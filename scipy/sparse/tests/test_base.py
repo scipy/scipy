@@ -47,7 +47,6 @@ from scipy.sparse.sputils import (supported_dtypes, isscalarlike,
                                   get_index_dtype, asmatrix, matrix)
 from scipy.sparse.linalg import splu, expm, inv
 
-from scipy._lib._version import NumpyVersion
 from scipy._lib.decorator import decorator
 
 import pytest
@@ -1794,8 +1793,7 @@ class _TestCommon(object):
                 assert_array_equal(sum2, dat + dat)
 
         for dtype in self.math_dtypes:
-            if (dtype == np.dtype('bool')) and (
-                    NumpyVersion(np.__version__) >= '1.9.0.dev'):
+            if dtype == np.dtype('bool'):
                 # boolean array subtraction deprecated in 1.9.0
                 continue
 
@@ -2039,8 +2037,6 @@ class _TestCommon(object):
 
 
 class _TestInplaceArithmetic(object):
-    @pytest.mark.skipif(NumpyVersion(np.__version__) < "1.13.0",
-                        reason="numpy version doesn't respect array priority")
     def test_inplace_dense(self):
         a = np.ones((3, 4))
         b = self.spmatrix(a)
@@ -2448,19 +2444,16 @@ class _TestSlicing(object):
         assert_equal(a[1, 1, ...], b[1, 1, ...])
         assert_equal(a[1, ..., 1], b[1, ..., 1])
 
-    @pytest.mark.skipif(NumpyVersion(np.__version__) >= '1.9.0.dev', reason="")
     def test_multiple_ellipsis_slicing(self):
         b = asmatrix(arange(50).reshape(5,10))
         a = self.spmatrix(b)
 
-        assert_array_equal(a[..., ...].A, b[..., ...].A)
-        assert_array_equal(a[..., ..., ...].A, b[..., ..., ...].A)
-        assert_array_equal(a[1, ..., ...].A, b[1, ..., ...].A)
-        assert_array_equal(a[1:, ..., ...].A, b[1:, ..., ...].A)
-        assert_array_equal(a[..., ..., 1:].A, b[..., ..., 1:].A)
-
-        # Bug in NumPy's slicing
-        assert_array_equal(a[..., ..., 1].A, b[..., ..., 1].A.reshape((5,1)))
+        assert_array_equal(a[..., ...].A, b[:, :].A)
+        assert_array_equal(a[..., ..., ...].A, b[:, :].A)
+        assert_array_equal(a[1, ..., ...].A, b[1, :].A)
+        assert_array_equal(a[1:, ..., ...].A, b[1:, :].A)
+        assert_array_equal(a[..., ..., 1:].A, b[:, 1:].A)
+        assert_array_equal(a[..., ..., 1].A, b[:, 1].A)
 
 
 class _TestSlicingAssign(object):
@@ -3117,8 +3110,7 @@ class _TestArithmetic(object):
                 assert_array_equal(A + Bsp,D1)          # check dense + sparse
 
                 # subtraction
-                if (np.dtype('bool') in [x, y]) and (
-                        NumpyVersion(np.__version__) >= '1.9.0.dev'):
+                if np.dtype('bool') in [x, y]:
                     # boolean array subtraction deprecated in 1.9.0
                     continue
 
