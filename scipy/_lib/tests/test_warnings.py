@@ -100,7 +100,7 @@ def test_warning_calls_filters(warning_calls):
     if bad_filters:
         raise AssertionError(
             "warning ignore filter should not be used, instead, use\n"
-            "scipy._lib._numpy_compat.suppress_warnings (in tests only);\n"
+            "numpy.testing.suppress_warnings (in tests only);\n"
             "found in:\n    {}".format(
                 "\n    ".join(bad_filters)))
 
@@ -115,7 +115,7 @@ def test_warning_calls_stacklevels(warning_calls):
 
     if bad_filters:
         msg += ("warning ignore filter should not be used, instead, use\n"
-                "scipy._lib._numpy_compat.suppress_warnings (in tests only);\n"
+                "numpy.testing.suppress_warnings (in tests only);\n"
                 "found in:\n    {}".format("\n    ".join(bad_filters)))
         msg += "\n\n"
 

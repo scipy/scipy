@@ -30,8 +30,8 @@ import pytest
 from pytest import raises as assert_raises
 from numpy.testing import (assert_equal, assert_almost_equal,
         assert_array_equal, assert_array_almost_equal, assert_approx_equal,
-        assert_, assert_allclose,
-        assert_array_almost_equal_nulp)
+        assert_, assert_allclose, assert_array_almost_equal_nulp,
+        suppress_warnings)
 
 from scipy import special
 import scipy.special._ufuncs as cephes
@@ -40,7 +40,6 @@ from scipy.special import ellipk, zeta
 from scipy.special._testutils import with_special_errors, \
      assert_func_equal, FuncData
 
-from scipy._lib._numpy_compat import suppress_warnings
 from scipy._lib._version import NumpyVersion
 
 import math

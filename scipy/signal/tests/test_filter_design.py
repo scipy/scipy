@@ -7,10 +7,9 @@ import numpy as np
 from numpy.testing import (assert_array_almost_equal,
                            assert_array_equal, assert_array_less,
                            assert_equal, assert_,
-                           assert_allclose, assert_warns)
+                           assert_allclose, assert_warns, suppress_warnings)
 import pytest
 from pytest import raises as assert_raises
-from scipy._lib._numpy_compat import suppress_warnings
 
 from numpy import array, spacing, sin, pi, sort, sqrt
 from scipy.signal import (BadCoefficients, bessel, besselap, bilinear, buttap,

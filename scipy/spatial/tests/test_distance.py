@@ -44,11 +44,11 @@ import warnings
 from numpy.linalg import norm
 from numpy.testing import (verbose, assert_,
                            assert_array_equal, assert_equal,
-                           assert_almost_equal, assert_allclose)
+                           assert_almost_equal, assert_allclose,
+                           suppress_warnings)
 import pytest
 from pytest import raises as assert_raises
 
-from scipy._lib._numpy_compat import suppress_warnings
 from scipy.spatial.distance import (squareform, pdist, cdist, num_obs_y,
                                     num_obs_dm, is_valid_dm, is_valid_y,
                                     _validate_vector, _METRICS_NAMES)

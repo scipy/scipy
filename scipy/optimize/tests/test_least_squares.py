@@ -5,10 +5,8 @@ from itertools import product
 import numpy as np
 from numpy.linalg import norm
 from numpy.testing import (assert_, assert_allclose,
-                           assert_equal)
+                           assert_equal, suppress_warnings)
 from pytest import raises as assert_raises
-from scipy._lib._numpy_compat import suppress_warnings
-
 from scipy.sparse import issparse, lil_matrix
 from scipy.sparse.linalg import aslinearoperator
 

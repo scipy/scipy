@@ -4,7 +4,8 @@ import pytest
 from scipy.linalg import block_diag
 from scipy.sparse import csc_matrix
 from numpy.testing import (TestCase, assert_array_almost_equal,
-                           assert_array_less, assert_allclose, assert_)
+                           assert_array_less, assert_allclose, assert_,
+                           suppress_warnings)
 from pytest import raises
 from scipy.optimize import (NonlinearConstraint,
                             LinearConstraint,
@@ -12,7 +13,6 @@ from scipy.optimize import (NonlinearConstraint,
                             minimize,
                             BFGS,
                             SR1)
-from scipy._lib._numpy_compat import suppress_warnings
 
 
 class Maratos:

@@ -17,11 +17,10 @@ import numpy as np
 from numpy.testing import (assert_allclose, assert_equal,
                            assert_,
                            assert_almost_equal, assert_warns,
-                           assert_array_less)
+                           assert_array_less, suppress_warnings)
 import pytest
 from pytest import raises as assert_raises
 
-from scipy._lib._numpy_compat import suppress_warnings
 from scipy import optimize
 from scipy.optimize._minimize import MINIMIZE_METHODS
 from scipy.optimize._differentiable_functions import ScalarFunction

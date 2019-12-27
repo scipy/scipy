@@ -26,12 +26,11 @@ import warnings
 from scipy._lib.six import callable, string_types
 from scipy import linalg, special
 from scipy.special import logsumexp
-from scipy._lib._numpy_compat import cov
 from scipy._lib._util import check_random_state
 
 from numpy import (asarray, atleast_2d, reshape, zeros, newaxis, dot, exp, pi,
                    sqrt, ravel, power, atleast_1d, squeeze, sum, transpose,
-                   ones)
+                   ones, cov)
 import numpy as np
 
 # Local imports.

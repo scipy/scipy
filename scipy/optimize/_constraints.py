@@ -6,7 +6,7 @@ from ._differentiable_functions import (
     VectorFunction, LinearVectorFunction, IdentityVectorFunction)
 from .optimize import OptimizeWarning
 from warnings import warn
-from scipy._lib._numpy_compat import suppress_warnings
+from numpy.testing import suppress_warnings
 from scipy.sparse import issparse
 
 class NonlinearConstraint(object):

@@ -4,7 +4,7 @@ import itertools
 
 from numpy.testing import (assert_, assert_equal, assert_almost_equal,
         assert_array_almost_equal, assert_array_equal,
-        assert_allclose)
+        assert_allclose, assert_warns, suppress_warnings)
 from pytest import raises as assert_raises
 import pytest
 
@@ -12,7 +12,6 @@ from numpy import mgrid, pi, sin, ogrid, poly1d, linspace
 import numpy as np
 
 from scipy._lib.six import xrange
-from scipy._lib._numpy_compat import _assert_warns, suppress_warnings
 
 from scipy.interpolate import (interp1d, interp2d, lagrange, PPoly, BPoly,
          splrep, splev, splantider, splint, sproot, Akima1DInterpolator,
@@ -2779,8 +2778,8 @@ class TestInterpN(object):
             assert_allclose(v1, v2)
 
         # Complex-valued data not supported by spline2fd
-        _assert_warns(np.ComplexWarning, interpn, points, values,
-                      sample, method='splinef2d')
+        assert_warns(np.ComplexWarning, interpn, points, values,
+                     sample, method='splinef2d')
 
     def test_duck_typed_values(self):
         x = np.linspace(0, 2, 5)

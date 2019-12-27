@@ -3,13 +3,11 @@ from __future__ import division, print_function, absolute_import
 import sys
 
 import numpy as np
-from numpy.testing import assert_equal, assert_allclose
+from numpy.testing import assert_equal, assert_allclose, suppress_warnings
 import pytest
 
 from scipy.special._ufuncs import _sinpi as sinpi
 from scipy.special._ufuncs import _cospi as cospi
-
-from scipy._lib._numpy_compat import suppress_warnings
 
 
 def test_integer_real_part():

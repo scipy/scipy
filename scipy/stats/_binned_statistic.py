@@ -1,8 +1,8 @@
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
+from numpy.testing import suppress_warnings
 from scipy._lib.six import callable, xrange
-from scipy._lib._numpy_compat import suppress_warnings
 from collections import namedtuple
 
 __all__ = ['binned_statistic',

@@ -3,9 +3,9 @@ Tests for line search routines
 """
 from __future__ import division, print_function, absolute_import
 
-from numpy.testing import assert_, assert_equal, \
-     assert_array_almost_equal, assert_array_almost_equal_nulp, assert_warns
-from scipy._lib._numpy_compat import suppress_warnings
+from numpy.testing import (assert_, assert_equal, assert_array_almost_equal,
+                           assert_array_almost_equal_nulp, assert_warns,
+                           suppress_warnings)
 import scipy.optimize.linesearch as ls
 from scipy.optimize.linesearch import LineSearchWarning
 import numpy as np

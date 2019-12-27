@@ -20,9 +20,8 @@ import shutil
 import gzip
 
 from numpy.testing import (assert_array_equal, assert_array_almost_equal,
-                           assert_equal, assert_)
+                           assert_equal, assert_, suppress_warnings)
 from pytest import raises as assert_raises
-from scipy._lib._numpy_compat import suppress_warnings
 
 import numpy as np
 from numpy import array

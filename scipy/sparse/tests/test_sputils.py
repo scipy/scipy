@@ -3,11 +3,10 @@
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from numpy.testing import assert_equal
+from numpy.testing import assert_equal, suppress_warnings
 from pytest import raises as assert_raises
 from scipy.sparse import sputils
 from scipy.sparse.sputils import matrix
-from scipy._lib._numpy_compat import suppress_warnings
 
 
 class TestSparseUtils(object):

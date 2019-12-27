@@ -6,10 +6,9 @@ import sys
 
 import numpy as np
 from numpy.testing import (assert_, assert_allclose, assert_equal,
-                           assert_array_less)
+                           assert_array_less, assert_warns, suppress_warnings)
 from pytest import raises as assert_raises
 from scipy.optimize import linprog, OptimizeWarning
-from scipy._lib._numpy_compat import _assert_warns, suppress_warnings
 from scipy.sparse.linalg import MatrixRankWarning
 from scipy.linalg import LinAlgWarning
 import pytest
@@ -330,8 +329,8 @@ class LinprogCommonTests(object):
         o = {key: self.options[key] for key in self.options}
         o['spam'] = 42
 
-        _assert_warns(OptimizeWarning, f,
-                      c, A_ub=A_ub, b_ub=b_ub, options=o)
+        assert_warns(OptimizeWarning, f,
+                     c, A_ub=A_ub, b_ub=b_ub, options=o)
 
     def test_invalid_inputs(self):
 

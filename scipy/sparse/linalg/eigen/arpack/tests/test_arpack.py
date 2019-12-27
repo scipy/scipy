@@ -12,7 +12,7 @@ import itertools
 import numpy as np
 
 from numpy.testing import (assert_allclose, assert_array_almost_equal_nulp,
-                           assert_equal, assert_array_equal)
+                           assert_equal, assert_array_equal, suppress_warnings)
 from pytest import raises as assert_raises
 import pytest
 
@@ -24,7 +24,6 @@ from scipy.sparse.linalg.eigen.arpack import eigs, eigsh, svds, \
      ArpackNoConvergence, arpack
 
 from scipy._lib._gcutils import assert_deallocated, IS_PYPY
-from scipy._lib._numpy_compat import suppress_warnings
 
 
 # precision for tests
