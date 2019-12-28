@@ -12,7 +12,7 @@ __all__ = ['upcast', 'getdtype', 'isscalarlike', 'isintlike',
            'isshape', 'issequence', 'isdense', 'ismatrix', 'get_sum_dtype']
 
 supported_dtypes = ['bool', 'int8', 'uint8', 'short', 'ushort', 'intc',
-                    'uintc', 'longlong', 'ulonglong', 'single', 'double',
+                    'uintc', 'l', 'L', 'longlong', 'ulonglong', 'single', 'double',
                     'longdouble', 'csingle', 'cdouble', 'clongdouble']
 supported_dtypes = [np.typeDict[x] for x in supported_dtypes]
 
