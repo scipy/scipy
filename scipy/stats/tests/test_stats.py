@@ -2633,6 +2633,15 @@ class TestPowerDivergence(object):
         check_named_results(res, attributes)
 
 
+@pytest.mark.parametrize("n, dtype", [(200, np.uint8), (1000000, np.int32)])
+def test_chiquare_data_types(n, dtype):
+    # Regression test for gh-10159.
+    obs = np.array([n, 0], dtype=dtype)
+    exp = np.array([n // 2, n // 2], dtype=dtype)
+    stat, p = stats.chisquare(obs, exp)
+    assert_allclose(stat, n, rtol=1e-13)
+
+
 def test_chisquare_masked_arrays():
     # Test masked arrays.
     obs = np.array([[8, 8, 16, 32, -1], [-1, -1, 3, 4, 5]]).T
