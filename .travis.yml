@@ -4,7 +4,6 @@ language: python
 addons:
   apt:
     packages: &common_packages
-    - libatlas-dev
     - libatlas-base-dev
     - liblapack-dev
     - gfortran
@@ -52,18 +51,19 @@ matrix:
         - NUMPYSPEC="numpy==1.15.4"
     # Test SciPy with the debug version of Python.
     # However travis only specifies regular or development builds of Python
-    # so we must install python3.7-dbg using apt.
+    # so we must install python3.6-dbg using apt.
     - language: generic
+      dist: bionic
       env:
-        - USE_DEBUG=python3.7-dbg
+        - USE_DEBUG=python3.6-dbg
         - TESTMODE=fast
         - NUMPYSPEC="--upgrade numpy"
       addons:
         apt:
           packages:
             - *common_packages
-            - python3.7-dbg
-            - python3.7-dev
+            - python3.6-dbg
+            - python3.6-dev
     - python: 3.8
       env:
         - TESTMODE=full
