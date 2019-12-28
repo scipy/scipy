@@ -27,7 +27,6 @@ import numpy as np
 import scipy.stats as stats
 import scipy.stats.mstats as mstats
 import scipy.stats.mstats_basic as mstats_basic
-from scipy._lib._version import NumpyVersion
 from scipy._lib.six import xrange
 from .common_tests import check_named_results
 from scipy.special import kv
@@ -1879,37 +1878,6 @@ class TestVariability(object):
         assert_almost_equal(mad, 0.504084)
 
 
-class _numpy_version_warn_context_mgr(object):
-    """
-    A simple context manager class to avoid retyping the same code for
-    different versions of numpy when the only difference is that older
-    versions raise warnings.
-
-    This manager does not apply for cases where the old code returns
-    different values.
-    """
-
-    def __init__(self, min_numpy_version, warning_type, num_warnings):
-        if NumpyVersion(np.__version__) < min_numpy_version:
-            self.numpy_is_old = True
-            self.warning_type = warning_type
-            self.num_warnings = num_warnings
-            self.delegate = warnings.catch_warnings(record = True)
-        else:
-            self.numpy_is_old = False
-
-    def __enter__(self):
-        if self.numpy_is_old:
-            self.warn_list = self.delegate.__enter__()
-            warnings.simplefilter("always")
-        return None
-
-    def __exit__(self, exc_type, exc_value, traceback):
-        if self.numpy_is_old:
-            self.delegate.__exit__(exc_type, exc_value, traceback)
-            _check_warnings(self.warn_list, self.warning_type, self.num_warnings)
-
-
 def _check_warnings(warn_list, expected_type, expected_len):
     """
     Checks that all of the warnings from a list returned by
@@ -1937,9 +1905,8 @@ class TestIQR(object):
         stats.iqr(d, None, (10, 90))
         stats.iqr(d, None, (30, 20), 'raw')
         stats.iqr(d, None, (25, 75), 1.5, 'propagate')
-        if NumpyVersion(np.__version__) >= '1.9.0a':
-            stats.iqr(d, None, (50, 50), 'normal', 'raise', 'linear')
-            stats.iqr(d, None, (25, 75), -0.4, 'omit', 'lower', True)
+        stats.iqr(d, None, (50, 50), 'normal', 'raise', 'linear')
+        stats.iqr(d, None, (25, 75), -0.4, 'omit', 'lower', True)
 
     def test_empty(self):
         assert_equal(stats.iqr([]), np.nan)
@@ -1951,13 +1918,11 @@ class TestIQR(object):
         assert_equal(stats.iqr(x), 0.0)
         assert_array_equal(stats.iqr(x, axis=0), np.zeros(4))
         assert_array_equal(stats.iqr(x, axis=1), np.zeros(7))
-        # Even for older versions, 'linear' does not raise a warning
-        with _numpy_version_warn_context_mgr('1.9.0a', RuntimeWarning, 4):
-            assert_equal(stats.iqr(x, interpolation='linear'), 0.0)
-            assert_equal(stats.iqr(x, interpolation='midpoint'), 0.0)
-            assert_equal(stats.iqr(x, interpolation='nearest'), 0.0)
-            assert_equal(stats.iqr(x, interpolation='lower'), 0.0)
-            assert_equal(stats.iqr(x, interpolation='higher'), 0.0)
+        assert_equal(stats.iqr(x, interpolation='linear'), 0.0)
+        assert_equal(stats.iqr(x, interpolation='midpoint'), 0.0)
+        assert_equal(stats.iqr(x, interpolation='nearest'), 0.0)
+        assert_equal(stats.iqr(x, interpolation='lower'), 0.0)
+        assert_equal(stats.iqr(x, interpolation='higher'), 0.0)
 
         # 0 only along constant dimensions
         # This also tests much of `axis`
@@ -1973,13 +1938,7 @@ class TestIQR(object):
         x = np.arange(1) + 7.0
         assert_equal(stats.iqr(x[0]), 0.0)
         assert_equal(stats.iqr(x), 0.0)
-        if NumpyVersion(np.__version__) >= '1.9.0a':
-            assert_array_equal(stats.iqr(x, keepdims=True), [0.0])
-        else:
-            with warnings.catch_warnings(record=True) as w:
-                warnings.simplefilter("always")
-                assert_array_equal(stats.iqr(x, keepdims=True), 0.0)
-                _check_warnings(w, RuntimeWarning, 1)
+        assert_array_equal(stats.iqr(x, keepdims=True), [0.0])
 
     def test_2D(self):
         x = np.arange(15).reshape((3, 5))
@@ -2027,10 +1986,7 @@ class TestIQR(object):
         assert_equal(stats.iqr(d, axis=(1, 3))[2, 2],
                      stats.iqr(d[2, :, 2,:].ravel()))
 
-        if NumpyVersion(np.__version__) >= '1.9.0a':
-            assert_raises(IndexError, stats.iqr, d, axis=4)
-        else:
-            assert_raises(ValueError, stats.iqr, d, axis=4)
+        assert_raises(IndexError, stats.iqr, d, axis=4)
         assert_raises(ValueError, stats.iqr, d, axis=(0, 0))
 
     def test_rng(self):
@@ -2050,65 +2006,28 @@ class TestIQR(object):
         # Default
         assert_equal(stats.iqr(x), 2)
         assert_equal(stats.iqr(y), 1.5)
-        if NumpyVersion(np.__version__) >= '1.9.0a':
-            # Linear
-            assert_equal(stats.iqr(x, interpolation='linear'), 2)
-            assert_equal(stats.iqr(y, interpolation='linear'), 1.5)
-            # Higher
-            assert_equal(stats.iqr(x, interpolation='higher'), 2)
-            assert_equal(stats.iqr(x, rng=(25, 80), interpolation='higher'), 3)
-            assert_equal(stats.iqr(y, interpolation='higher'), 2)
-            # Lower (will generally, but not always be the same as higher)
-            assert_equal(stats.iqr(x, interpolation='lower'), 2)
-            assert_equal(stats.iqr(x, rng=(25, 80), interpolation='lower'), 2)
-            assert_equal(stats.iqr(y, interpolation='lower'), 2)
-            # Nearest
-            assert_equal(stats.iqr(x, interpolation='nearest'), 2)
-            assert_equal(stats.iqr(y, interpolation='nearest'), 1)
-            # Midpoint
-            if NumpyVersion(np.__version__) >= '1.11.0a':
-                assert_equal(stats.iqr(x, interpolation='midpoint'), 2)
-                assert_equal(stats.iqr(x, rng=(25, 80), interpolation='midpoint'), 2.5)
-                assert_equal(stats.iqr(y, interpolation='midpoint'), 2)
-            else:
-                # midpoint did not work correctly before numpy 1.11.0
-                assert_equal(stats.iqr(x, interpolation='midpoint'), 2)
-                assert_equal(stats.iqr(x, rng=(25, 80), interpolation='midpoint'), 2)
-                assert_equal(stats.iqr(y, interpolation='midpoint'), 2)
-        else:
-            with warnings.catch_warnings(record=True) as w:
-                warnings.simplefilter("always")
-                # Linear
-                assert_equal(stats.iqr(x, interpolation='linear'), 2)
-                assert_equal(stats.iqr(y, interpolation='linear'), 1.5)
-                # Higher
-                assert_equal(stats.iqr(x, interpolation='higher'), 2)
-                assert_almost_equal(stats.iqr(x, rng=(25, 80), interpolation='higher'), 2.2)
-                assert_equal(stats.iqr(y, interpolation='higher'), 1.5)
-                # Lower
-                assert_equal(stats.iqr(x, interpolation='lower'), 2)
-                assert_almost_equal(stats.iqr(x, rng=(25, 80), interpolation='lower'), 2.2)
-                assert_equal(stats.iqr(y, interpolation='lower'), 1.5)
-                # Nearest
-                assert_equal(stats.iqr(x, interpolation='nearest'), 2)
-                assert_equal(stats.iqr(y, interpolation='nearest'), 1.5)
-                # Midpoint
-                assert_equal(stats.iqr(x, interpolation='midpoint'), 2)
-                assert_almost_equal(stats.iqr(x, rng=(25, 80), interpolation='midpoint'), 2.2)
-                assert_equal(stats.iqr(y, interpolation='midpoint'), 1.5)
-                _check_warnings(w, RuntimeWarning, 11)
+        # Linear
+        assert_equal(stats.iqr(x, interpolation='linear'), 2)
+        assert_equal(stats.iqr(y, interpolation='linear'), 1.5)
+        # Higher
+        assert_equal(stats.iqr(x, interpolation='higher'), 2)
+        assert_equal(stats.iqr(x, rng=(25, 80), interpolation='higher'), 3)
+        assert_equal(stats.iqr(y, interpolation='higher'), 2)
+        # Lower (will generally, but not always be the same as higher)
+        assert_equal(stats.iqr(x, interpolation='lower'), 2)
+        assert_equal(stats.iqr(x, rng=(25, 80), interpolation='lower'), 2)
+        assert_equal(stats.iqr(y, interpolation='lower'), 2)
+        # Nearest
+        assert_equal(stats.iqr(x, interpolation='nearest'), 2)
+        assert_equal(stats.iqr(y, interpolation='nearest'), 1)
+        # Midpoint
+        assert_equal(stats.iqr(x, interpolation='midpoint'), 2)
+        assert_equal(stats.iqr(x, rng=(25, 80), interpolation='midpoint'), 2.5)
+        assert_equal(stats.iqr(y, interpolation='midpoint'), 2)
 
-        if NumpyVersion(np.__version__) >= '1.9.0a':
-            assert_raises(ValueError, stats.iqr, x, interpolation='foobar')
-        else:
-            with warnings.catch_warnings(record=True) as w:
-                warnings.simplefilter("always")
-                assert_equal(stats.iqr(x, interpolation='foobar'), 2)
-                _check_warnings(w, RuntimeWarning, 1)
+        assert_raises(ValueError, stats.iqr, x, interpolation='foobar')
 
     def test_keepdims(self):
-        numpy_version = NumpyVersion(np.__version__)
-
         # Also tests most of `axis`
         x = np.ones((3, 5, 7, 11))
         assert_equal(stats.iqr(x, axis=None, keepdims=False).shape, ())
@@ -2119,28 +2038,15 @@ class TestIQR(object):
         assert_equal(stats.iqr(x, (0, 1, 2, 3), keepdims=False).shape, ())
         assert_equal(stats.iqr(x, axis=(0, 1, 3), keepdims=False).shape, (7,))
 
-        if numpy_version >= '1.9.0a':
-            assert_equal(stats.iqr(x, axis=None, keepdims=True).shape, (1, 1, 1, 1))
-            assert_equal(stats.iqr(x, axis=2, keepdims=True).shape, (3, 5, 1, 11))
-            assert_equal(stats.iqr(x, axis=(0, 1), keepdims=True).shape, (1, 1, 7, 11))
-            assert_equal(stats.iqr(x, axis=(0, 3), keepdims=True).shape, (1, 5, 7, 1))
-            assert_equal(stats.iqr(x, axis=(1,), keepdims=True).shape, (3, 1, 7, 11))
-            assert_equal(stats.iqr(x, (0, 1, 2, 3), keepdims=True).shape, (1, 1, 1, 1))
-            assert_equal(stats.iqr(x, axis=(0, 1, 3), keepdims=True).shape, (1, 1, 7, 1))
-        else:
-            with warnings.catch_warnings(record=True) as w:
-                warnings.simplefilter("always")
-                assert_equal(stats.iqr(x, axis=None, keepdims=True).shape, ())
-                assert_equal(stats.iqr(x, axis=2, keepdims=True).shape, (3, 5, 11))
-                assert_equal(stats.iqr(x, axis=(0, 1), keepdims=True).shape, (7, 11))
-                assert_equal(stats.iqr(x, axis=(0, 3), keepdims=True).shape, (5, 7))
-                assert_equal(stats.iqr(x, axis=(1,), keepdims=True).shape, (3, 7, 11))
-                assert_equal(stats.iqr(x, (0, 1, 2, 3), keepdims=True).shape, ())
-                assert_equal(stats.iqr(x, axis=(0, 1, 3), keepdims=True).shape, (7,))
-                _check_warnings(w, RuntimeWarning, 7)
+        assert_equal(stats.iqr(x, axis=None, keepdims=True).shape, (1, 1, 1, 1))
+        assert_equal(stats.iqr(x, axis=2, keepdims=True).shape, (3, 5, 1, 11))
+        assert_equal(stats.iqr(x, axis=(0, 1), keepdims=True).shape, (1, 1, 7, 11))
+        assert_equal(stats.iqr(x, axis=(0, 3), keepdims=True).shape, (1, 5, 7, 1))
+        assert_equal(stats.iqr(x, axis=(1,), keepdims=True).shape, (3, 1, 7, 11))
+        assert_equal(stats.iqr(x, (0, 1, 2, 3), keepdims=True).shape, (1, 1, 1, 1))
+        assert_equal(stats.iqr(x, axis=(0, 1, 3), keepdims=True).shape, (1, 1, 7, 1))
 
     def test_nanpolicy(self):
-        numpy_version = NumpyVersion(np.__version__)
         x = np.arange(15.0).reshape((3, 5))
 
         # No NaNs
@@ -2152,34 +2058,15 @@ class TestIQR(object):
         x[1, 2] = np.nan
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")
-            if numpy_version < '1.10.0a':
-                # Fails over to mishmash of omit/propagate, but mostly omit
-                # The first case showcases the "incorrect" behavior of np.percentile
-                assert_equal(stats.iqr(x, nan_policy='propagate'), 8)
-                assert_equal(stats.iqr(x, axis=0, nan_policy='propagate'), [5, 5, np.nan, 5, 5])
-                if numpy_version < '1.9.0a':
-                    assert_equal(stats.iqr(x, axis=1, nan_policy='propagate'), [2, 3, 2])
-                else:
-                    # some fixes to percentile nan handling in 1.9
-                    assert_equal(stats.iqr(x, axis=1, nan_policy='propagate'), [2, np.nan, 2])
-                _check_warnings(w, RuntimeWarning, 3)
-            else:
-                assert_equal(stats.iqr(x, nan_policy='propagate'), np.nan)
-                assert_equal(stats.iqr(x, axis=0, nan_policy='propagate'), [5, 5, np.nan, 5, 5])
-                assert_equal(stats.iqr(x, axis=1, nan_policy='propagate'), [2, np.nan, 2])
+            assert_equal(stats.iqr(x, nan_policy='propagate'), np.nan)
+            assert_equal(stats.iqr(x, axis=0, nan_policy='propagate'), [5, 5, np.nan, 5, 5])
+            assert_equal(stats.iqr(x, axis=1, nan_policy='propagate'), [2, np.nan, 2])
 
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")
-            if numpy_version < '1.9.0a':
-                # Fails over to mishmash of omit/propagate, but mostly omit
-                assert_equal(stats.iqr(x, nan_policy='omit'), 8)
-                assert_equal(stats.iqr(x, axis=0, nan_policy='omit'), [5, 5, np.nan, 5, 5])
-                assert_equal(stats.iqr(x, axis=1, nan_policy='omit'), [2, 3, 2])
-                _check_warnings(w, RuntimeWarning, 3)
-            else:
-                assert_equal(stats.iqr(x, nan_policy='omit'), 7.5)
-                assert_equal(stats.iqr(x, axis=0, nan_policy='omit'), np.full(5, 5))
-                assert_equal(stats.iqr(x, axis=1, nan_policy='omit'), [2, 2.5, 2])
+            assert_equal(stats.iqr(x, nan_policy='omit'), 7.5)
+            assert_equal(stats.iqr(x, axis=0, nan_policy='omit'), np.full(5, 5))
+            assert_equal(stats.iqr(x, axis=1, nan_policy='omit'), [2, 2.5, 2])
 
         assert_raises(ValueError, stats.iqr, x, nan_policy='raise')
         assert_raises(ValueError, stats.iqr, x, axis=0, nan_policy='raise')
@@ -2189,7 +2076,6 @@ class TestIQR(object):
         assert_raises(ValueError, stats.iqr, x, nan_policy='barfood')
 
     def test_scale(self):
-        numpy_version = NumpyVersion(np.__version__)
         x = np.arange(15.0).reshape((3, 5))
 
         # No NaNs
@@ -2201,60 +2087,25 @@ class TestIQR(object):
         x[1, 2] = np.nan
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")
-            if numpy_version < '1.10.0a':
-                # Fails over to mishmash of omit/propagate, but mostly omit
-                assert_equal(stats.iqr(x, scale='raw', nan_policy='propagate'), 8)
-                assert_almost_equal(stats.iqr(x, scale='normal',
-                                              nan_policy='propagate'),
-                                    8 / 1.3489795)
-                assert_equal(stats.iqr(x, scale=2.0, nan_policy='propagate'), 4)
-                # axis=1 chosen to show behavior with both nans and without
-                if numpy_version < '1.9.0a':
-                    assert_equal(stats.iqr(x, axis=1, nan_policy='propagate'), [2, 3, 2])
-                    assert_almost_equal(stats.iqr(x, axis=1, scale='normal',
-                                                  nan_policy='propagate'),
-                                        np.array([2, 3, 2]) / 1.3489795)
-                    assert_equal(stats.iqr(x, axis=1, scale=2.0,
-                                           nan_policy='propagate'), [1, 1.5, 1])
-                else:
-                    # some fixes to percentile nan handling in 1.9
-                    assert_equal(stats.iqr(x, axis=1, nan_policy='propagate'), [2, np.nan, 2])
-                    assert_almost_equal(stats.iqr(x, axis=1, scale='normal',
-                                                  nan_policy='propagate'),
-                                        np.array([2, np.nan, 2]) / 1.3489795)
-                    assert_equal(stats.iqr(x, axis=1, scale=2.0,
-                                           nan_policy='propagate'), [1, np.nan, 1])
-                _check_warnings(w, RuntimeWarning, 6)
-            else:
-                assert_equal(stats.iqr(x, scale='raw', nan_policy='propagate'), np.nan)
-                assert_equal(stats.iqr(x, scale='normal', nan_policy='propagate'), np.nan)
-                assert_equal(stats.iqr(x, scale=2.0, nan_policy='propagate'), np.nan)
-                # axis=1 chosen to show behavior with both nans and without
-                assert_equal(stats.iqr(x, axis=1, scale='raw',
-                                       nan_policy='propagate'), [2, np.nan, 2])
-                assert_almost_equal(stats.iqr(x, axis=1, scale='normal',
-                                              nan_policy='propagate'),
-                                    np.array([2, np.nan, 2]) / 1.3489795)
-                assert_equal(stats.iqr(x, axis=1, scale=2.0, nan_policy='propagate'),
-                             [1, np.nan, 1])
-                # Since NumPy 1.17.0.dev, warnings are no longer emitted by
-                # np.percentile with nans, so we don't check the number of
-                # warnings here. See https://github.com/numpy/numpy/pull/12679.
+            assert_equal(stats.iqr(x, scale='raw', nan_policy='propagate'), np.nan)
+            assert_equal(stats.iqr(x, scale='normal', nan_policy='propagate'), np.nan)
+            assert_equal(stats.iqr(x, scale=2.0, nan_policy='propagate'), np.nan)
+            # axis=1 chosen to show behavior with both nans and without
+            assert_equal(stats.iqr(x, axis=1, scale='raw',
+                                   nan_policy='propagate'), [2, np.nan, 2])
+            assert_almost_equal(stats.iqr(x, axis=1, scale='normal',
+                                          nan_policy='propagate'),
+                                np.array([2, np.nan, 2]) / 1.3489795)
+            assert_equal(stats.iqr(x, axis=1, scale=2.0, nan_policy='propagate'),
+                         [1, np.nan, 1])
+            # Since NumPy 1.17.0.dev, warnings are no longer emitted by
+            # np.percentile with nans, so we don't check the number of
+            # warnings here. See https://github.com/numpy/numpy/pull/12679.
 
-        if numpy_version < '1.9.0a':
-            with warnings.catch_warnings(record=True) as w:
-                warnings.simplefilter("always")
-                # Fails over to mishmash of omit/propagate, but mostly omit
-                assert_equal(stats.iqr(x, scale='raw', nan_policy='omit'), 8)
-                assert_almost_equal(stats.iqr(x, scale='normal', nan_policy='omit'),
-                                    8 / 1.3489795)
-                assert_equal(stats.iqr(x, scale=2.0, nan_policy='omit'), 4)
-                _check_warnings(w, RuntimeWarning, 3)
-        else:
-            assert_equal(stats.iqr(x, scale='raw', nan_policy='omit'), 7.5)
-            assert_almost_equal(stats.iqr(x, scale='normal', nan_policy='omit'),
-                                7.5 / 1.3489795)
-            assert_equal(stats.iqr(x, scale=2.0, nan_policy='omit'), 3.75)
+        assert_equal(stats.iqr(x, scale='raw', nan_policy='omit'), 7.5)
+        assert_almost_equal(stats.iqr(x, scale='normal', nan_policy='omit'),
+                            7.5 / 1.3489795)
+        assert_equal(stats.iqr(x, scale=2.0, nan_policy='omit'), 3.75)
 
         # Bad scale
         assert_raises(ValueError, stats.iqr, x, scale='foobar')
