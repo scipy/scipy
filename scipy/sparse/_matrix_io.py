@@ -4,16 +4,11 @@ import sys
 import numpy as np
 import scipy.sparse
 
-from scipy._lib._version import NumpyVersion
-
 __all__ = ['save_npz', 'load_npz']
 
 
-if NumpyVersion(np.__version__) >= '1.10.0':
-    # Make loading safe vs. malicious input
-    PICKLE_KWARGS = dict(allow_pickle=False)
-else:
-    PICKLE_KWARGS = dict()
+# Make loading safe vs. malicious input
+PICKLE_KWARGS = dict(allow_pickle=False)
 
 
 def save_npz(file, matrix, compressed=True):

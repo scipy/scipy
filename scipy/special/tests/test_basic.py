@@ -40,8 +40,6 @@ from scipy.special import ellipk, zeta
 from scipy.special._testutils import with_special_errors, \
      assert_func_equal, FuncData
 
-from scipy._lib._version import NumpyVersion
-
 import math
 
 
@@ -333,8 +331,6 @@ class TestCephes(object):
         assert_equal(cephes.expm1(-np.inf), -1)
         assert_equal(cephes.expm1(np.nan), np.nan)
 
-    # Earlier numpy version don't guarantee that npy_cexp conforms to C99.
-    @pytest.mark.skipif(NumpyVersion(np.__version__) < '1.9.0', reason='')
     def test_expm1_complex(self):
         expm1 = cephes.expm1
         assert_equal(expm1(0 + 0j), 0 + 0j)
@@ -575,8 +571,6 @@ class TestCephes(object):
         assert_equal(log1p(-2), np.nan)
         assert_equal(log1p(np.inf), np.inf)
 
-    # earlier numpy version don't guarantee that npy_clog conforms to C99
-    @pytest.mark.skipif(NumpyVersion(np.__version__) < '1.9.0', reason='')
     def test_log1p_complex(self):
         log1p = cephes.log1p
         c = complex
