@@ -3231,7 +3231,8 @@ def detrend(data, axis=-1, type='linear', bp=0, overwrite_data=False):
     bp : array_like of ints, optional
         A sequence of break points. If given, an individual linear fit is
         performed for each part of `data` between two break points.
-        Break points are specified as indices into `data`.
+        Break points are specified as indices into `data`. This parameter
+        only has an effect when ``type == 'linear'``.
     overwrite_data : bool, optional
         If True, perform in place detrending and avoid a copy. Default is False
 
