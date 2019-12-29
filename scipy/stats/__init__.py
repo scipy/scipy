@@ -375,7 +375,6 @@ Warnings used in :mod:`scipy.stats`
    PearsonRConstantInputWarning
    PearsonRNearConstantInputWarning
    SpearmanRConstantInputWarning
-   SpearmanRIndexError
 
 For many more stat related functions install the software R and the
 interface package rpy.

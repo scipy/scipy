@@ -781,13 +781,6 @@ class TestCorrSpearmanr2(object):
         assert_approx_equal(res[0], expected[0])
         assert_approx_equal(res[1], expected[1])
 
-    def test_spearmanr_attributes(self):
-        x1 = [1, 2, 3, 4, 5]
-        x2 = [5, 6, 7, 8, 7]
-        attributes = ('correlation', 'pvalue')
-        res = stats.spearmanr(x1, x2)
-        check_named_results(res, attributes)
-
     def test_empty_arrays(self):
         assert_equal(stats.spearmanr([], []), (np.nan, np.nan))
 
@@ -910,7 +903,7 @@ class TestCorrSpearmanr2(object):
         y = np.array([0, 0.009783728115345005, 0, 0, 0.0019759230121848587,
             0.0007535430349118562, 0.0002661781514710257, 0, 0,
             0.0007835762419683435])
-        assert_raises(stats.SpearmanRIndexError, stats.spearmanr, x, y, axis=2)
+        assert_raises(ValueError, stats.spearmanr, x, y, axis=2)
 
 
 #    W.II.E.  Tabulate X against X, using BIG as a case weight.  The values
