@@ -178,15 +178,10 @@ def _remove_redundancy_dense(A, rhs, true_rank=None):
     # matrix from the original problem - not on the canonical form matrix,
     # which would have many more column singletons due to slack variables
     # from the inequality constraints.
-    # The thoughts on "crashing" the initial basis sound useful, but the
-    # description of the procedure seems to assume a lot of familiarity with
-    # the subject; it is not very explicit. I already went through enough
-    # trouble getting the basic algorithm working, so I was not interested in
-    # trying to decipher this, too. (Overall, the paper is fraught with
-    # mistakes and ambiguities - which is strange, because the rest of
-    # Andersen's papers are quite good.)
+    # The thoughts on "crashing" the initial basis are only really useful if
+    # the matrix is sparse.
 
-    lu = np.eye(m, order='F'), np.arange(m)  # LU for initial basis is trivial
+    lu = np.eye(m, order='F'), np.arange(m)  # initial LU is trivial
     perm_r = lu[1]
     for i in v:
 
