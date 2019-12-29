@@ -228,7 +228,7 @@ def read(filename, mmap=False):
     Examples
     --------
     >>> from os.path import dirname, join as pjoin
-    >>> from scipy.io.wavfile import read
+    >>> from scipy.io import wavfile
     >>> import scipy.io
 
     Get the filename for an example .wav file from the tests/data directory.
@@ -238,7 +238,7 @@ def read(filename, mmap=False):
 
     Load the .wav file contents.
 
-    >>> samplerate, data = read(wav_fname)
+    >>> samplerate, data = wavfile.read(wav_fname)
     >>> print(f"number of channels = {data.shape[1]}")
     number of channels = 2
     >>> length = data.shape[0] / samplerate
