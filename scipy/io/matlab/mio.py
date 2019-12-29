@@ -17,9 +17,11 @@ __all__ = ['mat_reader_factory', 'loadmat', 'savemat', 'whosmat']
 @contextmanager
 def _open_file_context(file_like, appendmat, mode='rb'):
     f, opened = _open_file(file_like, appendmat, mode)
-    yield f
-    if opened:
-        f.close()
+    try:
+        yield f
+    finally:
+        if opened:
+            f.close()
 
 
 def _open_file(file_like, appendmat, mode='rb'):
