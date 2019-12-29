@@ -1388,46 +1388,212 @@ add_newdoc("cbrt",
     """)
 
 add_newdoc("chdtr",
-    """
-    chdtr(v, x)
+    r"""
+    chdtr(v, x, out=None)
 
-    Chi square cumulative distribution function
+    Chi square cumulative distribution function.
 
-    Returns the area under the left hand tail (from 0 to `x`) of the Chi
-    square probability density function with `v` degrees of freedom::
+    Returns the area under the left tail (from 0 to `x`) of the Chi
+    square probability density function with `v` degrees of freedom:
 
-        1/(2**(v/2) * gamma(v/2)) * integral(t**(v/2-1) * exp(-t/2), t=0..x)
+    .. math::
+
+        \frac{1}{2^{v/2} \Gamma(v/2)} \int_0^x t^{v/2 - 1} e^{-t/2} dt
+
+    Here :math:`\Gamma` is the Gamma function; see `gamma`. This
+    integral can be expressed in terms of the regularized lower
+    incomplete gamma function `gammainc` as
+    ``gammainc(v / 2, x / 2)``. [1]_
+
+    Parameters
+    ----------
+    v : array_like
+        Degrees of freedom.
+    x : array_like
+        Upper bound of the integral.
+    out : ndarray, optional
+        Optional output array for the function results.
+
+    Returns
+    -------
+    scalar or ndarray
+        Values of the cumulative distribution function.
+
+    See Also
+    --------
+    chdtrc, chdtri, chdtriv, gammainc
+
+    References
+    ----------
+    .. [1] Chi-Square distribution,
+        https://www.itl.nist.gov/div898/handbook/eda/section3/eda3666.htm
+
+    Examples
+    --------
+    >>> import scipy.special as sc
+
+    It can be expressed in terms of the regularized lower incomplete
+    gamma function.
+
+    >>> v = 1
+    >>> x = np.arange(4)
+    >>> sc.chdtr(v, x)
+    array([0.        , 0.68268949, 0.84270079, 0.91673548])
+    >>> sc.gammainc(v / 2, x / 2)
+    array([0.        , 0.68268949, 0.84270079, 0.91673548])
+
     """)
 
 add_newdoc("chdtrc",
-    """
-    chdtrc(v, x)
+    r"""
+    chdtrc(v, x, out=None)
 
-    Chi square survival function
+    Chi square survival function.
 
-    Returns the area under the right hand tail (from `x` to
-    infinity) of the Chi square probability density function with `v`
-    degrees of freedom::
+    Returns the area under the right hand tail (from `x` to infinity)
+    of the Chi square probability density function with `v` degrees of
+    freedom:
 
-        1/(2**(v/2) * gamma(v/2)) * integral(t**(v/2-1) * exp(-t/2), t=x..inf)
+    .. math::
+
+        \frac{1}{2^{v/2} \Gamma(v/2)} \int_x^\infty t^{v/2 - 1} e^{-t/2} dt
+
+    Here :math:`\Gamma` is the Gamma function; see `gamma`. This
+    integral can be expressed in terms of the regularized upper
+    incomplete gamma function `gammaincc` as
+    ``gammaincc(v / 2, x / 2)``. [1]_
+
+    Parameters
+    ----------
+    v : array_like
+        Degrees of freedom.
+    x : array_like
+        Lower bound of the integral.
+    out : ndarray, optional
+        Optional output array for the function results.
+
+    Returns
+    -------
+    scalar or ndarray
+        Values of the survival function.
+
+    See Also
+    --------
+    chdtr, chdtri, chdtriv, gammaincc
+
+    References
+    ----------
+    .. [1] Chi-Square distribution,
+        https://www.itl.nist.gov/div898/handbook/eda/section3/eda3666.htm
+
+    Examples
+    --------
+    >>> import scipy.special as sc
+
+    It can be expressed in terms of the regularized upper incomplete
+    gamma function.
+
+    >>> v = 1
+    >>> x = np.arange(4)
+    >>> sc.chdtrc(v, x)
+    array([1.        , 0.31731051, 0.15729921, 0.08326452])
+    >>> sc.gammaincc(v / 2, x / 2)
+    array([1.        , 0.31731051, 0.15729921, 0.08326452])
+
     """)
 
 add_newdoc("chdtri",
     """
-    chdtri(v, p)
+    chdtri(v, p, out=None)
 
-    Inverse to `chdtrc`
+    Inverse to `chdtrc` with respect to `x`.
 
-    Returns the argument x such that ``chdtrc(v, x) == p``.
+    Returns `x` such that ``chdtrc(v, x) == p``.
+
+    Parameters
+    ----------
+    v : array_like
+        Degrees of freedom.
+    p : array_like
+        Probability.
+    out : ndarray, optional
+        Optional output array for the function results.
+
+    Returns
+    -------
+    x : scalar or ndarray
+        Value so that he probability a Chi square random variable
+        with `v` degrees of freedom is greater than `x` equals `p`.
+
+    See Also
+    --------
+    chdtrc, chdtr, chdtriv
+
+    References
+    ----------
+    .. [1] Chi-Square distribution,
+        https://www.itl.nist.gov/div898/handbook/eda/section3/eda3666.htm
+
+    Examples
+    --------
+    >>> import scipy.special as sc
+
+    It inverts `chdtrc`.
+
+    >>> v, p = 1, 0.3
+    >>> sc.chdtrc(v, sc.chdtri(v, p))
+    0.3
+    >>> x = 1
+    >>> sc.chdtri(v, sc.chdtrc(v, x))
+    1.0
+
     """)
 
 add_newdoc("chdtriv",
     """
-    chdtriv(p, x)
+    chdtriv(p, x, out=None)
 
-    Inverse to `chdtr` vs `v`
+    Inverse to `chdtr` with respect to `v`.
 
-    Returns the argument v such that ``chdtr(v, x) == p``.
+    Returns `v` such that ``chdtr(v, x) == p``.
+
+    Parameters
+    ----------
+    p : array_like
+        Probability that the Chi square random variable is less than
+        or equal to `x`.
+    x : array_like
+        Nonnegative input.
+    out : ndarray, optional
+        Optional output array for the function results.
+
+    Returns
+    -------
+    scalar or ndarray
+        Degrees of freedom.
+
+    See Also
+    --------
+    chdtr, chdtrc, chdtri
+
+    References
+    ----------
+    .. [1] Chi-Square distribution,
+        https://www.itl.nist.gov/div898/handbook/eda/section3/eda3666.htm
+
+    Examples
+    --------
+    >>> import scipy.special as sc
+
+    It inverts `chdtr`.
+
+    >>> p, x = 0.5, 1
+    >>> sc.chdtr(sc.chdtriv(p, x), x)
+    0.5000000000202172
+    >>> v = 1
+    >>> sc.chdtriv(sc.chdtr(v, x), v)
+    1.0000000000000013
+
     """)
 
 add_newdoc("chndtr",
