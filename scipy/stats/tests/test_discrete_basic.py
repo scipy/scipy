@@ -1,4 +1,5 @@
 from __future__ import division, print_function, absolute_import
+
 import numpy.testing as npt
 import numpy as np
 from scipy._lib.six import xrange
@@ -36,7 +37,7 @@ def test_discrete_basic(distname, arg, first_case):
     supp = np.unique(rvs)
     m, v = distfn.stats(*arg)
     check_cdf_ppf(distfn, arg, supp, distname + ' cdf_ppf')
-    
+
     check_pmf_cdf(distfn, arg, distname)
     check_oth(distfn, arg, supp, distname + ' oth')
     check_edge_support(distfn, arg)
@@ -44,7 +45,7 @@ def test_discrete_basic(distname, arg, first_case):
     alpha = 0.01
     check_discrete_chisquare(distfn, arg, rvs, alpha,
            distname + ' chisquare')
-    
+
     if first_case:
         locscale_defaults = (0,)
         meths = [distfn.pmf, distfn.logpmf, distfn.cdf, distfn.logcdf,
@@ -131,11 +132,12 @@ def test_ppf_with_loc(dist, args):
     except TypeError:
         distfn = dist
     #check with a negative, no and positive relocation.
+    np.random.seed(1942349)
     re_locs = [np.random.randint(-10, -1), 0, np.random.randint(1, 10)]
     _a, _b = distfn.support(*args)
     for loc in re_locs:
         npt.assert_array_equal(
-            [_a-1+loc, _b+loc], 
+            [_a-1+loc, _b+loc],
             [distfn.ppf(0.0, *args, loc=loc), distfn.ppf(1.0, *args, loc=loc)]
             )
 
@@ -250,3 +252,4 @@ def check_scale_docstring(distfn):
     if distfn.__doc__ is not None:
         # Docstrings can be stripped if interpreter is run with -OO
         npt.assert_('scale' not in distfn.__doc__)
+
