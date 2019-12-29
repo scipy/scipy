@@ -228,16 +228,17 @@ def read(filename, mmap=False):
     Examples
     --------
     >>> from os.path import dirname, join as pjoin
-    >>> import scipy.io as sio
+    >>> from scipy.io import wavfile
+    >>> import scipy.io
 
     Get the filename for an example .wav file from the tests/data directory.
 
-    >>> data_dir = pjoin(dirname(sio.__file__), 'tests', 'data')
+    >>> data_dir = pjoin(dirname(scipy.io.__file__), 'tests', 'data')
     >>> wav_fname = pjoin(data_dir, 'test-44100Hz-2ch-32bit-float-be.wav')
 
     Load the .wav file contents.
 
-    >>> samplerate, data = sio.wavfile.read(wav_fname)
+    >>> samplerate, data = wavfile.read(wav_fname)
     >>> print(f"number of channels = {data.shape[1]}")
     number of channels = 2
     >>> length = data.shape[0] / samplerate
