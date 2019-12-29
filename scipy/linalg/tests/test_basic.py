@@ -61,6 +61,8 @@ class TestSolveBanded(object):
         for b in [b4, b4by1, b4by2, b4by4]:
             x = solve_banded((l, u), ab, b)
             assert_array_almost_equal(dot(a, x), b)
+            x = solve_banded((l, u), a, b, diagonal_form=False)
+            assert_array_almost_equal(dot(a, x), b)
 
     def test_complex(self):
         a = array([[1.0, 20, 0, 0],
@@ -84,6 +86,8 @@ class TestSolveBanded(object):
                        [0, 1, 0, 0]])
         for b in [b4, b4by1, b4by2, b4by4]:
             x = solve_banded((l, u), ab, b)
+            assert_array_almost_equal(dot(a, x), b)
+            x = solve_banded((l, u), a, b, diagonal_form=False)
             assert_array_almost_equal(dot(a, x), b)
 
     def test_tridiag_real(self):
@@ -160,6 +164,12 @@ class TestSolveBanded(object):
         assert_equal(x.dtype, np.dtype('f8'))
         assert_array_equal(b, [[1.0, 2.0, 3.0]])
 
+        x = solve_banded((1, 1), [[2]], b, diagonal_form=False)
+        assert_array_equal(x, [[0.5, 1.0, 1.5]])
+        assert_equal(x.dtype, np.dtype('f8'))
+        assert_array_equal(b, [[1.0, 2.0, 3.0]])
+
+
     def test_native_list_arguments(self):
         a = [[1.0, 20, 0, 0],
              [-30, 4, 6, 0],
@@ -172,6 +182,9 @@ class TestSolveBanded(object):
         l, u = 2, 1
         b = [10.0, 0.0, 2.0, 14.0]
         x = solve_banded((l, u), ab, b)
+        assert_array_almost_equal(dot(a, x), b)
+
+        x = solve_banded((l, u), a, b, diagonal_form=False)
         assert_array_almost_equal(dot(a, x), b)
 
 

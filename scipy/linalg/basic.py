@@ -360,12 +360,38 @@ def solve_triangular(a, b, trans=0, lower=False, unit_diagonal=False,
                      (-info))
 
 
+def _diagonal_banded(l_and_u, a):
+    n = a.shape[1]
+    if a.shape != (n, n):
+        raise ValueError("Matrix must be square (has shape %s)" % (a.shape,))
+    (nlower, nupper) = l_and_u
+    if nlower > n or nupper > n:
+        raise ValueError("Number of nonzero diagonals must be less than square dimension")
+
+    upper = np.empty((nupper, n), dtype=a.dtype)
+    mid = np.empty((1, n), dtype=a.dtype)
+    lower = np.empty((nlower, n), dtype=a.dtype)
+
+    for i in range(1, nupper + 1):
+        for j in range(n - i):
+            upper[nupper - i, i + j] = a[j, i + j]
+
+    for i in range(n):
+        mid[0, i] = a[i, i]
+
+    for i in range(nlower):
+        for j in range(n - i - 1):
+            lower[i, j] = a[i + j + 1, j]
+
+    return np.concatenate((upper, mid, lower))
+
+
 def solve_banded(l_and_u, ab, b, overwrite_ab=False, overwrite_b=False,
-                 debug=None, check_finite=True):
+                 debug=None, check_finite=True, diagonal_form=True):
     """
     Solve the equation a x = b for x, assuming a is banded matrix.
 
-    The matrix a is stored in `ab` using the matrix diagonal ordered form::
+    Until 'diagonal_form' is disabled, the matrix a is stored in `ab` using the matrix diagonal ordered form::
 
         ab[u + i - j, j] == a[i,j]
 
@@ -392,6 +418,8 @@ def solve_banded(l_and_u, ab, b, overwrite_ab=False, overwrite_b=False,
         Whether to check that the input matrices contain only finite numbers.
         Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
+    diagonal_form : bool, optional
+        If disabled, 'ab' is converted into a diagonal ordered form.
 
     Returns
     -------
@@ -437,6 +465,10 @@ def solve_banded(l_and_u, ab, b, overwrite_ab=False, overwrite_b=False,
 
     a1 = _asarray_validated(ab, check_finite=check_finite, as_inexact=True)
     b1 = _asarray_validated(b, check_finite=check_finite, as_inexact=True)
+
+    if not diagonal_form:
+        a1 = _diagonal_banded(l_and_u, a1)
+
     # Validate shapes.
     if a1.shape[-1] != b1.shape[0]:
         raise ValueError("shapes of ab and b are not compatible.")
