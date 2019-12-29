@@ -127,10 +127,10 @@ def test_rvs_broadcast(dist, shape_args):
 @pytest.mark.parametrize('dist,args', distdiscrete)
 def test_ppf_with_loc(dist, args):
     try:
-        distfn = getattr(stats, dist) #stats.rv_discrete(name='custom', values=vals)
+        distfn = getattr(stats, dist)
     except TypeError:
         distfn = dist
-    #check with a negative, non and positive relocation.
+    #check with a negative, no and positive relocation.
     re_locs = [np.random.randint(-10, -1), 0, np.random.randint(1, 10)]
     _a, _b = distfn.support(*args)
     for loc in re_locs:
