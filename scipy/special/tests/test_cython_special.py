@@ -1,11 +1,7 @@
 from __future__ import division, print_function, absolute_import
-
-from itertools import product
-
-from numpy.testing import assert_allclose
-from scipy._lib._numpy_compat import suppress_warnings
 import pytest
-
+from itertools import product
+from numpy.testing import assert_allclose, suppress_warnings
 from scipy import special
 from scipy.special import cython_special
 

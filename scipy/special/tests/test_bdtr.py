@@ -1,8 +1,7 @@
 import numpy as np
 import scipy.special as sc
 import pytest
-from scipy._lib._numpy_compat import suppress_warnings
-from numpy.testing import assert_allclose, assert_array_equal, assert_warns
+from numpy.testing import assert_allclose, assert_array_equal, assert_warns, suppress_warnings
 
 
 class TestBdtr(object):
