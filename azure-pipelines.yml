@@ -5,12 +5,20 @@ trigger:
     include:
       - master
       - maintenance/*
+  paths:
+    include:
+      - '*'
+    exclude:
+      - 'benchmarks/*'
+      - './*.txt'
+      - 'site.cfg.example'
 
 # the version of OpenBLAS used is currently 0.3.7
 # and should be updated to match scipy-wheels as appropriate
 
 jobs:
 - job: Linux_Python_36_32bit_full
+  condition: ne(variables['Build.SourceBranch'], 'refs/heads/master')  # skip for PR merges
   pool:
     vmImage: 'ubuntu-16.04'
   steps:
@@ -45,6 +53,7 @@ jobs:
       summaryFileLocation: '$(System.DefaultWorkingDirectory)/**/coverage.xml'
       reportDirectory: '$(System.DefaultWorkingDirectory)/**/htmlcov'
 - job: Windows
+  condition: ne(variables['Build.SourceBranch'], 'refs/heads/master')  # skip for PR merges
   pool:
     vmImage: 'VS2017-Win2016'
   variables:
