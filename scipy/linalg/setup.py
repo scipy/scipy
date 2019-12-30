@@ -83,7 +83,8 @@ def configuration(parent_package='', top_path=None):
     from scipy._build_utils.system_info import get_info, NotFoundError, numpy_info
     from numpy.distutils.misc_util import Configuration, get_numpy_include_dirs
     from scipy._build_utils import (get_g77_abi_wrappers, uses_blas64,
-                                    blas_ilp64_pre_build_hook, get_f2py_int64_options)
+                                    blas_ilp64_pre_build_hook, get_f2py_int64_options,
+                                    generic_pre_build_hook)
 
     config = Configuration('linalg', parent_package, top_path)
 
@@ -166,11 +167,52 @@ def configuration(parent_package='', top_path=None):
                          )
 
     # _interpolative:
-    config.add_extension('_interpolative',
-                         sources=[join('src', 'id_dist', 'src', '*.f'),
-                                  "interpolative.pyf"],
-                         extra_info=lapack_opt
-                         )
+    id_dist_src = [join('src', 'id_dist', 'src', '*.f')]
+
+    if uses_blas64():
+        # Patch id_dist sources on the fly, changing *gesdd -> *gesdd_id_dist,
+        # and include LAPACK wrappers that define it.
+        def id_dist_pre_build_hook(cmd, ext):
+            fcompiler_flags = {'gnu95': ['-cpp', '-ffree-line-length-none', '-ffixed-line-length-none']}
+
+            macros = dict(lapack_ilp64_opt.get('define_macros', []))
+            prefix = macros.get('BLAS_SYMBOL_PREFIX', '')
+            suffix = macros.get('BLAS_SYMBOL_SUFFIX', '')
+            if suffix:
+                if not suffix.endswith('_'):
+                    raise ValueError("Incompatible BLAS symbol suffix (has to end in _)")
+                suffix = '_' + suffix[:-1]
+
+            def patch_source(filename, old_text):
+                if os.path.basename(filename) == 'id_dist_gesdd.f':
+                    text = ("#define dgesdd {0}dgesdd{1}\n"
+                            "#define zgesdd {0}zgesdd{1}\n").format(prefix, suffix)
+                else:
+                    text = ("#define dgesdd dgesdd_id_dist\n"
+                            "#define zgesdd zgesdd_id_dist\n")
+                text += old_text
+                return text
+
+            return generic_pre_build_hook(cmd, ext,
+                                          fcompiler_flags=fcompiler_flags,
+                                          patch_source_func=patch_source,
+                                          source_fnpart='_id_dist_64')
+
+        id_dist_src.append(os.path.join('src', 'id_dist_gesdd.f'))
+        id_dist_lapack_opt = lapack_ilp64_opt
+    else:
+        id_dist_pre_build_hook = None
+        id_dist_lapack_opt = lapack_opt
+
+    config.add_library('id_dist_src',
+                       sources=id_dist_src,
+                       _pre_build_hook=id_dist_pre_build_hook)
+
+    ext = config.add_extension('_interpolative',
+                               sources=["interpolative.pyf"],
+                               libraries=['id_dist_src'],
+                               extra_info=id_dist_lapack_opt)
+    ext._pre_build_hook = id_dist_pre_build_hook
 
     # _solve_toeplitz:
     config.add_extension('_solve_toeplitz',
