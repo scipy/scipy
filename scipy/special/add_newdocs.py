@@ -1628,23 +1628,111 @@ add_newdoc("chndtrinc",
 
 add_newdoc("cosdg",
     """
-    cosdg(x)
+    cosdg(x, out=None)
 
     Cosine of the angle `x` given in degrees.
+
+    Parameters
+    ----------
+    x : array_like
+        Angle, given in degrees.
+    out : ndarray, optional
+        Optional output array for the function results.
+
+    Returns
+    -------
+    scalar or ndarray
+        Cosine of the input.
+
+    See Also
+    --------
+    sindg, tandg, cotdg
+
+    Examples
+    --------
+    >>> import scipy.special as sc
+
+    It is more accurate than using cosine directly.
+
+    >>> x = 90 + 180 * np.arange(3)
+    >>> sc.cosdg(x)
+    array([-0.,  0., -0.])
+    >>> np.cos(x * np.pi / 180)
+    array([ 6.1232340e-17, -1.8369702e-16,  3.0616170e-16])
+
     """)
 
 add_newdoc("cosm1",
     """
-    cosm1(x)
+    cosm1(x, out=None)
 
     cos(x) - 1 for use when `x` is near zero.
+
+    Parameters
+    ----------
+    x : array_like
+        Real valued argument.
+    out : ndarray, optional
+        Optional output array for the function results.
+
+    Returns
+    -------
+    scalar or ndarray
+        Values of ``cos(x) - 1``.
+
+    See Also
+    --------
+    expm1, log1p
+
+    Examples
+    --------
+    >>> import scipy.special as sc
+
+    It is more accurate than computing ``cos(x) - 1`` directly for
+    ``x`` around 0.
+
+    >>> x = 1e-30
+    >>> np.cos(x) - 1
+    0.0
+    >>> sc.cosm1(x)
+    -5.0000000000000005e-61
+
     """)
 
 add_newdoc("cotdg",
     """
-    cotdg(x)
+    cotdg(x, out=None)
 
     Cotangent of the angle `x` given in degrees.
+
+    Parameters
+    ----------
+    x : array_like
+        Angle, given in degrees.
+    out : ndarray, optional
+        Optional output array for the function results.
+
+    Returns
+    -------
+    scalar or ndarray
+        Cotangent at the input.
+
+    See Also
+    --------
+    sindg, cosdg, tandg
+
+    Examples
+    --------
+    >>> import scipy.special as sc
+
+    It is more accurate than using cotangent directly.
+
+    >>> x = 90 + 180 * np.arange(3)
+    >>> sc.cotdg(x)
+    array([0., 0., 0.])
+    >>> 1 / np.tan(x * np.pi / 180)
+    array([6.1232340e-17, 1.8369702e-16, 3.0616170e-16])
+
     """)
 
 add_newdoc("dawsn",
@@ -6374,9 +6462,39 @@ add_newdoc("_lgam1p",
 
 add_newdoc("log1p",
     """
-    log1p(x)
+    log1p(x, out=None)
 
-    Calculates log(1+x) for use when `x` is near zero
+    Calculates log(1 + x) for use when `x` is near zero.
+
+    Parameters
+    ----------
+    x : array_like
+        Real or complex valued input.
+    out : ndarray, optional
+        Optional output array for the function results.
+
+    Returns
+    -------
+    scalar or ndarray
+        Values of ``log(1 + x)``.
+
+    See Also
+    --------
+    expm1, cosm1
+
+    Examples
+    --------
+    >>> import scipy.special as sc
+
+    It is more accurate than using ``log(1 + x)`` directly for ``x``
+    near 0. Note that in the below example ``1 + 1e-17 == 1`` to
+    double precision.
+
+    >>> sc.log1p(1e-17)
+    1e-17
+    >>> np.log(1 + 1e-17)
+    0.0
+
     """)
 
 add_newdoc("_log1pmx",
@@ -8063,12 +8181,49 @@ add_newdoc("psi",
 
 add_newdoc("radian",
     """
-    radian(d, m, s)
+    radian(d, m, s, out=None)
 
-    Convert from degrees to radians
+    Convert from degrees to radians.
 
     Returns the angle given in (d)egrees, (m)inutes, and (s)econds in
     radians.
+
+    Parameters
+    ----------
+    d : array_like
+        Degrees, can be real-valued.
+    m : array_like
+        Minutes, can be real-valued.
+    s : array_like
+        Seconds, can be real-valued.
+    out : ndarray, optional
+        Optional output array for the function results.
+
+    Returns
+    -------
+    scalar or ndarray
+        Values of the inputs in radians.
+
+    Examples
+    --------
+    >>> import scipy.special as sc
+
+    There are many ways to specify an angle.
+
+    >>> sc.radian(90, 0, 0)
+    1.5707963267948966
+    >>> sc.radian(0, 60 * 90, 0)
+    1.5707963267948966
+    >>> sc.radian(0, 0, 60**2 * 90)
+    1.5707963267948966
+
+    The inputs can be real-valued.
+
+    >>> sc.radian(1.5, 0, 0)
+    0.02617993877991494
+    >>> sc.radian(1, 30, 0)
+    0.02617993877991494
+
     """)
 
 add_newdoc("rel_entr",
@@ -8190,13 +8345,35 @@ add_newdoc("rgamma",
 
 add_newdoc("round",
     """
-    round(x)
+    round(x, out=None)
 
-    Round to nearest integer
+    Round to the nearest integer.
 
-    Returns the nearest integer to `x` as a double precision floating
-    point result.  If `x` ends in 0.5 exactly, the nearest even integer
-    is chosen.
+    Returns the nearest integer to `x`.  If `x` ends in 0.5 exactly,
+    the nearest even integer is chosen.
+
+    Parameters
+    ----------
+    x : array_like
+        Real valued input.
+    out : ndarray, optional
+        Optional output array for the function results.
+
+    Returns
+    -------
+    scalar or ndarray
+        The nearest integers to the elements of `x`. The result is of
+        floating type, not integer type.
+
+    Examples
+    --------
+    >>> import scipy.special as sc
+
+    It rounds to even.
+
+    >>> sc.round([0.5, 1.5])
+    array([0., 2.])
+
     """)
 
 add_newdoc("shichi",
@@ -8307,9 +8484,38 @@ add_newdoc("sici",
 
 add_newdoc("sindg",
     """
-    sindg(x)
+    sindg(x, out=None)
 
-    Sine of angle given in degrees
+    Sine of the angle `x` given in degrees.
+
+    Parameters
+    ----------
+    x : array_like
+        Angle, given in degrees.
+    out : ndarray, optional
+        Optional output array for the function results.
+
+    Returns
+    -------
+    scalar or ndarray
+        Sine at the input.
+
+    See Also
+    --------
+    cosdg, tandg, cotdg
+
+    Examples
+    --------
+    >>> import scipy.special as sc
+
+    It is more accurate than using sine directly.
+
+    >>> x = 180 * np.arange(3)
+    >>> sc.sindg(x)
+    array([ 0., -0.,  0.])
+    >>> np.sin(x * np.pi / 180)
+    array([ 0.0000000e+00,  1.2246468e-16, -2.4492936e-16])
+
     """)
 
 add_newdoc("smirnov",
@@ -8583,9 +8789,38 @@ add_newdoc("struve",
 
 add_newdoc("tandg",
     """
-    tandg(x)
+    tandg(x, out=None)
 
-    Tangent of angle x given in degrees.
+    Tangent of angle `x` given in degrees.
+
+    Parameters
+    ----------
+    x : array_like
+        Angle, given in degrees.
+    out : ndarray, optional
+        Optional output array for the function results.
+
+    Returns
+    -------
+    scalar or ndarray
+        Tangent at the input.
+
+    See Also
+    --------
+    sindg, cosdg, cotdg
+
+    Examples
+    --------
+    >>> import scipy.special as sc
+
+    It is more accurate than using tangent directly.
+
+    >>> x = 180 * np.arange(3)
+    >>> sc.tandg(x)
+    array([0., 0., 0.])
+    >>> np.tan(x * np.pi / 180)
+    array([ 0.0000000e+00, -1.2246468e-16, -2.4492936e-16])
+
     """)
 
 add_newdoc("tklmbda",
