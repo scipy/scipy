@@ -38,11 +38,11 @@ def test_dev_version():
     for ver in ['1.9.0', '1.9.0a1', '1.9.0b2', '1.9.0b2.dev+ffffffff', '1.9.0.dev1']:
         assert Version('1.9.0.dev+f16acvda') < Version(ver)
 
-    assert Version('1.9.0.dev+f16acvda') < Version('1.9.0.dev+11111111')
+    assert Version('1.9.0.dev+f16acvda') == Version('1.9.0.dev+f16acvda')
 
 
 def test_dev_a_b_rc_mixed():
-    assert Version('1.9.0a2.dev+f16acvda') < Version('1.9.0a2.dev+11111111')
+    assert Version('1.9.0a2.dev+f16acvda') == Version('1.9.0a2.dev+f16acvda')
     assert Version('1.9.0a2.dev+6acvda54') < Version('1.9.0a2')
 
 
@@ -51,11 +51,11 @@ def test_dev0_version():
     for ver in ['1.9.0', '1.9.0a1', '1.9.0b2', '1.9.0b2.dev0+ffffffff']:
         assert Version('1.9.0.dev0+f16acvda') < Version(ver)
 
-    assert Version('1.9.0.dev0+f16acvda') < Version('1.9.0.dev0+11111111')
+    assert Version('1.9.0.dev0+f16acvda') == Version('1.9.0.dev0+f16acvda')
 
 
 def test_dev0_a_b_rc_mixed():
-    assert Version('1.9.0a2.dev0+f16acvda') < Version('1.9.0a2.dev0+11111111')
+    assert Version('1.9.0a2.dev0+f16acvda') == Version('1.9.0a2.dev0+f16acvda')
     assert Version('1.9.0a2.dev0+6acvda54') < Version('1.9.0a2')
 
 
