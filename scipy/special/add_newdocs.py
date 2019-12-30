@@ -1523,7 +1523,7 @@ add_newdoc("chdtri",
     Returns
     -------
     x : scalar or ndarray
-        Value so that he probability a Chi square random variable
+        Value so that the probability a Chi square random variable
         with `v` degrees of freedom is greater than `x` equals `p`.
 
     See Also
