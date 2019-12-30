@@ -316,4 +316,5 @@ def test_buffer(method):
 def test_NaN_warnings():
     with pytest.warns(None) as record:
         shortest_path(np.array([[0, 1], [np.nan, 0]]))
-    assert not record
+    for i in range(len(record)):
+        assert record[i].category is not RuntimeWarning
