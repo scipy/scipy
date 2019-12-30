@@ -1,10 +1,7 @@
 from __future__ import division, print_function, absolute_import
-
-from itertools import product
-
-from numpy.testing import assert_allclose
 import pytest
-
+from itertools import product
+from numpy.testing import assert_allclose, suppress_warnings
 from scipy import special
 from scipy.special import cython_special
 
@@ -42,9 +39,9 @@ PARAMS = [
     (special.agm, cython_special.agm, ('dd',), None),
     (special.airy, cython_special._airy_pywrap, ('d', 'D'), None),
     (special.airye, cython_special._airye_pywrap, ('d', 'D'), None),
-    (special.bdtr, cython_special.bdtr, ('lld', 'ddd'), None),
-    (special.bdtrc, cython_special.bdtrc, ('lld', 'ddd'), None),
-    (special.bdtri, cython_special.bdtri, ('lld', 'ddd'), None),
+    (special.bdtr, cython_special.bdtr, ('dld', 'ddd'), None),
+    (special.bdtrc, cython_special.bdtrc, ('dld', 'ddd'), None),
+    (special.bdtri, cython_special.bdtri, ('dld', 'ddd'), None),
     (special.bdtrik, cython_special.bdtrik, ('ddd',), None),
     (special.bdtrin, cython_special.bdtrin, ('ddd',), None),
     (special.bei, cython_special.bei, ('d',), None),
@@ -329,6 +326,8 @@ def test_cython_api(param):
         # Test it
         pts = _generate_test_points(typecodes)
         for pt in pts:
-            pyval = pyfunc(*pt)
-            cyval = cy_spec_func(*pt)
+            with suppress_warnings() as sup:
+                sup.filter(DeprecationWarning)
+                pyval = pyfunc(*pt)
+                cyval = cy_spec_func(*pt)
             assert_allclose(cyval, pyval, err_msg="{} {} {}".format(pt, typecodes, signature))

@@ -6,7 +6,6 @@ from __future__ import division, print_function, absolute_import
 import numpy as np
 from numpy.testing import assert_array_equal, assert_, suppress_warnings
 import pytest
-
 import scipy.special as sc
 
 
@@ -44,7 +43,9 @@ def test_nan_inputs(func):
         sup.filter(RuntimeWarning,
                    "floating point number truncated to an integer")
         try:
-            res = func(*args)
+            with suppress_warnings() as sup:
+                sup.filter(DeprecationWarning)
+                res = func(*args)
         except TypeError:
             # One of the arguments doesn't take real inputs
             return

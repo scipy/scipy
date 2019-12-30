@@ -1,8 +1,8 @@
 cdef extern from "cephes.h" nogil:
     int airy(double x, double *ai, double *aip, double *bi, double *bip)
-    double bdtrc(int k, int n, double p)
-    double bdtr(int k, int n, double p)
-    double bdtri(int k, int n, double y)
+    double bdtrc(double k, int n, double p)
+    double bdtr(double k, int n, double p)
+    double bdtri(double k, int n, double y)
     double beta(double a, double b)
     double lbeta(double a, double b)
     double btdtr(double a, double b, double x)
