@@ -59,6 +59,7 @@ jobs:
   variables:
       OPENBLAS_32: https://3f23b170c54c2533c070-1c8a9b3114517dc5fe17b7c3f8c63a43.ssl.cf2.rackcdn.com/openblas-v0.3.7-win32-gcc_7_1_0.zip
       OPENBLAS_64: https://3f23b170c54c2533c070-1c8a9b3114517dc5fe17b7c3f8c63a43.ssl.cf2.rackcdn.com/openblas-v0.3.7-win_amd64-gcc_7_1_0.zip
+      OPENBLAS_ILP64_64: https://3f23b170c54c2533c070-1c8a9b3114517dc5fe17b7c3f8c63a43.ssl.cf2.rackcdn.com/openblas64_-v0.3.7-win_amd64-gcc_7_1_0.zip
   strategy:
     maxParallel: 4
     matrix:
@@ -80,11 +81,13 @@ jobs:
           TEST_MODE: full
           OPENBLAS: $(OPENBLAS_64)
           BITS: 64
-        Python38-64bit-full:
+        Python38-64bit-full-ilp64:
           PYTHON_VERSION: '3.8'
           PYTHON_ARCH: 'x64'
           TEST_MODE: full
+          NPY_USE_BLAS_ILP64: 1
           OPENBLAS: $(OPENBLAS_64)
+          OPENBLAS_ILP64: $(OPENBLAS_ILP64_64)
           BITS: 64
   steps:
   - task: UsePythonVersion@0
@@ -95,15 +98,21 @@ jobs:
   - script: python -m pip install --upgrade pip setuptools wheel
     displayName: 'Install tools'
   - powershell: |
-      $wc = New-Object net.webclient;
-      $wc.Downloadfile("$(OPENBLAS)", "openblas.zip")
-      $tmpdir = New-TemporaryFile | %{ rm $_; mkdir $_ }
-      Expand-Archive "openblas.zip" $tmpdir
-      $pyversion = python -c "from __future__ import print_function; import sys; print(sys.version.split()[0])"
-      Write-Host "Python Version: $pyversion"
-      $target = "C:\\hostedtoolcache\\windows\\Python\\$pyversion\\$(PYTHON_ARCH)\\lib\\openblas.a"
-      Write-Host "target path: $target"
-      cp $tmpdir\$(BITS)\lib\libopenblas_v0.3.7-gcc_7_1_0.a $target
+      function Download-Openblas($url, $srcname, $dstname) {
+          $wc = New-Object net.webclient;
+          $wc.Downloadfile($url, "openblas.zip")
+          $tmpdir = New-TemporaryFile | %{ rm $_; mkdir $_ }
+          Expand-Archive "openblas.zip" $tmpdir
+          $pyversion = python -c "from __future__ import print_function; import sys; print(sys.version.split()[0])"
+          Write-Host "Python Version: $pyversion"
+          $target = "C:\\hostedtoolcache\\windows\\Python\\$pyversion\\$(PYTHON_ARCH)\\lib\\${dstname}"
+          Write-Host "target path: $target"
+          cp $tmpdir\$(BITS)\lib\${srcname} $target
+      }
+      Download-Openblas "${env:OPENBLAS}" libopenblas_v0.3.7-gcc_7_1_0.a openblas.a
+      if ( "${env:OPENBLAS_ILP64}" -ne "" ) {
+          Download-Openblas "${env:OPENBLAS_ILP64}" libopenblas64__v0.3.7-gcc_7_1_0.a openblas64_.a
+      }
     displayName: 'Download / Install OpenBLAS'
   - powershell: |
       # wheels appear to use mingw64 version 6.3.0, but 6.4.0
