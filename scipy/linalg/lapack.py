@@ -274,14 +274,26 @@ All functions
    cheev
    zheev
 
+   cheev_lwork
+   zheev_lwork
+
    cheevd
    zheevd
+
+   cheevd_lwork
+   zheevd_lwork
 
    cheevr
    zheevr
 
    cheevr_lwork
    zheevr_lwork
+
+   cheevx
+   zheevx
+
+   cheevx_lwork
+   zheevx_lwork
 
    chegst
    zhegst
@@ -504,8 +516,14 @@ All functions
    ssyev
    dsyev
 
+   ssyev_lwork
+   dsyev_lwork
+
    ssyevd
    dsyevd
+
+   ssyevd_lwork
+   dsyevd_lwork
 
    ssyevr
    dsyevr
