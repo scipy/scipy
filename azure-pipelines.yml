@@ -18,7 +18,7 @@ trigger:
 
 jobs:
 - job: Linux_Python_36_32bit_full
-  condition: ne(variables['Build.SourceBranch'], 'refs/heads/master')  # skip for PR merges
+  condition: and(succeeded(), ne(variables['Build.SourceBranch'], 'refs/heads/master'))  # skip for PR merges
   pool:
     vmImage: 'ubuntu-16.04'
   steps:
@@ -53,7 +53,7 @@ jobs:
       summaryFileLocation: '$(System.DefaultWorkingDirectory)/**/coverage.xml'
       reportDirectory: '$(System.DefaultWorkingDirectory)/**/htmlcov'
 - job: Windows
-  condition: ne(variables['Build.SourceBranch'], 'refs/heads/master')  # skip for PR merges
+  condition: and(succeeded(), ne(variables['Build.SourceBranch'], 'refs/heads/master'))  # skip for PR merges
   pool:
     vmImage: 'VS2017-Win2016'
   variables:
@@ -110,11 +110,11 @@ jobs:
       # is the closest match available from choco package manager
       choco install -y mingw --forcex86 --force --version=6.4.0
     displayName: 'Install 32-bit mingw for 32-bit builds'
-    condition: eq(variables['BITS'], 32)
+    condition: and(succeeded(), eq(variables['BITS'], 32))
   - powershell: |
       choco install -y mingw --force --version=6.4.0
     displayName: 'Install 64-bit mingw for 64-bit builds'
-    condition: eq(variables['BITS'], 64)
+    condition: and(succeeded(), eq(variables['BITS'], 64))
   - script: python -m pip install numpy cython==0.29.14 pybind11 pytest pytest-timeout pytest-xdist pytest-env pytest-cov Pillow mpmath
     displayName: 'Install dependencies'
   - powershell: |
@@ -141,7 +141,7 @@ jobs:
       rm scipy/_distributor_init.py
       mv scipy-wheels/_distributor_init.py scipy/
     displayName: 'Copy in _distributor_init.py'
-    condition: eq(variables['PYTHON_VERSION'], '3.8')
+    condition: and(succeeded(), eq(variables['PYTHON_VERSION'], '3.8'))
   - powershell: |
       If ($(BITS) -eq 32) {
           # 32-bit build requires careful adjustments
