@@ -889,7 +889,7 @@ add_newdoc("besselpoly",
 
     Weighted integral of the Bessel function of the first kind.
 
-    Comptues
+    Computes
 
     .. math::
 
