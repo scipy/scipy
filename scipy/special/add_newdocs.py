@@ -885,9 +885,11 @@ add_newdoc("berp",
 
 add_newdoc("besselpoly",
     r"""
-    besselpoly(a, lmb, nu)
+    besselpoly(a, lmb, nu, out=None)
 
-    Weighted integral of a Bessel function.
+    Weighted integral of the Bessel function of the first kind.
+
+    Comptues
 
     .. math::
 
@@ -895,6 +897,22 @@ add_newdoc("besselpoly",
 
     where :math:`J_\nu` is a Bessel function and :math:`\lambda=lmb`,
     :math:`\nu=nu`.
+
+    Parameters
+    ----------
+    a : array_like
+        Scale factor inside the Bessel function.
+    lmb : array_like
+        Power of `x`
+    nu : array_like
+        Order of the Bessel function.
+    out : ndarray, optional
+        Optional output array for the function results.
+
+    Returns
+    -------
+    scalar or ndarray
+        Value of the integral.
 
     """)
 
@@ -5235,31 +5253,63 @@ add_newdoc("_igam_fac",
     """)
 
 add_newdoc("it2i0k0",
-    """
-    it2i0k0(x)
+    r"""
+    it2i0k0(x, out=None)
 
-    Integrals related to modified Bessel functions of order 0
+    Integrals related to modified Bessel functions of order 0.
+
+    Computes the integrals
+
+    .. math::
+
+        \int_0^x \frac{I_0(t) - 1}{t} dt \\
+        \int_x^\infty \frac{K_0(t)}{t} dt.
+
+    Parameters
+    ----------
+    x : array_like
+        Values at which to evaluate the integrals.
+    out : tuple of ndarrays, optional
+        Optional output arrays for the function results.
 
     Returns
     -------
-    ii0
-        ``integral((i0(t)-1)/t, t=0..x)``
-    ik0
-        ``integral(k0(t)/t, t=x..inf)``
+    ii0 : scalar or ndarray
+        The integral for `i0`
+    ik0 : scalar or ndarray
+        The integral for `k0`
+
     """)
 
 add_newdoc("it2j0y0",
-    """
-    it2j0y0(x)
+    r"""
+    it2j0y0(x, out=None)
 
-    Integrals related to Bessel functions of order 0
+    Integrals related to Bessel functions of the first kind of order 0.
+
+    Computes the integrals
+
+    .. math::
+
+        \int_0^x \frac{1 - J_0(t)}{t} dt \\
+        \int_x^\infty \frac{Y_0(t)}{t} dt.
+
+    For more on :math:`J_0` and :math:`Y_0` see `j0` and `y0`.
+
+    Parameters
+    ----------
+    x : array_like
+        Values at which to evaluate the integrals.
+    out : tuple of ndarrays, optional
+        Optional output arrays for the function results.
 
     Returns
     -------
-    ij0
-        ``integral((1-j0(t))/t, t=0..x)``
-    iy0
-        ``integral(y0(t)/t, t=x..inf)``
+    ij0 : scalar or ndarray
+        The integral for `j0`
+    iy0 : scalar or ndarray
+        The integral for `y0`
+
     """)
 
 add_newdoc("it2struve0",
@@ -5341,31 +5391,64 @@ add_newdoc("itairy",
     """)
 
 add_newdoc("iti0k0",
-    """
-    iti0k0(x)
+    r"""
+    iti0k0(x, out=None)
 
-    Integrals of modified Bessel functions of order 0
+    Integrals of modified Bessel functions of order 0.
 
-    Returns simple integrals from 0 to `x` of the zeroth order modified
-    Bessel functions `i0` and `k0`.
+    Computes the integrals
+
+    .. math::
+
+        \int_0^x I_0(t) dt \\
+        \int_0^x K_0(t) dt.
+
+    For more on :math:`I_0` and :math:`K_0` see `i0` and `k0`.
+
+    Parameters
+    ----------
+    x : array_like
+        Values at which to evaluate the integrals.
+    out : tuple of ndarrays, optional
+        Optional output arrays for the function results.
 
     Returns
     -------
-    ii0, ik0
+    ii0 : scalar or ndarray
+        The integral for `i0`
+    ik0 : scalar or ndarray
+        The integral for `k0`
     """)
 
 add_newdoc("itj0y0",
-    """
-    itj0y0(x)
+    r"""
+    itj0y0(x, out=None)
 
-    Integrals of Bessel functions of order 0
+    Integrals of Bessel functions of the first kind of order 0.
 
-    Returns simple integrals from 0 to `x` of the zeroth order Bessel
-    functions `j0` and `y0`.
+    Computes the integrals
+
+    .. math::
+
+        \int_0^x J_0(t) dt \\
+        \int_0^x Y_0(t) dt.
+
+    For more on :math:`J_0` and :math:`Y_0` see `j0` and `y0`.
+
+    Parameters
+    ----------
+    x : array_like
+        Values at which to evaluate the integrals.
+    out : tuple of ndarrays, optional
+        Optional output arrays for the function results.
 
     Returns
     -------
-    ij0, iy0
+    ij0 : scalar or ndarray
+        The integral of `j0`
+    iy0 : scalar or ndarray
+        The integral of `y0`
+
     """)
 
 add_newdoc("itmodstruve0",
