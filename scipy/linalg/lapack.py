@@ -301,11 +301,17 @@ All functions
    chegv
    zhegv
 
+   chegv_lwork
+   zhegv_lwork
+
    chegvd
    zhegvd
 
    chegvx
    zhegvx
+
+   chegvx_lwork
+   zhegvx_lwork
 
    chesv
    zhesv
@@ -531,17 +537,32 @@ All functions
    ssyevr_lwork
    dsyevr_lwork
 
+   ssyevx
+   dsyevx
+   
+   ssyevx_lwork
+   dsyevx_lwork
+
    ssygst
    dsygst
 
    ssygv
    dsygv
 
+   ssygv_lwork
+   dsygv_lwork
+
    ssygvd
    dsygvd
 
+   ssygvd_lwork
+   dsygvd_lwork
+
    ssygvx
    dsygvx
+
+   ssygvx_lwork
+   dsygvx_lwork
 
    ssysv
    dsysv

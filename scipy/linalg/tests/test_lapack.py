@@ -1654,3 +1654,34 @@ def test_getc2_gesc2():
         else:
             assert_array_almost_equal(desired_cplx.astype(dtype),
                                       x/scale, decimal=4)
+
+
+@pytest.mark.parametrize("driver", ['ev', 'evd', 'evr', 'evx'])
+@pytest.mark.parametrize("pfx", ['sy', 'he'])
+def test_standard_eigh_lworks(pfx, driver):
+    n = 1200  # Some sufficiently big arbitrary number
+    dtype = REAL_DTYPES if pfx == 'sy' else COMPLEX_DTYPES
+    sc_dlw = get_lapack_funcs(pfx+driver+'_lwork', dtype=dtype[0])
+    dz_dlw = get_lapack_funcs(pfx+driver+'_lwork', dtype=dtype[1])
+    try:
+        _compute_lwork(sc_dlw, n, lower=1)
+        _compute_lwork(dz_dlw, n, lower=1)
+    except Exception as e:
+        pytest.fail("{}_lwork raised unexpected exception: {}"
+                    "".format(pfx+driver, e))
+
+
+@pytest.mark.parametrize("driver", ['gv', 'gvx'])
+@pytest.mark.parametrize("pfx", ['sy', 'he'])
+def test_generalized_eigh_lworks(pfx, driver):
+    n = 1200  # Some sufficiently big arbitrary number
+    dtype = REAL_DTYPES if pfx == 'sy' else COMPLEX_DTYPES
+    sc_dlw = get_lapack_funcs(pfx+driver+'_lwork', dtype=dtype[0])
+    dz_dlw = get_lapack_funcs(pfx+driver+'_lwork', dtype=dtype[1])
+    # Shouldn't raise any exceptions
+    try:
+        _compute_lwork(sc_dlw, n, uplo="L")
+        _compute_lwork(dz_dlw, n, uplo="L")
+    except Exception as e:
+        pytest.fail("{}_lwork raised unexpected exception: {}"
+                    "".format(pfx+driver, e))
