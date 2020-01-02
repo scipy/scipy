@@ -1016,7 +1016,7 @@ def test_sygst():
         B = (B + B.T)/2 + 2 * np.eye(n, dtype=dtype)
 
         # Perform eig (sygvd)
-        _, eig_gvd, info = sygvd(A, B)
+        eig_gvd, _, info = sygvd(A, B)
         assert_(info == 0)
 
         # Convert to std problem potrf
@@ -1047,7 +1047,7 @@ def test_hegst():
         B = (B + B.conj().T)/2 + 2 * np.eye(n, dtype=dtype)
 
         # Perform eig (hegvd)
-        _, eig_gvd, info = hegvd(A, B)
+        eig_gvd, _, info = hegvd(A, B)
         assert_(info == 0)
 
         # Convert to std problem potrf
