@@ -24,7 +24,7 @@ from scipy.linalg import (eig, eigvals, lu, svd, svdvals, cholesky, qr,
      schur, rsf2csf, lu_solve, lu_factor, solve, diagsvd, hessenberg, rq,
      eig_banded, eigvals_banded, eigh, eigvalsh, qr_multiply, qz, orth, ordqz,
      subspace_angles, hadamard, eigvalsh_tridiagonal, eigh_tridiagonal,
-     null_space, cdf2rdf)
+     null_space, cdf2rdf, LinAlgError)
 from scipy.linalg.lapack import dgbtrf, dgbtrs, zgbtrf, zgbtrs, \
      dsbev, dsbevd, dsbevx, zhbevd, zhbevx
 from scipy.linalg.misc import norm
@@ -43,6 +43,10 @@ from scipy.sparse.sputils import bmat, matrix
 
 # digit precision to use in asserts for different types
 DIGITS = {'d':11, 'D':11, 'f':4, 'F':4}
+REAL_DTYPES = [np.float32, np.float64]
+COMPLEX_DTYPES = [np.complex64, np.complex128]
+DTYPES = REAL_DTYPES + COMPLEX_DTYPES
+
 
 def clear_fuss(ar, fuss_binary_bits=7):
     """Clears trailing `fuss_binary_bits` of mantissa of a floating number"""
@@ -763,29 +767,79 @@ class TestEigTridiagonal(object):
                                       abs(self.evec[:, ind1:ind2+1]))
 
 
-def test_eigh():
-    DIM = 6
-    v = {'dim': (DIM,),
-         'dtype': ('f','d','F','D'),
-         'overwrite': (True, False),
-         'lower': (True, False),
-         'turbo': (True, False),
-         'eigvals': (None, (2, DIM-2))}
+class TestEigh:
+    def setup_class(self):
+        seed(1234)
+        self.n = 20
+        self.testmats_a = []
+        self.testmats_b = []
+        # Create suitable a and b matrices for all tests
+        for d, label in zip(DTYPES, 'sdcz'):
+            temp = np.random.rand(self.n, self.n).astype(d)
+            temp = temp + temp.T
+            self.testmats_a += [temp.copy()]
+            if label in 'cz':
+                temp = np.random.rand(self.n, self.n).astype(d)*d(1j)
+                temp = temp + temp.conj().T
+                self.testmats_a[-1] += temp
 
-    for dim in v['dim']:
-        for typ in v['dtype']:
-            for overwrite in v['overwrite']:
-                for turbo in v['turbo']:
-                    for eigenvalues in v['eigvals']:
-                        for lower in v['lower']:
-                            eigenhproblem_standard(
-                                   'ordinary',
-                                   dim, typ, overwrite, lower,
-                                   turbo, eigenvalues)
-                            eigenhproblem_general(
-                                   'general ',
-                                   dim, typ, overwrite, lower,
-                                   turbo, eigenvalues)
+            temp = np.random.rand(self.n, self.n).astype(d)
+            temp = temp + temp.T
+            self.testmats_b += [temp + np.eye(self.n, dtype=d)*d(10.)]
+            if label in 'cz':
+                temp = np.random.rand(self.n, self.n).astype(d)*d(1j)
+                temp = temp + temp.conj().T
+                # make sure b is pos. def.
+                self.testmats_b[-1] += temp + np.eye(self.n, dtype=d)*d(10.)
+
+    def test_wrong_inputs(self):
+        assert_raises(ValueError, eigh, np.ones([1, 2]))
+        assert_raises(ValueError, eigh, np.ones([2, 2]), np.ones([2, 1]))
+        assert_raises(ValueError, eigh, np.ones([3, 3]), np.ones([2, 2]))
+        assert_raises(ValueError, eigh, np.ones([3, 3]), np.ones([3, 3]),
+                      subset_by_value=[1, 2], eigvals=[2, 4])
+        assert_raises(ValueError, eigh, np.ones([3, 3]), np.ones([3, 3]),
+                      eigvals=[0, 4])
+        assert_raises(ValueError, eigh, np.ones([3, 3]), np.ones([3, 3]),
+                      eigvals=[2, 0])
+        assert_raises(ValueError, eigh, np.ones([3, 3]), np.ones([3, 3]),
+                      subset_by_value=[2, 0])
+        assert_raises(ValueError, eigh, np.ones([2, 2]), driver='wrong')
+        assert_raises(ValueError, eigh, np.ones([3, 3]), None, driver='gvx')
+        assert_raises(ValueError, eigh, np.ones([3, 3]), np.ones([3, 3]),
+                      driver='evr', turbo=False)
+        assert_raises(ValueError, eigh, np.ones([3, 3]), np.ones([3, 3]),
+                      driver='gvd', eigvals=[1, 2], turbo=False)
+
+    def test_nonpositive_b(self):
+        assert_raises(LinAlgError, eigh, np.ones([3, 3]), np.ones([3, 3]))
+
+    # index based subsets are done in the legacy test_eigh()
+    def test_value_subsets(self):
+        for ind, dt in enumerate(DTYPES):
+            w, v = eigh(self.testmats_a[ind], subset_by_value=[-2, 2])
+            assert_equal(v.shape[1], len(w))
+            assert all((w > -2) & (w < 2))
+
+            w, v = eigh(self.testmats_a[ind],
+                        self.testmats_b[ind],
+                        subset_by_value=[-2, 2])
+            assert_equal(v.shape[1], len(w))
+            assert all((w > -2) & (w < 2))
+
+
+# Old eigh tests kept for backwards compatibility
+@pytest.mark.parametrize('eigvals', (None, (2, 4)))
+@pytest.mark.parametrize('turbo', (True, False))
+@pytest.mark.parametrize('lower', (True, False))
+@pytest.mark.parametrize('overwrite', (True, False))
+@pytest.mark.parametrize('dtype_', ('f', 'd', 'F', 'D'))
+@pytest.mark.parametrize('dim', (6,))
+def test_eigh(dim, dtype_, overwrite, lower, turbo, eigvals):
+    eigenhproblem_standard('ordinary', dim, dtype_, overwrite, lower, turbo,
+                           eigvals)
+    eigenhproblem_general('general ', dim, dtype_, overwrite, lower, turbo,
+                          eigvals)
 
 
 def test_eigh_of_sparse():
