@@ -539,7 +539,7 @@ All functions
 
    ssyevx
    dsyevx
-   
+
    ssyevx_lwork
    dsyevx_lwork
 
@@ -554,9 +554,6 @@ All functions
 
    ssygvd
    dsygvd
-
-   ssygvd_lwork
-   dsygvd_lwork
 
    ssygvx
    dsygvx
@@ -722,6 +719,7 @@ from __future__ import division, print_function, absolute_import
 import numpy as _np
 from .blas import _get_funcs, _memoize_get_funcs
 from scipy.linalg import _flapack
+import re
 try:
     from scipy.linalg import _clapack
 except ImportError:
@@ -765,6 +763,17 @@ _lapack_alias = {
     'cormqr': 'cunmqr', 'zormqr': 'zunmqr',
     'corgrq': 'cungrq', 'zorgrq': 'zungrq',
 }
+
+
+# Place guards against markdown problems with special characters
+p = re.compile(r'with bounds (?P<m>.*?)\n', re.MULTILINE)
+for routine in [ssyevr, dsyevr, cheevr, zheevr,
+                ssyevx, dsyevx, cheevx, zheevx,
+                ssygvd, dsygvd, chegvd, zhegvd]:
+    if routine.__doc__:
+        routine.__doc__ = p.sub(r'with bounds ``\1``\n', routine.__doc__)
+    else:
+        continue
 
 
 @_memoize_get_funcs
