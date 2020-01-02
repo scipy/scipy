@@ -455,7 +455,7 @@ def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
     # Check indices if given
     if subset_by_index:
         lo, hi = [int(x) for x in subset_by_index]
-        if not (0 <= lo < hi < n):
+        if not (0 <= lo <= hi < n):
             raise ValueError('Requested eigenvalue indices are not valid. '
                              'Valid range is [0, {}] and start <= end, but '
                              'start={}, end={} is given'.format(n-1, lo, hi))
