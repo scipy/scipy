@@ -1014,7 +1014,7 @@ subroutine <prefix2c>heevx_lwork(lower,n,a,lda,vl,vu,il,iu,abstol,m,w,z,ldz,work
 
 end subroutine <prefix2c>heevx_lwork
 
-subroutine <prefix2>sygv(itype,jobz,uplo,n,a,lda,b,ldb,w,work,lwork,info)
+subroutine <prefix2>sygv(itype,jobz,uplo,n,lda,ldb,w,a,b,work,lwork,info)
     ! Generalized Symmetric Eigenvalue Problem
     ! Real - Single precision / Double precision
     !
@@ -1067,7 +1067,7 @@ subroutine <prefix2>sygv_lwork(itype,jobz,uplo,n,a,lda,b,ldb,w,work,lwork,info)
 
 end subroutine <prefix2>sygv_lwork
 
-subroutine <prefix2c>hegv(itype,jobz,uplo,n,a,lda,b,ldb,w,work,lwork,rwork,info)
+subroutine <prefix2c>hegv(itype,jobz,uplo,n,lda,ldb,w,a,b,work,lwork,rwork,info)
     ! Generalized Symmetric Eigenvalue Problem
     ! Complex - Single precision / Double precision
     !
@@ -1125,7 +1125,7 @@ end subroutine <prefix2c>hegv_lwork
 !
 ! Divide and conquer routines for generalized eigenvalue problem
 !
-subroutine <prefix2>sygvd(itype,jobz,uplo,n,a,lda,b,ldb,w,work,lwork,iwork,liwork,info)
+subroutine <prefix2>sygvd(itype,jobz,uplo,n,lda,ldb,w,a,b,work,lwork,iwork,liwork,info)
 
     ! No call to ILAENV is performed. Hence no need for (d/s)sygvd_lwork. Default sizes are optimal.
 
@@ -1151,7 +1151,7 @@ subroutine <prefix2>sygvd(itype,jobz,uplo,n,a,lda,b,ldb,w,work,lwork,iwork,liwor
 
 end subroutine <prefix2>sygvd
 
-subroutine <prefix2c>hegvd(itype,jobz,uplo,n,a,lda,b,ldb,w,work,lwork,rwork,lrwork,iwork,liwork,info)
+subroutine <prefix2c>hegvd(itype,jobz,uplo,n,lda,ldb,w,a,b,work,lwork,rwork,lrwork,iwork,liwork,info)
 
     ! No call to ILAENV is performed. Hence no need for (c/z)hegvd_lwork. Default sizes are optimal.
 
@@ -1182,7 +1182,7 @@ end subroutine <prefix2c>hegvd
 !
 ! Expert routines for generalized eigenvalue problem
 !
-subroutine <prefix2>sygvx(itype,jobz,range,uplo,n,a,lda,b,ldb,vl,vu,il,iu,abstol,m,w,z,ldz,work,lwork,iwork,ifail,info)
+subroutine <prefix2>sygvx(itype,jobz,range,uplo,n,a,lda,b,ldb,vl,vu,il,iu,abstol,w,z,m,ldz,work,lwork,iwork,ifail,info)
     ! (S/D)SYGVX computes selected eigenvalues, and optionally, eigenvectors
     ! of a real generalized symmetric-definite eigenproblem, of the form
     ! A*x=(lambda)*B*x,  A*Bx=(lambda)*x,  or B*A*x=(lambda)*x.  Here A
@@ -1194,9 +1194,9 @@ subroutine <prefix2>sygvx(itype,jobz,range,uplo,n,a,lda,b,ldb,vl,vu,il,iu,abstol
     callprotoargument int*,char*,char*,char*,int*,<ctype2>*,int*,<ctype2>*,int*,<ctype2>*,<ctype2>*,int*,int*,<ctype2>*,int*,<ctype2>*,<ctype2>*,int*,<ctype2>*,int*,int*,int*,int*
     
     integer optional,intent(in),check(itype>0||itype<4) :: itype=1
-    character optional,intent(in),check(*jobz=='N'||*jobz=='V') :: jobz='V'
-    character optional,intent(in),check(*uplo=='U'||*uplo=='L') :: uplo='L'
-    character optional,intent(in),check(*range=='A'||*range=='V' ||*range=='I') :: range='A'
+    character optional,intent(in),check(*jobz=='N'||*jobz=='V') :: jobz="V"
+    character optional,intent(in),check(*uplo=='U'||*uplo=='L') :: uplo="L"
+    character optional,intent(in),check(*range=='A'||*range=='V' ||*range=='I') :: range="A"
     integer intent(hide),depend(a) :: n=shape(a,0)
     integer optional,intent(in) :: il=1
     integer optional,intent(in),depend(n) :: iu=n
@@ -1207,16 +1207,16 @@ subroutine <prefix2>sygvx(itype,jobz,range,uplo,n,a,lda,b,ldb,vl,vu,il,iu,abstol
 
     <ftype2> intent(in,copy),check(shape(a,0)==shape(a,1)),dimension(n,n) :: a
     <ftype2> intent(in,copy,aligned8),check(shape(b,0)==shape(b,1)),check(shape(b,0)==n),dimension(n,n),depend(n) :: b
-    integer intent(hide),depend(n) :: lda=max(1,n)
-    integer intent(hide),depend(n) :: ldb=max(1,n)
-    integer intent(hide),depend(z) :: ldz=max(1,shape(z,0))
+    integer intent(hide),depend(a) :: lda=MAX(1,shape(a,0))
+    integer intent(hide),depend(b) :: ldb=MAX(1,shape(b,0))
+    integer intent(hide),depend(z) :: ldz=MAX(1,shape(z,0))
     <ftype2>  intent(hide),dimension(lwork),depend(lwork) :: work
     integer intent(hide),dimension(5*n),depend(n) :: iwork
 
     <ftype2> intent(out),dimension(n),depend(n) :: w
     <ftype2> intent(out),dimension((jobz[0]=='V'?MAX(0,n):0),(jobz[0]=='V'?(range[0]=='I'?iu-il+1:MAX(1,n)):0)),depend(n,jobz,range,iu,il) :: z
     integer intent(out) :: m
-    integer intent(out),dimension((jobz[0]=='N'?n:0)),depend(jobz,n):: ifail
+    integer intent(out),dimension((jobz[0]=='N'?0:n)),depend(jobz,n):: ifail
     integer intent(out) :: info
 
 end subroutine <prefix2>sygvx
@@ -1253,7 +1253,7 @@ subroutine <prefix2>sygvx_lwork(itype,uplo,n,a,lda,b,ldb,vl,vu,il,iu,abstol,m,w,
 
 end subroutine <prefix2>sygvx_lwork
 
-subroutine <prefix2c>hegvx(itype,jobz,range,uplo,n,a,lda,b,ldb,vl,vu,il,iu,abstol,m,w,z,ldz,work,lwork,rwork,iwork,ifail,info)
+subroutine <prefix2c>hegvx(itype,jobz,range,uplo,n,a,lda,b,ldb,vl,vu,il,iu,abstol,w,z,m,ldz,work,lwork,rwork,iwork,ifail,info)
     ! (C/Z)HEGVX computes selected eigenvalues, and optionally, eigenvectors
     ! of a complex generalized Hermitian-definite eigenproblem, of the form
     ! A*x=(lambda)*B*x,  A*Bx=(lambda)*x,  or B*A*x=(lambda)*x.  Here A and
@@ -1261,7 +1261,7 @@ subroutine <prefix2c>hegvx(itype,jobz,range,uplo,n,a,lda,b,ldb,vl,vu,il,iu,absto
     ! Eigenvalues and eigenvectors can be selected by specifying either a
     ! range of values or a range of indices for the desired eigenvalues.
     callstatement (*f2py_func)(&itype,jobz,range,uplo,&n,a,&lda,b,&ldb,&vl,&vu,&il,&iu,&abstol,&m,w,z,&ldz,work,&lwork,rwork,iwork,ifail,&info)
-    callprotoargument int*,char*,char*,char*,int*,<ctype2>*,int*,<ctype2>*,int*,<ctype2>*,<ctype2>*,int*,int*,<ctype2>*,int*,<ctype2>*,<ctype2>*,int*,<ctype2>*,int*,<ctype2>*,int*,int*,int*
+    callprotoargument int*,char*,char*,char*,int*,<ctype2c>*,int*,<ctype2c>*,int*,<ctype2>*,<ctype2>*,int*,int*,<ctype2>*,int*,<ctype2>*,<ctype2c>*,int*,<ctype2c>*,int*,<ctype2>*,int*,int*,int*
     
     integer optional,intent(in),check(itype>0||itype<4) :: itype=1
     character optional,intent(in),check(*jobz=='N'||*jobz=='V') :: jobz='V'
@@ -1275,19 +1275,19 @@ subroutine <prefix2c>hegvx(itype,jobz,range,uplo,n,a,lda,b,ldb,vl,vu,il,iu,absto
     <ftype2> intent(in) :: abstol=0.0
     integer optional,intent(in),depend(n),check(lwork>=1||lwork==-1) :: lwork=max(2*n,1)
 
-    <ftype2> intent(in,copy),check(shape(a,0)==shape(a,1)),dimension(n,n) :: a
-    <ftype2> intent(in,copy,aligned8),check(shape(b,0)==shape(b,1)),check(shape(b,0)==n),dimension(n,n),depend(n) :: b
+    <ftype2c> intent(in,copy),check(shape(a,0)==shape(a,1)),dimension(n,n) :: a
+    <ftype2c> intent(in,copy,aligned8),check(shape(b,0)==shape(b,1)),check(shape(b,0)==n),dimension(n,n),depend(n) :: b
     integer intent(hide),depend(n) :: lda=max(1,n)
     integer intent(hide),depend(n) :: ldb=max(1,n)
     integer intent(hide),depend(z) :: ldz=max(1,shape(z,0))
-    <ftype2>  intent(hide),dimension(lwork),depend(lwork) :: work
+    <ftype2c>  intent(hide),dimension(lwork),depend(lwork) :: work
     integer intent(hide),dimension(5*n),depend(n) :: iwork
     <ftype2> intent(hide),dimension(7*n),depend(n) :: rwork
 
     <ftype2> intent(out),dimension(n),depend(n) :: w
-    <ftype2> intent(out),dimension((jobz[0]=='V'?MAX(0,n):0),(jobz[0]=='V'?(range[0]=='I'?iu-il+1:MAX(1,n)):0)),depend(n,jobz,range,iu,il) :: z
+    <ftype2c> intent(out),dimension((jobz[0]=='V'?MAX(0,n):0),(jobz[0]=='V'?(range[0]=='I'?iu-il+1:MAX(1,n)):0)),depend(n,jobz,range,iu,il) :: z
     integer intent(out) :: m
-    integer intent(out),dimension((jobz[0]=='N'?n:0)),depend(jobz,n):: ifail
+    integer intent(out),dimension((jobz[0]=='N'?0:n)),depend(jobz,n):: ifail
     integer intent(out) :: info
 
 end subroutine <prefix2c>hegvx
@@ -1296,15 +1296,15 @@ subroutine <prefix2c>hegvx_lwork(itype,uplo,n,a,lda,b,ldb,vl,vu,il,iu,abstol,m,w
     ! LWORK Query routine for (c/z)hegvx
     fortranname <prefix2c>hegvx
     callstatement (*f2py_func)(&itype,"N","A",uplo,&n,&a,&lda,&b,&ldb,&vl,&vu,&il,&iu,&abstol,&m,&w,&z,&ldz,&work,&lwork,&rwork,&iwork,&ifail,&info)
-    callprotoargument int*,char*,char*,char*,int*,<ctype2>*,int*,<ctype2>*,int*,<ctype2>*,<ctype2>*,int*,int*,<ctype2>*,int*,<ctype2>*,<ctype2>*,int*,<ctype2>*,int*,<ctype2>*,int*,int*,int*
+    callprotoargument int*,char*,char*,char*,int*,<ctype2c>*,int*,<ctype2c>*,int*,<ctype2>*,<ctype2>*,int*,int*,<ctype2>*,int*,<ctype2>*,<ctype2c>*,int*,<ctype2c>*,int*,<ctype2>*,int*,int*,int*
 
     integer intent(in):: n
     character optional,intent(in),check(*uplo=='U'||*uplo=='L') :: uplo='L'
 
     integer intent(hide):: itype = 1
-    <ftype2> intent(hide):: a
+    <ftype2c> intent(hide):: a
     integer intent(hide),depend(n):: lda = MAX(1,n)
-    <ftype2> intent(hide):: b
+    <ftype2c> intent(hide):: b
     integer intent(hide):: ldb = MAX(1,n)
     integer intent(hide):: il = 1
     integer intent(hide):: iu = 0
@@ -1313,14 +1313,14 @@ subroutine <prefix2c>hegvx_lwork(itype,uplo,n,a,lda,b,ldb,vl,vu,il,iu,abstol,m,w
     <ftype2> intent(hide):: abstol = 0.0
     integer intent(hide):: m
     <ftype2> intent(hide):: w
-    <ftype2> intent(hide):: z
+    <ftype2c> intent(hide):: z
     integer intent(hide),depend(n):: ldz = MAX(1,n)
     integer intent(hide):: lwork = -1
     <ftype2> intent(hide):: rwork
     integer intent(hide):: iwork
     integer intent(hide):: ifail
 
-    <ftype2> intent(out):: work
+    <ftype2c> intent(out):: work
     integer intent(out):: info
 
 end subroutine <prefix2c>hegvx_lwork
