@@ -2630,7 +2630,7 @@ def fclusterdata(X, t, criterion='inconsistent',
         Specifies the criterion for forming flat clusters. Valid
         values are 'inconsistent' (default), 'distance', or 'maxclust'
         cluster formation algorithms. See `fcluster` for descriptions.
-    metric : str, optional
+    metric : str or function, optional
         The distance metric for calculating pairwise distances. See
         ``distance.pdist`` for descriptions and linkage to verify
         compatibility with the linkage method.
