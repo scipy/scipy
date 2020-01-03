@@ -895,9 +895,7 @@ class TestPPolyCommon(object):
             assert_equal(np.shape(p(0.5)), ())
             assert_equal(np.shape(p(np.array(0.5))), ())
 
-            # can't use dtype=object (with any numpy; what fails is
-            # constructing the object array here for old NumPy)
-            assert_raises(ValueError, p, np.array([[0.1, 0.2], [0.4]]))
+            assert_raises(ValueError, p, np.array([[0.1, 0.2], [0.4]], dtype=object))
 
     def test_complex_coef(self):
         np.random.seed(12345)

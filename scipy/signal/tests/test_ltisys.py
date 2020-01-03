@@ -331,7 +331,7 @@ class TestSS2TF:
         assert_allclose(num, [[0, 1, 2, 3], [0, 1, 2, 3]], rtol=1e-13)
         assert_allclose(den, [1, 2, 3, 4], rtol=1e-13)
 
-        tf = ([1, [2, 3]], [1, 6])
+        tf = (np.array([1, [2, 3]], dtype=object), [1, 6])
         A, B, C, D = tf2ss(*tf)
         assert_allclose(A, [[-6]], rtol=1e-31)
         assert_allclose(B, [[1]], rtol=1e-31)
@@ -342,7 +342,7 @@ class TestSS2TF:
         assert_allclose(num, [[0, 1], [2, 3]], rtol=1e-13)
         assert_allclose(den, [1, 6], rtol=1e-13)
 
-        tf = ([[1, -3], [1, 2, 3]], [1, 6, 5])
+        tf = (np.array([[1, -3], [1, 2, 3]], dtype=object), [1, 6, 5])
         A, B, C, D = tf2ss(*tf)
         assert_allclose(A, [[-6, -5], [1, 0]], rtol=1e-13)
         assert_allclose(B, [[1], [0]], rtol=1e-13)
