@@ -218,29 +218,20 @@ def _get_delta(A, b, c, x, y, z, tau, kappa, gamma, eta, sparse=False,
         # Reference [4] Eq. 8.6
         rhatp = eta(gamma) * r_P
         rhatd = eta(gamma) * r_D
-        rhatg = np.array(eta(gamma) * r_G).reshape((1,))
+        rhatg = eta(gamma) * r_G
 
         # Reference [4] Eq. 8.7
         rhatxs = gamma * mu - x * z
-        rhattk = np.array(gamma * mu - tau * kappa).reshape((1,))
+        rhattk = gamma * mu - tau * kappa
 
         if i == 1:
             if ip:  # if the correction is to get "initial point"
                 # Reference [4] Eq. 8.23
                 rhatxs = ((1 - alpha) * gamma * mu -
                           x * z - alpha**2 * d_x * d_z)
-                rhattk = np.array(
-                    (1 -
-                     alpha) *
-                    gamma *
-                    mu -
-                    tau *
-                    kappa -
-                    alpha**2 *
-                    d_tau *
-                    d_kappa).reshape(
-                    (1,
-                     ))
+                rhattk = ((1 - alpha) * gamma * mu - 
+                    tau * kappa - 
+                    alpha**2 * d_tau * d_kappa)
             else:  # if the correction is for "predictor-corrector"
                 # Reference [4] Eq. 8.13
                 rhatxs -= d_x * d_z
