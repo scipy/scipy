@@ -1423,14 +1423,14 @@ class TestLinprogSimplexDefault(LinprogSimplexTests):
 
     def test_bug_7237_low_tol(self):
         # Fails if the tolerance is too strict. Here, we test that
-        # even if the solutuion is wrong, the appropriate error is raised.
+        # even if the solution is wrong, the appropriate error is raised.
         self.options.update({'tol': 1e-12})
         with pytest.raises(ValueError):
             super(TestLinprogSimplexDefault, self).test_bug_7237()
 
     def test_bug_8174_low_tol(self):
         # Fails if the tolerance is too strict. Here, we test that
-        # even if the solutuion is wrong, the appropriate warning is issued.
+        # even if the solution is wrong, the appropriate warning is issued.
         self.options.update({'tol': 1e-12})
         with pytest.warns(OptimizeWarning):
             super(TestLinprogSimplexDefault, self).test_bug_8174()
@@ -1447,7 +1447,7 @@ class TestLinprogSimplexBland(LinprogSimplexTests):
 
     def test_bug_8174_low_tol(self):
         # Fails if the tolerance is too strict. Here, we test that
-        # even if the solutuion is wrong, the appropriate error is raised.
+        # even if the solution is wrong, the appropriate error is raised.
         self.options.update({'tol': 1e-12})
         with pytest.raises(AssertionError):
             with pytest.warns(OptimizeWarning):
@@ -1479,14 +1479,14 @@ class TestLinprogSimplexNoPresolve(LinprogSimplexTests):
 
     def test_bug_7237_low_tol(self):
         # Fails if the tolerance is too strict. Here, we test that
-        # even if the solutuion is wrong, the appropriate error is raised.
+        # even if the solution is wrong, the appropriate error is raised.
         self.options.update({'tol': 1e-12})
         with pytest.raises(ValueError):
             super(TestLinprogSimplexNoPresolve, self).test_bug_7237()
 
     def test_bug_8174_low_tol(self):
         # Fails if the tolerance is too strict. Here, we test that
-        # even if the solutuion is wrong, the appropriate warning is issued.
+        # even if the solution is wrong, the appropriate warning is issued.
         self.options.update({'tol': 1e-12})
         with pytest.warns(OptimizeWarning):
             super(TestLinprogSimplexNoPresolve, self).test_bug_8174()
