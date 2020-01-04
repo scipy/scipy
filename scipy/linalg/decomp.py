@@ -386,7 +386,8 @@ def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
     -----
     This function does not check the input array for being hermitian/symmetric
     in order to allow for representing arrays with only their upper/lower
-    triangular parts.
+    triangular parts. Also, note that even though not referenced, finiteness
+    check applies to the whole array and unaffected by "lower" keyword.
 
     This function uses LAPACK drivers for computations in all possible keyword
     combinations, prefixed with ``sy`` if arrays are real and ``he`` if
