@@ -538,9 +538,12 @@ class TestTbtrs(object):
         assert_equal(info, 0)
         assert_allclose(x, x_out, rtol=0, atol=1e-5)
 
-    @pytest.mark.parametrize('dtype', DTYPES)
+    @pytest.mark.parametrize('dtype,trans',
+                             [(dtype, trans)
+                              for dtype in DTYPES for trans in ['N', 'T', 'C']
+                              if not (trans == 'C' and dtype in REAL_DTYPES)])
     @pytest.mark.parametrize('uplo', ['U', 'L'])
-    def test_random_matrices(self, dtype, uplo):
+    def test_random_matrices(self, dtype, trans, uplo):
         seed(1724)
         # lda, ldb, nrhs, kd are used to specify A and b.
         # A is of shape lda x ldb with kd super/sub-diagonals
@@ -563,11 +566,19 @@ class TestTbtrs(object):
         # Construct the diagonal banded matrix A from the bands and offsets.
         a = sps.diags(bands, band_offsets, format='dia')
         ab = np.flipud(a.data) if uplo == 'U' else a.data
-        tbtrs = get_lapack_funcs('tbtrs', dtype=dtype)
 
-        x, info = tbtrs(ab=ab, b=b, uplo=uplo)
+        tbtrs = get_lapack_funcs('tbtrs', dtype=dtype)
+        x, info = tbtrs(ab=ab, b=b, uplo=uplo, trans=trans)
         assert_equal(info, 0)
-        assert_allclose(a @ x, b, rtol=5e-5)
+
+        if trans == 'N':
+            assert_allclose(a @ x, b, rtol=5e-5)
+        elif trans == 'T':
+            assert_allclose(a.T @ x, b, rtol=5e-5)
+        elif trans == 'C':
+            assert_allclose(a.H @ x, b, rtol=5e-5)
+        else:
+            raise ValueError('Invalid trans argument')
 
 
 def test_lartg():
