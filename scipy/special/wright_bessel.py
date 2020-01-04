@@ -84,15 +84,17 @@ def _wright_series(a, b, z, result, max_iter=1000,
     converged = False
     for k in range(1, max_iter):
         z_k *= z/k
-        term = z_k * rgamma(a*k + b)
+        rg = rgamma(a*k + b)
+        term = z_k * rg
         result += term
 
-        # stop early?
-        term_max = np.abs(term.flatten()[imax])
-        res_max = np.abs(result.flatten()[imax])
-        if (term_max < eps_abs) and (term_max < eps_rel * res_max):
-            converged = True
-            break
+        # check convergence, only if rgamma != 0 (a*k+b = 0, -1, -2, ..)
+        if rg != 0:
+            term_max = np.abs(term.flatten()[imax])
+            res_max = np.abs(result.flatten()[imax])
+            if (term_max < eps_abs) and (term_max < eps_rel * res_max):
+                converged = True
+                break
 
     if not converged:
         warnings.warn("Wright's generalized Bessel function did not converge "
