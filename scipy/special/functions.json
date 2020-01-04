@@ -1,8 +1,10 @@
 {
     "_cospi": {
+	"cephes.h": {
+	    "cospi": "d->d"
+	},
         "_trig.pxd": {
-            "ccospi": "D->D",
-            "dcospi": "d->d"
+            "ccospi": "D->D"
         }
     },
     "_ellip_harm": {
@@ -44,9 +46,11 @@
         }
     },
     "_sinpi": {
+	"cephes.h": {
+	    "sinpi": "d->d"
+	},
         "_trig.pxd": {
-            "csinpi": "D->D",
-            "dsinpi": "d->d"
+            "csinpi": "D->D"
         }
     },
     "_spherical_in": {
