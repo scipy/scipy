@@ -584,6 +584,19 @@ class TestTbtrs(object):
         else:
             raise ValueError('Invalid trans argument')
 
+    @pytest.mark.parametrize('uplo,trans,diag',
+                             [['U', 'N', 'Invalid'],
+                              ['U', 'Invalid', 'N'],
+                              ['Invalid', 'N', 'N']])
+    def test_invalid_argument_raises_exception(self, uplo, trans, diag):
+        """Test if invalid values of uplo, trans and diag raise exceptions"""
+        # Argument checks occur independently of used datatype.
+        # This mean we must not parameterize all available datatypes.
+        tbtrs = get_lapack_funcs('tbtrs', dtype=np.float)
+        ab = rand(4, 2)
+        b = rand(2, 4)
+        assert_raises(Exception, tbtrs, ab, b, uplo, trans, diag)
+
 
 def test_lartg():
     for dtype in 'fdFD':
