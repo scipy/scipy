@@ -2323,10 +2323,7 @@ def factorial(n, exact=False):
     """
     if exact:
         if np.ndim(n) == 0:
-            if not np.isnan(n):
-                return _factorial(n)
-            else:
-                return n
+            return _factorial(n)
         else:
             n = asarray(n)
             un = np.unique(n).astype(object)
@@ -2362,20 +2359,11 @@ def factorial(n, exact=False):
 
             if np.isnan(n).any():
                 out = out.astype(np.float64)
-                out[np.isnan(n)] = np.nan
+                out[np.isnan(n)] = n[np.isnan(n)]
             return out
     else:
-        if np.ndim(n) == 0:
-            return _factorial(n)
-
         n = asarray(n)
-        vals = gamma(n + 1)
-        # Ignore runtime warning when less operator used w/np.nan
-        with np.errstate(all='ignore'):
-            out = where(n >= 0, vals, 0)
-
-        if np.isnan(n).any():
-            out[np.isnan(n)] = np.nan
+        out = _factorial(n)
         return out
 
 
