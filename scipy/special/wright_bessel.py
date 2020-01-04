@@ -2,11 +2,11 @@ import numbers
 import numpy as np
 import warnings
 
-from ._ufuncs import iv, rgamma
+from ._ufuncs import rgamma
 from scipy._lib._util import _asarray_validated
 
 
-def wright_bessel(a, b, z, max_iter=1000, tol=1e-15):
+def wright_bessel(a, b, z, max_iter=1000, tol=1e-16):
     r"""Compute Wright's generalized Bessel function.
 
     Wright's generalized Bessel function is an entire function and defined as
@@ -52,11 +52,6 @@ def wright_bessel(a, b, z, max_iter=1000, tol=1e-15):
         return 0
     elif a == 0:
         return np.exp(z) * rgamma(b)
-    elif a == 1:
-        # Phi(1, v+1, z**2/4) = (z/2)**(-v) * I_v(z)
-        x = 2 * np.sqrt(z)
-        v = b - 1
-        return np.power(0.5*x, -v) * iv(v, x)
     # now the general case
     else:
         if np.iscomplexobj(z) or isinstance(b, complex):
