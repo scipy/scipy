@@ -542,18 +542,23 @@ class TestTbtrs(object):
     @pytest.mark.parametrize('uplo', ['U', 'L'])
     def test_random_matrices(self, dtype, uplo):
         seed(1724)
+        # lda, ldb, nrhs, kd are used to specify A and b.
+        # A is of shape lda x ldb with kd super/sub-diagonals
+        # b is of shape ldb x nrhs matrix
         lda, ldb, nrhs, kd = 4, 4, 3, 2
         ldab = kd + 1
 
+        # Construct the diagonal and kd super/sub diagonals of A with
+        # the corresponding offsets.
         band_widths = range(lda, lda - kd - 1, -1)
         band_offsets = np.arange(ldab) if uplo == 'U' else np.arange(ldab) * -1
-
         if dtype in REAL_DTYPES:
-            bands = [rand(band_width).astype(dtype) for band_width in band_widths]
+            bands = [rand(width).astype(dtype) for width in band_widths]
         elif dtype in COMPLEX_DTYPES:
-            bands = [(rand(band_width) + rand(band_width) * 1j).astype(dtype)
-                     for band_width in band_widths]
+            bands = [(rand(width) + rand(width) * 1j).astype(dtype)
+                     for width in band_widths]
 
+        # Construct the diagonal banded matrix A from the bands and offsets.
         a = sps.diags(bands, band_offsets, format='dia')
         ab = np.flipud(a.data) if uplo == 'U' else a.data
         b = rand(ldb, nrhs).astype(dtype)
@@ -562,7 +567,6 @@ class TestTbtrs(object):
         x, info = tbtrs(ab=ab, b=b, uplo=uplo)
         assert_equal(info, 0)
         assert_allclose(a @ x, b, rtol=5e-5)
-
 
 def test_lartg():
     for dtype in 'fdFD':
