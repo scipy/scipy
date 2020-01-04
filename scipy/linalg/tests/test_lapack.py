@@ -543,7 +543,8 @@ class TestTbtrs(object):
                               for dtype in DTYPES for trans in ['N', 'T', 'C']
                               if not (trans == 'C' and dtype in REAL_DTYPES)])
     @pytest.mark.parametrize('uplo', ['U', 'L'])
-    def test_random_matrices(self, dtype, trans, uplo):
+    @pytest.mark.parametrize('diag', ['N', 'U'])
+    def test_random_matrices(self, dtype, trans, uplo, diag):
         seed(1724)
         # lda, ldb, nrhs, kd are used to specify A and b.
         # A is of shape lda x ldb with kd super/sub-diagonals
@@ -563,12 +564,15 @@ class TestTbtrs(object):
             bands = [(rand(width) + rand(width) * 1j).astype(dtype)
                      for width in band_widths]
 
+        if diag == 'U':  # A must be unit triangular
+            bands[0] = np.ones(lda, dtype=dtype)
+
         # Construct the diagonal banded matrix A from the bands and offsets.
         a = sps.diags(bands, band_offsets, format='dia')
         ab = np.flipud(a.data) if uplo == 'U' else a.data
 
         tbtrs = get_lapack_funcs('tbtrs', dtype=dtype)
-        x, info = tbtrs(ab=ab, b=b, uplo=uplo, trans=trans)
+        x, info = tbtrs(ab=ab, b=b, uplo=uplo, trans=trans, diag=diag)
         assert_equal(info, 0)
 
         if trans == 'N':
