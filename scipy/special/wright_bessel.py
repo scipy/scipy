@@ -42,26 +42,33 @@ def wright_bessel(a, b, z, max_iter=1000, tol=1e-16):
 
     if not isinstance(b, numbers.Number):
         raise ValueError("Argument b must be a number.")
+    elif not np.isfinite(b):
+        raise ValueError("Argument b must be a finite number.")
 
     b = 1. * b  # make it at least a float
 
-    z = _asarray_validated(z, check_finite=True)
+    z = _asarray_validated(z, check_finite=False)
+
+    # determine dtype of result
+    if np.iscomplexobj(z) or isinstance(b, complex):
+        dtype = max(z.dtype, complex)
+        result = np.zeros_like(z, dtype=dtype)
+    else:
+        dtype = max(z.dtype, float)
+        result = np.zeros_like(z, dtype=dtype)
+
+    # deal with np.nan and np.inf
+    # TODO: np.isfinite(z) otherwise return np.nan
 
     # first some special cases
     if np.all(z == 0):
         return 0
     elif a == 0:
-        return np.exp(z) * rgamma(b)
+        result += np.exp(z) * rgamma(b)
     # now the general case
     else:
-        if np.iscomplexobj(z) or isinstance(b, complex):
-            dtype = max(z.dtype, complex)
-            result = np.zeros_like(z, dtype=dtype)
-        else:
-            dtype = max(z.dtype, float)
-            result = np.zeros_like(z, dtype=dtype)
+        _wright_series(a, b, z, result, eps_rel=tol, eps_abs=tol)
 
-    _wright_series(a, b, z, result, eps_rel=tol, eps_abs=tol)
     return result
 
 
