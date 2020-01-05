@@ -765,7 +765,7 @@ _lapack_alias = {
 }
 
 
-# Place guards against markdown problems with special characters
+# Place guards against docstring rendering issues with special characters
 p1 = regex_compile(r'with bounds (?P<b>.*?)( and (?P<s>.*?) storage){0,1}\n')
 p2 = regex_compile(r'Default: (?P<d>.*?)\n')
 
@@ -776,6 +776,7 @@ def backtickrepl(m):
                 ''.format(m.group('b'), m.group('s')))
     else:
         return 'with bounds ``{}``\n'.format(m.group('b'))
+
 
 for routine in [ssyevr, dsyevr, cheevr, zheevr,
                 ssyevx, dsyevx, cheevx, zheevx,
