@@ -1748,6 +1748,19 @@ class TestEllipord(object):
         assert_equal(N, 7)
         assert_allclose(Wn, [590.3293117737195, 2400], rtol=1e-5)
 
+    def test_invalid_input(self):
+        with pytest.raises(ValueError) as exc_info:
+            ellipord(0.2, 0.5, 3, 2)
+        assert "gpass should be smaller than gstop" in str(exc_info.value)
+
+        with pytest.raises(ValueError) as exc_info:
+            ellipord(0.2, 0.5, -1, 2)
+        assert "gpass should be larger than 0.0" in str(exc_info.value)
+
+        with pytest.raises(ValueError) as exc_info:
+            ellipord(0.2, 0.5, 1, -2)
+        assert "gstop should be larger than 0.0" in str(exc_info.value)
+
 
 class TestBessel(object):
 
