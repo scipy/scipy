@@ -16,9 +16,9 @@ cpdef object squeeze_element(cnp.ndarray arr):
     if not arr.size:
         return np.array([])
     cdef cnp.ndarray arr2 = np.squeeze(arr)
-    # We want to squeeze 0d arrays, unless they are record arrays
-    if arr2.ndim == 0 and arr2.dtype.kind != 'V':
-        return arr2.item()
+    # We want to squeeze 0d arrays into scalars
+    if arr2.ndim == 0:
+        return arr2[()]
     return arr2
 
 
