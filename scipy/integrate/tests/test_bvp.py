@@ -326,7 +326,7 @@ def test_compute_global_jac():
 
     J_true = np.zeros((m * n + k, m * n + k))
     for i in range(m - 1):
-        J_true[i * n: (i + 1) * n, i * n: (i + 2) * n] = J_block(h[i], p)
+        J_true[i * n: (i + 1) * n, i * n: (i + 2) * n] = J_block(h[i], p[0])
 
     J_true[:(m - 1) * n:2, -1] = p * h**2/6 * (y[0, :-1] - y[0, 1:])
     J_true[1:(m - 1) * n:2, -1] = p * (h * (y[0, :-1] + y[0, 1:]) +

@@ -1087,7 +1087,7 @@ class TestSTFT(object):
         assert_raises(ValueError, check_NOLA, 'hann', 64, -32)
 
         x = np.zeros(1024)
-        z = stft(x)
+        z = np.array(stft(x), dtype=object)
 
         assert_raises(ValueError, stft, x, window=np.ones((2,2)))
         assert_raises(ValueError, stft, x, window=np.ones(10), nperseg=256)

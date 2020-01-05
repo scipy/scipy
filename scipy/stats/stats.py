@@ -2258,6 +2258,7 @@ def obrientransform(*args):
 
     # `arrays` will hold the transformed arguments.
     arrays = []
+    sLast = None
 
     for arg in args:
         a = np.asarray(arg)
@@ -2276,7 +2277,12 @@ def obrientransform(*args):
             raise ValueError('Lack of convergence in obrientransform.')
 
         arrays.append(t)
+        sLast = a.shape
 
+    if sLast:
+        for arr in arrays[:-1]:
+            if sLast != arr.shape:
+                return np.array(arrays, dtype=object)
     return np.array(arrays)
 
 
