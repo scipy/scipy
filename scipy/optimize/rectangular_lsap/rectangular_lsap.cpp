@@ -42,6 +42,7 @@ Author: PM Larsen
 
 #include <algorithm>
 #include <cmath>
+#include <cstdint>
 #include <vector>
 
 static int
