@@ -42,7 +42,7 @@ Author: PM Larsen
 
 #include <algorithm>
 #include <cmath>
-#include <cstdint>
+#include "rectangular_lsap.h"
 #include <vector>
 
 static int
