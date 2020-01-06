@@ -13,7 +13,7 @@ from numpy import (pi, asarray, floor, isscalar, iscomplex, real,
 from . import _ufuncs as ufuncs
 from ._ufuncs import (mathieu_a, mathieu_b, iv, jv, gamma,
                       psi, hankel1, hankel2, yv, kv, ndtri,
-                      poch, binom, hyp0f1, _factorial)
+                      poch, binom, hyp0f1)
 from . import specfun
 from . import orthogonal
 from ._comb import _comb_int
@@ -2323,7 +2323,9 @@ def factorial(n, exact=False):
     """
     if exact:
         if np.ndim(n) == 0:
-            return _factorial(n)
+            if np.isnan(n):
+                return n
+            return 0 if n < 0 else math.factorial(n)
         else:
             n = asarray(n)
             un = np.unique(n).astype(object)
@@ -2363,7 +2365,7 @@ def factorial(n, exact=False):
             return out
     else:
         n = asarray(n)
-        out = _factorial(n)
+        out = ufuncs._factorial(n)
         return out
 
 
