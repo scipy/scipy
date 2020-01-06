@@ -766,78 +766,83 @@ class TestCorrSpearmanr(object):
         assert_allclose([res1, res2, res3], expected)
 
 
-def test_spearmanr():
-    # Cross-check with R:
-    # cor.test(c(1,2,3,4,5),c(5,6,7,8,7),method="spearmanr")
-    x1 = [1, 2, 3, 4, 5]
-    x2 = [5, 6, 7, 8, 7]
-    expected = (0.82078268166812329, 0.088587005313543798)
-    res = stats.spearmanr(x1, x2)
-    assert_approx_equal(res[0], expected[0])
-    assert_approx_equal(res[1], expected[1])
+class TestCorrSpearmanr2(object):
+    """Some further tests of the spearmanr function."""
 
-    attributes = ('correlation', 'pvalue')
-    res = stats.spearmanr(x1, x2)
-    check_named_results(res, attributes)
+    def test_spearmanr_vs_r(self):
+        # Cross-check with R:
+        # cor.test(c(1,2,3,4,5),c(5,6,7,8,7),method="spearmanr")
+        x1 = [1, 2, 3, 4, 5]
+        x2 = [5, 6, 7, 8, 7]
+        expected = (0.82078268166812329, 0.088587005313543798)
+        res = stats.spearmanr(x1, x2)
+        assert_approx_equal(res[0], expected[0])
+        assert_approx_equal(res[1], expected[1])
 
-    # with only ties in one or both inputs
-    with np.errstate(invalid="ignore"):
-        assert_equal(stats.spearmanr([2,2,2], [2,2,2]), (np.nan, np.nan))
-        assert_equal(stats.spearmanr([2,0,2], [2,2,2]), (np.nan, np.nan))
-        assert_equal(stats.spearmanr([2,2,2], [2,0,2]), (np.nan, np.nan))
+    def test_empty_arrays(self):
+        assert_equal(stats.spearmanr([], []), (np.nan, np.nan))
 
-    # empty arrays provided as input
-    assert_equal(stats.spearmanr([], []), (np.nan, np.nan))
+    def test_normal_draws(self):
+        np.random.seed(7546)
+        x = np.array([np.random.normal(loc=1, scale=1, size=500),
+                    np.random.normal(loc=1, scale=1, size=500)])
+        corr = [[1.0, 0.3],
+                [0.3, 1.0]]
+        x = np.dot(np.linalg.cholesky(corr), x)
+        expected = (0.28659685838743354, 6.579862219051161e-11)
+        res = stats.spearmanr(x[0], x[1])
+        assert_approx_equal(res[0], expected[0])
+        assert_approx_equal(res[1], expected[1])
 
-    np.random.seed(7546)
-    x = np.array([np.random.normal(loc=1, scale=1, size=500),
-                np.random.normal(loc=1, scale=1, size=500)])
-    corr = [[1.0, 0.3],
-            [0.3, 1.0]]
-    x = np.dot(np.linalg.cholesky(corr), x)
-    expected = (0.28659685838743354, 6.579862219051161e-11)
-    res = stats.spearmanr(x[0], x[1])
-    assert_approx_equal(res[0], expected[0])
-    assert_approx_equal(res[1], expected[1])
+    def test_corr_1(self):
+        assert_approx_equal(stats.spearmanr([1, 1, 2], [1, 1, 2])[0], 1.0)
 
-    assert_approx_equal(stats.spearmanr([1,1,2], [1,1,2])[0], 1.0)
+    def test_nan_policies(self):
+        x = np.arange(10.)
+        x[9] = np.nan
+        assert_array_equal(stats.spearmanr(x, x), (np.nan, np.nan))
+        assert_allclose(stats.spearmanr(x, x, nan_policy='omit'),
+                        (1.0, 0))
+        assert_raises(ValueError, stats.spearmanr, x, x, nan_policy='raise')
+        assert_raises(ValueError, stats.spearmanr, x, x, nan_policy='foobar')
 
-    # test nan_policy
-    x = np.arange(10.)
-    x[9] = np.nan
-    assert_array_equal(stats.spearmanr(x, x), (np.nan, np.nan))
-    assert_allclose(stats.spearmanr(x, x, nan_policy='omit'),
-                    (1.0, 0))
-    assert_raises(ValueError, stats.spearmanr, x, x, nan_policy='raise')
-    assert_raises(ValueError, stats.spearmanr, x, x, nan_policy='foobar')
+    def test_unequal_lengths(self):
+        x = np.arange(10.)
+        y = np.arange(20.)
+        assert_raises(ValueError, stats.spearmanr, x, y)
 
-    # test unequal length inputs
-    x = np.arange(10.)
-    y = np.arange(20.)
-    assert_raises(ValueError, stats.spearmanr, x, y)
+    def test_omit_paired_value(self):
+        x1 = [1, 2, 3, 4]
+        x2 = [8, 7, 6, np.nan]
+        res1 = stats.spearmanr(x1, x2, nan_policy='omit')
+        res2 = stats.spearmanr(x1[:3], x2[:3], nan_policy='omit')
+        assert_equal(res1, res2)
 
-    #test paired value
-    x1 = [1, 2, 3, 4]
-    x2 = [8, 7, 6, np.nan]
-    res1 = stats.spearmanr(x1, x2, nan_policy='omit')
-    res2 = stats.spearmanr(x1[:3], x2[:3], nan_policy='omit')
-    assert_equal(res1, res2)
+    def test_gh_issue_6061_windows_overflow(self):
+        x = list(range(2000))
+        y = list(range(2000))
+        y[0], y[9] = y[9], y[0]
+        y[10], y[434] = y[434], y[10]
+        y[435], y[1509] = y[1509], y[435]
+        # rho = 1 - 6 * (2 * (9^2 + 424^2 + 1074^2))/(2000 * (2000^2 - 1))
+        #     = 1 - (1 / 500)
+        #     = 0.998
+        x.append(np.nan)
+        y.append(3.0)
+        assert_almost_equal(stats.spearmanr(x, y, nan_policy='omit')[0], 0.998)
 
-    # Regression test for GitHub issue #6061 - Overflow on Windows
-    x = list(range(2000))
-    y = list(range(2000))
-    y[0], y[9] = y[9], y[0]
-    y[10], y[434] = y[434], y[10]
-    y[435], y[1509] = y[1509], y[435]
-    # rho = 1 - 6 * (2 * (9^2 + 424^2 + 1074^2))/(2000 * (2000^2 - 1))
-    #     = 1 - (1 / 500)
-    #     = 0.998
-    x.append(np.nan)
-    y.append(3.0)
-    assert_almost_equal(stats.spearmanr(x, y, nan_policy='omit')[0], 0.998)
-
-class TestCorrSpearmanrTies(object):
-    """Some tests of tie-handling by the spearmanr function."""
+    def test_tie0(self):
+        # with only ties in one or both inputs
+        with assert_warns(stats.SpearmanRConstantInputWarning):
+            r, p = stats.spearmanr([2, 2, 2], [2, 2, 2])
+            assert_equal(r, np.nan)
+            assert_equal(p, np.nan)
+            r, p = stats.spearmanr([2, 0, 2], [2, 2, 2])
+            assert_equal(r, np.nan)
+            assert_equal(p, np.nan)
+            r, p = stats.spearmanr([2, 2, 2], [2, 0, 2])
+            assert_equal(r, np.nan)
+            assert_equal(p, np.nan)
 
     def test_tie1(self):
         # Data
@@ -865,6 +870,38 @@ class TestCorrSpearmanrTies(object):
         sr1 = stats.spearmanr(x1, y1)
         sr2 = stats.spearmanr(x2, y2, nan_policy='omit')
         assert_almost_equal(sr1, sr2)
+
+    def test_ties_axis_1(self):
+        z1 = np.array([[1, 1, 1, 1], [1, 2, 3, 4]])
+        z2 = np.array([[1, 2, 3, 4], [1, 1, 1, 1]])
+        z3 = np.array([[1, 1, 1, 1], [1, 1, 1, 1]])
+        with assert_warns(stats.SpearmanRConstantInputWarning):
+            r, p = stats.spearmanr(z1, axis=1)
+            assert_equal(r, np.nan)
+            assert_equal(p, np.nan)
+            r, p = stats.spearmanr(z2, axis=1)
+            assert_equal(r, np.nan)
+            assert_equal(p, np.nan)
+            r, p = stats.spearmanr(z3, axis=1)
+            assert_equal(r, np.nan)
+            assert_equal(p, np.nan)
+
+    def test_gh_11111(self):
+        x = np.array([1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0])
+        y = np.array([0, 0.009783728115345005, 0, 0, 0.0019759230121848587,
+            0.0007535430349118562, 0.0002661781514710257, 0, 0,
+            0.0007835762419683435])
+        with assert_warns(stats.SpearmanRConstantInputWarning):
+            r, p = stats.spearmanr(x, y)
+            assert_equal(r, np.nan)
+            assert_equal(p, np.nan)
+
+    def test_index_error(self):
+        x = np.array([1.0, 7.0, 2.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0])
+        y = np.array([0, 0.009783728115345005, 0, 0, 0.0019759230121848587,
+            0.0007535430349118562, 0.0002661781514710257, 0, 0,
+            0.0007835762419683435])
+        assert_raises(ValueError, stats.spearmanr, x, y, axis=2)
 
 
 #    W.II.E.  Tabulate X against X, using BIG as a case weight.  The values
