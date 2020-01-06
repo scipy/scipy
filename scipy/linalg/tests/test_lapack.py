@@ -597,6 +597,22 @@ class TestTbtrs(object):
         b = rand(2, 4)
         assert_raises(Exception, tbtrs, ab, b, uplo, trans, diag)
 
+    def test_zero_element_in_diagonal(self):
+        """Test if a matrix with a zero diagonal element is singular
+
+        If the i-th diagonal of A is zero, ?tbtrs should return `i` in `info`
+        indicating the provided matrix is singular.
+
+        Note that ?tbtrs requires the matrix A to be stored in banded form.
+        In this form the diagonal corresponds to the last row."""
+        ab = np.ones((3, 4), dtype=float)
+        b = np.ones(4, dtype=float)
+        tbtrs = get_lapack_funcs('tbtrs', dtype=float)
+
+        ab[-1, 3] = 0
+        _, info = tbtrs(ab=ab, b=b, uplo='U')
+        assert_equal(info, 4)
+
 
 def test_lartg():
     for dtype in 'fdFD':
