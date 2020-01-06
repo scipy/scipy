@@ -613,6 +613,18 @@ class TestTbtrs(object):
         _, info = tbtrs(ab=ab, b=b, uplo='U')
         assert_equal(info, 4)
 
+    @pytest.mark.parametrize('ldab,n,ldb,nrhs',
+                             [(0, 5, 5, 5),
+                              (5, 0, 5, 5),
+                              (5, 5, 0, 5),
+                              (5, 5, 5, 0)])
+    def test_invalid_matrix_shapes(self, ldab, n, ldb, nrhs):
+        """Test ?tbtrs fails correctly if shapes are invalid."""
+        ab = np.ones((ldab, n), dtype=float)
+        b = np.ones((ldb, nrhs), dtype=float)
+        tbtrs = get_lapack_funcs('tbtrs', dtype=float)
+        assert_raises(Exception, tbtrs, ab, b)
+
 
 def test_lartg():
     for dtype in 'fdFD':
