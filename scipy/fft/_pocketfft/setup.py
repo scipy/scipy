@@ -18,6 +18,12 @@ def pre_build_hook(build_ext, ext):
                                    'int main(int argc, char **argv) {}')
         if has_pthreads:
             ext.define_macros.append(('POCKETFFT_PTHREADS', None))
+            if has_flag(cc, '-pthread'):
+                args.append('-pthread')
+                ext.extra_link_args.append('-pthread')
+            else:
+                from numpy.distutils import log
+                log.warn('Unknown compiler pthread flag')
 
         min_macos_flag = '-mmacosx-version-min=10.9'
         import sys
