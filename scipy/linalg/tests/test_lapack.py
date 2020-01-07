@@ -1646,128 +1646,98 @@ def test_getc2_gesc2():
             assert_array_almost_equal(desired_cplx.astype(dtype),
                                       x/scale, decimal=4)
 
+    
+@pytest.mark.parametrize("dtype", DTYPES)
+@pytest.mark.filterwarnings("ignore:Casting complex")
+def test_gttrf_gttrs(dtype):
 
-def test_gttrf_gttrs():
-    #%%
     np.random.seed(42)
     # use ?gttrf and ?gttrs to solve a random linear system for each dtype
-    for index, dtype in enumerate(DTYPES):
-        n = 10
-        # set appropriate test tolerance based on the data type
-        if index % 2 == 0:
-            rtol = 10**-(np.finfo(dtype).precision-1)
-        else:
-            rtol = 10**-(np.finfo(dtype).precision-3)
-        # create the matrix in accordance with the data type
-        if index < 2:
-            du = np.random.rand(n-1)
-            d = np.random.rand(n)
-            dl = np.random.rand(n-1)
-        else:
-            du = np.random.rand(n-1) + np.random.rand(n-1) * 1j
-            d = np.random.rand(n) + np.random.rand(n) * 1j
-            dl = np.random.rand(n-1) + np.random.rand(n-1) * 1j
+    n = 4
+    # set appropriate test tolerance based on the data type
+    rtol = 250*np.finfo(dtype).eps
 
-        diag_cpy = np.array([dl.copy(), d.copy(), du.copy()])
+    # create the matrix in accordance with the data type
+    du = my_rand(n-1, dtype=dtype)
+    d = my_rand(n, dtype=dtype)
+    dl = my_rand(n-1, dtype=dtype)
 
-        A = np.diag(d) + np.diag(dl, -1) + np.diag(du, 1)
-        x = np.random.rand(n)
-        b = A @ x
+    diag_cpy = np.array([dl.copy(), d.copy(), du.copy()])
 
-        gttrf, gttrs = get_lapack_funcs(('gttrf', 'gttrs'), dtype=dtype)
+    A = np.diag(d) + np.diag(dl, -1) + np.diag(du, 1)
+    x = np.random.rand(n)
+    b = A @ x
 
-        _dl, _d, _du, du2, ipiv, info = gttrf(dl, d, du)
-        # test to assure that the inputs of ?gttrf are maintained
-        assert_array_equal(dl, diag_cpy[0])
-        assert_array_equal(d, diag_cpy[1])
-        assert_array_equal(du, diag_cpy[2])
+    gttrf, gttrs = get_lapack_funcs(('gttrf', 'gttrs'), dtype=dtype)
 
-        perm_fnl = np.arange(n)
-        for i, piv in enumerate(ipiv):
-            perm_fnl[i], perm_fnl[piv-1] = perm_fnl[piv-1], perm_fnl[i]
+    _dl, _d, _du, du2, ipiv, info = gttrf(dl, d, du)
+    # test to assure that the inputs of ?gttrf are maintained
+    assert_array_equal(dl, diag_cpy[0])
+    assert_array_equal(d, diag_cpy[1])
+    assert_array_equal(du, diag_cpy[2])
 
-        U = np.diag(_d, 0) + np.diag(_du, 1) + np.diag(du2, 2)
-        L = np.eye(n)
+    perm_fnl = np.arange(n)
+    for i, piv in enumerate(ipiv):
+        perm_fnl[i], perm_fnl[piv-1] = perm_fnl[piv-1], perm_fnl[i]
 
-        for i, m in enumerate(_dl):
-            piv = ipiv[i] - 1
+    U = np.diag(_d, 0) + np.diag(_du, 1) + np.diag(du2, 2)
+    L = np.eye(n, dtype=dtype)
 
-            # create permutation matrix
-            P = np.eye(n)
-            temp = P[i,:].copy()
-            P[i,:] = P[piv, :]
-            P[piv, :] = temp
+    for i, m in enumerate(_dl):
+        # L is given in a factored form. See http://www.hpcavf.uclan.ac.uk/softwaredoc/sgi_scsl_html/sgi_html/ch03.html
+        piv = ipiv[i] - 1
+        L[:,[i,piv]] = L[:,[piv,i]]  # right multiply by permutation matrix
+        L[:,i] += L[:,i+1]*m  # right multiply by factor Li, a rank-one modification of the identity
 
-            # create factor Li
-            if index < 2:
-                Li = np.eye(n)
-            else:
-                Li = np.eye(n) + np.eye(n)*1j
-            Li[i+1,i] = m
+    # one last permutation
+    i, piv = -1, ipiv[-1] - 1
+    L[:,[i,piv]] = L[:,[piv,i]]  # right multiply by final permutation matrix
 
-            L = L@P@Li
+    _A = L @ U
+    # check that the outputs of ?gttrf define an LU decompisition of A
+    assert_allclose(A, _A, atol=rtol)
 
-        # one last permutation
-        piv = ipiv[-1] - 1
-        i = -1
-        P = np.eye(n)
-        temp = P[i,:].copy()
-        P[i,:] = P[piv, :]
-        P[piv,:] = temp
+    b_cpy = b.copy()
+    x_gttrs, info = gttrs(_dl, _d, _du, du2, ipiv, b)
+    # test that the inputs of ?gttrs are maintained
+    assert_array_equal(b, b_cpy)
+    # test that the result of ?gttrs matches the expected input
+    assert_allclose(x, x_gttrs, rtol=rtol)
 
-        _A = L @ U
-        # check that the outputs of ?gttrf define an LU decompisition of A
-        assert_allclose(A, _A, rtol=rtol)
+    # test that ?gttrf and ?gttrs work with transposal options
+    if dtype in REAL_DTYPES:
+        trans = "T"
+        b_trans = A.T @ x
+    else:
+        trans = "C"
+        b_trans = A.conj().T @ x
 
-        #%%
-        b_cpy = b.copy()
-        x_gttrs, info = gttrs(_dl, _d, _du, du2, ipiv, b)
-        # test that the inputs of ?gttrs are maintained
-        assert_array_equal(b, b_cpy)
-        # test that the result of ?gttrs matches the expected input
-        assert_allclose(x, x_gttrs, rtol=rtol)
+    x_gttrs, info = gttrs(_dl, _d, _du, du2, ipiv, b_trans, trans=trans)
+    assert_allclose(x, x_gttrs, rtol=rtol)
 
-        # create matricies of inconsistent shapes
-        if index < 2:
-            dl_misshaped = np.random.rand(n)
-            d_misshaped = np.random.rand(n-1)
-            du_misshaped = np.random.rand(n)
-        else:
-            dl_misshaped = np.random.rand(n) + np.random.rand(n) * 1j
-            d_misshaped = np.random.rand(n-1) + np.random.rand(n-1) * 1j
-            du_misshaped = np.random.rand(n) + np.random.rand(n) * 1j
+    # test that ValueError is raised with incompatible matrix shapes
+    with assert_raises(ValueError):
+        gttrf(dl[:-1], d, du)
+    with assert_raises(ValueError):
+        gttrf(dl, d[:-1], du)
+    with assert_raises(ValueError):
+        gttrf(dl, d, du[:-1])
 
-        # test that ValueError is raised with incompatible matrix shapes
-        with assert_raises(ValueError):
-            gttrf(dl_misshaped, d, du)
-        with assert_raises(ValueError):
-            gttrf(dl, d_misshaped, du)
-        with assert_raises(ValueError):
-            gttrf(dl, d, du_misshaped)
+    # test that matrix of size n=2 raises exception
+    with assert_raises(Exception):
+        gttrf(dl[0], d[:1], du[0])
 
-        # test that matrix of size n=2 raises exception
-        with assert_raises(Exception):
-            gttrf(dl[0], d[:1], du[0])
+    # test that singular (row of all zeroes) matrix fails via info
+    du[0] = 0
+    d[0] = 0
+    __dl, __d, __du, _du2, _ipiv, _info = gttrf(dl, d, du)
+    np.testing.assert_(_info != 0,
+                       "?gttrf: singular matrix ret info == 0")
 
-        # test that ?gttrf and ?gttrs work with transposal options
-        transpose_options = ["C", "T"]
-        for trans in transpose_options:
-            if trans == "T":
-                b_trans = np.transpose(A) @ x
-            else:
-                b_trans = A.conj().T @ x
-            _dl, _d, _du, du2, ipiv, info = gttrf(dl, d, du)
-            x_gttrs, info = gttrs(_dl, _d, _du, du2, ipiv, b_trans,
-                                  trans=trans)
-            assert_allclose(x, x_gttrs, rtol=rtol)
 
-        # test that singular (row of all zeroes) matrix fails via info
-        dl[0] = 0
-        du[0] = 0
-        d[0] = 0
-        __dl, __d, __du, _du2, _ipiv, _info = gttrf(dl, d, du)
-        np.testing.assert_(_info != 0,
-                           "?gttrf: singular matrix ret info == 0")
+def my_rand(shape, dtype):
+    x = np.random.rand(shape) + np.random.rand(shape)*1.0j
+    return x.astype(dtype)
 
 
 def test_gttrf_gttrs_NAG():
