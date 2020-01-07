@@ -1646,23 +1646,26 @@ def test_getc2_gesc2():
             assert_array_almost_equal(desired_cplx.astype(dtype),
                                       x/scale, decimal=4)
 
-    
+
 @pytest.mark.parametrize("dtype", DTYPES)
 @pytest.mark.filterwarnings("ignore:Casting complex")
 def test_gttrf_gttrs(dtype):
+    # The test uses ?gttrf and ?gttrs to solve a random system for each dtype,
+    # tests that the output of ?gttrf define LU matricies, that input
+    # parameters are unmodified, transposal options function correctly, that
+    # incompatible matrix shapes raise an error, and singular matrices return
+    # non zero info.
 
     np.random.seed(42)
-    # use ?gttrf and ?gttrs to solve a random linear system for each dtype
-    n = 4
-    # set appropriate test tolerance based on the data type
-    rtol = 250*np.finfo(dtype).eps
+    n = 10
+    rtol = 250*np.finfo(dtype).eps  # set test tolerance appropriate for dtype
 
     # create the matrix in accordance with the data type
     du = my_rand(n-1, dtype=dtype)
     d = my_rand(n, dtype=dtype)
     dl = my_rand(n-1, dtype=dtype)
 
-    diag_cpy = np.array([dl.copy(), d.copy(), du.copy()])
+    diag_cpy = [dl.copy(), d.copy(), du.copy()]
 
     A = np.diag(d) + np.diag(dl, -1) + np.diag(du, 1)
     x = np.random.rand(n)
@@ -1671,35 +1674,36 @@ def test_gttrf_gttrs(dtype):
     gttrf, gttrs = get_lapack_funcs(('gttrf', 'gttrs'), dtype=dtype)
 
     _dl, _d, _du, du2, ipiv, info = gttrf(dl, d, du)
-    # test to assure that the inputs of ?gttrf are maintained
+    # test to assure that the inputs of ?gttrf are unmodified
     assert_array_equal(dl, diag_cpy[0])
     assert_array_equal(d, diag_cpy[1])
     assert_array_equal(du, diag_cpy[2])
 
-    perm_fnl = np.arange(n)
-    for i, piv in enumerate(ipiv):
-        perm_fnl[i], perm_fnl[piv-1] = perm_fnl[piv-1], perm_fnl[i]
-
+    # generate L and U factors from ?gttrf return values
+    # L/U are lower/upper triangular by construction (initially and at end)
     U = np.diag(_d, 0) + np.diag(_du, 1) + np.diag(du2, 2)
     L = np.eye(n, dtype=dtype)
 
     for i, m in enumerate(_dl):
-        # L is given in a factored form. See http://www.hpcavf.uclan.ac.uk/softwaredoc/sgi_scsl_html/sgi_html/ch03.html
+        # L is given in a factored form.
         piv = ipiv[i] - 1
-        L[:,[i,piv]] = L[:,[piv,i]]  # right multiply by permutation matrix
-        L[:,i] += L[:,i+1]*m  # right multiply by factor Li, a rank-one modification of the identity
+        # right multiply by permutation matrix
+        L[:, [i, piv]] = L[:, [piv, i]]
+        # right multiply by Li, rank-one modification of identity
+        L[:, i] += L[:, i+1]*m
 
     # one last permutation
     i, piv = -1, ipiv[-1] - 1
-    L[:,[i,piv]] = L[:,[piv,i]]  # right multiply by final permutation matrix
+    # right multiply by final permutation matrix
+    L[:, [i, piv]] = L[:, [piv, i]]
 
     _A = L @ U
-    # check that the outputs of ?gttrf define an LU decompisition of A
+    # check that the outputs of ?gttrf define an LU decomposition of A
     assert_allclose(A, _A, atol=rtol)
 
     b_cpy = b.copy()
     x_gttrs, info = gttrs(_dl, _d, _du, du2, ipiv, b)
-    # test that the inputs of ?gttrs are maintained
+    # test that the inputs of ?gttrs are unmodified
     assert_array_equal(b, b_cpy)
     # test that the result of ?gttrs matches the expected input
     assert_allclose(x, x_gttrs, rtol=rtol)
@@ -1736,6 +1740,7 @@ def test_gttrf_gttrs(dtype):
 
 
 def my_rand(shape, dtype):
+    # generates a random matrix of desired data type
     x = np.random.rand(shape) + np.random.rand(shape)*1.0j
     return x.astype(dtype)
 
