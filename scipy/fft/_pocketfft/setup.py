@@ -21,8 +21,8 @@ def pre_build_hook(build_ext, ext):
                 args.append('-pthread')
                 ext.extra_link_args.append('-pthread')
             else:
-                from numpy.distutils import log
-                log.warn('Unknown compiler pthread flag')
+                raise RuntimeError("Build failed: System has pthreads header "
+                                   "but could not compile with -pthread option")
 
         # Don't export library symbols
         try_add_flag(args, cc, '-fvisibility=hidden')
