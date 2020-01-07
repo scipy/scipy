@@ -171,9 +171,9 @@ def shortest_path(csgraph, method='auto',
             Nk = csgraph.count()
             edges = csgraph.compressed()
         else:
-            csgraph[~np.isfinite(csgraph)] = 0
-            Nk = np.sum(csgraph > 0)
-            edges = csgraph
+            edges = csgraph[np.isfinite(csgraph)]
+            edges = edges[edges != 0]
+            Nk = edges.size
 
         if indices is not None or Nk < N * N / 4:
             if (np.any(edges < 0)):
