@@ -7,6 +7,8 @@ import operator
 import warnings
 import numpy as np
 
+from scipy._lib._util import _broadcast_arrays
+
 __all__ = ['upcast', 'getdtype', 'isscalarlike', 'isintlike',
            'isshape', 'issequence', 'isdense', 'ismatrix', 'get_sum_dtype']
 
@@ -455,7 +457,7 @@ class IndexMixin(object):
             # row vector special case
             j = np.atleast_1d(j)
             if i.ndim == 1:
-                i, j = np.broadcast_arrays(i, j)
+                i, j = _broadcast_arrays(i, j)
                 i = i[:, None]
                 j = j[:, None]
                 return i, j
@@ -464,7 +466,7 @@ class IndexMixin(object):
             if i_slice and j.ndim > 1:
                 raise IndexError('index returns 3-dim structure')
 
-        i, j = np.broadcast_arrays(i, j)
+        i, j = _broadcast_arrays(i, j)
 
         if i.ndim == 1:
             # return column vectors for 1-D indexing

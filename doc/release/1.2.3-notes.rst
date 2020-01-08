@@ -32,6 +32,7 @@ Pull requests for 1.2.3
 * `#10306 <https://github.com/scipy/scipy/pull/10306>`__: BUG: optimize: Fix for 10303
 * `#10309 <https://github.com/scipy/scipy/pull/10309>`__: BUG: Pass jac=None directly to lsoda
 * `#10377 <https://github.com/scipy/scipy/pull/10377>`__: TST, MAINT: adjustments for pytest 5.0
+* `#10379 <https://github.com/scipy/scipy/pull/10379>`__: BUG: sparse: set writeability to be forward-compatible with numpy>=1.17
 * `#10426 <https://github.com/scipy/scipy/pull/10426>`__: MAINT: Fix doc build bugs
 * `#10457 <https://github.com/scipy/scipy/pull/10457>`__: BUG: Allow ckdtree to accept empty data input
 * `#10503 <https://github.com/scipy/scipy/pull/10503>`__: BUG: spatial/qhull: get HalfspaceIntersection.dual_points from the correct array
