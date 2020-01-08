@@ -1686,6 +1686,7 @@ def test_gttrf_gttrs(dtype):
 
     for i, m in enumerate(_dl):
         # L is given in a factored form.
+        # See http://www.hpcavf.uclan.ac.uk/softwaredoc/sgi_scsl_html/sgi_html/ch03.html
         piv = ipiv[i] - 1
         # right multiply by permutation matrix
         L[:, [i, piv]] = L[:, [piv, i]]
