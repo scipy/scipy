@@ -1648,7 +1648,6 @@ def test_getc2_gesc2():
 
 
 @pytest.mark.parametrize("dtype", DTYPES)
-@pytest.mark.filterwarnings("ignore:Casting complex")
 def test_gttrf_gttrs(dtype):
     # The test uses ?gttrf and ?gttrs to solve a random system for each dtype,
     # tests that the output of ?gttrf define LU matricies, that input
@@ -1657,13 +1656,14 @@ def test_gttrf_gttrs(dtype):
     # non zero info.
 
     np.random.seed(42)
-    n = 10
+    n = 8
     rtol = 250*np.finfo(dtype).eps  # set test tolerance appropriate for dtype
+    atol = np.finfo(dtype).eps
 
     # create the matrix in accordance with the data type
-    du = my_rand(n-1, dtype=dtype)
-    d = my_rand(n, dtype=dtype)
-    dl = my_rand(n-1, dtype=dtype)
+    du = generate_random_dtype_array(n-1, dtype=dtype)
+    d = generate_random_dtype_array(n, dtype=dtype)
+    dl = generate_random_dtype_array(n-1, dtype=dtype)
 
     diag_cpy = [dl.copy(), d.copy(), du.copy()]
 
@@ -1698,9 +1698,8 @@ def test_gttrf_gttrs(dtype):
     # right multiply by final permutation matrix
     L[:, [i, piv]] = L[:, [piv, i]]
 
-    _A = L @ U
     # check that the outputs of ?gttrf define an LU decomposition of A
-    assert_allclose(A, _A, atol=rtol)
+    assert_allclose(A, L @ U, atol=atol)
 
     b_cpy = b.copy()
     x_gttrs, info = gttrs(_dl, _d, _du, du2, ipiv, b)
@@ -1736,43 +1735,80 @@ def test_gttrf_gttrs(dtype):
     du[0] = 0
     d[0] = 0
     __dl, __d, __du, _du2, _ipiv, _info = gttrf(dl, d, du)
-    np.testing.assert_(_info != 0,
-                       "?gttrf: singular matrix ret info == 0")
+    print(_info)
+    np.testing.assert_(_info == n,
+                       "?gttrf: A is singular matrix, _info =/= {}.".format(n))
 
 
-def my_rand(shape, dtype):
+def generate_random_dtype_array(shape, dtype):
     # generates a random matrix of desired data type
-    x = np.random.rand(shape) + np.random.rand(shape)*1.0j
-    return x.astype(dtype)
+    if dtype in COMPLEX_DTYPES:
+        return (np.random.rand(shape)
+                + np.random.rand(shape)*1.0j).astype(dtype)
+    return np.random.rand(shape).astype(dtype)
 
 
-def test_gttrf_gttrs_NAG():
+@pytest.mark.parametrize("du,d,dl,du_exp,d_exp,du2_exp,ipiv_exp,b,x",
+                         [(np.array([2.1, -1.0, 1.9, 8.0]),
+                             np.array([3.0, 2.3, -5.0, -.9, 7.1]),
+                             np.array([3.4, 3.6, 7.0, -6.0]),
+                             np.array([2.3, -5, -.9, 7.1]),
+                             np.array([3.4, 3.6, 7, -6, -1.015373]),
+                             np.array([-1, 1.9, 8]),
+                             np.array([2, 3, 4, 5, 5]),
+                             np.array([[2.7, 6.6],
+                                       [-0.5, 10.8],
+                                       [2.6, -3.2],
+                                       [0.6, -11.2],
+                                       [2.7, 19.1]
+                                       ]),
+                             np.array([[-4, 5],
+                                       [7, -4],
+                                       [3, -3],
+                                       [-4, -2],
+                                       [-3, 1]])),
+                          (
+                             np.array([2 - 1j, 2 + 1j, -1 + 1j, 1 - 1j]),
+                             np.array([-1.3 + 1.3j, -1.3 + 1.3j,
+                                       -1.3 + 3.3j, - .3 + 4.3j,
+                                       -3.3 + 1.3j]),
+                             np.array([1 - 2j, 1 + 1j, 2 - 3j, 1 + 1j]),
+                             # du exp
+                             np.array([-1.3 + 1.3j, -1.3 + 3.3j,
+                                       -0.3 + 4.3j, -3.3 + 1.3j]),
+                             np.array([1 - 2j, 1 + 1j, 2 - 3j, 1 + 1j,
+                                       -1.3399 + 0.2875j]),
+                             np.array([2 + 1j, -1 + 1j, 1 - 1j]),
+                             np.array([2, 3, 4, 5, 5]),
+                             np.array([[2.4 - 5j, 2.7 + 6.9j],
+                                       [3.4 + 18.2j, - 6.9 - 5.3j],
+                                       [-14.7 + 9.7j, - 6 - .6j],
+                                       [31.9 - 7.7j, -3.9 + 9.3j],
+                                       [-1 + 1.6j, -3 + 12.2j]]),
+                             np.array([[1 + 1j, 2 - 1j],
+                                       [3 - 1j, 1 + 2j],
+                                       [4 + 5j, -1 + 1j],
+                                       [-1 - 2j, 2 + 1j],
+                                       [1 - 1j, 2 - 2j]])
+                            )])
+def test_gttrf_gttrs_NAG_f07cdf_f07cef_f07crf_f07csf(du, d, dl, du_exp, d_exp,
+                                                     du2_exp, ipiv_exp, b, x):
     # test to assure that wrapper is consistent with NAG manual
-    # example problems
-    du = np.array([2.1, -1.0, 1.9, 8.0])
-    d = np.array([3.0, 2.3, -5.0, -.9, 7.1])
-    dl = np.array([3.4, 3.6, 7.0, -6.0])
+    # example problems: f07cdf and f07cef (real)
+    # https://www.nag.com/numeric/fl/nagdoc_latest/html/f07/f07cdf.html#example
+    # https://www.nag.com/numeric/fl/nagdoc_latest/html/f07/f07cef.html#example
+    # examples: f07crf and f07csf (complex)
+    # https://www.nag.com/numeric/fl/nagdoc_latest/html/f07/f07csf.html
+    # https://www.nag.com/numeric/fl/nagdoc_latest/html/f07/f07crf.html
 
     gttrf, gttrs = get_lapack_funcs(('gttrf', "gttrs"), (du[0], du[0]))
 
     _dl, _d, _du, du2, ipiv, info = gttrf(dl, d, du)
-    assert_allclose(du2, np.array([-1.0000, 1.90000, 8.0000]))
-    assert_allclose(_du, np.array([2.3, -5, -.9, 7.1]))
-    assert_allclose(_d, np.array([3.4, 3.6, 7, -6, -1.0154]), rtol=.001)
-    assert_allclose(ipiv, np.array([2, 3, 4, 5, 5]))
-
-    b = np.array([[2.7, 6.6],
-                  [-0.5, 10.8],
-                  [2.6, -3.2],
-                  [0.6, -11.2],
-                  [2.7, 19.1]
-                  ])
+    assert_allclose(du2, du2_exp)
+    assert_allclose(_du, du_exp)
+    assert_allclose(_d, d_exp, rtol=1e-4)  # NAG examples provide 4 decimals.
+    assert_allclose(ipiv, ipiv_exp)
 
     x_gttrs, info = gttrs(_dl, _d, _du, du2, ipiv, b)
-    x = np.array([[-4.0000, 5.0000],
-                  [7.0000, -4.0000],
-                  [3.0000, -3.0000],
-                  [-4.0000, -2.0000],
-                  [-3.0000, 1.0000]
-                  ])
+
     assert_allclose(x_gttrs, x)
