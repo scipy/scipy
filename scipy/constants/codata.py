@@ -1718,9 +1718,11 @@ exact_values = {
 
 # sanity check
 for key in exact_values:
-    val = _current_constants[key][0]
+    val = physical_constants[key][0]
     if abs(exact_values[key][0] - val) / val > 1e-9:
         raise ValueError("Constants.codata: exact values too far off.")
+    if exact_values[key][2] == 0 and physical_constants[key][2] != 0:
+        raise ValueError("Constants.codata: value not exact")
 
 physical_constants.update(exact_values)
 
