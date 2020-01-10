@@ -11,8 +11,6 @@ import pytest
 from numpy import mgrid, pi, sin, ogrid, poly1d, linspace
 import numpy as np
 
-from scipy._lib.six import xrange
-
 from scipy.interpolate import (interp1d, interp2d, lagrange, PPoly, BPoly,
          splrep, splev, splantider, splint, sproot, Akima1DInterpolator,
          RegularGridInterpolator, LinearNDInterpolator, NearestNDInterpolator,
@@ -2215,7 +2213,7 @@ def _ppoly_eval_2(coeffs, breaks, xnew, fill=np.nan):
     pp = coeffs
     diff = xx - breaks.take(indxs)
     V = np.vander(diff, N=K)
-    values = np.array([np.dot(V[k, :], pp[:, indxs[k]]) for k in xrange(len(xx))])
+    values = np.array([np.dot(V[k, :], pp[:, indxs[k]]) for k in range(len(xx))])
     res[mask] = values
     res.shape = saveshape
     return res

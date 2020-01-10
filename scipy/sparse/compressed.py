@@ -7,7 +7,7 @@ from warnings import warn
 import operator
 
 import numpy as np
-from scipy._lib.six import zip as izip, xrange
+from scipy._lib.six import zip as izip
 from scipy._lib._util import _prune_array
 
 from .base import spmatrix, isspmatrix, SparseEfficiencyWarning
@@ -706,7 +706,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
 
         M, N = self._swap(self.shape)
         start, stop, step = idx.indices(M)
-        M = len(xrange(start, stop, step))
+        M = len(range(start, stop, step))
         new_shape = self._swap((M, N))
         if M == 0:
             return self.__class__(new_shape)
@@ -766,7 +766,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
 
         M, N = self._swap(self.shape)
         start, stop, step = idx.indices(N)
-        N = len(xrange(start, stop, step))
+        N = len(range(start, stop, step))
         if N == 0:
             return self.__class__(self._swap((M, N)))
         if step == 1:

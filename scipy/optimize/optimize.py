@@ -30,7 +30,7 @@ __docformat__ = "restructuredtext en"
 import warnings
 import sys
 import numpy
-from scipy._lib.six import callable, xrange
+from scipy._lib.six import callable
 from numpy import (atleast_1d, eye, mgrid, argmin, zeros, shape, squeeze,
                    asarray, sqrt, Inf, asfarray, isinf)
 import numpy as np
@@ -1610,7 +1610,7 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
             A = fhess(*(xk,) + args)
             hcalls = hcalls + 1
 
-        for k2 in xrange(cg_maxiter):
+        for k2 in range(cg_maxiter):
             if numpy.add.reduce(numpy.abs(ri)) <= termcond:
                 break
             if fhess is None:
@@ -2289,7 +2289,7 @@ def _minimize_scalar_golden(func, brack=None, args=(),
     f2 = func(*((x2,) + args))
     funcalls += 2
     nit = 0
-    for i in xrange(maxiter):
+    for i in range(maxiter):
         if numpy.abs(x3 - x0) <= tol * (numpy.abs(x1) + numpy.abs(x2)):
             break
         if (f2 < f1):

@@ -26,7 +26,7 @@ import platform
 from distutils.version import LooseVersion
 
 import numpy as np
-from scipy._lib.six import xrange, zip as izip
+from scipy._lib.six import zip as izip
 from numpy import (arange, zeros, array, dot, asarray,
                    vstack, ndarray, transpose, diag, kron, inf, conjugate,
                    int8, ComplexWarning)
@@ -1665,8 +1665,8 @@ class _TestCommon(object):
         frac = .3
         random.seed(0)  # make runs repeatable
         A = zeros((L,2))
-        for i in xrange(L):
-            for j in xrange(2):
+        for i in range(L):
+            for j in range(2):
                 r = random.random()
                 if r < frac:
                     A[i,j] = r/frac
@@ -2570,11 +2570,11 @@ class _TestSlicingAssign(object):
                     B[a,b] = 10*i + 1000*(j+1)
                     assert_array_equal(A.todense(), B, repr((a, b)))
 
-            A[0, 1:10:2] = xrange(1,10,2)
-            B[0, 1:10:2] = xrange(1,10,2)
+            A[0, 1:10:2] = range(1, 10, 2)
+            B[0, 1:10:2] = range(1, 10, 2)
             assert_array_equal(A.todense(), B)
-            A[1:5:2,0] = np.array(range(1,5,2))[:,None]
-            B[1:5:2,0] = np.array(range(1,5,2))[:,None]
+            A[1:5:2,0] = np.array(range(1, 5, 2))[:,None]
+            B[1:5:2,0] = np.array(range(1, 5, 2))[:,None]
             assert_array_equal(A.todense(), B)
 
         # The next commands should raise exceptions

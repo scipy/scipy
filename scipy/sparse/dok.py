@@ -9,7 +9,7 @@ __all__ = ['dok_matrix', 'isspmatrix_dok']
 import itertools
 import numpy as np
 
-from scipy._lib.six import zip as izip, xrange, iteritems, iterkeys, itervalues
+from scipy._lib.six import zip as izip, iteritems, iterkeys, itervalues
 
 from .base import spmatrix, isspmatrix
 from ._index import IndexMixin
@@ -169,8 +169,8 @@ class dok_matrix(spmatrix, IndexMixin, dict):
     def _get_sliceXslice(self, row, col):
         row_start, row_stop, row_step = row.indices(self.shape[0])
         col_start, col_stop, col_step = col.indices(self.shape[1])
-        row_range = xrange(row_start, row_stop, row_step)
-        col_range = xrange(col_start, col_stop, col_step)
+        row_range = range(row_start, row_stop, row_step)
+        col_range = range(col_start, col_stop, col_step)
         shape = (len(row_range), len(col_range))
         # Switch paths only when advantageous
         # (count the iterations in the loops, adjust for complexity)
@@ -220,7 +220,7 @@ class dok_matrix(spmatrix, IndexMixin, dict):
         i, j = map(np.atleast_2d, np.broadcast_arrays(row, col))
         newdok = dok_matrix(i.shape, dtype=self.dtype)
 
-        for key in itertools.product(xrange(i.shape[0]), xrange(i.shape[1])):
+        for key in itertools.product(range(i.shape[0]), range(i.shape[1])):
             v = dict.get(self, (i[key], j[key]), 0)
             if v:
                 dict.__setitem__(newdok, key, v)
@@ -251,7 +251,7 @@ class dok_matrix(spmatrix, IndexMixin, dict):
             new = dok_matrix(self.shape, dtype=res_dtype)
             # Add this scalar to every element.
             M, N = self.shape
-            for key in itertools.product(xrange(M), xrange(N)):
+            for key in itertools.product(range(M), range(N)):
                 aij = dict.get(self, (key), 0) + other
                 if aij:
                     new[key] = aij
@@ -280,7 +280,7 @@ class dok_matrix(spmatrix, IndexMixin, dict):
         if isscalarlike(other):
             new = dok_matrix(self.shape, dtype=self.dtype)
             M, N = self.shape
-            for key in itertools.product(xrange(M), xrange(N)):
+            for key in itertools.product(range(M), range(N)):
                 aij = dict.get(self, (key), 0) + other
                 if aij:
                     new[key] = aij
