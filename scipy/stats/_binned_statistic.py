@@ -1,5 +1,6 @@
 from __future__ import division, print_function, absolute_import
 
+import builtins
 import numpy as np
 from numpy.testing import suppress_warnings
 from scipy._lib.six import callable
@@ -511,7 +512,6 @@ def binned_statistic_dd(sample, values, statistic='mean',
     ...                                  binned_statistic_result=ret,
     ...                                  statistic='mean')
     """
-    import builtins
     known_stats = ['mean', 'median', 'count', 'sum', 'std', 'min', 'max']
     if not callable(statistic) and statistic not in known_stats:
         raise ValueError('invalid statistic %r' % (statistic,))
@@ -638,7 +638,6 @@ def binned_statistic_dd(sample, values, statistic='mean',
 def _bin_edges(sample, bins=None, range=None):
     """ Create edge arrays
     """
-    import builtins
     Dlen, Ndim = sample.shape
 
     nbin = np.empty(Ndim, int)    # Number of bins in each dimension
