@@ -1837,6 +1837,10 @@ class TestFactorialFunctions(object):
         result = special.factorial(x, exact=False)
         assert_equal(np.array([np.nan, 1, 2, 6, np.nan]), result)
 
+    def test_non_integral_inputs(self):
+        assert_raises(ValueError, special.factorial, 1.3, True)
+        assert_raises(ValueError, special.factorial, 1.1, False)
+
 
 class TestFresnel(object):
     def test_fresnel(self):
