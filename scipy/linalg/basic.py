@@ -1747,7 +1747,6 @@ def matmul_toeplitz(c_or_cr, b, check_finite=False):
     array([[-20, -80], [ -7,  -8], [  9,  85], [ 33, 218]])
 
     The full matrix is never formed, so dimensions aren't an issue.
-    This takes 2.15 seconds on a laptop:
 
     >>> n = 1000000
     >>> matmul_toeplitz([1] + [0]*(n-1), np.ones(n))
