@@ -76,7 +76,7 @@ class CheckOptimize(object):
         log_pdot = np.dot(self.F, x)
         logZ = np.log(sum(np.exp(log_pdot)))
         f = logZ - np.dot(self.K, x)
-        self.trace.append(x)
+        self.trace.append(np.copy(x))
         return f
 
     def grad(self, x):
@@ -399,7 +399,7 @@ class CheckOptimizeParameterized(CheckOptimize):
 
         # Ensure that function call counts are 'known good'; these are from
         # SciPy 0.7.0. Don't allow them to increase.
-        assert_(self.funccalls == 7, self.funccalls)
+        assert_(self.funccalls <= 7, self.funccalls)   # gh10673
         assert_(self.gradcalls <= 18, self.gradcalls)  # 0.9.0
         # assert_(self.gradcalls == 18, self.gradcalls) # 0.8.0
         # assert_(self.gradcalls == 22, self.gradcalls) # 0.7.0
@@ -433,7 +433,7 @@ class CheckOptimizeParameterized(CheckOptimize):
 
         # Ensure that function call counts are 'known good'; these are from
         # SciPy 0.7.0. Don't allow them to increase.
-        assert_(self.funccalls == 7, self.funccalls)
+        assert_(self.funccalls <= 7, self.funccalls)   # gh10673
         assert_(self.gradcalls <= 18, self.gradcalls)  # 0.9.0
         # assert_(self.gradcalls == 18, self.gradcalls) # 0.8.0
         # assert_(self.gradcalls == 22, self.gradcalls) # 0.7.0
@@ -450,8 +450,7 @@ def test_obj_func_returns_scalar():
              "objective function must "
              "return a scalar value.")
     with assert_raises(ValueError, match=match):
-        optimize.minimize(lambda x: x, np.array([1, 1]))
-
+        optimize.minimize(lambda x: x, np.array([1, 1]), method='BFGS')
 
 def test_neldermead_xatol_fatol():
     # gh4484
@@ -542,6 +541,15 @@ class TestOptimizeSimple(CheckOptimize):
         assert_allclose(self.func(params), self.func(self.solution),
                         atol=1e-6)
 
+    def test_finite_differences(self):
+        methods = ['BFGS', 'CG', 'TNC']
+        jacs = ['2-point', '3-point', None]
+        for method, jac in itertools.product(methods, jacs):
+            result = optimize.minimize(self.func, self.startparams,
+                                       method=method, jac=jac)
+            assert_allclose(self.func(result.x), self.func(self.solution),
+                            atol=1e-6)
+
     def test_bfgs_gh_2169(self):
         def f(x):
             if x < 0:
@@ -579,8 +587,9 @@ class TestOptimizeSimple(CheckOptimize):
         assert_(self.gradcalls == 5, self.gradcalls)
 
         # Ensure that the function behaves the same; this is from SciPy 0.7.0
+        # test fixed in gh10673
         assert_allclose(self.trace[3:5],
-                        [[0., -0.52489628, 0.48753042],
+                        [[8.117083e-16, -5.196198e-01, 4.897617e-01],
                          [0., -0.52489628, 0.48753042]],
                         atol=1e-14, rtol=1e-7)
 
@@ -642,13 +651,25 @@ class TestOptimizeSimple(CheckOptimize):
                               options=opts)
         assert_allclose(self.func(r.x), self.func(self.solution),
                         atol=1e-6)
-        # approximate Jacobian
+        assert self.gradcalls == r.njev
+
+        self.funccalls = self.gradcalls = 0
+        # approximate jacobian
         ra = optimize.minimize(self.func, self.startparams,
                                method='L-BFGS-B', options=opts)
+        # check that function evaluations in approximate jacobian are counted
+        # assert_(ra.nfev > r.nfev)
+        assert self.funccalls == ra.nfev
         assert_allclose(self.func(ra.x), self.func(self.solution),
                         atol=1e-6)
-        # check that function evaluations in approximate Jacobian are counted
-        assert_(ra.nfev > r.nfev)
+
+        self.funccalls = self.gradcalls = 0
+        # approximate jacobian
+        ra = optimize.minimize(self.func, self.startparams, jac='3-point',
+                               method='L-BFGS-B', options=opts)
+        assert self.funccalls == ra.nfev
+        assert_allclose(self.func(ra.x), self.func(self.solution),
+                        atol=1e-6)
 
     def test_minimize_l_bfgs_b_ftol(self):
         # Check that the `ftol` parameter in l_bfgs_b works as expected
@@ -1110,6 +1131,21 @@ class TestLBFGSBBounds(object):
                                 jac=self.jac, bounds=self.bounds)
         assert_(res['success'], res['message'])
         assert_allclose(res.x, self.solution, atol=1e-6)
+
+    def test_minimize_l_bfgs_b_bounds_FD(self):
+        # test that initial starting value outside bounds doesn't raise
+        # an error (done with clipping).
+        # test all different finite differences combos, with and without args
+
+        jacs = ['2-point', '3-point', None]
+        argss = [(2.,), ()]
+        for jac, args in itertools.product(jacs, argss):
+            res = optimize.minimize(self.fun, [0, -1], args=args,
+                                    method='L-BFGS-B',
+                                    jac=jac, bounds=self.bounds,
+                                    options={'finite_diff_rel_step': None})
+            assert_(res['success'], res['message'])
+            assert_allclose(res.x, self.solution, atol=1e-6)
 
 
 class TestOptimizeScalar(object):
