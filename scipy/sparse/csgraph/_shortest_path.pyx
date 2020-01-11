@@ -176,7 +176,7 @@ def shortest_path(csgraph, method='auto',
             Nk = edges.size
 
         if indices is not None or Nk < N * N / 4:
-            if (np.any(edges < 0)):
+            if np.any(edges < 0):
                 method = 'J'
             else:
                 method = 'D'
