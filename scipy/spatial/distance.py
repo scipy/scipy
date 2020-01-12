@@ -115,7 +115,6 @@ import numpy as np
 
 from functools import partial
 from collections import namedtuple
-from scipy._lib.six import callable
 from scipy._lib._util import _asarray_validated
 
 from . import _distance_wrap
