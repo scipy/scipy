@@ -561,7 +561,7 @@ class netcdf_file(object):
         if hasattr(values, 'dtype'):
             nc_type = REVERSE[values.dtype.char, values.dtype.itemsize]
         else:
-            types = [(int, NC_INT)], (float, NC_FLOAT), (str, NC_CHAR)]
+            types = [(int, NC_INT), (float, NC_FLOAT), (str, NC_CHAR)]
 
             # bytes index into scalars in py3k. Check for "string" types
             if isinstance(values, text_type) or isinstance(values, binary_type):
