@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 #
 # Author: Pearu Peterson, March 2002
 #
