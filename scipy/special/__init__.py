@@ -600,7 +600,6 @@ Other special functions
    spence        -- Spence's function, also known as the dilogarithm.
    zeta          -- Riemann zeta function.
    zetac         -- Riemann zeta function minus 1.
-   wright_bessel -- Wright's generalized Bessel function.
 
 Convenience functions
 ---------------------
@@ -656,7 +655,6 @@ from ._spherical_bessel import (
     spherical_in,
     spherical_kn
 )
-from .wright_bessel import wright_bessel
 
 __all__ = _ufuncs.__all__ + _basic.__all__ + orthogonal.__all__ + [
     'SpecialFunctionWarning',
@@ -673,7 +671,6 @@ __all__ = _ufuncs.__all__ + _basic.__all__ + orthogonal.__all__ + [
     'spherical_yn',
     'spherical_in',
     'spherical_kn',
-    'wright_bessel',
 ]
 
 from scipy._lib._testutils import PytestTester
