@@ -38,8 +38,6 @@ from numpy.testing import assert_allclose, assert_equal, assert_, assert_warns
 import pytest
 from pytest import raises as assert_raises
 
-from scipy._lib.six import u
-
 import scipy.cluster.hierarchy
 from scipy.cluster.hierarchy import (
     ClusterWarning, linkage, from_mlab_linkage, to_mlab_linkage,
@@ -82,7 +80,7 @@ class TestLinkage(object):
         assert_raises(ValueError, linkage, y)
 
     def test_linkage_tdist(self):
-        for method in ['single', 'complete', 'average', 'weighted', u('single')]:
+        for method in ['single', 'complete', 'average', 'weighted']:
             self.check_linkage_tdist(method)
 
     def check_linkage_tdist(self, method):

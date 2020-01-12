@@ -37,7 +37,6 @@ from __future__ import division, print_function, absolute_import
 import os.path
 
 from functools import wraps, partial
-from scipy._lib.six import u
 
 import numpy as np
 import warnings
@@ -440,8 +439,8 @@ class TestCdist(object):
         eps = 1e-07
         X1 = eo['cdist-X1']
         X2 = eo['cdist-X2']
-        Y1 = wcdist_no_const(X1, X2, u('euclidean'))
-        Y2 = wcdist_no_const(X1, X2, u('test_euclidean'))
+        Y1 = wcdist_no_const(X1, X2, 'euclidean')
+        Y2 = wcdist_no_const(X1, X2, 'test_euclidean')
         _assert_within_tol(Y1, Y2, eps, verbose > 2)
 
     def test_cdist_minkowski_random_p3d8(self):
@@ -710,7 +709,7 @@ class TestPdist(object):
         eps = 1e-07
         X = eo['pdist-double-inp']
         Y_right = eo['pdist-euclidean']
-        Y_test1 = wpdist_no_const(X, u('euclidean'))
+        Y_test1 = wpdist_no_const(X, 'euclidean')
         _assert_within_tol(Y_test1, Y_right, eps)
 
     def test_pdist_euclidean_random_float32(self):
