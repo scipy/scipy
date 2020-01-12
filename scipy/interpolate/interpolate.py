@@ -15,7 +15,6 @@ from numpy import (array, transpose, searchsorted, atleast_1d, atleast_2d,
 import scipy.special as spec
 from scipy.special import comb
 
-from scipy._lib.six import integer_types
 from . import fitpack
 from . import dfitpack
 from . import _fitpack
@@ -1719,7 +1718,7 @@ class BPoly(_PPolyBase):
         if orders is None:
             orders = [None] * m
         else:
-            if isinstance(orders, (integer_types, np.integer)):
+            if isinstance(orders, (int, np.integer)):
                 orders = [orders] * m
             k = max(k, max(orders))
 
