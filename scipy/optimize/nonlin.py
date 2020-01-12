@@ -111,7 +111,6 @@ from __future__ import division, print_function, absolute_import
 
 import sys
 import numpy as np
-from scipy._lib.six import exec_
 from scipy.linalg import norm, solve, inv, qr, svd, LinAlgError
 from numpy import asarray, dot, vdot
 import scipy.sparse.linalg
@@ -1562,7 +1561,7 @@ def %(name)s(F, xin, iter=None %(kw)s, verbose=False, maxiter=None,
                              kwkw=kwkw_str)
     ns = {}
     ns.update(globals())
-    exec_(wrapper, ns)
+    exec(wrapper, ns)
     func = ns[name]
     func.__doc__ = jac.__doc__
     _set_doc(func)

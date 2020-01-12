@@ -4,7 +4,7 @@
 #
 from __future__ import division, print_function, absolute_import
 
-from scipy._lib.six import exec_, PY2
+from scipy._lib.six import PY2
 from scipy._lib._util import getargspec_no_self as _getargspec
 
 import sys
@@ -687,7 +687,7 @@ class rv_generic(object):
                    locscale_out=locscale_out,
                    )
         ns = {}
-        exec_(parse_arg_template % dct, ns)
+        exec(parse_arg_template % dct, ns)
         # NB: attach to the instance, not class
         for name in ['_parse_args', '_parse_args_stats', '_parse_args_rvs']:
             setattr(self, name,
