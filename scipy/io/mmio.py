@@ -19,7 +19,6 @@ from numpy import (asarray, real, imag, conj, zeros, ndarray, concatenate,
                    ones, can_cast)
 from numpy.compat import asbytes, asstr
 
-from scipy._lib.six import string_types
 from scipy.sparse import coo_matrix, isspmatrix
 
 __all__ = ['mminfo', 'mmread', 'mmwrite', 'MMFile']
@@ -292,7 +291,7 @@ class MMFile (object):
             false otherwise.
         """
         close_it = False
-        if isinstance(filespec, string_types):
+        if isinstance(filespec, str):
             close_it = True
 
             # open for reading

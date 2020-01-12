@@ -115,7 +115,7 @@ import numpy as np
 
 from functools import partial
 from collections import namedtuple
-from scipy._lib.six import callable, string_types
+from scipy._lib.six import callable
 from scipy._lib._util import _asarray_validated
 
 from . import _distance_wrap
@@ -2046,7 +2046,7 @@ def pdist(X, metric='euclidean', *args, **kwargs):
                 dm[k] = metric(X[i], X[j], **kwargs)
                 k = k + 1
 
-    elif isinstance(metric, string_types):
+    elif isinstance(metric, str):
         mstr = metric.lower()
 
         mstr, kwargs = _select_weighted_metric(mstr, kwargs, out)
@@ -2762,7 +2762,7 @@ def cdist(XA, XB, metric='euclidean', *args, **kwargs):
             for j in range(0, mB):
                 dm[i, j] = metric(XA[i], XB[j], **kwargs)
 
-    elif isinstance(metric, string_types):
+    elif isinstance(metric, str):
         mstr = metric.lower()
 
         mstr, kwargs = _select_weighted_metric(mstr, kwargs, out)

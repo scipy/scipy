@@ -23,7 +23,7 @@ from __future__ import division, print_function, absolute_import
 import warnings
 
 # SciPy imports.
-from scipy._lib.six import callable, string_types
+from scipy._lib.six import callable
 from scipy import linalg, special
 from scipy.special import logsumexp
 from scipy._lib._util import check_random_state
@@ -550,7 +550,7 @@ class gaussian_kde(object):
             self.covariance_factor = self.scotts_factor
         elif bw_method == 'silverman':
             self.covariance_factor = self.silverman_factor
-        elif np.isscalar(bw_method) and not isinstance(bw_method, string_types):
+        elif np.isscalar(bw_method) and not isinstance(bw_method, str):
             self._bw_method = 'use constant'
             self.covariance_factor = lambda: bw_method
         elif callable(bw_method):

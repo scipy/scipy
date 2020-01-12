@@ -9,7 +9,6 @@ import numpy as np
 from scipy.optimize import OptimizeResult, minimize
 from scipy.optimize.optimize import _status_message
 from scipy._lib._util import check_random_state, MapWrapper
-from scipy._lib.six import string_types
 
 from scipy.optimize._constraints import (Bounds, new_bounds_to_old,
                                          NonlinearConstraint, LinearConstraint)
@@ -567,7 +566,7 @@ class DifferentialEvolutionSolver(object):
                                  self.parameter_count)
 
         self._nfev = 0
-        if isinstance(init, string_types):
+        if isinstance(init, str):
             if init == 'latinhypercube':
                 self.init_population_lhs()
             elif init == 'random':

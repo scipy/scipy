@@ -13,7 +13,7 @@ from glob import glob
 from io import BytesIO
 from tempfile import mkdtemp
 
-from scipy._lib.six import u, text_type, string_types
+from scipy._lib.six import u, text_type
 
 import warnings
 import shutil
@@ -1015,7 +1015,7 @@ def test_scalar_squeeze():
     savemat(stream, in_d)
     out_d = loadmat(stream, squeeze_me=True)
     assert_(isinstance(out_d['scalar'], float))
-    assert_(isinstance(out_d['string'], string_types))
+    assert_(isinstance(out_d['string'], str))
     assert_(isinstance(out_d['st'], np.ndarray))
 
 

@@ -130,7 +130,6 @@ import numpy as np
 from . import _hierarchy, _optimal_leaf_ordering
 import scipy.spatial.distance as distance
 
-from scipy._lib.six import string_types
 
 _LINKAGE_METHODS = {'single': 0, 'complete': 1, 'average': 2, 'centroid': 3,
                     'median': 4, 'ward': 5, 'weighted': 6}
@@ -2996,7 +2995,7 @@ def set_link_color_palette(palette):
         palette = ['g', 'r', 'c', 'm', 'y', 'k']
     elif type(palette) not in (list, tuple):
         raise TypeError("palette must be a list or tuple")
-    _ptypes = [isinstance(p, string_types) for p in palette]
+    _ptypes = [isinstance(p, str) for p in palette]
 
     if False in _ptypes:
         raise TypeError("all palette list elements must be color strings")
@@ -3310,7 +3309,7 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
     currently_below_threshold = [False]
     ivl = []  # list of leaves
 
-    if color_threshold is None or (isinstance(color_threshold, string_types) and
+    if color_threshold is None or (isinstance(color_threshold, str) and
                                    color_threshold == 'default'):
         color_threshold = max(Z[:, 2]) * 0.7
 
@@ -3637,7 +3636,7 @@ def _dendrogram_calculate_info(Z, p, truncate_mode,
     dcoord_list.append([uah, h, h, ubh])
     if link_color_func is not None:
         v = link_color_func(int(i))
-        if not isinstance(v, string_types):
+        if not isinstance(v, str):
             raise TypeError("link_color_func must return a matplotlib "
                             "color string!")
         color_list.append(v)
