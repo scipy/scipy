@@ -1,0 +1,13 @@
+diff --git a/scipy/_lib/_uarray/__init__.py b/scipy/_lib/_uarray/__init__.py
+index b455bb8ad..b84928a24 100644
+--- a/scipy/_lib/_uarray/__init__.py
++++ b/scipy/_lib/_uarray/__init__.py
+@@ -112,7 +112,5 @@ possible.
+ """
+
+ from ._backend import *
+-from ._version import get_versions  # type: ignore
+
+-__version__ = get_versions()["version"]
+-del get_versions
++__version__ = '0.5.1+49.g4c3f1d7.scipy'

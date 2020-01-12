@@ -27,8 +27,6 @@ from scipy.sparse import csc_matrix
 from scipy.io.harwell_boeing._fortran_format_parser import \
         FortranFormatParser, IntFormat, ExpFormat
 
-from scipy._lib.six import string_types
-
 __all__ = ["MalformedHeader", "hb_read", "hb_write", "HBInfo", "HBFile",
            "HBMatrixType"]
 
@@ -69,6 +67,8 @@ class HBInfo(object):
         -------
         hb_info : HBInfo instance
         """
+        m = m.tocsc(copy=False)
+
         pointer = m.indptr
         indices = m.indices
         values = m.data
@@ -333,6 +333,8 @@ def _read_hb_data(content, header):
 
 
 def _write_data(m, fid, header):
+    m = m.tocsc(copy=False)
+
     def write_array(f, ar, nlines, fmt):
         # ar_nlines is the number of full lines, n is the number of items per
         # line, ffmt the fortran format
@@ -350,7 +352,7 @@ def _write_data(m, fid, header):
 
     fid.write(header.dump())
     fid.write("\n")
-    # +1 is for fortran one-based indexing
+    # +1 is for Fortran one-based indexing
     write_array(fid, m.indptr+1, header.pointer_nlines,
                 header.pointer_format)
     write_array(fid, m.indices+1, header.indices_nlines,
@@ -361,7 +363,7 @@ def _write_data(m, fid, header):
 
 class HBMatrixType(object):
     """Class to hold the matrix type."""
-    # q2f* translates qualified names to fortran character
+    # q2f* translates qualified names to Fortran character
     _q2f_type = {
         "real": "R",
         "complex": "C",
@@ -473,7 +475,7 @@ def hb_read(path_or_open_file):
     Parameters
     ----------
     path_or_open_file : path-like or file-like
-        If a file-like object, it is used as-is. Otherwise it is opened
+        If a file-like object, it is used as-is. Otherwise, it is opened
         before reading.
 
     Returns
@@ -508,7 +510,7 @@ def hb_write(path_or_open_file, m, hb_info=None):
     Parameters
     ----------
     path_or_open_file : path-like or file-like
-        If a file-like object, it is used as-is. Otherwise it is opened
+        If a file-like object, it is used as-is. Otherwise, it is opened
         before writing.
     m : sparse-matrix
         the sparse matrix to write
@@ -529,6 +531,8 @@ def hb_write(path_or_open_file, m, hb_info=None):
         - exponential format for float values, and int format
 
     """
+    m = m.tocsc(copy=False)
+
     if hb_info is None:
         hb_info = HBInfo.from_data(m)
 

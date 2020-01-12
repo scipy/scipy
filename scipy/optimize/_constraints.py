@@ -4,7 +4,10 @@ import numpy as np
 from ._hessian_update_strategy import BFGS
 from ._differentiable_functions import (
     VectorFunction, LinearVectorFunction, IdentityVectorFunction)
-
+from .optimize import OptimizeWarning
+from warnings import warn
+from numpy.testing import suppress_warnings
+from scipy.sparse import issparse
 
 class NonlinearConstraint(object):
     """Nonlinear constraint on the variables.
@@ -84,6 +87,15 @@ class NonlinearConstraint(object):
     to correctly handles complex inputs and be analytically continuable to the
     complex plane. The scheme '3-point' is more accurate than '2-point' but
     requires twice as many operations.
+
+    Examples
+    --------
+    Constrain ``x[0] < sin(x[1]) + 1.9``
+
+    >>> from scipy.optimize import NonlinearConstraint
+    >>> con = lambda x: x[0] - np.sin(x[1])
+    >>> nlc = NonlinearConstraint(con, -np.inf, 1.9)
+
     """
     def __init__(self, fun, lb, ub, jac='2-point', hess=BFGS(),
                  keep_feasible=False, finite_diff_rel_step=None,
@@ -166,6 +178,12 @@ class Bounds(object):
         self.ub = ub
         self.keep_feasible = keep_feasible
 
+    def __repr__(self):
+        if np.any(self.keep_feasible):
+            return "{}({!r}, {!r}, keep_feasible={!r})".format(type(self).__name__, self.lb, self.ub, self.keep_feasible)
+        else:
+            return "{}({!r}, {!r})".format(type(self).__name__, self.lb, self.ub)
+
 
 class PreparedConstraint(object):
     """Constraint prepared from a user defined constraint.
@@ -241,13 +259,38 @@ class PreparedConstraint(object):
         self.bounds = (lb, ub)
         self.keep_feasible = keep_feasible
 
+    def violation(self, x):
+        """How much the constraint is exceeded by.
+
+        Parameters
+        ----------
+        x : array-like
+            Vector of independent variables
+
+        Returns
+        -------
+        excess : array-like
+            How much the constraint is exceeded by, for each of the
+            constraints specified by `PreparedConstraint.fun`.
+        """
+        with suppress_warnings() as sup:
+            sup.filter(UserWarning)
+            ev = self.fun.fun(np.asarray(x))
+
+        excess_lb = np.maximum(self.bounds[0] - ev, 0)
+        excess_ub = np.maximum(ev - self.bounds[1], 0)
+
+        return excess_lb + excess_ub
+
 
 def new_bounds_to_old(lb, ub, n):
     """Convert the new bounds representation to the old one.
 
     The new representation is a tuple (lb, ub) and the old one is a list
-    containing n tuples, i-th containing lower and upper bound on a i-th
+    containing n tuples, ith containing lower and upper bound on a ith
     variable.
+    If any of the entries in lb/ub are -np.inf/np.inf they are replaced by
+    None.
     """
     lb = np.asarray(lb)
     ub = np.asarray(ub)
@@ -266,8 +309,10 @@ def old_bound_to_new(bounds):
     """Convert the old bounds representation to the new one.
 
     The new representation is a tuple (lb, ub) and the old one is a list
-    containing n tuples, i-th containing lower and upper bound on a i-th
+    containing n tuples, ith containing lower and upper bound on a ith
     variable.
+    If any of the entries in lb/ub are None they are replaced by
+    -np.inf/np.inf.
     """
     lb, ub = zip(*bounds)
     lb = np.array([x if x is not None else -np.inf for x in lb])
@@ -283,3 +328,136 @@ def strict_bounds(lb, ub, keep_feasible, n_vars):
     strict_lb[~keep_feasible] = -np.inf
     strict_ub[~keep_feasible] = np.inf
     return strict_lb, strict_ub
+
+
+def new_constraint_to_old(con, x0):
+    """
+    Converts new-style constraint objects to old-style constraint dictionaries.
+    """
+    if isinstance(con, NonlinearConstraint):
+        if (con.finite_diff_jac_sparsity is not None or
+                con.finite_diff_rel_step is not None or
+                not isinstance(con.hess, BFGS) or  # misses user specified BFGS
+                con.keep_feasible):
+            warn("Constraint options `finite_diff_jac_sparsity`, "
+                 "`finite_diff_rel_step`, `keep_feasible`, and `hess`"
+                 "are ignored by this method.", OptimizeWarning)
+
+        fun = con.fun
+        if callable(con.jac):
+            jac = con.jac
+        else:
+            jac = None
+
+    else:  # LinearConstraint
+        if con.keep_feasible:
+            warn("Constraint option `keep_feasible` is ignored by this "
+                 "method.", OptimizeWarning)
+
+        A = con.A
+        if issparse(A):
+            A = A.todense()
+        fun = lambda x: np.dot(A, x)
+        jac = lambda x: A
+
+    # FIXME: when bugs in VectorFunction/LinearVectorFunction are worked out,
+    # use pcon.fun.fun and pcon.fun.jac. Until then, get fun/jac above.
+    pcon = PreparedConstraint(con, x0)
+    lb, ub = pcon.bounds
+
+    i_eq = lb == ub
+    i_bound_below = np.logical_xor(lb != -np.inf, i_eq)
+    i_bound_above = np.logical_xor(ub != np.inf, i_eq)
+    i_unbounded = np.logical_and(lb == -np.inf, ub == np.inf)
+
+    if np.any(i_unbounded):
+        warn("At least one constraint is unbounded above and below. Such "
+             "constraints are ignored.", OptimizeWarning)
+
+    ceq = []
+    if np.any(i_eq):
+        def f_eq(x):
+            y = np.array(fun(x)).flatten()
+            return y[i_eq] - lb[i_eq]
+        ceq = [{"type": "eq", "fun": f_eq}]
+
+        if jac is not None:
+            def j_eq(x):
+                dy = jac(x)
+                if issparse(dy):
+                    dy = dy.todense()
+                dy = np.atleast_2d(dy)
+                return dy[i_eq, :]
+            ceq[0]["jac"] = j_eq
+
+    cineq = []
+    n_bound_below = np.sum(i_bound_below)
+    n_bound_above = np.sum(i_bound_above)
+    if n_bound_below + n_bound_above:
+        def f_ineq(x):
+            y = np.zeros(n_bound_below + n_bound_above)
+            y_all = np.array(fun(x)).flatten()
+            y[:n_bound_below] = y_all[i_bound_below] - lb[i_bound_below]
+            y[n_bound_below:] = -(y_all[i_bound_above] - ub[i_bound_above])
+            return y
+        cineq = [{"type": "ineq", "fun": f_ineq}]
+
+        if jac is not None:
+            def j_ineq(x):
+                dy = np.zeros((n_bound_below + n_bound_above, len(x0)))
+                dy_all = jac(x)
+                if issparse(dy_all):
+                    dy_all = dy_all.todense()
+                dy_all = np.atleast_2d(dy_all)
+                dy[:n_bound_below, :] = dy_all[i_bound_below]
+                dy[n_bound_below:, :] = -dy_all[i_bound_above]
+                return dy
+            cineq[0]["jac"] = j_ineq
+
+    old_constraints = ceq + cineq
+
+    if len(old_constraints) > 1:
+        warn("Equality and inequality constraints are specified in the same "
+             "element of the constraint list. For efficient use with this "
+             "method, equality and inequality constraints should be specified "
+             "in separate elements of the constraint list. ", OptimizeWarning)
+    return old_constraints
+
+
+def old_constraint_to_new(ic, con):
+    """
+    Converts old-style constraint dictionaries to new-style constraint objects.
+    """
+    # check type
+    try:
+        ctype = con['type'].lower()
+    except KeyError:
+        raise KeyError('Constraint %d has no type defined.' % ic)
+    except TypeError:
+        raise TypeError('Constraints must be a sequence of dictionaries.')
+    except AttributeError:
+        raise TypeError("Constraint's type must be a string.")
+    else:
+        if ctype not in ['eq', 'ineq']:
+            raise ValueError("Unknown constraint type '%s'." % con['type'])
+    if 'fun' not in con:
+        raise ValueError('Constraint %d has no function defined.' % ic)
+
+    lb = 0
+    if ctype == 'eq':
+        ub = 0
+    else:
+        ub = np.inf
+
+    jac = '2-point'
+    if 'args' in con:
+        args = con['args']
+        fun = lambda x: con['fun'](x, *args)
+        if 'jac' in con:
+            jac = lambda x: con['jac'](x, *args)
+    else:
+        fun = con['fun']
+        if 'jac' in con:
+            jac = con['jac']
+
+    return NonlinearConstraint(fun, lb, ub, jac)

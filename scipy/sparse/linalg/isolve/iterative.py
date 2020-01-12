@@ -10,7 +10,6 @@ import numpy as np
 from . import _iterative
 
 from scipy.sparse.linalg.interface import LinearOperator
-from scipy._lib.decorator import decorator
 from .utils import make_system
 from scipy._lib._util import _aligned_zeros
 from scipy._lib._threadsafety import non_reentrant
@@ -130,8 +129,9 @@ def set_docstring(header, Ainfo, footer='', atol_default='0'):
 
 @set_docstring('Use BIConjugate Gradient iteration to solve ``Ax = b``.',
                'The real or complex N-by-N matrix of the linear system.\n'
-               'It is required that the linear operator can produce\n'
-               '``Ax`` and ``A^T x``.')
+               'Alternatively, ``A`` can be a linear operator which can\n'
+               'produce ``Ax`` and ``A^T x`` using, e.g.,\n'
+               '``scipy.sparse.linalg.LinearOperator``.')
 @non_reentrant()
 def bicg(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None, atol=None):
     A,M,x,b,postprocess = make_system(A, M, x0, b)
@@ -200,7 +200,10 @@ def bicg(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None, atol=None
 
 @set_docstring('Use BIConjugate Gradient STABilized iteration to solve '
                '``Ax = b``.',
-               'The real or complex N-by-N matrix of the linear system.')
+               'The real or complex N-by-N matrix of the linear system.\n'
+               'Alternatively, ``A`` can be a linear operator which can\n'
+               'produce ``Ax`` using, e.g.,\n'
+               '``scipy.sparse.linalg.LinearOperator``.')
 @non_reentrant()
 def bicgstab(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None, atol=None):
     A, M, x, b, postprocess = make_system(A, M, x0, b)
@@ -264,7 +267,10 @@ def bicgstab(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None, atol=
 
 @set_docstring('Use Conjugate Gradient iteration to solve ``Ax = b``.',
                'The real or complex N-by-N matrix of the linear system.\n'
-               '``A`` must represent a hermitian, positive definite matrix.')
+               '``A`` must represent a hermitian, positive definite matrix.\n'
+               'Alternatively, ``A`` can be a linear operator which can\n'
+               'produce ``Ax`` using, e.g.,\n'
+               '``scipy.sparse.linalg.LinearOperator``.')
 @non_reentrant()
 def cg(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None, atol=None):
     A, M, x, b, postprocess = make_system(A, M, x0, b)
@@ -332,7 +338,10 @@ def cg(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None, atol=None):
 
 
 @set_docstring('Use Conjugate Gradient Squared iteration to solve ``Ax = b``.',
-               'The real-valued N-by-N matrix of the linear system.')
+               'The real-valued N-by-N matrix of the linear system.\n'
+               'Alternatively, ``A`` can be a linear operator which can\n'
+               'produce ``Ax`` using, e.g.,\n'
+               '``scipy.sparse.linalg.LinearOperator``.')
 @non_reentrant()
 def cgs(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None, atol=None):
     A, M, x, b, postprocess = make_system(A, M, x0, b)
@@ -407,7 +416,7 @@ def cgs(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None, atol=None)
 
 @non_reentrant()
 def gmres(A, b, x0=None, tol=1e-5, restart=None, maxiter=None, M=None, callback=None,
-          restrt=None, atol=None):
+          restrt=None, atol=None, callback_type=None):
     """
     Use Generalized Minimal RESidual iteration to solve ``Ax = b``.
 
@@ -415,6 +424,9 @@ def gmres(A, b, x0=None, tol=1e-5, restart=None, maxiter=None, M=None, callback=
     ----------
     A : {sparse matrix, dense matrix, LinearOperator}
         The real or complex N-by-N matrix of the linear system.
+        Alternatively, ``A`` can be a linear operator which can
+        produce ``Ax`` using, e.g.,
+        ``scipy.sparse.linalg.LinearOperator``.
     b : {array, matrix}
         Right hand side of the linear system. Has shape (N,) or (N,1).
 
@@ -457,7 +469,15 @@ def gmres(A, b, x0=None, tol=1e-5, restart=None, maxiter=None, M=None, callback=
         error tolerance.  By default, no preconditioner is used.
     callback : function
         User-supplied function to call after each iteration.  It is called
-        as callback(rk), where rk is the current residual vector.
+        as `callback(args)`, where `args` are selected by `callback_type`.
+    callback_type : {'x', 'pr_norm', 'legacy'}, optional
+        Callback function argument requested:
+          - ``x``: current iterate (ndarray), called on every restart
+          - ``pr_norm``: relative (preconditioned) residual norm (float),
+            called on every inner iteration
+          - ``legacy`` (default): same as ``pr_norm``, but also changes the
+            meaning of 'maxiter' to count inner iterations instead of restart
+            cycles.
     restrt : int, optional
         DEPRECATED - use `restart` instead.
 
@@ -496,6 +516,25 @@ def gmres(A, b, x0=None, tol=1e-5, restart=None, maxiter=None, M=None, callback=
     elif restart is not None:
         raise ValueError("Cannot specify both restart and restrt keywords. "
                          "Preferably use 'restart' only.")
+
+    if callback is not None and callback_type is None:
+        # Warn about 'callback_type' semantic changes.
+        # Probably should be removed only in far future, Scipy 2.0 or so.
+        warnings.warn("scipy.sparse.linalg.gmres called without specifying `callback_type`. "
+                      "The default value will be changed in a future release. "
+                      "For compatibility, specify a value for `callback_type` explicitly, e.g., "
+                      "``{name}(..., callback_type='pr_norm')``, or to retain the old behavior "
+                      "``{name}(..., callback_type='legacy')``",
+                      category=DeprecationWarning, stacklevel=3)
+
+    if callback_type is None:
+        callback_type = 'legacy'
+
+    if callback_type not in ('x', 'pr_norm', 'legacy'):
+        raise ValueError("Unknown callback_type: {!r}".format(callback_type))
+
+    if callback is None:
+        callback_type = 'none'
 
     A, M, x, b,postprocess = make_system(A, M, x0, b)
 
@@ -542,14 +581,19 @@ def gmres(A, b, x0=None, tol=1e-5, restart=None, maxiter=None, M=None, callback=
     resid_ready = False
     iter_num = 1
     while True:
+        olditer = iter_
         x, iter_, presid, info, ndx1, ndx2, sclr1, sclr2, ijob = \
            revcom(b, x, restrt, work, work2, iter_, presid, info, ndx1, ndx2, ijob, ptol)
+        if callback_type == 'x' and iter_ != olditer:
+            callback(x)
         slice1 = slice(ndx1-1, ndx1-1+n)
         slice2 = slice(ndx2-1, ndx2-1+n)
         if (ijob == -1):  # gmres success, update last residual
-            if resid_ready and callback is not None:
-                callback(presid / bnrm2)
-                resid_ready = False
+            if callback_type in ('pr_norm', 'legacy'):
+                if resid_ready:
+                    callback(presid / bnrm2)
+            elif callback_type == 'x':
+                callback(x)
             break
         elif (ijob == 1):
             work[slice2] *= sclr2
@@ -563,8 +607,9 @@ def gmres(A, b, x0=None, tol=1e-5, restart=None, maxiter=None, M=None, callback=
         elif (ijob == 3):
             work[slice2] *= sclr2
             work[slice2] += sclr1*matvec(work[slice1])
-            if resid_ready and callback is not None:
-                callback(presid / bnrm2)
+            if resid_ready:
+                if callback_type in ('pr_norm', 'legacy'):
+                    callback(presid / bnrm2)
                 resid_ready = False
                 iter_num = iter_num+1
 
@@ -589,9 +634,11 @@ def gmres(A, b, x0=None, tol=1e-5, restart=None, maxiter=None, M=None, callback=
         old_ijob = ijob
         ijob = 2
 
-        if iter_num > maxiter:
-            info = maxiter
-            break
+        if callback_type == 'legacy':
+            # Legacy behavior
+            if iter_num > maxiter:
+                info = maxiter
+                break
 
     if info >= 0 and not (resid <= atol):
         # info isn't set appropriately otherwise
@@ -609,8 +656,9 @@ def qmr(A, b, x0=None, tol=1e-5, maxiter=None, M1=None, M2=None, callback=None,
     ----------
     A : {sparse matrix, dense matrix, LinearOperator}
         The real-valued N-by-N matrix of the linear system.
-        It is required that the linear operator can produce
-        ``Ax`` and ``A^T x``.
+        Alternatively, ``A`` can be a linear operator which can
+        produce ``Ax`` and ``A^T x`` using, e.g.,
+        ``scipy.sparse.linalg.LinearOperator``.
     b : {array, matrix}
         Right hand side of the linear system. Has shape (N,) or (N,1).
 

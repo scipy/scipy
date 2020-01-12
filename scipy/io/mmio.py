@@ -16,11 +16,9 @@ import os
 import sys
 
 from numpy import (asarray, real, imag, conj, zeros, ndarray, concatenate,
-                   ones, ascontiguousarray, vstack, savetxt, fromfile,
-                   fromstring, can_cast)
+                   ones, can_cast)
 from numpy.compat import asbytes, asstr
 
-from scipy._lib.six import string_types
 from scipy.sparse import coo_matrix, isspmatrix
 
 __all__ = ['mminfo', 'mmread', 'mmwrite', 'MMFile']
@@ -87,7 +85,7 @@ def mmwrite(target, a, comment='', field=None, precision=None, symmetry=None):
     target : str or file-like
         Matrix Market filename (extension .mtx) or open file-like object.
     a : array like
-        Sparse or dense 2D array.
+        Sparse or dense 2-D array.
     comment : str, optional
         Comments to be prepended to the Matrix Market file.
     field : None or str, optional
@@ -247,6 +245,10 @@ class MMFile (object):
             while line.startswith(b'%'):
                 line = stream.readline()
 
+            # skip empty lines
+            while not line.strip():
+                line = stream.readline()
+
             line = line.split()
             if format == self.FORMAT_ARRAY:
                 if not len(line) == 2:
@@ -271,7 +273,7 @@ class MMFile (object):
         """ Return an open file stream for reading based on source.
 
         If source is a file name, open it (after trying to find it with mtx and
-        gzipped mtx extensions).  Otherwise, just return source.
+        gzipped mtx extensions). Otherwise, just return source.
 
         Parameters
         ----------
@@ -289,7 +291,7 @@ class MMFile (object):
             false otherwise.
         """
         close_it = False
-        if isinstance(filespec, string_types):
+        if isinstance(filespec, str):
             close_it = True
 
             # open for reading
@@ -432,7 +434,7 @@ class MMFile (object):
         target : str or file-like
             Matrix Market filename (extension .mtx) or open file-like object.
         a : array like
-            Sparse or dense 2D array.
+            Sparse or dense 2-D array.
         comment : str, optional
             Comments to be prepended to the Matrix Market file.
         field : None or str, optional
@@ -496,7 +498,7 @@ class MMFile (object):
         dtype = self.DTYPES_BY_FIELD.get(field, None)
 
         has_symmetry = self.has_symmetry
-        is_integer = field == self.FIELD_INTEGER 
+        is_integer = field == self.FIELD_INTEGER
         is_unsigned_integer = field == self.FIELD_UNSIGNED
         is_complex = field == self.FIELD_COMPLEX
         is_skew = symm == self.SYMMETRY_SKEW_SYMMETRIC
@@ -513,7 +515,7 @@ class MMFile (object):
                     i += 1
             while line:
                 line = stream.readline()
-                if not line or line.startswith(b'%'):
+                if not line or line.startswith(b'%') or not line.strip():
                     continue
                 if is_integer:
                     aij = int(line)
@@ -542,8 +544,8 @@ class MMFile (object):
                         if is_skew:
                             a[i, j] = 0
                             if i < rows-1:
-                                i += 1     
-                                
+                                i += 1
+
             if is_skew:
                 if not (i in [0, j] and j == cols - 1):
                     raise ValueError("Parse error, did not read all lines.")
@@ -558,7 +560,7 @@ class MMFile (object):
             k = 0
             while line:
                 line = stream.readline()
-                if not line or line.startswith(b'%'):
+                if not line or line.startswith(b'%') or not line.strip():
                     continue
                 l = line.split()
                 i, j = map(int, l[:2])
@@ -605,7 +607,7 @@ class MMFile (object):
 
             entry_number = 0
             for line in stream:
-                if not line or line.startswith(b'%'):
+                if not line or line.startswith(b'%') or not line.strip():
                     continue
 
                 if entry_number+1 > entries:
@@ -681,7 +683,7 @@ class MMFile (object):
         else:
             if not isspmatrix(a):
                 raise ValueError('unknown matrix type: %s' % type(a))
-            
+
             rep = 'coordinate'
             rows, cols = a.shape
 
@@ -735,12 +737,12 @@ class MMFile (object):
                     for j in range(cols):
                         for i in range(rows):
                             stream.write(asbytes(template % a[i, j]))
-                            
+
                 elif symmetry == self.SYMMETRY_SKEW_SYMMETRIC:
                     for j in range(cols):
                         for i in range(j + 1, rows):
                             stream.write(asbytes(template % a[i, j]))
-                            
+
                 else:
                     for j in range(cols):
                         for i in range(j, rows):
@@ -804,7 +806,7 @@ def _is_fromfile_compatible(stream):
     Check whether `stream` is compatible with numpy.fromfile.
 
     Passing a gzipped file object to ``fromfile/fromstring`` doesn't work with
-    Python3.
+    Python 3.
     """
     if sys.version_info[0] < 3:
         return True

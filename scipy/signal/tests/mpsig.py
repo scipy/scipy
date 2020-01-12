@@ -78,9 +78,7 @@ def _butter_analog_poles(n):
     scipy.signal.butter(n, 1, analog=True, output='zpk'), but mpmath is used,
     and only the poles are returned.
     """
-    poles = []
-    for k in range(-n+1, n, 2):
-        poles.append(-mpmath.exp(1j*mpmath.pi*k/(2*n)))
+    poles = [-mpmath.exp(1j*mpmath.pi*k/(2*n)) for k in range(-n+1, n, 2)]
     return poles
 
 
@@ -89,7 +87,7 @@ def butter_lp(n, Wn):
     Lowpass Butterworth digital filter design.
 
     This computes the same result as scipy.signal.butter(n, Wn, output='zpk'),
-    but it uses mpmath, and the results are returned in lists instead of numpy
+    but it uses mpmath, and the results are returned in lists instead of NumPy
     arrays.
     """
     zeros = []
@@ -108,7 +106,7 @@ def zpkfreqz(z, p, k, worN=None):
 
     This is the same calculation as scipy.signal.freqz, but the input is in
     zpk format, the calculation is performed using mpath, and the results are
-    returned in lists instead of numpy arrays.
+    returned in lists instead of NumPy arrays.
     """
     if worN is None or isinstance(worN, int):
         N = worN or 512

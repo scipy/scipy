@@ -4,7 +4,6 @@ import functools
 import operator
 
 import numpy as np
-from scipy._lib.six import string_types
 from scipy.linalg import (get_lapack_funcs, LinAlgError,
                           cholesky_banded, cho_solve_banded)
 from . import _bspl
@@ -158,7 +157,7 @@ class BSpline(object):
     1.375
 
     Note that outside of the base interval results differ. This is because
-    `BSpline` extrapolates the first and last polynomial pieces of b-spline
+    `BSpline` extrapolates the first and last polynomial pieces of B-spline
     functions active on the base interval.
 
     >>> import matplotlib.pyplot as plt
@@ -181,7 +180,7 @@ class BSpline(object):
     def __init__(self, t, c, k, extrapolate=True, axis=0):
         super(BSpline, self).__init__()
 
-        self.k = int(k)
+        self.k = operator.index(k)
         self.c = np.asarray(c)
         self.t = np.ascontiguousarray(t, dtype=np.float64)
 
@@ -206,8 +205,6 @@ class BSpline(object):
 
         if k < 0:
             raise ValueError("Spline order cannot be negative.")
-        if int(k) != k:
-            raise ValueError("Spline order must be integer.")
         if self.t.ndim != 1:
             raise ValueError("Knot vector must be one-dimensional.")
         if n < self.k + 1:
@@ -268,14 +265,14 @@ class BSpline(object):
 
         Notes
         -----
-        The order of the b-spline, `k`, is inferred from the length of `t` as
+        The order of the B-spline, `k`, is inferred from the length of `t` as
         ``len(t)-2``. The knot vector is constructed by appending and prepending
         ``k+1`` elements to internal knots `t`.
 
         Examples
         --------
 
-        Construct a cubic b-spline:
+        Construct a cubic B-spline:
 
         >>> from scipy.interpolate import BSpline
         >>> b = BSpline.basis_element([0, 1, 2, 3, 4])
@@ -285,7 +282,7 @@ class BSpline(object):
         >>> k
         3
 
-        Construct a second order b-spline on ``[0, 1, 1, 2]``, and compare
+        Construct a second order B-spline on ``[0, 1, 1, 2]``, and compare
         to its explicit form:
 
         >>> t = [-1, 0, 1, 1, 2]
@@ -372,7 +369,7 @@ class BSpline(object):
             self.c = self.c.copy()
 
     def derivative(self, nu=1):
-        """Return a b-spline representing the derivative.
+        """Return a B-spline representing the derivative.
 
         Parameters
         ----------
@@ -400,7 +397,7 @@ class BSpline(object):
                                     axis=self.axis)
 
     def antiderivative(self, nu=1):
-        """Return a b-spline representing the antiderivative.
+        """Return a B-spline representing the antiderivative.
 
         Parameters
         ----------
@@ -510,7 +507,7 @@ class BSpline(object):
                 # (cf _fitpack_impl.splint).
                 t, c, k = self.tck
                 integral, wrk = _dierckx._splint(t, c, k, a, b)
-                return integral * sign 
+                return integral * sign
 
         out = np.empty((2, prod(self.c.shape[1:])), dtype=self.c.dtype)
 
@@ -596,7 +593,7 @@ def _augknt(x, k):
 
 
 def _convert_string_aliases(deriv, target_shape):
-    if isinstance(deriv, string_types):
+    if isinstance(deriv, str):
         if deriv == "clamped":
             deriv = [(1, np.zeros(target_shape))]
         elif deriv == "natural":
@@ -736,13 +733,20 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
     # convert string aliases for the boundary conditions
     if bc_type is None or bc_type == 'not-a-knot':
         deriv_l, deriv_r = None, None
-    elif isinstance(bc_type, string_types):
+    elif isinstance(bc_type, str):
         deriv_l, deriv_r = bc_type, bc_type
     else:
         try:
             deriv_l, deriv_r = bc_type
         except TypeError:
             raise ValueError("Unknown boundary condition: %s" % bc_type)
+
+    y = np.asarray(y)
+
+    if not -y.ndim <= axis < y.ndim:
+        raise ValueError("axis {} is out of bounds".format(axis))
+    if axis < 0:
+        axis += y.ndim
 
     # special-case k=0 right away
     if k == 0:
@@ -752,6 +756,7 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
         x = _as_float_array(x, check_finite)
         t = np.r_[x, x[-1]]
         c = np.asarray(y)
+        c = np.rollaxis(c, axis)
         c = np.ascontiguousarray(c, dtype=_get_dtype(c.dtype))
         return BSpline.construct_fast(t, c, k, axis=axis)
 
@@ -762,12 +767,13 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
         x = _as_float_array(x, check_finite)
         t = np.r_[x[0], x, x[-1]]
         c = np.asarray(y)
+        c = np.rollaxis(c, axis)
         c = np.ascontiguousarray(c, dtype=_get_dtype(c.dtype))
         return BSpline.construct_fast(t, c, k, axis=axis)
 
     x = _as_float_array(x, check_finite)
     y = _as_float_array(y, check_finite)
-    k = int(k)
+    k = operator.index(k)
 
     # come up with a sensible knot vector, if needed
     if t is None:
@@ -786,7 +792,6 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
 
     t = _as_float_array(t, check_finite)
 
-    axis = axis % y.ndim
     y = np.rollaxis(y, axis)    # now internally interp axis is zero
 
     if x.ndim != 1 or np.any(x[1:] <= x[:-1]):
@@ -967,9 +972,13 @@ def make_lsq_spline(x, y, t, k=3, w=None, axis=0, check_finite=True):
         w = _as_float_array(w, check_finite)
     else:
         w = np.ones_like(x)
-    k = int(k)
+    k = operator.index(k)
 
-    axis = axis % y.ndim
+    if not -y.ndim <= axis < y.ndim:
+        raise ValueError("axis {} is out of bounds".format(axis))
+    if axis < 0:
+        axis += y.ndim
+
     y = np.rollaxis(y, axis)    # now internally interp axis is zero
 
     if x.ndim != 1 or np.any(x[1:] - x[:-1] <= 0):
@@ -1010,4 +1019,3 @@ def make_lsq_spline(x, y, t, k=3, w=None, axis=0, check_finite=True):
 
     c = np.ascontiguousarray(c)
     return BSpline.construct_fast(t, c, k, axis=axis)
-

@@ -4,14 +4,13 @@
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from scipy import fftpack
+from scipy import fft as sp_fft
 from . import signaltools
 from .windows import get_window
 from ._spectral import _lombscargle
 from ._arraytools import const_ext, even_ext, odd_ext, zero_ext
 import warnings
 
-from scipy._lib.six import string_types
 
 __all__ = ['periodogram', 'welch', 'lombscargle', 'csd', 'coherence',
            'spectrogram', 'stft', 'istft', 'check_COLA', 'check_NOLA']
@@ -38,7 +37,7 @@ def lombscargle(x,
     When *normalize* is True the computed periodogram is normalized by
     the residuals of the data around a constant reference model (at zero).
 
-    Input arrays should be one-dimensional and will be cast to float64.
+    Input arrays should be 1-D and will be cast to float64.
 
     Parameters
     ----------
@@ -187,8 +186,8 @@ def periodogram(x, fs=1.0, window='boxcar', nfft=None, detrend='constant',
         done. Defaults to 'constant'.
     return_onesided : bool, optional
         If `True`, return a one-sided spectrum for real data. If
-        `False` return a two-sided spectrum. Note that for complex
-        data, a two-sided spectrum is always returned.
+        `False` return a two-sided spectrum. Defaults to `True`, but for
+        complex data, a two-sided spectrum is always returned.
     scaling : { 'density', 'spectrum' }, optional
         Selects between computing the power spectral density ('density')
         where `Pxx` has units of V**2/Hz and computing the power
@@ -333,8 +332,8 @@ def welch(x, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
         done. Defaults to 'constant'.
     return_onesided : bool, optional
         If `True`, return a one-sided spectrum for real data. If
-        `False` return a two-sided spectrum. Note that for complex
-        data, a two-sided spectrum is always returned.
+        `False` return a two-sided spectrum. Defaults to `True`, but for
+        complex data, a two-sided spectrum is always returned.
     scaling : { 'density', 'spectrum' }, optional
         Selects between computing the power spectral density ('density')
         where `Pxx` has units of V**2/Hz and computing the power
@@ -498,8 +497,8 @@ def csd(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
         done. Defaults to 'constant'.
     return_onesided : bool, optional
         If `True`, return a one-sided spectrum for real data. If
-        `False` return a two-sided spectrum. Note that for complex
-        data, a two-sided spectrum is always returned.
+        `False` return a two-sided spectrum. Defaults to `True`, but for
+        complex data, a two-sided spectrum is always returned.
     scaling : { 'density', 'spectrum' }, optional
         Selects between computing the cross spectral density ('density')
         where `Pxy` has units of V**2/Hz and computing the cross spectrum
@@ -641,8 +640,8 @@ def spectrogram(x, fs=1.0, window=('tukey', .25), nperseg=None, noverlap=None,
         done. Defaults to 'constant'.
     return_onesided : bool, optional
         If `True`, return a one-sided spectrum for real data. If
-        `False` return a two-sided spectrum. Note that for complex
-        data, a two-sided spectrum is always returned.
+        `False` return a two-sided spectrum. Defaults to `True`, but for
+        complex data, a two-sided spectrum is always returned.
     scaling : { 'density', 'spectrum' }, optional
         Selects between computing the power spectral density ('density')
         where `Sxx` has units of V**2/Hz and computing the power
@@ -697,6 +696,7 @@ def spectrogram(x, fs=1.0, window=('tukey', .25), nperseg=None, noverlap=None,
     Examples
     --------
     >>> from scipy import signal
+    >>> from scipy.fft import fftshift
     >>> import matplotlib.pyplot as plt
 
     Generate a test signal, a 2 Vrms sine wave whose frequency is slowly
@@ -718,6 +718,14 @@ def spectrogram(x, fs=1.0, window=('tukey', .25), nperseg=None, noverlap=None,
 
     >>> f, t, Sxx = signal.spectrogram(x, fs)
     >>> plt.pcolormesh(t, f, Sxx)
+    >>> plt.ylabel('Frequency [Hz]')
+    >>> plt.xlabel('Time [sec]')
+    >>> plt.show()
+
+    Note, if using output that is not one sided, then use the following:
+
+    >>> f, t, Sxx = signal.spectrogram(x, fs, return_onesided=False)
+    >>> plt.pcolormesh(t, fftshift(f), fftshift(Sxx, axes=0))
     >>> plt.ylabel('Frequency [Hz]')
     >>> plt.xlabel('Time [sec]')
     >>> plt.show()
@@ -867,7 +875,7 @@ def check_COLA(window, nperseg, noverlap, tol=1e-10):
         raise ValueError('noverlap must be less than nperseg.')
     noverlap = int(noverlap)
 
-    if isinstance(window, string_types) or type(window) is tuple:
+    if isinstance(window, str) or type(window) is tuple:
         win = get_window(window, nperseg)
     else:
         win = np.asarray(window)
@@ -995,7 +1003,7 @@ def check_NOLA(window, nperseg, noverlap, tol=1e-10):
         raise ValueError('noverlap must be a nonnegative integer')
     noverlap = int(noverlap)
 
-    if isinstance(window, string_types) or type(window) is tuple:
+    if isinstance(window, str) or type(window) is tuple:
         win = get_window(window, nperseg)
     else:
         win = np.asarray(window)
@@ -1052,9 +1060,8 @@ def stft(x, fs=1.0, window='hann', nperseg=256, noverlap=None, nfft=None,
         done. Defaults to `False`.
     return_onesided : bool, optional
         If `True`, return a one-sided spectrum for real data. If
-        `False` return a two-sided spectrum. Note that for complex
-        data, a two-sided spectrum is always returned. Defaults to
-        `True`.
+        `False` return a two-sided spectrum. Defaults to `True`, but for
+        complex data, a two-sided spectrum is always returned.
     boundary : str or None, optional
         Specifies whether the input signal is extended at both ends, and
         how to generate the new values, in order to center the first
@@ -1127,7 +1134,7 @@ def stft(x, fs=1.0, window='hann', nperseg=256, noverlap=None, nfft=None,
     .. [1] Oppenheim, Alan V., Ronald W. Schafer, John R. Buck
            "Discrete-Time Signal Processing", Prentice Hall, 1999.
     .. [2] Daniel W. Griffin, Jae S. Lim "Signal Estimation from
-           Modified Short Fourier Transform", IEEE 1984,
+           Modified Short-Time Fourier Transform", IEEE 1984,
            10.1109/TASSP.1984.1164317
 
     Examples
@@ -1195,7 +1202,7 @@ def istft(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
         parameter must be specified if the number of data points per
         segment is odd, or if the STFT was padded via ``nfft >
         nperseg``. If `None`, the value depends on the shape of
-        `Zxx` and `input_onesided`. If `input_onesided` is True,
+        `Zxx` and `input_onesided`. If `input_onesided` is `True`,
         ``nperseg=2*(Zxx.shape[freq_axis] - 1)``. Otherwise,
         ``nperseg=Zxx.shape[freq_axis]``. Defaults to `None`.
     noverlap : int, optional
@@ -1272,8 +1279,8 @@ def istft(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
     ----------
     .. [1] Oppenheim, Alan V., Ronald W. Schafer, John R. Buck
            "Discrete-Time Signal Processing", Prentice Hall, 1999.
-    .. [2] Daniel W. Griffin, Jae S. Limdt "Signal Estimation from
-           Modified Short Fourier Transform", IEEE 1984,
+    .. [2] Daniel W. Griffin, Jae S. Lim "Signal Estimation from
+           Modified Short-Time Fourier Transform", IEEE 1984,
            10.1109/TASSP.1984.1164317
 
     Examples
@@ -1395,7 +1402,7 @@ def istft(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
         Zxx = np.transpose(Zxx, zouter+[freq_axis, time_axis])
 
     # Get window as array
-    if isinstance(window, string_types) or type(window) is tuple:
+    if isinstance(window, str) or type(window) is tuple:
         win = get_window(window, nperseg)
     else:
         win = np.asarray(window)
@@ -1404,11 +1411,7 @@ def istft(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
         if win.shape[0] != nperseg:
             raise ValueError('window must have length of {0}'.format(nperseg))
 
-    if input_onesided:
-        ifunc = np.fft.irfft
-    else:
-        ifunc = fftpack.ifft
-
+    ifunc = sp_fft.irfft if input_onesided else sp_fft.ifft
     xsubs = ifunc(Zxx, axis=-2, n=nfft)[..., :nperseg, :]
 
     # Initialize output and normalization arrays
@@ -1574,7 +1577,7 @@ def coherence(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
 
 def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
                      nfft=None, detrend='constant', return_onesided=True,
-                     scaling='spectrum', axis=-1, mode='psd', boundary=None,
+                     scaling='density', axis=-1, mode='psd', boundary=None,
                      padded=False):
     """
     Calculate various forms of windowed FFTs for PSD, CSD, etc.
@@ -1619,8 +1622,8 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
         done. Defaults to 'constant'.
     return_onesided : bool, optional
         If `True`, return a one-sided spectrum for real data. If
-        `False` return a two-sided spectrum. Note that for complex
-        data, a two-sided spectrum is always returned.
+        `False` return a two-sided spectrum. Defaults to `True`, but for
+        complex data, a two-sided spectrum is always returned.
     scaling : { 'density', 'spectrum' }, optional
         Selects between computing the cross spectral density ('density')
         where `Pxy` has units of V**2/Hz and computing the cross
@@ -1821,9 +1824,9 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
         sides = 'twosided'
 
     if sides == 'twosided':
-        freqs = fftpack.fftfreq(nfft, 1/fs)
+        freqs = sp_fft.fftfreq(nfft, 1/fs)
     elif sides == 'onesided':
-        freqs = np.fft.rfftfreq(nfft, 1/fs)
+        freqs = sp_fft.rfftfreq(nfft, 1/fs)
 
     # Perform the windowed FFTs
     result = _fft_helper(x, win, detrend_func, nperseg, noverlap, nfft, sides)
@@ -1907,10 +1910,10 @@ def _fft_helper(x, win, detrend_func, nperseg, noverlap, nfft, sides):
 
     # Perform the fft. Acts on last axis by default. Zero-pads automatically
     if sides == 'twosided':
-        func = fftpack.fft
+        func = sp_fft.fft
     else:
         result = result.real
-        func = np.fft.rfft
+        func = sp_fft.rfft
     result = func(result, n=nfft)
 
     return result
@@ -1952,7 +1955,7 @@ def _triage_segments(window, nperseg, input_length):
     """
 
     # parse window; if array like, then set nperseg = win.shape
-    if isinstance(window, string_types) or isinstance(window, tuple):
+    if isinstance(window, str) or isinstance(window, tuple):
         # if nperseg not specified
         if nperseg is None:
             nperseg = 256  # then change to default

@@ -19,7 +19,7 @@ def test_logsumexp():
     assert_almost_equal(logsumexp(b), desired)
 
     n = 1000
-    b = np.ones(n) * 10000
+    b = np.full(n, 10000, dtype='float64')
     desired = 10000.0 + np.log(n)
     assert_almost_equal(logsumexp(b), desired)
 

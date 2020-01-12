@@ -8,7 +8,7 @@ try:
     from scipy.optimize import linprog
     from scipy.linalg import toeplitz
     from scipy.optimize.tests.test_linprog import lpgen_2d
-    from scipy._lib._numpy_compat import suppress_warnings
+    from numpy.testing import suppress_warnings
     import numpy as np
     import os
 except ImportError:

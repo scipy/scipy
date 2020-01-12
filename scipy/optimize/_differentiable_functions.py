@@ -4,7 +4,6 @@ import scipy.sparse as sps
 from ._numdiff import approx_derivative, group_columns
 from ._hessian_update_strategy import HessianUpdateStrategy
 from scipy.sparse.linalg import LinearOperator
-from copy import deepcopy
 
 
 FD_METHODS = ('2-point', '3-point', 'cs')
@@ -28,7 +27,7 @@ class ScalarFunction(object):
            of *any* of the methods may overwrite the attribute.
     """
     def __init__(self, fun, x0, args, grad, hess, finite_diff_rel_step,
-                 finite_diff_bounds):
+                 finite_diff_bounds, epsilon=None):
         if not callable(grad) and grad not in FD_METHODS:
             raise ValueError("`grad` must be either callable or one of {}."
                              .format(FD_METHODS))
@@ -58,10 +57,12 @@ class ScalarFunction(object):
         if grad in FD_METHODS:
             finite_diff_options["method"] = grad
             finite_diff_options["rel_step"] = finite_diff_rel_step
+            finite_diff_options["abs_step"] = epsilon
             finite_diff_options["bounds"] = finite_diff_bounds
         if hess in FD_METHODS:
             finite_diff_options["method"] = hess
             finite_diff_options["rel_step"] = finite_diff_rel_step
+            finite_diff_options["abs_step"] = epsilon
             finite_diff_options["as_linear_operator"] = True
 
         # Function evaluation
@@ -87,6 +88,7 @@ class ScalarFunction(object):
         elif grad in FD_METHODS:
             def update_grad():
                 self._update_fun()
+                self.ngev += 1
                 self.g = approx_derivative(fun_wrapped, self.x, f0=self.f,
                                            **finite_diff_options)
 
@@ -147,14 +149,14 @@ class ScalarFunction(object):
                 self.x_prev = self.x
                 self.g_prev = self.g
 
-                self.x = x
+                self.x = np.atleast_1d(x).astype(float)
                 self.f_updated = False
                 self.g_updated = False
                 self.H_updated = False
                 self._update_hess()
         else:
             def update_x(x):
-                self.x = x
+                self.x = np.atleast_1d(x).astype(float)
                 self.f_updated = False
                 self.g_updated = False
                 self.H_updated = False
@@ -192,6 +194,13 @@ class ScalarFunction(object):
             self._update_x_impl(x)
         self._update_hess()
         return self.H
+
+    def fun_and_grad(self, x):
+        if not np.array_equal(x, self.x):
+            self._update_x_impl(x)
+        self._update_fun()
+        self._update_grad()
+        return self.f, self.g
 
 
 class VectorFunction(object):
@@ -399,14 +408,14 @@ class VectorFunction(object):
                 self._update_jac()
                 self.x_prev = self.x
                 self.J_prev = self.J
-                self.x = x
+                self.x = np.atleast_1d(x).astype(float)
                 self.f_updated = False
                 self.J_updated = False
                 self.H_updated = False
                 self._update_hess()
         else:
             def update_x(x):
-                self.x = x
+                self.x = np.atleast_1d(x).astype(float)
                 self.f_updated = False
                 self.J_updated = False
                 self.H_updated = False
@@ -458,7 +467,7 @@ class VectorFunction(object):
 class LinearVectorFunction(object):
     """Linear vector function and its derivatives.
 
-    Defines a linear function F = A x, where x is n-dimensional vector and
+    Defines a linear function F = A x, where x is N-D vector and
     A is m-by-n matrix. The Jacobian is constant and equals to A. The Hessian
     is identically zero and it is returned as a csr matrix.
     """
@@ -484,7 +493,7 @@ class LinearVectorFunction(object):
 
     def _update_x(self, x):
         if not np.array_equal(x, self.x):
-            self.x = x
+            self.x = np.atleast_1d(x).astype(float)
             self.f_updated = False
 
     def fun(self, x):

@@ -8,8 +8,8 @@
 # additions by Andrew D Straw, May 2007
 # additions by Tiziano Zito, November 2008
 #
-# April 2010: Functions for LU, QR, SVD, Schur and Cholesky decompositions were
-# moved to their own files.  Still in this file are functions for eigenstuff
+# April 2010: Functions for LU, QR, SVD, Schur, and Cholesky decompositions were
+# moved to their own files. Still in this file are functions for eigenstuff
 # and for the Hessenberg form.
 
 from __future__ import division, print_function, absolute_import
@@ -23,9 +23,7 @@ from numpy import (array, isfinite, inexact, nonzero, iscomplexobj, cast,
                    flatnonzero, conj, asarray, argsort, empty, newaxis,
                    argwhere, iscomplex, eye, zeros, einsum)
 # Local imports
-from scipy._lib.six import xrange
 from scipy._lib._util import _asarray_validated
-from scipy._lib.six import string_types
 from .misc import LinAlgError, _datacopied, norm
 from .lapack import get_lapack_funcs, _compute_lwork
 
@@ -63,7 +61,7 @@ def _make_eigvals(alpha, beta, homogeneous_eigvals):
             beta_nonzero = ~beta_zero
             w[beta_nonzero] = alpha[beta_nonzero]/beta[beta_nonzero]
             # Use numpy.inf for complex values too since
-            # 1/numpy.inf = 0, i.e. it correctly behaves as projective
+            # 1/numpy.inf = 0, i.e., it correctly behaves as projective
             # infinity.
             w[~alpha_zero & beta_zero] = numpy.inf
             if numpy.all(alpha.imag == 0):
@@ -100,7 +98,7 @@ def _geneig(a1, b1, left, right, overwrite_a, overwrite_b,
             vr = _make_complex_eigvecs(w, vr, t)
 
     # the eigenvectors returned by the lapack function are NOT normalized
-    for i in xrange(vr.shape[0]):
+    for i in range(vr.shape[0]):
         if right:
             vr[:, i] /= norm(vr[:, i])
         if left:
@@ -345,7 +343,7 @@ def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
     LinAlgError
         If eigenvalue computation does not converge,
         an error occurred, or b matrix is not definite positive. Note that
-        if input matrices are not symmetric or hermitian, no error is reported
+        if input matrices are not symmetric or Hermitian, no error is reported
         but results will be wrong.
 
     See Also
@@ -395,10 +393,10 @@ def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
     else:
         b1 = None
 
-    # Set job for fortran routines
+    # Set job for Fortran routines
     _job = (eigvals_only and 'N') or 'V'
 
-    # port eigenvalue range from python to fortran convention
+    # port eigenvalue range from Python to Fortran convention
     if eigvals is not None:
         lo, hi = eigvals
         if lo < 0 or hi >= a1.shape[0]:
@@ -500,7 +498,7 @@ _conv_dict = {0: 0, 1: 1, 2: 2,
 
 def _check_select(select, select_range, max_ev, max_len):
     """Check that select is valid, convert to Fortran style."""
-    if isinstance(select, string_types):
+    if isinstance(select, str):
         select = select.lower()
     try:
         select = _conv_dict[select]
@@ -533,7 +531,7 @@ def _check_select(select, select_range, max_ev, max_len):
 def eig_banded(a_band, lower=False, eigvals_only=False, overwrite_a_band=False,
                select='a', select_range=None, max_ev=0, check_finite=True):
     """
-    Solve real symmetric or complex hermitian band matrix eigenvalue problem.
+    Solve real symmetric or complex Hermitian band matrix eigenvalue problem.
 
     Find eigenvalues w and optionally right eigenvectors v of a::
 
@@ -647,7 +645,7 @@ def eig_banded(a_band, lower=False, eigvals_only=False, overwrite_a_band=False,
         overwrite_a_band = 1
 
     if len(a1.shape) != 2:
-        raise ValueError('expected two-dimensional array')
+        raise ValueError('expected a 2-D array')
     select, vl, vu, il, iu, max_ev = _check_select(
         select, select_range, max_ev, a1.shape[1])
     del select_range
@@ -842,7 +840,7 @@ def eigvalsh(a, b=None, lower=True, overwrite_a=False,
 
     Notes
     -----
-    This function does not check the input array for being hermitian/symmetric
+    This function does not check the input array for being Hermitian/symmetric
     in order to allow for representing arrays with only their upper/lower
     triangular parts.
 
@@ -864,7 +862,7 @@ def eigvalsh(a, b=None, lower=True, overwrite_a=False,
 def eigvals_banded(a_band, lower=False, overwrite_a_band=False,
                    select='a', select_range=None, check_finite=True):
     """
-    Solve real symmetric or complex hermitian band matrix eigenvalue problem.
+    Solve real symmetric or complex Hermitian band matrix eigenvalue problem.
 
     Find eigenvalues w of a::
 
@@ -1125,7 +1123,7 @@ def eigh_tridiagonal(d, e, eigvals_only=False, select='a', select_range=None,
     e = _asarray_validated(e, check_finite=check_finite)
     for check in (d, e):
         if check.ndim != 1:
-            raise ValueError('expected one-dimensional array')
+            raise ValueError('expected a 1-D array')
         if check.dtype.char in 'GFD':  # complex
             raise TypeError('Only real arrays currently supported')
     if d.size != e.size + 1:
@@ -1133,7 +1131,7 @@ def eigh_tridiagonal(d, e, eigvals_only=False, select='a', select_range=None,
                          % (d.size, e.size))
     select, vl, vu, il, iu, _ = _check_select(
         select, select_range, 0, d.size)
-    if not isinstance(lapack_driver, string_types):
+    if not isinstance(lapack_driver, str):
         raise TypeError('lapack_driver must be str')
     drivers = ('auto', 'stemr', 'sterf', 'stebz', 'stev')
     if lapack_driver not in drivers:
@@ -1161,7 +1159,7 @@ def eigh_tridiagonal(d, e, eigvals_only=False, select='a', select_range=None,
         internal_name = 'stebz'
         stebz, = get_lapack_funcs((internal_name,), (d, e))
         # If getting eigenvectors, needs to be block-ordered (B) instead of
-        # matirx-ordered (E), and we will reorder later
+        # matrix-ordered (E), and we will reorder later
         order = 'E' if eigvals_only else 'B'
         m, w, iblock, isplit, info = stebz(d, e, select, vl, vu, il, iu, tol,
                                            order)
@@ -1369,9 +1367,9 @@ def cdf2rdf(w, v):
 
     # check dimensions
     if w.ndim < 1:
-        raise ValueError('expected w to be at least one-dimensional')
+        raise ValueError('expected w to be at least 1D')
     if v.ndim < 2:
-        raise ValueError('expected v to be at least two-dimensional')
+        raise ValueError('expected v to be at least 2D')
     if v.ndim != w.ndim + 1:
         raise ValueError('expected eigenvectors array to have exactly one '
                          'dimension more than eigenvalues array')

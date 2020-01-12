@@ -30,6 +30,7 @@
 
 from __future__ import division, print_function, absolute_import
 import warnings
+import operator
 
 import numpy
 from . import _ni_support
@@ -132,7 +133,7 @@ def generate_binary_structure(rank, connectivity):
          will be applied, as returned by `np.ndim`.
     connectivity : int
          `connectivity` determines which elements of the output array belong
-         to the structure, i.e. are considered as neighbors of the central
+         to the structure, i.e., are considered as neighbors of the central
          element. Elements up to a squared distance of `connectivity` from
          the center are considered neighbors. `connectivity` may range from 1
          (no diagonal elements are neighbors) to `rank` (all elements are
@@ -151,9 +152,9 @@ def generate_binary_structure(rank, connectivity):
     Notes
     -----
     `generate_binary_structure` can only create structuring elements with
-    dimensions equal to 3, i.e. minimal dimensions. For larger structuring
-    elements, that are useful e.g. for eroding large objects, one may either
-    use   `iterate_structure`, or create directly custom arrays with
+    dimensions equal to 3, i.e., minimal dimensions. For larger structuring
+    elements, that are useful e.g., for eroding large objects, one may either
+    use `iterate_structure`, or create directly custom arrays with
     numpy functions such as `numpy.ones`.
 
     Examples
@@ -214,6 +215,11 @@ def generate_binary_structure(rank, connectivity):
 
 def _binary_erosion(input, structure, iterations, mask, output,
                     border_value, origin, invert, brute_force):
+    try:
+        iterations = operator.index(iterations)
+    except TypeError:
+        raise TypeError('iterations parameter should be an integer')
+
     input = numpy.asarray(input)
     if numpy.iscomplexobj(input):
         raise TypeError('Complex type not supported')
@@ -225,7 +231,7 @@ def _binary_erosion(input, structure, iterations, mask, output,
         raise RuntimeError('structure and input must have same dimensionality')
     if not structure.flags.contiguous:
         structure = structure.copy()
-    if numpy.product(structure.shape, axis=0) < 1:
+    if numpy.prod(structure.shape, axis=0) < 1:
         raise RuntimeError('structure must not be empty')
     if mask is not None:
         mask = numpy.asarray(mask)
@@ -282,7 +288,7 @@ def _binary_erosion(input, structure, iterations, mask, output,
 def binary_erosion(input, structure=None, iterations=1, mask=None, output=None,
                    border_value=0, origin=0, brute_force=False):
     """
-    Multi-dimensional binary erosion with a given structuring element.
+    Multidimensional binary erosion with a given structuring element.
 
     Binary erosion is a mathematical morphology operation used for image
     processing.
@@ -296,7 +302,7 @@ def binary_erosion(input, structure=None, iterations=1, mask=None, output=None,
         Structuring element used for the erosion. Non-zero elements are
         considered True. If no structuring element is provided, an element
         is generated with a square connectivity equal to one.
-    iterations : {int, float}, optional
+    iterations : int, optional
         The erosion is repeated `iterations` times (one, by default).
         If iterations is less than 1, the erosion is repeated until the
         result does not change anymore.
@@ -380,7 +386,7 @@ def binary_dilation(input, structure=None, iterations=1, mask=None,
                     output=None, border_value=0, origin=0,
                     brute_force=False):
     """
-    Multi-dimensional binary dilation with the given structuring element.
+    Multidimensional binary dilation with the given structuring element.
 
     Parameters
     ----------
@@ -391,10 +397,11 @@ def binary_dilation(input, structure=None, iterations=1, mask=None,
         Structuring element used for the dilation. Non-zero elements are
         considered True. If no structuring element is provided an element
         is generated with a square connectivity equal to one.
-    iterations : {int, float}, optional
+    iterations : int, optional
         The dilation is repeated `iterations` times (one, by default).
         If iterations is less than 1, the dilation is repeated until the
-        result does not change anymore.
+        result does not change anymore. Only an integer of iterations is
+        accepted.
     mask : array_like, optional
         If a mask is given, only those elements with a True value at
         the corresponding mask element are modified at each iteration.
@@ -510,7 +517,7 @@ def binary_dilation(input, structure=None, iterations=1, mask=None,
 def binary_opening(input, structure=None, iterations=1, output=None,
                    origin=0, mask=None, border_value=0, brute_force=False):
     """
-    Multi-dimensional binary opening with the given structuring element.
+    Multidimensional binary opening with the given structuring element.
 
     The *opening* of an input image by a structuring element is the
     *dilation* of the *erosion* of the image by the structuring element.
@@ -526,11 +533,11 @@ def binary_opening(input, structure=None, iterations=1, output=None,
         is generated with a square connectivity equal to one (i.e., only
         nearest neighbors are connected to the center, diagonally-connected
         elements are not considered neighbors).
-    iterations : {int, float}, optional
+    iterations : int, optional
         The erosion step of the opening, then the dilation step are each
         repeated `iterations` times (one, by default). If `iterations` is
         less than 1, each operation is repeated until the result does
-        not change anymore.
+        not change anymore. Only an integer of iterations is accepted.
     output : ndarray, optional
         Array of the same shape as input, into which the output is placed.
         By default, a new array is created.
@@ -568,7 +575,7 @@ def binary_opening(input, structure=None, iterations=1, output=None,
     -----
     *Opening* [1]_ is a mathematical morphology operation [2]_ that
     consists in the succession of an erosion and a dilation of the
-    input with the same structuring element. Opening therefore removes
+    input with the same structuring element. Opening, therefore, removes
     objects smaller than the structuring element.
 
     Together with *closing* (`binary_closing`), opening can be used for
@@ -633,7 +640,7 @@ def binary_opening(input, structure=None, iterations=1, output=None,
 def binary_closing(input, structure=None, iterations=1, output=None,
                    origin=0, mask=None, border_value=0, brute_force=False):
     """
-    Multi-dimensional binary closing with the given structuring element.
+    Multidimensional binary closing with the given structuring element.
 
     The *closing* of an input image by a structuring element is the
     *erosion* of the *dilation* of the image by the structuring element.
@@ -649,11 +656,11 @@ def binary_closing(input, structure=None, iterations=1, output=None,
         is generated with a square connectivity equal to one (i.e., only
         nearest neighbors are connected to the center, diagonally-connected
         elements are not considered neighbors).
-    iterations : {int, float}, optional
+    iterations : int, optional
         The dilation step of the closing, then the erosion step are each
         repeated `iterations` times (one, by default). If iterations is
         less than 1, each operations is repeated until the result does
-        not change anymore.
+        not change anymore. Only an integer of iterations is accepted.
     output : ndarray, optional
         Array of the same shape as input, into which the output is placed.
         By default, a new array is created.
@@ -779,7 +786,7 @@ def binary_closing(input, structure=None, iterations=1, output=None,
 def binary_hit_or_miss(input, structure1=None, structure2=None,
                        output=None, origin1=0, origin2=None):
     """
-    Multi-dimensional binary hit-or-miss transform.
+    Multidimensional binary hit-or-miss transform.
 
     The hit-or-miss transform finds the locations of a given pattern
     inside the input image.
@@ -815,7 +822,7 @@ def binary_hit_or_miss(input, structure1=None, structure2=None,
 
     See also
     --------
-    ndimage.morphology, binary_erosion
+    binary_erosion
 
     References
     ----------
@@ -888,7 +895,7 @@ def binary_hit_or_miss(input, structure1=None, structure2=None,
 def binary_propagation(input, structure=None, mask=None,
                        output=None, border_value=0, origin=0):
     """
-    Multi-dimensional binary propagation with the given structuring element.
+    Multidimensional binary propagation with the given structuring element.
 
     Parameters
     ----------
@@ -1024,7 +1031,7 @@ def binary_fill_holes(input, structure=None, output=None, origin=0):
     Parameters
     ----------
     input : array_like
-        n-dimensional binary array with holes to be filled
+        N-D binary array with holes to be filled
     structure : array_like, optional
         Structuring element used in the computation; large-size elements
         make computations faster but may miss holes separated from the
@@ -1145,7 +1152,7 @@ def grey_erosion(input, size=None, footprint=None, structure=None,
     See also
     --------
     binary_erosion, grey_dilation, grey_opening, grey_closing
-    generate_binary_structure, ndimage.minimum_filter
+    generate_binary_structure, minimum_filter
 
     Notes
     -----
@@ -1204,7 +1211,7 @@ def grey_erosion(input, size=None, footprint=None, structure=None,
 
     """
     if size is None and footprint is None and structure is None:
-        raise ValueError("size, footprint or structure must be specified")
+        raise ValueError("size, footprint, or structure must be specified")
 
     return filters._min_or_max_filter(input, size, footprint, structure,
                                       output, mode, cval, origin, 1)
@@ -1255,7 +1262,7 @@ def grey_dilation(input, size=None, footprint=None, structure=None,
     See also
     --------
     binary_dilation, grey_erosion, grey_closing, grey_opening
-    generate_binary_structure, ndimage.maximum_filter
+    generate_binary_structure, maximum_filter
 
     Notes
     -----
@@ -1329,7 +1336,7 @@ def grey_dilation(input, size=None, footprint=None, structure=None,
 
     """
     if size is None and footprint is None and structure is None:
-        raise ValueError("size, footprint or structure must be specified")
+        raise ValueError("size, footprint, or structure must be specified")
     if structure is not None:
         structure = numpy.asarray(structure)
         structure = structure[tuple([slice(None, None, -1)] *
@@ -1361,10 +1368,10 @@ def grey_dilation(input, size=None, footprint=None, structure=None,
 def grey_opening(input, size=None, footprint=None, structure=None,
                  output=None, mode="reflect", cval=0.0, origin=0):
     """
-    Multi-dimensional greyscale opening.
+    Multidimensional grayscale opening.
 
-    A greyscale opening consists in the succession of a greyscale erosion,
-    and a greyscale dilation.
+    A grayscale opening consists in the succession of a grayscale erosion,
+    and a grayscale dilation.
 
     Parameters
     ----------
@@ -1444,10 +1451,10 @@ def grey_opening(input, size=None, footprint=None, structure=None,
 def grey_closing(input, size=None, footprint=None, structure=None,
                  output=None, mode="reflect", cval=0.0, origin=0):
     """
-    Multi-dimensional greyscale closing.
+    Multidimensional grayscale closing.
 
-    A greyscale closing consists in the succession of a greyscale dilation,
-    and a greyscale erosion.
+    A grayscale closing consists in the succession of a grayscale dilation,
+    and a grayscale erosion.
 
     Parameters
     ----------
@@ -1527,7 +1534,7 @@ def grey_closing(input, size=None, footprint=None, structure=None,
 def morphological_gradient(input, size=None, footprint=None, structure=None,
                            output=None, mode="reflect", cval=0.0, origin=0):
     """
-    Multi-dimensional morphological gradient.
+    Multidimensional morphological gradient.
 
     The morphological gradient is calculated as the difference between a
     dilation and an erosion of the input with a given structuring element.
@@ -1568,7 +1575,7 @@ def morphological_gradient(input, size=None, footprint=None, structure=None,
 
     See also
     --------
-    grey_dilation, grey_erosion, ndimage.gaussian_gradient_magnitude
+    grey_dilation, grey_erosion, gaussian_gradient_magnitude
 
     Notes
     -----
@@ -1641,7 +1648,7 @@ def morphological_laplace(input, size=None, footprint=None,
                           structure=None, output=None,
                           mode="reflect", cval=0.0, origin=0):
     """
-    Multi-dimensional morphological laplace.
+    Multidimensional morphological laplace.
 
     Parameters
     ----------
@@ -1691,7 +1698,7 @@ def morphological_laplace(input, size=None, footprint=None,
 def white_tophat(input, size=None, footprint=None, structure=None,
                  output=None, mode="reflect", cval=0.0, origin=0):
     """
-    Multi-dimensional white tophat filter.
+    Multidimensional white tophat filter.
 
     Parameters
     ----------
@@ -1749,7 +1756,7 @@ def black_tophat(input, size=None, footprint=None,
                  structure=None, output=None, mode="reflect",
                  cval=0.0, origin=0):
     """
-    Multi-dimensional black tophat filter.
+    Multidimensional black tophat filter.
 
     Parameters
     ----------
@@ -1822,7 +1829,7 @@ def distance_transform_bf(input, metric="euclidean", sampling=None,
     input : array_like
         Input
     metric : str, optional
-        Three types of distance metric are supported: 'euclidean', 'taxicab'
+        Three types of distance metric are supported: 'euclidean', 'taxicab',
         and 'chessboard'.
     sampling : {int, sequence of ints}, optional
         This parameter is only used in the case of the euclidean `metric`
@@ -1992,7 +1999,7 @@ def distance_transform_cdt(input, metric='chessboard', return_distances=True,
     else:
         try:
             metric = numpy.asarray(metric)
-        except:
+        except Exception:
             raise RuntimeError('invalid metric provided')
         for s in metric.shape:
             if s != 3:
@@ -2012,7 +2019,7 @@ def distance_transform_cdt(input, metric='chessboard', return_distances=True,
 
     rank = dt.ndim
     if return_indices:
-        sz = numpy.product(dt.shape, axis=0)
+        sz = numpy.prod(dt.shape, axis=0)
         ft = numpy.arange(sz, dtype=numpy.int32)
         ft.shape = dt.shape
     else:
@@ -2059,7 +2066,7 @@ def distance_transform_cdt(input, metric='chessboard', return_distances=True,
 def distance_transform_edt(input, sampling=None, return_distances=True,
                            return_indices=False, distances=None, indices=None):
     """
-    Exact euclidean distance transform.
+    Exact Euclidean distance transform.
 
     In addition to the distance transform, the feature transform can
     be calculated. In this case the index of the closest background
@@ -2093,7 +2100,7 @@ def distance_transform_edt(input, sampling=None, return_distances=True,
 
     Notes
     -----
-    The euclidean distance transform gives values of the euclidean
+    The Euclidean distance transform gives values of the Euclidean
     distance::
 
                     n

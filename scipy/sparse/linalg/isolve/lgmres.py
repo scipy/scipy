@@ -1,12 +1,11 @@
 # Copyright (C) 2009, Pauli Virtanen <pav@iki.fi>
-# Distributed under the same license as Scipy.
+# Distributed under the same license as SciPy.
 
 from __future__ import division, print_function, absolute_import
 
 import warnings
 import numpy as np
 from numpy.linalg import LinAlgError
-from scipy._lib.six import xrange
 from scipy.linalg import get_blas_funcs, get_lapack_funcs
 from .utils import make_system
 
@@ -29,6 +28,9 @@ def lgmres(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
     ----------
     A : {sparse matrix, dense matrix, LinearOperator}
         The real or complex N-by-N matrix of the linear system.
+        Alternatively, ``A`` can be a linear operator which can
+        produce ``Ax`` using, e.g.,
+        ``scipy.sparse.linalg.LinearOperator``.
     b : {array, matrix}
         Right hand side of the linear system. Has shape (N,) or (N,1).
     x0  : {array, matrix}
@@ -146,7 +148,7 @@ def lgmres(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
     b_norm = nrm2(b)
     ptol_max_factor = 1.0
 
-    for k_outer in xrange(maxiter):
+    for k_outer in range(maxiter):
         r_outer = matvec(x) - b
 
         # -- callback

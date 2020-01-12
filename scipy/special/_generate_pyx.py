@@ -1,7 +1,7 @@
 """
 python _generate_pyx.py
 
-Generate Ufunc definition source files for scipy.special.  Produces
+Generate Ufunc definition source files for scipy.special. Produces
 files '_ufuncs.c' and '_ufuncs_cxx.c' by first producing Cython.
 
 This will generate both calls to PyUFunc_FromFuncAndData and the
@@ -104,8 +104,7 @@ CYTHON_SPECIAL_PYX = """\
 \"\"\"
 .. highlight:: cython
 
-================================
-Cython API for Special Functions
+Cython API for special functions
 ================================
 
 Scalar, typed versions of many of the functions in ``scipy.special``
@@ -123,14 +122,14 @@ The module is usable from Cython via::
 
     cimport scipy.special.cython_special
 
-Error Handling
-==============
+Error handling
+--------------
 
 Functions can indicate an error by returning ``nan``; however they
 cannot emit warnings like their counterparts in ``scipy.special``.
 
-Available Functions
-===================
+Available functions
+-------------------
 
 FUNCLIST
 \"\"\"
@@ -447,13 +446,13 @@ def generate_doc(name, specs):
 
 
 def npy_cdouble_from_double_complex(var):
-    """Cast a cython double complex to a numpy cdouble."""
+    """Cast a Cython double complex to a NumPy cdouble."""
     res = "_complexstuff.npy_cdouble_from_double_complex({})".format(var)
     return res
 
 
 def double_complex_from_npy_cdouble(var):
-    """Cast a numpy cdouble to a cython double complex."""
+    """Cast a NumPy cdouble to a Cython double complex."""
     res = "_complexstuff.double_complex_from_npy_cdouble({})".format(var)
     return res
 
@@ -490,7 +489,7 @@ def iter_variants(inputs, outputs):
         # can lead to incorrect dtype selection if the integer arguments are
         # arrays, but float arguments are scalars.
         # For instance sph_harm(0,[0],0,0).dtype == complex64
-        # This may be a Numpy bug, but we need to work around it.
+        # This may be a NumPy bug, but we need to work around it.
         # cf. gh-4895, https://github.com/numpy/numpy/issues/5895
         maps = maps + [(a + 'dD', b + 'fF') for a, b in maps]
 
@@ -596,7 +595,7 @@ class Ufunc(Func):
     """
     def __init__(self, name, signatures):
         super(Ufunc, self).__init__(name, signatures)
-        self.doc = add_newdocs.get("scipy.special." + name)
+        self.doc = add_newdocs.get(name)
         if self.doc is None:
             raise ValueError("No docstring for ufunc %r" % name)
         self.doc = textwrap.dedent(self.doc).strip()
@@ -701,7 +700,7 @@ class Ufunc(Func):
 class FusedFunc(Func):
     """
     Generate code for a fused-type special function that can be
-    cimported in cython.
+    cimported in Cython.
 
     """
     def __init__(self, name, signatures):
@@ -756,12 +755,8 @@ class FusedFunc(Func):
         return all_types, fused_types
 
     def _get_vars(self):
-        invars = []
-        for n in range(len(self.intypes)):
-            invars.append("x{}".format(n))
-        outvars = []
-        for n in range(len(self.outtypes)):
-            outvars.append("y{}".format(n))
+        invars = ["x{}".format(n) for n in range(len(self.intypes))]
+        outvars = ["y{}".format(n) for n in range(len(self.outtypes))]
         return invars, outvars
 
     def _get_conditional(self, types, codes, adverb):
@@ -787,7 +782,7 @@ class FusedFunc(Func):
 
     def _get_incallvars(self, intypes, c):
         """Generate pure input variables to a specialization,
-        i.e. variables that aren't used to return a value.
+        i.e., variables that aren't used to return a value.
 
         """
         incallvars = []
@@ -800,7 +795,7 @@ class FusedFunc(Func):
 
     def _get_outcallvars(self, outtypes, c):
         """Generate output variables to a specialization,
-        i.e. pointers that are used to return values.
+        i.e., pointers that are used to return values.
 
         """
         outcallvars, tmpvars, casts = [], [], []
@@ -842,14 +837,10 @@ class FusedFunc(Func):
             return lines
 
         # Set fused-type variables to nan
-        all_codes = []
-        for fused_type in fused_types:
-            _, codes = fused_type
-            all_codes.append(codes)
-        all_codes = tuple(all_codes)
+        all_codes = tuple([codes for _unused, codes in fused_types])
 
         codelens = list(map(lambda x: len(x), all_codes))
-        last = numpy.product(codelens) - 1
+        last = numpy.prod(codelens) - 1
         for m, codes in enumerate(itertools.product(*all_codes)):
             fused_codes, decs = [], []
             for n, fused_type in enumerate(fused_types):
@@ -878,14 +869,12 @@ class FusedFunc(Func):
         tab = " "*4
         tmpvars = list(all_tmpvars)
         tmpvars.sort()
-        tmpdecs = []
-        for tmpvar in tmpvars:
-            line = "cdef npy_cdouble {}".format(tmpvar)
-            tmpdecs.append(tab + line)
+        tmpdecs = [tab + "cdef npy_cdouble {}".format(tmpvar)
+                   for tmpvar in tmpvars]
         return tmpdecs
 
     def _get_python_wrap(self):
-        """Generate a python wrapper for functions which pass their
+        """Generate a Python wrapper for functions which pass their
         arguments as pointers.
 
         """
@@ -1219,10 +1208,20 @@ def generate_ufuncs(fn_prefix, cxx_fn_prefix, ufuncs):
 
     # Produce output
     toplevel = "\n".join(sorted(all_loops.values()) + defs + [toplevel])
+    # Generate an `__all__` for the module
+    all_ufuncs = (
+        [
+            "'{}'".format(ufunc.name)
+            for ufunc in ufuncs if not ufunc.name.startswith('_')
+        ]
+        + ["'geterr'", "'seterr'", "'errstate'", "'jn'"]
+    )
+    module_all = '__all__ = [{}]'.format(', '.join(all_ufuncs))
 
     with open(filename, 'w') as f:
         f.write(UFUNCS_EXTRA_CODE_COMMON)
         f.write(UFUNCS_EXTRA_CODE)
+        f.write(module_all)
         f.write("\n")
         f.write(toplevel)
         f.write(UFUNCS_EXTRA_CODE_BOTTOM)
@@ -1333,13 +1332,15 @@ def unique(lst):
         new_lst.append(item)
     return new_lst
 
+
 def all_newer(src_files, dst_files):
     from distutils.dep_util import newer
     return all(os.path.exists(dst) and newer(dst, src)
                for dst in dst_files for src in src_files)
 
+
 def main():
-    p = optparse.OptionParser(usage=__doc__.strip())
+    p = optparse.OptionParser(usage=(__doc__ or '').strip())
     options, args = p.parse_args()
     if len(args) != 0:
         p.error('invalid number of arguments')

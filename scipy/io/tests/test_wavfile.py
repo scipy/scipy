@@ -6,9 +6,9 @@ import tempfile
 from io import BytesIO
 
 import numpy as np
-from numpy.testing import assert_equal, assert_, assert_array_equal
-from pytest import raises as assert_raises
-from scipy._lib._numpy_compat import suppress_warnings
+from numpy.testing import (assert_equal, assert_, assert_array_equal,
+                           suppress_warnings)
+from pytest import raises as assert_raises, warns as assert_warns
 
 from scipy.io import wavfile
 
@@ -84,11 +84,22 @@ def test_read_fail():
         fp.close()
 
 
+def test_read_early_eof_with_data():
+    for mmap in [False, True]:
+        with open(datafile('test-44100Hz-le-1ch-4bytes-early-eof.wav'), 'rb') as fp:
+            with assert_warns(wavfile.WavFileWarning, match='Reached EOF'):
+                rate, data = wavfile.read(fp, mmap=mmap)
+                assert_(data.size > 0)
+                assert_equal(rate, 44100)
+
+        del data
+
+
 def test_read_early_eof():
     for mmap in [False, True]:
-        fp = open(datafile('test-44100Hz-le-1ch-4bytes-early-eof.wav'), 'rb')
-        assert_raises(ValueError, wavfile.read, fp, mmap=mmap)
-        fp.close()
+        with open(datafile('test-44100Hz-le-1ch-4bytes-early-eof-no-data.wav'), 'rb') as fp:
+            with assert_raises(ValueError, match="Unexpected end of file."):
+                wavfile.read(fp, mmap=mmap)
 
 
 def test_read_incomplete_chunk():

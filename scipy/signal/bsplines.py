@@ -1,6 +1,5 @@
 from __future__ import division, print_function, absolute_import
 
-from scipy._lib.six import xrange
 from numpy import (logical_and, asarray, pi, zeros_like,
                    piecewise, array, arctan2, tan, zeros, arange, floor)
 from numpy.core.umath import (sqrt, exp, greater, less, cos, add, sin,
@@ -50,8 +49,8 @@ def _bspline_piecefunctions(order):
     """Returns the function defined over the left-side pieces for a bspline of
     a given order.
 
-    The 0th piece is the first one less than 0.  The last piece is a function
-    identical to 0 (returned as the constant 0).  (There are order//2 + 2 total
+    The 0th piece is the first one less than 0. The last piece is a function
+    identical to 0 (returned as the constant 0). (There are order//2 + 2 total
     pieces).
 
     Also returns the condition functions that when evaluated return boolean
@@ -79,14 +78,14 @@ def _bspline_piecefunctions(order):
         startbound = -0.5
     condfuncs = [condfuncgen(0, 0, startbound)]
     bound = startbound
-    for num in xrange(1, last - 1):
+    for num in range(1, last - 1):
         condfuncs.append(condfuncgen(1, bound, bound - 1))
         bound = bound - 1
     condfuncs.append(condfuncgen(2, 0, -(order + 1) / 2.0))
 
     # final value of bound is used in piecefuncgen below
 
-    # the functions to evaluate are taken from the left-hand-side
+    # the functions to evaluate are taken from the left-hand side
     #  in the general expression derived from the central difference
     #  operator (because they involve fewer terms).
 
@@ -97,8 +96,8 @@ def _bspline_piecefunctions(order):
         if (Mk < 0):
             return 0  # final function is 0
         coeffs = [(1 - 2 * (k % 2)) * float(comb(order + 1, k, exact=1)) / fval
-                  for k in xrange(Mk + 1)]
-        shifts = [-bound - k for k in xrange(Mk + 1)]
+                  for k in range(Mk + 1)]
+        shifts = [-bound - k for k in range(Mk + 1)]
 
         def thefunc(x):
             res = 0.0
@@ -107,7 +106,7 @@ def _bspline_piecefunctions(order):
             return res
         return thefunc
 
-    funclist = [piecefuncgen(k) for k in xrange(last)]
+    funclist = [piecefuncgen(k) for k in range(last)]
 
     _splinefunc_cache[order] = (funclist, condfuncs)
 
@@ -135,7 +134,7 @@ def gauss_spline(x, n):
     Parameters
     ----------
     n : int
-        The order of the spline. Must be nonnegative, i.e. n >= 0
+        The order of the spline. Must be nonnegative, i.e., n >= 0
 
     References
     ----------
@@ -272,7 +271,7 @@ def cspline1d(signal, lamb=0.0):
     Compute cubic spline coefficients for rank-1 array.
 
     Find the cubic spline coefficients for a 1-D signal assuming
-    mirror-symmetric boundary conditions.   To obtain the signal back from the
+    mirror-symmetric boundary conditions. To obtain the signal back from the
     spline representation mirror-symmetric-convolve these coefficients with a
     length 3 FIR window [1.0, 4.0, 1.0]/ 6.0 .
 
@@ -299,7 +298,7 @@ def qspline1d(signal, lamb=0.0):
     """Compute quadratic spline coefficients for rank-1 array.
 
     Find the quadratic spline coefficients for a 1-D signal assuming
-    mirror-symmetric boundary conditions.   To obtain the signal back from the
+    mirror-symmetric boundary conditions. To obtain the signal back from the
     spline representation mirror-symmetric-convolve these coefficients with a
     length 3 FIR window [1.0, 6.0, 1.0]/ 8.0 .
 
@@ -325,7 +324,7 @@ def qspline1d(signal, lamb=0.0):
 def cspline1d_eval(cj, newx, dx=1.0, x0=0):
     """Evaluate a spline at the new set of points.
 
-    `dx` is the old sample-spacing while `x0` was the old origin.  In
+    `dx` is the old sample-spacing while `x0` was the old origin. In
     other-words the old-sample points (knot-points) for which the `cj`
     represent spline coefficients were at equally-spaced points of:
 
@@ -361,7 +360,7 @@ def cspline1d_eval(cj, newx, dx=1.0, x0=0):
 def qspline1d_eval(cj, newx, dx=1.0, x0=0):
     """Evaluate a quadratic spline at the new set of points.
 
-    `dx` is the old sample-spacing while `x0` was the old origin.  In
+    `dx` is the old sample-spacing while `x0` was the old origin. In
     other-words the old-sample points (knot-points) for which the `cj`
     represent spline coefficients were at equally-spaced points of::
 

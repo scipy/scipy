@@ -29,8 +29,9 @@
     "matrix": {
         "numpy": [],
         "Tempita": [],
-        "Cython": ["0.27.3"],
+        "Cython": ["0.29.13"],
         "pytest": [],
+        "pybind11": [],
         "six": [],
     },
 
@@ -43,7 +44,7 @@
     "env_dir": "env",
 
     "environment_type": "virtualenv",
-    "wheel_cache_size": 10,
+    "build_cache_size": 10,
 
     // The directory (relative to the current directory) that raw benchmark
     // results are stored in.  If not provided, defaults to "results".

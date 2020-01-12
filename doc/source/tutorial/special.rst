@@ -21,7 +21,7 @@ write the function in either C, Fortran, or Python. Look in the source
 code of the library for examples of each of these kinds of functions.
 
 
-Bessel functions of real order(:func:`jn`, :func:`jn_zeros`)
+Bessel functions of real order(:func:`jv`, :func:`jn_zeros`)
 ------------------------------------------------------------
 
 Bessel functions are a family of solutions to Bessel's differential equation
@@ -30,7 +30,7 @@ with real or complex order alpha:
 .. math::
    x^2 \frac{d^2 y}{dx^2} + x \frac{dy}{dx} + (x^2 - \alpha^2)y = 0
 
-Among other uses, these functions arise in wave propagation problems such as
+Among other uses, these functions arise in wave propagation problems, such as
 the vibrational modes of a thin drum head.  Here is an example of a circular
 drum head anchored at the edge:
 
@@ -66,7 +66,7 @@ Cython Bindings for Special Functions (:mod:`scipy.special.cython_special`)
 
 .. highlight:: cython
 
-Scipy also offers Cython bindings for scalar, typed versions of many
+SciPy also offers Cython bindings for scalar, typed versions of many
 of the functions in special. The following Cython code gives a simple
 example of how to use these functions::
 
@@ -88,32 +88,32 @@ example of how to use these functions::
 (See the `Cython documentation`_ for help with compiling Cython.) In
 the example the function ``csc.gamma`` works essentially like its
 ufunc counterpart `gamma`, though it takes C types as arguments
-instead of NumPy arrays. Note in particular that the function is
+instead of NumPy arrays. Note, in particular, that the function is
 overloaded to support real and complex arguments; the correct variant
 is selected at compile time. The function ``csc.sici`` works slightly
 differently from `sici`; for the ufunc we could write ``ai, bi =
-sici(x)`` whereas in the Cython version multiple return values are
+sici(x)``, whereas in the Cython version multiple return values are
 passed as pointers. It might help to think of this as analogous to
 calling a ufunc with an output array: ``sici(x, out=(si, ci))``.
 
 There are two potential advantages to using the Cython bindings:
 
-- They avoid Python function overhead
-- They do not require the Python Global Interpreter Lock (GIL)
+- they avoid Python function overhead
+- they do not require the Python Global Interpreter Lock (GIL)
 
 The following sections discuss how to use these advantages to
-potentially speed up your code, though of course one should always
+potentially speed up your code, though, of course, one should always
 profile the code first to make sure putting in the extra effort will
 be worth it.
 
 Avoiding Python Function Overhead
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  
+
 For the ufuncs in special, Python function overhead is avoided by
-vectorizing, that is, by passing an array to the function. Typically
+vectorizing, that is, by passing an array to the function. Typically,
 this approach works quite well, but sometimes it is more convenient to
-call a special function on scalar inputs inside a loop, for example
-when implementing your own ufunc. In this case the Python function
+call a special function on scalar inputs inside a loop, for example,
+when implementing your own ufunc. In this case, the Python function
 overhead can become significant. Consider the following example::
 
   import scipy.special as sc
@@ -123,7 +123,7 @@ overhead can become significant. Consider the following example::
       cdef:
           int n
           double x = 1
-    
+
       for n in range(100):
           sc.jv(n, x)
 
@@ -140,7 +140,7 @@ run and ``cython_tight_loop`` took about 18.2 microseconds to
 run. Obviously this example is contrived: one could just call
 ``special.jv(np.arange(100), 1)`` and get results just as fast as in
 ``cython_tight_loop``. The point is that if Python function overhead
-becomes significant in your code then the Cython bindings might be
+becomes significant in your code, then the Cython bindings might be
 useful.
 
 Releasing the GIL
@@ -166,7 +166,7 @@ delta function. It is known that in two dimensions the unique
    G(x, y) = \frac{i}{4}H_0^{(1)}(k|x - y|),
 
 where :math:`H_0^{(1)}` is the Hankel function of the first kind,
-i.e. the function `hankel1`. The following example shows how we could
+i.e., the function `hankel1`. The following example shows how we could
 compute this function in parallel::
 
   from libc.math cimport fabs
@@ -237,7 +237,7 @@ Functions not in :mod:`scipy.special`
 Some functions are not included in special because they are
 straightforward to implement with existing functions in NumPy and
 SciPy. To prevent reinventing the wheel, this section provides
-implementations of several such functions which hopefully illustrate
+implementations of several such functions, which hopefully illustrate
 how to handle similar functions. In all examples NumPy is imported as
 ``np`` and special is imported as ``sc``.
 

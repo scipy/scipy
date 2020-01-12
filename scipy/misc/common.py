@@ -5,7 +5,7 @@ Functions which are common and require SciPy Base and Level 1 SciPy
 
 from __future__ import division, print_function, absolute_import
 
-from numpy import arange, newaxis, hstack, product, array, frombuffer, load
+from numpy import arange, newaxis, hstack, prod, array, frombuffer, load
 
 __all__ = ['central_diff_weights', 'derivative', 'ascent', 'face',
            'electrocardiogram']
@@ -25,11 +25,11 @@ def central_diff_weights(Np, ndiv=1):
     Np : int
         Number of points for the central derivative.
     ndiv : int, optional
-        Number of divisions.  Default is 1.
+        Number of divisions. Default is 1.
 
     Notes
     -----
-    Can be inaccurate for large number of points.
+    Can be inaccurate for a large number of points.
 
     """
     if Np < ndiv + 1:
@@ -43,23 +43,23 @@ def central_diff_weights(Np, ndiv=1):
     X = x**0.0
     for k in range(1,Np):
         X = hstack([X,x**k])
-    w = product(arange(1,ndiv+1),axis=0)*linalg.inv(X)[ndiv]
+    w = prod(arange(1,ndiv+1),axis=0)*linalg.inv(X)[ndiv]
     return w
 
 
 def derivative(func, x0, dx=1.0, n=1, args=(), order=3):
     """
-    Find the n-th derivative of a function at a point.
+    Find the nth derivative of a function at a point.
 
     Given a function, use a central difference formula with spacing `dx` to
-    compute the `n`-th derivative at `x0`.
+    compute the nth derivative at `x0`.
 
     Parameters
     ----------
     func : function
         Input function.
     x0 : float
-        The point at which `n`-th derivative is found.
+        The point at which the nth derivative is found.
     dx : float, optional
         Spacing.
     n : int, optional
@@ -117,7 +117,7 @@ def derivative(func, x0, dx=1.0, n=1, args=(), order=3):
     ho = order >> 1
     for k in range(order):
         val += weights[k]*func(x0+(k-ho)*dx,*args)
-    return val / product((dx,)*n,axis=0)
+    return val / prod((dx,)*n,axis=0)
 
 
 def ascent():
@@ -206,7 +206,7 @@ def face(gray=False):
 
 def electrocardiogram():
     """
-    Load an electrocardiogram as an example for a one-dimensional signal.
+    Load an electrocardiogram as an example for a 1-D signal.
 
     The returned signal is a 5 minute long electrocardiogram (ECG), a medical
     recording of the heart's electrical activity, sampled at 360 Hz.
@@ -248,7 +248,7 @@ def electrocardiogram():
     ((108000,), -0.16510875, 0.5992473991177294)
 
     As stated the signal features several areas with a different morphology.
-    E.g. the first few seconds show the electrical activity of a heart in
+    E.g., the first few seconds show the electrical activity of a heart in
     normal sinus rhythm as seen below.
 
     >>> import matplotlib.pyplot as plt
@@ -261,7 +261,7 @@ def electrocardiogram():
     >>> plt.ylim(-1, 1.5)
     >>> plt.show()
 
-    After second 16 however, the first premature ventricular contractions, also
+    After second 16, however, the first premature ventricular contractions, also
     called extrasystoles, appear. These have a different morphology compared to
     typical heartbeats. The difference can easily be observed in the following
     plot.

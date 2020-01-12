@@ -1,8 +1,8 @@
 """
 This paver file is intended to help with the release process as much as
 possible. It relies on virtualenv to generate 'bootstrap' environments as
-independent from the user system as possible (e.g. to make sure the sphinx doc
-is built against the built scipy, not an installed one).
+independent from the user system as possible (e.g., to make sure the sphinx doc
+is built against the built SciPy, not an installed one).
 
 The release is assumed to be done on OS X. See release.sh for a script that
 employs the Paver tasks defined in this file, and builds everything required
@@ -18,7 +18,7 @@ instructions) installer, do::
 
     paver bdist_wininst_simple
 
-This assumes that blas/lapack are in c:\local\lib inside drive_c.  You will
+This assumes that blas/lapack are in c:\local\lib inside drive_c. You will
 have to make sure your Wine python locations (WINE_PYS) are configured
 correctly.
 
@@ -35,7 +35,7 @@ For a simple installer, which is just an mpkg inside a dmg, do::
 
   paver simple_dmg
 
-For a more fancy installer which includes documentation and looks better, do::
+For a more fancy installer, which includes documentation and looks better, do::
 
   paver pdf  # needs to be done only once
   paver dmg
@@ -48,7 +48,7 @@ Assumes you have git and the binaries/tarballs in installers/::
 
     paver write_release_and_log
 
-This automatically put the checksum into NOTES.txt, and write the Changelog
+This automatically puts the checksum into NOTES.txt and writes the Changelog,
 which can be uploaded to Github Releases (and maybe sourceforge for historical
 reasons, see gh-4939).
 
@@ -58,7 +58,7 @@ TODO
     - make it more easily customizable (through command line args)
     - missing targets: install & test, sdist test, debian packaging
     - fix bdist_mpkg: we build the same source twice -> how to make sure we use
-      the same underlying python for egg install in venv and for bdist_mpkg
+      the same underlying Python for egg install in venv and for bdist_mpkg
 """
 
 import os
@@ -70,13 +70,11 @@ import warnings
 from hashlib import md5
 from hashlib import sha256
 
-import distutils
-
 try:
     from paver.tasks import VERSION as _PVER
     if not _PVER >= '1.0':
         raise RuntimeError("paver version >= 1.0 required (was %s)" % _PVER)
-except ImportError, e:
+except ImportError:
     raise RuntimeError("paver version >= 1.0 required")
 
 import paver
@@ -115,10 +113,10 @@ except AttributeError:
 #-----------------------------------
 
 # Source of the release notes
-RELEASE = 'doc/release/1.2.0-notes.rst'
+RELEASE = 'doc/release/1.5.0-notes.rst'
 
 # Start/end of the log (from git)
-LOG_START = 'v1.1.0'
+LOG_START = 'v1.4.0'
 LOG_END = 'master'
 
 
@@ -126,12 +124,12 @@ LOG_END = 'master'
 # Hardcoded build/install dirs, virtualenv options, etc.
 #-------------------------------------------------------
 
-# Default python version
-PYVER="2.7"
+# Default Python version
+PYVER="3.6"
 
 # Paver options object, holds all default dirs
 options(bootstrap=Bunch(bootstrap_dir="bootstrap"),
-        virtualenv=Bunch(packages_to_install=["sphinx==1.1.3", "numpydoc"],
+        virtualenv=Bunch(packages_to_install=["sphinx==1.8.5", "numpydoc"],
                          no_site_packages=False),
         sphinx=Bunch(builddir="build", sourcedir="source", docroot='doc'),
         superpack=Bunch(builddir="build-superpack",
@@ -157,40 +155,23 @@ SITECFG = {"sse3" : {'BLAS': 'None', 'LAPACK': 'None',
 
 # Wine config for win32 builds
 if sys.platform == "win32":
-    WINE_PY26 = [r"C:\Python26\python.exe"]
-    WINE_PY27 = [r"C:\Python27\python.exe"]
-    WINE_PY32 = [r"C:\Python32\python.exe"]
-    WINE_PY33 = [r"C:\Python33\python.exe"]
-    WINE_PY34 = [r"C:\Python34\python.exe"]
+    WINE_PY35 = [r"C:\Python35\python.exe"]
     WINDOWS_ENV = os.environ
     MAKENSIS = ["makensis"]
 elif sys.platform == "darwin":
-    WINE_PY26 = ["wine", os.environ['HOME'] + "/.wine/drive_c/Python26/python.exe"]
-    WINE_PY27 = ["wine", os.environ['HOME'] + "/.wine/drive_c/Python27/python.exe"]
-    WINE_PY32 = ["wine", os.environ['HOME'] + "/.wine/drive_c/Python32/python.exe"]
-    WINE_PY33 = ["wine", os.environ['HOME'] + "/.wine/drive_c/Python33/python.exe"]
-    WINE_PY34 = ["wine", os.environ['HOME'] + "/.wine/drive_c/Python34/python.exe"]
+    WINE_PY35 = ["wine", os.environ['HOME'] + "/.wine/drive_c/Python35/python.exe"]
     WINDOWS_ENV = os.environ
     WINDOWS_ENV["DYLD_FALLBACK_LIBRARY_PATH"] = "/usr/X11/lib:/usr/lib"
     MAKENSIS = ["wine", "makensis"]
 else:
-    WINE_PY26 = [os.environ['HOME'] + "/.wine/drive_c/Python26/python.exe"]
-    WINE_PY27 = [os.environ['HOME'] + "/.wine/drive_c/Python27/python.exe"]
-    WINE_PY32 = [os.environ['HOME'] + "/.wine/drive_c/Python32/python.exe"]
-    WINE_PY33 = [os.environ['HOME'] + "/.wine/drive_c/Python33/python.exe"]
-    WINE_PY34 = [os.environ['HOME'] + "/.wine/drive_c/Python34/python.exe"]
+    WINE_PY35 = [os.environ['HOME'] + "/.wine/drive_c/Python35/python.exe"]
     WINDOWS_ENV = os.environ
     MAKENSIS = ["wine", "makensis"]
-WINE_PYS = {'3.4':WINE_PY34, '3.3':WINE_PY33, '3.2':WINE_PY32,
-            '2.7':WINE_PY27, '2.6':WINE_PY26}
+WINE_PYS = {'3.5':WINE_PY35}
 
 # Framework Python locations on OS X
 MPKG_PYTHON = {
-        "2.6": "/Library/Frameworks/Python.framework/Versions/2.6/bin/python",
-        "2.7": "/Library/Frameworks/Python.framework/Versions/2.7/bin/python",
-        "3.2": "/Library/Frameworks/Python.framework/Versions/3.2/bin/python3",
-        "3.3": "/Library/Frameworks/Python.framework/Versions/3.3/bin/python3",
-        "3.4": "/Library/Frameworks/Python.framework/Versions/3.4/bin/python3"
+        "3.5": "/Library/Frameworks/Python.framework/Versions/3.5/bin/python3"
         }
 # Full path to the *static* gfortran runtime
 LIBGFORTRAN_A_PATH = "/usr/local/lib/libgfortran.a"
@@ -231,7 +212,7 @@ def bootstrap():
     bdir = options.bootstrap_dir
     if not os.path.exists(bdir):
         os.makedirs(bdir)
-    bscript = "boostrap.py"
+    bscript = "bootstrap.py"
 
     options.virtualenv.script_name = os.path.join(options.bootstrap_dir,
                                                   bscript)
@@ -271,7 +252,7 @@ def nuke():
 
 @task
 def html(options):
-    """Build scipy documentation and put it into build/docs"""
+    """Build SciPy documentation and put it into build/docs"""
     # Don't use paver html target because of scipy bootstrapping problems
     subprocess.check_call(["make", "html"], cwd="doc")
     builtdocs = paver.path.path("doc") / options.sphinx.builddir / "html"
@@ -280,7 +261,7 @@ def html(options):
 
 @task
 def latex():
-    """Build scipy documentation in latex format."""
+    """Build SciPy documentation in latex format."""
     subprocess.check_call(["make", "latex"], cwd="doc")
 
 @task
@@ -314,14 +295,14 @@ def tarball_name(type='gztar'):
 
 @task
 def sdist():
-    # First clean the repo and update submodules (for up-to-date doc html theme
+    # First, clean the repo and update submodules (for up-to-date doc html theme
     # and Sphinx extensions)
     sh('git clean -xdf')
     sh('git submodule init')
     sh('git submodule update')
 
     # Fix file permissions
-    sh('chmod a+rX -R *')
+    sh('chmod -R a+rX *')
 
     # To be sure to bypass paver when building sdist... paver + scipy.distutils
     # do not play well together.
@@ -352,7 +333,7 @@ def sdist():
 
 @task
 def release(options):
-    """sdists, release notes and changelog.  Docs and wheels are built in
+    """sdists, release notes and changelog. Docs and wheels are built in
     separate steps (see doc/source/dev/releasing.rst).
     """
     # Source tarballs
@@ -382,7 +363,7 @@ def wininst_name(pyver):
     return "scipy-%s.win32-py%s%s" % (FULLVERSION, pyver, ext)
 
 def bdist_wininst_arch(pyver, arch):
-    """Arch specific wininst build."""
+    """Arch-specific wininst build."""
     if os.path.exists("build"):
         shutil.rmtree("build")
     _bdist_wininst(pyver, SITECFG[arch])
@@ -436,7 +417,7 @@ def bdist_superpack(options):
             os.rename(source, target)
         except OSError:
             # May be due to dev version having 'Unknown' in name, if git isn't
-            # found.  This can be the case when compiling under Wine.
+            # found. This can be the case when compiling under Wine.
             ix = source.find('.dev0+') + 6
             source = source[:ix] + 'Unknown' + source[ix+7:]
             os.rename(source, target)
@@ -483,7 +464,7 @@ def _bdist_wininst(pyver, cfg_env=None):
         subprocess.check_call(cmd, env=cfg_env)
     except subprocess.CalledProcessError:
         # Too many open files to compile in one go, so re-run.
-        print('RESTART WINDOWS BUILD.  See gh-2709.')
+        print('RESTART WINDOWS BUILD. See gh-2709.')
         subprocess.check_call(cmd, env=cfg_env)
 
 
@@ -545,7 +526,7 @@ def _build_mpkg(pyver):
     numverstr = ".".join(["%i" % i for i in numver])
     if pyver < "3.3":
         if not numver == (1, 8, 2):
-            raise ValueError("Scipy 0.19.x should be built against numpy "
+            raise ValueError("SciPy 0.19.x should be built against numpy "
                              "1.8.2, (detected %s) for Python >= 3.4" % numverstr)
 
     prepare_static_gfortran_runtime("build")
@@ -564,7 +545,7 @@ def _build_mpkg(pyver):
 def dmg():
     try:
         pyver = options.dmg.python_version
-    except:
+    except Exception:
         pyver = PYVER
     idirs = options.installers.installersdir
 
@@ -660,7 +641,7 @@ def compute_md5(idirs):
     released = paver.path.path(idirs).listdir()
     checksums = []
     for f in sorted(released):
-        m = md5(open(f, 'r').read())
+        m = md5(open(f, 'rb').read())
         checksums.append('%s  %s' % (m.hexdigest(), os.path.basename(f)))
 
     return checksums
@@ -671,7 +652,7 @@ def compute_sha256(idirs):
     released = paver.path.path(idirs).listdir()
     checksums = []
     for f in sorted(released):
-        m = sha256(open(f, 'r').read())
+        m = sha256(open(f, 'rb').read())
         checksums.append('%s  %s' % (m.hexdigest(), os.path.basename(f)))
 
     return checksums
@@ -703,8 +684,9 @@ SHA256
 """)
         ftarget.writelines(['%s\n' % c for c in compute_sha256(idirs)])
 
-    # Sign release
-    cmd = ['gpg', '--clearsign', '--armor']
+    # Sign release; on some platforms gpg2 may actually
+    # be named gpg
+    cmd = ['gpg2', '--clearsign', '--armor']
     if hasattr(options, 'gpg_key'):
         cmd += ['--default-key', options.gpg_key]
     cmd += ['--output', str(target), str(tmp_target)]
@@ -718,7 +700,7 @@ def write_log_task(filename='Changelog'):
             ['git', 'log',  '%s..%s' % (LOG_START, LOG_END)],
             stdout=subprocess.PIPE)
 
-    out = st.communicate()[0]
+    out = st.communicate()[0].decode()
     a = open(filename, 'w')
     a.writelines(out)
     a.close()

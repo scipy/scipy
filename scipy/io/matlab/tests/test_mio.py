@@ -13,16 +13,15 @@ from glob import glob
 from io import BytesIO
 from tempfile import mkdtemp
 
-from scipy._lib.six import u, text_type, string_types
+from scipy._lib.six import u, text_type
 
 import warnings
 import shutil
 import gzip
 
 from numpy.testing import (assert_array_equal, assert_array_almost_equal,
-                           assert_equal, assert_)
+                           assert_equal, assert_, suppress_warnings)
 from pytest import raises as assert_raises
-from scipy._lib._numpy_compat import suppress_warnings
 
 import numpy as np
 from numpy import array
@@ -40,7 +39,7 @@ test_data_path = pjoin(dirname(__file__), 'data')
 
 
 def mlarr(*args, **kwargs):
-    """Convenience function to return matlab-compatible 2D array."""
+    """Convenience function to return matlab-compatible 2-D array."""
     arr = np.array(*args, **kwargs)
     arr.shape = matdims(arr)
     return arr
@@ -311,9 +310,8 @@ def _whos_check_case(name, files, case, classes):
 
         whos = whosmat(file_name)
 
-        expected_whos = []
-        for k, expected in case.items():
-            expected_whos.append((k, expected.shape, classes[k]))
+        expected_whos = [
+            (k, expected.shape, classes[k]) for k, expected in case.items()]
 
         whos.sort()
         expected_whos.sort()
@@ -378,11 +376,11 @@ def test_gzip_simple():
     tmpdir = mkdtemp()
     try:
         fname = pjoin(tmpdir,name)
-        mat_stream = gzip.open(fname,mode='wb')
+        mat_stream = gzip.open(fname, mode='wb')
         savemat(mat_stream, expected, format=format)
         mat_stream.close()
 
-        mat_stream = gzip.open(fname,mode='rb')
+        mat_stream = gzip.open(fname, mode='rb')
         actual = loadmat(mat_stream, struct_as_record=True)
         mat_stream.close()
     finally:
@@ -439,7 +437,7 @@ def test_mat73():
 def test_warnings():
     # This test is an echo of the previous behavior, which was to raise a
     # warning if the user triggered a search for mat files on the Python system
-    # path.  We can remove the test in the next version after upcoming (0.13)
+    # path. We can remove the test in the next version after upcoming (0.13).
     fname = pjoin(test_data_path, 'testdouble_7.1_GLNX86.mat')
     with warnings.catch_warnings():
         warnings.simplefilter('error')
@@ -511,7 +509,7 @@ def test_long_field_names_in_struct():
 
 def test_cell_with_one_thing_in_it():
     # Regression test - make a cell array that's 1 x 2 and put two
-    # strings in it.  It works. Make a cell array that's 1 x 1 and put
+    # strings in it. It works. Make a cell array that's 1 x 1 and put
     # a string in it. It should work but, in the old days, it didn't.
     cells = np.ndarray((1,2),dtype=object)
     cells[0,0] = 'Hello'
@@ -743,7 +741,7 @@ def test_to_writeable():
     assert_(to_writeable(None) is None)
     # String to strings
     assert_equal(to_writeable('a string').dtype.type, np.str_)
-    # Scalars to numpy to numpy scalars
+    # Scalars to numpy to NumPy scalars
     res = to_writeable(1)
     assert_equal(res.shape, ())
     assert_equal(res.dtype.type, np.array(1).dtype.type)
@@ -832,7 +830,7 @@ def test_read_opts():
     rdr = MatFile5Reader(stream, byte_order=boc.native_code)
     assert_array_equal(rdr.get_variables()['a'], arr)
     # inverted byte code leads to error on read because of swapped
-    # header etc
+    # header etc.
     rdr = MatFile5Reader(stream, byte_order=boc.swapped_code)
     assert_raises(Exception, rdr.get_variables)
     rdr.byte_order = boc.native_code
@@ -858,10 +856,10 @@ def test_empty_string():
     d = rdr.get_variables()
     fp.close()
     assert_array_equal(d['a'], np.array([], dtype='U1'))
-    # empty string round trip.  Matlab cannot distiguish
+    # Empty string round trip. Matlab cannot distinguish
     # between a string array that is empty, and a string array
     # containing a single empty string, because it stores strings as
-    # arrays of char.  There is no way of having an array of char that
+    # arrays of char. There is no way of having an array of char that
     # is not empty, but contains an empty string.
     stream = BytesIO()
     savemat(stream, {'a': np.array([''])})
@@ -909,7 +907,7 @@ def test_read_both_endian():
 
 def test_write_opposite_endian():
     # We don't support writing opposite endian .mat files, but we need to behave
-    # correctly if the user supplies an other-endian numpy array to write out
+    # correctly if the user supplies an other-endian NumPy array to write out.
     float_arr = np.array([[2., 3.],
                           [3., 4.]])
     int_arr = np.arange(6).reshape((2, 3))
@@ -955,7 +953,7 @@ def test_logical_out_type():
 
 
 def test_mat4_3d():
-    # test behavior when writing 3D arrays to matlab 4 files
+    # test behavior when writing 3-D arrays to matlab 4 files
     stream = BytesIO()
     arr = np.arange(24).reshape((2,3,4))
     assert_raises(ValueError, savemat, stream, {'a': arr}, True, '4')
@@ -1017,7 +1015,7 @@ def test_scalar_squeeze():
     savemat(stream, in_d)
     out_d = loadmat(stream, squeeze_me=True)
     assert_(isinstance(out_d['scalar'], float))
-    assert_(isinstance(out_d['string'], string_types))
+    assert_(isinstance(out_d['string'], str))
     assert_(isinstance(out_d['st'], np.ndarray))
 
 
@@ -1091,7 +1089,7 @@ def test_round_types():
     for dts in ('f8','f4','i8','i4','i2','i1',
                 'u8','u4','u2','u1','c16','c8'):
         stream.truncate(0)
-        stream.seek(0)  # needed for BytesIO in python 3
+        stream.seek(0)  # needed for BytesIO in Python 3
         savemat(stream, {'arr': arr.astype(dts)})
         vars = loadmat(stream)
         assert_equal(np.dtype(dts), vars['arr'].dtype)
@@ -1201,9 +1199,8 @@ def test_miuint32_compromise():
     assert_equal(res['an_array'], np.arange(10)[None, :])
     # mat file with miUINT32 for miINT32, with negative value
     filename = pjoin(test_data_path, 'bad_miuint32.mat')
-    with suppress_warnings() as sup:
-        sup.filter(message="unclosed file")  # Py3k ResourceWarning
-        assert_raises(ValueError, loadmat, filename)
+    with assert_raises(ValueError):
+        loadmat(filename)
 
 
 def test_miutf8_for_miint8_compromise():
@@ -1213,9 +1210,8 @@ def test_miutf8_for_miint8_compromise():
     assert_equal(res['array_name'], [[1]])
     # mat file with non-ascii utf8 name raises error
     filename = pjoin(test_data_path, 'bad_miutf8_array_name.mat')
-    with suppress_warnings() as sup:
-        sup.filter(message="unclosed file")  # Py3k ResourceWarning
-        assert_raises(ValueError, loadmat, filename)
+    with assert_raises(ValueError):
+        loadmat(filename)
 
 
 def test_bad_utf8():

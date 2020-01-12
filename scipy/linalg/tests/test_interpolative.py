@@ -30,7 +30,9 @@ import scipy.linalg.interpolative as pymatrixid
 import numpy as np
 from scipy.linalg import hilbert, svdvals, norm
 from scipy.sparse.linalg import aslinearoperator
+from scipy.linalg.interpolative import interp_decomp
 import time
+import itertools
 
 from numpy.testing import assert_, assert_allclose
 from pytest import raises as assert_raises
@@ -63,7 +65,7 @@ class TestInterpolativeDecomposition(object):
         S = np.linalg.svd(A, compute_uv=False)
         try:
             rank = np.nonzero(S < eps)[0][0]
-        except:
+        except IndexError:
             rank = n
 
         # print input summary
@@ -256,3 +258,38 @@ class TestInterpolativeDecomposition(object):
         a = np.ones((4, 3))
         with assert_raises(ValueError):
             pymatrixid.svd(a, 4)
+
+    def test_full_rank(self):
+        eps = 1.0e-12
+
+        # fixed precision
+        A = np.random.rand(16, 8)
+        k, idx, proj = pymatrixid.interp_decomp(A, eps)
+        assert_(k == A.shape[1])
+
+        P = pymatrixid.reconstruct_interp_matrix(idx, proj)
+        B = pymatrixid.reconstruct_skel_matrix(A, k, idx)
+        assert_allclose(A, B.dot(P))
+
+        # fixed rank
+        idx, proj = pymatrixid.interp_decomp(A, k)
+
+        P = pymatrixid.reconstruct_interp_matrix(idx, proj)
+        B = pymatrixid.reconstruct_skel_matrix(A, k, idx)
+        assert_allclose(A, B.dot(P))
+
+    def test_bug_9793(self):
+        dtypes = [np.float_, np.complex_]
+        rands = [True, False]
+        epss = [1, 0.1]
+
+        for dtype, eps, rand in itertools.product(dtypes, epss, rands):
+            A = np.array([[-1, -1, -1, 0, 0, 0],
+                          [0, 0, 0, 1, 1, 1],
+                          [1, 0, 0, 1, 0, 0],
+                          [0, 1, 0, 0, 1, 0],
+                          [0, 0, 1, 0, 0, 1]],
+                         dtype=dtype, order="C")
+            B = A.copy()
+            interp_decomp(A.T, eps, rand=rand)
+            assert_(np.array_equal(A, B))

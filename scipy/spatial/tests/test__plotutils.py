@@ -1,9 +1,7 @@
 from __future__ import division, print_function, absolute_import
 
 import pytest
-from numpy.testing import assert_, assert_array_equal
-from scipy._lib._numpy_compat import suppress_warnings
-
+from numpy.testing import assert_, assert_array_equal, suppress_warnings
 try:
     import matplotlib
     matplotlib.rcParams['backend'] = 'Agg'
@@ -11,7 +9,7 @@ try:
     from matplotlib.collections import LineCollection
     from matplotlib import MatplotlibDeprecationWarning
     has_matplotlib = True
-except:
+except Exception:
     has_matplotlib = False
 
 from scipy.spatial import \
@@ -28,7 +26,7 @@ class TestPlotting:
         fig = plt.figure()
         obj = Delaunay(self.points)
         s_before = obj.simplices.copy()
-        with suppress_warnings as sup:
+        with suppress_warnings() as sup:
             # filter can be removed when matplotlib 1.x is dropped
             sup.filter(message="The ishold function was deprecated in version")
             r = delaunay_plot_2d(obj, ax=fig.gca())
@@ -40,7 +38,7 @@ class TestPlotting:
         # Smoke test
         fig = plt.figure()
         obj = Voronoi(self.points)
-        with suppress_warnings as sup:
+        with suppress_warnings() as sup:
             # filter can be removed when matplotlib 1.x is dropped
             sup.filter(message="The ishold function was deprecated in version")
             r = voronoi_plot_2d(obj, ax=fig.gca())
@@ -52,7 +50,7 @@ class TestPlotting:
         # Smoke test
         fig = plt.figure()
         tri = ConvexHull(self.points)
-        with suppress_warnings as sup:
+        with suppress_warnings() as sup:
             # filter can be removed when matplotlib 1.x is dropped
             sup.filter(message="The ishold function was deprecated in version")
             r = convex_hull_plot_2d(tri, ax=fig.gca())

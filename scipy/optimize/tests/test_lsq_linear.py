@@ -108,6 +108,19 @@ class BaseMixin(object):
         assert_(isinstance(res.message, str))
         assert_(res.success)
 
+    # This is a test for issue #9982.
+    def test_almost_singular(self):
+        A = np.array(
+            [[0.8854232310355122, 0.0365312146937765, 0.0365312146836789],
+             [0.3742460132129041, 0.0130523214078376, 0.0130523214077873],
+             [0.9680633871281361, 0.0319366128718639, 0.0319366128718388]])
+
+        b = np.array(
+            [0.0055029366538097, 0.0026677442422208, 0.0066612514782381])
+
+        result = lsq_linear(A, b, method=self.method)
+        assert_(result.cost < 1.1e-8)
+
 
 class SparseMixin(object):
     def test_sparse_and_LinearOperator(self):
@@ -130,13 +143,13 @@ class SparseMixin(object):
         lb = self.rnd.randn(n)
         ub = lb + 1
         res = lsq_linear(A, b, (lb, ub))
-        assert_allclose(res.optimality, 0.0, atol=1e-8)
+        assert_allclose(res.optimality, 0.0, atol=1e-6)
 
         res = lsq_linear(A, b, (lb, ub), lsmr_tol=1e-13)
-        assert_allclose(res.optimality, 0.0, atol=1e-8)
+        assert_allclose(res.optimality, 0.0, atol=1e-6)
 
         res = lsq_linear(A, b, (lb, ub), lsmr_tol='auto')
-        assert_allclose(res.optimality, 0.0, atol=1e-8)
+        assert_allclose(res.optimality, 0.0, atol=1e-6)
 
 
 class TestTRF(BaseMixin, SparseMixin):

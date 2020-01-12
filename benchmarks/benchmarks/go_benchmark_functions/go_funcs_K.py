@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import division, print_function, absolute_import
 
-from numpy import asarray, atleast_2d, floor, arange, sin, sqrt, prod, sum, round
+from numpy import asarray, atleast_2d, arange, sin, sqrt, prod, sum, round
 from .go_benchmark import Benchmark
 
 

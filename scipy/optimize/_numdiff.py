@@ -20,7 +20,7 @@ def _adjust_scheme_to_bounds(x0, h, num_steps, scheme, lb, ub):
     x0 : ndarray, shape (n,)
         Point at which we wish to estimate derivative.
     h : ndarray, shape (n,)
-        Desired finite difference steps.
+        Desired absolute finite difference steps.
     num_steps : int
         Number of `h` steps in one direction required to implement finite
         difference scheme. For example, 2 means that we need to evaluate
@@ -37,8 +37,8 @@ def _adjust_scheme_to_bounds(x0, h, num_steps, scheme, lb, ub):
     Returns
     -------
     h_adjusted : ndarray, shape (n,)
-        Adjusted step sizes. Step size decreases only if a sign flip or
-        switching to one-sided scheme doesn't allow to take a full step.
+        Adjusted absolute step sizes. Step size decreases only if a sign flip
+        or switching to one-sided scheme doesn't allow to take a full step.
     use_one_sided : ndarray of bool, shape (n,)
         Whether to switch to one-sided scheme. Informative only for
         ``scheme='2-sided'``.
@@ -97,6 +97,18 @@ relative_step = {"2-point": EPS**0.5,
 
 
 def _compute_absolute_step(rel_step, x0, method):
+    """
+    Computes an absolute step from a relative step for finite difference
+    calculation.
+
+    Parameters
+    ----------
+    rel_step: None or array-like
+        Relative step for the finite difference calculation
+    x0 : np.ndarray
+        Parameter vector
+    method : {'2-point', '3-point', 'cs'}
+    """
     if rel_step is None:
         rel_step = relative_step[method]
     sign_x0 = (x0 >= 0).astype(float) * 2 - 1
@@ -104,6 +116,16 @@ def _compute_absolute_step(rel_step, x0, method):
 
 
 def _prepare_bounds(bounds, x0):
+    """
+    Prepares new-style bounds from a two-tuple specifying the lower and upper
+    limits for values in x0. If a value is not bound then the lower/upper bound
+    will be expected to be -np.inf/np.inf.
+
+    Examples
+    --------
+    >>> _prepare_bounds([(0, 1, 2), (1, 2, np.inf)], [0.5, 1.5, 2.5])
+    (array([0., 1., 2.]), array([ 1.,  2., inf]))
+    """
     lb, ub = [np.asarray(b, dtype=float) for b in bounds]
     if lb.ndim == 0:
         lb = np.resize(lb, x0.shape)
@@ -115,7 +137,7 @@ def _prepare_bounds(bounds, x0):
 
 
 def group_columns(A, order=0):
-    """Group columns of a 2-d matrix for sparse finite differencing [1]_.
+    """Group columns of a 2-D matrix for sparse finite differencing [1]_.
 
     Two columns are in the same group if in each row at least one of them
     has zero. A greedy sequential algorithm is used to construct groups.
@@ -135,7 +157,7 @@ def group_columns(A, order=0):
     groups : ndarray of int, shape (n,)
         Contains values from 0 to n_groups-1, where n_groups is the number
         of found groups. Each value ``groups[i]`` is an index of a group to
-        which i-th column assigned. The procedure was helpful only if
+        which ith column assigned. The procedure was helpful only if
         n_groups is significantly less than n.
 
     References
@@ -175,8 +197,8 @@ def group_columns(A, order=0):
     return groups
 
 
-def approx_derivative(fun, x0, method='3-point', rel_step=None, f0=None,
-                      bounds=(-np.inf, np.inf), sparsity=None,
+def approx_derivative(fun, x0, method='3-point', rel_step=None, abs_step=None,
+                      f0=None, bounds=(-np.inf, np.inf), sparsity=None,
                       as_linear_operator=False, args=(), kwargs={}):
     """Compute finite difference approximation of the derivatives of a
     vector-valued function.
@@ -190,10 +212,10 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, f0=None,
     fun : callable
         Function of which to estimate the derivatives. The argument x
         passed to this function is ndarray of shape (n,) (never a scalar
-        even if n=1). It must return 1-d array_like of shape (m,) or a scalar.
+        even if n=1). It must return 1-D array_like of shape (m,) or a scalar.
     x0 : array_like of shape (n,) or float
         Point at which to estimate the derivatives. Float will be converted
-        to a 1-d array.
+        to a 1-D array.
     method : {'3-point', '2-point', 'cs'}, optional
         Finite difference method to use:
             - '2-point' - use the first order accuracy forward or backward
@@ -211,6 +233,11 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, f0=None,
         fit into the bounds. For ``method='3-point'`` the sign of `h` is
         ignored. If None (default) then step is selected automatically,
         see Notes.
+    abs_step : array_like, optional
+        Absolute step size to use, possibly adjusted to fit into the bounds.
+        For ``method='3-point'`` the sign of `abs_step` is ignored. By default
+        relative steps are used, only if ``abs_step is not None`` are absolute
+        steps used.
     f0 : None or array_like, optional
         If not None it is assumed to be equal to ``fun(x0)``, in  this case
         the ``fun(x0)`` is not called. Default is None.
@@ -261,8 +288,8 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, f0=None,
         is None then a ndarray with shape (m, n) is returned. If
         `sparsity` is not None returns a csr_matrix with shape (m, n).
         For sparse matrices and linear operators it is always returned as
-        a 2-dimensional structure, for ndarrays, if m=1 it is returned
-        as a 1-dimensional gradient array with shape (n,).
+        a 2-D structure, for ndarrays, if m=1 it is returned
+        as a 1-D gradient array with shape (n,).
 
     See Also
     --------
@@ -273,7 +300,11 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, f0=None,
     If `rel_step` is not provided, it assigned to ``EPS**(1/s)``, where EPS is
     machine epsilon for float64 numbers, s=2 for '2-point' method and s=3 for
     '3-point' method. Such relative step approximately minimizes a sum of
-    truncation and round-off errors, see [1]_.
+    truncation and round-off errors, see [1]_. Relative steps are used by
+    default. However, absolute steps are used when ``abs_step is not None``.
+    If any of the absolute steps produces an indistinguishable difference from
+    the original `x0`, ``(x0 + abs_step) - x0 == 0``, then a relative step is
+    substituted for that particular entry.
 
     A finite difference scheme for '3-point' method is selected automatically.
     The well-known central difference scheme is used for points sufficiently
@@ -286,7 +317,7 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, f0=None,
     on the other hand when n=1 Jacobian is returned with a shape (m, 1).
     Our motivation is the following: a) It handles a case of gradient
     computation (m=1) in a conventional way. b) It clearly separates these two
-    different cases. b) In all cases np.atleast_2d can be called to get 2-d
+    different cases. b) In all cases np.atleast_2d can be called to get 2-D
     Jacobian with correct dimensions.
 
     References
@@ -368,7 +399,21 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, f0=None,
         return _linear_operator_difference(fun_wrapped, x0,
                                            f0, rel_step, method)
     else:
-        h = _compute_absolute_step(rel_step, x0, method)
+        # by default we use rel_step
+        if abs_step is None:
+            h = _compute_absolute_step(rel_step, x0, method)
+        else:
+            # user specifies an absolute step
+            sign_x0 = (x0 >= 0).astype(float) * 2 - 1
+            h = abs_step * sign_x0
+
+            # cannot have a zero step. This might happen if x0 is very large
+            # or small. In which case fall back to relative step.
+            dx = ((x0 + h) - x0)
+            h = np.where(dx == 0,
+                         relative_step[method] * sign_x0 *
+                         np.maximum(1.0, np.abs(x0)),
+                         h)
 
         if method == '2-point':
             h, use_one_sided = _adjust_scheme_to_bounds(
@@ -571,14 +616,14 @@ def check_derivative(fun, jac, x0, bounds=(-np.inf, np.inf), args=(),
     fun : callable
         Function of which to estimate the derivatives. The argument x
         passed to this function is ndarray of shape (n,) (never a scalar
-        even if n=1). It must return 1-d array_like of shape (m,) or a scalar.
+        even if n=1). It must return 1-D array_like of shape (m,) or a scalar.
     jac : callable
         Function which computes Jacobian matrix of `fun`. It must work with
         argument x the same way as `fun`. The return value must be array_like
         or sparse matrix with an appropriate shape.
     x0 : array_like of shape (n,) or float
         Point at which to estimate the derivatives. Float will be converted
-        to 1-d array.
+        to 1-D array.
     bounds : 2-tuple of array_like, optional
         Lower and upper bounds on independent variables. Defaults to no bounds.
         Each bound must match the size of `x0` or be a scalar, in the latter

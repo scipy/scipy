@@ -31,16 +31,13 @@ from ._complexstuff cimport (
     double_complex_from_npy_cdouble)
 
 from . cimport sf_error
-from ._cephes cimport Gamma, lgam, beta, lbeta
+from ._cephes cimport Gamma, lgam, beta, lbeta, gammasgn
 from ._cephes cimport hyp2f1 as hyp2f1_wrap
 
 cdef extern from "specfun_wrappers.h":
     double hyp1f1_wrap(double a, double b, double x) nogil
     npy_cdouble chyp2f1_wrap( double a, double b, double c, npy_cdouble z) nogil
     npy_cdouble chyp1f1_wrap( double a, double b, npy_cdouble z) nogil
-
-cdef extern from "c_misc/misc.h":
-    double gammasgn(double x) nogil
 
 # Fused type wrappers
 
@@ -485,7 +482,12 @@ cdef inline double eval_hermitenorm(long n, double x) nogil:
     cdef double y1, y2, y3
 
     if n < 0:
-        return 0.0
+        sf_error.error(
+            "eval_hermitenorm",
+            sf_error.DOMAIN,
+            "polynomial only defined for nonnegative n",
+        )
+        return nan
     elif n == 0:
         return 1.0
     elif n == 1:
@@ -505,4 +507,11 @@ cdef inline double eval_hermitenorm(long n, double x) nogil:
 
 @cython.cdivision(True)
 cdef inline double eval_hermite(long n, double x) nogil:
+    if n < 0:
+        sf_error.error(
+            "eval_hermite",
+            sf_error.DOMAIN,
+            "polynomial only defined for nonnegative n",
+        )
+        return nan
     return eval_hermitenorm(n, sqrt(2)*x) * 2**(n/2.0)

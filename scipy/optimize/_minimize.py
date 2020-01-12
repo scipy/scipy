@@ -18,8 +18,6 @@ import numpy as np
 
 from scipy._lib.six import callable
 
-from scipy.sparse.linalg import LinearOperator
-
 # unconstrained minimization
 from .optimize import (_minimize_neldermead, _minimize_powell, _minimize_cg,
                        _minimize_bfgs, _minimize_newtoncg,
@@ -30,14 +28,20 @@ from ._trustregion_ncg import _minimize_trust_ncg
 from ._trustregion_krylov import _minimize_trust_krylov
 from ._trustregion_exact import _minimize_trustregion_exact
 from ._trustregion_constr import _minimize_trustregion_constr
-from ._constraints import Bounds, new_bounds_to_old, old_bound_to_new
-
 
 # constrained minimization
 from .lbfgsb import _minimize_lbfgsb
 from .tnc import _minimize_tnc
 from .cobyla import _minimize_cobyla
 from .slsqp import _minimize_slsqp
+from ._constraints import (old_bound_to_new, new_bounds_to_old,
+                           old_constraint_to_new, new_constraint_to_old,
+                           NonlinearConstraint, LinearConstraint, Bounds)
+from ._differentiable_functions import FD_METHODS
+
+MINIMIZE_METHODS = ['nelder-mead', 'powell', 'cg', 'bfgs', 'newton-cg',
+                    'l-bfgs-b', 'tnc', 'cobyla', 'slsqp', 'trust-constr',
+                    'dogleg', 'trust-ncg', 'trust-exact', 'trust-krylov']
 
 
 def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
@@ -52,7 +56,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
 
             ``fun(x, *args) -> float``
 
-        where x is an 1-D array with shape (n,) and `args`
+        where ``x`` is an 1-D array with shape (n,) and ``args``
         is a tuple of the fixed parameters needed to completely
         specify the function.
     x0 : ndarray, shape (n,)
@@ -86,20 +90,25 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     jac : {callable,  '2-point', '3-point', 'cs', bool}, optional
         Method for computing the gradient vector. Only for CG, BFGS,
         Newton-CG, L-BFGS-B, TNC, SLSQP, dogleg, trust-ncg, trust-krylov,
-        trust-exact and trust-constr. If it is a callable, it should be a
-        function that returns the gradient vector:
+        trust-exact and trust-constr.
+        If it is a callable, it should be a function that returns the gradient
+        vector:
 
             ``jac(x, *args) -> array_like, shape (n,)``
 
-        where x is an array with shape (n,) and `args` is a tuple with
-        the fixed parameters. Alternatively, the keywords
-        {'2-point', '3-point', 'cs'} select a finite
-        difference scheme for numerical estimation of the gradient. Options
-        '3-point' and 'cs' are available only to 'trust-constr'.
-        If `jac` is a Boolean and is True, `fun` is assumed to return the
-        gradient along with the objective function. If False, the gradient
-        will be estimated using '2-point' finite difference estimation.
-    hess : {callable, '2-point', '3-point', 'cs', HessianUpdateStrategy},  optional
+        where ``x`` is an array with shape (n,) and ``args`` is a tuple with
+        the fixed parameters. If `jac` is a Boolean and is True, `fun` is
+        assumed to return and objective and gradient as and ``(f, g)`` tuple.
+        Methods 'Newton-CG', 'trust-ncg', 'dogleg', 'trust-exact', and
+        'trust-krylov' require that either a callable be supplied, or that
+        `fun` return the objective and gradient.
+        If None or False, the gradient will be estimated using 2-point finite
+        difference estimation with an absolute step size.
+        Alternatively, the keywords  {'2-point', '3-point', 'cs'} can be used
+        to select a finite difference scheme for numerical estimation of the
+        gradient with a relative step size. These finite difference schemes
+        obey any specified `bounds`.
+    hess : {callable, '2-point', '3-point', 'cs', HessianUpdateStrategy}, optional
         Method for computing the Hessian matrix. Only for Newton-CG, dogleg,
         trust-ncg,  trust-krylov, trust-exact and trust-constr. If it is
         callable, it should return the  Hessian matrix:
@@ -176,7 +185,8 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         generic options:
 
             maxiter : int
-                Maximum number of iterations to perform.
+                Maximum number of iterations to perform. Depending on the
+                method each iteration may use several function evaluations.
             disp : bool
                 Set to True to print convergence messages.
 
@@ -189,7 +199,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
 
         where ``xk`` is the current parameter vector. and ``state``
         is an `OptimizeResult` object, with the same fields
-        as the ones from the return.  If callback returns True
+        as the ones from the return. If callback returns True
         the algorithm execution is terminated.
         For all the other methods, the signature is:
 
@@ -205,7 +215,6 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         Boolean flag indicating if the optimizer exited successfully and
         ``message`` which describes the cause of the termination. See
         `OptimizeResult` for a description of other attributes.
-
 
     See also
     --------
@@ -237,7 +246,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
 
     Method :ref:`CG <optimize.minimize-cg>` uses a nonlinear conjugate
     gradient algorithm by Polak and Ribiere, a variant of the
-    Fletcher-Reeves method described in [5]_ pp.  120-122. Only the
+    Fletcher-Reeves method described in [5]_ pp.120-122. Only the
     first derivatives are used.
 
     Method :ref:`BFGS <optimize.minimize-bfgs>` uses the quasi-Newton
@@ -335,7 +344,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     The scheme 'cs' is, potentially, the most accurate but it
     requires the function to correctly handles complex inputs and to
     be differentiable in the complex plane. The scheme '3-point' is more
-    accurate than '2-point' but requires twice as much operations.
+    accurate than '2-point' but requires twice as many operations.
 
     **Custom minimizers**
 
@@ -350,7 +359,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     its contents also passed as `method` parameters pair by pair.  Also, if
     `jac` has been passed as a bool type, `jac` and `fun` are mangled so that
     `fun` returns just the function values and `jac` is converted to a function
-    returning the Jacobian.  The method shall return an ``OptimizeResult``
+    returning the Jacobian.  The method shall return an `OptimizeResult`
     object.
 
     The provided `method` callable must be able to accept (and possibly ignore)
@@ -532,29 +541,25 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
              RuntimeWarning)
 
     # check gradient vector
-    if meth == 'trust-constr':
-        if type(jac) is bool:
-            if jac:
-                fun = MemoizeJac(fun)
-                jac = fun.derivative
-            else:
-                jac = '2-point'
-        elif jac is None:
-            jac = '2-point'
-        elif not callable(jac) and jac not in ('2-point', '3-point', 'cs'):
-            raise ValueError("Unsupported jac definition.")
+    if callable(jac):
+        pass
+    elif jac is True:
+        # fun returns func and grad
+        fun = MemoizeJac(fun)
+        jac = fun.derivative
+    elif (jac in FD_METHODS and
+          meth in ['trust-constr', 'bfgs', 'cg', 'l-bfgs-b', 'tnc']):
+        # finite differences
+        pass
+    elif meth in ['trust-constr']:
+        # default jac calculation for this method
+        jac = '2-point'
+    elif jac is None or bool(jac) is False:
+        # this will cause e.g. LBFGS to use forward difference, absolute step
+        jac = None
     else:
-        if jac in ('2-point', '3-point', 'cs'):
-            if jac in ('3-point', 'cs'):
-                warn("Only 'trust-constr' method accept %s "
-                     "options for 'jac'. Using '2-point' instead." % jac)
-            jac = None
-        elif not callable(jac):
-            if bool(jac):
-                fun = MemoizeJac(fun)
-                jac = fun.derivative
-            else:
-                jac = None
+        # default if jac option is not understood
+        jac = None
 
     # set default tolerances
     if tol is not None:
@@ -576,20 +581,21 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
             options.setdefault('gtol', tol)
             options.setdefault('barrier_tol', tol)
 
-    if bounds is not None:
-        if meth == 'trust-constr':
-            if not isinstance(bounds, Bounds):
-                lb, ub = old_bound_to_new(bounds)
-                bounds = Bounds(lb, ub)
-        elif meth in ('l-bfgs-b', 'tnc', 'slsqp'):
-            if isinstance(bounds, Bounds):
-                bounds = new_bounds_to_old(bounds.lb, bounds.ub, x0.shape[0])
-
     if meth == '_custom':
+        # custom method called before bounds and constraints are 'standardised'
+        # custom method should be able to accept whatever bounds/constraints
+        # are provided to it.
         return method(fun, x0, args=args, jac=jac, hess=hess, hessp=hessp,
                       bounds=bounds, constraints=constraints,
                       callback=callback, **options)
-    elif meth == 'nelder-mead':
+
+    if bounds is not None:
+        bounds = standardize_bounds(bounds, x0, meth)
+
+    if constraints is not None:
+        constraints = standardize_constraints(constraints, x0, meth)
+
+    if meth == 'nelder-mead':
         return _minimize_neldermead(fun, x0, args, callback, **options)
     elif meth == 'powell':
         return _minimize_powell(fun, x0, args, callback, **options)
@@ -710,19 +716,19 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
     **Custom minimizers**
 
     It may be useful to pass a custom minimization method, for example
-    when using some library frontend to minimize_scalar.  You can simply
+    when using some library frontend to minimize_scalar. You can simply
     pass a callable as the ``method`` parameter.
 
     The callable is called as ``method(fun, args, **kwargs, **options)``
     where ``kwargs`` corresponds to any other parameters passed to `minimize`
     (such as `bracket`, `tol`, etc.), except the `options` dict, which has
     its contents also passed as `method` parameters pair by pair.  The method
-    shall return an ``OptimizeResult`` object.
+    shall return an `OptimizeResult` object.
 
     The provided `method` callable must be able to accept (and possibly ignore)
     arbitrary parameters; the set of parameters accepted by `minimize` may
     expand in future versions and then these parameters will be passed to
-    the method.  You can find an example in the scipy.optimize tutorial.
+    the method. You can find an example in the scipy.optimize tutorial.
 
     .. versionadded:: 0.11.0
 
@@ -787,3 +793,38 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
         return _minimize_scalar_golden(fun, bracket, args, **options)
     else:
         raise ValueError('Unknown solver %s' % method)
+
+
+def standardize_bounds(bounds, x0, meth):
+    """Converts bounds to the form required by the solver."""
+    if meth == 'trust-constr':
+        if not isinstance(bounds, Bounds):
+            lb, ub = old_bound_to_new(bounds)
+            bounds = Bounds(lb, ub)
+    elif meth in ('l-bfgs-b', 'tnc', 'slsqp'):
+        if isinstance(bounds, Bounds):
+            bounds = new_bounds_to_old(bounds.lb, bounds.ub, x0.shape[0])
+    return bounds
+
+
+def standardize_constraints(constraints, x0, meth):
+    """Converts constraints to the form required by the solver."""
+    all_constraint_types = (NonlinearConstraint, LinearConstraint, dict)
+    new_constraint_types = all_constraint_types[:-1]
+    if isinstance(constraints, all_constraint_types):
+        constraints = [constraints]
+    constraints = list(constraints)  # ensure it's a mutable sequence
+
+    if meth == 'trust-constr':
+        for i, con in enumerate(constraints):
+            if not isinstance(con, new_constraint_types):
+                constraints[i] = old_constraint_to_new(i, con)
+    else:
+        # iterate over copy, changing original
+        for i, con in enumerate(list(constraints)):
+            if isinstance(con, new_constraint_types):
+                old_constraints = new_constraint_to_old(con, x0)
+                constraints[i] = old_constraints[0]
+                constraints.extend(old_constraints[1:])  # appends 1 if present
+
+    return constraints

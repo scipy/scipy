@@ -88,7 +88,7 @@ cdef int _simultaneous_sort(float* dist, int* idx,
         # The smallest of the three is moved to the beginning of the array,
         # the middle (the pivot value) is moved to the end, and the largest
         # is moved to the pivot index.
-        pivot_idx = size / 2
+        pivot_idx = size // 2
         if dist[0] > dist[size - 1]:
             dual_swap(dist, idx, 0, size - 1)
         if dist[size - 1] > dist[pivot_idx]:
@@ -160,16 +160,16 @@ cdef int[:] identify_swaps(int[:, ::1] sorted_Z,
         float[:, ::1] M = np.zeros((n_points, n_points), dtype=np.float32)
         # (n x n x 2) booleans
         int[:, :, :] swap_status = np.zeros((n_points, n_points, 2),
-                                            dtype=np.int32)
-        int[:] must_swap = np.zeros((len(sorted_Z),), dtype=np.int32)
+                                            dtype=np.intc)
+        int[:] must_swap = np.zeros((len(sorted_Z),), dtype=np.intc)
 
         int i, v_l, v_r, v_size, 
         int v_l_min, v_l_max, v_r_min, v_r_max
 
-        int* u_clusters
-        int* m_clusters
-        int* w_clusters
-        int* k_clusters
+        int u_clusters[2]
+        int m_clusters[2]
+        int w_clusters[2]
+        int k_clusters[2]
         int total_u_clusters, total_w_clusters
 
         int u, w, m, k
@@ -230,13 +230,6 @@ cdef int[:] identify_swaps(int[:, ::1] sorted_Z,
         v_l_min = cluster_ranges[v_l, 0]; v_l_max = cluster_ranges[v_l, 1]
         v_r_min = cluster_ranges[v_r, 0]; v_r_max = cluster_ranges[v_r, 1]
 
-
-        # Store the index of the clusters used to search for u, m, w, k. 
-        u_clusters = <int*>malloc(sizeof(int) * 2)
-        m_clusters = <int*>malloc(sizeof(int) * 2)
-        w_clusters = <int*>malloc(sizeof(int) * 2)
-        k_clusters = <int*>malloc(sizeof(int) * 2)
-
         if v_l < n_points:
             # V_l is a singleton, so U = M = V_L.
             total_u_clusters = 1
@@ -267,12 +260,10 @@ cdef int[:] identify_swaps(int[:, ::1] sorted_Z,
             total_w_clusters = 2
 
             # First look for W from V_RR and L from V_RL
-            w_clusters = <int*>malloc(sizeof(int) * 2)
             w_clusters[0] = sorted_Z[v_r - n_points, 1]
             w_clusters[1] = sorted_Z[v_r - n_points, 0]
 
             # Next look for W from V_RL and L from V_RR
-            k_clusters = <int*>malloc(sizeof(int) * 2)
             k_clusters[0] = sorted_Z[v_r - n_points, 0]
             k_clusters[1] = sorted_Z[v_r - n_points, 1]
 
@@ -303,17 +294,23 @@ cdef int[:] identify_swaps(int[:, ::1] sorted_Z,
                         if sorted_D[m, k] < min_km_dist:
                             min_km_dist = sorted_D[m, k] 
 
+                m_vals = <float*>malloc(sizeof(float) * (m_max - m_min))
+                m_idx = <int*>malloc(sizeof(int) * (m_max - m_min))
+                k_vals = <float*>malloc(sizeof(float) * (k_max - k_min))
+                k_idx = <int*>malloc(sizeof(int) * (k_max - k_min))
+                if not m_vals or not m_idx or not k_vals or not k_idx:
+                    free(m_vals)
+                    free(m_idx)
+                    free(k_vals)
+                    free(k_idx)
+                    raise MemoryError("failed to allocate memory in identify_swaps().")
 
                 for u in range(u_min, u_max):
                     # Sort the values of M[{m}, u]
-                    m_vals = <float*>malloc(sizeof(float) * (m_max - m_min))
-                    m_idx = <int*>malloc(sizeof(int) * (m_max - m_min))
                     _sort_M_slice(M, m_vals, m_idx, m_min, m_max, u)
 
                     for w in range(w_min, w_max):
                         # Sort the values of M[{k}, w]
-                        k_vals = <float*>malloc(sizeof(float) * (k_max - k_min))
-                        k_idx = <int*>malloc(sizeof(int) * (k_max - k_min))
                         _sort_M_slice(M, k_vals, k_idx, k_min, k_max, w)
 
                         # Set initial value for cur_min_M.
@@ -354,19 +351,12 @@ cdef int[:] identify_swaps(int[:, ::1] sorted_Z,
                         swap_status[u, w, 1] = swap_R
                         swap_status[w, u, 1] = swap_R
 
-                        # We are getting a fresh `w` so need to resort M[{k}, w]
-                        free(k_vals)
-                        free(k_idx)
-
-                    # We are getting a fresh `u` so need to resort M[{m}, u]
-                    free(m_vals)
-                    free(m_idx)
-
-        # We are about to get fresh clusters.
-        free(u_clusters)
-        free(m_clusters)
-        free(w_clusters)
-        free(k_clusters)
+                # We are getting a fresh `w` and `u` so need to resort
+                # M[{k}, w] and M[{m}, u]
+                free(m_vals)
+                free(m_idx)
+                free(k_vals)
+                free(k_idx)
 
         # We are now ready to find the best minimal value for M[{u}, {w}]
         cur_min_M = 1073741824.0 #2^30

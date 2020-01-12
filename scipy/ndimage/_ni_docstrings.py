@@ -1,7 +1,7 @@
 """Docstring components common to several ndimage functions."""
 from __future__ import division, print_function, absolute_import
 
-from scipy.misc import doccer
+from scipy._lib import doccer
 
 __all__ = ['docfiller']
 
@@ -21,12 +21,12 @@ _size_foot_doc = (
 """size : scalar or tuple, optional
     See footprint, below. Ignored if footprint is given.
 footprint : array, optional
-    Either `size` or `footprint` must be defined.  `size` gives
+    Either `size` or `footprint` must be defined. `size` gives
     the shape that is taken from the input array, at every element
     position, to define the input to the filter function.
     `footprint` is a boolean array that specifies (implicitly) a
     shape, but also which of the elements within this shape will get
-    passed to the filter function.  Thus ``size=(n,m)`` is equivalent
+    passed to the filter function. Thus ``size=(n,m)`` is equivalent
     to ``footprint=np.ones((n,m))``.  We adjust `size` to the number
     of dimensions of the input array, so that, if the input array is
     shape (10,10,10), and `size` is 2, then the actual size used is
@@ -34,8 +34,8 @@ footprint : array, optional
 _mode_doc = (
 """mode : {'reflect', 'constant', 'nearest', 'mirror', 'wrap'}, optional
     The `mode` parameter determines how the input array is extended
-    when the filter overlaps a border. Default is 'reflect'. Behavior
-    for each valid value is as follows:
+    beyond its boundaries. Default is 'reflect'. Behavior for each valid
+    value is as follows:
 
     'reflect' (`d c b a | a b c d | d c b a`)
         The input is extended by reflecting about the edge of the last

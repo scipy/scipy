@@ -10,18 +10,16 @@ import random
 import functools
 
 import numpy as np
-from numpy import array, matrix, identity, dot, sqrt, double
+from numpy import array, identity, dot, sqrt
 from numpy.testing import (
         assert_array_equal, assert_array_less, assert_equal,
-        assert_array_almost_equal, assert_array_almost_equal_nulp,
-        assert_allclose, assert_)
+        assert_array_almost_equal,
+        assert_allclose, assert_, assert_warns)
 import pytest
-
-from scipy._lib._numpy_compat import _assert_warns, suppress_warnings
 
 import scipy.linalg
 from scipy.linalg import (funm, signm, logm, sqrtm, fractional_matrix_power,
-        expm, expm_frechet, expm_cond, norm)
+                          expm, expm_frechet, expm_cond, norm)
 from scipy.linalg import _matfuncs_inv_ssq
 import scipy.linalg._expm_frechet
 
@@ -211,14 +209,14 @@ class TestLogM(object):
         B = np.asarray([[1, 1], [0, 0]])
         for M in A, A.T, B, B.T:
             expected_warning = _matfuncs_inv_ssq.LogmExactlySingularWarning
-            L, info = _assert_warns(expected_warning, logm, M, disp=False)
+            L, info = assert_warns(expected_warning, logm, M, disp=False)
             E = expm(L)
             assert_allclose(E, M, atol=1e-14)
 
     def test_nearly_singular(self):
         M = np.array([[1e-100]])
         expected_warning = _matfuncs_inv_ssq.LogmNearlySingularWarning
-        L, info = _assert_warns(expected_warning, logm, M, disp=False)
+        L, info = assert_warns(expected_warning, logm, M, disp=False)
         E = expm(L)
         assert_allclose(E, M, atol=1e-14)
 
@@ -628,6 +626,12 @@ class TestExpM(object):
                                               -0.8978045395698304))
         assert_allclose(outTwo[0, 0], complex(-0.52896401032626006,
                                               -0.84864425749518878))
+
+    def test_empty_matrix_input(self):
+        # handle gh-11082
+        A = np.zeros((0, 0))
+        result = expm(A)
+        assert result.size == 0
 
 
 class TestExpmFrechet(object):

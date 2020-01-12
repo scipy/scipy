@@ -32,7 +32,8 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-static NPY_INLINE void 
+
+static NPY_INLINE void
 _row_norms(const double *X, npy_intp num_rows, const npy_intp num_cols, double *norms_buff){
     /* Compute the row norms. */
     npy_intp i, j;
@@ -42,7 +43,7 @@ _row_norms(const double *X, npy_intp num_rows, const npy_intp num_cols, double *
             norms_buff[i] += curr_val * curr_val;
         }
         norms_buff[i] = sqrt(norms_buff[i]);
-    }    
+    }
 }
 
 static NPY_INLINE double
@@ -162,25 +163,33 @@ mahalanobis_distance(const double *u, const double *v, const double *covinv,
 }
 
 static NPY_INLINE double
-hamming_distance_double(const double *u, const double *v, const npy_intp n)
+hamming_distance_double(const double *u, const double *v, const npy_intp n, const double *w)
 {
-    npy_intp i, s = 0;
+    npy_intp i;
+    double s = 0;
+    double w_sum = 0;
 
     for (i = 0; i < n; ++i) {
-        s += (u[i] != v[i]);
+        s += ((double) (u[i] != v[i])) * w[i];
+        w_sum += w[i];
     }
-    return (double)s / n;
+
+    return s / w_sum;
 }
 
 static NPY_INLINE double
-hamming_distance_char(const char *u, const char *v, const npy_intp n)
+hamming_distance_char(const char *u, const char *v, const npy_intp n, const double *w)
 {
-    npy_intp i, s = 0;
+    npy_intp i;
+    double s = 0;
+    double w_sum = 0;
 
     for (i = 0; i < n; ++i) {
-        s += (u[i] != v[i]);
+        s += ((double) (u[i] != v[i])) * w[i];
+        w_sum += w[i];
     }
-    return (double)s / n;
+
+    return s / w_sum;
 }
 
 static NPY_INLINE double
@@ -292,7 +301,7 @@ jaccard_distance_double(const double *u, const double *v, const npy_intp n)
         num += (x != y) & ((x != 0.0) | (y != 0.0));
         denom += (x != 0.0) | (y != 0.0);
     }
-    return (double)num / denom;
+    return denom == 0.0 ? 0.0 : (double)num / denom;
 }
 
 static NPY_INLINE double
@@ -306,8 +315,41 @@ jaccard_distance_char(const char *u, const char *v, const npy_intp n)
         num += (x != y);
         denom += x | y;
     }
-    return (double)num / denom;
+    return denom == 0.0 ? 0.0 : (double)num / denom;
 }
+
+
+static NPY_INLINE double
+jensenshannon_distance_double(const double *p, const double *q, const npy_intp n)
+{
+    npy_intp i;
+    double s = 0.0;
+    double p_sum = 0.0;
+    double q_sum = 0.0;
+
+    for (i = 0; i < n; ++i) {
+        if (p[i] < 0.0 || q[i] < 0.0)
+            return HUGE_VAL;
+        p_sum += p[i];
+        q_sum += q[i];
+    }
+
+    if (p_sum == 0.0 || q_sum == 0.0)
+        return HUGE_VAL;
+
+    for (i = 0; i < n; ++i) {
+        const double p_i = p[i] / p_sum;
+        const double q_i = q[i] / q_sum;
+        const double m_i = (p_i + q_i) / 2.0;
+        if (p_i > 0.0)
+            s += p_i * log(p_i / m_i);
+        if (q_i > 0.0)
+            s += q_i * log(q_i / m_i);
+    }
+
+    return sqrt(s / 2.0);
+}
+
 
 static NPY_INLINE double
 seuclidean_distance(const double *var, const double *u, const double *v,
@@ -484,6 +526,38 @@ pdist_weighted_minkowski(const double *X, double *dm, npy_intp num_rows,
     return 0;
 }
 
+static NPY_INLINE int
+pdist_hamming_double(const double *X, double *dm, npy_intp num_rows,
+                         const npy_intp num_cols, const double *w)
+{
+    npy_intp i, j;
+
+    for (i = 0; i < num_rows; ++i) {
+        const double *u = X + (num_cols * i);
+        for (j = i + 1; j < num_rows; ++j, ++dm) {
+            const double *v = X + (num_cols * j);
+            *dm = hamming_distance_double(u, v, num_cols, w);
+        }
+    }
+    return 0;
+}
+
+static NPY_INLINE int
+pdist_hamming_char(const char *X, double *dm, npy_intp num_rows,
+                         const npy_intp num_cols, const double *w)
+{
+    npy_intp i, j;
+
+    for (i = 0; i < num_rows; ++i) {
+        const char *u = X + (num_cols * i);
+        for (j = i + 1; j < num_rows; ++j, ++dm) {
+            const char *v = X + (num_cols * j);
+            *dm = hamming_distance_char(u, v, num_cols, w);
+        }
+    }
+    return 0;
+}
+
 static NPY_INLINE void
 dist_to_squareform_from_vector_generic(char *M, const char *v, const npy_intp n,
                                        npy_intp s)
@@ -648,6 +722,42 @@ cdist_weighted_minkowski(const double *XA, const double *XB, double *dm,
     return 0;
 }
 
+static NPY_INLINE int
+cdist_hamming_double(const double *XA, const double *XB, double *dm,
+                         const npy_intp num_rowsA, const npy_intp num_rowsB,
+                         const npy_intp num_cols,
+                         const double *w)
+{
+    npy_intp i, j;
+
+    for (i = 0; i < num_rowsA; ++i) {
+        const double *u = XA + (num_cols * i);
+        for (j = 0; j < num_rowsB; ++j, ++dm) {
+            const double *v = XB + (num_cols * j);
+            *dm = hamming_distance_double(u, v, num_cols, w);
+        }
+    }
+    return 0;
+}
+
+static NPY_INLINE int
+cdist_hamming_char(const char *XA, const char *XB, double *dm,
+                         const npy_intp num_rowsA, const npy_intp num_rowsB,
+                         const npy_intp num_cols,
+                         const double *w)
+{
+    npy_intp i, j;
+
+    for (i = 0; i < num_rowsA; ++i) {
+        const char *u = XA + (num_cols * i);
+        for (j = 0; j < num_rowsB; ++j, ++dm) {
+            const char *v = XB + (num_cols * j);
+            *dm = hamming_distance_char(u, v, num_cols, w);
+        }
+    }
+    return 0;
+}
+
 #define DEFINE_CDIST(name, type) \
     static int cdist_ ## name ## _ ## type(const type *XA, const type *XB, \
                                            double *dm,                     \
@@ -671,12 +781,11 @@ DEFINE_CDIST(canberra, double)
 DEFINE_CDIST(chebyshev, double)
 DEFINE_CDIST(city_block, double)
 DEFINE_CDIST(euclidean, double)
-DEFINE_CDIST(hamming, double)
 DEFINE_CDIST(jaccard, double)
+DEFINE_CDIST(jensenshannon, double)
 DEFINE_CDIST(sqeuclidean, double)
 
 DEFINE_CDIST(dice, char)
-DEFINE_CDIST(hamming, char)
 DEFINE_CDIST(jaccard, char)
 DEFINE_CDIST(kulsinski, char)
 DEFINE_CDIST(rogerstanimoto, char)
@@ -708,12 +817,11 @@ DEFINE_PDIST(canberra, double)
 DEFINE_PDIST(chebyshev, double)
 DEFINE_PDIST(city_block, double)
 DEFINE_PDIST(euclidean, double)
-DEFINE_PDIST(hamming, double)
 DEFINE_PDIST(jaccard, double)
+DEFINE_PDIST(jensenshannon, double)
 DEFINE_PDIST(sqeuclidean, double)
 
 DEFINE_PDIST(dice, char)
-DEFINE_PDIST(hamming, char)
 DEFINE_PDIST(jaccard, char)
 DEFINE_PDIST(kulsinski, char)
 DEFINE_PDIST(rogerstanimoto, char)

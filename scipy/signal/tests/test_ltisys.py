@@ -4,16 +4,16 @@ import warnings
 
 import numpy as np
 from numpy.testing import (assert_almost_equal, assert_equal, assert_allclose,
-                           assert_)
+                           assert_, suppress_warnings)
 from pytest import raises as assert_raises
 
-from scipy._lib._numpy_compat import suppress_warnings
 from scipy.signal import (ss2tf, tf2ss, lsim2, impulse2, step2, lti,
                           dlti, bode, freqresp, lsim, impulse, step,
                           abcd_normalize, place_poles,
                           TransferFunction, StateSpace, ZerosPolesGain)
 from scipy.signal.filter_design import BadCoefficients
 import scipy.linalg as linalg
+from scipy.sparse.sputils import matrix
 
 import scipy._lib.six as six
 
@@ -211,7 +211,7 @@ class TestPlacePoles(object):
         assert_raises(ValueError, place_poles, A, B, (-2.1,-2.2,-2.3,-2.4),
                       maxiter=-42)
 
-        # should fail as rank(B) is two
+        # should fail as ndim(B) is two
         assert_raises(ValueError, place_poles, A, B, (-2,-2,-2,-2))
 
         #unctrollable system
@@ -331,7 +331,7 @@ class TestSS2TF:
         assert_allclose(num, [[0, 1, 2, 3], [0, 1, 2, 3]], rtol=1e-13)
         assert_allclose(den, [1, 2, 3, 4], rtol=1e-13)
 
-        tf = ([1, [2, 3]], [1, 6])
+        tf = (np.array([1, [2, 3]], dtype=object), [1, 6])
         A, B, C, D = tf2ss(*tf)
         assert_allclose(A, [[-6]], rtol=1e-31)
         assert_allclose(B, [[1]], rtol=1e-31)
@@ -342,7 +342,7 @@ class TestSS2TF:
         assert_allclose(num, [[0, 1], [2, 3]], rtol=1e-13)
         assert_allclose(den, [1, 6], rtol=1e-13)
 
-        tf = ([[1, -3], [1, 2, 3]], [1, 6, 5])
+        tf = (np.array([[1, -3], [1, 2, 3]], dtype=object), [1, 6, 5])
         A, B, C, D = tf2ss(*tf)
         assert_allclose(A, [[-6, -5], [1, 0]], rtol=1e-13)
         assert_allclose(B, [[1], [0]], rtol=1e-13)
@@ -422,9 +422,9 @@ class TestLsim(object):
 
     def test_double_integrator(self):
         # double integrator: y'' = 2u
-        A = np.mat("0. 1.; 0. 0.")
-        B = np.mat("0.; 1.")
-        C = np.mat("2. 0.")
+        A = matrix("0. 1.; 0. 0.")
+        B = matrix("0.; 1.")
+        C = matrix("2. 0.")
         system = self.lti_nowarn(A, B, C, 0.)
         t = np.linspace(0,5)
         u = np.ones_like(t)
@@ -440,9 +440,9 @@ class TestLsim(object):
         #   x2' + x2 = u
         #   y = x1
         # Exact solution with u = 0 is y(t) = t exp(-t)
-        A = np.mat("-1. 1.; 0. -1.")
-        B = np.mat("0.; 1.")
-        C = np.mat("1. 0.")
+        A = matrix("-1. 1.; 0. -1.")
+        B = matrix("0.; 1.")
+        C = matrix("1. 0.")
         system = self.lti_nowarn(A, B, C, 0.)
         t = np.linspace(0,5)
         u = np.zeros_like(t)
@@ -887,7 +887,7 @@ class TestStateSpace(object):
         assert_allclose(lsim(s1 + s2, U=u, T=t)[1],
                         lsim(s1, U=u, T=t)[1] + lsim(s2, U=u, T=t)[1])
 
-        # Test substraction
+        # Test subtraction
         assert_allclose(lsim(s1 - 2, U=u, T=t)[1],
                         -2 * u + lsim(s1, U=u, T=t)[1])
 

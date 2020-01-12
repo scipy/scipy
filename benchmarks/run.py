@@ -11,8 +11,6 @@ from __future__ import division, absolute_import, print_function
 import os
 import sys
 import subprocess
-import json
-import shutil
 import argparse
 import sysconfig
 import errno
@@ -78,7 +76,7 @@ def run_asv(args):
     except OSError as err:
         if err.errno == errno.ENOENT:
             print("Error when running '%s': %s\n" % (" ".join(cmd), str(err),))
-            print("You need to install Airspeed Velocity https://spacetelescope.github.io/asv/")
+            print("You need to install Airspeed Velocity https://airspeed-velocity.github.io/asv/")
             print("to run Scipy benchmarks")
             return 1
         raise

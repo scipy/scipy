@@ -1233,6 +1233,176 @@ void get_csr_submatrix(const I n_row,
 
 
 /*
+ * Slice rows given as an array of indices.
+ *
+ * Input Arguments:
+ *   I  n_row_idx       - number of row indices
+ *   I  rows[n_row_idx] - row indices for indexing
+ *   I  Ap[n_row+1]     - row pointer
+ *   I  Aj[nnz(A)]      - column indices
+ *   T  Ax[nnz(A)]      - data
+ *
+ * Output Arguments:
+ *   I  Bj - new column indices
+ *   T  Bx - new data
+ *
+ */
+template<class I, class T>
+void csr_row_index(const I n_row_idx,
+                   const I rows[],
+                   const I Ap[],
+                   const I Aj[],
+                   const T Ax[],
+                   I Bj[],
+                   T Bx[])
+{
+    for(I i = 0; i < n_row_idx; i++){
+        const I row = rows[i];
+        const I row_start = Ap[row];
+        const I row_end   = Ap[row+1];
+        Bj = std::copy(Aj + row_start, Aj + row_end, Bj);
+        Bx = std::copy(Ax + row_start, Ax + row_end, Bx);
+    }
+}
+
+
+/*
+ * Slice rows given as a (start, stop, step) tuple.
+ *
+ * Input Arguments:
+ *   I  start
+ *   I  stop
+ *   I  step
+ *   I  Ap[N+1]    - row pointer
+ *   I  Aj[nnz(A)] - column indices
+ *   T  Ax[nnz(A)] - data
+ *
+ * Output Arguments:
+ *   I  Bj - new column indices
+ *   T  Bx - new data
+ *
+ */
+template<class I, class T>
+void csr_row_slice(const I start,
+                   const I stop,
+                   const I step,
+                   const I Ap[],
+                   const I Aj[],
+                   const T Ax[],
+                   I Bj[],
+                   T Bx[])
+{
+    if (step > 0) {
+        for(I row = start; row < stop; row += step){
+            const I row_start = Ap[row];
+            const I row_end   = Ap[row+1];
+            Bj = std::copy(Aj + row_start, Aj + row_end, Bj);
+            Bx = std::copy(Ax + row_start, Ax + row_end, Bx);
+        }
+    } else {
+        for(I row = start; row > stop; row += step){
+            const I row_start = Ap[row];
+            const I row_end   = Ap[row+1];
+            Bj = std::copy(Aj + row_start, Aj + row_end, Bj);
+            Bx = std::copy(Ax + row_start, Ax + row_end, Bx);
+        }
+    }
+}
+
+
+/*
+ * Slice columns given as an array of indices (pass 1).
+ * This pass counts idx entries and computes a new indptr.
+ *
+ * Input Arguments:
+ *   I  n_idx           - number of indices to slice
+ *   I  col_idxs[n_idx] - indices to slice
+ *   I  n_row           - major axis dimension
+ *   I  n_col           - minor axis dimension
+ *   I  Ap[n_row+1]     - indptr
+ *   I  Aj[nnz(A)]      - indices
+ *
+ * Output Arguments:
+ *   I  col_offsets[n_col] - cumsum of index repeats
+ *   I  Bp[n_row+1]        - new indptr
+ *
+ */
+template<class I>
+void csr_column_index1(const I n_idx,
+                       const I col_idxs[],
+                       const I n_row,
+                       const I n_col,
+                       const I Ap[],
+                       const I Aj[],
+                       I col_offsets[],
+                       I Bp[])
+{
+    // bincount(col_idxs)
+    for(I jj = 0; jj < n_idx; jj++){
+        const I j = col_idxs[jj];
+        col_offsets[j]++;
+    }
+
+    // Compute new indptr
+    I new_nnz = 0;
+    Bp[0] = 0;
+    for(I i = 0; i < n_row; i++){
+        for(I jj = Ap[i]; jj < Ap[i+1]; jj++){
+            new_nnz += col_offsets[Aj[jj]];
+        }
+        Bp[i+1] = new_nnz;
+    }
+
+    // cumsum in-place
+    for(I j = 1; j < n_col; j++){
+        col_offsets[j] += col_offsets[j - 1];
+    }
+}
+
+
+/*
+ * Slice columns given as an array of indices (pass 2).
+ * This pass populates indices/data entries for selected columns.
+ *
+ * Input Arguments:
+ *   I  col_order[n_idx]   - order of col indices
+ *   I  col_offsets[n_col] - cumsum of col index counts
+ *   I  nnz                - nnz(A)
+ *   I  Aj[nnz(A)]         - column indices
+ *   T  Ax[nnz(A)]         - data
+ *
+ * Output Arguments:
+ *   I  Bj[nnz(B)] - new column indices
+ *   T  Bx[nnz(B)] - new data
+ *
+ */
+template<class I, class T>
+void csr_column_index2(const I col_order[],
+                       const I col_offsets[],
+                       const I nnz,
+                       const I Aj[],
+                       const T Ax[],
+                       I Bj[],
+                       T Bx[])
+{
+    I n = 0;
+    for(I jj = 0; jj < nnz; jj++){
+        const I j = Aj[jj];
+        const I offset = col_offsets[j];
+        const I prev_offset = j == 0 ? 0 : col_offsets[j-1];
+        if (offset != prev_offset) {
+            const T v = Ax[jj];
+            for(I k = prev_offset; k < offset; k++){
+                Bj[n] = col_order[k];
+                Bx[n] = v;
+                n++;
+            }
+        }
+    }
+}
+
+
+/*
  * Count the number of occupied diagonals in CSR matrix A
  *
  * Input Arguments:

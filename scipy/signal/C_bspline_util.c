@@ -29,12 +29,9 @@ void C_FIR_mirror_symmetric(__complex__ float*,__complex__ float*,int,__complex_
 int C_separable_2Dconvolve_mirror(__complex__ float*,__complex__ float*,int,int,__complex__ float*,__complex__ float*,int,int,npy_intp*,npy_intp*);
 
 void 
-C_IIR_order1 (a1, a2, x, y, N, stridex, stridey) 
-     __complex__ float a1; 
-     __complex__ float a2; 
-     __complex__ float *x; 
-     __complex__ float *y; 
-     int N, stridex, stridey; 
+C_IIR_order1(__complex__ float a1, __complex__ float a2,
+             __complex__ float *x, __complex__ float *y,
+             int N, int stridex, int stridey)
 { 
     __complex__ float *yvec = y+stridey; 
     __complex__ float *xvec = x+stridex; 
@@ -52,13 +49,9 @@ C_IIR_order1 (a1, a2, x, y, N, stridex, stridey)
 /* y[n] = a1 * x[n] + a2 * y[n-1]  + a3 * y[n-2] */
 /* with two starting values loaded into the array */
 void 
-C_IIR_order2 (a1, a2, a3, x, y, N, stridex, stridey) 
-     __complex__ float a1; 
-     __complex__ float a2; 
-     __complex__ float a3; 
-     __complex__ float *x; 
-     __complex__ float *y; 
-     int N, stridex, stridey; 
+C_IIR_order2(__complex__ float a1, __complex__ float a2, __complex__ float a3,
+             __complex__ float *x, __complex__ float *y,
+             int N, int stridex, int stridey)
 { 
     __complex__ float *yvec = y+2*stridey; 
     __complex__ float *xvec = x+2*stridex; 
@@ -87,14 +80,11 @@ C_IIR_order2 (a1, a2, a3, x, y, N, stridex, stridey)
 */
 
 void 
-C_IIR_order2_cascade (cs, z1, z2, y1_0, x, yp, N, stridex, stridey) 
-     __complex__ float cs; 
-     __complex__ float z1; 
-     __complex__ float z2; 
-     __complex__ float y1_0; 
-     __complex__ float *x; 
-     __complex__ float *yp; 
-     int N, stridex, stridey; 
+C_IIR_order2_cascade(__complex__ float cs,
+                     __complex__ float z1, __complex__ float z2,
+                     __complex__ float y1_0,
+                     __complex__ float *x, __complex__ float *yp,
+                     int N, int stridex, int stridey)
 { 
     __complex__ float *yvec = yp+stridey; 
     __complex__ float *xvec = x+stridex; 
@@ -138,14 +128,10 @@ C_IIR_order2_cascade (cs, z1, z2, y1_0, x, yp, N, stridex, stridey)
 */
 
 int 
-C_IIR_forback1 (c0, z1, x, y, N, stridex, stridey, precision)
-     __complex__ float c0; 
-     __complex__ float z1; 
-     __complex__ float *x; 
-     __complex__ float *y; 
-     int N, stridex, stridey; 
-     float precision; 
-{ 
+C_IIR_forback1(__complex__ float c0, __complex__ float z1,
+               __complex__ float *x, __complex__ float *y,
+               int N, int stridex, int stridey, float precision)
+{
     __complex__ float *yp = NULL; 
     __complex__ float *xptr = x;
     __complex__ float yp0;
@@ -190,12 +176,9 @@ C_IIR_forback1 (c0, z1, x, y, N, stridex, stridey, precision)
 /* h must be odd length */
 /* strides in units of sizeof(__complex__ float) bytes */
 void 
-C_FIR_mirror_symmetric (in, out, N, h, Nh, instride, outstride)
-     __complex__ float *in;
-     __complex__ float *out;
-     int N, Nh;
-     __complex__ float *h;
-     int instride, outstride;
+C_FIR_mirror_symmetric(__complex__ float *in, __complex__ float *out,
+                       int N, __complex__ float *h, int Nh,
+                       int instride, int outstride)
 {    
     int n, k;
     int Nhdiv2 = Nh >> 1;
@@ -255,14 +238,11 @@ C_FIR_mirror_symmetric (in, out, N, h, Nh, instride, outstride)
 }
 
 int
-C_separable_2Dconvolve_mirror(in, out, M, N, hr, hc, Nhr, 
-				   Nhc, instrides, outstrides)
-     __complex__ float *in;
-     __complex__ float *out;
-     int M, N;
-     __complex__ float *hr, *hc;
-     int Nhr, Nhc;
-     npy_intp *instrides, *outstrides;
+C_separable_2Dconvolve_mirror(__complex__ float *in, __complex__ float *out,
+                              int M, int N,
+                              __complex__ float *hr, __complex__ float *hc,
+                              int Nhr, int Nhc,
+                              npy_intp *instrides, npy_intp *outstrides)
 {
     int m, n;
     __complex__ float *tmpmem;
@@ -301,7 +281,3 @@ C_separable_2Dconvolve_mirror(in, out, M, N, hr, hc, Nhr,
     return 0;
 }
 #endif
-
-
-
-
