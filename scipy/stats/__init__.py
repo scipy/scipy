@@ -341,6 +341,7 @@ Contingency table functions
    chi2_contingency
    contingency.expected_freq
    contingency.margins
+   crosstab
    fisher_exact
 
 Plot-tests
@@ -395,6 +396,7 @@ from ._binned_statistic import *
 from .kde import gaussian_kde
 from . import mstats
 from .contingency import chi2_contingency
+from ._crosstab import crosstab
 from ._multivariate import *
 
 __all__ = [s for s in dir() if not s.startswith("_")]  # Remove dunders.
