@@ -10,7 +10,6 @@ import pytest
 from pytest import raises as assert_raises
 
 from scipy.integrate import quad, dblquad, tplquad, nquad
-from scipy._lib.six import xrange
 from scipy._lib._ccallback import LowLevelCallable
 
 import ctypes

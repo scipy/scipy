@@ -9,7 +9,6 @@ from numpy.testing import (assert_equal, assert_almost_equal,
                            assert_, assert_allclose, assert_array_equal)
 import pytest
 from pytest import raises as assert_raises
-from scipy._lib.six import xrange
 
 import scipy.spatial.qhull as qhull
 from scipy.spatial import cKDTree as KDTree
@@ -116,7 +115,7 @@ def _add_inc_data(name, chunksize):
         nmin = 12
 
     chunks = [points[:nmin]]
-    for j in xrange(nmin, len(points), chunksize):
+    for j in range(nmin, len(points), chunksize):
         chunks.append(points[j:j+chunksize])
 
     new_name = "%s-chunk-%d" % (name, chunksize)
@@ -362,7 +361,7 @@ class TestUtilities(object):
 
         npoints = {2: 70, 3: 11, 4: 5, 5: 3}
 
-        for ndim in xrange(2, 6):
+        for ndim in range(2, 6):
             # Generate an uniform grid in n-d unit cube
             x = np.linspace(0, 1, npoints[ndim])
             grid = np.c_[list(map(np.ravel, np.broadcast_arrays(*np.ix_(*([x]*ndim)))))].T
@@ -439,9 +438,9 @@ class TestDelaunay(object):
 
     def test_nd_simplex(self):
         # simple smoke test: triangulate a n-dimensional simplex
-        for nd in xrange(2, 8):
+        for nd in range(2, 8):
             points = np.zeros((nd+1, nd))
-            for j in xrange(nd):
+            for j in range(nd):
                 points[j,j] = 1.0
             points[-1,:] = 1.0
 

@@ -3,7 +3,6 @@ from __future__ import division, print_function, absolute_import
 import numpy as np
 from numpy.testing import (assert_, assert_equal, assert_almost_equal,
                            assert_array_almost_equal)
-from scipy._lib.six import xrange
 
 import scipy.sparse
 import scipy.sparse.linalg
@@ -16,7 +15,7 @@ G = np.eye(n)
 normal = np.random.normal
 norm = np.linalg.norm
 
-for jj in xrange(5):
+for jj in range(5):
     gg = normal(size=n)
     hh = gg * gg.T
     G += (hh + hh.T) * 0.5

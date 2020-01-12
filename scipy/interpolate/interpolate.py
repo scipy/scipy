@@ -15,7 +15,7 @@ from numpy import (array, transpose, searchsorted, atleast_1d, atleast_2d,
 import scipy.special as spec
 from scipy.special import comb
 
-from scipy._lib.six import xrange, integer_types, string_types
+from scipy._lib.six import integer_types, string_types
 
 from . import fitpack
 from . import dfitpack
@@ -83,9 +83,9 @@ def lagrange(x, w):
 
     M = len(x)
     p = poly1d(0.0)
-    for j in xrange(M):
+    for j in range(M):
         pt = poly1d(w[j])
-        for k in xrange(M):
+        for k in range(M):
             if k == j:
                 continue
             fac = x[j]-x[k]
@@ -1289,7 +1289,7 @@ class PPoly(_PPolyBase):
             t, c, k = tck
 
         cvals = np.empty((k + 1, len(t)-1), dtype=c.dtype)
-        for m in xrange(k, -1, -1):
+        for m in range(k, -1, -1):
             y = fitpack.splev(t[:-1], tck, der=m)
             cvals[k - m, :] = y/spec.gamma(m+1)
 
@@ -2716,7 +2716,7 @@ class _ppform(PPoly):
         # Note: this spline representation is incompatible with FITPACK
         N = len(xk)-1
         sivals = np.empty((order+1, N), dtype=float)
-        for m in xrange(order, -1, -1):
+        for m in range(order, -1, -1):
             fact = spec.gamma(m+1)
             res = _fitpack._bspleval(xk[:-1], xk, cvals, order, m)
             res /= fact

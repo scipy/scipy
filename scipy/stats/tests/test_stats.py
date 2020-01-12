@@ -27,7 +27,6 @@ import numpy as np
 import scipy.stats as stats
 import scipy.stats.mstats as mstats
 import scipy.stats.mstats_basic as mstats_basic
-from scipy._lib.six import xrange
 from .common_tests import check_named_results
 from scipy.special import kv
 from scipy.sparse.sputils import matrix

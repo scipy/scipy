@@ -23,7 +23,6 @@ from numpy import (array, isfinite, inexact, nonzero, iscomplexobj, cast,
                    flatnonzero, conj, asarray, argsort, empty, newaxis,
                    argwhere, iscomplex, eye, zeros, einsum)
 # Local imports
-from scipy._lib.six import xrange
 from scipy._lib._util import _asarray_validated
 from scipy._lib.six import string_types
 from .misc import LinAlgError, _datacopied, norm
@@ -100,7 +99,7 @@ def _geneig(a1, b1, left, right, overwrite_a, overwrite_b,
             vr = _make_complex_eigvecs(w, vr, t)
 
     # the eigenvectors returned by the lapack function are NOT normalized
-    for i in xrange(vr.shape[0]):
+    for i in range(vr.shape[0]):
         if right:
             vr[:, i] /= norm(vr[:, i])
         if left:

@@ -7,7 +7,6 @@ from __future__ import division, print_function, absolute_import
 import operator
 import numpy as np
 import math
-from scipy._lib.six import xrange
 from numpy import (pi, asarray, floor, isscalar, iscomplex, real,
                    imag, sqrt, where, mgrid, sin, place, issubdtype,
                    extract, inexact, nan, zeros, sinc)
@@ -607,7 +606,7 @@ def _bessel_diff_formula(v, z, n, L, phase):
     v = asarray(v)
     p = 1.0
     s = L(v-n, z)
-    for i in xrange(1, n+1):
+    for i in range(1, n+1):
         p = phase * (p * (n-i+1)) / i   # = choose(k, i)
         s += p*L(v-n + i*2, z)
     return s / (2.**n)
@@ -2241,7 +2240,7 @@ def perm(N, k, exact=False):
         if (k > N) or (N < 0) or (k < 0):
             return 0
         val = 1
-        for i in xrange(N - k + 1, N + 1):
+        for i in range(N - k + 1, N + 1):
             val *= i
         return val
     else:
@@ -2348,7 +2347,7 @@ def factorial(n, exact=False):
             if un.size:
                 val = math.factorial(un[0])
                 out[n == un[0]] = val
-                for i in xrange(len(un) - 1):
+                for i in range(len(un) - 1):
                     prev = un[i] + 1
                     current = un[i + 1]
                     val *= _range_prod(prev, current)
@@ -2403,7 +2402,7 @@ def factorial2(n, exact=False):
         if n <= 0:
             return 1
         val = 1
-        for k in xrange(n, 0, -2):
+        for k in range(n, 0, -2):
             val *= k
         return val
     else:
@@ -2468,7 +2467,7 @@ def factorialk(n, k, exact=True):
         if n <= 0:
             return 1
         val = 1
-        for j in xrange(n, 0, -k):
+        for j in range(n, 0, -k):
             val = val*j
         return val
     else:
