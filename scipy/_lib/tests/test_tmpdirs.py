@@ -40,6 +40,5 @@ def test_given_directory():
     with in_dir(MY_DIR) as tmpdir:
         assert_equal(tmpdir, MY_DIR)
         assert_equal(realpath(MY_DIR), realpath(abspath(getcwd())))
-    # We were deleting the given directory!  Check not so now.
+    # We were deleting the given directory! Check not so now.
     assert_(isfile(MY_PATH))
-

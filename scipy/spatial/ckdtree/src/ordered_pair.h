@@ -3,13 +3,13 @@
 #define CKDTREE_ORDERED_PAIR
 
 struct ordered_pair {
-    npy_intp i;
-    npy_intp j;
+    ckdtree_intp_t i;
+    ckdtree_intp_t j;
 };
 
 inline void
 add_ordered_pair(std::vector<ordered_pair> *results,
-                       const npy_intp i, const npy_intp j)
+                       const ckdtree_intp_t i, const intptr_t j)
 {
     if (i > j) {
         ordered_pair p = {j,i};

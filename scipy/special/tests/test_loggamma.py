@@ -1,7 +1,7 @@
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from numpy.testing import assert_allclose
+from numpy.testing import assert_allclose, assert_
 
 from scipy.special._testutils import FuncData
 from scipy.special import gamma, gammaln, loggamma
@@ -35,23 +35,34 @@ def test_identities2():
     FuncData(f, dataset, 0, 1, rtol=1e-14, atol=1e-14).check()
 
 
-def test_realpart():
+def test_complex_dispatch_realpart():
     # Test that the real parts of loggamma and gammaln agree on the
     # real axis.
     x = np.r_[-np.logspace(10, -10), np.logspace(-10, 10)] + 0.5
+
     dataset = np.vstack((x, gammaln(x))).T
 
     def f(z):
+        z = np.array(z, dtype='complex128')
         return loggamma(z).real
-    
+
     FuncData(f, dataset, 0, 1, rtol=1e-14, atol=1e-14).check()
+
+
+def test_real_dispatch():
+    x = np.logspace(-10, 10) + 0.5
+    dataset = np.vstack((x, gammaln(x))).T
+
+    FuncData(loggamma, dataset, 0, 1, rtol=1e-14, atol=1e-14).check()
+    assert_(loggamma(0) == np.inf)
+    assert_(np.isnan(loggamma(-1)))
 
 
 def test_gh_6536():
     z = loggamma(complex(-3.4, +0.0))
     zbar = loggamma(complex(-3.4, -0.0))
     assert_allclose(z, zbar.conjugate(), rtol=1e-15, atol=0)
-    
+
 
 def test_branch_cut():
     # Make sure negative zero is treated correctly

@@ -9,6 +9,7 @@ PUBLIC_SUBMODULES = [
     'cluster.hierarchy',
     'cluster.vq',
     'constants',
+    'fft',
     'fftpack',
     'fftpack.convolve',
     'integrate',
@@ -44,4 +45,3 @@ def test_importing_submodules():
             subprocess.check_output(cmd)
         except subprocess.CalledProcessError:
             raise AssertionError('Importing scipy.{0} failed'.format(name))
-

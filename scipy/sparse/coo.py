@@ -16,7 +16,9 @@ from .base import isspmatrix, SparseEfficiencyWarning, spmatrix
 from .data import _data_matrix, _minmax_mixin
 from .sputils import (upcast, upcast_char, to_native, isshape, getdtype,
                       get_index_dtype, downcast_intp_index, check_shape,
-                      check_reshape_kwargs)
+                      check_reshape_kwargs, matrix)
+
+import operator
 
 
 class coo_matrix(_data_matrix, _minmax_mixin):
@@ -54,7 +56,7 @@ class coo_matrix(_data_matrix, _minmax_mixin):
     ndim : int
         Number of dimensions (this is always 2)
     nnz
-        Number of nonzero elements
+        Number of stored values, including explicit zeros
     data
         COO format data array of the matrix
     row
@@ -88,7 +90,7 @@ class coo_matrix(_data_matrix, _minmax_mixin):
 
     Examples
     --------
-    
+
     >>> # Constructing an empty matrix
     >>> from scipy.sparse import coo_matrix
     >>> coo_matrix((3, 4), dtype=np.int8).toarray()
@@ -145,8 +147,8 @@ class coo_matrix(_data_matrix, _minmax_mixin):
                     if len(row) == 0 or len(col) == 0:
                         raise ValueError('cannot infer dimensions from zero '
                                          'sized index arrays')
-                    M = np.max(row) + 1
-                    N = np.max(col) + 1
+                    M = operator.index(np.max(row)) + 1
+                    N = operator.index(np.max(col)) + 1
                     self._shape = check_shape((M, N))
                 else:
                     # Use 2 steps to ensure shape has length 2.
@@ -179,8 +181,12 @@ class coo_matrix(_data_matrix, _minmax_mixin):
 
                 if M.ndim != 2:
                     raise TypeError('expected dimension <= 2 array or matrix')
-                else:
-                    self._shape = check_shape(M.shape)
+
+                self._shape = check_shape(M.shape)
+                if shape is not None:
+                    if check_shape(shape) != self._shape:
+                        raise ValueError('inconsistent shapes: %s != %s' %
+                                         (shape, self._shape))
 
                 self.row, self.col = M.nonzero()
                 self.data = M[self.row, self.col]
@@ -205,10 +211,17 @@ class coo_matrix(_data_matrix, _minmax_mixin):
         nrows, ncols = self.shape
 
         if order == 'C':
-            flat_indices = ncols * self.row + self.col
+            # Upcast to avoid overflows: the coo_matrix constructor
+            # below will downcast the results to a smaller dtype, if
+            # possible.
+            dtype = get_index_dtype(maxval=(ncols * max(0, nrows - 1) + max(0, ncols - 1)))
+
+            flat_indices = np.multiply(ncols, self.row, dtype=dtype) + self.col
             new_row, new_col = divmod(flat_indices, shape[1])
         elif order == 'F':
-            flat_indices = self.row + nrows * self.col
+            dtype = get_index_dtype(maxval=(nrows * max(0, ncols - 1) + max(0, nrows - 1)))
+
+            flat_indices = np.multiply(nrows, self.col, dtype=dtype) + self.row
             new_col, new_row = divmod(flat_indices, shape[0])
         else:
             raise ValueError("'order' must be 'C' or 'F'")
@@ -563,7 +576,7 @@ class coo_matrix(_data_matrix, _minmax_mixin):
         M, N = self.shape
         coo_todense(M, N, self.nnz, self.row, self.col, self.data,
                     result.ravel('A'), fortran)
-        return np.matrix(result, copy=False)
+        return matrix(result, copy=False)
 
     def _mul_vector(self, other):
         #output array

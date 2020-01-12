@@ -1,9 +1,10 @@
 """
-==============================================
 Window functions (:mod:`scipy.signal.windows`)
 ==============================================
 
 The suite of window functions for filtering and spectral estimation.
+
+.. currentmodule:: scipy.signal.windows
 
 .. autosummary::
    :toctree: generated/
@@ -22,7 +23,9 @@ The suite of window functions for filtering and spectral estimation.
    exponential       -- Exponential window
    flattop           -- Flat top window
    gaussian          -- Gaussian window
+   general_cosine    -- Generalized Cosine window
    general_gaussian  -- Generalized Gaussian window
+   general_hamming   -- Generalized Hamming window
    hamming           -- Hamming window
    hann              -- Hann window
    hanning           -- Hann window
@@ -39,6 +42,6 @@ from .windows import *
 
 __all__ = ['boxcar', 'triang', 'parzen', 'bohman', 'blackman', 'nuttall',
            'blackmanharris', 'flattop', 'bartlett', 'hanning', 'barthann',
-           'hamming', 'kaiser', 'gaussian', 'general_gaussian', 'chebwin',
-           'slepian', 'cosine', 'hann', 'exponential', 'tukey', 'get_window',
-           'dpss']
+           'hamming', 'kaiser', 'gaussian', 'general_gaussian', 'general_cosine',
+           'general_hamming', 'chebwin', 'slepian', 'cosine', 'hann',
+           'exponential', 'tukey', 'get_window', 'dpss']

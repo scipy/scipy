@@ -26,7 +26,7 @@ Generate C code coverage listing under build/lcov/:
 """
 
 #
-# This is a generic test runner script for projects using Numpy's test
+# This is a generic test runner script for projects using NumPy's test
 # framework. Change the following values to adapt to your project:
 #
 
@@ -54,14 +54,18 @@ import os
 # project from there:
 sys.path.pop(0)
 
+from argparse import ArgumentParser, REMAINDER
 import shutil
 import subprocess
 import time
 import datetime
-import imp
-from argparse import ArgumentParser, REMAINDER
+try:
+    from types import ModuleType as new_module
+except ImportError:  # old Python
+    from imp import new_module
 
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__)))
+
 
 def main(argv):
     parser = ArgumentParser(usage=__doc__.lstrip())
@@ -76,11 +80,11 @@ def main(argv):
     parser.add_argument("--refguide-check", action="store_true", default=False,
                         help="Run refguide check (do not run regular tests.)")
     parser.add_argument("--coverage", action="store_true", default=False,
-                        help=("report coverage of project code. HTML output goes "
-                              "under build/coverage"))
+                        help=("report coverage of project code. HTML output"
+                              " goes under build/coverage"))
     parser.add_argument("--gcov", action="store_true", default=False,
-                        help=("enable C code coverage via gcov (requires GCC). "
-                              "gcov output goes to build/**/*.gc*"))
+                        help=("enable C code coverage via gcov (requires GCC)."
+                              " gcov output goes to build/**/*.gc*"))
     parser.add_argument("--lcov-html", action="store_true", default=False,
                         help=("produce HTML for C code coverage information "
                               "from a previous run with --gcov. "
@@ -89,7 +93,8 @@ def main(argv):
                         help="'fast', 'full', or something that could be "
                              "passed to nosetests -A [default: fast]")
     parser.add_argument("--submodule", "-s", default=None,
-                        help="Submodule whose tests to run (cluster, constants, ...)")
+                        help="Submodule whose tests to run (cluster,"
+                             " constants, ...)")
     parser.add_argument("--pythonpath", "-p", default=None,
                         help="Paths to prepend to PYTHONPATH")
     parser.add_argument("--tests", "-t", action='append',
@@ -104,23 +109,37 @@ def main(argv):
                         help="Debug build")
     parser.add_argument("--parallel", "-j", type=int, default=1,
                         help="Number of parallel jobs during build (requires "
-                             "Numpy 1.10 or greater).")
+                             "NumPy 1.10 or greater).")
     parser.add_argument("--show-build-log", action="store_true",
                         help="Show build output rather than using a log file")
     parser.add_argument("--bench", action="store_true",
                         help="Run benchmark suite instead of test suite")
     parser.add_argument("--bench-compare", action="append", metavar="BEFORE",
-                        help=("Compare benchmark results of current HEAD to BEFORE. "
-                              "Use an additional --bench-compare=COMMIT to override HEAD with COMMIT. "
-                              "Note that you need to commit your changes first!"
-                             ))
+                        help=("Compare benchmark results of current HEAD to"
+                              " BEFORE. Use an additional "
+                              "--bench-compare=COMMIT to override HEAD with"
+                              " COMMIT. Note that you need to commit your "
+                              "changes first!"
+                              ))
     parser.add_argument("args", metavar="ARGS", default=[], nargs=REMAINDER,
                         help="Arguments to pass to Nose, Python or shell")
+    parser.add_argument("--pep8", action="store_true", default=False,
+                        help="Perform pep8 check with pycodestyle.")
+    parser.add_argument("--doc", action="append", nargs="?",
+                        const="html-scipyorg", help="Build documentation")
     args = parser.parse_args(argv)
+
+    if args.pep8:
+        # os.system("flake8 scipy --ignore=F403,F841,F401,F811,F405,E121,E122,"
+        #           "E123,E125,E126,E127,E128,E226,E231,E251,E265,E266,E302,"
+        #           "E402,E501,E712,E721,E731,E741,W291,W293,W391,W503,W504"
+        #           "--exclude=scipy/_lib/six.py")
+        os.system("pycodestyle scipy benchmarks/benchmarks")
+        sys.exit(0)
 
     if args.bench_compare:
         args.bench = True
-        args.no_build = True # ASV does the building
+        args.no_build = True  # ASV does the building
 
     if args.lcov_html:
         # generate C code coverage output
@@ -135,7 +154,8 @@ def main(argv):
         gcov_reset_counters()
 
     if args.debug and args.bench:
-        print("*** Benchmarks should not be run against debug version; remove -g flag ***")
+        print("*** Benchmarks should not be run against debug version; "
+              "remove -g flag ***")
 
     if not args.no_build:
         site_dir = build_project(args)
@@ -153,7 +173,7 @@ def main(argv):
             sys.argv = extra_argv
             with open(extra_argv[0], 'r') as f:
                 script = f.read()
-            sys.modules['__main__'] = imp.new_module('__main__')
+            sys.modules['__main__'] = new_module('__main__')
             ns = dict(__name__='__main__',
                       __file__=extra_argv[0])
             exec_(script, ns)
@@ -173,6 +193,14 @@ def main(argv):
         print("Spawning a Unix shell...")
         os.execv(shell, [shell] + extra_argv)
         sys.exit(1)
+
+    if args.doc:
+        cmd = ["make", "-Cdoc", 'PYTHON="{}"'.format(sys.executable)]
+        cmd += args.doc
+        if args.parallel:
+            cmd.append('SPHINXOPTS="-j{}"'.format(args.parallel))
+        subprocess.run(cmd, check=True)
+        sys.exit(0)
 
     if args.coverage:
         dst_dir = os.path.join(ROOT_DIR, 'build', 'coverage')
@@ -217,19 +245,23 @@ def main(argv):
 
             # Check for uncommitted files
             if commit_b == 'HEAD':
-                r1 = subprocess.call(['git', 'diff-index', '--quiet', '--cached', 'HEAD'])
+                r1 = subprocess.call(['git', 'diff-index', '--quiet',
+                                      '--cached', 'HEAD'])
                 r2 = subprocess.call(['git', 'diff-files', '--quiet'])
                 if r1 != 0 or r2 != 0:
                     print("*"*80)
-                    print("WARNING: you have uncommitted changes --- these will NOT be benchmarked!")
+                    print("WARNING: you have uncommitted changes --- "
+                          "these will NOT be benchmarked!")
                     print("*"*80)
 
             # Fix commit ids (HEAD is local to current repo)
-            p = subprocess.Popen(['git', 'rev-parse', commit_b], stdout=subprocess.PIPE)
+            p = subprocess.Popen(['git', 'rev-parse', commit_b],
+                                 stdout=subprocess.PIPE)
             out, err = p.communicate()
             commit_b = out.strip()
 
-            p = subprocess.Popen(['git', 'rev-parse', commit_a], stdout=subprocess.PIPE)
+            p = subprocess.Popen(['git', 'rev-parse', commit_a],
+                                 stdout=subprocess.PIPE)
             out, err = p.communicate()
             commit_a = out.strip()
 
@@ -272,7 +304,8 @@ def main(argv):
                       extra_argv=extra_argv,
                       doctests=args.doctests,
                       coverage=args.coverage,
-                      tests=tests)
+                      tests=tests,
+                      parallel=args.parallel)
     finally:
         os.chdir(cwd)
 
@@ -308,7 +341,8 @@ def build_project(args):
     cmd = [sys.executable, 'setup.py']
 
     # Always use ccache, if installed
-    env['PATH'] = os.pathsep.join(EXTRA_PATH + env.get('PATH', '').split(os.pathsep))
+    env['PATH'] = os.pathsep.join(EXTRA_PATH +
+                                  env.get('PATH', '').split(os.pathsep))
 
     if args.debug or args.gcov:
         # assume everyone uses gcc/gfortran
@@ -324,12 +358,13 @@ def build_project(args):
             env['F77'] = 'gfortran --coverage '
             env['F90'] = 'gfortran --coverage '
             env['LDSHARED'] = cvars['LDSHARED'] + ' --coverage'
-            env['LDFLAGS'] = " ".join(cvars['LDSHARED'].split()[1:]) + ' --coverage'
+            env['LDFLAGS'] = " ".join(cvars['LDSHARED'].split()[1:]) +\
+                ' --coverage'
 
     cmd += ['build']
     if args.parallel > 1:
         cmd += ['-j', str(args.parallel)]
-    # Install; avoid producing eggs so scipy can be imported from dst_dir.
+    # Install; avoid producing eggs so SciPy can be imported from dst_dir.
     cmd += ['install', '--prefix=' + dst_dir,
             '--single-version-externally-managed',
             '--record=' + dst_dir + 'tmp_install_log.txt']
@@ -337,7 +372,7 @@ def build_project(args):
     from distutils.sysconfig import get_python_lib
     site_dir = get_python_lib(prefix=dst_dir, plat_specific=True)
     # easy_install won't install to a path that Python by default cannot see
-    # and isn't on the PYTHONPATH.  Plus, it has to exist.
+    # and isn't on the PYTHONPATH. Plus, it has to exist.
     if not os.path.exists(site_dir):
         os.makedirs(site_dir)
     env['PYTHONPATH'] = site_dir
@@ -367,12 +402,13 @@ def build_project(args):
                     log_size = os.stat(log_filename).st_size
                     if log_size > last_log_size:
                         elapsed = datetime.datetime.now() - start_time
-                        print("    ... build in progress ({0} elapsed)".format(elapsed))
+                        print("    ... build in progress ({0} "
+                              "elapsed)".format(elapsed))
                         last_blip = time.time()
                         last_log_size = log_size
 
             ret = p.wait()
-        except:
+        except:  # noqa: E722
             p.terminate()
             raise
 
@@ -406,14 +442,20 @@ def gcov_reset_counters():
 # LCOV support
 #
 
+
 LCOV_OUTPUT_FILE = os.path.join(ROOT_DIR, 'build', 'lcov.out')
 LCOV_HTML_DIR = os.path.join(ROOT_DIR, 'build', 'lcov')
 
+
 def lcov_generate():
-    try: os.unlink(LCOV_OUTPUT_FILE)
-    except OSError: pass
-    try: shutil.rmtree(LCOV_HTML_DIR)
-    except OSError: pass
+    try:
+        os.unlink(LCOV_OUTPUT_FILE)
+    except OSError:
+        pass
+    try:
+        shutil.rmtree(LCOV_HTML_DIR)
+    except OSError:
+        pass
 
     print("Capturing lcov info...")
     subprocess.call(['lcov', '-q', '-c',

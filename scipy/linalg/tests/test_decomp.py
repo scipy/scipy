@@ -11,6 +11,7 @@ Run tests if scipy is installed:
 """
 
 import itertools
+import platform
 import numpy as np
 from numpy.testing import (assert_equal, assert_almost_equal,
                            assert_array_almost_equal, assert_array_equal,
@@ -19,27 +20,26 @@ from numpy.testing import (assert_equal, assert_almost_equal,
 import pytest
 from pytest import raises as assert_raises
 
-from scipy._lib.six import xrange
-
 from scipy.linalg import (eig, eigvals, lu, svd, svdvals, cholesky, qr,
      schur, rsf2csf, lu_solve, lu_factor, solve, diagsvd, hessenberg, rq,
      eig_banded, eigvals_banded, eigh, eigvalsh, qr_multiply, qz, orth, ordqz,
      subspace_angles, hadamard, eigvalsh_tridiagonal, eigh_tridiagonal,
-     null_space)
+     null_space, cdf2rdf)
 from scipy.linalg.lapack import dgbtrf, dgbtrs, zgbtrf, zgbtrs, \
      dsbev, dsbevd, dsbevx, zhbevd, zhbevx
 from scipy.linalg.misc import norm
 from scipy.linalg._decomp_qz import _select_function
 
-from numpy import array, transpose, sometrue, diag, ones, linalg, \
+from numpy import array, transpose, diag, ones, full, linalg, \
      argsort, zeros, arange, float32, complex64, dot, conj, identity, \
-     ravel, sqrt, iscomplex, shape, sort, conjugate, bmat, sign, \
-     asarray, matrix, isfinite, all, ndarray, outer, eye, dtype, empty,\
+     ravel, sqrt, iscomplex, shape, sort, conjugate, sign, \
+     asarray, isfinite, ndarray, outer, eye, dtype, empty,\
      triu, tril
 
 from numpy.random import normal, seed, random
 
 from scipy.linalg._testutils import assert_no_overwrite
+from scipy.sparse.sputils import bmat, matrix
 
 # digit precision to use in asserts for different types
 DIGITS = {'d':11, 'D':11, 'f':4, 'F':4}
@@ -117,7 +117,7 @@ def random_rot(dim):
     matrices with an application to condition estimators', SIAM Journal
     on Numerical Analysis, 17(3), pp. 403-409, 1980.
     For more information see
-    http://en.wikipedia.org/wiki/Orthogonal_matrix#Randomization"""
+    https://en.wikipedia.org/wiki/Orthogonal_matrix#Randomization"""
     H = eye(dim)
     D = ones((dim,))
     for n in range(1, dim):
@@ -248,7 +248,7 @@ class TestEig(object):
                         err_msg=msg)
 
         length = np.empty(len(vr))
-        for i in xrange(len(vr)):
+        for i in range(len(vr)):
             length[i] = norm(vr[:,i])
         assert_allclose(length, np.ones(length.size), err_msg=msg,
                         atol=1e-7, rtol=1e-7)
@@ -264,7 +264,7 @@ class TestEig(object):
         val2 = dot(B, vr) * w
         res = val1 - val2
         for i in range(res.shape[1]):
-            if all(isfinite(res[:,i])):
+            if np.all(isfinite(res[:,i])):
                 assert_allclose(res[:,i], 0, rtol=1e-13, atol=1e-13, err_msg=msg)
 
         w_fin = w[isfinite(w)]
@@ -275,17 +275,17 @@ class TestEig(object):
                         atol=1e-7, rtol=1e-7, err_msg=msg)
 
         length = np.empty(len(vr))
-        for i in xrange(len(vr)):
+        for i in range(len(vr)):
             length[i] = norm(vr[:,i])
         assert_allclose(length, np.ones(length.size), err_msg=msg)
 
         # Compare homogeneous and nonhomogeneous versions
         assert_allclose(sort(wh), sort(w[np.isfinite(w)]))
 
-    @pytest.mark.xfail(reason="See gh-2254.")
+    @pytest.mark.xfail(reason="See gh-2254")
     def test_singular(self):
         # Example taken from
-        # http://www.cs.umu.se/research/nla/singular_pairs/guptri/matlab.html
+        # https://web.archive.org/web/20040903121217/http://www.cs.umu.se/research/nla/singular_pairs/guptri/matlab.html
         A = array(([22,34,31,31,17], [45,45,42,19,29], [39,47,49,26,34],
             [27,31,26,21,15], [38,44,44,24,30]))
         B = array(([13,26,25,17,24], [31,46,40,26,37], [26,40,19,25,25],
@@ -303,9 +303,9 @@ class TestEig(object):
         K = array(([2,-1,-1],[-1,2,-1],[-1,-1,2]))
         D = array(([1,-1,0],[-1,1,0],[0,0,0]))
         Z = zeros((3,3))
-        I = identity(3)
-        A = bmat([[I,Z],[Z,-K]])
-        B = bmat([[Z,I],[M,D]])
+        I3 = identity(3)
+        A = bmat([[I3, Z], [Z, -K]])
+        B = bmat([[Z, I3], [M, D]])
 
         olderr = np.seterr(all='ignore')
         try:
@@ -333,7 +333,7 @@ class TestEig(object):
         # machines -- so we need to test several values
         olderr = np.seterr(all='ignore')
         try:
-            for k in xrange(100):
+            for k in range(100):
                 A, B = matrices(omega=k*5./100)
                 self._check_gen_eig(A, B)
         finally:
@@ -395,24 +395,24 @@ class TestEigBanded(object):
         self.KU = 2   # number of superdiagonals (above the diagonal)
 
         # symmetric band matrix
-        self.sym_mat = (diag(1.0*ones(N))
-                     + diag(-1.0*ones(N-1), -1) + diag(-1.0*ones(N-1), 1)
-                     + diag(-2.0*ones(N-2), -2) + diag(-2.0*ones(N-2), 2))
+        self.sym_mat = (diag(full(N, 1.0))
+                     + diag(full(N-1, -1.0), -1) + diag(full(N-1, -1.0), 1)
+                     + diag(full(N-2, -2.0), -2) + diag(full(N-2, -2.0), 2))
 
         # hermitian band matrix
-        self.herm_mat = (diag(-1.0*ones(N))
-                     + 1j*diag(1.0*ones(N-1), -1) - 1j*diag(1.0*ones(N-1), 1)
-                     + diag(-2.0*ones(N-2), -2) + diag(-2.0*ones(N-2), 2))
+        self.herm_mat = (diag(full(N, -1.0))
+                     + 1j*diag(full(N-1, 1.0), -1) - 1j*diag(full(N-1, 1.0), 1)
+                     + diag(full(N-2, -2.0), -2) + diag(full(N-2, -2.0), 2))
 
         # general real band matrix
-        self.real_mat = (diag(1.0*ones(N))
-                     + diag(-1.0*ones(N-1), -1) + diag(-3.0*ones(N-1), 1)
-                     + diag(2.0*ones(N-2), -2) + diag(-2.0*ones(N-2), 2))
+        self.real_mat = (diag(full(N, 1.0))
+                     + diag(full(N-1, -1.0), -1) + diag(full(N-1, -3.0), 1)
+                     + diag(full(N-2, 2.0), -2) + diag(full(N-2, -2.0), 2))
 
         # general complex band matrix
-        self.comp_mat = (1j*diag(1.0*ones(N))
-                     + diag(-1.0*ones(N-1), -1) + 1j*diag(-3.0*ones(N-1), 1)
-                     + diag(2.0*ones(N-2), -2) + diag(-2.0*ones(N-2), 2))
+        self.comp_mat = (1j*diag(full(N, 1.0))
+                     + diag(full(N-1, -1.0), -1) + 1j*diag(full(N-1, -3.0), 1)
+                     + diag(full(N-2, 2.0), -2) + diag(full(N-2, -2.0), 2))
 
         # Eigenvalues and -vectors from linalg.eig
         ew, ev = linalg.eig(self.sym_mat)
@@ -433,7 +433,7 @@ class TestEigBanded(object):
         LDAB = self.KU + 1
         self.bandmat_sym = zeros((LDAB, N), dtype=float)
         self.bandmat_herm = zeros((LDAB, N), dtype=complex)
-        for i in xrange(LDAB):
+        for i in range(LDAB):
             self.bandmat_sym[LDAB-i-1,i:N] = diag(self.sym_mat, i)
             self.bandmat_herm[LDAB-i-1,i:N] = diag(self.herm_mat, i)
 
@@ -442,7 +442,7 @@ class TestEigBanded(object):
         LDAB = 2*self.KL + self.KU + 1
         self.bandmat_real = zeros((LDAB, N), dtype=float)
         self.bandmat_real[2*self.KL,:] = diag(self.real_mat)     # diagonal
-        for i in xrange(self.KL):
+        for i in range(self.KL):
             # superdiagonals
             self.bandmat_real[2*self.KL-1-i,i+1:N] = diag(self.real_mat, i+1)
             # subdiagonals
@@ -450,7 +450,7 @@ class TestEigBanded(object):
 
         self.bandmat_comp = zeros((LDAB, N), dtype=complex)
         self.bandmat_comp[2*self.KL,:] = diag(self.comp_mat)     # diagonal
-        for i in xrange(self.KL):
+        for i in range(self.KL):
             # superdiagonals
             self.bandmat_comp[2*self.KL-1-i,i+1:N] = diag(self.comp_mat, i+1)
             # subdiagonals
@@ -520,7 +520,7 @@ class TestEigBanded(object):
 
         # extracting eigenvalues with respect to an index range
         ind1 = 2
-        ind2 = 6
+        ind2 = np.longlong(6)
         w_sym_ind = eigvals_banded(self.bandmat_sym,
                                     select='i', select_range=(ind1, ind2))
         assert_array_almost_equal(sort(w_sym_ind),
@@ -611,7 +611,7 @@ class TestEigBanded(object):
 
         # extract matrix u from lu_symm_band
         u = diag(lu_symm_band[2*self.KL,:])
-        for i in xrange(self.KL + self.KU):
+        for i in range(self.KL + self.KU):
             u += diag(lu_symm_band[2*self.KL-1-i,i+1:N], i+1)
 
         p_lin, l_lin, u_lin = lu(self.real_mat, permute_l=0)
@@ -625,7 +625,7 @@ class TestEigBanded(object):
 
         # extract matrix u from lu_symm_band
         u = diag(lu_symm_band[2*self.KL,:])
-        for i in xrange(self.KL + self.KU):
+        for i in range(self.KL + self.KU):
             u += diag(lu_symm_band[2*self.KL-1-i,i+1:N], i+1)
 
         p_lin, l_lin, u_lin = lu(self.comp_mat, permute_l=0)
@@ -661,8 +661,8 @@ class TestEigTridiagonal(object):
         N = 10
 
         # symmetric band matrix
-        self.d = 1.0*ones(N)
-        self.e = -1.0*ones(N-1)
+        self.d = full(N, 1.0)
+        self.e = full(N-1, -1.0)
         self.full_mat = (diag(self.d) + diag(self.e, -1) + diag(self.e, 1))
 
         ew, ev = linalg.eig(self.full_mat)
@@ -1221,7 +1221,7 @@ class TestQR(object):
         a = np.asarray([[8,2,3],[2,9,3],[5,3,6]])
         q,r,p = qr(a, pivoting=True)
         d = abs(diag(r))
-        assert_(all(d[1:] <= d[:-1]))
+        assert_(np.all(d[1:] <= d[:-1]))
         assert_array_almost_equal(dot(transpose(q),q),identity(3))
         assert_array_almost_equal(dot(q,r),a[:,p])
         q2,r2 = qr(a[:,p])
@@ -1252,7 +1252,7 @@ class TestQR(object):
         a = np.asarray([[8,2,3],[2,9,3]])
         q,r,p = qr(a, pivoting=True)
         d = abs(diag(r))
-        assert_(all(d[1:] <= d[:-1]))
+        assert_(np.all(d[1:] <= d[:-1]))
         assert_array_almost_equal(dot(transpose(q),q),identity(2))
         assert_array_almost_equal(dot(q,r),a[:,p])
         q2,r2 = qr(a[:,p])
@@ -1271,7 +1271,7 @@ class TestQR(object):
         a = np.asarray([[8,2],[2,9],[5,3]])
         q,r,p = qr(a, pivoting=True)
         d = abs(diag(r))
-        assert_(all(d[1:] <= d[:-1]))
+        assert_(np.all(d[1:] <= d[:-1]))
         assert_array_almost_equal(dot(transpose(q),q),identity(3))
         assert_array_almost_equal(dot(q,r),a[:,p])
         q2,r2 = qr(a[:,p])
@@ -1292,7 +1292,7 @@ class TestQR(object):
         a = np.asarray([[8,2],[2,9],[5,3]])
         q,r,p = qr(a, pivoting=True, mode='economic')
         d = abs(diag(r))
-        assert_(all(d[1:] <= d[:-1]))
+        assert_(np.all(d[1:] <= d[:-1]))
         assert_array_almost_equal(dot(transpose(q),q),identity(2))
         assert_array_almost_equal(dot(q,r),a[:,p])
         q2,r2 = qr(a[:,p], mode='economic')
@@ -1355,7 +1355,7 @@ class TestQR(object):
         a = np.asarray([[8,2,5],[2,9,3]])
         q,r,p = qr(a, pivoting=True)
         d = abs(diag(r))
-        assert_(all(d[1:] <= d[:-1]))
+        assert_(np.all(d[1:] <= d[:-1]))
         assert_array_almost_equal(dot(transpose(q),q),identity(2))
         assert_array_almost_equal(dot(q,r),a[:,p])
         assert_equal(q.shape, (2,2))
@@ -1378,7 +1378,7 @@ class TestQR(object):
         a = np.asarray([[8,2,3],[2,9,5]])
         q,r,p = qr(a, pivoting=True, mode='economic')
         d = abs(diag(r))
-        assert_(all(d[1:] <= d[:-1]))
+        assert_(np.all(d[1:] <= d[:-1]))
         assert_array_almost_equal(dot(transpose(q),q),identity(2))
         assert_array_almost_equal(dot(q,r),a[:,p])
         assert_equal(q.shape, (2,2))
@@ -1487,7 +1487,7 @@ class TestQR(object):
         a = np.asarray([[3,3+4j,5],[5,2,2+7j],[3,2,7]])
         q,r,p = qr(a, pivoting=True)
         d = abs(diag(r))
-        assert_(all(d[1:] <= d[:-1]))
+        assert_(np.all(d[1:] <= d[:-1]))
         assert_array_almost_equal(dot(conj(transpose(q)),q),identity(3))
         assert_array_almost_equal(dot(q,r),a[:,p])
         q2,r2 = qr(a[:,p])
@@ -1544,7 +1544,7 @@ class TestQR(object):
             a = random([n,n])
             q,r,p = qr(a, pivoting=True)
             d = abs(diag(r))
-            assert_(all(d[1:] <= d[:-1]))
+            assert_(np.all(d[1:] <= d[:-1]))
             assert_array_almost_equal(dot(transpose(q),q),identity(n))
             assert_array_almost_equal(dot(q,r),a[:,p])
             q2,r2 = qr(a[:,p])
@@ -1595,7 +1595,7 @@ class TestQR(object):
             a = random([m,n])
             q,r,p = qr(a, pivoting=True)
             d = abs(diag(r))
-            assert_(all(d[1:] <= d[:-1]))
+            assert_(np.all(d[1:] <= d[:-1]))
             assert_array_almost_equal(dot(transpose(q),q),identity(m))
             assert_array_almost_equal(dot(q,r),a[:,p])
             q2,r2 = qr(a[:,p])
@@ -1622,7 +1622,7 @@ class TestQR(object):
             a = random([m,n])
             q,r,p = qr(a, pivoting=True, mode='economic')
             d = abs(diag(r))
-            assert_(all(d[1:] <= d[:-1]))
+            assert_(np.all(d[1:] <= d[:-1]))
             assert_array_almost_equal(dot(transpose(q),q),identity(n))
             assert_array_almost_equal(dot(q,r),a[:,p])
             assert_equal(q.shape, (m,n))
@@ -1647,7 +1647,7 @@ class TestQR(object):
             a = random([m,n])
             q,r,p = qr(a, pivoting=True)
             d = abs(diag(r))
-            assert_(all(d[1:] <= d[:-1]))
+            assert_(np.all(d[1:] <= d[:-1]))
             assert_array_almost_equal(dot(transpose(q),q),identity(m))
             assert_array_almost_equal(dot(q,r),a[:,p])
             q2,r2 = qr(a[:,p])
@@ -1690,7 +1690,7 @@ class TestQR(object):
             a = random([n,n])+1j*random([n,n])
             q,r,p = qr(a, pivoting=True)
             d = abs(diag(r))
-            assert_(all(d[1:] <= d[:-1]))
+            assert_(np.all(d[1:] <= d[:-1]))
             assert_array_almost_equal(dot(conj(transpose(q)),q),identity(n))
             assert_array_almost_equal(dot(q,r),a[:,p])
             q2,r2 = qr(a[:,p])
@@ -1832,7 +1832,6 @@ class TestRQ(object):
 
 
 transp = transpose
-any = sometrue
 
 
 class TestSchur(object):
@@ -1842,7 +1841,7 @@ class TestSchur(object):
         t,z = schur(a)
         assert_array_almost_equal(dot(dot(z,t),transp(conj(z))),a)
         tc,zc = schur(a,'complex')
-        assert_(any(ravel(iscomplex(zc))) and any(ravel(iscomplex(tc))))
+        assert_(np.any(ravel(iscomplex(zc))) and np.any(ravel(iscomplex(tc))))
         assert_array_almost_equal(dot(dot(zc,tc),transp(conj(zc))),a)
         tc2,zc2 = rsf2csf(tc,zc)
         assert_array_almost_equal(dot(dot(zc2,tc2),transp(conj(zc2))),a)
@@ -2012,11 +2011,11 @@ class TestQZ(object):
         A = random([n,n]).astype(float32)
         B = random([n,n]).astype(float32)
         AA,BB,Q,Z = qz(A,B)
-        assert_array_almost_equal(dot(dot(Q,AA),Z.T), A)
-        assert_array_almost_equal(dot(dot(Q,BB),Z.T), B)
-        assert_array_almost_equal(dot(Q,Q.T), eye(n))
-        assert_array_almost_equal(dot(Z,Z.T), eye(n))
-        assert_(all(diag(BB) >= 0))
+        assert_array_almost_equal(dot(dot(Q,AA),Z.T), A, decimal=5)
+        assert_array_almost_equal(dot(dot(Q,BB),Z.T), B, decimal=5)
+        assert_array_almost_equal(dot(Q,Q.T), eye(n), decimal=5)
+        assert_array_almost_equal(dot(Z,Z.T), eye(n), decimal=5)
+        assert_(np.all(diag(BB) >= 0))
 
     def test_qz_double(self):
         n = 5
@@ -2027,7 +2026,7 @@ class TestQZ(object):
         assert_array_almost_equal(dot(dot(Q,BB),Z.T), B)
         assert_array_almost_equal(dot(Q,Q.T), eye(n))
         assert_array_almost_equal(dot(Z,Z.T), eye(n))
-        assert_(all(diag(BB) >= 0))
+        assert_(np.all(diag(BB) >= 0))
 
     def test_qz_complex(self):
         n = 5
@@ -2038,8 +2037,8 @@ class TestQZ(object):
         assert_array_almost_equal(dot(dot(Q,BB),Z.conjugate().T), B)
         assert_array_almost_equal(dot(Q,Q.conjugate().T), eye(n))
         assert_array_almost_equal(dot(Z,Z.conjugate().T), eye(n))
-        assert_(all(diag(BB) >= 0))
-        assert_(all(diag(BB).imag == 0))
+        assert_(np.all(diag(BB) >= 0))
+        assert_(np.all(diag(BB).imag == 0))
 
     def test_qz_complex64(self):
         n = 5
@@ -2050,8 +2049,8 @@ class TestQZ(object):
         assert_array_almost_equal(dot(dot(Q,BB),Z.conjugate().T), B, decimal=5)
         assert_array_almost_equal(dot(Q,Q.conjugate().T), eye(n), decimal=5)
         assert_array_almost_equal(dot(Z,Z.conjugate().T), eye(n), decimal=5)
-        assert_(all(diag(BB) >= 0))
-        assert_(all(diag(BB).imag == 0))
+        assert_(np.all(diag(BB) >= 0))
+        assert_(np.all(diag(BB).imag == 0))
 
     def test_qz_double_complex(self):
         n = 5
@@ -2066,10 +2065,10 @@ class TestQZ(object):
         assert_array_almost_equal(bb.imag, 0)
         assert_array_almost_equal(dot(Q,Q.conjugate().T), eye(n))
         assert_array_almost_equal(dot(Z,Z.conjugate().T), eye(n))
-        assert_(all(diag(BB) >= 0))
+        assert_(np.all(diag(BB) >= 0))
 
     def test_qz_double_sort(self):
-        # from http://www.nag.com/lapack-ex/node119.html
+        # from https://www.nag.com/lapack-ex/node119.html
         # NOTE: These matrices may be ill-conditioned and lead to a
         # seg fault on certain python versions when compiled with
         # sse2 or sse3 older ATLAS/LAPACK binaries for windows
@@ -2166,8 +2165,8 @@ class TestQZ(object):
     #    AAS,BBS,QS,ZS,sdim = qz(cA,cB,sort='lhp')
 
     #    eigenvalues = diag(AAS)/diag(BBS)
-    #    assert_(all(np.real(eigenvalues[:sdim] < 0)))
-    #    assert_(all(np.real(eigenvalues[sdim:] > 0)))
+    #    assert_(np.all(np.real(eigenvalues[:sdim] < 0)))
+    #    assert_(np.all(np.real(eigenvalues[sdim:] > 0)))
 
     def test_check_finite(self):
         n = 5
@@ -2178,7 +2177,7 @@ class TestQZ(object):
         assert_array_almost_equal(dot(dot(Q,BB),Z.T), B)
         assert_array_almost_equal(dot(Q,Q.T), eye(n))
         assert_array_almost_equal(dot(Z,Z.T), eye(n))
-        assert_(all(diag(BB) >= 0))
+        assert_(np.all(diag(BB) >= 0))
 
 
 def _make_pos(X):
@@ -2189,7 +2188,7 @@ def _make_pos(X):
 class TestOrdQZ(object):
     @classmethod
     def setup_class(cls):
-        # http://www.nag.com/lapack-ex/node119.html
+        # https://www.nag.com/lapack-ex/node119.html
         A1 = np.array([[-21.10 - 22.50j, 53.5 - 50.5j, -34.5 + 127.5j,
                         7.5 + 0.5j],
                        [-0.46 - 7.78j, -3.5 - 37.5j, -15.5 + 58.5j,
@@ -2204,7 +2203,7 @@ class TestOrdQZ(object):
                        [1.0 + 0.0j, 2.4 + 1.8j, -4 - 5j, 0.0 - 3.0j],
                        [0.0 + 1.0j, -1.8 + 2.4j, 0 - 4j, 4.0 - 5.0j]])
 
-        # http://www.nag.com/numeric/fl/nagdoc_fl23/xhtml/F08/f08yuf.xml
+        # https://www.nag.com/numeric/fl/nagdoc_fl23/xhtml/F08/f08yuf.xml
         A2 = np.array([[3.9, 12.5, -34.5, -0.5],
                        [4.3, 21.5, -47.5, 7.5],
                        [4.3, 21.5, -43.5, 3.5],
@@ -2253,10 +2252,10 @@ class TestOrdQZ(object):
         return tuple(ret)
 
     def check(self, A, B, sort, AA, BB, alpha, beta, Q, Z):
-        I = np.eye(*A.shape)
+        Id = np.eye(*A.shape)
         # make sure Q and Z are orthogonal
-        assert_array_almost_equal(Q.dot(Q.T.conj()), I)
-        assert_array_almost_equal(Z.dot(Z.T.conj()), I)
+        assert_array_almost_equal(Q.dot(Q.T.conj()), Id)
+        assert_array_almost_equal(Z.dot(Z.T.conj()), Id)
         # check factorization
         assert_array_almost_equal(Q.dot(AA), A.dot(Z))
         assert_array_almost_equal(Q.dot(BB), B.dot(Z))
@@ -2456,7 +2455,7 @@ class TestDatacopied(object):
 
 
 def test_aligned_mem_float():
-    """Check linalg works with non-aligned memory"""
+    """Check linalg works with non-aligned memory (float32)"""
     # Allocate 402 bytes of memory (allocated on boundary)
     a = arange(402, dtype=np.uint8)
 
@@ -2468,8 +2467,10 @@ def test_aligned_mem_float():
     eig(z.T, overwrite_a=True)
 
 
+@pytest.mark.skip(platform.machine() == 'ppc64le',
+                  reason="crashes on ppc64le")
 def test_aligned_mem():
-    """Check linalg works with non-aligned memory"""
+    """Check linalg works with non-aligned memory (float64)"""
     # Allocate 804 bytes of memory (allocated on boundary)
     a = arange(804, dtype=np.uint8)
 
@@ -2721,3 +2722,119 @@ def test_subspace_angles():
     assert_raises(ValueError, subspace_angles, x[0], x)
     assert_raises(ValueError, subspace_angles, x, x[0])
     assert_raises(ValueError, subspace_angles, x[:-1], x)
+
+    # Test branch if mask.any is True:
+    A = np.array([[1, 0, 0],
+                  [0, 1, 0],
+                  [0, 0, 1],
+                  [0, 0, 0],
+                  [0, 0, 0]])
+    B = np.array([[1, 0, 0],
+                  [0, 1, 0],
+                  [0, 0, 0],
+                  [0, 0, 0],
+                  [0, 0, 1]])
+    expected = np.array([np.pi/2, 0, 0])
+    assert_allclose(subspace_angles(A, B), expected, rtol=1e-12)
+
+    # Complex
+    # second column in "b" does not affect result, just there so that
+    # b can have more cols than a, and vice-versa (both conditional code paths)
+    a = [[1 + 1j], [0]]
+    b = [[1 - 1j, 0], [0, 1]]
+    assert_allclose(subspace_angles(a, b), 0., atol=1e-14)
+    assert_allclose(subspace_angles(b, a), 0., atol=1e-14)
+
+
+class TestCDF2RDF(object):
+
+    def matmul(self, a, b):
+        return np.einsum('...ij,...jk->...ik', a, b)
+
+    def assert_eig_valid(self, w, v, x):
+        assert_array_almost_equal(
+            self.matmul(v, w),
+            self.matmul(x, v)
+        )
+
+    def test_single_array0x0real(self):
+        # eig doesn't support 0x0 in old versions of numpy
+        X = np.empty((0, 0))
+        w, v = np.empty(0), np.empty((0, 0))
+        wr, vr = cdf2rdf(w, v)
+        self.assert_eig_valid(wr, vr, X)
+
+    def test_single_array2x2_real(self):
+        X = np.array([[1, 2], [3, -1]])
+        w, v = np.linalg.eig(X)
+        wr, vr = cdf2rdf(w, v)
+        self.assert_eig_valid(wr, vr, X)
+
+    def test_single_array2x2_complex(self):
+        X = np.array([[1, 2], [-2, 1]])
+        w, v = np.linalg.eig(X)
+        wr, vr = cdf2rdf(w, v)
+        self.assert_eig_valid(wr, vr, X)
+
+    def test_single_array3x3_real(self):
+        X = np.array([[1, 2, 3], [1, 2, 3], [2, 5, 6]])
+        w, v = np.linalg.eig(X)
+        wr, vr = cdf2rdf(w, v)
+        self.assert_eig_valid(wr, vr, X)
+
+    def test_single_array3x3_complex(self):
+        X = np.array([[1, 2, 3], [0, 4, 5], [0, -5, 4]])
+        w, v = np.linalg.eig(X)
+        wr, vr = cdf2rdf(w, v)
+        self.assert_eig_valid(wr, vr, X)
+
+    def test_random_1d_stacked_arrays(self):
+        # cannot test M == 0 due to bug in old numpy
+        for M in range(1, 7):
+            np.random.seed(999999999)
+            X = np.random.rand(100, M, M)
+            w, v = np.linalg.eig(X)
+            wr, vr = cdf2rdf(w, v)
+            self.assert_eig_valid(wr, vr, X)
+
+    def test_random_2d_stacked_arrays(self):
+        # cannot test M == 0 due to bug in old numpy
+        for M in range(1, 7):
+            X = np.random.rand(10, 10, M, M)
+            w, v = np.linalg.eig(X)
+            wr, vr = cdf2rdf(w, v)
+            self.assert_eig_valid(wr, vr, X)
+
+    def test_low_dimensionality_error(self):
+        w, v = np.empty(()), np.array((2,))
+        assert_raises(ValueError, cdf2rdf, w, v)
+
+    def test_not_square_error(self):
+        # Check that passing a non-square array raises a ValueError.
+        w, v = np.arange(3), np.arange(6).reshape(3,2)
+        assert_raises(ValueError, cdf2rdf, w, v)
+
+    def test_swapped_v_w_error(self):
+        # Check that exchanging places of w and v raises ValueError.
+        X = np.array([[1, 2, 3], [0, 4, 5], [0, -5, 4]])
+        w, v = np.linalg.eig(X)
+        assert_raises(ValueError, cdf2rdf, v, w)
+
+    def test_non_associated_error(self):
+        # Check that passing non-associated eigenvectors raises a ValueError.
+        w, v = np.arange(3), np.arange(16).reshape(4,4)
+        assert_raises(ValueError, cdf2rdf, w, v)
+
+    def test_not_conjugate_pairs(self):
+        # Check that passing non-conjugate pairs raises a ValueError.
+        X = np.array([[1, 2, 3], [1, 2, 3], [2, 5, 6+1j]])
+        w, v = np.linalg.eig(X)
+        assert_raises(ValueError, cdf2rdf, w, v)
+
+        # different arrays in the stack, so not conjugate
+        X = np.array([
+            [[1, 2, 3], [1, 2, 3], [2, 5, 6+1j]],
+            [[1, 2, 3], [1, 2, 3], [2, 5, 6-1j]],
+        ])
+        w, v = np.linalg.eig(X)
+        assert_raises(ValueError, cdf2rdf, w, v)

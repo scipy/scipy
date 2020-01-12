@@ -14,11 +14,8 @@ import cython
 from libc.math cimport ceil, fabs, M_PI
 from ._complexstuff cimport number_t, nan, zlog, zabs
 from ._trig cimport sinpi, cospi
+from ._cephes cimport zeta, psi
 from . cimport sf_error
-
-cdef extern from "cephes.h":
-    double zeta(double x, double q) nogil
-    double psi(double x) nogil
 
 # Use the asymptotic series for z away from the negative real axis
 # with abs(z) > smallabsz.
@@ -84,7 +81,7 @@ cdef inline double complex cdigamma(double complex z) nogil:
     if z.real < 0 and fabs(z.imag) < smallabsz:
         # Reflection formula for digamma. See
         #
-        # http://dlmf.nist.gov/5.5#E4
+        # https://dlmf.nist.gov/5.5#E4
         #
         res -= M_PI*cospi(z)/sinpi(z)
         z = 1 - z
@@ -123,7 +120,7 @@ cdef inline double complex forward_recurrence(double complex z,
 
     digamma(z + 1) = digamma(z) + 1/z.
 
-    See http://dlmf.nist.gov/5.5#E2
+    See https://dlmf.nist.gov/5.5#E2
 
     """
     cdef:
@@ -158,7 +155,7 @@ cdef inline double complex asymptotic_series(double complex z) nogil:
     """
     Evaluate digamma using an asymptotic series. See
 
-    http://dlmf.nist.gov/5.11#E2
+    https://dlmf.nist.gov/5.11#E2
 
     """
     cdef:

@@ -7,9 +7,12 @@ Linear algebra (:mod:`scipy.linalg`)
 
 Linear algebra functions.
 
+.. eventually, we should replace the numpy.linalg HTML link with just `numpy.linalg`
+
 .. seealso::
 
-   `numpy.linalg` for more linear algebra functions.  Note that
+   `numpy.linalg <https://www.numpy.org/devdocs/reference/routines.linalg.html>`__
+   for more linear algebra functions. Note that
    although `scipy.linalg` imports most of them, identically named
    functions from `scipy.linalg` may offer more or slightly differing
    functionality.
@@ -90,6 +93,7 @@ Decompositions
    schur - Schur decomposition of a matrix
    rsf2csf - Real to complex Schur form
    hessenberg - Hessenberg form of a matrix
+   cdf2rdf - Complex diagonal form to real diagonal block form
 
 .. seealso::
 
@@ -127,7 +131,7 @@ Matrix Equation Solvers
    solve_sylvester - Solve the Sylvester matrix equation
    solve_continuous_are - Solve the continuous-time algebraic Riccati equation
    solve_discrete_are - Solve the discrete-time algebraic Riccati equation
-   solve_continuous_lyapunov - Solve the continous-time Lyapunov equation
+   solve_continuous_lyapunov - Solve the continuous-time Lyapunov equation
    solve_discrete_lyapunov - Solve the discrete-time Lyapunov equation
 
 
@@ -149,6 +153,8 @@ Special Matrices
    circulant - Circulant matrix
    companion - Companion matrix
    dft - Discrete Fourier transform matrix
+   fiedler - Fiedler matrix
+   fiedler_companion - Fiedler companion matrix
    hadamard - Hadamard matrix of order 2**n
    hankel - Hankel matrix
    helmert - Helmert matrix

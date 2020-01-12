@@ -1,7 +1,7 @@
 # -*-cython-*-
 #
 # Implementation of the Lambert W function [1]. Based on the MPMath
-# implementation [2], and documentaion [3].
+# implementation [2], and documentation [3].
 #
 # Copyright: Yosef Meller, 2009
 # Author email: mellerf@netvision.net.il

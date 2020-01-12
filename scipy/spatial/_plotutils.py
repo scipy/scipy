@@ -17,7 +17,7 @@ def _held_figure(func, obj, ax=None, **kw):
 
     # As of matplotlib 2.0, the "hold" mechanism is deprecated.
     # When matplotlib 1.x is no longer supported, this check can be removed.
-    was_held = ax.ishold()
+    was_held = getattr(ax, 'ishold', lambda: True)()
     if was_held:
         return func(obj, ax=ax, **kw)
     try:
@@ -29,8 +29,8 @@ def _held_figure(func, obj, ax=None, **kw):
 
 def _adjust_bounds(ax, points):
     margin = 0.1 * points.ptp(axis=0)
-    xy_min = points.min(axis=0) - margin 
-    xy_max = points.max(axis=0) + margin 
+    xy_min = points.min(axis=0) - margin
+    xy_max = points.max(axis=0) + margin
     ax.set_xlim(xy_min[0], xy_max[0])
     ax.set_ylim(xy_min[1], xy_max[1])
 
@@ -60,6 +60,22 @@ def delaunay_plot_2d(tri, ax=None):
     Notes
     -----
     Requires Matplotlib.
+
+    Examples
+    --------
+
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.spatial import Delaunay, delaunay_plot_2d
+
+    The Delaunay triangulation of a set of random points:
+
+    >>> points = np.random.rand(30, 2)
+    >>> tri = Delaunay(points)
+
+    Plot it:
+
+    >>> _ = delaunay_plot_2d(tri)
+    >>> plt.show()
 
     """
     if tri.points.shape[1] != 2:
@@ -99,6 +115,23 @@ def convex_hull_plot_2d(hull, ax=None):
     -----
     Requires Matplotlib.
 
+
+    Examples
+    --------
+
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.spatial import ConvexHull, convex_hull_plot_2d
+
+    The convex hull of a random set of points:
+
+    >>> points = np.random.rand(30, 2)
+    >>> hull = ConvexHull(points)
+
+    Plot it:
+
+    >>> _ = convex_hull_plot_2d(hull)
+    >>> plt.show()
+
     """
     from matplotlib.collections import LineCollection
 
@@ -136,6 +169,9 @@ def voronoi_plot_2d(vor, ax=None, **kw):
         Specifies the line width for polygon boundaries
     line_alpha: float, optional
         Specifies the line alpha for polygon boundaries
+    point_size: float, optional
+        Specifies the size of points
+
 
     Returns
     -------
@@ -150,6 +186,28 @@ def voronoi_plot_2d(vor, ax=None, **kw):
     -----
     Requires Matplotlib.
 
+    Examples
+    --------
+    Set of point:
+
+    >>> import matplotlib.pyplot as plt
+    >>> points = np.random.rand(10,2) #random
+
+    Voronoi diagram of the points:
+
+    >>> from scipy.spatial import Voronoi, voronoi_plot_2d
+    >>> vor = Voronoi(points)
+
+    using `voronoi_plot_2d` for visualisation:
+
+    >>> fig = voronoi_plot_2d(vor)
+
+    using `voronoi_plot_2d` for visualisation with enhancements:
+
+    >>> fig = voronoi_plot_2d(vor, show_vertices=False, line_colors='orange',
+    ...                 line_width=2, line_alpha=0.6, point_size=2)
+    >>> plt.show()
+
     """
     from matplotlib.collections import LineCollection
 
@@ -157,7 +215,8 @@ def voronoi_plot_2d(vor, ax=None, **kw):
         raise ValueError("Voronoi diagram is not 2-D")
 
     if kw.get('show_points', True):
-        ax.plot(vor.points[:,0], vor.points[:,1], '.')
+        point_size = kw.get('point_size', None)
+        ax.plot(vor.points[:,0], vor.points[:,1], '.', markersize=point_size)
     if kw.get('show_vertices', True):
         ax.plot(vor.vertices[:,0], vor.vertices[:,1], 'o')
 
@@ -183,6 +242,8 @@ def voronoi_plot_2d(vor, ax=None, **kw):
 
             midpoint = vor.points[pointidx].mean(axis=0)
             direction = np.sign(np.dot(midpoint - center, n)) * n
+            if (vor.furthest_site):
+                direction = -direction
             far_point = vor.vertices[i] + direction * ptp_bound.max()
 
             infinite_segments.append([vor.vertices[i], far_point])

@@ -22,10 +22,13 @@ from scipy.linalg.basic import solve, solve_triangular
 from scipy.sparse.base import isspmatrix
 from scipy.sparse.construct import eye as speye
 from scipy.sparse.linalg import spsolve
+from scipy.sparse.sputils import is_pydata_spmatrix
 
 import scipy.sparse
 import scipy.sparse.linalg
 from scipy.sparse.linalg.interface import LinearOperator
+
+from ._expm_multiply import _ident_like, _exact_1_norm as _onenorm
 
 
 UPPER_TRIANGULAR = 'upper_triangular'
@@ -47,7 +50,7 @@ def inv(A):
 
     Notes
     -----
-    This computes the sparse inverse of `A`.  If the inverse of `A` is expected
+    This computes the sparse inverse of `A`. If the inverse of `A` is expected
     to be non-sparse, it will likely be faster to convert `A` to dense and use
     scipy.linalg.inv.
 
@@ -70,7 +73,11 @@ def inv(A):
     .. versionadded:: 0.12.0
 
     """
-    I = speye(A.shape[0], A.shape[1], dtype=A.dtype, format=A.format)
+    #check input
+    if not (scipy.sparse.isspmatrix(A) or is_pydata_spmatrix(A)):
+        raise TypeError('Input must be a sparse matrix')
+
+    I = _ident_like(A)
     Ainv = spsolve(A, I)
     return Ainv
 
@@ -105,26 +112,7 @@ def _onenorm_matrix_power_nnm(A, p):
     M = A.T
     for i in range(p):
         v = M.dot(v)
-    return max(v)
-
-
-def _onenorm(A):
-    # A compatibility function which should eventually disappear.
-    # This is copypasted from expm_action.
-    if scipy.sparse.isspmatrix(A):
-        return max(abs(A).sum(axis=0).flat)
-    else:
-        return np.linalg.norm(A, 1)
-
-
-def _ident_like(A):
-    # A compatibility function which should eventually disappear.
-    # This is copypasted from expm_action.
-    if scipy.sparse.isspmatrix(A):
-        return scipy.sparse.construct.eye(A.shape[0], A.shape[1],
-                dtype=A.dtype, format=A.format)
-    else:
-        return np.eye(A.shape[0], A.shape[1], dtype=A.dtype)
+    return np.max(v)
 
 
 def _is_upper_triangular(A):
@@ -134,6 +122,10 @@ def _is_upper_triangular(A):
         # Check structural upper triangularity,
         # then coincidental upper triangularity if needed.
         return lower_part.nnz == 0 or lower_part.count_nonzero() == 0
+    elif is_pydata_spmatrix(A):
+        import sparse
+        lower_part = sparse.tril(A, -1)
+        return lower_part.nnz == 0
     else:
         return not np.tril(A, -1).any()
 
@@ -166,7 +158,8 @@ def _smart_matrix_product(A, B, alpha=None, structure=None):
         raise ValueError('expected B to be a rectangular matrix')
     f = None
     if structure == UPPER_TRIANGULAR:
-        if not isspmatrix(A) and not isspmatrix(B):
+        if (not isspmatrix(A) and not isspmatrix(B)
+                and not is_pydata_spmatrix(A) and not is_pydata_spmatrix(B)):
             f, = scipy.linalg.get_blas_funcs(('trmm',), (A, B))
     if f is not None:
         if alpha is None:
@@ -607,10 +600,18 @@ def _expm(A, use_exact_onenorm):
     # algorithms.
 
     # Avoid indiscriminate asarray() to allow sparse or other strange arrays.
-    if isinstance(A, (list, tuple)):
+    if isinstance(A, (list, tuple, np.matrix)):
         A = np.asarray(A)
     if len(A.shape) != 2 or A.shape[0] != A.shape[1]:
         raise ValueError('expected a square matrix')
+
+    # gracefully handle size-0 input,
+    # carefully handling sparse scenario
+    if A.shape == (0, 0):
+        out = np.zeros([0, 0], dtype=A.dtype)
+        if isspmatrix(A) or is_pydata_spmatrix(A):
+            return A.__class__(out)
+        return out
 
     # Trivial case
     if A.shape == (1, 1):
@@ -618,10 +619,15 @@ def _expm(A, use_exact_onenorm):
 
         # Avoid indiscriminate casting to ndarray to
         # allow for sparse or other strange arrays
-        if isspmatrix(A):
+        if isspmatrix(A) or is_pydata_spmatrix(A):
             return A.__class__(out)
 
         return np.array(out)
+
+    # Ensure input is of float type, to avoid integer overflows etc.
+    if ((isinstance(A, np.ndarray) or isspmatrix(A) or is_pydata_spmatrix(A))
+            and not np.issubdtype(A.dtype, np.inexact)):
+        A = A.astype(float)
 
     # Detect upper triangularity.
     structure = UPPER_TRIANGULAR if _is_upper_triangular(A) else None
@@ -701,7 +707,7 @@ def _solve_P_Q(U, V, structure=None):
     """
     P = U + V
     Q = -U + V
-    if isspmatrix(U):
+    if isspmatrix(U) or is_pydata_spmatrix(U):
         return spsolve(Q, P)
     elif structure is None:
         return solve(Q, P)
@@ -835,19 +841,17 @@ def _ell(A, m):
     if len(A.shape) != 2 or A.shape[0] != A.shape[1]:
         raise ValueError('expected A to be like a square matrix')
 
-    p = 2*m + 1
-
     # The c_i are explained in (2.2) and (2.6) of the 2005 expm paper.
     # They are coefficients of terms of a generating function series expansion.
-    choose_2p_p = scipy.special.comb(2*p, p, exact=True)
-    abs_c_recip = float(choose_2p_p * math.factorial(2*p + 1))
+    choose_2m_m = scipy.special.comb(2*m, m, exact=True)
+    abs_c_recip = float(choose_2m_m * math.factorial(2*m + 1))
 
     # This is explained after Eq. (1.2) of the 2009 expm paper.
     # It is the "unit roundoff" of IEEE double precision arithmetic.
     u = 2**-53
 
     # Compute the one-norm of matrix power p of abs(A).
-    A_abs_onenorm = _onenorm_matrix_power_nnm(abs(A), p)
+    A_abs_onenorm = _onenorm_matrix_power_nnm(abs(A), 2*m + 1)
 
     # Treat zero norm as a special case.
     if not A_abs_onenorm:

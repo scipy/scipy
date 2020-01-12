@@ -28,12 +28,22 @@ cdef extern from "numpy/npy_math.h":
     double npy_copysign(double x, double y) nogil
     int npy_signbit(double x) nogil
 
+cdef extern from "cephes.h":
+    double lgam(double x) nogil
+
 DEF TWOPI = 6.2831853071795864769252842 # 2*pi
 DEF LOGPI = 1.1447298858494001741434262 # log(pi)
 DEF HLOG2PI = 0.918938533204672742 # log(2*pi)/2
 DEF SMALLX = 7
 DEF SMALLY = 7
 DEF TAYLOR_RADIUS = 0.2
+
+
+cdef inline double loggamma_real(double x) nogil:
+    if x < 0.0:
+        return nan
+
+    return lgam(x)
 
 
 @cython.cdivision(True)

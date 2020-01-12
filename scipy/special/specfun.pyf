@@ -42,7 +42,6 @@ python module specfun ! in
         end subroutine jdzo
 
         ! cbk
-        ! cjy01
         ! rmn2sp
         subroutine bernob(n,bn) ! in :specfun:specfun.f
             integer intent(in), check(n>=2) :: n
@@ -56,7 +55,6 @@ python module specfun ! in
         ! cv0
         ! cvqm
         ! cvql
-        ! csphjy
         ! ittjyb
 
         ! ittjya
@@ -251,7 +249,6 @@ python module specfun ! in
         ! airyb
 
         ! ikna
-        ! cjyna
         ! cjynb
         ! iknb
         subroutine lpmn(mm,m,n,x,pm,pd) ! in :specfun:specfun.f
@@ -364,7 +361,6 @@ python module specfun ! in
         end subroutine cyzo
         ! klvnb
         ! rmn2so
-        ! csphik
         ! bjndd
         ! sphj
         subroutine othpl(kf,n,x,pl,dpl) ! in :specfun:specfun.f

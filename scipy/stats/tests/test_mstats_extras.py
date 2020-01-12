@@ -20,10 +20,10 @@ def test_compare_medians_ms():
 def test_hdmedian():
     # 1-D array
     x = ma.arange(11)
-    assert_equal(ms.hdmedian(x), 5)
+    assert_allclose(ms.hdmedian(x), 5, rtol=1e-14)
     x.mask = ma.make_mask(x)
     x.mask[:7] = False
-    assert_equal(ms.hdmedian(x), 3)
+    assert_allclose(ms.hdmedian(x), 3, rtol=1e-14)
 
     # Check that `var` keyword returns a value.  TODO: check whether returned
     # value is actually correct.

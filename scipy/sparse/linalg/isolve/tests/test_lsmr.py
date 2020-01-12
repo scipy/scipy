@@ -1,6 +1,6 @@
 """
 Copyright (C) 2010 David Fong and Michael Saunders
-Distributed under the same license as Scipy
+Distributed under the same license as SciPy
 
 Testing Code for LSMR.
 
@@ -65,6 +65,31 @@ class TestLSMR:
         b = 3.0
         x = lsmr(A, b)[0]
         assert_almost_equal(norm(A.dot(x) - b), 0)
+
+    def testComplexX(self):
+        A = eye(self.n)
+        xtrue = transpose(arange(self.n, 0, -1) * (1 + 1j))
+        self.assertCompatibleSystem(A, xtrue)
+
+    def testComplexX0(self):
+        A = 4 * eye(self.n) + ones((self.n, self.n))
+        xtrue = transpose(arange(self.n, 0, -1))
+        b = aslinearoperator(A).matvec(xtrue)
+        x0 = zeros(self.n, dtype=complex)
+        x = lsmr(A, b, x0=x0)[0]
+        assert_almost_equal(norm(x - xtrue), 0, decimal=5)
+
+    def testComplexA(self):
+        A = 4 * eye(self.n) + 1j * ones((self.n, self.n))
+        xtrue = transpose(arange(self.n, 0, -1).astype(complex))
+        self.assertCompatibleSystem(A, xtrue)
+
+    def testComplexB(self):
+        A = 4 * eye(self.n) + ones((self.n, self.n))
+        xtrue = transpose(arange(self.n, 0, -1) * (1 + 1j))
+        b = aslinearoperator(A).matvec(xtrue)
+        x = lsmr(A, b)[0]
+        assert_almost_equal(norm(x - xtrue), 0, decimal=5)
 
     def testColumnB(self):
         A = eye(self.n)
@@ -174,6 +199,7 @@ def lsmrtest(m, n, damp):
     print(str)
     print(str2)
     print(' ')
+
 
 if __name__ == "__main__":
     lsmrtest(20,10,0)

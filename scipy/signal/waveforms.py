@@ -10,8 +10,6 @@ import numpy as np
 from numpy import asarray, zeros, place, nan, mod, pi, extract, log, sqrt, \
     exp, cos, sin, polyval, polyint
 
-from scipy._lib.six import string_types
-
 
 __all__ = ['sawtooth', 'square', 'gausspulse', 'chirp', 'sweep_poly',
            'unit_impulse']
@@ -237,12 +235,13 @@ def gausspulse(t, fc=1000, bw=0.5, bwr=-6, tpr=-60, retquad=False,
     # pi^2/a * fc^2 * bw^2 /4=-log(ref)
     a = -(pi * fc * bw) ** 2 / (4.0 * log(ref))
 
-    if isinstance(t, string_types):
+    if isinstance(t, str):
         if t == 'cutoff':  # compute cut_off point
             #  Solve exp(-a tc**2) = tref  for tc
             #   tc = sqrt(-log(tref) / a) where tref = 10^(tpr/20)
             if tpr >= 0:
-                raise ValueError("Reference level for time cutoff must be < 0 dB")
+                raise ValueError("Reference level for time cutoff must "
+                                 "be < 0 dB")
             tref = pow(10.0, tpr / 20.0)
             return sqrt(-log(tref) / a)
         else:
@@ -328,7 +327,7 @@ def chirp(t, f0, t1, f1, method='linear', phi=0, vertex_zero=True):
             ``f(t) = f1 - (f1 - f0) * (t1 - t)**2 / t1**2``
 
         To use a more general quadratic function, or an arbitrary
-        polynomial, use the function `scipy.signal.waveforms.sweep_poly`.
+        polynomial, use the function `scipy.signal.sweep_poly`.
 
     logarithmic, log, lo:
 
@@ -390,7 +389,7 @@ def chirp(t, f0, t1, f1, method='linear', phi=0, vertex_zero=True):
     >>> ff, tt, Sxx = spectrogram(w, fs=fs, noverlap=256, nperseg=512,
     ...                           nfft=2048)
     >>> plt.pcolormesh(tt, ff[:513], Sxx[:513], cmap='gray_r')
-    >>> plt.title('Quadratic Chirp, f(0)=2500, f(10)=250\\n' +
+    >>> plt.title('Quadratic Chirp, f(0)=1500, f(10)=250\\n' +
     ...           '(vertex_zero=False)')
     >>> plt.xlabel('t (sec)')
     >>> plt.ylabel('Frequency (Hz)')
@@ -431,7 +430,7 @@ def chirp(t, f0, t1, f1, method='linear', phi=0, vertex_zero=True):
 
 def _chirp_phase(t, f0, t1, f1, method='linear', vertex_zero=True):
     """
-    Calculate the phase used by chirp_phase to generate its output.
+    Calculate the phase used by `chirp` to generate its output.
 
     See `chirp` for a description of the arguments.
 
@@ -607,8 +606,8 @@ def unit_impulse(shape, idx=None, dtype=float):
         all dimensions.  If an int, the impulse will be at `idx` in all
         dimensions.
     dtype : data-type, optional
-        The desired data-type for the array, e.g., `numpy.int8`.  Default is
-        `numpy.float64`.
+        The desired data-type for the array, e.g., ``numpy.int8``.  Default is
+        ``numpy.float64``.
 
     Returns
     -------

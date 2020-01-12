@@ -4,8 +4,7 @@ import pickle
 
 import numpy as np
 import numpy.testing as npt
-from numpy.testing import assert_allclose, assert_equal
-from scipy._lib._numpy_compat import suppress_warnings
+from numpy.testing import assert_allclose, assert_equal, suppress_warnings
 from pytest import raises as assert_raises
 
 import numpy.ma.testutils as ma_npt
@@ -37,7 +36,8 @@ def check_normalization(distfn, args, distname):
     npt.assert_allclose(normalization_expect, 1.0, atol=atol, rtol=rtol,
             err_msg=distname, verbose=True)
 
-    normalization_cdf = distfn.cdf(distfn.b, *args)
+    _a, _b = distfn.support(*args)
+    normalization_cdf = distfn.cdf(_b, *args)
     npt.assert_allclose(normalization_cdf, 1.0)
 
 
@@ -87,7 +87,7 @@ def check_kurt_expect(distfn, arg, m, v, k, msg):
         m4e = distfn.expect(lambda x: np.power(x-m, 4), arg)
         npt.assert_allclose(m4e, (k + 3.) * np.power(v, 2), atol=1e-5, rtol=1e-5,
                 err_msg=msg + ' - kurtosis')
-    else:
+    elif not np.isposinf(k):
         npt.assert_(np.isnan(k))
 
 
@@ -102,11 +102,27 @@ def check_private_entropy(distfn, args, superclass):
                         superclass._entropy(distfn, *args))
 
 
+def check_entropy_vect_scale(distfn, arg):
+    # check 2-d
+    sc = np.asarray([[1, 2], [3, 4]])
+    v_ent = distfn.entropy(*arg, scale=sc)
+    s_ent = [distfn.entropy(*arg, scale=s) for s in sc.ravel()]
+    s_ent = np.asarray(s_ent).reshape(v_ent.shape)
+    assert_allclose(v_ent, s_ent, atol=1e-14)
+
+    # check invalid value, check cast
+    sc = [1, 2, -3]
+    v_ent = distfn.entropy(*arg, scale=sc)
+    s_ent = [distfn.entropy(*arg, scale=s) for s in sc]
+    s_ent = np.asarray(s_ent).reshape(v_ent.shape)
+    assert_allclose(v_ent, s_ent, atol=1e-14)
+
+
 def check_edge_support(distfn, args):
     # Make sure that x=self.a and self.b are handled correctly.
-    x = [distfn.a, distfn.b]
+    x = distfn.support(*args)
     if isinstance(distfn, stats.rv_discrete):
-        x = [distfn.a - 1, distfn.b]
+        x = x[0]-1, x[1]
 
     npt.assert_equal(distfn.cdf(x, *args), [0.0, 1.0])
     npt.assert_equal(distfn.sf(x, *args), [1.0, 0.0])
@@ -273,6 +289,19 @@ def check_pickling(distfn, args):
 
     # restore the random_state
     distfn.random_state = rndm
+
+
+def check_freezing(distfn, args):
+    # regression test for gh-11089: freezing a distribution fails
+    # if loc and/or scale are specified
+    if isinstance(distfn, stats.rv_continuous):
+        locscale = {'loc': 1, 'scale': 2}
+    else:
+        locscale = {'loc': 1}
+
+    rv = distfn(*args, **locscale)
+    assert rv.a == distfn(*args).a
+    assert rv.b == distfn(*args).b
 
 
 def check_rvs_broadcast(distfunc, distname, allargs, shape, shape_only, otype):

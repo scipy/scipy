@@ -122,7 +122,7 @@
  * This is accomplished using the inverse Gamma integral
  * function and the relation
  *
- *    x/2 = igami( df/2, y );
+ *    x/2 = igamci( df/2, y );
  *
  *
  *
@@ -166,7 +166,7 @@ double df, x;
 {
 
     if ((x < 0.0)) {		/* || (df < 1.0) ) */
-	mtherr("chdtr", DOMAIN);
+	sf_error("chdtr", SF_ERROR_DOMAIN, NULL);
 	return (NPY_NAN);
     }
     return (igam(df / 2.0, x / 2.0));
@@ -180,10 +180,10 @@ double df, y;
     double x;
 
     if ((y < 0.0) || (y > 1.0)) {	/* || (df < 1.0) ) */
-	mtherr("chdtri", DOMAIN);
+	sf_error("chdtri", SF_ERROR_DOMAIN, NULL);
 	return (NPY_NAN);
     }
 
-    x = igami(0.5 * df, y);
+    x = igamci(0.5 * df, y);
     return (2.0 * x);
 }

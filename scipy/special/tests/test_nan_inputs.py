@@ -4,18 +4,14 @@
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from numpy.testing import assert_array_equal, assert_
+from numpy.testing import assert_array_equal, assert_, suppress_warnings
 import pytest
-
 import scipy.special as sc
-from scipy._lib._numpy_compat import suppress_warnings
 
 
 KNOWNFAILURES = {}
 
-POSTPROCESSING = {
-    sc.hyp2f0: lambda x, y: x  # Second argument is an error estimate
-}
+POSTPROCESSING = {}
 
 
 def _get_ufuncs():
@@ -35,6 +31,7 @@ def _get_ufuncs():
             ufunc_names.append(name)
     return ufuncs, ufunc_names
 
+
 UFUNCS, UFUNC_NAMES = _get_ufuncs()
 
 
@@ -46,7 +43,9 @@ def test_nan_inputs(func):
         sup.filter(RuntimeWarning,
                    "floating point number truncated to an integer")
         try:
-            res = func(*args)
+            with suppress_warnings() as sup:
+                sup.filter(DeprecationWarning)
+                res = func(*args)
         except TypeError:
             # One of the arguments doesn't take real inputs
             return

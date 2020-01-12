@@ -4,7 +4,7 @@
 Inverted Weibull Distribution
 =============================
 
-Shape parameter :math:`c>0` and :math:`x>0` . Then
+There is one shape parameter :math:`c>0` and the support is  :math:`x\geq0` . Then
 
 .. math::
    :nowrap:

@@ -7,9 +7,7 @@ cdef extern from "_c99compat.h":
     int sc_isnan(double x) nogil
     int sc_isinf(double x) nogil
 
-cdef extern from "cephes.h":
-    double ellpk(double m) nogil
-
+from ._cephes cimport ellpk
 from ._complexstuff cimport pi, nan
 
 
@@ -55,7 +53,7 @@ cdef inline double agm(double a, double b) nogil:
 
     if a == 0 or b == 0:
         # At least one of the arguments is 0.
-        return 0.0 
+        return 0.0
 
     if a == b:
         return a

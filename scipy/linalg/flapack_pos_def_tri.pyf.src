@@ -1,0 +1,14 @@
+! Signatures for f2py-wrappers of FORTRAN LAPACK Positive Definite Tridiagonal Matrix functions.
+!
+
+subroutine <prefix>ptsv(n, nrhs, d, e, b, info)
+    callstatement (*f2py_func)(&n, &nrhs, d, e, b, &n, &info);
+    callprotoargument int*, int*, <ctypereal>*, <ctype>*, <ctype>*, int*, int*
+    integer intent(hide), depend(d) :: n = len(d)
+    integer intent(hide), depend(b) :: nrhs = shape(b, 1)
+    <ftypereal> dimension(n), intent(in,out,copy) :: d
+    <ftype> dimension(n-1), intent(in,out,copy,out=du), depend(n) :: e
+    <ftype> dimension(n,nrhs), intent(in,out,copy,out=x), depend(n), check(shape(b,0)==n) :: b
+    integer intent(out) :: info
+
+end subroutine <prefix>ptsv

@@ -82,7 +82,7 @@ C
    20 strtx = stvaln(pp)
       xcur = strtx
 C
-C     NEWTON INTERATIONS
+C     NEWTON ITERATIONS
 C
       DO 30,i = 1,maxit
           CALL cumnor(xcur,cum,ccum)

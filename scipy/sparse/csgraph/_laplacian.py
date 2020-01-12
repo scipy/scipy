@@ -24,7 +24,7 @@ def laplacian(csgraph, normed=False, return_diag=False, use_out_degree=False):
     csgraph : array_like or sparse matrix, 2 dimensions
         compressed-sparse graph, with shape (N, N).
     normed : bool, optional
-        If True, then compute normalized Laplacian.
+        If True, then compute symmetric normalized Laplacian.
     return_diag : bool, optional
         If True, then also return an array related to vertex degrees.
     use_out_degree : bool, optional
@@ -35,7 +35,7 @@ def laplacian(csgraph, normed=False, return_diag=False, use_out_degree=False):
     Returns
     -------
     lap : ndarray or sparse matrix
-        The N x N laplacian matrix of csgraph. It will be a numpy array (dense)
+        The N x N laplacian matrix of csgraph. It will be a NumPy array (dense)
         if the input was dense, or a sparse matrix otherwise.
     diag : ndarray, optional
         The length-N diagonal of the Laplacian matrix.
@@ -46,7 +46,7 @@ def laplacian(csgraph, normed=False, return_diag=False, use_out_degree=False):
     -----
     The Laplacian matrix of a graph is sometimes referred to as the
     "Kirchoff matrix" or the "admittance matrix", and is useful in many
-    parts of spectral graph theory.  In particular, the eigen-decomposition
+    parts of spectral graph theory. In particular, the eigen-decomposition
     of the laplacian matrix can give insight into many properties of the graph.
 
     Examples

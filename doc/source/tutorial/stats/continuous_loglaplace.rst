@@ -4,7 +4,7 @@
 Log Double Exponential (Log-Laplace) Distribution
 =================================================
 
-Defined over :math:`x>0` with :math:`c>0`
+One shape parameter :math:`c>0`.   The support is :math:`x\geq0`.
 
 .. math::
    :nowrap:

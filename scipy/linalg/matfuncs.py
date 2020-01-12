@@ -8,7 +8,7 @@ __all__ = ['expm','cosm','sinm','tanm','coshm','sinhm',
            'tanhm','logm','funm','signm','sqrtm',
            'expm_frechet', 'expm_cond', 'fractional_matrix_power']
 
-from numpy import (Inf, dot, diag, product, logical_not, ravel,
+from numpy import (Inf, dot, diag, prod, logical_not, ravel,
         transpose, conjugate, absolute, amax, sign, isfinite, single)
 import numpy as np
 
@@ -554,7 +554,7 @@ def funm(A, func, disp=True):
     T, Z = rsf2csf(T,Z)
     n,n = T.shape
     F = diag(func(diag(T)))  # apply function to diagonal elements
-    F = F.astype(T.dtype.char)  # e.g. when F is real but T is complex
+    F = F.astype(T.dtype.char)  # e.g., when F is real but T is complex
 
     minden = abs(T[0,0])
 
@@ -580,7 +580,7 @@ def funm(A, func, disp=True):
     if minden == 0.0:
         minden = tol
     err = min(1, max(tol,(tol/minden)*norm(triu(T,1),1)))
-    if product(ravel(logical_not(isfinite(F))),axis=0):
+    if prod(ravel(logical_not(isfinite(F))),axis=0):
         err = Inf
     if disp:
         if err > 1000*tol:

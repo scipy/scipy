@@ -1,12 +1,13 @@
 """
 Tests which scan for certain occurrences in the code, they may not find
 all of these occurrences but should catch almost all. This file was adapted
-from numpy.
+from NumPy.
 """
 
 
 from __future__ import division, absolute_import, print_function
 
+import os
 import sys
 import scipy
 
@@ -69,10 +70,10 @@ def warning_calls():
 
     bad_filters = []
     bad_stacklevels = []
-    
+
     for path in base.rglob("*.py"):
         # use tokenize to auto-detect encoding on systems where no
-        # default encoding is defined (e.g. LANG='C')
+        # default encoding is defined (e.g., LANG='C')
         with tokenize.open(str(path)) as file:
             tree = ast.parse(file.read(), filename=str(path))
             finder = FindFuncs(path.relative_to(base))
@@ -88,15 +89,18 @@ def warning_calls():
 def test_warning_calls_filters(warning_calls):
     bad_filters, bad_stacklevels = warning_calls
 
-    # There is still one missing occurrence in optimize.py,
-    # this is one that should be fixed and this removed then.
+    # There is still one simplefilter occurrence in optimize.py that could be removed.
     bad_filters = [item for item in bad_filters
                    if 'optimize.py' not in item]
+    # The filterwarnings calls in sparse are needed.
+    bad_filters = [item for item in bad_filters
+                   if os.path.join('sparse', '__init__.py') not in item
+                   and os.path.join('sparse', 'sputils.py') not in item]
 
     if bad_filters:
         raise AssertionError(
             "warning ignore filter should not be used, instead, use\n"
-            "scipy._lib._numpy_compat.suppress_warnings (in tests only);\n"
+            "numpy.testing.suppress_warnings (in tests only);\n"
             "found in:\n    {}".format(
                 "\n    ".join(bad_filters)))
 
@@ -111,7 +115,7 @@ def test_warning_calls_stacklevels(warning_calls):
 
     if bad_filters:
         msg += ("warning ignore filter should not be used, instead, use\n"
-                "scipy._lib._numpy_compat.suppress_warnings (in tests only);\n"
+                "numpy.testing.suppress_warnings (in tests only);\n"
                 "found in:\n    {}".format("\n    ".join(bad_filters)))
         msg += "\n\n"
 

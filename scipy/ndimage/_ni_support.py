@@ -32,8 +32,6 @@ from __future__ import division, print_function, absolute_import
 
 import numpy
 
-from scipy._lib.six import string_types
-
 
 def _extend_mode_to_code(mode):
     """Convert an extension mode to the corresponding integer code.
@@ -52,12 +50,12 @@ def _extend_mode_to_code(mode):
         raise RuntimeError('boundary mode not supported')
 
 
-def _normalize_sequence(input, rank, array_type=None):
+def _normalize_sequence(input, rank):
     """If input is a scalar, create a sequence of length equal to the
     rank by duplicating the input. If input is a sequence,
     check if its length is equal to the length of array.
     """
-    is_str = isinstance(input, string_types)
+    is_str = isinstance(input, str)
     if hasattr(input, '__iter__') and not is_str:
         normalized = list(input)
         if len(normalized) != rank:
@@ -73,19 +71,15 @@ def _get_output(output, input, shape=None):
         shape = input.shape
     if output is None:
         output = numpy.zeros(shape, dtype=input.dtype.name)
-        return_value = output
-    elif type(output) in [type(type), type(numpy.zeros((4,)).dtype)]:
+    elif isinstance(output, (type, numpy.dtype)):
+        # Classes (like `np.float32`) and dtypes are interpreted as dtype
         output = numpy.zeros(shape, dtype=output)
-        return_value = output
-    elif type(output) in string_types:
+    elif isinstance(output, str):
         output = numpy.typeDict[output]
         output = numpy.zeros(shape, dtype=output)
-        return_value = output
-    else:
-        if output.shape != shape:
-            raise RuntimeError("output shape not correct")
-        return_value = None
-    return output, return_value
+    elif output.shape != shape:
+        raise RuntimeError("output shape not correct")
+    return output
 
 
 def _check_axis(axis, rank):

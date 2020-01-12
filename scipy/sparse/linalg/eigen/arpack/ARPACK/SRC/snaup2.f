@@ -146,11 +146,11 @@ c     ivout   ARPACK utility routine that prints integers.
 c     arscnd  ARPACK utility routine for timing.
 c     smout   ARPACK utility routine that prints matrices
 c     svout   ARPACK utility routine that prints vectors.
-c     wslamch  LAPACK routine that determines machine constants.
-c     wslapy2  LAPACK routine to compute sqrt(x**2+y**2) carefully.
+c     slamch  LAPACK routine that determines machine constants.
+c     slapy2  LAPACK routine to compute sqrt(x**2+y**2) carefully.
 c     scopy   Level 1 BLAS that copies one vector to another .
-c     wsdot    Level 1 BLAS that computes the scalar product of two vectors.
-c     wsnrm2   Level 1 BLAS that computes the norm of a vector.
+c     sdot    Level 1 BLAS that computes the scalar product of two vectors.
+c     snrm2   Level 1 BLAS that computes the norm of a vector.
 c     sswap   Level 1 BLAS that swaps two vectors.
 c
 c\Author
@@ -243,8 +243,8 @@ c     | External Functions |
 c     %--------------------%
 c
       Real
-     &           wsdot, wsnrm2, wslapy2, wslamch
-      external   wsdot, wsnrm2, wslapy2, wslamch
+     &           sdot, snrm2, slapy2, slamch
+      external   sdot, snrm2, slapy2, slamch
 c
 c     %---------------------%
 c     | Intrinsic Functions |
@@ -266,7 +266,7 @@ c        %-------------------------------------%
 c        | Get the machine dependent constant. |
 c        %-------------------------------------%
 c
-         eps23 = wslamch('Epsilon-Machine')
+         eps23 = slamch('Epsilon-Machine')
          eps23 = eps23**(2.0E+0  / 3.0E+0 )
 c
          nev0   = nev
@@ -591,7 +591,7 @@ c           | by 1 / max(eps23,magnitude of the Ritz value).   |
 c           %--------------------------------------------------%
 c
             do 35 j = 1, numcnv
-                temp = max(eps23,wslapy2(ritzr(j),
+                temp = max(eps23,slapy2(ritzr(j),
      &                                   ritzi(j)))
                 bounds(j) = bounds(j)/temp
  35         continue
@@ -612,7 +612,7 @@ c           | value.                                       |
 c           %----------------------------------------------%
 c
             do 40 j = 1, numcnv
-                temp = max(eps23, wslapy2(ritzr(j),
+                temp = max(eps23, slapy2(ritzr(j),
      &                                   ritzi(j)))
                 bounds(j) = bounds(j)*temp
  40         continue
@@ -800,10 +800,10 @@ c
          end if
 c
          if (bmat .eq. 'G') then
-            rnorm = wsdot (n, resid, 1, workd, 1)
+            rnorm = sdot (n, resid, 1, workd, 1)
             rnorm = sqrt(abs(rnorm))
          else if (bmat .eq. 'I') then
-            rnorm = wsnrm2(n, resid, 1)
+            rnorm = snrm2(n, resid, 1)
          end if
          cnorm = .false.
 c

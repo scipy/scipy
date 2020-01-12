@@ -4,7 +4,7 @@
 Wald Distribution
 =================
 
-Special case of the Inverse Normal with shape parameter set to :math:`1.0` . Defined for :math:`x>0` .
+Special case of the Inverse Normal with shape parameter set to :math:`1.0`. It has support :math:`x\geq0`.
 
 .. math::
    :nowrap:

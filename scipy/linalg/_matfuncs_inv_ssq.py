@@ -72,7 +72,7 @@ class _MatrixM1PowerOperator(LinearOperator):
         return _MatrixM1PowerOperator(self._A.T, self._p)
 
 
-#TODO renovate or move this function when scipy operators are more mature
+#TODO renovate or move this function when SciPy operators are more mature
 def _onenormest_m1_power(A, p,
         t=2, itmax=5, compute_v=False, compute_w=False):
     """
@@ -848,12 +848,12 @@ def _logm(A):
     Notes
     -----
     In this function we look at triangular matrices that are similar
-    to the input matrix.  If any diagonal entry of such a triangular matrix
+    to the input matrix. If any diagonal entry of such a triangular matrix
     is exactly zero then the original matrix is singular.
     The matrix logarithm does not exist for such matrices,
     but in such cases we will pretend that the diagonal entries that are zero
     are actually slightly positive by an ad-hoc amount, in the interest
-    of returning something more useful than NaN.  This will cause a warning.
+    of returning something more useful than NaN. This will cause a warning.
 
     """
     A = np.asarray(A)
