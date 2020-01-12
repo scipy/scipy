@@ -337,7 +337,8 @@ def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
     turbo : bool, optional
         *Deprecated by ``driver=gvd`` option*. Use divide and conquer
         algorithm (faster but expensive in memory, only for generalized
-        eigenvalue problem and if full set of eigenvalues are requested.)
+        eigenvalue problem and if full set of eigenvalues are requested.). Has
+        no significant effect if eigenvectors are not requested.
 
         ..Deprecated in v1.5.0
     eigvals : tuple (lo, hi), optional
@@ -855,66 +856,99 @@ def eigvals(a, b=None, overwrite_a=False, check_finite=True,
 
 def eigvalsh(a, b=None, lower=True, overwrite_a=False,
              overwrite_b=False, turbo=True, eigvals=None, type=1,
-             check_finite=True):
+             check_finite=True, subset_by_index=None, subset_by_value=None,
+             driver=None):
     """
-    Solve an ordinary or generalized eigenvalue problem for a complex
+    Solves a standard or generalized eigenvalue problem for a complex
     Hermitian or real symmetric matrix.
 
-    Find eigenvalues w of matrix a, where b is positive definite::
+    Find eigenvalues array ``w`` of array ``a``, where ``b`` is positive
+    definite such that for every eigenvalue λ (i-th entry of w) and its
+    eigenvector vi (i-th column of v) satisfies::
 
-                      a v[:,i] = w[i] b v[:,i]
-        v[i,:].conj() a v[:,i] = w[i]
-        v[i,:].conj() b v[:,i] = 1
+                      a @ vi = λ * b @ vi
+        vi.conj().T @ a @ vi = λ
+        vi.conj().T @ b @ vi = 1
 
+    In the standard problem, b is assumed to be the identity matrix.
 
     Parameters
     ----------
     a : (M, M) array_like
-        A complex Hermitian or real symmetric matrix whose eigenvalues and
-        eigenvectors will be computed.
+        A complex Hermitian or real symmetric matrix whose eigenvalues will
+        be computed.
     b : (M, M) array_like, optional
         A complex Hermitian or real symmetric definite positive matrix in.
         If omitted, identity matrix is assumed.
     lower : bool, optional
         Whether the pertinent array data is taken from the lower or upper
         triangle of `a`. (Default: lower)
-    turbo : bool, optional
-        Use divide and conquer algorithm (faster but expensive in memory,
-        only for generalized eigenvalue problem and if eigvals=None)
-    eigvals : tuple (lo, hi), optional
-        Indexes of the smallest and largest (in ascending order) eigenvalues
-        and corresponding eigenvectors to be returned: 0 <= lo < hi <= M-1.
-        If omitted, all eigenvalues and eigenvectors are returned.
+    eigvals_only : bool, optional
+        Whether to calculate only eigenvalues and no eigenvectors.
+        (Default: both are calculated)
+    subset_by_index : iterable, optional
+        If provided, this two-element iterable defines the start and the end
+        indices of the desired eigenvalues (ascending order and 0-indexed).
+        To return only the second smallest to fifth smallest eigenvalues,
+        ``[1, 4]`` is used. ``[n-3, n-1]`` returns the largest three. Only
+        available with "evr", "evx", and "gvx" drivers. The entries are
+        directly converted to integers via ``int()``.
+    subset_by_value : iterable, optional
+        If provided, this two-element iterable defines the half-open interval
+        ``(a, b]`` that, if any, only the eigenvalues between these values
+        are returned. Only available with "evr", "evx", and "gvx" drivers. Use
+        ``np.inf`` for the unconstrained ends.
+    driver: str, optional
+        Defines which LAPACK driver should be used. Valid options are "ev",
+        "evd", "evr", "evx" for standard problems and "gv", "gvd", "gvx" for
+        generalized (where b is not None) problems. See the Notes section of
+        `scipy.linalg.eigh`.
     type : int, optional
-        Specifies the problem type to be solved:
+        For the generalized problems, this keyword specifies the problem type
+        to be solved for ``w`` and ``v`` (only takes 1, 2, 3 as possible
+        inputs)::
 
-           type = 1: a   v[:,i] = w[i] b v[:,i]
+            1 =>     a @ v = w @ b @ v
+            2 => a @ b @ v = w @ v
+            3 => b @ a @ v = w @ v
 
-           type = 2: a b v[:,i] = w[i]   v[:,i]
-
-           type = 3: b a v[:,i] = w[i]   v[:,i]
+        This keyword is ignored for standard problems.
     overwrite_a : bool, optional
-        Whether to overwrite data in `a` (may improve performance)
+        Whether to overwrite data in ``a`` (may improve performance). Default
+        is False.
     overwrite_b : bool, optional
-        Whether to overwrite data in `b` (may improve performance)
+        Whether to overwrite data in ``b`` (may improve performance). Default
+        is False.
     check_finite : bool, optional
         Whether to check that the input matrices contain only finite numbers.
         Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
+    turbo : bool, optional
+        *Deprecated by ``driver=gvd`` option*. Has no significant effect for
+        eigenvalue computations since no eigenvectors are requested.
+
+        ..Deprecated in v1.5.0
+    eigvals : tuple (lo, hi), optional
+        *Deprecated by ``subset_by_index`` keyword*. Indexes of the smallest
+        and largest (in ascending order) eigenvalues and corresponding
+        eigenvectors to be returned: 0 <= lo <= hi <= M-1. If omitted, all
+        eigenvalues and eigenvectors are returned.
+
+        .. Deprecated in v1.5.0
 
     Returns
     -------
-    w : (N,) float ndarray
-        The N (1<=N<=M) selected eigenvalues, in ascending order, each
+    w : (N,) ndarray
+        The ``N`` (``1<=N<=M``) selected eigenvalues, in ascending order, each
         repeated according to its multiplicity.
 
     Raises
     ------
     LinAlgError
-        If eigenvalue computation does not converge,
-        an error occurred, or b matrix is not definite positive. Note that
-        if input matrices are not symmetric or hermitian, no error is reported
-        but results will be wrong.
+        If eigenvalue computation does not converge, an error occurred, or
+        b matrix is not definite positive. Note that if input matrices are
+        not symmetric or Hermitian, no error will be reported but results will
+        be wrong.
 
     See Also
     --------
@@ -930,6 +964,12 @@ def eigvalsh(a, b=None, lower=True, overwrite_a=False,
     in order to allow for representing arrays with only their upper/lower
     triangular parts.
 
+    This function serves as a one-liner shorthand for `scipy.linalg.eigh` with
+    the option ``eigvals_only=True`` to get the eigenvalues and not the
+    eigenvectors. Here it is kept as a legacy convenience. It might be
+    beneficial to use the main function to have full control and to be a bit
+    more pythonic.
+
     Examples
     --------
     >>> from scipy.linalg import eigvalsh
@@ -941,8 +981,9 @@ def eigvalsh(a, b=None, lower=True, overwrite_a=False,
     """
     return eigh(a, b=b, lower=lower, eigvals_only=True,
                 overwrite_a=overwrite_a, overwrite_b=overwrite_b,
-                turbo=turbo, eigvals=eigvals, type=type,
-                check_finite=check_finite)
+                turbo=turbo, eigvals=None, type=type,
+                check_finite=check_finite, subset_by_index=eigvals,
+                subset_by_value=None, driver=None)
 
 
 def eigvals_banded(a_band, lower=False, overwrite_a_band=False,
