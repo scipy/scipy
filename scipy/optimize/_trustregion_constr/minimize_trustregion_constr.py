@@ -253,7 +253,7 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
         Total number of iterations.
     nfev : integer
         Number of the objective function evaluations.
-    ngev : integer
+    njev : integer
         Number of the objective function gradient evaluations.
     nhev : integer
         Number of the objective function Hessian evaluations.
