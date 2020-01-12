@@ -11,7 +11,6 @@ from bisect import bisect_left
 
 import numpy as np
 
-from scipy._lib.six import zip
 from .base import spmatrix, isspmatrix
 from ._index import IndexMixin, INT_TYPES, _broadcast_arrays
 from .sputils import (getdtype, isshape, isscalarlike, upcast_scalar,
