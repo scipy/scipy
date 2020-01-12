@@ -2046,6 +2046,16 @@ def bilinear(b, a, fs=1.0):
     return normalize(bprime, aprime)
 
 
+def _validate_gpass_gstop(gpass, gstop):
+
+    if gpass <= 0.0:
+        raise ValueError("gpass should be larger than 0.0")
+    elif gstop <= 0.0:
+        raise ValueError("gstop should be larger than 0.0")
+    elif gpass > gstop:
+        raise ValueError("gpass should be smaller than gstop")
+
+
 def iirdesign(wp, ws, gpass, gstop, analog=False, ftype='ellip', output='ba',
               fs=None):
     """Complete IIR digital and analog filter design.
@@ -2159,6 +2169,8 @@ def iirdesign(wp, ws, gpass, gstop, analog=False, ftype='ellip', output='ba',
     except IndexError:
         raise ValueError(("%s does not have order selection. Use "
                           "iirfilter function.") % ftype)
+
+    _validate_gpass_gstop(gpass, gstop)
 
     wp = atleast_1d(wp)
     ws = atleast_1d(ws)
@@ -3421,6 +3433,9 @@ def band_stop_obj(wp, ind, passb, stopb, gpass, gstop, type):
         Filter order (possibly non-integer).
 
     """
+
+    _validate_gpass_gstop(gpass, gstop)
+
     passbC = passb.copy()
     passbC[ind] = wp
     nat = (stopb * (passbC[0] - passbC[1]) /
@@ -3525,6 +3540,9 @@ def buttord(wp, ws, gpass, gstop, analog=False, fs=None):
     >>> plt.show()
 
     """
+
+    _validate_gpass_gstop(gpass, gstop)
+
     wp = atleast_1d(wp)
     ws = atleast_1d(ws)
     if fs is not None:
@@ -3693,6 +3711,9 @@ def cheb1ord(wp, ws, gpass, gstop, analog=False, fs=None):
     >>> plt.show()
 
     """
+
+    _validate_gpass_gstop(gpass, gstop)
+
     wp = atleast_1d(wp)
     ws = atleast_1d(ws)
     if fs is not None:
@@ -3833,6 +3854,9 @@ def cheb2ord(wp, ws, gpass, gstop, analog=False, fs=None):
     >>> plt.show()
 
     """
+
+    _validate_gpass_gstop(gpass, gstop)
+
     wp = atleast_1d(wp)
     ws = atleast_1d(ws)
     if fs is not None:
@@ -3994,12 +4018,7 @@ def ellipord(wp, ws, gpass, gstop, analog=False, fs=None):
 
     """
 
-    if gpass <= 0.0:
-        raise ValueError("gpass should be larger than 0.0")
-    elif gstop <= 0.0:
-        raise ValueError("gstop should be larger than 0.0")
-    elif gpass > gstop:
-        raise ValueError("gpass should be smaller than gstop")
+    _validate_gpass_gstop(gpass, gstop)
 
     wp = atleast_1d(wp)
     ws = atleast_1d(ws)

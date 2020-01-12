@@ -1447,6 +1447,19 @@ class TestButtord(object):
         assert_allclose(Wn, [4409.722701715714, 11025.47178084662],
                         rtol=1e-15)
 
+    def test_invalid_input(self):
+        with pytest.raises(ValueError) as exc_info:
+            buttord([20, 50], [14, 60], 3, 2)
+        assert "gpass should be smaller than gstop" in str(exc_info.value)
+
+        with pytest.raises(ValueError) as exc_info:
+            buttord([20, 50], [14, 60], -1, 2)
+        assert "gpass should be larger than 0.0" in str(exc_info.value)
+
+        with pytest.raises(ValueError) as exc_info:
+            buttord([20, 50], [14, 60], 1, -2)
+        assert "gstop should be larger than 0.0" in str(exc_info.value)
+
 
 class TestCheb1ord(object):
 
@@ -1544,6 +1557,19 @@ class TestCheb1ord(object):
 
         assert_equal(N, 8)
         assert_allclose(Wn, 4800, rtol=1e-15)
+
+    def test_invalid_input(self):
+        with pytest.raises(ValueError) as exc_info:
+            cheb1ord(0.2, 0.3, 3, 2)
+        assert "gpass should be smaller than gstop" in str(exc_info.value)
+
+        with pytest.raises(ValueError) as exc_info:
+            cheb1ord(0.2, 0.3, -1, 2)
+        assert "gpass should be larger than 0.0" in str(exc_info.value)
+
+        with pytest.raises(ValueError) as exc_info:
+            cheb1ord(0.2, 0.3, 1, -2)
+        assert "gstop should be larger than 0.0" in str(exc_info.value)
 
 
 class TestCheb2ord(object):
@@ -1645,6 +1671,19 @@ class TestCheb2ord(object):
 
         assert_equal(N, 9)
         assert_allclose(Wn, 103.4874609145164, rtol=1e-15)
+
+    def test_invalid_input(self):
+        with pytest.raises(ValueError) as exc_info:
+            cheb2ord([0.1, 0.6], [0.2, 0.5], 3, 2)
+        assert "gpass should be smaller than gstop" in str(exc_info.value)
+
+        with pytest.raises(ValueError) as exc_info:
+            cheb2ord([0.1, 0.6], [0.2, 0.5], -1, 2)
+        assert "gpass should be larger than 0.0" in str(exc_info.value)
+
+        with pytest.raises(ValueError) as exc_info:
+            cheb2ord([0.1, 0.6], [0.2, 0.5], 1, -2)
+        assert "gstop should be larger than 0.0" in str(exc_info.value)
 
 
 class TestEllipord(object):
