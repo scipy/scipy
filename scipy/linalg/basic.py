@@ -15,6 +15,7 @@ from .misc import LinAlgError, _datacopied, LinAlgWarning
 from .decomp import _asarray_validated
 from . import decomp, decomp_svd
 from ._solve_toeplitz import levinson
+from ..fft import fft, ifft
 
 __all__ = ['solve', 'solve_triangular', 'solveh_banded', 'solve_banded',
            'solve_toeplitz', 'solve_circulant', 'inv', 'det', 'lstsq',
@@ -1671,7 +1672,7 @@ def _validate_args_for_toeplitz_ops(c_or_cr, b, check_finite, keep_b_shape):
     return r, c, b, dtype, b_shape
 
 
-def matmul_toeplitz(c_or_cr, b, check_finite=False):
+def matmul_toeplitz(c_or_cr, b, check_finite=False, workers=None):
     """Efficient Toeplitz Matrix-Matrix Multiplication using FFT
 
     This function returns the matrix multiplication between a Toeplitz
@@ -1696,6 +1697,10 @@ def matmul_toeplitz(c_or_cr, b, check_finite=False):
         Whether to check that the input matrices contain only finite numbers.
         Disabling may give a performance gain, but may result in problems
         (result entirely NaNs) if the inputs do contain infinities or NaNs.
+    workers : int, optional
+        To pass to scipy.fft.fft and ifft. Maximum number of workers to use
+        for parallel computation. If negative, the value wraps around from
+        ``os.cpu_count()``. See scipy.fft.fft for more details.
 
     Returns
     -------
@@ -1738,13 +1743,19 @@ def matmul_toeplitz(c_or_cr, b, check_finite=False):
 
     >>> from scipy.linalg import toeplitz, matmul_toeplitz
     >>> matmul_toeplitz((c, r), b)
-    array([[-20., -80.], [ -7.,  -8.], [  9.,  85.], [ 33., 218.]])
+    array([[-20., -80.],
+           [ -7.,  -8.],
+           [  9.,  85.],
+           [ 33., 218.]])
 
     Check the result by creating the full Toeplitz matrix and
     multiplying it by ``b``.
 
     >>> toeplitz(c, r) @ b
-    array([[-20, -80], [ -7,  -8], [  9,  85], [ 33, 218]])
+    array([[-20, -80],
+           [ -7,  -8],
+           [  9,  85],
+           [ 33, 218]])
 
     The full matrix is never formed explicitly, so this routine
     is suitable for very large Toeplitz matrices.
@@ -1767,13 +1778,13 @@ def matmul_toeplitz(c_or_cr, b, check_finite=False):
     Problems: A Practical Guide. SIAM, Philadelphia, 2000. Available online:
     http://www.netlib.org/utk/people/JackDongarra/etemplates/node384.html
 
-    .. [3] : R. Scheibler, E. Bezzam, I. Dokmanić, Pyroomacoustics: A Python
+    .. [3] : R. Scheibler, E. Bezzam, I. Dokmanic, Pyroomacoustics: A Python
     package for audio room simulations and array processing algorithms,
     Proc. IEEE ICASSP, Calgary, CA, 2018.
     https://github.com/LCAV/pyroomacoustics/blob/pypi-release/pyroomacoustics
     /adaptive/util.py
 
-    .. [4] : Maranò S, Edwards B, Ferrari G and Fäh D (2017), "Fitting
+    .. [4] : Marano S, Edwards B, Ferrari G and Fah D (2017), "Fitting
     Earthquake Spectra: Colored Noise and Incomplete Data", Bulletin of
     the Seismological Society of America., January, 2017. Vol. 107(1),
     pp. 276-291. Implementation available online at:
@@ -1787,12 +1798,11 @@ def matmul_toeplitz(c_or_cr, b, check_finite=False):
     n, m = b.shape
 
     embedded_col = np.concatenate((c, r[-1:0:-1]))
-    padded_b = np.vstack((b, np.zeros((n - 1, m))))
 
-    fft_mat = np.fft.fft(embedded_col, axis=0).reshape(-1, 1)
-    fft_b = np.fft.fft(padded_b, axis=0)
+    fft_mat = fft(embedded_col, axis=0, workers=workers).reshape(-1, 1)
+    fft_b = fft(b, n=2*n-1, axis=0, workers=workers)
 
-    mat_times_b = np.fft.ifft(fft_mat*fft_b, axis=0)[:n, :]
+    mat_times_b = ifft(fft_mat*fft_b, axis=0, workers=workers)[:n, :]
 
     if not np.iscomplexobj(dtype()):
         mat_times_b = mat_times_b.real
