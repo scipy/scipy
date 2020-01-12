@@ -1,7 +1,7 @@
 from __future__ import division, print_function, absolute_import
 
 import warnings
-
+import io
 import numpy as np
 
 from numpy.testing import (
@@ -409,7 +409,6 @@ class TestPCHIP(object):
         # http://nag.com/numeric/cl/nagdoc_cl25/html/e01/e01bec.html
         # suggested in gh-5326 as a smoke test for the way the derivatives
         # are computed (see also gh-3453)
-        from scipy._lib.six import StringIO
         dataStr = '''
           7.99   0.00000E+0
           8.09   0.27643E-4
@@ -421,7 +420,7 @@ class TestPCHIP(object):
          15.00   0.99992E+0
          20.00   0.99999E+0
         '''
-        data = np.loadtxt(StringIO(dataStr))
+        data = np.loadtxt(io.StringIO(dataStr))
         pch = pchip(data[:,0], data[:,1])
 
         resultStr = '''
@@ -437,7 +436,7 @@ class TestPCHIP(object):
           18.7990       1.0000
           20.0000       1.0000
         '''
-        result = np.loadtxt(StringIO(resultStr))
+        result = np.loadtxt(io.StringIO(resultStr))
         assert_allclose(result[:,1], pch(result[:,0]), rtol=0., atol=5e-5)
 
     def test_endslopes(self):
