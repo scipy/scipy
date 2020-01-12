@@ -175,7 +175,6 @@ from collections import namedtuple
 import numpy as np
 from numpy import array, asarray, ma
 
-from scipy._lib.six import callable
 from scipy.spatial.distance import cdist
 from scipy.ndimage import measurements
 from scipy._lib._util import _lazywhere, check_random_state, MapWrapper

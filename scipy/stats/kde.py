@@ -23,7 +23,6 @@ from __future__ import division, print_function, absolute_import
 import warnings
 
 # SciPy imports.
-from scipy._lib.six import callable
 from scipy import linalg, special
 from scipy.special import logsumexp
 from scipy._lib._util import check_random_state
