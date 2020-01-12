@@ -368,7 +368,7 @@ class dok_matrix(spmatrix, IndexMixin, dict):
         M, N = self.shape
         new = dok_matrix((N, M), dtype=self.dtype, copy=copy)
         dict.update(new, (((right, left), val)
-                          for (left, right), val in self.items))
+                          for (left, right), val in self.items()))
         return new
 
     transpose.__doc__ = spmatrix.transpose.__doc__
