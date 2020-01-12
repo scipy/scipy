@@ -1691,7 +1691,7 @@ def matmul_toeplitz(c_or_cr, b, check_finite=False):
         of the Toeplitz matrix is ``[c[0], r[1:]]``. Whatever the actual shape
         of ``r``, it will be converted to a 1-D array.
     b : (M,) or (M, K) array_like
-        Right-hand side in ``T x = b``.
+        Matrix with which to multiply.
     check_finite : bool, optional
         Whether to check that the input matrices contain only finite numbers.
         Disabling may give a performance gain, but may result in problems
@@ -1699,7 +1699,7 @@ def matmul_toeplitz(c_or_cr, b, check_finite=False):
 
     Returns
     -------
-    x : (M,) or (M, K) ndarray
+    T @ b : (M,) or (M, K) ndarray
         The result of the matrix multiplication ``T @ b``. Shape of return
         matches shape of `b`.
 
@@ -1746,7 +1746,8 @@ def matmul_toeplitz(c_or_cr, b, check_finite=False):
     >>> toeplitz(c, r) @ b
     array([[-20, -80], [ -7,  -8], [  9,  85], [ 33, 218]])
 
-    The full matrix is never formed, so dimensions aren't an issue.
+    The full matrix is never formed explicitly, so this routine
+    is suitable for very large Toeplitz matrices.
 
     >>> n = 1000000
     >>> matmul_toeplitz([1] + [0]*(n-1), np.ones(n))
