@@ -7,7 +7,6 @@ from warnings import warn
 import operator
 
 import numpy as np
-from scipy._lib.six import zip as izip
 from scipy._lib._util import _prune_array
 
 from .base import spmatrix, isspmatrix, SparseEfficiencyWarning
@@ -961,7 +960,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         ui_indptr = np.append(ui_indptr, len(j))
         new_nnzs = np.diff(ui_indptr)
         prev = 0
-        for c, (ii, js, je) in enumerate(izip(ui, ui_indptr, ui_indptr[1:])):
+        for c, (ii, js, je) in enumerate(zip(ui, ui_indptr, ui_indptr[1:])):
             # old entries
             start = self.indptr[prev]
             stop = self.indptr[ii]

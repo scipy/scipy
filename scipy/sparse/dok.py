@@ -9,7 +9,7 @@ __all__ = ['dok_matrix', 'isspmatrix_dok']
 import itertools
 import numpy as np
 
-from scipy._lib.six import zip as izip, iteritems, iterkeys, itervalues
+from scipy._lib.six import iteritems, iterkeys, itervalues
 
 from .base import spmatrix, isspmatrix
 from ._index import IndexMixin
@@ -237,7 +237,7 @@ class dok_matrix(spmatrix, IndexMixin, dict):
         row = list(map(int, row.ravel()))
         col = list(map(int, col.ravel()))
         x = x.ravel()
-        dict.update(self, izip(izip(row, col), x))
+        dict.update(self, zip(zip(row, col), x))
 
         for i in np.nonzero(x == 0)[0]:
             key = (row[i], col[i])
