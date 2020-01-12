@@ -4,7 +4,7 @@
 #
 from __future__ import division, print_function, absolute_import
 
-from scipy._lib.six import string_types, exec_, PY2
+from scipy._lib.six import exec_, PY2
 from scipy._lib._util import getargspec_no_self as _getargspec
 
 import sys
@@ -637,7 +637,7 @@ class rv_generic(object):
 
         if self.shapes:
             # sanitize the user-supplied shapes
-            if not isinstance(self.shapes, string_types):
+            if not isinstance(self.shapes, str):
                 raise TypeError('shapes must be a string.')
 
             shapes = self.shapes.replace(',', ' ').split()
@@ -2293,7 +2293,7 @@ class rv_continuous(rv_generic):
 
         optimizer = kwds.pop('optimizer', optimize.fmin)
         # convert string to function in scipy.optimize
-        if not callable(optimizer) and isinstance(optimizer, string_types):
+        if not callable(optimizer) and isinstance(optimizer, str):
             if not optimizer.startswith('fmin_'):
                 optimizer = "fmin_"+optimizer
             if optimizer == 'fmin_':

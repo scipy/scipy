@@ -32,8 +32,6 @@ from __future__ import division, print_function, absolute_import
 
 import numpy
 
-from scipy._lib.six import string_types
-
 
 def _extend_mode_to_code(mode):
     """Convert an extension mode to the corresponding integer code.
@@ -57,7 +55,7 @@ def _normalize_sequence(input, rank):
     rank by duplicating the input. If input is a sequence,
     check if its length is equal to the length of array.
     """
-    is_str = isinstance(input, string_types)
+    is_str = isinstance(input, str)
     if hasattr(input, '__iter__') and not is_str:
         normalized = list(input)
         if len(normalized) != rank:
@@ -76,7 +74,7 @@ def _get_output(output, input, shape=None):
     elif isinstance(output, (type, numpy.dtype)):
         # Classes (like `np.float32`) and dtypes are interpreted as dtype
         output = numpy.zeros(shape, dtype=output)
-    elif isinstance(output, string_types):
+    elif isinstance(output, str):
         output = numpy.typeDict[output]
         output = numpy.zeros(shape, dtype=output)
     elif output.shape != shape:

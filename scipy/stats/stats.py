@@ -175,7 +175,7 @@ from collections import namedtuple
 import numpy as np
 from numpy import array, asarray, ma
 
-from scipy._lib.six import callable, string_types
+from scipy._lib.six import callable
 from scipy.spatial.distance import cdist
 from scipy.ndimage import measurements
 from scipy._lib._util import _lazywhere, check_random_state, MapWrapper
@@ -2738,7 +2738,7 @@ def iqr(x, axis=None, rng=(25, 75), scale='raw', nan_policy='propagate',
 
     # An error may be raised here, so fail-fast, before doing lengthy
     # computations, even though `scale` is not used until later
-    if isinstance(scale, string_types):
+    if isinstance(scale, str):
         scale_key = scale.lower()
         if scale_key not in _scale_conversions:
             raise ValueError("{0} not a valid scale for `iqr`".format(scale))
@@ -5412,7 +5412,7 @@ def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', mode='approx'):
     (0.131016895759829, 0.058826222555312224)
 
     """
-    if isinstance(rvs, string_types):
+    if isinstance(rvs, str):
         if (not cdf) or (cdf == rvs):
             cdf = getattr(distributions, rvs).cdf
             rvs = getattr(distributions, rvs).rvs
@@ -5420,7 +5420,7 @@ def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', mode='approx'):
             raise AttributeError("if rvs is string, cdf has to be the "
                                  "same distribution")
 
-    if isinstance(cdf, string_types):
+    if isinstance(cdf, str):
         cdf = getattr(distributions, cdf).cdf
     if callable(rvs):
         kwds = {'size': N}
@@ -5646,7 +5646,7 @@ def power_divergence(f_obs, f_exp=None, ddof=0, axis=0, lambda_=None):
 
     """
     # Convert the input argument `lambda_` to a numerical value.
-    if isinstance(lambda_, string_types):
+    if isinstance(lambda_, str):
         if lambda_ not in _power_div_lambda_names:
             names = repr(list(_power_div_lambda_names.keys()))[1:-1]
             raise ValueError("invalid string for lambda_: {0!r}.  Valid strings "

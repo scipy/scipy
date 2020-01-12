@@ -10,8 +10,6 @@ from numpy.compat import asbytes, asstr
 
 import scipy.sparse
 
-from scipy._lib.six import string_types
-
 from .miobase import (MatFileReader, docfiller, matdims, read_dtype,
                       convert_dtypes, arr_to_chars, arr_dtype_number)
 
@@ -383,7 +381,7 @@ class MatFile4Reader(MatFileReader):
             variable name, or sequence of variable names to get from Mat file /
             file stream. If None, then get all variables in file.
         '''
-        if isinstance(variable_names, string_types):
+        if isinstance(variable_names, str):
             variable_names = [variable_names]
         elif variable_names is not None:
             variable_names = list(variable_names)

@@ -11,7 +11,6 @@ from ._spectral import _lombscargle
 from ._arraytools import const_ext, even_ext, odd_ext, zero_ext
 import warnings
 
-from scipy._lib.six import string_types
 
 __all__ = ['periodogram', 'welch', 'lombscargle', 'csd', 'coherence',
            'spectrogram', 'stft', 'istft', 'check_COLA', 'check_NOLA']
@@ -876,7 +875,7 @@ def check_COLA(window, nperseg, noverlap, tol=1e-10):
         raise ValueError('noverlap must be less than nperseg.')
     noverlap = int(noverlap)
 
-    if isinstance(window, string_types) or type(window) is tuple:
+    if isinstance(window, str) or type(window) is tuple:
         win = get_window(window, nperseg)
     else:
         win = np.asarray(window)
@@ -1004,7 +1003,7 @@ def check_NOLA(window, nperseg, noverlap, tol=1e-10):
         raise ValueError('noverlap must be a nonnegative integer')
     noverlap = int(noverlap)
 
-    if isinstance(window, string_types) or type(window) is tuple:
+    if isinstance(window, str) or type(window) is tuple:
         win = get_window(window, nperseg)
     else:
         win = np.asarray(window)
@@ -1403,7 +1402,7 @@ def istft(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
         Zxx = np.transpose(Zxx, zouter+[freq_axis, time_axis])
 
     # Get window as array
-    if isinstance(window, string_types) or type(window) is tuple:
+    if isinstance(window, str) or type(window) is tuple:
         win = get_window(window, nperseg)
     else:
         win = np.asarray(window)
@@ -1956,7 +1955,7 @@ def _triage_segments(window, nperseg, input_length):
     """
 
     # parse window; if array like, then set nperseg = win.shape
-    if isinstance(window, string_types) or isinstance(window, tuple):
+    if isinstance(window, str) or isinstance(window, tuple):
         # if nperseg not specified
         if nperseg is None:
             nperseg = 256  # then change to default

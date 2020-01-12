@@ -15,8 +15,7 @@ from numpy import (array, transpose, searchsorted, atleast_1d, atleast_2d,
 import scipy.special as spec
 from scipy.special import comb
 
-from scipy._lib.six import integer_types, string_types
-
+from scipy._lib.six import integer_types
 from . import fitpack
 from . import dfitpack
 from . import _fitpack
@@ -332,7 +331,7 @@ def _check_broadcast_up_to(arr_from, shape_to, name):
 
 def _do_extrapolate(fill_value):
     """Helper to check if fill_value == "extrapolate" without warnings"""
-    return (isinstance(fill_value, string_types) and
+    return (isinstance(fill_value, str) and
             fill_value == 'extrapolate')
 
 
