@@ -54,7 +54,7 @@ class ToeplitzTestCase:
         c = np.random.normal(size=(n, 1))
         r = None
         b = np.random.normal(size=(n, np.random.randint(1, 10)))
-        cases.append((b, c, r, True))
+        cases.append((b, c, r, True, -1))
 
         n = 100
         c = np.random.normal(size=(n, 1))
@@ -94,9 +94,9 @@ class ToeplitzTestCase:
 
 class TestMul(ToeplitzTestCase):
     # For toeplitz matrices, matmul_toeplitz() should be equivalent to @.
-    def do(self, b, c, r=None, check_finite=False):
+    def do(self, b, c, r=None, check_finite=False, workers=None):
         if r is None:
-            actual = matmul_toeplitz(c, b, check_finite)
+            actual = matmul_toeplitz(c, b, check_finite, workers)
         else:
             actual = matmul_toeplitz((c, r), b, check_finite)
         desired = toeplitz(c, r) @ b

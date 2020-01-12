@@ -1666,7 +1666,6 @@ def _validate_args_for_toeplitz_ops(c_or_cr, b, check_finite, keep_b_shape):
     if b.ndim == 1 and not keep_b_shape:
         b = b.reshape(-1, 1)
     elif b.ndim != 1:
-        b_shape = b.shape
         b = b.reshape(b.shape[0], -1)
 
     return r, c, b, dtype, b_shape
