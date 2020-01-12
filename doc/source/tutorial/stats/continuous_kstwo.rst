@@ -33,7 +33,7 @@ The implementation follows Simard & L'Ecuyer, which combines exact algorithms of
 with asymptotic estimates of Li-Chien, Pelz and Good to compute the CDF with 5-15 accurate digits.
 
 Examples
-========
+--------
 
 >>> from scipy.stats import kstwo
 
