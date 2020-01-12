@@ -273,9 +273,10 @@ def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
     Solves a standard or generalized eigenvalue problem for a complex
     Hermitian or real symmetric matrix.
 
-    Find eigenvalues array w and optionally eigenvectors array v of array
-    ``a``, where ``b`` is positive definite such that for every eigenvalue
-    λ (i-th entry of w) and its eigenvector vi (i-th column of v) satisfies::
+    Find eigenvalues array ``w`` and optionally eigenvectors array ``v`` of
+    array ``a``, where ``b`` is positive definite such that for every
+    eigenvalue λ (i-th entry of w) and its eigenvector vi (i-th column of v)
+    satisfies::
 
                       a @ vi = λ * b @ vi
         vi.conj().T @ a @ vi = λ
@@ -315,7 +316,8 @@ def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
         generalized (where b is not None) problems. See the Notes section.
     type : int, optional
         For the generalized problems, this keyword specifies the problem type
-        to be solved for w and v (only takes 1, 2, 3 as possible inputs)::
+        to be solved for ``w`` and ``v`` (only takes 1, 2, 3 as possible
+        inputs)::
 
             1 =>     a @ v = w @ b @ v
             2 => a @ b @ v = w @ v
@@ -323,10 +325,10 @@ def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
 
         This keyword is ignored for standard problems.
     overwrite_a : bool, optional
-        Whether to overwrite data in `a` (may improve performance). Default
+        Whether to overwrite data in ``a`` (may improve performance). Default
         is False.
     overwrite_b : bool, optional
-        Whether to overwrite data in `b` (may improve performance). Default
+        Whether to overwrite data in ``b`` (may improve performance). Default
         is False.
     check_finite : bool, optional
         Whether to check that the input matrices contain only finite numbers.
@@ -372,7 +374,7 @@ def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
     LinAlgError
         If eigenvalue computation does not converge, an error occurred, or
         b matrix is not definite positive. Note that if input matrices are
-        not symmetric or Hermitian, no error is reported but results will
+        not symmetric or Hermitian, no error will be reported but results will
         be wrong.
 
     See Also
@@ -386,16 +388,17 @@ def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
     -----
     This function does not check the input array for being hermitian/symmetric
     in order to allow for representing arrays with only their upper/lower
-    triangular parts. Also, note that even though not referenced, finiteness
-    check applies to the whole array and unaffected by "lower" keyword.
+    triangular parts. Also, note that even though not taken into account,
+    finiteness check applies to the whole array and unaffected by "lower"
+    keyword.
 
     This function uses LAPACK drivers for computations in all possible keyword
     combinations, prefixed with ``sy`` if arrays are real and ``he`` if
     complex. As a brief summary, the slowest and the most robust driver is the
     classical ``<sy/he>ev`` which uses symmetric QR. ``<sy/he>evr`` is seen as
     the optimal choice for the most general cases. However, there are certain
-    occassions that ``<sy/he>evd`` computes faster in the expense of more
-    memory usage. ``<sy/he>evx`` while still being faster than ``<sy/he>ev``
+    occassions that ``<sy/he>evd`` computes faster at the expense of more
+    memory usage. ``<sy/he>evx``, while still being faster than ``<sy/he>ev``,
     often performs worse than the rest except when very few eigenvalues are
     requested for large arrays though there is still no performance guarantee.
 
