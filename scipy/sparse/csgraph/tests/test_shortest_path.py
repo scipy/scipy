@@ -318,3 +318,13 @@ def test_NaN_warnings():
         shortest_path(np.array([[0, 1], [np.nan, 0]]))
     for r in record:
         assert r.category is not RuntimeWarning
+
+def test_lil_matrix():
+    # Test that using lil sparse matrix do not cause error 
+    G_dense = np.array([[0, 3, 0, 0 ,0],
+                        [0, 0, -1, 0, 0],
+                        [0, 0, 0, 2, 0],
+                        [0, 0, 0, 0, 4],
+                        [0, 0, 0, 0, 0]])
+    G_lil = scipy.sparse.lil_matrix(G_dense)
+    shortest_path(G_lil)
