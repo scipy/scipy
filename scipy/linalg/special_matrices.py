@@ -469,6 +469,31 @@ def kron(a, b):
     return np.concatenate(np.concatenate(o, axis=1), axis=1)
 
 
+def Khatri_rao(a, b):
+    """
+    Khatri-rao product
+
+    The result is the block matrix.
+
+    Mathematically:
+    ---------------
+    A * B = (A_{ij}  \bigotimes B_{ij})_{ij}
+
+    Parameters
+    ----------
+    a:  (I, K) ndarray
+        Input array
+    b:  (J, K) ndarray
+        Input array
+
+    Returns
+    -------
+    C:  ((I*J), K) ndarray
+        Khatri-rao product of 'a' and 'b'.
+
+    """
+
+
 def block_diag(*arrs):
     """
     Create a block diagonal matrix from provided arrays.
