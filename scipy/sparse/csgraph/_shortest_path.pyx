@@ -166,7 +166,10 @@ def shortest_path(csgraph, method='auto',
         issparse = isspmatrix(csgraph)
         if issparse:
             Nk = csgraph.nnz
-            edges = csgraph.data
+            if isspmatrix_csr(csgraph) or isspmatrix_csc(csgraph):
+                edges = csgraph.data
+            else: 
+                edges = csgraph.tocsr().data
         elif np.ma.isMaskedArray(csgraph):
             Nk = csgraph.count()
             edges = csgraph.compressed()
