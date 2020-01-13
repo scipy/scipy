@@ -11,7 +11,7 @@ from scipy.special import comb
 from scipy.linalg import (toeplitz, hankel, circulant, hadamard, leslie, dft,
                           companion, tri, triu, tril, kron, block_diag,
                           helmert, hilbert, invhilbert, pascal, invpascal,
-                          fiedler, fiedler_companion, eigvals)
+                          fiedler, fiedler_companion, eigvals, khatri_rao)
 from numpy.linalg import cond
 
 
