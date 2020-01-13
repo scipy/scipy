@@ -7,7 +7,7 @@ from numpy.lib.stride_tricks import as_strided
 __all__ = ['tri', 'tril', 'triu', 'toeplitz', 'circulant', 'hankel',
            'hadamard', 'leslie', 'kron', 'block_diag', 'companion',
            'helmert', 'hilbert', 'invhilbert', 'pascal', 'invpascal', 'dft',
-           'fiedler', 'fiedler_companion']
+           'fiedler', 'fiedler_companion', 'khatri_rao']
 
 
 # -----------------------------------------------------------------------------
