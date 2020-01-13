@@ -326,19 +326,18 @@ def _check_ellipsis(index):
 
 def _compatible_boolean_index(idx):
     """Returns a boolean index array that can be converted to
-    integer array. Returns None if no such array exists """
-    if hasattr(idx, '__iter__'):
-        if isinstance(idx, np.ndarray):
-            if idx.dtype.kind == 'b':
-                return idx
-        else:
-            for v in idx:
-                if not isinstance(v, bool):
-                    return None
-            return np.fromiter(idx, dtype=bool)
+    integer array. Returns None if no such array exists.
+    """
+    # Absence of attributes `ndim` or `dtype` indicates a
+    # non compatible index array.
+    if not hasattr(idx, 'ndim') or not hasattr(idx, 'dtype'):
+        idx = np.asanyarray(idx)
+    if idx.dtype.kind == 'b':
+        return idx
+    return None
 
 
 def _boolean_index_to_array(idx):
     if idx.ndim > 1:
         raise IndexError('invalid index shape')
-    return idx.nonzero()[0]
+    return np.where(idx)[0]
