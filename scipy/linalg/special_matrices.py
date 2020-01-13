@@ -491,6 +491,19 @@ def Khatri_rao(a, b):
     C:  ((I*J), K) ndarray
         Khatri-rao product of 'a' and 'b'.
 
+    Examples
+    --------
+    >>> from numpy import array
+    >>> from scipy.linalg import khatri_rao
+    >>> khatri_rao(array([[1, 2, 3], [4, 5, 6]]),
+    ...            array([[3, 4, 5], [6, 7, 8], [2, 3, 9]]))
+    array([[3, 8, 15],
+           [6, 14, 24],
+           [2, 6, 27],
+           [12, 20, 30],
+           [24, 35, 48],
+           [8, 15, 54]])
+
     """
     try:
         a.shape[1] == b.shape[1]
