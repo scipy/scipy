@@ -196,12 +196,7 @@ class Rbf(object):
             if allow_one and argcount == 1:
                 self._function = self.function
             elif argcount == 2:
-                if sys.version_info[0] >= 3:
-                    self._function = self.function.__get__(self, Rbf)
-                else:
-                    import new
-                    self._function = new.instancemethod(self.function, self,
-                                                        Rbf)
+                self._function = self.function.__get__(self, Rbf)
             else:
                 raise ValueError("Function argument must take 1 or 2 "
                                  "arguments.")
