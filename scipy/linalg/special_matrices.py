@@ -473,12 +473,6 @@ def Khatri_rao(a, b):
     """
     Khatri-rao product
 
-    The result is the block matrix.
-
-    Mathematically:
-    ---------------
-    A * B = (A_{ij}  \bigotimes B_{ij})_{ij}
-
     Parameters
     ----------
     a:  (I, K) ndarray
@@ -490,6 +484,12 @@ def Khatri_rao(a, b):
     -------
     C:  ((I*J), K) ndarray
         Khatri-rao product of 'a' and 'b'.
+
+    Notes
+    -----
+    Mathematically:
+
+    A * B = (A_{ij}  \bigotimes B_{ij})_{ij}
 
     Examples
     --------
