@@ -125,8 +125,6 @@ cdef extern from "qhull_src/src/libqhull_r.h":
         int num_vertices
         int center_size
         unsigned int facet_id
-        int hull_dim
-        int num_points
         pointT *first_point
         pointT *input_points
         coordT* feasible_point
@@ -679,7 +677,7 @@ cdef class _Qhull:
             The array of points contained in Qhull.
 
         """
-        cdef pointT *point
+        cdef vertexT *vertex
         cdef int i, j, numpoints, point_ndim
         cdef np.ndarray[np.npy_double, ndim=2] points
 
@@ -693,15 +691,20 @@ cdef class _Qhull:
         if self._is_delaunay:
             point_ndim += 1
 
-        numpoints = self._qh.num_points
-        points = np.zeros((numpoints, point_ndim))
+        numvertices = self._qh.num_vertices
 
+        vertex = self._qh.vertex_list
+        points = np.zeros((numvertices, point_ndim))
+
+        i = 0
         with nogil:
-            point = self._qh.first_point
-            for i in range(numpoints):
-                for j in range(point_ndim):
-                    points[i,j] = point[j]
-                point += self._qh.hull_dim
+            while vertex and vertex.next:
+                j = 0
+                for j in xrange(point_ndim):
+                    points[i, j] = vertex.point[j]
+
+                i += 1
+                vertex = vertex.next
 
         return points
 
