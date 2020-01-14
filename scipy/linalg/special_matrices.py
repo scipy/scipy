@@ -482,7 +482,7 @@ def Khatri_rao(a, b):
 
     Returns
     -------
-    C:  ((I*J), K) ndarray
+    C:  ((IJ), K) ndarray
         Khatri-rao product of 'a' and 'b'.
 
     Notes
