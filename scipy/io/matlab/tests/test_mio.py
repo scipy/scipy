@@ -13,8 +13,6 @@ from glob import glob
 from io import BytesIO
 from tempfile import mkdtemp
 
-from scipy._lib.six import text_type
-
 import warnings
 import shutil
 import gzip
@@ -285,7 +283,7 @@ def _check_level(label, expected, actual):
             _check_level(level_label,
                          expected[fn], actual[fn])
         return
-    if ex_dtype.type in (text_type,  # string or bool
+    if ex_dtype.type in (str,  # string or bool
                          np.unicode_,
                          np.bool_):
         assert_equal(actual, expected, err_msg=label)
