@@ -166,10 +166,7 @@ from __future__ import division, print_function, absolute_import
 import warnings
 import sys
 import math
-if sys.version_info >= (3, 5):
-    from math import gcd
-else:
-    from fractions import gcd
+from math import gcd
 from collections import namedtuple
 
 import numpy as np
