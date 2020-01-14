@@ -353,6 +353,11 @@
 	    "ellipk": "d->d"
 	}
     },
+    "_factorial": {
+	"_factorial.pxd": {
+	    "_factorial": "d->d"
+	}
+    },
     "entr": {
         "_convex_analysis.pxd": {
             "entr": "d->d"

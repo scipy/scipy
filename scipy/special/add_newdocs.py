@@ -9463,3 +9463,8 @@ add_newdoc("owens_t",
     .. [1] M. Patefield and D. Tandy, "Fast and accurate calculation of
            Owen's T Function", Statistical Software vol. 5, pp. 1-25, 2000.
     """)
+
+add_newdoc("_factorial",
+    """
+    Internal function, do not use.
+    """)
