@@ -2364,7 +2364,6 @@ def factorial(n, exact=False):
                 out[np.isnan(n)] = n[np.isnan(n)]
             return out
     else:
-        n = asarray(n)
         out = ufuncs._factorial(n)
         return out
 
