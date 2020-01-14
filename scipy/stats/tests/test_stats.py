@@ -2084,7 +2084,10 @@ class TestIQR(object):
                                     np.array([2, np.nan, 2]) / 1.3489795)
                 assert_equal(stats.iqr(x, axis=1, scale=2.0, nan_policy='propagate'),
                              [1, np.nan, 1])
-                _check_warnings(w, RuntimeWarning, 6)
+                if numpy_version <= '1.16.6':
+                    _check_warnings(w, RuntimeWarning, 6)
+                else:
+                    _check_warnings(w, RuntimeWarning, 0)
 
         if numpy_version < '1.9.0a':
             with warnings.catch_warnings(record=True) as w:
