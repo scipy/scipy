@@ -3234,14 +3234,15 @@ def f_oneway(*args):
     offset = alldata.mean()
     alldata -= offset
 
-    sstot = _sum_of_squares(alldata) - (_square_of_sums(alldata) / bign)
+    normalized_ss = _square_of_sums(alldata) / bign
+    sstot = _sum_of_squares(alldata) - normalized_ss
     ssbn = 0
     for a in args:
         ssbn += _square_of_sums(a - offset) / len(a)
 
     # Naming: variables ending in bn/b are for "between treatments", wn/w are
     # for "within treatments"
-    ssbn -= _square_of_sums(alldata) / bign
+    ssbn -= normalized_ss
     sswn = sstot - ssbn
     dfbn = num_groups - 1
     dfwn = bign - num_groups
