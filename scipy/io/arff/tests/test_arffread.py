@@ -5,10 +5,7 @@ import os
 import sys
 from os.path import join as pjoin
 
-if sys.version_info[0] >= 3:
-    from io import StringIO
-else:
-    from cStringIO import StringIO
+from io import StringIO
 
 import numpy as np
 
