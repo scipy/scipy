@@ -1656,7 +1656,7 @@ def test_gttrf_gttrs(dtype):
     # non zero info.
 
     np.random.seed(42)
-    n = 8
+    n = 10
     rtol = 250*np.finfo(dtype).eps  # set test tolerance appropriate for dtype
     atol = np.finfo(dtype).eps
 
@@ -1735,16 +1735,16 @@ def test_gttrf_gttrs(dtype):
     du[0] = 0
     d[0] = 0
     __dl, __d, __du, _du2, _ipiv, _info = gttrf(dl, d, du)
-    print(_info)
-    np.testing.assert_(_info == n,
-                       "?gttrf: A is singular matrix, _info =/= {}.".format(n))
+    np.testing.assert_(__d[info - 1] == 0,
+                       "?gttrf: _d[info-1] is {}, not the illegal value :0."
+                       .format(__d[info - 1]))
 
 
 def generate_random_dtype_array(shape, dtype):
     # generates a random matrix of desired data type
     if dtype in COMPLEX_DTYPES:
-        return (np.random.rand(shape)
-                + np.random.rand(shape)*1.0j).astype(dtype)
+        return (np.random.rand(shape) +
+                np.random.rand(shape) * 1.0j).astype(dtype)
     return np.random.rand(shape).astype(dtype)
 
 
