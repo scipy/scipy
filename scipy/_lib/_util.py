@@ -9,6 +9,8 @@ from collections import namedtuple
 from multiprocessing import Pool
 import inspect
 
+from scipy._lib._version import NumpyVersion
+
 import numpy as np
 
 def _broadcast_arrays(a, b):
@@ -21,8 +23,9 @@ def _broadcast_arrays(a, b):
     """
     # backport based on gh-10379
     x, y = np.broadcast_arrays(a, b)
-    x.flags.writeable = a.flags.writeable
-    y.flags.writeable = b.flags.writeable
+    if NumpyVersion(np.__version__) >= '1.17.0':
+        x.flags.writeable = a.flags.writeable
+        y.flags.writeable = b.flags.writeable
     return x, y
 
 def _valarray(shape, value=np.nan, typecode=None):
