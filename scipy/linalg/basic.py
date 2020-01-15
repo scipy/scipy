@@ -368,22 +368,19 @@ def _diagonal_banded(l_and_u, a):
     if nlower >= n or nupper >= n:
         raise ValueError("Number of nonzero diagonals must be less than square dimension")
 
-    upper = np.empty((nupper, n), dtype=a.dtype)
-    mid = np.empty((1, n), dtype=a.dtype)
-    lower = np.empty((nlower, n), dtype=a.dtype)
-
+    diagonal_ordered = np.empty((nlower + nupper + 1, n), dtype=a.dtype)
     for i in range(1, nupper + 1):
         for j in range(n - i):
-            upper[nupper - i, i + j] = a[j, i + j]
+            diagonal_ordered[nupper - i, i + j] = a[j, i + j]
 
     for i in range(n):
-        mid[0, i] = a[i, i]
+        diagonal_ordered[nupper, i] = a[i, i]
 
     for i in range(nlower):
         for j in range(n - i - 1):
-            lower[i, j] = a[i + j + 1, j]
+            diagonal_ordered[nupper + 1 + i, j] = a[i + j + 1, j]
 
-    return np.concatenate((upper, mid, lower))
+    return diagonal_ordered
 
 
 def solve_banded(l_and_u, ab, b, overwrite_ab=False, overwrite_b=False,
