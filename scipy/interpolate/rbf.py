@@ -49,7 +49,6 @@ import sys
 import numpy as np
 
 from scipy import linalg
-from scipy._lib.six import callable, get_method_function, get_function_code
 from scipy.special import xlogy
 from scipy.spatial.distance import cdist, pdist, squareform
 
@@ -187,24 +186,17 @@ class Rbf(object):
                hasattr(self.function, '__code__'):
                 val = self.function
                 allow_one = True
-            elif hasattr(self.function, "im_func"):
-                val = get_method_function(self.function)
             elif hasattr(self.function, "__call__"):
-                val = get_method_function(self.function.__call__)
+                val = self.function.__call__.__func__
             else:
                 raise ValueError("Cannot determine number of arguments to "
                                  "function")
 
-            argcount = get_function_code(val).co_argcount
+            argcount = val.__code__.co_argcount
             if allow_one and argcount == 1:
                 self._function = self.function
             elif argcount == 2:
-                if sys.version_info[0] >= 3:
-                    self._function = self.function.__get__(self, Rbf)
-                else:
-                    import new
-                    self._function = new.instancemethod(self.function, self,
-                                                        Rbf)
+                self._function = self.function.__get__(self, Rbf)
             else:
                 raise ValueError("Function argument must take 1 or 2 "
                                  "arguments.")

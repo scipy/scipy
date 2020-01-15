@@ -6,7 +6,6 @@ from pytest import raises as assert_raises
 from scipy.stats import (binned_statistic, binned_statistic_2d,
                          binned_statistic_dd)
 
-from scipy._lib.six import u
 from .common_tests import check_named_results
 
 
@@ -223,7 +222,7 @@ class TestBinnedStatistic(object):
         y = self.y
         v = self.v
         stat1, binx1, biny1, bc = binned_statistic_2d(
-            x, y, v, u('mean'), bins=5)
+            x, y, v, 'mean', bins=5)
         stat2, binx2, biny2, bc = binned_statistic_2d(x, y, v, np.mean, bins=5)
         assert_allclose(stat1, stat2)
         assert_allclose(binx1, binx2)

@@ -8,7 +8,6 @@ from numpy import asarray_chkfinite
 from .misc import LinAlgError, _datacopied, LinAlgWarning
 from .lapack import get_lapack_funcs
 
-from scipy._lib.six import callable
 
 __all__ = ['qz', 'ordqz']
 

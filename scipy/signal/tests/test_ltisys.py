@@ -15,8 +15,6 @@ from scipy.signal.filter_design import BadCoefficients
 import scipy.linalg as linalg
 from scipy.sparse.sputils import matrix
 
-import scipy._lib.six as six
-
 
 def _assert_poles_close(P1,P2, rtol=1e-8, atol=1e-8):
     """
@@ -814,8 +812,7 @@ class TestStateSpace(object):
         u[0] = 1
 
         # Test multiplication
-        for typ in six.integer_types + (float, complex, np.float32,
-                                        np.complex128, np.array):
+        for typ in (int, float, complex, np.float32, np.complex128, np.array):
             assert_allclose(lsim(typ(2) * s1, U=u, T=t)[1],
                             typ(2) * lsim(s1, U=u, T=t)[1])
 

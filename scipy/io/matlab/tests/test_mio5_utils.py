@@ -13,8 +13,6 @@ import numpy as np
 from numpy.testing import assert_array_equal, assert_equal, assert_
 from pytest import raises as assert_raises
 
-from scipy._lib.six import u
-
 import scipy.io.matlab.byteordercodes as boc
 import scipy.io.matlab.streams as streams
 import scipy.io.matlab.mio5_params as mio5p
@@ -170,16 +168,16 @@ def test_zero_byte_string():
     _write_stream(str_io, tag.tostring() + b'        ')
     str_io.seek(0)
     val = c_reader.read_char(hdr)
-    assert_equal(val, u(' '))
+    assert_equal(val, ' ')
     # Now when string has 0 bytes 1 length
     tag['byte_count'] = 0
     _write_stream(str_io, tag.tostring())
     str_io.seek(0)
     val = c_reader.read_char(hdr)
-    assert_equal(val, u(' '))
+    assert_equal(val, ' ')
     # Now when string has 0 bytes 4 length
     str_io.seek(0)
     hdr.set_dims([4,])
     val = c_reader.read_char(hdr)
-    assert_array_equal(val, [u(' ')] * 4)
+    assert_array_equal(val, [' '] * 4)
 

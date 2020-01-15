@@ -4,7 +4,6 @@
 #
 from __future__ import division, print_function, absolute_import
 
-from scipy._lib.six import exec_, PY2
 from scipy._lib._util import getargspec_no_self as _getargspec
 
 import sys
@@ -37,12 +36,6 @@ from numpy import (arange, putmask, ravel, ones, shape, ndarray, zeros, floor,
 import numpy as np
 
 from ._constants import _XMAX
-
-if PY2:
-    instancemethod = types.MethodType
-else:
-    def instancemethod(func, obj, cls):
-        return types.MethodType(func, obj)
 
 
 # These are the docstring parts used for substitution in specific
@@ -687,12 +680,10 @@ class rv_generic(object):
                    locscale_out=locscale_out,
                    )
         ns = {}
-        exec_(parse_arg_template % dct, ns)
+        exec(parse_arg_template % dct, ns)
         # NB: attach to the instance, not class
         for name in ['_parse_args', '_parse_args_stats', '_parse_args_rvs']:
-            setattr(self, name,
-                    instancemethod(ns[name], self, self.__class__)
-                    )
+            setattr(self, name, types.MethodType(ns[name], self))
 
         self.shapes = ', '.join(shapes) if shapes else None
         if not hasattr(self, 'numargs'):
@@ -2859,14 +2850,12 @@ class rv_discrete(rv_generic):
         # correct nin for generic moment vectorization
         _vec_generic_moment = vectorize(_drv2_moment, otypes='d')
         _vec_generic_moment.nin = self.numargs + 2
-        self.generic_moment = instancemethod(_vec_generic_moment,
-                                             self, rv_discrete)
+        self.generic_moment = types.MethodType(_vec_generic_moment, self)
 
         # correct nin for ppf vectorization
         _vppf = vectorize(_drv2_ppfsingle, otypes='d')
         _vppf.nin = self.numargs + 2
-        self._ppfvec = instancemethod(_vppf,
-                                      self, rv_discrete)
+        self._ppfvec = types.MethodType(_vppf, self)
 
         # now that self.numargs is defined, we can adjust nin
         self._cdfvec.nin = self.numargs + 1

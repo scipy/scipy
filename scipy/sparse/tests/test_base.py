@@ -26,7 +26,6 @@ import platform
 from distutils.version import LooseVersion
 
 import numpy as np
-from scipy._lib.six import zip as izip
 from numpy import (arange, zeros, array, dot, asarray,
                    vstack, ndarray, transpose, diag, kron, inf, conjugate,
                    int8, ComplexWarning)
@@ -4475,7 +4474,7 @@ class _NonCanonicalCompressedMixin(_NonCanonicalMixin):
         data, indices, indptr = _same_sum_duplicate(M.data, M.indices,
                                                     indptr=M.indptr)
         if not sorted_indices:
-            for start, stop in izip(indptr, indptr[1:]):
+            for start, stop in zip(indptr, indptr[1:]):
                 indices[start:stop] = indices[start:stop][::-1].copy()
                 data[start:stop] = data[start:stop][::-1].copy()
         return data, indices, indptr
