@@ -365,7 +365,7 @@ def _diagonal_banded(l_and_u, a):
     if a.shape != (n, n):
         raise ValueError("Matrix must be square (has shape %s)" % (a.shape,))
     (nlower, nupper) = l_and_u
-    if nlower > n or nupper > n:
+    if nlower >= n or nupper >= n:
         raise ValueError("Number of nonzero diagonals must be less than square dimension")
 
     upper = np.empty((nupper, n), dtype=a.dtype)
@@ -391,7 +391,7 @@ def solve_banded(l_and_u, ab, b, overwrite_ab=False, overwrite_b=False,
     """
     Solve the equation a x = b for x, assuming a is banded matrix.
 
-    Until 'diagonal_form' is disabled, the matrix a is stored in `ab` using the matrix diagonal ordered form::
+    Unless 'diagonal_form' is disabled, the matrix a is stored in `ab` using the matrix diagonal ordered form::
 
         ab[u + i - j, j] == a[i,j]
 

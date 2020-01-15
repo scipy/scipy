@@ -145,6 +145,10 @@ class TestSolveBanded(object):
         assert_array_almost_equal(dot(a, x), b4)
 
     def test_bad_shape(self):
+        a = array([[1.0, 20, 0, 0],
+                   [-30, 4, 6, 0],
+                   [2, 1, 20, 2],
+                   [0, -1, 7, 14]])
         ab = array([[0.0, 20, 6, 2],
                     [1, 4, 20, 14],
                     [-30, 1, 7, 0],
@@ -153,18 +157,16 @@ class TestSolveBanded(object):
         bad = array([1.0, 2.0, 3.0, 4.0]).reshape(-1, 4)
         assert_raises(ValueError, solve_banded, (l, u), ab, bad)
         assert_raises(ValueError, solve_banded, (l, u), ab, [1.0, 2.0])
+        assert_raises(ValueError, solve_banded, (1, 1), array([[1, 2, 3], [2, 3, 4]]), [1, 2], diagonal_form=False)
 
         # Values of (l,u) are not compatible with ab.
         assert_raises(ValueError, solve_banded, (1, 1), ab, [1.0, 2.0])
+        assert_raises(ValueError, solve_banded, (4, 3), a, [10.0, 0.0, 2.0, 14.0], diagonal_form=False)
+        assert_raises(ValueError, solve_banded, (1, 5), a, [10.0, 0.0, 2.0, 14.0], diagonal_form=False)
 
     def test_1x1(self):
         b = array([[1., 2., 3.]])
         x = solve_banded((1, 1), [[0], [2], [0]], b)
-        assert_array_equal(x, [[0.5, 1.0, 1.5]])
-        assert_equal(x.dtype, np.dtype('f8'))
-        assert_array_equal(b, [[1.0, 2.0, 3.0]])
-
-        x = solve_banded((1, 1), [[2]], b, diagonal_form=False)
         assert_array_equal(x, [[0.5, 1.0, 1.5]])
         assert_equal(x.dtype, np.dtype('f8'))
         assert_array_equal(b, [[1.0, 2.0, 3.0]])
