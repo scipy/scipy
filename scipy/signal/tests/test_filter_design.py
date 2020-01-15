@@ -810,6 +810,20 @@ class TestFreqz(object):
             assert_array_almost_equal(w_out, [8])
             assert_array_almost_equal(h, [1])
 
+    def test_nyquist(self):
+        w, h = freqz([1.0], worN=8, nyquist=True)
+        assert_array_almost_equal(w, np.pi * np.arange(8) / 7.)
+        assert_array_almost_equal(h, np.ones(8))
+        w, h = freqz([1.0], worN=9, nyquist=True)
+        assert_array_almost_equal(w, np.pi * np.arange(9) / 8.)
+        assert_array_almost_equal(h, np.ones(9))
+
+        for a in [1, np.ones(2)]:
+            w, h = freqz(np.ones(2), a, worN=0, nyquist=True)
+            assert_equal(w.shape, (0,))
+            assert_equal(h.shape, (0,))
+            assert_equal(h.dtype, np.dtype('complex128'))
+
 
 class TestSOSFreqz(object):
 
