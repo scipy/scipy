@@ -808,8 +808,6 @@ def _is_fromfile_compatible(stream):
     Passing a gzipped file object to ``fromfile/fromstring`` doesn't work with
     Python 3.
     """
-    if sys.version_info[0] < 3:
-        return True
 
     bad_cls = []
     try:
