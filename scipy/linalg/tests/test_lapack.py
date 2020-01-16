@@ -1654,3 +1654,170 @@ def test_getc2_gesc2():
         else:
             assert_array_almost_equal(desired_cplx.astype(dtype),
                                       x/scale, decimal=4)
+
+
+@pytest.mark.parametrize("dtype", DTYPES)
+def test_gttrf_gttrs(dtype):
+    # The test uses ?gttrf and ?gttrs to solve a random system for each dtype,
+    # tests that the output of ?gttrf define LU matricies, that input
+    # parameters are unmodified, transposal options function correctly, that
+    # incompatible matrix shapes raise an error, and singular matrices return
+    # non zero info.
+
+    np.random.seed(42)
+    n = 10
+    rtol = 250*np.finfo(dtype).eps  # set test tolerance appropriate for dtype
+    atol = np.finfo(dtype).eps
+
+    # create the matrix in accordance with the data type
+    du = generate_random_dtype_array(n-1, dtype=dtype)
+    d = generate_random_dtype_array(n, dtype=dtype)
+    dl = generate_random_dtype_array(n-1, dtype=dtype)
+
+    diag_cpy = [dl.copy(), d.copy(), du.copy()]
+
+    A = np.diag(d) + np.diag(dl, -1) + np.diag(du, 1)
+    x = np.random.rand(n)
+    b = A @ x
+
+    gttrf, gttrs = get_lapack_funcs(('gttrf', 'gttrs'), dtype=dtype)
+
+    _dl, _d, _du, du2, ipiv, info = gttrf(dl, d, du)
+    # test to assure that the inputs of ?gttrf are unmodified
+    assert_array_equal(dl, diag_cpy[0])
+    assert_array_equal(d, diag_cpy[1])
+    assert_array_equal(du, diag_cpy[2])
+
+    # generate L and U factors from ?gttrf return values
+    # L/U are lower/upper triangular by construction (initially and at end)
+    U = np.diag(_d, 0) + np.diag(_du, 1) + np.diag(du2, 2)
+    L = np.eye(n, dtype=dtype)
+
+    for i, m in enumerate(_dl):
+        # L is given in a factored form.
+        # See http://www.hpcavf.uclan.ac.uk/softwaredoc/sgi_scsl_html/sgi_html/ch03.html
+        piv = ipiv[i] - 1
+        # right multiply by permutation matrix
+        L[:, [i, piv]] = L[:, [piv, i]]
+        # right multiply by Li, rank-one modification of identity
+        L[:, i] += L[:, i+1]*m
+
+    # one last permutation
+    i, piv = -1, ipiv[-1] - 1
+    # right multiply by final permutation matrix
+    L[:, [i, piv]] = L[:, [piv, i]]
+
+    # check that the outputs of ?gttrf define an LU decomposition of A
+    assert_allclose(A, L @ U, atol=atol)
+
+    b_cpy = b.copy()
+    x_gttrs, info = gttrs(_dl, _d, _du, du2, ipiv, b)
+    # test that the inputs of ?gttrs are unmodified
+    assert_array_equal(b, b_cpy)
+    # test that the result of ?gttrs matches the expected input
+    assert_allclose(x, x_gttrs, rtol=rtol)
+
+    # test that ?gttrf and ?gttrs work with transposal options
+    if dtype in REAL_DTYPES:
+        trans = "T"
+        b_trans = A.T @ x
+    else:
+        trans = "C"
+        b_trans = A.conj().T @ x
+
+    x_gttrs, info = gttrs(_dl, _d, _du, du2, ipiv, b_trans, trans=trans)
+    assert_allclose(x, x_gttrs, rtol=rtol)
+
+    # test that ValueError is raised with incompatible matrix shapes
+    with assert_raises(ValueError):
+        gttrf(dl[:-1], d, du)
+    with assert_raises(ValueError):
+        gttrf(dl, d[:-1], du)
+    with assert_raises(ValueError):
+        gttrf(dl, d, du[:-1])
+
+    # test that matrix of size n=2 raises exception
+    with assert_raises(Exception):
+        gttrf(dl[0], d[:1], du[0])
+
+    # test that singular (row of all zeroes) matrix fails via info
+    du[0] = 0
+    d[0] = 0
+    __dl, __d, __du, _du2, _ipiv, _info = gttrf(dl, d, du)
+    np.testing.assert_(__d[info - 1] == 0,
+                       "?gttrf: _d[info-1] is {}, not the illegal value :0."
+                       .format(__d[info - 1]))
+
+
+def generate_random_dtype_array(shape, dtype):
+    # generates a random matrix of desired data type
+    if dtype in COMPLEX_DTYPES:
+        return (np.random.rand(shape) +
+                np.random.rand(shape) * 1.0j).astype(dtype)
+    return np.random.rand(shape).astype(dtype)
+
+
+@pytest.mark.parametrize("du,d,dl,du_exp,d_exp,du2_exp,ipiv_exp,b,x",
+                         [(np.array([2.1, -1.0, 1.9, 8.0]),
+                             np.array([3.0, 2.3, -5.0, -.9, 7.1]),
+                             np.array([3.4, 3.6, 7.0, -6.0]),
+                             np.array([2.3, -5, -.9, 7.1]),
+                             np.array([3.4, 3.6, 7, -6, -1.015373]),
+                             np.array([-1, 1.9, 8]),
+                             np.array([2, 3, 4, 5, 5]),
+                             np.array([[2.7, 6.6],
+                                       [-0.5, 10.8],
+                                       [2.6, -3.2],
+                                       [0.6, -11.2],
+                                       [2.7, 19.1]
+                                       ]),
+                             np.array([[-4, 5],
+                                       [7, -4],
+                                       [3, -3],
+                                       [-4, -2],
+                                       [-3, 1]])),
+                          (
+                             np.array([2 - 1j, 2 + 1j, -1 + 1j, 1 - 1j]),
+                             np.array([-1.3 + 1.3j, -1.3 + 1.3j,
+                                       -1.3 + 3.3j, - .3 + 4.3j,
+                                       -3.3 + 1.3j]),
+                             np.array([1 - 2j, 1 + 1j, 2 - 3j, 1 + 1j]),
+                             # du exp
+                             np.array([-1.3 + 1.3j, -1.3 + 3.3j,
+                                       -0.3 + 4.3j, -3.3 + 1.3j]),
+                             np.array([1 - 2j, 1 + 1j, 2 - 3j, 1 + 1j,
+                                       -1.3399 + 0.2875j]),
+                             np.array([2 + 1j, -1 + 1j, 1 - 1j]),
+                             np.array([2, 3, 4, 5, 5]),
+                             np.array([[2.4 - 5j, 2.7 + 6.9j],
+                                       [3.4 + 18.2j, - 6.9 - 5.3j],
+                                       [-14.7 + 9.7j, - 6 - .6j],
+                                       [31.9 - 7.7j, -3.9 + 9.3j],
+                                       [-1 + 1.6j, -3 + 12.2j]]),
+                             np.array([[1 + 1j, 2 - 1j],
+                                       [3 - 1j, 1 + 2j],
+                                       [4 + 5j, -1 + 1j],
+                                       [-1 - 2j, 2 + 1j],
+                                       [1 - 1j, 2 - 2j]])
+                            )])
+def test_gttrf_gttrs_NAG_f07cdf_f07cef_f07crf_f07csf(du, d, dl, du_exp, d_exp,
+                                                     du2_exp, ipiv_exp, b, x):
+    # test to assure that wrapper is consistent with NAG manual
+    # example problems: f07cdf and f07cef (real)
+    # https://www.nag.com/numeric/fl/nagdoc_latest/html/f07/f07cdf.html#example
+    # https://www.nag.com/numeric/fl/nagdoc_latest/html/f07/f07cef.html#example
+    # examples: f07crf and f07csf (complex)
+    # https://www.nag.com/numeric/fl/nagdoc_latest/html/f07/f07csf.html
+    # https://www.nag.com/numeric/fl/nagdoc_latest/html/f07/f07crf.html
+
+    gttrf, gttrs = get_lapack_funcs(('gttrf', "gttrs"), (du[0], du[0]))
+
+    _dl, _d, _du, du2, ipiv, info = gttrf(dl, d, du)
+    assert_allclose(du2, du2_exp)
+    assert_allclose(_du, du_exp)
+    assert_allclose(_d, d_exp, rtol=1e-4)  # NAG examples provide 4 decimals.
+    assert_allclose(ipiv, ipiv_exp)
+
+    x_gttrs, info = gttrs(_dl, _d, _du, du2, ipiv, b)
+
+    assert_allclose(x_gttrs, x)
