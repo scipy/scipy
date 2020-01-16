@@ -2464,23 +2464,14 @@ def _line_for_search(x0, alpha, lower_bound, upper_bound):
     high = (upper_bound - x0) / alpha
 
     # positive and negative indices
-    pos, neg = alpha > 0, alpha < 0
+    pos = alpha > 0
 
-    # inf * 0 = nan, but gives a RuntimeWarning when in array multiplication.
-    # In our case, we want inf * 0 to be 0.
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", category=RuntimeWarning)
+    lmin_pos = np.where(pos, low, 0)
+    lmin_neg = np.where(pos, 0, high)
+    lmax_pos = np.where(pos, high, 0)
+    lmax_neg = np.where(pos, 0, low)
 
-        lmin_pos = low * pos
-        lmin_neg = high * neg
-        lmax_pos = high * pos
-        lmax_neg = low * neg
-
-    lmin_pos[np.isnan(lmin_pos)] = 0
-    lmin_neg[np.isnan(lmin_neg)] = 0
     lmin = np.max(lmin_pos + lmin_neg)
-    lmax_pos[np.isnan(lmax_pos)] = 0
-    lmax_neg[np.isnan(lmax_neg)] = 0
     lmax = np.min(lmax_pos + lmax_neg)
 
     # if x0 is outside the bounds, then it is possible that there is 
