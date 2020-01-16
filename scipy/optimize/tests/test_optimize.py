@@ -280,6 +280,7 @@ class CheckOptimizeParameterized(CheckOptimize):
         #
         assert_(self.funccalls <= 131 + 20, self.funccalls)
         assert_(self.gradcalls == 0, self.gradcalls)
+        assert_(func_calls == self.funccalls, func_calls)
 
     def test_neldermead(self):
         # Nelder-Mead simplex algorithm
@@ -608,7 +609,19 @@ def test_bounded_powell_vs_powell():
     assert_allclose(res_powell.fun, 0.007136253919761627, atol=1e-6)
     assert_allclose(res_bounded_powell.fun, 0, atol=1e-6)
 
-    # test when x0 starts outside of the bounds.
+    # next we test the previous example where the we provide Powell
+    # with (-inf, inf) bounds, and compare it to providing Powell
+    # with no bounds. They should end up the same.
+    bounds = tuple((-np.inf, np.inf) for _ in range(3))
+
+    res_bounded_powell = optimize.minimize(func, x0,
+                                           bounds=bounds,
+                                           method="Powell")
+    assert_allclose(res_powell.fun, res_bounded_powell.fun, atol=1e-6)
+    assert_allclose(res_powell.nfev, res_bounded_powell.nfev, atol=1e-6)
+    assert_allclose(res_powell.x, res_bounded_powell.x, atol=1e-6)
+
+    # now test when x0 starts outside of the bounds.
     x0 = [45.46254415, -26.52351498, 31.74830248]
     # we're starting outside the bounds, so we should get a warning
     with assert_warns(optimize.OptimizeWarning):

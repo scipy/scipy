@@ -2421,22 +2421,38 @@ def bracket(func, xa=0.0, xb=1.0, args=(), grow_limit=110.0, maxiter=1000):
 
 def _line_for_search(x0, alpha, lower_bound, upper_bound):
     """
-    Given an n-dimensional parameter vector x0 and an n-dimensional
-    direction vector alpha, and lower and upper bounds on each of
-    the n parameters, what are the bounds on a scalar l such that
-    lower_bound <= x0 + alpha * l <= upper_bound.
+    Given a parameter vector ``x0`` with length ``n`` and a direction
+    vector ``alpha`` with length ``n``, and lower and upper bounds on
+    each of the ``n`` parameters, what are the bounds on a scalar
+    ``l`` such that ``lower_bound <= x0 + alpha * l <= upper_bound``.
 
-    x0 is the vector representing the current location (np.array)
-    alpha is the vector representing the direction (np.array)
 
-    ie the direction is along the line from x0 to alpha
+    Parameters
+    ----------
+    x0 : np.array. 
+        The vector representing the current location.
+        Note ``np.shape(x0) == (n,)``.
+    alpha : np.array.
+        The vector representing the direction.
+        Note ``np.shape(alpha) == (n,)``.
+    lower_bound : np.array.
+        The lower bounds for each parameter in ``x0``. If the ``i``th
+        parameter in ``x0`` is unbounded below, then ``lower_bound[i]``
+        should be ``-np.inf``.
+        Note ``np.shape(lower_bound) == (n,)``.
+    upper_bound : np.array.
+        The upper bounds for each parameter in ``x0``. If the ``i``th
+        parameter in ``x0`` is unbounded above, then ``upper_bound[i]``
+        should be ``np.inf``.
+        Note ``np.shape(upper_bound) == (n,)``.
 
-    lower_bound is a np.array of the lower bounds for each parameter in x0.
-    upper_bound is a np.array of the upper bounds for each parameter in x0.
+    Returns
+    -------
+    res : tuple ``(lmin, lmax)``
+        The bounds for ``l`` such that
+            ``lower_bound[i] <= x0[i]+alpha[i] * l <= upper_bound[i]``
+        for all ``i``.
 
-    returns (lmin, lmax), the bounds for l such that
-            lower_bound[i] <= x0_i+alpha_i * l <= upper_bound[i]
-        for all i.
     """
     # get nonzero indices of alpha so we don't get any zero division errors.
     # alpha will not be all zero, since it is called from _linesearch_powell
@@ -2500,17 +2516,18 @@ def _linesearch_powell(func, p, xi, lower_bound=None, upper_bound=None,
         return squeeze(fret), p + xi, xi
     else:
         bound = _line_for_search(p, xi, lower_bound, upper_bound)
-        if bound[0] == -np.inf and bound[1] == np.inf:
+        if np.isneginf(bound[0]) and np.isposinf(bound[1]):
             # equivalent to unbounded
             return _linesearch_powell(func, p, xi, fval=fval, tol=tol)
-        elif bound[0] != -np.inf and bound[1] != np.inf:
+        elif not np.isneginf(bound[0]) and not np.isposinf(bound[1]):
             # we can use a bounded scalar minimization
             res = _minimize_scalar_bounded(myfunc, bound, xatol=tol / 100)
             xi = res.x * xi
             return squeeze(res.fun), p + xi, xi
         else:
             # only bounded on one side. use the tangent function to convert
-            # the infinity bound to a finite bound.
+            # the infinity bound to a finite bound. The new bounded region
+            # is a subregion of the region bounded by -np.pi/2 and np.pi/2.
             bound = np.arctan(bound[0]), np.arctan(bound[1])
             res = _minimize_scalar_bounded(
                 lambda x: myfunc(np.tan(x)),
@@ -2661,7 +2678,7 @@ def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None,
             return res['x']
 
 
-def _minimize_powell(func, x0, args=(), bounds=None, callback=None,
+def _minimize_powell(func, x0, args=(), callback=None, bounds=None,
                      xtol=1e-4, ftol=1e-4, maxiter=None, maxfev=None,
                      disp=False, direc=None, return_all=False,
                      **unknown_options):

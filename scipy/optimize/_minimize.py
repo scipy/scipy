@@ -607,7 +607,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     if meth == 'nelder-mead':
         return _minimize_neldermead(fun, x0, args, callback, **options)
     elif meth == 'powell':
-        return _minimize_powell(fun, x0, args, bounds, callback, **options)
+        return _minimize_powell(fun, x0, args, callback, bounds, **options)
     elif meth == 'cg':
         return _minimize_cg(fun, x0, args, jac, callback, **options)
     elif meth == 'bfgs':
