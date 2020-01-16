@@ -632,6 +632,52 @@ def test_bounded_powell_vs_powell():
     assert_allclose(res_bounded_powell.fun, 0, atol=1e-6)
 
 
+def test_onesided_bounded_powell_stability():
+    # When the Powell method is bounded on only one side, a
+    # np.tan transform is done in order to convert it into a
+    # completely bounded problem. Here we do some simple tests
+    # of one-sided bounded Powell where the optimal solutions
+    # are large to test the stability of the transformation.
+
+    kwargs = dict(
+        method="Powell",
+        bounds=((-np.inf, 1e6), (-np.inf, 1e6), (-np.inf, 1e6)),
+        options=dict(
+            ftol=1e-8,
+            xtol=1e-8
+        )
+    )
+    x0 = [1, 1, 1]
+
+    # start out with an example where df/dx is constant.
+    f = lambda x: -np.sum(x)
+    res = optimize.minimize(f, x0, **kwargs)
+    assert_allclose(res.fun, -3e6, atol=1)
+
+    # now we do example where df/dx gets smaller and smaller.
+    f = lambda x: (
+        -np.abs(np.sum(x)) ** (1 / 10) * (1 if np.all(x > 0) else -1)
+    )
+    res = optimize.minimize(f, x0, **kwargs)
+    assert_allclose(res.fun, -(3e6) ** (1 / 10), atol=1)
+
+    # now we do example where df/dx gets larger and larger.
+    f = lambda x: (
+        -np.abs(np.sum(x)) ** 10 * (1 if np.all(x > 0) else -1)
+    )
+    res = optimize.minimize(f, x0, **kwargs)
+    assert_allclose(res.fun, -(3e6) ** 10, atol=1)
+
+    # now we do an example where df/dx gets larger for some
+    # of the varables and smaller for others.
+    f = lambda x: (
+        (1 if np.all(x > 0) else -1) *
+        (-np.abs(np.sum(x[:2])) ** 10 - np.abs(np.sum(x[3:])) ** (1 / 10))
+    )
+    res = optimize.minimize(f, x0, **kwargs)
+    assert_allclose(res.fun, -(2e6) ** 10 - (1e6) ** (1 / 10), atol=1)
+
+
 class TestOptimizeWrapperDisp(CheckOptimizeParameterized):
     use_wrapper = True
     disp = True
