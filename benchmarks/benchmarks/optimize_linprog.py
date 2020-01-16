@@ -209,8 +209,9 @@ class Netlib_RR(Benchmark):
             raise NotImplementedError("Known issues with these benchmarks.")
 
         dir_path = os.path.dirname(os.path.realpath(__file__))
-        data = np.load(dir_path + "/linprog_benchmark_files/" + prob + ".npz",
-                       allow_pickle=True)
+        datafile = os.path.join(dir_path, "linprog_benchmark_files",
+                                prob + ".npz")
+        data = np.load(datafile, allow_pickle=True)
 
         c, A_eq, A_ub, b_ub, b_eq = (data["c"], data["A_eq"], data["A_ub"],
                                      data["b_ub"], data["b_eq"])
@@ -259,8 +260,9 @@ class Netlib_presolve(Benchmark):
     def setup(self, meth, prob):
 
         dir_path = os.path.dirname(os.path.realpath(__file__))
-        data = np.load(dir_path + "/linprog_benchmark_files/" + prob + ".npz",
-                       allow_pickle=True)
+        datafile = os.path.join(dir_path, "linprog_benchmark_files",
+                                prob + ".npz")
+        data = np.load(datafile, allow_pickle=True)
 
         c, A_eq, A_ub, b_ub, b_eq = (data["c"], data["A_eq"], data["A_ub"],
                                      data["b_ub"], data["b_eq"])
