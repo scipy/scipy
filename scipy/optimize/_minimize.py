@@ -298,7 +298,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     outside the bounds, but every function evaluation after the first
     iteration will be within the bounds. If `direc` is not full rank,
     then some parameters may not be optimized and the solution is not
-    guarenteed to be within the bounds.
+    guaranteed to be within the bounds.
 
     Method :ref:`TNC <optimize.minimize-tnc>` uses a truncated Newton
     algorithm [5]_, [8]_ to minimize a function with variables subject

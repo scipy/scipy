@@ -2450,7 +2450,7 @@ def _line_for_search(x0, alpha, lower_bound, upper_bound):
     -------
     res : tuple ``(lmin, lmax)``
         The bounds for ``l`` such that
-            ``lower_bound[i] <= x0[i]+alpha[i] * l <= upper_bound[i]``
+            ``lower_bound[i] <= x0[i] + alpha[i] * l <= upper_bound[i]``
         for all ``i``.
 
     """
@@ -2486,22 +2486,30 @@ def _line_for_search(x0, alpha, lower_bound, upper_bound):
     # if x0 is outside the bounds, then it is possible that there is 
     # no way to get back in the bounds for the parameters being updated
     # with the current direction alpha.
-    # when this happens, lmax >= lmin.
+    # when this happens, lmax > lmin.
     # If this is the case, then we can just return (0, 0)
     return (lmin, lmax) if lmax >= lmin else (0, 0)
 
 
-def _linesearch_powell(func, p, xi, lower_bound=None, upper_bound=None,
-                       fval=None, tol=1e-3):
+def _linesearch_powell(func, p, xi, tol=1e-3,
+                       lower_bound=None, upper_bound=None, fval=None):
     """Line-search algorithm using fminbound.
 
     Find the minimium of the function ``func(x0 + alpha*direc)``.
-    
-    fval = func(p), might as well avoid recomputing it (limit fevals).
 
-    lower_bound and upper_bound should be np.arrays, where
-    lower_bound[i] is the lower bounds on the i^th parameter,
-    etc.
+    lower_bound : np.array.
+        The lower bounds for each parameter in ``x0``. If the ``i``th
+        parameter in ``x0`` is unbounded below, then ``lower_bound[i]``
+        should be ``-np.inf``.
+        Note ``np.shape(lower_bound) == (n,)``.
+    upper_bound : np.array.
+        The upper bounds for each parameter in ``x0``. If the ``i``th
+        parameter in ``x0`` is unbounded above, then ``upper_bound[i]``
+        should be ``np.inf``.
+        Note ``np.shape(upper_bound) == (n,)``.
+    fval : number.
+        ``fval`` is equal to ``func(p)``, the idea is just to avoid
+        recomputing it so we can limit the ``fevals``.
 
     """
     def myfunc(alpha):
@@ -2511,6 +2519,7 @@ def _linesearch_powell(func, p, xi, lower_bound=None, upper_bound=None,
     if not np.any(xi):
         return ((fval, p, xi) if fval is not None else (func(p), p, xi))
     elif lower_bound is None and upper_bound is None:
+        # non-bounded minimization
         alpha_min, fret, _, _ = brent(myfunc, full_output=1, tol=tol)
         xi = alpha_min * xi
         return squeeze(fret), p + xi, xi
@@ -2780,8 +2789,10 @@ def _minimize_powell(func, x0, args=(), callback=None, bounds=None,
             direc1 = direc[i]
             fx2 = fval
             fval, x, direc1 = _linesearch_powell(func, x, direc1,
-                                                 lower_bound, upper_bound,
-                                                 fval=fval, tol=xtol * 100)
+                                                 tol=xtol * 100,
+                                                 lower_bound=lower_bound,
+                                                 upper_bound=upper_bound,
+                                                 fval=fval)
             if (fx2 - fval) > delta:
                 delta = fx2 - fval
                 bigind = i
@@ -2815,8 +2826,10 @@ def _minimize_powell(func, x0, args=(), callback=None, bounds=None,
             t -= delta*temp*temp
             if t < 0.0:
                 fval, x, direc1 = _linesearch_powell(func, x, direc1,
-                                                     lower_bound, upper_bound,
-                                                     fval=fval, tol=xtol * 100)
+                                                     tol=xtol * 100,
+                                                     lower_bound=lower_bound,
+                                                     upper_bound=upper_bound,
+                                                     fval=fval)
                 if np.any(direc1):
                     direc[bigind] = direc[-1]
                     direc[-1] = direc1
