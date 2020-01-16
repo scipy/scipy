@@ -2477,7 +2477,7 @@ def _line_for_search(x0, alpha, lower_bound, upper_bound):
     # if x0 is outside the bounds, then it is possible that there is 
     # no way to get back in the bounds for the parameters being updated
     # with the current direction alpha.
-    # when this happens, lmax > lmin.
+    # when this happens, lmax < lmin.
     # If this is the case, then we can just return (0, 0)
     return (lmin, lmax) if lmax >= lmin else (0, 0)
 
