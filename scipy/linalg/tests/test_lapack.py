@@ -617,7 +617,8 @@ class TestTbtrs(object):
                              [(0, 5, 5, 5),
                               (5, 0, 5, 5),
                               (5, 5, 0, 5),
-                              (5, 5, 5, 0)])
+                              (5, 5, 5, 0),
+                              (5, 5, 3, 5)])
     def test_invalid_matrix_shapes(self, ldab, n, ldb, nrhs):
         """Test ?tbtrs fails correctly if shapes are invalid."""
         ab = np.ones((ldab, n), dtype=float)
