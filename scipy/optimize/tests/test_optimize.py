@@ -256,6 +256,7 @@ class CheckOptimizeParameterized(CheckOptimize):
                                           retall=False)
             (params, fopt, direc, numiter, func_calls, warnflag) = retval
 
+        assert_(func_calls == self.funccalls, (func_calls, self.funccalls))
         assert_allclose(self.func(params), self.func(self.solution),
                         atol=1e-6)
 
@@ -280,7 +281,6 @@ class CheckOptimizeParameterized(CheckOptimize):
         #
         assert_(self.funccalls <= 131 + 20, self.funccalls)
         assert_(self.gradcalls == 0, self.gradcalls)
-        assert_(func_calls == self.funccalls, func_calls)
 
     def test_neldermead(self):
         # Nelder-Mead simplex algorithm
@@ -1524,9 +1524,10 @@ def test_linesearch_powell():
         assert_allclose(p, l * xi, atol=1e-6)
         assert_allclose(direction, l * xi, atol=1e-6)
 
-        f, p, direction = linesearch_powell(func, p0, xi,
-                                            lower_bound, upper_bound,
-                                            fval=fval, tol=1e-5)
+        f, p, direction = linesearch_powell(func, p0, xi, tol=1e-5,
+                                            lower_bound=lower_bound,
+                                            upper_bound=upper_bound,
+                                            fval=fval)
         assert_allclose(f, func(l * xi), atol=1e-6)
         assert_allclose(p, l * xi, atol=1e-6)
         assert_allclose(direction, l * xi, atol=1e-6)
@@ -1557,9 +1558,10 @@ def test_linesearch_powell_bounded():
     )
 
     for xi, l in all_tests:
-        f, p, direction = linesearch_powell(func, p0, xi,
-                                            lower_bound, upper_bound,
-                                            fval=fval, tol=1e-5)
+        f, p, direction = linesearch_powell(func, p0, xi, tol=1e-5,
+                                            lower_bound=lower_bound,
+                                            upper_bound=upper_bound,
+                                            fval=fval)
         assert_allclose(f, func(l * xi), atol=1e-6)
         assert_allclose(p, l * xi, atol=1e-6)
         assert_allclose(direction, l * xi, atol=1e-6)
@@ -1579,9 +1581,10 @@ def test_linesearch_powell_bounded():
     )
 
     for xi, l in all_tests:
-        f, p, direction = linesearch_powell(func, p0, xi,
-                                            lower_bound, upper_bound,
-                                            fval=fval, tol=1e-5)
+        f, p, direction = linesearch_powell(func, p0, xi, tol=1e-5,
+                                            lower_bound=lower_bound,
+                                            upper_bound=upper_bound,
+                                            fval=fval)
         assert_allclose(f, func(l * xi), atol=1e-6)
         assert_allclose(p, l * xi, atol=1e-6)
         assert_allclose(direction, l * xi, atol=1e-6)
@@ -1598,9 +1601,10 @@ def test_linesearch_powell_bounded():
     )
 
     for xi, l in all_tests:
-        f, p, direction = linesearch_powell(func, p0, xi,
-                                            lower_bound, upper_bound,
-                                            fval=fval, tol=1e-5)
+        f, p, direction = linesearch_powell(func, p0, xi, tol=1e-5,
+                                            lower_bound=lower_bound,
+                                            upper_bound=upper_bound,
+                                            fval=fval)
         assert_allclose(f, func(p0 + l * xi), atol=1e-6)
         assert_allclose(p, p0 + l * xi, atol=1e-6)
         assert_allclose(direction, l * xi, atol=1e-6)
@@ -1624,9 +1628,10 @@ def test_linesearch_powell_bounded():
     )
 
     for xi, l in all_tests:
-        f, p, direction = linesearch_powell(func, p0, xi,
-                                            lower_bound, upper_bound,
-                                            fval=fval, tol=1e-5)
+        f, p, direction = linesearch_powell(func, p0, xi, tol=1e-5,
+                                            lower_bound=lower_bound,
+                                            upper_bound=upper_bound,
+                                            fval=fval)
         assert_allclose(f, func(l * xi), atol=1e-6)
         assert_allclose(p, l * xi, atol=1e-6)
         assert_allclose(direction, l * xi, atol=1e-6)
@@ -1643,9 +1648,10 @@ def test_linesearch_powell_bounded():
     )
 
     for xi, l in all_tests:
-        f, p, direction = linesearch_powell(func, p0, xi,
-                                            lower_bound, upper_bound,
-                                            fval=fval, tol=1e-5)
+        f, p, direction = linesearch_powell(func, p0, xi, tol=1e-5,
+                                            lower_bound=lower_bound,
+                                            upper_bound=upper_bound,
+                                            fval=fval)
         assert_allclose(f, func(p0 + l * xi), atol=1e-6)
         assert_allclose(p, p0 + l * xi, atol=1e-6)
         assert_allclose(direction, l * xi, atol=1e-6)
