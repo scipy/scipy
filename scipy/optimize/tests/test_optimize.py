@@ -623,6 +623,7 @@ def test_bounded_powell_vs_powell():
 
     # now test when x0 starts outside of the bounds.
     x0 = [45.46254415, -26.52351498, 31.74830248]
+    bounds = tuple((-2, 5) for _ in range(3))
     # we're starting outside the bounds, so we should get a warning
     with assert_warns(optimize.OptimizeWarning):
         res_bounded_powell = optimize.minimize(func, x0,
