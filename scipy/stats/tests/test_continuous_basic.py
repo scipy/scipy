@@ -136,7 +136,7 @@ def test_cont_basic(distname, arg):
         check_pickling(distfn, arg)
 
         # Entropy
-        if distname not in ['ksone', 'kstwobign']:
+        if distname not in ['ksone', 'kstwobign', 'ncf', 'crystalball']:
             check_entropy(distfn, arg, distname)
 
         if distfn.numargs == 0:
