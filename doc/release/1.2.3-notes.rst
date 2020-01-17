@@ -21,6 +21,7 @@ Authors
 Issues closed for 1.2.3
 -----------------------
 * `#9901 <https://github.com/scipy/scipy/issues/9901>`__: lsoda fails to detect stiff problem when called from solve_ivp
+* `#9988 <https://github.com/scipy/scipy/issues/9988>`__: doc build broken with Sphinx 2.0.0
 * `#10303 <https://github.com/scipy/scipy/issues/10303>`__: BUG: optimize: `linprog` failing TestLinprogSimplexBland::test_unbounded_below_no_presolve_corrected 
 * `#10376 <https://github.com/scipy/scipy/issues/10376>`__: TST: Travis CI fails (with pytest 5.0 ?)
 * `#10384 <https://github.com/scipy/scipy/issues/10384>`__: CircleCI doc build failing on new warnings
@@ -29,6 +30,7 @@ Issues closed for 1.2.3
 
 Pull requests for 1.2.3
 -----------------------
+* `#9992 <https://github.com/scipy/scipy/pull/9992>`__: MAINT: Undo Sphinx pin 
 * `#10071 <https://github.com/scipy/scipy/pull/10071>`__: DOC: reconstruct SuperLU permutation matrices avoiding SparseEfficiencyWarning
 * `#10306 <https://github.com/scipy/scipy/pull/10306>`__: BUG: optimize: Fix for 10303
 * `#10309 <https://github.com/scipy/scipy/pull/10309>`__: BUG: Pass jac=None directly to lsoda
