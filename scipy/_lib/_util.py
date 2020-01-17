@@ -265,86 +265,51 @@ def _asarray_validated(a, check_finite=True,
 #
 # This way, the caller code does not need to know whether it uses a legacy
 # .getargspec or a bright and shiny .signature.
+ArgSpec = namedtuple('ArgSpec', ['args', 'varargs', 'keywords', 'defaults'])
 
-try:
-    # is it Python 3.3 or higher?
-    inspect.signature
 
-    # Apparently, yes. Wrap inspect.signature
+def getargspec_no_self(func):
+    """inspect.getargspec replacement using inspect.signature.
 
-    ArgSpec = namedtuple('ArgSpec', ['args', 'varargs', 'keywords', 'defaults'])
+    inspect.getargspec is deprecated in Python 3. This is a replacement
+    based on the (new in Python 3.3) `inspect.signature`.
 
-    def getargspec_no_self(func):
-        """inspect.getargspec replacement using inspect.signature.
+    Parameters
+    ----------
+    func : callable
+        A callable to inspect
 
-        inspect.getargspec is deprecated in Python 3. This is a replacement
-        based on the (new in Python 3.3) `inspect.signature`.
-
-        Parameters
-        ----------
-        func : callable
-            A callable to inspect
-
-        Returns
-        -------
-        argspec : ArgSpec(args, varargs, varkw, defaults)
-            This is similar to the result of inspect.getargspec(func) under
-            Python 2.x.
-            NOTE: if the first argument of `func` is self, it is *not*, I repeat
-            *not*, included in argspec.args.
-            This is done for consistency between inspect.getargspec() under
-            Python 2.x, and inspect.signature() under Python 3.x.
-        """
-        sig = inspect.signature(func)
-        args = [
-            p.name for p in sig.parameters.values()
-            if p.kind == inspect.Parameter.POSITIONAL_OR_KEYWORD
-        ]
-        varargs = [
-            p.name for p in sig.parameters.values()
-            if p.kind == inspect.Parameter.VAR_POSITIONAL
-        ]
-        varargs = varargs[0] if varargs else None
-        varkw = [
-            p.name for p in sig.parameters.values()
-            if p.kind == inspect.Parameter.VAR_KEYWORD
-        ]
-        varkw = varkw[0] if varkw else None
-        defaults = [
-            p.default for p in sig.parameters.values()
-            if (p.kind == inspect.Parameter.POSITIONAL_OR_KEYWORD and
-               p.default is not p.empty)
-        ] or None
-        return ArgSpec(args, varargs, varkw, defaults)
-
-except AttributeError:
-    # python 2.x
-    def getargspec_no_self(func):
-        """inspect.getargspec replacement for compatibility with Python 3.x.
-
-        inspect.getargspec is deprecated in Python 3. This wraps it and
-        *removes* `self` from the argument list of `func`, if present.
-        This is done for forward compatibility with Python 3.
-
-        Parameters
-        ----------
-        func : callable
-            A callable to inspect
-
-        Returns
-        -------
-        argspec : ArgSpec(args, varargs, varkw, defaults)
-            This is similar to the result of inspect.getargspec(func) under
-            Python 2.x.
-            NOTE: if the first argument of `func` is self, it is *not*, I repeat
-            *not*, included in argspec.args.
-            This is done for consistency between inspect.getargspec() under
-            Python 2.x, and inspect.signature() under Python 3.x.
-        """
-        argspec = inspect.getargspec(func)
-        if argspec.args[0] == 'self':
-            argspec.args.pop(0)
-        return argspec
+    Returns
+    -------
+    argspec : ArgSpec(args, varargs, varkw, defaults)
+        This is similar to the result of inspect.getargspec(func) under
+        Python 2.x.
+        NOTE: if the first argument of `func` is self, it is *not*, I repeat
+        *not*, included in argspec.args.
+        This is done for consistency between inspect.getargspec() under
+        Python 2.x, and inspect.signature() under Python 3.x.
+    """
+    sig = inspect.signature(func)
+    args = [
+        p.name for p in sig.parameters.values()
+        if p.kind == inspect.Parameter.POSITIONAL_OR_KEYWORD
+    ]
+    varargs = [
+        p.name for p in sig.parameters.values()
+        if p.kind == inspect.Parameter.VAR_POSITIONAL
+    ]
+    varargs = varargs[0] if varargs else None
+    varkw = [
+        p.name for p in sig.parameters.values()
+        if p.kind == inspect.Parameter.VAR_KEYWORD
+    ]
+    varkw = varkw[0] if varkw else None
+    defaults = [
+        p.default for p in sig.parameters.values()
+        if (p.kind == inspect.Parameter.POSITIONAL_OR_KEYWORD and
+           p.default is not p.empty)
+    ] or None
+    return ArgSpec(args, varargs, varkw, defaults)
 
 
 class MapWrapper(object):
