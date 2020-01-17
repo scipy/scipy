@@ -3048,7 +3048,10 @@ def pearsonr(x, y):
 
     References
     ----------
-    http://www.statsoft.com/textbook/glosp.html#Pearson%20Correlation
+    .. [1] "Pearson correlation coefficient", Wikipedia,
+           https://en.wikipedia.org/wiki/Pearson_correlation_coefficient
+    .. [2] Student, "Probable error of a correlation coefficient",
+           Biometrika, Volume 6, Issue 2-3, 1 September 1908, pp. 302-310.
 
     Examples
     --------
