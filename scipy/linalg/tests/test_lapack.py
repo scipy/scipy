@@ -24,6 +24,7 @@ from numpy.random import rand, randint, seed
 from scipy.linalg import _flapack as flapack, lapack
 from scipy.linalg import inv, svd, cholesky, solve, ldl, norm
 from scipy.linalg.lapack import _compute_lwork
+from scipy.linalg import rq
 
 try:
     from scipy.linalg import _clapack as clapack
@@ -1654,3 +1655,59 @@ def test_geqrfp_lwork(dtype, shape):
     m, n = shape
     lwork, info = geqrfp_lwork(m=m, n=n)
     assert_equal(info, 0)
+
+
+def generate_random_dtype_array(shape, dtype):
+    # generates a random matrix of desired data type of shape
+    if type(shape) != tuple:
+        # in case shape is not passed in as a tuple
+        shape = (shape,)
+    if dtype in COMPLEX_DTYPES:
+        return (np.random.rand(*shape)
+                + np.random.rand(*shape)*1.0j).astype(dtype)
+    return np.random.rand(*shape).astype(dtype)
+
+
+@pytest.mark.parametrize('dtype', DTYPES)
+def test_geqrfp(dtype):
+    # set test tolerance appropriate for dtype
+    np.random.seed(42)
+    rtol = 250*np.finfo(dtype).eps
+    atol = np.finfo(dtype).eps
+    # get appropriate ?geqrfp for dtype
+    geqrfp = get_lapack_funcs(('geqrfp'), dtype=dtype)
+    np.random.seed(42)
+    m = 6
+    n = m + 1
+    # create random matrix of dimentions m x n
+    A = generate_random_dtype_array((m, n), dtype=dtype)
+    # create rq matrix using geqrfp
+    rq_A, tau, work, info = geqrfp(A)
+    r_rq, q_rq = rq(A)
+    # obtain r from the upper triangular area
+    r = np.triu(rq_A)
+    # obtain q from the orgqr lapack routine
+    gqr = get_lapack_funcs(("orgqr"), (rq_A[0][0],))
+    q = gqr(rq_A[:, :m], tau=tau, lwork=work)[0]
+
+    # test that q and r still make A
+    assert_allclose(q@r, A, rtol=rtol)
+    # enure that q is orthogonal (that q @ transposed q is the identity)
+    assert_allclose(np.eye(q.shape[0]), q@(q.T), rtol=rtol, atol=atol*10)
+    # ensure r is upper tri by comparing original r to r as upper triangular
+    assert_allclose(r, np.triu(r), rtol=rtol)
+    # make sure diagonals of r are positive for this random solution
+    assert_(np.all(r[np.arange(m), np.arange(m)] > np.zeros(m)))
+
+    # test that this routine gives r diagonals that are positive for a
+    # matrix that returns negatives in the diagonal with scipy.linalg.rq
+    A_negative = generate_random_dtype_array((n, m), dtype=dtype) * -1
+    r_rq_neg, q_rq_neg = rq(A_negative)
+    rq_A_neg, tau_neg, work_neg, info_neg = geqrfp(A_negative)
+    assert_(np.any(r_rq_neg[np.arange(m), np.arange(m)] < 0) and
+            np.all(r[np.arange(m), np.arange(m)] > np.zeros(m)))
+
+    # check that empty array raises good error message
+    A_empty = np.array([])
+    with assert_raises(Exception):
+        geqrfp(A_empty)
