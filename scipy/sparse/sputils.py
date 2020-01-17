@@ -7,7 +7,12 @@ import operator
 import warnings
 import numpy as np
 
-from scipy._lib._util import _broadcast_arrays
+from scipy._lib._version import NumpyVersion
+
+if NumpyVersion(np.__version__) >= '1.17.0':
+    from scipy._lib._util import _broadcast_arrays
+else:
+    from numpy import broadcast_arrays as _broadcast_arrays
 
 __all__ = ['upcast', 'getdtype', 'isscalarlike', 'isintlike',
            'isshape', 'issequence', 'isdense', 'ismatrix', 'get_sum_dtype']

@@ -11,8 +11,14 @@ from bisect import bisect_left
 
 import numpy as np
 
+from scipy._lib._version import NumpyVersion
 from scipy._lib.six import xrange, zip
-from scipy._lib._util import _broadcast_arrays
+
+if NumpyVersion(np.__version__) >= '1.17.0':
+    from scipy._lib._util import _broadcast_arrays
+else:
+    from numpy import broadcast_arrays as _broadcast_arrays
+
 from .base import spmatrix, isspmatrix
 from .sputils import (getdtype, isshape, isscalarlike, IndexMixin,
                       upcast_scalar, get_index_dtype, isintlike, check_shape,
