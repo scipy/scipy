@@ -1666,8 +1666,8 @@ def test_gttrf_gttrs(dtype):
 
     np.random.seed(42)
     n = 10
-    rtol = 250*np.finfo(dtype).eps  # set test tolerance appropriate for dtype
-    atol = np.finfo(dtype).eps
+    rtol = 250 * np.finfo(dtype).eps  # set test tolerance appropriate for dtype
+    atol = 100 * np.finfo(dtype).eps
 
     # create the matrix in accordance with the data type
     du = generate_random_dtype_array(n-1, dtype=dtype)
