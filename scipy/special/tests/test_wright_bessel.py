@@ -1,3 +1,21 @@
+# Reference MPMATH implementation:
+#
+# import mpmath
+# from mpmath import nsum
+#
+# def Wright_Series_MPMATH(a, b, z, dps=50, method='r+s+e', steps=[1000]):
+#    """Compute Wright' generalized Bessel function as Series.
+#
+#    This uses mpmath for arbitrary precision.
+#    """
+#    with mpmath.workdps(dps):
+#        res = nsum(lambda k: z**k/mpmath.fac(k) * mpmath.rgamma(a*k+b),
+#                          [0, mpmath.inf],
+#                          tol=dps, method=method, steps=steps
+#                          )
+#
+#    return res
+
 import pytest
 import numpy as np
 from numpy.testing import assert_equal, assert_allclose
