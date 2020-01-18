@@ -9,6 +9,7 @@ import keyword
 import re
 import types
 import warnings
+import inspect
 from itertools import zip_longest
 
 from scipy._lib import doccer
@@ -18,7 +19,7 @@ from scipy._lib._util import _valarray as valarray
 
 from scipy.special import (comb, chndtr, entr, rel_entr, xlogy, ive)
 
-# for root finding for discrete distribution ppf, and max likelihood estimation
+# for root finding for continuous distribution ppf, and max likelihood estimation
 from scipy import optimize
 
 # for functions of continuous distributions (e.g. moments, entropy, cdf)
@@ -586,6 +587,19 @@ class rv_generic(object):
                                    ('moments' in sig.kwonlyargs))
         self._random_state = check_random_state(seed)
 
+        # For historical reasons, `size` was made an attribute that was read
+        # inside _rvs().  The code is being changed so that 'size' is an argument
+        # to self._rvs(). However some external (non-SciPy) distributions have not
+        # been updated.  Maintain backwards compatibility by checking if
+        # the self._rvs() signature has the 'size' keyword, or a **kwarg,
+        # and if not set self._size inside self.rvs() before calling self._rvs().
+        argspec = inspect.getfullargspec(self._rvs)
+        self._rvs_uses_size_attribute = (argspec.varkw is None and
+                                         'size' not in argspec.args and
+                                         'size' not in argspec.kwonlyargs)
+        # Warn on first use only
+        self._rvs_size_warned = False
+
     @property
     def random_state(self):
         """ Get or set the RandomState object for generating random variates.
@@ -844,7 +858,7 @@ class rv_generic(object):
                   for (bcdim, szdim) in zip(bcast_shape, size_)])
         if not ok:
             raise ValueError("size does not match the broadcast shape of "
-                             "the parameters.")
+                             "the parameters. %s, %s, %s" % (size, size_, bcast_shape))
 
         param_bcast = all_bcast[:-2]
         loc_bcast = all_bcast[-2]
@@ -898,14 +912,14 @@ class rv_generic(object):
         with np.errstate(invalid='ignore'):
             return (a < x) & (x < b)
 
-    def _rvs(self, *args):
+    def _rvs(self, *args, size=None, random_state=None):
         # This method must handle self._size being a tuple, and it must
         # properly broadcast *args and self._size.  self._size might be
         # an empty tuple, which means a scalar random variate is to be
         # generated.
 
         ## Use basic inverse cdf algorithm for RV generation as default.
-        U = self._random_state.uniform(size=self._size)
+        U = random_state.uniform(size)
         Y = self._ppf(U, *args)
         return Y
 
@@ -970,13 +984,24 @@ class rv_generic(object):
         # extra gymnastics needed for a custom random_state
         if rndm is not None:
             random_state_saved = self._random_state
-            self._random_state = check_random_state(rndm)
+            random_state = check_random_state(rndm)
+        else:
+            random_state = self._random_state
 
-        # `size` should just be an argument to _rvs(), but for, um,
-        # historical reasons, it is made an attribute that is read
-        # by _rvs().
-        self._size = size
-        vals = self._rvs(*args)
+        # Maintain backwards compatibility by setting self._size
+        # for distributions that still need it.
+        if self._rvs_uses_size_attribute:
+            if not self._rvs_size_warned:
+                warnings.warn(
+                    f'The signature of {self._rvs} does not contain '
+                    f'a "size" keyword.  Such signatures are deprecated.',
+                    np.VisibleDeprecationWarning)
+                self._rvs_size_warned = True
+            self._size = size
+            self._random_state = random_state
+            vals = self._rvs(*args)
+        else:
+            vals = self._rvs(*args, size=size, random_state=random_state)
 
         vals = vals * scale + loc
 
@@ -3548,11 +3573,11 @@ class rv_sample(rv_discrete):
         indx = argmax(sqq >= qq, axis=-1)
         return self.xk[indx]
 
-    def _rvs(self):
+    def _rvs(self, size=None, random_state=None):
         # Need to define it explicitly, otherwise .rvs() with size=None
         # fails due to explicit broadcasting in _ppf
-        U = self._random_state.uniform(size=self._size)
-        if self._size is None:
+        U = random_state.uniform(size=size)
+        if size is None:
             U = np.array(U, ndmin=1)
             Y = self._ppf(U)[0]
         else:
