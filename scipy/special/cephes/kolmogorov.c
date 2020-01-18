@@ -169,7 +169,7 @@ _kolmogorov(double x)
         RETURN_3PROBS(1.0, 0.0, 0);
     }
     /* x <= 0.040611972203751713 */
-    if (x <= NPY_PI/sqrt(-MIN_EXPABLE * 8)) {
+    if (x <= (double)NPY_PI/sqrt(-MIN_EXPABLE * 8)) {
         RETURN_3PROBS(1.0, 0.0, 0);
     }
 

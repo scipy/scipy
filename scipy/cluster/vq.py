@@ -70,7 +70,6 @@ import warnings
 import numpy as np
 from collections import deque
 from scipy._lib._util import _asarray_validated
-from scipy._lib.six import xrange
 from scipy.spatial.distance import cdist
 
 from . import _vq
@@ -451,7 +450,7 @@ def kmeans(obs, k_or_guess, iter=20, thresh=1e-5, check_finite=True):
 
     # initialize best distance value to a large value
     best_dist = np.inf
-    for i in xrange(iter):
+    for i in range(iter):
         # the initial code book is randomly selected from observations
         guess = _kpoints(obs, k)
         book, dist = _kmeans(obs, guess, thresh=thresh)
@@ -747,7 +746,7 @@ def kmeans2(data, k, iter=10, thresh=1e-5, minit='random',
         else:
             code_book = init_meth(data, k)
 
-    for i in xrange(iter):
+    for i in range(iter):
         # Compute the nearest neighbor for each obs using the current code book
         label = vq(data, code_book)[0]
         # Update the code book by computing centroids

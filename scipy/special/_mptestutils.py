@@ -8,7 +8,6 @@ import numpy as np
 from numpy.testing import assert_
 import pytest
 
-from scipy._lib.six import reraise
 from scipy.special._testutils import assert_func_equal
 
 try:
@@ -270,7 +269,11 @@ class MpmathData(object):
                     break
                 except AssertionError:
                     if j >= len(dps_list)-1:
-                        reraise(*sys.exc_info())
+                        # reraise the Exception
+                        tp, value, tb = sys.exc_info()
+                        if value.__traceback__ is not tb:
+                            raise value.with_traceback(tb)
+                        raise value
         finally:
             mpmath.mp.dps, mpmath.mp.prec = old_dps, old_prec
 

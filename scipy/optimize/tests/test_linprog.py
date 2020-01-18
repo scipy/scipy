@@ -1523,6 +1523,12 @@ if has_umfpack:
 class TestLinprogIPSparse(LinprogIPTests):
     options = {"sparse": True, "cholesky": False, "sym_pos": False}
 
+    @pytest.mark.xfail_on_32bit("This test is sensitive to machine epsilon level "
+                                "perturbations in linear system solution in "
+                                "_linprog_ip._sym_solve.")
+    def test_bug_6139(self):
+        super(TestLinprogIPSparse, self).test_bug_6139()
+
     @pytest.mark.xfail(reason='Fails with ATLAS, see gh-7877')
     def test_bug_6690(self):
         # Test defined in base class, but can't mark as xfail there
@@ -1566,6 +1572,12 @@ class TestLinprogIPSparse(LinprogIPTests):
 
 class TestLinprogIPSparsePresolve(LinprogIPTests):
     options = {"sparse": True, "_sparse_presolve": True}
+
+    @pytest.mark.xfail_on_32bit("This test is sensitive to machine epsilon level "
+                                "perturbations in linear system solution in "
+                                "_linprog_ip._sym_solve.")
+    def test_bug_6139(self):
+        super(TestLinprogIPSparsePresolve, self).test_bug_6139()
 
     def test_enzo_example_c_with_infeasibility(self):
         pytest.skip('_sparse_presolve=True incompatible with presolve=False')

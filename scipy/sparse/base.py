@@ -3,7 +3,6 @@ from __future__ import division, print_function, absolute_import
 
 import numpy as np
 
-from scipy._lib.six import xrange
 from .sputils import (isdense, isscalarlike, isintlike,
                       get_sum_dtype, validateaxis, check_reshape_kwargs,
                       check_shape, asmatrix)
@@ -203,7 +202,7 @@ class spmatrix(object):
                             'point format' % self.dtype.name)
 
     def __iter__(self):
-        for r in xrange(self.shape[0]):
+        for r in range(self.shape[0]):
             yield self[r, :]
 
     def getmaxprint(self):
@@ -1153,7 +1152,7 @@ class spmatrix(object):
             if values.ndim == 0:
                 # broadcast
                 max_index = min(M+k, N)
-                for i in xrange(max_index):
+                for i in range(max_index):
                     self[i - k, i] = values
             else:
                 max_index = min(M+k, N, len(values))
@@ -1165,7 +1164,7 @@ class spmatrix(object):
             if values.ndim == 0:
                 # broadcast
                 max_index = min(M, N-k)
-                for i in xrange(max_index):
+                for i in range(max_index):
                     self[i, i + k] = values
             else:
                 max_index = min(M, N-k, len(values))

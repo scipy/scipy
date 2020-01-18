@@ -28,7 +28,6 @@ from numpy.testing import assert_equal
 import pytest
 
 import scipy.special as sp
-from scipy._lib.six import with_metaclass
 from scipy.special._testutils import (
     MissingModule, check_version, FuncData)
 from scipy.special._mptestutils import (

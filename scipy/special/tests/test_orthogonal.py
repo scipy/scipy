@@ -9,7 +9,6 @@ from numpy.testing import (assert_array_almost_equal, assert_equal,
 import pytest
 from pytest import raises as assert_raises
 
-from scipy._lib.six import xrange
 from scipy import integrate
 import scipy.special as sc
 from scipy.special import gamma
@@ -249,7 +248,7 @@ class _test_sh_jacobi(object):
 class TestCall(object):
     def test_call(self):
         poly = []
-        for n in xrange(5):
+        for n in range(5):
             poly.extend([x.strip() for x in
                 ("""
                 orth.jacobi(%(n)d,0.3,0.9)
@@ -462,7 +461,7 @@ def test_roots_hermite_asy():
         H[0,:] = np.pi**(-0.25) * np.exp(-0.5*nodes**2)
         if n > 1:
             H[1,:] = sqrt(2.0) * nodes * H[0,:]
-            for k in xrange(2, n):
+            for k in range(2, n):
                 H[k,:] = sqrt(2.0/k) * nodes * H[k-1,:] - sqrt((k-1.0)/k) * H[k-2,:]
         return H
 

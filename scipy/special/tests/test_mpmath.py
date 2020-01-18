@@ -1716,18 +1716,14 @@ class TestSystematic(object):
                             [IntArg(0, 1000), Arg()])
 
     def test_rgamma(self):
-        def rgamma(x):
-            if x < -8000:
-                return np.inf
-            else:
-                v = mpmath.rgamma(x)
-            return v
-        # n=500 (non-xslow default) fails for one bad point
-        assert_mpmath_equal(sc.rgamma,
-                            rgamma,
-                            [Arg()],
-                            n=5000,
-                            ignore_inf_sign=True)
+        assert_mpmath_equal(
+            sc.rgamma,
+            mpmath.rgamma,
+            [Arg(-8000, np.inf)],
+            n=5000,
+            nan_ok=False,
+            ignore_inf_sign=True,
+        )
 
     def test_rgamma_complex(self):
         assert_mpmath_equal(sc.rgamma,

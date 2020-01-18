@@ -36,9 +36,10 @@ is certainly helpful. We expect core API designers/specifiers to write the
 multimethods, and implementors to override them. But, as is often the case,
 similar people write both.
 
-Without further ado, here's an example multimethTrueod:
+Without further ado, here's an example multimethod:
 
 >>> import uarray as ua
+>>> from uarray import Dispatchable
 >>> def override_me(a, b):
 ...   return Dispatchable(a, int),
 >>> def override_replacer(args, kwargs, dispatchables):
@@ -113,4 +114,4 @@ possible.
 
 from ._backend import *
 
-__version__ = '0.5.1+5.ga864a57.scipy'
+__version__ = '0.5.1+49.g4c3f1d7.scipy'

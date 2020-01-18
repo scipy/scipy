@@ -9464,6 +9464,11 @@ add_newdoc("owens_t",
            Owen's T Function", Statistical Software vol. 5, pp. 1-25, 2000.
     """)
 
+add_newdoc("_factorial",
+    """
+    Internal function, do not use.
+    """)
+
 add_newdoc("_wright_bessel",
     """
     Internal function, use `wright_bessel` instead.

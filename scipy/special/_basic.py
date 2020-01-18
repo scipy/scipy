@@ -7,7 +7,6 @@ from __future__ import division, print_function, absolute_import
 import operator
 import numpy as np
 import math
-from scipy._lib.six import xrange
 from numpy import (pi, asarray, floor, isscalar, iscomplex, real,
                    imag, sqrt, where, mgrid, sin, place, issubdtype,
                    extract, inexact, nan, zeros, sinc)
@@ -607,7 +606,7 @@ def _bessel_diff_formula(v, z, n, L, phase):
     v = asarray(v)
     p = 1.0
     s = L(v-n, z)
-    for i in xrange(1, n+1):
+    for i in range(1, n+1):
         p = phase * (p * (n-i+1)) / i   # = choose(k, i)
         s += p*L(v-n + i*2, z)
     return s / (2.**n)
@@ -2241,7 +2240,7 @@ def perm(N, k, exact=False):
         if (k > N) or (N < 0) or (k < 0):
             return 0
         val = 1
-        for i in xrange(N - k + 1, N + 1):
+        for i in range(N - k + 1, N + 1):
             val *= i
         return val
     else:
@@ -2324,13 +2323,17 @@ def factorial(n, exact=False):
     """
     if exact:
         if np.ndim(n) == 0:
+            if np.isnan(n):
+                return n
             return 0 if n < 0 else math.factorial(n)
         else:
             n = asarray(n)
             un = np.unique(n).astype(object)
 
             # Convert to object array of long ints if np.int can't handle size
-            if un[-1] > 20:
+            if np.isnan(n).any():
+                dt = float
+            elif un[-1] > 20:
                 dt = object
             elif un[-1] > 12:
                 dt = np.int64
@@ -2340,27 +2343,29 @@ def factorial(n, exact=False):
             out = np.empty_like(n, dtype=dt)
 
             # Handle invalid/trivial values
-            un = un[un > 1]
-            out[n < 2] = 1
-            out[n < 0] = 0
+            # Ignore runtime warning when less operator used w/np.nan
+            with np.errstate(all='ignore'):
+                un = un[un > 1]
+                out[n < 2] = 1
+                out[n < 0] = 0
 
             # Calculate products of each range of numbers
             if un.size:
                 val = math.factorial(un[0])
                 out[n == un[0]] = val
-                for i in xrange(len(un) - 1):
+                for i in range(len(un) - 1):
                     prev = un[i] + 1
                     current = un[i + 1]
                     val *= _range_prod(prev, current)
                     out[n == current] = val
+
+            if np.isnan(n).any():
+                out = out.astype(np.float64)
+                out[np.isnan(n)] = n[np.isnan(n)]
             return out
     else:
-        if np.ndim(n) == 0:
-            return 0 if n < 0 else gamma(n + 1)
-
-        n = asarray(n)
-        vals = gamma(n + 1)
-        return where(n >= 0, vals, 0)
+        out = ufuncs._factorial(n)
+        return out
 
 
 def factorial2(n, exact=False):
@@ -2403,7 +2408,7 @@ def factorial2(n, exact=False):
         if n <= 0:
             return 1
         val = 1
-        for k in xrange(n, 0, -2):
+        for k in range(n, 0, -2):
             val *= k
         return val
     else:
@@ -2468,7 +2473,7 @@ def factorialk(n, k, exact=True):
         if n <= 0:
             return 1
         val = 1
-        for j in xrange(n, 0, -k):
+        for j in range(n, 0, -k):
             val = val*j
         return val
     else:

@@ -5,7 +5,6 @@ import numpy
 from numpy import asarray_chkfinite, single, asarray, array
 from numpy.linalg import norm
 
-from scipy._lib.six import callable
 
 # Local imports.
 from .misc import LinAlgError, _datacopied

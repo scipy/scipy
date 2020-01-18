@@ -8,7 +8,6 @@ from numpy import zeros, r_, diag, dot, arccos, arcsin, where, clip
 from .misc import LinAlgError, _datacopied
 from .lapack import get_lapack_funcs, _compute_lwork
 from .decomp import _asarray_validated
-from scipy._lib.six import string_types
 
 __all__ = ['svd', 'svdvals', 'diagsvd', 'orth', 'subspace_angles', 'null_space']
 
@@ -112,7 +111,7 @@ def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
     m, n = a1.shape
     overwrite_a = overwrite_a or (_datacopied(a1, a))
 
-    if not isinstance(lapack_driver, string_types):
+    if not isinstance(lapack_driver, str):
         raise TypeError('lapack_driver must be a string')
     if lapack_driver not in ('gesdd', 'gesvd'):
         raise ValueError('lapack_driver must be "gesdd" or "gesvd", not "%s"'

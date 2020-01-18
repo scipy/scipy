@@ -158,7 +158,7 @@ class TestShapiro(object):
 
     def test_not_enough_values(self):
         assert_raises(ValueError, stats.shapiro, [1, 2])
-        assert_raises(ValueError, stats.shapiro, [[], [2]])
+        assert_raises(ValueError, stats.shapiro, np.array([[], [2]], dtype=object))
 
     def test_bad_arg(self):
         # Length of x is less than 3.

@@ -4,12 +4,8 @@ import datetime
 import os
 import sys
 from os.path import join as pjoin
-from scipy._lib.six import xrange
 
-if sys.version_info[0] >= 3:
-    from io import StringIO
-else:
-    from cStringIO import StringIO
+from io import StringIO
 
 import numpy as np
 
@@ -319,7 +315,7 @@ class TestRelationalAttributeLong(object):
     def test_data(self):
         dtype_instance = [('attr_number', np.float_)]
 
-        expected = np.array([(n,) for n in xrange(30000)],
+        expected = np.array([(n,) for n in range(30000)],
                             dtype=dtype_instance)
 
         assert_array_equal(self.data["attr_relational"][0],

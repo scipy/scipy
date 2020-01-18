@@ -10,8 +10,6 @@ __all__ = ['spdiags', 'eye', 'identity', 'kron', 'kronsum',
 
 import numpy as np
 
-from scipy._lib.six import xrange
-
 from .sputils import upcast, get_index_dtype, isscalarlike
 
 from .csr import csr_matrix

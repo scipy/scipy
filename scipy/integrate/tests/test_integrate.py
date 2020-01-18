@@ -8,8 +8,6 @@ import numpy as np
 from numpy import (arange, zeros, array, dot, sqrt, cos, sin, eye, pi, exp,
                    allclose)
 
-from scipy._lib.six import xrange
-
 from numpy.testing import (
     assert_, assert_array_almost_equal,
     assert_allclose, assert_array_equal, assert_equal, assert_warns)
@@ -161,7 +159,7 @@ class TestOde(TestODEClass):
     def test_concurrent_ok(self):
         f = lambda t, y: 1.0
 
-        for k in xrange(3):
+        for k in range(3):
             for sol in ('vode', 'zvode', 'lsoda', 'dopri5', 'dop853'):
                 r = ode(f).set_integrator(sol)
                 r.set_initial_value(0, 0)
