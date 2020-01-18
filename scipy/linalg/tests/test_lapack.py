@@ -1796,13 +1796,18 @@ def test_getc2_gesc2():
                                       x/scale, decimal=4)
 
 
-@pytest.mark.parametrize('dtype', DTYPES)
-@pytest.mark.parametrize('shape', [(3, 7), (7, 3), (2**18, 2**18)])
-def test_geqrfp_lwork(dtype, shape):
-    geqrfp_lwork = get_lapack_funcs(('geqrfp_lwork'), dtype=dtype)
-    m, n = shape
-    lwork, info = geqrfp_lwork(m=m, n=n)
-    assert_equal(info, 0)
+@pytest.mark.parametrize("dtype", DTYPES)
+def test_gttrf_gttrs(dtype):
+    # The test uses ?gttrf and ?gttrs to solve a random system for each dtype,
+    # tests that the output of ?gttrf define LU matricies, that input
+    # parameters are unmodified, transposal options function correctly, that
+    # incompatible matrix shapes raise an error, and singular matrices return
+    # non zero info.
+
+    np.random.seed(42)
+    n = 10
+    rtol = 250 * np.finfo(dtype).eps  # set test tolerance appropriate for dtype
+    atol = 100 * np.finfo(dtype).eps
 
 
 def generate_random_dtype_array(shape, dtype):
