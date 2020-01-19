@@ -2561,18 +2561,9 @@ c                               Line search is impossible.
          else
 c        take step and prevent rounding error beyond bound
             do 41 i = 1, n
-               if (nbd(i) .ne. 0) then
-                  if (nbd(i) .eq. 1) then !lower bound only
-                     x(i) = max( l(i) , stp*d(i) + t(i) )
-                  else if ( nbd(i) .eq. 2) then !upper and lower bounds
-                     a1 = max( l(i), stp*d(i) + t(i) )
-                     x(i) = min( u(i), a1)
-                  else if ( nbd(i) .eq. 3) then ! upper bound only
-                     x(i) = min( u(i), stp*d(i) + t(i) )
-                  end if
-               else   ! no bounds
-                  x(i) = stp*d(i) + t(i)
-               end if
+               x(i) = stp*d(i) + t(i)
+               if (nbd(i).eq.1.or.nbd(i).eq.2) x(i) = max(x(i), l(i))
+               if (nbd(i).eq.2.or.nbd(i).eq.3) x(i) = min(x(i), u(i))
   41        continue
          endif
       else
