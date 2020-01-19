@@ -20,7 +20,7 @@ from ._index import IndexMixin
 from .sputils import (upcast, upcast_char, to_native, isdense, isshape,
                       getdtype, isscalarlike, isintlike, get_index_dtype,
                       downcast_intp_index, get_sum_dtype, check_shape,
-                      matrix, asmatrix)
+                      matrix, asmatrix, is_pydata_spmatrix)
 
 
 class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
@@ -231,6 +231,9 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         # Dense other.
         elif isdense(other):
             return self.todense() == other
+        # Pydata sparse other.
+        elif is_pydata_spmatrix(other):
+            return NotImplemented
         # Sparse other.
         elif isspmatrix(other):
             warn("Comparing sparse matrices using == is inefficient, try using"
@@ -266,6 +269,9 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         # Dense other.
         elif isdense(other):
             return self.todense() != other
+        # Pydata sparse other.
+        elif is_pydata_spmatrix(other):
+            return NotImplemented
         # Sparse other.
         elif isspmatrix(other):
             # TODO sparse broadcasting
