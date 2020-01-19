@@ -62,9 +62,9 @@ class IndexMixin(object):
                 return self._get_arrayXint(row, col)
             elif isinstance(col, slice):
                 raise IndexError('index results in >2 dimensions')
-            elif row.shape[1] == 1 and col.ndim == 1:
+            elif row.shape[1] == 1 and (col.ndim == 1 or col.shape[0] == 1):
                 # special case for outer indexing
-                return self._get_columnXarray(row[:,0], col)
+                return self._get_columnXarray(row[:,0], col.ravel())
 
         # The only remaining case is inner (fancy) indexing
         row, col = _broadcast_arrays(row, col)
