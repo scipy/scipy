@@ -11,10 +11,6 @@ try:
 except ImportError:
     sparse = None
 
-pytestmark = pytest.mark.skipif(sparse is None,
-                                reason="pydata/sparse not installed")
-
-
 msg = "pydata/sparse (0.8) does not implement necessary operations"
 
 
@@ -24,8 +20,14 @@ sparse_params = [pytest.param("COO"),
 
 @pytest.fixture(params=sparse_params)
 def sparse_cls(request):
-    return getattr(sparse, request.param)
-
+    # Use duck typing to check that both:
+    #  1. we were able to import a sparse module (None will fail test below)
+    #  2. we were able to import the right sparse module (import will return the scipy/sparse
+    #     module if no sparse module has been installed)
+    if hasattr(sparse, request.param):
+        return getattr(sparse, request.param)
+    else:
+        pytest.skip("sparse is not installed")
 
 @pytest.fixture
 def matrices(sparse_cls):
