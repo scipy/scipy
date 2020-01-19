@@ -271,19 +271,19 @@ def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
          check_finite=True, subset_by_index=None, subset_by_value=None,
          driver=None):
     """
-    Solves a standard or generalized eigenvalue problem for a complex
+    Solve a standard or generalized eigenvalue problem for a complex
     Hermitian or real symmetric matrix.
 
     Find eigenvalues array ``w`` and optionally eigenvectors array ``v`` of
     array ``a``, where ``b`` is positive definite such that for every
-    eigenvalue λ (i-th entry of w) and its eigenvector vi (i-th column of v)
-    satisfies::
+    eigenvalue λ (i-th entry of w) and its eigenvector ``vi`` (i-th column of
+    ``v``) satisfies::
 
                       a @ vi = λ * b @ vi
         vi.conj().T @ a @ vi = λ
         vi.conj().T @ b @ vi = 1
 
-    In the standard problem, b is assumed to be the identity matrix.
+    In the standard problem, ``b`` is assumed to be the identity matrix.
 
     Parameters
     ----------
@@ -336,40 +336,24 @@ def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
         Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
     turbo : bool, optional
-        *Deprecated by ``driver=gvd`` option*. Use divide and conquer
-        algorithm (faster but expensive in memory, only for generalized
-        eigenvalue problem and if full set of eigenvalues are requested.). Has
-        no significant effect if eigenvectors are not requested.
-
-        ..Deprecated in v1.5.0
+        *Deprecated since v1.5.0, use ``driver=gvd`` keyword instead*.
+        Use divide and conquer algorithm (faster but expensive in memory, only
+        for generalized eigenvalue problem and if full set of eigenvalues are
+        requested.). Has no significant effect if eigenvectors are not
+        requested.
     eigvals : tuple (lo, hi), optional
-        *Deprecated by ``subset_by_index`` keyword*. Indexes of the smallest
-        and largest (in ascending order) eigenvalues and corresponding
-        eigenvectors to be returned: 0 <= lo <= hi <= M-1. If omitted, all
-        eigenvalues and eigenvectors are returned.
-
-        .. Deprecated in v1.5.0
+        *Deprecated since v1.5.0, use ``subset_by_index`` keyword instead*.
+        Indexes of the smallest and largest (in ascending order) eigenvalues
+        and corresponding eigenvectors to be returned: 0 <= lo <= hi <= M-1.
+        If omitted, all eigenvalues and eigenvectors are returned.
 
     Returns
     -------
-    w : (N,) float ndarray
+    w : (N,) ndarray
         The N (1<=N<=M) selected eigenvalues, in ascending order, each
         repeated according to its multiplicity.
-    v : (M, N) complex ndarray
-        (if eigvals_only == False)
-
-        The normalized selected eigenvector corresponding to the
-        eigenvalue w[i] is the column v[:,i].
-
-        Normalization:
-
-            type 1 and 3: v.conj() a      v  = w
-
-            type 2: inv(v).conj() a  inv(v) = w
-
-            type = 1 or 2: v.conj() b      v  = I
-
-            type = 3: v.conj() inv(b) v  = I
+    v : (M, N) ndarray
+        (if ``eigvals_only == False``)
 
     Raises
     ------
@@ -396,13 +380,28 @@ def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
 
     This function uses LAPACK drivers for computations in all possible keyword
     combinations, prefixed with ``sy`` if arrays are real and ``he`` if
-    complex. As a brief summary, the slowest and the most robust driver is the
+    complex, e.g., a float array with "evr" driver is solved via
+    "syevr", complex arrays with "gvx" driver problem is solved via "hegvx"
+    etc.
+
+    As a brief summary, the slowest and the most robust driver is the
     classical ``<sy/he>ev`` which uses symmetric QR. ``<sy/he>evr`` is seen as
     the optimal choice for the most general cases. However, there are certain
     occassions that ``<sy/he>evd`` computes faster at the expense of more
     memory usage. ``<sy/he>evx``, while still being faster than ``<sy/he>ev``,
     often performs worse than the rest except when very few eigenvalues are
     requested for large arrays though there is still no performance guarantee.
+
+
+    For the generalized problem, normalization with respoect to the given
+    type argument::
+
+            type 1 and 3 :      v.conj().T @ a @ v = w
+            type 2       : inv(v).conj().T @ a @ inv(v) = w
+
+            type 1 or 2  :      v.conj().T @ b @ v  = I
+            type 3       : v.conj().T @ inv(b) @ v  = I
+
 
     Examples
     --------
@@ -416,7 +415,7 @@ def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
     # set lower
     uplo = 'L' if lower else 'U'
     # Set job for Fortran routines
-    _job = (eigvals_only and 'N') or 'V'
+    _job = 'N' if eigvals_only else 'V'
 
     drv_str = [None, "ev", "evd", "evr", "evx", "gv", "gvd", "gvx"]
     if driver not in drv_str:
@@ -454,9 +453,8 @@ def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
         raise ValueError('Either index or value subset can be requested.')
 
     # Take turbo into account if all conditions are met otherwise ignore
-    if turbo:
-        if b is not None:
-            driver = 'gvx' if subset else 'gvd'
+    if turbo and b is not None:
+        driver = 'gvx' if subset else 'gvd'
 
     # Check indices if given
     if subset_by_index:
@@ -512,7 +510,7 @@ def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
         lw = _compute_lwork(drvlw, n, lower=lower)
         # Multiple lwork vars
         if isinstance(drvlw, tuple):
-            lwork_args = {x: y for x, y in zip(lwork_spec[pfx+driver], lw)}
+            lwork_args = dict(zip(lwork_spec[pfx+driver], lw))
         else:
             lwork_args = {'lwork': lw}
 

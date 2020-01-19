@@ -21,28 +21,46 @@ import pytest
 from pytest import raises as assert_raises
 
 from scipy.linalg import (eig, eigvals, lu, svd, svdvals, cholesky, qr,
-     schur, rsf2csf, lu_solve, lu_factor, solve, diagsvd, hessenberg, rq,
-     eig_banded, eigvals_banded, eigh, eigvalsh, qr_multiply, qz, orth, ordqz,
-     subspace_angles, hadamard, eigvalsh_tridiagonal, eigh_tridiagonal,
-     null_space, cdf2rdf, LinAlgError)
-from scipy.linalg.lapack import dgbtrf, dgbtrs, zgbtrf, zgbtrs, \
-     dsbev, dsbevd, dsbevx, zhbevd, zhbevx
+                          schur, rsf2csf, lu_solve, lu_factor, solve, diagsvd,
+                          hessenberg, rq, eig_banded, eigvals_banded, eigh,
+                          eigvalsh, qr_multiply, qz, orth, ordqz,
+                          subspace_angles, hadamard, eigvalsh_tridiagonal,
+                          eigh_tridiagonal, null_space, cdf2rdf, LinAlgError)
+
+from scipy.linalg.lapack import (dgbtrf, dgbtrs, zgbtrf, zgbtrs, dsbev,
+                                 dsbevd, dsbevx, zhbevd, zhbevx)
+
 from scipy.linalg.misc import norm
 from scipy.linalg._decomp_qz import _select_function
+from scipy.stats import ortho_group
 
-from numpy import array, transpose, diag, ones, full, linalg, \
-     argsort, zeros, arange, float32, complex64, dot, conj, identity, \
-     ravel, sqrt, iscomplex, shape, sort, conjugate, sign, \
-     asarray, isfinite, ndarray, outer, eye, dtype, empty,\
-     triu, tril
+from numpy import (array, transpose, diag, ones, full, linalg, argsort,
+                   zeros, arange, float32, complex64, dot, conj, identity,
+                   ravel, sqrt, iscomplex, shape, sort, conjugate, sign,
+                   asarray, isfinite, ndarray, outer, eye, dtype, empty,
+                   triu, tril)
 
-from numpy.random import normal, seed, random
+from numpy.random import seed, random
 
 from scipy.linalg._testutils import assert_no_overwrite
 from scipy.sparse.sputils import bmat, matrix
 
-# digit precision to use in asserts for different types
-DIGITS = {'d':11, 'D':11, 'f':4, 'F':4}
+
+def _random_hermitian_matrix(n, posdef=False, dtype=float):
+    "Generate random sym/hermitian array of the given size n"
+    if dtype in COMPLEX_DTYPES:
+        A = np.random.rand(n, n) + np.random.rand(n, n)*1.0j
+        A = (A + A.conj().T)/2
+    else:
+        A = np.random.rand(n, n)
+        A = (A + A.T)/2
+
+    if posdef:
+        A += sqrt(2*n)*np.eye(n)
+
+    return A.astype(dtype)
+
+
 REAL_DTYPES = [np.float32, np.float64]
 COMPLEX_DTYPES = [np.complex64, np.complex128]
 DTYPES = REAL_DTYPES + COMPLEX_DTYPES
@@ -103,41 +121,18 @@ def symrand(dim_or_eigv):
     else:
         raise TypeError("input type not supported.")
 
-    v = random_rot(dim)
+    v = ortho_group.rvs(dim)
     h = dot(dot(v.T.conj(), diag(d)), v)
     # to avoid roundoff errors, symmetrize the matrix (again)
     h = 0.5*(h.T+h)
     return h
 
-# XXX: This function should not be defined here, but somewhere in
-#      scipy.linalg namespace
 
-
-def random_rot(dim):
-    """Return a random rotation matrix, drawn from the Haar distribution
-    (the only uniform distribution on SO(n)).
-    The algorithm is described in the paper
-    Stewart, G.W., 'The efficient generation of random orthogonal
-    matrices with an application to condition estimators', SIAM Journal
-    on Numerical Analysis, 17(3), pp. 403-409, 1980.
-    For more information see
-    https://en.wikipedia.org/wiki/Orthogonal_matrix#Randomization"""
-    H = eye(dim)
-    D = ones((dim,))
-    for n in range(1, dim):
-        x = normal(size=(dim-n+1,))
-        D[n-1] = sign(x[0])
-        x[0] -= D[n-1]*sqrt((x*x).sum())
-        # Householder transformation
-
-        Hx = eye(dim-n+1) - 2.*outer(x, x)/(x*x).sum()
-        mat = eye(dim)
-        mat[n-1:,n-1:] = Hx
-        H = dot(H, mat)
-    # Fix the last sign such that the determinant is 1
-    D[-1] = -D.prod()
-    H = (D*H.T).T
-    return H
+def _complex_symrand(dim, dtype):
+    a1, a2 = symrand(dim), symrand(dim)
+    # add antisymmetric matrix as imag part
+    a = a1 + 1j*(triu(a2)-tril(a2))
+    return a.astype(dtype)
 
 
 class TestEigVals(object):
@@ -770,44 +765,37 @@ class TestEigTridiagonal(object):
 class TestEigh:
     def setup_class(self):
         seed(1234)
-        self.n = 20
-        self.testmats_a = []
-        self.testmats_b = []
-        # Create suitable a and b matrices for all tests
-        for d, label in zip(DTYPES, 'sdcz'):
-            temp = np.random.rand(self.n, self.n).astype(d)
-            temp = temp + temp.T
-            self.testmats_a += [temp.copy()]
-            if label in 'cz':
-                temp = np.random.rand(self.n, self.n).astype(d)*d(1j)
-                temp = temp + temp.conj().T
-                self.testmats_a[-1] += temp
-
-            temp = np.random.rand(self.n, self.n).astype(d)
-            temp = temp + temp.T
-            self.testmats_b += [temp + np.eye(self.n, dtype=d)*d(10.)]
-            if label in 'cz':
-                temp = np.random.rand(self.n, self.n).astype(d)*d(1j)
-                temp = temp + temp.conj().T
-                # make sure b is pos. def.
-                self.testmats_b[-1] += temp + np.eye(self.n, dtype=d)*d(10.)
 
     def test_wrong_inputs(self):
+        # Nonsquare a
         assert_raises(ValueError, eigh, np.ones([1, 2]))
+        # Nonsquare b
         assert_raises(ValueError, eigh, np.ones([2, 2]), np.ones([2, 1]))
+        # Incompatible a, b sizes
         assert_raises(ValueError, eigh, np.ones([3, 3]), np.ones([2, 2]))
+        # Both value and index subsets requested
         assert_raises(ValueError, eigh, np.ones([3, 3]), np.ones([3, 3]),
                       subset_by_value=[1, 2], eigvals=[2, 4])
+        # Invalid upper index spec
         assert_raises(ValueError, eigh, np.ones([3, 3]), np.ones([3, 3]),
                       eigvals=[0, 4])
+        # Invalid lower index
+        assert_raises(ValueError, eigh, np.ones([3, 3]), np.ones([3, 3]),
+                      eigvals=[-2, 2])
+        # Invalid index spec #2
         assert_raises(ValueError, eigh, np.ones([3, 3]), np.ones([3, 3]),
                       eigvals=[2, 0])
+        # Invalid value spec
         assert_raises(ValueError, eigh, np.ones([3, 3]), np.ones([3, 3]),
                       subset_by_value=[2, 0])
+        # Invalid driver name
         assert_raises(ValueError, eigh, np.ones([2, 2]), driver='wrong')
+        # Generalized driver selection without b
         assert_raises(ValueError, eigh, np.ones([3, 3]), None, driver='gvx')
+        # Standard driver with b
         assert_raises(ValueError, eigh, np.ones([3, 3]), np.ones([3, 3]),
                       driver='evr', turbo=False)
+        # Subset request from invalid driver
         assert_raises(ValueError, eigh, np.ones([3, 3]), np.ones([3, 3]),
                       driver='gvd', eigvals=[1, 2], turbo=False)
 
@@ -817,98 +805,57 @@ class TestEigh:
     # index based subsets are done in the legacy test_eigh()
     def test_value_subsets(self):
         for ind, dt in enumerate(DTYPES):
-            w, v = eigh(self.testmats_a[ind], subset_by_value=[-2, 2])
+
+            a = _random_hermitian_matrix(20, dtype=dt)
+            w, v = eigh(a, subset_by_value=[-2, 2])
             assert_equal(v.shape[1], len(w))
             assert all((w > -2) & (w < 2))
 
-            w, v = eigh(self.testmats_a[ind],
-                        self.testmats_b[ind],
-                        subset_by_value=[-2, 2])
+            b = _random_hermitian_matrix(20, posdef=True, dtype=dt)
+            w, v = eigh(a, b, subset_by_value=[-2, 2])
             assert_equal(v.shape[1], len(w))
             assert all((w > -2) & (w < 2))
 
+    def test_eigh_integer(self):
+        a = array([[1, 2], [2, 7]])
+        b = array([[3, 1], [1, 5]])
+        w, z = eigh(a)
+        w, z = eigh(a, b)
 
-# Old eigh tests kept for backwards compatibility
-@pytest.mark.parametrize('eigvals', (None, (2, 4)))
-@pytest.mark.parametrize('turbo', (True, False))
-@pytest.mark.parametrize('lower', (True, False))
-@pytest.mark.parametrize('overwrite', (True, False))
-@pytest.mark.parametrize('dtype_', ('f', 'd', 'F', 'D'))
-@pytest.mark.parametrize('dim', (6,))
-def test_eigh(dim, dtype_, overwrite, lower, turbo, eigvals):
-    eigenhproblem_standard('ordinary', dim, dtype_, overwrite, lower, turbo,
-                           eigvals)
-    eigenhproblem_general('general ', dim, dtype_, overwrite, lower, turbo,
-                          eigvals)
+    def test_eigh_of_sparse(self):
+        # This tests the rejection of inputs that eigh cannot currently handle.
+        import scipy.sparse
+        a = scipy.sparse.identity(2).tocsc()
+        b = np.atleast_2d(a)
+        assert_raises(ValueError, eigh, a)
+        assert_raises(ValueError, eigh, b)
 
+    # Old eigh tests kept for backwards compatibility
+    @pytest.mark.parametrize('eigvals', (None, (2, 4)))
+    @pytest.mark.parametrize('turbo', (True, False))
+    @pytest.mark.parametrize('lower', (True, False))
+    @pytest.mark.parametrize('overwrite', (True, False))
+    @pytest.mark.parametrize('dtype_', ('f', 'd', 'F', 'D'))
+    @pytest.mark.parametrize('dim', (6,))
+    def test_eigh(self, dim, dtype_, overwrite, lower, turbo, eigvals):
+        atol = 1e-11 if dtype_ in ('dD') else 1e-4
+        a = _random_hermitian_matrix(n=dim, dtype=dtype_)
+        w, z = eigh(a, overwrite_a=overwrite, lower=lower, eigvals=eigvals)
+        assert_dtype_equal(z.dtype, dtype_)
+        w = w.astype(dtype_)
+        diag_ = diag(z.T.conj() @ a @ z).real
+        assert_allclose(diag_, w, rtol=0., atol=atol)
 
-def test_eigh_of_sparse():
-    # This tests the rejection of inputs that eigh cannot currently handle.
-    import scipy.sparse
-    a = scipy.sparse.identity(2).tocsc()
-    b = np.atleast_2d(a)
-    assert_raises(ValueError, eigh, a)
-    assert_raises(ValueError, eigh, b)
-
-
-def _complex_symrand(dim, dtype):
-    a1, a2 = symrand(dim), symrand(dim)
-    # add antisymmetric matrix as imag part
-    a = a1 + 1j*(triu(a2)-tril(a2))
-    return a.astype(dtype)
-
-
-def eigenhproblem_standard(desc, dim, dtype,
-                           overwrite, lower, turbo,
-                           eigenvalues):
-    """Solve a standard eigenvalue problem."""
-    if iscomplex(empty(1, dtype=dtype)):
-        a = _complex_symrand(dim, dtype)
-    else:
-        a = symrand(dim).astype(dtype)
-
-    if overwrite:
-        a_c = a.copy()
-    else:
-        a_c = a
-    w, z = eigh(a, overwrite_a=overwrite, lower=lower, eigvals=eigenvalues)
-    assert_dtype_equal(z.dtype, dtype)
-    w = w.astype(dtype)
-    diag_ = diag(dot(z.T.conj(), dot(a_c, z))).real
-    assert_array_almost_equal(diag_, w, DIGITS[dtype])
-
-
-def eigenhproblem_general(desc, dim, dtype,
-                          overwrite, lower, turbo,
-                          eigenvalues):
-    """Solve a generalized eigenvalue problem."""
-    if iscomplex(empty(1, dtype=dtype)):
-        a = _complex_symrand(dim, dtype)
-        b = _complex_symrand(dim, dtype)+diag([2.1]*dim).astype(dtype)
-    else:
-        a = symrand(dim).astype(dtype)
-        b = symrand(dim).astype(dtype)+diag([2.1]*dim).astype(dtype)
-
-    if overwrite:
-        a_c, b_c = a.copy(), b.copy()
-    else:
-        a_c, b_c = a, b
-
-    w, z = eigh(a, b, overwrite_a=overwrite, lower=lower,
-                overwrite_b=overwrite, turbo=turbo, eigvals=eigenvalues)
-    assert_dtype_equal(z.dtype, dtype)
-    w = w.astype(dtype)
-    diag1_ = diag(dot(z.T.conj(), dot(a_c, z))).real
-    assert_array_almost_equal(diag1_, w, DIGITS[dtype])
-    diag2_ = diag(dot(z.T.conj(), dot(b_c, z))).real
-    assert_array_almost_equal(diag2_, ones(diag2_.shape[0]), DIGITS[dtype])
-
-
-def test_eigh_integer():
-    a = array([[1,2],[2,7]])
-    b = array([[3,1],[1,5]])
-    w,z = eigh(a)
-    w,z = eigh(a,b)
+        a = _random_hermitian_matrix(n=dim, dtype=dtype_)
+        b = _random_hermitian_matrix(n=dim, dtype=dtype_, posdef=True)
+        w, z = eigh(a, b, overwrite_a=overwrite, lower=lower,
+                    overwrite_b=overwrite, turbo=turbo, eigvals=eigvals)
+        assert_dtype_equal(z.dtype, dtype_)
+        w = w.astype(dtype_)
+        diag1_ = diag(z.T.conj() @ a @ z).real
+        assert_allclose(diag1_, w, rtol=0., atol=atol)
+        diag2_ = diag(z.T.conj() @ b @ z).real
+        assert_allclose(diag2_, ones(diag2_.shape[0]), rtol=0., atol=atol)
 
 
 class TestLU(object):
