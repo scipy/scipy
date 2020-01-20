@@ -431,7 +431,6 @@ class TestNdimage:
                                    mode='nearest', output=output, origin=1)
                 assert_array_almost_equal(output, tcov)
 
-
     def test_gauss01(self):
         input = numpy.array([[1, 2, 3],
                              [2, 4, 6]], numpy.float32)
@@ -752,11 +751,14 @@ class TestNdimage:
                              [7, 6, 9, 3, 5],
                              [5, 8, 3, 7, 1]])
         footprint = [[1, 1, 1], [1, 1, 1]]
-        output = ndimage.minimum_filter(array, footprint=footprint,
-                                        mode=['reflect', 'reflect'])
+        output = ndimage.minimum_filter(array, footprint=footprint)
         assert_array_almost_equal([[2, 2, 1, 1, 1],
                                    [2, 2, 1, 1, 1],
                                    [5, 3, 3, 1, 1]], output)
+        # separable footprint should allow mode sequence
+        output = ndimage.minimum_filter(array, footprint=footprint,
+                                        mode=['reflect', 'reflect'])
+        assert_array_almost_equal(output2, output)
 
     def test_minimum_filter07(self):
         array = numpy.array([[3, 2, 5, 1, 4],
@@ -831,12 +833,14 @@ class TestNdimage:
                              [7, 6, 9, 3, 5],
                              [5, 8, 3, 7, 1]])
         footprint = [[1, 1, 1], [1, 1, 1]]
-        # separable footprint should allow mode sequence
-        output = ndimage.maximum_filter(array, footprint=footprint,
-                                        mode=['reflect', 'reflect'])
+        output = ndimage.maximum_filter(array, footprint=footprint)
         assert_array_almost_equal([[3, 5, 5, 5, 4],
                                    [7, 9, 9, 9, 5],
                                    [8, 9, 9, 9, 7]], output)
+        # separable footprint should allow mode sequence
+        output = ndimage.maximum_filter(array, footprint=footprint,
+                                        mode=['reflect', 'reflect'])
+        assert_array_almost_equal(output2, output)
 
     def test_maximum_filter07(self):
         array = numpy.array([[3, 2, 5, 1, 4],
@@ -1102,7 +1106,6 @@ class TestNdimage:
                 a, _filter_func, mode=['reflect', 'reflect'],
                 footprint=footprint, extra_arguments=(cf,),
                 extra_keywords={'total': cf.sum()})
-
 
     def test_extend01(self):
         array = numpy.array([1, 2, 3])
