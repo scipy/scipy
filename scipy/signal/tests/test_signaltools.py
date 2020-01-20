@@ -2705,7 +2705,10 @@ class TestUniqueRoots(object):
 
     def test_gh_4915(self):
         p = np.roots(np.convolve(np.ones(5), np.ones(5)))
-        true_roots = [-(-1)**(1/5), (-1)**(4/5), -(-1)**(3/5), (-1)**(2/5)]
+        true_roots = [-(-1 + 0j)**(1/5),
+                       (-1 + 0j)**(4/5),
+                       -(-1 + 0j)**(3/5),
+                       (-1 + 0j)**(2/5)]
 
         unique, multiplicity = unique_roots(p)
         unique = np.sort(unique)
