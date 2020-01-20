@@ -661,4 +661,3 @@ class TestCubicSpline(object):
 
         # periodic condition, y[-1] must be equal to y[0]:
         assert_raises(ValueError, CubicSpline, x, y, 0, 'periodic', True)
-

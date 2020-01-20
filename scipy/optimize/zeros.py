@@ -696,8 +696,12 @@ def brentq(f, a, b, args=(),
         Object containing information about the convergence.  In particular,
         ``r.converged`` is True if the routine converged.
 
-    See Also
-    --------
+    Notes
+    -----
+    `f` must be continuous.  f(a) and f(b) must have opposite signs.
+
+    Related functions fall into several classes:
+
     multivariate local optimizers
       `fmin`, `fmin_powell`, `fmin_cg`, `fmin_bfgs`, `fmin_ncg`
     nonlinear least squares minimizer
@@ -714,10 +718,6 @@ def brentq(f, a, b, args=(),
       `brenth`, `ridder`, `bisect`, `newton`
     scalar fixed-point finder
       `fixed_point`
-
-    Notes
-    -----
-    `f` must be continuous.  f(a) and f(b) must have opposite signs.
 
     References
     ----------

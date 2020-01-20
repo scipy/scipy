@@ -16,7 +16,7 @@ jobs:
            docker run -v $(pwd):/scipy i386/ubuntu:bionic /bin/bash -c "cd scipy && \
            apt-get -y update && \
            apt-get -y install python3.6-dev python3-pip pkg-config libpng-dev libjpeg8-dev libfreetype6-dev && \
-           pip3 install setuptools wheel 'numpy<1.17' cython==0.29 pytest pytest-timeout pytest-xdist pytest-env pytest-faulthandler Pillow mpmath matplotlib && \
+           pip3 install setuptools wheel 'numpy<1.17' cython==0.29 pytest pytest-timeout pytest-xdist pytest-env Pillow mpmath matplotlib && \
            apt-get -y install gfortran-5 wget && \
            cd .. && \
            mkdir openblas && cd openblas && \
@@ -105,7 +105,7 @@ jobs:
       choco install -y mingw --force --version=6.4.0
     displayName: 'Install 64-bit mingw for 64-bit builds'
     condition: eq(variables['BITS'], 64)
-  - bash: python -m pip install 'numpy<1.17' cython==0.28.5 pytest pytest-timeout pytest-xdist pytest-env pytest-faulthandler Pillow mpmath matplotlib
+  - bash: python -m pip install 'numpy<1.17' cython==0.28.5 pytest pytest-timeout pytest-xdist pytest-env Pillow mpmath matplotlib
     displayName: 'Install dependencies'
   - powershell: |
       If ($(BITS) -eq 32) {

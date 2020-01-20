@@ -21,7 +21,10 @@ jobs:
           name: install Debian dependencies
           command: |
             sudo apt-get update
-            sudo apt-get install libatlas-dev libatlas-base-dev liblapack-dev gfortran libgmp-dev libmpfr-dev libfreetype6-dev libpng-dev zlib1g zlib1g-dev texlive-fonts-recommended texlive-latex-recommended texlive-latex-extra texlive-generic-extra latexmk texlive-xetex
+            sudo apt-get install libatlas-dev libatlas-base-dev liblapack-dev gfortran libgmp-dev libmpfr-dev libfreetype6-dev libpng-dev zlib1g zlib1g-dev texlive-fonts-recommended texlive-latex-recommended texlive-latex-extra texlive-generic-extra latexmk texlive-xetex fonts-freefont-otf
+            sudo sh -c 'echo "deb http://ftp.de.debian.org/debian sid main" >> /etc/apt/sources.list'
+            sudo apt-get update
+            sudo apt-get install xindy
 
       - run:
           name: setup Python venv
@@ -30,7 +33,8 @@ jobs:
             . venv/bin/activate
             pip install --install-option="--no-cython-compile" cython
             pip install numpy
-            pip install nose mpmath argparse Pillow codecov matplotlib Sphinx==1.7.2
+            pip install nose mpmath argparse Pillow codecov matplotlib "Sphinx<2.1"
+            pip install pybind11
 
       - run:
           name: build docs

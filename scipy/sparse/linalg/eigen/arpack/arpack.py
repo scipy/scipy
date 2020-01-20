@@ -852,22 +852,27 @@ class _UnsymmetricArpackParams(_ArpackParams):
                 z = z[:, :nreturned]
             else:
                 # we got one extra eigenvalue (likely a cc pair, but which?)
-                # cut at approx precision for sorting
-                rd = np.round(d, decimals=_ndigits[self.tp])
+                if self.mode in (1, 2):
+                    rd = d
+                elif self.mode in (3, 4):
+                    rd = 1 / (d - self.sigma)
+
                 if self.which in ['LR', 'SR']:
                     ind = np.argsort(rd.real)
                 elif self.which in ['LI', 'SI']:
                     # for LI,SI ARPACK returns largest,smallest
-                    # abs(imaginary) why?
+                    # abs(imaginary) (complex pairs come together)
                     ind = np.argsort(abs(rd.imag))
                 else:
                     ind = np.argsort(abs(rd))
+
                 if self.which in ['LR', 'LM', 'LI']:
-                    d = d[ind[-k:]]
-                    z = z[:, ind[-k:]]
-                if self.which in ['SR', 'SM', 'SI']:
-                    d = d[ind[:k]]
-                    z = z[:, ind[:k]]
+                    ind = ind[-k:][::-1]
+                elif self.which in ['SR', 'SM', 'SI']:
+                    ind = ind[:k]
+
+                d = d[ind]
+                z = z[:, ind]
         else:
             # complex is so much simpler...
             d, z, ierr =\
@@ -1026,20 +1031,28 @@ class IterOpInv(LinearOperator):
         return self.OP.dtype
 
 
-def get_inv_matvec(M, symmetric=False, tol=0):
+def _fast_spmatrix_to_csc(A, hermitian=False):
+    """Convert sparse matrix to CSC (by transposing, if possible)"""
+    if (isspmatrix_csr(A) and hermitian
+            and not np.issubdtype(A.dtype, np.complexfloating)):
+        return A.T
+    else:
+        return A.tocsc()
+
+
+def get_inv_matvec(M, hermitian=False, tol=0):
     if isdense(M):
         return LuInv(M).matvec
     elif isspmatrix(M):
-        if isspmatrix_csr(M) and symmetric:
-            M = M.T
+        M = _fast_spmatrix_to_csc(M, hermitian=hermitian)
         return SpLuInv(M).matvec
     else:
         return IterInv(M, tol=tol).matvec
 
 
-def get_OPinv_matvec(A, M, sigma, symmetric=False, tol=0):
+def get_OPinv_matvec(A, M, sigma, hermitian=False, tol=0):
     if sigma == 0:
-        return get_inv_matvec(A, symmetric=symmetric, tol=tol)
+        return get_inv_matvec(A, hermitian=hermitian, tol=tol)
 
     if M is None:
         #M is the identity matrix
@@ -1053,9 +1066,8 @@ def get_OPinv_matvec(A, M, sigma, symmetric=False, tol=0):
             return LuInv(A).matvec
         elif isspmatrix(A):
             A = A - sigma * eye(A.shape[0])
-            if symmetric and isspmatrix_csr(A):
-                A = A.T
-            return SpLuInv(A.tocsc()).matvec
+            A = _fast_spmatrix_to_csc(A, hermitian=hermitian)
+            return SpLuInv(A).matvec
         else:
             return IterOpInv(_aslinearoperator_with_dtype(A),
                               M, sigma, tol=tol).matvec
@@ -1069,9 +1081,8 @@ def get_OPinv_matvec(A, M, sigma, symmetric=False, tol=0):
             return LuInv(A - sigma * M).matvec
         else:
             OP = A - sigma * M
-            if symmetric and isspmatrix_csr(OP):
-                OP = OP.T
-            return SpLuInv(OP.tocsc()).matvec
+            OP = _fast_spmatrix_to_csc(OP, hermitian=hermitian)
+            return SpLuInv(OP).matvec
 
 
 # ARPACK is not threadsafe or reentrant (SAVE variables), so we need a
@@ -1288,7 +1299,7 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
             #general eigenvalue problem
             mode = 2
             if Minv is None:
-                Minv_matvec = get_inv_matvec(M, symmetric=True, tol=tol)
+                Minv_matvec = get_inv_matvec(M, hermitian=True, tol=tol)
             else:
                 Minv = _aslinearoperator_with_dtype(Minv)
                 Minv_matvec = Minv.matvec
@@ -1314,7 +1325,7 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
             raise ValueError("Minv should not be specified when sigma is")
         if OPinv is None:
             Minv_matvec = get_OPinv_matvec(A, M, sigma,
-                                           symmetric=False, tol=tol)
+                                           hermitian=False, tol=tol)
         else:
             OPinv = _aslinearoperator_with_dtype(OPinv)
             Minv_matvec = OPinv.matvec
@@ -1603,7 +1614,7 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
             #general eigenvalue problem
             mode = 2
             if Minv is None:
-                Minv_matvec = get_inv_matvec(M, symmetric=True, tol=tol)
+                Minv_matvec = get_inv_matvec(M, hermitian=True, tol=tol)
             else:
                 Minv = _aslinearoperator_with_dtype(Minv)
                 Minv_matvec = Minv.matvec
@@ -1619,7 +1630,7 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
             matvec = None
             if OPinv is None:
                 Minv_matvec = get_OPinv_matvec(A, M, sigma,
-                                               symmetric=True, tol=tol)
+                                               hermitian=True, tol=tol)
             else:
                 OPinv = _aslinearoperator_with_dtype(OPinv)
                 Minv_matvec = OPinv.matvec
@@ -1634,7 +1645,7 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
             mode = 4
             if OPinv is None:
                 Minv_matvec = get_OPinv_matvec(A, M, sigma,
-                                               symmetric=True, tol=tol)
+                                               hermitian=True, tol=tol)
             else:
                 Minv_matvec = _aslinearoperator_with_dtype(OPinv).matvec
             matvec = _aslinearoperator_with_dtype(A).matvec
@@ -1646,7 +1657,7 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
             matvec = _aslinearoperator_with_dtype(A).matvec
             if OPinv is None:
                 Minv_matvec = get_OPinv_matvec(A, M, sigma,
-                                               symmetric=True, tol=tol)
+                                               hermitian=True, tol=tol)
             else:
                 Minv_matvec = _aslinearoperator_with_dtype(OPinv).matvec
             if M is None:

@@ -11,6 +11,19 @@ import inspect
 
 import numpy as np
 
+def _broadcast_arrays(a, b):
+    """
+    Same as np.broadcast_arrays(a, b) but old writeability rules.
+    Numpy >= 1.17.0 transitions broadcast_arrays to return
+    read-only arrays. Set writeability explicitly to avoid warnings.
+    Retain the old writeability rules, as our Cython code assumes
+    the old behavior.
+    """
+    # backport based on gh-10379
+    x, y = np.broadcast_arrays(a, b)
+    x.flags.writeable = a.flags.writeable
+    y.flags.writeable = b.flags.writeable
+    return x, y
 
 def _valarray(shape, value=np.nan, typecode=None):
     """Return an array of all value.

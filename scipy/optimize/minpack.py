@@ -129,7 +129,7 @@ def fsolve(func, x0, args=(), fprime=None, full_output=0,
     See Also
     --------
     root : Interface to root finding algorithms for multivariate
-    functions. See the 'hybr' `method` in particular.
+           functions. See the ``method=='hybr'`` in particular.
 
     Notes
     -----
@@ -711,6 +711,10 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
             xdata = np.asarray_chkfinite(xdata)
         else:
             xdata = np.asarray(xdata)
+
+    # optimization may produce garbage for float32 inputs, cast them to float64
+    xdata = xdata.astype(float)
+    ydata = ydata.astype(float)
 
     # Determine type of sigma
     if sigma is not None:

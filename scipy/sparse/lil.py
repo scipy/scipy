@@ -11,7 +11,14 @@ from bisect import bisect_left
 
 import numpy as np
 
+from scipy._lib._version import NumpyVersion
 from scipy._lib.six import xrange, zip
+
+if NumpyVersion(np.__version__) >= '1.17.0':
+    from scipy._lib._util import _broadcast_arrays
+else:
+    from numpy import broadcast_arrays as _broadcast_arrays
+
 from .base import spmatrix, isspmatrix
 from .sputils import (getdtype, isshape, isscalarlike, IndexMixin,
                       upcast_scalar, get_index_dtype, isintlike, check_shape,
@@ -344,7 +351,7 @@ class lil_matrix(spmatrix, IndexMixin):
 
         # Make x and i into the same shape
         x = np.asarray(x, dtype=self.dtype)
-        x, _ = np.broadcast_arrays(x, i)
+        x, _ = _broadcast_arrays(x, i)
 
         if x.shape != i.shape:
             raise ValueError("shape mismatch in assignment")

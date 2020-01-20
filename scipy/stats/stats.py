@@ -3010,10 +3010,48 @@ def pearsonr(x, y):
     where :math:`m_x` is the mean of the vector :math:`x` and :math:`m_y` is
     the mean of the vector :math:`y`.
 
+    Under the assumption that x and y are drawn from independent normal
+    distributions (so the population correlation coefficient is 0), the
+    probability density function of the sample correlation coefficient r
+    is ([1]_, [2]_)::
+
+               (1 - r**2)**(n/2 - 2)
+        f(r) = ---------------------
+                  B(1/2, n/2 - 1)
+
+    where n is the number of samples, and B is the beta function.  This
+    is sometimes referred to as the exact distribution of r.  This is
+    the distribution that is used in `pearsonr` to compute the p-value.
+    The distribution is a beta distribution on the interval [-1, 1],
+    with equal shape parameters a = b = n/2 - 1.  In terms of SciPy's
+    implementation of the beta distribution, the distribution of r is::
+
+        dist = scipy.stats.beta(n/2 - 1, n/2 - 1, loc=-1, scale=2)
+
+    The p-value returned by `pearsonr` is a two-sided p-value.  For a
+    given sample with correlation coefficient r, the p-value is
+    the probability that abs(r') of a random sample x' and y' drawn from
+    the population with zero correlation would be greater than or equal
+    to abs(r).  In terms of the object ``dist`` shown above, the p-value
+    for a given r and length n can be computed as::
+
+        p = 2*dist.cdf(-abs(r))
+
+    When n is 2, the above continuous distribution is not well-defined.
+    One can interpret the limit of the beta distribution as the shape
+    parameters a and b approach a = b = 0 as a discrete distribution with
+    equal probability masses at r = 1 and r = -1.  More directly, one
+    can observe that, given the data x = [x1, x2] and y = [y1, y2], and
+    assuming x1 != x2 and y1 != y2, the only possible values for r are 1
+    and -1.  Because abs(r') for any sample x' and y' with length 2 will
+    be 1, the two-sided p-value for a sample of length 2 is always 1.
 
     References
     ----------
-    http://www.statsoft.com/textbook/glosp.html#Pearson%20Correlation
+    .. [1] "Pearson correlation coefficient", Wikipedia,
+           https://en.wikipedia.org/wiki/Pearson_correlation_coefficient
+    .. [2] Student, "Probable error of a correlation coefficient",
+           Biometrika, Volume 6, Issue 2-3, 1 September 1908, pp. 302-310.
 
     Examples
     --------

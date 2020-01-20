@@ -40,9 +40,9 @@ class LowLevelCallable(tuple):
     Attributes
     ----------
     function
-        Callback function given
+        Callback function given.
     user_data
-        User data given
+        User data given.
     signature
         Signature of the function.
 
