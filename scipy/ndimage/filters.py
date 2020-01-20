@@ -1172,11 +1172,11 @@ def _rank_filter(input, rank, size=None, footprint=None, output=None,
                               origins)
     else:
         output = _ni_support._get_output(output, input)
-        mode = _ni_support._extend_mode_to_code(mode)
         if hasattr(mode, '__iter__') and not isinstance(mode, str):
             raise RuntimeError(
                 "A sequence of modes is not supported by non-separable rank "
                 "filters")
+        mode = _ni_support._extend_mode_to_code(mode)
         _nd_image.rank_filter(input, rank, footprint, output, mode, cval,
                               origins)
         return output
