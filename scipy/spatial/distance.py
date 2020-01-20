@@ -1416,6 +1416,7 @@ def rogerstanimoto(u, v, w=None):
     `u` and `v`, is defined as
 
     .. math::
+    
        \\frac{R}
             {c_{TT} + c_{FF} + R}
 
