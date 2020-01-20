@@ -7386,10 +7386,9 @@ class truncnorm_gen(rv_continuous):
             return _truncnorm_pdf_scalar(x, a.item(), b.item())
         it = np.nditer([x, a, b, None], [],
                     [['readonly'], ['readonly'], ['readonly'], ['writeonly','allocate']])
-        with it:
-            for (_x, _a, _b, _ld) in it:
-                _ld[...] = _truncnorm_pdf_scalar(_x, _a, _b)
-            return it.operands[3]
+        for (_x, _a, _b, _ld) in it:
+            _ld[...] = _truncnorm_pdf_scalar(_x, _a, _b)
+        return it.operands[3]
 
     def _logpdf(self, x, a, b):
         if np.isscalar(a) and np.isscalar(b):
@@ -7399,10 +7398,9 @@ class truncnorm_gen(rv_continuous):
             return _truncnorm_logpdf_scalar(x, a.item(), b.item())
         it = np.nditer([x, a, b, None], [],
                     [['readonly'], ['readonly'], ['readonly'], ['writeonly','allocate']])
-        with it:
-            for (_x, _a, _b, _ld) in it:
-                _ld[...] = _truncnorm_logpdf_scalar(_x, _a, _b)
-            return it.operands[3]
+        for (_x, _a, _b, _ld) in it:
+            _ld[...] = _truncnorm_logpdf_scalar(_x, _a, _b)
+        return it.operands[3]
 
     def _cdf(self, x, a, b):
         if np.isscalar(a) and np.isscalar(b):
@@ -7413,10 +7411,9 @@ class truncnorm_gen(rv_continuous):
         out = None
         it = np.nditer([x, a, b, out], [],
                        [['readonly'], ['readonly'], ['readonly'], ['writeonly', 'allocate']])
-        with it:
-            for (_x, _a, _b, _p) in it:
-                _p[...] = _truncnorm_cdf_scalar(_x, _a, _b)
-            return it.operands[3]
+        for (_x, _a, _b, _p) in it:
+            _p[...] = _truncnorm_cdf_scalar(_x, _a, _b)
+        return it.operands[3]
 
     def _logcdf(self, x, a, b):
         if np.isscalar(a) and np.isscalar(b):
@@ -7426,10 +7423,9 @@ class truncnorm_gen(rv_continuous):
             return _truncnorm_logcdf_scalar(x, a.item(), b.item())
         it = np.nditer([x, a, b, None], [],
                        [['readonly'], ['readonly'], ['readonly'], ['writeonly', 'allocate']])
-        with it:
-            for (_x, _a, _b, _p) in it:
-                _p[...] = _truncnorm_logcdf_scalar(_x, _a, _b)
-            return it.operands[3]
+        for (_x, _a, _b, _p) in it:
+            _p[...] = _truncnorm_logcdf_scalar(_x, _a, _b)
+        return it.operands[3]
 
     def _sf(self, x, a, b):
         if np.isscalar(a) and np.isscalar(b):
@@ -7440,10 +7436,9 @@ class truncnorm_gen(rv_continuous):
         out = None
         it = np.nditer([x, a, b, out], [],
                        [['readonly'], ['readonly'], ['readonly'], ['writeonly', 'allocate']])
-        with it:
-            for (_x, _a, _b, _p) in it:
-                _p[...] = _truncnorm_sf_scalar(_x, _a, _b)
-            return it.operands[3]
+        for (_x, _a, _b, _p) in it:
+            _p[...] = _truncnorm_sf_scalar(_x, _a, _b)
+        return it.operands[3]
 
     def _logsf(self, x, a, b):
         if np.isscalar(a) and np.isscalar(b):
@@ -7454,10 +7449,9 @@ class truncnorm_gen(rv_continuous):
         out = None
         it = np.nditer([x, a, b, out], [],
                        [['readonly'], ['readonly'], ['readonly'], ['writeonly', 'allocate']])
-        with it:
-            for (_x, _a, _b, _p) in it:
-                _p[...] = _truncnorm_logsf_scalar(_x, _a, _b)
-            return it.operands[3]
+        for (_x, _a, _b, _p) in it:
+            _p[...] = _truncnorm_logsf_scalar(_x, _a, _b)
+        return it.operands[3]
 
     def _ppf(self, q, a, b):
         if np.isscalar(a) and np.isscalar(b):
@@ -7469,10 +7463,9 @@ class truncnorm_gen(rv_continuous):
         out = None
         it = np.nditer([q, a, b, out], [],
                        [['readonly'], ['readonly'], ['readonly'], ['writeonly', 'allocate']])
-        with it:
-            for (_q, _a, _b, _x) in it:
-                _x[...] = _truncnorm_ppf_scalar(_q, _a, _b)
-            return it.operands[3]
+        for (_q, _a, _b, _x) in it:
+            _x[...] = _truncnorm_ppf_scalar(_q, _a, _b)
+        return it.operands[3]
 
     def _munp(self, n, a, b):
         def n_th_moment(n, a, b):
