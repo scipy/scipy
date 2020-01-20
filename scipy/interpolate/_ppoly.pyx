@@ -533,11 +533,8 @@ def real_roots(double[:,:,::1] c, double[::1] x, double y, bint report_discont,
                     wr[i] += x[interval]
                     if interval == 0 and extrapolate:
                         # Half-open to the left/right.
-                        # Might also be the only interval, in which case there is
-                        # no limitation.
-                        if (interval != c.shape[1] - 1 and
-                            (ascending and not wr[i] <= x[interval+1] or
-                             not ascending and not wr[i] >= x[interval + 1])):
+                        if (ascending and not wr[i] <= x[interval+1] or
+                            not ascending and not wr[i] >= x[interval + 1]):
                                 continue
                     elif interval == c.shape[1] - 1 and extrapolate:
                         # Half-open to the right/left.
