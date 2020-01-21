@@ -20,6 +20,7 @@ import scipy.special as sc
 import scipy.special._ufuncs as scu
 from scipy._lib._util import _lazyselect, _lazywhere
 from . import _stats
+from ._rvs_sampling import rvs_ratio_uniforms
 from ._tukeylambda_stats import (tukeylambda_variance as _tlvar,
                                  tukeylambda_kurtosis as _tlkurt)
 from ._distn_infrastructure import (get_distribution_names, _kurtosis,
@@ -8034,26 +8035,14 @@ class argus_gen(rv_continuous):
     %(example)s
     """
     def _pdf(self, x, chi):
-        """
-        Return PDF of the argus function
-
-        argus.pdf(x, chi) = chi**3 / (sqrt(2*pi) * Psi(chi)) * x *
-                            sqrt(1-x**2) * exp(- 0.5 * chi**2 * (1 - x**2))
-        """
         y = 1.0 - x**2
         A = chi**3 / (_norm_pdf_C * _argus_phi(chi))
         return A * x * np.sqrt(y) * np.exp(-chi**2 * y / 2)
 
     def _cdf(self, x, chi):
-        """
-        Return CDF of the argus function
-        """
         return 1.0 - self._sf(x, chi)
 
     def _sf(self, x, chi):
-        """
-        Return survival function of the argus function
-        """
         return _argus_phi(chi * np.sqrt(1 - x**2)) / _argus_phi(chi)
 
     def _rvs(self, chi):
@@ -8079,6 +8068,7 @@ class argus_gen(rv_continuous):
         return out
 
     def _rvs_scalar(self, chi, numsamples=None):
+        # if chi <= 2.611:
         # use rejection method, see Devroye:
         # Non-Uniform Random Variate Generation, 1986, section II.3.2.
         # write: self.pdf = c * g(x) * h(x), where
@@ -8098,31 +8088,59 @@ class argus_gen(rv_continuous):
         # G_inv(y) = sqrt(2 * log(1 + (exp(chi**2 / 2) - 1) * y) / chi**2)
         # to avoid an overflow of exp(chi**2 / 2), it is convenient to write
         # G_inv(y) = sqrt(1 + 2 * log(exp(-chi**2 / 2) * (1-y) + y) / chi**2)
+        #
+        # if chi > 2.611:
+        # use ratio of uniforms method applied to a transformed variable of X
+        # (X is ARGUS with parameter chi):
+        # Y = chi * sqrt(1 - X**2) has density proportional to
+        # u**2 * exp(-u**2 / 2) on [0, chi] (Maxwell distribution conditioned
+        # on [0, chi]). Apply ratio of uniforms to this density to generate
+        # samples of Y and convert back to X
+        #
+        # The expected number of iterations using the rejection method
+        # increases with increasing chi, whereas the expected number of
+        # iterations using the ratio of uniforms method decreases with
+        # increasing chi. The crossover occurs where
+        # chi*(1 - exp(-0.5*chi**2)) = 8*sqrt(2)*exp(-1.5) => chi ~ 2.611
+        # Switching algorithms at chi=2.611 means that the expected number of
+        # iterations is always below 2.2.
 
-        size1d = tuple(np.atleast_1d(numsamples))
-        N = int(np.prod(size1d))
-        x = np.zeros(N)
-        echi = np.exp(-chi**2 / 2)
-        simulated = 0
-        # apply rejection method
-        while simulated < N:
-            k = N - simulated
-            u = self._random_state.random_sample(size=k)
-            v = self._random_state.random_sample(size=k)
-            # acceptance condition: u <= h(G_inv(v)). This simplifies to
-            z = 2 * np.log(echi * (1 - v) + v) / chi**2
-            accept = (u**2 + z <= 0)
-            num_accept = np.sum(accept)
-            if num_accept > 0:
-                # rvs follow a distribution with density g: rvs = G_inv(v)
-                rvs = np.sqrt(1 + z[accept])
-                x[simulated:(simulated + num_accept)] = rvs
-                simulated += num_accept
+        if chi <= 2.611:
+            # use rejection method
+            size1d = tuple(np.atleast_1d(numsamples))
+            N = int(np.prod(size1d))
+            x = np.zeros(N)
+            echi = np.exp(-chi**2 / 2)
+            simulated = 0
+            while simulated < N:
+                k = N - simulated
+                u = self._random_state.uniform(size=k)
+                v = self._random_state.uniform(size=k)
+                # acceptance condition: u <= h(G_inv(v)). This simplifies to
+                z = 2 * np.log(echi * (1 - v) + v) / chi**2
+                accept = (u**2 + z <= 0)
+                num_accept = np.sum(accept)
+                if num_accept > 0:
+                    # rvs follow a distribution with density g: rvs = G_inv(v)
+                    rvs = np.sqrt(1 + z[accept])
+                    x[simulated:(simulated + num_accept)] = rvs
+                    simulated += num_accept
 
-        if self._size == ():
-            # return scalar if rvs() is called without size specified
-            return x[0]
-        return np.reshape(x, size1d)
+            if self._size == ():
+                # return scalar if rvs() is called without size specified
+                return x[0]
+            return np.reshape(x, size1d)
+        else:
+            # use ratio of uniforms method
+            def f(x):
+                return np.where((x >= 0) & (x <= chi),
+                                np.exp(2*np.log(x) - x**2/2), 0)
+
+            umax = np.sqrt(2) / np.exp(0.5)
+            vmax = 4 / np.exp(1)
+            z = rvs_ratio_uniforms(f, umax, 0, vmax, size=numsamples,
+                                   random_state=self._random_state)
+            return np.sqrt(1 - z*z / chi**2)
 
     def _stats(self, chi):
         chi2 = chi**2

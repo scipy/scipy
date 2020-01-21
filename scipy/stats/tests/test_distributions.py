@@ -4147,25 +4147,6 @@ def test_crystalball_function_moments():
     assert_allclose(expected_5th_moment, calculated_5th_moment, rtol=0.001)
 
 
-def test_argus_function():
-    # There is no usable reference implementation.
-    # (RootFit implementation returns unreasonable results which are not
-    # normalized correctly.)
-    # Instead we do some tests if the distribution behaves as expected for
-    # different shapes and scales.
-    for i in range(1, 10):
-        for j in range(1, 10):
-            assert_equal(stats.argus.pdf(i + 0.001, chi=j, scale=i), 0.0)
-            assert_(stats.argus.pdf(i - 0.001, chi=j, scale=i) > 0.0)
-            assert_equal(stats.argus.pdf(-0.001, chi=j, scale=i), 0.0)
-            assert_(stats.argus.pdf(+0.001, chi=j, scale=i) > 0.0)
-
-    for i in range(1, 10):
-        assert_equal(stats.argus.cdf(1.0, chi=i), 1.0)
-        assert_equal(stats.argus.cdf(1.0, chi=i),
-                     1.0 - stats.argus.sf(1.0, chi=i))
-
-
 def test_ncf_variance():
     # Regression test for gh-10658 (incorrect variance formula for ncf).
     # The correct value of ncf.var(2, 6, 4), 42.75, can be verified with, for
@@ -4283,8 +4264,14 @@ def test_loguniform():
     assert np.abs(np.median(vals) - 1000) <= 10
 
 
-def test_argus_rvs_large_chi():
-    np.random.seed(325)
-    # test that the rejection algorithm can handle large values of chi
-    x = stats.argus.rvs(50, size=500)
-    assert_almost_equal(stats.argus(50).mean(), x.mean(), decimal=4)
+class TestArgus(object):
+    def test_argus_rvs_large_chi(self):
+        # test that the algorithm can handle large values of chi
+        x = stats.argus.rvs(50, size=500, random_state=325)
+        assert_almost_equal(stats.argus(50).mean(), x.mean(), decimal=4)
+
+    def test_argus_rvs_ratio_uniforms(self):
+        # test that the ratio of uniforms algorithms works for chi > 2.611
+        x = stats.argus.rvs(3.5, size=1500, random_state=1535)
+        assert_almost_equal(stats.argus(3.5).mean(), x.mean(), decimal=3)
+        assert_almost_equal(stats.argus(3.5).std(), x.std(), decimal=3)
