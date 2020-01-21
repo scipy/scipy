@@ -142,7 +142,7 @@ class TestDualAnnealing:
         assert_equal(res1.x, res3.x)
 
     def test_rand_gen(self):
-        # check that np.random.Generator can be used (1.17 and above)
+        # check that np.random.Generator can be used (numpy >= 1.17)
         try:
             # obtain a np.random.Generator object
             rng = np.random.default_rng(1)

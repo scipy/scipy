@@ -301,6 +301,27 @@ class TestBasinHopping(object):
                      niter=10, callback=callback2, seed=10)
         assert_equal(np.array(f_1), np.array(f_2))
 
+    def test_random_gen(self):
+        # check that np.random.Generator can be used (numpy >= 1.17)
+        try:
+            # obtain a np.random.Generator object
+            rng = np.random.default_rng(1)
+        except AttributeError:
+            # only available in numpy >= 1.17
+            return
+
+        minimizer_kwargs = {"method": "L-BFGS-B", "jac": True}
+
+        res1 = basinhopping(func2d, [1.0, 1.0],
+                            minimizer_kwargs=minimizer_kwargs,
+                            niter=10, seed=rng)
+
+        rng = np.random.default_rng(1)
+        res2 = basinhopping(func2d, [1.0, 1.0],
+                            minimizer_kwargs=minimizer_kwargs,
+                            niter=10, seed=rng)
+        assert_equal(res1.x, res2.x)
+
     def test_monotonic_basin_hopping(self):
         # test 1-D minimizations with gradient and T=0
         i = 0
