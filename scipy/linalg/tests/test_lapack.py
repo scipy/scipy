@@ -1654,3 +1654,95 @@ def test_getc2_gesc2():
         else:
             assert_array_almost_equal(desired_cplx.astype(dtype),
                                       x/scale, decimal=4)
+def generate_random_dtype_array(shape, dtype):
+    # generates a random matrix of desired data type of shape
+    if type(shape) != tuple:
+        # in case shape is not passed in as a tuple
+        shape = (shape,)
+    if dtype in COMPLEX_DTYPES:
+        return (np.random.rand(*shape)
+                + np.random.rand(*shape)*1.0j).astype(dtype)
+    return np.random.rand(*shape).astype(dtype)
+         
+
+@pytest.mark.parametrize("dtype", DTYPES)
+def test_pttrf_pttrs(dtype):
+    #%%
+    np.random.seed(42)
+    #import scipy
+    dtype = DTYPES[2]
+    # set test tolerance appropriate for dtype
+    rtol = 250*np.finfo(dtype).eps
+    atol = np.finfo(dtype).eps
+    # n is the length diagonal of A
+    n = 3
+    # create diagonals according to size and dtype
+    
+    d = generate_random_dtype_array(n, dtype)
+    e = generate_random_dtype_array(n-1, dtype)
+
+    if dtype in COMPLEX_DTYPES:
+        e = e - 20j
+    else:
+        d = d + 2
+    e = generate_random_dtype_array(n-1, dtype)
+    # cast diagonals together into matrix
+    A = np.diag(d) + np.diag(e, -1) + np.diag(e, 1)
+
+    diag_cpy = [d.copy(), e]
+    
+    pttrf = get_lapack_funcs('pttrf', dtype=dtype)
+    
+    _d, _e, info = pttrf(d, e)
+    
+    # test to assure that the inputs of ?pttrf are unmodified
+    assert_array_equal(d, diag_cpy[0])
+    assert_array_equal(e, diag_cpy[1])
+    
+    # test that the factors from pttrf can be recombined to make A
+    L = np.diag(np.ones(n)) + np.diag(_e, -1)
+    D = np.diag(_d)
+    assert_allclose(A, L@D@(np.transpose(L)), rtol=rtol, atol=atol)
+    
+    # generate random solution x
+    x = generate_random_dtype_array(n, dtype)
+    # determine accompanying b to get soln x
+    b = A@x
+    
+    # determine _x from pttrs
+    pttrs = get_lapack_funcs('pttrs', dtype=dtype)
+    _x, info  = pttrs(_d, _e, b)
+    
+    # test that _x from pttrs matches the expected x
+    assert_allclose(x, _x, rtol=rtol, atol=atol)
+    
+    #%%
+    
+@pytest.mark.parametrize(("d, e, d_expect, e_expect, b, x_expect"),[
+                         (np.array([4, 10, 29, 25, 5]),
+                         np.array([-2, -6, 15, 8]),
+                         np.array([4, 9, 25, 16, 1]),
+                         np.array([-.5, -.6667, .6, .5]),
+                         np.array([[6,10],[9,4], [2,9],[14, 65], [7,23]]),
+                         np.array([[2.5,2],[2,-1], [1,-3],[-1, 6], [3,-5]])
+                         ),(
+                         np.array([16, 41, 46, 21]),
+                         np.array([16 + 16j, 19 - 9j, 1 - 4j]),
+                         np.array([16, 9, 1, 4]),
+                         np.array([1+1j, 2-1j, 1-4j]),
+                         np.array([[64+16j,-16-32j],[93+62j, 61-66j], [78-80j,71-74j],[14-27j, 35+15j]]),
+                         np.array([[2-1j, -3-2j], [1+1j, 1+1j], [1-2j], [1-2j], [1-1j, 2+1j]])
+                         )])
+def test_pttrf_pttrs_NAG(d, e, d_expect, e_expect, b, x_expect):
+    # NAG examples provide 4 decimals.
+    rtol = 1e-4
+    pttrf = get_lapack_funcs('pttrf', dtype=e[0])
+    A = np.diag(d) + np.diag(e, -1) + np.diag(e, 1)
+    _d, _e, info = pttrf(d, e)
+    assert_allclose(_d, d_expect,  rtol=rtol)
+    assert_allclose(_e, e_expect,  rtol=rtol)
+    
+    pttrs = get_lapack_funcs('pttrs', dtype=e[0])
+    _x, info  = pttrs(_d, _e, b)
+    assert_allclose(_x, x_expect,  rtol=rtol)
+    
