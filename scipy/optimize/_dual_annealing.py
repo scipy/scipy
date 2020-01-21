@@ -80,8 +80,7 @@ class VisitingDistribution(object):
         if step < dim:
             # Changing all coordinates with a new visiting value
             visits = self.visit_fn(temperature, dim)
-            upper_sample = self.rand_gen.random()
-            lower_sample = self.rand_gen.random()
+            upper_sample, lower_sample = self.rand_gen.uniform(size=2)
             visits[visits > self.TAIL_LIMIT] = self.TAIL_LIMIT * upper_sample
             visits[visits < -self.TAIL_LIMIT] = -self.TAIL_LIMIT * lower_sample
             x_visit = visits + x
@@ -96,9 +95,9 @@ class VisitingDistribution(object):
             x_visit = np.copy(x)
             visit = self.visit_fn(temperature, 1)
             if visit > self.TAIL_LIMIT:
-                visit = self.TAIL_LIMIT * self.rand_gen.random()
+                visit = self.TAIL_LIMIT * self.rand_gen.uniform()
             elif visit < -self.TAIL_LIMIT:
-                visit = -self.TAIL_LIMIT * self.rand_gen.random()
+                visit = -self.TAIL_LIMIT * self.rand_gen.uniform()
             index = step - dim
             x_visit[index] = visit + x[index]
             a = x_visit[index] - self.lower[index]
@@ -164,8 +163,8 @@ class EnergyState(object):
         provided, a random location within the bounds is generated.
         """
         if x0 is None:
-            self.current_location = self.lower + rand_gen.random(
-                len(self.lower)) * (self.upper - self.lower)
+            self.current_location = rand_gen.uniform(self.lower, self.upper,
+                                                     size=len(self.lower))
         else:
             self.current_location = np.copy(x0)
         init_error = True
@@ -184,8 +183,9 @@ class EnergyState(object):
                         'trying new random parameters'
                     )
                     raise ValueError(message)
-                self.current_location = self.lower + rand_gen.random(
-                    self.lower.size) * (self.upper - self.lower)
+                self.current_location = rand_gen.uniform(self.lower,
+                                                         self.upper,
+                                                         size=self.lower.size)
                 reinit_counter += 1
             else:
                 init_error = False
@@ -257,7 +257,7 @@ class StrategyChain(object):
         self.K = 100 * len(energy_state.current_location)
 
     def accept_reject(self, j, e, x_visit):
-        r = self._rand_gen.random()
+        r = self._rand_gen.uniform()
         pqv_temp = (self.acceptance_param - 1.0) * (
             e - self.energy_state.current_energy) / (
                 self.temperature_step + 1.)
@@ -333,7 +333,7 @@ class StrategyChain(object):
             pls = np.exp(self.K * (
                 self.energy_state.ebest - self.energy_state.current_energy) /
                 self.temperature_step)
-            if pls >= self._rand_gen.random():
+            if pls >= self._rand_gen.uniform():
                 do_ls = True
         # Global energy not improved, let's see what LS gives
         # on the best strategy chain location
