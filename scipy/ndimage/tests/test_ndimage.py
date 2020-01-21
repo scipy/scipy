@@ -756,8 +756,8 @@ class TestNdimage:
                                    [2, 2, 1, 1, 1],
                                    [5, 3, 3, 1, 1]], output)
         # separable footprint should allow mode sequence
-        output = ndimage.minimum_filter(array, footprint=footprint,
-                                        mode=['reflect', 'reflect'])
+        output2 = ndimage.minimum_filter(array, footprint=footprint,
+                                         mode=['reflect', 'reflect'])
         assert_array_almost_equal(output2, output)
 
     def test_minimum_filter07(self):
@@ -838,8 +838,8 @@ class TestNdimage:
                                    [7, 9, 9, 9, 5],
                                    [8, 9, 9, 9, 7]], output)
         # separable footprint should allow mode sequence
-        output = ndimage.maximum_filter(array, footprint=footprint,
-                                        mode=['reflect', 'reflect'])
+        output2 = ndimage.maximum_filter(array, footprint=footprint,
+                                         mode=['reflect', 'reflect'])
         assert_array_almost_equal(output2, output)
 
     def test_maximum_filter07(self):
