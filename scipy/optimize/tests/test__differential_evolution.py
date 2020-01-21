@@ -387,7 +387,7 @@ class TestDifferentialEvolutionSolver(object):
         assert_equal(result.nfev, result2.nfev)
 
     def test_random_generator(self):
-        # check that np.random.Generator can be used (1.17 and above)
+        # check that np.random.Generator can be used (numpy >= 1.17)
         try:
             # obtain a np.random.Generator object
             rng = np.random.default_rng()
