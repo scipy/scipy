@@ -614,7 +614,7 @@ class DifferentialEvolutionSolver(object):
 
         # Within each segment we sample from a uniform random distribution.
         # We need to do this sampling for each parameter.
-        samples = (segsize * rng.random(size=self.population_shape)
+        samples = (segsize * rng.uniform(size=self.population_shape)
 
         # Offset each segment to cover the entire parameter range [0, 1)
                    + np.linspace(0., 1., self.num_population_members,
@@ -642,7 +642,7 @@ class DifferentialEvolutionSolver(object):
         can possess clustering, Latin Hypercube sampling is generally better.
         """
         rng = self.random_number_generator
-        self.population = rng.random(size=self.population_shape)
+        self.population = rng.uniform(size=self.population_shape)
 
         # reset population energies
         self.population_energies = np.full(self.num_population_members,
@@ -1045,8 +1045,8 @@ class DifferentialEvolutionSolver(object):
             self._promote_lowest_energy()
 
         if self.dither is not None:
-            self.scale = (self.random_number_generator.random()
-                          * (self.dither[1] - self.dither[0]) + self.dither[0])
+            self.scale = self.random_number_generator.uniform(self.dither[0],
+                                                              self.dither[1])
 
         if self._updating == 'immediate':
             # update best solution immediately
@@ -1156,7 +1156,7 @@ class DifferentialEvolutionSolver(object):
     def _ensure_constraint(self, trial):
         """Make sure the parameters lie between the limits."""
         mask = np.where((trial > 1) | (trial < 0))
-        trial[mask] = self.random_number_generator.random(size=mask[0].shape)
+        trial[mask] = self.random_number_generator.uniform(size=mask[0].shape)
 
     def _mutate(self, candidate):
         """Create a trial vector based on a mutation strategy."""
@@ -1173,7 +1173,7 @@ class DifferentialEvolutionSolver(object):
             bprime = self.mutation_func(self._select_samples(candidate, 5))
 
         if self.strategy in self._binomial:
-            crossovers = rng.random(size=self.parameter_count)
+            crossovers = rng.uniform(size=self.parameter_count)
             crossovers = crossovers < self.cross_over_probability
             # the last one is always from the bprime vector for binomial
             # If you fill in modulo with a loop you have to set the last one to
@@ -1185,7 +1185,7 @@ class DifferentialEvolutionSolver(object):
 
         elif self.strategy in self._exponential:
             i = 0
-            crossovers = rng.random(size=self.parameter_count)
+            crossovers = rng.uniform(size=self.parameter_count)
             crossovers = crossovers < self.cross_over_probability
             while (i < self.parameter_count and crossovers[i]):
                 trial[fill_point] = bprime[fill_point]

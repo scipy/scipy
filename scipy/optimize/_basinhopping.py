@@ -311,7 +311,7 @@ class Metropolis(object):
         less likely for larger differences.
         """
         w = math.exp(min(0, -float(energy_new - energy_old) * self.beta))
-        rand = self.random_gen.random()
+        rand = self.random_gen.uniform()
         return w >= rand
 
     def __call__(self, **kwargs):
