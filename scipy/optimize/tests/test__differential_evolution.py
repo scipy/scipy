@@ -386,6 +386,24 @@ class TestDifferentialEvolutionSolver(object):
         assert_equal(result.x, result2.x)
         assert_equal(result.nfev, result2.nfev)
 
+    def test_random_generator(self):
+        # check that np.random.Generator can be used (1.17 and above)
+        try:
+            # obtain a np.random.Generator object
+            rng = np.random.default_rng()
+        except AttributeError:
+            # only available in numpy >= 1.17
+            return
+
+        inits = ['random', 'latinhypercube']
+        for init in inits:
+            differential_evolution(self.quadratic,
+                                   [(-100, 100)],
+                                   polish=False,
+                                   seed=rng,
+                                   tol=0.5,
+                                   init=init)
+
     def test_exp_runs(self):
         # test whether exponential mutation loop runs
         solver = DifferentialEvolutionSolver(rosen,
