@@ -1362,7 +1362,7 @@ def toms748(f, a, b, args=(), k=1,
     if not np.isfinite(b):
         raise ValueError("b is not finite %s" % b)
     if a >= b:
-        raise ValueError("a and b are not an interval [%g, %g]" % (a, b))
+        raise ValueError("a and b are not an interval [{}, {}]".format(a, b))
     if not k >= 1:
         raise ValueError("k too small (%s < 1)" % k)
 
