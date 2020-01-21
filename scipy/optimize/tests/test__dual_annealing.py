@@ -141,6 +141,23 @@ class TestDualAnnealing:
         assert_equal(res1.x, res2.x)
         assert_equal(res1.x, res3.x)
 
+    def test_rand_gen(self):
+        # check that np.random.Generator can be used (1.17 and above)
+        try:
+            # obtain a np.random.Generator object
+            rng = np.random.default_rng(1)
+        except AttributeError:
+            # only available in numpy >= 1.17
+            return
+
+        res1 = dual_annealing(self.func, self.ld_bounds, seed=rng)
+        # seed again
+        rng = np.random.default_rng(1)
+        res2 = dual_annealing(self.func, self.ld_bounds, seed=rng)
+        # If we have reproducible results, x components found has to
+        # be exactly the same, which is not the case with no seeding
+        assert_equal(res1.x, res2.x)
+
     def test_bounds_integrity(self):
         wrong_bounds = [(-5.12, 5.12), (1, 0), (5.12, 5.12)]
         assert_raises(ValueError, dual_annealing, self.func,
