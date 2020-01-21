@@ -242,8 +242,8 @@ class MMFile (object):
                 format = self.FORMAT_COORDINATE
 
             # skip comments
-            t = b'%' if type(line) is bytes else '%'
-            while line.startswith(t):
+            # line.startswith('%')
+            while line and line[0] in ['%', 37]:
                 line = stream.readline()
 
             # skip empty lines
@@ -516,8 +516,8 @@ class MMFile (object):
                     i += 1
             while line:
                 line = stream.readline()
-                t = b'%' if type(line) is bytes else '%'
-                if not line or line.startswith(t) or not line.strip():
+                # line.startswith('%')
+                if not line or line[0] in ['%', 37] or not line.strip():
                     continue
                 if is_integer:
                     aij = int(line)
@@ -562,8 +562,8 @@ class MMFile (object):
             k = 0
             while line:
                 line = stream.readline()
-                t = b'%' if type(line) is bytes else '%'
-                if not line or line.startswith(t) or not line.strip():
+                # line.startswith('%')
+                if not line or line[0] in ['%', 37] or not line.strip():
                     continue
                 l = line.split()
                 i, j = map(int, l[:2])
@@ -610,8 +610,8 @@ class MMFile (object):
 
             entry_number = 0
             for line in stream:
-                t = b'%' if type(line) is bytes else '%'
-                if not line or line.startswith(t) or not line.strip():
+                # line.startswith('%')
+                if not line or line[0] in ['%', 37] or not line.strip():
                     continue
 
                 if entry_number+1 > entries:
