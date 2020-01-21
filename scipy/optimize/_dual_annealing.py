@@ -40,8 +40,8 @@ class VisitingDistribution(object):
         makes the algorithm jump to a more distant region.
         The value range is (0, 3]. It's value is fixed for the life of the
         object.
-    rand_state : `~numpy.random.mtrand.RandomState` object
-        A `~numpy.random.mtrand.RandomState` object for using the current state
+    rand_state : `~numpy.random.RandomState` object
+        A `~numpy.random.RandomState` object for using the current state
         of the created random generator container.
     """
     TAIL_LIMIT = 1.e8
@@ -228,8 +228,8 @@ class StrategyChain(object):
         Instance of `ObjectiveFunWrapper` class.
     minimizer_wrapper: LocalSearchWrapper
         Instance of `LocalSearchWrapper` class.
-    rand_state : `~numpy.random.mtrand.RandomState` object
-        A `~numpy.random.mtrand.RandomState` object for using the current state
+    rand_state : `~numpy.random.RandomState` object
+        A `~numpy.random.RandomState` object for using the current state
         of the created random generator container.
     energy_state: EnergyState
         Instance of `EnergyState` class.
@@ -476,8 +476,8 @@ def dual_annealing(func, bounds, args=(), maxiter=1000,
         algorithm is in the middle of a local search, this number will be
         exceeded, the algorithm will stop just after the local search is
         done. Default value is 1e7.
-    seed : {int or `~numpy.random.mtrand.RandomState` instance}, optional
-        If `seed` is not specified the `~numpy.random.mtrand.RandomState`
+    seed : {int or `~numpy.random.RandomState` instance}, optional
+        If `seed` is not specified the `~numpy.random.RandomState`
         singleton is used.
         If `seed` is an int, a new ``RandomState`` instance is used,
         seeded with `seed`.
