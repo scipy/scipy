@@ -19,7 +19,7 @@ import pytest
 
 import scipy.linalg
 from scipy.linalg import (funm, signm, logm, sqrtm, fractional_matrix_power,
-                          expm, expm_frechet, expm_cond, norm)
+                          expm, expm_frechet, expm_cond, norm, khatri_rao)
 from scipy.linalg import _matfuncs_inv_ssq
 import scipy.linalg._expm_frechet
 
@@ -838,3 +838,23 @@ class TestExpmConditionNumber(object):
             # eps times the condition number kappa.
             # In the limit as eps approaches zero it should never be greater.
             assert_array_less(p_best_relerr, (1 + 2*eps) * eps * kappa)
+
+
+class TestKhatriRao(object):
+
+    def test_basic(self):
+        a = khatri_rao(array([[1, 2], [3, 4]]),
+                       array([[1, 2], [3, 4]]))
+
+        assert_array_equal(a, array([[1, 4],
+                                     [3, 8],
+                                     [3, 8],
+                                     [9, 16]]))
+
+    def test_number_of_columns_equality(self):
+        with pytest.raises(ValueError):
+            a = array([[1, 2, 3],
+                       [4, 5, 6]])
+            b = array([[1, 2],
+                       [3, 4]])
+            khatri_rao(a, b)
