@@ -272,7 +272,7 @@ def freqs_zpk(z, p, k, worN=200):
     return w, h
 
 
-def freqz(b, a=1, worN=512, whole=False, plot=None, fs=2*pi):
+def freqz(b, a=1, worN=512, whole=False, plot=None, fs=2*pi, include_nyquist=False):
     """
     Compute the frequency response of a digital filter.
 
@@ -301,7 +301,7 @@ def freqz(b, a=1, worN=512, whole=False, plot=None, fs=2*pi):
         If a single integer, then compute at that many frequencies (default is
         N=512). This is a convenient alternative to::
 
-            np.linspace(0, fs if whole else fs/2, N, endpoint=False)
+            np.linspace(0, fs if whole else fs/2, N, endpoint=include_nyquist)
 
         Using a number that is fast for FFT computations can result in
         faster computations (see Notes).
@@ -321,6 +321,11 @@ def freqz(b, a=1, worN=512, whole=False, plot=None, fs=2*pi):
         radians/sample (so w is from 0 to pi).
 
         .. versionadded:: 1.2.0
+    include_nyquist : bool, optional
+        If `whole` is False and `worN` is an integer, setting `include_nyquist` to True
+        will include the last frequency (Nyquist frequency) and is otherwise ignored.
+
+        .. versionadded:: 1.5.0
 
     Returns
     -------
@@ -436,7 +441,8 @@ def freqz(b, a=1, worN=512, whole=False, plot=None, fs=2*pi):
         if N < 0:
             raise ValueError('worN must be nonnegative, got %s' % (N,))
         lastpoint = 2 * pi if whole else pi
-        w = np.linspace(0, lastpoint, N, endpoint=False)
+        # if include_nyquist is true and whole is false, w should include end point
+        w = np.linspace(0, lastpoint, N, endpoint=include_nyquist and not whole)
         if (a.size == 1 and N >= b.shape[0] and
                 sp_fft.next_fast_len(N) == N and
                 (b.ndim == 1 or (b.shape[-1] == 1))):
