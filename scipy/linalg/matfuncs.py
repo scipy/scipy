@@ -6,7 +6,8 @@ from __future__ import division, print_function, absolute_import
 
 __all__ = ['expm','cosm','sinm','tanm','coshm','sinhm',
            'tanhm','logm','funm','signm','sqrtm',
-           'expm_frechet', 'expm_cond', 'fractional_matrix_power']
+           'expm_frechet', 'expm_cond', 'fractional_matrix_power',
+           'khatri_rao']
 
 from numpy import (Inf, dot, diag, prod, logical_not, ravel,
         transpose, conjugate, absolute, amax, sign, isfinite, single)
@@ -668,3 +669,48 @@ def signm(A, disp=True):
         return S0
     else:
         return S0, errest
+
+
+def khatri_rao(a, b):
+    """
+    Khatri-rao product
+
+    Parameters
+    ----------
+    a:  (I, K) ndarray
+        Input array
+    b:  (J, K) ndarray
+        Input array
+
+    Returns
+    -------
+    C:  ((IJ), K) ndarray
+        Khatri-rao product of 'a' and 'b'.
+
+    Notes
+    -----
+    Mathematically:
+
+    A * B = (A_{ij}  \bigotimes B_{ij})_{ij}
+
+    Examples
+    --------
+    >>> from numpy import array
+    >>> from scipy.linalg import khatri_rao
+    >>> khatri_rao(array([[1, 2, 3], [4, 5, 6]]),
+    ...            array([[3, 4, 5], [6, 7, 8], [2, 3, 9]]))
+    array([[ 3,  8, 15],
+           [ 6, 14, 24],
+           [ 2,  6, 27],
+           [12, 20, 30],
+           [24, 35, 48],
+           [ 8, 15, 54]])
+
+    """
+    try:
+        a.shape[1] == b.shape[1]
+    except ValueError:
+        raise ValueError("The number of columns for both arrays should be equal.")
+
+    c = a[..., :, np.newaxis, :] * b[..., np.newaxis, :, :]
+    return c.reshape((-1,) + c.shape[2:])
