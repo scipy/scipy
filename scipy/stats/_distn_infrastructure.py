@@ -590,10 +590,11 @@ class rv_generic(object):
     def random_state(self):
         """ Get or set the RandomState object for generating random variates.
 
-        This can be either None or an existing RandomState object.
+        This can be either None, int, a RandomState instance, or a
+        np.random.Generator instance.
 
         If None (or np.random), use the RandomState singleton used by np.random.
-        If already a RandomState instance, use it.
+        If already a RandomState or Generator instance, use it.
         If an int, use a new RandomState instance seeded with seed.
 
         """
@@ -900,7 +901,7 @@ class rv_generic(object):
         # generated.
 
         ## Use basic inverse cdf algorithm for RV generation as default.
-        U = self._random_state.random_sample(self._size)
+        U = self._random_state.uniform(size=self._size)
         Y = self._ppf(U, *args)
         return Y
 
@@ -938,9 +939,12 @@ class rv_generic(object):
             Scale parameter (default=1).
         size : int or tuple of ints, optional
             Defining number of random variates (default is 1).
-        random_state : None or int or ``np.random.RandomState`` instance, optional
-            If int or RandomState, use it for drawing the random variates.
-            If None, rely on ``self.random_state``.
+        random_state : {None, int, `~np.random.RandomState`, `~np.random.Generator`}, optional
+            If `seed` is `None` the `~np.random.RandomState` singleton is used.
+            If `seed` is an int, a new ``RandomState`` instance is used, seeded
+            with seed.
+            If `seed` is already a ``RandomState`` or ``Generator`` instance,
+            then that object is used.
             Default is None.
 
         Returns
@@ -1408,11 +1412,13 @@ class rv_continuous(rv_generic):
         This string is used as the last part of the docstring returned when a
         subclass has no docstring of its own. Note: `extradoc` exists for
         backwards compatibility, do not use for new subclasses.
-    seed : None or int or ``numpy.random.RandomState`` instance, optional
-        This parameter defines the RandomState object to use for drawing
-        random variates.
-        If None (or np.random), the global np.random state is used.
-        If integer, it is used to seed the local RandomState instance.
+    seed : {None, int, `~np.random.RandomState`, `~np.random.Generator`}, optional
+        This parameter defines the object to use for drawing random variates.
+        If `seed` is `None` the `~np.random.RandomState` singleton is used.
+        If `seed` is an int, a new ``RandomState`` instance is used, seeded
+        with seed.
+        If `seed` is already a ``RandomState`` or ``Generator`` instance,
+        then that object is used.
         Default is None.
 
     Methods
@@ -2714,11 +2720,13 @@ class rv_discrete(rv_generic):
         This string is used as the last part of the docstring returned when a
         subclass has no docstring of its own. Note: `extradoc` exists for
         backwards compatibility, do not use for new subclasses.
-    seed : None or int or ``numpy.random.RandomState`` instance, optional
-        This parameter defines the RandomState object to use for drawing
-        random variates.
-        If None, the global np.random state is used.
-        If integer, it is used to seed the local RandomState instance.
+    seed : {None, int, `~np.random.RandomState`, `~np.random.Generator`}, optional
+        This parameter defines the object to use for drawing random variates.
+        If `seed` is `None` the `~np.random.RandomState` singleton is used.
+        If `seed` is an int, a new ``RandomState`` instance is used, seeded
+        with seed.
+        If `seed` is already a ``RandomState`` or ``Generator`` instance,
+        then that object is used.
         Default is None.
 
     Methods
@@ -2943,9 +2951,15 @@ class rv_discrete(rv_generic):
         size : int or tuple of ints, optional
             Defining number of random variates (Default is 1).  Note that `size`
             has to be given as keyword, not as positional argument.
-        random_state : None or int or ``np.random.RandomState`` instance, optional
-            If int or RandomState, use it for drawing the random variates.
-            If None, rely on ``self.random_state``.
+        random_state : {None, int, `~np.random.RandomState`, `~np.random.Generator`}, optional
+            This parameter defines the object to use for drawing random
+            variates.
+            If `random_state` is `None` the `~np.random.RandomState` singleton
+            is used.
+            If `random_state` is an int, a new ``RandomState`` instance is used,
+            seeded with random_state.
+            If `random_state` is already a ``RandomState`` or ``Generator``
+            instance, then that object is used.
             Default is None.
 
         Returns
@@ -3537,7 +3551,7 @@ class rv_sample(rv_discrete):
     def _rvs(self):
         # Need to define it explicitly, otherwise .rvs() with size=None
         # fails due to explicit broadcasting in _ppf
-        U = self._random_state.random_sample(self._size)
+        U = self._random_state.uniform(size=self._size)
         if self._size is None:
             U = np.array(U, ndmin=1)
             Y = self._ppf(U)[0]

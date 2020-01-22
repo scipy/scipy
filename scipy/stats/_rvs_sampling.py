@@ -25,10 +25,14 @@ def rvs_ratio_uniforms(pdf, umax, vmin, vmax, size=1, c=0, random_state=None):
         Defining number of random variates (default is 1).
     c : float, optional.
         Shift parameter of ratio-of-uniforms method, see Notes. Default is 0.
-    random_state : int or np.random.RandomState instance, optional
-        If already a RandomState instance, use it.
-        If seed is an int, return a new RandomState instance seeded with seed.
-        If None, use np.random.RandomState. Default is None.
+    random_state : {None, int, `~np.random.RandomState`, `~np.random.Generator`}, optional
+        If `random_state` is `None` the `~np.random.RandomState` singleton is
+        used.
+        If `random_state` is an int, a new ``RandomState`` instance is used,
+        seeded with random_state.
+        If `random_state` is already a ``RandomState`` or ``Generator``
+        instance, then that object is used.
+        Default is None.
 
     Returns
     -------
@@ -148,8 +152,8 @@ def rvs_ratio_uniforms(pdf, umax, vmin, vmax, size=1, c=0, random_state=None):
     while simulated < N:
         k = N - simulated
         # simulate uniform rvs on [0, umax] and [vmin, vmax]
-        u1 = umax * rng.random_sample(size=k)
-        v1 = vmin + (vmax - vmin) * rng.random_sample(size=k)
+        u1 = umax * rng.uniform(size=k)
+        v1 = rng.uniform(vmin, vmax, size=k)
         # apply rejection method
         rvs = v1 / u1 + c
         accept = (u1**2 <= pdf(rvs))

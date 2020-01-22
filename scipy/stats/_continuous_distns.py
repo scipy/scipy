@@ -1278,7 +1278,7 @@ class dgamma_gen(rv_continuous):
     """
     def _rvs(self, a):
         sz, rndm = self._size, self._random_state
-        u = rndm.random_sample(size=sz)
+        u = rndm.uniform(size=sz)
         gm = gamma.rvs(a, size=sz, random_state=rndm)
         return gm * np.where(u >= 0.5, 1, -1)
 
@@ -1335,7 +1335,7 @@ class dweibull_gen(rv_continuous):
     """
     def _rvs(self, c):
         sz, rndm = self._size, self._random_state
-        u = rndm.random_sample(size=sz)
+        u = rndm.uniform(size=sz)
         w = weibull_min.rvs(c, size=sz, random_state=rndm)
         return w * (np.where(u >= 0.5, 1, -1))
 
@@ -3735,8 +3735,8 @@ class geninvgauss_gen(rv_continuous):
             while simulated < N:
                 k = N - simulated
                 # simulate uniform rvs on [0, umax] and [vmin, vmax]
-                u = umax * self._random_state.random_sample(size=k)
-                v = self._random_state.random_sample(size=k)
+                u = umax * self._random_state.uniform(size=k)
+                v = self._random_state.uniform(size=k)
                 v = vmin + (vmax - vmin) * v
                 rvs = v / u + c
                 # rewrite acceptance condition u**2 <= pdf(rvs) by taking logs
@@ -3775,8 +3775,8 @@ class geninvgauss_gen(rv_continuous):
                 k = N - simulated
                 h, rvs = np.zeros(k), np.zeros(k)
                 # simulate uniform rvs on [x1, x2] and [0, y2]
-                u = self._random_state.random_sample(size=k)
-                v = A * self._random_state.random_sample(size=k)
+                u = self._random_state.uniform(size=k)
+                v = A * self._random_state.uniform(size=k)
                 cond1 = v <= A1
                 cond2 = np.logical_not(cond1) & (v <= A1 + A2)
                 cond3 = np.logical_not(cond1 | cond2)
@@ -6668,8 +6668,8 @@ class semicircular_gen(rv_continuous):
     def _rvs(self):
         # generate values uniformly distributed on the area under the pdf
         # (semi-circle) by randomly generating the radius and angle
-        r = np.sqrt(self._random_state.random_sample(size=self._size))
-        a = np.cos(np.pi * self._random_state.random_sample(size=self._size))
+        r = np.sqrt(self._random_state.uniform(size=self._size))
+        a = np.cos(np.pi * self._random_state.uniform(size=self._size))
         return r * a
 
     def _stats(self):
