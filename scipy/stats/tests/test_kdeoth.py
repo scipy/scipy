@@ -413,6 +413,15 @@ def test_seed():
         samp2 = gkde_trail.resample(n_sample, seed=rstate2)
         assert_allclose(samp1, samp2, atol=1e-13)
 
+        # check that np.random.Generator can be used (numpy >= 1.17)
+        try:
+            # obtain a np.random.Generator object
+            rng = np.random.default_rng(1234)
+            gkde_trail.resample(n_sample, seed=rng)
+        except AttributeError:
+            # only available in numpy >= 1.17
+            pass
+
     np.random.seed(8765678)
     n_basesample = 500
     wn = np.random.rand(n_basesample)
