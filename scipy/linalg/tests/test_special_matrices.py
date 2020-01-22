@@ -312,26 +312,6 @@ class TestKron:
         assert_array_equal(a, expected)
 
 
-class TestKhatriRao(object):
-
-    def test_basic(self):
-        a = khatri_rao(array([[1, 2], [3, 4]]),
-                       array([[1, 2], [3, 4]]))
-
-        assert_array_equal(a, array([[1, 4],
-                                     [3, 8],
-                                     [3, 8],
-                                     [9, 16]]))
-
-    def test_number_of_columns_equality(self):
-        with assert_raises(ValueError):
-            a = array([[1, 2, 3],
-                       [4, 5, 6]])
-            b = array([[1, 2],
-                       [3, 4]])
-            khatri_rao(a, b)
-
-
 class TestHelmert(object):
 
     def test_orthogonality(self):
