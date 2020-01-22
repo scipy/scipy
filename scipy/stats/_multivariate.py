@@ -34,9 +34,13 @@ _LOG_PI = np.log(np.pi)
 
 
 _doc_random_state = """\
-random_state : None or int or np.random.RandomState instance, optional
-    If int or RandomState, use it for drawing the random variates.
-    If None (or np.random), the global np.random state is used.
+random_state : {None, int, np.random.RandomState, np.random.Generator}, optional
+    Used for drawing random variates.
+    If `seed` is `None` the `~np.random.RandomState` singleton is used.
+    If `seed` is an int, a new ``RandomState`` instance is used, seeded
+    with seed.
+    If `seed` is already a ``RandomState`` or ``Generator`` instance,
+    then that object is used.
     Default is None.
 """
 
@@ -193,10 +197,12 @@ class multi_rv_generic(object):
     def random_state(self):
         """ Get or set the RandomState object for generating random variates.
 
-        This can be either None or an existing RandomState object.
+        This can be either None, int, a RandomState instance, or a
+        np.random.Generator instance.
 
-        If None (or np.random), use the RandomState singleton used by np.random.
-        If already a RandomState instance, use it.
+        If None (or np.random), use the RandomState singleton used by
+        np.random.
+        If already a RandomState or Generator instance, use it.
         If an int, use a new RandomState instance seeded with seed.
 
         """
@@ -701,11 +707,14 @@ class multivariate_normal_frozen(multi_rv_frozen):
         allow_singular : bool, optional
             If this flag is True then tolerate a singular
             covariance matrix (default False).
-        seed : None or int or np.random.RandomState instance, optional
-            This parameter defines the RandomState object to use for drawing
-            random variates.
-            If None (or np.random), the global np.random state is used.
-            If integer, it is used to seed the local RandomState instance
+        seed : {None, int, `~np.random.RandomState`, `~np.random.Generator`}, optional
+            This parameter defines the object to use for drawing random
+            variates.
+            If `seed` is `None` the `~np.random.RandomState` singleton is used.
+            If `seed` is an int, a new ``RandomState`` instance is used, seeded
+            with seed.
+            If `seed` is already a ``RandomState`` or ``Generator`` instance,
+            then that object is used.
             Default is None.
         maxpts: integer, optional
             The maximum number of points to use for integration of the
@@ -1153,9 +1162,14 @@ class matrix_normal_frozen(multi_rv_frozen):
         Parameters
         ----------
         %(_matnorm_doc_default_callparams)s
-        seed : None or int or np.random.RandomState instance, optional
-            If int or RandomState, use it for drawing the random variates.
-            If None (or np.random), the global np.random state is used.
+       seed : {None, int, `~np.random.RandomState`, `~np.random.Generator`}, optional
+            This parameter defines the object to use for drawing random
+            variates.
+            If `seed` is `None` the `~np.random.RandomState` singleton is used.
+            If `seed` is an int, a new ``RandomState`` instance is used, seeded
+            with seed.
+            If `seed` is already a ``RandomState`` or ``Generator`` instance,
+            then that object is used.
             Default is None.
 
         Examples
@@ -2038,8 +2052,8 @@ class wishart_gen(multi_rv_generic):
             Dimension of the scale matrix
         df : int
             Degrees of freedom
-        random_state : np.random.RandomState instance
-            RandomState used for drawing the random variates.
+        random_state : {`~np.random.RandomState`, `~np.random.Generator`}
+            Object used for drawing the random variates.
 
         Notes
         -----
@@ -2238,11 +2252,13 @@ class wishart_frozen(multi_rv_frozen):
         Degrees of freedom of the distribution
     scale : array_like
         Scale matrix of the distribution
-    seed : None or int or np.random.RandomState instance, optional
-        This parameter defines the RandomState object to use for drawing
-        random variates.
-        If None (or np.random), the global np.random state is used.
-        If integer, it is used to seed the local RandomState instance
+    seed : {None, int, `~np.random.RandomState`, `~np.random.Generator`}, optional
+        This parameter defines the object to use for drawing random variates.
+        If `seed` is `None` the `~np.random.RandomState` singleton is used.
+        If `seed` is an int, a new ``RandomState`` instance is used, seeded
+        with seed.
+        If `seed` is already a ``RandomState`` or ``Generator`` instance,
+        then that object is used.
         Default is None.
 
     """
@@ -2787,11 +2803,14 @@ class invwishart_frozen(multi_rv_frozen):
             Degrees of freedom of the distribution
         scale : array_like
             Scale matrix of the distribution
-        seed : None or int or np.random.RandomState instance, optional
-            This parameter defines the RandomState object to use for drawing
-            random variates.
-            If None (or np.random), the global np.random state is used.
-            If integer, it is used to seed the local RandomState instance
+        seed : {None, int, `~np.random.RandomState`, `~np.random.Generator`}, optional
+            This parameter defines the object to use for drawing random
+            variates.
+            If `seed` is `None` the `~np.random.RandomState` singleton is used.
+            If `seed` is an int, a new ``RandomState`` instance is used, seeded
+            with seed.
+            If `seed` is already a ``RandomState`` or ``Generator`` instance,
+            then that object is used.
             Default is None.
 
         """
@@ -3233,11 +3252,13 @@ class multinomial_frozen(multi_rv_frozen):
         number of trials
     p: array_like
         probability of a trial falling into each category; should sum to 1
-    seed : None or int or np.random.RandomState instance, optional
-        This parameter defines the RandomState object to use for drawing
-        random variates.
-        If None (or np.random), the global np.random state is used.
-        If integer, it is used to seed the local RandomState instance
+    seed : {None, int, `~np.random.RandomState`, `~np.random.Generator`}, optional
+        This parameter defines the object to use for drawing random variates.
+        If `seed` is `None` the `~np.random.RandomState` singleton is used.
+        If `seed` is an int, a new ``RandomState`` instance is used, seeded
+        with seed.
+        If `seed` is already a ``RandomState`` or ``Generator`` instance,
+        then that object is used.
         Default is None.
     """
     def __init__(self, n, p, seed=None):
@@ -3413,11 +3434,14 @@ class special_ortho_group_frozen(multi_rv_frozen):
         ----------
         dim : scalar
             Dimension of matrices
-        seed : None or int or np.random.RandomState instance, optional
-            This parameter defines the RandomState object to use for drawing
-            random variates.
-            If None (or np.random), the global np.random state is used.
-            If integer, it is used to seed the local RandomState instance
+        seed : {None, int, `~np.random.RandomState`, `~np.random.Generator`}, optional
+            This parameter defines the object to use for drawing random
+            variates.
+            If `seed` is `None` the `~np.random.RandomState` singleton is used.
+            If `seed` is an int, a new ``RandomState`` instance is used, seeded
+            with seed.
+            If `seed` is already a ``RandomState`` or ``Generator`` instance,
+            then that object is used.
             Default is None.
 
         Examples
