@@ -323,8 +323,7 @@ def freqz(b, a=1, worN=512, whole=False, plot=None, fs=2*pi, include_nyquist=Fal
         .. versionadded:: 1.2.0
     include_nyquist : bool, optional
         If `whole` is False and `worN` is an integer, setting `include_nyquist` to True
-        will include the last frequency (Nyquist frequency).
-        Otherwise the last frequency will be ignored.
+        will include the last frequency (Nyquist frequency) and is otherwise ignored.
 
         .. versionadded:: 1.5.0
 
