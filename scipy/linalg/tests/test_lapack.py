@@ -1659,9 +1659,6 @@ def test_geqrfp_lwork(dtype, shape):
 
 def generate_random_dtype_array(shape, dtype):
     # generates a random matrix of desired data type of shape
-    if type(shape) != tuple:
-        # in case shape is not passed in as a tuple
-        shape = (shape,)
     if dtype in COMPLEX_DTYPES:
         return (np.random.rand(*shape)
                 + np.random.rand(*shape)*1.0j).astype(dtype)
@@ -1669,29 +1666,38 @@ def generate_random_dtype_array(shape, dtype):
 
 
 @pytest.mark.parametrize('dtype', DTYPES)
-@pytest.mark.parametrize('matrix_size', [(6, 7), (7, 6), (6, 6)])
+@pytest.mark.parametrize('matrix_size', [(3, 4), (7, 6), (6, 6)])
 def test_geqrfp(dtype, matrix_size):
-    # set test tolerance appropriate for dtype
+    # This test tests for all dytpes, tall, wide, and square matricies.
+    # Using the routine with random Matrix A, Q and R are obtained and then
+    # tested such that R is upper triangualr and non-negative on the diagonal,
+    # and Q is tested as an orthagonal matrix. Verifies that A=Q@R. It also
+    # tests against a matrix that the linalg.qr method returns negative
+    # diagonals, and for info and error messaging.
 
+    # Additional note: this test stands alone without a NAG manual additional
+    #   example as the NAG problem was overly complex in for the small role
+    #   this routine played in it.
+    # set test tolerance appropriate for dtype
     np.random.seed(42)
     rtol = 250*np.finfo(dtype).eps
-    atol = np.finfo(dtype).eps
+    atol = 100*np.finfo(dtype).eps
     # get appropriate ?geqrfp for dtype
     geqrfp = get_lapack_funcs(('geqrfp'), dtype=dtype)
     gqr = get_lapack_funcs(("orgqr"), dtype=dtype)
 
-    np.random.seed(42)
-    m = matrix_size[0]
-    n = matrix_size[1]
+    m, n = matrix_size
+
     # create random matrix of dimentions m x n
     A = generate_random_dtype_array((m, n), dtype=dtype)
     # create rq matrix using geqrfp
     qr_A, tau, work, info = geqrfp(A)
-    # qr(A)
+
     # obtain r from the upper triangular area
     r = np.triu(qr_A)
 
-    # obtain q from the orgqr lapack routine:
+    # obtain q from the orgqr lapack routine
+    # based on linalg.qr's extraction strategy of q with orgqr
 
     if m > n:
         # this adds an extra column to the end of qr_A
@@ -1699,21 +1705,23 @@ def test_geqrfp(dtype, matrix_size):
         qqr = np.zeros((m, m), dtype=dtype)
         # set first n columns of qqr to qr_A
         qqr[:, :n] = qr_A
-        # determine q from this
+        # determine q from this qqr
+        # note that m is a sufficient for lwork based on LAPACK documentation
         q = gqr(qqr, tau=tau, lwork=m)[0]
     else:
         q = gqr(qr_A[:, :m], tau=tau, lwork=m)[0]
 
     # test that q and r still make A
     assert_allclose(q@r, A, rtol=rtol)
-    # enure that q is orthogonal (that q @ transposed q is the identity)
+    # ensure that q is orthogonal (that q @ transposed q is the identity)
     assert_allclose(np.eye(q.shape[0]), q@(q.conj().T), rtol=rtol,
-                    atol=atol*10)
+                    atol=atol)
     # ensure r is upper tri by comparing original r to r as upper triangular
     assert_allclose(r, np.triu(r), rtol=rtol)
     # make sure diagonals of r are positive for this random solution
-    assert_(np.all(r[np.arange(r.shape[0]-1),
-                     np.arange(r.shape[0]-1)] > np.zeros(r.shape[0]-1)))
+    assert_(np.all(np.diag(r) > np.zeros(len(np.diag(r)))))
+    # ensure that info is zero for this success
+    assert_(info == 0)
 
     # test that this routine gives r diagonals that are positive for a
     # matrix that returns negatives in the diagonal with scipy.linalg.rq
@@ -1726,9 +1734,11 @@ def test_geqrfp(dtype, matrix_size):
                             np.arange(r_rq_neg.shape[0]-1)] < 0) and
             np.all(r[np.arange(r.shape[0]-1),
                      np.arange(r.shape[0]-1)] > np.zeros(r.shape[0]-1)))
-
+    # assert that the first value (1 indexed 1) returned as the illegal value
+    A[0][0] = None
+    _qr_A, _tau, _work, _info = geqrfp(A)
+    assert_(_info == -1)
     # check that empty array raises good error message
     A_empty = np.array([])
     with assert_raises(Exception):
         geqrfp(A_empty)
-
