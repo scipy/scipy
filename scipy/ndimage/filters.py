@@ -29,6 +29,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from __future__ import division, print_function, absolute_import
+from collections.abc import Iterable
 import warnings
 import numbers
 import numpy
@@ -618,7 +619,7 @@ def _correlate_or_convolve(input, weights, output, mode, cval, origin,
     if not weights.flags.contiguous:
         weights = weights.copy()
     output = _ni_support._get_output(output, input)
-    if hasattr(mode, '__iter__') and not isinstance(mode, str):
+    if not isinstance(mode, str) and isinstance(mode, Iterable):
         raise RuntimeError("A sequence of modes is not supported")
     mode = _ni_support._extend_mode_to_code(mode)
     _nd_image.correlate(input, weights, output, mode, cval, origins)
@@ -1029,7 +1030,7 @@ def _min_or_max_filter(input, size, footprint, structure, output, mode,
                 raise RuntimeError('structure array has incorrect shape')
             if not structure.flags.contiguous:
                 structure = structure.copy()
-        if hasattr(mode, '__iter__') and not isinstance(mode, str):
+        if not isinstance(mode, str) and isinstance(mode, Iterable):
             raise RuntimeError(
                 "A sequence of modes is not supported for non-separable "
                 "footprints")
@@ -1172,7 +1173,7 @@ def _rank_filter(input, rank, size=None, footprint=None, output=None,
                               origins)
     else:
         output = _ni_support._get_output(output, input)
-        if hasattr(mode, '__iter__') and not isinstance(mode, str):
+        if not isinstance(mode, str) and isinstance(mode, Iterable):
             raise RuntimeError(
                 "A sequence of modes is not supported by non-separable rank "
                 "filters")
