@@ -1035,7 +1035,7 @@ class SmoothBivariateSpline(BivariateSpline):
     bisplrep : an older wrapping of FITPACK
     bisplev : an older wrapping of FITPACK
     UnivariateSpline : a similar class for univariate spline interpolation
-    LSQUnivariateSpline : to create a BivariateSpline using weighted
+    LSQBivariateSpline : to create a BivariateSpline using weighted least-squares fitting
 
     Notes
     -----
