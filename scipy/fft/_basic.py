@@ -53,6 +53,9 @@ def fft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
         Maximum number of workers to use for parallel computation. If negative,
         the value wraps around from ``os.cpu_count()``. See below for more
         details.
+    plan: object, optional
+        This argument is reserved for passing in a precomputed plan provided
+        by downstream FFT vendors. It is currently not used in SciPy.
 
     Returns
     -------
@@ -201,6 +204,9 @@ def ifft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
         Maximum number of workers to use for parallel computation. If negative,
         the value wraps around from ``os.cpu_count()``.
         See :func:`~scipy.fft.fft` for more details.
+    plan: object, optional
+        This argument is reserved for passing in a precomputed plan provided
+        by downstream FFT vendors. It is currently not used in SciPy.
 
     Returns
     -------
@@ -290,6 +296,9 @@ def rfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
         Maximum number of workers to use for parallel computation. If negative,
         the value wraps around from ``os.cpu_count()``.
         See :func:`~scipy.fft.fft` for more details.
+    plan: object, optional
+        This argument is reserved for passing in a precomputed plan provided
+        by downstream FFT vendors. It is currently not used in SciPy.
 
     Returns
     -------
@@ -390,6 +399,9 @@ def irfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
         Maximum number of workers to use for parallel computation. If negative,
         the value wraps around from ``os.cpu_count()``.
         See :func:`~scipy.fft.fft` for more details.
+    plan: object, optional
+        This argument is reserved for passing in a precomputed plan provided
+        by downstream FFT vendors. It is currently not used in SciPy.
 
     Returns
     -------
@@ -479,6 +491,9 @@ def hfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
         Maximum number of workers to use for parallel computation. If negative,
         the value wraps around from ``os.cpu_count()``.
         See :func:`~scipy.fft.fft` for more details.
+    plan: object, optional
+        This argument is reserved for passing in a precomputed plan provided
+        by downstream FFT vendors. It is currently not used in SciPy.
 
     Returns
     -------
@@ -557,6 +572,9 @@ def ihfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
         Maximum number of workers to use for parallel computation. If negative,
         the value wraps around from ``os.cpu_count()``.
         See :func:`~scipy.fft.fft` for more details.
+    plan: object, optional
+        This argument is reserved for passing in a precomputed plan provided
+        by downstream FFT vendors. It is currently not used in SciPy.
 
     Returns
     -------
@@ -627,6 +645,9 @@ def fftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
         Maximum number of workers to use for parallel computation. If negative,
         the value wraps around from ``os.cpu_count()``.
         See :func:`~scipy.fft.fft` for more details.
+    plan: object, optional
+        This argument is reserved for passing in a precomputed plan provided
+        by downstream FFT vendors. It is currently not used in SciPy.
 
     Returns
     -------
@@ -736,6 +757,9 @@ def ifftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
         Maximum number of workers to use for parallel computation. If negative,
         the value wraps around from ``os.cpu_count()``.
         See :func:`~scipy.fft.fft` for more details.
+    plan: object, optional
+        This argument is reserved for passing in a precomputed plan provided
+        by downstream FFT vendors. It is currently not used in SciPy.
 
     Returns
     -------
@@ -829,6 +853,9 @@ def fft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None, *
         Maximum number of workers to use for parallel computation. If negative,
         the value wraps around from ``os.cpu_count()``.
         See :func:`~scipy.fft.fft` for more details.
+    plan: object, optional
+        This argument is reserved for passing in a precomputed plan provided
+        by downstream FFT vendors. It is currently not used in SciPy.
 
     Returns
     -------
@@ -932,6 +959,9 @@ def ifft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None, 
         Maximum number of workers to use for parallel computation. If negative,
         the value wraps around from ``os.cpu_count()``.
         See :func:`~scipy.fft.fft` for more details.
+    plan: object, optional
+        This argument is reserved for passing in a precomputed plan provided
+        by downstream FFT vendors. It is currently not used in SciPy.
 
     Returns
     -------
@@ -1020,6 +1050,9 @@ def rfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
         Maximum number of workers to use for parallel computation. If negative,
         the value wraps around from ``os.cpu_count()``.
         See :func:`~scipy.fft.fft` for more details.
+    plan: object, optional
+        This argument is reserved for passing in a precomputed plan provided
+        by downstream FFT vendors. It is currently not used in SciPy.
 
     Returns
     -------
@@ -1103,6 +1136,9 @@ def rfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None, 
         Maximum number of workers to use for parallel computation. If negative,
         the value wraps around from ``os.cpu_count()``.
         See :func:`~scipy.fft.fft` for more details.
+    plan: object, optional
+        This argument is reserved for passing in a precomputed plan provided
+        by downstream FFT vendors. It is currently not used in SciPy.
 
     Returns
     -------
@@ -1169,6 +1205,9 @@ def irfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
         Maximum number of workers to use for parallel computation. If negative,
         the value wraps around from ``os.cpu_count()``.
         See :func:`~scipy.fft.fft` for more details.
+    plan: object, optional
+        This argument is reserved for passing in a precomputed plan provided
+        by downstream FFT vendors. It is currently not used in SciPy.
 
     Returns
     -------
@@ -1254,6 +1293,9 @@ def irfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None,
         Maximum number of workers to use for parallel computation. If negative,
         the value wraps around from ``os.cpu_count()``.
         See :func:`~scipy.fft.fft` for more details.
+    plan: object, optional
+        This argument is reserved for passing in a precomputed plan provided
+        by downstream FFT vendors. It is currently not used in SciPy.
 
     Returns
     -------
@@ -1316,6 +1358,9 @@ def hfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
         Maximum number of workers to use for parallel computation. If negative,
         the value wraps around from ``os.cpu_count()``.
         See :func:`~scipy.fft.fft` for more details.
+    plan: object, optional
+        This argument is reserved for passing in a precomputed plan provided
+        by downstream FFT vendors. It is currently not used in SciPy.
 
     Returns
     -------
@@ -1410,6 +1455,9 @@ def hfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None, 
         Maximum number of workers to use for parallel computation. If negative,
         the value wraps around from ``os.cpu_count()``.
         See :func:`~scipy.fft.fft` for more details.
+    plan: object, optional
+        This argument is reserved for passing in a precomputed plan provided
+        by downstream FFT vendors. It is currently not used in SciPy.
 
     Returns
     -------
@@ -1469,6 +1517,9 @@ def ihfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
         Maximum number of workers to use for parallel computation. If negative,
         the value wraps around from ``os.cpu_count()``.
         See :func:`~scipy.fft.fft` for more details.
+    plan: object, optional
+        This argument is reserved for passing in a precomputed plan provided
+        by downstream FFT vendors. It is currently not used in SciPy.
 
     Returns
     -------
@@ -1549,6 +1600,9 @@ def ihfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None,
         Maximum number of workers to use for parallel computation. If negative,
         the value wraps around from ``os.cpu_count()``.
         See :func:`~scipy.fft.fft` for more details.
+    plan: object, optional
+        This argument is reserved for passing in a precomputed plan provided
+        by downstream FFT vendors. It is currently not used in SciPy.
 
     Returns
     -------
