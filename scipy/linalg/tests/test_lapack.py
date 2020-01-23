@@ -1731,10 +1731,8 @@ def test_geqrfp(dtype, matrix_size):
     rq_A_neg, tau_neg, work_neg, info_neg = geqrfp(A_negative)
     # assert that any of the entries on the diagonal from linalg.qr
     #   are negative and that all of geqrfp are positive.
-    assert_(np.any(r_rq_neg[np.arange(r_rq_neg.shape[0]-1),
-                            np.arange(r_rq_neg.shape[0]-1)] < 0) and
-            np.all(r[np.arange(r.shape[0]-1),
-                     np.arange(r.shape[0]-1)] > np.zeros(r.shape[0]-1)))
+    assert_(np.any(np.diag(r_rq_neg) < 0) and
+            np.all(np.diag(r) > np.zeros(np.diag(r).shape)))
 
     # check that empty array raises good error message
     A_empty = np.array([])
