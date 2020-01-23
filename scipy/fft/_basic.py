@@ -21,7 +21,8 @@ def _dispatch(func):
 
 
 @_dispatch
-def fft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None):
+def fft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
+        plan=None):
     """
     Compute the 1-D discrete Fourier Transform.
 
@@ -150,12 +151,15 @@ def fft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None):
     >>> plt.show()
 
     """
-
+    if plan is not None:
+        raise NotImplementedError('Passing a precomputed plan is not yet '
+                                  'supported by scipy.fft functions')
     return (Dispatchable(x, np.ndarray),)
 
 
 @_dispatch
-def ifft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None):
+def ifft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
+         plan=None):
     """
     Compute the 1-D inverse discrete Fourier Transform.
 
@@ -249,11 +253,15 @@ def ifft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None):
     >>> plt.show()
 
     """
+    if plan is not None:
+        raise NotImplementedError('Passing a precomputed plan is not yet '
+                                  'supported by scipy.fft functions')
     return (Dispatchable(x, np.ndarray),)
 
 
 @_dispatch
-def rfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None):
+def rfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
+         plan=None):
     """
     Compute the 1-D discrete Fourier Transform for real input.
 
@@ -336,11 +344,15 @@ def rfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None):
     exploited to compute only the non-negative frequency terms.
 
     """
+    if plan is not None:
+        raise NotImplementedError('Passing a precomputed plan is not yet '
+                                  'supported by scipy.fft functions')
     return (Dispatchable(x, np.ndarray),)
 
 
 @_dispatch
-def irfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None):
+def irfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
+          plan=None):
     """
     Compute the inverse of the n-point DFT for real input.
 
@@ -431,11 +443,15 @@ def irfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None):
     specified, and the output array is purely real.
 
     """
+    if plan is not None:
+        raise NotImplementedError('Passing a precomputed plan is not yet '
+                                  'supported by scipy.fft functions')
     return (Dispatchable(x, np.ndarray),)
 
 
 @_dispatch
-def hfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None):
+def hfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
+         plan=None):
     """
     Compute the FFT of a signal that has Hermitian symmetry, i.e., a real
     spectrum.
@@ -507,11 +523,15 @@ def hfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None):
     >>> hfft(signal, 10)  # Input entire signal and truncate
     array([  0.,   5.,   0.,  15.,  -0.,   0.,   0., -15.,  -0.,   5.])
     """
+    if plan is not None:
+        raise NotImplementedError('Passing a precomputed plan is not yet '
+                                  'supported by scipy.fft functions')
     return (Dispatchable(x, np.ndarray),)
 
 
 @_dispatch
-def ihfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None):
+def ihfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
+          plan=None):
     """
     Compute the inverse FFT of a signal that has Hermitian symmetry.
 
@@ -567,11 +587,15 @@ def ihfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None):
     >>> ihfft(spectrum)
     array([ 1.-0.j,  2.-0.j,  3.-0.j,  4.-0.j]) # may vary
     """
+    if plan is not None:
+        raise NotImplementedError('Passing a precomputed plan is not yet '
+                                  'supported by scipy.fft functions')
     return (Dispatchable(x, np.ndarray),)
 
 
 @_dispatch
-def fftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None):
+def fftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
+         plan=None):
     """
     Compute the N-D discrete Fourier Transform.
 
@@ -664,12 +688,15 @@ def fftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None):
     >>> plt.show()
 
     """
-
+    if plan is not None:
+        raise NotImplementedError('Passing a precomputed plan is not yet '
+                                  'supported by scipy.fft functions')
     return (Dispatchable(x, np.ndarray),)
 
 
 @_dispatch
-def ifftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None):
+def ifftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
+          plan=None):
     """
     Compute the N-D inverse discrete Fourier Transform.
 
@@ -761,11 +788,15 @@ def ifftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None):
     >>> plt.show()
 
     """
+    if plan is not None:
+        raise NotImplementedError('Passing a precomputed plan is not yet '
+                                  'supported by scipy.fft functions')
     return (Dispatchable(x, np.ndarray),)
 
 
 @_dispatch
-def fft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None):
+def fft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None, *,
+         plan=None):
     """
     Compute the 2-D discrete Fourier Transform
 
@@ -853,12 +884,15 @@ def fft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None):
               0.  +0.j        ,   0.  +0.j        ]])
 
     """
-
+    if plan is not None:
+        raise NotImplementedError('Passing a precomputed plan is not yet '
+                                  'supported by scipy.fft functions')
     return (Dispatchable(x, np.ndarray),)
 
 
 @_dispatch
-def ifft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None):
+def ifft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None, *,
+          plan=None):
     """
     Compute the 2-D inverse discrete Fourier Transform.
 
@@ -943,12 +977,15 @@ def ifft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None):
            [0.+0.j,  1.+0.j,  0.+0.j,  0.+0.j]])
 
     """
-
+    if plan is not None:
+        raise NotImplementedError('Passing a precomputed plan is not yet '
+                                  'supported by scipy.fft functions')
     return (Dispatchable(x, np.ndarray),)
 
 
 @_dispatch
-def rfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None):
+def rfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
+          plan=None):
     """
     Compute the N-D discrete Fourier Transform for real input.
 
@@ -1037,11 +1074,15 @@ def rfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None):
             [0.+0.j,  0.+0.j]]])
 
     """
+    if plan is not None:
+        raise NotImplementedError('Passing a precomputed plan is not yet '
+                                  'supported by scipy.fft functions')
     return (Dispatchable(x, np.ndarray),)
 
 
 @_dispatch
-def rfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None):
+def rfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None, *,
+          plan=None):
     """
     Compute the 2-D FFT of a real array.
 
@@ -1079,12 +1120,15 @@ def rfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None):
     For more details see `rfftn`.
 
     """
-
+    if plan is not None:
+        raise NotImplementedError('Passing a precomputed plan is not yet '
+                                  'supported by scipy.fft functions')
     return (Dispatchable(x, np.ndarray),)
 
 
 @_dispatch
-def irfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None):
+def irfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
+           plan=None):
     """
     Compute the inverse of the N-D FFT of real input.
 
@@ -1180,12 +1224,15 @@ def irfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None):
             [1.,  1.]]])
 
     """
+    if plan is not None:
+        raise NotImplementedError('Passing a precomputed plan is not yet '
+                                  'supported by scipy.fft functions')
     return (Dispatchable(x, np.ndarray),)
 
 
 @_dispatch
-def irfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False,
-           workers=None):
+def irfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None, *,
+           plan=None):
     """
     Compute the 2-D inverse FFT of a real array.
 
@@ -1223,11 +1270,15 @@ def irfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False,
     For more details see `irfftn`.
 
     """
+    if plan is not None:
+        raise NotImplementedError('Passing a precomputed plan is not yet '
+                                  'supported by scipy.fft functions')
     return (Dispatchable(x, np.ndarray),)
 
 
 @_dispatch
-def hfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None):
+def hfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
+          plan=None):
     """
     Compute the N-D FFT of Hermitian symmetric complex input, i.e., a
     signal with a real spectrum.
@@ -1330,11 +1381,15 @@ def hfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None):
             [ 0.,  0.]]])
 
     """
+    if plan is not None:
+        raise NotImplementedError('Passing a precomputed plan is not yet '
+                                  'supported by scipy.fft functions')
     return (Dispatchable(x, np.ndarray),)
 
 
 @_dispatch
-def hfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None):
+def hfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None, *,
+          plan=None):
     """
     Compute the 2-D FFT of a Hermitian complex array.
 
@@ -1372,11 +1427,15 @@ def hfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None):
     For more details see `hfftn`.
 
     """
+    if plan is not None:
+        raise NotImplementedError('Passing a precomputed plan is not yet '
+                                  'supported by scipy.fft functions')
     return (Dispatchable(x, np.ndarray),)
 
 
 @_dispatch
-def ihfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None):
+def ihfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
+           plan=None):
     """
     Compute the N-D inverse discrete Fourier Transform for a real
     spectrum.
@@ -1460,12 +1519,15 @@ def ihfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None):
             [0.+0.j,  0.+0.j]]])
 
     """
+    if plan is not None:
+        raise NotImplementedError('Passing a precomputed plan is not yet '
+                                  'supported by scipy.fft functions')
     return (Dispatchable(x, np.ndarray),)
 
 
 @_dispatch
-def ihfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False,
-           workers=None):
+def ihfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None, *,
+           plan=None):
     """
     Compute the 2-D inverse FFT of a real spectrum.
 
@@ -1503,4 +1565,7 @@ def ihfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False,
     For more details see `ihfftn`.
 
     """
+    if plan is not None:
+        raise NotImplementedError('Passing a precomputed plan is not yet '
+                                  'supported by scipy.fft functions')
     return (Dispatchable(x, np.ndarray),)
