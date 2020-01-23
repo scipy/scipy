@@ -1668,16 +1668,17 @@ def generate_random_dtype_array(shape, dtype):
 @pytest.mark.parametrize('dtype', DTYPES)
 @pytest.mark.parametrize('matrix_size', [(3, 4), (7, 6), (6, 6)])
 def test_geqrfp(dtype, matrix_size):
-    # This test tests for all dytpes, tall, wide, and square matricies.
-    # Using the routine with random Matrix A, Q and R are obtained and then
-    # tested such that R is upper triangualr and non-negative on the diagonal,
-    # and Q is tested as an orthagonal matrix. Verifies that A=Q@R. It also
-    # tests against a matrix that the linalg.qr method returns negative
-    # diagonals, and for info and error messaging.
+    # Tests for all dytpes, tall, wide, and square matricies.
+    # Using the routine with random matrix A, Q and R are obtained and then
+    # tested such that R is upper triangular and non-negative on the diagonal,
+    # and Q is an orthagonal matrix. Verifies that A=Q@R. It also
+    # tests against a matrix that for which the  linalg.qr method returns
+    # negative diagonals, and for error messaging.
 
     # Additional note: this test stands alone without a NAG manual additional
-    #   example as the NAG problem was overly complex in for the small role
-    #   this routine played in it.
+    # example as the NAG problem was overly complex in for the small role
+    # this routine played in it.
+
     # set test tolerance appropriate for dtype
     np.random.seed(42)
     rtol = 250*np.finfo(dtype).eps
@@ -1734,10 +1735,7 @@ def test_geqrfp(dtype, matrix_size):
                             np.arange(r_rq_neg.shape[0]-1)] < 0) and
             np.all(r[np.arange(r.shape[0]-1),
                      np.arange(r.shape[0]-1)] > np.zeros(r.shape[0]-1)))
-    # assert that the first value (1 indexed 1) returned as the illegal value
-    A[0][0] = None
-    _qr_A, _tau, _work, _info = geqrfp(A)
-    assert_(_info == -1)
+
     # check that empty array raises good error message
     A_empty = np.array([])
     with assert_raises(Exception):
