@@ -1114,8 +1114,6 @@ class TestOptimizeSimple(CheckOptimize):
         with np.errstate(invalid='ignore'), suppress_warnings() as sup:
             # for trust-constr
             sup.filter(UserWarning, "delta_grad == 0.*")
-            sup.filter(RuntimeWarning, ".*does not use Hessian.*")
-            sup.filter(RuntimeWarning, ".*does not use gradient.*")
             optimize.minimize(self.func, self.startparams,
                               method=method, jac=jac, hess=hess)
 
