@@ -154,9 +154,6 @@ def fft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
     >>> plt.show()
 
     """
-    if plan is not None:
-        raise NotImplementedError('Passing a precomputed plan is not yet '
-                                  'supported by scipy.fft functions')
     return (Dispatchable(x, np.ndarray),)
 
 
@@ -259,9 +256,6 @@ def ifft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
     >>> plt.show()
 
     """
-    if plan is not None:
-        raise NotImplementedError('Passing a precomputed plan is not yet '
-                                  'supported by scipy.fft functions')
     return (Dispatchable(x, np.ndarray),)
 
 
@@ -353,9 +347,6 @@ def rfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
     exploited to compute only the non-negative frequency terms.
 
     """
-    if plan is not None:
-        raise NotImplementedError('Passing a precomputed plan is not yet '
-                                  'supported by scipy.fft functions')
     return (Dispatchable(x, np.ndarray),)
 
 
@@ -455,9 +446,6 @@ def irfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
     specified, and the output array is purely real.
 
     """
-    if plan is not None:
-        raise NotImplementedError('Passing a precomputed plan is not yet '
-                                  'supported by scipy.fft functions')
     return (Dispatchable(x, np.ndarray),)
 
 
@@ -538,9 +526,6 @@ def hfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
     >>> hfft(signal, 10)  # Input entire signal and truncate
     array([  0.,   5.,   0.,  15.,  -0.,   0.,   0., -15.,  -0.,   5.])
     """
-    if plan is not None:
-        raise NotImplementedError('Passing a precomputed plan is not yet '
-                                  'supported by scipy.fft functions')
     return (Dispatchable(x, np.ndarray),)
 
 
@@ -605,9 +590,6 @@ def ihfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
     >>> ihfft(spectrum)
     array([ 1.-0.j,  2.-0.j,  3.-0.j,  4.-0.j]) # may vary
     """
-    if plan is not None:
-        raise NotImplementedError('Passing a precomputed plan is not yet '
-                                  'supported by scipy.fft functions')
     return (Dispatchable(x, np.ndarray),)
 
 
@@ -709,9 +691,6 @@ def fftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
     >>> plt.show()
 
     """
-    if plan is not None:
-        raise NotImplementedError('Passing a precomputed plan is not yet '
-                                  'supported by scipy.fft functions')
     return (Dispatchable(x, np.ndarray),)
 
 
@@ -812,9 +791,6 @@ def ifftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
     >>> plt.show()
 
     """
-    if plan is not None:
-        raise NotImplementedError('Passing a precomputed plan is not yet '
-                                  'supported by scipy.fft functions')
     return (Dispatchable(x, np.ndarray),)
 
 
@@ -911,9 +887,6 @@ def fft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None, *
               0.  +0.j        ,   0.  +0.j        ]])
 
     """
-    if plan is not None:
-        raise NotImplementedError('Passing a precomputed plan is not yet '
-                                  'supported by scipy.fft functions')
     return (Dispatchable(x, np.ndarray),)
 
 
@@ -1007,9 +980,6 @@ def ifft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None, 
            [0.+0.j,  1.+0.j,  0.+0.j,  0.+0.j]])
 
     """
-    if plan is not None:
-        raise NotImplementedError('Passing a precomputed plan is not yet '
-                                  'supported by scipy.fft functions')
     return (Dispatchable(x, np.ndarray),)
 
 
@@ -1107,9 +1077,6 @@ def rfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
             [0.+0.j,  0.+0.j]]])
 
     """
-    if plan is not None:
-        raise NotImplementedError('Passing a precomputed plan is not yet '
-                                  'supported by scipy.fft functions')
     return (Dispatchable(x, np.ndarray),)
 
 
@@ -1156,9 +1123,6 @@ def rfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None, 
     For more details see `rfftn`.
 
     """
-    if plan is not None:
-        raise NotImplementedError('Passing a precomputed plan is not yet '
-                                  'supported by scipy.fft functions')
     return (Dispatchable(x, np.ndarray),)
 
 
@@ -1263,9 +1227,6 @@ def irfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
             [1.,  1.]]])
 
     """
-    if plan is not None:
-        raise NotImplementedError('Passing a precomputed plan is not yet '
-                                  'supported by scipy.fft functions')
     return (Dispatchable(x, np.ndarray),)
 
 
@@ -1312,9 +1273,6 @@ def irfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None,
     For more details see `irfftn`.
 
     """
-    if plan is not None:
-        raise NotImplementedError('Passing a precomputed plan is not yet '
-                                  'supported by scipy.fft functions')
     return (Dispatchable(x, np.ndarray),)
 
 
@@ -1426,9 +1384,6 @@ def hfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
             [ 0.,  0.]]])
 
     """
-    if plan is not None:
-        raise NotImplementedError('Passing a precomputed plan is not yet '
-                                  'supported by scipy.fft functions')
     return (Dispatchable(x, np.ndarray),)
 
 
@@ -1475,9 +1430,6 @@ def hfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None, 
     For more details see `hfftn`.
 
     """
-    if plan is not None:
-        raise NotImplementedError('Passing a precomputed plan is not yet '
-                                  'supported by scipy.fft functions')
     return (Dispatchable(x, np.ndarray),)
 
 
@@ -1570,9 +1522,6 @@ def ihfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
             [0.+0.j,  0.+0.j]]])
 
     """
-    if plan is not None:
-        raise NotImplementedError('Passing a precomputed plan is not yet '
-                                  'supported by scipy.fft functions')
     return (Dispatchable(x, np.ndarray),)
 
 
@@ -1619,7 +1568,4 @@ def ihfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None,
     For more details see `ihfftn`.
 
     """
-    if plan is not None:
-        raise NotImplementedError('Passing a precomputed plan is not yet '
-                                  'supported by scipy.fft functions')
     return (Dispatchable(x, np.ndarray),)
