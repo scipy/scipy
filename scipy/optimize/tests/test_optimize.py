@@ -1111,10 +1111,8 @@ class TestOptimizeSimple(CheckOptimize):
                       'dogleg'):
             hess = self.hess
 
-        x = self.startparams
-        self.trace = []
-
-        optimize.minimize(self.func, x, method=method, jac=jac, hess=hess)
+        optimize.minimize(self.func, self.startparams,
+                          method=method, jac=jac, hess=hess)
         for i in range(1, len(self.trace)):
             if np.array_equal(self.trace[i - 1], self.trace[i]):
                 raise RuntimeError(
