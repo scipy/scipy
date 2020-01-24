@@ -1096,6 +1096,30 @@ class TestOptimizeSimple(CheckOptimize):
                                         options=dict(maxiter=20))
                 assert_equal(sol.success, False)
 
+    @pytest.mark.parametrize('method', ['nelder-mead', 'cg', 'bfgs',
+                                        'l-bfgs-b', 'tnc',
+                                        'cobyla', 'slsqp', 'trust-constr',
+                                        'dogleg', 'trust-ncg', 'trust-exact',
+                                        'trust-krylov'])
+    def test_duplicate_evaluations(self, method):
+        # check that there are no duplicate evaluations for any methods
+        jac = hess = None
+        if method in ('newton-cg', 'trust-krylov', 'trust-exact',
+                      'trust-ncg', 'dogleg'):
+            jac = self.grad
+        if method in ('trust-krylov', 'trust-exact', 'trust-ncg',
+                      'dogleg'):
+            hess = self.hess
+
+        x = self.startparams
+        self.trace = []
+
+        optimize.minimize(self.func, x, method=method, jac=jac, hess=hess)
+        for i in range(1, len(self.trace)):
+            if np.array_equal(self.trace[i - 1], self.trace[i]):
+                raise RuntimeError(
+                    "Duplicate evaluations made by {}".format(method))
+
 
 class TestLBFGSBBounds(object):
     def setup_method(self):
