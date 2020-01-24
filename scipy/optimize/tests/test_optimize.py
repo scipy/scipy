@@ -1111,8 +1111,14 @@ class TestOptimizeSimple(CheckOptimize):
                       'dogleg'):
             hess = self.hess
 
-        optimize.minimize(self.func, self.startparams,
-                          method=method, jac=jac, hess=hess)
+        with np.errstate(invalid='ignore'), suppress_warnings() as sup:
+            # for trust-constr
+            sup.filter(UserWarning, "delta_grad == 0.*")
+            sup.filter(RuntimeWarning, ".*does not use Hessian.*")
+            sup.filter(RuntimeWarning, ".*does not use gradient.*")
+            optimize.minimize(self.func, self.startparams,
+                              method=method, jac=jac, hess=hess)
+
         for i in range(1, len(self.trace)):
             if np.array_equal(self.trace[i - 1], self.trace[i]):
                 raise RuntimeError(
