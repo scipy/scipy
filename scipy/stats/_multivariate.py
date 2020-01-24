@@ -3838,12 +3838,16 @@ class multivariate_t_gen(multi_rv_generic):
         Parameters
         ----------
         seed : Random state.
+
+        .. versionadded:: 1.5.0
         """
         self._random_state = check_random_state(seed)
 
     def __call__(self, mean=None, shape=1, df=1, seed=None):
         """Create a frozen multivariate t-distribution. See
         `multivariate_t_frozen` for parameters.
+
+        .. versionadded:: 1.5.0
         """
         return multivariate_t_frozen(mean=mean, shape=shape, df=df, seed=seed)
 
@@ -3865,6 +3869,18 @@ class multivariate_t_gen(multi_rv_generic):
         Returns
         -------
         pdf : Probability density function evaluated at `x`.
+
+        Examples
+        --------
+        >>> from scipy.stats import multivariate_t
+        >>> x = [0.4, 5]
+        >>> mean = [0, 1]
+        >>> shape = [[1, 0.1], [0.1, 1]]
+        >>> df = 7
+        >>> multivariate_t.pdf(x, mean, shape, df)
+        array([0.00075713])
+
+        .. versionadded:: 1.5.0
         """
         dim, mean, shape, df = self._process_parameters(mean, shape, df)
         x = self._process_quantiles(x, dim)
@@ -3891,6 +3907,18 @@ class multivariate_t_gen(multi_rv_generic):
         Returns
         -------
         logpdf : Log of the probability density function evaluated at `x`.
+
+        Examples
+        --------
+        >>> from scipy.stats import multivariate_t
+        >>> x = [0.4, 5]
+        >>> mean = [0, 1]
+        >>> shape = [[1, 0.1], [0.1, 1]]
+        >>> df = 7
+        >>> multivariate_t.logpdf(x, mean, shape, df)
+        array([-7.1859802])
+
+        .. versionadded:: 1.5.0
         """
         dim, mean, shape, df = self._process_parameters(mean, shape, df)
         x = self._process_quantiles(x, dim)
@@ -3927,6 +3955,18 @@ class multivariate_t_gen(multi_rv_generic):
         rvs : ndarray or scalar
             Random variates of size (`size`, `P`), where `P` is the
             dimension of the random variable.
+
+        Examples
+        --------
+        >>> from scipy.stats import multivariate_t
+        >>> x = [0.4, 5]
+        >>> mean = [0, 1]
+        >>> shape = [[1, 0.1], [0.1, 1]]
+        >>> df = 7
+        >>> multivariate_t.rvs(mean, shape, df)
+        array([[0.93477495, 3.00408716]])
+
+        .. versionadded:: 1.5.0
         """
         # For implementation details, see equation (3):
         #
@@ -4018,20 +4058,29 @@ class multivariate_t_gen(multi_rv_generic):
 class multivariate_t_frozen(multi_rv_frozen):
 
     def __init__(self, mean=None, shape=1, df=1, seed=None):
-        """
-        Create a frozen multivariate normal distribution.
+        """Create a frozen multivariate t distribution.
 
         Parameters
         ----------
-        x : array_like
-            Points at which to evaluate the log of the probability density
-            function.
         mean : array_like, optional
-            Mean of the distribution (default zero).
+            Mean of the distribution (default zero)
         shape : array_like, optional
             Positive definite shape matrix. This is not the distribution's
             covariance matrix (default one).
         df : Degrees of freedom.
+
+        Examples
+        --------
+        >>> mean = np.zeros(3)
+        >>> shape = np.eye(3)
+        >>> df = 10
+        >>> dist = multivariate_t(mean, shape, df)
+        >>> dist.rvs()
+        array([[ 0.81412036, -1.53612361,  0.42199647]])
+        >>> dist.pdf([1, 1, 1])
+        array([0.01237803])
+
+        .. versionadded:: 1.5.0
         """
         self._dist = multivariate_t_gen(seed)
         dim, mean, shape, df = self._dist._process_parameters(mean, shape, df)

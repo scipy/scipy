@@ -1764,6 +1764,22 @@ class TestMultivariateT:
         samples2 = dist2.rvs(size=10)
         assert_equal(samples1, samples2)
 
+    def test_scalar_list_and_ndarray_arguments(self):
+        dist = multivariate_t(-1, 2, 3)
+        assert(dist.mean == np.array([-1]))
+        assert(dist.shape == np.array([2]))
+        assert(dist.df == 3)
+
+        dist = multivariate_t([-1], [2], 3)
+        assert(dist.mean == np.array([-1]))
+        assert(dist.shape == np.array([2]))
+        assert(dist.df == 3)
+
+        dist = multivariate_t(np.array([-1]), np.array([2]), 3)
+        assert(dist.mean == np.array([-1]))
+        assert(dist.shape == np.array([2]))
+        assert(dist.df == 3)
+
 
 def check_pickling(distfn, args):
     # check that a distribution instance pickles and unpickles
