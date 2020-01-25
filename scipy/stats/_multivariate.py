@@ -3830,41 +3830,137 @@ class unitary_group_gen(multi_rv_generic):
 unitary_group = unitary_group_gen()
 
 
+_mvt_doc_default_callparams = \
+"""
+mean : array_like, optional
+    Mean of the distribution. (default ``0``)
+shape : array_like, optional
+    Positive definite matrix of the distribution. (default ``1``)
+df : integer, optional
+    Degrees of freedom of the distribution; must be a positive whole number. (default ``1``) 
+allow_singular : bool, optional
+    Whether to allow a singular matrix. (default ``False``)
+"""
+
+_mvt_doc_callparams_note = \
+"""Setting the parameter `mean` to ``None`` is equivalent to having `mean`
+be the zero-vector. The parameter `shape` can be a scalar, in which case
+the shape matrix is the identity times that value, a vector of
+diagonal entries for the shape matrix, or a two-dimensional array_like.
+"""
+
+_mvt_doc_frozen_callparams_note = \
+"""See class definition for a detailed description of parameters."""
+
+mvt_docdict_params = {
+    '_mvt_doc_default_callparams': _mvt_doc_default_callparams,
+    '_mvt_doc_callparams_note': _mvt_doc_callparams_note,
+    '_doc_random_state': _doc_random_state
+}
+
+mvt_docdict_noparams = {
+    '_mvt_doc_default_callparams': "",
+    '_mvt_doc_callparams_note': _mvt_doc_frozen_callparams_note,
+    '_doc_random_state': _doc_random_state
+}
+
+
 class multivariate_t_gen(multi_rv_generic):
+    r"""
+    A multivariate t-distributed random variable.
+
+    The `mean` parameter specifies the mean. The `shape` parameter specifies 
+    the positive definite shape matrix. The `df` parameter specifies the 
+    degrees of freedom.
+
+    In addition to calling the methods below, the object itself may be called 
+    as a function to fix the mean, shape matrix, and degrees of freedom 
+    parameters, returning a "frozen" multivariate t-distribution random.
+
+    .. versionadded:: 1.5.0
+
+    Methods
+    -------
+    ``pdf(x, mean=None, shape=1, df=1, allow_singular=False)``
+        Probability density function.
+    ``logpdf(x, mean=None, shape=1, df=1, allow_singular=False)``
+        Log of the probability density function.
+    ``rvs(mean=None, shape=1, df=1, size=1, random_state=None)``
+        Draw random samples from a multivariate t-distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Quantiles, with the last axis of `x` denoting the components.
+    %(_mvt_doc_default_callparams)s
+    %(_doc_random_state)s
+
+    Notes
+    -----
+    %(_mvt_doc_callparams_note)s
+
+    The matrix `shape` must be a (symmetric) positive definite matrix. The 
+    determinant and inverse of `shape` are computed as the pseudo-determinant 
+    and pseudo-inverse, respectively, so that `shape` does not need to have 
+    full rank.
+
+    The probability density function for `multivariate_t` is
+
+    .. math::
+
+        f(x) = \frac{\Gamma(\nu + p)/2}{\Gamma(\nu/2)\nu^{p/2}\pi^{p/2}|\Sigma|^{1/2}}
+               \exp\left[1 + \frac{1}{\nu} (\mathbf{x} - \boldsymbol{\mu})^{\top} 
+               \boldsymbol{\Sigma}^{-1}
+               (\mathbf{x} - \boldsymbol{\mu}) \right]^{-(\nu + p)/2},
+
+    where :math:`p` is the dimension of :math:`\mathbf{x}`, 
+    :math:`\boldsymbol{\mu}` is the :math:`p`-dimensional mean, 
+    :math:`\boldsymbol{\Sigma}` the :math:`p \times p`-dimensional shape 
+    matrix, and :math:`\nu` is the degrees of freedom.
+
+    Examples
+    --------
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.stats import multivariate_t
+    >>> x, y = np.mgrid[-1:1:.01, -1:1:.01]
+    >>> pos = np.dstack((x, y))
+    >>> rv = multivariate_t([1.0, -0.5], [[2.1, 0.3], [0.3, 1.5]], df=2)
+    >>> plt.contourf(x, y, rv.pdf(pos))
+
+    """
 
     def __init__(self, seed=None):
-        """Initialize a multivariate t-distributed random variable.
+        """
+        Initialize a multivariate t-distributed random variable.
 
         Parameters
         ----------
         seed : Random state.
 
-        .. versionadded:: 1.5.0
         """
+        super(multivariate_t_gen, self).__init__(seed)
+        self.__doc__ = doccer.docformat(self.__doc__, mvt_docdict_params)
         self._random_state = check_random_state(seed)
 
-    def __call__(self, mean=None, shape=1, df=1, seed=None):
-        """Create a frozen multivariate t-distribution. See
+    def __call__(self, mean=None, shape=1, df=1, allow_singular=False,
+                 seed=None):
+        """
+        Create a frozen multivariate t-distribution. See
         `multivariate_t_frozen` for parameters.
 
-        .. versionadded:: 1.5.0
         """
-        return multivariate_t_frozen(mean=mean, shape=shape, df=df, seed=seed)
+        return multivariate_t_frozen(mean=mean, shape=shape, df=df,
+                                     allow_singular=allow_singular, seed=seed)
 
-    def pdf(self, x, mean=None, shape=1, df=1):
-        """Multivariate t-distribution probability density function.
+    def pdf(self, x, mean=None, shape=1, df=1, allow_singular=False):
+        """
+        Multivariate t-distribution probability density function.
 
         Parameters
         ----------
         x : array_like
-            Points at which to evaluate the log of the probability density
-            function.
-        mean : array_like, optional
-            Mean of the distribution (default zero).
-        shape : array_like, optional
-            Positive definite shape matrix. This is not the distribution's
-            covariance matrix (default one).
-        df : Degrees of freedom.
+            Points at which to evaluate the probability density function.
+        %(_mvt_doc_default_callparams)s
 
         Returns
         -------
@@ -3880,29 +3976,24 @@ class multivariate_t_gen(multi_rv_generic):
         >>> multivariate_t.pdf(x, mean, shape, df)
         array([0.00075713])
 
-        .. versionadded:: 1.5.0
         """
         dim, mean, shape, df = self._process_parameters(mean, shape, df)
         x = self._process_quantiles(x, dim)
-        shape_info = _PSD(shape)
+        shape_info = _PSD(shape, allow_singular=allow_singular)
         logpdf = self._logpdf(x, mean, shape_info.U, shape_info.log_pdet, df,
                               dim)
         return np.exp(logpdf)
 
     def logpdf(self, x, mean=None, shape=1, df=1):
-        """Log of the multivariate t-distribution probability density function.
+        """
+        Log of the multivariate t-distribution probability density function.
 
         Parameters
         ----------
         x : array_like
             Points at which to evaluate the log of the probability density
             function.
-        mean : array_like, optional
-            Mean of the distribution (default zero).
-        shape : array_like, optional
-            Positive definite shape matrix. This is not the distribution's
-            covariance matrix (default one).
-        df : Degrees of freedom.
+        %(_mvt_doc_default_callparams)s
 
         Returns
         -------
@@ -3918,18 +4009,43 @@ class multivariate_t_gen(multi_rv_generic):
         >>> multivariate_t.logpdf(x, mean, shape, df)
         array([-7.1859802])
 
-        .. versionadded:: 1.5.0
+        See Also
+        --------
+        pdf : Probability density function.
+
         """
         dim, mean, shape, df = self._process_parameters(mean, shape, df)
         x = self._process_quantiles(x, dim)
         shape_info = _PSD(shape)
         return self._logpdf(x, mean, shape_info.U, shape_info.log_pdet, df, dim)
 
-    def _logpdf(self, x, mean, U, log_pdet, df, dim):
+    def _logpdf(self, x, mean, prec_U, log_pdet, df, dim):
         """Utility method `pdf`, `logpdf` for parameters.
+
+        Parameters
+        ----------
+        x : ndarray
+            Points at which to evaluate the log of the probability density 
+            function.
+        mean : ndarray
+            Mean of the distribution.
+        prec_U : ndarray
+            A decomposition such that `np.dot(prec_U, prec_U.T)` is the inverse
+            of the shape matrix.
+        log_det_cov : float
+            Logarithm of the determinant of the shape matrix.
+        df : int
+            Degrees of freedom of the distribution.
+        dim : int
+            Dimension of the quantiles x.
+
+        Notes
+        -----
+        As this function does no argument checking, it should not be called
+        directly; use 'logpdf' instead.
         """
         dev  = x - mean
-        maha = np.square(np.dot(dev, U)).sum(axis=-1)
+        maha = np.square(np.dot(dev, prec_U)).sum(axis=-1)
 
         t = 0.5 * (df + dim)
         A = gammaln(t)
@@ -3941,14 +4057,15 @@ class multivariate_t_gen(multi_rv_generic):
         return A - B - C - D + E
 
     def rvs(self, mean=None, shape=1, df=1, size=1, random_state=None):
-        """Draw random samples from a multivariate t-distribution.
+        """
+        Draw random samples from a multivariate t-distribution.
 
         Parameters
         ----------
+        %(_mvt_doc_default_callparams)s
         size : integer, optional
             Number of samples to draw (default 1).
-        random_state : np.random.RandomState instance
-            RandomState used for drawing the random variates.
+        %(_doc_random_state)s
 
         Returns
         -------
@@ -3966,7 +4083,6 @@ class multivariate_t_gen(multi_rv_generic):
         >>> multivariate_t.rvs(mean, shape, df)
         array([[0.93477495, 3.00408716]])
 
-        .. versionadded:: 1.5.0
         """
         # For implementation details, see equation (3):
         #
@@ -4057,17 +4173,14 @@ class multivariate_t_gen(multi_rv_generic):
 
 class multivariate_t_frozen(multi_rv_frozen):
 
-    def __init__(self, mean=None, shape=1, df=1, seed=None):
-        """Create a frozen multivariate t distribution.
+    def __init__(self, mean=None, shape=1, df=1, allow_singular=False,
+                 seed=None):
+        """
+        Create a frozen multivariate t distribution.
 
         Parameters
         ----------
-        mean : array_like, optional
-            Mean of the distribution (default zero)
-        shape : array_like, optional
-            Positive definite shape matrix. This is not the distribution's
-            covariance matrix (default one).
-        df : Degrees of freedom.
+        %(_mvt_doc_default_callparams)s
 
         Examples
         --------
@@ -4080,12 +4193,11 @@ class multivariate_t_frozen(multi_rv_frozen):
         >>> dist.pdf([1, 1, 1])
         array([0.01237803])
 
-        .. versionadded:: 1.5.0
         """
         self._dist = multivariate_t_gen(seed)
         dim, mean, shape, df = self._dist._process_parameters(mean, shape, df)
         self.dim, self.mean, self.shape, self.df = dim, mean, shape, df
-        self.shape_info = _PSD(shape)
+        self.shape_info = _PSD(shape, allow_singular=allow_singular)
 
     def logpdf(self, x):
         x = self._dist._process_quantiles(x, self.dim)
@@ -4105,3 +4217,12 @@ class multivariate_t_frozen(multi_rv_frozen):
 
 
 multivariate_t = multivariate_t_gen()
+
+# Set frozen generator docstrings from corresponding docstrings in
+# multivariate_t_gen and fill in default strings in class docstrings
+for name in ['logpdf', 'pdf', 'rvs']:
+    method = multivariate_t_gen.__dict__[name]
+    method_frozen = multivariate_t_frozen.__dict__[name]
+    method_frozen.__doc__ = doccer.docformat(method.__doc__,
+                                             mvt_docdict_noparams)
+    method.__doc__ = doccer.docformat(method.__doc__, mvt_docdict_params)

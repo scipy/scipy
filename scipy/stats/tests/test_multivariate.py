@@ -1781,6 +1781,31 @@ class TestMultivariateT:
         assert(dist.shape == np.array([2]))
         assert(dist.df == 3)
 
+    def test_allow_singular(self):
+        mean = np.zeros(4)
+        shape = np.eye(4)
+        df = 1
+
+        try:
+            multivariate_t(mean, shape, df, allow_singular=False)
+        except np.linalg.LinAlgError:
+            pytest.fail("Test failed by unexpectedly raising `LinAlgError`.")
+
+        # Make shape singular and verify error was raised.
+        shape[2, 2] = 0
+        allow_singular = False
+        seed = 0
+        assert_raises(np.linalg.LinAlgError,
+                      multivariate_t,
+                      mean, shape, df, allow_singular, seed)
+
+        # Check that singular `shape` is when when `allow_singular=True`.
+        try:
+            multivariate_t(mean, shape, df, allow_singular=True)
+        except np.linalg.LinAlgError:
+            pytest.fail("Test failed by unexpectedly raising `LinAlgError`.")
+
+
 
 def check_pickling(distfn, args):
     # check that a distribution instance pickles and unpickles
