@@ -42,6 +42,10 @@ from ._digamma cimport digamma
 from ._complexstuff cimport inf, nan
 from . cimport sf_error
 
+# Euler Gamma constant aka Euler Mascheroni constant
+DEF M_EG = 0.57721566490153286060
+# zeta(3)
+DEF M_Z3 = 1.2020569031595942854
 # rgamma_zero: smallest value x for which rgamma(x) == 0 as x gets large
 DEF rgamma_zero = 178.47241115886637
 # exp_inf: smallest value x for which exp(x) == inf
@@ -93,22 +97,58 @@ cdef inline double _wb_series(double a, double b, double x,
 #    where Psi is the digamma function.
 @cython.cdivision(True)
 cdef inline double _wb_small_a(double a, double b, double x, int order) nogil:
-    cdef double dg, dg1, dg2, dg3, res
-    dg = digamma(b)
-    # dg1 = polygamma(1, b)
-    dg1 = zeta(2, x)
-    # res = 1 - a*x*dg + a**2/2*x*(1+x)*(dg**2 - dg1)
-    res = 1 + a*x*(-dg + 0.5*a*(1 + x)*(dg**2 - dg1))
-    if order >= 3:
-        # dg2 = polygamma(2, b)
-        dg2 = -2. * zeta(3, x)
-        res += -a**3/6. * x*(x**2 + 3*x + 1)*(dg**3 - 3*dg*dg1 + dg2)
-    if order >= 4:
-        # dg3 = polygamma(3, b)
-        dg3 =  6 * zeta(4, x)
-        res += a**4/24. * x*(x**3 + 6*x**2 + 7*x + 1) \
-               *(dg**4 - 6*dg**2*dg1 + 4*dg*dg2 + 3*dg1**2 - dg3)
-    res *= exp(x) * rgamma(b)
+    cdef:
+        double dg, dg1, dg2, dg3, res
+        double A[5]  # powers of a^k/k!
+        double B[5]  # powers of b^k/k!
+        double C[5]  # coefficients of a^k1 * b^k2
+        int k
+
+    if b <= 1e-3:
+        # Small b need a series expansion of digamma(b)/Gamma(b) as both have
+        # poles 1/b that cancel out.
+        # digamma(b)/Gamma(b) = −1 − 2*M_EG*b + O(b^2)
+        # digamma(b)^2/Gamma(b) = 1/b + 3*M_EG + b*(−5/12*PI^2+7/2*M_EG^2)
+        #                         + O(b^2)
+        # polygamma(1, b)/Gamma(b) = 1/b + M_EG + b*(1/12*PI^2 + 1/2*M_EG^2)
+        #                            + O(z)
+        # and so on
+        #
+        # Series expansion of both a and b up to order 5:
+        C[0] = 1
+        C[1] = 2*M_EG
+        C[2] = 3*M_EG**2 - M_PI**2/2
+        C[3] = 8*M_Z3 + 4*M_EG**3 - 2*M_EG*M_PI**2
+        C[4] = 40*M_EG*M_Z3 + 5*M_EG**4 - 5*M_EG**2*M_PI**2 + M_PI**4/12
+        B[0] = 1.
+        B[0] = 1.
+        for k in range(1, 5):
+            A[k] = a/k*A[k-1]
+            B[k] = b/k*B[k-1]
+
+        res = rgamma(b)
+        res += a*x * (C[0] + C[1]*b + C[2]*B[2] + C[3]*B[3] + C[4]*B[4])
+        res += A[2]*x*(1+x)*(C[1]   + C[2]*b    + C[3]*B[2] + C[4]*B[3])
+        res += A[3]*x*(x**2+3*x+1) * (C[2]      + C[3]*b    + C[4]*B[2])
+        res += A[4]*x*(x**3+6*x**2+7*x+1) *      (C[3]      + C[4]*b)
+        res += A[5]*x*(x**4+10*x**3+25*x**2+15*x+1) *         C[4]
+        res *= exp(x)
+    else:
+        dg = digamma(b)
+        # dg1 = polygamma(1, b)
+        dg1 = zeta(2, x)
+        # res = 1 - a*x*dg + a**2/2*x*(1+x)*(dg**2 - dg1)
+        res = 1 + a*x*(-dg + 0.5*a*(1 + x)*(dg**2 - dg1))
+        if order >= 3:
+            # dg2 = polygamma(2, b)
+            dg2 = -2. * zeta(3, x)
+            res += -a**3/6. * x*(x**2 + 3*x + 1)*(dg**3 - 3*dg*dg1 + dg2)
+        if order >= 4:
+            # dg3 = polygamma(3, b)
+            dg3 =  6 * zeta(4, x)
+            res += a**4/24. * x*(x**3 + 6*x**2 + 7*x + 1) \
+                   *(dg**4 - 6*dg**2*dg1 + 4*dg*dg2 + 3*dg1**2 - dg3)
+        res *= exp(x) * rgamma(b)
     return res
 
 
@@ -373,8 +413,8 @@ cdef inline double wright_bessel_integral(double a, double b, double x) nogil:
     # We try to make eps * sin(phi) and x * eps^(-a) * cos(a*phi) small at
     # the same time. Otherwise, P can be highly oscillatory and unpredictable.
     if x > 1 and a > 1:
-        # set eps such that x*eps^(-a) = 1
-        eps = pow(x, 1./a)
+        # set eps such that x*eps^(-a) = 2^(-a) < 0.5
+        eps = 2. * pow(x, 1./a)
     elif x > 1 and a > 0:
         # set eps such that eps ~ x * eps^(-rho)
         eps = pow(x, 1./(1+a))
@@ -427,6 +467,7 @@ cdef inline double wright_bessel_scalar(double a, double b, double x) nogil:
         or (a <= 1e-5 and x <= 100) \
         or (a <= 1e-6 and x < exp_inf):
         # series expansion in 'a' to order=order => precision <~ 1e-13
+        # if beta also small => precision <~ 2e-14
         # max order = 4
         # a <= 1e-5 and x <= 1    : order = 2
         # a <= 1e-4 and x <= 1    : order = 3
