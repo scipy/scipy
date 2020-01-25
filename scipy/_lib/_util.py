@@ -265,6 +265,13 @@ def _asarray_validated(a, check_finite=True,
 #
 # This way, the caller code does not need to know whether it uses a legacy
 # .getargspec or a bright and shiny .signature.
+
+# NOTE: Py3 supports keyword-only arguments which are NOT returned by
+# getargspec_no_self.   It is likely that inspections should be done
+# using getfullargspec_no_self instead.
+# Python's inspect.getargspec raises an Exception if the signature contains
+# keyword-only arguments and getargspec_no_self does the same.
+
 ArgSpec = namedtuple('ArgSpec', ['args', 'varargs', 'keywords', 'defaults'])
 
 
@@ -284,15 +291,25 @@ def getargspec_no_self(func):
     argspec : ArgSpec(args, varargs, varkw, defaults)
         This is similar to the result of inspect.getargspec(func) under
         Python 2.x.
+
         NOTE: if the first argument of `func` is self, it is *not*, I repeat
         *not*, included in argspec.args.
         This is done for consistency between inspect.getargspec() under
         Python 2.x, and inspect.signature() under Python 3.x.
+
+        Keyword arguments are NOT returned by getargspec_no_self, use
+        getfullargspec_no_self instead.
+
+    Raises
+    ------
+    ValueError
+        If the signature contains keyword-only arguments.
     """
     sig = inspect.signature(func)
     args = [
         p.name for p in sig.parameters.values()
-        if p.kind == inspect.Parameter.POSITIONAL_OR_KEYWORD
+        if p.kind in [inspect.Parameter.POSITIONAL_OR_KEYWORD,
+                      inspect.Parameter.POSITIONAL_ONLY]
     ]
     varargs = [
         p.name for p in sig.parameters.values()
@@ -309,7 +326,66 @@ def getargspec_no_self(func):
         if (p.kind == inspect.Parameter.POSITIONAL_OR_KEYWORD and
            p.default is not p.empty)
     ] or None
+    # Ignore any annotations but raise if keyword-only arguments
+    if inspect.Parameter.KEYWORD_ONLY in {p.kind for p in sig.parameters.values()}:
+        raise ValueError("Function has keyword-only arguments, use "
+                         "getfullargspec_no_self() API which can support them")
+
     return ArgSpec(args, varargs, varkw, defaults)
+
+
+FullArgSpec = namedtuple('FullArgSpec',
+                         ['args', 'varargs', 'keywords', 'defaults',
+                          'kwonlyargs', 'kwonlydefaults', 'annotations'])
+
+def getfullargspec_no_self(func):
+    """inspect.getfullargspec replacement using inspect.signature.
+
+    inspect.getfullargspec is deprecated in Python 3.5. This is a replacement
+    based on `inspect.signature`.
+
+    Parameters
+    ----------
+    func : callable
+        A callable to inspect
+
+    Returns
+    -------
+    fullargspec : FullArgSpec(args, varargs, varkw, defaults, kwonlyargs,
+                              kwonlydefaults, annotations)
+    """
+    sig = inspect.signature(func)
+    args = [
+        p.name for p in sig.parameters.values()
+        if p.kind in [inspect.Parameter.POSITIONAL_OR_KEYWORD,
+                      inspect.Parameter.POSITIONAL_ONLY]
+    ]
+    varargs = [
+        p.name for p in sig.parameters.values()
+        if p.kind == inspect.Parameter.VAR_POSITIONAL
+    ]
+    varargs = varargs[0] if varargs else None
+    varkw = [
+        p.name for p in sig.parameters.values()
+        if p.kind == inspect.Parameter.VAR_KEYWORD
+    ]
+    varkw = varkw[0] if varkw else None
+    defaults = tuple(
+        p.default for p in sig.parameters.values()
+        if (p.kind == inspect.Parameter.POSITIONAL_OR_KEYWORD and
+           p.default is not p.empty)
+    ) or None
+    kwonlyargs = [
+        p.name for p in sig.parameters.values()
+        if p.kind == inspect.Parameter.KEYWORD_ONLY
+    ]
+    kwdefaults = {p.name: p.default for p in sig.parameters.values()
+                  if p.kind == inspect.Parameter.KEYWORD_ONLY and
+                  p.default is not p.empty}
+    annotations = {p.name: p.annotation for p in sig.parameters.values()
+                   if p.annotation is not p.empty}
+    return FullArgSpec(args, varargs, varkw, defaults, kwonlyargs,
+                       kwdefaults or None, annotations)
 
 
 class MapWrapper(object):

@@ -4,7 +4,7 @@
 #
 from __future__ import division, print_function, absolute_import
 
-from scipy._lib._util import getargspec_no_self as _getargspec
+from scipy._lib._util import getfullargspec_no_self as _getfullargspec
 
 import sys
 import keyword
@@ -581,9 +581,9 @@ class rv_generic(object):
         super(rv_generic, self).__init__()
 
         # figure out if _stats signature has 'moments' keyword
-        sign = _getargspec(self._stats)
+        sign = _getfullargspec(self._stats)
         self._stats_has_moments = ((sign[2] is not None) or
-                                   ('moments' in sign[0]))
+                                   ('moments' in sign[0]) or ('moments' in sign[4]))
         self._random_state = check_random_state(seed)
 
     @property
@@ -647,7 +647,7 @@ class rv_generic(object):
             # are shapes.
             shapes_list = []
             for meth in meths_to_inspect:
-                shapes_args = _getargspec(meth)   # NB: does not contain self
+                shapes_args = _getfullargspec(meth)   # NB: does not contain self
                 args = shapes_args.args[1:]       # peel off 'x', too
 
                 if args:
@@ -660,6 +660,9 @@ class rv_generic(object):
                     if shapes_args.keywords is not None:
                         raise TypeError(
                             '**kwds are not allowed w/out explicit shapes')
+                    if shapes_args.kwonlyargs:
+                        raise TypeError(
+                            'kwonly args are not allowed w/out explicit shapes')
                     if shapes_args.defaults is not None:
                         raise TypeError('defaults are not allowed for shapes')
 
