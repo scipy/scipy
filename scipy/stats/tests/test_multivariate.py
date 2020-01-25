@@ -1703,12 +1703,13 @@ class TestMultivariateT:
 
     def test_pdf_correctness(self):
         for t in MULTIVARIATE_T_TESTS:
-            val = multivariate_t.pdf(t['x'], t['mu'], t['shape'], t['df'])
+            dist = multivariate_t(t['mu'], t['shape'], t['df'], seed=0)
+            val = dist.pdf(t['x'])
             assert_array_almost_equal(val, t['ans'])
 
     def test_logpdf_correct(self):
         for t in MULTIVARIATE_T_TESTS:
-            dist = multivariate_t(t['mu'], t['shape'], t['df'])
+            dist = multivariate_t(t['mu'], t['shape'], t['df'], seed=0)
             # We already test this elsewhere, but let's explicitly confirm the
             # PDF is correct since this test requires checking the log of that
             # value.
