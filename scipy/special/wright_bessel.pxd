@@ -99,7 +99,7 @@ cdef inline double _wb_series(double a, double b, double x,
 cdef inline double _wb_small_a(double a, double b, double x, int order) nogil:
     cdef:
         double dg, dg1, dg2, dg3, res
-        double A[5]  # powers of a^k/k!
+        double A[6]  # powers of a^k/k!
         double B[5]  # powers of b^k/k!
         double C[5]  # coefficients of a^k1 * b^k2
         int k
@@ -120,12 +120,12 @@ cdef inline double _wb_small_a(double a, double b, double x, int order) nogil:
         C[2] = 3*M_EG**2 - M_PI**2/2
         C[3] = 8*M_Z3 + 4*M_EG**3 - 2*M_EG*M_PI**2
         C[4] = 40*M_EG*M_Z3 + 5*M_EG**4 - 5*M_EG**2*M_PI**2 + M_PI**4/12
-        B[0] = 1.
+        A[0] = 1.
         B[0] = 1.
         for k in range(1, 5):
-            A[k] = a/k*A[k-1]
-            B[k] = b/k*B[k-1]
-
+            A[k] = a/k * A[k-1]
+            B[k] = b/k * B[k-1]
+        A[5] = a/5*A[4]
         res = rgamma(b)
         res += a*x * (C[0] + C[1]*b + C[2]*B[2] + C[3]*B[3] + C[4]*B[4])
         res += A[2]*x*(1+x)*(C[1]   + C[2]*b    + C[3]*B[2] + C[4]*B[3])
@@ -416,10 +416,13 @@ cdef inline double wright_bessel_integral(double a, double b, double x) nogil:
         # set eps such that x*eps^(-a) = 2^(-a) < 0.5
         eps = 2. * pow(x, 1./a)
     elif x > 1 and a > 0:
-        # set eps such that eps ~ x * eps^(-rho)
-        eps = pow(x, 1./(1+a))
+        # set eps such that eps ~ x * eps^(-rho), make it 0.5 of the solution.
+        eps = 0.5 * pow(x, 1./(1+a))
+        if x <= 5 and b >= 5:
+                    eps = 2 * eps
         # safeguard, higher better for larger a, lower better for tiny a.
-        eps = min(eps, 100)
+        eps = min(eps, 100.)
+        eps = max(eps, 1.)
     else:
         eps = 1.
 

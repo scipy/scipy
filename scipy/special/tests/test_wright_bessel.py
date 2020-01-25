@@ -47,3 +47,23 @@ def test_wright_bessel_iv(b, x):
         assert_allclose(np.power(x/2., v) * wb,
                         sc.iv(v, x),
                         rtol=1e-11, atol=1e-11)
+
+
+@pytest.mark.parametrize('a', [0, 1e-6, 0.1, 0.5, 1, 10])
+@pytest.mark.parametrize('b', [1, 1 + 1e-3, 2, 5, 10])
+@pytest.mark.parametrize('x', [0, 1e-6, 0.1, 0.5, 1, 5, 10, 100])
+def test_wright_functional(a, b, x):
+    """Test functional relation of wright_bessel.
+
+    Phi(a, b-1, z) = a*z*Phi(a, b+a, z) + (b-1)*Phi(a, b, z)
+
+    Note that d/dx Phi(a, b, x) = Phi(a, b-1, x)
+    See Eq. (22) of
+    B. Stankovic, On the Function of E. M. Wright,
+    Publ. de l’Institut Math`ematique, Beograd,
+    Nouvelle S`er. 10 (1970), 113-124.
+    """
+    assert_allclose(wright_bessel(a, b-1, x),
+                    a*x*wright_bessel(a, b + a, x)
+                    + (b-1)*wright_bessel(a, b, x),
+                    rtol=1e-7, atol=1e-7)
