@@ -1667,48 +1667,50 @@ def generate_random_dtype_array(shape, dtype):
 
 @pytest.mark.parametrize("dtype", DTYPES)
 def test_pttrf_pttrs(dtype):
-    #%%
     np.random.seed(42)
-    #import scipy
-    dtype = DTYPES[2]
     # set test tolerance appropriate for dtype
     rtol = 250*np.finfo(dtype).eps
-    atol = np.finfo(dtype).eps
+    atol = 100*np.finfo(dtype).eps
     # n is the length diagonal of A
-    n = 3
+    n = 10
     # create diagonals according to size and dtype
-    
-    d = generate_random_dtype_array(n, dtype)
-    e = generate_random_dtype_array(n-1, dtype)
-
-    if dtype in COMPLEX_DTYPES:
-        e = e - 20j
+    if dtype in REAL_DTYPES:
+        # add 2 so that the matrix will be diagonally dominant
+        d = generate_random_dtype_array(n, dtype) + 2 
     else:
-        d = d + 2
-    e = generate_random_dtype_array(n-1, dtype)
+        # diagonal d should always be real.
+        # for complex add 4 so it will be dominant
+        d = generate_random_dtype_array(n, DTYPES[1]) + 4
+    # diagonal e may be real or complex.
+    e = generate_random_dtype_array(n-1, dtype) 
+    
+
     # cast diagonals together into matrix
     A = np.diag(d) + np.diag(e, -1) + np.diag(e, 1)
-
-    diag_cpy = [d.copy(), e]
+    
+    diag_cpy = [d.copy(), e.copy()]
     
     pttrf = get_lapack_funcs('pttrf', dtype=dtype)
     
     _d, _e, info = pttrf(d, e)
-    
     # test to assure that the inputs of ?pttrf are unmodified
     assert_array_equal(d, diag_cpy[0])
     assert_array_equal(e, diag_cpy[1])
     
     # test that the factors from pttrf can be recombined to make A
-    L = np.diag(np.ones(n)) + np.diag(_e, -1)
+    L = np.diag(_e, -1) + np.diag(np.ones(n))
     D = np.diag(_d)
-    assert_allclose(A, L@D@(np.transpose(L)), rtol=rtol, atol=atol)
     
+    if dtype in REAL_DTYPES:
+        assert_allclose(A, L@D@(np.transpose(L)), rtol=rtol, atol=atol)
+    else:
+         assert_allclose(A, L@D@(L.conjugate()), rtol=rtol, atol=atol)
+     
     # generate random solution x
     x = generate_random_dtype_array(n, dtype)
     # determine accompanying b to get soln x
     b = A@x
-    
+   
     # determine _x from pttrs
     pttrs = get_lapack_funcs('pttrs', dtype=dtype)
     _x, info  = pttrs(_d, _e, b)
@@ -1716,7 +1718,28 @@ def test_pttrf_pttrs(dtype):
     # test that _x from pttrs matches the expected x
     assert_allclose(x, _x, rtol=rtol, atol=atol)
     
-    #%%
+    # test that ValueError is raised with incompatible matrix shapes
+    with assert_raises(ValueError):
+        pttrf(d[:-1], e)
+    with assert_raises(ValueError):
+        pttrf(d, e[:-1])
+
+
+    # test that singular (row of all zeroes) matrix fails via info
+    d[0] = 0
+    _d, _e, info = pttrf(d, e)
+    np.testing.assert_(_d[info - 1] == 0,
+                       "?pttrf: _d[info-1] is {}, not the illegal value :0."
+                       .format(_d[info - 1]))
+    
+    # test with non-spd matrix
+    d = generate_random_dtype_array(n, dtype)
+    _d, _e, info = pttrf(d, e)
+    assert_(np.linalg.norm(d[info]) < 2 * np.linalg.norm(e[info]),
+            "idx {} of d should < e but are: {}, {} ".format(
+               info, np.linalg.norm(d[info]), np.linalg.norm(e[info])))
+    
+
     
 @pytest.mark.parametrize(("d, e, d_expect, e_expect, b, x_expect"),[
                          (np.array([4, 10, 29, 25, 5]),
@@ -1731,13 +1754,19 @@ def test_pttrf_pttrs(dtype):
                          np.array([16, 9, 1, 4]),
                          np.array([1+1j, 2-1j, 1-4j]),
                          np.array([[64+16j,-16-32j],[93+62j, 61-66j], [78-80j,71-74j],[14-27j, 35+15j]]),
-                         np.array([[2-1j, -3-2j], [1+1j, 1+1j], [1-2j], [1-2j], [1-1j, 2+1j]])
+                         np.array([[2-1j, -3-2j], [1+1j, 1+1j], [1-2j, 1-2j], [1-1j, 2+1j]])
                          )])
 def test_pttrf_pttrs_NAG(d, e, d_expect, e_expect, b, x_expect):
+    # test to assure that wrapper is consistent with NAG manual
+    # example problems: f07jdf and f07jef (real)
+    # hhttps://www.nag.com/numeric/fl/nagdoc_latest/html/f07/f07jdf.html
+    # https://www.nag.com/numeric/fl/nagdoc_latest/html/f07/f07jef.html
+    # examples: f07jrf and f07csf (complex)
+    # https://www.nag.com/numeric/fl/nagdoc_latest/html/f07/f07jrf.html
+    # https://www.nag.com/numeric/fl/nagdoc_latest/html/f07/f07jsf.html
     # NAG examples provide 4 decimals.
     rtol = 1e-4
     pttrf = get_lapack_funcs('pttrf', dtype=e[0])
-    A = np.diag(d) + np.diag(e, -1) + np.diag(e, 1)
     _d, _e, info = pttrf(d, e)
     assert_allclose(_d, d_expect,  rtol=rtol)
     assert_allclose(_e, e_expect,  rtol=rtol)
