@@ -171,6 +171,8 @@ before_install:
       echo "library_dirs = $TRAVIS_BUILD_DIR/openblas/usr/local/lib" >> site.cfg
       echo "include_dirs = $TRAVIS_BUILD_DIR/openblas/usr/local/include" >> site.cfg
       echo "runtime_library_dirs = $TRAVIS_BUILD_DIR/openblas/usr/local/lib" >> site.cfg
+      # remove a spurious gcc/gfortran toolchain install
+      rm -rf /usr/local/Cellar/gcc/9.2.0_2
     fi
   - export CCACHE_COMPRESS=1
   - python --version # just to check
