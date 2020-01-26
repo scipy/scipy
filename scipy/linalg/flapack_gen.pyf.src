@@ -998,7 +998,7 @@ subroutine <prefix>geqrfp(m,n,a,lda,tau,work,lwork,info)
     integer intent(hide), check(m > 0), depend(a) :: m = shape(a, 0)
     integer intent(hide), check(n > 0), depend(a) :: n = shape(a, 1)
     <ftype> intent(in,out,copy,out=qr), dimension(m,n) :: a
-    integer intent(hide) :: lda = m
+    integer intent(hide) :: lda = max(1, m)
     <ftype> intent(out), depend(m,n), dimension(MIN(m,n)) :: tau
     <ftype> intent(out), depend(lwork), dimension(lwork) :: work
     integer intent(in), check(lwork>=n||lwork==-1) :: lwork = MAX(1, n)
