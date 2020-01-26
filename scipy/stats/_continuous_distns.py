@@ -1561,7 +1561,7 @@ class exponweib_gen(rv_continuous):
 
     See Also
     --------
-    weibull_min, numpy.random.mtrand.RandomState.weibull
+    weibull_min, numpy.random.RandomState.weibull
 
     Notes
     -----
@@ -1938,7 +1938,7 @@ class weibull_min_gen(rv_continuous):
 
     See Also
     --------
-    weibull_max, numpy.random.mtrand.RandomState.weibull, exponweib
+    weibull_max, numpy.random.RandomState.weibull, exponweib
 
     Notes
     -----
