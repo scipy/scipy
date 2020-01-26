@@ -64,3 +64,40 @@ subroutine <prefix>gttrs(trans, n, nrhs, dl, d, du, du2, ipiv, b, ldb, info)
     integer    intent(out) :: info
 
 end subroutine gttrs
+
+
+subroutine <prefix2>gtsvx(fact,trans,n,nrhs,dl,d,du,dlf,df,duf,du2,ipiv,b,ldb,x,ldx,rcond,ferr,berr,work,iwork,info)
+    ! DGTSVX uses the LU factorization to compute the solution to a real
+    ! system of linear equations A * X = B or A**T * X = B,
+    ! where A is a tridiagonal matrix of order N and X and B are N-by-NRHS
+    ! matrices.
+    !
+    ! Error bounds on the solution and a condition estimate are also
+    !provided.
+    callstatement (*f2py_func)(fact,trans,&n,&nrhs,dl,d,du,dlf,df,duf,du2,ipiv,b,&ldb,x,&ldx,&rcond,ferr,berr,work,iwork,&info);
+    callprotoargument char*,char*,int*,int*,<ctype2>*,<ctype2>*,<ctype2>*,<ctype2>*,<ctype2>*,<ctype2>*,<ctype2>*,int*,<ctype2>*,int*,<ctype2>*,int*,<ctype2>*,<ctype2>*,<ctype2>*,<ctype2>*,int*,int*
+
+    character optional, intent(in), check(*fact=='F'||*fact=='N') :: fact = 'N'
+    character optional, intent(in), check(*trans=='N'||*trans=='C'||*trans=='T') :: trans = 'N'
+    integer intent(hide), depend(d), check(n > 1) :: n = len(d)
+    integer intent(hide), depend(b) :: nrhs = max(1, shape(b, 1))
+    <ftype2> intent(in), depend(n), dimension(n-1) :: dl
+    <ftype2> intnet(in), dimension(n) :: d
+    <ftype2> intent(in), depend(n), dimension(n-1) :: du
+    <ftype2> optional, intent(in,out), depend(n), dimension(n-1) :: dlf
+    <ftype2> optional, intent(in,out), depend(n), dimension(n) :: df
+    <ftype2> optional, intent(in,out), depend(n), dimension(n-1) :: duf
+    <ftype2> optional, intent(in,out), depend(n), dimension(n-2) :: du2
+    integer optional, intent(in,out), depend(n), dimension(n) :: ipiv
+    <ftype2> intent(in), dimension(ldb, nrhs) :: b
+    integer intent(hide), depend(b), check(ldb >= n) :: ldb = max(1, shape(b, 0))
+    <ftype2> dimension(n,nrhs),depend(n,nrhs),intent(out) :: x
+    integer intent(hide), depend(n) :: ldx = n
+    <ftype2> intent(out) :: rcond
+    <ftype2> intent(out),dimension(nrhs),depend(nrhs) :: ferr
+    <ftype2> intent(out),dimension(nrhs),depend(nrhs) :: berr
+    <ftype2> dimension(3*n),depend(n),intent(hide,cache) :: work
+    integer intent(hide,cache),dimension(n),depend(n) :: iwork
+    integer intent(out) :: info
+
+end subroutine <prefix2>gtsvx
