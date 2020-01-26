@@ -17,10 +17,9 @@ import multiprocessing
 from numpy.testing import (dec, assert_, assert_equal,
                            assert_almost_equal, assert_array_almost_equal,
                            assert_array_equal, assert_approx_equal,
-                           assert_allclose, assert_warns)
+                           assert_allclose, assert_warns, suppress_warnings)
 import pytest
 from pytest import raises as assert_raises
-from scipy._lib._numpy_compat import suppress_warnings
 import numpy.ma.testutils as mat
 from numpy import array, arange, float32, float64, power
 import numpy as np
@@ -28,8 +27,6 @@ import numpy as np
 import scipy.stats as stats
 import scipy.stats.mstats as mstats
 import scipy.stats.mstats_basic as mstats_basic
-from scipy._lib._version import NumpyVersion
-from scipy._lib.six import xrange
 from .common_tests import check_named_results
 from scipy.special import kv
 from scipy.sparse.sputils import matrix
@@ -768,78 +765,83 @@ class TestCorrSpearmanr(object):
         assert_allclose([res1, res2, res3], expected)
 
 
-def test_spearmanr():
-    # Cross-check with R:
-    # cor.test(c(1,2,3,4,5),c(5,6,7,8,7),method="spearmanr")
-    x1 = [1, 2, 3, 4, 5]
-    x2 = [5, 6, 7, 8, 7]
-    expected = (0.82078268166812329, 0.088587005313543798)
-    res = stats.spearmanr(x1, x2)
-    assert_approx_equal(res[0], expected[0])
-    assert_approx_equal(res[1], expected[1])
+class TestCorrSpearmanr2(object):
+    """Some further tests of the spearmanr function."""
 
-    attributes = ('correlation', 'pvalue')
-    res = stats.spearmanr(x1, x2)
-    check_named_results(res, attributes)
+    def test_spearmanr_vs_r(self):
+        # Cross-check with R:
+        # cor.test(c(1,2,3,4,5),c(5,6,7,8,7),method="spearmanr")
+        x1 = [1, 2, 3, 4, 5]
+        x2 = [5, 6, 7, 8, 7]
+        expected = (0.82078268166812329, 0.088587005313543798)
+        res = stats.spearmanr(x1, x2)
+        assert_approx_equal(res[0], expected[0])
+        assert_approx_equal(res[1], expected[1])
 
-    # with only ties in one or both inputs
-    with np.errstate(invalid="ignore"):
-        assert_equal(stats.spearmanr([2,2,2], [2,2,2]), (np.nan, np.nan))
-        assert_equal(stats.spearmanr([2,0,2], [2,2,2]), (np.nan, np.nan))
-        assert_equal(stats.spearmanr([2,2,2], [2,0,2]), (np.nan, np.nan))
+    def test_empty_arrays(self):
+        assert_equal(stats.spearmanr([], []), (np.nan, np.nan))
 
-    # empty arrays provided as input
-    assert_equal(stats.spearmanr([], []), (np.nan, np.nan))
+    def test_normal_draws(self):
+        np.random.seed(7546)
+        x = np.array([np.random.normal(loc=1, scale=1, size=500),
+                    np.random.normal(loc=1, scale=1, size=500)])
+        corr = [[1.0, 0.3],
+                [0.3, 1.0]]
+        x = np.dot(np.linalg.cholesky(corr), x)
+        expected = (0.28659685838743354, 6.579862219051161e-11)
+        res = stats.spearmanr(x[0], x[1])
+        assert_approx_equal(res[0], expected[0])
+        assert_approx_equal(res[1], expected[1])
 
-    np.random.seed(7546)
-    x = np.array([np.random.normal(loc=1, scale=1, size=500),
-                np.random.normal(loc=1, scale=1, size=500)])
-    corr = [[1.0, 0.3],
-            [0.3, 1.0]]
-    x = np.dot(np.linalg.cholesky(corr), x)
-    expected = (0.28659685838743354, 6.579862219051161e-11)
-    res = stats.spearmanr(x[0], x[1])
-    assert_approx_equal(res[0], expected[0])
-    assert_approx_equal(res[1], expected[1])
+    def test_corr_1(self):
+        assert_approx_equal(stats.spearmanr([1, 1, 2], [1, 1, 2])[0], 1.0)
 
-    assert_approx_equal(stats.spearmanr([1,1,2], [1,1,2])[0], 1.0)
+    def test_nan_policies(self):
+        x = np.arange(10.)
+        x[9] = np.nan
+        assert_array_equal(stats.spearmanr(x, x), (np.nan, np.nan))
+        assert_allclose(stats.spearmanr(x, x, nan_policy='omit'),
+                        (1.0, 0))
+        assert_raises(ValueError, stats.spearmanr, x, x, nan_policy='raise')
+        assert_raises(ValueError, stats.spearmanr, x, x, nan_policy='foobar')
 
-    # test nan_policy
-    x = np.arange(10.)
-    x[9] = np.nan
-    assert_array_equal(stats.spearmanr(x, x), (np.nan, np.nan))
-    assert_allclose(stats.spearmanr(x, x, nan_policy='omit'),
-                    (1.0, 0))
-    assert_raises(ValueError, stats.spearmanr, x, x, nan_policy='raise')
-    assert_raises(ValueError, stats.spearmanr, x, x, nan_policy='foobar')
+    def test_unequal_lengths(self):
+        x = np.arange(10.)
+        y = np.arange(20.)
+        assert_raises(ValueError, stats.spearmanr, x, y)
 
-    # test unequal length inputs
-    x = np.arange(10.)
-    y = np.arange(20.)
-    assert_raises(ValueError, stats.spearmanr, x, y)
+    def test_omit_paired_value(self):
+        x1 = [1, 2, 3, 4]
+        x2 = [8, 7, 6, np.nan]
+        res1 = stats.spearmanr(x1, x2, nan_policy='omit')
+        res2 = stats.spearmanr(x1[:3], x2[:3], nan_policy='omit')
+        assert_equal(res1, res2)
 
-    #test paired value
-    x1 = [1, 2, 3, 4]
-    x2 = [8, 7, 6, np.nan]
-    res1 = stats.spearmanr(x1, x2, nan_policy='omit')
-    res2 = stats.spearmanr(x1[:3], x2[:3], nan_policy='omit')
-    assert_equal(res1, res2)
+    def test_gh_issue_6061_windows_overflow(self):
+        x = list(range(2000))
+        y = list(range(2000))
+        y[0], y[9] = y[9], y[0]
+        y[10], y[434] = y[434], y[10]
+        y[435], y[1509] = y[1509], y[435]
+        # rho = 1 - 6 * (2 * (9^2 + 424^2 + 1074^2))/(2000 * (2000^2 - 1))
+        #     = 1 - (1 / 500)
+        #     = 0.998
+        x.append(np.nan)
+        y.append(3.0)
+        assert_almost_equal(stats.spearmanr(x, y, nan_policy='omit')[0], 0.998)
 
-    # Regression test for GitHub issue #6061 - Overflow on Windows
-    x = list(range(2000))
-    y = list(range(2000))
-    y[0], y[9] = y[9], y[0]
-    y[10], y[434] = y[434], y[10]
-    y[435], y[1509] = y[1509], y[435]
-    # rho = 1 - 6 * (2 * (9^2 + 424^2 + 1074^2))/(2000 * (2000^2 - 1))
-    #     = 1 - (1 / 500)
-    #     = 0.998
-    x.append(np.nan)
-    y.append(3.0)
-    assert_almost_equal(stats.spearmanr(x, y, nan_policy='omit')[0], 0.998)
-
-class TestCorrSpearmanrTies(object):
-    """Some tests of tie-handling by the spearmanr function."""
+    def test_tie0(self):
+        # with only ties in one or both inputs
+        with assert_warns(stats.SpearmanRConstantInputWarning):
+            r, p = stats.spearmanr([2, 2, 2], [2, 2, 2])
+            assert_equal(r, np.nan)
+            assert_equal(p, np.nan)
+            r, p = stats.spearmanr([2, 0, 2], [2, 2, 2])
+            assert_equal(r, np.nan)
+            assert_equal(p, np.nan)
+            r, p = stats.spearmanr([2, 2, 2], [2, 0, 2])
+            assert_equal(r, np.nan)
+            assert_equal(p, np.nan)
 
     def test_tie1(self):
         # Data
@@ -868,6 +870,38 @@ class TestCorrSpearmanrTies(object):
         sr2 = stats.spearmanr(x2, y2, nan_policy='omit')
         assert_almost_equal(sr1, sr2)
 
+    def test_ties_axis_1(self):
+        z1 = np.array([[1, 1, 1, 1], [1, 2, 3, 4]])
+        z2 = np.array([[1, 2, 3, 4], [1, 1, 1, 1]])
+        z3 = np.array([[1, 1, 1, 1], [1, 1, 1, 1]])
+        with assert_warns(stats.SpearmanRConstantInputWarning):
+            r, p = stats.spearmanr(z1, axis=1)
+            assert_equal(r, np.nan)
+            assert_equal(p, np.nan)
+            r, p = stats.spearmanr(z2, axis=1)
+            assert_equal(r, np.nan)
+            assert_equal(p, np.nan)
+            r, p = stats.spearmanr(z3, axis=1)
+            assert_equal(r, np.nan)
+            assert_equal(p, np.nan)
+
+    def test_gh_11111(self):
+        x = np.array([1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0])
+        y = np.array([0, 0.009783728115345005, 0, 0, 0.0019759230121848587,
+            0.0007535430349118562, 0.0002661781514710257, 0, 0,
+            0.0007835762419683435])
+        with assert_warns(stats.SpearmanRConstantInputWarning):
+            r, p = stats.spearmanr(x, y)
+            assert_equal(r, np.nan)
+            assert_equal(p, np.nan)
+
+    def test_index_error(self):
+        x = np.array([1.0, 7.0, 2.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0])
+        y = np.array([0, 0.009783728115345005, 0, 0, 0.0019759230121848587,
+            0.0007535430349118562, 0.0002661781514710257, 0, 0,
+            0.0007835762419683435])
+        assert_raises(ValueError, stats.spearmanr, x, y, axis=2)
+
 
 #    W.II.E.  Tabulate X against X, using BIG as a case weight.  The values
 #    should appear on the diagonal and the total should be 899999955.
@@ -880,6 +914,47 @@ class TestCorrSpearmanrTies(object):
 
 
 def test_kendalltau():
+
+    # case without ties, con-dis equal zero
+    x = [5, 2, 1, 3, 6, 4, 7, 8]
+    y = [5, 2, 6, 3, 1, 8, 7, 4]
+    # Cross-check with exact result from R:
+    # cor.test(x,y,method="kendall",exact=1)
+    expected = (0.0, 1.0)
+    res = stats.kendalltau(x, y)
+    assert_approx_equal(res[0], expected[0])
+    assert_approx_equal(res[1], expected[1])
+
+    # case without ties, con-dis equal zero
+    x = [0, 5, 2, 1, 3, 6, 4, 7, 8]
+    y = [5, 2, 0, 6, 3, 1, 8, 7, 4]
+    # Cross-check with exact result from R:
+    # cor.test(x,y,method="kendall",exact=1)
+    expected = (0.0, 1.0)
+    res = stats.kendalltau(x, y)
+    assert_approx_equal(res[0], expected[0])
+    assert_approx_equal(res[1], expected[1])
+
+    # case without ties, con-dis close to zero
+    x = [5, 2, 1, 3, 6, 4, 7]
+    y = [5, 2, 6, 3, 1, 7, 4]
+    # Cross-check with exact result from R:
+    # cor.test(x,y,method="kendall",exact=1)
+    expected = (-0.14285714286, 0.77261904762)
+    res = stats.kendalltau(x, y)
+    assert_approx_equal(res[0], expected[0])
+    assert_approx_equal(res[1], expected[1])
+
+    # case without ties, con-dis close to zero
+    x = [2, 1, 3, 6, 4, 7, 8]
+    y = [2, 6, 3, 1, 8, 7, 4]
+    # Cross-check with exact result from R:
+    # cor.test(x,y,method="kendall",exact=1)
+    expected = (0.047619047619, 1.0)
+    res = stats.kendalltau(x, y)
+    assert_approx_equal(res[0], expected[0])
+    assert_approx_equal(res[1], expected[1])
+
     # simple case without ties
     x = np.arange(10)
     y = np.arange(10)
@@ -1839,37 +1914,6 @@ class TestVariability(object):
         assert_almost_equal(mad, 0.504084)
 
 
-class _numpy_version_warn_context_mgr(object):
-    """
-    A simple context manager class to avoid retyping the same code for
-    different versions of numpy when the only difference is that older
-    versions raise warnings.
-
-    This manager does not apply for cases where the old code returns
-    different values.
-    """
-
-    def __init__(self, min_numpy_version, warning_type, num_warnings):
-        if NumpyVersion(np.__version__) < min_numpy_version:
-            self.numpy_is_old = True
-            self.warning_type = warning_type
-            self.num_warnings = num_warnings
-            self.delegate = warnings.catch_warnings(record = True)
-        else:
-            self.numpy_is_old = False
-
-    def __enter__(self):
-        if self.numpy_is_old:
-            self.warn_list = self.delegate.__enter__()
-            warnings.simplefilter("always")
-        return None
-
-    def __exit__(self, exc_type, exc_value, traceback):
-        if self.numpy_is_old:
-            self.delegate.__exit__(exc_type, exc_value, traceback)
-            _check_warnings(self.warn_list, self.warning_type, self.num_warnings)
-
-
 def _check_warnings(warn_list, expected_type, expected_len):
     """
     Checks that all of the warnings from a list returned by
@@ -1897,9 +1941,8 @@ class TestIQR(object):
         stats.iqr(d, None, (10, 90))
         stats.iqr(d, None, (30, 20), 'raw')
         stats.iqr(d, None, (25, 75), 1.5, 'propagate')
-        if NumpyVersion(np.__version__) >= '1.9.0a':
-            stats.iqr(d, None, (50, 50), 'normal', 'raise', 'linear')
-            stats.iqr(d, None, (25, 75), -0.4, 'omit', 'lower', True)
+        stats.iqr(d, None, (50, 50), 'normal', 'raise', 'linear')
+        stats.iqr(d, None, (25, 75), -0.4, 'omit', 'lower', True)
 
     def test_empty(self):
         assert_equal(stats.iqr([]), np.nan)
@@ -1911,13 +1954,11 @@ class TestIQR(object):
         assert_equal(stats.iqr(x), 0.0)
         assert_array_equal(stats.iqr(x, axis=0), np.zeros(4))
         assert_array_equal(stats.iqr(x, axis=1), np.zeros(7))
-        # Even for older versions, 'linear' does not raise a warning
-        with _numpy_version_warn_context_mgr('1.9.0a', RuntimeWarning, 4):
-            assert_equal(stats.iqr(x, interpolation='linear'), 0.0)
-            assert_equal(stats.iqr(x, interpolation='midpoint'), 0.0)
-            assert_equal(stats.iqr(x, interpolation='nearest'), 0.0)
-            assert_equal(stats.iqr(x, interpolation='lower'), 0.0)
-            assert_equal(stats.iqr(x, interpolation='higher'), 0.0)
+        assert_equal(stats.iqr(x, interpolation='linear'), 0.0)
+        assert_equal(stats.iqr(x, interpolation='midpoint'), 0.0)
+        assert_equal(stats.iqr(x, interpolation='nearest'), 0.0)
+        assert_equal(stats.iqr(x, interpolation='lower'), 0.0)
+        assert_equal(stats.iqr(x, interpolation='higher'), 0.0)
 
         # 0 only along constant dimensions
         # This also tests much of `axis`
@@ -1933,13 +1974,7 @@ class TestIQR(object):
         x = np.arange(1) + 7.0
         assert_equal(stats.iqr(x[0]), 0.0)
         assert_equal(stats.iqr(x), 0.0)
-        if NumpyVersion(np.__version__) >= '1.9.0a':
-            assert_array_equal(stats.iqr(x, keepdims=True), [0.0])
-        else:
-            with warnings.catch_warnings(record=True) as w:
-                warnings.simplefilter("always")
-                assert_array_equal(stats.iqr(x, keepdims=True), 0.0)
-                _check_warnings(w, RuntimeWarning, 1)
+        assert_array_equal(stats.iqr(x, keepdims=True), [0.0])
 
     def test_2D(self):
         x = np.arange(15).reshape((3, 5))
@@ -1987,10 +2022,7 @@ class TestIQR(object):
         assert_equal(stats.iqr(d, axis=(1, 3))[2, 2],
                      stats.iqr(d[2, :, 2,:].ravel()))
 
-        if NumpyVersion(np.__version__) >= '1.9.0a':
-            assert_raises(IndexError, stats.iqr, d, axis=4)
-        else:
-            assert_raises(ValueError, stats.iqr, d, axis=4)
+        assert_raises(IndexError, stats.iqr, d, axis=4)
         assert_raises(ValueError, stats.iqr, d, axis=(0, 0))
 
     def test_rng(self):
@@ -2010,65 +2042,28 @@ class TestIQR(object):
         # Default
         assert_equal(stats.iqr(x), 2)
         assert_equal(stats.iqr(y), 1.5)
-        if NumpyVersion(np.__version__) >= '1.9.0a':
-            # Linear
-            assert_equal(stats.iqr(x, interpolation='linear'), 2)
-            assert_equal(stats.iqr(y, interpolation='linear'), 1.5)
-            # Higher
-            assert_equal(stats.iqr(x, interpolation='higher'), 2)
-            assert_equal(stats.iqr(x, rng=(25, 80), interpolation='higher'), 3)
-            assert_equal(stats.iqr(y, interpolation='higher'), 2)
-            # Lower (will generally, but not always be the same as higher)
-            assert_equal(stats.iqr(x, interpolation='lower'), 2)
-            assert_equal(stats.iqr(x, rng=(25, 80), interpolation='lower'), 2)
-            assert_equal(stats.iqr(y, interpolation='lower'), 2)
-            # Nearest
-            assert_equal(stats.iqr(x, interpolation='nearest'), 2)
-            assert_equal(stats.iqr(y, interpolation='nearest'), 1)
-            # Midpoint
-            if NumpyVersion(np.__version__) >= '1.11.0a':
-                assert_equal(stats.iqr(x, interpolation='midpoint'), 2)
-                assert_equal(stats.iqr(x, rng=(25, 80), interpolation='midpoint'), 2.5)
-                assert_equal(stats.iqr(y, interpolation='midpoint'), 2)
-            else:
-                # midpoint did not work correctly before numpy 1.11.0
-                assert_equal(stats.iqr(x, interpolation='midpoint'), 2)
-                assert_equal(stats.iqr(x, rng=(25, 80), interpolation='midpoint'), 2)
-                assert_equal(stats.iqr(y, interpolation='midpoint'), 2)
-        else:
-            with warnings.catch_warnings(record=True) as w:
-                warnings.simplefilter("always")
-                # Linear
-                assert_equal(stats.iqr(x, interpolation='linear'), 2)
-                assert_equal(stats.iqr(y, interpolation='linear'), 1.5)
-                # Higher
-                assert_equal(stats.iqr(x, interpolation='higher'), 2)
-                assert_almost_equal(stats.iqr(x, rng=(25, 80), interpolation='higher'), 2.2)
-                assert_equal(stats.iqr(y, interpolation='higher'), 1.5)
-                # Lower
-                assert_equal(stats.iqr(x, interpolation='lower'), 2)
-                assert_almost_equal(stats.iqr(x, rng=(25, 80), interpolation='lower'), 2.2)
-                assert_equal(stats.iqr(y, interpolation='lower'), 1.5)
-                # Nearest
-                assert_equal(stats.iqr(x, interpolation='nearest'), 2)
-                assert_equal(stats.iqr(y, interpolation='nearest'), 1.5)
-                # Midpoint
-                assert_equal(stats.iqr(x, interpolation='midpoint'), 2)
-                assert_almost_equal(stats.iqr(x, rng=(25, 80), interpolation='midpoint'), 2.2)
-                assert_equal(stats.iqr(y, interpolation='midpoint'), 1.5)
-                _check_warnings(w, RuntimeWarning, 11)
+        # Linear
+        assert_equal(stats.iqr(x, interpolation='linear'), 2)
+        assert_equal(stats.iqr(y, interpolation='linear'), 1.5)
+        # Higher
+        assert_equal(stats.iqr(x, interpolation='higher'), 2)
+        assert_equal(stats.iqr(x, rng=(25, 80), interpolation='higher'), 3)
+        assert_equal(stats.iqr(y, interpolation='higher'), 2)
+        # Lower (will generally, but not always be the same as higher)
+        assert_equal(stats.iqr(x, interpolation='lower'), 2)
+        assert_equal(stats.iqr(x, rng=(25, 80), interpolation='lower'), 2)
+        assert_equal(stats.iqr(y, interpolation='lower'), 2)
+        # Nearest
+        assert_equal(stats.iqr(x, interpolation='nearest'), 2)
+        assert_equal(stats.iqr(y, interpolation='nearest'), 1)
+        # Midpoint
+        assert_equal(stats.iqr(x, interpolation='midpoint'), 2)
+        assert_equal(stats.iqr(x, rng=(25, 80), interpolation='midpoint'), 2.5)
+        assert_equal(stats.iqr(y, interpolation='midpoint'), 2)
 
-        if NumpyVersion(np.__version__) >= '1.9.0a':
-            assert_raises(ValueError, stats.iqr, x, interpolation='foobar')
-        else:
-            with warnings.catch_warnings(record=True) as w:
-                warnings.simplefilter("always")
-                assert_equal(stats.iqr(x, interpolation='foobar'), 2)
-                _check_warnings(w, RuntimeWarning, 1)
+        assert_raises(ValueError, stats.iqr, x, interpolation='foobar')
 
     def test_keepdims(self):
-        numpy_version = NumpyVersion(np.__version__)
-
         # Also tests most of `axis`
         x = np.ones((3, 5, 7, 11))
         assert_equal(stats.iqr(x, axis=None, keepdims=False).shape, ())
@@ -2079,28 +2074,15 @@ class TestIQR(object):
         assert_equal(stats.iqr(x, (0, 1, 2, 3), keepdims=False).shape, ())
         assert_equal(stats.iqr(x, axis=(0, 1, 3), keepdims=False).shape, (7,))
 
-        if numpy_version >= '1.9.0a':
-            assert_equal(stats.iqr(x, axis=None, keepdims=True).shape, (1, 1, 1, 1))
-            assert_equal(stats.iqr(x, axis=2, keepdims=True).shape, (3, 5, 1, 11))
-            assert_equal(stats.iqr(x, axis=(0, 1), keepdims=True).shape, (1, 1, 7, 11))
-            assert_equal(stats.iqr(x, axis=(0, 3), keepdims=True).shape, (1, 5, 7, 1))
-            assert_equal(stats.iqr(x, axis=(1,), keepdims=True).shape, (3, 1, 7, 11))
-            assert_equal(stats.iqr(x, (0, 1, 2, 3), keepdims=True).shape, (1, 1, 1, 1))
-            assert_equal(stats.iqr(x, axis=(0, 1, 3), keepdims=True).shape, (1, 1, 7, 1))
-        else:
-            with warnings.catch_warnings(record=True) as w:
-                warnings.simplefilter("always")
-                assert_equal(stats.iqr(x, axis=None, keepdims=True).shape, ())
-                assert_equal(stats.iqr(x, axis=2, keepdims=True).shape, (3, 5, 11))
-                assert_equal(stats.iqr(x, axis=(0, 1), keepdims=True).shape, (7, 11))
-                assert_equal(stats.iqr(x, axis=(0, 3), keepdims=True).shape, (5, 7))
-                assert_equal(stats.iqr(x, axis=(1,), keepdims=True).shape, (3, 7, 11))
-                assert_equal(stats.iqr(x, (0, 1, 2, 3), keepdims=True).shape, ())
-                assert_equal(stats.iqr(x, axis=(0, 1, 3), keepdims=True).shape, (7,))
-                _check_warnings(w, RuntimeWarning, 7)
+        assert_equal(stats.iqr(x, axis=None, keepdims=True).shape, (1, 1, 1, 1))
+        assert_equal(stats.iqr(x, axis=2, keepdims=True).shape, (3, 5, 1, 11))
+        assert_equal(stats.iqr(x, axis=(0, 1), keepdims=True).shape, (1, 1, 7, 11))
+        assert_equal(stats.iqr(x, axis=(0, 3), keepdims=True).shape, (1, 5, 7, 1))
+        assert_equal(stats.iqr(x, axis=(1,), keepdims=True).shape, (3, 1, 7, 11))
+        assert_equal(stats.iqr(x, (0, 1, 2, 3), keepdims=True).shape, (1, 1, 1, 1))
+        assert_equal(stats.iqr(x, axis=(0, 1, 3), keepdims=True).shape, (1, 1, 7, 1))
 
     def test_nanpolicy(self):
-        numpy_version = NumpyVersion(np.__version__)
         x = np.arange(15.0).reshape((3, 5))
 
         # No NaNs
@@ -2112,34 +2094,15 @@ class TestIQR(object):
         x[1, 2] = np.nan
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")
-            if numpy_version < '1.10.0a':
-                # Fails over to mishmash of omit/propagate, but mostly omit
-                # The first case showcases the "incorrect" behavior of np.percentile
-                assert_equal(stats.iqr(x, nan_policy='propagate'), 8)
-                assert_equal(stats.iqr(x, axis=0, nan_policy='propagate'), [5, 5, np.nan, 5, 5])
-                if numpy_version < '1.9.0a':
-                    assert_equal(stats.iqr(x, axis=1, nan_policy='propagate'), [2, 3, 2])
-                else:
-                    # some fixes to percentile nan handling in 1.9
-                    assert_equal(stats.iqr(x, axis=1, nan_policy='propagate'), [2, np.nan, 2])
-                _check_warnings(w, RuntimeWarning, 3)
-            else:
-                assert_equal(stats.iqr(x, nan_policy='propagate'), np.nan)
-                assert_equal(stats.iqr(x, axis=0, nan_policy='propagate'), [5, 5, np.nan, 5, 5])
-                assert_equal(stats.iqr(x, axis=1, nan_policy='propagate'), [2, np.nan, 2])
+            assert_equal(stats.iqr(x, nan_policy='propagate'), np.nan)
+            assert_equal(stats.iqr(x, axis=0, nan_policy='propagate'), [5, 5, np.nan, 5, 5])
+            assert_equal(stats.iqr(x, axis=1, nan_policy='propagate'), [2, np.nan, 2])
 
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")
-            if numpy_version < '1.9.0a':
-                # Fails over to mishmash of omit/propagate, but mostly omit
-                assert_equal(stats.iqr(x, nan_policy='omit'), 8)
-                assert_equal(stats.iqr(x, axis=0, nan_policy='omit'), [5, 5, np.nan, 5, 5])
-                assert_equal(stats.iqr(x, axis=1, nan_policy='omit'), [2, 3, 2])
-                _check_warnings(w, RuntimeWarning, 3)
-            else:
-                assert_equal(stats.iqr(x, nan_policy='omit'), 7.5)
-                assert_equal(stats.iqr(x, axis=0, nan_policy='omit'), np.full(5, 5))
-                assert_equal(stats.iqr(x, axis=1, nan_policy='omit'), [2, 2.5, 2])
+            assert_equal(stats.iqr(x, nan_policy='omit'), 7.5)
+            assert_equal(stats.iqr(x, axis=0, nan_policy='omit'), np.full(5, 5))
+            assert_equal(stats.iqr(x, axis=1, nan_policy='omit'), [2, 2.5, 2])
 
         assert_raises(ValueError, stats.iqr, x, nan_policy='raise')
         assert_raises(ValueError, stats.iqr, x, axis=0, nan_policy='raise')
@@ -2149,7 +2112,6 @@ class TestIQR(object):
         assert_raises(ValueError, stats.iqr, x, nan_policy='barfood')
 
     def test_scale(self):
-        numpy_version = NumpyVersion(np.__version__)
         x = np.arange(15.0).reshape((3, 5))
 
         # No NaNs
@@ -2161,60 +2123,25 @@ class TestIQR(object):
         x[1, 2] = np.nan
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")
-            if numpy_version < '1.10.0a':
-                # Fails over to mishmash of omit/propagate, but mostly omit
-                assert_equal(stats.iqr(x, scale='raw', nan_policy='propagate'), 8)
-                assert_almost_equal(stats.iqr(x, scale='normal',
-                                              nan_policy='propagate'),
-                                    8 / 1.3489795)
-                assert_equal(stats.iqr(x, scale=2.0, nan_policy='propagate'), 4)
-                # axis=1 chosen to show behavior with both nans and without
-                if numpy_version < '1.9.0a':
-                    assert_equal(stats.iqr(x, axis=1, nan_policy='propagate'), [2, 3, 2])
-                    assert_almost_equal(stats.iqr(x, axis=1, scale='normal',
-                                                  nan_policy='propagate'),
-                                        np.array([2, 3, 2]) / 1.3489795)
-                    assert_equal(stats.iqr(x, axis=1, scale=2.0,
-                                           nan_policy='propagate'), [1, 1.5, 1])
-                else:
-                    # some fixes to percentile nan handling in 1.9
-                    assert_equal(stats.iqr(x, axis=1, nan_policy='propagate'), [2, np.nan, 2])
-                    assert_almost_equal(stats.iqr(x, axis=1, scale='normal',
-                                                  nan_policy='propagate'),
-                                        np.array([2, np.nan, 2]) / 1.3489795)
-                    assert_equal(stats.iqr(x, axis=1, scale=2.0,
-                                           nan_policy='propagate'), [1, np.nan, 1])
-                _check_warnings(w, RuntimeWarning, 6)
-            else:
-                assert_equal(stats.iqr(x, scale='raw', nan_policy='propagate'), np.nan)
-                assert_equal(stats.iqr(x, scale='normal', nan_policy='propagate'), np.nan)
-                assert_equal(stats.iqr(x, scale=2.0, nan_policy='propagate'), np.nan)
-                # axis=1 chosen to show behavior with both nans and without
-                assert_equal(stats.iqr(x, axis=1, scale='raw',
-                                       nan_policy='propagate'), [2, np.nan, 2])
-                assert_almost_equal(stats.iqr(x, axis=1, scale='normal',
-                                              nan_policy='propagate'),
-                                    np.array([2, np.nan, 2]) / 1.3489795)
-                assert_equal(stats.iqr(x, axis=1, scale=2.0, nan_policy='propagate'),
-                             [1, np.nan, 1])
-                # Since NumPy 1.17.0.dev, warnings are no longer emitted by
-                # np.percentile with nans, so we don't check the number of
-                # warnings here. See https://github.com/numpy/numpy/pull/12679.
+            assert_equal(stats.iqr(x, scale='raw', nan_policy='propagate'), np.nan)
+            assert_equal(stats.iqr(x, scale='normal', nan_policy='propagate'), np.nan)
+            assert_equal(stats.iqr(x, scale=2.0, nan_policy='propagate'), np.nan)
+            # axis=1 chosen to show behavior with both nans and without
+            assert_equal(stats.iqr(x, axis=1, scale='raw',
+                                   nan_policy='propagate'), [2, np.nan, 2])
+            assert_almost_equal(stats.iqr(x, axis=1, scale='normal',
+                                          nan_policy='propagate'),
+                                np.array([2, np.nan, 2]) / 1.3489795)
+            assert_equal(stats.iqr(x, axis=1, scale=2.0, nan_policy='propagate'),
+                         [1, np.nan, 1])
+            # Since NumPy 1.17.0.dev, warnings are no longer emitted by
+            # np.percentile with nans, so we don't check the number of
+            # warnings here. See https://github.com/numpy/numpy/pull/12679.
 
-        if numpy_version < '1.9.0a':
-            with warnings.catch_warnings(record=True) as w:
-                warnings.simplefilter("always")
-                # Fails over to mishmash of omit/propagate, but mostly omit
-                assert_equal(stats.iqr(x, scale='raw', nan_policy='omit'), 8)
-                assert_almost_equal(stats.iqr(x, scale='normal', nan_policy='omit'),
-                                    8 / 1.3489795)
-                assert_equal(stats.iqr(x, scale=2.0, nan_policy='omit'), 4)
-                _check_warnings(w, RuntimeWarning, 3)
-        else:
-            assert_equal(stats.iqr(x, scale='raw', nan_policy='omit'), 7.5)
-            assert_almost_equal(stats.iqr(x, scale='normal', nan_policy='omit'),
-                                7.5 / 1.3489795)
-            assert_equal(stats.iqr(x, scale=2.0, nan_policy='omit'), 3.75)
+        assert_equal(stats.iqr(x, scale='raw', nan_policy='omit'), 7.5)
+        assert_almost_equal(stats.iqr(x, scale='normal', nan_policy='omit'),
+                            7.5 / 1.3489795)
+        assert_equal(stats.iqr(x, scale=2.0, nan_policy='omit'), 3.75)
 
         # Bad scale
         assert_raises(ValueError, stats.iqr, x, scale='foobar')
@@ -2742,6 +2669,15 @@ class TestPowerDivergence(object):
         check_named_results(res, attributes)
 
 
+@pytest.mark.parametrize("n, dtype", [(200, np.uint8), (1000000, np.int32)])
+def test_chiquare_data_types(n, dtype):
+    # Regression test for gh-10159.
+    obs = np.array([n, 0], dtype=dtype)
+    exp = np.array([n // 2, n // 2], dtype=dtype)
+    stat, p = stats.chisquare(obs, exp)
+    assert_allclose(stat, n, rtol=1e-13)
+
+
 def test_chisquare_masked_arrays():
     # Test masked arrays.
     obs = np.array([[8, 8, 16, 32, -1], [-1, -1, 3, 4, 5]]).T
@@ -3095,6 +3031,26 @@ class TestKSTwoSamples(object):
         self._testOne(x, y, 'greater', 561.0 / lcm, 0.99115454582047591)
         self._testOne(x, y, 'less', 55275.0 / lcm, 3.1317328311518713e-26)
 
+    def test_gh11184(self):
+        # 3000, 3001, exact two-sided
+        np.random.seed(123456)
+        x = np.random.normal(size=3000)
+        y = np.random.normal(size=3001) * 1.5
+        print(x[0], x[-1], y[0], y[-1])
+        self._testOne(x, y, 'two-sided', 0.11292880151060758, 2.7755575615628914e-15, mode='asymp')
+        self._testOne(x, y, 'two-sided', 0.11292880151060758, 2.7755575615628914e-15, mode='exact')
+
+    def test_gh11184_bigger(self):
+        # 10000, 10001, exact two-sided
+        np.random.seed(123456)
+        x = np.random.normal(size=10000)
+        y = np.random.normal(size=10001) * 1.5
+        print(x[0], x[-1], y[0], y[-1])
+        self._testOne(x, y, 'two-sided', 0.10597913208679133, 3.3149311398483503e-49, mode='asymp')
+        self._testOne(x, y, 'two-sided', 0.10597913208679133, 2.7755575615628914e-15, mode='exact')
+        self._testOne(x, y, 'greater', 0.10597913208679133, 2.7947433906389253e-41, mode='asymp')
+        self._testOne(x, y, 'less', 0.09658002199780022, 2.7947433906389253e-41, mode='asymp')
+
     @pytest.mark.slow
     def testLargeBoth(self):
         # 10000, 11000
@@ -3104,7 +3060,7 @@ class TestKSTwoSamples(object):
         x = np.linspace(1, 200, n1) - delta
         y = np.linspace(2, 200, n2)
         self._testOne(x, y, 'two-sided', 563.0 / lcm, 0.99915729949018561, mode='asymp')
-        self._testOne(x, y, 'two-sided', 563.0 / lcm, 1.0, mode='exact')
+        self._testOne(x, y, 'two-sided', 563.0 / lcm, 0.9990456491488628, mode='exact')
         self._testOne(x, y, 'two-sided', 563.0 / lcm, 0.99915729949018561, mode='auto')
         self._testOne(x, y, 'greater', 563.0 / lcm, 0.7561851877420673)
         self._testOne(x, y, 'less', 10.0 / lcm, 0.9998239693191724)

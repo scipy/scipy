@@ -7,7 +7,8 @@ from functools import lru_cache
 from numpy.testing import (assert_warns, assert_,
                            assert_allclose,
                            assert_equal,
-                           assert_array_equal)
+                           assert_array_equal,
+                           suppress_warnings)
 import numpy as np
 from numpy import finfo, power, nan, isclose
 
@@ -18,7 +19,6 @@ from scipy._lib._util import getargspec_no_self as _getargspec
 
 # Import testing parameters
 from scipy.optimize._tstutils import get_tests, functions as tstutils_functions, fstrings as tstutils_fstrings
-from scipy._lib._numpy_compat import suppress_warnings
 
 TOL = 4*np.finfo(float).eps  # tolerance
 

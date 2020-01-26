@@ -17,7 +17,6 @@ from scipy import integrate
 from scipy import interpolate
 import scipy.special as sc
 import scipy.special._ufuncs as scu
-from scipy._lib._numpy_compat import broadcast_to
 from scipy._lib._util import _lazyselect, _lazywhere
 from . import _stats
 from ._tukeylambda_stats import (tukeylambda_variance as _tlvar,
@@ -4306,8 +4305,8 @@ class levy_stable_gen(rv_continuous):
             return res
 
         sz = self._size
-        alpha = broadcast_to(alpha, sz)
-        beta = broadcast_to(beta, sz)
+        alpha = np.broadcast_to(alpha, sz)
+        beta = np.broadcast_to(beta, sz)
         TH = uniform.rvs(loc=-np.pi/2.0, scale=np.pi, size=sz,
                          random_state=self._random_state)
         W = expon.rvs(size=sz, random_state=self._random_state)
@@ -6153,7 +6152,7 @@ class pearson3_gen(rv_continuous):
         return ans
 
     def _rvs(self, skew):
-        skew = broadcast_to(skew, self._size)
+        skew = np.broadcast_to(skew, self._size)
         ans, _, _, mask, invmask, beta, alpha, zeta = (
             self._preprocess([0], skew))
 

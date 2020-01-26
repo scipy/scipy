@@ -40,8 +40,6 @@ from numpy import ndarray
 import numpy.ma as ma
 from numpy.ma import masked, nomask
 
-from scipy._lib.six import iteritems
-
 import itertools
 import warnings
 from collections import namedtuple
@@ -591,8 +589,8 @@ def kendalltau(x, y, use_ties=True, use_missing=False, method='auto'):
     xties = count_tied_groups(x)
     yties = count_tied_groups(y)
     if use_ties:
-        corr_x = np.sum([v*k*(k-1) for (k,v) in iteritems(xties)], dtype=float)
-        corr_y = np.sum([v*k*(k-1) for (k,v) in iteritems(yties)], dtype=float)
+        corr_x = np.sum([v*k*(k-1) for (k,v) in xties.items()], dtype=float)
+        corr_y = np.sum([v*k*(k-1) for (k,v) in yties.items()], dtype=float)
         denom = ma.sqrt((n*(n-1)-corr_x)/2. * (n*(n-1)-corr_y)/2.)
     else:
         denom = n*(n-1)/2.
@@ -622,6 +620,8 @@ def kendalltau(x, y, use_ties=True, use_missing=False, method='auto'):
             prob = 2.0/np.math.factorial(n)
         elif c == 1:
             prob = 2.0/np.math.factorial(n-1)
+        elif 2*c == (n*(n-1))//2:
+            pvalue = 1.0
         else:
             old = [0.0]*(c+1)
             new = [0.0]*(c+1)
@@ -637,15 +637,15 @@ def kendalltau(x, y, use_ties=True, use_missing=False, method='auto'):
     elif method == 'asymptotic':
         var_s = n*(n-1)*(2*n+5)
         if use_ties:
-            var_s -= np.sum([v*k*(k-1)*(2*k+5)*1. for (k,v) in iteritems(xties)])
-            var_s -= np.sum([v*k*(k-1)*(2*k+5)*1. for (k,v) in iteritems(yties)])
-            v1 = np.sum([v*k*(k-1) for (k, v) in iteritems(xties)], dtype=float) *\
-                 np.sum([v*k*(k-1) for (k, v) in iteritems(yties)], dtype=float)
+            var_s -= np.sum([v*k*(k-1)*(2*k+5)*1. for (k,v) in xties.items()])
+            var_s -= np.sum([v*k*(k-1)*(2*k+5)*1. for (k,v) in yties.items()])
+            v1 = np.sum([v*k*(k-1) for (k, v) in xties.items()], dtype=float) *\
+                 np.sum([v*k*(k-1) for (k, v) in yties.items()], dtype=float)
             v1 /= 2.*n*(n-1)
             if n > 2:
-                v2 = np.sum([v*k*(k-1)*(k-2) for (k,v) in iteritems(xties)],
+                v2 = np.sum([v*k*(k-1)*(k-2) for (k,v) in xties.items()],
                             dtype=float) * \
-                     np.sum([v*k*(k-1)*(k-2) for (k,v) in iteritems(yties)],
+                     np.sum([v*k*(k-1)*(k-2) for (k,v) in yties.items()],
                             dtype=float)
                 v2 /= 9.*n*(n-1)*(n-2)
             else:
@@ -682,7 +682,7 @@ def kendalltau_seasonal(x):
 
     n_tot = x.count()
     ties = count_tied_groups(x.compressed())
-    corr_ties = sum(v*k*(k-1) for (k,v) in iteritems(ties))
+    corr_ties = sum(v*k*(k-1) for (k,v) in ties.items())
     denom_tot = ma.sqrt(1.*n_tot*(n_tot-1)*(n_tot*(n_tot-1)-corr_ties))/2.
 
     R = rankdata(x, axis=0, use_missing=True)
@@ -691,7 +691,7 @@ def kendalltau_seasonal(x):
     denom_szn = ma.empty(m, dtype=float)
     for j in range(m):
         ties_j = count_tied_groups(x[:,j].compressed())
-        corr_j = sum(v*k*(k-1) for (k,v) in iteritems(ties_j))
+        corr_j = sum(v*k*(k-1) for (k,v) in ties_j.items())
         cmb = n_p[j]*(n_p[j]-1)
         for k in range(j,m,1):
             K[j,k] = sum(msign((x[i:,j]-x[i,j])*(x[i:,k]-x[i,k])).sum()
@@ -1153,7 +1153,7 @@ def mannwhitneyu(x,y, use_continuity=True):
     mu = (nx*ny)/2.
     sigsq = (nt**3 - nt)/12.
     ties = count_tied_groups(ranks)
-    sigsq -= sum(v*(k**3-k) for (k,v) in iteritems(ties))/12.
+    sigsq -= sum(v*(k**3-k) for (k,v) in ties.items())/12.
     sigsq *= nx*ny/float(nt*(nt-1))
 
     if use_continuity:
@@ -1219,7 +1219,7 @@ def kruskal(*args):
     H = 12./(ntot*(ntot+1)) * (sumrk**2/ngrp).sum() - 3*(ntot+1)
     # Tie correction
     ties = count_tied_groups(ranks)
-    T = 1. - sum(v*(k**3-k) for (k,v) in iteritems(ties))/float(ntot**3-ntot)
+    T = 1. - sum(v*(k**3-k) for (k,v) in ties.items())/float(ntot**3-ntot)
     if T == 0:
         raise ValueError('All numbers are identical in kruskal')
 

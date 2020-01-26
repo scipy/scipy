@@ -5,7 +5,6 @@ import warnings
 import numpy as np
 from scipy.special import factorial
 
-from scipy._lib.six import xrange
 from scipy._lib._util import _asarray_validated
 
 
@@ -182,7 +181,7 @@ class _Interpolator1DWithDerivatives(_Interpolator1D):
             nx = len(x_shape)
             ny = len(self._y_extra_shape)
             s = ([0] + list(range(nx+1, nx + self._y_axis+1))
-                 + list(range(1,nx+1)) +
+                 + list(range(1, nx+1)) +
                  list(range(nx+1+self._y_axis, nx+ny+1)))
             y = y.transpose(s)
         return y
@@ -299,13 +298,13 @@ class KroghInterpolator(_Interpolator1DWithDerivatives):
         c = np.zeros((self.n+1, self.r), dtype=self.dtype)
         c[0] = self.yi[0]
         Vk = np.zeros((self.n, self.r), dtype=self.dtype)
-        for k in xrange(1,self.n):
+        for k in range(1, self.n):
             s = 0
             while s <= k and xi[k-s] == xi[k]:
                 s += 1
             s -= 1
             Vk[0] = self.yi[k]/float(factorial(s))
-            for i in xrange(k-s):
+            for i in range(k-s):
                 if xi[i] == xi[k]:
                     raise ValueError("Elements if `xi` can't be equal.")
                 if s == 0:
@@ -337,7 +336,7 @@ class KroghInterpolator(_Interpolator1DWithDerivatives):
         p = np.zeros((len(x), self.r), dtype=self.dtype)
         p += self.c[0, np.newaxis, :]
 
-        for k in xrange(1, n):
+        for k in range(1, n):
             w[k-1] = x - self.xi[k-1]
             pi[k] = w[k-1] * pi[k-1]
             p += pi[k, :, np.newaxis] * self.c[k]
@@ -345,8 +344,8 @@ class KroghInterpolator(_Interpolator1DWithDerivatives):
         cn = np.zeros((max(der, n+1), len(x), r), dtype=self.dtype)
         cn[:n+1, :, :] += self.c[:n+1, np.newaxis, :]
         cn[0] = p
-        for k in xrange(1, n):
-            for i in xrange(1, n-k+1):
+        for k in range(1, n):
+            for i in range(1, n-k+1):
                 pi[i] = w[k+i-1]*pi[i-1] + pi[i]
                 cn[k] = cn[k] + pi[i, :, np.newaxis]*cn[k+i]
             cn[k] *= factorial(k)
@@ -507,7 +506,7 @@ class BarycentricInterpolator(_Interpolator1D):
 
         self.wi = np.zeros(self.n)
         self.wi[0] = 1
-        for j in xrange(1,self.n):
+        for j in range(1, self.n):
             self.wi[:j] *= (self.xi[j]-self.xi[:j])
             self.wi[j] = np.multiply.reduce(self.xi[:j]-self.xi[j])
         self.wi **= -1
@@ -571,7 +570,7 @@ class BarycentricInterpolator(_Interpolator1D):
         old_wi = self.wi
         self.wi = np.zeros(self.n)
         self.wi[:old_n] = old_wi
-        for j in xrange(old_n,self.n):
+        for j in range(old_n, self.n):
             self.wi[:j] *= (self.xi[j]-self.xi[:j])
             self.wi[j] = np.multiply.reduce(self.xi[:j]-self.xi[j])
         self.wi **= -1

@@ -16,10 +16,10 @@ from numpy.distutils.system_info import (system_info,
                                          dict_append,
                                          get_info as old_get_info)
 
-from scipy._lib._version import NumpyVersion
+from scipy._lib import _pep440
 
 
-if NumpyVersion(np.__version__) >= "1.15.0.dev":
+if _pep440.parse(np.__version__) >= _pep440.Version("1.15.0.dev"):
     # For new enough numpy.distutils, the ACCELERATE=None environment
     # variable in the top-level setup.py is enough, so no need to
     # customize BLAS detection.

@@ -20,8 +20,6 @@ from numpy.testing import (assert_equal, assert_almost_equal,
 import pytest
 from pytest import raises as assert_raises
 
-from scipy._lib.six import xrange
-
 from scipy.linalg import (eig, eigvals, lu, svd, svdvals, cholesky, qr,
      schur, rsf2csf, lu_solve, lu_factor, solve, diagsvd, hessenberg, rq,
      eig_banded, eigvals_banded, eigh, eigvalsh, qr_multiply, qz, orth, ordqz,
@@ -250,7 +248,7 @@ class TestEig(object):
                         err_msg=msg)
 
         length = np.empty(len(vr))
-        for i in xrange(len(vr)):
+        for i in range(len(vr)):
             length[i] = norm(vr[:,i])
         assert_allclose(length, np.ones(length.size), err_msg=msg,
                         atol=1e-7, rtol=1e-7)
@@ -277,7 +275,7 @@ class TestEig(object):
                         atol=1e-7, rtol=1e-7, err_msg=msg)
 
         length = np.empty(len(vr))
-        for i in xrange(len(vr)):
+        for i in range(len(vr)):
             length[i] = norm(vr[:,i])
         assert_allclose(length, np.ones(length.size), err_msg=msg)
 
@@ -335,7 +333,7 @@ class TestEig(object):
         # machines -- so we need to test several values
         olderr = np.seterr(all='ignore')
         try:
-            for k in xrange(100):
+            for k in range(100):
                 A, B = matrices(omega=k*5./100)
                 self._check_gen_eig(A, B)
         finally:
@@ -435,7 +433,7 @@ class TestEigBanded(object):
         LDAB = self.KU + 1
         self.bandmat_sym = zeros((LDAB, N), dtype=float)
         self.bandmat_herm = zeros((LDAB, N), dtype=complex)
-        for i in xrange(LDAB):
+        for i in range(LDAB):
             self.bandmat_sym[LDAB-i-1,i:N] = diag(self.sym_mat, i)
             self.bandmat_herm[LDAB-i-1,i:N] = diag(self.herm_mat, i)
 
@@ -444,7 +442,7 @@ class TestEigBanded(object):
         LDAB = 2*self.KL + self.KU + 1
         self.bandmat_real = zeros((LDAB, N), dtype=float)
         self.bandmat_real[2*self.KL,:] = diag(self.real_mat)     # diagonal
-        for i in xrange(self.KL):
+        for i in range(self.KL):
             # superdiagonals
             self.bandmat_real[2*self.KL-1-i,i+1:N] = diag(self.real_mat, i+1)
             # subdiagonals
@@ -452,7 +450,7 @@ class TestEigBanded(object):
 
         self.bandmat_comp = zeros((LDAB, N), dtype=complex)
         self.bandmat_comp[2*self.KL,:] = diag(self.comp_mat)     # diagonal
-        for i in xrange(self.KL):
+        for i in range(self.KL):
             # superdiagonals
             self.bandmat_comp[2*self.KL-1-i,i+1:N] = diag(self.comp_mat, i+1)
             # subdiagonals
@@ -613,7 +611,7 @@ class TestEigBanded(object):
 
         # extract matrix u from lu_symm_band
         u = diag(lu_symm_band[2*self.KL,:])
-        for i in xrange(self.KL + self.KU):
+        for i in range(self.KL + self.KU):
             u += diag(lu_symm_band[2*self.KL-1-i,i+1:N], i+1)
 
         p_lin, l_lin, u_lin = lu(self.real_mat, permute_l=0)
@@ -627,7 +625,7 @@ class TestEigBanded(object):
 
         # extract matrix u from lu_symm_band
         u = diag(lu_symm_band[2*self.KL,:])
-        for i in xrange(self.KL + self.KU):
+        for i in range(self.KL + self.KU):
             u += diag(lu_symm_band[2*self.KL-1-i,i+1:N], i+1)
 
         p_lin, l_lin, u_lin = lu(self.comp_mat, permute_l=0)
@@ -2457,7 +2455,7 @@ class TestDatacopied(object):
 
 
 def test_aligned_mem_float():
-    """Check linalg works with non-aligned memory"""
+    """Check linalg works with non-aligned memory (float32)"""
     # Allocate 402 bytes of memory (allocated on boundary)
     a = arange(402, dtype=np.uint8)
 
@@ -2469,10 +2467,10 @@ def test_aligned_mem_float():
     eig(z.T, overwrite_a=True)
 
 
-@pytest.mark.xfail(platform.machine() == 'ppc64le',
-                   reason="fails on ppc64le")
+@pytest.mark.skip(platform.machine() == 'ppc64le',
+                  reason="crashes on ppc64le")
 def test_aligned_mem():
-    """Check linalg works with non-aligned memory"""
+    """Check linalg works with non-aligned memory (float64)"""
     # Allocate 804 bytes of memory (allocated on boundary)
     a = arange(804, dtype=np.uint8)
 
@@ -2793,6 +2791,7 @@ class TestCDF2RDF(object):
     def test_random_1d_stacked_arrays(self):
         # cannot test M == 0 due to bug in old numpy
         for M in range(1, 7):
+            np.random.seed(999999999)
             X = np.random.rand(100, M, M)
             w, v = np.linalg.eig(X)
             wr, vr = cdf2rdf(w, v)

@@ -8,10 +8,9 @@ import platform
 import numpy as np
 
 from numpy.testing import (assert_equal, assert_array_equal,
-     assert_, assert_allclose)
+     assert_, assert_allclose, suppress_warnings)
 import pytest
 from pytest import raises as assert_raises
-from scipy._lib._numpy_compat import suppress_warnings
 
 from numpy import zeros, arange, array, ones, eye, iscomplexobj
 from scipy.linalg import norm
@@ -470,6 +469,7 @@ def test_maxiter_worsening(solver):
                   [0.1112795288033368, 0j, 0j, -0.16127952880333785]])
     v = np.ones(4)
     best_error = np.inf
+    tol = 7 if platform.machine() == 'aarch64' else 5
 
     for maxiter in range(1, 20):
         x, info = solver(A, v, maxiter=maxiter, tol=1e-8, atol=0)
@@ -481,7 +481,7 @@ def test_maxiter_worsening(solver):
         best_error = min(best_error, error)
 
         # Check with slack
-        assert_(error <= 5*best_error)
+        assert_(error <= tol*best_error)
 
 
 #------------------------------------------------------------------------------

@@ -7,7 +7,6 @@ from __future__ import division, print_function, absolute_import
 import operator
 import numpy as np
 import math
-from scipy._lib.six import xrange
 from numpy import (pi, asarray, floor, isscalar, iscomplex, real,
                    imag, sqrt, where, mgrid, sin, place, issubdtype,
                    extract, inexact, nan, zeros, sinc)
@@ -255,8 +254,9 @@ def jnjnp_zeros(nt):
 def jnyn_zeros(n, nt):
     """Compute nt zeros of Bessel functions Jn(x), Jn'(x), Yn(x), and Yn'(x).
 
-    Returns 4 arrays of length `nt`, corresponding to the first `nt` zeros of
-    Jn(x), Jn'(x), Yn(x), and Yn'(x), respectively.
+    Returns 4 arrays of length `nt`, corresponding to the first `nt`
+    zeros of Jn(x), Jn'(x), Yn(x), and Yn'(x), respectively. The zeros
+    are returned in ascending order.
 
     Parameters
     ----------
@@ -265,7 +265,20 @@ def jnyn_zeros(n, nt):
     nt : int
         Number (<=1200) of zeros to compute
 
-    See jn_zeros, jnp_zeros, yn_zeros, ynp_zeros to get separate arrays.
+    Returns
+    -------
+    Jn : ndarray
+        First `nt` zeros of Jn
+    Jnp : ndarray
+        First `nt` zeros of Jn'
+    Yn : ndarray
+        First `nt` zeros of Yn
+    Ynp : ndarray
+        First `nt` zeros of Yn'
+
+    See Also
+    --------
+    jn_zeros, jnp_zeros, yn_zeros, ynp_zeros
 
     References
     ----------
@@ -284,7 +297,12 @@ def jnyn_zeros(n, nt):
 
 
 def jn_zeros(n, nt):
-    """Compute zeros of integer-order Bessel function Jn(x).
+    r"""Compute zeros of integer-order Bessel functions Jn.
+
+    Compute `nt` zeros of the Bessel functions :math:`J_n(x)` on the
+    interval :math:`(0, \infty)`. The zeros are returned in ascending
+    order. Note that this interval excludes the zero at :math:`x = 0`
+    that exists for :math:`n > 0`.
 
     Parameters
     ----------
@@ -293,18 +311,51 @@ def jn_zeros(n, nt):
     nt : int
         Number of zeros to return
 
+    Returns
+    -------
+    ndarray
+        First `n` zeros of the Bessel function.
+
+    See Also
+    --------
+    jv
+
     References
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996, chapter 5.
            https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
+
+    Examples
+    --------
+    >>> import scipy.special as sc
+
+    We can check that we are getting approximations of the zeros by
+    evaluating them with `jv`.
+
+    >>> n = 1
+    >>> x = sc.jn_zeros(n, 3)
+    >>> x
+    array([ 3.83170597,  7.01558667, 10.17346814])
+    >>> sc.jv(n, x)
+    array([-0.00000000e+00,  1.72975330e-16,  2.89157291e-16])
+
+    Note that the zero at ``x = 0`` for ``n > 0`` is not included.
+
+    >>> sc.jv(1, 0)
+    0.0
 
     """
     return jnyn_zeros(n, nt)[0]
 
 
 def jnp_zeros(n, nt):
-    """Compute zeros of integer-order Bessel function derivative Jn'(x).
+    r"""Compute zeros of integer-order Bessel function derivatives Jn'.
+
+    Compute `nt` zeros of the functions :math:`J_n'(x)` on the
+    interval :math:`(0, \infty)`. The zeros are returned in ascending
+    order. Note that this interval excludes the zero at :math:`x = 0`
+    that exists for :math:`n > 1`.
 
     Parameters
     ----------
@@ -313,18 +364,49 @@ def jnp_zeros(n, nt):
     nt : int
         Number of zeros to return
 
+    Returns
+    -------
+    ndarray
+        First `n` zeros of the Bessel function.
+
+    See Also
+    --------
+    jvp, jv
+
     References
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996, chapter 5.
            https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
+
+    Examples
+    --------
+    >>> import scipy.special as sc
+
+    We can check that we are getting approximations of the zeros by
+    evaluating them with `jvp`.
+
+    >>> n = 2
+    >>> x = sc.jnp_zeros(n, 3)
+    >>> x
+    array([3.05423693, 6.70613319, 9.96946782])
+    >>> sc.jvp(n, x)
+    array([ 2.77555756e-17,  2.08166817e-16, -3.01841885e-16])
+
+    Note that the zero at ``x = 0`` for ``n > 1`` is not included.
+
+    >>> sc.jvp(n, 0)
+    0.0
 
     """
     return jnyn_zeros(n, nt)[1]
 
 
 def yn_zeros(n, nt):
-    """Compute zeros of integer-order Bessel function Yn(x).
+    r"""Compute zeros of integer-order Bessel function Yn(x).
+
+    Compute `nt` zeros of the functions :math:`Y_n(x)` on the interval
+    :math:`(0, \infty)`. The zeros are returned in ascending order.
 
     Parameters
     ----------
@@ -333,18 +415,45 @@ def yn_zeros(n, nt):
     nt : int
         Number of zeros to return
 
+    Returns
+    -------
+    ndarray
+        First `n` zeros of the Bessel function.
+
+    See Also
+    --------
+    yn, yv
+
     References
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996, chapter 5.
            https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
+
+    Examples
+    --------
+    >>> import scipy.special as sc
+
+    We can check that we are getting approximations of the zeros by
+    evaluating them with `yn`.
+
+    >>> n = 2
+    >>> x = sc.yn_zeros(n, 3)
+    >>> x
+    array([ 3.38424177,  6.79380751, 10.02347798])
+    >>> sc.yn(n, x)
+    array([-1.94289029e-16,  8.32667268e-17, -1.52655666e-16])
 
     """
     return jnyn_zeros(n, nt)[2]
 
 
 def ynp_zeros(n, nt):
-    """Compute zeros of integer-order Bessel function derivative Yn'(x).
+    r"""Compute zeros of integer-order Bessel function derivatives Yn'(x).
+
+    Compute `nt` zeros of the functions :math:`Y_n'(x)` on the
+    interval :math:`(0, \infty)`. The zeros are returned in ascending
+    order.
 
     Parameters
     ----------
@@ -353,11 +462,29 @@ def ynp_zeros(n, nt):
     nt : int
         Number of zeros to return
 
+    See Also
+    --------
+    yvp
+
     References
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996, chapter 5.
            https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
+
+    Examples
+    --------
+    >>> import scipy.special as sc
+
+    We can check that we are getting approximations of the zeros by
+    evaluating them with `yvp`.
+
+    >>> n = 2
+    >>> x = sc.ynp_zeros(n, 3)
+    >>> x
+    array([ 5.00258293,  8.3507247 , 11.57419547])
+    >>> sc.yvp(n, x)
+    array([ 2.22044605e-16, -3.33066907e-16,  2.94902991e-16])
 
     """
     return jnyn_zeros(n, nt)[3]
@@ -479,23 +606,32 @@ def _bessel_diff_formula(v, z, n, L, phase):
     v = asarray(v)
     p = 1.0
     s = L(v-n, z)
-    for i in xrange(1, n+1):
+    for i in range(1, n+1):
         p = phase * (p * (n-i+1)) / i   # = choose(k, i)
         s += p*L(v-n + i*2, z)
     return s / (2.**n)
 
 
 def jvp(v, z, n=1):
-    """Compute nth derivative of Bessel function Jv(z) with respect to `z`.
+    """Compute derivatives of Bessel functions of the first kind.
+
+    Compute the nth derivative of the Bessel function `Jv` with
+    respect to `z`.
 
     Parameters
     ----------
     v : float
         Order of Bessel function
     z : complex
-        Argument at which to evaluate the derivative
+        Argument at which to evaluate the derivative; can be real or
+        complex.
     n : int, default 1
         Order of derivative
+
+    Returns
+    -------
+    scalar or ndarray
+        Values of the derivative of the Bessel function.
 
     Notes
     -----
@@ -518,7 +654,10 @@ def jvp(v, z, n=1):
 
 
 def yvp(v, z, n=1):
-    """Compute nth derivative of Bessel function Yv(z) with respect to `z`.
+    """Compute derivatives of Bessel functions of the second kind.
+
+    Compute the nth derivative of the Bessel function `Yv` with
+    respect to `z`.
 
     Parameters
     ----------
@@ -528,6 +667,11 @@ def yvp(v, z, n=1):
         Argument at which to evaluate the derivative
     n : int, default 1
         Order of derivative
+
+    Returns
+    -------
+    scalar or ndarray
+        nth derivative of the Bessel function.
 
     Notes
     -----
@@ -605,17 +749,29 @@ def kvp(v, z, n=1):
 
 
 def ivp(v, z, n=1):
-    """Compute nth derivative of modified Bessel function Iv(z) with respect
-    to `z`.
+    """Compute derivatives of modified Bessel functions of the first kind.
+
+    Compute the nth derivative of the modified Bessel function `Iv`
+    with respect to `z`.
 
     Parameters
     ----------
-    v : array_like of float
+    v : array_like
         Order of Bessel function
-    z : array_like of complex
-        Argument at which to evaluate the derivative
+    z : array_like
+        Argument at which to evaluate the derivative; can be real or
+        complex.
     n : int, default 1
         Order of derivative
+
+    Returns
+    -------
+    scalar or ndarray
+        nth derivative of the modified Bessel function.
+
+    See Also
+    --------
+    iv
 
     Notes
     -----
@@ -642,12 +798,18 @@ def h1vp(v, z, n=1):
 
     Parameters
     ----------
-    v : float
+    v : array_like
         Order of Hankel function
-    z : complex
-        Argument at which to evaluate the derivative
+    z : array_like
+        Argument at which to evaluate the derivative. Can be real or
+        complex.
     n : int, default 1
         Order of derivative
+
+    Returns
+    -------
+    scalar or ndarray
+        Values of the derivative of the Hankel function.
 
     Notes
     -----
@@ -674,12 +836,18 @@ def h2vp(v, z, n=1):
 
     Parameters
     ----------
-    v : float
+    v : array_like
         Order of Hankel function
-    z : complex
-        Argument at which to evaluate the derivative
+    z : array_like
+        Argument at which to evaluate the derivative. Can be real or
+        complex.
     n : int, default 1
         Order of derivative
+
+    Returns
+    -------
+    scalar or ndarray
+        Values of the derivative of the Hankel function.
 
     Notes
     -----
@@ -1667,7 +1835,21 @@ def pbdn_seq(n, z):
 
 
 def ber_zeros(nt):
-    """Compute nt zeros of the Kelvin function ber(x).
+    """Compute nt zeros of the Kelvin function ber.
+
+    Parameters
+    ----------
+    nt : int
+        Number of zeros to compute. Must be positive.
+
+    Returns
+    -------
+    ndarray
+        First `nt` zeros of the Kelvin function.
+
+    See Also
+    --------
+    ber
 
     References
     ----------
@@ -1682,7 +1864,21 @@ def ber_zeros(nt):
 
 
 def bei_zeros(nt):
-    """Compute nt zeros of the Kelvin function bei(x).
+    """Compute nt zeros of the Kelvin function bei.
+
+    Parameters
+    ----------
+    nt : int
+        Number of zeros to compute. Must be positive.
+
+    Returns
+    -------
+    ndarray
+        First `nt` zeros of the Kelvin function.
+
+    See Also
+    --------
+    bei
 
     References
     ----------
@@ -1697,7 +1893,21 @@ def bei_zeros(nt):
 
 
 def ker_zeros(nt):
-    """Compute nt zeros of the Kelvin function ker(x).
+    """Compute nt zeros of the Kelvin function ker.
+
+    Parameters
+    ----------
+    nt : int
+        Number of zeros to compute. Must be positive.
+
+    Returns
+    -------
+    ndarray
+        First `nt` zeros of the Kelvin function.
+
+    See Also
+    --------
+    ker
 
     References
     ----------
@@ -1712,7 +1922,28 @@ def ker_zeros(nt):
 
 
 def kei_zeros(nt):
-    """Compute nt zeros of the Kelvin function kei(x).
+    """Compute nt zeros of the Kelvin function kei.
+
+    Parameters
+    ----------
+    nt : int
+        Number of zeros to compute. Must be positive.
+
+    Returns
+    -------
+    ndarray
+        First `nt` zeros of the Kelvin function.
+
+    See Also
+    --------
+    kei
+
+    References
+    ----------
+    .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
+           Functions", John Wiley and Sons, 1996.
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
+
     """
     if not isscalar(nt) or (floor(nt) != nt) or (nt <= 0):
         raise ValueError("nt must be positive integer scalar.")
@@ -1720,7 +1951,21 @@ def kei_zeros(nt):
 
 
 def berp_zeros(nt):
-    """Compute nt zeros of the Kelvin function ber'(x).
+    """Compute nt zeros of the derivative of the Kelvin function ber.
+
+    Parameters
+    ----------
+    nt : int
+        Number of zeros to compute. Must be positive.
+
+    Returns
+    -------
+    ndarray
+        First `nt` zeros of the derivative of the Kelvin function.
+
+    See Also
+    --------
+    ber, berp
 
     References
     ----------
@@ -1735,7 +1980,21 @@ def berp_zeros(nt):
 
 
 def beip_zeros(nt):
-    """Compute nt zeros of the Kelvin function bei'(x).
+    """Compute nt zeros of the derivative of the Kelvin function bei.
+
+    Parameters
+    ----------
+    nt : int
+        Number of zeros to compute. Must be positive.
+
+    Returns
+    -------
+    ndarray
+        First `nt` zeros of the derivative of the Kelvin function.
+
+    See Also
+    --------
+    bei, beip
 
     References
     ----------
@@ -1750,7 +2009,21 @@ def beip_zeros(nt):
 
 
 def kerp_zeros(nt):
-    """Compute nt zeros of the Kelvin function ker'(x).
+    """Compute nt zeros of the derivative of the Kelvin function ker.
+
+    Parameters
+    ----------
+    nt : int
+        Number of zeros to compute. Must be positive.
+
+    Returns
+    -------
+    ndarray
+        First `nt` zeros of the derivative of the Kelvin function.
+
+    See Also
+    --------
+    ker, kerp
 
     References
     ----------
@@ -1765,7 +2038,21 @@ def kerp_zeros(nt):
 
 
 def keip_zeros(nt):
-    """Compute nt zeros of the Kelvin function kei'(x).
+    """Compute nt zeros of the derivative of the Kelvin function kei.
+
+    Parameters
+    ----------
+    nt : int
+        Number of zeros to compute. Must be positive.
+
+    Returns
+    -------
+    ndarray
+        First `nt` zeros of the derivative of the Kelvin function.
+
+    See Also
+    --------
+    kei, keip
 
     References
     ----------
@@ -1953,7 +2240,7 @@ def perm(N, k, exact=False):
         if (k > N) or (N < 0) or (k < 0):
             return 0
         val = 1
-        for i in xrange(N - k + 1, N + 1):
+        for i in range(N - k + 1, N + 1):
             val *= i
         return val
     else:
@@ -2036,13 +2323,17 @@ def factorial(n, exact=False):
     """
     if exact:
         if np.ndim(n) == 0:
+            if np.isnan(n):
+                return n
             return 0 if n < 0 else math.factorial(n)
         else:
             n = asarray(n)
             un = np.unique(n).astype(object)
 
             # Convert to object array of long ints if np.int can't handle size
-            if un[-1] > 20:
+            if np.isnan(n).any():
+                dt = float
+            elif un[-1] > 20:
                 dt = object
             elif un[-1] > 12:
                 dt = np.int64
@@ -2052,27 +2343,29 @@ def factorial(n, exact=False):
             out = np.empty_like(n, dtype=dt)
 
             # Handle invalid/trivial values
-            un = un[un > 1]
-            out[n < 2] = 1
-            out[n < 0] = 0
+            # Ignore runtime warning when less operator used w/np.nan
+            with np.errstate(all='ignore'):
+                un = un[un > 1]
+                out[n < 2] = 1
+                out[n < 0] = 0
 
             # Calculate products of each range of numbers
             if un.size:
                 val = math.factorial(un[0])
                 out[n == un[0]] = val
-                for i in xrange(len(un) - 1):
+                for i in range(len(un) - 1):
                     prev = un[i] + 1
                     current = un[i + 1]
                     val *= _range_prod(prev, current)
                     out[n == current] = val
+
+            if np.isnan(n).any():
+                out = out.astype(np.float64)
+                out[np.isnan(n)] = n[np.isnan(n)]
             return out
     else:
-        if np.ndim(n) == 0:
-            return 0 if n < 0 else gamma(n + 1)
-
-        n = asarray(n)
-        vals = gamma(n + 1)
-        return where(n >= 0, vals, 0)
+        out = ufuncs._factorial(n)
+        return out
 
 
 def factorial2(n, exact=False):
@@ -2115,7 +2408,7 @@ def factorial2(n, exact=False):
         if n <= 0:
             return 1
         val = 1
-        for k in xrange(n, 0, -2):
+        for k in range(n, 0, -2):
             val *= k
         return val
     else:
@@ -2180,7 +2473,7 @@ def factorialk(n, k, exact=True):
         if n <= 0:
             return 1
         val = 1
-        for j in xrange(n, 0, -k):
+        for j in range(n, 0, -k):
             val = val*j
         return val
     else:

@@ -251,21 +251,20 @@ class KDTree(object):
         self.tree = self.__build(np.arange(self.n), self.maxes, self.mins)
 
     class node(object):
-        if sys.version_info[0] >= 3:
-            def __lt__(self, other):
-                return id(self) < id(other)
+        def __lt__(self, other):
+            return id(self) < id(other)
 
-            def __gt__(self, other):
-                return id(self) > id(other)
+        def __gt__(self, other):
+            return id(self) > id(other)
 
-            def __le__(self, other):
-                return id(self) <= id(other)
+        def __le__(self, other):
+            return id(self) <= id(other)
 
-            def __ge__(self, other):
-                return id(self) >= id(other)
+        def __ge__(self, other):
+            return id(self) >= id(other)
 
-            def __eq__(self, other):
-                return id(self) == id(other)
+        def __eq__(self, other):
+            return id(self) == id(other)
 
     class leafnode(node):
         def __init__(self, idx):

@@ -592,11 +592,12 @@ def dual_annealing(func, bounds, args=(), maxiter=1000,
     >>> lw = [-5.12] * 10
     >>> up = [5.12] * 10
     >>> ret = dual_annealing(func, bounds=list(zip(lw, up)), seed=1234)
-    >>> print("global minimum: xmin = {0}, f(xmin) = {1:.6f}".format(
-    ...       ret.x, ret.fun))
-    global minimum: xmin = [-4.26437714e-09 -3.91699361e-09 -1.86149218e-09 -3.97165720e-09
-     -6.29151648e-09 -6.53145322e-09 -3.93616815e-09 -6.55623025e-09
-    -6.05775280e-09 -5.00668935e-09], f(xmin) = 0.000000
+    >>> ret.x
+    array([-4.26437714e-09, -3.91699361e-09, -1.86149218e-09, -3.97165720e-09,
+           -6.29151648e-09, -6.53145322e-09, -3.93616815e-09, -6.55623025e-09,
+           -6.05775280e-09, -5.00668935e-09]) # may vary
+    >>> ret.fun
+    0.000000
 
     """  # noqa: E501
     if x0 is not None and not len(x0) == len(bounds):

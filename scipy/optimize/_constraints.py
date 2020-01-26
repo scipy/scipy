@@ -6,7 +6,7 @@ from ._differentiable_functions import (
     VectorFunction, LinearVectorFunction, IdentityVectorFunction)
 from .optimize import OptimizeWarning
 from warnings import warn
-from scipy._lib._numpy_compat import suppress_warnings
+from numpy.testing import suppress_warnings
 from scipy.sparse import issparse
 
 class NonlinearConstraint(object):
@@ -87,6 +87,15 @@ class NonlinearConstraint(object):
     to correctly handles complex inputs and be analytically continuable to the
     complex plane. The scheme '3-point' is more accurate than '2-point' but
     requires twice as many operations.
+
+    Examples
+    --------
+    Constrain ``x[0] < sin(x[1]) + 1.9``
+
+    >>> from scipy.optimize import NonlinearConstraint
+    >>> con = lambda x: x[0] - np.sin(x[1])
+    >>> nlc = NonlinearConstraint(con, -np.inf, 1.9)
+
     """
     def __init__(self, fun, lb, ub, jac='2-point', hess=BFGS(),
                  keep_feasible=False, finite_diff_rel_step=None,
@@ -280,6 +289,8 @@ def new_bounds_to_old(lb, ub, n):
     The new representation is a tuple (lb, ub) and the old one is a list
     containing n tuples, ith containing lower and upper bound on a ith
     variable.
+    If any of the entries in lb/ub are -np.inf/np.inf they are replaced by
+    None.
     """
     lb = np.asarray(lb)
     ub = np.asarray(ub)
@@ -300,6 +311,8 @@ def old_bound_to_new(bounds):
     The new representation is a tuple (lb, ub) and the old one is a list
     containing n tuples, ith containing lower and upper bound on a ith
     variable.
+    If any of the entries in lb/ub are None they are replaced by
+    -np.inf/np.inf.
     """
     lb, ub = zip(*bounds)
     lb = np.array([x if x is not None else -np.inf for x in lb])

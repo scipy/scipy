@@ -12,8 +12,8 @@ from pytest import raises as assert_raises
 from numpy.testing import (
     assert_equal,
     assert_almost_equal, assert_array_equal, assert_array_almost_equal,
-    assert_allclose, assert_, assert_warns, assert_array_less)
-from scipy._lib._numpy_compat import suppress_warnings
+    assert_allclose, assert_, assert_warns, assert_array_less,
+    suppress_warnings)
 from numpy import array, arange
 import numpy as np
 
@@ -2082,7 +2082,7 @@ class TestFiltFilt(object):
     def test_basic(self):
         zpk = tf2zpk([1, 2, 3], [1, 2, 3])
         out = self.filtfilt(zpk, np.arange(12))
-        assert_allclose(out, arange(12), atol=1e-11)
+        assert_allclose(out, arange(12), atol=5.28e-11)
 
     def test_sine(self):
         rate = 2000

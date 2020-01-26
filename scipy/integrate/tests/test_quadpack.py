@@ -10,7 +10,6 @@ import pytest
 from pytest import raises as assert_raises
 
 from scipy.integrate import quad, dblquad, tplquad, nquad
-from scipy._lib.six import xrange
 from scipy._lib._ccallback import LowLevelCallable
 
 import ctypes
@@ -35,10 +34,7 @@ def get_clib_test_routine(name, restype, *argtypes):
 class TestCtypesQuad(object):
     def setup_method(self):
         if sys.platform == 'win32':
-            if sys.version_info < (3, 5):
-                files = [ctypes.util.find_msvcrt()]
-            else:
-                files = ['api-ms-win-crt-math-l1-1-0.dll']
+            files = ['api-ms-win-crt-math-l1-1-0.dll']
         elif sys.platform == 'darwin':
             files = ['libm.dylib']
         else:
