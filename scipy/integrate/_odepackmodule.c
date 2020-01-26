@@ -33,6 +33,15 @@ the result tuple when the full_output argument is non-zero.
 
 #include "numpy/arrayobject.h"
 
+#ifdef HAVE_BLAS_ILP64
+#define INT_TYPE npy_int64
+#define INT_TYPE_NPY NPY_INT64
+#else
+#define INT_TYPE int
+#define INT_TYPE_NPY NPY_INT
+#endif
+
+
 #define PYERR(errobj,message) {\
     PyErr_SetString(errobj,message); \
     goto fail; \
@@ -146,7 +155,14 @@ static PyObject *odepack_error;
     #endif
 #endif
 
-void LSODA();
+typedef void lsoda_f_t(INT_TYPE *n, double *t, double *y, double *ydot);
+typedef int lsoda_jac_t(INT_TYPE *n, double *t, double *y, INT_TYPE *ml, INT_TYPE *mu,
+                        double *pd, INT_TYPE *nrowpd);
+
+void LSODA(lsoda_f_t *f, INT_TYPE *neq, double *y, double *t, double *tout, INT_TYPE *itol,
+           double *rtol, double *atol, INT_TYPE *itask, INT_TYPE *istate, INT_TYPE *iopt,
+           double *rwork, INT_TYPE *lrw, INT_TYPE *iwork, INT_TYPE *liw, lsoda_jac_t *jac,
+           INT_TYPE *jt);
 
 /*
 void ode_function(int *n, double *t, double *y, double *ydot)
@@ -159,7 +175,7 @@ void ode_function(int *n, double *t, double *y, double *ydot)
 */
 
 void
-ode_function(int *n, double *t, double *y, double *ydot)
+ode_function(INT_TYPE *n, double *t, double *y, double *ydot)
 {
     /*
     This is the function called from the Fortran code. It should
@@ -215,11 +231,11 @@ ode_function(int *n, double *t, double *y, double *ydot)
  */
 
 static void
-copy_array_to_fortran(double *f, int ldf, int nrows, int ncols,
-                      double *c, int transposed)
+copy_array_to_fortran(double *f, INT_TYPE ldf, INT_TYPE nrows, INT_TYPE ncols,
+                      double *c, INT_TYPE transposed)
 {
-    int i, j;
-    int row_stride, col_stride;
+    INT_TYPE i, j;
+    INT_TYPE row_stride, col_stride;
 
     /* The strides count multiples of sizeof(double), not bytes. */
     if (transposed) {
@@ -243,8 +259,8 @@ copy_array_to_fortran(double *f, int ldf, int nrows, int ncols,
 
 
 int
-ode_jacobian_function(int *n, double *t, double *y, int *ml, int *mu,
-                      double *pd, int *nrowpd)
+ode_jacobian_function(INT_TYPE *n, double *t, double *y, INT_TYPE *ml, INT_TYPE *mu,
+                      double *pd, INT_TYPE *nrowpd)
 {
     /*
         This is the function called from the Fortran code. It should
@@ -255,7 +271,7 @@ ode_jacobian_function(int *n, double *t, double *y, int *ml, int *mu,
     */
 
     PyArrayObject *result_array;
-    int ndim, nrows, ncols, dim_error;
+    npy_intp ndim, nrows, ncols, dim_error;
     npy_intp *dims;
 
     result_array = (PyArrayObject *)
@@ -277,7 +293,7 @@ ode_jacobian_function(int *n, double *t, double *y, int *ml, int *mu,
     }
 
     if (!global_params.jac_transpose) {
-        int tmp;
+        npy_intp tmp;
         tmp = nrows;
         nrows = ncols;
         ncols = tmp;
@@ -343,7 +359,7 @@ ode_jacobian_function(int *n, double *t, double *y, int *ml, int *mu,
          *  dimension of pd doesn't necessarily equal the number of rows of the
          *  matrix.
          */
-        int m;  /* Number of rows in the (full or packed banded) Jacobian. */
+        npy_intp m;  /* Number of rows in the (full or packed banded) Jacobian. */
         if (global_params.jac_type == 4) {
             m = *ml + *mu + 1;
         }
@@ -433,10 +449,10 @@ fail:       /* Needed for use of PYERR */
 
 
 int
-compute_lrw_liw(int *lrw, int *liw, int neq, int jt, int ml, int mu,
-                int mxordn, int mxords)
+compute_lrw_liw(INT_TYPE *lrw, INT_TYPE *liw, INT_TYPE neq, INT_TYPE jt, INT_TYPE ml, INT_TYPE mu,
+                INT_TYPE mxordn, INT_TYPE mxords)
 {
-    int lrn, lrs, nyh, lmat;
+    INT_TYPE lrn, lrs, nyh, lmat;
 
     if (jt == 1 || jt == 2) {
         lmat = neq*neq + 2;
@@ -483,7 +499,7 @@ odepack_odeint(PyObject *dummy, PyObject *args, PyObject *kwdict)
     PyArrayObject *ap_tout = NULL;
     PyObject *extra_args = NULL;
     PyObject *Dfun = Py_None;
-    int neq, itol = 1, itask = 1, istate = 1, iopt = 0, lrw, *iwork, liw, jt = 4;
+    INT_TYPE neq, itol = 1, itask = 1, istate = 1, iopt = 0, lrw, *iwork, liw, jt = 4;
     double *y, t, *tout, *rtol, *atol, *rwork;
     double h0 = 0.0, hmax = 0.0, hmin = 0.0;
     int ixpr = 0, mxstep = 0, mxhnil = 0, mxordn = 12, mxords = 5, ml = -1, mu = -1;
@@ -633,13 +649,13 @@ odepack_odeint(PyObject *dummy, PyObject *args, PyObject *kwdict)
         goto fail;
     }
 
-    if ((wa = (double *)malloc(lrw*sizeof(double) + liw*sizeof(int)))==NULL) {
+    if ((wa = (double *)malloc(lrw*sizeof(double) + liw*sizeof(INT_TYPE)))==NULL) {
         PyErr_NoMemory();
         goto fail;
     }
     allocated = 1;
     rwork = wa;
-    iwork = (int *)(wa + lrw);
+    iwork = (INT_TYPE *)(wa + lrw);
 
     iwork[0] = ml;
     iwork[1] = mu;
@@ -666,11 +682,11 @@ odepack_odeint(PyObject *dummy, PyObject *args, PyObject *kwdict)
         ap_tcur = (PyArrayObject *) PyArray_SimpleNew(1, &out_sz, NPY_DOUBLE);
         ap_tolsf = (PyArrayObject *) PyArray_SimpleNew(1, &out_sz, NPY_DOUBLE);
         ap_tsw = (PyArrayObject *) PyArray_SimpleNew(1, &out_sz, NPY_DOUBLE);
-        ap_nst = (PyArrayObject *) PyArray_SimpleNew(1, &out_sz, NPY_INT);
-        ap_nfe = (PyArrayObject *) PyArray_SimpleNew(1, &out_sz, NPY_INT);
-        ap_nje = (PyArrayObject *) PyArray_SimpleNew(1, &out_sz, NPY_INT);
-        ap_nqu = (PyArrayObject *) PyArray_SimpleNew(1, &out_sz, NPY_INT);
-        ap_mused = (PyArrayObject *) PyArray_SimpleNew(1, &out_sz, NPY_INT);
+        ap_nst = (PyArrayObject *) PyArray_SimpleNew(1, &out_sz, INT_TYPE_NPY);
+        ap_nfe = (PyArrayObject *) PyArray_SimpleNew(1, &out_sz, INT_TYPE_NPY);
+        ap_nje = (PyArrayObject *) PyArray_SimpleNew(1, &out_sz, INT_TYPE_NPY);
+        ap_nqu = (PyArrayObject *) PyArray_SimpleNew(1, &out_sz, INT_TYPE_NPY);
+        ap_mused = (PyArrayObject *) PyArray_SimpleNew(1, &out_sz, INT_TYPE_NPY);
         if (ap_hu == NULL || ap_tcur == NULL || ap_tolsf == NULL ||
                 ap_tsw == NULL || ap_nst == NULL || ap_nfe == NULL ||
                 ap_nje == NULL || ap_nqu == NULL || ap_mused == NULL) {
@@ -703,10 +719,10 @@ odepack_odeint(PyObject *dummy, PyObject *args, PyObject *kwdict)
             *((double *)PyArray_DATA(ap_tcur) + (k-1)) = rwork[12];
             *((double *)PyArray_DATA(ap_tolsf) + (k-1)) = rwork[13];
             *((double *)PyArray_DATA(ap_tsw) + (k-1)) = rwork[14];
-            *((int *)PyArray_DATA(ap_nst) + (k-1)) = iwork[10];
-            *((int *)PyArray_DATA(ap_nfe) + (k-1)) = iwork[11];
-            *((int *)PyArray_DATA(ap_nje) + (k-1)) = iwork[12];
-            *((int *)PyArray_DATA(ap_nqu) + (k-1)) = iwork[13];
+            *((INT_TYPE *)PyArray_DATA(ap_nst) + (k-1)) = iwork[10];
+            *((INT_TYPE *)PyArray_DATA(ap_nfe) + (k-1)) = iwork[11];
+            *((INT_TYPE *)PyArray_DATA(ap_nje) + (k-1)) = iwork[12];
+            *((INT_TYPE *)PyArray_DATA(ap_nqu) + (k-1)) = iwork[13];
             if (istate == -5 || istate == -4) {
                 imxer = iwork[15];
             }
@@ -715,7 +731,7 @@ odepack_odeint(PyObject *dummy, PyObject *args, PyObject *kwdict)
             }
             lenrw = iwork[16];
             leniw = iwork[17];
-            *((int *)PyArray_DATA(ap_mused) + (k-1)) = iwork[18];
+            *((INT_TYPE *)PyArray_DATA(ap_mused) + (k-1)) = iwork[18];
         }
         if (PyErr_Occurred()) {
             goto fail;

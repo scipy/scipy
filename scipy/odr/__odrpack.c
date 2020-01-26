@@ -13,36 +13,36 @@
 #include "odrpack.h"
 
 
-void F_FUNC(dodrc,DODRC)(void (*fcn)(int *n, int *m, int *np, int *nq, int *ldn, int *ldm,
-            int *ldnp, double *beta, double *xplusd, int *ifixb, int *ifixx,
-            int *ldifx, int *ideval, double *f, double *fjacb, double *fjacd,
-            int *istop),
-           int *n, int *m, int *np, int *nq, double *beta, double *y, int *ldy,
-           double *x, int *ldx, double *we, int *ldwe, int *ld2we, double *wd,
-           int *ldwd, int *ld2wd, int *ifixb, int *ifixx, int *ldifx, int *job,
-           int *ndigit, double *taufac, double *sstol, double *partol,
-           int *maxit, int *iprint, int *lunerr, int *lunrpt, double *stpb,
-           double *stpd, int *ldstpd, double *sclb, double *scld, int *ldscld,
-           double *work, int *lwork, int *iwork, int *liwork, int *info);
-void F_FUNC(dwinf,DWINF)(int *n, int *m, int *np, int *nq, int *ldwe, int *ld2we, int *isodr,
-        int *delta, int *eps, int *xplus, int *fn, int *sd, int *vcv, int *rvar,
-        int *wss, int *wssde, int *wssep, int *rcond, int *eta, int *olmav,
-        int *tau, int *alpha, int *actrs, int *pnorm, int *rnors, int *prers,
-        int *partl, int *sstol, int *taufc, int *apsma, int *betao, int *betac,
-        int *betas, int *betan, int *s, int *ss, int *ssf, int *qraux, int *u,
-        int *fs, int *fjacb, int *we1, int *diff, int *delts, int *deltn,
-        int *t, int *tt, int *omega, int *fjacd, int *wrk1, int *wrk2,
-        int *wrk3, int *wrk4, int *wrk5, int *wrk6, int *wrk7, int *lwkmn);
-void F_FUNC(dluno,DLUNO)(int *lun, char *fn, int fnlen);
-void F_FUNC(dlunc,DLUNC)(int *lun);
+void F_FUNC(dodrc,DODRC)(void (*fcn)(INT_TYPE *n, INT_TYPE *m, INT_TYPE *np, INT_TYPE *nq, INT_TYPE *ldn, INT_TYPE *ldm,
+            INT_TYPE *ldnp, double *beta, double *xplusd, INT_TYPE *ifixb, INT_TYPE *ifixx,
+            INT_TYPE *ldifx, INT_TYPE *ideval, double *f, double *fjacb, double *fjacd,
+            INT_TYPE *istop),
+           INT_TYPE *n, INT_TYPE *m, INT_TYPE *np, INT_TYPE *nq, double *beta, double *y, INT_TYPE *ldy,
+           double *x, INT_TYPE *ldx, double *we, INT_TYPE *ldwe, INT_TYPE *ld2we, double *wd,
+           INT_TYPE *ldwd, INT_TYPE *ld2wd, INT_TYPE *ifixb, INT_TYPE *ifixx, INT_TYPE *ldifx, INT_TYPE *job,
+           INT_TYPE *ndigit, double *taufac, double *sstol, double *partol,
+           INT_TYPE *maxit, INT_TYPE *iprINT_TYPE, INT_TYPE *lunerr, INT_TYPE *lunrpt, double *stpb,
+           double *stpd, INT_TYPE *ldstpd, double *sclb, double *scld, INT_TYPE *ldscld,
+           double *work, INT_TYPE *lwork, INT_TYPE *iwork, INT_TYPE *liwork, INT_TYPE *info);
+void F_FUNC(dwinf,DWINF)(INT_TYPE *n, INT_TYPE *m, INT_TYPE *np, INT_TYPE *nq, INT_TYPE *ldwe, INT_TYPE *ld2we, INT_TYPE *isodr,
+        INT_TYPE *delta, INT_TYPE *eps, INT_TYPE *xplus, INT_TYPE *fn, INT_TYPE *sd, INT_TYPE *vcv, INT_TYPE *rvar,
+        INT_TYPE *wss, INT_TYPE *wssde, INT_TYPE *wssep, INT_TYPE *rcond, INT_TYPE *eta, INT_TYPE *olmav,
+        INT_TYPE *tau, INT_TYPE *alpha, INT_TYPE *actrs, INT_TYPE *pnorm, INT_TYPE *rnors, INT_TYPE *prers,
+        INT_TYPE *partl, INT_TYPE *sstol, INT_TYPE *taufc, INT_TYPE *apsma, INT_TYPE *betao, INT_TYPE *betac,
+        INT_TYPE *betas, INT_TYPE *betan, INT_TYPE *s, INT_TYPE *ss, INT_TYPE *ssf, INT_TYPE *qraux, INT_TYPE *u,
+        INT_TYPE *fs, INT_TYPE *fjacb, INT_TYPE *we1, INT_TYPE *diff, INT_TYPE *delts, INT_TYPE *deltn,
+        INT_TYPE *t, INT_TYPE *tt, INT_TYPE *omega, INT_TYPE *fjacd, INT_TYPE *wrk1, INT_TYPE *wrk2,
+        INT_TYPE *wrk3, INT_TYPE *wrk4, INT_TYPE *wrk5, INT_TYPE *wrk6, INT_TYPE *wrk7, INT_TYPE *lwkmn);
+void F_FUNC(dluno,DLUNO)(INT_TYPE *lun, char *fn, int fnlen);
+void F_FUNC(dlunc,DLUNC)(INT_TYPE *lun);
 
 
 
 /* callback to pass to DODRC; calls the Python function in the global structure |odr_global| */
-void fcn_callback(int *n, int *m, int *np, int *nq, int *ldn, int *ldm,
-                  int *ldnp, double *beta, double *xplusd, int *ifixb,
-                  int *ifixx, int *ldfix, int *ideval, double *f,
-                  double *fjacb, double *fjacd, int *istop)
+void fcn_callback(INT_TYPE *n, INT_TYPE *m, INT_TYPE *np, INT_TYPE *nq, INT_TYPE *ldn, INT_TYPE *ldm,
+                  INT_TYPE *ldnp, double *beta, double *xplusd, INT_TYPE *ifixb,
+                  INT_TYPE *ifixx, INT_TYPE *ldfix, INT_TYPE *ideval, double *f,
+                  double *fjacb, double *fjacd, INT_TYPE *istop)
 {
   PyObject *arg01, *arglist;
   PyObject *result = NULL;
@@ -269,18 +269,18 @@ fail:
 
 
 /* generates Python output from the raw output from DODRC */
-PyObject *gen_output(int n, int m, int np, int nq, int ldwe, int ld2we,
+PyObject *gen_output(INT_TYPE n, INT_TYPE m, INT_TYPE np, INT_TYPE nq, INT_TYPE ldwe, INT_TYPE ld2we,
                      PyArrayObject * beta, PyArrayObject * work,
-                     PyArrayObject * iwork, int isodr, int info,
+                     PyArrayObject * iwork, INT_TYPE isodr, INT_TYPE info,
                      int full_output)
 {
   PyArrayObject *sd_beta, *cov_beta;
 
-  int delta, eps, xplus, fn, sd, vcv, rvar, wss, wssde, wssep, rcond;
-  int eta, olmav, tau, alpha, actrs, pnorm, rnors, prers, partl, sstol;
-  int taufc, apsma, betao, betac, betas, betan, s, ss, ssf, qraux, u;
-  int fs, fjacb, we1, diff, delts, deltn, t, tt, omega, fjacd;
-  int wrk1, wrk2, wrk3, wrk4, wrk5, wrk6, wrk7, lwkmn;
+  INT_TYPE delta, eps, xplus, fn, sd, vcv, rvar, wss, wssde, wssep, rcond;
+  INT_TYPE eta, olmav, tau, alpha, actrs, pnorm, rnors, prers, partl, sstol;
+  INT_TYPE taufc, apsma, betao, betac, betas, betan, s, ss, ssf, qraux, u;
+  INT_TYPE fs, fjacb, we1, diff, delts, deltn, t, tt, omega, fjacd;
+  INT_TYPE wrk1, wrk2, wrk3, wrk4, wrk5, wrk6, wrk7, lwkmn;
 
   PyObject *retobj;
 
@@ -383,7 +383,19 @@ PyObject *gen_output(int n, int m, int np, int nq, int ldwe, int ld2we,
 
       work_ind =
         Py_BuildValue
-        ("{s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i}",
+          (("{s:" INT_TYPE_PYFMT ",s:" INT_TYPE_PYFMT ",s:" INT_TYPE_PYFMT ",s:" INT_TYPE_PYFMT
+            ",s:" INT_TYPE_PYFMT ",s:" INT_TYPE_PYFMT ",s:" INT_TYPE_PYFMT ",s:" INT_TYPE_PYFMT
+            ",s:" INT_TYPE_PYFMT ",s:" INT_TYPE_PYFMT ",s:" INT_TYPE_PYFMT ",s:" INT_TYPE_PYFMT
+            ",s:" INT_TYPE_PYFMT ",s:" INT_TYPE_PYFMT ",s:" INT_TYPE_PYFMT ",s:" INT_TYPE_PYFMT
+            ",s:" INT_TYPE_PYFMT ",s:" INT_TYPE_PYFMT ",s:" INT_TYPE_PYFMT ",s:" INT_TYPE_PYFMT
+            ",s:" INT_TYPE_PYFMT ",s:" INT_TYPE_PYFMT ",s:" INT_TYPE_PYFMT ",s:" INT_TYPE_PYFMT
+            ",s:" INT_TYPE_PYFMT ",s:" INT_TYPE_PYFMT ",s:" INT_TYPE_PYFMT ",s:" INT_TYPE_PYFMT
+            ",s:" INT_TYPE_PYFMT ",s:" INT_TYPE_PYFMT ",s:" INT_TYPE_PYFMT ",s:" INT_TYPE_PYFMT
+            ",s:" INT_TYPE_PYFMT ",s:" INT_TYPE_PYFMT ",s:" INT_TYPE_PYFMT ",s:" INT_TYPE_PYFMT
+            ",s:" INT_TYPE_PYFMT ",s:" INT_TYPE_PYFMT ",s:" INT_TYPE_PYFMT ",s:" INT_TYPE_PYFMT
+            ",s:" INT_TYPE_PYFMT ",s:" INT_TYPE_PYFMT ",s:" INT_TYPE_PYFMT ",s:" INT_TYPE_PYFMT
+            ",s:" INT_TYPE_PYFMT ",s:" INT_TYPE_PYFMT ",s:" INT_TYPE_PYFMT ",s:" INT_TYPE_PYFMT
+            ",s:" INT_TYPE_PYFMT "}"),
          "delta", delta, "eps", eps, "xplus", xplus, "fn", fn, "sd", sd, "sd",
          vcv, "rvar", rvar, "wss", wss, "wssde", wssde, "wssep", wssep,
          "rcond", rcond, "eta", eta, "olmav", olmav, "tau", tau, "alpha",
@@ -446,7 +458,7 @@ PyObject *gen_output(int n, int m, int np, int nq, int ldwe, int ld2we,
 
       retobj =
         Py_BuildValue
-        ("OOO{s:O,s:O,s:O,s:O,s:d,s:d,s:d,s:d,s:d,s:d,s:O,s:O,s:O,s:i}",
+         (("OOO{s:O,s:O,s:O,s:O,s:d,s:d,s:d,s:d,s:d,s:d,s:O,s:O,s:O,s:" INT_TYPE_PYFMT "}"),
          PyArray_Return(beta), PyArray_Return(sd_beta),
          PyArray_Return(cov_beta), "delta", PyArray_Return(deltaA), "eps",
          PyArray_Return(epsA), "xplus", PyArray_Return(xplusA), "y",
@@ -473,7 +485,7 @@ PyObject *odr(PyObject * self, PyObject * args, PyObject * kwds)
   PyObject *fjacd = NULL, *pifixb = NULL, *pifixx = NULL;
   PyObject *pstpb = NULL, *pstpd = NULL, *psclb = NULL, *pscld = NULL;
   PyObject *pwork = NULL, *piwork = NULL, *extra_args = NULL;
-  int job = 0, ndigit = 0, maxit = -1, iprint = 0;
+  INT_TYPE job = 0, ndigit = 0, maxit = -1, iprint = 0;
   int full_output = 0;
   double taufac = 0.0, sstol = -1.0, partol = -1.0;
   char *errfile = NULL, *rptfile = NULL;
@@ -482,23 +494,25 @@ PyObject *odr(PyObject * self, PyObject * args, PyObject * kwds)
   PyArrayObject *ifixb = NULL, *ifixx = NULL;
   PyArrayObject *stpb = NULL, *stpd = NULL, *sclb = NULL, *scld = NULL;
   PyArrayObject *work = NULL, *iwork = NULL;
-  int n, m, np, nq, ldy, ldx, ldwe, ld2we, ldwd, ld2wd, ldifx;
-  int lunerr = -1, lunrpt = -1, ldstpd, ldscld, lwork, liwork, info = 0;
+  INT_TYPE n, m, np, nq, ldy, ldx, ldwe, ld2we, ldwd, ld2wd, ldifx;
+  INT_TYPE lunerr = -1, lunrpt = -1, ldstpd, ldscld, lwork, liwork, info = 0;
   static char *kw_list[] = { "fcn", "initbeta", "y", "x", "we", "wd", "fjacb",
     "fjacd", "extra_args", "ifixb", "ifixx", "job", "iprint", "errfile",
     "rptfile", "ndigit", "taufac", "sstol", "partol",
     "maxit", "stpb", "stpd", "sclb", "scld", "work",
     "iwork", "full_output", NULL
   };
-  int isodr = 1;
+  INT_TYPE isodr = 1;
   PyObject *result;
   npy_intp dim1[1], dim2[2], dim3[3];
-  int implicit;                 /* flag for implicit model */
+  INT_TYPE implicit;                 /* flag for implicit model */
 
 
   if (kwds == NULL)
     {
-      if (!PyArg_ParseTuple(args, "OOOO|OOOOOOOiiz#z#idddiOOOOOOi:odr",
+        if (!PyArg_ParseTuple(args, ("OOOO|OOOOOOO" INT_TYPE_PYFMT INT_TYPE_PYFMT
+                                     "z#z#" INT_TYPE_PYFMT "ddd" INT_TYPE_PYFMT
+                                     "OOOOOOi:odr"),
                             &fcn, &initbeta, &py, &px, &pwe, &pwd,
                             &fjacb, &fjacd, &extra_args, &pifixb, &pifixx,
                             &job, &iprint, &errfile, &lerrfile, &rptfile,
@@ -512,7 +526,9 @@ PyObject *odr(PyObject * self, PyObject * args, PyObject * kwds)
   else
     {
       if (!PyArg_ParseTupleAndKeywords(args, kwds,
-                                       "OOOO|OOOOOOOiiz#z#idddiOOOOOOi:odr",
+                                       ("OOOO|OOOOOOO" INT_TYPE_PYFMT "" INT_TYPE_PYFMT
+                                        "z#z#" INT_TYPE_PYFMT "ddd" INT_TYPE_PYFMT
+                                        "OOOOOOi:odr"),
                                        kw_list, &fcn, &initbeta, &py, &px,
                                        &pwe, &pwd, &fjacb, &fjacd,
                                        &extra_args, &pifixb, &pifixx, &job,
@@ -651,7 +667,7 @@ PyObject *odr(PyObject * self, PyObject * args, PyObject * kwds)
   else
     {                           /* we *do* have an implicit model */
       ldy = 1;
-      nq = (int)PyInt_AsLong(py);
+      nq = (INT_TYPE)PyInt_AsLong(py);
       dim1[0] = 1;
 
       /* initialize y to a dummy array; never referenced */
@@ -878,15 +894,15 @@ PyObject *odr(PyObject * self, PyObject * args, PyObject * kwds)
   if (pifixb == NULL)
     {
       dim1[0] = np;
-      ifixb = (PyArrayObject *) PyArray_SimpleNew(1, dim1, NPY_INT);
-      *(int *)(PyArray_DATA(ifixb)) = -1;      /* set first element negative */
+      ifixb = (PyArrayObject *) PyArray_SimpleNew(1, dim1, INT_TYPE_NPY);
+      *(INT_TYPE *)(PyArray_DATA(ifixb)) = -1;      /* set first element negative */
     }
   else
     {
       /* pifixb is a sequence as checked before */
 
       if ((ifixb =
-           (PyArrayObject *) PyArray_CopyFromObject(pifixb, NPY_INT, 1,
+           (PyArrayObject *) PyArray_CopyFromObject(pifixb, INT_TYPE_NPY, 1,
                                                     1)) == NULL)
         {
           PYERR(PyExc_ValueError,
@@ -904,8 +920,8 @@ PyObject *odr(PyObject * self, PyObject * args, PyObject * kwds)
     {
       dim2[0] = m;
       dim2[1] = 1;
-      ifixx = (PyArrayObject *) PyArray_SimpleNew(2, dim2, NPY_INT);
-      *(int *)(PyArray_DATA(ifixx)) = -1;      /* set first element negative */
+      ifixx = (PyArrayObject *) PyArray_SimpleNew(2, dim2, INT_TYPE_NPY);
+      *(INT_TYPE *)(PyArray_DATA(ifixx)) = -1;      /* set first element negative */
       ldifx = 1;
     }
   else
@@ -913,7 +929,7 @@ PyObject *odr(PyObject * self, PyObject * args, PyObject * kwds)
       /* pifixx is a sequence as checked before */
 
       if ((ifixx =
-           (PyArrayObject *) PyArray_CopyFromObject(pifixx, NPY_INT, 1,
+           (PyArrayObject *) PyArray_CopyFromObject(pifixx, INT_TYPE_NPY, 1,
                                                     2)) == NULL)
         {
           PYERR(PyExc_ValueError,
@@ -1113,7 +1129,7 @@ PyObject *odr(PyObject * self, PyObject * args, PyObject * kwds)
         }
       if (PyArray_DIMS(work)[0] < lwork)
         {
-            printf("%ld %d\n", PyArray_DIMS(work)[0], lwork);
+            printf("%ld " INT_TYPE_FMT "\n", PyArray_DIMS(work)[0], lwork);
           PYERR(PyExc_ValueError, "work is too small");
         }
     }
@@ -1127,7 +1143,7 @@ PyObject *odr(PyObject * self, PyObject * args, PyObject * kwds)
   if (piwork != NULL)
     {
       if ((iwork =
-           (PyArrayObject *) PyArray_CopyFromObject(piwork, NPY_INT, 1,
+           (PyArrayObject *) PyArray_CopyFromObject(piwork, INT_TYPE_NPY, 1,
                                                     1)) == NULL)
         {
           PYERR(PyExc_ValueError,
@@ -1143,7 +1159,7 @@ PyObject *odr(PyObject * self, PyObject * args, PyObject * kwds)
     {
       /* initialize our own iwork array */
       dim1[0] = liwork;
-      iwork = (PyArrayObject *) PyArray_SimpleNew(1, dim1, NPY_INT);
+      iwork = (PyArrayObject *) PyArray_SimpleNew(1, dim1, INT_TYPE_NPY);
     }                           /* iwork */
 
   /* check if what JOB requests can be done with what the user has
@@ -1176,12 +1192,12 @@ PyObject *odr(PyObject * self, PyObject * args, PyObject * kwds)
          (double *)(PyArray_DATA(y)), &ldy, (double *)(PyArray_DATA(x)), &ldx,
          (double *)(PyArray_DATA(we)), &ldwe, &ld2we,
          (double *)(PyArray_DATA(wd)), &ldwd, &ld2wd,
-         (int *)(PyArray_DATA(ifixb)), (int *)(PyArray_DATA(ifixx)), &ldifx,
+         (INT_TYPE *)(PyArray_DATA(ifixb)), (INT_TYPE *)(PyArray_DATA(ifixx)), &ldifx,
          &job, &ndigit, &taufac, &sstol, &partol, &maxit,
          &iprint, &lunerr, &lunrpt,
          (double *)(PyArray_DATA(stpb)), (double *)(PyArray_DATA(stpd)), &ldstpd,
          (double *)(PyArray_DATA(sclb)), (double *)(PyArray_DATA(scld)), &ldscld,
-         (double *)(PyArray_DATA(work)), &lwork, (int *)(PyArray_DATA(iwork)), &liwork,
+         (double *)(PyArray_DATA(work)), &lwork, (INT_TYPE *)(PyArray_DATA(iwork)), &liwork,
          &info);
 
   result = gen_output(n, m, np, nq, ldwe, ld2we,

@@ -1,5 +1,6 @@
 from __future__ import division, absolute_import, print_function
 
+import os
 import warnings
 
 import numpy as np
@@ -19,13 +20,91 @@ from numpy.distutils.system_info import (system_info,
 from scipy._lib import _pep440
 
 
-if _pep440.parse(np.__version__) >= _pep440.Version("1.15.0.dev"):
-    # For new enough numpy.distutils, the ACCELERATE=None environment
-    # variable in the top-level setup.py is enough, so no need to
-    # customize BLAS detection.
+def combine_dict(*dicts, **kw):
+    """
+    Combine Numpy distutils style library configuration dictionaries.
+
+    Parameters
+    ----------
+    *dicts
+        Dictionaries of keys. List-valued keys will be concatenated.
+        Otherwise, duplicate keys with different values result to
+        an error. The input arguments are not modified.
+    **kw
+        Keyword arguments are treated as an additional dictionary
+        (the first one, i.e., prepended).
+
+    Returns
+    -------
+    combined
+        Dictionary with combined values.
+    """
+    new_dict = {}
+
+    for d in (kw,) + dicts:
+        for key, value in d.items():
+            if new_dict.get(key, None) is not None:
+                old_value = new_dict[key]
+                if isinstance(value, (list, tuple)):
+                    if isinstance(old_value, (list, tuple)):
+                        new_dict[key] = list(old_value) + list(value)
+                        continue
+                elif value == old_value:
+                    continue
+
+                raise ValueError("Conflicting configuration dicts: {!r} {!r}"
+                                 "".format(new_dict, d))
+            else:
+                new_dict[key] = value
+
+    return new_dict
+
+
+if _pep440.parse(np.__version__) >= _pep440.Version("1.18.1"):
+    get_info = old_get_info
+elif _pep440.parse(np.__version__) >= _pep440.Version("1.18.0"):
+    # For NumPy < 1.18.2, we need monkeypatching to make MSVC+gfortran
+    # combination to work for ILP64 OpenBLAS.
+    # See https://github.com/numpy/numpy/pull/15211
+    from numpy.distutils.system_info import openblas_info
+
+    def check_msvc_gfortran_libs(self, library_dirs, libraries):
+        # First, find the full path to each library directory
+        library_paths = []
+        for library in libraries:
+            for library_dir in library_dirs:
+                # MinGW static ext will be .a
+                fullpath = os.path.join(library_dir, library + '.a')
+                if os.path.isfile(fullpath):
+                    library_paths.append(fullpath)
+                    break
+            else:
+                return None
+
+        # Generate numpy.distutils virtual static library file
+        basename = self.__class__.__name__
+        tmpdir = os.path.join(os.getcwd(), 'build', basename)
+        if not os.path.isdir(tmpdir):
+            os.makedirs(tmpdir)
+
+        info = {'library_dirs': [tmpdir],
+                'libraries': [basename],
+                'language': 'f77'}
+
+        fake_lib_file = os.path.join(tmpdir, basename + '.fobjects')
+        fake_clib_file = os.path.join(tmpdir, basename + '.cobjects')
+        with open(fake_lib_file, 'w') as f:
+            f.write("\n".join(library_paths))
+        with open(fake_clib_file, 'w') as f:
+            pass
+
+        return info
+
+    openblas_info.check_msvc_gfortran_libs = check_msvc_gfortran_libs
+
     get_info = old_get_info
 else:
-    # For NumPy < 1.15.0, we need overrides.
+    # For NumPy < 1.15.0, we need overrides in Accelerate detection,
 
     def get_info(name, notfound_action=0):
         # Special case our custom *_opt_info.

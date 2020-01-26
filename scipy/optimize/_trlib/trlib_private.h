@@ -35,19 +35,82 @@
 #include <string.h>
 #include <time.h>
 
+#include "numpy/arrayobject.h"
+#include "npy_cblas.h"
+
 // blas
-void daxpy_(trlib_int_t *n, trlib_flt_t *alpha, trlib_flt_t *x, trlib_int_t *incx, trlib_flt_t *y, trlib_int_t *incy);
-void dscal_(trlib_int_t *n, trlib_flt_t *alpha, trlib_flt_t *x, trlib_int_t *incx);
-void dcopy_(trlib_int_t *n, trlib_flt_t *x, trlib_int_t *incx, trlib_flt_t *y, trlib_int_t *incy);
-trlib_flt_t dnrm2_(trlib_int_t *n, trlib_flt_t *x, trlib_int_t *incx);
-trlib_flt_t ddot_(trlib_int_t *n, trlib_flt_t *x, trlib_int_t *incx, trlib_flt_t *y, trlib_int_t *incy);
+void BLAS_FUNC(daxpy)(CBLAS_INT *n, double *alpha, double *x, CBLAS_INT *incx, double *y, CBLAS_INT *incy);
+void BLAS_FUNC(dscal)(CBLAS_INT *n, double *alpha, double *x, CBLAS_INT *incx);
+void BLAS_FUNC(dcopy)(CBLAS_INT *n, double *x, CBLAS_INT *incx, double *y, CBLAS_INT *incy);
+double BLAS_FUNC(dnrm2)(CBLAS_INT *n, double *x, CBLAS_INT *incx);
+double BLAS_FUNC(ddot)(CBLAS_INT *n, double *x, CBLAS_INT *incx, double *y, CBLAS_INT *incy);
 
 // lapack
-void dpttrf_(trlib_int_t *n, trlib_flt_t *d, trlib_flt_t *e, trlib_int_t *info);
-void dpttrs_(trlib_int_t *n, trlib_int_t *nrhs, trlib_flt_t *d, trlib_flt_t *e, trlib_flt_t *b, trlib_int_t *ldb, trlib_int_t *info);
-void dptrfs_(trlib_int_t *n, trlib_int_t *nrhs, trlib_flt_t *d, trlib_flt_t *e, trlib_flt_t *df, trlib_flt_t *ef, trlib_flt_t *b, trlib_int_t *ldb, trlib_flt_t *x, trlib_int_t *ldx, trlib_flt_t *ferr, trlib_flt_t *berr, trlib_flt_t *work, trlib_int_t *info);
-void dlagtm_(char *trans, trlib_int_t *n, trlib_int_t *nrhs, trlib_flt_t *alpha, trlib_flt_t *dl, trlib_flt_t *d, trlib_flt_t *du, trlib_flt_t *x, trlib_int_t *ldx, trlib_flt_t *beta, trlib_flt_t *b, trlib_int_t *ldb);
-void dgtsv_(trlib_int_t *n, trlib_int_t *nrhs, trlib_flt_t *dl, trlib_flt_t *d, trlib_flt_t *du, trlib_flt_t *b, trlib_int_t *ldb, trlib_int_t *info);
+void BLAS_FUNC(dpttrf)(CBLAS_INT *n, double *d, double *e, CBLAS_INT *info);
+void BLAS_FUNC(dpttrs)(CBLAS_INT *n, CBLAS_INT *nrhs, double *d, double *e, double *b, CBLAS_INT *ldb, CBLAS_INT *info);
+void BLAS_FUNC(dptrfs)(CBLAS_INT *n, CBLAS_INT *nrhs, double *d, double *e, double *df, double *ef, double *b, CBLAS_INT *ldb, double *x, CBLAS_INT *ldx, double *ferr, double *berr, double *work, CBLAS_INT *info);
+void BLAS_FUNC(dlagtm)(char *trans, CBLAS_INT *n, CBLAS_INT *nrhs, double *alpha, double *dl, double *d, double *du, double *x, CBLAS_INT *ldx, double *beta, double *b, CBLAS_INT *ldb, int);
+
+
+static void trlib_daxpy(trlib_int_t *n, double *alpha, double *x, trlib_int_t *incx, double *y, trlib_int_t *incy)
+{
+    CBLAS_INT n_ = *n, incx_ = *incx, incy_ = *incy;
+    BLAS_FUNC(daxpy)(&n_, alpha, x, &incx_, y, &incy_);
+}
+
+static void trlib_dscal(trlib_int_t *n, double *alpha, double *x, trlib_int_t *incx)
+{
+    CBLAS_INT n_ = *n, incx_ = *incx;
+    BLAS_FUNC(dscal)(&n_, alpha, x, &incx_);
+}
+
+static void trlib_dcopy(trlib_int_t *n, double *x, trlib_int_t *incx, double *y, trlib_int_t *incy)
+{
+    CBLAS_INT n_ = *n, incx_ = *incx, incy_ = *incy;
+    BLAS_FUNC(dcopy)(&n_, x, &incx_, y, &incy_);
+}
+
+static double trlib_dnrm2(trlib_int_t *n, double *x, trlib_int_t *incx)
+{
+    CBLAS_INT n_ = *n, incx_ = *incx;
+    return BLAS_FUNC(dnrm2)(&n_, x, &incx_);
+}
+
+static double trlib_ddot(trlib_int_t *n, double *x, trlib_int_t *incx, double *y, trlib_int_t *incy)
+{
+    CBLAS_INT n_ = *n, incx_ = *incx, incy_ = *incy;
+    return BLAS_FUNC(ddot)(&n_, x, &incx_, y, &incy_);
+}
+
+static void trlib_dpttrf(trlib_int_t *n, double *d, double *e, trlib_int_t *info)
+{
+    CBLAS_INT n_ = *n, info_ = *info;
+    BLAS_FUNC(dpttrf)(&n_, d, e, &info_);
+    *info = (trlib_int_t)info_;
+}
+
+static void trlib_dpttrs(trlib_int_t *n, trlib_int_t *nrhs, double *d, double *e, double *b, trlib_int_t *ldb, trlib_int_t *info)
+{
+    CBLAS_INT n_ = *n, nrhs_ = *nrhs, ldb_ = *ldb, info_ = *info;
+    BLAS_FUNC(dpttrs)(&n_, &nrhs_, d, e, b, &ldb_, &info_);
+    *info = (trlib_int_t)info_;
+}
+
+static void trlib_dptrfs(trlib_int_t *n, trlib_int_t *nrhs, double *d, double *e, double *df, double *ef, double *b, trlib_int_t *ldb,
+                         double *x, trlib_int_t *ldx, double *ferr, double *berr, double *work, trlib_int_t *info)
+{
+    CBLAS_INT n_ = *n, nrhs_ = *nrhs, ldb_ = *ldb, ldx_ = *ldx, info_ = *info;
+    BLAS_FUNC(dptrfs)(&n_, &nrhs_, d, e, df, ef, b, &ldb_, x, &ldx_, ferr, berr, work, &info_);
+    *info = (trlib_int_t)info_;
+}
+
+static void trlib_dlagtm(char *trans, trlib_int_t *n, trlib_int_t *nrhs, double *alpha, double *dl, double *d, double *du, double *x,
+                         trlib_int_t *ldx, double *beta, double *b, trlib_int_t *ldb)
+{
+    CBLAS_INT n_ = *n, nrhs_ = *nrhs, ldb_ = *ldb, ldx_ = *ldx;
+    BLAS_FUNC(dlagtm)(trans, &n_, &nrhs_, alpha, dl, d, du, x, &ldx_, beta, b, &ldb_, 1);
+}
+
 
 #if TRLIB_MEASURE_TIME
     #define TRLIB_TIC(X) { clock_gettime(CLOCK_MONOTONIC, &X); }
@@ -64,15 +127,16 @@ void dgtsv_(trlib_int_t *n, trlib_int_t *nrhs, trlib_flt_t *dl, trlib_flt_t *d, 
     #define TRLIB_DURATION_SUB(X, Y, Z)
 #endif
 #define TRLIB_RETURN(X) { TRLIB_DURATION(verystart, end, timing[0]) return X; }
-#define TRLIB_DCOPY(...) { TRLIB_TIC(start) dcopy_(__VA_ARGS__); TRLIB_DURATION_SUB(start, end, timing[1]) }
-#define TRLIB_DAXPY(...) { TRLIB_TIC(start) daxpy_(__VA_ARGS__); TRLIB_DURATION_SUB(start, end, timing[2]) }
-#define TRLIB_DSCAL(...) { TRLIB_TIC(start) dscal_(__VA_ARGS__); TRLIB_DURATION_SUB(start, end, timing[3]) }
-#define TRLIB_DNRM2(A, X, Y, Z) { TRLIB_TIC(start) A = dnrm2_(X, Y, Z); TRLIB_DURATION_SUB(start, end, timing[4]) }
-#define TRLIB_DDOT(A, N, X, IX, Y, IY) { TRLIB_TIC(start) A = ddot_(N, X, IX, Y, IY); TRLIB_DURATION_SUB(start, end, timing[5]) }
-#define TRLIB_DPTTRF(...) { TRLIB_TIC(start) dpttrf_(__VA_ARGS__); TRLIB_DURATION_SUB(start, end, timing[6]) }
-#define TRLIB_DPTTRS(...) { TRLIB_TIC(start) dpttrs_(__VA_ARGS__); TRLIB_DURATION_SUB(start, end, timing[7]) }
-#define TRLIB_DPTRFS(...) { TRLIB_TIC(start) dptrfs_(__VA_ARGS__); TRLIB_DURATION_SUB(start, end, timing[8]) }
-#define TRLIB_DLAGTM(...) { TRLIB_TIC(start) dlagtm_(__VA_ARGS__); TRLIB_DURATION_SUB(start, end, timing[9]) }
+
+#define TRLIB_DCOPY(...) { TRLIB_TIC(start) trlib_dcopy(__VA_ARGS__); TRLIB_DURATION_SUB(start, end, timing[1]) }
+#define TRLIB_DAXPY(...) { TRLIB_TIC(start) trlib_daxpy(__VA_ARGS__); TRLIB_DURATION_SUB(start, end, timing[2]) }
+#define TRLIB_DSCAL(...) { TRLIB_TIC(start) trlib_dscal(__VA_ARGS__); TRLIB_DURATION_SUB(start, end, timing[3]) }
+#define TRLIB_DNRM2(A, X, Y, Z) { TRLIB_TIC(start) A = trlib_dnrm2(X, Y, Z); TRLIB_DURATION_SUB(start, end, timing[4]) }
+#define TRLIB_DDOT(A, N, X, IX, Y, IY) { TRLIB_TIC(start) A = trlib_ddot(N, X, IX, Y, IY); TRLIB_DURATION_SUB(start, end, timing[5]) }
+#define TRLIB_DPTTRF(...) { TRLIB_TIC(start) trlib_dpttrf(__VA_ARGS__); TRLIB_DURATION_SUB(start, end, timing[6]) }
+#define TRLIB_DPTTRS(...) { TRLIB_TIC(start) trlib_dpttrs(__VA_ARGS__); TRLIB_DURATION_SUB(start, end, timing[7]) }
+#define TRLIB_DPTRFS(...) { TRLIB_TIC(start) trlib_dptrfs(__VA_ARGS__); TRLIB_DURATION_SUB(start, end, timing[8]) }
+#define TRLIB_DLAGTM(...) { TRLIB_TIC(start) trlib_dlagtm(__VA_ARGS__); TRLIB_DURATION_SUB(start, end, timing[9]) }
 
 #define TRLIB_PRINTLN_1(...) if (verbose > 0) { if (fout) { fprintf(fout, "%s", prefix); fprintf(fout, __VA_ARGS__); fprintf(fout, "\n"); } else { printf("%s", prefix); printf(__VA_ARGS__); printf("\n"); } }
 #define TRLIB_PRINTLN_2(...) if (verbose > 1) { if (fout) { fprintf(fout, "%s", prefix); fprintf(fout, __VA_ARGS__); fprintf(fout, "\n"); } else { printf("%s", prefix); printf(__VA_ARGS__); printf("\n"); } }
