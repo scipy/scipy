@@ -922,6 +922,36 @@ class TestHetrd(object):
             )
 
 
+class TestGtsvx:
+
+    @pytest.mark.parametrize('dtype', REAL_DTYPES)
+    def test_nag_f07cbf(self, dtype):
+        """Find the solution that satisfies the set of equations Ax=b.
+
+        For the full reference see:
+        https://www.nag.com/numeric/fl/nagdoc_latest/examples/source/f07cbf.html
+
+        """
+        du = np.array([2.1, -1.0, 1.9, 8.0], dtype=dtype)
+        d = np.array([3.0, 2.3, -5.0, -0.9, 7.1], dtype=dtype)
+        dl = np.array([3.4, 3.6, 7.0, -6.0], dtype=dtype)
+        b = np.array([[2.7, 6.6],
+                      [-0.5, 10.8],
+                      [2.6, -3.2],
+                      [0.6, -11.2],
+                      [2.7, 19.1]])
+
+        gtsvx = get_lapack_funcs('gtsvx', dtype=dtype)
+        dlf,df,duf,du2,ipiv,x,rcond,ferr,berr,info = gtsvx(dl,d,du,b,fact='N')
+
+        assert_equal(info, 0)
+        assert_allclose(x, [[-4.0000,  5.0000],
+                            [ 7.0000, -4.0000],
+                            [ 3.0000, -3.0000],
+                            [-4.0000, -2.0000],
+                            [-3.0000,  1.0000]],
+                        atol=1e-5)
+
 def test_gglse():
     # Example data taken from NAG manual
     for ind, dtype in enumerate(DTYPES):
