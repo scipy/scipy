@@ -67,7 +67,7 @@ end subroutine gttrs
 
 
 subroutine <prefix2>gtsvx(fact,trans,n,nrhs,dl,d,du,dlf,df,duf,du2,ipiv,b,ldb,x,ldx,rcond,ferr,berr,work,iwork,info)
-    ! DGTSVX uses the LU factorization to compute the solution to a real
+    ! ?GTSVX uses the LU factorization to compute the solution to a real
     ! system of linear equations A * X = B or A**T * X = B,
     ! where A is a tridiagonal matrix of order N and X and B are N-by-NRHS
     ! matrices.
