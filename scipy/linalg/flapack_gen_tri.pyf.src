@@ -102,7 +102,7 @@ subroutine <prefix2>gtsvx(fact,trans,n,nrhs,dl,d,du,dlf,df,duf,du2,ipiv,b,ldb,x,
 
 end subroutine <prefix2>gtsvx
 
-subroutine <prefix2c>gtsvx(fact,trans,n,nrhs,dl,d,du,dlf,df,duf,du2,ipiv,b,ldb,x,ldx,rcond,ferr,berr,work,iwork,info)
+subroutine <prefix2c>gtsvx(fact,trans,n,nrhs,dl,d,du,dlf,df,duf,du2,ipiv,b,ldb,x,ldx,rcond,ferr,berr,work,rwork,info)
     ! ?GTSVX uses the LU factorization to compute the solution to a
     ! complex system of linear equations A * X = B or A**T * X = B,
     ! where A is a tridiagonal matrix of order N and X and B are N-by-NRHS
@@ -110,7 +110,7 @@ subroutine <prefix2c>gtsvx(fact,trans,n,nrhs,dl,d,du,dlf,df,duf,du2,ipiv,b,ldb,x
     !
     ! Error bounds on the solution and a condition estimate are also
     !provided.
-    callstatement (*f2py_func)(fact,trans,&n,&nrhs,dl,d,du,dlf,df,duf,du2,ipiv,b,&ldb,x,&ldx,&rcond,ferr,berr,work,iwork,&info);
+    callstatement (*f2py_func)(fact,trans,&n,&nrhs,dl,d,du,dlf,df,duf,du2,ipiv,b,&ldb,x,&ldx,&rcond,ferr,berr,work,rwork,&info);
     callprotoargument char*,char*,int*,int*,<ctype2c>*,<ctype2c>*,<ctype2c>*,<ctype2c>*,<ctype2c>*,<ctype2c>*,<ctype2c>*,int*,<ctype2c>*,int*,<ctype2c>*,int*,<ctype2>*,<ctype2>*,<ctype2>*,<ctype2c>*,<ctype2>*,int*
 
     character optional, intent(in), check(*fact=='F'||*fact=='N') :: fact = 'N'
@@ -133,7 +133,7 @@ subroutine <prefix2c>gtsvx(fact,trans,n,nrhs,dl,d,du,dlf,df,duf,du2,ipiv,b,ldb,x
     <ftype2> intent(out),dimension(nrhs),depend(nrhs) :: ferr
     <ftype2> intent(out),dimension(nrhs),depend(nrhs) :: berr
     <ftype2c> dimension(2*n),depend(n),intent(hide,cache) :: work
-    <ftype2> intent(hide,cache),dimension(n),depend(n) :: iwork
+    <ftype2> intent(hide,cache),dimension(n),depend(n) :: rwork
     integer intent(out) :: info
 
 end subroutine <prefix2c>gtsvx
