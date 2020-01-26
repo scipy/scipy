@@ -325,7 +325,7 @@ latex_elements = {
 # -----------------------------------------------------------------------------
 intersphinx_mapping = {
     'python': ('https://docs.python.org/dev', None),
-    'numpy': ('https://docs.scipy.org/doc/numpy', None),
+    'numpy': ('https://numpy.org/devdocs', None),
     'matplotlib': ('https://matplotlib.org', None),
     'asv': ('https://asv.readthedocs.io/en/stable/', None),
 }

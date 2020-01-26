@@ -417,7 +417,7 @@ def seed(seed=None):
         the generator.
 
         If the value is an integer, the internal state is obtained
-        from `numpy.random.mtrand.RandomState` (MT19937) with the integer
+        from `numpy.random.RandomState` (MT19937) with the integer
         used as the initial seed.
 
         If `seed` is omitted (None), ``numpy.random.rand`` is used to
