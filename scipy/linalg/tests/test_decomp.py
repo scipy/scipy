@@ -830,6 +830,20 @@ class TestEigh:
         assert_raises(ValueError, eigh, a)
         assert_raises(ValueError, eigh, b)
 
+    @pytest.mark.parametrize('driver', ("ev", "evd", "evr", "evx"))
+    def test_various_drivers_standard(self, driver):
+        a = _random_hermitian_matrix(20)
+        w, v = eigh(a, driver=driver)
+        assert_allclose(a @ v - (v * w), 0., atol=1000*np.spacing(1.), rtol=0.)
+
+    @pytest.mark.parametrize('driver', ("gv", "gvd", "gvx"))
+    def test_various_drivers_generalized(self, driver):
+        a = _random_hermitian_matrix(20)
+        b = _random_hermitian_matrix(20, posdef=True)
+        w, v = eigh(a=a, b=b, driver=driver)
+        assert_allclose(a @ v - w*(b @ v), 0.,
+                        atol=1000*np.spacing(1.), rtol=0.)
+
     # Old eigh tests kept for backwards compatibility
     @pytest.mark.parametrize('eigvals', (None, (2, 4)))
     @pytest.mark.parametrize('turbo', (True, False))
