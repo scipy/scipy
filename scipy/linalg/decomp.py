@@ -411,6 +411,28 @@ def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
     >>> np.allclose(A @ v - v @ np.diag(w), np.zeros((4, 4)))
     True
 
+    Request only the eigenvalues
+
+    >>> w = eigh(A, eigvals_only=True)
+
+    Request eigenvalues that are less than 10.
+
+    >>> A = np.array([[34, -4, -10, -7, 2],
+                      [-4, 7, 2, 12, 0],
+                      [-10, 2, 44, 2, -19],
+                      [-7, 12, 2, 79, -34],
+                      [2, 0, -19, -34, 29]])
+    >>> eigh(A, eigvals_only=True, subset_by_value=[-np.inf, 10])
+    array([6.69199443e-07, 9.11938152e+00])
+
+    Request the largest second eigenvalue and its eigenvector
+
+    >>> w, v = eigh(A, subset_by_index=[1, 1])
+    >>> w
+    array([9.11938152])
+    >>> v.shape  % only a single column is returned
+    (5, 1)
+
     """
     # set lower
     uplo = 'L' if lower else 'U'
@@ -971,6 +993,8 @@ def eigvalsh(a, b=None, lower=True, overwrite_a=False,
 
     Examples
     --------
+    For more examples see `scipy.linalg.eigh`.
+
     >>> from scipy.linalg import eigvalsh
     >>> A = np.array([[6, 3, 1, 5], [3, 0, 5, 1], [1, 5, 6, 2], [5, 1, 2, 2]])
     >>> w = eigvalsh(A)
