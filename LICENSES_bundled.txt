@@ -168,3 +168,9 @@ Name: uarray
 Files: scipy/_lib/uarray/*
 License: 3-Clause BSD
   For details, see scipy/_lib/uarray/LICENSE
+
+Name: ampgo
+Files: benchmarks/benchmarks/go_benchmark_functions/*.py
+License: MIT
+  Functions for testing global optimizers, forked from the AMPGO project,
+  https://code.google.com/archive/p/ampgo
