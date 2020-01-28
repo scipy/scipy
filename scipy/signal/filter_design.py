@@ -2842,13 +2842,11 @@ def butter(N, Wn, btype='low', analog=False, output='ba', fs=None):
 
     The ``'sos'`` output parameter was added in 0.16.0.
 
-    If you use the transfer function syntax [b, a], you might encounter
-    numerical problems. Because the conversion between roots and 
-    polynomial coefficients is a numerically sensitive operation.
-    Thus, conversion to a Transfer Function can be unstable
-    even for N = 4 and above. It is recommended to keep the SOS representation.
-    see "Numerical Instability of Transfer Function Syntax" 
-    at https://www.mathworks.com/help/signal/ref/butter.html
+    If the transfer function form ``[b, a]`` is requested, numerical
+    problems can occur since the conversion between roots and
+    the polynomial coefficients is a numerically sensitive operation,
+    even for N >= 4. It is recommended to work with the SOS
+    representation.
 
     Examples
     --------
