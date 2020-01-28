@@ -2216,6 +2216,7 @@ def test_pteqr_NAG_f08jgf(compute_z, d, e, d_expect, z_expect):
     assert_allclose(_d, d_expect, atol=atol)
     assert_allclose(np.abs(_z), np.abs(z_expect), atol=atol)
 
+
 @pytest.mark.parametrize('dtype', DTYPES)
 @pytest.mark.parametrize('matrix_size', [(3, 4), (7, 6), (6, 6)])
 def test_geqrfp(dtype, matrix_size):
@@ -2573,3 +2574,76 @@ def test_gtsvx_NAG(du, d, dl, b, x):
     dlf, df, duf, du2f, ipiv, x_soln, rcond, ferr, berr, info = gtsvx_out
 
     assert_array_almost_equal(x, x_soln)
+
+
+@pytest.mark.parametrize("dtype", DTYPES)
+@pytest.mark.parametrize("fact", ("F", "N"))
+def test_ptsvx(dtype,fact):
+    np.random.seed(42)
+    # set test tolerance appropriate for dtype
+    rtol = 250*np.finfo(dtype).eps
+    atol = 100*np.finfo(dtype).eps
+    # obtain routine
+    ptsvx = get_lapack_funcs('ptsvx', dtype=dtype)
+    # n is the length diagonal of A
+    n = 5
+    # create diagonals according to size and dtype
+    if dtype in REAL_DTYPES:
+        # add 2 so that the matrix will be diagonally dominant
+        d = generate_random_dtype_array((n,), dtype) + 2
+    else:
+        # diagonal d should always be real.
+        # for complex add 4 so it will be dominant
+        d = generate_random_dtype_array((n,), DTYPES[1]) + 4
+    # diagonal e may be real or complex.
+    e = generate_random_dtype_array(n-1, dtype)
+    # form matrix A from d and e
+    A = np.diag(d) + np.diag(e, -1) + np.diag(e, 1)
+    # create random solution x
+    x_soln = generate_random_dtype_array((n,2), dtype)
+    # now create a b based on these
+    b = A @ x_soln
+    # determine if de, df, should be null or based on pttrf
+    if fact == "N":
+        de = None
+        df = None
+    else:
+        pttrf = get_lapack_funcs('pttrf', dtype=dtype)
+        df, fe, info = pttrf(d, e)
+
+    # solve using routine
+    x, df, ef, rcond, ferr, berr, info  = ptsvx(d, e, b, fact=fact, df=df, de=de)
+    assert_(info == 0, "info should be 0 but is {}.".format(info))
+    assert_array_almost_equal(x_soln, x)
+
+    # test that the factors from ptsvx can be recombined to make A
+    L = np.diag(ef, -1) + np.diag(np.ones(n))
+    D = np.diag(df)
+    assert_allclose(A, L@D@(np.transpose(L)), rtol=rtol, atol=atol)
+
+    # assert that the outputs are of correct type or shape
+    # rcond should be a scalar
+    assert_(hasattr(rcond, "__len__"),
+            "rcond should be scalar but is {}").format(rcond)
+    # ferr should be length of # of cols in x
+    assert_(ferr.shape == (n,), "ferr.shape is {} but shoud be ({},)"
+            .format(ferr.shape, x_soln.shape))
+    # berr should be length of # of cols in x
+    assert_(berr.shape == (n,), "berr.shape is {} but shoud be ({},)"
+            .format(berr.shape, n))
+
+    # test with malformatted array sizes
+    with assert_raises(Exception):
+        ptsvx(d[:-1], e, b, fact=fact, df=df, de=de)
+    with assert_raises(Exception):
+        ptsvx(d, e[:-1], b, fact=fact, df=df, de=de)
+    with assert_raises(Exception):
+        ptsvx(d, e, b[:-1], fact=fact, df=df, de=de)
+
+    # test with singular matrix
+
+    # test with non spd matrix
+    x, df, ef, rcond, ferr, berr, info = ptsvx(d, e+2, b, fact=fact, df=df, de=de)
+
+
+    # It might be cool to create an example for which the matrix is numerically - but not exactly - singular to see if we can get info==N+1
