@@ -1641,82 +1641,96 @@ class TestUnitaryGroup(object):
         assert_(res.pvalue > 0.05)
 
 
-# These tests were created by running vpa(mvtpdf(...)) in MATLAB. The
-# function takes no `mu` parameter. The tests were run as
-#
-# >> ans = vpa(mvtpdf(x - mu, shape, df));
-#
-MULTIVARIATE_T_TESTS = [{
-    'x': [
-        [1, 2],
-        [4, 1],
-        [2, 1],
-        [2, 4],
-        [1, 4],
-        [4, 1],
-        [3, 2],
-        [3, 3],
-        [4, 4],
-        [5, 1],
-    ],
-    'mu': [0, 0],
-    'shape': [[1, 0], [0, 1]],
-    'df': 4,
-    'ans': [
-        0.013972450422333741737457302178882,
-        0.0010998721906793330026219646100571,
-        0.013972450422333741737457302178882,
-        0.00073682844024025606101402363634634,
-        0.0010998721906793330026219646100571,
-        0.0010998721906793330026219646100571,
-        0.0020732579600816823488240725481546,
-        0.00095660371505271429414668515889275,
-        0.00021831953784896498569831346792114,
-        0.00037725616140301147447000396084604
-    ]
-}, {
-    'x': [
-        [0.9718, 0.1298, 0.8134],
-        [0.4922, 0.5522, 0.7185],
-        [0.3010, 0.1491, 0.5008],
-        [0.5971, 0.2585, 0.8940],
-        [0.5434, 0.5287, 0.9507],
-    ],
-    'mu': [-1, 1, 50],
-    'shape': [
-        [1.0000, 0.5000, 0.2500],
-        [0.5000, 1.0000, -0.1000],
-        [0.2500, -0.1000, 1.0000],
-    ],
-    'df': 8,
-    'ans': [
-        0.00000000000000069609279697467772867405511133763,
-        0.00000000000000073700739052207366474839369535934,
-        0.00000000000000069522909962669171512174435447027,
-        0.00000000000000074212293557998314091880208889767,
-        0.00000000000000077039675154022118593323030449058,
-    ]
-}]
-
-
 class TestMultivariateT:
 
-    def test_pdf_correctness(self):
-        for t in MULTIVARIATE_T_TESTS:
-            dist = multivariate_t(t['mu'], t['shape'], t['df'], seed=0)
-            val = dist.pdf(t['x'])
-            assert_array_almost_equal(val, t['ans'])
+    # These tests were created by running vpa(mvtpdf(...)) in MATLAB. The
+    # function takes no `mu` parameter. The tests were run as
+    #
+    # >> ans = vpa(mvtpdf(x - mu, shape, df));
+    #
+    MULTIVARIATE_T_TESTS = [(
+        # x
+        [
+            [1, 2],
+            [4, 1],
+            [2, 1],
+            [2, 4],
+            [1, 4],
+            [4, 1],
+            [3, 2],
+            [3, 3],
+            [4, 4],
+            [5, 1],
+        ],
+        # mu
+        [0, 0],
+        # shape
+        [
+            [1, 0],
+            [0, 1]
+        ],
+        # df
+        4,
+        # ans
+        [
+            0.013972450422333741737457302178882,
+            0.0010998721906793330026219646100571,
+            0.013972450422333741737457302178882,
+            0.00073682844024025606101402363634634,
+            0.0010998721906793330026219646100571,
+            0.0010998721906793330026219646100571,
+            0.0020732579600816823488240725481546,
+            0.00095660371505271429414668515889275,
+            0.00021831953784896498569831346792114,
+            0.00037725616140301147447000396084604
+        ]
 
-    def test_logpdf_correct(self):
-        for t in MULTIVARIATE_T_TESTS:
-            dist = multivariate_t(t['mu'], t['shape'], t['df'], seed=0)
-            # We already test this elsewhere, but let's explicitly confirm the
-            # PDF is correct since this test requires checking the log of that
-            # value.
-            val1 = dist.pdf(t['x'])
-            assert_array_almost_equal(val1, t['ans'])
-            val2 = dist.logpdf(t['x'])
-            assert_array_almost_equal(np.log(val1), val2)
+    ), (
+
+        # x
+        [
+            [0.9718, 0.1298, 0.8134],
+            [0.4922, 0.5522, 0.7185],
+            [0.3010, 0.1491, 0.5008],
+            [0.5971, 0.2585, 0.8940],
+            [0.5434, 0.5287, 0.9507],
+        ],
+        # mu
+        [-1, 1, 50],
+        # shape
+        [
+            [1.0000, 0.5000, 0.2500],
+            [0.5000, 1.0000, -0.1000],
+            [0.2500, -0.1000, 1.0000],
+        ],
+        # df
+        8,
+        # ans
+        [
+            0.00000000000000069609279697467772867405511133763,
+            0.00000000000000073700739052207366474839369535934,
+            0.00000000000000069522909962669171512174435447027,
+            0.00000000000000074212293557998314091880208889767,
+            0.00000000000000077039675154022118593323030449058,
+        ]
+    )]
+
+    @pytest.mark.parametrize("x, mu, df, shape, ans", MULTIVARIATE_T_TESTS)
+    def test_pdf_correctness(self, x, mu, df, shape, ans):
+        dist = multivariate_t(mu, df, shape, seed=0)
+        val = dist.pdf(x)
+        assert_array_almost_equal(val, ans)
+
+    @pytest.mark.parametrize("x, mu, df, shape, ans", MULTIVARIATE_T_TESTS)
+    def test_logpdf_correct(self, x, mu, df, shape, ans):
+        dist = multivariate_t(mu, df, shape, seed=0)
+        # We already test this elsewhere, but let's explicitly confirm the
+        # PDF is correct since this test requires checking the log of that
+        # value.
+        val1 = dist.pdf(x)
+        assert_array_almost_equal(val1, ans)
+        val2 = dist.logpdf(x)
+        assert_array_almost_equal(np.log(val1), val2)
 
     # https://github.com/scipy/scipy/issues/10042#issuecomment-576795195
     def test_mvt_with_df_one_is_cauchy(self):
