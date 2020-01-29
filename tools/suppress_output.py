@@ -88,10 +88,7 @@ def main():
 
         if ret != 0:
             log.seek(0)
-            if sys.version_info[0] >= 3:
-                shutil.copyfileobj(log, sys.stdout.buffer)
-            else:
-                shutil.copyfileobj(log, sys.stdout)
+            shutil.copyfileobj(log, sys.stdout.buffer)
 
     sys.exit(ret)
 

@@ -5,6 +5,7 @@ import sys
 
 from decimal import Decimal
 from itertools import product
+from math import gcd
 import warnings
 
 import pytest
@@ -31,12 +32,6 @@ from scipy.signal.windows import hann
 from scipy.signal.signaltools import (_filtfilt_gust, _compute_factors,
                                       _group_poles)
 from scipy.signal._upfirdn import _upfirdn_modes
-
-
-if sys.version_info >= (3, 5):
-    from math import gcd
-else:
-    from fractions import gcd
 
 
 class _TestConvolve(object):
