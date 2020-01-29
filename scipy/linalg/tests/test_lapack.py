@@ -2115,7 +2115,7 @@ def test_pttrf_pttrs_NAG(d, e, d_expect, e_expect, b, x_expect):
     # examples: f07jrf and f07csf (complex)
     # NAG examples provide 4 decimals.
     # (Links expire, so please search for "NAG Library Manual Mark 26" online)
-    
+
     atol = 1e-4
     pttrf = get_lapack_funcs('pttrf', dtype=e[0])
     _d, _e, info = pttrf(d, e)
@@ -2125,12 +2125,12 @@ def test_pttrf_pttrs_NAG(d, e, d_expect, e_expect, b, x_expect):
     pttrs = get_lapack_funcs('pttrs', dtype=e[0])
     _x, info = pttrs(_d, _e.conj(), b)
     assert_allclose(_x, x_expect, atol=atol)
-    
+
     # also test option `lower`
     if e.dtype in COMPLEX_DTYPES:
         _x, info = pttrs(_d, _e, b, lower=1)
         assert_allclose(_x, x_expect, atol=atol)
-        
+
 
 
 @pytest.mark.parametrize('dtype', DTYPES)
@@ -2296,3 +2296,105 @@ def test_orcsd_uncsd(dtype_):
 
     Xc = U @ S @ VH
     assert_allclose(X, Xc, rtol=0., atol=1e4*np.finfo(dtype_).eps)
+
+
+@pytest.mark.parametrize("dtype", DTYPES)
+@pytest.mark.parametrize("fact,dl_d_du_lambda",
+                         [("F", lambda dl, d, du: get_lapack_funcs('gttrf',
+                            dtype=d.dtype)),
+                          ("N", lambda dl, d, du: (None, None, None, None,
+                                                   None))])
+def test_gtsvx(dtype, fact, dl_d_du_lambda):
+    dtype = DTYPES[0]
+    np.random.seed(42)
+    # set test tolerance appropriate for dtype
+    rtol = 250 * np.finfo(dtype).eps
+    atol = 100 * np.finfo(dtype).eps
+    # obtain routine
+    gtsvx = get_lapack_funcs('gtsvx', dtype=dtype)
+    # n is the length diagonal of A
+    n = 10
+    # generate facots dl, d, and du.
+    dl = generate_random_dtype_array((n-1,), dtype=dtype)
+    d = generate_random_dtype_array((n,), dtype=dtype)
+    du = generate_random_dtype_array((n-1,), dtype=dtype)
+    # create A from these diagonals
+    A = np.diag(dl, -1) + np.diag(d) + np.diag(du, 1)
+    # generate random solution x
+    x = generate_random_dtype_array((n, 2), dtype=dtype)
+    # create b from x for equation Ax=b
+    b = A @ x
+    inputs_cpy = [dl.copy(), d.copy(), du.copy(), b.copy()]
+
+    # determine dlf, df, duf, du2f, and IPIV from lambda expression
+    dlf_, df_, duf_, du2f_, ipiv_ = dl_d_du_lambda(dl, d, du)
+
+    gtsvx_out = gtsvx(dl, d, du, b, fact=fact, dlf=dlf_, df=df_, duf=duf_,
+                      du2=du2f_, ipiv=ipiv_)
+    # assure that inputs are unmodified
+    assert_array_equal(dl, inputs_cpy[0])
+    assert_array_equal(d, inputs_cpy[1])
+    assert_array_equal(du, inputs_cpy[2])
+    assert_array_equal(b, inputs_cpy[3])
+
+    x_soln, dlf, df, duf, du2f, ipiv, rcond, ferr, berr, info = gtsvx_out
+
+    # note that these are split into multiple lines since it was very long
+
+    U = np.diag(df, 0) + np.diag(duf, 1) + np.diag(du2f, 2)
+    L = np.eye(n, dtype=dtype)
+
+    for i, m in enumerate(dlf):
+        # L is given in a factored form.
+        # See http://www.hpcavf.uclan.ac.uk/softwaredoc/sgi_scsl_html/sgi_html/ch03.html
+        piv = ipiv[i] - 1
+        # right multiply by permutation matrix
+        L[:, [i, piv]] = L[:, [piv, i]]
+        # right multiply by Li, rank-one modification of identity
+        L[:, i] += L[:, i+1]*m
+
+    # one last permutation
+    i, piv = -1, ipiv[-1] - 1
+    # right multiply by final permutation matrix
+    L[:, [i, piv]] = L[:, [piv, i]]
+
+    # check that the outputs define an LU decomposition of A
+    assert_allclose(A, L @ U, atol=atol)
+
+    # assert that the outputs are of correct type or shape
+    # rcond should be a scalar
+    assert_(hasattr(rcond, "__len__") != True,
+            "rcond should be scalar but is {}".format(rcond))
+    # ferr should be length of # of cols in x
+    assert_(ferr.shape[0] == b.shape[1], "ferr.shape is {} but shoud be {},"
+            .format(ferr.shape[0], b.shape[1]))
+    # berr should be length of # of cols in x
+    assert_(berr.shape[0] == b.shape[1], "berr.shape is {} but shoud be {},"
+            .format(berr.shape[0], b.shape[1]))
+
+    # test with singular matrix
+    # no need to test with fact "F" since ?pttrf already tests for these.
+    if fact == "N":
+        d[n-1] = 0
+        dl[n-2] = 0
+
+        # solve using routine
+        gtsvx_out = gtsvx(dl, d, du, b)
+        x_soln, dlf, df, duf, du2f, ipiv, rcond, ferr, berr, info = gtsvx_out
+        # test for the singular matrix.
+        assert_(d[info - 1] == 0,
+                "?gtsvx: d[info-1] is {}, not the illegal value"
+                .format(d[info - 1]))
+
+    else:
+        # assuming that someone is using a singular factorization
+        df[n-1] = 0
+        duf[n-2] = 0
+
+        gtsvx_out = gtsvx(dl, d, du, b, fact=fact, dlf=dlf_, df=df_, duf=duf_,
+                          du2=du2f_, ipiv=ipiv_)
+        x_soln, dlf, df, duf, du2f, ipiv, rcond, ferr, berr, info = gtsvx_out
+        # info should not be zero and should provide index of illegal value
+        assert_(df[info - 1] == 0,
+                "?gtsvx: df[info-1] is {}, not the illegal value"
+                .format(d[info - 1]))
