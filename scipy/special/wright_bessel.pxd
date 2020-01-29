@@ -11,12 +11,13 @@
 #
 # So far, only non-negative values of rho=a, beta=b and z=x are implemented.
 # There are 4 different approaches depending on the ranges of the arguments.
-# 1. Tylor series expansion in x=0 [1]. Suited for x <= 1. Involves gamma
+# 1. Taylor series expansion in x=0 [1]. Suited for x <= 1. Involves gamma
 #    funtion in each term.
-# 2. Taylor series in a=0. Suited for tiny a and not too large x.
-# 3. Asymptotic expansion for large x [2, 3]. Suited for large x while still
+# 2. Taylor series expansion in x=0 [1] suitable for large a.
+# 3. Taylor series in a=0. Suited for tiny a and not too large x.
+# 4. Asymptotic expansion for large x [2, 3]. Suited for large x while still
 #    small a and b.
-# 4. Integral representation [4]. Suited for all arguments.
+# 5. Integral representation [4]. Suited for all arguments.
 #
 # References:
 # [1] https://dlmf.nist.gov/10.46.E1
@@ -31,13 +32,13 @@
 #     http://sci-gems.math.bas.bg/jspui/bitstream/10525/1298/1/fcaa-vol11-num1-2008-57p-75p.pdf
 
 import cython
-from libc.math cimport cos, exp, floor, log10, pow, sin, sqrt, M_PI
+from libc.math cimport cos, exp, floor, log, log10, pow, sin, sqrt, M_PI
 
 cdef extern from "_c99compat.h":
     int sc_isnan(double x) nogil
     int sc_isinf(double x) nogil
 
-from ._cephes cimport Gamma, rgamma, zeta, sinpi, cospi
+from ._cephes cimport Gamma, lgam, rgamma, zeta, sinpi, cospi
 from ._digamma cimport digamma
 from ._complexstuff cimport inf, nan
 from . cimport sf_error
@@ -81,7 +82,33 @@ cdef inline double _wb_series(double a, double b, double x,
     return res
 
 
-# 2. Tylor series expansion in a=0 up to order 2
+# 2. Tylor series expansion in x=0 suitable for large a
+#    Phi(a, b, x) = sum_k x^k / k! / Gamma(a*k+b)
+#
+#    Use Stirling formula to find k=k_max, the maximum term.
+#    Then use n terms of Taylor series around k_max.
+@cython.cdivision(True)
+cdef inline double _wb_large_a(double a, double b, double x,
+    unsigned int n) nogil:
+    cdef:
+        unsigned int k, k_max
+        int n_start
+        double lnx, res
+
+    k_max = int(pow(pow(a, -a) * x, 1./(1 + a)))
+    n_start = k_max - n//2
+    if n_start < 0:
+        n_start = 0
+
+    res = 0
+    lnx = log(x)
+    for k in range(n_start, n_start + n):
+        res += exp(k * lnx - lgam(k + 1) - lgam(a*k + b))
+
+    return res
+
+
+# 3. Tylor series expansion in a=0 up to order 2
 #
 # import sympy
 # from sympy import S, Sum, factorial, gamma, symbols
@@ -152,7 +179,7 @@ cdef inline double _wb_small_a(double a, double b, double x, int order) nogil:
     return res
 
 
-# 3. Asymptotic expansion for large x
+# 4. Asymptotic expansion for large x
 #    Phi(a, b, x) ~ Z^(1/2-b) * exp((1+a)/a * Z) * sum_k (-1)^k * a_k / Z^k
 #    with Z = (a*x)**(1/(1+a)).
 #
@@ -285,7 +312,7 @@ cdef inline double _wb_asymptotic(double a, double b, double x) nogil:
     return res
 
 
-# 4. Integral representation
+# 5. Integral representation
 #    K(a, b, x, r) = exp(-r + x * r^(-a) * cos(pi*a)) * r^(-b)
 #                  * sin(x * r^(-a) * sin(pi*a) + pi * b)
 #   P(eps, a, b, x, phi) =
@@ -453,11 +480,15 @@ cdef inline double wright_bessel_scalar(double a, double b, double x) nogil:
         sf_error.error("wright_bessel", sf_error.DOMAIN, NULL)
         return nan
     elif sc_isinf(x):
-        return inf
+        if sc_isinf(a) or sc_isinf(b):
+            return nan
+        else:
+            return inf
     elif sc_isinf(a) or sc_isinf(b):
-        return 0
+        return nan  # or 0
     elif b >= rgamma_zero:
-          return 0
+        sf_error.error("wright_bessel", sf_error.OVERFLOW, NULL)
+        return nan # or 0
     elif a >= rgamma_zero:
         # use only first term k=0 of series
         return rgamma(b)
@@ -490,12 +521,13 @@ cdef inline double wright_bessel_scalar(double a, double b, double x) nogil:
     elif x <= 2:
         # 20 term Taylor Series => error mostly smaller 1e-12 to 1e-13
         return _wb_series(a, b, x, 0, 20)
+    elif a >= 10:
+        # 20 term Taylor series around the approximate maximum term
+        # => error mostly smoller 1e-13
+        return _wb_large_a(a, b, x, 20)
     elif (x >= 500 and a <= 1 and b <= 1) \
         or (x >= 100 and a <= 0.5 and b <= 0.5):
         # asymptotic expansion => precision ~ 8e-11
         return _wb_asymptotic(a, b, x)
-    #elif a > 10:
-    #    # TODO: Use Taylor Series suitable for large a
-    #    return 0
     else:
         return wright_bessel_integral(a, b, x)
