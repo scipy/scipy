@@ -2,13 +2,7 @@
 Ensure that we can use pathlib.Path objects in all relevant IO functions.
 """
 import sys
-
-try:
-    from pathlib import Path
-except ImportError:
-    # Not available. No fallback import, since we'll skip the entire
-    # test suite for Python < 3.6.
-    pass
+from pathlib import Path
 
 import numpy as np
 from numpy.testing import assert_
@@ -20,9 +14,7 @@ from scipy._lib._tmpdirs import tempdir
 import scipy.sparse
 
 
-@pytest.mark.skipif(sys.version_info < (3, 6),
-                    reason='Passing path-like objects to IO functions requires Python >= 3.6')
-class TestPaths(object):
+class TestPaths:
     data = np.arange(5).astype(np.int64)
 
     def test_savemat(self):
