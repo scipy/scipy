@@ -1654,6 +1654,8 @@ def test_getc2_gesc2():
         else:
             assert_array_almost_equal(desired_cplx.astype(dtype),
                                       x/scale, decimal=4)
+
+
 def generate_random_dtype_array(shape, dtype):
     # generates a random matrix of desired data type of shape
     if type(shape) != tuple:
@@ -1743,20 +1745,24 @@ def test_pttrf_pttrs(dtype):
                           np.array([-2, -6, 15, 8]),
                           np.array([4, 9, 25, 16, 1]),
                           np.array([-.5, -.6667, .6, .5]),
-                          np.array([[6, 10], [9, 4], [2, 9], [14, 65], [7, 23]]),
-                          np.array([[2.5, 2], [2, -1], [1, -3], [-1, 6], [3, -5]])
+                          np.array([[6, 10], [9, 4], [2, 9], [14, 65],
+                                    [7, 23]]),
+                          np.array([[2.5, 2], [2, -1], [1, -3], [-1, 6],
+                                    [3, -5]])
                           ), (
                           np.array([16, 41, 46, 21]),
                           np.array([16 + 16j, 18 - 9j, 1 - 4j]),
                           np.array([16, 9, 1, 4]),
                           np.array([1+1j, 2-1j, 1-4j]),
-                          np.array([[64+16j, -16-32j], [93+62j, 61-66j], [78-80j, 71-74j], [14-27j, 35+15j]]),
-                          np.array([[2-1j, -3-2j], [1+1j, 1+1j], [1-2j, 1-2j], [1-1j, 2+1j]])
+                          np.array([[64+16j, -16-32j], [93+62j, 61-66j],
+                                    [78-80j, 71-74j], [14-27j, 35+15j]]),
+                          np.array([[2-1j, -3-2j], [1+1j, 1+1j], [1-2j, 1-2j],
+                                    [1-1j, 2+1j]])
                          )])
 def test_pttrf_pttrs_NAG(d, e, d_expect, e_expect, b, x_expect):
     # test to assure that wrapper is consistent with NAG manual
     # example problems: f07jdf and f07jef (real)
-    # hhttps://www.nag.com/numeric/fl/nagdoc_latest/html/f07/f07jdf.html
+    # https://www.nag.com/numeric/fl/nagdoc_latest/html/f07/f07jdf.html
     # https://www.nag.com/numeric/fl/nagdoc_latest/html/f07/f07jef.html
     # examples: f07jrf and f07csf (complex)
     # https://www.nag.com/numeric/fl/nagdoc_latest/html/f07/f07jrf.html
