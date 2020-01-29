@@ -67,7 +67,7 @@ cdef extern from "ckdtree_decl.h":
         np.intp_t size
 
     # External build and query methods in C++.
-    
+
     int build_ckdtree(ckdtree *self,
                          np.intp_t start_idx,
                          np.intp_t end_idx,
@@ -286,16 +286,10 @@ cdef class ordered_pairs:
         results = set()
         pair = self.buf.data()
         n = <np.intp_t> self.buf.size()
-        if sizeof(long) < sizeof(np.intp_t):
-            # Needed for Python 2.x on Win64
-            for i in range(n):
-                results.add((int(pair.i), int(pair.j)))
-                pair += 1
-        else:
-            # other platforms
-            for i in range(n):
-                results.add((pair.i, pair.j))
-                pair += 1
+        # other platforms
+        for i in range(n):
+            results.add((pair.i, pair.j))
+            pair += 1
         return results
 
 
@@ -511,8 +505,8 @@ cdef class cKDTree:
 
     def __init__(cKDTree self, data, np.intp_t leafsize=16, compact_nodes=True,
             copy_data=False, balanced_tree=True, boxsize=None):
-        
-        cdef: 
+
+        cdef:
             np.float64_t [::1] tmpmaxes, tmpmins
             np.float64_t *ptmpmaxes
             np.float64_t *ptmpmins
@@ -565,10 +559,10 @@ cdef class cKDTree:
 
         tmpmaxes = np.copy(self.maxes)
         tmpmins = np.copy(self.mins)
-        
+
         ptmpmaxes = &tmpmaxes[0]
         ptmpmins = &tmpmins[0]
-        with nogil: 
+        with nogil:
             build_ckdtree(cself, 0, cself.n, ptmpmaxes, ptmpmins, median, compact)
 
         # set up the tree structure pointers
@@ -770,7 +764,7 @@ cdef class cKDTree:
         # The C++ function touches all dd and ii entries,
         # setting the missing values.
 
-        cdef: 
+        cdef:
             np.float64_t [:, ::1] dd = np.empty((n,len(k)),dtype=np.float64)
             np.intp_t [:, ::1] ii = np.empty((n,len(k)),dtype=np.intp)
             np.intp_t [::1] kk = np.array(k, dtype=np.intp)
@@ -951,7 +945,7 @@ cdef class cKDTree:
 
                 pvxx = &vxx[start, 0]
                 pvrr = &vrr[start + 0]
-                
+
                 with nogil:
                     query_ball_point(self.cself, pvxx,
                         pvrr, p, eps, stop - start, vvres, rlen)
@@ -1124,7 +1118,7 @@ cdef class cKDTree:
         cdef ordered_pairs results
 
         results = ordered_pairs()
-        
+
         with nogil:
             query_pairs(self.cself, r, p, eps, results.buf)
 
@@ -1155,7 +1149,7 @@ cdef class cKDTree:
             total weight for each KD-Tree node.
 
         """
-        cdef: 
+        cdef:
             np.intp_t num_of_nodes
             np.float64_t [::1] node_weights
             np.float64_t [::1] proper_weights
@@ -1366,10 +1360,10 @@ cdef class cKDTree:
             results = np.zeros(n_queries + 1, dtype=np.intp)
 
             iresults = results
-            
+
             prr = &real_r[0]
             pir = &iresults[0]
-            
+
             with nogil:
                 count_neighbors_unweighted(self.cself, other.cself, n_queries,
                             prr, pir, p, cum)
@@ -1391,10 +1385,10 @@ cdef class cKDTree:
 
             results = np.zeros(n_queries + 1, dtype=np.float64)
             fresults = results
-            
+
             prr = &real_r[0]
             pfr = &fresults[0]
-            
+
             with nogil:
                 count_neighbors_weighted(self.cself, other.cself,
                                     w1p, w2p, w1np, w2np,
@@ -1466,7 +1460,7 @@ cdef class cKDTree:
                              "different dimensionality")
         # do the query
         res = coo_entries()
-        
+
         with nogil:
             sparse_distance_matrix(
                 self.cself, other.cself, p, max_distance, res.buf)
