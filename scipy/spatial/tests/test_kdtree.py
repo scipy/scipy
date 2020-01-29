@@ -1160,7 +1160,7 @@ def test_ckdtree_memuse():
     try:
         import resource
     except ImportError:
-        # resource is not available on Windows with Python 2.6
+        # resource is not available on Windows
         return
     # Make some data
     dx, dy = 0.05, 0.05

@@ -1,5 +1,6 @@
 from __future__ import division, print_function, absolute_import
 
+import itertools
 import os
 
 import numpy as np
@@ -54,8 +55,7 @@ def f2(x,y=0,dx=0,dy=0):
 
 def makepairs(x, y):
     """Helper function to create an array of pairs of x and y."""
-    # Or itertools.product (>= Python 2.6)
-    xy = array([[a, b] for a in asarray(x) for b in asarray(y)])
+    xy = array(list(itertools.product(asarray(x), asarray(y))))
     return xy.T
 
 
