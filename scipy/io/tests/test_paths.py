@@ -70,6 +70,22 @@ class TestPaths(object):
             scipy.io.harwell_boeing.hb_write(path, data)
             assert_(path.is_file())
 
+    def test_mmio_read(self):
+        # Save data with string path, load with pathlib.Path
+        with tempdir() as temp_dir:
+            data = scipy.sparse.csr_matrix(scipy.sparse.eye(3))
+            path = Path(temp_dir) / 'data.mtx'
+            scipy.io.mmwrite(str(path), data)
+
+            data_new = scipy.io.mmread(path)
+            assert_((data_new != data).nnz == 0)
+
+    def test_mmio_write(self):
+        with tempdir() as temp_dir:
+            data = scipy.sparse.csr_matrix(scipy.sparse.eye(3))
+            path = Path(temp_dir) / 'data.mtx'
+            scipy.io.mmwrite(path, data)
+
     def test_netcdf_file(self):
         path = Path(__file__).parent / 'data/example_1.nc'
         scipy.io.netcdf.netcdf_file(path)
