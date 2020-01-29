@@ -108,8 +108,7 @@ def main(argv):
     parser.add_argument("--debug", "-g", action="store_true",
                         help="Debug build")
     parser.add_argument("--parallel", "-j", type=int, default=1,
-                        help="Number of parallel jobs during build (requires "
-                             "NumPy 1.10 or greater).")
+                        help="Number of parallel jobs for build and testing")
     parser.add_argument("--show-build-log", action="store_true",
                         help="Show build output rather than using a log file")
     parser.add_argument("--bench", action="store_true",
