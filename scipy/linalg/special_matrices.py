@@ -751,7 +751,7 @@ def invhilbert(n, exact=False):
     >>> invhilbert(16)[7,7]
     4.2475099528537506e+19
     >>> invhilbert(16, exact=True)[7,7]
-    42475099528537378560L
+    42475099528537378560
 
     """
     from scipy.special import comb
@@ -828,10 +828,10 @@ def pascal(n, kind='symmetric', exact=True):
            [1, 2, 1, 0],
            [1, 3, 3, 1]], dtype=uint64)
     >>> pascal(50)[-1, -1]
-    25477612258980856902730428600L
+    25477612258980856902730428600
     >>> from scipy.special import comb
     >>> comb(98, 49, exact=True)
-    25477612258980856902730428600L
+    25477612258980856902730428600
 
     """
 
