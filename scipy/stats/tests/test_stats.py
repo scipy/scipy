@@ -1876,65 +1876,99 @@ class TestVariability(object):
 
         assert_raises(ValueError, stats.zscore, x, nan_policy='raise')
 
-    def test_mad(self):
-        dat = np.array([2.20, 2.20, 2.4, 2.4, 2.5, 2.7, 2.8, 2.9, 3.03,
-                3.03, 3.10, 3.37, 3.4, 3.4, 3.4, 3.5, 3.6, 3.7, 3.7,
-                3.7, 3.7,3.77, 5.28, 28.95])
-        assert_almost_equal(stats.median_absolute_deviation(dat, axis=None), 0.526323)
 
-        dat = dat.reshape(6, 4)
-        mad = stats.median_absolute_deviation(dat, axis=0)
-        mad_expected = np.asarray([0.644931, 0.7413, 0.66717, 0.59304])
+class TestMedianAbsDeviation(object):
+    def setup_class(self):
+        self.dat_nan = np.array([2.20, 2.20, 2.4, 2.4, 2.5, 2.7, 2.8, 2.9,
+                3.03, 3.03, 3.10, 3.37, 3.4, 3.4, 3.4, 3.5, 3.6, 3.7, 3.7,
+                3.7, 3.7, 3.77, 5.28, np.nan])
+        self.dat = np.array([2.20, 2.20, 2.4, 2.4, 2.5, 2.7, 2.8, 2.9, 3.03,
+                3.03, 3.10, 3.37, 3.4, 3.4, 3.4, 3.5, 3.6, 3.7, 3.7,
+                3.7, 3.7, 3.77, 5.28, 28.95])
+
+    def test_median_abs_deviation(self):
+        assert_almost_equal(stats.median_abs_deviation(self.dat, axis=None),
+                            0.355)
+        dat = self.dat.reshape(6, 4)
+        mad = stats.median_abs_deviation(dat, axis=0)
+        mad_expected = np.asarray([0.435, 0.5, 0.45, 0.4])
         assert_array_almost_equal(mad, mad_expected)
+
+    def test_mad_nan_omit(self):
+        mad = stats.median_abs_deviation(self.dat_nan, nan_policy='omit')
+        assert_almost_equal(mad, 0.34)
+
+
+class TestMedianAbsoluteDeviation(object):
+    def setup_class(self):
+        self.dat_nan = np.array([2.20, 2.20, 2.4, 2.4, 2.5, 2.7, 2.8, 2.9, 3.03,
+                3.03, 3.10, 3.37, 3.4, 3.4, 3.4, 3.5, 3.6, 3.7, 3.7,
+                3.7, 3.7, 3.77, 5.28, np.nan])
+        self.dat = np.array([2.20, 2.20, 2.4, 2.4, 2.5, 2.7, 2.8, 2.9, 3.03,
+                3.03, 3.10, 3.37, 3.4, 3.4, 3.4, 3.5, 3.6, 3.7, 3.7,
+                3.7, 3.7, 3.77, 5.28, 28.95])
 
     def test_mad_empty(self):
         dat = []
-        mad = stats.median_absolute_deviation(dat)
+        with suppress_warnings() as sup:
+            sup.filter(DeprecationWarning)
+            mad = stats.median_absolute_deviation(dat)
         assert_equal(mad, np.nan)
 
     def test_mad_nan_shape1(self):
         z = np.ones((3, 0))
-        mad_axis0 = stats.median_absolute_deviation(z, axis=0)
+        with suppress_warnings() as sup:
+            sup.filter(DeprecationWarning)
+            mad_axis0 = stats.median_absolute_deviation(z, axis=0)
+            mad_axis1 = stats.median_absolute_deviation(z, axis=1)
         assert_equal(mad_axis0, np.nan)
-        mad_axis1 = stats.median_absolute_deviation(z, axis=1)
         assert_equal(mad_axis1, np.array([np.nan, np.nan, np.nan]))
         assert_equal(mad_axis1.shape, (3,))
 
     def test_mad_nan_shape2(self):
         z = np.ones((3, 0, 2))
-        mad_axis0 = stats.median_absolute_deviation(z, axis=0)
+        with suppress_warnings() as sup:
+            sup.filter(DeprecationWarning)
+            mad_axis0 = stats.median_absolute_deviation(z, axis=0)
+            mad_axis1 = stats.median_absolute_deviation(z, axis=1)
+            mad_axis2 = stats.median_absolute_deviation(z, axis=2)
         assert_equal(mad_axis0, np.nan)
-        mad_axis1 = stats.median_absolute_deviation(z, axis=1)
         assert_equal(mad_axis1, np.array([[np.nan, np.nan],
                                           [np.nan, np.nan],
                                           [np.nan, np.nan]]))
         assert_equal(mad_axis1.shape, (3, 2))
-        mad_axis2 = stats.median_absolute_deviation(z, axis=2)
         assert_equal(mad_axis2, np.nan)
 
     def test_mad_nan_propagate(self):
-        dat = np.array([2.20, 2.20, 2.4, 2.4, 2.5, 2.7, 2.8, 2.9, 3.03,
-                3.03, 3.10, 3.37, 3.4, 3.4, 3.4, 3.5, 3.6, 3.7, 3.7,
-                3.7, 3.7,3.77, 5.28, np.nan])
-
-        mad = stats.median_absolute_deviation(dat, nan_policy='propagate')
+        with suppress_warnings() as sup:
+            sup.filter(DeprecationWarning)
+            mad = stats.median_absolute_deviation(self.dat_nan,
+                                                  nan_policy='propagate')
         assert_equal(mad, np.nan)
 
     def test_mad_nan_raise(self):
-        dat = np.array([2.20, 2.20, 2.4, 2.4, 2.5, 2.7, 2.8, 2.9, 3.03,
-                3.03, 3.10, 3.37, 3.4, 3.4, 3.4, 3.5, 3.6, 3.7, 3.7,
-                3.7, 3.7,3.77, 5.28, np.nan])
-
         with assert_raises(ValueError):
-            stats.median_absolute_deviation(dat, nan_policy='raise')
+            with suppress_warnings() as sup:
+                sup.filter(DeprecationWarning)
+                stats.median_absolute_deviation(self.dat_nan,
+                                                nan_policy='raise')
 
-    def test_mad_nan_omit(self):
-        dat = np.array([2.20, 2.20, 2.4, 2.4, 2.5, 2.7, 2.8, 2.9, 3.03,
-                3.03, 3.10, 3.37, 3.4, 3.4, 3.4, 3.5, 3.6, 3.7, 3.7,
-                3.7, 3.7,3.77, 5.28, np.nan])
+    def test_mad_scale_default(self):
+        with suppress_warnings() as sup:
+            sup.filter(DeprecationWarning)
+            mad = stats.median_absolute_deviation(self.dat, scale=1.0)
+            mad_float = stats.median_absolute_deviation(self.dat, scale=1.0)
+        assert_almost_equal(mad, 0.355)
+        assert_almost_equal(mad, mad_float)
 
-        mad = stats.median_absolute_deviation(dat, nan_policy='omit')
-        assert_almost_equal(mad, 0.504084)
+    def test_mad_scale_normal(self):
+        with suppress_warnings() as sup:
+            sup.filter(DeprecationWarning)
+            mad = stats.median_absolute_deviation(self.dat, scale="normal")
+            scale = 1.4826022185056018
+            mad_float = stats.median_absolute_deviation(self.dat, scale=scale)
+        assert_almost_equal(mad, 0.526323787)
+        assert_almost_equal(mad, mad_float)
 
 
 def _check_warnings(warn_list, expected_type, expected_len):
@@ -1962,7 +1996,7 @@ class TestIQR(object):
         stats.iqr(d, 1)
         stats.iqr(d, (0, 1))
         stats.iqr(d, None, (10, 90))
-        stats.iqr(d, None, (30, 20), 'raw')
+        stats.iqr(d, None, (30, 20), 1.0)
         stats.iqr(d, None, (25, 75), 1.5, 'propagate')
         stats.iqr(d, None, (50, 50), 'normal', 'raise', 'linear')
         stats.iqr(d, None, (25, 75), -0.4, 'omit', 'lower', True)
@@ -2138,7 +2172,7 @@ class TestIQR(object):
         x = np.arange(15.0).reshape((3, 5))
 
         # No NaNs
-        assert_equal(stats.iqr(x, scale='raw'), 7)
+        assert_equal(stats.iqr(x, scale=1.0), 7)
         assert_almost_equal(stats.iqr(x, scale='normal'), 7 / 1.3489795)
         assert_equal(stats.iqr(x, scale=2.0), 3.5)
 
@@ -2146,11 +2180,11 @@ class TestIQR(object):
         x[1, 2] = np.nan
         with warnings.catch_warnings(record=True):
             warnings.simplefilter("always")
-            assert_equal(stats.iqr(x, scale='raw', nan_policy='propagate'), np.nan)
+            assert_equal(stats.iqr(x, scale=1.0, nan_policy='propagate'), np.nan)
             assert_equal(stats.iqr(x, scale='normal', nan_policy='propagate'), np.nan)
             assert_equal(stats.iqr(x, scale=2.0, nan_policy='propagate'), np.nan)
             # axis=1 chosen to show behavior with both nans and without
-            assert_equal(stats.iqr(x, axis=1, scale='raw',
+            assert_equal(stats.iqr(x, axis=1, scale=1.0,
                                    nan_policy='propagate'), [2, np.nan, 2])
             assert_almost_equal(stats.iqr(x, axis=1, scale='normal',
                                           nan_policy='propagate'),
@@ -2161,7 +2195,7 @@ class TestIQR(object):
             # np.percentile with nans, so we don't check the number of
             # warnings here. See https://github.com/numpy/numpy/pull/12679.
 
-        assert_equal(stats.iqr(x, scale='raw', nan_policy='omit'), 7.5)
+        assert_equal(stats.iqr(x, scale=1.0, nan_policy='omit'), 7.5)
         assert_almost_equal(stats.iqr(x, scale='normal', nan_policy='omit'),
                             7.5 / 1.3489795)
         assert_equal(stats.iqr(x, scale=2.0, nan_policy='omit'), 3.75)
