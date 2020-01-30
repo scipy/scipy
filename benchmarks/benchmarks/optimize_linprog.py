@@ -1,21 +1,17 @@
 """
 Benchmarks for Linear Programming
 """
-from __future__ import division, print_function, absolute_import
 
 # Import testing parameters
-try:
-    from scipy.optimize import linprog, OptimizeWarning
-    from scipy.linalg import toeplitz
-    from scipy.optimize.tests.test_linprog import lpgen_2d, magic_square
-    from numpy.testing import suppress_warnings
-    from scipy.optimize._remove_redundancy import _remove_redundancy, _remove_redundancy_dense, _remove_redundancy_sparse
-    from scipy.optimize._linprog_util import _presolve, _clean_inputs, _LPProblem
-    from scipy.sparse import csc_matrix, csr_matrix, issparse
-    import numpy as np
-    import os
-except ImportError:
-    pass
+from scipy.optimize import linprog, OptimizeWarning
+from scipy.linalg import toeplitz
+from scipy.optimize.tests.test_linprog import lpgen_2d, magic_square
+from numpy.testing import suppress_warnings
+from scipy.optimize._remove_redundancy import _remove_redundancy, _remove_redundancy_dense, _remove_redundancy_sparse
+from scipy.optimize._linprog_util import _presolve, _clean_inputs, _LPProblem
+from scipy.sparse import csc_matrix, csr_matrix, issparse
+import numpy as np
+import os
 
 from .common import Benchmark
 
