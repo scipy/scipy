@@ -45,7 +45,7 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
         Constraints definition.
         Function(s) ``R**n`` in the form::
 
-            g(x) <= 0 applied as g : R^n -> R^m
+            g(x) >= 0 applied as g : R^n -> R^m
             h(x) == 0 applied as h : R^n -> R^p
 
         Each constraint is defined in a dictionary with fields:
