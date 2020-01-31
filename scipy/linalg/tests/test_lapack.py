@@ -2300,12 +2300,18 @@ def test_orcsd_uncsd(dtype_):
 
 @pytest.mark.parametrize("dtype", DTYPES)
 @pytest.mark.parametrize("fact,dl_d_du_lambda",
-                         [("F", lambda dl, d, du: get_lapack_funcs('gttrf',
-                            dtype=d.dtype)),
+                         [("F", lambda dl, d, du: get_lapack_funcs('gttrf', 
+                                                                   dtype=d.dtype)),
                           ("N", lambda dl, d, du: (None, None, None, None,
                                                    None))])
 def test_gtsvx(dtype, fact, dl_d_du_lambda):
-    dtype = DTYPES[0]
+    """
+    This test uses ?gtsvx to solve a random Ax=b system for each dtype.
+    It tests that the outputs define an LU matrix, that inputs are unmodified,
+    transposal options, incompatible shapes, singular matricies, and
+    singular factorizations. It parametrizes DTYPES and the fact value along
+    with the fact related inputs.
+    """
     np.random.seed(42)
     # set test tolerance appropriate for dtype
     rtol = 250 * np.finfo(dtype).eps
@@ -2337,7 +2343,7 @@ def test_gtsvx(dtype, fact, dl_d_du_lambda):
     assert_array_equal(du, inputs_cpy[2])
     assert_array_equal(b, inputs_cpy[3])
 
-    x_soln, dlf, df, duf, du2f, ipiv, rcond, ferr, berr, info = gtsvx_out
+    dlf, df, duf, du2f, ipiv, x_soln, rcond, ferr, berr, info = gtsvx_out
 
     # note that these are split into multiple lines since it was very long
 
@@ -2359,11 +2365,12 @@ def test_gtsvx(dtype, fact, dl_d_du_lambda):
     L[:, [i, piv]] = L[:, [piv, i]]
 
     # check that the outputs define an LU decomposition of A
-    assert_allclose(A, L @ U, atol=atol)
+    assert_allclose(A, L @ U, atol=atol, rtol=rtol)
 
     # assert that the outputs are of correct type or shape
     # rcond should be a scalar
-    assert_(hasattr(rcond, "__len__") != True,
+
+    assert_(hasattr(rcond, "__len__") is not True,
             "rcond should be scalar but is {}".format(rcond))
     # ferr should be length of # of cols in x
     assert_(ferr.shape[0] == b.shape[1], "ferr.shape is {} but shoud be {},"
@@ -2380,7 +2387,7 @@ def test_gtsvx(dtype, fact, dl_d_du_lambda):
 
         # solve using routine
         gtsvx_out = gtsvx(dl, d, du, b)
-        x_soln, dlf, df, duf, du2f, ipiv, rcond, ferr, berr, info = gtsvx_out
+        dlf, df, duf, du2f, ipiv, x_soln, rcond, ferr, berr, info = gtsvx_out
         # test for the singular matrix.
         assert_(d[info - 1] == 0,
                 "?gtsvx: d[info-1] is {}, not the illegal value"
@@ -2393,8 +2400,52 @@ def test_gtsvx(dtype, fact, dl_d_du_lambda):
 
         gtsvx_out = gtsvx(dl, d, du, b, fact=fact, dlf=dlf_, df=df_, duf=duf_,
                           du2=du2f_, ipiv=ipiv_)
-        x_soln, dlf, df, duf, du2f, ipiv, rcond, ferr, berr, info = gtsvx_out
+        dlf, df, duf, du2f, ipiv, x_soln, rcond, ferr, berr, info = gtsvx_out
         # info should not be zero and should provide index of illegal value
         assert_(df[info - 1] == 0,
                 "?gtsvx: df[info-1] is {}, not the illegal value"
                 .format(d[info - 1]))
+
+
+@pytest.mark.parametrize("du,d,dl,b,x", [(np.array([2.1, -1.0, 1.9, 8.0]),
+                                          np.array([3.0, 2.3, -5.0, -0.9,
+                                                    7.1]),
+                                          np.array([3.4, 3.6, 7.0, -6.0]),
+                                          np.array([[2.7, 6.6],
+                                                    [-.5, 10.8],
+                                                    [2.6, -3.2],
+                                                    [.6, -11.2],
+                                                    [2.7, 19.1]]),
+                                          np.array([[-4, 5],
+                                                    [7, -4],
+                                                    [3, -3],
+                                                    [-4, -2],
+                                                    [-3, 1]])),
+                                         (np.array([2 - 1j, 2 + 1j, -1 + 1j,
+                                                    1 - 1j]),
+                                          np.array([-1.3 + 1.3j, -1.3 + 1.3j,
+                                                    -1.3 + 3.3j, -.3 + 4.3j,
+                                                    -3.3 + 1.3j]),
+                                          np.array([1 - 2j, 1 + 1j, 2 - 3j,
+                                                    1 + 1j]),
+                                          np.array([[2.4 - 5j, 2.7 + 6.9j],
+                                                    [3.4 + 18.2j, -6.9 - 5.3j],
+                                                    [-14.7 + 9.7j, -6 - .6j],
+                                                    [31.9 - 7.7j, -3.9 + 9.3j],
+                                                    [-1 + 1.6j, -3 + 12.2j]]),
+                                          np.array([[1 + 1j,  2 - 1j],
+                                                    [3 - 1j, 1 + 2j],
+                                                    [4 + 5j, -1 + 1j],
+                                                    [-1 - 2j, 2 + 1j],
+                                                    [1 - 1j, 2 - 2j]]))])
+def test_gtsvx_NAG(du, d, dl, b, x):
+    # Test to ensure wrapper is consistent with NAG manual
+    # example problems: real (f07cbf) and complex (f07cpf)
+    # https://www.nag.com/numeric/fl/nagdoc_latest/html/f07/f07cbf.html
+    # https://www.nag.com/numeric/fl/nagdoc_latest/html/f07/f07cpf.html
+    gtsvx = get_lapack_funcs('gtsvx', dtype=d.dtype)
+
+    gtsvx_out = gtsvx(dl, d, du, b)
+    dlf, df, duf, du2f, ipiv, x_soln, rcond, ferr, berr, info = gtsvx_out
+
+    assert_array_almost_equal(x, x_soln)
