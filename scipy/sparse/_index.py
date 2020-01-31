@@ -266,8 +266,13 @@ def _unpack_index(index):
         else:
             raise IndexError('invalid number of indices')
     else:
-        row, col = index, slice(None)
-
+        idx = _compatible_boolean_index(index)
+        if idx is None:
+            row, col = index, slice(None)
+        elif idx.ndim < 2:
+            return _boolean_index_to_array(idx), slice(None)
+        elif idx.ndim == 2:
+            return idx.nonzero()
     # Next, check for validity and transform the index as needed.
     if isspmatrix(row) or isspmatrix(col):
         # Supporting sparse boolean indexing with both row and col does
@@ -333,10 +338,18 @@ def _compatible_boolean_index(idx):
     if not hasattr(idx, 'ndim') or not hasattr(idx, 'dtype'):
         if hasattr(idx, '__iter__'):
             first = next(iter(idx), None)
+            # Checks if the index array is 1D array with boolean data.
             if isinstance(first, bool):
                 idx = np.asanyarray(idx)
                 if idx.dtype.kind == 'b':
                     return idx
+            # Checks if index array is 2D
+            elif hasattr(first, '__iter__'):
+                ff = next(iter(first), None)
+                if isinstance(ff, bool):
+                    idx = np.asanyarray(idx)
+                    if idx.dtype.kind == 'b':
+                        return idx
     elif idx.dtype.kind == 'b':
         return idx
     return None
