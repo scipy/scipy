@@ -95,3 +95,12 @@ def test_csr_empty_slices(matrix_input, axis, expected_shape):
 
     assert actual_shape_1 == expected_shape
     assert actual_shape_1 == actual_shape_2
+
+
+def test_csr_bool_indexing():
+    data = csr_matrix([[0, 1, 2], [3, 4, 5], [6, 7, 8]])
+    list_indices = [False, True, False]
+    array_indices = np.array(list_indices)
+    slice_list = data[list_indices].toarray()
+    slice_array = data[array_indices].toarray()
+    assert (slice_list == slice_array).all()
