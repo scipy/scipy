@@ -2300,7 +2300,7 @@ def test_orcsd_uncsd(dtype_):
 
 @pytest.mark.parametrize("dtype", DTYPES)
 @pytest.mark.parametrize("fact,dl_d_du_lambda",
-                         [("F", lambda dl, d, du: get_lapack_funcs('gttrf', 
+                         [("F", lambda dl, d, du: get_lapack_funcs('gttrf',
                                                                    dtype=d.dtype)),
                           ("N", lambda dl, d, du: (None, None, None, None,
                                                    None))])
@@ -2337,15 +2337,17 @@ def test_gtsvx(dtype, fact, dl_d_du_lambda):
 
     gtsvx_out = gtsvx(dl, d, du, b, fact=fact, dlf=dlf_, df=df_, duf=duf_,
                       du2=du2f_, ipiv=ipiv_)
+    dlf, df, duf, du2f, ipiv, x_soln, rcond, ferr, berr, info = gtsvx_out
+    # note that these are split into multiple lines since it was very long
+
     # assure that inputs are unmodified
     assert_array_equal(dl, inputs_cpy[0])
     assert_array_equal(d, inputs_cpy[1])
     assert_array_equal(du, inputs_cpy[2])
     assert_array_equal(b, inputs_cpy[3])
 
-    dlf, df, duf, du2f, ipiv, x_soln, rcond, ferr, berr, info = gtsvx_out
-
-    # note that these are split into multiple lines since it was very long
+    # test that x_soln matches the expected x
+    assert_allclose(x, x_soln, rtol=rtol, atol=atol)
 
     U = np.diag(df, 0) + np.diag(duf, 1) + np.diag(du2f, 2)
     L = np.eye(n, dtype=dtype)
@@ -2405,6 +2407,23 @@ def test_gtsvx(dtype, fact, dl_d_du_lambda):
         assert_(df[info - 1] == 0,
                 "?gtsvx: df[info-1] is {}, not the illegal value"
                 .format(d[info - 1]))
+
+    if dtype in REAL_DTYPES:
+        trans = "T"
+    else:
+        trans = "C"
+    A_trans = A.conj().T
+    # Test with transposed matricies
+    # restore these
+    du = inputs_cpy[2]
+    d = inputs_cpy[1]
+    dl = inputs_cpy[0]
+
+    b = A_trans@x
+    gtsvx_out = gtsvx(dl, d, du, b, trans=trans)
+    dlf, df, duf, du2f, ipiv, x_soln, rcond, ferr, berr, info = gtsvx_out
+    # test that x_soln matches the expected x
+    assert_allclose(x, x_soln, rtol=rtol, atol=atol)
 
 
 @pytest.mark.parametrize("du,d,dl,b,x", [(np.array([2.1, -1.0, 1.9, 8.0]),
