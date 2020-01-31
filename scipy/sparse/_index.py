@@ -331,8 +331,13 @@ def _compatible_boolean_index(idx):
     # Absence of attributes `ndim` or `dtype` indicates a
     # non compatible index array.
     if not hasattr(idx, 'ndim') or not hasattr(idx, 'dtype'):
-        idx = np.asanyarray(idx)
-    if idx.dtype.kind == 'b':
+        if hasattr(idx, '__iter__'):
+            first = next(iter(idx), None)
+            if isinstance(first, bool):
+                idx = np.asanyarray(idx)
+                if idx.dtype.kind == 'b':
+                    return idx
+    elif idx.dtype.kind == 'b':
         return idx
     return None
 
