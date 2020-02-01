@@ -79,7 +79,14 @@ def _get_umf_family(A):
             % (f_type, i_type)
         raise ValueError(msg)
 
-    return family
+    if np.prod(A.shape) > np.iinfo(np.int32).max:
+        family = family[0] + "l"
+        A_new = A.__class__(A.shape)
+        A_new.data = A.data
+        A_new.indptr = np.array(A.indptr, copy=False, dtype=np.int64)
+        A_new.indices = np.array(A.indices, copy=False, dtype=np.int64)
+
+    return family, A_new
 
 def spsolve(A, b, permc_spec=None, use_umfpack=True):
     """Solve the sparse linear system Ax=b, where b may be a vector or a matrix.
@@ -177,12 +184,7 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
             raise ValueError("convert matrix data to double, please, using"
                   " .astype(), or set linsolve.useUmfpack = False")
 
-        umf_family = _get_umf_family(A)
-        if np.prod(A.shape) > np.iinfo(np.int32).max:
-            umf_family = umf_family[0] + "l"
-            A.indices = A.indices.astype(np.int64)
-            A.indptr = A.indptr.astype(np.int64)
-
+        umf_family, A = _get_umf_family(A)
         umf = umfpack.UmfpackContext(umf_family)
         x = umf.linsolve(umfpack.UMFPACK_A, A, b_vec,
                          autoTranspose=True)
@@ -462,11 +464,7 @@ def factorized(A):
             raise ValueError("convert matrix data to double, please, using"
                   " .astype(), or set linsolve.useUmfpack = False")
 
-        umf_family = _get_umf_family(A)
-        if np.prod(A.shape) > np.iinfo(np.int32).max:
-            umf_family = umf_family[0] + "l"
-            A.indices = A.indices.astype(np.int64)
-            A.indptr = A.indptr.astype(np.int64)
+        umf_family, A = _get_umf_family(A)
         umf = umfpack.UmfpackContext(umf_family)
 
         # Make LU decomposition.
