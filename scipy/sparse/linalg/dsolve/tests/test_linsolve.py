@@ -16,12 +16,11 @@ from pytest import raises as assert_raises
 import scipy.linalg
 from scipy.linalg import norm, inv
 from scipy.sparse import (spdiags, SparseEfficiencyWarning, csc_matrix,
-        csr_matrix, identity, isspmatrix, dok_matrix, lil_matrix, bsr_matrix,
-        kron, eye, diags)
+        csr_matrix, identity, isspmatrix, dok_matrix, lil_matrix, bsr_matrix)
 from scipy.sparse.linalg import SuperLU
 from scipy.sparse.linalg.dsolve import (spsolve, use_solver, splu, spilu,
         MatrixRankWarning, _superlu, spsolve_triangular, factorized)
-
+import scipy.sparse
 
 sup_sparse_efficiency = suppress_warnings()
 sup_sparse_efficiency.filter(SparseEfficiencyWarning)
@@ -166,15 +165,18 @@ class TestFactorized(object):
         assert_array_almost_equal(factorized(A)(b), expected)
         assert_equal(A.has_sorted_indices, 1)
 
+    @pytest.mark.slow
     @pytest.mark.skipif(not has_umfpack, reason="umfpack not available")
     def test_bug_8278(self):
         use_solver(useUmfpack=True)
         N = 2 ** 6
         h = 1/N
-        Ah1D = diags([-1, 2, -1], [-1, 0, 1], shape=(N-1, N-1))/(h**2)
-        eyeN = eye(N - 1)
-        A = (kron(eyeN, kron(eyeN, Ah1D)) + kron(eyeN, kron(Ah1D, eyeN))
-             + kron(Ah1D, kron(eyeN, eyeN)))
+        Ah1D = scipy.sparse.diags([-1, 2, -1], [-1, 0, 1],
+                                  shape=(N-1, N-1))/(h**2)
+        eyeN = scipy.sparse.eye(N - 1)
+        A = (scipy.sparse.kron(eyeN, scipy.sparse.kron(eyeN, Ah1D))
+             + scipy.sparse.kron(eyeN, scipy.sparse.kron(Ah1D, eyeN))
+             + scipy.sparse.kron(Ah1D, scipy.sparse.kron(eyeN, eyeN)))
         b = np.random.rand((N-1)**3)
         f = factorized(A)
         x = f(b)
@@ -415,15 +417,18 @@ class TestLinsolve(object):
         x = spsolve(A_complex, b_complex)
         assert_(np.issubdtype(x.dtype, np.complexfloating))
 
+    @pytest.mark.slow
     @pytest.mark.skipif(not has_umfpack, reason="umfpack not available")
     def test_bug_8278(self):
         use_solver(useUmfpack=True)
         N = 2 ** 6
         h = 1/N
-        Ah1D = diags([-1, 2, -1], [-1, 0, 1], shape=(N-1, N-1))/(h**2)
-        eyeN = eye(N - 1)
-        A = (kron(eyeN, kron(eyeN, Ah1D)) + kron(eyeN, kron(Ah1D, eyeN))
-             + kron(Ah1D, kron(eyeN, eyeN)))
+        Ah1D = scipy.sparse.diags([-1, 2, -1], [-1, 0, 1],
+                                  shape=(N-1, N-1))/(h**2)
+        eyeN = scipy.sparse.eye(N - 1)
+        A = (scipy.sparse.kron(eyeN, scipy.sparse.kron(eyeN, Ah1D))
+             + scipy.sparse.kron(eyeN, scipy.sparse.kron(Ah1D, eyeN))
+             + scipy.sparse.kron(Ah1D, scipy.sparse.kron(eyeN, eyeN)))
         b = np.random.rand((N-1)**3)
         x = spsolve(A, b)
         assert_array_almost_equal(A @ x, b)
