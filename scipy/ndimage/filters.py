@@ -29,6 +29,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from __future__ import division, print_function, absolute_import
+from collections.abc import Iterable
 import warnings
 import numbers
 import numpy
@@ -618,6 +619,8 @@ def _correlate_or_convolve(input, weights, output, mode, cval, origin,
     if not weights.flags.contiguous:
         weights = weights.copy()
     output = _ni_support._get_output(output, input)
+    if not isinstance(mode, str) and isinstance(mode, Iterable):
+        raise RuntimeError("A sequence of modes is not supported")
     mode = _ni_support._extend_mode_to_code(mode)
     _nd_image.correlate(input, weights, output, mode, cval, origins)
     return output
@@ -637,7 +640,7 @@ def correlate(input, weights, output=None, mode='reflect', cval=0.0,
     weights : ndarray
         array of weights, same number of dimensions as input
     %(output)s
-    %(mode_multiple)s
+    %(mode)s
     %(cval)s
     %(origin_multiple)s
 
@@ -663,7 +666,7 @@ def convolve(input, weights, output=None, mode='reflect', cval=0.0,
     weights : array_like
         Array of weights, same number of dimensions as input
     %(output)s
-    %(mode_multiple)s
+    %(mode)s
     cval : scalar, optional
         Value to fill past edges of input if `mode` is 'constant'. Default
         is 0.0
@@ -1027,6 +1030,10 @@ def _min_or_max_filter(input, size, footprint, structure, output, mode,
                 raise RuntimeError('structure array has incorrect shape')
             if not structure.flags.contiguous:
                 structure = structure.copy()
+        if not isinstance(mode, str) and isinstance(mode, Iterable):
+            raise RuntimeError(
+                "A sequence of modes is not supported for non-separable "
+                "footprints")
         mode = _ni_support._extend_mode_to_code(mode)
         _nd_image.min_or_max_filter(input, footprint, structure, output,
                                     mode, cval, origins, minimum)
@@ -1051,6 +1058,11 @@ def minimum_filter(input, size=None, footprint=None, output=None,
     -------
     minimum_filter : ndarray
         Filtered array. Has the same shape as `input`.
+
+    Notes
+    -----
+    A sequence of modes (one per axis) is only supported when the footprint is
+    separable. Otherwise, a single mode string must be provided.
 
     Examples
     --------
@@ -1088,6 +1100,11 @@ def maximum_filter(input, size=None, footprint=None, output=None,
     -------
     maximum_filter : ndarray
         Filtered array. Has the same shape as `input`.
+
+    Notes
+    -----
+    A sequence of modes (one per axis) is only supported when the footprint is
+    separable. Otherwise, a single mode string must be provided.
 
     Examples
     --------
@@ -1156,6 +1173,10 @@ def _rank_filter(input, rank, size=None, footprint=None, output=None,
                               origins)
     else:
         output = _ni_support._get_output(output, input)
+        if not isinstance(mode, str) and isinstance(mode, Iterable):
+            raise RuntimeError(
+                "A sequence of modes is not supported by non-separable rank "
+                "filters")
         mode = _ni_support._extend_mode_to_code(mode)
         _nd_image.rank_filter(input, rank, footprint, output, mode, cval,
                               origins)
@@ -1175,7 +1196,7 @@ def rank_filter(input, rank, size=None, footprint=None, output=None,
         indicates the largest element.
     %(size_foot)s
     %(output)s
-    %(mode_multiple)s
+    %(mode)s
     %(cval)s
     %(origin_multiple)s
 
@@ -1214,7 +1235,7 @@ def median_filter(input, size=None, footprint=None, output=None,
     %(input)s
     %(size_foot)s
     %(output)s
-    %(mode_multiple)s
+    %(mode)s
     %(cval)s
     %(origin_multiple)s
 
@@ -1254,7 +1275,7 @@ def percentile_filter(input, percentile, size=None, footprint=None,
         percentile = -20 equals percentile = 80
     %(size_foot)s
     %(output)s
-    %(mode_multiple)s
+    %(mode)s
     %(cval)s
     %(origin_multiple)s
 
@@ -1381,7 +1402,7 @@ def generic_filter(input, function, size=None, footprint=None,
         Function to apply at each element.
     %(size_foot)s
     %(output)s
-    %(mode_multiple)s
+    %(mode)s
     %(cval)s
     %(origin_multiple)s
     %(extra_arguments)s
