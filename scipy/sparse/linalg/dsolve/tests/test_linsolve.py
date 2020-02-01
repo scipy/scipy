@@ -40,6 +40,19 @@ def toarray(a):
         return a
 
 
+def setup_bug_8278():
+    N = 2 ** 6
+    h = 1/N
+    Ah1D = scipy.sparse.diags([-1, 2, -1], [-1, 0, 1],
+                              shape=(N-1, N-1))/(h**2)
+    eyeN = scipy.sparse.eye(N - 1)
+    A = (scipy.sparse.kron(eyeN, scipy.sparse.kron(eyeN, Ah1D))
+         + scipy.sparse.kron(eyeN, scipy.sparse.kron(Ah1D, eyeN))
+         + scipy.sparse.kron(Ah1D, scipy.sparse.kron(eyeN, eyeN)))
+    b = np.random.rand((N-1)**3)
+    return A, b
+
+
 class TestFactorized(object):
     def setup_method(self):
         n = 5
@@ -169,15 +182,7 @@ class TestFactorized(object):
     @pytest.mark.skipif(not has_umfpack, reason="umfpack not available")
     def test_bug_8278(self):
         use_solver(useUmfpack=True)
-        N = 2 ** 6
-        h = 1/N
-        Ah1D = scipy.sparse.diags([-1, 2, -1], [-1, 0, 1],
-                                  shape=(N-1, N-1))/(h**2)
-        eyeN = scipy.sparse.eye(N - 1)
-        A = (scipy.sparse.kron(eyeN, scipy.sparse.kron(eyeN, Ah1D))
-             + scipy.sparse.kron(eyeN, scipy.sparse.kron(Ah1D, eyeN))
-             + scipy.sparse.kron(Ah1D, scipy.sparse.kron(eyeN, eyeN)))
-        b = np.random.rand((N-1)**3)
+        A, b = setup_bug_8278()
         f = factorized(A)
         x = f(b)
         assert_array_almost_equal(A @ x, b)
@@ -421,15 +426,7 @@ class TestLinsolve(object):
     @pytest.mark.skipif(not has_umfpack, reason="umfpack not available")
     def test_bug_8278(self):
         use_solver(useUmfpack=True)
-        N = 2 ** 6
-        h = 1/N
-        Ah1D = scipy.sparse.diags([-1, 2, -1], [-1, 0, 1],
-                                  shape=(N-1, N-1))/(h**2)
-        eyeN = scipy.sparse.eye(N - 1)
-        A = (scipy.sparse.kron(eyeN, scipy.sparse.kron(eyeN, Ah1D))
-             + scipy.sparse.kron(eyeN, scipy.sparse.kron(Ah1D, eyeN))
-             + scipy.sparse.kron(Ah1D, scipy.sparse.kron(eyeN, eyeN)))
-        b = np.random.rand((N-1)**3)
+        A, b = setup_bug_8278()
         x = spsolve(A, b)
         assert_array_almost_equal(A @ x, b)
 
