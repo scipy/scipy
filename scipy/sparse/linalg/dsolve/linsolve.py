@@ -177,7 +177,13 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
             raise ValueError("convert matrix data to double, please, using"
                   " .astype(), or set linsolve.useUmfpack = False")
 
-        umf = umfpack.UmfpackContext(_get_umf_family(A))
+        umf_family = _get_umf_family(A)
+        if np.prod(A.shape) > np.iinfo(np.int32).max:
+            umf_family = umf_family[0] + "l"
+            A.indices = A.indices.astype(np.int64)
+            A.indptr = A.indptr.astype(np.int64)
+
+        umf = umfpack.UmfpackContext(umf_family)
         x = umf.linsolve(umfpack.UMFPACK_A, A, b_vec,
                          autoTranspose=True)
     else:
@@ -456,7 +462,12 @@ def factorized(A):
             raise ValueError("convert matrix data to double, please, using"
                   " .astype(), or set linsolve.useUmfpack = False")
 
-        umf = umfpack.UmfpackContext(_get_umf_family(A))
+        umf_family = _get_umf_family(A)
+        if np.prod(A.shape) > np.iinfo(np.int32).max:
+            umf_family = umf_family[0] + "l"
+            A.indices = A.indices.astype(np.int64)
+            A.indptr = A.indptr.astype(np.int64)
+        umf = umfpack.UmfpackContext(umf_family)
 
         # Make LU decomposition.
         umf.numeric(A)
