@@ -30,6 +30,7 @@
 
 from __future__ import division, print_function, absolute_import
 
+from collections.abc import Iterable
 import numpy
 
 
@@ -56,7 +57,7 @@ def _normalize_sequence(input, rank):
     check if its length is equal to the length of array.
     """
     is_str = isinstance(input, str)
-    if hasattr(input, '__iter__') and not is_str:
+    if not is_str and isinstance(input, Iterable):
         normalized = list(input)
         if len(normalized) != rank:
             err = "sequence argument must have length equal to input rank"
