@@ -581,9 +581,10 @@ class rv_generic(object):
         super(rv_generic, self).__init__()
 
         # figure out if _stats signature has 'moments' keyword
-        sign = _getfullargspec(self._stats)
-        self._stats_has_moments = ((sign[2] is not None) or
-                                   ('moments' in sign[0]) or ('moments' in sign[4]))
+        sig = _getfullargspec(self._stats)
+        self._stats_has_moments = ((sig.varkw is not None) or
+                                   ('moments' in sig.args) or
+                                   ('moments' in sig.kwonlyargs))
         self._random_state = check_random_state(seed)
 
     @property
@@ -657,7 +658,7 @@ class rv_generic(object):
                     if shapes_args.varargs is not None:
                         raise TypeError(
                             '*args are not allowed w/out explicit shapes')
-                    if shapes_args.keywords is not None:
+                    if shapes_args.varkw is not None:
                         raise TypeError(
                             '**kwds are not allowed w/out explicit shapes')
                     if shapes_args.kwonlyargs:

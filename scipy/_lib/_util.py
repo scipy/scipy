@@ -253,96 +253,27 @@ def _asarray_validated(a, check_finite=True,
     return a
 
 
-# Add a replacement for inspect.getargspec() which is deprecated in Python 3.5
+# Add a replacement for inspect.getfullargspec()/
 # The version below is borrowed from Django,
 # https://github.com/django/django/pull/4846.
 
-# Note an inconsistency between inspect.getargspec(func) and
+# Note an inconsistency between inspect.getfullargspec(func) and
 # inspect.signature(func). If `func` is a bound method, the latter does *not*
 # list `self` as a first argument, while the former *does*.
-# Hence, cook up a common ground replacement: `getargspec_no_self` which
-# mimics `inspect.getargspec` but does not list `self`.
+# Hence, cook up a common ground replacement: `getfullargspec_no_self` which
+# mimics `inspect.getfullargspec` but does not list `self`.
 #
 # This way, the caller code does not need to know whether it uses a legacy
-# .getargspec or a bright and shiny .signature.
-
-# NOTE: Py3 supports keyword-only arguments which are NOT returned by
-# getargspec_no_self.   It is likely that inspections should be done
-# using getfullargspec_no_self instead.
-# Python's inspect.getargspec raises an Exception if the signature contains
-# keyword-only arguments and getargspec_no_self does the same.
-
-ArgSpec = namedtuple('ArgSpec', ['args', 'varargs', 'keywords', 'defaults'])
-
-
-def getargspec_no_self(func):
-    """inspect.getargspec replacement using inspect.signature.
-
-    inspect.getargspec is deprecated in Python 3. This is a replacement
-    based on the (new in Python 3.3) `inspect.signature`.
-
-    Parameters
-    ----------
-    func : callable
-        A callable to inspect
-
-    Returns
-    -------
-    argspec : ArgSpec(args, varargs, varkw, defaults)
-        This is similar to the result of inspect.getargspec(func) under
-        Python 2.x.
-
-        NOTE: if the first argument of `func` is self, it is *not*, I repeat
-        *not*, included in argspec.args.
-        This is done for consistency between inspect.getargspec() under
-        Python 2.x, and inspect.signature() under Python 3.x.
-
-        Keyword arguments are NOT returned by getargspec_no_self, use
-        getfullargspec_no_self instead.
-
-    Raises
-    ------
-    ValueError
-        If the signature contains keyword-only arguments.
-    """
-    sig = inspect.signature(func)
-    args = [
-        p.name for p in sig.parameters.values()
-        if p.kind in [inspect.Parameter.POSITIONAL_OR_KEYWORD,
-                      inspect.Parameter.POSITIONAL_ONLY]
-    ]
-    varargs = [
-        p.name for p in sig.parameters.values()
-        if p.kind == inspect.Parameter.VAR_POSITIONAL
-    ]
-    varargs = varargs[0] if varargs else None
-    varkw = [
-        p.name for p in sig.parameters.values()
-        if p.kind == inspect.Parameter.VAR_KEYWORD
-    ]
-    varkw = varkw[0] if varkw else None
-    defaults = [
-        p.default for p in sig.parameters.values()
-        if (p.kind == inspect.Parameter.POSITIONAL_OR_KEYWORD and
-           p.default is not p.empty)
-    ] or None
-    # Ignore any annotations but raise if keyword-only arguments
-    if inspect.Parameter.KEYWORD_ONLY in {p.kind for p in sig.parameters.values()}:
-        raise ValueError("Function has keyword-only arguments, use "
-                         "getfullargspec_no_self() API which can support them")
-
-    return ArgSpec(args, varargs, varkw, defaults)
-
+# .getfullargspec or a bright and shiny .signature.
 
 FullArgSpec = namedtuple('FullArgSpec',
-                         ['args', 'varargs', 'keywords', 'defaults',
+                         ['args', 'varargs', 'varkw', 'defaults',
                           'kwonlyargs', 'kwonlydefaults', 'annotations'])
 
 def getfullargspec_no_self(func):
     """inspect.getfullargspec replacement using inspect.signature.
 
-    inspect.getfullargspec is deprecated in Python 3.5. This is a replacement
-    based on `inspect.signature`.
+    If func is a bound method, do not list the 'self' parameter.
 
     Parameters
     ----------
@@ -353,6 +284,12 @@ def getfullargspec_no_self(func):
     -------
     fullargspec : FullArgSpec(args, varargs, varkw, defaults, kwonlyargs,
                               kwonlydefaults, annotations)
+
+        NOTE: if the first argument of `func` is self, it is *not*, I repeat
+        *not*, included in fullargspec.args.
+        This is done for consistency between inspect.getargspec() under
+        Python 2.x, and inspect.signature() under Python 3.x.
+
     """
     sig = inspect.signature(func)
     args = [
