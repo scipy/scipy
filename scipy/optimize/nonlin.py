@@ -1546,7 +1546,7 @@ def _nonlin_wrapper(name, jac):
     if kwkw_str:
         kwkw_str = kwkw_str + ", "
     if kwonlyargs:
-        raise ValueError('Unexpected signature %s' % sig)
+        raise ValueError('Unexpected signature %s' % signature)
 
     # Construct the wrapper function so that its keyword arguments
     # are visible in pydoc.help etc.
