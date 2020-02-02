@@ -19,7 +19,7 @@ import pytest
 
 import scipy.linalg
 from scipy.linalg import (funm, signm, logm, sqrtm, fractional_matrix_power,
-                          expm, expm_frechet, expm_cond, norm)
+                          expm, expm_frechet, expm_cond, norm, khatri_rao)
 from scipy.linalg import _matfuncs_inv_ssq
 import scipy.linalg._expm_frechet
 
