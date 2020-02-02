@@ -37,7 +37,7 @@ from .linesearch import (line_search_wolfe1, line_search_wolfe2,
                          line_search_wolfe2 as line_search,
                          LineSearchWarning)
 from ._numdiff import approx_derivative
-from scipy._lib._util import getargspec_no_self as _getargspec
+from scipy._lib._util import getfullargspec_no_self as _getfullargspec
 from scipy._lib._util import MapWrapper
 from scipy.optimize._differentiable_functions import ScalarFunction, FD_METHODS
 
@@ -3066,7 +3066,7 @@ def brute(func, ranges, args=(), Ns=20, full_output=0, finish=fmin,
 
     if callable(finish):
         # set up kwargs for `finish` function
-        finish_args = _getargspec(finish).args
+        finish_args = _getfullargspec(finish).args
         finish_kwargs = dict()
         if 'full_output' in finish_args:
             finish_kwargs['full_output'] = 1
