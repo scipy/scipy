@@ -187,9 +187,8 @@ def maximum_flow(csgraph, source, sink):
     matched with the second, first, and third vertex in :math:`V` respectively.
 
     While this solves the maximum bipartite matching problem in general, note
-    that algorithms specialized to that problem will perform better. In
-    particular, :func:`maximum_bipartite_matching` will be faster when its
-    preconditions are met.
+    that algorithms specialized to that problem, such as
+    :func:`maximum_bipartite_matching`, will generally perform better.
 
     This approach can also be used to solve various common generalizations of
     the maximum bipartite matching problem. If, for instance, some vertices can
