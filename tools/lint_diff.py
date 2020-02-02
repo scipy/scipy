@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import os
 import sys
 import subprocess
@@ -38,21 +39,22 @@ def find_branch_point():
     https://stackoverflow.com/questions/1527234/finding-a-branch-point-with-git#4991675
 
     """
-    branch_commits = rev_list('HEAD', 100)
-    master_commits = set(rev_list('master', 100))
+    branch_commits = rev_list('HEAD', 1000)
+    master_commits = set(rev_list('master', 1000))
     for branch_commit in branch_commits:
         if branch_commit in master_commits:
             return branch_commit
 
-    # If a branch split off over 100 commits ago we will fail to find
+    # If a branch split off over 1000 commits ago we will fail to find
     # the ancestor.
-    raise RuntimeError('Failed to find a common ancestor')
+    raise RuntimeError(
+        'Failed to find a common ancestor in the last 1000 commits')
 
 
 def find_diff(sha):
     """Find the diff since the given sha."""
     res = subprocess.run(
-        ['git', 'diff', '--unified=0', sha],
+        ['git', 'diff', '--unified=0', sha, '--', '*.py'],
         capture_output=True,
         text=True,
     )
