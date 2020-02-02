@@ -6,7 +6,8 @@ from __future__ import division, print_function, absolute_import
 
 __all__ = ['expm','cosm','sinm','tanm','coshm','sinhm',
            'tanhm','logm','funm','signm','sqrtm',
-           'expm_frechet', 'expm_cond', 'fractional_matrix_power']
+           'expm_frechet', 'expm_cond', 'fractional_matrix_power',
+           'khatri_rao']
 
 from numpy import (Inf, dot, diag, prod, logical_not, ravel,
         transpose, conjugate, absolute, amax, sign, isfinite, single)
