@@ -668,3 +668,27 @@ def signm(A, disp=True):
         return S0
     else:
         return S0, errest
+
+
+def khatri_rao(a, b):
+    """
+    Khatri-rao product
+
+    Parameters
+    ----------
+    a:  (I, K) ndarray
+        Input array
+    b:  (J, K) ndarray
+        Input array
+
+    Returns
+    -------
+    C:  ((IJ), K) ndarray
+        Khatri-rao product of 'a' and 'b'.
+
+    Notes
+    -----
+    Mathematically:
+
+    A * B = (A_{ij}  \bigotimes B_{ij})_{ij}
+    """
