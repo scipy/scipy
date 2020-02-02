@@ -9,7 +9,7 @@ from pytest import raises as assert_raises
 
 import numpy.ma.testutils as ma_npt
 
-from scipy._lib._util import getargspec_no_self as _getargspec
+from scipy._lib._util import getfullargspec_no_self as _getfullargspec
 from scipy import stats
 
 
@@ -144,9 +144,10 @@ def check_named_args(distfn, x, shape_args, defaults, meths):
     ## Check calling w/ named arguments.
 
     # check consistency of shapes, numargs and _parse signature
-    signature = _getargspec(distfn._parse_args)
+    signature = _getfullargspec(distfn._parse_args)
     npt.assert_(signature.varargs is None)
-    npt.assert_(signature.keywords is None)
+    npt.assert_(signature.varkw is None)
+    npt.assert_(not signature.kwonlyargs)
     npt.assert_(list(signature.defaults) == list(defaults))
 
     shape_argnames = signature.args[:-len(defaults)]  # a, b, loc=0, scale=1

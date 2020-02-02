@@ -117,7 +117,7 @@ import scipy.sparse.linalg
 import scipy.sparse
 from scipy.linalg import get_blas_funcs
 import inspect
-from scipy._lib._util import getargspec_no_self as _getargspec
+from scipy._lib._util import getfullargspec_no_self as _getfullargspec
 from .linesearch import scalar_search_wolfe1, scalar_search_armijo
 
 
@@ -1536,7 +1536,8 @@ def _nonlin_wrapper(name, jac):
     keyword arguments of `nonlin_solve`
 
     """
-    args, varargs, varkw, defaults = _getargspec(jac.__init__)
+    signature = _getfullargspec(jac.__init__)
+    args, varargs, varkw, defaults, kwonlyargs, kwdefaults, _ = signature
     kwargs = list(zip(args[-len(defaults):], defaults))
     kw_str = ", ".join(["%s=%r" % (k, v) for k, v in kwargs])
     if kw_str:
@@ -1544,6 +1545,8 @@ def _nonlin_wrapper(name, jac):
     kwkw_str = ", ".join(["%s=%s" % (k, k) for k, v in kwargs])
     if kwkw_str:
         kwkw_str = kwkw_str + ", "
+    if kwonlyargs:
+        raise ValueError('Unexpected signature %s' % signature)
 
     # Construct the wrapper function so that its keyword arguments
     # are visible in pydoc.help etc.
