@@ -706,3 +706,10 @@ def khatri_rao(a, b):
            [ 8, 15, 54]])
 
     """
+    try:
+        a.shape[1] == b.shape[1]
+    except ValueError:
+        raise ValueError("The number of columns for both arrays should be equal.")
+
+    c = a[..., :, np.newaxis, :] * b[..., np.newaxis, :, :]
+    return c.reshape((-1,) + c.shape[2:])
