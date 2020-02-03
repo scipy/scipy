@@ -715,5 +715,6 @@ def khatri_rao(a, b):
     if not a.shape[1] == b.shape[1]:
         raise ValueError("The number of columns for both arrays should be equal.")
 
+    # c = np.vstack([np.kron(a[:, k], b[:, k]) for k in range(b.shape[1])]).T
     c = a[..., :, np.newaxis, :] * b[..., np.newaxis, :, :]
     return c.reshape((-1,) + c.shape[2:])
