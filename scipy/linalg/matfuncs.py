@@ -709,9 +709,10 @@ def khatri_rao(a, b):
            [ 8, 15, 54]])
 
     """
-    try:
-        a.shape[1] == b.shape[1]
-    except ValueError:
+    if not(a.ndim == 2 and b.ndim == 2):
+        raise ValueError("The both arrays should be 2-dimensional.")
+
+    if not a.shape[1] == b.shape[1]:
         raise ValueError("The number of columns for both arrays should be equal.")
 
     c = a[..., :, np.newaxis, :] * b[..., np.newaxis, :, :]
