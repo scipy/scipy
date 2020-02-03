@@ -556,7 +556,7 @@ def _kpp(data, k):
 
     for i in range(k):
         if i == 0:
-            init[i, :] = data[np.random.randint(dims)]
+            init[i, :] = data[np.random.randint(data.shape[0])]
 
         else:
             D2 = np.array([min(
