@@ -851,6 +851,9 @@ class TestKhatriRao(object):
                                      [3, 8],
                                      [9, 16]]))
 
+        b = khatri_rao(np.empty([2, 2]), np.empty([2, 2]))
+        assert_array_equal(b.shape, (4, 2))
+
     def test_number_of_columns_equality(self):
         with pytest.raises(ValueError):
             a = array([[1, 2, 3],
