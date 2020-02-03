@@ -674,6 +674,7 @@ def signm(A, disp=True):
 def khatri_rao(a, b):
     """
     Khatri-rao product
+    A column-wise Kronecker product of two matrices
 
     Parameters
     ----------
