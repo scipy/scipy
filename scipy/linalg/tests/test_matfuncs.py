@@ -858,3 +858,28 @@ class TestKhatriRao(object):
             b = array([[1, 2],
                        [3, 4]])
             khatri_rao(a, b)
+
+    def test_to_assure_2d_array(self):
+        with pytest.raises(ValueError):
+            # both arrays are 1-D
+            a = array([1, 2, 3])
+            b = array([4, 5, 6])
+            khatri_rao(a, b)
+
+        with pytest.raises(ValueError):
+            # first array is 1-D
+            a = array([1, 2, 3])
+            b = array([
+                [1, 2, 3],
+                [4, 5, 6]
+            ])
+            khatri_rao(a, b)
+
+        with pytest.raises(ValueError):
+            # second array is 1-D
+            a = array([
+                [1, 2, 3],
+                [7, 8, 9]
+            ])
+            b = array([4, 5, 6])
+            khatri_rao(a, b)
