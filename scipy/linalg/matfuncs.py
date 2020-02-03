@@ -697,10 +697,10 @@ def khatri_rao(a, b):
 
     Examples
     --------
-    >>> from numpy import array
-    >>> from scipy.linalg import khatri_rao
-    >>> khatri_rao(array([[1, 2, 3], [4, 5, 6]]),
-    ...            array([[3, 4, 5], [6, 7, 8], [2, 3, 9]]))
+    >>> from scipy import linalg
+    >>> a = np.array([[1, 2, 3], [4, 5, 6]])
+    >>> b = np.array([[3, 4, 5], [6, 7, 8], [2, 3, 9]])
+    >>> linalg.khatri_rao(a, b)
     array([[ 3,  8, 15],
            [ 6, 14, 24],
            [ 2,  6, 27],
