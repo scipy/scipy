@@ -14,10 +14,10 @@ Uses ARPACK: http://www.caam.rice.edu/software/ARPACK/
 # - (s,d,c,z)neupd: single,double,complex,double complex general matrix
 # This wrapper puts the *neupd (general matrix) interfaces in eigs()
 # and the *seupd (symmetric matrix) in eigsh().
-# There is no Hermetian complex/double complex interface.
-# To find eigenvalues of a Hermetian matrix you
+# There is no Hermitian complex/double complex interface.
+# To find eigenvalues of a Hermitian matrix you
 # must use eigs() and not eigsh()
-# It might be desirable to handle the Hermetian case differently
+# It might be desirable to handle the Hermitian case differently
 # and, for example, return real eigenvalues.
 
 # Number of eigenvalues returned and complex eigenvalues
