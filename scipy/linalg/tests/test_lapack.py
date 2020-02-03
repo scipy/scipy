@@ -772,7 +772,7 @@ class TestHetrd(object):
                     - tau[i] * np.outer(v, np.conj(v))
                 Q = np.dot(H, Q)
 
-            # Make matrix fully Hermetian
+            # Make matrix fully Hermitian
             i_lower = np.tril_indices(n, -1)
             A[i_lower] = np.conj(A.T[i_lower])
 
