@@ -2298,13 +2298,35 @@ def test_orcsd_uncsd(dtype_):
     assert_allclose(X, Xc, rtol=0., atol=1e4*np.finfo(dtype_).eps)
 
 
-@pytest.mark.parametrize("dtype", DTYPES)
+def gttrf_to_lu(n, dtype, dlf, df, duf, du2f, ipiv):
+    U = np.diag(df, 0) + np.diag(duf, 1) + np.diag(du2f, 2)
+    L = np.eye(n, dtype=dtype)
+    for i, m in enumerate(dlf):
+        # L is given in a factored form.
+        # See http://www.hpcavf.uclan.ac.uk/softwaredoc/sgi_scsl_html/sgi_html/ch03.html
+        piv = ipiv[i] - 1
+        # right multiply by permutation matrix
+        L[:, [i, piv]] = L[:, [piv, i]]
+        # right multiply by Li, rank-one modification of identity
+        L[:, i] += L[:, i+1]*m
+
+    # one last permutation
+    i, piv = -1, ipiv[-1] - 1
+    # right multiply by final permutation matrix
+    L[:, [i, piv]] = L[:, [piv, i]]
+    return (L, U)
+
+
+@pytest.mark.parametrize("dtype,trans", list(zip(DTYPES, ["N"]*len(DTYPES)))
+                         + list(zip(REAL_DTYPES, ["T"]*len(REAL_DTYPES)))
+                         + list(zip(COMPLEX_DTYPES,
+                                    ["C"]*len(COMPLEX_DTYPES))))
 @pytest.mark.parametrize("fact,dl_d_du_lambda",
                          [("F", lambda dl, d, du: get_lapack_funcs('gttrf',
                                                                    dtype=d.dtype)(dl, d, du)),
                           ("N", lambda dl, d, du: (None, None, None, None,
-                                                   None))])
-def test_gtsvx(dtype, fact, dl_d_du_lambda):
+                                                   None, None))])
+def test_gtsvx(dtype, trans, fact, dl_d_du_lambda):
     """
     This test uses ?gtsvx to solve a random Ax=b system for each dtype.
     It tests that the outputs define an LU matrix, that inputs are unmodified,
@@ -2327,16 +2349,22 @@ def test_gtsvx(dtype, fact, dl_d_du_lambda):
     # generate random solution x
     x = generate_random_dtype_array((n, 2), dtype=dtype)
     # create b from x for equation Ax=b
-    b = A @ x
-    # store a copy of the inputs
+    if trans == 'N':
+        b = A @ x
+    else:
+        b = (A.conj().T) @ x
+
+    # store a copy of the inputs to check they haven't been modified later
     inputs_cpy = [dl.copy(), d.copy(), du.copy(), b.copy()]
 
     # determine dlf, df, duf, du2f, and IPIV from lambda expression
-    dlf_, df_, duf_, du2f_, ipiv_ = dl_d_du_lambda(dl, d, du)
 
-    gtsvx_out = gtsvx(dl, d, du, b, fact=fact, dlf=dlf_, df=df_, duf=duf_,
-                      du2=du2f_, ipiv=ipiv_)
+    dlf_, df_, duf_, du2f_, ipiv_, info_lambda = dl_d_du_lambda(dl, d, du)
+
+    gtsvx_out = gtsvx(dl, d, du, b, fact=fact, trans=trans, dlf=dlf_, df=df_,
+                      duf=duf_, du2=du2f_, ipiv=ipiv_)
     dlf, df, duf, du2f, ipiv, x_soln, rcond, ferr, berr, info = gtsvx_out
+    assert_(info == 0, "?gtsvx info = {}, should be zero".format(info))
 
     # assure that inputs are unmodified
     assert_array_equal(dl, inputs_cpy[0])
@@ -2346,26 +2374,6 @@ def test_gtsvx(dtype, fact, dl_d_du_lambda):
 
     # test that x_soln matches the expected x
     assert_allclose(x, x_soln, rtol=rtol, atol=atol)
-
-    U = np.diag(df, 0) + np.diag(duf, 1) + np.diag(du2f, 2)
-    L = np.eye(n, dtype=dtype)
-
-    for i, m in enumerate(dlf):
-        # L is given in a factored form.
-        # See http://www.hpcavf.uclan.ac.uk/softwaredoc/sgi_scsl_html/sgi_html/ch03.html
-        piv = ipiv[i] - 1
-        # right multiply by permutation matrix
-        L[:, [i, piv]] = L[:, [piv, i]]
-        # right multiply by Li, rank-one modification of identity
-        L[:, i] += L[:, i+1]*m
-
-    # one last permutation
-    i, piv = -1, ipiv[-1] - 1
-    # right multiply by final permutation matrix
-    L[:, [i, piv]] = L[:, [piv, i]]
-
-    # check that the outputs define an LU decomposition of A
-    assert_allclose(A, L @ U, atol=atol, rtol=rtol)
 
     # assert that the outputs are of correct type or shape
     # rcond should be a scalar
@@ -2382,6 +2390,10 @@ def test_gtsvx(dtype, fact, dl_d_du_lambda):
     # test with singular matrix
     # no need to test with fact "F" since ?gttrf already tests for these.
     if fact == "N":
+
+        L, U = gttrf_to_lu(n, dtype, dlf, df, duf, du2f, ipiv)
+        # check that the outputs define an LU decomposition of A
+        assert_allclose(A, L @ U, atol=atol, rtol=rtol)
         d[n-1] = 0
         dl[n-2] = 0
 
@@ -2393,88 +2405,42 @@ def test_gtsvx(dtype, fact, dl_d_du_lambda):
                 "?gtsvx: d[info-1] is {}, not the illegal value"
                 .format(d[info - 1]))
 
-    else:
-        # assuming that someone is using a singular factorization
-        df[n-1] = 0
-        duf[n-2] = 0
+    elif fact == 'F':
+        # assuming that a singular factorization is input
+        df_[-1] = 0
+        duf_[n-2] = 0
+        du2f_[n-3] = 0
 
         gtsvx_out = gtsvx(dl, d, du, b, fact=fact, dlf=dlf_, df=df_, duf=duf_,
                           du2=du2f_, ipiv=ipiv_)
         dlf, df, duf, du2f, ipiv, x_soln, rcond, ferr, berr, info = gtsvx_out
         # info should not be zero and should provide index of illegal value
-        assert_(df[info - 1] == 0,
-                "?gtsvx: df[info-1] is {}, not the illegal value"
-                .format(d[info - 1]))
-
-    if dtype in REAL_DTYPES:
-        trans = "T"
-    else:
-        trans = "C"
-    A_trans = A.conj().T
-    # Test with transposed matricies
-    # restore these
-    du = inputs_cpy[2]
-    d = inputs_cpy[1]
-    dl = inputs_cpy[0]
-
-    b = A_trans@x
-    gtsvx_out = gtsvx(dl, d, du, b, trans=trans)
-    dlf, df, duf, du2f, ipiv, x_soln, rcond, ferr, berr, info = gtsvx_out
-    # test that x_soln matches the expected x
-    assert_allclose(x, x_soln, rtol=rtol, atol=atol)
-
-    U = np.diag(df, 0) + np.diag(duf, 1) + np.diag(du2f, 2)
-    L = np.eye(n, dtype=dtype)
-
-    for i, m in enumerate(dlf):
-        # L is given in a factored form.
-        # See http://www.hpcavf.uclan.ac.uk/softwaredoc/sgi_scsl_html/sgi_html/ch03.html
-        piv = ipiv[i] - 1
-        # right multiply by permutation matrix
-        L[:, [i, piv]] = L[:, [piv, i]]
-        # right multiply by Li, rank-one modification of identity
-        L[:, i] += L[:, i+1]*m
-
-    # one last permutation
-    i, piv = -1, ipiv[-1] - 1
-    # right multiply by final permutation matrix
-    L[:, [i, piv]] = L[:, [piv, i]]
-
-    # check that the outputs define an LU decomposition of A
-    assert_allclose(A, L @ U, atol=atol, rtol=rtol)
+        assert_(0 <= info < n, "incorrect info for singular matrix")
+        assert_(df_[info - 1] == 0,
+                "?gtsvx: df_[info-1] is {}, not the illegal value"
+                .format(df_[info - 1]))
 
 
-@pytest.mark.parametrize("du,d,dl,b,x", [(np.array([2.1, -1.0, 1.9, 8.0]),
-                                          np.array([3.0, 2.3, -5.0, -0.9,
-                                                    7.1]),
-                                          np.array([3.4, 3.6, 7.0, -6.0]),
-                                          np.array([[2.7, 6.6],
-                                                    [-.5, 10.8],
-                                                    [2.6, -3.2],
-                                                    [.6, -11.2],
-                                                    [2.7, 19.1]]),
-                                          np.array([[-4, 5],
-                                                    [7, -4],
-                                                    [3, -3],
-                                                    [-4, -2],
-                                                    [-3, 1]])),
-                                         (np.array([2 - 1j, 2 + 1j, -1 + 1j,
-                                                    1 - 1j]),
-                                          np.array([-1.3 + 1.3j, -1.3 + 1.3j,
-                                                    -1.3 + 3.3j, -.3 + 4.3j,
-                                                    -3.3 + 1.3j]),
-                                          np.array([1 - 2j, 1 + 1j, 2 - 3j,
-                                                    1 + 1j]),
-                                          np.array([[2.4 - 5j, 2.7 + 6.9j],
-                                                    [3.4 + 18.2j, -6.9 - 5.3j],
-                                                    [-14.7 + 9.7j, -6 - .6j],
-                                                    [31.9 - 7.7j, -3.9 + 9.3j],
-                                                    [-1 + 1.6j, -3 + 12.2j]]),
-                                          np.array([[1 + 1j,  2 - 1j],
-                                                    [3 - 1j, 1 + 2j],
-                                                    [4 + 5j, -1 + 1j],
-                                                    [-1 - 2j, 2 + 1j],
-                                                    [1 - 1j, 2 - 2j]]))])
+@pytest.mark.parametrize("du,d,dl,b,x",
+                         [(np.array([2.1, -1.0, 1.9, 8.0]),
+                           np.array([3.0, 2.3, -5.0, -0.9, 7.1]),
+                           np.array([3.4, 3.6, 7.0, -6.0]),
+                           np.array([[2.7, 6.6], [-.5, 10.8], [2.6, -3.2],
+                                     [.6, -11.2], [2.7, 19.1]]),
+                           np.array([[-4, 5], [7, -4], [3, -3], [-4, -2],
+                                     [-3, 1]])),
+                          (np.array([2 - 1j, 2 + 1j, -1 + 1j, 1 - 1j]),
+                           np.array([-1.3 + 1.3j, -1.3 + 1.3j, -1.3 + 3.3j,
+                                     -.3 + 4.3j, -3.3 + 1.3j]),
+                           np.array([1 - 2j, 1 + 1j, 2 - 3j, 1 + 1j]),
+                           np.array([[2.4 - 5j, 2.7 + 6.9j],
+                                     [3.4 + 18.2j, -6.9 - 5.3j],
+                                     [-14.7 + 9.7j, -6 - .6j],
+                                     [31.9 - 7.7j, -3.9 + 9.3j],
+                                     [-1 + 1.6j, -3 + 12.2j]]),
+                           np.array([[1 + 1j,  2 - 1j], [3 - 1j, 1 + 2j],
+                                     [4 + 5j, -1 + 1j], [-1 - 2j, 2 + 1j],
+                                     [1 - 1j, 2 - 2j]]))])
 def test_gtsvx_NAG(du, d, dl, b, x):
     # Test to ensure wrapper is consistent with NAG manual
     # example problems: real (f07cbf) and complex (f07cpf)
