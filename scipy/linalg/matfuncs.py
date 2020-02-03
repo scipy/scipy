@@ -695,6 +695,10 @@ def khatri_rao(a, b):
 
         (A_{ij}  \bigotimes B_{ij})_{ij}
 
+    See Also
+    --------
+        scipy.linalg.kron : Kronecker product
+
     Examples
     --------
     >>> from scipy import linalg
