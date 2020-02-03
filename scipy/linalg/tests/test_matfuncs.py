@@ -844,12 +844,12 @@ class TestKhatriRao(object):
 
     def test_basic(self):
         a = khatri_rao(array([[1, 2], [3, 4]]),
-                       array([[1, 2], [3, 4]]))
+                       array([[5, 6], [7, 8]]))
 
-        assert_array_equal(a, array([[1, 4],
-                                     [3, 8],
-                                     [3, 8],
-                                     [9, 16]]))
+        assert_array_equal(a, array([[5, 12],
+                                     [7, 16],
+                                     [15, 24],
+                                     [21, 32]]))
 
         b = khatri_rao(np.empty([2, 2]), np.empty([2, 2]))
         assert_array_equal(b.shape, (4, 2))
