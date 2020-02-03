@@ -317,6 +317,24 @@ def test_kde_integer_input():
     y_expected = [0.13480721, 0.18222869, 0.19514935, 0.18222869, 0.13480721]
     assert_array_almost_equal(kde(x1), y_expected, decimal=6)
 
+@pytest.mark.parametrize("test_type", (np.float64, np.float32, np.float128))
+def test_kde_output_dtype(test_type):
+    # test that if input is floating, we maintain the datatype
+    x1 = np.arange(5)
+    k = stats.kde.gaussian_kde(x1)
+    points = np.arange(5, dtype=test_type)
+    result = k(points)
+    assert result.dtype == test_type
+
+def test_kde_output_dtype():
+    # test that kde result is floating if input is not floating
+    test_type = np.int
+    x1 = np.arange(5)
+    k = stats.kde.gaussian_kde(x1)
+    points = np.arange(5, dtype=test_type)
+    result = k(points)
+    assert result.dtype == np.float64
+
 
 def test_pdf_logpdf():
     np.random.seed(1)
