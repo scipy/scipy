@@ -2301,14 +2301,14 @@ def test_orcsd_uncsd(dtype_):
 @pytest.mark.parametrize("dtype", DTYPES)
 @pytest.mark.parametrize("fact,dl_d_du_lambda",
                          [("F", lambda dl, d, du: get_lapack_funcs('gttrf',
-                                                                   dtype=d.dtype)),
+                                                                   dtype=d.dtype)(dl, d, du)),
                           ("N", lambda dl, d, du: (None, None, None, None,
                                                    None))])
 def test_gtsvx(dtype, fact, dl_d_du_lambda):
     """
     This test uses ?gtsvx to solve a random Ax=b system for each dtype.
     It tests that the outputs define an LU matrix, that inputs are unmodified,
-    transposal options, incompatible shapes, singular matricies, and
+    transposal options, incompatible shapes, singular matrices, and
     singular factorizations. It parametrizes DTYPES and the fact value along
     with the fact related inputs.
     """
@@ -2318,18 +2318,17 @@ def test_gtsvx(dtype, fact, dl_d_du_lambda):
     atol = 100 * np.finfo(dtype).eps
     # obtain routine
     gtsvx = get_lapack_funcs('gtsvx', dtype=dtype)
-    # n is the length diagonal of A
+    # Generate random tridiagonal matrix A
     n = 10
-    # generate facots dl, d, and du.
     dl = generate_random_dtype_array((n-1,), dtype=dtype)
     d = generate_random_dtype_array((n,), dtype=dtype)
     du = generate_random_dtype_array((n-1,), dtype=dtype)
-    # create A from these diagonals
     A = np.diag(dl, -1) + np.diag(d) + np.diag(du, 1)
     # generate random solution x
     x = generate_random_dtype_array((n, 2), dtype=dtype)
     # create b from x for equation Ax=b
     b = A @ x
+    # store a copy of the inputs
     inputs_cpy = [dl.copy(), d.copy(), du.copy(), b.copy()]
 
     # determine dlf, df, duf, du2f, and IPIV from lambda expression
@@ -2338,7 +2337,6 @@ def test_gtsvx(dtype, fact, dl_d_du_lambda):
     gtsvx_out = gtsvx(dl, d, du, b, fact=fact, dlf=dlf_, df=df_, duf=duf_,
                       du2=du2f_, ipiv=ipiv_)
     dlf, df, duf, du2f, ipiv, x_soln, rcond, ferr, berr, info = gtsvx_out
-    # note that these are split into multiple lines since it was very long
 
     # assure that inputs are unmodified
     assert_array_equal(dl, inputs_cpy[0])
@@ -2382,7 +2380,7 @@ def test_gtsvx(dtype, fact, dl_d_du_lambda):
             .format(berr.shape[0], b.shape[1]))
 
     # test with singular matrix
-    # no need to test with fact "F" since ?pttrf already tests for these.
+    # no need to test with fact "F" since ?gttrf already tests for these.
     if fact == "N":
         d[n-1] = 0
         dl[n-2] = 0
@@ -2424,6 +2422,26 @@ def test_gtsvx(dtype, fact, dl_d_du_lambda):
     dlf, df, duf, du2f, ipiv, x_soln, rcond, ferr, berr, info = gtsvx_out
     # test that x_soln matches the expected x
     assert_allclose(x, x_soln, rtol=rtol, atol=atol)
+
+    U = np.diag(df, 0) + np.diag(duf, 1) + np.diag(du2f, 2)
+    L = np.eye(n, dtype=dtype)
+
+    for i, m in enumerate(dlf):
+        # L is given in a factored form.
+        # See http://www.hpcavf.uclan.ac.uk/softwaredoc/sgi_scsl_html/sgi_html/ch03.html
+        piv = ipiv[i] - 1
+        # right multiply by permutation matrix
+        L[:, [i, piv]] = L[:, [piv, i]]
+        # right multiply by Li, rank-one modification of identity
+        L[:, i] += L[:, i+1]*m
+
+    # one last permutation
+    i, piv = -1, ipiv[-1] - 1
+    # right multiply by final permutation matrix
+    L[:, [i, piv]] = L[:, [piv, i]]
+
+    # check that the outputs define an LU decomposition of A
+    assert_allclose(A, L @ U, atol=atol, rtol=rtol)
 
 
 @pytest.mark.parametrize("du,d,dl,b,x", [(np.array([2.1, -1.0, 1.9, 8.0]),
