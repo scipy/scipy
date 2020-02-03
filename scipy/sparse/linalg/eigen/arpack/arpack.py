@@ -908,7 +908,7 @@ class SpLuInv(LinearOperator):
     """
     SpLuInv:
        helper class to repeatedly solve M*x=b
-       using a sparse LU-decopposition of M
+       using a sparse LU-decomposition of M
     """
     def __init__(self, M):
         self.M_lu = splu(M)
