@@ -678,9 +678,9 @@ def khatri_rao(a, b):
 
     Parameters
     ----------
-    a:  (I, K) ndarray
+    a:  (n, k) arraylike
         Input array
-    b:  (J, K) ndarray
+    b:  (m, k) arraylike
         Input array
 
     Returns
