@@ -7,7 +7,6 @@ from warnings import warn
 import operator
 
 import numpy as np
-from scipy._lib.six import zip as izip, xrange
 from scipy._lib._util import _prune_array
 
 from .base import spmatrix, isspmatrix, SparseEfficiencyWarning
@@ -21,7 +20,7 @@ from ._index import IndexMixin
 from .sputils import (upcast, upcast_char, to_native, isdense, isshape,
                       getdtype, isscalarlike, isintlike, get_index_dtype,
                       downcast_intp_index, get_sum_dtype, check_shape,
-                      matrix, asmatrix)
+                      matrix, asmatrix, is_pydata_spmatrix)
 
 
 class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
@@ -232,6 +231,9 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         # Dense other.
         elif isdense(other):
             return self.todense() == other
+        # Pydata sparse other.
+        elif is_pydata_spmatrix(other):
+            return NotImplemented
         # Sparse other.
         elif isspmatrix(other):
             warn("Comparing sparse matrices using == is inefficient, try using"
@@ -267,6 +269,9 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         # Dense other.
         elif isdense(other):
             return self.todense() != other
+        # Pydata sparse other.
+        elif is_pydata_spmatrix(other):
+            return NotImplemented
         # Sparse other.
         elif isspmatrix(other):
             # TODO sparse broadcasting
@@ -706,7 +711,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
 
         M, N = self._swap(self.shape)
         start, stop, step = idx.indices(M)
-        M = len(xrange(start, stop, step))
+        M = len(range(start, stop, step))
         new_shape = self._swap((M, N))
         if M == 0:
             return self.__class__(new_shape)
@@ -766,7 +771,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
 
         M, N = self._swap(self.shape)
         start, stop, step = idx.indices(N)
-        N = len(xrange(start, stop, step))
+        N = len(range(start, stop, step))
         if N == 0:
             return self.__class__(self._swap((M, N)))
         if step == 1:
@@ -961,7 +966,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         ui_indptr = np.append(ui_indptr, len(j))
         new_nnzs = np.diff(ui_indptr)
         prev = 0
-        for c, (ii, js, je) in enumerate(izip(ui, ui_indptr, ui_indptr[1:])):
+        for c, (ii, js, je) in enumerate(zip(ui, ui_indptr, ui_indptr[1:])):
             # old entries
             start = self.indptr[prev]
             stop = self.indptr[ii]

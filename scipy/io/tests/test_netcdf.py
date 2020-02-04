@@ -11,12 +11,11 @@ from glob import glob
 from contextlib import contextmanager
 
 import numpy as np
-from numpy.testing import assert_, assert_allclose, assert_equal
+from numpy.testing import (assert_, assert_allclose, assert_equal,
+                           suppress_warnings)
 from pytest import raises as assert_raises
 
 from scipy.io.netcdf import netcdf_file, IS_PYPY
-
-from scipy._lib._numpy_compat import suppress_warnings
 from scipy._lib._tmpdirs import in_tempdir
 
 TEST_DATA_PATH = pjoin(dirname(__file__), 'data')

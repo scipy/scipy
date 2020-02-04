@@ -21,17 +21,17 @@ subroutine <prefix>pttrf(n, d, e, info)
     ! definite tridiagonal matrix A.  The factorization may also be regarded as ! having the form A = U**T*D*U.
 
     callstatement (*f2py_func)(&n, d, e, &info)
-    callprotoargument int*, <ctype>*, <ctype>*, int*
+    callprotoargument int*, <ctypereal>*, <ctype>*, int*
 
     integer intent(hide), depend(d), check(n > 1) :: n = len(d)
-    <ftype> intent(in, out, copy), dimension(n) :: d
+    <ftypereal> intent(in, out, copy), dimension(n) :: d
     <ftype> intent(in, out, copy), dimension(n - 1), depend(n) :: e
     integer intent(out) :: info
 
 end subroutine <prefix>pttrf
 
 
-subroutine <prefix>pttrs(n, nrhs, d, e, b, ldb, info)
+subroutine <prefix2>pttrs(n, nrhs, d, e, b, ldb, info)
     ! x, info  = pttrs(d, e, b, overwrite_b=0)
     !
     ! DPTTRS solves a tridiagonal system of the form
@@ -44,14 +44,41 @@ subroutine <prefix>pttrs(n, nrhs, d, e, b, ldb, info)
     ! are N by NRHS matrices.
 
     callstatement (*f2py_func)(&n, &nrhs, d, e, b, &ldb, &info)
-    callprotoargument int*, int*, <ctype>*, <ctype>*, <ctype>*, int*, int*
+    callprotoargument int*, int*, <ctype2>*, <ctype2>*, <ctype2>*, int*, int*
 
     integer intent(hide), depend(d), check(n > 1) :: n = len(d)
-    <ftype> intent(in), dimension(n) :: d
-    <ftype> intent(in), depend(n), dimension(n - 1) :: e
-    <ftype> intent(in, out, copy), dimension(ldb, nrhs) :: b
+    <ftype2> intent(in), dimension(n) :: d
+    <ftype2> intent(in), depend(n), dimension(n - 1) :: e
+    <ftype2> intent(in, out, copy, out=x), dimension(ldb, nrhs) :: b
     integer intent(hide), depend(b) :: ldb = MAX(1, shape(b, 0))
-    integer intent(hide), depend(b), check(nrhs > 0) :: nrhs = shape(b, 1)
+    integer intent(hide), depend(b)  :: nrhs = MAX(1, shape(b, 1))
     integer intent(out) :: info
 
-end subroutine<prefix>pttrs
+end subroutine<prefix2>pttrs
+
+
+subroutine <prefix2c>pttrs(uplo, n, nrhs, d, e, b, ldb, info)
+    ! x, info  = pttrs(d, e, b, uplo='L', overwrite_b=0)
+    !
+    ! ?PTTRS solves a tridiagonal system of the form
+    !
+    !     A * X = B
+    !
+    ! using the L*D*L**T factorization of A computed by DPTTRF.  D is a
+    ! diagonal matrix specified in the vector D, L is a unit bidiagonal
+    ! matrix whose subdiagonal is specified in the vector E, and X and B
+    ! are N by NRHS matrices.
+
+    callstatement (*f2py_func)(uplo, &n, &nrhs, d, e, b, &ldb, &info)
+    callprotoargument char*, int*, int*, <ctype2>*, <ctype2c>*, <ctype2c>*, int*, int*
+
+    character optional, check(*uplo=='U'||*uplo=='L') :: uplo = 'L'
+    integer intent(hide), depend(d), check(n > 1) :: n = len(d)
+    <ftype2> intent(in), dimension(n) :: d
+    <ftype2c> intent(in), depend(n), dimension(n - 1) :: e
+    <ftype2c> intent(in, out, copy, out=x), dimension(ldb, nrhs) :: b
+    integer intent(hide), depend(b) :: ldb = MAX(1, shape(b, 0))
+    integer intent(hide), depend(b)  :: nrhs = MAX(1, shape(b, 1))
+    integer intent(out) :: info
+
+end subroutine<prefix2c>pttrs

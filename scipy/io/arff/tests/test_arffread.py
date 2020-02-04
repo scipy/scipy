@@ -4,12 +4,8 @@ import datetime
 import os
 import sys
 from os.path import join as pjoin
-from scipy._lib.six import xrange
 
-if sys.version_info[0] >= 3:
-    from io import StringIO
-else:
-    from cStringIO import StringIO
+from io import StringIO
 
 import numpy as np
 
@@ -73,12 +69,10 @@ class TestData(object):
 
     def test_filelike(self):
         # Test reading from file-like object (StringIO)
-        f1 = open(test1)
-        data1, meta1 = loadarff(f1)
-        f1.close()
-        f2 = open(test1)
-        data2, meta2 = loadarff(StringIO(f2.read()))
-        f2.close()
+        with open(test1) as f1:
+            data1, meta1 = loadarff(f1)
+        with open(test1) as f2:
+            data2, meta2 = loadarff(StringIO(f2.read()))
         assert_(data1 == data2)
         assert_(repr(meta1) == repr(meta2))
 
@@ -122,9 +116,8 @@ class TestNoData(object):
 class TestHeader(object):
     def test_type_parsing(self):
         # Test parsing type of attribute from their value.
-        ofile = open(test2)
-        rel, attrs = read_header(ofile)
-        ofile.close()
+        with open(test2) as ofile:
+            rel, attrs = read_header(ofile)
 
         expected = ['numeric', 'numeric', 'numeric', 'numeric', 'numeric',
                     'numeric', 'string', 'string', 'nominal', 'nominal']
@@ -135,17 +128,15 @@ class TestHeader(object):
     def test_badtype_parsing(self):
         # Test parsing wrong type of attribute from their value.
         def badtype_read():
-            ofile = open(test3)
-            rel, attrs = read_header(ofile)
-            ofile.close()
+            with open(test3) as ofile:
+                _, _ = read_header(ofile)
 
         assert_raises(ParseArffError, badtype_read)
 
     def test_fullheader1(self):
         # Parsing trivial header with nothing.
-        ofile = open(test1)
-        rel, attrs = read_header(ofile)
-        ofile.close()
+        with open(test1) as ofile:
+            rel, attrs = read_header(ofile)
 
         # Test relation
         assert_(rel == 'test1')
@@ -161,9 +152,8 @@ class TestHeader(object):
         assert_(attrs[4].values == ('class0', 'class1', 'class2', 'class3'))
 
     def test_dateheader(self):
-        ofile = open(test7)
-        rel, attrs = read_header(ofile)
-        ofile.close()
+        with open(test7) as ofile:
+            rel, attrs = read_header(ofile)
 
         assert_(rel == 'test7')
 
@@ -186,9 +176,8 @@ class TestHeader(object):
 
     def test_dateheader_unsupported(self):
         def read_dateheader_unsupported():
-            ofile = open(test8)
-            rel, attrs = read_header(ofile)
-            ofile.close()
+            with open(test8) as ofile:
+                _, _ = read_header(ofile)
 
         assert_raises(ValueError, read_dateheader_unsupported)
 
@@ -326,7 +315,7 @@ class TestRelationalAttributeLong(object):
     def test_data(self):
         dtype_instance = [('attr_number', np.float_)]
 
-        expected = np.array([(n,) for n in xrange(30000)],
+        expected = np.array([(n,) for n in range(30000)],
                             dtype=dtype_instance)
 
         assert_array_equal(self.data["attr_relational"][0],

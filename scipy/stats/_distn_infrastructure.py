@@ -4,7 +4,6 @@
 #
 from __future__ import division, print_function, absolute_import
 
-from scipy._lib.six import string_types, exec_, PY2
 from scipy._lib._util import getargspec_no_self as _getargspec
 
 import sys
@@ -37,12 +36,6 @@ from numpy import (arange, putmask, ravel, ones, shape, ndarray, zeros, floor,
 import numpy as np
 
 from ._constants import _XMAX
-
-if PY2:
-    instancemethod = types.MethodType
-else:
-    def instancemethod(func, obj, cls):
-        return types.MethodType(func, obj)
 
 
 # These are the docstring parts used for substitution in specific
@@ -637,7 +630,7 @@ class rv_generic(object):
 
         if self.shapes:
             # sanitize the user-supplied shapes
-            if not isinstance(self.shapes, string_types):
+            if not isinstance(self.shapes, str):
                 raise TypeError('shapes must be a string.')
 
             shapes = self.shapes.replace(',', ' ').split()
@@ -687,12 +680,10 @@ class rv_generic(object):
                    locscale_out=locscale_out,
                    )
         ns = {}
-        exec_(parse_arg_template % dct, ns)
+        exec(parse_arg_template % dct, ns)
         # NB: attach to the instance, not class
         for name in ['_parse_args', '_parse_args_stats', '_parse_args_rvs']:
-            setattr(self, name,
-                    instancemethod(ns[name], self, self.__class__)
-                    )
+            setattr(self, name, types.MethodType(ns[name], self))
 
         self.shapes = ', '.join(shapes) if shapes else None
         if not hasattr(self, 'numargs'):
@@ -2293,7 +2284,7 @@ class rv_continuous(rv_generic):
 
         optimizer = kwds.pop('optimizer', optimize.fmin)
         # convert string to function in scipy.optimize
-        if not callable(optimizer) and isinstance(optimizer, string_types):
+        if not callable(optimizer) and isinstance(optimizer, str):
             if not optimizer.startswith('fmin_'):
                 optimizer = "fmin_"+optimizer
             if optimizer == 'fmin_':
@@ -2859,14 +2850,12 @@ class rv_discrete(rv_generic):
         # correct nin for generic moment vectorization
         _vec_generic_moment = vectorize(_drv2_moment, otypes='d')
         _vec_generic_moment.nin = self.numargs + 2
-        self.generic_moment = instancemethod(_vec_generic_moment,
-                                             self, rv_discrete)
+        self.generic_moment = types.MethodType(_vec_generic_moment, self)
 
         # correct nin for ppf vectorization
         _vppf = vectorize(_drv2_ppfsingle, otypes='d')
         _vppf.nin = self.numargs + 2
-        self._ppfvec = instancemethod(_vppf,
-                                      self, rv_discrete)
+        self._ppfvec = types.MethodType(_vppf, self)
 
         # now that self.numargs is defined, we can adjust nin
         self._cdfvec.nin = self.numargs + 1
@@ -3236,8 +3225,8 @@ class rv_discrete(rv_generic):
         cond = cond0 & cond1
         output = valarray(shape(cond), value=self.badvalue, typecode='d')
         # output type 'd' to handle nin and inf
-        place(output, (q == 0)*(cond == cond), _a-1)
-        place(output, cond2, _b)
+        place(output, (q == 0)*(cond == cond), _a-1 + loc)
+        place(output, cond2, _b + loc)
         if np.any(cond):
             goodargs = argsreduce(cond, *((q,)+args+(loc,)))
             loc, goodargs = goodargs[-1], goodargs[:-1]

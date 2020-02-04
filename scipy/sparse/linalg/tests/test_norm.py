@@ -8,7 +8,6 @@ from numpy.linalg import norm as npnorm
 from numpy.testing import assert_equal, assert_allclose
 from pytest import raises as assert_raises
 
-from scipy._lib._version import NumpyVersion
 import scipy.sparse
 from scipy.sparse.linalg import norm as spnorm
 

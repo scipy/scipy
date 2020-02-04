@@ -1,8 +1,10 @@
 {
     "_cospi": {
+	"cephes.h": {
+	    "cospi": "d->d"
+	},
         "_trig.pxd": {
-            "ccospi": "D->D",
-            "dcospi": "d->d"
+            "ccospi": "D->D"
         }
     },
     "_ellip_harm": {
@@ -44,9 +46,11 @@
         }
     },
     "_sinpi": {
+	"cephes.h": {
+	    "sinpi": "d->d"
+	},
         "_trig.pxd": {
-            "csinpi": "D->D",
-            "dsinpi": "d->d"
+            "csinpi": "D->D"
         }
     },
     "_spherical_in": {
@@ -144,7 +148,7 @@
             "bdtr_unsafe": "ddd->d"
         },
         "cephes.h": {
-            "bdtr": "iid->d"
+            "bdtr": "did->d"
         }
     },
     "bdtrc": {
@@ -152,7 +156,7 @@
             "bdtrc_unsafe": "ddd->d"
         },
         "cephes.h": {
-            "bdtrc": "iid->d"
+            "bdtrc": "did->d"
         }
     },
     "bdtri": {
@@ -160,7 +164,7 @@
             "bdtri_unsafe": "ddd->d"
         },
         "cephes.h": {
-            "bdtri": "iid->d"
+            "bdtri": "did->d"
         }
     },
     "bdtrik": {
@@ -347,6 +351,11 @@
     "ellipk": {
 	"_ellipk.pxd": {
 	    "ellipk": "d->d"
+	}
+    },
+    "_factorial": {
+	"_factorial.pxd": {
+	    "_factorial": "d->d"
 	}
     },
     "entr": {

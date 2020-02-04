@@ -31,6 +31,7 @@ has_umfpack = True
 has_cholmod = True
 try:
     from sksparse.cholmod import cholesky as cholmod
+    from sksparse.cholmod import analyze as cholmod_analyze
 except ImportError:
     has_cholmod = False
 try:
@@ -87,7 +88,14 @@ def _get_solver(M, sparse=False, lstsq=False, sym_pos=True,
                 def solve(r, sym_pos=False):
                     return sps.linalg.lsqr(M, r)[0]
             elif cholesky:
-                solve = cholmod(M)
+                try:
+                    # Will raise an exception in the first call,
+                    # or when the matrix changes due to a new problem
+                    _get_solver.cholmod_factor.cholesky_inplace(M)
+                except Exception:
+                    _get_solver.cholmod_factor = cholmod_analyze(M)
+                    _get_solver.cholmod_factor.cholesky_inplace(M)
+                solve = _get_solver.cholmod_factor
             else:
                 if has_umfpack and sym_pos:
                     solve = sps.linalg.factorized(M)
@@ -218,29 +226,20 @@ def _get_delta(A, b, c, x, y, z, tau, kappa, gamma, eta, sparse=False,
         # Reference [4] Eq. 8.6
         rhatp = eta(gamma) * r_P
         rhatd = eta(gamma) * r_D
-        rhatg = np.array(eta(gamma) * r_G).reshape((1,))
+        rhatg = eta(gamma) * r_G
 
         # Reference [4] Eq. 8.7
         rhatxs = gamma * mu - x * z
-        rhattk = np.array(gamma * mu - tau * kappa).reshape((1,))
+        rhattk = gamma * mu - tau * kappa
 
         if i == 1:
             if ip:  # if the correction is to get "initial point"
                 # Reference [4] Eq. 8.23
                 rhatxs = ((1 - alpha) * gamma * mu -
                           x * z - alpha**2 * d_x * d_z)
-                rhattk = np.array(
-                    (1 -
-                     alpha) *
-                    gamma *
-                    mu -
-                    tau *
-                    kappa -
-                    alpha**2 *
-                    d_tau *
-                    d_kappa).reshape(
-                    (1,
-                     ))
+                rhattk = ((1 - alpha) * gamma * mu -
+                    tau * kappa -
+                    alpha**2 * d_tau * d_kappa)
             else:  # if the correction is for "predictor-corrector"
                 # Reference [4] Eq. 8.13
                 rhatxs -= d_x * d_z

@@ -14,10 +14,10 @@ from numpy import (atleast_1d, poly, polyval, roots, real, asarray,
                    zeros, sinh, append, concatenate, prod, ones, full, array,
                    mintypecode)
 from numpy.polynomial.polynomial import polyval as npp_polyval
+from numpy.polynomial.polynomial import polyvalfromroots
 
 from scipy import special, optimize, fft as sp_fft
 from scipy.special import comb, factorial
-from scipy._lib._numpy_compat import polyvalfromroots
 
 
 __all__ = ['findfreqs', 'freqs', 'freqz', 'tf2zpk', 'zpk2tf', 'normalize',
@@ -272,7 +272,7 @@ def freqs_zpk(z, p, k, worN=200):
     return w, h
 
 
-def freqz(b, a=1, worN=512, whole=False, plot=None, fs=2*pi):
+def freqz(b, a=1, worN=512, whole=False, plot=None, fs=2*pi, include_nyquist=False):
     """
     Compute the frequency response of a digital filter.
 
@@ -301,7 +301,7 @@ def freqz(b, a=1, worN=512, whole=False, plot=None, fs=2*pi):
         If a single integer, then compute at that many frequencies (default is
         N=512). This is a convenient alternative to::
 
-            np.linspace(0, fs if whole else fs/2, N, endpoint=False)
+            np.linspace(0, fs if whole else fs/2, N, endpoint=include_nyquist)
 
         Using a number that is fast for FFT computations can result in
         faster computations (see Notes).
@@ -321,6 +321,11 @@ def freqz(b, a=1, worN=512, whole=False, plot=None, fs=2*pi):
         radians/sample (so w is from 0 to pi).
 
         .. versionadded:: 1.2.0
+    include_nyquist : bool, optional
+        If `whole` is False and `worN` is an integer, setting `include_nyquist` to True
+        will include the last frequency (Nyquist frequency) and is otherwise ignored.
+
+        .. versionadded:: 1.5.0
 
     Returns
     -------
@@ -436,7 +441,8 @@ def freqz(b, a=1, worN=512, whole=False, plot=None, fs=2*pi):
         if N < 0:
             raise ValueError('worN must be nonnegative, got %s' % (N,))
         lastpoint = 2 * pi if whole else pi
-        w = np.linspace(0, lastpoint, N, endpoint=False)
+        # if include_nyquist is true and whole is false, w should include end point
+        w = np.linspace(0, lastpoint, N, endpoint=include_nyquist and not whole)
         if (a.size == 1 and N >= b.shape[0] and
                 sp_fft.next_fast_len(N) == N and
                 (b.ndim == 1 or (b.shape[-1] == 1))):
@@ -2046,6 +2052,16 @@ def bilinear(b, a, fs=1.0):
     return normalize(bprime, aprime)
 
 
+def _validate_gpass_gstop(gpass, gstop):
+
+    if gpass <= 0.0:
+        raise ValueError("gpass should be larger than 0.0")
+    elif gstop <= 0.0:
+        raise ValueError("gstop should be larger than 0.0")
+    elif gpass > gstop:
+        raise ValueError("gpass should be smaller than gstop")
+
+
 def iirdesign(wp, ws, gpass, gstop, analog=False, ftype='ellip', output='ba',
               fs=None):
     """Complete IIR digital and analog filter design.
@@ -2159,6 +2175,8 @@ def iirdesign(wp, ws, gpass, gstop, analog=False, ftype='ellip', output='ba',
     except IndexError:
         raise ValueError(("%s does not have order selection. Use "
                           "iirfilter function.") % ftype)
+
+    _validate_gpass_gstop(gpass, gstop)
 
     wp = atleast_1d(wp)
     ws = atleast_1d(ws)
@@ -2343,6 +2361,9 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
     # Pre-warp frequencies for digital filter design
     if not analog:
         if numpy.any(Wn <= 0) or numpy.any(Wn >= 1):
+            if fs is not None:
+                raise ValueError("Digital filter critical frequencies "
+                                 "must be 0 < Wn < fs/2 (fs={} -> fs/2={})".format(fs, fs/2))
             raise ValueError("Digital filter critical frequencies "
                              "must be 0 < Wn < 1")
         fs = 2.0
@@ -3418,6 +3439,9 @@ def band_stop_obj(wp, ind, passb, stopb, gpass, gstop, type):
         Filter order (possibly non-integer).
 
     """
+
+    _validate_gpass_gstop(gpass, gstop)
+
     passbC = passb.copy()
     passbC[ind] = wp
     nat = (stopb * (passbC[0] - passbC[1]) /
@@ -3522,6 +3546,9 @@ def buttord(wp, ws, gpass, gstop, analog=False, fs=None):
     >>> plt.show()
 
     """
+
+    _validate_gpass_gstop(gpass, gstop)
+
     wp = atleast_1d(wp)
     ws = atleast_1d(ws)
     if fs is not None:
@@ -3690,6 +3717,9 @@ def cheb1ord(wp, ws, gpass, gstop, analog=False, fs=None):
     >>> plt.show()
 
     """
+
+    _validate_gpass_gstop(gpass, gstop)
+
     wp = atleast_1d(wp)
     ws = atleast_1d(ws)
     if fs is not None:
@@ -3830,6 +3860,9 @@ def cheb2ord(wp, ws, gpass, gstop, analog=False, fs=None):
     >>> plt.show()
 
     """
+
+    _validate_gpass_gstop(gpass, gstop)
+
     wp = atleast_1d(wp)
     ws = atleast_1d(ws)
     if fs is not None:
@@ -3990,6 +4023,9 @@ def ellipord(wp, ws, gpass, gstop, analog=False, fs=None):
     >>> plt.show()
 
     """
+
+    _validate_gpass_gstop(gpass, gstop)
+
     wp = atleast_1d(wp)
     ws = atleast_1d(ws)
     if fs is not None:

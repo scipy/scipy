@@ -2,8 +2,6 @@ from __future__ import division, print_function, absolute_import
 
 import math
 import numpy as np
-from scipy._lib.six import xrange
-from scipy._lib.six import string_types
 from numpy.lib.stride_tricks import as_strided
 
 __all__ = ['tri', 'tril', 'triu', 'toeplitz', 'circulant', 'hankel',
@@ -61,7 +59,7 @@ def tri(N, M=None, k=0, dtype=None):
     """
     if M is None:
         M = N
-    if isinstance(M, string_types):
+    if isinstance(M, str):
         # pearu: any objections to remove this feature?
         #       As tri(N,'d') is equivalent to tri(N,dtype='d')
         dtype = M
@@ -765,8 +763,8 @@ def invhilbert(n, exact=False):
     else:
         dtype = np.float64
     invh = np.empty((n, n), dtype=dtype)
-    for i in xrange(n):
-        for j in xrange(0, i + 1):
+    for i in range(n):
+        for j in range(0, i + 1):
             s = i + j
             invh[i, j] = ((-1) ** s * (s + 1) *
                           comb(n + i, n - j - 1, exact) *

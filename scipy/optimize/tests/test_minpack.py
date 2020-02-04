@@ -6,7 +6,8 @@ from __future__ import division, print_function, absolute_import
 import warnings
 
 from numpy.testing import (assert_, assert_almost_equal, assert_array_equal,
-                           assert_array_almost_equal, assert_allclose)
+                           assert_array_almost_equal, assert_allclose,
+                           assert_warns, suppress_warnings)
 from pytest import raises as assert_raises
 import numpy as np
 from numpy import array, float64
@@ -15,7 +16,6 @@ from multiprocessing.pool import ThreadPool
 from scipy import optimize
 from scipy.special import lambertw
 from scipy.optimize.minpack import leastsq, curve_fit, fixed_point
-from scipy._lib._numpy_compat import _assert_warns, suppress_warnings
 from scipy.optimize import OptimizeWarning
 
 
@@ -523,8 +523,8 @@ class TestCurveFit(object):
         # Test that a warning is returned when pcov is indeterminate
         xdata = np.array([1, 2, 3, 4, 5, 6])
         ydata = np.array([1, 2, 3, 4, 5.5, 6])
-        _assert_warns(OptimizeWarning, curve_fit,
-                      lambda x, a, b: a*x, xdata, ydata)
+        assert_warns(OptimizeWarning, curve_fit,
+                     lambda x, a, b: a*x, xdata, ydata)
 
     def test_NaN_handling(self):
         # Test for correct handling of NaNs in input data: gh-3422

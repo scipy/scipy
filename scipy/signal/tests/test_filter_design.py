@@ -7,10 +7,9 @@ import numpy as np
 from numpy.testing import (assert_array_almost_equal,
                            assert_array_equal, assert_array_less,
                            assert_equal, assert_,
-                           assert_allclose, assert_warns)
+                           assert_allclose, assert_warns, suppress_warnings)
 import pytest
 from pytest import raises as assert_raises
-from scipy._lib._numpy_compat import suppress_warnings
 
 from numpy import array, spacing, sin, pi, sort, sqrt
 from scipy.signal import (BadCoefficients, bessel, besselap, bilinear, buttap,
@@ -811,6 +810,25 @@ class TestFreqz(object):
             assert_array_almost_equal(w_out, [8])
             assert_array_almost_equal(h, [1])
 
+    def test_nyquist(self):
+        w, h = freqz([1.0], worN=8, include_nyquist=True)
+        assert_array_almost_equal(w, np.pi * np.arange(8) / 7.)
+        assert_array_almost_equal(h, np.ones(8))
+        w, h = freqz([1.0], worN=9, include_nyquist=True)
+        assert_array_almost_equal(w, np.pi * np.arange(9) / 8.)
+        assert_array_almost_equal(h, np.ones(9))
+
+        for a in [1, np.ones(2)]:
+            w, h = freqz(np.ones(2), a, worN=0, include_nyquist=True)
+            assert_equal(w.shape, (0,))
+            assert_equal(h.shape, (0,))
+            assert_equal(h.dtype, np.dtype('complex128'))
+
+        w1, h1 = freqz([1.0], worN=8, whole = True, include_nyquist=True)
+        w2, h2 = freqz([1.0], worN=8, whole = True, include_nyquist=False)
+        assert_array_almost_equal(w1, w2)
+        assert_array_almost_equal(h1, h2)
+
 
 class TestSOSFreqz(object):
 
@@ -1448,6 +1466,19 @@ class TestButtord(object):
         assert_allclose(Wn, [4409.722701715714, 11025.47178084662],
                         rtol=1e-15)
 
+    def test_invalid_input(self):
+        with pytest.raises(ValueError) as exc_info:
+            buttord([20, 50], [14, 60], 3, 2)
+        assert "gpass should be smaller than gstop" in str(exc_info.value)
+
+        with pytest.raises(ValueError) as exc_info:
+            buttord([20, 50], [14, 60], -1, 2)
+        assert "gpass should be larger than 0.0" in str(exc_info.value)
+
+        with pytest.raises(ValueError) as exc_info:
+            buttord([20, 50], [14, 60], 1, -2)
+        assert "gstop should be larger than 0.0" in str(exc_info.value)
+
 
 class TestCheb1ord(object):
 
@@ -1545,6 +1576,19 @@ class TestCheb1ord(object):
 
         assert_equal(N, 8)
         assert_allclose(Wn, 4800, rtol=1e-15)
+
+    def test_invalid_input(self):
+        with pytest.raises(ValueError) as exc_info:
+            cheb1ord(0.2, 0.3, 3, 2)
+        assert "gpass should be smaller than gstop" in str(exc_info.value)
+
+        with pytest.raises(ValueError) as exc_info:
+            cheb1ord(0.2, 0.3, -1, 2)
+        assert "gpass should be larger than 0.0" in str(exc_info.value)
+
+        with pytest.raises(ValueError) as exc_info:
+            cheb1ord(0.2, 0.3, 1, -2)
+        assert "gstop should be larger than 0.0" in str(exc_info.value)
 
 
 class TestCheb2ord(object):
@@ -1647,6 +1691,19 @@ class TestCheb2ord(object):
         assert_equal(N, 9)
         assert_allclose(Wn, 103.4874609145164, rtol=1e-15)
 
+    def test_invalid_input(self):
+        with pytest.raises(ValueError) as exc_info:
+            cheb2ord([0.1, 0.6], [0.2, 0.5], 3, 2)
+        assert "gpass should be smaller than gstop" in str(exc_info.value)
+
+        with pytest.raises(ValueError) as exc_info:
+            cheb2ord([0.1, 0.6], [0.2, 0.5], -1, 2)
+        assert "gpass should be larger than 0.0" in str(exc_info.value)
+
+        with pytest.raises(ValueError) as exc_info:
+            cheb2ord([0.1, 0.6], [0.2, 0.5], 1, -2)
+        assert "gstop should be larger than 0.0" in str(exc_info.value)
+
 
 class TestEllipord(object):
 
@@ -1748,6 +1805,19 @@ class TestEllipord(object):
 
         assert_equal(N, 7)
         assert_allclose(Wn, [590.3293117737195, 2400], rtol=1e-5)
+
+    def test_invalid_input(self):
+        with pytest.raises(ValueError) as exc_info:
+            ellipord(0.2, 0.5, 3, 2)
+        assert "gpass should be smaller than gstop" in str(exc_info.value)
+
+        with pytest.raises(ValueError) as exc_info:
+            ellipord(0.2, 0.5, -1, 2)
+        assert "gpass should be larger than 0.0" in str(exc_info.value)
+
+        with pytest.raises(ValueError) as exc_info:
+            ellipord(0.2, 0.5, 1, -2)
+        assert "gstop should be larger than 0.0" in str(exc_info.value)
 
 
 class TestBessel(object):

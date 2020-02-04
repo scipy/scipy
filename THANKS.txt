@@ -227,6 +227,7 @@ Leo P. Singer for bug fixes in scipy.optimize and scipy.interpolate and
 Domen Gorjup and Janko Slavič for continuous wavelet transform with complex
     wavelets fix.
 Søren Fuglede Jørgensen for improvements to scipy.sparse.csgraph
+Grzegorz Mrukwa for a bug fix in rectangular_lsap.cpp
 
 Institutions
 ------------

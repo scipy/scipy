@@ -2,7 +2,6 @@ from __future__ import division, print_function, absolute_import
 
 import numpy.testing as npt
 import numpy as np
-from scipy._lib.six import xrange
 import pytest
 
 from scipy import stats
@@ -125,6 +124,23 @@ def test_rvs_broadcast(dist, shape_args):
     check_rvs_broadcast(distfunc, dist, allargs, bshape, shape_only, [np.int_])
 
 
+@pytest.mark.parametrize('dist,args', distdiscrete)
+def test_ppf_with_loc(dist, args):
+    try:
+        distfn = getattr(stats, dist)
+    except TypeError:
+        distfn = dist
+    #check with a negative, no and positive relocation.
+    np.random.seed(1942349)
+    re_locs = [np.random.randint(-10, -1), 0, np.random.randint(1, 10)]
+    _a, _b = distfn.support(*args)
+    for loc in re_locs:
+        npt.assert_array_equal(
+            [_a-1+loc, _b+loc],
+            [distfn.ppf(0.0, *args, loc=loc), distfn.ppf(1.0, *args, loc=loc)]
+            )
+
+
 def check_cdf_ppf(distfn, arg, supp, msg):
     # cdf is a step function, and ppf(q) = min{k : cdf(k) >= q, k integer}
     npt.assert_array_equal(distfn.ppf(distfn.cdf(supp, *arg), *arg),
@@ -200,7 +216,7 @@ def check_discrete_chisquare(distfn, arg, rvs, alpha, msg):
     _a, _b = distfn.support(*arg)
     lo = int(max(_a, -1000))
     high = int(min(_b, 1000)) + 1
-    distsupport = xrange(lo, high)
+    distsupport = range(lo, high)
     last = 0
     distsupp = [lo]
     distmass = []

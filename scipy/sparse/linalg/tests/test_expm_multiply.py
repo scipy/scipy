@@ -4,9 +4,8 @@
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from numpy.testing import assert_allclose, assert_, assert_equal
-from scipy._lib._numpy_compat import suppress_warnings
-
+from numpy.testing import (assert_allclose, assert_, assert_equal,
+                           suppress_warnings)
 from scipy.sparse import SparseEfficiencyWarning
 import scipy.linalg
 from scipy.sparse.linalg._expm_multiply import (_theta, _compute_p_max,

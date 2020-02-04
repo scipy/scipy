@@ -10,7 +10,6 @@ from numpy import (isscalar, r_, log, around, unique, asarray,
                    sqrt, ceil, floor, array, compress,
                    pi, exp, ravel, count_nonzero, sin, cos, arctan2, hypot)
 
-from scipy._lib.six import string_types
 from scipy import optimize
 from scipy import special
 from . import statlib
@@ -439,7 +438,7 @@ def _parse_dist_kw(dist, enforce_subclass=True):
     """
     if isinstance(dist, rv_generic):
         pass
-    elif isinstance(dist, string_types):
+    elif isinstance(dist, str):
         try:
             dist = getattr(distributions, dist)
         except AttributeError:

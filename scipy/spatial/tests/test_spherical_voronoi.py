@@ -4,13 +4,13 @@ import itertools
 from numpy.testing import (assert_equal,
                            assert_almost_equal,
                            assert_array_equal,
-                           assert_array_almost_equal)
+                           assert_array_almost_equal,
+                           suppress_warnings)
 import pytest
 from pytest import raises as assert_raises
 from pytest import warns as assert_warns
 from scipy.spatial import SphericalVoronoi, distance
 from scipy.spatial import _spherical_voronoi as spherical_voronoi
-from scipy._lib._numpy_compat import suppress_warnings
 from scipy.spatial.transform import Rotation
 from scipy.optimize import linear_sum_assignment
 
@@ -76,14 +76,14 @@ class TestSphericalVoronoi(object):
         sv_origin = SphericalVoronoi(self.points)
         center = np.array([1, 1, 1])
         sv_translated = SphericalVoronoi(self.points + center, center=center)
-        assert_array_equal(sv_origin.regions, sv_translated.regions)
+        assert_equal(sv_origin.regions, sv_translated.regions)
         assert_array_almost_equal(sv_origin.vertices + center,
                                   sv_translated.vertices)
 
     def test_vertices_regions_scaling_invariance(self):
         sv_unit = SphericalVoronoi(self.points)
         sv_scaled = SphericalVoronoi(self.points * 2, 2)
-        assert_array_equal(sv_unit.regions, sv_scaled.regions)
+        assert_equal(sv_unit.regions, sv_scaled.regions)
         assert_array_almost_equal(sv_unit.vertices * 2,
                                   sv_scaled.vertices)
 
@@ -102,7 +102,7 @@ class TestSphericalVoronoi(object):
         sv = SphericalVoronoi(self.points)
         unsorted_regions = sv.regions
         sv.sort_vertices_of_regions()
-        assert_array_equal(sorted(sv.regions), sorted(unsorted_regions))
+        assert_equal(sorted(sv.regions), sorted(unsorted_regions))
 
     def test_sort_vertices_of_regions_flattened(self):
         expected = sorted([[0, 6, 5, 2, 3], [2, 3, 10, 11, 8, 7], [0, 6, 4, 1],

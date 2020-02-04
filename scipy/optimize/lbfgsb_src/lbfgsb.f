@@ -2559,8 +2559,11 @@ c                               Line search is impossible.
          if (stp .eq. one) then
             call dcopy(n,z,1,x,1)
          else
+c        take step and prevent rounding error beyond bound
             do 41 i = 1, n
                x(i) = stp*d(i) + t(i)
+               if (nbd(i).eq.1.or.nbd(i).eq.2) x(i) = max(x(i), l(i))
+               if (nbd(i).eq.2.or.nbd(i).eq.3) x(i) = min(x(i), u(i))
   41        continue
          endif
       else
