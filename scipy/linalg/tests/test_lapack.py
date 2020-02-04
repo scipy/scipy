@@ -1756,7 +1756,7 @@ def test_pttrf_pttrs(dtype):
                           np.array([1+1j, 2-1j, 1-4j]),
                           np.array([[64+16j, -16-32j], [93+62j, 61-66j],
                                     [78-80j, 71-74j], [14-27j, 35+15j]]),
-                          np.array([[2-1j, -3-2j], [1+1j, 1+1j], [1-2j, 1-2j],
+                          np.array([[2+1j, -3-2j], [1+1j, 1+1j], [1-2j, 1-2j],
                                     [1-1j, 2+1j]])
                          )])
 def test_pttrf_pttrs_NAG(d, e, d_expect, e_expect, b, x_expect):
