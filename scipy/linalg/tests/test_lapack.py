@@ -2578,8 +2578,9 @@ def test_gtsvx_NAG(du, d, dl, b, x):
 
 @pytest.mark.parametrize("dtype", DTYPES)
 @pytest.mark.parametrize("fact,df_de_lambda",
-                         [("F", lambda d, e:get_lapack_funcs('pttrf',
-                                                             dtype=e.dtype)),
+                         [("F",
+                           lambda d, e:get_lapack_funcs('pttrf',
+                                                        dtype=e.dtype)(d, e)),
                           ("N", lambda d, e: (None, None, None))])
 def test_ptsvx(dtype, fact, df_de_lambda):
     '''
@@ -2595,9 +2596,7 @@ def test_ptsvx(dtype, fact, df_de_lambda):
     # set test tolerance appropriate for dtype
     rtol = 250 * np.finfo(dtype).eps
     atol = 100 * np.finfo(dtype).eps
-    # obtain routine
     ptsvx = get_lapack_funcs('ptsvx', dtype=dtype)
-    # n is the length diagonal of A
     n = 5
     # create diagonals according to size and dtype
     if dtype in REAL_DTYPES:
@@ -2613,13 +2612,12 @@ def test_ptsvx(dtype, fact, df_de_lambda):
     A = np.diag(d) + np.diag(e, -1) + np.diag(e, 1)
     # create random solution x
     x_soln = generate_random_dtype_array((n, 2), dtype=dtype)
-    # now create a b based on these
     b = A @ x_soln
 
     # use lambda to determine what df, ef are
-    # (parametrized to either be null or result of ?pttrf)
     df, ef, info = df_de_lambda(d, e)
 
+    # create copy to later test that they are unmodified
     diag_cpy = [d.copy(), e.copy(), b.copy()]
 
     # solve using routine
@@ -2686,7 +2684,7 @@ def test_ptsvx(dtype, fact, df_de_lambda):
         df, ef = df_de_lambda(d, e)
         df[0] = 0
         ef[0] = 0
-        x, df, ef, rcond, ferr, berr, info = ptsvx(None, None, b, fact=fact,
+        x, df, ef, rcond, ferr, berr, info = ptsvx(d, e, b, fact=fact,
                                                    df=df, ef=ef)
         # info should not be zero and should provide index of illegal value
         assert_(d[info - 1] == 0,
@@ -2697,28 +2695,22 @@ def test_ptsvx(dtype, fact, df_de_lambda):
     # numerically - but not exactly - singular to see if we can get info==N+1
 
 
-@pytest.mark.parametrize('d,e,b,x', [(np.array([4, 10, 29, 25, 5]),
-                                      np.array([-2, -6, 15, 8]),
-                                      np.array([[6, 10],
-                                                [9, 4],
-                                                [2, 9],
-                                                [14, 65],
-                                                [7, 23]]),
-                                      np.array([[2.5, 2]],
-                                               [2, -1],
-                                               [1, -3],
-                                               [-1, 6],
-                                               [3, -5])),
-                                     (np.array([16, 41, 46, 21]),
-                                      np.array([16 + 16j, 18 - 9j, 1 - 4j]),
-                                      np.array([[64 - 16j, -16 - 32j],
-                                                [93 - 62j, 61 - 66j],
-                                                [78 - 80j, 71 - 74j],
-                                                [14 - 27j, 35 + 15j]]),
-                                      np.array([[2 + 1j, -3 - 2j]],
-                                               [1 + 1j, 1 + 1j],
-                                               [1 - 2j, 1 - 2j],
-                                               [1 - 1j, 2 - 1j]))])
+@pytest.mark.parametrize('d,e,b,x',
+                         [(np.array([4, 10, 29, 25, 5]),
+                           np.array([-2, -6, 15, 8]),
+                           np.array([[6, 10], [9, 4], [2, 9], [14, 65],
+                                     [7, 23]]),
+                           np.array([[2.5, 2], [2, -1], [1, -3],
+                                     [-1, 6], [3, -5]])),
+                          (np.array([16, 41, 46, 21]),
+                           np.array([16 + 16j, 18 - 9j, 1 - 4j]),
+                           np.array([[64 - 16j, -16 - 32j],
+                                     [93 - 62j, 61 - 66j],
+                                     [78 - 80j, 71 - 74j],
+                                     [14 - 27j, 35 + 15j]]),
+                           np.array([[2 + 1j, -3 - 2j],
+                                     [1 + 1j, 1 + 1j], [1 - 2j, 1 - 2j],
+                                     [1 - 1j, 2 - 1j]]))])
 def test_ptsvx_NAG(d, e, b, x):
     '''
     TODO: On nag manual there are berr vals that are exactly zero.
