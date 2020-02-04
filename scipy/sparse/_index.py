@@ -329,29 +329,37 @@ def _check_ellipsis(index):
     return index[:first_ellipsis] + (slice(None),)*nslice + tuple(tail)
 
 
+def _maybe_bool_ndarray(idx):
+    """Returns a compatible array if elements are boolean.
+    """
+    idx = np.asanyarray(idx)
+    if idx.dtype.kind == 'b':
+        return idx
+    return None
+
+
+def _first_element_bool(idx, max_dim=2):
+    """Returns True if first element of the incompatible
+    array type is boolean.
+    """
+    if max_dim < 1:
+        return None
+    try:
+        first = next(iter(idx), None)
+    except TypeError:
+        return None
+    if isinstance(first, bool):
+        return True
+    return _first_element_bool(first, max_dim-1)
+
+
 def _compatible_boolean_index(idx):
     """Returns a boolean index array that can be converted to
     integer array. Returns None if no such array exists.
     """
-    # Absence of attributes `ndim` or `dtype` indicates a
-    # non compatible index array.
-    if not hasattr(idx, 'ndim') or not hasattr(idx, 'dtype'):
-        if hasattr(idx, '__iter__'):
-            first = next(iter(idx), None)
-            # Checks if the index array is 1D array with boolean data.
-            if isinstance(first, bool):
-                idx = np.asanyarray(idx)
-                if idx.dtype.kind == 'b':
-                    return idx
-            # Checks if index array is 2D
-            elif hasattr(first, '__iter__'):
-                ff = next(iter(first), None)
-                if isinstance(ff, bool):
-                    idx = np.asanyarray(idx)
-                    if idx.dtype.kind == 'b':
-                        return idx
-    elif idx.dtype.kind == 'b':
-        return idx
+    # Presence of attribute `ndim` indicates a compatible array type.
+    if hasattr(idx, 'ndim') or _first_element_bool(idx):
+        return _maybe_bool_ndarray(idx)
     return None
 
 
