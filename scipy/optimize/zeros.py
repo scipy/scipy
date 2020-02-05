@@ -372,23 +372,26 @@ def _array_newton(func, x0, fprime, args, tol, maxiter, fprime2, full_output):
     Do not use this method directly. This method is called from `newton`
     when ``np.size(x0) > 1`` is ``True``. For docstring, see `newton`.
     """
-    x0 = np.asarray(x0)
     # Explicitly copy `x0` as `p` will be modified inplace, but the
     # user's array should not be altered.
-    p = np.array(x0, copy=True, dtype=np.promote_types(x0.dtype, np.float64))
+    p = np.array(x0, copy=True)
 
     failures = np.ones_like(p, dtype=bool)
     nz_der = np.ones_like(failures)
     if fprime is not None:
         # Newton-Raphson method
+        fval = np.asarray(func(p, *args))
+        fder = np.asarray(fprime(p, *args))
+        p = np.asarray(p, dtype=np.result_type(p, fval, fder, np.float64))
         for iteration in range(maxiter):
             # first evaluate fval
-            fval = np.asarray(func(p, *args))
+            if iteration != 0:
+                fval = np.asarray(func(p, *args))
+                fder = np.asarray(fprime(p, *args))
             # If all fval are 0, all roots have been found, then terminate
             if not fval.any():
                 failures = fval.astype(bool)
                 break
-            fder = np.asarray(fprime(p, *args))
             nz_der = (fder != 0)
             # stop iterating if all derivatives are zero
             if not nz_der.any():
@@ -410,6 +413,9 @@ def _array_newton(func, x0, fprime, args, tol, maxiter, fprime2, full_output):
         p1 = p * (1 + dx) + np.where(p >= 0, dx, -dx)
         q0 = np.asarray(func(p, *args))
         q1 = np.asarray(func(p1, *args))
+        dtype = np.result_type(q0, p, np.float64)
+        p = np.asarray(p, dtype=dtype)
+        p1 = np.asarray(p1, dtype=dtype)
         active = np.ones_like(p, dtype=bool)
         for iteration in range(maxiter):
             nz_der = (q1 != q0)
