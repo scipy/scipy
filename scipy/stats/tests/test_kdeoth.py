@@ -317,14 +317,13 @@ def test_kde_integer_input():
     y_expected = [0.13480721, 0.18222869, 0.19514935, 0.18222869, 0.13480721]
     assert_array_almost_equal(kde(x1), y_expected, decimal=6)
 
-@pytest.mark.skipif(not hasattr(np, 'float96'), reason='cannot find float96 so skipping')
-@pytest.mark.skipif(not hasattr(np, 'float128'), reason='cannot find float128 so skipping')
-@pytest.mark.parametrize("test_type", (0,1,2,3))
-def test_kde_output_dtype(test_type_ix):
+@pytest.mark.parametrize("test_type", [getattr(np, dtype, None) for dtype in
+                         ['float32', 'float64', 'float96', 'float128']])
+def test_kde_output_dtype(test_type):
     # test that if input is floating, we maintain the datatype
     # need to have the list of types inside, because skipif only applies within the test
-    test_types = [np.float64, np.float32, np.float96, np.float128]
-    test_type = test_types[test_type_ix]
+    if test_type is None:
+        pytest.skip("Data type not available")
     x1 = np.arange(5)
     k = stats.kde.gaussian_kde(x1)
     points = np.arange(5, dtype=test_type)
