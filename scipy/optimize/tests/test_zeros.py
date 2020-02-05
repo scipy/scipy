@@ -352,6 +352,14 @@ class TestBasic(object):
         x = zeros.newton(f, t, fprime=fprime)
         assert_allclose(f(x), 0.)
 
+        # should work even if x0 is not complex
+        t = np.ones(4)
+        x = zeros.newton(f, t, fprime=fprime)
+        assert_allclose(f(x), 0.)
+
+        x = zeros.newton(f, t)
+        assert_allclose(f(x), 0.)
+
     def test_array_secant_active_zero_der(self):
         """test secant doesn't continue to iterate zero derivatives"""
         x = zeros.newton(lambda x, *a: x*x - a[0], x0=[4.123, 5],
