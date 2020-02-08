@@ -114,8 +114,7 @@ subroutine <prefix2>syevd(compute_v,lower,n,w,a,lda,work,lwork,iwork,liwork,info
     callstatement (*f2py_func)((compute_v?"V":"N"),(lower?"L":"U"),&n,a,&lda,w,work,&lwork,iwork,&liwork,&info)
     callprotoargument char*,char*,int*,<ctype2>*,int*,<ctype2>*,<ctype2>*,int*,int*,int*,int*
 
-    integer optional,intent(in):: compute_v = 1
-    check(compute_v==1||compute_v==0) compute_v
+    integer optional,intent(in),check(compute_v==1||compute_v==0) :: compute_v = 1
     integer optional,intent(in),check(lower==0||lower==1) :: lower = 0
 
     integer intent(hide),depend(a):: n = shape(a,0)
@@ -135,16 +134,17 @@ subroutine <prefix2>syevd(compute_v,lower,n,w,a,lda,work,lwork,iwork,liwork,info
 
 end subroutine <prefix2>syevd
 
-subroutine <prefix2>syevd_lwork(lower,n,w,a,lda,work,lwork,iwork,liwork,info)
+subroutine <prefix2>syevd_lwork(compute_v,lower,n,w,a,lda,work,lwork,iwork,liwork,info)
     ! LWORK routines for syevd
 
     fortranname <prefix2>syevd
 
-    callstatement (*f2py_func)("N",(lower?"L":"U"),&n,&a,&lda,&w,&work,&lwork,&iwork,&liwork,&info)
+    callstatement (*f2py_func)((compute_v?"V":"N"),(lower?"L":"U"),&n,&a,&lda,&w,&work,&lwork,&iwork,&liwork,&info)
     callprotoargument char*,char*,int*,<ctype2>*,int*,<ctype2>*,<ctype2>*,int*,int*,int*,int*
 
     integer intent(in):: n
     integer optional,intent(in),check(lower==0||lower==1) :: lower = 0
+    integer optional,intent(in),check(compute_v==0||compute_v==1) :: compute_v = 1
     
     integer intent(hide):: lda = MAX(1,n)
     <ftype2> intent(hide):: a
@@ -192,16 +192,17 @@ subroutine <prefix2c>heevd(compute_v,lower,n,w,a,lda,work,lwork,iwork,liwork,rwo
 
 end subroutine <prefix2c>heevd
 
-subroutine <prefix2c>heevd_lwork(lower,n,w,a,lda,work,lwork,iwork,liwork,rwork,lrwork,info)
+subroutine <prefix2c>heevd_lwork(compute_v,lower,n,w,a,lda,work,lwork,iwork,liwork,rwork,lrwork,info)
     ! LWORK routines for heevd
     
     fortranname <prefix2c>heevd
     
-    callstatement (*f2py_func)("N",(lower?"L":"U"),&n,&a,&lda,&w,&work,&lwork,&rwork,&lrwork,&iwork,&liwork,&info)
+    callstatement (*f2py_func)((compute_v?"V":"N"),(lower?"L":"U"),&n,&a,&lda,&w,&work,&lwork,&rwork,&lrwork,&iwork,&liwork,&info)
     callprotoargument char*,char*,int*,<ctype2c>*,int*,<ctype2>*,<ctype2c>*,int*,<ctype2>*,int*,int*,int*,int*
 
     integer intent(in):: n
     integer optional,intent(in),check(lower==0||lower==1) :: lower = 0
+    integer optional,intent(in),check(compute_v==0||compute_v==1) :: compute_v = 1
     
     integer intent(hide):: lda=MAX(1,n)
     <ftype2c> intent(hide):: a
