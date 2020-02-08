@@ -2842,6 +2842,12 @@ def butter(N, Wn, btype='low', analog=False, output='ba', fs=None):
 
     The ``'sos'`` output parameter was added in 0.16.0.
 
+    If the transfer function form ``[b, a]`` is requested, numerical
+    problems can occur since the conversion between roots and
+    the polynomial coefficients is a numerically sensitive operation,
+    even for N >= 4. It is recommended to work with the SOS
+    representation.
+
     Examples
     --------
     Design an analog filter and plot its frequency response, showing the
