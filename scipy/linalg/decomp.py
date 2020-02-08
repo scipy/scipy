@@ -529,7 +529,11 @@ def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
     if b is None:  # Standard problem
         drv, drvlw = get_lapack_funcs((pfx + driver, pfx+driver+'_lwork'),
                                       [a1])
-        lw = _compute_lwork(drvlw, n, lower=lower)
+        clw_args = {'n': n, 'lower': lower}
+        if driver == 'evd':
+            clw_args.update({'compute_v': 0 if _job == "N" else 1})
+
+        lw = _compute_lwork(drvlw, **clw_args)
         # Multiple lwork vars
         if isinstance(drvlw, tuple):
             lwork_args = dict(zip(lwork_spec[pfx+driver], lw))
