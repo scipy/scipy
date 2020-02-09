@@ -67,4 +67,4 @@ def test_wright_functional(a, b, x):
     assert_allclose(wright_bessel(a, b-1, x),
                     a*x*wright_bessel(a, b + a, x)
                     + (b-1)*wright_bessel(a, b, x),
-                    rtol=5e-8, atol=5e-8)
+                    rtol=1e-8, atol=1e-8)

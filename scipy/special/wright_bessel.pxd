@@ -476,6 +476,9 @@ cdef inline double wright_bessel_integral(double a, double b, double x) nogil:
     # We use the free choice of eps to make the integral better behaved.
     # We try to make eps * sin(phi) and x * eps^(-a) * cos(a*phi) small at
     # the same time. Otherwise, P can be highly oscillatory and unpredictable.
+    if b >= 8:
+        # int K ~ exp(-eps) and int P ~ eps^(1-beta)
+        eps = pow(b, -b/(1.-b))
     if x > 1 and a > 1:
         # set eps such that x*eps^(-a) = 2^(-a) < 0.5
         eps = 2. * pow(x, 1./a)
@@ -485,10 +488,7 @@ cdef inline double wright_bessel_integral(double a, double b, double x) nogil:
         if x <= 5 and b >= 5:
             eps = 2 * eps
         elif a <= 0.1:
-            if b <= 1:
-                eps *= a
-            else:
-                eps *= 0.5
+            eps *= pow(2, log10(a))
     else:
         eps = 1.
     # safeguard, higher better for larger a, lower better for tiny a.
