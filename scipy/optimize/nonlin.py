@@ -1394,9 +1394,10 @@ class KrylovJacobian(Jacobian):
         Size of the subspace kept across LGMRES nonlinear iterations.
         See `scipy.sparse.linalg.lgmres` for details.
     inner_kwargs : kwargs
-        Keyword parameters for the \"inner\" Krylov solver (defined with `method`). Parameter names must start
-        with the `inner_` prefix which will be stripped before passing on the inner method.
-        See, e.g., `scipy.sparse.linalg.gmres` for details.
+        Keyword parameters for the \"inner\" Krylov solver
+        (defined with `method`). Parameter names must start with
+        the `inner_` prefix which will be stripped before passing on
+        the inner method. See, e.g., `scipy.sparse.linalg.gmres` for details.
     %(params_extra)s
 
     See Also
