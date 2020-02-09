@@ -380,18 +380,14 @@ def _array_newton(func, x0, fprime, args, tol, maxiter, fprime2, full_output):
     nz_der = np.ones_like(failures)
     if fprime is not None:
         # Newton-Raphson method
-        fval = np.asarray(func(p, *args))
-        fder = np.asarray(fprime(p, *args))
-        p = np.asarray(p, dtype=np.result_type(p, fval, fder, np.float64))
         for iteration in range(maxiter):
             # first evaluate fval
-            if iteration != 0:
-                fval = np.asarray(func(p, *args))
-                fder = np.asarray(fprime(p, *args))
+            fval = np.asarray(func(p, *args))
             # If all fval are 0, all roots have been found, then terminate
             if not fval.any():
                 failures = fval.astype(bool)
                 break
+            fder = np.asarray(fprime(p, *args))
             nz_der = (fder != 0)
             # stop iterating if all derivatives are zero
             if not nz_der.any():
@@ -402,6 +398,7 @@ def _array_newton(func, x0, fprime, args, tol, maxiter, fprime2, full_output):
                 fder2 = np.asarray(fprime2(p, *args))
                 dp = dp / (1.0 - 0.5 * dp * fder2[nz_der] / fder[nz_der])
             # only update nonzero derivatives
+            p = np.asarray(p, dtype=np.result_type(p, dp, np.float64))
             p[nz_der] -= dp
             failures[nz_der] = np.abs(dp) >= tol  # items not yet converged
             # stop iterating if there aren't any failures, not incl zero der
@@ -413,9 +410,6 @@ def _array_newton(func, x0, fprime, args, tol, maxiter, fprime2, full_output):
         p1 = p * (1 + dx) + np.where(p >= 0, dx, -dx)
         q0 = np.asarray(func(p, *args))
         q1 = np.asarray(func(p1, *args))
-        dtype = np.result_type(q0, p, np.float64)
-        p = np.asarray(p, dtype=dtype)
-        p1 = np.asarray(p1, dtype=dtype)
         active = np.ones_like(p, dtype=bool)
         for iteration in range(maxiter):
             nz_der = (q1 != q0)
@@ -426,6 +420,7 @@ def _array_newton(func, x0, fprime, args, tol, maxiter, fprime2, full_output):
             # Secant Step
             dp = (q1 * (p1 - p))[nz_der] / (q1 - q0)[nz_der]
             # only update nonzero derivatives
+            p = np.asarray(p, dtype=np.result_type(p, p1, dp, np.float64))
             p[nz_der] = p1[nz_der] - dp
             active_zero_der = ~nz_der & active
             p[active_zero_der] = (p1 + p)[active_zero_der] / 2.0
