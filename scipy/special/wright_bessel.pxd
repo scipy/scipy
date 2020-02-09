@@ -483,12 +483,17 @@ cdef inline double wright_bessel_integral(double a, double b, double x) nogil:
         # set eps such that eps ~ x * eps^(-rho), make it 0.5 of the solution.
         eps = 0.5 * pow(x, 1./(1+a))
         if x <= 5 and b >= 5:
-                    eps = 2 * eps
-        # safeguard, higher better for larger a, lower better for tiny a.
-        eps = min(eps, 100.)
-        eps = max(eps, 1.)
+            eps = 2 * eps
+        elif a <= 0.1:
+            if b <= 1:
+                eps *= a
+            else:
+                eps *= 0.5
     else:
         eps = 1.
+    # safeguard, higher better for larger a, lower better for tiny a.
+    eps = min(eps, 100.)
+    eps = max(eps, 1.)
 
     res1 = 0
     res2 = 0
