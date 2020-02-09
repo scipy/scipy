@@ -713,6 +713,9 @@ def khatri_rao(a, b):
            [ 8, 15, 54]])
 
     """
+    a = np.asarray(a)
+    b = np.asarray(b)
+
     if not(a.ndim == 2 and b.ndim == 2):
         raise ValueError("The both arrays should be 2-dimensional.")
 
