@@ -57,6 +57,9 @@ cdef inline number_t hyp1f1(double a, double b, number_t z) nogil:
         r = chyp1f1_wrap(a, b, npy_cdouble_from_double_complex(z))
         return double_complex_from_npy_cdouble(r)
 
+cdef extern from "numpy/npy_math.h":
+    double npy_isnan(double x) nogil
+
 #-----------------------------------------------------------------------------
 # Binomial coefficient
 #-----------------------------------------------------------------------------
@@ -480,6 +483,9 @@ cdef inline double eval_laguerre_l(long n, double x) nogil:
 cdef inline double eval_hermitenorm(long n, double x) nogil:
     cdef long k
     cdef double y1, y2, y3
+
+    if npy_isnan(x):
+        return x
 
     if n < 0:
         sf_error.error(
