@@ -166,7 +166,8 @@ def correlate(in1, in2, mode='full', method='auto'):
     `fftconvolve`. In certain cases (i.e., arrays of objects or when
     rounding integers can lose precision), ``method='direct'`` is always used.
 
-    Outputs of `correlate` and `correlate2d` are different when you are using the "same" mode and even-length inputs.
+    Outputs of `correlate` and `correlate2d` are different
+    when you are using the "same" mode and even-length inputs.
 
     Examples
     --------
@@ -1597,7 +1598,8 @@ def correlate2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
 
     Notes
     -----
-    Outputs of `correlate` and `correlate2d` are different when you are using the "same" mode and even-length inputs.
+    Outputs of `correlate` and `correlate2d` are different
+    when you are using the "same" mode and even-length inputs.
 
     Examples
     --------
