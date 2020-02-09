@@ -418,10 +418,10 @@ def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
     Request eigenvalues that are less than 10.
 
     >>> A = np.array([[34, -4, -10, -7, 2],
-                      [-4, 7, 2, 12, 0],
-                      [-10, 2, 44, 2, -19],
-                      [-7, 12, 2, 79, -34],
-                      [2, 0, -19, -34, 29]])
+    ...               [-4, 7, 2, 12, 0],
+    ...               [-10, 2, 44, 2, -19],
+    ...               [-7, 12, 2, 79, -34],
+    ...               [2, 0, -19, -34, 29]])
     >>> eigh(A, eigvals_only=True, subset_by_value=[-np.inf, 10])
     array([6.69199443e-07, 9.11938152e+00])
 
@@ -430,7 +430,7 @@ def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
     >>> w, v = eigh(A, subset_by_index=[1, 1])
     >>> w
     array([9.11938152])
-    >>> v.shape  % only a single column is returned
+    >>> v.shape  # only a single column is returned
     (5, 1)
 
     """
