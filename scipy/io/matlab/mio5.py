@@ -636,11 +636,11 @@ class VarWriter5(object):
             # No matching matlab type, probably complex256 / float128 / float96
             # Cast data to complex128 / float64.
             if imagf:
-                arr = arr.astype('c128')
+                arr = arr.astype('c128', copy=False)
             elif logif:
-                arr = arr.astype('i1')  # Should only contain 0/1
+                arr = arr.astype('i1', copy=False)  # Should only contain 0/1
             else:
-                arr = arr.astype('f8')
+                arr = arr.astype('f8', copy=False)
             mclass = mxDOUBLE_CLASS
         self.write_header(matdims(arr, self.oned_as),
                           mclass,
@@ -709,8 +709,8 @@ class VarWriter5(object):
                           is_logical=is_logical,
                           # matlab won't load file with 0 nzmax
                           nzmax=1 if nz == 0 else nz)
-        self.write_element(A.indices.astype('i4'))
-        self.write_element(A.indptr.astype('i4'))
+        self.write_element(A.indices.astype('i4', copy=False))
+        self.write_element(A.indptr.astype('i4', copy=False))
         self.write_element(A.data.real)
         if is_complex:
             self.write_element(A.data.imag)

@@ -706,7 +706,7 @@ cdef class VarReader5:
                     mat_dtype = BOOL_DTYPE
                 else:
                     mat_dtype = <object>self.class_dtypes[mc]
-                arr = arr.astype(mat_dtype)
+                arr = arr.astype(mat_dtype, copy=False)
         elif mc == mxSPARSE_CLASS:
             arr = self.read_sparse(header)
             # no current processing makes sense for sparse
@@ -860,7 +860,7 @@ cdef class VarReader5:
                 arr = np.ndarray(shape=(length,),
                                   dtype=dt,
                                   buffer=data)
-                data = arr.astype(np.uint8).tostring()
+                data = arr.astype(np.uint8, copy=False).tostring()
         elif mdtype == miINT8 or mdtype == miUINT8:
             codec = 'ascii'
         elif mdtype in self.codecs: # encoded char data

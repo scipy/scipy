@@ -216,7 +216,7 @@ class VarReader4(object):
         arr : ndarray
             with dtype 'U1', shape given by `hdr` ``dims``
         '''
-        arr = self.read_sub_array(hdr).astype(np.uint8)
+        arr = self.read_sub_array(hdr).astype(np.uint8, copy=False)
         S = arr.tostring().decode('latin-1')
         return np.ndarray(shape=hdr.dims,
                           dtype=np.dtype('U1'),
