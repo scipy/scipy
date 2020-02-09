@@ -32,7 +32,7 @@
 #     http://sci-gems.math.bas.bg/jspui/bitstream/10525/1298/1/fcaa-vol11-num1-2008-57p-75p.pdf
 
 import cython
-from libc.math cimport cos, exp, floor, log, log10, pow, sin, sqrt, M_PI
+from libc.math cimport cos, exp, floor, fmax, log, log10, pow, sin, sqrt, M_PI
 
 cdef extern from "_c99compat.h":
     int sc_isnan(double x) nogil
@@ -228,21 +228,21 @@ cdef inline double _wb_small_a(double a, double b, double x, int order) nogil:
 @cython.cdivision(True)
 cdef inline double _wb_asymptotic(double a, double b, double x) nogil:
     cdef:
-        double A[9]  # powers of a
-        double B[11]  # powers of b
-        double Ap1[6]  # powers of (1+a)
-        double C[6]  # coefficients of asymptotic series a_k
+        double A[11]  # powers of a
+        double B[13]  # powers of b
+        double Ap1[7]  # powers of (1+a)
+        double C[7]  # coefficients of asymptotic series a_k
         double Z, Zp, res
         int k
 
     A[0] = 1.
     B[0] = 1.
     Ap1[0] = 1.
-    for k in range(1, 9):
-        A[k] = A[k-1] * a
     for k in range(1, 11):
+        A[k] = A[k-1] * a
+    for k in range(1, 13):
         B[k] = B[k-1] * b
-    for k in range(1, 6):
+    for k in range(1, 7):
         Ap1[k] = Ap1[k-1] * (1 + a)
 
     C[0] = 1./sqrt(2. * M_PI * Ap1[1])
@@ -302,10 +302,47 @@ cdef inline double _wb_asymptotic(double a, double b, double x) nogil:
                                  + 1115235367*A[4] - 302008904*A[3] \
                                  - 167685080*A[2] + 12598624*a + 2622064)
 
+    C[6] = C[0] / (4815794995200.*Ap1[6])
+    C[6] *= 104509440*B[12] - 209018880*B[11]*(13*a - 7) \
+            + 574801920*B[10]*(52*A[2] - 65*a + 12) \
+            - 63866880*B[9]*(2834*A[3] - 6279*A[2] + 2769*a - 134) \
+            + 23950080*B[8]*(27404*A[4] - 98228*A[3] + 78663*A[2] \
+                             - 10868*a - 1012) \
+            - 13685760*B[7]*(105612*A[5] - 599196*A[4] + 791843*A[3] \
+                             - 224913*A[2] - 27612*a + 4540) \
+            + 2661120*B[6]*(693680*A[6] - 6473532*A[5] + 13736424*A[4] \
+                            - 7047469*A[3] - 723840*A[2] + 471588*a + 7376) \
+            - 2661120*B[5]*(432536*A[7] - 7850804*A[6] + 27531114*A[5] \
+                            - 24234457*A[4] - 703001*A[3] + 3633474*A[2] \
+                            - 36244*a - 45128) \
+            + 166320*B[4]*(548912*A[8] - 75660832*A[7] + 502902712*A[6] \
+                           - 764807992*A[5] + 91248287*A[4] + 217811464*A[3] \
+                           - 20365384*A[2] - 9776416*a + 37936) \
+            + 10080*B[3]*(18759728*A[9] + 165932208*A[8] - 4710418440.*A[7] \
+                          + 13686052536.*A[6] - 5456818809.*A[5] \
+                          - 6834514245.*A[4] + 1919299512*A[3] + 752176152*A[2] \
+                          - 45661200*a - 8616848) \
+            - 360*B[2]*(32743360*A[10] - 3381871792.*A[9] - 21488827776.*A[8] \
+                        + 200389923864.*A[7] - 198708005340.*A[6] \
+                        - 171633799779.*A[5] + 123124874028.*A[4] \
+                        + 40072774872.*A[3] - 9137993280.*A[2] - 1895843248*a \
+                        + 18929728) \
+            - 360*b*Ap1[1]*(57685408*A[10] + 406929456*A[9] - 6125375760.*A[8] \
+                            - 27094918920.*A[7] + 128752249410.*A[6] \
+                            - 74866710561.*A[5] - 42917416470.*A[4] \
+                            + 16256951352.*A[3] + 4375268400.*A[2] \
+                            - 316500688*a - 47197152) \
+            + (a + 2)*(2*a + 1)*(167898208*A[10] - 22774946512.*A[9] \
+                                 - 88280004528.*A[8] + 611863976472.*A[7] \
+                                 + 1041430242126.*A[6] - 3446851131657.*A[5] \
+                                 + 1041430242126.*A[4] + 611863976472.*A[3] \
+                                 - 88280004528.*A[2] - 22774946512.*a \
+                                 + 167898208)
+
     Z = pow(a * x, 1/Ap1[1])
     Zp = 1.
     res = C[0]
-    for k in range(1, 5):
+    for k in range(1, 7):
         Zp /= Z
         res += (-1)**k * C[k] * Zp
     res *= pow(Z, 0.5 - b) * exp(Ap1[1]/a * Z)
@@ -521,13 +558,13 @@ cdef inline double wright_bessel_scalar(double a, double b, double x) nogil:
     elif x <= 2:
         # 20 term Taylor Series => error mostly smaller 1e-12 to 1e-13
         return _wb_series(a, b, x, 0, 20)
-    elif a >= 10:
+    elif (a >= 10) or (a >= 5 and x <= 1e9):
         # 20 term Taylor series around the approximate maximum term
-        # => error mostly smoller 1e-13
+        # => error mostly smaller 1e-13
         return _wb_large_a(a, b, x, 20)
-    elif (x >= 500 and a <= 1 and b <= 1) \
-        or (x >= 100 and a <= 0.5 and b <= 0.5):
-        # asymptotic expansion => precision ~ 8e-11
+    elif (a <= 2) and (a*x >= pow(10.*fmax(1., b), 1+a)):
+        # asymptotic expansion in Z = (a*x)^(1/(1+a)) >= 10 * max(1, b)
+        # => precision ~ 1e-11 but can go down to ~1e-8 or 1e-7
         return _wb_asymptotic(a, b, x)
     else:
         return wright_bessel_integral(a, b, x)

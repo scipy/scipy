@@ -28,6 +28,7 @@ from scipy.special.wright_bessel import wright_bessel
 @pytest.mark.parametrize('a', [0, 1e-6, 0.1, 0.5, 1, 10])
 @pytest.mark.parametrize('b', [0, 1e-6, 0.1, 0.5, 1, 10])
 def test_wright_bessel_zero(a, b):
+    """Test at x = 0."""
     assert_equal(wright_bessel(a, b, 0.), rgamma(b))
 
 
@@ -66,4 +67,4 @@ def test_wright_functional(a, b, x):
     assert_allclose(wright_bessel(a, b-1, x),
                     a*x*wright_bessel(a, b + a, x)
                     + (b-1)*wright_bessel(a, b, x),
-                    rtol=1e-7, atol=1e-7)
+                    rtol=5e-8, atol=5e-8)
