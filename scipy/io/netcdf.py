@@ -533,7 +533,7 @@ class netcdf_file(object):
                 try:
                     var.data.resize(shape)
                 except ValueError:
-                    var.__dict__['data'] = np.resize(var.data, shape).astype(var.data.dtype)
+                    var.__dict__['data'] = np.resize(var.data, shape).astype(var.data.dtype, copy=False)
 
             pos0 = pos = self.fp.tell()
             for rec in var.data:
@@ -975,7 +975,7 @@ class netcdf_variable(object):
         scale_factor = self._attributes.get('scale_factor')
         add_offset = self._attributes.get('add_offset')
         if add_offset is not None or scale_factor is not None:
-            data = data.astype(np.float64)
+            data = data.astype(np.float64, copy=False)
         if scale_factor is not None:
             data = data * scale_factor
         if add_offset is not None:
@@ -1013,7 +1013,7 @@ class netcdf_variable(object):
                 try:
                     self.data.resize(shape)
                 except ValueError:
-                    self.__dict__['data'] = np.resize(self.data, shape).astype(self.data.dtype)
+                    self.__dict__['data'] = np.resize(self.data, shape).astype(self.data.dtype, copy=False)
         self.data[index] = data
 
     def _default_encoded_fill_value(self):
