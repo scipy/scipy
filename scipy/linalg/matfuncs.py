@@ -691,7 +691,7 @@ def khatri_rao(a, b):
     Notes
     -----
     The mathematical definition of the Khatri-Rao product is:
-    ..math::
+    .. math::
 
         (A_{ij}  \bigotimes B_{ij})_{ij}
 
