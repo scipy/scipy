@@ -672,13 +672,13 @@ class MMFile (object):
                     if not can_cast(a.dtype, 'intp'):
                         raise OverflowError("mmwrite does not support integer "
                                             "dtypes larger than native 'intp'.")
-                    a = a.astype('intp')
+                    a = a.astype('intp', copy=False)
                 elif field == self.FIELD_REAL:
                     if a.dtype.char not in 'fd':
-                        a = a.astype('d')
+                        a = a.astype('d', copy=False)
                 elif field == self.FIELD_COMPLEX:
                     if a.dtype.char not in 'FD':
-                        a = a.astype('D')
+                        a = a.astype('D', copy=False)
 
         else:
             if not isspmatrix(a):
