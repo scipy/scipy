@@ -1662,14 +1662,14 @@ class rv_continuous(rv_generic):
             left = min(-factor, right)
             while self._ppf_to_solve(left, q, *args) > 0.:
                 left, right = left * factor, left
-            # left is now such that cdf(left) < q
-            # if right has changed, then cdf(rught) >= q
+            # left is now such that cdf(left) <= q
+            # if right has changed, then cdf(right) > q
 
         if np.isinf(right):
             right = max(factor, left)
             while self._ppf_to_solve(right, q, *args) < 0.:
                 left, right = right, right * factor
-            # right is now such that cdf(right) > q
+            # right is now such that cdf(right) >= q
 
         return optimize.brentq(self._ppf_to_solve,
                                left, right, args=(q,)+args, xtol=self.xtol)

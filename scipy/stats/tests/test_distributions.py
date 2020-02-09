@@ -12,7 +12,7 @@ import os
 from numpy.testing import (assert_equal, assert_array_equal,
                            assert_almost_equal, assert_array_almost_equal,
                            assert_allclose, assert_, assert_warns,
-                           suppress_warnings)
+                           assert_array_less, suppress_warnings)
 import pytest
 from pytest import raises as assert_raises
 
@@ -1203,7 +1203,7 @@ class TestKSTwo(object):
     def test_cdf_sqrtn(self):
         # For fixed a, cdf(a/sqrt(n), n) -> kstwobign(a) as n->infinity
         # cdf(a/sqrt(n), n) is an increasing function of n (and a)
-        # Check that the function is indeed increasing (alloowing for some
+        # Check that the function is indeed increasing (allowing for some
         # small floating point and algorithm differences.)
         x = np.linspace(0, 2, 11)[1:]
         ns = [50, 100, 200, 400, 1000, 2000]
@@ -1211,8 +1211,7 @@ class TestKSTwo(object):
             xn = _x / np.sqrt(ns)
             probs = stats.kstwo.cdf(xn, ns)
             diffs = np.diff(probs)
-            cond = (diffs >= 1e-8)
-            assert len(diffs[cond]) == 0
+            assert_array_less(diffs, 1e-8)
 
     def test_cdf_sf(self):
         x = np.linspace(0, 1, 11)

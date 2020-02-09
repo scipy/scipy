@@ -75,60 +75,61 @@ _EP128 = np.ldexp(np.longdouble(1), _E128)
 _EM128 = np.ldexp(np.longdouble(1), -_E128)
 
 _SQRT2PI = np.sqrt(2 * np.pi)
+_LOG_2PI = np.log(2 * np.pi)
 _MIN_LOG = -708
+_SQRT3 = np.sqrt(3)
+_PI_SQUARED = np.pi ** 2
+_PI_FOUR = np.pi ** 4
+_PI_SIX = np.pi ** 6
+
+# [Lifted from _loggamma.pxd.] If B_m are the Bernoulli numbers,
+# then Stirling coeffs are B_{2j}/(2j)/(2j-1) for j=8,...1.
+_STIRLING_COEFFS = [-2.955065359477124183e-2, 6.4102564102564102564e-3,
+                    -1.9175269175269175269e-3, 8.4175084175084175084e-4,
+                    -5.952380952380952381e-4, 7.9365079365079365079e-4,
+                    -2.7777777777777777778e-3, 8.3333333333333333333e-2]
+
+def _log_nfactorial_div_n_pow_n(n):
+    # Computes n! / n**n
+    #    = (n-1)! / n**(n-1)
+    # Uses Stirling's approximation, but removes n*log(n) up-front to
+    # avoid subtractive cancellation.
+    #    = log(n)/2 - n + log(sqrt(2pi)) + sum B_{2j}/(2j)/(2j-1)/n**(2j-1)
+    rn = 1.0/n
+    return np.log(n)/2 - n + _LOG_2PI/2 + rn * np.polyval(_STIRLING_COEFFS, rn/n)
 
 
-def _pin_prob(p):
-    """pin a probability to range 0<=p<=1."""
+def _clip_prob(p):
+    """clips a probability to range 0<=p<=1."""
     return np.clip(p, 0.0, 1.0)
 
 
-def _select_and_pin_prob(cdfprob, sfprob, cdf=True):
-    """Select either the CDF or SF, and then pin to range 0<=p<=1."""
+def _select_and_clip_prob(cdfprob, sfprob, cdf=True):
+    """Selects either the CDF or SF, and then clips to range 0<=p<=1."""
     p = (cdfprob if cdf else sfprob)
-    return _pin_prob(p)
+    return _clip_prob(p)
 
 
 def _kolmogn_DMTW(n, d, cdf=True):
-    r"""Compute the Kolmogorov CDF:  Pr(D_n <= d) using the MTW approach to
+    r"""Computes the Kolmogorov CDF:  Pr(D_n <= d) using the MTW approach to
     the Durbin matrix algorithm.
 
-    Durbin (1968); Marsaglia, Tsang, Wang (2003). [1], [3]."""
+    Durbin (1968); Marsaglia, Tsang, Wang (2003). [1], [3].
+    """
     # Write d = (k-h)/n, where k is positive integer and 0 <= h < 1
     # Generate initial matrix H of size m*m where m=(2k-1)
     # Compute k-th row of (n!/n^n) * H^n, scaling intermediate results.
     # Requires memory O(m^2) and computation O(m^2 log(n)).
     # Most suitable for small m.
 
-    if d <= 0.5/n:
-        return _select_and_pin_prob(0.0, 1.0, cdf)
-    elif d >= 1.0:
-        return _select_and_pin_prob(1.0, 0.0, cdf)
+    if d >= 1.0:
+        return _select_and_clip_prob(1.0, 0.0, cdf)
     nd = n * d
+    if nd <= 0.5:
+        return _select_and_clip_prob(0.0, 1.0, cdf)
     k = int(np.ceil(nd))
     h = k - nd
     m = 2 * k - 1
-
-    if k == 1:  # n * d <= 1:
-        # p = { 0,                  if h >= 0.5 (0.0 <= d <= 0.5/n)
-        #     { (1-2h)^n * n!/n^n,  if h <= 0.5 (0.5/n <= d <= 1/n)
-        #        =  n! (2d-1/n)^n
-        if n * d <= 0.5:
-            return _select_and_pin_prob(0, 1, cdf)
-        nu = 2 * d - 1.0 / n
-        if n < 10:
-            p = np.prod(np.arange(1, n + 1)) * np.power(nu, n)
-        else:
-            logp = scipy.special.loggamma(n + 1) + n * np.log(nu)
-            p = 0.0 if logp < _MIN_LOG else np.exp(logp)
-        return _select_and_pin_prob(p, 1.0 - p, cdf)
-
-    # if d >= 0.5, then p = 1 - 2*scipy.special.smirnov(n, d)
-    # Pull out the topmost values for d, the ones closest to 1.0
-    if k == n:  # d >= 1 - 1/n
-        q = 2 * np.power(1 - d, n)  # 2(1-d)^n
-        p = 1 - q
-        return _select_and_pin_prob(p, q, cdf)
 
     H = np.zeros([m, m])
 
@@ -168,7 +169,6 @@ def _kolmogn_DMTW(n, d, cdf=True):
             Hexpnt += _E128
         nn = nn // 2
 
-    # ans = (Hpwr[k-1, k-1] * 2^expnt) * n!/n^n
     p = Hpwr[k - 1, k - 1]
 
     # Multiply by n!/n^n
@@ -182,43 +182,44 @@ def _kolmogn_DMTW(n, d, cdf=True):
     if expnt != 0:
         p = np.ldexp(p, expnt)
 
-    return _select_and_pin_prob(p, 1.0-p, cdf)
+    return _select_and_clip_prob(p, 1.0-p, cdf)
 
 
 def _pomeranz_compute_j1j2(i, n, ll, ceilf, roundf):
-    '''Compute the endpoints of the interval for row i.'''
+    """Compute the endpoints of the interval for row i."""
     if i == 0:
         j1, j2 = -ll - ceilf - 1, ll + ceilf - 1
     else:
-        # i + 1 = 2*id2 + remainder
-        id2 = (i + 1) // 2
-        if (i + 1) % 2 == 0:  # i+1 is even, so i is odd
-            if id2 == n + 1:
+        # i + 1 = 2*ip1div2 + ip1mod2
+        ip1div2, ip1mod2 = divmod(i + 1, 2)
+        if ip1mod2 == 0:  # i is odd
+            if ip1div2 == n + 1:
                 j1, j2 = n - ll - ceilf - 1, n + ll + ceilf - 1
             else:
-                j1, j2 = id2 - 1 - ll - roundf - 1, id2 + ll - 1 + ceilf - 1
+                j1, j2 = ip1div2 - 1 - ll - roundf - 1, ip1div2 + ll - 1 + ceilf - 1
         else:
-            assert (i + 1) % 2 != 0  # i+1 is odd, i is even
-            j1, j2 = id2 - 1 - ll - 1, id2 + ll + roundf - 1
+            j1, j2 = ip1div2 - 1 - ll - 1, ip1div2 + ll + roundf - 1
+
     return max(j1 + 2, 0), min(j2, n)
 
 
 def _kolmogn_Pomeranz(n, x, cdf=True):
-    r"""Compute Pr(D_n <= d) using the Pomeranz recursion algorithm.
+    r"""Computes Pr(D_n <= d) using the Pomeranz recursion algorithm.
 
-    Pomeranz (1974) [2]"""
+    Pomeranz (1974) [2]
+    """
 
     # V is n*(2n+2) matrix.
     # Each row is convolution of the previous row and probabilities from a
     #  Poisson distribution.
     # Desired CDF probability is n! V[n-1, 2n+1]  (final entry in final row).
-    # Scale intermediate results as needed.
     # Only two rows are needed at any given stage:
     #  - Call them V0 and V1.
     #  - Swap each iteration
     # Only a few (contiguous) entries in each row can be non-zero.
     #  - Keep track of start and end (j1 and j2 below)
     #  - V0s and V1s track the start in the two rows
+    # Scale intermediate results as needed.
     # Only a few different Poisson distributions can occur
     t = n * x
     ll = int(np.floor(t))
@@ -282,95 +283,45 @@ def _kolmogn_Pomeranz(n, x, cdf=True):
     # Undo any intermediate scaling
     if expnt != 0:
         ans = np.ldexp(ans, expnt)
-    ans = _select_and_pin_prob(ans, 1.0 - ans, cdf)
+    ans = _select_and_clip_prob(ans, 1.0 - ans, cdf)
     return ans
 
 
-def _kolmogn_LCK(n, x, cdf=True):
-    """Compute the Li-Chien, Korolyuk approximation to Pr(D_n <= d).
-
-        Pr(D_n <= d) ~ K0(z) + K1(z)/sqrt(n) + K2(z)/n + K3(z)/n**1.5
-    where z = x*sqrt(n) >> 0.
-    Li-Chien (1956), Korolyuk (1960). [4], [5]"""
-    z = np.sqrt(n)*x
-    K0to3 = np.zeros(4)
-    alpha = -2 * z**2
-    zsq = z*z
-    zquad = np.power(z, 4)
-
-    # Use a Horner scheme to evaluate sum C_k q^(k^2) for each of the 3 series.
-    maxk = int(np.ceil(np.sqrt(_MIN_LOG / alpha)) // 2)
-    maxk = max(maxk, 1)
-    for k in range(maxk, 0, -1):
-        qpower = np.exp((2 * k + 1) * alpha)
-        ksq = k ** 2
-        kfour = k ** 4
-        f1 = ksq - (1 if (k % 2) else 0)
-        f2 = 5 * ksq + 22 - 15 * (1 if (k % 2) else 0)
-        coeffs = np.array([
-            1.0,
-            ksq,
-            (f1 - 4 * (f1 + 3) * ksq * zsq + 8 * kfour * zquad),
-            (f2 / 5 - 4 * (f2 + 45) * ksq * zsq / 15 + 8 * kfour * zquad) * ksq
-        ])
-        if k % 2:
-            coeffs *= -1.0
-        K0to3 *= qpower
-        K0to3 += coeffs
-    K0to3 *= np.exp(alpha)
-
-    # Multiply by some constants
-    K0to3 *= np.array([-2.0, 4 * z / 3.0, 1 / 9.0, -2 * z / 27.0])
-    if cdf:
-        K0to3 *= -1
-        K0to3[0] += 1
-
-    powers_of_n = np.power(n, np.arange(0, len(K0to3)) / 2.0)
-    K0to3 = K0to3 / powers_of_n
-    Ksum = sum(K0to3)
-    return Ksum
-
-
 def _kolmogn_PelzGood(n, x, cdf=True):
-    """Compute the Pelz-Good approximation to Prob(Dn <= x) with 0<=x<=1.
+    """Computes the Pelz-Good approximation to Prob(Dn <= x) with 0<=x<=1.
 
     Start with Li-Chien, Korolyuk approximation:
         Prob(Dn <= x) ~ K0(z) + K1(z)/sqrt(n) + K2(z)/n + K3(z)/n**1.5
     where z = x*sqrt(n).
     Transform each K_(z) using Jacobi theta functions into a form suitable
     for small z.
-    Pelz-Good (1976). [6]"""
+    Pelz-Good (1976). [6]
+    """
     if x <= 0.0:
-        return _select_and_pin_prob(0.0, 1.0, cdf=cdf)
+        return _select_and_clip_prob(0.0, 1.0, cdf=cdf)
     if x >= 1.0:
-        return _select_and_pin_prob(1.0, 0.0, cdf=cdf)
-
-    pisquared = np.pi**2
-    pifour = np.pi**4
-    pisix = np.pi**6
+        return _select_and_clip_prob(1.0, 0.0, cdf=cdf)
 
     z = np.sqrt(n) * x
-    zsquared = z**2
-    zfour = z**4
-    zsix = z**6
+    zsquared, zthree, zfour, zsix = z**2, z**3, z**4, z**6
 
-    qlog = -pisquared / 8 / zsquared
+    qlog = -_PI_SQUARED / 8 / zsquared
     if qlog < _MIN_LOG:  # z ~ 0.041743441416853426
-        return _select_and_pin_prob(0.0, 1.0, cdf=cdf)
+        return _select_and_clip_prob(0.0, 1.0, cdf=cdf)
 
     q = np.exp(qlog)
 
     # Coefficients of terms in the sums for K1, K2 and K3
     k1a = -zsquared
-    k1b = pisquared / 4
+    k1b = _PI_SQUARED / 4
 
     k2a = 6 * zsix + 2 * zfour
-    k2b = (2 * zfour - 5 * zsquared) * pisquared / 4
-    k2c = pifour * (1 - 2 * zsquared) / 16
+    k2b = (2 * zfour - 5 * zsquared) * _PI_SQUARED / 4
+    k2c = _PI_FOUR * (1 - 2 * zsquared) / 16
 
-    k3d = pisix * (5 - 30 * zsquared) / 64
-    k3c = pifour * (-60 * zsquared + 212 * zfour) / 16
-    k3b = pisquared * (135 * zfour - 96 * zsix) / 4
+    k3d = _PI_SIX * (5 - 30 * zsquared) / 64
+    k3c = _PI_FOUR * (-60 * zsquared + 212 * zfour) / 16
+    k3b = _PI_SQUARED * (135 * zfour - 96 * zsix) / 4
     k3a = -30 * zsix - 90 * z**8
 
     K0to3 = np.zeros(4)
@@ -379,14 +330,12 @@ def _kolmogn_PelzGood(n, x, cdf=True):
     maxk = int(np.ceil(16 * z / np.pi))
     for k in range(maxk, 0, -1):
         m = 2 * k - 1
-        msquared = m ** 2
-        mfour = m ** 4
-        msix = m ** 6
+        msquared, mfour, msix = m**2, m**4, m**6
         qpower = np.power(q, 8 * k)
         coeffs = np.array([1.0,
-                           k1a + k1b * msquared,
-                           k2a + k2b*msquared + k2c * mfour,
-                           k3a + k3b*msquared + k3c * mfour + k3d * msix])
+                           k1a + k1b*msquared,
+                           k2a + k2b*msquared + k2c*mfour,
+                           k3a + k3b*msquared + k3c*mfour + k3d*msix])
         K0to3 *= qpower
         K0to3 += coeffs
     K0to3 *= q
@@ -395,28 +344,22 @@ def _kolmogn_PelzGood(n, x, cdf=True):
     K0to3 /= np.array([z, 6 * zfour, 72 * z**7, 6480 * z**10])
 
     # Now do the other sum over the other terms, all integers k
-    q = np.exp(-pisquared / 2 / zsquared)
-    # Coefficients of terms in the sums for K3
-    k2b = np.pi**2
-    k3b = 3 * pisquared * zsquared
-    k3c = -pifour
-    K0to3Extra = np.zeros(2)
-
-    for k in range(maxk, 0, -1):
-        ksquared = k**2
-        kfour = k**4
-        qpower = np.power(q, 2 * k + 1)
-        coeffs = np.array([k2b * ksquared, k3b * ksquared + k3c * kfour])
-        K0to3Extra *= qpower
-        K0to3Extra += coeffs
-    K0to3Extra *= q
-
-    zthree = z**3
-    K0to3Extra *= _SQRT2PI
-    K0to3Extra /= np.array([-36 * zthree, 216 * zsix])
-
-    K0to3[2:4] += K0to3Extra
-    powers_of_n = np.power(n * 1.0, np.arange(0, len(K0to3)) / 2.0)
+    # K_2:  (pi^2 k^2) q^(k^2),
+    # K_3:  (3pi^2 k^2 z^2 - pi^4 k^4)*q^(k^2)
+    # Don't expect much subtractive cancellation so use direct calculation
+    q = np.exp(-_PI_SQUARED / 2 / zsquared)
+    ks = np.arange(maxk, 0, -1)
+    ksquared = ks ** 2
+    sqrt3z = _SQRT3 * z
+    kspi = np.pi * ks
+    qpwers = q ** ksquared
+    k2extra = np.sum(ksquared * qpwers)
+    k2extra *= _PI_SQUARED * _SQRT2PI/(-36 * zthree)
+    K0to3[2] += k2extra
+    k3extra = np.sum((sqrt3z + kspi) * (sqrt3z - kspi) * ksquared * qpwers)
+    k3extra *= _PI_SQUARED * _SQRT2PI/(216 * zsix)
+    K0to3[3] += k3extra
+    powers_of_n = np.power(n * 1.0, np.arange(len(K0to3)) / 2.0)
     K0to3 /= powers_of_n
 
     if not cdf:
@@ -428,45 +371,47 @@ def _kolmogn_PelzGood(n, x, cdf=True):
 
 
 def _kolmogn(n, x, cdf=True):
-    """Compute the CDF(SF) for the two-sided Kolmogorov-Smirnov statistic.
+    """Computes the CDF(or SF) for the two-sided Kolmogorov-Smirnov statistic.
 
     x must be of type float, n of type integer.
 
-    Simard & L'Ecuyer (2011) [7]."""
+    Simard & L'Ecuyer (2011) [7].
+    """
+    if np.isnan(n):
+        return n  # Keep the same type of nan
     if int(n) != n or n <= 0:
         return np.nan
     if x >= 1.0:
-        return _select_and_pin_prob(1.0, 0.0, cdf=cdf)
+        return _select_and_clip_prob(1.0, 0.0, cdf=cdf)
     if x <= 0.0:
-        return _select_and_pin_prob(0.0, 1.0, cdf=cdf)
+        return _select_and_clip_prob(0.0, 1.0, cdf=cdf)
     t = n * x
-    if t <= 1.0:  # Ruben-Gambino
+    if t <= 1.0:  # Ruben-Gambino: 1/2n <= x <= 1/n
         if t <= 0.5:
-            return _select_and_pin_prob(0.0, 1.0, cdf=cdf)
-        prd = 1.0
-        mlt = 2 * t - 1
-        for m in range(1, n + 1):
-            prd = prd * m * mlt / n
-        return _select_and_pin_prob(prd, 1.0 - prd, cdf=cdf)
+            return _select_and_clip_prob(0.0, 1.0, cdf=cdf)
+        if n <= 140:
+            prob = np.prod(np.arange(1, n+1) * (1.0/n) * (2*t - 1))
+        else:
+            prob = np.exp(_log_nfactorial_div_n_pow_n(n) + n * np.log(2*t-1))
+        return _select_and_clip_prob(prob, 1.0 - prob, cdf=cdf)
     if t >= n - 1:  # Ruben-Gambino
-        onemx = 1.0 - x
-        prob = 2 * onemx**n
-        return _select_and_pin_prob(1 - prob, prob, cdf=cdf)
+        prob = 2 * (1.0 - x)**n
+        return _select_and_clip_prob(1 - prob, prob, cdf=cdf)
     if x >= 0.5:  # Exact: 2 * smirnov
         prob = 2 * scipy.special.smirnov(n, x)
-        return _select_and_pin_prob(1.0 - prob, prob, cdf=cdf)
+        return _select_and_clip_prob(1.0 - prob, prob, cdf=cdf)
 
     nxsquared = t * x
     if n <= 140:
         if nxsquared <= 0.754693:
             prob = _kolmogn_DMTW(n, x, cdf=True)
-            return _select_and_pin_prob(prob, 1.0 - prob, cdf=cdf)
+            return _select_and_clip_prob(prob, 1.0 - prob, cdf=cdf)
         if nxsquared <= 4:
             prob = _kolmogn_Pomeranz(n, x, cdf=True)
-            return _select_and_pin_prob(prob, 1.0 - prob, cdf=cdf)
+            return _select_and_clip_prob(prob, 1.0 - prob, cdf=cdf)
         # Now use Miller approximation of 2*smirnov
         prob = 2 * scipy.special.smirnov(n, x)
-        return _select_and_pin_prob(1.0 - prob, prob, cdf=cdf)
+        return _select_and_clip_prob(1.0 - prob, prob, cdf=cdf)
 
     # Split CDF and SF as they have different cutoffs on nxsquared.
     if cdf:
@@ -475,53 +420,47 @@ def _kolmogn(n, x, cdf=True):
         if n <= 100000:
             if n * x**1.5 <= 1.4:
                 prob = _kolmogn_DMTW(n, x, cdf=True)
-                return _pin_prob(prob)
-            prob = _kolmogn_PelzGood(n, x, cdf=True)
-            return _pin_prob(prob)
-        # n > 1e5
-        if nxsquared >= 18.0:
-            return 1.0
+                return _clip_prob(prob)
+        # n > 1e5 or  n * x**1.5 > 1.4
         prob = _kolmogn_PelzGood(n, x, cdf=True)
-        return _pin_prob(prob)
-    else:
-        # compute the SF
-        if nxsquared >= 370.0:
-            return 0.0
-        if nxsquared >= 2.2:
-            prob = 2 * scipy.special.smirnov(n, x)
-            return _pin_prob(prob)
-        # Compute the CDF and take its complement
-        cdfprob = _kolmogn(n, x, cdf=True)
-        return _pin_prob(1.0 - cdfprob)
+        return _clip_prob(prob)
+    # compute the SF
+    if nxsquared >= 370.0:
+        return 0.0
+    if nxsquared >= 2.2:
+        prob = 2 * scipy.special.smirnov(n, x)
+        return _clip_prob(prob)
+    # Compute the CDF and take its complement
+    cdfprob = _kolmogn(n, x, cdf=True)
+    return _clip_prob(1.0 - cdfprob)
 
 
 def _kolmogn_p(n, x):
-    """Compute the PDF for the two-sided Kolmogorov-Smirnov statistic.
+    """Computes the PDF for the two-sided Kolmogorov-Smirnov statistic.
 
-    x must be of type float, n of type integer."""
+    x must be of type float, n of type integer.
+    """
+    if np.isnan(n):
+        return n  # Keep the same type of nan
     if int(n) != n or n <= 0:
         return np.nan
     if x >= 1.0 or x <= 0:
         return 0
     t = n * x
     if t <= 1.0:
+        # Ruben-Gambino: n!/n^n * (2t-1)^n -> 2 n!/n^n * n^2 * (2t-1)^(n-1)
         if t <= 0.5:
-            # Ruben-Gambino
             return 0.0
-        prd = 1.0
-        mlt = 2 * t - 1
-        for m in range(1, n):
-            prd = prd * m * mlt / n
-        prd = prd * 2 * n * n
-        return prd
+        if n <= 140:
+            prd = np.prod(np.arange(1, n) * (1.0 / n) * (2 * t - 1))
+        else:
+            prd = np.exp(_log_nfactorial_div_n_pow_n(n) + (n-1) * np.log(2 * t - 1))
+        return prd * 2 * n**2
     if t >= n - 1:
-        # Ruben-Gambino
-        onemx = 1.0 - x
-        pdf = 2 * onemx ** (n-1) * n
-        return pdf
+        # Ruben-Gambino : 1-2(1-x)**n -> 2n*(1-x)**(n-1)
+        return 2 * (1.0 - x) ** (n-1) * n
     if x >= 0.5:
-        pdf = scipy.stats.ksone.pdf(x, n)
-        return 2 * pdf
+        return 2 * scipy.stats.ksone.pdf(x, n)
 
     # Just take a small delta.
     # Ideally x +/- delta would stay within [i/n, (i+1)/n] for some integer a.
@@ -535,73 +474,111 @@ def _kolmogn_p(n, x):
     def _kk(_x):
         return kolmogn(n, _x)
 
-    pdf = scipy.misc.derivative(_kk, x, dx=delta, order=5)
-
-    return pdf
+    return scipy.misc.derivative(_kk, x, dx=delta, order=5)
 
 
 def _kolmogni(n, p, q):
-    """Compute the PPF/ISF of kolmogn.
+    """Computes the PPF/ISF of kolmogn.
 
     n of type integer, n>= 1
     p is the CDF, q the SF, p+q=1
     """
+    if np.isnan(n):
+        return n  # Keep the same type of nan
+    if int(n) != n or n <= 0:
+        return np.nan
     if p <= 0:
         return 1.0/n
     if q <= 0:
         return 1.0
     delta = np.exp((np.log(p) - scipy.special.loggamma(n+1))/n)
     if delta <= 1.0/n:
-        x = (delta + 1.0 / n) / 2
-        return x
+        return (delta + 1.0 / n) / 2
     x = -np.expm1(np.log(q/2.0)/n)
-    if x >= 1-1.0/n:
+    if x >= 1 - 1.0/n:
         return x
     x1 = scu._kolmogci(p)/np.sqrt(n)
     x1 = min(x1, 1.0 - 1.0/n)
-    f = lambda x: _kolmogn(n, x) - p
-    x = scipy.optimize.brentq(f, 1.0/n, x1, xtol=1e-14)
-    return x
+    _f = lambda x: _kolmogn(n, x) - p
+    return scipy.optimize.brentq(_f, 1.0/n, x1, xtol=1e-14)
 
 
 def kolmogn(n, x, cdf=True):
-    """Compute the CDF for the two-sided Kolmogorov-Smirnov distribution.
+    """Computes the CDF for the two-sided Kolmogorov-Smirnov distribution.
 
-    n may be an integer, or a numpy iterable of same.
-    x may be a float, or a numpy iterable of same.
-    If cdf is False, the SF is returned.
-    The return value has shape the result of numpy broadcasting n and x."""
+    The two-sided Kolmogorov-Smirnov distribution has as its CDF Pr(D_n <= x),
+    for a sample of size n drawn from a distribution with CDF F(t), where
+    D_n &= sup_t |F_n(t) - F(t)|, and
+    F_n(t) is the Empirical Cumulative Distribution Function of the sample.
+
+    Parameters
+    ----------
+    n : integer, array_like
+        the number of samples
+    x : float, array_like
+        The K-S statistic, float between 0 and 1
+    cdf : bool, optional
+        whether to compute the CDF(default=true) or the SF.
+
+    Returns
+    -------
+    cdf : ndarray
+        CDF (or SF it cdf is False) at the specified locations.
+
+    The return value has shape the result of numpy broadcasting n and x.
+    """
     it = np.nditer([n, x, None])
     for _n, _x, z in it:
         z[...] = _kolmogn(int(_n), _x, cdf=cdf)
     result = it.operands[2]
-
     return result
 
 
 def kolmognp(n, x):
-    """Compute the PDF for the two-sided Kolmogorov-Smirnov distribution.
+    """Computes the PDF for the two-sided Kolmogorov-Smirnov distribution.
 
-    n may be an integer, or a numpy iterable of same.
-    x may be a float, or a numpy iterable of same.
-    The return value has shape the result of numpy broadcasting n and x."""
+    Parameters
+    ----------
+    n : integer, array_like
+        the number of samples
+    x : float, array_like
+        The K-S statistic, float between 0 and 1
+
+    Returns
+    -------
+    pdf : ndarray
+        The PDF at the specified locations
+
+    The return value has shape the result of numpy broadcasting n and x.
+    """
     it = np.nditer([n, x, None])
     for _n, _x, z in it:
         z[...] = _kolmogn_p(int(_n), _x)
     result = it.operands[2]
-
     return result
 
 
 def kolmogni(n, q, cdf=True):
-    """Compute the PPF(ISF) for the two-sided Kolmogorov-Smirnov distribution.
+    """Computes the PPF(or ISF) for the two-sided Kolmogorov-Smirnov distribution.
 
-    n may be an integer, or a numpy iterable of same.
-    q may be a float, or a numpy iterable of same.
-    The return value has shape the result of numpy broadcasting n and q."""
+    Parameters
+    ----------
+    n : integer, array_like
+        the number of samples
+    q : float, array_like
+        Probabilities, float between 0 and 1
+    cdf : bool, optional
+        whether to compute the PPF(default=true) or the ISF.
+
+    Returns
+    -------
+    ppf : ndarray
+        PPF (or ISF if cdf is False) at the specified locations
+
+    The return value has shape the result of numpy broadcasting n and x.
+    """
     it = np.nditer([n, q, None])
     for _n, _q, z in it:
         z[...] = _kolmogni(int(_n), _q if cdf else 1.0-_q, 1.0-_q if cdf else _q)
     result = it.operands[2]
-
     return result
