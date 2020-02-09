@@ -1700,7 +1700,7 @@ def anderson(x, dist='norm'):
     """
     Anderson-Darling test for data coming from a particular distribution.
 
-    The Anderson-Darling tests the null hypothesis that a sample is
+    The Anderson-Darling test tests the null hypothesis that a sample is
     drawn from a population that follows a particular distribution.
     For the Anderson-Darling test, the critical values depend on
     which distribution is being tested against.  This function works
@@ -1711,10 +1711,11 @@ def anderson(x, dist='norm'):
     ----------
     x : array_like
         Array of sample data.
-    dist : {'norm','expon','logistic','gumbel','gumbel_l', gumbel_r',
+    dist : {'norm', 'expon', 'logistic', 'gumbel', 'gumbel_l', 'gumbel_r',
         'extreme1'}, optional
-        the type of distribution to test against.  The default is 'norm'
-        and 'extreme1', 'gumbel_l' and 'gumbel' are synonyms.
+        The type of distribution to test against.  The default is 'norm'.
+        The names 'extreme1', 'gumbel_l' and 'gumbel' are synonyms for the
+        same distribution.
 
     Returns
     -------
