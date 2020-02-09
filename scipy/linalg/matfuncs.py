@@ -717,7 +717,8 @@ def khatri_rao(a, b):
         raise ValueError("The both arrays should be 2-dimensional.")
 
     if not a.shape[1] == b.shape[1]:
-        raise ValueError("The number of columns for both arrays should be equal.")
+        raise ValueError("The number of columns for both arrays "
+                         "should be equal.")
 
     # c = np.vstack([np.kron(a[:, k], b[:, k]) for k in range(b.shape[1])]).T
     c = a[..., :, np.newaxis, :] * b[..., np.newaxis, :, :]
