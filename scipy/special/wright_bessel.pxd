@@ -52,7 +52,7 @@ DEF rgamma_zero = 178.47241115886637
 # exp_inf: smallest value x for which exp(x) == inf
 DEF exp_inf = 709.78271289338403
 # exp_zero: largest value x for which exp(x) == 0
-DEF exp_zero = -745.13321910194117
+# DEF exp_zero = -745.13321910194117
 
 
 # 1. Tylor series expansion in x=0
