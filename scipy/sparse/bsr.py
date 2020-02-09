@@ -388,10 +388,10 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
         indptr = np.empty(self.indptr.shape, dtype=idx_dtype)
 
         csr_matmat_pass1(M//R, N//C,
-                         self.indptr.astype(idx_dtype),
-                         self.indices.astype(idx_dtype),
-                         other.indptr.astype(idx_dtype),
-                         other.indices.astype(idx_dtype),
+                         self.indptr.astype(idx_dtype, copy=False),
+                         self.indices.astype(idx_dtype, copy=False),
+                         other.indptr.astype(idx_dtype, copy=False),
+                         other.indices.astype(idx_dtype, copy=False),
                          indptr)
 
         bnnz = indptr[-1]
@@ -404,11 +404,11 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
         data = np.empty(R*C*bnnz, dtype=upcast(self.dtype,other.dtype))
 
         bsr_matmat_pass2(M//R, N//C, R, C, n,
-                         self.indptr.astype(idx_dtype),
-                         self.indices.astype(idx_dtype),
+                         self.indptr.astype(idx_dtype, copy=False),
+                         self.indices.astype(idx_dtype, copy=False),
                          np.ravel(self.data),
-                         other.indptr.astype(idx_dtype),
-                         other.indices.astype(idx_dtype),
+                         other.indptr.astype(idx_dtype, copy=False),
+                         other.indices.astype(idx_dtype, copy=False),
                          np.ravel(other.data),
                          indptr,
                          indices,
