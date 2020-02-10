@@ -309,4 +309,5 @@ class TestKMean(object):
         # 20x100 dataset
         np.random.seed(42)
         res, _ = kmeans2(data, 2, minit='++')
-        assert_array_almost_equal(res, centers, decimal=0) 
+        assert_array_almost_equal(res, centers, decimal=0)
+        
