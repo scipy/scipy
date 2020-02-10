@@ -20,7 +20,7 @@ from numpy import (eye, ones, zeros, zeros_like, triu, tril, tril_indices,
 from numpy.random import rand, randint, seed
 
 from scipy.linalg import _flapack as flapack, lapack
-from scipy.linalg import inv, svd, cholesky, solve, ldl, norm, block_diag, qr
+from scipy.linalg import inv, svd, cholesky, solve, ldl, norm, block_diag, qr, eig
 from scipy.linalg.lapack import _compute_lwork
 from scipy.stats import ortho_group, unitary_group
 
@@ -2245,3 +2245,53 @@ def test_orcsd_uncsd(dtype_):
 
     Xc = U @ S @ VH
     assert_allclose(X, Xc, rtol=0., atol=1e4*np.finfo(dtype_).eps)
+
+
+@pytest.mark.parametrize("dtype", DTYPES)
+@pytest.mark.parametrize("compz", ["V", "I", "N"])
+def test_pteqr(dtype, compz):
+    np.random.seed(42)
+    rtol = 250*np.finfo(dtype).eps
+    atol = 100*np.finfo(dtype).eps
+    pteqr = get_lapack_funcs(('pteqr'), dtype=dtype)
+
+    n = 10
+    # d and e are always real, per lapack docs.
+    d = generate_random_dtype_array((n,), DTYPES[1])
+    e = generate_random_dtype_array((n-1,), DTYPES[1])
+
+    if compz == "I":
+        z = None
+    else:
+        # need to determine this
+        pass
+
+    A = np.diag(d) + np.diag(e, 1) + np.diag(e, -1)
+
+    d_eigen, e_, z_, work, info = pteqr(d, e, z, compz=compz)
+
+    w, vl = eig(A)
+
+    assert_allclose(w, d_eigen, rtol=rtol, atol=atol)
+
+    assert_allclose(z_ @ z_.T, np.identity(n))
+
+
+@pytest.mark.parametrize("compz,d,e,z,d_expect,z_expect",
+                         [("I",
+                           np.array([4.16, 5.25, 1.09, .62]),
+                           np.array([3.17, -.97, .55]),
+                           None,
+                           np.array([8.0023, 1.9926, 1.0014, 0.1237]),
+                           np.array([[0.6326,  0.6245, -0.4191,  0.1847],
+                                     [0.7668, -0.4270, 0.4176, -0.2352],
+                                     [-0.1082, 0.6071, 0.4594, -0.6393],
+                                     [-0.0081, 0.2432, 0.6625, 0.7084]]))])
+def test_pteqr_NAG(compz, d, e, z, d_expect, z_expect):
+    # the NAG manual has 4 decmals accuracy
+    rtol = 1e-4
+    # get appropriate ?pteqr for dtype
+    pteqr = get_lapack_funcs(('pteqr'), dtype=d.dtype)
+    _d, _e, _z, work, info = pteqr(d, e, z, compz=compz)
+    assert_allclose(_d, d_expect, rtol=rtol)
+    assert_allclose(_z, z_expect, rtol=rtol)
