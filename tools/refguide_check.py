@@ -35,16 +35,15 @@ import shutil
 import sys
 import tempfile
 import warnings
-import docutils.core
 from argparse import ArgumentParser
 from contextlib import contextmanager, redirect_stderr
 from doctest import NORMALIZE_WHITESPACE, ELLIPSIS, IGNORE_EXCEPTION_DETAIL
 
+import docutils.core
+import numpy as np
+import sphinx
 from docutils.parsers.rst import directives
 from pkg_resources import parse_version
-
-import sphinx
-import numpy as np
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'doc', 'sphinxext'))
 from numpydoc.docscrape_sphinx import get_doc_object
