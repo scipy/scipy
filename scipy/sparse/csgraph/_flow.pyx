@@ -30,7 +30,7 @@ class MaximumFlowResult:
 def maximum_flow(csgraph, source, sink):
     r"""
     maximum_flow(csgraph, source, sink)
-                  
+
     Maximize the flow between two vertices in a graph.
 
     .. versionadded:: 1.4.0
@@ -86,6 +86,9 @@ def maximum_flow(csgraph, source, sink):
     to reduce the problem to the integral case by scaling all capacities
     accordingly.
 
+    Solving a maximum-flow problem can be used for example for graph cuts
+    optimization in computer vision [3]_.
+
     References
     ----------
     .. [1] Edmonds, J. and Karp, R. M.
@@ -93,6 +96,7 @@ def maximum_flow(csgraph, source, sink):
            problems. 1972. Journal of the ACM. 19 (2): pp. 248-264
     .. [2] Cormen, T. H. and Leiserson, C. E. and Rivest, R. L. and Stein C.
            Introduction to Algorithms. Second Edition. 2001. MIT Press.
+    .. [3] https://en.wikipedia.org/wiki/Graph_cuts_in_computer_vision
 
     Examples
     --------
