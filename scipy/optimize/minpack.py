@@ -11,6 +11,7 @@ from numpy import (atleast_1d, dot, take, triu, shape, eye,
                    finfo, inexact, issubdtype, dtype)
 from scipy.linalg import svd, cholesky, solve_triangular, LinAlgError
 from scipy._lib._util import _asarray_validated, _lazywhere
+from scipy._lib._util import getfullargspec_no_self as _getfullargspec
 from .optimize import OptimizeResult, _check_unknown_options, OptimizeWarning
 from ._lsq import least_squares
 from ._lsq.common import make_strictly_feasible
@@ -682,8 +683,9 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
     """
     if p0 is None:
         # determine number of parameters by inspecting the function
-        from scipy._lib._util import getargspec_no_self as _getargspec
-        args, varargs, varkw, defaults = _getargspec(f)
+        sig = _getfullargspec(f)
+        args = sig.args
+        varargs, varkw, defaults = sig.varargs, sig.varkw, sig.defaults
         if len(args) < 2:
             raise ValueError("Unable to determine number of fit parameters.")
         n = len(args) - 1

@@ -15,7 +15,7 @@ from numpy import finfo, power, nan, isclose
 
 from scipy.optimize import zeros, newton, root_scalar
 
-from scipy._lib._util import getargspec_no_self as _getargspec
+from scipy._lib._util import getfullargspec_no_self as _getfullargspec
 
 # Import testing parameters
 from scipy.optimize._tstutils import get_tests, functions as tstutils_functions, fstrings as tstutils_fstrings
@@ -132,10 +132,11 @@ class TestBasic(object):
         # The methods have one of two base signatures:
         # (f, a, b, **kwargs)  # newton
         # (func, x0, **kwargs)  # bisect/brentq/...
-        sig = _getargspec(method)  # ArgSpec with args, varargs, varkw, defaults
-        nDefaults = len(sig[3])
-        nRequired = len(sig[0]) - nDefaults
-        sig_args_keys = sig[0][:nRequired]
+        sig = _getfullargspec(method)  # FullArgSpec with args, varargs, varkw, defaults, ...
+        assert_(not sig.kwonlyargs)
+        nDefaults = len(sig.defaults)
+        nRequired = len(sig.args) - nDefaults
+        sig_args_keys = sig.args[:nRequired]
         sig_kwargs_keys = []
         if name in ['secant', 'newton', 'halley']:
             if name in ['newton', 'halley']:
