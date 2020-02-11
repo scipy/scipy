@@ -199,6 +199,12 @@ def check_random_state_property(distfn, args):
     r2 = distfn.rvs(*args, size=8)
     npt.assert_equal(r0, r2)
 
+    # check that np.random.Generator can be used (numpy >= 1.17)
+    if hasattr(np.random, 'default_rng'):
+        # obtain a np.random.Generator object
+        rng = np.random.default_rng(1234)
+        distfn.rvs(*args, size=1, random_state=rng)
+
     # can override the instance-level random_state for an individual .rvs call
     distfn.random_state = 2
     orig_state = distfn.random_state.get_state()
