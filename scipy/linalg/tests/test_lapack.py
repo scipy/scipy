@@ -1654,3 +1654,95 @@ def test_getc2_gesc2():
         else:
             assert_array_almost_equal(desired_cplx.astype(dtype),
                                       x/scale, decimal=4)
+
+
+def generate_random_dtype_array(shape, dtype):
+    # generates a random matrix of desired data type of shape
+    if dtype in COMPLEX_DTYPES:
+        return (np.random.rand(*shape)
+                + np.random.rand(*shape)*1.0j).astype(dtype)
+    return np.random.rand(*shape).astype(dtype)
+
+
+@pytest.mark.parametrize('dtype', DTYPES)
+def test_gejsv(dtype):
+    np.random.seet(42)
+    rtol = 250 * np.finfo(dtype).eps
+    atol = 100 * np.finfo(dtype).eps
+    # m >= n according to lapack documentation
+    m, n = (6, 5)
+
+    gejsv = get_lapack_funcs('gejsv', dtype=dtype)
+    A = generate_random_dtype_array((m, n), dtype)
+
+    sva, u, v, work, iwork, info = gejsv(A)
+
+    SIGMA = np.diag(work[1/work[0]*sva[:n]])
+    assert_allclose(A, u @ SIGMA @ v.T, rtol=rtol, atol=atol)
+    assert_allclose(u.T @ u, np.eye(u.shape[1]), rtol=rtol, atol=atol)
+
+    '''test with joba = C, E, F, G, A, R'''
+    joba_values = ["E", "F", "G", "A", "R"]
+    for joba in joba_values:
+        sva, u, v, work, iwork, info = gejsv(A, joba=joba)
+
+    '''jobu = U, F (W,N later)'''
+    jobu_values = ["F"]
+    for jobu in jobu_values:
+        sva, u, v, work, iwork, info = gejsv(A, jobu=jobu)
+
+    '''jobv = V, J (W, N later)'''
+    jobv_values = ["J"]
+    for jobv in jobv_values:
+        sva, u, v, work, iwork, info = gejsv(A, jobv=jobv)
+
+    '''jobr = N, R'''
+    jobr_values = ["N"]
+    for jobr in jobr_values:
+        sva, u, v, work, iwork, info = gejsv(A, jobr=jobr)
+
+    '''jobt = N (as default)'''
+    jobt_values = ["N"]
+    for jobt in jobt_values:
+        sva, u, v, work, iwork, info = gejsv(A, jobt=jobt)
+
+    '''jobp = P'''
+    jobp_values = ["N"]
+    for jobp in jobp_values:
+        sva, u, v, work, iwork, info = gejsv(A, jobp=jobp)
+
+    '''jobu, jobv = N, check for correct eigenvalues'''
+    sva, u, v, work, iwork, info = gejsv(A, jobu="N", jobv="N")
+    # correct eigenvalues
+    '''jobt='T', jobu='W', jobv='V', and m==n'''
+    # sva, u, v, work, iwork, info = gejsv(A, joba="C", jobu="U", jobv="V", jobr="R", jobt="N", jobp="N", overwrite_A=0)
+
+
+@pytest.mark.parametrize("A,sva_expect,u_expect,v_expect",
+                         [(np.array([[2.27, -1.54, 1.15, -1.94],
+                                     [0.28, -1.67, 0.94, -0.78],
+                                     [-0.48, -3.09, 0.99, -0.21],
+                                     [1.07, 1.22, 0.79, 0.63],
+                                     [-2.35, 2.93, -1.45, 2.30]
+                                     [0.62, -7.39, 1.03, -2.57]]),
+                           np.array([9.9966, 3.6831, 1.3569, 0.5000]),
+                           np.array([[0.2774, -0.6003, -0.1277, 0.1323],
+                                     [0.2020, -0.0301, 0.2805, 0.7034],
+                                     [0.2918, 0.3348, 0.6453, 0.1906],
+                                     [-0.0938, -0.3699, 0.6781, -0.5399],
+                                     [-0.4213, 0.5266, 0.0413, -0.0575],
+                                     [0.7816, 0.3353, -0.1645, -0.3957]]),
+                           np.array([[0.1921, -0.8030, 0.0041, -0.5642],
+                                     [-0.8794, -0.3926, -0.0752, 0.2587],
+                                     [0.2140, -0.2980, 0.7827, 0.5027],
+                                     [-0.3795, 0.3351, 0.6178, -0.6017]]))])
+def test_gejsv_NAG(A, sva_expect, u_expect, v_expect):
+    # NAG manual provides accuracy up to 4 decimals
+    rtol = 1e-4
+    gejsv = get_lapack_funcs('gejsv', dtype=A.dtype)
+
+    sva, u, v, work, iwork, info = gejsv(A)
+
+    assert_allclose(sva_expect, sva, rtol=rtol)
+    assert_allclose(u_expect, u, rtol=rtol)
+    assert_allclose(v_expect, v, rtol=rtol)
