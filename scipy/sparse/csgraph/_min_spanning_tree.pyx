@@ -86,8 +86,15 @@ def minimum_spanning_tree(csgraph, overwrite=False):
            [0, 0, 0, 0]])
     """
     global NULL_IDX
-    
-    csgraph = validate_graph(csgraph, True, DTYPE, dense_output=False,
+
+    # If we have a function which supports the supplied data type
+    # directly, use it. Otherwise convert to DTYPE.
+    if csgraph.dtype.name + '_t' in _min_spanning_tree.__signatures__:
+        best_dtype = csgraph.dtype
+    else:
+        best_dtype = DTYPE
+
+    csgraph = validate_graph(csgraph, True, best_dtype, dense_output=False,
                              copy_if_sparse=not overwrite)
     cdef int N = csgraph.shape[0]
 
@@ -101,8 +108,8 @@ def minimum_spanning_tree(csgraph, overwrite=False):
     i_sort = np.argsort(data).astype(ITYPE)
     row_indices = np.zeros(len(data), dtype=ITYPE)
 
-    _min_spanning_tree(data, indices, indptr, i_sort,
-                       row_indices, predecessors, rank)
+    _min_spanning_tree[data.dtype.name + '_t'](data, indices, indptr, i_sort,
+                                               row_indices, predecessors, rank)
 
     sp_tree = csr_matrix((data, indices, indptr), (N, N))
     sp_tree.eliminate_zeros()
@@ -110,15 +117,23 @@ def minimum_spanning_tree(csgraph, overwrite=False):
     return sp_tree
 
 
+ctypedef fused tree_data_t:
+    np.int8_t
+    np.int16_t
+    np.int32_t
+    np.int64_t
+    np.float32_t
+    np.float64_t
+
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef void _min_spanning_tree(DTYPE_t[::1] data,
-                             ITYPE_t[::1] col_indices,
-                             ITYPE_t[::1] indptr,
-                             ITYPE_t[::1] i_sort,
-                             ITYPE_t[::1] row_indices,
-                             ITYPE_t[::1] predecessors,
-                             ITYPE_t[::1] rank) nogil:
+cpdef void _min_spanning_tree(tree_data_t[::1] data,
+                              ITYPE_t[::1] col_indices,
+                              ITYPE_t[::1] indptr,
+                              ITYPE_t[::1] i_sort,
+                              ITYPE_t[::1] row_indices,
+                              ITYPE_t[::1] predecessors,
+                              ITYPE_t[::1] rank) nogil:
     # Work-horse routine for computing minimum spanning tree using
     #  Kruskal's algorithm.  By separating this code here, we get more
     #  efficient indexing.
