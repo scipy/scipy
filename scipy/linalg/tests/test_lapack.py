@@ -22,7 +22,7 @@ from numpy import (eye, ones, zeros, zeros_like, triu, tril, tril_indices,
 from numpy.random import rand, randint, seed
 
 from scipy.linalg import _flapack as flapack, lapack
-from scipy.linalg import inv, svd, cholesky, solve, ldl, norm
+from scipy.linalg import inv, svd, cholesky, solve, ldl, norm, eig
 from scipy.linalg.lapack import _compute_lwork
 
 try:
@@ -1664,58 +1664,102 @@ def generate_random_dtype_array(shape, dtype):
     return np.random.rand(*shape).astype(dtype)
 
 
+@pytest.mark.parametrize("size", [(6, 5), (5, 5)])
 @pytest.mark.parametrize('dtype', DTYPES)
-def test_gejsv(dtype):
-    np.random.seet(42)
+@pytest.mark.parametrize('gejsv_lambda',
+                         [(lambda A, gejsv: gejsv(A)),  # base default case
+                          (lambda A, gejsv: gejsv(A, joba="E")),  # joba
+                          (lambda A, gejsv: gejsv(A, joba="F")),
+                          (lambda A, gejsv: gejsv(A, joba="G")),
+                          (lambda A, gejsv: gejsv(A, joba="A")),
+                          (lambda A, gejsv: gejsv(A, joba="R")),
+                          (lambda A, gejsv: gejsv(A, jobu="F")),  # jobu
+                          (lambda A, gejsv: gejsv(A, jobu="W")),
+                          (lambda A, gejsv: gejsv(A, jobv="J")),  # jobv
+                          (lambda A, gejsv: gejsv(A, jobv="V")),
+                          (lambda A, gejsv: gejsv(A, jobr="N")),  # jobr
+                          (lambda A, gejsv: gejsv(A, jobt="T")),  # jobt
+                          (lambda A, gejsv: gejsv(A, jobp="N")),  # jobp
+                          ])
+def test_gejsv_general(size, dtype, gejsv_lambda):
+    '''
+    Tests the lapack routine ?gejsv. This function varies the job? values
+    one at a time per dtype by passing different dtype routines into a lambda
+    that decides parameters. It then tests the general random matrix A of size
+    (m, n) for zero info, that sva, v, and u can be recombined to make A, and
+    that u.T @ u and v.T @ v are the identity. Lastly, we check that iwork [0]
+    and [1] are n.
+    '''
+    np.random.seed(42)
     rtol = 250 * np.finfo(dtype).eps
     atol = 100 * np.finfo(dtype).eps
-    # m >= n according to lapack documentation
-    m, n = (6, 5)
-
-    gejsv = get_lapack_funcs('gejsv', dtype=dtype)
+    m, n = size
     A = generate_random_dtype_array((m, n), dtype)
 
-    sva, u, v, work, iwork, info = gejsv(A)
+    gejsv = get_lapack_funcs('gejsv', dtype=dtype)
+    # pass A and gejsv into lambda expression for parametrized job? values
+    sva, u, v, work, iwork, info = gejsv_lambda(A, gejsv)
 
-    SIGMA = np.diag(work[1/work[0]*sva[:n]])
+    assert_(info == 0, "?gejsv info = {}, not 0".format(info))
+
+    SIGMA = np.diag(work[1] / work[0] * sva[:n])
+
     assert_allclose(A, u @ SIGMA @ v.T, rtol=rtol, atol=atol)
-    assert_allclose(u.T @ u, np.eye(u.shape[1]), rtol=rtol, atol=atol)
+    assert_allclose(u.T @ u, np.identity(u.shape[1]), rtol=rtol, atol=atol)
+    assert_allclose(v @ v.T, np.identity(n), rtol=rtol, atol=atol)
 
-    '''test with joba = C, E, F, G, A, R'''
-    joba_values = ["E", "F", "G", "A", "R"]
-    for joba in joba_values:
-        sva, u, v, work, iwork, info = gejsv(A, joba=joba)
+    assert_(iwork[0] == min(m, n))
+    assert_(iwork[1] == min(m, n))
 
-    '''jobu = U, F (W,N later)'''
-    jobu_values = ["F"]
-    for jobu in jobu_values:
-        sva, u, v, work, iwork, info = gejsv(A, jobu=jobu)
 
-    '''jobv = V, J (W, N later)'''
-    jobv_values = ["J"]
-    for jobv in jobv_values:
-        sva, u, v, work, iwork, info = gejsv(A, jobv=jobv)
-
-    '''jobr = N, R'''
-    jobr_values = ["N"]
-    for jobr in jobr_values:
-        sva, u, v, work, iwork, info = gejsv(A, jobr=jobr)
-
-    '''jobt = N (as default)'''
-    jobt_values = ["N"]
-    for jobt in jobt_values:
-        sva, u, v, work, iwork, info = gejsv(A, jobt=jobt)
-
-    '''jobp = P'''
-    jobp_values = ["N"]
-    for jobp in jobp_values:
-        sva, u, v, work, iwork, info = gejsv(A, jobp=jobp)
+@pytest.mark.parametrize("dtype", DTYPES)
+def test_gejsv_specific(dtype):
+    '''
+    Tests more specific cases of routine ?gejsv, specifically for when
+    u and v are not computed, matrix A is 1D, 1x1, empty, lwork = 0,
+    and invalid job? parameters.
+    '''
+    np.random.seed(42)
+    rtol = 250 * np.finfo(dtype).eps
+    atol = 100 * np.finfo(dtype).eps
+    m, n = (6, 5)
+    gejsv = get_lapack_funcs('gejsv', dtype=dtype)
+    A = generate_random_dtype_array((m, n), dtype)
 
     '''jobu, jobv = N, check for correct eigenvalues'''
     sva, u, v, work, iwork, info = gejsv(A, jobu="N", jobv="N")
     # correct eigenvalues
-    '''jobt='T', jobu='W', jobv='V', and m==n'''
-    # sva, u, v, work, iwork, info = gejsv(A, joba="C", jobu="U", jobv="V", jobr="R", jobt="N", jobp="N", overwrite_A=0)
+    assert_allclose(sva, eig(A), rtol=rtol, atol=atol)
+
+    # Invalid job? parameters should result in non zero info
+    sva, u, v, work, iwork, info = gejsv(A, joba="L")
+    assert_(info != 0)
+    sva, u, v, work, iwork, info = gejsv(A, jobu="L")
+    assert_(info != 0)
+    sva, u, v, work, iwork, info = gejsv(A, jobv="L")
+    assert_(info != 0)
+    sva, u, v, work, iwork, info = gejsv(A, jobr="L")
+    assert_(info != 0)
+    sva, u, v, work, iwork, info = gejsv(A, jobt="L")
+    assert_(info != 0)
+    sva, u, v, work, iwork, info = gejsv(A, jobp="L")
+    assert_(info != 0)
+
+    # lwork is zero
+    sva, u, v, work, iwork, info = gejsv(A, lwork=0)
+    assert_(info != 0, "?gejsv info = {}".format(info))
+    # A is 1D
+    A = generate_random_dtype_array((m, 1), dtype)
+    sva, u, v, work, iwork, info = gejsv(A)
+    assert_(info == 1, "?gejsv info = {}".format(info))
+    # A is 1 x 1
+    A = generate_random_dtype_array((1, 1), dtype)
+    sva, u, v, work, iwork, info = gejsv(A)
+    assert_(info == 1, "?gejsv info = {}".format(info))
+    # A is empty
+    A = None
+    sva, u, v, work, iwork, info = gejsv(A)
+    assert_(info == 1, "?gejsv info = {}".format(info))
 
 
 @pytest.mark.parametrize("A,sva_expect,u_expect,v_expect",
@@ -1723,7 +1767,7 @@ def test_gejsv(dtype):
                                      [0.28, -1.67, 0.94, -0.78],
                                      [-0.48, -3.09, 0.99, -0.21],
                                      [1.07, 1.22, 0.79, 0.63],
-                                     [-2.35, 2.93, -1.45, 2.30]
+                                     [-2.35, 2.93, -1.45, 2.30],
                                      [0.62, -7.39, 1.03, -2.57]]),
                            np.array([9.9966, 3.6831, 1.3569, 0.5000]),
                            np.array([[0.2774, -0.6003, -0.1277, 0.1323],
@@ -1737,6 +1781,11 @@ def test_gejsv(dtype):
                                      [0.2140, -0.2980, 0.7827, 0.5027],
                                      [-0.3795, 0.3351, 0.6178, -0.6017]]))])
 def test_gejsv_NAG(A, sva_expect, u_expect, v_expect):
+    '''
+    This test implements the example found in the NAG manual, f08khf.
+    An example was not found for the complex case.
+    https://www.nag.com/numeric/fl/nagdoc_latest/html/f08/f08khf.html
+    '''
     # NAG manual provides accuracy up to 4 decimals
     rtol = 1e-4
     gejsv = get_lapack_funcs('gejsv', dtype=A.dtype)
