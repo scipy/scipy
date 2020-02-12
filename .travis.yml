@@ -115,7 +115,7 @@ matrix:
       env:
         - TESTMODE=fast
         - COVERAGE=
-        - NUMPYSPEC="--upgrade numpy"
+        - NUMPYSPEC="--upgrade numpy --no-cache-dir"
 cache:
   directories:
     - $HOME/.ccache
