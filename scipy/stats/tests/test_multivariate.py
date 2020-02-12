@@ -1764,44 +1764,44 @@ class TestMultivariateT:
 
     def test_default_arguments(self):
         dist = multivariate_t()
-        assert_equal(dist.mean, [0])
+        assert_equal(dist.loc, [0])
         assert_equal(dist.shape, [[1]])
         assert (dist.df == 1)
 
     def test_reproducibility(self):
         rng = np.random.RandomState(4)
-        mean = rng.random(3)
+        loc = rng.random(3)
         tmp = rng.random((20, 3))
         shape = np.matmul(tmp.T, tmp)
-        dist1 = multivariate_t(mean, shape, df=3, seed=2)
-        dist2 = multivariate_t(mean, shape, df=3, seed=2)
+        dist1 = multivariate_t(loc, shape, df=3, seed=2)
+        dist2 = multivariate_t(loc, shape, df=3, seed=2)
         samples1 = dist1.rvs(size=10)
         samples2 = dist2.rvs(size=10)
         assert_equal(samples1, samples2)
 
     def test_scalar_list_and_ndarray_arguments(self):
         dist = multivariate_t(-1, 2, 3)
-        assert(dist.mean == np.array([-1]))
+        assert(dist.loc == np.array([-1]))
         assert(dist.shape == np.array([2]))
         assert(dist.df == 3)
 
         dist = multivariate_t([-1], [2], 3)
-        assert(dist.mean == np.array([-1]))
+        assert(dist.loc == np.array([-1]))
         assert(dist.shape == np.array([2]))
         assert(dist.df == 3)
 
         dist = multivariate_t(np.array([-1]), np.array([2]), 3)
-        assert(dist.mean == np.array([-1]))
+        assert(dist.loc == np.array([-1]))
         assert(dist.shape == np.array([2]))
         assert(dist.df == 3)
 
     def test_allow_singular(self):
-        mean = np.zeros(4)
+        loc = np.zeros(4)
         shape = np.eye(4)
         df = 1
 
         try:
-            multivariate_t(mean, shape, df, allow_singular=False)
+            multivariate_t(loc, shape, df, allow_singular=False)
         except np.linalg.LinAlgError:
             pytest.fail("Test failed by unexpectedly raising `LinAlgError`.")
 
@@ -1811,11 +1811,11 @@ class TestMultivariateT:
         seed = 0
         assert_raises(np.linalg.LinAlgError,
                       multivariate_t,
-                      mean, shape, df, allow_singular, seed)
+                      loc, shape, df, allow_singular, seed)
 
         # Check that singular `shape` is when when `allow_singular=True`.
         try:
-            multivariate_t(mean, shape, df, allow_singular=True)
+            multivariate_t(loc, shape, df, allow_singular=True)
         except np.linalg.LinAlgError:
             pytest.fail("Test failed by unexpectedly raising `LinAlgError`.")
 

@@ -3856,8 +3856,8 @@ unitary_group = unitary_group_gen()
 
 _mvt_doc_default_callparams = \
 """
-mean : array_like, optional
-    Mean of the distribution. (default ``0``)
+loc : array_like, optional
+    Location of the distribution. (default ``0``)
 shape : array_like, optional
     Positive definite matrix of the distribution. (default ``1``)
 df : integer, optional
@@ -3867,7 +3867,7 @@ allow_singular : bool, optional
 """
 
 _mvt_doc_callparams_note = \
-"""Setting the parameter `mean` to ``None`` is equivalent to having `mean`
+"""Setting the parameter `loc` to ``None`` is equivalent to having `loc`
 be the zero-vector. The parameter `shape` can be a scalar, in which case
 the shape matrix is the identity times that value, a vector of
 diagonal entries for the shape matrix, or a two-dimensional array_like.
@@ -3893,23 +3893,23 @@ class multivariate_t_gen(multi_rv_generic):
     r"""
     A multivariate t-distributed random variable.
 
-    The `mean` parameter specifies the mean. The `shape` parameter specifies 
+    The `loc` parameter specifies the location. The `shape` parameter specifies
     the positive definite shape matrix. The `df` parameter specifies the 
     degrees of freedom.
 
     In addition to calling the methods below, the object itself may be called 
-    as a function to fix the mean, shape matrix, and degrees of freedom 
+    as a function to fix the location, shape matrix, and degrees of freedom
     parameters, returning a "frozen" multivariate t-distribution random.
 
     .. versionadded:: 1.5.0
 
     Methods
     -------
-    ``pdf(x, mean=None, shape=1, df=1, allow_singular=False)``
+    ``pdf(x, loc=None, shape=1, df=1, allow_singular=False)``
         Probability density function.
-    ``logpdf(x, mean=None, shape=1, df=1, allow_singular=False)``
+    ``logpdf(x, loc=None, shape=1, df=1, allow_singular=False)``
         Log of the probability density function.
-    ``rvs(mean=None, shape=1, df=1, size=1, random_state=None)``
+    ``rvs(loc=None, shape=1, df=1, size=1, random_state=None)``
         Draw random samples from a multivariate t-distribution.
 
     Parameters
@@ -3938,7 +3938,7 @@ class multivariate_t_gen(multi_rv_generic):
                (\mathbf{x} - \boldsymbol{\mu}) \right]^{-(\nu + p)/2},
 
     where :math:`p` is the dimension of :math:`\mathbf{x}`, 
-    :math:`\boldsymbol{\mu}` is the :math:`p`-dimensional mean, 
+    :math:`\boldsymbol{\mu}` is the :math:`p`-dimensional location,
     :math:`\boldsymbol{\Sigma}` the :math:`p \times p`-dimensional shape 
     matrix, and :math:`\nu` is the degrees of freedom.
 
@@ -3966,17 +3966,17 @@ class multivariate_t_gen(multi_rv_generic):
         self.__doc__ = doccer.docformat(self.__doc__, mvt_docdict_params)
         self._random_state = check_random_state(seed)
 
-    def __call__(self, mean=None, shape=1, df=1, allow_singular=False,
+    def __call__(self, loc=None, shape=1, df=1, allow_singular=False,
                  seed=None):
         """
         Create a frozen multivariate t-distribution. See
         `multivariate_t_frozen` for parameters.
 
         """
-        return multivariate_t_frozen(mean=mean, shape=shape, df=df,
+        return multivariate_t_frozen(loc=loc, shape=shape, df=df,
                                      allow_singular=allow_singular, seed=seed)
 
-    def pdf(self, x, mean=None, shape=1, df=1, allow_singular=False):
+    def pdf(self, x, loc=None, shape=1, df=1, allow_singular=False):
         """
         Multivariate t-distribution probability density function.
 
@@ -3994,21 +3994,21 @@ class multivariate_t_gen(multi_rv_generic):
         --------
         >>> from scipy.stats import multivariate_t
         >>> x = [0.4, 5]
-        >>> mean = [0, 1]
+        >>> loc = [0, 1]
         >>> shape = [[1, 0.1], [0.1, 1]]
         >>> df = 7
-        >>> multivariate_t.pdf(x, mean, shape, df)
+        >>> multivariate_t.pdf(x, loc, shape, df)
         array([0.00075713])
 
         """
-        dim, mean, shape, df = self._process_parameters(mean, shape, df)
+        dim, loc, shape, df = self._process_parameters(loc, shape, df)
         x = self._process_quantiles(x, dim)
         shape_info = _PSD(shape, allow_singular=allow_singular)
-        logpdf = self._logpdf(x, mean, shape_info.U, shape_info.log_pdet, df,
+        logpdf = self._logpdf(x, loc, shape_info.U, shape_info.log_pdet, df,
                               dim)
         return np.exp(logpdf)
 
-    def logpdf(self, x, mean=None, shape=1, df=1):
+    def logpdf(self, x, loc=None, shape=1, df=1):
         """
         Log of the multivariate t-distribution probability density function.
 
@@ -4027,10 +4027,10 @@ class multivariate_t_gen(multi_rv_generic):
         --------
         >>> from scipy.stats import multivariate_t
         >>> x = [0.4, 5]
-        >>> mean = [0, 1]
+        >>> loc = [0, 1]
         >>> shape = [[1, 0.1], [0.1, 1]]
         >>> df = 7
-        >>> multivariate_t.logpdf(x, mean, shape, df)
+        >>> multivariate_t.logpdf(x, loc, shape, df)
         array([-7.1859802])
 
         See Also
@@ -4038,12 +4038,12 @@ class multivariate_t_gen(multi_rv_generic):
         pdf : Probability density function.
 
         """
-        dim, mean, shape, df = self._process_parameters(mean, shape, df)
+        dim, loc, shape, df = self._process_parameters(loc, shape, df)
         x = self._process_quantiles(x, dim)
         shape_info = _PSD(shape)
-        return self._logpdf(x, mean, shape_info.U, shape_info.log_pdet, df, dim)
+        return self._logpdf(x, loc, shape_info.U, shape_info.log_pdet, df, dim)
 
-    def _logpdf(self, x, mean, prec_U, log_pdet, df, dim):
+    def _logpdf(self, x, loc, prec_U, log_pdet, df, dim):
         """Utility method `pdf`, `logpdf` for parameters.
 
         Parameters
@@ -4051,8 +4051,8 @@ class multivariate_t_gen(multi_rv_generic):
         x : ndarray
             Points at which to evaluate the log of the probability density 
             function.
-        mean : ndarray
-            Mean of the distribution.
+        loc : ndarray
+            Location of the distribution.
         prec_U : ndarray
             A decomposition such that `np.dot(prec_U, prec_U.T)` is the inverse
             of the shape matrix.
@@ -4068,7 +4068,7 @@ class multivariate_t_gen(multi_rv_generic):
         As this function does no argument checking, it should not be called
         directly; use 'logpdf' instead.
         """
-        dev  = x - mean
+        dev  = x - loc
         maha = np.square(np.dot(dev, prec_U)).sum(axis=-1)
 
         t = 0.5 * (df + dim)
@@ -4080,7 +4080,7 @@ class multivariate_t_gen(multi_rv_generic):
 
         return A - B - C - D + E
 
-    def rvs(self, mean=None, shape=1, df=1, size=1, random_state=None):
+    def rvs(self, loc=None, shape=1, df=1, size=1, random_state=None):
         """
         Draw random samples from a multivariate t-distribution.
 
@@ -4101,10 +4101,10 @@ class multivariate_t_gen(multi_rv_generic):
         --------
         >>> from scipy.stats import multivariate_t
         >>> x = [0.4, 5]
-        >>> mean = [0, 1]
+        >>> loc = [0, 1]
         >>> shape = [[1, 0.1], [0.1, 1]]
         >>> df = 7
-        >>> multivariate_t.rvs(mean, shape, df)
+        >>> multivariate_t.rvs(loc, shape, df)
         array([[0.93477495, 3.00408716]])
 
         """
@@ -4112,7 +4112,7 @@ class multivariate_t_gen(multi_rv_generic):
         #
         #    Hofert, "On Sampling from the Multivariatet Distribution", 2013
         #
-        dim, mean, shape, df = self._process_parameters(mean, shape, df)
+        dim, loc, shape, df = self._process_parameters(loc, shape, df)
         if random_state is not None:
             rng = check_random_state(random_state)
         else:
@@ -4124,7 +4124,7 @@ class multivariate_t_gen(multi_rv_generic):
             x = rng.chisquare(df, size=size) / df
 
         z = rng.multivariate_normal(np.zeros(dim), shape, size=size)
-        samples = mean + z / np.sqrt(x)[:, None]
+        samples = loc + z / np.sqrt(x)[:, None]
         return samples
 
     def _process_quantiles(self, x, dim):
@@ -4141,31 +4141,31 @@ class multivariate_t_gen(multi_rv_generic):
                 x = x[np.newaxis, :]
         return x
 
-    def _process_parameters(self, mean, shape, df):
-        """Infer dimensionality from mean array and shape matrix, handle
+    def _process_parameters(self, loc, shape, df):
+        """Infer dimensionality from location array and shape matrix, handle
         defaults, and ensure compatible dimensions.
         """
-        if mean is None and shape is None:
+        if loc is None and shape is None:
             shape = np.asarray(1, dtype=float)
             dim = 1
-        elif mean is None:
+        elif loc is None:
             shape = np.asarray(shape, dtype=float)
             if shape.ndim < 2:
                 dim = 1
             else:
                 dim = shape.shape[0]
-            mean = np.zeros(dim)
+            loc = np.zeros(dim)
         else:
             shape = np.asarray(shape, dtype=float)
-            mean = np.asarray(mean, dtype=float)
-            dim = mean.size
+            loc = np.asarray(loc, dtype=float)
+            dim = loc.size
 
         if dim == 1:
-            mean.shape = (1,)
+            loc.shape = (1,)
             shape.shape = (1, 1)
 
-        if mean.ndim != 1 or mean.shape[0] != dim:
-            raise ValueError("Array 'mean' must be a vector of length %d." %
+        if loc.ndim != 1 or loc.shape[0] != dim:
+            raise ValueError("Array 'loc' must be a vector of length %d." %
                              dim)
         if shape.ndim == 0:
             shape = shape * np.eye(dim)
@@ -4178,8 +4178,8 @@ class multivariate_t_gen(multi_rv_generic):
                        " but cov.shape = %s." % str(shape.shape))
             else:
                 msg = ("Dimension mismatch: array 'cov' is of shape %s,"
-                       " but 'mean' is a vector of length %d.")
-                msg = msg % (str(shape.shape), len(mean))
+                       " but 'loc' is a vector of length %d.")
+                msg = msg % (str(shape.shape), len(loc))
             raise ValueError(msg)
         elif shape.ndim > 2:
             raise ValueError("Array 'cov' must be at most two-dimensional,"
@@ -4192,12 +4192,12 @@ class multivariate_t_gen(multi_rv_generic):
             raise ValueError("'df' must be an integer or 'np.inf' but is of "
                              "type %s" % type(df))
 
-        return dim, mean, shape, df
+        return dim, loc, shape, df
 
 
 class multivariate_t_frozen(multi_rv_frozen):
 
-    def __init__(self, mean=None, shape=1, df=1, allow_singular=False,
+    def __init__(self, loc=None, shape=1, df=1, allow_singular=False,
                  seed=None):
         """
         Create a frozen multivariate t distribution.
@@ -4208,10 +4208,10 @@ class multivariate_t_frozen(multi_rv_frozen):
 
         Examples
         --------
-        >>> mean = np.zeros(3)
+        >>> loc = np.zeros(3)
         >>> shape = np.eye(3)
         >>> df = 10
-        >>> dist = multivariate_t(mean, shape, df)
+        >>> dist = multivariate_t(loc, shape, df)
         >>> dist.rvs()
         array([[ 0.81412036, -1.53612361,  0.42199647]])
         >>> dist.pdf([1, 1, 1])
@@ -4219,21 +4219,21 @@ class multivariate_t_frozen(multi_rv_frozen):
 
         """
         self._dist = multivariate_t_gen(seed)
-        dim, mean, shape, df = self._dist._process_parameters(mean, shape, df)
-        self.dim, self.mean, self.shape, self.df = dim, mean, shape, df
+        dim, loc, shape, df = self._dist._process_parameters(loc, shape, df)
+        self.dim, self.loc, self.shape, self.df = dim, loc, shape, df
         self.shape_info = _PSD(shape, allow_singular=allow_singular)
 
     def logpdf(self, x):
         x = self._dist._process_quantiles(x, self.dim)
         U = self.shape_info.U
         log_pdet = self.shape_info.log_pdet
-        return self._dist._logpdf(x, self.mean, U, log_pdet, self.df, self.dim)
+        return self._dist._logpdf(x, self.loc, U, log_pdet, self.df, self.dim)
 
     def pdf(self, x):
         return np.exp(self.logpdf(x))
 
     def rvs(self, size=1, random_state=None):
-        return self._dist.rvs(mean=self.mean,
+        return self._dist.rvs(loc=self.loc,
                               shape=self.shape,
                               df=self.df,
                               size=size,
