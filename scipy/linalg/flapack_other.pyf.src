@@ -1630,3 +1630,149 @@ subroutine ilaver(major, minor, patch)
     integer intent(out) :: minor
     integer intent(out) :: patch
 end subroutine ilaver
+
+subroutine <prefix2c>uncsd(jobu1,jobu2,jobv1t,jobv2t,trans,signs,m,p,q,x11,ldx11,x12,ldx12,x21,ldx21,x22,ldx22,theta,u1,ldu1,u2,ldu2,v1t,ldv1t,v2t,ldv2t,work,lwork,rwork,lrwork,iwork,info)
+! TODO(balopat) figure out call statement and callprotoargument
+!    callstatement (*f2py_func)(&jobu1,&jobu2,&jobv1t,&jobv2t,&trans,&signs,&m,&p,&q,&x11,&ldx11,&x12,&ldx12,&x21,&ldx21,&x22,&ldx22,&theta,&u1,&ldu1,&u2,&ldu2,&v1t,&ldv1t,&v2t,&ldv2t,work,&lwork,rwork,&lrwork,&iwork,&info)
+! TODO(balopat) figure out if we can clean these bits up to booleans instead
+
+    character optional,intent(in) :: jobu1='Y'
+    character optional,intent(in) :: jobu2='Y'
+    character optional,intent(in) :: jobv1t='Y'
+    character optional,intent(in) :: jobv2t='Y'
+    character optional,intent(in) :: trans='T'
+    character optional,intent(in) :: signs='O'
+    integer intent(in) :: m
+    integer intent(in) :: p
+    integer intent(in) :: q
+    <ftype2c> dimension(ldx11,q),intent(in), depend(ldx11,q) :: x11
+    integer intent(in),depend(p) :: ldx11>=max(1,p)
+    <ftype2c> dimension(ldx12,m-q),intent(in), depend(ldx12,m,q) :: x12
+    integer intent(in),depend(p) :: ldx12>=max(1,p)
+    <ftype2c> dimension(ldx21,q),intent(in), depend(ldx21,q) :: x21
+    integer intent(in),depend(m,p) :: ldx21>=max(1,m-p)
+    <ftype2c> dimension(ldx22,m-q),intent(in), depend(ldx22,m,q) :: x22
+    integer intent(in),depend(m,p) :: ldx22>=max(1,m-p)
+    <ftype2> dimension(min(min(p,m-p),min(q,m-q))),intent(out),depend(p,m,q) :: theta
+    <ftype2c> dimension(p,p),intent(out),depend(p) :: u1
+    integer intent(in),depend(p) :: ldu1>=max(1,p)
+    <ftype2c> dimension(m-p,m-p),intent(out),depend(m,p) :: u2
+    integer intent(in),depend(m,p) :: ldu2>=max(1,m-p)
+    <ftype2c> dimension(q,q),intent(out),depend(q) :: v1t
+    integer intent(in),depend(q) :: ldv1t>=max(1,q)
+    <ftype2c> dimension(m-q,m-q),intent(out),depend(m,q) :: v2t
+    integer intent(in),depend(m,q) :: ldv2t>=max(1,m-q)
+    <ftype2c> dimension(abs(lwork)),intent(hide),depend(lwork) :: work
+    integer intent(in) :: lwork
+    <ftype2> dimension(abs(lrwork)),intent(hide),depend(lrwork) :: rwork
+    integer intent(in) :: lrwork
+    integer dimension(m-min(min(p,m-p),min(q,m-q))),intent(hide) :: iwork
+    integer intent(out) :: info
+end subroutine <prefix2c>uncsd
+
+! TODO(balopat) figure out if we really need all these inputs to query workspace
+subroutine <prefix2c>uncsd_lwork(jobu1,jobu2,jobv1t,jobv2t,trans,signs,m,p,q,x11,ldx11,x12,ldx12,x21,ldx21,x22,ldx22,theta,u1,ldu1,u2,ldu2,v1t,ldv1t,v2t,ldv2t,work,lwork,rwork,lrwork,iwork,info)
+    fortranname <prefix2c>uncsd
+    !callstatement (*f2py_func)(&jobu1,&jobu2,&jobv1t,&jobv2t,&trans,&signs,&m,&p,&q,&x11,&ldx11,&x12,&ldx12,&x21,&ldx21,&x22,&ldx22,&theta,&u1,&ldu1,&u2,&ldu2,&v1t,&ldv1t,&v2t,&ldv2t,work,&lwork,rwork,&lrwork,&iwork,&info)
+    character optional,intent(in) :: jobu1='Y'
+    character optional,intent(in) :: jobu2='Y'
+    character optional,intent(in) :: jobv1t='Y'
+    character optional,intent(in) :: jobv2t='Y'
+    character optional,intent(in) :: trans='T'
+    character optional,intent(in) :: signs='O'
+    integer intent(in) :: m
+    integer intent(in) :: p
+    integer intent(in) :: q
+    <ftype2c> dimension(ldx11,q),intent(in), depend(ldx11,q) :: x11
+    integer intent(in),depend(p) :: ldx11>=max(1,p)
+    <ftype2c> dimension(ldx12,m-q),intent(in), depend(ldx12,m,q) :: x12
+    integer intent(in),depend(p) :: ldx12>=max(1,p)
+    <ftype2c> dimension(ldx21,q),intent(in), depend(ldx21,q) :: x21
+    integer intent(in),depend(m,p) :: ldx21>=max(1,m-p)
+    <ftype2c> dimension(ldx22,m-q),intent(in), depend(ldx22,m,q) :: x22
+    integer intent(in),depend(m,p) :: ldx22>=max(1,m-p)
+    <ftype2> dimension(min(min(p,m-p),min(q,m-q))),intent(hide),depend(p,m,q) :: theta
+    <ftype2c> dimension(p,p),intent(hide),depend(p) :: u1
+    integer intent(in),depend(p) :: ldu1>=max(1,p)
+    <ftype2c> dimension(m-p,m-p),intent(hide),depend(m,p) :: u2
+    integer intent(in),depend(m,p) :: ldu2>=max(1,m-p)
+    <ftype2c> dimension(q,q),intent(hide),depend(q) :: v1t
+    integer intent(in),depend(q) :: ldv1t>=max(1,q)
+    <ftype2c> dimension(m-q,m-q),intent(hide),depend(m,q) :: v2t
+    integer intent(in),depend(m,q) :: ldv2t>=max(1,m-q)
+    <ftype2c> intent(out) :: work
+    integer intent(in) :: lwork=-1
+    <ftype2> intent(out) :: rwork
+    integer intent(in) :: lrwork=-1
+    integer intent(out) :: iwork
+    integer intent(out) :: info
+end subroutine <prefix2c>uncsd_lwork
+
+
+subroutine <prefix2>orcsd(jobu1,jobu2,jobv1t,jobv2t,trans,signs,m,p,q,x11,ldx11,x12,ldx12,x21,ldx21,x22,ldx22,theta,u1,ldu1,u2,ldu2,v1t,ldv1t,v2t,ldv2t,work,lwork,iwork,info)
+    character optional,intent(in) :: jobu1='Y'
+    character optional,intent(in) :: jobu2='Y'
+    character optional,intent(in) :: jobv1t='Y'
+    character optional,intent(in) :: jobv2t='Y'
+    character optional,intent(in) :: trans='T'
+    character optional,intent(in) :: signs='O'
+    integer intent(in) :: m
+    integer intent(in) :: p
+    integer intent(in) :: q
+    <ftype2> dimension(ldx11,q),intent(in), depend(ldx11,q) :: x11
+    integer intent(in),depend(p) :: ldx11>=max(1,p)
+    <ftype2> dimension(ldx12,m-q),intent(in), depend(ldx12,m,q) :: x12
+    integer intent(in),depend(p) :: ldx12>=max(1,p)
+    <ftype2> dimension(ldx21,q),intent(in), depend(ldx21,q) :: x21
+    integer intent(in),depend(m,p) :: ldx21>=max(1,m-p)
+    <ftype2> dimension(ldx22,m-q),intent(in), depend(ldx22,m,q) :: x22
+    integer intent(in),depend(m,p) :: ldx22>=max(1,m-p)
+    <ftype2> dimension(min(min(p,m-p),min(q,m-q))),intent(out),depend(p,m,q) :: theta
+    <ftype2> dimension(p,p),intent(out),depend(p) :: u1
+    integer intent(in),depend(p) :: ldu1>=max(1,p)
+    <ftype2> dimension(m-p,m-p),intent(out),depend(m,p) :: u2
+    integer intent(in),depend(m,p) :: ldu2>=max(1,m-p)
+    <ftype2> dimension(q,q),intent(out),depend(q) :: v1t
+    integer intent(in),depend(q) :: ldv1t>=max(1,q)
+    <ftype2> dimension(m-q,m-q),intent(out),depend(m,q) :: v2t
+    integer intent(in),depend(m,q) :: ldv2t>=max(1,m-q)
+    <ftype2> dimension(abs(lwork)),intent(out),depend(lwork) :: work
+    integer intent(in) :: lwork
+    integer dimension(m-min(min(p,m-p),min(q,m-q))),intent(hide) :: iwork
+    integer intent(out) :: info
+end subroutine <prefix2>orcsd
+
+
+subroutine <prefix2>orcsd_lwork(jobu1,jobu2,jobv1t,jobv2t,trans,signs,m,p,q,x11,ldx11,x12,ldx12,x21,ldx21,x22,ldx22,theta,u1,ldu1,u2,ldu2,v1t,ldv1t,v2t,ldv2t,work,lwork,iwork,info)
+    fortranname <prefix2>orcsd
+    character optional,intent(in) :: jobu1='Y'
+    character optional,intent(in) :: jobu2='Y'
+    character optional,intent(in) :: jobv1t='Y'
+    character optional,intent(in) :: jobv2t='Y'
+    character optional,intent(in) :: trans='T'
+    character optional,intent(in) :: signs='O'
+    integer intent(in) :: m
+    integer intent(in) :: p
+    integer intent(in) :: q
+    <ftype2> dimension(ldx11,q),intent(in), depend(ldx11,q) :: x11
+    integer intent(in),depend(p) :: ldx11>=max(1,p)
+    <ftype2> dimension(ldx12,m-q),intent(in), depend(ldx12,m,q) :: x12
+    integer intent(in),depend(p) :: ldx12>=max(1,p)
+    <ftype2> dimension(ldx21,q),intent(in), depend(ldx21,q) :: x21
+    integer intent(in),depend(m,p) :: ldx21>=max(1,m-p)
+    <ftype2> dimension(ldx22,m-q),intent(in), depend(ldx22,m,q) :: x22
+    integer intent(in),depend(m,p) :: ldx22>=max(1,m-p)
+    <ftype2> dimension(min(min(p,m-p),min(q,m-q))),intent(hide),depend(p,m,q) :: theta
+    <ftype2> dimension(p,p),intent(hide),depend(p) :: u1
+    integer intent(in),depend(p) :: ldu1>=max(1,p)
+    <ftype2> dimension(m-p,m-p),intent(hide),depend(m,p) :: u2
+    integer intent(in),depend(m,p) :: ldu2>=max(1,m-p)
+    <ftype2> dimension(q,q),intent(hide),depend(q) :: v1t
+    integer intent(in),depend(q) :: ldv1t>=max(1,q)
+    <ftype2> dimension(m-q,m-q),intent(hide),depend(m,q) :: v2t
+    integer intent(in),depend(m,q) :: ldv2t>=max(1,m-q)
+    <ftype2> intent(out) :: work
+    integer intent(in) :: lwork=-1
+    integer intent(out) :: iwork
+    integer intent(out) :: info
+end subroutine <prefix2>orcsd_lwork

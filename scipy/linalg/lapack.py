@@ -718,6 +718,16 @@ All functions
    cunmrz_lwork
    zunmrz_lwork
 
+   cuncsd
+   zuncsd
+   sorcsd
+   dorcsd
+
+   cuncsd_lwork
+   zuncsd_lwork
+   sorcsd_lwork
+   dorcsd_lwork
+
    ilaver
 
 """
