@@ -2,6 +2,7 @@ from __future__ import division, print_function, absolute_import
 
 from tempfile import mkdtemp, mktemp
 import os
+import io
 import shutil
 
 import numpy as np
@@ -698,3 +699,9 @@ class TestMMIOCoordinate(object):
                 assert_array_equal(A.col, [n-1])
                 assert_array_almost_equal(A.data,
                     [float('%%.%dg' % precision % value)])
+
+
+def test_gh11389():
+    mmread(io.StringIO("%%MatrixMarket matrix coordinate complex symmetric\n"
+                       " 1 1 1\n"
+                       "1 1 -2.1846000000000e+02  0.0000000000000e+00"))
