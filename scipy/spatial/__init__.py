@@ -97,6 +97,7 @@ from .kdtree import *
 from .ckdtree import *
 from .qhull import *
 from ._spherical_voronoi import SphericalVoronoi
+from ._alpha_shapes import AlphaShapes
 from ._plotutils import *
 from ._procrustes import procrustes
 from ._geometric_slerp import geometric_slerp
