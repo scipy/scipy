@@ -72,21 +72,22 @@ class AlphaShapes:
     >>> import numpy as np
     >>> from scipy.spatial import AlphaShapes
     >>> rng = np.random.RandomState(seed=0)
-    >>> points = rng.normal(size=(1000, 2))
+    >>> points = rng.normal(size=(12, 2))
     >>> alpha = AlphaShapes(points)
 
     The simplices are ordered by circumradius:
 
     >>> alpha.radii
-    array([1.12687281e-02 1.18887521e-02 1.39000778e-02 ... 2.91044209e+00
-           3.88209547e+00 1.34510564e+01], dtype=float64)
+    array([ 0.41419783 0.5038057  0.51805934 0.52050488 0.53245625 0.55120833
+            0.58252112 0.60508938 0.66602254 0.87210292 0.90357423 0.98832633
+            1.02969871 1.41936012 1.770874   1.86824635 4.2987339 ])
 
     The number of connected components in the complex decreases as the
     threshold increases:
 
     >>> alpha.thresholds
-    array([0.         0.51975275 0.50015835 ... 0.01188875
-           0.01126873 0.01126873])
+    array([ 0.         1.41936012 1.02969871 0.60508938 0.58252112 0.58252112
+            0.53245625 0.52050488 0.51805934 0.5038057  0.41419783 0.41419783])
 
     We can plot the alpha complex at a radius threshold which is large
     enough to include all points:
