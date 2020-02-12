@@ -12,7 +12,7 @@ cdef class DisjointSet:
         readonly np.npy_intp[:] sizes
 
     def __init__(DisjointSet self, np.intp_t n):
-        self.sizes = np.ones(n, dtype=int)
+        self.sizes = np.ones(n, dtype=np.intp)
         self.parents = np.arange(n)
 
     def find(DisjointSet self, np.intp_t index):
