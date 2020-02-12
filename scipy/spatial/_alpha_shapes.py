@@ -7,6 +7,7 @@ Alpha Shapes Code
 import itertools
 import numpy as np
 from scipy.spatial import Delaunay
+from . import _disjoint_set
 
 
 __all__ = ['AlphaShapes']
@@ -39,10 +40,6 @@ class AlphaShapes:
     simplices : ndarray of ints, shape (nsimplex, ndim+1)
         Indices of the points forming the simplices in the alpha complex.
         For 2-D, the points are oriented counterclockwise.
-    equations : ndarray of double, shape (nsimplex, ndim+2)
-        [normal, offset] forming the hyperplane equation of the facet
-        on the paraboloid
-        (see `Qhull documentation <http://www.qhull.org/>`__ for more).
     radii : ndarray of double, shape (nsimplex,)
         Circumradii of the simplices in sorted order.
     circumcenters : ndarray of double, shape (nsimplex, ndim)
@@ -84,11 +81,19 @@ class AlphaShapes:
     array([1.12687281e-02 1.18887521e-02 1.39000778e-02 ... 2.91044209e+00
            3.88209547e+00 1.34510564e+01], dtype=float64)
 
-    We can plot the alpha complex at a chosen radius threshold:
+    The number of connected components in the complex decreases as the
+    threshold increases:
+
+    >>> alpha.thresholds
+    array([0.         0.51975275 0.50015835 ... 0.01188875
+           0.01126873 0.01126873])
+
+    We can plot the alpha complex at a radius threshold which is large
+    enough to include all points:
 
     >>> import matplotlib.pyplot as plt
     >>> from matplotlib import collections
-    >>> facets = alpha.get_surface_facets(0.7)
+    >>> facets = alpha.get_surface_facets(alpha.thresholds[1])
     >>> fig, ax = plt.subplots()
     >>> ax.scatter(points.T[0], points.T[1])
     >>> lc = collections.LineCollection(points[facets])
@@ -99,11 +104,11 @@ class AlphaShapes:
         delaunay = Delaunay(points, qhull_options=qhull_options)
         self.points = delaunay.points
         self.simplices = delaunay.simplices
-        self.equations = delaunay.equations
 
         self._calculate_circumcenters(rcond)
         self._calculate_circumradii()
         self._calculate_surface_intervals()
+        self._calculate_connectivity_thresholds()
 
     def _calculate_circumcenters(self, rcond):
         tetrahedra = self.points[self.simplices]
@@ -131,7 +136,6 @@ class AlphaShapes:
         self.radii = self.radii[indices]
         self.circumcenters = self.circumcenters[indices]
         self.simplices = self.simplices[indices]
-        self.equations = self.equations[indices]
 
     def _calculate_surface_intervals(self):
         dim = self.points.shape[1]
@@ -158,6 +162,16 @@ class AlphaShapes:
         self._start = start
         self._end = end
         self._unique_facets = unique_facets
+
+    def _calculate_connectivity_thresholds(self):
+        n = len(self.points)
+        uf = _disjoint_set.DisjointSet(n)
+        self.thresholds = np.zeros(n)
+        for ii, s in enumerate(self.simplices):
+            for i, j in itertools.combinations(s, 2):
+                if uf.merge(i, j):
+                    n -= 1
+                    self.thresholds[n] = self.radii[ii]
 
     def get_surface_facets(self, alpha):
         dim = self.points.shape[1]

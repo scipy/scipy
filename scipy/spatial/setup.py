@@ -78,6 +78,9 @@ def configuration(parent_package='', top_path=None):
     config.add_extension('_voronoi',
                          sources=['_voronoi.c'])
 
+    config.add_extension('_disjoint_set',
+                         sources=['_disjoint_set.c'])
+
     config.add_extension('_hausdorff',
                          sources=['_hausdorff.c'])
 

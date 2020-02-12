@@ -10,7 +10,7 @@ class TestAlphaShapes(object):
 
     def setup_method(self):
         seed = 0
-        size = 10
+        size = 100
         dim = 3
         rng = np.random.RandomState(seed=seed)
         self.points = rng.normal(size=(size, dim))
@@ -48,3 +48,10 @@ class TestAlphaShapes(object):
     def test_zero_surface_radius(self):
         alpha = self.alpha
         assert alpha.get_surface_facets(0).shape == (0,)
+
+    def test_connected_components(self):
+        alpha = self.alpha
+        threshold = alpha.thresholds[1]
+        indices = np.where(alpha.radii <= threshold)[0]
+        hits = np.unique(alpha.simplices[indices])
+        assert (hits == np.arange(len(self.points))).all()
