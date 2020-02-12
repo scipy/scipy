@@ -501,8 +501,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         other = self.__class__(other)  # convert to this format
 
         idx_dtype = get_index_dtype((self.indptr, self.indices,
-                                     other.indptr, other.indices),
-                                    maxval=M*N)
+                                     other.indptr, other.indices))
 
         fn = getattr(_sparsetools, self.format + '_matmat_maxnnz')
         nnz = fn(M, N,
