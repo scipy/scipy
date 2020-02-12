@@ -1411,11 +1411,6 @@ def medfilt(volume, kernel_size=None):
 def wiener(im, mysize=None, noise=None):
     """
     Perform a Wiener filter on an N-dimensional array.
-
-    It is similar to wiener2 in Matlab/Octave.
-    Refer to Lim, Jae S., Two-Dimensional Signal and Image Processing,
-    Englewood Cliffs, NJ, Prentice Hall, 1990, p. 548.
-
     Apply a Wiener filter to the N-dimensional array `im`.
 
     Parameters
@@ -1435,6 +1430,17 @@ def wiener(im, mysize=None, noise=None):
     -------
     out : ndarray
         Wiener filtered result with the same shape as `im`.
+
+    Notes
+    -----
+    This implementation is similar to wiener2 in Matlab/Octave.
+    For more details see [1]_
+
+    References
+    ----------
+    .. [1] Lim, Jae S., Two-Dimensional Signal and Image Processing,
+           Englewood Cliffs, NJ, Prentice Hall, 1990, p. 548.
+
 
     """
     im = np.asarray(im)
