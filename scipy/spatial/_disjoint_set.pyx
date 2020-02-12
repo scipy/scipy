@@ -13,7 +13,7 @@ cdef class DisjointSet:
 
     def __init__(DisjointSet self, np.intp_t n):
         self.sizes = np.ones(n, dtype=np.intp)
-        self.parents = np.arange(n)
+        self.parents = np.arange(n, dtype=np.intp)
 
     def find(DisjointSet self, np.intp_t index):
         cdef np.npy_intp parent
