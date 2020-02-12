@@ -1678,7 +1678,7 @@ def shapiro(x):
 
 
 # Values from Stephens, M A, "EDF Statistics for Goodness of Fit and
-#             Some Comparisons", Journal of he American Statistical
+#             Some Comparisons", Journal of the American Statistical
 #             Association, Vol. 69, Issue 347, Sept. 1974, pp 730-737
 _Avals_norm = array([0.576, 0.656, 0.787, 0.918, 1.092])
 _Avals_expon = array([0.922, 1.078, 1.341, 1.606, 1.957])
