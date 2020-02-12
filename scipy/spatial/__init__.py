@@ -32,6 +32,7 @@ Delaunay triangulation, convex hulls, and Voronoi diagrams
    Voronoi     -- compute a Voronoi diagram hull from input points
    SphericalVoronoi -- compute a Voronoi diagram from input points on the surface of a sphere
    HalfspaceIntersection -- compute the intersection points of input halfspaces
+   AlphaShapes    -- compute Alpha shapes of input points
 
 Plotting helpers
 ================
