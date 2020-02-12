@@ -102,7 +102,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                                                           minor_dim)))
 
         if dtype is not None:
-            self.data = np.asarray(self.data, dtype=dtype)
+            self.data = self.data.astype(dtype, copy=False)
 
         self.check_format(full_check=False)
 

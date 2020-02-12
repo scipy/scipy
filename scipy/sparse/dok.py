@@ -88,7 +88,7 @@ class dok_matrix(spmatrix, IndexMixin, dict):
                 arg1 = arg1.todok()
 
             if dtype is not None:
-                arg1 = arg1.astype(dtype)
+                arg1 = arg1.astype(dtype, copy=False)
 
             dict.update(self, arg1)
             self._shape = check_shape(arg1.shape)
