@@ -5,6 +5,7 @@ from __future__ import division, print_function, absolute_import
 import copy
 
 from numpy.testing import assert_almost_equal, assert_equal, assert_
+import pytest
 from pytest import raises as assert_raises
 import numpy as np
 from numpy import cos, sin
@@ -301,14 +302,11 @@ class TestBasinHopping(object):
                      niter=10, callback=callback2, seed=10)
         assert_equal(np.array(f_1), np.array(f_2))
 
+    @pytest.mark.skipif(np.__version__ < '1.17',
+                        reason='Generator not available for numpy, < 1.17')
     def test_random_gen(self):
         # check that np.random.Generator can be used (numpy >= 1.17)
-        try:
-            # obtain a np.random.Generator object
-            rng = np.random.default_rng(1)
-        except AttributeError:
-            # only available in numpy >= 1.17
-            return
+        rng = np.random.default_rng(1)
 
         minimizer_kwargs = {"method": "L-BFGS-B", "jac": True}
 

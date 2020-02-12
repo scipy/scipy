@@ -141,14 +141,12 @@ class TestDualAnnealing:
         assert_equal(res1.x, res2.x)
         assert_equal(res1.x, res3.x)
 
+    @pytest.mark.skipif(np.__version__ < '1.17',
+                        reason='Generator not available for numpy, < 1.17')
     def test_rand_gen(self):
         # check that np.random.Generator can be used (numpy >= 1.17)
-        try:
-            # obtain a np.random.Generator object
-            rng = np.random.default_rng(1)
-        except AttributeError:
-            # only available in numpy >= 1.17
-            return
+        # obtain a np.random.Generator object
+        rng = np.random.default_rng(1)
 
         res1 = dual_annealing(self.func, self.ld_bounds, seed=rng)
         # seed again

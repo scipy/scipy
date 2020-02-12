@@ -386,14 +386,12 @@ class TestDifferentialEvolutionSolver(object):
         assert_equal(result.x, result2.x)
         assert_equal(result.nfev, result2.nfev)
 
+    @pytest.mark.skipif(np.__version__ < '1.17',
+                        reason='Generator not available for numpy, < 1.17')
     def test_random_generator(self):
         # check that np.random.Generator can be used (numpy >= 1.17)
-        try:
-            # obtain a np.random.Generator object
-            rng = np.random.default_rng()
-        except AttributeError:
-            # only available in numpy >= 1.17
-            return
+        # obtain a np.random.Generator object
+        rng = np.random.default_rng()
 
         inits = ['random', 'latinhypercube']
         for init in inits:
