@@ -1411,7 +1411,7 @@ def medfilt(volume, kernel_size=None):
 def wiener(im, mysize=None, noise=None):
     """
     Perform a Wiener filter on an N-dimensional array.
-    
+
     Apply a Wiener filter to the N-dimensional array `im`.
 
     Parameters
@@ -1439,10 +1439,14 @@ def wiener(im, mysize=None, noise=None):
     >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> from pylab import *
-    >>> x = np.random.random((40,40))         #Create a random image
-    >>> plot1 = plt.imshow(x)                 #Plot the image
-    >>> #Show image filtered with 5px by 5px window
-    >>> plot2 = plt.imshow(wiener(x, (5, 5)))
+    >>> img = np.random.random((40,40))    #Create a random image
+    >>> #Filter image with 5px by 5px window
+    >>> filtered_img = wiener(img, (5, 5))
+    >>> plt.figure()
+    >>> f, arr = plt.subplots(1, 2)
+    >>> arr[0].imshow(img)
+    >>> arr[1].imshow(filtered_img)
+    >>> f.show()
 
     Notes
     -----
