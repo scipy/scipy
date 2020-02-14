@@ -2254,7 +2254,7 @@ def test_pteqr(dtype, compz):
     Tests the pteqr lapack routine for all dtypes and compz parameters.
     It generates random SPD matrix diagonals d and e, and then confirms
     correct eigenvalues with scipy.linalg.eig. With applicable compz=I it
-    tests that z can reform A. 
+    tests that z can reform A.
     '''
     np.random.seed(42)
     rtol = 250*np.finfo(dtype).eps
@@ -2273,16 +2273,32 @@ def test_pteqr(dtype, compz):
         d = d + 4
     A = np.diag(d) + np.diag(e, 1) + np.diag(e, -1)
 
-    d_pteqr, e_pteqr, z_pteqr, work, info = pteqr(d, e, z, compz=compz)
+    d_pteqr, e_pteqr, z_pteqr, work, info = pteqr(d, e, compz=compz)
+    assert_(info == 0, "info = {}, should be 0.".format(info))
     w = eig(A)
     # compare the routine's eigenvalues with scipy.linalg.eig's.
     assert_allclose(w, d_pteqr, rtol=rtol, atol=atol)
 
     if compz == "I":
         # verify z_pteqr as orthagonal
-        assert_allclose(z_pteqr @ z_pteqr.T, np.identity(n), rtol=rtol, atol=atol)
+        assert_allclose(z_pteqr @ z_pteqr.T, np.identity(n), rtol=rtol,
+                        atol=atol)
         # verify that z_pteqr recombines to A
-        assert_allclose(z_pteqr @ diag(d_pteqr) @ z_pteqr.T, A, rtol=rtol, atol=atol)
+        assert_allclose(z_pteqr @ np.diag(d_pteqr) @ z_pteqr.T, A, rtol=rtol,
+                        atol=atol)
+
+    # test with non-spd matrix
+    d_pteqr, e_pteqr, z_pteqr, work, info = pteqr(d - 2, e, compz=compz)
+    assert_(info == 1, "pteqr: info = {}, should be 1".format(info))
+    # test with incorrect/incompatible array sizes
+    d_pteqr, e_pteqr, z_pteqr, work, info = pteqr(d[:-1], e, compz=compz)
+    assert_(info == 1, "pteqr: info = {}, should be 1".format(info))
+    # test with singular matrix
+    d[0] = 0
+    e[0] = 0
+    d_pteqr, e_pteqr, z_pteqr, work, info = pteqr(d - 2, e, compz=compz)
+    assert_(info == 1, "pteqr: info = {}, should be 1".format(info))
+
 
 @pytest.mark.parametrize("compz,d,e,z,d_expect,z_expect",
                          [("I",
@@ -2296,13 +2312,18 @@ def test_pteqr(dtype, compz):
                                      [-0.0081, 0.2432, 0.6625, 0.7084]])),
                           ("I",
                            np.array([6.02, 2.91, 3.29, 4.18]),
-                           np.array([(-0.45 - 0.25j, 0.05 - 1.56j, 0.14 - 1.70j]),
+                           np.array([-0.45 - 0.25j, 0.05 - 1.56j,
+                                     0.14 - 1.70j]),
                            None,
                            np.array([7.9995, 5.9976, 2.0003, 0.4026]),
-                           np.array([[0.7289 0.0000j, 0.2001 +  0.4724j, -0.2133 + 0.1498j, 0.0995 -0.3573j],
-                                     [-0.1651 -0.2067j, -0.2461+ 0.3742j, 0.7308+ 0.0000j, 0.2867 -0.3364j],
-                                     [-0.4170 -0.1413j, 0.4476+  0.1455j, -0.3282 + 0.0471j, 0.6890 + 0.0000J],
-                                     [0.1748 + 0.4175j, 0.5610 + 0.0000j, 0.5203 + 0.1317j, 0.0659 + 0.4336j]]))])
+                           np.array([[0.7289 + 0.0j, 0.2001 + 0.4724j,
+                                      -0.2133 + 0.1498j, 0.0995 - 0.3573j],
+                                     [-0.1651 - 0.2067j, -0.2461 + 0.3742j,
+                                      0.7308 + 0.0000j, 0.2867 - 0.3364j],
+                                     [-0.4170 - 0.1413j, 0.4476 + 0.1455j,
+                                      -0.3282 + 0.0471j, 0.6890 + 0.0000J],
+                                     [0.1748 + 0.4175j, 0.5610 + 0.0000j,
+                                      0.5203 + 0.1317j, 0.0659 + 0.4336j]]))])
 def test_pteqr_NAG(compz, d, e, z, d_expect, z_expect):
     '''
     Implements real (f08jgf) and complex (f08juf) examples from NAG manual.
