@@ -886,3 +886,13 @@ class TestKhatriRao(object):
             ])
             b = array([4, 5, 6])
             khatri_rao(a, b)
+
+    def test_equality_of_two_equations(self):
+        a = array([[1, 2], [3, 4]])
+        b = array([[5, 6], [7, 8]])
+
+        res1 = khatri_rao(a, b)
+        res2 = np.vstack([np.kron(a[:, k], b[:, k])
+                          for k in range(b.shape[1])]).T
+
+        assert_array_equal(res1, res2)
