@@ -1731,6 +1731,16 @@ def test_gejsv_specific(dtype):
     # correct eigenvalues
     assert_allclose(sva, eig(A), rtol=rtol, atol=atol)
 
+    # check that iwork[0] and iwork[1] are the correct rank
+    sva, u, v, work, iwork, info = gejsv(A)
+    k = 3
+    sva[np.random.permutation(min(m, n))[k:]] = 0
+    SIGMA = np.diag(work[1] / work[0] * sva[:n])
+    A_rank_k = u @ SIGMA @ v.T
+    sva, u, v, work, iwork, info = gejsv(A_rank_k)
+    assert_(k == iwork[0])
+    assert_(k == iwork[1])
+
     # Invalid job? parameters should result in non zero info
     sva, u, v, work, iwork, info = gejsv(A, joba="L")
     assert_(info != 0)
