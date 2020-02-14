@@ -197,6 +197,9 @@ cdef inline double eval_gegenbauer_l(long n, double alpha, double x) nogil:
     cdef double p, d
     cdef double k
 
+    if npy_isnan(alpha) or npy_isnan(x):
+        return nan
+
     if n < 0:
         return 0.0
     elif n == 0:

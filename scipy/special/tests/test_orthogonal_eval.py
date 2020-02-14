@@ -271,3 +271,13 @@ def test_genlaguerre_nan(n, alpha, x):
     nan_laguerre = np.isnan(orth.eval_genlaguerre(n, alpha, x))
     nan_arg = np.any(np.isnan([n, alpha, x]))
     assert nan_laguerre == nan_arg
+
+
+@pytest.mark.parametrize('n', [0, 1, 2, 3.2])
+@pytest.mark.parametrize('alpha', [0.0, 1, np.nan])
+@pytest.mark.parametrize('x', [1e-6, 2, np.nan])
+def test_gegenbauer_nan(n, alpha, x):
+    # Regression test for gh-11370.
+    nan_gegenbauer = np.isnan(orth.eval_gegenbauer(n, alpha, x))
+    nan_arg = np.any(np.isnan([n, alpha, x]))
+    assert nan_gegenbauer == nan_arg
