@@ -674,13 +674,14 @@ def signm(A, disp=True):
 def khatri_rao(a, b):
     r"""
     Khatri-rao product
+
     A column-wise Kronecker product of two matrices
 
     Parameters
     ----------
-    a:  (n, k) arraylike
+    a:  (n, k) array_like
         Input array
-    b:  (m, k) arraylike
+    b:  (m, k) array_like
         Input array
 
     Returns
@@ -691,13 +692,14 @@ def khatri_rao(a, b):
     Notes
     -----
     The mathematical definition of the Khatri-Rao product is:
+
     .. math::
 
         (A_{ij}  \bigotimes B_{ij})_{ij}
 
     See Also
     --------
-        scipy.linalg.kron : Kronecker product
+    kron : Kronecker product
 
     Examples
     --------
