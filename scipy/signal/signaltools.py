@@ -1432,6 +1432,31 @@ def wiener(im, mysize=None, noise=None):
     out : ndarray
         Wiener filtered result with the same shape as `im`.
 
+    Examples
+    --------
+
+    >>> from scipy.misc import face
+    >>> from scipy.signal.signaltools import wiener
+    >>> import matplotlib.pyplot as plt
+    >>> import numpy as np
+    >>> img = np.random.random((40, 40))    #Create a random image
+    >>> filtered_img = wiener(img, (5, 5))  #Filter the image
+    >>> f, (plot1, plot2) = plt.subplots(1, 2)
+    >>> plot1.imshow(img)
+    >>> plot2.imshow(filtered_img)
+    >>> plt.show()
+
+    Notes
+    -----
+    This implementation is similar to wiener2 in Matlab/Octave.
+    For more details see [1]_
+
+    References
+    ----------
+    .. [1] Lim, Jae S., Two-Dimensional Signal and Image Processing,
+           Englewood Cliffs, NJ, Prentice Hall, 1990, p. 548.
+
+
     """
     im = np.asarray(im)
     if mysize is None:
