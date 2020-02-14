@@ -13,6 +13,7 @@ from numpy import cos, sin
 from scipy.optimize import basinhopping, OptimizeResult
 from scipy.optimize._basinhopping import (
     Storage, RandomDisplacement, Metropolis, AdaptiveStepsize)
+from scipy._lib._pep440 import Version
 
 
 def func1d(x):
@@ -302,7 +303,7 @@ class TestBasinHopping(object):
                      niter=10, callback=callback2, seed=10)
         assert_equal(np.array(f_1), np.array(f_2))
 
-    @pytest.mark.skipif(np.__version__ < '1.17',
+    @pytest.mark.skipif(Version(np.__version__) < Version('1.17'),
                         reason='Generator not available for numpy, < 1.17')
     def test_random_gen(self):
         # check that np.random.Generator can be used (numpy >= 1.17)
