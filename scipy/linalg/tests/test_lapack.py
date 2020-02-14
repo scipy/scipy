@@ -2248,34 +2248,41 @@ def test_orcsd_uncsd(dtype_):
 
 
 @pytest.mark.parametrize("dtype", DTYPES)
-@pytest.mark.parametrize("compz", ["V", "I", "N"])
+@pytest.mark.parametrize("compz", ["I", "N", "Z"])
 def test_pteqr(dtype, compz):
+    '''
+    Tests the pteqr lapack routine for all dtypes and compz parameters.
+    It generates random SPD matrix diagonals d and e, and then confirms
+    correct eigenvalues with scipy.linalg.eig. With applicable compz=I it
+    tests that z can reform A. 
+    '''
     np.random.seed(42)
     rtol = 250*np.finfo(dtype).eps
     atol = 100*np.finfo(dtype).eps
     pteqr = get_lapack_funcs(('pteqr'), dtype=dtype)
 
     n = 10
-    # d and e are always real, per lapack docs.
+    # d and e are always real per lapack docs.
     d = generate_random_dtype_array((n,), DTYPES[1])
     e = generate_random_dtype_array((n-1,), DTYPES[1])
 
-    if compz == "I":
-        z = None
+    # make SPD with dominant diagonals
+    if dtype in REAL_DTYPES:
+        d = d + 2
     else:
-        # need to determine this
-        pass
-
+        d = d + 4
     A = np.diag(d) + np.diag(e, 1) + np.diag(e, -1)
 
-    d_eigen, e_, z_, work, info = pteqr(d, e, z, compz=compz)
+    d_pteqr, e_pteqr, z_pteqr, work, info = pteqr(d, e, z, compz=compz)
+    w = eig(A)
+    # compare the routine's eigenvalues with scipy.linalg.eig's.
+    assert_allclose(w, d_pteqr, rtol=rtol, atol=atol)
 
-    w, vl = eig(A)
-
-    assert_allclose(w, d_eigen, rtol=rtol, atol=atol)
-
-    assert_allclose(z_ @ z_.T, np.identity(n))
-
+    if compz == "I":
+        # verify z_pteqr as orthagonal
+        assert_allclose(z_pteqr @ z_pteqr.T, np.identity(n), rtol=rtol, atol=atol)
+        # verify that z_pteqr recombines to A
+        assert_allclose(z_pteqr @ diag(d_pteqr) @ z_pteqr.T, A, rtol=rtol, atol=atol)
 
 @pytest.mark.parametrize("compz,d,e,z,d_expect,z_expect",
                          [("I",
@@ -2286,11 +2293,25 @@ def test_pteqr(dtype, compz):
                            np.array([[0.6326,  0.6245, -0.4191,  0.1847],
                                      [0.7668, -0.4270, 0.4176, -0.2352],
                                      [-0.1082, 0.6071, 0.4594, -0.6393],
-                                     [-0.0081, 0.2432, 0.6625, 0.7084]]))])
+                                     [-0.0081, 0.2432, 0.6625, 0.7084]])),
+                          ("I",
+                           np.array([6.02, 2.91, 3.29, 4.18]),
+                           np.array([(-0.45 - 0.25j, 0.05 - 1.56j, 0.14 - 1.70j]),
+                           None,
+                           np.array([7.9995, 5.9976, 2.0003, 0.4026]),
+                           np.array([[0.7289 0.0000j, 0.2001 +  0.4724j, -0.2133 + 0.1498j, 0.0995 -0.3573j],
+                                     [-0.1651 -0.2067j, -0.2461+ 0.3742j, 0.7308+ 0.0000j, 0.2867 -0.3364j],
+                                     [-0.4170 -0.1413j, 0.4476+  0.1455j, -0.3282 + 0.0471j, 0.6890 + 0.0000J],
+                                     [0.1748 + 0.4175j, 0.5610 + 0.0000j, 0.5203 + 0.1317j, 0.0659 + 0.4336j]]))])
 def test_pteqr_NAG(compz, d, e, z, d_expect, z_expect):
-    # the NAG manual has 4 decmals accuracy
+    '''
+    Implements real (f08jgf) and complex (f08juf) examples from NAG manual.
+    https://www.nag.com/numeric/fl/nagdoc_latest/html/f08/f08jgf.html
+    https://www.nag.com/numeric/fl/nagdoc_latest/html/f08/f08juf.html
+    Tests for correct d and z outputs.
+    '''
+    # the NAG manual has 4 decimals accuracy
     rtol = 1e-4
-    # get appropriate ?pteqr for dtype
     pteqr = get_lapack_funcs(('pteqr'), dtype=d.dtype)
     _d, _e, _z, work, info = pteqr(d, e, z, compz=compz)
     assert_allclose(_d, d_expect, rtol=rtol)
