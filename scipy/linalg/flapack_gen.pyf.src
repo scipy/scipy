@@ -1016,9 +1016,9 @@ subroutine <prefix>geqrfp(m,n,a,lda,tau,work,lwork,info)
     integer intent(hide), check(m > 0), depend(a) :: m = shape(a, 0)
     integer intent(hide), check(n > 0), depend(a) :: n = shape(a, 1)
     <ftype> intent(in,out,copy,out=qr), dimension(m,n) :: a
-    integer intent(hide) :: lda = max(1, m)
+    integer intent(hide), depend(a) :: lda = max(1, shape(a, 0))
     <ftype> intent(out), depend(m,n), dimension(MIN(m,n)) :: tau
-    <ftype> intent(out), depend(lwork), dimension(lwork) :: work
+    <ftype> intent(hide), depend(lwork), dimension(lwork) :: work
     integer intent(in), check(lwork>=n||lwork==-1) :: lwork = MAX(1, n)
     integer intent(out) :: info
 
@@ -1034,7 +1034,7 @@ subroutine <prefix>geqrfp_lwork(m,n,a,lda,tau,work,lwork,info)
     integer intent(in), check(m > 0) :: m
     integer intent(in), check(n > 0) :: n
     <ftype> intent(hide) :: a
-    integer intent(hide) :: lda = m
+    integer intent(hide), depend(m) :: lda = m
     <ftype> intent(hide) :: tau
     <ftype> intent(out) :: work
     integer intent(hide) :: lwork = -1

@@ -1701,7 +1701,7 @@ def test_geqrfp(dtype, matrix_size):
     # create random matrix of dimentions m x n
     A = generate_random_dtype_array((m, n), dtype=dtype)
     # create qr matrix using geqrfp
-    qr_A, tau, work, info = geqrfp(A)
+    qr_A, tau, info = geqrfp(A)
 
     # obtain r from the upper triangular area
     r = np.triu(qr_A)
@@ -1737,7 +1737,7 @@ def test_geqrfp(dtype, matrix_size):
     # matrix that returns negatives in the diagonal with scipy.linalg.rq
     A_negative = generate_random_dtype_array((n, m), dtype=dtype) * -1
     r_rq_neg, q_rq_neg = qr(A_negative)
-    rq_A_neg, tau_neg, work_neg, info_neg = geqrfp(A_negative)
+    rq_A_neg, tau_neg, info_neg = geqrfp(A_negative)
     # assert that any of the entries on the diagonal from linalg.qr
     #   are negative and that all of geqrfp are positive.
     assert_(np.any(np.diag(r_rq_neg) < 0) and
