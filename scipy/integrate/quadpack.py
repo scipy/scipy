@@ -102,9 +102,14 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
     Other Parameters
     ----------------
     epsabs : float or int, optional
-        Absolute error tolerance.
+        Absolute error tolerance. Default is 1.49e-8. `quad` tries to obtain
+        an accuracy of ``abs(i-result) <= max(epsabs, epsrel*abs(i))``
+        where ``i`` = integral of `func` from `a` to `b`, and ``result`` is the
+        numerical approximation. See `epsrel` below.
     epsrel : float or int, optional
-        Relative error tolerance.
+        Relative error tolerance. Default is 1.49e-8.
+        If ``epsabs <= 0``, `epsrel` must be greater than both 5e-29
+        and ``50 * (machine epsilon)``. See `epsabs` above.
     limit : float or int, optional
         An upper bound on the number of subintervals used in the adaptive
         algorithm.
@@ -393,7 +398,7 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
     elif ier == 6:  # Forensic decision tree when QUADPACK throws ier=6
         if epsabs <= 0:  # Small error tolerance - applies to all methods
             if epsrel < max(50 * sys.float_info.epsilon, 5e-29):
-                msg = ("If 'errabs'<=0, 'epsrel' must be greater than both"
+                msg = ("If 'epsabs'<=0, 'epsrel' must be greater than both"
                        " 5e-29 and 50*(machine epsilon).")
             elif weight in ['sin', 'cos'] and (abs(a) + abs(b) == Inf):
                 msg = ("Sine or cosine weighted intergals with infinite domain"
@@ -541,9 +546,15 @@ def dblquad(func, a, b, gfun, hfun, args=(), epsabs=1.49e-8, epsrel=1.49e-8):
         Extra arguments to pass to `func`.
     epsabs : float, optional
         Absolute tolerance passed directly to the inner 1-D quadrature
-        integration. Default is 1.49e-8.
+        integration. Default is 1.49e-8. `dblquad`` tries to obtain
+        an accuracy of ``abs(i-result) <= max(epsabs, epsrel*abs(i))``
+        where ``i`` = inner integral of ``func(y, x)`` from ``gfun(x)``
+        to ``hfun(x)``, and ``result`` is the numerical approximation.
+        See `epsrel` below.
     epsrel : float, optional
         Relative tolerance of the inner 1-D integrals. Default is 1.49e-8.
+        If ``epsabs <= 0``, `epsrel` must be greater than both 5e-29
+        and ``50 * (machine epsilon)``. See `epsabs` above.
 
     Returns
     -------

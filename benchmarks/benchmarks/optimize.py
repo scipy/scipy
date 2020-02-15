@@ -197,7 +197,6 @@ class _BenchOptimizers(Benchmark):
         t0 = time.time()
 
         res = dual_annealing(self.fun,
-                             None,
                              self.bounds)
 
         t1 = time.time()

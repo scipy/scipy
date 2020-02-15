@@ -169,7 +169,7 @@ you can explicitly seed a global variable
 
 Relying on a global state is not recommended, though. A better way is to use
 the `random_state` parameter, which accepts an instance of
-`numpy.random.mtrand.RandomState` class, or an integer, which is then used to
+`numpy.random.RandomState` class, or an integer, which is then used to
 seed an internal ``RandomState`` object:
 
     >>> norm.rvs(size=5, random_state=1234)

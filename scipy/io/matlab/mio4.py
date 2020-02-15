@@ -161,7 +161,7 @@ class VarReader4(object):
         Returns
         -------
         arr : ndarray
-            of dtype givem by `hdr` ``dtype`` and shape givem by `hdr` ``dims``
+            of dtype given by `hdr` ``dtype`` and shape given by `hdr` ``dims``
         '''
         dt = hdr.dtype
         dims = hdr.dims

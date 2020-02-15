@@ -15,7 +15,7 @@ from numpy import finfo, power, nan, isclose
 
 from scipy.optimize import zeros, newton, root_scalar
 
-from scipy._lib._util import getargspec_no_self as _getargspec
+from scipy._lib._util import getfullargspec_no_self as _getfullargspec
 
 # Import testing parameters
 from scipy.optimize._tstutils import get_tests, functions as tstutils_functions, fstrings as tstutils_fstrings
@@ -132,10 +132,11 @@ class TestBasic(object):
         # The methods have one of two base signatures:
         # (f, a, b, **kwargs)  # newton
         # (func, x0, **kwargs)  # bisect/brentq/...
-        sig = _getargspec(method)  # ArgSpec with args, varargs, varkw, defaults
-        nDefaults = len(sig[3])
-        nRequired = len(sig[0]) - nDefaults
-        sig_args_keys = sig[0][:nRequired]
+        sig = _getfullargspec(method)  # FullArgSpec with args, varargs, varkw, defaults, ...
+        assert_(not sig.kwonlyargs)
+        nDefaults = len(sig.defaults)
+        nRequired = len(sig.args) - nDefaults
+        sig_args_keys = sig.args[:nRequired]
         sig_kwargs_keys = []
         if name in ['secant', 'newton', 'halley']:
             if name in ['newton', 'halley']:
@@ -340,6 +341,25 @@ class TestBasic(object):
         # test secant
         x = zeros.newton(f1, x0, args=args)
         assert_allclose(x, x_expected)
+
+    def test_array_newton_complex(self):
+        def f(x):
+            return x + 1+1j
+
+        def fprime(x):
+            return 1.0
+
+        t = np.full(4, 1j)
+        x = zeros.newton(f, t, fprime=fprime)
+        assert_allclose(f(x), 0.)
+
+        # should work even if x0 is not complex
+        t = np.ones(4)
+        x = zeros.newton(f, t, fprime=fprime)
+        assert_allclose(f(x), 0.)
+
+        x = zeros.newton(f, t)
+        assert_allclose(f(x), 0.)
 
     def test_array_secant_active_zero_der(self):
         """test secant doesn't continue to iterate zero derivatives"""

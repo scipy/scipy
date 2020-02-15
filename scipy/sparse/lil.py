@@ -96,7 +96,7 @@ class lil_matrix(spmatrix, IndexMixin):
                 A = arg1.tolil()
 
             if dtype is not None:
-                A = A.astype(dtype)
+                A = A.astype(dtype, copy=False)
 
             self._shape = check_shape(A.shape)
             self.dtype = A.dtype

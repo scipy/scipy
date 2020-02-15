@@ -3757,8 +3757,8 @@ add_newdoc("fresnel",
 
     .. math::
 
-       S(z) &= \int_0^z \cos(\pi t^2 /2) dt \\
-       C(z) &= \int_0^z \sin(\pi t^2 /2) dt.
+       S(z) &= \int_0^z \sin(\pi t^2 /2) dt \\
+       C(z) &= \int_0^z \cos(\pi t^2 /2) dt.
 
     See [dlmf]_ for details.
 
