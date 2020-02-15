@@ -1743,7 +1743,9 @@ def test_geqrfp(dtype, matrix_size):
     assert_(np.any(np.diag(r_rq_neg) < 0) and
             np.all(np.diag(r) > 0))
 
+
+def test_geqrfp_errors_with_empty_array():
     # check that empty array raises good error message
     A_empty = np.array([])
-    with assert_raises(Exception):
-        geqrfp(A_empty)
+    geqrfp = get_lapack_funcs('geqrfp', dtype=A_empty.dtype)
+    assert_raises(Exception, geqrfp, A_empty)
