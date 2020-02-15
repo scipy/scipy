@@ -1677,16 +1677,12 @@ def generate_random_dtype_array(shape, dtype):
 @pytest.mark.parametrize('dtype', DTYPES)
 @pytest.mark.parametrize('matrix_size', [(3, 4), (7, 6), (6, 6)])
 def test_geqrfp(dtype, matrix_size):
-    # Tests for all dytpes, tall, wide, and square matricies.
+    # Tests for all dytpes, tall, wide, and square matrices.
     # Using the routine with random matrix A, Q and R are obtained and then
     # tested such that R is upper triangular and non-negative on the diagonal,
     # and Q is an orthagonal matrix. Verifies that A=Q@R. It also
     # tests against a matrix that for which the  linalg.qr method returns
     # negative diagonals, and for error messaging.
-
-    # Additional note: this test stands alone without a NAG manual additional
-    # example as the NAG problem was overly complex in for the small role
-    # this routine played in it.
 
     # set test tolerance appropriate for dtype
     np.random.seed(42)
