@@ -172,7 +172,7 @@ def fmin_slsqp(func, x0, eqcons=(), f_eqcons=None, ieqcons=(), f_ieqcons=None,
          6 : Singular matrix C in LSQ subproblem
          7 : Rank-deficient equality constraint subproblem HFTI
          8 : Positive directional derivative for linesearch
-         9 : Iteration limit exceeded
+         9 : Iteration limit reached
 
     Examples
     --------
@@ -242,7 +242,7 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
         automatically.
     """
     _check_unknown_options(unknown_options)
-    iter = maxiter
+    iter = maxiter - 1
     acc = ftol
     epsilon = eps
 
@@ -305,7 +305,7 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
                    6: "Singular matrix C in LSQ subproblem",
                    7: "Rank-deficient equality constraint subproblem HFTI",
                    8: "Positive directional derivative for linesearch",
-                   9: "Iteration limit exceeded"}
+                   9: "Iteration limit reached"}
 
     # Transform x0 into an array.
     x = asfarray(x0).flatten()
