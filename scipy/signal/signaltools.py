@@ -166,6 +166,9 @@ def correlate(in1, in2, mode='full', method='auto'):
     `fftconvolve`. In certain cases (i.e., arrays of objects or when
     rounding integers can lose precision), ``method='direct'`` is always used.
 
+    When using "same" mode with even-length inputs, the outputs of `correlate`
+    and `correlate2d` differ: There is a 1-index offset between them.
+
     Examples
     --------
     Implement a matched filter using cross-correlation, to recover a signal
@@ -1617,6 +1620,11 @@ def correlate2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
     correlate2d : ndarray
         A 2-dimensional array containing a subset of the discrete linear
         cross-correlation of `in1` with `in2`.
+
+    Notes
+    -----
+    When using "same" mode with even-length inputs, the outputs of `correlate`
+    and `correlate2d` differ: There is a 1-index offset between them.
 
     Examples
     --------
