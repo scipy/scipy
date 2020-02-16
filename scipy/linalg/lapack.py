@@ -48,6 +48,11 @@ All functions
 .. autosummary::
    :toctree: generated/
 
+   sorcsd
+   dorcsd
+
+   sorcsd_lwork
+   dorcsd_lwork
 
    sgbsv
    dgbsv
@@ -712,21 +717,17 @@ All functions
    ctpmqrt
    ztpmqrt
 
+   cuncsd
+   zuncsd
+
+   cuncsd_lwork
+   zuncsd_lwork
+
    cunmrz
    zunmrz
 
    cunmrz_lwork
    zunmrz_lwork
-
-   cuncsd
-   zuncsd
-   sorcsd
-   dorcsd
-
-   cuncsd_lwork
-   zuncsd_lwork
-   sorcsd_lwork
-   dorcsd_lwork
 
    ilaver
 
