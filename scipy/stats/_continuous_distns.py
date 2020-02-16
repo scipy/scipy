@@ -1933,8 +1933,8 @@ class weibull_min_gen(rv_continuous):
 
     The Weibull Minimum Extreme Value distribution, from extreme value theory,
     is also often simply called the Weibull distribution.
-    it arises as the limiting distribution of the rescaled minimum of
-    iid random variables
+    It arises as the limiting distribution of the rescaled minimum of
+    iid random variables.
 
     %(before_notes)s
 
