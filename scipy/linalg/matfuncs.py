@@ -697,7 +697,7 @@ def khatri_rao(a, b):
 
         (A_{ij}  \bigotimes B_{ij})_{ij}
 
-    which is the Kronecker product of every column of A and B, e.g.,
+    which is the Kronecker product of every column of A and B, e.g.::
 
         c = np.vstack([np.kron(a[:, k], b[:, k]) for k in range(b.shape[1])]).T
 
