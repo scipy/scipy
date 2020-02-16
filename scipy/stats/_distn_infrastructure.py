@@ -919,7 +919,7 @@ class rv_generic(object):
         # generated.
 
         ## Use basic inverse cdf algorithm for RV generation as default.
-        U = random_state.uniform(size)
+        U = random_state.uniform(size=size)
         Y = self._ppf(U, *args)
         return Y
 
