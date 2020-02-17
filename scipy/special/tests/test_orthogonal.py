@@ -1,12 +1,9 @@
 from __future__ import division, print_function, absolute_import
 
-import platform
-
 import numpy as np
 from numpy import array, sqrt
 from numpy.testing import (assert_array_almost_equal, assert_equal,
                            assert_almost_equal, assert_allclose)
-import pytest
 from pytest import raises as assert_raises
 
 from scipy import integrate

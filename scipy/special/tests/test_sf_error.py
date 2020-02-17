@@ -2,7 +2,7 @@ from __future__ import division, print_function, absolute_import
 
 import warnings
 
-from numpy.testing import assert_, assert_equal, suppress_warnings
+from numpy.testing import assert_, assert_equal
 import pytest
 from pytest import raises as assert_raises
 
