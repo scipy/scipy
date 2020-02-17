@@ -4,9 +4,8 @@ from __future__ import division, print_function, absolute_import
 
 import numpy as np
 
-from . import BPoly, PPoly
+from . import PPoly
 from .polyint import _isscalar
-from scipy._lib._util import _asarray_validated
 from scipy.linalg import solve_banded, solve
 
 

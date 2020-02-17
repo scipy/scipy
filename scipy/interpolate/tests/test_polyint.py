@@ -198,14 +198,14 @@ class TestKrogh(object):
                                 np.zeros(len(self.test_xs)))
 
     def test_hermite(self):
-        xs = [0,0,0,1,1,1,2]
-        ys = [self.true_poly(0),
-              self.true_poly.deriv(1)(0),
-              self.true_poly.deriv(2)(0),
-              self.true_poly(1),
-              self.true_poly.deriv(1)(1),
-              self.true_poly.deriv(2)(1),
-              self.true_poly(2)]
+        # xs = [0,0,0,1,1,1,2]
+        # ys = [self.true_poly(0),
+        #       self.true_poly.deriv(1)(0),
+        #       self.true_poly.deriv(2)(0),
+        #       self.true_poly(1),
+        #       self.true_poly.deriv(1)(1),
+        #       self.true_poly.deriv(2)(1),
+        #       self.true_poly(2)]
         P = KroghInterpolator(self.xs,self.ys)
         assert_almost_equal(self.true_poly(self.test_xs),P(self.test_xs))
 
