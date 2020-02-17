@@ -24,8 +24,8 @@ def rev_list(branch, num_commits):
             '--first-parent',
             branch
         ],
-        capture_output=True,
-        text=True,
+        stdout=subprocess.PIPE,
+        encoding='utf-8',
     )
     res.check_returncode()
     return res.stdout.rstrip('\n').split('\n')
@@ -55,8 +55,8 @@ def find_diff(sha):
     """Find the diff since the given sha."""
     res = subprocess.run(
         ['git', 'diff', '--unified=0', sha, '--', '*.py'],
-        capture_output=True,
-        text=True,
+        stdout=subprocess.PIPE,
+        encoding='utf-8',
     )
     res.check_returncode()
     return res.stdout
@@ -67,8 +67,8 @@ def run_pycodestyle(diff):
     res = subprocess.run(
         ['pycodestyle', '--diff', '--config', CONFIG],
         input=diff,
-        capture_output=True,
-        text=True,
+        stdout=subprocess.PIPE,
+        encoding='utf-8',
     )
     return res.returncode, res.stdout
 
