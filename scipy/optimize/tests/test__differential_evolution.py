@@ -438,11 +438,11 @@ class TestDifferentialEvolutionSolver(object):
 
         # check a proper minimisation can be done by an iterable solver
         solver = DifferentialEvolutionSolver(rosen, self.bounds)
-        x_prev, fun_prev = next(solver)
+        _, fun_prev = next(solver)
         for i, soln in enumerate(solver):
             x_current, fun_current = soln
             assert(fun_prev >= fun_current)
-            x_prev, fun_prev = x_current, fun_current
+            _, fun_prev = x_current, fun_current
             # need to have this otherwise the solver would never stop.
             if i == 50:
                 break
@@ -522,9 +522,7 @@ class TestDifferentialEvolutionSolver(object):
                 return np.inf
             return x[1]
         bounds = [(0, 1), (0, 1)]
-        x_fit = differential_evolution(sometimes_inf,
-                                       bounds=[(0, 1), (0, 1)],
-                                       disp=False)
+        differential_evolution(sometimes_inf, bounds=bounds, disp=False)
 
     def test_deferred_updating(self):
         # check setting of deferred updating, with default workers
