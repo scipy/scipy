@@ -1,7 +1,6 @@
 ''' Some tests for filters '''
 from __future__ import division, print_function, absolute_import
 
-import sys
 import numpy as np
 
 from numpy.testing import (assert_equal, assert_allclose,
@@ -83,7 +82,6 @@ def test_valid_origins():
     data = np.array([1,2,3,4,5], dtype=np.float64)
     assert_raises(ValueError, sndi.generic_filter, data, func, size=3,
                   origin=2)
-    func2 = lambda x, y: np.mean(x + y)
     assert_raises(ValueError, sndi.generic_filter1d, data, func,
                   filter_size=3, origin=2)
     assert_raises(ValueError, sndi.percentile_filter, data, 0.2, size=3,

@@ -31,7 +31,6 @@
 from __future__ import division, print_function, absolute_import
 from collections.abc import Iterable
 import warnings
-import numbers
 import numpy
 import operator
 from . import _ni_support
