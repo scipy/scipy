@@ -42,7 +42,7 @@ import scipy.cluster.hierarchy
 from scipy.cluster.hierarchy import (
     ClusterWarning, linkage, from_mlab_linkage, to_mlab_linkage,
     num_obs_linkage, inconsistent, cophenet, fclusterdata, fcluster,
-    is_isomorphic, single, leaders, complete, weighted, centroid,
+    is_isomorphic, single, leaders,
     correspond, is_monotonic, maxdists, maxinconsts, maxRstat,
     is_valid_linkage, is_valid_im, to_tree, leaves_list, dendrogram,
     set_link_color_palette, cut_tree, optimal_leaf_ordering,
@@ -845,8 +845,8 @@ class TestDendrogram(object):
 
         # test that dendrogram accepts and handle the leaf_font_size and
         # leaf_rotation keywords
-        R1a = dendrogram(Z, ax=ax, orientation=orientation,
-                         leaf_font_size=20, leaf_rotation=90)
+        dendrogram(Z, ax=ax, orientation=orientation,
+                   leaf_font_size=20, leaf_rotation=90)
         testlabel = (
             ax.get_xticklabels()[0]
             if orientation in ['top', 'bottom']
@@ -854,16 +854,16 @@ class TestDendrogram(object):
         )
         assert_equal(testlabel.get_rotation(), 90)
         assert_equal(testlabel.get_size(), 20)
-        R1a = dendrogram(Z, ax=ax, orientation=orientation,
-                         leaf_rotation=90)
+        dendrogram(Z, ax=ax, orientation=orientation,
+                   leaf_rotation=90)
         testlabel = (
             ax.get_xticklabels()[0]
             if orientation in ['top', 'bottom']
             else ax.get_yticklabels()[0]
         )
         assert_equal(testlabel.get_rotation(), 90)
-        R1a = dendrogram(Z, ax=ax, orientation=orientation,
-                         leaf_font_size=20)
+        dendrogram(Z, ax=ax, orientation=orientation,
+                   leaf_font_size=20)
         testlabel = (
             ax.get_xticklabels()[0]
             if orientation in ['top', 'bottom']
