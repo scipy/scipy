@@ -68,4 +68,4 @@ class TestRoot(object):
 
         F = fun()
         with assert_raises(ValueError):
-            _ = root(F, [0.1, 0.0], method='lm')
+            root(F, [0.1, 0.0], method='lm')

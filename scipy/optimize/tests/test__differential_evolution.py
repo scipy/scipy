@@ -522,7 +522,7 @@ class TestDifferentialEvolutionSolver(object):
                 return np.inf
             return x[1]
         bounds = [(0, 1), (0, 1)]
-        _ = differential_evolution(sometimes_inf, bounds=bounds, disp=False)
+        differential_evolution(sometimes_inf, bounds=bounds, disp=False)
 
     def test_deferred_updating(self):
         # check setting of deferred updating, with default workers
