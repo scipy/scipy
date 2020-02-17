@@ -8,7 +8,8 @@ from numpy.testing import (assert_, assert_equal, assert_array_almost_equal,
 import pytest
 from pytest import raises as assert_raises
 from scipy.fft._pocketfft import (ifft, fft, fftn, ifftn,
-                                  rfft, irfft, rfftn, irfftn, fft2)
+                                  rfft, irfft, rfftn, irfftn, fft2,
+                                  hfft, ihfft, hfftn, ihfftn)
 
 from numpy import (arange, add, array, asarray, zeros, dot, exp, pi,
                    swapaxes, double, cdouble)
@@ -45,6 +46,10 @@ def _assert_close_in_norm(x, y, rtol, size, rdt):
 def random(size):
     return rand(*size)
 
+def swap_byteorder(arr):
+    """Returns the same array with swapped byteorder"""
+    dtype = arr.dtype.newbyteorder('S')
+    return arr.astype(dtype)
 
 def get_mat(n):
     data = arange(n)
@@ -1001,3 +1006,18 @@ def test_invalid_norm(func):
     with assert_raises(ValueError,
                        match='Invalid norm value o, should be None or "ortho"'):
         func(x, norm='o')
+
+
+@pytest.mark.parametrize('func', [fft, ifft, fftn, ifftn,
+                                   irfft, irfftn, hfft, hfftn])
+def test_swapped_byte_order_complex(func):
+    rng = np.random.RandomState(1234)
+    x = rng.rand(10) + 1j * rng.rand(10)
+    assert_allclose(func(swap_byteorder(x)), func(x))
+
+
+@pytest.mark.parametrize('func', [ihfft, ihfftn, rfft, rfftn])
+def test_swapped_byte_order_complex(func):
+    rng = np.random.RandomState(1234)
+    x = rng.rand(10)
+    assert_allclose(func(swap_byteorder(x)), func(x))
