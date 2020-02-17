@@ -21,10 +21,9 @@ import numpy as np
 from scipy.optimize._slsqp import slsqp
 from numpy import (zeros, array, linalg, append, asfarray, concatenate, finfo,
                    sqrt, vstack, exp, inf, isfinite, atleast_1d)
-from .optimize import (wrap_function, OptimizeResult, _check_unknown_options,
+from .optimize import (OptimizeResult, _check_unknown_options,
                        _prepare_scalar_function)
 from ._numdiff import approx_derivative
-from ._differentiable_functions import ScalarFunction, FD_METHODS
 from ._constraints import old_bound_to_new
 
 

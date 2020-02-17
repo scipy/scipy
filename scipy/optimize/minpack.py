@@ -1,20 +1,19 @@
 from __future__ import division, print_function, absolute_import
 
-import threading
 import warnings
 from . import _minpack
 
 import numpy as np
 from numpy import (atleast_1d, dot, take, triu, shape, eye,
-                   transpose, zeros, prod, greater, array,
-                   all, where, isscalar, asarray, inf, abs,
+                   transpose, zeros, prod, greater,
+                   asarray, inf,
                    finfo, inexact, issubdtype, dtype)
 from scipy.linalg import svd, cholesky, solve_triangular, LinAlgError
 from scipy._lib._util import _asarray_validated, _lazywhere
 from scipy._lib._util import getfullargspec_no_self as _getfullargspec
 from .optimize import OptimizeResult, _check_unknown_options, OptimizeWarning
 from ._lsq import least_squares
-from ._lsq.common import make_strictly_feasible
+# from ._lsq.common import make_strictly_feasible
 from ._lsq.least_squares import prepare_bounds
 
 error = _minpack.error
@@ -685,7 +684,6 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         # determine number of parameters by inspecting the function
         sig = _getfullargspec(f)
         args = sig.args
-        varargs, varkw, defaults = sig.varargs, sig.varkw, sig.defaults
         if len(args) < 2:
             raise ValueError("Unable to determine number of fit parameters.")
         n = len(args) - 1

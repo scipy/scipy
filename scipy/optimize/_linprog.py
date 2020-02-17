@@ -25,8 +25,7 @@ from ._linprog_ip import _linprog_ip
 from ._linprog_simplex import _linprog_simplex
 from ._linprog_rs import _linprog_rs
 from ._linprog_util import (
-    _parse_linprog, _presolve, _get_Abc, _postprocess, _LPProblem, _autoscale, _unscale
-    )
+    _parse_linprog, _presolve, _get_Abc, _postprocess, _LPProblem, _autoscale)
 from copy import deepcopy
 
 __all__ = ['linprog', 'linprog_verbose_callback', 'linprog_terse_callback']

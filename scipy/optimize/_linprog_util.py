@@ -1237,7 +1237,7 @@ def _unscale(x, C, b_scale):
         n = len(C)
         # fails if sparse or scalar; that's OK.
         # this is only needed for original simplex (never sparse)
-    except TypeError as e:
+    except TypeError:
         n = len(x)
 
     return x[:n]*b_scale*C

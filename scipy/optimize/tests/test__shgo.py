@@ -450,11 +450,11 @@ class TestShgoArguments(object):
             print("Local minimization callback test")
 
         for test in [test1_1, test2_1]:
-            res = shgo(test.f, test.bounds, iters=1,
-                       sampling_method='simplicial',
-                       callback=callback_func, options={'disp': True})
-            res = shgo(test.f, test.bounds, n=1, sampling_method='simplicial',
-                       callback=callback_func, options={'disp': True})
+            shgo(test.f, test.bounds, iters=1,
+                 sampling_method='simplicial',
+                 callback=callback_func, options={'disp': True})
+            shgo(test.f, test.bounds, n=1, sampling_method='simplicial',
+                 callback=callback_func, options={'disp': True})
 
     def test_3_2_disp_sobol(self):
         """Iterative sampling on TestFunction 1 and 2 (multi- and univariate)"""
@@ -463,11 +463,11 @@ class TestShgoArguments(object):
             print("Local minimization callback test")
 
         for test in [test1_1, test2_1]:
-            res = shgo(test.f, test.bounds, iters=1, sampling_method='sobol',
-                       callback=callback_func, options={'disp': True})
+            shgo(test.f, test.bounds, iters=1, sampling_method='sobol',
+                 callback=callback_func, options={'disp': True})
 
-            res = shgo(test.f, test.bounds, n=1, sampling_method='simplicial',
-                       callback=callback_func, options={'disp': True})
+            shgo(test.f, test.bounds, n=1, sampling_method='simplicial',
+                 callback=callback_func, options={'disp': True})
 
     @pytest.mark.slow
     def test_4_1_known_f_min(self):
@@ -571,8 +571,8 @@ class TestShgoArguments(object):
         """Test the minimizer_kwargs default inits"""
         minimizer_kwargs = {'ftol': 1e-5}
         options = {'disp': True}  # For coverage purposes
-        SHGOc = SHGO(test3_1.f, test3_1.bounds, constraints=test3_1.cons[0],
-                     minimizer_kwargs=minimizer_kwargs, options=options)
+        SHGO(test3_1.f, test3_1.bounds, constraints=test3_1.cons[0],
+             minimizer_kwargs=minimizer_kwargs, options=options)
 
     def test_7_3_minkwargs(self):
         """Test minimizer_kwargs arguments for solvers without constraints"""
@@ -602,27 +602,27 @@ class TestShgoArguments(object):
 
     def test_9_cons_g(self):
         """Test single function constraint passing"""
-        SHGOc = SHGO(test3_1.f, test3_1.bounds, constraints=test3_1.cons[0])
+        SHGO(test3_1.f, test3_1.bounds, constraints=test3_1.cons[0])
 
     def test_10_finite_time(self):
         """Test single function constraint passing"""
         options = {'maxtime': 1e-15}
-        res = shgo(test1_1.f, test1_1.bounds, n=1, iters=None,
-                   options=options, sampling_method='sobol')
+        shgo(test1_1.f, test1_1.bounds, n=1, iters=None,
+             options=options, sampling_method='sobol')
 
     def test_11_f_min_time(self):
         """Test to cover the case where f_lowest == 0"""
         options = {'maxtime': 1e-15,
                    'f_min': 0.0}
-        res = shgo(test1_2.f, test1_2.bounds, n=1, iters=None,
-                   options=options, sampling_method='sobol')
+        shgo(test1_2.f, test1_2.bounds, n=1, iters=None,
+             options=options, sampling_method='sobol')
 
     def test_12_sobol_inf_cons(self):
         """Test to cover the case where f_lowest == 0"""
         options = {'maxtime': 1e-15,
                    'f_min': 0.0}
-        res = shgo(test1_2.f, test1_2.bounds, n=1, iters=None,
-                   options=options, sampling_method='sobol')
+        shgo(test1_2.f, test1_2.bounds, n=1, iters=None,
+             options=options, sampling_method='sobol')
 
     def test_13_high_sobol(self):
         """Test init of high-dimensional sobol sequences"""

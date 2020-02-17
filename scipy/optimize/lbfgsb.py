@@ -39,10 +39,8 @@ import numpy as np
 from numpy import array, asarray, float64, int32, zeros
 from . import _lbfgsb
 from .optimize import (MemoizeJac, OptimizeResult,
-                       _check_unknown_options, wrap_function, _prepare_scalar_function)
-from ._numdiff import approx_derivative
+                       _check_unknown_options, _prepare_scalar_function)
 from ._constraints import old_bound_to_new
-from ._differentiable_functions import ScalarFunction, FD_METHODS
 
 from scipy.sparse.linalg import LinearOperator
 

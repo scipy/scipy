@@ -5,20 +5,13 @@ from scipy.sparse import csc_matrix
 from scipy.optimize._trustregion_constr.projections \
     import projections, orthogonality
 from numpy.testing import (TestCase, assert_array_almost_equal,
-                           assert_array_equal, assert_array_less,
-                           assert_raises, assert_equal, assert_,
-                           run_module_suite, assert_allclose, assert_warns,
-                           dec)
-import pytest
-import sys
-import platform
+                           assert_equal, assert_allclose)
 
 try:
     from sksparse.cholmod import cholesky_AAt
     sksparse_available = True
     available_sparse_methods = ("NormalEquation", "AugmentedSystem")
 except ImportError:
-    import warnings
     sksparse_available = False
     available_sparse_methods = ("AugmentedSystem",)
 available_dense_methods = ('QRFactorization', 'SVDFactorization')
@@ -65,7 +58,6 @@ class TestProjections(TestCase):
                 # Test if x is in the null_space
                 x = Z.matvec(z)
                 atol = 1e-13 * abs(x).max()
-                err = abs(A.dot(x)).max()
                 assert_allclose(A.dot(x), 0, atol=atol)
                 # Test orthogonality
                 assert_allclose(orthogonality(A, x), 0, atol=1e-13)

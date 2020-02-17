@@ -3,14 +3,8 @@ import numpy as np
 from copy import deepcopy
 from numpy.linalg import norm
 from numpy.testing import (TestCase, assert_array_almost_equal,
-                           assert_array_equal, assert_array_less,
-                           assert_raises, assert_equal, assert_,
-                           run_module_suite, assert_allclose, assert_warns,
-                           dec)
-from scipy.optimize import (BFGS,
-                            SR1,
-                            HessianUpdateStrategy,
-                            minimize)
+                           assert_array_equal, assert_array_less)
+from scipy.optimize import (BFGS, SR1)
 
 
 class Rosenbrock:
