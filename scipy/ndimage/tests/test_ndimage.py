@@ -32,7 +32,6 @@ from __future__ import division, print_function, absolute_import
 
 import math
 import sys
-import platform
 
 import numpy
 from numpy import fft
@@ -3627,7 +3626,7 @@ class TestNdimage:
                            [1, 0, 1]], dtype=bool)
         iterations = 2.0
         with assert_raises(TypeError):
-            out = ndimage.binary_erosion(data, iterations=iterations)
+            _ = ndimage.binary_erosion(data, iterations=iterations)
 
     def test_binary_erosion39(self):
         iterations = numpy.int32(3)

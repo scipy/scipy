@@ -27,7 +27,7 @@ def test_ticket_742():
         rank = len(mask.shape)
         la, co = ndimage.label(mask,
                                ndimage.generate_binary_structure(rank, rank))
-        slices = ndimage.find_objects(la)
+        _ = ndimage.find_objects(la)
 
     if np.dtype(np.intp) != np.dtype('i'):
         shape = (3,1240,1240)
