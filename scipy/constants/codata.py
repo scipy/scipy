@@ -52,7 +52,7 @@ https://physics.nist.gov/cuu/Constants/
 from __future__ import division, print_function, absolute_import
 
 import warnings
-from math import pi, sqrt
+from math import pi
 
 __all__ = ['physical_constants', 'value', 'unit', 'precision', 'find',
            'ConstantWarning']
