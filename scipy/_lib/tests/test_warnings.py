@@ -8,7 +8,6 @@ from NumPy.
 from __future__ import division, absolute_import, print_function
 
 import os
-import sys
 from pathlib import Path
 import ast
 import tokenize
