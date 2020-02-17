@@ -1,7 +1,7 @@
 from functools import update_wrapper, lru_cache
 import numpy as np
 
-from . import _pocketfft
+# from . import _pocketfft
 from ._pocketfft import helper as _helper
 
 
