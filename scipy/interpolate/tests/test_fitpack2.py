@@ -200,8 +200,8 @@ class TestUnivariateSpline(object):
         # also test LSQUnivariateSpline [which needs explicit knots]
         spl = UnivariateSpline(xx, yy, check_finite=True)
         t = spl.get_knots()[3:4]  # interior knots w/ default k=3
-        spl2 = UnivariateSpline(x=x, y=y, w=w, s=1, check_finite=True)
-        spl3 = LSQUnivariateSpline(x=x, y=y, t=t, w=w, check_finite=True)
+        UnivariateSpline(x=x, y=y, w=w, s=1, check_finite=True)
+        LSQUnivariateSpline(x=x, y=y, t=t, w=w, check_finite=True)
         assert_raises(ValueError, UnivariateSpline,
                 **dict(x=x, y=y, s=0, check_finite=True))
         assert_raises(ValueError, InterpolatedUnivariateSpline,

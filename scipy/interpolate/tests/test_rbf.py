@@ -216,7 +216,7 @@ def test_two_arg_function_is_callable():
 def test_rbf_epsilon_none():
     x = linspace(0, 10, 9)
     y = sin(x)
-    rbf = Rbf(x, y, epsilon=None)
+    Rbf(x, y, epsilon=None)
 
 
 def test_rbf_epsilon_none_collinear():
