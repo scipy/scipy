@@ -65,7 +65,7 @@ class TestSignM(object):
 
     def test_defective1(self):
         a = array([[0.0,1,0,0],[1,0,1,0],[0,0,0,1],[0,0,1,0]])
-        r = signm(a, disp=False)
+        _ = signm(a, disp=False)
         #XXX: what would be the correct result?
 
     def test_defective2(self):
@@ -75,7 +75,7 @@ class TestSignM(object):
             [-10.0,6.0,-20.0,-18.0,-2.0],
             [-9.6,9.6,-25.5,-15.4,-2.0],
             [9.8,-4.8,18.0,18.2,2.0]))
-        r = signm(a, disp=False)
+        _ = signm(a, disp=False)
         #XXX: what would be the correct result?
 
     def test_defective3(self):
@@ -86,7 +86,7 @@ class TestSignM(object):
                    [0., 0., 0., 0., 3., 10., 0.],
                    [0., 0., 0., 0., 0., -2., 25.],
                    [0., 0., 0., 0., 0., 0., -3.]])
-        r = signm(a, disp=False)
+        _ = signm(a, disp=False)
         #XXX: what would be the correct result?
 
 
@@ -378,7 +378,6 @@ class TestSqrtM(object):
             assert_(np.isnan(B_sqrtm).all())
 
     def test_disp(self):
-        from io import StringIO
         np.random.seed(1234)
 
         A = np.random.rand(3, 3)
@@ -729,7 +728,7 @@ class TestExpmFrechet(object):
                 [1.87864034, 2.07055038],
                 [1.34102727, 0.67341123],
                 ], dtype=float)
-        A_norm_1 = scipy.linalg.norm(A, 1)
+        _ = scipy.linalg.norm(A, 1)
         sps_expm, sps_frechet = expm_frechet(
                 A, E, method='SPS')
         blockEnlarge_expm, blockEnlarge_frechet = expm_frechet(
