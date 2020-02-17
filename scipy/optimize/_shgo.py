@@ -1332,7 +1332,7 @@ class SHGO(object):
 
         for j in range(1, D):
             F_int = [int(item) for item in next(f).strip().split()]
-            (d, s, a), m = F_int[:3], [0] + F_int[3:]
+            (_, s, a), m = F_int[:3], [0] + F_int[3:]
 
             if L <= s:
                 for i in range(1, L + 1):

@@ -36,9 +36,7 @@ from __future__ import division, print_function, absolute_import
 
 from scipy.optimize import moduleTNC
 from .optimize import (MemoizeJac, OptimizeResult, _check_unknown_options,
-                       wrap_function, _prepare_scalar_function)
-from ._differentiable_functions import ScalarFunction, FD_METHODS
-from ._numdiff import approx_derivative
+                       _prepare_scalar_function)
 from ._constraints import old_bound_to_new
 
 from numpy import inf, array, zeros, asfarray

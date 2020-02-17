@@ -4,7 +4,6 @@ from numpy.testing import assert_, assert_allclose, assert_equal
 from pytest import raises as assert_raises
 import numpy as np
 
-from scipy.sparse.linalg import LinearOperator
 from scipy.optimize._lsq.common import (
     step_size_to_bound, find_active_constraints, make_strictly_feasible,
     CL_scaling_vector, intersect_trust_region, build_quadratic_1d,

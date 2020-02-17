@@ -448,7 +448,7 @@ class TestBasic(object):
         dfunc = lambda x: 2*x
         assert_warns(RuntimeWarning, zeros.newton, func, 0.0, dfunc, disp=False)
         with pytest.raises(RuntimeError, match='Derivative was zero'):
-            result = zeros.newton(func, 0.0, dfunc)
+            _ = zeros.newton(func, 0.0, dfunc)
 
     def test_newton_does_not_modify_x0(self):
         # https://github.com/scipy/scipy/issues/9964
@@ -751,6 +751,6 @@ def test_gh9551_raise_error_if_disp_true():
     with pytest.raises(
         RuntimeError,
         match=r'^Derivative was zero\. Failed to converge after \d+ iterations, value is [+-]?\d*\.\d+\.$'):
-        result = zeros.newton(f, 1.0, f_p)
+        _ = zeros.newton(f, 1.0, f_p)
     root = zeros.newton(f, complex(10.0, 10.0), f_p)
     assert_allclose(root, complex(0.0, 1.0))

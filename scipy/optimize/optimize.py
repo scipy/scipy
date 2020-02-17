@@ -30,7 +30,7 @@ __docformat__ = "restructuredtext en"
 import warnings
 import sys
 import numpy
-from numpy import (atleast_1d, eye, mgrid, argmin, zeros, shape, squeeze,
+from numpy import (atleast_1d, eye, argmin, zeros, shape, squeeze,
                    asarray, sqrt, Inf, asfarray, isinf)
 import numpy as np
 from .linesearch import (line_search_wolfe1, line_search_wolfe2,
