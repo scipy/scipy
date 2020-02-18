@@ -20,7 +20,7 @@ from numpy import (eye, ones, zeros, zeros_like, triu, tril, tril_indices,
 from numpy.random import rand, randint, seed
 
 from scipy.linalg import _flapack as flapack, lapack
-from scipy.linalg import inv, svd, cholesky, solve, ldl, norm, block_diag, qr, eig
+from scipy.linalg import inv, svd, cholesky, solve, ldl, norm, block_diag, qr, eigh
 from scipy.linalg.lapack import _compute_lwork
 from scipy.stats import ortho_group, unitary_group
 
@@ -2248,7 +2248,7 @@ def test_orcsd_uncsd(dtype_):
 
 
 @pytest.mark.parametrize("dtype", DTYPES)
-@pytest.mark.parametrize("compz", ["I", "N", "Z"])
+@pytest.mark.parametrize("compz", ["I", "N", "V"])
 def test_pteqr(dtype, compz):
     '''
     Tests the pteqr lapack routine for all dtypes and compz parameters.
@@ -2256,26 +2256,38 @@ def test_pteqr(dtype, compz):
     correct eigenvalues with scipy.linalg.eig. With applicable compz=I it
     tests that z can reform A.
     '''
+    dtype = DTYPES[1]
     np.random.seed(42)
     rtol = 250*np.finfo(dtype).eps
     atol = 100*np.finfo(dtype).eps
     pteqr = get_lapack_funcs(('pteqr'), dtype=dtype)
 
     n = 10
-    # d and e are always real per lapack docs.
-    d = generate_random_dtype_array((n,), DTYPES[1])
-    e = generate_random_dtype_array((n-1,), DTYPES[1])
 
-    # make SPD with dominant diagonals
-    if dtype in REAL_DTYPES:
-        d = d + 2
+    if compz == "V":
+        # create a random symmetric matrix
+        A_rand = generate_random_dtype_array((n, n), dtype)
+        A_rand = A_rand + np.diag(np.zeros(n) + n)
+        A = (A_rand + A_rand.T) / 2
+        # obtain tridiagonal form
+        sytrd = get_lapack_funcs('sytrd', dtype=A.dtype)
+        data, d, e, tau, info = sytrd(A)
+
     else:
-        d = d + 4
-    A = np.diag(d) + np.diag(e, 1) + np.diag(e, -1)
+        # d and e are always real per lapack docs.
+        d = generate_random_dtype_array((n,), DTYPES[1])
+        e = generate_random_dtype_array((n-1,), DTYPES[1])
+
+        # make SPD with dominant diagonals
+        if dtype in REAL_DTYPES:
+            d = d + 2
+        else:
+            d = d + 4
+        A = np.diag(d) + np.diag(e, 1) + np.diag(e, -1)
 
     d_pteqr, e_pteqr, z_pteqr, work, info = pteqr(d, e, compz=compz)
     assert_(info == 0, "info = {}, should be 0.".format(info))
-    w = eig(A)
+    w = eigh(A)
     # compare the routine's eigenvalues with scipy.linalg.eig's.
     assert_allclose(w, d_pteqr, rtol=rtol, atol=atol)
 
@@ -2300,8 +2312,9 @@ def test_pteqr(dtype, compz):
     assert_(info == 1, "pteqr: info = {}, should be 1".format(info))
 
 
-@pytest.mark.parametrize("compz,d,e,z,d_expect,z_expect",
+@pytest.mark.parametrize("compz,A,d,e,z,d_expect,z_expect",
                          [("I",
+                           None,
                            np.array([4.16, 5.25, 1.09, .62]),
                            np.array([3.17, -.97, .55]),
                            None,
@@ -2311,9 +2324,16 @@ def test_pteqr(dtype, compz):
                                      [-0.1082, 0.6071, 0.4594, -0.6393],
                                      [-0.0081, 0.2432, 0.6625, 0.7084]])),
                           ("I",
-                           np.array([6.02, 2.91, 3.29, 4.18]),
-                           np.array([-0.45 - 0.25j, 0.05 - 1.56j,
-                                     0.14 - 1.70j]),
+                           np.array([[6.02 + 0j, -.45 + .25j, -1.3 + 1.74j,
+                                      1.45 - .66j],
+                                     [-.45 - .25j, 2.91 + 0j, .05 + 1.56j,
+                                      -1.04 + 1.27j],
+                                     [-1.30 - 1.74j, 0.05 - 1.56j,
+                                      3.29 + 0.00j, 0.14 - 1.70j],
+                                     [1.45 + 0.66j, -1.04 - 1.27j,
+                                      0.14 - 1.70j, 4.18 + 0.00j]]),
+                           None,
+                           None,
                            None,
                            np.array([7.9995, 5.9976, 2.0003, 0.4026]),
                            np.array([[0.7289 + 0.0j, 0.2001 + 0.4724j,
@@ -2324,7 +2344,7 @@ def test_pteqr(dtype, compz):
                                       -0.3282 + 0.0471j, 0.6890 + 0.0000J],
                                      [0.1748 + 0.4175j, 0.5610 + 0.0000j,
                                       0.5203 + 0.1317j, 0.0659 + 0.4336j]]))])
-def test_pteqr_NAG(compz, d, e, z, d_expect, z_expect):
+def test_pteqr_NAG(compz, A, d, e, z, d_expect, z_expect):
     '''
     Implements real (f08jgf) and complex (f08juf) examples from NAG manual.
     https://www.nag.com/numeric/fl/nagdoc_latest/html/f08/f08jgf.html
@@ -2334,6 +2354,12 @@ def test_pteqr_NAG(compz, d, e, z, d_expect, z_expect):
     # the NAG manual has 4 decimals accuracy
     rtol = 1e-4
     pteqr = get_lapack_funcs(('pteqr'), dtype=d.dtype)
+
+    if compz == "V":
+        # Reduce A to tridiagonal form T = (Q**H)*A*Q
+        hetrd = get_lapack_funcs("hetrd", dtype=A.dtype)
+        c, d, e, tau, info = hetrd(A)
+
     _d, _e, _z, work, info = pteqr(d, e, z, compz=compz)
     assert_allclose(_d, d_expect, rtol=rtol)
     assert_allclose(_z, z_expect, rtol=rtol)
