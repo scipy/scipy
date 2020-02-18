@@ -13,7 +13,7 @@ from ._upfirdn import upfirdn, _output_len, _upfirdn_modes
 from scipy import linalg, fft as sp_fft
 from scipy.fft._helper import _init_nd_shape_and_axes
 import numpy as np
-from scipy.special import factorial, lambertw
+from scipy.special import lambertw
 from .windows import get_window
 from ._arraytools import axis_slice, axis_reverse, odd_ext, even_ext, const_ext
 from .filter_design import cheby1, _validate_sos
@@ -898,7 +898,6 @@ def _conv_ops(x_shape, h_shape, mode):
     FFT (and the implementation of ``_freq_domain_conv``).
 
     """
-    x_size, h_size = _prod(x_shape), _prod(h_shape)
     if mode == "full":
         out_shape = [n + k - 1 for n, k in zip(x_shape, h_shape)]
     elif mode == "valid":
