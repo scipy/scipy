@@ -6,7 +6,6 @@ import numpy as np
 from numpy import sqrt, cos, sin, arctan, exp, log, pi, Inf
 from numpy.testing import (assert_,
         assert_allclose, assert_array_less, assert_almost_equal)
-import pytest
 from pytest import raises as assert_raises
 
 from scipy.integrate import quad, dblquad, tplquad, nquad
@@ -408,7 +407,7 @@ class TestNQuad(object):
 
     def test_dict_as_opts(self):
         try:
-            out = nquad(lambda x, y: x * y, [[0, 1], [0, 1]], opts={'epsrel': 0.0001})
+            nquad(lambda x, y: x * y, [[0, 1], [0, 1]], opts={'epsrel': 0.0001})
         except(TypeError):
             assert False
 
