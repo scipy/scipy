@@ -759,10 +759,10 @@ class TestLti(object):
 class TestStateSpace(object):
     def test_initialization(self):
         # Check that all initializations work
-        s = StateSpace(1, 1, 1, 1)
-        s = StateSpace([1], [2], [3], [4])
-        s = StateSpace(np.array([[1, 2], [3, 4]]), np.array([[1], [2]]),
-                       np.array([[1, 0]]), np.array([[0]]))
+        StateSpace(1, 1, 1, 1)
+        StateSpace([1], [2], [3], [4])
+        StateSpace(np.array([[1, 2], [3, 4]]), np.array([[1], [2]]),
+                   np.array([[1, 0]]), np.array([[0]]))
 
     def test_conversion(self):
         # Check the conversion functions
@@ -904,9 +904,9 @@ class TestStateSpace(object):
 class TestTransferFunction(object):
     def test_initialization(self):
         # Check that all initializations work
-        s = TransferFunction(1, 1)
-        s = TransferFunction([1], [2])
-        s = TransferFunction(np.array([1]), np.array([2]))
+        TransferFunction(1, 1)
+        TransferFunction([1], [2])
+        TransferFunction(np.array([1]), np.array([2]))
 
     def test_conversion(self):
         # Check the conversion functions
@@ -932,9 +932,9 @@ class TestTransferFunction(object):
 class TestZerosPolesGain(object):
     def test_initialization(self):
         # Check that all initializations work
-        s = ZerosPolesGain(1, 1, 1)
-        s = ZerosPolesGain([1], [2], 1)
-        s = ZerosPolesGain(np.array([1]), np.array([2]), 1)
+        ZerosPolesGain(1, 1, 1)
+        ZerosPolesGain([1], [2], 1)
+        ZerosPolesGain(np.array([1]), np.array([2]), 1)
 
     def test_conversion(self):
         #Check the conversion functions
