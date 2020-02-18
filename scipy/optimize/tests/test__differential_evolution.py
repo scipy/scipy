@@ -12,6 +12,7 @@ from scipy.optimize import differential_evolution
 from scipy.optimize._constraints import (Bounds, NonlinearConstraint,
                                          LinearConstraint)
 from scipy.optimize import rosen
+from scipy._lib._pep440 import Version
 
 import numpy as np
 from numpy.testing import (assert_equal, assert_allclose,
@@ -385,6 +386,22 @@ class TestDifferentialEvolutionSolver(object):
                                         tol=0.5)
         assert_equal(result.x, result2.x)
         assert_equal(result.nfev, result2.nfev)
+
+    @pytest.mark.skipif(Version(np.__version__) < Version('1.17'),
+                        reason='Generator not available for numpy, < 1.17')
+    def test_random_generator(self):
+        # check that np.random.Generator can be used (numpy >= 1.17)
+        # obtain a np.random.Generator object
+        rng = np.random.default_rng()
+
+        inits = ['random', 'latinhypercube']
+        for init in inits:
+            differential_evolution(self.quadratic,
+                                   [(-100, 100)],
+                                   polish=False,
+                                   seed=rng,
+                                   tol=0.5,
+                                   init=init)
 
     def test_exp_runs(self):
         # test whether exponential mutation loop runs
