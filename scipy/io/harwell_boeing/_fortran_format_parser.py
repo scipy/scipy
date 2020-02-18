@@ -192,7 +192,6 @@ class Tokenizer(object):
 
     def next_token(self):
         curpos = self.curpos
-        tokens = self.tokens
 
         while curpos < self.len:
             for i, r in enumerate(self.res):

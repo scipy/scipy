@@ -18,7 +18,7 @@ import shutil
 import gzip
 
 from numpy.testing import (assert_array_equal, assert_array_almost_equal,
-                           assert_equal, assert_, suppress_warnings)
+                           assert_equal, assert_)
 from pytest import raises as assert_raises
 
 import numpy as np
@@ -440,9 +440,9 @@ def test_warnings():
     with warnings.catch_warnings():
         warnings.simplefilter('error')
         # This should not generate a warning
-        mres = loadmat(fname, struct_as_record=True)
+        loadmat(fname, struct_as_record=True)
         # This neither
-        mres = loadmat(fname, struct_as_record=False)
+        loadmat(fname, struct_as_record=False)
 
 
 def test_regression_653():
@@ -999,12 +999,9 @@ def test_mat_struct_squeeze():
     in_d = {'st':{'one':1, 'two':2}}
     savemat(stream, in_d)
     # no error without squeeze
-    out_d = loadmat(stream, struct_as_record=False)
+    loadmat(stream, struct_as_record=False)
     # previous error was with squeeze, with mat_struct
-    out_d = loadmat(stream,
-                    struct_as_record=False,
-                    squeeze_me=True,
-                    )
+    loadmat(stream, struct_as_record=False, squeeze_me=True)
 
 
 def test_scalar_squeeze():

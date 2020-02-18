@@ -378,7 +378,7 @@ def varmats_from_mat(file_obj):
     # Initialize variable reading
     file_obj.seek(0)
     rdr.initialize_read()
-    mdict = rdr.read_file_header()
+    rdr.read_file_header()
     next_position = file_obj.tell()
     named_mats = []
     while not rdr.end_of_stream():
