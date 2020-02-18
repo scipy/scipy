@@ -53,6 +53,7 @@ from scipy.spatial.distance import (squareform, pdist, cdist, num_obs_y,
                                     _validate_vector, _METRICS_NAMES)
 
 # these were missing: chebyshev cityblock kulsinski
+# jensenshannon, matching and seuclidean are referenced by string name.
 from scipy.spatial.distance import (braycurtis, canberra, chebyshev, cityblock,
                                     correlation, cosine, dice, euclidean,
                                     hamming, jaccard, jensenshannon,
@@ -769,6 +770,7 @@ class TestPdist(object):
         # Check no error is raise when V has float32 dtype (#11171).
         V = np.var(X, axis=0, ddof=1)
         Y_test2 = pdist(X, 'seuclidean', V=V)
+        # SHould Y_test1 be replaced by Y_test2 in the _assert_within_tol call?
         _assert_within_tol(Y_test1, Y_right, eps)
 
     def test_pdist_seuclidean_random_nonC(self):
@@ -1403,7 +1405,6 @@ class TestPdist(object):
         # gives the same behaviour (i.e. same result or same exception).
         # NOTE: The correctness should be checked within each metric tests.
         # NOTE: Extra args should be checked with a dedicated test
-        eps = 1e-07
         for eo_name in self.rnd_eo_names:
             # subsampling input data to speed-up tests
             # NOTE: num samples needs to be > than dimensions for mahalanobis
@@ -1527,7 +1528,7 @@ class TestSomeDistanceFunctions(object):
                 assert_almost_equal(dist1, 3.0)
                 dist1p5 = wminkowski(x, y, p=1.5)
                 assert_almost_equal(dist1p5, (1.0 + 2.0**1.5)**(2. / 3))
-                dist2 = wminkowski(x, y, p=2)
+                wminkowski(x, y, p=2)
 
             # Check that casting input to minimum scalar type doesn't affect result (issue #10262).
             # This could be extended to more test inputs with np.min_scalar_type(np.max(input_matrix)).
