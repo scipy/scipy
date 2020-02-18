@@ -20,7 +20,7 @@ from numpy.testing import assert_, assert_equal
 from pytest import raises as assert_raises
 
 from scipy.io.matlab.streams import (make_stream,
-    GenericStream, cStringStream, FileStream, ZlibInputStream,
+    GenericStream, ZlibInputStream,
     _read_into, _read_string, BLOCK_SIZE)
 
 IS_PYPY = ('__pypy__' in sys.modules)

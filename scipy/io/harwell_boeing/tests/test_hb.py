@@ -1,6 +1,5 @@
 from __future__ import division, print_function, absolute_import
 
-import sys
 from io import StringIO
 import tempfile
 
