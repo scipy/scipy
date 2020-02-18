@@ -1658,17 +1658,15 @@ def test_getc2_gesc2():
 
 def generate_random_dtype_array(shape, dtype):
     # generates a random matrix of desired data type of shape
-    if type(shape) != tuple:
-        # in case shape is not passed in as a tuple
-        shape = (shape,)
     if dtype in COMPLEX_DTYPES:
         return (np.random.rand(*shape)
                 + np.random.rand(*shape)*1.0j).astype(dtype)
     return np.random.rand(*shape).astype(dtype)
 
 
-@pytest.mark.parametrize("dtype", DTYPES)
-def test_pttrf_pttrs(dtype):
+@pytest.mark.parametrize("ddtype,dtype",
+                         list(zip(DTYPES, REAL_DTYPES + REAL_DTYPES)))
+def test_pttrf_pttrs(ddtype, dtype):
     np.random.seed(42)
     # set test tolerance appropriate for dtype
     rtol = 250*np.finfo(dtype).eps
@@ -1678,17 +1676,17 @@ def test_pttrf_pttrs(dtype):
     # create diagonals according to size and dtype
     if dtype in REAL_DTYPES:
         # add 2 so that the matrix will be diagonally dominant
-        d = generate_random_dtype_array(n, dtype) + 2
+        d = generate_random_dtype_array((n,), dtype) + 2
     else:
         # diagonal d should always be real.
         # for complex add 4 so it will be dominant
-        d = generate_random_dtype_array(n, DTYPES[1]) + 4
+        d = (generate_random_dtype_array((n,), ddtype) + 4)
     # diagonal e may be real or complex.
-    e = generate_random_dtype_array(n-1, dtype)
+    e = generate_random_dtype_array((n-1,), dtype)
 
     # cast diagonals together into matrix
-    A = np.diag(d) + np.diag(e, -1) + np.diag(e, 1)
-
+    A = np.diag(d) + np.diag(e, -1) + np.diag(np.conj(e), 1)
+    # store a copy of diagonals to later verify
     diag_cpy = [d.copy(), e.copy()]
 
     pttrf = get_lapack_funcs('pttrf', dtype=dtype)
@@ -1697,24 +1695,23 @@ def test_pttrf_pttrs(dtype):
     # test to assure that the inputs of ?pttrf are unmodified
     assert_array_equal(d, diag_cpy[0])
     assert_array_equal(e, diag_cpy[1])
+    assert_(info == 0, "pttrf: info = {}, should be 0".format(info))
 
     # test that the factors from pttrf can be recombined to make A
     L = np.diag(_e, -1) + np.diag(np.ones(n))
     D = np.diag(_d)
 
-    if dtype in REAL_DTYPES:
-        assert_allclose(A, L@D@(np.transpose(L)), rtol=rtol, atol=atol)
-    else:
-        assert_allclose(A, L@D@(L.conjugate()), rtol=rtol, atol=atol)
+    assert_allclose(A, L@D@L.conjugate().T, rtol=rtol, atol=atol)
 
     # generate random solution x
-    x = generate_random_dtype_array(n, dtype)
+    x = generate_random_dtype_array((n,), dtype)
     # determine accompanying b to get soln x
     b = A@x
 
     # determine _x from pttrs
     pttrs = get_lapack_funcs('pttrs', dtype=dtype)
     _x, info = pttrs(_d, _e, b)
+    assert_(info == 0, "pttrs: info = {}, should be 0".format(info))
 
     # test that _x from pttrs matches the expected x
     assert_allclose(x, _x, rtol=rtol, atol=atol)
@@ -1733,11 +1730,11 @@ def test_pttrf_pttrs(dtype):
                        .format(_d[info - 1]))
 
     # test with non-spd matrix
-    d = generate_random_dtype_array(n, dtype)
+    d = generate_random_dtype_array((n,), dtype)
     _d, _e, info = pttrf(d, e)
-    assert_(np.linalg.norm(d[info]) < 2 * np.linalg.norm(e[info]),
+    assert_(np.linalg.norm(d[info-1]) < 2 * np.linalg.norm(e[info-1]),
             "idx {} of d should < e but are: {}, {} ".format(
-               info, np.linalg.norm(d[info]), np.linalg.norm(e[info])))
+               info, np.linalg.norm(d[info-1]), np.linalg.norm(e[info-1])))
 
 
 @pytest.mark.parametrize(("d, e, d_expect, e_expect, b, x_expect"), [
