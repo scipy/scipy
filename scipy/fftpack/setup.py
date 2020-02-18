@@ -2,9 +2,6 @@
 from __future__ import division, print_function, absolute_import
 
 
-from os.path import join
-
-
 def configuration(parent_package='',top_path=None):
     from numpy.distutils.misc_util import Configuration
 
