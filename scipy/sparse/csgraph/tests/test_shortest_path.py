@@ -279,7 +279,7 @@ def test_negative_cycles():
 
 
 def test_masked_input():
-    G = np.ma.masked_equal(directed_G, 0)
+    np.ma.masked_equal(directed_G, 0)
 
     def check(method):
         SP = shortest_path(directed_G, method=method, directed=True,

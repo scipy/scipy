@@ -20,7 +20,6 @@ import scipy.special
 from scipy.linalg.basic import solve, solve_triangular
 
 from scipy.sparse.base import isspmatrix
-from scipy.sparse.construct import eye as speye
 from scipy.sparse.linalg import spsolve
 from scipy.sparse.sputils import is_pydata_spmatrix
 
