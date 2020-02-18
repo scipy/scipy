@@ -43,7 +43,7 @@ cdef inline int init(setlist_t *setlist, size_t n, size_t size_guess) except -1:
         libc.stdlib.free(<void*>setlist.sizes)
         raise MemoryError
 
-    for j in xrange(n):
+    for j in range(n):
         setlist.sizes[j] = 0
         setlist.alloc_sizes[j] = size_guess
         setlist.sets[j] = <int*>libc.stdlib.malloc(sizeof(int) * size_guess)
@@ -56,7 +56,7 @@ cdef inline void free(setlist_t *setlist):
     """
 
     cdef int j
-    for j in xrange(setlist.n):
+    for j in range(setlist.n):
         libc.stdlib.free(<void*>setlist.sets[j])
     libc.stdlib.free(<void*>setlist.sets)
     libc.stdlib.free(<void*>setlist.sizes)
@@ -77,7 +77,7 @@ cdef inline int add(setlist_t *setlist, int n, int value) nogil:
     if n < 0 or n >= setlist.n:
         return 1
 
-    for i in xrange(setlist.sizes[n]):
+    for i in range(setlist.sizes[n]):
         if setlist.sets[n][i] == value:
             return 0
 
@@ -113,16 +113,16 @@ cdef inline object tocsr(setlist_t *setlist):
     cdef np.ndarray[np.npy_int, ndim=1] indptr, data
 
     total_size = 0
-    for j in xrange(setlist.n):
+    for j in range(setlist.n):
         total_size += setlist.sizes[j]
 
     indptr = np.empty((setlist.n+1,), dtype=np.intc)
     data = np.empty((total_size,), dtype=np.intc)
 
     pos = 0
-    for i in xrange(setlist.n):
+    for i in range(setlist.n):
         indptr[i] = pos
-        for j in xrange(setlist.sizes[i]):
+        for j in range(setlist.sizes[i]):
             data[pos] = setlist.sets[i][j]
             pos += 1
     indptr[setlist.n] = pos

@@ -280,7 +280,7 @@ class LinearNDInterpolator(NDInterpolatorBase):
         eps_broad = sqrt(DBL_EPSILON)
 
         with nogil:
-            for i in xrange(xi.shape[0]):
+            for i in range(xi.shape[0]):
 
                 # 1) Find the simplex
 
@@ -292,15 +292,15 @@ class LinearNDInterpolator(NDInterpolatorBase):
 
                 if isimplex == -1:
                     # don't extrapolate
-                    for k in xrange(nvalues):
+                    for k in range(nvalues):
                         out[i,k] = fill_value
                     continue
 
-                for k in xrange(nvalues):
+                for k in range(nvalues):
                     out[i,k] = 0
 
-                for j in xrange(ndim+1):
-                    for k in xrange(nvalues):
+                for j in range(ndim+1):
+                    for k in range(nvalues):
                         m = simplices[isimplex,j]
                         out[i,k] = out[i,k] + c[j] * values[m,k]
 
@@ -363,7 +363,7 @@ cdef int _estimate_gradients_2d_global(qhull.DelaunayInfo_t *d, double *data,
     cdef double f1, f2, df2, ex, ey, L, L3, det, err, change
 
     # initialize
-    for ipoint in xrange(2*d.npoints):
+    for ipoint in range(2*d.npoints):
         y[ipoint] = 0
 
     #
@@ -429,16 +429,16 @@ cdef int _estimate_gradients_2d_global(qhull.DelaunayInfo_t *d, double *data,
     #
 
     # Gauss-Seidel
-    for iiter in xrange(maxiter):
+    for iiter in range(maxiter):
         err = 0
-        for ipoint in xrange(d.npoints):
-            for k in xrange(2*2):
+        for ipoint in range(d.npoints):
+            for k in range(2*2):
                 Q[k] = 0
-            for k in xrange(2):
+            for k in range(2):
                 s[k] = 0
 
             # walk over neighbours of given point
-            for jpoint2 in xrange(d.vertex_neighbors_indptr[ipoint],
+            for jpoint2 in range(d.vertex_neighbors_indptr[ipoint],
                                   d.vertex_neighbors_indptr[ipoint+1]):
                 ipoint2 = d.vertex_neighbors_indices[jpoint2]
 
@@ -523,7 +523,7 @@ cpdef estimate_gradients_2d_global(tri, y, int maxiter=400, double tol=1e-6):
     qhull._get_delaunay_info(&info, tri, 0, 0, 1)
     nvalues = data.shape[0]
 
-    for k in xrange(nvalues):
+    for k in range(nvalues):
         with nogil:
             ret = _estimate_gradients_2d_global(
                 &info,
@@ -700,7 +700,7 @@ cdef double_or_complex _clough_tocher_2d_single(qhull.DelaunayInfo_t *d,
     # peek into neighbouring triangles.
     #
 
-    for k in xrange(3):
+    for k in range(3):
         itri = d.neighbors[3*isimplex + k]
 
         if itri == -1:
@@ -750,7 +750,7 @@ cdef double_or_complex _clough_tocher_2d_single(qhull.DelaunayInfo_t *d,
 
     # extended barycentric coordinates
     minval = b[0]
-    for k in xrange(3):
+    for k in range(3):
         if b[k] < minval:
             minval = b[k]
 
@@ -884,7 +884,7 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
         eps_broad = sqrt(eps)
 
         with nogil:
-            for i in xrange(xi.shape[0]):
+            for i in range(xi.shape[0]):
                 # 1) Find the simplex
 
                 isimplex = qhull._find_simplex(&info, c,
@@ -895,12 +895,12 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
 
                 if isimplex == -1:
                     # outside triangulation
-                    for k in xrange(nvalues):
+                    for k in range(nvalues):
                         out[i,k] = fill_value
                     continue
 
-                for k in xrange(nvalues):
-                    for j in xrange(ndim+1):
+                for k in range(nvalues):
+                    for j in range(ndim+1):
                         f[j] = values[simplices[isimplex,j],k]
                         df[2*j] = grad[simplices[isimplex,j],k,0]
                         df[2*j+1] = grad[simplices[isimplex,j],k,1]
