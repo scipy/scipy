@@ -1,5 +1,7 @@
 from __future__ import division, absolute_import, print_function
 
+import warnings
+
 import numpy as np
 from numpy.testing import assert_equal, assert_allclose
 
@@ -102,15 +104,19 @@ class TestGeometricSlerp(object):
 
     @pytest.mark.parametrize("start, end, expected", [
         # North and South Poles are definitely antipodes
-        (np.array([0, 0, 1.0]), np.array([0, 0, -1.0]), "error"),
-        # this case will error; North Pole was rotated very slightly
+        # but should be handled gracefully now
+        (np.array([0, 0, 1.0]), np.array([0, 0, -1.0]), "warning"),
+        # this case will issue a warning & be handled 
+        # gracefully as well; 
+        # North Pole was rotated very slightly
         # using r = R.from_euler('x', 0.035, degrees=True)
         # to achieve Euclidean distance offset from diameter by
         # 9.328908379124812e-08, within the default tol
         (np.array([0.00000000e+00,
                   -6.10865200e-04,
-                  9.99999813e-01]), np.array([0, 0, -1.0]), "error"),
-        # this case should succeed because a sufficiently large
+                  9.99999813e-01]), np.array([0, 0, -1.0]), "warning"),
+        # this case should succeed without warning because a 
+        # sufficiently large
         # rotation was applied to North Pole point to shift it
         # to a Euclidean distance of 2.3036691931821451e-07
         # from South Pole, which is larger than tol
@@ -122,15 +128,20 @@ class TestGeometricSlerp(object):
         # antipodal points must be handled appropriately;
         # there are an infinite number of possible geodesic
         # interpolations between them in higher dims
-        if expected == "error":
-            with pytest.raises(ValueError, match='antipodes'):
-                geometric_slerp(start=start,
-                                end=end,
-                                t=np.linspace(0, 1, 10))
+        if expected == "warning":
+            with pytest.warns(UserWarning, match='antipodes'):
+                res = geometric_slerp(start=start,
+                                      end=end,
+                                      t=np.linspace(0, 1, 10))
         else:
-            geometric_slerp(start=start,
-                            end=end,
-                            t=np.linspace(0, 1, 10))
+            res = geometric_slerp(start=start,
+                                  end=end,
+                                  t=np.linspace(0, 1, 10))
+
+        # antipodes or near-antipodes should still produce
+        # slerp paths on the surface of the sphere (but they
+        # may be ambiguous):
+        assert_allclose(np.linalg.norm(res, axis=1), 1.0)
 
     @pytest.mark.parametrize("start, end, expected", [
         # 2-D with n_pts=4 (two new interpolation points)
@@ -361,11 +372,9 @@ class TestGeometricSlerp(object):
         # the test should only be enforced for cases where
         # geometric_slerp determines that the input is actually
         # on the unit sphere
-        try:
+        with np.testing.suppress_warnings() as sup:
+            sup.filter(UserWarning)
             result = geometric_slerp(P, Q, ts, 1e-18)
-        except ValueError:
-            pass
-        else:
             norms = np.linalg.norm(result, axis=1)
             error = np.max(np.abs(norms - 1))
             assert error < 4e-15

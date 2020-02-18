@@ -2,6 +2,8 @@ from __future__ import division, print_function, absolute_import
 
 __all__ = ['geometric_slerp']
 
+import warnings
+
 import numpy as np
 from scipy.spatial.distance import euclidean
 
@@ -9,7 +11,7 @@ def _geometric_slerp(start, end, t):
     # create an orthogonal basis using QR decomposition
     basis = np.vstack([start, end])
     Q, R = np.linalg.qr(basis.T)
-    signs = np.sign(np.diag(R))
+    signs = 2 * (np.diag(R) >= 0) - 1
     Q = Q.T * signs.T[:, np.newaxis]
     R = R.T * signs.T[:, np.newaxis]
 
@@ -196,9 +198,10 @@ def geometric_slerp(start,
     # diameter of 2 within tolerance means antipodes, which is a problem
     # for all unit n-spheres (even the 0-sphere would have an ambiguous path)
     if np.allclose(coord_dist, 2.0, rtol=0, atol=tol):
-        raise ValueError("start and end are antipodes"
-                         " using the specified tolerance or they"
-                         " are not on a unit n-sphere")
+        warnings.warn("start and end are antipodes"
+                      " using the specified tolerance or they"
+                      " are not on a unit n-sphere; this may"
+                      " cause ambiguous slerp paths")
 
     t = np.asarray(t, dtype=np.float64)
 
