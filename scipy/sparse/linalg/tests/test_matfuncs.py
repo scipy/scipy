@@ -520,7 +520,6 @@ class TestExpM(object):
                 got = B
                 expected = binom(np.arange(n + 1)[:,None],
                                  np.arange(n + 1)[None,:]) * sc[None,:] / sc[:,None]
-                err = abs(expected - got).max()
                 atol = 1e-13 * abs(expected).max()
                 assert_allclose(got, expected, atol=atol)
 
