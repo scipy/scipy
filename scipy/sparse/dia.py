@@ -72,7 +72,9 @@ class dia_matrix(_data_matrix):
            [0, 2, 3, 0],
            [0, 0, 3, 4]])
 
-    >>> n= 10000
+    >>> import numpy as np
+    >>> from scipy.sparse import dia_matrix
+    >>> n= 10
     >>> ex = np.ones(n)
     >>> data = np.array([ex, 2 * ex, ex])
     >>> offsets = np.array([-1, 0, 1])
