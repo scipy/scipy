@@ -1,12 +1,12 @@
-import numpy as np
 from numbers import Number
 import operator
-from .pypocketfft import good_size
-import operator
-import sys
 import os
 import threading
 import contextlib
+
+import numpy as np
+# good_size is exposed (and used) from this import
+from .pypocketfft import good_size
 
 _config = threading.local()
 _cpu_count = os.cpu_count()
