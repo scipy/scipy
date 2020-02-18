@@ -1070,7 +1070,7 @@ class TestLombscargle(object):
         t = np.linspace(0, 10, 1000, endpoint=False)
         x = np.sin(4*t)
         f = np.linspace(0, 50, 500, endpoint=False) + 0.1
-        q = lombscargle(t, x, f*2*np.pi)
+        lombscargle(t, x, f*2*np.pi)
 
 
 class TestSTFT(object):
