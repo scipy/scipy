@@ -4069,7 +4069,7 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate', method='auto'
             pvalue = 2.0/math.factorial(size-1) if (size-1) < 171 else 0.0
         elif 2*c == tot:
             pvalue = 1.0
-        else:
+        elif size < 171:
             new = [0.0]*(c+1)
             new[0] = 1.0
             new[1] = 1.0
@@ -4080,7 +4080,25 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate', method='auto'
                 for k in range(j,c+1):
                     new[k] += new[k-1] - old[k-j]
 
-            pvalue = 2.0*sum(new)/math.factorial(size) if size < 171 else 0.0
+            pvalue = 2.0*sum(new)/math.factorial(size)
+        else:
+            warnings.warn("Due to the large sample size, the exact computation "
+                          "of the Kendall p-value may incur significant "
+                          "roundoff error and can take very long. Please "
+                          "consider switching to asymptotic mode.",
+                          RuntimeWarning)
+            new = [0.0]*(c+1)
+            new[0] = 1.0
+            new[1] = 1.0
+            for j in range(3,size+1):
+                old = new[:]
+                new[0] = new[0]/j
+                for k in range(1,min(j,c+1)):
+                    new[k] = new[k-1] + new[k]/j
+                for k in range(j,c+1):
+                    new[k] = new[k-1] + (new[k] - old[k-j])/j
+            pvalue = sum(new)
+            pvalue = max(0.0, min(1.0, pvalue))
 
     elif method == 'asymptotic':
         # con_minus_dis is approx normally distributed with this variance [3]_

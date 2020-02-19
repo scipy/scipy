@@ -622,7 +622,7 @@ def kendalltau(x, y, use_ties=True, use_missing=False, method='auto'):
             prob = 2.0/np.math.factorial(n-1)
         elif 2*c == (n*(n-1))//2:
             prob = 1.0
-        else:
+        elif n < 171:
             old = [0.0]*(c+1)
             new = [0.0]*(c+1)
             new[0] = 1.0
@@ -634,6 +634,24 @@ def kendalltau(x, y, use_ties=True, use_missing=False, method='auto'):
                 for k in range(j,c+1):
                     new[k] += new[k-1] - old[k-j]
             prob = 2.0*sum(new)/np.math.factorial(n)
+        else:
+            warnings.warn("Due to the large sample size, the exact computation "
+                          "of the Kendall p-value may incur significant "
+                          "roundoff error and can take very long. Please "
+                          "consider switching to asymptotic mode.",
+                          RuntimeWarning)
+            new = [0.0]*(c+1)
+            new[0] = 1.0
+            new[1] = 1.0
+            for j in range(3,n+1):
+                old = new[:]
+                new[0] = new[0]/j
+                for k in range(1,min(j,c+1)):
+                    new[k] = new[k-1] + new[k]/j
+                for k in range(j,c+1):
+                    new[k] = new[k-1] + (new[k] - old[k-j])/j
+            prob = sum(new)
+            prob = max(0.0, min(1.0, prob))
     elif method == 'asymptotic':
         var_s = n*(n-1)*(2*n+5)
         if use_ties:
