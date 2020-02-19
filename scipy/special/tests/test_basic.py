@@ -35,7 +35,7 @@ from numpy.testing import (assert_equal, assert_almost_equal,
 
 from scipy import special
 import scipy.special._ufuncs as cephes
-from scipy.special import ellipk, zeta
+from scipy.special import ellipk
 
 from scipy.special._testutils import with_special_errors, \
      assert_func_equal, FuncData
@@ -2958,7 +2958,7 @@ class TestMathieu(object):
         pass
 
     def test_mathieu_even_coef(self):
-        mc = special.mathieu_even_coef(2,5)
+        special.mathieu_even_coef(2,5)
         # Q not defined broken and cannot figure out proper reporting order
 
     def test_mathieu_odd_coef(self):
@@ -2993,8 +2993,8 @@ class TestParabolicCylinder(object):
                                              0.9925])),4)
 
     def test_pbdv(self):
-        pbv = special.pbdv(1,.2)
-        derrl = 1/2*(.2)*special.pbdv(1,.2)[0] - special.pbdv(0,.2)[0]
+        special.pbdv(1,.2)
+        1/2*(.2)*special.pbdv(1,.2)[0] - special.pbdv(0,.2)[0]
 
     def test_pbdv_seq(self):
         pbn = special.pbdn_seq(1,.1)
