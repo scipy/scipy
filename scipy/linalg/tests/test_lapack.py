@@ -1665,7 +1665,7 @@ def generate_random_dtype_array(shape, dtype):
 
 
 @pytest.mark.parametrize("ddtype,dtype",
-                         list(zip(DTYPES, REAL_DTYPES + REAL_DTYPES)))
+                         zip(DTYPES, REAL_DTYPES + REAL_DTYPES))
 def test_pttrf_pttrs(ddtype, dtype):
     np.random.seed(42)
     # set test tolerance appropriate for dtype
@@ -1695,7 +1695,7 @@ def test_pttrf_pttrs(ddtype, dtype):
     # test to assure that the inputs of ?pttrf are unmodified
     assert_array_equal(d, diag_cpy[0])
     assert_array_equal(e, diag_cpy[1])
-    assert_(info == 0, "pttrf: info = {}, should be 0".format(info))
+    assert_equal(info, 0, err_msg="pttrf: info = {}, should be 0".format(info))
 
     # test that the factors from pttrf can be recombined to make A
     L = np.diag(_e, -1) + np.diag(np.ones(n))
@@ -1711,26 +1711,41 @@ def test_pttrf_pttrs(ddtype, dtype):
     # determine _x from pttrs
     pttrs = get_lapack_funcs('pttrs', dtype=dtype)
     _x, info = pttrs(_d, _e, b)
-    assert_(info == 0, "pttrs: info = {}, should be 0".format(info))
+    assert_equal(info, 0, err_msg="pttrs: info = {}, should be 0".format(info))
 
     # test that _x from pttrs matches the expected x
     assert_allclose(x, _x, rtol=rtol, atol=atol)
 
+@pytest.mark.parametrize("ddtype,dtype",
+                         zip(REAL_DTYPES + REAL_DTYPES, DTYPES))
+def test_pttrf_pttrs_errors_incompatible_shape(ddtype, dtype):
+    n = 10
+    pttrf = get_lapack_funcs('pttrf', dtype=dtype)
+    d = generate_random_dtype_array((n,), ddtype) + 2
+    e = generate_random_dtype_array((n-1,), dtype)
     # test that ValueError is raised with incompatible matrix shapes
     with assert_raises(ValueError):
         pttrf(d[:-1], e)
     with assert_raises(ValueError):
         pttrf(d, e[:-1])
 
+
+@pytest.mark.parametrize("ddtype,dtype",
+                         zip(REAL_DTYPES + REAL_DTYPES, DTYPES))
+def test_pttrf_pttrs_errors_singular_nonSPD(ddtype, dtype):
+    n = 10
+    pttrf = get_lapack_funcs('pttrf', dtype=dtype)
+    d = generate_random_dtype_array((n,), ddtype) + 2
+    e = generate_random_dtype_array((n-1,), dtype)
     # test that singular (row of all zeroes) matrix fails via info
     d[0] = 0
     _d, _e, info = pttrf(d, e)
-    np.testing.assert_(_d[info - 1] == 0,
-                       "?pttrf: _d[info-1] is {}, not the illegal value :0."
-                       .format(_d[info - 1]))
+    assert_equal(_d[info - 1], 0,
+                 err_msg="?pttrf: _d[info-1] is {}, not the illegal value :0."
+                 .format(_d[info - 1]))
 
     # test with non-spd matrix
-    d = generate_random_dtype_array((n,), dtype)
+    d = generate_random_dtype_array((n,), ddtype)
     _d, _e, info = pttrf(d, e)
     assert_(np.linalg.norm(d[info-1]) < 2 * np.linalg.norm(e[info-1]),
             "idx {} of d should < e but are: {}, {} ".format(
@@ -1765,12 +1780,12 @@ def test_pttrf_pttrs_NAG(d, e, d_expect, e_expect, b, x_expect):
     # https://www.nag.com/numeric/fl/nagdoc_latest/html/f07/f07jrf.html
     # https://www.nag.com/numeric/fl/nagdoc_latest/html/f07/f07jsf.html
     # NAG examples provide 4 decimals.
-    rtol = 1e-4
+    atol = 1e-4
     pttrf = get_lapack_funcs('pttrf', dtype=e[0])
     _d, _e, info = pttrf(d, e)
-    assert_allclose(_d, d_expect,  rtol=rtol)
-    assert_allclose(_e, e_expect,  rtol=rtol)
+    assert_allclose(_d, d_expect, atol=atol)
+    assert_allclose(_e, e_expect, atol=atol)
 
     pttrs = get_lapack_funcs('pttrs', dtype=e[0])
     _x, info = pttrs(_d, _e, b)
-    assert_allclose(_x, x_expect,  rtol=rtol)
+    assert_allclose(_x, x_expect, atol=atol)
