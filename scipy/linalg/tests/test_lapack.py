@@ -1743,33 +1743,33 @@ def test_gejsv_specific(dtype):
 
     # Invalid job? parameters should result in non zero info
     sva, u, v, work, iwork, info = gejsv(A, joba="L")
-    assert_(info != 0)
+    assert_(info == -3)
     sva, u, v, work, iwork, info = gejsv(A, jobu="L")
-    assert_(info != 0)
+    assert_(info == -4)
     sva, u, v, work, iwork, info = gejsv(A, jobv="L")
-    assert_(info != 0)
+    assert_(info == -5)
     sva, u, v, work, iwork, info = gejsv(A, jobr="L")
-    assert_(info != 0)
+    assert_(info == -6)
     sva, u, v, work, iwork, info = gejsv(A, jobt="L")
-    assert_(info != 0)
+    assert_(info == -7)
     sva, u, v, work, iwork, info = gejsv(A, jobp="L")
-    assert_(info != 0)
+    assert_(info == -8)
 
     # lwork is zero
     sva, u, v, work, iwork, info = gejsv(A, lwork=0)
-    assert_(info != 0, "?gejsv info = {}".format(info))
+    assert_(info == -2, "?gejsv info = {}, not -1".format(info))
     # A is 1D
     A = generate_random_dtype_array((m, 1), dtype)
     sva, u, v, work, iwork, info = gejsv(A)
-    assert_(info == 1, "?gejsv info = {}".format(info))
+    assert_(info == 1, "?gejsv info = {}, not 1".format(info))
     # A is 1 x 1
     A = generate_random_dtype_array((1, 1), dtype)
     sva, u, v, work, iwork, info = gejsv(A)
-    assert_(info == 1, "?gejsv info = {}".format(info))
+    assert_(info == 1, "?gejsv info = {}, not 1".format(info))
     # A is empty
     A = None
     sva, u, v, work, iwork, info = gejsv(A)
-    assert_(info == 1, "?gejsv info = {}".format(info))
+    assert_(info == 1, "?gejsv info = {}, not 1".format(info))
 
 
 @pytest.mark.parametrize("A,sva_expect,u_expect,v_expect",
