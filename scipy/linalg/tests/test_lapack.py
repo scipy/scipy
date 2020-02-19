@@ -20,7 +20,7 @@ from numpy import (eye, ones, zeros, zeros_like, triu, tril, tril_indices,
 from numpy.random import rand, randint, seed
 
 from scipy.linalg import _flapack as flapack, lapack
-from scipy.linalg import inv, svd, cholesky, solve, ldl, norm, block_diag, qr, eigh
+from scipy.linalg import inv, svd, cholesky, solve, ldl, norm, block_diag, qr, eigh, eig
 from scipy.linalg.lapack import _compute_lwork
 from scipy.stats import ortho_group, unitary_group
 
@@ -2247,16 +2247,16 @@ def test_orcsd_uncsd(dtype_):
     assert_allclose(X, Xc, rtol=0., atol=1e4*np.finfo(dtype_).eps)
 
 
-@pytest.mark.parametrize("dtype", DTYPES)
+@pytest.mark.parametrize("dtype,realtype",
+                         list(zip(DTYPES, REAL_DTYPES + REAL_DTYPES)))
 @pytest.mark.parametrize("compz", ["I", "N", "V"])
-def test_pteqr(dtype, compz):
+def test_pteqr(dtype, realtype, compz):
     '''
     Tests the pteqr lapack routine for all dtypes and compz parameters.
     It generates random SPD matrix diagonals d and e, and then confirms
     correct eigenvalues with scipy.linalg.eig. With applicable compz=I it
     tests that z can reform A.
     '''
-    dtype = DTYPES[1]
     np.random.seed(42)
     rtol = 250*np.finfo(dtype).eps
     atol = 100*np.finfo(dtype).eps
@@ -2265,34 +2265,42 @@ def test_pteqr(dtype, compz):
     n = 10
 
     if compz == "V":
-        # create a random symmetric matrix
-        A_rand = generate_random_dtype_array((n, n), dtype)
-        A_rand = A_rand + np.diag(np.zeros(n) + n)
-        A = (A_rand + A_rand.T) / 2
-        # obtain tridiagonal form
-        sytrd = get_lapack_funcs('sytrd', dtype=A.dtype)
-        data, d, e, tau, info = sytrd(A)
+        # build Hermitian A from Q**T * tri * Q = A by creating Q and tri
+        A_eig = generate_random_dtype_array((n, n), dtype)
+        A_eig = A_eig + np.diag(np.zeros(n) + 4*n)
+        A_eig = (A_eig + A_eig.conj().T) / 2
+        # obtain right eigenvectors (orthogonal)
+        vr = eig(A_eig)[1]
+        # create tridiagonal matrix
+        d = generate_random_dtype_array((n,), realtype) + 4
+        e = generate_random_dtype_array((n-1,), realtype)
+        tri = np.diag(d) + np.diag(e, 1) + np.diag(e, -1)
+        # Build A using these factors that sytrd would: (Q**T * tri * Q = A)
+        A = vr @ tri @ vr.conj().T
+        # vr is orthogonal
+        z = vr
 
     else:
         # d and e are always real per lapack docs.
-        d = generate_random_dtype_array((n,), DTYPES[1])
-        e = generate_random_dtype_array((n-1,), DTYPES[1])
+        d = generate_random_dtype_array((n,), realtype)
+        e = generate_random_dtype_array((n-1,), realtype)
 
-        # make SPD with dominant diagonals
+        # make SPD
         if dtype in REAL_DTYPES:
             d = d + 2
         else:
             d = d + 4
+        z = None
         A = np.diag(d) + np.diag(e, 1) + np.diag(e, -1)
 
-    d_pteqr, e_pteqr, z_pteqr, work, info = pteqr(d, e, compz=compz)
+    d_pteqr, e_pteqr, z_pteqr, work, info = pteqr(d, e, z=z, compz=compz)
     assert_(info == 0, "info = {}, should be 0.".format(info))
-    w = eigh(A)
+    w = eig(A)
     # compare the routine's eigenvalues with scipy.linalg.eig's.
     assert_allclose(w, d_pteqr, rtol=rtol, atol=atol)
 
-    if compz == "I":
-        # verify z_pteqr as orthagonal
+    if compz == "I" or compz == "V":
+        # verify z_pteqr as orthogonal
         assert_allclose(z_pteqr @ z_pteqr.T, np.identity(n), rtol=rtol,
                         atol=atol)
         # verify that z_pteqr recombines to A
@@ -2300,15 +2308,15 @@ def test_pteqr(dtype, compz):
                         atol=atol)
 
     # test with non-spd matrix
-    d_pteqr, e_pteqr, z_pteqr, work, info = pteqr(d - 2, e, compz=compz)
+    d_pteqr, e_pteqr, z_pteqr, work, info = pteqr(d - 2, e, z=z, compz=compz)
     assert_(info == 1, "pteqr: info = {}, should be 1".format(info))
     # test with incorrect/incompatible array sizes
-    d_pteqr, e_pteqr, z_pteqr, work, info = pteqr(d[:-1], e, compz=compz)
+    d_pteqr, e_pteqr, z_pteqr, work, info = pteqr(d[:-1], e, z=z, compz=compz)
     assert_(info == 1, "pteqr: info = {}, should be 1".format(info))
     # test with singular matrix
     d[0] = 0
     e[0] = 0
-    d_pteqr, e_pteqr, z_pteqr, work, info = pteqr(d - 2, e, compz=compz)
+    d_pteqr, e_pteqr, z_pteqr, work, info = pteqr(d, e, z=z, compz=compz)
     assert_(info == 1, "pteqr: info = {}, should be 1".format(info))
 
 
@@ -2323,7 +2331,7 @@ def test_pteqr(dtype, compz):
                                      [0.7668, -0.4270, 0.4176, -0.2352],
                                      [-0.1082, 0.6071, 0.4594, -0.6393],
                                      [-0.0081, 0.2432, 0.6625, 0.7084]])),
-                          ("I",
+                          ("V",
                            np.array([[6.02 + 0j, -.45 + .25j, -1.3 + 1.74j,
                                       1.45 - .66j],
                                      [-.45 - .25j, 2.91 + 0j, .05 + 1.56j,
@@ -2349,7 +2357,7 @@ def test_pteqr_NAG(compz, A, d, e, z, d_expect, z_expect):
     Implements real (f08jgf) and complex (f08juf) examples from NAG manual.
     https://www.nag.com/numeric/fl/nagdoc_latest/html/f08/f08jgf.html
     https://www.nag.com/numeric/fl/nagdoc_latest/html/f08/f08juf.html
-    Tests for correct d and z outputs.
+    Tests for correct outputs.
     '''
     # the NAG manual has 4 decimals accuracy
     rtol = 1e-4
@@ -2357,8 +2365,8 @@ def test_pteqr_NAG(compz, A, d, e, z, d_expect, z_expect):
 
     if compz == "V":
         # Reduce A to tridiagonal form T = (Q**H)*A*Q
-        hetrd = get_lapack_funcs("hetrd", dtype=A.dtype)
-        c, d, e, tau, info = hetrd(A)
+        hetrd = get_lapack_funcs(('hetrd', ), (A,))
+        data, d, e, tau, info = hetrd[0](A)
 
     _d, _e, _z, work, info = pteqr(d, e, z, compz=compz)
     assert_allclose(_d, d_expect, rtol=rtol)
