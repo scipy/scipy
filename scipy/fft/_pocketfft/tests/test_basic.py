@@ -11,7 +11,7 @@ from scipy.fft._pocketfft import (ifft, fft, fftn, ifftn,
                                   rfft, irfft, rfftn, irfftn, fft2)
 
 from numpy import (arange, add, array, asarray, zeros, dot, exp, pi,
-                   swapaxes, double, cdouble)
+                   swapaxes, cdouble)
 import numpy as np
 import numpy.fft
 from numpy.random import rand
@@ -345,7 +345,7 @@ class _TestRFFTBase(object):
         xs = _TestRFFTBase.MockSeries(x)
 
         expected = [1, 2, 3, 4, 5]
-        out = rfft(xs)
+        rfft(xs)
 
         # Data should not have been overwritten
         assert_equal(x, expected)
@@ -850,7 +850,7 @@ class TestRfftn(object):
     def test_no_axes(self, func):
         with assert_raises(ValueError,
                            match="at least 1 axis must be transformed"):
-            y = func([], axes=[])
+            func([], axes=[])
 
     def test_complex_input(self):
         with assert_raises(TypeError, match="x must be a real sequence"):

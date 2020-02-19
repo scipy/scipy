@@ -2,11 +2,9 @@ import numpy as np
 import scipy.fft
 from scipy.fft import set_backend
 from scipy.fft import _pocketfft
-from scipy.fft import _realtransforms as rt
-import scipy.fftpack as fftpack
 from scipy.fft.tests import mock_backend
 
-from numpy.testing import assert_allclose, assert_equal, assert_
+from numpy.testing import assert_allclose, assert_equal
 import pytest
 
 fnames = ('fft', 'fft2', 'fftn',
