@@ -107,24 +107,29 @@ def geometric_slerp(start,
 
     The interpolated results should be at 30 degree intervals
     recognizable on the unit circle:
+
     >>> ax.scatter(result[...,0], result[...,1], c='k')
     >>> circle = plt.Circle((0, 0), 1, color='grey')
     >>> ax.add_artist(circle)
+    >>> ax.set_aspect('equal')
     >>> plt.show()
 
     Attempting to interpolate between antipodes on a circle is
     ambiguous because there are two possible paths, and on a
-    sphere there are infinite possible paths on the geodesic surface:
+    sphere there are infinite possible paths on the geodesic surface.
+    Nonetheless, one of the ambiguous paths is returned along
+    with a warning:
 
     >>> opposite_pole = np.array([-1, 0])
-    >>> try:
-    ...     geometric_slerp(start,
+    >>> with np.testing.suppress_warnings() as sup:
+    ...     sup.filter(UserWarning)
+    ...     geometric_slerp(start, 
     ...                     opposite_pole,
     ...                     t_vals)
-    ... except ValueError:
-    ...     print("ValueError")
-    ValueError
-
+    array([[ 1.00000000e+00,  0.00000000e+00],
+           [ 5.00000000e-01,  8.66025404e-01],
+           [-5.00000000e-01,  8.66025404e-01],
+           [-1.00000000e+00,  1.22464680e-16]])
 
     Extend the original example to a sphere and plot interpolation
     points in 3D:
