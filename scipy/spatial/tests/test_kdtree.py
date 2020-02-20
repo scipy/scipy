@@ -1224,7 +1224,6 @@ def test_ckdtree_weights():
         w1 = weights.copy()
         w1[i] = 0
         data2 = data[w1 != 0]
-        weights[w1 != 0]
         tree2 = cKDTree(data2)
 
         c1 = tree1.count_neighbors(tree1, np.linspace(0, 10, 100),
