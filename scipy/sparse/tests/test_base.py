@@ -41,7 +41,7 @@ import scipy.linalg
 import scipy.sparse as sparse
 from scipy.sparse import (csc_matrix, csr_matrix, dok_matrix,
         coo_matrix, lil_matrix, dia_matrix, bsr_matrix,
-        eye, isspmatrix, SparseEfficiencyWarning, issparse)
+        eye, isspmatrix, SparseEfficiencyWarning)
 from scipy.sparse.sputils import (supported_dtypes, isscalarlike,
                                   get_index_dtype, asmatrix, matrix)
 from scipy.sparse.linalg import splu, expm, inv
