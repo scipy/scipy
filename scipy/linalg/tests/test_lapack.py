@@ -1796,7 +1796,6 @@ def test_orcsd_uncsd_lwork(dtype_, m):
 @pytest.mark.parametrize("dtype_", DTYPES)
 def test_orcsd_uncsd(dtype_):
     m, p, q = 250, 80, 170
-    r = min(p, q, m-p, m-q)
 
     pfx = 'or' if dtype_ in REAL_DTYPES else 'un'
     X = ortho_group.rvs(m) if pfx == 'or' else unitary_group.rvs(m)

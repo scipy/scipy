@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from collections.abc import Iterable
 import numpy as np
+
 from scipy._lib._util import _asarray_validated
 from scipy.linalg import block_diag, LinAlgError
 from .lapack import _compute_lwork, get_lapack_funcs
@@ -8,8 +9,8 @@ from .lapack import _compute_lwork, get_lapack_funcs
 __all__ = ['cossin']
 
 
-def cossin(X, p=None, q=None, minus_upper=True, compute_u=True,
-           compute_vh=True):
+def cossin(X, p=None, q=None, separate=False,
+           swap_sign=False, compute_u=True, compute_vh=True):
     """
     Compute the cosine-sine (CS) decomposition of an orthogonal/unitary matrix.
 
@@ -26,16 +27,18 @@ def cossin(X, p=None, q=None, minus_upper=True, compute_u=True,
                                    │ 0  0  I │ 0  0  0 │
                                    └                   ┘
 
-    ``U1``, ``U2``, ``V1``, ``V2`` are square orthogonal/unitary matrices and
-    ``C`` and ``S`` are ``(r, r)`` nonnegative diagonal matrices satisfying
+    ``U1``, ``U2``, ``V1``, ``V2`` are square orthogonal/unitary matrices of
+    dimensions ``(p,p)``, ``(m-p,m-p)``, ``(q,q)``, ``(m-q,m-q)``, respectively,
+    and ``C`` and ``S`` are ``(r, r)`` nonnegative diagonal matrices satisfying
     ``C^2 + S^2 = I`` where ``r = min(p, m-p, q, m-q)``.
 
     Moreover, the rank of the identity matrices are ``min(p, q) - r``,
     ``min(p, m - q) - r``, ``min(m - p, q) - r``, and ``min(m - p, m - q) - r``
     respectively.
 
-    X can be supplied either by itself or by its subblocks in an iterable. See
-    the examples below.
+    X can be supplied either by itself and block specifications p, q or its
+    subblocks in an iterable from which the shapes would be derived. See the
+    examples below.
 
     Parameters
     ----------
@@ -43,28 +46,38 @@ def cossin(X, p=None, q=None, minus_upper=True, compute_u=True,
         complex unitary or real orthogonal matrix to be decomposed, or iterable
         of subblocks ``X11``, ``X12``, ``X21``, ``X22``, when ``p``, ``q`` are
         omitted.
-    p : int
-        Number of rows of the upper left block ``X11``
-    q : int
-        Number of columns of the upper left block ``X11``
-    minus_upper : bool, optional
-        if `False`, the -S, -I block will be the bottom left, otherwise (by
+    p : int, optional
+        Number of rows of the upper left block ``X11``, used only when X is
+        given as an array.
+    q : int, optional
+        Number of columns of the upper left block ``X11``, used only when X is
+        given as an array.
+    separate : bool, optional
+        if ``True``, the low level components are returned instead of the matrix
+        factors, i.e. ``(u1,u2),theta,(v1h,v2h)`` instead of ``u,cs,vh``
+    swap_sign : bool, optional
+        if ``True``, the ``-S``, ``-I`` block will be the bottom left, otherwise (by
         default) they will be in the upper right block.
     compute_u : bool, optional
-        if `False`, `u` won't be computed and an empty array is returned.
+        if ``False``, ``u`` won't be computed and an empty array is returned.
     compute_vh : bool, optional
-        if `False`, `vh` won't be computed and an empty array is returned.
+        if ``False``, ``vh`` won't be computed and an empty array is returned.
 
     Returns
     -------
     u : ndarray
-        When `compute_u=True`, contains the block diagonal orthogonal/unitary
-        matrix consisting of the blocks U1 (p-by-p) and U2 (m-p)-by-(m-p)
+        When ``compute_u=True``, contains the block diagonal orthogonal/unitary
+        matrix consisting of the blocks ``U1`` ``(p,p)`` and ``U2`` ``(m-p,m-p)``
+        orthogonal/unitary matrices. If `separate=True`, this contains the tuple
+        of ``(U1, U2)``.
     cs : ndarray
-        The cosine-sine factor with the structure described above
+        The cosine-sine factor with the structure described above.
+         If ``separate=True``, this contains the ``theta`` array.
     vh : ndarray
-        When `compute_u=True`, contains the block diagonal orthogonal/unitary
-        matrix consisting of the blocks V1 (q-by-q) and V2 (m-q)-by-(m-q)
+        When ``compute_vh=True`, contains the block diagonal orthogonal/unitary
+        matrix consisting of the blocks ``V1H`` ``(q,q)`` and
+        ``V2H`` ``(m-q,m-q)`` orthogonal/unitary matrices. If ``separate=True``,
+        this contains the tuple of ``(V1H, V2H)``.
 
     Examples
     --------
@@ -75,7 +88,7 @@ def cossin(X, p=None, q=None, minus_upper=True, compute_u=True,
     >>> np.allclose(x, u @ cs @ vdh)
     True
 
-    Same can be entered via subblocks without the need of ``p``and ``q``. Also
+    Same can be entered via subblocks without the need of ``p`` and ``q``. Also
     let's skip the computation of ``u``
 
     >>> ue, cs, vdh = cossin((x[:2, :2], x[:2, 2:], x[2:, :2], x[2:, 2:]),
@@ -91,6 +104,7 @@ def cossin(X, p=None, q=None, minus_upper=True, compute_u=True,
            Algorithms, 50(1):33-65, 2009.
 
     """
+
     if p or q:
         p = 1 if p is None else int(p)
         q = 1 if q is None else int(q)
@@ -146,15 +160,15 @@ def cossin(X, p=None, q=None, minus_upper=True, compute_u=True,
     lwork = _compute_lwork(csd_lwork, m=m, p=p, q=q)
     lwork_args = ({'lwork': lwork[0], 'lrwork': lwork[1]} if cplx else
                   {'lwork': lwork})
-
     *_, theta, u1, u2, v1h, v2h, info = csd(x11=x11, x12=x12, x21=x21, x22=x22,
                                             compute_u1=compute_u,
                                             compute_u2=compute_u,
                                             compute_v1t=compute_vh,
                                             compute_v2t=compute_vh,
-                                            trans=False, signs=not minus_upper,
+                                            trans=False, signs=swap_sign,
                                             **lwork_args)
-
+    if separate:
+        return (u1, u2), theta, (v1h, v2h)
     method_name = csd.typecode + driver
     if info < 0:
         raise ValueError('illegal value in argument {} of internal {}'
@@ -176,24 +190,30 @@ def cossin(X, p=None, q=None, minus_upper=True, compute_u=True,
     Id = np.eye(np.max([n11, n12, n21, n22, r]), dtype=theta.dtype)
     CS = np.zeros((m, m), dtype=theta.dtype)
 
-    sgn = -1 if minus_upper else 1
-
     CS[:n11, :n11] = Id[:n11, :n11]
-    CS[n11 + r:
-       n11 + r + n12,
-    n11 + n21 + n22 + 2 * r:
-    n11 + n12 + n21 + n22 + 2 * r] = Id[:n12, :n12] * sgn
 
-    CS[p + n22 + r:
-       p + n21 + n22 + r,
-    n11 + r:
-    n11 + n21 + r] = Id[:n21, :n21] * -sgn
+    xs = n11 + r
+    xe = n11 + r + n12
+    ys = n11 + n21 + n22 + 2 * r
+    ye = n11 + n12 + n21 + n22 + 2 * r
+    CS[xs: xe, ys:ye] = Id[:n12, :n12] if swap_sign else - Id[:n12, :n12]
+
+    xs = p + n22 + r
+    xe = p + n21 + n22 + r
+    ys = n11 + r
+    ye = n11 + n21 + r
+    CS[xs:xe, ys:ye] = Id[:n21, :n21] if not swap_sign else -Id[:n21, :n21]
 
     CS[p:p + n22, q:q + n22] = Id[:n22, :n22]
-
     CS[n11:n11 + r, n11:n11 + r] = c
     CS[p + n22:p + n22 + r, r + n21 + n22:2 * r + n21 + n22] = c
-    CS[n11:n11 + r, n11 + n21 + n22 + r:n11 + n21 + n22 + 2 * r] = s * sgn
-    CS[p + n22:p + n22 + r, n11:n11 + r] = s * -sgn
+
+    xs = n11
+    xe = n11 + r
+    ys = n11 + n21 + n22 + r
+    ye = n11 + n21 + n22 + 2 * r
+    CS[xs:xe, ys:ye] = -s if not swap_sign else s
+
+    CS[p + n22:p + n22 + r, n11:n11 + r] = s if not swap_sign else -s
 
     return U, CS, VDH

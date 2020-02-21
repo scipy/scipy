@@ -95,7 +95,7 @@ Decompositions
    rsf2csf - Real to complex Schur form
    hessenberg - Hessenberg form of a matrix
    cdf2rdf - Complex diagonal form to real diagonal block form
-   cossin - Cosine sine decomposition of a unitary or orthogonal matrix
+   cossin - Cosine sine decomposition of a unitary or orthogonal matrix   
    
 .. seealso::
 

@@ -238,20 +238,24 @@ end subroutine <prefix2c>pbsv
 
 subroutine <prefix2>orcsd(compute_u1,compute_u2,compute_v1t,compute_v2t,trans,signs,m,p,q,x11,ldx11,x12,ldx12,x21,ldx21,x22,ldx22,theta,u1,ldu1,u2,ldu2,v1t,ldv1t,v2t,ldv2t,work,lwork,iwork,info,mmp,mmq)
     ! DORCSD computes the CS decomposition of an M-by-M partitioned
-    ! orthogonal matrix X:
+    ! unitary matrix X:
     !
-    !                                 [  I  0  0 |  0  0  0 ]
-    !                                 [  0  C  0 |  0 -S  0 ]
-    !     [ X11 | X12 ]   [ U1 |    ] [  0  0  0 |  0  0 -I ] [ V1 |    ]**T
-    ! X = [-----------] = [---------] [---------------------] [---------]   .
-    !     [ X21 | X22 ]   [    | U2 ] [  0  0  0 |  I  0  0 ] [    | V2 ]
-    !                                 [  0  S  0 |  0  C  0 ]
-    !                                 [  0  0  I |  0  0  0 ]
+    !                             [  I11 0  0  |  0    0  0   ]
+    !                             [  0   C  0  |  0   -S  0   ]
+    ! [ X11 | X12 ]   [ U1 |    ] [  0   0  0  |  0    0 -I12 ] [ V1 |    ]**T
+    ! [-----------] = [---------] [---------------------------] [---------]   .
+    ! [ X21 | X22 ]   [    | U2 ] [  0  0  0   |  I22  0  0   ] [    | V2 ]
+    !                             [  0  S  0   |  0    C  0   ]
+    !                             [  0  0  I21 |  0    0  0   ]
     !
-    ! X11 is P-by-Q. The orthogonal matrices U1, U2, V1, and V2 are P-by-P,
-    ! (M-P)-by-(M-P), Q-by-Q, and (M-Q)-by-(M-Q), respectively. C and S are
-    ! R-by-R nonnegative diagonal matrices satisfying C^2 + S^2 = I, in
-    ! which R = MIN(P,M-P,Q,M-Q).
+    ! U1, U2, V1, V2 are square orthogonal matrices of
+    ! dimensions (p,p), (m-p,m-p), (q,q), (m-q,m-q), respectively,
+    !  and C and S are (r, r) nonnegative diagonal matrices satisfying
+    ! C^2 + S^2 = I where r = min(p, m-p, q, m-q).
+    !
+    !  Moreover, the rank of the identity matrices are min(p, q) - r,
+    !  min(p, m - q) - r, min(m - p, q) - r, and min(m - p, m - q) - r
+    !  respectively.
 
     callstatement (*f2py_func)((compute_u1?"Y":"N"),(compute_u2?"Y":"N"),(compute_v1t?"Y":"N"),(compute_v2t?"Y":"N"),(trans?"T":"N"),(signs?"O":"D"),&m,&p,&q,x11,&ldx11,x12,&ldx12,x21,&ldx21,x22,&ldx22,theta,u1,&ldu1,u2,&ldu2,v1t,&ldv1t,v2t,&ldv2t,work,&lwork,iwork,&info)
     callprotoargument char*,char*,char*,char*,char*,char*,int*,int*,int*,<ctype2>*,int*,<ctype2>*,int*,<ctype2>*,int*,<ctype2>*,int*,<ctype2>*,<ctype2>*,int*,<ctype2>*,int*,<ctype2>*,int*,<ctype2>*,int*,<ctype2>*,int*,int*,int*
@@ -341,22 +345,23 @@ subroutine <prefix2c>uncsd(compute_u1,compute_u2,compute_v1t,compute_v2t,trans,s
     ! ZUNCSD computes the CS decomposition of an M-by-M partitioned
     ! unitary matrix X:
     !
-    !                                 [  I11 0  0  |  0    0  0   ]
-    !                                 [  0   C  0  |  0   -S  0   ]
-    !     [ X11 | X12 ]   [ U1 |    ] [  0   0  0  |  0    0 -I12 ] [ V1 |    ]**H
-    ! X = [-----------] = [---------] [---------------------------] [---------]   .
-    !     [ X21 | X22 ]   [    | U2 ] [  0  0  0   |  I22  0  0   ] [    | V2 ]
-    !                                 [  0  S  0   |  0    C  0   ]
-    !                                 [  0  0  I21 |  0    0  0   ]
+    !                             [  I11 0  0  |  0    0  0   ]
+    !                             [  0   C  0  |  0   -S  0   ]
+    ! [ X11 | X12 ]   [ U1 |    ] [  0   0  0  |  0    0 -I12 ] [ V1 |    ]*
+    ! [-----------] = [---------] [---------------------------] [---------]   .
+    ! [ X21 | X22 ]   [    | U2 ] [  0  0  0   |  I22  0  0   ] [    | V2 ]
+    !                             [  0  S  0   |  0    C  0   ]
+    !                             [  0  0  I21 |  0    0  0   ]
     !
-    ! X11 is P-by-Q. The unitary matrices U1, U2, V1, and V2 are P-by-P,
-    ! (M-P)-by-(M-P), Q-by-Q, and (M-Q)-by-(M-Q), respectively. C and S are
-    ! R-by-R nonnegative diagonal matrices satisfying C^2 + S^2 = I, in
-    ! which R = MIN(P,M-P,Q,M-Q).
-    ! I11, I12, I21 and I22 identity matrices with the following dimensions:
+    ! U1, U2, V1, V2 are square orthogonal matrices of
+    ! dimensions (p,p), (m-p,m-p), (q,q), (m-q,m-q), respectively,
+    !  and C and S are (r, r) nonnegative diagonal matrices satisfying
+    ! C^2 + S^2 = I where r = min(p, m-p, q, m-q).
     !
-    !
-    !
+    !  Moreover, the rank of the identity matrices are min(p, q) - r,
+    !  min(p, m - q) - r, min(m - p, q) - r, and min(m - p, m - q) - r
+    !  respectively.
+    
 
     callstatement (*f2py_func)((compute_u1?"Y":"N"),(compute_u2?"Y":"N"),(compute_v1t?"Y":"N"),(compute_v2t?"Y":"N"),(trans?"T":"N"),(signs?"O":"D"),&m,&p,&q,x11,&ldx11,x12,&ldx12,x21,&ldx21,x22,&ldx22,theta,u1,&ldu1,u2,&ldu2,v1t,&ldv1t,v2t,&ldv2t,work,&lwork,rwork,&lrwork,iwork,&info)
     callprotoargument char*,char*,char*,char*,char*,char*,int*,int*,int*,<ctype2c>*,int*,<ctype2c>*,int*,<ctype2c>*,int*,<ctype2c>*,int*,<ctype2>*,<ctype2c>*,int*,<ctype2c>*,int*,<ctype2c>*,int*,<ctype2c>*,int*,<ctype2c>*,int*,<ctype2>*,int*,int*,int*
