@@ -3,8 +3,9 @@ import numpy as np
 from numpy.random import seed
 from numpy.testing import assert_allclose
 
+from scipy.linalg.lapack import _compute_lwork
 from scipy.stats import ortho_group, unitary_group
-from scipy.linalg import cossin
+from scipy.linalg import cossin, get_lapack_funcs, block_diag
 
 REAL_DTYPES = [np.float32, np.float64]
 COMPLEX_DTYPES = [np.complex64, np.complex128]
@@ -25,8 +26,8 @@ DTYPES = REAL_DTYPES + COMPLEX_DTYPES
                              (100, 50, 1),
                              (100, 50, 50),
                          ])
-@pytest.mark.parametrize('minus_upper', [True, False])
-def test_cossin(dtype_, m, p, q, minus_upper):
+@pytest.mark.parametrize('swap_sign', [True, False])
+def test_cossin(dtype_, m, p, q, swap_sign):
     seed(1234)
     if dtype_ in COMPLEX_DTYPES:
         x = np.array(unitary_group.rvs(m), dtype=dtype_)
@@ -34,7 +35,7 @@ def test_cossin(dtype_, m, p, q, minus_upper):
         x = np.array(ortho_group.rvs(m), dtype=dtype_)
 
     u, cs, vh = cossin(x, p, q,
-                       minus_upper=minus_upper)
+                       swap_sign=swap_sign)
     assert_allclose(x, u @ cs @ vh, rtol=0., atol=m*1e3*np.finfo(dtype_).eps)
     assert u.dtype == dtype_
     # Test for float32 or float 64
@@ -42,7 +43,7 @@ def test_cossin(dtype_, m, p, q, minus_upper):
     assert vh.dtype == dtype_
 
     u, cs, vh = cossin([x[:p, :q], x[:p, q:], x[p:, :q], x[p:, q:]],
-                       minus_upper=minus_upper)
+                       swap_sign=swap_sign)
     assert_allclose(x, u @ cs @ vh, rtol=0., atol=m*1e3*np.finfo(dtype_).eps)
     assert u.dtype == dtype_
     assert cs.dtype == np.real(u).dtype
@@ -50,20 +51,20 @@ def test_cossin(dtype_, m, p, q, minus_upper):
 
     _, cs2, vh2 = cossin(x, p, q,
                          compute_u=False,
-                         minus_upper=minus_upper)
+                         swap_sign=swap_sign)
     assert_allclose(cs, cs2, rtol=0., atol=10*np.finfo(dtype_).eps)
     assert_allclose(vh, vh2, rtol=0., atol=10*np.finfo(dtype_).eps)
 
     u2, cs2, _ = cossin(x, p, q,
                         compute_vh=False,
-                        minus_upper=minus_upper)
+                        swap_sign=swap_sign)
     assert_allclose(u, u2, rtol=0., atol=10*np.finfo(dtype_).eps)
     assert_allclose(cs, cs2, rtol=0., atol=10*np.finfo(dtype_).eps)
 
     _, cs2, _ = cossin(x, p, q,
                        compute_u=False,
                        compute_vh=False,
-                       minus_upper=minus_upper)
+                       swap_sign=swap_sign)
     assert_allclose(cs, cs2, rtol=0., atol=10*np.finfo(dtype_).eps)
 
 
@@ -125,3 +126,29 @@ def test_cossin_error_partitioning():
         cossin(x, 1, -2)
     with pytest.raises(ValueError, match="invalid q=5.*0<q<4.*"):
         cossin(x, 1, 5)
+
+
+@pytest.mark.parametrize("dtype_", DTYPES)
+def test_cossin_separate(dtype_):
+    m, p, q = 250, 80, 170
+
+    pfx = 'or' if dtype_ in REAL_DTYPES else 'un'
+    X = ortho_group.rvs(m) if pfx == 'or' else unitary_group.rvs(m)
+    X = np.array(X, dtype=dtype_)
+
+    drv, dlw = get_lapack_funcs((pfx + 'csd', pfx + 'csd_lwork'),[X])
+    lwval = _compute_lwork(dlw, m, p, q)
+    lwvals = {'lwork': lwval} if pfx == 'or' else dict(zip(['lwork',
+                                                            'lrwork'],
+                                                           lwval))
+
+    *_, theta, u1, u2, v1t, v2t, _ = \
+        drv(X[:p, :q], X[:p, q:], X[p:, :q], X[p:, q:], **lwvals)
+
+    (u1_2, u2_2), theta2, (v1t_2, v2t_2) = cossin(X, p, q, separate=True)
+
+    assert_allclose(u1_2, u1, rtol=0., atol=10*np.finfo(dtype_).eps)
+    assert_allclose(u2_2, u2, rtol=0., atol=10*np.finfo(dtype_).eps)
+    assert_allclose(v1t_2, v1t, rtol=0., atol=10*np.finfo(dtype_).eps)
+    assert_allclose(v2t_2, v2t, rtol=0., atol=10*np.finfo(dtype_).eps)
+    assert_allclose(theta2, theta, rtol=0., atol=10*np.finfo(dtype_).eps)
