@@ -640,21 +640,12 @@ class TestSytrd(object):
         assert_raises(ValueError, sytrd, A)
 
     @pytest.mark.parametrize('dtype', REAL_DTYPES)
-    def test_sytrd(self, dtype):
-        n = 3
+    @pytest.mark.parametrize('n', (1, 3))
+    def test_sytrd(self, dtype, n):
         A = np.zeros((n, n), dtype=dtype)
 
         sytrd, sytrd_lwork = \
             get_lapack_funcs(('sytrd', 'sytrd_lwork'), (A,))
-
-        # Tests for n = 1 currently fail with
-        # ```
-        # ValueError: failed to create intent(cache|hide)|optional array--
-        # must have defined dimensions but got (0,)
-        # ```
-        # This is a NumPy issue
-        # <https://github.com/numpy/numpy/issues/9617>.
-        # TODO Once the minimum NumPy version is past 1.14, test for n=1
 
         # some upper triangular array
         A[np.triu_indices_from(A)] = \
