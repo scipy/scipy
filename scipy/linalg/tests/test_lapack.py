@@ -700,15 +700,20 @@ class TestSytrd(object):
 
 
 class TestHetrd(object):
+    @pytest.mark.parametrize('complex_dtype', COMPLEX_DTYPES)
+    def test_hetrd_with_zero_dim_array(self, complex_dtype):
+        # Assert that a 0x0 matrix raises an error
+        A = np.zeros((0, 0), dtype=complex_dtype)
+        hetrd = get_lapack_funcs('hetrd', (A,))
+        assert_raises(ValueError, hetrd, A)
 
     @pytest.mark.parametrize('real_dtype,complex_dtype',
                              zip(REAL_DTYPES, COMPLEX_DTYPES))
     def test_hetrd(self, real_dtype, complex_dtype):
-        # Assert that a 0x0 matrix raises an error
-        A = np.zeros((0, 0), dtype=complex_dtype)
+        n = 3
+        A = np.zeros((n, n), dtype=complex_dtype)
         hetrd, hetrd_lwork = \
             get_lapack_funcs(('hetrd', 'hetrd_lwork'), (A,))
-        assert_raises(ValueError, hetrd, A)
 
         # Tests for n = 1 currently fail with
         # ```
@@ -720,8 +725,6 @@ class TestHetrd(object):
         # TODO Once the minimum NumPy version is past 1.14, test for n=1
 
         # some upper triangular array
-        n = 3
-        A = np.zeros((n, n), dtype=complex_dtype)
         A[np.triu_indices_from(A)] = (
             np.arange(1, n*(n+1)//2+1, dtype=real_dtype)
             + 1j * np.arange(1, n*(n+1)//2+1, dtype=real_dtype)
