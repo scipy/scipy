@@ -709,20 +709,11 @@ class TestHetrd(object):
 
     @pytest.mark.parametrize('real_dtype,complex_dtype',
                              zip(REAL_DTYPES, COMPLEX_DTYPES))
-    def test_hetrd(self, real_dtype, complex_dtype):
-        n = 3
+    @pytest.mark.parametrize('n', (1, 3))
+    def test_hetrd(self, n, real_dtype, complex_dtype):
         A = np.zeros((n, n), dtype=complex_dtype)
         hetrd, hetrd_lwork = \
             get_lapack_funcs(('hetrd', 'hetrd_lwork'), (A,))
-
-        # Tests for n = 1 currently fail with
-        # ```
-        # ValueError: failed to create intent(cache|hide)|optional array--
-        # must have defined dimensions but got (0,)
-        # ```
-        # This is a NumPy issue
-        # <https://github.com/numpy/numpy/issues/9617>.
-        # TODO Once the minimum NumPy version is past 1.14, test for n=1
 
         # some upper triangular array
         A[np.triu_indices_from(A)] = (
