@@ -633,12 +633,19 @@ def test_sgesdd_lwork_bug_workaround():
 
 class TestSytrd(object):
     @pytest.mark.parametrize('dtype', REAL_DTYPES)
-    def test_sytrd(self, dtype):
+    def test_sytrd_with_zero_dim_array(self, dtype):
         # Assert that a 0x0 matrix raises an error
         A = np.zeros((0, 0), dtype=dtype)
+        sytrd = get_lapack_funcs('sytrd', (A,))
+        assert_raises(ValueError, sytrd, A)
+
+    @pytest.mark.parametrize('dtype', REAL_DTYPES)
+    def test_sytrd(self, dtype):
+        n = 3
+        A = np.zeros((n, n), dtype=dtype)
+
         sytrd, sytrd_lwork = \
             get_lapack_funcs(('sytrd', 'sytrd_lwork'), (A,))
-        assert_raises(ValueError, sytrd, A)
 
         # Tests for n = 1 currently fail with
         # ```
@@ -650,8 +657,6 @@ class TestSytrd(object):
         # TODO Once the minimum NumPy version is past 1.14, test for n=1
 
         # some upper triangular array
-        n = 3
-        A = np.zeros((n, n), dtype=dtype)
         A[np.triu_indices_from(A)] = \
             np.arange(1, n*(n+1)//2+1, dtype=dtype)
 
