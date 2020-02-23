@@ -19,7 +19,7 @@ class FindDependenciesLdd:
         self.cmd = ['ldd']
 
         try:
-            st = call(self.cmd, stdout=PIPE, stderr=PIPE)
+            call(self.cmd, stdout=PIPE, stderr=PIPE)
         except OSError:
             raise RuntimeError("command %s cannot be run" % self.cmd)
 
