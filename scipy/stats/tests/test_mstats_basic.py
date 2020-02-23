@@ -575,7 +575,7 @@ class TestMoments(object):
         im[:50, :] += 1
         im[:, :50] += 1
         cp = im.copy()
-        a = mstats.mode(im, None)
+        mstats.mode(im, None)
         assert_equal(im, cp)
 
 
