@@ -26,6 +26,8 @@ from scipy.linalg import inv, svd, cholesky, solve, ldl, norm
 from scipy.linalg.lapack import _compute_lwork
 from scipy.linalg import qr
 
+import scipy.sparse as sps
+
 try:
     from scipy.linalg import _clapack as clapack
 except ImportError:
@@ -487,6 +489,141 @@ class TestDlasd4(object):
         assert_((not np.any(np.isnan(roots)), "There are NaN roots"))
         assert_allclose(SM, roots, atol=100*np.finfo(np.float64).eps,
                         rtol=100*np.finfo(np.float64).eps)
+
+
+class TestTbtrs(object):
+
+    @pytest.mark.parametrize('dtype', DTYPES)
+    def test_nag_example_f07vef_f07vsf(self, dtype):
+        """Test real (f07vef) and complex (f07vsf) examples from NAG
+
+        Examples available from:
+        * https://www.nag.com/numeric/fl/nagdoc_latest/html/f07/f07vef.html
+        * https://www.nag.com/numeric/fl/nagdoc_latest/html/f07/f07vsf.html
+
+        """
+        if dtype in REAL_DTYPES:
+            ab = np.array([[-4.16, 4.78, 6.32, 0.16],
+                           [-2.25, 5.86, -4.82, 0]],
+                          dtype=dtype)
+            b = np.array([[-16.64, -4.16],
+                          [-13.78, -16.59],
+                          [13.10, -4.94],
+                          [-14.14, -9.96]],
+                         dtype=dtype)
+            x_out = np.array([[4, 1],
+                              [-1, -3],
+                              [3, 2],
+                              [2, -2]],
+                             dtype=dtype)
+        elif dtype in COMPLEX_DTYPES:
+            ab = np.array([[-1.94+4.43j, 4.12-4.27j, 0.43-2.66j, 0.44+0.1j],
+                           [-3.39+3.44j, -1.84+5.52j, 1.74 - 0.04j, 0],
+                           [1.62+3.68j, -2.77-1.93j, 0, 0]],
+                          dtype=dtype)
+            b = np.array([[-8.86 - 3.88j, -24.09 - 5.27j],
+                          [-15.57 - 23.41j, -57.97 + 8.14j],
+                          [-7.63 + 22.78j, 19.09 - 29.51j],
+                          [-14.74 - 2.40j, 19.17 + 21.33j]],
+                         dtype=dtype)
+            x_out = np.array([[2j, 1 + 5j],
+                              [1 - 3j, -7 - 2j],
+                              [-4.001887 - 4.988417j, 3.026830 + 4.003182j],
+                              [1.996158 - 1.045105j, -6.103357 - 8.986653j]],
+                             dtype=dtype)
+        else:
+            raise ValueError(f"Datatype {dtype} not understood.")
+
+        tbtrs = get_lapack_funcs(('tbtrs'), dtype=dtype)
+        x, info = tbtrs(ab=ab, b=b, uplo='L')
+        assert_equal(info, 0)
+        assert_allclose(x, x_out, rtol=0, atol=1e-5)
+
+    @pytest.mark.parametrize('dtype,trans',
+                             [(dtype, trans)
+                              for dtype in DTYPES for trans in ['N', 'T', 'C']
+                              if not (trans == 'C' and dtype in REAL_DTYPES)])
+    @pytest.mark.parametrize('uplo', ['U', 'L'])
+    @pytest.mark.parametrize('diag', ['N', 'U'])
+    def test_random_matrices(self, dtype, trans, uplo, diag):
+        seed(1724)
+        # lda, ldb, nrhs, kd are used to specify A and b.
+        # A is of shape lda x ldb with kd super/sub-diagonals
+        # b is of shape ldb x nrhs matrix
+        lda, ldb, nrhs, kd = 4, 4, 3, 2
+        ldab = kd + 1
+
+        # Construct the diagonal and kd super/sub diagonals of A with
+        # the corresponding offsets.
+        band_widths = range(lda, lda - kd - 1, -1)
+        band_offsets = np.arange(ldab) if uplo == 'U' else np.arange(ldab) * -1
+        if dtype in REAL_DTYPES:
+            b = rand(ldb, nrhs).astype(dtype)
+            bands = [rand(width).astype(dtype) for width in band_widths]
+        elif dtype in COMPLEX_DTYPES:
+            b = (rand(ldb, nrhs) + rand(ldb, nrhs) * 1j).astype(dtype)
+            bands = [(rand(width) + rand(width) * 1j).astype(dtype)
+                     for width in band_widths]
+
+        if diag == 'U':  # A must be unit triangular
+            bands[0] = np.ones(lda, dtype=dtype)
+
+        # Construct the diagonal banded matrix A from the bands and offsets.
+        a = sps.diags(bands, band_offsets, format='dia')
+        ab = np.flipud(a.data) if uplo == 'U' else a.data
+
+        tbtrs = get_lapack_funcs('tbtrs', dtype=dtype)
+        x, info = tbtrs(ab=ab, b=b, uplo=uplo, trans=trans, diag=diag)
+        assert_equal(info, 0)
+
+        if trans == 'N':
+            assert_allclose(a @ x, b, rtol=5e-5)
+        elif trans == 'T':
+            assert_allclose(a.T @ x, b, rtol=5e-5)
+        elif trans == 'C':
+            assert_allclose(a.H @ x, b, rtol=5e-5)
+        else:
+            raise ValueError('Invalid trans argument')
+
+    @pytest.mark.parametrize('uplo,trans,diag',
+                             [['U', 'N', 'Invalid'],
+                              ['U', 'Invalid', 'N'],
+                              ['Invalid', 'N', 'N']])
+    def test_invalid_argument_raises_exception(self, uplo, trans, diag):
+        """Test if invalid values of uplo, trans and diag raise exceptions"""
+        # Argument checks occur independently of used datatype.
+        # This mean we must not parameterize all available datatypes.
+        tbtrs = get_lapack_funcs('tbtrs', dtype=np.float)
+        ab = rand(4, 2)
+        b = rand(2, 4)
+        assert_raises(Exception, tbtrs, ab, b, uplo, trans, diag)
+
+    def test_zero_element_in_diagonal(self):
+        """Test if a matrix with a zero diagonal element is singular
+
+        If the i-th diagonal of A is zero, ?tbtrs should return `i` in `info`
+        indicating the provided matrix is singular.
+
+        Note that ?tbtrs requires the matrix A to be stored in banded form.
+        In this form the diagonal corresponds to the last row."""
+        ab = np.ones((3, 4), dtype=float)
+        b = np.ones(4, dtype=float)
+        tbtrs = get_lapack_funcs('tbtrs', dtype=float)
+
+        ab[-1, 3] = 0
+        _, info = tbtrs(ab=ab, b=b, uplo='U')
+        assert_equal(info, 4)
+
+    @pytest.mark.parametrize('ldab,n,ldb,nrhs', [
+                              (5, 5, 0, 5),
+                              (5, 5, 3, 5)
+    ])
+    def test_invalid_matrix_shapes(self, ldab, n, ldb, nrhs):
+        """Test ?tbtrs fails correctly if shapes are invalid."""
+        ab = np.ones((ldab, n), dtype=float)
+        b = np.ones((ldb, nrhs), dtype=float)
+        tbtrs = get_lapack_funcs('tbtrs', dtype=float)
+        assert_raises(Exception, tbtrs, ab, b)
 
 
 def test_lartg():
