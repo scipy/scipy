@@ -188,7 +188,7 @@ def geometric_slerp(start,
     # for points that violate equation for n-sphere
     for coord in [start, end]:
         if not np.allclose(np.linalg.norm(coord), 1.0,
-                           rtol=np.finfo(np.float32).eps,
+                           rtol=1e-9,
                            atol=0):
             raise ValueError("start and end are not"
                              " on a unit n-sphere")
@@ -204,9 +204,8 @@ def geometric_slerp(start,
     # for all unit n-spheres (even the 0-sphere would have an ambiguous path)
     if np.allclose(coord_dist, 2.0, rtol=0, atol=tol):
         warnings.warn("start and end are antipodes"
-                      " using the specified tolerance or they"
-                      " are not on a unit n-sphere; this may"
-                      " cause ambiguous slerp paths")
+                      " using the specified tolerance;"
+                      " this may cause ambiguous slerp paths")
 
     t = np.asarray(t, dtype=np.float64)
 
@@ -216,11 +215,11 @@ def geometric_slerp(start,
     if t.min() < 0 or t.max() > 1:
         raise ValueError("interpolation parameter must be in [0, 1]")
 
-    if np.ndim(t) == 0:
-        return _geometric_slerp(start.astype(np.float64),
-                                end.astype(np.float64),
+    if t.ndim == 0:
+        return _geometric_slerp(start,
+                                end,
                                 np.atleast_1d(t)).ravel()
     else:
-        return _geometric_slerp(start.astype(np.float64),
-                                end.astype(np.float64),
+        return _geometric_slerp(start,
+                                end,
                                 t)
