@@ -9,7 +9,6 @@
 from __future__ import division, print_function, absolute_import
 
 import os
-import sys
 import warnings
 from collections import namedtuple
 import multiprocessing
@@ -28,9 +27,7 @@ import scipy.stats as stats
 import scipy.stats.mstats as mstats
 import scipy.stats.mstats_basic as mstats_basic
 from .common_tests import check_named_results
-from scipy.special import kv
 from scipy.sparse.sputils import matrix
-from scipy.integrate import quad
 
 """ Numbers in docstrings beginning with 'W' refer to the section numbers
     and headings found in the STATISTICS QUIZ of Leland Wilkinson.  These are
@@ -89,7 +86,7 @@ class TestTrimmedStats(object):
         assert_approx_equal(y, 4.666666666666667, significant=self.dprec)
 
         with suppress_warnings() as sup:
-            r = sup.record(RuntimeWarning, "Degrees of freedom <= 0 for slice.")
+            sup.record(RuntimeWarning, "Degrees of freedom <= 0 for slice.")
 
             # Limiting some values along one axis
             y = stats.tvar(x_2d, limits=(1, 5), axis=1, inclusive=(True, True))
@@ -123,7 +120,7 @@ class TestTrimmedStats(object):
         x = np.arange(10.)
         x[9] = np.nan
         with suppress_warnings() as sup:
-            r = sup.record(RuntimeWarning, "invalid value*")
+            sup.record(RuntimeWarning, "invalid value*")
             assert_equal(stats.tmin(x), np.nan)
             assert_equal(stats.tmin(x, nan_policy='omit'), 0.)
             assert_raises(ValueError, stats.tmin, x, nan_policy='raise')
@@ -148,7 +145,7 @@ class TestTrimmedStats(object):
         x = np.arange(10.)
         x[6] = np.nan
         with suppress_warnings() as sup:
-            r = sup.record(RuntimeWarning, "invalid value*")
+            sup.record(RuntimeWarning, "invalid value*")
             assert_equal(stats.tmax(x), np.nan)
             assert_equal(stats.tmax(x, nan_policy='omit'), 9.)
             assert_raises(ValueError, stats.tmax, x, nan_policy='raise')
@@ -2092,13 +2089,13 @@ class TestIQR(object):
 
         # Yes NaNs
         x[1, 2] = np.nan
-        with warnings.catch_warnings(record=True) as w:
+        with warnings.catch_warnings(record=True):
             warnings.simplefilter("always")
             assert_equal(stats.iqr(x, nan_policy='propagate'), np.nan)
             assert_equal(stats.iqr(x, axis=0, nan_policy='propagate'), [5, 5, np.nan, 5, 5])
             assert_equal(stats.iqr(x, axis=1, nan_policy='propagate'), [2, np.nan, 2])
 
-        with warnings.catch_warnings(record=True) as w:
+        with warnings.catch_warnings(record=True):
             warnings.simplefilter("always")
             assert_equal(stats.iqr(x, nan_policy='omit'), 7.5)
             assert_equal(stats.iqr(x, axis=0, nan_policy='omit'), np.full(5, 5))
@@ -2121,7 +2118,7 @@ class TestIQR(object):
 
         # Yes NaNs
         x[1, 2] = np.nan
-        with warnings.catch_warnings(record=True) as w:
+        with warnings.catch_warnings(record=True):
             warnings.simplefilter("always")
             assert_equal(stats.iqr(x, scale='raw', nan_policy='propagate'), np.nan)
             assert_equal(stats.iqr(x, scale='normal', nan_policy='propagate'), np.nan)
@@ -4711,7 +4708,7 @@ class TestWassersteinDistance(object):
             stats.wasserstein_distance([1, -np.inf, np.inf], [1, 1]),
             np.inf)
         with suppress_warnings() as sup:
-            r = sup.record(RuntimeWarning, "invalid value*")
+            sup.record(RuntimeWarning, "invalid value*")
             assert_equal(
                 stats.wasserstein_distance([1, 2, np.inf], [np.inf, 1]),
                 np.nan)
@@ -4778,7 +4775,7 @@ class TestEnergyDistance(object):
             stats.energy_distance([1, -np.inf, np.inf], [1, 1]),
             np.inf)
         with suppress_warnings() as sup:
-            r = sup.record(RuntimeWarning, "invalid value*")
+            sup.record(RuntimeWarning, "invalid value*")
             assert_equal(
                 stats.energy_distance([1, 2, np.inf], [np.inf, 1]),
                 np.nan)

@@ -164,7 +164,6 @@ References
 from __future__ import division, print_function, absolute_import
 
 import warnings
-import sys
 import math
 from math import gcd
 from collections import namedtuple
@@ -5874,7 +5873,7 @@ def _compute_prob_inside_method(m, n, g, h):
     for i in range(1, m + 1):
         # Generate the next column.
         # First calculate the sliding window
-        lastminj, lastmaxj, lastlen = minj, maxj, curlen
+        lastminj, lastlen = minj, curlen
         minj = max(int(np.floor((ng * i - h) / mg)) + 1, 0)
         minj = min(minj, n)
         maxj = min(int(np.ceil((ng * i + h) / mg)), n + 1)

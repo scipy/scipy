@@ -10,7 +10,7 @@ import numpy as np
 from numpy.random import RandomState
 from numpy.testing import (assert_array_equal,
     assert_almost_equal, assert_array_less, assert_array_almost_equal,
-    assert_, assert_allclose, assert_equal, assert_warns, suppress_warnings)
+    assert_, assert_allclose, assert_equal, suppress_warnings)
 import pytest
 from pytest import raises as assert_raises
 
@@ -1510,7 +1510,6 @@ class TestYeojohnson(object):
     def test_array_like(self):
         np.random.seed(54321)
         x = stats.norm.rvs(size=100, loc=0)
-        lmbda = 1.5
         xt1, _ = stats.yeojohnson(x)
         xt2, _ = stats.yeojohnson(list(x))
         assert_allclose(xt1, xt2, rtol=1e-12)
