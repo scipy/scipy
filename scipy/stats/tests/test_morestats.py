@@ -1510,8 +1510,6 @@ class TestYeojohnson(object):
     def test_array_like(self):
         np.random.seed(54321)
         x = stats.norm.rvs(size=100, loc=0)
-        lmbda = 1.5
-        # Should 'stats.yeojohnson(x)' be 'stats.yeojohnson(x, lmbda=lmbda)'?
         xt1, _ = stats.yeojohnson(x)
         xt2, _ = stats.yeojohnson(list(x))
         assert_allclose(xt1, xt2, rtol=1e-12)
