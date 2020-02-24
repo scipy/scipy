@@ -1665,7 +1665,7 @@ def generate_random_dtype_array(shape, dtype):
 
 
 @pytest.mark.parametrize("ddtype,dtype",
-                         zip(DTYPES, REAL_DTYPES + REAL_DTYPES))
+                         zip(REAL_DTYPES + REAL_DTYPES, DTYPES))
 def test_pttrf_pttrs(ddtype, dtype):
     np.random.seed(42)
     # set test tolerance appropriate for dtype
@@ -1674,17 +1674,14 @@ def test_pttrf_pttrs(ddtype, dtype):
     # n is the length diagonal of A
     n = 10
     # create diagonals according to size and dtype
-    if dtype in REAL_DTYPES:
-        # add 2 so that the matrix will be diagonally dominant
-        d = generate_random_dtype_array((n,), dtype) + 2
-    else:
-        # diagonal d should always be real.
-        # for complex add 4 so it will be dominant
-        d = (generate_random_dtype_array((n,), ddtype) + 4)
+
+    # diagonal d should always be real.
+    # add 4 to d so it will be dominant for all dtypes
+    d = generate_random_dtype_array((n,), ddtype) + 4
     # diagonal e may be real or complex.
     e = generate_random_dtype_array((n-1,), dtype)
 
-    # cast diagonals together into matrix
+    # assemble diagonals together into matrix
     A = np.diag(d) + np.diag(e, -1) + np.diag(np.conj(e), 1)
     # store a copy of diagonals to later verify
     diag_cpy = [d.copy(), e.copy()]
@@ -1739,16 +1736,17 @@ def test_pttrf_pttrs_errors_singular_nonSPD(ddtype, dtype):
     e = generate_random_dtype_array((n-1,), dtype)
     # test that singular (row of all zeroes) matrix fails via info
     d[0] = 0
+    e[0] = 0
     _d, _e, info = pttrf(d, e)
     assert_equal(_d[info - 1], 0,
-                 err_msg="?pttrf: _d[info-1] is {}, not the illegal value :0."
+                 "?pttrf: _d[info-1] is {}, not the illegal value :0."
                  .format(_d[info - 1]))
 
     # test with non-spd matrix
     d = generate_random_dtype_array((n,), ddtype)
     _d, _e, info = pttrf(d, e)
     assert np.linalg.norm(d[info-1]) < (2 * np.linalg.norm(e[info-1])), \
-        "idx {} of d should < e but are: {}, {} " \
+        "d{} shouldn't be positive definite, (d should < e), but is: {}, {} " \
         .format(info, np.linalg.norm(d[info-1]), np.linalg.norm(e[info-1]))
 
 
