@@ -2322,16 +2322,18 @@ def gttrf_to_lu(n, dtype, dlf, df, duf, du2f, ipiv):
                          + list(zip(COMPLEX_DTYPES,
                                     ["C"]*len(COMPLEX_DTYPES))))
 @pytest.mark.parametrize("fact,dl_d_du_lambda",
-                         [("F", lambda dl, d, du: get_lapack_funcs('gttrf',
-                                                                   dtype=d.dtype)(dl, d, du)),
+                         [("F",
+                           lambda dl,
+                           d, du: get_lapack_funcs('gttrf',
+                                                   dtype=d.dtype)(dl, d, du)),
                           ("N", lambda dl, d, du: (None, None, None, None,
                                                    None, None))])
 def test_gtsvx(dtype, trans, fact, dl_d_du_lambda):
     """
-    This test uses ?gtsvx to solve a random Ax=b system for each dtype.
+    Thess tests uses ?gtsvx to solve a random Ax=b system for each dtype.
     It tests that the outputs define an LU matrix, that inputs are unmodified,
     transposal options, incompatible shapes, singular matrices, and
-    singular factorizations. It parametrizes DTYPES and the fact value along
+    singular factorizations. It parametrizes DTYPES and the 'fact' value along
     with the fact related inputs.
     """
     np.random.seed(42)
@@ -2377,7 +2379,6 @@ def test_gtsvx(dtype, trans, fact, dl_d_du_lambda):
 
     # assert that the outputs are of correct type or shape
     # rcond should be a scalar
-
     assert_(hasattr(rcond, "__len__") is not True,
             "rcond should be scalar but is {}".format(rcond))
     # ferr should be length of # of cols in x
@@ -2387,6 +2388,48 @@ def test_gtsvx(dtype, trans, fact, dl_d_du_lambda):
     assert_(berr.shape[0] == b.shape[1], "berr.shape is {} but shoud be {},"
             .format(berr.shape[0], b.shape[1]))
 
+
+@pytest.mark.parametrize("dtype,trans", list(zip(DTYPES, ["N"]*len(DTYPES)))
+                         + list(zip(REAL_DTYPES, ["T"]*len(REAL_DTYPES)))
+                         + list(zip(COMPLEX_DTYPES,
+                                    ["C"]*len(COMPLEX_DTYPES))))
+@pytest.mark.parametrize("fact,dl_d_du_lambda",
+                         [("F",
+                           lambda dl,
+                           d,
+                           du: get_lapack_funcs('gttrf', dtype=d.dtype)(dl,
+                                                                        d,
+                                                                        du)),
+                          ("N", lambda dl, d, du: (None, None, None, None,
+                                                   None, None))])
+def test_gtsvx_error_singular(dtype, trans, fact, dl_d_du_lambda):
+    np.random.seed(42)
+    # set test tolerance appropriate for dtype
+    rtol = 250 * np.finfo(dtype).eps
+    atol = 100 * np.finfo(dtype).eps
+    # obtain routine
+    gtsvx = get_lapack_funcs('gtsvx', dtype=dtype)
+    # Generate random tridiagonal matrix A
+    n = 10
+    dl = generate_random_dtype_array((n-1,), dtype=dtype)
+    d = generate_random_dtype_array((n,), dtype=dtype)
+    du = generate_random_dtype_array((n-1,), dtype=dtype)
+    A = np.diag(dl, -1) + np.diag(d) + np.diag(du, 1)
+    # generate random solution x
+    x = generate_random_dtype_array((n, 2), dtype=dtype)
+    # create b from x for equation Ax=b
+    if trans == 'N':
+        b = A @ x
+    else:
+        b = (A.conj().T) @ x
+
+    # determine dlf, df, duf, du2f, and IPIV from lambda expression
+
+    dlf_, df_, duf_, du2f_, ipiv_, info_lambda = dl_d_du_lambda(dl, d, du)
+
+    gtsvx_out = gtsvx(dl, d, du, b, fact=fact, trans=trans, dlf=dlf_, df=df_,
+                      duf=duf_, du2=du2f_, ipiv=ipiv_)
+    dlf, df, duf, du2f, ipiv, x_soln, rcond, ferr, berr, info = gtsvx_out
     # test with singular matrix
     # no need to test with fact "F" since ?gttrf already tests for these.
     if fact == "N":
@@ -2401,9 +2444,7 @@ def test_gtsvx(dtype, trans, fact, dl_d_du_lambda):
         gtsvx_out = gtsvx(dl, d, du, b)
         dlf, df, duf, du2f, ipiv, x_soln, rcond, ferr, berr, info = gtsvx_out
         # test for the singular matrix.
-        assert_(d[info - 1] == 0,
-                "?gtsvx: d[info-1] is {}, not the illegal value"
-                .format(d[info - 1]))
+        assert info > 0, "info should be > 0 for singular matrix"
 
     elif fact == 'F':
         # assuming that a singular factorization is input
@@ -2415,10 +2456,69 @@ def test_gtsvx(dtype, trans, fact, dl_d_du_lambda):
                           du2=du2f_, ipiv=ipiv_)
         dlf, df, duf, du2f, ipiv, x_soln, rcond, ferr, berr, info = gtsvx_out
         # info should not be zero and should provide index of illegal value
-        assert_(0 <= info < n, "incorrect info for singular matrix")
-        assert_(df_[info - 1] == 0,
-                "?gtsvx: df_[info-1] is {}, not the illegal value"
-                .format(df_[info - 1]))
+        assert 0 < info <= n, "incorrect info for singular matrix"
+        assert info > 0, "info should be > 0 for singular matrix"
+
+
+@pytest.mark.parametrize("dtype,trans", list(zip(DTYPES, ["N"]*len(DTYPES)))
+                         + list(zip(REAL_DTYPES, ["T"]*len(REAL_DTYPES)))
+                         + list(zip(COMPLEX_DTYPES,
+                                    ["C"]*len(COMPLEX_DTYPES))))
+@pytest.mark.parametrize("fact,dl_d_du_lambda",
+                         [("F",
+                           lambda dl,
+                           d,
+                           du: get_lapack_funcs('gttrf', dtype=d.dtype)(dl,
+                                                                        d,
+                                                                        du)),
+                          ("N", lambda dl, d, du: (None, None, None, None,
+                                                   None, None))])
+def test_gtsvx_error_incompatible_size(dtype, trans, fact, dl_d_du_lambda):
+    np.random.seed(42)
+    # obtain routine
+    gtsvx = get_lapack_funcs('gtsvx', dtype=dtype)
+    # Generate random tridiagonal matrix A
+    n = 10
+    dl = generate_random_dtype_array((n-1,), dtype=dtype)
+    d = generate_random_dtype_array((n,), dtype=dtype)
+    du = generate_random_dtype_array((n-1,), dtype=dtype)
+    A = np.diag(dl, -1) + np.diag(d) + np.diag(du, 1)
+    # generate random solution x
+    x = generate_random_dtype_array((n, 2), dtype=dtype)
+    # create b from x for equation Ax=b
+    if trans == 'N':
+        b = A @ x
+    else:
+        b = (A.conj().T) @ x
+    # determine dlf, df, duf, du2f, and IPIV from lambda expression
+
+    dlf_, df_, duf_, du2f_, ipiv_, info_lambda = dl_d_du_lambda(dl, d, du)
+    if fact == "N":
+        assert_raises(ValueError, gtsvx, dl[:-1], d, du, b,
+                      fact=fact, trans=trans, dlf=dlf_, df=df_,
+                      duf=duf_, du2=du2f_, ipiv=ipiv_)
+        assert_raises(ValueError, gtsvx, dl, d[:-1], du, b,
+                      fact=fact, trans=trans, dlf=dlf_, df=df_,
+                      duf=duf_, du2=du2f_, ipiv=ipiv_)
+        assert_raises(ValueError, gtsvx, dl, d, du[:-1], b,
+                      fact=fact, trans=trans, dlf=dlf_, df=df_,
+                      duf=duf_, du2=du2f_, ipiv=ipiv_)
+        assert_raises(ValueError, gtsvx, dl, d, du, b[:-1],
+                      fact=fact, trans=trans, dlf=dlf_, df=df_,
+                      duf=duf_, du2=du2f_, ipiv=ipiv_)
+    else:
+        assert_raises(ValueError, gtsvx, dl, d, du, b,
+                      fact=fact, trans=trans, dlf=dlf_[:-1], df=df_,
+                      duf=duf_, du2=du2f_, ipiv=ipiv_)
+        assert_raises(ValueError, gtsvx, dl, d, du, b,
+                      fact=fact, trans=trans, dlf=dlf_, df=df_[:-1],
+                      duf=duf_, du2=du2f_, ipiv=ipiv_)
+        assert_raises(ValueError, gtsvx, dl, d, du, b,
+                      fact=fact, trans=trans, dlf=dlf_, df=df_,
+                      duf=duf_[:-1], du2=du2f_, ipiv=ipiv_)
+        assert_raises(ValueError, gtsvx, dl, d, du, b,
+                      fact=fact, trans=trans, dlf=dlf_, df=df_,
+                      duf=duf_, du2=du2f_[:-1], ipiv=ipiv_)
 
 
 @pytest.mark.parametrize("du,d,dl,b,x",
