@@ -6,10 +6,10 @@ import numpy as np
 from numpy import array
 from numpy.testing import (assert_array_almost_equal, assert_array_equal,
                            assert_allclose,
-                           assert_equal, assert_, assert_array_less)
+                           assert_equal, assert_, assert_array_less,
+                           suppress_warnings)
 from pytest import raises as assert_raises
 
-from scipy._lib._numpy_compat import suppress_warnings
 from scipy.fft import fft
 from scipy.signal import windows, get_window, resample, hann as dep_hann
 

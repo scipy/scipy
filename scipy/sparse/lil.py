@@ -11,7 +11,6 @@ from bisect import bisect_left
 
 import numpy as np
 
-from scipy._lib.six import xrange, zip
 from .base import spmatrix, isspmatrix
 from ._index import IndexMixin, INT_TYPES, _broadcast_arrays
 from .sputils import (getdtype, isshape, isscalarlike, upcast_scalar,
@@ -97,7 +96,7 @@ class lil_matrix(spmatrix, IndexMixin):
                 A = arg1.tolil()
 
             if dtype is not None:
-                A = A.astype(dtype)
+                A = A.astype(dtype, copy=False)
 
             self._shape = check_shape(A.shape)
             self.dtype = A.dtype
@@ -231,7 +230,7 @@ class lil_matrix(spmatrix, IndexMixin):
         return self.dtype.type(v)
 
     def _get_sliceXint(self, row, col):
-        row = xrange(*row.indices(self.shape[0]))
+        row = range(*row.indices(self.shape[0]))
         return self._get_row_ranges(row, slice(col, col+1))
 
     def _get_arrayXint(self, row, col):
@@ -241,7 +240,7 @@ class lil_matrix(spmatrix, IndexMixin):
         return self._get_row_ranges((row,), col)
 
     def _get_sliceXslice(self, row, col):
-        row = xrange(*row.indices(self.shape[0]))
+        row = range(*row.indices(self.shape[0]))
         return self._get_row_ranges(row, col)
 
     def _get_arrayXslice(self, row, col):
@@ -280,14 +279,14 @@ class lil_matrix(spmatrix, IndexMixin):
 
         Parameters
         ----------
-        rows : sequence or xrange
-            Rows indexed. If xrange, must be within valid bounds.
+        rows : sequence or range
+            Rows indexed. If range, must be within valid bounds.
         col_slice : slice
             Columns indexed
 
         """
         j_start, j_stop, j_stride = col_slice.indices(self.shape[1])
-        col_range = xrange(j_start, j_stop, j_stride)
+        col_range = range(j_start, j_stop, j_stride)
         nj = len(col_range)
         new = lil_matrix((len(rows), nj), dtype=self.dtype)
 
@@ -364,7 +363,7 @@ class lil_matrix(spmatrix, IndexMixin):
         new = lil_matrix(self.shape, dtype=self.dtype)
         # This is ~14x faster than calling deepcopy() on rows and data.
         _csparsetools.lil_get_row_ranges(M, N, self.rows, self.data,
-                                         new.rows, new.data, xrange(M),
+                                         new.rows, new.data, range(M),
                                          0, N, 1, N)
         return new
 

@@ -6,8 +6,7 @@ from __future__ import division, print_function, absolute_import
 import warnings
 import numpy as np
 from numpy.linalg import LinAlgError
-from scipy._lib.six import xrange
-from scipy.linalg import get_blas_funcs, get_lapack_funcs
+from scipy.linalg import get_blas_funcs
 from .utils import make_system
 
 from ._gcrotmk import _fgmres
@@ -149,7 +148,7 @@ def lgmres(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
     b_norm = nrm2(b)
     ptol_max_factor = 1.0
 
-    for k_outer in xrange(maxiter):
+    for k_outer in range(maxiter):
         r_outer = matvec(x) - b
 
         # -- callback

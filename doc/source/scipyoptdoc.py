@@ -36,13 +36,7 @@ from numpydoc.numpydoc import mangle_docstrings
 from docutils.parsers.rst import Directive
 from docutils.statemachine import ViewList
 from sphinx.domains.python import PythonDomain
-from scipy._lib._util import getargspec_no_self
-
-
-if sys.version_info[0] >= 3:
-    sixu = lambda s: s
-else:
-    sixu = lambda s: unicode(s, 'unicode_escape')
+from scipy._lib._util import getfullargspec_no_self
 
 
 def setup(app):
@@ -85,12 +79,12 @@ def wrap_mangling_directive(base_directive):
             # Interface function
             name = self.arguments[0].strip()
             obj = _import_object(name)
-            args, varargs, keywords, defaults = getargspec_no_self(obj)
+            args, varargs, keywords, defaults = getfullargspec_no_self(obj)[:4]
 
             # Implementation function
             impl_name = self.options['impl']
             impl_obj = _import_object(impl_name)
-            impl_args, impl_varargs, impl_keywords, impl_defaults = getargspec_no_self(impl_obj)
+            impl_args, impl_varargs, impl_keywords, impl_defaults = getfullargspec_no_self(impl_obj)[:4]
 
             # Format signature taking implementation into account
             args = list(args)

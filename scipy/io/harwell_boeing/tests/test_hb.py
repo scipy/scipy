@@ -1,10 +1,6 @@
 from __future__ import division, print_function, absolute_import
 
-import sys
-if sys.version_info[0] >= 3:
-    from io import StringIO
-else:
-    from StringIO import StringIO
+from io import StringIO
 import tempfile
 
 import numpy as np

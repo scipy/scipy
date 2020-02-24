@@ -23,15 +23,13 @@ from __future__ import division, print_function, absolute_import
 import warnings
 
 # SciPy imports.
-from scipy._lib.six import callable, string_types
 from scipy import linalg, special
 from scipy.special import logsumexp
-from scipy._lib._numpy_compat import cov
 from scipy._lib._util import check_random_state
 
 from numpy import (asarray, atleast_2d, reshape, zeros, newaxis, dot, exp, pi,
                    sqrt, ravel, power, atleast_1d, squeeze, sum, transpose,
-                   ones)
+                   ones, cov)
 import numpy as np
 
 # Local imports.
@@ -447,13 +445,15 @@ class gaussian_kde(object):
             The number of samples to draw.  If not provided, then the size is
             the same as the effective number of samples in the underlying
             dataset.
-        seed : None or int or `np.random.RandomState`, optional
-            If `seed` is None, random variates are drawn by the RandomState
-            singleton used by np.random.
-            If `seed` is an int, a new `np.random.RandomState` instance is used,
-            seeded with seed.
-            If `seed` is already a `np.random.RandomState instance`, then that
-            `np.random.RandomState` instance is used.
+        seed : {None, int, `~np.random.RandomState`, `~np.random.Generator`}, optional
+            This parameter defines the object to use for drawing random
+            variates.
+            If `seed` is `None` the `~np.random.RandomState` singleton is used.
+            If `seed` is an int, a new ``RandomState`` instance is used, seeded
+            with seed.
+            If `seed` is already a ``RandomState`` or ``Generator`` instance,
+            then that object is used.
+            Default is None.
             Specify `seed` for reproducible drawing of random variates.
 
         Returns
@@ -551,7 +551,7 @@ class gaussian_kde(object):
             self.covariance_factor = self.scotts_factor
         elif bw_method == 'silverman':
             self.covariance_factor = self.silverman_factor
-        elif np.isscalar(bw_method) and not isinstance(bw_method, string_types):
+        elif np.isscalar(bw_method) and not isinstance(bw_method, str):
             self._bw_method = 'use constant'
             self.covariance_factor = lambda: bw_method
         elif callable(bw_method):

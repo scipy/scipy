@@ -5,14 +5,12 @@ from __future__ import division, print_function, absolute_import
 
 import numpy as np
 from numpy.testing import (assert_almost_equal, assert_allclose,
-                           assert_array_almost_equal)
+                           assert_array_almost_equal, suppress_warnings)
 import pytest
 from numpy import sin, cos, sinh, cosh, exp, inf, nan, r_, pi
 
 from scipy.special import spherical_jn, spherical_yn, spherical_in, spherical_kn
 from scipy.integrate import quad
-
-from scipy._lib._numpy_compat import suppress_warnings
 
 
 class TestSphericalJn:

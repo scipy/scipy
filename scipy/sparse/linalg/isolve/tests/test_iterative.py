@@ -8,10 +8,9 @@ import platform
 import numpy as np
 
 from numpy.testing import (assert_equal, assert_array_equal,
-     assert_, assert_allclose)
+     assert_, assert_allclose, suppress_warnings)
 import pytest
 from pytest import raises as assert_raises
-from scipy._lib._numpy_compat import suppress_warnings
 
 from numpy import zeros, arange, array, ones, eye, iscomplexobj
 from scipy.linalg import norm
@@ -246,7 +245,7 @@ def check_precond_dummy(solver, case):
     A = case.A
 
     M,N = A.shape
-    D = spdiags([1.0/A.diagonal()], [0], M, N)
+    spdiags([1.0/A.diagonal()], [0], M, N)
 
     b = case.b
     x0 = 0*b
@@ -339,7 +338,7 @@ def test_gmres_basic():
     A = np.vander(np.arange(10) + 1)[:, ::-1]
     b = np.zeros(10)
     b[0] = 1
-    x = np.linalg.solve(A, b)
+    np.linalg.solve(A, b)
 
     with suppress_warnings() as sup:
         sup.filter(DeprecationWarning, ".*called without specifying.*")

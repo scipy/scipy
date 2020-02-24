@@ -4,8 +4,6 @@ from __future__ import division, print_function, absolute_import
 
 import numpy as np
 
-from scipy._lib.six import string_types
-
 from . import BPoly, PPoly
 from .polyint import _isscalar
 from scipy._lib._util import _asarray_validated
@@ -781,7 +779,7 @@ class CubicSpline(CubicHermiteSpline):
             y casted to complex dtype if one of the boundary conditions has
             complex dtype.
         """
-        if isinstance(bc_type, string_types):
+        if isinstance(bc_type, str):
             if bc_type == 'periodic':
                 if not np.allclose(y[0], y[-1], rtol=1e-15, atol=1e-15):
                     raise ValueError(
@@ -803,7 +801,7 @@ class CubicSpline(CubicHermiteSpline):
 
         validated_bc = []
         for bc in bc_type:
-            if isinstance(bc, string_types):
+            if isinstance(bc, str):
                 if bc == 'clamped':
                     validated_bc.append((1, np.zeros(expected_deriv_shape)))
                 elif bc == 'natural':

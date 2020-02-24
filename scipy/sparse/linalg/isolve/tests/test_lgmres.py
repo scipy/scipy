@@ -3,7 +3,8 @@
 
 from __future__ import division, print_function, absolute_import
 
-from numpy.testing import assert_, assert_allclose, assert_equal
+from numpy.testing import (assert_, assert_allclose, assert_equal,
+                           suppress_warnings)
 
 import pytest
 from platform import python_implementation
@@ -17,7 +18,6 @@ from scipy.sparse.linalg.interface import LinearOperator
 from scipy.sparse.linalg import splu
 from scipy.sparse.linalg.isolve import lgmres, gmres
 
-from scipy._lib._numpy_compat import suppress_warnings
 
 Am = csr_matrix(array([[-2, 1, 0, 0, 0, 9],
                        [1, -2, 1, 0, 5, 0],

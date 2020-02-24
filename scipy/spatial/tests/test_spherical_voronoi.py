@@ -4,13 +4,13 @@ import itertools
 from numpy.testing import (assert_equal,
                            assert_almost_equal,
                            assert_array_equal,
-                           assert_array_almost_equal)
+                           assert_array_almost_equal,
+                           suppress_warnings)
 import pytest
 from pytest import raises as assert_raises
 from pytest import warns as assert_warns
 from scipy.spatial import SphericalVoronoi, distance
 from scipy.spatial import _spherical_voronoi as spherical_voronoi
-from scipy._lib._numpy_compat import suppress_warnings
 from scipy.spatial.transform import Rotation
 from scipy.optimize import linear_sum_assignment
 
@@ -76,14 +76,14 @@ class TestSphericalVoronoi(object):
         sv_origin = SphericalVoronoi(self.points)
         center = np.array([1, 1, 1])
         sv_translated = SphericalVoronoi(self.points + center, center=center)
-        assert_array_equal(sv_origin.regions, sv_translated.regions)
+        assert_equal(sv_origin.regions, sv_translated.regions)
         assert_array_almost_equal(sv_origin.vertices + center,
                                   sv_translated.vertices)
 
     def test_vertices_regions_scaling_invariance(self):
         sv_unit = SphericalVoronoi(self.points)
         sv_scaled = SphericalVoronoi(self.points * 2, 2)
-        assert_array_equal(sv_unit.regions, sv_scaled.regions)
+        assert_equal(sv_unit.regions, sv_scaled.regions)
         assert_array_almost_equal(sv_unit.vertices * 2,
                                   sv_scaled.vertices)
 
@@ -96,13 +96,13 @@ class TestSphericalVoronoi(object):
 
     def test_old_radius_api_warning(self):
         with assert_warns(DeprecationWarning):
-            sv = SphericalVoronoi(self.points, None)
+            SphericalVoronoi(self.points, None)
 
     def test_sort_vertices_of_regions(self):
         sv = SphericalVoronoi(self.points)
         unsorted_regions = sv.regions
         sv.sort_vertices_of_regions()
-        assert_array_equal(sorted(sv.regions), sorted(unsorted_regions))
+        assert_equal(sorted(sv.regions), sorted(unsorted_regions))
 
     def test_sort_vertices_of_regions_flattened(self):
         expected = sorted([[0, 6, 5, 2, 3], [2, 3, 10, 11, 8, 7], [0, 6, 4, 1],
@@ -148,20 +148,20 @@ class TestSphericalVoronoi(object):
         # related to Issue# 7046
         self.degenerate = np.concatenate((self.points, self.points))
         with assert_raises(ValueError):
-            sv = spherical_voronoi.SphericalVoronoi(self.degenerate)
+            spherical_voronoi.SphericalVoronoi(self.degenerate)
 
     def test_incorrect_radius_handling(self):
         # an exception should be raised if the radius provided
         # cannot possibly match the input generators
         with assert_raises(ValueError):
-            sv = spherical_voronoi.SphericalVoronoi(self.points,
+            spherical_voronoi.SphericalVoronoi(self.points,
                                                     radius=0.98)
 
     def test_incorrect_center_handling(self):
         # an exception should be raised if the center provided
         # cannot possibly match the input generators
         with assert_raises(ValueError):
-            sv = spherical_voronoi.SphericalVoronoi(self.points,
+            spherical_voronoi.SphericalVoronoi(self.points,
                                                     center=[0.1, 0, 0])
 
     def test_single_hemisphere_handling(self):
@@ -178,7 +178,7 @@ class TestSphericalVoronoi(object):
         # rank-1 input cannot be triangulated
         points = np.array([[-1, 0, 0], [1, 0, 0]])
         with pytest.raises(ValueError, match="Rank of input points"):
-            sv = spherical_voronoi.SphericalVoronoi(points)
+            spherical_voronoi.SphericalVoronoi(points)
 
     @pytest.mark.parametrize("n", [8, 15, 21])
     @pytest.mark.parametrize("radius", [0.5, 1, 2])

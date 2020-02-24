@@ -39,8 +39,9 @@ import numpy as np
 from numpy import array, asarray, float64, int32, zeros
 from . import _lbfgsb
 from .optimize import (MemoizeJac, OptimizeResult,
-                       _check_unknown_options, wrap_function,
-                       _approx_fprime_helper)
+                       _check_unknown_options, _prepare_scalar_function)
+from ._constraints import old_bound_to_new
+
 from scipy.sparse.linalg import LinearOperator
 
 __all__ = ['fmin_l_bfgs_b', 'LbfgsInvHessProduct']
@@ -211,7 +212,8 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
 def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
                      disp=None, maxcor=10, ftol=2.2204460492503131e-09,
                      gtol=1e-5, eps=1e-8, maxfun=15000, maxiter=15000,
-                     iprint=-1, callback=None, maxls=20, **unknown_options):
+                     iprint=-1, callback=None, maxls=20,
+                     finite_diff_rel_step=None, **unknown_options):
     """
     Minimize a scalar function of one or more variables using the L-BFGS-B
     algorithm.
@@ -234,8 +236,9 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
         The iteration will stop when ``max{|proj g_i | i = 1, ..., n}
         <= gtol`` where ``pg_i`` is the i-th component of the
         projected gradient.
-    eps : float
-        Step size used for numerical approximation of the Jacobian.
+    eps : float or ndarray
+        If `jac is None` the absolute step size used for numerical
+        approximation of the jacobian via forward differences.
     maxfun : int
         Maximum number of function evaluations.
     maxiter : int
@@ -252,6 +255,13 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
         current parameter vector.
     maxls : int, optional
         Maximum number of line search steps (per iteration). Default is 20.
+    finite_diff_rel_step : None or array_like, optional
+        If `jac in ['2-point', '3-point', 'cs']` the relative step size to
+        use for numerical approximation of the jacobian. The absolute step
+        size is computed as ``h = rel_step * sign(x0) * max(1, abs(x0))``,
+        possibly adjusted to fit into the bounds. For ``method='3-point'``
+        the sign of `h` is ignored. If None (default) then step is selected
+        automatically.
 
     Notes
     -----
@@ -264,7 +274,6 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
     """
     _check_unknown_options(unknown_options)
     m = maxcor
-    epsilon = eps
     pgtol = gtol
     factr = ftol / np.finfo(float).eps
 
@@ -275,8 +284,15 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
         bounds = [(None, None)] * n
     if len(bounds) != n:
         raise ValueError('length of x0 != length of bounds')
+
     # unbounded variables must use None, not +-inf, for optimizer to work properly
     bounds = [(None if l == -np.inf else l, None if u == np.inf else u) for l, u in bounds]
+    # LBFGSB is sent 'old-style' bounds, 'new-style' bounds are required by
+    # approx_derivative and ScalarFunction
+    new_bounds = old_bound_to_new(bounds)
+    # initial vector must lie within the bounds. Otherwise ScalarFunction and
+    # approx_derivative will cause problems
+    x0 = np.clip(x0, new_bounds[0], new_bounds[1])
 
     if disp is not None:
         if disp == 0:
@@ -284,17 +300,11 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
         else:
             iprint = disp
 
-    n_function_evals, fun = wrap_function(fun, ())
-    if jac is None:
-        def func_and_grad(x):
-            f = fun(x, *args)
-            g = _approx_fprime_helper(x, fun, epsilon, args=args, f0=f)
-            return f, g
-    else:
-        def func_and_grad(x):
-            f = fun(x, *args)
-            g = jac(x, *args)
-            return f, g
+    sf = _prepare_scalar_function(fun, x0, jac=jac, args=args, epsilon=eps,
+                                  bounds=new_bounds,
+                                  finite_diff_rel_step=finite_diff_rel_step)
+
+    func_and_grad = sf.fun_and_grad
 
     nbd = zeros(n, int32)
     low_bnd = zeros(n, float64)
@@ -351,7 +361,7 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
 
             if n_iterations >= maxiter:
                 task[:] = 'STOP: TOTAL NO. of ITERATIONS REACHED LIMIT'
-            elif n_function_evals[0] > maxfun:
+            elif sf.nfev > maxfun:
                 task[:] = ('STOP: TOTAL NO. of f AND g EVALUATIONS '
                            'EXCEEDS LIMIT')
         else:
@@ -360,7 +370,7 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
     task_str = task.tostring().strip(b'\x00').strip()
     if task_str.startswith(b'CONV'):
         warnflag = 0
-    elif n_function_evals[0] > maxfun or n_iterations >= maxiter:
+    elif sf.nfev > maxfun or n_iterations >= maxiter:
         warnflag = 1
     else:
         warnflag = 2
@@ -377,7 +387,8 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
     n_corrs = min(n_bfgs_updates, maxcor)
     hess_inv = LbfgsInvHessProduct(s[:n_corrs], y[:n_corrs])
 
-    return OptimizeResult(fun=f, jac=g, nfev=n_function_evals[0],
+    return OptimizeResult(fun=f, jac=g, nfev=sf.nfev,
+                          njev=sf.ngev,
                           nit=n_iterations, status=warnflag, message=task_str,
                           x=x, success=(warnflag == 0), hess_inv=hess_inv)
 

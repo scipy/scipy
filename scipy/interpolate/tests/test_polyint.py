@@ -1,7 +1,7 @@
 from __future__ import division, print_function, absolute_import
 
 import warnings
-
+import io
 import numpy as np
 
 from numpy.testing import (
@@ -15,8 +15,6 @@ from scipy.interpolate import (
     approximate_taylor_polynomial, CubicHermiteSpline, pchip,
     PchipInterpolator, pchip_interpolate, Akima1DInterpolator, CubicSpline,
     make_interp_spline)
-
-from scipy._lib.six import xrange
 
 
 def check_shape(interpolator_cls, x_shape, y_shape, deriv_shape=None, axis=0,
@@ -175,14 +173,14 @@ class TestKrogh(object):
     def test_derivatives(self):
         P = KroghInterpolator(self.xs,self.ys)
         D = P.derivatives(self.test_xs)
-        for i in xrange(D.shape[0]):
+        for i in range(D.shape[0]):
             assert_almost_equal(self.true_poly.deriv(i)(self.test_xs),
                                 D[i])
 
     def test_low_derivatives(self):
         P = KroghInterpolator(self.xs,self.ys)
         D = P.derivatives(self.test_xs,len(self.xs)+2)
-        for i in xrange(D.shape[0]):
+        for i in range(D.shape[0]):
             assert_almost_equal(self.true_poly.deriv(i)(self.test_xs),
                                 D[i])
 
@@ -190,12 +188,12 @@ class TestKrogh(object):
         P = KroghInterpolator(self.xs,self.ys)
         m = 10
         r = P.derivatives(self.test_xs,m)
-        for i in xrange(m):
+        for i in range(m):
             assert_almost_equal(P.derivative(self.test_xs,i),r[i])
 
     def test_high_derivative(self):
         P = KroghInterpolator(self.xs,self.ys)
-        for i in xrange(len(self.xs),2*len(self.xs)):
+        for i in range(len(self.xs), 2*len(self.xs)):
             assert_almost_equal(P.derivative(self.test_xs,i),
                                 np.zeros(len(self.test_xs)))
 
@@ -215,7 +213,7 @@ class TestKrogh(object):
         xs = [0, 1, 2]
         ys = np.array([[0,1],[1,0],[2,1]])
         P = KroghInterpolator(xs,ys)
-        Pi = [KroghInterpolator(xs,ys[:,i]) for i in xrange(ys.shape[1])]
+        Pi = [KroghInterpolator(xs,ys[:,i]) for i in range(ys.shape[1])]
         test_xs = np.linspace(-1,3,100)
         assert_almost_equal(P(test_xs),
                 np.rollaxis(np.asarray([p(test_xs) for p in Pi]),-1))
@@ -298,7 +296,7 @@ class TestTaylor(object):
     def test_exponential(self):
         degree = 5
         p = approximate_taylor_polynomial(np.exp, 0, degree, 1, 15)
-        for i in xrange(degree+1):
+        for i in range(degree+1):
             assert_almost_equal(p(0),1)
             p = p.deriv()
         assert_almost_equal(p(0),0)
@@ -335,7 +333,7 @@ class TestBarycentric(object):
         ys = np.array([[0, 1], [1, 0], [2, 1]])
         BI = BarycentricInterpolator
         P = BI(xs, ys)
-        Pi = [BI(xs, ys[:, i]) for i in xrange(ys.shape[1])]
+        Pi = [BI(xs, ys[:, i]) for i in range(ys.shape[1])]
         test_xs = np.linspace(-1, 3, 100)
         assert_almost_equal(P(test_xs),
                 np.rollaxis(np.asarray([p(test_xs) for p in Pi]), -1))
@@ -411,7 +409,6 @@ class TestPCHIP(object):
         # http://nag.com/numeric/cl/nagdoc_cl25/html/e01/e01bec.html
         # suggested in gh-5326 as a smoke test for the way the derivatives
         # are computed (see also gh-3453)
-        from scipy._lib.six import StringIO
         dataStr = '''
           7.99   0.00000E+0
           8.09   0.27643E-4
@@ -423,7 +420,7 @@ class TestPCHIP(object):
          15.00   0.99992E+0
          20.00   0.99999E+0
         '''
-        data = np.loadtxt(StringIO(dataStr))
+        data = np.loadtxt(io.StringIO(dataStr))
         pch = pchip(data[:,0], data[:,1])
 
         resultStr = '''
@@ -439,7 +436,7 @@ class TestPCHIP(object):
           18.7990       1.0000
           20.0000       1.0000
         '''
-        result = np.loadtxt(StringIO(resultStr))
+        result = np.loadtxt(io.StringIO(resultStr))
         assert_allclose(result[:,1], pch(result[:,0]), rtol=0., atol=5e-5)
 
     def test_endslopes(self):

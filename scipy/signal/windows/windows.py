@@ -7,7 +7,6 @@ import warnings
 
 import numpy as np
 from scipy import linalg, special, fft as sp_fft
-from scipy._lib.six import string_types
 
 __all__ = ['boxcar', 'triang', 'parzen', 'bohman', 'blackman', 'nuttall',
            'blackmanharris', 'flattop', 'bartlett', 'hanning', 'barthann',
@@ -2101,7 +2100,7 @@ def get_window(window, Nx, fftbins=True):
             winstr = window[0]
             if len(window) > 1:
                 args = window[1:]
-        elif isinstance(window, string_types):
+        elif isinstance(window, str):
             if window in _needs_param:
                 raise ValueError("The '" + window + "' window needs one or "
                                  "more parameters -- pass a tuple.")

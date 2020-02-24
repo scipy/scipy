@@ -1,11 +1,10 @@
 from __future__ import division, print_function, absolute_import
 
 import os
-import platform
 
 import numpy as np
 from numpy import arccosh, arcsinh, arctanh
-from scipy._lib._numpy_compat import suppress_warnings
+from numpy.testing import suppress_warnings
 import pytest
 
 from scipy.special import (

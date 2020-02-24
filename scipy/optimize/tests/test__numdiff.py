@@ -199,6 +199,20 @@ class TestApproxDerivativesDense(object):
         assert_allclose(jac_diff_3, jac_true, rtol=1e-9)
         assert_allclose(jac_diff_4, jac_true, rtol=1e-12)
 
+    def test_scalar_scalar_abs_step(self):
+        # can approx_derivative use abs_step?
+        x0 = 1.0
+        jac_diff_2 = approx_derivative(self.fun_scalar_scalar, x0,
+                                       method='2-point', abs_step=1.49e-8)
+        jac_diff_3 = approx_derivative(self.fun_scalar_scalar, x0,
+                                       abs_step=1.49e-8)
+        jac_diff_4 = approx_derivative(self.fun_scalar_scalar, x0,
+                                       method='cs', abs_step=1.49e-8)
+        jac_true = self.jac_scalar_scalar(x0)
+        assert_allclose(jac_diff_2, jac_true, rtol=1e-6)
+        assert_allclose(jac_diff_3, jac_true, rtol=1e-9)
+        assert_allclose(jac_diff_4, jac_true, rtol=1e-12)
+
     def test_scalar_vector(self):
         x0 = 0.5
         jac_diff_2 = approx_derivative(self.fun_scalar_vector, x0,
@@ -221,6 +235,20 @@ class TestApproxDerivativesDense(object):
         jac_true = self.jac_vector_scalar(x0)
         assert_allclose(jac_diff_2, jac_true, rtol=1e-6)
         assert_allclose(jac_diff_3, jac_true, rtol=1e-7)
+        assert_allclose(jac_diff_4, jac_true, rtol=1e-12)
+
+    def test_vector_scalar_abs_step(self):
+        # can approx_derivative use abs_step?
+        x0 = np.array([100.0, -0.5])
+        jac_diff_2 = approx_derivative(self.fun_vector_scalar, x0,
+                                       method='2-point', abs_step=1.49e-8)
+        jac_diff_3 = approx_derivative(self.fun_vector_scalar, x0,
+                                       abs_step=1.49e-8, rel_step=np.inf)
+        jac_diff_4 = approx_derivative(self.fun_vector_scalar, x0,
+                                       method='cs', abs_step=1.49e-8)
+        jac_true = self.jac_vector_scalar(x0)
+        assert_allclose(jac_diff_2, jac_true, rtol=1e-6)
+        assert_allclose(jac_diff_3, jac_true, rtol=3e-9)
         assert_allclose(jac_diff_4, jac_true, rtol=1e-12)
 
     def test_vector_vector(self):

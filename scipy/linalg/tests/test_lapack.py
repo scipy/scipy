@@ -24,6 +24,9 @@ from numpy.random import rand, randint, seed
 from scipy.linalg import _flapack as flapack, lapack
 from scipy.linalg import inv, svd, cholesky, solve, ldl, norm
 from scipy.linalg.lapack import _compute_lwork
+from scipy.linalg import qr
+
+import scipy.sparse as sps
 
 try:
     from scipy.linalg import _clapack as clapack
@@ -488,6 +491,141 @@ class TestDlasd4(object):
                         rtol=100*np.finfo(np.float64).eps)
 
 
+class TestTbtrs(object):
+
+    @pytest.mark.parametrize('dtype', DTYPES)
+    def test_nag_example_f07vef_f07vsf(self, dtype):
+        """Test real (f07vef) and complex (f07vsf) examples from NAG
+
+        Examples available from:
+        * https://www.nag.com/numeric/fl/nagdoc_latest/html/f07/f07vef.html
+        * https://www.nag.com/numeric/fl/nagdoc_latest/html/f07/f07vsf.html
+
+        """
+        if dtype in REAL_DTYPES:
+            ab = np.array([[-4.16, 4.78, 6.32, 0.16],
+                           [-2.25, 5.86, -4.82, 0]],
+                          dtype=dtype)
+            b = np.array([[-16.64, -4.16],
+                          [-13.78, -16.59],
+                          [13.10, -4.94],
+                          [-14.14, -9.96]],
+                         dtype=dtype)
+            x_out = np.array([[4, 1],
+                              [-1, -3],
+                              [3, 2],
+                              [2, -2]],
+                             dtype=dtype)
+        elif dtype in COMPLEX_DTYPES:
+            ab = np.array([[-1.94+4.43j, 4.12-4.27j, 0.43-2.66j, 0.44+0.1j],
+                           [-3.39+3.44j, -1.84+5.52j, 1.74 - 0.04j, 0],
+                           [1.62+3.68j, -2.77-1.93j, 0, 0]],
+                          dtype=dtype)
+            b = np.array([[-8.86 - 3.88j, -24.09 - 5.27j],
+                          [-15.57 - 23.41j, -57.97 + 8.14j],
+                          [-7.63 + 22.78j, 19.09 - 29.51j],
+                          [-14.74 - 2.40j, 19.17 + 21.33j]],
+                         dtype=dtype)
+            x_out = np.array([[2j, 1 + 5j],
+                              [1 - 3j, -7 - 2j],
+                              [-4.001887 - 4.988417j, 3.026830 + 4.003182j],
+                              [1.996158 - 1.045105j, -6.103357 - 8.986653j]],
+                             dtype=dtype)
+        else:
+            raise ValueError(f"Datatype {dtype} not understood.")
+
+        tbtrs = get_lapack_funcs(('tbtrs'), dtype=dtype)
+        x, info = tbtrs(ab=ab, b=b, uplo='L')
+        assert_equal(info, 0)
+        assert_allclose(x, x_out, rtol=0, atol=1e-5)
+
+    @pytest.mark.parametrize('dtype,trans',
+                             [(dtype, trans)
+                              for dtype in DTYPES for trans in ['N', 'T', 'C']
+                              if not (trans == 'C' and dtype in REAL_DTYPES)])
+    @pytest.mark.parametrize('uplo', ['U', 'L'])
+    @pytest.mark.parametrize('diag', ['N', 'U'])
+    def test_random_matrices(self, dtype, trans, uplo, diag):
+        seed(1724)
+        # lda, ldb, nrhs, kd are used to specify A and b.
+        # A is of shape lda x ldb with kd super/sub-diagonals
+        # b is of shape ldb x nrhs matrix
+        lda, ldb, nrhs, kd = 4, 4, 3, 2
+        ldab = kd + 1
+
+        # Construct the diagonal and kd super/sub diagonals of A with
+        # the corresponding offsets.
+        band_widths = range(lda, lda - kd - 1, -1)
+        band_offsets = np.arange(ldab) if uplo == 'U' else np.arange(ldab) * -1
+        if dtype in REAL_DTYPES:
+            b = rand(ldb, nrhs).astype(dtype)
+            bands = [rand(width).astype(dtype) for width in band_widths]
+        elif dtype in COMPLEX_DTYPES:
+            b = (rand(ldb, nrhs) + rand(ldb, nrhs) * 1j).astype(dtype)
+            bands = [(rand(width) + rand(width) * 1j).astype(dtype)
+                     for width in band_widths]
+
+        if diag == 'U':  # A must be unit triangular
+            bands[0] = np.ones(lda, dtype=dtype)
+
+        # Construct the diagonal banded matrix A from the bands and offsets.
+        a = sps.diags(bands, band_offsets, format='dia')
+        ab = np.flipud(a.data) if uplo == 'U' else a.data
+
+        tbtrs = get_lapack_funcs('tbtrs', dtype=dtype)
+        x, info = tbtrs(ab=ab, b=b, uplo=uplo, trans=trans, diag=diag)
+        assert_equal(info, 0)
+
+        if trans == 'N':
+            assert_allclose(a @ x, b, rtol=5e-5)
+        elif trans == 'T':
+            assert_allclose(a.T @ x, b, rtol=5e-5)
+        elif trans == 'C':
+            assert_allclose(a.H @ x, b, rtol=5e-5)
+        else:
+            raise ValueError('Invalid trans argument')
+
+    @pytest.mark.parametrize('uplo,trans,diag',
+                             [['U', 'N', 'Invalid'],
+                              ['U', 'Invalid', 'N'],
+                              ['Invalid', 'N', 'N']])
+    def test_invalid_argument_raises_exception(self, uplo, trans, diag):
+        """Test if invalid values of uplo, trans and diag raise exceptions"""
+        # Argument checks occur independently of used datatype.
+        # This mean we must not parameterize all available datatypes.
+        tbtrs = get_lapack_funcs('tbtrs', dtype=np.float)
+        ab = rand(4, 2)
+        b = rand(2, 4)
+        assert_raises(Exception, tbtrs, ab, b, uplo, trans, diag)
+
+    def test_zero_element_in_diagonal(self):
+        """Test if a matrix with a zero diagonal element is singular
+
+        If the i-th diagonal of A is zero, ?tbtrs should return `i` in `info`
+        indicating the provided matrix is singular.
+
+        Note that ?tbtrs requires the matrix A to be stored in banded form.
+        In this form the diagonal corresponds to the last row."""
+        ab = np.ones((3, 4), dtype=float)
+        b = np.ones(4, dtype=float)
+        tbtrs = get_lapack_funcs('tbtrs', dtype=float)
+
+        ab[-1, 3] = 0
+        _, info = tbtrs(ab=ab, b=b, uplo='U')
+        assert_equal(info, 4)
+
+    @pytest.mark.parametrize('ldab,n,ldb,nrhs', [
+                              (5, 5, 0, 5),
+                              (5, 5, 3, 5)
+    ])
+    def test_invalid_matrix_shapes(self, ldab, n, ldb, nrhs):
+        """Test ?tbtrs fails correctly if shapes are invalid."""
+        ab = np.ones((ldab, n), dtype=float)
+        b = np.ones((ldb, nrhs), dtype=float)
+        tbtrs = get_lapack_funcs('tbtrs', dtype=float)
+        assert_raises(Exception, tbtrs, ab, b)
+
+
 def test_lartg():
     for dtype in 'fdFD':
         lartg = get_lapack_funcs('lartg', dtype=dtype)
@@ -631,158 +769,150 @@ def test_sgesdd_lwork_bug_workaround():
 
 
 class TestSytrd(object):
-    def test_sytrd(self):
-        for dtype in REAL_DTYPES:
-            # Assert that a 0x0 matrix raises an error
-            A = np.zeros((0, 0), dtype=dtype)
-            sytrd, sytrd_lwork = \
-                get_lapack_funcs(('sytrd', 'sytrd_lwork'), (A,))
-            assert_raises(ValueError, sytrd, A)
+    @pytest.mark.parametrize('dtype', REAL_DTYPES)
+    def test_sytrd_with_zero_dim_array(self, dtype):
+        # Assert that a 0x0 matrix raises an error
+        A = np.zeros((0, 0), dtype=dtype)
+        sytrd = get_lapack_funcs('sytrd', (A,))
+        assert_raises(ValueError, sytrd, A)
 
-            # Tests for n = 1 currently fail with
-            # ```
-            # ValueError: failed to create intent(cache|hide)|optional array--
-            # must have defined dimensions but got (0,)
-            # ```
-            # This is a NumPy issue
-            # <https://github.com/numpy/numpy/issues/9617>.
-            # TODO Once the minimum NumPy version is past 1.14, test for n=1
+    @pytest.mark.parametrize('dtype', REAL_DTYPES)
+    @pytest.mark.parametrize('n', (1, 3))
+    def test_sytrd(self, dtype, n):
+        A = np.zeros((n, n), dtype=dtype)
 
-            # some upper triangular array
-            n = 3
-            A = np.zeros((n, n), dtype=dtype)
-            A[np.triu_indices_from(A)] = \
-                np.arange(1, n*(n+1)//2+1, dtype=dtype)
+        sytrd, sytrd_lwork = \
+            get_lapack_funcs(('sytrd', 'sytrd_lwork'), (A,))
 
-            # query lwork
-            lwork, info = sytrd_lwork(n)
-            assert_equal(info, 0)
+        # some upper triangular array
+        A[np.triu_indices_from(A)] = \
+            np.arange(1, n*(n+1)//2+1, dtype=dtype)
 
-            # check lower=1 behavior (shouldn't do much since the matrix is
-            # upper triangular)
-            data, d, e, tau, info = sytrd(A, lower=1, lwork=lwork)
-            assert_equal(info, 0)
+        # query lwork
+        lwork, info = sytrd_lwork(n)
+        assert_equal(info, 0)
 
-            assert_allclose(data, A, atol=5*np.finfo(dtype).eps, rtol=1.0)
-            assert_allclose(d, np.diag(A))
-            assert_allclose(e, 0.0)
-            assert_allclose(tau, 0.0)
+        # check lower=1 behavior (shouldn't do much since the matrix is
+        # upper triangular)
+        data, d, e, tau, info = sytrd(A, lower=1, lwork=lwork)
+        assert_equal(info, 0)
 
-            # and now for the proper test (lower=0 is the default)
-            data, d, e, tau, info = sytrd(A, lwork=lwork)
-            assert_equal(info, 0)
+        assert_allclose(data, A, atol=5*np.finfo(dtype).eps, rtol=1.0)
+        assert_allclose(d, np.diag(A))
+        assert_allclose(e, 0.0)
+        assert_allclose(tau, 0.0)
 
-            # assert Q^T*A*Q = tridiag(e, d, e)
+        # and now for the proper test (lower=0 is the default)
+        data, d, e, tau, info = sytrd(A, lwork=lwork)
+        assert_equal(info, 0)
 
-            # build tridiagonal matrix
-            T = np.zeros_like(A, dtype=dtype)
-            k = np.arange(A.shape[0])
-            T[k, k] = d
-            k2 = np.arange(A.shape[0]-1)
-            T[k2+1, k2] = e
-            T[k2, k2+1] = e
+        # assert Q^T*A*Q = tridiag(e, d, e)
 
-            # build Q
-            Q = np.eye(n, n, dtype=dtype)
-            for i in range(n-1):
-                v = np.zeros(n, dtype=dtype)
-                v[:i] = data[:i, i+1]
-                v[i] = 1.0
-                H = np.eye(n, n, dtype=dtype) - tau[i] * np.outer(v, v)
-                Q = np.dot(H, Q)
+        # build tridiagonal matrix
+        T = np.zeros_like(A, dtype=dtype)
+        k = np.arange(A.shape[0])
+        T[k, k] = d
+        k2 = np.arange(A.shape[0]-1)
+        T[k2+1, k2] = e
+        T[k2, k2+1] = e
 
-            # Make matrix fully symmetric
-            i_lower = np.tril_indices(n, -1)
-            A[i_lower] = A.T[i_lower]
+        # build Q
+        Q = np.eye(n, n, dtype=dtype)
+        for i in range(n-1):
+            v = np.zeros(n, dtype=dtype)
+            v[:i] = data[:i, i+1]
+            v[i] = 1.0
+            H = np.eye(n, n, dtype=dtype) - tau[i] * np.outer(v, v)
+            Q = np.dot(H, Q)
 
-            QTAQ = np.dot(Q.T, np.dot(A, Q))
+        # Make matrix fully symmetric
+        i_lower = np.tril_indices(n, -1)
+        A[i_lower] = A.T[i_lower]
 
-            # disable rtol here since some values in QTAQ and T are very close
-            # to 0.
-            assert_allclose(QTAQ, T, atol=5*np.finfo(dtype).eps, rtol=1.0)
+        QTAQ = np.dot(Q.T, np.dot(A, Q))
+
+        # disable rtol here since some values in QTAQ and T are very close
+        # to 0.
+        assert_allclose(QTAQ, T, atol=5*np.finfo(dtype).eps, rtol=1.0)
 
 
 class TestHetrd(object):
-    def test_hetrd(self):
-        for real_dtype, complex_dtype in zip(REAL_DTYPES, COMPLEX_DTYPES):
-            # Assert that a 0x0 matrix raises an error
-            A = np.zeros((0, 0), dtype=complex_dtype)
-            hetrd, hetrd_lwork = \
-                get_lapack_funcs(('hetrd', 'hetrd_lwork'), (A,))
-            assert_raises(ValueError, hetrd, A)
+    @pytest.mark.parametrize('complex_dtype', COMPLEX_DTYPES)
+    def test_hetrd_with_zero_dim_array(self, complex_dtype):
+        # Assert that a 0x0 matrix raises an error
+        A = np.zeros((0, 0), dtype=complex_dtype)
+        hetrd = get_lapack_funcs('hetrd', (A,))
+        assert_raises(ValueError, hetrd, A)
 
-            # Tests for n = 1 currently fail with
-            # ```
-            # ValueError: failed to create intent(cache|hide)|optional array--
-            # must have defined dimensions but got (0,)
-            # ```
-            # This is a NumPy issue
-            # <https://github.com/numpy/numpy/issues/9617>.
-            # TODO Once the minimum NumPy version is past 1.14, test for n=1
+    @pytest.mark.parametrize('real_dtype,complex_dtype',
+                             zip(REAL_DTYPES, COMPLEX_DTYPES))
+    @pytest.mark.parametrize('n', (1, 3))
+    def test_hetrd(self, n, real_dtype, complex_dtype):
+        A = np.zeros((n, n), dtype=complex_dtype)
+        hetrd, hetrd_lwork = \
+            get_lapack_funcs(('hetrd', 'hetrd_lwork'), (A,))
 
-            # some upper triangular array
-            n = 3
-            A = np.zeros((n, n), dtype=complex_dtype)
-            A[np.triu_indices_from(A)] = (
-                np.arange(1, n*(n+1)//2+1, dtype=real_dtype)
-                + 1j * np.arange(1, n*(n+1)//2+1, dtype=real_dtype)
-                )
-            np.fill_diagonal(A, np.real(np.diag(A)))
+        # some upper triangular array
+        A[np.triu_indices_from(A)] = (
+            np.arange(1, n*(n+1)//2+1, dtype=real_dtype)
+            + 1j * np.arange(1, n*(n+1)//2+1, dtype=real_dtype)
+            )
+        np.fill_diagonal(A, np.real(np.diag(A)))
 
-            # test query lwork
-            for x in [0, 1]:
-                _, info = hetrd_lwork(n, lower=x)
-                assert_equal(info, 0)
-            # lwork returns complex which segfaults hetrd call (gh-10388)
-            # use the safe and recommended option
-            lwork = _compute_lwork(hetrd_lwork, n)
-
-            # check lower=1 behavior (shouldn't do much since the matrix is
-            # upper triangular)
-            data, d, e, tau, info = hetrd(A, lower=1, lwork=lwork)
+        # test query lwork
+        for x in [0, 1]:
+            _, info = hetrd_lwork(n, lower=x)
             assert_equal(info, 0)
+        # lwork returns complex which segfaults hetrd call (gh-10388)
+        # use the safe and recommended option
+        lwork = _compute_lwork(hetrd_lwork, n)
 
-            assert_allclose(data, A, atol=5*np.finfo(real_dtype).eps, rtol=1.0)
+        # check lower=1 behavior (shouldn't do much since the matrix is
+        # upper triangular)
+        data, d, e, tau, info = hetrd(A, lower=1, lwork=lwork)
+        assert_equal(info, 0)
 
-            assert_allclose(d, np.real(np.diag(A)))
-            assert_allclose(e, 0.0)
-            assert_allclose(tau, 0.0)
+        assert_allclose(data, A, atol=5*np.finfo(real_dtype).eps, rtol=1.0)
 
-            # and now for the proper test (lower=0 is the default)
-            data, d, e, tau, info = hetrd(A, lwork=lwork)
-            assert_equal(info, 0)
+        assert_allclose(d, np.real(np.diag(A)))
+        assert_allclose(e, 0.0)
+        assert_allclose(tau, 0.0)
 
-            # assert Q^T*A*Q = tridiag(e, d, e)
+        # and now for the proper test (lower=0 is the default)
+        data, d, e, tau, info = hetrd(A, lwork=lwork)
+        assert_equal(info, 0)
 
-            # build tridiagonal matrix
-            T = np.zeros_like(A, dtype=real_dtype)
-            k = np.arange(A.shape[0], dtype=int)
-            T[k, k] = d
-            k2 = np.arange(A.shape[0]-1, dtype=int)
-            T[k2+1, k2] = e
-            T[k2, k2+1] = e
+        # assert Q^T*A*Q = tridiag(e, d, e)
 
-            # build Q
-            Q = np.eye(n, n, dtype=complex_dtype)
-            for i in range(n-1):
-                v = np.zeros(n, dtype=complex_dtype)
-                v[:i] = data[:i, i+1]
-                v[i] = 1.0
-                H = np.eye(n, n, dtype=complex_dtype) \
-                    - tau[i] * np.outer(v, np.conj(v))
-                Q = np.dot(H, Q)
+        # build tridiagonal matrix
+        T = np.zeros_like(A, dtype=real_dtype)
+        k = np.arange(A.shape[0], dtype=int)
+        T[k, k] = d
+        k2 = np.arange(A.shape[0]-1, dtype=int)
+        T[k2+1, k2] = e
+        T[k2, k2+1] = e
 
-            # Make matrix fully Hermetian
-            i_lower = np.tril_indices(n, -1)
-            A[i_lower] = np.conj(A.T[i_lower])
+        # build Q
+        Q = np.eye(n, n, dtype=complex_dtype)
+        for i in range(n-1):
+            v = np.zeros(n, dtype=complex_dtype)
+            v[:i] = data[:i, i+1]
+            v[i] = 1.0
+            H = np.eye(n, n, dtype=complex_dtype) \
+                - tau[i] * np.outer(v, np.conj(v))
+            Q = np.dot(H, Q)
 
-            QHAQ = np.dot(np.conj(Q.T), np.dot(A, Q))
+        # Make matrix fully Hermitian
+        i_lower = np.tril_indices(n, -1)
+        A[i_lower] = np.conj(A.T[i_lower])
 
-            # disable rtol here since some values in QTAQ and T are very close
-            # to 0.
-            assert_allclose(
-                QHAQ, T, atol=10*np.finfo(real_dtype).eps, rtol=1.0
-                )
+        QHAQ = np.dot(np.conj(Q.T), np.dot(A, Q))
+
+        # disable rtol here since some values in QTAQ and T are very close
+        # to 0.
+        assert_allclose(
+            QHAQ, T, atol=10*np.finfo(real_dtype).eps, rtol=1.0
+            )
 
 
 def test_gglse():
@@ -878,7 +1008,7 @@ def test_sygst():
         B = (B + B.T)/2 + 2 * np.eye(n, dtype=dtype)
 
         # Perform eig (sygvd)
-        _, eig_gvd, info = sygvd(A, B)
+        eig_gvd, _, info = sygvd(A, B)
         assert_(info == 0)
 
         # Convert to std problem potrf
@@ -909,7 +1039,7 @@ def test_hegst():
         B = (B + B.conj().T)/2 + 2 * np.eye(n, dtype=dtype)
 
         # Perform eig (hegvd)
-        _, eig_gvd, info = hegvd(A, B)
+        eig_gvd, _, info = hegvd(A, B)
         assert_(info == 0)
 
         # Convert to std problem potrf
@@ -1654,3 +1784,124 @@ def test_getc2_gesc2():
         else:
             assert_array_almost_equal(desired_cplx.astype(dtype),
                                       x/scale, decimal=4)
+
+
+@pytest.mark.parametrize('dtype', DTYPES)
+@pytest.mark.parametrize('shape', [(3, 7), (7, 3), (2**18, 2**18)])
+def test_geqrfp_lwork(dtype, shape):
+    geqrfp_lwork = get_lapack_funcs(('geqrfp_lwork'), dtype=dtype)
+    m, n = shape
+    lwork, info = geqrfp_lwork(m=m, n=n)
+    assert_equal(info, 0)
+
+
+def generate_random_dtype_array(shape, dtype):
+    # generates a random matrix of desired data type of shape
+    if dtype in COMPLEX_DTYPES:
+        return (np.random.rand(*shape)
+                + np.random.rand(*shape)*1.0j).astype(dtype)
+    return np.random.rand(*shape).astype(dtype)
+
+
+@pytest.mark.parametrize('dtype', DTYPES)
+@pytest.mark.parametrize('matrix_size', [(3, 4), (7, 6), (6, 6)])
+def test_geqrfp(dtype, matrix_size):
+    # Tests for all dytpes, tall, wide, and square matrices.
+    # Using the routine with random matrix A, Q and R are obtained and then
+    # tested such that R is upper triangular and non-negative on the diagonal,
+    # and Q is an orthagonal matrix. Verifies that A=Q@R. It also
+    # tests against a matrix that for which the  linalg.qr method returns
+    # negative diagonals, and for error messaging.
+
+    # set test tolerance appropriate for dtype
+    np.random.seed(42)
+    rtol = 250*np.finfo(dtype).eps
+    atol = 100*np.finfo(dtype).eps
+    # get appropriate ?geqrfp for dtype
+    geqrfp = get_lapack_funcs(('geqrfp'), dtype=dtype)
+    gqr = get_lapack_funcs(("orgqr"), dtype=dtype)
+
+    m, n = matrix_size
+
+    # create random matrix of dimentions m x n
+    A = generate_random_dtype_array((m, n), dtype=dtype)
+    # create qr matrix using geqrfp
+    qr_A, tau, info = geqrfp(A)
+
+    # obtain r from the upper triangular area
+    r = np.triu(qr_A)
+
+    # obtain q from the orgqr lapack routine
+    # based on linalg.qr's extraction strategy of q with orgqr
+
+    if m > n:
+        # this adds an extra column to the end of qr_A
+        # let qqr be an empty m x m matrix
+        qqr = np.zeros((m, m), dtype=dtype)
+        # set first n columns of qqr to qr_A
+        qqr[:, :n] = qr_A
+        # determine q from this qqr
+        # note that m is a sufficient for lwork based on LAPACK documentation
+        q = gqr(qqr, tau=tau, lwork=m)[0]
+    else:
+        q = gqr(qr_A[:, :m], tau=tau, lwork=m)[0]
+
+    # test that q and r still make A
+    assert_allclose(q@r, A, rtol=rtol)
+    # ensure that q is orthogonal (that q @ transposed q is the identity)
+    assert_allclose(np.eye(q.shape[0]), q@(q.conj().T), rtol=rtol,
+                    atol=atol)
+    # ensure r is upper tri by comparing original r to r as upper triangular
+    assert_allclose(r, np.triu(r), rtol=rtol)
+    # make sure diagonals of r are positive for this random solution
+    assert_(np.all(np.diag(r) > np.zeros(len(np.diag(r)))))
+    # ensure that info is zero for this success
+    assert_(info == 0)
+
+    # test that this routine gives r diagonals that are positive for a
+    # matrix that returns negatives in the diagonal with scipy.linalg.rq
+    A_negative = generate_random_dtype_array((n, m), dtype=dtype) * -1
+    r_rq_neg, q_rq_neg = qr(A_negative)
+    rq_A_neg, tau_neg, info_neg = geqrfp(A_negative)
+    # assert that any of the entries on the diagonal from linalg.qr
+    #   are negative and that all of geqrfp are positive.
+    assert_(np.any(np.diag(r_rq_neg) < 0) and
+            np.all(np.diag(r) > 0))
+
+
+def test_geqrfp_errors_with_empty_array():
+    # check that empty array raises good error message
+    A_empty = np.array([])
+    geqrfp = get_lapack_funcs('geqrfp', dtype=A_empty.dtype)
+    assert_raises(Exception, geqrfp, A_empty)
+
+
+@pytest.mark.parametrize("driver", ['ev', 'evd', 'evr', 'evx'])
+@pytest.mark.parametrize("pfx", ['sy', 'he'])
+def test_standard_eigh_lworks(pfx, driver):
+    n = 1200  # Some sufficiently big arbitrary number
+    dtype = REAL_DTYPES if pfx == 'sy' else COMPLEX_DTYPES
+    sc_dlw = get_lapack_funcs(pfx+driver+'_lwork', dtype=dtype[0])
+    dz_dlw = get_lapack_funcs(pfx+driver+'_lwork', dtype=dtype[1])
+    try:
+        _compute_lwork(sc_dlw, n, lower=1)
+        _compute_lwork(dz_dlw, n, lower=1)
+    except Exception as e:
+        pytest.fail("{}_lwork raised unexpected exception: {}"
+                    "".format(pfx+driver, e))
+
+
+@pytest.mark.parametrize("driver", ['gv', 'gvx'])
+@pytest.mark.parametrize("pfx", ['sy', 'he'])
+def test_generalized_eigh_lworks(pfx, driver):
+    n = 1200  # Some sufficiently big arbitrary number
+    dtype = REAL_DTYPES if pfx == 'sy' else COMPLEX_DTYPES
+    sc_dlw = get_lapack_funcs(pfx+driver+'_lwork', dtype=dtype[0])
+    dz_dlw = get_lapack_funcs(pfx+driver+'_lwork', dtype=dtype[1])
+    # Shouldn't raise any exceptions
+    try:
+        _compute_lwork(sc_dlw, n, uplo="L")
+        _compute_lwork(dz_dlw, n, uplo="L")
+    except Exception as e:
+        pytest.fail("{}_lwork raised unexpected exception: {}"
+                    "".format(pfx+driver, e))

@@ -17,7 +17,6 @@ from scipy import integrate
 from scipy import interpolate
 import scipy.special as sc
 import scipy.special._ufuncs as scu
-from scipy._lib._numpy_compat import broadcast_to
 from scipy._lib._util import _lazyselect, _lazywhere
 from . import _stats
 from ._tukeylambda_stats import (tukeylambda_variance as _tlvar,
@@ -1279,7 +1278,7 @@ class dgamma_gen(rv_continuous):
     """
     def _rvs(self, a):
         sz, rndm = self._size, self._random_state
-        u = rndm.random_sample(size=sz)
+        u = rndm.uniform(size=sz)
         gm = gamma.rvs(a, size=sz, random_state=rndm)
         return gm * np.where(u >= 0.5, 1, -1)
 
@@ -1336,7 +1335,7 @@ class dweibull_gen(rv_continuous):
     """
     def _rvs(self, c):
         sz, rndm = self._size, self._random_state
-        u = rndm.random_sample(size=sz)
+        u = rndm.uniform(size=sz)
         w = weibull_min.rvs(c, size=sz, random_state=rndm)
         return w * (np.where(u >= 0.5, 1, -1))
 
@@ -1562,7 +1561,7 @@ class exponweib_gen(rv_continuous):
 
     See Also
     --------
-    weibull_min, numpy.random.mtrand.RandomState.weibull
+    weibull_min, numpy.random.RandomState.weibull
 
     Notes
     -----
@@ -1939,7 +1938,7 @@ class weibull_min_gen(rv_continuous):
 
     See Also
     --------
-    weibull_max, numpy.random.mtrand.RandomState.weibull, exponweib
+    weibull_max, numpy.random.RandomState.weibull, exponweib
 
     Notes
     -----
@@ -3736,8 +3735,8 @@ class geninvgauss_gen(rv_continuous):
             while simulated < N:
                 k = N - simulated
                 # simulate uniform rvs on [0, umax] and [vmin, vmax]
-                u = umax * self._random_state.random_sample(size=k)
-                v = self._random_state.random_sample(size=k)
+                u = umax * self._random_state.uniform(size=k)
+                v = self._random_state.uniform(size=k)
                 v = vmin + (vmax - vmin) * v
                 rvs = v / u + c
                 # rewrite acceptance condition u**2 <= pdf(rvs) by taking logs
@@ -3776,8 +3775,8 @@ class geninvgauss_gen(rv_continuous):
                 k = N - simulated
                 h, rvs = np.zeros(k), np.zeros(k)
                 # simulate uniform rvs on [x1, x2] and [0, y2]
-                u = self._random_state.random_sample(size=k)
-                v = A * self._random_state.random_sample(size=k)
+                u = self._random_state.uniform(size=k)
+                v = A * self._random_state.uniform(size=k)
                 cond1 = v <= A1
                 cond2 = np.logical_not(cond1) & (v <= A1 + A2)
                 cond3 = np.logical_not(cond1 | cond2)
@@ -4306,8 +4305,8 @@ class levy_stable_gen(rv_continuous):
             return res
 
         sz = self._size
-        alpha = broadcast_to(alpha, sz)
-        beta = broadcast_to(beta, sz)
+        alpha = np.broadcast_to(alpha, sz)
+        beta = np.broadcast_to(beta, sz)
         TH = uniform.rvs(loc=-np.pi/2.0, scale=np.pi, size=sz,
                          random_state=self._random_state)
         W = expon.rvs(size=sz, random_state=self._random_state)
@@ -6153,7 +6152,7 @@ class pearson3_gen(rv_continuous):
         return ans
 
     def _rvs(self, skew):
-        skew = broadcast_to(skew, self._size)
+        skew = np.broadcast_to(skew, self._size)
         ans, _, _, mask, invmask, beta, alpha, zeta = (
             self._preprocess([0], skew))
 
@@ -6669,8 +6668,8 @@ class semicircular_gen(rv_continuous):
     def _rvs(self):
         # generate values uniformly distributed on the area under the pdf
         # (semi-circle) by randomly generating the radius and angle
-        r = np.sqrt(self._random_state.random_sample(size=self._size))
-        a = np.cos(np.pi * self._random_state.random_sample(size=self._size))
+        r = np.sqrt(self._random_state.uniform(size=self._size))
+        a = np.cos(np.pi * self._random_state.uniform(size=self._size))
         return r * a
 
     def _stats(self):

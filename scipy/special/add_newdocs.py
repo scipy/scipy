@@ -374,15 +374,15 @@ add_newdoc("bdtr",
 
     Binomial distribution cumulative distribution function.
 
-    Sum of the terms 0 through `k` of the Binomial probability density.
+    Sum of the terms 0 through `floor(k)` of the Binomial probability density.
 
     .. math::
-        \mathrm{bdtr}(k, n, p) = \sum_{j=0}^k {{n}\choose{j}} p^j (1-p)^{n-j}
+        \mathrm{bdtr}(k, n, p) = \sum_{j=0}^{\lfloor k \rfloor} {{n}\choose{j}} p^j (1-p)^{n-j}
 
     Parameters
     ----------
     k : array_like
-        Number of successes (int).
+        Number of successes (double), rounded down to the nearest integer.
     n : array_like
         Number of events (int).
     p : array_like
@@ -391,7 +391,7 @@ add_newdoc("bdtr",
     Returns
     -------
     y : ndarray
-        Probability of `k` or fewer successes in `n` independent events with
+        Probability of `floor(k)` or fewer successes in `n` independent events with
         success probabilities of `p`.
 
     Notes
@@ -400,7 +400,7 @@ add_newdoc("bdtr",
     function is employed, according to the formula,
 
     .. math::
-        \mathrm{bdtr}(k, n, p) = I_{1 - p}(n - k, k + 1).
+        \mathrm{bdtr}(k, n, p) = I_{1 - p}(n - \lfloor k \rfloor, \lfloor k \rfloor + 1).
 
     Wrapper for the Cephes [1]_ routine `bdtr`.
 
@@ -417,15 +417,16 @@ add_newdoc("bdtrc",
 
     Binomial distribution survival function.
 
-    Sum of the terms `k + 1` through `n` of the binomial probability density,
+    Sum of the terms `floor(k) + 1` through `n` of the binomial probability
+    density,
 
     .. math::
-        \mathrm{bdtrc}(k, n, p) = \sum_{j=k+1}^n {{n}\choose{j}} p^j (1-p)^{n-j}
+        \mathrm{bdtrc}(k, n, p) = \sum_{j=\lfloor k \rfloor +1}^n {{n}\choose{j}} p^j (1-p)^{n-j}
 
     Parameters
     ----------
     k : array_like
-        Number of successes (int).
+        Number of successes (double), rounded down to nearest integer.
     n : array_like
         Number of events (int)
     p : array_like
@@ -434,8 +435,8 @@ add_newdoc("bdtrc",
     Returns
     -------
     y : ndarray
-        Probability of `k + 1` or more successes in `n` independent events
-        with success probabilities of `p`.
+        Probability of `floor(k) + 1` or more successes in `n` independent
+        events with success probabilities of `p`.
 
     See also
     --------
@@ -448,7 +449,7 @@ add_newdoc("bdtrc",
     function is employed, according to the formula,
 
     .. math::
-        \mathrm{bdtrc}(k, n, p) = I_{p}(k + 1, n - k).
+        \mathrm{bdtrc}(k, n, p) = I_{p}(\lfloor k \rfloor + 1, n - \lfloor k \rfloor).
 
     Wrapper for the Cephes [1]_ routine `bdtrc`.
 
@@ -460,7 +461,7 @@ add_newdoc("bdtrc",
     """)
 
 add_newdoc("bdtri",
-    """
+    r"""
     bdtri(k, n, y)
 
     Inverse function to `bdtr` with respect to `p`.
@@ -472,7 +473,7 @@ add_newdoc("bdtri",
     Parameters
     ----------
     k : array_like
-        Number of successes (float).
+        Number of successes (float), rounded down to the nearest integer.
     n : array_like
         Number of events (float)
     y : array_like
@@ -482,7 +483,7 @@ add_newdoc("bdtri",
     Returns
     -------
     p : ndarray
-        The event probability such that `bdtr(k, n, p) = y`.
+        The event probability such that `bdtr(\lfloor k \rfloor, n, p) = y`.
 
     See also
     --------
@@ -884,9 +885,11 @@ add_newdoc("berp",
 
 add_newdoc("besselpoly",
     r"""
-    besselpoly(a, lmb, nu)
+    besselpoly(a, lmb, nu, out=None)
 
-    Weighted integral of a Bessel function.
+    Weighted integral of the Bessel function of the first kind.
+
+    Computes
 
     .. math::
 
@@ -894,6 +897,22 @@ add_newdoc("besselpoly",
 
     where :math:`J_\nu` is a Bessel function and :math:`\lambda=lmb`,
     :math:`\nu=nu`.
+
+    Parameters
+    ----------
+    a : array_like
+        Scale factor inside the Bessel function.
+    lmb : array_like
+        Power of `x`
+    nu : array_like
+        Order of the Bessel function.
+    out : ndarray, optional
+        Optional output array for the function results.
+
+    Returns
+    -------
+    scalar or ndarray
+        Value of the integral.
 
     """)
 
@@ -1388,46 +1407,212 @@ add_newdoc("cbrt",
     """)
 
 add_newdoc("chdtr",
-    """
-    chdtr(v, x)
+    r"""
+    chdtr(v, x, out=None)
 
-    Chi square cumulative distribution function
+    Chi square cumulative distribution function.
 
-    Returns the area under the left hand tail (from 0 to `x`) of the Chi
-    square probability density function with `v` degrees of freedom::
+    Returns the area under the left tail (from 0 to `x`) of the Chi
+    square probability density function with `v` degrees of freedom:
 
-        1/(2**(v/2) * gamma(v/2)) * integral(t**(v/2-1) * exp(-t/2), t=0..x)
+    .. math::
+
+        \frac{1}{2^{v/2} \Gamma(v/2)} \int_0^x t^{v/2 - 1} e^{-t/2} dt
+
+    Here :math:`\Gamma` is the Gamma function; see `gamma`. This
+    integral can be expressed in terms of the regularized lower
+    incomplete gamma function `gammainc` as
+    ``gammainc(v / 2, x / 2)``. [1]_
+
+    Parameters
+    ----------
+    v : array_like
+        Degrees of freedom.
+    x : array_like
+        Upper bound of the integral.
+    out : ndarray, optional
+        Optional output array for the function results.
+
+    Returns
+    -------
+    scalar or ndarray
+        Values of the cumulative distribution function.
+
+    See Also
+    --------
+    chdtrc, chdtri, chdtriv, gammainc
+
+    References
+    ----------
+    .. [1] Chi-Square distribution,
+        https://www.itl.nist.gov/div898/handbook/eda/section3/eda3666.htm
+
+    Examples
+    --------
+    >>> import scipy.special as sc
+
+    It can be expressed in terms of the regularized lower incomplete
+    gamma function.
+
+    >>> v = 1
+    >>> x = np.arange(4)
+    >>> sc.chdtr(v, x)
+    array([0.        , 0.68268949, 0.84270079, 0.91673548])
+    >>> sc.gammainc(v / 2, x / 2)
+    array([0.        , 0.68268949, 0.84270079, 0.91673548])
+
     """)
 
 add_newdoc("chdtrc",
-    """
-    chdtrc(v, x)
+    r"""
+    chdtrc(v, x, out=None)
 
-    Chi square survival function
+    Chi square survival function.
 
-    Returns the area under the right hand tail (from `x` to
-    infinity) of the Chi square probability density function with `v`
-    degrees of freedom::
+    Returns the area under the right hand tail (from `x` to infinity)
+    of the Chi square probability density function with `v` degrees of
+    freedom:
 
-        1/(2**(v/2) * gamma(v/2)) * integral(t**(v/2-1) * exp(-t/2), t=x..inf)
+    .. math::
+
+        \frac{1}{2^{v/2} \Gamma(v/2)} \int_x^\infty t^{v/2 - 1} e^{-t/2} dt
+
+    Here :math:`\Gamma` is the Gamma function; see `gamma`. This
+    integral can be expressed in terms of the regularized upper
+    incomplete gamma function `gammaincc` as
+    ``gammaincc(v / 2, x / 2)``. [1]_
+
+    Parameters
+    ----------
+    v : array_like
+        Degrees of freedom.
+    x : array_like
+        Lower bound of the integral.
+    out : ndarray, optional
+        Optional output array for the function results.
+
+    Returns
+    -------
+    scalar or ndarray
+        Values of the survival function.
+
+    See Also
+    --------
+    chdtr, chdtri, chdtriv, gammaincc
+
+    References
+    ----------
+    .. [1] Chi-Square distribution,
+        https://www.itl.nist.gov/div898/handbook/eda/section3/eda3666.htm
+
+    Examples
+    --------
+    >>> import scipy.special as sc
+
+    It can be expressed in terms of the regularized upper incomplete
+    gamma function.
+
+    >>> v = 1
+    >>> x = np.arange(4)
+    >>> sc.chdtrc(v, x)
+    array([1.        , 0.31731051, 0.15729921, 0.08326452])
+    >>> sc.gammaincc(v / 2, x / 2)
+    array([1.        , 0.31731051, 0.15729921, 0.08326452])
+
     """)
 
 add_newdoc("chdtri",
     """
-    chdtri(v, p)
+    chdtri(v, p, out=None)
 
-    Inverse to `chdtrc`
+    Inverse to `chdtrc` with respect to `x`.
 
-    Returns the argument x such that ``chdtrc(v, x) == p``.
+    Returns `x` such that ``chdtrc(v, x) == p``.
+
+    Parameters
+    ----------
+    v : array_like
+        Degrees of freedom.
+    p : array_like
+        Probability.
+    out : ndarray, optional
+        Optional output array for the function results.
+
+    Returns
+    -------
+    x : scalar or ndarray
+        Value so that the probability a Chi square random variable
+        with `v` degrees of freedom is greater than `x` equals `p`.
+
+    See Also
+    --------
+    chdtrc, chdtr, chdtriv
+
+    References
+    ----------
+    .. [1] Chi-Square distribution,
+        https://www.itl.nist.gov/div898/handbook/eda/section3/eda3666.htm
+
+    Examples
+    --------
+    >>> import scipy.special as sc
+
+    It inverts `chdtrc`.
+
+    >>> v, p = 1, 0.3
+    >>> sc.chdtrc(v, sc.chdtri(v, p))
+    0.3
+    >>> x = 1
+    >>> sc.chdtri(v, sc.chdtrc(v, x))
+    1.0
+
     """)
 
 add_newdoc("chdtriv",
     """
-    chdtriv(p, x)
+    chdtriv(p, x, out=None)
 
-    Inverse to `chdtr` vs `v`
+    Inverse to `chdtr` with respect to `v`.
 
-    Returns the argument v such that ``chdtr(v, x) == p``.
+    Returns `v` such that ``chdtr(v, x) == p``.
+
+    Parameters
+    ----------
+    p : array_like
+        Probability that the Chi square random variable is less than
+        or equal to `x`.
+    x : array_like
+        Nonnegative input.
+    out : ndarray, optional
+        Optional output array for the function results.
+
+    Returns
+    -------
+    scalar or ndarray
+        Degrees of freedom.
+
+    See Also
+    --------
+    chdtr, chdtrc, chdtri
+
+    References
+    ----------
+    .. [1] Chi-Square distribution,
+        https://www.itl.nist.gov/div898/handbook/eda/section3/eda3666.htm
+
+    Examples
+    --------
+    >>> import scipy.special as sc
+
+    It inverts `chdtr`.
+
+    >>> p, x = 0.5, 1
+    >>> sc.chdtr(sc.chdtriv(p, x), x)
+    0.5000000000202172
+    >>> v = 1
+    >>> sc.chdtriv(sc.chdtr(v, x), v)
+    1.0000000000000013
+
     """)
 
 add_newdoc("chndtr",
@@ -1461,23 +1646,111 @@ add_newdoc("chndtrinc",
 
 add_newdoc("cosdg",
     """
-    cosdg(x)
+    cosdg(x, out=None)
 
     Cosine of the angle `x` given in degrees.
+
+    Parameters
+    ----------
+    x : array_like
+        Angle, given in degrees.
+    out : ndarray, optional
+        Optional output array for the function results.
+
+    Returns
+    -------
+    scalar or ndarray
+        Cosine of the input.
+
+    See Also
+    --------
+    sindg, tandg, cotdg
+
+    Examples
+    --------
+    >>> import scipy.special as sc
+
+    It is more accurate than using cosine directly.
+
+    >>> x = 90 + 180 * np.arange(3)
+    >>> sc.cosdg(x)
+    array([-0.,  0., -0.])
+    >>> np.cos(x * np.pi / 180)
+    array([ 6.1232340e-17, -1.8369702e-16,  3.0616170e-16])
+
     """)
 
 add_newdoc("cosm1",
     """
-    cosm1(x)
+    cosm1(x, out=None)
 
     cos(x) - 1 for use when `x` is near zero.
+
+    Parameters
+    ----------
+    x : array_like
+        Real valued argument.
+    out : ndarray, optional
+        Optional output array for the function results.
+
+    Returns
+    -------
+    scalar or ndarray
+        Values of ``cos(x) - 1``.
+
+    See Also
+    --------
+    expm1, log1p
+
+    Examples
+    --------
+    >>> import scipy.special as sc
+
+    It is more accurate than computing ``cos(x) - 1`` directly for
+    ``x`` around 0.
+
+    >>> x = 1e-30
+    >>> np.cos(x) - 1
+    0.0
+    >>> sc.cosm1(x)
+    -5.0000000000000005e-61
+
     """)
 
 add_newdoc("cotdg",
     """
-    cotdg(x)
+    cotdg(x, out=None)
 
     Cotangent of the angle `x` given in degrees.
+
+    Parameters
+    ----------
+    x : array_like
+        Angle, given in degrees.
+    out : ndarray, optional
+        Optional output array for the function results.
+
+    Returns
+    -------
+    scalar or ndarray
+        Cotangent at the input.
+
+    See Also
+    --------
+    sindg, cosdg, tandg
+
+    Examples
+    --------
+    >>> import scipy.special as sc
+
+    It is more accurate than using cotangent directly.
+
+    >>> x = 90 + 180 * np.arange(3)
+    >>> sc.cotdg(x)
+    array([0., 0., 0.])
+    >>> 1 / np.tan(x * np.pi / 180)
+    array([6.1232340e-17, 1.8369702e-16, 3.0616170e-16])
+
     """)
 
 add_newdoc("dawsn",
@@ -3484,8 +3757,8 @@ add_newdoc("fresnel",
 
     .. math::
 
-       S(z) &= \int_0^z \cos(\pi t^2 /2) dt \\
-       C(z) &= \int_0^z \sin(\pi t^2 /2) dt.
+       S(z) &= \int_0^z \sin(\pi t^2 /2) dt \\
+       C(z) &= \int_0^z \cos(\pi t^2 /2) dt.
 
     See [dlmf]_ for details.
 
@@ -4980,31 +5253,63 @@ add_newdoc("_igam_fac",
     """)
 
 add_newdoc("it2i0k0",
-    """
-    it2i0k0(x)
+    r"""
+    it2i0k0(x, out=None)
 
-    Integrals related to modified Bessel functions of order 0
+    Integrals related to modified Bessel functions of order 0.
+
+    Computes the integrals
+
+    .. math::
+
+        \int_0^x \frac{I_0(t) - 1}{t} dt \\
+        \int_x^\infty \frac{K_0(t)}{t} dt.
+
+    Parameters
+    ----------
+    x : array_like
+        Values at which to evaluate the integrals.
+    out : tuple of ndarrays, optional
+        Optional output arrays for the function results.
 
     Returns
     -------
-    ii0
-        ``integral((i0(t)-1)/t, t=0..x)``
-    ik0
-        ``integral(k0(t)/t, t=x..inf)``
+    ii0 : scalar or ndarray
+        The integral for `i0`
+    ik0 : scalar or ndarray
+        The integral for `k0`
+
     """)
 
 add_newdoc("it2j0y0",
-    """
-    it2j0y0(x)
+    r"""
+    it2j0y0(x, out=None)
 
-    Integrals related to Bessel functions of order 0
+    Integrals related to Bessel functions of the first kind of order 0.
+
+    Computes the integrals
+
+    .. math::
+
+        \int_0^x \frac{1 - J_0(t)}{t} dt \\
+        \int_x^\infty \frac{Y_0(t)}{t} dt.
+
+    For more on :math:`J_0` and :math:`Y_0` see `j0` and `y0`.
+
+    Parameters
+    ----------
+    x : array_like
+        Values at which to evaluate the integrals.
+    out : tuple of ndarrays, optional
+        Optional output arrays for the function results.
 
     Returns
     -------
-    ij0
-        ``integral((1-j0(t))/t, t=0..x)``
-    iy0
-        ``integral(y0(t)/t, t=x..inf)``
+    ij0 : scalar or ndarray
+        The integral for `j0`
+    iy0 : scalar or ndarray
+        The integral for `y0`
+
     """)
 
 add_newdoc("it2struve0",
@@ -5086,31 +5391,64 @@ add_newdoc("itairy",
     """)
 
 add_newdoc("iti0k0",
-    """
-    iti0k0(x)
+    r"""
+    iti0k0(x, out=None)
 
-    Integrals of modified Bessel functions of order 0
+    Integrals of modified Bessel functions of order 0.
 
-    Returns simple integrals from 0 to `x` of the zeroth order modified
-    Bessel functions `i0` and `k0`.
+    Computes the integrals
+
+    .. math::
+
+        \int_0^x I_0(t) dt \\
+        \int_0^x K_0(t) dt.
+
+    For more on :math:`I_0` and :math:`K_0` see `i0` and `k0`.
+
+    Parameters
+    ----------
+    x : array_like
+        Values at which to evaluate the integrals.
+    out : tuple of ndarrays, optional
+        Optional output arrays for the function results.
 
     Returns
     -------
-    ii0, ik0
+    ii0 : scalar or ndarray
+        The integral for `i0`
+    ik0 : scalar or ndarray
+        The integral for `k0`
     """)
 
 add_newdoc("itj0y0",
-    """
-    itj0y0(x)
+    r"""
+    itj0y0(x, out=None)
 
-    Integrals of Bessel functions of order 0
+    Integrals of Bessel functions of the first kind of order 0.
 
-    Returns simple integrals from 0 to `x` of the zeroth order Bessel
-    functions `j0` and `y0`.
+    Computes the integrals
+
+    .. math::
+
+        \int_0^x J_0(t) dt \\
+        \int_0^x Y_0(t) dt.
+
+    For more on :math:`J_0` and :math:`Y_0` see `j0` and `y0`.
+
+    Parameters
+    ----------
+    x : array_like
+        Values at which to evaluate the integrals.
+    out : tuple of ndarrays, optional
+        Optional output arrays for the function results.
 
     Returns
     -------
-    ij0, iy0
+    ij0 : scalar or ndarray
+        The integral of `j0`
+    iy0 : scalar or ndarray
+        The integral of `y0`
+
     """)
 
 add_newdoc("itmodstruve0",
@@ -6207,9 +6545,39 @@ add_newdoc("_lgam1p",
 
 add_newdoc("log1p",
     """
-    log1p(x)
+    log1p(x, out=None)
 
-    Calculates log(1+x) for use when `x` is near zero
+    Calculates log(1 + x) for use when `x` is near zero.
+
+    Parameters
+    ----------
+    x : array_like
+        Real or complex valued input.
+    out : ndarray, optional
+        Optional output array for the function results.
+
+    Returns
+    -------
+    scalar or ndarray
+        Values of ``log(1 + x)``.
+
+    See Also
+    --------
+    expm1, cosm1
+
+    Examples
+    --------
+    >>> import scipy.special as sc
+
+    It is more accurate than using ``log(1 + x)`` directly for ``x``
+    near 0. Note that in the below example ``1 + 1e-17 == 1`` to
+    double precision.
+
+    >>> sc.log1p(1e-17)
+    1e-17
+    >>> np.log(1 + 1e-17)
+    0.0
+
     """)
 
 add_newdoc("_log1pmx",
@@ -7896,12 +8264,49 @@ add_newdoc("psi",
 
 add_newdoc("radian",
     """
-    radian(d, m, s)
+    radian(d, m, s, out=None)
 
-    Convert from degrees to radians
+    Convert from degrees to radians.
 
     Returns the angle given in (d)egrees, (m)inutes, and (s)econds in
     radians.
+
+    Parameters
+    ----------
+    d : array_like
+        Degrees, can be real-valued.
+    m : array_like
+        Minutes, can be real-valued.
+    s : array_like
+        Seconds, can be real-valued.
+    out : ndarray, optional
+        Optional output array for the function results.
+
+    Returns
+    -------
+    scalar or ndarray
+        Values of the inputs in radians.
+
+    Examples
+    --------
+    >>> import scipy.special as sc
+
+    There are many ways to specify an angle.
+
+    >>> sc.radian(90, 0, 0)
+    1.5707963267948966
+    >>> sc.radian(0, 60 * 90, 0)
+    1.5707963267948966
+    >>> sc.radian(0, 0, 60**2 * 90)
+    1.5707963267948966
+
+    The inputs can be real-valued.
+
+    >>> sc.radian(1.5, 0, 0)
+    0.02617993877991494
+    >>> sc.radian(1, 30, 0)
+    0.02617993877991494
+
     """)
 
 add_newdoc("rel_entr",
@@ -8023,13 +8428,35 @@ add_newdoc("rgamma",
 
 add_newdoc("round",
     """
-    round(x)
+    round(x, out=None)
 
-    Round to nearest integer
+    Round to the nearest integer.
 
-    Returns the nearest integer to `x` as a double precision floating
-    point result.  If `x` ends in 0.5 exactly, the nearest even integer
-    is chosen.
+    Returns the nearest integer to `x`.  If `x` ends in 0.5 exactly,
+    the nearest even integer is chosen.
+
+    Parameters
+    ----------
+    x : array_like
+        Real valued input.
+    out : ndarray, optional
+        Optional output array for the function results.
+
+    Returns
+    -------
+    scalar or ndarray
+        The nearest integers to the elements of `x`. The result is of
+        floating type, not integer type.
+
+    Examples
+    --------
+    >>> import scipy.special as sc
+
+    It rounds to even.
+
+    >>> sc.round([0.5, 1.5])
+    array([0., 2.])
+
     """)
 
 add_newdoc("shichi",
@@ -8140,9 +8567,38 @@ add_newdoc("sici",
 
 add_newdoc("sindg",
     """
-    sindg(x)
+    sindg(x, out=None)
 
-    Sine of angle given in degrees
+    Sine of the angle `x` given in degrees.
+
+    Parameters
+    ----------
+    x : array_like
+        Angle, given in degrees.
+    out : ndarray, optional
+        Optional output array for the function results.
+
+    Returns
+    -------
+    scalar or ndarray
+        Sine at the input.
+
+    See Also
+    --------
+    cosdg, tandg, cotdg
+
+    Examples
+    --------
+    >>> import scipy.special as sc
+
+    It is more accurate than using sine directly.
+
+    >>> x = 180 * np.arange(3)
+    >>> sc.sindg(x)
+    array([ 0., -0.,  0.])
+    >>> np.sin(x * np.pi / 180)
+    array([ 0.0000000e+00,  1.2246468e-16, -2.4492936e-16])
+
     """)
 
 add_newdoc("smirnov",
@@ -8416,9 +8872,38 @@ add_newdoc("struve",
 
 add_newdoc("tandg",
     """
-    tandg(x)
+    tandg(x, out=None)
 
-    Tangent of angle x given in degrees.
+    Tangent of angle `x` given in degrees.
+
+    Parameters
+    ----------
+    x : array_like
+        Angle, given in degrees.
+    out : ndarray, optional
+        Optional output array for the function results.
+
+    Returns
+    -------
+    scalar or ndarray
+        Tangent at the input.
+
+    See Also
+    --------
+    sindg, cosdg, cotdg
+
+    Examples
+    --------
+    >>> import scipy.special as sc
+
+    It is more accurate than using tangent directly.
+
+    >>> x = 180 * np.arange(3)
+    >>> sc.tandg(x)
+    array([0., 0., 0.])
+    >>> np.tan(x * np.pi / 180)
+    array([ 0.0000000e+00, -1.2246468e-16, -2.4492936e-16])
+
     """)
 
 add_newdoc("tklmbda",
@@ -8977,4 +9462,9 @@ add_newdoc("owens_t",
     ----------
     .. [1] M. Patefield and D. Tandy, "Fast and accurate calculation of
            Owen's T Function", Statistical Software vol. 5, pp. 1-25, 2000.
+    """)
+
+add_newdoc("_factorial",
+    """
+    Internal function, do not use.
     """)

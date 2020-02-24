@@ -5,6 +5,7 @@ import sys
 
 from decimal import Decimal
 from itertools import product
+from math import gcd
 import warnings
 
 import pytest
@@ -12,8 +13,8 @@ from pytest import raises as assert_raises
 from numpy.testing import (
     assert_equal,
     assert_almost_equal, assert_array_equal, assert_array_almost_equal,
-    assert_allclose, assert_, assert_warns, assert_array_less)
-from scipy._lib._numpy_compat import suppress_warnings
+    assert_allclose, assert_, assert_warns, assert_array_less,
+    suppress_warnings)
 from numpy import array, arange
 import numpy as np
 
@@ -31,12 +32,6 @@ from scipy.signal.windows import hann
 from scipy.signal.signaltools import (_filtfilt_gust, _compute_factors,
                                       _group_poles)
 from scipy.signal._upfirdn import _upfirdn_modes
-
-
-if sys.version_info >= (3, 5):
-    from math import gcd
-else:
-    from fractions import gcd
 
 
 class _TestConvolve(object):

@@ -3,13 +3,12 @@ Unit test for SLSQP optimization.
 """
 from __future__ import division, print_function, absolute_import
 
-import pytest
 from numpy.testing import (assert_, assert_array_almost_equal,
                            assert_allclose, assert_equal)
 from pytest import raises as assert_raises
 import numpy as np
 
-from scipy.optimize import fmin_slsqp, minimize, NonlinearConstraint, Bounds
+from scipy.optimize import fmin_slsqp, minimize, Bounds
 
 
 class MyCallBack(object):
@@ -101,11 +100,14 @@ class TestSLSQP(object):
 
     # minimize
     def test_minimize_unbounded_approximated(self):
-        # Minimize, method='SLSQP': unbounded, approximated Jacobian.
-        res = minimize(self.fun, [-1.0, 1.0], args=(-1.0, ),
-                       method='SLSQP', options=self.opts)
-        assert_(res['success'], res['message'])
-        assert_allclose(res.x, [2, 1])
+        # Minimize, method='SLSQP': unbounded, approximated jacobian.
+        jacs = [None, False, '2-point', '3-point']
+        for jac in jacs:
+            res = minimize(self.fun, [-1.0, 1.0], args=(-1.0, ),
+                           jac=jac, method='SLSQP',
+                           options=self.opts)
+            assert_(res['success'], res['message'])
+            assert_allclose(res.x, [2, 1])
 
     def test_minimize_unbounded_given(self):
         # Minimize, method='SLSQP': unbounded, given Jacobian.
@@ -115,15 +117,18 @@ class TestSLSQP(object):
         assert_allclose(res.x, [2, 1])
 
     def test_minimize_bounded_approximated(self):
-        # Minimize, method='SLSQP': bounded, approximated Jacobian.
-        with np.errstate(invalid='ignore'):
-            res = minimize(self.fun, [-1.0, 1.0], args=(-1.0, ),
-                           bounds=((2.5, None), (None, 0.5)),
-                           method='SLSQP', options=self.opts)
-        assert_(res['success'], res['message'])
-        assert_allclose(res.x, [2.5, 0.5])
-        assert_(2.5 <= res.x[0])
-        assert_(res.x[1] <= 0.5)
+        # Minimize, method='SLSQP': bounded, approximated jacobian.
+        jacs = [None, False, '2-point', '3-point']
+        for jac in jacs:
+            with np.errstate(invalid='ignore'):
+                res = minimize(self.fun, [-1.0, 1.0], args=(-1.0, ),
+                               jac=jac,
+                               bounds=((2.5, None), (None, 0.5)),
+                               method='SLSQP', options=self.opts)
+            assert_(res['success'], res['message'])
+            assert_allclose(res.x, [2.5, 0.5])
+            assert_(2.5 <= res.x[0])
+            assert_(res.x[1] <= 0.5)
 
     def test_minimize_unbounded_combined(self):
         # Minimize, method='SLSQP': unbounded, combined function and Jacobian.
@@ -133,14 +138,17 @@ class TestSLSQP(object):
         assert_allclose(res.x, [2, 1])
 
     def test_minimize_equality_approximated(self):
-        # Minimize with method='SLSQP': equality constraint, approx. Jacobian.
-        res = minimize(self.fun, [-1.0, 1.0], args=(-1.0, ),
-                       constraints={'type': 'eq',
-                                    'fun': self.f_eqcon,
-                                    'args': (-1.0, )},
-                       method='SLSQP', options=self.opts)
-        assert_(res['success'], res['message'])
-        assert_allclose(res.x, [1, 1])
+        # Minimize with method='SLSQP': equality constraint, approx. jacobian.
+        jacs = [None, False, '2-point', '3-point']
+        for jac in jacs:
+            res = minimize(self.fun, [-1.0, 1.0], args=(-1.0, ),
+                           jac=jac,
+                           constraints={'type': 'eq',
+                                        'fun': self.f_eqcon,
+                                        'args': (-1.0, )},
+                           method='SLSQP', options=self.opts)
+            assert_(res['success'], res['message'])
+            assert_allclose(res.x, [1, 1])
 
     def test_minimize_equality_given(self):
         # Minimize with method='SLSQP': equality constraint, given Jacobian.

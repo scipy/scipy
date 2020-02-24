@@ -1,8 +1,8 @@
 from __future__ import division, absolute_import, print_function
 
 import numpy as np
-from numpy.testing import assert_equal, assert_allclose, assert_
-from scipy._lib._numpy_compat import suppress_warnings
+from numpy.testing import (assert_equal, assert_allclose, assert_,
+                           suppress_warnings)
 from pytest import raises as assert_raises
 import pytest
 
@@ -10,7 +10,7 @@ from scipy.interpolate import (BSpline, BPoly, PPoly, make_interp_spline,
         make_lsq_spline, _bspl, splev, splrep, splprep, splder, splantider,
          sproot, splint, insert)
 import scipy.linalg as sl
-from scipy._lib._version import NumpyVersion
+from scipy._lib import _pep440
 
 from scipy.interpolate._bsplines import _not_a_knot, _augknt
 import scipy.interpolate._fitpack_impl as _impl
@@ -615,7 +615,7 @@ class TestInterop(object):
         b = BSpline(*tck)
         assert_allclose(y, b(x), atol=1e-15)
 
-    @pytest.mark.xfail(NumpyVersion(np.__version__) < '1.14.0',
+    @pytest.mark.xfail(_pep440.parse(np.__version__) < _pep440.Version('1.14.0'),
                        reason='requires NumPy >= 1.14.0')
     def test_splrep_errors(self):
         # test that both "old" and "new" splrep raise for an N-D ``y`` array

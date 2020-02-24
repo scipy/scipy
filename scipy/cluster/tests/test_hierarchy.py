@@ -38,13 +38,11 @@ from numpy.testing import assert_allclose, assert_equal, assert_, assert_warns
 import pytest
 from pytest import raises as assert_raises
 
-from scipy._lib.six import xrange, u
-
 import scipy.cluster.hierarchy
 from scipy.cluster.hierarchy import (
     ClusterWarning, linkage, from_mlab_linkage, to_mlab_linkage,
     num_obs_linkage, inconsistent, cophenet, fclusterdata, fcluster,
-    is_isomorphic, single, leaders, complete, weighted, centroid,
+    is_isomorphic, single, leaders,
     correspond, is_monotonic, maxdists, maxinconsts, maxRstat,
     is_valid_linkage, is_valid_im, to_tree, leaves_list, dendrogram,
     set_link_color_palette, cut_tree, optimal_leaf_ordering,
@@ -82,7 +80,7 @@ class TestLinkage(object):
         assert_raises(ValueError, linkage, y)
 
     def test_linkage_tdist(self):
-        for method in ['single', 'complete', 'average', 'weighted', u('single')]:
+        for method in ['single', 'complete', 'average', 'weighted']:
             self.check_linkage_tdist(method)
 
     def check_linkage_tdist(self, method):
@@ -337,7 +335,7 @@ class TestIsIsomorphic(object):
             a = np.int_(np.random.rand(nobs) * nclusters)
             b = np.zeros(a.size, dtype=np.int_)
             P = np.random.permutation(nclusters)
-            for i in xrange(0, a.shape[0]):
+            for i in range(0, a.shape[0]):
                 b[i] = P[a[i]]
             if noniso:
                 Q = np.random.permutation(nobs)
@@ -378,7 +376,7 @@ class TestIsValidLinkage(object):
     def test_is_valid_linkage_4_and_up(self):
         # Tests is_valid_linkage(Z) on linkage on observation sets between
         # sizes 4 and 15 (step size 3).
-        for i in xrange(4, 15, 3):
+        for i in range(4, 15, 3):
             y = np.random.rand(i*(i-1)//2)
             Z = linkage(y)
             assert_(is_valid_linkage(Z) == True)
@@ -386,7 +384,7 @@ class TestIsValidLinkage(object):
     def test_is_valid_linkage_4_and_up_neg_index_left(self):
         # Tests is_valid_linkage(Z) on linkage on observation sets between
         # sizes 4 and 15 (step size 3) with negative indices (left).
-        for i in xrange(4, 15, 3):
+        for i in range(4, 15, 3):
             y = np.random.rand(i*(i-1)//2)
             Z = linkage(y)
             Z[i//2,0] = -2
@@ -396,7 +394,7 @@ class TestIsValidLinkage(object):
     def test_is_valid_linkage_4_and_up_neg_index_right(self):
         # Tests is_valid_linkage(Z) on linkage on observation sets between
         # sizes 4 and 15 (step size 3) with negative indices (right).
-        for i in xrange(4, 15, 3):
+        for i in range(4, 15, 3):
             y = np.random.rand(i*(i-1)//2)
             Z = linkage(y)
             Z[i//2,1] = -2
@@ -406,7 +404,7 @@ class TestIsValidLinkage(object):
     def test_is_valid_linkage_4_and_up_neg_dist(self):
         # Tests is_valid_linkage(Z) on linkage on observation sets between
         # sizes 4 and 15 (step size 3) with negative distances.
-        for i in xrange(4, 15, 3):
+        for i in range(4, 15, 3):
             y = np.random.rand(i*(i-1)//2)
             Z = linkage(y)
             Z[i//2,2] = -0.5
@@ -416,7 +414,7 @@ class TestIsValidLinkage(object):
     def test_is_valid_linkage_4_and_up_neg_counts(self):
         # Tests is_valid_linkage(Z) on linkage on observation sets between
         # sizes 4 and 15 (step size 3) with negative counts.
-        for i in xrange(4, 15, 3):
+        for i in range(4, 15, 3):
             y = np.random.rand(i*(i-1)//2)
             Z = linkage(y)
             Z[i//2,3] = -2
@@ -455,7 +453,7 @@ class TestIsValidInconsistent(object):
     def test_is_valid_im_4_and_up(self):
         # Tests is_valid_im(R) on im on observation sets between sizes 4 and 15
         # (step size 3).
-        for i in xrange(4, 15, 3):
+        for i in range(4, 15, 3):
             y = np.random.rand(i*(i-1)//2)
             Z = linkage(y)
             R = inconsistent(Z)
@@ -464,7 +462,7 @@ class TestIsValidInconsistent(object):
     def test_is_valid_im_4_and_up_neg_index_left(self):
         # Tests is_valid_im(R) on im on observation sets between sizes 4 and 15
         # (step size 3) with negative link height means.
-        for i in xrange(4, 15, 3):
+        for i in range(4, 15, 3):
             y = np.random.rand(i*(i-1)//2)
             Z = linkage(y)
             R = inconsistent(Z)
@@ -475,7 +473,7 @@ class TestIsValidInconsistent(object):
     def test_is_valid_im_4_and_up_neg_index_right(self):
         # Tests is_valid_im(R) on im on observation sets between sizes 4 and 15
         # (step size 3) with negative link height standard deviations.
-        for i in xrange(4, 15, 3):
+        for i in range(4, 15, 3):
             y = np.random.rand(i*(i-1)//2)
             Z = linkage(y)
             R = inconsistent(Z)
@@ -486,7 +484,7 @@ class TestIsValidInconsistent(object):
     def test_is_valid_im_4_and_up_neg_dist(self):
         # Tests is_valid_im(R) on im on observation sets between sizes 4 and 15
         # (step size 3) with negative link counts.
-        for i in xrange(4, 15, 3):
+        for i in range(4, 15, 3):
             y = np.random.rand(i*(i-1)//2)
             Z = linkage(y)
             R = inconsistent(Z)
@@ -515,7 +513,7 @@ class TestNumObsLinkage(object):
     def test_num_obs_linkage_4_and_up(self):
         # Tests num_obs_linkage(Z) on linkage on observation sets between sizes
         # 4 and 15 (step size 3).
-        for i in xrange(4, 15, 3):
+        for i in range(4, 15, 3):
             y = np.random.rand(i*(i-1)//2)
             Z = linkage(y)
             assert_equal(num_obs_linkage(Z), i)
@@ -566,11 +564,11 @@ class TestCorrespond(object):
     def test_correspond_2_and_up(self):
         # Tests correspond(Z, y) on linkage and CDMs over observation sets of
         # different sizes.
-        for i in xrange(2, 4):
+        for i in range(2, 4):
             y = np.random.rand(i*(i-1)//2)
             Z = linkage(y)
             assert_(correspond(Z, y))
-        for i in xrange(4, 15, 3):
+        for i in range(4, 15, 3):
             y = np.random.rand(i*(i-1)//2)
             Z = linkage(y)
             assert_(correspond(Z, y))
@@ -601,7 +599,7 @@ class TestCorrespond(object):
 
     def test_num_obs_linkage_multi_matrix(self):
         # Tests num_obs_linkage with observation matrices of multiple sizes.
-        for n in xrange(2, 10):
+        for n in range(2, 10):
             X = np.random.rand(n, 4)
             Y = pdist(X)
             Z = linkage(Y)
@@ -847,8 +845,8 @@ class TestDendrogram(object):
 
         # test that dendrogram accepts and handle the leaf_font_size and
         # leaf_rotation keywords
-        R1a = dendrogram(Z, ax=ax, orientation=orientation,
-                         leaf_font_size=20, leaf_rotation=90)
+        dendrogram(Z, ax=ax, orientation=orientation,
+                   leaf_font_size=20, leaf_rotation=90)
         testlabel = (
             ax.get_xticklabels()[0]
             if orientation in ['top', 'bottom']
@@ -856,16 +854,16 @@ class TestDendrogram(object):
         )
         assert_equal(testlabel.get_rotation(), 90)
         assert_equal(testlabel.get_size(), 20)
-        R1a = dendrogram(Z, ax=ax, orientation=orientation,
-                         leaf_rotation=90)
+        dendrogram(Z, ax=ax, orientation=orientation,
+                   leaf_rotation=90)
         testlabel = (
             ax.get_xticklabels()[0]
             if orientation in ['top', 'bottom']
             else ax.get_yticklabels()[0]
         )
         assert_equal(testlabel.get_rotation(), 90)
-        R1a = dendrogram(Z, ax=ax, orientation=orientation,
-                         leaf_font_size=20)
+        dendrogram(Z, ax=ax, orientation=orientation,
+                   leaf_font_size=20)
         testlabel = (
             ax.get_xticklabels()[0]
             if orientation in ['top', 'bottom']
@@ -926,7 +924,7 @@ def calculate_maximum_distances(Z):
     n = Z.shape[0] + 1
     B = np.zeros((n-1,))
     q = np.zeros((3,))
-    for i in xrange(0, n - 1):
+    for i in range(0, n - 1):
         q[:] = 0.0
         left = Z[i, 0]
         right = Z[i, 1]
@@ -944,7 +942,7 @@ def calculate_maximum_inconsistencies(Z, R, k=3):
     n = Z.shape[0] + 1
     B = np.zeros((n-1,))
     q = np.zeros((3,))
-    for i in xrange(0, n - 1):
+    for i in range(0, n - 1):
         q[:] = 0.0
         left = Z[i, 0]
         right = Z[i, 1]

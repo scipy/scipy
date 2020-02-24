@@ -45,7 +45,7 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
         Constraints definition.
         Function(s) ``R**n`` in the form::
 
-            g(x) <= 0 applied as g : R^n -> R^m
+            g(x) >= 0 applied as g : R^n -> R^m
             h(x) == 0 applied as h : R^n -> R^p
 
         Each constraint is defined in a dictionary with fields:
@@ -400,9 +400,9 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
          fun: 29.894378159142136
         funl: array([29.89437816])
      message: 'Optimization terminated successfully.'
-        nfev: 119
+        nfev: 114
          nit: 3
-       nlfev: 40
+       nlfev: 35
        nlhev: 0
        nljev: 5
      success: True
@@ -1332,7 +1332,7 @@ class SHGO(object):
 
         for j in range(1, D):
             F_int = [int(item) for item in next(f).strip().split()]
-            (d, s, a), m = F_int[:3], [0] + F_int[3:]
+            (_, s, a), m = F_int[:3], [0] + F_int[3:]
 
             if L <= s:
                 for i in range(1, L + 1):

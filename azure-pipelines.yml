@@ -5,12 +5,20 @@ trigger:
     include:
       - master
       - maintenance/*
+  paths:
+    include:
+      - '*'
+    exclude:
+      - 'benchmarks/*'
+      - './*.txt'
+      - 'site.cfg.example'
 
 # the version of OpenBLAS used is currently 0.3.7
 # and should be updated to match scipy-wheels as appropriate
 
 jobs:
 - job: Linux_Python_36_32bit_full
+  condition: and(succeeded(), ne(variables['Build.SourceBranch'], 'refs/heads/master'))  # skip for PR merges
   pool:
     vmImage: 'ubuntu-16.04'
   steps:
@@ -22,7 +30,7 @@ jobs:
            curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py && \
            python3.6 get-pip.py && \
            pip3 --version && \
-           pip3 install setuptools wheel numpy cython==0.29.13 pybind11 pytest pytest-timeout pytest-xdist pytest-env pytest-cov Pillow mpmath matplotlib --user && \
+           pip3 install setuptools wheel numpy cython==0.29.14 pybind11 pytest pytest-timeout pytest-xdist pytest-env pytest-cov Pillow mpmath matplotlib --user && \
            apt-get -y install gfortran-5 wget && \
            cd .. && \
            mkdir openblas && cd openblas && \
@@ -31,7 +39,7 @@ jobs:
            cp -r ./usr/local/lib/* /usr/lib && \
            cp ./usr/local/include/* /usr/include && \
            cd ../scipy && \
-           F77=gfortran-5 F90=gfortran-5 python3.6 runtests.py --mode=full -- -n auto -rsx --junitxml=junit/test-results.xml --cov=scipy --cov-report=xml --cov-report=html"
+           F77=gfortran-5 F90=gfortran-5 python3.6 runtests.py --mode=full -- -n auto -s --junitxml=junit/test-results.xml --cov-config=.coveragerc --cov-report=xml --cov-report=html"
     displayName: 'Run 32-bit Ubuntu Docker Build / Tests'
   - task: PublishTestResults@2
     condition: succeededOrFailed()
@@ -45,6 +53,7 @@ jobs:
       summaryFileLocation: '$(System.DefaultWorkingDirectory)/**/coverage.xml'
       reportDirectory: '$(System.DefaultWorkingDirectory)/**/htmlcov'
 - job: Windows
+  condition: and(succeeded(), ne(variables['Build.SourceBranch'], 'refs/heads/master'))  # skip for PR merges
   pool:
     vmImage: 'VS2017-Win2016'
   variables:
@@ -59,12 +68,6 @@ jobs:
           TEST_MODE: full
           OPENBLAS: $(OPENBLAS_32)
           BITS: 32
-        Python35-64bit-full:
-          PYTHON_VERSION: '3.5'
-          PYTHON_ARCH: 'x64'
-          TEST_MODE: full
-          OPENBLAS: $(OPENBLAS_64)
-          BITS: 64
         Python36-64bit-full:
           PYTHON_VERSION: '3.6'
           PYTHON_ARCH: 'x64'
@@ -107,15 +110,15 @@ jobs:
       # is the closest match available from choco package manager
       choco install -y mingw --forcex86 --force --version=6.4.0
     displayName: 'Install 32-bit mingw for 32-bit builds'
-    condition: eq(variables['BITS'], 32)
+    condition: and(succeeded(), eq(variables['BITS'], 32))
   - powershell: |
       choco install -y mingw --force --version=6.4.0
     displayName: 'Install 64-bit mingw for 64-bit builds'
-    condition: eq(variables['BITS'], 64)
-  - script: python -m pip install numpy cython==0.29.13 pybind11 pytest pytest-timeout pytest-xdist pytest-env pytest-cov Pillow mpmath
+    condition: and(succeeded(), eq(variables['BITS'], 64))
+  - script: python -m pip install numpy cython==0.29.14 pybind11 pytest pytest-timeout pytest-xdist pytest-env pytest-cov Pillow mpmath
     displayName: 'Install dependencies'
   - powershell: |
-      If ($(PYTHON_VERSION) -ne '3.5') {
+      If ($(PYTHON_VERSION) -ne '3.6') {
           python -m pip install matplotlib==3.2.0rc1
       }
       else {
@@ -138,7 +141,7 @@ jobs:
       rm scipy/_distributor_init.py
       mv scipy-wheels/_distributor_init.py scipy/
     displayName: 'Copy in _distributor_init.py'
-    condition: eq(variables['PYTHON_VERSION'], '3.8')
+    condition: and(succeeded(), eq(variables['PYTHON_VERSION'], '3.8'))
   - powershell: |
       If ($(BITS) -eq 32) {
           # 32-bit build requires careful adjustments

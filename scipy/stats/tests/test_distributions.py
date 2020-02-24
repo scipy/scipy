@@ -11,16 +11,17 @@ import os
 
 from numpy.testing import (assert_equal, assert_array_equal,
                            assert_almost_equal, assert_array_almost_equal,
-                           assert_allclose, assert_, assert_warns)
+                           assert_allclose, assert_, assert_warns,
+                           suppress_warnings)
 import pytest
 from pytest import raises as assert_raises
-from scipy._lib._numpy_compat import suppress_warnings
 
 import numpy
 import numpy as np
 from numpy import typecodes, array
 from numpy.lib.recfunctions import rec_append_fields
 from scipy import special
+from scipy._lib._util import check_random_state
 from scipy.integrate import IntegrationWarning
 import scipy.stats as stats
 from scipy.stats._distn_infrastructure import argsreduce
@@ -1452,7 +1453,7 @@ class TestRvDiscrete(object):
 
 class TestSkewNorm(object):
     def setup_method(self):
-        np.random.seed(1234)
+        self.rng = check_random_state(1234)
 
     def test_normal(self):
         # When the skewness is 0 the distribution is normal
@@ -1462,19 +1463,21 @@ class TestSkewNorm(object):
 
     def test_rvs(self):
         shape = (3, 4, 5)
-        x = stats.skewnorm.rvs(a=0.75, size=shape)
+        x = stats.skewnorm.rvs(a=0.75, size=shape, random_state=self.rng)
         assert_equal(shape, x.shape)
 
-        x = stats.skewnorm.rvs(a=-3, size=shape)
+        x = stats.skewnorm.rvs(a=-3, size=shape, random_state=self.rng)
         assert_equal(shape, x.shape)
 
     def test_moments(self):
-        X = stats.skewnorm.rvs(a=4, size=int(1e6), loc=5, scale=2)
+        X = stats.skewnorm.rvs(a=4, size=int(1e6), loc=5, scale=2,
+                               random_state=self.rng)
         expected = [np.mean(X), np.var(X), stats.skew(X), stats.kurtosis(X)]
         computed = stats.skewnorm.stats(a=4, loc=5, scale=2, moments='mvsk')
         assert_array_almost_equal(computed, expected, decimal=2)
 
-        X = stats.skewnorm.rvs(a=-4, size=int(1e6), loc=5, scale=2)
+        X = stats.skewnorm.rvs(a=-4, size=int(1e6), loc=5, scale=2,
+                               random_state=self.rng)
         expected = [np.mean(X), np.var(X), stats.skew(X), stats.kurtosis(X)]
         computed = stats.skewnorm.stats(a=-4, loc=5, scale=2, moments='mvsk')
         assert_array_almost_equal(computed, expected, decimal=2)
