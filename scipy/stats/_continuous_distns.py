@@ -1931,10 +1931,10 @@ foldnorm = foldnorm_gen(a=0.0, name='foldnorm')
 class weibull_min_gen(rv_continuous):
     r"""Weibull minimum continuous random variable.
 
-    The Weibull Minimum Extreme Value distribution, from extreme value theory,
-    is also often simply called the Weibull distribution.
-    It arises as the limiting distribution of the rescaled minimum of
-    iid random variables.
+    The Weibull Minimum Extreme Value distribution, from extreme value theory
+    (Fisher-Gnedenko theorem), is also often simply call1ed the Weibull
+    distribution. It arises as the limiting distribution of the rescaled
+    minimum of iid random variables.
 
     %(before_notes)s
 
@@ -1950,7 +1950,7 @@ class weibull_min_gen(rv_continuous):
 
         f(x, c) = c x^{c-1} \exp(-x^c)
 
-    for :math:`x >= 0`, :math:`c > 0`.
+    for :math:`x > 0`, :math:`c > 0`.
 
     `weibull_min` takes ``c`` as a shape parameter for :math:`c`.
     (named :math:`k` in Wikipedia article and :math:`a` in
@@ -2000,9 +2000,10 @@ weibull_min = weibull_min_gen(a=0.0, name='weibull_min')
 class weibull_max_gen(rv_continuous):
     r"""Weibull maximum continuous random variable.
 
-    The Weibull Maximum Extreme Value distribution, from extreme value theory,
-    is the limiting distribution of rescaled maximum of iid random variables.
-    This is the distribution of -X if X is from the `weibull_min` function.
+    The Weibull Maximum Extreme Value distribution, from extreme value theory
+    (Fisher-Gnedenko theorem), is the limiting distribution of rescaled
+    maximum of iid random variables. This is the distribution of -X
+    if X is from the `weibull_min` function.
 
     %(before_notes)s
 
