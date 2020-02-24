@@ -15,9 +15,9 @@ from numpy.testing import (
     assert_equal)
 
 from .test_linprog import magic_square
-from scipy.optimize._remove_redundancy import _remove_redundancy
-from scipy.optimize._remove_redundancy import _remove_redundancy_dense
-from scipy.optimize._remove_redundancy import _remove_redundancy_sparse
+from scipy.optimize._remove_redundancy import _remove_redundancy_svd
+from scipy.optimize._remove_redundancy import _remove_redundancy_pivot_dense
+from scipy.optimize._remove_redundancy import _remove_redundancy_pivot_sparse
 from scipy.optimize._remove_redundancy import _remove_redundancy_id
 
 from scipy.sparse import csc_matrix
@@ -230,12 +230,12 @@ class RRCommonTests(object):
 
 class TestRRSVD(RRCommonTests):
     def rr(self, A, b):
-        return _remove_redundancy(A, b)
+        return _remove_redundancy_svd(A, b)
 
 
 class TestRRPivotDense(RRCommonTests):
     def rr(self, A, b):
-        return _remove_redundancy_dense(A, b)
+        return _remove_redundancy_pivot_dense(A, b)
 
 
 class TestRRID(RRCommonTests):
@@ -245,5 +245,5 @@ class TestRRID(RRCommonTests):
 
 class TestRRPivotSparse(RRCommonTests):
     def rr(self, A, b):
-        A1, b1, status, message = _remove_redundancy_sparse(csc_matrix(A), b)
+        A1, b1, status, message = _remove_redundancy_pivot_sparse(csc_matrix(A), b)
         return A1.toarray(), b1, status, message

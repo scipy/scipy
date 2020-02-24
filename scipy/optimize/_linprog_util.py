@@ -7,8 +7,8 @@ import scipy.sparse as sps
 from warnings import warn
 from .optimize import OptimizeWarning
 from scipy.optimize._remove_redundancy import (
-    _remove_redundancy, _remove_redundancy_sparse,
-    _remove_redundancy_dense, _remove_redundancy_id
+    _remove_redundancy_svd, _remove_redundancy_pivot_sparse,
+    _remove_redundancy_pivot_dense, _remove_redundancy_id
     )
 from collections import namedtuple
 
@@ -835,7 +835,7 @@ def _presolve(lp, rr, rr_method, tol=1e-9):
                           "for redundant equality constraints.")
     if (sps.issparse(A_eq)):
         if rr and A_eq.size > 0:  # TODO: Fast sparse rank check?
-            A_eq, b_eq, status, message = _remove_redundancy_sparse(A_eq, b_eq)
+            A_eq, b_eq, status, message = _remove_redundancy_pivot_sparse(A_eq, b_eq)
             if A_eq.shape[0] < n_rows_A:
                 warn(redundancy_warning, OptimizeWarning, stacklevel=1)
             if status != 0:
@@ -847,24 +847,24 @@ def _presolve(lp, rr, rr_method, tol=1e-9):
     # faster. More testing would be good.
     small_nullspace = 5
     if rr and A_eq.size > 0:
-        try:  # TODO: instead use results of first SVD in _remove_redundancy
+        try:  # TODO: instead use results of first SVD in _remove_redundancy_svd
             rank = np.linalg.matrix_rank(A_eq)
-        except Exception:  # oh well, we'll have to go with _remove_redundancy_dense
+        except Exception:  # oh well, we'll have to go with _remove_redundancy_pivot_dense
             rank = 0
     if rr and A_eq.size > 0 and rank < A_eq.shape[0]:
         warn(redundancy_warning, OptimizeWarning, stacklevel=3)
         dim_row_nullspace = A_eq.shape[0]-rank
         if rr_method is None:
             if dim_row_nullspace <= small_nullspace:
-                A_eq, b_eq, status, message = _remove_redundancy(A_eq, b_eq)
+                A_eq, b_eq, status, message = _remove_redundancy_svd(A_eq, b_eq)
             if dim_row_nullspace > small_nullspace or status == 4:
-                A_eq, b_eq, status, message = _remove_redundancy_dense(A_eq, b_eq)
+                A_eq, b_eq, status, message = _remove_redundancy_pivot_dense(A_eq, b_eq)
         else:
             rr_method = rr_method.lower()
             if rr_method == "svd":
-                A_eq, b_eq, status, message = _remove_redundancy(A_eq, b_eq)
+                A_eq, b_eq, status, message = _remove_redundancy_svd(A_eq, b_eq)
             elif rr_method == "pivot":
-                A_eq, b_eq, status, message = _remove_redundancy_dense(A_eq, b_eq)
+                A_eq, b_eq, status, message = _remove_redundancy_pivot_dense(A_eq, b_eq)
             elif rr_method == "id":
                 A_eq, b_eq, status, message = _remove_redundancy_id(A_eq, b_eq, rank)
             else:  # shouldn't get here; option validity checked above

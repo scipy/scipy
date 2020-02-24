@@ -106,7 +106,7 @@ def bg_update_dense(plu, perm_r, v, j):
     return LU, p
 
 
-def _remove_redundancy_dense(A, rhs, true_rank=None):
+def _remove_redundancy_pivot_dense(A, rhs, true_rank=None):
     """
     Eliminates redundant equations from system of equations defined by Ax = b
     and identifies infeasibilities.
@@ -233,7 +233,7 @@ def _remove_redundancy_dense(A, rhs, true_rank=None):
     return A_orig[keep, :], rhs[keep], status, message
 
 
-def _remove_redundancy_sparse(A, rhs):
+def _remove_redundancy_pivot_sparse(A, rhs):
     """
     Eliminates redundant equations from system of equations defined by Ax = b
     and identifies infeasibilities.
@@ -360,7 +360,7 @@ def _remove_redundancy_sparse(A, rhs):
     return A_orig[keep, :], rhs[keep], status, message
 
 
-def _remove_redundancy(A, b):
+def _remove_redundancy_svd(A, b):
     """
     Eliminates redundant equations from system of equations defined by Ax = b
     and identifies infeasibilities.
