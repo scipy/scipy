@@ -2248,7 +2248,7 @@ def test_orcsd_uncsd(dtype_):
 
 
 @pytest.mark.parametrize("dtype,realtype",
-                         list(zip(DTYPES, REAL_DTYPES + REAL_DTYPES)))
+                         zip(DTYPES, REAL_DTYPES + REAL_DTYPES))
 @pytest.mark.parametrize("compz", ["I", "N", "V"])
 def test_pteqr(dtype, realtype, compz):
     '''
@@ -2294,7 +2294,7 @@ def test_pteqr(dtype, realtype, compz):
         A = np.diag(d) + np.diag(e, 1) + np.diag(e, -1)
 
     d_pteqr, e_pteqr, z_pteqr, work, info = pteqr(d, e, z=z, compz=compz)
-    assert_(info == 0, "info = {}, should be 0.".format(info))
+    assert_equal(info, 0, "info = {}, should be 0.".format(info))
     w = eig(A)
     # compare the routine's eigenvalues with scipy.linalg.eig's.
     assert_allclose(w, d_pteqr, rtol=rtol, atol=atol)
@@ -2306,68 +2306,39 @@ def test_pteqr(dtype, realtype, compz):
         # verify that z_pteqr recombines to A
         assert_allclose(z_pteqr @ np.diag(d_pteqr) @ z_pteqr.T, A, rtol=rtol,
                         atol=atol)
-
     # test with non-spd matrix
     d_pteqr, e_pteqr, z_pteqr, work, info = pteqr(d - 2, e, z=z, compz=compz)
-    assert_(info == 1, "pteqr: info = {}, should be 1".format(info))
+    assert_equal(info, 1, "pteqr: info = {}, should be 1".format(info))
     # test with incorrect/incompatible array sizes
     d_pteqr, e_pteqr, z_pteqr, work, info = pteqr(d[:-1], e, z=z, compz=compz)
-    assert_(info == 1, "pteqr: info = {}, should be 1".format(info))
+    assert_equal(info, 1, "pteqr: info = {}, should be 1".format(info))
     # test with singular matrix
     d[0] = 0
     e[0] = 0
     d_pteqr, e_pteqr, z_pteqr, work, info = pteqr(d, e, z=z, compz=compz)
-    assert_(info == 1, "pteqr: info = {}, should be 1".format(info))
+    assert_equal(info, 1, "pteqr: info = {}, should be 1".format(info))
 
 
-@pytest.mark.parametrize("compz,A,d,e,z,d_expect,z_expect",
+@pytest.mark.parametrize("compz,d,e,d_expect,z_expect",
                          [("I",
-                           None,
                            np.array([4.16, 5.25, 1.09, .62]),
                            np.array([3.17, -.97, .55]),
-                           None,
                            np.array([8.0023, 1.9926, 1.0014, 0.1237]),
                            np.array([[0.6326,  0.6245, -0.4191,  0.1847],
                                      [0.7668, -0.4270, 0.4176, -0.2352],
                                      [-0.1082, 0.6071, 0.4594, -0.6393],
                                      [-0.0081, 0.2432, 0.6625, 0.7084]])),
-                          ("V",
-                           np.array([[6.02 + 0j, -.45 + .25j, -1.3 + 1.74j,
-                                      1.45 - .66j],
-                                     [-.45 - .25j, 2.91 + 0j, .05 + 1.56j,
-                                      -1.04 + 1.27j],
-                                     [-1.30 - 1.74j, 0.05 - 1.56j,
-                                      3.29 + 0.00j, 0.14 - 1.70j],
-                                     [1.45 + 0.66j, -1.04 - 1.27j,
-                                      0.14 - 1.70j, 4.18 + 0.00j]]),
-                           None,
-                           None,
-                           None,
-                           np.array([7.9995, 5.9976, 2.0003, 0.4026]),
-                           np.array([[0.7289 + 0.0j, 0.2001 + 0.4724j,
-                                      -0.2133 + 0.1498j, 0.0995 - 0.3573j],
-                                     [-0.1651 - 0.2067j, -0.2461 + 0.3742j,
-                                      0.7308 + 0.0000j, 0.2867 - 0.3364j],
-                                     [-0.4170 - 0.1413j, 0.4476 + 0.1455j,
-                                      -0.3282 + 0.0471j, 0.6890 + 0.0000J],
-                                     [0.1748 + 0.4175j, 0.5610 + 0.0000j,
-                                      0.5203 + 0.1317j, 0.0659 + 0.4336j]]))])
-def test_pteqr_NAG(compz, A, d, e, z, d_expect, z_expect):
+                          ])
+def test_pteqr_NAG(compz, A, d, e, d_expect, z_expect):
     '''
-    Implements real (f08jgf) and complex (f08juf) examples from NAG manual.
+    Implements real (f08jgf) example from NAG manual.
     https://www.nag.com/numeric/fl/nagdoc_latest/html/f08/f08jgf.html
-    https://www.nag.com/numeric/fl/nagdoc_latest/html/f08/f08juf.html
     Tests for correct outputs.
     '''
     # the NAG manual has 4 decimals accuracy
-    rtol = 1e-4
+    atol = 1e-4
     pteqr = get_lapack_funcs(('pteqr'), dtype=d.dtype)
 
-    if compz == "V":
-        # Reduce A to tridiagonal form T = (Q**H)*A*Q
-        hetrd = get_lapack_funcs(('hetrd', ), (A,))
-        data, d, e, tau, info = hetrd[0](A)
-
-    _d, _e, _z, work, info = pteqr(d, e, z, compz=compz)
-    assert_allclose(_d, d_expect, rtol=rtol)
-    assert_allclose(_z, z_expect, rtol=rtol)
+    _d, _e, _z, work, info = pteqr(d, e, compz=compz)
+    assert_allclose(_d, d_expect, atol=atol)
+    assert_allclose(_z, z_expect, atol=atol)
