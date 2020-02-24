@@ -18,6 +18,8 @@ from .test_linprog import magic_square
 from scipy.optimize._remove_redundancy import _remove_redundancy
 from scipy.optimize._remove_redundancy import _remove_redundancy_dense
 from scipy.optimize._remove_redundancy import _remove_redundancy_sparse
+from scipy.optimize._remove_redundancy import _remove_redundancy_id
+
 from scipy.sparse import csc_matrix
 
 
@@ -234,6 +236,11 @@ class TestRRSVD(RRCommonTests):
 class TestRRPivotDense(RRCommonTests):
     def rr(self, A, b):
         return _remove_redundancy_dense(A, b)
+
+
+class TestRRID(RRCommonTests):
+    def rr(self, A, b):
+        return _remove_redundancy_id(A, b)
 
 
 class TestRRPivotSparse(RRCommonTests):
