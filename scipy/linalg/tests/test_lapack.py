@@ -2437,8 +2437,8 @@ def test_gtsvx_error_singular(dtype, trans, fact, dl_d_du_lambda):
         L, U = gttrf_to_lu(n, dtype, dlf, df, duf, du2f, ipiv)
         # check that the outputs define an LU decomposition of A
         assert_allclose(A, L @ U, atol=atol, rtol=rtol)
-        d[n-1] = 0
-        dl[n-2] = 0
+        d[-1] = 0
+        dl[-1] = 0
 
         # solve using routine
         gtsvx_out = gtsvx(dl, d, du, b)
@@ -2449,8 +2449,8 @@ def test_gtsvx_error_singular(dtype, trans, fact, dl_d_du_lambda):
     elif fact == 'F':
         # assuming that a singular factorization is input
         df_[-1] = 0
-        duf_[n-2] = 0
-        du2f_[n-3] = 0
+        duf_[-1] = 0
+        du2f_[-1] = 0
 
         gtsvx_out = gtsvx(dl, d, du, b, fact=fact, dlf=dlf_, df=df_, duf=duf_,
                           du2=du2f_, ipiv=ipiv_)
