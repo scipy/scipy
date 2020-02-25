@@ -28,9 +28,9 @@
 typedef long trlib_int_t;
 typedef double trlib_flt_t;
 
-#define TRLIB_EPS            (2.2204460492503131e-16)
-#define TRLIB_EPS_POW_4      (5.4774205922939014e-07)
-#define TRLIB_EPS_POW_5      (1.4901161193847656e-08)
-#define TRLIB_EPS_POW_75     (1.8189894035458565e-12)
+#define TRLIB_EPS            ((trlib_flt_t)2.2204460492503131e-16)
+#define TRLIB_EPS_POW_4      ((trlib_flt_t)5.4774205922939014e-07)
+#define TRLIB_EPS_POW_5      ((trlib_flt_t)1.4901161193847656e-08)
+#define TRLIB_EPS_POW_75     ((trlib_flt_t)1.8189894035458565e-12)
 
 #endif

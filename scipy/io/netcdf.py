@@ -50,7 +50,6 @@ from numpy import frombuffer, dtype, empty, array, asarray
 from numpy import little_endian as LITTLE_ENDIAN
 from functools import reduce
 
-from scipy._lib.six import integer_types, text_type, binary_type
 
 IS_PYPY = ('__pypy__' in sys.modules)
 
@@ -561,13 +560,10 @@ class netcdf_file(object):
         if hasattr(values, 'dtype'):
             nc_type = REVERSE[values.dtype.char, values.dtype.itemsize]
         else:
-            types = [(t, NC_INT) for t in integer_types]
-            types += [
-                    (float, NC_FLOAT),
-                    (str, NC_CHAR)
-                    ]
+            types = [(int, NC_INT), (float, NC_FLOAT), (str, NC_CHAR)]
+
             # bytes index into scalars in py3k. Check for "string" types
-            if isinstance(values, text_type) or isinstance(values, binary_type):
+            if isinstance(values, (str, bytes)):
                 sample = values
             else:
                 try:

@@ -1,11 +1,6 @@
 from __future__ import division, print_function, absolute_import
 
-import sys
-
-if sys.version_info[0] >= 3:
-    DEFINE_MACROS = [("SCIPY_PY3K", None)]
-else:
-    DEFINE_MACROS = []
+DEFINE_MACROS = [("SCIPY_PY3K", None)]
 
 
 def configuration(parent_package='', top_path=None):

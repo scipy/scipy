@@ -5,13 +5,11 @@ of mat file.
 from __future__ import division, print_function, absolute_import
 
 import os.path
-import sys
 import io
 
 from numpy.compat import asstr
 
-from scipy.io.matlab.mio5 import (MatlabObject, MatFile5Writer,
-                                  MatFile5Reader, MatlabFunction)
+from scipy.io.matlab.mio5 import MatFile5Reader
 
 test_data_path = os.path.join(os.path.dirname(__file__), 'data')
 
@@ -54,4 +52,4 @@ def read_workspace_vars(fname):
 def test_jottings():
     # example
     fname = os.path.join(test_data_path, 'parabola.mat')
-    ws_vars = read_workspace_vars(fname)
+    read_workspace_vars(fname)

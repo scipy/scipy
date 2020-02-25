@@ -530,8 +530,9 @@ void csr_toell(const I n_row,
  *   T  Cx[nnz(C)]  - nonzeros
  *
  * Note:
- *   Output arrays Cp, Cj, and Cx must be preallocated
- *   The value of nnz(C) will be stored in Ap[n_row] after the first pass.
+ *   Output arrays Cp, Cj, and Cx must be preallocated.
+ *   In order to find the appropriate type for T, csr_matmat_maxnnz can be used
+ *   to find nnz(C).
  *
  * Note:
  *   Input:  A and B column indices *are not* assumed to be in sorted order
@@ -553,25 +554,22 @@ void csr_toell(const I n_row,
  *
  */
 
-
 /*
- * Pass 1 computes CSR row pointer for the matrix product C = A * B
+ * Compute the number of non-zeroes (nnz) in the result of C = A * B.
  *
  */
 template <class I>
-void csr_matmat_pass1(const I n_row,
-                      const I n_col,
-                      const I Ap[],
-                      const I Aj[],
-                      const I Bp[],
-                      const I Bj[],
-                            I Cp[])
+npy_intp csr_matmat_maxnnz(const I n_row,
+                           const I n_col,
+                           const I Ap[],
+                           const I Aj[],
+                           const I Bp[],
+                           const I Bj[])
 {
     // method that uses O(n) temp storage
     std::vector<I> mask(n_col, -1);
-    Cp[0] = 0;
 
-    I nnz = 0;
+    npy_intp nnz = 0;
     for(I i = 0; i < n_row; i++){
         npy_intp row_nnz = 0;
 
@@ -596,27 +594,27 @@ void csr_matmat_pass1(const I n_row,
         }
 
         nnz = next_nnz;
-        Cp[i+1] = nnz;
     }
+
+    return nnz;
 }
 
 /*
- * Pass 2 computes CSR entries for matrix C = A*B using the
- * row pointer Cp[] computed in Pass 1.
+ * Compute CSR entries for matrix C = A*B.
  *
  */
 template <class I, class T>
-void csr_matmat_pass2(const I n_row,
-                      const I n_col,
-                      const I Ap[],
-                      const I Aj[],
-                      const T Ax[],
-                      const I Bp[],
-                      const I Bj[],
-                      const T Bx[],
-                            I Cp[],
-                            I Cj[],
-                            T Cx[])
+void csr_matmat(const I n_row,
+                const I n_col,
+                const I Ap[],
+                const I Aj[],
+                const T Ax[],
+                const I Bp[],
+                const I Bj[],
+                const T Bx[],
+                      I Cp[],
+                      I Cj[],
+                      T Cx[])
 {
     std::vector<I> next(n_col,-1);
     std::vector<T> sums(n_col, 0);

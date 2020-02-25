@@ -20,18 +20,7 @@ import os
 import io
 import subprocess
 
-try:
-    from scipy._lib.six import PY2
-except ImportError:
-    sys.path.insert(0, os.path.join(os.path.dirname(__file__),
-                                    os.pardir, 'scipy', 'lib'))
-    from six import PY2
-if PY2:
-    stdout_b = sys.stdout
-else:
-    stdout_b = sys.stdout.buffer
-
-
+stdout_b = sys.stdout.buffer
 MAILMAP_FILE = os.path.join(os.path.dirname(__file__), "..", ".mailmap")
 
 

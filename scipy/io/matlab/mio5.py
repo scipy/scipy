@@ -86,8 +86,6 @@ from numpy.compat import asbytes, asstr
 
 import scipy.sparse
 
-from scipy._lib.six import string_types
-
 from .byteordercodes import native_code, swapped_code
 
 from .miobase import (MatFileReader, docfiller, matdims, read_dtype,
@@ -258,7 +256,7 @@ class MatFile5Reader(MatFileReader):
 
         If variable_names is None, then get all variables in file
         '''
-        if isinstance(variable_names, string_types):
+        if isinstance(variable_names, str):
             variable_names = [variable_names]
         elif variable_names is not None:
             variable_names = list(variable_names)
@@ -380,7 +378,7 @@ def varmats_from_mat(file_obj):
     # Initialize variable reading
     file_obj.seek(0)
     rdr.initialize_read()
-    mdict = rdr.read_file_header()
+    rdr.read_file_header()
     next_position = file_obj.tell()
     named_mats = []
     while not rdr.end_of_stream():
@@ -438,7 +436,7 @@ def to_writeable(source):
         dtype = []
         values = []
         for field, value in source.items():
-            if (isinstance(field, string_types) and
+            if (isinstance(field, str) and
                     field[0] not in '_0123456789'):
                 dtype.append((str(field), object))
                 values.append(value)

@@ -26,11 +26,9 @@ import warnings
 # np.linalg.qr fails on some tests with LinAlgError: zgeqrf returns -7
 # use scipy's qr until this is solved
 
-import scipy._lib.six as six
 from scipy.linalg import qr as s_qr
 from scipy import integrate, interpolate, linalg
 from scipy.interpolate import interp1d
-from scipy._lib.six import xrange
 from .filter_design import (tf2zpk, zpk2tf, normalize, freqs, freqz, freqs_zpk,
                             freqz_zpk)
 from .lti_conversion import (tf2ss, abcd_normalize, ss2tf, zpk2ss, ss2zpk,
@@ -1345,7 +1343,7 @@ class StateSpace(LinearTimeInvariant):
 
     def _check_binop_other(self, other):
         return isinstance(other, (StateSpace, np.ndarray, float, complex,
-                                  np.number) + six.integer_types)
+                                  np.number, int))
 
     def __mul__(self, other):
         """
@@ -1971,7 +1969,7 @@ def lsim(system, U, T, X0=None, interp=True):
         # Zero input: just use matrix exponential
         # take transpose because state is a row vector
         expAT_dt = linalg.expm(transpose(A) * dt)
-        for i in xrange(1, n_steps):
+        for i in range(1, n_steps):
             xout[i] = dot(xout[i-1], expAT_dt)
         yout = squeeze(dot(xout, transpose(C)))
         return T, squeeze(yout), squeeze(xout)
@@ -2003,7 +2001,7 @@ def lsim(system, U, T, X0=None, interp=True):
         expMT = linalg.expm(transpose(M))
         Ad = expMT[:n_states, :n_states]
         Bd = expMT[n_states:, :n_states]
-        for i in xrange(1, n_steps):
+        for i in range(1, n_steps):
             xout[i] = dot(xout[i-1], Ad) + dot(U[i-1], Bd)
     else:
         # Linear interpolation between steps
@@ -2025,7 +2023,7 @@ def lsim(system, U, T, X0=None, interp=True):
         Ad = expMT[:n_states, :n_states]
         Bd1 = expMT[n_states+n_inputs:, :n_states]
         Bd0 = expMT[n_states:n_states + n_inputs, :n_states] - Bd1
-        for i in xrange(1, n_steps):
+        for i in range(1, n_steps):
             xout[i] = (dot(xout[i-1], Ad) + dot(U[i-1], Bd0) + dot(U[i], Bd1))
 
     yout = (squeeze(dot(xout, transpose(C))) + squeeze(dot(U, transpose(D))))

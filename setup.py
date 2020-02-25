@@ -27,8 +27,8 @@ import sysconfig
 from distutils.version import LooseVersion
 
 
-if sys.version_info[:2] < (3, 5):
-    raise RuntimeError("Python version >= 3.5 required.")
+if sys.version_info[:2] < (3, 6):
+    raise RuntimeError("Python version >= 3.6 required.")
 
 import builtins
 
@@ -41,9 +41,9 @@ License :: OSI Approved :: BSD License
 Programming Language :: C
 Programming Language :: Python
 Programming Language :: Python :: 3
-Programming Language :: Python :: 3.5
 Programming Language :: Python :: 3.6
 Programming Language :: Python :: 3.7
+Programming Language :: Python :: 3.8
 Topic :: Software Development
 Topic :: Scientific/Engineering
 Operating System :: Microsoft :: Windows
@@ -463,16 +463,16 @@ def setup_package():
     try:
         import numpy
     except ImportError:  # We do not have numpy installed
-        build_requires = ['numpy>=1.13.3']
+        build_requires = ['numpy>=1.14.5']
     else:
         # If we're building a wheel, assume there already exist numpy wheels
         # for this platform, so it is safe to add numpy to build requirements.
         # See gh-5184.
-        build_requires = (['numpy>=1.13.3'] if 'bdist_wheel' in sys.argv[1:]
+        build_requires = (['numpy>=1.14.5'] if 'bdist_wheel' in sys.argv[1:]
                           else [])
 
     install_requires = build_requires
-    setup_requires = build_requires + ['pybind11>=2.2.4']
+    setup_requires = build_requires + ['pybind11>=2.4.3']
 
     metadata = dict(
         name='scipy',
@@ -494,7 +494,7 @@ def setup_package():
         test_suite='nose.collector',
         setup_requires=setup_requires,
         install_requires=install_requires,
-        python_requires='>=3.5',
+        python_requires='>=3.6',
     )
 
     if "--force" in sys.argv:

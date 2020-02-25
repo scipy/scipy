@@ -6,7 +6,6 @@ from __future__ import division, print_function, absolute_import
 import warnings
 import numpy as np
 from numpy.linalg import LinAlgError
-from scipy._lib.six import xrange
 from scipy.linalg import (get_blas_funcs, qr, solve, svd, qr_insert, lstsq)
 from scipy.sparse.linalg.isolve.utils import make_system
 
@@ -89,7 +88,7 @@ def _fgmres(matvec, v0, m, atol, lpsolve=None, rpsolve=None, cs=(), outer_v=(),
     breakdown = False
 
     # FGMRES Arnoldi process
-    for j in xrange(m):
+    for j in range(m):
         # L A Z = C B + V H
 
         if prepend_outer_v and j < len(outer_v):
@@ -326,9 +325,9 @@ def gcrotmk(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
 
         # U := U P R^-1,  back-substitution
         new_us = []
-        for j in xrange(len(cs)):
+        for j in range(len(cs)):
             u = us[P[j]]
-            for i in xrange(j):
+            for i in range(j):
                 u = axpy(us[P[i]], u, u.shape[0], -R[i,j])
             if abs(R[j,j]) < 1e-12 * abs(R[0,0]):
                 # discard rest of the vectors
@@ -356,7 +355,7 @@ def gcrotmk(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
             r = axpy(c, r, r.shape[0], -yc)
 
     # GCROT main iteration
-    for j_outer in xrange(maxiter):
+    for j_outer in range(maxiter):
         # -- callback
         if callback is not None:
             callback(x)

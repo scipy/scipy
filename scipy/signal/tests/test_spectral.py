@@ -3,11 +3,10 @@ from __future__ import division, print_function, absolute_import
 import numpy as np
 from numpy.testing import (assert_, assert_approx_equal,
                            assert_allclose, assert_array_equal, assert_equal,
-                           assert_array_almost_equal_nulp)
+                           assert_array_almost_equal_nulp, suppress_warnings)
 import pytest
 from pytest import raises as assert_raises
 
-from scipy._lib._numpy_compat import suppress_warnings
 from scipy import signal
 from scipy.fft import fftfreq
 from scipy.signal import (periodogram, welch, lombscargle, csd, coherence,
@@ -1071,7 +1070,7 @@ class TestLombscargle(object):
         t = np.linspace(0, 10, 1000, endpoint=False)
         x = np.sin(4*t)
         f = np.linspace(0, 50, 500, endpoint=False) + 0.1
-        q = lombscargle(t, x, f*2*np.pi)
+        lombscargle(t, x, f*2*np.pi)
 
 
 class TestSTFT(object):
@@ -1088,7 +1087,7 @@ class TestSTFT(object):
         assert_raises(ValueError, check_NOLA, 'hann', 64, -32)
 
         x = np.zeros(1024)
-        z = stft(x)
+        z = np.array(stft(x), dtype=object)
 
         assert_raises(ValueError, stft, x, window=np.ones((2,2)))
         assert_raises(ValueError, stft, x, window=np.ones(10), nperseg=256)

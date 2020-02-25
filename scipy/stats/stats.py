@@ -164,21 +164,15 @@ References
 from __future__ import division, print_function, absolute_import
 
 import warnings
-import sys
 import math
-if sys.version_info >= (3, 5):
-    from math import gcd
-else:
-    from fractions import gcd
+from math import gcd
 from collections import namedtuple
 
 import numpy as np
 from numpy import array, asarray, ma
 
-from scipy._lib.six import callable, string_types
 from scipy.spatial.distance import cdist
 from scipy.ndimage import measurements
-from scipy._lib._version import NumpyVersion
 from scipy._lib._util import _lazywhere, check_random_state, MapWrapper
 import scipy.special as special
 from scipy import linalg
@@ -201,9 +195,9 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
            'sem', 'zmap', 'zscore', 'iqr', 'gstd', 'median_absolute_deviation',
            'sigmaclip', 'trimboth', 'trim1', 'trim_mean', 'f_oneway',
            'PearsonRConstantInputWarning', 'PearsonRNearConstantInputWarning',
-           'pearsonr', 'fisher_exact', 'spearmanr', 'pointbiserialr',
-           'kendalltau', 'weightedtau',
-           'multiscale_graphcorr',
+           'pearsonr', 'fisher_exact', 'SpearmanRConstantInputWarning',
+           'spearmanr', 'pointbiserialr',
+           'kendalltau', 'weightedtau', 'multiscale_graphcorr',
            'linregress', 'siegelslopes', 'theilslopes', 'ttest_1samp',
            'ttest_ind', 'ttest_ind_from_stats', 'ttest_rel', 'kstest',
            'chisquare', 'power_divergence', 'ks_2samp', 'mannwhitneyu',
@@ -2259,6 +2253,7 @@ def obrientransform(*args):
 
     # `arrays` will hold the transformed arguments.
     arrays = []
+    sLast = None
 
     for arg in args:
         a = np.asarray(arg)
@@ -2277,7 +2272,12 @@ def obrientransform(*args):
             raise ValueError('Lack of convergence in obrientransform.')
 
         arrays.append(t)
+        sLast = a.shape
 
+    if sLast:
+        for arr in arrays[:-1]:
+            if sLast != arr.shape:
+                return np.array(arrays, dtype=object)
     return np.array(arrays)
 
 
@@ -2733,7 +2733,7 @@ def iqr(x, axis=None, rng=(25, 75), scale='raw', nan_policy='propagate',
 
     # An error may be raised here, so fail-fast, before doing lengthy
     # computations, even though `scale` is not used until later
-    if isinstance(scale, string_types):
+    if isinstance(scale, str):
         scale_key = scale.lower()
         if scale_key not in _scale_conversions:
             raise ValueError("{0} not a valid scale for `iqr`".format(scale))
@@ -2743,9 +2743,9 @@ def iqr(x, axis=None, rng=(25, 75), scale='raw', nan_policy='propagate',
     contains_nan, nan_policy = _contains_nan(x, nan_policy)
 
     if contains_nan and nan_policy == 'omit':
-        percentile_func = _iqr_nanpercentile
+        percentile_func = np.nanpercentile
     else:
-        percentile_func = _iqr_percentile
+        percentile_func = np.percentile
 
     if len(rng) != 2:
         raise TypeError("quantile range must be two element sequence")
@@ -2755,7 +2755,7 @@ def iqr(x, axis=None, rng=(25, 75), scale='raw', nan_policy='propagate',
 
     rng = sorted(rng)
     pct = percentile_func(x, rng, axis=axis, interpolation=interpolation,
-                          keepdims=keepdims, contains_nan=contains_nan)
+                          keepdims=keepdims)
     out = np.subtract(pct[1], pct[0])
 
     if scale != 1.0:
@@ -2880,110 +2880,6 @@ def median_absolute_deviation(x, axis=0, center=np.median, scale=1.4826,
         mad = np.median(np.abs(arr - med), axis=axis)
 
     return scale * mad
-
-
-def _iqr_percentile(x, q, axis=None, interpolation='linear', keepdims=False, contains_nan=False):
-    """
-    Private wrapper that works around older versions of `numpy`.
-
-    While this function is pretty much necessary for the moment, it
-    should be removed as soon as the minimum supported numpy version
-    allows.
-    """
-    if contains_nan and NumpyVersion(np.__version__) < '1.10.0a':
-        # I see no way to avoid the version check to ensure that the corrected
-        # NaN behavior has been implemented except to call `percentile` on a
-        # small array.
-        msg = "Keyword nan_policy='propagate' not correctly supported for " \
-              "numpy versions < 1.10.x. The default behavior of " \
-              "`numpy.percentile` will be used."
-        warnings.warn(msg, RuntimeWarning)
-
-    try:
-        # For older versions of numpy, there are two things that can cause a
-        # problem here: missing keywords and non-scalar axis. The former can be
-        # partially handled with a warning, the latter can be handled fully by
-        # hacking in an implementation similar to numpy's function for
-        # providing multi-axis functionality
-        # (`numpy.lib.function_base._ureduce` for the curious).
-        result = np.percentile(x, q, axis=axis, keepdims=keepdims,
-                               interpolation=interpolation)
-    except TypeError:
-        if interpolation != 'linear' or keepdims:
-            # At time or writing, this means np.__version__ < 1.9.0
-            warnings.warn("Keywords interpolation and keepdims not supported "
-                          "for your version of numpy", RuntimeWarning)
-        try:
-            # Special processing if axis is an iterable
-            original_size = len(axis)
-        except TypeError:
-            # Axis is a scalar at this point
-            pass
-        else:
-            axis = np.unique(np.asarray(axis) % x.ndim)
-            if original_size > axis.size:
-                # mimic numpy if axes are duplicated
-                raise ValueError("duplicate value in axis")
-            if axis.size == x.ndim:
-                # axis includes all axes: revert to None
-                axis = None
-            elif axis.size == 1:
-                # no rolling necessary
-                axis = axis[0]
-            else:
-                # roll multiple axes to the end and flatten that part out
-                for ax in axis[::-1]:
-                    x = np.rollaxis(x, ax, x.ndim)
-                x = x.reshape(x.shape[:-axis.size] +
-                              (np.prod(x.shape[-axis.size:]),))
-                axis = -1
-        result = np.percentile(x, q, axis=axis)
-
-    return result
-
-
-def _iqr_nanpercentile(x, q, axis=None, interpolation='linear', keepdims=False,
-                       contains_nan=False):
-    """
-    Private wrapper that works around the following:
-
-      1. A bug in `np.nanpercentile` that was around until numpy version
-         1.11.0.
-      2. A bug in `np.percentile` NaN handling that was fixed in numpy
-         version 1.10.0.
-      3. The non-existence of `np.nanpercentile` before numpy version
-         1.9.0.
-
-    While this function is pretty much necessary for the moment, it
-    should be removed as soon as the minimum supported numpy version
-    allows.
-    """
-    if hasattr(np, 'nanpercentile'):
-        # At time or writing, this means np.__version__ < 1.9.0
-        result = np.nanpercentile(x, q, axis=axis,
-                                  interpolation=interpolation,
-                                  keepdims=keepdims)
-        # If non-scalar result and nanpercentile does not do proper axis roll.
-        # I see no way of avoiding the version test since dimensions may just
-        # happen to match in the data.
-        if result.ndim > 1 and NumpyVersion(np.__version__) < '1.11.0a':
-            axis = np.asarray(axis)
-            if axis.size == 1:
-                # If only one axis specified, reduction happens along that dimension
-                if axis.ndim == 0:
-                    axis = axis[None]
-                result = np.rollaxis(result, axis[0])
-            else:
-                # If multiple axes, reduced dimeision is last
-                result = np.rollaxis(result, -1)
-    else:
-        msg = "Keyword nan_policy='omit' not correctly supported for numpy " \
-              "versions < 1.9.x. The default behavior of  numpy.percentile " \
-              "will be used."
-        warnings.warn(msg, RuntimeWarning)
-        result = _iqr_percentile(x, q, axis=axis)
-
-    return result
 
 
 #####################################
@@ -3333,14 +3229,15 @@ def f_oneway(*args):
     offset = alldata.mean()
     alldata -= offset
 
-    sstot = _sum_of_squares(alldata) - (_square_of_sums(alldata) / bign)
+    normalized_ss = _square_of_sums(alldata) / bign
+    sstot = _sum_of_squares(alldata) - normalized_ss
     ssbn = 0
     for a in args:
         ssbn += _square_of_sums(a - offset) / len(a)
 
     # Naming: variables ending in bn/b are for "between treatments", wn/w are
     # for "within treatments"
-    ssbn -= _square_of_sums(alldata) / bign
+    ssbn -= normalized_ss
     sswn = sstot - ssbn
     dfbn = num_groups - 1
     dfwn = bign - num_groups
@@ -3719,6 +3616,16 @@ def fisher_exact(table, alternative='two-sided'):
     return oddsratio, pvalue
 
 
+class SpearmanRConstantInputWarning(RuntimeWarning):
+    """Warning generated by `spearmanr` when an input is constant."""
+
+    def __init__(self, msg=None):
+        if msg is None:
+            msg = ("An input array is constant; the correlation coefficent "
+                   "is not defined.")
+        self.args = (msg,)
+
+
 SpearmanrResult = namedtuple('SpearmanrResult', ('correlation', 'pvalue'))
 
 
@@ -3818,6 +3725,9 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate'):
     (0.052760927029710199, 0.60213045837062351)
 
     """
+    if axis is not None and axis > 1:
+        raise ValueError("spearmanr only handles 1-D or 2-D arrays, supplied axis argument {}, please use only values 0, 1 or None for axis".format(axis))
+
     a, axisout = _chk_asarray(a, axis)
     if a.ndim > 2:
         raise ValueError("spearmanr only handles 1-D or 2-D arrays")
@@ -3839,6 +3749,17 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate'):
     if n_obs <= 1:
         # Handle empty arrays or single observations.
         return SpearmanrResult(np.nan, np.nan)
+
+    if axisout == 0:
+        if (a[:, 0][0] == a[:, 0]).all() or (a[:, 1][0] == a[:, 1]).all():
+            # If an input is constant, the correlation coefficient is not defined.
+            warnings.warn(SpearmanRConstantInputWarning())
+            return SpearmanrResult(np.nan, np.nan)
+    else:  # case when axisout == 1 b/c a is 2 dim only
+        if (a[0, :][0] == a[0, :]).all() or (a[1, :][0] == a[1, :]).all():
+            # If an input is constant, the correlation coefficient is not defined.
+            warnings.warn(SpearmanRConstantInputWarning())
+            return SpearmanrResult(np.nan, np.nan)
 
     a_contains_nan, nan_policy = _contains_nan(a, nan_policy)
     variable_has_nan = np.zeros(n_vars, dtype=bool)
@@ -4131,7 +4052,7 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate', method='auto'
             method = 'asymptotic'
 
     if xtie == 0 and ytie == 0 and method == 'exact':
-        # Exact p-value, see Maurice G. Kendall, "Rank Correlation Methods" (4th Edition), Charles Griffin & Co., 1970.
+        # Exact p-value, see p. 68 of Maurice G. Kendall, "Rank Correlation Methods" (4th Edition), Charles Griffin & Co., 1970.
         c = min(dis, tot-dis)
         if size <= 0:
             raise ValueError
@@ -4145,6 +4066,8 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate', method='auto'
             pvalue = 2.0/math.factorial(size) if size < 171 else 0.0
         elif c == 1:
             pvalue = 2.0/math.factorial(size-1) if (size-1) < 171 else 0.0
+        elif 2*c == tot:
+            pvalue = 1.0
         else:
             new = [0.0]*(c+1)
             new[0] = 1.0
@@ -4155,6 +4078,7 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate', method='auto'
                     new[k] += new[k-1]
                 for k in range(j,c+1):
                     new[k] += new[k-1] - old[k-j]
+
             pvalue = 2.0*sum(new)/math.factorial(size) if size < 171 else 0.0
 
     elif method == 'asymptotic':
@@ -5484,7 +5408,7 @@ def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', mode='approx'):
     (0.131016895759829, 0.058826222555312224)
 
     """
-    if isinstance(rvs, string_types):
+    if isinstance(rvs, str):
         if (not cdf) or (cdf == rvs):
             cdf = getattr(distributions, rvs).cdf
             rvs = getattr(distributions, rvs).rvs
@@ -5492,7 +5416,7 @@ def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', mode='approx'):
             raise AttributeError("if rvs is string, cdf has to be the "
                                  "same distribution")
 
-    if isinstance(cdf, string_types):
+    if isinstance(cdf, str):
         cdf = getattr(distributions, cdf).cdf
     if callable(rvs):
         kwds = {'size': N}
@@ -5718,7 +5642,7 @@ def power_divergence(f_obs, f_exp=None, ddof=0, axis=0, lambda_=None):
 
     """
     # Convert the input argument `lambda_` to a numerical value.
-    if isinstance(lambda_, string_types):
+    if isinstance(lambda_, str):
         if lambda_ not in _power_div_lambda_names:
             names = repr(list(_power_div_lambda_names.keys()))[1:-1]
             raise ValueError("invalid string for lambda_: {0!r}.  Valid strings "
@@ -5742,7 +5666,7 @@ def power_divergence(f_obs, f_exp=None, ddof=0, axis=0, lambda_=None):
     # cases of lambda_.
     if lambda_ == 1:
         # Pearson's chi-squared statistic
-        terms = (f_obs - f_exp)**2 / f_exp
+        terms = (f_obs.astype(np.float64) - f_exp)**2 / f_exp
     elif lambda_ == 0:
         # Log-likelihood ratio (i.e. G-test)
         terms = 2.0 * special.xlogy(f_obs, f_obs / f_exp)
@@ -5935,16 +5859,21 @@ def _compute_prob_inside_method(m, n, g, h):
     # This is an integer calculation, but the entries are essentially
     # binomial coefficients, hence grow quickly.
     # Scaling after each column is computed avoids dividing by a
-    # large binomial coefficent at the end. Instead it is incorporated
-    # one factor at a time during the computation.
+    # large binomial coefficent at the end, but is not sufficient to avoid
+    # the large dyanamic range which appears during the calculation.
+    # Instead we rescale based on the magnitude of the right most term in
+    # the column and keep track of an exponent separately and apply
+    # it at the end of the calculation.  Similarly when multiplying by
+    # the binomial coefficint
     dtype = np.float64
     A = np.zeros(lenA, dtype=dtype)
     # Initialize the first column
     A[minj:maxj] = 1
+    expnt = 0
     for i in range(1, m + 1):
         # Generate the next column.
         # First calculate the sliding window
-        lastminj, lastmaxj, lastlen = minj, maxj, curlen
+        lastminj, lastlen = minj, curlen
         minj = max(int(np.floor((ng * i - h) / mg)) + 1, 0)
         minj = min(minj, n)
         maxj = min(int(np.ceil((ng * i + h) / mg)), n + 1)
@@ -5956,10 +5885,26 @@ def _compute_prob_inside_method(m, n, g, h):
         if lastlen > curlen:
             # Set some carried-over elements to 0
             A[maxj - minj:maxj - minj + (lastlen - curlen)] = 0
-        # Peel off one term from each of top and bottom of the binomial coefficient.
-        scaling_factor = i * 1.0 / (n + i)
-        A *= scaling_factor
-    return A[maxj - minj - 1]
+        # Rescale if the right most value is over 2**900
+        val = A[maxj - minj - 1]
+        _, valexpt = math.frexp(val)
+        if valexpt > 900:
+            # Scaling to bring down to about 2**800 appears
+            # sufficient for sizes under 10000.
+            valexpt -= 800
+            A = np.ldexp(A, -valexpt)
+            expnt += valexpt
+
+    val = A[maxj - minj - 1]
+    # Now divide by the binomial (m+n)!/m!/n!
+    for i in range(1, n + 1):
+        val = (val * i) / (m + i)
+        _, valexpt = math.frexp(val)
+        if valexpt < -128:
+            val = np.ldexp(val, -valexpt)
+            expnt += valexpt
+    # Finally scale if needed.
+    return np.ldexp(val, expnt)
 
 
 def _compute_prob_outside_square(n, h):
@@ -6141,6 +6086,12 @@ def ks_2samp(data1, data2, alternative='two-sided', mode='auto'):
     If the mode is 'auto', the computation is exact if the sample sizes are
     less than 10000.  For larger sizes, the computation uses the
     Kolmogorov-Smirnov distributions to compute an approximate value.
+
+    The 'two-sided' 'exact' computation computes the complementary probability
+    and then subtracts from 1.  As such, the minimum probability it can return
+    is about 1e-16.  While the algorithm itself is exact, numerical
+    errors may accumulate for large sample sizes.   It is most suited to
+    situations in which one of the sample sizes is only a few thousand.
 
     We generally follow Hodges' treatment of Drion/Gnedenko/Korolyuk [1]_.
 

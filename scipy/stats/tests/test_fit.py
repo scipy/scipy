@@ -3,8 +3,7 @@ from __future__ import division, print_function, absolute_import
 import os
 
 import numpy as np
-from numpy.testing import assert_allclose
-from scipy._lib._numpy_compat import suppress_warnings
+from numpy.testing import assert_allclose, suppress_warnings
 import pytest
 from scipy import stats
 
@@ -26,6 +25,7 @@ failing_fits = [
         'gengamma',
         'kappa4',
         'ksone',
+        'kstwo',
         'mielke',
         'ncf',
         'ncx2',

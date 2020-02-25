@@ -4,7 +4,6 @@ import numpy as np
 
 try:
     import mpmath
-    import matplotlib.pyplot as plt
 except ImportError:
     pass
 

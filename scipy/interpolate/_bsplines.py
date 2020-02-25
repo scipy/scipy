@@ -4,7 +4,6 @@ import functools
 import operator
 
 import numpy as np
-from scipy._lib.six import string_types
 from scipy.linalg import (get_lapack_funcs, LinAlgError,
                           cholesky_banded, cho_solve_banded)
 from . import _bspl
@@ -594,7 +593,7 @@ def _augknt(x, k):
 
 
 def _convert_string_aliases(deriv, target_shape):
-    if isinstance(deriv, string_types):
+    if isinstance(deriv, str):
         if deriv == "clamped":
             deriv = [(1, np.zeros(target_shape))]
         elif deriv == "natural":
@@ -734,7 +733,7 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
     # convert string aliases for the boundary conditions
     if bc_type is None or bc_type == 'not-a-knot':
         deriv_l, deriv_r = None, None
-    elif isinstance(bc_type, string_types):
+    elif isinstance(bc_type, str):
         deriv_l, deriv_r = bc_type, bc_type
     else:
         try:

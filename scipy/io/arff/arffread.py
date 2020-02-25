@@ -7,7 +7,6 @@ from collections import OrderedDict
 
 import numpy as np
 
-from scipy._lib.six import next
 import csv
 import ctypes
 

@@ -3,7 +3,6 @@ from __future__ import division, print_function, absolute_import
 import warnings
 
 from numpy.testing import assert_, assert_equal
-from scipy._lib._numpy_compat import suppress_warnings
 import pytest
 from pytest import raises as assert_raises
 

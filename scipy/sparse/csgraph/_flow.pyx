@@ -30,7 +30,7 @@ class MaximumFlowResult:
 def maximum_flow(csgraph, source, sink):
     r"""
     maximum_flow(csgraph, source, sink)
-                  
+
     Maximize the flow between two vertices in a graph.
 
     .. versionadded:: 1.4.0
@@ -86,6 +86,9 @@ def maximum_flow(csgraph, source, sink):
     to reduce the problem to the integral case by scaling all capacities
     accordingly.
 
+    Solving a maximum-flow problem can be used for example for graph cuts
+    optimization in computer vision [3]_.
+
     References
     ----------
     .. [1] Edmonds, J. and Karp, R. M.
@@ -93,6 +96,7 @@ def maximum_flow(csgraph, source, sink):
            problems. 1972. Journal of the ACM. 19 (2): pp. 248-264
     .. [2] Cormen, T. H. and Leiserson, C. E. and Rivest, R. L. and Stein C.
            Introduction to Algorithms. Second Edition. 2001. MIT Press.
+    .. [3] https://en.wikipedia.org/wiki/Graph_cuts_in_computer_vision
 
     Examples
     --------
@@ -187,9 +191,8 @@ def maximum_flow(csgraph, source, sink):
     matched with the second, first, and third vertex in :math:`V` respectively.
 
     While this solves the maximum bipartite matching problem in general, note
-    that algorithms specialized to that problem will perform better. In
-    particular, :func:`maximum_bipartite_matching` will be faster when its
-    preconditions are met.
+    that algorithms specialized to that problem, such as
+    :func:`maximum_bipartite_matching`, will generally perform better.
 
     This approach can also be used to solve various common generalizations of
     the maximum bipartite matching problem. If, for instance, some vertices can
