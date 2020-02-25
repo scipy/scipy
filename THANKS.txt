@@ -228,6 +228,7 @@ Domen Gorjup and Janko Slavič for continuous wavelet transform with complex
     wavelets fix.
 Søren Fuglede Jørgensen for improvements to scipy.sparse.csgraph
 Grzegorz Mrukwa for a bug fix in rectangular_lsap.cpp
+Santiago Hernandez for a bug fix in scipy.optimize._differentialevolution.py.
 
 Institutions
 ------------
