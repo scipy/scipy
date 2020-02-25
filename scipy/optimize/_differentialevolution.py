@@ -1299,10 +1299,10 @@ class _ConstraintWrapper(object):
                 return np.atleast_1d(constraint.fun(x))
         elif isinstance(constraint, LinearConstraint):
             def fun(x):
-                if not issparse(constraint.A):
-                    A = np.atleast_2d(constraint.A)
-                else:
+                if issparse(constraint.A):
                     A = constraint.A
+                else:
+                    A = np.atleast_2d(constraint.A)
                 return A.dot(x)
         elif isinstance(constraint, Bounds):
             def fun(x):
