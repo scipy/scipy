@@ -122,7 +122,7 @@ ctypedef fused ordered:
 @cython.boundscheck(False)
 cdef _invert_in_place(intp_t[:] perm):
     cdef intp_t n, i, j, k
-    for n in xrange(len(perm)-1, -1, -1):
+    for n in range(len(perm)-1, -1, -1):
         i = perm[n]
         if i < 0:
             perm[n] = -i - 1
@@ -149,7 +149,7 @@ def _toint64(x):
     cdef int64_t[::1] result = np.ndarray(l, dtype=np.int64)
 
     # Find nans, if any, and assign them the lowest value
-    for i in xrange(l - 1, -1, -1):
+    for i in range(l - 1, -1, -1):
         if not np.isnan(x[perm[i]]):
             break
         result[perm[i]] = 0
@@ -158,7 +158,7 @@ def _toint64(x):
         j = 1
         l = i + 1
 
-    for i in xrange(l - 1):
+    for i in range(l - 1):
         result[perm[i]] = j
         if x[perm[i]] != x[perm[i + 1]]:
             j += 1
@@ -195,7 +195,7 @@ def _weightedrankedtau(ordered[:] x, ordered[:] y, intp_t[:] rank, weigher, bool
     s = w
     sq = w * w
 
-    for i in xrange(1, n):
+    for i in range(1, n):
         if x[perm[first]] != x[perm[i]] or y[perm[first]] != y[perm[i]]:
             t += s * (i - first - 1) if additive else (s * s - sq) / 2
             first = i
@@ -214,7 +214,7 @@ def _weightedrankedtau(ordered[:] x, ordered[:] y, intp_t[:] rank, weigher, bool
     s = w
     sq = w * w
 
-    for i in xrange(1, n):
+    for i in range(1, n):
         if x[perm[first]] != x[perm[i]]:
             u += s * (i - first - 1) if additive else (s * s - sq) / 2
             first = i
@@ -275,7 +275,7 @@ def _weightedrankedtau(ordered[:] x, ordered[:] y, intp_t[:] rank, weigher, bool
     s = w
     sq = w * w
 
-    for i in xrange(1, n):
+    for i in range(1, n):
         if y[perm[first]] != y[perm[i]]:
             v += s * (i - first - 1) if additive else (s * s - sq) / 2
             first = i
@@ -291,7 +291,7 @@ def _weightedrankedtau(ordered[:] x, ordered[:] y, intp_t[:] rank, weigher, bool
 
     # weigh all pairs
     s = sq = 0
-    for i in xrange(n):
+    for i in range(n):
         w = weigher(rank[perm[i]])
         s += w
         sq += w * w
