@@ -12,6 +12,7 @@ from scipy.optimize import differential_evolution
 from scipy.optimize._constraints import (Bounds, NonlinearConstraint,
                                          LinearConstraint)
 from scipy.optimize import rosen
+from scipy.sparse import dok_matrix
 from scipy._lib._pep440 import Version
 
 import numpy as np
@@ -755,6 +756,11 @@ class TestDifferentialEvolutionSolver(object):
         assert (pc.violation(x0) > 0).any()
         assert (pc.violation([-10, 2, -10, 4]) == 0).all()
 
+        pc = _ConstraintWrapper(LinearConstraint(dok_matrix(A), -np.inf, 0),
+                                x0)
+        assert (pc.violation(x0) > 0).any()
+        assert (pc.violation([-10, 2, -10, 4]) == 0).all()
+
         def fun(x):
             return A.dot(x)
 
@@ -842,6 +848,24 @@ class TestDifferentialEvolutionSolver(object):
                                          seed=1234, constraints=constraints,
                                          popsize=2)
 
+        assert_allclose(res.x, x_opt, atol=5e-4)
+        assert_allclose(res.fun, f_opt, atol=5e-3)
+        assert_(np.all(A@res.x <= b))
+        assert_(np.all(res.x >= np.array(bounds)[:, 0]))
+        assert_(np.all(res.x <= np.array(bounds)[:, 1]))
+
+        # now repeat the same solve, using the same overall constraints,
+        # but using a sparse matrix for the LinearConstraint instead of an
+        # array
+
+        L = LinearConstraint(dok_matrix(A), -np.inf, b)
+
+        # using a lower popsize to speed the test up
+        res = differential_evolution(f, bounds, strategy='best1bin', seed=1234,
+                                     constraints=(L), popsize=2)
+
+        assert_allclose(f(x_opt), f_opt)
+        assert res.success
         assert_allclose(res.x, x_opt, atol=5e-4)
         assert_allclose(res.fun, f_opt, atol=5e-3)
         assert_(np.all(A@res.x <= b))
