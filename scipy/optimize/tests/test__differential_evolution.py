@@ -12,7 +12,7 @@ from scipy.optimize import differential_evolution
 from scipy.optimize._constraints import (Bounds, NonlinearConstraint,
                                          LinearConstraint)
 from scipy.optimize import rosen
-from scipy.sparse import dok_matrix
+from scipy.sparse import csr_matrix
 from scipy._lib._pep440 import Version
 
 import numpy as np
@@ -756,7 +756,7 @@ class TestDifferentialEvolutionSolver(object):
         assert (pc.violation(x0) > 0).any()
         assert (pc.violation([-10, 2, -10, 4]) == 0).all()
 
-        pc = _ConstraintWrapper(LinearConstraint(dok_matrix(A), -np.inf, 0),
+        pc = _ConstraintWrapper(LinearConstraint(csr_matrix(A), -np.inf, 0),
                                 x0)
         assert (pc.violation(x0) > 0).any()
         assert (pc.violation([-10, 2, -10, 4]) == 0).all()
@@ -828,7 +828,7 @@ class TestDifferentialEvolutionSolver(object):
         # but using a sparse matrix for the LinearConstraint instead of an
         # array
 
-        L = LinearConstraint(dok_matrix(A), -np.inf, b)
+        L = LinearConstraint(csr_matrix(A), -np.inf, b)
 
         # using a lower popsize to speed the test up
         res = differential_evolution(f, bounds, strategy='best1bin', seed=1234,
