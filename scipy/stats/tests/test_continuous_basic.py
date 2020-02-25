@@ -54,7 +54,7 @@ distslow = ['kappa4', 'gausshyper', 'recipinvgauss', 'genexpon',
 # skip check_fit_args (test is slow)
 skip_fit_test = ['argus', 'exponpow', 'exponweib', 'gausshyper', 'genexpon',
                  'halfgennorm', 'gompertz', 'johnsonsb', 'johnsonsu',
-                 'kappa4', 'ksone', 'kstwobign', 'mielke', 'ncf', 'nct',
+                 'kappa4', 'ksone', 'kstwo', 'kstwobign', 'mielke', 'ncf', 'nct',
                  'powerlognorm', 'powernorm', 'recipinvgauss', 'trapz',
                  'vonmises', 'vonmises_line',
                  'levy_stable', 'rv_histogram_instance']
@@ -63,7 +63,7 @@ skip_fit_test = ['argus', 'exponpow', 'exponweib', 'gausshyper', 'genexpon',
 skip_fit_fix_test = ['argus', 'burr', 'exponpow', 'exponweib',
                      'gausshyper', 'genexpon', 'halfgennorm',
                      'gompertz', 'johnsonsb', 'johnsonsu', 'kappa4',
-                     'ksone', 'kstwobign', 'levy_stable', 'mielke', 'ncf',
+                     'ksone', 'kstwo', 'kstwobign', 'levy_stable', 'mielke', 'ncf',
                      'ncx2', 'powerlognorm', 'powernorm', 'rdist',
                      'recipinvgauss', 'trapz', 'vonmises', 'vonmises_line']
 
@@ -75,7 +75,7 @@ fails_cmplx = set(['beta', 'betaprime', 'chi', 'chi2', 'dgamma', 'dweibull',
                    'erlang', 'f', 'gamma', 'gausshyper', 'gengamma',
                    'geninvgauss', 'gennorm', 'genpareto',
                    'halfgennorm', 'invgamma',
-                   'ksone', 'kstwobign', 'levy_l', 'loggamma', 'logistic',
+                   'ksone', 'kstwo', 'kstwobign', 'levy_l', 'loggamma', 'logistic',
                    'loguniform', 'maxwell', 'nakagami',
                    'ncf', 'nct', 'ncx2', 'norminvgauss', 'pearson3', 'rdist',
                    'reciprocal', 'rice', 'skewnorm', 't', 'tukeylambda',
@@ -155,7 +155,7 @@ def test_cont_basic(distname, arg):
         check_freezing(distfn, arg)
 
         # Entropy
-        if distname not in ['kstwobign']:
+        if distname not in ['kstwobign', 'kstwo']:
             check_entropy(distfn, arg, distname)
 
         if distfn.numargs == 0:

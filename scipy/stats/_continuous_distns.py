@@ -7,6 +7,7 @@ from __future__ import division, print_function, absolute_import
 
 import warnings
 import functools
+import collections
 
 import numpy as np
 
@@ -25,6 +26,7 @@ from ._distn_infrastructure import (get_distribution_names, _kurtosis,
                                     _ncx2_cdf, _ncx2_log_pdf, _ncx2_pdf,
                                     rv_continuous, _skew, valarray,
                                     _get_fixed_fit_value, _check_shape)
+from ._ksstats import kolmogn, kolmognp, kolmogni
 from ._constants import _XMIN, _EULER, _ZETA3, _XMAX, _LOGXMAX
 
 # In numpy 1.12 and above, np.power refuses to raise integers to negative
@@ -55,7 +57,7 @@ def _remove_optimizer_parameters(kwds):
 
 ## Kolmogorov-Smirnov one-sided and two-sided test statistics
 class ksone_gen(rv_continuous):
-    r"""General Kolmogorov-Smirnov one-sided test.
+    r"""Kolmogorov-Smirnov one-sided test statistic distribution.
 
     This is the distribution of the one-sided Kolmogorov-Smirnov (KS)
     statistics :math:`D_n^+` and :math:`D_n^-`
@@ -72,8 +74,8 @@ class ksone_gen(rv_continuous):
         D_n^+ &= \text{sup}_x (F_n(x) - F(x)),\\
         D_n^- &= \text{sup}_x (F(x) - F_n(x)),\\
 
-    where :math:`F` is a CDF and :math:`F_n` is an empirical CDF. `ksone`
-    describes the distribution under the null hypothesis of the KS test
+    where :math:`F` is a continuous CDF and :math:`F_n` is an empirical CDF.
+    `ksone` describes the distribution under the null hypothesis of the KS test
     that the empirical CDF corresponds to :math:`n` i.i.d. random variates
     with CDF :math:`F`.
 
@@ -81,7 +83,7 @@ class ksone_gen(rv_continuous):
 
     See Also
     --------
-    kstwobign, kstest
+    kstwobign, kstwo, kstest
 
     References
     ----------
@@ -111,12 +113,73 @@ class ksone_gen(rv_continuous):
 ksone = ksone_gen(a=0.0, b=1.0, name='ksone')
 
 
+class kstwo_gen(rv_continuous):
+    r"""Kolmogorov-Smirnov two-sided test statistic distribution.
+
+    This is the distribution of the two-sided Kolmogorov-Smirnov (KS)
+    statistic :math:`D_n` for a finite sample size ``n``
+    (the shape parameter).
+
+    %(before_notes)s
+
+    Notes
+    -----
+    :math:`D_n` is given by
+
+    .. math::
+
+        D_n &= \text{sup}_x |F_n(x) - F(x)|
+
+    where :math:`F` is a (continuous) CDF and :math:`F_n` is an empirical CDF.
+    `kstwo` describes the distribution under the null hypothesis of the KS test
+    that the empirical CDF corresponds to :math:`n` i.i.d. random variates
+    with CDF :math:`F`.
+
+    %(after_notes)s
+
+    See Also
+    --------
+    kstwobign, ksone, kstest
+
+    References
+    ----------
+    .. [1] Simard, R., L'Ecuyer, P. "Computing the Two-Sided
+       Kolmogorov-Smirnov Distribution",  Journal of Statistical Software,
+       Vol 39, 11, 1-18 (2011).
+
+    %(example)s
+
+    """
+    def _get_support(self, n):
+        return 0.5/(n if not isinstance(n, collections.Iterable) else np.asanyarray(n)), 1.0
+
+    def _pdf(self, x, n):
+        return kolmognp(n, x)
+
+    def _cdf(self, x, n):
+        return kolmogn(n, x)
+
+    def _sf(self, x, n):
+        return kolmogn(n, x, cdf=False)
+
+    def _ppf(self, q, n):
+        return kolmogni(n, q, cdf=True)
+
+    def _isf(self, q, n):
+        return kolmogni(n, q, cdf=False)
+
+
+# Use the pdf, (not the ppf) to compute moments
+kstwo = kstwo_gen(momtype=0, a=0.0, b=1.0, name='kstwo')
+
+
 class kstwobign_gen(rv_continuous):
-    r"""Kolmogorov-Smirnov two-sided test for large N.
+    r"""Limiting distribution of scaled Kolmogorov-Smirnov two-sided test statistic.
 
     This is the asymptotic distribution of the two-sided Kolmogorov-Smirnov
     statistic :math:`\sqrt{n} D_n` that measures the maximum absolute
-    distance of the theoretical CDF from the empirical CDF (see `kstest`).
+    distance of the theoretical (continuous) CDF from the empirical CDF.
+    (see `kstest`).
 
     %(before_notes)s
 
@@ -128,8 +191,8 @@ class kstwobign_gen(rv_continuous):
 
         D_n = \text{sup}_x |F_n(x) - F(x)|
 
-    where :math:`F` is a CDF and :math:`F_n` is an empirical CDF. `kstwobign`
-    describes the asymptotic distribution (i.e. the limit of
+    where :math:`F` is a continuous CDF and :math:`F_n` is an empirical CDF.
+    `kstwobign`  describes the asymptotic distribution (i.e. the limit of
     :math:`\sqrt{n} D_n`) under the null hypothesis of the KS test that the
     empirical CDF corresponds to i.i.d. random variates with CDF :math:`F`.
 
@@ -137,12 +200,12 @@ class kstwobign_gen(rv_continuous):
 
     See Also
     --------
-    ksone, kstest
+    ksone, kstwo, kstest
 
     References
     ----------
-    .. [1] Marsaglia, G. et al. "Evaluating Kolmogorov's distribution",
-       Journal of Statistical Software, 8(18), 2003.
+    .. [1] Feller, W. "On the Kolmogorov-Smirnov Limit Theorems for Empirical
+       Distributions",  Ann. Math. Statist. Vol 19, 177-189 (1948).
 
     %(example)s
 
