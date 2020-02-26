@@ -2081,23 +2081,9 @@ def test_pttrf_pttrs_NAG(d, e, d_expect, e_expect, b, x_expect):
         assert_allclose(_x, x_expect, atol=atol)
         
 
-@pytest.mark.parametrize("dtype,realtype",
-                         zip(DTYPES, REAL_DTYPES + REAL_DTYPES))
-@pytest.mark.parametrize("compz", ["I", "N", "V"])
-def test_pteqr(dtype, realtype, compz):
-    '''
-    Tests the pteqr lapack routine for all dtypes and compz parameters.
-    It generates random SPD matrix diagonals d and e, and then confirms
-    correct eigenvalues with scipy.linalg.eig. With applicable compz=I it
-    tests that z can reform A.
-    '''
-    np.random.seed(42)
-    rtol = 250*np.finfo(dtype).eps
-    atol = 100*np.finfo(dtype).eps
-    pteqr = get_lapack_funcs(('pteqr'), dtype=dtype)
-
-    n = 10
-
+def pteqr_get_d_e_A_z(dtype, realtype, n, compz):
+    # used by ?pteqr tests to build parameters
+    # returns tuple of (d, e, A, z)
     if compz == "V":
         # build Hermitian A from Q**T * tri * Q = A by creating Q and tri
         A_eig = generate_random_dtype_array((n, n), dtype)
@@ -2121,9 +2107,29 @@ def test_pteqr(dtype, realtype, compz):
 
         # make SPD
         d = d + 4
-        z = generate_random_dtype_array((n, n), dtype)
         A = np.diag(d) + np.diag(e, 1) + np.diag(e, -1)
         z = np.diag(d) + np.diag(e, -1) + np.diag(e, 1)
+    return (d, e, A, z)
+
+
+@pytest.mark.parametrize("dtype,realtype",
+                         zip(DTYPES, REAL_DTYPES + REAL_DTYPES))
+@pytest.mark.parametrize("compz", ["I", "N", "V"])
+def test_pteqr(dtype, realtype, compz):
+    '''
+    Tests the ?pteqr lapack routine for all dtypes and compz parameters.
+    It generates random SPD matrix diagonals d and e, and then confirms
+    correct eigenvalues with scipy.linalg.eig. With applicable compz=I it
+    tests that z can reform A.
+    '''
+    np.random.seed(42)
+    rtol = 250*np.finfo(dtype).eps
+    atol = 100*np.finfo(dtype).eps
+    pteqr = get_lapack_funcs(('pteqr'), dtype=dtype)
+
+    n = 10
+
+    d, e, A, z = pteqr_get_d_e_A_z(dtype, realtype, n, compz)
 
     d_pteqr, e_pteqr, z_pteqr, work, info = pteqr(d=d, e=e, z=z, compz=compz)
     assert_equal(info, 0, "info = {}, should be 0.".format(info))
@@ -2139,13 +2145,44 @@ def test_pteqr(dtype, realtype, compz):
         assert_allclose(z_pteqr @ np.diag(d_pteqr) @ np.conj(z_pteqr).T,
                         A, rtol=rtol, atol=atol)
 
+
+@pytest.mark.parametrize("dtype,realtype",
+                         zip(DTYPES, REAL_DTYPES + REAL_DTYPES))
+@pytest.mark.parametrize("compz", ["I", "N", "V"])
+def test_pteqr_error_non_spd(dtype, realtype, compz):
+    np.random.seed(42)
+    pteqr = get_lapack_funcs(('pteqr'), dtype=dtype)
+
+    n = 10
+    d, e, A, z = pteqr_get_d_e_A_z(dtype, realtype, n, compz)
+
     # test with non-spd matrix
     d_pteqr, e_pteqr, z_pteqr, work, info = pteqr(d - 4, e, z=z, compz=compz)
     assert info > 0
+
+
+@pytest.mark.parametrize("dtype,realtype",
+                         zip(DTYPES, REAL_DTYPES + REAL_DTYPES))
+@pytest.mark.parametrize("compz", ["I", "N", "V"])
+def test_pteqr_raise_error_wrong_shape(dtype, realtype, compz):
+    np.random.seed(42)
+    pteqr = get_lapack_funcs(('pteqr'), dtype=dtype)
+    n = 10
+    d, e, A, z = pteqr_get_d_e_A_z(dtype, realtype, n, compz)
     # test with incorrect/incompatible array sizes
     assert_raises(ValueError, pteqr, d[:-1], e, z=z, compz=compz)
     assert_raises(ValueError, pteqr, d, e[:-1], z=z, compz=compz)
-    assert_raises(ValueError, pteqr, d[:-1], e, z=z[:-1], compz=compz)
+    assert_raises(ValueError, pteqr, d, e, z=z[:-1], compz=compz)
+
+
+@pytest.mark.parametrize("dtype,realtype",
+                         zip(DTYPES, REAL_DTYPES + REAL_DTYPES))
+@pytest.mark.parametrize("compz", ["I", "N", "V"])
+def test_pteqr_error_singular(dtype, realtype, compz):
+    np.random.seed(42)
+    pteqr = get_lapack_funcs(('pteqr'), dtype=dtype)
+    n = 10
+    d, e, A, z = pteqr_get_d_e_A_z(dtype, realtype, n, compz)
     # test with singular matrix
     d[0] = 0
     e[0] = 0
@@ -2163,7 +2200,7 @@ def test_pteqr(dtype, realtype, compz):
                                      [-0.1082, 0.6071, 0.4594, -0.6393],
                                      [-0.0081, 0.2432, 0.6625, 0.7084]])),
                           ])
-def test_pteqr_NAG(compz, d, e, d_expect, z_expect):
+def test_pteqr_NAG_f08jgf(compz, d, e, d_expect, z_expect):
     '''
     Implements real (f08jgf) example from NAG manual.
     https://www.nag.com/numeric/fl/nagdoc_latest/html/f08/f08jgf.html
@@ -2176,7 +2213,7 @@ def test_pteqr_NAG(compz, d, e, d_expect, z_expect):
     z = np.diag(d) + np.diag(e, 1) + np.diag(e, -1)
     _d, _e, _z, work, info = pteqr(d=d, e=e, z=z, compz=compz)
     assert_allclose(_d, d_expect, atol=atol)
-    assert_allclose(_z, z_expect, atol=atol)
+    assert_allclose(np.abs(_z), np.abs(z_expect), atol=atol)
 
 
 @pytest.mark.parametrize('dtype', DTYPES)
