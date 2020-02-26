@@ -763,7 +763,6 @@ static PyMethodDef _distanceWrapMethods[] = {
   {NULL, NULL}     /* Sentinel - marks the end of this structure */
 };
 
-#if PY_VERSION_HEX >= 0x03000000
 static struct PyModuleDef moduledef = {
     PyModuleDef_HEAD_INIT,
     "_distance_wrap",
@@ -785,10 +784,3 @@ PyObject *PyInit__distance_wrap(void)
 
     return m;
 }
-#else
-PyMODINIT_FUNC init_distance_wrap(void)
-{
-  (void) Py_InitModule("_distance_wrap", _distanceWrapMethods);
-  import_array();  /* Must be present for NumPy.  Called first after above line.*/
-}
-#endif

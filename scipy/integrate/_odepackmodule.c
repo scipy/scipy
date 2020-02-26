@@ -792,7 +792,6 @@ static struct PyMethodDef odepack_module_methods[] = {
     {NULL, NULL, 0, NULL}
 };
 
-#if PY_VERSION_HEX >= 0x03000000
 static struct PyModuleDef moduledef = {
     PyModuleDef_HEAD_INIT,
     "_odepack",
@@ -824,20 +823,3 @@ PyInit__odepack(void)
     }
     return m;
 }
-#else
-PyMODINIT_FUNC init_odepack(void)
-{
-    PyObject *m, *d, *s;
-    m = Py_InitModule("_odepack", odepack_module_methods);
-    import_array();
-    d = PyModule_GetDict(m);
-
-    s = PyUString_FromString(" 1.9 ");
-    PyDict_SetItemString(d, "__version__", s);
-    odepack_error = PyErr_NewException ("odepack.error", NULL, NULL);
-    Py_DECREF(s);
-    if (PyErr_Occurred()) {
-        Py_FatalError("can't initialize module odepack");
-    }
-}
-#endif

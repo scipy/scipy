@@ -195,7 +195,6 @@ static PyMethodDef _CTestMethods[] = {
 				      
 				      
 /* Initialize the module */
-#if PY_VERSION_HEX >= 0x03000000
 static struct PyModuleDef MOD = {
     PyModuleDef_HEAD_INIT,
     MODSTR,
@@ -214,12 +213,3 @@ PY3K_INIT(void)
 {
     return PyModule_Create(&MOD);
 }
-
-
-#else
-PyMODINIT_FUNC
-PY2K_INIT(void)
-{
-    Py_InitModule(MODSTR, _CTestMethods);
-}
-#endif

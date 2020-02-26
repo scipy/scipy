@@ -97,7 +97,6 @@ fail:
 }
 
 
-#if PY_MAJOR_VERSION >= 3
 static struct PyModuleDef moduledef = {
     PyModuleDef_HEAD_INIT,
     "_test_multivariate",
@@ -124,17 +123,3 @@ PyInit__test_multivariate(void)
     }
     return m;
 }
-
-#else
-
-PyMODINIT_FUNC
-init_test_multivariate(void)
-{
-    PyObject *m;
-    m = Py_InitModule("_test_multivariate", NULL);
-    if (m == NULL) {
-        return;
-    }
-    create_pointers(m);
-}
-#endif

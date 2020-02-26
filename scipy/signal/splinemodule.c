@@ -474,8 +474,7 @@ static struct PyMethodDef toolbox_module_methods[] = {
     {NULL, NULL, 0, NULL}		/* sentinel */
 };
 
-/* Initialization function for the module (*must* be called initXXXXX) */
-#if PY_VERSION_HEX >= 0x03000000
+/* Initialization function for the module */
 static struct PyModuleDef moduledef = {
     PyModuleDef_HEAD_INIT,
     "spline",
@@ -508,25 +507,3 @@ PyObject *PyInit_spline(void)
     }
     return m;
 }
-#else
-PyMODINIT_FUNC initspline(void) {
-    PyObject *m, *d, *s;
-	
-    /* Create the module and add the functions */
-    m = Py_InitModule("spline", toolbox_module_methods);
-    
-    /* Import the C API function pointers for the Array Object*/
-    import_array();
-    
-    /* Add some symbolic constants to the module */
-    d = PyModule_GetDict(m);
-
-    s = PyString_FromString("0.2");
-    PyDict_SetItemString(d, "__version__", s);
-    Py_DECREF(s);
-    
-    /* Check for errors */
-    if (PyErr_Occurred())
-	Py_FatalError("can't initialize module array");
-}
-#endif

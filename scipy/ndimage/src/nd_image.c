@@ -1190,7 +1190,6 @@ static PyMethodDef methods[] = {
     {NULL, NULL, 0, NULL}
 };
 
-#ifdef NPY_PY3K
 static struct PyModuleDef moduledef = {
     PyModuleDef_HEAD_INIT,
     "_nd_image",
@@ -1212,10 +1211,3 @@ PyObject *PyInit__nd_image(void)
 
     return m;
 }
-#else
-PyMODINIT_FUNC init_nd_image(void)
-{
-    Py_InitModule("_nd_image", methods);
-    import_array();
-}
-#endif

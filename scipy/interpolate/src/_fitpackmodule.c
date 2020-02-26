@@ -1497,7 +1497,6 @@ static struct PyMethodDef fitpack_module_methods[] = {
 {NULL, NULL, 0, NULL}
 };
 
-#if PY_VERSION_HEX >= 0x03000000
 static struct PyModuleDef moduledef = {
     PyModuleDef_HEAD_INIT,
     "_fitpack",
@@ -1529,19 +1528,3 @@ PyObject *PyInit__fitpack(void)
 
     return m;
 }
-#else
-PyMODINIT_FUNC init_fitpack(void) {
-    PyObject *m, *d, *s;
-    m = Py_InitModule("_fitpack", fitpack_module_methods);
-    import_array();
-    d = PyModule_GetDict(m);
-
-    s = PyString_FromString(" 1.7 ");
-    PyDict_SetItemString(d, "__version__", s);
-    fitpack_error = PyErr_NewException ("fitpack.error", NULL, NULL);
-    Py_DECREF(s);
-    if (PyErr_Occurred()) {
-        Py_FatalError("can't initialize module fitpack");
-    }
-}
-#endif 
