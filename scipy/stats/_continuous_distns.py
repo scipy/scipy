@@ -1964,7 +1964,7 @@ class weibull_min_gen(rv_continuous):
     ----------
     https://en.wikipedia.org/wiki/Weibull_distribution
 
-    https://en.wikipedia.org/wiki/Fisher%E2%80%93Tippett%E2%80%93Gnedenko_theorem
+    https://en.wikipedia.org/wiki/Fisher-Tippett-Gnedenko_theorem
 
     %(example)s
 
@@ -2031,7 +2031,7 @@ class weibull_max_gen(rv_continuous):
     ----------
     https://en.wikipedia.org/wiki/Weibull_distribution
 
-    https://en.wikipedia.org/wiki/Fisher%E2%80%93Tippett%E2%80%93Gnedenko_theorem
+    https://en.wikipedia.org/wiki/Fisher-Tippett-Gnedenko_theorem
 
     %(example)s
 
