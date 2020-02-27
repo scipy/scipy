@@ -4521,6 +4521,9 @@ class _NonCanonicalCompressedMixin(_NonCanonicalMixin):
         return data, indices, indptr
 
     def _insert_explicit_zero(self, M, i, j):
+        # setting to zero outside the sparsity structure is a no-op, so first create the element
+        # then zero it
+        M[i,j] = 1
         M[i,j] = 0
         return M
 
@@ -4586,6 +4589,8 @@ class TestCSCNonCanonical(_NonCanonicalCSMixin, TestCSC):
 class TestBSRNonCanonical(_NonCanonicalCompressedMixin, TestBSR):
     def _insert_explicit_zero(self, M, i, j):
         x = M.tocsr()
+        # see _NonCanonicalCompressedMixin:
+        x[i,j] = 1
         x[i,j] = 0
         return x.tobsr(blocksize=M.blocksize)
 

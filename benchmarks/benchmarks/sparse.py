@@ -219,12 +219,13 @@ class Getset(Benchmark):
     params = [
         [1, 10, 100, 1000, 10000],
         ['different', 'same'],
-        ['csr', 'csc', 'lil', 'dok']
+        ['csr', 'csc', 'lil', 'dok'],
+        ['random', 'zero'],
     ]
-    param_names = ['N', 'sparsity pattern', 'format']
+    param_names = ['N', 'sparsity pattern', 'format', 'values']
     unit = "seconds"
 
-    def setup(self, N, sparsity_pattern, format):
+    def setup(self, N, sparsity_pattern, format, values):
         if format == 'dok' and N > 500:
             raise NotImplementedError()
 
@@ -241,7 +242,12 @@ class Getset(Benchmark):
             jp = numpy.random.randint(0, A.shape[1], size=n)
             i = numpy.r_[i, ip]
             j = numpy.r_[j, jp]
-        v = numpy.random.rand(n)
+
+        if values == 'random':
+            v = numpy.random.rand(n)
+        else:
+            assert values == 'zero'
+            v = 0.0
 
         if N == 1:
             i = int(i)
@@ -277,7 +283,7 @@ class Getset(Benchmark):
             min_time = min(min_time, duration/number)
         return min_time
 
-    def track_fancy_setitem(self, N, sparsity_pattern, format):
+    def track_fancy_setitem(self, N, sparsity_pattern, format, values):
         def kernel(A, i, j, v):
             A[i, j] = v
 
@@ -285,7 +291,7 @@ class Getset(Benchmark):
             warnings.simplefilter('ignore', SparseEfficiencyWarning)
             return self._timeit(kernel, sparsity_pattern == 'different')
 
-    def time_fancy_getitem(self, N, sparsity_pattern, format):
+    def time_fancy_getitem(self, N, sparsity_pattern, format, values):
         self.m[self.i, self.j]
 
 

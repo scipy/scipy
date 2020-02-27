@@ -898,19 +898,26 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             return
 
         else:
-            warn("Changing the sparsity structure of a {}_matrix is expensive."
-                 " lil_matrix is more efficient.".format(self.format),
-                 SparseEfficiencyWarning, stacklevel=3)
             # replace where possible
             mask = offsets > -1
             self.data[offsets[mask]] = x[mask]
-            # only insertions remain
+
             mask = ~mask
+            x = x[mask]
+            if np.count_nonzero(x) == 0:
+                # all remaining elements are zero, so no more work is needed
+                return
+
+            # only insertions remain
+            warn("Changing the sparsity structure of a {}_matrix is expensive."
+                 " lil_matrix is more efficient.".format(self.format),
+                 SparseEfficiencyWarning, stacklevel=3)
+
             i = i[mask]
             i[i < 0] += M
             j = j[mask]
             j[j < 0] += N
-            self._insert_many(i, j, x[mask])
+            self._insert_many(i, j, x)
 
     def _zero_many(self, i, j):
         """Sets value at each (i, j) to zero, preserving sparsity structure.
