@@ -9,9 +9,9 @@ extern "C" {
 
 extern int airy(double x, double *ai, double *aip, double *bi, double *bip);
 
-extern double bdtrc(double k, int n, double p);
-extern double bdtr(double k, int n, double p);
-extern double bdtri(double k, int n, double y);
+extern double bdtrc(double k, long n, double p);
+extern double bdtr(double k, long n, double p);
+extern double bdtri(double k, long n, double y);
 
 extern double besselpoly(double a, double lambda, double nu);
 

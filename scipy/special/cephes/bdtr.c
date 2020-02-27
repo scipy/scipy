@@ -149,7 +149,7 @@
 #include "mconf.h"
 #include <numpy/npy_math.h>
 
-double bdtrc(double k, int n, double p)
+double bdtrc(double k, long n, double p)
 {
     double dk, dn;
     double fk = floor(k);
@@ -187,7 +187,7 @@ double bdtrc(double k, int n, double p)
 
 
 
-double bdtr(double k, int n, double p)
+double bdtr(double k, long n, double p)
 {
     double dk, dn;
     double fk = floor(k);
@@ -216,7 +216,7 @@ double bdtr(double k, int n, double p)
 }
 
 
-double bdtri(double k, int n, double y)
+double bdtri(double k, long n, double y)
 {
     double p, dn, dk;
     double fk = floor(k);
