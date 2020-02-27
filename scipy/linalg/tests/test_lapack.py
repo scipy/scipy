@@ -2503,7 +2503,7 @@ def test_gtsvx_error_incompatible_size(dtype, trans, fact, dl_d_du_lambda):
         assert_raises(ValueError, gtsvx, dl, d, du[:-1], b,
                       fact=fact, trans=trans, dlf=dlf_, df=df_,
                       duf=duf_, du2=du2f_, ipiv=ipiv_)
-        assert_raises(ValueError, gtsvx, dl, d, du, b[:-1],
+        assert_raises(Exception, gtsvx, dl, d, du, b[:-1],
                       fact=fact, trans=trans, dlf=dlf_, df=df_,
                       duf=duf_, du2=du2f_, ipiv=ipiv_)
     else:
