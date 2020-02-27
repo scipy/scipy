@@ -4,15 +4,12 @@ import itertools
 
 from numpy.testing import (assert_, assert_equal, assert_almost_equal,
         assert_array_almost_equal, assert_array_equal,
-        assert_allclose)
+        assert_allclose, assert_warns, suppress_warnings)
 from pytest import raises as assert_raises
 import pytest
 
 from numpy import mgrid, pi, sin, ogrid, poly1d, linspace
 import numpy as np
-
-from scipy._lib.six import xrange
-from scipy._lib._numpy_compat import _assert_warns, suppress_warnings
 
 from scipy.interpolate import (interp1d, interp2d, lagrange, PPoly, BPoly,
          splrep, splev, splantider, splint, sproot, Akima1DInterpolator,
@@ -896,9 +893,7 @@ class TestPPolyCommon(object):
             assert_equal(np.shape(p(0.5)), ())
             assert_equal(np.shape(p(np.array(0.5))), ())
 
-            # can't use dtype=object (with any numpy; what fails is
-            # constructing the object array here for old NumPy)
-            assert_raises(ValueError, p, np.array([[0.1, 0.2], [0.4]]))
+            assert_raises(ValueError, p, np.array([[0.1, 0.2], [0.4]], dtype=object))
 
     def test_complex_coef(self):
         np.random.seed(12345)
@@ -2218,7 +2213,7 @@ def _ppoly_eval_2(coeffs, breaks, xnew, fill=np.nan):
     pp = coeffs
     diff = xx - breaks.take(indxs)
     V = np.vander(diff, N=K)
-    values = np.array([np.dot(V[k, :], pp[:, indxs[k]]) for k in xrange(len(xx))])
+    values = np.array([np.dot(V[k, :], pp[:, indxs[k]]) for k in range(len(xx))])
     res[mask] = values
     res.shape = saveshape
     return res
@@ -2779,8 +2774,8 @@ class TestInterpN(object):
             assert_allclose(v1, v2)
 
         # Complex-valued data not supported by spline2fd
-        _assert_warns(np.ComplexWarning, interpn, points, values,
-                      sample, method='splinef2d')
+        assert_warns(np.ComplexWarning, interpn, points, values,
+                     sample, method='splinef2d')
 
     def test_duck_typed_values(self):
         x = np.linspace(0, 2, 5)

@@ -5,7 +5,6 @@ Module for reading and writing matlab (TM) .mat files
 
 from __future__ import division, print_function, absolute_import
 from contextlib import contextmanager
-from scipy._lib.six import string_types
 
 from .miobase import get_matfile_version, docfiller
 from .mio4 import MatFile4Reader, MatFile4Writer
@@ -17,9 +16,11 @@ __all__ = ['mat_reader_factory', 'loadmat', 'savemat', 'whosmat']
 @contextmanager
 def _open_file_context(file_like, appendmat, mode='rb'):
     f, opened = _open_file(file_like, appendmat, mode)
-    yield f
-    if opened:
-        f.close()
+    try:
+        yield f
+    finally:
+        if opened:
+            f.close()
 
 
 def _open_file(file_like, appendmat, mode='rb'):
@@ -39,7 +40,7 @@ def _open_file(file_like, appendmat, mode='rb'):
         return open(file_like, mode), True
     except IOError:
         # Probably "not found"
-        if isinstance(file_like, string_types):
+        if isinstance(file_like, str):
             if appendmat and not file_like.endswith('.mat'):
                 file_like += '.mat'
             return open(file_like, mode), True

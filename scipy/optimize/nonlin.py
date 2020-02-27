@@ -111,14 +111,13 @@ from __future__ import division, print_function, absolute_import
 
 import sys
 import numpy as np
-from scipy._lib.six import callable, exec_, xrange
 from scipy.linalg import norm, solve, inv, qr, svd, LinAlgError
 from numpy import asarray, dot, vdot
 import scipy.sparse.linalg
 import scipy.sparse
 from scipy.linalg import get_blas_funcs
 import inspect
-from scipy._lib._util import getargspec_no_self as _getargspec
+from scipy._lib._util import getfullargspec_no_self as _getfullargspec
 from .linesearch import scalar_search_wolfe1, scalar_search_armijo
 
 
@@ -302,7 +301,7 @@ def nonlin_solve(F, x0, jacobian='krylov', iter=None, verbose=False,
     eta_treshold = 0.1
     eta = 1e-3
 
-    for n in xrange(maxiter):
+    for n in range(maxiter):
         status = condition.check(Fx, x, dx)
         if status:
             break
@@ -876,7 +875,7 @@ class LowRankMatrix(object):
         C = dot(C, inv(WH))
         D = dot(D, WH.T.conj())
 
-        for k in xrange(q):
+        for k in range(q):
             self.cs[k] = C[:,k].copy()
             self.ds[k] = D[:,k].copy()
 
@@ -1128,7 +1127,7 @@ class Anderson(GenericBroyden):
             return dx
 
         df_f = np.empty(n, dtype=f.dtype)
-        for k in xrange(n):
+        for k in range(n):
             df_f[k] = vdot(self.df[k], f)
 
         try:
@@ -1139,7 +1138,7 @@ class Anderson(GenericBroyden):
             del self.df[:]
             return dx
 
-        for m in xrange(n):
+        for m in range(n):
             dx += gamma[m]*(self.dx[m] + self.alpha*self.df[m])
         return dx
 
@@ -1151,18 +1150,18 @@ class Anderson(GenericBroyden):
             return dx
 
         df_f = np.empty(n, dtype=f.dtype)
-        for k in xrange(n):
+        for k in range(n):
             df_f[k] = vdot(self.df[k], f)
 
         b = np.empty((n, n), dtype=f.dtype)
-        for i in xrange(n):
-            for j in xrange(n):
+        for i in range(n):
+            for j in range(n):
                 b[i,j] = vdot(self.df[i], self.dx[j])
                 if i == j and self.w0 != 0:
                     b[i,j] -= vdot(self.df[i], self.df[i])*self.w0**2*self.alpha
         gamma = solve(b, df_f)
 
-        for m in xrange(n):
+        for m in range(n):
             dx += gamma[m]*(self.df[m] + self.dx[m]/self.alpha)
         return dx
 
@@ -1180,8 +1179,8 @@ class Anderson(GenericBroyden):
         n = len(self.dx)
         a = np.zeros((n, n), dtype=f.dtype)
 
-        for i in xrange(n):
-            for j in xrange(i, n):
+        for i in range(n):
+            for j in range(i, n):
                 if i == j:
                     wd = self.w0**2
                 else:
@@ -1537,7 +1536,8 @@ def _nonlin_wrapper(name, jac):
     keyword arguments of `nonlin_solve`
 
     """
-    args, varargs, varkw, defaults = _getargspec(jac.__init__)
+    signature = _getfullargspec(jac.__init__)
+    args, varargs, varkw, defaults, kwonlyargs, kwdefaults, _ = signature
     kwargs = list(zip(args[-len(defaults):], defaults))
     kw_str = ", ".join(["%s=%r" % (k, v) for k, v in kwargs])
     if kw_str:
@@ -1545,6 +1545,8 @@ def _nonlin_wrapper(name, jac):
     kwkw_str = ", ".join(["%s=%s" % (k, k) for k, v in kwargs])
     if kwkw_str:
         kwkw_str = kwkw_str + ", "
+    if kwonlyargs:
+        raise ValueError('Unexpected signature %s' % signature)
 
     # Construct the wrapper function so that its keyword arguments
     # are visible in pydoc.help etc.
@@ -1562,7 +1564,7 @@ def %(name)s(F, xin, iter=None %(kw)s, verbose=False, maxiter=None,
                              kwkw=kwkw_str)
     ns = {}
     ns.update(globals())
-    exec_(wrapper, ns)
+    exec(wrapper, ns)
     func = ns[name]
     func.__doc__ = jac.__doc__
     _set_doc(func)

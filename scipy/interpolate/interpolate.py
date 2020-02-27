@@ -15,8 +15,6 @@ from numpy import (array, transpose, searchsorted, atleast_1d, atleast_2d,
 import scipy.special as spec
 from scipy.special import comb
 
-from scipy._lib.six import xrange, integer_types, string_types
-
 from . import fitpack
 from . import dfitpack
 from . import _fitpack
@@ -83,9 +81,9 @@ def lagrange(x, w):
 
     M = len(x)
     p = poly1d(0.0)
-    for j in xrange(M):
+    for j in range(M):
         pt = poly1d(w[j])
-        for k in xrange(M):
+        for k in range(M):
             if k == j:
                 continue
             fac = x[j]-x[k]
@@ -332,7 +330,7 @@ def _check_broadcast_up_to(arr_from, shape_to, name):
 
 def _do_extrapolate(fill_value):
     """Helper to check if fill_value == "extrapolate" without warnings"""
-    return (isinstance(fill_value, string_types) and
+    return (isinstance(fill_value, str) and
             fill_value == 'extrapolate')
 
 
@@ -1289,7 +1287,7 @@ class PPoly(_PPolyBase):
             t, c, k = tck
 
         cvals = np.empty((k + 1, len(t)-1), dtype=c.dtype)
-        for m in xrange(k, -1, -1):
+        for m in range(k, -1, -1):
             y = fitpack.splev(t[:-1], tck, der=m)
             cvals[k - m, :] = y/spec.gamma(m+1)
 
@@ -1720,7 +1718,7 @@ class BPoly(_PPolyBase):
         if orders is None:
             orders = [None] * m
         else:
-            if isinstance(orders, (integer_types, np.integer)):
+            if isinstance(orders, (int, np.integer)):
                 orders = [orders] * m
             k = max(k, max(orders))
 
@@ -2608,17 +2606,17 @@ def interpn(points, values, xi, method="linear", bounds_error=True,
 
     ndim = values.ndim
     if ndim > 2 and method == "splinef2d":
-        raise ValueError("The method spline2fd can only be used for "
+        raise ValueError("The method splinef2d can only be used for "
                          "2-dimensional input data")
     if not bounds_error and fill_value is None and method == "splinef2d":
-        raise ValueError("The method spline2fd does not support extrapolation.")
+        raise ValueError("The method splinef2d does not support extrapolation.")
 
     # sanity check consistency of input dimensions
     if len(points) > ndim:
         raise ValueError("There are %d point arrays, but values has %d "
                          "dimensions" % (len(points), ndim))
     if len(points) != ndim and method == 'splinef2d':
-        raise ValueError("The method spline2fd can only be used for "
+        raise ValueError("The method splinef2d can only be used for "
                          "scalar data with one point per coordinate")
 
     # sanity check input grid
@@ -2716,7 +2714,7 @@ class _ppform(PPoly):
         # Note: this spline representation is incompatible with FITPACK
         N = len(xk)-1
         sivals = np.empty((order+1, N), dtype=float)
-        for m in xrange(order, -1, -1):
+        for m in range(order, -1, -1):
             fact = spec.gamma(m+1)
             res = _fitpack._bspleval(xk[:-1], xk, cvals, order, m)
             res /= fact

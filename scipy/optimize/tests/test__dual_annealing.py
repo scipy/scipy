@@ -16,6 +16,7 @@ import numpy as np
 from numpy.testing import assert_equal, assert_allclose, assert_array_less
 from pytest import raises as assert_raises
 from scipy._lib._util import check_random_state
+from scipy._lib._pep440 import Version
 
 
 class TestDualAnnealing:
@@ -141,6 +142,21 @@ class TestDualAnnealing:
         assert_equal(res1.x, res2.x)
         assert_equal(res1.x, res3.x)
 
+    @pytest.mark.skipif(Version(np.__version__) < Version('1.17'),
+                        reason='Generator not available for numpy, < 1.17')
+    def test_rand_gen(self):
+        # check that np.random.Generator can be used (numpy >= 1.17)
+        # obtain a np.random.Generator object
+        rng = np.random.default_rng(1)
+
+        res1 = dual_annealing(self.func, self.ld_bounds, seed=rng)
+        # seed again
+        rng = np.random.default_rng(1)
+        res2 = dual_annealing(self.func, self.ld_bounds, seed=rng)
+        # If we have reproducible results, x components found has to
+        # be exactly the same, which is not the case with no seeding
+        assert_equal(res1.x, res2.x)
+
     def test_bounds_integrity(self):
         wrong_bounds = [(-5.12, 5.12), (1, 0), (5.12, 5.12)]
         assert_raises(ValueError, dual_annealing, self.func,
@@ -230,3 +246,15 @@ class TestDualAnnealing:
                              local_search_options=minimizer_opts,
                              seed=self.seed)
         assert ret.njev == self.ngev
+
+    def test_from_docstring(self):
+        func = lambda x: np.sum(x * x - 10 * np.cos(2 * np.pi * x)) + 10 * np.size(x)
+        lw = [-5.12] * 10
+        up = [5.12] * 10
+        ret = dual_annealing(func, bounds=list(zip(lw, up)), seed=1234)
+        assert_allclose(ret.x,
+                        [-4.26437714e-09, -3.91699361e-09, -1.86149218e-09,
+                         -3.97165720e-09, -6.29151648e-09, -6.53145322e-09,
+                         -3.93616815e-09, -6.55623025e-09, -6.05775280e-09,
+                         -5.00668935e-09], atol=4e-8)
+        assert_allclose(ret.fun, 0.000000, atol=5e-13)

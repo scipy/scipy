@@ -17,7 +17,6 @@ from warnings import warn
 
 from scipy.optimize import minpack2
 import numpy as np
-from scipy._lib.six import xrange
 
 __all__ = ['LineSearchWarning', 'line_search_wolfe1', 'line_search_wolfe2',
            'scalar_search_wolfe1', 'scalar_search_wolfe2',
@@ -166,7 +165,7 @@ def scalar_search_wolfe1(phi, derphi, phi0=None, old_phi0=None, derphi0=None,
     task = b'START'
 
     maxiter = 100
-    for i in xrange(maxiter):
+    for i in range(maxiter):
         stp, phi1, derphi1, task = minpack2.dcsrch(alpha1, phi1, derphi1,
                                                    c1, c2, xtol, task,
                                                    amin, amax, isave, dsave)
@@ -259,9 +258,7 @@ def line_search_wolfe2(f, myfprime, xk, pk, gfk=None, old_fval=None,
     -----
     Uses the line search algorithm to enforce strong Wolfe
     conditions. See Wright and Nocedal, 'Numerical Optimization',
-    1999, pp. 59-60.
-
-    For the zoom phase it uses an algorithm by [...].
+    1999, pp. 59-61.
 
     """
     fc = [0]
@@ -375,9 +372,7 @@ def scalar_search_wolfe2(phi, derphi, phi0=None,
     -----
     Uses the line search algorithm to enforce strong Wolfe
     conditions. See Wright and Nocedal, 'Numerical Optimization',
-    1999, pp. 59-60.
-
-    For the zoom phase it uses an algorithm by [...].
+    1999, pp. 59-61.
 
     """
 
@@ -408,7 +403,7 @@ def scalar_search_wolfe2(phi, derphi, phi0=None,
     if extra_condition is None:
         extra_condition = lambda alpha, phi: True
 
-    for i in xrange(maxiter):
+    for i in range(maxiter):
         if alpha1 == 0 or (amax is not None and alpha0 == amax):
             # alpha1 == 0: This shouldn't happen. Perhaps the increment has
             # slipped below machine precision?
@@ -525,8 +520,15 @@ def _quadmin(a, fa, fpa, b, fb):
 
 def _zoom(a_lo, a_hi, phi_lo, phi_hi, derphi_lo,
           phi, derphi, phi0, derphi0, c1, c2, extra_condition):
-    """
+    """Zoom stage of approximate linesearch satisfying strong Wolfe conditions.
+    
     Part of the optimization algorithm in `scalar_search_wolfe2`.
+    
+    Notes
+    -----
+    Implements Algorithm 3.6 (zoom) in Wright and Nocedal,
+    'Numerical Optimization', 1999, pp. 61.
+
     """
 
     maxiter = 10

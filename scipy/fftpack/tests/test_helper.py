@@ -11,12 +11,10 @@ Run tests if fftpack is not installed:
   python tests/test_helper.py [<level>]
 """
 
-from pytest import raises as assert_raises
-from numpy.testing import assert_array_almost_equal, assert_equal, assert_
-from scipy.fftpack import fftshift,ifftshift,fftfreq,rfftfreq
+from numpy.testing import assert_array_almost_equal
+from scipy.fftpack import fftshift, ifftshift, fftfreq, rfftfreq
 
 from numpy import pi, random
-import numpy as np
 
 class TestFFTShift(object):
 

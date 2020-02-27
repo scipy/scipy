@@ -175,6 +175,37 @@ subroutine <prefix>trtrs(lower, trans, unitdiag, n, nrhs, a, lda, b, ldb, info)
 
 end subroutine <prefix>trtrs
 
+
+subroutine <prefix>tbtrs(uplo,trans,diag,n,kd,nrhs,ab,ldab,b,ldb,info)
+    ! x, info  = tbtrs(ab, b, uplo="U", trans="N", diag="N", overwrite_b=0)
+    ! ?TBTRS solves a triangular system of the form
+    !
+    !     A * X = B  or  A**T * X = B,
+    !
+    ! where:
+    !   * A is a triangular band matrix of order N,
+    !   * B is an N-by NRHS matrix.
+    ! A check is made to verify that A is nonsingular.
+
+    callstatement (*f2py_func)(uplo,trans,diag,&n,&kd,&nrhs,ab,&ldab,b,&ldb,&info)
+    callprotoargument char*,char*,char*,int*,int*,int*,<ctype>*,int*,<ctype>*,int*,int*
+
+    <ftype> intent(in), dimension(ldab, n) :: ab
+    <ftype> intent(in,out,copy,out=x), dimension(ldb, nrhs) :: b
+    integer intent(out) :: info
+
+    character optional intent(in), check(*uplo=='U'||*uplo=='L') :: uplo = 'U'
+    character optional intent(in), check(*trans=='N'||*trans=='T'||*trans=='C') :: trans = 'N'
+    character optional intent(in), check(*diag=='N'||*diag=='U') :: diag = 'N'
+
+    integer intent(hide), depend(ab) :: ldab = MAX(1, shape(ab, 0))
+    integer intent(hide), depend(ab) :: n = MAX(1, shape(ab, 1))
+    integer intent(hide), depend(ldab) :: kd = ldab - 1
+    integer intent(hide), depend(b, n), check(ldb >= n) :: ldb = MAX(1, shape(b, 0))
+    integer intent(hide), depend(b) :: nrhs = MAX(1, shape(b, 1))
+
+end subroutine <prefix>tbtrs
+
 subroutine <prefix2>pbsv(lower,n,kd,nrhs,ab,ldab,b,ldb,info)
     !
     ! Computes the solution to a real system of linear equations

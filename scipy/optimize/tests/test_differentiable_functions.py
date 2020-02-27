@@ -52,9 +52,9 @@ class TestScalarFunction(TestCase):
         approx = ScalarFunction(ex.fun, x0, (), '2-point',
                                 ex.hess, None, (-np.inf, np.inf))
         nfev += 3
+        ngev += 1
         assert_array_equal(ex.nfev, nfev)
         assert_array_equal(analit.nfev+approx.nfev, nfev)
-        assert_array_equal(ex.ngev, ngev)
         assert_array_equal(analit.ngev+approx.ngev, ngev)
         assert_array_equal(analit.f, approx.f)
         assert_array_almost_equal(analit.g, approx.g)
@@ -66,14 +66,13 @@ class TestScalarFunction(TestCase):
         ngev += 1
         assert_array_equal(ex.nfev, nfev)
         assert_array_equal(analit.nfev+approx.nfev, nfev)
-        assert_array_equal(ex.ngev, ngev)
         assert_array_equal(analit.ngev+approx.ngev, ngev)
         f_approx = approx.fun(x)
         g_approx = approx.grad(x)
         nfev += 3
+        ngev += 1
         assert_array_equal(ex.nfev, nfev)
         assert_array_equal(analit.nfev+approx.nfev, nfev)
-        assert_array_equal(ex.ngev, ngev)
         assert_array_equal(analit.ngev+approx.ngev, ngev)
         assert_array_almost_equal(f_analit, f_approx)
         assert_array_almost_equal(g_analit, g_approx)
@@ -83,14 +82,13 @@ class TestScalarFunction(TestCase):
         ngev += 1
         assert_array_equal(ex.nfev, nfev)
         assert_array_equal(analit.nfev+approx.nfev, nfev)
-        assert_array_equal(ex.ngev, ngev)
         assert_array_equal(analit.ngev+approx.ngev, ngev)
 
         g_approx = approx.grad(x)
         nfev += 3
+        ngev += 1
         assert_array_equal(ex.nfev, nfev)
         assert_array_equal(analit.nfev+approx.nfev, nfev)
-        assert_array_equal(ex.ngev, ngev)
         assert_array_equal(analit.ngev+approx.ngev, ngev)
         assert_array_almost_equal(g_analit, g_approx)
 
@@ -101,14 +99,13 @@ class TestScalarFunction(TestCase):
         ngev += 1
         assert_array_equal(ex.nfev, nfev)
         assert_array_equal(analit.nfev+approx.nfev, nfev)
-        assert_array_equal(ex.ngev, ngev)
         assert_array_equal(analit.ngev+approx.ngev, ngev)
         f_approx = approx.fun(x)
         g_approx = approx.grad(x)
         nfev += 3
+        ngev += 1
         assert_array_equal(ex.nfev, nfev)
         assert_array_equal(analit.nfev+approx.nfev, nfev)
-        assert_array_equal(ex.ngev, ngev)
         assert_array_equal(analit.ngev+approx.ngev, ngev)
         assert_array_almost_equal(f_analit, f_approx)
         assert_array_almost_equal(g_analit, g_approx)
@@ -120,14 +117,13 @@ class TestScalarFunction(TestCase):
         ngev += 1
         assert_array_equal(ex.nfev, nfev)
         assert_array_equal(analit.nfev+approx.nfev, nfev)
-        assert_array_equal(ex.ngev, ngev)
         assert_array_equal(analit.ngev+approx.ngev, ngev)
         f_approx = approx.fun(x)
         g_approx = approx.grad(x)
         nfev += 3
+        ngev += 1
         assert_array_equal(ex.nfev, nfev)
         assert_array_equal(analit.nfev+approx.nfev, nfev)
-        assert_array_equal(ex.ngev, ngev)
         assert_array_equal(analit.ngev+approx.ngev, ngev)
         assert_array_almost_equal(f_analit, f_approx)
         assert_array_almost_equal(g_analit, g_approx)
@@ -146,6 +142,7 @@ class TestScalarFunction(TestCase):
 
         fg = ex.fun(x0), ex.grad(x0)
         fg_allclose(analit.fun_and_grad(x0), fg)
+        assert(analit.ngev == 1)
 
         x0[1] = 1.
         fg = ex.fun(x0), ex.grad(x0)
@@ -155,9 +152,10 @@ class TestScalarFunction(TestCase):
         x0 = [2.0, 0.3]
         sf = ScalarFunction(ex.fun, x0, (), '3-point',
                                 ex.hess, None, (-np.inf, np.inf))
-
+        assert(sf.ngev == 1)
         fg = ex.fun(x0), ex.grad(x0)
         fg_allclose(sf.fun_and_grad(x0), fg)
+        assert(sf.ngev == 1)
 
         x0[1] = 1.
         fg = ex.fun(x0), ex.grad(x0)
@@ -361,7 +359,6 @@ class TestVectorialFunction(TestCase):
         njev = 0
 
         x0 = [1.0, 0.0]
-        v0 = [0.0, 1.0]
         analit = VectorFunction(ex.fun, x0, ex.jac, ex.hess, None, None,
                                 (-np.inf, np.inf), None)
         nfev += 1

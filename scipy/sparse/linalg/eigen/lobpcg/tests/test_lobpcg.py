@@ -11,10 +11,10 @@ from numpy.testing import (assert_almost_equal, assert_equal,
 
 import pytest
 
-from numpy import ones, r_, diag, eye
+from numpy import ones, r_, diag
 from numpy.random import rand
 from scipy.linalg import eig, eigh, toeplitz, orth
-from scipy.sparse import spdiags, diags, eye, random
+from scipy.sparse import spdiags, diags, eye
 from scipy.sparse.linalg import eigs, LinearOperator
 from scipy.sparse.linalg.eigen.lobpcg import lobpcg
 

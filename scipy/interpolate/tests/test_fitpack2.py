@@ -3,8 +3,7 @@ from __future__ import division, print_function, absolute_import
 
 import numpy as np
 from numpy.testing import (assert_equal, assert_almost_equal, assert_array_equal,
-        assert_array_almost_equal, assert_allclose)
-from scipy._lib._numpy_compat import suppress_warnings
+        assert_array_almost_equal, assert_allclose, suppress_warnings)
 from pytest import raises as assert_raises
 
 from numpy import array, diff, linspace, meshgrid, ones, pi, shape

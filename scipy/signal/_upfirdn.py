@@ -89,7 +89,9 @@ class _UpFIRDn(object):
         """Apply the prepared filter to the specified axis of a N-D signal x"""
         output_len = _output_len(len(self._h_trans_flip), x.shape[axis],
                                  self._up, self._down)
-        output_shape = np.asarray(x.shape)
+        # Explicit use of np.int64 for output_shape dtype avoids OverflowError
+        # when allocating large array on platforms where np.int_ is 32 bits
+        output_shape = np.asarray(x.shape, dtype=np.int64)
         output_shape[axis] = output_len
         out = np.zeros(output_shape, dtype=self._output_type, order='C')
         axis = axis % x.ndim

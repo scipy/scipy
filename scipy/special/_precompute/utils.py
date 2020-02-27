@@ -1,6 +1,6 @@
 from __future__ import division, print_function, absolute_import
 
-from scipy._lib._numpy_compat import suppress_warnings
+from numpy.testing import suppress_warnings
 
 try:
     import mpmath as mp

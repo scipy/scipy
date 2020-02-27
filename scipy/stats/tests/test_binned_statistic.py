@@ -5,8 +5,8 @@ from numpy.testing import assert_allclose
 from pytest import raises as assert_raises
 from scipy.stats import (binned_statistic, binned_statistic_2d,
                          binned_statistic_dd)
+from scipy._lib._util import check_random_state
 
-from scipy._lib.six import u
 from .common_tests import check_named_results
 
 
@@ -14,13 +14,13 @@ class TestBinnedStatistic(object):
 
     @classmethod
     def setup_class(cls):
-        np.random.seed(9865)
-        cls.x = np.random.random(100)
-        cls.y = np.random.random(100)
-        cls.v = np.random.random(100)
-        cls.X = np.random.random((100, 3))
-        cls.w = np.random.random(100)
-        cls.u = np.random.random(100) + 1e6
+        rng = check_random_state(9865)
+        cls.x = rng.uniform(size=100)
+        cls.y = rng.uniform(size=100)
+        cls.v = rng.uniform(size=100)
+        cls.X = rng.uniform(size=(100, 3))
+        cls.w = rng.uniform(size=100)
+        cls.u = rng.uniform(size=100) + 1e6
 
     def test_1d_count(self):
         x = self.x
@@ -223,7 +223,7 @@ class TestBinnedStatistic(object):
         y = self.y
         v = self.v
         stat1, binx1, biny1, bc = binned_statistic_2d(
-            x, y, v, u('mean'), bins=5)
+            x, y, v, 'mean', bins=5)
         stat2, binx2, biny2, bc = binned_statistic_2d(x, y, v, np.mean, bins=5)
         assert_allclose(stat1, stat2)
         assert_allclose(binx1, binx2)
