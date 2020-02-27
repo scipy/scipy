@@ -2606,17 +2606,17 @@ def interpn(points, values, xi, method="linear", bounds_error=True,
 
     ndim = values.ndim
     if ndim > 2 and method == "splinef2d":
-        raise ValueError("The method spline2fd can only be used for "
+        raise ValueError("The method splinef2d can only be used for "
                          "2-dimensional input data")
     if not bounds_error and fill_value is None and method == "splinef2d":
-        raise ValueError("The method spline2fd does not support extrapolation.")
+        raise ValueError("The method splinef2d does not support extrapolation.")
 
     # sanity check consistency of input dimensions
     if len(points) > ndim:
         raise ValueError("There are %d point arrays, but values has %d "
                          "dimensions" % (len(points), ndim))
     if len(points) != ndim and method == 'splinef2d':
-        raise ValueError("The method spline2fd can only be used for "
+        raise ValueError("The method splinef2d can only be used for "
                          "scalar data with one point per coordinate")
 
     # sanity check input grid

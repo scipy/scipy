@@ -12,7 +12,7 @@ import os
 from numpy.testing import (assert_equal, assert_array_equal,
                            assert_almost_equal, assert_array_almost_equal,
                            assert_allclose, assert_, assert_warns,
-                           suppress_warnings)
+                           assert_array_less, suppress_warnings)
 import pytest
 from pytest import raises as assert_raises
 
@@ -21,6 +21,7 @@ import numpy as np
 from numpy import typecodes, array
 from numpy.lib.recfunctions import rec_append_fields
 from scipy import special
+from scipy._lib._util import check_random_state
 from scipy.integrate import IntegrationWarning
 import scipy.stats as stats
 from scipy.stats._distn_infrastructure import argsreduce
@@ -1160,6 +1161,146 @@ class TestPoisson(object):
         assert_allclose(result, expected)
 
 
+class TestKSTwo(object):
+    def setup_method(self):
+        np.random.seed(1234)
+
+    def test_cdf(self):
+        for n in [1, 2, 3, 10, 100, 1000]:
+            # Test x-values:
+            #  0, 1/2n, where the cdf should be 0
+            #  1/n, where the cdf should be n!/n^n
+            #  0.5, where the cdf should match ksone.cdf
+            # 1-1/n, where cdf = 1-2/n^n
+            # 1, where cdf == 1
+            # (E.g. Exact values given by Eqn 1 in Simard / L'Ecuyer)
+            x = np.array([0, 0.5/n, 1/n, 0.5, 1-1.0/n, 1])
+            v1 = (1.0/n)**n
+            lg = scipy.special.gammaln(n+1)
+            elg = (np.exp(lg) if v1 != 0 else 0)
+            expected = np.array([0, 0, v1 * elg,
+                                 1 - 2*stats.ksone.sf(0.5, n),
+                                 max(1 - 2*v1, 0.0),
+                                 1.0])
+            vals_cdf = stats.kstwo.cdf(x, n)
+            assert_allclose(vals_cdf, expected)
+
+    def test_sf(self):
+        x = np.linspace(0, 1, 11)
+        for n in [1, 2, 3, 10, 100, 1000]:
+            # Same x values as in test_cdf, and use sf = 1 - cdf
+            x = np.array([0, 0.5/n, 1/n, 0.5, 1-1.0/n, 1])
+            v1 = (1.0/n)**n
+            lg = scipy.special.gammaln(n+1)
+            elg = (np.exp(lg) if v1 != 0 else 0)
+            expected = np.array([1.0, 1.0,
+                                 1 - v1 * elg,
+                                 2*stats.ksone.sf(0.5, n),
+                                 min(2*v1, 1.0), 0])
+            vals_sf = stats.kstwo.sf(x, n)
+            assert_allclose(vals_sf, expected)
+
+    def test_cdf_sqrtn(self):
+        # For fixed a, cdf(a/sqrt(n), n) -> kstwobign(a) as n->infinity
+        # cdf(a/sqrt(n), n) is an increasing function of n (and a)
+        # Check that the function is indeed increasing (allowing for some
+        # small floating point and algorithm differences.)
+        x = np.linspace(0, 2, 11)[1:]
+        ns = [50, 100, 200, 400, 1000, 2000]
+        for _x in x:
+            xn = _x / np.sqrt(ns)
+            probs = stats.kstwo.cdf(xn, ns)
+            diffs = np.diff(probs)
+            assert_array_less(diffs, 1e-8)
+
+    def test_cdf_sf(self):
+        x = np.linspace(0, 1, 11)
+        for n in [1, 2, 3, 10, 100, 1000]:
+            vals_cdf = stats.kstwo.cdf(x, n)
+            vals_sf = stats.kstwo.sf(x, n)
+            assert_array_almost_equal(vals_cdf, 1 - vals_sf)
+
+    def test_cdf_sf_sqrtn(self):
+        x = np.linspace(0, 1, 11)
+        for n in [1, 2, 3, 10, 100, 1000]:
+            xn = x / np.sqrt(n)
+            vals_cdf = stats.kstwo.cdf(xn, n)
+            vals_sf = stats.kstwo.sf(xn, n)
+            assert_array_almost_equal(vals_cdf, 1 - vals_sf)
+
+    def test_ppf_of_cdf(self):
+        x = np.linspace(0, 1, 11)
+        for n in [1, 2, 3, 10, 100, 1000]:
+            xn = x[x > 0.5/n]
+            vals_cdf = stats.kstwo.cdf(xn, n)
+            # CDFs close to 1 are better dealt with using the SF
+            cond = (0 < vals_cdf) & (vals_cdf < 0.99)
+            vals = stats.kstwo.ppf(vals_cdf, n)
+            assert_allclose(vals[cond], xn[cond], rtol=1e-4)
+
+    def test_isf_of_sf(self):
+        x = np.linspace(0, 1, 11)
+        for n in [1, 2, 3, 10, 100, 1000]:
+            xn = x[x > 0.5/n]
+            vals_isf = stats.kstwo.isf(xn, n)
+            cond = (0 < vals_isf) & (vals_isf < 1.0)
+            vals = stats.kstwo.sf(vals_isf, n)
+            assert_allclose(vals[cond], xn[cond], rtol=1e-4)
+
+    def test_ppf_of_cdf_sqrtn(self):
+        x = np.linspace(0, 1, 11)
+        for n in [1, 2, 3, 10, 100, 1000]:
+            xn = (x / np.sqrt(n))[x > 0.5/n]
+            vals_cdf = stats.kstwo.cdf(xn, n)
+            cond = (0 < vals_cdf) & (vals_cdf < 1.0)
+            vals = stats.kstwo.ppf(vals_cdf, n)
+            assert_allclose(vals[cond], xn[cond])
+
+    def test_isf_of_sf_sqrtn(self):
+        x = np.linspace(0, 1, 11)
+        for n in [1, 2, 3, 10, 100, 1000]:
+            xn = (x / np.sqrt(n))[x > 0.5/n]
+            vals_sf = stats.kstwo.sf(xn, n)
+            # SFs close to 1 are better dealt with using the CDF
+            cond = (0 < vals_sf) & (vals_sf < 0.95)
+            vals = stats.kstwo.isf(vals_sf, n)
+            assert_allclose(vals[cond], xn[cond])
+
+    def test_ppf(self):
+        probs = np.linspace(0, 1, 11)[1:]
+        for n in [1, 2, 3, 10, 100, 1000]:
+            xn = stats.kstwo.ppf(probs, n)
+            vals_cdf = stats.kstwo.cdf(xn, n)
+            assert_allclose(vals_cdf, probs)
+
+    def test_simard_lecuyer_table1(self):
+        # Compute the cdf for values near the mean of the distribution.
+        # The mean u ~ log(2)*sqrt(pi/(2n))
+        # Compute for x in [u/4, u/3, u/2, u, 2u, 3u]
+        # This is the computation of Table 1 of Simard, R., L'Ecuyer, P. (2011)
+        #  "Computing the Two-Sided Kolmogorov-Smirnov Distribution".
+        # Except that the values below are not from the published table, but
+        # were generated using an independent SageMath implementation of
+        # Durbin's algorithm (with the exponentiation and scaling of
+        # Marsaglia/Tsang/Wang's version) using 500 bit arithmetic.
+        # Some of the values in the published table have relative
+        # errors greater than 1e-4.
+        ns = [10, 50, 100, 200, 500, 1000]
+        ratios = np.array([1.0/4, 1.0/3, 1.0/2, 1, 2, 3])
+        expected = np.array([
+            [1.92155292e-08, 5.72933228e-05, 2.15233226e-02, 6.31566589e-01, 9.97685592e-01, 9.99999942e-01],
+            [2.28096224e-09, 1.99142563e-05, 1.42617934e-02, 5.95345542e-01, 9.96177701e-01, 9.99998662e-01],
+            [1.00201886e-09, 1.32673079e-05, 1.24608594e-02, 5.86163220e-01, 9.95866877e-01, 9.99998240e-01],
+            [4.93313022e-10, 9.52658029e-06, 1.12123138e-02, 5.79486872e-01, 9.95661824e-01, 9.99997964e-01],
+            [2.37049293e-10, 6.85002458e-06, 1.01309221e-02, 5.73427224e-01, 9.95491207e-01, 9.99997750e-01],
+            [1.56990874e-10, 5.71738276e-06, 9.59725430e-03, 5.70322692e-01, 9.95409545e-01, 9.99997657e-01]
+        ])
+        for idx, n in enumerate(ns):
+            x = ratios * np.log(2) * np.sqrt(np.pi/2/n)
+            vals_cdf = stats.kstwo.cdf(x, n)
+            assert_allclose(vals_cdf, expected[idx], rtol=1e-5)
+
+
 class TestZipf(object):
     def setup_method(self):
         np.random.seed(1234)
@@ -1452,7 +1593,7 @@ class TestRvDiscrete(object):
 
 class TestSkewNorm(object):
     def setup_method(self):
-        np.random.seed(1234)
+        self.rng = check_random_state(1234)
 
     def test_normal(self):
         # When the skewness is 0 the distribution is normal
@@ -1462,19 +1603,21 @@ class TestSkewNorm(object):
 
     def test_rvs(self):
         shape = (3, 4, 5)
-        x = stats.skewnorm.rvs(a=0.75, size=shape)
+        x = stats.skewnorm.rvs(a=0.75, size=shape, random_state=self.rng)
         assert_equal(shape, x.shape)
 
-        x = stats.skewnorm.rvs(a=-3, size=shape)
+        x = stats.skewnorm.rvs(a=-3, size=shape, random_state=self.rng)
         assert_equal(shape, x.shape)
 
     def test_moments(self):
-        X = stats.skewnorm.rvs(a=4, size=int(1e6), loc=5, scale=2)
+        X = stats.skewnorm.rvs(a=4, size=int(1e6), loc=5, scale=2,
+                               random_state=self.rng)
         expected = [np.mean(X), np.var(X), stats.skew(X), stats.kurtosis(X)]
         computed = stats.skewnorm.stats(a=4, loc=5, scale=2, moments='mvsk')
         assert_array_almost_equal(computed, expected, decimal=2)
 
-        X = stats.skewnorm.rvs(a=-4, size=int(1e6), loc=5, scale=2)
+        X = stats.skewnorm.rvs(a=-4, size=int(1e6), loc=5, scale=2,
+                               random_state=self.rng)
         expected = [np.mean(X), np.var(X), stats.skew(X), stats.kurtosis(X)]
         computed = stats.skewnorm.stats(a=-4, loc=5, scale=2, moments='mvsk')
         assert_array_almost_equal(computed, expected, decimal=2)
@@ -2087,7 +2230,7 @@ def TestArgsreduce():
 
 
 class TestFitMethod(object):
-    skip = ['ncf']
+    skip = ['ncf', 'ksone', 'kstwo']
 
     def setup_method(self):
         np.random.seed(1234)

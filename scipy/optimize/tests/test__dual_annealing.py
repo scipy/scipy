@@ -16,6 +16,7 @@ import numpy as np
 from numpy.testing import assert_equal, assert_allclose, assert_array_less
 from pytest import raises as assert_raises
 from scipy._lib._util import check_random_state
+from scipy._lib._pep440 import Version
 
 
 class TestDualAnnealing:
@@ -140,6 +141,21 @@ class TestDualAnnealing:
         # be exactly the same, which is not the case with no seeding
         assert_equal(res1.x, res2.x)
         assert_equal(res1.x, res3.x)
+
+    @pytest.mark.skipif(Version(np.__version__) < Version('1.17'),
+                        reason='Generator not available for numpy, < 1.17')
+    def test_rand_gen(self):
+        # check that np.random.Generator can be used (numpy >= 1.17)
+        # obtain a np.random.Generator object
+        rng = np.random.default_rng(1)
+
+        res1 = dual_annealing(self.func, self.ld_bounds, seed=rng)
+        # seed again
+        rng = np.random.default_rng(1)
+        res2 = dual_annealing(self.func, self.ld_bounds, seed=rng)
+        # If we have reproducible results, x components found has to
+        # be exactly the same, which is not the case with no seeding
+        assert_equal(res1.x, res2.x)
 
     def test_bounds_integrity(self):
         wrong_bounds = [(-5.12, 5.12), (1, 0), (5.12, 5.12)]

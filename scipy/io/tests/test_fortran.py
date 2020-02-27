@@ -2,7 +2,7 @@
 
 import tempfile
 import shutil
-from os import path, unlink
+from os import path
 from glob import iglob
 import re
 

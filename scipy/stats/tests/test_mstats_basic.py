@@ -250,6 +250,14 @@ class TestCorr(object):
     @pytest.mark.skipif(platform.machine() == 'ppc64le',
                         reason="fails/crashes on ppc64le")
     def test_kendalltau(self):
+        # check case with with maximum disorder and p=1
+        x = ma.array(np.array([9, 2, 5, 6]))
+        y = ma.array(np.array([4, 7, 9, 11]))
+        # Cross-check with exact result from R:
+        # cor.test(x,y,method="kendall",exact=1)
+        expected = [0.0, 1.0]
+        assert_almost_equal(np.asarray(mstats.kendalltau(x, y)), expected)
+        
         # simple case without ties
         x = ma.array(np.arange(10))
         y = ma.array(np.arange(10))
@@ -567,7 +575,7 @@ class TestMoments(object):
         im[:50, :] += 1
         im[:, :50] += 1
         cp = im.copy()
-        a = mstats.mode(im, None)
+        mstats.mode(im, None)
         assert_equal(im, cp)
 
 

@@ -771,8 +771,8 @@ class TestOptimizeSimple(CheckOptimize):
             return optimize.OptimizeResult()
 
         x0 = [1, 1]
-        res = optimize.minimize(optimize.rosen, x0, method=custmin,
-                                bounds=bounds, constraints=constraints)
+        optimize.minimize(optimize.rosen, x0, method=custmin,
+                          bounds=bounds, constraints=constraints)
 
     def test_minimize_tol_parameter(self):
         # Check that the minimize() tol= argument does something
@@ -855,7 +855,7 @@ class TestOptimizeSimple(CheckOptimize):
         def callback(x, *args, **kwargs):
             results.append((x, np.copy(x)))
 
-        sol = routine(func, x0, callback=callback, **kwargs)
+        routine(func, x0, callback=callback, **kwargs)
 
         # Check returned arrays coincide with their copies
         # and have no memory overlap
@@ -1095,6 +1095,32 @@ class TestOptimizeSimple(CheckOptimize):
                 sol = optimize.minimize(f, x0, jac=g, hess=h, method=method,
                                         options=dict(maxiter=20))
                 assert_equal(sol.success, False)
+
+    @pytest.mark.parametrize('method', ['nelder-mead', 'cg', 'bfgs',
+                                        'l-bfgs-b', 'tnc',
+                                        'cobyla', 'slsqp', 'trust-constr',
+                                        'dogleg', 'trust-ncg', 'trust-exact',
+                                        'trust-krylov'])
+    def test_duplicate_evaluations(self, method):
+        # check that there are no duplicate evaluations for any methods
+        jac = hess = None
+        if method in ('newton-cg', 'trust-krylov', 'trust-exact',
+                      'trust-ncg', 'dogleg'):
+            jac = self.grad
+        if method in ('trust-krylov', 'trust-exact', 'trust-ncg',
+                      'dogleg'):
+            hess = self.hess
+
+        with np.errstate(invalid='ignore'), suppress_warnings() as sup:
+            # for trust-constr
+            sup.filter(UserWarning, "delta_grad == 0.*")
+            optimize.minimize(self.func, self.startparams,
+                              method=method, jac=jac, hess=hess)
+
+        for i in range(1, len(self.trace)):
+            if np.array_equal(self.trace[i - 1], self.trace[i]):
+                raise RuntimeError(
+                    "Duplicate evaluations made by {}".format(method))
 
 
 class TestLBFGSBBounds(object):
