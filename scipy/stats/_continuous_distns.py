@@ -1932,7 +1932,7 @@ class weibull_min_gen(rv_continuous):
     r"""Weibull minimum continuous random variable.
 
     The Weibull Minimum Extreme Value distribution, from extreme value theory
-    (Fisher-Gnedenko theorem), is also often simply call1ed the Weibull
+    (Fisher-Gnedenko theorem), is also often simply called the Weibull
     distribution. It arises as the limiting distribution of the rescaled
     minimum of iid random variables.
 
@@ -1963,6 +1963,8 @@ class weibull_min_gen(rv_continuous):
     References
     ----------
     https://en.wikipedia.org/wiki/Weibull_distribution
+
+    https://en.wikipedia.org/wiki/Fisher%E2%80%93Tippett%E2%80%93Gnedenko_theorem
 
     %(example)s
 
@@ -2024,6 +2026,12 @@ class weibull_max_gen(rv_continuous):
     `weibull_max` takes ``c`` as a shape parameter for :math:`c`.
 
     %(after_notes)s
+
+    References
+    ----------
+    https://en.wikipedia.org/wiki/Weibull_distribution
+
+    https://en.wikipedia.org/wiki/Fisher%E2%80%93Tippett%E2%80%93Gnedenko_theorem
 
     %(example)s
 
