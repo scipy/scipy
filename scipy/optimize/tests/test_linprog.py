@@ -338,11 +338,11 @@ class LinprogCommonTests(object):
             linprog(c, A_ub, b_ub, A_eq, b_eq, bounds,
                     method=self.method, options=self.options)
 
-        for bad_bound in [[(5, 0), (1, 2), (3, 4)],
-                          [(1, 2), (3, 4)],
+        # Removed [(5, 0), (1, 2), (3, 4)]: these are invalid bounds but should be subject to a check in _presolve, not in _clean_inputs.
+        # The optimization should exit with an 'infeasible problem' error, not with a ValueError
+        # Same for [(1, 2), (np.inf, np.inf), (3, 4)] and [(1, 2), (-np.inf, -np.inf), (3, 4)]
+        for bad_bound in [[(1, 2), (3, 4)],
                           [(1, 2), (3, 4), (3, 4, 5)],
-                          [(1, 2), (np.inf, np.inf), (3, 4)],
-                          [(1, 2), (-np.inf, -np.inf), (3, 4)],
                           ]:
             assert_raises(ValueError, f, [1, 2, 3], bounds=bad_bound)
 

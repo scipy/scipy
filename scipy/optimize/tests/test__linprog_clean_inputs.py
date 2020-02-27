@@ -132,12 +132,12 @@ def test_type_errors():
     assert_raises(TypeError, _clean_inputs, lp._replace(A_eq=bad))
     assert_raises(TypeError, _clean_inputs, lp._replace(b_eq=bad))
 
-    assert_raises(TypeError, _clean_inputs, lp._replace(bounds=bad))
-    assert_raises(TypeError, _clean_inputs, lp._replace(bounds="hi"))
-    assert_raises(TypeError, _clean_inputs, lp._replace(bounds=["hi"]))
-    assert_raises(TypeError, _clean_inputs, lp._replace(bounds=[("hi")]))
-    assert_raises(TypeError, _clean_inputs, lp._replace(bounds=[(1, "")]))
-    assert_raises(TypeError, _clean_inputs, lp._replace(bounds=[(1, 2), (1, "")]))
+    assert_raises(ValueError, _clean_inputs, lp._replace(bounds=bad))
+    assert_raises(ValueError, _clean_inputs, lp._replace(bounds="hi"))
+    assert_raises(ValueError, _clean_inputs, lp._replace(bounds=["hi"]))
+    assert_raises(ValueError, _clean_inputs, lp._replace(bounds=[("hi")]))
+    assert_raises(ValueError, _clean_inputs, lp._replace(bounds=[(1, "")]))
+    assert_raises(ValueError, _clean_inputs, lp._replace(bounds=[(1, 2), (1, "")]))
 
 
 def test_non_finite_errors():
@@ -177,7 +177,7 @@ def test__clean_inputs1():
     assert_allclose(lp_cleaned.b_ub, np.array(lp.b_ub))
     assert_allclose(lp_cleaned.A_eq, np.array(lp.A_eq))
     assert_allclose(lp_cleaned.b_eq, np.array(lp.b_eq))
-    assert_(lp_cleaned.bounds == [(0, None)] * 2, "")
+    assert_(np.all(lp_cleaned.bounds == [(0, np.inf)] * 2), "")
 
     assert_(lp_cleaned.c.shape == (2,), "")
     assert_(lp_cleaned.A_ub.shape == (2, 2), "")
@@ -203,7 +203,7 @@ def test__clean_inputs2():
     assert_allclose(lp_cleaned.b_ub, np.array(lp.b_ub))
     assert_allclose(lp_cleaned.A_eq, np.array(lp.A_eq))
     assert_allclose(lp_cleaned.b_eq, np.array(lp.b_eq))
-    assert_(lp_cleaned.bounds == [(0, 1)], "")
+    assert_(np.all(lp_cleaned.bounds == [(0, 1)]), "")
 
     assert_(lp_cleaned.c.shape == (1,), "")
     assert_(lp_cleaned.A_ub.shape == (1, 1), "")
@@ -227,7 +227,8 @@ def test__clean_inputs3():
     assert_allclose(lp_cleaned.c, np.array([1, 2]))
     assert_allclose(lp_cleaned.b_ub, np.array([1, 2]))
     assert_allclose(lp_cleaned.b_eq, np.array([1, 2]))
-    assert_(lp_cleaned.bounds == [(0, 1)] * 2, "")
+    # assert_(lp_cleaned.bounds == [(0, 1)] * 2, "")
+    assert_(np.all(lp_cleaned.bounds == [(0, 1)] * 2), "")
 
     assert_(lp_cleaned.c.shape == (2,), "")
     assert_(lp_cleaned.b_ub.shape == (2,), "")
@@ -237,10 +238,21 @@ def test__clean_inputs3():
 def test_bad_bounds():
     lp = _LPProblem(c=[1, 2])
 
-    assert_raises(ValueError, _clean_inputs, lp._replace(bounds=(1, -2)))
-    assert_raises(ValueError, _clean_inputs, lp._replace(bounds=[(1, -2)]))
-    assert_raises(ValueError, _clean_inputs, lp._replace(bounds=[(1, -2), (1, 2)]))
+    #assert_raises(ValueError, _clean_inputs, lp._replace(bounds=(1, -2)))
+    #assert_raises(ValueError, _clean_inputs, lp._replace(bounds=[(1, -2)]))
+    #assert_raises(ValueError, _clean_inputs, lp._replace(bounds=[(1, -2), (1, 2)]))
+    # value checks are for _presolve
 
+    # Bad scalar values
+    assert_raises(ValueError, _clean_inputs, lp._replace(bounds="one"))
+    assert_raises(ValueError, _clean_inputs, lp._replace(bounds=2.2))
+    # Bad single sequence or array values
+    assert_raises(ValueError, _clean_inputs, lp._replace(bounds=np.array("one")))
+    assert_raises(ValueError, _clean_inputs, lp._replace(bounds=np.array(2.2)))
+    assert_raises(ValueError, _clean_inputs, lp._replace(bounds=(2.2,)))
+    assert_raises(ValueError, _clean_inputs, lp._replace(bounds=[2.2]))
+    # Bad 2-element sequence or array values
+    assert_raises(ValueError, _clean_inputs, lp._replace(bounds=("one", "two")))
     assert_raises(ValueError, _clean_inputs, lp._replace(bounds=(1, 2, 2)))
     assert_raises(ValueError, _clean_inputs, lp._replace(bounds=[(1, 2, 2)]))
     assert_raises(ValueError, _clean_inputs, lp._replace(bounds=[(1, 2), (1, 2, 2)]))
@@ -251,19 +263,19 @@ def test_good_bounds():
     lp = _LPProblem(c=[1, 2])
 
     lp_cleaned = _clean_inputs(lp)  # lp.bounds is None by default
-    assert_(lp_cleaned.bounds == [(0, None)] * 2, "")
+    assert_(np.all(lp_cleaned.bounds == [(0, np.inf)] * 2), "")
 
     lp_cleaned = _clean_inputs(lp._replace(bounds=(1, 2)))
-    assert_(lp_cleaned.bounds == [(1, 2)] * 2, "")
+    assert_(np.all(lp_cleaned.bounds == [(1, 2)] * 2), "")
 
     lp_cleaned = _clean_inputs(lp._replace(bounds=[(1, 2)]))
-    assert_(lp_cleaned.bounds == [(1, 2)] * 2, "")
+    assert_(np.all(lp_cleaned.bounds == [(1, 2)] * 2), "")
 
     lp_cleaned = _clean_inputs(lp._replace(bounds=[(1, np.inf)]))
-    assert_(lp_cleaned.bounds == [(1, None)] * 2, "")
+    assert_(np.all(lp_cleaned.bounds == [(1, np.inf)] * 2), "")
 
     lp_cleaned = _clean_inputs(lp._replace(bounds=[(-np.inf, 1)]))
-    assert_(lp_cleaned.bounds == [(None, 1)] * 2, "")
+    assert_(np.all(lp_cleaned.bounds == [(-np.inf, 1)] * 2), "")
 
     lp_cleaned = _clean_inputs(lp._replace(bounds=[(-np.inf, np.inf), (-np.inf, np.inf)]))
-    assert_(lp_cleaned.bounds == [(None, None)] * 2, "")
+    assert_(np.all(lp_cleaned.bounds == [(-np.inf, np.inf)] * 2), "")
