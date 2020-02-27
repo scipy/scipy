@@ -40,6 +40,14 @@ COMPLEX_DTYPES = [np.complex64, np.complex128]
 DTYPES = REAL_DTYPES + COMPLEX_DTYPES
 
 
+def generate_random_dtype_array(shape, dtype):
+    # generates a random matrix of desired data type of shape
+    if dtype in COMPLEX_DTYPES:
+        return (np.random.rand(*shape)
+                + np.random.rand(*shape)*1.0j).astype(dtype)
+    return np.random.rand(*shape).astype(dtype)
+
+
 def test_lapack_documented():
     """Test that all entries are in the doc."""
     if lapack.__doc__ is None:  # just in case there is a python -OO
@@ -1800,9 +1808,9 @@ def test_gttrf_gttrs(dtype):
     atol = 100 * np.finfo(dtype).eps
 
     # create the matrix in accordance with the data type
-    du = generate_random_dtype_array(n-1, dtype=dtype)
-    d = generate_random_dtype_array(n, dtype=dtype)
-    dl = generate_random_dtype_array(n-1, dtype=dtype)
+    du = generate_random_dtype_array((n-1,), dtype=dtype)
+    d = generate_random_dtype_array((n,), dtype=dtype)
+    dl = generate_random_dtype_array((n-1,), dtype=dtype)
 
     diag_cpy = [dl.copy(), d.copy(), du.copy()]
 
@@ -1952,14 +1960,6 @@ def test_geqrfp_lwork(dtype, shape):
     m, n = shape
     lwork, info = geqrfp_lwork(m=m, n=n)
     assert_equal(info, 0)
-
-
-def generate_random_dtype_array(shape, dtype):
-    # generates a random matrix of desired data type of shape
-    if dtype in COMPLEX_DTYPES:
-        return (np.random.rand(*shape)
-                + np.random.rand(*shape)*1.0j).astype(dtype)
-    return np.random.rand(*shape).astype(dtype)
 
 
 @pytest.mark.parametrize('dtype', DTYPES)
