@@ -29,7 +29,7 @@ subroutine <prefix>gttrf(n, dl, d, du, du2, ipiv, info)
     callstatement (*f2py_func)(&n, dl, d, du, du2, ipiv, &info)
     callprotoargument int*, <ctype>*, <ctype>*, <ctype>*, <ctype>*, int*, int*
 
-    integer intent(hide),   depend(d), check(len(d) > 2) :: n = len(d)
+    integer intent(hide),   depend(d) :: n = max(3, len(d))
     <ftype> intent(in,out,copy), depend(n), dimension(n-1) :: dl
     <ftype> intent(in,out,copy),            dimension(n)   :: d
     <ftype> intent(in,out,copy), depend(n), dimension(n-1) :: du
@@ -52,9 +52,9 @@ subroutine <prefix>gttrs(trans, n, nrhs, dl, d, du, du2, ipiv, b, ldb, info)
     threadsafe
 
     character  optional, intent(in), check(*trans=='N'||*trans=='T'||*trans=='C') :: trans = "N"
-    integer    intent(in, hide), depend(d), check(len(d) > 2) :: n = len(d)
-    integer    intent(in, hide), depend(b), check(nrhs > 0)  :: nrhs = shape(b, 1)
-    integer    intent(in, hide), depend(n) :: ldb = MAX(1, n)
+    integer    intent(in, hide), depend(d) :: n = max(3, len(d))
+    integer    intent(in, hide), depend(b) :: nrhs = max(1, shape(b, 1))
+    integer    intent(in, hide), depend(n) :: ldb = max(1, n)
     <ftype>    intent(in), depend(n), dimension(n - 1) :: dl
     <ftype>    intent(in),            dimension(n)     :: d
     <ftype>    intent(in), depend(n), dimension(n - 1) :: du
