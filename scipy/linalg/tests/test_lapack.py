@@ -2585,9 +2585,6 @@ def test_gtsvx_NAG(du, d, dl, b, x):
                           ("N", lambda d, e: (None, None, None))])
 def test_ptsvx(dtype, realtype, fact, df_de_lambda):
     '''
-    TODO: let's see what the actual type of rcond is so that we can test for
-    that specifcially
-
     This tests the ?ptsvx lapack routine wrapper to solve a random system
     Ax = b for all dtypes and input variations. Tests for: unmodified
     input parameters, fact options, incompatible matrix shapes raise an error,
@@ -2601,11 +2598,8 @@ def test_ptsvx(dtype, realtype, fact, df_de_lambda):
     n = 5
     # create diagonals according to size and dtype
     d = generate_random_dtype_array((n,), realtype) + 4
-    # diagonal e may be real or complex.
     e = generate_random_dtype_array((n-1,), dtype)
-    # form matrix A from d and e
     A = np.diag(d) + np.diag(e, -1) + np.diag(np.conj(e), 1)
-    # create random solution x
     x_soln = generate_random_dtype_array((n, 2), dtype=dtype)
     b = A @ x_soln
 
@@ -2653,11 +2647,8 @@ def test_ptsvx_error_raise_errors(dtype, realtype, fact, df_de_lambda):
     n = 5
     # create diagonals according to size and dtype
     d = generate_random_dtype_array((n,), realtype) + 4
-    # diagonal e may be real or complex.
     e = generate_random_dtype_array((n-1,), dtype)
-    # form matrix A from d and e
     A = np.diag(d) + np.diag(e, -1) + np.diag(np.conj(e), 1)
-    # create random solution x
     x_soln = generate_random_dtype_array((n, 2), dtype=dtype)
     b = A @ x_soln
 
@@ -2671,6 +2662,7 @@ def test_ptsvx_error_raise_errors(dtype, realtype, fact, df_de_lambda):
         ptsvx(d, e[:-1], b, fact=fact, df=df, ef=ef)
     df, ef, x, rcond, ferr, berr, info = ptsvx(d, e, b[:-1], fact=fact,
                                                df=df, ef=ef)
+    # this info returns -9
     assert info < 0
 
 
@@ -2687,17 +2679,13 @@ def test_ptsvx_non_SPD_singular(dtype, realtype, fact, df_de_lambda):
     n = 5
     # create diagonals according to size and dtype
     d = generate_random_dtype_array((n,), realtype) + 4
-    # diagonal e may be real or complex.
     e = generate_random_dtype_array((n-1,), dtype)
-    # form matrix A from d and e
     A = np.diag(d) + np.diag(e, -1) + np.diag(np.conj(e), 1)
-    # create random solution x
     x_soln = generate_random_dtype_array((n, 2), dtype=dtype)
     b = A @ x_soln
 
     # use lambda to determine what df, ef are
     df, ef, info = df_de_lambda(d, e)
-    # test with non spd matrix
 
     if fact == "N":
         d[3] = 0
@@ -2706,12 +2694,12 @@ def test_ptsvx_non_SPD_singular(dtype, realtype, fact, df_de_lambda):
         # solve using routine
         df, ef, x, rcond, ferr, berr, info = ptsvx(d, e, b)
         # test for the singular matrix.
-        assert info > 0
+        assert info > 0 and info <= n
 
         # non SPD matrix
         d = generate_random_dtype_array((n,), realtype)
         df, ef, x, rcond, ferr, berr, info = ptsvx(d, e, b)
-        assert info > 0
+        assert info > 0 and info <= n
     else:
         # assuming that someone is using a singular factorization
         df, ef, info = df_de_lambda(d, e)
@@ -2719,7 +2707,7 @@ def test_ptsvx_non_SPD_singular(dtype, realtype, fact, df_de_lambda):
         ef[0] = 0
         df, ef, x, rcond, ferr, berr, info = ptsvx(d, e, b, fact=fact,
                                                    df=df, ef=ef)
-        assert info > 0
+        assert info > 0 and info <= n
 
     # It might be cool to create an example for which the matrix is
     # numerically - but not exactly - singular to see if we can get info==N+1
