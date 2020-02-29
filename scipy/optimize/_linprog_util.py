@@ -383,46 +383,64 @@ def _clean_inputs(lp):
     # (6) a 2-D array, with shape N x 2 or 2 x N
     # Unspecified bounds can be represented by None or (-)np.inf.
     # All formats are converted into a N x 2 np.array with (-)np.inf where bounds are unspecified.
-    # Strings in input result in a ValueError
-    clean_bounds = np.zeros((n_x,2))
+    # Incorrect dmensions result in a Valuerror
+    # Invalid types in bounds (including incovertible strings) result in a TypeError
+    clean_bounds = np.zeros((n_x,2),dtype=float)
 
     bounds_valid = False
     # Determine shape of provided bounds
-    # np.shape returns a tuple, but only if sizes are consistent
-    bsh = np.shape(bounds)
+    # np.array(..,dtype=float) raises a ValueError if sizes are consistent
+    # or if unable to convert string to float
+    try:
+        bsh = np.array(bounds,dtype=float).shape
+    except ValueError as e:
+        if "could not convert string to float" in e.args[0]:
+            raise TypeError("Invalid input for linprog: bounds contains strings which cannot be converted to floats.")
+        else:
+            raise ValueError("Invalid input for linprog: unable to interpret bounds, inconsistent dimensions.")
     
     # 1. Check if bounds can be interpreted as n_x pairs (n_x is the number of variables)
     #    Bounds can have sizes n_x x 2 and 2 x n_x
-    if len(bsh) == 2:
-        if bsh[0] == n_x and bsh[1] == 2: 
-            for i in range(n_x):
-                bi = bounds[i] # no need to check if length == 2, np.shape did that
-                clean_bounds[i,:] = bi
-                bounds_valid = True
-        elif bsh[0] == 2 and bsh[1] == n_x: 
-            for i in range(2):
-                bi = bounds[i] # no need to check length, np.shape did that
-                clean_bounds[:,i] = bi
-                bounds_valid = True
+    try:
+
+        if len(bsh) == 2:
+            if bsh[0] == n_x and bsh[1] == 2:
+                for i in range(n_x):
+                    bi = bounds[i]  # no need to check if length == 2, np.shape did that
+                    clean_bounds[i,:] = bi
+                    bounds_valid = True
+            elif bsh[0] == 2 and bsh[1] == n_x:
+                for i in range(2):
+                    bi = bounds[i]  # no need to check length, np.shape did that
+                    clean_bounds[:,i] = bi
+                    bounds_valid = True
 
     # 2. Check if bounds can be interpreted as a single pair
     #    Bounds can have sizes 1 x 2, 2 x 1 or 2
     #    Raises TypeError if elements are not scalars
-    if not bounds_valid:
-        if len(bsh) == 2:
-            if bsh[0] == 2 and bsh[1] == 1:
-                clean_bounds[:,0] = bounds[0][0]
-                clean_bounds[:,1] = bounds[1][0]
-                bounds_valid = True
-            elif bsh[0] == 1 and bsh[1] == 2: 
-                clean_bounds[:,0] = bounds[0][0]
-                clean_bounds[:,1] = bounds[0][1]
-                bounds_valid = True
-        elif len(bsh) == 1:
-            if bsh[0] == 2:
-                clean_bounds[:,0] = bounds[0]
-                clean_bounds[:,1] = bounds[1]
-                bounds_valid = True
+        if not bounds_valid:
+            if len(bsh) == 2:
+                if bsh[0] == 2 and bsh[1] == 1:
+                    clean_bounds[:,0] = bounds[0][0]
+                    clean_bounds[:,1] = bounds[1][0]
+                    bounds_valid = True
+                elif bsh[0] == 1 and bsh[1] == 2:
+                    clean_bounds[:,0] = bounds[0][0]
+                    clean_bounds[:,1] = bounds[0][1]
+                    bounds_valid = True
+            elif len(bsh) == 1:
+                if bsh[0] == 2:
+                    clean_bounds[:,0] = bounds[0]
+                    clean_bounds[:,1] = bounds[1]
+                    bounds_valid = True
+
+    except ValueError as e:
+        if "could not convert string to float" in e.args[0]:
+            raise TypeError("Invalid input for linprog: bounds contains strings which cannot be converted to floats.")
+        else:
+            raise e
+    except TypeError as e:
+        raise TypeError("Invalid input for linprog: bounds contains illegal types: "+e.args[0])
 
     # 3. Check remaining possibility
     if bounds is None:
@@ -432,14 +450,14 @@ def _clean_inputs(lp):
         
     # 4. If none of the formats where found, raise a ValueError
     if not bounds_valid:
-        raise ValueError("Invalid input for linprog: unable to interpret bounds.")
+        raise ValueError("Invalid input for linprog: unable to interpret bounds with given dimensions.")
 
     # The process above creates nan-s where the input specified None
     # Convert the nan-s in the 1st column to -np.inf and in the 2nd column to np.inf
     i_none = np.isnan(clean_bounds[:,0])
-    clean_bounds[i_none,0] = -np.inf;
+    clean_bounds[i_none,0] = -np.inf
     i_none = np.isnan(clean_bounds[:,1])
-    clean_bounds[i_none,1] = np.inf;
+    clean_bounds[i_none,1] = np.inf
 
     return _LPProblem(c, A_ub, b_ub, A_eq, b_eq, clean_bounds, x0)
 
@@ -746,30 +764,6 @@ def _presolve(lp, rr, tol=1e-9):
         lb_mod = lb[i_nf]
         ub_mod = ub[i_nf]
 
-    # === repeat to prevent row rank warning below ====================================
-    # This is only a shallow fix: only fixes new A_eq zero rows, not A_ub zero rows.
-    # zero row in equality constraints
-    # zero row in equality constraints
-    zero_row = np.array(np.sum(A_eq != 0, axis=1) == 0).flatten()
-    if np.any(zero_row):
-        if np.any(
-            np.logical_and(
-                zero_row,
-                np.abs(b_eq) > tol)):  # test_zero_row_1
-            # infeasible if RHS is not zero
-            status = 2
-            message = ("The problem is (trivially) infeasible due to a row "
-                       "of zeros in the equality constraint matrix with a "
-                       "nonzero corresponding constraint value.")
-            complete = True
-            return (_LPProblem(c, A_ub, b_ub, A_eq, b_eq, bounds, x0),
-                    c0, x, undo, complete, status, message)
-        else:  # test_zero_row_2
-            # if RHS is zero, we can eliminate this equation entirely
-            A_eq = A_eq[np.logical_not(zero_row), :]
-            b_eq = b_eq[np.logical_not(zero_row)]
-    # === repeat to prevent row rank warning below ====================================
-
     # no constraints indicates that problem is trivial
     if A_eq.size == 0 and A_ub.size == 0:
         b_eq = np.array([])
@@ -1074,6 +1068,8 @@ def _get_Abc(lp, c0, undo=[]):
         zeros = np.zeros
         eye = np.eye
 
+    # bounds will be modified, create a copy
+    bounds = np.array(bounds,copy=True)
     # undo[0] contains indices of variables removed from the problem
     # however, their bounds are still part of the bounds list
     # they are needed elsewhere, but not here
@@ -1099,7 +1095,7 @@ def _get_Abc(lp, c0, undo=[]):
     l_nolb_someub = np.logical_and(lb_none, ub_some)
     i_nolb = np.nonzero(l_nolb_someub)[0]
     lbs[l_nolb_someub], ubs[l_nolb_someub] = (
-        -ubs[l_nolb_someub], lbs[l_nolb_someub])
+        -ubs[l_nolb_someub], -lbs[l_nolb_someub])
     lb_none = np.equal(lbs, -np.inf)
     ub_none = np.equal(ubs, np.inf)
     lb_some = np.logical_not(lb_none)
@@ -1321,10 +1317,8 @@ def _postsolve(x, postsolve_args, complete=False, tol=1e-8, copy=False):
     con : 1-D array
         The (nominally zero) residuals of the equality constraints, that is,
         ``b - A_eq @ x``
-    lb : 1-D array
-        The lower bound constraints on the original variables
-    ub: 1-D array
-        The upper bound constraints on the original variables
+    bounds : 2D array
+        The bounds on the original variables ``x``
     """
     # note that all the inputs are the ORIGINAL, unmodified versions
     # no rows, columns have been removed
@@ -1376,14 +1370,11 @@ def _postsolve(x, postsolve_args, complete=False, tol=1e-8, copy=False):
     slack = b_ub - A_ub.dot(x)  # report slack for ORIGINAL UB constraints
     # report residuals of ORIGINAL EQ constraints
     con = b_eq - A_eq.dot(x)
-    # separate arrays for bounds
-    lb = bounds[:, 0]
-    ub = bounds[:, 1]
 
-    return x, fun, slack, con, lb, ub
+    return x, fun, slack, con, bounds
 
 
-def _check_result(x, fun, status, slack, con, lb, ub, tol, message):
+def _check_result(x, fun, status, slack, con, bounds, tol, message):
     """
     Check the validity of the provided solution.
 
@@ -1413,10 +1404,8 @@ def _check_result(x, fun, status, slack, con, lb, ub, tol, message):
     con : 1-D array
         The (nominally zero) residuals of the equality constraints, that is,
         ``b - A_eq @ x``
-    lb : 1-D array
-        The lower bound constraints on the original variables
-    ub: 1-D array
-        The upper bound constraints on the original variables
+    bounds : 2D array
+        The bounds on the original variables ``x``
     message : str
         A string descriptor of the exit status of the optimization.
     tol : float
@@ -1449,7 +1438,7 @@ def _check_result(x, fun, status, slack, con, lb, ub, tol, message):
     if contains_nans:
         is_feasible = False
     else:
-        invalid_bounds = (x < lb - tol).any() or (x > ub + tol).any()
+        invalid_bounds = (x < bounds[:,0] - tol).any() or (x > bounds[:,1] + tol).any()
         invalid_slack = status != 3 and (slack < -tol).any()
         invalid_con = status != 3 and (np.abs(con) > tol).any()
         is_feasible = not (invalid_bounds or invalid_slack or invalid_con)
@@ -1562,13 +1551,13 @@ def _postprocess(x, postsolve_args, complete=False, status=0, message="",
 
     """
 
-    x, fun, slack, con, lb, ub = _postsolve(
+    x, fun, slack, con, bounds = _postsolve(
         x, postsolve_args, complete, tol
     )
 
     status, message = _check_result(
         x, fun, status, slack, con,
-        lb, ub, tol, message
+        bounds, tol, message
     )
 
     if disp:
