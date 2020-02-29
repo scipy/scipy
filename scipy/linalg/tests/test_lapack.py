@@ -1945,7 +1945,7 @@ def test_gttrf_gttrs_NAG_f07cdf_f07cef_f07crf_f07csf(du, d, dl, du_exp, d_exp,
     _dl, _d, _du, du2, ipiv, info = gttrf(dl, d, du)
     assert_allclose(du2, du2_exp)
     assert_allclose(_du, du_exp)
-    assert_allclose(_d, d_exp, rtol=1e-4)  # NAG examples provide 4 decimals.
+    assert_allclose(_d, d_exp, atol=1e-4)  # NAG examples provide 4 decimals.
     assert_allclose(ipiv, ipiv_exp)
 
     x_gttrs, info = gttrs(_dl, _d, _du, du2, ipiv, b)
