@@ -79,7 +79,7 @@ class TestSmokeTests(object):
             xe = b
         x = a+(b-a)*arange(N+1,dtype=float)/float(N)    # nodes
         x1 = a+(b-a)*arange(1,N,dtype=float)/float(N-1)  # middle points of the nodes
-        v, _ = f(x),f(x1)
+        v = f(x)
         nk = []
 
         def err_est(k, d):

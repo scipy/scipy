@@ -7,7 +7,7 @@ import warnings
 
 import numpy as np
 
-# These are in the API for fftpack even if not used in fftpacvk.py itself.
+# These are in the API for fitpack even if not used in fitpack.py itself.
 from ._fitpack_impl import bisplrep, bisplev, dblint
 from . import _fitpack_impl as _impl
 from ._bsplines import BSpline
