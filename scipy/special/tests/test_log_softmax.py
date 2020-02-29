@@ -86,24 +86,24 @@ def log_softmax_2d_expected():
                          -1.4401896985611953,
                          -0.44018969856119533]])
     return expected
-	
+
 
 def test_log_softmax_2d_axis1(log_softmax_2d_x, log_softmax_2d_expected):
-    x=log_softmax_2d_x
-    expected=log_softmax_2d_expected
+    x = log_softmax_2d_x
+    expected = log_softmax_2d_expected
     assert_allclose(sc.log_softmax(x, axis=1), expected, rtol=1e-13)
     
     
 def test_log_softmax_2d_axis0(log_softmax_2d_x, log_softmax_2d_expected):
-    x=log_softmax_2d_x.T
-    expected=log_softmax_2d_expected.T
+    x = log_softmax_2d_x.T
+    expected = log_softmax_2d_expected.T
     assert_allclose(sc.log_softmax(x, axis=0), expected, rtol=1e-13)
 
 
 def test_log_softmax_3d(log_softmax_2d_x, log_softmax_2d_expected):
     # 3-d input, with a tuple for the axis.
     x_3d = log_softmax_2d_x.reshape(2, 2, 2)
-    expected_3d=log_softmax_2d_expected.reshape(2, 2, 2)
+    expected_3d = log_softmax_2d_expected.reshape(2, 2, 2)
     assert_allclose(sc.log_softmax(x_3d, axis=(1, 2)), expected_3d, rtol=1e-13)
     
     
