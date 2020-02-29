@@ -913,7 +913,7 @@ class TestPPolyCommon(object):
         c_s = c.shape
         xp = np.random.random((1, 2))
         for axis in (0, 1, 2, 3):
-            _, m = c.shape[axis], c.shape[axis+1]
+            m = c.shape[axis+1]
             x = np.sort(np.random.rand(m+1))
             for cls in (PPoly, BPoly):
                 p = cls(c, x, axis=axis)
