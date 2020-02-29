@@ -507,15 +507,17 @@ def _remove_redundancy_id(A, rhs, rank=None, randomized=True):
 
     # first k entries in idx are indices of the independent rows
     # remaining entries are the indices of the m-k dependent rows
-    A2 = A[idx[:k], :]
-    rhs2 = rhs[idx[:k]]
-
     # proj provides a linear combinations of rows of A2 that form the
     # remaining m-k (dependent) rows. The same linear combination of entries
     # in rhs2 must give the remaining m-k entries. If not, the system is
     # inconsistent, and the problem is infeasible.
-    if not np.allclose(rhs2 @ proj, rhs[idx[k:]]):
+    if not np.allclose(rhs[idx[:k]] @ proj, rhs[idx[k:]]):
         status = 2
         message = inconsistent
 
+    # sort indices because the other redundancy removal routines leave rows
+    # in original order and tests were written with that in mind
+    idx = sorted(idx[:k])
+    A2 = A[idx, :]
+    rhs2 = rhs[idx]
     return A2, rhs2, status, message
