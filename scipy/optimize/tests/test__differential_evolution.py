@@ -241,15 +241,26 @@ class TestDifferentialEvolutionSolver(object):
     def test_callback_terminates(self):
         # test that if the callback returns true, then the minimization halts
         bounds = [(0, 2), (0, 2)]
+        expected_msg = 'callback function requested stop early by returning True'
 
-        def callback(param, convergence=0.):
+        def callback_python_true(param, convergence=0.):
             return True
 
-        result = differential_evolution(rosen, bounds, callback=callback)
+        result = differential_evolution(rosen, bounds, callback=callback_python_true)
+        assert_string_equal(result.message, expected_msg)
 
-        assert_string_equal(result.message,
-                                'callback function requested stop early '
-                                'by returning True')
+        def callback_evaluates_true(param, convergence=0.):
+            # DE should stop if bool(self.callback) is True
+            return [10]
+
+        result = differential_evolution(rosen, bounds, callback=callback_evaluates_true)
+        assert_string_equal(result.message, expected_msg)
+
+        def callback_evaluates_false(param, convergence=0.):
+            return []
+
+        result = differential_evolution(rosen, bounds, callback=callback_evaluates_false)
+        assert result.success
 
     def test_args_tuple_is_passed(self):
         # test that the args tuple is passed to the cost function properly.
