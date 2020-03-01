@@ -1115,13 +1115,11 @@ def chebyshev(u, v, w=None):
     """
     u = _validate_vector(u)
     v = _validate_vector(v)
+    l1_diff = abs(u-v)
     if w is not None:
         w = _validate_weights(w)
-        has_weight = w > 0
-        if has_weight.sum() < w.size:
-            u = u[has_weight]
-            v = v[has_weight]
-    return max(abs(u - v))
+        l1_diff = w * l1_diff
+    return max(l1_diff)
 
 
 def braycurtis(u, v, w=None):
