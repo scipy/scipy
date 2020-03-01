@@ -1804,7 +1804,6 @@ def test_gttrf_gttrs(dtype):
 
     np.random.seed(42)
     n = 10
-    rtol = 250 * np.finfo(dtype).eps  # set test tolerance appropriate for dtype
     atol = 100 * np.finfo(dtype).eps
 
     # create the matrix in accordance with the data type
@@ -1853,7 +1852,7 @@ def test_gttrf_gttrs(dtype):
     # test that the inputs of ?gttrs are unmodified
     assert_array_equal(b, b_cpy)
     # test that the result of ?gttrs matches the expected input
-    assert_allclose(x, x_gttrs, rtol=rtol)
+    assert_allclose(x, x_gttrs, atol=atol)
 
     # test that ?gttrf and ?gttrs work with transposal options
     if dtype in REAL_DTYPES:
@@ -1864,7 +1863,7 @@ def test_gttrf_gttrs(dtype):
         b_trans = A.conj().T @ x
 
     x_gttrs, info = gttrs(_dl, _d, _du, du2, ipiv, b_trans, trans=trans)
-    assert_allclose(x, x_gttrs, rtol=rtol)
+    assert_allclose(x, x_gttrs, atol=atol)
 
     # test that ValueError is raised with incompatible matrix shapes
     with assert_raises(ValueError):
