@@ -384,7 +384,7 @@ def _clean_inputs(lp):
     # Unspecified bounds can be represented by None or (-)np.inf.
     # All formats are converted into a N x 2 np.array with (-)np.inf where bounds are unspecified.
     # Strings in input result in a ValueError
-    clean_bounds = np.zeros((n_x,2))
+    clean_bounds = np.zeros((n_x, 2))
 
     bounds_valid = False
     # Determine shape of provided bounds
