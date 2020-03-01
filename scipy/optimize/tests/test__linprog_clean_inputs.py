@@ -8,6 +8,7 @@ from numpy.testing import assert_, assert_allclose
 from pytest import raises as assert_raises
 from scipy.optimize._linprog_util import _clean_inputs, _LPProblem
 from copy import deepcopy
+from datetime import date
 
 
 def test_aliasing():
@@ -113,6 +114,7 @@ def test_inconsistent_dimensions():
     assert_raises(ValueError, _clean_inputs, _LPProblem(c=c, A_eq=Abad, b_eq=bgood))
     assert_raises(ValueError, _clean_inputs, _LPProblem(c=c, A_eq=Agood, b_eq=bbad))
     assert_raises(ValueError, _clean_inputs, _LPProblem(c=c, bounds=boundsbad))
+    assert_raises(ValueError, _clean_inputs, _LPProblem(c=c, bounds=[[1,2],[2,3],[3,4],[4,5,6]]))
 
 
 def test_type_errors():
@@ -132,12 +134,13 @@ def test_type_errors():
     assert_raises(TypeError, _clean_inputs, lp._replace(A_eq=bad))
     assert_raises(TypeError, _clean_inputs, lp._replace(b_eq=bad))
 
-    assert_raises(ValueError, _clean_inputs, lp._replace(bounds=bad))
-    assert_raises(ValueError, _clean_inputs, lp._replace(bounds="hi"))
-    assert_raises(ValueError, _clean_inputs, lp._replace(bounds=["hi"]))
-    assert_raises(ValueError, _clean_inputs, lp._replace(bounds=[("hi")]))
-    assert_raises(ValueError, _clean_inputs, lp._replace(bounds=[(1, "")]))
-    assert_raises(ValueError, _clean_inputs, lp._replace(bounds=[(1, 2), (1, "")]))
+    assert_raises(TypeError, _clean_inputs, lp._replace(bounds=bad))
+    assert_raises(TypeError, _clean_inputs, lp._replace(bounds="hi"))
+    assert_raises(TypeError, _clean_inputs, lp._replace(bounds=["hi"]))
+    assert_raises(TypeError, _clean_inputs, lp._replace(bounds=[("hi")]))
+    assert_raises(TypeError, _clean_inputs, lp._replace(bounds=[(1, "")]))
+    assert_raises(TypeError, _clean_inputs, lp._replace(bounds=[(1, 2), (1, "")]))
+    assert_raises(TypeError, _clean_inputs, lp._replace(bounds=[(1, date(2020,2,29))]))
 
 
 def test_non_finite_errors():
@@ -227,7 +230,6 @@ def test__clean_inputs3():
     assert_allclose(lp_cleaned.c, np.array([1, 2]))
     assert_allclose(lp_cleaned.b_ub, np.array([1, 2]))
     assert_allclose(lp_cleaned.b_eq, np.array([1, 2]))
-    # assert_(lp_cleaned.bounds == [(0, 1)] * 2, "")
     assert_(np.all(lp_cleaned.bounds == [(0, 1)] * 2), "")
 
     assert_(lp_cleaned.c.shape == (2,), "")
@@ -238,21 +240,6 @@ def test__clean_inputs3():
 def test_bad_bounds():
     lp = _LPProblem(c=[1, 2])
 
-    #assert_raises(ValueError, _clean_inputs, lp._replace(bounds=(1, -2)))
-    #assert_raises(ValueError, _clean_inputs, lp._replace(bounds=[(1, -2)]))
-    #assert_raises(ValueError, _clean_inputs, lp._replace(bounds=[(1, -2), (1, 2)]))
-    # value checks are for _presolve
-
-    # Bad scalar values
-    assert_raises(ValueError, _clean_inputs, lp._replace(bounds="one"))
-    assert_raises(ValueError, _clean_inputs, lp._replace(bounds=2.2))
-    # Bad single sequence or array values
-    assert_raises(ValueError, _clean_inputs, lp._replace(bounds=np.array("one")))
-    assert_raises(ValueError, _clean_inputs, lp._replace(bounds=np.array(2.2)))
-    assert_raises(ValueError, _clean_inputs, lp._replace(bounds=(2.2,)))
-    assert_raises(ValueError, _clean_inputs, lp._replace(bounds=[2.2]))
-    # Bad 2-element sequence or array values
-    assert_raises(ValueError, _clean_inputs, lp._replace(bounds=("one", "two")))
     assert_raises(ValueError, _clean_inputs, lp._replace(bounds=(1, 2, 2)))
     assert_raises(ValueError, _clean_inputs, lp._replace(bounds=[(1, 2, 2)]))
     assert_raises(ValueError, _clean_inputs, lp._replace(bounds=[(1, 2), (1, 2, 2)]))
@@ -271,11 +258,11 @@ def test_good_bounds():
     lp_cleaned = _clean_inputs(lp._replace(bounds=[(1, 2)]))
     assert_(np.all(lp_cleaned.bounds == [(1, 2)] * 2), "")
 
-    lp_cleaned = _clean_inputs(lp._replace(bounds=[(1, np.inf)]))
+    lp_cleaned = _clean_inputs(lp._replace(bounds=[(1, None)]))
     assert_(np.all(lp_cleaned.bounds == [(1, np.inf)] * 2), "")
 
-    lp_cleaned = _clean_inputs(lp._replace(bounds=[(-np.inf, 1)]))
+    lp_cleaned = _clean_inputs(lp._replace(bounds=[(None, 1)]))
     assert_(np.all(lp_cleaned.bounds == [(-np.inf, 1)] * 2), "")
 
-    lp_cleaned = _clean_inputs(lp._replace(bounds=[(-np.inf, np.inf), (-np.inf, np.inf)]))
+    lp_cleaned = _clean_inputs(lp._replace(bounds=[(None, None), (-np.inf, None)]))
     assert_(np.all(lp_cleaned.bounds == [(-np.inf, np.inf)] * 2), "")
