@@ -343,7 +343,7 @@ def _phase_two(c, A, x, b, callback, postsolve_args, maxiter, tol, disp,
             else:
                 phase = 2
                 x_postsolve = x
-            x_o, fun, slack, con, _, _ = _postsolve(x_postsolve,
+            x_o, fun, slack, con, _ = _postsolve(x_postsolve,
                                                     postsolve_args,
                                                     tol=tol, copy=True)
 
