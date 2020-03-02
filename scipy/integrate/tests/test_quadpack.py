@@ -4,6 +4,7 @@ import numpy as np
 from numpy import sqrt, cos, sin, arctan, exp, log, pi, Inf
 from numpy.testing import (assert_,
         assert_allclose, assert_array_less, assert_almost_equal)
+import pytest
 from pytest import raises as assert_raises
 
 from scipy.integrate import quad, dblquad, tplquad, nquad
@@ -46,7 +47,7 @@ class TestCtypesQuad(object):
         else:
             # This test doesn't work on some Linux platforms (Fedora for
             # example) that put an ld script in libm.so - see gh-5370
-            self.skipTest("Ctypes can't import libm.so")
+            pytest.skip("Ctypes can't import libm.so")
 
         restype = ctypes.c_double
         argtypes = (ctypes.c_double,)
