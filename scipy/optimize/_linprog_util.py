@@ -501,15 +501,15 @@ def _presolve(lp, rr, tol=1e-9):
             'revised simplex' method, and can only be used if `x0` represents a
             basic feasible solution.
 
-    c0 : 1D array
-        Constant term in objective function due to fixed (and eliminated)
-        variables.
-    x : 1D array
-        Solution vector (when the solution is trivial and can be determined
-        in presolve)
-    undo: list of tuples
-        (index, value) pairs that record the original index and fixed value
-        for each variable removed from the problem
+lp, revstack, complete, status, message
+    lp : see above
+        The problem is modified by a number of presolve steps.
+    revstack : list of functions
+        List of functions, the application of which recreates the original
+        ``c``, ``x`` and ``x0``.
+        Each function corresponds to a presolve step taken. It takes ``c``,
+        ``x`` and ``x0`` from after a step and returns the values from before
+        the presolve step.
     complete: bool
         Whether the solution is complete (solved or determined to be infeasible
         or unbounded in presolve)
@@ -546,274 +546,295 @@ def _presolve(lp, rr, tol=1e-9):
     #  * loop presolve until no additional changes are made
     #  * implement additional efficiency improvements in redundancy removal [2]
 
-    c, A_ub, b_ub, A_eq, b_eq, bounds, x0 = lp
+    # Default return values
+    complete = False
+    message = None
+    status = 0
 
-    undo = []               # record of variables eliminated from problem
-    # constant term in cost function may be added if variables are eliminated
-    c0 = 0
-    complete = False        # complete is True if detected infeasible/unbounded
-    x = np.zeros(c.shape)   # this is solution vector if completed in presolve
+    # List of functions for undoing presolve modifications
+    revstack = []
 
-    status = 0              # all OK unless determined otherwise
-    message = ""
+    # Check infeasible bounds
+    (lp, rev, status) = _presolve_infeasible_bounds(lp)
+    if status == 2:
+        message = "The problem is (trivially) infeasible. One or more lower bounds are higher than corresponding upper bounds."
+        return (lp, revstack, True, status, message)
 
-    # Lower and upper bounds
-    lb = bounds[:, 0]
-    ub = bounds[:, 1]
+    # Check infeasible equality constraints
+    (lp, _, status) = _presolve_infeasible_equality_constraints(lp)
+    if status == 2:
+        message = "The problem is (trivially) infeasible. One or more equalities cannot be fulfilled given the bounds."
+        return (lp, revstack, True, status, message)
 
-    m_eq, n = A_eq.shape
-    m_ub, n = A_ub.shape
+    # Check infeasible inequality constraints
+    (lp, _, status) = _presolve_infeasible_inequality_constraints(lp)
+    if status == 2:
+        message = "The problem is (trivially) infeasible. One or more inequalities cannot be fulfilled given the bounds."
+        return (lp, revstack, True, status, message)
 
-    if sps.issparse(A_eq):
-        A_eq = A_eq.tocsr()
-        A_ub = A_ub.tocsr()
+    # Remove fixed variables
+    (lp, rev, status) = _presolve_remove_fixed_variables(lp)
+    if status == 5:
+        revstack.append(rev)
 
-        def where(A):
-            return A.nonzero()
+    loop_modifications = True
+    while loop_modifications:
+        loop_modifications = False
 
-        vstack = sps.vstack
+        # Remove row singletons
+        (lp, rev, status) = _presolve_remove_row_singletons(lp)
+        if status == 5:
+            revstack.append(rev)
+            loop_modifications = True
+
+    # Remove empty rows
+    (lp, rev, status) = _presolve_remove_empty_rows(lp)
+    if status == 5:
+        revstack.append(rev)
+    elif status == 2:
+        message = "The problem is (trivially) infeasible due to a row of zeros in the (in)equality constraint matrix with a nonzero corresponding constraint value."
+        return (lp, revstack, True, status, message)
+
+    # Remove empty columns
+    (lp, rev, status) = _presolve_remove_empty_columns(lp)
+    if status == 5:
+        revstack.append(rev)
+    
+    # Check if problem solved
+    c = lp[0]
+    if len(c) == 0:
+        complete = True
+
+    # At this point, status cannot be anything else than 0
+    status = 0
+
+    return (lp, revstack, complete, status, message)
+
+def _presolve_infeasible_bounds(pp):
+    """
+    Check for lower bounds which are larger than upper bounds
+    pp = (c, A_ub, b_ub, A_eq, b_eq, bounds, x0)
+    """
+    bounds = pp[5]
+    infeasible_bounds = bounds[:,0]>bounds[:,1]
+    if np.any(infeasible_bounds):
+        status = 2 # infeasible bounds
     else:
-        where = np.where
-        vstack = np.vstack
+        status = 6 # no change
+ 
+    return (pp, None, status)
 
-    # zero row in equality constraints
-    zero_row = np.array(np.sum(A_eq != 0, axis=1) == 0).flatten()
-    if np.any(zero_row):
-        if np.any(
-            np.logical_and(
-                zero_row,
-                np.abs(b_eq) > tol)):  # test_zero_row_1
+
+def _presolve_infeasible_equality_constraints(pp):
+    """
+    Check for equalities which cannot be fulfilled given the bounds
+    Given bounds for x lead to bounds for product A_eq*x. If b_eq
+    does not satisfy these bounds, a solution is infeasible.
+    pp = (c, A_ub, b_ub, A_eq, b_eq, bounds, x0)
+    """
+    A_eq = pp[3]
+    b_eq = pp[4]
+    bounds = pp[5]
+
+    if A_eq is None:
+        status = 6 # no change
+        return (pp, None, status)
+
+    # Create two matrices G and H the shape of A_eq. G with upper bound
+    # values where elements of A_eq are positive, lower bound values
+    # where negative, and 0 where 0. H the opposite.
+    # Note: treat zero-values in A_eq separately, to avoid final
+    # mutiplication of 0 and inf.
+    pos = A_eq>0
+    neg = A_eq<0
+    n_eq = len(b_eq)
+    # Repeat lower bounds to get a matrix the shape of A_eq
+    Ml = np.tile(bounds[:,0],[n_eq,1])
+    # Repeat upper bounds to get a matrix the shape of A_eq
+    Mu = np.tile(bounds[:,1],[n_eq,1])
+    # Create G and H
+    G = np.zeros(A_eq.shape)
+    G[neg] = Ml[neg]
+    G[pos] = Mu[pos]
+    H = np.zeros(A_eq.shape)
+    H[pos] = Ml[pos]
+    H[neg] = Mu[neg]
+    # Row sums of element-wise product gives range between which equations
+    # can vary.
+    u_eq = np.sum(A_eq*G,1)
+    l_eq = np.sum(A_eq*H,1)
+    # Check whether b_eq is within this range
+    #TODO: need tolerances here? check problem 2 with b_eq[2] = -0.5*self.tol
+    if np.any(b_eq<l_eq) or np.any(b_eq>u_eq):
+        # Infeasible constraints
+        status = 2 # infeasible bounds
+    else:
+        # No infeasible constraints detected
+        status = 6 # no change
+    return (pp, None, status)
+
+
+def _presolve_infeasible_inequality_constraints(pp):
+    """
+    Check for inequalities which cannot be fulfilled given the bounds
+    Given bounds for x lead to bounds L and U for product A_ub*x. If
+    these bounds do not overlap <= b_ub, i.e. if L > b_ub, then a
+    solution is infeasible.
+    pp = (c, A_ub, b_ub, A_eq, b_eq, bounds, x0)
+    """
+    A_ub = pp[1]
+    b_ub = pp[2]
+    bounds = pp[5]
+
+    if A_ub is None:
+        status = 6 # no change
+        return (pp, None, status)
+
+    # Create a matrix H the shape of A_eq, with upper bound
+    # values where elements of A_eq are negative, lower bound values
+    # where positive, and 0 where 0.
+    # Note: treat zero-values in A_eq separately, to avoid final
+    # mutiplication of 0 and inf.
+    pos = A_ub>0
+    neg = A_ub<0
+    n_eq = len(b_ub)
+    # Repeat lower bounds to get a matrix the shape of A_eq
+    Ml = np.tile(bounds[:,0],[n_eq,1])
+    # Repeat upper bounds to get a matrix the shape of A_eq
+    Mu = np.tile(bounds[:,1],[n_eq,1])
+    # Create H
+    H = np.zeros(A_ub.shape)
+    H[pos] = Ml[pos]
+    H[neg] = Mu[neg]
+    # Row sums of element-wise product gives range between which equations
+    # can vary.
+    l_ub = np.sum(A_ub*H,1)
+    #print("b_ub:",b_ub)
+    #print("l_ub:",l_ub)
+    # Check whether b_eq is within this range
+    #TODO: need tolerances here? compare problem 2 with b_eq[2] = -0.5*self.tol
+    if np.any(b_ub<l_ub):
+        # Infeasible constraints
+        status = 2 # infeasible bounds
+    else:
+        # No infeasible constraints detected
+        status = 6 # no change
+    return (pp, None, status)
+
+
+def _presolve_remove_fixed_variables(pp):
+    """
+    Check for lower bounds which are equal to upper bounds.
+    Remove these variable from the problem matrices.
+    pp = (c, A_ub, b_ub, A_eq, b_eq, bounds, x0)
+    """
+    c, A_ub, b_ub, A_eq, b_eq, bounds, x0, tol = pp
+    fixed_indices = bounds[:,0]==bounds[:,1]
+    if np.any(fixed_indices):
+        # Keep variables which are not fixed
+        keep_indices = np.logical_not(fixed_indices)
+        # Fix variables indicated by fixed_indices
+        x_fixed = bounds[fixed_indices,0]
+        if b_eq is not None:
+            b_eq = b_eq - np.dot(A_eq[:,fixed_indices],x_fixed)
+            A_eq = A_eq[:,keep_indices]
+        if b_ub is not None:
+            b_ub = b_ub - np.dot(A_ub[:,fixed_indices],x_fixed)
+            A_ub = A_ub[:,keep_indices]
+        c_fixed = c[fixed_indices]
+        c = c[keep_indices]
+        bounds = bounds[keep_indices,:]
+        if x0 is not None:
+            x0_fixed = x0[fixed_indices]
+            x0 = x0[keep_indices];
+        pp = (c, A_ub, b_ub, A_eq, b_eq, bounds, x0, tol)
+        status = 5 # modifications
+        # Reverse operation only relevant for c, x and x0
+        # When removing elements at positions k1, k2, k3, ...
+        # these must be replaced at (after) positions k1-1, k2-2, k3-3, ...
+        # in the modified array
+        def rev(c_mod,x_mod,x0_mod):
+            i = np.where(fixed_indices)
+            # Number of variables to restore
+            N = len(i)
+            index_offset = list(range(N))
+            # Creat insert indices
+            insert_indices = np.subtract(i,index_offset).flatten()
+            c_rev = np.insert(c_mod,insert_indices,c_fixed)
+            x_rev = np.insert(x_mod,insert_indices,x_fixed)
+            if x0 is not None:
+                x0_rev = np.insert(x0_mod,insert_indices,x0_fixed)
+            else:
+                x0_rev = None
+            return (c_rev,x_rev,x0_rev)
+        return (pp, rev, status)
+    else:
+        status = 6 # no change
+        return (pp, None, status)
+
+
+def _presolve_remove_row_singletons(pp):
+    return (pp, None, 6)
+
+
+def _presolve_remove_empty_rows(pp):
+    """
+    Check for empty rows in A_eq and A_ub.
+    Remove these rows and the corresponding elements in b_eq and b_ub.
+    pp = (c, A_ub, b_ub, A_eq, b_eq, bounds, x0)
+    """
+    c, A_ub, b_ub, A_eq, b_eq, bounds, x0, tol = pp
+
+    # Equations
+    Z = np.array(np.sum(A_eq != 0, axis=1) == 0).flatten()
+    # Need to check for infeasibility? Covered by the initial infeasibility check?
+    if np.any(Z):
+        if np.any(np.abs(b_eq[Z])>tol):
             # infeasible if RHS is not zero
             status = 2
-            message = ("The problem is (trivially) infeasible due to a row "
-                       "of zeros in the equality constraint matrix with a "
-                       "nonzero corresponding constraint value.")
-            complete = True
-            return (_LPProblem(c, A_ub, b_ub, A_eq, b_eq, bounds, x0),
-                    c0, x, undo, complete, status, message)
-        else:  # test_zero_row_2
+            return (pp, None, status)
+        else:
             # if RHS is zero, we can eliminate this equation entirely
-            A_eq = A_eq[np.logical_not(zero_row), :]
-            b_eq = b_eq[np.logical_not(zero_row)]
+            A_eq = A_eq[np.logical_not(Z), :]
+            b_eq = b_eq[np.logical_not(Z)]
 
-    # zero row in inequality constraints
-    zero_row = np.array(np.sum(A_ub != 0, axis=1) == 0).flatten()
-    if np.any(zero_row):
-        if np.any(np.logical_and(zero_row, b_ub < -tol)):  # test_zero_row_1
-            # infeasible if RHS is less than zero (because LHS is zero)
+    # Inequalities
+    Z = np.array(np.sum(A_eq != 0, axis=1) == 0).flatten()
+    # Need to check for infeasibility? Covered by the initial infeasibility check?
+    if np.any(Z):
+        if np.any(b_ub[Z]>tol):
+            # A_ub * x >= b_ub, with empty row causing LHS to be 0. Infeasible if RHS bigger than zero
             status = 2
-            message = ("The problem is (trivially) infeasible due to a row "
-                       "of zeros in the equality constraint matrix with a "
-                       "nonzero corresponding  constraint value.")
-            complete = True
-            return (_LPProblem(c, A_ub, b_ub, A_eq, b_eq, bounds, x0),
-                    c0, x, undo, complete, status, message)
-        else:  # test_zero_row_2
-            # if LHS is >= 0, we can eliminate this constraint entirely
-            A_ub = A_ub[np.logical_not(zero_row), :]
-            b_ub = b_ub[np.logical_not(zero_row)]
+            return (pp, None, status)
+        else:
+            # if RHS is zero or below, we can eliminate this inequality entirely
+            A_ub = A_ub[np.logical_not(Z), :]
+            b_ub = b_ub[np.logical_not(Z)]
+    # Wrap up
+    pp = (c, A_ub, b_ub, A_eq, b_eq, bounds, x0, tol)
+    status = 6 # modifications made, but nothing to reverse, so return 6, not 5
+    return (pp, None, status)
 
-    # zero column in (both) constraints
-    # this indicates that a variable isn't constrained and can be removed
-    A = vstack((A_eq, A_ub))
-    if A.shape[0] > 0:
-        zero_col = np.array(np.sum(A != 0, axis=0) == 0).flatten()
-        # variable will be at upper or lower bound, depending on objective
-        x[np.logical_and(zero_col, c < 0)] = ub[
-            np.logical_and(zero_col, c < 0)]
-        x[np.logical_and(zero_col, c > 0)] = lb[
-            np.logical_and(zero_col, c > 0)]
-        if np.any(np.isinf(x)):  # if an unconstrained variable has no bound
-            status = 3
-            message = ("If feasible, the problem is (trivially) unbounded "
-                       "due  to a zero column in the constraint matrices. If "
-                       "you wish to check whether the problem is infeasible, "
-                       "turn presolve off.")
-            complete = True
-            return (_LPProblem(c, A_ub, b_ub, A_eq, b_eq, bounds, x0),
-                    c0, x, undo, complete, status, message)
-        # variables will equal upper/lower bounds will be removed later
-        lb[np.logical_and(zero_col, c < 0)] = ub[
-            np.logical_and(zero_col, c < 0)]
-        ub[np.logical_and(zero_col, c > 0)] = lb[
-            np.logical_and(zero_col, c > 0)]
 
-    # row singleton in equality constraints
-    # this fixes a variable and removes the constraint
-    singleton_row = np.array(np.sum(A_eq != 0, axis=1) == 1).flatten()
-    rows = where(singleton_row)[0]
-    cols = where(A_eq[rows, :])[1]
-    if len(rows) > 0:
-        for row, col in zip(rows, cols):
-            val = b_eq[row] / A_eq[row, col]
-            if not lb[col] - tol <= val <= ub[col] + tol:
-                # infeasible if fixed value is not within bounds
-                status = 2
-                message = ("The problem is (trivially) infeasible because a "
-                           "singleton row in the equality constraints is "
-                           "inconsistent with the bounds.")
-                complete = True
-                return (_LPProblem(c, A_ub, b_ub, A_eq, b_eq, bounds, x0),
-                        c0, x, undo, complete, status, message)
-            else:
-                # sets upper and lower bounds at that fixed value - variable
-                # will be removed later
-                lb[col] = val
-                ub[col] = val
-        A_eq = A_eq[np.logical_not(singleton_row), :]
-        b_eq = b_eq[np.logical_not(singleton_row)]
+def _presolve_remove_empty_columns(pp):
+    """
+    Check for empty columns in A_eq and A_ub.
+    Remove these rows and the corresponding elements in b_eq and b_ub.
+    pp = (c, A_ub, b_ub, A_eq, b_eq, bounds, x0)
+    """
+    A_ub = pp[1]
+    A_eq = pp[3]
 
-    # row singleton in inequality constraints
-    # this indicates a simple bound and the constraint can be removed
-    # simple bounds may be adjusted here
-    # After all of the simple bound information is combined here, get_Abc will
-    # turn the simple bounds into constraints
-    singleton_row = np.array(np.sum(A_ub != 0, axis=1) == 1).flatten()
-    cols = where(A_ub[singleton_row, :])[1]
-    rows = where(singleton_row)[0]
-    if len(rows) > 0:
-        for row, col in zip(rows, cols):
-            val = b_ub[row] / A_ub[row, col]
-            if A_ub[row, col] > 0:  # upper bound
-                if val < lb[col] - tol:  # infeasible
-                    complete = True
-                elif val < ub[col]:  # new upper bound
-                    ub[col] = val
-            else:  # lower bound
-                if val > ub[col] + tol:  # infeasible
-                    complete = True
-                elif val > lb[col]:  # new lower bound
-                    lb[col] = val
-            if complete:
-                status = 2
-                message = ("The problem is (trivially) infeasible because a "
-                           "singleton row in the upper bound constraints is "
-                           "inconsistent with the bounds.")
-                return (_LPProblem(c, A_ub, b_ub, A_eq, b_eq, bounds, x0),
-                        c0, x, undo, complete, status, message)
-        A_ub = A_ub[np.logical_not(singleton_row), :]
-        b_ub = b_ub[np.logical_not(singleton_row)]
+    Z_ub = np.array(np.sum(A_ub != 0, axis=0) == 0).flatten()
+    Z_eq = np.array(np.sum(A_eq != 0, axis=0) == 0).flatten()
+    if np.any(np.logical_and(Z_ub,Z_eq)):
+        # If a variable does not appear in any of the equations and inequalities,
+        # an optimal choice can be made for it using its bounds and the corrsponding
+        # value in c.
+        # After that, the variable can be removed from the equations.
+        raise ValueError("to be implemented")
 
-    # identical bounds indicate that variable can be removed
-    i_f = np.abs(lb - ub) < tol   # indices of "fixed" variables
-    i_nf = np.logical_not(i_f)  # indices of "not fixed" variables
-
-    # test_bounds_equal_but_infeasible
-    if np.all(i_f):  # if bounds define solution, check for consistency
-        residual = b_eq - A_eq.dot(lb)
-        slack = b_ub - A_ub.dot(lb)
-        if ((A_ub.size > 0 and np.any(slack < 0)) or
-                (A_eq.size > 0 and not np.allclose(residual, 0))):
-            status = 2
-            message = ("The problem is (trivially) infeasible because the "
-                       "bounds fix all variables to values inconsistent with "
-                       "the constraints")
-            complete = True
-            return (_LPProblem(c, A_ub, b_ub, A_eq, b_eq, bounds, x0),
-                    c0, x, undo, complete, status, message)
-
-    ub_mod = ub
-    lb_mod = lb
-    if np.any(i_f):
-        c0 += c[i_f].dot(lb[i_f])
-        b_eq = b_eq - A_eq[:, i_f].dot(lb[i_f])
-        b_ub = b_ub - A_ub[:, i_f].dot(lb[i_f])
-        c = c[i_nf]
-        x = x[i_nf]
-        # user guess x0 stays separate from presolve solution x
-        if x0 is not None:
-            x0 = x0[i_nf]
-        A_eq = A_eq[:, i_nf]
-        A_ub = A_ub[:, i_nf]
-        # record of variables to be added back in
-        undo = [np.nonzero(i_f)[0], lb[i_f]]
-        # don't remove these entries from bounds; they'll be used later.
-        # but we _also_ need a version of the bounds with these removed
-        lb_mod = lb[i_nf]
-        ub_mod = ub[i_nf]
-
-    # no constraints indicates that problem is trivial
-    if A_eq.size == 0 and A_ub.size == 0:
-        b_eq = np.array([])
-        b_ub = np.array([])
-        # test_empty_constraint_1
-        if c.size == 0:
-            status = 0
-            message = ("The solution was determined in presolve as there are "
-                       "no non-trivial constraints.")
-        elif (np.any(np.logical_and(c < 0, ub_mod == np.inf)) or
-              np.any(np.logical_and(c > 0, lb_mod == -np.inf))):
-            # test_no_constraints()
-            # test_unbounded_no_nontrivial_constraints_1
-            # test_unbounded_no_nontrivial_constraints_2
-            status = 3
-            message = ("The problem is (trivially) unbounded "
-                       "because there are no non-trivial constraints and "
-                       "a) at least one decision variable is unbounded "
-                       "above and its corresponding cost is negative, or "
-                       "b) at least one decision variable is unbounded below "
-                       "and its corresponding cost is positive. ")
-        else:  # test_empty_constraint_2
-            status = 0
-            message = ("The solution was determined in presolve as there are "
-                       "no non-trivial constraints.")
-        complete = True
-        x[c < 0] = ub_mod[c < 0]
-        x[c > 0] = lb_mod[c > 0]
-        # where c is zero, set x to a finite bound or zero
-        x_zero_c = ub_mod[c == 0]
-        x_zero_c[np.isinf(x_zero_c)] = ub_mod[c == 0][np.isinf(x_zero_c)]
-        x_zero_c[np.isinf(x_zero_c)] = 0
-        x[c == 0] = x_zero_c
-        # if this is not the last step of presolve, should convert bounds back
-        # to array and return here
-
-    # Convert lb and ub back into Nx2 bounds
-    bounds = np.hstack((lb[:, np.newaxis], ub[:, np.newaxis]))
-
-    # remove redundant (linearly dependent) rows from equality constraints
-    n_rows_A = A_eq.shape[0]
-    redundancy_warning = ("A_eq does not appear to be of full row rank. To "
-                          "improve performance, check the problem formulation "
-                          "for redundant equality constraints.")
-    if (sps.issparse(A_eq)):
-        if rr and A_eq.size > 0:  # TODO: Fast sparse rank check?
-            A_eq, b_eq, status, message = _remove_redundancy_sparse(A_eq, b_eq)
-            if A_eq.shape[0] < n_rows_A:
-                warn(redundancy_warning, OptimizeWarning, stacklevel=1)
-            if status != 0:
-                complete = True
-        return (_LPProblem(c, A_ub, b_ub, A_eq, b_eq, bounds, x0),
-                c0, x, undo, complete, status, message)
-
-    # This is a wild guess for which redundancy removal algorithm will be
-    # faster. More testing would be good.
-    small_nullspace = 5
-    if rr and A_eq.size > 0:
-        try:  # TODO: instead use results of first SVD in _remove_redundancy
-            rank = np.linalg.matrix_rank(A_eq)
-        except Exception:  # oh well, we'll have to go with _remove_redundancy_dense
-            rank = 0
-    if rr and A_eq.size > 0 and rank < A_eq.shape[0]:
-        warn(redundancy_warning, OptimizeWarning, stacklevel=3)
-        dim_row_nullspace = A_eq.shape[0]-rank
-        if dim_row_nullspace <= small_nullspace:
-            A_eq, b_eq, status, message = _remove_redundancy(A_eq, b_eq)
-        if dim_row_nullspace > small_nullspace or status == 4:
-            A_eq, b_eq, status, message = _remove_redundancy_dense(A_eq, b_eq)
-        if A_eq.shape[0] < rank:
-            message = ("Due to numerical issues, redundant equality "
-                       "constraints could not be removed automatically. "
-                       "Try providing your constraint matrices as sparse "
-                       "matrices to activate sparse presolve, try turning "
-                       "off redundancy removal, or try turning off presolve "
-                       "altogether.")
-            status = 4
-        if status != 0:
-            complete = True
-    return (_LPProblem(c, A_ub, b_ub, A_eq, b_eq, bounds, x0),
-            c0, x, undo, complete, status, message)
-
+    return (pp, None, 6)
 
 def _parse_linprog(lp, options):
     """
