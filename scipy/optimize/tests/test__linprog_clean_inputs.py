@@ -290,3 +290,22 @@ def test_good_bounds():
 
     lp_cleaned = _clean_inputs(lp._replace(bounds=[(None, None), (-np.inf, None), (None, np.inf), (-np.inf, np.inf)]))
     assert_(np.all(lp_cleaned.bounds == [(-np.inf, np.inf)] * 4), "")
+
+def test_bounds_branches():
+
+    lp = _LPProblem(c=[1, 2, 3, 4])
+
+    # branch 1
+    lp_cleaned = _clean_inputs(lp._replace(bounds=[(1, 2),(1, 2),(1, 2),(1, 2)]))
+    # branch 2
+    lp_cleaned = _clean_inputs(lp._replace(bounds=[(1, 2)]))
+    lp_cleaned = _clean_inputs(lp._replace(bounds=[[1],[2]]))
+    # branch 3
+    assert_raises(ValueError, _clean_inputs, lp._replace(bounds=[(1, 2, 3, 4),(1, 2, 3, 4)]))
+    # branch 4
+    lp_cleaned = _clean_inputs(lp._replace(bounds=[1, 2]))
+    # branch 5
+    lp_cleaned = _clean_inputs(lp._replace(bounds=[]))
+    lp_cleaned = _clean_inputs(lp._replace(bounds=None))
+    # branch 6
+    assert_raises(ValueError, _clean_inputs, lp._replace(bounds=[(1, 2, 3),(1, 2, 3),(1, 2, 3),(1, 2, 3)]))
