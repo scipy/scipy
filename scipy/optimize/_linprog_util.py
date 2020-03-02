@@ -379,85 +379,53 @@ def _clean_inputs(lp):
     # (2) a sequence with 2 scalars
     # (3) a sequence with 1 element as (2)
     # (4) a sequence with N elements, all with 2 values (N is the size of x)
-    # (5) a sequence with 2 elements, both sequences with N values
-    # (6) a 2-D array, with shape N x 2 or 2 x N
+    # (5) a 2-D array, with shape N x 2
     # Unspecified bounds can be represented by None or (-)np.inf.
-    # All formats are converted into a N x 2 np.array with (-)np.inf where bounds are unspecified.
-    # Incorrect dmensions result in a Valuerror
-    # Invalid types in bounds (including incovertible strings) result in a TypeError
-    clean_bounds = np.zeros((n_x,2),dtype=float)
+    # All formats are converted into a N x 2 np.array with (-)np.inf where
+    # bounds are unspecified.
+    clean_bounds = np.zeros((n_x, 2), dtype=float)
 
-    bounds_valid = False
     # Determine shape of provided bounds
-    # np.array(..,dtype=float) raises a ValueError if sizes are consistent
-    # or if unable to convert string to float
+    # np.array(..,dtype=float) raises an error if dimensions are inconsistent
+    # or if there are invalid data types in bounds. Add a linprog header to
+    # the error returned by np.array().
     try:
-        bsh = np.array(bounds,dtype=float).shape
+        b = np.array(bounds, dtype=float)
     except ValueError as e:
-        if "could not convert string to float" in e.args[0]:
-            raise TypeError("Invalid input for linprog: bounds contains strings which cannot be converted to floats.")
-        else:
-            raise ValueError("Invalid input for linprog: unable to interpret bounds, inconsistent dimensions.")
-    
-    # 1. Check if bounds can be interpreted as n_x pairs (n_x is the number of variables)
-    #    Bounds can have sizes n_x x 2 and 2 x n_x
-    try:
-
-        if len(bsh) == 2:
-            if bsh[0] == n_x and bsh[1] == 2:
-                for i in range(n_x):
-                    bi = bounds[i]  # no need to check if length == 2, np.shape did that
-                    clean_bounds[i,:] = bi
-                    bounds_valid = True
-            elif bsh[0] == 2 and bsh[1] == n_x:
-                for i in range(2):
-                    bi = bounds[i]  # no need to check length, np.shape did that
-                    clean_bounds[:,i] = bi
-                    bounds_valid = True
-
-    # 2. Check if bounds can be interpreted as a single pair
-    #    Bounds can have sizes 1 x 2, 2 x 1 or 2
-    #    Raises TypeError if elements are not scalars
-        if not bounds_valid:
-            if len(bsh) == 2:
-                if bsh[0] == 2 and bsh[1] == 1:
-                    clean_bounds[:,0] = bounds[0][0]
-                    clean_bounds[:,1] = bounds[1][0]
-                    bounds_valid = True
-                elif bsh[0] == 1 and bsh[1] == 2:
-                    clean_bounds[:,0] = bounds[0][0]
-                    clean_bounds[:,1] = bounds[0][1]
-                    bounds_valid = True
-            elif len(bsh) == 1:
-                if bsh[0] == 2:
-                    clean_bounds[:,0] = bounds[0]
-                    clean_bounds[:,1] = bounds[1]
-                    bounds_valid = True
-
-    except ValueError as e:
-        if "could not convert string to float" in e.args[0]:
-            raise TypeError("Invalid input for linprog: bounds contains strings which cannot be converted to floats.")
-        else:
-            raise e
+        raise ValueError("Invalid input for linprog: unable to interpret bounds, check values and dimensions: "+e.args[0])
     except TypeError as e:
-        raise TypeError("Invalid input for linprog: bounds contains illegal types: "+e.args[0])
+        raise TypeError("Invalid input for linprog: unable to interpret bounds, check values and dimensions: "+e.args[0])
 
-    # 3. Check remaining possibility
-    if bounds is None:
-        clean_bounds[:,1] = np.inf
-        bounds_valid = True
-        bounds_valid = True
-        
-    # 4. If none of the formats where found, raise a ValueError
-    if not bounds_valid:
-        raise ValueError("Invalid input for linprog: unable to interpret bounds with given dimensions.")
+    # Check bounds options
+    bsh = b.shape
+    if len(bsh) == 2 and np.all(bsh == (n_x, 2)):
+        # Regular N x 2 array
+        clean_bounds = b;
+    elif len(bsh) == 2 and (np.all(bsh == (2, 1)) or np.all(bsh == (1, 2))):
+        # 2 values: interpret as overall lower and upper bound
+        bf = b.flatten()
+        clean_bounds[:, 0] = bf[0]
+        clean_bounds[:, 1] = bf[1]
+    elif len(bsh) == 2 and np.all(bsh == (2, n_x)):
+        # Reject a 2 x N array
+        raise ValueError("Invalid input for linprog: provide a {:d} x 2 array for bounds, not a 2 x {:d} array.".format(n_x,n_x))
+    elif len(bsh) == 1 and bsh[0] == 2:
+        # A 1-D array with 2 elements: interpret as overall lower and upper bound
+        clean_bounds[:, 0] = b[0]
+        clean_bounds[:, 1] = b[1]
+    elif (len(bsh) == 1 and bsh[0] == 0) or (len(bsh) == 0):
+        # [] converts to a 1-D array with no elements
+        # None converts to a 0-D array
+        clean_bounds[:, 1] = np.inf
+    else:
+        raise ValueError("Invalid input for linprog: unable to interpret bounds with this dimension tuple: {0}.".format(bsh))
 
     # The process above creates nan-s where the input specified None
     # Convert the nan-s in the 1st column to -np.inf and in the 2nd column to np.inf
-    i_none = np.isnan(clean_bounds[:,0])
-    clean_bounds[i_none,0] = -np.inf
-    i_none = np.isnan(clean_bounds[:,1])
-    clean_bounds[i_none,1] = np.inf
+    i_none = np.isnan(clean_bounds[:, 0])
+    clean_bounds[i_none, 0] = -np.inf
+    i_none = np.isnan(clean_bounds[:, 1])
+    clean_bounds[i_none, 1] = np.inf
 
     return _LPProblem(c, A_ub, b_ub, A_eq, b_eq, clean_bounds, x0)
 
