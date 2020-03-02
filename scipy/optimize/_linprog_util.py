@@ -400,7 +400,7 @@ def _clean_inputs(lp):
     bsh = b.shape
     if len(bsh) == 2 and np.all(bsh == (n_x, 2)):
         # Regular N x 2 array
-        clean_bounds = b;
+        clean_bounds = b
     elif len(bsh) == 2 and (np.all(bsh == (2, 1)) or np.all(bsh == (1, 2))):
         # 2 values: interpret as overall lower and upper bound
         bf = b.flatten()
@@ -640,7 +640,7 @@ def _presolve_infeasible_equality_constraints(pp):
         status = 6 # no change
         return (pp, None, status)
 
-    # Create two matrices G and H the shape of A_eq. G with upper bound
+    # Create t**wo matrices G and H the shape of A_eq. G with upper bound
     # values where elements of A_eq are positive, lower bound values
     # where negative, and 0 where 0. H the opposite.
     # Note: treat zero-values in A_eq separately, to avoid final
