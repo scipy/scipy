@@ -803,9 +803,9 @@ def _ip_hsd(A, b, c, c0, alpha0, beta, maxiter, disp, tol, sparse, lstsq,
         inf2 = rho_mu < tol and tau < tol * min(1, kappa)
         if inf1 or inf2:
             # [4] Lemma 8.4 / Theorem 8.3
-            if b.transpose().dot(y) > tol:
+            if b.transpose().dot(y) > -c.transpose().dot(x):
                 status = 2
-            else:  # elif c.T.dot(x) < tol: ? Probably not necessary.
+            else:
                 status = 3
             message = _get_message(status)
             break

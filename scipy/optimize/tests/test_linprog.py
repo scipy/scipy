@@ -1659,6 +1659,21 @@ class TestLinprogIPSpecific(object):
                           method=self.method, options={"presolve": False})
         assert_(not res.success, "Incorrectly reported success")
 
+    def test_bug_11617(self):
+        # for the simple example:
+        #   min  x1
+        #   s.t. x1 <= -1
+        # when expressed in standard form:
+        #   min  x1      - x3
+        #   s.t. x1 + x2 - x3 = -1
+        #        x1,  x2,  x3 >= 0
+        # interior-point had trouble detecting unboundedness in scipy 1.4.1
+        c = [1., 0., -1.]
+        A_eq = [[1., 1., -1.]]
+        b_eq = [-1.]
+        res = linprog(c, None, None, A_eq, b_eq, bounds, method=self.method)
+        _assert_unbounded(res)
+
 
 ########################################
 # Revised Simplex Option-Specific Tests#
