@@ -400,7 +400,7 @@ def _clean_inputs(lp):
     bsh = b.shape
     if len(bsh) == 2 and np.all(bsh == (n_x, 2)):
         # Regular N x 2 array
-        clean_bounds = b;
+        clean_bounds = b
     elif len(bsh) == 2 and (np.all(bsh == (2, 1)) or np.all(bsh == (1, 2))):
         # 2 values: interpret as overall lower and upper bound
         bf = b.flatten()
