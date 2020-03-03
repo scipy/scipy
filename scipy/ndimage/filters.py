@@ -97,6 +97,7 @@ def correlate1d(input, weights, axis=-1, output=None, mode="reflect",
     array([ 8, 26,  8, 12,  7, 28, 36,  9])
     """
     input = numpy.asarray(input)
+    weights = numpy.asarray(weights)
     complex_input = input.dtype.kind == 'c'
     complex_weights = weights.dtype.kind == 'c'
     if complex_input or complex_weights:
@@ -628,6 +629,7 @@ def gaussian_gradient_magnitude(input, sigma, output=None,
 def _correlate_or_convolve(input, weights, output, mode, cval, origin,
                            convolution):
     input = numpy.asarray(input)
+    weights = numpy.asarray(weights)
     complex_input = input.dtype.kind == 'c'
     complex_weights = weights.dtype.kind == 'c'
     if complex_input or complex_weights:
