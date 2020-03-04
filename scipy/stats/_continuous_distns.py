@@ -2953,7 +2953,7 @@ class gamma_gompertz_gen(rv_continuous):
         # approximately equals to -sc.log(np.exp(x) / beta) = np.log(beta) - x
         lw = _lazywhere(np.isfinite(em1),
                         lambda em1_, x_, beta_ : -sc.log1p(em1_ / beta_),
-                        lambda em1_, x_, beta_ : np.log(beta_) - x_))
+                        lambda em1_, x_, beta_ : np.log(beta_) - x_)
         return c * lw
     
     def _sf(self, x, c, beta):
