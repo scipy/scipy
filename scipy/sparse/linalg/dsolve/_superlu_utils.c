@@ -181,12 +181,7 @@ static void SuperLUGlobal_dealloc(SuperLUGlobalObject *self)
 
 
 PyTypeObject SuperLUGlobalType = {
-#if defined(NPY_PY3K)
     PyVarObject_HEAD_INIT(NULL, 0)
-#else
-    PyObject_HEAD_INIT(NULL)
-    0,
-#endif
     "_SuperLUGlobal",
     sizeof(SuperLUGlobalObject),
     0,

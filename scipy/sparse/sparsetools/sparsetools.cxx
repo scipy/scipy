@@ -266,16 +266,7 @@ call_thunk(char ret_spec, const char *spec, thunk_t *thunk, PyObject *args)
             /* Integer scalars */
             PY_LONG_LONG value;
 
-#if PY_VERSION_HEX >= 0x03000000
             value = PyLong_AsLongLong(arg_arrays[j]);
-#else
-            if (PyInt_Check(arg_arrays[j])) {
-                value = PyInt_AsLong(arg_arrays[j]);
-            }
-            else {
-                value = PyLong_AsLongLong(arg_arrays[j]);
-            }
-#endif
             if (PyErr_Occurred()) {
                 goto fail;
             }
@@ -447,7 +438,7 @@ fail:
         }
         #ifdef HAVE_WRITEBACKIFCOPY
             if (is_output[j] && arg_arrays[j] != NULL && PyArray_Check(arg_arrays[j])) {
-                PyArray_ResolveWritebackIfCopy((PyArrayObject *)arg_arrays[j]); 
+                PyArray_ResolveWritebackIfCopy((PyArrayObject *)arg_arrays[j]);
             }
         #endif
         Py_XDECREF(arg_arrays[j]);

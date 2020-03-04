@@ -15,7 +15,7 @@
 #include <ctype.h>
 
 
-/*********************************************************************** 
+/***********************************************************************
  * SuperLUObject methods
  */
 
@@ -24,11 +24,7 @@ static PyObject *SuperLU_solve(SuperLUObject * self, PyObject * args,
 {
     volatile PyArrayObject *b, *x = NULL;
     volatile SuperMatrix B = { 0 };
-#ifndef NPY_PY3K
-    volatile char itrans = 'N';
-#else
     volatile int itrans = 'N';
-#endif
     volatile int info;
     volatile trans_t trans;
     volatile SuperLUStat_t stat = { 0 };
@@ -41,13 +37,8 @@ static PyObject *SuperLU_solve(SuperLUObject * self, PyObject * args,
         return NULL;
     }
 
-#ifndef NPY_PY3K
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O!|c", kwlist,
-                                     &PyArray_Type, &b, &itrans))
-#else
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "O!|C", kwlist,
                                      &PyArray_Type, &b, &itrans))
-#endif
         return NULL;
 
     /* solve transposed system: matrix was passed row-wise instead of
@@ -123,7 +114,7 @@ PyMethodDef SuperLU_methods[] = {
 };
 
 
-/*********************************************************************** 
+/***********************************************************************
  * SuperLUType methods
  */
 
@@ -228,12 +219,7 @@ PyGetSetDef SuperLU_getset[] = {
 
 
 PyTypeObject SuperLUType = {
-#if defined(NPY_PY3K)
     PyVarObject_HEAD_INIT(NULL, 0)
-#else
-    PyObject_HEAD_INIT(NULL)
-    0,
-#endif
     "SuperLU",
     sizeof(SuperLUObject),
     0,
@@ -539,7 +525,7 @@ int LU_to_csc_matrix(SuperMatrix *L, SuperMatrix *U,
     }
 
     result = 0;
-    
+
 fail:
     Py_XDECREF(U_indices);
     Py_XDECREF(U_indptr);
@@ -590,7 +576,7 @@ LU_to_csc(SuperMatrix *L, SuperMatrix *U,
         PyErr_SetString(PyExc_ValueError, "unknown dtype");
         return -1;
     }
-    
+
 #define IS_ZERO(p)                                                      \
     ((dtype == SLU_S) ? (*(float*)(p) == 0) :                           \
      ((dtype == SLU_D) ? (*(double*)(p) == 0) :                         \
@@ -740,7 +726,7 @@ PyObject *newSuperLUObject(SuperMatrix * A, PyObject * option_dict,
     StatInit((SuperLUStat_t *)&stat);
 
     /* calc column permutation */
-    get_perm_c(options.ColPerm, A, self->perm_c);	
+    get_perm_c(options.ColPerm, A, self->perm_c);
 
     /* apply column permutation */
     sp_preorder((superlu_options_t*)&options, A, self->perm_c, (int*)etree,
@@ -1025,11 +1011,9 @@ static int droprule_cvt(PyObject * input, int *value)
     else if (PyString_Check(input) || PyUnicode_Check(input)) {
         /* Comma-separated string */
         char *fmt = "s";
-#if PY_MAJOR_VERSION >= 3
         if (PyBytes_Check(input)) {
             fmt = "y";
         }
-#endif
 	seq = PyObject_CallMethod(input, "split", fmt, ",");
 	if (seq == NULL || !PySequence_Check(seq))
 	    goto fail;
