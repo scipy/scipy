@@ -61,6 +61,7 @@ Continuous distributions
    genextreme        -- Generalized Extreme Value
    gausshyper        -- Gauss Hypergeometric
    gamma             -- Gamma
+   gamma_gompertz    -- Gamma/Gompertz
    gengamma          -- Generalized gamma
    genhalflogistic   -- Generalized Half Logistic
    geninvgauss       -- Generalized Inverse Gaussian
