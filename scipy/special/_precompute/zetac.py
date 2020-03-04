@@ -1,6 +1,4 @@
 """Compute the Taylor series for zeta(x) - 1 around x = 0."""
-from __future__ import division, print_function, absolute_import
-
 try:
     import mpmath
 except ImportError:

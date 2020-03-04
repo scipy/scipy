@@ -1,7 +1,5 @@
 # Created by John Travers, Robert Hetland, 2007
 """ Test functions for rbf module """
-from __future__ import division, print_function, absolute_import
-
 
 import numpy as np
 from numpy.testing import (assert_, assert_array_almost_equal,

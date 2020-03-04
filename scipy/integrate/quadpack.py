@@ -1,7 +1,5 @@
 # Author: Travis Oliphant 2001
 # Author: Nathan Woods 2013 (nquad &c)
-from __future__ import division, print_function, absolute_import
-
 import sys
 import warnings
 from functools import partial

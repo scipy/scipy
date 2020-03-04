@@ -5,8 +5,6 @@ Tools and utilities for working with compressed sparse graphs
 # Author: Jake Vanderplas  -- <vanderplas@astro.washington.edu>
 # License: BSD, (C) 2012
 
-from __future__ import absolute_import
-
 import numpy as np
 cimport numpy as np
 

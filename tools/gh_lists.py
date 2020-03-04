@@ -5,8 +5,6 @@ gh_lists.py MILESTONE
 
 Functions for Github API requests.
 """
-from __future__ import print_function, division, absolute_import
-
 import os
 import re
 import sys

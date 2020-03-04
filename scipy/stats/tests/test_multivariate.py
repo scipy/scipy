@@ -2,8 +2,6 @@
 Test functions for multivariate normal distributions.
 
 """
-from __future__ import division, print_function, absolute_import
-
 import pickle
 
 from numpy.testing import (assert_allclose, assert_almost_equal,

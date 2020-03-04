@@ -8,8 +8,6 @@ Sparse matrix functions
 #          Jake Vanderplas, August 2012 (Sparse Updates)
 #
 
-from __future__ import division, print_function, absolute_import
-
 __all__ = ['expm', 'inv']
 
 import math

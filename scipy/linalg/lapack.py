@@ -730,7 +730,6 @@ All functions
 # Author: Pearu Peterson, March 2002
 #
 
-from __future__ import division, print_function, absolute_import
 import numpy as _np
 from .blas import _get_funcs, _memoize_get_funcs
 from scipy.linalg import _flapack

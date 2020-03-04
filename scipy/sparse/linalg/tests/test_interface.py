@@ -1,8 +1,6 @@
 """Test functions for the sparse.linalg.interface module
 """
 
-from __future__ import division, print_function, absolute_import
-
 from functools import partial
 from itertools import product
 import operator

@@ -381,8 +381,6 @@ For many more stat related functions install the software R and the
 interface package rpy.
 
 """
-from __future__ import division, print_function, absolute_import
-
 from .stats import *
 from .distributions import *
 from .morestats import *

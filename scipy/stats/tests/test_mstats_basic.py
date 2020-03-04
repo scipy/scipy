@@ -1,8 +1,6 @@
 """
 Tests for the stats.mstats module (support for masked arrays)
 """
-from __future__ import division, print_function, absolute_import
-
 import warnings
 import platform
 
