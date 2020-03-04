@@ -187,13 +187,8 @@ int NI_InitLineBuffer(PyArrayObject *array, int axis, npy_intp size1,
     case NPY_DOUBLE:
         break;
     default:
-#if PY_VERSION_HEX >= 0x03040000
         PyErr_Format(PyExc_RuntimeError, "array type %R not supported",
                      (PyObject *)PyArray_DTYPE(array));
-#else
-        PyErr_Format(PyExc_RuntimeError, "array type %d not supported",
-                     array_type);
-#endif
         return 0;
     }
 
