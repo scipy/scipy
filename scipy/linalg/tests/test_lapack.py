@@ -1700,7 +1700,7 @@ def test_gejsv_general(size, dtype, gejsv_lambda):
     # pass A and gejsv into lambda expression for parametrized job? values
     sva, u, v, work, iwork, info = gejsv_lambda(A, gejsv)
 
-    assert_(info == 0, "?gejsv info = {}, not 0".format(info))
+    assert_equal(info, 0)
 
     SIGMA = np.diag(work[1] / work[0] * sva[:n])
 
@@ -1708,8 +1708,8 @@ def test_gejsv_general(size, dtype, gejsv_lambda):
     assert_allclose(u.T @ u, np.identity(u.shape[1]), rtol=rtol, atol=atol)
     assert_allclose(v @ v.T, np.identity(n), rtol=rtol, atol=atol)
 
-    assert_(iwork[0] == min(m, n))
-    assert_(iwork[1] == min(m, n))
+    assert_equal(iwork[0], np.linagl.matrix_rank(A))
+    assert_equal(iwork[1], np.linagl.matrix_rank(A))
 
 
 @pytest.mark.parametrize("dtype", DTYPES)
@@ -1757,19 +1757,19 @@ def test_gejsv_specific(dtype):
 
     # lwork is zero
     sva, u, v, work, iwork, info = gejsv(A, lwork=0)
-    assert_(info == -2, "?gejsv info = {}, not -1".format(info))
+    assert_equal(info, -2)
     # A is 1D
     A = generate_random_dtype_array((m, 1), dtype)
     sva, u, v, work, iwork, info = gejsv(A)
-    assert_(info == 1, "?gejsv info = {}, not 1".format(info))
+    assert_equal(info, 1)
     # A is 1 x 1
     A = generate_random_dtype_array((1, 1), dtype)
     sva, u, v, work, iwork, info = gejsv(A)
-    assert_(info == 1, "?gejsv info = {}, not 1".format(info))
+    assert_equal(info, 1)
     # A is empty
     A = None
     sva, u, v, work, iwork, info = gejsv(A)
-    assert_(info == 1, "?gejsv info = {}, not 1".format(info))
+    assert_equal(info, 1)
 
 
 @pytest.mark.parametrize("A,sva_expect,u_expect,v_expect",
@@ -1797,11 +1797,11 @@ def test_gejsv_NAG(A, sva_expect, u_expect, v_expect):
     https://www.nag.com/numeric/fl/nagdoc_latest/html/f08/f08khf.html
     '''
     # NAG manual provides accuracy up to 4 decimals
-    rtol = 1e-4
+    atol = 1e-4
     gejsv = get_lapack_funcs('gejsv', dtype=A.dtype)
 
     sva, u, v, work, iwork, info = gejsv(A)
 
-    assert_allclose(sva_expect, sva, rtol=rtol)
-    assert_allclose(u_expect, u, rtol=rtol)
-    assert_allclose(v_expect, v, rtol=rtol)
+    assert_allclose(sva_expect, sva, atol=atol)
+    assert_allclose(u_expect, u, atol=atol)
+    assert_allclose(v_expect, v, atol=atol)
