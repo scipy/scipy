@@ -2923,6 +2923,56 @@ class gamma_gen(rv_continuous):
 gamma = gamma_gen(a=0.0, name='gamma')
 
 
+class gamma_gompertz_gen(rv_continuous):
+    """ A Gamma/Gompertz continuous random variable
+    
+    %(before_notes)s
+    
+    Notes
+    -----
+    The probability density function for `gamma_gompertz` is::
+    
+        gamma_gompertz.pdf(x, c, beta) = c * exp(x) * (beta**c) / ((beta - 1 + exp(x))**(c + 1))
+    
+    for ``x >= 0``, ``c > 0``, ``beta > 0``.
+    
+    `gamma_gompertz` takes ``c`` and ``beta`` as shape parameters
+    
+    %(after_notes)s
+    
+    References
+    ----------
+    [1] https://en.wikipedia.org/wiki/Gamma/Gompertz_distribution    
+    
+    %(example)s
+    """
+        
+    def _logsf(self, x, c, beta):
+        em1 = sc.expm1(x)
+        # np.where is used for dealing with the case that x is too large
+        # so that sc.expm1(x) becomes infinity.
+        # Since x is very large in that case, -sc.log1p(em1 / beta)
+        # approximately equals to -sc.log(np.exp(x) / beta) = np.log(beta) - x
+        return c * (np.where(np.isfinite(em1), -sc.log1p(em1 / beta),
+                             np.log(beta) - x))
+    
+    def _sf(self, x, c, beta):
+        return np.exp(self._logsf(x, c, beta))
+    
+    def _cdf(self, x, c, beta):
+        return 1. - (beta ** c) / (beta + sc.expm1(x))
+    
+    def _pdf(self, x, c, beta):
+        return np.exp(self._logpdf(x, c, beta))
+    
+    def _logpdf(self, x, c, beta):
+        return np.log(c) + x + c * np.log(beta) - (c + 1.) * np.where(
+                 np.isfinite(sc.expm1(x)), np.log(beta + sc.expm1(x)), x)
+
+
+gamma_gompertz = gamma_gompertz_gen(a=0.0, name='gamma_gompertz')
+
+
 class erlang_gen(gamma_gen):
     """An Erlang continuous random variable.
 
