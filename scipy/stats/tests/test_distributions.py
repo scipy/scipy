@@ -1926,7 +1926,7 @@ class TestGammaGompertz(object):
         points = [1., 2., 3.]
         pdf1 = stats.gamma_gompertz.pdf(points, 1., 1.)
         pdf2 = stats.expon.pdf(points)
-        assert_allclose(vals, expected, rtol=1e-7, atol=0.)
+        assert_allclose(pdf1, pdf2, rtol=1e-7, atol=0.)
 
     def test_cdf_ppf_accuracy(self):
         p = stats.gamma_gompertz.ppf(stats.gamma_gompertz.cdf(1e-8, 1., 1.),
