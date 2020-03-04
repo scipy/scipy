@@ -1322,7 +1322,7 @@ def _postsolve(x, postsolve_args, complete=False, tol=1e-8, copy=False):
         for i in range(bounds.shape[0]):
             if i in no_adjust:
                 continue
-            lbi = bounds[i,0]
+            lbi = bounds[i, 0]
             ubi = bounds[i,1]
             if lbi == -np.inf and ubi == np.inf:
                 n_unbounded += 1
