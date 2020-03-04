@@ -1,7 +1,5 @@
 """ Test functions for the sparse.linalg.eigen.lobpcg module
 """
-from __future__ import division, print_function, absolute_import
-
 import itertools
 import platform
 

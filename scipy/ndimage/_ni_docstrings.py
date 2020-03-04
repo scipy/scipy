@@ -1,6 +1,4 @@
 """Docstring components common to several ndimage functions."""
-from __future__ import division, print_function, absolute_import
-
 from scipy._lib import doccer
 
 __all__ = ['docfiller']

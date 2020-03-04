@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 import numpy as np  # np is actually used, in the decorators below.
 import pytest
 

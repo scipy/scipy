@@ -13,8 +13,6 @@
 # were moved to their own files. Still in this file are functions for
 # eigenstuff and for the Hessenberg form.
 
-from __future__ import division, print_function, absolute_import
-
 __all__ = ['eig', 'eigvals', 'eigh', 'eigvalsh',
            'eig_banded', 'eigvals_banded',
            'eigh_tridiagonal', 'eigvalsh_tridiagonal', 'hessenberg', 'cdf2rdf']

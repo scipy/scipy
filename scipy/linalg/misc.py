@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 from numpy.linalg import LinAlgError
 from .blas import get_blas_funcs

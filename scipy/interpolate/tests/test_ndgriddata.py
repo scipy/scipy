@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 from numpy.testing import assert_equal, assert_array_equal, assert_allclose
 from pytest import raises as assert_raises

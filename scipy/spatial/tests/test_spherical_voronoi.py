@@ -1,4 +1,3 @@
-from __future__ import print_function
 import numpy as np
 import itertools
 from numpy.testing import (assert_equal,

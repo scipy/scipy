@@ -17,8 +17,6 @@ Sources:
     December 2013. http://mpmath.org/.
 
 """
-from __future__ import division, print_function, absolute_import
-
 import os
 from time import time
 import numpy as np

@@ -11,8 +11,6 @@ Functions
     scalar_search_wolfe2
 
 """
-from __future__ import division, print_function, absolute_import
-
 from warnings import warn
 
 from scipy.optimize import minpack2

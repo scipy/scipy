@@ -1,8 +1,6 @@
 # Copyright (C) 2009, Pauli Virtanen <pav@iki.fi>
 # Distributed under the same license as SciPy.
 
-from __future__ import division, print_function, absolute_import
-
 import warnings
 import numpy as np
 from numpy.linalg import LinAlgError

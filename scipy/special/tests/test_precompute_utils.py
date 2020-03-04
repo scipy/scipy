@@ -1,4 +1,3 @@
-from __future__ import division, print_function, absolute_import
 import pytest
 
 from scipy.special._testutils import MissingModule, check_version

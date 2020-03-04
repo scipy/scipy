@@ -6,8 +6,6 @@ https://www.mathworks.com/access/helpdesk/help/pdf_doc/matlab/matfile_format.pdf
 
 (as of December 5 2008)
 '''
-from __future__ import division, print_function, absolute_import
-
 '''
 =================================
  Note on functions and mat files

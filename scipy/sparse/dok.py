@@ -1,7 +1,5 @@
 """Dictionary Of Keys based matrix"""
 
-from __future__ import division, print_function, absolute_import
-
 __docformat__ = "restructuredtext en"
 
 __all__ = ['dok_matrix', 'isspmatrix_dok']

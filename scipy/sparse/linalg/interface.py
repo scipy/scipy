@@ -40,8 +40,6 @@ Several algorithms in the ``scipy.sparse`` library are able to operate on
 ``LinearOperator`` instances.
 """
 
-from __future__ import division, print_function, absolute_import
-
 import warnings
 
 import numpy as np

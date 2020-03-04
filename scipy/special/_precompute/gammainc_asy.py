@@ -8,8 +8,6 @@ Sources:
     https://dlmf.nist.gov/
 
 """
-from __future__ import division, print_function, absolute_import
-
 import os
 from scipy.special._precompute.utils import lagrange_inversion
 

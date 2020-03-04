@@ -1,7 +1,5 @@
 ''' Classes for read / write of matlab (TM) 4 files
 '''
-from __future__ import division, print_function, absolute_import
-
 import sys
 import warnings
 

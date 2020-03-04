@@ -5,8 +5,6 @@ Functions
 ---------
 - root : find a root of a vector function.
 """
-from __future__ import division, print_function, absolute_import
-
 __all__ = ['root']
 
 import numpy as np

@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 """Functions for FIR filter design."""
-from __future__ import division, print_function, absolute_import
-
 from math import ceil, log
 import operator
 import warnings

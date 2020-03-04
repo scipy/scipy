@@ -7,8 +7,6 @@ Sources
     https://dlmf.nist.gov/8.20#ii
 
 """
-from __future__ import division, print_function, absolute_import
-
 import os
 from numpy.testing import suppress_warnings
 

@@ -3,7 +3,6 @@
 #
 # w/ additions by Gregory Gundersen, January 2020
 #
-from __future__ import division, print_function, absolute_import
 
 import math
 import numpy as np

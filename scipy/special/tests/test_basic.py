@@ -17,8 +17,6 @@
 ###  test_pbvv_seq
 ###  test_sph_harm
 
-from __future__ import division, print_function, absolute_import
-
 import itertools
 import platform
 

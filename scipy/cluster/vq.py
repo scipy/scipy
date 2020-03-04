@@ -64,8 +64,6 @@ human face, more flesh-tone colors would be represented in the
 code book.
 
 """
-from __future__ import division, print_function, absolute_import
-
 import warnings
 import numpy as np
 from collections import deque

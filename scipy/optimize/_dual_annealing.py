@@ -7,8 +7,6 @@
 A Dual Annealing global optimization algorithm
 """
 
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 from scipy.optimize import OptimizeResult
 from scipy.optimize import minimize

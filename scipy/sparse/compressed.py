@@ -1,6 +1,4 @@
 """Base class for sparse matrix formats using compressed storage."""
-from __future__ import division, print_function, absolute_import
-
 __all__ = []
 
 from warnings import warn

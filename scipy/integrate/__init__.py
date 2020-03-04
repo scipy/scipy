@@ -86,8 +86,6 @@ Solving boundary value problems for ODE systems
 
    solve_bvp     -- Solve a boundary value problem for a system of ODEs.
 """
-from __future__ import division, print_function, absolute_import
-
 from .quadrature import *
 from .odepack import *
 from .quadpack import *

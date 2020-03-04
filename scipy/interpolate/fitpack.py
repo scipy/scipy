@@ -1,5 +1,3 @@
-from __future__ import print_function, division, absolute_import
-
 __all__ = ['splrep', 'splprep', 'splev', 'splint', 'sproot', 'spalde',
            'bisplrep', 'bisplev', 'insert', 'splder', 'splantider']
 

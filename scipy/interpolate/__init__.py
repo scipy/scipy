@@ -162,8 +162,6 @@ Additional tools
 ``pchip`` is an alias of `PchipInterpolator` for backward compatibility
 (should not be used in new code).
 """
-from __future__ import division, print_function, absolute_import
-
 from .interpolate import *
 from .fitpack import *
 

@@ -4,8 +4,6 @@
 # w/ additions by Travis Oliphant, March 2002
 #              and Jake Vanderplas, August 2012
 
-from __future__ import division, print_function, absolute_import
-
 from warnings import warn
 import numpy as np
 from numpy import atleast_1d, atleast_2d

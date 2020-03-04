@@ -73,8 +73,6 @@ computing the distances between all pairs.
 
 # Copyright (C) Damian Eads, 2007-2008. New BSD License.
 
-from __future__ import division, print_function, absolute_import
-
 __all__ = [
     'braycurtis',
     'canberra',

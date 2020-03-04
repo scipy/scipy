@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 from scipy.constants import constants, codata, find, value
 from numpy.testing import (assert_equal, assert_,
                            assert_almost_equal)

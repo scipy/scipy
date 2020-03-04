@@ -1,8 +1,6 @@
 """
 basinhopping: The basinhopping global optimization algorithm
 """
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 import math
 from numpy import cos, sin

@@ -1,7 +1,5 @@
 """Indexing mixin for sparse matrix classes.
 """
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 from .sputils import isintlike
 

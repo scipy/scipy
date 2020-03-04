@@ -8,8 +8,6 @@ Functions
 `write`: Write a NumPy array as a WAV file.
 
 """
-from __future__ import division, print_function, absolute_import
-
 import sys
 import numpy
 import struct

@@ -1,6 +1,4 @@
 """Bounded-variable least-squares algorithm."""
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 from numpy.linalg import norm, lstsq
 from scipy.optimize import OptimizeResult

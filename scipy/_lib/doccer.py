@@ -1,8 +1,6 @@
 ''' Utilities to allow inserting docstring fragments for common
 parameters into function and method docstrings'''
 
-from __future__ import division, print_function, absolute_import
-
 import sys
 
 __all__ = ['docformat', 'inherit_docstring_from', 'indentcount_lines',

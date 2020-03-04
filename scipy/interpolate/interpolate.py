@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 __all__ = ['interp1d', 'interp2d', 'lagrange', 'PPoly', 'BPoly', 'NdPPoly',
            'RegularGridInterpolator', 'interpn']
 

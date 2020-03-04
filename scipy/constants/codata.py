@@ -49,8 +49,6 @@ back to the 1800s. To search the bibliography, visit
 https://physics.nist.gov/cuu/Constants/
 
 """
-from __future__ import division, print_function, absolute_import
-
 import warnings
 from math import pi, sqrt
 

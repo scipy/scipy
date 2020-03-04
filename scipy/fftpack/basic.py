@@ -2,8 +2,6 @@
 Discrete Fourier Transforms - basic.py
 """
 # Created by Pearu Peterson, August,September 2002
-from __future__ import division, print_function, absolute_import
-
 __all__ = ['fft','ifft','fftn','ifftn','rfft','irfft',
            'fft2','ifft2']
 

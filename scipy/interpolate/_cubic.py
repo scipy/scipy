@@ -1,7 +1,5 @@
 """Interpolation algorithms using piecewise cubic polynomials."""
 
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 
 from . import PPoly

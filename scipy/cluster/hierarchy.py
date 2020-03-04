@@ -83,8 +83,6 @@ Utility routines for plotting:
    set_link_color_palette
 
 """
-from __future__ import division, print_function, absolute_import
-
 # Copyright (C) Damian Eads, 2007-2008. New BSD License.
 
 # hierarchy.py (derived from cluster.py, http://scipy-cluster.googlecode.com)

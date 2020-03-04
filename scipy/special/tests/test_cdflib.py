@@ -19,8 +19,6 @@ The following functions still need tests:
 - nctdtrinc
 
 """
-from __future__ import division, print_function, absolute_import
-
 import itertools
 
 import numpy as np

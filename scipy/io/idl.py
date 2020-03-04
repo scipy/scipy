@@ -27,8 +27,6 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
-from __future__ import division, print_function, absolute_import
-
 __all__ = ['readsav']
 
 import struct

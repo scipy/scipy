@@ -1,8 +1,6 @@
 """ Test functions for linalg.decomp module
 
 """
-from __future__ import division, print_function, absolute_import
-
 __usage__ = """
 Build linalg:
   python setup_linalg.py build

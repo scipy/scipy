@@ -7,8 +7,6 @@ Original C version by Damian Eads.
 Translated to Cython by David Warde-Farley, October 2009.
 """
 
-from __future__ import absolute_import
-
 cimport cython
 import numpy as np
 cimport numpy as np

@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 from numpy import zeros, asarray, eye, poly1d, hstack, r_
 from scipy import linalg
 

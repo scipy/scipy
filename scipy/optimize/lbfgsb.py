@@ -33,8 +33,6 @@ Functions
 
 ## Modifications by Travis Oliphant and Enthought, Inc. for inclusion in SciPy
 
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 from numpy import array, asarray, float64, int32, zeros
 from . import _lbfgsb

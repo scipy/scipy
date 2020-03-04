@@ -71,8 +71,6 @@ Backend control
 
 """
 
-from __future__ import division, print_function, absolute_import
-
 from ._basic import (
     fft, ifft, fft2, ifft2, fftn, ifftn,
     rfft, irfft, rfft2, irfft2, rfftn, irfftn,

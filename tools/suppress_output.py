@@ -12,8 +12,6 @@ When the command exits with any other return code, print all output
 produced by the command and exit with the same return code.
 
 """
-from __future__ import division, absolute_import, print_function
-
 import sys
 import os
 import re

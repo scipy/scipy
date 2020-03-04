@@ -74,8 +74,6 @@ References
 # Author:  Travis Oliphant 2000
 # Updated Sep. 2003 (fixed bugs --- tested to be accurate)
 
-from __future__ import division, print_function, absolute_import
-
 # SciPy imports.
 import numpy as np
 from numpy import (exp, inf, pi, sqrt, floor, sin, cos, around, int,

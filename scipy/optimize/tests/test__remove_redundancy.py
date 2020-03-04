@@ -6,8 +6,6 @@ Unit test for Linear Programming via Simplex Algorithm.
 # https://github.com/scipy/scipy/issues/5400
 # https://github.com/scipy/scipy/issues/6690
 
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 from numpy.testing import (
     assert_,

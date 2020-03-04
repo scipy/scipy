@@ -22,8 +22,6 @@ docstrings is valid python::
     $ python refguide_check.py --doctests optimize
 
 """
-from __future__ import print_function
-
 import copy
 import doctest
 import glob

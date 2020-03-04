@@ -6,8 +6,6 @@
 # [1] mpmath source code, Subversion revision 992
 #     http://code.google.com/p/mpmath/source/browse/trunk/mpmath/tests/test_functions2.py?spec=svn994&r=992
 
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 from numpy.testing import assert_, assert_equal, assert_array_almost_equal
 from scipy.special import lambertw

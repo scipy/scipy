@@ -11,8 +11,6 @@ repository.
 """
 # Author: Pauli Virtanen <pav@iki.fi>. This script is in the public domain.
 
-from __future__ import division, print_function, absolute_import
-
 import optparse
 import re
 import sys

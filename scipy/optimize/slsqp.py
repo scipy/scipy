@@ -13,8 +13,6 @@ Functions
 
 """
 
-from __future__ import division, print_function, absolute_import
-
 __all__ = ['approx_jacobian', 'fmin_slsqp']
 
 import numpy as np

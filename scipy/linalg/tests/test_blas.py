@@ -1,8 +1,6 @@
 #
 # Created by: Pearu Peterson, April 2002
 #
-from __future__ import division, print_function, absolute_import
-
 
 __usage__ = """
 Build linalg:

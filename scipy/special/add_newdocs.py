@@ -7,8 +7,6 @@
 # scipy.special at the C level when the ufuncs are created at compile
 # time.
 
-from __future__ import division, print_function, absolute_import
-
 docdict = {}
 
 

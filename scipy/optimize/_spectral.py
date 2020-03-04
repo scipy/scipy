@@ -1,8 +1,6 @@
 """
 Spectral Algorithm for Nonlinear Equations
 """
-from __future__ import division, absolute_import, print_function
-
 import collections
 
 import numpy as np

@@ -6,8 +6,6 @@ by P. Dierckx (see http://www.netlib.org/dierckx/) transformed
 to double routines by Pearu Peterson.
 """
 # Created by Pearu Peterson, June,August 2003
-from __future__ import division, print_function, absolute_import
-
 __all__ = [
     'UnivariateSpline',
     'InterpolatedUnivariateSpline',

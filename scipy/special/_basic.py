@@ -2,8 +2,6 @@
 # Author:  Travis Oliphant, 2002
 #
 
-from __future__ import division, print_function, absolute_import
-
 import operator
 import numpy as np
 import math

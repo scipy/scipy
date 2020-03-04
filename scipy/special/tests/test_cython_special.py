@@ -1,4 +1,3 @@
-from __future__ import division, print_function, absolute_import
 import pytest
 from itertools import product
 from numpy.testing import assert_allclose, suppress_warnings

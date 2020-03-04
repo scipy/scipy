@@ -4,8 +4,6 @@ Convenience interface to N-D interpolation
 .. versionadded:: 0.9
 
 """
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 from .interpnd import LinearNDInterpolator, NDInterpolatorBase, \
      CloughTocher2DInterpolator, _ndim_coords_from_arrays

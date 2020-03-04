@@ -1,8 +1,6 @@
 """ Test functions for the sparse.linalg.isolve module
 """
 
-from __future__ import division, print_function, absolute_import
-
 import itertools
 import platform
 import numpy as np

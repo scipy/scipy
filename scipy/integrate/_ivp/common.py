@@ -1,4 +1,3 @@
-from __future__ import division, print_function, absolute_import
 from itertools import groupby
 from warnings import warn
 import numpy as np

@@ -161,8 +161,6 @@ References
 
 """
 
-from __future__ import division, print_function, absolute_import
-
 import warnings
 import math
 from math import gcd

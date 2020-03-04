@@ -5,8 +5,6 @@ Base classes for MATLAB file stream reading.
 
 MATLAB is a registered trademark of the Mathworks inc.
 """
-from __future__ import division, print_function, absolute_import
-
 import operator
 import functools
 

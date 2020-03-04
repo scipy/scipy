@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 import os.path
 from os.path import join
 

@@ -10,8 +10,6 @@ Functions
 
 """
 
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 from scipy.optimize import _cobyla
 from .optimize import OptimizeResult, _check_unknown_options

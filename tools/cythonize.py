@@ -35,8 +35,6 @@ operates on the Cython .pyx files.
 
 """
 
-from __future__ import division, print_function, absolute_import
-
 import os
 import re
 import sys

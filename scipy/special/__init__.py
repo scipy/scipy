@@ -628,8 +628,6 @@ Convenience functions
 
 """
 
-from __future__ import division, print_function, absolute_import
-
 from .sf_error import SpecialFunctionWarning, SpecialFunctionError
 
 from . import _ufuncs
