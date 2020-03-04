@@ -232,6 +232,7 @@ Continuous Distributions in `scipy.stats`
    continuous_foldnorm
    continuous_f
    continuous_gamma
+   continuous_gamma_gompertz
    continuous_genlogistic
    continuous_genpareto
    continuous_genexpon
