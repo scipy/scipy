@@ -1898,6 +1898,35 @@ class TestGamma(object):
         assert_raises(TypeError, stats.gamma.fit, x, floc=0, plate="shrimp")
 
 
+class TestGammaGompertz(object):
+    def test_pdf(self):
+        vals = stats.gamma_gompertz.pdf(np.log(np.arange(1., 6., 1.)), 1., 2.)
+        expected = [1./2., 4./9., 3./8., 8./25., 5./18.]
+        assert_almost_equal(vals, expected)
+
+    def test_cdf(self):
+        vals = stats.gamma_gompertz.cdf(np.log(np.arange(1., 6., 1.)), 1., 2.)
+        expected = [0., 1./3., 0.5, 0.6, 2./3.]
+        assert_almost_equal(vals, expected)
+
+    def test_ppf(self):
+        vals = stats.gamma_gompertz.ppf([0., 1./3., 1./2., 3./5., 2./3.], 1., 2.)
+        expected = np.log(np.arange(1., 6., 1.))
+        assert_almost_equal(vals, expected)
+
+    def test_expon(self):
+        # test against expon (special case for beta=1)
+        points = [1., 2., 3.]
+        pdf1 = stats.gamma_gompertz.pdf(points, 1., 1.)
+        pdf2 = stats.expon.pdf(points)
+        assert_almost_equal(pdf1, pdf2)
+
+    def test_cdf_ppf_accuracy(self):
+        p = stats.gamma_gompertz.ppf(stats.gamma_gompertz.cdf(1e-8, 1., 1.),
+                                     1., 1.)
+        assert_allclose(p, 1e-8)
+
+
 class TestChi2(object):
     # regression tests after precision improvements, ticket:1041, not verified
     def test_precision(self):
