@@ -1910,7 +1910,7 @@ class TestGammaGompertz(object):
     def test_logsf(self):
         # test for large x such that sc.expm1(x) is infinity
         x = 10 ** (np.arange(3., 6., 1.))
-        em1 = sc.expm1(x)
+        em1 = special.expm1(x)
         expected = -x
         vals = stats.gamma_gompertz.logsf(x, 1., 2.)
         assert_equal(em1, np.inf)
