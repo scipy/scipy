@@ -1,8 +1,6 @@
 """
 Simple benchmarks for the sparse module
 """
-from __future__ import division, print_function, absolute_import
-
 import warnings
 import time
 import timeit
