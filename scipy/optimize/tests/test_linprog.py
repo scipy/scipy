@@ -265,6 +265,7 @@ class LinprogCommonTests(object):
         x1_bounds = (-3, None)
         res = linprog(c, A_ub=A, b_ub=b, bounds=(x0_bounds, x1_bounds),
                       options=self.options, method=self.method)
+        print("res:",res)
         _assert_success(res, desired_fun=-22)
 
     def test_type_error(self):
