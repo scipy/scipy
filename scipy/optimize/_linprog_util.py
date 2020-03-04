@@ -390,29 +390,29 @@ def _clean_inputs(lp):
     # or if there are invalid data types in bounds. Add a linprog header to
     # the error returned by np.array().
     try:
-        b = np.array(bounds, dtype=float)
+        bounds_conv = np.array(bounds, dtype=float)
     except ValueError as e:
         raise ValueError("Invalid input for linprog: unable to interpret bounds, check values and dimensions: "+e.args[0])
     except TypeError as e:
         raise TypeError("Invalid input for linprog: unable to interpret bounds, check values and dimensions: "+e.args[0])
 
     # Check bounds options
-    bsh = b.shape
+    bsh = bounds_conv.shape
     if len(bsh) == 2 and np.all(bsh == (n_x, 2)):
         # Regular N x 2 array
-        clean_bounds = b
+        clean_bounds = bounds_conv
     elif len(bsh) == 2 and (np.all(bsh == (2, 1)) or np.all(bsh == (1, 2))):
         # 2 values: interpret as overall lower and upper bound
-        bf = b.flatten()
+        bf = bounds_conv.flatten()
         clean_bounds[:, 0] = bf[0]
         clean_bounds[:, 1] = bf[1]
     elif len(bsh) == 2 and np.all(bsh == (2, n_x)):
         # Reject a 2 x N array
-        raise ValueError("Invalid input for linprog: provide a {:d} x 2 array for bounds, not a 2 x {:d} array.".format(n_x,n_x))
+        raise ValueError("Invalid input for linprog: provide a {:d} x 2 array for bounds, not a 2 x {:d} array.".format(n_x, n_x))
     elif len(bsh) == 1 and bsh[0] == 2:
         # A 1-D array with 2 elements: interpret as overall lower and upper bound
-        clean_bounds[:, 0] = b[0]
-        clean_bounds[:, 1] = b[1]
+        clean_bounds[:, 0] = bounds_conv[0]
+        clean_bounds[:, 1] = bounds_conv[1]
     elif (len(bsh) == 1 and bsh[0] == 0) or (len(bsh) == 0):
         # [] converts to a 1-D array with no elements
         # None converts to a 0-D array
@@ -1037,12 +1037,12 @@ def _get_Abc(lp, c0, undo=[]):
         eye = np.eye
 
     # bounds will be modified, create a copy
-    bounds = np.array(bounds,copy=True)
+    bounds = np.array(bounds, copy=True)
     # undo[0] contains indices of variables removed from the problem
     # however, their bounds are still part of the bounds list
     # they are needed elsewhere, but not here
     if undo is not None and undo != []:
-        bounds = np.delete(bounds,undo[0],0)
+        bounds = np.delete(bounds, undo[0], 0)
 
     # modify problem such that all variables have only non-negativity bounds
     lbs = bounds[:, 0]
