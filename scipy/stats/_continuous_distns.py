@@ -2934,7 +2934,7 @@ class gamma_gompertz_gen(rv_continuous):
 
     for ``x >= 0``, ``c > 0``, ``beta > 0``.
 
-    `gamma_gompertz` takes ``c`` and ``beta`` as shape parameters
+    `gamma_gompertz` takes ``c`` and ``beta`` as shape parameters.
 
     %(after_notes)s
 
