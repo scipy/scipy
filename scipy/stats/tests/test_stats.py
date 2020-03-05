@@ -1187,19 +1187,7 @@ def test_weightedtau():
 
 
 def test_kendall_tau_large():
-    # n = 172.
-    # x = np.arange(n)
-    # y = np.arange(n)
-    # _, pval = stats.kendalltau(x, y, method='exact')
-    # assert_equal(pval, 0.0)
-    # y[-1], y[-2] = y[-2], y[-1]
-    # _, pval = stats.kendalltau(x, y, method='exact')
-    # assert_equal(pval, 0.0)
-    # y[-3], y[-4] = y[-4], y[-3]
-    # _, pval = stats.kendalltau(x, y, method='exact')
-    # assert_equal(pval, 0.0)
-
-    # Test for the exact method with large samples (n > 171)
+    # Test for the exact method with large samples (n >= 171)
     # expected values generated using SymPy
     expectations = {100: (-0.033131313131313136, 0.62822615287956040664),
                     101: (0.03524752475247526, 0.60439525773513602669),
@@ -1208,9 +1196,9 @@ def test_kendall_tau_large():
                     400: (0.02343358395989975, 0.48444283672113314099),
                     401: (-0.014563591022443893, 0.66363159823474837662),
                     800: (-0.018948685857321654, 0.42265448483120932055),
-                    801: (-0.014675405742821473, 0.53437553412194416236)}
-    # 1600: (0.0033270794246404007, 0.84200727400323538419),
-    # 1601: (0.01576514678326046, 0.34465255088058593946)}
+                    801: (-0.014675405742821473, 0.53437553412194416236),
+                    1600: (0.0033270794246404007, 0.84200727400323538419),
+                    1601: (0.01576514678326046, 0.34465255088058593946)}
     
     for n, expected in expectations.items():
         x = np.arange(n)

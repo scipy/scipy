@@ -526,6 +526,47 @@ def spearmanr(x, y=None, use_ties=True, axis=None, nan_policy='propagate'):
         return SpearmanrResult(rs, prob)
 
 
+def _kendall_p_exact(n, c):
+    # Exact p-value, see Maurice G. Kendall, "Rank Correlation Methods" (4th Edition), Charles Griffin & Co., 1970.
+    if n <= 0:
+        raise ValueError
+    elif c < 0 or 4*c > n*(n-1):
+        raise ValueError
+    elif n == 1:
+        prob = 1.0
+    elif n == 2:
+        prob = 1.0
+    elif c == 0:
+        prob = 2.0/np.math.factorial(n)
+    elif c == 1:
+        prob = 2.0/np.math.factorial(n-1)
+    elif 4*c == n*(n-1):
+        prob = 1.0
+    elif n < 171:
+        new = np.zeros(c+1)
+        new[0] = 1.0
+        new[1] = 1.0
+        for j in range(3,n+1):
+            cs = np.cumsum(new)
+            new = cs.copy()
+            if j <= c:
+                new[j:] -= cs[:c+1-j]
+        prob = 2.0*sum(new)/np.math.factorial(n)
+    else:
+        new = np.zeros(c+1)
+        new[0] = 1.0
+        new[1] = 1.0
+        for j in range(3, n+1):
+            cs = np.cumsum(new)/j
+            new = cs.copy()
+            if j <= c:
+                new[j:] -= cs[:c+1-j]
+        prob = sum(new)
+        prob = max(0.0, min(1.0, prob))
+    
+    return prob
+
+
 KendalltauResult = namedtuple('KendalltauResult', ('correlation', 'pvalue'))
 
 
@@ -548,7 +589,9 @@ def kendalltau(x, y, use_ties=True, use_missing=False, method='auto'):
         Defines which method is used to calculate the p-value [1]_.
         'asymptotic' uses a normal approximation valid for large samples.
         'exact' computes the exact p-value, but can only be used if no ties
-        are present. 'auto' is the default and selects the appropriate
+        are present. For sample size > 171, the exact computation may incur
+        roundoff error and can take very long.
+        'auto' is the default and selects the appropriate
         method based on a trade-off between speed and accuracy.
 
     Returns
@@ -606,52 +649,8 @@ def kendalltau(x, y, use_ties=True, use_missing=False, method='auto'):
             method = 'asymptotic'
 
     if not xties and not yties and method == 'exact':
-        # Exact p-value, see Maurice G. Kendall, "Rank Correlation Methods" (4th Edition), Charles Griffin & Co., 1970.
-        c = int(min(C, (n*(n-1))/2-C))
-        if n <= 0:
-            raise ValueError
-        elif c < 0 or 2*c > n*(n-1):
-            raise ValueError
-        elif n == 1:
-            prob = 1.0
-        elif n == 2:
-            prob = 1.0
-        elif c == 0:
-            prob = 2.0/np.math.factorial(n)
-        elif c == 1:
-            prob = 2.0/np.math.factorial(n-1)
-        elif 2*c == (n*(n-1))//2:
-            prob = 1.0
-        elif n < 171:
-            old = [0.0]*(c+1)
-            new = [0.0]*(c+1)
-            new[0] = 1.0
-            new[1] = 1.0
-            for j in range(3,n+1):
-                old = new[:]
-                for k in range(1,min(j,c+1)):
-                    new[k] += new[k-1]
-                for k in range(j,c+1):
-                    new[k] += new[k-1] - old[k-j]
-            prob = 2.0*sum(new)/np.math.factorial(n)
-        else:
-            warnings.warn("Due to the large sample size, the exact computation "
-                          "of the Kendall p-value may incur significant "
-                          "roundoff error and can take very long. Please "
-                          "consider switching to asymptotic mode.",
-                          RuntimeWarning)
-            new = [0.0]*(c+1)
-            new[0] = 1.0
-            new[1] = 1.0
-            for j in range(3,n+1):
-                old = new[:]
-                new[0] = new[0]/j
-                for k in range(1,min(j,c+1)):
-                    new[k] = new[k-1] + new[k]/j
-                for k in range(j,c+1):
-                    new[k] = new[k-1] + (new[k] - old[k-j])/j
-            prob = sum(new)
-            prob = max(0.0, min(1.0, prob))
+        prob = _kendall_p_exact(n, int(min(C, (n*(n-1))//2-C)))
+
     elif method == 'asymptotic':
         var_s = n*(n-1)*(2*n+5)
         if use_ties:
