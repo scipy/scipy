@@ -2953,7 +2953,7 @@ class gamma_gompertz_gen(rv_continuous):
         # so that sc.expm1(x) becomes infinity.
         # Since x is very large in that case, -sc.log1p(em1 / beta)
         # approximately equals to -sc.log(np.exp(x) / beta) = np.log(beta) - x
-        lw = _lazywhere(np.isfinite(em1),
+        lw = _lazywhere(np.isfinite(em1), [em1, x, beta],
                         lambda em1_, x_, beta_ : -sc.log1p(em1_ / beta_),
                         f2 = lambda em1_, x_, beta_ : np.log(beta_) - x_)
         return c * lw
