@@ -1064,6 +1064,19 @@ def assoc_laguerre(x, n, k=0.0):
     The polynomial :math:`L^{(k)}_n(x)` is orthogonal over ``[0, inf)``,
     with weighting function ``exp(-x) * x**k`` with ``k > -1``.
 
+    Examples
+    --------
+    Calculate the n=2 Laguerre polynomial at x=1
+    >>> from scipy.special import assoc_laguerre
+    >>> assoc_laguerre(1,2)
+    -0.5
+
+    Calculate the n=2, k=3 Laguerre polynomial at x=1
+
+    >>> from scipy.special import assoc_laguerre
+    >>> assoc_laguerre(1,2,3)
+    5.5
+
     Notes
     -----
     `assoc_laguerre` is a simple wrapper around `eval_genlaguerre`, with
