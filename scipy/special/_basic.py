@@ -645,6 +645,24 @@ def jvp(v, z, n=1):
     .. [2] NIST Digital Library of Mathematical Functions.
            https://dlmf.nist.gov/10.6.E7
 
+    Examples
+    --------
+    Compute the first derivative of the v=2 Bessel Function at z=1.
+
+    >>> from scipy import special
+    >>> v=2
+    >>> z=1
+    >>> result = special.jvp(v,z)
+    >>> result
+    0.21024361588113258
+
+    Using the recurrence relation found in Formula 10.6.1 in Reference [1]
+    we can perform a sanity check.
+
+    >>> special.jv(v-1,z)-special.jv(v+1,z)
+    0.42048723176226516
+    >>> 2*result
+    0.42048723176226516
     """
     n = _nonneg_int_or_fail(n, 'n')
     if n == 0:
