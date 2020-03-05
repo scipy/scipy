@@ -209,7 +209,7 @@ before_install:
     fi
   - |
     if [ "${TESTMODE}" == "full" ]; then
-        travis_retry pip install pytest-cov coverage matplotlib==3.2.0rc1 scikit-umfpack scikit-sparse
+        travis_retry pip install pytest-cov coverage matplotlib scikit-umfpack scikit-sparse
     fi
   - |
     if [ "${REFGUIDE_CHECK}" == "1" ]; then
