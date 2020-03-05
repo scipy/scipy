@@ -369,6 +369,12 @@ class norm_gen(rv_continuous):
 
         See https://arxiv.org/pdf/1209.4340.pdf
         """
+        if mu == 0.:
+            if  n % 2 == 0:
+                return sigma**n * sf.factorial2(n - 1)
+            else:
+                return 0.
+ 
         if n == 0:
             return 1.
         elif n == 1:
@@ -379,8 +385,6 @@ class norm_gen(rv_continuous):
             hyper = sc.gamma(0.5 * n + 0.5) * sc.hyp1f1(-n / 2, 0.5,  -0.5 * (mu / sigma)**2)
             return _norm_munp_C * sigma**n * 2.**(n / 2) * hyper
         else:
-            if mu == 0.:
-                return 0.
             hyper = sc.gamma(0.5 * n + 1.) * sc.hyp1f1((1 - n) / 2, 1.5,  -0.5 * (mu / sigma)**2)
             return _norm_munp_C * mu * sigma**(n - 1) * 2.**((n + 1) / 2) * hyper
 
