@@ -647,7 +647,7 @@ def jvp(v, z, n=1):
 
     Examples
     --------
-    Compute the first derivative of the v=2 Bessel Function at z=1.
+    Compute the first derivative of the v=2 Bessel Function of the first kind at z=1.
 
     >>> from scipy import special
     >>> v=2
@@ -703,6 +703,16 @@ def yvp(v, z, n=1):
     .. [2] NIST Digital Library of Mathematical Functions.
            https://dlmf.nist.gov/10.6.E7
 
+    Examples
+    --------
+    Compute the first derivative of the v=2 Bessel function of the second kind  at z=1.
+
+    >>> from scipy import special
+    >>> v=2
+    >>> z=1
+    >>> result = special.yvp(v,z)
+    >>> result
+    2.520152392332221
     """
     n = _nonneg_int_or_fail(n, 'n')
     if n == 0:
