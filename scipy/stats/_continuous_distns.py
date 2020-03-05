@@ -237,6 +237,7 @@ kstwobign = kstwobign_gen(a=0.0, name='kstwobign')
 # by other distributions.
 _norm_pdf_C = np.sqrt(2*np.pi)
 _norm_pdf_logC = np.log(_norm_pdf_C)
+_norm_munp_C = 1. / np.sqrt(np.pi)
 
 
 def _norm_pdf(x):
@@ -361,6 +362,28 @@ class norm_gen(rv_continuous):
             scale = fscale
 
         return loc, scale
+
+    def _munp(self, n, mu=0., sigma=1.):
+        """
+        @returns Expectation of x^p for integer p >= 0
+
+        See https://arxiv.org/pdf/1209.4340.pdf
+        """
+        if n == 0:
+            return 1.
+        elif n == 1:
+            return mu
+        elif n == 2:
+            return sigma**2 + mu**2
+        elif n % 2 == 0:
+            hyper = sc.gamma(0.5 * n + 0.5) * sc.hyp1f1(-n / 2, 0.5,  -0.5 * (mu / sigma)**2)
+            return _norm_munp_C * sigma**n * 2.**(n / 2) * hyper
+        else:
+            if mu == 0.:
+                return 0.
+            hyper = sc.gamma(0.5 * n + 1.) * sc.hyp1f1((1 - n) / 2, 1.5,  -0.5 * (mu / sigma)**2)
+            return _norm_munp_C * mu * sigma**(n - 1) * 2.**((n + 1) / 2) * hyper
+
 
 
 norm = norm_gen(name='norm')
