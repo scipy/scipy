@@ -2922,13 +2922,13 @@ gamma = gamma_gen(a=0.0, name='gamma')
 
 
 class gamma_gompertz_gen(rv_continuous):
-    """ A Gamma/Gompertz continuous random variable
+    u""" A Gamma/Gompertz continuous random variable
 
     %(before_notes)s
 
     Notes
     -----
-    The probability density function for `gamma_gompertz` is::
+    The probability density function for `gamma_gompertz` is:
 
         gamma_gompertz.pdf(x, c, beta) = c * exp(x) * (beta**c) / ((beta - 1 + exp(x))**(c + 1))
 
@@ -2940,7 +2940,7 @@ class gamma_gompertz_gen(rv_continuous):
 
     References
     ----------
-    [1] https://en.wikipedia.org/wiki/Gamma/Gompertz_distribution    
+    .. [1] https://en.wikipedia.org/wiki/Gamma/Gompertz_distribution
 
     %(example)s
     """
