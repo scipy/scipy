@@ -652,14 +652,14 @@ def jvp(v, z, n=1):
     >>> from scipy import special
     >>> v=2
     >>> z=1
-    >>> result = special.jvp(v,z)
+    >>> result = special.jvp(v, z)
     >>> result
     0.21024361588113258
 
     Using the recurrence relation found in Formula 10.6.1 in Reference [1]
     we can perform a sanity check.
 
-    >>> special.jv(v-1,z)-special.jv(v+1,z)
+    >>> special.jv(v-1, z)-special.jv(v+1, z)
     0.42048723176226516
     >>> 2*result
     0.42048723176226516
@@ -710,8 +710,7 @@ def yvp(v, z, n=1):
     >>> from scipy import special
     >>> v=2
     >>> z=1
-    >>> result = special.yvp(v,z)
-    >>> result
+    >>> special.yvp(v, z)
     2.520152392332221
     """
     n = _nonneg_int_or_fail(n, 'n')
@@ -1096,13 +1095,13 @@ def assoc_laguerre(x, n, k=0.0):
     --------
     Calculate the n=2 Laguerre polynomial at x=1
     >>> from scipy.special import assoc_laguerre
-    >>> assoc_laguerre(1,2)
+    >>> assoc_laguerre(1, 2)
     -0.5
 
     Calculate the n=2, k=3 Laguerre polynomial at x=1
 
     >>> from scipy.special import assoc_laguerre
-    >>> assoc_laguerre(1,2,3)
+    >>> assoc_laguerre(1, 2, 3)
     5.5
 
     Notes
