@@ -1050,8 +1050,8 @@ def fresnelc_zeros(nt):
            https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
 
 
-    Example
-    -------
+    Examples
+    --------
     Compute first three zeros of cosine Fresnel integral C(z).
 
     >>> from scipy.special import fresnelc
@@ -1079,8 +1079,8 @@ def fresnels_zeros(nt):
            Functions", John Wiley and Sons, 1996.
            https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
 
-    Example
-    -------
+    Examples
+    --------
     Compute first three zeros of sine Fresnel integral S(z).
 
     >>> from scipy.special import fresnels_zeros
