@@ -1,7 +1,7 @@
 /* Anti-Copyright
  *
  * I hereby release this code into the PUBLIC DOMAIN AS IS. There is no
- * support, warranty, or guarantee. I will gladly accept comments, bug 
+ * support, warranty, or guarantee. I will gladly accept comments, bug
  * reports, and patches, however.
  *
  * Robert Kern
@@ -536,21 +536,10 @@ PyObject *odr(PyObject * self, PyObject * args, PyObject * kwds)
     {
       PYERR(PyExc_TypeError, "initbeta must be a sequence");
     }
-  if (!PySequence_Check(py))
+  if (!PySequence_Check(py) && !PyNumber_Check(py))
     {
-      /* Checking whether py is an int
-       *
-       * XXX: PyInt_Check for np.int32 instances does not work on python 2.6 -
-       * we should fix this in numpy, workaround by trying to cast to an int
-       * for now */
-      long val;
-
-      PyErr_Clear();
-      val = PyInt_AsLong(py);
-      if (val == -1 && PyErr_Occurred()) {
-        PYERR(PyExc_TypeError,
-              "y must be a sequence or integer (if model is implicit)");
-      }
+      PYERR(PyExc_TypeError,
+            "y must be a sequence or integer (if model is implicit)");
     }
   if (!PySequence_Check(px))
     {
@@ -651,7 +640,7 @@ PyObject *odr(PyObject * self, PyObject * args, PyObject * kwds)
   else
     {                           /* we *do* have an implicit model */
       ldy = 1;
-      nq = (int)PyInt_AsLong(py);
+      nq = (int)PyLong_AsLong(py);
       dim1[0] = 1;
 
       /* initialize y to a dummy array; never referenced */
