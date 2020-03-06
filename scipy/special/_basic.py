@@ -1049,6 +1049,21 @@ def fresnelc_zeros(nt):
            Functions", John Wiley and Sons, 1996.
            https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
 
+
+    Example
+    -------
+    Compute first three zeros of cosine Fresnel integral C(z).
+
+    >>> from scipy.special import fresnelc
+    >>> zeros = fresnelc(3)
+
+    Confirm these are zero with scipy.special.fresnel.
+    This function returns C(z) as the second entry in a tuple.
+
+    >>> from scipy.special import fresnel
+    >>> fresnel(zeros)[1]
+    array([ 1.92907324e-16-1.82360812e-15j, 3.90027380e-16-3.98314126e-16j,
+       -1.05564305e-16+2.65452517e-15j])
     """
     if (floor(nt) != nt) or (nt <= 0) or not isscalar(nt):
         raise ValueError("Argument must be positive scalar integer.")
@@ -1064,6 +1079,20 @@ def fresnels_zeros(nt):
            Functions", John Wiley and Sons, 1996.
            https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
 
+    Example
+    -------
+    Compute first three zeros of sine Fresnel integral S(z).
+
+    >>> from scipy.special import fresnels_zeros
+    >>> zeros = fresnels_zeros(3)
+
+    Confirm these are zeros with scipy.special.fresnel.
+    This function returns S(z) as the first entry in a tuple.
+
+    >>> from scipy.special import fresnel
+    >>> fresnel(zeros)[0]
+    array([ 3.83246190e-16-4.08508532e-16j,  1.10970456e-16-1.32507037e-15j,
+       -5.14042545e-16-9.97392255e-16j])
     """
     if (floor(nt) != nt) or (nt <= 0) or not isscalar(nt):
         raise ValueError("Argument must be positive scalar integer.")
