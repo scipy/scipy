@@ -1906,7 +1906,13 @@ class TestGammaGompertz(object):
 
     def test_cdf(self):
         vals = stats.gamma_gompertz.cdf(np.log(np.arange(1., 6., 1.)), 1., 2.)
-        expected = [0., 1./3., 0.5, 0.6, 2./3.]
+        expected = [0., 1./3., 1./2., 3./5., 2./3.]
+        assert_allclose(vals, expected, rtol=1e-7, atol=0.)
+
+    def test_ppf(self):
+        x = np.array([0., 1./3., 1./2., 3./5., 2./3.])
+        vals = stats.gamma_gompertz.ppf(x, 1., 2.)
+        expected = np.log(np.arange(1., 6., 1.))
         assert_allclose(vals, expected, rtol=1e-7, atol=0.)
 
     def test_logsf(self):
