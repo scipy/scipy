@@ -456,8 +456,8 @@ class TestTrimming(object):
 
     def test_winsorization_nan(self):
         data = ma.array([np.nan, np.nan, 0, 1, 2])
-        assert_raises(ValueError, mstats.winsorize, data, (0.05, 0.05)
-                      , nan_policy='raise')
+        assert_raises(ValueError, mstats.winsorize, data, (0.05, 0.05),
+                      nan_policy='raise')
         # Testing propagate (default behavior)
         assert_equal(mstats.winsorize(data, (0.4, 0.4)),
                      ma.array([2, 2, 2, 2, 2]))
