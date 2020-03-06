@@ -670,6 +670,47 @@ class TestNdimage:
             extra_keywords={'b': 2.0})
         assert_array_almost_equal(tmp1, tmp2)
 
+    def test_gabor_filter01(self):
+        input = numpy.array([[1, 2, 3],
+                        [2, 4, 6]], numpy.float32)
+        output = ndimage.gabor_filter(input, 1.0, 0, 5)
+        assert_equal(input.dtype, output.dtype)
+        assert_equal(input.shape, output.shape)
+
+    def test_gabor_filter02(self):
+        input = numpy.arange(100 * 100).astype(numpy.float32)
+        input.shape = (100, 100)
+        otype = numpy.float64
+        output = ndimage.gabor_filter(input, [1.0, 1.0], 0, 5, output=otype)
+        assert_equal(output.dtype.type, numpy.float64)
+        assert_equal(input.shape, output.shape)
+
+    def test_gabor_filter03(self):
+        # Tests that inputting an output array works
+        input = numpy.arange(100 * 100).astype(numpy.float64)
+        input.shape = (100, 100)
+        ndimage.gabor_filter(input, [1.0, 1.0], 0, 5, output=output)
+        assert_equal(input.dtype, output.dtype)
+        assert_equal(input.shape, output.shape)
+
+    def test_gabor_filter04(self):
+        # Tests that list of sigmas is same as single
+        input = numpy.arange(100 * 100).astype(numpy.float32)
+        input.shape = (100, 100)
+        otype = numpy.float64
+        output1 = ndimage.gabor_filter(input, [1.0, 1.0], 0, 5, output=otype)
+        output2 = ndimage.gabor_filter(input, 1.0, 0, 5, output=otype)
+        assert_array_almost_equal(output1, output2)
+
+    def test_gabor_filter05(self):
+        # Tests that list of phi works
+        input = numpy.arange(100 * 100 * 100).astype(numpy.float32)
+        input.shape = (100, 100, 100)
+        otype = numpy.float64
+        output1 = ndimage.gabor_filter(input, 1.0, [0.5, 0.5], 5, output=otype)
+        output2 = ndimage.gabor_filter(input, 1.0, 0.5, 5, output=otype)
+        assert_array_almost_equal(output1, output2)
+
     def test_uniform01(self):
         array = numpy.array([2, 4, 6])
         size = 2

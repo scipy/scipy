@@ -304,6 +304,118 @@ def gaussian_filter(input, sigma, order=0, output=None,
 
 
 @_ni_docstrings.docfiller
+def gabor_filter(input, sigma, phi, frequency, offset=0.0, output=None,
+                    mode="reflect", cval=0.0, truncate=3.0):
+    """Multidimensional Gabor filter. A gabor filter
+    is an elementwise product between a Gaussian 
+    and a complex exponential.
+
+    Parameters
+    ----------
+    %(input)s
+    sigma : scalar or sequence of scalars
+        Standard deviation for Gaussian kernel. The standard
+        deviations of the Gaussian filter are given for each axis as a
+        sequence, or as a single number, in which case it is equal for
+        all axes.
+    phi : scalar or sequence of scalars
+        Angles specifying orientation of the periodic complex
+        exponential. If the input is n-dimensional, then phi
+        is a sequence of length n-1. Convention follows
+        https://en.wikipedia.org/wiki/N-sphere#Spherical_coordinates.
+    frequency : scalar
+        Frequency of the complex exponential. Units are revolutions/voxels.
+    offset : scalar
+        Phase shift of the complex exponential. Units are radians.
+
+    %(output)s
+    %(mode_multiple)s
+    %(cval)s
+    truncate : float
+        Truncate the filter at this many standard deviations.
+        Default is 3.0.
+
+    Returns
+    -------
+    gabor_filter : ndarray
+        Returned array of same shape as `input`.
+
+    Notes
+    -----
+    The multidimensional filter is implemented by creating
+    a gabor filter array, then using the convolve method.
+    Also, sigma specifies the standard deviations of the 
+    Gaussian along the coordinate axes, and the Gaussian
+    is not rotated. This is unlike
+    skimage.filters.gabor, whose Gaussian is
+    rotated with the complex exponential.
+    The reasoning behind this design choice is that
+    sigma can be more easily designed to deal with 
+    anisotropic voxels.
+
+    Examples
+    --------
+    >>> from scipy.ndimage import gabor_filter
+    >>> a = np.arange(50, step=2).reshape((5,5))
+    >>> a
+    array([[ 0,  2,  4,  6,  8],
+           [10, 12, 14, 16, 18],
+           [20, 22, 24, 26, 28],
+           [30, 32, 34, 36, 38],
+           [40, 42, 44, 46, 48]])
+    >>> gabor_filter(a, sigma=1, phi=[0.0], frequency=0.1)
+    array([[ ? ]])
+
+    >>> from scipy import misc
+    >>> import matplotlib.pyplot as plt
+    >>> fig = plt.figure()
+    >>> plt.gray()  # show the filtered result in grayscale
+    >>> ax1 = fig.add_subplot(121)  # left side
+    >>> ax2 = fig.add_subplot(122)  # right side
+    >>> ascent = misc.ascent()
+    >>> result = gabor_filter(ascent, sigma=5, phi=[0.0], frequency=0.1)
+    >>> ax1.imshow(ascent)
+    >>> ax2.imshow(result)
+    >>> plt.show()
+    """
+    input = numpy.asarray(input)
+    sigmas = _ni_support._normalize_sequence(sigma, input.ndim)
+    phi = _ni_support._normalize_sequence(phi, input.ndim - 1)
+    frequency = _ni_support._check_float(frequency)
+    offset = _ni_support._check_float(offset)
+
+    limits = [numpy.ceil(truncate * sigma).astype(int) for sigma in sigmas]
+    ranges = [range(-limit, limit + 1) for limit in limits]
+    coords = numpy.meshgrid(*ranges, indexing='ij')
+    filter_size = coords[0].shape
+    coords = numpy.stack(coords,axis=-1)
+    
+    new_shape = numpy.ones(input.ndim)
+    new_shape = numpy.append(new_shape,-1).astype(int)
+    sigmas = numpy.reshape(sigmas, new_shape)
+
+    g = numpy.zeros(filter_size, dtype=numpy.complex)
+    g[:] = numpy.exp(-0.5 * numpy.sum(numpy.divide(coords,sigmas)**2, axis=-1))
+
+    g /= (2 * numpy.pi)**(input.ndim / 2) * numpy.prod(sigmas)
+
+    orientation = numpy.ones(input.ndim)
+    for i,p in enumerate(phi):
+        orientation[i + 1] = orientation[i] * numpy.sin(p)
+        orientation[i] = orientation[i] * numpy.cos(p)
+    orientation = numpy.flip(orientation)
+    
+    rotx = coords @ orientation
+
+    g *= numpy.exp(1j * (2 * numpy.pi * frequency * rotx + offset))
+
+    output = ndi.convolve(input, weights=g, output=output,
+                          mode=mode, cval=cval)
+
+    return output
+
+
+@_ni_docstrings.docfiller
 def prewitt(input, axis=-1, output=None, mode="reflect", cval=0.0):
     """Calculate a Prewitt filter.
 

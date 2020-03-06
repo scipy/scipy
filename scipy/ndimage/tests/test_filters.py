@@ -317,6 +317,22 @@ def test_gaussian_truncate():
     n = nonzero_indices.ptp() + 1
     assert_equal(n, 15)
 
+    # Test gabor_filter
+    num_nonzeros_2 = (np.abs(sndi.gabor_filter(arr, 5, 0, 5, truncate = 2)) > 0).sum()
+    assert_equal(num_nonzeros_2, 21**2)
+    num_nonzeros_5 = (np.abs(sndi.gabor_filter(arr, 5, 0, 5, truncate = 5)) > 0).sum()
+    assert_equal(num_nonzeros_5, 51**2)
+
+    f = np.abs(sndi.gabor_filter(arr, [0.5, 2.5], 0, 5, truncate = 3.5))
+    fpos = f > 0
+    n0 = fpos.any(axis=0).sum()
+    # n0 should be 2*int(2.5*3.5 + 0.5) + 1
+    assert_equal(n0, 19)
+    n1 = fpos.any(axis=1).sum()
+    # n1 should be 2*int(0.5*3.5 + 0.5) + 1
+    assert_equal(n1, 5)
+
+
 
 class TestThreading(object):
     def check_func_thread(self, n, fun, args, out):

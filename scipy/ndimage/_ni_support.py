@@ -89,3 +89,7 @@ def _check_axis(axis, rank):
     if axis < 0 or axis >= rank:
         raise ValueError('invalid axis')
     return axis
+
+
+def _check_float(num):
+    return float(num)
