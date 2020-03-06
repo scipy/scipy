@@ -237,7 +237,6 @@ kstwobign = kstwobign_gen(a=0.0, name='kstwobign')
 # by other distributions.
 _norm_pdf_C = np.sqrt(2*np.pi)
 _norm_pdf_logC = np.log(_norm_pdf_C)
-_norm_munp_C = 1. / np.sqrt(np.pi)
 
 
 def _norm_pdf(x):
@@ -363,32 +362,17 @@ class norm_gen(rv_continuous):
 
         return loc, scale
 
-    def _munp(self, n, mu=0., sigma=1.):
+    def _munp(self, n):
         """
-        @returns Expectation of x^p for integer p >= 0
+        @returns Moments of standard normal distribution for integer n >= 0
 
         See https://arxiv.org/pdf/1209.4340.pdf
         """
-        if mu == 0.:
-            if  n % 2 == 0:
-                return sigma**n * sf.factorial2(n - 1)
-            else:
-                return 0.
- 
-        if n == 0:
-            return 1.
-        elif n == 1:
-            return mu
-        elif n == 2:
-            return sigma**2 + mu**2
-        elif n % 2 == 0:
-            hyper = sc.gamma(0.5 * n + 0.5) * sc.hyp1f1(-n / 2, 0.5,  -0.5 * (mu / sigma)**2)
-            return _norm_munp_C * sigma**n * 2.**(n / 2) * hyper
+        if  n % 2 == 0:
+            return sf.factorial2(n - 1)
         else:
-            hyper = sc.gamma(0.5 * n + 1.) * sc.hyp1f1((1 - n) / 2, 1.5,  -0.5 * (mu / sigma)**2)
-            return _norm_munp_C * mu * sigma**(n - 1) * 2.**((n + 1) / 2) * hyper
-
-
+            return 0.
+ 
 
 norm = norm_gen(name='norm')
 
