@@ -61,7 +61,7 @@ from numpy.linalg import LinAlgError
 
 # This is used in place of, e.g., cnp.NPY_C_CONTIGUOUS, to indicate that a C
 # F or non contiguous array is acceptable.
-cdef int ARRAY_ANYORDER = 0
+DEF ARRAY_ANYORDER = 0
 
 cdef int MEMORY_ERROR = libc.limits.INT_MAX
 
