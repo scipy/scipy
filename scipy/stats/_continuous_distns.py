@@ -2966,8 +2966,14 @@ class gamma_gompertz_gen(rv_continuous):
         return np.exp(self._logpdf(x, c, beta))
 
     def _logpdf(self, x, c, beta):
-        return np.log(c) + x + c * np.log(beta) - (c + 1.) * np.where(
-                 np.isfinite(sc.expm1(x)), np.log(beta + sc.expm1(x)), x)
+        em1 = sc.expm1(x)
+        lw = _lazywhere(np.isfinite(em1), [em1, x, beta],
+                        lambda em1_, x_, beta_: np.log(beta_ + em1_),
+                        f2 = lambda em1_, x_, beta_: x_)
+        return np.log(c) + x + c * np.log(beta) - (c + 1.) * lw
+
+    def _ppf(self, q, c, beta):
+        return sc.log1p((beta ** c) / (1. - q) - beta)
 
 
 gamma_gompertz = gamma_gompertz_gen(a=0.0, name='gamma_gompertz')
