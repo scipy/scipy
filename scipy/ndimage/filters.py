@@ -327,8 +327,11 @@ def gabor_filter(input, sigma, phi, frequency, offset=0.0, output=None,
         Frequency of the complex exponential. Units are revolutions/voxels.
     offset : scalar
         Phase shift of the complex exponential. Units are radians.
-
-    %(output)s
+    output : array or dtype, optional
+        The array in which to place the output, or the dtype of the
+        returned array. By default an array of the same dtype as input
+        will be created. Only the real component will be saved
+        if output is an array.
     %(mode_multiple)s
     %(cval)s
     truncate : float
@@ -337,8 +340,9 @@ def gabor_filter(input, sigma, phi, frequency, offset=0.0, output=None,
 
     Returns
     -------
-    gabor_filter : ndarray
-        Returned array of same shape as `input`.
+    real, imaginary : arrays
+        Returns real and imaginary responses, arrays of same 
+        shape as `input`.
 
     Notes
     -----
@@ -375,7 +379,7 @@ def gabor_filter(input, sigma, phi, frequency, offset=0.0, output=None,
     >>> ascent = misc.ascent()
     >>> result = gabor_filter(ascent, sigma=5, phi=[0.0], frequency=0.1)
     >>> ax1.imshow(ascent)
-    >>> ax2.imshow(result)
+    >>> ax2.imshow(result[0])
     >>> plt.show()
     """
     input = numpy.asarray(input)
@@ -409,10 +413,18 @@ def gabor_filter(input, sigma, phi, frequency, offset=0.0, output=None,
 
     g *= numpy.exp(1j * (2 * numpy.pi * frequency * rotx + offset))
 
-    output = ndi.convolve(input, weights=g, output=output,
-                          mode=mode, cval=cval)
+    if isinstance(output, (type, np.dtype)):
+        otype = output
+    elif isinstance(output, str):
+        otype = np.typeDict[output]
+    else:
+        otype = None
 
-    return output
+    output = ndi.convolve(input, weights=np.real(g), output=output, mode=mode, cval=cval)
+    imag = ndi.convolve(input, weights=np.imag(g), output=otype, mode=mode, cval=cval)
+
+    result = (output, imag)
+    return result
 
 
 @_ni_docstrings.docfiller
