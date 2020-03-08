@@ -2317,12 +2317,11 @@ def gttrf_to_lu(n, dtype, dlf, df, duf, du2f, ipiv):
     return (L, U)
 
 
-def gtsvx_factorizer(fact, input_args):
+def gtsvx_factorize_gttrf(fact, input_args):
     if fact == "F":
         gttrf = get_lapack_funcs('gttrf', dtype=input_args[0].dtype)
         return gttrf(*input_args)
     return (None, None, None, None, None, None)
-
 
 
 @pytest.mark.parametrize("dtype,trans", list(zip(DTYPES, ["N"]*len(DTYPES)))
@@ -2361,9 +2360,9 @@ def test_gtsvx(dtype, trans, fact):
     # store a copy of the inputs to check they haven't been modified later
     inputs_cpy = [dl.copy(), d.copy(), du.copy(), b.copy()]
 
-    # determine dlf, df, duf, du2f, and IPIV from gtsvx_factorizer
-    # based on if fact = n or f.
-    dlf_, df_, duf_, du2f_, ipiv_, info_ = gtsvx_factorizer(fact, (dl, d, du))
+    # set these to None if fact = 'N', or the output of gttrf is fact = 'F'
+    dlf_, df_, duf_, du2f_, ipiv_, info_ = gtsvx_factorize_gttrf(fact,
+                                                                 (dl, d, du))
 
     gtsvx_out = gtsvx(dl, d, du, b, fact=fact, trans=trans, dlf=dlf_, df=df_,
                       duf=duf_, du2=du2f_, ipiv=ipiv_)
@@ -2417,15 +2416,15 @@ def test_gtsvx_error_singular(dtype, trans, fact):
     else:
         b = (A.conj().T) @ x
 
-    # determine dlf, df, duf, du2f, and IPIV from gtsvx_factorizer
-    # based on if fact = n or f.
-    dlf_, df_, duf_, du2f_, ipiv_, info_ = gtsvx_factorizer(fact, (dl, d, du))
+    # set these to None if fact = 'N', or the output of gttrf is fact = 'F'
+    dlf_, df_, duf_, du2f_, ipiv_, info_ = gtsvx_factorize_gttrf(fact,
+                                                                 (dl, d, du))
 
     gtsvx_out = gtsvx(dl, d, du, b, fact=fact, trans=trans, dlf=dlf_, df=df_,
                       duf=duf_, du2=du2f_, ipiv=ipiv_)
     dlf, df, duf, du2f, ipiv, x_soln, rcond, ferr, berr, info = gtsvx_out
     # test with singular matrix
-    # no need to test with fact "F" since ?gttrf already tests for these.
+    # no need to test inputs with fact "F" since ?gttrf already does.
     if fact == "N":
 
         L, U = gttrf_to_lu(n, dtype, dlf, df, duf, du2f, ipiv)
@@ -2476,9 +2475,9 @@ def test_gtsvx_error_incompatible_size(dtype, trans, fact):
         b = A @ x
     else:
         b = (A.conj().T) @ x
-    # determine dlf, df, duf, du2f, and IPIV from gtsvx_factorizer
-    # based on if fact = n or f.
-    dlf_, df_, duf_, du2f_, ipiv_, info_ = gtsvx_factorizer(fact, (dl, d, du))
+    # set these to None if fact = 'N', or the output of gttrf is fact = 'F'
+    dlf_, df_, duf_, du2f_, ipiv_, info_ = gtsvx_factorize_gttrf(fact,
+                                                                 (dl, d, du))
     if fact == "N":
         assert_raises(ValueError, gtsvx, dl[:-1], d, du, b,
                       fact=fact, trans=trans, dlf=dlf_, df=df_,
