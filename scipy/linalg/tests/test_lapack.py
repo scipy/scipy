@@ -2123,8 +2123,8 @@ def test_pteqr(dtype, realtype, compz):
     tests that z can reform A.
     '''
     np.random.seed(42)
-    rtol = 250*np.finfo(dtype).eps
-    atol = 100*np.finfo(dtype).eps
+    rtol = 2500*np.finfo(dtype).eps
+    atol = 1000*np.finfo(dtype).eps
     pteqr = get_lapack_funcs(('pteqr'), dtype=dtype)
 
     n = 10
