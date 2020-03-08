@@ -67,7 +67,7 @@ def lambertw(z, k=0, tol=1e-8):
     .. [1] https://en.wikipedia.org/wiki/Lambert_W_function
     .. [2] Corless et al, "On the Lambert W function", Adv. Comp. Math. 5
        (1996) 329-359.
-       http://www.apmaths.uwo.ca/~djeffrey/Offprints/W-adv-cm.pdf
+       https://cs.uwaterloo.ca/research/tr/1993/03/W.pdf
 
     Examples
     --------
