@@ -1126,3 +1126,18 @@ def test_slerp_call_scalar_time():
     delta = r_interpolated * r_interpolated_expected.inv()
 
     assert_allclose(delta.magnitude(), 0, atol=1e-16)
+
+
+def test_slerp_ambiguous():
+    key_quats = np.concatenate((np.eye(4), -np.eye(4)))
+    n = len(key_quats)
+    key_rots = Rotation.from_quat(key_quats)
+    key_times = np.arange(n)
+    interpolator = Slerp(key_times, key_rots)
+
+    k = 4
+    times = np.linspace(0, n - 1, k * n - k + 1, endpoint=True)
+    interp_rots = interpolator(times)
+    interp_quats = interp_rots.as_quat()
+    for i in range(n):
+        assert_allclose(interp_quats[i * k], key_quats[i], atol=1E-12)

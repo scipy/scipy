@@ -1968,6 +1968,14 @@ class Rotation(object):
             return cls.from_matrix(C), rmsd
 
 
+def unique_qr(A):
+    Q, R = np.linalg.qr(A)
+    signs = 2 * (np.diag(R) >= 0) - 1
+    Q = Q * signs[np.newaxis, :]
+    R = R * signs[:, np.newaxis]
+    return Q, R
+
+
 class Slerp(object):
     """Spherical Linear Interpolation of Rotations.
 
@@ -2062,12 +2070,25 @@ class Slerp(object):
                                 len(rotations), times.shape[0]))
         self.times = times
         self.timedelta = np.diff(times)
-
         if np.any(self.timedelta <= 0):
             raise ValueError("Times must be in strictly increasing order.")
 
-        self.rotations = rotations[:-1]
-        self.rotvecs = (self.rotations.inv() * rotations[1:]).as_rotvec()
+        q = rotations.as_quat()
+        self.basis = []
+        self.omega = []
+        for i in range(len(q) - 1):
+            # create an orthogonal basis using QR decomposition
+            start = q[i]
+            end = q[i + 1]
+            Q, R = unique_qr(np.vstack([start, end]).T)
+
+            # calculate the angle between `start` and `end`
+            c = np.dot(start, end)
+            s = np.linalg.det(R)
+            omega = np.arctan2(s, c)
+
+            self.basis.append(Q.T)
+            self.omega.append(omega)
 
     def __call__(self, times):
         """Interpolate rotations.
@@ -2091,24 +2112,28 @@ class Slerp(object):
         if compute_times.ndim > 1:
             raise ValueError("`times` must be at most 1-dimensional.")
 
-        single_time = compute_times.ndim == 0
         compute_times = np.atleast_1d(compute_times)
 
         # side = 'left' (default) excludes t_min.
         ind = np.searchsorted(self.times, compute_times) - 1
         # Include t_min. Without this step, index for t_min equals -1
         ind[compute_times == self.times[0]] = 0
-        if np.any(np.logical_or(ind < 0, ind > len(self.rotations) - 1)):
+        if np.any(np.logical_or(ind < 0, ind > len(self.basis) - 1)):
             raise ValueError("Interpolation times must be within the range "
                              "[{}, {}], both inclusive.".format(
                                 self.times[0], self.times[-1]))
 
         alpha = (compute_times - self.times[ind]) / self.timedelta[ind]
 
-        result = (self.rotations[ind] *
-                  Rotation.from_rotvec(self.rotvecs[ind] * alpha[:, None]))
-
-        if single_time:
-            result = result[0]
-
-        return result
+        # Interpolate between rotations using a geometric slerp.
+        result = []
+        for i, a in zip(ind, alpha):
+            start, end = self.basis[i]
+            omega = self.omega[i]
+            t = np.atleast_1d(a) * omega
+            s = np.sin(t)
+            c = np.cos(t)
+            q = start * c[:, np.newaxis] + end * s[:, np.newaxis]
+            result.append(q)
+        result = np.squeeze(result)
+        return Rotation.from_quat(result)
