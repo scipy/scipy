@@ -87,6 +87,35 @@ def _chk_size(a, b):
     return (a, b, na)
 
 
+def _contains_nan(a, nan_policy='propagate'):
+    policies = ['propagate', 'raise', 'omit']
+    if nan_policy not in policies:
+        raise ValueError("nan_policy must be one of {%s}" %
+                         ', '.join("'%s'" % s for s in policies))
+    try:
+        # Calling np.sum to avoid creating a huge array into memory
+        # e.g. np.isnan(a).any()
+        with np.errstate(invalid='ignore'):
+            contains_nan = np.isnan(np.sum(a))
+    except TypeError:
+        # This can happen when attempting to sum things which are not
+        # numbers (e.g. as in the function `mode`). Try an alternative method:
+        try:
+            contains_nan = np.nan in set(a.ravel())
+        except TypeError:
+            # Don't know what to do. Fall back to omitting nan values and
+            # issue a warning.
+            contains_nan = False
+            nan_policy = 'omit'
+            warnings.warn("The input array could not be properly checked for nan "
+                          "values. nan values will be ignored.", RuntimeWarning)
+
+    if contains_nan and nan_policy == 'raise':
+        raise ValueError("The input contains nan values")
+
+    return contains_nan, nan_policy
+
+
 def argstoarray(*args):
     """
     Constructs a 2D array from a group of sequences.
@@ -1975,7 +2004,7 @@ def tsem(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
 
 
 def winsorize(a, limits=None, inclusive=(True, True), inplace=False,
-              axis=None):
+              axis=None, nan_policy='propagate'):
     """Returns a Winsorized version of the input array.
 
     The (limits[0])th lowest values are set to the (limits[0])th percentile,
@@ -2004,6 +2033,13 @@ def winsorize(a, limits=None, inclusive=(True, True), inplace=False,
     axis : {None, int}, optional
         Axis along which to trim. If None, the whole array is trimmed, but its
         shape is maintained.
+    nan_policy : {'propagate', 'raise', 'omit'}, optional
+        Defines how to handle when input contains nan.
+        The following options are available (default is 'propagate'):
+
+          * 'propagate': allows nan values and may overwrite or propagate them
+          * 'raise': throws an error
+          * 'omit': performs the calculations ignoring nan values
 
     Notes
     -----
@@ -2027,23 +2063,32 @@ def winsorize(a, limits=None, inclusive=(True, True), inplace=False,
            fill_value=999999)
 
     """
-    def _winsorize1D(a, low_limit, up_limit, low_include, up_include):
+    def _winsorize1D(a, low_limit, up_limit, low_include, up_include,
+                     contains_nan, nan_policy):
         n = a.count()
         idx = a.argsort()
+        if contains_nan:
+            nan_count = np.count_nonzero(np.isnan(a))
         if low_limit:
             if low_include:
                 lowidx = int(low_limit * n)
             else:
                 lowidx = np.round(low_limit * n).astype(int)
+            if contains_nan and nan_policy == 'omit':
+                lowidx = min(lowidx, n-nan_count-1)
             a[idx[:lowidx]] = a[idx[lowidx]]
         if up_limit is not None:
             if up_include:
                 upidx = n - int(n * up_limit)
             else:
                 upidx = n - np.round(n * up_limit).astype(int)
-            a[idx[upidx:]] = a[idx[upidx - 1]]
+            if contains_nan and nan_policy == 'omit':
+                a[idx[upidx:-nan_count]] = a[idx[upidx - 1]]
+            else:
+                a[idx[upidx:]] = a[idx[upidx - 1]]
         return a
 
+    contains_nan, nan_policy = _contains_nan(a, nan_policy)
     # We are going to modify a: better make a copy
     a = ma.array(a, copy=np.logical_not(inplace))
 
@@ -2066,10 +2111,11 @@ def winsorize(a, limits=None, inclusive=(True, True), inplace=False,
 
     if axis is None:
         shp = a.shape
-        return _winsorize1D(a.ravel(), lolim, uplim, loinc, upinc).reshape(shp)
+        return _winsorize1D(a.ravel(), lolim, uplim, loinc, upinc,
+                            contains_nan, nan_policy).reshape(shp)
     else:
         return ma.apply_along_axis(_winsorize1D, axis, a, lolim, uplim, loinc,
-                                   upinc)
+                                   upinc, contains_nan, nan_policy)
 
 
 def moment(a, moment=1, axis=0):
