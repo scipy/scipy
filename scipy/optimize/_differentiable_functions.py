@@ -28,6 +28,8 @@ class ScalarFunction(object):
     """
     def __init__(self, fun, x0, args, grad, hess, finite_diff_rel_step,
                  finite_diff_bounds, epsilon=None):
+
+
         if not callable(grad) and grad not in FD_METHODS:
             raise ValueError("`grad` must be either callable or one of {}."
                              .format(FD_METHODS))
@@ -52,6 +54,8 @@ class ScalarFunction(object):
         self.f_updated = False
         self.g_updated = False
         self.H_updated = False
+        self.lb = finite_diff_bounds[0]
+        self.ub = finite_diff_bounds[1]
 
         finite_diff_options = {}
         if grad in FD_METHODS:
@@ -145,6 +149,8 @@ class ScalarFunction(object):
 
         if isinstance(hess, HessianUpdateStrategy):
             def update_x(x):
+                if np.any((x < self.lb) | (x > self.ub)):
+                    raise ValueError("`updated x` violates bound constraints.")
                 self._update_grad()
                 self.x_prev = self.x
                 self.g_prev = self.g
@@ -156,6 +162,8 @@ class ScalarFunction(object):
                 self._update_hess()
         else:
             def update_x(x):
+                if np.any((x < self.lb) | (x > self.ub)):
+                    raise ValueError("`updated x` violates bound constraints.")
                 self.x = np.atleast_1d(x).astype(float)
                 self.f_updated = False
                 self.g_updated = False
