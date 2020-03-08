@@ -2131,7 +2131,6 @@ class Slerp(object):
         # Interpolate between rotations using a geometric slerp.
         result = []
         for i, a in zip(ind, alpha):
-            print(i, a)
             start, end = self.basis[i]
             omega = self.omega[i]
             t = np.atleast_1d(a) * omega
