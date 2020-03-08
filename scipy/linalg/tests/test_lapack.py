@@ -2317,18 +2317,20 @@ def gttrf_to_lu(n, dtype, dlf, df, duf, du2f, ipiv):
     return (L, U)
 
 
+def gtsvx_factorizer(fact, input_args):
+    if fact == "F":
+        gttrf = get_lapack_funcs('gttrf', dtype=input_args[0].dtype)
+        return gttrf(*input_args)
+    return (None, None, None, None, None, None)
+
+
+
 @pytest.mark.parametrize("dtype,trans", list(zip(DTYPES, ["N"]*len(DTYPES)))
                          + list(zip(REAL_DTYPES, ["T"]*len(REAL_DTYPES)))
                          + list(zip(COMPLEX_DTYPES,
                                     ["C"]*len(COMPLEX_DTYPES))))
-@pytest.mark.parametrize("fact,dl_d_du_lambda",
-                         [("F",
-                           lambda dl,
-                           d, du: get_lapack_funcs('gttrf',
-                                                   dtype=d.dtype)(dl, d, du)),
-                          ("N", lambda dl, d, du: (None, None, None, None,
-                                                   None, None))])
-def test_gtsvx(dtype, trans, fact, dl_d_du_lambda):
+@pytest.mark.parametrize("fact", ["F", "N"])
+def test_gtsvx(dtype, trans, fact):
     """
     Thess tests uses ?gtsvx to solve a random Ax=b system for each dtype.
     It tests that the outputs define an LU matrix, that inputs are unmodified,
@@ -2359,9 +2361,9 @@ def test_gtsvx(dtype, trans, fact, dl_d_du_lambda):
     # store a copy of the inputs to check they haven't been modified later
     inputs_cpy = [dl.copy(), d.copy(), du.copy(), b.copy()]
 
-    # determine dlf, df, duf, du2f, and IPIV from lambda expression
-
-    dlf_, df_, duf_, du2f_, ipiv_, info_lambda = dl_d_du_lambda(dl, d, du)
+    # determine dlf, df, duf, du2f, and IPIV from gtsvx_factorizer
+    # based on if fact = n or f.
+    dlf_, df_, duf_, du2f_, ipiv_, info_ = gtsvx_factorizer(fact, (dl, d, du))
 
     gtsvx_out = gtsvx(dl, d, du, b, fact=fact, trans=trans, dlf=dlf_, df=df_,
                       duf=duf_, du2=du2f_, ipiv=ipiv_)
@@ -2393,16 +2395,8 @@ def test_gtsvx(dtype, trans, fact, dl_d_du_lambda):
                          + list(zip(REAL_DTYPES, ["T"]*len(REAL_DTYPES)))
                          + list(zip(COMPLEX_DTYPES,
                                     ["C"]*len(COMPLEX_DTYPES))))
-@pytest.mark.parametrize("fact,dl_d_du_lambda",
-                         [("F",
-                           lambda dl,
-                           d,
-                           du: get_lapack_funcs('gttrf', dtype=d.dtype)(dl,
-                                                                        d,
-                                                                        du)),
-                          ("N", lambda dl, d, du: (None, None, None, None,
-                                                   None, None))])
-def test_gtsvx_error_singular(dtype, trans, fact, dl_d_du_lambda):
+@pytest.mark.parametrize("fact", ["F", "N"])
+def test_gtsvx_error_singular(dtype, trans, fact):
     np.random.seed(42)
     # set test tolerance appropriate for dtype
     rtol = 250 * np.finfo(dtype).eps
@@ -2423,9 +2417,9 @@ def test_gtsvx_error_singular(dtype, trans, fact, dl_d_du_lambda):
     else:
         b = (A.conj().T) @ x
 
-    # determine dlf, df, duf, du2f, and IPIV from lambda expression
-
-    dlf_, df_, duf_, du2f_, ipiv_, info_lambda = dl_d_du_lambda(dl, d, du)
+    # determine dlf, df, duf, du2f, and IPIV from gtsvx_factorizer
+    # based on if fact = n or f.
+    dlf_, df_, duf_, du2f_, ipiv_, info_ = gtsvx_factorizer(fact, (dl, d, du))
 
     gtsvx_out = gtsvx(dl, d, du, b, fact=fact, trans=trans, dlf=dlf_, df=df_,
                       duf=duf_, du2=du2f_, ipiv=ipiv_)
@@ -2464,16 +2458,8 @@ def test_gtsvx_error_singular(dtype, trans, fact, dl_d_du_lambda):
                          + list(zip(REAL_DTYPES, ["T"]*len(REAL_DTYPES)))
                          + list(zip(COMPLEX_DTYPES,
                                     ["C"]*len(COMPLEX_DTYPES))))
-@pytest.mark.parametrize("fact,dl_d_du_lambda",
-                         [("F",
-                           lambda dl,
-                           d,
-                           du: get_lapack_funcs('gttrf', dtype=d.dtype)(dl,
-                                                                        d,
-                                                                        du)),
-                          ("N", lambda dl, d, du: (None, None, None, None,
-                                                   None, None))])
-def test_gtsvx_error_incompatible_size(dtype, trans, fact, dl_d_du_lambda):
+@pytest.mark.parametrize("fact", ["F", "N"])
+def test_gtsvx_error_incompatible_size(dtype, trans, fact):
     np.random.seed(42)
     # obtain routine
     gtsvx = get_lapack_funcs('gtsvx', dtype=dtype)
@@ -2490,9 +2476,9 @@ def test_gtsvx_error_incompatible_size(dtype, trans, fact, dl_d_du_lambda):
         b = A @ x
     else:
         b = (A.conj().T) @ x
-    # determine dlf, df, duf, du2f, and IPIV from lambda expression
-
-    dlf_, df_, duf_, du2f_, ipiv_, info_lambda = dl_d_du_lambda(dl, d, du)
+    # determine dlf, df, duf, du2f, and IPIV from gtsvx_factorizer
+    # based on if fact = n or f.
+    dlf_, df_, duf_, du2f_, ipiv_, info_ = gtsvx_factorizer(fact, (dl, d, du))
     if fact == "N":
         assert_raises(ValueError, gtsvx, dl[:-1], d, du, b,
                       fact=fact, trans=trans, dlf=dlf_, df=df_,
