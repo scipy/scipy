@@ -2418,7 +2418,7 @@ def binom_test(x, n=None, p=0.5, alternative='two-sided'):
     because the returned p-value is greater than the critical value of 5%.
 
     """
-    x = atleast_1d(x).astype(np.integer)
+    x = atleast_1d(x).astype(np.int_)
     if len(x) == 2:
         n = x[1] + x[0]
         x = x[0]
