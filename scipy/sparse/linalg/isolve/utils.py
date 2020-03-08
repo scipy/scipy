@@ -78,10 +78,13 @@ def make_system(A, M, x0, b):
     if b.dtype.char not in 'fdFD':
         b = b.astype('d')  # upcast non-FP types to double
 
+    b_shape = b.shape
+    b_type = type(b)
+
     def postprocess(x):
-        if isinstance(b,matrix):
+        if issubclass(b_type, matrix):
             x = asmatrix(x)
-        return x.reshape(b.shape)
+        return x.reshape(b_shape)
 
     if hasattr(A,'dtype'):
         xtype = A.dtype.char
