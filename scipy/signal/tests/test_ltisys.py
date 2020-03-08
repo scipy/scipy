@@ -11,7 +11,6 @@ from scipy.signal import (ss2tf, tf2ss, lsim2, impulse2, step2, lti,
                           dlti, bode, freqresp, lsim, impulse, step,
                           abcd_normalize, place_poles,
                           TransferFunction, StateSpace, ZerosPolesGain)
-from scipy.signal.filter_design import BadCoefficients
 import scipy.linalg as linalg
 from scipy.sparse.sputils import matrix
 
@@ -391,16 +390,10 @@ class TestSS2TF:
 
 
 class TestLsim(object):
-    def lti_nowarn(self, *args):
-        with suppress_warnings() as sup:
-            sup.filter(BadCoefficients)
-            system = lti(*args)
-        return system
-
     def test_first_order(self):
         # y' = -y
         # exact solution is y(t) = exp(-t)
-        system = self.lti_nowarn(-1.,1.,1.,0.)
+        system = lti(-1.,1.,1.,0.)
         t = np.linspace(0,5)
         u = np.zeros_like(t)
         tout, y, x = lsim(system, u, t, X0=[1.0])
@@ -410,7 +403,7 @@ class TestLsim(object):
 
     def test_integrator(self):
         # integrator: y' = u
-        system = self.lti_nowarn(0., 1., 1., 0.)
+        system = lti(0., 1., 1., 0.)
         t = np.linspace(0,5)
         u = t
         tout, y, x = lsim(system, u, t)
@@ -423,7 +416,7 @@ class TestLsim(object):
         A = matrix("0. 1.; 0. 0.")
         B = matrix("0.; 1.")
         C = matrix("2. 0.")
-        system = self.lti_nowarn(A, B, C, 0.)
+        system = lti(A, B, C, 0.)
         t = np.linspace(0,5)
         u = np.ones_like(t)
         tout, y, x = lsim(system, u, t)
@@ -441,7 +434,7 @@ class TestLsim(object):
         A = matrix("-1. 1.; 0. -1.")
         B = matrix("0.; 1.")
         C = matrix("1. 0.")
-        system = self.lti_nowarn(A, B, C, 0.)
+        system = lti(A, B, C, 0.)
         t = np.linspace(0,5)
         u = np.zeros_like(t)
         tout, y, x = lsim(system, u, t, X0=[0.0, 1.0])
@@ -454,7 +447,7 @@ class TestLsim(object):
         B = np.array([[1.0, 0.0], [0.0, 1.0]])
         C = np.array([1.0, 0.0])
         D = np.zeros((1,2))
-        system = self.lti_nowarn(A, B, C, D)
+        system = lti(A, B, C, D)
 
         t = np.linspace(0, 5.0, 101)
         u = np.zeros_like(t)
@@ -467,7 +460,7 @@ class TestLsim(object):
         assert_almost_equal(x[:,1], expected_x1)
 
     def test_nonzero_initial_time(self):
-        system = self.lti_nowarn(-1.,1.,1.,0.)
+        system = lti(-1.,1.,1.,0.)
         t = np.linspace(1,2)
         u = np.zeros_like(t)
         tout, y, x = lsim(system, u, t, X0=[1.0])
@@ -517,11 +510,6 @@ class Test_lsim2(object):
         assert_almost_equal(x[:,0], expected_x)
 
     def test_05(self):
-        # The call to lsim2 triggers a "BadCoefficients" warning from
-        # scipy.signal.filter_design, but the test passes.  I think the warning
-        # is related to the incomplete handling of multi-input systems in
-        # scipy.signal.
-
         # A system with two state variables, two inputs, and one output.
         A = np.array([[-1.0, 0.0], [0.0, -2.0]])
         B = np.array([[1.0, 0.0], [0.0, 1.0]])
@@ -529,9 +517,7 @@ class Test_lsim2(object):
         D = np.zeros((1, 2))
 
         t = np.linspace(0, 10.0, 101)
-        with suppress_warnings() as sup:
-            sup.filter(BadCoefficients)
-            tout, y, x = lsim2((A,B,C,D), T=t, X0=[1.0, 1.0])
+        tout, y, x = lsim2((A,B,C,D), T=t, X0=[1.0, 1.0])
         expected_y = np.exp(-tout)
         expected_x0 = np.exp(-tout)
         expected_x1 = np.exp(-2.0 * tout)
@@ -1173,10 +1159,8 @@ class Test_bode(object):
         B = np.array([[0.0], [0.0], [1.0]])
         C = np.array([[1.0, 0.0, 0.0]])
         D = np.array([[0.0]])
-        with suppress_warnings() as sup:
-            sup.filter(BadCoefficients)
-            system = lti(A, B, C, D)
-            w, mag, phase = bode(system, n=100)
+        system = lti(A, B, C, D)
+        w, mag, phase = bode(system, n=100)
 
         expected_magnitude = 20 * np.log10(np.sqrt(1.0 / (1.0 + w**6)))
         assert_almost_equal(mag, expected_magnitude)
@@ -1238,10 +1222,8 @@ class Test_freqresp(object):
         B = np.array([[0.0],[0.0],[1.0]])
         C = np.array([[1.0, 0.0, 0.0]])
         D = np.array([[0.0]])
-        with suppress_warnings() as sup:
-            sup.filter(BadCoefficients)
-            system = lti(A, B, C, D)
-            w, H = freqresp(system, n=100)
+        system = lti(A, B, C, D)
+        w, H = freqresp(system, n=100)
         s = w * 1j
         expected = (1.0 / (1.0 + 2*s + 2*s**2 + s**3))
         assert_almost_equal(H.real, expected.real)

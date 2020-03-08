@@ -26,7 +26,7 @@ from scipy.signal import (
     fftconvolve, oaconvolve, choose_conv_method,
     hilbert, hilbert2, lfilter, lfilter_zi, filtfilt, butter, zpk2tf, zpk2sos,
     invres, invresz, vectorstrength, lfiltic, tf2sos, sosfilt, sosfiltfilt,
-    sosfilt_zi, tf2zpk, BadCoefficients, detrend, unique_roots, residue,
+    sosfilt_zi, tf2zpk, detrend, unique_roots, residue,
     residuez)
 from scipy.signal.windows import hann
 from scipy.signal.signaltools import (_filtfilt_gust, _compute_factors,
@@ -2336,14 +2336,10 @@ class TestDecimate(object):
         assert_equal(d1.shape, (30, 15))
 
     def test_phaseshift_FIR(self):
-        with suppress_warnings() as sup:
-            sup.filter(BadCoefficients, "Badly conditioned filter")
-            self._test_phaseshift(method='fir', zero_phase=False)
+        self._test_phaseshift(method='fir', zero_phase=False)
 
     def test_zero_phase_FIR(self):
-        with suppress_warnings() as sup:
-            sup.filter(BadCoefficients, "Badly conditioned filter")
-            self._test_phaseshift(method='fir', zero_phase=True)
+        self._test_phaseshift(method='fir', zero_phase=True)
 
     def test_phaseshift_IIR(self):
         self._test_phaseshift(method='iir', zero_phase=False)

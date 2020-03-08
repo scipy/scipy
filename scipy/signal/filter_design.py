@@ -28,7 +28,7 @@ __all__ = ['findfreqs', 'freqs', 'freqz', 'tf2zpk', 'zpk2tf', 'normalize',
            'BadCoefficients', 'freqs_zpk', 'freqz_zpk',
            'tf2sos', 'sos2tf', 'zpk2sos', 'sos2zpk', 'group_delay',
            'sosfreqz', 'iirnotch', 'iirpeak', 'bilinear_zpk',
-           'lp2lp_zpk', 'lp2hp_zpk', 'lp2bp_zpk', 'lp2bs_zpk']
+           'lp2lp_zpk', 'lp2hp_zpk', 'lp2bp_zpk', 'lp2bs_zpk', 'is_stable']
 
 
 class BadCoefficients(UserWarning):
@@ -1028,8 +1028,7 @@ def tf2zpk(b, a):
 
     Notes
     -----
-    If some values of `b` are too close to 0, they are removed. In that case,
-    a BadCoefficients warning is emitted.
+    If leading values of `b` are zeros, they are removed.
 
     The `b` and `a` arrays are interpreted as coefficients for positive,
     descending powers of the transfer function variable. So the inputs
@@ -1068,8 +1067,7 @@ def tf2zpk(b, a):
 
     """
     b, a = normalize(b, a)
-    b = (b + 0.0) / a[0]
-    a = (a + 0.0) / a[0]
+    b = np.trim_zeros(b, 'f')
     k = b[0]
     b /= b[0]
     z = roots(b)
@@ -1570,9 +1568,6 @@ def _align_nums(nums):
 def normalize(b, a):
     """Normalize numerator/denominator of a continuous-time transfer function.
 
-    If values of `b` are too close to 0, they are removed. In that case, a
-    BadCoefficients warning is emitted.
-
     Parameters
     ----------
     b: array_like
@@ -1614,28 +1609,64 @@ def normalize(b, a):
     # Normalize transfer function
     num, den = num / den[0], den / den[0]
 
-    # Count numerator columns that are all zero
-    leading_zeros = 0
-    for col in num.T:
-        if np.allclose(col, 0, atol=1e-14):
-            leading_zeros += 1
-        else:
-            break
-
-    # Trim leading zeros of numerator
-    if leading_zeros > 0:
-        warnings.warn("Badly conditioned filter coefficients (numerator): the "
-                      "results may be meaningless", BadCoefficients)
-        # Make sure at least one column remains
-        if leading_zeros == num.shape[1]:
-            leading_zeros -= 1
-        num = num[:, leading_zeros:]
-
     # Squeeze first dimension if singular
     if num.shape[0] == 1:
         num = num[0, :]
 
     return num, den
+
+
+def is_stable(den):
+    """Determine digital filter stability
+
+    Parameters
+    ----------
+    b: array_like
+        Numerator of the transfer function. Can be a 2d array to normalize
+        multiple transfer functions.
+    a: array_like
+        Denominator of the transfer function. At most 1d.
+
+    Returns
+    -------
+    stable: bool
+        Indicates whether all poles of the filter are stable.
+
+    Notes
+    -----
+    This function checks if all poles of the filter lie within the z-plane unit circle.
+    As direct root finding is numerically unreliable, this function uses step-down,
+    reverse Levinson recursion to determine the denominator polynomial's reflection
+    coefficients, as shown in [1]_. For a stable filter, all reflection coefficients
+    have magnitude less than unity.
+
+    References
+    ----------
+    .. [1] S. M. Kay, "Modern Spectral Estimation: Theory and Application",
+           O.P. EngleWood Cliffs, N.J., Ch. 6, p.172, Eq. 6.51
+
+    """
+
+    den = np.atleast_1d(den)
+
+    if den.ndim != 1:
+        raise ValueError("Denominator polynomial must be rank-1 array.")
+
+    if np.all(den == 0):
+        raise ValueError("Denominator must have at least on nonzero element.")
+
+    den = np.trim_zeros(den, 'f')
+    a = den / den[0]  # Normalize to first element
+
+    stable = True
+    for ii in reversed(range(1, len(a))):
+        k = a[ii]
+        if abs(k) >= 1:
+            stable = False
+            break
+        a = (a[:ii] - k * a[ii:0:-1]) / (1 - k ** 2)
+
+    return stable
 
 
 def lp2lp(b, a, wo=1.0):

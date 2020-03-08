@@ -1,7 +1,5 @@
 from __future__ import division, print_function, absolute_import
 
-import warnings
-
 from distutils.version import LooseVersion
 import numpy as np
 from numpy.testing import (assert_array_almost_equal,
@@ -12,7 +10,7 @@ import pytest
 from pytest import raises as assert_raises
 
 from numpy import array, spacing, sin, pi, sort, sqrt
-from scipy.signal import (BadCoefficients, bessel, besselap, bilinear, buttap,
+from scipy.signal import (bessel, besselap, bilinear, buttap,
                           butter, buttord, cheb1ap, cheb1ord, cheb2ap,
                           cheb2ord, cheby1, cheby2, ellip, ellipap, ellipord,
                           firwin, freqs_zpk, freqs, freqz, freqz_zpk,
@@ -181,13 +179,6 @@ class TestTf2zpk(object):
         assert_array_almost_equal(k, 1.)
         assert k.dtype == dt
 
-    def test_bad_filter(self):
-        # Regression test for #651: better handling of badly conditioned
-        # filter coefficients.
-        with suppress_warnings():
-            warnings.simplefilter("error", BadCoefficients)
-            assert_raises(BadCoefficients, tf2zpk, [1e-15], [1.0, 1.0])
-
 
 class TestZpk2Tf(object):
 
@@ -254,8 +245,7 @@ class TestSos2Zpk(object):
 
         sos = butter(12, [5., 30.], 'bandpass', fs=1200., analog=False,
                     output='sos')
-        with pytest.warns(BadCoefficients, match='Badly conditioned'):
-            z, p, k = sos2zpk(sos)
+        z, p, k = sos2zpk(sos)
         assert len(z) == 24
         assert len(p) == 24
 
