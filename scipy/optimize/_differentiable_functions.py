@@ -28,8 +28,6 @@ class ScalarFunction(object):
     """
     def __init__(self, fun, x0, args, grad, hess, finite_diff_rel_step,
                  finite_diff_bounds, epsilon=None):
-
-
         if not callable(grad) and grad not in FD_METHODS:
             raise ValueError("`grad` must be either callable or one of {}."
                              .format(FD_METHODS))

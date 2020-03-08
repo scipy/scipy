@@ -77,9 +77,6 @@ class BarrierSubproblem:
 
         """
         # Get variables and slack variables
-        # I think this is the spot where we want to check for feasibility with self.enforce_feasibility
-        # need to figure out how to determine if feasibiltiy is violated from the variables and slacks
-        #import ipdb; ipdb.set_trace()
         x = self.get_variables(z)
         s = self.get_slack(z)
         c_eq, c_ineq = self.constr(x)
@@ -133,7 +130,6 @@ class BarrierSubproblem:
         Both of them scaled by the previously defined scaling factor.
         """
         # Get variables and slack variables
-        #import ipdb; ipdb.set_trace()
         x = self.get_variables(z)
         s = self.get_slack(z)
         # Compute first derivatives
@@ -319,7 +315,6 @@ def tr_interior_point(fun, grad, lagr_hess, n_vars, n_ineq, n_eq,
     fun0_subprob, constr0_subprob = subprob.fun0, subprob.constr0
     grad0_subprob, jac0_subprob = subprob.grad0, subprob.jac0
     # Define trust region bounds
-    #import ipdb; ipdb.set_trace()
     trust_lb = np.hstack((np.full(subprob.n_vars, -np.inf),
                           np.full(subprob.n_ineq, -BOUNDARY_PARAMETER)))
     trust_ub = np.full(subprob.n_vars+subprob.n_ineq, np.inf)
@@ -347,7 +342,6 @@ def tr_interior_point(fun, grad, lagr_hess, n_vars, n_ineq, n_eq,
         # Update Barrier Problem
         subprob.update(barrier_parameter, tolerance)
         # Compute initial values for next iteration
-        #import ipdb; ipdb.set_trace()
         fun0_subprob, constr0_subprob = subprob.function_and_constraints(z)
         grad0_subprob, jac0_subprob = subprob.gradient_and_jacobian(z)
 
