@@ -2069,17 +2069,22 @@ class Slerp(object):
                              "and {} timestamps.".format(
                                 len(rotations), times.shape[0]))
         self.times = times
-        self.timedelta = np.diff(times)
+        self.timedelta = np.concatenate((np.diff(times), [1]))
         if np.any(self.timedelta <= 0):
             raise ValueError("Times must be in strictly increasing order.")
 
-        q = rotations.as_quat()
+        starts = rotations.as_quat()
+        ends = np.roll(starts, -1, axis=0)
+        dots = np.einsum('ij,ij->i', starts, ends)
+        signs = 2 * (dots >= 0) - 1
+        ends *= signs[:, np.newaxis]
+
         self.basis = []
         self.omega = []
-        for i in range(len(q) - 1):
+        for i in range(len(starts)):
             # create an orthogonal basis using QR decomposition
-            start = q[i]
-            end = q[i + 1]
+            start = starts[i]
+            end = ends[i]
             Q, R = unique_qr(np.vstack([start, end]).T)
 
             # calculate the angle between `start` and `end`
@@ -2114,11 +2119,9 @@ class Slerp(object):
 
         compute_times = np.atleast_1d(compute_times)
 
-        # side = 'left' (default) excludes t_min.
-        ind = np.searchsorted(self.times, compute_times) - 1
-        # Include t_min. Without this step, index for t_min equals -1
-        ind[compute_times == self.times[0]] = 0
-        if np.any(np.logical_or(ind < 0, ind > len(self.basis) - 1)):
+        ind = np.searchsorted(self.times, compute_times, side='right') - 1
+        if (np.min(compute_times) < np.min(self.times) or
+           np.max(compute_times) > np.max(self.times)):
             raise ValueError("Interpolation times must be within the range "
                              "[{}, {}], both inclusive.".format(
                                 self.times[0], self.times[-1]))
@@ -2128,6 +2131,7 @@ class Slerp(object):
         # Interpolate between rotations using a geometric slerp.
         result = []
         for i, a in zip(ind, alpha):
+            print(i, a)
             start, end = self.basis[i]
             omega = self.omega[i]
             t = np.atleast_1d(a) * omega

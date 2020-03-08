@@ -1141,3 +1141,30 @@ def test_slerp_ambiguous():
     interp_quats = interp_rots.as_quat()
     for i in range(n):
         assert_allclose(interp_quats[i * k], key_quats[i], atol=1E-12)
+
+
+def test_slerp_shortest_path():
+    np.random.seed(0)
+    key_quats = np.random.normal(size=(100, 4))
+    key_quats /= np.linalg.norm(key_quats, axis=1)[:, np.newaxis]
+
+    n = len(key_quats)
+    key_rots = Rotation.from_quat(key_quats)
+    key_times = np.arange(n)
+    interpolator = Slerp(key_times, key_rots)
+
+    k = 2
+    times = np.linspace(0, n - 1, k * n - k + 1, endpoint=True)
+    interp_rots = interpolator(times)
+    interp_quats = interp_rots.as_quat()
+    for i in range(n):
+        assert_allclose(interp_quats[i * k], key_quats[i], atol=1E-12)
+
+    # Test that angle from start to halfway point does not exceed 90 degrees.
+    for i in range(n - 1):
+        start = interp_quats[i * k]
+        mid = interp_quats[i * k + 1]
+
+        dot = min(1, np.abs(np.dot(start, mid)))
+        angle = 2 * np.arccos(dot)
+        assert angle <= np.pi + 1E-12
