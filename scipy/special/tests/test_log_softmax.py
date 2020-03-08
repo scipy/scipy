@@ -1,6 +1,5 @@
 import numpy as np
-from numpy.testing import (assert_almost_equal, assert_equal, assert_allclose,
-                           assert_array_almost_equal, assert_)
+from numpy.testing import assert_allclose
 
 import pytest
 

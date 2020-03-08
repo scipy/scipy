@@ -3,7 +3,6 @@
 
 import operator
 import math
-import sys
 import timeit
 from scipy.spatial import cKDTree
 from . import sigtools, dlti
