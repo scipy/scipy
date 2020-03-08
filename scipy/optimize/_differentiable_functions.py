@@ -52,9 +52,10 @@ class ScalarFunction(object):
         self.f_updated = False
         self.g_updated = False
         self.H_updated = False
+        if finite_diff_bounds is None:
+            finite_diff_bounds = ((np.full(self.n, -np.inf), np.full(self.n, np.inf)))
         self.lb = finite_diff_bounds[0]
         self.ub = finite_diff_bounds[1]
-
         finite_diff_options = {}
         if grad in FD_METHODS:
             finite_diff_options["method"] = grad
@@ -147,22 +148,23 @@ class ScalarFunction(object):
 
         if isinstance(hess, HessianUpdateStrategy):
             def update_x(x):
+                x = np.atleast_1d(x).astype(float)
                 if np.any((x < self.lb) | (x > self.ub)):
                     raise ValueError("`updated x` violates bound constraints.")
                 self._update_grad()
                 self.x_prev = self.x
                 self.g_prev = self.g
-
-                self.x = np.atleast_1d(x).astype(float)
+                self.x = x
                 self.f_updated = False
                 self.g_updated = False
                 self.H_updated = False
                 self._update_hess()
         else:
             def update_x(x):
+                x = np.atleast_1d(x).astype(float)
                 if np.any((x < self.lb) | (x > self.ub)):
                     raise ValueError("`updated x` violates bound constraints.")
-                self.x = np.atleast_1d(x).astype(float)
+                self.x = x
                 self.f_updated = False
                 self.g_updated = False
                 self.H_updated = False
