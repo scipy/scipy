@@ -2922,7 +2922,7 @@ gamma = gamma_gen(a=0.0, name='gamma')
 
 
 class gamma_gompertz_gen(rv_continuous):
-    u""" A Gamma/Gompertz continuous random variable
+    r""" A Gamma/Gompertz continuous random variable
 
     %(before_notes)s
 
