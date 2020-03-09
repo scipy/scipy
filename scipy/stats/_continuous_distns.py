@@ -2936,7 +2936,7 @@ class gamma_gompertz_gen(rv_continuous):
 
         f(x, c, \beta) = c \beta^c e^x / (e^x + \beta - 1)^{c+1}
 
-    for :math:`x >= 0`, :math:`c > 0`, and :math:`\beta > 0`.
+    for :math:`x \ge 0`, :math:`c > 0`, and :math:`\beta > 0`.
 
     `gamma_gompertz` takes :math:`c` and :math:`\beta` as shape parameters.
 
@@ -2964,10 +2964,10 @@ class gamma_gompertz_gen(rv_continuous):
         return np.exp(self._logsf(x, c, beta))
 
     def _cdf(self, x, c, beta):
-        return 1. - (beta ** c) / (beta + sc.expm1(x))
+        return 1. - (beta / (beta + sc.expm1(x))) ** c
 
     def _logcdf(self, x, c, beta):
-        return sc.log1p(- (beta ** c) / (beta + sc.expm1(x)))
+        return sc.log1p(- (beta / (beta + sc.expm1(x))) ** c)
 
     def _pdf(self, x, c, beta):
         return np.exp(self._logpdf(x, c, beta))
@@ -2981,7 +2981,7 @@ class gamma_gompertz_gen(rv_continuous):
         return np.log(c) + x + c * np.log(beta) - (c + 1.) * lw
 
     def _ppf(self, q, c, beta):
-        return sc.log1p(beta ** c / (1. - q) - beta)
+        return sc.log1p(beta * ((1. - q) ** (-1. / c) - 1.))
 
 
 gamma_gompertz = gamma_gompertz_gen(a=0.0, name='gamma_gompertz')

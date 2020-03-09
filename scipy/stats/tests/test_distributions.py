@@ -1900,11 +1900,13 @@ class TestGamma(object):
 
 class TestGammaGompertz(object):
     def test_pdf(self):
+        # when x=log(n), c=1, beta=2, we have pdf=2n/(n+1)^2
         vals = stats.gamma_gompertz.pdf(np.log(np.arange(1., 6., 1.)), 1., 2.)
         expected = [1./2., 4./9., 3./8., 8./25., 5./18.]
         assert_allclose(vals, expected, rtol=1e-7, atol=0.)
 
     def test_cdf(self):
+        # when x=log(n), c=1, beta=2, we have cdf=(n-1)/(n+1)
         vals = stats.gamma_gompertz.cdf(np.log(np.arange(1., 6., 1.)), 1., 2.)
         expected = [0., 1./3., 1./2., 3./5., 2./3.]
         assert_allclose(vals, expected, rtol=1e-7, atol=0.)
