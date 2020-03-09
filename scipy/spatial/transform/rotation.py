@@ -2079,21 +2079,25 @@ class Slerp(object):
         signs = 2 * (dots >= 0) - 1
         ends *= signs[:, np.newaxis]
 
-        self.basis = []
-        self.omega = []
-        for i in range(len(starts)):
+        rs = []
+        ps = []
+        qs = []
+        for a, b in zip(starts, ends):
             # create an orthogonal basis using QR decomposition
-            start = starts[i]
-            end = ends[i]
-            Q, R = unique_qr(np.vstack([start, end]).T)
+            Q, R = unique_qr(np.vstack([a, b]).T)
+            p, q = Q.T
+            ps.append(p)
+            qs.append(q)
+            rs.append(R)
 
-            # calculate the angle between `start` and `end`
-            c = np.dot(start, end)
-            s = np.linalg.det(R)
-            omega = np.arctan2(s, c)
+        # ps and qs are orthogonal pairs of points on a geodesic
+        self.ps = np.array(ps)
+        self.qs = np.array(qs)
 
-            self.basis.append(Q.T)
-            self.omega.append(omega)
+        # calculate the angle between `start` and `end`
+        c = np.abs(dots)
+        s = np.linalg.det(rs)
+        self.omega = np.arctan2(s, c)
 
     def __call__(self, times):
         """Interpolate rotations.
@@ -2129,14 +2133,8 @@ class Slerp(object):
         alpha = (compute_times - self.times[ind]) / self.timedelta[ind]
 
         # Interpolate between rotations using a geometric slerp.
-        result = []
-        for i, a in zip(ind, alpha):
-            start, end = self.basis[i]
-            omega = self.omega[i]
-            t = np.atleast_1d(a) * omega
-            s = np.sin(t)
-            c = np.cos(t)
-            q = start * c[:, np.newaxis] + end * s[:, np.newaxis]
-            result.append(q)
-        result = np.squeeze(result)
-        return Rotation.from_quat(result)
+        t = (alpha * self.omega[ind])[:, np.newaxis]
+        s = np.sin(t)
+        c = np.cos(t)
+        result = self.ps[ind] * c + self.qs[ind] * s
+        return Rotation.from_quat(np.squeeze(result))
