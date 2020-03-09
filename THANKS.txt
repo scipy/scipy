@@ -230,6 +230,7 @@ Søren Fuglede Jørgensen for improvements to scipy.sparse.csgraph
 Grzegorz Mrukwa for a bug fix in rectangular_lsap.cpp
 Santiago Hernandez for a bug fix in scipy.optimize._differentialevolution.py.
 Dan Kleeman for implementing nan_policy in stats.zscores and winsorize
+James Wright for simple documentation fixes
 
 Institutions
 ------------
