@@ -366,9 +366,9 @@ class norm_gen(rv_continuous):
         """
         @returns Moments of standard normal distribution for integer n >= 0
 
-        See https://arxiv.org/pdf/1209.4340.pdf
+        See eq. 16 of https://arxiv.org/abs/1209.4340v2
         """
-        if  n % 2 == 0:
+        if n % 2 == 0:
             return sf.factorial2(n - 1)
         else:
             return 0.
