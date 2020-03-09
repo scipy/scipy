@@ -2930,7 +2930,9 @@ class gamma_gompertz_gen(rv_continuous):
     -----
     The probability density function for `gamma_gompertz` is:
 
-        gamma_gompertz.pdf(x, c, beta) = c * exp(x) * (beta**c) / ((beta - 1 + exp(x))**(c + 1))
+    .. math::
+
+        f\left(x,c,\beta\right) = c*\exp\left(x\right)*\frac{\beta^c}{((\beta-1+\exp\left(x\right))^{c+1})}
 
     for ``x >= 0``, ``c > 0``, ``beta > 0``.
 
@@ -2947,7 +2949,7 @@ class gamma_gompertz_gen(rv_continuous):
 
     def _logsf(self, x, c, beta):
         em1 = sc.expm1(x)
-        # np.where is used for dealing with the case that x is too large
+        # _lazywhere is used for dealing with the case that x is too large
         # so that sc.expm1(x) becomes infinity.
         # Since x is very large in that case, -sc.log1p(em1 / beta)
         # approximately equals to -sc.log(np.exp(x) / beta) = np.log(beta) - x
@@ -2962,6 +2964,9 @@ class gamma_gompertz_gen(rv_continuous):
     def _cdf(self, x, c, beta):
         return 1. - (beta ** c) / (beta + sc.expm1(x))
 
+    def _logcdf(self, x, c, beta):
+        return sc.log1p(- (beta ** c) / (beta + sc.expm1(x)))
+
     def _pdf(self, x, c, beta):
         return np.exp(self._logpdf(x, c, beta))
 
@@ -2973,7 +2978,7 @@ class gamma_gompertz_gen(rv_continuous):
         return np.log(c) + x + c * np.log(beta) - (c + 1.) * lw
 
     def _ppf(self, q, c, beta):
-        return sc.log1p((beta ** c) / (1. - q) - beta)
+        return sc.log1p(beta ** c / (1. - q) - beta)
 
 
 gamma_gompertz = gamma_gompertz_gen(a=0.0, name='gamma_gompertz')

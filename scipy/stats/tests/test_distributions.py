@@ -1907,12 +1907,6 @@ class TestGammaGompertz(object):
         expected = [0., 1./3., 1./2., 3./5., 2./3.]
         assert_allclose(vals, expected, rtol=1e-7, atol=0.)
 
-    def test_ppf(self):
-        x = np.array([0., 1./3., 1./2., 3./5., 2./3.])
-        vals = stats.gamma_gompertz.ppf(x, 1., 2.)
-        expected = np.log(np.arange(1., 6., 1.))
-        assert_allclose(vals, expected, rtol=1e-7, atol=0.)
-
     def test_logsf(self):
         # test for large x such that sc.expm1(x) is infinity
         x = 10 ** (np.arange(3., 6., 1.))
@@ -1922,23 +1916,12 @@ class TestGammaGompertz(object):
         assert_equal(em1, np.inf)
         assert_allclose(vals, expected, rtol=1e-3, atol=0.)
 
-    def test_ppf(self):
-        vals = stats.gamma_gompertz.ppf([0., 1./3., 1./2., 3./5., 2./3.], 1., 2.)
-        expected = np.log(np.arange(1., 6., 1.))
-        assert_allclose(vals, expected, rtol=1e-7, atol=0.)
-
     def test_expon(self):
         # test against expon (special case for beta=1)
         points = [1., 2., 3.]
         pdf1 = stats.gamma_gompertz.pdf(points, 1., 1.)
         pdf2 = stats.expon.pdf(points)
         assert_allclose(pdf1, pdf2, rtol=1e-7, atol=0.)
-
-    def test_cdf_ppf_accuracy(self):
-        p = stats.gamma_gompertz.ppf(stats.gamma_gompertz.cdf(1e-8, 1., 1.),
-                                     1., 1.)
-        expected = 1e-8
-        assert_allclose(p, expected, rtol=1e-7, atol=0.)
 
 
 class TestChi2(object):
