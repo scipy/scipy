@@ -2974,9 +2974,10 @@ class gamma_gompertz_gen(rv_continuous):
 
     def _logpdf(self, x, c, beta):
         em1 = sc.expm1(x)
-        lw = _lazywhere(np.isfinite(em1), [em1, x, beta],
-                        lambda em1_, x_, beta_: np.log(beta_ + em1_),
-                        f2 = lambda em1_, x_, beta_: x_)
+        bem1 = beta + em1
+        lw = _lazywhere(np.isfinite(bem1), [bem1, x],
+                        lambda bem1_, x_: np.log(bem1_),
+                        f2 = lambda bem1_, x_: x_)
         return np.log(c) + x + c * np.log(beta) - (c + 1.) * lw
 
     def _ppf(self, q, c, beta):
