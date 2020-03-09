@@ -2932,7 +2932,7 @@ class gamma_gompertz_gen(rv_continuous):
 
     .. math::
 
-        f\left(x,c,\beta\right) = c*\exp\left(x\right)*\frac{\beta^c}{((\beta-1+\exp\left(x\right))^{c+1})}
+        f(x, c, \beta) = c \beta^c e^x / (e^x + \beta - 1)^{c+1}
 
     for :math:`x >= 0`, :math:`c > 0`, and :math:`\beta > 0`.
 
