@@ -2934,9 +2934,9 @@ class gamma_gompertz_gen(rv_continuous):
 
         f\left(x,c,\beta\right) = c*\exp\left(x\right)*\frac{\beta^c}{((\beta-1+\exp\left(x\right))^{c+1})}
 
-    for ``x >= 0``, ``c > 0``, ``beta > 0``.
+    for :math:`x >= 0`, :math:`c > 0`, and :math:`\beta > 0`.
 
-    `gamma_gompertz` takes ``c`` and ``beta`` as shape parameters.
+    `gamma_gompertz` takes :math:`c` and :math:`\beta` as shape parameters.
 
     %(after_notes)s
 
