@@ -25,11 +25,6 @@ static struct PycStringIO_CAPI {
     PyTypeObject *InputType, *OutputType;
 } *PycStringIO;
 
-static void PycString_IMPORT() {}
-
-#define PycStringIO_InputCheck(O) 0
-#define PycStringIO_OutputCheck(O) 0
-
 /*
  * PyFile_* compatibility
  */
