@@ -64,8 +64,11 @@ static int partition_node_indices(const double *data,
      *    modified as noted above.
      */
 
-    IndexComparator index_comparator = {.data=data, .split_dim=split_dim, 
-                                        .n_dims = n_dims};
+    IndexComparator index_comparator;
+
+    index_comparator.data = data;
+    index_comparator.split_dim = split_dim;
+    index_comparator.n_dims = n_dims;
 
     std::nth_element(node_indices,
                      node_indices + split_index,
