@@ -8,8 +8,6 @@ Sparse matrix functions
 #          Jake Vanderplas, August 2012 (Sparse Updates)
 #
 
-from __future__ import division, print_function, absolute_import
-
 __all__ = ['expm', 'inv']
 
 import math
@@ -20,7 +18,6 @@ import scipy.special
 from scipy.linalg.basic import solve, solve_triangular
 
 from scipy.sparse.base import isspmatrix
-from scipy.sparse.construct import eye as speye
 from scipy.sparse.linalg import spsolve
 from scipy.sparse.sputils import is_pydata_spmatrix
 

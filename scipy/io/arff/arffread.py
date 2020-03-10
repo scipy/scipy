@@ -1,13 +1,10 @@
 # Last Change: Mon Aug 20 08:00 PM 2007 J
-from __future__ import division, print_function, absolute_import
-
 import re
 import datetime
 from collections import OrderedDict
 
 import numpy as np
 
-from scipy._lib.six import next
 import csv
 import ctypes
 

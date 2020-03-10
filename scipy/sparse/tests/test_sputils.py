@@ -1,7 +1,5 @@
 """unit tests for sparse utility functions"""
 
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 from numpy.testing import assert_equal, suppress_warnings
 from pytest import raises as assert_raises

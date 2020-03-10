@@ -1,8 +1,5 @@
-from __future__ import division, print_function, absolute_import
-
 import numpy.testing as npt
 import numpy as np
-from scipy._lib.six import xrange
 import pytest
 
 from scipy import stats
@@ -217,7 +214,7 @@ def check_discrete_chisquare(distfn, arg, rvs, alpha, msg):
     _a, _b = distfn.support(*arg)
     lo = int(max(_a, -1000))
     high = int(min(_b, 1000)) + 1
-    distsupport = xrange(lo, high)
+    distsupport = range(lo, high)
     last = 0
     distsupp = [lo]
     distmass = []

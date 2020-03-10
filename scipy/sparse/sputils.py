@@ -1,8 +1,6 @@
 """ Utility functions for sparse matrix module
 """
 
-from __future__ import division, print_function, absolute_import
-
 import sys
 import operator
 import warnings
@@ -11,10 +9,9 @@ import numpy as np
 __all__ = ['upcast', 'getdtype', 'isscalarlike', 'isintlike',
            'isshape', 'issequence', 'isdense', 'ismatrix', 'get_sum_dtype']
 
-supported_dtypes = ['bool', 'int8', 'uint8', 'short', 'ushort', 'intc',
-                    'uintc', 'l', 'L', 'longlong', 'ulonglong', 'single', 'double',
-                    'longdouble', 'csingle', 'cdouble', 'clongdouble']
-supported_dtypes = [np.typeDict[x] for x in supported_dtypes]
+supported_dtypes = [np.bool_, np.byte, np.ubyte, np.short, np.ushort, np.intc,
+                    np.uintc, np.int_, np.uint, np.longlong, np.ulonglong, np.single, np.double,
+                    np.longdouble, np.csingle, np.cdouble, np.clongdouble]
 
 _upcast_memo = {}
 

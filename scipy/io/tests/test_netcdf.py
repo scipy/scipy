@@ -1,6 +1,4 @@
 ''' Tests for netcdf '''
-from __future__ import division, print_function, absolute_import
-
 import os
 from os.path import join as pjoin, dirname
 import shutil
@@ -143,7 +141,7 @@ def test_read_write_files():
 
 def test_read_write_sio():
     eg_sio1 = BytesIO()
-    with make_simple(eg_sio1, 'w') as f1:
+    with make_simple(eg_sio1, 'w'):
         str_val = eg_sio1.getvalue()
 
     eg_sio2 = BytesIO(str_val)
@@ -232,9 +230,9 @@ def test_encoded_fill_value():
 def test_read_example_data():
     # read any example data files
     for fname in glob(pjoin(TEST_DATA_PATH, '*.nc')):
-        with netcdf_file(fname, 'r') as f:
+        with netcdf_file(fname, 'r'):
             pass
-        with netcdf_file(fname, 'r', mmap=False) as f:
+        with netcdf_file(fname, 'r', mmap=False):
             pass
 
 
@@ -284,7 +282,7 @@ def test_write_invalid_dtype():
 def test_flush_rewind():
     stream = BytesIO()
     with make_simple(stream, mode='w') as f:
-        x = f.createDimension('x',4)
+        x = f.createDimension('x',4)  # x is used in createVariable
         v = f.createVariable('v', 'i2', ['x'])
         v[:] = 1
         f.flush()

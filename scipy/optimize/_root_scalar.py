@@ -6,10 +6,7 @@ Functions
 ---------
 - root : find a root of a scalar function.
 """
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
-from scipy._lib.six import callable
 
 from . import zeros as optzeros
 

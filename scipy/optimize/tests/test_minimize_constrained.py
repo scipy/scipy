@@ -1,10 +1,9 @@
-from __future__ import division, print_function, absolute_import
 import numpy as np
 import pytest
 from scipy.linalg import block_diag
 from scipy.sparse import csc_matrix
 from numpy.testing import (TestCase, assert_array_almost_equal,
-                           assert_array_less, assert_allclose, assert_,
+                           assert_array_less, assert_,
                            suppress_warnings)
 from pytest import raises
 from scipy.optimize import (NonlinearConstraint,
@@ -530,10 +529,10 @@ class TestTrustRegionConstr(TestCase):
         result1 = minimize(prob.fun, prob.x0,
                            method='L-BFGS-B',
                            jac='2-point')
-        with pytest.warns(UserWarning):
-            result2 = minimize(prob.fun, prob.x0,
-                               method='L-BFGS-B',
-                               jac='3-point')
+
+        result2 = minimize(prob.fun, prob.x0,
+                           method='L-BFGS-B',
+                           jac='3-point')
         assert_array_almost_equal(result.x, prob.x_opt, decimal=5)
         assert_array_almost_equal(result1.x, prob.x_opt, decimal=5)
         assert_array_almost_equal(result2.x, prob.x_opt, decimal=5)

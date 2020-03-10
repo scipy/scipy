@@ -39,6 +39,7 @@ Basics
    pinv2 - Pseudo-inverse using svd
    pinvh - Pseudo-inverse of hermitian matrix
    kron - Kronecker product of two arrays
+   khatri_rao - Khatri-Rao product of two arrays
    tril - Construct a lower-triangular matrix from a given matrix
    triu - Construct an upper-triangular matrix from a given matrix
    orthogonal_procrustes - Solve an orthogonal Procrustes problem
@@ -188,8 +189,6 @@ Low-level routines
    `scipy.linalg.cython_lapack` -- Low-level LAPACK functions for Cython
 
 """  # noqa: E501
-
-from __future__ import division, print_function, absolute_import
 
 from .linalg_version import linalg_version as __version__
 

@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 import warnings
 
 import numpy as np
@@ -8,7 +6,6 @@ from numpy import asarray_chkfinite
 from .misc import LinAlgError, _datacopied, LinAlgWarning
 from .lapack import get_lapack_funcs
 
-from scipy._lib.six import callable
 
 __all__ = ['qz', 'ordqz']
 

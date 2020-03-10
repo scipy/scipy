@@ -4,13 +4,9 @@
 # Feb. 2010: Updated by Warren Weckesser:
 #   Rewrote much of chirp()
 #   Added sweep_poly()
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 from numpy import asarray, zeros, place, nan, mod, pi, extract, log, sqrt, \
     exp, cos, sin, polyval, polyint
-
-from scipy._lib.six import string_types
 
 
 __all__ = ['sawtooth', 'square', 'gausspulse', 'chirp', 'sweep_poly',
@@ -237,7 +233,7 @@ def gausspulse(t, fc=1000, bw=0.5, bwr=-6, tpr=-60, retquad=False,
     # pi^2/a * fc^2 * bw^2 /4=-log(ref)
     a = -(pi * fc * bw) ** 2 / (4.0 * log(ref))
 
-    if isinstance(t, string_types):
+    if isinstance(t, str):
         if t == 'cutoff':  # compute cut_off point
             #  Solve exp(-a tc**2) = tref  for tc
             #   tc = sqrt(-log(tref) / a) where tref = 10^(tpr/20)

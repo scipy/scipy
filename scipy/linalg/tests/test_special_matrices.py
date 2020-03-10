@@ -1,12 +1,8 @@
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 from numpy import arange, add, array, eye, copy, sqrt
 from numpy.testing import (assert_equal, assert_array_equal,
                            assert_array_almost_equal, assert_allclose)
 from pytest import raises as assert_raises
-
-from scipy._lib.six import xrange
 
 from scipy.fft import fft
 from scipy.special import comb
@@ -506,7 +502,7 @@ class TestInvHilbert(object):
         assert_allclose(invhilbert(17), invh17.astype(float), rtol=1e-12)
 
     def test_inverse(self):
-        for n in xrange(1, 10):
+        for n in range(1, 10):
             a = hilbert(n)
             b = invhilbert(n)
             # The Hilbert matrix is increasingly badly conditioned,

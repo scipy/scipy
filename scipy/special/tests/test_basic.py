@@ -17,8 +17,6 @@
 ###  test_pbvv_seq
 ###  test_sph_harm
 
-from __future__ import division, print_function, absolute_import
-
 import itertools
 import platform
 
@@ -35,7 +33,7 @@ from numpy.testing import (assert_equal, assert_almost_equal,
 
 from scipy import special
 import scipy.special._ufuncs as cephes
-from scipy.special import ellipk, zeta
+from scipy.special import ellipk
 
 from scipy.special._testutils import with_special_errors, \
      assert_func_equal, FuncData
@@ -1820,6 +1818,23 @@ class TestFactorialFunctions(object):
         assert_equal(special.factorialk(5, 1, exact=True), 120)
         assert_equal(special.factorialk(5, 3, exact=True), 10)
 
+    @pytest.mark.parametrize('x, exact', [
+        (np.nan, True),
+        (np.nan, False),
+        (np.array([np.nan]), True),
+        (np.array([np.nan]), False),
+    ])
+    def test_nan_inputs(self, x, exact):
+        result = special.factorial(x, exact=exact)
+        assert_(np.isnan(result))
+
+    def test_mixed_nan_inputs(self):
+        x = np.array([np.nan, 1, 2, 3, np.nan])
+        result = special.factorial(x, exact=True)
+        assert_equal(np.array([np.nan, 1, 2, 6, np.nan]), result)
+        result = special.factorial(x, exact=False)
+        assert_equal(np.array([np.nan, 1, 2, 6, np.nan]), result)
+
 
 class TestFresnel(object):
     def test_fresnel(self):
@@ -2941,7 +2956,7 @@ class TestMathieu(object):
         pass
 
     def test_mathieu_even_coef(self):
-        mc = special.mathieu_even_coef(2,5)
+        special.mathieu_even_coef(2,5)
         # Q not defined broken and cannot figure out proper reporting order
 
     def test_mathieu_odd_coef(self):
@@ -2976,8 +2991,8 @@ class TestParabolicCylinder(object):
                                              0.9925])),4)
 
     def test_pbdv(self):
-        pbv = special.pbdv(1,.2)
-        derrl = 1/2*(.2)*special.pbdv(1,.2)[0] - special.pbdv(0,.2)[0]
+        special.pbdv(1,.2)
+        1/2*(.2)*special.pbdv(1,.2)[0] - special.pbdv(0,.2)[0]
 
     def test_pbdv_seq(self):
         pbn = special.pbdn_seq(1,.1)

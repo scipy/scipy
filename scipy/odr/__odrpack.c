@@ -1276,7 +1276,6 @@ static PyMethodDef methods[] = {
   {NULL, NULL},
 };
 
-#if PY_VERSION_HEX >= 0x03000000
 static struct PyModuleDef moduledef = {
     PyModuleDef_HEAD_INIT,
     "_odrpack",
@@ -1296,11 +1295,3 @@ PyObject *PyInit___odrpack(void)
     m = PyModule_Create(&moduledef);
     return m;
 }
-#else
-PyMODINIT_FUNC init__odrpack(void)
-{
-    PyObject *m;
-    import_array();
-    m = Py_InitModule("__odrpack", methods);
-}
-#endif

@@ -20,6 +20,9 @@ DEF ACCEPTABLE_RTOL = 1e-7
 
 @cython.cdivision(True)
 cdef inline double hyperu(double a, double b, double x) nogil:
+    if npy_isnan(a) or npy_isnan(b) or npy_isnan(x):
+        return NPY_NAN
+
     if x < 0.0:
         sf_error.error("hyperu", sf_error.DOMAIN, NULL)
         return NPY_NAN

@@ -1,7 +1,5 @@
 # Created by Pearu Peterson, September 2002
 
-from __future__ import division, print_function, absolute_import
-
 __usage__ = """
 Build fftpack:
   python setup_fftpack.py build
@@ -11,12 +9,10 @@ Run tests if fftpack is not installed:
   python tests/test_helper.py [<level>]
 """
 
-from pytest import raises as assert_raises
-from numpy.testing import assert_array_almost_equal, assert_equal, assert_
-from scipy.fftpack import fftshift,ifftshift,fftfreq,rfftfreq
+from numpy.testing import assert_array_almost_equal
+from scipy.fftpack import fftshift, ifftshift, fftfreq, rfftfreq
 
 from numpy import pi, random
-import numpy as np
 
 class TestFFTShift(object):
 

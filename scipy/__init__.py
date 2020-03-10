@@ -56,8 +56,6 @@ Utility tools
  __numpy_version__ --- Numpy version string
 
 """
-from __future__ import division, print_function, absolute_import
-
 __all__ = ['test']
 
 from numpy import show_config as show_numpy_config

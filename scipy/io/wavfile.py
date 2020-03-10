@@ -8,8 +8,6 @@ Functions
 `write`: Write a NumPy array as a WAV file.
 
 """
-from __future__ import division, print_function, absolute_import
-
 import sys
 import numpy
 import struct
@@ -451,10 +449,6 @@ def write(filename, rate, data):
             fid.seek(0)
 
 
-if sys.version_info[0] >= 3:
-    def _array_tofile(fid, data):
-        # ravel gives a c-contiguous buffer
-        fid.write(data.ravel().view('b').data)
-else:
-    def _array_tofile(fid, data):
-        fid.write(data.tostring())
+def _array_tofile(fid, data):
+    # ravel gives a c-contiguous buffer
+    fid.write(data.ravel().view('b').data)

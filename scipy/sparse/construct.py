@@ -1,6 +1,5 @@
 """Functions to construct sparse matrices
 """
-from __future__ import division, print_function, absolute_import
 
 __docformat__ = "restructuredtext en"
 
@@ -9,8 +8,6 @@ __all__ = ['spdiags', 'eye', 'identity', 'kron', 'kronsum',
 
 
 import numpy as np
-
-from scipy._lib.six import xrange
 
 from .sputils import upcast, get_index_dtype, isscalarlike
 

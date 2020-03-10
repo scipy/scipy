@@ -161,21 +161,14 @@ References
 
 """
 
-from __future__ import division, print_function, absolute_import
-
 import warnings
-import sys
 import math
-if sys.version_info >= (3, 5):
-    from math import gcd
-else:
-    from fractions import gcd
+from math import gcd
 from collections import namedtuple
 
 import numpy as np
 from numpy import array, asarray, ma
 
-from scipy._lib.six import callable, string_types
 from scipy.spatial.distance import cdist
 from scipy.ndimage import measurements
 from scipy._lib._util import _lazywhere, check_random_state, MapWrapper
@@ -183,6 +176,7 @@ import scipy.special as special
 from scipy import linalg
 from . import distributions
 from . import mstats_basic
+from .mstats_basic import _contains_nan
 from ._stats_mstats_common import (_find_repeats, linregress, theilslopes,
                                    siegelslopes)
 from ._stats import (_kendall_dis, _toint64, _weightedrankedtau,
@@ -242,35 +236,6 @@ def _chk2_asarray(a, b, axis):
         b = np.atleast_1d(b)
 
     return a, b, outaxis
-
-
-def _contains_nan(a, nan_policy='propagate'):
-    policies = ['propagate', 'raise', 'omit']
-    if nan_policy not in policies:
-        raise ValueError("nan_policy must be one of {%s}" %
-                         ', '.join("'%s'" % s for s in policies))
-    try:
-        # Calling np.sum to avoid creating a huge array into memory
-        # e.g. np.isnan(a).any()
-        with np.errstate(invalid='ignore'):
-            contains_nan = np.isnan(np.sum(a))
-    except TypeError:
-        # This can happen when attempting to sum things which are not
-        # numbers (e.g. as in the function `mode`). Try an alternative method:
-        try:
-            contains_nan = np.nan in set(a.ravel())
-        except TypeError:
-            # Don't know what to do. Fall back to omitting nan values and
-            # issue a warning.
-            contains_nan = False
-            nan_policy = 'omit'
-            warnings.warn("The input array could not be properly checked for nan "
-                          "values. nan values will be ignored.", RuntimeWarning)
-
-    if contains_nan and nan_policy == 'raise':
-        raise ValueError("The input contains nan values")
-
-    return (contains_nan, nan_policy)
 
 
 def gmean(a, axis=0, dtype=None):
@@ -2738,7 +2703,7 @@ def iqr(x, axis=None, rng=(25, 75), scale='raw', nan_policy='propagate',
 
     # An error may be raised here, so fail-fast, before doing lengthy
     # computations, even though `scale` is not used until later
-    if isinstance(scale, string_types):
+    if isinstance(scale, str):
         scale_key = scale.lower()
         if scale_key not in _scale_conversions:
             raise ValueError("{0} not a valid scale for `iqr`".format(scale))
@@ -3234,14 +3199,15 @@ def f_oneway(*args):
     offset = alldata.mean()
     alldata -= offset
 
-    sstot = _sum_of_squares(alldata) - (_square_of_sums(alldata) / bign)
+    normalized_ss = _square_of_sums(alldata) / bign
+    sstot = _sum_of_squares(alldata) - normalized_ss
     ssbn = 0
     for a in args:
         ssbn += _square_of_sums(a - offset) / len(a)
 
     # Naming: variables ending in bn/b are for "between treatments", wn/w are
     # for "within treatments"
-    ssbn -= _square_of_sums(alldata) / bign
+    ssbn -= normalized_ss
     sswn = sstot - ssbn
     dfbn = num_groups - 1
     dfwn = bign - num_groups
@@ -5412,7 +5378,7 @@ def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', mode='approx'):
     (0.131016895759829, 0.058826222555312224)
 
     """
-    if isinstance(rvs, string_types):
+    if isinstance(rvs, str):
         if (not cdf) or (cdf == rvs):
             cdf = getattr(distributions, rvs).cdf
             rvs = getattr(distributions, rvs).rvs
@@ -5420,7 +5386,7 @@ def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', mode='approx'):
             raise AttributeError("if rvs is string, cdf has to be the "
                                  "same distribution")
 
-    if isinstance(cdf, string_types):
+    if isinstance(cdf, str):
         cdf = getattr(distributions, cdf).cdf
     if callable(rvs):
         kwds = {'size': N}
@@ -5646,7 +5612,7 @@ def power_divergence(f_obs, f_exp=None, ddof=0, axis=0, lambda_=None):
 
     """
     # Convert the input argument `lambda_` to a numerical value.
-    if isinstance(lambda_, string_types):
+    if isinstance(lambda_, str):
         if lambda_ not in _power_div_lambda_names:
             names = repr(list(_power_div_lambda_names.keys()))[1:-1]
             raise ValueError("invalid string for lambda_: {0!r}.  Valid strings "
@@ -5877,7 +5843,7 @@ def _compute_prob_inside_method(m, n, g, h):
     for i in range(1, m + 1):
         # Generate the next column.
         # First calculate the sliding window
-        lastminj, lastmaxj, lastlen = minj, maxj, curlen
+        lastminj, lastlen = minj, curlen
         minj = max(int(np.floor((ng * i - h) / mg)) + 1, 0)
         minj = min(minj, n)
         maxj = min(int(np.ceil((ng * i + h) / mg)), n + 1)

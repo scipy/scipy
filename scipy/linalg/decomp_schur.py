@@ -1,11 +1,8 @@
 """Schur decomposition functions."""
-from __future__ import division, print_function, absolute_import
-
 import numpy
 from numpy import asarray_chkfinite, single, asarray, array
 from numpy.linalg import norm
 
-from scipy._lib.six import callable
 
 # Local imports.
 from .misc import LinAlgError, _datacopied

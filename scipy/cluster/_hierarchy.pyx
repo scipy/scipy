@@ -1,6 +1,4 @@
 # cython: boundscheck=False, wraparound=False, cdivision=True
-from __future__ import absolute_import
-
 import numpy as np
 cimport numpy as np
 from libc.math cimport sqrt

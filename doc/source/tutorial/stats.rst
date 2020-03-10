@@ -103,7 +103,7 @@ introspection:
     >>> dist_discrete = [d for d in dir(stats) if
     ...                  isinstance(getattr(stats, d), stats.rv_discrete)]
     >>> print('number of continuous distributions: %d' % len(dist_continu))
-    number of continuous distributions: 100
+    number of continuous distributions: 101
     >>> print('number of discrete distributions:   %d' % len(dist_discrete))
     number of discrete distributions:   15
 
@@ -169,7 +169,7 @@ you can explicitly seed a global variable
 
 Relying on a global state is not recommended, though. A better way is to use
 the `random_state` parameter, which accepts an instance of
-`numpy.random.mtrand.RandomState` class, or an integer, which is then used to
+`numpy.random.RandomState` class, or an integer, which is then used to
 seed an internal ``RandomState`` object:
 
     >>> norm.rvs(size=5, random_state=1234)

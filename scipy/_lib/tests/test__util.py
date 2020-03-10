@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 from multiprocessing import Pool, get_start_method
 from multiprocessing.pool import Pool as PWL
 import os
@@ -10,7 +8,8 @@ import pytest
 from pytest import raises as assert_raises, deprecated_call
 
 import scipy
-from scipy._lib._util import _aligned_zeros, check_random_state, MapWrapper
+from scipy._lib._util import (_aligned_zeros, check_random_state, MapWrapper,
+                              getfullargspec_no_self, FullArgSpec)
 
 
 def test__aligned_zeros():
@@ -65,6 +64,22 @@ def test_check_random_state():
         rg = np.random.Generator(np.random.PCG64())
         rsi = check_random_state(rg)
         assert_equal(type(rsi), np.random.Generator)
+
+
+def test_getfullargspec_no_self():
+    p = MapWrapper(1)
+    argspec = getfullargspec_no_self(p.__init__)
+    assert_equal(argspec, FullArgSpec(['pool'], None, None, (1,), [], None, {}))
+    argspec = getfullargspec_no_self(p.__call__)
+    assert_equal(argspec, FullArgSpec(['func', 'iterable'], None, None, None, [], None, {}))
+
+    class _rv_generic(object):
+        def _rvs(self, a, b=2, c=3, *args, size=None, **kwargs):
+            return None
+
+    rv_obj = _rv_generic()
+    argspec = getfullargspec_no_self(rv_obj._rvs)
+    assert_equal(argspec, FullArgSpec(['a', 'b', 'c'], 'args', 'kwargs', (2, 3), ['size'], {'size': None}, {}))
 
 
 def test_mapwrapper_serial():
