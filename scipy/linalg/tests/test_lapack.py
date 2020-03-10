@@ -1667,9 +1667,8 @@ def generate_random_dtype_array(shape, dtype):
 @pytest.mark.parametrize("ddtype,dtype",
                          zip(REAL_DTYPES + REAL_DTYPES, DTYPES))
 def test_pttrf_pttrs(ddtype, dtype):
-    np.random.seed(42)
+    seed(42)
     # set test tolerance appropriate for dtype
-    rtol = 250*np.finfo(dtype).eps
     atol = 100*np.finfo(dtype).eps
     # n is the length diagonal of A
     n = 10
@@ -1698,7 +1697,7 @@ def test_pttrf_pttrs(ddtype, dtype):
     L = np.diag(_e, -1) + np.diag(np.ones(n))
     D = np.diag(_d)
 
-    assert_allclose(A, L@D@L.conjugate().T, rtol=rtol, atol=atol)
+    assert_allclose(A, L@D@L.conjugate().T, atol=atol)
 
     # generate random solution x
     x = generate_random_dtype_array((n,), dtype)
@@ -1711,7 +1710,7 @@ def test_pttrf_pttrs(ddtype, dtype):
     assert_equal(info, 0, err_msg="pttrs: info = {}, should be 0".format(info))
 
     # test that _x from pttrs matches the expected x
-    assert_allclose(x, _x, rtol=rtol, atol=atol)
+    assert_allclose(x, _x, atol=atol)
 
 @pytest.mark.parametrize("ddtype,dtype",
                          zip(REAL_DTYPES + REAL_DTYPES, DTYPES))
@@ -1770,14 +1769,12 @@ def test_pttrf_pttrs_errors_singular_nonSPD(ddtype, dtype):
                                     [1-1j, 2+1j]])
                          )])
 def test_pttrf_pttrs_NAG(d, e, d_expect, e_expect, b, x_expect):
-    # test to assure that wrapper is consistent with NAG manual
+    # test to assure that wrapper is consistent with NAG Manual Mark 26
     # example problems: f07jdf and f07jef (real)
-    # https://www.nag.com/numeric/fl/nagdoc_latest/html/f07/f07jdf.html
-    # https://www.nag.com/numeric/fl/nagdoc_latest/html/f07/f07jef.html
     # examples: f07jrf and f07csf (complex)
-    # https://www.nag.com/numeric/fl/nagdoc_latest/html/f07/f07jrf.html
-    # https://www.nag.com/numeric/fl/nagdoc_latest/html/f07/f07jsf.html
     # NAG examples provide 4 decimals.
+    # (Links expire, so please search for "NAG Library Manual Mark 26" online)
+    
     atol = 1e-4
     pttrf = get_lapack_funcs('pttrf', dtype=e[0])
     _d, _e, info = pttrf(d, e)
