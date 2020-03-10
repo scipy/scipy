@@ -1,6 +1,4 @@
 """Compressed Block Sparse Row matrix format"""
-from __future__ import division, print_function, absolute_import
-
 
 __docformat__ = "restructuredtext en"
 

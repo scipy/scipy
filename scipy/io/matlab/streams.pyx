@@ -1,7 +1,5 @@
 # -*- python -*- or near enough
 
-from __future__ import absolute_import
-
 import sys
 import zlib
 

@@ -2,8 +2,6 @@
 
 """
 
-from __future__ import division, print_function, absolute_import
-
 import os
 import sys
 import zlib

@@ -1,8 +1,6 @@
 # Author: Travis Oliphant
 # 1999 -- 2002
 
-from __future__ import division, print_function, absolute_import
-
 import operator
 import math
 import sys

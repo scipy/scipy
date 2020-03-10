@@ -1,8 +1,6 @@
 # Copyright Anne M. Archibald 2008
 # Released under the scipy license
 
-from __future__ import division, print_function, absolute_import
-
 from numpy.testing import (assert_equal, assert_array_equal, assert_,
                            assert_almost_equal, assert_array_almost_equal)
 from pytest import raises as assert_raises

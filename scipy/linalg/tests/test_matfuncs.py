@@ -4,8 +4,6 @@
 """ Test functions for linalg.matfuncs module
 
 """
-from __future__ import division, print_function, absolute_import
-
 import random
 import functools
 

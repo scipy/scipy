@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 from numpy import sqrt, inner, zeros, inf, finfo
 from numpy.linalg import norm
 

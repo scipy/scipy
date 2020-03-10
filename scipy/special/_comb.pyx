@@ -1,5 +1,3 @@
-from __future__ import absolute_import
-
 cdef extern from "limits.h":
     unsigned long ULONG_MAX
 

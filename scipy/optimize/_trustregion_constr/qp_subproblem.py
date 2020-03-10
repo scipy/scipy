@@ -1,6 +1,5 @@
 """Equality-constrained quadratic programming solvers."""
 
-from __future__ import division, print_function, absolute_import
 from scipy.sparse import (linalg, bmat, csc_matrix)
 from math import copysign
 import numpy as np
