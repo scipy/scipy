@@ -60,7 +60,7 @@ subroutine <prefix>gttrs(trans, n, nrhs, dl, d, du, du2, ipiv, b, ldb, info)
     <ftype>    intent(in), depend(n), dimension(n - 1) :: du
     <ftype>    intent(in), depend(n), dimension(n - 2) :: du2
     integer    intent(in), depend(n), dimension(n)     :: ipiv
-    <ftype>    intent(in, out, copy), dimension(ldb, nrhs) :: b
+    <ftype>    intent(in, out, copy, out=x), dimension(ldb, nrhs) :: b
     integer    intent(out) :: info
 
 end subroutine gttrs

@@ -1802,7 +1802,7 @@ def test_gttrf_gttrs(dtype):
     # incompatible matrix shapes raise an error, and singular matrices return
     # non zero info.
 
-    np.random.seed(42)
+    seed(42)
     n = 10
     atol = 100 * np.finfo(dtype).eps
 
@@ -1886,7 +1886,7 @@ def test_gttrf_gttrs(dtype):
                        .format(__d[info - 1]))
 
 
-@pytest.mark.parametrize("du,d,dl,du_exp,d_exp,du2_exp,ipiv_exp,b,x",
+@pytest.mark.parametrize("du, d, dl, du_exp, d_exp, du2_exp, ipiv_exp, b, x",
                          [(np.array([2.1, -1.0, 1.9, 8.0]),
                              np.array([3.0, 2.3, -5.0, -.9, 7.1]),
                              np.array([3.4, 3.6, 7.0, -6.0]),
@@ -1931,13 +1931,10 @@ def test_gttrf_gttrs(dtype):
                             )])
 def test_gttrf_gttrs_NAG_f07cdf_f07cef_f07crf_f07csf(du, d, dl, du_exp, d_exp,
                                                      du2_exp, ipiv_exp, b, x):
-    # test to assure that wrapper is consistent with NAG manual
+    # test to assure that wrapper is consistent with NAG Library Manual Mark 26
     # example problems: f07cdf and f07cef (real)
-    # https://www.nag.com/numeric/fl/nagdoc_latest/html/f07/f07cdf.html#example
-    # https://www.nag.com/numeric/fl/nagdoc_latest/html/f07/f07cef.html#example
     # examples: f07crf and f07csf (complex)
-    # https://www.nag.com/numeric/fl/nagdoc_latest/html/f07/f07csf.html
-    # https://www.nag.com/numeric/fl/nagdoc_latest/html/f07/f07crf.html
+    # (Links may expire, so search for "NAG Library Manual Mark 26" online)
 
     gttrf, gttrs = get_lapack_funcs(('gttrf', "gttrs"), (du[0], du[0]))
 
