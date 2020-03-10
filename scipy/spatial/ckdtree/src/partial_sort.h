@@ -9,25 +9,21 @@
 
 #include <algorithm>
 
-class IndexComparator {
+struct IndexComparator {
     const double *data;
-    ckdtree_intp_t split_dim, n_features;
+    ckdtree_intp_t split_dim, n_dims;
 
-public:
-    IndexComparator(const double *data, ckdtree_intp_t split_dim, ckdtree_intp_t n_features):
-        data(data), split_dim(split_dim), n_features(n_features) {}
-
-    bool operator()(ckdtree_intp_t a, ckdtree_intp_t b) {
-        return data[a * n_features + split_dim]
-            < data[b * n_features + split_dim];
+    inline bool operator()(ckdtree_intp_t a, ckdtree_intp_t b) {
+        return data[a * n_dims + split_dim]
+               < data[b * n_dims + split_dim];
     }
 };
 
-int partition_node_indices(const double *data,
+static int partition_node_indices(const double *data,
                            ckdtree_intp_t *node_indices,
                            ckdtree_intp_t split_dim,
                            ckdtree_intp_t split_index,
-                           ckdtree_intp_t n_features,
+                           ckdtree_intp_t n_dims,
                            ckdtree_intp_t n_points) {
 
     /* Partition points in the node into two equal-sized groups
@@ -42,14 +38,14 @@ int partition_node_indices(const double *data,
      *   data[node_indices[split_index], split_dim]
      *     <= data[node_indices[split_index:n_points], split_dim]
      *
-     * This is eassentially a wrapper around a standard C++ function 
+     * This is eassentially a wrapper around the standard C++ function 
      * ``std::nth_element``.
      * 
      *
      * Parameters
      * ----------
      * data : double pointer
-     *    Pointer to a 2D array of the training data, of shape [N, n_features].
+     *    Pointer to a 2D array of the training data, of shape [N, n_dims].
      *    N must be greater than any of the values in node_indices.
      * node_indices : int pointer
      *    Pointer to a 1D array of length n_points.  This lists the indices of
@@ -68,7 +64,9 @@ int partition_node_indices(const double *data,
      *    modified as noted above.
      */
 
-    IndexComparator index_comparator(data, split_dim, n_features);
+    IndexComparator index_comparator = {.data=data, .split_dim=split_dim, 
+                                        .n_dims = n_dims};
+
     std::nth_element(node_indices,
                      node_indices + split_index,
                      node_indices + n_points,
