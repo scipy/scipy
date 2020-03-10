@@ -15,7 +15,6 @@ from .misc import LinAlgError, _datacopied, LinAlgWarning
 from .decomp import _asarray_validated
 from . import decomp, decomp_svd
 from ._solve_toeplitz import levinson
-from ..fft import fft, ifft
 
 __all__ = ['solve', 'solve_triangular', 'solveh_banded', 'solve_banded',
            'solve_toeplitz', 'solve_circulant', 'inv', 'det', 'lstsq',
@@ -1792,18 +1791,24 @@ def matmul_toeplitz(c_or_cr, b, check_finite=False, workers=None):
 
     """
 
+    from ..fft import fft, ifft, rfft, irfft
+
     r, c, b, dtype, b_shape = _validate_args_for_toeplitz_ops(
         c_or_cr, b, check_finite, keep_b_shape=False)
     n, m = b.shape
 
     embedded_col = np.concatenate((c, r[-1:0:-1]))
 
-    fft_mat = fft(embedded_col, axis=0, workers=workers).reshape(-1, 1)
-    fft_b = fft(b, n=2*n-1, axis=0, workers=workers)
+    if np.iscomplexobj(embedded_col) or np.iscomplexobj(b):
+        fft_mat = fft(embedded_col, axis=0, workers=workers).reshape(-1, 1)
+        fft_b = fft(b, n=2*n-1, axis=0, workers=workers)
 
-    mat_times_b = ifft(fft_mat*fft_b, axis=0, workers=workers)[:n, :]
+        mat_times_b = ifft(fft_mat*fft_b, axis=0, workers=workers)[:n, :]
+    else:
+        # Real inputs; using rfft is faster
+        fft_mat = rfft(embedded_col, axis=0, workers=workers).reshape(-1, 1)
+        fft_b = rfft(b, n=2*n-1, axis=0, workers=workers)
 
-    if not np.iscomplexobj(dtype()):
-        mat_times_b = mat_times_b.real
+        mat_times_b = irfft(fft_mat*fft_b, axis=0, workers=workers, n=2*n-1)[:n, :]
 
     return mat_times_b.reshape(*b_shape)
