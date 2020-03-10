@@ -1,4 +1,3 @@
-from __future__ import division, print_function, absolute_import
 import pytest
 
 from math import sqrt, exp, sin, cos
@@ -15,7 +14,7 @@ from numpy import finfo, power, nan, isclose
 
 from scipy.optimize import zeros, newton, root_scalar
 
-from scipy._lib._util import getargspec_no_self as _getargspec
+from scipy._lib._util import getfullargspec_no_self as _getfullargspec
 
 # Import testing parameters
 from scipy.optimize._tstutils import get_tests, functions as tstutils_functions, fstrings as tstutils_fstrings
@@ -132,10 +131,11 @@ class TestBasic(object):
         # The methods have one of two base signatures:
         # (f, a, b, **kwargs)  # newton
         # (func, x0, **kwargs)  # bisect/brentq/...
-        sig = _getargspec(method)  # ArgSpec with args, varargs, varkw, defaults
-        nDefaults = len(sig[3])
-        nRequired = len(sig[0]) - nDefaults
-        sig_args_keys = sig[0][:nRequired]
+        sig = _getfullargspec(method)  # FullArgSpec with args, varargs, varkw, defaults, ...
+        assert_(not sig.kwonlyargs)
+        nDefaults = len(sig.defaults)
+        nRequired = len(sig.args) - nDefaults
+        sig_args_keys = sig.args[:nRequired]
         sig_kwargs_keys = []
         if name in ['secant', 'newton', 'halley']:
             if name in ['newton', 'halley']:
@@ -341,6 +341,25 @@ class TestBasic(object):
         x = zeros.newton(f1, x0, args=args)
         assert_allclose(x, x_expected)
 
+    def test_array_newton_complex(self):
+        def f(x):
+            return x + 1+1j
+
+        def fprime(x):
+            return 1.0
+
+        t = np.full(4, 1j)
+        x = zeros.newton(f, t, fprime=fprime)
+        assert_allclose(f(x), 0.)
+
+        # should work even if x0 is not complex
+        t = np.ones(4)
+        x = zeros.newton(f, t, fprime=fprime)
+        assert_allclose(f(x), 0.)
+
+        x = zeros.newton(f, t)
+        assert_allclose(f(x), 0.)
+
     def test_array_secant_active_zero_der(self):
         """test secant doesn't continue to iterate zero derivatives"""
         x = zeros.newton(lambda x, *a: x*x - a[0], x0=[4.123, 5],
@@ -428,7 +447,7 @@ class TestBasic(object):
         dfunc = lambda x: 2*x
         assert_warns(RuntimeWarning, zeros.newton, func, 0.0, dfunc, disp=False)
         with pytest.raises(RuntimeError, match='Derivative was zero'):
-            result = zeros.newton(func, 0.0, dfunc)
+            zeros.newton(func, 0.0, dfunc)
 
     def test_newton_does_not_modify_x0(self):
         # https://github.com/scipy/scipy/issues/9964
@@ -729,8 +748,8 @@ def test_gh9551_raise_error_if_disp_true():
 
     assert_warns(RuntimeWarning, zeros.newton, f, 1.0, f_p, disp=False)
     with pytest.raises(
-        RuntimeError,
-        match=r'^Derivative was zero\. Failed to converge after \d+ iterations, value is [+-]?\d*\.\d+\.$'):
-        result = zeros.newton(f, 1.0, f_p)
+            RuntimeError,
+            match=r'^Derivative was zero\. Failed to converge after \d+ iterations, value is [+-]?\d*\.\d+\.$'):
+        zeros.newton(f, 1.0, f_p)
     root = zeros.newton(f, complex(10.0, 10.0), f_p)
     assert_allclose(root, complex(0.0, 1.0))

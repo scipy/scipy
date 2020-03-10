@@ -1,8 +1,5 @@
-from __future__ import division, print_function, absolute_import
-
 import os
 import copy
-import pytest
 
 import numpy as np
 from numpy.testing import (assert_equal, assert_almost_equal,
@@ -299,7 +296,6 @@ class TestUtilities(object):
         # or, (ii) the centroid is in the simplex
 
         def barycentric_transform(tr, x):
-            ndim = tr.shape[1]
             r = tr[:,-1,:]
             Tinv = tr[:,:-1,:]
             return np.einsum('ijk,ik->ij', Tinv, x - r)
@@ -467,8 +463,8 @@ class TestDelaunay(object):
         yp = np.r_[y, y]
 
         # shouldn't fail on duplicate points
-        tri = qhull.Delaunay(np.c_[x, y])
-        tri2 = qhull.Delaunay(np.c_[xp, yp])
+        qhull.Delaunay(np.c_[x, y])
+        qhull.Delaunay(np.c_[xp, yp])
 
     def test_pathological(self):
         # both should succeed
@@ -850,7 +846,6 @@ class TestVoronoi:
         nregion = int(output[1][1])
         regions = [[int(y)-1 for y in x[1:]]
                    for x in output[2+nvertex:2+nvertex+nregion]]
-        nridge = int(output[2+nvertex+nregion][0])
         ridge_points = [[int(y) for y in x[1:3]]
                         for x in output[3+nvertex+nregion:]]
         ridge_vertices = [[int(y)-1 for y in x[3:]]

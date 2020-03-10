@@ -1,8 +1,6 @@
 """ Utility functions for sparse matrix module
 """
 
-from __future__ import division, print_function, absolute_import
-
 import sys
 import operator
 import warnings

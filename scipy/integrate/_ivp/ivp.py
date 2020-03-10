@@ -1,4 +1,3 @@
-from __future__ import division, print_function, absolute_import
 import inspect
 import numpy as np
 from .bdf import BDF

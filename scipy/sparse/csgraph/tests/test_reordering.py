@@ -1,9 +1,7 @@
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 from numpy.testing import assert_equal
 from scipy.sparse.csgraph import reverse_cuthill_mckee, structural_rank
-from scipy.sparse import diags, csc_matrix, csr_matrix, coo_matrix
+from scipy.sparse import csc_matrix, csr_matrix, coo_matrix
 
 
 def test_graph_reverse_cuthill_mckee():

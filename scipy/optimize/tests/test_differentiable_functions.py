@@ -1,4 +1,3 @@
-from __future__ import division, print_function, absolute_import
 import pytest
 import numpy as np
 from numpy.testing import (TestCase, assert_array_almost_equal,
@@ -359,7 +358,6 @@ class TestVectorialFunction(TestCase):
         njev = 0
 
         x0 = [1.0, 0.0]
-        v0 = [0.0, 1.0]
         analit = VectorFunction(ex.fun, x0, ex.jac, ex.hess, None, None,
                                 (-np.inf, np.inf), None)
         nfev += 1

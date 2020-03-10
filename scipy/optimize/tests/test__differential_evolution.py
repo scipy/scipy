@@ -12,6 +12,8 @@ from scipy.optimize import differential_evolution
 from scipy.optimize._constraints import (Bounds, NonlinearConstraint,
                                          LinearConstraint)
 from scipy.optimize import rosen
+from scipy.sparse import csr_matrix
+from scipy._lib._pep440 import Version
 
 import numpy as np
 from numpy.testing import (assert_equal, assert_allclose,
@@ -386,6 +388,22 @@ class TestDifferentialEvolutionSolver(object):
         assert_equal(result.x, result2.x)
         assert_equal(result.nfev, result2.nfev)
 
+    @pytest.mark.skipif(Version(np.__version__) < Version('1.17'),
+                        reason='Generator not available for numpy, < 1.17')
+    def test_random_generator(self):
+        # check that np.random.Generator can be used (numpy >= 1.17)
+        # obtain a np.random.Generator object
+        rng = np.random.default_rng()
+
+        inits = ['random', 'latinhypercube']
+        for init in inits:
+            differential_evolution(self.quadratic,
+                                   [(-100, 100)],
+                                   polish=False,
+                                   seed=rng,
+                                   tol=0.5,
+                                   init=init)
+
     def test_exp_runs(self):
         # test whether exponential mutation loop runs
         solver = DifferentialEvolutionSolver(rosen,
@@ -438,11 +456,11 @@ class TestDifferentialEvolutionSolver(object):
 
         # check a proper minimisation can be done by an iterable solver
         solver = DifferentialEvolutionSolver(rosen, self.bounds)
-        x_prev, fun_prev = next(solver)
+        _, fun_prev = next(solver)
         for i, soln in enumerate(solver):
             x_current, fun_current = soln
             assert(fun_prev >= fun_current)
-            x_prev, fun_prev = x_current, fun_current
+            _, fun_prev = x_current, fun_current
             # need to have this otherwise the solver would never stop.
             if i == 50:
                 break
@@ -522,9 +540,7 @@ class TestDifferentialEvolutionSolver(object):
                 return np.inf
             return x[1]
         bounds = [(0, 1), (0, 1)]
-        x_fit = differential_evolution(sometimes_inf,
-                                       bounds=[(0, 1), (0, 1)],
-                                       disp=False)
+        differential_evolution(sometimes_inf, bounds=bounds, disp=False)
 
     def test_deferred_updating(self):
         # check setting of deferred updating, with default workers
@@ -740,6 +756,11 @@ class TestDifferentialEvolutionSolver(object):
         assert (pc.violation(x0) > 0).any()
         assert (pc.violation([-10, 2, -10, 4]) == 0).all()
 
+        pc = _ConstraintWrapper(LinearConstraint(csr_matrix(A), -np.inf, 0),
+                                x0)
+        assert (pc.violation(x0) > 0).any()
+        assert (pc.violation([-10, 2, -10, 4]) == 0).all()
+
         def fun(x):
             return A.dot(x)
 
@@ -794,6 +815,24 @@ class TestDifferentialEvolutionSolver(object):
 
         x_opt = (1, 1, 1, 1, 1, 1, 1, 1, 1, 3, 3, 3, 1)
         f_opt = -15
+
+        assert_allclose(f(x_opt), f_opt)
+        assert res.success
+        assert_allclose(res.x, x_opt, atol=5e-4)
+        assert_allclose(res.fun, f_opt, atol=5e-3)
+        assert_(np.all(A@res.x <= b))
+        assert_(np.all(res.x >= np.array(bounds)[:, 0]))
+        assert_(np.all(res.x <= np.array(bounds)[:, 1]))
+
+        # now repeat the same solve, using the same overall constraints,
+        # but using a sparse matrix for the LinearConstraint instead of an
+        # array
+
+        L = LinearConstraint(csr_matrix(A), -np.inf, b)
+
+        # using a lower popsize to speed the test up
+        res = differential_evolution(f, bounds, strategy='best1bin', seed=1234,
+                                     constraints=(L), popsize=2)
 
         assert_allclose(f(x_opt), f_opt)
         assert res.success

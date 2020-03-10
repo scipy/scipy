@@ -1,8 +1,6 @@
 #
 # Created by: Pearu Peterson, April 2002
 #
-from __future__ import division, print_function, absolute_import
-
 
 __usage__ = """
 Build linalg:
@@ -23,8 +21,7 @@ from numpy import float32, float64, complex64, complex128, arange, triu, \
                   nonzero
 
 from numpy.random import rand, seed
-from scipy.linalg import _fblas as fblas, get_blas_funcs, toeplitz, solve, \
-                                          solve_triangular
+from scipy.linalg import _fblas as fblas, get_blas_funcs, toeplitz, solve
 
 try:
     from scipy.linalg import _cblas as cblas

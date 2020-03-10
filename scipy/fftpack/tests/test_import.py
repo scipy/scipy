@@ -10,7 +10,6 @@ on one version of Python.
 """
 
 
-import sys
 from pathlib import Path
 import re
 import tokenize

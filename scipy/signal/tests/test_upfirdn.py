@@ -32,7 +32,6 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-from copy import copy
 import numpy as np
 from itertools import product
 

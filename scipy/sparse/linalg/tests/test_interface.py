@@ -1,8 +1,6 @@
 """Test functions for the sparse.linalg.interface module
 """
 
-from __future__ import division, print_function, absolute_import
-
 from functools import partial
 from itertools import product
 import operator
@@ -426,7 +424,7 @@ def test_no_double_init():
 
     # It should call matvec exactly once (in order to determine the
     # operator dtype)
-    A = interface.LinearOperator((2, 2), matvec=matvec)
+    interface.LinearOperator((2, 2), matvec=matvec)
     assert_equal(call_count[0], 1)
 
 def test_adjoint_conjugate():

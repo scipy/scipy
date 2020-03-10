@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 from os.path import join
 from scipy._build_utils import numpy_nodepr_api
 

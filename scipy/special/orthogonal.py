@@ -74,8 +74,6 @@ References
 # Author:  Travis Oliphant 2000
 # Updated Sep. 2003 (fixed bugs --- tested to be accurate)
 
-from __future__ import division, print_function, absolute_import
-
 # SciPy imports.
 import numpy as np
 from numpy import (exp, inf, pi, sqrt, floor, sin, cos, around, int,
@@ -2190,6 +2188,9 @@ def sh_legendre(n, monic=False):
 # module directly. (They shouldn't be; it's not in the public API).
 poch = cephes.poch
 
+# eval_chebyu, eval_sh_chebyt and eval_sh_chebyu: These functions are not
+# used in orthogonal.py, they are not in _rootfuns_map, but their names
+# do appear in _evalfuns, so they must be kept.
 from ._ufuncs import (binom, eval_jacobi, eval_sh_jacobi, eval_gegenbauer,
                       eval_chebyt, eval_chebyu, eval_chebys, eval_chebyc,
                       eval_sh_chebyt, eval_sh_chebyu, eval_legendre,

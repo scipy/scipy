@@ -73,8 +73,6 @@ computing the distances between all pairs.
 
 # Copyright (C) Damian Eads, 2007-2008. New BSD License.
 
-from __future__ import division, print_function, absolute_import
-
 __all__ = [
     'braycurtis',
     'canberra',
@@ -366,7 +364,7 @@ def directed_hausdorff(u, v, seed=0):
     v : (O,N) ndarray
         Input array.
     seed : int or None
-        Local `numpy.random.mtrand.RandomState` seed. Default is 0, a random
+        Local `numpy.random.RandomState` seed. Default is 0, a random
         shuffling of u and v that guarantees reproducibility.
 
     Returns

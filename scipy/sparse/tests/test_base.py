@@ -8,8 +8,6 @@ class for generic tests" section.
 
 """
 
-from __future__ import division, print_function, absolute_import
-
 __usage__ = """
 Build sparse:
   python setup.py build
@@ -41,7 +39,7 @@ import scipy.linalg
 import scipy.sparse as sparse
 from scipy.sparse import (csc_matrix, csr_matrix, dok_matrix,
         coo_matrix, lil_matrix, dia_matrix, bsr_matrix,
-        eye, isspmatrix, SparseEfficiencyWarning, issparse)
+        eye, isspmatrix, SparseEfficiencyWarning)
 from scipy.sparse.sputils import (supported_dtypes, isscalarlike,
                                   get_index_dtype, asmatrix, matrix)
 from scipy.sparse.linalg import splu, expm, inv
@@ -58,6 +56,28 @@ def assert_in(member, collection, msg=None):
 def assert_array_equal_dtype(x, y, **kwargs):
     assert_(x.dtype == y.dtype)
     assert_array_equal(x, y, **kwargs)
+
+
+NON_ARRAY_BACKED_FORMATS = frozenset(['dok'])
+
+def sparse_may_share_memory(A, B):
+    # Checks if A and B have any numpy array sharing memory.
+
+    def _underlying_arrays(x):
+        # Given any object (e.g. a sparse array), returns all numpy arrays
+        # stored in any attribute.
+
+        arrays = []
+        for a in x.__dict__.values():
+            if isinstance(a, (np.ndarray, np.generic)):
+                arrays.append(a)
+        return arrays
+
+    for a in _underlying_arrays(A):
+        for b in _underlying_arrays(B):
+            if np.may_share_memory(a, b):
+                return True
+    return False
 
 
 # Only test matmul operator (A @ B) when available (Python 3.5+)
@@ -219,7 +239,6 @@ class BinopTester_with_shape(object):
 #------------------------------------------------------------------------------
 
 
-# TODO check that spmatrix( ... , copy=X ) is respected
 # TODO test prune
 # TODO test has_sorted_indices
 class _TestCommon(object):
@@ -1855,26 +1874,13 @@ class _TestCommon(object):
 
         # check that XXX_matrix.toXXX() works
         toself = getattr(A,'to' + A.format)
-        assert_equal(toself().format, A.format)
+        assert_(toself() is A)
+        assert_(toself(copy=False) is A)
         assert_equal(toself(copy=True).format, A.format)
-        assert_equal(toself(copy=False).format, A.format)
-
-        assert_equal(toself().todense(), A.todense())
         assert_equal(toself(copy=True).todense(), A.todense())
-        assert_equal(toself(copy=False).todense(), A.todense())
 
         # check whether the data is copied?
-        # TODO: deal with non-indexable types somehow
-        B = A.copy()
-        try:
-            B[0,0] += 1
-            assert_(B[0,0] != A[0,0])
-        except NotImplementedError:
-            # not all sparse matrices can be indexed
-            pass
-        except TypeError:
-            # not all sparse matrices can be indexed
-            pass
+        assert_(not sparse_may_share_memory(A.copy(), A))
 
     # test that __iter__ is compatible with NumPy matrix
     def test_iterator(self):
@@ -2033,6 +2039,39 @@ class _TestCommon(object):
 
         for bad_shape in [1, (-1, 2), (2, -1), (1, 2, 3)]:
             assert_raises(ValueError, S.resize, bad_shape)
+
+    def test_constructor1_base(self):
+        A = self.datsp
+
+        self_format = A.format
+
+        C = A.__class__(A, copy=False)
+        assert_array_equal_dtype(A.todense(), C.todense())
+        if self_format not in NON_ARRAY_BACKED_FORMATS:
+            assert_(sparse_may_share_memory(A, C))
+
+        C = A.__class__(A, dtype=A.dtype, copy=False)
+        assert_array_equal_dtype(A.todense(), C.todense())
+        if self_format not in NON_ARRAY_BACKED_FORMATS:
+            assert_(sparse_may_share_memory(A, C))
+
+        C = A.__class__(A, dtype=np.float32, copy=False)
+        assert_array_equal(A.todense(), C.todense())
+
+        C = A.__class__(A, copy=True)
+        assert_array_equal_dtype(A.todense(), C.todense())
+        assert_(not sparse_may_share_memory(A, C))
+
+        for other_format in ['csr', 'csc', 'coo', 'dia', 'dok', 'lil']:
+            if other_format == self_format:
+                continue
+            B = A.asformat(other_format)
+            C = A.__class__(B, copy=False)
+            assert_array_equal_dtype(A.todense(), C.todense())
+
+            C = A.__class__(B, copy=True)
+            assert_array_equal_dtype(A.todense(), C.todense())
+            assert_(not sparse_may_share_memory(B, C))
 
 
 class _TestInplaceArithmetic(object):

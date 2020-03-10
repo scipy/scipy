@@ -15,8 +15,6 @@ Also check that the number of tests run is larger than some baseline number
 This probably could/should be made less brittle.
 
 """
-from __future__ import print_function
-
 import sys
 import re
 

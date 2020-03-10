@@ -8,8 +8,6 @@
 # Modified: Ilhan Polat <ilhanpolat@gmail.com>
 # September 13, 2016
 
-from __future__ import division, print_function, absolute_import
-
 import warnings
 import numpy as np
 from numpy.linalg import inv, LinAlgError, norm, cond, svd

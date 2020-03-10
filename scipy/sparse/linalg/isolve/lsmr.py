@@ -16,8 +16,6 @@ Dept of MS&E, Stanford University.
 
 """
 
-from __future__ import division, print_function, absolute_import
-
 __all__ = ['lsmr']
 
 from numpy import zeros, infty, atleast_1d, result_type

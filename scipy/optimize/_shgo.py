@@ -2,8 +2,6 @@
 shgo: The simplicial homology global optimisation algorithm
 """
 
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 import time
 import logging
@@ -45,7 +43,7 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
         Constraints definition.
         Function(s) ``R**n`` in the form::
 
-            g(x) <= 0 applied as g : R^n -> R^m
+            g(x) >= 0 applied as g : R^n -> R^m
             h(x) == 0 applied as h : R^n -> R^p
 
         Each constraint is defined in a dictionary with fields:
@@ -1332,7 +1330,7 @@ class SHGO(object):
 
         for j in range(1, D):
             F_int = [int(item) for item in next(f).strip().split()]
-            (d, s, a), m = F_int[:3], [0] + F_int[3:]
+            (_, s, a), m = F_int[:3], [0] + F_int[3:]
 
             if L <= s:
                 for i in range(1, L + 1):

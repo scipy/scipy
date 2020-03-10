@@ -17,8 +17,6 @@ which has a similar API.
 
 """
 
-from __future__ import division, print_function, absolute_import
-
 # TODO:
 # * properly implement ``_FillValue``.
 # * fix character variables.

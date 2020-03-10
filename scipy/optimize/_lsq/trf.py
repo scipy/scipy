@@ -93,8 +93,6 @@ References
 .. [JJMore] More, J. J., "The Levenberg-Marquardt Algorithm: Implementation
     and Theory," Numerical Analysis, ed. G. A. Watson, Lecture
 """
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 from numpy.linalg import norm
 from scipy.linalg import svd, qr
@@ -352,10 +350,6 @@ def trf_bounds(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev,
             else:
                 cost_new = 0.5 * np.dot(f_new, f_new)
             actual_reduction = cost - cost_new
-            # Correction term is specific to the algorithm,
-            # vanishes in unbounded case.
-            correction = 0.5 * np.dot(step_h * diag_h, step_h)
-
             Delta_new, ratio = update_tr_radius(
                 Delta, actual_reduction, predicted_reduction,
                 step_h_norm, step_h_norm > 0.95 * Delta)
