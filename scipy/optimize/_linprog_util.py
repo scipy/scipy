@@ -1074,6 +1074,7 @@ def _get_Abc(lp, c0, undo=[]):
     # required modifications from inside here.
 
     # unbounded below: substitute xi = -xi' (unbounded above)
+    # if -inf <= xi <= ub, then -ub <= -xi <= inf, so swap and invert bounds
     l_nolb_someub = np.logical_and(lb_none, ub_some)
     i_nolb = np.nonzero(l_nolb_someub)[0]
     lbs[l_nolb_someub], ubs[l_nolb_someub] = (
