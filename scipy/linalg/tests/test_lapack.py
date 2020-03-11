@@ -1880,9 +1880,7 @@ def test_pttrf_pttrs_errors_singular_nonSPD(ddtype, dtype):
     # test with non-spd matrix
     d = generate_random_dtype_array((n,), ddtype)
     _d, _e, info = pttrf(d, e)
-    assert_(norm(d[info-1]) < (2 * np.linalg.norm(e[info-1])),
-            "d{} shouldn't be positive definite, (d should < e), but is: {}, {} "
-            .format(info, np.linalg.norm(d[info-1]), np.linalg.norm(e[info-1])))
+    assert_(info != 0, "?pttrf should fail with non-spd matrix, but didn't")
 
 
 @pytest.mark.parametrize(("d, e, d_expect, e_expect, b, x_expect"), [
