@@ -4,8 +4,6 @@ language: python
 addons:
   apt:
     packages: &common_packages
-    - libatlas-base-dev
-    - liblapack-dev
     - gfortran
     - libgmp-dev
     - libmpfr-dev
@@ -127,6 +125,9 @@ before_install:
     if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
       free -m
       export PATH=/usr/lib/ccache:$PATH
+      target=$(python tools/openblas_support.py)
+      sudo cp -r $target/lib/* /usr/lib
+      sudo cp $target/include/* /usr/include
     elif [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
       brew cask uninstall oclint
       brew install ccache libmpc gcc@6
