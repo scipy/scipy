@@ -1,33 +1,50 @@
 #ifndef CKDTREE_PARTIAL_SORT
 #define CKDTREE_PARTIAL_SORT
 
-/* Adapted version of the code originally 
+/* Adapted version of the code originally
  * written by @jiefangxuanyan for scikit-learn.
  *
  */
 
-
 #include <algorithm>
 
 struct IndexComparator {
+
     const double *data;
-    ckdtree_intp_t split_dim, n_dims;
+    ckdtree_intp_t split_dim;
+    ckdtree_intp_t n_dims;
+
+    IndexComparator(const double *data,
+                    ckdtree_intp_t split_dim,
+                    ckdtree_intp_t n_dims) :
+                                            data(data),
+                                            split_dim(split_dim),
+                                            n_dims(n_dims) {};
 
     inline bool operator()(ckdtree_intp_t a, ckdtree_intp_t b) {
-        return data[a * n_dims + split_dim]
-               < data[b * n_dims + split_dim];
+        if (data[a * n_dims + split_dim] == data[b * n_dims + split_dim]) {
+            return a < b;
+        }
+        else {
+            return data[a * n_dims + split_dim] < data[b * n_dims + split_dim];
+        }
     }
 };
 
-static int partition_node_indices(const double *data,
-                           ckdtree_intp_t *node_indices,
-                           ckdtree_intp_t split_dim,
-                           ckdtree_intp_t split_index,
-                           ckdtree_intp_t n_dims,
-                           ckdtree_intp_t n_points) {
+/*
+ * Partition points in the node into two groups.
+ *
+ */
 
-    /* Partition points in the node into two equal-sized groups
-     * Upon return, the values in node_indices will be rearranged such that
+static int
+partition_node_indices(const double   *data,
+                       ckdtree_intp_t *node_indices,
+                       ckdtree_intp_t split_dim,
+                       ckdtree_intp_t split_index,
+                       ckdtree_intp_t n_dims,
+                       ckdtree_intp_t n_points) {
+
+    /* Upon return, the values in node_indices will be rearranged such that
      * (assuming numpy-style indexing):
      *
      *   data[node_indices[0:split_index], split_dim]
@@ -38,9 +55,9 @@ static int partition_node_indices(const double *data,
      *   data[node_indices[split_index], split_dim]
      *     <= data[node_indices[split_index:n_points], split_dim]
      *
-     * This is eassentially a wrapper around the standard C++ function 
+     * This is eassentially a wrapper around the standard C++ function
      * ``std::nth_element``.
-     * 
+     *
      *
      * Parameters
      * ----------
@@ -64,16 +81,13 @@ static int partition_node_indices(const double *data,
      *    modified as noted above.
      */
 
-    IndexComparator index_comparator;
-
-    index_comparator.data = data;
-    index_comparator.split_dim = split_dim;
-    index_comparator.n_dims = n_dims;
+    IndexComparator index_comparator(data, split_dim, n_dims);
 
     std::nth_element(node_indices,
                      node_indices + split_index,
                      node_indices + n_points,
                      index_comparator);
+
     return 0;
 }
 
