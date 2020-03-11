@@ -10,24 +10,26 @@
 # Implementation Overview:
 #
 # So far, only non-negative values of rho=a, beta=b and z=x are implemented.
-# There are 4 different approaches depending on the ranges of the arguments.
-# 1. Taylor series expansion in x=0 [1]. Suited for x <= 1. Involves gamma
-#    funtion in each term.
-# 2. Taylor series expansion in x=0 [1] suitable for large a.
-# 3. Taylor series in a=0. Suited for tiny a and not too large x.
-# 4. Asymptotic expansion for large x [2, 3]. Suited for large x while still
-#    small a and b.
-# 5. Integral representation [4]. Suited for all arguments.
+# There are 5 different approaches depending on the ranges of the arguments.
+# 1. Taylor series expansion in x=0 [1], for x <= 1.
+#    Involves gamma funtions in each term.
+# 2. Taylor series expansion in x=0 [2], for large a.
+# 3. Taylor series in a=0, for tiny a and not too large x.
+# 4. Asymptotic expansion for large x [3, 4].
+#    Suitable for large x while still small a and b.
+# 5. Integral representation [5], in principle for all arguments.
 #
 # References:
 # [1] https://dlmf.nist.gov/10.46.E1
-# [2] E. M. Wright (1935), The asymptotic expansion of the generalized Bessel
+# [2] P. K. Dunn, G. K. Smyth (2005), Series evaluation of Tweedie exponential
+#     dispersion model densities. Statistics and Computing 15 (2005): 267-280.
+# [3] E. M. Wright (1935), The asymptotic expansion of the generalized Bessel
 #     function. Proc. London Math. Soc. (2) 38, pp. 257–270.
 #     https://doi.org/10.1112/plms/s2-38.1.257
-# [3] R. B. Paris (2017), The asymptotics of the generalised Bessel function,
+# [4] R. B. Paris (2017), The asymptotics of the generalised Bessel function,
 #     Mathematica Aeterna, Vol. 7, 2017, no. 4, 381 - 406,
 #     https://arxiv.org/abs/1711.03006
-# [4] Y. F. Luchko (2008), Algorithms for Evaluation of the Wright Function for
+# [5] Y. F. Luchko (2008), Algorithms for Evaluation of the Wright Function for
 #     the Real Arguments’ Values, Fractional Calculus and Applied Analysis 11(1)
 #     http://sci-gems.math.bas.bg/jspui/bitstream/10525/1298/1/fcaa-vol11-num1-2008-57p-75p.pdf
 
@@ -55,7 +57,7 @@ DEF exp_inf = 709.78271289338403
 # DEF exp_zero = -745.13321910194117
 
 
-# 1. Tylor series expansion in x=0
+# 1. Taylor series expansion in x=0, for x <= 1
 #    Phi(a, b, x) = sum_k x^k / k! / Gamma(a*k+b)
 #
 # Note that every term, and therefore also Phi(a, b, x), is monotone decreasing
@@ -82,7 +84,7 @@ cdef inline double _wb_series(double a, double b, double x,
     return res
 
 
-# 2. Tylor series expansion in x=0 suitable for large a
+# 2. Taylor series expansion in x=0, for large a.
 #    Phi(a, b, x) = sum_k x^k / k! / Gamma(a*k+b)
 #
 #    Use Stirling formula to find k=k_max, the maximum term.
@@ -108,20 +110,15 @@ cdef inline double _wb_large_a(double a, double b, double x,
     return res
 
 
-# 3. Tylor series expansion in a=0 up to order 2
+# 3. Taylor series in a=0 up to order 5, for tiny a and not too large x
+# Phi(a, b, x) = exp(x)/Gamma(b)
+#               * (1 - a*x*Psi(b) + a^2/2*x*(1+x)(Psi(b)^2 - Psi'(b)) + O(a^3))
+# where Psi is the digamma function.
+# Call: python _precompute/wright_bessel.py 1
 #
-# import sympy
-# from sympy import S, Sum, factorial, gamma, symbols
-# a, b, z, k = symbols("a b z k")
-# expression = Sum(z**k/factorial(k)/gamma(a*k+b), (k, 0, S.Infinity))
-# # nth term
-# n = 1
-# expression.diff(a, n).subs(a, 0).simplify().doit()
-#
-#    Phi(a, b, x) = exp(z)/Gamma(b)
-#                   * (1 - a*z*Psi(b) + a^2/2*z(1+z)(Psi(b)^2 - Psi'(b))
-#                      + O(a^3))
-#    where Psi is the digamma function.
+# For small b, cancellation of poles of digamma(b)/Gamma(b) and polygamma needs
+# to be carried out => series expansion in a and b around 0 to order 5.
+# Call: python _precompute/wright_bessel.py 2
 @cython.cdivision(True)
 cdef inline double _wb_small_a(double a, double b, double x, int order) nogil:
     cdef:
@@ -132,21 +129,12 @@ cdef inline double _wb_small_a(double a, double b, double x, int order) nogil:
         int k
 
     if b <= 1e-3:
-        # Small b need a series expansion of digamma(b)/Gamma(b) as both have
-        # poles 1/b that cancel out.
-        # digamma(b)/Gamma(b) = −1 − 2*M_EG*b + O(b^2)
-        # digamma(b)^2/Gamma(b) = 1/b + 3*M_EG + b*(−5/12*PI^2+7/2*M_EG^2)
-        #                         + O(b^2)
-        # polygamma(1, b)/Gamma(b) = 1/b + M_EG + b*(1/12*PI^2 + 1/2*M_EG^2)
-        #                            + O(z)
-        # and so on
-        #
         # Series expansion of both a and b up to order 5:
         C[0] = 1
         C[1] = 2*M_EG
         C[2] = 3*M_EG**2 - M_PI**2/2
-        C[3] = 8*M_Z3 + 4*M_EG**3 - 2*M_EG*M_PI**2
-        C[4] = 40*M_EG*M_Z3 + 5*M_EG**4 - 5*M_EG**2*M_PI**2 + M_PI**4/12
+        C[3] = 4*M_EG**3 - 2*M_EG*M_PI**2 + 8*M_Z3
+        C[4] = 5*M_EG**4 - 5*M_EG**2*M_PI**2 + 40*M_EG*M_Z3 + M_PI**4/12
         A[0] = 1.
         B[0] = 1.
         for k in range(1, 5):
@@ -179,52 +167,11 @@ cdef inline double _wb_small_a(double a, double b, double x, int order) nogil:
     return res
 
 
-# 4. Asymptotic expansion for large x
-#    Phi(a, b, x) ~ Z^(1/2-b) * exp((1+a)/a * Z) * sum_k (-1)^k * a_k / Z^k
-#    with Z = (a*x)**(1/(1+a)).
+# 4. Asymptotic expansion for large x up to order 6
+#    Phi(a, b, x) ~ Z^(1/2-b) * exp((1+a)/a * Z) * sum_k (-1)^k * C_k / Z^k
+#    with Z = (a*x)^(1/(1+a)).
 #
-# Wright (1935) lists the coefficients a_0 and a_1. With slightly different
-# notation, Paris (2017) lists coefficients c_k up to order k=3.
-# Paris (2017) uses ZP = (1+a)/a * Z  (ZP = Z of Paris) and
-# a_k = a_0 * (-a/(1+a))^k c_k
-#
-# The coefficients a_k can be generated with the following code:
-#
-# import sympy
-# from sympy import factorial, gamma, gammasimp, pi, symbols, Function, Rational
-# class g(Function):
-#     nargs = 3
-#
-#     @classmethod
-#     def eval(cls, n, rho, v):
-#         if not n >= 0:
-#             raise ValueError("must have n >= 0")
-#
-#         if n == 0:
-#             return 1
-#         else:
-#             return g(n-1, rho,v) + gammasimp(gamma(rho+2+n)/gamma(rho+2)) \
-#                                  / gammasimp(gamma(3+n)/gamma(3))*v**n
-#
-# class a(Function):
-#     nargs = 3
-#
-#     @classmethod
-#     def eval(cls, m, rho, beta):
-#         if not m >= 0:
-#             raise ValueError("must have m >= 0")
-#
-#         v = symbols("v")
-#         expression = (1-v)**(-beta) * g(2*m, rho, v)**(-m-Rational(1, 2))
-#         res = expression.diff(v, 2*m).subs(v, 0) / factorial(2*m)
-#         res = res * (gamma(m + Rational(1, 2)) / (2*pi) \
-#                      * (2/(rho+1))**(m + Rational(1, 2)))
-#         return res
-#
-# m, rho, beta = symbols("m rho beta")
-# a0 = a(0, rho, beta)
-# a1 = a(1, rho, beta)
-#
+# Call: python _precompute/wright_bessel.py 3
 @cython.cdivision(True)
 cdef inline double _wb_asymptotic(double a, double b, double x) nogil:
     cdef:
@@ -251,20 +198,19 @@ cdef inline double _wb_asymptotic(double a, double b, double x) nogil:
     C[1] *= (2*a + 1)*(2 + a) - 12*b*(1 + a - b)
 
     C[2] = C[0] / (1152 * Ap1[2])
-    C[2] *= ((2 + a)*(1 + 2*a)*(2 - 19*a + 2*A[2]) \
-            + 24*b*Ap1[1]*(2 + 7*a - 6*A[2]) \
-            - 24*B[2]*(4 - 5*a - 20*A[2]) - 96*B[3]*(1 + 5*a) + 144*B[4])
+    C[2] *= 144*B[4] - 96*B[3]*(5*a + 1) + 24*B[2]*(20*A[2] + 5*a - 4) \
+            - 24*b*Ap1[1]*(6*A[2] - 7*a - 2) \
+            + (a + 2)*(2*a + 1)*(2*A[2] - 19*a + 2)
 
-    C[3] = -C[0] / (414720*Ap1[3])
-    C[3] *= (2 + a)*(1 + 2*a)*(556 + 1628*a - 9093*A[2] + 1628*A[3] \
-                               + 556*A[4]) \
-            - 180*b*Ap1[1]*(12 - 172*a - 417*A[2] + 516*A[3] - 20*A[4]) \
-            - 180*B[2]*(76 + 392*a - 567*A[2] - 1288*A[3] + 364*A[4]) \
-            + 1440*B[3]*(8 - 63*a - 147*A[2] + 112*A[3]) \
-            + 10800*B[4]*(2 + 7*a - 14*A[2]) \
-            - 8640*B[5]*(1 - 7*a) - 8640*B[6]
+    C[3] = C[0] / (414720 * Ap1[3])
+    C[3] *= 8640*B[6] - 8640*B[5]*(7*a - 1) + 10800*B[4]*(14*A[2] - 7*a - 2) \
+            - 1440*B[3]*(112*A[3] - 147*A[2] - 63*a + 8) \
+            + 180*B[2]*(364*A[4] - 1288*A[3] - 567*A[2] + 392*a + 76) \
+            - 180*b*Ap1[1]*(20*A[4] - 516*A[3] + 417*A[2] + 172*a - 12) \
+            - (a + 2)*(2*a + 1)*(556*A[4] + 1628*A[3] - 9093*A[2] + 1628*a \
+                                 + 556)
 
-    C[4] = C[0] / (39813120*Ap1[4])
+    C[4] = C[0] / (39813120 * Ap1[4])
     C[4] *= 103680*B[8] - 414720*B[7]*(3*a - 1) + 725760*B[6]*a*(8*a - 7) \
             - 48384*B[5]*(274*A[3] - 489*A[2] + 39*a + 26) \
             + 30240*B[4]*(500*A[4] - 1740*A[3] + 495*A[2] + 340*a - 12) \
@@ -275,10 +221,9 @@ cdef inline double _wb_asymptotic(double a, double b, double x) nogil:
             + 48*b*Ap1[1]*(7784*A[6] + 48180*A[5] - 491202*A[4] + 336347*A[3] \
                            + 163734*A[2] - 28908*a - 5560) \
             - (a + 2)*(2*a + 1)*(4568*A[6] - 226668*A[5] - 465702*A[4] \
-                                 + 2013479*A[3] - 465702*A[2] - 226668*a \
-                                 + 4568)
+                       + 2013479*A[3] - 465702*A[2] - 226668*a + 4568)
 
-    C[5] = C[0] / (6688604160.*Ap1[5])
+    C[5] = C[0] / (6688604160. * Ap1[5])
     C[5] *= 1741824*B[10] - 2903040*B[9]*(11*a - 5) \
             + 2177280*B[8]*(110*A[2] - 121*a + 14) \
             - 580608*B[7]*(1628*A[3] - 3333*A[2] + 1023*a + 52) \
@@ -299,15 +244,15 @@ cdef inline double _wb_asymptotic(double a, double b, double x) nogil:
                            + 15879912*A[2] + 4020640*a - 63952) \
             + (a + 2)*(2*a + 1)*(2622064*A[8] + 12598624*A[7] \
                                  - 167685080*A[6] - 302008904*A[5] \
-                                 + 1115235367*A[4] - 302008904*A[3] \
+                                 + 1115235367.*A[4] - 302008904*A[3] \
                                  - 167685080*A[2] + 12598624*a + 2622064)
 
-    C[6] = C[0] / (4815794995200.*Ap1[6])
+    C[6] = C[0] / (4815794995200. * Ap1[6])
     C[6] *= 104509440*B[12] - 209018880*B[11]*(13*a - 7) \
             + 574801920*B[10]*(52*A[2] - 65*a + 12) \
             - 63866880*B[9]*(2834*A[3] - 6279*A[2] + 2769*a - 134) \
-            + 23950080*B[8]*(27404*A[4] - 98228*A[3] + 78663*A[2] \
-                             - 10868*a - 1012) \
+            + 23950080*B[8]*(27404*A[4] - 98228*A[3] + 78663*A[2] - 10868*a \
+                             - 1012) \
             - 13685760*B[7]*(105612*A[5] - 599196*A[4] + 791843*A[3] \
                              - 224913*A[2] - 27612*a + 4540) \
             + 2661120*B[6]*(693680*A[6] - 6473532*A[5] + 13736424*A[4] \
@@ -320,18 +265,18 @@ cdef inline double _wb_asymptotic(double a, double b, double x) nogil:
                            - 20365384*A[2] - 9776416*a + 37936) \
             + 10080*B[3]*(18759728*A[9] + 165932208*A[8] - 4710418440.*A[7] \
                           + 13686052536.*A[6] - 5456818809.*A[5] \
-                          - 6834514245.*A[4] + 1919299512*A[3] + 752176152*A[2] \
-                          - 45661200*a - 8616848) \
+                          - 6834514245.*A[4] + 1919299512.*A[3] \
+                          + 752176152*A[2] - 45661200*a - 8616848) \
             - 360*B[2]*(32743360*A[10] - 3381871792.*A[9] - 21488827776.*A[8] \
                         + 200389923864.*A[7] - 198708005340.*A[6] \
                         - 171633799779.*A[5] + 123124874028.*A[4] \
-                        + 40072774872.*A[3] - 9137993280.*A[2] - 1895843248*a \
-                        + 18929728) \
-            - 360*b*Ap1[1]*(57685408*A[10] + 406929456*A[9] - 6125375760.*A[8] \
-                            - 27094918920.*A[7] + 128752249410.*A[6] \
-                            - 74866710561.*A[5] - 42917416470.*A[4] \
-                            + 16256951352.*A[3] + 4375268400.*A[2] \
-                            - 316500688*a - 47197152) \
+                        + 40072774872.*A[3] - 9137993280.*A[2] \
+                        - 1895843248.*a + 18929728) \
+            - 360*b*Ap1[1]*(57685408*A[10] + 406929456*A[9] \
+                            - 6125375760.*A[8] - 27094918920.*A[7] \
+                            + 128752249410.*A[6] - 74866710561.*A[5] \
+                            - 42917416470.*A[4] + 16256951352.*A[3] \
+                            + 4375268400.*A[2] - 316500688*a - 47197152) \
             + (a + 2)*(2*a + 1)*(167898208*A[10] - 22774946512.*A[9] \
                                  - 88280004528.*A[8] + 611863976472.*A[7] \
                                  + 1041430242126.*A[6] - 3446851131657.*A[5] \
