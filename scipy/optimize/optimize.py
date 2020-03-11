@@ -570,7 +570,7 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
         `maxiter` and `maxfev` are set, minimization will stop at the
         first reached.
     return_all : bool, optional
-        Set to True to return list of the best solution at each of the
+        Set to True to return a list of the best solution at each of the
         iterations.
     initial_simplex : array_like of shape (N + 1, N)
         Initial simplex. If given, overrides `x0`.
@@ -1075,7 +1075,7 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
         If `jac is None` the absolute step size used for numerical
         approximation of the jacobian via forward differences.
     return_all : bool, optional
-        Set to True to return list of the best solution at each of the
+        Set to True to return a list of the best solution at each of the
         iterations.
     finite_diff_rel_step : None or array_like, optional
         If `jac in ['2-point', '3-point', 'cs']` the relative step size to
@@ -1399,7 +1399,7 @@ def _minimize_cg(fun, x0, args=(), jac=None, callback=None,
         If `jac is None` the absolute step size used for numerical
         approximation of the jacobian via forward differences.
     return_all : bool, optional
-        Set to True to return list of the best solution at each of the
+        Set to True to return a list of the best solution at each of the
         iterations.
     finite_diff_rel_step : None or array_like, optional
         If `jac in ['2-point', '3-point', 'cs']` the relative step size to
@@ -1664,7 +1664,7 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
     eps : float or ndarray
         If `hessp` is approximated, use this value for the step size.
     return_all : bool, optional
-        Set to True to return list of the best solution at each of the
+        Set to True to return a list of the best solution at each of the
         iterations.
     """
     _check_unknown_options(unknown_options)
@@ -2724,7 +2724,7 @@ def _minimize_powell(func, x0, args=(), callback=None,
     direc : ndarray
         Initial set of direction vectors for the Powell method.
     return_all : bool, optional
-        Set to True to return list of the best solution at each of the
+        Set to True to return a list of the best solution at each of the
         iterations.
 
     """
