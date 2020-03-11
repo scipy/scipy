@@ -18,14 +18,15 @@ subroutine <prefix>pttrf(n, d, e, info)
     ! d, e, info  = pttrf(d, e, overwrite_d=0, overwrite_e=0)
     !
     ! ?PTTRF computes the L*D*L**T factorization of a symmetric positive
-    ! definite tridiagonal matrix A.  The factorization may also be regarded as ! having the form A = U**T*D*U.
+    ! definite tridiagonal matrix A.  The factorization may also be regarded
+    ! as ! having the form A = U**T*D*U.
 
     callstatement (*f2py_func)(&n, d, e, &info)
     callprotoargument int*, <ctypereal>*, <ctype>*, int*
 
-    integer intent(hide), depend(d), check(n > 1) :: n = len(d)
+    integer intent(hide), depend(d) :: n = len(d)
     <ftypereal> intent(in, out, copy), dimension(n) :: d
-    <ftype> intent(in, out, copy), dimension(n - 1), depend(n) :: e
+    <ftype> intent(in, out, copy), dimension((n>0?n-1:0)) :: e
     integer intent(out) :: info
 
 end subroutine <prefix>pttrf
@@ -46,19 +47,19 @@ subroutine <prefix2>pttrs(n, nrhs, d, e, b, ldb, info)
     callstatement (*f2py_func)(&n, &nrhs, d, e, b, &ldb, &info)
     callprotoargument int*, int*, <ctype2>*, <ctype2>*, <ctype2>*, int*, int*
 
-    integer intent(hide), depend(d), check(n > 1) :: n = len(d)
+    integer intent(hide), depend(d) :: n = len(d)
     <ftype2> intent(in), dimension(n) :: d
-    <ftype2> intent(in), depend(n), dimension(n - 1) :: e
+    <ftype2> intent(in), dimension((n>0?n-1:0)) :: e
     <ftype2> intent(in, out, copy, out=x), dimension(ldb, nrhs) :: b
     integer intent(hide), depend(b) :: ldb = MAX(1, shape(b, 0))
-    integer intent(hide), depend(b)  :: nrhs = MAX(1, shape(b, 1))
+    integer intent(hide), depend(b)  :: nrhs = shape(b, 1)
     integer intent(out) :: info
 
 end subroutine<prefix2>pttrs
 
 
-subroutine <prefix2c>pttrs(uplo, n, nrhs, d, e, b, ldb, info)
-    ! x, info  = pttrs(d, e, b, uplo='L', overwrite_b=0)
+subroutine <prefix2c>pttrs(lower, n, nrhs, d, e, b, ldb, info)
+    ! x, info  = pttrs(d, e, b, lower=1, overwrite_b=0)
     !
     ! ?PTTRS solves a tridiagonal system of the form
     !
@@ -69,16 +70,16 @@ subroutine <prefix2c>pttrs(uplo, n, nrhs, d, e, b, ldb, info)
     ! matrix whose subdiagonal is specified in the vector E, and X and B
     ! are N by NRHS matrices.
 
-    callstatement (*f2py_func)(uplo, &n, &nrhs, d, e, b, &ldb, &info)
+    callstatement (*f2py_func)((lower?"L":"U"), &n, &nrhs, d, e, b, &ldb, &info)
     callprotoargument char*, int*, int*, <ctype2>*, <ctype2c>*, <ctype2c>*, int*, int*
 
-    character optional, check(*uplo=='U'||*uplo=='L') :: uplo = 'L'
-    integer intent(hide), depend(d), check(n > 1) :: n = len(d)
+    integer optional, intent(in), check(lower==0||lower==1) :: lower = 1
+    integer intent(hide), depend(d) :: n = len(d)
     <ftype2> intent(in), dimension(n) :: d
-    <ftype2c> intent(in), depend(n), dimension(n - 1) :: e
+    <ftype2c> intent(in), dimension((n>0?n-1:0)) :: e
     <ftype2c> intent(in, out, copy, out=x), dimension(ldb, nrhs) :: b
     integer intent(hide), depend(b) :: ldb = MAX(1, shape(b, 0))
-    integer intent(hide), depend(b)  :: nrhs = MAX(1, shape(b, 1))
+    integer intent(hide), depend(b)  :: nrhs = shape(b, 1)
     integer intent(out) :: info
 
 end subroutine<prefix2c>pttrs

@@ -1858,10 +1858,8 @@ def test_pttrf_pttrs_errors_incompatible_shape(ddtype, dtype):
     d = generate_random_dtype_array((n,), ddtype) + 2
     e = generate_random_dtype_array((n-1,), dtype)
     # test that ValueError is raised with incompatible matrix shapes
-    with assert_raises(ValueError):
-        pttrf(d[:-1], e)
-    with assert_raises(ValueError):
-        pttrf(d, e[:-1])
+    assert_raises(ValueError, pttrf, d[:-1], e)
+    assert_raises(ValueError, pttrf, d, e[:-1])
 
 
 @pytest.mark.parametrize("ddtype,dtype",
@@ -1882,9 +1880,9 @@ def test_pttrf_pttrs_errors_singular_nonSPD(ddtype, dtype):
     # test with non-spd matrix
     d = generate_random_dtype_array((n,), ddtype)
     _d, _e, info = pttrf(d, e)
-    assert np.linalg.norm(d[info-1]) < (2 * np.linalg.norm(e[info-1])), \
-        "d{} shouldn't be positive definite, (d should < e), but is: {}, {} " \
-        .format(info, np.linalg.norm(d[info-1]), np.linalg.norm(e[info-1]))
+    assert_(norm(d[info-1]) < (2 * np.linalg.norm(e[info-1])),
+            "d{} shouldn't be positive definite, (d should < e), but is: {}, {} "
+            .format(info, np.linalg.norm(d[info-1]), np.linalg.norm(e[info-1])))
 
 
 @pytest.mark.parametrize(("d, e, d_expect, e_expect, b, x_expect"), [
