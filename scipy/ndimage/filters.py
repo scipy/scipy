@@ -44,7 +44,7 @@ __all__ = ['correlate1d', 'convolve1d', 'gaussian_filter1d', 'gaussian_filter',
            'uniform_filter1d', 'uniform_filter', 'minimum_filter1d',
            'maximum_filter1d', 'minimum_filter', 'maximum_filter',
            'rank_filter', 'median_filter', 'percentile_filter',
-           'generic_filter1d', 'generic_filter']
+           'generic_filter1d', 'generic_filter', 'gabor_filter']
 
 
 def _invalid_origin(origin, lenw):
@@ -305,9 +305,9 @@ def gaussian_filter(input, sigma, order=0, output=None,
 
 @_ni_docstrings.docfiller
 def gabor_filter(input, sigma, phi, frequency, offset=0.0, output=None,
-                    mode="reflect", cval=0.0, truncate=3.0):
+                 mode="reflect", cval=0.0, truncate=3.0):
     """Multidimensional Gabor filter. A gabor filter
-    is an elementwise product between a Gaussian 
+    is an elementwise product between a Gaussian
     and a complex exponential.
 
     Parameters
@@ -332,7 +332,7 @@ def gabor_filter(input, sigma, phi, frequency, offset=0.0, output=None,
         returned array. By default an array of the same dtype as input
         will be created. Only the real component will be saved
         if output is an array.
-    %(mode_multiple)s
+    %(mode)s
     %(cval)s
     truncate : float
         Truncate the filter at this many standard deviations.
@@ -341,20 +341,20 @@ def gabor_filter(input, sigma, phi, frequency, offset=0.0, output=None,
     Returns
     -------
     real, imaginary : arrays
-        Returns real and imaginary responses, arrays of same 
+        Returns real and imaginary responses, arrays of same
         shape as `input`.
 
     Notes
     -----
     The multidimensional filter is implemented by creating
     a gabor filter array, then using the convolve method.
-    Also, sigma specifies the standard deviations of the 
+    Also, sigma specifies the standard deviations of the
     Gaussian along the coordinate axes, and the Gaussian
     is not rotated. This is unlike
     skimage.filters.gabor, whose Gaussian is
     rotated with the complex exponential.
     The reasoning behind this design choice is that
-    sigma can be more easily designed to deal with 
+    sigma can be more easily designed to deal with
     anisotropic voxels.
 
     Examples
@@ -368,7 +368,16 @@ def gabor_filter(input, sigma, phi, frequency, offset=0.0, output=None,
            [30, 32, 34, 36, 38],
            [40, 42, 44, 46, 48]])
     >>> gabor_filter(a, sigma=1, phi=[0.0], frequency=0.1)
-    array([[ ? ]])
+   (array([[ 3,  5,  6,  8,  9],
+            [ 9, 10, 12, 13, 14],
+            [16, 18, 19, 21, 22],
+            [24, 25, 27, 28, 30],
+            [29, 30, 32, 34, 35]]),
+     array([[ 0,  0, -1,  0,  0],
+            [ 0,  0, -1,  0,  0],
+            [ 0,  0, -1,  0,  0],
+            [ 0,  0, -1,  0,  0],
+            [ 0,  0, -1,  0,  0]]))
 
     >>> from scipy import misc
     >>> import matplotlib.pyplot as plt
@@ -392,36 +401,38 @@ def gabor_filter(input, sigma, phi, frequency, offset=0.0, output=None,
     ranges = [range(-limit, limit + 1) for limit in limits]
     coords = numpy.meshgrid(*ranges, indexing='ij')
     filter_size = coords[0].shape
-    coords = numpy.stack(coords,axis=-1)
-    
+    coords = numpy.stack(coords, axis=-1)
+
     new_shape = numpy.ones(input.ndim)
-    new_shape = numpy.append(new_shape,-1).astype(int)
+    new_shape = numpy.append(new_shape, -1).astype(int)
     sigmas = numpy.reshape(sigmas, new_shape)
 
     g = numpy.zeros(filter_size, dtype=numpy.complex)
-    g[:] = numpy.exp(-0.5 * numpy.sum(numpy.divide(coords,sigmas)**2, axis=-1))
+    g[:] = numpy.exp(-0.5 * numpy.sum(numpy.divide(coords, sigmas)**2, axis=-1))
 
     g /= (2 * numpy.pi)**(input.ndim / 2) * numpy.prod(sigmas)
 
     orientation = numpy.ones(input.ndim)
-    for i,p in enumerate(phi):
+    for i, p in enumerate(phi):
         orientation[i + 1] = orientation[i] * numpy.sin(p)
         orientation[i] = orientation[i] * numpy.cos(p)
     orientation = numpy.flip(orientation)
-    
+
     rotx = coords @ orientation
 
     g *= numpy.exp(1j * (2 * numpy.pi * frequency * rotx + offset))
 
-    if isinstance(output, (type, np.dtype)):
+    if isinstance(output, (type, numpy.dtype)):
         otype = output
     elif isinstance(output, str):
-        otype = np.typeDict[output]
+        otype = numpy.typeDict[output]
     else:
         otype = None
 
-    output = ndi.convolve(input, weights=np.real(g), output=output, mode=mode, cval=cval)
-    imag = ndi.convolve(input, weights=np.imag(g), output=otype, mode=mode, cval=cval)
+    output = convolve(input, weights=numpy.real(g),
+                      output=output, mode=mode, cval=cval)
+    imag = convolve(input, weights=numpy.imag(g),
+                    output=otype, mode=mode, cval=cval)
 
     result = (output, imag)
     return result

@@ -19,6 +19,7 @@ Filters
    convolve1d - 1-D convolution along the given axis
    correlate - Multidimensional correlation
    correlate1d - 1-D correlation along the given axis
+   gabor_filter
    gaussian_filter
    gaussian_filter1d
    gaussian_gradient_magnitude
