@@ -1,7 +1,5 @@
 """Dictionary Of Keys based matrix"""
 
-from __future__ import division, print_function, absolute_import
-
 __docformat__ = "restructuredtext en"
 
 __all__ = ['dok_matrix', 'isspmatrix_dok']
@@ -88,7 +86,7 @@ class dok_matrix(spmatrix, IndexMixin, dict):
                 arg1 = arg1.todok()
 
             if dtype is not None:
-                arg1 = arg1.astype(dtype)
+                arg1 = arg1.astype(dtype, copy=False)
 
             dict.update(self, arg1)
             self._shape = check_shape(arg1.shape)

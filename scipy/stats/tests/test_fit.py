@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 import os
 
 import numpy as np
@@ -25,6 +23,7 @@ failing_fits = [
         'gengamma',
         'kappa4',
         'ksone',
+        'kstwo',
         'mielke',
         'ncf',
         'ncx2',

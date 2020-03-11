@@ -17,9 +17,8 @@ References
        https://github.com/lobpcg/blopex
 """
 
-from __future__ import division, print_function, absolute_import
 import numpy as np
-from scipy.linalg import (inv, eigh, cho_factor, cho_solve, cholesky, orth,
+from scipy.linalg import (inv, eigh, cho_factor, cho_solve, cholesky,
                           LinAlgError)
 from scipy.sparse.linalg import aslinearoperator
 from scipy.sparse.sputils import bmat

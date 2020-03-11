@@ -12,7 +12,6 @@ References
        Second Edition (2006).
 """
 
-from __future__ import division, print_function, absolute_import
 import scipy.sparse as sps
 import numpy as np
 from .equality_constrained_sqp import equality_constrained_sqp

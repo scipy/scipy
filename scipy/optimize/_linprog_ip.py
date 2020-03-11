@@ -18,11 +18,9 @@ References
 """
 # Author: Matt Haberland
 
-from __future__ import print_function, division, absolute_import
 import numpy as np
 import scipy as sp
 import scipy.sparse as sps
-import numbers
 from warnings import warn
 from scipy.linalg import LinAlgError
 from .optimize import OptimizeWarning, OptimizeResult, _check_unknown_options

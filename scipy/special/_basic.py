@@ -2,8 +2,6 @@
 # Author:  Travis Oliphant, 2002
 #
 
-from __future__ import division, print_function, absolute_import
-
 import operator
 import numpy as np
 import math
@@ -2180,9 +2178,9 @@ def comb(N, k, exact=False, repetition=False):
     >>> comb(n, k, exact=False)
     array([ 120.,  210.])
     >>> comb(10, 3, exact=True)
-    120L
+    120
     >>> comb(10, 3, exact=True, repetition=True)
-    220L
+    220
 
     """
     if repetition:
@@ -2318,7 +2316,7 @@ def factorial(n, exact=False):
     >>> factorial(arr, exact=True)
     array([  6,  24, 120])
     >>> factorial(5, exact=True)
-    120L
+    120
 
     """
     if exact:
@@ -2399,7 +2397,7 @@ def factorial2(n, exact=False):
     >>> factorial2(7, exact=False)
     array(105.00000000000001)
     >>> factorial2(7, exact=True)
-    105L
+    105
 
     """
     if exact:
@@ -2462,9 +2460,9 @@ def factorialk(n, k, exact=True):
     --------
     >>> from scipy.special import factorialk
     >>> factorialk(5, 1, exact=True)
-    120L
+    120
     >>> factorialk(5, 3, exact=True)
-    10L
+    10
 
     """
     if exact:

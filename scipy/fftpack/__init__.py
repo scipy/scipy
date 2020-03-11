@@ -78,8 +78,6 @@ Convolutions (:mod:`scipy.fftpack.convolve`)
 
 """
 
-from __future__ import division, print_function, absolute_import
-
 
 __all__ = ['fft','ifft','fftn','ifftn','rfft','irfft',
            'fft2','ifft2',

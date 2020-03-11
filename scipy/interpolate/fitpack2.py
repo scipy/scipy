@@ -6,8 +6,6 @@ by P. Dierckx (see http://www.netlib.org/dierckx/) transformed
 to double routines by Pearu Peterson.
 """
 # Created by Pearu Peterson, June,August 2003
-from __future__ import division, print_function, absolute_import
-
 __all__ = [
     'UnivariateSpline',
     'InterpolatedUnivariateSpline',
@@ -1035,7 +1033,7 @@ class SmoothBivariateSpline(BivariateSpline):
     bisplrep : an older wrapping of FITPACK
     bisplev : an older wrapping of FITPACK
     UnivariateSpline : a similar class for univariate spline interpolation
-    LSQUnivariateSpline : to create a BivariateSpline using weighted
+    LSQBivariateSpline : to create a BivariateSpline using weighted least-squares fitting
 
     Notes
     -----

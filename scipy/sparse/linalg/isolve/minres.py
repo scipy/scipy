@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 from numpy import sqrt, inner, zeros, inf, finfo
 from numpy.linalg import norm
 
@@ -344,8 +342,7 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None,
 
 
 if __name__ == '__main__':
-    from numpy import zeros, arange
-    from scipy.linalg import norm
+    from numpy import arange
     from scipy.sparse import spdiags
 
     n = 10

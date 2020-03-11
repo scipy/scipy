@@ -1,7 +1,5 @@
 """ Test functions for fftpack.basic module
 """
-from __future__ import division, absolute_import, print_function
-
 from numpy import arange, asarray, zeros, dot, exp, pi, double, cdouble
 from numpy.random import rand
 import numpy as np

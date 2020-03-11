@@ -126,11 +126,8 @@ References
 # author: Robert Kern <robert.kern@gmail.com>
 # date: 2006-09-21
 
-from __future__ import division, print_function, absolute_import
-
 from .odrpack import *
 from .models import *
-from . import add_newdocs
 
 __all__ = [s for s in dir()
            if not (s.startswith('_') or s in ('odr_stop', 'odr_error'))]

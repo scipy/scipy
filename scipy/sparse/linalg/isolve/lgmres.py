@@ -1,12 +1,10 @@
 # Copyright (C) 2009, Pauli Virtanen <pav@iki.fi>
 # Distributed under the same license as SciPy.
 
-from __future__ import division, print_function, absolute_import
-
 import warnings
 import numpy as np
 from numpy.linalg import LinAlgError
-from scipy.linalg import get_blas_funcs, get_lapack_funcs
+from scipy.linalg import get_blas_funcs
 from .utils import make_system
 
 from ._gcrotmk import _fgmres

@@ -2,7 +2,6 @@
 differential_evolution: The differential evolution global optimization algorithm
 Added by Andrew Nelson 2014
 """
-from __future__ import division, print_function, absolute_import
 import warnings
 
 import numpy as np
@@ -12,6 +11,7 @@ from scipy._lib._util import check_random_state, MapWrapper
 
 from scipy.optimize._constraints import (Bounds, new_bounds_to_old,
                                          NonlinearConstraint, LinearConstraint)
+from scipy.sparse import issparse
 
 
 __all__ = ['differential_evolution']
@@ -97,12 +97,13 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         denoted by CR. Increasing this value allows a larger number of mutants
         to progress into the next generation, but at the risk of population
         stability.
-    seed : int or `np.random.RandomState`, optional
-        If `seed` is not specified the `np.RandomState` singleton is used.
-        If `seed` is an int, a new `np.random.RandomState` instance is used,
+    seed : {int, `~np.random.RandomState`, `~np.random.Generator`}, optional
+        If `seed` is not specified the `~np.random.RandomState` singleton is
+        used.
+        If `seed` is an int, a new ``RandomState`` instance is used,
         seeded with seed.
-        If `seed` is already a `np.random.RandomState instance`, then that
-        `np.random.RandomState` instance is used.
+        If `seed` is already a ``RandomState`` or a ``Generator`` instance,
+        then that object is used.
         Specify `seed` for repeatable minimizations.
     disp : bool, optional
         Prints the evaluated `func` at every iteration.
@@ -375,13 +376,13 @@ class DifferentialEvolutionSolver(object):
         denoted by CR. Increasing this value allows a larger number of mutants
         to progress into the next generation, but at the risk of population
         stability.
-    seed : int or `np.random.RandomState`, optional
-        If `seed` is not specified the `np.random.RandomState` singleton is
+    seed : {int, `~np.random.RandomState`, `~np.random.Generator`}, optional
+        If `seed` is not specified the `~np.random.RandomState` singleton is
         used.
-        If `seed` is an int, a new `np.random.RandomState` instance is used,
-        seeded with `seed`.
-        If `seed` is already a `np.random.RandomState` instance, then that
-        `np.random.RandomState` instance is used.
+        If `seed` is an int, a new ``RandomState`` instance is used,
+        seeded with seed.
+        If `seed` is already a ``RandomState`` or a ``Generator`` instance,
+        then that object is used.
         Specify `seed` for repeatable minimizations.
     disp : bool, optional
         Prints the evaluated `func` at every iteration.
@@ -613,7 +614,7 @@ class DifferentialEvolutionSolver(object):
 
         # Within each segment we sample from a uniform random distribution.
         # We need to do this sampling for each parameter.
-        samples = (segsize * rng.random_sample(self.population_shape)
+        samples = (segsize * rng.uniform(size=self.population_shape)
 
         # Offset each segment to cover the entire parameter range [0, 1)
                    + np.linspace(0., 1., self.num_population_members,
@@ -641,7 +642,7 @@ class DifferentialEvolutionSolver(object):
         can possess clustering, Latin Hypercube sampling is generally better.
         """
         rng = self.random_number_generator
-        self.population = rng.random_sample(self.population_shape)
+        self.population = rng.uniform(size=self.population_shape)
 
         # reset population energies
         self.population_energies = np.full(self.num_population_members,
@@ -1044,8 +1045,8 @@ class DifferentialEvolutionSolver(object):
             self._promote_lowest_energy()
 
         if self.dither is not None:
-            self.scale = (self.random_number_generator.rand()
-                          * (self.dither[1] - self.dither[0]) + self.dither[0])
+            self.scale = self.random_number_generator.uniform(self.dither[0],
+                                                              self.dither[1])
 
         if self._updating == 'immediate':
             # update best solution immediately
@@ -1155,7 +1156,7 @@ class DifferentialEvolutionSolver(object):
     def _ensure_constraint(self, trial):
         """Make sure the parameters lie between the limits."""
         mask = np.where((trial > 1) | (trial < 0))
-        trial[mask] = self.random_number_generator.rand(mask[0].size)
+        trial[mask] = self.random_number_generator.uniform(size=mask[0].shape)
 
     def _mutate(self, candidate):
         """Create a trial vector based on a mutation strategy."""
@@ -1163,7 +1164,7 @@ class DifferentialEvolutionSolver(object):
 
         rng = self.random_number_generator
 
-        fill_point = rng.randint(0, self.parameter_count)
+        fill_point = rng.choice(self.parameter_count)
 
         if self.strategy in ['currenttobest1exp', 'currenttobest1bin']:
             bprime = self.mutation_func(candidate,
@@ -1172,7 +1173,7 @@ class DifferentialEvolutionSolver(object):
             bprime = self.mutation_func(self._select_samples(candidate, 5))
 
         if self.strategy in self._binomial:
-            crossovers = rng.rand(self.parameter_count)
+            crossovers = rng.uniform(size=self.parameter_count)
             crossovers = crossovers < self.cross_over_probability
             # the last one is always from the bprime vector for binomial
             # If you fill in modulo with a loop you have to set the last one to
@@ -1184,9 +1185,9 @@ class DifferentialEvolutionSolver(object):
 
         elif self.strategy in self._exponential:
             i = 0
-            while (i < self.parameter_count and
-                   rng.rand() < self.cross_over_probability):
-
+            crossovers = rng.uniform(size=self.parameter_count)
+            crossovers = crossovers < self.cross_over_probability
+            while (i < self.parameter_count and crossovers[i]):
                 trial[fill_point] = bprime[fill_point]
                 fill_point = (fill_point + 1) % self.parameter_count
                 i += 1
@@ -1297,7 +1298,10 @@ class _ConstraintWrapper(object):
                 return np.atleast_1d(constraint.fun(x))
         elif isinstance(constraint, LinearConstraint):
             def fun(x):
-                A = np.atleast_2d(constraint.A)
+                if issparse(constraint.A):
+                    A = constraint.A
+                else:
+                    A = np.atleast_2d(constraint.A)
                 return A.dot(x)
         elif isinstance(constraint, Bounds):
             def fun(x):

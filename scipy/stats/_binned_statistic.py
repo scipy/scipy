@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 import builtins
 import numpy as np
 from numpy.testing import suppress_warnings
@@ -628,7 +626,7 @@ def binned_statistic_dd(sample, values, statistic='mean',
     if np.any(result.shape[1:] != nbin - 2):
         raise RuntimeError('Internal Shape Error')
 
-    # Reshape to have output (`reulst`) match input (`values`) shape
+    # Reshape to have output (`result`) match input (`values`) shape
     result = result.reshape(input_shape[:-1] + list(nbin-2))
 
     return BinnedStatisticddResult(result, edges, binnumbers)

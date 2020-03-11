@@ -1,8 +1,6 @@
 # Author: Jeffrey Armstrong <jeff@approximatrix.com>
 # April 4, 2011
 
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 from numpy.testing import (assert_equal,
                            assert_array_almost_equal, assert_array_equal,
@@ -318,11 +316,11 @@ class TestStateSpaceDisc(object):
     def test_initialization(self):
         # Check that all initializations work
         dt = 0.05
-        s = StateSpace(1, 1, 1, 1, dt=dt)
-        s = StateSpace([1], [2], [3], [4], dt=dt)
-        s = StateSpace(np.array([[1, 2], [3, 4]]), np.array([[1], [2]]),
-                       np.array([[1, 0]]), np.array([[0]]), dt=dt)
-        s = StateSpace(1, 1, 1, 1, dt=True)
+        StateSpace(1, 1, 1, 1, dt=dt)
+        StateSpace([1], [2], [3], [4], dt=dt)
+        StateSpace(np.array([[1, 2], [3, 4]]), np.array([[1], [2]]),
+                   np.array([[1, 0]]), np.array([[0]]), dt=dt)
+        StateSpace(1, 1, 1, 1, dt=True)
 
     def test_conversion(self):
         # Check the conversion functions
@@ -349,10 +347,10 @@ class TestTransferFunction(object):
     def test_initialization(self):
         # Check that all initializations work
         dt = 0.05
-        s = TransferFunction(1, 1, dt=dt)
-        s = TransferFunction([1], [2], dt=dt)
-        s = TransferFunction(np.array([1]), np.array([2]), dt=dt)
-        s = TransferFunction(1, 1, dt=True)
+        TransferFunction(1, 1, dt=dt)
+        TransferFunction([1], [2], dt=dt)
+        TransferFunction(np.array([1]), np.array([2]), dt=dt)
+        TransferFunction(1, 1, dt=True)
 
     def test_conversion(self):
         # Check the conversion functions
@@ -379,10 +377,10 @@ class TestZerosPolesGain(object):
     def test_initialization(self):
         # Check that all initializations work
         dt = 0.05
-        s = ZerosPolesGain(1, 1, 1, dt=dt)
-        s = ZerosPolesGain([1], [2], 1, dt=dt)
-        s = ZerosPolesGain(np.array([1]), np.array([2]), 1, dt=dt)
-        s = ZerosPolesGain(1, 1, 1, dt=True)
+        ZerosPolesGain(1, 1, 1, dt=dt)
+        ZerosPolesGain([1], [2], 1, dt=dt)
+        ZerosPolesGain(np.array([1]), np.array([2]), 1, dt=dt)
+        ZerosPolesGain(1, 1, 1, dt=True)
 
     def test_conversion(self):
         # Check the conversion functions

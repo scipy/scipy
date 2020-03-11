@@ -1,8 +1,6 @@
 """ Test functions for the sparse.linalg.isolve module
 """
 
-from __future__ import division, print_function, absolute_import
-
 import itertools
 import platform
 import numpy as np
@@ -245,7 +243,7 @@ def check_precond_dummy(solver, case):
     A = case.A
 
     M,N = A.shape
-    D = spdiags([1.0/A.diagonal()], [0], M, N)
+    spdiags([1.0/A.diagonal()], [0], M, N)
 
     b = case.b
     x0 = 0*b
@@ -338,7 +336,7 @@ def test_gmres_basic():
     A = np.vander(np.arange(10) + 1)[:, ::-1]
     b = np.zeros(10)
     b[0] = 1
-    x = np.linalg.solve(A, b)
+    np.linalg.solve(A, b)
 
     with suppress_warnings() as sup:
         sup.filter(DeprecationWarning, ".*called without specifying.*")

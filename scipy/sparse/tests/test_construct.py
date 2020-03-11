@@ -1,7 +1,5 @@
 """test sparse matrix construction functions"""
 
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 from numpy import array
 from numpy.testing import (assert_equal, assert_,
@@ -471,5 +469,5 @@ class TestConstructUtils(object):
     def test_random_accept_str_dtype(self):
         # anything that np.dtype can convert to a dtype should be accepted
         # for the dtype
-        a = construct.random(10, 10, dtype='d')
+        construct.random(10, 10, dtype='d')
 

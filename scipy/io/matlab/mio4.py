@@ -1,7 +1,5 @@
 ''' Classes for read / write of matlab (TM) 4 files
 '''
-from __future__ import division, print_function, absolute_import
-
 import sys
 import warnings
 
@@ -161,7 +159,7 @@ class VarReader4(object):
         Returns
         -------
         arr : ndarray
-            of dtype givem by `hdr` ``dtype`` and shape givem by `hdr` ``dims``
+            of dtype given by `hdr` ``dtype`` and shape given by `hdr` ``dims``
         '''
         dt = hdr.dtype
         dims = hdr.dims

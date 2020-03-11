@@ -1,7 +1,5 @@
 """ Benchmark functions for fftpack.pseudo_diffs module
 """
-from __future__ import division, absolute_import, print_function
-
 from numpy import arange, sin, cos, pi, exp, tanh, sign
 
 try:

@@ -5,19 +5,14 @@ To run it in its simplest form::
   nosetests test_optimize.py
 
 """
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 from scipy.optimize._trustregion_exact import (
     estimate_smallest_singular_value,
     singular_leading_submatrix,
     IterativeSubproblem)
-from scipy.linalg import (svd, get_lapack_funcs, det,
-                          cho_factor, cho_solve, qr,
-                          eigvalsh, eig, norm)
-from numpy.testing import (assert_, assert_array_equal,
-                           assert_equal, assert_array_almost_equal,
-                           assert_array_less)
+from scipy.linalg import (svd, get_lapack_funcs, det, qr, norm)
+from numpy.testing import (assert_array_equal,
+                           assert_equal, assert_array_almost_equal)
 
 
 def random_entry(n, min_eig, max_eig, case):
