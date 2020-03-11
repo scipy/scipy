@@ -28,9 +28,9 @@ def cossin(X, p=None, q=None, separate=False,
                                    └                   ┘
 
     ``U1``, ``U2``, ``V1``, ``V2`` are square orthogonal/unitary matrices of
-    dimensions ``(p,p)``, ``(m-p,m-p)``, ``(q,q)``, ``(m-q,m-q)``, respectively,
-    and ``C`` and ``S`` are ``(r, r)`` nonnegative diagonal matrices satisfying
-    ``C^2 + S^2 = I`` where ``r = min(p, m-p, q, m-q)``.
+    dimensions ``(p,p)``, ``(m-p,m-p)``, ``(q,q)``, and ``(m-q,m-q)``
+    respectively, and ``C`` and ``S`` are ``(r, r)`` nonnegative diagonal
+    matrices satisfying ``C^2 + S^2 = I`` where ``r = min(p, m-p, q, m-q)``.
 
     Moreover, the rank of the identity matrices are ``min(p, q) - r``,
     ``min(p, m - q) - r``, ``min(m - p, q) - r``, and ``min(m - p, m - q) - r``
@@ -53,11 +53,12 @@ def cossin(X, p=None, q=None, separate=False,
         Number of columns of the upper left block ``X11``, used only when X is
         given as an array.
     separate : bool, optional
-        if ``True``, the low level components are returned instead of the matrix
-        factors, i.e. ``(u1,u2),theta,(v1h,v2h)`` instead of ``u,cs,vh``
+        if ``True``, the low level components are returned instead of the
+        matrix factors, i.e. ``(u1,u2)``, ``theta``, ``(v1h,v2h)`` instead of
+        ``u``, ``cs``, ``vh``.
     swap_sign : bool, optional
-        if ``True``, the ``-S``, ``-I`` block will be the bottom left, otherwise (by
-        default) they will be in the upper right block.
+        if ``True``, the ``-S``, ``-I`` block will be the bottom left,
+        otherwise (by default) they will be in the upper right block.
     compute_u : bool, optional
         if ``False``, ``u`` won't be computed and an empty array is returned.
     compute_vh : bool, optional
@@ -67,16 +68,17 @@ def cossin(X, p=None, q=None, separate=False,
     -------
     u : ndarray
         When ``compute_u=True``, contains the block diagonal orthogonal/unitary
-        matrix consisting of the blocks ``U1`` ``(p,p)`` and ``U2`` ``(m-p,m-p)``
-        orthogonal/unitary matrices. If `separate=True`, this contains the tuple
-        of ``(U1, U2)``.
+        matrix consisting of the blocks ``U1`` (``p`` x ``p``) and ``U2``
+        (``m-p`` x ``m-p``) orthogonal/unitary matrices. If ``separate=True``,
+        this contains the tuple of ``(U1, U2)``.
     cs : ndarray
         The cosine-sine factor with the structure described above.
-         If ``separate=True``, this contains the ``theta`` array.
+         If ``separate=True``, this contains the ``theta`` array containing the
+         angles in radians.
     vh : ndarray
         When ``compute_vh=True`, contains the block diagonal orthogonal/unitary
-        matrix consisting of the blocks ``V1H`` ``(q,q)`` and
-        ``V2H`` ``(m-q,m-q)`` orthogonal/unitary matrices. If ``separate=True``,
+        matrix consisting of the blocks ``V1H`` (``q`` x ``q``) and ``V2H``
+        (``m-q`` x ``m-q``) orthogonal/unitary matrices. If ``separate=True``,
         this contains the tuple of ``(V1H, V2H)``.
 
     Examples
@@ -167,14 +169,16 @@ def cossin(X, p=None, q=None, separate=False,
                                             compute_v2t=compute_vh,
                                             trans=False, signs=swap_sign,
                                             **lwork_args)
-    if separate:
-        return (u1, u2), theta, (v1h, v2h)
+
     method_name = csd.typecode + driver
     if info < 0:
         raise ValueError('illegal value in argument {} of internal {}'
                          .format(-info, method_name))
     if info > 0:
         raise LinAlgError("{} did not converge: {}".format(method_name, info))
+
+    if separate:
+        return (u1, u2), theta, (v1h, v2h)
 
     U = block_diag(u1, u2)
     VDH = block_diag(v1h, v2h)
@@ -195,14 +199,14 @@ def cossin(X, p=None, q=None, separate=False,
     xs = n11 + r
     xe = n11 + r + n12
     ys = n11 + n21 + n22 + 2 * r
-    ye = n11 + n12 + n21 + n22 + 2 * r
-    CS[xs: xe, ys:ye] = Id[:n12, :n12] if swap_sign else - Id[:n12, :n12]
+    ye = n11 + n21 + n22 + 2 * r + n12
+    CS[xs: xe, ys:ye] = Id[:n12, :n12] if swap_sign else -Id[:n12, :n12]
 
     xs = p + n22 + r
-    xe = p + n21 + n22 + r
+    xe = p + n22 + r + + n21
     ys = n11 + r
-    ye = n11 + n21 + r
-    CS[xs:xe, ys:ye] = Id[:n21, :n21] if not swap_sign else -Id[:n21, :n21]
+    ye = n11 + r + n21
+    CS[xs:xe, ys:ye] = -Id[:n21, :n21] if swap_sign else Id[:n21, :n21]
 
     CS[p:p + n22, q:q + n22] = Id[:n22, :n22]
     CS[n11:n11 + r, n11:n11 + r] = c
@@ -212,8 +216,8 @@ def cossin(X, p=None, q=None, separate=False,
     xe = n11 + r
     ys = n11 + n21 + n22 + r
     ye = n11 + n21 + n22 + 2 * r
-    CS[xs:xe, ys:ye] = -s if not swap_sign else s
+    CS[xs:xe, ys:ye] = s if swap_sign else -s
 
-    CS[p + n22:p + n22 + r, n11:n11 + r] = s if not swap_sign else -s
+    CS[p + n22:p + n22 + r, n11:n11 + r] = -s if swap_sign else s
 
     return U, CS, VDH
