@@ -5,8 +5,6 @@ To run it in its simplest form::
   nosetests test_optimize.py
 
 """
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 from scipy.optimize._trlib import (get_trlib_quadratic_subproblem)
 from numpy.testing import (assert_,

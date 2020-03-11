@@ -2,8 +2,6 @@
 # Author: Travis Oliphant, March 2002
 #
 
-from __future__ import division, print_function, absolute_import
-
 __all__ = ['expm','cosm','sinm','tanm','coshm','sinhm',
            'tanhm','logm','funm','signm','sqrtm',
            'expm_frechet', 'expm_cond', 'fractional_matrix_power',

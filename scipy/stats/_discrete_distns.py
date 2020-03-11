@@ -2,8 +2,6 @@
 # Author:  Travis Oliphant  2002-2011 with contributions from
 #          SciPy Developers 2004-2011
 #
-from __future__ import division, print_function, absolute_import
-
 from scipy import special
 from scipy.special import entr, logsumexp, betaln, gammaln as gamln
 from scipy._lib._util import _lazywhere

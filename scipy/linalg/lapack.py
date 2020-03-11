@@ -612,6 +612,11 @@ All functions
    csytrf_lwork
    zsytrf_lwork
 
+   stbtrs
+   dtbtrs
+   ctbtrs
+   ztbtrs
+
    stfsm
    dtfsm
    ctfsm
@@ -725,7 +730,6 @@ All functions
 # Author: Pearu Peterson, March 2002
 #
 
-from __future__ import division, print_function, absolute_import
 import numpy as _np
 from .blas import _get_funcs, _memoize_get_funcs
 from scipy.linalg import _flapack
@@ -736,7 +740,6 @@ except ImportError:
     _clapack = None
 
 # Backward compatibility
-from .blas import find_best_blas_type as find_best_lapack_type
 from scipy._lib._util import DeprecatedImport as _DeprecatedImport
 clapack = _DeprecatedImport("scipy.linalg.blas.clapack", "scipy.linalg.lapack")
 flapack = _DeprecatedImport("scipy.linalg.blas.flapack", "scipy.linalg.lapack")

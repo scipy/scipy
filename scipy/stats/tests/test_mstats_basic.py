@@ -1,8 +1,6 @@
 """
 Tests for the stats.mstats module (support for masked arrays)
 """
-from __future__ import division, print_function, absolute_import
-
 import warnings
 import platform
 
@@ -454,6 +452,19 @@ class TestTrimming(object):
         winsorized = mstats.winsorize(data)
         assert_equal(winsorized.mask, data.mask)
 
+    def test_winsorization_nan(self):
+        data = ma.array([np.nan, np.nan, 0, 1, 2])
+        assert_raises(ValueError, mstats.winsorize, data, (0.05, 0.05),
+                      nan_policy='raise')
+        # Testing propagate (default behavior)
+        assert_equal(mstats.winsorize(data, (0.4, 0.4)),
+                     ma.array([2, 2, 2, 2, 2]))
+        assert_equal(mstats.winsorize(data, (0.8, 0.8)),
+                     ma.array([np.nan, np.nan, np.nan, np.nan, np.nan]))
+        assert_equal(mstats.winsorize(data, (0.4, 0.4), nan_policy='omit'),
+                     ma.array([np.nan, np.nan, 2, 2, 2]))
+        assert_equal(mstats.winsorize(data, (0.8, 0.8), nan_policy='omit'),
+                     ma.array([np.nan, np.nan, 2, 2, 2]))
 
 class TestMoments(object):
     # Comparison numbers are found using R v.1.5.1
@@ -575,7 +586,7 @@ class TestMoments(object):
         im[:50, :] += 1
         im[:, :50] += 1
         cp = im.copy()
-        a = mstats.mode(im, None)
+        mstats.mode(im, None)
         assert_equal(im, cp)
 
 

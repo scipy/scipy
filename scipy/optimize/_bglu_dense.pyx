@@ -1,7 +1,5 @@
 # Author: Matt Haberland
 
-from __future__ import division, absolute_import, print_function
-
 cimport cython
 import numpy as np
 cimport numpy as np

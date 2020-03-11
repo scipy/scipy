@@ -2,7 +2,6 @@
 differential_evolution: The differential evolution global optimization algorithm
 Added by Andrew Nelson 2014
 """
-from __future__ import division, print_function, absolute_import
 import warnings
 
 import numpy as np
@@ -12,6 +11,7 @@ from scipy._lib._util import check_random_state, MapWrapper
 
 from scipy.optimize._constraints import (Bounds, new_bounds_to_old,
                                          NonlinearConstraint, LinearConstraint)
+from scipy.sparse import issparse
 
 
 __all__ = ['differential_evolution']
@@ -1298,7 +1298,10 @@ class _ConstraintWrapper(object):
                 return np.atleast_1d(constraint.fun(x))
         elif isinstance(constraint, LinearConstraint):
             def fun(x):
-                A = np.atleast_2d(constraint.A)
+                if issparse(constraint.A):
+                    A = constraint.A
+                else:
+                    A = np.atleast_2d(constraint.A)
                 return A.dot(x)
         elif isinstance(constraint, Bounds):
             def fun(x):

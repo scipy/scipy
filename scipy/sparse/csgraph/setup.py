@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 
 def configuration(parent_package='', top_path=None):
     import numpy

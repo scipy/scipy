@@ -1,8 +1,6 @@
 """Functions to extract parts of sparse matrices
 """
 
-from __future__ import division, print_function, absolute_import
-
 __docformat__ = "restructuredtext en"
 
 __all__ = ['find', 'tril', 'triu']

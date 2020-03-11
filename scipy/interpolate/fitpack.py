@@ -1,5 +1,3 @@
-from __future__ import print_function, division, absolute_import
-
 __all__ = ['splrep', 'splprep', 'splev', 'splint', 'sproot', 'spalde',
            'bisplrep', 'bisplev', 'insert', 'splder', 'splantider']
 
@@ -7,6 +5,7 @@ import warnings
 
 import numpy as np
 
+# These are in the API for fitpack even if not used in fitpack.py itself.
 from ._fitpack_impl import bisplrep, bisplev, dblint
 from . import _fitpack_impl as _impl
 from ._bsplines import BSpline

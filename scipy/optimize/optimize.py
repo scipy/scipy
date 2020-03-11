@@ -14,8 +14,6 @@
 #  Updated strong Wolfe conditions line search to use
 #  cubic-interpolation (Mar. 2004)
 
-from __future__ import division, print_function, absolute_import
-
 
 # Minimization routines
 

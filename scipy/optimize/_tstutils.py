@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 r"""
 Parameters used in test and benchmark methods.
 

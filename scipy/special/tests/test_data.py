@@ -1,7 +1,4 @@
-from __future__ import division, print_function, absolute_import
-
 import os
-import platform
 
 import numpy as np
 from numpy import arccosh, arcsinh, arctanh

@@ -32,8 +32,6 @@ value of the function, and whose second argument is the gradient of the function
 (as a list of values); or None, to abort the minimization.
 """
 
-from __future__ import division, print_function, absolute_import
-
 from scipy.optimize import moduleTNC
 from .optimize import (MemoizeJac, OptimizeResult, _check_unknown_options,
                        _prepare_scalar_function)

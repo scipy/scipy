@@ -218,8 +218,6 @@ sorted indices are required (e.g., when passing data to other libraries).
 
 """
 
-from __future__ import division, print_function, absolute_import
-
 # Original code by Travis Oliphant.
 # Modified and extended by Ed Schofield, Robert Cimrman,
 # Nathan Bell, and Jake Vanderplas.

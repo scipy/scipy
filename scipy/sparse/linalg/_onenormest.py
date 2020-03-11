@@ -1,8 +1,6 @@
 """Sparse block 1-norm estimator.
 """
 
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 from scipy.sparse.linalg import aslinearoperator
 

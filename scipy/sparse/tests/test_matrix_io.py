@@ -1,11 +1,7 @@
-from __future__ import division, print_function, absolute_import
-
-import sys
 import os
 import numpy as np
 import tempfile
 
-import pytest
 from pytest import raises as assert_raises
 from numpy.testing import assert_equal, assert_
 

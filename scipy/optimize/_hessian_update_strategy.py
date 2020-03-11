@@ -1,5 +1,4 @@
 """Hessian update strategies for quasi-Newton optimization methods."""
-from __future__ import division, print_function, absolute_import
 import numpy as np
 from numpy.linalg import norm
 from scipy.linalg import get_blas_funcs

@@ -1,7 +1,5 @@
 # Created by John Travers, Robert Hetland, 2007
 """ Test functions for rbf module """
-from __future__ import division, print_function, absolute_import
-
 
 import numpy as np
 from numpy.testing import (assert_, assert_array_almost_equal,
@@ -216,7 +214,7 @@ def test_two_arg_function_is_callable():
 def test_rbf_epsilon_none():
     x = linspace(0, 10, 9)
     y = sin(x)
-    rbf = Rbf(x, y, epsilon=None)
+    Rbf(x, y, epsilon=None)
 
 
 def test_rbf_epsilon_none_collinear():
