@@ -707,6 +707,16 @@ All functions
    cgemqrt
    zgemqrt
 
+   sgttrf
+   dgttrf
+   cgttrf
+   zgttrf
+
+   sgttrs
+   dgttrs
+   cgttrs
+   zgttrs
+
    stpqrt
    dtpqrt
    ctpqrt
