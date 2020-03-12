@@ -59,7 +59,7 @@ end subroutine<prefix2>pttrs
 
 
 subroutine <prefix2c>pttrs(lower, n, nrhs, d, e, b, ldb, info)
-    ! x, info  = pttrs(d, e, b, lower=1, overwrite_b=0)
+    ! x, info  = pttrs(d, e, b, lower=0, overwrite_b=0)
     !
     ! ?PTTRS solves a tridiagonal system of the form
     !
@@ -73,7 +73,7 @@ subroutine <prefix2c>pttrs(lower, n, nrhs, d, e, b, ldb, info)
     callstatement (*f2py_func)((lower?"L":"U"), &n, &nrhs, d, e, b, &ldb, &info)
     callprotoargument char*, int*, int*, <ctype2>*, <ctype2c>*, <ctype2c>*, int*, int*
 
-    integer optional, intent(in), check(lower==0||lower==1) :: lower = 1
+    integer optional, intent(in), check(lower==0||lower==1) :: lower = 0
     integer intent(hide), depend(d) :: n = len(d)
     <ftype2> intent(in), dimension(n) :: d
     <ftype2c> intent(in), dimension((n>0?n-1:0)) :: e

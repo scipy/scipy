@@ -1998,7 +1998,7 @@ def test_pttrf_pttrs(ddtype, dtype):
 
     # determine _x from pttrs
     pttrs = get_lapack_funcs('pttrs', dtype=dtype)
-    _x, info = pttrs(_d, _e, b)
+    _x, info = pttrs(_d, _e.conj(), b)
     assert_equal(info, 0, err_msg="pttrs: info = {}, should be 0".format(info))
 
     # test that _x from pttrs matches the expected x
@@ -2071,8 +2071,14 @@ def test_pttrf_pttrs_NAG(d, e, d_expect, e_expect, b, x_expect):
     assert_allclose(_e, e_expect, atol=atol)
 
     pttrs = get_lapack_funcs('pttrs', dtype=e[0])
-    _x, info = pttrs(_d, _e, b)
+    _x, info = pttrs(_d, _e.conj(), b)
     assert_allclose(_x, x_expect, atol=atol)
+    
+    # also test option `lower`
+    if e.dtype in COMPLEX_DTYPES:
+        _x, info = pttrs(_d, _e, b, lower=1)
+        assert_allclose(_x, x_expect, atol=atol)
+        
 
 
 @pytest.mark.parametrize('dtype', DTYPES)
