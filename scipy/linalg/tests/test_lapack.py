@@ -20,7 +20,7 @@ from numpy import (eye, ones, zeros, zeros_like, triu, tril, tril_indices,
 from numpy.random import rand, randint, seed
 
 from scipy.linalg import _flapack as flapack, lapack
-from scipy.linalg import inv, svd, cholesky, solve, ldl, norm, block_diag, qr, eigh, eig
+from scipy.linalg import inv, svd, cholesky, solve, ldl, norm, block_diag, qr, eigh
 from scipy.linalg.lapack import _compute_lwork
 from scipy.stats import ortho_group, unitary_group
 
@@ -2090,7 +2090,7 @@ def pteqr_get_d_e_A_z(dtype, realtype, n, compz):
         A_eig = A_eig + np.diag(np.zeros(n) + 4*n)
         A_eig = (A_eig + A_eig.conj().T) / 2
         # obtain right eigenvectors (orthogonal)
-        vr = eig(A_eig)[1]
+        vr = eigh(A_eig)[1]
         # create tridiagonal matrix
         d = generate_random_dtype_array((n,), realtype) + 4
         e = generate_random_dtype_array((n-1,), realtype)
@@ -2122,8 +2122,7 @@ def test_pteqr(dtype, realtype, compz):
     correct eigenvalues with scipy.linalg.eig. With applicable compz=I it
     tests that z can reform A.
     '''
-    np.random.seed(42)
-    rtol = 2500*np.finfo(dtype).eps
+    seed(42)
     atol = 1000*np.finfo(dtype).eps
     pteqr = get_lapack_funcs(('pteqr'), dtype=dtype)
 
@@ -2131,26 +2130,26 @@ def test_pteqr(dtype, realtype, compz):
 
     d, e, A, z = pteqr_get_d_e_A_z(dtype, realtype, n, compz)
 
-    d_pteqr, e_pteqr, z_pteqr, work, info = pteqr(d=d, e=e, z=z, compz=compz)
+    d_pteqr, e_pteqr, z_pteqr,work, info = pteqr(d=d, e=e, z=z, compz=compz)
     assert_equal(info, 0, "info = {}, should be 0.".format(info))
 
     # compare the routine's eigenvalues with scipy.linalg.eig's.
-    assert_allclose(np.sort(eig(A)[0]), np.sort(d_pteqr), rtol=rtol, atol=atol)
+    assert_allclose(np.sort(eigh(A)[0]), np.sort(d_pteqr), atol=atol)
 
     if compz == "I" or compz == "V":
         # verify z_pteqr as orthogonal
         assert_allclose(z_pteqr @ np.conj(z_pteqr).T, np.identity(n),
-                        rtol=rtol, atol=atol)
+                        atol=atol)
         # verify that z_pteqr recombines to A
         assert_allclose(z_pteqr @ np.diag(d_pteqr) @ np.conj(z_pteqr).T,
-                        A, rtol=rtol, atol=atol)
+                        A, atol=atol)
 
 
 @pytest.mark.parametrize("dtype,realtype",
                          zip(DTYPES, REAL_DTYPES + REAL_DTYPES))
 @pytest.mark.parametrize("compz", ["I", "N", "V"])
 def test_pteqr_error_non_spd(dtype, realtype, compz):
-    np.random.seed(42)
+    seed(42)
     pteqr = get_lapack_funcs(('pteqr'), dtype=dtype)
 
     n = 10
@@ -2165,21 +2164,23 @@ def test_pteqr_error_non_spd(dtype, realtype, compz):
                          zip(DTYPES, REAL_DTYPES + REAL_DTYPES))
 @pytest.mark.parametrize("compz", ["I", "N", "V"])
 def test_pteqr_raise_error_wrong_shape(dtype, realtype, compz):
-    np.random.seed(42)
+    seed(42)
     pteqr = get_lapack_funcs(('pteqr'), dtype=dtype)
     n = 10
     d, e, A, z = pteqr_get_d_e_A_z(dtype, realtype, n, compz)
     # test with incorrect/incompatible array sizes
     assert_raises(ValueError, pteqr, d[:-1], e, z=z, compz=compz)
     assert_raises(ValueError, pteqr, d, e[:-1], z=z, compz=compz)
-    assert_raises(ValueError, pteqr, d, e, z=z[:-1], compz=compz)
+    if compz in {"I", "V"}:
+        d_pteqr, e_pteqr, z_pteqr, work, info = pteqr(d, e, z=z[:-1], compz=compz)
+        assert_(info != 0)
 
 
 @pytest.mark.parametrize("dtype,realtype",
                          zip(DTYPES, REAL_DTYPES + REAL_DTYPES))
 @pytest.mark.parametrize("compz", ["I", "N", "V"])
 def test_pteqr_error_singular(dtype, realtype, compz):
-    np.random.seed(42)
+    seed(42)
     pteqr = get_lapack_funcs(('pteqr'), dtype=dtype)
     n = 10
     d, e, A, z = pteqr_get_d_e_A_z(dtype, realtype, n, compz)
@@ -2202,8 +2203,7 @@ def test_pteqr_error_singular(dtype, realtype, compz):
                           ])
 def test_pteqr_NAG_f08jgf(compz, d, e, d_expect, z_expect):
     '''
-    Implements real (f08jgf) example from NAG manual.
-    https://www.nag.com/numeric/fl/nagdoc_latest/html/f08/f08jgf.html
+    Implements real (f08jgf) example from NAG Manual Mark 26.
     Tests for correct outputs.
     '''
     # the NAG manual has 4 decimals accuracy
