@@ -112,7 +112,7 @@ subroutine <prefix>pteqr(compz, n, d, e, z, ldz, work, info)
     <ftypereal> intent(in,out,copy), dimension(n) :: d
     <ftypereal> intent(in,out,copy), depend(n), dimension(n-1) :: e
     <ftype> intent(in,out,copy), depend(n), dimension(ldz, n) :: z
-    integer intent(hide), depend(z) :: ldz = max(1, shape(z, 0))
+    integer intent(hide), depend(z,n,compz) :: ldz = (*compz=='N')?1:max(1, shape(z, 0))
     <ftypereal> intent(out), dimension(4*n) :: work
     integer intent(out) :: info
 
