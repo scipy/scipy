@@ -574,6 +574,7 @@ lp, revstack, complete, status, message
         message = "The problem is (trivially) infeasible. One or more lower bounds are higher than corresponding upper bounds."
         return (lp, revstack, True, status, message)
 
+    """
     # Check infeasible equality constraints
     (lp, _, status) = _presolve_infeasible_equality_constraints(lp)
     if status == 2:
@@ -618,6 +619,7 @@ lp, revstack, complete, status, message
     c = lp[0]
     if len(c) == 0:
         complete = True
+    """
 
     # At this point, status cannot be anything else than 0
     status = 0
@@ -641,7 +643,7 @@ def _presolve_infeasible_bounds(pp):
 
 def _presolve_infeasible_equality_constraints(pp):
     """
-    Check for equalities which cannot be fulfilled given the bounds
+    Check for equalities which cannot be fulfilled given the bounds.
     Given bounds for x lead to bounds for product A_eq*x. If b_eq
     does not satisfy these bounds, a solution is infeasible.
     pp = (c, A_ub, b_ub, A_eq, b_eq, bounds, x0)
@@ -654,7 +656,7 @@ def _presolve_infeasible_equality_constraints(pp):
         status = 6 # no change
         return (pp, None, status)
 
-    # Create t**wo matrices G and H the shape of A_eq. G with upper bound
+    # Create two matrices G and H the shape of A_eq. G with upper bound
     # values where elements of A_eq are positive, lower bound values
     # where negative, and 0 where 0. H the opposite.
     # Note: treat zero-values in A_eq separately, to avoid final
@@ -678,7 +680,6 @@ def _presolve_infeasible_equality_constraints(pp):
     u_eq = np.sum(A_eq*G,1)
     l_eq = np.sum(A_eq*H,1)
     # Check whether b_eq is within this range
-    #TODO: need tolerances here? check problem 2 with b_eq[2] = -0.5*self.tol
     if np.any(b_eq<l_eq) or np.any(b_eq>u_eq):
         # Infeasible constraints
         status = 2 # infeasible bounds
@@ -690,7 +691,7 @@ def _presolve_infeasible_equality_constraints(pp):
 
 def _presolve_infeasible_inequality_constraints(pp):
     """
-    Check for inequalities which cannot be fulfilled given the bounds
+    Check for inequalities which cannot be fulfilled given the bounds.
     Given bounds for x lead to bounds L and U for product A_ub*x. If
     these bounds do not overlap <= b_ub, i.e. if L > b_ub, then a
     solution is infeasible.
@@ -723,10 +724,7 @@ def _presolve_infeasible_inequality_constraints(pp):
     # Row sums of element-wise product gives range between which equations
     # can vary.
     l_ub = np.sum(A_ub*H,1)
-    #print("b_ub:",b_ub)
-    #print("l_ub:",l_ub)
     # Check whether b_eq is within this range
-    #TODO: need tolerances here? compare problem 2 with b_eq[2] = -0.5*self.tol
     if np.any(b_ub<l_ub):
         # Infeasible constraints
         status = 2 # infeasible bounds
@@ -736,19 +734,53 @@ def _presolve_infeasible_inequality_constraints(pp):
     return (pp, None, status)
 
 
-def _presolve_remove_fixed_variables(pp):
+def _presolve_remove_fixed_variables(pp, tol=1e-9):
     """
     Check for lower bounds which are equal to upper bounds.
     Remove these variable from the problem matrices.
     pp = (c, A_ub, b_ub, A_eq, b_eq, bounds, x0)
     """
-    c, A_ub, b_ub, A_eq, b_eq, bounds, x0, tol = pp
-    fixed_indices = bounds[:,0]==bounds[:,1]
-    if np.any(fixed_indices):
+    c, A_ub, b_ub, A_eq, b_eq, bounds, x0 = pp
+    # Create a tolerance vector to facilitate further processing
+    # tol = np.full(b_eq.shape,tol)
+    # Check which indices are fixed, given the tolerance
+    fixed_indices = np.abs(bounds[:,0]-bounds[:,1])<=tol
+    if np.all(fixed_indices):
+        # If all variables have been fixed, the problem is either solved or
+        # infeasible.
+        # The fixed variables results in 0 >= b_ub and 0 == b_eq.
+        # So check if the transformed b_eq equals 0 (within tolerance range).
+        # For b_ub there is no need to use a tolerance, just check if b_ub <= 0.
+        # The tolerance to use for element i in b_eq is:
+        # tol_b[i]^2 = A_eq[i,1]^2 * tol_x[1]^2 + ... + A_eq[i,N] * tol_x[N]^2
+        # if there are N variables in x.
+        # All x-tolerances are the same: tol_x[j] = tol.
+        x_fixed = np.sum(bounds[fixed_indices,:],1)/2
+        if A_eq is not None:
+            tol_b_eq = np.sqrt(np.sum(np.square(A_eq),1))*tol
+            # Calculate residu A_eq * x - b_eq and check if zero
+            r = np.dot(A_eq,x_fixed) - b_eq
+            sol_eq = np.all(np.abs(r) <= tol_b_eq)
+        else:
+            sol_eq = True
+        if A_ub is not None:
+            # Calculate residu A_ub * x - b_ub and check if >= zero
+            r = np.dot(A_ub,x_fixed) - b_ub
+            sol_ub = np.all(r >= 0)
+        else:
+            sol_ub = True
+        if sol_eq and sol_ub:
+            # Solution determined in presolve
+            status = 0
+        else:
+            # Solution infeasible
+            status = 2
+        return (pp, None, status)
+    elif np.any(fixed_indices):
         # Keep variables which are not fixed
         keep_indices = np.logical_not(fixed_indices)
-        # Fix variables indicated by fixed_indices
-        x_fixed = bounds[fixed_indices,0]
+        # Fix variables indicated by fixed_indices (midway bounds)
+        x_fixed = np.sum(bounds[fixed_indices,:],1)/2
         if b_eq is not None:
             b_eq = b_eq - np.dot(A_eq[:,fixed_indices],x_fixed)
             A_eq = A_eq[:,keep_indices]
@@ -761,19 +793,24 @@ def _presolve_remove_fixed_variables(pp):
         if x0 is not None:
             x0_fixed = x0[fixed_indices]
             x0 = x0[keep_indices];
-        pp = (c, A_ub, b_ub, A_eq, b_eq, bounds, x0, tol)
+        pp = (c, A_ub, b_ub, A_eq, b_eq, bounds, x0) #TODO check if necessary
         status = 5 # modifications
         # Reverse operation only relevant for c, x and x0
         # When removing elements at positions k1, k2, k3, ...
         # these must be replaced at (after) positions k1-1, k2-2, k3-3, ...
         # in the modified array
         def rev(c_mod,x_mod,x0_mod):
-            i = np.where(fixed_indices)
+            print("fixed_indices:",fixed_indices)
+            i = np.flatnonzero(fixed_indices)
+            print("i:",i)
             # Number of variables to restore
             N = len(i)
+            print("N:",N)
             index_offset = list(range(N))
-            # Creat insert indices
+            print("index_offset:",index_offset)
+            # Create insert indices
             insert_indices = np.subtract(i,index_offset).flatten()
+            print("insert_indices:",insert_indices)
             c_rev = np.insert(c_mod,insert_indices,c_fixed)
             x_rev = np.insert(x_mod,insert_indices,x_fixed)
             if x0 is not None:
@@ -787,8 +824,146 @@ def _presolve_remove_fixed_variables(pp):
         return (pp, None, status)
 
 
-def _presolve_remove_row_singletons(pp):
-    return (pp, None, 6)
+def _presolve_remove_row_singletons(pp, tol=1e-9):
+    """
+    Remove row singletons.
+    
+    A row singleton is an equality equation in a single variable.
+    Using this equation, the variable can be solved and eliminated from the
+    problem.
+    
+    Parameters
+    ----------
+    pp : tuple
+        DESCRIPTION.
+
+    Returns
+    -------
+    pp : TYPE
+        DESCRIPTION.
+    rev
+        DESCRIPTION.
+    status
+        DESCRIPTION.
+
+    """
+    
+    c, A_ub, b_ub, A_eq, b_eq, bounds, x0 = pp
+
+    if A_eq is None:
+        status = 6 # no change
+        return (pp, None, status)
+
+    # Detect which rows of A_eq have a single non-zero element
+    S = np.abs(A_eq) > tol
+    sing_row_indices = np.sum(S,1) == 1
+    R = S[sing_row_indices,:]
+    
+    # Calculate variable values from singleton rows
+    # Select b_eq-values for singleton rows
+    # Select the sinlge non-zero A_eq-values on its singleton rows
+    # (A_eq[sing_row_indices,:] is A_eq's singleton rows,
+    # R = S[sing_row_indices,:] is the corresponding mask of non-zero elements
+    # in these rows. Combine both to get the A_eq values needed.)
+    # No need to check fixed values against bounds; that has been checked
+    # already in _presolve_infeasible_equality_constraints().
+    b_fixed = b_eq[sing_row_indices]
+    A_fixed = A_eq[sing_row_indices,:][R]
+    x_fixed = b_fixed/A_fixed
+    # Column sums of R provide indices of involved variables
+    Rs = np.sum(R,0)
+    fixed_indices = Rs >= 1
+    
+    # Handle situation in which multiple row singletons pertain to the same
+    # variable. For these cases, np.sum(R,0) > 1.
+    # If the corresponding calculated x_fixed values are the same, the
+    # procedure can continue. Otherwise, the problem is infeasible.
+    Rm = Rs > 1
+    if np.any(Rm):
+        # Check all occasions
+        for i in range(len(Rm)):
+            if Rm(i):
+                # What equations involve variable x[i]?
+                # Check column i of R. Use this as a mask in x_fixed
+                v = x_fixed[R[:,i]]
+                r = v[1:]-v[0]
+                if np.any(np.abs(r)>tol):
+                    # Solution infeasible
+                    status = 2
+                    return (pp, None, status)                
+    
+    if np.all(fixed_indices):
+        # If all variables have been fixed, the problem is either solved or
+        # infeasible.
+        # The fixed variables results in 0 >= b_ub and 0 == b_eq.
+        # So check if the transformed b_eq equals 0 (within tolerance range).
+        # For b_ub there is no need to use a tolerance, just check if b_ub <= 0.
+        # The tolerance to use for element i in b_eq is:
+        # tol_b[i]^2 = A_eq[i,1]^2 * tol_x[1]^2 + ... + A_eq[i,N] * tol_x[N]^2
+        # if there are N variables in x.
+        # All x-tolerances are the same: tol_x[j] = tol.
+        tol_b_eq = np.sqrt(np.sum(np.square(A_eq),1))*tol
+        # Calculate residu A_eq * x - b_eq and check if zero
+        r = np.dot(A_eq,x_fixed) - b_eq
+        sol_eq = np.all(np.abs(r) <= tol_b_eq)
+        if A_ub is not None:
+            # Calculate residu A_ub * x - b_ub and check if >= zero
+            r = np.dot(A_ub,x_fixed) - b_ub
+            sol_ub = np.all(r >= 0)
+        else:
+            sol_ub = True
+        if sol_eq and sol_ub:
+            # Solution determined in presolve
+            status = 0
+        else:
+            # Solution infeasible
+            status = 2
+        return (pp, None, status)
+    elif np.any(sing_row_indices):
+        # Keep variables which are not fixed
+        keep_indices = np.logical_not(fixed_indices)
+        print("keep_indices:",keep_indices)
+        if b_eq is not None:
+            b_eq = b_eq - np.dot(A_eq[:,fixed_indices],x_fixed)
+            A_eq = A_eq[:,keep_indices]
+        if b_ub is not None:
+            b_ub = b_ub - np.dot(A_ub[:,fixed_indices],x_fixed)
+            A_ub = A_ub[:,keep_indices]
+        c_fixed = c[fixed_indices]
+        c = c[keep_indices]
+        bounds = bounds[keep_indices,:]
+        if x0 is not None:
+            x0_fixed = x0[fixed_indices]
+            x0 = x0[keep_indices];
+        pp = (c, A_ub, b_ub, A_eq, b_eq, bounds, x0) #TODO check if necessary
+        status = 5 # modifications
+        # Reverse operation only relevant for c, x and x0
+        # When removing elements at positions k1, k2, k3, ...
+        # these must be replaced at (after) positions k1-1, k2-2, k3-3, ...
+        # in the modified array
+        def rev(c_mod,x_mod,x0_mod):
+            print("fixed_indices:",fixed_indices)
+            i = np.flatnonzero(fixed_indices)
+            print("i:",i)
+            # Number of variables to restore
+            N = len(i)
+            print("N:",N)
+            index_offset = list(range(N))
+            print("index_offset:",index_offset)
+            # Create insert indices
+            insert_indices = np.subtract(i,index_offset).flatten()
+            print("insert_indices:",insert_indices)
+            c_rev = np.insert(c_mod,insert_indices,c_fixed)
+            x_rev = np.insert(x_mod,insert_indices,x_fixed)
+            if x0 is not None:
+                x0_rev = np.insert(x0_mod,insert_indices,x0_fixed)
+            else:
+                x0_rev = None
+            return (c_rev,x_rev,x0_rev)
+        return (pp, rev, status)
+    else:
+        status = 6 # no change
+        return (pp, None, status)
 
 
 def _presolve_remove_empty_rows(pp):
