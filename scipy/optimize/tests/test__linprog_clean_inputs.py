@@ -114,7 +114,7 @@ def test_inconsistent_dimensions():
     assert_raises(ValueError, _clean_inputs, _LPProblem(c=c, A_eq=Abad, b_eq=bgood))
     assert_raises(ValueError, _clean_inputs, _LPProblem(c=c, A_eq=Agood, b_eq=bbad))
     assert_raises(ValueError, _clean_inputs, _LPProblem(c=c, bounds=boundsbad))
-    assert_raises(ValueError, _clean_inputs, _LPProblem(c=c, bounds=[[1,2],[2,3],[3,4],[4,5,6]]))
+    assert_raises(ValueError, _clean_inputs, _LPProblem(c=c, bounds=[[1, 2], [2, 3], [3, 4], [4, 5, 6]]))
 
 
 def test_type_errors():
@@ -140,7 +140,8 @@ def test_type_errors():
     assert_raises(ValueError, _clean_inputs, lp._replace(bounds=[("hi")]))
     assert_raises(ValueError, _clean_inputs, lp._replace(bounds=[(1, "")]))
     assert_raises(ValueError, _clean_inputs, lp._replace(bounds=[(1, 2), (1, "")]))
-    assert_raises(TypeError, _clean_inputs, lp._replace(bounds=[(1, date(2020,2,29))]))
+    assert_raises(TypeError, _clean_inputs, lp._replace(bounds=[(1, date(2020, 2, 29))]))
+    assert_raises(ValueError, _clean_inputs, lp._replace(bounds=[[[1, 2]]]))
 
 
 def test_non_finite_errors():
@@ -254,6 +255,12 @@ def test_good_bounds():
     lp = _LPProblem(c=[1, 2])
 
     lp_cleaned = _clean_inputs(lp)  # lp.bounds is None by default
+    assert_(np.all(lp_cleaned.bounds == [(0, np.inf)] * 2), "")
+
+    lp_cleaned = _clean_inputs(lp._replace(bounds=[]))
+    assert_(np.all(lp_cleaned.bounds == [(0, np.inf)] * 2), "")
+
+    lp_cleaned = _clean_inputs(lp._replace(bounds=[[]]))
     assert_(np.all(lp_cleaned.bounds == [(0, np.inf)] * 2), "")
 
     lp_cleaned = _clean_inputs(lp._replace(bounds=(1, 2)))

@@ -35,15 +35,16 @@ _LPProblem.__doc__ = \
         the corresponding element of ``b_eq``.
     bounds : various valid formats, optional
         The bounds of ``x``, as ``min`` and ``max`` pairs.
-        If bounds are specified for all N variables separately, valid formats are:
-        * a 2D array (2 x N or N x 2);
+        If bounds are specified for all N variables separately, valid formats
+        are:
+        * a 2D array (N x 2);
         * a sequence of N sequences, each with 2 values.
-        If all variables have the same bounds, a single pair of values can
-        be specified. Valid formats are:
-        * a sequence with 2 scalar values;
-        * a sequence with a single element containing 2 scalar values.
+        If all variables have the same bounds, the bounds can be specified as
+        a 1-D or 2-D array or sequence with 2 scalar values.
         If all variables have a lower bound of 0 and no upper bound, the bounds
         parameter can be omitted (or given as None).
+        Absent lower and/or upper bounds can be specified as -numpy.inf (no
+        lower bound), numpy.inf (no upper bound) or None (both).
     x0 : 1D array, optional
         Guess values of the decision variables, which will be refined by
         the optimization algorithm. This argument is currently used only by the
@@ -375,21 +376,21 @@ def _clean_inputs(lp):
                 "inf, nan, or None")
 
     # Bounds can be one of these formats:
-    # (1) None
-    # (2) a sequence with 2 scalars
-    # (3) a sequence with 1 element as (2)
-    # (4) a sequence with N elements, all with 2 values (N is the size of x)
-    # (5) a 2-D array, with shape N x 2
+    # (1) a 2-D array or sequence, with shape N x 2
+    # (2) a 1-D or 2-D sequence or array with 2 scalars
+    # (3) None (or an empty sequence or array)
     # Unspecified bounds can be represented by None or (-)np.inf.
     # All formats are converted into a N x 2 np.array with (-)np.inf where
     # bounds are unspecified.
+
+    # Prepare clean bounds array
     bounds_clean = np.zeros((n_x, 2), dtype=float)
 
-    # Determine shape of provided bounds
+    # Convert to a numpy array.
     # np.array(..,dtype=float) raises an error if dimensions are inconsistent
-    # or if there are invalid data types in bounds. Add a linprog header to
-    # the error returned by np.array().
-    # Create at least a 2-D array.
+    # or if there are invalid data types in bounds. Just add a linprog prefix
+    # to the error and re-raise.
+    # Creating at least a 2-D array simplifies the cases to distinguish below.
     try:
         bounds_conv = np.atleast_2d(np.array(bounds, dtype=float))
     except ValueError as e:
@@ -403,7 +404,12 @@ def _clean_inputs(lp):
 
     # Check bounds options
     bsh = bounds_conv.shape
-    if np.all(bsh == (n_x, 2)):
+    if len(bsh) > 2:
+        # Do not try to handle multidimensional bounds input
+        raise ValueError(
+            "Invalid input for linprog: provide a 2-D array for bounds, "
+            "not a {:d}-D array.".format(len(bsh)))
+    elif np.all(bsh == (n_x, 2)):
         # Regular N x 2 array
         bounds_clean = bounds_conv
     elif (np.all(bsh == (2, 1)) or np.all(bsh == (1, 2))):
@@ -416,9 +422,11 @@ def _clean_inputs(lp):
         raise ValueError(
             "Invalid input for linprog: provide a {:d} x 2 array for bounds, "
             "not a 2 x {:d} array.".format(n_x, n_x))
-    elif bsh[0] == 1 and (bsh[1] == 0 or bsh[1] == 1):
+    elif bsh[0] == 1 and bsh[1] == 0:
         # [] converts to a (1,0) array (with no elements)
-        # None converts to a (1,1) array (with a nan-value)
+        bounds_clean[:, 1] = np.inf
+    elif bsh[0] == 1 and bsh[1] == 1 and np.isnan(bounds_conv[0, 0]):
+        # None converts to a (1,1) array with a nan-value
         bounds_clean[:, 1] = np.inf
     else:
         raise ValueError(
@@ -1066,6 +1074,7 @@ def _get_Abc(lp, c0, undo=[]):
     # required modifications from inside here.
 
     # unbounded below: substitute xi = -xi' (unbounded above)
+    # if -inf <= xi <= ub, then -ub <= -xi <= inf, so swap and invert bounds
     l_nolb_someub = np.logical_and(lb_none, ub_some)
     i_nolb = np.nonzero(l_nolb_someub)[0]
     lbs[l_nolb_someub], ubs[l_nolb_someub] = (
