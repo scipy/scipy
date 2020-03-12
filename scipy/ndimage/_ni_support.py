@@ -91,3 +91,4 @@ def _check_axis(axis, rank):
 
 def _check_float(num):
     return float(num)
+
