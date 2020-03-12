@@ -25,3 +25,4 @@ class GaborFilter(Benchmark):
 
     def time_gabor_3d(self, truncate):
         gabor_filter(self.volume, 5, 0, 0.1, 0, truncate=truncate)
+

@@ -372,12 +372,11 @@ def gabor_filter(input, sigma, phi, frequency, offset=0.0, output=None,
             [16, 18, 19, 21, 22],
             [24, 25, 27, 28, 30],
             [29, 30, 32, 34, 35]]),
-     array([[ 0,  0, -1,  0,  0],
+    array([[ 0,  0, -1,  0,  0],
             [ 0,  0, -1,  0,  0],
             [ 0,  0, -1,  0,  0],
             [ 0,  0, -1,  0,  0],
             [ 0,  0, -1,  0,  0]]))
-
     >>> from scipy import misc
     >>> import matplotlib.pyplot as plt
     >>> fig = plt.figure()
