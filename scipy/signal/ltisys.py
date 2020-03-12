@@ -2,8 +2,6 @@
 ltisys -- a collection of classes and functions for modeling linear
 time invariant systems.
 """
-from __future__ import division, print_function, absolute_import
-
 #
 # Author: Travis Oliphant 2001
 #

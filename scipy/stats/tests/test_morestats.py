@@ -2,8 +2,6 @@
 #
 # Further enhancements and tests added by numerous SciPy developers.
 #
-from __future__ import division, print_function, absolute_import
-
 import warnings
 
 import numpy as np

@@ -315,8 +315,6 @@ References
    https://physics.nist.gov/cuu/Constants/
 
 """
-from __future__ import division, print_function, absolute_import
-
 # Modules contributed by BasSw (wegwerp@gmail.com)
 from .codata import *
 from .constants import *

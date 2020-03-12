@@ -1,8 +1,6 @@
 """Tools for spectral analysis.
 """
 
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 from scipy import fft as sp_fft
 from . import signaltools

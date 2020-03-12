@@ -189,8 +189,6 @@ Low-level routines
 
 """  # noqa: E501
 
-from __future__ import division, print_function, absolute_import
-
 from .linalg_version import linalg_version as __version__
 
 from .misc import *

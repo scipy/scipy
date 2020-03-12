@@ -2,8 +2,6 @@
 Solve the orthogonal Procrustes problem.
 
 """
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 from .decomp_svd import svd
 

@@ -3,8 +3,6 @@
 # Author: Jordi Montes <jomsdev@gmail.com>
 # August 28, 2017
 
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 
 from scipy._lib._util import check_random_state

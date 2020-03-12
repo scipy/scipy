@@ -13,8 +13,10 @@ trigger:
       - './*.txt'
       - 'site.cfg.example'
 
-# the version of OpenBLAS used is currently 0.3.7
+# the version of OpenBLAS used is currently 0.3.8.dev
 # and should be updated to match scipy-wheels as appropriate
+variables:
+    openblas_version: 0.3.8.dev
 
 jobs:
 - job: Linux_Python_36_32bit_full
@@ -34,11 +36,12 @@ jobs:
            apt-get -y install gfortran-5 wget && \
            cd .. && \
            mkdir openblas && cd openblas && \
-           wget https://3f23b170c54c2533c070-1c8a9b3114517dc5fe17b7c3f8c63a43.ssl.cf2.rackcdn.com/openblas-v0.3.7-manylinux1_i686.tar.gz && \
-           tar zxvf openblas-v0.3.7-manylinux1_i686.tar.gz && \
-           cp -r ./usr/local/lib/* /usr/lib && \
-           cp ./usr/local/include/* /usr/include && \
+           target=\$(python3.6 ../scipy/tools/openblas_support.py) && \
+           cp -r \$target/lib/* /usr/lib && \
+           cp \$target/include/* /usr/include && \
            cd ../scipy && \
+           F77=gfortran-5 F90=gfortran-5 python3.6 setup.py install && \
+           python3.6 tools/openblas_support.py --check_version $(openblas_version) && \
            F77=gfortran-5 F90=gfortran-5 python3.6 runtests.py --mode=full -- -n auto -s --junitxml=junit/test-results.xml --cov-config=.coveragerc --cov-report=xml --cov-report=html"
     displayName: 'Run 32-bit Ubuntu Docker Build / Tests'
   - task: PublishTestResults@2
@@ -56,9 +59,6 @@ jobs:
   condition: and(succeeded(), ne(variables['Build.SourceBranch'], 'refs/heads/master'))  # skip for PR merges
   pool:
     vmImage: 'VS2017-Win2016'
-  variables:
-      OPENBLAS_32: https://3f23b170c54c2533c070-1c8a9b3114517dc5fe17b7c3f8c63a43.ssl.cf2.rackcdn.com/openblas-v0.3.7-win32-gcc_7_1_0.zip
-      OPENBLAS_64: https://3f23b170c54c2533c070-1c8a9b3114517dc5fe17b7c3f8c63a43.ssl.cf2.rackcdn.com/openblas-v0.3.7-win_amd64-gcc_7_1_0.zip
   strategy:
     maxParallel: 4
     matrix:
@@ -95,15 +95,12 @@ jobs:
   - script: python -m pip install --upgrade pip setuptools wheel
     displayName: 'Install tools'
   - powershell: |
-      $wc = New-Object net.webclient;
-      $wc.Downloadfile("$(OPENBLAS)", "openblas.zip")
-      $tmpdir = New-TemporaryFile | %{ rm $_; mkdir $_ }
-      Expand-Archive "openblas.zip" $tmpdir
-      $pyversion = python -c "from __future__ import print_function; import sys; print(sys.version.split()[0])"
+      $pyversion = python -c "import sys; print(sys.version.split()[0])"
       Write-Host "Python Version: $pyversion"
       $target = "C:\\hostedtoolcache\\windows\\Python\\$pyversion\\$(PYTHON_ARCH)\\lib\\openblas.a"
       Write-Host "target path: $target"
-      cp $tmpdir\$(BITS)\lib\libopenblas_v0.3.7-gcc_7_1_0.a $target
+      $openblas = python tools/openblas_support.py
+      cp $openblas $target
     displayName: 'Download / Install OpenBLAS'
   - powershell: |
       # wheels appear to use mingw64 version 6.3.0, but 6.4.0

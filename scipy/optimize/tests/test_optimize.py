@@ -9,8 +9,6 @@ To run it in its simplest form::
   nosetests test_optimize.py
 
 """
-from __future__ import division, print_function, absolute_import
-
 import itertools
 import multiprocessing
 import numpy as np

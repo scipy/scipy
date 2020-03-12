@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 from scipy.sparse import csr_matrix, isspmatrix, isspmatrix_csc
 from ._tools import csgraph_to_dense, csgraph_from_dense,\
