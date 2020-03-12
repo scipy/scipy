@@ -95,7 +95,8 @@ Decompositions
    rsf2csf - Real to complex Schur form
    hessenberg - Hessenberg form of a matrix
    cdf2rdf - Complex diagonal form to real diagonal block form
-
+   cossin - Cosine sine decomposition of a unitary or orthogonal matrix   
+   
 .. seealso::
 
    `scipy.linalg.interpolative` -- Interpolative matrix decompositions
@@ -210,6 +211,7 @@ from ._solvers import *
 from ._procrustes import *
 from ._decomp_update import *
 from ._sketches import *
+from ._decomp_cossin import *
 
 __all__ = [s for s in dir() if not s.startswith('_')]
 
