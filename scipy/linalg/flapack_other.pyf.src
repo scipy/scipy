@@ -1630,3 +1630,62 @@ subroutine ilaver(major, minor, patch)
     integer intent(out) :: minor
     integer intent(out) :: patch
 end subroutine ilaver
+
+
+
+subroutine <prefix2>gejsv(joba,jobu,jobv,jobr,jobt,jobp,m,n,a,lda,sva,u,ldu,v,ldv,work,lwork,iwork,info)
+    callstatement(*f2py_func)(joba,jobu,jobv,jobr,jobt,jobp,&m,&n,a,&lda,sva,u,&ldu,v,&ldv,work,&lwork,iwork,&info)
+    callprotoargument char*,char*,char*,char*,char*,char*,int*,int*,<ctype2>*,int*,<ctype2>*,<ctype2>*,int*,<ctype2>*,int*,<ctype2>*,int*,<ctype2>*,int*
+
+    character intent(in, optional), check(*joba=='C'||*joba=='E'||*joba=='F'||*joba=='G'||*joba=='A'||*joba=='R') :: joba='C'
+    character intent(in, optional), check(*jobu=='U'||*jobu=='F'||*jobu=='W'||*jobu=='N') :: jobu='U'
+    character intent(in, optional), check(*jobv=='V'||*jobv=='J'||*jobv=='W'||*jobv=='N') :: jobv='V'
+    character intent(in, optional), check(*jobr=='R'||*jobr=='N') :: jobr='R'
+    character intent(in, optional), check(*jobt=='N'||*jobt=='T') :: jobt='N'
+    character intent(in, optional), check(*jobp=='N'||*jobp=='P') :: jobp='N'
+
+    integer intent(hide),depend(a) ::m=shape(a,0)
+    integer intent(hide),depend(a) ::n=shape(a,1)
+    <ftype2> dimension(n,m), intent(in) :: a
+    integer intent(hide), depend(m) :: lda = max(1,m)
+    <ftype2> intent(out), dimension(n) :: sva
+    <ftype2> intent(out), dimension(ldu, n) :: u
+    integer intent(hide), depend(m) :: ldu = max(m, 1)
+    <ftype2> intent(out), dimension(ldv, n) :: v
+    integer intent(hide), depend(n) :: ldv = max(n, 1)
+    <ftype2> intent(out), dimension(lwork) :: work
+    integer intent(in, optional) :: lwork=2*max(2*m+n, max(4*n+n*n,2*n+n*n+6))
+    <ftype2> intent(out), dimension(m+3*n) :: iwork
+    integer intent(out) :: info
+
+end subroutine <prefix2>gejsv
+
+
+subroutine <prefix2c>gejsv(joba,jobu,jobv,jobr,jobt,jobp,m,n,a,lda,sva,u,ldu,v,ldv,cwork,lwork,rwork,lrwork,iwork,info)
+    callstatement(*f2py_func)(joba,jobu,jobv,jobr,jobt,jobp,&m,&n,a,&lda,sva,u,&ldu,v,&ldv,cwork,&lwork,rwork,&lrwork,&iwork,&info)
+    callprotoargument char*,char*,char*,char*,char*,char*,int*,int*,<ctype2c>*,int*,<ctype2>*,<ctype2c>*,int*,<ctype2c>*,int*,<ctype2c>*,int*,<ctype2>*,int*,<ctype2>*,int*
+
+    character intent(in, optional), check(*joba=='C'||*joba=='E'||*joba=='F'||*joba=='G'||*joba=='A'||*joba=='R') :: joba='C'
+    character intent(in, optional), check(*jobu=='U'||*jobu=='F'||*jobu=='W'||*jobu=='N') :: jobu='U'
+    character intent(in, optional), check(*jobv=='V'||*jobv=='J'||*jobv=='W'||*jobv=='N') :: jobv='V'
+    character intent(in, optional), check(*jobr=='R'||*jobr=='N') :: jobr='R'
+    character intent(in, optional), check(*jobt=='N'||*jobt=='T') :: jobt='N'
+    character intent(in, optional), check(*jobp=='N'||*jobp=='P') :: jobp='N'
+
+    integer intent(hide),depend(a) :: m=shape(a,0)
+    integer intent(hide),depend(a) :: n=shape(a,1)
+    <ftype2c> dimension(n,m), intent(in) :: a
+    integer intent(hide), depend(m) :: lda = max(1,m)
+    <ftype2> intent(out), dimension(n) :: sva
+    <ftype2c> intent(out), dimension(ldu, n) :: u
+    integer intent(hide), depend(m) :: ldu = max(m, 1)
+    <ftype2c> intent(out), dimension(ldv, n) :: v
+    integer intent(hide),depend(n) :: ldv = n
+    <ftype2c> intent(out), dimension(max(2,lwork)) :: cwork
+    integer intent(in, optional),depend(n,m) :: lwork=2*max(2*m+n, max(4*n+n*n,2*n+n*n+6))
+    <ftype2> intent(hide), dimension(max(7,lwork)) :: rwork
+    integer intent(in, optional),depend(m,n) :: lrwork=2*max(7,max(2*m,n))
+    <ftype2> intent(out):: iwork
+    integer intent(out) :: info
+
+end subroutine <prefix2c>gejsv
