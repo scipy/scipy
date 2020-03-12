@@ -6,6 +6,7 @@
  *
  */
 
+#include "ckdtree_decl.h"
 #include <algorithm>
 
 struct IndexComparator {
@@ -22,11 +23,13 @@ struct IndexComparator {
                                             n_dims(n_dims) {};
 
     inline bool operator()(ckdtree_intp_t a, ckdtree_intp_t b) {
-        if (data[a * n_dims + split_dim] == data[b * n_dims + split_dim]) {
+        const double point_a = data[a * n_dims + split_dim];
+        const double point_b = data[b * n_dims + split_dim];
+
+        if CKDTREE_UNLIKELY (point_a == point_b) {
             return a < b;
-        }
-        else {
-            return data[a * n_dims + split_dim] < data[b * n_dims + split_dim];
+        } else {
+            return point_a < point_b;
         }
     }
 };
