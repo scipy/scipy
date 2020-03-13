@@ -317,18 +317,41 @@ def test_kde_integer_input():
     y_expected = [0.13480721, 0.18222869, 0.19514935, 0.18222869, 0.13480721]
     assert_array_almost_equal(kde(x1), y_expected, decimal=6)
 
-@pytest.mark.parametrize("test_type", [getattr(np, dtype, None) for dtype in
+
+@pytest.mark.parametrize("bw_type", [getattr(np, dtype, None) for dtype in
+                         ['float32', 'float64', 'float96', 'float128']] +
+                         ["scott", "silverman"])
+@pytest.mark.parametrize("weights_type", [getattr(np, dtype, None) for dtype in
                          ['float32', 'float64', 'float96', 'float128']])
-def test_kde_output_dtype(test_type):
-    # test that if input is floating, we maintain the datatype
-    # need to have the list of types inside, because skipif only applies within the test
-    if test_type is None:
+@pytest.mark.parametrize("dataset_type", [getattr(np, dtype, None) for dtype in
+                         ['float32', 'float64', 'float96', 'float128']])
+@pytest.mark.parametrize("point_type", [getattr(np, dtype, None) for dtype in
+                         ['float32', 'float64', 'float96', 'float128']])
+def test_kde_output_dtype(point_type, dataset_type, weights_type, bw_type):
+    # test that for any given combination of input datatypes we get the 
+    # appropriate result datatype
+    if point_type is None:
         pytest.skip("Data type not available")
-    x1 = np.arange(5)
-    k = stats.kde.gaussian_kde(x1)
-    points = np.arange(5, dtype=test_type)
+    if dataset_type is None:
+        pytest.skip("Data type not available")
+
+    if weights_type is None:
+        pytest.skip("Data type not available")
+    else:
+        weights = np.arange(5, dtype=weights_type)
+
+    if bw_type is None:
+        pytest.skip("Data type not available")
+    elif bw_type in ["scott", "silverman"]:
+        bw = bw_type
+    else:
+        bw = bw_type(3)
+
+    dataset = np.arange(5, dtype=dataset_type)
+    k = stats.kde.gaussian_kde(dataset, bw_method=bw, weights=weights)
+    points = np.arange(5, dtype=point_type)
     result = k(points)
-    assert result.dtype == test_type
+    assert result.dtype == np.result_type(dataset, points, weights, k.factor)
 
 def test_kde_output_dtype():
     # test that kde result is floating if input is not floating

@@ -239,10 +239,7 @@ class gaussian_kde(object):
                     self.d)
                 raise ValueError(msg)
 
-        if np.issubdtype(points.dtype, np.floating):
-            output_dtype = points.dtype
-        else:
-            output_dtype = np.float
+        output_dtype = np.common_type(self.covariance, points)
         result = zeros((m,), dtype=output_dtype)
 
         whitening = linalg.cholesky(self.inv_cov)
