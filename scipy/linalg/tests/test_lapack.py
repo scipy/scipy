@@ -1957,6 +1957,131 @@ def test_geqrfp_lwork(dtype, shape):
     assert_equal(info, 0)
 
 
+@pytest.mark.parametrize("ddtype,dtype",
+                         zip(REAL_DTYPES + REAL_DTYPES, DTYPES))
+def test_pttrf_pttrs(ddtype, dtype):
+    seed(42)
+    # set test tolerance appropriate for dtype
+    atol = 100*np.finfo(dtype).eps
+    # n is the length diagonal of A
+    n = 10
+    # create diagonals according to size and dtype
+
+    # diagonal d should always be real.
+    # add 4 to d so it will be dominant for all dtypes
+    d = generate_random_dtype_array((n,), ddtype) + 4
+    # diagonal e may be real or complex.
+    e = generate_random_dtype_array((n-1,), dtype)
+
+    # assemble diagonals together into matrix
+    A = np.diag(d) + np.diag(e, -1) + np.diag(np.conj(e), 1)
+    # store a copy of diagonals to later verify
+    diag_cpy = [d.copy(), e.copy()]
+
+    pttrf = get_lapack_funcs('pttrf', dtype=dtype)
+
+    _d, _e, info = pttrf(d, e)
+    # test to assure that the inputs of ?pttrf are unmodified
+    assert_array_equal(d, diag_cpy[0])
+    assert_array_equal(e, diag_cpy[1])
+    assert_equal(info, 0, err_msg="pttrf: info = {}, should be 0".format(info))
+
+    # test that the factors from pttrf can be recombined to make A
+    L = np.diag(_e, -1) + np.diag(np.ones(n))
+    D = np.diag(_d)
+
+    assert_allclose(A, L@D@L.conjugate().T, atol=atol)
+
+    # generate random solution x
+    x = generate_random_dtype_array((n,), dtype)
+    # determine accompanying b to get soln x
+    b = A@x
+
+    # determine _x from pttrs
+    pttrs = get_lapack_funcs('pttrs', dtype=dtype)
+    _x, info = pttrs(_d, _e.conj(), b)
+    assert_equal(info, 0, err_msg="pttrs: info = {}, should be 0".format(info))
+
+    # test that _x from pttrs matches the expected x
+    assert_allclose(x, _x, atol=atol)
+
+
+@pytest.mark.parametrize("ddtype,dtype",
+                         zip(REAL_DTYPES + REAL_DTYPES, DTYPES))
+def test_pttrf_pttrs_errors_incompatible_shape(ddtype, dtype):
+    n = 10
+    pttrf = get_lapack_funcs('pttrf', dtype=dtype)
+    d = generate_random_dtype_array((n,), ddtype) + 2
+    e = generate_random_dtype_array((n-1,), dtype)
+    # test that ValueError is raised with incompatible matrix shapes
+    assert_raises(ValueError, pttrf, d[:-1], e)
+    assert_raises(ValueError, pttrf, d, e[:-1])
+
+
+@pytest.mark.parametrize("ddtype,dtype",
+                         zip(REAL_DTYPES + REAL_DTYPES, DTYPES))
+def test_pttrf_pttrs_errors_singular_nonSPD(ddtype, dtype):
+    n = 10
+    pttrf = get_lapack_funcs('pttrf', dtype=dtype)
+    d = generate_random_dtype_array((n,), ddtype) + 2
+    e = generate_random_dtype_array((n-1,), dtype)
+    # test that singular (row of all zeroes) matrix fails via info
+    d[0] = 0
+    e[0] = 0
+    _d, _e, info = pttrf(d, e)
+    assert_equal(_d[info - 1], 0,
+                 "?pttrf: _d[info-1] is {}, not the illegal value :0."
+                 .format(_d[info - 1]))
+
+    # test with non-spd matrix
+    d = generate_random_dtype_array((n,), ddtype)
+    _d, _e, info = pttrf(d, e)
+    assert_(info != 0, "?pttrf should fail with non-spd matrix, but didn't")
+
+
+@pytest.mark.parametrize(("d, e, d_expect, e_expect, b, x_expect"), [
+                         (np.array([4, 10, 29, 25, 5]),
+                          np.array([-2, -6, 15, 8]),
+                          np.array([4, 9, 25, 16, 1]),
+                          np.array([-.5, -.6667, .6, .5]),
+                          np.array([[6, 10], [9, 4], [2, 9], [14, 65],
+                                    [7, 23]]),
+                          np.array([[2.5, 2], [2, -1], [1, -3], [-1, 6],
+                                    [3, -5]])
+                          ), (
+                          np.array([16, 41, 46, 21]),
+                          np.array([16 + 16j, 18 - 9j, 1 - 4j]),
+                          np.array([16, 9, 1, 4]),
+                          np.array([1+1j, 2-1j, 1-4j]),
+                          np.array([[64+16j, -16-32j], [93+62j, 61-66j],
+                                    [78-80j, 71-74j], [14-27j, 35+15j]]),
+                          np.array([[2+1j, -3-2j], [1+1j, 1+1j], [1-2j, 1-2j],
+                                    [1-1j, 2+1j]])
+                         )])
+def test_pttrf_pttrs_NAG(d, e, d_expect, e_expect, b, x_expect):
+    # test to assure that wrapper is consistent with NAG Manual Mark 26
+    # example problems: f07jdf and f07jef (real)
+    # examples: f07jrf and f07csf (complex)
+    # NAG examples provide 4 decimals.
+    # (Links expire, so please search for "NAG Library Manual Mark 26" online)
+    
+    atol = 1e-4
+    pttrf = get_lapack_funcs('pttrf', dtype=e[0])
+    _d, _e, info = pttrf(d, e)
+    assert_allclose(_d, d_expect, atol=atol)
+    assert_allclose(_e, e_expect, atol=atol)
+
+    pttrs = get_lapack_funcs('pttrs', dtype=e[0])
+    _x, info = pttrs(_d, _e.conj(), b)
+    assert_allclose(_x, x_expect, atol=atol)
+    
+    # also test option `lower`
+    if e.dtype in COMPLEX_DTYPES:
+        _x, info = pttrs(_d, _e, b, lower=1)
+        assert_allclose(_x, x_expect, atol=atol)
+        
+
+
 @pytest.mark.parametrize('dtype', DTYPES)
 @pytest.mark.parametrize('matrix_size', [(3, 4), (7, 6), (6, 6)])
 def test_geqrfp(dtype, matrix_size):
