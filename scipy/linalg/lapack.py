@@ -485,6 +485,16 @@ All functions
    cptsv
    zptsv
 
+   spttrf
+   dpttrf
+   cpttrf
+   zpttrf
+
+   spttrs
+   dpttrs
+   cpttrs
+   zpttrs
+
    crot
    zrot
 
