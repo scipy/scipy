@@ -10,7 +10,9 @@ from scipy.optimize._linprog_util import (
     _presolve_infeasible_equality_constraints,
     _presolve_infeasible_inequality_constraints,
     _presolve_remove_fixed_variables,
-    _presolve_remove_row_singletons)
+    _presolve_remove_row_singletons,
+    _presolve_remove_empty_rows,
+    _presolve_remove_empty_columns)
 
 
 def test_infeasible_bounds():
@@ -136,8 +138,9 @@ def test_remove_fixed_variables():
     """
     Test if fixed variables (lb == ub) are removed correctly.
     """
+    c = np.array([1, 2, 3])
     lp = _LPProblem(
-        c=np.array([1, 2, 3]),
+        c=c,
         A_ub=np.array([[1, 3, 5], [-2, -2, 1]]),
         b_ub=np.array([1, -1]),
         A_eq=None,
@@ -161,8 +164,8 @@ def test_remove_fixed_variables():
     assert_(np.all(lpp[1] == np.array([[3, 5], [-2, 1]])))
     assert_(np.all(lpp[2] == np.array([0, 1])))
 
-    cr, xr, x0r = rev(lpp[0], np.array([0, 0]), lpp[6])
-    assert_(np.all(cr == np.array([1, 2, 3])))
+    cr, xr, x0r = rev(lpp[0], np.array([0., 0.]), lpp[6])
+    assert_(np.all(cr == c))
     assert_(np.all(xr == np.array([1, 0, 0])))
     assert_(x0r is None)
 
@@ -174,8 +177,8 @@ def test_remove_fixed_variables():
     assert_(np.all(lpp[1] == np.array([[1, 5], [-2, 1]])))
     assert_(np.all(lpp[2] == np.array([4, -3])))
 
-    cr, xr, x0r = rev(lpp[0], np.array([0, 0]), lpp[6])
-    assert_(np.all(cr == np.array([1, 2, 3])))
+    cr, xr, x0r = rev(lpp[0], np.array([0., 0.]), lpp[6])
+    assert_(np.all(cr == c))
     assert_(np.all(xr == np.array([0, -1, 0])))
     assert_(x0r is None)
 
@@ -188,8 +191,8 @@ def test_remove_fixed_variables():
     assert_(np.all(lpp[1] == np.array([[1, 3], [-2, -2]])))
     assert_(np.all(lpp[2] == np.array([-14, -4])))
 
-    cr, xr, x0r = rev(lpp[0], np.array([0, 0]), lpp[6])
-    assert_(np.all(cr == np.array([1, 2, 3])))
+    cr, xr, x0r = rev(lpp[0], np.array([0., 0.]), lpp[6])
+    assert_(np.all(cr == c))
     assert_(np.all(xr == np.array([0, 0, 3])))
     assert_(np.all(x0r == x0))
 
@@ -202,8 +205,8 @@ def test_remove_fixed_variables():
     assert_(np.all(lpp[1] == np.array([[3], [-2]])))
     assert_(np.all(lpp[2] == np.array([-15, -2])))
 
-    cr, xr, x0r = rev(lpp[0], np.array([0]), lpp[6])
-    assert_(np.all(cr == np.array([1, 2, 3])))
+    cr, xr, x0r = rev(lpp[0], np.array([0.]), lpp[6])
+    assert_(np.all(cr == c))
     assert_(np.all(xr == np.array([1, 0, 3])))
     assert_(np.all(x0r == x0))
 
@@ -212,8 +215,9 @@ def test_remove_fixed_variables_close_bounds():
     """
     Test tolerances with close bounds.
     """
+    c = np.array([1, 2, 3])
     lp = _LPProblem(
-        c=np.array([1, 2, 3]),
+        c=c,
         A_ub=np.array([[1, 3, 5], [-2, -2, 1]]),
         b_ub=np.array([1, -1]),
         A_eq=None,
@@ -232,8 +236,8 @@ def test_remove_fixed_variables_close_bounds():
     assert_(np.all(lpp[1] == np.array([[1, 5], [-2, 1]])))
     assert_(np.all(lpp[2] == np.array([4, -3])))
 
-    cr, xr, x0r = rev(lpp[0], np.array([0, 0]), lpp[6])
-    assert_(np.all(cr == np.array([1, 2, 3])))
+    cr, xr, x0r = rev(lpp[0], np.array([0., 0.]), lpp[6])
+    assert_(np.all(cr == c))
     assert_(np.all(xr == np.array([0, -1, 0])))
     assert_(x0r is None)
 
@@ -245,8 +249,8 @@ def test_remove_fixed_variables_close_bounds():
     assert_(np.all(lpp[1] == np.array([[1, 5], [-2, 1]])))
     assert_(np.all(lpp[2] == np.array([4, -3])))
 
-    cr, xr, x0r = rev(lpp[0], np.array([0, 0]), lpp[6])
-    assert_(np.all(cr == np.array([1, 2, 3])))
+    cr, xr, x0r = rev(lpp[0], np.array([0., 0.]), lpp[6])
+    assert_(np.all(cr == c))
     assert_(np.all(xr == np.array([0, -1, 0])))
     assert_(x0r is None)
 
@@ -277,7 +281,6 @@ def test_remove_fixed_variables_solution():
     # b_ub exactly on border: solution
     b_ub = np.array([10, 5])
     lpp, rev, status = _presolve_remove_fixed_variables(lp._replace(b_ub=b_ub), tol)
-    print("status:", status)
     assert_(status == 0)
 
     # b_ub too large: infeasible
@@ -350,8 +353,9 @@ def test_remove_singleton_rows():
     Test singleton removal procedure.
     """
     tol = 1e-2
+    c = np.array([1, 2, 3, 4, 5])
     lp = _LPProblem(
-        c=np.array([1, 2, 3, 4, 5]),
+        c=c,
         A_ub=None,
         b_ub=None,
         A_eq=np.array([
@@ -368,11 +372,235 @@ def test_remove_singleton_rows():
     )
 
     # (lp, rev, status) = _presolve_remove_row_singletons(lp)
+
     lpp, rev, status = _presolve_remove_row_singletons(lp, tol)
+    assert_(status == 5)
     assert_(np.all(lpp[0] == np.array([2, 3, 5])))
     assert_(np.allclose(lpp[4], np.array([21.2, 15.6, 1.])))
     assert_(np.allclose(lpp[3], np.array([[3, 5, 9], [-2, 1, 1], [2, 0, 0]])))
 
+    # Do not use an integer array to insert into:
+    # the resulting array will also be integer.
+    cr, xr, x0r = rev(lpp[0], np.array([0., 0., 0.]), lpp[6])
+    assert_(np.all(cr == c))
+    assert_(np.allclose(xr, np.array([0.8, 0, 0, -2, 0])))
+    assert_(np.all(x0r is None))
+
     b_eq = np.array([8, 6, -2, -3, 2 + 1.5 * tol, 4])
     lpp, rev, status = _presolve_remove_row_singletons(lp._replace(b_eq=b_eq), tol)
     assert_(status == 2)
+
+
+def test_remove_empty_rows():
+    """
+    Test empty row removal procedure.
+    """
+    tol = 1e-2
+    A = np.array([
+        [ 1,  3,  5,  7,  9],
+        [ 0,  0,  0,  0,  0],
+        [-2, -2,  1,  8,  1],
+        [ 0,  2,  0,  2,  0],
+        [ 0,  0,  0,  0,  0],
+        [ 5,  0,  0,  0,  0]
+        ])
+    lp = _LPProblem(
+        c=None,
+        A_ub=None,
+        b_ub=None,
+        b_eq=None,
+        A_eq=None,
+        bounds=None,
+        x0=None,
+    )
+
+    # (lp, rev, status) = _presolve_remove_empty_rows(lp)
+
+    # Empty equations
+    lpp, rev, status = _presolve_remove_empty_rows(lp, tol)
+    assert_(status == 6)
+    assert_(rev is None)
+
+    # A_eq, b_eq
+    b_eq = np.array([8, 6, -2, -3, 2, 4])
+    lpp, rev, status = _presolve_remove_empty_rows(lp._replace(A_eq=A, b_eq=b_eq), tol)
+    assert_(status == 2)
+    assert_(rev is None)
+
+    b_eq = np.array([8, 0, -2, -3, 0, 4])
+    lpp, rev, status = _presolve_remove_empty_rows(lp._replace(A_eq=A, b_eq=b_eq), tol)
+    assert_(status == 6)
+    assert_(rev is None)
+
+    b_eq = np.array([8, 0.5 * tol, -2, -3, -0.9 * tol, 4])
+    lpp, rev, status = _presolve_remove_empty_rows(lp._replace(A_eq=A, b_eq=b_eq), tol)
+    assert_(status == 6)
+    assert_(rev is None)
+
+    b_eq = np.array([8, 1.5 * tol, -2, -3, -0.9 * tol, 4])
+    lpp, rev, status = _presolve_remove_empty_rows(lp._replace(A_eq=A, b_eq=b_eq), tol)
+    assert_(status == 2)
+    assert_(rev is None)
+
+    b_eq = np.array([8, 6, -2, -3, 2, 4])
+    lpp, rev, status = _presolve_remove_empty_rows(lp._replace(A_eq=A, b_eq=b_eq), tol)
+    assert_(status == 2)
+    assert_(rev is None)
+
+    # A_ub, b_ub
+    b_ub = np.array([8, 6, -2, -3, 2, 4])
+    lpp, rev, status = _presolve_remove_empty_rows(lp._replace(A_ub=A, b_ub=b_ub), tol)
+    assert_(status == 2)
+    assert_(rev is None)
+
+    b_ub = np.array([8, 0, -2, -3, 0, 4])
+    lpp, rev, status = _presolve_remove_empty_rows(lp._replace(A_ub=A, b_ub=b_ub), tol)
+    assert_(status == 6)
+    assert_(rev is None)
+
+    b_ub = np.array([8, 0.5 * tol, -2, -3, -0.9 * tol, 4])
+    lpp, rev, status = _presolve_remove_empty_rows(lp._replace(A_ub=A, b_ub=b_ub), tol)
+    assert_(status == 6)
+    assert_(rev is None)
+
+    b_ub = np.array([8, 1.5 * tol, -2, -3, -0.9 * tol, 4])
+    lpp, rev, status = _presolve_remove_empty_rows(lp._replace(A_ub=A, b_ub=b_ub), tol)
+    assert_(status == 2)
+    assert_(rev is None)
+
+    b_ub = np.array([8, 6, -2, -3, 2, 4])
+    lpp, rev, status = _presolve_remove_empty_rows(lp._replace(A_ub=A, b_ub=b_ub), tol)
+    assert_(status == 2)
+    assert_(rev is None)
+
+
+def test_remove_empty_columns():
+    """
+    Test empty column removal procedure.
+    """
+    c = np.array([1, -2, 3, -4, 5])
+    lp = _LPProblem(
+        c=c,
+        A_ub=None,
+        b_ub=None,
+        A_eq=None,
+        b_eq=None,
+        bounds=np.array([[0, 1], [0, 1], [0, 1], [0, 1], [0, 1]]),
+        x0=None,
+    )
+
+    A = np.array([
+        [ 1,  3,  0,  7,  0],
+        [ 1, -1,  0,  0,  0],
+        [-2, -2,  0,  8,  0],
+        [ 0,  2,  0,  2,  0],
+        [ 0,  1,  0, -3,  2],
+        [ 5,  0,  0,  0,  0]
+        ])
+
+    A2 = np.array([
+        [ 3,  3,  0,  0,  7],
+        [ 1, -3,  0,  0,  0],
+        [-2, -1,  0,  0,  2],
+        ])
+
+    # (lp, rev, status) = _presolve_remove_empty_columns(lp)
+
+    # Empty 
+    lpp, rev, status = _presolve_remove_empty_rows(lp)
+    assert_(status == 6)
+
+    # Columns in A_eq only
+    lpp, rev, status = _presolve_remove_empty_columns(lp._replace(A_eq=A))
+    assert_(status == 5)
+    assert_(np.all(lpp[0] == np.array([1, -2, -4, 5])))
+
+    cr, xr, x0r = rev(lpp[0], np.array([0., 0., 0., 0.]), lpp[6])
+    assert_(np.all(cr == c))
+    assert_(np.allclose(xr, np.array([0., 0., 0., 0., 0.])))
+    assert_(np.all(x0r is None))
+
+    bounds = np.array([[0, 1], [0, 1], [0, np.inf], [0, 1], [0, 1]])
+    lpp, rev, status = _presolve_remove_empty_columns(lp._replace(A_eq=A, bounds=bounds))
+    assert_(status == 5)
+    assert_(np.all(lpp[0] == np.array([1, -2, -4, 5])))
+
+    cr, xr, x0r = rev(lpp[0], np.array([0., 0., 0., 0.]), lpp[6])
+    assert_(np.all(cr == c))
+    assert_(np.allclose(xr, np.array([0., 0., 0., 0., 0.])))
+    assert_(np.all(x0r is None))
+
+    bounds = np.array([[0, 1], [0, 1], [-np.inf, 1], [0, 1], [0, 1]])
+    lpp, rev, status = _presolve_remove_empty_columns(lp._replace(A_eq=A, bounds=bounds))
+    assert_(status == 3)
+
+    bounds = np.array([[0, 1], [0, 1], [0, 1], [0, np.inf], [0, 1]])
+    lpp, rev, status = _presolve_remove_empty_columns(lp._replace(A_eq=A2, bounds=bounds))
+    assert_(status == 3)
+
+    bounds = np.array([[0, 1], [0, 1], [0, 1], [-np.inf, 1], [0, 1]])
+    lpp, rev, status = _presolve_remove_empty_columns(lp._replace(A_eq=A2, bounds=bounds))
+    assert_(status == 5)
+    assert_(np.all(lpp[0] == np.array([1, -2, 5])))
+
+    cr, xr, x0r = rev(lpp[0], np.array([0., 0., 0.]), lpp[6])
+    assert_(np.all(cr == c))
+    assert_(np.allclose(xr, np.array([0., 0., 0., 1., 0.])))
+    assert_(np.all(x0r is None))
+
+    # Columns in A_ub only
+    lpp, rev, status = _presolve_remove_empty_columns(lp._replace(A_ub=A))
+    assert_(status == 5)
+    assert_(np.all(lpp[0] == np.array([1, -2, -4, 5])))
+
+    cr, xr, x0r = rev(lpp[0], np.array([0., 0., 0., 0.]), lpp[6])
+    assert_(np.all(cr == c))
+    assert_(np.allclose(xr, np.array([0., 0., 0., 0., 0.])))
+    assert_(np.all(x0r is None))
+
+    bounds = np.array([[0, 1], [0, 1], [0, np.inf], [0, 1], [0, 1]])
+    lpp, rev, status = _presolve_remove_empty_columns(lp._replace(A_ub=A, bounds=bounds))
+    assert_(status == 5)
+    assert_(np.all(lpp[0] == np.array([1, -2, -4, 5])))
+
+    cr, xr, x0r = rev(lpp[0], np.array([0., 0., 0., 0.]), lpp[6])
+    assert_(np.all(cr == c))
+    assert_(np.allclose(xr, np.array([0., 0., 0., 0., 0.])))
+    assert_(np.all(x0r is None))
+
+    bounds = np.array([[0, 1], [0, 1], [-np.inf, 1], [0, 1], [0, 1]])
+    lpp, rev, status = _presolve_remove_empty_columns(lp._replace(A_ub=A, bounds=bounds))
+    assert_(status == 3)
+
+    # Columns in A_eq and A_ub
+    lpp, rev, status = _presolve_remove_empty_columns(lp._replace(A_eq=A, A_ub=A2))
+    assert_(status == 5)
+    assert_(np.all(lpp[0] == np.array([1, -2, -4, 5])))
+
+    cr, xr, x0r = rev(lpp[0], np.array([0., 0., 0., 0.]), lpp[6])
+    assert_(np.all(cr == c))
+    assert_(np.allclose(xr, np.array([0., 0., 0., 0., 0.])))
+    assert_(np.all(x0r is None))
+
+    lpp, rev, status = _presolve_remove_empty_columns(lp._replace(A_eq=A2, A_ub=A))
+    assert_(status == 5)
+    assert_(np.all(lpp[0] == np.array([1, -2, -4, 5])))
+
+    cr, xr, x0r = rev(lpp[0], np.array([0., 0., 0., 0.]), lpp[6])
+    assert_(np.all(cr == c))
+    assert_(np.allclose(xr, np.array([0., 0., 0., 0., 0.])))
+    assert_(np.all(x0r is None))
+
+    bounds = np.array([[0, 1], [0, 1], [0, np.inf], [0, 1], [0, 1]])
+    lpp, rev, status = _presolve_remove_empty_columns(lp._replace(A_eq=A, A_ub=A2, bounds=bounds))
+    assert_(status == 5)
+    assert_(np.all(lpp[0] == np.array([1, -2, -4, 5])))
+
+    cr, xr, x0r = rev(lpp[0], np.array([0., 0., 0., 0.]), lpp[6])
+    assert_(np.all(cr == c))
+    assert_(np.allclose(xr, np.array([0., 0., 0., 0., 0.])))
+    assert_(np.all(x0r is None))
+
+    bounds = np.array([[0, 1], [0, 1], [-np.inf, 1], [0, 1], [0, 1]])
+    lpp, rev, status = _presolve_remove_empty_columns(lp._replace(A_eq=A, A_ub=A2, bounds=bounds))
+    assert_(status == 3)
