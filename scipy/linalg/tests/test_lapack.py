@@ -922,57 +922,6 @@ class TestHetrd(object):
             )
 
 
-class TestGtsvx:
-
-    @pytest.mark.parametrize('dtype', DTYPES)
-    def test_nag_example(self, dtype):
-        """Find the solution that satisfies the set of equations Ax=b.
-
-        For the full reference see:
-        https://www.nag.com/numeric/fl/nagdoc_latest/html/f07/f07cbf.html
-        https://www.nag.com/numeric/fl/nagdoc_latest/html/f07/f07cpf.html
-        """
-
-        if dtype in REAL_DTYPES:
-            du = (2.1, -1.0, 1.9, 8.0)
-            d = (3.0, 2.3, -5.0, -0.9, 7.1)
-            dl = (3.4, 3.6, 7.0, -6.0)
-            b = ((2.7, 6.6),
-                 (-0.5, 10.8),
-                 (2.6, -3.2),
-                 (0.6, -11.2),
-                 (2.7, 19.1))
-            x_ = ((-4.0000, 5.0000),
-                  (7.0000, -4.0000),
-                  (3.0000, -3.0000),
-                  (-4.0000, -2.0000),
-                  (-3.0000, 1.0000))
-        elif dtype in COMPLEX_DTYPES:
-            du = (2.0 - 1.0j, 2.0 + 1.0j, -1.0 + 1.0j, 1.0 - 1.0j)
-            d = (-1.3 + 1.3j, -1.3 + 1.3j, -1.3 + 3.3j, -0.3 + 4.3j,
-                 -3.3 + 1.3j)
-            dl = (1.0 - 2.0j, 1.0 + 1.0j, 2.0 - 3.0j, 1.0 + 1.0j)
-            b = ((2.4 - 5.0j, 2.7 + 6.9j),
-                 (3.4 - 18.2j, -6.9 - 5.3j),
-                 (-14.7 - 9.7j, -6.0 - 0.6j),
-                 (31.9 - 7.7j, -3.9 + 9.3j),
-                 (-1.0 - 1.6j, -3.0 + 12.2j))
-            x_ = ((1.0 + 1.0j, 2.0 - 1.0j),
-                  (3.0 - 1.0j, 1.0 + 2.0j),
-                  (4.0 + 5.0j, -1.0 + 1.0j),
-                  (-1.0 - 2.0j, 2.0 + 1.0j),
-                  (1.0 - 1.0j, 2.0 - 2.0j))
-        else:
-            raise ValueError(f'{dtype} is neither real nor complex.')
-
-        du, d, dl, b, x_ = [np.asarray(a, dtype=dtype)
-                            for a in (du, d, dl, b, x_)]
-        gtsvx = get_lapack_funcs('gtsvx', dtype=dtype)
-        dlf, df, duf, du2, ip, x, rc, f, b, info = gtsvx(dl, d, du, b, fact='N')
-        assert_equal(info, 0)
-        assert_allclose(x, x_, atol=1e-5)
-
-
 def test_gglse():
     # Example data taken from NAG manual
     for ind, dtype in enumerate(DTYPES):
@@ -2337,9 +2286,8 @@ def test_gtsvx(dtype, trans, fact):
     singular factorizations. It parametrizes DTYPES and the 'fact' value along
     with the fact related inputs.
     """
-    np.random.seed(42)
+    seed(42)
     # set test tolerance appropriate for dtype
-    rtol = 250 * np.finfo(dtype).eps
     atol = 100 * np.finfo(dtype).eps
     # obtain routine
     gtsvx = get_lapack_funcs('gtsvx', dtype=dtype)
@@ -2376,7 +2324,7 @@ def test_gtsvx(dtype, trans, fact):
     assert_array_equal(b, inputs_cpy[3])
 
     # test that x_soln matches the expected x
-    assert_allclose(x, x_soln, rtol=rtol, atol=atol)
+    assert_allclose(x, x_soln, atol=atol)
 
     # assert that the outputs are of correct type or shape
     # rcond should be a scalar
@@ -2396,9 +2344,8 @@ def test_gtsvx(dtype, trans, fact):
                                     ["C"]*len(COMPLEX_DTYPES))))
 @pytest.mark.parametrize("fact", ["F", "N"])
 def test_gtsvx_error_singular(dtype, trans, fact):
-    np.random.seed(42)
+    seed(42)
     # set test tolerance appropriate for dtype
-    rtol = 250 * np.finfo(dtype).eps
     atol = 100 * np.finfo(dtype).eps
     # obtain routine
     gtsvx = get_lapack_funcs('gtsvx', dtype=dtype)
@@ -2429,7 +2376,7 @@ def test_gtsvx_error_singular(dtype, trans, fact):
 
         L, U = gttrf_to_lu(n, dtype, dlf, df, duf, du2f, ipiv)
         # check that the outputs define an LU decomposition of A
-        assert_allclose(A, L @ U, atol=atol, rtol=rtol)
+        assert_allclose(A, L @ U, atol=atol)
         d[-1] = 0
         dl[-1] = 0
 
@@ -2449,7 +2396,6 @@ def test_gtsvx_error_singular(dtype, trans, fact):
                           du2=du2f_, ipiv=ipiv_)
         dlf, df, duf, du2f, ipiv, x_soln, rcond, ferr, berr, info = gtsvx_out
         # info should not be zero and should provide index of illegal value
-        assert 0 < info <= n, "incorrect info for singular matrix"
         assert info > 0, "info should be > 0 for singular matrix"
 
 
@@ -2459,7 +2405,7 @@ def test_gtsvx_error_singular(dtype, trans, fact):
                                     ["C"]*len(COMPLEX_DTYPES))))
 @pytest.mark.parametrize("fact", ["F", "N"])
 def test_gtsvx_error_incompatible_size(dtype, trans, fact):
-    np.random.seed(42)
+    seed(42)
     # obtain routine
     gtsvx = get_lapack_funcs('gtsvx', dtype=dtype)
     # Generate random tridiagonal matrix A
@@ -2527,10 +2473,8 @@ def test_gtsvx_error_incompatible_size(dtype, trans, fact):
                                      [4 + 5j, -1 + 1j], [-1 - 2j, 2 + 1j],
                                      [1 - 1j, 2 - 2j]]))])
 def test_gtsvx_NAG(du, d, dl, b, x):
-    # Test to ensure wrapper is consistent with NAG manual
+    # Test to ensure wrapper is consistent with NAG Manual Mark 26
     # example problems: real (f07cbf) and complex (f07cpf)
-    # https://www.nag.com/numeric/fl/nagdoc_latest/html/f07/f07cbf.html
-    # https://www.nag.com/numeric/fl/nagdoc_latest/html/f07/f07cpf.html
     gtsvx = get_lapack_funcs('gtsvx', dtype=d.dtype)
 
     gtsvx_out = gtsvx(dl, d, du, b)

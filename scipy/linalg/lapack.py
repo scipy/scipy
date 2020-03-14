@@ -270,6 +270,8 @@ All functions
 
    sgtsvx
    dgtsvx
+   cgtsvx
+   zgtsvx
 
    chbevd
    zhbevd
