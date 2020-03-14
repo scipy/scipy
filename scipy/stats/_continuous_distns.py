@@ -5761,6 +5761,9 @@ class ncf_gen(rv_continuous):
     %(example)s
 
     """
+    def _argcheck(self, df1, df2, nc):
+        return (df1 > 0) & (df2 > 0) & (nc >= 0)
+
     def _rvs(self, dfn, dfd, nc):
         return self._random_state.noncentral_f(dfn, dfd, nc, self._size)
 
