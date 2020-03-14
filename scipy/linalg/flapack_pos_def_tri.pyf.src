@@ -36,7 +36,7 @@ subroutine <prefix2>pttrs(n, nrhs, d, e, b, ldb, info)
     ! x, info  = pttrs(d, e, b, overwrite_b=0)
     !
     ! DPTTRS solves a tridiagonal system of the form
-    ! 
+    !
     !     A * X = B
     !
     ! using the L*D*L**T factorization of A computed by DPTTRF.  D is a
@@ -85,12 +85,10 @@ subroutine <prefix2c>pttrs(lower, n, nrhs, d, e, b, ldb, info)
 end subroutine<prefix2c>pttrs
 
 
-subroutine <prefix>pteqr(compz, n, d, e, z, ldz, work, info)
-    ! d, e, z, work, info  = pteqr(d, e, z, compz="N", overwrite_d=0, overwrite_e=0, overwrite_z=0)
-    ! CPTEQR computes all eigenvalues and, optionally, eigenvectors of a
-    ! symmetric positive definite tridiagonal matrix by first factoring the
-    ! matrix using SPTTRF and then calling CBDSQR to compute the singular
-    ! values of the bidiagonal factor.
+subroutine <prefix>pteqr(compute_z, n, d, e, z, ldz, work, info)
+    ! d, e, z, work, info  = pteqr(d, e, z, compute_z="N", overwrite_d=0, overwrite_e=0, overwrite_z=0)
+    ! ?PTEQR computes all eigenvalues and, optionally, eigenvectors of a
+    ! symmetric positive definite tridiagonal matrix.
     !
     ! This routine computes the eigenvalues of the positive definite
     ! tridiagonal matrix to high relative accuracy.  This means that if the
@@ -99,21 +97,21 @@ subroutine <prefix>pteqr(compz, n, d, e, z, ldz, work, info)
     ! more accurately than, for example, with the standard QR method.
     !
     ! The eigenvectors of a full or band positive definite Hermitian matrix
-    ! can also be found if CHETRD, CHPTRD, or CHBTRD has been used to
+    ! can also be found if ?HETRD, ?HPTRD, or ?HBTRD has been used to
     ! reduce this matrix to tridiagonal form.  (The reduction to
     ! tridiagonal form, however, may preclude the possibility of obtaining
     ! high relative accuracy in the small eigenvalues of the original
     ! matrix, if these eigenvalues range over many orders of magnitude.)
-    callstatement (*f2py_func)(compz, &n, d, e, z, &ldz, work, &info)
+    callstatement (*f2py_func)(compute_z, &n, d, e, z, &ldz, work, &info)
     callprotoargument char*, int*, <ctypereal>*, <ctypereal>*, <ctype>*, int*, <ctypereal>*, int*
 
-    character intent(in, optional), check(*compz=='N'||*compz=='V'||*compz=='I') :: compz='N'
+    character intent(in, optional), check(*compute_z=='N'||*compute_z=='V'||*compute_z=='I') :: compute_z='N'
     integer intent(hide), check(n > 1), depend(d) :: n = len(d)
     <ftypereal> intent(in,out,copy), dimension(n) :: d
     <ftypereal> intent(in,out,copy), depend(n), dimension(n-1) :: e
     <ftype> intent(in,out,copy), depend(n), dimension(ldz, n) :: z
-    integer intent(hide), depend(z,n,compz) :: ldz = (*compz=='N')?1:max(1, shape(z, 0))
-    <ftypereal> intent(out), dimension(4*n) :: work
+    integer intent(hide), depend(z,n,compute_z) :: ldz = (*compute_z=='N')?1:max(1, shape(z, 0))
+    <ftypereal> intent(hide), dimension(4*n) :: work
     integer intent(out) :: info
 
 end subroutine <prefix>pteqr
