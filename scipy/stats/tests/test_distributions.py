@@ -4145,6 +4145,25 @@ def test_crystalball_function_moments():
     assert_allclose(expected_5th_moment, calculated_5th_moment, rtol=0.001)
 
 
+def test_ncf_edge_case():
+    # Test for edge case described in gh-11660.
+    # Non-central Fisher distribution when nc = 0
+    # should be the same as Fisher distribution.
+    x = np.array([-0.5, 0.2, 1.0, 2.3])
+    df1 = 4
+    df2 = 11
+    nc = 0
+    expected_cdf = stats.f.cdf(x, df1, df2)
+    calculated_cdf = stats.ncf.cdf(x, df1, df2, nc)
+    assert_allclose(expected_cdf, calculated_cdf, rtol=1e-14)
+
+    # when ncf_gen._skip_pdf will be used instead of generic pdf,
+    # this additional test will be useful.
+    expected_pdf = stats.f.pdf(x, df1, df2)
+    calculated_pdf = stats.ncf.pdf(x, df1, df2, nc)
+    assert_allclose(expected_pdf, calculated_pdf, rtol=1e-6)
+
+
 def test_ncf_variance():
     # Regression test for gh-10658 (incorrect variance formula for ncf).
     # The correct value of ncf.var(2, 6, 4), 42.75, can be verified with, for
