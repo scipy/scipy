@@ -2084,7 +2084,7 @@ def test_pttrf_pttrs_NAG(d, e, d_expect, e_expect, b, x_expect):
 def pteqr_get_d_e_A_z(dtype, realtype, n, compute_z):
     # used by ?pteqr tests to build parameters
     # returns tuple of (d, e, A, z)
-    if compute_z == "V":
+    if compute_z == 1:
         # build Hermitian A from Q**T * tri * Q = A by creating Q and tri
         A_eig = generate_random_dtype_array((n, n), dtype)
         A_eig = A_eig + np.diag(np.zeros(n) + 4*n)
@@ -2114,12 +2114,12 @@ def pteqr_get_d_e_A_z(dtype, realtype, n, compute_z):
 
 @pytest.mark.parametrize("dtype,realtype",
                          zip(DTYPES, REAL_DTYPES + REAL_DTYPES))
-@pytest.mark.parametrize("compute_z", ["I", "N", "V"])
+@pytest.mark.parametrize("compute_z", range(3))
 def test_pteqr(dtype, realtype, compute_z):
     '''
     Tests the ?pteqr lapack routine for all dtypes and compute_z parameters.
     It generates random SPD matrix diagonals d and e, and then confirms
-    correct eigenvalues with scipy.linalg.eig. With applicable compute_z=I it
+    correct eigenvalues with scipy.linalg.eig. With applicable compute_z=2 it
     tests that z can reform A.
     '''
     seed(42)
@@ -2136,7 +2136,7 @@ def test_pteqr(dtype, realtype, compute_z):
     # compare the routine's eigenvalues with scipy.linalg.eig's.
     assert_allclose(np.sort(eigh(A)[0]), np.sort(d_pteqr), atol=atol)
 
-    if compute_z == "I" or compute_z == "V":
+    if compute_z:
         # verify z_pteqr as orthogonal
         assert_allclose(z_pteqr @ np.conj(z_pteqr).T, np.identity(n),
                         atol=atol)
@@ -2147,7 +2147,7 @@ def test_pteqr(dtype, realtype, compute_z):
 
 @pytest.mark.parametrize("dtype,realtype",
                          zip(DTYPES, REAL_DTYPES + REAL_DTYPES))
-@pytest.mark.parametrize("compute_z", ["I", "N", "V"])
+@pytest.mark.parametrize("compute_z", range(3))
 def test_pteqr_error_non_spd(dtype, realtype, compute_z):
     seed(42)
     pteqr = get_lapack_funcs(('pteqr'), dtype=dtype)
@@ -2162,7 +2162,7 @@ def test_pteqr_error_non_spd(dtype, realtype, compute_z):
 
 @pytest.mark.parametrize("dtype,realtype",
                          zip(DTYPES, REAL_DTYPES + REAL_DTYPES))
-@pytest.mark.parametrize("compute_z", ["I", "N", "V"])
+@pytest.mark.parametrize("compute_z", range(3))
 def test_pteqr_raise_error_wrong_shape(dtype, realtype, compute_z):
     seed(42)
     pteqr = get_lapack_funcs(('pteqr'), dtype=dtype)
@@ -2171,14 +2171,13 @@ def test_pteqr_raise_error_wrong_shape(dtype, realtype, compute_z):
     # test with incorrect/incompatible array sizes
     assert_raises(ValueError, pteqr, d[:-1], e, z=z, compute_z=compute_z)
     assert_raises(ValueError, pteqr, d, e[:-1], z=z, compute_z=compute_z)
-    if compute_z in {"I", "V"}:
-        d_pteqr, e_pteqr, z_pteqr, info = pteqr(d, e, z=z[:-1], compute_z=compute_z)
-        assert_(info != 0)
+    if compute_z:
+        assert_raises(ValueError, pteqr, d, e, z=z[:-1], compute_z=compute_z)
 
 
 @pytest.mark.parametrize("dtype,realtype",
                          zip(DTYPES, REAL_DTYPES + REAL_DTYPES))
-@pytest.mark.parametrize("compute_z", ["I", "N", "V"])
+@pytest.mark.parametrize("compute_z", range(3))
 def test_pteqr_error_singular(dtype, realtype, compute_z):
     seed(42)
     pteqr = get_lapack_funcs(('pteqr'), dtype=dtype)
@@ -2192,7 +2191,7 @@ def test_pteqr_error_singular(dtype, realtype, compute_z):
 
 
 @pytest.mark.parametrize("compute_z,d,e,d_expect,z_expect",
-                         [("I",
+                         [(2, # "I"
                            np.array([4.16, 5.25, 1.09, .62]),
                            np.array([3.17, -.97, .55]),
                            np.array([8.0023, 1.9926, 1.0014, 0.1237]),
