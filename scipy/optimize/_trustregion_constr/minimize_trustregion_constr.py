@@ -339,7 +339,7 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
 
     # Prepare constraints.
     prepared_constraints = [
-        PreparedConstraint(c, x0, sparse_jacobian, finite_diff_bounds)
+        PreparedConstraint(c, x0, sparse_jacobian, (-np.inf, np.inf))
         for c in constraints]
 
     # Check that all constraints are either sparse or dense.
