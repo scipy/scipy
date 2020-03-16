@@ -295,7 +295,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     the initial guess is within the bounds, then every function
     evaluation throughout the minimization procedure will be within
     the bounds. If bounds are provided, the initial guess is outside
-    the bounds, and `direc` is full rank (or left to default), then
+    the bounds, and `direc` is full rank (default has full rank), then
     some function evaluations during the first iteration may be
     outside the bounds, but every function evaluation after the first
     iteration will be within the bounds. If `direc` is not full rank,
