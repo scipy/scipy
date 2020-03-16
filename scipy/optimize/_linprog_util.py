@@ -11,16 +11,6 @@ from scipy.optimize._remove_redundancy import (
     )
 from collections import namedtuple
 
-# Switch between old and new form of bounds
-# The orginal problem parameters and its sizes are c (N x 1), A_ub (nu x N),
-# b_ub (nu x 1), A_eq (ne x N), b_eq (ne x 1) bounds (N x 2) and optionally
-# x0 (N x 1), where N is the number of variables to optimize.
-# After presolve(), the number of variables reduces to M < N.
-# The old form of bounds includes values for all original variables (N x 2).
-# The new form only includes bounds for the set of variables that remains
-# (M x 2) and corresponds directly to the altered problem parameters.
-BOUNDS_REDUCED = True
-
 _LPProblem = namedtuple('_LPProblem', 'c A_ub b_ub A_eq b_eq bounds x0')
 _LPProblem.__new__.__defaults__ = (None,) * 6  # make c the only required arg
 _LPProblem.__doc__ = \
@@ -580,7 +570,7 @@ def _presolve(lp, rr, tol=1e-9):
     status = 0              # all OK unless determined otherwise
     message = ""
 
-    # Lower and upper bounds
+    # Lower and upper bounds. Copy to prevent feedback (see comments below).
     lb = bounds[:, 0].copy()
     ub = bounds[:, 1].copy()
 
@@ -796,11 +786,8 @@ def _presolve(lp, rr, tol=1e-9):
         # if this is not the last step of presolve, should convert bounds back
         # to array and return here
 
-    # Convert lb and ub back into N x 2 bounds
-    if BOUNDS_REDUCED:
-        bounds = np.hstack((lb_mod[:, np.newaxis], ub_mod[:, np.newaxis]))
-    else:
-        bounds = np.hstack((lb[:, np.newaxis], ub[:, np.newaxis]))
+    # Convert modified lb and ub back into N x 2 bounds
+    bounds = np.hstack((lb_mod[:, np.newaxis], ub_mod[:, np.newaxis]))
 
     # remove redundant (linearly dependent) rows from equality constraints
     n_rows_A = A_eq.shape[0]
@@ -956,7 +943,7 @@ def _parse_linprog(lp, options):
     return lp, solver_options
 
 
-def _get_Abc(lp, c0, undo=[]):
+def _get_Abc(lp, c0):
     """
     Given a linear programming problem of the form:
 
@@ -1067,19 +1054,8 @@ def _get_Abc(lp, c0, undo=[]):
         zeros = np.zeros
         eye = np.eye
 
-    if BOUNDS_REDUCED:
-        # bounds will not be modified by taking out rows, but rows will be
-        # reversed, which feeds back into bounds!
-        # Note: is not necessary
-        bounds = np.array(bounds, copy=True)
-    else:
-        # bounds will be modified, create a copy
-        bounds = np.array(bounds, copy=True)
-        # undo[0] contains indices of variables removed from the problem
-        # however, their bounds are still part of the bounds list
-        # they are needed elsewhere, but not here
-        if undo is not None and undo != []:  # undo is never None
-            bounds = np.delete(bounds, undo[0], 0)
+    # Rows will be reversed, which feeds back into bounds!
+    bounds = np.array(bounds, copy=True)
 
     # modify problem such that all variables have only non-negativity bounds
     lbs = bounds[:, 0]
@@ -1334,53 +1310,20 @@ def _postsolve(x, postsolve_args, complete=False, tol=1e-8, copy=False):
     # variable also contained information for undoing variable substitutions
 
     (c, A_ub, b_ub, A_eq, b_eq, bounds, x0), undo, C, b_scale = postsolve_args
+
     x = _unscale(x, C, b_scale)
-
-    n_x = len(c)
-
-    # we don't have to undo variable substitutions for fixed variables that
-    # were removed from the problem
-    no_adjust = set()
-
-    # if there were variables removed from the problem, add them back into the
-    # solution vector
-    if len(undo) > 0:
-        no_adjust = set(undo[0])
-        x = x.tolist()
-        for i, val in zip(undo[0], undo[1]):
-            x.insert(i, val)
-        copy = True
-    if copy:
-        x = np.array(x, copy=True)
-
-    # Reconstruct bounds if reduced
-    if BOUNDS_REDUCED and undo != []:
-        # undo gives indices in the original array
-        # If these are [i1, i2, i3, ..., iK], then they have to be inserted at
-        # locations [i1, i2-1, i3-2, ..., iK-K+1].
-        # undo is a list of 2 np-arrays, both 1 x K
-        # print("undo[0]: ", undo[0])
-        i = np.subtract(undo[0], np.arange(len(undo[0])))
-        # print("i: ", i)
-        v = np.transpose(undo[1])
-        # print("undo[1]: ", undo[1])
-        # print("v: ", v)
-        # print("bounds before insert: ", bounds)
-        cs = np.column_stack((undo[1], undo[1]))
-        # print("cs: ", cs)
-        if bounds.size != 0:
-            bounds = np.insert(bounds, i, cs, 0)
-        else:
-            bounds = cs
-        # print("bounds after insert: ", bounds)
-
-    # now undo variable substitutions
+    
+    # print("postsolve(): initial")
+    # print("postsolve(): len(x) ",len(x))
+    # print("postsolve(): len(c) ",len(c))
+    # print("postsolve(): shape bounds ",bounds.shape)
+    
+    # Undo variable substitutions of _get_Abc()
     # if "complete", problem was solved in presolve; don't do anything here
+    n_x = bounds.shape[0]  # was len(c)
     if not complete and bounds is not None:  # bounds are never none, probably
         n_unbounded = 0
         for i, bi in enumerate(bounds):
-            if i in no_adjust:
-                continue
             lbi = bi[0]
             ubi = bi[1]
             if lbi == -np.inf and ubi == np.inf:
@@ -1391,15 +1334,29 @@ def _postsolve(x, postsolve_args, complete=False, tol=1e-8, copy=False):
                     x[i] = ubi - x[i]
                 else:
                     x[i] += lbi
+    # all the rest of the variables were artificial
+    x = x[:n_x]
 
-    n_x = len(c)
-    x = x[:n_x]  # all the rest of the variables were artificial
+    # print("postsolve(): after variable substitutions len(x) ",len(x))
+
+    # If there were variables removed from the problem, add them back into the
+    # solution vector
+    if len(undo) > 0:
+        x = x.tolist()
+        for i, val in zip(undo[0], undo[1]):
+            x.insert(i, val)
+        copy = True
+    if copy:
+        x = np.array(x, copy=True)
+
+    # print("postsolve(): after fixed variable insertions len(x) ",len(x))
+
     fun = x.dot(c)
     slack = b_ub - A_ub.dot(x)  # report slack for ORIGINAL UB constraints
     # report residuals of ORIGINAL EQ constraints
     con = b_eq - A_eq.dot(x)
 
-    return x, fun, slack, con, bounds
+    return x, fun, slack, con
 
 
 def _check_result(x, fun, status, slack, con, bounds, tol, message):

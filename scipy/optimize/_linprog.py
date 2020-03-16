@@ -546,7 +546,7 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     postsolve_args = (lp_o._replace(bounds=lp.bounds), undo, C, b_scale)
 
     if not complete:
-        A, b, c, c0, x0 = _get_Abc(lp, c0, undo)
+        A, b, c, c0, x0 = _get_Abc(lp, c0)  # , undo
         if solver_options.pop('autoscale', False):
             A, b, c, x0, C, b_scale = _autoscale(A, b, c, x0)
             postsolve_args = postsolve_args[:-2] + (C, b_scale)
@@ -577,9 +577,11 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     #                                                    message, tol,
     #                                                    iteration, disp)
 
-    x, fun, slack, con, bounds_p = _postsolve(x, postsolve_args, complete, tol)
+    x, fun, slack, con = _postsolve(x, postsolve_args, complete, tol)
 
-    status, message = _check_result(x, fun, status, slack, con, bounds_p, tol, message)
+    status, message = _check_result(x, fun, status, slack, con, lp_o.bounds, tol, message)
+    # not bounds output from _postsolve anymore, because the reconstruction
+    # there is removed and the return argument as well
 
     if disp:
         _display_summary(message, status, fun, iteration)
