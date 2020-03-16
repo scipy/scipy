@@ -1,14 +1,11 @@
-from __future__ import division, print_function, absolute_import
-
-import os
 from os.path import join
 
 
 def configuration(parent_package='', top_path=None):
     from distutils.sysconfig import get_python_inc
-    from scipy._build_utils.system_info import get_info, NotFoundError, numpy_info
+    from scipy._build_utils.system_info import get_info, numpy_info
     from numpy.distutils.misc_util import Configuration, get_numpy_include_dirs
-    from scipy._build_utils import (get_g77_abi_wrappers, split_fortran_files)
+    from scipy._build_utils import get_g77_abi_wrappers
 
     config = Configuration('linalg', parent_package, top_path)
 
@@ -71,54 +68,9 @@ def configuration(parent_package='', top_path=None):
                          )
 
     # _interpolative:
-    routines_to_split = [
-        'dfftb1',
-        'dfftf1',
-        'dffti1',
-        'dsint1',
-        'dzfft1',
-        'id_srand',
-        'idd_copyints',
-        'idd_id2svd0',
-        'idd_pairsamps',
-        'idd_permute',
-        'idd_permuter',
-        'idd_random_transf0',
-        'idd_random_transf0_inv',
-        'idd_random_transf_init0',
-        'idd_subselect',
-        'iddp_asvd0',
-        'iddp_rsvd0',
-        'iddr_asvd0',
-        'iddr_rsvd0',
-        'idz_estrank0',
-        'idz_id2svd0',
-        'idz_permute',
-        'idz_permuter',
-        'idz_random_transf0_inv',
-        'idz_random_transf_init0',
-        'idz_random_transf_init00',
-        'idz_realcomp',
-        'idz_realcomplex',
-        'idz_reco',
-        'idz_subselect',
-        'idzp_aid0',
-        'idzp_aid1',
-        'idzp_asvd0',
-        'idzp_rsvd0',
-        'idzr_asvd0',
-        'idzr_reco',
-        'idzr_rsvd0',
-        'zfftb1',
-        'zfftf1',
-        'zffti1',
-    ]
-    print('Splitting linalg.interpolative Fortran source files')
-    dirname = os.path.split(os.path.abspath(__file__))[0]
-    fnames = split_fortran_files(join(dirname, 'src', 'id_dist', 'src'),
-                                 routines_to_split)
-    fnames = [join('src', 'id_dist', 'src', f) for f in fnames]
-    config.add_extension('_interpolative', fnames + ["interpolative.pyf"],
+    config.add_extension('_interpolative',
+                         sources=[join('src', 'id_dist', 'src', '*.f'),
+                                  "interpolative.pyf"],
                          extra_info=lapack_opt
                          )
 

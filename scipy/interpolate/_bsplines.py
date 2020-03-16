@@ -1,10 +1,7 @@
-from __future__ import division, print_function, absolute_import
-
 import functools
 import operator
 
 import numpy as np
-from scipy._lib.six import string_types
 from scipy.linalg import (get_lapack_funcs, LinAlgError,
                           cholesky_banded, cho_solve_banded)
 from . import _bspl
@@ -158,7 +155,7 @@ class BSpline(object):
     1.375
 
     Note that outside of the base interval results differ. This is because
-    `BSpline` extrapolates the first and last polynomial pieces of b-spline
+    `BSpline` extrapolates the first and last polynomial pieces of B-spline
     functions active on the base interval.
 
     >>> import matplotlib.pyplot as plt
@@ -266,14 +263,14 @@ class BSpline(object):
 
         Notes
         -----
-        The order of the b-spline, `k`, is inferred from the length of `t` as
+        The order of the B-spline, `k`, is inferred from the length of `t` as
         ``len(t)-2``. The knot vector is constructed by appending and prepending
         ``k+1`` elements to internal knots `t`.
 
         Examples
         --------
 
-        Construct a cubic b-spline:
+        Construct a cubic B-spline:
 
         >>> from scipy.interpolate import BSpline
         >>> b = BSpline.basis_element([0, 1, 2, 3, 4])
@@ -283,7 +280,7 @@ class BSpline(object):
         >>> k
         3
 
-        Construct a second order b-spline on ``[0, 1, 1, 2]``, and compare
+        Construct a second order B-spline on ``[0, 1, 1, 2]``, and compare
         to its explicit form:
 
         >>> t = [-1, 0, 1, 1, 2]
@@ -370,7 +367,7 @@ class BSpline(object):
             self.c = self.c.copy()
 
     def derivative(self, nu=1):
-        """Return a b-spline representing the derivative.
+        """Return a B-spline representing the derivative.
 
         Parameters
         ----------
@@ -398,7 +395,7 @@ class BSpline(object):
                                     axis=self.axis)
 
     def antiderivative(self, nu=1):
-        """Return a b-spline representing the antiderivative.
+        """Return a B-spline representing the antiderivative.
 
         Parameters
         ----------
@@ -594,7 +591,7 @@ def _augknt(x, k):
 
 
 def _convert_string_aliases(deriv, target_shape):
-    if isinstance(deriv, string_types):
+    if isinstance(deriv, str):
         if deriv == "clamped":
             deriv = [(1, np.zeros(target_shape))]
         elif deriv == "natural":
@@ -734,7 +731,7 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
     # convert string aliases for the boundary conditions
     if bc_type is None or bc_type == 'not-a-knot':
         deriv_l, deriv_r = None, None
-    elif isinstance(bc_type, string_types):
+    elif isinstance(bc_type, str):
         deriv_l, deriv_r = bc_type, bc_type
     else:
         try:
@@ -1020,4 +1017,3 @@ def make_lsq_spline(x, y, t, k=3, w=None, axis=0, check_finite=True):
 
     c = np.ascontiguousarray(c)
     return BSpline.construct_fast(t, c, k, axis=axis)
-

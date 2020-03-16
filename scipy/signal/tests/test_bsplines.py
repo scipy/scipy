@@ -1,9 +1,7 @@
 # pylint: disable=missing-docstring
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 from numpy import array
-from numpy.testing import (TestCase, assert_equal, run_module_suite,
+from numpy.testing import (assert_equal,
                            assert_allclose, assert_array_equal,
                            assert_almost_equal)
 from pytest import raises
@@ -12,8 +10,8 @@ import scipy.signal.bsplines as bsp
 
 
 class TestBSplines(object):
-    """Test behaviors of bsplines. The values tested against were returned as of
-    scipy 1.1.0 and are included for regression testing purposes"""
+    """Test behaviors of B-splines. The values tested against were returned as of
+    SciPy 1.1.0 and are included for regression testing purposes"""
 
     def test_factorial(self):
         # can't all be zero state

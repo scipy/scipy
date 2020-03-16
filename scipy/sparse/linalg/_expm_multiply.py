@@ -1,8 +1,6 @@
 """Compute the action of the matrix exponential.
 """
 
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 
 import scipy.linalg
@@ -532,7 +530,7 @@ def _expm_multiply_interval(A, B, start=None, stop=None,
     num : int, optional
         Number of time points to use.
     endpoint : bool, optional
-        If True, `stop` is the last time point.  Otherwise, it is not included.
+        If True, `stop` is the last time point. Otherwise, it is not included.
     balance : bool
         Indicates whether or not to apply balancing.
     status_only : bool

@@ -1,10 +1,7 @@
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 import numpy.testing as npt
 import pytest
 from pytest import raises as assert_raises
-from scipy._lib._numpy_compat import suppress_warnings
 from scipy.integrate import IntegrationWarning
 
 from scipy import stats
@@ -16,7 +13,7 @@ from. common_tests import (check_normalization, check_moment, check_mean_expect,
                            check_edge_support, check_named_args,
                            check_random_state_property,
                            check_meth_dtype, check_ppf_dtype, check_cmplx_deriv,
-                           check_pickling, check_rvs_broadcast)
+                           check_pickling, check_rvs_broadcast, check_freezing)
 from scipy.stats._distr_params import distcont
 
 """
@@ -53,18 +50,18 @@ distslow = ['kappa4', 'gausshyper', 'recipinvgauss', 'genexpon',
 # distslow are sorted by speed (very slow to slow)
 
 # skip check_fit_args (test is slow)
-skip_fit_test = ['argus', 'exponpow', 'exponweib', 'gausshyper', 'genexpon',
+skip_fit_test = ['exponpow', 'exponweib', 'gausshyper', 'genexpon',
                  'halfgennorm', 'gompertz', 'johnsonsb', 'johnsonsu',
-                 'kappa4', 'ksone', 'kstwobign', 'mielke', 'ncf', 'nct',
+                 'kappa4', 'ksone', 'kstwo', 'kstwobign', 'mielke', 'ncf', 'nct',
                  'powerlognorm', 'powernorm', 'recipinvgauss', 'trapz',
                  'vonmises', 'vonmises_line',
                  'levy_stable', 'rv_histogram_instance']
 
 # skip check_fit_args_fix (test is slow)
-skip_fit_fix_test = ['argus', 'burr', 'exponpow', 'exponweib',
+skip_fit_fix_test = ['burr', 'exponpow', 'exponweib',
                      'gausshyper', 'genexpon', 'halfgennorm',
                      'gompertz', 'johnsonsb', 'johnsonsu', 'kappa4',
-                     'ksone', 'kstwobign', 'levy_stable', 'mielke', 'ncf',
+                     'ksone', 'kstwo', 'kstwobign', 'levy_stable', 'mielke', 'ncf',
                      'ncx2', 'powerlognorm', 'powernorm', 'rdist',
                      'recipinvgauss', 'trapz', 'vonmises', 'vonmises_line']
 
@@ -76,7 +73,7 @@ fails_cmplx = set(['beta', 'betaprime', 'chi', 'chi2', 'dgamma', 'dweibull',
                    'erlang', 'f', 'gamma', 'gausshyper', 'gengamma',
                    'geninvgauss', 'gennorm', 'genpareto',
                    'halfgennorm', 'invgamma',
-                   'ksone', 'kstwobign', 'levy_l', 'loggamma', 'logistic',
+                   'ksone', 'kstwo', 'kstwobign', 'levy_l', 'loggamma', 'logistic',
                    'loguniform', 'maxwell', 'nakagami',
                    'ncf', 'nct', 'ncx2', 'norminvgauss', 'pearson3', 'rdist',
                    'reciprocal', 'rice', 'skewnorm', 't', 'tukeylambda',
@@ -111,7 +108,7 @@ def test_cont_basic(distname, arg):
         distname = 'rv_histogram_instance'
     np.random.seed(765456)
     sn = 500
-    with suppress_warnings() as sup:
+    with npt.suppress_warnings() as sup:
         # frechet_l and frechet_r are deprecated, so all their
         # methods generate DeprecationWarnings.
         sup.filter(category=DeprecationWarning, message=".*frechet_")
@@ -153,9 +150,10 @@ def test_cont_basic(distname, arg):
         check_named_args(distfn, x, arg, locscale_defaults, meths)
         check_random_state_property(distfn, arg)
         check_pickling(distfn, arg)
+        check_freezing(distfn, arg)
 
         # Entropy
-        if distname not in ['kstwobign']:
+        if distname not in ['kstwobign', 'kstwo']:
             check_entropy(distfn, arg, distname)
 
         if distfn.numargs == 0:
@@ -165,7 +163,7 @@ def test_cont_basic(distname, arg):
                 and distname != 'vonmises'):
             check_private_entropy(distfn, arg, stats.rv_continuous)
 
-        with suppress_warnings() as sup:
+        with npt.suppress_warnings() as sup:
             sup.filter(IntegrationWarning, "The occurrence of roundoff error")
             sup.filter(IntegrationWarning, "Extremely bad integrand")
             sup.filter(RuntimeWarning, "invalid value")
@@ -227,7 +225,7 @@ def test_moments(distname, arg, normalization_ok, higher_ok, is_xfailing):
         distfn = distname
         distname = 'rv_histogram_instance'
 
-    with suppress_warnings() as sup:
+    with npt.suppress_warnings() as sup:
         sup.filter(IntegrationWarning,
                    "The integral is probably divergent, or slowly convergent.")
         sup.filter(category=DeprecationWarning, message=".*frechet_")
@@ -264,9 +262,9 @@ def test_rvs_broadcast(dist, shape_args):
     # implementation detail of the distribution, not a requirement.  If
     # the implementation the rvs() method of a distribution changes, this
     # test might also have to be changed.
-    shape_only = dist in ['betaprime', 'dgamma', 'dweibull', 'exponnorm',
-                          'geninvgauss', 'levy_stable', 'nct', 'norminvgauss',
-                          'rice', 'skewnorm', 'semicircular']
+    shape_only = dist in ['argus', 'betaprime', 'dgamma', 'dweibull',
+                          'exponnorm', 'geninvgauss', 'levy_stable', 'nct',
+                          'norminvgauss', 'rice', 'skewnorm', 'semicircular']
 
     distfunc = getattr(stats, dist)
     loc = np.zeros(2)
@@ -478,7 +476,7 @@ def check_pdf_logpdf_at_endpoints(distfn, args, msg):
     points = np.array([0, 1])
     vals = distfn.ppf(points, *args)
     vals = vals[np.isfinite(vals)]
-    with suppress_warnings() as sup:
+    with npt.suppress_warnings() as sup:
         # Several distributions incur divide by zero or encounter invalid values when computing
         # the pdf or logpdf at the endpoints.
         suppress_messsages = [
@@ -575,7 +573,7 @@ def check_retrieving_support(distfn, args):
 
 
 def check_fit_args(distfn, arg, rvs):
-    with np.errstate(all='ignore'), suppress_warnings() as sup:
+    with np.errstate(all='ignore'), npt.suppress_warnings() as sup:
         sup.filter(category=DeprecationWarning, message=".*frechet_")
         sup.filter(category=RuntimeWarning,
                    message="The shape parameter of the erlang")
@@ -591,7 +589,7 @@ def check_fit_args(distfn, arg, rvs):
 
 
 def check_fit_args_fix(distfn, arg, rvs):
-    with np.errstate(all='ignore'), suppress_warnings() as sup:
+    with np.errstate(all='ignore'), npt.suppress_warnings() as sup:
         sup.filter(category=DeprecationWarning, message=".*frechet_")
         sup.filter(category=RuntimeWarning,
                    message="The shape parameter of the erlang")

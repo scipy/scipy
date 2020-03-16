@@ -1,8 +1,6 @@
 """
 Spectral Algorithm for Nonlinear Equations
 """
-from __future__ import division, absolute_import, print_function
-
 import collections
 
 import numpy as np
@@ -192,7 +190,7 @@ def _wrap_func(func, x0, fmerit, nfev_list, maxfev, args=()):
         Wrapped function, to be called as
         ``F, fp = wrap_func(x0)``
     x0_wrap : ndarray of float
-        Wrapped initial value; raveled to 1D and complex
+        Wrapped initial value; raveled to 1-D and complex
         values mapped to reals.
     x0_shape : tuple
         Shape of the initial value array

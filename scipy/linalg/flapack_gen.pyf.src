@@ -221,6 +221,43 @@ subroutine <prefix>getrs(n,nrhs,lu,piv,b,info,trans)
 
 end subroutine <prefix>getrs
 
+subroutine <prefix>getc2(n,a,lda,ipiv,jpiv,info)
+    ! lu,ipiv,jpiv,info = getc2(a,overwrite_a=0)
+    ! Compute an LU factorization of with complete pivoting of a general n-by-n matrix.
+    ! A = P * L * U * Q
+    threadsafe
+    callstatement {int i;(*f2py_func)(&n,a,&lda,ipiv,jpiv,&info);for(i=0;i\<n;--ipiv[i],--jpiv[i++]);}
+    callprotoargument int*,<ctype>*,int*,int*,int*,int*
+
+    integer depend(a),intent(hide):: n = shape(a,0)
+    <ftype> dimension(n,n),intent(in,out,copy,out=lu) :: a
+    check(shape(a,0)==shape(a,1)) :: a
+    integer intent(hide),depend(a):: lda = MAX(1,shape(a,0))
+    integer dimension(n),depend(n),intent(out) :: ipiv
+    integer dimension(n),depend(n),intent(out) :: jpiv
+    integer intent(out):: info
+
+end subroutine <prefix>getc2
+
+subroutine <prefix>gesc2(n,lu,lda,rhs,ipiv,jpiv,scale)
+    ! x,scale = gesc2(lu,rhs,ipiv,jpiv,overwrite_rhs=0)
+    ! Solve  A * X = scale * RHS
+    ! A = P * L * U * Q
+    threadsafe
+    callstatement {int i;for(i=0;i\<n;++ipiv[i],++jpiv[i++]);(*f2py_func)(&n,lu,&lda,rhs,ipiv,jpiv,&scale);for(i=0;i\<n;--ipiv[i],--jpiv[i++]);}
+    callprotoargument int*,<ctype>*,int*,<ctype>*,int*,int*,<ctypereal>*
+
+    integer depend(lu),intent(hide):: n = shape(lu,0)
+    <ftype> dimension(n,n),intent(in) :: lu
+    check(shape(lu,0)==shape(lu,1)) :: lu
+    integer intent(hide),depend(lu):: lda = MAX(1,shape(lu,0))
+    <ftype> dimension(n),intent(in,out,copy,out=x),depend(n),check(shape(lu,0)==len(rhs)) :: rhs
+    integer dimension(n),intent(in),depend(n) :: ipiv
+    integer dimension(n),intent(in),depend(n) :: jpiv
+    <ftypereal> intent(out):: scale
+
+end subroutine <prefix>gesc2
+
 subroutine <prefix>getri(n,lu,piv,work,lwork,info)
     ! inv_a,info = getri(lu,piv,lwork=3*n,overwrite_lu=0)
     ! Find A inverse A^-1.
@@ -940,6 +977,70 @@ subroutine <prefix>geqrf(m,n,a,tau,work,lwork,info)
     integer intent(out) :: info
 
 end subroutine <prefix>geqrf
+
+subroutine <prefix>geqrf_lwork(m,n,a,tau,work,lwork,info)
+    ! work, info = geqrf_lwork(m, n)
+    ! Calculate the optimal size of the ?geqrf work array.
+
+    fortranname <prefix>geqrf
+    callstatement (*f2py_func)(&m,&n,&a,&m,&tau,&work,&lwork,&info)
+    callprotoargument int*,int*,<ctype>*,int*,<ctype>*,<ctype>*,int*,int*
+
+    integer intent(in), check(m > 0) :: m
+    integer intent(in), check(n > 0) :: n
+    <ftype> intent(hide) :: a
+    <ftype> intent(hide) :: tau
+    <ftype> intent(out) :: work
+    integer intent(hide) :: lwork = -1
+    integer intent(out) :: info
+
+end subroutine <prefix>geqrf_lwork
+
+subroutine <prefix>geqrfp(m,n,a,lda,tau,work,lwork,info)
+    ! qr,tau,work,info = geqrfp(a,lwork=3*n,overwrite_a=0)
+    ! DGEQR2P computes a QR factorization of a real M-by-N matrix A:
+    !
+    !    A = Q * ( R ),
+    !            ( 0 )
+    !
+    ! where:
+    !
+    !    Q is a M-by-M orthogonal matrix;
+    !    R is an upper-triangular N-by-N matrix with nonnegative diagonal
+    !    entries;
+    !    0 is a (M-N)-by-N zero matrix, if M > N.
+
+    callstatement (*f2py_func)(&m,&n,a,&lda,tau,work,&lwork,&info)
+    callprotoargument int*,int*,<ctype>*,int*,<ctype>*,<ctype>*,int*,int*
+
+    integer intent(hide), check(m > 0), depend(a) :: m = shape(a, 0)
+    integer intent(hide), check(n > 0), depend(a) :: n = shape(a, 1)
+    <ftype> intent(in,out,copy,out=qr), dimension(m,n) :: a
+    integer intent(hide), depend(a) :: lda = max(1, shape(a, 0))
+    <ftype> intent(out), depend(m,n), dimension(MIN(m,n)) :: tau
+    <ftype> intent(hide), depend(lwork), dimension(lwork) :: work
+    integer intent(in), check(lwork>=n||lwork==-1) :: lwork = MAX(1, n)
+    integer intent(out) :: info
+
+end subroutine <prefix>geqrfp
+
+subroutine <prefix>geqrfp_lwork(m,n,a,lda,tau,work,lwork,info)
+    ! work, info = geqrfp_lwork(m, n)
+
+    fortranname <prefix>geqrfp
+    callstatement (*f2py_func)(&m,&n,&a,&lda,&tau,&work,&lwork,&info)
+    callprotoargument int*,int*,<ctype>*,int*,<ctype>*,<ctype>*,int*,int*
+
+    integer intent(in), check(m > 0) :: m
+    integer intent(in), check(n > 0) :: n
+    <ftype> intent(hide) :: a
+    integer intent(hide), depend(m) :: lda = m
+    <ftype> intent(hide) :: tau
+    <ftype> intent(out) :: work
+    integer intent(hide) :: lwork = -1
+    integer intent(out) :: info
+
+end subroutine <prefix>geqrfp_lwork
 
 subroutine <prefix>gerqf(m,n,a,tau,work,lwork,info)
    ! rq_a,tau,work,info = gerqf(a,lwork=3*n,overwrite_a=0)

@@ -1,5 +1,4 @@
 """ A sparse matrix in COOrdinate or 'triplet' format"""
-from __future__ import division, print_function, absolute_import
 
 __docformat__ = "restructuredtext en"
 
@@ -9,7 +8,6 @@ from warnings import warn
 
 import numpy as np
 
-from scipy._lib.six import zip as izip
 
 from ._sparsetools import coo_tocsr, coo_todense, coo_matvec
 from .base import isspmatrix, SparseEfficiencyWarning, spmatrix
@@ -449,7 +447,7 @@ class coo_matrix(_data_matrix, _minmax_mixin):
 
         self.sum_duplicates()
         dok = dok_matrix((self.shape), dtype=self.dtype)
-        dok._update(izip(izip(self.row,self.col),self.data))
+        dok._update(zip(zip(self.row,self.col),self.data))
 
         return dok
 

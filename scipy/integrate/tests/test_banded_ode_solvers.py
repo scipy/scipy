@@ -1,6 +1,3 @@
-
-from __future__ import division, print_function, absolute_import
-
 import itertools
 import numpy as np
 from numpy.testing import assert_allclose
@@ -118,7 +115,7 @@ def _analytical_solution(a, y0, t):
 
     The solution is only valid if `a` is diagonalizable.
 
-    Returns a 2-d array with shape (len(t), len(y0)).
+    Returns a 2-D array with shape (len(t), len(y0)).
     """
     lam, v = np.linalg.eig(a)
     c = np.linalg.solve(v, y0)
@@ -219,4 +216,3 @@ def test_banded_ode_solvers():
              [False, True]]      # banded
         for meth, use_jac, with_jac, banded in itertools.product(*p):
             check_complex(idx, "zvode", meth, use_jac, with_jac, banded)
-

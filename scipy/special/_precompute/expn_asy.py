@@ -7,10 +7,8 @@ Sources
     https://dlmf.nist.gov/8.20#ii
 
 """
-from __future__ import division, print_function, absolute_import
-
 import os
-from scipy._lib._numpy_compat import suppress_warnings
+from numpy.testing import suppress_warnings
 
 try:
     # Can remove when sympy #11255 is resolved; see

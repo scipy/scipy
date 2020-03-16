@@ -1,15 +1,13 @@
 """
 Unit test for Linear Programming
 """
-from __future__ import division, print_function, absolute_import
 import sys
 
 import numpy as np
 from numpy.testing import (assert_, assert_allclose, assert_equal,
-                           assert_array_less)
+                           assert_array_less, assert_warns, suppress_warnings)
 from pytest import raises as assert_raises
 from scipy.optimize import linprog, OptimizeWarning
-from scipy._lib._numpy_compat import _assert_warns, suppress_warnings
 from scipy.sparse.linalg import MatrixRankWarning
 from scipy.linalg import LinAlgWarning
 import pytest
@@ -50,7 +48,7 @@ def _assert_unable_to_find_basic_feasible_sol(res):
 
     # The status may be either 2 or 4 depending on why the feasible solution
     # could not be found. If the undelying problem is expected to not have a
-    # feasible solution _assert_infeasible should be used.
+    # feasible solution, _assert_infeasible should be used.
     assert_(not res.success, "incorrectly reported success")
     assert_(res.status in (2, 4), "failed to report optimization failure")
 
@@ -330,8 +328,8 @@ class LinprogCommonTests(object):
         o = {key: self.options[key] for key in self.options}
         o['spam'] = 42
 
-        _assert_warns(OptimizeWarning, f,
-                      c, A_ub=A_ub, b_ub=b_ub, options=o)
+        assert_warns(OptimizeWarning, f,
+                     c, A_ub=A_ub, b_ub=b_ub, options=o)
 
     def test_invalid_inputs(self):
 
@@ -339,11 +337,11 @@ class LinprogCommonTests(object):
             linprog(c, A_ub, b_ub, A_eq, b_eq, bounds,
                     method=self.method, options=self.options)
 
-        for bad_bound in [[(5, 0), (1, 2), (3, 4)],
-                          [(1, 2), (3, 4)],
+        # Removed [(5, 0), (1, 2), (3, 4)]: these are invalid bounds but should be subject to a check in _presolve, not in _clean_inputs.
+        # The optimization should exit with an 'infeasible problem' error, not with a ValueError
+        # Same for [(1, 2), (np.inf, np.inf), (3, 4)] and [(1, 2), (-np.inf, -np.inf), (3, 4)]
+        for bad_bound in [[(1, 2), (3, 4)],
                           [(1, 2), (3, 4), (3, 4, 5)],
-                          [(1, 2), (np.inf, np.inf), (3, 4)],
-                          [(1, 2), (-np.inf, -np.inf), (3, 4)],
                           ]:
             assert_raises(ValueError, f, [1, 2, 3], bounds=bad_bound)
 
@@ -357,7 +355,7 @@ class LinprogCommonTests(object):
         if ("_sparse_presolve" in self.options and
                 self.options["_sparse_presolve"]):
             return
-            # there aren't 3D sparse matrices
+            # there aren't 3-D sparse matrices
 
         assert_raises(ValueError, f, [1, 2], A_ub=np.zeros((1, 1, 3)), b_eq=1)
 
@@ -1397,7 +1395,7 @@ class LinprogRSTests(LinprogCommonTests):
     # acknowledges this possibility, suggesting that there is a bug. On the
     # other hand, the pivoting rule is quite simple, and I can't find a
     # mistake, which suggests that this is a possibility with the pivoting
-    # rule. Hopefully a better pivoting rule will fix the issue.
+    # rule. Hopefully, a better pivoting rule will fix the issue.
 
     def test_bug_5400(self):
         pytest.skip("Intermittent failure acceptable.")
@@ -1423,15 +1421,15 @@ class TestLinprogSimplexDefault(LinprogSimplexTests):
             super(TestLinprogSimplexDefault, self).test_bug_5400()
 
     def test_bug_7237_low_tol(self):
-        # Fails if the tolerance is too strict. Here we test that
-        # even if the solutuion is wrong, the appropriate error is raised.
+        # Fails if the tolerance is too strict. Here, we test that
+        # even if the solution is wrong, the appropriate error is raised.
         self.options.update({'tol': 1e-12})
         with pytest.raises(ValueError):
             super(TestLinprogSimplexDefault, self).test_bug_7237()
 
     def test_bug_8174_low_tol(self):
-        # Fails if the tolerance is too strict. Here we test that
-        # even if the solutuion is wrong, the appropriate warning is issued.
+        # Fails if the tolerance is too strict. Here, we test that
+        # even if the solution is wrong, the appropriate warning is issued.
         self.options.update({'tol': 1e-12})
         with pytest.warns(OptimizeWarning):
             super(TestLinprogSimplexDefault, self).test_bug_8174()
@@ -1447,8 +1445,8 @@ class TestLinprogSimplexBland(LinprogSimplexTests):
             super(TestLinprogSimplexBland, self).test_bug_5400()
 
     def test_bug_8174_low_tol(self):
-        # Fails if the tolerance is too strict. Here we test that
-        # even if the solutuion is wrong, the appropriate error is raised.
+        # Fails if the tolerance is too strict. Here, we test that
+        # even if the solution is wrong, the appropriate error is raised.
         self.options.update({'tol': 1e-12})
         with pytest.raises(AssertionError):
             with pytest.warns(OptimizeWarning):
@@ -1479,15 +1477,15 @@ class TestLinprogSimplexNoPresolve(LinprogSimplexTests):
             return super(TestLinprogSimplexNoPresolve, self).test_bug_6139()
 
     def test_bug_7237_low_tol(self):
-        # Fails if the tolerance is too strict. Here we test that
-        # even if the solutuion is wrong, the appropriate error is raised.
+        # Fails if the tolerance is too strict. Here, we test that
+        # even if the solution is wrong, the appropriate error is raised.
         self.options.update({'tol': 1e-12})
         with pytest.raises(ValueError):
             super(TestLinprogSimplexNoPresolve, self).test_bug_7237()
 
     def test_bug_8174_low_tol(self):
-        # Fails if the tolerance is too strict. Here we test that
-        # even if the solutuion is wrong, the appropriate warning is issued.
+        # Fails if the tolerance is too strict. Here, we test that
+        # even if the solution is wrong, the appropriate warning is issued.
         self.options.update({'tol': 1e-12})
         with pytest.warns(OptimizeWarning):
             super(TestLinprogSimplexNoPresolve, self).test_bug_8174()
@@ -1523,6 +1521,12 @@ if has_umfpack:
 
 class TestLinprogIPSparse(LinprogIPTests):
     options = {"sparse": True, "cholesky": False, "sym_pos": False}
+
+    @pytest.mark.xfail_on_32bit("This test is sensitive to machine epsilon level "
+                                "perturbations in linear system solution in "
+                                "_linprog_ip._sym_solve.")
+    def test_bug_6139(self):
+        super(TestLinprogIPSparse, self).test_bug_6139()
 
     @pytest.mark.xfail(reason='Fails with ATLAS, see gh-7877')
     def test_bug_6690(self):
@@ -1567,6 +1571,12 @@ class TestLinprogIPSparse(LinprogIPTests):
 
 class TestLinprogIPSparsePresolve(LinprogIPTests):
     options = {"sparse": True, "_sparse_presolve": True}
+
+    @pytest.mark.xfail_on_32bit("This test is sensitive to machine epsilon level "
+                                "perturbations in linear system solution in "
+                                "_linprog_ip._sym_solve.")
+    def test_bug_6139(self):
+        super(TestLinprogIPSparsePresolve, self).test_bug_6139()
 
     def test_enzo_example_c_with_infeasibility(self):
         pytest.skip('_sparse_presolve=True incompatible with presolve=False')

@@ -8,8 +8,6 @@ Sparse matrix functions
 #          Jake Vanderplas, August 2012 (Sparse Updates)
 #
 
-from __future__ import division, print_function, absolute_import
-
 __all__ = ['expm', 'inv']
 
 import math
@@ -20,7 +18,6 @@ import scipy.special
 from scipy.linalg.basic import solve, solve_triangular
 
 from scipy.sparse.base import isspmatrix
-from scipy.sparse.construct import eye as speye
 from scipy.sparse.linalg import spsolve
 from scipy.sparse.sputils import is_pydata_spmatrix
 
@@ -50,7 +47,7 @@ def inv(A):
 
     Notes
     -----
-    This computes the sparse inverse of `A`.  If the inverse of `A` is expected
+    This computes the sparse inverse of `A`. If the inverse of `A` is expected
     to be non-sparse, it will likely be faster to convert `A` to dense and use
     scipy.linalg.inv.
 
@@ -604,6 +601,14 @@ def _expm(A, use_exact_onenorm):
         A = np.asarray(A)
     if len(A.shape) != 2 or A.shape[0] != A.shape[1]:
         raise ValueError('expected a square matrix')
+
+    # gracefully handle size-0 input,
+    # carefully handling sparse scenario
+    if A.shape == (0, 0):
+        out = np.zeros([0, 0], dtype=A.dtype)
+        if isspmatrix(A) or is_pydata_spmatrix(A):
+            return A.__class__(out)
+        return out
 
     # Trivial case
     if A.shape == (1, 1):

@@ -6,20 +6,18 @@ https://www.mathworks.com/access/helpdesk/help/pdf_doc/matlab/matfile_format.pdf
 
 (as of December 5 2008)
 '''
-from __future__ import division, print_function, absolute_import
-
 '''
 =================================
  Note on functions and mat files
 =================================
 
 The document above does not give any hints as to the storage of matlab
-function handles, or anonymous function handles.  I had therefore to
+function handles, or anonymous function handles. I had, therefore, to
 guess the format of matlab arrays of ``mxFUNCTION_CLASS`` and
 ``mxOPAQUE_CLASS`` by looking at example mat files.
 
-``mxFUNCTION_CLASS`` stores all types of matlab functions.  It seems to
-contain a struct matrix with a set pattern of fields.  For anonymous
+``mxFUNCTION_CLASS`` stores all types of matlab functions. It seems to
+contain a struct matrix with a set pattern of fields. For anonymous
 functions, a sub-fields of one of these fields seems to contain the
 well-named ``mxOPAQUE_CLASS``. This seems to contain:
 
@@ -27,9 +25,9 @@ well-named ``mxOPAQUE_CLASS``. This seems to contain:
 * 3 int8 strings
 * a matrix
 
-It seems that, whenever the mat file contains a ``mxOPAQUE_CLASS``
+It seems that whenever the mat file contains a ``mxOPAQUE_CLASS``
 instance, there is also an un-named matrix (name == '') at the end of
-the mat file.  I'll call this the ``__function_workspace__`` matrix.
+the mat file. I'll call this the ``__function_workspace__`` matrix.
 
 When I saved two anonymous functions in a mat file, or appended another
 anonymous function to the mat file, there was still only one
@@ -41,7 +39,7 @@ The ``__function_workspace__`` matrix appears to be of double class
 (``mxCLASS_DOUBLE``), but stored as uint8, the memory for which is in
 the format of a mini .mat file, without the first 124 bytes of the file
 header (the description and the subsystem_offset), but with the version
-U2 bytes, and the S2 endian test bytes.  There follow 4 zero bytes,
+U2 bytes, and the S2 endian test bytes. There follow 4 zero bytes,
 presumably for 8 byte padding, and then a series of ``miMATRIX``
 entries, as in a standard mat file. The ``miMATRIX`` entries appear to
 be series of un-named (name == '') matrices, and may also contain arrays
@@ -64,7 +62,7 @@ The mat files I was playing with are in ``tests/data``:
 * parabola.mat
 * some_functions.mat
 
-See ``tests/test_mio.py:test_mio_funcs.py`` for a debugging
+See ``tests/test_mio.py:test_mio_funcs.py`` for the debugging
 script I was working with.
 
 '''
@@ -85,8 +83,6 @@ import numpy as np
 from numpy.compat import asbytes, asstr
 
 import scipy.sparse
-
-from scipy._lib.six import string_types
 
 from .byteordercodes import native_code, swapped_code
 
@@ -145,7 +141,7 @@ class MatFile5Reader(MatFileReader):
     %(load_args)s
     %(struct_arg)s
     uint16_codec : {None, string}
-        Set codec to use for uint16 char arrays (e.g. 'utf-8').
+        Set codec to use for uint16 char arrays (e.g., 'utf-8').
         Use system default codec if None
         '''
         super(MatFile5Reader, self).__init__(
@@ -190,7 +186,7 @@ class MatFile5Reader(MatFileReader):
 
         Sets up readers from parameters in `self`
         '''
-        # reader for top level stream.  We need this extra top-level
+        # reader for top level stream. We need this extra top-level
         # reader because we use the matrix_reader object to contain
         # compressed matrices (so they have their own stream)
         self._file_reader = VarReader5(self)
@@ -258,7 +254,7 @@ class MatFile5Reader(MatFileReader):
 
         If variable_names is None, then get all variables in file
         '''
-        if isinstance(variable_names, string_types):
+        if isinstance(variable_names, str):
             variable_names = [variable_names]
         elif variable_names is not None:
             variable_names = list(variable_names)
@@ -335,13 +331,13 @@ def varmats_from_mat(file_obj):
     """ Pull variables out of mat 5 file as a sequence of mat file objects
 
     This can be useful with a difficult mat file, containing unreadable
-    variables.  This routine pulls the variables out in raw form and puts them,
-    unread, back into a file stream for saving or reading.  Another use is the
+    variables. This routine pulls the variables out in raw form and puts them,
+    unread, back into a file stream for saving or reading. Another use is the
     pathological case where there is more than one variable of the same name in
     the file; this routine returns the duplicates, whereas the standard reader
     will overwrite duplicates in the returned dictionary.
 
-    The file pointer in `file_obj` will be undefined.  File pointers for the
+    The file pointer in `file_obj` will be undefined. File pointers for the
     returned file-like objects are set at 0.
 
     Parameters
@@ -353,7 +349,7 @@ def varmats_from_mat(file_obj):
     -------
     named_mats : list
         list contains tuples of (name, BytesIO) where BytesIO is a file-like
-        object containing mat file contents as for a single variable.  The
+        object containing mat file contents as for a single variable. The
         BytesIO contains a string with the original header and a single var. If
         ``var_file_obj`` is an individual BytesIO instance, then save as a mat
         file with something like ``open('test.mat',
@@ -363,8 +359,8 @@ def varmats_from_mat(file_obj):
     --------
     >>> import scipy.io
 
-    BytesIO is from the ``io`` module in python 3, and is ``cStringIO`` for
-    python < 3.
+    BytesIO is from the ``io`` module in Python 3, and is ``cStringIO`` for
+    Python < 3.
 
     >>> mat_fileobj = BytesIO()
     >>> scipy.io.savemat(mat_fileobj, {'b': np.arange(10), 'a': 'a string'})
@@ -380,7 +376,7 @@ def varmats_from_mat(file_obj):
     # Initialize variable reading
     file_obj.seek(0)
     rdr.initialize_read()
-    mdict = rdr.read_file_header()
+    rdr.read_file_header()
     next_position = file_obj.tell()
     named_mats = []
     while not rdr.end_of_stream():
@@ -428,7 +424,7 @@ def to_writeable(source):
                   hasattr(source, 'items'))
     # Objects that don't implement mappings, but do have dicts
     if isinstance(source, np.generic):
-        # Numpy scalars are never mappings (pypy issue workaround)
+        # NumPy scalars are never mappings (PyPy issue workaround)
         pass
     elif not is_mapping and hasattr(source, '__dict__'):
         source = dict((key, value) for key, value in source.__dict__.items()
@@ -438,7 +434,7 @@ def to_writeable(source):
         dtype = []
         values = []
         for field, value in source.items():
-            if (isinstance(field, string_types) and
+            if (isinstance(field, str) and
                     field[0] not in '_0123456789'):
                 dtype.append((str(field), object))
                 values.append(value)
@@ -659,10 +655,10 @@ class VarWriter5(object):
         '''
         if arr.size == 0 or np.all(arr == ''):
             # This an empty string array or a string array containing
-            # only empty strings.  Matlab cannot distinguish between a
+            # only empty strings. Matlab cannot distinguish between a
             # string array that is empty, and a string array containing
             # only empty strings, because it stores strings as arrays of
-            # char.  There is no way of having an array of char that is
+            # char. There is no way of having an array of char that is
             # not empty, but contains an empty string. We have to
             # special-case the array-with-empty-strings because even
             # empty strings have zero padding, which would otherwise
@@ -681,9 +677,9 @@ class VarWriter5(object):
         shape = arr.shape
         self.write_header(shape, mxCHAR_CLASS)
         if arr.dtype.kind == 'U' and arr.size:
-            # Make one long string from all the characters.  We need to
+            # Make one long string from all the characters. We need to
             # transpose here, because we're flattening the array, before
-            # we write the bytes.  The bytes have to be written in
+            # we write the bytes. The bytes have to be written in
             # Fortran order.
             n_chars = np.prod(shape)
             st_arr = np.ndarray(shape=(),
@@ -691,7 +687,7 @@ class VarWriter5(object):
                                 buffer=arr.T.copy())  # Fortran order
             # Recode with codec to give byte string
             st = st_arr.item().encode(codec)
-            # Reconstruct as one-dimensional byte array
+            # Reconstruct as 1-D byte array
             arr = np.ndarray(shape=(len(st),),
                              dtype='S1',
                              buffer=st)
@@ -816,12 +812,12 @@ class MatFile5Writer(object):
         mdict : mapping
            mapping with method ``items`` returns name, contents pairs where
            ``name`` which will appear in the matlab workspace in file load, and
-           ``contents`` is something writeable to a matlab file, such as a numpy
+           ``contents`` is something writeable to a matlab file, such as a NumPy
            array.
         write_header : {None, True, False}, optional
            If True, then write the matlab file header before writing the
-           variables.  If None (the default) then write the file header
-           if we are at position 0 in the stream.  By setting False
+           variables. If None (the default) then write the file header
+           if we are at position 0 in the stream. By setting False
            here, and setting the stream position to the end of the file,
            you can append variables to a matlab file
         '''

@@ -1,18 +1,14 @@
-from __future__ import division, print_function, absolute_import
-
 import functools
 import numpy as np
 import math
-import sys
 import types
 import warnings
 
 # trapz is a public function for scipy.integrate,
-# even though it's actually a numpy function.
+# even though it's actually a NumPy function.
 from numpy import trapz
 from scipy.special import roots_legendre
 from scipy.special import gammaln
-from scipy._lib.six import xrange
 
 __all__ = ['fixed_quad', 'quadrature', 'romberg', 'trapz', 'simps', 'romb',
            'cumtrapz', 'newton_cotes']
@@ -162,7 +158,7 @@ def vectorize1(func, args=(), vec_func=False):
             dtype = getattr(y0, 'dtype', type(y0))
             output = np.empty((n,), dtype=dtype)
             output[0] = y0
-            for i in xrange(1, n):
+            for i in range(1, n):
                 output[i] = func(x[i], *args)
             return output
     return vfunc
@@ -238,7 +234,7 @@ def quadrature(func, a, b, args=(), tol=1.49e-8, rtol=1.49e-8, maxiter=50,
     val = np.inf
     err = np.inf
     maxiter = max(miniter+1, maxiter)
-    for n in xrange(miniter, maxiter+1):
+    for n in range(miniter, maxiter+1):
         newval = fixed_quad(vfunc, a, b, (), n)[0]
         err = abs(newval-val)
         val = newval
@@ -267,15 +263,15 @@ def cumtrapz(y, x=None, dx=1.0, axis=-1, initial=None):
     y : array_like
         Values to integrate.
     x : array_like, optional
-        The coordinate to integrate along.  If None (default), use spacing `dx`
+        The coordinate to integrate along. If None (default), use spacing `dx`
         between consecutive elements in `y`.
     dx : float, optional
-        Spacing between elements of `y`.  Only used if `x` is None.
+        Spacing between elements of `y`. Only used if `x` is None.
     axis : int, optional
-        Specifies the axis to cumulate.  Default is -1 (last axis).
+        Specifies the axis to cumulate. Default is -1 (last axis).
     initial : scalar, optional
         If given, insert this value at the beginning of the returned result.
-        Typically this value should be 0.  Default is None, which means no
+        Typically this value should be 0. Default is None, which means no
         value at ``x[0]`` is returned and `res` has one element less than `y`
         along the axis of integration.
 
@@ -284,7 +280,7 @@ def cumtrapz(y, x=None, dx=1.0, axis=-1, initial=None):
     res : ndarray
         The result of cumulative integration of `y` along `axis`.
         If `initial` is None, the shape is such that the axis of integration
-        has one less value than `y`.  If `initial` is given, the shape is equal
+        has one less value than `y`. If `initial` is given, the shape is equal
         to that of `y`.
 
     See Also
@@ -324,7 +320,7 @@ def cumtrapz(y, x=None, dx=1.0, axis=-1, initial=None):
             shape[axis] = -1
             d = d.reshape(shape)
         elif len(x.shape) != len(y.shape):
-            raise ValueError("If given, shape of x must be 1-d or the "
+            raise ValueError("If given, shape of x must be 1-D or the "
                              "same as y.")
         else:
             d = np.diff(x, axis=axis)
@@ -360,7 +356,7 @@ def _basic_simps(y, start, stop, x, dx, axis):
     slice1 = tupleset(slice_all, axis, slice(start+1, stop+1, step))
     slice2 = tupleset(slice_all, axis, slice(start+2, stop+2, step))
 
-    if x is None:  # Even spaced Simpson's rule.
+    if x is None:  # Even-spaced Simpson's rule.
         result = np.sum(dx/3.0 * (y[slice0]+4*y[slice1]+y[slice2]),
                         axis=axis)
     else:
@@ -384,11 +380,11 @@ def _basic_simps(y, start, stop, x, dx, axis):
 def simps(y, x=None, dx=1, axis=-1, even='avg'):
     """
     Integrate y(x) using samples along the given axis and the composite
-    Simpson's rule.  If x is None, spacing of dx is assumed.
+    Simpson's rule. If x is None, spacing of dx is assumed.
 
     If there are an even number of samples, N, then there are an odd
     number of intervals (N-1), but Simpson's rule requires an even number
-    of intervals.  The parameter 'even' controls how this is handled.
+    of intervals. The parameter 'even' controls how this is handled.
 
     Parameters
     ----------
@@ -428,7 +424,7 @@ def simps(y, x=None, dx=1, axis=-1, even='avg'):
     Notes
     -----
     For an odd number of samples that are equally spaced the result is
-    exact if the function is a polynomial of order 3 or less.  If
+    exact if the function is a polynomial of order 3 or less. If
     the samples are not equally spaced, then the result is exact only
     if the function is a polynomial of order 2 or less.
 
@@ -466,7 +462,7 @@ def simps(y, x=None, dx=1, axis=-1, even='avg'):
             returnshape = 1
             x = x.reshape(tuple(shapex))
         elif len(x.shape) != len(y.shape):
-            raise ValueError("If given, shape of x must be 1-d or the "
+            raise ValueError("If given, shape of x must be 1-D or the "
                              "same as y.")
         if x.shape[axis] != N:
             raise ValueError("If given, length of x along axis must be the "
@@ -586,12 +582,12 @@ def romb(y, dx=1.0, axis=-1, show=False):
     R[(0, 0)] = (y[slice0] + y[slicem1])/2.0*h
     slice_R = slice_all
     start = stop = step = Ninterv
-    for i in xrange(1, k+1):
+    for i in range(1, k+1):
         start >>= 1
         slice_R = tupleset(slice_R, axis, slice(start, stop, step))
         step >>= 1
         R[(i, 0)] = 0.5*(R[(i-1, 0)] + h*y[slice_R].sum(axis=axis))
-        for j in xrange(1, i+1):
+        for j in range(1, i+1):
             prev = R[(i, j-1)]
             R[(i, j)] = prev + (prev-R[(i-1, j-1)]) / ((1 << (2*j))-1)
         h /= 2.0
@@ -613,8 +609,8 @@ def romb(y, dx=1.0, axis=-1, show=False):
 
             title = "Richardson Extrapolation Table for Romberg Integration"
             print("", title.center(68), "=" * 68, sep="\n", end="\n")
-            for i in xrange(k+1):
-                for j in xrange(i+1):
+            for i in range(k+1):
+                for j in range(i+1):
                     print(formstr % R[(i, j)], end=" ")
                 print()
             print("=" * 68)
@@ -630,7 +626,7 @@ def romb(y, dx=1.0, axis=-1, show=False):
 # Cosmetic changes by Konrad Hinsen <hinsen@cnrs-orleans.fr>
 # last revision: 1999-7-21
 #
-# Adapted to scipy by Travis Oliphant <oliphant.travis@ieee.org>
+# Adapted to SciPy by Travis Oliphant <oliphant.travis@ieee.org>
 # last revision: Dec 2001
 
 
@@ -638,9 +634,9 @@ def _difftrap(function, interval, numtraps):
     """
     Perform part of the trapezoidal rule to integrate a function.
     Assume that we had called difftrap with all lower powers-of-2
-    starting with 1.  Calling difftrap only returns the summation
-    of the new ordinates.  It does _not_ multiply by the width
-    of the trapezoids.  This must be performed by the caller.
+    starting with 1. Calling difftrap only returns the summation
+    of the new ordinates. It does _not_ multiply by the width
+    of the trapezoids. This must be performed by the caller.
         'function' is the function to evaluate (must accept vector arguments).
         'interval' is a sequence with lower and upper limits
                    of integration.
@@ -676,9 +672,9 @@ def _printresmat(function, interval, resmat):
     print('from', interval)
     print('')
     print('%6s %9s %9s' % ('Steps', 'StepSize', 'Results'))
-    for i in xrange(len(resmat)):
+    for i in range(len(resmat)):
         print('%6d %9f' % (2**i, (interval[1]-interval[0])/(2.**i)), end=' ')
-        for j in xrange(i+1):
+        for j in range(i+1):
             print('%9f' % (resmat[i][j]), end=' ')
         print('')
     print('')
@@ -695,7 +691,7 @@ def romberg(function, a, b, args=(), tol=1.48e-8, rtol=1.48e-8, show=False,
     over the interval (`a`, `b`).
 
     If `show` is 1, the triangular array of the intermediate results
-    will be printed.  If `vec_func` is True (default is False), then
+    will be printed. If `vec_func` is True (default is False), then
     `function` is assumed to support vector arguments.
 
     Parameters
@@ -725,7 +721,7 @@ def romberg(function, a, b, args=(), tol=1.48e-8, rtol=1.48e-8, show=False,
     divmax : int, optional
         Maximum order of extrapolation. Default is 10.
     vec_func : bool, optional
-        Whether `func` handles arrays as arguments (i.e whether it is a
+        Whether `func` handles arrays as arguments (i.e., whether it is a
         "vector" function). Default is False.
 
     See Also
@@ -782,11 +778,11 @@ def romberg(function, a, b, args=(), tol=1.48e-8, rtol=1.48e-8, show=False,
     resmat = [[result]]
     err = np.inf
     last_row = resmat[0]
-    for i in xrange(1, divmax+1):
+    for i in range(1, divmax+1):
         n *= 2
         ordsum += _difftrap(vfunc, interval, n)
         row = [intrange * ordsum / n]
-        for k in xrange(i):
+        for k in range(i):
             row.append(_romberg_diff(last_row[k], row[k], k+1))
         result = row[i]
         lastresult = last_row[i-1]
@@ -872,7 +868,7 @@ def newton_cotes(rn, equal=0):
     Return weights and error coefficient for Newton-Cotes integration.
 
     Suppose we have (N+1) samples of f at the positions
-    x_0, x_1, ..., x_N.  Then an N-point Newton-Cotes formula for the
+    x_0, x_1, ..., x_N. Then an N-point Newton-Cotes formula for the
     integral between x_0 and x_N is:
 
     :math:`\int_{x_0}^{x_N} f(x)dx = \Delta x \sum_{i=0}^{N} a_i f(x_i)
@@ -889,7 +885,7 @@ def newton_cotes(rn, equal=0):
     rn : int
         The integer order for equally-spaced data or the relative positions of
         the samples with the first sample at 0 and the last at N, where N+1 is
-        the length of `rn`.  N is the order of the Newton-Cotes integration.
+        the length of `rn`. N is the order of the Newton-Cotes integration.
     equal : int, optional
         Set to 1 to enforce equally spaced data.
 

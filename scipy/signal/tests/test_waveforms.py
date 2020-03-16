@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 from numpy.testing import (assert_almost_equal, assert_equal,
                            assert_, assert_allclose, assert_array_equal)
@@ -38,7 +36,7 @@ def compute_frequency(t, theta):
     """
     Compute theta'(t)/(2*pi), where theta'(t) is the derivative of theta(t).
     """
-    # Assume theta and t are 1D numpy arrays.
+    # Assume theta and t are 1-D NumPy arrays.
     # Assume that t is uniformly spaced.
     dt = t[1] - t[0]
     f = np.diff(theta)/(2*np.pi) / dt

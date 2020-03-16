@@ -1,14 +1,10 @@
-from __future__ import division
-
 from itertools import product
 
 import numpy as np
 from numpy.linalg import norm
 from numpy.testing import (assert_, assert_allclose,
-                           assert_equal)
+                           assert_equal, suppress_warnings)
 from pytest import raises as assert_raises
-from scipy._lib._numpy_compat import suppress_warnings
-
 from scipy.sparse import issparse, lil_matrix
 from scipy.sparse.linalg import aslinearoperator
 
@@ -60,7 +56,7 @@ def jac_rosenbrock_cropped(x):
     return jac_rosenbrock(x)[0]
 
 
-# When x is 1-d array, return is 2-d array.
+# When x is 1-D array, return is 2-D array.
 def fun_wrong_dimensions(x):
     return np.array([x, x**2, x**3])
 
@@ -614,7 +610,7 @@ class LossFunctionMixin(object):
         # the cost function and dropping the part containing second derivative
         # of f. For a scalar function it is computed as
         # H = (rho' + 2 * rho'' * f**2) * f'**2, if the expression inside the
-        # brackets is less than EPS it is replaced by EPS. Here we check
+        # brackets is less than EPS it is replaced by EPS. Here, we check
         # against the root of H.
 
         x = 2.0  # res.x will be this.
@@ -630,7 +626,7 @@ class LossFunctionMixin(object):
                             max_nfev=1, method=self.method)
         assert_equal(res.jac, 2 * x * EPS**0.5)
 
-        # Now let's apply `loss_scale` to turn the residual into an inlier.
+        # Now, let's apply `loss_scale` to turn the residual into an inlier.
         # The loss function becomes linear.
         res = least_squares(fun_trivial, x, jac_trivial, loss='huber',
                             f_scale=10, max_nfev=1)

@@ -14,10 +14,11 @@ try:
 except ImportError:
     _has_uarray = False
 else:
-    from scipy._lib._pep440 import Version
+    from scipy._lib._pep440 import Version as _Version
 
-    _has_uarray = Version(_uarray.__version__) >= Version("0.5")
+    _has_uarray = _Version(_uarray.__version__) >= _Version("0.5")
     del _uarray
+    del _Version
 
 
 if _has_uarray:

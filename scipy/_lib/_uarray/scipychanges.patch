@@ -10,4 +10,4 @@ index b455bb8ad..b84928a24 100644
 
 -__version__ = get_versions()["version"]
 -del get_versions
-+__version__ = '0.5.1+5.ga864a57.scipy'
++__version__ = '0.5.1+49.g4c3f1d7.scipy'

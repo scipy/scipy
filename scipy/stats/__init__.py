@@ -80,8 +80,9 @@ Continuous distributions
    johnsonsu         -- Johnson SU
    kappa4            -- Kappa 4 parameter
    kappa3            -- Kappa 3 parameter
-   ksone             -- Kolmogorov-Smirnov one-sided (no stats)
-   kstwobign         -- Kolmogorov-Smirnov two-sided test for Large N (no stats)
+   ksone             -- Distribution of Kolmogorov-Smirnov one-sided test statistic
+   kstwo             -- Distribution of Kolmogorov-Smirnov two-sided test statistic
+   kstwobign         -- Limiting Distribution of scaled Kolmogorov-Smirnov two-sided test statistic.
    laplace           -- Laplace
    levy              -- Levy
    levy_l
@@ -374,13 +375,12 @@ Warnings used in :mod:`scipy.stats`
 
    PearsonRConstantInputWarning
    PearsonRNearConstantInputWarning
+   SpearmanRConstantInputWarning
 
 For many more stat related functions install the software R and the
 interface package rpy.
 
 """
-from __future__ import division, print_function, absolute_import
-
 from .stats import *
 from .distributions import *
 from .morestats import *

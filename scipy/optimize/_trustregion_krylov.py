@@ -27,17 +27,17 @@ def _minimize_trust_krylov(fun, x0, args=(), jac=None, hess=None, hessp=None,
                          'is required for Krylov trust-region minimization')
 
     # tol_rel specifies the termination tolerance relative to the initial
-    # gradient norm in the krylov subspace iteration.
+    # gradient norm in the Krylov subspace iteration.
 
     # - tol_rel_i specifies the tolerance for interior convergence.
     # - tol_rel_b specifies the tolerance for boundary convergence.
     #   in nonlinear programming applications it is not necessary to solve
     #   the boundary case as exact as the interior case.
 
-    # - setting tol_rel_i=-2 leads to a forcing sequence in the krylov
+    # - setting tol_rel_i=-2 leads to a forcing sequence in the Krylov
     #   subspace iteration leading to quadratic convergence if eventually
     #   the trust region stays inactive.
-    # - setting tol_rel_b=-3 leads to a forcing sequence in the krylov
+    # - setting tol_rel_b=-3 leads to a forcing sequence in the Krylov
     #   subspace iteration leading to superlinear convergence as long
     #   as the iterates hit the trust region boundary.
 

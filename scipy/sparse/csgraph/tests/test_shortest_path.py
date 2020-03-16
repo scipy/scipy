@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 from numpy.testing import assert_array_almost_equal, assert_array_equal
 from pytest import raises as assert_raises
@@ -149,7 +147,7 @@ def test_undirected_sparse_zero():
 @pytest.mark.parametrize('directed, SP_ans',
                          ((True, directed_SP),
                           (False, undirected_SP)))
-@pytest.mark.parametrize('indices', ([0, 2, 4], [0, 4], [3, 4]))
+@pytest.mark.parametrize('indices', ([0, 2, 4], [0, 4], [3, 4], [0, 0]))
 def test_dijkstra_indices_min_only(directed, SP_ans, indices):
     SP_ans = np.array(SP_ans)
     indices = np.array(indices, dtype=np.int64)
@@ -279,7 +277,7 @@ def test_negative_cycles():
 
 
 def test_masked_input():
-    G = np.ma.masked_equal(directed_G, 0)
+    np.ma.masked_equal(directed_G, 0)
 
     def check(method):
         SP = shortest_path(directed_G, method=method, directed=True,

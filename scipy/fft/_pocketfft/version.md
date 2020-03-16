@@ -4,17 +4,15 @@ pypocketfft version
 
 SciPy currently vendors [pypocketfft] at:
 
-    commit c0f74f610adfc60b8b5e3c3bce6477e646329f63
-	Merge: c573384 dce19de
-	Author: Martin Reinecke <martin@mpa-garching.mpg.de>
-	Date:   Wed Aug 14 15:25:48 2019 +0200
+    commit 2147aaf37c6274cc77160f6b355ed9d120cfdc57
+    Merge: 80bb41a 99599e1
+    Author: Martin Reinecke <martin@mpa-garching.mpg.de>
+    Date:   Sat Jan 11 17:09:17 2020 +0100
 
-        Merge branch 'macos-issues' into 'master'
+        Merge branch 'more_clang_fixes' into 'master'
 
-        macOS issues
+        address more problems with clang (and follow its optimization hints)
 
-        See merge request mtr/pypocketfft!27
-
-
+        See merge request mtr/pypocketfft!35
 
 pypocketfft: https://gitlab.mpcdf.mpg.de/mtr/pypocketfft

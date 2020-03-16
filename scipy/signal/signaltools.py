@@ -1,30 +1,22 @@
 # Author: Travis Oliphant
 # 1999 -- 2002
 
-from __future__ import division, print_function, absolute_import
-
 import operator
+import math
 import sys
 import timeit
 from scipy.spatial import cKDTree
 from . import sigtools, dlti
 from ._upfirdn import upfirdn, _output_len, _upfirdn_modes
-from scipy._lib.six import callable
 from scipy import linalg, fft as sp_fft
 from scipy.fft._helper import _init_nd_shape_and_axes
 import numpy as np
-import math
-from scipy.special import factorial, lambertw
+from scipy.special import lambertw
 from .windows import get_window
 from ._arraytools import axis_slice, axis_reverse, odd_ext, even_ext, const_ext
 from .filter_design import cheby1, _validate_sos
 from .fir_filter_design import firwin
 from ._sosfilt import _sosfilt
-
-if sys.version_info >= (3, 5):
-    from math import gcd
-else:
-    from fractions import gcd
 
 
 __all__ = ['correlate', 'correlate2d',
@@ -166,6 +158,9 @@ def correlate(in1, in2, mode='full', method='auto'):
     ``method='fft'`` only works for numerical arrays as it relies on
     `fftconvolve`. In certain cases (i.e., arrays of objects or when
     rounding integers can lose precision), ``method='direct'`` is always used.
+
+    When using "same" mode with even-length inputs, the outputs of `correlate`
+    and `correlate2d` differ: There is a 1-index offset between them.
 
     Examples
     --------
@@ -901,7 +896,6 @@ def _conv_ops(x_shape, h_shape, mode):
     FFT (and the implementation of ``_freq_domain_conv``).
 
     """
-    x_size, h_size = _prod(x_shape), _prod(h_shape)
     if mode == "full":
         out_shape = [n + k - 1 for n, k in zip(x_shape, h_shape)]
     elif mode == "valid":
@@ -1299,12 +1293,12 @@ def convolve(in1, in2, mode='full', method='auto'):
 
 def order_filter(a, domain, rank):
     """
-    Perform an order filter on an N-dimensional array.
+    Perform an order filter on an N-D array.
 
-    Perform an order filter on the array in.  The domain argument acts as a
-    mask centered over each pixel.  The non-zero elements of domain are
+    Perform an order filter on the array in. The domain argument acts as a
+    mask centered over each pixel. The non-zero elements of domain are
     used to select elements surrounding each input pixel which are placed
-    in a list.   The list is sorted, and the output for that pixel is the
+    in a list. The list is sorted, and the output for that pixel is the
     element corresponding to rank in the sorted list.
 
     Parameters
@@ -1433,6 +1427,31 @@ def wiener(im, mysize=None, noise=None):
     out : ndarray
         Wiener filtered result with the same shape as `im`.
 
+    Examples
+    --------
+
+    >>> from scipy.misc import face
+    >>> from scipy.signal.signaltools import wiener
+    >>> import matplotlib.pyplot as plt
+    >>> import numpy as np
+    >>> img = np.random.random((40, 40))    #Create a random image
+    >>> filtered_img = wiener(img, (5, 5))  #Filter the image
+    >>> f, (plot1, plot2) = plt.subplots(1, 2)
+    >>> plot1.imshow(img)
+    >>> plot2.imshow(filtered_img)
+    >>> plt.show()
+
+    Notes
+    -----
+    This implementation is similar to wiener2 in Matlab/Octave.
+    For more details see [1]_
+
+    References
+    ----------
+    .. [1] Lim, Jae S., Two-Dimensional Signal and Image Processing,
+           Englewood Cliffs, NJ, Prentice Hall, 1990, p. 548.
+
+
     """
     im = np.asarray(im)
     if mysize is None:
@@ -1538,7 +1557,7 @@ def convolve2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
     in2 = np.asarray(in2)
 
     if not in1.ndim == in2.ndim == 2:
-        raise ValueError('convolve2d inputs must both be 2D arrays')
+        raise ValueError('convolve2d inputs must both be 2-D arrays')
 
     if _inputs_swap_needed(mode, in1.shape, in2.shape):
         in1, in2 = in2, in1
@@ -1594,6 +1613,11 @@ def correlate2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
         A 2-dimensional array containing a subset of the discrete linear
         cross-correlation of `in1` with `in2`.
 
+    Notes
+    -----
+    When using "same" mode with even-length inputs, the outputs of `correlate`
+    and `correlate2d` differ: There is a 1-index offset between them.
+
     Examples
     --------
     Use 2D cross-correlation to find the location of a template in a noisy
@@ -1628,7 +1652,7 @@ def correlate2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
     in2 = np.asarray(in2)
 
     if not in1.ndim == in2.ndim == 2:
-        raise ValueError('correlate2d inputs must both be 2D arrays')
+        raise ValueError('correlate2d inputs must both be 2-D arrays')
 
     swapped_inputs = _inputs_swap_needed(mode, in1.shape, in2.shape)
     if swapped_inputs:
@@ -2830,7 +2854,6 @@ def resample(x, num, t=None, axis=0, window=None):
     >>> plt.show()
     """
     x = np.asarray(x)
-    X = sp_fft.fft(x, axis=axis)
     Nx = x.shape[axis]
 
     # Check if we can use faster real FFT
@@ -3067,7 +3090,7 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0),
     # Determine our up and down factors
     # Use a rational approximation to save computation time on really long
     # signals
-    g_ = gcd(up, down)
+    g_ = math.gcd(up, down)
     up //= g_
     down //= g_
     if up == down == 1:
@@ -3232,7 +3255,8 @@ def detrend(data, axis=-1, type='linear', bp=0, overwrite_data=False):
     bp : array_like of ints, optional
         A sequence of break points. If given, an individual linear fit is
         performed for each part of `data` between two break points.
-        Break points are specified as indices into `data`.
+        Break points are specified as indices into `data`. This parameter
+        only has an effect when ``type == 'linear'``.
     overwrite_data : bool, optional
         If True, perform in place detrending and avoid a copy. Default is False
 
@@ -3924,7 +3948,7 @@ def _validate_pad(padtype, padlen, x, axis, ntaps):
 def _validate_x(x):
     x = np.asarray(x)
     if x.ndim == 0:
-        raise ValueError('x must be at least 1D')
+        raise ValueError('x must be at least 1-D')
     return x
 
 

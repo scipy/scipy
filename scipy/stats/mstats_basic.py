@@ -8,8 +8,6 @@ An extension of scipy.stats.stats to support masked arrays
 # TODO : ttest_rel looks botched:  what are x1,x2,v1,v2 for ?
 # TODO : reimplement ksonesamp
 
-from __future__ import division, print_function, absolute_import
-
 
 __all__ = ['argstoarray',
            'count_tied_groups',
@@ -39,8 +37,6 @@ import numpy as np
 from numpy import ndarray
 import numpy.ma as ma
 from numpy.ma import masked, nomask
-
-from scipy._lib.six import iteritems
 
 import itertools
 import warnings
@@ -87,6 +83,35 @@ def _chk_size(a, b):
         raise ValueError("The size of the input array should match!"
                          " (%s <> %s)" % (na, nb))
     return (a, b, na)
+
+
+def _contains_nan(a, nan_policy='propagate'):
+    policies = ['propagate', 'raise', 'omit']
+    if nan_policy not in policies:
+        raise ValueError("nan_policy must be one of {%s}" %
+                         ', '.join("'%s'" % s for s in policies))
+    try:
+        # Calling np.sum to avoid creating a huge array into memory
+        # e.g. np.isnan(a).any()
+        with np.errstate(invalid='ignore'):
+            contains_nan = np.isnan(np.sum(a))
+    except TypeError:
+        # This can happen when attempting to sum things which are not
+        # numbers (e.g. as in the function `mode`). Try an alternative method:
+        try:
+            contains_nan = np.nan in set(a.ravel())
+        except TypeError:
+            # Don't know what to do. Fall back to omitting nan values and
+            # issue a warning.
+            contains_nan = False
+            nan_policy = 'omit'
+            warnings.warn("The input array could not be properly checked for nan "
+                          "values. nan values will be ignored.", RuntimeWarning)
+
+    if contains_nan and nan_policy == 'raise':
+        raise ValueError("The input contains nan values")
+
+    return contains_nan, nan_policy
 
 
 def argstoarray(*args):
@@ -591,8 +616,8 @@ def kendalltau(x, y, use_ties=True, use_missing=False, method='auto'):
     xties = count_tied_groups(x)
     yties = count_tied_groups(y)
     if use_ties:
-        corr_x = np.sum([v*k*(k-1) for (k,v) in iteritems(xties)], dtype=float)
-        corr_y = np.sum([v*k*(k-1) for (k,v) in iteritems(yties)], dtype=float)
+        corr_x = np.sum([v*k*(k-1) for (k,v) in xties.items()], dtype=float)
+        corr_y = np.sum([v*k*(k-1) for (k,v) in yties.items()], dtype=float)
         denom = ma.sqrt((n*(n-1)-corr_x)/2. * (n*(n-1)-corr_y)/2.)
     else:
         denom = n*(n-1)/2.
@@ -622,6 +647,8 @@ def kendalltau(x, y, use_ties=True, use_missing=False, method='auto'):
             prob = 2.0/np.math.factorial(n)
         elif c == 1:
             prob = 2.0/np.math.factorial(n-1)
+        elif 2*c == (n*(n-1))//2:
+            prob = 1.0
         else:
             old = [0.0]*(c+1)
             new = [0.0]*(c+1)
@@ -637,15 +664,15 @@ def kendalltau(x, y, use_ties=True, use_missing=False, method='auto'):
     elif method == 'asymptotic':
         var_s = n*(n-1)*(2*n+5)
         if use_ties:
-            var_s -= np.sum([v*k*(k-1)*(2*k+5)*1. for (k,v) in iteritems(xties)])
-            var_s -= np.sum([v*k*(k-1)*(2*k+5)*1. for (k,v) in iteritems(yties)])
-            v1 = np.sum([v*k*(k-1) for (k, v) in iteritems(xties)], dtype=float) *\
-                 np.sum([v*k*(k-1) for (k, v) in iteritems(yties)], dtype=float)
+            var_s -= np.sum([v*k*(k-1)*(2*k+5)*1. for (k,v) in xties.items()])
+            var_s -= np.sum([v*k*(k-1)*(2*k+5)*1. for (k,v) in yties.items()])
+            v1 = np.sum([v*k*(k-1) for (k, v) in xties.items()], dtype=float) *\
+                 np.sum([v*k*(k-1) for (k, v) in yties.items()], dtype=float)
             v1 /= 2.*n*(n-1)
             if n > 2:
-                v2 = np.sum([v*k*(k-1)*(k-2) for (k,v) in iteritems(xties)],
+                v2 = np.sum([v*k*(k-1)*(k-2) for (k,v) in xties.items()],
                             dtype=float) * \
-                     np.sum([v*k*(k-1)*(k-2) for (k,v) in iteritems(yties)],
+                     np.sum([v*k*(k-1)*(k-2) for (k,v) in yties.items()],
                             dtype=float)
                 v2 /= 9.*n*(n-1)*(n-2)
             else:
@@ -682,7 +709,7 @@ def kendalltau_seasonal(x):
 
     n_tot = x.count()
     ties = count_tied_groups(x.compressed())
-    corr_ties = sum(v*k*(k-1) for (k,v) in iteritems(ties))
+    corr_ties = sum(v*k*(k-1) for (k,v) in ties.items())
     denom_tot = ma.sqrt(1.*n_tot*(n_tot-1)*(n_tot*(n_tot-1)-corr_ties))/2.
 
     R = rankdata(x, axis=0, use_missing=True)
@@ -691,7 +718,7 @@ def kendalltau_seasonal(x):
     denom_szn = ma.empty(m, dtype=float)
     for j in range(m):
         ties_j = count_tied_groups(x[:,j].compressed())
-        corr_j = sum(v*k*(k-1) for (k,v) in iteritems(ties_j))
+        corr_j = sum(v*k*(k-1) for (k,v) in ties_j.items())
         cmb = n_p[j]*(n_p[j]-1)
         for k in range(j,m,1):
             K[j,k] = sum(msign((x[i:,j]-x[i,j])*(x[i:,k]-x[i,k])).sum()
@@ -1153,7 +1180,7 @@ def mannwhitneyu(x,y, use_continuity=True):
     mu = (nx*ny)/2.
     sigsq = (nt**3 - nt)/12.
     ties = count_tied_groups(ranks)
-    sigsq -= sum(v*(k**3-k) for (k,v) in iteritems(ties))/12.
+    sigsq -= sum(v*(k**3-k) for (k,v) in ties.items())/12.
     sigsq *= nx*ny/float(nt*(nt-1))
 
     if use_continuity:
@@ -1219,7 +1246,7 @@ def kruskal(*args):
     H = 12./(ntot*(ntot+1)) * (sumrk**2/ngrp).sum() - 3*(ntot+1)
     # Tie correction
     ties = count_tied_groups(ranks)
-    T = 1. - sum(v*(k**3-k) for (k,v) in iteritems(ties))/float(ntot**3-ntot)
+    T = 1. - sum(v*(k**3-k) for (k,v) in ties.items())/float(ntot**3-ntot)
     if T == 0:
         raise ValueError('All numbers are identical in kruskal')
 
@@ -1975,7 +2002,7 @@ def tsem(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
 
 
 def winsorize(a, limits=None, inclusive=(True, True), inplace=False,
-              axis=None):
+              axis=None, nan_policy='propagate'):
     """Returns a Winsorized version of the input array.
 
     The (limits[0])th lowest values are set to the (limits[0])th percentile,
@@ -2004,6 +2031,13 @@ def winsorize(a, limits=None, inclusive=(True, True), inplace=False,
     axis : {None, int}, optional
         Axis along which to trim. If None, the whole array is trimmed, but its
         shape is maintained.
+    nan_policy : {'propagate', 'raise', 'omit'}, optional
+        Defines how to handle when input contains nan.
+        The following options are available (default is 'propagate'):
+
+          * 'propagate': allows nan values and may overwrite or propagate them
+          * 'raise': throws an error
+          * 'omit': performs the calculations ignoring nan values
 
     Notes
     -----
@@ -2027,23 +2061,32 @@ def winsorize(a, limits=None, inclusive=(True, True), inplace=False,
            fill_value=999999)
 
     """
-    def _winsorize1D(a, low_limit, up_limit, low_include, up_include):
+    def _winsorize1D(a, low_limit, up_limit, low_include, up_include,
+                     contains_nan, nan_policy):
         n = a.count()
         idx = a.argsort()
+        if contains_nan:
+            nan_count = np.count_nonzero(np.isnan(a))
         if low_limit:
             if low_include:
                 lowidx = int(low_limit * n)
             else:
                 lowidx = np.round(low_limit * n).astype(int)
+            if contains_nan and nan_policy == 'omit':
+                lowidx = min(lowidx, n-nan_count-1)
             a[idx[:lowidx]] = a[idx[lowidx]]
         if up_limit is not None:
             if up_include:
                 upidx = n - int(n * up_limit)
             else:
                 upidx = n - np.round(n * up_limit).astype(int)
-            a[idx[upidx:]] = a[idx[upidx - 1]]
+            if contains_nan and nan_policy == 'omit':
+                a[idx[upidx:-nan_count]] = a[idx[upidx - 1]]
+            else:
+                a[idx[upidx:]] = a[idx[upidx - 1]]
         return a
 
+    contains_nan, nan_policy = _contains_nan(a, nan_policy)
     # We are going to modify a: better make a copy
     a = ma.array(a, copy=np.logical_not(inplace))
 
@@ -2066,10 +2109,11 @@ def winsorize(a, limits=None, inclusive=(True, True), inplace=False,
 
     if axis is None:
         shp = a.shape
-        return _winsorize1D(a.ravel(), lolim, uplim, loinc, upinc).reshape(shp)
+        return _winsorize1D(a.ravel(), lolim, uplim, loinc, upinc,
+                            contains_nan, nan_policy).reshape(shp)
     else:
         return ma.apply_along_axis(_winsorize1D, axis, a, lolim, uplim, loinc,
-                                   upinc)
+                                   upinc, contains_nan, nan_policy)
 
 
 def moment(a, moment=1, axis=0):

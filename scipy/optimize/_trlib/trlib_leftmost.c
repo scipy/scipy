@@ -8,10 +8,10 @@
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in all
  * copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -47,7 +47,7 @@ trlib_int_t trlib_leftmost(
             if (leftmost[ii] < leftmost[*ileftmost]) { *ileftmost = ii; }
         }
     }
-    else { 
+    else {
         ret = trlib_leftmost_irreducible(irblk[nirblk] - irblk[nirblk-1], diag+irblk[nirblk-1], offdiag+irblk[nirblk-1],
                 1, leftmost_minor, itmax, tol_abs, verbose, unicode, prefix, fout, timing, leftmost+nirblk-1, &curit);
         if (leftmost[nirblk-1] < leftmost[*ileftmost]) { *ileftmost = nirblk-1; }
@@ -114,7 +114,7 @@ trlib_int_t trlib_leftmost_irreducible(
     if ( warm ) {
         // provided leftmost is an upper bound and a pole of Parlett-Reid Value, thus pertub a bit
         up = fmin(up, leftmost_minor); *leftmost = leftmost_minor - .1*(up-low); //*leftmost = leftmost_minor - TRLIB_EPS_POW_4;
-    }  
+    }
     else { leftmost_minor = 0.0; *leftmost = low + .1*(up-low); }; // ensure sanity on leftmost_minor and start with lower bound
     // Parlett-Reid Iteration, note we can assume n > 1
     itmax = itmax*n;
@@ -124,7 +124,7 @@ trlib_int_t trlib_leftmost_irreducible(
            this iteration uses a safeguard bracket [low, up] such that always low <= leftmost <= up
            note that T - t*I is positive definite for t <= desired leftmost
            steps of iteration:
-          
+
            (1) compute Parlett-Reid last pivot value which is D_n in a LDL^T factorization of T
                obtain derivative d D_n / d leftmost as byproduct in the very same recursion
                track if breakdown would occur in factorization, happens if either
@@ -132,7 +132,7 @@ trlib_int_t trlib_leftmost_irreducible(
                (b) more than one negative pivot present
                if breakdown would occurs this means that Parlett-Reid value is infinite
                  end iteration at premature point and restart with adapted bounds and estimation:
-               (a) a pivot became zero:  
+               (a) a pivot became zero:
                    if last pivot zero   --> goal reached, exit
                    if previous zero     --> T - leftmost I not positive definite, thus desired value <= leftmost
                (b) multiple neg privots --> T - leftmost I            indefinite, thus desired value <= leftmost
@@ -146,13 +146,13 @@ trlib_int_t trlib_leftmost_irreducible(
                    Other choices  would be m(t) = a+bt      (Newton on lifted model)
                                            m(t) = a+bt+ct^2 (Taylor, very good close to zero, possibly really bad far away)
                do (b) if warmstart where user provided leftmost(U), otherwise go route (a)
-          
+
            (3) take trial step if inside bracket, otherwise bisect
-          
+
            stop iteration if either bracket is sufficiently small or Parlett-Reid value is close enough to zero */
 
         *iter_pr += 1;
-        
+
         // test if iteration limit exceeded
         if ( *iter_pr > itmax ) { TRLIB_RETURN(TRLIB_LMR_ITMAX) }
 
@@ -168,7 +168,7 @@ trlib_int_t trlib_leftmost_irreducible(
         // compute pivot and derivative of LDL^T factorization of T - leftmost I
         continue_outer_loop = 0;
         for( jj = 0; jj < n; ++jj ) {
-            /* compute jj-th pivot
+            /* compute jjth pivot
                special case for jj == 0 since offdiagonal is missing */
             if (jj == 0) { prlp = diag[0] - *leftmost; dprlp = -1.0; ddprlp = 0.0; }
             else{
@@ -208,9 +208,9 @@ trlib_int_t trlib_leftmost_irreducible(
             }
         }
 
-        if (continue_outer_loop) { 
+        if (continue_outer_loop) {
             TRLIB_PRINTLN_1("%6s%8s%14e%14e%14e%14s%14e%6ld%6ld", "", " bisecp ", low, *leftmost, up, "", prlp, n_neg_piv, jj)
-            continue; 
+            continue;
         }
 
         // we have survived computing the Last-Pivot value without finding a zero pivot and at most one negative pivot
@@ -220,7 +220,7 @@ trlib_int_t trlib_leftmost_irreducible(
         else { up = *leftmost; }
 
         // test if bracket interval is small or last pivot has converged to zero
-        if (up-low <= tol_abs * fmax(1.0, fmax(fabs(low), fabs(up))) || fabs(prlp) <= tol_abs) { 
+        if (up-low <= tol_abs * fmax(1.0, fmax(fabs(low), fabs(up))) || fabs(prlp) <= tol_abs) {
             TRLIB_PRINTLN_1("%6s%8s%14e%14e%14e%14s%14e%6ld%6ld", "", "  conv  ", low, *leftmost, up, "", prlp, n_neg_piv, jj)
             TRLIB_RETURN(TRLIB_LMR_CONV)
         }
@@ -230,7 +230,7 @@ trlib_int_t trlib_leftmost_irreducible(
         // select suitable model for analytic expression in dependence of warm
         // warm: 1 --> heuristic depending on estimation if already close to zero
         // warm: 2 --> use asymptotic quadratic model of lifted prlp
-        // warm: 3 --> use taylor     quadratic model of lifted prlp
+        // warm: 3 --> use Taylor     quadratic model of lifted prlp
         // warm: 4 --> use linear (newton)      model of lifted prlp
         if (warm) {
             if ( warm == 2 || (warm == 1 && up-low >= .1*fmax(1.0, fabs(*leftmost))) ) {
@@ -243,7 +243,7 @@ trlib_int_t trlib_leftmost_irreducible(
                 model_type = 2; dleftmost = leftmost_attempt - *leftmost;
             }
             if( warm > 2 || (warm == 1 && up-low <.1*fmax(1.0, fabs(*leftmost))) ) {
-                /* use quadratic taylor model for pole lifted function (leftmost_minor-t)*prlp(t) */
+                /* use quadratic Taylor model for pole lifted function (leftmost_minor-t)*prlp(t) */
                 quad_qua = -(dprlp + .5*((*leftmost)-leftmost_minor)*ddprlp);
                 quad_lin = -(prlp + ((*leftmost)-leftmost_minor)*dprlp);
                 quad_abs = (leftmost_minor-(*leftmost))*prlp;
@@ -261,11 +261,11 @@ trlib_int_t trlib_leftmost_irreducible(
         else { model_type = 1; dleftmost = -prlp/dprlp; leftmost_attempt = *leftmost + dleftmost; } // Newton step
 
         // assess if we can use trial step
-        if (low <= leftmost_attempt && leftmost_attempt <= up) { 
+        if (low <= leftmost_attempt && leftmost_attempt <= up) {
             if( fabs(dleftmost) <= tol_abs * fmax(1.0, fmax(fabs(low), fabs(up))) ) { TRLIB_RETURN(TRLIB_LMR_NEWTON_BREAK) }
             *leftmost = leftmost_attempt;
         }
-        else { 
+        else {
             // if warmstart information available, lifted newton step may still be feasible
             if(warm) {
                 quad_lin = -(prlp + ((*leftmost)-leftmost_minor)*dprlp);
@@ -298,4 +298,3 @@ trlib_int_t trlib_leftmost_timing_size() {
 #endif
     return 0;
 }
-

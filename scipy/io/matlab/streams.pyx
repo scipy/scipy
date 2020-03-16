@@ -1,7 +1,5 @@
 # -*- python -*- or near enough
 
-from __future__ import absolute_import
-
 import sys
 import zlib
 
@@ -367,10 +365,7 @@ cpdef GenericStream make_stream(object fobj):
     """ Make stream of correct type for file-like `fobj`
     """
     if npy_PyFile_Check(fobj):
-        if <int>sys.version_info[0] >= 3 or IS_PYPY:
-            return GenericStream(fobj)
-        else:
-            return FileStream(fobj)
+        return GenericStream(fobj)
     elif HAS_PYCCSTRINGIO and (PycStringIO_InputCheck(fobj) or PycStringIO_OutputCheck(fobj)):
         return cStringStream(fobj)
     elif isinstance(fobj, GenericStream):

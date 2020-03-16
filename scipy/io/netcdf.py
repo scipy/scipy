@@ -17,8 +17,6 @@ which has a similar API.
 
 """
 
-from __future__ import division, print_function, absolute_import
-
 # TODO:
 # * properly implement ``_FillValue``.
 # * fix character variables.
@@ -50,7 +48,6 @@ from numpy import frombuffer, dtype, empty, array, asarray
 from numpy import little_endian as LITTLE_ENDIAN
 from functools import reduce
 
-from scipy._lib.six import integer_types, text_type, binary_type
 
 IS_PYPY = ('__pypy__' in sys.modules)
 
@@ -330,7 +327,7 @@ class netcdf_file(object):
         Adds a dimension to the Dimension section of the NetCDF data structure.
 
         Note that this function merely adds a new dimension that the variables can
-        reference.  The values for the dimension, if desired, should be added as
+        reference. The values for the dimension, if desired, should be added as
         a variable using `createVariable`, referring to this dimension.
 
         Parameters
@@ -383,7 +380,7 @@ class netcdf_file(object):
 
         """
         shape = tuple([self.dimensions[dim] for dim in dimensions])
-        shape_ = tuple([dim or 0 for dim in shape])  # replace None with 0 for numpy
+        shape_ = tuple([dim or 0 for dim in shape])  # replace None with 0 for NumPy
 
         type = dtype(type)
         typecode, size = type.char, type.itemsize
@@ -561,13 +558,10 @@ class netcdf_file(object):
         if hasattr(values, 'dtype'):
             nc_type = REVERSE[values.dtype.char, values.dtype.itemsize]
         else:
-            types = [(t, NC_INT) for t in integer_types]
-            types += [
-                    (float, NC_FLOAT),
-                    (str, NC_CHAR)
-                    ]
-            # bytes index into scalars in py3k.  Check for "string" types
-            if isinstance(values, text_type) or isinstance(values, binary_type):
+            types = [(int, NC_INT), (float, NC_FLOAT), (str, NC_CHAR)]
+
+            # bytes index into scalars in py3k. Check for "string" types
+            if isinstance(values, (str, bytes)):
                 sample = values
             else:
                 try:
@@ -581,7 +575,7 @@ class netcdf_file(object):
 
         typecode, size = TYPEMAP[nc_type]
         dtype_ = '>%s' % typecode
-        # asarray() dies with bytes and '>c' in py3k.  Change to 'S'
+        # asarray() dies with bytes and '>c' in py3k. Change to 'S'
         dtype_ = 'S' if dtype_ == '>c' else dtype_
 
         values = asarray(values, dtype=dtype_)
@@ -836,13 +830,13 @@ class netcdf_variable(object):
     size : int
         Desired element size for the data array.
     shape : sequence of ints
-        The shape of the array.  This should match the lengths of the
+        The shape of the array. This should match the lengths of the
         variable's dimensions.
     dimensions : sequence of strings
-        The names of the dimensions used by the variable.  Must be in the
+        The names of the dimensions used by the variable. Must be in the
         same order of the dimension lengths given by `shape`.
     attributes : dict, optional
-        Attribute values (any type) keyed by string names.  These attributes
+        Attribute values (any type) keyed by string names. These attributes
         become attributes for the netcdf_variable object.
     maskandscale : bool, optional
         Whether to automatically scale and/or mask data based on attributes.
@@ -940,7 +934,7 @@ class netcdf_variable(object):
             # memory-mapped array causes a seg. fault.
             # See NumPy ticket #1622, and SciPy ticket #1202.
             # This check for `writeable` can be removed when the oldest version
-            # of numpy still supported by scipy contains the fix for #1622.
+            # of NumPy still supported by scipy contains the fix for #1622.
             raise RuntimeError("variable is not writeable")
 
         self.data.itemset(value)
@@ -952,7 +946,7 @@ class netcdf_variable(object):
         Returns
         -------
         typecode : char
-            The character typecode of the variable (eg, 'i' for int).
+            The character typecode of the variable (e.g., 'i' for int).
 
         """
         return self._typecode
@@ -964,7 +958,7 @@ class netcdf_variable(object):
         Returns
         -------
         itemsize : int
-            The element size of the variable (eg, 8 for float64).
+            The element size of the variable (e.g., 8 for float64).
 
         """
         return self._size

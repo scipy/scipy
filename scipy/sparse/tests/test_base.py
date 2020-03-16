@@ -8,8 +8,6 @@ class for generic tests" section.
 
 """
 
-from __future__ import division, print_function, absolute_import
-
 __usage__ = """
 Build sparse:
   python setup.py build
@@ -26,7 +24,6 @@ import platform
 from distutils.version import LooseVersion
 
 import numpy as np
-from scipy._lib.six import xrange, zip as izip
 from numpy import (arange, zeros, array, dot, asarray,
                    vstack, ndarray, transpose, diag, kron, inf, conjugate,
                    int8, ComplexWarning)
@@ -34,21 +31,19 @@ from numpy import (arange, zeros, array, dot, asarray,
 import random
 from numpy.testing import (assert_equal, assert_array_equal,
         assert_array_almost_equal, assert_almost_equal, assert_,
-        assert_allclose)
+        assert_allclose,suppress_warnings)
 from pytest import raises as assert_raises
-from scipy._lib._numpy_compat import suppress_warnings
 
 import scipy.linalg
 
 import scipy.sparse as sparse
 from scipy.sparse import (csc_matrix, csr_matrix, dok_matrix,
         coo_matrix, lil_matrix, dia_matrix, bsr_matrix,
-        eye, isspmatrix, SparseEfficiencyWarning, issparse)
+        eye, isspmatrix, SparseEfficiencyWarning)
 from scipy.sparse.sputils import (supported_dtypes, isscalarlike,
                                   get_index_dtype, asmatrix, matrix)
 from scipy.sparse.linalg import splu, expm, inv
 
-from scipy._lib._version import NumpyVersion
 from scipy._lib.decorator import decorator
 
 import pytest
@@ -61,6 +56,28 @@ def assert_in(member, collection, msg=None):
 def assert_array_equal_dtype(x, y, **kwargs):
     assert_(x.dtype == y.dtype)
     assert_array_equal(x, y, **kwargs)
+
+
+NON_ARRAY_BACKED_FORMATS = frozenset(['dok'])
+
+def sparse_may_share_memory(A, B):
+    # Checks if A and B have any numpy array sharing memory.
+
+    def _underlying_arrays(x):
+        # Given any object (e.g. a sparse array), returns all numpy arrays
+        # stored in any attribute.
+
+        arrays = []
+        for a in x.__dict__.values():
+            if isinstance(a, (np.ndarray, np.generic)):
+                arrays.append(a)
+        return arrays
+
+    for a in _underlying_arrays(A):
+        for b in _underlying_arrays(B):
+            if np.may_share_memory(a, b):
+                return True
+    return False
 
 
 # Only test matmul operator (A @ B) when available (Python 3.5+)
@@ -222,7 +239,6 @@ class BinopTester_with_shape(object):
 #------------------------------------------------------------------------------
 
 
-# TODO check that spmatrix( ... , copy=X ) is respected
 # TODO test prune
 # TODO test has_sorted_indices
 class _TestCommon(object):
@@ -780,7 +796,7 @@ class _TestCommon(object):
             # correct length, and too short or too long vectors
             for r in [-1, len(np.diag(a, k)), 2, 30]:
                 if r < 0:
-                    v = int(np.random.randint(1, 20, size=1))
+                    v = np.random.choice(range(1, 20))
                 else:
                     v = np.random.randint(1, 20, size=r)
 
@@ -1667,8 +1683,8 @@ class _TestCommon(object):
         frac = .3
         random.seed(0)  # make runs repeatable
         A = zeros((L,2))
-        for i in xrange(L):
-            for j in xrange(2):
+        for i in range(L):
+            for j in range(2):
                 r = random.random()
                 if r < frac:
                     A[i,j] = r/frac
@@ -1795,8 +1811,7 @@ class _TestCommon(object):
                 assert_array_equal(sum2, dat + dat)
 
         for dtype in self.math_dtypes:
-            if (dtype == np.dtype('bool')) and (
-                    NumpyVersion(np.__version__) >= '1.9.0.dev'):
+            if dtype == np.dtype('bool'):
                 # boolean array subtraction deprecated in 1.9.0
                 continue
 
@@ -1859,26 +1874,13 @@ class _TestCommon(object):
 
         # check that XXX_matrix.toXXX() works
         toself = getattr(A,'to' + A.format)
-        assert_equal(toself().format, A.format)
+        assert_(toself() is A)
+        assert_(toself(copy=False) is A)
         assert_equal(toself(copy=True).format, A.format)
-        assert_equal(toself(copy=False).format, A.format)
-
-        assert_equal(toself().todense(), A.todense())
         assert_equal(toself(copy=True).todense(), A.todense())
-        assert_equal(toself(copy=False).todense(), A.todense())
 
         # check whether the data is copied?
-        # TODO: deal with non-indexable types somehow
-        B = A.copy()
-        try:
-            B[0,0] += 1
-            assert_(B[0,0] != A[0,0])
-        except NotImplementedError:
-            # not all sparse matrices can be indexed
-            pass
-        except TypeError:
-            # not all sparse matrices can be indexed
-            pass
+        assert_(not sparse_may_share_memory(A.copy(), A))
 
     # test that __iter__ is compatible with NumPy matrix
     def test_iterator(self):
@@ -2038,10 +2040,41 @@ class _TestCommon(object):
         for bad_shape in [1, (-1, 2), (2, -1), (1, 2, 3)]:
             assert_raises(ValueError, S.resize, bad_shape)
 
+    def test_constructor1_base(self):
+        A = self.datsp
+
+        self_format = A.format
+
+        C = A.__class__(A, copy=False)
+        assert_array_equal_dtype(A.todense(), C.todense())
+        if self_format not in NON_ARRAY_BACKED_FORMATS:
+            assert_(sparse_may_share_memory(A, C))
+
+        C = A.__class__(A, dtype=A.dtype, copy=False)
+        assert_array_equal_dtype(A.todense(), C.todense())
+        if self_format not in NON_ARRAY_BACKED_FORMATS:
+            assert_(sparse_may_share_memory(A, C))
+
+        C = A.__class__(A, dtype=np.float32, copy=False)
+        assert_array_equal(A.todense(), C.todense())
+
+        C = A.__class__(A, copy=True)
+        assert_array_equal_dtype(A.todense(), C.todense())
+        assert_(not sparse_may_share_memory(A, C))
+
+        for other_format in ['csr', 'csc', 'coo', 'dia', 'dok', 'lil']:
+            if other_format == self_format:
+                continue
+            B = A.asformat(other_format)
+            C = A.__class__(B, copy=False)
+            assert_array_equal_dtype(A.todense(), C.todense())
+
+            C = A.__class__(B, copy=True)
+            assert_array_equal_dtype(A.todense(), C.todense())
+            assert_(not sparse_may_share_memory(B, C))
+
 
 class _TestInplaceArithmetic(object):
-    @pytest.mark.skipif(NumpyVersion(np.__version__) < "1.13.0",
-                        reason="numpy version doesn't respect array priority")
     def test_inplace_dense(self):
         a = np.ones((3, 4))
         b = self.spmatrix(a)
@@ -2384,6 +2417,7 @@ class _TestSlicing(object):
 
         s_ = np.s_
         slices = [s_[:2], s_[1:2], s_[3:], s_[3::2],
+                  s_[15:20], s_[3:2],
                   s_[8:3:-1], s_[4::-2], s_[:5:-1],
                   0, 1, s_[:], s_[1:5], -1, -2, -5,
                   array(-1), np.int8(-3)]
@@ -2448,19 +2482,16 @@ class _TestSlicing(object):
         assert_equal(a[1, 1, ...], b[1, 1, ...])
         assert_equal(a[1, ..., 1], b[1, ..., 1])
 
-    @pytest.mark.skipif(NumpyVersion(np.__version__) >= '1.9.0.dev', reason="")
     def test_multiple_ellipsis_slicing(self):
         b = asmatrix(arange(50).reshape(5,10))
         a = self.spmatrix(b)
 
-        assert_array_equal(a[..., ...].A, b[..., ...].A)
-        assert_array_equal(a[..., ..., ...].A, b[..., ..., ...].A)
-        assert_array_equal(a[1, ..., ...].A, b[1, ..., ...].A)
-        assert_array_equal(a[1:, ..., ...].A, b[1:, ..., ...].A)
-        assert_array_equal(a[..., ..., 1:].A, b[..., ..., 1:].A)
-
-        # Bug in NumPy's slicing
-        assert_array_equal(a[..., ..., 1].A, b[..., ..., 1].A.reshape((5,1)))
+        assert_array_equal(a[..., ...].A, b[:, :].A)
+        assert_array_equal(a[..., ..., ...].A, b[:, :].A)
+        assert_array_equal(a[1, ..., ...].A, b[1, :].A)
+        assert_array_equal(a[1:, ..., ...].A, b[1:, :].A)
+        assert_array_equal(a[..., ..., 1:].A, b[:, 1:].A)
+        assert_array_equal(a[..., ..., 1].A, b[:, 1].A)
 
 
 class _TestSlicingAssign(object):
@@ -2577,11 +2608,11 @@ class _TestSlicingAssign(object):
                     B[a,b] = 10*i + 1000*(j+1)
                     assert_array_equal(A.todense(), B, repr((a, b)))
 
-            A[0, 1:10:2] = xrange(1,10,2)
-            B[0, 1:10:2] = xrange(1,10,2)
+            A[0, 1:10:2] = range(1, 10, 2)
+            B[0, 1:10:2] = range(1, 10, 2)
             assert_array_equal(A.todense(), B)
-            A[1:5:2,0] = np.array(range(1,5,2))[:,None]
-            B[1:5:2,0] = np.array(range(1,5,2))[:,None]
+            A[1:5:2,0] = np.array(range(1, 5, 2))[:,None]
+            B[1:5:2,0] = np.array(range(1, 5, 2))[:,None]
             assert_array_equal(A.todense(), B)
 
         # The next commands should raise exceptions
@@ -3117,8 +3148,7 @@ class _TestArithmetic(object):
                 assert_array_equal(A + Bsp,D1)          # check dense + sparse
 
                 # subtraction
-                if (np.dtype('bool') in [x, y]) and (
-                        NumpyVersion(np.__version__) >= '1.9.0.dev'):
+                if np.dtype('bool') in [x, y]:
                     # boolean array subtraction deprecated in 1.9.0
                     continue
 
@@ -4483,7 +4513,7 @@ class _NonCanonicalCompressedMixin(_NonCanonicalMixin):
         data, indices, indptr = _same_sum_duplicate(M.data, M.indices,
                                                     indptr=M.indptr)
         if not sorted_indices:
-            for start, stop in izip(indptr, indptr[1:]):
+            for start, stop in zip(indptr, indptr[1:]):
                 indices[start:stop] = indices[start:stop][::-1].copy()
                 data[start:stop] = data[start:stop][::-1].copy()
         return data, indices, indptr

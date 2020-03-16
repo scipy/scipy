@@ -1,14 +1,12 @@
-from __future__ import division, print_function, absolute_import
-
 import os
 import sys
 import tempfile
 from io import BytesIO
 
 import numpy as np
-from numpy.testing import assert_equal, assert_, assert_array_equal
+from numpy.testing import (assert_equal, assert_, assert_array_equal,
+                           suppress_warnings)
 from pytest import raises as assert_raises, warns as assert_warns
-from scipy._lib._numpy_compat import suppress_warnings
 
 from scipy.io import wavfile
 

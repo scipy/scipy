@@ -3,8 +3,6 @@
 
 """Tools for spectral analysis of unequally sampled signals."""
 
-from __future__ import absolute_import
-
 import numpy as np
 cimport numpy as np
 cimport cython

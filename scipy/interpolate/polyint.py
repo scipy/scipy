@@ -1,11 +1,6 @@
-from __future__ import division, print_function, absolute_import
-
-import warnings
-
 import numpy as np
 from scipy.special import factorial
 
-from scipy._lib.six import xrange
 from scipy._lib._util import _asarray_validated
 
 
@@ -22,7 +17,7 @@ class _Interpolator1D(object):
     """
     Common features in univariate interpolation
 
-    Deal with input data type and interpolation axis rolling.  The
+    Deal with input data type and interpolation axis rolling. The
     actual interpolator can assume the y-data is of shape (n, r) where
     `n` is the number of x-points, and `r` the number of variables,
     and use self.dtype as the y-data type.
@@ -92,7 +87,7 @@ class _Interpolator1D(object):
         return x.ravel(), x_shape
 
     def _finish_y(self, y, x_shape):
-        """Reshape interpolated y back to n-d array similar to initial y"""
+        """Reshape interpolated y back to an N-D array similar to initial y"""
         y = y.reshape(x_shape + self._y_extra_shape)
         if self._y_axis != 0 and x_shape != ():
             nx = len(x_shape)
@@ -159,7 +154,7 @@ class _Interpolator1DWithDerivatives(_Interpolator1D):
         Returns
         -------
         d : ndarray
-            Array with derivatives; d[j] contains the j-th derivative.
+            Array with derivatives; d[j] contains the jth derivative.
             Shape of d[j] is determined by replacing the interpolation
             axis in the original array with the shape of x.
 
@@ -182,7 +177,7 @@ class _Interpolator1DWithDerivatives(_Interpolator1D):
             nx = len(x_shape)
             ny = len(self._y_extra_shape)
             s = ([0] + list(range(nx+1, nx + self._y_axis+1))
-                 + list(range(1,nx+1)) +
+                 + list(range(1, nx+1)) +
                  list(range(nx+1+self._y_axis, nx+ny+1)))
             y = y.transpose(s)
         return y
@@ -203,7 +198,7 @@ class _Interpolator1DWithDerivatives(_Interpolator1D):
         Returns
         -------
         d : ndarray
-            Derivative interpolated at the x-points.  Shape of d is
+            Derivative interpolated at the x-points. Shape of d is
             determined by replacing the interpolation axis in the
             original array with the shape of x.
 
@@ -247,7 +242,7 @@ class KroghInterpolator(_Interpolator1DWithDerivatives):
     Be aware that the algorithms implemented here are not necessarily
     the most numerically stable known. Moreover, even in a world of
     exact computation, unless the x coordinates are chosen very
-    carefully - Chebyshev zeros (e.g. cos(i*pi/n)) are a good choice -
+    carefully - Chebyshev zeros (e.g., cos(i*pi/n)) are a good choice -
     polynomial interpolation itself is a very ill-conditioned process
     due to the Runge phenomenon. In general, even with well-chosen
     x values, degrees higher than about thirty cause problems with
@@ -299,13 +294,13 @@ class KroghInterpolator(_Interpolator1DWithDerivatives):
         c = np.zeros((self.n+1, self.r), dtype=self.dtype)
         c[0] = self.yi[0]
         Vk = np.zeros((self.n, self.r), dtype=self.dtype)
-        for k in xrange(1,self.n):
+        for k in range(1, self.n):
             s = 0
             while s <= k and xi[k-s] == xi[k]:
                 s += 1
             s -= 1
             Vk[0] = self.yi[k]/float(factorial(s))
-            for i in xrange(k-s):
+            for i in range(k-s):
                 if xi[i] == xi[k]:
                     raise ValueError("Elements if `xi` can't be equal.")
                 if s == 0:
@@ -337,7 +332,7 @@ class KroghInterpolator(_Interpolator1DWithDerivatives):
         p = np.zeros((len(x), self.r), dtype=self.dtype)
         p += self.c[0, np.newaxis, :]
 
-        for k in xrange(1, n):
+        for k in range(1, n):
             w[k-1] = x - self.xi[k-1]
             pi[k] = w[k-1] * pi[k-1]
             p += pi[k, :, np.newaxis] * self.c[k]
@@ -345,8 +340,8 @@ class KroghInterpolator(_Interpolator1DWithDerivatives):
         cn = np.zeros((max(der, n+1), len(x), r), dtype=self.dtype)
         cn[:n+1, :, :] += self.c[:n+1, np.newaxis, :]
         cn[0] = p
-        for k in xrange(1, n):
-            for i in xrange(1, n-k+1):
+        for k in range(1, n):
+            for i in range(1, n-k+1):
                 pi[i] = w[k+i-1]*pi[i-1] + pi[i]
                 cn[k] = cn[k] + pi[i, :, np.newaxis]*cn[k+i]
             cn[k] *= factorial(k)
@@ -366,7 +361,7 @@ def krogh_interpolate(xi, yi, x, der=0, axis=0):
     xi : array_like
         Known x-coordinates.
     yi : array_like
-        Known y-coordinates, of shape ``(xi.size, R)``.  Interpreted as
+        Known y-coordinates, of shape ``(xi.size, R)``. Interpreted as
         vectors of length R, or scalars if R=1.
     x : array_like
         Point or points at which to evaluate the derivatives.
@@ -381,7 +376,7 @@ def krogh_interpolate(xi, yi, x, der=0, axis=0):
     Returns
     -------
     d : ndarray
-        If the interpolator's values are R-dimensional then the
+        If the interpolator's values are R-D then the
         returned array will be the number of derivatives by N by R.
         If `x` is a scalar, the middle dimension will be dropped; if
         the `yi` are scalars then the last dimension will be dropped.
@@ -477,7 +472,7 @@ class BarycentricInterpolator(_Interpolator1D):
     Parameters
     ----------
     xi : array_like
-        1-d array of x coordinates of the points the polynomial
+        1-D array of x coordinates of the points the polynomial
         should pass through
     yi : array_like, optional
         The y coordinates of the points the polynomial should pass through.
@@ -491,7 +486,7 @@ class BarycentricInterpolator(_Interpolator1D):
     the problem as a special case of rational function interpolation.
     This algorithm is quite stable, numerically, but even in a world of
     exact computation, unless the x coordinates are chosen very
-    carefully - Chebyshev zeros (e.g. cos(i*pi/n)) are a good choice -
+    carefully - Chebyshev zeros (e.g., cos(i*pi/n)) are a good choice -
     polynomial interpolation itself is a very ill-conditioned process
     due to the Runge phenomenon.
 
@@ -507,7 +502,7 @@ class BarycentricInterpolator(_Interpolator1D):
 
         self.wi = np.zeros(self.n)
         self.wi[0] = 1
-        for j in xrange(1,self.n):
+        for j in range(1, self.n):
             self.wi[:j] *= (self.xi[j]-self.xi[:j])
             self.wi[j] = np.multiply.reduce(self.xi[:j]-self.xi[j])
         self.wi **= -1
@@ -571,7 +566,7 @@ class BarycentricInterpolator(_Interpolator1D):
         old_wi = self.wi
         self.wi = np.zeros(self.n)
         self.wi[:old_n] = old_wi
-        for j in xrange(old_n,self.n):
+        for j in range(old_n, self.n):
             self.wi[:j] *= (self.xi[j]-self.xi[:j])
             self.wi[j] = np.multiply.reduce(self.xi[:j]-self.xi[j])
         self.wi **= -1
@@ -629,14 +624,14 @@ def barycentric_interpolate(xi, yi, x, axis=0):
     the problem as a special case of rational function interpolation.
     This algorithm is quite stable, numerically, but even in a world of
     exact computation, unless the `x` coordinates are chosen very
-    carefully - Chebyshev zeros (e.g. cos(i*pi/n)) are a good choice -
+    carefully - Chebyshev zeros (e.g., cos(i*pi/n)) are a good choice -
     polynomial interpolation itself is a very ill-conditioned process
     due to the Runge phenomenon.
 
     Parameters
     ----------
     xi : array_like
-        1-d array of x coordinates of the points the polynomial should
+        1-D array of x coordinates of the points the polynomial should
         pass through
     yi : array_like
         The y coordinates of the points the polynomial should pass through.

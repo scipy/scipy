@@ -1,7 +1,5 @@
 """Tests for _sketches.py."""
 
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 from numpy.testing import assert_, assert_equal
 from scipy.linalg import clarkson_woodruff_transform
