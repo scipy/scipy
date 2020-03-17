@@ -2081,7 +2081,6 @@ def test_pttrf_pttrs_NAG(d, e, d_expect, e_expect, b, x_expect):
         assert_allclose(_x, x_expect, atol=atol)
 
 
-
 @pytest.mark.parametrize('dtype', DTYPES)
 @pytest.mark.parametrize('matrix_size', [(3, 4), (7, 6), (6, 6)])
 def test_geqrfp(dtype, matrix_size):
@@ -2469,7 +2468,7 @@ def test_gtsvx_error_incompatible_size(dtype, trans, fact):
                                      [-14.7 + 9.7j, -6 - .6j],
                                      [31.9 - 7.7j, -3.9 + 9.3j],
                                      [-1 + 1.6j, -3 + 12.2j]]),
-                           np.array([[1 + 1j,  2 - 1j], [3 - 1j, 1 + 2j],
+                           np.array([[1 + 1j, 2 - 1j], [3 - 1j, 1 + 2j],
                                      [4 + 5j, -1 + 1j], [-1 - 2j, 2 + 1j],
                                      [1 - 1j, 2 - 2j]]))])
 def test_gtsvx_NAG(du, d, dl, b, x):
