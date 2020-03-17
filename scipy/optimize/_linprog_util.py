@@ -12,7 +12,7 @@ from scipy.optimize._remove_redundancy import (
 from collections import namedtuple
 
 # Switch between using undo and using revstack
-UNDO_OLD = False
+UNDO_OLD = True
 
 _LPProblem = namedtuple('_LPProblem', 'c A_ub b_ub A_eq b_eq bounds x0')
 _LPProblem.__new__.__defaults__ = (None,) * 6  # make c the only required arg
