@@ -11,6 +11,9 @@ from scipy.optimize._remove_redundancy import (
     )
 from collections import namedtuple
 
+# Switch between using undo and using revstack
+UNDO_OLD = False
+
 _LPProblem = namedtuple('_LPProblem', 'c A_ub b_ub A_eq b_eq bounds x0')
 _LPProblem.__new__.__defaults__ = (None,) * 6  # make c the only required arg
 _LPProblem.__doc__ = \
@@ -746,15 +749,46 @@ def _presolve(lp, rr, tol=1e-9):
         c0 += c[i_f].dot(lb[i_f])
         b_eq = b_eq - A_eq[:, i_f].dot(lb[i_f])
         b_ub = b_ub - A_ub[:, i_f].dot(lb[i_f])
+        c_undo = c[i_f]
         c = c[i_nf]
+        x_undo = lb[i_f]  # not x[i_f], x is just zeroes
+        print("(1) x orig (zeros): ", x)
         x = x[i_nf]
+        print("(1) x mod: ", x)
         # user guess x0 stays separate from presolve solution x
         if x0 is not None:
+            x0_undo = x0[i_f]
             x0 = x0[i_nf]
         A_eq = A_eq[:, i_nf]
         A_ub = A_ub[:, i_nf]
         # record of variables to be added back in
-        undo = [np.nonzero(i_f)[0], lb[i_f]]
+        if UNDO_OLD:
+            # Current implementation
+            undo = [np.nonzero(i_f)[0], lb[i_f]]
+        else:
+            # New implementation: define a function which restores c, x and x0
+            def rev(c_mod, x_mod, x0_mod):
+                # Insert c_undo, x_undo, x0_undo into c_mod, x_mod, x0_mod
+                # When elements have been removed at positions k1, k2, k3, ...
+                # then these must be replaced at (after) positions k1-1, k2-2,
+                # k3-3, ... in the modified array to recreate the original
+                i = np.flatnonzero(i_f)
+                # Number of variables to restore
+                N = len(i)
+                index_offset = list(range(N))
+                # Create insert indices
+                insert_indices = np.subtract(i, index_offset).flatten()
+                c_rev = np.insert(c_mod.astype(float), insert_indices, c_undo)
+                x_rev = np.insert(x_mod.astype(float), insert_indices, x_undo)
+                if x0 is not None:
+                    x0_rev = np.insert(x0_mod.astype(float), insert_indices, x0_undo)
+                else:
+                    x0_rev = None
+                return (c_rev, x_rev, x0_rev)
+
+            # Use undo as a list of functions, currently just this one.
+            undo.append(rev)
+
         # print("create undo: ", undo)
         # don't remove these entries from bounds; they'll be used later.
         # but we _also_ need a version of the bounds with these removed
@@ -1352,13 +1386,22 @@ def _postsolve(x, postsolve_args, complete=False, tol=1e-8, copy=False):
 
     # If there were variables removed from the problem, add them back into the
     # solution vector
-    if len(undo) > 0:
-        x = x.tolist()
-        for i, val in zip(undo[0], undo[1]):
-            x.insert(i, val)
-        copy = True
-    if copy:
-        x = np.array(x, copy=True)
+    if UNDO_OLD:
+        print("(2) x mod: ", x)
+        if len(undo) > 0:
+            x = x.tolist()
+            for i, val in zip(undo[0], undo[1]):
+                x.insert(i, val)
+            copy = True
+        if copy:
+            x = np.array(x, copy=True)
+        print("(2) x orig: ", x)
+    else:
+        # Apply the functions in undo (reverse direction)
+        print("(2) x mod: ", x)
+        for rev in reversed(undo):
+            _, x, _ = rev(c, x, x0)
+        print("(2) x orig: ", x)
 
     # print("postsolve(): after fixed variable insertions len(x) ",len(x))
 
@@ -1469,97 +1512,3 @@ def _check_result(x, fun, status, slack, con, bounds, tol, message):
         raise ValueError(message)
 
     return status, message
-
-    """
-    def _postprocess(x, postsolve_args, complete=False, status=0, message="",
-                 tol=1e-8, iteration=None, disp=False):
-    """
-
-    """
-    Given solution x to presolved, standard form linear program x, add
-    fixed variables back into the problem and undo the variable substitutions
-    to get solution to original linear program. Also, calculate the objective
-    function value, slack in original upper bound constraints, and residuals
-    in original equality constraints.
-
-    Parameters
-    ----------
-    x : 1-D array
-        Solution vector to the standard-form problem.
-    c : 1-D array
-        Original coefficients of the linear objective function to be minimized.
-    A_ub : 2-D array, optional
-        2-D array such that ``A_ub @ x`` gives the values of the upper-bound
-        inequality constraints at ``x``.
-    b_ub : 1-D array, optional
-        1-D array of values representing the upper-bound of each inequality
-        constraint (row) in ``A_ub``.
-    A_eq : 2-D array, optional
-        2-D array such that ``A_eq @ x`` gives the values of the equality
-        constraints at ``x``.
-    b_eq : 1-D array, optional
-        1-D array of values representing the RHS of each equality constraint
-        (row) in ``A_eq``.
-    bounds : 2D array
-        The bounds of ``x``, lower bounds in the 1st column, upper
-        bounds in the 2nd column. The bounds are possibly tightened
-        by the presolve procedure.
-    complete : bool
-        Whether the solution is was determined in presolve (``True`` if so)
-    undo: list of tuples
-        (`index`, `value`) pairs that record the original index and fixed value
-        for each variable removed from the problem
-    status : int
-        An integer representing the exit status of the optimization::
-
-             0 : Optimization terminated successfully
-             1 : Iteration limit reached
-             2 : Problem appears to be infeasible
-             3 : Problem appears to be unbounded
-             4 : Serious numerical difficulties encountered
-
-    message : str
-        A string descriptor of the exit status of the optimization.
-    tol : float
-        Termination tolerance; see [1]_ Section 4.5.
-
-    Returns
-    -------
-    x : 1-D array
-        Solution vector to original linear programming problem
-    fun: float
-        optimal objective value for original problem
-    slack : 1-D array
-        The (non-negative) slack in the upper bound constraints, that is,
-        ``b_ub - A_ub @ x``
-    con : 1-D array
-        The (nominally zero) residuals of the equality constraints, that is,
-        ``b - A_eq @ x``
-    status : int
-        An integer representing the exit status of the optimization::
-
-             0 : Optimization terminated successfully
-             1 : Iteration limit reached
-             2 : Problem appears to be infeasible
-             3 : Problem appears to be unbounded
-             4 : Serious numerical difficulties encountered
-
-    message : str
-        A string descriptor of the exit status of the optimization.
-
-    """
-"""
-    x, fun, slack, con, bounds = _postsolve(
-        x, postsolve_args, complete, tol
-    )
-
-    status, message = _check_result(
-        x, fun, status, slack, con,
-        bounds, tol, message
-    )
-
-    if disp:
-        _display_summary(message, status, fun, iteration)
-
-    return x, fun, slack, con, status, message
-"""
