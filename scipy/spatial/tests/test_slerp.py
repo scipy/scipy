@@ -6,6 +6,7 @@ from numpy.testing import assert_equal, assert_allclose
 import pytest
 from scipy.spatial import geometric_slerp
 
+
 def _generate_spherical_points(ndim=3, n_pts=2):
     # generate uniform points on sphere
     # see: https://stackoverflow.com/a/23785326
@@ -15,6 +16,7 @@ def _generate_spherical_points(ndim=3, n_pts=2):
     points = np.random.normal(size=(n_pts, ndim))
     points /= np.linalg.norm(points, axis=1)[:, np.newaxis]
     return points[0], points[1]
+
 
 class TestGeometricSlerp(object):
     # Test various properties of the geometric slerp code
@@ -56,9 +58,9 @@ class TestGeometricSlerp(object):
 
     @pytest.mark.parametrize("start, end", [
         # both arrays are not flat
-        (np.zeros((1,3)), np.ones((1,3))),
+        (np.zeros((1, 3)), np.ones((1, 3))),
         # only start array is not flat
-        (np.zeros((1,3)), np.ones(3)),
+        (np.zeros((1, 3)), np.ones(3)),
         # only end array is not flat
         (np.zeros(1), np.ones((3, 1))),
         ])
@@ -104,8 +106,8 @@ class TestGeometricSlerp(object):
         # North and South Poles are definitely antipodes
         # but should be handled gracefully now
         (np.array([0, 0, 1.0]), np.array([0, 0, -1.0]), "warning"),
-        # this case will issue a warning & be handled 
-        # gracefully as well; 
+        # this case will issue a warning & be handled
+        # gracefully as well;
         # North Pole was rotated very slightly
         # using r = R.from_euler('x', 0.035, degrees=True)
         # to achieve Euclidean distance offset from diameter by
@@ -113,7 +115,7 @@ class TestGeometricSlerp(object):
         (np.array([0.00000000e+00,
                   -6.10865200e-04,
                   9.99999813e-01]), np.array([0, 0, -1.0]), "warning"),
-        # this case should succeed without warning because a 
+        # this case should succeed without warning because a
         # sufficiently large
         # rotation was applied to North Pole point to shift it
         # to a Euclidean distance of 2.3036691931821451e-07
@@ -214,7 +216,7 @@ class TestGeometricSlerp(object):
         # an integer currently raises
         5,
         # string raises
-        "7", 
+        "7",
         # list and arrays also raise
         [5, 6, 7], np.array(9.0),
         ])
@@ -356,9 +358,7 @@ class TestGeometricSlerp(object):
                             end=start,
                             t=np.linspace(0, 1, 5))
 
-    @pytest.mark.parametrize('k',
-    np.logspace(-10, -1, 10),
-    )
+    @pytest.mark.parametrize('k', np.logspace(-10, -1, 10))
     def test_numerical_stability_pi(self, k):
         # geometric_slerp should have excellent numerical
         # stability for angles approaching pi between

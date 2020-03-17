@@ -7,6 +7,7 @@ import warnings
 import numpy as np
 from scipy.spatial.distance import euclidean
 
+
 def _geometric_slerp(start, end, t):
     # create an orthogonal basis using QR decomposition
     basis = np.vstack([start, end])
@@ -25,6 +26,7 @@ def _geometric_slerp(start, end, t):
     s = np.sin(t * omega)
     c = np.cos(t * omega)
     return start * c[:, np.newaxis] + end * s[:, np.newaxis]
+
 
 def geometric_slerp(start,
                     end,
@@ -123,7 +125,7 @@ def geometric_slerp(start,
     >>> opposite_pole = np.array([-1, 0])
     >>> with np.testing.suppress_warnings() as sup:
     ...     sup.filter(UserWarning)
-    ...     geometric_slerp(start, 
+    ...     geometric_slerp(start,
     ...                     opposite_pole,
     ...                     t_vals)
     array([[ 1.00000000e+00,  0.00000000e+00],
