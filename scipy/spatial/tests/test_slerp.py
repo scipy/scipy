@@ -350,13 +350,18 @@ class TestGeometricSlerp(object):
         assert actual.shape == (2,)
         assert_allclose(actual, expected)
 
-    def test_degenerate_input(self):
-        # handle start == end with ValueError
-        start = np.array([1, 0, 0])
-        with pytest.raises(ValueError, match="cannot be the same"):
-            geometric_slerp(start=start,
-                            end=start,
-                            t=np.linspace(0, 1, 5))
+    @pytest.mark.parametrize('start', [
+        np.array([1, 0, 0]),
+        np.array([0, 1]),
+        ])
+    def test_degenerate_input(self, start):
+        # handle start == end with repeated value
+        # like np.linspace
+        expected = [start] * 5
+        actual = geometric_slerp(start=start,
+                                 end=start,
+                                 t=np.linspace(0, 1, 5))
+        assert_allclose(actual, expected)
 
     @pytest.mark.parametrize('k', np.logspace(-10, -1, 10))
     def test_numerical_stability_pi(self, k):
