@@ -726,8 +726,8 @@ class TestCurveFit(object):
                 popt2, pcov2 = curve_fit(funcp, xdata, ydatap, sigma=covarp,
                         jac=jac2, absolute_sigma=absolute_sigma)
 
-                assert_allclose(popt1, popt2, atol=1e-14)
-                assert_allclose(pcov1, pcov2, atol=1e-14)
+                assert_allclose(popt1, popt2, rtol=1.2e-7, atol=1e-14)
+                assert_allclose(pcov1, pcov2, rtol=1.2e-7, atol=1e-14)
 
     def test_dtypes(self):
         # regression test for gh-9581: curve_fit fails if x and y dtypes differ
