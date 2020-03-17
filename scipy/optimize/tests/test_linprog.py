@@ -339,14 +339,12 @@ class LinprogCommonTests(object):
             linprog(c, A_ub, b_ub, A_eq, b_eq, bounds,
                     method=self.method, options=self.options)
 
-        # Removed [(5, 0), (1, 2), (3, 4)]: these are invalid bounds but should be subject to a check in _presolve, not in _clean_inputs.
-        # The optimization should exit with an 'infeasible problem' error, not with a ValueError
-        # Same for [(1, 2), (np.inf, np.inf), (3, 4)] and [(1, 2), (-np.inf, -np.inf), (3, 4)]
-        for bad_bound in [[(1, 2), (3, 4)],
-                          [(1, 2), (3, 4), (3, 4, 5)],
-                          ]:
-            assert_raises(ValueError, f, [1, 2, 3], bounds=bad_bound)
+        # Test ill-formatted bounds
+        assert_raises(ValueError, f, [1, 2, 3], bounds=[(1, 2), (3, 4)])
+        assert_raises(ValueError, f, [1, 2, 3], bounds=[(1, 2), (3, 4), (3, 4, 5)])
+        assert_raises(ValueError, f, [1, 2, 3], bounds=[(1, -2), (1, 2)])
 
+        # Test other invalid inputs
         assert_raises(ValueError, f, [1, 2], A_ub=[[1, 2]], b_ub=[1, 2])
         assert_raises(ValueError, f, [1, 2], A_ub=[[1]], b_ub=[1])
         assert_raises(ValueError, f, [1, 2], A_eq=[[1, 2]], b_eq=[1, 2])
@@ -360,6 +358,35 @@ class LinprogCommonTests(object):
             # there aren't 3-D sparse matrices
 
         assert_raises(ValueError, f, [1, 2], A_ub=np.zeros((1, 1, 3)), b_eq=1)
+
+    def test_bounds_infeasible(self):
+
+        def g(c, bounds):
+            res = linprog(c, bounds=bounds, method=self.method, options=self.options)
+            return res
+
+        # Test ill-valued bounds (upper less than lower, lower inf, upper -inf)
+        res = g([1], bounds=(1, -2))
+        _assert_infeasible(res)
+        res = g([1], bounds=[(1, -2)])
+        _assert_infeasible(res)
+        res = g([1, 2, 3], bounds=[(5, 0), (1, 2), (3, 4)])
+        _assert_infeasible(res)
+
+        dopr = self.options.get('presolve', True)
+        # print("do presolve? ", dopr," method=", self.method)
+        if not dopr and self.method == 'simplex':
+            # For the simplex method, the cases below do not result in an
+            # infeasible status, but in a RuntimeWarning. This is a
+            # consequence of having _presolve() take care of feasibility
+            # checks.
+            assert_raises(RuntimeWarning, g, [1, 2, 3], bounds=[(1, 2), (np.inf, np.inf), (3, 4)])
+            assert_raises(RuntimeWarning, g, [1, 2, 3], bounds=[(1, 2), (-np.inf, -np.inf), (3, 4)])
+        else:
+            res = g([1, 2, 3], bounds=[(1, 2), (np.inf, np.inf), (3, 4)])
+            _assert_infeasible(res)
+            res = g([1, 2, 3], bounds=[(1, 2), (-np.inf, -np.inf), (3, 4)])
+            _assert_infeasible(res)
 
     def test_empty_constraint_1(self):
         c = [-1, -2]

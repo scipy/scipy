@@ -589,6 +589,17 @@ def _presolve(lp, rr, tol=1e-9):
         where = np.where
         vstack = np.vstack
 
+    # upper bounds >= lower bounds
+    if np.any(ub <= lb) or np.any(lb == np.inf) or np.any(ub == -np.inf):
+        status = 2
+        message = ("The problem is (trivially) infeasible since one "
+                   "or more upper bounds are smaller than the corresponding "
+                   "lower bounds, a lower bound is np.inf or an upper bound "
+                   "is -np.inf.")
+        complete = True
+        return (_LPProblem(c, A_ub, b_ub, A_eq, b_eq, bounds, x0),
+                c0, x, undo, complete, status, message)
+
     # zero row in equality constraints
     zero_row = np.array(np.sum(A_eq != 0, axis=1) == 0).flatten()
     if np.any(zero_row):
