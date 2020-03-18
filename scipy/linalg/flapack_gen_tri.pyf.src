@@ -13,3 +13,54 @@ subroutine <prefix>gtsv(n, nrhs, dl, d, du, b, info)
     integer intent(out) :: info
 
 end subroutine <prefix>gtsv
+
+
+subroutine <prefix>gttrf(n, dl, d, du, du2, ipiv, info)
+    ! dl, d, du, du2, ipiv, info  = gttrf(dl, d, du, [overwrite_dl=0, overwrite_d=0, overwrite_du=0])
+    ! ?GTTRF computes an LU factorization of a tridiagonal matrix A
+    ! using elimination with partial pivoting and row interchanges.
+    !
+    ! The factorization has the form
+    !    A = L * U
+    !
+    ! where L is a product of permutation and unit lower bidiagonal
+    ! matrices and U is upper triangular with nonzeros in only the main
+    ! diagonal and first two superdiagonals.
+    callstatement (*f2py_func)(&n, dl, d, du, du2, ipiv, &info)
+    callprotoargument int*, <ctype>*, <ctype>*, <ctype>*, <ctype>*, int*, int*
+
+    integer intent(hide),   depend(d) :: n = max(3, len(d))
+    <ftype> intent(in,out,copy), depend(n), dimension(n-1) :: dl
+    <ftype> intent(in,out,copy),            dimension(n)   :: d
+    <ftype> intent(in,out,copy), depend(n), dimension(n-1) :: du
+    <ftype> intent(out),    depend(n), dimension(n-2)    :: du2
+    integer intent(out),    depend(n), dimension(n)      :: ipiv
+    integer intent(out)                                  :: info
+
+end subroutine <prefix>gttrf
+
+
+subroutine <prefix>gttrs(trans, n, nrhs, dl, d, du, du2, ipiv, b, ldb, info)
+    ! x, info  = gttrs(dl, d, du, du2, ipiv, b, trans="N", overwrite_b=0)
+    !
+    ! ?GTTRS solves one of the systems of equations:
+    ! A*X = B  or  A**T*X = B,
+    ! with a tridiagonal matrix A using the LU factorization computed
+    ! by ?GTTRF.
+    callstatement (*f2py_func)(trans, &n, &nrhs, dl, d, du, du2, ipiv, b, &ldb, &info)
+    callprotoargument char*, int*, int*, <ctype>*, <ctype>*, <ctype>*, <ctype>*, int*, <ctype>*, int*, int*
+    threadsafe
+
+    character  optional, intent(in), check(*trans=='N'||*trans=='T'||*trans=='C') :: trans = "N"
+    integer    intent(hide), depend(d) :: n = max(3, len(d))
+    integer    intent(hide), depend(b) :: nrhs = max(1, shape(b, 1))
+    integer    intent(hide), depend(n) :: ldb = max(1, n)
+    <ftype>    intent(in), depend(n), dimension(n - 1) :: dl
+    <ftype>    intent(in),            dimension(n)     :: d
+    <ftype>    intent(in), depend(n), dimension(n - 1) :: du
+    <ftype>    intent(in), depend(n), dimension(n - 2) :: du2
+    integer    intent(in), depend(n), dimension(n)     :: ipiv
+    <ftype>    intent(in, out, copy, out=x), dimension(ldb, nrhs) :: b
+    integer    intent(out) :: info
+
+end subroutine gttrs

@@ -9,8 +9,6 @@ utilities in submodules of ``_lib`` can be run with::
     _lib.test()
 
 """
-from __future__ import division, print_function, absolute_import
-
 from scipy._lib._testutils import PytestTester
 test = PytestTester(__name__)
 del PytestTester

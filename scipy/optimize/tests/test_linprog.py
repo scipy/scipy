@@ -1,7 +1,6 @@
 """
 Unit test for Linear Programming
 """
-from __future__ import division, print_function, absolute_import
 import sys
 
 import numpy as np

@@ -3,10 +3,9 @@
 # Author:  Travis Oliphant  2002-2011 with contributions from
 #          SciPy Developers 2004-2011
 #
-from __future__ import division, print_function, absolute_import
-
 import warnings
 import functools
+import collections
 
 import numpy as np
 
@@ -19,12 +18,14 @@ import scipy.special as sc
 import scipy.special._ufuncs as scu
 from scipy._lib._util import _lazyselect, _lazywhere
 from . import _stats
+from ._rvs_sampling import rvs_ratio_uniforms
 from ._tukeylambda_stats import (tukeylambda_variance as _tlvar,
                                  tukeylambda_kurtosis as _tlkurt)
 from ._distn_infrastructure import (get_distribution_names, _kurtosis,
                                     _ncx2_cdf, _ncx2_log_pdf, _ncx2_pdf,
                                     rv_continuous, _skew, valarray,
                                     _get_fixed_fit_value, _check_shape)
+from ._ksstats import kolmogn, kolmognp, kolmogni
 from ._constants import _XMIN, _EULER, _ZETA3, _XMAX, _LOGXMAX
 
 # In numpy 1.12 and above, np.power refuses to raise integers to negative
@@ -55,7 +56,7 @@ def _remove_optimizer_parameters(kwds):
 
 ## Kolmogorov-Smirnov one-sided and two-sided test statistics
 class ksone_gen(rv_continuous):
-    r"""General Kolmogorov-Smirnov one-sided test.
+    r"""Kolmogorov-Smirnov one-sided test statistic distribution.
 
     This is the distribution of the one-sided Kolmogorov-Smirnov (KS)
     statistics :math:`D_n^+` and :math:`D_n^-`
@@ -72,8 +73,8 @@ class ksone_gen(rv_continuous):
         D_n^+ &= \text{sup}_x (F_n(x) - F(x)),\\
         D_n^- &= \text{sup}_x (F(x) - F_n(x)),\\
 
-    where :math:`F` is a CDF and :math:`F_n` is an empirical CDF. `ksone`
-    describes the distribution under the null hypothesis of the KS test
+    where :math:`F` is a continuous CDF and :math:`F_n` is an empirical CDF.
+    `ksone` describes the distribution under the null hypothesis of the KS test
     that the empirical CDF corresponds to :math:`n` i.i.d. random variates
     with CDF :math:`F`.
 
@@ -81,7 +82,7 @@ class ksone_gen(rv_continuous):
 
     See Also
     --------
-    kstwobign, kstest
+    kstwobign, kstwo, kstest
 
     References
     ----------
@@ -111,12 +112,73 @@ class ksone_gen(rv_continuous):
 ksone = ksone_gen(a=0.0, b=1.0, name='ksone')
 
 
+class kstwo_gen(rv_continuous):
+    r"""Kolmogorov-Smirnov two-sided test statistic distribution.
+
+    This is the distribution of the two-sided Kolmogorov-Smirnov (KS)
+    statistic :math:`D_n` for a finite sample size ``n``
+    (the shape parameter).
+
+    %(before_notes)s
+
+    Notes
+    -----
+    :math:`D_n` is given by
+
+    .. math::
+
+        D_n &= \text{sup}_x |F_n(x) - F(x)|
+
+    where :math:`F` is a (continuous) CDF and :math:`F_n` is an empirical CDF.
+    `kstwo` describes the distribution under the null hypothesis of the KS test
+    that the empirical CDF corresponds to :math:`n` i.i.d. random variates
+    with CDF :math:`F`.
+
+    %(after_notes)s
+
+    See Also
+    --------
+    kstwobign, ksone, kstest
+
+    References
+    ----------
+    .. [1] Simard, R., L'Ecuyer, P. "Computing the Two-Sided
+       Kolmogorov-Smirnov Distribution",  Journal of Statistical Software,
+       Vol 39, 11, 1-18 (2011).
+
+    %(example)s
+
+    """
+    def _get_support(self, n):
+        return 0.5/(n if not isinstance(n, collections.Iterable) else np.asanyarray(n)), 1.0
+
+    def _pdf(self, x, n):
+        return kolmognp(n, x)
+
+    def _cdf(self, x, n):
+        return kolmogn(n, x)
+
+    def _sf(self, x, n):
+        return kolmogn(n, x, cdf=False)
+
+    def _ppf(self, q, n):
+        return kolmogni(n, q, cdf=True)
+
+    def _isf(self, q, n):
+        return kolmogni(n, q, cdf=False)
+
+
+# Use the pdf, (not the ppf) to compute moments
+kstwo = kstwo_gen(momtype=0, a=0.0, b=1.0, name='kstwo')
+
+
 class kstwobign_gen(rv_continuous):
-    r"""Kolmogorov-Smirnov two-sided test for large N.
+    r"""Limiting distribution of scaled Kolmogorov-Smirnov two-sided test statistic.
 
     This is the asymptotic distribution of the two-sided Kolmogorov-Smirnov
     statistic :math:`\sqrt{n} D_n` that measures the maximum absolute
-    distance of the theoretical CDF from the empirical CDF (see `kstest`).
+    distance of the theoretical (continuous) CDF from the empirical CDF.
+    (see `kstest`).
 
     %(before_notes)s
 
@@ -128,8 +190,8 @@ class kstwobign_gen(rv_continuous):
 
         D_n = \text{sup}_x |F_n(x) - F(x)|
 
-    where :math:`F` is a CDF and :math:`F_n` is an empirical CDF. `kstwobign`
-    describes the asymptotic distribution (i.e. the limit of
+    where :math:`F` is a continuous CDF and :math:`F_n` is an empirical CDF.
+    `kstwobign`  describes the asymptotic distribution (i.e. the limit of
     :math:`\sqrt{n} D_n`) under the null hypothesis of the KS test that the
     empirical CDF corresponds to i.i.d. random variates with CDF :math:`F`.
 
@@ -137,12 +199,12 @@ class kstwobign_gen(rv_continuous):
 
     See Also
     --------
-    ksone, kstest
+    ksone, kstwo, kstest
 
     References
     ----------
-    .. [1] Marsaglia, G. et al. "Evaluating Kolmogorov's distribution",
-       Journal of Statistical Software, 8(18), 2003.
+    .. [1] Feller, W. "On the Kolmogorov-Smirnov Limit Theorems for Empirical
+       Distributions",  Ann. Math. Statist. Vol 19, 177-189 (1948).
 
     %(example)s
 
@@ -1931,8 +1993,10 @@ foldnorm = foldnorm_gen(a=0.0, name='foldnorm')
 class weibull_min_gen(rv_continuous):
     r"""Weibull minimum continuous random variable.
 
-    The Weibull Minimum Extreme Value distribution, from extreme value theory,
-    is also often simply called the Weibull distribution.
+    The Weibull Minimum Extreme Value distribution, from extreme value theory
+    (Fisher-Gnedenko theorem), is also often simply called the Weibull
+    distribution. It arises as the limiting distribution of the rescaled
+    minimum of iid random variables.
 
     %(before_notes)s
 
@@ -1948,7 +2012,7 @@ class weibull_min_gen(rv_continuous):
 
         f(x, c) = c x^{c-1} \exp(-x^c)
 
-    for :math:`x >= 0`, :math:`c > 0`.
+    for :math:`x > 0`, :math:`c > 0`.
 
     `weibull_min` takes ``c`` as a shape parameter for :math:`c`.
     (named :math:`k` in Wikipedia article and :math:`a` in
@@ -1961,6 +2025,8 @@ class weibull_min_gen(rv_continuous):
     References
     ----------
     https://en.wikipedia.org/wiki/Weibull_distribution
+
+    https://en.wikipedia.org/wiki/Fisher-Tippett-Gnedenko_theorem
 
     %(example)s
 
@@ -1998,6 +2064,11 @@ weibull_min = weibull_min_gen(a=0.0, name='weibull_min')
 class weibull_max_gen(rv_continuous):
     r"""Weibull maximum continuous random variable.
 
+    The Weibull Maximum Extreme Value distribution, from extreme value theory
+    (Fisher-Gnedenko theorem), is the limiting distribution of rescaled
+    maximum of iid random variables. This is the distribution of -X
+    if X is from the `weibull_min` function.
+
     %(before_notes)s
 
     See Also
@@ -2017,6 +2088,12 @@ class weibull_max_gen(rv_continuous):
     `weibull_max` takes ``c`` as a shape parameter for :math:`c`.
 
     %(after_notes)s
+
+    References
+    ----------
+    https://en.wikipedia.org/wiki/Weibull_distribution
+
+    https://en.wikipedia.org/wiki/Fisher-Tippett-Gnedenko_theorem
 
     %(example)s
 
@@ -7947,7 +8024,7 @@ class argus_gen(rv_continuous):
         f(x, \chi) = \frac{\chi^3}{\sqrt{2\pi} \Psi(\chi)} x \sqrt{1-x^2}
                      \exp(-\chi^2 (1 - x^2)/2)
 
-    for :math:`0 < x < 1`, where
+    for :math:`0 < x < 1` and :math:`\chi > 0`, where
 
     .. math::
 
@@ -7971,26 +8048,119 @@ class argus_gen(rv_continuous):
     %(example)s
     """
     def _pdf(self, x, chi):
-        """
-        Return PDF of the argus function
-
-        argus.pdf(x, chi) = chi**3 / (sqrt(2*pi) * Psi(chi)) * x *
-                            sqrt(1-x**2) * exp(- 0.5 * chi**2 * (1 - x**2))
-        """
         y = 1.0 - x**2
-        return chi**3 / (_norm_pdf_C * _argus_phi(chi)) * x * np.sqrt(y) * np.exp(-chi**2 * y / 2)
+        A = chi**3 / (_norm_pdf_C * _argus_phi(chi))
+        return A * x * np.sqrt(y) * np.exp(-chi**2 * y / 2)
 
     def _cdf(self, x, chi):
-        """
-        Return CDF of the argus function
-        """
         return 1.0 - self._sf(x, chi)
 
     def _sf(self, x, chi):
-        """
-        Return survival function of the argus function
-        """
         return _argus_phi(chi * np.sqrt(1 - x**2)) / _argus_phi(chi)
+
+    def _rvs(self, chi):
+        chi = np.asarray(chi)
+        if chi.size == 1:
+            out = self._rvs_scalar(chi, self._size)
+        else:
+            shp, bc = _check_shape(chi.shape, self._size)
+            numsamples = int(np.prod(shp))
+            out = np.empty(self._size)
+            it = np.nditer([chi],
+                           flags=['multi_index'],
+                           op_flags=[['readonly']])
+            while not it.finished:
+                idx = tuple((it.multi_index[j] if not bc[j] else slice(None))
+                            for j in range(-len(self._size), 0))
+                r = self._rvs_scalar(it[0], numsamples)
+                out[idx] = r.reshape(shp)
+                it.iternext()
+
+        if self._size == ():
+            out = out[()]
+        return out
+
+    def _rvs_scalar(self, chi, numsamples=None):
+        # if chi <= 2.611:
+        # use rejection method, see Devroye:
+        # Non-Uniform Random Variate Generation, 1986, section II.3.2.
+        # write: self.pdf = c * g(x) * h(x), where
+        # h is [0,1]-valued and g is a density
+        # g(x) = d1 * chi**2 * x * exp(-chi**2 * (1 - x**2) / 2), 0 <= x <= 1
+        # h(x) = sqrt(1 - x**2), 0 <= x <= 1
+        # Integrating g, we get:
+        # G(x) = d1 * exp(-chi**2 * (1 - x**2) / 2) - d2
+        # d1 and d2 are determined by G(0) = 0 and G(1) = 1
+        # d1 = 1 / (1 - exp(-0.5 * chi**2))
+        # d2 = 1 / (exp(0.5 * chi**2) - 1)
+        # => G(x) = (exp(chi**2 * x**2 /2) - 1) / (exp(chi**2 / 2) - 1)
+        # expected number of iterations is c with
+        # c = -np.expm1(-0.5 * chi**2) * chi / (_norm_pdf_C * _argus_phi(chi))
+        # note that G can be inverted easily, so we can sample
+        # rvs from this distribution
+        # G_inv(y) = sqrt(2 * log(1 + (exp(chi**2 / 2) - 1) * y) / chi**2)
+        # to avoid an overflow of exp(chi**2 / 2), it is convenient to write
+        # G_inv(y) = sqrt(1 + 2 * log(exp(-chi**2 / 2) * (1-y) + y) / chi**2)
+        #
+        # if chi > 2.611:
+        # use ratio of uniforms method applied to a transformed variable of X
+        # (X is ARGUS with parameter chi):
+        # Y = chi * sqrt(1 - X**2) has density proportional to
+        # u**2 * exp(-u**2 / 2) on [0, chi] (Maxwell distribution conditioned
+        # on [0, chi]). Apply ratio of uniforms to this density to generate
+        # samples of Y and convert back to X
+        #
+        # The expected number of iterations using the rejection method
+        # increases with increasing chi, whereas the expected number of
+        # iterations using the ratio of uniforms method decreases with
+        # increasing chi. The crossover occurs where
+        # chi*(1 - exp(-0.5*chi**2)) = 8*sqrt(2)*exp(-1.5) => chi ~ 2.611
+        # Switching algorithms at chi=2.611 means that the expected number of
+        # iterations is always below 2.2.
+
+        if chi <= 2.611:
+            # use rejection method
+            size1d = tuple(np.atleast_1d(numsamples))
+            N = int(np.prod(size1d))
+            x = np.zeros(N)
+            echi = np.exp(-chi**2 / 2)
+            simulated = 0
+            while simulated < N:
+                k = N - simulated
+                u = self._random_state.uniform(size=k)
+                v = self._random_state.uniform(size=k)
+                # acceptance condition: u <= h(G_inv(v)). This simplifies to
+                z = 2 * np.log(echi * (1 - v) + v) / chi**2
+                accept = (u**2 + z <= 0)
+                num_accept = np.sum(accept)
+                if num_accept > 0:
+                    # rvs follow a distribution with density g: rvs = G_inv(v)
+                    rvs = np.sqrt(1 + z[accept])
+                    x[simulated:(simulated + num_accept)] = rvs
+                    simulated += num_accept
+
+            if self._size == ():
+                # return scalar if rvs() is called without size specified
+                return x[0]
+            return np.reshape(x, size1d)
+        else:
+            # use ratio of uniforms method
+            def f(x):
+                return np.where((x >= 0) & (x <= chi),
+                                np.exp(2*np.log(x) - x**2/2), 0)
+
+            umax = np.sqrt(2) / np.exp(0.5)
+            vmax = 4 / np.exp(1)
+            z = rvs_ratio_uniforms(f, umax, 0, vmax, size=numsamples,
+                                   random_state=self._random_state)
+            return np.sqrt(1 - z*z / chi**2)
+
+    def _stats(self, chi):
+        chi2 = chi**2
+        phi = _argus_phi(chi)
+        m = np.sqrt(np.pi/8) * chi * np.exp(-chi2/4) * sc.iv(1, chi2/4) / phi
+        v = (1 - 3 / chi2 + chi * _norm_pdf(chi) / phi) - m**2
+        return m, v, None, None
 
 
 argus = argus_gen(name='argus', longname="An Argus Function", a=0.0, b=1.0)

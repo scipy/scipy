@@ -1,6 +1,4 @@
 """Linear least squares with bound constraints on independent variables."""
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 from numpy.linalg import norm
 from scipy.sparse import issparse, csr_matrix

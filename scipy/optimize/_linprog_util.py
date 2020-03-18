@@ -59,8 +59,8 @@ _LPProblem.__doc__ = \
     >>> lp1 = _LPProblem(c=[-1, 4], A_ub=[[-3, 1], [1, 2]], b_ub=[6, 4])
     >>> lp2 = _LPProblem([-1, 4], [[-3, 1], [1, 2]], [6, 4])
 
-    Note that only ``c`` is a required argument here, whereas all other arguments 
-    ``A_ub``, ``b_ub``, ``A_eq``, ``b_eq``, ``bounds``, ``x0`` are optional with 
+    Note that only ``c`` is a required argument here, whereas all other arguments
+    ``A_ub``, ``b_ub``, ``A_eq``, ``b_eq``, ``bounds``, ``x0`` are optional with
     default values of None.
     For example, ``A_eq`` and ``b_eq`` can be set without ``A_ub`` or ``b_ub``:
     >>> lp3 = _LPProblem(c=[-1, 4], A_eq=[[2, 1]], b_eq=[10])
@@ -393,6 +393,8 @@ def _clean_inputs(lp):
     # or if there are invalid data types in bounds. Just add a linprog prefix
     # to the error and re-raise.
     # Creating at least a 2-D array simplifies the cases to distinguish below.
+    if bounds is None or np.array_equal(bounds, []) or np.array_equal(bounds, [[]]):
+        bounds = (0, np.inf)
     try:
         bounds_conv = np.atleast_2d(np.array(bounds, dtype=float))
     except ValueError as e:
@@ -424,12 +426,6 @@ def _clean_inputs(lp):
         raise ValueError(
             "Invalid input for linprog: provide a {:d} x 2 array for bounds, "
             "not a 2 x {:d} array.".format(n_x, n_x))
-    elif bsh[0] == 1 and bsh[1] == 0:
-        # [] converts to a (1,0) array (with no elements)
-        bounds_clean[:, 1] = np.inf
-    elif bsh[0] == 1 and bsh[1] == 1 and np.isnan(bounds_conv[0, 0]):
-        # None converts to a (1,1) array with a nan-value
-        bounds_clean[:, 1] = np.inf
     else:
         raise ValueError(
             "Invalid input for linprog: unable to interpret bounds with this "

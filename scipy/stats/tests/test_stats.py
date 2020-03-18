@@ -6,8 +6,6 @@
 
     Additional tests by a host of SciPy developers.
 """
-from __future__ import division, print_function, absolute_import
-
 import os
 import warnings
 from collections import namedtuple

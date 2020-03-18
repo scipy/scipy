@@ -5,8 +5,6 @@ To run it in its simplest form::
   nosetests test_optimize.py
 
 """
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 from scipy.optimize._trustregion_exact import (
     estimate_smallest_singular_value,

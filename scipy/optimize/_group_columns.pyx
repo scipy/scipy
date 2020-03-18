@@ -3,8 +3,6 @@ Cython implementation of columns grouping for finite difference Jacobian
 estimation. Used by ._numdiff.group_columns.
 """
 
-from __future__ import absolute_import
-
 cimport cython
 
 import numpy as np

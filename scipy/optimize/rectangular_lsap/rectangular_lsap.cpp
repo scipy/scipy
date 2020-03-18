@@ -59,7 +59,9 @@ augmenting_path(int nc, std::vector<double>& cost, std::vector<double>& u,
     int num_remaining = nc;
     std::vector<int> remaining(nc);
     for (int it = 0; it < nc; it++) {
-        remaining[it] = it;
+        // Filling this up in reverse order ensures that the solution of a
+        // constant cost matrix is the identity matrix (c.f. #11602).
+        remaining[it] = nc - it - 1;
     }
 
     std::fill(SR.begin(), SR.end(), false);
