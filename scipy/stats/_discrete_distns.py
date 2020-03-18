@@ -2,6 +2,7 @@
 # Author:  Travis Oliphant  2002-2011 with contributions from
 #          SciPy Developers 2004-2011
 #
+from functools import partial
 from scipy import special
 from scipy.special import entr, logsumexp, betaln, gammaln as gamln
 from scipy._lib._util import _lazywhere, rng_integers
@@ -830,8 +831,9 @@ class randint_gen(rv_discrete):
             # randint without needing to pass it a `size` argument.
             low = np.broadcast_to(low, self._size)
             high = np.broadcast_to(high, self._size)
-        randint = np.vectorize(rng_integers, otypes=[np.int_])
-        return randint(self._random_state, low, high)
+        randint = np.vectorize(partial(rng_integers, self._random_state),
+                               otypes=[np.int_])
+        return randint(low, high)
 
     def _entropy(self, low, high):
         return log(high - low)
