@@ -59,6 +59,63 @@ class Build(Benchmark):
             self.cls(self.data)
 
 
+class PresortedDataSetup(Benchmark):
+    params = [
+        [(3, 10 ** 4, 1000), (8, 10 ** 4, 1000), (16, 10 ** 4, 1000)],
+        [True, False],
+        ['random', 'sorted'],
+        [0.5]
+    ]
+    param_names = ['(m, n, r)', 'balanced', 'order', 'radius']
+
+    def setup(self, mnr, balanced, order, radius):
+        m, n, r = mnr
+
+        np.random.seed(1234)
+        self.data = {
+            'random': np.random.uniform(size=(n, m)),
+            'sorted': np.repeat(np.arange(n, 0, -1)[:, np.newaxis],
+                                m,
+                                axis=1) / n
+        }
+
+        self.queries = np.random.uniform(size=(r, m))
+        self.T = cKDTree(self.data.get(order), balanced_tree=balanced)
+
+
+class BuildUnbalanced(PresortedDataSetup):
+    params = PresortedDataSetup.params[:-1]
+    param_names = PresortedDataSetup.param_names[:-1]
+
+    def setup(self, *args):
+        super().setup(*args, None)
+
+    def time_build(self, mnr, balanced, order):
+        cKDTree(self.data.get(order), balanced_tree=balanced)
+
+
+class QueryUnbalanced(PresortedDataSetup):
+    params = PresortedDataSetup.params[:-1]
+    param_names = PresortedDataSetup.param_names[:-1]
+
+    def setup(self, *args):
+        super().setup(*args, None)
+
+    def time_query(self, mnr, balanced, order):
+        self.T.query(self.queries)
+
+
+class RadiusUnbalanced(PresortedDataSetup):
+    params = PresortedDataSetup.params[:]
+    params[0] = [(3, 1000, 30), (8, 1000, 30), (16, 1000, 30)]
+
+    def time_query_pairs(self, mnr, balanced, order, radius):
+        self.T.query_pairs(radius)
+
+    def time_query_ball_point(self, mnr, balanced, order, radius):
+        self.T.query_ball_point(self.queries, radius)
+
+
 LEAF_SIZES = [8, 128]
 BOX_SIZES = [None, 0.0, 1.0]
 
