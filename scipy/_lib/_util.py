@@ -12,7 +12,8 @@ import numpy as np
 try:
     from numpy.random import Generator as Generator
 except AttributeError:
-    Generator = None
+    class Generator():
+        pass
 
 
 def _valarray(shape, value=np.nan, typecode=None):
