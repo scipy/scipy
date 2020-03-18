@@ -9,9 +9,9 @@ Constants (:mod:`scipy.constants`)
 About the SI units
 ==================
 In 2019 seven système international d’unités (SI) base units were defined to
-serve as a basis for all physical quantities [SIunits]_. They can be
-summarized as followed even though for a detailed background the given
-literature is recommended [SIunits]_ :
+serve as a basis for all physical quantities [SIunits]_ by the bureau
+international des poids et mesures (BIPM). They can be summarized as followed
+even though for a detailed background the given link is recommended:
 
 - The second :math:`\mathrm{s}` as the SI unit of time is derived from the
   unperturbed ground-state hyperfine transition frequency of the caesium-133
@@ -37,9 +37,10 @@ literature is recommended [SIunits]_ :
   radiation :math:`K_{\mathrm{cd}}`.
 
 All physical quantities and "traditional" units such as newton or pascal
-can expressed by a combination of these base units. Therefore the SI brochure
-lists 22 derived units with special names and serveral non-SI units. Of
-course all of before mentioned units can be used with the SI prefixes.
+can expressed by a combination of these base units. Therefore the BIPM
+lists in addition to the seven base units 22 derived units with special
+names and serveral non-SI units. Of course all of before mentioned units
+can be used with the SI prefixes.
 
 However, one has to keep in mind that different systems of measurements apply
 for different problems and therefore the SI units are not necessarily the
@@ -50,16 +51,18 @@ different systems of measurement can be found on Wikipedia [Wikipedia]_ .
 About the notation of physical units
 ====================================
 A physical quantity is written as the product of a number and a unit such as in
-:math:`T = 293 \ \mathrm{K}` where :math:`293` is the number and
-:math:`\mathrm{K}` is the unit. The quantity, in the given example :math:`T`,
-is written in italic (slanted) letters and the unit, in the given example
-:math:`\mathrm{K}`, is written in roman (upright) letters. As quantities are
-written as a product of a number and a unit they are treated by the common
-rules of algebra meaning that :math:`T = 293 \ \mathrm{K}` equals
-:math:`T/\mathrm{K} = 293`. The latter form is also the recommended form for
-tables or figures where :math:`T/\mathrm{K}` is put in the table header or on
-the axis label and the numerical values are put in the table rows or on the
-axis ticks.
+
+:math:`T = 293 \ \mathrm{K}`
+
+where :math:`293` is the number and :math:`\mathrm{K}` is the unit. The
+quantity, in the given example :math:`T`, is written in italic (slanted)
+letters and the unit, in the given example :math:`\mathrm{K}`, is written
+in roman (upright) letters. As quantities are written as a product of a number
+and a unit they are treated by the common rules of algebra meaning that
+:math:`T = 293 \ \mathrm{K}` equals :math:`T / \mathrm{K} = 293`. The latter
+form is also the recommended form for tables or figures where
+:math:`T / \mathrm{K}` is put in the table header or on the axis label and the
+numerical value(s) is/are put in the table rows or on the axis ticks.
 
 
 List of all constants
