@@ -2590,9 +2590,8 @@ def test_ptsvx(dtype, realtype, fact, df_de_lambda):
     input parameters, fact options, incompatible matrix shapes raise an error,
     and singular matrices return info of illegal value.
     '''
-    np.random.seed(42)
+    seed(42)
     # set test tolerance appropriate for dtype
-    rtol = 250 * np.finfo(dtype).eps
     atol = 100 * np.finfo(dtype).eps
     ptsvx = get_lapack_funcs('ptsvx', dtype=dtype)
     n = 5
@@ -2622,7 +2621,7 @@ def test_ptsvx(dtype, realtype, fact, df_de_lambda):
     # test that the factors from ptsvx can be recombined to make A
     L = np.diag(ef, -1) + np.diag(np.ones(n))
     D = np.diag(df)
-    assert_allclose(A, L@D@(np.conj(L).T), rtol=rtol, atol=atol)
+    assert_allclose(A, L@D@(np.conj(L).T), atol=atol)
 
     # assert that the outputs are of correct type or shape
     # rcond should be a scalar
@@ -2643,6 +2642,7 @@ def test_ptsvx(dtype, realtype, fact, df_de_lambda):
                                                         dtype=e.dtype)(d, e)),
                           ("N", lambda d, e: (None, None, None))])
 def test_ptsvx_error_raise_errors(dtype, realtype, fact, df_de_lambda):
+    seed(42)
     ptsvx = get_lapack_funcs('ptsvx', dtype=dtype)
     n = 5
     # create diagonals according to size and dtype
@@ -2674,7 +2674,7 @@ def test_ptsvx_error_raise_errors(dtype, realtype, fact, df_de_lambda):
                                                         dtype=e.dtype)(d, e)),
                           ("N", lambda d, e: (None, None, None))])
 def test_ptsvx_non_SPD_singular(dtype, realtype, fact, df_de_lambda):
-
+    seed(42)
     ptsvx = get_lapack_funcs('ptsvx', dtype=dtype)
     n = 5
     # create diagonals according to size and dtype
@@ -2709,9 +2709,6 @@ def test_ptsvx_non_SPD_singular(dtype, realtype, fact, df_de_lambda):
                                                    df=df, ef=ef)
         assert info > 0
 
-    # It might be cool to create an example for which the matrix is
-    # numerically - but not exactly - singular to see if we can get info==N+1
-
 
 @pytest.mark.parametrize('d,e,b,x',
                          [(np.array([4, 10, 29, 25, 5]),
@@ -2731,17 +2728,9 @@ def test_ptsvx_non_SPD_singular(dtype, realtype, fact, df_de_lambda):
                                      [1 - 2j, 1 - 2j],
                                      [1 - 1j, 2 + 1j]]))])
 def test_ptsvx_NAG(d, e, b, x):
-    '''
-    TODO: On nag manual there are berr vals that are exactly zero.
-        - why would it be zero, shouldn't it not be?
-        - test idea to just see if nearby zero.
-
-    Tests real and complex NAG examples: f07jbf, f07jpf
-    https://www.nag.com/numeric/fl/nagdoc_fl26.2/html/f07/f07jbf.html
-    https://www.nag.com/numeric/fl/nagdoc_fl26.2/html/f07/f07jpf.html
-    '''
-    # test that it is close to zero, ask kai about why it is exactly zero
-    # (not supposed to be exactly zero, or at least shouldnt be)
+    # test to assure that wrapper is consistent with NAG Manual Mark 26
+    # example problemss: f07jbf, f07jpf
+    # (Links expire, so please search for "NAG Library Manual Mark 26" online)
 
     # obtain routine with correct type based on e.dtype
     ptsvx = get_lapack_funcs('ptsvx', dtype=e.dtype)
