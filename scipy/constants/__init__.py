@@ -9,9 +9,9 @@ Constants (:mod:`scipy.constants`)
 About the SI units
 ==================
 In 2019 seven système international d’unités (SI) base units were defined to
-serve as a basis for all physical quantities [CompleteBrochure]_. They can be
+serve as a basis for all physical quantities [SIunits]_. They can be
 summarized as followed even though for a detailed background the given
-literature is recommended [Intro]_, [ConciseBrochure]_, [CompleteBrochure]_ :
+literature is recommended [SIunits]_ :
 
 - The second :math:`\mathrm{s}` as the SI unit of time is derived from the
   unperturbed ground-state hyperfine transition frequency of the caesium-133
@@ -90,11 +90,8 @@ A complete list of available constants is given in the following:
 
 References
 ==========
-.. [Intro] Introduction to SI units, https://www.bipm.org/en/measurement-units/
-.. [CompleteBrochure] Le Système international d’unités (SI), 9e édition 2019,
-   v1.06, https://www.bipm.org/utils/common/pdf/si-brochure/SI-Brochure-9.pdf
-.. [ConciseBrochure] A concise summary of theInternational System of Units, SI,
-   https://www.bipm.org/utils/common/pdf/si-brochure/SI-Brochure-9-concise-EN.pdf
+.. [SIunits] Introduction to SI units,
+   https://www.bipm.org/en/measurement-units/
 .. [Wikipedia] Wikipedia, Systems of measurements,
    https://en.wikipedia.org/wiki/System_of_measurement
 .. [CODATA2018] Fundamental Physical Constants --- Complete Listing, 2018
