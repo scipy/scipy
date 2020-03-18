@@ -227,6 +227,11 @@ int NI_ExtendLine(double *buffer, npy_intp line_length,
     double *last = first + line_length;
     double *src, *dst, val;
 
+    if ((line_length == 1) && (extend_mode == NI_EXTEND_MIRROR))
+    {
+        extend_mode = NI_EXTEND_NEAREST;
+    }
+
     switch (extend_mode) {
         /* aaaaaaaa|abcd|dddddddd */
         case NI_EXTEND_NEAREST:
