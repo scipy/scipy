@@ -44,7 +44,6 @@ class TestBinnedStatistic(object):
         # see issue gh-10126 for more
         x = self.x
         u = self.u
-        print(u)
         stat1, edges1, bc = binned_statistic(x, u, 'std', bins=10)
         stat2, edges2, bc = binned_statistic(x, u, np.std, bins=10)
 
