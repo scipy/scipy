@@ -54,16 +54,20 @@ in the table rows or the axis ticks.
 
 List of all constants
 =====================
-The physical constants provided by SciPy are given as
-``physical_constants[name] = (value, unit, uncertainty)``
-where
+The properties of the constants in :mod:`scipy.constants` can be either
+accessed directly via
+
    value      -- Value in physical_constants indexed by key
    unit       -- Unit in physical_constants indexed by key
    precision  -- Relative precision in physical_constants indexed by key
    find       -- Return list of physical_constant keys with a given string
    ConstantWarning -- Constant sought not in newest CODATA data set
 
-The complete list of available constants is given in the following:
+or via the dictionaries stored in :mod:`scipy.constants.physical_constants`
+with the following format:
+``physical_constants[name] = (value, unit, uncertainty)``.
+
+A complete list of available constants is given in the following:
 %(constant_names)s
 
 
@@ -74,10 +78,10 @@ References
    v1.06, https://www.bipm.org/utils/common/pdf/si-brochure/SI-Brochure-9.pdf
 .. [ConciseBrochure] A concise summary of theInternational System of Units, SI,
    https://www.bipm.org/utils/common/pdf/si-brochure/SI-Brochure-9-concise-EN.pdf
-.. [Wikipedia] Wikipedia "International System of Units",
-   https://en.wikipedia.org/wiki/International_System_of_Units
 .. [CODATA2018] Fundamental Physical Constants --- Complete Listing, 2018
    CODATA adjustment 2018, https://physics.nist.gov/cuu/Constants/
+"""
+
 
 # Modules contributed by BasSw (wegwerp@gmail.com)
 from .codata import *
