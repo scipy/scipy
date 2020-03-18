@@ -418,8 +418,9 @@ def rng_integers(gen, low, high=None, size=None, dtype='int64',
 
     Parameters
     ----------
-    gen: {np.random.RandomState, np.random.Generator}
-        Random number generator
+    gen: {None, np.random.RandomState, np.random.Generator}
+        Random number generator. If None, then the np.random.RandomState
+        singleton is used.
     low: int or array-like of ints
         Lowest (signed) integers to be drawn from the distribution (unless
         high=None, in which case this parameter is 0 and this value is used
@@ -441,6 +442,8 @@ def rng_integers(gen, low, high=None, size=None, dtype='int64',
         If True, sample from the interval [low, high] instead of the default
         [low, high) Defaults to False.
 
+    Returns
+    -------
     out: int or ndarray of ints
         size-shaped array of random integers from the appropriate distribution,
         or a single such random int if size not provided.
