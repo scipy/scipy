@@ -11,7 +11,7 @@ About the SI units
 In 2019 seven système international d’unités (SI) base units were defined to
 serve as a basis for all physical quantities [CompleteBrochure]_. They can be
 summarized as followed even though for a detailed background the given
-literature is recommended [Intro, ConciseBrochure, CompleteBrochure]_ :
+literature is recommended [Intro]_, [ConciseBrochure]_, [CompleteBrochure]_ :
 
 - The second :math:`\mathrm{s}` as the SI unit of time is derived from the
   unperturbed ground-state hyperfine transition frequency of the caesium-133
