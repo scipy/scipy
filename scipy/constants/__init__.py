@@ -30,11 +30,11 @@ literature is recommended [Intro]_, [ConciseBrochure]_, [CompleteBrochure]_ :
   derived from the Boltzmann constant :math:`k`.
 
 - The mole :math:`\mathrm{mol}` as the SI unit of amount of substance is
-  derived from Avogadro constant :math:`N_{\mathrm{A}}`.
+  derived from the Avogadro constant :math:`N_{\mathrm{A}}`.
 
 - The candela :math:`\mathrm{cd}` as the SI unit of luminous intensity in a
   given direction is derived from the luminous efficacy of monochromatic
-  radiation of frequency :math:`K_{\mathrm{cd}}`.
+  radiation :math:`K_{\mathrm{cd}}`.
 
 All physical quantities and "traditional" units such as newton or pascal
 can expressed by a combination of these base units. Therefore the SI brochure
