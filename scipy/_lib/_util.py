@@ -10,8 +10,8 @@ import inspect
 import numpy as np
 
 try:
-    import np.random.Generator as Generator
-except: AttributeError
+    from numpy.random import Generator as Generator
+except AttributeError:
     Generator = None
 
 
@@ -420,7 +420,6 @@ def rng_integers(gen, low, high=None, size=None, dtype='int64',
     ----------
     gen: {np.random.RandomState, np.random.Generator}
         Random number generator
-
     low: int or array-like of ints
         Lowest (signed) integers to be drawn from the distribution (unless
         high=None, in which case this parameter is 0 and this value is used
@@ -450,8 +449,17 @@ def rng_integers(gen, low, high=None, size=None, dtype='int64',
         return gen.integers(low, high=high, size=size, dtype=dtype,
                             endpoint=endpoint)
     else:
+        if gen is None:
+            # default is RandomState singleton used by np.random.
+            gen = np.random.mtrand._rand
         if endpoint:
-            # we want inclusive
-            return gen.random_integers(low, high=high, size=size)
-        else:
-            return gen.randint(low, high=high, size=size, dtype=dtype)
+            # inclusive of endpoint
+            # remember that low and high can be arrays, so don't modify in
+            # place
+            if high is None:
+                return gen.randint(low + 1, size=size, dtype=dtype)
+            if high is not None:
+                return gen.randint(low, high=high + 1, size=size, dtype=dtype)
+
+        # exclusive
+        return gen.randint(low, high=high, size=size, dtype=dtype)
