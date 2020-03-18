@@ -17,8 +17,8 @@ literature is recommended [Intro]_, [ConciseBrochure]_, [CompleteBrochure]_ :
   unperturbed ground-state hyperfine transition frequency of the caesium-133
   atom :math:`\Delta \nu_{\mathrm{Cs}}`.
 
-- The metre :math:`\mathrm{m}` as the SI unit of length is derived from the to
-  the speed of light in vaccum :math:`c`.
+- The metre :math:`\mathrm{m}` as the SI unit of length is derived from the
+  speed of light in vaccum :math:`c`.
 
 - The kilogram :math:`\mathrm{kg}` as the SI unit of mass is derived from the
   Planck constant :math:`h`.
@@ -36,12 +36,15 @@ literature is recommended [Intro]_, [ConciseBrochure]_, [CompleteBrochure]_ :
   given direction is derived from the luminous efficacy of monochromatic
   radiation of frequency :math:`K_{\mathrm{cd}}`.
 
-Defining these SI base units as constants has the advantage will remain for all
-future as they are defined now and all physical quantities can expressed by a
-combination of these base units. Also all "traditional" units such as newton or
-pascal can be expressed in SI units. Therefore the SI brochure lists 22 derived
-units with special names and serveral non-SI units. Of course all of before
-mentioned units can be used with the SI prefixes.
+All physical quantities and "traditional" units such as newton or pascal
+can expressed by a combination of these base units. Therefore the SI brochure
+lists 22 derived units with special names and serveral non-SI units. Of
+course all of before mentioned units can be used with the SI prefixes.
+
+However, one has to keep in mind that different systems of measurements apply
+for different problems and therefore the SI units are not necessarily the
+best (in terms of convenience) units for every problem. An overview of
+different systems of measurement can be found on Wikipedia [Wikipedia]_ .
 
 
 About the notation of physical units
@@ -61,8 +64,8 @@ axis ticks.
 
 List of all constants
 =====================
-The properties of the constants in :mod:`scipy.constants` can be either
-accessed directly via
+The properties of the constants in :mod:`scipy.constants` are taken from
+[CODATA2018]_ and can be either accessed directly via
 
 .. autosummary::
    :toctree: generated/
@@ -75,6 +78,7 @@ accessed directly via
 
 or via the dictionaries stored in :mod:`scipy.constants.physical_constants`
 with the following format:
+
 ``physical_constants[name] = (value, unit, uncertainty)``.
 
 A complete list of available constants is given in the following:
@@ -91,8 +95,11 @@ References
    v1.06, https://www.bipm.org/utils/common/pdf/si-brochure/SI-Brochure-9.pdf
 .. [ConciseBrochure] A concise summary of theInternational System of Units, SI,
    https://www.bipm.org/utils/common/pdf/si-brochure/SI-Brochure-9-concise-EN.pdf
+.. [Wikipedia] Wikipedia, Systems of measurements,
+   https://en.wikipedia.org/wiki/System_of_measurement
 .. [CODATA2018] Fundamental Physical Constants --- Complete Listing, 2018
-   CODATA adjustment 2018, https://physics.nist.gov/cuu/Constants/
+   CODATA adjustment 2018,
+   https://physics.nist.gov/cuu/Constants/Table/allascii.txt
 """
 
 
