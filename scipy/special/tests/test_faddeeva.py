@@ -57,3 +57,21 @@ class TestVoigtProfile(object):
             rtol=1e-15,
             atol=0
         )
+    
+    def test_corner_cases(self):
+        points = np.array([
+            [-7.89, 0, 6.66, 0.0198855],
+            [-0.05, 0, 24.13, 0.0131914],
+            [-13.98, 16.83, 0, 0.0167879],
+            [11.34, 4.25, 0, 0.00267021],
+            [-11.56, 0, 0, 0],
+            [0, 0, 0, np.inf]
+        ])
+        FuncData(
+            sc.voigt_profile,
+            points,
+            (0, 1, 2),
+            3,
+            atol=1e-7,
+            rtol=1e-7
+        ).check()
