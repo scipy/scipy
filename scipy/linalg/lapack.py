@@ -490,6 +490,11 @@ All functions
    cptsv
    zptsv
 
+   sptsvx
+   dptsvx
+   cptsvx
+   zptsvx
+
    spttrf
    dpttrf
    cpttrf

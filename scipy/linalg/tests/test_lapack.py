@@ -2707,7 +2707,7 @@ def test_ptsvx_non_SPD_singular(dtype, realtype, fact, df_de_lambda):
         ef[0] = 0
         df, ef, x, rcond, ferr, berr, info = ptsvx(d, e, b, fact=fact,
                                                    df=df, ef=ef)
-        assert info > 0 and info <= n
+        assert info > 0
 
     # It might be cool to create an example for which the matrix is
     # numerically - but not exactly - singular to see if we can get info==N+1
