@@ -11,7 +11,7 @@ import numpy as np
 
 try:
     from numpy.random import Generator as Generator
-except AttributeError:
+except ImportError:
     class Generator():
         pass
 
