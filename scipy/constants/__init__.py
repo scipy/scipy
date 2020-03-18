@@ -14,27 +14,27 @@ summarized as followed even though for a detailed background the given
 literature is recommended [Intro, ConciseBrochure, CompleteBrochure]_ :
 
 - The second :math:`\mathrm{s}` as the SI unit of time is derived from the
-unperturbed ground-state hyperfine transition frequency of the caesium-133 atom
-:math:`\Delta \nu_{\mathrm{Cs}}`.
+  unperturbed ground-state hyperfine transition frequency of the caesium-133
+  atom :math:`\Delta \nu_{\mathrm{Cs}}`.
 
 - The metre :math:`\mathrm{m}` as the SI unit of length is derived from the to
-the speed of light in vaccum :math:`c`.
+  the speed of light in vaccum :math:`c`.
 
 - The kilogram :math:`\mathrm{kg}` as the SI unit of mass is derived from the
-Planck constant :math:`h`.
+  Planck constant :math:`h`.
 
 - The ampere :math:`\mathrm{A}` as the SI unit of electric current is derived
-from the elementary charge :math:`e`.
+  from the elementary charge :math:`e`.
 
 - The kelvin :math:`\mathrm{K}` as the SI unit of thermodynamic temperature is
-derived from the Boltzmann constant :math:`k`.
+  derived from the Boltzmann constant :math:`k`.
 
 - The mole :math:`\mathrm{mol}` as the SI unit of amount of substance is
-derived from Avogadro constant :math:`N_{\mathrm{A}}`.
+  derived from Avogadro constant :math:`N_{\mathrm{A}}`.
 
 - The candela :math:`\mathrm{cd}` as the SI unit of luminous intensity in a
-given direction is derived from the luminous efficacy of monochromatic
-radiation of frequency :math:`K_{\mathrm{cd}}`.
+  given direction is derived from the luminous efficacy of monochromatic
+  radiation of frequency :math:`K_{\mathrm{cd}}`.
 
 Defining these SI base units as constants has the advantage will remain for all
 future as they are defined now and all physical quantities can expressed by a
@@ -79,9 +79,9 @@ with the following format:
 
 A complete list of available constants is given in the following:
 
-----------------------------------------------------------------------  ----
+======================================================================  ====
 %(constant_names)s
-----------------------------------------------------------------------  ----
+======================================================================  ====
 
 
 References
