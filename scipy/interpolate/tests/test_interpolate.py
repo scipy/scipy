@@ -1,10 +1,8 @@
-from __future__ import division, print_function, absolute_import
-
 import itertools
 
 from numpy.testing import (assert_, assert_equal, assert_almost_equal,
         assert_array_almost_equal, assert_array_equal,
-        assert_allclose, assert_warns, suppress_warnings)
+        assert_allclose, assert_warns)
 from pytest import raises as assert_raises
 import pytest
 
@@ -658,7 +656,7 @@ class TestInterp1D(object):
         y = np.linspace(0, 1)
         # Confirm interp can be released from memory after use
         with assert_deallocated(interp1d, x, y) as interp:
-            new_y = interp([0.1, 0.2])
+            interp([0.1, 0.2])
             del interp
 
     def test_overflow_nearest(self):
@@ -913,7 +911,7 @@ class TestPPolyCommon(object):
         c_s = c.shape
         xp = np.random.random((1, 2))
         for axis in (0, 1, 2, 3):
-            k, m = c.shape[axis], c.shape[axis+1]
+            m = c.shape[axis+1]
             x = np.sort(np.random.rand(m+1))
             for cls in (PPoly, BPoly):
                 p = cls(c, x, axis=axis)
@@ -1007,7 +1005,7 @@ class TestPPoly(object):
         c = np.array([[1, 4], [2, 5], [3, 6]])
         x = np.array([0, 0.5, 1])
         xnew = np.array([0, 0.1, 0.2])
-        p = PPoly(c, x, extrapolate='periodic')
+        PPoly(c, x, extrapolate='periodic')
 
         for writeable in (True, False):
             x.flags.writeable = writeable
@@ -1901,7 +1899,7 @@ class TestBPolyFromDerivatives(object):
         m, k = 5, 12
         xi, yi = self._make_random_mk(m, k)
 
-        pp = BPoly.from_derivatives(xi, yi, orders=2*k-1)   # this is still ok
+        BPoly.from_derivatives(xi, yi, orders=2*k-1)   # this is still ok
         assert_raises(ValueError, BPoly.from_derivatives,   # but this is not
                 **dict(xi=xi, yi=yi, orders=2*k))
 
@@ -2572,9 +2570,9 @@ class TestRegularGridInterpolator(object):
         # from #3703; test that interpolator object construction succeeds
         values = np.ones((10, 20, 30), dtype='>f4')
         points = [np.arange(n) for n in values.shape]
-        xi = [(1, 1, 1)]
-        interpolator = RegularGridInterpolator(points, values)
-        interpolator = RegularGridInterpolator(points, values, fill_value=0.)
+        # xi = [(1, 1, 1)]
+        RegularGridInterpolator(points, values)
+        RegularGridInterpolator(points, values, fill_value=0.)
 
 
 class MyValue(object):

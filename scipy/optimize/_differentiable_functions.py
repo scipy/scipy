@@ -1,4 +1,3 @@
-from __future__ import division, print_function, absolute_import
 import numpy as np
 import scipy.sparse as sps
 from ._numdiff import approx_derivative, group_columns

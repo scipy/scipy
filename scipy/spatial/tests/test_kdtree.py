@@ -1,8 +1,6 @@
 # Copyright Anne M. Archibald 2008
 # Released under the scipy license
 
-from __future__ import division, print_function, absolute_import
-
 from numpy.testing import (assert_equal, assert_array_equal, assert_,
                            assert_almost_equal, assert_array_almost_equal)
 from pytest import raises as assert_raises
@@ -1160,7 +1158,7 @@ def test_ckdtree_memuse():
     try:
         import resource
     except ImportError:
-        # resource is not available on Windows with Python 2.6
+        # resource is not available on Windows
         return
     # Make some data
     dx, dy = 0.05, 0.05

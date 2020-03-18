@@ -17,7 +17,6 @@ References
 """
 # Author: Matt Haberland
 
-from __future__ import division, absolute_import, print_function
 import numpy as np
 from scipy.linalg import solve
 from .optimize import _check_unknown_options

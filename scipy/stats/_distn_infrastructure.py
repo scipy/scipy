@@ -2,8 +2,6 @@
 # Author:  Travis Oliphant  2002-2011 with contributions from
 #          SciPy Developers 2004-2011
 #
-from __future__ import division, print_function, absolute_import
-
 from scipy._lib._util import getfullargspec_no_self as _getfullargspec
 
 import sys
@@ -1654,26 +1652,21 @@ class rv_continuous(rv_generic):
         return self.cdf(*(x, )+args)-q
 
     def _ppf_single(self, q, *args):
-        left = right = None
-        _a, _b = self._get_support(*args)
-        if _a > -np.inf:
-            left = _a
-        if _b < np.inf:
-            right = _b
-
         factor = 10.
-        if not left:  # i.e. self.a = -inf
-            left = -1.*factor
+        left, right = self._get_support(*args)
+
+        if np.isinf(left):
+            left = min(-factor, right)
             while self._ppf_to_solve(left, q, *args) > 0.:
-                right = left
-                left *= factor
-            # left is now such that cdf(left) < q
-        if not right:  # i.e. self.b = inf
-            right = factor
+                left, right = left * factor, left
+            # left is now such that cdf(left) <= q
+            # if right has changed, then cdf(right) > q
+
+        if np.isinf(right):
+            right = max(factor, left)
             while self._ppf_to_solve(right, q, *args) < 0.:
-                left = right
-                right *= factor
-            # right is now such that cdf(right) > q
+                left, right = right, right * factor
+            # right is now such that cdf(right) >= q
 
         return optimize.brentq(self._ppf_to_solve,
                                left, right, args=(q,)+args, xtol=self.xtol)

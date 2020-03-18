@@ -3,8 +3,6 @@ Functions which are common and require SciPy Base and Level 1 SciPy
 (special, linalg)
 """
 
-from __future__ import division, print_function, absolute_import
-
 from numpy import arange, newaxis, hstack, prod, array, frombuffer, load
 
 __all__ = ['central_diff_weights', 'derivative', 'ascent', 'face',

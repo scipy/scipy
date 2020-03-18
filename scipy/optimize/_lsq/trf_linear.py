@@ -1,7 +1,5 @@
 """The adaptation of Trust Region Reflective algorithm for a linear
 least-squares problem."""
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 from numpy.linalg import norm
 from scipy.linalg import qr, solve_triangular

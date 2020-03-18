@@ -163,8 +163,7 @@ subroutine <prefix>trmm(m, n, k, alpha, a, b, lda, ldb, side, lower, trans_a, di
   !
   ! c = trmm(alpha, a, b, side=0, lower=0, trans_a=0, diag=0)
 
-  callstatement (*f2py_func)((side?"R":"L"), (lower?"L":"U"), &
-        (trans_a?(trans_a==2?"C":"T"):"N"), (diag?"U":"N"), &m, &n, &alpha, a, &lda, b, &ldb)
+  callstatement (*f2py_func)((side?"R":"L"), (lower?"L":"U"),(trans_a?(trans_a==2?"C":"T"):"N"), (diag?"U":"N"), &m, &n, &alpha, a, &lda, b, &ldb)
   callprotoargument char*, char*, char*, char*, int*, int*, <ctype>*,<ctype>*,int*,<ctype>*, int*
 
   integer optional, intent(in), check(side==0 || side==1) :: side = 0
@@ -174,16 +173,15 @@ subroutine <prefix>trmm(m, n, k, alpha, a, b, lda, ldb, side, lower, trans_a, di
 
   <ftype> intent(in) :: alpha
 
-  <ftype> dimension(lda, k), intent(in) :: a
-  <ftype> dimension(ldb, n), intent(in, out, copy) :: b
+  <ftype> intent(in), dimension(lda, k) :: a
+  <ftype> intent(in, out, copy), dimension(ldb, n) :: b
 
-  integer depend(a), intent(hide) :: lda = shape(a, 0)
-  integer depend(a), intent(hide) :: k = shape(a, 1)
+  integer intent(hide), depend(a) :: lda = MAX(1,shape(a, 0))
+  integer intent(hide), depend(a, n, m, side), check(k>=(side?n:m) && k<=shape(a, 0)) :: k = shape(a, 1)
 
-  integer depend(b), intent(hide) :: ldb = shape(b, 0)
-  integer depend(b), intent(hide) :: n = shape(b, 1)
-
-  integer depend(side, a, b, n, k), intent(hide) :: m = (side ? n : k)
+  integer intent(hide), depend(b) :: ldb = MAX(1,shape(b, 0))
+  integer intent(hide), depend(b) :: m = shape(b, 0)
+  integer intent(hide), depend(b) :: n = shape(b, 1)
 
 end subroutine <prefix>trmm
 

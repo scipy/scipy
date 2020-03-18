@@ -1,6 +1,4 @@
 """Nearly exact trust-region optimization subproblem."""
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 from scipy.linalg import (norm, get_lapack_funcs, solve_triangular,
                           cho_solve)
