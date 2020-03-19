@@ -8,9 +8,9 @@ Constants (:mod:`scipy.constants`)
 
 About the SI units
 ==================
-In 2019 seven système international d’unités (SI) base units were defined to
-serve as a basis for all physical quantities [SIunits]_ by the bureau
-international des poids et mesures (BIPM). They can be summarized as followed
+In 2019 seven système international d’unités (SI) base units were (re)defined to
+serve as a basis for all physical quantities by the bureau
+international des poids et mesures (BIPM) [SIunits]_. They can be summarized as followed
 even though for a detailed background the given link is recommended:
 
 - The second :math:`\mathrm{s}` as the SI unit of time is derived from the
