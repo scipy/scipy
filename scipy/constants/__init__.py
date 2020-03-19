@@ -10,29 +10,29 @@ About the SI units
 ==================
 In 2019 seven système international d’unités (SI) base units were (re)defined to
 serve as a basis for all physical quantities by the bureau
-international des poids et mesures (BIPM) [SIunits]_. They can be summarized as followed
+international des poids et mesures (BIPM) [Introduction]_. They can be summarized as followed
 even though for a detailed background the given link is recommended:
 
-- The second (:math:`\mathrm{s}`) as the SI unit of time is derived from the
+- The second :math:`(\mathrm{s})` as the SI unit of time is derived from the
   unperturbed ground-state hyperfine transition frequency of the caesium-133
   atom :math:`\Delta \nu_{\mathrm{Cs}}`.
 
-- The metre (:math:`\mathrm{m}`) as the SI unit of length is derived from the
+- The metre :math:`(\mathrm{m})` as the SI unit of length is derived from the
   speed of light in vaccum :math:`c`.
 
-- The kilogram (:math:`\mathrm{kg}`) as the SI unit of mass is derived from the
+- The kilogram :math:`(\mathrm{kg})` as the SI unit of mass is derived from the
   Planck constant :math:`h`.
 
-- The ampere (:math:`\mathrm{A}`) as the SI unit of electric current is derived
+- The ampere :math:`(\mathrm{A})` as the SI unit of electric current is derived
   from the elementary charge :math:`e`.
 
-- The kelvin (:math:`\mathrm{K}`) as the SI unit of thermodynamic temperature is
+- The kelvin :math:`(\mathrm{K})` as the SI unit of thermodynamic temperature is
   derived from the Boltzmann constant :math:`k`.
 
-- The mole (:math:`\mathrm{mol}`) as the SI unit of amount of substance is
+- The mole :math:`(\mathrm{mol})` as the SI unit of amount of substance is
   derived from the Avogadro constant :math:`N_{\mathrm{A}}`.
 
-- The candela (:math:`\mathrm{cd}`) as the SI unit of luminous intensity in a
+- The candela :math:`(\mathrm{cd})` as the SI unit of luminous intensity in a
   given direction is derived from the luminous efficacy of monochromatic
   radiation :math:`K_{\mathrm{cd}}`.
 
@@ -79,8 +79,11 @@ The properties of the constants in :mod:`scipy.constants` are taken from
    find       -- Return list of physical_constant keys with a given string
    ConstantWarning -- Constant sought not in newest CODATA data set
 
-or via the dictionary stored in :mod:`scipy.constants` with the following
-format:
+or via the dictionary
+
+.. data:: physical_constants
+
+with the following format:
 
 ``scipy.constants.physical_constants[name] = (value, unit, uncertainty)``.
 
@@ -93,7 +96,7 @@ A complete list of available constants is given in the following:
 
 References
 ==========
-.. [SIunits] Introduction to SI units,
+.. [Introduction] Introduction to SI units,
    https://www.bipm.org/en/measurement-units/
 .. [Wikipedia] Wikipedia, Systems of measurements,
    https://en.wikipedia.org/wiki/System_of_measurement
