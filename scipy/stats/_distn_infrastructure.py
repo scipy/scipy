@@ -2170,10 +2170,12 @@ class rv_continuous(rv_generic):
 
     def fit(self, data, *args, **kwds):
         """
-        Return MLEs for shape (if applicable), location, and scale
-        parameters from data.
+        Return estimates of shape (if applicable), location, and scale
+        parameters from data. The default estimation method is Maximum
+        Likelihood Estimation (MLE), but Generalized Method of Moments (GMM)
+        is also available.
 
-        MLE stands for Maximum Likelihood Estimate.  Starting estimates for
+        Starting estimates for
         the fit are given by input arguments; for any arguments not provided
         with starting estimates, ``self._fitstart(data)`` is called to generate
         such.
@@ -2186,7 +2188,7 @@ class rv_continuous(rv_generic):
         Parameters
         ----------
         data : array_like
-            Data to use in calculating the MLEs.
+            Data to use in calculating the distribution parameters.
         args : floats, optional
             Starting value(s) for any shape-characterizing arguments (those not
             provided will be determined by a call to ``_fitstart(data)``).
@@ -2212,21 +2214,36 @@ class rv_continuous(rv_generic):
               function to be optimized) and ``disp=0`` to suppress
               output as keyword arguments.
 
+            - method : The method to use. The default is "MLE" (Maximum
+              Likelihood Estimate); "GMM" (Generalized Method of Moments)
+              is also available.
+
+            - order : The number of moments to fit with ``method="GMM"``.
+              This integer must be greater than or equal to the number of
+              non-fixed distribution parameters (including location and scale);
+              the default is the number of non-fixed parameters. This keyword
+              is ignored when ``method="MLE"``.
+
         Returns
         -------
-        mle_tuple : tuple of floats
-            MLEs for any shape parameters (if applicable), followed by those
+        parameter_tuple : tuple of floats
+            Estimates for any shape parameters (if applicable), followed by those
             for location and scale. For most random variables, shape statistics
             will be returned, but there are exceptions (e.g. ``norm``).
 
         Notes
         -----
-        This fit is computed by maximizing a log-likelihood function, with
-        penalty applied for samples outside of range of the distribution. The
-        returned answer is not guaranteed to be the globally optimal MLE, it
+        With ``method="MLE"`` (default),
+        the fit is computed by maximizing a log-likelihood function, with
+        penalty applied for samples beyond the range of the distribution.
+
+        With ``method="GMM"``, the fit is computed by minimizing a weighted
+        norm of the errors between data moments and distribution moments.
+
+        The returned answer is not guaranteed to be globally optimal; it
         may only be locally optimal, or the optimization may fail altogether.
-        If the data contain any of np.nan, np.inf, or -np.inf, the fit routine
-        will throw a RuntimeError.
+        If the data contain any of ``np.nan``, ``np.inf``, or ``-np.inf``,
+        the `fit` method will raise a ``RuntimeError``.
 
         Examples
         --------
@@ -2489,7 +2506,7 @@ class rv_continuous(rv_generic):
         --------
 
         To understand the effect of the bounds of integration consider
-        
+
         >>> from scipy.stats import expon
         >>> expon(1).expect(lambda x: 1, lb=0.0, ub=2.0)
         0.6321205588285578
