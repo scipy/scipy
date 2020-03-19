@@ -12,7 +12,7 @@ from scipy.optimize._remove_redundancy import (
 from collections import namedtuple
 
 # Switch between using undo and using revstack
-UNDO_OLD = True
+UNDO_OLD = False
 
 _LPProblem = namedtuple('_LPProblem', 'c A_ub b_ub A_eq b_eq bounds x0')
 _LPProblem.__new__.__defaults__ = (None,) * 6  # make c the only required arg
@@ -748,9 +748,9 @@ def _presolve(lp, rr, tol=1e-9):
         c_undo = c[i_f]
         c = c[i_nf]
         x_undo = lb[i_f]  # not x[i_f], x is just zeroes
-        print("(1) x orig (zeros): ", x)
+        # print("(1) x orig (zeros): ", x)
         x = x[i_nf]
-        print("(1) x mod: ", x)
+        # print("(1) x mod: ", x)
         # user guess x0 stays separate from presolve solution x
         if x0 is not None:
             x0_undo = x0[i_f]
@@ -762,9 +762,9 @@ def _presolve(lp, rr, tol=1e-9):
             # Current implementation
             undo = [np.nonzero(i_f)[0], lb[i_f]]
         else:
-            # New implementation: define a function which restores c, x and x0
-            def rev(c_mod, x_mod, x0_mod):
-                # Insert c_undo, x_undo, x0_undo into c_mod, x_mod, x0_mod
+            # New implementation: define a function which restores x
+            def rev(x_mod):
+                # Insert x_undo into x_mod
                 # When elements have been removed at positions k1, k2, k3, ...
                 # then these must be replaced at (after) positions k1-1, k2-2,
                 # k3-3, ... in the modified array to recreate the original
@@ -774,13 +774,8 @@ def _presolve(lp, rr, tol=1e-9):
                 index_offset = list(range(N))
                 # Create insert indices
                 insert_indices = np.subtract(i, index_offset).flatten()
-                c_rev = np.insert(c_mod.astype(float), insert_indices, c_undo)
                 x_rev = np.insert(x_mod.astype(float), insert_indices, x_undo)
-                if x0 is not None:
-                    x0_rev = np.insert(x0_mod.astype(float), insert_indices, x0_undo)
-                else:
-                    x0_rev = None
-                return (c_rev, x_rev, x0_rev)
+                return (x_rev)
 
             # Use undo as a list of functions, currently just this one.
             undo.append(rev)
@@ -1353,12 +1348,12 @@ def _postsolve(x, postsolve_args, complete=False, tol=1e-8, copy=False):
     (c, A_ub, b_ub, A_eq, b_eq, bounds, x0), undo, C, b_scale = postsolve_args
 
     x = _unscale(x, C, b_scale)
-    
+
     # print("postsolve(): initial")
     # print("postsolve(): len(x) ",len(x))
     # print("postsolve(): len(c) ",len(c))
     # print("postsolve(): shape bounds ",bounds.shape)
-    
+
     # Undo variable substitutions of _get_Abc()
     # if "complete", problem was solved in presolve; don't do anything here
     n_x = bounds.shape[0]  # was len(c)
@@ -1383,7 +1378,7 @@ def _postsolve(x, postsolve_args, complete=False, tol=1e-8, copy=False):
     # If there were variables removed from the problem, add them back into the
     # solution vector
     if UNDO_OLD:
-        print("(2) x mod: ", x)
+        # print("(2) x mod: ", x)
         if len(undo) > 0:
             x = x.tolist()
             for i, val in zip(undo[0], undo[1]):
@@ -1391,13 +1386,13 @@ def _postsolve(x, postsolve_args, complete=False, tol=1e-8, copy=False):
             copy = True
         if copy:
             x = np.array(x, copy=True)
-        print("(2) x orig: ", x)
+        # print("(2) x orig: ", x)
     else:
         # Apply the functions in undo (reverse direction)
-        print("(2) x mod: ", x)
+        # print("(2) x mod: ", x)
         for rev in reversed(undo):
-            _, x, _ = rev(c, x, x0)
-        print("(2) x orig: ", x)
+            x = rev(x)
+        # print("(2) x orig: ", x)
 
     # print("postsolve(): after fixed variable insertions len(x) ",len(x))
 
