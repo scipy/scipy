@@ -20,7 +20,8 @@ from numpy import (eye, ones, zeros, zeros_like, triu, tril, tril_indices,
 from numpy.random import rand, randint, seed
 
 from scipy.linalg import _flapack as flapack, lapack
-from scipy.linalg import inv, svd, cholesky, solve, ldl, norm, block_diag, qr, eigh
+from scipy.linalg import inv, svd, cholesky, solve, ldl, norm, block_diag, qr
+from scipy.linalg import eigh
 from scipy.linalg.lapack import _compute_lwork
 from scipy.stats import ortho_group, unitary_group
 
@@ -2191,11 +2192,11 @@ def test_pteqr_error_singular(dtype, realtype, compute_z):
 
 
 @pytest.mark.parametrize("compute_z,d,e,d_expect,z_expect",
-                         [(2, # "I"
+                         [(2,  # "I"
                            np.array([4.16, 5.25, 1.09, .62]),
                            np.array([3.17, -.97, .55]),
                            np.array([8.0023, 1.9926, 1.0014, 0.1237]),
-                           np.array([[0.6326,  0.6245, -0.4191,  0.1847],
+                           np.array([[0.6326, 0.6245, -0.4191, 0.1847],
                                      [0.7668, -0.4270, 0.4176, -0.2352],
                                      [-0.1082, 0.6071, 0.4594, -0.6393],
                                      [-0.0081, 0.2432, 0.6625, 0.7084]])),
