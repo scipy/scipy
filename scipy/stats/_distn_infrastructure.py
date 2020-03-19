@@ -2143,8 +2143,17 @@ class rv_continuous(rv_generic):
             else:
                 x0.append(args[n])
 
+        objectives = {"MLE": self._penalized_nnlf,
+                      "GMM": self._moment_error_norm}
+        method = kwds.pop('method', "mle").upper()
+        try:
+            objective = objectives[method]
+        except KeyError:
+            raise ValueError("Method '{0}' not available; must be one of {1}"
+                             .format(method, str(set(objectives.keys()))))
+
         if len(fixedn) == 0:
-            func = self._penalized_nnlf
+            func = objective
             restore = None
         else:
             if len(fixedn) == Nargs:
@@ -2164,9 +2173,15 @@ class rv_continuous(rv_generic):
 
             def func(theta, x):
                 newtheta = restore(args[:], theta)
-                return self._penalized_nnlf(newtheta, x)
+                return objective(newtheta, x)
 
         return x0, func, restore, args
+
+    # TODO: implement method of moments objective assuming all variables free, order = len(theta)
+    # TODO: no longer assume all variables are free
+    # TODO: order > len(theta)
+    def _moment_error_norm(self, theta, x):
+        raise NotImplementedError("Method of Moments not yet implemented")
 
     def fit(self, data, *args, **kwds):
         """
