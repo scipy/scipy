@@ -344,7 +344,7 @@ def _phase_two(c, A, x, b, callback, postsolve_args, maxiter, tol, disp,
                 x_postsolve = x
             x_o, fun, slack, con = _postsolve(x_postsolve,
                                               postsolve_args,
-                                              tol=tol, copy=True)
+                                              copy=True)
 
             if callback is not None:
                 res = OptimizeResult({'x': x_o, 'fun': fun, 'slack': slack,

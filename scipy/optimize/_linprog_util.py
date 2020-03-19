@@ -11,9 +11,6 @@ from scipy.optimize._remove_redundancy import (
     )
 from collections import namedtuple
 
-# Switch between using undo and using revstack
-UNDO_OLD = False
-
 _LPProblem = namedtuple('_LPProblem', 'c A_ub b_ub A_eq b_eq bounds x0')
 _LPProblem.__new__.__defaults__ = (None,) * 6  # make c the only required arg
 _LPProblem.__doc__ = \
@@ -519,9 +516,11 @@ def _presolve(lp, rr, tol=1e-9):
     x : 1D array
         Solution vector (when the solution is trivial and can be determined
         in presolve)
-    undo: list of tuples
-        (index, value) pairs that record the original index and fixed value
-        for each variable removed from the problem
+    revstack: list of functions
+        the functions in the list reverse the operations of _presolve()
+        the function signature is x_org = f(x_mod), where x_mod is the result
+        of a presolve step and x_org the value at the start of the step
+        (currently, the revstack contains only one function)
     complete: bool
         Whether the solution is complete (solved or determined to be infeasible
         or unbounded in presolve)
@@ -560,7 +559,7 @@ def _presolve(lp, rr, tol=1e-9):
 
     c, A_ub, b_ub, A_eq, b_eq, bounds, x0 = lp
 
-    undo = []               # record of variables eliminated from problem
+    revstack = []               # record of variables eliminated from problem
     # constant term in cost function may be added if variables are eliminated
     c0 = 0
     complete = False        # complete is True if detected infeasible/unbounded
@@ -597,7 +596,7 @@ def _presolve(lp, rr, tol=1e-9):
                    "is -np.inf.")
         complete = True
         return (_LPProblem(c, A_ub, b_ub, A_eq, b_eq, bounds, x0),
-                c0, x, undo, complete, status, message)
+                c0, x, revstack, complete, status, message)
 
     # zero row in equality constraints
     zero_row = np.array(np.sum(A_eq != 0, axis=1) == 0).flatten()
@@ -613,7 +612,7 @@ def _presolve(lp, rr, tol=1e-9):
                        "nonzero corresponding constraint value.")
             complete = True
             return (_LPProblem(c, A_ub, b_ub, A_eq, b_eq, bounds, x0),
-                    c0, x, undo, complete, status, message)
+                    c0, x, revstack, complete, status, message)
         else:  # test_zero_row_2
             # if RHS is zero, we can eliminate this equation entirely
             A_eq = A_eq[np.logical_not(zero_row), :]
@@ -630,7 +629,7 @@ def _presolve(lp, rr, tol=1e-9):
                        "nonzero corresponding  constraint value.")
             complete = True
             return (_LPProblem(c, A_ub, b_ub, A_eq, b_eq, bounds, x0),
-                    c0, x, undo, complete, status, message)
+                    c0, x, revstack, complete, status, message)
         else:  # test_zero_row_2
             # if LHS is >= 0, we can eliminate this constraint entirely
             A_ub = A_ub[np.logical_not(zero_row), :]
@@ -654,7 +653,7 @@ def _presolve(lp, rr, tol=1e-9):
                        "turn presolve off.")
             complete = True
             return (_LPProblem(c, A_ub, b_ub, A_eq, b_eq, bounds, x0),
-                    c0, x, undo, complete, status, message)
+                    c0, x, revstack, complete, status, message)
         # variables will equal upper/lower bounds will be removed later
         # >> the statements below also change bounds and lp <<
         lb[np.logical_and(zero_col, c < 0)] = ub[
@@ -678,7 +677,7 @@ def _presolve(lp, rr, tol=1e-9):
                            "inconsistent with the bounds.")
                 complete = True
                 return (_LPProblem(c, A_ub, b_ub, A_eq, b_eq, bounds, x0),
-                        c0, x, undo, complete, status, message)
+                        c0, x, revstack, complete, status, message)
             else:
                 # sets upper and lower bounds at that fixed value - variable
                 # will be removed later
@@ -717,7 +716,7 @@ def _presolve(lp, rr, tol=1e-9):
                            "singleton row in the upper bound constraints is "
                            "inconsistent with the bounds.")
                 return (_LPProblem(c, A_ub, b_ub, A_eq, b_eq, bounds, x0),
-                        c0, x, undo, complete, status, message)
+                        c0, x, revstack, complete, status, message)
         A_ub = A_ub[np.logical_not(singleton_row), :]
         b_ub = b_ub[np.logical_not(singleton_row)]
 
@@ -737,7 +736,7 @@ def _presolve(lp, rr, tol=1e-9):
                        "the constraints")
             complete = True
             return (_LPProblem(c, A_ub, b_ub, A_eq, b_eq, bounds, x0),
-                    c0, x, undo, complete, status, message)
+                    c0, x, revstack, complete, status, message)
 
     ub_mod = ub
     lb_mod = lb
@@ -745,46 +744,34 @@ def _presolve(lp, rr, tol=1e-9):
         c0 += c[i_f].dot(lb[i_f])
         b_eq = b_eq - A_eq[:, i_f].dot(lb[i_f])
         b_ub = b_ub - A_ub[:, i_f].dot(lb[i_f])
-        c_undo = c[i_f]
         c = c[i_nf]
         x_undo = lb[i_f]  # not x[i_f], x is just zeroes
-        # print("(1) x orig (zeros): ", x)
         x = x[i_nf]
-        # print("(1) x mod: ", x)
         # user guess x0 stays separate from presolve solution x
         if x0 is not None:
-            x0_undo = x0[i_f]
             x0 = x0[i_nf]
         A_eq = A_eq[:, i_nf]
         A_ub = A_ub[:, i_nf]
-        # record of variables to be added back in
-        if UNDO_OLD:
-            # Current implementation
-            undo = [np.nonzero(i_f)[0], lb[i_f]]
-        else:
-            # New implementation: define a function which restores x
-            def rev(x_mod):
-                # Insert x_undo into x_mod
-                # When elements have been removed at positions k1, k2, k3, ...
-                # then these must be replaced at (after) positions k1-1, k2-2,
-                # k3-3, ... in the modified array to recreate the original
-                i = np.flatnonzero(i_f)
-                # Number of variables to restore
-                N = len(i)
-                index_offset = list(range(N))
-                # Create insert indices
-                insert_indices = np.subtract(i, index_offset).flatten()
-                x_rev = np.insert(x_mod.astype(float), insert_indices, x_undo)
-                return (x_rev)
-
-            # Use undo as a list of functions, currently just this one.
-            undo.append(rev)
-
-        # print("create undo: ", undo)
-        # don't remove these entries from bounds; they'll be used later.
-        # but we _also_ need a version of the bounds with these removed
+        # modify bounds
         lb_mod = lb[i_nf]
         ub_mod = ub[i_nf]
+
+        def rev(x_mod):
+            # Function to restore x: insert x_undo into x_mod.
+            # When elements have been removed at positions k1, k2, k3, ...
+            # then these must be replaced at (after) positions k1-1, k2-2,
+            # k3-3, ... in the modified array to recreate the original
+            i = np.flatnonzero(i_f)
+            # Number of variables to restore
+            N = len(i)
+            index_offset = list(range(N))
+            # Create insert indices
+            insert_indices = np.subtract(i, index_offset).flatten()
+            x_rev = np.insert(x_mod.astype(float), insert_indices, x_undo)
+            return (x_rev)
+
+        # Use revstack as a list of functions, currently just this one.
+        revstack.append(rev)
 
     # no constraints indicates that problem is trivial
     if A_eq.size == 0 and A_ub.size == 0:
@@ -838,7 +825,7 @@ def _presolve(lp, rr, tol=1e-9):
             if status != 0:
                 complete = True
         return (_LPProblem(c, A_ub, b_ub, A_eq, b_eq, bounds, x0),
-                c0, x, undo, complete, status, message)
+                c0, x, revstack, complete, status, message)
 
     # This is a wild guess for which redundancy removal algorithm will be
     # faster. More testing would be good.
@@ -866,7 +853,7 @@ def _presolve(lp, rr, tol=1e-9):
         if status != 0:
             complete = True
     return (_LPProblem(c, A_ub, b_ub, A_eq, b_eq, bounds, x0),
-            c0, x, undo, complete, status, message)
+            c0, x, revstack, complete, status, message)
 
 
 def _parse_linprog(lp, options):
@@ -1040,10 +1027,6 @@ def _get_Abc(lp, c0):
         Constant term in objective function due to fixed (and eliminated)
         variables.
 
-    undo: list of tuples
-        (`index`, `value`) pairs that record the original index and fixed value
-        for each variable removed from the problem
-
     Returns
     -------
     A : 2-D array
@@ -1090,7 +1073,7 @@ def _get_Abc(lp, c0):
         zeros = np.zeros
         eye = np.eye
 
-    # Rows will be reversed, which feeds back into bounds!
+    # Rows will be reversed, which feeds back into bounds, so copy
     bounds = np.array(bounds, copy=True)
 
     # modify problem such that all variables have only non-negativity bounds
@@ -1102,11 +1085,6 @@ def _get_Abc(lp, c0):
     ub_none = np.equal(ubs, np.inf)
     lb_some = np.logical_not(lb_none)
     ub_some = np.logical_not(ub_none)
-
-    # if preprocessing is on, lb == ub can't happen
-    # if preprocessing is off, then it would be best to convert that
-    # to an equality constraint, but it's tricky to make the other
-    # required modifications from inside here.
 
     # unbounded below: substitute xi = -xi' (unbounded above)
     # if -inf <= xi <= ub, then -ub <= -xi <= inf, so swap and invert bounds
@@ -1273,7 +1251,7 @@ def _display_summary(message, status, fun, iteration):
     print("         Iterations: {0:d}".format(iteration))
 
 
-def _postsolve(x, postsolve_args, complete=False, tol=1e-8, copy=False):
+def _postsolve(x, postsolve_args, complete=False, copy=False):
     """
     Given solution x to presolved, standard form linear program x, add
     fixed variables back into the problem and undo the variable substitutions
@@ -1315,13 +1293,12 @@ def _postsolve(x, postsolve_args, complete=False, tol=1e-8, copy=False):
             'revised simplex' method, and can only be used if `x0` represents a
             basic feasible solution.
 
-    undo: list of tuples
-        (`index`, `value`) pairs that record the original index and fixed value
-        for each variable removed from the problem
+    revstack: list of functions
+        the functions in the list reverse the operations of _presolve()
+        the function signature is x_org = f(x_mod), where x_mod is the result
+        of a presolve step and x_org the value at the start of the step
     complete : bool
         Whether the solution is was determined in presolve (``True`` if so)
-    tol : float
-        Termination tolerance; see [1]_ Section 4.5.
 
     Returns
     -------
@@ -1335,28 +1312,17 @@ def _postsolve(x, postsolve_args, complete=False, tol=1e-8, copy=False):
     con : 1-D array
         The (nominally zero) residuals of the equality constraints, that is,
         ``b - A_eq @ x``
-    bounds : 2D array
-        The bounds on the original variables ``x``
     """
     # note that all the inputs are the ORIGINAL, unmodified versions
     # no rows, columns have been removed
-    # the only exception is bounds; it has been modified
-    # we need these modified values to undo the variable substitutions
-    # in retrospect, perhaps this could have been simplified if the "undo"
-    # variable also contained information for undoing variable substitutions
 
-    (c, A_ub, b_ub, A_eq, b_eq, bounds, x0), undo, C, b_scale = postsolve_args
+    (c, A_ub, b_ub, A_eq, b_eq, bounds, x0), revstack, C, b_scale = postsolve_args
 
     x = _unscale(x, C, b_scale)
 
-    # print("postsolve(): initial")
-    # print("postsolve(): len(x) ",len(x))
-    # print("postsolve(): len(c) ",len(c))
-    # print("postsolve(): shape bounds ",bounds.shape)
-
     # Undo variable substitutions of _get_Abc()
     # if "complete", problem was solved in presolve; don't do anything here
-    n_x = bounds.shape[0]  # was len(c)
+    n_x = bounds.shape[0]
     if not complete and bounds is not None:  # bounds are never none, probably
         n_unbounded = 0
         for i, bi in enumerate(bounds):
@@ -1373,28 +1339,11 @@ def _postsolve(x, postsolve_args, complete=False, tol=1e-8, copy=False):
     # all the rest of the variables were artificial
     x = x[:n_x]
 
-    # print("postsolve(): after variable substitutions len(x) ",len(x))
-
     # If there were variables removed from the problem, add them back into the
     # solution vector
-    if UNDO_OLD:
-        # print("(2) x mod: ", x)
-        if len(undo) > 0:
-            x = x.tolist()
-            for i, val in zip(undo[0], undo[1]):
-                x.insert(i, val)
-            copy = True
-        if copy:
-            x = np.array(x, copy=True)
-        # print("(2) x orig: ", x)
-    else:
-        # Apply the functions in undo (reverse direction)
-        # print("(2) x mod: ", x)
-        for rev in reversed(undo):
-            x = rev(x)
-        # print("(2) x orig: ", x)
-
-    # print("postsolve(): after fixed variable insertions len(x) ",len(x))
+    # Apply the functions in revstack (reverse direction)
+    for rev in reversed(revstack):
+        x = rev(x)
 
     fun = x.dot(c)
     slack = b_ub - A_ub.dot(x)  # report slack for ORIGINAL UB constraints

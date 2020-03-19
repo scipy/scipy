@@ -408,7 +408,7 @@ def _solve_simplex(T, n, basis, callback, postsolve_args,
             solution[basis[:n]] = T[:n, -1]
             x = solution[:m]
             x, fun, slack, con = _postsolve(
-                x, postsolve_args, tol=tol
+                x, postsolve_args
             )
             res = OptimizeResult({
                 'x': x,
