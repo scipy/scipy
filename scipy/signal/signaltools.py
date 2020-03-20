@@ -1379,10 +1379,10 @@ def medfilt(volume, kernel_size=None):
         An array the same size as input containing the median filtered
         result.
 
-    Raises
+    Warns 
     -------
-        UserWarning
-            If array size is lesser than kernel size along any dimension
+    UserWarning
+        If array size is smaller than kernel size along any dimension
 
     See also
     --------
