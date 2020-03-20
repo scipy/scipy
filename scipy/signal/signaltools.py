@@ -1403,11 +1403,8 @@ def medfilt(volume, kernel_size=None):
     for k in range(volume.ndim):
         if (kernel_size[k] % 2) != 1:
             raise ValueError("Each element of kernel_size should be odd.")
-    shape = volume.shape
-    for k in range(volume.ndim):
-        if (kernel_size[k] > shape[k]):
-            warnings.warn(f'Array size is less then kernel size '
-                          f'along axis nr. {k}, input will be zero-padded', UserWarning)
+    if any(k > s for k, s in zip(kernel_size, volume.shape)):
+        warnings.warn('kernel_size exceeds volume extent: the volume will be zero-padded.')
 
     domain = np.ones(kernel_size)
 
