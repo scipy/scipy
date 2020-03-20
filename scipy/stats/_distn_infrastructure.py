@@ -2177,11 +2177,21 @@ class rv_continuous(rv_generic):
 
         return x0, func, restore, args
 
-    # TODO: implement method of moments objective assuming all variables free, order = len(theta)
     # TODO: no longer assume all variables are free
     # TODO: order > len(theta)
+    # TODO: add tests
+    # TODO: don't re-calculate moments from data every iteration
     def _moment_error_norm(self, theta, x):
-        raise NotImplementedError("Method of Moments not yet implemented")
+        loc, scale, args = self._unpack_loc_scale(theta)
+        if not self._argcheck(*args) or scale <= 0:
+            return inf
+        dist_moments = np.array([self.moment(n+1, *args, loc=loc, scale=scale)
+                                 for n in range(len(theta))])
+        # how can I import scipy.stats.moment?
+        # is there a function for moments NOT about mean?
+        exponents = (np.arange(1, len(theta)+1))[:, np.newaxis]
+        data_moments = np.sum(x[np.newaxis, :]**exponents/len(x), axis=1)
+        return np.linalg.norm(data_moments - dist_moments)
 
     def fit(self, data, *args, **kwds):
         """
