@@ -78,7 +78,7 @@ def convert_temperature(val, old_scale, new_scale):
     return res
 
 
-def lambda2nu(lambda):
+def lambda2nu(lambda_):
     """
     Convert wavelength to optical frequency
 
@@ -104,7 +104,7 @@ def lambda2nu(lambda):
     array([  2.99792458e+08,   1.00000000e+00])
 
     """
-    return _np.asanyarray(c) / lambda
+    return _np.asanyarray(c) / lambda_
 
 
 def nu2lambda(nu):
