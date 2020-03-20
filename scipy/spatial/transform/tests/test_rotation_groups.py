@@ -5,9 +5,9 @@ from numpy.testing import assert_array_almost_equal
 from scipy.spatial.transform import Rotation
 from scipy.optimize import linear_sum_assignment
 from scipy.spatial.distance import cdist
-from scipy.constants import golden as phi
 from scipy.spatial import cKDTree
 
+phi = (1 + _math.sqrt(5)) / 2 # golden ratio
 
 TOL = 1E-12
 NS = range(1, 13)
