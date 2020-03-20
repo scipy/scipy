@@ -21,7 +21,7 @@ pr:
 # the version of OpenBLAS used is currently 0.3.8.dev
 # and should be updated to match scipy-wheels as appropriate
 variables:
-    openblas_version: 0.3.8.dev
+    openblas_version: 0.3.9
 
 jobs:
 - job: Linux_Python_36_32bit_full

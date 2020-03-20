@@ -11,8 +11,8 @@ from urllib.error import HTTPError
 import zipfile
 import tarfile
 
-OPENBLAS_V = 'v0.3.8'
-OPENBLAS_LONG = 'v0.3.5-605-gc815b8fb'  # the 0.3.5 is misleading
+OPENBLAS_V = 'v0.3.9'
+OPENBLAS_LONG = 'v0.3.9'
 BASE_LOC = ''
 ANACONDA = 'https://anaconda.org/multibuild-wheels-staging/openblas-libs'
 ARCHITECTURES = ['', 'windows', 'darwin', 'aarch64', 'x86', 'ppc64le', 's390x']
