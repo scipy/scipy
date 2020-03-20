@@ -8,31 +8,32 @@ Constants (:mod:`scipy.constants`)
 
 About the SI units
 ==================
-In 2019 seven système international d’unités (SI) base units were (re)defined to
+In 2019 seven système international d’unités (SI) base units were redefined to
 serve as a basis for all physical quantities by the bureau
-international des poids et mesures (BIPM) [Introduction]_. They can be summarized as followed
-even though for a detailed background the given link is recommended:
+international des poids et mesures (BIPM). They can be summarized as followed
+even though for a more detailed background the information provided by the
+BIPM is recommended (see [1]_):
 
-- The second :math:`(\mathrm{s})` as the SI unit of time is derived from the
+- The second (:math:`\mathrm{s}`) as the SI unit of time is derived from the
   unperturbed ground-state hyperfine transition frequency of the caesium-133
   atom :math:`\Delta \nu_{\mathrm{Cs}}`.
 
-- The metre :math:`(\mathrm{m})` as the SI unit of length is derived from the
+- The metre (:math:`\mathrm{m}`) as the SI unit of length is derived from the
   speed of light in vaccum :math:`c`.
 
-- The kilogram :math:`(\mathrm{kg})` as the SI unit of mass is derived from the
+- The kilogram (:math:`\mathrm{kg}`) as the SI unit of mass is derived from the
   Planck constant :math:`h`.
 
-- The ampere :math:`(\mathrm{A})` as the SI unit of electric current is derived
+- The ampere (:math:`\mathrm{A}`) as the SI unit of electric current is derived
   from the elementary charge :math:`e`.
 
-- The kelvin :math:`(\mathrm{K})` as the SI unit of thermodynamic temperature is
+- The kelvin (:math:`\mathrm{K}`) as the SI unit of thermodynamic temperature is
   derived from the Boltzmann constant :math:`k`.
 
-- The mole :math:`(\mathrm{mol})` as the SI unit of amount of substance is
+- The mole (:math:`\mathrm{mol}`) as the SI unit of amount of substance is
   derived from the Avogadro constant :math:`N_{\mathrm{A}}`.
 
-- The candela :math:`(\mathrm{cd})` as the SI unit of luminous intensity in a
+- The candela (:math:`\mathrm{cd}`) as the SI unit of luminous intensity in a
   given direction is derived from the luminous efficacy of monochromatic
   radiation :math:`K_{\mathrm{cd}}`.
 
@@ -42,10 +43,10 @@ lists in addition to the seven base units 22 derived units with special
 names and serveral non-SI units. Of course all of before mentioned units
 can be used with the SI prefixes.
 
-However, one has to keep in mind that different systems of measurements apply
+However, one has to keep in mind that different systems of measurement apply
 for different problems and therefore the SI units are not necessarily the
 best (in terms of convenience) units for every problem. An overview of
-different systems of measurement can be found on Wikipedia [Wikipedia]_ .
+different systems of measurement can be found on Wikipedia [2]_ .
 
 
 About the notation of physical units
@@ -68,7 +69,7 @@ numerical value(s) is/are put in the table rows or on the axis ticks.
 List of all constants
 =====================
 The properties of the constants in :mod:`scipy.constants` are taken from
-[CODATA2018]_ and can be either accessed directly via
+[3]_ and can be either accessed directly via
 
 .. autosummary::
    :toctree: generated/
@@ -80,9 +81,7 @@ The properties of the constants in :mod:`scipy.constants` are taken from
    ConstantWarning -- Constant sought not in newest CODATA data set
 
 or via the dictionary
-
 .. data:: physical_constants
-
 with the following format:
 
 ``scipy.constants.physical_constants[name] = (value, unit, uncertainty)``.
@@ -94,15 +93,27 @@ A complete list of available constants is given in the following:
 ======================================================================  ====
 
 
+Auxilliary functions
+====================
+Besides the constants the following auxilliary functions are provided for
+the users convencience:
+
+.. autosummary::
+   :toctree: generated/   
+   
+   convert_temperature
+   lambda2nu
+   nu2lambda
+   
+
 References
 ==========
-.. [Introduction] Introduction to SI units,
+.. [1] Introduction to SI units,
    https://www.bipm.org/en/measurement-units/
-.. [Wikipedia] Wikipedia, Systems of measurements,
+.. [2] Wikipedia, Systems of measurements,
    https://en.wikipedia.org/wiki/System_of_measurement
-.. [CODATA2018] Fundamental Physical Constants --- Complete Listing, 2018
-   CODATA adjustment 2018,
-   https://physics.nist.gov/cuu/Constants/Table/allascii.txt
+.. [3] Fundamental Physical Constants --- Complete Listing, 2018 CODATA
+   adjustment, https://physics.nist.gov/cuu/Constants/Table/allascii.txt
 """
 
 
