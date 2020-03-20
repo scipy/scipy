@@ -118,7 +118,7 @@ def configuration(parent_package='', top_path=None):
 
 if __name__ == '__main__':
     from numpy.distutils.core import setup
-    from linalg_version import linalg_version
+    from scipy.linalg.linalg_version import linalg_version
 
     setup(version=linalg_version,
           **configuration(top_path='').todict())
