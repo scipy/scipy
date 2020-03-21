@@ -127,7 +127,7 @@ subroutine <prefix2>syevd(compute_v,lower,n,w,a,lda,work,lwork,iwork,liwork,info
     check(lwork>=(compute_v?1+6*n+2*n*n:2*n+1)) :: lwork
     <ftype2> dimension(lwork),intent(hide,cache),depend(lwork) :: work
 
-    integer intent(hide),depend(n,compute_v) :: liwork = (compute_v?3+5*n:1)
+    integer optional,intent(in),depend(n,compute_v) :: liwork = (compute_v?3+5*n:1)
     integer dimension(liwork),intent(hide,cache),depend(liwork) :: iwork
 
     integer intent(out) :: info
@@ -183,10 +183,10 @@ subroutine <prefix2c>heevd(compute_v,lower,n,w,a,lda,work,lwork,iwork,liwork,rwo
     check(lwork>=(compute_v?2*n+n*n:n+1)) :: lwork
     <ftype2c> dimension(lwork),intent(hide,cache),depend(lwork) :: work
 
-    integer intent(hide),depend(n,compute_v) :: liwork = (compute_v?3+5*n:1)
+    integer optional,intent(in),depend(n,compute_v) :: liwork = (compute_v?3+5*n:1)
     integer dimension(liwork),intent(hide,cache),depend(liwork) :: iwork
 
-    integer intent(hide),depend(n,compute_v) :: lrwork = (compute_v?1+5*n+2*n*n:n)
+    integer optional,intent(in),depend(n,compute_v) :: lrwork = (compute_v?1+5*n+2*n*n:n)
     <ftype2> dimension(lrwork),intent(hide,cache),depend(n,lrwork) :: rwork
     integer intent(out) :: info
 

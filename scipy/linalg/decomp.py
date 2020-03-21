@@ -521,7 +521,7 @@ def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
                   'syevd': ['lwork', 'liwork'],
                   'syevr': ['lwork', 'liwork'],
                   'heevd': ['lwork', 'liwork', 'lrwork'],
-                  'heevr': ['lwork', 'liwork', 'lrwork'],
+                  'heevr': ['lwork', 'lrwork', 'liwork'],
                   }
 
     if b is None:  # Standard problem
@@ -533,7 +533,7 @@ def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
 
         lw = _compute_lwork(drvlw, **clw_args)
         # Multiple lwork vars
-        if isinstance(drvlw, tuple):
+        if isinstance(lw, tuple):
             lwork_args = dict(zip(lwork_spec[pfx+driver], lw))
         else:
             lwork_args = {'lwork': lw}
