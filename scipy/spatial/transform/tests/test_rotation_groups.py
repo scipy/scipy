@@ -7,7 +7,7 @@ from scipy.optimize import linear_sum_assignment
 from scipy.spatial.distance import cdist
 from scipy.spatial import cKDTree
 
-phi = (1 + np.sqrt(5)) / 2 # golden ratio
+phi = (1 + np.sqrt(5)) / 2  # golden ratio
 
 TOL = 1E-12
 NS = range(1, 13)

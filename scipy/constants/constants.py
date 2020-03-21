@@ -1,10 +1,5 @@
-import math as _math
-from .codata import value as _cd
-import numpy as _np
-
-# constants needed in functions
-zero_Celsius = 273.15
-c = _cd('speed of light in vacuum')
+from .codata import value
+import numpy as np
 
 # auxiliary functions
 def convert_temperature(val, old_scale, new_scale):
@@ -50,11 +45,11 @@ def convert_temperature(val, old_scale, new_scale):
     """
     # Convert from `old_scale` to Kelvin
     if old_scale.lower() in ['celsius', 'c']:
-        tempo = _np.asanyarray(val) + zero_Celsius
+        tempo = _np.asanyarray(val) + 273.15
     elif old_scale.lower() in ['kelvin', 'k']:
         tempo = _np.asanyarray(val)
     elif old_scale.lower() in ['fahrenheit', 'f']:
-        tempo = (_np.asanyarray(val) - 32) * 5 / 9 + zero_Celsius
+        tempo = (_np.asanyarray(val) - 32) * 5 / 9 + 273.15
     elif old_scale.lower() in ['rankine', 'r']:
         tempo = _np.asanyarray(val) * 5 / 9
     else:
@@ -63,11 +58,11 @@ def convert_temperature(val, old_scale, new_scale):
                                   "Rankine" % old_scale)
     # and from Kelvin to `new_scale`.
     if new_scale.lower() in ['celsius', 'c']:
-        res = tempo - zero_Celsius
+        res = tempo - 273.15
     elif new_scale.lower() in ['kelvin', 'k']:
         res = tempo
     elif new_scale.lower() in ['fahrenheit', 'f']:
-        res = (tempo - zero_Celsius) * 9 / 5 + 32
+        res = (tempo - 273.15) * 9 / 5 + 32
     elif new_scale.lower() in ['rankine', 'r']:
         res = tempo * 9 / 5
     else:
@@ -99,12 +94,12 @@ def lambda2nu(lambda_):
 
     Examples
     --------
-    >>> from scipy.constants import lambda2nu, speed_of_light
-    >>> lambda2nu(np.array((1, speed_of_light)))
+    >>> import scipy.constants as sc
+    >>> sc.lambda2nu(np.array((1, sc.value('speed of light in vacuum'))))
     array([  2.99792458e+08,   1.00000000e+00])
 
     """
-    return _np.asanyarray(c) / lambda_
+    return np.asanyarray(value('speed of light in vacuum')) / lambda_
 
 
 def nu2lambda(nu):
@@ -128,9 +123,9 @@ def nu2lambda(nu):
 
     Examples
     --------
-    >>> from scipy.constants import nu2lambda, speed_of_light
-    >>> nu2lambda(np.array((1, speed_of_light)))
+    >>> import scipy.constants as sc
+    >>> sc.nu2lambda(np.array((1, sc.value('speed of light in vacuum'))))
     array([  2.99792458e+08,   1.00000000e+00])
 
     """
-    return c / _np.asanyarray(nu)
+    return value('speed of light in vacuum') / np.asanyarray(nu)

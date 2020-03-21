@@ -1,6 +1,6 @@
 import numpy as np
 
-phi =  (1 + np.sqrt(5)) / 2 # golden ratio
+phi = (1 + np.sqrt(5)) / 2  # golden ratio
 
 def icosahedral(cls):
     g1 = tetrahedral(cls).as_quat()
