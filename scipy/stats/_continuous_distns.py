@@ -3922,8 +3922,8 @@ class norminvgauss_gen(rv_continuous):
 
     .. math::
 
-        f(x, a, b) = (a \exp(\sqrt{a^2 - b^2} + b x)) /
-                     (\pi \sqrt{1 + x^2} \, K_1(a \sqrt{1 + x^2}))
+        f(x, a, b) = \frac{a \, K_1(a \sqrt{1 + x^2})}{\pi \sqrt{1 + x^2}} \,
+                     \exp(\sqrt{a^2 - b^2} + b x)
 
     where :math:`x` is a real number, the parameter :math:`a` is the tail
     heaviness and :math:`b` is the asymmetry parameter satisfying
