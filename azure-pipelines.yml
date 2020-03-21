@@ -159,7 +159,7 @@ jobs:
     displayName: 'Build SciPy'
   - powershell: |
       $env:PATH = "C:\\ProgramData\\chocolatey\\lib\\mingw\\tools\\install\\mingw$(BITS)\\bin;" + $env:PATH
-      python runtests.py -n --mode=$(TEST_MODE) -- -n 2 -rsx --junitxml=junit/test-results.xml --cov=scipy --cov-report=xml --cov-report=html
+      python runtests.py -n --mode=$(TEST_MODE) -- -n 2 -rsx --junitxml=junit/test-results.xml --cov=scipy --cov-report=xml --cov-report=html --durations=10
     displayName: 'Run SciPy Test Suite'
   - task: PublishTestResults@2
     condition: succeededOrFailed()
