@@ -1661,7 +1661,6 @@ We can also implement the callback function with the following C code:
    };
 
    /* Initialize the module */
-   #if PY_VERSION_HEX >= 0x03000000
    static struct PyModuleDef example = {
        PyModuleDef_HEAD_INIT,
        "example",
@@ -1679,13 +1678,6 @@ We can also implement the callback function with the following C code:
    {
        return PyModule_Create(&example);
    }
-   #else
-   PyMODINIT_FUNC
-   initexample(void)
-   {
-       Py_InitModule("example", ExampleMethods);
-   }
-   #endif
 
 More information on writing Python extension modules can be found
 `here`__. If the C code is in the file ``example.c``, then it can be

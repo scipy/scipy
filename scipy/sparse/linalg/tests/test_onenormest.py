@@ -1,8 +1,6 @@
 """Test functions for the sparse.linalg._onenormest module
 """
 
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 from numpy.testing import assert_allclose, assert_equal, assert_
 import pytest

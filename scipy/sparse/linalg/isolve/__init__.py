@@ -1,7 +1,5 @@
 "Iterative Solvers for Sparse Linear Systems"
 
-from __future__ import division, print_function, absolute_import
-
 #from info import __doc__
 from .iterative import *
 from .minres import minres

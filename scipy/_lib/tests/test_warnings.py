@@ -5,8 +5,6 @@ from NumPy.
 """
 
 
-from __future__ import division, absolute_import, print_function
-
 import os
 from pathlib import Path
 import ast

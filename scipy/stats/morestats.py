@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 import math
 import warnings
 from collections import namedtuple
@@ -14,7 +12,8 @@ from scipy import optimize
 from scipy import special
 from . import statlib
 from . import stats
-from .stats import find_repeats, _contains_nan
+from .stats import find_repeats
+from .mstats_basic import _contains_nan
 from .contingency import chi2_contingency
 from . import distributions
 from ._distn_infrastructure import rv_generic
@@ -2418,7 +2417,7 @@ def binom_test(x, n=None, p=0.5, alternative='two-sided'):
     because the returned p-value is greater than the critical value of 5%.
 
     """
-    x = atleast_1d(x).astype(np.integer)
+    x = atleast_1d(x).astype(np.int_)
     if len(x) == 2:
         n = x[1] + x[0]
         x = x[0]

@@ -262,9 +262,3 @@ scipy/optimize/_group_columns.c
 scipy/optimize/cython_optimize/_zeros.c
 scipy/optimize/cython_optimize/_zeros.pyx
 scipy/optimize/lbfgsb/_lbfgsbmodule.c
-
-# Very specific
-# * incorrect Cython version
-benchmarks/asv.conf.json
-# * tox.ini ignores most PEP8 style errors
-tox.ini

@@ -1,7 +1,6 @@
 """
 Unit tests for the basin hopping global minimization algorithm.
 """
-from __future__ import division, print_function, absolute_import
 import copy
 
 from numpy.testing import assert_almost_equal, assert_equal, assert_

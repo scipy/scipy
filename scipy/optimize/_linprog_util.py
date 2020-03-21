@@ -11,7 +11,6 @@ from scipy.optimize._remove_redundancy import (
     )
 from collections import namedtuple
 
-
 _LPProblem = namedtuple('_LPProblem', 'c A_ub b_ub A_eq b_eq bounds x0')
 _LPProblem.__new__.__defaults__ = (None,) * 6  # make c the only required arg
 _LPProblem.__doc__ = \
@@ -43,8 +42,8 @@ _LPProblem.__doc__ = \
         a 1-D or 2-D array or sequence with 2 scalar values.
         If all variables have a lower bound of 0 and no upper bound, the bounds
         parameter can be omitted (or given as None).
-        If a specific variable has no lower bound and/or no upper bound,
-        specify the respective bound as -numpy.inf, numpy.inf or None.
+        Absent lower and/or upper bounds can be specified as -numpy.inf (no
+        lower bound), numpy.inf (no upper bound) or None (both).
     x0 : 1D array, optional
         Guess values of the decision variables, which will be refined by
         the optimization algorithm. This argument is currently used only by the
@@ -57,8 +56,8 @@ _LPProblem.__doc__ = \
     >>> lp1 = _LPProblem(c=[-1, 4], A_ub=[[-3, 1], [1, 2]], b_ub=[6, 4])
     >>> lp2 = _LPProblem([-1, 4], [[-3, 1], [1, 2]], [6, 4])
 
-    Note that only ``c`` is a required argument here, whereas all other arguments 
-    ``A_ub``, ``b_ub``, ``A_eq``, ``b_eq``, ``bounds``, ``x0`` are optional with 
+    Note that only ``c`` is a required argument here, whereas all other arguments
+    ``A_ub``, ``b_ub``, ``A_eq``, ``b_eq``, ``bounds``, ``x0`` are optional with
     default values of None.
     For example, ``A_eq`` and ``b_eq`` can be set without ``A_ub`` or ``b_ub``:
     >>> lp3 = _LPProblem(c=[-1, 4], A_eq=[[2, 1]], b_eq=[10])
@@ -390,7 +389,9 @@ def _clean_inputs(lp):
     # np.array(..,dtype=float) raises an error if dimensions are inconsistent
     # or if there are invalid data types in bounds. Just add a linprog prefix
     # to the error and re-raise.
-    # Creating at least a 2-D array simplifies the cases to distinguish.
+    # Creating at least a 2-D array simplifies the cases to distinguish below.
+    if bounds is None or np.array_equal(bounds, []) or np.array_equal(bounds, [[]]):
+        bounds = (0, np.inf)
     try:
         bounds_conv = np.atleast_2d(np.array(bounds, dtype=float))
     except ValueError as e:
@@ -422,12 +423,6 @@ def _clean_inputs(lp):
         raise ValueError(
             "Invalid input for linprog: provide a {:d} x 2 array for bounds, "
             "not a 2 x {:d} array.".format(n_x, n_x))
-    elif bsh[0] == 1 and bsh[1] == 0:
-        # [] converts to a (1,0) array (with no elements)
-        bounds_clean[:, 1] = np.inf
-    elif bsh[0] == 1 and bsh[1] == 1 and np.isnan(bounds_conv[0, 0]):
-        # None converts to a (1,1) array with a nan-value
-        bounds_clean[:, 1] = np.inf
     else:
         raise ValueError(
             "Invalid input for linprog: unable to interpret bounds with this "
@@ -515,15 +510,17 @@ def _presolve(lp, rr, tol=1e-9):
             'revised simplex' method, and can only be used if `x0` represents a
             basic feasible solution.
 
-lp, revstack, complete, status, message
-    lp : see above
-        The problem is modified by a number of presolve steps.
-    revstack : list of functions
-        List of functions, the application of which recreates the original
-        ``c``, ``x`` and ``x0``.
-        Each function corresponds to a presolve step taken. It takes ``c``,
-        ``x`` and ``x0`` from after a step and returns the values from before
-        the presolve step.
+    c0 : 1D array
+        Constant term in objective function due to fixed (and eliminated)
+        variables.
+    x : 1D array
+        Solution vector (when the solution is trivial and can be determined
+        in presolve)
+    revstack: list of functions
+        the functions in the list reverse the operations of _presolve()
+        the function signature is x_org = f(x_mod), where x_mod is the result
+        of a presolve step and x_org the value at the start of the step
+        (currently, the revstack contains only one function)
     complete: bool
         Whether the solution is complete (solved or determined to be infeasible
         or unbounded in presolve)
@@ -1207,7 +1204,7 @@ def _parse_linprog(lp, options):
     return lp, solver_options
 
 
-def _get_Abc(lp, c0, undo=[]):
+def _get_Abc(lp, c0):
     """
     Given a linear programming problem of the form:
 
@@ -1268,10 +1265,6 @@ def _get_Abc(lp, c0, undo=[]):
         Constant term in objective function due to fixed (and eliminated)
         variables.
 
-    undo: list of tuples
-        (`index`, `value`) pairs that record the original index and fixed value
-        for each variable removed from the problem
-
     Returns
     -------
     A : 2-D array
@@ -1318,13 +1311,8 @@ def _get_Abc(lp, c0, undo=[]):
         zeros = np.zeros
         eye = np.eye
 
-    # bounds will be modified, create a copy
+    # Rows will be reversed, which feeds back into bounds, so copy
     bounds = np.array(bounds, copy=True)
-    # undo[0] contains indices of variables removed from the problem
-    # however, their bounds are still part of the bounds list
-    # they are needed elsewhere, but not here
-    if undo is not None and undo != []:
-        bounds = np.delete(bounds, undo[0], 0)
 
     # modify problem such that all variables have only non-negativity bounds
     lbs = bounds[:, 0]
@@ -1335,11 +1323,6 @@ def _get_Abc(lp, c0, undo=[]):
     ub_none = np.equal(ubs, np.inf)
     lb_some = np.logical_not(lb_none)
     ub_some = np.logical_not(ub_none)
-
-    # if preprocessing is on, lb == ub can't happen
-    # if preprocessing is off, then it would be best to convert that
-    # to an equality constraint, but it's tricky to make the other
-    # required modifications from inside here.
 
     # unbounded below: substitute xi = -xi' (unbounded above)
     # if -inf <= xi <= ub, then -ub <= -xi <= inf, so swap and invert bounds
@@ -1506,7 +1489,7 @@ def _display_summary(message, status, fun, iteration):
     print("         Iterations: {0:d}".format(iteration))
 
 
-def _postsolve(x, postsolve_args, complete=False, tol=1e-8, copy=False):
+def _postsolve(x, postsolve_args, complete=False, copy=False):
     """
     Given solution x to presolved, standard form linear program x, add
     fixed variables back into the problem and undo the variable substitutions
@@ -1548,13 +1531,12 @@ def _postsolve(x, postsolve_args, complete=False, tol=1e-8, copy=False):
             'revised simplex' method, and can only be used if `x0` represents a
             basic feasible solution.
 
-    undo: list of tuples
-        (`index`, `value`) pairs that record the original index and fixed value
-        for each variable removed from the problem
+    revstack: list of functions
+        the functions in the list reverse the operations of _presolve()
+        the function signature is x_org = f(x_mod), where x_mod is the result
+        of a presolve step and x_org the value at the start of the step
     complete : bool
         Whether the solution is was determined in presolve (``True`` if so)
-    tol : float
-        Termination tolerance; see [1]_ Section 4.5.
 
     Returns
     -------
@@ -1568,43 +1550,20 @@ def _postsolve(x, postsolve_args, complete=False, tol=1e-8, copy=False):
     con : 1-D array
         The (nominally zero) residuals of the equality constraints, that is,
         ``b - A_eq @ x``
-    bounds : 2D array
-        The bounds on the original variables ``x``
     """
     # note that all the inputs are the ORIGINAL, unmodified versions
     # no rows, columns have been removed
-    # the only exception is bounds; it has been modified
-    # we need these modified values to undo the variable substitutions
-    # in retrospect, perhaps this could have been simplified if the "undo"
-    # variable also contained information for undoing variable substitutions
 
-    (c, A_ub, b_ub, A_eq, b_eq, bounds, x0), undo, C, b_scale = postsolve_args
+    (c, A_ub, b_ub, A_eq, b_eq, bounds, x0), revstack, C, b_scale = postsolve_args
+
     x = _unscale(x, C, b_scale)
 
-    n_x = len(c)
-
-    # we don't have to undo variable substitutions for fixed variables that
-    # were removed from the problem
-    no_adjust = set()
-
-    # if there were variables removed from the problem, add them back into the
-    # solution vector
-    if len(undo) > 0:
-        no_adjust = set(undo[0])
-        x = x.tolist()
-        for i, val in zip(undo[0], undo[1]):
-            x.insert(i, val)
-        copy = True
-    if copy:
-        x = np.array(x, copy=True)
-
-    # now undo variable substitutions
+    # Undo variable substitutions of _get_Abc()
     # if "complete", problem was solved in presolve; don't do anything here
+    n_x = bounds.shape[0]
     if not complete and bounds is not None:  # bounds are never none, probably
         n_unbounded = 0
         for i, bi in enumerate(bounds):
-            if i in no_adjust:
-                continue
             lbi = bi[0]
             ubi = bi[1]
             if lbi == -np.inf and ubi == np.inf:
@@ -1615,15 +1574,21 @@ def _postsolve(x, postsolve_args, complete=False, tol=1e-8, copy=False):
                     x[i] = ubi - x[i]
                 else:
                     x[i] += lbi
+    # all the rest of the variables were artificial
+    x = x[:n_x]
 
-    n_x = len(c)
-    x = x[:n_x]  # all the rest of the variables were artificial
+    # If there were variables removed from the problem, add them back into the
+    # solution vector
+    # Apply the functions in revstack (reverse direction)
+    for rev in reversed(revstack):
+        x = rev(x)
+
     fun = x.dot(c)
     slack = b_ub - A_ub.dot(x)  # report slack for ORIGINAL UB constraints
     # report residuals of ORIGINAL EQ constraints
     con = b_eq - A_eq.dot(x)
 
-    return x, fun, slack, con, bounds
+    return x, fun, slack, con
 
 
 def _check_result(x, fun, status, slack, con, bounds, tol, message):
@@ -1725,94 +1690,3 @@ def _check_result(x, fun, status, slack, con, bounds, tol, message):
         raise ValueError(message)
 
     return status, message
-
-
-def _postprocess(x, postsolve_args, complete=False, status=0, message="",
-                 tol=1e-8, iteration=None, disp=False):
-    """
-    Given solution x to presolved, standard form linear program x, add
-    fixed variables back into the problem and undo the variable substitutions
-    to get solution to original linear program. Also, calculate the objective
-    function value, slack in original upper bound constraints, and residuals
-    in original equality constraints.
-
-    Parameters
-    ----------
-    x : 1-D array
-        Solution vector to the standard-form problem.
-    c : 1-D array
-        Original coefficients of the linear objective function to be minimized.
-    A_ub : 2-D array, optional
-        2-D array such that ``A_ub @ x`` gives the values of the upper-bound
-        inequality constraints at ``x``.
-    b_ub : 1-D array, optional
-        1-D array of values representing the upper-bound of each inequality
-        constraint (row) in ``A_ub``.
-    A_eq : 2-D array, optional
-        2-D array such that ``A_eq @ x`` gives the values of the equality
-        constraints at ``x``.
-    b_eq : 1-D array, optional
-        1-D array of values representing the RHS of each equality constraint
-        (row) in ``A_eq``.
-    bounds : 2D array
-        The bounds of ``x``, lower bounds in the 1st column, upper
-        bounds in the 2nd column. The bounds are possibly tightened
-        by the presolve procedure.
-    complete : bool
-        Whether the solution is was determined in presolve (``True`` if so)
-    undo: list of tuples
-        (`index`, `value`) pairs that record the original index and fixed value
-        for each variable removed from the problem
-    status : int
-        An integer representing the exit status of the optimization::
-
-             0 : Optimization terminated successfully
-             1 : Iteration limit reached
-             2 : Problem appears to be infeasible
-             3 : Problem appears to be unbounded
-             4 : Serious numerical difficulties encountered
-
-    message : str
-        A string descriptor of the exit status of the optimization.
-    tol : float
-        Termination tolerance; see [1]_ Section 4.5.
-
-    Returns
-    -------
-    x : 1-D array
-        Solution vector to original linear programming problem
-    fun: float
-        optimal objective value for original problem
-    slack : 1-D array
-        The (non-negative) slack in the upper bound constraints, that is,
-        ``b_ub - A_ub @ x``
-    con : 1-D array
-        The (nominally zero) residuals of the equality constraints, that is,
-        ``b - A_eq @ x``
-    status : int
-        An integer representing the exit status of the optimization::
-
-             0 : Optimization terminated successfully
-             1 : Iteration limit reached
-             2 : Problem appears to be infeasible
-             3 : Problem appears to be unbounded
-             4 : Serious numerical difficulties encountered
-
-    message : str
-        A string descriptor of the exit status of the optimization.
-
-    """
-
-    x, fun, slack, con, bounds = _postsolve(
-        x, postsolve_args, complete, tol
-    )
-
-    status, message = _check_result(
-        x, fun, status, slack, con,
-        bounds, tol, message
-    )
-
-    if disp:
-        _display_summary(message, status, fun, iteration)
-
-    return x, fun, slack, con, status, message

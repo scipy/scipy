@@ -1,8 +1,6 @@
 #
 # Author: Joris Vankerschaver 2013
 #
-from __future__ import division, print_function, absolute_import
-
 import math
 import numpy as np
 from numpy import asarray_chkfinite, asarray

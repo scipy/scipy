@@ -153,7 +153,7 @@ cdef tuple _hopcroft_karp(ITYPE_t[:] indices, ITYPE_t[:] indptr,
     # every unmatched column will be matched with this vertex.
     cdef ITYPE_t[:] dist = np.empty(i + 1, dtype=ITYPE)
 
-    cdef ITYPE_t k, v, w, up, u, u_old
+    cdef ITYPE_t k, v, w, up, u, yu, u_old
 
     # At the end of the day, unmatched vertices will have a value of -1. As
     # mentioned above, unmatched vertices in the right partition will be
@@ -183,12 +183,10 @@ cdef tuple _hopcroft_karp(ITYPE_t[:] indices, ITYPE_t[:] indptr,
     cdef ITYPE_t[:] stack = np.empty(i + 1, dtype=ITYPE)
     cdef ITYPE_t stack_head
 
-    # Finally, during our depth-first search, we keep track of the vertices we
-    # have visited. This will simplify the updates to the matching that occurs
-    # when an augmenting path is found. Elements will be pushed to path_head
-    # and popped from path_head - 1.
-    cdef ITYPE_t[:] path = np.empty(i, dtype=ITYPE)
-    cdef ITYPE_t path_head
+    # Finally, during our depth-first search, we keep track of the path along
+    # which we move. This will simplify the updates to the matching that occur
+    # when an augmenting path is found.
+    cdef ITYPE_t[:] parents = np.empty(i, dtype=ITYPE)
 
     # The breadth-first search part of the algorithm. This will terminate when
     # we are unable to find a path to an unassigned vertex, which boils down to
@@ -235,41 +233,40 @@ cdef tuple _hopcroft_karp(ITYPE_t[:] indices, ITYPE_t[:] indptr,
                 # Initialize stack to contain only w and reset path.
                 stack[0] = w
                 stack_head = 1
-                path_head = 0
                 while stack_head != 0:
-                    # Pop v from stack and push it to path.
+                    # Pop v from stack.
                     stack_head -= 1
                     v = stack[stack_head]
-                    path[path_head] = v
-                    path_head += 1
                     could_augment = False
                     for up in range(indptr[v], indptr[v + 1]):
                         u = indices[up]
-                        if dist[y[u]] == dist[v] + 1:
+                        yu = y[u]
+                        if dist[yu] == dist[v] + 1:
                             could_augment = True
-                            # If y[u] is unmatched, we have found an augmenting
+                            # If yu is unmatched, we have found an augmenting
                             # path. We update the matching and move on to the
                             # next unmatched vertex.
-                            if y[u] == i:
+                            if yu == i:
                                 done = True
-                                while path_head != 0:
-                                    path_head -= 1
-                                    v = path[path_head]
+                                # Unwind and follow the path back to the root.
+                                while True:
+                                    # Mark v as visited to ensure that it
+                                    # features in only one augmenting path in
+                                    # this sequence of DFS runs.
+                                    dist[v] = INF
                                     u_old = x[v]
                                     y[u] = v
                                     x[v] = u
                                     u = u_old
+                                    if v == w:
+                                        break
+                                    v = parents[v]
                                 break
-                            stack[stack_head] = y[u]
+                            stack[stack_head] = yu
                             stack_head += 1
+                            parents[yu] = v
                     if done:
                         break
-                    # Mark v as a vertex from which it is impossible to augment
-                    # to avoid considering it multiple times, and remove it
-                    # from path before moving on to next candidate.
-                    if not could_augment:
-                        dist[v] = INF
-                        path_head -= 1
 
     for k in range(j):
         if y[k] == i:

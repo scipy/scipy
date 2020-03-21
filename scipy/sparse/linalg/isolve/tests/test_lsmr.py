@@ -16,8 +16,6 @@ Dept of MS&E, Stanford University.
 
 """
 
-from __future__ import division, print_function, absolute_import
-
 from numpy import array, arange, eye, zeros, ones, sqrt, transpose, hstack
 from numpy.linalg import norm
 from numpy.testing import (assert_almost_equal,

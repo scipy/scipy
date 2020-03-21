@@ -185,7 +185,6 @@ Zerosmethods[] = {
 	{NULL, NULL}
 };
 
-#if PY_VERSION_HEX >= 0x03000000
 static struct PyModuleDef moduledef = {
     PyModuleDef_HEAD_INIT,
     "_zeros",
@@ -206,9 +205,3 @@ PyObject *PyInit__zeros(void)
 
     return m;
 }
-#else
-PyMODINIT_FUNC init_zeros(void)
-{
-        Py_InitModule("_zeros", Zerosmethods);
-}
-#endif
