@@ -137,7 +137,7 @@ double faddeeva_voigt_profile(double x, double sigma, double gamma)
         return gamma / NPY_PI / (x*x + gamma*gamma);
     }
     if (gamma == 0){
-        return 1 / SQRT_2PI / sigma * exp(-x*x / 2 / (sigma*sigma));
+        return 1 / SQRT_2PI / sigma * exp(-(x/sigma)*(x/sigma) / 2);
     }
 
     double zreal = x / sigma * INV_SQRT_2;
