@@ -24,6 +24,8 @@ import numpy as np
 import scipy.stats as stats
 import scipy.stats.mstats as mstats
 import scipy.stats.mstats_basic as mstats_basic
+from scipy.stats._ksstats import kolmogn
+from scipy.special._testutils import FuncData
 from .common_tests import check_named_results
 from scipy.sparse.sputils import matrix
 
@@ -2908,6 +2910,36 @@ def test_kstest():
 
     # missing: no test that uses *args
 
+def test_kstest_allpaths():
+    # Check NaN input, output.
+    assert (np.isnan(kolmogn(np.nan, 1, True)))
+    with assert_raises(ValueError, match='n is not integral: 1.5'):
+        kolmogn(1.5, 1, True)
+    assert (np.isnan(kolmogn(-1, 1, True)))
+
+    dataset = np.asarray([
+        # Check x out of range
+        (101, 1, True, 1.0),
+        (101, 1.1, True, 1.0),
+        (101, 0, True, 0.0),
+        (101, -0.1, True, 0.0),
+
+        (32, 1.0 / 64, True, 0.0),  # Ruben-Gambino
+        (32, 1.0 / 64, False, 1.0),  # Ruben-Gambino
+
+        (32, 0.5, True, 0.9999999363163307),  # Miller
+        (32, 0.5, False, 6.368366937916623e-08),  # Miller 2 * special.smirnov(32, 0.5)
+
+        # Check some other paths
+        (32, 1.0 / 8, True, 0.34624229979775223),
+        (32, 1.0 / 4, True, 0.9699508336558085),
+        (1600, 0.49, False, 0.0),
+        (1600, 1 / 16.0, False, 7.0837876229702195e-06),  # 2 * special.smirnov(1600, 1/16.0)
+        (1600, 14 / 1600, False, 0.99962357317602),  # _kolmogn_DMTW
+        (1600, 1 / 32, False, 0.08603386296651416),  # _kolmogn_PelzGood
+    ])
+    FuncData(kolmogn, dataset, (0, 1, 2), 3).check(dtypes=[int, float, bool])
+
 
 class TestKSTwoSamples(object):
     def _testOne(self, x1, x2, alternative, expected_statistic, expected_prob, mode='auto'):
@@ -3007,7 +3039,7 @@ class TestKSTwoSamples(object):
         self._testOne(x, y, 'greater', 2000.0 / n1 / n2, 0.9697596024683929, mode='asymp')
         self._testOne(x, y, 'less', 500.0 / n1 / n2, 0.9968735843165021, mode='asymp')
         with suppress_warnings() as sup:
-            sup.filter(RuntimeWarning, "ks_2samp: Exact calculation overflowed. Switching to mode=asymp")
+            sup.filter(RuntimeWarning, "ks_2samp: Exact calculation unsuccessful. Switching to mode=asymp.")
             self._testOne(x, y, 'greater', 2000.0 / n1 / n2, 0.9697596024683929, mode='exact')
             self._testOne(x, y, 'less', 500.0 / n1 / n2, 0.9968735843165021, mode='exact')
         with warnings.catch_warnings(record=True) as w:
@@ -3027,7 +3059,7 @@ class TestKSTwoSamples(object):
         self._testOne(x, y, 'less', 1000.0 / n1 / n2, 0.9982410869433984, mode='asymp')
 
         with suppress_warnings() as sup:
-            sup.filter(RuntimeWarning, "ks_2samp: Exact calculation overflowed. Switching to mode=asymp")
+            sup.filter(RuntimeWarning, "ks_2samp: Exact calculation unsuccessful. Switching to mode=asymp.")
             self._testOne(x, y, 'greater', 6600.0 / n1 / n2, 0.9573185808092622, mode='exact')
             self._testOne(x, y, 'less', 1000.0 / n1 / n2, 0.9982410869433984, mode='exact')
         with warnings.catch_warnings(record=True) as w:
@@ -3074,13 +3106,13 @@ class TestKSTwoSamples(object):
         delta = 1.0/n1/n2/2/2
         x = np.linspace(1, 200, n1) - delta
         y = np.linspace(2, 200, n2)
-        self._testOne(x, y, 'two-sided', 563.0 / lcm, 0.99915729949018561, mode='asymp')
+        self._testOne(x, y, 'two-sided', 563.0 / lcm, 0.9990660108966576, mode='asymp')
         self._testOne(x, y, 'two-sided', 563.0 / lcm, 0.9990456491488628, mode='exact')
-        self._testOne(x, y, 'two-sided', 563.0 / lcm, 0.99915729949018561, mode='auto')
+        self._testOne(x, y, 'two-sided', 563.0 / lcm, 0.9990660108966576, mode='auto')
         self._testOne(x, y, 'greater', 563.0 / lcm, 0.7561851877420673)
         self._testOne(x, y, 'less', 10.0 / lcm, 0.9998239693191724)
         with suppress_warnings() as sup:
-            sup.filter(RuntimeWarning, "ks_2samp: Exact calculation overflowed. Switching to mode=asymp")
+            sup.filter(RuntimeWarning, "ks_2samp: Exact calculation unsuccessful. Switching to mode=asymp.")
             self._testOne(x, y, 'greater', 563.0 / lcm, 0.7561851877420673, mode='exact')
             self._testOne(x, y, 'less', 10.0 / lcm, 0.9998239693191724, mode='exact')
 

@@ -662,11 +662,11 @@ class TestMisc(object):
         (winter,spring,summer,fall) = x.T
 
         assert_almost_equal(np.round(mstats.ks_twosamp(winter,spring),4),
-                            (0.1818,0.9892))
+                            (0.1818,0.9628))
         assert_almost_equal(np.round(mstats.ks_twosamp(winter,spring,'g'),4),
-                            (0.1469,0.7734))
+                            (0.1469,0.6886))
         assert_almost_equal(np.round(mstats.ks_twosamp(winter,spring,'l'),4),
-                            (0.1818,0.6744))
+                            (0.1818,0.6011))
 
     def test_friedmanchisq(self):
         # No missing values
@@ -1435,6 +1435,60 @@ class TestCompareWithStats(object):
             r = stats.obrientransform(x)
             rm = stats.mstats.obrientransform(xm)
             assert_almost_equal(r.T, rm[0:len(x)])
+
+    def test_ks_1samp(self):
+        for mode in ['auto', 'exact', 'asymp']:
+            with suppress_warnings() as sup:
+                for alternative in ['less', 'greater', 'two-sided']:
+                    for n in self.get_n():
+                        x, y, xm, ym = self.generate_xy_sample(n)
+                        res1 = stats.ks_1samp(x, stats.norm.cdf, alternative=alternative, mode=mode)
+                        res2 = stats.mstats.ks_1samp(xm, stats.norm.cdf, alternative=alternative, mode=mode)
+                        assert_equal(np.asarray(res1), np.asarray(res2))
+                        res3 = stats.ks_1samp(xm, stats.norm.cdf, alternative=alternative, mode=mode)
+                        assert_equal(np.asarray(res1), np.asarray(res3))
+
+    def test_kstest_1samp(self):
+        for mode in ['auto', 'exact', 'asymp']:
+            with suppress_warnings() as sup:
+                for alternative in ['less', 'greater', 'two-sided']:
+                    for n in self.get_n():
+                        x, y, xm, ym = self.generate_xy_sample(n)
+                        res1 = stats.kstest(x, 'norm', alternative=alternative, mode=mode)
+                        res2 = stats.mstats.kstest(xm, 'norm', alternative=alternative, mode=mode)
+                        assert_equal(np.asarray(res1), np.asarray(res2))
+                        res3 = stats.kstest(xm, 'norm', alternative=alternative, mode=mode)
+                        assert_equal(np.asarray(res1), np.asarray(res3))
+
+    def test_ks_2samp(self):
+        for mode in ['auto', 'exact', 'asymp']:
+            with suppress_warnings() as sup:
+                if mode in ['auto', 'exact']:
+                    sup.filter(RuntimeWarning,
+                               "ks_2samp: Exact calculation unsuccessful. Switching to mode=asymp.")
+                for alternative in ['less', 'greater', 'two-sided']:
+                    for n in self.get_n():
+                        x, y, xm, ym = self.generate_xy_sample(n)
+                        res1 = stats.ks_2samp(x, y, alternative=alternative, mode=mode)
+                        res2 = stats.mstats.ks_2samp(xm, ym, alternative=alternative, mode=mode)
+                        assert_equal(np.asarray(res1), np.asarray(res2))
+                        res3 = stats.ks_2samp(xm, y, alternative=alternative, mode=mode)
+                        assert_equal(np.asarray(res1), np.asarray(res3))
+
+    def test_kstest_2samp(self):
+        for mode in ['auto', 'exact', 'asymp']:
+            with suppress_warnings() as sup:
+                if mode in ['auto', 'exact']:
+                    sup.filter(RuntimeWarning,
+                               "ks_2samp: Exact calculation unsuccessful. Switching to mode=asymp.")
+                for alternative in ['less', 'greater', 'two-sided']:
+                    for n in self.get_n():
+                        x, y, xm, ym = self.generate_xy_sample(n)
+                        res1 = stats.kstest(x, y, alternative=alternative, mode=mode)
+                        res2 = stats.mstats.kstest(xm, ym, alternative=alternative, mode=mode)
+                        assert_equal(np.asarray(res1), np.asarray(res2))
+                        res3 = stats.kstest(xm, y, alternative=alternative, mode=mode)
+                        assert_equal(np.asarray(res1), np.asarray(res3))
 
 
 class TestBrunnerMunzel(object):
