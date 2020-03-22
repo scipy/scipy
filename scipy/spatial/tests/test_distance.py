@@ -1887,6 +1887,11 @@ def test_canberra():
     assert_equal(wcanberra([1, 1, 0, 0], [1, 0, 1, 0]), 2)
 
 
+def test_chebyshev(): 
+    # Regression test for ticket #11442
+    assert_equal(wchebyshev([10, 0, 0], [0, 1, 0], w=np.array([1,20,1])), 20.0)
+
+
 def test_braycurtis():
     # Regression test for ticket #1430.
     assert_almost_equal(wbraycurtis([1, 2, 3], [2, 4, 6]), 1. / 3, decimal=15)
