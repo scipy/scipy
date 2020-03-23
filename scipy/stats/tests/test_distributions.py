@@ -1905,7 +1905,7 @@ class TestGammaGompertz(object):
 
         # test for large x and large beta
         val = stats.gamma_gompertz.pdf(710., 5., np.exp(709.))
-        expected = np.exp(np.log(5.) + 1. - 6. * special.log1p(np.exp(1.))))
+        expected = np.exp(np.log(5.) + 1. - 6. * special.log1p(np.exp(1.)))
         assert_allclose(val, expected, rtol=1e-3, atol=0.)
 
     def test_cdf(self):
