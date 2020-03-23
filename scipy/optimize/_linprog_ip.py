@@ -805,7 +805,7 @@ def _ip_hsd(A, b, c, c0, alpha0, beta, maxiter, disp, tol, sparse, lstsq,
             # [4] Lemma 8.4 / Theorem 8.3, but more strict (see issue #11617)
             if b.transpose().dot(y) > x.dot(z) and np.all(A.T.dot(y) <= 0):
                 status = 2
-            else:
+            else:  # elif c.T.dot(x) < tol: ? Probably not necessary.
                 status = 3
             message = _get_message(status)
             break
