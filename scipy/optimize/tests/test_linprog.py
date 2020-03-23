@@ -1676,6 +1676,7 @@ class TestLinprogIPSpecific(object):
             s = 10**i
             check([s, 0, -s], [[s, s, -s]], [-s])  # failed in scipy 1.4.1
             check([1, 0, -1], [[s, s, -s]], [-s])  # failed in scipy 1.4.1
+            check([1, 0, -1], [[1, 1, -1]], [-s])  # failed in scipy 1.4.1
 
 ########################################
 # Revised Simplex Option-Specific Tests#
