@@ -1903,6 +1903,11 @@ class TestGammaGompertz(object):
         expected = [1./2., 4./9., 3./8., 8./25., 5./18.]
         assert_allclose(vals, expected, rtol=1e-7, atol=0.)
 
+        # test for large x and large beta
+        val = stats.gamma_gompertz.pdf(710., 5., np.exp(709.))
+        expected = np.exp(np.log(5.) + 1. - 6. * special.log1p(np.exp(1.))))
+        assert_allclose(val, expected, rtol=1e-3, atol=0.)
+
     def test_cdf(self):
         # when x=log(n), c=1, beta=2, we have cdf=(n-1)/(n+1)
         vals = stats.gamma_gompertz.cdf(np.log(np.arange(1., 6., 1.)), 1., 2.)
@@ -1917,6 +1922,11 @@ class TestGammaGompertz(object):
         vals = stats.gamma_gompertz.logsf(x, 1., 2.)
         assert_equal(em1, np.inf)
         assert_allclose(vals, expected, rtol=1e-3, atol=0.)
+
+        # test for large x and large beta
+        val = stats.gamma_gompertz.logsf(710., 5., np.exp(709.))
+        expected = -5. * special.log1p(np.exp(1.))
+        assert_allclose(val, expected, rtol=1e-7, atol=0.)
 
     def test_expon(self):
         # test against expon (special case for beta=1)

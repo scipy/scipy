@@ -2951,11 +2951,10 @@ class gamma_gompertz_gen(rv_continuous):
         em1 = sc.expm1(x)
         # _lazywhere is used for dealing with the case that x is too large
         # so that sc.expm1(x) becomes infinity.
-        # Since x is very large in that case, -sc.log1p(em1 / beta)
-        # approximately equals to -sc.log(np.exp(x) / beta) = np.log(beta) - x
         lw = _lazywhere(np.isfinite(em1), [em1, x, beta],
                         lambda em1_, x_, beta_: -sc.log1p(em1_ / beta_),
-                        f2 = lambda em1_, x_, beta_: np.log(beta_) - x_)
+                        f2 = lambda em1_, x_, beta_: np.log(beta_) - x_
+                        - sc.log1p(np.exp(-x_) * (beta_ - 1.)))
         return c * lw
 
     def _sf(self, x, c, beta):
@@ -2971,11 +2970,13 @@ class gamma_gompertz_gen(rv_continuous):
         return np.exp(self._logpdf(x, c, beta))
 
     def _logpdf(self, x, c, beta):
-        em1 = sc.expm1(x)
-        bem1 = beta + em1
-        lw = _lazywhere(np.isfinite(bem1), [bem1, x],
-                        lambda bem1_, x_: np.log(bem1_),
-                        f2 = lambda bem1_, x_: x_)
+        # _lazywhere is used for dealing with the case that x is too large
+        # so that beta + sc.expm1(x) becomes infinity.
+        bem1 = beta + sc.expm1(x)
+        lw = _lazywhere(np.isfinite(bem1), [bem1, x, beta],
+                        lambda bem1_, x_, beta_: np.log(bem1_),
+                        f2 = lambda bem1_, x_, beta_:
+                        x_ + sc.log1p(np.exp(-x_) * (beta_ - 1.)))
         return np.log(c) + x + c * np.log(beta) - (c + 1.) * lw
 
     def _ppf(self, q, c, beta):
