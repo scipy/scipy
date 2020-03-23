@@ -2447,22 +2447,42 @@ def binom_test(x, n=None, p=0.5, alternative='two-sided'):
     # if alternative was neither 'less' nor 'greater', then it's 'two-sided'
     d = distributions.binom.pmf(x, n, p)
     rerr = 1 + 1e-7
+    a_fn = lambda x1:binom.pmf(x1,n,p)
     if x == p * n:
         # special case as shortcut, would also be handled by `else` below
         pval = 1.
     elif x < p * n:
-        i = np.arange(np.ceil(p * n), n+1)
-        y = np.sum(distributions.binom.pmf(i, n, p) <= d*rerr, axis=0)
+        y = n-binary_search_for_binom_test(a_fn,d*rerr,np.ceil(p * n),n)+1
         pval = (distributions.binom.cdf(x, n, p) +
                 distributions.binom.sf(n - y, n, p))
     else:
-        i = np.arange(np.floor(p*n) + 1)
-        y = np.sum(distributions.binom.pmf(i, n, p) <= d*rerr, axis=0)
+        y = binary_search_for_binom_test(a_fn,d*rerr,0,np.floor(p*n) + 1,True)+1
         pval = (distributions.binom.cdf(y-1, n, p) +
                 distributions.binom.sf(x-1, n, p))
 
     return min(1.0, pval)
 
+
+def binary_search_for_binom_test(a, d, lo, hi, asc_order=False):
+    while lo < hi:
+        mid = (lo+hi)//2
+        midval = a(mid)
+        if midval < d:
+            if asc_order:
+                lo = mid+1
+            else:
+                hi = mid-1
+        elif midval > d:
+            if asc_order:
+                hi = mid-1
+            else:
+                lo = mid+1
+        else:
+            return mid
+    if a(lo)<=d:
+        return lo
+    else:
+        return lo-(asc_order-0.5)*2
 
 def _apply_func(x, g, func):
     # g is list of indices into x
