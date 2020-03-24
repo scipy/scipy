@@ -492,12 +492,9 @@ def run_mypy(args):
     if args.no_build:
         raise ValueError('Cannot run mypy with --no-build')
 
-    mypy_check = subprocess.run(
-        [sys.executable, "-m", "mypy", "-V"],
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-    )
-    if mypy_check.returncode != 0:
+    try:
+        import mypy.api
+    except ImportError:
         raise RuntimeError(
             "Mypy not found. Please install it by running "
             "pip install -r mypy_requirements.txt from the repo root"
@@ -509,17 +506,19 @@ def run_mypy(args):
         "mypy.ini",
     )
     with working_dir(site_dir):
-        # Change to the site directory to make sure mypy doesn't
-        # pick up any type stubs in the source tree.
-        result = subprocess.run([
-            sys.executable,
-            "-m",
-            "mypy",
+        # By default mypy won't color the output since it isn't being
+        # invoked from a tty.
+        os.environ['MYPY_FORCE_COLOR'] = '1'
+        # Change to the site directory to make sure mypy doesn't pick
+        # up any type stubs in the source tree.
+        report, errors, status = mypy.api.run([
             "--config-file",
             config,
             PROJECT_MODULE,
         ])
-    return result.returncode
+    print(report, end='')
+    print(errors, end='', file=sys.stderr)
+    return status
 
 
 if __name__ == "__main__":
