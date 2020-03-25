@@ -137,12 +137,7 @@ case_table5.append(
      })
 st_sub_arr = array([np.sqrt(2),np.exp(1),np.pi]).reshape(1,3)
 dtype = [(n, object) for n in ['stringfield', 'doublefield', 'complexfield']]
-# See
-#
-# https://github.com/numpy/numpy-stubs/issues/42
-#
-# for the reasoning behind the ignore.
-st1 = np.zeros((1,1), dtype)  # type: ignore[arg-type]
+st1 = np.zeros((1,1), dtype)
 st1['stringfield'][0,0] = array(['Rats live on no evil star.'])
 st1['doublefield'][0,0] = st_sub_arr
 st1['complexfield'][0,0] = st_sub_arr * (1 + 1j)
