@@ -81,8 +81,6 @@ The properties of the constants in :mod:`scipy.constants` are taken from
    ConstantWarning -- Constant sought not in newest CODATA data set
 
 or via the dictionary
-.. data:: physical_constants
-with the following format:
 
 ``scipy.constants.physical_constants[name] = (value, unit, uncertainty)``.
 
