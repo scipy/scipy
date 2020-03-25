@@ -22,7 +22,7 @@ class TestTnc(object):
     """
     def setup_method(self):
         # options for minimize
-        self.opts = {'disp': False, 'maxiter': 200}
+        self.opts = {'disp': False, 'maxfun': 200}
 
     # objective functions and Jacobian for each test
     def f1(self, x, a=100.0):

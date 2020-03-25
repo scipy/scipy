@@ -834,7 +834,7 @@ class TestOptimizeSimple(CheckOptimize):
                 return optimize.minimize(*a, **kw)
 
             if method == 'tnc':
-                kwargs['options'] = dict(maxiter=100)
+                kwargs['options'] = dict(maxfun=100)
             else:
                 kwargs['options'] = dict(maxiter=5)
 
@@ -905,8 +905,7 @@ class TestOptimizeSimple(CheckOptimize):
         assert_allclose(res.x, np.array([0., 2, 5, 8])/3, atol=1e-12)
 
     @pytest.mark.parametrize('method', ['Nelder-Mead', 'Powell', 'CG', 'BFGS',
-                                        'Newton-CG', 'L-BFGS-B',
-                                        # 'TNC', 'SLSQP',
+                                        'Newton-CG', 'L-BFGS-B', 'SLSQP',
                                         'trust-constr', 'dogleg', 'trust-ncg',
                                         'trust-exact', 'trust-krylov'])
     def test_respect_maxiter(self, method):
@@ -930,10 +929,14 @@ class TestOptimizeSimple(CheckOptimize):
             kwargs['hess'] = sf.hess
 
         sol = optimize.minimize(sf.fun, x0, **kwargs)
-        assert sol.nit <= MAXITER
+        assert sol.nit == MAXITER
         assert sol.nfev >= sf.nfev
         if hasattr(sol, 'njev'):
             assert sol.njev >= sf.ngev
+
+        # method specific tests
+        if method == 'SLSQP':
+            assert sol.status == 9  # Iteration limit reached
 
     def test_respect_maxiter_trust_constr_ineq_constraints(self):
         # special case of minimization with trust-constr and inequality
