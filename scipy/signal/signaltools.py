@@ -17,6 +17,7 @@ from ._arraytools import axis_slice, axis_reverse, odd_ext, even_ext, const_ext
 from .filter_design import cheby1, _validate_sos
 from .fir_filter_design import firwin
 from ._sosfilt import _sosfilt
+import warnings
 
 
 __all__ = ['correlate', 'correlate2d',
@@ -1376,6 +1377,11 @@ def medfilt(volume, kernel_size=None):
         An array the same size as input containing the median filtered
         result.
 
+    Warns 
+    -------
+    UserWarning
+        If array size is smaller than kernel size along any dimension
+
     See also
     --------
     scipy.ndimage.median_filter
@@ -1395,6 +1401,8 @@ def medfilt(volume, kernel_size=None):
     for k in range(volume.ndim):
         if (kernel_size[k] % 2) != 1:
             raise ValueError("Each element of kernel_size should be odd.")
+    if any(k > s for k, s in zip(kernel_size, volume.shape)):
+        warnings.warn('kernel_size exceeds volume extent: the volume will be zero-padded.')
 
     domain = np.ones(kernel_size)
 

@@ -134,18 +134,31 @@ FUNCLIST
 include "_cython_special.pxi"
 """
 
+STUBS = """\
+from typing import Any, Type
+
+__all__ = [
+    {ALL}
+]
+
+{STUBS}
+
+"""
+
 
 #---------------------------------------------------------------------------------
 # Code generation
 #---------------------------------------------------------------------------------
 
+import itertools
+import json
 import os
 import optparse
 import re
 import textwrap
-import itertools
+from typing import List
+
 import numpy
-import json
 
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
@@ -1314,6 +1327,29 @@ def generate_fused_funcs(modname, ufunc_fn_prefix, fused_funcs):
         f.write("\n\n".join(bench_aux))
 
 
+def generate_ufuncs_type_stubs(module_name: str, ufuncs: List[Ufunc]):
+    stubs, module_all = [], []
+    for ufunc in ufuncs:
+        stubs.append(f'{ufunc.name}: Any')
+        if not ufunc.name.startswith('_'):
+            module_all.append(f"'{ufunc.name}'")
+    # jn is an alias for jv.
+    module_all.append("'jn'")
+    module_all.sort()
+    stubs.sort()
+    # Make sure jn goes last so that jv has been declared.
+    stubs.append('jn: Type[jv]')
+
+    contents = STUBS.format(
+        ALL=',\n    '.join(module_all),
+        STUBS='\n'.join(stubs),
+    )
+
+    stubs_file = f'{module_name}.pyi'
+    with open(stubs_file, 'w') as f:
+        f.write(contents)
+
+
 def unique(lst):
     """
     Return a list without repeated entries (first occurrence is kept),
@@ -1350,6 +1386,7 @@ def main():
                  '_ufuncs_cxx.pyx',
                  '_ufuncs_cxx.pxd',
                  '_ufuncs_cxx_defs.h',
+                 '_ufuncs.pyi',
                  'cython_special.pyx',
                  'cython_special.pxd')
 
@@ -1366,6 +1403,7 @@ def main():
         ufuncs.append(Ufunc(f, sig))
         fused_funcs.append(FusedFunc(f, sig))
     generate_ufuncs("_ufuncs", "_ufuncs_cxx", ufuncs)
+    generate_ufuncs_type_stubs("_ufuncs", ufuncs)
     generate_fused_funcs("cython_special", "_ufuncs", fused_funcs)
 
 
