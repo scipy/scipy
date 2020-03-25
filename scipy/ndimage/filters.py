@@ -367,7 +367,7 @@ def gabor_filter(input, sigma, phi, frequency, offset=0.0, output=None,
            [30, 32, 34, 36, 38],
            [40, 42, 44, 46, 48]])
     >>> gabor_filter(a, sigma=1, phi=[0.0], frequency=0.1)
-   (array([[ 3,  5,  6,  8,  9],
+    (array([[ 3,  5,  6,  8,  9],
             [ 9, 10, 12, 13, 14],
             [16, 18, 19, 21, 22],
             [24, 25, 27, 28, 30],
@@ -414,7 +414,7 @@ def gabor_filter(input, sigma, phi, frequency, offset=0.0, output=None,
     for i, p in enumerate(phi):
         orientation[i + 1] = orientation[i] * numpy.sin(p)
         orientation[i] = orientation[i] * numpy.cos(p)
-    orientation = numpy.flip(orientation)
+    orientation = numpy.flip(orientation, axis=0)
 
     rotx = coords @ orientation
 
