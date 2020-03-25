@@ -6,7 +6,7 @@ approximations.
 import numpy as np
 
 try:
-    import mpmath
+    import mpmath  # type: ignore[import]
     import matplotlib.pyplot as plt
 except ImportError:
     pass
