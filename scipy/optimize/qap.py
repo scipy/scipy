@@ -6,6 +6,95 @@ from sklearn.utils import check_array
 
 
 def quadratic_assignment(cost_matrix, dist_matrix, seed_cost = [], seed_dist = [], maximize = False):
+    """Solve the quadratic assignment problem
+
+        This class solves the Quadratic Assignment Problem and the Graph Matching Problem
+        (QAP) through an implementation of the Fast Approximate QAP Algorithm (FAQ) (these
+        two problems are the same up to a sign change) [1].
+
+        This algorithm can be thought of as finding an alignment of the vertices of two
+        graphs which minimizes the number of induced edge disagreements, or, in the case
+        of weighted graphs, the sum of squared differences of edge weight disagreements.
+        The option to add seeds (known vertex correspondence between some nodes) is also
+        available [2].
+
+
+        Parameters
+        ----------
+        cost_matrix : 2d-array, square, positive
+            A square adjacency matrix
+
+        dist_matrix : 2d-array, square, positive
+            A square adjacency matrix
+
+        seed_cost : 1d-array, shape (m , 1) where m <= number of nodes (default = [])
+            An array where each entry is an index of a node in `cost_matrix`.
+
+        seeds_dist : 1d-array, shape (m , 1) where m <= number of nodes (default = [])
+            An array where each entry is an index of a node in `dist_matrix` The elements of
+            `seed_cost` and `seed_dist` are vertices which are known to be matched, that is,
+            `seed_cost[i]` is matched to vertex `seed_dist[i]`.
+
+        maximize : bool (default = False)
+            Gives users the option to solve the Graph Matching Problem (GMP) rather than QAP.
+            This is accomplished through trivial negation of the objective function.
+
+        n_init : int, positive (default = 1)
+            Number of random initializations of the starting permutation matrix that
+            the FAQ algorithm will undergo. n_init automatically set to 1 if
+            init_method = 'barycenter'
+
+        init_method : string (default = 'barycenter')
+            The initial position chosen
+
+            "barycenter" : the non-informative “flat doubly stochastic matrix,”
+            :math:`J=1*1^T /n` , i.e the barycenter of the feasible region
+
+            "rand" : some random point near :math:`J, (J+K)/2`, where K is some random doubly
+            stochastic matrix
+
+        max_iter : int, positive (default = 30)
+            Integer specifying the max number of Franke-Wolfe iterations.
+            FAQ typically converges with modest number of iterations.
+
+        shuffle_input : bool (default = True)
+            Gives users the option to shuffle the nodes of A matrix to avoid results
+            from inputs that were already matched.
+
+        eps : float (default = 0.1)
+            A positive, threshold stopping criteria such that FW continues to iterate
+            while Frobenius norm of :math:`(P_{i}-P_{i+1}) > eps`
+
+        gmp : bool (default = True)
+            Gives users the option to solve QAP rather than the Graph Matching Problem
+            (GMP). This is accomplished through trivial negation of the objective function.
+
+        Attributes
+        ----------
+
+        perm_inds_ : array, size (n,) where n is the number of vertices in the fitted graphs.
+            The indices of the optimal permutation (with the fixed seeds given) on the nodes of B,
+            to best minimize the objective function :math:`f(P) = trace(A^T PBP^T )`.
+
+
+        score_ : float
+            The objective function value of for the optimal permutation found.
+
+
+        References
+        ----------
+        .. [1] J.T. Vogelstein, J.M. Conroy, V. Lyzinski, L.J. Podrazik, S.G. Kratzer,
+            E.T. Harley, D.E. Fishkind, R.J. Vogelstein, and C.E. Priebe, “Fast
+            approximate quadratic programming for graph matching,” PLOS one, vol. 10,
+            no. 4, p. e0121002, 2015.
+
+        .. [2] D. Fishkind, S. Adali, H. Patsolic, L. Meng, D. Singh, V. Lyzinski, C. Priebe,
+            Seeded graph matching, Pattern Recognit. 87 (2019) 203–215
+
+
+
+        """
+
     cost_matrix = check_array(cost_matrix, copy=True, ensure_2d=True)
     dist_matrix = check_array(dist_matrix, copy=True, ensure_2d=True)
     seed_cost = np.asarray(seed_cost)
@@ -48,26 +137,26 @@ def quadratic_assignment(cost_matrix, dist_matrix, seed_cost = [], seed_dist = [
         obj_func_scalar = -1
         score = 0
 
+    seed_dist_c = np.setdiff1d(range(n), seed_dist)
     if self.shuffle_input:
-        W2_c = np.random.permutation(np.array([x for x in range(n) if x not in seed_dist]))
+        seed_dist_c = np.random.permutation(seed_dist_c)
         # shuffle_input to avoid results from inputs that were already matched
-    else:
-        W2_c = np.array([x for x in range(n) if x not in seed_dist])
 
-    W1_c = np.array([x for x in range(n) if x not in seed_cost])
-    p_A = np.concatenate([seed_cost, W1_c], axis=None).astype(int)
-    p_B = np.concatenate([seed_dist, W2_c], axis=None).astype(int)
-    A = cost_matrix[np.ix_(p_A, p_A)]
-    B = dist_matrix[np.ix_(p_B, p_B)]
+    seed_cost_c = np.setdiff1d(range(n), seed_cost)
+    permutation_cost = np.concatenate([seed_cost, seed_cost_c], axis=None).astype(int)
+    permutation_dist = np.concatenate([seed_dist, seed_dist_c], axis=None).astype(int)
+    cost_matrix = cost_matrix[np.ix_(permutation_cost, permutation_cost)]
+    dist_matrix = dist_matrix[np.ix_(permutation_dist, permutation_dist)]
 
-    A11 = A[:n_seeds, :n_seeds]
-    A12 = A[:n_seeds, n_seeds:]
-    A21 = A[n_seeds:, :n_seeds]
-    A22 = A[n_seeds:, n_seeds:]
-    B11 = B[:n_seeds, :n_seeds]
-    B12 = B[:n_seeds, n_seeds:]
-    B21 = B[n_seeds:, :n_seeds]
-    B22 = B[n_seeds:, n_seeds:]
+    # definitions according to Seeded Graph Matching [2].
+    A11 = cost_matrix[:n_seeds, :n_seeds]
+    A12 = cost_matrix[:n_seeds, n_seeds:]
+    A21 = cost_matrix[n_seeds:, :n_seeds]
+    A22 = cost_matrix[n_seeds:, n_seeds:]
+    B11 = dist_matrix[:n_seeds, :n_seeds]
+    B12 = dist_matrix[:n_seeds, n_seeds:]
+    B21 = dist_matrix[n_seeds:, :n_seeds]
+    B22 = dist_matrix[n_seeds:, n_seeds:]
     A11T = np.transpose(A11)
     A12T = np.transpose(A12)
     A22T = np.transpose(A22)
@@ -75,7 +164,6 @@ def quadratic_assignment(cost_matrix, dist_matrix, seed_cost = [], seed_dist = [
     B22T = np.transpose(B22)
 
     for i in range(self.n_init):
-
         # setting initialization matrix
         if self.init_method == "rand":
             sk = SinkhornKnopp()
@@ -136,23 +224,25 @@ def quadratic_assignment(cost_matrix, dist_matrix, seed_cost = [], seed_dist = [
         )
 
         score_new = np.trace(
-            np.transpose(A) @ B[np.ix_(perm_inds_new, perm_inds_new)]
+            np.transpose(cost_matrix) @ dist_matrix[np.ix_(perm_inds_new, perm_inds_new)]
         )  # computing objective function value
 
         if obj_func_scalar * score_new < obj_func_scalar * score:  # minimizing
             score = score_new
-            perm_inds = np.array([0] * n)
-            perm_inds[p_A] = p_B[perm_inds_new]
+            perm_inds = np.zeros(n, dtype=int)
+            perm_inds[permutation_cost] = permutation_dist[perm_inds_new]
 
-    perm_inds = perm_inds.astype(int)
-    p_A_unshuffle = np.array(range(n))
-    p_A_unshuffle[p_A] = np.array(range(n))
-    A = A[np.ix_(p_A_unshuffle, p_A_unshuffle)]
-    p_B_unshuffle = np.array(range(n))
-    p_B_unshuffle[p_B] = np.array(range(n))
-    B = B[np.ix_(p_B_unshuffle, p_B_unshuffle)]
-    score = np.trace(np.transpose(A) @ B[np.ix_(perm_inds, perm_inds)])
+    permutation_cost_unshuffle = _unshuffle(permutation_cost, n)
+    cost_matrix = cost_matrix[np.ix_(permutation_cost_unshuffle, permutation_cost_unshuffle)]
+    permutation_dist_unshuffle = _unshuffle(permutation_dist, n)
+    dist_matrix = dist_matrix[np.ix_(permutation_dist_unshuffle, permutation_dist_unshuffle)]
+    score = np.trace(np.transpose(cost_matrix) @ dist_matrix[np.ix_(perm_inds, perm_inds)])
 
     self.perm_inds_ = perm_inds  # permutation indices
     self.score_ = score  # objective function value
     return self
+
+def _unshuffle(array, n):
+    unshuffle = np.array(range(n))
+    unshuffle[array] = np.array(range(n))
+    return unshuffle
