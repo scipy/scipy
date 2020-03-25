@@ -1371,6 +1371,10 @@ class KrylovJacobian(Jacobian):
         the iterative solvers in `scipy.sparse.linalg`.
 
         The default is `scipy.sparse.linalg.lgmres`.
+    inner_maxiter : int, optional
+        Parameter to pass to the "inner" Krylov solver: maximum number of
+        iterations. Iteration will stop after maxiter steps even if the
+        specified tolerance has not been achieved.
     inner_M : LinearOperator or InverseJacobian
         Preconditioner for the inner Krylov iteration.
         Note that you can use also inverse Jacobians as (adaptive)
@@ -1384,12 +1388,14 @@ class KrylovJacobian(Jacobian):
         If the preconditioner has a method named 'update', it will be called
         as ``update(x, f)`` after each nonlinear step, with ``x`` giving
         the current point, and ``f`` the current function value.
-    inner_tol, inner_maxiter, ...
-        Parameters to pass on to the \"inner\" Krylov solver.
-        See `scipy.sparse.linalg.gmres` for details.
     outer_k : int, optional
         Size of the subspace kept across LGMRES nonlinear iterations.
         See `scipy.sparse.linalg.lgmres` for details.
+    inner_kwargs : kwargs
+        Keyword parameters for the "inner" Krylov solver
+        (defined with `method`). Parameter names must start with
+        the `inner_` prefix which will be stripped before passing on
+        the inner method. See, e.g., `scipy.sparse.linalg.gmres` for details.
     %(params_extra)s
 
     See Also
