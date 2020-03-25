@@ -3150,7 +3150,13 @@ def f_oneway(*args):
     possible to use the Kruskal-Wallis H-test (`scipy.stats.kruskal`) although
     with some loss of power.
 
+    If each group is made of constant values, and
+    
+    - Exists 2 groups with different values, function returns (np.inf, 0)
+    - All values in all groups are the same, function returns (np.nan, np.nan)
+
     The algorithm is from Heiman[2], pp.394-7.
+
 
     References
     ----------
@@ -3191,6 +3197,21 @@ def f_oneway(*args):
     num_groups = len(args)
     alldata = np.concatenate(args)
     bign = len(alldata)
+
+    # Check if each the values within each group are constant
+    # And the common value in at least one group is different
+    # from that in another group - special cases
+    # Based on https://github.com/scipy/scipy/issues/11669
+    const_groups = True
+    for group in args:
+        if not all(x == group[0] for x in group):
+            const_groups = False
+            break
+    if const_groups:
+        if len(set(group[0] for group in args)) > 1:
+            return F_onewayResult(np.inf, 0)
+        else:
+            return F_onewayResult(np.nan, np.nan)
 
     # Determine the mean of the data, and subtract that from all inputs to a
     # variance (via sum_of_sq / sq_of_sum) calculation.  Variance is invariance
