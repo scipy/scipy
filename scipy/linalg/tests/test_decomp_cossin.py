@@ -7,8 +7,8 @@ from scipy.linalg.lapack import _compute_lwork
 from scipy.stats import ortho_group, unitary_group
 from scipy.linalg import cossin, get_lapack_funcs, block_diag
 
-REAL_DTYPES = [np.float32, np.float64]
-COMPLEX_DTYPES = [np.complex64, np.complex128]
+REAL_DTYPES = (np.float32, np.float64)
+COMPLEX_DTYPES = (np.complex64, np.complex128)
 DTYPES = REAL_DTYPES + COMPLEX_DTYPES
 
 

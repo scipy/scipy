@@ -89,6 +89,7 @@ Functions
    minkowski_distance
    minkowski_distance_p
    procrustes
+   geometric_slerp
 
 """
 
@@ -98,6 +99,7 @@ from .qhull import *
 from ._spherical_voronoi import SphericalVoronoi
 from ._plotutils import *
 from ._procrustes import procrustes
+from ._geometric_slerp import geometric_slerp
 
 __all__ = [s for s in dir() if not s.startswith('_')]
 __all__ += ['distance', 'transform']
