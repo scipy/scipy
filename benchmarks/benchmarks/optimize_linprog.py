@@ -21,7 +21,6 @@ try:
 except ValueError:
     pass
 
-
 methods = [("interior-point", {"sparse": True}),
            ("interior-point", {"sparse": False}),
            ("revised simplex", {})]
@@ -45,12 +44,21 @@ problems = ['25FV47', '80BAU3B', 'ADLITTLE', 'AFIRO', 'AGG', 'AGG2', 'AGG3',
 rr_problems = ['AFIRO', 'BLEND', 'FINNIS', 'RECIPE', 'SCSD6', 'VTP-BASE',
                'BORE3D', 'CYCLE', 'DEGEN2', 'DEGEN3', 'ETAMACRO', 'PILOTNOV',
                'QAP8', 'RECIPE', 'SCORPION', 'SHELL', 'SIERRA', 'WOOD1P']
+infeasible_problems = ['bgdbg1', 'bgetam', 'bgindy', 'bgprtr', 'box1',
+                       'ceria3d', 'chemcom', 'cplex1', 'cplex2', 'ex72a',
+                       'ex73a', 'forest6', 'galenet', 'gosh', 'gran',
+                       'itest2', 'itest6', 'klein1', 'klein2', 'klein3',
+                       'mondou2', 'pang', 'pilot4i', 'qual', 'reactor',
+                       'refinery', 'vol1', 'woodinfe']
 
 if not slow:
     problems = ['ADLITTLE', 'AFIRO', 'BLEND', 'BEACONFD', 'GROW7', 'LOTFI',
                 'SC105', 'SCTAP1', 'SHARE2B', 'STOCFOR1']
     rr_problems = ['AFIRO', 'BLEND', 'FINNIS', 'RECIPE', 'SCSD6', 'VTP-BASE',
                    'DEGEN2', 'ETAMACRO', 'RECIPE']
+    infeasible_problems = ['bgdbg1', 'bgprtr', 'box1', 'chemcom', 'cplex2',
+                           'ex72a', 'ex73a', 'forest6', 'galenet', 'itest2',
+                           'itest6', 'klein1', 'refinery', 'woodinfe']
 
 presolve_problems = problems
 
@@ -274,3 +282,41 @@ class Netlib_presolve(Benchmark):
 
     def time_netlib_presolve(self, meth, prob):
         _presolve(self.lp_cleaned, rr=False, tol=1e-9)
+
+
+class Netlib_infeasible(Benchmark):
+    params = [
+        methods,
+        infeasible_problems
+    ]
+    param_names = ['method', 'problems']
+
+    def setup(self, meth, prob):
+        dir_path = os.path.dirname(os.path.realpath(__file__))
+        datafile = os.path.join(dir_path, "linprog_benchmark_files",
+                                "infeasible", prob + ".npz")
+        data = np.load(datafile, allow_pickle=True)
+        self.c = data["c"]
+        self.A_eq = data["A_eq"]
+        self.A_ub = data["A_ub"]
+        self.b_ub = data["b_ub"]
+        self.b_eq = data["b_eq"]
+        self.bounds = np.squeeze(data["bounds"])
+        self.status = None
+
+    def time_netlib_infeasible(self, meth, prob):
+        method, options = meth
+        res = linprog(c=self.c,
+                      A_ub=self.A_ub,
+                      b_ub=self.b_ub,
+                      A_eq=self.A_eq,
+                      b_eq=self.b_eq,
+                      bounds=self.bounds,
+                      method=method,
+                      options=options)
+        self.status = res.status
+
+    def track_netlib_infeasible(self, meth, prob):
+        if self.status is None:
+            self.time_netlib_infeasible(meth, prob)
+        return self.status
