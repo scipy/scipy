@@ -8,7 +8,7 @@ The distribution of :math:`\left(X_{1}/X_{2}\right)\left(\nu_{2}/\nu_{1}\right)`
 if :math:`X_{1}` is non-central chi-squared with :math:`\nu_{1}` degrees of freedom
 and parameter :math:`\lambda`, and :math:`X_{2}` is chi-squared with :math:`\nu_{2}` degrees of freedom.
 
-There are 3 shape parameters: the degrees of freedom :math:`\nu_{1}>0` and :math:`\nu_{2}>0`; and :math:`\lambda\geq0`.
+There are 3 shape parameters: the degrees of freedom :math:`\nu_{1}>0` and :math:`\nu_{2}>0`; and :math:`\lambda\geq 0`.
 
 
 .. math::
@@ -19,7 +19,6 @@ There are 3 shape parameters: the degrees of freedom :math:`\nu_{1}>0` and :math
 
 where :math:`L_{\nu_{2}/2}^{\nu_{1}/2-1}(x)` is an associated Laguerre polynomial.
 
-If :math:`\lambda=0`, it becomes equivalent to the Fisher distribution
-with :math:`\nu_{1}` and :math:`\nu_{2}` degrees of freedom.
+If :math:`\lambda=0`, the distribution becomes equivalent to the Fisher distribution with :math:`\nu_{1}` and :math:`\nu_{2}` degrees of freedom.
 
 Implementation: `scipy.stats.ncf`
