@@ -5,13 +5,29 @@
 # Updated to 2018 values by Jakob Jakobson, 2019
 
 """
-General link:
-CODATA: https://physics.nist.gov/cuu/Constants/index.html
+Fundamental Physical Constants
+------------------------------
+All constants in this file are taken from the CODATA internationally
+recommended values of the fundamental physical constants. The general site can
+be found here:
 
-Specific links:
-CODATA 2018: https://physics.nist.gov/cuu/Constants/Table/allascii.txt
-CODATA 2014: https://physics.nist.gov/cuu/Constants/Table/allascii_2014.txt
-CODATA 2010: https://physics.nist.gov/cuu/Constants/allascii_2010.txt
+https://physics.nist.gov/cuu/Constants/index.html .
+
+The data sets of the years 2018, 2014 and 2010 are available as ascii files
+with their links given in the following.
+
+2018: https://physics.nist.gov/cuu/Constants/Table/allascii.txt
+2014: https://physics.nist.gov/cuu/Constants/Table/allascii_2014.txt
+2010: https://physics.nist.gov/cuu/Constants/allascii_2010.txt
+
+The data sets of the year 2006 and earlier are only available as pdf files and
+are given in the following.
+
+2006: https://physics.nist.gov/cuu/pdf/all_2006.pdf
+2002: https://physics.nist.gov/cuu/pdf/all_2002.pdf
+1998: https://physics.nist.gov/cuu/pdf/all_1998.pdf
+1986: https://physics.nist.gov/cuu/pdf/codata86.pdf
+1973: https://physics.nist.gov/cuu/pdf/1973JPCRD.pdf
 """
 
 
