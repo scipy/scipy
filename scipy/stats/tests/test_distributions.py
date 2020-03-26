@@ -4145,13 +4145,16 @@ def test_crystalball_function_moments():
     assert_allclose(expected_5th_moment, calculated_5th_moment, rtol=0.001)
 
 
-def test_ncf_edge_case():
+@pytest.mark.parametrize(
+    'df1,df2,x',
+    [(2, 2, [-0.5, 0.2, 1.0, 2.3]),
+     (4, 11, [-0.5, 0.2, 1.0, 2.3]),
+     (7, 17, [1, 2, 3, 4, 5])]
+)
+def test_ncf_edge_case(df1, df2, x):
     # Test for edge case described in gh-11660.
     # Non-central Fisher distribution when nc = 0
     # should be the same as Fisher distribution.
-    x = np.array([-0.5, 0.2, 1.0, 2.3])
-    df1 = 4
-    df2 = 11
     nc = 0
     expected_cdf = stats.f.cdf(x, df1, df2)
     calculated_cdf = stats.ncf.cdf(x, df1, df2, nc)
