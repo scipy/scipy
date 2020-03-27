@@ -24,6 +24,26 @@ import os
 import sys
 import tempfile
 
+cimport
+numpy as np
+cimport
+cython
+import numpy as np
+import os
+import sys
+import tempfile
+import threading
+from libc cimport
+
+stdlib
+from numpy.compat import asbytes
+
+from scipy._lib.messagestream cimport
+
+MessageStream
+from .cimport qhull
+from .cimport setlist
+
 cdef extern from "numpy/npy_math.h":
     double nan "NPY_NAN"
 
@@ -2764,7 +2784,7 @@ class HalfspaceIntersection(_QhullUser):
     >>> c[-1] = -1
     >>> A = np.hstack((halfspaces[:, :-1], norm_vector))
     >>> b = - halfspaces[:, -1:]
-    >>> res = linprog(c, A_ub=A, b_ub=b)
+    >>> res = linprog(c, A_ub=A, b_ub=b, bounds=(None, None))
     >>> x = res.x[:-1]
     >>> y = res.x[-1]
     >>> circle = Circle(x, radius=y, alpha=0.3)
