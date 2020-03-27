@@ -4450,14 +4450,15 @@ class TestFOneWay(object):
             assert_allclose(res[0], f, rtol=rtol,
                             err_msg='Failing testcase: %s' % test_case)
 
-    def test_constant_values(self):
+    def test_constant_input(self):
         # For more details, look on https://github.com/scipy/scipy/issues/11669
-        a = np.array([42, 42, 42], dtype=np.uint16)
-        b = np.array([7, 7, 7, 7], dtype=np.uint16)
-        res = stats.f_oneway(a, b)
-        assert_equal(res, (np.inf, 0))
-        res = stats.f_oneway(a,a)
-        assert_equal(res, (np.nan, np.nan))
+        a = np.array([42, 42, 42])
+        b = np.array([7, 7, 7, 7])
+        with assert_warns(stats.F_onewayConstantInputWarning):
+            res = stats.f_oneway(a, b)
+            assert_equal(res, (np.inf, 0))
+            res = stats.f_oneway(a,a)
+            assert_equal(res, (np.nan, np.nan))
 
 
 class TestKruskal(object):
