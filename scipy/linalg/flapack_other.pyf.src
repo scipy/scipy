@@ -1649,7 +1649,7 @@ subroutine <prefix2>gejsv(joba,jobu,jobv,jobr,jobt,jobp,m,n,a,lda,sva,u,ldu,v,ld
     <ftype2> dimension(n,m), intent(in) :: a
     integer intent(hide), depend(m) :: lda = max(1,m)
     <ftype2> intent(out), dimension(n) :: sva
-    <ftype2> intent(out), dimension(ldu, n) :: u
+    <ftype2> intent(out), dimension(ldu, max(1, (*jobu=='F'?m:n))) :: u
     integer intent(hide), depend(m) :: ldu = max(m, 1)
     <ftype2> intent(out), dimension(ldv, n) :: v
     integer intent(hide), depend(n) :: ldv = max(n, 1)
