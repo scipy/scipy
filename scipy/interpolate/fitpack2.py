@@ -1542,7 +1542,7 @@ class RectSphereBivariateSpline(SphereBivariateSpline):
     Parameters
     ----------
     u : array_like
-        1-D array of latitude coordinates in strictly ascending order.
+        1-D array of colatitude coordinates in strictly ascending order.
         Coordinates must be given in radians and lie within the interval
         (0, pi).
     v : array_like
@@ -1693,6 +1693,14 @@ class RectSphereBivariateSpline(SphereBivariateSpline):
         ider[1], ider[3] = pole_flat
 
         u, v = np.ravel(u), np.ravel(v)
+
+        if not np.all(0.0 < u) or not np.all(u < np.pi):
+            raise ValueError('u should be between (0, pi)')
+        if not -np.pi <= v[0] < np.pi:
+            raise ValueError('v[0] should be between [-pi, pi)')
+        if not v[-1] <= v[0] + 2*np.pi:
+            raise ValueError('v[-1] should be v[0] + 2pi or less ')
+
         if not np.all(np.diff(u) > 0.0):
             raise ValueError('u must be strictly increasing')
         if not np.all(np.diff(v) > 0.0):
