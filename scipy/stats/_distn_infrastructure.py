@@ -2142,6 +2142,7 @@ class rv_continuous(rv_generic):
                 args[n] = kwds.pop(key)
             else:
                 x0.append(args[n])
+        self._fixedn = fixedn  # used in method of moments
 
         objectives = {"MLE": self._penalized_nnlf,
                       "GMM": self._moment_error_norm}
@@ -2177,20 +2178,22 @@ class rv_continuous(rv_generic):
 
         return x0, func, restore, args
 
-    # TODO: no longer assume all variables are free
     # TODO: order > len(theta)
     # TODO: add tests
-    # TODO: don't re-calculate moments from data every iteration
     def _moment_error_norm(self, theta, x):
         loc, scale, args = self._unpack_loc_scale(theta)
         if not self._argcheck(*args) or scale <= 0:
             return inf
-        dist_moments = np.array([self.moment(n+1, *args, loc=loc, scale=scale)
-                                 for n in range(len(theta))])
+        n = len(theta) - len(self._fixedn)
+        dist_moments = np.array([self.moment(i+1, *args, loc=loc, scale=scale)
+                                 for i in range(n)])
         # how can I import scipy.stats.moment?
         # is there a function for moments NOT about mean?
-        exponents = (np.arange(1, len(theta)+1))[:, np.newaxis]
-        data_moments = np.sum(x[np.newaxis, :]**exponents/len(x), axis=1)
+        if self._data_moments is None:
+            exponents = (np.arange(1, n+1))[:, np.newaxis]
+            self._data_moments = np.sum(x[np.newaxis, :]**exponents/len(x),
+                                        axis=1)
+        data_moments = self._data_moments
         return np.linalg.norm(data_moments - dist_moments)
 
     def fit(self, data, *args, **kwds):
@@ -2308,6 +2311,10 @@ class rv_continuous(rv_generic):
         >>> loc1, scale1
         (0.92087172783841631, 2.0015750750324668)
         """
+
+        # memory for method of moments
+        self._data_moments = None
+
         Narg = len(args)
         if Narg > self.numargs:
             raise TypeError("Too many input arguments.")
