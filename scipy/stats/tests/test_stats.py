@@ -1884,6 +1884,26 @@ class TestVariability(object):
         mad = stats.median_absolute_deviation(dat)
         assert_equal(mad, np.nan)
 
+    def test_mad_nan_shape1(self):
+        z = np.ones((3, 0))
+        mad_axis0 = stats.median_absolute_deviation(z, axis=0)
+        assert_equal(mad_axis0, np.nan)
+        mad_axis1 = stats.median_absolute_deviation(z, axis=1)
+        assert_equal(mad_axis1, np.array([np.nan, np.nan, np.nan]))
+        assert_equal(mad_axis1.shape, (3,))
+
+    def test_mad_nan_shape2(self):
+        z = np.ones((3, 0, 2))
+        mad_axis0 = stats.median_absolute_deviation(z, axis=0)
+        assert_equal(mad_axis0, np.nan)
+        mad_axis1 = stats.median_absolute_deviation(z, axis=1)
+        assert_equal(mad_axis1, np.array([[np.nan, np.nan],
+                                          [np.nan, np.nan],
+                                          [np.nan, np.nan]]))
+        assert_equal(mad_axis1.shape, (3, 2))
+        mad_axis2 = stats.median_absolute_deviation(z, axis=2)
+        assert_equal(mad_axis2, np.nan)
+
     def test_mad_nan_propagate(self):
         dat = np.array([2.20, 2.20, 2.4, 2.4, 2.5, 2.7, 2.8, 2.9, 3.03,
                 3.03, 3.10, 3.37, 3.4, 3.4, 3.4, 3.5, 3.6, 3.7, 3.7,
