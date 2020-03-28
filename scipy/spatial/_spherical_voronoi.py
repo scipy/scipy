@@ -120,24 +120,20 @@ class SphericalVoronoi:
     ...                    c='g')
     >>> # indicate Voronoi regions (as Euclidean polygons)
     >>> for region in sv.regions:
-    ...    region_size = len(region)
-    ...    for i in range(region_size):
-    ...        if i == (region_size - 1):
-    ...            next_index = 0
-    ...        else:
-    ...            next_index = i + 1
+    ...    n = len(region)
+    ...    for i in range(n):
     ...        start = sv.vertices[region][i]
-    ...        end = sv.vertices[region][next_index]
+    ...        end = sv.vertices[region][(i + 1) % n]
     ...        result = geometric_slerp(start, end, t_vals)
-    ...        ax.plot(result[...,0],
-    ...                result[...,1],
-    ...                result[...,2],
+    ...        ax.plot(result[..., 0],
+    ...                result[..., 1],
+    ...                result[..., 2],
     ...                c='k')
     >>> ax.azim = 10
     >>> ax.elev = 40
-    >>> ax.set_xticks([])
-    >>> ax.set_yticks([])
-    >>> ax.set_zticks([])
+    >>> _ = ax.set_xticks([])
+    >>> _ = ax.set_yticks([])
+    >>> _ = ax.set_zticks([])
     >>> fig.set_size_inches(4, 4)
     >>> plt.show()
 
