@@ -5,7 +5,6 @@ from numpy import sqrt, cos, sin, arctan, exp, log, pi, Inf
 from numpy.testing import (assert_,
         assert_allclose, assert_array_less, assert_almost_equal)
 import pytest
-from pytest import raises as assert_raises
 
 from scipy.integrate import quad, dblquad, tplquad, nquad
 from scipy._lib._ccallback import LowLevelCallable
@@ -89,7 +88,7 @@ class TestCtypesQuad(object):
         for j, func in enumerate(all_sigs):
             callback = LowLevelCallable(func)
             if func in legacy_only_sigs:
-                assert_raises(ValueError, quad, callback, 0, pi)
+                pytest.raises(ValueError, quad, callback, 0, pi)
             else:
                 assert_allclose(quad(callback, 0, pi)[0], 2.0)
 
@@ -98,7 +97,7 @@ class TestCtypesQuad(object):
             if func in legacy_sigs:
                 assert_allclose(quad(func, 0, pi)[0], 2.0)
             else:
-                assert_raises(ValueError, quad, func, 0, pi)
+                pytest.raises(ValueError, quad, func, 0, pi)
 
 
 class TestMultivariateCtypesQuad(object):
