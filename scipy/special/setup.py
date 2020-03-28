@@ -160,7 +160,7 @@ def configuration(parent_package='',top_path=None):
     config.add_subpackage('_precompute')
 
     # Type stubs
-    config.add_data_files('_ufuncs.pyi')
+    config.add_data_files('*.pyi')
 
     return config
 
