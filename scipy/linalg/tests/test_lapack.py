@@ -1679,13 +1679,17 @@ def test_gejsv_general(size, dtype, joba, jobu, jobv, jobr, jobt, jobp):
     """Test the lapack routine ?gejsv.
 
     This function tests that a singular value decomposition can be performed
-    on the random m-by-n matrix A. The test performs the SVD using ?gejsv
+    on the random M-by-N matrix A. The test performs the SVD using ?gejsv
     then performs the following checks:
 
     * ?gejsv exist successfully (info == 0)
+    * The returned singular values are correct
     * `A` can be reconstructed from `u`, `SIGMA`, `v`
     * Ensure that u.T @ u is the identity matrix
     * Ensure that v.T @ v is the identity matrix
+    * The reported matrix rank
+    * The reported number of singular values
+    * If denormalized floats are required
 
     Notes
     -----
@@ -1705,7 +1709,7 @@ def test_gejsv_general(size, dtype, joba, jobu, jobv, jobr, jobt, jobp):
     A = generate_random_dtype_array(size, dtype)
     compute_u = jobu in {'U', 'F'}
     compute_v = jobv in {'V', 'J'}
-    compute_uv = compute_u and compute_v
+    compute_full_svd = compute_u and compute_v
     gejsv = get_lapack_funcs('gejsv', dtype=dtype)
 
     sva, u, v, work, iwork, info = gejsv(A,
@@ -1716,10 +1720,12 @@ def test_gejsv_general(size, dtype, joba, jobu, jobv, jobr, jobt, jobp):
                                          jobt=jobt,
                                          jobp=jobp)
 
+    # Check that ?gejsv exited successfully
     assert_equal(info, 0)
 
-    SIGMA = np.diag(work[1] / work[0] * sva[:n])
+    # Check the returned singular values
     sigma = work[1] / work[0] * sva[:n]  # not a matrix
+    assert_allclose(sigma, svd(A, compute_uv=False), atol=atol)
 
     if jobu == 'F':
         # If JOBU = 'F', then u contains the M-by-M matrix of
@@ -1730,15 +1736,19 @@ def test_gejsv_general(size, dtype, joba, jobu, jobv, jobr, jobt, jobp):
         #TODO: Add a test for ONB?
         u = u[:, :n]
 
-    if compute_uv:
+    if compute_full_svd:
+        SIGMA = np.diag(work[1] / work[0] * sva[:n])
         assert_allclose(A, u @ SIGMA @ v.T, atol=atol)
     if compute_u:
         assert_allclose(u.T @ u, np.identity(n), atol=atol)
     if compute_v:
         assert_allclose(v @ v.T, np.identity(n), atol=atol)
 
-    # assert_equal(iwork[0], np.linagl.matrix_rank(A))
-    # assert_equal(iwork[1], np.linagl.matrix_rank(A))
+    assert_equal(iwork[0], np.linalg.matrix_rank(A))
+    assert_equal(iwork[1], np.count_nonzero(sigma))
+    # iwork[2] is non-zero if requested accuracy is not warranted for the
+    # data. This should never occur for these tests.
+    assert_equal(iwork[2], 0)
 
 
 @pytest.mark.parametrize("dtype", DTYPES)

@@ -1635,7 +1635,7 @@ end subroutine ilaver
 
 subroutine <prefix2>gejsv(joba,jobu,jobv,jobr,jobt,jobp,m,n,a,lda,sva,u,ldu,v,ldv,work,lwork,iwork,info)
     callstatement(*f2py_func)(joba,jobu,jobv,jobr,jobt,jobp,&m,&n,a,&lda,sva,u,&ldu,v,&ldv,work,&lwork,iwork,&info)
-    callprotoargument char*,char*,char*,char*,char*,char*,int*,int*,<ctype2>*,int*,<ctype2>*,<ctype2>*,int*,<ctype2>*,int*,<ctype2>*,int*,<ctype2>*,int*
+    callprotoargument char*,char*,char*,char*,char*,char*,int*,int*,<ctype2>*,int*,<ctype2>*,<ctype2>*,int*,<ctype2>*,int*,<ctype2>*,int*,int*,int*
 
     character intent(in, optional), check(*joba=='C'||*joba=='E'||*joba=='F'||*joba=='G'||*joba=='A'||*joba=='R') :: joba='A'
     character intent(in, optional), check(*jobu=='U'||*jobu=='F'||*jobu=='W'||*jobu=='N') :: jobu='U'
@@ -1655,7 +1655,7 @@ subroutine <prefix2>gejsv(joba,jobu,jobv,jobr,jobt,jobp,m,n,a,lda,sva,u,ldu,v,ld
     integer intent(hide), depend(n) :: ldv = max(n, 1)
     <ftype2> intent(out), dimension(lwork) :: work
     integer intent(in, optional) :: lwork=2*max(2*m+n, max(4*n+n*n,2*n+n*n+6))
-    <ftype2> intent(out), dimension(m+3*n) :: iwork
+    integer intent(out), dimension(m+3*n) :: iwork
     integer intent(out) :: info
 
 end subroutine <prefix2>gejsv
