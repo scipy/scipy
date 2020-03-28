@@ -1637,12 +1637,12 @@ subroutine <prefix2>gejsv(joba,jobu,jobv,jobr,jobt,jobp,m,n,a,lda,sva,u,ldu,v,ld
     callstatement(*f2py_func)(joba,jobu,jobv,jobr,jobt,jobp,&m,&n,a,&lda,sva,u,&ldu,v,&ldv,work,&lwork,iwork,&info)
     callprotoargument char*,char*,char*,char*,char*,char*,int*,int*,<ctype2>*,int*,<ctype2>*,<ctype2>*,int*,<ctype2>*,int*,<ctype2>*,int*,<ctype2>*,int*
 
-    character intent(in, optional), check(*joba=='C'||*joba=='E'||*joba=='F'||*joba=='G'||*joba=='A'||*joba=='R') :: joba='C'
+    character intent(in, optional), check(*joba=='C'||*joba=='E'||*joba=='F'||*joba=='G'||*joba=='A'||*joba=='R') :: joba='A'
     character intent(in, optional), check(*jobu=='U'||*jobu=='F'||*jobu=='W'||*jobu=='N') :: jobu='U'
     character intent(in, optional), check(*jobv=='V'||*jobv=='J'||*jobv=='W'||*jobv=='N') :: jobv='V'
     character intent(in, optional), check(*jobr=='R'||*jobr=='N') :: jobr='R'
-    character intent(in, optional), check(*jobt=='N'||*jobt=='T') :: jobt='N'
-    character intent(in, optional), check(*jobp=='N'||*jobp=='P') :: jobp='N'
+    character intent(in, optional), check(*jobt=='N'||*jobt=='T') :: jobt='T'
+    character intent(in, optional), check(*jobp=='N'||*jobp=='P') :: jobp='P'
 
     integer intent(hide),depend(a) ::m=shape(a,0)
     integer intent(hide),depend(a) ::n=shape(a,1)
@@ -1665,12 +1665,12 @@ subroutine <prefix2c>gejsv(joba,jobu,jobv,jobr,jobt,jobp,m,n,a,lda,sva,u,ldu,v,l
     callstatement(*f2py_func)(joba,jobu,jobv,jobr,jobt,jobp,&m,&n,a,&lda,sva,u,&ldu,v,&ldv,cwork,&lwork,rwork,&lrwork,&iwork,&info)
     callprotoargument char*,char*,char*,char*,char*,char*,int*,int*,<ctype2c>*,int*,<ctype2>*,<ctype2c>*,int*,<ctype2c>*,int*,<ctype2c>*,int*,<ctype2>*,int*,<ctype2>*,int*
 
-    character intent(in, optional), check(*joba=='C'||*joba=='E'||*joba=='F'||*joba=='G'||*joba=='A'||*joba=='R') :: joba='C'
+    character intent(in, optional), check(*joba=='C'||*joba=='E'||*joba=='F'||*joba=='G'||*joba=='A'||*joba=='R') :: joba='A'
     character intent(in, optional), check(*jobu=='U'||*jobu=='F'||*jobu=='W'||*jobu=='N') :: jobu='U'
     character intent(in, optional), check(*jobv=='V'||*jobv=='J'||*jobv=='W'||*jobv=='N') :: jobv='V'
     character intent(in, optional), check(*jobr=='R'||*jobr=='N') :: jobr='R'
-    character intent(in, optional), check(*jobt=='N'||*jobt=='T') :: jobt='N'
-    character intent(in, optional), check(*jobp=='N'||*jobp=='P') :: jobp='N'
+    character intent(in, optional), check(*jobt=='N'||*jobt=='T') :: jobt='T'
+    character intent(in, optional), check(*jobp=='N'||*jobp=='P') :: jobp='P'
 
     integer intent(hide),depend(a) :: m=shape(a,0)
     integer intent(hide),depend(a) :: n=shape(a,1)
