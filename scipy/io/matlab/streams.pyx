@@ -23,13 +23,10 @@ cdef extern from "py3k.h":
     # From:
     # https://github.com/hydralabs/pyamf/blob/release-0.4rc2/cpyamf/util.pyx
     # (MIT license) - with thanks
-    void PycString_IMPORT()
     int StringIO_cread "PycStringIO->cread" (object, char **, Py_ssize_t)
     int StringIO_creadline "PycStringIO->creadline" (object, char **)
     int StringIO_cwrite "PycStringIO->cwrite" (object, char *, Py_ssize_t)
     object StringIO_cgetvalue "PycStringIO->cgetvalue" (obj)
-    bint PycStringIO_InputCheck(object O)
-    bint PycStringIO_OutputCheck(object O)
 
     FILE* npy_PyFile_Dup(object file, char *mode) except NULL
     int npy_PyFile_DupClose(object file, FILE *handle) except -1
@@ -37,11 +34,6 @@ cdef extern from "py3k.h":
 
 
 cdef bint IS_PYPY = ('__pypy__' in sys.modules)
-cdef bint HAS_PYCCSTRINGIO = not IS_PYPY
-
-if HAS_PYCCSTRINGIO:
-    # initialize cStringIO
-    PycString_IMPORT
 
 
 DEF _BLOCK_SIZE = 131072
@@ -56,7 +48,7 @@ cdef class GenericStream:
     cpdef int seek(self, long int offset, int whence=0) except -1:
         self.fobj.seek(offset, whence)
         return 0
-        
+
     cpdef long int tell(self) except -1:
         return self.fobj.tell()
 
@@ -233,7 +225,7 @@ cdef class ZlibInputStream(GenericStream):
             if self._buffer_size == 0:
                 break
 
-            size = min(new_pos - self._total_position, 
+            size = min(new_pos - self._total_position,
                        self._buffer_size - self._buffer_position)
 
             self._total_position += size
@@ -242,44 +234,6 @@ cdef class ZlibInputStream(GenericStream):
         return 0
 
 
-cdef class cStringStream(GenericStream):
-    
-    cpdef int seek(self, long int offset, int whence=0) except -1:
-        cdef char *ptr
-        if whence == 1 and offset >=0: # forward, from here
-            StringIO_cread(self.fobj, &ptr, offset)
-            return 0
-        else: # use python interface
-            return GenericStream.seek(self, offset, whence)
-
-    cdef int read_into(self, void *buf, size_t n) except -1:
-        """ Read n bytes from stream into pre-allocated buffer `buf`
-        """
-        cdef:
-            size_t n_red
-            char* d_ptr
-        n_red = StringIO_cread(self.fobj, &d_ptr, n)
-        if n_red != n:
-            raise IOError('could not read bytes')
-        memcpy(buf, <void *>d_ptr, n)
-        return 0
-
-    cdef object read_string(self, size_t n, void **pp, int copy=True):
-        """ Make new memory, wrap with object
-
-        It's not obvious to me how to avoid a copy
-        """
-        cdef:
-            char *d_ptr
-            object obj
-        cdef size_t n_red = StringIO_cread(self.fobj, &d_ptr, n)
-        if n_red != n:
-            raise IOError('could not read bytes')
-        obj = pyalloc_v(n, pp)
-        memcpy(pp[0], d_ptr, n)
-        return obj
-
-   
 cdef class FileStream(GenericStream):
     cdef FILE* file
 
@@ -301,7 +255,7 @@ cdef class FileStream(GenericStream):
            negative for backward
         whence : int
            `whence` can be:
-           
+
            * 0 - from beginning of file (`offset` should be >=0)
            * 1 - from current file position
            * 2 - from end of file (`offset` nearly always <=0)
@@ -366,8 +320,6 @@ cpdef GenericStream make_stream(object fobj):
     """
     if npy_PyFile_Check(fobj):
         return GenericStream(fobj)
-    elif HAS_PYCCSTRINGIO and (PycStringIO_InputCheck(fobj) or PycStringIO_OutputCheck(fobj)):
-        return cStringStream(fobj)
     elif isinstance(fobj, GenericStream):
         return fobj
     return GenericStream(fobj)
