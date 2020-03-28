@@ -1704,7 +1704,7 @@ def test_gejsv_general(size, dtype, gejsv_lambda):
     SIGMA = np.diag(work[1] / work[0] * sva[:n])
     sigma = work[1] / work[0] * sva[:n]  # not a matrix
 
-    assert_allclose(np.sort(sigma), np.sort(eig(A)[0]), atol=atol)
+    assert_allclose(sigma, svd(A, compute_uv=False), atol=atol)
     # this doesn't seem like it would work as sva is real and eig(A) is complex
     assert_allclose(A, u @ SIGMA @ v.T, atol=atol)
     assert_allclose(u.T @ u, np.identity(u.shape[1]), atol=atol)
@@ -1730,7 +1730,7 @@ def test_gejsv_specific(dtype):
     '''jobu, jobv = N, check for correct eigenvalues'''
     sva, u, v, work, iwork, info = gejsv(A, jobu="N", jobv="N")
     # correct eigenvalues
-    assert_allclose(sva, eig(A), atol=atol)
+    assert_allclose(sva, svd(A, compute_uv=False), atol=atol)
 
     # check that iwork[0] and iwork[1] are the correct rank
     sva, u, v, work, iwork, info = gejsv(A)
