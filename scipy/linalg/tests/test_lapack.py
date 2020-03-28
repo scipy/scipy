@@ -1664,7 +1664,7 @@ def generate_random_dtype_array(shape, dtype):
     return np.random.rand(*shape).astype(dtype)
 
 
-@pytest.mark.parametrize("size", [(6, 5), (5, 5)])
+@pytest.mark.parametrize('size', [(6, 5), (5, 5)])
 @pytest.mark.parametrize('dtype', DTYPES)
 @pytest.mark.parametrize('gejsv_lambda',
                          [(lambda A, gejsv: gejsv(A)),  # base default case
@@ -1682,16 +1682,15 @@ def generate_random_dtype_array(shape, dtype):
                           (lambda A, gejsv: gejsv(A, jobp="N")),  # jobp
                           ])
 def test_gejsv_general(size, dtype, gejsv_lambda):
-    '''
+    """
     Tests the lapack routine ?gejsv. This function varies the job? values
     one at a time per dtype by passing different dtype routines into a lambda
     that decides parameters. It then tests the general random matrix A of size
     (m, n) for zero info, that sva, v, and u can be recombined to make A, and
     that u.T @ u and v.T @ v are the identity. Lastly, we check that iwork [0]
     and [1] are n.
-    '''
-    np.random.seed(42)
-    rtol = 250 * np.finfo(dtype).eps
+    """
+    seed(42)
     atol = 100 * np.finfo(dtype).eps
     m, n = size
     A = generate_random_dtype_array((m, n), dtype)
@@ -1703,28 +1702,26 @@ def test_gejsv_general(size, dtype, gejsv_lambda):
     assert_equal(info, 0)
 
     SIGMA = np.diag(work[1] / work[0] * sva[:n])
-    sigma = work[1] / work[0] * sva[:n] # not a matrix
+    sigma = work[1] / work[0] * sva[:n]  # not a matrix
 
+    assert_allclose(np.sort(sigma), np.sort(eig(A)[0]), atol=atol)
+    # this doesn't seem like it would work as sva is real and eig(A) is complex
+    assert_allclose(A, u @ SIGMA @ v.T, atol=atol)
+    assert_allclose(u.T @ u, np.identity(u.shape[1]), atol=atol)
+    assert_allclose(v @ v.T, np.identity(n), atol=atol)
 
-    assert_allclose(np.sort(sigma), np.sort(eig(A)[0]), rtol=rtol, atol=atol)
-    # ^ this doesn't seem like it would work as sva is real and eig(A) is complex
-    assert_allclose(A, u @ SIGMA @ v.T, rtol=rtol, atol=atol)
-    assert_allclose(u.T @ u, np.identity(u.shape[1]), rtol=rtol, atol=atol)
-    assert_allclose(v @ v.T, np.identity(n), rtol=rtol, atol=atol)
-
-    #assert_equal(iwork[0], np.linagl.matrix_rank(A))
-    #assert_equal(iwork[1], np.linagl.matrix_rank(A))
+    # assert_equal(iwork[0], np.linagl.matrix_rank(A))
+    # assert_equal(iwork[1], np.linagl.matrix_rank(A))
 
 
 @pytest.mark.parametrize("dtype", DTYPES)
 def test_gejsv_specific(dtype):
-    '''
+    """
     Tests more specific cases of routine ?gejsv, specifically for when
     u and v are not computed, matrix A is 1D, 1x1, empty, lwork = 0,
     and invalid job? parameters.
-    '''
-    np.random.seed(42)
-    rtol = 250 * np.finfo(dtype).eps
+    """
+    seed(42)
     atol = 100 * np.finfo(dtype).eps
     m, n = (6, 5)
     gejsv = get_lapack_funcs('gejsv', dtype=dtype)
@@ -1733,7 +1730,7 @@ def test_gejsv_specific(dtype):
     '''jobu, jobv = N, check for correct eigenvalues'''
     sva, u, v, work, iwork, info = gejsv(A, jobu="N", jobv="N")
     # correct eigenvalues
-    assert_allclose(sva, eig(A), rtol=rtol, atol=atol)
+    assert_allclose(sva, eig(A), atol=atol)
 
     # check that iwork[0] and iwork[1] are the correct rank
     sva, u, v, work, iwork, info = gejsv(A)
@@ -1795,11 +1792,10 @@ def test_gejsv_specific(dtype):
                                      [0.2140, -0.2980, 0.7827, 0.5027],
                                      [-0.3795, 0.3351, 0.6178, -0.6017]]))])
 def test_gejsv_NAG(A, sva_expect, u_expect, v_expect):
-    '''
+    """
     This test implements the example found in the NAG manual, f08khf.
     An example was not found for the complex case.
-    https://www.nag.com/numeric/fl/nagdoc_latest/html/f08/f08khf.html
-    '''
+    """
     # NAG manual provides accuracy up to 4 decimals
     atol = 1e-4
     gejsv = get_lapack_funcs('gejsv', dtype=A.dtype)
