@@ -1665,50 +1665,77 @@ def generate_random_dtype_array(shape, dtype):
 
 
 @pytest.mark.parametrize('size', [(6, 5), (5, 5)])
-@pytest.mark.parametrize('dtype', DTYPES)
-@pytest.mark.parametrize('gejsv_lambda',
-                         [(lambda A, gejsv: gejsv(A)),  # base default case
-                          (lambda A, gejsv: gejsv(A, joba="E")),  # joba
-                          (lambda A, gejsv: gejsv(A, joba="F")),
-                          (lambda A, gejsv: gejsv(A, joba="G")),
-                          (lambda A, gejsv: gejsv(A, joba="A")),
-                          (lambda A, gejsv: gejsv(A, joba="R")),
-                          (lambda A, gejsv: gejsv(A, jobu="F")),  # jobu
-                          (lambda A, gejsv: gejsv(A, jobu="W")),
-                          (lambda A, gejsv: gejsv(A, jobv="J")),  # jobv
-                          (lambda A, gejsv: gejsv(A, jobv="V")),
-                          (lambda A, gejsv: gejsv(A, jobr="N")),  # jobr
-                          (lambda A, gejsv: gejsv(A, jobt="T")),  # jobt
-                          (lambda A, gejsv: gejsv(A, jobp="N")),  # jobp
-                          ])
-def test_gejsv_general(size, dtype, gejsv_lambda):
-    """
-    Tests the lapack routine ?gejsv. This function varies the job? values
-    one at a time per dtype by passing different dtype routines into a lambda
-    that decides parameters. It then tests the general random matrix A of size
-    (m, n) for zero info, that sva, v, and u can be recombined to make A, and
-    that u.T @ u and v.T @ v are the identity. Lastly, we check that iwork [0]
-    and [1] are n.
+# FIXME: This test also requires complex dtypes
+#        however due to the number of possible job? combinations
+#        I want to focus on completing the real case first.
+@pytest.mark.parametrize('dtype', REAL_DTYPES)
+@pytest.mark.parametrize('joba', ['C', 'E', 'F', 'G', 'A', 'R'])
+@pytest.mark.parametrize('jobu', ['U', 'F', 'W', 'N'])
+@pytest.mark.parametrize('jobv', ['V', 'J', 'W', 'N'])
+@pytest.mark.parametrize('jobr', ['R', 'N'])
+@pytest.mark.parametrize('jobt', ['T', 'N'])
+@pytest.mark.parametrize('jobp', ['P', 'N'])
+def test_gejsv_general(size, dtype, joba, jobu, jobv, jobr, jobt, jobp):
+    """Test the lapack routine ?gejsv.
+
+    This function tests that a singular value decomposition can be performed
+    on the random m-by-n matrix A. The test performs the SVD using ?gejsv
+    then performs the following checks:
+
+    * ?gejsv exist successfully (info == 0)
+    * `A` can be reconstructed from `u`, `SIGMA`, `v`
+    * Ensure that u.T @ u is the identity matrix
+    * Ensure that v.T @ v is the identity matrix
+
+    Notes
+    -----
+    joba specifies several choices effecting the calculation's accuracy
+    Although all arguments are tested, the tests only check that the correct
+    solution is returned - NOT that the prescribed actions are performed
+    internally.
     """
     seed(42)
-    atol = 100 * np.finfo(dtype).eps
-    m, n = size
-    A = generate_random_dtype_array((m, n), dtype)
 
+    if jobv == 'J' and jobu in {'N', 'W'}:
+        pytest.skip("jobv = 'J' is not allowed if jobu is 'N' or 'W'")
+
+    # Define some constants for later use:
+    m, n = size
+    atol = 100 * np.finfo(dtype).eps
+    A = generate_random_dtype_array(size, dtype)
+    compute_u = jobu in {'U', 'F'}
+    compute_v = jobv in {'V', 'J'}
+    compute_uv = compute_u and compute_v
     gejsv = get_lapack_funcs('gejsv', dtype=dtype)
-    # pass A and gejsv into lambda expression for parametrized job? values
-    sva, u, v, work, iwork, info = gejsv_lambda(A, gejsv)
+
+    sva, u, v, work, iwork, info = gejsv(A,
+                                         joba=joba,
+                                         jobu=jobu,
+                                         jobv=jobv,
+                                         jobr=jobr,
+                                         jobt=jobt,
+                                         jobp=jobp)
 
     assert_equal(info, 0)
 
     SIGMA = np.diag(work[1] / work[0] * sva[:n])
     sigma = work[1] / work[0] * sva[:n]  # not a matrix
 
-    assert_allclose(sigma, svd(A, compute_uv=False), atol=atol)
-    # this doesn't seem like it would work as sva is real and eig(A) is complex
-    assert_allclose(A, u @ SIGMA @ v.T, atol=atol)
-    assert_allclose(u.T @ u, np.identity(u.shape[1]), atol=atol)
-    assert_allclose(v @ v.T, np.identity(n), atol=atol)
+    if jobu == 'F':
+        # If JOBU = 'F', then u contains the M-by-M matrix of
+        # the left singular vectors, including an ONB of the orthogonal
+        # complement of the Range(A)
+        # However, to recalculate A we are concerned about the
+        # first n singular values and so can ignore the latter.
+        #TODO: Add a test for ONB?
+        u = u[:, :n]
+
+    if compute_uv:
+        assert_allclose(A, u @ SIGMA @ v.T, atol=atol)
+    if compute_u:
+        assert_allclose(u.T @ u, np.identity(n), atol=atol)
+    if compute_v:
+        assert_allclose(v @ v.T, np.identity(n), atol=atol)
 
     # assert_equal(iwork[0], np.linagl.matrix_rank(A))
     # assert_equal(iwork[1], np.linagl.matrix_rank(A))
