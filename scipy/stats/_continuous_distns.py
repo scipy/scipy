@@ -50,6 +50,7 @@ def _remove_optimizer_parameters(kwds):
     kwds.pop('loc', None)
     kwds.pop('scale', None)
     kwds.pop('optimizer', None)
+    kwds.pop('method', None)
     if kwds:
         raise TypeError("Unknown arguments: %s." % kwds)
 
@@ -329,7 +330,7 @@ class norm_gen(rv_continuous):
     @replace_notes_in_docstring(rv_continuous, notes="""\
         This function uses explicit formulas for the maximum likelihood
         estimation of the normal distribution parameters, so the
-        `optimizer` argument is ignored.\n\n""")
+        `optimizer` and `method` arguments are ignored.\n\n""")
     def fit(self, data, **kwds):
         floc = kwds.pop('floc', None)
         fscale = kwds.pop('fscale', None)
@@ -1492,7 +1493,8 @@ class expon_gen(rv_continuous):
     @replace_notes_in_docstring(rv_continuous, notes="""\
         This function uses explicit formulas for the maximum likelihood
         estimation of the exponential distribution parameters, so the
-        `optimizer`, `loc` and `scale` keyword arguments are ignored.\n\n""")
+        `optimizer`, `method`, `loc` and `scale` keyword arguments are
+        ignored.\n\n""")
     def fit(self, data, *args, **kwds):
         if len(args) > 0:
             raise TypeError("Too many arguments.")
@@ -2842,7 +2844,8 @@ class gamma_gen(rv_continuous):
         When the location is fixed by using the argument `floc`, this
         function uses explicit formulas or solves a simpler numerical
         problem than the full ML optimization problem.  So in that case,
-        the `optimizer`, `loc` and `scale` arguments are ignored.\n\n""")
+        the `optimizer`, `method`, `loc` and `scale` arguments are ignored.
+        \n\n""")
     def fit(self, data, *args, **kwds):
         floc = kwds.get('floc', None)
 
@@ -4986,7 +4989,8 @@ class lognorm_gen(rv_continuous):
         When the location parameter is fixed by using the `floc` argument,
         this function uses explicit formulas for the maximum likelihood
         estimation of the log-normal shape and scale parameters, so the
-        `optimizer`, `loc` and `scale` keyword arguments are ignored.\n\n""")
+        `optimizer`, `method`, `loc` and `scale` keyword arguments are ignored.
+        \n\n""")
     def fit(self, data, *args, **kwds):
         floc = kwds.get('floc', None)
         if floc is None:

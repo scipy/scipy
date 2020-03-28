@@ -2183,6 +2183,7 @@ class rv_continuous(rv_generic):
         loc, scale, args = self._unpack_loc_scale(theta)
         if not self._argcheck(*args) or scale <= 0:
             return inf
+
         n = len(theta) - len(self._fixedn)
         dist_moments = np.array([self.moment(i+1, *args, loc=loc, scale=scale)
                                  for i in range(n)])
