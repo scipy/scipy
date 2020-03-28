@@ -2145,7 +2145,7 @@ class rv_continuous(rv_generic):
         self._fixedn = fixedn  # used in method of moments
 
         objectives = {"MLE": self._penalized_nnlf,
-                      "GMM": self._moment_error_norm}
+                      "MM": self._moment_error_norm}
         method = kwds.pop('method', "mle").upper()
         try:
             objective = objectives[method]
@@ -2178,7 +2178,6 @@ class rv_continuous(rv_generic):
 
         return x0, func, restore, args
 
-    # TODO: order > len(theta)
     # TODO: add tests
     def _moment_error_norm(self, theta, x):
         loc, scale, args = self._unpack_loc_scale(theta)
@@ -2187,8 +2186,7 @@ class rv_continuous(rv_generic):
         n = len(theta) - len(self._fixedn)
         dist_moments = np.array([self.moment(i+1, *args, loc=loc, scale=scale)
                                  for i in range(n)])
-        # how can I import scipy.stats.moment?
-        # is there a function for moments NOT about mean?
+
         if self._data_moments is None:
             exponents = (np.arange(1, n+1))[:, np.newaxis]
             self._data_moments = np.sum(x[np.newaxis, :]**exponents/len(x),
@@ -2200,7 +2198,7 @@ class rv_continuous(rv_generic):
         """
         Return estimates of shape (if applicable), location, and scale
         parameters from data. The default estimation method is Maximum
-        Likelihood Estimation (MLE), but Generalized Method of Moments (GMM)
+        Likelihood Estimation (MLE), but Method of Moments (MM)
         is also available.
 
         Starting estimates for
@@ -2222,7 +2220,7 @@ class rv_continuous(rv_generic):
             provided will be determined by a call to ``_fitstart(data)``).
             No default value.
         kwds : floats, optional
-            Starting values for the location and scale parameters; no default.
+            Fixed values for the location and scale parameters; no default.
             Special keyword arguments are recognized as holding certain
             parameters fixed:
 
@@ -2243,14 +2241,9 @@ class rv_continuous(rv_generic):
               output as keyword arguments.
 
             - method : The method to use. The default is "MLE" (Maximum
-              Likelihood Estimate); "GMM" (Generalized Method of Moments)
+              Likelihood Estimate); "MM" (Method of Moments)
               is also available.
 
-            - order : The number of moments to fit with ``method="GMM"``.
-              This integer must be greater than or equal to the number of
-              non-fixed distribution parameters (including location and scale);
-              the default is the number of non-fixed parameters. This keyword
-              is ignored when ``method="MLE"``.
 
         Returns
         -------
@@ -2265,8 +2258,10 @@ class rv_continuous(rv_generic):
         the fit is computed by maximizing a log-likelihood function, with
         penalty applied for samples beyond the range of the distribution.
 
-        With ``method="GMM"``, the fit is computed by minimizing a weighted
-        norm of the errors between data moments and distribution moments.
+        With ``method="MM"``, the fit is computed by minimizing the L2 norm
+        of the errors between first *k* data moments and distribution moments,
+        where *k* is the number of non-fixed parameters. Typically, the norm
+        of the errors can be reduced to zero.
 
         The returned answer is not guaranteed to be globally optimal; it
         may only be locally optimal, or the optimization may fail altogether.
@@ -2349,6 +2344,9 @@ class rv_continuous(rv_generic):
         if kwds:
             raise TypeError("Unknown arguments: %s." % kwds)
 
+        # method of moments could be done with fsolve/root instead of an
+        # optimizer, but using an optimizer reduces maintains the structure of
+        # MM/MLE and paves the way for Generalized Method of Moments
         vals = optimizer(func, x0, args=(ravel(data),), disp=0)
         if restore is not None:
             vals = restore(args, vals)
