@@ -5748,19 +5748,27 @@ class ncf_gen(rv_continuous):
                                (-\lambda v_1 \frac{x}{2(v_1 x+v_2)})}
                               {B(v_1/2, v_2/2)  \gamma(\frac{v_1+v_2}{2})}
 
-    for :math:`n_1 > 1`, :math:`n_2, \lambda > 0`.  Here :math:`n_1` is the
+    for :math:`n_1, n_2 > 0`, :math:`\lambda\geq 0`.  Here :math:`n_1` is the
     degrees of freedom in the numerator, :math:`n_2` the degrees of freedom in
     the denominator, :math:`\lambda` the non-centrality parameter,
     :math:`\gamma` is the logarithm of the Gamma function, :math:`L_n^k` is a
     generalized Laguerre polynomial and :math:`B` is the beta function.
 
-    `ncf` takes ``df1``, ``df2`` and ``nc`` as shape parameters.
+    `ncf` takes ``df1``, ``df2`` and ``nc`` as shape parameters. If ``nc=0``,
+    the distribution becomes equivalent to the Fisher distribution.
 
     %(after_notes)s
+
+    See Also
+    --------
+    scipy.stats.f : Fisher distribution
 
     %(example)s
 
     """
+    def _argcheck(self, df1, df2, nc):
+        return (df1 > 0) & (df2 > 0) & (nc >= 0)
+
     def _rvs(self, dfn, dfd, nc):
         return self._random_state.noncentral_f(dfn, dfd, nc, self._size)
 
