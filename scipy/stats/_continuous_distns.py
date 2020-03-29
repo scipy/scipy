@@ -5740,13 +5740,16 @@ class ncf_gen(rv_continuous):
     .. math::
 
         f(x, n_1, n_2, \lambda) =
-                          \exp(\frac{\lambda}{2} + \lambda n_1 \frac{x}{2(n_1 x+n_2)})
-                          n_1^{n_1/2} n_2^{n_2/2} x^{n_1/2 - 1} \\
-                          (n_2+n_1 x)^{-(n_1+n_2)/2}
-                          \gamma(n_1/2) \gamma(1+n_2/2) \\
-                         \frac{L^{\frac{v_1}{2}-1}_{v_2/2}
-                               (-\lambda v_1 \frac{x}{2(v_1 x+v_2)})}
-                              {B(v_1/2, v_2/2)  \gamma(\frac{v_1+v_2}{2})}
+            \exp\left(\frac{\lambda}{2} +
+                      \lambda n_1 \frac{x}{2(n_1 x + n_2)}
+                \right)
+            n_1^{n_1/2} n_2^{n_2/2} x^{n_1/2 - 1} \\
+            (n_2 + n_1 x)^{-(n_1 + n_2)/2}
+            \gamma(n_1/2) \gamma(1 + n_2/2) \\
+            \frac{L^{\frac{n_1}{2}-1}_{n_2/2}
+                \left(-\lambda n_1 \frac{x}{2(n_1 x + n_2)}\right)}
+            {B(n_1/2, n_2/2)
+                \gamma\left(\frac{n_1 + n_2}{2}\right)}
 
     for :math:`n_1, n_2 > 0`, :math:`\lambda\geq 0`.  Here :math:`n_1` is the
     degrees of freedom in the numerator, :math:`n_2` the degrees of freedom in
