@@ -506,6 +506,7 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
            x: array([10., -3.]) # may vary
 
     """
+
     meth = method.lower()
 
     # print("linprog() bounds: at entry ", bounds)
@@ -515,6 +516,7 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         warn(warning_message, OptimizeWarning)
 
     lp = _LPProblem(c, A_ub, b_ub, A_eq, b_eq, bounds, x0)
+
     lp, solver_options = _parse_linprog(lp, options)
     tol = solver_options.get('tol', 1e-9)
 
@@ -522,44 +524,71 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
 
     iteration = 0
     complete = False    # will become True if solved in presolve
-    undo = []
+    revstack = []
 
     # Keep the original arrays to calculate slack/residuals for original
     # problem.
     lp_o = deepcopy(lp)
 
     # print("linprog() bounds: copied into lp_o ", lp_o[5])
+    # print("Before presolve():")
+    # print("_linprog(): lp.c=", lp.c)
+    # print("_linprog(): lp.A_eq=", lp.A_eq)
+    # print("_linprog(): lp.b_eq=", lp.b_eq)
+    # print("_linprog(): lp.A_ub=", lp.A_ub)
+    # print("_linprog(): lp.b_ub=", lp.b_ub)
 
     # Solve trivial problem, eliminate variables, tighten bounds, etc.
-    c0 = 0  # we might get a constant term in the objective
     if solver_options.pop('presolve', True):
         rr = solver_options.pop('rr', True)
-        (lp, c0, x, undo, complete, status, message) = _presolve(lp, rr, tol)
+        (lp, revstack, complete, status, message) = _presolve(lp, rr, tol)
+    else:
+        message = None
+
+    # print("After presolve():")
+    # print("_linprog(): lp.c=", lp.c)
+    # print("_linprog(): lp.A_eq=", lp.A_eq)
+    # print("_linprog(): lp.b_eq=", lp.b_eq)
+    # print("_linprog(): lp.A_ub=", lp.A_ub)
+    # print("_linprog(): lp.b_ub=", lp.b_ub)
+    # print("_linprog(): complete=", complete)
+    # if message is not None:
+    #     print("_linprog(): message=", message)
+    # if len(revstack) == 0:
+    #     print("revstack empty")
+    # else:
+    #     x_check = revstack[0](np.zeros((1, len(lp.c))))
+    #     print("_linprog(): x_check=", x_check)
 
     # print("linprog() bounds: bounds after presolve ", bounds)
     # print("linprog() bounds: in lp_o after presolve ", lp_o[5])
     # print("linprog() bounds: in lp after presolve ", lp[5])
 
     C, b_scale = 1, 1  # for trivial unscaling if autoscale is not used
-    postsolve_args = (lp_o._replace(bounds=lp.bounds), undo, C, b_scale)
+    postsolve_args = (lp_o._replace(bounds=lp.bounds), revstack, C, b_scale)
 
-    if not complete:
-        A, b, c, c0, x0 = _get_Abc(lp, c0)  # , undo
+    if complete:
+        x = np.zeros(lp.c.shape)
+    else:
+        A, b, c, _, x0 = _get_Abc(lp, 0)
+        # print("_linprog(): A=", A)
+        # print("_linprog(): b=", b)
+        # print("_linprog(): c=", c)
         if solver_options.pop('autoscale', False):
             A, b, c, x0, C, b_scale = _autoscale(A, b, c, x0)
             postsolve_args = postsolve_args[:-2] + (C, b_scale)
 
         if meth == 'simplex':
             x, status, message, iteration = _linprog_simplex(
-                c, c0=c0, A=A, b=b, callback=callback,
+                c, c0=0, A=A, b=b, callback=callback,
                 postsolve_args=postsolve_args, **solver_options)
         elif meth == 'interior-point':
             x, status, message, iteration = _linprog_ip(
-                c, c0=c0, A=A, b=b, callback=callback,
+                c, c0=0, A=A, b=b, callback=callback,
                 postsolve_args=postsolve_args, **solver_options)
         elif meth == 'revised simplex':
             x, status, message, iteration = _linprog_rs(
-                c, c0=c0, A=A, b=b, x0=x0, callback=callback,
+                c, c0=0, A=A, b=b, x0=x0, callback=callback,
                 postsolve_args=postsolve_args, **solver_options)
         else:
             raise ValueError('Unknown solver %s' % method)
@@ -593,5 +622,5 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         'message': message,
         'nit': iteration,
         'success': status == 0}
-
+    
     return OptimizeResult(sol)

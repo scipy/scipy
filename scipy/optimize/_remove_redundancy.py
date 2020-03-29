@@ -83,12 +83,14 @@ def _remove_zero_rows(A, b):
     status = 0
     message = ""
     i_zero = _row_count(A) == 0
-    A = A[np.logical_not(i_zero), :]
-    if not(np.allclose(b[i_zero], 0)):
-        status = 2
-        message = "There is a zero row in A_eq with a nonzero corresponding " \
-                  "entry in b_eq. The problem is infeasible."
-    b = b[np.logical_not(i_zero)]
+    if np.sum(i_zero) > 0:
+        raise Warning("_remove_redundency: Unexpected zero row(s) in A")
+        A = A[np.logical_not(i_zero), :]
+        if not(np.allclose(b[i_zero], 0)):
+            status = 2
+            message = "There is a zero row in A_eq with a nonzero corresponding " \
+                      "entry in b_eq. The problem is infeasible."
+        b = b[np.logical_not(i_zero)]
     return A, b, status, message
 
 
