@@ -1662,7 +1662,7 @@ end subroutine <prefix2>gejsv
 
 
 subroutine <prefix2c>gejsv(joba,jobu,jobv,jobr,jobt,jobp,m,n,a,lda,sva,u,ldu,v,ldv,cwork,lwork,rwork,lrwork,iwork,info)
-    callstatement(*f2py_func)(joba,jobu,jobv,jobr,jobt,jobp,&m,&n,a,&lda,sva,u,&ldu,v,&ldv,cwork,&lwork,rwork,&lrwork,&iwork,&info)
+    callstatement(*f2py_func)(joba,jobu,jobv,jobr,jobt,jobp,&m,&n,a,&lda,sva,u,&ldu,v,&ldv,cwork,&lwork,rwork,&lrwork,iwork,&info)
     callprotoargument char*,char*,char*,char*,char*,char*,int*,int*,<ctype2c>*,int*,<ctype2>*,<ctype2c>*,int*,<ctype2c>*,int*,<ctype2c>*,int*,<ctype2>*,int*,int*,int*
 
     character intent(in, optional) :: joba='A'
@@ -1672,20 +1672,20 @@ subroutine <prefix2c>gejsv(joba,jobu,jobv,jobr,jobt,jobp,m,n,a,lda,sva,u,ldu,v,l
     character intent(in, optional) :: jobt='T'
     character intent(in, optional) :: jobp='P'
 
-    integer intent(hide),depend(a) :: m=shape(a,0)
-    integer intent(hide),depend(a) :: n=shape(a,1)
-    <ftype2c> dimension(n,m), intent(in) :: a
-    integer intent(hide), depend(m) :: lda = max(1,m)
-    <ftype2> intent(out), dimension(n) :: sva
-    <ftype2c> intent(out), dimension(ldu, n) :: u
-    integer intent(hide), depend(m) :: ldu = max(m, 1)
+    integer intent(hide), depend(a) :: m = shape(a,0)
+    integer intent(hide), depend(a) :: n = shape(a,1)
+    <ftype2c> dimension(lda, n), intent(in) :: a
+    integer intent(hide), depend(a) :: lda = max(1, shape(a, 0))
+    <ftype2> intent(out), depend(n), dimension(n) :: sva
+    <ftype2c> intent(out), depend(ldu, jobu, m, n), dimension(ldu, (*jobu=='F'?m:n)) :: u
+    integer intent(hide), depend(m) :: ldu = max(1, m)
     <ftype2c> intent(out), dimension(ldv, n) :: v
-    integer intent(hide),depend(n) :: ldv = n
-    <ftype2c> intent(out), dimension(max(2,lwork)) :: cwork
-    integer intent(in, optional),depend(n,m) :: lwork=2*max(2*m+n, max(4*n+n*n,2*n+n*n+6))
-    <ftype2> intent(hide), dimension(max(7,lwork)) :: rwork
+    integer intent(hide), depend(n) :: ldv = max(1, n)
+    <ftype2c> intent(hide), dimension(lwork) :: cwork
+    integer intent(in, optional), depend(n,m) :: lwork=5*n + 2*n*n
+    <ftype2> intent(out), depend(lwork), dimension(max(7,lwork)) :: rwork
     integer intent(in, optional),depend(m,n) :: lrwork=2*max(7,max(2*m,n))
-    integer intent(out):: iwork
+    integer intent(out), depend(m, n), dimension(max(4, 2*m + n)) :: iwork
     integer intent(out) :: info
 
 end subroutine <prefix2c>gejsv

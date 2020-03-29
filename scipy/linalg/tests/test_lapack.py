@@ -1663,12 +1663,8 @@ def generate_random_dtype_array(shape, dtype):
                 + np.random.rand(*shape)*1.0j).astype(dtype)
     return np.random.rand(*shape).astype(dtype)
 
-
 @pytest.mark.parametrize('size', [(6, 5), (5, 5)])
-# FIXME: This test also requires complex dtypes
-#        however due to the number of possible job? combinations
-#        I want to focus on completing the real case first.
-@pytest.mark.parametrize('dtype', REAL_DTYPES)
+@pytest.mark.parametrize('dtype', DTYPES)
 @pytest.mark.parametrize('joba', ['C', 'E', 'F', 'G', 'A', 'R'])
 @pytest.mark.parametrize('jobu', ['U', 'F', 'W', 'N'])
 @pytest.mark.parametrize('jobv', ['V', 'J', 'W', 'N'])
