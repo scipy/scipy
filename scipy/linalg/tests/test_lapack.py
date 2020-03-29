@@ -1779,35 +1779,30 @@ def test_gejsv_specific(dtype):
     assert_equal(k, iwork[0])
     assert_equal(k, iwork[1])
 
-    # Invalid job? parameters should result in non zero info
-    sva, u, v, work, iwork, info = gejsv(A, joba="L")
-    assert_equal(info, -3)
-    sva, u, v, work, iwork, info = gejsv(A, jobu="L")
-    assert_equal(info, -4)
-    sva, u, v, work, iwork, info = gejsv(A, jobv="L")
-    assert_equal(info, -5)
-    sva, u, v, work, iwork, info = gejsv(A, jobr="L")
-    assert_equal(info, -6)
-    sva, u, v, work, iwork, info = gejsv(A, jobt="L")
-    assert_equal(info, -7)
-    sva, u, v, work, iwork, info = gejsv(A, jobp="L")
-    assert_equal(info, -8)
 
-    # lwork is zero
-    sva, u, v, work, iwork, info = gejsv(A, lwork=0)
-    assert_equal(info, -2)
-    # A is 1D
-    A = generate_random_dtype_array((m, 1), dtype)
-    sva, u, v, work, iwork, info = gejsv(A)
-    assert_equal(info, -1)
-    # A is 1 x 1
-    A = generate_random_dtype_array((1, 1), dtype)
-    sva, u, v, work, iwork, info = gejsv(A)
-    assert_equal(info, -1)
-    # A is empty
-    A = None
-    sva, u, v, work, iwork, info = gejsv(A)
-    assert_equal(info, -1)
+# FIXME: cases where jobv = 'J' and jobu = 'W' or 'N' segfault
+#        for complex dtypes.
+@pytest.mark.parametrize('dtype', [float])
+@pytest.mark.parametrize(('shape', 'kwargs', 'status'), [
+                            ((1, 1), {}, 0),
+                            (None, {}, 0),
+                            ((3, 3), {'joba': 'L'}, -1),
+                            ((3, 3), {'jobu': 'L'}, -2),
+                            ((3, 3), {'jobv': 'J', 'jobu': 'W'}, -3),
+                            ((3, 3), {'jobv': 'J', 'jobu': 'N'}, -3),
+                            ((3, 3), {'jobv': 'L'}, -3),
+                            ((3, 3), {'jobr': 'L'}, -4),
+                            ((3, 3), {'jobt': 'L'}, -5),
+                            ((3, 3), {'jobp': 'L'}, -6),
+                            ((3, 5), {}, -8),
+                            ((3, 3), {'lwork': 0}, -17),
+                          ])
+def test_gejsv_illegal_arguments(dtype, shape, kwargs, status):
+    """Test illegal arguments return expected status"""
+    A = np.ones(shape, dtype=dtype)
+    gejsv = get_lapack_funcs('gejsv', dtype=dtype)
+    sva, u, v, work, iwork, info = gejsv(A, **kwargs)
+    assert_equal(info, status)
 
 
 @pytest.mark.parametrize("A,sva_expect,u_expect,v_expect",
