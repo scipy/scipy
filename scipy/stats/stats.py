@@ -2829,12 +2829,16 @@ def median_absolute_deviation(x, axis=0, center=np.median, scale=1.4826,
 
     # Consistent with `np.var` and `np.std`.
     if not x.size:
-        nan_shape = [item for i, item in enumerate(x.shape) if i != axis]
-        nan_array = np.full(nan_shape, np.nan)
-        if not nan_array.size:
+        if x.shape == (0,): # empty array
             return np.nan
-        else:
-            return nan_array
+        nan_shape = list(x.shape)
+        try:
+            del nan_shape[axis]
+        except IndexError:
+            raise ValueError("axis number {} is invalid".format(axis))
+
+        nan_array = np.full(nan_shape, np.nan)
+        return nan_array
 
     contains_nan, nan_policy = _contains_nan(x, nan_policy)
 
