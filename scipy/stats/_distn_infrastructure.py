@@ -2178,7 +2178,6 @@ class rv_continuous(rv_generic):
 
         return x0, func, restore, args
 
-    # TODO: add tests
     def _moment_error_norm(self, theta, x):
         loc, scale, args = self._unpack_loc_scale(theta)
         if not self._argcheck(*args) or scale <= 0:
@@ -2187,12 +2186,17 @@ class rv_continuous(rv_generic):
         n = len(theta) - len(self._fixedn)
         dist_moments = np.array([self.moment(i+1, *args, loc=loc, scale=scale)
                                  for i in range(n)])
+        if not np.all(np.isfinite(dist_moments)):
+            raise ValueError("Method of moments encountered a non-finite "
+                             "distribution moment and cannot continue. "
+                             "Consider trying method='MLE'.")
 
         if self._data_moments is None:
             exponents = (np.arange(1, n+1))[:, np.newaxis]
             self._data_moments = np.sum(x[np.newaxis, :]**exponents/len(x),
                                         axis=1)
         data_moments = self._data_moments
+        print(theta, np.linalg.norm(data_moments - dist_moments))
         return np.linalg.norm(data_moments - dist_moments)
 
     def fit(self, data, *args, **kwds):
@@ -2221,7 +2225,7 @@ class rv_continuous(rv_generic):
             provided will be determined by a call to ``_fitstart(data)``).
             No default value.
         kwds : floats, optional
-            Fixed values for the location and scale parameters; no default.
+            Starting values for the location and scale parameters; no default.
             Special keyword arguments are recognized as holding certain
             parameters fixed:
 

@@ -5004,7 +5004,7 @@ class lognorm_gen(rv_continuous):
         if len(args) > 1:
             raise TypeError("Too many input arguments.")
         for name in ['f0', 'fs', 'fix_s', 'floc', 'fscale', 'loc', 'scale',
-                     'optimizer']:
+                     'optimizer', 'method']:
             kwds.pop(name, None)
         if kwds:
             raise TypeError("Unknown arguments: %s." % kwds)
