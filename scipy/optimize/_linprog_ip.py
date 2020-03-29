@@ -803,9 +803,16 @@ def _ip_hsd(A, b, c, c0, alpha0, beta, maxiter, disp, tol, sparse, lstsq,
         inf2 = rho_mu < tol and tau < tol * min(1, kappa)
         if inf1 or inf2:
             # [4] Lemma 8.4 / Theorem 8.3, but more strict (see issue #11617)
-            if b.transpose().dot(y) > x.dot(z) and np.all(A.T.dot(y) <= 0):
+            xz = x.dot(z)  # xz = 0 means complementary slackness achieved
+            by = b.dot(y)  # by > 0 means infeasible (in theory)
+            cx = c.dot(x)  # cx < 0 means unbounded (in theory)
+            if by > xz and -cx <= xz:      # well-behaved and infeasible
                 status = 2
-            else:  # elif c.T.dot(x) < tol: ? Probably not necessary.
+            elif by <= xz and -cx > xz:    # well-behaved and unbounded
+                status = 3
+            elif by > xz and np.all(A.T.dot(y) <= 0):  # catch extra infeasible
+                status = 2
+            else:                          # otherwise assume unbounded
                 status = 3
             message = _get_message(status)
             break

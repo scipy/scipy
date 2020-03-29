@@ -1659,7 +1659,8 @@ class TestLinprogIPSpecific(object):
                           method=self.method, options={"presolve": False})
         assert_(not res.success, "Incorrectly reported success")
 
-    def test_bug_11617(self):
+    @pytest.mark.parametrize("s", np.logspace(-7, 8, 16))
+    def test_bug_11617(self, s):
         # interior-point fails to detect unboundedness for the simple LP
         #   min  x1
         #   s.t. x1 <= -1
@@ -1667,16 +1668,13 @@ class TestLinprogIPSpecific(object):
         #   min  x1      - x3
         #   s.t. x1 + x2 - x3 = -1
         #        x1,  x2,  x3 >= 0
-        # and this was true of other specific variants of the above LP.
+        # and also failed for specific variants and scalings of this LP.
         def check(c, A, b):
             res = linprog(c, None, None, A, b, bounds, method=self.method)
-            _assert_unbounded(res)        
-        # all scales from 1e-7...1e14 (1e-8 succeeds; 1e15 doesn't converge)
-        for i in range(-7, 15):
-            s = 10**i
-            check([s, 0, -s], [[s, s, -s]], [-s])  # failed in scipy 1.4.1
-            check([1, 0, -1], [[s, s, -s]], [-s])  # failed in scipy 1.4.1
-            check([1, 0, -1], [[1, 1, -1]], [-s])  # failed in scipy 1.4.1
+            _assert_unbounded(res)
+        check([s, 0, -s], [[s, s, -s]], [-s])  # failed in scipy 1.4.1
+        check([1, 0, -1], [[s, s, -s]], [-s])  # failed in scipy 1.4.1
+        check([1, 0, -1], [[1, 1, -1]], [-s])  # failed in scipy 1.4.1
 
 ########################################
 # Revised Simplex Option-Specific Tests#
