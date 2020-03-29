@@ -4,7 +4,7 @@ import numpy as np
 from numpy.linalg import norm
 from numpy.testing import (assert_, assert_allclose,
                            assert_equal, suppress_warnings)
-from pytest import raises as assert_raises
+from pytest import raises as assert_raises, warns
 from scipy.sparse import issparse, lil_matrix
 from scipy.sparse.linalg import aslinearoperator
 
@@ -744,3 +744,28 @@ def test_basic():
     # test that 'method' arg is really optional
     res = least_squares(fun_trivial, 2.0)
     assert_allclose(res.x, 0, atol=1e-10)
+
+
+def test_small_tolerances():
+    def res(p):
+        return y - H @ p
+
+    p0 = np.array([-0.62631426, 0.34736521, -1.53904034])
+    y = np.array([0.21042216, -0.774209, -1.69254418, -0.20248775, 2.15496739,
+                  0.57563308, 2.14036788, 1.9187491, -1.03636067, 3.58819572])
+    H = np.array([[0.4620464, -1.91682697, -0.55389804],
+                  [-0.79682045, -1.60787256, 1.58394725],
+                  [-0.52023376, -1.67694436, 0.18293149],
+                  [0.59203689, -1.37410441, -0.34793584],
+                  [-0.76610329, 0.39296886, -0.79426522],
+                  [-0.0211633, 1.20145896, 0.22471291],
+                  [-0.09212487, 0.35775539, -0.083304],
+                  [-0.91542477, 0.1543938, -1.14452311],
+                  [0.53072674, 1.28778141, 0.73426207],
+                  [-0.71480276, 0.66167675, -0.94704367]])
+
+    # EPS warnings for ftol and gtol are shown.
+    with warns(UserWarning):
+        result = least_squares(res, p0, xtol=1e-13, ftol=0,
+                               gtol=0, method='lm')
+    assert_equal(result.status, 5)  # tol is too small status from minpack

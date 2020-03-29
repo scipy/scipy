@@ -20,7 +20,9 @@ TERMINATION_MESSAGES = {
     1: "`gtol` termination condition is satisfied.",
     2: "`ftol` termination condition is satisfied.",
     3: "`xtol` termination condition is satisfied.",
-    4: "Both `ftol` and `xtol` termination conditions are satisfied."
+    4: "Both `ftol` and `xtol` termination conditions are satisfied.",
+    5: "tol is too small. "\
+       "no further reduction in the sum of squares is possible."
 }
 
 
@@ -30,8 +32,9 @@ FROM_MINPACK_TO_COMMON = {
     2: 3,
     3: 4,
     4: 1,
-    5: 0
-    # There are 6, 7, 8 for too small tolerance parameters,
+    5: 0,
+    6: 5
+    # There are 7, 8 for too small tolerance parameters,
     # but we guard against it by checking ftol, xtol, gtol beforehand.
 }
 
