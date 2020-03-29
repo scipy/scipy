@@ -2144,14 +2144,16 @@ class rv_continuous(rv_generic):
                 x0.append(args[n])
         self._fixedn = fixedn  # used in method of moments
 
-        objectives = {"MLE": self._penalized_nnlf,
-                      "MM": self._moment_error_norm}
-        method = kwds.pop('method', "mle").upper()
+        # use lower for consistency, although upper would be more streamlined
+        objectives = {"mle": self._penalized_nnlf,
+                      "mm": self._moment_error_norm}
+        method = kwds.pop('method', "mle").lower()
+        methods = str({key.upper() for key in objectives.keys()})
         try:
             objective = objectives[method]
         except KeyError:
             raise ValueError("Method '{0}' not available; must be one of {1}"
-                             .format(method, str(set(objectives.keys()))))
+                             .format(method, methods))
 
         if len(fixedn) == 0:
             func = objective
@@ -2196,8 +2198,9 @@ class rv_continuous(rv_generic):
             self._data_moments = np.sum(x[np.newaxis, :]**exponents/len(x),
                                         axis=1)
         data_moments = self._data_moments
-        print(theta, np.linalg.norm(data_moments - dist_moments))
-        return np.linalg.norm(data_moments - dist_moments)
+
+        # dist_moments needs to be flatten due to pearson3 bug
+        return np.linalg.norm(data_moments - dist_moments.flatten())
 
     def fit(self, data, *args, **kwds):
         """
@@ -2264,9 +2267,9 @@ class rv_continuous(rv_generic):
         penalty applied for samples beyond the range of the distribution.
 
         With ``method="MM"``, the fit is computed by minimizing the L2 norm
-        of the errors between first *k* data moments and distribution moments,
-        where *k* is the number of non-fixed parameters. Typically, the norm
-        of the errors can be reduced to zero.
+        of the errors between the first *k* data moments and the corresponding
+        distribution moments, where *k* is the number of non-fixed parameters.
+        Typically, this error norm can be reduced to zero.
 
         The returned answer is not guaranteed to be globally optimal; it
         may only be locally optimal, or the optimization may fail altogether.
@@ -2353,6 +2356,7 @@ class rv_continuous(rv_generic):
         # optimizer, but using an optimizer reduces maintains the structure of
         # MM/MLE and paves the way for Generalized Method of Moments
         vals = optimizer(func, x0, args=(ravel(data),), disp=0)
+
         if restore is not None:
             vals = restore(args, vals)
         vals = tuple(vals)
