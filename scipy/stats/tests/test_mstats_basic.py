@@ -20,7 +20,7 @@ from numpy.ma.testutils import (assert_equal, assert_almost_equal,
     assert_array_almost_equal, assert_array_almost_equal_nulp, assert_,
     assert_allclose, assert_array_equal)
 from numpy.testing import suppress_warnings
-
+from .. import mstats_basic
 
 class TestMquantiles(object):
     def test_mquantiles_limit_keyword(self):
@@ -356,27 +356,22 @@ class TestCorr(object):
                             [0.18,0.53,0.20,0.04])
 
 
-def test_kendall_tau_large():
+def test_kendall_p_exact_large():
     # Test for the exact method with large samples (n >= 171)
     # expected values generated using SymPy
-    expectations = {100: (-0.033131313131313136, 0.62822615287956040664),
-                    101: (0.03524752475247526, 0.60439525773513602669),
-                    200: (-0.015376884422110552, 0.74753983745929675209),
-                    201: (-0.03920398009950248, 0.40959218958120363618),
-                    400: (0.02343358395989975, 0.48444283672113314099),
-                    401: (-0.014563591022443893, 0.66363159823474837662),
-                    800: (-0.018948685857321654, 0.42265448483120932055),
-                    801: (-0.014675405742821473, 0.53437553412194416236),
-                    1600: (0.0033270794246404007, 0.84200727400323538419),
-                    1601: (0.01576514678326046, 0.34465255088058593946)}
+    expectations = {(100, 2393): 0.62822615287956040664,
+                    (101, 2436): 0.60439525773513602669,
+                    (200, 9797): 0.74753983745929675209,
+                    (201, 9656): 0.40959218958120363618,
+                    (400, 38965): 0.48444283672113314099,
+                    (401, 39516): 0.66363159823474837662,
+                    (800, 156772): 0.42265448483120932055,
+                    (801, 157849): 0.53437553412194416236,
+                    (1600, 637472): 0.84200727400323538419,
+                    (1601, 630304): 0.34465255088058593946}
     
-    for n, expected in expectations.items():
-        x = ma.array(np.arange(n))
-        np.random.seed(n)   # to get reproducible yet different permutations
-        y = ma.array(np.random.permutation(n))
-        with suppress_warnings() as sup:
-            sup.filter(RuntimeWarning)
-            res = np.asarray(mstats.kendalltau(x, y, method='exact'))
+    for nc, expected in expectations.items():
+        res = mstats_basic._kendall_p_exact(nc[0], nc[1])
         assert_almost_equal(res, expected)
 
     def test_pointbiserial(self):

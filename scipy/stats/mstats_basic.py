@@ -544,24 +544,20 @@ def _kendall_p_exact(n, c):
         prob = 1.0
     elif n < 171:
         new = np.zeros(c+1)
-        new[0] = 1.0
-        new[1] = 1.0
+        new[0:2] = 1.0
         for j in range(3,n+1):
-            cs = np.cumsum(new)
-            new = cs.copy()
+            new = np.cumsum(new)
             if j <= c:
-                new[j:] -= cs[:c+1-j]
-        prob = 2.0*sum(new)/np.math.factorial(n)
+                new[j:] -= new[:c+1-j]
+        prob = 2.0*np.sum(new)/np.math.factorial(n)
     else:
         new = np.zeros(c+1)
-        new[0] = 1.0
-        new[1] = 1.0
+        new[0:2] = 1.0
         for j in range(3, n+1):
-            cs = np.cumsum(new)/j
-            new = cs.copy()
+            new = np.cumsum(new)/j
             if j <= c:
-                new[j:] -= cs[:c+1-j]
-        prob = sum(new)
+                new[j:] -= new[:c+1-j]
+        prob = np.sum(new)
         prob = max(0.0, min(1.0, prob))
     
     return prob
@@ -589,8 +585,8 @@ def kendalltau(x, y, use_ties=True, use_missing=False, method='auto'):
         Defines which method is used to calculate the p-value [1]_.
         'asymptotic' uses a normal approximation valid for large samples.
         'exact' computes the exact p-value, but can only be used if no ties
-        are present. For sample size > 171, the exact computation may incur
-        roundoff error and can take very long.
+        are present. As the sample size increases, the 'exact' computation 
+        time may grow and the result may lose some precision.
         'auto' is the default and selects the appropriate
         method based on a trade-off between speed and accuracy.
 

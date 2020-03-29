@@ -3925,8 +3925,8 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate', method='auto'
             speed and accuracy
           * 'asymptotic': uses a normal approximation valid for large samples
           * 'exact': computes the exact p-value, but can only be used if no ties
-            are present. For sample size > 171, the exact computation may incur
-            roundoff error and can take very long.
+            are present. As the sample size increases, the 'exact' computation
+            time may grow and the result may lose some precision.
 
     Returns
     -------
