@@ -858,7 +858,7 @@ cdef class VarReader5:
                 arr = np.ndarray(shape=(length,),
                                   dtype=dt,
                                   buffer=data)
-                data = arr.astype(np.uint8).tostring()
+                data = arr.astype(np.uint8).tobytes()
         elif mdtype == miINT8 or mdtype == miUINT8:
             codec = 'ascii'
         elif mdtype in self.codecs: # encoded char data
