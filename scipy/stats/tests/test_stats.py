@@ -5183,51 +5183,51 @@ class TestMGCStat(object):
     @dec.slow
     @pytest.mark.parametrize("sim_type, obs_stat, obs_pvalue", [
         ("linear", 0.97, 1/1000),           # test linear simulation
-        ("nonlinear", 0.163, 1/1000),       # test spiral simulation
-        ("independence", -0.0094, 0.78)     # test independence simulation
+        ("nonlinear", 0.18, 1/1000),       # test spiral simulation
+        ("independence", 0.044, 0.043)     # test independence simulation
     ])
     def test_oned(self, sim_type, obs_stat, obs_pvalue):
         np.random.seed(12345678)
 
         # generate x and y
-        x, y = self._simulations(samps=100, dims=1, sim_type=sim_type)
+        x, y = self._simulations(samps=80, dims=1, sim_type=sim_type)
 
         # test stat and pvalue
         stat, pvalue, _ = stats.multiscale_graphcorr(x, y)
-        assert_approx_equal(stat, obs_stat, significant=1)
-        assert_approx_equal(pvalue, obs_pvalue, significant=1)
+        assert_approx_equal(stat, obs_stat, significant=2)
+        assert_approx_equal(pvalue, obs_pvalue, significant=2)
 
     @dec.slow
     @pytest.mark.parametrize("sim_type, obs_stat, obs_pvalue", [
-        ("linear", 0.184, 1/1000),           # test linear simulation
-        ("nonlinear", 0.0190, 0.117),        # test spiral simulation
+        ("linear", 0.21, 1/1000),           # test linear simulation
+        ("nonlinear", -0.0055, 0.55),        # test spiral simulation
     ])
     def test_fived(self, sim_type, obs_stat, obs_pvalue):
         np.random.seed(12345678)
 
         # generate x and y
-        x, y = self._simulations(samps=100, dims=5, sim_type=sim_type)
+        x, y = self._simulations(samps=80, dims=5, sim_type=sim_type)
 
         # test stat and pvalue
         stat, pvalue, _ = stats.multiscale_graphcorr(x, y)
-        assert_approx_equal(stat, obs_stat, significant=1)
-        assert_approx_equal(pvalue, obs_pvalue, significant=1)
+        assert_approx_equal(stat, obs_stat, significant=2)
+        assert_approx_equal(pvalue, obs_pvalue, significant=2)
 
     @dec.slow
     def test_twosamp(self):
         np.random.seed(12345678)
 
-        # generate x and y
-        x = np.random.binomial(100, 0.5, size=(100, 5))
-        y = np.random.normal(0, 1, size=(80, 5))
+        # generate random x and y
+        x = np.random.binomial(100, 0.5, size=(80, 5))
+        y = np.random.normal(0, 1, size=(60, 5))
 
         # test stat and pvalue
         stat, pvalue, _ = stats.multiscale_graphcorr(x, y)
         assert_approx_equal(stat, 1.0, significant=1)
         assert_approx_equal(pvalue, 0.001, significant=1)
 
-        # generate x and y
-        y = np.random.normal(0, 1, size=(100, 5))
+        # generate random new y
+        y = np.random.normal(0, 1, size=(80, 5))
 
         # test stat and pvalue
         stat, pvalue, _ = stats.multiscale_graphcorr(x, y, is_twosamp=True)

@@ -243,28 +243,28 @@ class TestGenInvGauss(object):
     def test_rvs_with_mode_shift(self):
         # ratio_unif w/ mode shift
         gig = stats.geninvgauss(2.3, 1.5)
-        _, p = stats.kstest(gig.rvs(size=1500, random_state=1234), gig.cdf)
+        _, p = stats.kstest(gig.rvs(size=1000, random_state=1234), gig.cdf)
         assert_equal(p > 0.05, True)
 
     @pytest.mark.slow
     def test_rvs_without_mode_shift(self):
         # ratio_unif w/o mode shift
         gig = stats.geninvgauss(0.9, 0.75)
-        _, p = stats.kstest(gig.rvs(size=1500, random_state=1234), gig.cdf)
+        _, p = stats.kstest(gig.rvs(size=1000, random_state=1234), gig.cdf)
         assert_equal(p > 0.05, True)
 
     @pytest.mark.slow
     def test_rvs_new_method(self):
         # new algorithm of Hoermann / Leydold
         gig = stats.geninvgauss(0.1, 0.2)
-        _, p = stats.kstest(gig.rvs(size=1500, random_state=1234), gig.cdf)
+        _, p = stats.kstest(gig.rvs(size=1000, random_state=1234), gig.cdf)
         assert_equal(p > 0.05, True)
 
     @pytest.mark.slow
     def test_rvs_p_zero(self):
         def my_ks_check(p, b):
             gig = stats.geninvgauss(p, b)
-            rvs = gig.rvs(size=1500, random_state=1234)
+            rvs = gig.rvs(size=1000, random_state=1234)
             return stats.kstest(rvs, gig.cdf)[1] > 0.05
         # boundary cases when p = 0
         assert_equal(my_ks_check(0, 0.2), True)  # new algo
@@ -279,7 +279,7 @@ class TestGenInvGauss(object):
 
     def test_invgauss(self):
         # test that invgauss is special case
-        ig = stats.geninvgauss.rvs(size=1500, p=-0.5, b=1, random_state=1234)
+        ig = stats.geninvgauss.rvs(size=1000, p=-0.5, b=1, random_state=1234)
         assert_equal(stats.kstest(ig, 'invgauss', args=[1])[1] > 0.15, True)
         # test pdf and cdf
         mu, x = 100, np.linspace(0.01, 1, 10)
