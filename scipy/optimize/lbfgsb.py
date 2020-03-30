@@ -344,7 +344,7 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
         _lbfgsb.setulb(m, x, low_bnd, upper_bnd, nbd, f, g, factr,
                        pgtol, wa, iwa, task, iprint, csave, lsave,
                        isave, dsave, maxls)
-        task_str = task.tostring()
+        task_str = task.tobytes()
         if task_str.startswith(b'FG'):
             # The minimization routine wants f and g at the current x.
             # Note that interruptions due to maxfun are postponed
@@ -365,7 +365,7 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
         else:
             break
 
-    task_str = task.tostring().strip(b'\x00').strip()
+    task_str = task.tobytes().strip(b'\x00').strip()
     if task_str.startswith(b'CONV'):
         warnflag = 0
     elif sf.nfev > maxfun or n_iterations >= maxiter:
