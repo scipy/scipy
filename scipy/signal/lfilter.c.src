@@ -73,18 +73,18 @@ convert_shape_to_errmsg(npy_intp ndim, npy_intp *Xshape, npy_intp *Vishape,
     PyObject *msg, *tmp, *msg1, *tmp1;
 
     if (ndim == 1) {
-        msg = PyUString_FromFormat("Unexpected shape for zi: expected (%"   \
+        msg = PyUnicode_FromFormat("Unexpected shape for zi: expected (%"   \
                                     NPY_INTP_FMT ",), found (%" NPY_INTP_FMT \
                                     ",).", val, Vishape[0]);
         return msg;
     }
 
-    msg = PyUString_FromString("Unexpected shape for zi:  expected (");
+    msg = PyUnicode_FromString("Unexpected shape for zi:  expected (");
     if (!msg) {
         return 0;
     }
 
-    msg1 = PyUString_FromString("), found (");
+    msg1 = PyUnicode_FromString("), found (");
     if (!msg1) {
         Py_DECREF(msg);
         return 0;
@@ -94,11 +94,11 @@ convert_shape_to_errmsg(npy_intp ndim, npy_intp *Xshape, npy_intp *Vishape,
         expect_size = j != theaxis ? Xshape[j] : val;
 
         if (j == ndim - 1) {
-            tmp = PyUString_FromFormat("%" NPY_INTP_FMT, expect_size);
-            tmp1 = PyUString_FromFormat("%" NPY_INTP_FMT, Vishape[j]);
+            tmp = PyUnicode_FromFormat("%" NPY_INTP_FMT, expect_size);
+            tmp1 = PyUnicode_FromFormat("%" NPY_INTP_FMT, Vishape[j]);
         } else {
-            tmp = PyUString_FromFormat("%" NPY_INTP_FMT ",", expect_size);
-            tmp1 = PyUString_FromFormat("%" NPY_INTP_FMT ",", Vishape[j]);
+            tmp = PyUnicode_FromFormat("%" NPY_INTP_FMT ",", expect_size);
+            tmp1 = PyUnicode_FromFormat("%" NPY_INTP_FMT ",", Vishape[j]);
         }
         if (!tmp) {
             Py_DECREF(msg);
@@ -112,16 +112,21 @@ convert_shape_to_errmsg(npy_intp ndim, npy_intp *Xshape, npy_intp *Vishape,
             Py_DECREF(tmp);
             return 0;
         }
-        PyUString_ConcatAndDel(&msg, tmp);
-        PyUString_ConcatAndDel(&msg1, tmp1);
+        Py_SETREF(msg, PyUnicode_Concat(msg, tmp));
+        Py_SETREF(msg1, PyUnicode_Concat(msg1, tmp1));
+        Py_DECREF(tmp);
+        Py_DECREF(tmp1);
     }
-    tmp = PyUString_FromString(").");
+    tmp = PyUnicode_FromString(").");
     if (!tmp) {
         Py_DECREF(msg);
         Py_DECREF(msg1);
+        return 0;
     }
-    PyUString_ConcatAndDel(&msg1, tmp);
-    PyUString_ConcatAndDel(&msg, msg1);
+    Py_SETREF(msg1, PyUnicode_Concat(msg1, tmp));
+    Py_SETREF(msg, PyUnicode_Concat(msg, msg1));
+    Py_DECREF(tmp);
+    Py_DECREF(msg1);
     return msg;
 }
 
