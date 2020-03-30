@@ -3124,7 +3124,7 @@ class F_onewayConstantInputWarning(RuntimeWarning):
     def __init__(self, msg=None):
         if msg is None:
             msg = ("Each of the input arrays is constant;"
-                    "the F-value and p-value are not defined or infinite")
+                    "the F-value is not defined or infinite")
         self.args = (msg,)
 
 
@@ -3152,7 +3152,7 @@ def f_oneway(*args):
     -------
     F_onewayConstantInputWarning
         Raised if each of the input arrays is constant array.
-        In this case F-value should be either infinite or isn't defined, so
+        In this case F-value is either infinite or isn't defined, so
         ``np.inf`` or ``np.nan`` is returned for F-value
 
     Notes
@@ -3171,7 +3171,8 @@ def f_oneway(*args):
 
     If each group is made of constant values, and
     
-    - There exists 2 groups with different values, the function returns (``np.inf``, 0)
+    - There exist at least two groups with different values
+         the function returns (``np.inf``, 0)
     - All values in all groups are the same, function returns (``np.nan``, ``np.nan``)
 
     The algorithm is from Heiman[2], pp.394-7.
