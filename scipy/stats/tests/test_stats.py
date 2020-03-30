@@ -2308,29 +2308,6 @@ class TestMoments(object):
         mm = stats.moment(a, 2, axis=1, nan_policy="propagate")
         np.testing.assert_allclose(mm, [1.25, np.nan], atol=1e-15)
 
-    def test_variation(self):
-        # variation = samplestd / mean
-        y = stats.variation(self.scalar_testcase)
-        assert_approx_equal(y, 0.0)
-        y = stats.variation(self.testcase)
-        assert_approx_equal(y, 0.44721359549996, 10)
-
-        x = np.arange(10.)
-        x[9] = np.nan
-        assert_equal(stats.variation(x), np.nan)
-        assert_almost_equal(stats.variation(x, nan_policy='omit'),
-                            0.6454972243679028)
-        assert_raises(ValueError, stats.variation, x, nan_policy='raise')
-        assert_raises(ValueError, stats.variation, x, nan_policy='foobar')
-
-    def test_variation_propagate_nan(self):
-        # Check that the shape of the result is the same for inputs
-        # with and without nans, cf gh-5817
-        a = np.arange(8).reshape(2, -1).astype(float)
-        a[1, 0] = np.nan
-        vv = stats.variation(a, axis=1, nan_policy="propagate")
-        np.testing.assert_allclose(vv, [0.7453559924999299, np.nan], atol=1e-15)
-
     def test_skewness(self):
         # Scalar test case
         y = stats.skew(self.scalar_testcase)

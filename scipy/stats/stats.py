@@ -185,6 +185,7 @@ from ._stats import (_kendall_dis, _toint64, _weightedrankedtau,
                      _local_correlations)
 from ._rvs_sampling import rvs_ratio_uniforms
 from ._hypotests import epps_singleton_2samp
+from ._variation import variation
 
 
 __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
@@ -1091,57 +1092,6 @@ def _moment(a, moment, axis):
             if n % 2:
                 s *= a_zero_mean
         return np.mean(s, axis)
-
-
-def variation(a, axis=0, nan_policy='propagate'):
-    """
-    Compute the coefficient of variation.
-
-    The coefficient of variation is the ratio of the biased standard
-    deviation to the mean.
-
-    Parameters
-    ----------
-    a : array_like
-        Input array.
-    axis : int or None, optional
-        Axis along which to calculate the coefficient of variation. Default
-        is 0. If None, compute over the whole array `a`.
-    nan_policy : {'propagate', 'raise', 'omit'}, optional
-        Defines how to handle when input contains nan.
-        The following options are available (default is 'propagate'):
-
-          * 'propagate': returns nan
-          * 'raise': throws an error
-          * 'omit': performs the calculations ignoring nan values
-
-    Returns
-    -------
-    variation : ndarray
-        The calculated variation along the requested axis.
-
-    References
-    ----------
-    .. [1] Zwillinger, D. and Kokoska, S. (2000). CRC Standard
-       Probability and Statistics Tables and Formulae. Chapman & Hall: New
-       York. 2000.
-
-    Examples
-    --------
-    >>> from scipy.stats import variation
-    >>> variation([1, 2, 3, 4, 5])
-    0.47140452079103173
-
-    """
-    a, axis = _chk_asarray(a, axis)
-
-    contains_nan, nan_policy = _contains_nan(a, nan_policy)
-
-    if contains_nan and nan_policy == 'omit':
-        a = ma.masked_invalid(a)
-        return mstats_basic.variation(a, axis)
-
-    return a.std(axis) / a.mean(axis)
 
 
 def skew(a, axis=0, bias=True, nan_policy='propagate'):
