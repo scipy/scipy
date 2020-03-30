@@ -226,66 +226,6 @@ cdef class ZlibInputStream(GenericStream):
         return 0
 
 
-cdef class FileStream(GenericStream):
-    cdef FILE* file
-
-    def __init__(self, fobj):
-        self.fobj = fobj
-        self.file = npy_PyFile_Dup(fobj, "rb")
-
-    def __del__(self):
-        npy_PyFile_DupClose(self.fobj, self.file)
-
-    cpdef int seek(self, long int offset, int whence=0) except -1:
-        cdef int ret
-        """ move `offset` bytes in stream
-
-        Parameters
-        ----------
-        offset : long int
-           number of bytes to move.  Positive for forward in file,
-           negative for backward
-        whence : int
-           `whence` can be:
-
-           * 0 - from beginning of file (`offset` should be >=0)
-           * 1 - from current file position
-           * 2 - from end of file (`offset` nearly always <=0)
-
-        Returns
-        -------
-        ret : int
-        """
-        ret = fseek(self.file, offset, whence)
-        if ret:
-            raise IOError('Failed seek')
-        return ret
-
-    cpdef long int tell(self) except -1:
-        cdef long int position = ftell(self.file)
-        if position == -1:
-            raise IOError("Invalid file position.")
-        return position
-
-    cdef int read_into(self, void *buf, size_t n) except -1:
-        """ Read n bytes from stream into pre-allocated buffer `buf`
-        """
-        cdef:
-            size_t n_red
-            char* d_ptr
-        n_red = fread(buf, 1, n, self.file)
-        if n_red != n:
-            raise IOError('Could not read bytes')
-        return 0
-
-    cdef object read_string(self, size_t n, void **pp, int copy=True):
-        """ Make new memory, wrap with object """
-        cdef object obj = pyalloc_v(n, pp)
-        cdef size_t n_red = fread(pp[0], 1, n, self.file)
-        if n_red != n:
-            raise IOError('could not read bytes')
-        return obj
-
 def _read_into(GenericStream st, size_t n):
     # for testing only.  Use st.read instead
     cdef char * d_ptr
@@ -310,8 +250,6 @@ def _read_string(GenericStream st, size_t n):
 cpdef GenericStream make_stream(object fobj):
     """ Make stream of correct type for file-like `fobj`
     """
-    if npy_PyFile_Check(fobj):
-        return GenericStream(fobj)
-    elif isinstance(fobj, GenericStream):
+    if isinstance(fobj, GenericStream):
         return fobj
     return GenericStream(fobj)
