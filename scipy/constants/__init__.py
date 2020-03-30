@@ -27,8 +27,8 @@ BIPM is recommended (see [1]_):
 - The ampere (:math:`\mathrm{A}`) as the SI unit of electric current is derived
   from the elementary charge :math:`e`.
 
-- The kelvin (:math:`\mathrm{K}`) as the SI unit of thermodynamic temperature is
-  derived from the Boltzmann constant :math:`k`.
+- The kelvin (:math:`\mathrm{K}`) as the SI unit of thermodynamic temperature
+  is derived from the Boltzmann constant :math:`k`.
 
 - The mole (:math:`\mathrm{mol}`) as the SI unit of amount of substance is
   derived from the Avogadro constant :math:`N_{\mathrm{A}}`.
@@ -68,8 +68,11 @@ numerical value(s) is/are put in the table rows or on the axis ticks.
 
 List of all constants
 =====================
-The properties of the constants in :mod:`scipy.constants` are taken from
-[3]_ and can be either accessed directly via
+The constants in the dictionary
+
+.. data:: physical_constants
+
+are taken from [3]_ and can be either accessed directly via
 
 .. autosummary::
    :toctree: generated/
@@ -80,11 +83,11 @@ The properties of the constants in :mod:`scipy.constants` are taken from
    find       -- Return list of physical_constant keys with a given string
    ConstantWarning -- Constant sought not in newest CODATA data set
 
-or via the dictionary
+or via
 
 ``scipy.constants.physical_constants[name] = (value, unit, uncertainty)``.
 
-A complete list of available constants is given in the following:
+A complete list of the available constants is given in the following:
 
 ======================================================================  ====
 %(constant_names)s
