@@ -20,14 +20,6 @@ cdef extern from "Python.h":
     ctypedef struct FILE
 
 cdef extern from "py3k.h":
-    # From:
-    # https://github.com/hydralabs/pyamf/blob/release-0.4rc2/cpyamf/util.pyx
-    # (MIT license) - with thanks
-    int StringIO_cread "PycStringIO->cread" (object, char **, Py_ssize_t)
-    int StringIO_creadline "PycStringIO->creadline" (object, char **)
-    int StringIO_cwrite "PycStringIO->cwrite" (object, char *, Py_ssize_t)
-    object StringIO_cgetvalue "PycStringIO->cgetvalue" (obj)
-
     FILE* npy_PyFile_Dup(object file, char *mode) except NULL
     int npy_PyFile_DupClose(object file, FILE *handle) except -1
     int npy_PyFile_Check(object file)
