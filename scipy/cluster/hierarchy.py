@@ -3093,6 +3093,8 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
         -sized list (or tuple). The ``labels[i]`` value is the text to put
         under the :math:`i` th leaf node only if it corresponds to an original
         observation and not a non-singleton cluster.
+
+        Note, Dimensions of ``Z`` and ``labels`` must be consistent.
     count_sort : str or bool, optional
         For each node n, the order (visually, from left-to-right) n's
         two descendent links are plotted is determined by this
@@ -3270,6 +3272,9 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
     if orientation not in ["top", "left", "bottom", "right"]:
         raise ValueError("orientation must be one of 'top', 'left', "
                          "'bottom', or 'right'")
+
+    if labels and  Z.shape[1] != len(labels):
+        raise ValueError("Dimensions of Z and labels must be consistent.")
 
     is_valid_linkage(Z, throw=True, name='Z')
     Zs = Z.shape

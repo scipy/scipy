@@ -813,6 +813,20 @@ class TestDendrogram(object):
         assert_raises(ValueError, dendrogram, Z, orientation="foo")
 
     @pytest.mark.skipif(not have_matplotlib, reason="no matplotlib")
+    def test_valid_label_size(self):
+        link = np.array([
+            [0, 1, 1.0, 4],
+            [2, 3, 1.0, 5],
+            [4, 5, 2.0, 6],
+        ])
+        plt.figure()
+        with pytest.raises(ValueError) as exc_info:
+            dendrogram(link, labels=list(range(100)))
+        assert "Dimensions of Z and labels must be consistent."\
+               in str(exc_info.value)
+        plt.close()
+
+    @pytest.mark.skipif(not have_matplotlib, reason="no matplotlib")
     def test_dendrogram_plot(self):
         for orientation in ['top', 'bottom', 'left', 'right']:
             self.check_dendrogram_plot(orientation)
