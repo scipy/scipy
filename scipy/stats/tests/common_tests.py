@@ -23,12 +23,7 @@ def check_normalization(distfn, args, distname):
     norm_moment = distfn.moment(0, *args)
     npt.assert_allclose(norm_moment, 1.0)
 
-    # this is a temporary plug: either ncf or expect is problematic;
-    # best be marked as a knownfail, but I've no clue how to do it.
-    if distname == "ncf":
-        atol, rtol = 1e-5, 0
-    else:
-        atol, rtol = 1e-7, 1e-7
+    atol, rtol = 1e-7, 1e-7
 
     normalization_expect = distfn.expect(lambda x: 1, args=args)
     npt.assert_allclose(normalization_expect, 1.0, atol=atol, rtol=rtol,
@@ -265,7 +260,7 @@ def check_cmplx_deriv(distfn, arg):
         assert_allclose(deriv(distfn.sf, x, *arg), -pdf, rtol=1e-5)
         assert_allclose(deriv(distfn.logsf, x, *arg), -pdf/sf, rtol=1e-5)
 
-        assert_allclose(deriv(distfn.logpdf, x, *arg), 
+        assert_allclose(deriv(distfn.logpdf, x, *arg),
                         deriv(distfn.pdf, x, *arg) / distfn.pdf(x, *arg),
                         rtol=1e-5)
 
