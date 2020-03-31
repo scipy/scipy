@@ -130,6 +130,8 @@ double faddeeva_voigt_profile(double x, double sigma, double gamma)
 
     if(sigma == 0){
         if (gamma == 0){
+            if (isnan(x))
+                return x;
             if (x == 0)
                 return NPY_INFINITY;
             return 0;
