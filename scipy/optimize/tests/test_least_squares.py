@@ -369,6 +369,8 @@ class BaseMixin(object):
                       method=self.method, ftol=None, xtol=None, gtol=None)
 
     def test_convergence_with_only_one_tolerance_enabled(self):
+        if self.method == 'lm':
+            return # should not do test
         x0 = [-2, 1]
         x_opt = [1, 1]
         for ftol, xtol, gtol in [(1e-8, None, None),
@@ -746,7 +748,7 @@ def test_basic():
     assert_allclose(res.x, 0, atol=1e-10)
 
 
-def test_small_tolerances():
+def test_small_tolerances_for_lm():
     def res(p):
         return y - H @ p
 
@@ -764,8 +766,10 @@ def test_small_tolerances():
                   [0.53072674, 1.28778141, 0.73426207],
                   [-0.71480276, 0.66167675, -0.94704367]])
 
-    # EPS warnings for ftol and gtol are shown.
-    with warns(UserWarning):
-        result = least_squares(res, p0, xtol=1e-13, ftol=0,
-                               gtol=0, method='lm')
-    assert_equal(result.status, 5)  # tol is too small status from minpack
+    for ftol, xtol, gtol in [(0.0, 1e-13, 1e-13),
+                             (1e-13, 0.0, 1e-13),
+                             (1e-13, 1e-13, 0.0)]:
+        with warns(UserWarning): # UseWarning for EPS are shown.
+            print(ftol, xtol, gtol)
+            assert_raises(ValueError, least_squares, res, p0, xtol=xtol,
+                      ftol=ftol, gtol=gtol, method='lm')
