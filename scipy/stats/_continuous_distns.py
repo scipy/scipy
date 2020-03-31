@@ -2896,7 +2896,7 @@ class gamma_gen(rv_continuous):
                 # shape and scale are both free.
                 # The MLE for the shape parameter `a` is the solution to:
                 # np.log(a) - sc.digamma(a) - np.log(xbar) +
-                #                             np.log(data.mean) = 0
+                #                             np.log(data).mean() = 0
                 s = np.log(xbar) - np.log(data).mean()
                 func = lambda a: np.log(a) - sc.digamma(a) - s
                 aest = (3-s + np.sqrt((s-3)**2 + 24*s)) / (12*s)
