@@ -328,10 +328,14 @@ class norm_gen(rv_continuous):
         return 0.5*(np.log(2*np.pi)+1)
 
     @replace_notes_in_docstring(rv_continuous, notes="""\
-        This function uses explicit formulas for the maximum likelihood
+        For the normal distribution, method of moments and maximum likelihood
+        estimation give identical fits, and explicit formulas for the estimates
+        are available.
+        This function uses these explicit formulas for the maximum likelihood
         estimation of the normal distribution parameters, so the
         `optimizer` and `method` arguments are ignored.\n\n""")
     def fit(self, data, **kwds):
+
         floc = kwds.pop('floc', None)
         fscale = kwds.pop('fscale', None)
 
@@ -615,17 +619,19 @@ class beta_gen(rv_continuous):
         return super(beta_gen, self)._fitstart(data, args=(a, b))
 
     @extend_notes_in_docstring(rv_continuous, notes="""\
-        In the special case where both `floc` and `fscale` are given, a
+        In the special case where `method="MLE"` and
+        both `floc` and `fscale` are given, a
         `ValueError` is raised if any value `x` in `data` does not satisfy
         `floc < x < floc + fscale`.\n\n""")
     def fit(self, data, *args, **kwds):
         # Override rv_continuous.fit, so we can more efficiently handle the
         # case where floc and fscale are given.
 
+        method = kwds.get('method', 'mle').lower()
         floc = kwds.get('floc', None)
         fscale = kwds.get('fscale', None)
 
-        if floc is None or fscale is None:
+        if floc is None or fscale is None or method == 'mm':
             # do general fit
             return super(beta_gen, self).fit(data, *args, **kwds)
 
@@ -1491,13 +1497,18 @@ class expon_gen(rv_continuous):
         return 1.0
 
     @replace_notes_in_docstring(rv_continuous, notes="""\
-        This function uses explicit formulas for the maximum likelihood
+        When `method='MLE'`,
+        this function uses explicit formulas for the maximum likelihood
         estimation of the exponential distribution parameters, so the
-        `optimizer`, `method`, `loc` and `scale` keyword arguments are
+        `optimizer`, `loc` and `scale` keyword arguments are
         ignored.\n\n""")
     def fit(self, data, *args, **kwds):
         if len(args) > 0:
             raise TypeError("Too many arguments.")
+
+        method = kwds.get('method', 'mle').lower()
+        if method == 'mm':
+            return super(type(self), self).fit(data, *args, **kwds)
 
         floc = kwds.pop('floc', None)
         fscale = kwds.pop('fscale', None)
@@ -2841,15 +2852,17 @@ class gamma_gen(rv_continuous):
         return super(gamma_gen, self)._fitstart(data, args=(a,))
 
     @extend_notes_in_docstring(rv_continuous, notes="""\
-        When the location is fixed by using the argument `floc`, this
+        When the location is fixed by using the argument `floc`
+        and `method='MLE'`, this
         function uses explicit formulas or solves a simpler numerical
         problem than the full ML optimization problem.  So in that case,
-        the `optimizer`, `method`, `loc` and `scale` arguments are ignored.
+        the `optimizer`, `loc` and `scale` arguments are ignored.
         \n\n""")
     def fit(self, data, *args, **kwds):
         floc = kwds.get('floc', None)
+        method = kwds.get('method', 'mle').lower()
 
-        if floc is None:
+        if floc is None or method == 'mm':
             # loc is not fixed.  Use the default fit method.
             return super(gamma_gen, self).fit(data, *args, **kwds)
 
@@ -4986,15 +4999,17 @@ class lognorm_gen(rv_continuous):
         return 0.5 * (1 + np.log(2*np.pi) + 2 * np.log(s))
 
     @extend_notes_in_docstring(rv_continuous, notes="""\
-        When the location parameter is fixed by using the `floc` argument,
+        When `method='MLE'` and
+        the location parameter is fixed by using the `floc` argument,
         this function uses explicit formulas for the maximum likelihood
         estimation of the log-normal shape and scale parameters, so the
-        `optimizer`, `method`, `loc` and `scale` keyword arguments are ignored.
+        `optimizer`, `loc` and `scale` keyword arguments are ignored.
         \n\n""")
     def fit(self, data, *args, **kwds):
+        method = kwds.get('method', 'mle').lower()
         floc = kwds.get('floc', None)
-        if floc is None:
-            # loc is not fixed.  Use the default fit method.
+        if floc is None or method == 'mm':
+            # fall back on the default fit method.
             return super(lognorm_gen, self).fit(data, *args, **kwds)
 
         f0 = (kwds.get('f0', None) or kwds.get('fs', None) or
@@ -7489,6 +7504,10 @@ class uniform_gen(rv_continuous):
         the interval ``[data.min(), data.max()]``.
 
         """
+        method = kwds.get('method', 'mle').lower()
+        if method == 'mm':
+            return super(type(self), self).fit(data, *args, **kwds)
+
         if len(args) > 0:
             raise TypeError("Too many arguments.")
 
