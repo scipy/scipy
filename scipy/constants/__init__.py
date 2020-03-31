@@ -8,11 +8,10 @@ Constants (:mod:`scipy.constants`)
 
 About the SI units
 ==================
-In 2019 seven système international d’unités (SI) base units were redefined to
-serve as a basis for all physical quantities by the bureau
-international des poids et mesures (BIPM). They can be summarized as followed
-even though for a more detailed background the information provided by the
-BIPM is recommended (see [1]_):
+In 2019 seven SI base units were (re)defined to serve as a basis for all 
+physical quantities by the BIPM. They can be summarized as followed even though
+for a more detailed background the information provided by the BIPM is
+recommended (see [1]_):
 
 - The second (:math:`\mathrm{s}`) as the SI unit of time is derived from the
   unperturbed ground-state hyperfine transition frequency of the caesium-133
