@@ -22,6 +22,7 @@ from warnings import warn
 from ._linprog_ip import _linprog_ip
 from ._linprog_simplex import _linprog_simplex
 from ._linprog_rs import _linprog_rs
+from ._linprog_highs import _linprog_highs
 from ._linprog_util import (
     _parse_linprog, _presolve, _get_Abc, _postprocess, _LPProblem, _autoscale)
 from copy import deepcopy
@@ -513,6 +514,14 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
 
     lp = _LPProblem(c, A_ub, b_ub, A_eq, b_eq, bounds, x0)
     lp, solver_options = _parse_linprog(lp, options)
+
+    # Give unmodified problem to HiGHS
+    if meth.startswith('highs'):
+        highs_solvers = {'highs-ipm': 'ipm', 'highs-simplex': 'simplex'}
+        sol = _linprog_highs(lp, solver=highs_solvers[meth],  # meth[6:]?
+                             **solver_options)
+        return OptimizeResult(sol)
+
     tol = solver_options.get('tol', 1e-9)
 
     iteration = 0

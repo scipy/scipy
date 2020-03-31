@@ -1406,6 +1406,14 @@ class LinprogRSTests(LinprogCommonTests):
     def test_network_flow(self):
         pytest.skip("Intermittent failure acceptable.")
 
+
+class LinprogHiGHSIPMTests(LinprogCommonTests):
+    method = "highs-ipm"
+
+
+class LinprogHiGHSSimplexTests(LinprogCommonTests):
+    method = "highs-simplex"
+
 ################################
 # Simplex Option-Specific Tests#
 ################################
@@ -1730,6 +1738,24 @@ class TestLinprogRSCommon(LinprogRSTests):
 
 class TestLinprogRSBland(LinprogRSTests):
     options = {"pivot": "bland"}
+
+
+#######################################
+# HiGHS-Simplex Option-Specific Tests #
+#######################################
+
+
+class TestLinprogHiGHSSimplex(LinprogHiGHSSimplexTests):
+    options = {}
+
+
+#######################################
+# HiGHS-Simplex Option-Specific Tests #
+#######################################
+
+
+class TestLinprogHiGHSIPM(LinprogHiGHSIPMTests):
+    options = {}
 
 
 ###########################
