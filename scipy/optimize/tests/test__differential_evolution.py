@@ -1150,7 +1150,10 @@ class TestDifferentialEvolutionSolver(object):
 
         with suppress_warnings() as sup:
             sup.filter(UserWarning)
-            res = differential_evolution(f, bounds, strategy='rand1bin',
+            # original Lampinen test was with rand1bin, but that takes a
+            # huge amount of CPU time. Changing strategy to best1bin speeds
+            # things up a lot
+            res = differential_evolution(f, bounds, strategy='best1bin',
                                          seed=1234, constraints=constraints,
                                          maxiter=5000)
 
