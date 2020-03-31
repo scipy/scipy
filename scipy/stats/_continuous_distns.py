@@ -6269,6 +6269,17 @@ class pearson3_gen(rv_continuous):
         ans[invmask] = sc.gammaincinv(alpha, q[invmask])/beta + zeta
         return ans
 
+    @extend_notes_in_docstring(rv_continuous, notes="""\
+        Note that method of moments (`method='MM'`) is not
+        available for this distribution.\n\n""")
+    def fit(self, data, *args, **kwds):
+        if kwds.get("method", None) == 'MM':
+            raise NotImplementedError("Fit `method='MM'` is not available for "
+                                      "the Pearson3 distribution. Please try "
+                                      "the default `method='MLE'`.")
+        else:
+            return super(type(self), self).fit(data, *args, **kwds)
+
 
 pearson3 = pearson3_gen(name="pearson3")
 

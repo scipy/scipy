@@ -2199,8 +2199,7 @@ class rv_continuous(rv_generic):
                                         axis=1)
         data_moments = self._data_moments
 
-        # dist_moments needs to be flatten due to pearson3 bug
-        return np.linalg.norm(data_moments - dist_moments.flatten())
+        return np.linalg.norm(data_moments - dist_moments)
 
     def fit(self, data, *args, **kwds):
         """

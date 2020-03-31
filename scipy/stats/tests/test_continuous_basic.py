@@ -50,20 +50,51 @@ distslow = ['kappa4', 'gausshyper', 'recipinvgauss', 'genexpon',
 # distslow are sorted by speed (very slow to slow)
 
 # skip check_fit_args (test is slow)
-skip_fit_test = ['exponpow', 'exponweib', 'gausshyper', 'genexpon',
-                 'halfgennorm', 'gompertz', 'johnsonsb', 'johnsonsu',
-                 'kappa4', 'ksone', 'kstwo', 'kstwobign', 'mielke', 'ncf', 'nct',
-                 'powerlognorm', 'powernorm', 'recipinvgauss', 'trapz',
-                 'vonmises', 'vonmises_line',
-                 'levy_stable', 'rv_histogram_instance']
+skip_fit_test_mle = ['exponpow', 'exponweib', 'gausshyper', 'genexpon',
+                     'halfgennorm', 'gompertz', 'johnsonsb', 'johnsonsu',
+                     'kappa4', 'ksone', 'kstwo', 'kstwobign', 'mielke', 'ncf',
+                     'nct', 'powerlognorm', 'powernorm', 'recipinvgauss',
+                     'trapz', 'vonmises', 'vonmises_line', 'levy_stable',
+                     'rv_histogram_instance']
+# these were really slow in `test_fit`.py.
+# note that this list is used to skip both fit_test and fit_fix tests
+slow_fit_test_mm = ['argus', 'exponpow', 'exponweib', 'gausshyper', 'genexpon',
+                    'genhalflogistic', 'halfgennorm', 'gompertz', 'johnsonsb',
+                    'kappa4', 'kstwobign', 'recipinvgauss', 'skewnorm',
+                    'trapz', 'truncexpon', 'vonmises', 'vonmises_line']
+# pearson3 fails due to something weird
+# the first list fails due to non-finite distribution moments encountered
+# most of the rest fail due to integration warnings
+# pearson3 is overriden as not implemented due to gh-11746
+fail_fit_test_mm = (['alpha', 'betaprime', 'bradford', 'burr', 'burr12',
+                     'cauchy', 'crystalball', 'f', 'fisk', 'foldcauchy',
+                     'genextreme', 'genpareto', 'halfcauchy', 'invgamma',
+                     'kappa3', 'levy', 'levy_l', 'loglaplace', 'lomax',
+                     'mielke', 'nakagami', 'ncf', 't', 'tukeylambda'] +
+                    ['ksone', 'kstwo', 'nct', 'pareto', 'powernorm'] +
+                    ['pearson3'])
+skip_fit_test = {"MLE": skip_fit_test_mle,
+                 "MM": slow_fit_test_mm + fail_fit_test_mm}
 
 # skip check_fit_args_fix (test is slow)
-skip_fit_fix_test = ['burr', 'exponpow', 'exponweib',
-                     'gausshyper', 'genexpon', 'halfgennorm',
-                     'gompertz', 'johnsonsb', 'johnsonsu', 'kappa4',
-                     'ksone', 'kstwo', 'kstwobign', 'levy_stable', 'mielke', 'ncf',
-                     'ncx2', 'powerlognorm', 'powernorm', 'rdist',
-                     'recipinvgauss', 'trapz', 'vonmises', 'vonmises_line']
+skip_fit_fix_test_mle = ['burr', 'exponpow', 'exponweib', 'gausshyper',
+                         'genexpon', 'halfgennorm', 'gompertz', 'johnsonsb',
+                         'johnsonsu', 'kappa4', 'ksone', 'kstwo', 'kstwobign',
+                         'levy_stable', 'mielke', 'ncf', 'ncx2',
+                         'powerlognorm', 'powernorm', 'rdist', 'recipinvgauss',
+                         'trapz', 'vonmises', 'vonmises_line']
+# the first list fails due to non-finite distribution moments encountered
+# most of the rest fail due to integration warnings
+# pearson3 is overriden as not implemented due to gh-11746
+fail_fit_fix_test_mm = (['alpha', 'betaprime', 'burr', 'burr12', 'cauchy',
+                         'crystalball', 'f', 'fisk', 'foldcauchy',
+                         'genextreme', 'genpareto', 'halfcauchy', 'invgamma',
+                         'kappa3', 'levy', 'levy_l', 'loglaplace', 'lomax',
+                         'mielke', 'nakagami', 'ncf', 'nct', 't'] +
+                        ['ksone', 'kstwo', 'pareto', 'powernorm'] +
+                        ['pearson3'])
+skip_fit_fix_test = {"MLE": skip_fit_fix_test_mle,
+                     "MM": slow_fit_test_mm + fail_fit_fix_test_mm}
 
 # These distributions fail the complex derivative test below.
 # Here 'fail' mean produce wrong results and/or raise exceptions, depending
@@ -95,8 +126,7 @@ def cases_test_cont_basic():
 
 
 @pytest.mark.parametrize('distname,arg', cases_test_cont_basic())
-@pytest.mark.parametrize('method', ["MLE", "MM"])
-def test_cont_basic(distname, arg, method):
+def test_cont_basic(distname, arg):
     # this test skips slow distributions
 
     if distname == 'truncnorm':
@@ -182,11 +212,12 @@ def test_cont_basic(distname, arg, method):
         if distname != 'truncnorm':
             check_ppf_private(distfn, arg, distname)
 
-        if distname not in skip_fit_test:
-            check_fit_args(distfn, arg, rvs[0:200], method)
+        for method in ["MLE", "MM"]:
+            if distname not in skip_fit_test[method]:
+                check_fit_args(distfn, arg, rvs[0:200], method)
 
-        if distname not in skip_fit_fix_test:
-            check_fit_args_fix(distfn, arg, rvs[0:200], method)
+            if distname not in skip_fit_fix_test[method]:
+                check_fit_args_fix(distfn, arg, rvs[0:200], method)
 
 
 def test_levy_stable_random_state_property():
@@ -598,9 +629,7 @@ def check_fit_args(distfn, arg, rvs, method):
                    message="floating point number truncated")
         vals = distfn.fit(rvs, method=method)
         vals2 = distfn.fit(rvs, optimizer='powell', method=method)
-    # Only check the length of the return
-    # FIXME: should check the actual results to see if we are 'close'
-    #   to what was created --- but what is 'close' enough
+    # Only check the length of the return; accuracy tested in test_fit.py
     npt.assert_(len(vals) == 2+len(arg))
     npt.assert_(len(vals2) == 2+len(arg))
 
