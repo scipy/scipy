@@ -1696,17 +1696,27 @@ def test_gejsv_general(size, dtype, joba, jobu, jobv, jobr, jobt, jobp):
     """
     seed(42)
 
-    if jobv == 'J' and jobu in {'N', 'W'}:
-        pytest.skip("jobv = 'J' is not allowed if jobu is 'N' or 'W'")
-
     # Define some constants for later use:
     m, n = size
     atol = 100 * np.finfo(dtype).eps
     A = generate_random_dtype_array(size, dtype)
-    compute_u = jobu in {'U', 'F'}
-    compute_v = jobv in {'V', 'J'}
-    compute_full_svd = compute_u and compute_v
     gejsv = get_lapack_funcs('gejsv', dtype=dtype)
+
+    lsvec = jobu in {'U', 'F'}
+    rsvec = jobv in {'V', 'J'}
+    l2tran = (jobt == 'T') and (m == n)
+    is_complex = np.iscomplexobj(A)
+
+    invalid_real_jobv = (jobv == 'J') and (not lsvec) and (not is_complex)
+    invalid_cplx_jobu = (jobu == 'W') and not (rsvec and l2tran) and is_complex
+    invalid_cplx_jobv = (jobv == 'W') and not (lsvec and l2tran) and is_complex
+
+    if invalid_cplx_jobu:
+        exit_status = -2
+    elif invalid_real_jobv or invalid_cplx_jobv:
+        exit_status = -3
+    else:
+        exit_status = 0
 
     sva, u, v, work, iwork, info = gejsv(A,
                                          joba=joba,
@@ -1717,34 +1727,37 @@ def test_gejsv_general(size, dtype, joba, jobu, jobv, jobr, jobt, jobp):
                                          jobp=jobp)
 
     # Check that ?gejsv exited successfully
-    assert_equal(info, 0)
+    assert_equal(info, exit_status)
 
-    # Check the returned singular values
-    sigma = work[1] / work[0] * sva[:n]  # not a matrix
-    assert_allclose(sigma, svd(A, compute_uv=False), atol=atol)
+    # If exit_status is non-zero the combination of jobs is invalid.
+    # We test this above but no calculations are performed.
+    if not exit_status:
 
-    if jobu == 'F':
-        # If JOBU = 'F', then u contains the M-by-M matrix of
-        # the left singular vectors, including an ONB of the orthogonal
-        # complement of the Range(A)
-        # However, to recalculate A we are concerned about the
-        # first n singular values and so can ignore the latter.
-        #TODO: Add a test for ONB?
-        u = u[:, :n]
+        # Check the returned singular values
+        sigma = (work[0] / work[1]) * sva[:n]
+        assert_allclose(sigma, svd(A, compute_uv=False), atol=atol)
 
-    if compute_full_svd:
-        SIGMA = np.diag(work[1] / work[0] * sva[:n])
-        assert_allclose(A, u @ SIGMA @ v.T, atol=atol)
-    if compute_u:
-        assert_allclose(u.T @ u, np.identity(n), atol=atol)
-    if compute_v:
-        assert_allclose(v @ v.T, np.identity(n), atol=atol)
+        if jobu == 'F':
+            # If JOBU = 'F', then u contains the M-by-M matrix of
+            # the left singular vectors, including an ONB of the orthogonal
+            # complement of the Range(A)
+            # However, to recalculate A we are concerned about the
+            # first n singular values and so can ignore the latter.
+            #TODO: Add a test for ONB?
+            u = u[:, :n]
 
-    assert_equal(iwork[0], np.linalg.matrix_rank(A))
-    assert_equal(iwork[1], np.count_nonzero(sigma))
-    # iwork[2] is non-zero if requested accuracy is not warranted for the
-    # data. This should never occur for these tests.
-    assert_equal(iwork[2], 0)
+        if lsvec and rsvec:
+            assert_allclose(u @ np.diag(sigma) @ v.conj().T, A, atol=atol)
+        if lsvec:
+            assert_allclose(u.conj().T @ u, np.identity(n), atol=atol)
+        if rsvec:
+            assert_allclose(v.conj().T @ v, np.identity(n), atol=atol)
+
+        assert_equal(iwork[0], np.linalg.matrix_rank(A))
+        assert_equal(iwork[1], np.count_nonzero(sigma))
+        # iwork[2] is non-zero if requested accuracy is not warranted for the
+        # data. This should never occur for these tests.
+        assert_equal(iwork[2], 0)
 
 
 @pytest.mark.parametrize("dtype", DTYPES)
@@ -1784,8 +1797,6 @@ def test_gejsv_specific(dtype):
                             (None, {}, 0),
                             ((3, 3), {'joba': 'L'}, -1),
                             ((3, 3), {'jobu': 'L'}, -2),
-                            ((3, 3), {'jobv': 'J', 'jobu': 'W'}, -3),
-                            ((3, 3), {'jobv': 'J', 'jobu': 'N'}, -3),
                             ((3, 3), {'jobv': 'L'}, -3),
                             ((3, 3), {'jobr': 'L'}, -4),
                             ((3, 3), {'jobt': 'L'}, -5),
