@@ -3090,9 +3090,9 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
     labels : ndarray, optional
         By default, ``labels`` is None so the index of the original observation
         is used to label the leaf nodes.  Otherwise, this is an :math:`n`-sized
-        sequence, with ``n == Z.shape[1]``. The ``labels[i]`` value is the text
-        to put under the :math:`i` th leaf node only if it corresponds to an
-        original observation and not a non-singleton cluster.
+        sequence, with ``n == Z.shape[0] + 1``. The ``labels[i]`` value is the
+        text to put under the :math:`i` th leaf node only if it corresponds to
+        an original observation and not a non-singleton cluster.
     count_sort : str or bool, optional
         For each node n, the order (visually, from left-to-right) n's
         two descendent links are plotted is determined by this
@@ -3271,7 +3271,7 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
         raise ValueError("orientation must be one of 'top', 'left', "
                          "'bottom', or 'right'")
 
-    if labels and Z.shape[1] != len(labels):
+    if labels and Z.shape[0] + 1 != len(labels):
         raise ValueError("Dimensions of Z and labels must be consistent.")
 
     is_valid_linkage(Z, throw=True, name='Z')
