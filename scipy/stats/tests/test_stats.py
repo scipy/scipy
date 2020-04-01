@@ -4470,6 +4470,16 @@ class TestFOneWay(object):
             assert_allclose(res[0], f, rtol=rtol,
                             err_msg='Failing testcase: %s' % test_case)
 
+    @pytest.mark.parametrize("a, b, expected",[
+        (np.array([42, 42, 42]), np.array([7, 7, 7]), (np.inf, 0)),
+        (np.array([42, 42, 42]), np.array([42, 42, 42]), (np.nan, np.nan))
+        ])
+    def test_constant_input(self, a, b, expected):
+        # For more details, look on https://github.com/scipy/scipy/issues/11669
+        with assert_warns(stats.F_onewayConstantInputWarning):
+            f, p = stats.f_oneway(a, b)
+            assert f, p == expected
+
 
 class TestKruskal(object):
     def test_simple(self):
