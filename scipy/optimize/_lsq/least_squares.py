@@ -117,7 +117,7 @@ def check_tolerance(ftol, xtol, gtol, method):
     gtol = check(gtol, "gtol")
 
     if method == "lm" and (ftol < EPS or xtol < EPS or gtol < EPS):
-        raise ValueError("All tolerances must be higher than machine epsilon"
+        raise ValueError("All tolerances must be higher than machine epsilon "
                          "({:.2e}) for method 'lm'.".format(EPS))
     elif ftol < EPS and xtol < EPS and gtol < EPS:
         raise ValueError("At least one of the tolerances must be higher than "

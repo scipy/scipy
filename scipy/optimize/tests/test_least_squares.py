@@ -766,10 +766,8 @@ def test_small_tolerances_for_lm():
                   [0.53072674, 1.28778141, 0.73426207],
                   [-0.71480276, 0.66167675, -0.94704367]])
 
-    for ftol, xtol, gtol in [(0.0, 1e-13, 1e-13),
-                             (1e-13, 0.0, 1e-13),
-                             (1e-13, 1e-13, 0.0)]:
-        with warns(UserWarning): # UseWarning for EPS are shown.
-            print(ftol, xtol, gtol)
-            assert_raises(ValueError, least_squares, res, p0, xtol=xtol,
+    for ftol, xtol, gtol in [(None, 1e-13, 1e-13),
+                             (1e-13, None, 1e-13),
+                             (1e-13, 1e-13, None)]:
+        assert_raises(ValueError, least_squares, res, p0, xtol=xtol,
                       ftol=ftol, gtol=gtol, method='lm')
