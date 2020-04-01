@@ -19,7 +19,7 @@ from pyHiGHS import highs_wrapper
 from scipy.sparse import csc_matrix, vstack
 
 
-def _linprog_highs(lp, solver, time_limit=1, presolve=True, parallel=False,
+def _linprog_highs(lp, solver, time_limit=1, presolve=False, parallel=False,
                    **unknown_options):
     r"""
     Solve the following linear programming problem using one of the HiGHS
@@ -128,7 +128,7 @@ def _linprog_highs(lp, solver, time_limit=1, presolve=True, parallel=False,
                 A string descriptor of the exit status of the algorithm.
 
     """
-
+    
     _check_unknown_options(unknown_options)
 
     # TODO: hook these up to status
@@ -172,6 +172,13 @@ def _linprog_highs(lp, solver, time_limit=1, presolve=True, parallel=False,
         'solution_file': 'test.sol',
         'write_solution_pretty': True,
     }
+    print("C=", c)
+    print("A=", A)
+    print("rhs=", rhs)
+    print("lhs=", lhs)
+    print("lb=", lb)
+    print("ub=", ub)
+    print("options=", options)
     res = highs_wrapper(c, A, rhs, lhs, lb, ub, options=options)
 
     print(res)

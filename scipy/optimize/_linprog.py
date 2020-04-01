@@ -506,6 +506,7 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
            x: array([10., -3.]) # may vary
 
     """
+
     meth = method.lower()
 
     if x0 is not None and meth != "revised simplex":
@@ -517,6 +518,9 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
 
     # Give unmodified problem to HiGHS
     if meth.startswith('highs'):
+        if callback is not None:
+            raise NotImplementedError("HiGHS solvers do not support the "
+                                      "callback interface.")
         highs_solvers = {'highs-ipm': 'ipm', 'highs-simplex': 'simplex'}
         sol = _linprog_highs(lp, solver=highs_solvers[meth],  # meth[6:]?
                              **solver_options)

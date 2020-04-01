@@ -1407,12 +1407,18 @@ class LinprogRSTests(LinprogCommonTests):
         pytest.skip("Intermittent failure acceptable.")
 
 
-class LinprogHiGHSIPMTests(LinprogCommonTests):
-    method = "highs-ipm"
+class LinprogHiGHSTests(LinprogCommonTests):
+    def test_callback(self):
+        # this is the problem from test_callback
+        cb = lambda res: None
+        c = np.array([-3, -2])
+        A_ub = [[2, 1], [1, 1], [1, 0]]
+        b_ub = [10, 8, 4]
+        assert_raises(NotImplementedError, linprog, c, A_ub=A_ub, b_ub=b_ub,
+                      callback=cb, method=self.method)
+        res = linprog(c, A_ub=A_ub, b_ub=b_ub, method=self.method)
+        _assert_success(res, desired_fun=-18.0, desired_x=[2, 6])
 
-
-class LinprogHiGHSSimplexTests(LinprogCommonTests):
-    method = "highs-simplex"
 
 ################################
 # Simplex Option-Specific Tests#
@@ -1745,7 +1751,8 @@ class TestLinprogRSBland(LinprogRSTests):
 #######################################
 
 
-class TestLinprogHiGHSSimplex(LinprogHiGHSSimplexTests):
+class TestLinprogHiGHSSimplex(LinprogHiGHSTests):
+    method = "highs-simplex"
     options = {}
 
 
@@ -1754,7 +1761,8 @@ class TestLinprogHiGHSSimplex(LinprogHiGHSSimplexTests):
 #######################################
 
 
-class TestLinprogHiGHSIPM(LinprogHiGHSIPMTests):
+class TestLinprogHiGHSIPM(LinprogHiGHSTests):
+    method = "highs-ipm"
     options = {}
 
 
