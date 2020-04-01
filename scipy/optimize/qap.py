@@ -1,11 +1,22 @@
-
-
 import numpy as np
 import math
 from sklearn.utils import check_array
+from . import linear_sum_assignment
+from . import minimize_scalar
 
 
-def quadratic_assignment(cost_matrix, dist_matrix, seed_cost = [], seed_dist = [], maximize = False):
+def quadratic_assignment(
+    cost_matrix,
+    dist_matrix,
+    seed_cost=[],
+    seed_dist=[],
+    maximize=False,
+    n_init=1,
+    init_method="barycenter",
+    max_iter=30,
+    shuffle_input=True,
+    eps=0.1,
+):
     """Solve the quadratic assignment problem
 
         This class solves the Quadratic Assignment Problem and the Graph Matching Problem
@@ -100,11 +111,13 @@ def quadratic_assignment(cost_matrix, dist_matrix, seed_cost = [], seed_dist = [
     seed_cost = np.asarray(seed_cost)
     seed_dist = np.asarray(seed_dist)
 
-
     if cost_matrix.shape[0] != dist_matrix.shape[0]:
         msg = "Adjacency matrices must be of equal size"
         raise ValueError(msg)
-    elif cost_matrix.shape[0] != cost_matrix.shape[1] or dist_matrix.shape[0] != dist_matrix.shape[1]:
+    elif (
+        cost_matrix.shape[0] != cost_matrix.shape[1]
+        or dist_matrix.shape[0] != dist_matrix.shape[1]
+    ):
         msg = "Adjacency matrix entries must be square"
         raise ValueError(msg)
     elif (cost_matrix >= 0).all() == False or (dist_matrix >= 0).all() == False:
@@ -120,7 +133,7 @@ def quadratic_assignment(cost_matrix, dist_matrix, seed_cost = [], seed_dist = [
         msg = "Seed array entries must be greater than or equal to zero"
         raise ValueError(msg)
     elif (seed_cost <= (cost_matrix.shape[0] - 1)).all() == False or (
-            seed_dist <= (cost_matrix.shape[0] - 1)
+        seed_dist <= (cost_matrix.shape[0] - 1)
     ).all() == False:
         msg = "Seed array entries must be less than or equal to n-1"
         raise ValueError(msg)
@@ -138,7 +151,7 @@ def quadratic_assignment(cost_matrix, dist_matrix, seed_cost = [], seed_dist = [
         score = 0
 
     seed_dist_c = np.setdiff1d(range(n), seed_dist)
-    if self.shuffle_input:
+    if shuffle_input:
         seed_dist_c = np.random.permutation(seed_dist_c)
         # shuffle_input to avoid results from inputs that were already matched
 
@@ -163,20 +176,19 @@ def quadratic_assignment(cost_matrix, dist_matrix, seed_cost = [], seed_dist = [
     B21T = np.transpose(B21)
     B22T = np.transpose(B22)
 
-    for i in range(self.n_init):
+    for i in range(n_init):
         # setting initialization matrix
-        if self.init_method == "rand":
-            sk = SinkhornKnopp()
+        if init_method == "rand":
             K = np.random.rand(
                 n_unseed, n_unseed
             )  # generate a nxn matrix where each entry is a random integer [0,1]
             for i in range(10):  # perform 10 iterations of Sinkhorn balancing
-                K = sk.fit(K)
+                K = _skp(K)
             J = np.ones((n_unseed, n_unseed)) / float(
                 n_unseed
             )  # initialize J, a doubly stochastic barycenter
             P = (K + J) / 2
-        elif self.init_method == "barycenter":
+        elif init_method == "barycenter":
             P = np.ones((n_unseed, n_unseed)) / float(n_unseed)
 
         const_sum = A21 @ np.transpose(B21) + np.transpose(A12) @ B12
@@ -184,9 +196,9 @@ def quadratic_assignment(cost_matrix, dist_matrix, seed_cost = [], seed_dist = [
         n_iter = 0  # number of FW iterations
 
         # OPTIMIZATION WHILE LOOP BEGINS
-        while grad_P > self.eps and n_iter < self.max_iter:
+        while grad_P > eps and n_iter < max_iter:
             delta_f = (
-                    const_sum + A22 @ P @ B22T + A22T @ P @ B22
+                const_sum + A22 @ P @ B22T + A22T @ P @ B22
             )  # computing the gradient of f(P) = -tr(APB^tP^t)
             rows, cols = linear_sum_assignment(
                 obj_func_scalar * delta_f
@@ -196,15 +208,15 @@ def quadratic_assignment(cost_matrix, dist_matrix, seed_cost = [], seed_dist = [
 
             def f(x):  # computing the original optimization function
                 return obj_func_scalar * (
-                        np.trace(A11T @ B11)
-                        + np.trace(np.transpose(x * P + (1 - x) * Q) @ A21 @ B21T)
-                        + np.trace(np.transpose(x * P + (1 - x) * Q) @ A12T @ B12)
-                        + np.trace(
-                    A22T
-                    @ (x * P + (1 - x) * Q)
-                    @ B22
-                    @ np.transpose(x * P + (1 - x) * Q)
-                )
+                    np.trace(A11T @ B11)
+                    + np.trace(np.transpose(x * P + (1 - x) * Q) @ A21 @ B21T)
+                    + np.trace(np.transpose(x * P + (1 - x) * Q) @ A12T @ B12)
+                    + np.trace(
+                        A22T
+                        @ (x * P + (1 - x) * Q)
+                        @ B22
+                        @ np.transpose(x * P + (1 - x) * Q)
+                    )
                 )
 
             alpha = minimize_scalar(
@@ -224,7 +236,8 @@ def quadratic_assignment(cost_matrix, dist_matrix, seed_cost = [], seed_dist = [
         )
 
         score_new = np.trace(
-            np.transpose(cost_matrix) @ dist_matrix[np.ix_(perm_inds_new, perm_inds_new)]
+            np.transpose(cost_matrix)
+            @ dist_matrix[np.ix_(perm_inds_new, perm_inds_new)]
         )  # computing objective function value
 
         if obj_func_scalar * score_new < obj_func_scalar * score:  # minimizing
@@ -233,16 +246,103 @@ def quadratic_assignment(cost_matrix, dist_matrix, seed_cost = [], seed_dist = [
             perm_inds[permutation_cost] = permutation_dist[perm_inds_new]
 
     permutation_cost_unshuffle = _unshuffle(permutation_cost, n)
-    cost_matrix = cost_matrix[np.ix_(permutation_cost_unshuffle, permutation_cost_unshuffle)]
+    cost_matrix = cost_matrix[
+        np.ix_(permutation_cost_unshuffle, permutation_cost_unshuffle)
+    ]
     permutation_dist_unshuffle = _unshuffle(permutation_dist, n)
-    dist_matrix = dist_matrix[np.ix_(permutation_dist_unshuffle, permutation_dist_unshuffle)]
-    score = np.trace(np.transpose(cost_matrix) @ dist_matrix[np.ix_(perm_inds, perm_inds)])
+    dist_matrix = dist_matrix[
+        np.ix_(permutation_dist_unshuffle, permutation_dist_unshuffle)
+    ]
+    score = np.trace(
+        np.transpose(cost_matrix) @ dist_matrix[np.ix_(perm_inds, perm_inds)]
+    )
 
-    self.perm_inds_ = perm_inds  # permutation indices
-    self.score_ = score  # objective function value
-    return self
+    return (np.arange(n),perm_inds)
+
 
 def _unshuffle(array, n):
     unshuffle = np.array(range(n))
     unshuffle[array] = np.array(range(n))
     return unshuffle
+
+def _skp(P):
+    # Title: sinkhorn_knopp Source Code
+    # Author: Tabanpour, B
+    # Date: 2018
+    # Code version:  0.2
+    # Availability: https://pypi.org/project/sinkhorn_knopp/
+    #
+    # The MIT License
+    #
+    # Copyright (c) 2016 Baruch Tabanpour
+    #
+    # Permission is hereby granted, free of charge, to any person obtaining a copy
+    # of this software and associated documentation files (the "Software"), to deal
+    # in the Software without restriction, including without limitation the rights
+    # to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+    # copies of the Software, and to permit persons to whom the Software is
+    # furnished to do so, subject to the following conditions:
+
+    # The above copyright notice and this permission notice shall be included in
+    # all copies or substantial portions of the Software.
+    #
+    # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    # FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+    # AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+    # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+    # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+    # THE SOFTWARE.
+    max_iter = 1000
+    epsilon = 1e-3
+    epsilon = int(epsilon)
+    stopping_condition = None
+    iterations = 0
+    D1 = np.ones(1)
+    D2 = np.ones(1)
+    P = np.asarray(P)
+
+    assert np.all(P >= 0)
+    assert P.ndim == 2
+    assert P.shape[0] == P.shape[1]
+
+    N = P.shape[0]
+    max_thresh = 1 + epsilon
+    min_thresh = 1 - epsilon
+
+    r = np.ones((N, 1))
+    pdotr = P.T.dot(r)
+    c = 1 / pdotr
+    pdotc = P.dot(c)
+    r = 1 / pdotc
+    del pdotr, pdotc
+
+    P_eps = np.copy(P)
+    while (
+            np.any(np.sum(P_eps, axis=1) < min_thresh)
+            or np.any(np.sum(P_eps, axis=1) > max_thresh)
+            or np.any(np.sum(P_eps, axis=0) < min_thresh)
+            or np.any(np.sum(P_eps, axis=0) > max_thresh)
+    ):
+
+        c = 1 / P.T.dot(r)
+        r = 1 / P.dot(c)
+
+        D1 = np.diag(np.squeeze(r))
+        D2 = np.diag(np.squeeze(c))
+        P_eps = D1.dot(P).dot(D2)
+
+        iterations += 1
+
+        if iterations >= max_iter:
+            stopping_condition = "max_iter"
+            break
+
+    if not stopping_condition:
+        stopping_condition = "epsilon"
+
+    D1 = np.diag(np.squeeze(r))
+    D2 = np.diag(np.squeeze(c))
+    P_eps = D1.dot(P).dot(D2)
+
+    return P_eps
