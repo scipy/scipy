@@ -128,25 +128,26 @@ def _linprog_highs(lp, solver, time_limit=1, presolve=False, parallel=False,
                 A string descriptor of the exit status of the algorithm.
 
     """
-    
+
     _check_unknown_options(unknown_options)
 
-    # TODO: hook these up to status
-    messages = ["Optimization terminated successfully.",
-                "Iteration limit reached.",
-                "The problem appears infeasible, as the phase one auxiliary "
-                "problem terminated successfully with a residual of {0:.1e}, "
-                "greater than the tolerance {1} required for the solution to "
-                "be considered feasible. Consider increasing the tolerance to "
-                "be greater than {0:.1e}. If this tolerance is unnaceptably "
-                "large, the problem is likely infeasible.",
-                "The problem is unbounded, as the simplex algorithm found "
-                "a basic feasible solution from which there is a direction "
-                "with negative reduced cost in which all decision variables "
-                "increase.",
-                "Numerical difficulties encountered; consider trying "
-                "method='interior-point'.",
-                ]
+    statuses = {
+        9: (0, "Optimization terminated successfully."),
+        8: (3, "The problem is unbounded."),
+    }
+    # "Iteration limit reached.",
+    # "The problem appears infeasible, as the phase one auxiliary "
+    # "problem terminated successfully with a residual of {0:.1e}, "
+    # "greater than the tolerance {1} required for the solution to "
+    # "be considered feasible. Consider increasing the tolerance to "
+    # "be greater than {0:.1e}. If this tolerance is unnaceptably "
+    # "large, the problem is likely infeasible.",
+    # "The problem is unbounded, as the simplex algorithm found "
+    # "a basic feasible solution from which there is a direction "
+    # "with negative reduced cost in which all decision variables "
+    # "increase.",
+    # "Numerical difficulties encountered; consider trying "
+    # "method='interior-point'.",
 
     c, A_ub, b_ub, A_eq, b_eq, bounds, x0 = lp
     lb, ub = bounds.T.copy()                # separate bounds, copy->C-cntgs
@@ -182,15 +183,16 @@ def _linprog_highs(lp, solver, time_limit=1, presolve=False, parallel=False,
     res = highs_wrapper(c, A, rhs, lhs, lb, ub, options=options)
 
     print(res)
-    sol = {
-        'x': res.col_value,
-        'fun': res.fun,
-        }
-#       # TODO: 'slack': slack,
-#               'con': con,
-#               'status': status,
-#               'message': message,
-#                'nit': iteration,
-#                'success': status == 0}
+
+    sol = {'x': res['col_value'],
+           'slack': res['col_dual'],
+           'fun': res['fun'],
+           'con': res['sum_primal_infeasibilities'],
+           'status': statuses[res['model_status']['status']][0],
+           'success': res['model_status']['status'] == 9,
+           'message': res['model_status']['message'],
+           'nit': (res['simplex_nit'] if solver == 'simplex'
+                   else res['ipm_nit']),
+           }
 
     return sol
