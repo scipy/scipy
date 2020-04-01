@@ -22,7 +22,7 @@ from numpy import (eye, ones, zeros, zeros_like, triu, tril, tril_indices,
 from numpy.random import rand, randint, seed
 
 from scipy.linalg import _flapack as flapack, lapack
-from scipy.linalg import inv, svd, cholesky, solve, ldl, norm, eig
+from scipy.linalg import inv, svd, cholesky, solve, ldl, norm
 from scipy.linalg.lapack import _compute_lwork
 
 try:
@@ -1666,74 +1666,89 @@ def generate_random_dtype_array(shape, dtype):
 
 @pytest.mark.parametrize("size", [(6, 5), (5, 5)])
 @pytest.mark.parametrize('dtype', DTYPES)
-@pytest.mark.parametrize('gejsv_lambda',
-                         [(lambda A, gejsv: gejsv(A)),  # base default case
-                          (lambda A, gejsv: gejsv(A, joba="E")),  # joba
-                          (lambda A, gejsv: gejsv(A, joba="F")),
-                          (lambda A, gejsv: gejsv(A, joba="G")),
-                          (lambda A, gejsv: gejsv(A, joba="A")),
-                          (lambda A, gejsv: gejsv(A, joba="R")),
-                          (lambda A, gejsv: gejsv(A, jobu="F")),  # jobu
-                          (lambda A, gejsv: gejsv(A, jobu="W")),
-                          (lambda A, gejsv: gejsv(A, jobv="J")),  # jobv
-                          (lambda A, gejsv: gejsv(A, jobv="V")),
-                          (lambda A, gejsv: gejsv(A, jobr="N")),  # jobr
-                          (lambda A, gejsv: gejsv(A, jobt="T")),  # jobt
-                          (lambda A, gejsv: gejsv(A, jobp="N")),  # jobp
+@pytest.mark.parametrize('job',
+                         [None,
+                          *zip(["joba"]*5,
+                               ["'E'", "'F'", "'G'", "'A'", "'R'"]),
+                          *zip(["jobu"]*3, ["'F'", "'W'", "'N'"]),
+                          *zip(["jobv"]*3, ["'J'", "'W'", "'N'"]),
+                          ("jobr", "'N'"),
+                          ("jobt", "'T'"),
+                          ("jobp", "'P'"),
+                          [("jobv", "'N'"), ("jobu", "'N'")]
                           ])
-def test_gejsv_general(size, dtype, gejsv_lambda):
+def test_gejsv_general(size, dtype, job):
     '''
     Tests the lapack routine ?gejsv. This function varies the job? values
-    one at a time per dtype by passing different dtype routines into a lambda
-    that decides parameters. It then tests the general random matrix A of size
-    (m, n) for zero info, that sva, v, and u can be recombined to make A, and
-    that u.T @ u and v.T @ v are the identity. Lastly, we check that iwork [0]
-    and [1] are n.
+    by passing in a single job* and character combination tuple or a list of
+    them. It then tests the general random matrix A of size (m, n) for
+    - sva matches singular values of A
+    - info == 0
+    - that sva, v, and u can be recombined to make A
+    - that u.T @ u and v.T @ v are the identity
+    Lastly, we check that iwork [0] and [1] are the matrix rank.
     '''
-    np.random.seed(42)
-    rtol = 250 * np.finfo(dtype).eps
+    seed(42)
     atol = 100 * np.finfo(dtype).eps
     m, n = size
     A = generate_random_dtype_array((m, n), dtype)
-
     gejsv = get_lapack_funcs('gejsv', dtype=dtype)
-    # pass A and gejsv into lambda expression for parametrized job? values
-    sva, u, v, work, iwork, info = gejsv_lambda(A, gejsv)
+
+    jobs = {}
+
+    if job is None:
+        # use default gejsv values
+        sva, u, v, work, iwork, info = gejsv(A)
+    elif type(job) == list:
+        # execute with modified job argument
+        out = eval("gejsv(A, " + ",".join(list(map("=".join, job))) + ")")
+        sva, u, v, work, iwork, info = out
+        # add each job to dictionary
+        for job_ in job:
+            jobs[job_[0]] = job_[1]
+    else:
+        sva, u, v, work, iwork, info = eval("gejsv(A, " + "=".join(job) + ")")
+
+        jobs[job[0]] = job[1]
 
     assert_equal(info, 0)
 
     SIGMA = np.diag(work[1] / work[0] * sva[:n])
-    sigma = work[1] / work[0] * sva[:n] # not a matrix
+    sigma = work[1] / work[0] * sva[:n]
 
+    assert_allclose(np.sort(sigma), np.sort(svd(A)[0]), atol=atol)
 
-    assert_allclose(np.sort(sigma), np.sort(eig(A)[0]), rtol=rtol, atol=atol)
-    # ^ this doesn't seem like it would work as sva is real and eig(A) is complex
-    assert_allclose(A, u @ SIGMA @ v.T, rtol=rtol, atol=atol)
-    assert_allclose(u.T @ u, np.identity(u.shape[1]), rtol=rtol, atol=atol)
-    assert_allclose(v @ v.T, np.identity(n), rtol=rtol, atol=atol)
+    # run this test if jobu is computed
+    if not jobs.get('jobu') == "'N'":
+        assert_allclose(u.T @ u, np.identity(u.shape[1]), atol=atol)
 
-    #assert_equal(iwork[0], np.linagl.matrix_rank(A))
-    #assert_equal(iwork[1], np.linagl.matrix_rank(A))
+    # run this test if jobv is computed
+    if not jobs.get('jobv') == "'N'":
+        assert_allclose(v @ v.T, np.identity(n), atol=atol)
+
+    # run this if both jobu and jobv are computed
+    if (jobs.get('jobu') != "'N'" and
+            jobs.get('jobv') != "'N'"):
+        assert_allclose(A, u @ SIGMA @ v.T, atol=atol)
+
+    # check the rank of the matrix is correctly reported in iwork
+    assert_equal(iwork[0], np.linagl.matrix_rank(A))
+    assert_equal(iwork[1], np.linagl.matrix_rank(A))
 
 
 @pytest.mark.parametrize("dtype", DTYPES)
 def test_gejsv_specific(dtype):
     '''
-    Tests more specific cases of routine ?gejsv, specifically for when
-    u and v are not computed, matrix A is 1D, 1x1, empty, lwork = 0,
-    and invalid job? parameters.
+    Tests more specific cases of routine ?gejsv:
+    - when matrix is not full rank
+    - matrix A is 1D, 1x1, empty
+    - lwork = 0
+    - invalid job? parameters.
     '''
-    np.random.seed(42)
-    rtol = 250 * np.finfo(dtype).eps
-    atol = 100 * np.finfo(dtype).eps
+    seed(42)
     m, n = (6, 5)
     gejsv = get_lapack_funcs('gejsv', dtype=dtype)
     A = generate_random_dtype_array((m, n), dtype)
-
-    '''jobu, jobv = N, check for correct eigenvalues'''
-    sva, u, v, work, iwork, info = gejsv(A, jobu="N", jobv="N")
-    # correct eigenvalues
-    assert_allclose(sva, eig(A), rtol=rtol, atol=atol)
 
     # check that iwork[0] and iwork[1] are the correct rank
     sva, u, v, work, iwork, info = gejsv(A)
