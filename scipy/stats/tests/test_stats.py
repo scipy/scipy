@@ -1904,6 +1904,18 @@ class TestVariability(object):
         mad_axis2 = stats.median_absolute_deviation(z, axis=2)
         assert_equal(mad_axis2.shape, (3, 0))
 
+    def test_mad_nan_shape3(self):
+        z = np.array([[1., 2., 3., np.nan],
+                      [np.nan, np.nan, np.nan, np.nan],
+                      [1., 1., 2., 2.]])
+        mad_axis0 = stats.median_absolute_deviation(z, axis=0)
+        assert_equal(mad_axis0, np.array([np.nan, np.nan, np.nan, np.nan]))
+        assert_equal(mad_axis0.shape, (4,))
+
+        mad_axis1 = stats.median_absolute_deviation(z, axis=1)
+        assert_equal(mad_axis1, np.array([np.nan, np.nan, 0.7413]))
+        assert_equal(mad_axis1.shape, (3,))
+
     def test_mad_nan_propagate(self):
         dat = np.array([2.20, 2.20, 2.4, 2.4, 2.5, 2.7, 2.8, 2.9, 3.03,
                 3.03, 3.10, 3.37, 3.4, 3.4, 3.4, 3.5, 3.6, 3.7, 3.7,
@@ -1927,6 +1939,20 @@ class TestVariability(object):
 
         mad = stats.median_absolute_deviation(dat, nan_policy='omit')
         assert_almost_equal(mad, 0.504084)
+
+        z = np.array([[1., 2., 3., np.nan],
+                      [np.nan, np.nan, np.nan, np.nan],
+                      [1., 1., 2., 2.]])
+
+        mad_axis0 = stats.median_absolute_deviation(z, axis=0,
+                                                    nan_policy='omit')
+        assert_equal(mad_axis0, np.array([0.0, 0.7413, 0.7413, 0.0]))
+        assert_equal(mad_axis0.shape, (4,))
+
+        mad_axis1 = stats.median_absolute_deviation(z, axis=1,
+                                                    nan_policy='omit')
+        assert_equal(mad_axis1, np.array([1.4826, np.nan, 0.7413]))
+        assert_equal(mad_axis1.shape, (3,))
 
 
 def _check_warnings(warn_list, expected_type, expected_len):

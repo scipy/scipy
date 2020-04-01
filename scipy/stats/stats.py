@@ -2829,8 +2829,8 @@ def median_absolute_deviation(x, axis=0, center=np.median, scale=1.4826,
 
     # Consistent with `np.var` and `np.std`.
     if not x.size:
-        if x.shape == (0,): # empty array
-            return np.nan
+        if x.shape == (0,):
+            return np.nan # This empty array
         nan_shape = list(x.shape)
         try:
             del nan_shape[axis]
@@ -2842,12 +2842,14 @@ def median_absolute_deviation(x, axis=0, center=np.median, scale=1.4826,
 
     contains_nan, nan_policy = _contains_nan(x, nan_policy)
 
-    if contains_nan and nan_policy == 'propagate':
-        return np.nan
+    apply_over_axes_func = np.apply_over_axes
 
     if contains_nan and nan_policy == 'omit':
         # Way faster than carrying the masks around
-        arr = ma.masked_invalid(x).compressed()
+        arr = ma.masked_invalid(x)
+        # override functions for masked array
+        apply_over_axes_func = np.ma.apply_over_axes
+        center = np.ma.median
     else:
         arr = x
 
@@ -2855,8 +2857,8 @@ def median_absolute_deviation(x, axis=0, center=np.median, scale=1.4826,
         med = center(arr)
         mad = np.median(np.abs(arr - med))
     else:
-        med = np.apply_over_axes(center, arr, axis)
-        mad = np.median(np.abs(arr - med), axis=axis)
+        med = apply_over_axes_func(center, arr, axis)
+        mad = center(np.abs(arr - med), axis=axis)
 
     return scale * mad
 
