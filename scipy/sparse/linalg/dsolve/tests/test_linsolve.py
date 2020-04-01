@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 import sys
 import threading
 
@@ -9,7 +7,7 @@ import numpy.random as random
 from numpy.testing import (
         assert_array_almost_equal, assert_almost_equal,
         assert_equal, assert_array_equal, assert_, assert_allclose,
-        assert_warns)
+        assert_warns, suppress_warnings)
 import pytest
 from pytest import raises as assert_raises
 
@@ -20,8 +18,6 @@ from scipy.sparse import (spdiags, SparseEfficiencyWarning, csc_matrix,
 from scipy.sparse.linalg import SuperLU
 from scipy.sparse.linalg.dsolve import (spsolve, use_solver, splu, spilu,
         MatrixRankWarning, _superlu, spsolve_triangular, factorized)
-
-from scipy._lib._numpy_compat import suppress_warnings
 
 
 sup_sparse_efficiency = suppress_warnings()

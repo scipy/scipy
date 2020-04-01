@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 import copy
 
 import numpy as np
@@ -12,7 +10,6 @@ from numpy.testing import (
 import pytest
 from pytest import raises, warns
 
-from scipy._lib.six import xrange
 from scipy.signal._peak_finding import (
     argrelmax,
     argrelmin,
@@ -72,7 +69,7 @@ def _gen_ridge_line(start_locs, max_locs, length, distances, gaps):
         raise ValueError('Cannot generate ridge line according to constraints')
     dist_int = length / len(distances) - 1
     gap_int = length / len(gaps) - 1
-    for ind in xrange(1, length):
+    for ind in range(1, length):
         nextcol = locs[ind - 1, 1]
         nextrow = locs[ind - 1, 0] + 1
         if (ind % dist_int == 0) and (len(distances) > 0):
@@ -313,7 +310,7 @@ class TestArgrel(object):
         test_data_2 = np.vstack([test_data, test_data[rot_range]])
         rel_max_rows, rel_max_cols = argrelmax(test_data_2, axis=1, order=1)
 
-        for rw in xrange(0, test_data_2.shape[0]):
+        for rw in range(0, test_data_2.shape[0]):
             inds = (rel_max_rows == rw)
 
             assert_(len(rel_max_cols[inds]) == len(act_locs))
@@ -400,13 +397,13 @@ class TestPeakProminences(object):
         Verify that exceptions and warnings are raised.
         """
         # x with dimension > 1
-        with raises(ValueError, match='1D array'):
+        with raises(ValueError, match='1-D array'):
             peak_prominences([[0, 1, 1, 0]], [1, 2])
         # peaks with dimension > 1
-        with raises(ValueError, match='1D array'):
+        with raises(ValueError, match='1-D array'):
             peak_prominences([0, 1, 1, 0], [[1, 2]])
         # x with dimension < 1
-        with raises(ValueError, match='1D array'):
+        with raises(ValueError, match='1-D array'):
             peak_prominences(3, [0,])
 
         # empty x with supplied
@@ -491,16 +488,16 @@ class TestPeakWidths(object):
         """
         Verify that argument validation works as intended.
         """
-        with raises(ValueError, match='1D array'):
+        with raises(ValueError, match='1-D array'):
             # x with dimension > 1
             peak_widths(np.zeros((3, 4)), np.ones(3))
-        with raises(ValueError, match='1D array'):
+        with raises(ValueError, match='1-D array'):
             # x with dimension < 1
             peak_widths(3, [0])
-        with raises(ValueError, match='1D array'):
+        with raises(ValueError, match='1-D array'):
             # peaks with dimension > 1
             peak_widths(np.arange(10), np.ones((3, 2), dtype=np.intp))
-        with raises(ValueError, match='1D array'):
+        with raises(ValueError, match='1-D array'):
             # peaks with dimension < 1
             peak_widths(np.arange(10), 3)
         with raises(ValueError, match='not a valid index'):
@@ -747,9 +744,9 @@ class TestFindPeaks(object):
         """
         Test exceptions raised by function.
         """
-        with raises(ValueError, match="1D array"):
+        with raises(ValueError, match="1-D array"):
             find_peaks(np.array(1))
-        with raises(ValueError, match="1D array"):
+        with raises(ValueError, match="1-D array"):
             find_peaks(np.ones((2, 2)))
         with raises(ValueError, match="distance"):
             find_peaks(np.arange(10), distance=-1)

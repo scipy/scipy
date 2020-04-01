@@ -6,9 +6,6 @@ Additional statistics functions with support for masked arrays.
 # Original author (2007): Pierre GF Gerard-Marchant
 
 
-from __future__ import division, print_function, absolute_import
-
-
 __all__ = ['compare_medians_ms',
            'hdquantiles', 'hdmedian', 'hdquantiles_sd',
            'idealfourths',

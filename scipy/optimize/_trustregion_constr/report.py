@@ -19,7 +19,7 @@ class ReportBase(object):
     def print_iteration(cls, *args):
         # args[3] is obj func. It should really be a float. However,
         # trust-constr typically provides a length 1 array. We have to coerce
-        # it to a float otherwise the string format doesn't work.
+        # it to a float, otherwise the string format doesn't work.
         args = list(args)
         args[3] = float(args[3])
 

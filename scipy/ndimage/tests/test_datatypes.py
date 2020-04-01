@@ -1,7 +1,5 @@
 """ Testing data types for ndimage calls
 """
-from __future__ import division, print_function, absolute_import
-
 import sys
 
 import numpy as np

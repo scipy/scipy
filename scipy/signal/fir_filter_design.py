@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 """Functions for FIR filter design."""
-from __future__ import division, print_function, absolute_import
-
 from math import ceil, log
 import operator
 import warnings
@@ -11,7 +9,6 @@ from numpy.fft import irfft, fft, ifft
 from scipy.special import sinc
 from scipy.linalg import (toeplitz, hankel, solve, LinAlgError, LinAlgWarning,
                           lstsq)
-from scipy._lib.six import string_types
 
 from . import sigtools
 
@@ -115,8 +112,8 @@ def kaiser_atten(numtaps, width):
     --------
     Suppose we want to design a FIR filter using the Kaiser window method
     that will have 211 taps and a transition width of 9 Hz for a signal that
-    is sampled at 480 Hz.  Expressed as a fraction of the Nyquist frequency,
-    the width is 9/(0.5*480) = 0.0375.  The approximate attenuation (in dB)
+    is sampled at 480 Hz. Expressed as a fraction of the Nyquist frequency,
+    the width is 9/(0.5*480) = 0.0375. The approximate attenuation (in dB)
     is computed as follows:
 
     >>> from scipy.signal import kaiser_atten
@@ -141,7 +138,7 @@ def kaiserord(ripple, width):
     ripple : float
         Upper bound for the deviation (in dB) of the magnitude of the
         filter's frequency response from that of the desired filter (not
-        including frequencies in any transition intervals).  That is, if w
+        including frequencies in any transition intervals). That is, if w
         is the frequency expressed as a fraction of the Nyquist frequency,
         A(w) is the actual frequency response of the filter and D(w) is the
         desired frequency response, the design requirement is that::
@@ -151,7 +148,7 @@ def kaiserord(ripple, width):
         for 0 <= w <= 1 and w not in a transition interval.
     width : float
         Width of transition region, normalized so that 1 corresponds to pi
-        radians / sample.  That is, the frequency is expressed as a fraction
+        radians / sample. That is, the frequency is expressed as a fraction
         of the Nyquist frequency.
 
     Returns
@@ -177,7 +174,7 @@ def kaiserord(ripple, width):
 
     References
     ----------
-    Oppenheim, Schafer, "Discrete-Time Signal Processing", p.475-476.
+    Oppenheim, Schafer, "Discrete-Time Signal Processing", pp.475-476.
 
     Examples
     --------
@@ -188,7 +185,7 @@ def kaiserord(ripple, width):
     band the gain should vary no more than 0.5%.
 
     We want a cutoff frequency of 175 Hz, with a transition between the
-    pass band and the stop band of 24 Hz.  That is, in the band [0, 163],
+    pass band and the stop band of 24 Hz. That is, in the band [0, 163],
     the gain varies no more than 0.5%, and in the band [187, 500], the
     signal is attenuated by at least 65 dB.
 
@@ -200,7 +197,7 @@ def kaiserord(ripple, width):
 
     The Kaiser method accepts just a single parameter to control the pass
     band ripple and the stop band rejection, so we use the more restrictive
-    of the two.  In this case, the pass band ripple is 0.005, or 46.02 dB,
+    of the two. In this case, the pass band ripple is 0.005, or 46.02 dB,
     so we will use 65 dB as the design parameter.
 
     Use `kaiserord` to determine the length of the filter and the
@@ -225,16 +222,16 @@ def kaiserord(ripple, width):
     >>> w *= 0.5*fs/np.pi  # Convert w to Hz.
 
     Compute the deviation of the magnitude of the filter's response from
-    that of the ideal lowpass filter.  Values in the transition region are
+    that of the ideal lowpass filter. Values in the transition region are
     set to ``nan``, so they won't appear in the plot.
 
     >>> ideal = w < cutoff  # The "ideal" frequency response.
     >>> deviation = np.abs(np.abs(h) - ideal)
     >>> deviation[(w > cutoff - 0.5*width) & (w < cutoff + 0.5*width)] = np.nan
 
-    Plot the deviation.  A close look at the left end of the stop band shows
+    Plot the deviation. A close look at the left end of the stop band shows
     that the requirement for 65 dB attenuation is violated in the first lobe
-    by about 0.125 dB.  This is not unusual for the Kaiser window method.
+    by about 0.125 dB. This is not unusual for the Kaiser window method.
 
     >>> plt.plot(w, 20*np.log10(np.abs(deviation)))
     >>> plt.xlim(0, 0.5*fs)
@@ -267,7 +264,7 @@ def firwin(numtaps, cutoff, width=None, window='hamming', pass_zero=True,
     FIR filter design using the window method.
 
     This function computes the coefficients of a finite impulse response
-    filter.  The filter will have linear phase; it will be Type I if
+    filter. The filter will have linear phase; it will be Type I if
     `numtaps` is odd and Type II if `numtaps` is even.
 
     Type II filters always have zero response at the Nyquist frequency, so a
@@ -280,22 +277,22 @@ def firwin(numtaps, cutoff, width=None, window='hamming', pass_zero=True,
         Length of the filter (number of coefficients, i.e. the filter
         order + 1).  `numtaps` must be odd if a passband includes the
         Nyquist frequency.
-    cutoff : float or 1D array_like
+    cutoff : float or 1-D array_like
         Cutoff frequency of filter (expressed in the same units as `fs`)
         OR an array of cutoff frequencies (that is, band edges). In the
         latter case, the frequencies in `cutoff` should be positive and
-        monotonically increasing between 0 and `fs/2`.  The values 0 and
+        monotonically increasing between 0 and `fs/2`. The values 0 and
         `fs/2` must not be included in `cutoff`.
     width : float or None, optional
         If `width` is not None, then assume it is the approximate width
         of the transition region (expressed in the same units as `fs`)
-        for use in Kaiser FIR filter design.  In this case, the `window`
+        for use in Kaiser FIR filter design. In this case, the `window`
         argument is ignored.
     window : string or tuple of string and parameter values, optional
         Desired window to use. See `scipy.signal.get_window` for a list
         of windows and required parameters.
     pass_zero : {True, False, 'bandpass', 'lowpass', 'highpass', 'bandstop'}, optional
-        If True, the gain at the frequency 0 (i.e. the "DC gain") is 1.
+        If True, the gain at the frequency 0 (i.e., the "DC gain") is 1.
         If False, the DC gain is 0. Can also be a string argument for the
         desired filter type (equivalent to ``btype`` in IIR design functions).
 
@@ -313,11 +310,11 @@ def firwin(numtaps, cutoff, width=None, window='hamming', pass_zero=True,
           center of first passband otherwise
 
     nyq : float, optional
-        *Deprecated.  Use `fs` instead.*  This is the Nyquist frequency.
+        *Deprecated. Use `fs` instead.* This is the Nyquist frequency.
         Each frequency in `cutoff` must be between 0 and `nyq`. Default
         is 1.
     fs : float, optional
-        The sampling frequency of the signal.  Each frequency in `cutoff`
+        The sampling frequency of the signal. Each frequency in `cutoff`
         must be between 0 and ``fs/2``.  Default is 2.
 
     Returns
@@ -448,7 +445,7 @@ def firwin(numtaps, cutoff, width=None, window='hamming', pass_zero=True,
     # is even, and each pair in cutoff corresponds to passband.
     cutoff = np.hstack(([0.0] * pass_zero, cutoff, [1.0] * pass_nyquist))
 
-    # `bands` is a 2D array; each row gives the left and right edges of
+    # `bands` is a 2-D array; each row gives the left and right edges of
     # a passband.
     bands = cutoff.reshape(-1, 2)
 
@@ -500,11 +497,11 @@ def firwin2(numtaps, freq, gain, nfreqs=None, window='hamming', nyq=None,
     numtaps : int
         The number of taps in the FIR filter.  `numtaps` must be less than
         `nfreqs`.
-    freq : array_like, 1D
+    freq : array_like, 1-D
         The frequency sampling points. Typically 0.0 to 1.0 with 1.0 being
         Nyquist.  The Nyquist frequency is half `fs`.
-        The values in `freq` must be nondecreasing.  A value can be repeated
-        once to implement a discontinuity.  The first value in `freq` must
+        The values in `freq` must be nondecreasing. A value can be repeated
+        once to implement a discontinuity. The first value in `freq` must
         be 0, and the last value must be ``fs/2``. Values 0 and ``fs/2`` must
         not be repeated.
     gain : array_like
@@ -514,22 +511,22 @@ def firwin2(numtaps, freq, gain, nfreqs=None, window='hamming', nyq=None,
     nfreqs : int, optional
         The size of the interpolation mesh used to construct the filter.
         For most efficient behavior, this should be a power of 2 plus 1
-        (e.g, 129, 257, etc).  The default is one more than the smallest
-        power of 2 that is not less than `numtaps`.  `nfreqs` must be greater
+        (e.g, 129, 257, etc). The default is one more than the smallest
+        power of 2 that is not less than `numtaps`. `nfreqs` must be greater
         than `numtaps`.
     window : string or (string, float) or float, or None, optional
-        Window function to use. Default is "hamming".  See
+        Window function to use. Default is "hamming". See
         `scipy.signal.get_window` for the complete list of possible values.
         If None, no window function is applied.
     nyq : float, optional
-        *Deprecated.  Use `fs` instead.*  This is the Nyquist frequency.
+        *Deprecated. Use `fs` instead.* This is the Nyquist frequency.
         Each frequency in `freq` must be between 0 and `nyq`.  Default is 1.
     antisymmetric : bool, optional
         Whether resulting impulse response is symmetric/antisymmetric.
         See Notes for more details.
     fs : float, optional
-        The sampling frequency of the signal.  Each frequency in `cutoff`
-        must be between 0 and ``fs/2``.  Default is 2.
+        The sampling frequency of the signal. Each frequency in `cutoff`
+        must be between 0 and ``fs/2``. Default is 2.
 
     Returns
     -------
@@ -547,7 +544,7 @@ def firwin2(numtaps, freq, gain, nfreqs=None, window='hamming', nyq=None,
     Notes
     -----
     From the given set of frequencies and gains, the desired response is
-    constructed in the frequency domain.  The inverse FFT is applied to the
+    constructed in the frequency domain. The inverse FFT is applied to the
     desired response to create the associated convolution kernel, and the
     first `numtaps` coefficients of this kernel, scaled by `window`, are
     returned.
@@ -757,9 +754,9 @@ def remez(numtaps, bands, desired, weight=None, Hz=None, type='bandpass',
     Examples
     --------
     In these examples `remez` gets used creating a bandpass, bandstop, lowpass
-    and highpass filter.  The used parameters are the filter order, an array
+    and highpass filter. The used parameters are the filter order, an array
     with according frequency boundaries, the desired attenuation values and the
-    sampling frequency.  Using `freqz` the corresponding frequency response
+    sampling frequency. Using `freqz` the corresponding frequency response
     gets calculated and plotted.
 
     >>> from scipy import signal
@@ -800,7 +797,7 @@ def remez(numtaps, bands, desired, weight=None, Hz=None, type='bandpass',
     >>> plot_response(fs, w, h, "High-pass Filter")
 
     For a signal sampled with 22 kHz a bandpass filter with a pass band of 2-5
-    kHz gets calculated using the Remez algorithm.  The transition width is 260
+    kHz gets calculated using the Remez algorithm. The transition width is 260
     Hz and the filter order 10:
 
     >>> fs = 22000.0         # Sample rate, Hz
@@ -814,7 +811,7 @@ def remez(numtaps, bands, desired, weight=None, Hz=None, type='bandpass',
     >>> plot_response(fs, w, h, "Band-pass Filter")
 
     It can be seen that for this bandpass filter, the low order leads to higher
-    ripple and less steep transitions.  There is very low attenuation in the
+    ripple and less steep transitions. There is very low attenuation in the
     stop band and little overshoot in the pass band.  Of course the desired
     gain can be better approximated with a higher filter order.
 
@@ -870,7 +867,7 @@ def firls(numtaps, bands, desired, weight=None, nyq=None, fs=None):
     Parameters
     ----------
     numtaps : int
-        The number of taps in the FIR filter.  `numtaps` must be odd.
+        The number of taps in the FIR filter. `numtaps` must be odd.
     bands : array_like
         A monotonic nondecreasing sequence containing the band edges in
         Hz. All elements must be non-negative and less than or equal to
@@ -883,12 +880,12 @@ def firls(numtaps, bands, desired, weight=None, nyq=None, fs=None):
         the least squares problem. `weight` has to be half the size of
         `bands`.
     nyq : float, optional
-        *Deprecated.  Use `fs` instead.*
+        *Deprecated. Use `fs` instead.*
         Nyquist frequency. Each frequency in `bands` must be between 0
-        and `nyq` (inclusive).  Default is 1.
+        and `nyq` (inclusive). Default is 1.
     fs : float, optional
         The sampling frequency of the signal. Each frequency in `bands`
-        must be between 0 and ``fs/2`` (inclusive).  Default is 2.
+        must be between 0 and ``fs/2`` (inclusive). Default is 2.
 
     Returns
     -------
@@ -1069,12 +1066,12 @@ def firls(numtaps, bands, desired, weight=None, nyq=None, fs=None):
 
 
 def _dhtm(mag):
-    """Compute the modified 1D discrete Hilbert transform
+    """Compute the modified 1-D discrete Hilbert transform
 
     Parameters
     ----------
     mag : ndarray
-        The magnitude spectrum. Should be 1D with an even length, and
+        The magnitude spectrum. Should be 1-D with an even length, and
         preferably a fast length for FFT/IFFT.
     """
     # Adapted based on code by Niranjan Damera-Venkata,
@@ -1216,12 +1213,12 @@ def minimum_phase(h, method='homomorphic', n_fft=None):
     if np.iscomplexobj(h):
         raise ValueError('Complex filters not supported')
     if h.ndim != 1 or h.size <= 2:
-        raise ValueError('h must be 1D and at least 2 samples long')
+        raise ValueError('h must be 1-D and at least 2 samples long')
     n_half = len(h) // 2
     if not np.allclose(h[-n_half:][::-1], h[:n_half]):
         warnings.warn('h does not appear to by symmetric, conversion may '
                       'fail', RuntimeWarning)
-    if not isinstance(method, string_types) or method not in \
+    if not isinstance(method, str) or method not in \
             ('homomorphic', 'hilbert',):
         raise ValueError('method must be "homomorphic" or "hilbert", got %r'
                          % (method,))

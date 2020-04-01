@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
-from __future__ import division, print_function, absolute_import
-
 import sys
 
 from decimal import Decimal
 from itertools import product
+from math import gcd
 import warnings
 
 import pytest
@@ -12,8 +11,8 @@ from pytest import raises as assert_raises
 from numpy.testing import (
     assert_equal,
     assert_almost_equal, assert_array_equal, assert_array_almost_equal,
-    assert_allclose, assert_, assert_warns, assert_array_less)
-from scipy._lib._numpy_compat import suppress_warnings
+    assert_allclose, assert_, assert_warns, assert_array_less,
+    suppress_warnings)
 from numpy import array, arange
 import numpy as np
 
@@ -31,12 +30,6 @@ from scipy.signal.windows import hann
 from scipy.signal.signaltools import (_filtfilt_gust, _compute_factors,
                                       _group_poles)
 from scipy.signal._upfirdn import _upfirdn_modes
-
-
-if sys.version_info >= (3, 5):
-    from math import gcd
-else:
-    from fractions import gcd
 
 
 class _TestConvolve(object):
@@ -1039,7 +1032,8 @@ class TestMedFilt(object):
 
     def test_none(self):
         # Ticket #1124. Ensure this does not segfault.
-        signal.medfilt(None)
+        with pytest.warns(UserWarning):
+            signal.medfilt(None)
         # Expand on this test to avoid a regression with possible contiguous
         # numpy arrays that have odd strides. The stride value below gets
         # us into wrong memory if used (but it does not need to be used)
@@ -1057,8 +1051,9 @@ class TestMedFilt(object):
         else:
             n = 10
         # Shouldn't segfault:
-        for j in range(n):
-            signal.medfilt(x)
+        with pytest.warns(UserWarning):
+            for j in range(n):
+                signal.medfilt(x)
         if hasattr(sys, 'getrefcount'):
             assert_(sys.getrefcount(a) < n)
         assert_equal(x, [a, a])
@@ -2082,7 +2077,7 @@ class TestFiltFilt(object):
     def test_basic(self):
         zpk = tf2zpk([1, 2, 3], [1, 2, 3])
         out = self.filtfilt(zpk, np.arange(12))
-        assert_allclose(out, arange(12), atol=1e-11)
+        assert_allclose(out, arange(12), atol=5.28e-11)
 
     def test_sine(self):
         rate = 2000
@@ -2234,7 +2229,7 @@ def check_filtfilt_gust(b, a, shape, axis, irlen=None):
     yg, zg1, zg2 = _filtfilt_gust(b, a, x, axis=axis, irlen=irlen)
 
     # filtfilt_gust_opt is an independent implementation that gives the
-    # expected result, but it only handles 1-d arrays, so use some looping
+    # expected result, but it only handles 1-D arrays, so use some looping
     # and reshaping shenanigans to create the expected output arrays.
     xx = np.swapaxes(x, axis, -1)
     out_shape = xx.shape[:-1]
@@ -3081,7 +3076,7 @@ def test_nonnumeric_dtypes(func):
     with pytest.raises(NotImplementedError,
                        match='input type .* not supported'):
         func(*args, x=['foo'])
-    with pytest.raises(ValueError, match='must be at least 1D'):
+    with pytest.raises(ValueError, match='must be at least 1-D'):
         func(*args, x=1.)
 
 

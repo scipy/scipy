@@ -1,6 +1,4 @@
-"""Bounded-Variable Least-Squares algorithm."""
-from __future__ import division, print_function, absolute_import
-
+"""Bounded-variable least-squares algorithm."""
 import numpy as np
 from numpy.linalg import norm, lstsq
 from scipy.optimize import OptimizeResult
@@ -52,7 +50,7 @@ def bvls(A, b, x_lsq, lb, ub, tol, max_iter, verbose):
     # bounds, but many iterations may be required from this state later on.
     # The implemented ad-hoc procedure which intuitively should give a better
     # initial state: find the least-squares solution on current free variables,
-    # if its feasible then stop, otherwise set violating variables to
+    # if its feasible then stop, otherwise, set violating variables to
     # corresponding bounds and continue on the reduced set of free variables.
 
     while free_set.size > 0:

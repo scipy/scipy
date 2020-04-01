@@ -9,8 +9,6 @@ the Bellman-Ford algorithm, or Johnson's Algorithm.
 
 # Author: Jake Vanderplas  -- <vanderplas@astro.washington.edu>
 # License: BSD, (C) 2011
-from __future__ import absolute_import
-
 import warnings
 
 import numpy as np
@@ -630,10 +628,12 @@ cdef _dijkstra_setup_heap_multi(FibonacciHeap *heap,
     heap.min_node = NULL
     for i in range(Nind):
         j_source = source_indices[i]
+        current_node = &nodes[j_source]
+        if current_node.state == SCANNED:
+            continue
         dist_matrix[j_source] = 0
         if return_pred:
             sources[j_source] = j_source
-        current_node = &nodes[j_source]
         current_node.state = SCANNED
         current_node.source = j_source
         insert_node(heap, &nodes[j_source])

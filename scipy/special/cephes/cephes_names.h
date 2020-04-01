@@ -64,6 +64,8 @@
 #define ndtr cephes_ndtr
 #define erfc cephes_erfc
 #define erf cephes_erf
+#define erfinv cephes_erfinv
+#define erfcinv cephes_erfcinv
 #define ndtri cephes_ndtri
 #define pdtrc cephes_pdtrc
 #define pdtr cephes_pdtr
@@ -77,7 +79,9 @@
 #define sici cephes_sici
 #define radian cephes_radian
 #define sindg cephes_sindg
+#define sinpi cephes_sinpi
 #define cosdg cephes_cosdg
+#define cospi cephes_cospi
 #define sincos cephes_sincos
 #define spence cephes_spence
 #define stdtr cephes_stdtr

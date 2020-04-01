@@ -4,7 +4,7 @@ Distance computations (:mod:`scipy.spatial.distance`)
 
 .. sectionauthor:: Damian Eads
 
-Function Reference
+Function reference
 ------------------
 
 Distance matrix computation from a collection of raw observation vectors
@@ -73,8 +73,6 @@ computing the distances between all pairs.
 
 # Copyright (C) Damian Eads, 2007-2008. New BSD License.
 
-from __future__ import division, print_function, absolute_import
-
 __all__ = [
     'braycurtis',
     'canberra',
@@ -115,8 +113,6 @@ import numpy as np
 
 from functools import partial
 from collections import namedtuple
-from scipy._lib.six import callable, string_types
-from scipy._lib.six import xrange
 from scipy._lib._util import _asarray_validated
 
 from . import _distance_wrap
@@ -316,8 +312,6 @@ def _validate_seuclidean_kwargs(X, m, n, **kwargs):
         V = np.var(X.astype(np.double), axis=0, ddof=1)
     else:
         V = np.asarray(V, order='c')
-        if V.dtype != np.double:
-            raise TypeError('Variance vector V must contain doubles.')
         if len(V.shape) != 1:
             raise ValueError('Variance vector V must '
                              'be one-dimensional.')
@@ -370,7 +364,7 @@ def directed_hausdorff(u, v, seed=0):
     v : (O,N) ndarray
         Input array.
     seed : int or None
-        Local `numpy.random.mtrand.RandomState` seed. Default is 0, a random
+        Local `numpy.random.RandomState` seed. Default is 0, a random
         shuffling of u and v that guarantees reproducibility.
 
     Returns
@@ -2044,12 +2038,12 @@ def pdist(X, metric='euclidean', *args, **kwargs):
                                                    metric_name, **kwargs)
 
         k = 0
-        for i in xrange(0, m - 1):
-            for j in xrange(i + 1, m):
+        for i in range(0, m - 1):
+            for j in range(i + 1, m):
                 dm[k] = metric(X[i], X[j], **kwargs)
                 k = k + 1
 
-    elif isinstance(metric, string_types):
+    elif isinstance(metric, str):
         mstr = metric.lower()
 
         mstr, kwargs = _select_weighted_metric(mstr, kwargs, out)
@@ -2079,7 +2073,7 @@ def pdist(X, metric='euclidean', *args, **kwargs):
             # The denom. ||u||*||v||
             de = np.dot(nV, nV.T)
             dm = 1.0 - (nm / de)
-            dm[xrange(0, m), xrange(0, m)] = 0.0
+            dm[range(0, m), range(0, m)] = 0.0
             dm = squareform(dm)
         elif mstr.startswith("test_"):
             if mstr in _TEST_METRICS:
@@ -2269,7 +2263,7 @@ def is_valid_dm(D, tol=0.0, throw=False, name="D", warning=False):
                                      'symmetric.') % name)
                 else:
                     raise ValueError('Distance matrix must be symmetric.')
-            if not (D[xrange(0, s[0]), xrange(0, s[0])] == 0).all():
+            if not (D[range(0, s[0]), range(0, s[0])] == 0).all():
                 if name:
                     raise ValueError(('Distance matrix \'%s\' diagonal must '
                                       'be zero.') % name)
@@ -2284,7 +2278,7 @@ def is_valid_dm(D, tol=0.0, throw=False, name="D", warning=False):
                 else:
                     raise ValueError('Distance matrix must be symmetric within'
                                      ' tolerance %5.5f.' % tol)
-            if not (D[xrange(0, s[0]), xrange(0, s[0])] <= tol).all():
+            if not (D[range(0, s[0]), range(0, s[0])] <= tol).all():
                 if name:
                     raise ValueError(('Distance matrix \'%s\' diagonal must be'
                                       ' close to zero within tolerance %5.5f.')
@@ -2761,11 +2755,11 @@ def cdist(XA, XB, metric='euclidean', *args, **kwargs):
         XA, XB, typ, kwargs = _validate_cdist_input(XA, XB, mA, mB, n,
                                                     metric_name, **kwargs)
 
-        for i in xrange(0, mA):
-            for j in xrange(0, mB):
+        for i in range(0, mA):
+            for j in range(0, mB):
                 dm[i, j] = metric(XA[i], XB[j], **kwargs)
 
-    elif isinstance(metric, string_types):
+    elif isinstance(metric, str):
         mstr = metric.lower()
 
         mstr, kwargs = _select_weighted_metric(mstr, kwargs, out)

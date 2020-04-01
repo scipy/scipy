@@ -28,8 +28,6 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from __future__ import division, print_function, absolute_import
-
 import numpy
 from . import _ni_support
 from . import _nd_image
@@ -72,7 +70,7 @@ def _get_output_fourier_complex(output, input):
 
 def fourier_gaussian(input, sigma, n=-1, axis=-1, output=None):
     """
-    Multi-dimensional Gaussian fourier filter.
+    Multidimensional Gaussian fourier filter.
 
     The array is multiplied with the fourier transform of a Gaussian
     kernel.
@@ -131,9 +129,9 @@ def fourier_gaussian(input, sigma, n=-1, axis=-1, output=None):
 
 def fourier_uniform(input, size, n=-1, axis=-1, output=None):
     """
-    Multi-dimensional uniform fourier filter.
+    Multidimensional uniform fourier filter.
 
-    The array is multiplied with the fourier transform of a box of given
+    The array is multiplied with the Fourier transform of a box of given
     size.
 
     Parameters
@@ -189,7 +187,7 @@ def fourier_uniform(input, size, n=-1, axis=-1, output=None):
 
 def fourier_ellipsoid(input, size, n=-1, axis=-1, output=None):
     """
-    Multi-dimensional ellipsoid fourier filter.
+    Multidimensional ellipsoid Fourier filter.
 
     The array is multiplied with the fourier transform of a ellipsoid of
     given sizes.
@@ -251,9 +249,9 @@ def fourier_ellipsoid(input, size, n=-1, axis=-1, output=None):
 
 def fourier_shift(input, shift, n=-1, axis=-1, output=None):
     """
-    Multi-dimensional fourier shift filter.
+    Multidimensional Fourier shift filter.
 
-    The array is multiplied with the fourier transform of a shift operation.
+    The array is multiplied with the Fourier transform of a shift operation.
 
     Parameters
     ----------

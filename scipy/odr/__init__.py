@@ -18,7 +18,7 @@ Package Content
    Output        -- Result from the fit.
    odr           -- Low-level function for ODR.
 
-   OdrWarning    -- Warning about potential problems when running ODR
+   OdrWarning    -- Warning about potential problems when running ODR.
    OdrError      -- Error exception.
    OdrStop       -- Stop exception.
 
@@ -44,7 +44,7 @@ Usage information
 Introduction
 ------------
 
-Why Orthogonal Distance Regression (ODR)?  Sometimes one has
+Why Orthogonal Distance Regression (ODR)? Sometimes one has
 measurement errors in the explanatory (a.k.a., "independent")
 variable(s), not just the response (a.k.a., "dependent") variable(s).
 Ordinary Least Squares (OLS) fitting procedures treat the data for
@@ -56,13 +56,13 @@ handle both of these cases with ease, and can even reduce to the OLS
 case if that is sufficient for the problem.
 
 ODRPACK is a FORTRAN-77 library for performing ODR with possibly
-non-linear fitting functions.  It uses a modified trust-region
+non-linear fitting functions. It uses a modified trust-region
 Levenberg-Marquardt-type algorithm [1]_ to estimate the function
 parameters.  The fitting functions are provided by Python functions
-operating on NumPy arrays.  The required derivatives may be provided
-by Python functions as well, or may be estimated numerically.  ODRPACK
-can do explicit or implicit ODR fits, or it can do OLS.  Input and
-output variables may be multi-dimensional.  Weights can be provided to
+operating on NumPy arrays. The required derivatives may be provided
+by Python functions as well, or may be estimated numerically. ODRPACK
+can do explicit or implicit ODR fits, or it can do OLS. Input and
+output variables may be multidimensional. Weights can be provided to
 account for different variances of the observations, and even
 covariances between dimensions of the variables.
 
@@ -126,11 +126,8 @@ References
 # author: Robert Kern <robert.kern@gmail.com>
 # date: 2006-09-21
 
-from __future__ import division, print_function, absolute_import
-
 from .odrpack import *
 from .models import *
-from . import add_newdocs
 
 __all__ = [s for s in dir()
            if not (s.startswith('_') or s in ('odr_stop', 'odr_error'))]

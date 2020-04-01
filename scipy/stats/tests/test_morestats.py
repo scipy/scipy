@@ -2,18 +2,15 @@
 #
 # Further enhancements and tests added by numerous SciPy developers.
 #
-from __future__ import division, print_function, absolute_import
-
 import warnings
 
 import numpy as np
 from numpy.random import RandomState
 from numpy.testing import (assert_array_equal,
     assert_almost_equal, assert_array_less, assert_array_almost_equal,
-    assert_, assert_allclose, assert_equal, assert_warns)
+    assert_, assert_allclose, assert_equal, suppress_warnings)
 import pytest
 from pytest import raises as assert_raises
-from scipy._lib._numpy_compat import suppress_warnings
 
 from scipy import stats
 from .common_tests import check_named_results
@@ -159,7 +156,7 @@ class TestShapiro(object):
 
     def test_not_enough_values(self):
         assert_raises(ValueError, stats.shapiro, [1, 2])
-        assert_raises(ValueError, stats.shapiro, [[], [2]])
+        assert_raises(ValueError, stats.shapiro, np.array([[], [2]], dtype=object))
 
     def test_bad_arg(self):
         # Length of x is less than 3.
@@ -1145,9 +1142,7 @@ class TestPpccMax(object):
     def test_ppcc_max_basic(self):
         np.random.seed(1234567)
         x = stats.tukeylambda.rvs(-0.7, loc=2, scale=0.5, size=10000) + 1e4
-        # On Python 2.6 the result is accurate to 5 decimals. On Python >= 2.7
-        # it is accurate up to 16 decimals
-        assert_almost_equal(stats.ppcc_max(x), -0.71215366521264145, decimal=5)
+        assert_almost_equal(stats.ppcc_max(x), -0.71215366521264145, decimal=7)
 
     def test_dist(self):
         np.random.seed(1234567)
@@ -1168,15 +1163,11 @@ class TestPpccMax(object):
         x = stats.tukeylambda.rvs(-0.7, loc=2, scale=0.5, size=10000) + 1e4
         assert_raises(ValueError, stats.ppcc_max, x, brack=(0.0, 1.0, 0.5))
 
-        # On Python 2.6 the result is accurate to 5 decimals. On Python >= 2.7
-        # it is accurate up to 16 decimals
         assert_almost_equal(stats.ppcc_max(x, brack=(0, 1)),
-                            -0.71215366521264145, decimal=5)
+                            -0.71215366521264145, decimal=7)
 
-        # On Python 2.6 the result is accurate to 5 decimals. On Python >= 2.7
-        # it is accurate up to 16 decimals
         assert_almost_equal(stats.ppcc_max(x, brack=(-2, 2)),
-                            -0.71215366521264145, decimal=5)
+                            -0.71215366521264145, decimal=7)
 
 
 class TestBoxcox_llf(object):
@@ -1511,7 +1502,6 @@ class TestYeojohnson(object):
     def test_array_like(self):
         np.random.seed(54321)
         x = stats.norm.rvs(size=100, loc=0)
-        lmbda = 1.5
         xt1, _ = stats.yeojohnson(x)
         xt2, _ = stats.yeojohnson(list(x))
         assert_allclose(xt1, xt2, rtol=1e-12)

@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 from scipy.sparse import csr_matrix, isspmatrix, isspmatrix_csc
 from ._tools import csgraph_to_dense, csgraph_from_dense,\
@@ -50,7 +48,7 @@ def validate_graph(csgraph, directed, dtype=DTYPE,
                                          nan_null=nan_null)
 
     if csgraph.ndim != 2:
-        raise ValueError("compressed-sparse graph must be two dimensional")
+        raise ValueError("compressed-sparse graph must be 2-D")
 
     if csgraph.shape[0] != csgraph.shape[1]:
         raise ValueError("compressed-sparse graph must be shape (N, N)")

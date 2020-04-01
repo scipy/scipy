@@ -8,7 +8,7 @@ Interpolation (:mod:`scipy.interpolate`)
 Sub-package for objects used in interpolation.
 
 As listed below, this sub-package contains spline functions and classes,
-one-dimensional and multi-dimensional (univariate and multivariate)
+1-D and multidimensional (univariate and multivariate)
 interpolation classes, Lagrange and Taylor polynomial interpolators, and
 wrappers for `FITPACK <http://www.netlib.org/dierckx/>`__
 and DFITPACK functions.
@@ -162,8 +162,6 @@ Additional tools
 ``pchip`` is an alias of `PchipInterpolator` for backward compatibility
 (should not be used in new code).
 """
-from __future__ import division, print_function, absolute_import
-
 from .interpolate import *
 from .fitpack import *
 

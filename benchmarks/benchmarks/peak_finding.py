@@ -1,7 +1,5 @@
 """Benchmarks for peak finding related functions."""
 
-from __future__ import division, print_function, absolute_import
-
 try:
     from scipy.signal import find_peaks, peak_prominences, peak_widths
     from scipy.misc import electrocardiogram

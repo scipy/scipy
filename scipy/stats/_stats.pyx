@@ -1,5 +1,3 @@
-from __future__ import absolute_import
-
 from cpython cimport bool
 from libc cimport math
 cimport cython
@@ -122,7 +120,7 @@ ctypedef fused ordered:
 @cython.boundscheck(False)
 cdef _invert_in_place(intp_t[:] perm):
     cdef intp_t n, i, j, k
-    for n in xrange(len(perm)-1, -1, -1):
+    for n in range(len(perm)-1, -1, -1):
         i = perm[n]
         if i < 0:
             perm[n] = -i - 1
@@ -143,13 +141,13 @@ cdef _invert_in_place(intp_t[:] perm):
 @cython.wraparound(False)
 @cython.boundscheck(False)
 def _toint64(x):
-    cdef intp_t i, j = 0, l = len(x)
+    cdef intp_t i = 0, j = 0, l = len(x)
     cdef intp_t[::1] perm = np.argsort(x, kind='quicksort')
     # The type of this array must be one of the supported types
     cdef int64_t[::1] result = np.ndarray(l, dtype=np.int64)
 
     # Find nans, if any, and assign them the lowest value
-    for i in xrange(l - 1, -1, -1):
+    for i in range(l - 1, -1, -1):
         if not np.isnan(x[perm[i]]):
             break
         result[perm[i]] = 0
@@ -158,7 +156,7 @@ def _toint64(x):
         j = 1
         l = i + 1
 
-    for i in xrange(l - 1):
+    for i in range(l - 1):
         result[perm[i]] = j
         if x[perm[i]] != x[perm[i + 1]]:
             j += 1
@@ -195,7 +193,7 @@ def _weightedrankedtau(ordered[:] x, ordered[:] y, intp_t[:] rank, weigher, bool
     s = w
     sq = w * w
 
-    for i in xrange(1, n):
+    for i in range(1, n):
         if x[perm[first]] != x[perm[i]] or y[perm[first]] != y[perm[i]]:
             t += s * (i - first - 1) if additive else (s * s - sq) / 2
             first = i
@@ -214,7 +212,7 @@ def _weightedrankedtau(ordered[:] x, ordered[:] y, intp_t[:] rank, weigher, bool
     s = w
     sq = w * w
 
-    for i in xrange(1, n):
+    for i in range(1, n):
         if x[perm[first]] != x[perm[i]]:
             u += s * (i - first - 1) if additive else (s * s - sq) / 2
             first = i
@@ -275,7 +273,7 @@ def _weightedrankedtau(ordered[:] x, ordered[:] y, intp_t[:] rank, weigher, bool
     s = w
     sq = w * w
 
-    for i in xrange(1, n):
+    for i in range(1, n):
         if y[perm[first]] != y[perm[i]]:
             v += s * (i - first - 1) if additive else (s * s - sq) / 2
             first = i
@@ -291,7 +289,7 @@ def _weightedrankedtau(ordered[:] x, ordered[:] y, intp_t[:] rank, weigher, bool
 
     # weigh all pairs
     s = sq = 0
-    for i in xrange(n):
+    for i in range(n):
         w = weigher(rank[perm[i]])
         s += w
         sq += w * w
@@ -365,14 +363,15 @@ def _transform_distance_matrix(distx, disty, global_corr='mgc', is_ranked=True):
 
 
 # MGC specific functions
-
+@cython.wraparound(False)
+@cython.boundscheck(False)
 cdef _expected_covar(float64_t[:, :] distx, float64_t[:, :] disty,
                      int64_t[:, :] rank_distx, int64_t[:, :] rank_disty,
                      float64_t[:, :] cov_xy, float64_t[:] expectx,
                      float64_t[:] expecty):
     # summing up the the element-wise product of A and B based on the ranks,
     # yields the local family of covariances
-    cdef int n = distx.shape[0]
+    cdef intp_t n = distx.shape[0]
     cdef float64_t a, b
     cdef intp_t i, j, k, l
     for i in range(n):
@@ -390,8 +389,11 @@ cdef _expected_covar(float64_t[:, :] distx, float64_t[:, :] disty,
     return np.asarray(expectx), np.asarray(expecty)
 
 
-cdef _covar_map(float64_t[:, :] cov_xy, nx, ny):
+@cython.wraparound(False)
+@cython.boundscheck(False)
+cdef _covar_map(float64_t[:, :] cov_xy, intp_t nx, intp_t ny):
     # get covariances for each k and l
+    cdef intp_t k, l
     for k in range(nx - 1):
         for l in range(ny - 1):
             cov_xy[k+1, l+1] += (cov_xy[k+1, l] + cov_xy[k, l+1] - cov_xy[k, l])
@@ -407,9 +409,9 @@ def _local_covariance(distx, disty, rank_distx, rank_disty):
     rank_distx = np.asarray(rank_distx, np.int64) - 1
     rank_disty = np.asarray(rank_disty, np.int64) - 1
 
-    cdef int n = distx.shape[0]
-    cdef int nx = np.max(rank_distx) + 1
-    cdef int ny = np.max(rank_disty) + 1
+    cdef intp_t n = distx.shape[0]
+    cdef intp_t nx = np.max(rank_distx) + 1
+    cdef intp_t ny = np.max(rank_disty) + 1
     cdef ndarray cov_xy = np.zeros((nx, ny))
     cdef ndarray expectx = np.zeros(nx)
     cdef ndarray expecty = np.zeros(ny)

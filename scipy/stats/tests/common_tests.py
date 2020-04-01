@@ -1,16 +1,13 @@
-from __future__ import division, print_function, absolute_import
-
 import pickle
 
 import numpy as np
 import numpy.testing as npt
-from numpy.testing import assert_allclose, assert_equal
-from scipy._lib._numpy_compat import suppress_warnings
+from numpy.testing import assert_allclose, assert_equal, suppress_warnings
 from pytest import raises as assert_raises
 
 import numpy.ma.testutils as ma_npt
 
-from scipy._lib._util import getargspec_no_self as _getargspec
+from scipy._lib._util import getfullargspec_no_self as _getfullargspec
 from scipy import stats
 
 
@@ -145,9 +142,10 @@ def check_named_args(distfn, x, shape_args, defaults, meths):
     ## Check calling w/ named arguments.
 
     # check consistency of shapes, numargs and _parse signature
-    signature = _getargspec(distfn._parse_args)
+    signature = _getfullargspec(distfn._parse_args)
     npt.assert_(signature.varargs is None)
-    npt.assert_(signature.keywords is None)
+    npt.assert_(signature.varkw is None)
+    npt.assert_(not signature.kwonlyargs)
     npt.assert_(list(signature.defaults) == list(defaults))
 
     shape_argnames = signature.args[:-len(defaults)]  # a, b, loc=0, scale=1
@@ -199,6 +197,12 @@ def check_random_state_property(distfn, args):
     distfn.random_state = np.random.RandomState(1234)
     r2 = distfn.rvs(*args, size=8)
     npt.assert_equal(r0, r2)
+
+    # check that np.random.Generator can be used (numpy >= 1.17)
+    if hasattr(np.random, 'default_rng'):
+        # obtain a np.random.Generator object
+        rng = np.random.default_rng(1234)
+        distfn.rvs(*args, size=1, random_state=rng)
 
     # can override the instance-level random_state for an individual .rvs call
     distfn.random_state = 2

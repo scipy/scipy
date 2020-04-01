@@ -1,8 +1,6 @@
 """ Test functions for stats module
 
 """
-from __future__ import division, print_function, absolute_import
-
 import warnings
 import re
 import sys
@@ -11,16 +9,17 @@ import os
 
 from numpy.testing import (assert_equal, assert_array_equal,
                            assert_almost_equal, assert_array_almost_equal,
-                           assert_allclose, assert_, assert_warns)
+                           assert_allclose, assert_, assert_warns,
+                           assert_array_less, suppress_warnings)
 import pytest
 from pytest import raises as assert_raises
-from scipy._lib._numpy_compat import suppress_warnings
 
 import numpy
 import numpy as np
 from numpy import typecodes, array
 from numpy.lib.recfunctions import rec_append_fields
 from scipy import special
+from scipy._lib._util import check_random_state
 from scipy.integrate import IntegrationWarning
 import scipy.stats as stats
 from scipy.stats._distn_infrastructure import argsreduce
@@ -830,12 +829,6 @@ class TestLogser(object):
         assert_allclose(m, 1.000000005)
 
 
-class TestNorm(object):
-    def test_bad_keyword_arg(self):
-        x = [1, 2, 3]
-        assert_raises(TypeError, stats.norm.fit, x, plate="shrimp")
-
-
 class TestPareto(object):
     def test_stats(self):
         # Check the stats() method with some simple values. Also check
@@ -1007,6 +1000,23 @@ class TestGenpareto(object):
         logp = stats.genpareto.logsf(1e10, .01, 0, 1)
         assert_allclose(logp, -1842.0680753952365)
 
+    # Values in 'expected_stats' are
+    # [mean, variance, skewness, excess kurtosis].
+    @pytest.mark.parametrize(
+        'c, expected_stats',
+        [(0, [1, 1, 2, 6]),
+         (1/4, [4/3, 32/9, 10/np.sqrt(2), np.nan]),
+         (1/9, [9/8, (81/64)*(9/7), (10/9)*np.sqrt(7), 754/45]),
+         (-1, [1/2, 1/12, 0, -6/5])])
+    def test_stats(self, c, expected_stats):
+        result = stats.genpareto.stats(c, moments='mvsk')
+        assert_allclose(result, expected_stats, rtol=1e-13, atol=1e-15)
+
+    def test_var(self):
+        # Regression test for gh-11168.
+        v = stats.genpareto.var(1e-8)
+        assert_allclose(v, 1.000000040000001, rtol=1e-13)
+
 
 class TestPearson3(object):
     def setup_method(self):
@@ -1149,6 +1159,146 @@ class TestPoisson(object):
         assert_allclose(result, expected)
 
 
+class TestKSTwo(object):
+    def setup_method(self):
+        np.random.seed(1234)
+
+    def test_cdf(self):
+        for n in [1, 2, 3, 10, 100, 1000]:
+            # Test x-values:
+            #  0, 1/2n, where the cdf should be 0
+            #  1/n, where the cdf should be n!/n^n
+            #  0.5, where the cdf should match ksone.cdf
+            # 1-1/n, where cdf = 1-2/n^n
+            # 1, where cdf == 1
+            # (E.g. Exact values given by Eqn 1 in Simard / L'Ecuyer)
+            x = np.array([0, 0.5/n, 1/n, 0.5, 1-1.0/n, 1])
+            v1 = (1.0/n)**n
+            lg = scipy.special.gammaln(n+1)
+            elg = (np.exp(lg) if v1 != 0 else 0)
+            expected = np.array([0, 0, v1 * elg,
+                                 1 - 2*stats.ksone.sf(0.5, n),
+                                 max(1 - 2*v1, 0.0),
+                                 1.0])
+            vals_cdf = stats.kstwo.cdf(x, n)
+            assert_allclose(vals_cdf, expected)
+
+    def test_sf(self):
+        x = np.linspace(0, 1, 11)
+        for n in [1, 2, 3, 10, 100, 1000]:
+            # Same x values as in test_cdf, and use sf = 1 - cdf
+            x = np.array([0, 0.5/n, 1/n, 0.5, 1-1.0/n, 1])
+            v1 = (1.0/n)**n
+            lg = scipy.special.gammaln(n+1)
+            elg = (np.exp(lg) if v1 != 0 else 0)
+            expected = np.array([1.0, 1.0,
+                                 1 - v1 * elg,
+                                 2*stats.ksone.sf(0.5, n),
+                                 min(2*v1, 1.0), 0])
+            vals_sf = stats.kstwo.sf(x, n)
+            assert_allclose(vals_sf, expected)
+
+    def test_cdf_sqrtn(self):
+        # For fixed a, cdf(a/sqrt(n), n) -> kstwobign(a) as n->infinity
+        # cdf(a/sqrt(n), n) is an increasing function of n (and a)
+        # Check that the function is indeed increasing (allowing for some
+        # small floating point and algorithm differences.)
+        x = np.linspace(0, 2, 11)[1:]
+        ns = [50, 100, 200, 400, 1000, 2000]
+        for _x in x:
+            xn = _x / np.sqrt(ns)
+            probs = stats.kstwo.cdf(xn, ns)
+            diffs = np.diff(probs)
+            assert_array_less(diffs, 1e-8)
+
+    def test_cdf_sf(self):
+        x = np.linspace(0, 1, 11)
+        for n in [1, 2, 3, 10, 100, 1000]:
+            vals_cdf = stats.kstwo.cdf(x, n)
+            vals_sf = stats.kstwo.sf(x, n)
+            assert_array_almost_equal(vals_cdf, 1 - vals_sf)
+
+    def test_cdf_sf_sqrtn(self):
+        x = np.linspace(0, 1, 11)
+        for n in [1, 2, 3, 10, 100, 1000]:
+            xn = x / np.sqrt(n)
+            vals_cdf = stats.kstwo.cdf(xn, n)
+            vals_sf = stats.kstwo.sf(xn, n)
+            assert_array_almost_equal(vals_cdf, 1 - vals_sf)
+
+    def test_ppf_of_cdf(self):
+        x = np.linspace(0, 1, 11)
+        for n in [1, 2, 3, 10, 100, 1000]:
+            xn = x[x > 0.5/n]
+            vals_cdf = stats.kstwo.cdf(xn, n)
+            # CDFs close to 1 are better dealt with using the SF
+            cond = (0 < vals_cdf) & (vals_cdf < 0.99)
+            vals = stats.kstwo.ppf(vals_cdf, n)
+            assert_allclose(vals[cond], xn[cond], rtol=1e-4)
+
+    def test_isf_of_sf(self):
+        x = np.linspace(0, 1, 11)
+        for n in [1, 2, 3, 10, 100, 1000]:
+            xn = x[x > 0.5/n]
+            vals_isf = stats.kstwo.isf(xn, n)
+            cond = (0 < vals_isf) & (vals_isf < 1.0)
+            vals = stats.kstwo.sf(vals_isf, n)
+            assert_allclose(vals[cond], xn[cond], rtol=1e-4)
+
+    def test_ppf_of_cdf_sqrtn(self):
+        x = np.linspace(0, 1, 11)
+        for n in [1, 2, 3, 10, 100, 1000]:
+            xn = (x / np.sqrt(n))[x > 0.5/n]
+            vals_cdf = stats.kstwo.cdf(xn, n)
+            cond = (0 < vals_cdf) & (vals_cdf < 1.0)
+            vals = stats.kstwo.ppf(vals_cdf, n)
+            assert_allclose(vals[cond], xn[cond])
+
+    def test_isf_of_sf_sqrtn(self):
+        x = np.linspace(0, 1, 11)
+        for n in [1, 2, 3, 10, 100, 1000]:
+            xn = (x / np.sqrt(n))[x > 0.5/n]
+            vals_sf = stats.kstwo.sf(xn, n)
+            # SFs close to 1 are better dealt with using the CDF
+            cond = (0 < vals_sf) & (vals_sf < 0.95)
+            vals = stats.kstwo.isf(vals_sf, n)
+            assert_allclose(vals[cond], xn[cond])
+
+    def test_ppf(self):
+        probs = np.linspace(0, 1, 11)[1:]
+        for n in [1, 2, 3, 10, 100, 1000]:
+            xn = stats.kstwo.ppf(probs, n)
+            vals_cdf = stats.kstwo.cdf(xn, n)
+            assert_allclose(vals_cdf, probs)
+
+    def test_simard_lecuyer_table1(self):
+        # Compute the cdf for values near the mean of the distribution.
+        # The mean u ~ log(2)*sqrt(pi/(2n))
+        # Compute for x in [u/4, u/3, u/2, u, 2u, 3u]
+        # This is the computation of Table 1 of Simard, R., L'Ecuyer, P. (2011)
+        #  "Computing the Two-Sided Kolmogorov-Smirnov Distribution".
+        # Except that the values below are not from the published table, but
+        # were generated using an independent SageMath implementation of
+        # Durbin's algorithm (with the exponentiation and scaling of
+        # Marsaglia/Tsang/Wang's version) using 500 bit arithmetic.
+        # Some of the values in the published table have relative
+        # errors greater than 1e-4.
+        ns = [10, 50, 100, 200, 500, 1000]
+        ratios = np.array([1.0/4, 1.0/3, 1.0/2, 1, 2, 3])
+        expected = np.array([
+            [1.92155292e-08, 5.72933228e-05, 2.15233226e-02, 6.31566589e-01, 9.97685592e-01, 9.99999942e-01],
+            [2.28096224e-09, 1.99142563e-05, 1.42617934e-02, 5.95345542e-01, 9.96177701e-01, 9.99998662e-01],
+            [1.00201886e-09, 1.32673079e-05, 1.24608594e-02, 5.86163220e-01, 9.95866877e-01, 9.99998240e-01],
+            [4.93313022e-10, 9.52658029e-06, 1.12123138e-02, 5.79486872e-01, 9.95661824e-01, 9.99997964e-01],
+            [2.37049293e-10, 6.85002458e-06, 1.01309221e-02, 5.73427224e-01, 9.95491207e-01, 9.99997750e-01],
+            [1.56990874e-10, 5.71738276e-06, 9.59725430e-03, 5.70322692e-01, 9.95409545e-01, 9.99997657e-01]
+        ])
+        for idx, n in enumerate(ns):
+            x = ratios * np.log(2) * np.sqrt(np.pi/2/n)
+            vals_cdf = stats.kstwo.cdf(x, n)
+            assert_allclose(vals_cdf, expected[idx], rtol=1e-5)
+
+
 class TestZipf(object):
     def setup_method(self):
         np.random.seed(1234)
@@ -1277,10 +1427,22 @@ class TestF(object):
             warnings.simplefilter('error', RuntimeWarning)
             stats.f.stats(dfn=[11]*4, dfd=[2, 4, 6, 8], moments='mvsk')
 
-    @pytest.mark.xfail(reason='f stats does not properly broadcast')
     def test_stats_broadcast(self):
-        # stats do not fully broadcast just yet
-        mv = stats.f.stats(dfn=11, dfd=[11, 12])
+        dfn = np.array([[3], [11]])
+        dfd = np.array([11, 12])
+        m, v, s, k = stats.f.stats(dfn=dfn, dfd=dfd, moments='mvsk')
+        m2 = [dfd / (dfd - 2)]*2
+        assert_allclose(m, m2)
+        v2 = 2 * dfd**2 * (dfn + dfd - 2) / dfn / (dfd - 2)**2 / (dfd - 4)
+        assert_allclose(v, v2)
+        s2 = ((2*dfn + dfd - 2) * np.sqrt(8*(dfd - 4)) /
+              ((dfd - 6) * np.sqrt(dfn*(dfn + dfd - 2))))
+        assert_allclose(s, s2)
+        k2num = 12 * (dfn * (5*dfd - 22) * (dfn + dfd - 2) +
+                      (dfd - 4) * (dfd - 2)**2)
+        k2den = dfn * (dfd - 6) * (dfd - 8) * (dfn + dfd - 2)
+        k2 = k2num / k2den
+        assert_allclose(k, k2)
 
 
 def test_rvgeneric_std():
@@ -1429,7 +1591,7 @@ class TestRvDiscrete(object):
 
 class TestSkewNorm(object):
     def setup_method(self):
-        np.random.seed(1234)
+        self.rng = check_random_state(1234)
 
     def test_normal(self):
         # When the skewness is 0 the distribution is normal
@@ -1439,19 +1601,21 @@ class TestSkewNorm(object):
 
     def test_rvs(self):
         shape = (3, 4, 5)
-        x = stats.skewnorm.rvs(a=0.75, size=shape)
+        x = stats.skewnorm.rvs(a=0.75, size=shape, random_state=self.rng)
         assert_equal(shape, x.shape)
 
-        x = stats.skewnorm.rvs(a=-3, size=shape)
+        x = stats.skewnorm.rvs(a=-3, size=shape, random_state=self.rng)
         assert_equal(shape, x.shape)
 
     def test_moments(self):
-        X = stats.skewnorm.rvs(a=4, size=int(1e6), loc=5, scale=2)
+        X = stats.skewnorm.rvs(a=4, size=int(1e6), loc=5, scale=2,
+                               random_state=self.rng)
         expected = [np.mean(X), np.var(X), stats.skew(X), stats.kurtosis(X)]
         computed = stats.skewnorm.stats(a=4, loc=5, scale=2, moments='mvsk')
         assert_array_almost_equal(computed, expected, decimal=2)
 
-        X = stats.skewnorm.rvs(a=-4, size=int(1e6), loc=5, scale=2)
+        X = stats.skewnorm.rvs(a=-4, size=int(1e6), loc=5, scale=2,
+                               random_state=self.rng)
         expected = [np.mean(X), np.var(X), stats.skew(X), stats.kurtosis(X)]
         computed = stats.skewnorm.stats(a=-4, loc=5, scale=2, moments='mvsk')
         assert_array_almost_equal(computed, expected, decimal=2)
@@ -1503,7 +1667,6 @@ class TestExpon(object):
 
 
 class TestNorm(object):
-    """gh-10300"""
     def test_nan_raises_error(self):
         # see gh-issue 10300
         x = np.array([1.6483, 2.7169, 2.4667, 1.1791, 3.5433, np.nan])
@@ -1513,6 +1676,10 @@ class TestNorm(object):
         # see gh-issue 10300
         x = np.array([1.6483, 2.7169, 2.4667, 1.1791, 3.5433, np.inf])
         assert_raises(RuntimeError, stats.norm.fit, x)
+
+    def test_bad_keyword_arg(self):
+        x = [1, 2, 3]
+        assert_raises(TypeError, stats.norm.fit, x, plate="shrimp")
 
 
 class TestUniform(object):
@@ -2061,7 +2228,7 @@ def TestArgsreduce():
 
 
 class TestFitMethod(object):
-    skip = ['ncf']
+    skip = ['ncf', 'ksone', 'kstwo']
 
     def setup_method(self):
         np.random.seed(1234)
@@ -3112,7 +3279,7 @@ def test_540_567():
 def test_regression_ticket_1316():
     # The following was raising an exception, because _construct_default_doc()
     # did not handle the default keyword extradoc=None.  See ticket #1316.
-    g = stats._continuous_distns.gamma_gen(name='gamma')
+    stats._continuous_distns.gamma_gen(name='gamma')
 
 
 def test_regression_ticket_1326():
@@ -3772,10 +3939,10 @@ def test_genextreme_give_no_warnings():
     with warnings.catch_warnings(record=True) as w:
         warnings.simplefilter("always")
 
-        p = stats.genextreme.cdf(.5, 0)
-        p = stats.genextreme.pdf(.5, 0)
-        p = stats.genextreme.ppf(.5, 0)
-        p = stats.genextreme.logpdf(-np.inf, 0.0)
+        stats.genextreme.cdf(.5, 0)
+        stats.genextreme.pdf(.5, 0)
+        stats.genextreme.ppf(.5, 0)
+        stats.genextreme.logpdf(-np.inf, 0.0)
         number_of_warnings_thrown = len(w)
         assert_equal(number_of_warnings_thrown, 0)
 
@@ -3978,23 +4145,26 @@ def test_crystalball_function_moments():
     assert_allclose(expected_5th_moment, calculated_5th_moment, rtol=0.001)
 
 
-def test_argus_function():
-    # There is no usable reference implementation.
-    # (RootFit implementation returns unreasonable results which are not
-    # normalized correctly.)
-    # Instead we do some tests if the distribution behaves as expected for
-    # different shapes and scales.
-    for i in range(1, 10):
-        for j in range(1, 10):
-            assert_equal(stats.argus.pdf(i + 0.001, chi=j, scale=i), 0.0)
-            assert_(stats.argus.pdf(i - 0.001, chi=j, scale=i) > 0.0)
-            assert_equal(stats.argus.pdf(-0.001, chi=j, scale=i), 0.0)
-            assert_(stats.argus.pdf(+0.001, chi=j, scale=i) > 0.0)
+@pytest.mark.parametrize(
+    'df1,df2,x',
+    [(2, 2, [-0.5, 0.2, 1.0, 2.3]),
+     (4, 11, [-0.5, 0.2, 1.0, 2.3]),
+     (7, 17, [1, 2, 3, 4, 5])]
+)
+def test_ncf_edge_case(df1, df2, x):
+    # Test for edge case described in gh-11660.
+    # Non-central Fisher distribution when nc = 0
+    # should be the same as Fisher distribution.
+    nc = 0
+    expected_cdf = stats.f.cdf(x, df1, df2)
+    calculated_cdf = stats.ncf.cdf(x, df1, df2, nc)
+    assert_allclose(expected_cdf, calculated_cdf, rtol=1e-14)
 
-    for i in range(1, 10):
-        assert_equal(stats.argus.cdf(1.0, chi=i), 1.0)
-        assert_equal(stats.argus.cdf(1.0, chi=i),
-                     1.0 - stats.argus.sf(1.0, chi=i))
+    # when ncf_gen._skip_pdf will be used instead of generic pdf,
+    # this additional test will be useful.
+    expected_pdf = stats.f.pdf(x, df1, df2)
+    calculated_pdf = stats.ncf.pdf(x, df1, df2, nc)
+    assert_allclose(expected_pdf, calculated_pdf, rtol=1e-6)
 
 
 def test_ncf_variance():
@@ -4112,3 +4282,16 @@ def test_loguniform():
     vals, _ = np.histogram(np.log10(rvs), bins=10)
     assert 900 <= vals.min() <= vals.max() <= 1100
     assert np.abs(np.median(vals) - 1000) <= 10
+
+
+class TestArgus(object):
+    def test_argus_rvs_large_chi(self):
+        # test that the algorithm can handle large values of chi
+        x = stats.argus.rvs(50, size=500, random_state=325)
+        assert_almost_equal(stats.argus(50).mean(), x.mean(), decimal=4)
+
+    def test_argus_rvs_ratio_uniforms(self):
+        # test that the ratio of uniforms algorithms works for chi > 2.611
+        x = stats.argus.rvs(3.5, size=1500, random_state=1535)
+        assert_almost_equal(stats.argus(3.5).mean(), x.mean(), decimal=3)
+        assert_almost_equal(stats.argus(3.5).std(), x.std(), decimal=3)

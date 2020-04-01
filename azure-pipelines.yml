@@ -5,12 +5,27 @@ trigger:
     include:
       - master
       - maintenance/*
+  paths:
+    include:
+      - '*'
+    exclude:
+      - 'benchmarks/*'
+      - './*.txt'
+      - 'site.cfg.example'
 
-# the version of OpenBLAS used is currently 0.3.7
+pr:
+  branches:
+    include:
+    - '*'  # must quote since "*" is a YAML reserved character; we want a string
+
+# the version of OpenBLAS used is currently 0.3.8.dev
 # and should be updated to match scipy-wheels as appropriate
+variables:
+    openblas_version: 0.3.9
 
 jobs:
 - job: Linux_Python_36_32bit_full
+  condition: and(succeeded(), ne(variables['Build.SourceBranch'], 'refs/heads/master'))  # skip for PR merges
   pool:
     vmImage: 'ubuntu-16.04'
   steps:
@@ -22,16 +37,17 @@ jobs:
            curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py && \
            python3.6 get-pip.py && \
            pip3 --version && \
-           pip3 install setuptools wheel numpy cython==0.29.13 pybind11 pytest pytest-timeout pytest-xdist pytest-env pytest-cov Pillow mpmath matplotlib --user && \
+           pip3 install setuptools wheel numpy cython==0.29.14 pybind11 pytest pytest-timeout pytest-xdist pytest-env pytest-cov Pillow mpmath matplotlib==3.1.3 --user && \
            apt-get -y install gfortran-5 wget && \
            cd .. && \
            mkdir openblas && cd openblas && \
-           wget https://3f23b170c54c2533c070-1c8a9b3114517dc5fe17b7c3f8c63a43.ssl.cf2.rackcdn.com/openblas-v0.3.7-manylinux1_i686.tar.gz && \
-           tar zxvf openblas-v0.3.7-manylinux1_i686.tar.gz && \
-           cp -r ./usr/local/lib/* /usr/lib && \
-           cp ./usr/local/include/* /usr/include && \
+           target=\$(python3.6 ../scipy/tools/openblas_support.py) && \
+           cp -r \$target/lib/* /usr/lib && \
+           cp \$target/include/* /usr/include && \
            cd ../scipy && \
-           F77=gfortran-5 F90=gfortran-5 python3.6 runtests.py --mode=full -- -n auto -rsx --junitxml=junit/test-results.xml --cov=scipy --cov-report=xml --cov-report=html"
+           F77=gfortran-5 F90=gfortran-5 python3.6 setup.py install && \
+           python3.6 tools/openblas_support.py --check_version $(openblas_version) && \
+           F77=gfortran-5 F90=gfortran-5 python3.6 runtests.py --mode=full -- -n auto -s --junitxml=junit/test-results.xml --cov-config=.coveragerc --cov-report=xml --cov-report=html"
     displayName: 'Run 32-bit Ubuntu Docker Build / Tests'
   - task: PublishTestResults@2
     condition: succeededOrFailed()
@@ -45,11 +61,9 @@ jobs:
       summaryFileLocation: '$(System.DefaultWorkingDirectory)/**/coverage.xml'
       reportDirectory: '$(System.DefaultWorkingDirectory)/**/htmlcov'
 - job: Windows
+  condition: and(succeeded(), ne(variables['Build.SourceBranch'], 'refs/heads/master'))  # skip for PR merges
   pool:
     vmImage: 'VS2017-Win2016'
-  variables:
-      OPENBLAS_32: https://3f23b170c54c2533c070-1c8a9b3114517dc5fe17b7c3f8c63a43.ssl.cf2.rackcdn.com/openblas-v0.3.7-win32-gcc_7_1_0.zip
-      OPENBLAS_64: https://3f23b170c54c2533c070-1c8a9b3114517dc5fe17b7c3f8c63a43.ssl.cf2.rackcdn.com/openblas-v0.3.7-win_amd64-gcc_7_1_0.zip
   strategy:
     maxParallel: 4
     matrix:
@@ -59,12 +73,6 @@ jobs:
           TEST_MODE: full
           OPENBLAS: $(OPENBLAS_32)
           BITS: 32
-        Python35-64bit-full:
-          PYTHON_VERSION: '3.5'
-          PYTHON_ARCH: 'x64'
-          TEST_MODE: full
-          OPENBLAS: $(OPENBLAS_64)
-          BITS: 64
         Python36-64bit-full:
           PYTHON_VERSION: '3.6'
           PYTHON_ARCH: 'x64'
@@ -92,35 +100,27 @@ jobs:
   - script: python -m pip install --upgrade pip setuptools wheel
     displayName: 'Install tools'
   - powershell: |
-      $wc = New-Object net.webclient;
-      $wc.Downloadfile("$(OPENBLAS)", "openblas.zip")
-      $tmpdir = New-TemporaryFile | %{ rm $_; mkdir $_ }
-      Expand-Archive "openblas.zip" $tmpdir
-      $pyversion = python -c "from __future__ import print_function; import sys; print(sys.version.split()[0])"
+      $pyversion = python -c "import sys; print(sys.version.split()[0])"
       Write-Host "Python Version: $pyversion"
       $target = "C:\\hostedtoolcache\\windows\\Python\\$pyversion\\$(PYTHON_ARCH)\\lib\\openblas.a"
       Write-Host "target path: $target"
-      cp $tmpdir\$(BITS)\lib\libopenblas_v0.3.7-gcc_7_1_0.a $target
+      $openblas = python tools/openblas_support.py
+      cp $openblas $target
     displayName: 'Download / Install OpenBLAS'
   - powershell: |
       # wheels appear to use mingw64 version 6.3.0, but 6.4.0
       # is the closest match available from choco package manager
       choco install -y mingw --forcex86 --force --version=6.4.0
     displayName: 'Install 32-bit mingw for 32-bit builds'
-    condition: eq(variables['BITS'], 32)
+    condition: and(succeeded(), eq(variables['BITS'], 32))
   - powershell: |
       choco install -y mingw --force --version=6.4.0
     displayName: 'Install 64-bit mingw for 64-bit builds'
-    condition: eq(variables['BITS'], 64)
-  - script: python -m pip install numpy cython==0.29.13 pybind11 pytest pytest-timeout pytest-xdist pytest-env pytest-cov Pillow mpmath
+    condition: and(succeeded(), eq(variables['BITS'], 64))
+  - script: python -m pip install numpy cython==0.29.14 pybind11 pytest pytest-timeout pytest-xdist pytest-env pytest-cov Pillow mpmath
     displayName: 'Install dependencies'
   - powershell: |
-      If ($(PYTHON_VERSION) -ne '3.5') {
-          python -m pip install matplotlib==3.2.0rc1
-      }
-      else {
-          python -m pip install matplotlib
-      }
+      python -m pip install matplotlib
     displayName: 'Install matplotlib'
   # DLL resolution mechanics were changed in
   # Python 3.8: https://bugs.python.org/issue36085
@@ -138,7 +138,7 @@ jobs:
       rm scipy/_distributor_init.py
       mv scipy-wheels/_distributor_init.py scipy/
     displayName: 'Copy in _distributor_init.py'
-    condition: eq(variables['PYTHON_VERSION'], '3.8')
+    condition: and(succeeded(), eq(variables['PYTHON_VERSION'], '3.8'))
   - powershell: |
       If ($(BITS) -eq 32) {
           # 32-bit build requires careful adjustments
@@ -159,7 +159,7 @@ jobs:
     displayName: 'Build SciPy'
   - powershell: |
       $env:PATH = "C:\\ProgramData\\chocolatey\\lib\\mingw\\tools\\install\\mingw$(BITS)\\bin;" + $env:PATH
-      python runtests.py -n --mode=$(TEST_MODE) -- -n auto -rsx --junitxml=junit/test-results.xml --cov=scipy --cov-report=xml --cov-report=html
+      python runtests.py -n --mode=$(TEST_MODE) -- -n 2 -rsx --junitxml=junit/test-results.xml --cov=scipy --cov-report=xml --cov-report=html --durations=10
     displayName: 'Run SciPy Test Suite'
   - task: PublishTestResults@2
     condition: succeededOrFailed()

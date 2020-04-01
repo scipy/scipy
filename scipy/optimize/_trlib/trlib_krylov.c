@@ -8,10 +8,10 @@
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in all
  * copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -120,8 +120,8 @@ trlib_int_t trlib_krylov_min_internal(
 
     // local variables
     trlib_int_t returnvalue = TRLIB_CLR_CONTINUE;
-    trlib_int_t warm_fac0 = 0; // flag that indicates if you we could successfully update the factorization
-    trlib_int_t warm_fac = 0; // flag that indicates if you we could successfully update the factorization
+    trlib_int_t warm_fac0 = 0; // flag that indicates if you could successfully update the factorization
+    trlib_int_t warm_fac = 0; // flag that indicates if you could successfully update the factorization
     trlib_int_t inc = 1;
     trlib_flt_t one = 1.0;
     trlib_flt_t minus = -1.0;
@@ -144,14 +144,14 @@ trlib_int_t trlib_krylov_min_internal(
             case TRLIB_CLS_INIT:
                 // initialization
                 *ii = 0; *iter = *ii;  // iteration counter
-                *pos_def = 1;  // empty krylov subspace so far, so H is positive definite there for sure
+                *pos_def = 1;  // empty Krylov subspace so far, so H is positive definite there for sure
                 *interior = !equality;  // we can have interior solution if we are not asked for equality solution
                 *warm_leftmost = 0;  // coldstart, so no warmstart information on leftmost available
                 *nirblk = 1;  // at start, there is one irreducible block
                 irblk[0] = 0; // start pointer to first irreducible block
                 *warm_lam0 = 0;  // coldstart, so no warmstart information on multiplier available
                 *warm_lam = 0;  // coldstart, so no warmstart information on multiplier available
-                *lanczos_switch = -1; // indicate that no lanczos switch occurred
+                *lanczos_switch = -1; // indicate that no Lanczos switch occurred
                 *exit_tri = 0;  // set return code from #trlib_tri_factor_min to 0 just to be on the safe side
                 *sub_fail_tri = 0;  // set sub_fail from #trlib_tri_factor_min to 0 just to be on the safe side
                 *iter_tri = 0;  // set newton iter from #trlib_tri_factor_min to 0 just to be on the safe side
@@ -174,7 +174,7 @@ trlib_int_t trlib_krylov_min_internal(
                     eta_i = fmin(5e-1, sqrt(v_dot_g));
                 }
                 *stop_i = fmax(tol_abs_i, eta_i*sqrt(v_dot_g)); *stop_i = (*stop_i)*(*stop_i); // set interior stopping tolerance, note that this is squared as for efficiency we compare norm^2 <= tol
-                if( tol_rel_b >= 0.0 ) { 
+                if( tol_rel_b >= 0.0 ) {
                     eta_b = tol_rel_b;
                 }
                 if( fabs(tol_rel_b +1.0) < 1e-8 || fabs(tol_rel_b +3.0) < 1e-8 ) {
@@ -189,7 +189,7 @@ trlib_int_t trlib_krylov_min_internal(
                 *stop_b = fmax(tol_abs_b, eta_b*sqrt(v_dot_g)); // set boundary stopping tolerance, here no square as we directly compare norm <= tol
                 *v_g = v_dot_g; // store (v, g)
                 *p_Hp = p_dot_Hp; // store (p, Hp)
-                neglin[0] = - sqrt(v_dot_g); // set neglin = - gamma_0 e_1 
+                neglin[0] = - sqrt(v_dot_g); // set neglin = - gamma_0 e_1
                 *cgl = 1.0; *cglm = 1.0; // ratio between CG and Lanczos vectors is 1 in this and previous iteration
                 *sigma = 1.0; // sigma_0 = 1
                 *leftmost = 0.0; *lam = 0.0; // assume interior solution
@@ -207,7 +207,7 @@ trlib_int_t trlib_krylov_min_internal(
                    offdiag(i) = sqrt( beta(i-1)/abs(alpha(i-1) )
                      terms with index i-1 have been computed in previous iteration, just add 1/alpha(i) to diag(i) */
                 delta[*ii] += (*p_Hp)/(*v_g); // delta(i) += (p,Hp)/(v,g)
-                // update if hessian possitive definite in current krylov subspace
+                // update if Hessian possitive definite in current Krylov subspace
                 *pos_def = *pos_def && (alpha[*ii] > 0.0);
 
                 // update quantities needed to computed || s_trial ||_M and ratio between Lanczos vector q and pCG vector v
@@ -232,7 +232,7 @@ trlib_int_t trlib_krylov_min_internal(
                 else {
                     /* solution candidate is on boundary
                        solve tridiagonal reduction
-                       first try to update factorization if available to start tridiagonal problem warmstarted */
+                       first, try to update factorization if available to start tridiagonal problem warmstarted */
                     warm_fac0 = 0;
                     if (*warm_lam0) {
                         TRLIB_PRINTLN_2("Trying to update factorization")
@@ -248,7 +248,7 @@ trlib_int_t trlib_krylov_min_internal(
                         }
                     }
                     /* call trlib_tri_factor_min to solve tridiagonal problem, store solution candidate in h
-                       the criterion to specify the maximum number of iterations is weird. it should not be dependent on problem size rather than condition of the hessian... */
+                       the criterion to specify the maximum number of iterations is weird. it should not be dependent on problem size rather than condition of the Hessian... */
                     irblk[*nirblk] = *ii+1;
                     *exit_tri = trlib_tri_factor_min(
                         *nirblk, irblk, delta, gamma, neglin, radius, 100+3*(*ii),
@@ -286,7 +286,7 @@ trlib_int_t trlib_krylov_min_internal(
                         if ( *interior ) { *action = TRLIB_CLA_TRIVIAL; } else { *action = TRLIB_CLA_RETRANSF; }
                         *ityp = TRLIB_CLT_CG; returnvalue = TRLIB_CLR_FAIL_HARD; gamma[*ii] = 0.0; break;
                     }
-                    else { 
+                    else {
                         /* decide if a new invariant Krylov subspace should be investigated
                            therefore compute actual gradient at current point and test for convergence */
                         if(*interior) { *action = TRLIB_CLA_TRIVIAL; } else { *action = TRLIB_CLA_RETRANSF; }
@@ -332,7 +332,7 @@ trlib_int_t trlib_krylov_min_internal(
                 if (*interior && (*v_g <= *stop_i)) { *ityp = TRLIB_CLT_CG; *action = TRLIB_CLA_TRIVIAL; returnvalue = TRLIB_CLR_CONV_INTERIOR; break; }
                 else if (!(*interior) && (gamma[*ii]*fabs(h[*ii]) <= *stop_b) ) { *ityp = TRLIB_CLT_CG; *action = TRLIB_CLA_RETRANSF; returnvalue = TRLIB_CLR_CONV_BOUND; break; }
                 // test if convergence is unlikely
-                if ( !(*interior) && earlyterm && *ii > 10 && convhist[*ii-10] > 1e-1 * convhist[*ii]) { 
+                if ( !(*interior) && earlyterm && *ii > 10 && convhist[*ii-10] > 1e-1 * convhist[*ii]) {
                     trlib_int_t doit = 1;
                     for(cit = *ii-10; cit < *ii; ++cit) { if( convhist[cit+1] > convhist[cit] ) doit = 0; }
                     if(doit) {
@@ -345,7 +345,7 @@ trlib_int_t trlib_krylov_min_internal(
                     }
                 }
                 // test of problem is unbounded
-                else if (isnan(*obj) || *obj < obj_lo) { 
+                else if (isnan(*obj) || *obj < obj_lo) {
                     if(*interior) { *ityp = TRLIB_CLT_CG; *action = TRLIB_CLA_TRIVIAL; returnvalue = TRLIB_CLR_UNBDBEL; break; }
                     else  { *ityp = TRLIB_CLT_CG; *action = TRLIB_CLA_RETRANSF; returnvalue = TRLIB_CLR_UNBDBEL; break; }
                 }
@@ -377,7 +377,7 @@ trlib_int_t trlib_krylov_min_internal(
                 }
                 else {
                     TRLIB_PRINTLN_2("Investigate next invariant subspace") TRLIB_PRINTLN_2("%s","")
-                } 
+                }
                 *ityp = TRLIB_CLT_CG; *action = TRLIB_CLA_NEW_KRYLOV;
                 *status = TRLIB_CLS_CG_IF_IRBLK_N; returnvalue = TRLIB_CLR_CONTINUE; break;
             case TRLIB_CLS_CG_IF_IRBLK_N:
@@ -416,7 +416,7 @@ trlib_int_t trlib_krylov_min_internal(
                     *ityp = TRLIB_CLT_CG; *action = TRLIB_CLA_RETRANSF; returnvalue = TRLIB_CLR_FAIL_TTR; break;
                 }
 
-                ///* if tridiagonal problem cannot find suitable initial lambda it is most likely best to stop at this point
+                ///* if tridiagonal problem cannot find suitable initial lambda, it is most likely best to stop at this point
                 // * since this means that there is severe ill-conditioning and the user should better present a
                 // * better problem formulation. Continuing means most likely computing on garbage */
                 if (*exit_tri == TRLIB_TTR_HARD_INIT_LAM) {
@@ -438,11 +438,11 @@ trlib_int_t trlib_krylov_min_internal(
 
                 TRLIB_PRINTLN_1("%6ld%6ld%6s%14e%14e%14e%14e%14e%14e", *ii, *iter_tri, " hot", *obj, gamma[*ii]*fabs(h[*ii]), *leftmost, *lam, *ii == 0 ? neglin[0] : gamma[*ii-1], delta[*ii]) TRLIB_PRINTLN_2("%s", "")
 
-                if ( earlyterm ) { 
+                if ( earlyterm ) {
                     TRLIB_PRINTLN_2("Early exit as hotstart with early termination on")
                     *ityp = TRLIB_CLT_CG; *action = TRLIB_CLA_RETRANSF; returnvalue = TRLIB_CLR_UNLIKE_CONV; break;
                 }
-                
+
                 // test for convergence
                 if ( (*exit_tri != TRLIB_TTR_CONV_INTERIOR) && gamma[*ii]*fabs(h[*ii]) <= *stop_b) { *ityp = TRLIB_CLT_CG; *action = TRLIB_CLA_RETRANSF; returnvalue = *exit_tri; break; }
                 else if ( (*exit_tri == TRLIB_TTR_CONV_INTERIOR) && gamma[*ii]*fabs(h[*ii]) <= sqrt(*stop_i)) { *ityp = TRLIB_CLT_CG; *action = TRLIB_CLA_RETRANSF; returnvalue = *exit_tri; break; }
@@ -454,7 +454,7 @@ trlib_int_t trlib_krylov_min_internal(
                 }
                 break;
             case TRLIB_CLS_HOTSTART_P:
-                /* reentry to compute minimizer of problem with convexified hessian */
+                /* reentry to compute minimizer of problem with convexified Hessian */
 
                 // get regularization for diagonal in diag_fac (use this as a temporary)
                 trlib_tri_factor_regularize_posdef(irblk[1], delta, gamma, 1e-12, 10.0, regdiag);
@@ -512,7 +512,7 @@ trlib_int_t trlib_krylov_min_internal(
                     *ityp = TRLIB_CLT_CG; *action = TRLIB_CLA_RETRANSF; returnvalue = TRLIB_CLR_FAIL_TTR; break;
                 }
 
-                ///* if tridiagonal problem cannot find suitable initial lambda it is most likely best to stop at this point
+                ///* if tridiagonal problem cannot find suitable initial lambda, it is most likely best to stop at this point
                 // * since this means that there is severe ill-conditioning and the user should better present a
                 // * better problem formulation. Continuing means most likely computing on garbage */
                 if (*exit_tri == TRLIB_TTR_HARD_INIT_LAM) {
@@ -526,7 +526,7 @@ trlib_int_t trlib_krylov_min_internal(
                 *iter_last_head = *ii;
 
                 TRLIB_PRINTLN_1("%6ld%6ld%6s%14e%14e%14e%14e%14e%14e", *ii, *iter_tri, " hot_g", *obj, 0.0, *leftmost, *lam, *ii == 0 ? neglin[0] : gamma[*ii-1], delta[*ii]) TRLIB_PRINTLN_2("%s", "")
-                
+
                 // return without convergence check as indicated in API doc
                 *ityp = TRLIB_CLT_CG; *action = TRLIB_CLA_RETRANSF; returnvalue = *exit_tri; break;
             case TRLIB_CLS_LANCZOS_SWT:
@@ -571,7 +571,7 @@ trlib_int_t trlib_krylov_min_internal(
                     *warm_lam0 = 0; *warm_lam = 0; *warm_leftmost = 0;
                 }
                 /* call factor_min to solve tridiagonal problem, store solution candidate in h
-                   the criterion to specify the maximum number of iterations is weird. it should not be dependent on problem size rather than condition of the hessian... */
+                   the criterion to specify the maximum number of iterations is weird. it should not be dependent on problem size rather than condition of the Hessian... */
                 irblk[*nirblk] = *ii+1;
                 *exit_tri = trlib_tri_factor_min(
                     *nirblk, irblk, delta, gamma, neglin, radius, 100+3*(*ii),
@@ -587,7 +587,7 @@ trlib_int_t trlib_krylov_min_internal(
                     *ityp = TRLIB_CLT_L; *action = TRLIB_CLA_RETRANSF; returnvalue = TRLIB_CLR_FAIL_TTR; break;
                 }
 
-                ///* if tridiagonal problem cannot find suitable initial lambda it is most likely best to stop at this point
+                ///* if tridiagonal problem cannot find suitable initial lambda, it is most likely best to stop at this point
                 // * since this means that there is severe ill-conditioning and the user should better present a
                 // * better problem formulation. Continuing means most likely computing on garbage.
                 // * Ill-conditioning is likely since we already are in Lanczos mode. */
@@ -598,7 +598,7 @@ trlib_int_t trlib_krylov_min_internal(
                 /* convergence check is logical at this position, *but* requires gamma(ii+1).
                    wait until gradient has been updated */
                 // compute g^L(ii+1)
-                if(*ii < 2) { 
+                if(*ii < 2) {
                     *flt1 = -delta[*ii]/gamma[*ii-1]; *flt2 = -gamma[*ii-1]; *flt3 = 1.0;
                 }
                 else {
@@ -652,7 +652,7 @@ trlib_int_t trlib_krylov_min_internal(
                 if ( ctl_invariant <= TRLIB_CLC_EXP_INV_LOC && (*exit_tri != TRLIB_TTR_CONV_INTERIOR) && *v_g <= sqrt(*stop_b)) { *ityp = TRLIB_CLT_L; *action = TRLIB_CLA_RETRANSF; returnvalue = *exit_tri; break; }
                 else if ( ctl_invariant <= TRLIB_CLC_EXP_INV_LOC && (*exit_tri == TRLIB_TTR_CONV_INTERIOR) && *v_g <= sqrt(*stop_i)) { *ityp = TRLIB_CLT_L; *action = TRLIB_CLA_RETRANSF; returnvalue = *exit_tri; break; }
                 // test if convergence is unlikely
-                if ( !(*interior) && earlyterm && *ii > 10 && convhist[*ii-10] > 1e-1 * convhist[*ii]) { 
+                if ( !(*interior) && earlyterm && *ii > 10 && convhist[*ii-10] > 1e-1 * convhist[*ii]) {
                     trlib_int_t doit = 1;
                     for(cit = *ii-10; cit < *ii; ++cit) { if( convhist[cit+1] > convhist[cit] ) doit = 0; }
                     if(doit) {

@@ -6,8 +6,6 @@ by P. Dierckx (see http://www.netlib.org/dierckx/) transformed
 to double routines by Pearu Peterson.
 """
 # Created by Pearu Peterson, June,August 2003
-from __future__ import division, print_function, absolute_import
-
 __all__ = [
     'UnivariateSpline',
     'InterpolatedUnivariateSpline',
@@ -69,7 +67,7 @@ _extrap_modes = {0: 0, 'extrapolate': 0,
 
 class UnivariateSpline(object):
     """
-    One-dimensional smoothing spline fit to a given set of data points.
+    1-D smoothing spline fit to a given set of data points.
 
     Fits a spline y = spl(x) of degree `k` to the provided `x`, `y` data.  `s`
     specifies the number of knots by specifying a smoothing condition.
@@ -132,7 +130,7 @@ class UnivariateSpline(object):
 
     **NaN handling**: If the input arrays contain ``nan`` values, the result
     is not useful, since the underlying spline fitting routines cannot deal
-    with ``nan`` . A workaround is to use zero weights for not-a-number
+    with ``nan``. A workaround is to use zero weights for not-a-number
     data points:
 
     >>> from scipy.interpolate import UnivariateSpline
@@ -527,7 +525,7 @@ class UnivariateSpline(object):
 
 class InterpolatedUnivariateSpline(UnivariateSpline):
     """
-    One-dimensional interpolating spline for a given set of data points.
+    1-D interpolating spline for a given set of data points.
 
     Fits a spline y = spl(x) of degree `k` to the provided `x`, `y` data.
     Spline function passes through all provided points. Equivalent to
@@ -635,7 +633,7 @@ This means that at least one of the following conditions is violated:
 
 class LSQUnivariateSpline(UnivariateSpline):
     """
-    One-dimensional spline with explicit internal knots.
+    1-D spline with explicit internal knots.
 
     Fits a spline y = spl(x) of degree `k` to the provided `x`, `y` data.  `t`
     specifies the internal knots of the spline
@@ -652,7 +650,7 @@ class LSQUnivariateSpline(UnivariateSpline):
             bbox[0] < t[0] < ... < t[-1] < bbox[-1]
 
     w : (N,) array_like, optional
-        weights for spline fitting.  Must be positive.  If None (default),
+        weights for spline fitting. Must be positive. If None (default),
         weights are all equal.
     bbox : (2,) array_like, optional
         2-sequence specifying the boundary of the approximation interval. If
@@ -1017,7 +1015,7 @@ class SmoothBivariateSpline(BivariateSpline):
     bbox : array_like, optional
         Sequence of length 4 specifying the boundary of the rectangular
         approximation domain.  By default,
-        ``bbox=[min(x,tx),max(x,tx), min(y,ty),max(y,ty)]``.
+        ``bbox=[min(x), max(x), min(y), max(y)]``.
     kx, ky : ints, optional
         Degrees of the bivariate spline. Default is 3.
     s : float, optional
@@ -1035,7 +1033,7 @@ class SmoothBivariateSpline(BivariateSpline):
     bisplrep : an older wrapping of FITPACK
     bisplev : an older wrapping of FITPACK
     UnivariateSpline : a similar class for univariate spline interpolation
-    LSQUnivariateSpline : to create a BivariateSpline using weighted
+    LSQBivariateSpline : to create a BivariateSpline using weighted least-squares fitting
 
     Notes
     -----
@@ -1400,7 +1398,7 @@ class LSQSphereBivariateSpline(SphereBivariateSpline):
     """
     Weighted least-squares bivariate spline approximation in spherical
     coordinates.
-    
+
     Determines a smooth bicubic spline according to a given
     set of knots in the `theta` and `phi` directions.
 

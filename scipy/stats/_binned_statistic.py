@@ -1,8 +1,6 @@
-from __future__ import division, print_function, absolute_import
-
+import builtins
 import numpy as np
-from scipy._lib.six import callable, xrange
-from scipy._lib._numpy_compat import suppress_warnings
+from numpy.testing import suppress_warnings
 from collections import namedtuple
 
 __all__ = ['binned_statistic',
@@ -554,9 +552,9 @@ def binned_statistic_dd(sample, values, statistic='mean',
         binnumbers = _bin_numbers(sample, nbin, edges, dedges)
     else:
         edges = binned_statistic_result.bin_edges
-        nbin = np.array([len(edges[i]) + 1 for i in xrange(Ndim)])
+        nbin = np.array([len(edges[i]) + 1 for i in builtins.range(Ndim)])
         # +1 for outlier bins
-        dedges = [np.diff(edges[i]) for i in xrange(Ndim)]
+        dedges = [np.diff(edges[i]) for i in builtins.range(Ndim)]
         binnumbers = binned_statistic_result.binnumber
 
     result = np.empty([Vdim, nbin.prod()], float)
@@ -565,7 +563,7 @@ def binned_statistic_dd(sample, values, statistic='mean',
         result.fill(np.nan)
         flatcount = np.bincount(binnumbers, None)
         a = flatcount.nonzero()
-        for vv in xrange(Vdim):
+        for vv in builtins.range(Vdim):
             flatsum = np.bincount(binnumbers, values[vv])
             result[vv, a] = flatsum[a] / flatcount[a]
     elif statistic == 'std':
@@ -573,7 +571,7 @@ def binned_statistic_dd(sample, values, statistic='mean',
         flatcount = np.bincount(binnumbers, None)
         a = flatcount.nonzero()
         for i in np.unique(binnumbers):
-            for vv in xrange(Vdim):
+            for vv in builtins.range(Vdim):
                 # NOTE: take std dev by bin, np.std() is 2-pass and stable
                 result[vv, i] = np.std(values[vv, binnumbers == i])
     elif statistic == 'count':
@@ -583,24 +581,24 @@ def binned_statistic_dd(sample, values, statistic='mean',
         result[:, a] = flatcount[np.newaxis, :]
     elif statistic == 'sum':
         result.fill(0)
-        for vv in xrange(Vdim):
+        for vv in builtins.range(Vdim):
             flatsum = np.bincount(binnumbers, values[vv])
             a = np.arange(len(flatsum))
             result[vv, a] = flatsum
     elif statistic == 'median':
         result.fill(np.nan)
         for i in np.unique(binnumbers):
-            for vv in xrange(Vdim):
+            for vv in builtins.range(Vdim):
                 result[vv, i] = np.median(values[vv, binnumbers == i])
     elif statistic == 'min':
         result.fill(np.nan)
         for i in np.unique(binnumbers):
-            for vv in xrange(Vdim):
+            for vv in builtins.range(Vdim):
                 result[vv, i] = np.min(values[vv, binnumbers == i])
     elif statistic == 'max':
         result.fill(np.nan)
         for i in np.unique(binnumbers):
-            for vv in xrange(Vdim):
+            for vv in builtins.range(Vdim):
                 result[vv, i] = np.max(values[vv, binnumbers == i])
     elif callable(statistic):
         with np.errstate(invalid='ignore'), suppress_warnings() as sup:
@@ -611,7 +609,7 @@ def binned_statistic_dd(sample, values, statistic='mean',
                 null = np.nan
         result.fill(null)
         for i in np.unique(binnumbers):
-            for vv in xrange(Vdim):
+            for vv in builtins.range(Vdim):
                 result[vv, i] = statistic(values[vv, binnumbers == i])
 
     # Shape into a proper matrix
@@ -628,7 +626,7 @@ def binned_statistic_dd(sample, values, statistic='mean',
     if np.any(result.shape[1:] != nbin - 2):
         raise RuntimeError('Internal Shape Error')
 
-    # Reshape to have output (`reulst`) match input (`values`) shape
+    # Reshape to have output (`result`) match input (`values`) shape
     result = result.reshape(input_shape[:-1] + list(nbin-2))
 
     return BinnedStatisticddResult(result, edges, binnumbers)
@@ -651,17 +649,17 @@ def _bin_edges(sample, bins=None, range=None):
     else:
         smin = np.zeros(Ndim)
         smax = np.zeros(Ndim)
-        for i in xrange(Ndim):
+        for i in builtins.range(Ndim):
             smin[i], smax[i] = range[i]
 
     # Make sure the bins have a finite width.
-    for i in xrange(len(smin)):
+    for i in builtins.range(len(smin)):
         if smin[i] == smax[i]:
             smin[i] = smin[i] - .5
             smax[i] = smax[i] + .5
 
     # Create edge arrays
-    for i in xrange(Ndim):
+    for i in builtins.range(Ndim):
         if np.isscalar(bins[i]):
             nbin[i] = bins[i] + 2  # +2 for outlier bins
             edges[i] = np.linspace(smin[i], smax[i], nbin[i] - 1)
@@ -682,13 +680,13 @@ def _bin_numbers(sample, nbin, edges, dedges):
 
     sampBin = [
         np.digitize(sample[:, i], edges[i])
-        for i in xrange(Ndim)
+        for i in range(Ndim)
     ]
 
     # Using `digitize`, values that fall on an edge are put in the right bin.
     # For the rightmost bin, we want values equal to the right
     # edge to be counted in the last bin, and not as an outlier.
-    for i in xrange(Ndim):
+    for i in range(Ndim):
         # Find the rounding precision
         dedges_min = dedges[i].min()
         if dedges_min == 0:

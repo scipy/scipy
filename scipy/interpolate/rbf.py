@@ -1,4 +1,4 @@
-"""rbf - Radial basis functions for interpolation/smoothing scattered Nd data.
+"""rbf - Radial basis functions for interpolation/smoothing scattered N-D data.
 
 Written by John Travers <jtravs@gmail.com>, February 2007
 Based closely on Matlab code by Alex Chirokov
@@ -7,10 +7,10 @@ Some additional alterations by Travis Oliphant
 Interpolation with multi-dimensional target domain by Josua Sassen
 
 Permission to use, modify, and distribute this software is given under the
-terms of the SciPy (BSD style) license.  See LICENSE.txt that came with
+terms of the SciPy (BSD style) license. See LICENSE.txt that came with
 this distribution for specifics.
 
-NO WARRANTY IS EXPRESSED OR IMPLIED.  USE AT YOUR OWN RISK.
+NO WARRANTY IS EXPRESSED OR IMPLIED. USE AT YOUR OWN RISK.
 
 Copyright (c) 2006-2007, Robert Hetland <hetland@tamu.edu>
 Copyright (c) 2007, John Travers <jtravs@gmail.com>
@@ -43,13 +43,9 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
-from __future__ import division, print_function, absolute_import
-
-import sys
 import numpy as np
 
 from scipy import linalg
-from scipy._lib.six import callable, get_method_function, get_function_code
 from scipy.special import xlogy
 from scipy.spatial.distance import cdist, pdist, squareform
 
@@ -61,7 +57,7 @@ class Rbf(object):
     Rbf(*args)
 
     A class for radial basis function interpolation of functions from
-    n-dimensional scattered data to an m-dimensional domain.
+    N-D scattered data to an M-D domain.
 
     Parameters
     ----------
@@ -80,8 +76,8 @@ class Rbf(object):
             'quintic': r**5
             'thin_plate': r**2 * log(r)
 
-        If callable, then it must take 2 arguments (self, r).  The epsilon
-        parameter will be available as self.epsilon.  Other keyword
+        If callable, then it must take 2 arguments (self, r). The epsilon
+        parameter will be available as self.epsilon. Other keyword
         arguments passed in will be available as well.
 
     epsilon : float, optional
@@ -90,7 +86,7 @@ class Rbf(object):
         a good start).
     smooth : float, optional
         Values greater than zero increase the smoothness of the
-        approximation.  0 is for interpolation (default), the function will
+        approximation. 0 is for interpolation (default), the function will
         always go through the nodal points in this case.
     norm : str, callable, optional
         A function that returns the 'distance' between two points, with
@@ -101,7 +97,7 @@ class Rbf(object):
         `scipy.spatial.distances.cdist`.
     mode : str, optional
         Mode of the interpolation, can be '1-D' (default) or 'N-D'. When it is
-        '1-D' the data `d` will be considered as one-dimensional and flattened
+        '1-D' the data `d` will be considered as 1-D and flattened
         internally. When it is 'N-D' the data `d` is assumed to be an array of
         shape (n_samples, m), where m is the dimension of the target domain.
 
@@ -115,15 +111,15 @@ class Rbf(object):
     xi : ndarray
         The 2-D array of data coordinates.
     function : str or callable
-        The radial basis function.  See description under Parameters.
+        The radial basis function. See description under Parameters.
     epsilon : float
-        Parameter used by gaussian or multiquadrics functions.  See Parameters.
+        Parameter used by gaussian or multiquadrics functions. See Parameters.
     smooth : float
-        Smoothing parameter.  See description under Parameters.
+        Smoothing parameter. See description under Parameters.
     norm : str or callable
-        The distance function.  See description under Parameters.
+        The distance function. See description under Parameters.
     mode : str
-        Mode of the interpolation.  See description under Parameters.
+        Mode of the interpolation. See description under Parameters.
     nodes : ndarray
         A 1-D array of node values for the interpolation.
     A : internal property, do not use
@@ -187,24 +183,17 @@ class Rbf(object):
                hasattr(self.function, '__code__'):
                 val = self.function
                 allow_one = True
-            elif hasattr(self.function, "im_func"):
-                val = get_method_function(self.function)
             elif hasattr(self.function, "__call__"):
-                val = get_method_function(self.function.__call__)
+                val = self.function.__call__.__func__
             else:
                 raise ValueError("Cannot determine number of arguments to "
                                  "function")
 
-            argcount = get_function_code(val).co_argcount
+            argcount = val.__code__.co_argcount
             if allow_one and argcount == 1:
                 self._function = self.function
             elif argcount == 2:
-                if sys.version_info[0] >= 3:
-                    self._function = self.function.__get__(self, Rbf)
-                else:
-                    import new
-                    self._function = new.instancemethod(self.function, self,
-                                                        Rbf)
+                self._function = self.function.__get__(self, Rbf)
             else:
                 raise ValueError("Function argument must take 1 or 2 "
                                  "arguments.")

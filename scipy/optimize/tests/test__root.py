@@ -1,8 +1,6 @@
 """
 Unit tests for optimization routines from _root.py.
 """
-from __future__ import division, print_function, absolute_import
-
 from numpy.testing import assert_
 from pytest import raises as assert_raises
 import numpy as np
@@ -68,4 +66,4 @@ class TestRoot(object):
 
         F = fun()
         with assert_raises(ValueError):
-            sol = root(F, [0.1, 0.0], method='lm')
+            root(F, [0.1, 0.0], method='lm')

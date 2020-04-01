@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 import pytest
 
 import numpy as np
@@ -887,36 +885,53 @@ def test_quat_ownership():
     assert_allclose(s._quat[0], np.array([1, 0, 0, 0]))
 
 
-def test_match_vectors_no_rotation():
+def test_align_vectors_no_rotation():
     x = np.array([[1, 2, 3], [4, 5, 6]])
     y = x.copy()
 
-    r, p = Rotation.match_vectors(x, y)
+    r, rmsd = Rotation.align_vectors(x, y)
     assert_array_almost_equal(r.as_matrix(), np.eye(3))
+    assert_allclose(rmsd, 0, atol=1e-6)
 
 
-def test_match_vectors_no_noise():
+def test_align_vectors_no_noise():
     np.random.seed(0)
     c = Rotation.from_quat(np.random.normal(size=4))
     b = np.random.normal(size=(5, 3))
     a = c.apply(b)
 
-    est, cov = Rotation.match_vectors(a, b)
+    est, rmsd = Rotation.align_vectors(a, b)
     assert_allclose(c.as_quat(), est.as_quat())
+    assert_allclose(rmsd, 0, atol=1e-7)
 
 
-def test_match_vectors_improper_rotation():
+def test_align_vectors_improper_rotation():
     # Tests correct logic for issue #10444
     x = np.array([[0.89299824, -0.44372674, 0.0752378],
                   [0.60221789, -0.47564102, -0.6411702]])
     y = np.array([[0.02386536, -0.82176463, 0.5693271],
                   [-0.27654929, -0.95191427, -0.1318321]])
 
-    est, cov = Rotation.match_vectors(x, y)
+    est, rmsd = Rotation.align_vectors(x, y)
     assert_allclose(x, est.apply(y), atol=1e-6)
+    assert_allclose(rmsd, 0, atol=1e-7)
 
 
-def test_match_vectors_noise():
+def test_align_vectors_scaled_weights():
+    rng = np.random.RandomState(0)
+    c = Rotation.random(random_state=rng)
+    b = rng.normal(size=(5, 3))
+    a = c.apply(b)
+
+    est1, rmsd1, cov1 = Rotation.align_vectors(a, b, np.ones(5), True)
+    est2, rmsd2, cov2 = Rotation.align_vectors(a, b, 2 * np.ones(5), True)
+
+    assert_allclose(est1.as_matrix(), est2.as_matrix())
+    assert_allclose(np.sqrt(2) * rmsd1, rmsd2)
+    assert_allclose(cov1, cov2)
+
+
+def test_align_vectors_noise():
     np.random.seed(0)
     n_vectors = 100
     rot = Rotation.from_euler('xyz', np.random.normal(size=3))
@@ -937,7 +952,8 @@ def test_match_vectors_noise():
     # rotations to each vector.
     noisy_result = noise.apply(result)
 
-    est, cov = Rotation.match_vectors(noisy_result, vectors)
+    est, rmsd, cov = Rotation.align_vectors(noisy_result, vectors,
+                                            return_sensitivity=True)
 
     # Use rotation compositions to find out closeness
     error_vector = (rot * est.inv()).as_rotvec()
@@ -950,6 +966,34 @@ def test_match_vectors_noise():
     assert_allclose(cov[0, 0], 0, atol=tolerance)
     assert_allclose(cov[1, 1], 0, atol=tolerance)
     assert_allclose(cov[2, 2], 0, atol=tolerance)
+
+    assert_allclose(rmsd, np.sum((noisy_result - est.apply(vectors))**2)**0.5)
+
+
+def test_align_vectors_single_vector():
+    with pytest.warns(UserWarning, match="Optimal rotation is not"):
+        r_estimate, rmsd = Rotation.align_vectors([[1, -1, 1]], [[1, 1, -1]])
+        assert_allclose(rmsd, 0, atol=1e-16)
+
+
+def test_align_vectors_invalid_input():
+    with pytest.raises(ValueError, match="Expected input `a` to have shape"):
+        Rotation.align_vectors([1, 2, 3], [[1, 2, 3]])
+
+    with pytest.raises(ValueError, match="Expected input `b` to have shape"):
+        Rotation.align_vectors([[1, 2, 3]], [1, 2, 3])
+
+    with pytest.raises(ValueError, match="Expected inputs `a` and `b` "
+                                         "to have same shapes"):
+        Rotation.align_vectors([[1, 2, 3],[4, 5, 6]], [[1, 2, 3]])
+
+    with pytest.raises(ValueError,
+                       match="Expected `weights` to be 1 dimensional"):
+        Rotation.align_vectors([[1, 2, 3]], [[1, 2, 3]], weights=[[1]])
+
+    with pytest.raises(ValueError,
+                       match="Expected `weights` to have number of values"):
+        Rotation.align_vectors([[1, 2, 3]], [[1, 2, 3]], weights=[1, 2])
 
 
 def test_random_rotation_shape():

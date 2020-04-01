@@ -1,19 +1,16 @@
-from __future__ import division, print_function, absolute_import
 """
 Unit test for constraint conversion
 """
 
 import numpy as np
-from numpy.testing import (assert_, assert_array_almost_equal,
-                           assert_allclose, assert_equal, TestCase)
+from numpy.testing import (assert_array_almost_equal,
+                           assert_allclose, assert_warns, suppress_warnings)
 import pytest
-from scipy._lib._numpy_compat import suppress_warnings
-from scipy.optimize import (NonlinearConstraint, LinearConstraint, Bounds,
+from scipy.optimize import (NonlinearConstraint, LinearConstraint,
                             OptimizeWarning, minimize, BFGS)
 from .test_minimize_constrained import (Maratos, HyperbolicIneq, Rosenbrock,
                                         IneqRosenbrock, EqIneqRosenbrock,
                                         BoundedRosenbrock, Elec)
-from scipy._lib._numpy_compat import _assert_warns, suppress_warnings
 
 
 class TestOldToNew(object):
@@ -202,8 +199,8 @@ class TestNewToOldSLSQP(object):
         bnds = ((0, None), (0, None), (0, None))
         with suppress_warnings() as sup:
             sup.filter(UserWarning, "delta_grad == 0.0")
-            _assert_warns(OptimizeWarning, minimize, fun, (2, 0, 1),
-                          method=self.method, bounds=bnds, constraints=cons)
+            assert_warns(OptimizeWarning, minimize, fun, (2, 0, 1),
+                         method=self.method, bounds=bnds, constraints=cons)
 
     def test_warn_ignored_options(self):
         # warns about constraint options being ignored
@@ -239,8 +236,8 @@ class TestNewToOldSLSQP(object):
         cons.append(LinearConstraint([1, 0, 0], 2, np.inf,
                                      keep_feasible=True))
         for con in cons:
-            _assert_warns(OptimizeWarning, minimize, fun, x0,
-                          method=self.method, bounds=bnds, constraints=cons)
+            assert_warns(OptimizeWarning, minimize, fun, x0,
+                         method=self.method, bounds=bnds, constraints=cons)
 
 
 class TestNewToOldCobyla(object):

@@ -42,12 +42,10 @@ Building SciPy
 Python Versions
 ^^^^^^^^^^^^^^^
 
-SciPy is compatible with several versions of Python, and some
-specific decisions are still under consideration, especially
-with regard to future changes.
-Python 2.7 support was dropped for SciPy
-releases numbered 1.3 and above but is still available in Release 1.2.x,
-which is a long-term support release. [1]_, [2]_.
+SciPy is compatible with several versions of Python.  When dropping support for
+older Python versions, SciPy takes guidance from NEP 29 [10]_.  Python 2.7
+support was dropped for SciPy releases numbered 1.3 and above but is still
+available in release 1.2.x, which is a long-term support release [1]_, [2]_.
 
 ================  =======================================================================
  Date             Pythons supported
@@ -72,9 +70,10 @@ The table shows the NumPy versions suitable for each major Python version
  Python             Minimum NumPy version       Maximum NumPy version
 =================  ========================    ===========================
 2.7 (SciPy 1.2)      1.8.2                      1.16.x
-3.5                  1.13.3                     >= 1.16.x
-3.6                  1.13.3                     >= 1.16.x
-3.7                  1.14.5                     >= 1.16.x
+3.5 (SciPy 1.4)      1.13.3                     1.18.x
+3.6                  1.14.5                     >= 1.18.x
+3.7                  1.14.5                     >= 1.18.x
+3.8                  1.17.3                     >= 1.18.x
 =================  ========================    ===========================
 
 
@@ -173,7 +172,7 @@ SciPy always requires a recent Cython compiler.
 ======== ============ ===============
  Tool    Tool Version  SciPy version
 ======== ============ ===============
-Cython     >= 0.29.13  1.2.1
+Cython     >= 0.29.13  1.4.1
 ======== ============ ===============
 
 
@@ -280,3 +279,4 @@ References
 .. [7] https://pythondev.readthedocs.io/windows.html#python-and-visual-studio-version-matrix
 .. [8] https://en.wikipedia.org/wiki/Microsoft_Visual_C%2B%2B#Internal_version_numbering
 .. [9] https://wiki.python.org/moin/WindowsCompilers
+.. [10] https://numpy.org/neps/nep-0029-deprecation_policy.html

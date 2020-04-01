@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 import itertools
 from numpy.testing import assert_array_almost_equal, assert_allclose, assert_
 from numpy import (array, eye, zeros, empty_like, empty, tril_indices_from,

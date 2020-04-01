@@ -1,4 +1,3 @@
-from __future__ import division, print_function, absolute_import
 import numpy as np
 
 
@@ -40,7 +39,7 @@ class OdeSolver(object):
            whether a step was successful, and ``message`` is a string
            containing description of a failure if a step failed or None
            otherwise.
-        4. A solver must implement a private method `_dense_output_impl(self)`
+        4. A solver must implement a private method `_dense_output_impl(self)`,
            which returns a `DenseOutput` object covering the last successful
            step.
         5. A solver must have attributes listed below in Attributes section.
@@ -48,7 +47,7 @@ class OdeSolver(object):
         6. Use `fun(self, t, y)` method for the system rhs evaluation, this
            way the number of function evaluations (`nfev`) will be tracked
            automatically.
-        7. For convenience a base class provides `fun_single(self, t, y)` and
+        7. For convenience, a base class provides `fun_single(self, t, y)` and
            `fun_vectorized(self, t, y)` for evaluating the rhs in
            non-vectorized and vectorized fashions respectively (regardless of
            how `fun` from the constructor is implemented). These calls don't
@@ -56,7 +55,7 @@ class OdeSolver(object):
         8. If a solver uses a Jacobian matrix and LU decompositions, it should
            track the number of Jacobian evaluations (`njev`) and the number of
            LU decompositions (`nlu`).
-        9. By convention the function evaluations used to compute a finite
+        9. By convention, the function evaluations used to compute a finite
            difference approximation of the Jacobian should not be counted in
            `nfev`, thus use `fun_single(self, t, y)` or
            `fun_vectorized(self, t, y)` when computing a finite difference
@@ -68,7 +67,7 @@ class OdeSolver(object):
         Right-hand side of the system. The calling signature is ``fun(t, y)``.
         Here ``t`` is a scalar and there are two options for ndarray ``y``.
         It can either have shape (n,), then ``fun`` must return array_like with
-        shape (n,). Or alternatively it can have shape (n, n_points), then
+        shape (n,). Or, alternatively, it can have shape (n, n_points), then
         ``fun`` must return array_like with shape (n, n_points) (each column
         corresponds to a single column in ``y``). The choice between the two
         options is determined by `vectorized` argument (see below).
@@ -245,11 +244,11 @@ class DenseOutput(object):
         -------
         y : ndarray, shape (n,) or (n, n_points)
             Computed values. Shape depends on whether `t` was a scalar or a
-            1-d array.
+            1-D array.
         """
         t = np.asarray(t)
         if t.ndim > 1:
-            raise ValueError("`t` must be float or 1-d array.")
+            raise ValueError("`t` must be a float or a 1-D array.")
         return self._call_impl(t)
 
     def _call_impl(self, t):

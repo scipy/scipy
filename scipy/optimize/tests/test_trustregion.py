@@ -5,8 +5,6 @@ To run it in its simplest form::
   nosetests test_optimize.py
 
 """
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 from scipy.optimize import (minimize, rosen, rosen_der, rosen_hess,
                             rosen_hess_prod)

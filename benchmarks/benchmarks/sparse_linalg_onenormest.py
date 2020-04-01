@@ -1,7 +1,5 @@
 """Compare the speed of exact one-norm calculation vs. its estimation.
 """
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 
 try:

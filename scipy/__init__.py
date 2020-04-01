@@ -56,8 +56,6 @@ Utility tools
  __numpy_version__ --- Numpy version string
 
 """
-from __future__ import division, print_function, absolute_import
-
 __all__ = ['test']
 
 from numpy import show_config as show_numpy_config
@@ -136,14 +134,14 @@ else:
         raise ImportError(msg)
 
     from scipy.version import version as __version__
-    from scipy._lib._version import NumpyVersion as _NumpyVersion
-    if _NumpyVersion(__numpy_version__) < '1.13.3':
+    from scipy._lib import _pep440
+    if _pep440.parse(__numpy_version__) < _pep440.Version('1.14.5'):
         import warnings
-        warnings.warn("NumPy 1.13.3 or above is required for this version of "
+        warnings.warn("NumPy 1.14.5 or above is required for this version of "
                       "SciPy (detected version %s)" % __numpy_version__,
                       UserWarning)
 
-    del _NumpyVersion
+    del _pep440
 
     from scipy._lib._ccallback import LowLevelCallable
 

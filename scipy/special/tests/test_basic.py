@@ -17,8 +17,6 @@
 ###  test_pbvv_seq
 ###  test_sph_harm
 
-from __future__ import division, print_function, absolute_import
-
 import itertools
 import platform
 
@@ -30,18 +28,15 @@ import pytest
 from pytest import raises as assert_raises
 from numpy.testing import (assert_equal, assert_almost_equal,
         assert_array_equal, assert_array_almost_equal, assert_approx_equal,
-        assert_, assert_allclose,
-        assert_array_almost_equal_nulp)
+        assert_, assert_allclose, assert_array_almost_equal_nulp,
+        suppress_warnings)
 
 from scipy import special
 import scipy.special._ufuncs as cephes
-from scipy.special import ellipk, zeta
+from scipy.special import ellipk
 
 from scipy.special._testutils import with_special_errors, \
      assert_func_equal, FuncData
-
-from scipy._lib._numpy_compat import suppress_warnings
-from scipy._lib._version import NumpyVersion
 
 import math
 
@@ -334,8 +329,6 @@ class TestCephes(object):
         assert_equal(cephes.expm1(-np.inf), -1)
         assert_equal(cephes.expm1(np.nan), np.nan)
 
-    # Earlier numpy version don't guarantee that npy_cexp conforms to C99.
-    @pytest.mark.skipif(NumpyVersion(np.__version__) < '1.9.0', reason='')
     def test_expm1_complex(self):
         expm1 = cephes.expm1
         assert_equal(expm1(0 + 0j), 0 + 0j)
@@ -576,8 +569,6 @@ class TestCephes(object):
         assert_equal(log1p(-2), np.nan)
         assert_equal(log1p(np.inf), np.inf)
 
-    # earlier numpy version don't guarantee that npy_clog conforms to C99
-    @pytest.mark.skipif(NumpyVersion(np.__version__) < '1.9.0', reason='')
     def test_log1p_complex(self):
         log1p = cephes.log1p
         c = complex
@@ -1659,16 +1650,6 @@ class TestErf(object):
             rtol=1e-12
             )
 
-    def test_erfcinv(self):
-        i = special.erfcinv(1)
-        # Use assert_array_equal instead of assert_equal, so the comparison
-        # of -0.0 and 0.0 doesn't fail.
-        assert_array_equal(i, 0)
-
-    def test_erfinv(self):
-        i = special.erfinv(0)
-        assert_equal(i,0)
-
     def test_erf_nan_inf(self):
         vals = [np.nan, -np.inf, np.inf]
         expected = [np.nan, -1, 1]
@@ -1836,6 +1817,23 @@ class TestFactorialFunctions(object):
     def test_factorialk(self):
         assert_equal(special.factorialk(5, 1, exact=True), 120)
         assert_equal(special.factorialk(5, 3, exact=True), 10)
+
+    @pytest.mark.parametrize('x, exact', [
+        (np.nan, True),
+        (np.nan, False),
+        (np.array([np.nan]), True),
+        (np.array([np.nan]), False),
+    ])
+    def test_nan_inputs(self, x, exact):
+        result = special.factorial(x, exact=exact)
+        assert_(np.isnan(result))
+
+    def test_mixed_nan_inputs(self):
+        x = np.array([np.nan, 1, 2, 3, np.nan])
+        result = special.factorial(x, exact=True)
+        assert_equal(np.array([np.nan, 1, 2, 6, np.nan]), result)
+        result = special.factorial(x, exact=False)
+        assert_equal(np.array([np.nan, 1, 2, 6, np.nan]), result)
 
 
 class TestFresnel(object):
@@ -2958,7 +2956,7 @@ class TestMathieu(object):
         pass
 
     def test_mathieu_even_coef(self):
-        mc = special.mathieu_even_coef(2,5)
+        special.mathieu_even_coef(2,5)
         # Q not defined broken and cannot figure out proper reporting order
 
     def test_mathieu_odd_coef(self):
@@ -2993,8 +2991,8 @@ class TestParabolicCylinder(object):
                                              0.9925])),4)
 
     def test_pbdv(self):
-        pbv = special.pbdv(1,.2)
-        derrl = 1/2*(.2)*special.pbdv(1,.2)[0] - special.pbdv(0,.2)[0]
+        special.pbdv(1,.2)
+        1/2*(.2)*special.pbdv(1,.2)[0] - special.pbdv(0,.2)[0]
 
     def test_pbdv_seq(self):
         pbn = special.pbdn_seq(1,.1)
@@ -3271,9 +3269,6 @@ def test_legacy():
     # Legacy behavior: truncating arguments to integers
     with suppress_warnings() as sup:
         sup.filter(RuntimeWarning, "floating point number truncated to an integer")
-        assert_equal(special.bdtrc(1, 2, 0.3), special.bdtrc(1.8, 2.8, 0.3))
-        assert_equal(special.bdtr(1, 2, 0.3), special.bdtr(1.8, 2.8, 0.3))
-        assert_equal(special.bdtri(1, 2, 0.3), special.bdtri(1.8, 2.8, 0.3))
         assert_equal(special.expn(1, 0.3), special.expn(1.8, 0.3))
         assert_equal(special.nbdtrc(1, 2, 0.3), special.nbdtrc(1.8, 2.8, 0.3))
         assert_equal(special.nbdtr(1, 2, 0.3), special.nbdtr(1.8, 2.8, 0.3))

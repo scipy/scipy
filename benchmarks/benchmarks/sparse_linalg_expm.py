@@ -1,6 +1,4 @@
 """benchmarks for the scipy.sparse.linalg._expm_multiply module"""
-from __future__ import division, print_function, absolute_import
-
 import math
 
 import numpy as np

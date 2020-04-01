@@ -93,8 +93,6 @@ Arff files (:mod:`scipy.io.arff`)
    ParseArffError
 
 """
-from __future__ import division, print_function, absolute_import
-
 # matfile read and write
 from .matlab import loadmat, savemat, whosmat, byteordercodes
 
