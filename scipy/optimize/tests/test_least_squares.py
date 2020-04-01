@@ -370,7 +370,7 @@ class BaseMixin(object):
 
     def test_convergence_with_only_one_tolerance_enabled(self):
         if self.method == 'lm':
-            return # should not do test
+            return  # should not do test
         x0 = [-2, 1]
         x_opt = [1, 1]
         for ftol, xtol, gtol in [(1e-8, None, None),
