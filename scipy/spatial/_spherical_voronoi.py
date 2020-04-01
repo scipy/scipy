@@ -170,12 +170,14 @@ class SphericalVoronoi:
         # center the points
         centered = self.points - self.center
 
-        # calculate an orthogonal transformation using SVD
-        _, _, vh = np.linalg.svd(centered)
+        # calculate an orthogonal transformation which puts circle on x-y axis
+        _, _, vh = np.linalg.svd(centered - np.roll(centered, 1, axis=0))
 
-        # project points into inverse basis
+        # apply transformation
         circle = centered @ vh.T
         h = np.mean(circle[:, 2])
+        if h < 0:
+            h, vh, circle = -h, -vh, -circle
         midpoint = np.array([0, 0, h]) @ vh
         circle_radius = np.sqrt(np.maximum(0, self.radius**2 - h**2))
 

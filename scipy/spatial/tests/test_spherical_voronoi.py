@@ -181,12 +181,13 @@ class TestSphericalVoronoi(object):
 
     @pytest.mark.parametrize("n", [8, 15, 21])
     @pytest.mark.parametrize("radius", [0.5, 1, 2])
+    @pytest.mark.parametrize("fraction", [0, 0.6])
     @pytest.mark.parametrize("center", [(0, 0, 0), (1, 2, 3)])
-    def test_circular_input(self, n, radius, center):
+    def test_circular_input(self, n, radius, fraction, center):
         # generate a random circle
         rng = np.random.RandomState(0)
         U = Rotation.random(random_state=rng).as_matrix()
-        h = radius * rng.uniform(0.001, 0.999)
+        h = radius * fraction
         circle_radius = np.sqrt(radius**2 - h**2)
         thetas = np.linspace(0, 2 * np.pi, n, endpoint=False)
         points = np.vstack([circle_radius * np.sin(thetas),
