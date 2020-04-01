@@ -2830,7 +2830,7 @@ def median_absolute_deviation(x, axis=0, center=np.median, scale=1.4826,
     # Consistent with `np.var` and `np.std`.
     if not x.size:
         if x.shape == (0,):
-            return np.nan # This empty array
+            return np.nan  # This empty array
         nan_shape = list(x.shape)
         try:
             del nan_shape[axis]
