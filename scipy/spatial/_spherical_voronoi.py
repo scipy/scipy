@@ -325,7 +325,7 @@ class SphericalVoronoi:
         spherical polygons (not planar). The sum of the areas is
         `4 * pi * radius**2`.
 
-        .. versionadded:: 1.4.0
+        .. versionadded:: 1.5.0
 
         Returns
         -------
