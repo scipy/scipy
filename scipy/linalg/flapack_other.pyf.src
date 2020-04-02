@@ -1854,6 +1854,21 @@ subroutine <prefix>lartg(f,g,cs,sn,r)
 end subroutine <prefix>lartg
 
 subroutine <prefix2c>rot(n,x,offx,incx,y,offy,incy,c,s,lx,ly)
+    ! ?GEJSV computes the singular value decomposition (SVD) of a real M-by-N
+    ! matrix [A], where M >= N. The SVD of [A] is written as
+    !
+    !              [A] = [U] * [SIGMA] * [V]^t,
+    !
+    ! where [SIGMA] is an N-by-N (M-by-N) matrix which is zero except for its N
+    ! diagonal elements, [U] is an M-by-N (or M-by-M) orthonormal matrix, and
+    ! [V] is an N-by-N orthogonal matrix. The diagonal elements of [SIGMA] are
+    ! the singular values of [A]. The columns of [U] and [V] are the left and
+    ! the right singular vectors of [A], respectively. The matrices [U] and [V]
+    ! are computed and stored in the arrays U and V, respectively. The diagonal
+    ! of [SIGMA] is computed and stored in the array SVA.
+    ! DGEJSV can sometimes compute tiny singular values and their singular vectors
+    ! much more accurately than other SVD routines.
+
     callstatement (*f2py_func)(&n,x+offx,&incx,y+offy,&incy,&c,&s)
     callprotoargument int*,<ctype2c>*,int*,<ctype2c>*,int*,<float,double>*,<ctype2c>*
     <ftype2c> dimension(lx),intent(in,out,copy) :: x
@@ -1878,8 +1893,19 @@ subroutine ilaver(major, minor, patch)
 end subroutine ilaver
 
 
-
 subroutine <prefix2>gejsv(joba,jobu,jobv,jobr,jobt,jobp,m,n,a,lda,sva,u,ldu,v,ldv,work,lwork,iwork,info)
+    ! ?GEJSV computes the singular value decomposition (SVD) of a complex
+    ! M-by-N matrix [A], where M >= N. The SVD of [A] is written as
+    !
+    !              [A] = [U] * [SIGMA] * [V]^*,
+    !
+    ! where [SIGMA] is an N-by-N (M-by-N) matrix which is zero except for its N
+    ! diagonal elements, [U] is an M-by-N (or M-by-M) unitary matrix, and
+    ! [V] is an N-by-N unitary matrix. The diagonal elements of [SIGMA] are
+    ! the singular values of [A]. The columns of [U] and [V] are the left and
+    ! the right singular vectors of [A], respectively. The matrices [U] and [V]
+    ! are computed and stored in the arrays U and V, respectively. The diagonal
+    ! of [SIGMA] is computed and stored in the array SVA.
     callstatement(*f2py_func)(joba,jobu,jobv,jobr,jobt,jobp,&m,&n,a,&lda,sva,u,&ldu,v,&ldv,work,&lwork,iwork,&info)
     callprotoargument char*,char*,char*,char*,char*,char*,int*,int*,<ctype2>*,int*,<ctype2>*,<ctype2>*,int*,<ctype2>*,int*,<ctype2>*,int*,int*,int*
 
@@ -1890,24 +1916,36 @@ subroutine <prefix2>gejsv(joba,jobu,jobv,jobr,jobt,jobp,m,n,a,lda,sva,u,ldu,v,ld
     character intent(in, optional) :: jobt='T'
     character intent(in, optional) :: jobp='P'
 
-    integer intent(hide),depend(a) ::m=shape(a,0)
-    integer intent(hide),depend(a) ::n=shape(a,1)
+    integer intent(hide), depend(a) :: m = shape(a,0)
+    integer intent(hide), depend(a) :: n = shape(a,1)
     <ftype2> dimension(m, n), intent(in) :: a
-    integer intent(hide), depend(m) :: lda = max(1,m)
+    integer intent(hide), depend(m) :: lda = max(1, m)
     <ftype2> intent(out), dimension(n) :: sva
-    <ftype2> intent(out), dimension(ldu, max(1, (*jobu=='F'?m:n))) :: u
-    integer intent(hide), depend(m) :: ldu = max(m, 1)
+    <ftype2> intent(out), depend(ldu, jobu, m, n), dimension(ldu, (*jobu=='F'?m:n)) :: u
+    integer intent(hide), depend(m) :: ldu = max(1, m)
     <ftype2> intent(out), dimension(ldv, n) :: v
-    integer intent(hide), depend(n) :: ldv = max(n, 1)
-    <ftype2> intent(out), dimension(lwork) :: work
-    integer intent(in, optional) :: lwork=2*max(2*m+n, max(4*n+n*n,2*n+n*n+6))
-    integer intent(out), dimension(m+3*n) :: iwork
+    integer intent(hide), depend(n) :: ldv = max(1, n)
+    <ftype2> intent(out), depend(lwork), dimension(lwork) :: work
+    integer intent(in, optional), depend(m, n) :: lwork=2*max(2*m+n, max(4*n+n*n,2*n+n*n+6))
+    integer intent(out), depend(m ,n), dimension(m+3*n) :: iwork
     integer intent(out) :: info
 
 end subroutine <prefix2>gejsv
 
 
 subroutine <prefix2c>gejsv(joba,jobu,jobv,jobr,jobt,jobp,m,n,a,lda,sva,u,ldu,v,ldv,cwork,lwork,rwork,lrwork,iwork,info)
+    ! CGEJSV computes the singular value decomposition (SVD) of a complex M-by-N
+    ! matrix [A], where M >= N. The SVD of [A] is written as
+    !
+    !            [A] = [U] * [SIGMA] * [V]^*,
+    !
+    ! where [SIGMA] is an N-by-N (M-by-N) matrix which is zero except for its N
+    ! diagonal elements, [U] is an M-by-N (or M-by-M) unitary matrix, and
+    ! [V] is an N-by-N unitary matrix. The diagonal elements of [SIGMA] are
+    ! the singular values of [A]. The columns of [U] and [V] are the left and
+    ! the right singular vectors of [A], respectively. The matrices [U] and [V]
+    ! are computed and stored in the arrays U and V, respectively. The diagonal
+    ! of [SIGMA] is computed and stored in the array SVA.
     callstatement(*f2py_func)(joba,jobu,jobv,jobr,jobt,jobp,&m,&n,a,&lda,sva,u,&ldu,v,&ldv,cwork,&lwork,rwork,&lrwork,iwork,&info)
     callprotoargument char*,char*,char*,char*,char*,char*,int*,int*,<ctype2c>*,int*,<ctype2>*,<ctype2c>*,int*,<ctype2c>*,int*,<ctype2c>*,int*,<ctype2>*,int*,int*,int*
 
@@ -1918,19 +1956,19 @@ subroutine <prefix2c>gejsv(joba,jobu,jobv,jobr,jobt,jobp,m,n,a,lda,sva,u,ldu,v,l
     character intent(in, optional) :: jobt='T'
     character intent(in, optional) :: jobp='P'
 
-    integer intent(hide), depend(a) :: m = shape(a,0)
-    integer intent(hide), depend(a) :: n = shape(a,1)
-    <ftype2c> dimension(lda, n), intent(in) :: a
-    integer intent(hide), depend(a) :: lda = max(1, shape(a, 0))
+    integer intent(hide), depend(a) :: m = shape(a, 0)
+    integer intent(hide), depend(a) :: n = shape(a, 1)
+    <ftype2c> dimension(m, n), intent(in) :: a
+    integer intent(hide), depend(m) :: lda = max(1, m)
     <ftype2> intent(out), depend(n), dimension(n) :: sva
     <ftype2c> intent(out), depend(ldu, jobu, m, n), dimension(ldu, (*jobu=='F'?m:n)) :: u
     integer intent(hide), depend(m) :: ldu = max(1, m)
     <ftype2c> intent(out), dimension(ldv, n) :: v
     integer intent(hide), depend(n) :: ldv = max(1, n)
     <ftype2c> intent(hide), dimension(lwork) :: cwork
-    integer intent(in, optional), depend(n,m) :: lwork=5*n + 2*n*n
+    integer intent(in, optional), depend(m, n) :: lwork=5*n + 2*n*n
     <ftype2> intent(out), depend(lwork), dimension(max(7,lwork)) :: rwork
-    integer intent(in, optional),depend(m,n) :: lrwork=2*max(7,max(2*m,n))
+    integer intent(in, optional), depend(m,n) :: lrwork=2*max(7,max(2*m,n))
     integer intent(out), depend(m, n), dimension(max(4, 2*m + n)) :: iwork
     integer intent(out) :: info
 
