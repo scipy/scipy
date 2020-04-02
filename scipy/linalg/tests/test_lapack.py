@@ -1920,21 +1920,22 @@ def test_gejsv_specific(dtype):
     assert_equal(k, iwork[1])
 
 
-@pytest.mark.parametrize('dtype', [float])
-@pytest.mark.parametrize(('shape', 'kwargs', 'status'), [
-                            ((1, 1), {}, 0),
-                            (None, {}, 0),
-                            ((3, 3), {'joba': 'L'}, -1),
-                            ((3, 3), {'jobu': 'L'}, -2),
-                            ((3, 3), {'jobv': 'L'}, -3),
-                            ((3, 3), {'jobr': 'L'}, -4),
-                            ((3, 3), {'jobt': 'L'}, -5),
-                            ((3, 3), {'jobp': 'L'}, -6),
-                            ((3, 5), {}, -8),
-                            ((3, 3), {'lwork': 0}, -17),
+@pytest.mark.parametrize(('dtype', 'shape', 'kwargs', 'status'), [
+                        (np.float, (1, 0), {}, 0),
+                        (np.complex, (1, 0), {}, -17),
+                        (np.float, (1, 1), {}, 0),
+                        (np.float, None, {}, 0),
+                        (np.float, (3, 3), {'joba': 'L'}, -1),
+                        (np.float, (3, 3), {'jobu': 'L'}, -2),
+                        (np.float, (3, 3), {'jobv': 'L'}, -3),
+                        (np.float, (3, 3), {'jobr': 'L'}, -4),
+                        (np.float, (3, 3), {'jobt': 'L'}, -5),
+                        (np.float, (3, 3), {'jobp': 'L'}, -6),
+                        (np.float, (3, 5), {}, -8),
+                        (np.float, (3, 3), {'lwork': 0}, -17),
                           ])
-def test_gejsv_illegal_arguments(dtype, shape, kwargs, status):
-    """Test illegal arguments return expected status"""
+def test_gejsv_edge_arguments(dtype, shape, kwargs, status):
+    """Test edge arguments return expected status"""
     A = np.ones(shape, dtype=dtype)
     gejsv = get_lapack_funcs('gejsv', dtype=dtype)
     sva, u, v, work, iwork, info = gejsv(A, **kwargs)
