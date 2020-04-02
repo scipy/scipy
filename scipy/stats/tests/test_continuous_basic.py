@@ -70,9 +70,10 @@ fail_fit_test_mm = (['alpha', 'betaprime', 'bradford', 'burr', 'burr12',
                      'cauchy', 'crystalball', 'f', 'fisk', 'foldcauchy',
                      'genextreme', 'genpareto', 'halfcauchy', 'invgamma',
                      'kappa3', 'levy', 'levy_l', 'loglaplace', 'lomax',
-                     'mielke', 'nakagami', 'ncf', 't', 'tukeylambda'] +
-                    ['ksone', 'kstwo', 'nct', 'pareto', 'powernorm'] +
-                    ['pearson3'])
+                     'mielke', 'nakagami', 'ncf', 't', 'tukeylambda',
+                     'invweibull'] +
+                    ['ksone', 'kstwo', 'nct', 'pareto', 'powernorm',
+                     'powerlognorm', 'johnsonsu'] + ['pearson3'])
 skip_fit_test = {"MLE": skip_fit_test_mle,
                  "MM": slow_fit_test_mm + fail_fit_test_mm}
 
@@ -90,9 +91,9 @@ fail_fit_fix_test_mm = (['alpha', 'betaprime', 'burr', 'burr12', 'cauchy',
                          'crystalball', 'f', 'fisk', 'foldcauchy',
                          'genextreme', 'genpareto', 'halfcauchy', 'invgamma',
                          'kappa3', 'levy', 'levy_l', 'loglaplace', 'lomax',
-                         'mielke', 'nakagami', 'ncf', 'nct', 't'] +
-                        ['ksone', 'kstwo', 'pareto', 'powernorm'] +
-                        ['pearson3'])
+                         'mielke', 'nakagami', 'ncf', 'nct', 't', 'invweibull']
+                        + ['ksone', 'kstwo', 'pareto', 'powernorm',
+                           'powerlognorm', 'johnsonsu'] + ['pearson3'])
 skip_fit_fix_test = {"MLE": skip_fit_fix_test_mle,
                      "MM": slow_fit_test_mm + fail_fit_fix_test_mm}
 

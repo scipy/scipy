@@ -44,8 +44,8 @@ mm_failing_fits = ['alpha', 'betaprime', 'burr', 'burr12', 'cauchy', 'chi',
                    'invgamma', 'invweibull', 'johnsonsu', 'kappa3', 'ksone',
                    'kstwo', 'levy', 'levy_l', 'levy_stable', 'loglaplace',
                    'lomax', 'mielke', 'nakagami', 'ncf', 'nct', 'ncx2',
-                   'pareto', 'powerlognorm', 'powernorm', 't', 'tukeylambda',
-                   'wrapcauchy']
+                   'pareto', 'pearson3', 'powerlognorm', 'powernorm', 't',
+                   'tukeylambda', 'wrapcauchy']
 
 # not sure if these fail, but they caused my patience to fail
 mm_slow_fits = ['argus', 'exponpow', 'exponweib', 'gausshyper', 'genexpon',
