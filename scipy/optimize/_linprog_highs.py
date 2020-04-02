@@ -16,7 +16,7 @@ References
 import numpy as np
 from .optimize import _check_unknown_options
 from pyHiGHS import highs_wrapper
-from scipy.sparse import csc_matrix, vstack
+from scipy.sparse import csc_matrix, vstack, issparse
 
 
 def _linprog_highs(lp, solver, time_limit=1, presolve=False, parallel=False,
@@ -134,6 +134,7 @@ def _linprog_highs(lp, solver, time_limit=1, presolve=False, parallel=False,
     statuses = {
         9: (0, "Optimization terminated successfully."),
         8: (3, "The problem is unbounded."),
+        7: (2, "The problem is infeasible."),
     }
     # "Iteration limit reached.",
     # "The problem appears infeasible, as the phase one auxiliary "
@@ -158,9 +159,12 @@ def _linprog_highs(lp, solver, time_limit=1, presolve=False, parallel=False,
     rhs_eq = b_eq                           # constraint with LHS=RHS
     lhs = np.concatenate((lhs_ub, lhs_eq))
     rhs = np.concatenate((rhs_ub, rhs_eq))
-    A_ub = csc_matrix(A_ub)
-    A_eq = csc_matrix(A_eq)
-    A = vstack((A_ub, A_eq))
+
+    if issparse(A_ub) or issparse(A_eq):
+        A = vstack((A_ub, A_eq))
+    else:
+        A = np.vstack((A_ub, A_eq))
+    A = csc_matrix(A)
 
     options = {
         'presolve': presolve,
@@ -173,12 +177,12 @@ def _linprog_highs(lp, solver, time_limit=1, presolve=False, parallel=False,
         'solution_file': 'test.sol',
         'write_solution_pretty': True,
     }
-    print("C=", c)
-    print("A=", A)
-    print("rhs=", rhs)
-    print("lhs=", lhs)
-    print("lb=", lb)
-    print("ub=", ub)
+    print("c=", c, ", type= ", type(c), "dtype= ", c.dtype)
+    print("A=\n", A.todense(), ", type= ", type(A), "dtype= ", A.dtype)
+    print("rhs=", rhs, ", type= ", type(rhs), "dtype= ", rhs.dtype)
+    print("lhs=", lhs, ", type= ", type(lhs), "dtype= ", lhs.dtype)
+    print("lb=", lb, ", type= ", type(lb), "dtype= ", lb.dtype)
+    print("ub=", ub, ", type= ", type(ub), "dtype= ", ub.dtype)
     print("options=", options)
     res = highs_wrapper(c, A, rhs, lhs, lb, ub, options=options)
 
