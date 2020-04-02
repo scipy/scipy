@@ -1925,14 +1925,14 @@ def test_gejsv_specific(dtype):
                         (np.complex, (1, 0), {}, -17),
                         (np.float, (1, 1), {}, 0),
                         (np.float, None, {}, 0),
-                        (np.float, (3, 3), {'joba': 'L'}, -1),
-                        (np.float, (3, 3), {'jobu': 'L'}, -2),
-                        (np.float, (3, 3), {'jobv': 'L'}, -3),
-                        (np.float, (3, 3), {'jobr': 'L'}, -4),
-                        (np.float, (3, 3), {'jobt': 'L'}, -5),
-                        (np.float, (3, 3), {'jobp': 'L'}, -6),
+                        (np.float, (3, 2), {'joba': 'L'}, -1),
+                        (np.float, (3, 2), {'jobu': 'L'}, -2),
+                        (np.float, (3, 2), {'jobv': 'L'}, -3),
+                        (np.float, (3, 2), {'jobr': 'L'}, -4),
+                        (np.float, (3, 2), {'jobt': 'L'}, -5),
+                        (np.float, (3, 2), {'jobp': 'L'}, -6),
                         (np.float, (3, 5), {}, -8),
-                        (np.float, (3, 3), {'lwork': 0}, -17),
+                        (np.float, (3, 2), {'lwork': 0}, -17),
                           ])
 def test_gejsv_edge_arguments(dtype, shape, kwargs, status):
     """Test edge arguments return expected status"""
@@ -1940,6 +1940,20 @@ def test_gejsv_edge_arguments(dtype, shape, kwargs, status):
     gejsv = get_lapack_funcs('gejsv', dtype=dtype)
     sva, u, v, work, iwork, info = gejsv(A, **kwargs)
     assert_equal(info, status)
+
+    # The argument tests occur before any calculations are performed
+    # but we still expect the wrapper to generate the output arrays.
+    m, n = (1, 1) if shape is None else shape
+    assert_equal((max(1, m), n), u.shape)
+    assert_equal((max(1, n), n), v.shape)
+    assert_equal((n,), sva.shape)
+
+    # As no calculations are performed all output arrays should be strictly
+    # zero when info != 0.
+    if status != 0:
+        assert_equal(np.count_nonzero(sva), 0)
+        assert_equal(np.count_nonzero(u), 0)
+        assert_equal(np.count_nonzero(v), 0)
 
 
 @pytest.mark.parametrize("A,sva_expect,u_expect,v_expect",
