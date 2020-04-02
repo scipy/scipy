@@ -148,7 +148,7 @@ class SphericalVoronoi:
             self.center = np.array(center)
 
         # test degenerate input
-        self._rank = np.linalg.matrix_rank(self.points - self.center,
+        self._rank = np.linalg.matrix_rank(self.points - self.points[0],
                                            tol=self.threshold * self.radius)
         if self._rank <= 1:
             raise ValueError("Rank of input points must be at least 2")
@@ -170,14 +170,19 @@ class SphericalVoronoi:
         # center the points
         centered = self.points - self.center
 
-        # calculate an orthogonal transformation using SVD
-        _, _, vh = np.linalg.svd(centered)
+        # calculate an orthogonal transformation which puts circle on x-y axis
+        _, _, vh = np.linalg.svd(centered - np.roll(centered, 1, axis=0))
+
+        # apply transformation
+        circle = centered @ vh.T
+        h = np.mean(circle[:, 2])
+        if h < 0:
+            h, vh, circle = -h, -vh, -circle
+        midpoint = np.array([0, 0, h]) @ vh
+        circle_radius = np.sqrt(np.maximum(0, self.radius**2 - h**2))
 
         # calculate the north and south poles in this basis
         poles = [[0, 0, self.radius], [0, 0, -self.radius]] @ vh
-
-        # project points into inverse basis (such that z-components are zero)
-        circle = centered @ vh.T[:, :2]
 
         # simplicial neighbors are adjacent on the circle
         angles = np.arctan2(circle[:, 1], circle[:, 0])
@@ -185,8 +190,10 @@ class SphericalVoronoi:
 
         # Voronoi vertices lie halfway between neighboring pairs
         vertices = centered[indices] + centered[np.roll(indices, 1)]
+        vertices -= 2 * midpoint
         vertices /= np.linalg.norm(vertices, axis=1)[:, np.newaxis]
-        vertices *= self.radius
+        vertices *= circle_radius
+        vertices += midpoint
 
         # north and south poles are also Voronoi vertices
         vertices = np.concatenate((vertices, poles))
