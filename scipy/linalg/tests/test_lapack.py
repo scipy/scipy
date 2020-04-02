@@ -1702,8 +1702,11 @@ def test_gejsv_general(size, dtype, joba, jobu, jobv, jobr, jobt, jobp):
     A = generate_random_dtype_array(size, dtype)
     gejsv = get_lapack_funcs('gejsv', dtype=dtype)
 
-    lsvec = jobu in {'U', 'F'}
-    rsvec = jobv in {'V', 'J'}
+    # Set up checks for invalid job? combinations
+    # if an invalid combination occurs we set the appropriate
+    # exit status.
+    lsvec = jobu in {'U', 'F'}  # Calculate left singular vectors
+    rsvec = jobv in {'V', 'J'}  # Calculate right singular vectors
     l2tran = (jobt == 'T') and (m == n)
     is_complex = np.iscomplexobj(A)
 
@@ -1711,6 +1714,9 @@ def test_gejsv_general(size, dtype, joba, jobu, jobv, jobr, jobt, jobp):
     invalid_cplx_jobu = (jobu == 'W') and not (rsvec and l2tran) and is_complex
     invalid_cplx_jobv = (jobv == 'W') and not (lsvec and l2tran) and is_complex
 
+    # Set the exit status to the expected value.
+    # Here we only check for invalid combinations, not individual
+    # parameters.
     if invalid_cplx_jobu:
         exit_status = -2
     elif invalid_real_jobv or invalid_cplx_jobv:
@@ -1726,7 +1732,7 @@ def test_gejsv_general(size, dtype, joba, jobu, jobv, jobr, jobt, jobp):
                                          jobt=jobt,
                                          jobp=jobp)
 
-    # Check that ?gejsv exited successfully
+    # Check that ?gejsv exited successfully/as expected
     assert_equal(info, exit_status)
 
     # If exit_status is non-zero the combination of jobs is invalid.
@@ -1789,8 +1795,6 @@ def test_gejsv_specific(dtype):
     assert_equal(k, iwork[1])
 
 
-# FIXME: cases where jobv = 'J' and jobu = 'W' or 'N' segfault
-#        for complex dtypes.
 @pytest.mark.parametrize('dtype', [float])
 @pytest.mark.parametrize(('shape', 'kwargs', 'status'), [
                             ((1, 1), {}, 0),
