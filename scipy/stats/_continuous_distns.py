@@ -369,7 +369,7 @@ class norm_gen(rv_continuous):
         See eq. 16 of https://arxiv.org/abs/1209.4340v2
         """
         if n % 2 == 0:
-            return sf.factorial2(n - 1)
+            return sc.factorial2(n - 1)
         else:
             return 0.
  
