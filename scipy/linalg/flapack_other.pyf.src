@@ -1854,21 +1854,6 @@ subroutine <prefix>lartg(f,g,cs,sn,r)
 end subroutine <prefix>lartg
 
 subroutine <prefix2c>rot(n,x,offx,incx,y,offy,incy,c,s,lx,ly)
-    ! ?GEJSV computes the singular value decomposition (SVD) of a real M-by-N
-    ! matrix [A], where M >= N. The SVD of [A] is written as
-    !
-    !              [A] = [U] * [SIGMA] * [V]^t,
-    !
-    ! where [SIGMA] is an N-by-N (M-by-N) matrix which is zero except for its N
-    ! diagonal elements, [U] is an M-by-N (or M-by-M) orthonormal matrix, and
-    ! [V] is an N-by-N orthogonal matrix. The diagonal elements of [SIGMA] are
-    ! the singular values of [A]. The columns of [U] and [V] are the left and
-    ! the right singular vectors of [A], respectively. The matrices [U] and [V]
-    ! are computed and stored in the arrays U and V, respectively. The diagonal
-    ! of [SIGMA] is computed and stored in the array SVA.
-    ! DGEJSV can sometimes compute tiny singular values and their singular vectors
-    ! much more accurately than other SVD routines.
-
     callstatement (*f2py_func)(&n,x+offx,&incx,y+offy,&incy,&c,&s)
     callprotoargument int*,<ctype2c>*,int*,<ctype2c>*,int*,<float,double>*,<ctype2c>*
     <ftype2c> dimension(lx),intent(in,out,copy) :: x
