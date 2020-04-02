@@ -102,7 +102,7 @@ def prepare_bounds(bounds, n):
     return lb, ub
 
 
-def check_tolerance(ftol, xtol, gtol):
+def check_tolerance(ftol, xtol, gtol, method):
     def check(tol, name):
         if tol is None:
             tol = 0
@@ -116,7 +116,10 @@ def check_tolerance(ftol, xtol, gtol):
     xtol = check(xtol, "xtol")
     gtol = check(gtol, "gtol")
 
-    if ftol < EPS and xtol < EPS and gtol < EPS:
+    if method == "lm" and (ftol < EPS or xtol < EPS or gtol < EPS):
+        raise ValueError("All tolerances must be higher than machine epsilon "
+                         "({:.2e}) for method 'lm'.".format(EPS))
+    elif ftol < EPS and xtol < EPS and gtol < EPS:
         raise ValueError("At least one of the tolerances must be higher than "
                          "machine epsilon ({:.2e}).".format(EPS))
 
@@ -793,7 +796,7 @@ def least_squares(
 
     x_scale = check_x_scale(x_scale, x0)
 
-    ftol, xtol, gtol = check_tolerance(ftol, xtol, gtol)
+    ftol, xtol, gtol = check_tolerance(ftol, xtol, gtol, method)
 
     def fun_wrapped(x):
         return np.atleast_1d(fun(x, *args, **kwargs))
