@@ -22,7 +22,7 @@ from numpy import (eye, ones, zeros, zeros_like, triu, tril, tril_indices,
 from numpy.random import rand, randint, seed
 
 from scipy.linalg import _flapack as flapack, lapack
-from scipy.linalg import inv, svd, cholesky, solve, ldl, norm, eig
+from scipy.linalg import inv, svd, cholesky, solve, ldl, norm
 from scipy.linalg.lapack import _compute_lwork
 
 try:
@@ -1765,7 +1765,6 @@ def test_gejsv_general(size, dtype, joba, jobu, jobv, jobr, jobt, jobp):
         # data. This should never occur for these tests.
         assert_equal(iwork[2], 0)
 
-
 @pytest.mark.parametrize("dtype", DTYPES)
 def test_gejsv_specific(dtype):
     """
@@ -1775,14 +1774,10 @@ def test_gejsv_specific(dtype):
     """
     seed(42)
     atol = 100 * np.finfo(dtype).eps
+
     m, n = (6, 5)
     gejsv = get_lapack_funcs('gejsv', dtype=dtype)
     A = generate_random_dtype_array((m, n), dtype)
-
-    '''jobu, jobv = N, check for correct eigenvalues'''
-    sva, u, v, work, iwork, info = gejsv(A, jobu="N", jobv="N")
-    # correct eigenvalues
-    assert_allclose(sva, svd(A, compute_uv=False), atol=atol)
 
     # check that iwork[0] and iwork[1] are the correct rank
     sva, u, v, work, iwork, info = gejsv(A)
