@@ -126,7 +126,8 @@ def cases_test_cont_basic():
 
 
 @pytest.mark.parametrize('distname,arg', cases_test_cont_basic())
-def test_cont_basic(distname, arg):
+@pytest.mark.parametrize('sn, n_fit_samples', [(500, 200)])
+def test_cont_basic(distname, arg, sn, n_fit_samples):
     # this test skips slow distributions
 
     if distname == 'truncnorm':
@@ -138,7 +139,7 @@ def test_cont_basic(distname, arg):
         distfn = distname
         distname = 'rv_histogram_instance'
     np.random.seed(765456)
-    sn = 500
+
     with npt.suppress_warnings() as sup:
         # frechet_l and frechet_r are deprecated, so all their
         # methods generate DeprecationWarnings.
@@ -214,10 +215,10 @@ def test_cont_basic(distname, arg):
 
         for method in ["MLE", "MM"]:
             if distname not in skip_fit_test[method]:
-                check_fit_args(distfn, arg, rvs[0:200], method)
+                check_fit_args(distfn, arg, rvs[:n_fit_samples], method)
 
             if distname not in skip_fit_fix_test[method]:
-                check_fit_args_fix(distfn, arg, rvs[0:200], method)
+                check_fit_args_fix(distfn, arg, rvs[:n_fit_samples], method)
 
 
 def test_levy_stable_random_state_property():
