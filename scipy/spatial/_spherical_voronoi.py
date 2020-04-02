@@ -26,10 +26,8 @@ def calculate_solid_angles(R):
     that input points have unit norm."""
     # Original method uses a triple product `R1 . (R2 x R3)` for the numerator.
     # This is equal to the determinant of the matrix [R1 R2 R3], which can be
-    # computed with better stability using LU factorization with partial
-    # pivoting.
+    # computed with better stability.
     numerator = np.linalg.det(R)
-    numerator = np.einsum('ij,ij->i', R[:, 0], np.cross(R[:, 1], R[:, 2]))
     denominator = 1 + (np.einsum('ij,ij->i', R[:, 0], R[:, 1]) +
                        np.einsum('ij,ij->i', R[:, 1], R[:, 2]) +
                        np.einsum('ij,ij->i', R[:, 2], R[:, 0]))
@@ -175,9 +173,8 @@ class SphericalVoronoi:
                           '(i.e. `radius=1`).',
                           DeprecationWarning)
 
-        self.points = points
+        self.points = np.array(points).astype(np.double)
         self.radius = radius
-        self.threshold = threshold
         self._dim = len(points[0])
         if center is None:
             self.center = np.zeros(self._dim)
@@ -186,20 +183,18 @@ class SphericalVoronoi:
 
         # test degenerate input
         self._rank = np.linalg.matrix_rank(self.points - self.points[0],
-                                           tol=self.threshold * self.radius)
+                                           tol=threshold * self.radius)
         if self._rank <= 1:
             raise ValueError("Rank of input points must be at least 2")
 
-        if cKDTree(self.points).query_pairs(self.threshold * self.radius):
+        if cKDTree(self.points).query_pairs(threshold * self.radius):
             raise ValueError("Duplicate generators present.")
 
         radii = np.linalg.norm(self.points - self.center, axis=1)
         max_discrepancy = np.abs(radii - self.radius).max()
-        if max_discrepancy >= self.threshold * self.radius:
+        if max_discrepancy >= threshold * self.radius:
             raise ValueError("Radius inconsistent with generators.")
-        self.vertices = None
-        self.regions = None
-        self._tri = None
+
         self._calc_vertices_regions()
 
     def _handle_geodesic_input(self):
@@ -263,24 +258,24 @@ class SphericalVoronoi:
             return
 
         # get Convex Hull
-        self._tri = scipy.spatial.ConvexHull(self.points)
+        conv = scipy.spatial.ConvexHull(self.points)
         # get circumcenters of Convex Hull triangles from facet equations
         # for 3D input circumcenters will have shape: (2N-4, 3)
-        self.vertices = self.radius * self._tri.equations[:, :-1] + self.center
+        self.vertices = self.radius * conv.equations[:, :-1] + self.center
+        self._simplices = conv.simplices
         # calculate regions from triangulation
         # for 3D input simplex_indices will have shape: (2N-4,)
-        simplex_indices = np.arange(self._tri.simplices.shape[0])
+        simplex_indices = np.arange(len(self._simplices))
         # for 3D input tri_indices will have shape: (6N-12,)
         tri_indices = np.column_stack([simplex_indices] * self._dim).ravel()
         # for 3D input point_indices will have shape: (6N-12,)
-        point_indices = self._tri.simplices.ravel()
+        point_indices = self._simplices.ravel()
         # for 3D input indices will have shape: (6N-12,)
         indices = np.argsort(point_indices, kind='mergesort')
         # for 3D input flattened_groups will have shape: (6N-12,)
         flattened_groups = tri_indices[indices].astype(np.intp)
         # intervals will have shape: (N+1,)
         intervals = np.cumsum(np.bincount(point_indices + 1))
-
         # split flattened groups to get nested list of unsorted regions
         groups = [list(flattened_groups[intervals[i]:intervals[i + 1]])
                   for i in range(len(intervals) - 1)]
@@ -303,8 +298,8 @@ class SphericalVoronoi:
         This is done as follows: Recall that the n-th region in regions
         surrounds the n-th generator in points and that the k-th
         Voronoi vertex in vertices is the circumcenter of the k-th triangle
-        in _tri.simplices.  For each region n, we choose the first triangle
-        (=Voronoi vertex) in _tri.simplices and a vertex of that triangle
+        in self._simplices.  For each region n, we choose the first triangle
+        (=Voronoi vertex) in self._simplices and a vertex of that triangle
         not equal to the center n. These determine a unique neighbor of that
         triangle, which is then chosen as the second triangle. The second
         triangle will have a unique vertex not equal to the current vertex or
@@ -318,7 +313,7 @@ class SphericalVoronoi:
             raise TypeError("Only supported for three-dimensional point sets")
         if self._rank == 2:
             return  # regions are sorted by construction
-        _voronoi.sort_vertices_of_regions(self._tri.simplices, self.regions)
+        _voronoi.sort_vertices_of_regions(self._simplices, self.regions)
 
     def calculate_areas(self):
         """Calculates the areas of the Voronoi regions. The regions are
@@ -352,9 +347,8 @@ class SphericalVoronoi:
         indices[0] = 0
         nbrs2[indices] = nbrs1[csizes - 1]
 
-        # Normalize points and vertices. Use the copy stored in self._tri in
-        # case self.points has changed between initialization and this call.
-        pnormalized = (self._tri._points - self.center) / self.radius
+        # Normalize points and vertices.
+        pnormalized = (self.points - self.center) / self.radius
         vnormalized = (self.vertices - self.center) / self.radius
 
         # Create the complete set of triangles and calculate their solid angles

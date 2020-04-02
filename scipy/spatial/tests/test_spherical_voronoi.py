@@ -226,7 +226,7 @@ class TestSphericalVoronoi(object):
 
         for points in [self.hemisphere_points, self.hemisphere_points2]:
             sv = SphericalVoronoi(points)
-            triangles = sv._tri.points[sv._tri.simplices]
+            triangles = sv.points[sv._simplices]
             dots = np.einsum('ij,ij->i', sv.vertices, triangles[:, 0])
             circumradii = np.arccos(np.clip(dots, -1, 1))
             assert np.max(circumradii) > np.pi / 2
@@ -305,7 +305,7 @@ class TestSphericalVoronoi(object):
 
         # verify Euler characteristic
         cell_counts = []
-        simplices = np.sort(sv._tri.simplices)
+        simplices = np.sort(sv._simplices)
         for i in range(1, dim + 1):
             cells = []
             for indices in itertools.combinations(range(dim), i):
