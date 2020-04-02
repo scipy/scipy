@@ -18,9 +18,32 @@ from .optimize import _check_unknown_options
 from pyHiGHS import highs_wrapper
 from scipy.sparse import csc_matrix, vstack, issparse
 
+from pyHiGHS.linprog import (
+    HIGHS_CONST_I_INF,  # instead of integer infinity
+    HIGHS_CONST_INF,  # instead of double np.inf
+    HIGHS_CONST_TINY,  # instead of double -np.inf
+    HIGHS_CONST_ZERO,  # instead of tol/eps
+    HIGHS_THREAD_LIMIT,  # for max number of threads (linux only)
+    ML_NONE,  # Verbosity levels
+    ML_VERBOSE,
+    ML_DETAILED,
+    ML_MINIMAL,
+    SOLVER_OPTION_CHOOSE,  # Default solver
+    SOLVER_OPTION_SIMPLEX,  # simplex solver
+    SOLVER_OPTION_IPM,  # interior-point solver
+)
+
+def _replace_inf(x):
+    # wrote it this way in case there are several things to swap
+    # but if -np.inf is really to be replaced with -HIGHS_CONST_INF,
+    # I can get rid of the loop.
+    replace_with = {np.inf: HIGHS_CONST_INF, -np.inf: -HIGHS_CONST_INF}
+    for key, val in replace_with.items():
+        x[x == key] = val
+    return x
 
 def _linprog_highs(lp, solver, time_limit=1, presolve=False, parallel=False,
-                   **unknown_options):
+                   disp = False, **unknown_options):
     r"""
     Solve the following linear programming problem using one of the HiGHS
     solvers:
@@ -151,6 +174,7 @@ def _linprog_highs(lp, solver, time_limit=1, presolve=False, parallel=False,
     # "method='interior-point'.",
 
     c, A_ub, b_ub, A_eq, b_eq, bounds, x0 = lp
+
     lb, ub = bounds.T.copy()                # separate bounds, copy->C-cntgs
     # highs_wrapper solves LHS <= A*x <= RHS, not equality constraints
     lhs_ub = -np.ones_like(b_ub)*np.inf     # LHS of UB constraints is -inf
@@ -172,11 +196,17 @@ def _linprog_highs(lp, solver, time_limit=1, presolve=False, parallel=False,
         'solver': solver,
         'parallel': parallel,
         'time_limit': time_limit,
-        'message_level': 1,
+        'message_level': disp * 1, # 0 is none, 1 is some
         'write_solution_to_file': False,
         'solution_file': 'test.sol',
         'write_solution_pretty': True,
     }
+
+    rhs = _replace_inf(rhs)
+    lhs = _replace_inf(lhs)
+    lb = _replace_inf(lb)
+    ub = _replace_inf(ub)
+
     print("c=", c, ", type= ", type(c), "dtype= ", c.dtype)
     print("A=\n", A.todense(), ", type= ", type(A), "dtype= ", A.dtype)
     print("rhs=", rhs, ", type= ", type(rhs), "dtype= ", rhs.dtype)
