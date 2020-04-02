@@ -1896,28 +1896,33 @@ def test_gejsv_general(size, dtype, joba, jobu, jobv, jobr, jobt, jobp):
         assert_equal(iwork[2], 0)
 
 @pytest.mark.parametrize("dtype", DTYPES)
-def test_gejsv_specific(dtype):
+def test_gejsv_with_rank_deficient_matrix(dtype):
     """
     Tests more specific cases of routine ?gejsv, specifically for when
-    u and v are not computed, matrix A is 1D, 1x1, empty, lwork = 0,
-    and invalid job? parameters.
+    A is rank deficient. This test calculates and svd of A then keeps only
+    the k singular values, reconstructs a matrix and checks if the
+    decomposition of that matrix contains the correct number of singular
+    values.
     """
     seed(42)
-    atol = 100 * np.finfo(dtype).eps
 
-    m, n = (6, 5)
+    m, n = (6, 5)  # Desired shape of A
+    k = 3  # Desired number of singular values
     gejsv = get_lapack_funcs('gejsv', dtype=dtype)
     A = generate_random_dtype_array((m, n), dtype)
 
     # check that iwork[0] and iwork[1] are the correct rank
     sva, u, v, work, iwork, info = gejsv(A)
-    k = 3
-    sva[np.random.permutation(min(m, n))[k:]] = 0
-    SIGMA = np.diag(work[1] / work[0] * sva[:n])
+
+    # Keep only the first k singular values of A
+    # We then reconstruct A with only the first k singular values
+    # to perform another svd on that matrix.
+    sva[k:] = 0
+    SIGMA = np.diag(work[0] / work[1] * sva[:n])
     A_rank_k = u @ SIGMA @ v.T
     sva, u, v, work, iwork, info = gejsv(A_rank_k)
-    assert_equal(k, iwork[0])
-    assert_equal(k, iwork[1])
+    assert_equal(iwork[0], k)
+    assert_equal(iwork[1], k)
 
 
 @pytest.mark.parametrize(('dtype', 'shape', 'kwargs', 'status'), [
