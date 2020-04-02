@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
-from __future__ import division, print_function, absolute_import
-
 import sys
 
 from decimal import Decimal
 from itertools import product
+from math import gcd
 import warnings
 
 import pytest
@@ -31,12 +30,6 @@ from scipy.signal.windows import hann
 from scipy.signal.signaltools import (_filtfilt_gust, _compute_factors,
                                       _group_poles)
 from scipy.signal._upfirdn import _upfirdn_modes
-
-
-if sys.version_info >= (3, 5):
-    from math import gcd
-else:
-    from fractions import gcd
 
 
 class _TestConvolve(object):
@@ -1039,7 +1032,8 @@ class TestMedFilt(object):
 
     def test_none(self):
         # Ticket #1124. Ensure this does not segfault.
-        signal.medfilt(None)
+        with pytest.warns(UserWarning):
+            signal.medfilt(None)
         # Expand on this test to avoid a regression with possible contiguous
         # numpy arrays that have odd strides. The stride value below gets
         # us into wrong memory if used (but it does not need to be used)
@@ -1057,8 +1051,9 @@ class TestMedFilt(object):
         else:
             n = 10
         # Shouldn't segfault:
-        for j in range(n):
-            signal.medfilt(x)
+        with pytest.warns(UserWarning):
+            for j in range(n):
+                signal.medfilt(x)
         if hasattr(sys, 'getrefcount'):
             assert_(sys.getrefcount(a) < n)
         assert_equal(x, [a, a])

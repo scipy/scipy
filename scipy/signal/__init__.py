@@ -286,8 +286,6 @@ Spectral analysis
    check_NOLA     -- Check the NOLA constraint for iSTFT reconstruction.
 
 """
-from __future__ import division, print_function, absolute_import
-
 from . import sigtools, windows
 from .waveforms import *
 from ._max_len_seq import max_len_seq

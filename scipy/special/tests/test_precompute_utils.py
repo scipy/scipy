@@ -1,4 +1,3 @@
-from __future__ import division, print_function, absolute_import
 import pytest
 
 from scipy.special._testutils import MissingModule, check_version
@@ -11,7 +10,7 @@ except ImportError:
     sympy = MissingModule('sympy')
 
 try:
-    import mpmath as mp
+    import mpmath as mp  # type: ignore[import]
 except ImportError:
     mp = MissingModule('mpmath')
 

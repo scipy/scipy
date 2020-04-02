@@ -1,9 +1,8 @@
 # Author: Travis Oliphant
 # 1999 -- 2002
 
-from __future__ import division, print_function, absolute_import
-
 import operator
+import math
 import sys
 import timeit
 from scipy.spatial import cKDTree
@@ -12,18 +11,13 @@ from ._upfirdn import upfirdn, _output_len, _upfirdn_modes
 from scipy import linalg, fft as sp_fft
 from scipy.fft._helper import _init_nd_shape_and_axes
 import numpy as np
-import math
-from scipy.special import factorial, lambertw
+from scipy.special import lambertw
 from .windows import get_window
 from ._arraytools import axis_slice, axis_reverse, odd_ext, even_ext, const_ext
 from .filter_design import cheby1, _validate_sos
 from .fir_filter_design import firwin
 from ._sosfilt import _sosfilt
-
-if sys.version_info >= (3, 5):
-    from math import gcd
-else:
-    from fractions import gcd
+import warnings
 
 
 __all__ = ['correlate', 'correlate2d',
@@ -165,6 +159,9 @@ def correlate(in1, in2, mode='full', method='auto'):
     ``method='fft'`` only works for numerical arrays as it relies on
     `fftconvolve`. In certain cases (i.e., arrays of objects or when
     rounding integers can lose precision), ``method='direct'`` is always used.
+
+    When using "same" mode with even-length inputs, the outputs of `correlate`
+    and `correlate2d` differ: There is a 1-index offset between them.
 
     Examples
     --------
@@ -900,7 +897,6 @@ def _conv_ops(x_shape, h_shape, mode):
     FFT (and the implementation of ``_freq_domain_conv``).
 
     """
-    x_size, h_size = _prod(x_shape), _prod(h_shape)
     if mode == "full":
         out_shape = [n + k - 1 for n, k in zip(x_shape, h_shape)]
     elif mode == "valid":
@@ -1381,6 +1377,11 @@ def medfilt(volume, kernel_size=None):
         An array the same size as input containing the median filtered
         result.
 
+    Warns 
+    -------
+    UserWarning
+        If array size is smaller than kernel size along any dimension
+
     See also
     --------
     scipy.ndimage.median_filter
@@ -1400,6 +1401,8 @@ def medfilt(volume, kernel_size=None):
     for k in range(volume.ndim):
         if (kernel_size[k] % 2) != 1:
             raise ValueError("Each element of kernel_size should be odd.")
+    if any(k > s for k, s in zip(kernel_size, volume.shape)):
+        warnings.warn('kernel_size exceeds volume extent: the volume will be zero-padded.')
 
     domain = np.ones(kernel_size)
 
@@ -1431,6 +1434,31 @@ def wiener(im, mysize=None, noise=None):
     -------
     out : ndarray
         Wiener filtered result with the same shape as `im`.
+
+    Examples
+    --------
+
+    >>> from scipy.misc import face
+    >>> from scipy.signal.signaltools import wiener
+    >>> import matplotlib.pyplot as plt
+    >>> import numpy as np
+    >>> img = np.random.random((40, 40))    #Create a random image
+    >>> filtered_img = wiener(img, (5, 5))  #Filter the image
+    >>> f, (plot1, plot2) = plt.subplots(1, 2)
+    >>> plot1.imshow(img)
+    >>> plot2.imshow(filtered_img)
+    >>> plt.show()
+
+    Notes
+    -----
+    This implementation is similar to wiener2 in Matlab/Octave.
+    For more details see [1]_
+
+    References
+    ----------
+    .. [1] Lim, Jae S., Two-Dimensional Signal and Image Processing,
+           Englewood Cliffs, NJ, Prentice Hall, 1990, p. 548.
+
 
     """
     im = np.asarray(im)
@@ -1592,6 +1620,11 @@ def correlate2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
     correlate2d : ndarray
         A 2-dimensional array containing a subset of the discrete linear
         cross-correlation of `in1` with `in2`.
+
+    Notes
+    -----
+    When using "same" mode with even-length inputs, the outputs of `correlate`
+    and `correlate2d` differ: There is a 1-index offset between them.
 
     Examples
     --------
@@ -3065,7 +3098,7 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0),
     # Determine our up and down factors
     # Use a rational approximation to save computation time on really long
     # signals
-    g_ = gcd(up, down)
+    g_ = math.gcd(up, down)
     up //= g_
     down //= g_
     if up == down == 1:

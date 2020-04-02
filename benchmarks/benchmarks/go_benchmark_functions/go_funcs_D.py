@@ -1,6 +1,4 @@
 # -*- coding: utf-8 -*-
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 from numpy import abs, cos, exp, arange, pi, sin, sqrt, sum, zeros, tanh
 from numpy.testing import assert_almost_equal

@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 import numpy.ma as ma
 import scipy.stats.mstats as ms

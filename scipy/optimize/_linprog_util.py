@@ -33,13 +33,18 @@ _LPProblem.__doc__ = \
     b_eq : 1D array, optional
         The equality constraint vector. Each element of ``A_eq @ x`` must equal
         the corresponding element of ``b_eq``.
-    bounds : sequence, optional
-        A sequence of ``(min, max)`` pairs for each element in ``x``, defining
-        the minimum and maximum values of that decision variable. Use ``None`` to
-        indicate that there is no bound. By default, bounds are ``(0, None)``
-        (all decision variables are non-negative).
-        If a single tuple ``(min, max)`` is provided, then ``min`` and
-        ``max`` will serve as bounds for all decision variables.
+    bounds : various valid formats, optional
+        The bounds of ``x``, as ``min`` and ``max`` pairs.
+        If bounds are specified for all N variables separately, valid formats
+        are:
+        * a 2D array (N x 2);
+        * a sequence of N sequences, each with 2 values.
+        If all variables have the same bounds, the bounds can be specified as
+        a 1-D or 2-D array or sequence with 2 scalar values.
+        If all variables have a lower bound of 0 and no upper bound, the bounds
+        parameter can be omitted (or given as None).
+        Absent lower and/or upper bounds can be specified as -numpy.inf (no
+        lower bound), numpy.inf (no upper bound) or None (both).
     x0 : 1D array, optional
         Guess values of the decision variables, which will be refined by
         the optimization algorithm. This argument is currently used only by the
@@ -52,8 +57,8 @@ _LPProblem.__doc__ = \
     >>> lp1 = _LPProblem(c=[-1, 4], A_ub=[[-3, 1], [1, 2]], b_ub=[6, 4])
     >>> lp2 = _LPProblem([-1, 4], [[-3, 1], [1, 2]], [6, 4])
 
-    Note that only ``c`` is a required argument here, whereas all other arguments 
-    ``A_ub``, ``b_ub``, ``A_eq``, ``b_eq``, ``bounds``, ``x0`` are optional with 
+    Note that only ``c`` is a required argument here, whereas all other arguments
+    ``A_ub``, ``b_ub``, ``A_eq``, ``b_eq``, ``bounds``, ``x0`` are optional with
     default values of None.
     For example, ``A_eq`` and ``b_eq`` can be set without ``A_ub`` or ``b_ub``:
     >>> lp3 = _LPProblem(c=[-1, 4], A_eq=[[2, 1]], b_eq=[10])
@@ -195,13 +200,17 @@ def _clean_inputs(lp):
         b_eq : 1D array, optional
             The equality constraint vector. Each element of ``A_eq @ x`` must equal
             the corresponding element of ``b_eq``.
-        bounds : sequence, optional
-            A sequence of ``(min, max)`` pairs for each element in ``x``, defining
-            the minimum and maximum values of that decision variable. Use ``None`` to
-            indicate that there is no bound. By default, bounds are ``(0, None)``
-            (all decision variables are non-negative).
-            If a single tuple ``(min, max)`` is provided, then ``min`` and
-            ``max`` will serve as bounds for all decision variables.
+        bounds : various valid formats, optional
+            The bounds of ``x``, as ``min`` and ``max`` pairs.
+            If bounds are specified for all N variables separately, valid formats are:
+            * a 2D array (2 x N or N x 2);
+            * a sequence of N sequences, each with 2 values.
+            If all variables have the same bounds, a single pair of values can
+            be specified. Valid formats are:
+            * a sequence with 2 scalar values;
+            * a sequence with a single element containing 2 scalar values.
+            If all variables have a lower bound of 0 and no upper bound, the bounds
+            parameter can be omitted (or given as None).
         x0 : 1D array, optional
             Guess values of the decision variables, which will be refined by
             the optimization algorithm. This argument is currently used only by the
@@ -226,13 +235,11 @@ def _clean_inputs(lp):
         b_eq : 1D array, optional
             The equality constraint vector. Each element of ``A_eq @ x`` must equal
             the corresponding element of ``b_eq``.
-        bounds : sequence, optional
-            A sequence of ``(min, max)`` pairs for each element in ``x``, defining
-            the minimum and maximum values of that decision variable. Use ``None`` to
-            indicate that there is no bound. By default, bounds are ``(0, None)``
-            (all decision variables are non-negative).
-            If a single tuple ``(min, max)`` is provided, then ``min`` and
-            ``max`` will serve as bounds for all decision variables.
+        bounds : 2D array
+            The bounds of ``x``, as ``min`` and ``max`` pairs, one for each of the N
+            elements of ``x``. The N x 2 array contains lower bounds in the first
+            column and upper bounds in the 2nd. Unbounded variables have lower
+            bound -np.inf and/or upper bound np.inf.
         x0 : 1D array, optional
             Guess values of the decision variables, which will be refined by
             the optimization algorithm. This argument is currently used only by the
@@ -365,87 +372,72 @@ def _clean_inputs(lp):
                 "same number of elements")
         if not np.isfinite(x0).all():
             raise ValueError(
-            "Invalid input for linprog: x0 must not contain values "
-            "inf, nan, or None")
+                "Invalid input for linprog: x0 must not contain values "
+                "inf, nan, or None")
 
-    # "If a sequence containing a single tuple is provided, then min and max
-    # will be applied to all variables in the problem."
-    # linprog doesn't treat this right: it didn't accept a list with one tuple
-    # in it
+    # Bounds can be one of these formats:
+    # (1) a 2-D array or sequence, with shape N x 2
+    # (2) a 1-D or 2-D sequence or array with 2 scalars
+    # (3) None (or an empty sequence or array)
+    # Unspecified bounds can be represented by None or (-)np.inf.
+    # All formats are converted into a N x 2 np.array with (-)np.inf where
+    # bounds are unspecified.
+
+    # Prepare clean bounds array
+    bounds_clean = np.zeros((n_x, 2), dtype=float)
+
+    # Convert to a numpy array.
+    # np.array(..,dtype=float) raises an error if dimensions are inconsistent
+    # or if there are invalid data types in bounds. Just add a linprog prefix
+    # to the error and re-raise.
+    # Creating at least a 2-D array simplifies the cases to distinguish below.
+    if bounds is None or np.array_equal(bounds, []) or np.array_equal(bounds, [[]]):
+        bounds = (0, np.inf)
     try:
-        if isinstance(bounds, str):
-            raise TypeError
-        if bounds is None or len(bounds) == 0:
-            bounds = [(0, None)] * n_x
-        elif len(bounds) == 1:
-            b = bounds[0]
-            if len(b) != 2:
-                raise ValueError(
-                    "Invalid input for linprog: exactly one lower bound and "
-                    "one upper bound must be specified for each element of x")
-            bounds = [b] * n_x
-        elif len(bounds) == n_x:
-            try:
-                len(bounds[0])
-            except BaseException:
-                bounds = [(bounds[0], bounds[1])] * n_x
-            for i, b in enumerate(bounds):
-                if len(b) != 2:
-                    raise ValueError(
-                        "Invalid input for linprog, bound " +
-                        str(i) +
-                        " " +
-                        str(b) +
-                        ": exactly one lower bound and one upper bound must "
-                        "be specified for each element of x")
-        elif (len(bounds) == 2 and np.isreal(bounds[0])
-                and np.isreal(bounds[1])):
-            bounds = [(bounds[0], bounds[1])] * n_x
-        else:
-            raise ValueError(
-                "Invalid input for linprog: exactly one lower bound and one "
-                "upper bound must be specified for each element of x")
-
-        clean_bounds = []  # also creates a copy so user's object isn't changed
-        for i, b in enumerate(bounds):
-            if b[0] is not None and b[1] is not None and b[0] > b[1]:
-                raise ValueError(
-                    "Invalid input for linprog, bound " +
-                    str(i) +
-                    " " +
-                    str(b) +
-                    ": a lower bound must be less than or equal to the "
-                    "corresponding upper bound")
-            if b[0] == np.inf:
-                raise ValueError(
-                    "Invalid input for linprog, bound " +
-                    str(i) +
-                    " " +
-                    str(b) +
-                    ": infinity is not a valid lower bound")
-            if b[1] == -np.inf:
-                raise ValueError(
-                    "Invalid input for linprog, bound " +
-                    str(i) +
-                    " " +
-                    str(b) +
-                    ": negative infinity is not a valid upper bound")
-            lb = float(b[0]) if b[0] is not None and b[0] != -np.inf else None
-            ub = float(b[1]) if b[1] is not None and b[1] != np.inf else None
-            clean_bounds.append((lb, ub))
-        bounds = clean_bounds
+        bounds_conv = np.atleast_2d(np.array(bounds, dtype=float))
     except ValueError as e:
-        if "could not convert string to float" in e.args[0]:
-            raise TypeError
-        else:
-            raise e
+        raise ValueError(
+            "Invalid input for linprog: unable to interpret bounds, "
+            "check values and dimensions: " + e.args[0])
     except TypeError as e:
-        print(e)
         raise TypeError(
-            "Invalid input for linprog: bounds must be a sequence of "
-            "(min,max) pairs, each defining bounds on an element of x ")
+            "Invalid input for linprog: unable to interpret bounds, "
+            "check values and dimensions: " + e.args[0])
 
-    return _LPProblem(c, A_ub, b_ub, A_eq, b_eq, bounds, x0)
+    # Check bounds options
+    bsh = bounds_conv.shape
+    if len(bsh) > 2:
+        # Do not try to handle multidimensional bounds input
+        raise ValueError(
+            "Invalid input for linprog: provide a 2-D array for bounds, "
+            "not a {:d}-D array.".format(len(bsh)))
+    elif np.all(bsh == (n_x, 2)):
+        # Regular N x 2 array
+        bounds_clean = bounds_conv
+    elif (np.all(bsh == (2, 1)) or np.all(bsh == (1, 2))):
+        # 2 values: interpret as overall lower and upper bound
+        bounds_flat = bounds_conv.flatten()
+        bounds_clean[:, 0] = bounds_flat[0]
+        bounds_clean[:, 1] = bounds_flat[1]
+    elif np.all(bsh == (2, n_x)):
+        # Reject a 2 x N array
+        raise ValueError(
+            "Invalid input for linprog: provide a {:d} x 2 array for bounds, "
+            "not a 2 x {:d} array.".format(n_x, n_x))
+    else:
+        raise ValueError(
+            "Invalid input for linprog: unable to interpret bounds with this "
+            "dimension tuple: {0}.".format(bsh))
+
+    # The process above creates nan-s where the input specified None
+    # Convert the nan-s in the 1st column to -np.inf and in the 2nd column
+    # to np.inf
+    i_none = np.isnan(bounds_clean[:, 0])
+    bounds_clean[i_none, 0] = -np.inf
+    i_none = np.isnan(bounds_clean[:, 1])
+    bounds_clean[i_none, 1] = np.inf
+
+    return _LPProblem(c, A_ub, b_ub, A_eq, b_eq, bounds_clean, x0)
 
 
 def _presolve(lp, rr, tol=1e-9):
@@ -473,13 +465,11 @@ def _presolve(lp, rr, tol=1e-9):
         b_eq : 1D array, optional
             The equality constraint vector. Each element of ``A_eq @ x`` must equal
             the corresponding element of ``b_eq``.
-        bounds : sequence, optional
-            A sequence of ``(min, max)`` pairs for each element in ``x``, defining
-            the minimum and maximum values of that decision variable. Use ``None`` to
-            indicate that there is no bound. By default, bounds are ``(0, None)``
-            (all decision variables are non-negative).
-            If a single tuple ``(min, max)`` is provided, then ``min`` and
-            ``max`` will serve as bounds for all decision variables.
+        bounds : 2D array
+            The bounds of ``x``, as ``min`` and ``max`` pairs, one for each of the N
+            elements of ``x``. The N x 2 array contains lower bounds in the first
+            column and upper bounds in the 2nd. Unbounded variables have lower
+            bound -np.inf and/or upper bound np.inf.
         x0 : 1D array, optional
             Guess values of the decision variables, which will be refined by
             the optimization algorithm. This argument is currently used only by the
@@ -513,13 +503,8 @@ def _presolve(lp, rr, tol=1e-9):
         b_eq : 1D array, optional
             The equality constraint vector. Each element of ``A_eq @ x`` must equal
             the corresponding element of ``b_eq``.
-        bounds : sequence, optional
-            A sequence of ``(min, max)`` pairs for each element in ``x``, defining
-            the minimum and maximum values of that decision variable. Use ``None`` to
-            indicate that there is no bound. By default, bounds are ``(0, None)``
-            (all decision variables are non-negative).
-            If a single tuple ``(min, max)`` is provided, then ``min`` and
-            ``max`` will serve as bounds for all decision variables.
+        bounds : 2D array
+            The bounds of ``x``, as ``min`` and ``max`` pairs, possibly tightened.
         x0 : 1D array, optional
             Guess values of the decision variables, which will be refined by
             the optimization algorithm. This argument is currently used only by the
@@ -582,17 +567,9 @@ def _presolve(lp, rr, tol=1e-9):
     status = 0              # all OK unless determined otherwise
     message = ""
 
-    # Standard form for bounds (from _clean_inputs) is list of tuples
-    # but NumPy array is more convenient here
-    # In retrospect, numpy array should have been the standard
-    bounds = np.array(bounds)
+    # Lower and upper bounds
     lb = bounds[:, 0]
     ub = bounds[:, 1]
-    lb[np.equal(lb, None)] = -np.inf
-    ub[np.equal(ub, None)] = np.inf
-    bounds = bounds.astype(float)
-    lb = lb.astype(float)
-    ub = ub.astype(float)
 
     m_eq, n = A_eq.shape
     m_ub, n = A_ub.shape
@@ -801,18 +778,8 @@ def _presolve(lp, rr, tol=1e-9):
         # if this is not the last step of presolve, should convert bounds back
         # to array and return here
 
-    # *sigh* - convert bounds back to their standard form (list of tuples)
-    # again, in retrospect, numpy array would be standard form
-    lb[np.equal(lb, -np.inf)] = None
-    ub[np.equal(ub, np.inf)] = None
+    # Convert lb and ub back into Nx2 bounds
     bounds = np.hstack((lb[:, np.newaxis], ub[:, np.newaxis]))
-    bounds = bounds.tolist()
-    for i, row in enumerate(bounds):
-        for j, col in enumerate(row):
-            if str(col) == "nan":
-                # comparing col to float("nan") and np.nan doesn't work.
-                # should use np.isnan
-                bounds[i][j] = None
 
     # remove redundant (linearly dependent) rows from equality constraints
     n_rows_A = A_eq.shape[0]
@@ -889,13 +856,17 @@ def _parse_linprog(lp, options):
         b_eq : 1D array, optional
             The equality constraint vector. Each element of ``A_eq @ x`` must equal
             the corresponding element of ``b_eq``.
-        bounds : sequence, optional
-            A sequence of ``(min, max)`` pairs for each element in ``x``, defining
-            the minimum and maximum values of that decision variable. Use ``None`` to
-            indicate that there is no bound. By default, bounds are ``(0, None)``
-            (all decision variables are non-negative).
-            If a single tuple ``(min, max)`` is provided, then ``min`` and
-            ``max`` will serve as bounds for all decision variables.
+        bounds : various valid formats, optional
+            The bounds of ``x``, as ``min`` and ``max`` pairs.
+            If bounds are specified for all N variables separately, valid formats are:
+            * a 2D array (2 x N or N x 2);
+            * a sequence of N sequences, each with 2 values.
+            If all variables have the same bounds, a single pair of values can
+            be specified. Valid formats are:
+            * a sequence with 2 scalar values;
+            * a sequence with a single element containing 2 scalar values.
+            If all variables have a lower bound of 0 and no upper bound, the bounds
+            parameter can be omitted (or given as None).
         x0 : 1D array, optional
             Guess values of the decision variables, which will be refined by
             the optimization algorithm. This argument is currently used only by the
@@ -931,13 +902,11 @@ def _parse_linprog(lp, options):
         b_eq : 1D array, optional
             The equality constraint vector. Each element of ``A_eq @ x`` must equal
             the corresponding element of ``b_eq``.
-        bounds : sequence, optional
-            A sequence of ``(min, max)`` pairs for each element in ``x``, defining
-            the minimum and maximum values of that decision variable. Use ``None`` to
-            indicate that there is no bound. By default, bounds are ``(0, None)``
-            (all decision variables are non-negative).
-            If a single tuple ``(min, max)`` is provided, then ``min`` and
-            ``max`` will serve as bounds for all decision variables.
+        bounds : 2D array
+            The bounds of ``x``, as ``min`` and ``max`` pairs, one for each of the N
+            elements of ``x``. The N x 2 array contains lower bounds in the first
+            column and upper bounds in the 2nd. Unbounded variables have lower
+            bound -np.inf and/or upper bound np.inf.
         x0 : 1D array, optional
             Guess values of the decision variables, which will be refined by
             the optimization algorithm. This argument is currently used only by the
@@ -1013,13 +982,10 @@ def _get_Abc(lp, c0, undo=[]):
         b_eq : 1D array, optional
             The equality constraint vector. Each element of ``A_eq @ x`` must equal
             the corresponding element of ``b_eq``.
-        bounds : sequence, optional
-            A sequence of ``(min, max)`` pairs for each element in ``x``, defining
-            the minimum and maximum values of that decision variable. Use ``None`` to
-            indicate that there is no bound. By default, bounds are ``(0, None)``
-            (all decision variables are non-negative).
-            If a single tuple ``(min, max)`` is provided, then ``min`` and
-            ``max`` will serve as bounds for all decision variables.
+        bounds : 2D array
+            The bounds of ``x``, lower bounds in the 1st column, upper
+            bounds in the 2nd column. The bounds are possibly tightened
+            by the presolve procedure.
         x0 : 1D array, optional
             Guess values of the decision variables, which will be refined by
             the optimization algorithm. This argument is currently used only by the
@@ -1080,25 +1046,21 @@ def _get_Abc(lp, c0, undo=[]):
         zeros = np.zeros
         eye = np.eye
 
-    fixed_x = set()
-    if len(undo) > 0:
-        # these are indices of variables removed from the problem
-        # however, their bounds are still part of the bounds list
-        fixed_x = set(undo[0])
+    # bounds will be modified, create a copy
+    bounds = np.array(bounds, copy=True)
+    # undo[0] contains indices of variables removed from the problem
+    # however, their bounds are still part of the bounds list
     # they are needed elsewhere, but not here
-    bounds = [bounds[i] for i in range(len(bounds)) if i not in fixed_x]
-    # in retrospect, the standard form of bounds should have been an n x 2
-    # array. maybe change it someday.
+    if undo is not None and undo != []:
+        bounds = np.delete(bounds, undo[0], 0)
 
     # modify problem such that all variables have only non-negativity bounds
-
-    bounds = np.array(bounds)
     lbs = bounds[:, 0]
     ubs = bounds[:, 1]
     m_ub, n_ub = A_ub.shape
 
-    lb_none = np.equal(lbs, None)
-    ub_none = np.equal(ubs, None)
+    lb_none = np.equal(lbs, -np.inf)
+    ub_none = np.equal(ubs, np.inf)
     lb_some = np.logical_not(lb_none)
     ub_some = np.logical_not(ub_none)
 
@@ -1108,12 +1070,13 @@ def _get_Abc(lp, c0, undo=[]):
     # required modifications from inside here.
 
     # unbounded below: substitute xi = -xi' (unbounded above)
+    # if -inf <= xi <= ub, then -ub <= -xi <= inf, so swap and invert bounds
     l_nolb_someub = np.logical_and(lb_none, ub_some)
     i_nolb = np.nonzero(l_nolb_someub)[0]
     lbs[l_nolb_someub], ubs[l_nolb_someub] = (
-        -ubs[l_nolb_someub], lbs[l_nolb_someub])
-    lb_none = np.equal(lbs, None)
-    ub_none = np.equal(ubs, None)
+        -ubs[l_nolb_someub], -lbs[l_nolb_someub])
+    lb_none = np.equal(lbs, -np.inf)
+    ub_none = np.equal(ubs, np.inf)
     lb_some = np.logical_not(lb_none)
     ub_some = np.logical_not(ub_none)
     c[i_nolb] *= -1
@@ -1237,7 +1200,7 @@ def _unscale(x, C, b_scale):
         n = len(C)
         # fails if sparse or scalar; that's OK.
         # this is only needed for original simplex (never sparse)
-    except TypeError as e:
+    except TypeError:
         n = len(x)
 
     return x[:n]*b_scale*C
@@ -1303,13 +1266,10 @@ def _postsolve(x, postsolve_args, complete=False, tol=1e-8, copy=False):
         b_eq : 1D array, optional
             The equality constraint vector. Each element of ``A_eq @ x`` must equal
             the corresponding element of ``b_eq``.
-        bounds : sequence, optional
-            A sequence of ``(min, max)`` pairs for each element in ``x``, defining
-            the minimum and maximum values of that decision variable. Use ``None`` to
-            indicate that there is no bound. By default, bounds are ``(0, None)``
-            (all decision variables are non-negative).
-            If a single tuple ``(min, max)`` is provided, then ``min`` and
-            ``max`` will serve as bounds for all decision variables.
+        bounds : 2D array
+            The bounds of ``x``, lower bounds in the 1st column, upper
+            bounds in the 2nd column. The bounds are possibly tightened
+            by the presolve procedure.
         x0 : 1D array, optional
             Guess values of the decision variables, which will be refined by
             the optimization algorithm. This argument is currently used only by the
@@ -1336,10 +1296,8 @@ def _postsolve(x, postsolve_args, complete=False, tol=1e-8, copy=False):
     con : 1-D array
         The (nominally zero) residuals of the equality constraints, that is,
         ``b - A_eq @ x``
-    lb : 1-D array
-        The lower bound constraints on the original variables
-    ub: 1-D array
-        The upper bound constraints on the original variables
+    bounds : 2D array
+        The bounds on the original variables ``x``
     """
     # note that all the inputs are the ORIGINAL, unmodified versions
     # no rows, columns have been removed
@@ -1372,18 +1330,19 @@ def _postsolve(x, postsolve_args, complete=False, tol=1e-8, copy=False):
     # if "complete", problem was solved in presolve; don't do anything here
     if not complete and bounds is not None:  # bounds are never none, probably
         n_unbounded = 0
-        for i, b in enumerate(bounds):
+        for i, bi in enumerate(bounds):
             if i in no_adjust:
                 continue
-            lb, ub = b
-            if lb is None and ub is None:
+            lbi = bi[0]
+            ubi = bi[1]
+            if lbi == -np.inf and ubi == np.inf:
                 n_unbounded += 1
                 x[i] = x[i] - x[n_x + n_unbounded - 1]
             else:
-                if lb is None:
-                    x[i] = ub - x[i]
+                if lbi == -np.inf:
+                    x[i] = ubi - x[i]
                 else:
-                    x[i] += lb
+                    x[i] += lbi
 
     n_x = len(c)
     x = x[:n_x]  # all the rest of the variables were artificial
@@ -1392,18 +1351,10 @@ def _postsolve(x, postsolve_args, complete=False, tol=1e-8, copy=False):
     # report residuals of ORIGINAL EQ constraints
     con = b_eq - A_eq.dot(x)
 
-    # Patch for bug #8664. Detecting this sort of issue earlier
-    # (via abnormalities in the indicators) would be better.
-    bounds = np.array(bounds)  # again, this should have been the standard form
-    lb = bounds[:, 0]
-    ub = bounds[:, 1]
-    lb[np.equal(lb, None)] = -np.inf
-    ub[np.equal(ub, None)] = np.inf
-
-    return x, fun, slack, con, lb, ub
+    return x, fun, slack, con, bounds
 
 
-def _check_result(x, fun, status, slack, con, lb, ub, tol, message):
+def _check_result(x, fun, status, slack, con, bounds, tol, message):
     """
     Check the validity of the provided solution.
 
@@ -1433,10 +1384,8 @@ def _check_result(x, fun, status, slack, con, lb, ub, tol, message):
     con : 1-D array
         The (nominally zero) residuals of the equality constraints, that is,
         ``b - A_eq @ x``
-    lb : 1-D array
-        The lower bound constraints on the original variables
-    ub: 1-D array
-        The upper bound constraints on the original variables
+    bounds : 2D array
+        The bounds on the original variables ``x``
     message : str
         A string descriptor of the exit status of the optimization.
     tol : float
@@ -1469,7 +1418,7 @@ def _check_result(x, fun, status, slack, con, lb, ub, tol, message):
     if contains_nans:
         is_feasible = False
     else:
-        invalid_bounds = (x < lb - tol).any() or (x > ub + tol).any()
+        invalid_bounds = (x < bounds[:, 0] - tol).any() or (x > bounds[:, 1] + tol).any()
         invalid_slack = status != 3 and (slack < -tol).any()
         invalid_con = status != 3 and (np.abs(con) > tol).any()
         is_feasible = not (invalid_bounds or invalid_slack or invalid_con)
@@ -1533,8 +1482,10 @@ def _postprocess(x, postsolve_args, complete=False, status=0, message="",
     b_eq : 1-D array, optional
         1-D array of values representing the RHS of each equality constraint
         (row) in ``A_eq``.
-    bounds : sequence of tuples
-        Bounds, as modified in presolve
+    bounds : 2D array
+        The bounds of ``x``, lower bounds in the 1st column, upper
+        bounds in the 2nd column. The bounds are possibly tightened
+        by the presolve procedure.
     complete : bool
         Whether the solution is was determined in presolve (``True`` if so)
     undo: list of tuples
@@ -1580,13 +1531,13 @@ def _postprocess(x, postsolve_args, complete=False, status=0, message="",
 
     """
 
-    x, fun, slack, con, lb, ub = _postsolve(
+    x, fun, slack, con, bounds = _postsolve(
         x, postsolve_args, complete, tol
     )
 
     status, message = _check_result(
         x, fun, status, slack, con,
-        lb, ub, tol, message
+        bounds, tol, message
     )
 
     if disp:

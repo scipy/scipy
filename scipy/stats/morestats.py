@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 import math
 import warnings
 from collections import namedtuple
@@ -14,7 +12,8 @@ from scipy import optimize
 from scipy import special
 from . import statlib
 from . import stats
-from .stats import find_repeats, _contains_nan
+from .stats import find_repeats
+from .mstats_basic import _contains_nan
 from .contingency import chi2_contingency
 from . import distributions
 from ._distn_infrastructure import rv_generic
@@ -1678,7 +1677,7 @@ def shapiro(x):
 
 
 # Values from Stephens, M A, "EDF Statistics for Goodness of Fit and
-#             Some Comparisons", Journal of he American Statistical
+#             Some Comparisons", Journal of the American Statistical
 #             Association, Vol. 69, Issue 347, Sept. 1974, pp 730-737
 _Avals_norm = array([0.576, 0.656, 0.787, 0.918, 1.092])
 _Avals_expon = array([0.922, 1.078, 1.341, 1.606, 1.957])
@@ -2418,7 +2417,7 @@ def binom_test(x, n=None, p=0.5, alternative='two-sided'):
     because the returned p-value is greater than the critical value of 5%.
 
     """
-    x = atleast_1d(x).astype(np.integer)
+    x = atleast_1d(x).astype(np.int_)
     if len(x) == 2:
         n = x[1] + x[0]
         x = x[0]

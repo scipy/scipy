@@ -1,8 +1,6 @@
 # Python TNC example
 # @(#) $Jeannot: example.py,v 1.4 2004/04/02 18:51:04 js Exp $
 
-from __future__ import division, print_function, absolute_import
-
 import tnc
 
 # A function to minimize

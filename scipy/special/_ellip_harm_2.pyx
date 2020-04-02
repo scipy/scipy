@@ -1,5 +1,3 @@
-from __future__ import absolute_import
-
 import ctypes
 from libc.math cimport sqrt, fabs
 from libc.stdlib cimport free

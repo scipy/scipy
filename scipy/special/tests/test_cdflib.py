@@ -19,8 +19,6 @@ The following functions still need tests:
 - nctdtrinc
 
 """
-from __future__ import division, print_function, absolute_import
-
 import itertools
 
 import numpy as np
@@ -34,7 +32,7 @@ from scipy.special._mptestutils import (
     Arg, IntArg, get_args, mpf2float, assert_mpmath_equal)
 
 try:
-    import mpmath
+    import mpmath  # type: ignore[import]
 except ImportError:
     mpmath = MissingModule('mpmath')
 

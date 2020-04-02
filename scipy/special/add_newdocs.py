@@ -6,10 +6,9 @@
 # _generate_pyx.py to generate the docstrings for the ufuncs in
 # scipy.special at the C level when the ufuncs are created at compile
 # time.
+from typing import Dict
 
-from __future__ import division, print_function, absolute_import
-
-docdict = {}
+docdict: Dict[str, str] = {}
 
 
 def get(name):
@@ -377,7 +376,7 @@ add_newdoc("bdtr",
     Sum of the terms 0 through `floor(k)` of the Binomial probability density.
 
     .. math::
-        \mathrm{bdtr}(k, n, p) = \sum_{j=0}^\lfloor k \rfloor {{n}\choose{j}} p^j (1-p)^{n-j}
+        \mathrm{bdtr}(k, n, p) = \sum_{j=0}^{\lfloor k \rfloor} {{n}\choose{j}} p^j (1-p)^{n-j}
 
     Parameters
     ----------
@@ -421,7 +420,7 @@ add_newdoc("bdtrc",
     density,
 
     .. math::
-        \mathrm{bdtrc}(k, n, p) = \sum_{j=k+1}^n {{n}\choose{j}} p^j (1-p)^{n-j}
+        \mathrm{bdtrc}(k, n, p) = \sum_{j=\lfloor k \rfloor +1}^n {{n}\choose{j}} p^j (1-p)^{n-j}
 
     Parameters
     ----------
@@ -3757,8 +3756,8 @@ add_newdoc("fresnel",
 
     .. math::
 
-       S(z) &= \int_0^z \cos(\pi t^2 /2) dt \\
-       C(z) &= \int_0^z \sin(\pi t^2 /2) dt.
+       S(z) &= \int_0^z \sin(\pi t^2 /2) dt \\
+       C(z) &= \int_0^z \cos(\pi t^2 /2) dt.
 
     See [dlmf]_ for details.
 

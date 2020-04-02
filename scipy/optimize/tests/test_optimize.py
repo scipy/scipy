@@ -9,8 +9,6 @@ To run it in its simplest form::
   nosetests test_optimize.py
 
 """
-from __future__ import division, print_function, absolute_import
-
 import itertools
 import multiprocessing
 import numpy as np
@@ -771,8 +769,8 @@ class TestOptimizeSimple(CheckOptimize):
             return optimize.OptimizeResult()
 
         x0 = [1, 1]
-        res = optimize.minimize(optimize.rosen, x0, method=custmin,
-                                bounds=bounds, constraints=constraints)
+        optimize.minimize(optimize.rosen, x0, method=custmin,
+                          bounds=bounds, constraints=constraints)
 
     def test_minimize_tol_parameter(self):
         # Check that the minimize() tol= argument does something
@@ -836,7 +834,7 @@ class TestOptimizeSimple(CheckOptimize):
                 return optimize.minimize(*a, **kw)
 
             if method == 'tnc':
-                kwargs['options'] = dict(maxiter=100)
+                kwargs['options'] = dict(maxfun=100)
             else:
                 kwargs['options'] = dict(maxiter=5)
 
@@ -855,7 +853,7 @@ class TestOptimizeSimple(CheckOptimize):
         def callback(x, *args, **kwargs):
             results.append((x, np.copy(x)))
 
-        sol = routine(func, x0, callback=callback, **kwargs)
+        routine(func, x0, callback=callback, **kwargs)
 
         # Check returned arrays coincide with their copies
         # and have no memory overlap
@@ -907,8 +905,7 @@ class TestOptimizeSimple(CheckOptimize):
         assert_allclose(res.x, np.array([0., 2, 5, 8])/3, atol=1e-12)
 
     @pytest.mark.parametrize('method', ['Nelder-Mead', 'Powell', 'CG', 'BFGS',
-                                        'Newton-CG', 'L-BFGS-B',
-                                        # 'TNC', 'SLSQP',
+                                        'Newton-CG', 'L-BFGS-B', 'SLSQP',
                                         'trust-constr', 'dogleg', 'trust-ncg',
                                         'trust-exact', 'trust-krylov'])
     def test_respect_maxiter(self, method):
@@ -932,10 +929,14 @@ class TestOptimizeSimple(CheckOptimize):
             kwargs['hess'] = sf.hess
 
         sol = optimize.minimize(sf.fun, x0, **kwargs)
-        assert sol.nit <= MAXITER
+        assert sol.nit == MAXITER
         assert sol.nfev >= sf.nfev
         if hasattr(sol, 'njev'):
             assert sol.njev >= sf.ngev
+
+        # method specific tests
+        if method == 'SLSQP':
+            assert sol.status == 9  # Iteration limit reached
 
     def test_respect_maxiter_trust_constr_ineq_constraints(self):
         # special case of minimization with trust-constr and inequality

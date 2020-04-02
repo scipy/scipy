@@ -3,32 +3,11 @@
 
 #if PY_VERSION_HEX < 0x03000000
 
-#include "cStringIO.h"
-
 #define npy_PyFile_Dup(file, mode) PyFile_AsFile(file)
 #define npy_PyFile_DupClose(file, handle) (0)
 #define npy_PyFile_Check PyFile_Check
 
 #else
-
-/*
- * No-op implementation -- always fall back to the generic one.
- */
-
-static struct PycStringIO_CAPI {
-    int(*cread)(PyObject *, char **, Py_ssize_t);
-    int(*creadline)(PyObject *, char **);
-    int(*cwrite)(PyObject *, const char *, Py_ssize_t);
-    PyObject *(*cgetvalue)(PyObject *);
-    PyObject *(*NewOutput)(int);
-    PyObject *(*NewInput)(PyObject *);
-    PyTypeObject *InputType, *OutputType;
-} *PycStringIO;
-
-static void PycString_IMPORT() {}
-
-#define PycStringIO_InputCheck(O) 0
-#define PycStringIO_OutputCheck(O) 0
 
 /*
  * PyFile_* compatibility

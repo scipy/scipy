@@ -115,7 +115,7 @@ matrix:
       env:
         - TESTMODE=fast
         - COVERAGE=
-        - NUMPYSPEC="--upgrade numpy"
+        - NUMPYSPEC="--upgrade numpy --no-cache-dir"
 cache:
   directories:
     - $HOME/.ccache
@@ -204,19 +204,16 @@ before_install:
   - travis_retry pip install pybind11
   - |
     if [ -z "${USE_DEBUG}" -a "${TRAVIS_CPU_ARCH}" == "amd64" -a "${TRAVIS_PYTHON_VERSION}" != "3.8" ]; then
+        travis_retry pip install numba==0.47
         travis_retry pip install --only-binary=:all: sparse
     fi
   - |
     if [ "${TESTMODE}" == "full" ]; then
-        travis_retry pip install pytest-cov coverage matplotlib==3.2.0rc1 scikit-umfpack scikit-sparse
+        travis_retry pip install pytest-cov coverage matplotlib scikit-umfpack scikit-sparse
     fi
   - |
     if [ "${REFGUIDE_CHECK}" == "1" ]; then
         travis_retry pip install matplotlib Sphinx==1.7.2
-        # XXX: Install older numpy as a workaround for float printing changes.
-        # XXX: We'll remove this once numpy 1.14.1 is released to fix its printing
-        # XXX: bugs
-        travis_retry pip install 'numpy!=1.14.0'
     fi
   - |
     if [ "${ASV_CHECK}" == "1" ]; then

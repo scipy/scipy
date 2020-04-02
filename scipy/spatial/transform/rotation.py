@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 import re
 import warnings
 import numpy as np
@@ -564,6 +562,12 @@ class Rotation(object):
                 [ 0.,  0.,  1.]]])
         >>> r.as_matrix().shape
         (1, 3, 3)
+
+        Notes
+        -----
+        This function was called from_dcm before.
+
+        .. versionadded:: 1.4.0
         """
         is_single = False
         matrix = np.asarray(matrix, dtype=float)
@@ -960,6 +964,12 @@ class Rotation(object):
                 [ 0.00000000e+00,  0.00000000e+00,  1.00000000e+00]]])
         >>> r.as_matrix().shape
         (2, 3, 3)
+
+        Notes
+        -----
+        This function was called as_dcm before.
+
+        .. versionadded:: 1.4.0
         """
         x = self._quat[:, 0]
         y = self._quat[:, 1]

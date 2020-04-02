@@ -14,8 +14,6 @@
 #  Updated strong Wolfe conditions line search to use
 #  cubic-interpolation (Mar. 2004)
 
-from __future__ import division, print_function, absolute_import
-
 
 # Minimization routines
 
@@ -30,14 +28,14 @@ __docformat__ = "restructuredtext en"
 import warnings
 import sys
 import numpy
-from numpy import (atleast_1d, eye, mgrid, argmin, zeros, shape, squeeze,
+from numpy import (atleast_1d, eye, argmin, zeros, shape, squeeze,
                    asarray, sqrt, Inf, asfarray, isinf)
 import numpy as np
 from .linesearch import (line_search_wolfe1, line_search_wolfe2,
                          line_search_wolfe2 as line_search,
                          LineSearchWarning)
 from ._numdiff import approx_derivative
-from scipy._lib._util import getargspec_no_self as _getargspec
+from scipy._lib._util import getfullargspec_no_self as _getfullargspec
 from scipy._lib._util import MapWrapper
 from scipy.optimize._differentiable_functions import ScalarFunction, FD_METHODS
 
@@ -569,6 +567,9 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
         variables, if neither `maxiter` or `maxfev` is set. If both
         `maxiter` and `maxfev` are set, minimization will stop at the
         first reached.
+    return_all : bool, optional
+        Set to True to return a list of the best solution at each of the
+        iterations.
     initial_simplex : array_like of shape (N + 1, N)
         Initial simplex. If given, overrides `x0`.
         ``initial_simplex[j,:]`` should contain the coordinates of
@@ -1071,6 +1072,9 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
     eps : float or ndarray
         If `jac is None` the absolute step size used for numerical
         approximation of the jacobian via forward differences.
+    return_all : bool, optional
+        Set to True to return a list of the best solution at each of the
+        iterations.
     finite_diff_rel_step : None or array_like, optional
         If `jac in ['2-point', '3-point', 'cs']` the relative step size to
         use for numerical approximation of the jacobian. The absolute step
@@ -1392,6 +1396,9 @@ def _minimize_cg(fun, x0, args=(), jac=None, callback=None,
     eps : float or ndarray
         If `jac is None` the absolute step size used for numerical
         approximation of the jacobian via forward differences.
+    return_all : bool, optional
+        Set to True to return a list of the best solution at each of the
+        iterations.
     finite_diff_rel_step : None or array_like, optional
         If `jac in ['2-point', '3-point', 'cs']` the relative step size to
         use for numerical approximation of the jacobian. The absolute step
@@ -1654,6 +1661,9 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
         Maximum number of iterations to perform.
     eps : float or ndarray
         If `hessp` is approximated, use this value for the step size.
+    return_all : bool, optional
+        Set to True to return a list of the best solution at each of the
+        iterations.
     """
     _check_unknown_options(unknown_options)
     if jac is None:
@@ -2711,6 +2721,9 @@ def _minimize_powell(func, x0, args=(), callback=None,
         first reached.
     direc : ndarray
         Initial set of direction vectors for the Powell method.
+    return_all : bool, optional
+        Set to True to return a list of the best solution at each of the
+        iterations.
 
     """
     _check_unknown_options(unknown_options)
@@ -3066,7 +3079,7 @@ def brute(func, ranges, args=(), Ns=20, full_output=0, finish=fmin,
 
     if callable(finish):
         # set up kwargs for `finish` function
-        finish_args = _getargspec(finish).args
+        finish_args = _getfullargspec(finish).args
         finish_kwargs = dict()
         if 'full_output' in finish_args:
             finish_kwargs['full_output'] = 1

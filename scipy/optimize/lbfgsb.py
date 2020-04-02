@@ -33,16 +33,12 @@ Functions
 
 ## Modifications by Travis Oliphant and Enthought, Inc. for inclusion in SciPy
 
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 from numpy import array, asarray, float64, int32, zeros
 from . import _lbfgsb
 from .optimize import (MemoizeJac, OptimizeResult,
-                       _check_unknown_options, wrap_function, _prepare_scalar_function)
-from ._numdiff import approx_derivative
+                       _check_unknown_options, _prepare_scalar_function)
 from ._constraints import old_bound_to_new
-from ._differentiable_functions import ScalarFunction, FD_METHODS
 
 from scipy.sparse.linalg import LinearOperator
 
@@ -348,7 +344,7 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
         _lbfgsb.setulb(m, x, low_bnd, upper_bnd, nbd, f, g, factr,
                        pgtol, wa, iwa, task, iprint, csave, lsave,
                        isave, dsave, maxls)
-        task_str = task.tostring()
+        task_str = task.tobytes()
         if task_str.startswith(b'FG'):
             # The minimization routine wants f and g at the current x.
             # Note that interruptions due to maxfun are postponed
@@ -369,7 +365,7 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
         else:
             break
 
-    task_str = task.tostring().strip(b'\x00').strip()
+    task_str = task.tobytes().strip(b'\x00').strip()
     if task_str.startswith(b'CONV'):
         warnflag = 0
     elif sf.nfev > maxfun or n_iterations >= maxiter:

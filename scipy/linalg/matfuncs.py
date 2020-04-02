@@ -2,11 +2,10 @@
 # Author: Travis Oliphant, March 2002
 #
 
-from __future__ import division, print_function, absolute_import
-
 __all__ = ['expm','cosm','sinm','tanm','coshm','sinhm',
            'tanhm','logm','funm','signm','sqrtm',
-           'expm_frechet', 'expm_cond', 'fractional_matrix_power']
+           'expm_frechet', 'expm_cond', 'fractional_matrix_power',
+           'khatri_rao']
 
 from numpy import (Inf, dot, diag, prod, logical_not, ravel,
         transpose, conjugate, absolute, amax, sign, isfinite, single)
@@ -668,3 +667,66 @@ def signm(A, disp=True):
         return S0
     else:
         return S0, errest
+
+
+def khatri_rao(a, b):
+    r"""
+    Khatri-rao product
+
+    A column-wise Kronecker product of two matrices
+
+    Parameters
+    ----------
+    a:  (n, k) array_like
+        Input array
+    b:  (m, k) array_like
+        Input array
+
+    Returns
+    -------
+    c:  (n*m, k) ndarray
+        Khatri-rao product of `a` and `b`.
+
+    Notes
+    -----
+    The mathematical definition of the Khatri-Rao product is:
+
+    .. math::
+
+        (A_{ij}  \bigotimes B_{ij})_{ij}
+
+    which is the Kronecker product of every column of A and B, e.g.::
+
+        c = np.vstack([np.kron(a[:, k], b[:, k]) for k in range(b.shape[1])]).T
+
+    See Also
+    --------
+    kron : Kronecker product
+
+    Examples
+    --------
+    >>> from scipy import linalg
+    >>> a = np.array([[1, 2, 3], [4, 5, 6]])
+    >>> b = np.array([[3, 4, 5], [6, 7, 8], [2, 3, 9]])
+    >>> linalg.khatri_rao(a, b)
+    array([[ 3,  8, 15],
+           [ 6, 14, 24],
+           [ 2,  6, 27],
+           [12, 20, 30],
+           [24, 35, 48],
+           [ 8, 15, 54]])
+
+    """
+    a = np.asarray(a)
+    b = np.asarray(b)
+
+    if not(a.ndim == 2 and b.ndim == 2):
+        raise ValueError("The both arrays should be 2-dimensional.")
+
+    if not a.shape[1] == b.shape[1]:
+        raise ValueError("The number of columns for both arrays "
+                         "should be equal.")
+
+    # c = np.vstack([np.kron(a[:, k], b[:, k]) for k in range(b.shape[1])]).T
+    c = a[..., :, np.newaxis, :] * b[..., np.newaxis, :, :]
+    return c.reshape((-1,) + c.shape[2:])

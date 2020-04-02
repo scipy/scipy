@@ -2,8 +2,6 @@
 Test SciPy functions versus mpmath, if available.
 
 """
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 from numpy.testing import assert_, assert_allclose
 from numpy import pi
@@ -25,7 +23,7 @@ from scipy.special._ufuncs import (
     _igam_fac)
 
 try:
-    import mpmath
+    import mpmath  # type: ignore[import]
 except ImportError:
     mpmath = MissingModule('mpmath')
 

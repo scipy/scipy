@@ -1,10 +1,7 @@
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 
 try:
-    import mpmath
-    import matplotlib.pyplot as plt
+    import mpmath  # type: ignore[import]
 except ImportError:
     pass
 

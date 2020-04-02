@@ -38,6 +38,7 @@ Basics
    pinv2 - Pseudo-inverse using svd
    pinvh - Pseudo-inverse of hermitian matrix
    kron - Kronecker product of two arrays
+   khatri_rao - Khatri-Rao product of two arrays
    tril - Construct a lower-triangular matrix from a given matrix
    triu - Construct an upper-triangular matrix from a given matrix
    orthogonal_procrustes - Solve an orthogonal Procrustes problem
@@ -94,6 +95,7 @@ Decompositions
    rsf2csf - Real to complex Schur form
    hessenberg - Hessenberg form of a matrix
    cdf2rdf - Complex diagonal form to real diagonal block form
+   cossin - Cosine sine decomposition of a unitary or orthogonal matrix
 
 .. seealso::
 
@@ -188,10 +190,6 @@ Low-level routines
 
 """  # noqa: E501
 
-from __future__ import division, print_function, absolute_import
-
-from .linalg_version import linalg_version as __version__
-
 from .misc import *
 from .basic import *
 from .decomp import *
@@ -211,6 +209,7 @@ from ._solvers import *
 from ._procrustes import *
 from ._decomp_update import *
 from ._sketches import *
+from ._decomp_cossin import *
 
 __all__ = [s for s in dir() if not s.startswith('_')]
 

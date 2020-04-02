@@ -18,11 +18,9 @@ References
 """
 # Author: Matt Haberland
 
-from __future__ import print_function, division, absolute_import
 import numpy as np
 import scipy as sp
 import scipy.sparse as sps
-import numbers
 from warnings import warn
 from scipy.linalg import LinAlgError
 from .optimize import OptimizeWarning, OptimizeResult, _check_unknown_options
@@ -710,7 +708,7 @@ def _ip_hsd(A, b, c, c0, alpha0, beta, maxiter, disp, tol, sparse, lstsq,
     if disp:
         _display_iter(rho_p, rho_d, rho_g, "-", rho_mu, obj, header=True)
     if callback is not None:
-        x_o, fun, slack, con, _, _ = _postsolve(x/tau, postsolve_args,
+        x_o, fun, slack, con, _ = _postsolve(x/tau, postsolve_args,
                                                 tol=tol)
         res = OptimizeResult({'x': x_o, 'fun': fun, 'slack': slack,
                               'con': con, 'nit': iteration, 'phase': 1,
@@ -791,7 +789,7 @@ def _ip_hsd(A, b, c, c0, alpha0, beta, maxiter, disp, tol, sparse, lstsq,
         if disp:
             _display_iter(rho_p, rho_d, rho_g, alpha, rho_mu, obj)
         if callback is not None:
-            x_o, fun, slack, con, _, _ = _postsolve(x/tau, postsolve_args,
+            x_o, fun, slack, con, _ = _postsolve(x/tau, postsolve_args,
                                                     tol=tol)
             res = OptimizeResult({'x': x_o, 'fun': fun, 'slack': slack,
                                   'con': con, 'nit': iteration, 'phase': 1,

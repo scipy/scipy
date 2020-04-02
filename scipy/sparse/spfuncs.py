@@ -1,8 +1,6 @@
 """ Functions that operate on sparse matrices
 """
 
-from __future__ import division, print_function, absolute_import
-
 __all__ = ['count_blocks','estimate_blocksize']
 
 from .csr import isspmatrix_csr, csr_matrix

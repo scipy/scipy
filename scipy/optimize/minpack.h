@@ -29,12 +29,6 @@ the result tuple when the full_output argument is non-zero.
 */
 
 #include "Python.h"
-#if PY_VERSION_HEX >= 0x03000000
-    #define PyString_FromString PyBytes_FromString
-    #define PyString_Concat PyBytes_Concat
-    #define PyString_AsString PyBytes_AsString
-    #define PyInt_FromLong PyLong_FromLong
-#endif
 #include "numpy/arrayobject.h"
 #include "ccallback.h"
 

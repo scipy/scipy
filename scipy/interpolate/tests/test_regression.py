@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 import scipy.interpolate as interp
 from numpy.testing import assert_almost_equal

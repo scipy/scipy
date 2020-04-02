@@ -1,8 +1,6 @@
 """ Testing mio5_utils Cython module
 
 """
-from __future__ import division, print_function, absolute_import
-
 import sys
 
 from io import BytesIO
@@ -98,17 +96,17 @@ def test_read_tag():
     # bad SDE
     tag = _make_tag('i4', 1, mio5p.miINT32, sde=True)
     tag['byte_count'] = 5
-    _write_stream(str_io, tag.tostring())
+    _write_stream(str_io, tag.tobytes())
     assert_raises(ValueError, c_reader.read_tag)
 
 
 def test_read_stream():
     tag = _make_tag('i4', 1, mio5p.miINT32, sde=True)
-    tag_str = tag.tostring()
+    tag_str = tag.tobytes()
     str_io = cStringIO(tag_str)
     st = streams.make_stream(str_io)
     s = streams._read_into(st, tag.itemsize)
-    assert_equal(s, tag.tostring())
+    assert_equal(s, tag.tobytes())
 
 
 def test_read_numeric():
@@ -127,7 +125,7 @@ def test_read_numeric():
             for sde_f in (False, True):
                 dt = np.dtype(base_dt).newbyteorder(byte_code)
                 a = _make_tag(dt, val, mdtype, sde_f)
-                a_str = a.tostring()
+                a_str = a.tobytes()
                 _write_stream(str_io, a_str)
                 el = c_reader.read_numeric()
                 assert_equal(el, val)
@@ -146,7 +144,7 @@ def test_read_numeric_writeable():
     c_reader = m5u.VarReader5(r)
     dt = np.dtype('<u2')
     a = _make_tag(dt, 30, mio5p.miUINT16, 0)
-    a_str = a.tostring()
+    a_str = a.tobytes()
     _write_stream(str_io, a_str)
     el = c_reader.read_numeric()
     assert_(el.flags.writeable is True)
@@ -165,13 +163,13 @@ def test_zero_byte_string():
     hdr = m5u.VarHeader5()
     # Try when string is 1 length
     hdr.set_dims([1,])
-    _write_stream(str_io, tag.tostring() + b'        ')
+    _write_stream(str_io, tag.tobytes() + b'        ')
     str_io.seek(0)
     val = c_reader.read_char(hdr)
     assert_equal(val, ' ')
     # Now when string has 0 bytes 1 length
     tag['byte_count'] = 0
-    _write_stream(str_io, tag.tostring())
+    _write_stream(str_io, tag.tobytes())
     str_io.seek(0)
     val = c_reader.read_char(hdr)
     assert_equal(val, ' ')

@@ -32,8 +32,6 @@
 """Some more special functions which may be useful for multivariate statistical
 analysis."""
 
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 from scipy.special import gammaln as loggam
 

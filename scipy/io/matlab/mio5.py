@@ -6,8 +6,6 @@ https://www.mathworks.com/access/helpdesk/help/pdf_doc/matlab/matfile_format.pdf
 
 (as of December 5 2008)
 '''
-from __future__ import division, print_function, absolute_import
-
 '''
 =================================
  Note on functions and mat files
@@ -378,7 +376,7 @@ def varmats_from_mat(file_obj):
     # Initialize variable reading
     file_obj.seek(0)
     rdr.initialize_read()
-    mdict = rdr.read_file_header()
+    rdr.read_file_header()
     next_position = file_obj.tell()
     named_mats = []
     while not rdr.end_of_stream():
@@ -475,7 +473,7 @@ class VarWriter5(object):
         self._var_is_global = False
 
     def write_bytes(self, arr):
-        self.file_stream.write(arr.tostring(order='F'))
+        self.file_stream.write(arr.tobytes(order='F'))
 
     def write_string(self, s):
         self.file_stream.write(s)
@@ -497,8 +495,8 @@ class VarWriter5(object):
         # write tag with embedded data
         tag = np.zeros((), NDT_TAG_SMALL)
         tag['byte_count_mdtype'] = (byte_count << 16) + mdtype
-        # if arr.tostring is < 4, the element will be zero-padded as needed.
-        tag['data'] = arr.tostring(order='F')
+        # if arr.tobytes is < 4, the element will be zero-padded as needed.
+        tag['data'] = arr.tobytes(order='F')
         self.write_bytes(tag)
 
     def write_regular_element(self, arr, mdtype, byte_count):
@@ -804,7 +802,7 @@ class MatFile5Writer(object):
         hdr['endian_test'] = np.ndarray(shape=(),
                                       dtype='S2',
                                       buffer=np.uint16(0x4d49))
-        self.file_stream.write(hdr.tostring())
+        self.file_stream.write(hdr.tobytes())
 
     def put_variables(self, mdict, write_header=None):
         ''' Write variables in `mdict` to stream
@@ -841,7 +839,7 @@ class MatFile5Writer(object):
                 tag = np.empty((), NDT_TAG_FULL)
                 tag['mdtype'] = miCOMPRESSED
                 tag['byte_count'] = len(out_str)
-                self.file_stream.write(tag.tostring())
+                self.file_stream.write(tag.tobytes())
                 self.file_stream.write(out_str)
             else:  # not compressing
                 self._matrix_writer.write_top(var, asbytes(name), is_global)

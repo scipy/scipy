@@ -150,8 +150,6 @@ The routines in this module accept as input either scipy.sparse representations
 with non-edges indicated by zeros, infinities, and NaN entries.
 """
 
-from __future__ import division, print_function, absolute_import
-
 __docformat__ = "restructuredtext en"
 
 __all__ = ['connected_components',

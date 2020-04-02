@@ -28,11 +28,8 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from __future__ import division, print_function, absolute_import
-
 import math
 import sys
-import platform
 
 import numpy
 from numpy import fft
@@ -430,6 +427,14 @@ class TestNdimage:
                 ndimage.convolve1d(array, weights, axis=0,
                                    mode='nearest', output=output, origin=1)
                 assert_array_almost_equal(output, tcov)
+
+    def test_correlate26(self):
+        # test fix for gh-11661 (mirror extension of a length 1 signal)
+        y = ndimage.convolve1d(numpy.ones(1), numpy.ones(5), mode='mirror')
+        assert_array_equal(y, numpy.array(5.))
+
+        y = ndimage.correlate1d(numpy.ones(1), numpy.ones(5), mode='mirror')
+        assert_array_equal(y, numpy.array(5.))
 
     def test_gauss01(self):
         input = numpy.array([[1, 2, 3],
@@ -3627,7 +3632,7 @@ class TestNdimage:
                            [1, 0, 1]], dtype=bool)
         iterations = 2.0
         with assert_raises(TypeError):
-            out = ndimage.binary_erosion(data, iterations=iterations)
+            _ = ndimage.binary_erosion(data, iterations=iterations)
 
     def test_binary_erosion39(self):
         iterations = numpy.int32(3)

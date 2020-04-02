@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 import numpy.testing as npt
 import pytest
@@ -52,18 +50,18 @@ distslow = ['kappa4', 'gausshyper', 'recipinvgauss', 'genexpon',
 # distslow are sorted by speed (very slow to slow)
 
 # skip check_fit_args (test is slow)
-skip_fit_test = ['argus', 'exponpow', 'exponweib', 'gausshyper', 'genexpon',
+skip_fit_test = ['exponpow', 'exponweib', 'gausshyper', 'genexpon',
                  'halfgennorm', 'gompertz', 'johnsonsb', 'johnsonsu',
-                 'kappa4', 'ksone', 'kstwobign', 'mielke', 'ncf', 'nct',
+                 'kappa4', 'ksone', 'kstwo', 'kstwobign', 'mielke', 'ncf', 'nct',
                  'powerlognorm', 'powernorm', 'recipinvgauss', 'trapz',
                  'vonmises', 'vonmises_line',
                  'levy_stable', 'rv_histogram_instance']
 
 # skip check_fit_args_fix (test is slow)
-skip_fit_fix_test = ['argus', 'burr', 'exponpow', 'exponweib',
+skip_fit_fix_test = ['burr', 'exponpow', 'exponweib',
                      'gausshyper', 'genexpon', 'halfgennorm',
                      'gompertz', 'johnsonsb', 'johnsonsu', 'kappa4',
-                     'ksone', 'kstwobign', 'levy_stable', 'mielke', 'ncf',
+                     'ksone', 'kstwo', 'kstwobign', 'levy_stable', 'mielke', 'ncf',
                      'ncx2', 'powerlognorm', 'powernorm', 'rdist',
                      'recipinvgauss', 'trapz', 'vonmises', 'vonmises_line']
 
@@ -75,7 +73,7 @@ fails_cmplx = set(['beta', 'betaprime', 'chi', 'chi2', 'dgamma', 'dweibull',
                    'erlang', 'f', 'gamma', 'gausshyper', 'gengamma',
                    'geninvgauss', 'gennorm', 'genpareto',
                    'halfgennorm', 'invgamma',
-                   'ksone', 'kstwobign', 'levy_l', 'loggamma', 'logistic',
+                   'ksone', 'kstwo', 'kstwobign', 'levy_l', 'loggamma', 'logistic',
                    'loguniform', 'maxwell', 'nakagami',
                    'ncf', 'nct', 'ncx2', 'norminvgauss', 'pearson3', 'rdist',
                    'reciprocal', 'rice', 'skewnorm', 't', 'tukeylambda',
@@ -155,7 +153,7 @@ def test_cont_basic(distname, arg):
         check_freezing(distfn, arg)
 
         # Entropy
-        if distname not in ['kstwobign']:
+        if distname not in ['kstwobign', 'kstwo']:
             check_entropy(distfn, arg, distname)
 
         if distfn.numargs == 0:
@@ -264,9 +262,9 @@ def test_rvs_broadcast(dist, shape_args):
     # implementation detail of the distribution, not a requirement.  If
     # the implementation the rvs() method of a distribution changes, this
     # test might also have to be changed.
-    shape_only = dist in ['betaprime', 'dgamma', 'dweibull', 'exponnorm',
-                          'geninvgauss', 'levy_stable', 'nct', 'norminvgauss',
-                          'rice', 'skewnorm', 'semicircular']
+    shape_only = dist in ['argus', 'betaprime', 'dgamma', 'dweibull',
+                          'exponnorm', 'geninvgauss', 'levy_stable', 'nct',
+                          'norminvgauss', 'rice', 'skewnorm', 'semicircular']
 
     distfunc = getattr(stats, dist)
     loc = np.zeros(2)

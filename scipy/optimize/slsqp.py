@@ -13,18 +13,15 @@ Functions
 
 """
 
-from __future__ import division, print_function, absolute_import
-
 __all__ = ['approx_jacobian', 'fmin_slsqp']
 
 import numpy as np
 from scipy.optimize._slsqp import slsqp
 from numpy import (zeros, array, linalg, append, asfarray, concatenate, finfo,
                    sqrt, vstack, exp, inf, isfinite, atleast_1d)
-from .optimize import (wrap_function, OptimizeResult, _check_unknown_options,
+from .optimize import (OptimizeResult, _check_unknown_options,
                        _prepare_scalar_function)
 from ._numdiff import approx_derivative
-from ._differentiable_functions import ScalarFunction, FD_METHODS
 from ._constraints import old_bound_to_new
 
 
@@ -172,7 +169,7 @@ def fmin_slsqp(func, x0, eqcons=(), f_eqcons=None, ieqcons=(), f_ieqcons=None,
          6 : Singular matrix C in LSQ subproblem
          7 : Rank-deficient equality constraint subproblem HFTI
          8 : Positive directional derivative for linesearch
-         9 : Iteration limit exceeded
+         9 : Iteration limit reached
 
     Examples
     --------
@@ -242,7 +239,7 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
         automatically.
     """
     _check_unknown_options(unknown_options)
-    iter = maxiter
+    iter = maxiter - 1
     acc = ftol
     epsilon = eps
 
@@ -305,7 +302,7 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
                    6: "Singular matrix C in LSQ subproblem",
                    7: "Rank-deficient equality constraint subproblem HFTI",
                    8: "Positive directional derivative for linesearch",
-                   9: "Iteration limit exceeded"}
+                   9: "Iteration limit reached"}
 
     # Transform x0 into an array.
     x = asfarray(x0).flatten()

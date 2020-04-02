@@ -48,7 +48,6 @@ All functions
 .. autosummary::
    :toctree: generated/
 
-
    sgbsv
    dgbsv
    cgbsv
@@ -174,6 +173,16 @@ All functions
    cgeqrf_lwork
    zgeqrf_lwork
 
+   sgeqrfp
+   dgeqrfp
+   cgeqrfp
+   zgeqrfp
+
+   sgeqrfp_lwork
+   dgeqrfp_lwork
+   cgeqrfp_lwork
+   zgeqrfp_lwork
+
    sgerqf
    dgerqf
    cgerqf
@@ -279,11 +288,26 @@ All functions
    cheev
    zheev
 
+   cheev_lwork
+   zheev_lwork
+
    cheevd
    zheevd
 
+   cheevd_lwork
+   zheevd_lwork
+
    cheevr
    zheevr
+
+   cheevr_lwork
+   zheevr_lwork
+
+   cheevx
+   zheevx
+
+   cheevx_lwork
+   zheevx_lwork
 
    chegst
    zhegst
@@ -291,11 +315,17 @@ All functions
    chegv
    zhegv
 
+   chegv_lwork
+   zhegv_lwork
+
    chegvd
    zhegvd
 
    chegvx
    zhegvx
+
+   chegvx_lwork
+   zhegvx_lwork
 
    chesv
    zhesv
@@ -359,6 +389,11 @@ All functions
    dlauum
    clauum
    zlauum
+
+   sorcsd
+   dorcsd
+   sorcsd_lwork
+   dorcsd_lwork
 
    sorghr
    dorghr
@@ -455,6 +490,16 @@ All functions
    cptsv
    zptsv
 
+   spttrf
+   dpttrf
+   cpttrf
+   zpttrf
+
+   spttrs
+   dpttrs
+   cpttrs
+   zpttrs
+
    crot
    zrot
 
@@ -506,11 +551,26 @@ All functions
    ssyev
    dsyev
 
+   ssyev_lwork
+   dsyev_lwork
+
    ssyevd
    dsyevd
 
+   ssyevd_lwork
+   dsyevd_lwork
+
    ssyevr
    dsyevr
+
+   ssyevr_lwork
+   dsyevr_lwork
+
+   ssyevx
+   dsyevx
+
+   ssyevx_lwork
+   dsyevx_lwork
 
    ssygst
    dsygst
@@ -518,11 +578,17 @@ All functions
    ssygv
    dsygv
 
+   ssygv_lwork
+   dsygv_lwork
+
    ssygvd
    dsygvd
 
    ssygvx
    dsygvx
+
+   ssygvx_lwork
+   dsygvx_lwork
 
    ssysv
    dsysv
@@ -564,6 +630,11 @@ All functions
    dsytrf_lwork
    csytrf_lwork
    zsytrf_lwork
+
+   stbtrs
+   dtbtrs
+   ctbtrs
+   ztbtrs
 
    stfsm
    dtfsm
@@ -655,6 +726,16 @@ All functions
    cgemqrt
    zgemqrt
 
+   sgttrf
+   dgttrf
+   cgttrf
+   zgttrf
+
+   sgttrs
+   dgttrs
+   cgttrs
+   zgttrs
+
    stpqrt
    dtpqrt
    ctpqrt
@@ -664,6 +745,12 @@ All functions
    dtpmqrt
    ctpmqrt
    ztpmqrt
+
+   cuncsd
+   zuncsd
+
+   cuncsd_lwork
+   zuncsd_lwork
 
    cunmrz
    zunmrz
@@ -678,17 +765,16 @@ All functions
 # Author: Pearu Peterson, March 2002
 #
 
-from __future__ import division, print_function, absolute_import
 import numpy as _np
 from .blas import _get_funcs, _memoize_get_funcs
 from scipy.linalg import _flapack
+from re import compile as regex_compile
 try:
     from scipy.linalg import _clapack
 except ImportError:
     _clapack = None
 
 # Backward compatibility
-from .blas import find_best_blas_type as find_best_lapack_type
 from scipy._lib._util import DeprecatedImport as _DeprecatedImport
 clapack = _DeprecatedImport("scipy.linalg.blas.clapack", "scipy.linalg.lapack")
 flapack = _DeprecatedImport("scipy.linalg.blas.flapack", "scipy.linalg.lapack")
@@ -725,6 +811,31 @@ _lapack_alias = {
     'cormqr': 'cunmqr', 'zormqr': 'zunmqr',
     'corgrq': 'cungrq', 'zorgrq': 'zungrq',
 }
+
+
+# Place guards against docstring rendering issues with special characters
+p1 = regex_compile(r'with bounds (?P<b>.*?)( and (?P<s>.*?) storage){0,1}\n')
+p2 = regex_compile(r'Default: (?P<d>.*?)\n')
+
+
+def backtickrepl(m):
+    if m.group('s'):
+        return ('with bounds ``{}`` with ``{}`` storage\n'
+                ''.format(m.group('b'), m.group('s')))
+    else:
+        return 'with bounds ``{}``\n'.format(m.group('b'))
+
+
+for routine in [ssyevr, dsyevr, cheevr, zheevr,
+                ssyevx, dsyevx, cheevx, zheevx,
+                ssygvd, dsygvd, chegvd, zhegvd]:
+    if routine.__doc__:
+        routine.__doc__ = p1.sub(backtickrepl, routine.__doc__)
+        routine.__doc__ = p2.sub('Default ``\\1``\n', routine.__doc__)
+    else:
+        continue
+
+del regex_compile, p1, p2, backtickrepl
 
 
 @_memoize_get_funcs
