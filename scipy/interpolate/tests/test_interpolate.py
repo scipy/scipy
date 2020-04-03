@@ -2451,13 +2451,11 @@ class TestRegularGridInterpolator(object):
 
     def test_valid_create(self):
         # create a 2-D grid of 3 points in each dimension
-        points = [(0., .5, 1.), (0., 1., .5)]
+        points = [((0., .5, 1.), ), (0., .5, 1.)]
         values = np.asarray([0., .5, 1.])
         values0 = values[:, np.newaxis]
         values1 = values[np.newaxis, :]
         values = (values0 + values1 * 10)
-        assert_raises(ValueError, RegularGridInterpolator, points, values)
-        points = [((0., .5, 1.), ), (0., .5, 1.)]
         assert_raises(ValueError, RegularGridInterpolator, points, values)
         points = [(0., .5, .75, 1.), (0., .5, 1.)]
         assert_raises(ValueError, RegularGridInterpolator, points, values)
@@ -2573,6 +2571,32 @@ class TestRegularGridInterpolator(object):
         # xi = [(1, 1, 1)]
         RegularGridInterpolator(points, values)
         RegularGridInterpolator(points, values, fill_value=0.)
+
+    def test_not_ascending_input(self):
+        def val_func_3d(x, y, z):
+            return 2 * x ** 3 + 3 * y ** 2 - z
+
+        x = np.linspace(1, 4, 11)
+        y = np.linspace(4, 7, 22)
+        z = np.linspace(7, 9, 33)
+        points = (x, y, z)
+        values = val_func_3d(*np.meshgrid(*points, indexing='ij', sparse=True))
+        my_interpolating_function = RegularGridInterpolator(points, values)
+        pts = np.array([[2.1, 6.2, 8.3], [3.3, 5.2, 7.1]])
+        correct_result = my_interpolating_function(pts)
+
+        # shuffling data
+        x_shuffled = x[np.random.permutation(len(x))]
+        y_shuffled = y[np.random.permutation(len(y))]
+        z_shuffled = z[np.random.permutation(len(z))]
+        points_shuffled = (x_shuffled, y_shuffled, z_shuffled)
+        values_shuffled = val_func_3d(
+            *np.meshgrid(*points_shuffled, indexing='ij', sparse=True))
+        my_interpolating_function = RegularGridInterpolator(points_shuffled,
+                                                            values_shuffled)
+        test_result = my_interpolating_function(pts)
+
+        assert_array_equal(correct_result, test_result)
 
 
 class MyValue(object):
@@ -2798,3 +2822,29 @@ class TestInterpN(object):
             v1 = interpn((x, y), values, sample, method=method)
             v2 = interpn((x, y), np.asarray(values), sample, method=method)
             assert_allclose(v1, v2)
+
+    def test_not_ascending_input(self):
+        def value_func_4d(x, y, z, a):
+            return 2 * x ** 3 + 3 * y ** 2 - z - a
+
+        x1 = np.array([0, 1, 2, 3])
+        x2 = np.array([0, 10, 20, 30])
+        x3 = np.array([0, 10, 20, 30])
+        x4 = np.array([0, .1, .2, .30])
+        points = (x1, x2, x3, x4)
+        values = value_func_4d(*np.meshgrid(*points, indexing='ij',
+                                            sparse=True))
+        pts = (0.1, 0.3, np.transpose(np.linspace(0, 30, 4)),
+               np.linspace(0, 0.3, 4))
+        correct_result = interpn(points, values, pts)
+
+        x1_shuffled = x1[np.random.permutation(len(x1))]
+        x2_shuffled = x2[np.random.permutation(len(x2))]
+        x3_shuffled = x3[np.random.permutation(len(x3))]
+        x4_shuffled = x4[np.random.permutation(len(x4))]
+        points_shuffled = (x1_shuffled, x2_shuffled, x3_shuffled, x4_shuffled)
+        values_shuffled = value_func_4d(
+            *np.meshgrid(*points_shuffled, indexing='ij', sparse=True))
+        test_result = interpn(points_shuffled, values_shuffled, pts)
+
+        assert_array_equal(correct_result, test_result)

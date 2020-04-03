@@ -90,6 +90,27 @@ def lagrange(x, w):
     return p
 
 
+def _make_points_and_values_ascending(points, values):
+    # create ascending points
+    sorted_indexes = tuple(np.argsort(point) for point in points)
+    points_asc = tuple(
+        np.asarray(point)[sort_index] for (point, sort_index) in
+        zip(points, sorted_indexes))
+
+    # create ascending values
+    ordered_indexes = tuple([*range(len(x))] for x in sorted_indexes)
+    ordered_indexes_array = np.array(
+        [i.flatten() for i in np.meshgrid(*ordered_indexes)]).transpose()
+    sorted_indexes_array = np.array(
+        [i.flatten() for i in np.meshgrid(*sorted_indexes)]).transpose()
+
+    values_asc = np.zeros_like(np.asarray(values))
+    for o, s in zip(ordered_indexes_array, sorted_indexes_array):
+        values_asc[tuple(o)] = values[tuple(s)]
+
+    return points_asc, values_asc
+
+
 # !! Need to find argument for keeping initialize. If it isn't
 # !! found, get rid of it!
 
@@ -2436,8 +2457,8 @@ class RegularGridInterpolator(object):
 
         for i, p in enumerate(points):
             if not np.all(np.diff(p) > 0.):
-                raise ValueError("The points in dimension %d must be strictly "
-                                 "ascending" % i)
+                points, values = _make_points_and_values_ascending(points,
+                                                                   values)
             if not np.asarray(p).ndim == 1:
                 raise ValueError("The points in dimension %d must be "
                                  "1-dimensional" % i)
@@ -2620,8 +2641,7 @@ def interpn(points, values, xi, method="linear", bounds_error=True,
     # sanity check input grid
     for i, p in enumerate(points):
         if not np.all(np.diff(p) > 0.):
-            raise ValueError("The points in dimension %d must be strictly "
-                             "ascending" % i)
+            points, values = _make_points_and_values_ascending(points, values)
         if not np.asarray(p).ndim == 1:
             raise ValueError("The points in dimension %d must be "
                              "1-dimensional" % i)
