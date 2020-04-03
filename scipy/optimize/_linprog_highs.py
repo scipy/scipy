@@ -43,7 +43,8 @@ def _replace_inf(x):
     return x
 
 def _linprog_highs(lp, solver, time_limit=1, presolve=False, parallel=False,
-                   disp = False, **unknown_options):
+                   disp = False, maxiter=None, autoscale=False,
+                   **unknown_options):
     r"""
     Solve the following linear programming problem using one of the HiGHS
     solvers:
@@ -76,38 +77,29 @@ def _linprog_highs(lp, solver, time_limit=1, presolve=False, parallel=False,
 
     Parameters
     ----------
-    c : 1D array
-        The coefficients of the linear objective function to be minimized.
-    A_ub : 2D array, optional
-        The inequality constraint matrix. Each row of ``A_ub`` specifies the
-        coefficients of a linear inequality constraint on ``x``.
-    b_ub : 1D array, optional
-        The inequality constraint vector. Each element represents an
-        upper bound on the corresponding value of ``A_ub @ x``.
-    A_eq : 2D array, optional
-        The equality constraint matrix. Each row of ``A_eq`` specifies the
-        coefficients of a linear equality constraint on ``x``.
-    b_eq : 1D array, optional
-        The equality constraint vector. Each element of ``A_eq @ x`` must equal
-        the corresponding element of ``b_eq``.
-    bounds : sequence, optional
-        A sequence of ``(min, max)`` pairs for each element in ``x``, defining
-        the minimum and maximum values of that decision variable. Use ``None``
-        to indicate that there is no bound. By default, bounds are
-        ``(0, None)`` (all decision variables are non-negative).
-        If a single tuple ``(min, max)`` is provided, then ``min`` and
-        ``max`` will serve as bounds for all decision variables.
+    lp :  _LPProblem
+        A ``scipy.optimize._linprog_util._LPProblem`` ``namedtuple``.
     solver : "ipm" or "simplex"
-       Which HiGHS solver to use.
+        Which HiGHS solver to use.
 
     Options
     -------
+    maxiter : int
+        The maximum number of iterations to perform in either phase.
+    disp : bool
+        Set to ``True`` if indicators of optimization status are to be printed
+        to the console each iteration; default ``False``.
     time_limit : float
-       The maximum time alotted to solve the problem; default 1s.
+        The maximum time allotted to solve the problem; default 1s.
     presolve : bool
         Set to ``False`` if presolve is to be disabled; default ``True``.
     parallel : bool
         Set to ``True`` to enable parallelization; default ``False``.
+    autoscale : bool
+        Set to ``True`` to automatically perform equilibration.
+        Consider using this option if the numerical values in the
+        constraints are separated by several orders of magnitude.
+        Default: ``False``.
     unknown_options : dict
         Optional arguments not used by this particular solver. If
         `unknown_options` is non-empty, a warning is issued listing all
@@ -196,11 +188,15 @@ def _linprog_highs(lp, solver, time_limit=1, presolve=False, parallel=False,
         'solver': solver,
         'parallel': parallel,
         'time_limit': time_limit,
-        'message_level': disp * 1, # 0 is none, 1 is some
+        'message_level': disp * 1, # 0 is none, 1 is some. Simplex only?
         'write_solution_to_file': False,
         'solution_file': 'test.sol',
         'write_solution_pretty': True,
     }
+
+    # this doesn't seem to work, and I don't see an equivalent for IPM
+    if maxiter is not None and solver == 'simplex':
+        options['simplex_iteration_limit'] = maxiter
 
     rhs = _replace_inf(rhs)
     lhs = _replace_inf(lhs)
@@ -215,13 +211,13 @@ def _linprog_highs(lp, solver, time_limit=1, presolve=False, parallel=False,
     print("ub=", ub, ", type= ", type(ub), "dtype= ", ub.dtype)
     print("options=", options)
     res = highs_wrapper(c, A, rhs, lhs, lb, ub, options=options)
-
+    x = res['col_value']
     print(res)
 
-    sol = {'x': res['col_value'],
-           'slack': res['col_dual'],
+    sol = {'x': x,
+           'slack': b_ub - A_ub @ x,
            'fun': res['fun'],
-           'con': res['sum_primal_infeasibilities'],
+           'con': b_eq - A_eq @ x,
            'status': statuses[res['model_status']['status']][0],
            'success': res['model_status']['status'] == 9,
            'message': res['model_status']['message'],

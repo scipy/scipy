@@ -698,8 +698,9 @@ class LinprogCommonTests(object):
         res = linprog(c, A_ub, b_ub, A_eq, b_eq, bounds,
                       method=self.method, options=self.options)
         _assert_unbounded(res)
-        assert_equal(res.x[-1], np.inf)
-        assert_equal(res.message[:36], "The problem is (trivially) unbounded")
+        if not self.method.lower().startswith("highs"):
+            assert_equal(res.x[-1], np.inf)
+            assert_equal(res.message[:36], "The problem is (trivially) unbounded")
 
     def test_unbounded_no_nontrivial_constraints_2(self):
         """
@@ -716,8 +717,9 @@ class LinprogCommonTests(object):
         res = linprog(c, A_ub, b_ub, A_eq, b_eq, bounds,
                       method=self.method, options=self.options)
         _assert_unbounded(res)
-        assert_equal(res.x[-1], -np.inf)
-        assert_equal(res.message[:36], "The problem is (trivially) unbounded")
+        if not self.method.lower().startswith("highs"):
+            assert_equal(res.x[-1], -np.inf)
+            assert_equal(res.message[:36], "The problem is (trivially) unbounded")
 
     def test_cyclic_recovery(self):
         # Test linprogs recovery from cycling using the Klee-Minty problem
@@ -1273,7 +1275,8 @@ class LinprogCommonTests(object):
         bounds = [(None, None), (None, None), (None, None), (-1, 1), (-1, 1)]
         res = linprog(c, A_ub, b_ub, A_eq, b_eq, bounds,
                       method=self.method, options=self.options)
-        _assert_success(res, desired_x=[2, -2, 0, -1, 1], desired_fun=-2)
+        # solution vector x is not unique
+        _assert_success(res, desired_fun=-2)
 
     def test_bug_8973_2(self):
         """
