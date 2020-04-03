@@ -18,28 +18,12 @@ from .optimize import _check_unknown_options
 from pyHiGHS import highs_wrapper
 from scipy.sparse import csc_matrix, vstack, issparse
 
-from pyHiGHS.linprog import (
-    HIGHS_CONST_I_INF,  # instead of integer infinity
-    HIGHS_CONST_INF,  # instead of double np.inf
-    HIGHS_CONST_TINY,  # instead of double -np.inf
-    HIGHS_CONST_ZERO,  # instead of tol/eps
-    HIGHS_THREAD_LIMIT,  # for max number of threads (linux only)
-    ML_NONE,  # Verbosity levels
-    ML_VERBOSE,
-    ML_DETAILED,
-    ML_MINIMAL,
-    SOLVER_OPTION_CHOOSE,  # Default solver
-    SOLVER_OPTION_SIMPLEX,  # simplex solver
-    SOLVER_OPTION_IPM,  # interior-point solver
-)
+from pyHiGHS import CONST_INF
 
 def _replace_inf(x):
-    # wrote it this way in case there are several things to swap
-    # but if -np.inf is really to be replaced with -HIGHS_CONST_INF,
-    # I can get rid of the loop.
-    replace_with = {np.inf: HIGHS_CONST_INF, -np.inf: -HIGHS_CONST_INF}
-    for key, val in replace_with.items():
-        x[x == key] = val
+    # Replace `np.inf` with CONST_INF
+    infs = (np.abs(x) == np.inf)
+    x[infs] = np.sign(x[infs])*CONST_INF 
     return x
 
 def _linprog_highs(lp, solver, time_limit=1, presolve=False, parallel=False,
@@ -210,19 +194,20 @@ def _linprog_highs(lp, solver, time_limit=1, presolve=False, parallel=False,
     print("lb=", lb, ", type= ", type(lb), "dtype= ", lb.dtype)
     print("ub=", ub, ", type= ", type(ub), "dtype= ", ub.dtype)
     print("options=", options)
-    res = highs_wrapper(c, A, rhs, lhs, lb, ub, options=options)
-    x = res['col_value']
+    res = highs_wrapper(c, A.indptr, A.indices, A.data, lhs, rhs,
+                        lb, ub, options)
     print(res)
 
-    sol = {'x': x,
-           'slack': b_ub - A_ub @ x,
-           'fun': res['fun'],
-           'con': b_eq - A_eq @ x,
-           'status': statuses[res['model_status']['status']][0],
-           'success': res['model_status']['status'] == 9,
-           'message': res['model_status']['message'],
-           'nit': (res['simplex_nit'] if solver == 'simplex'
-                   else res['ipm_nit']),
+    sol = {'x': res.get('x', None),
+           'slack': res.get('slack', None),
+           'fun': res.get('fun', None),
+           'con': res.get('con', None),
+           'status': statuses[res['status']][0],
+           'success': res['status'] == 9,
+           'message': res['message'],
+           'nit': (res.get('simplex_nit', 0) if solver == 'simplex'
+                   else res.get('ipm_nit', 0))
            }
-
+    if sol['x'] is not None:
+        sol['x'] = np.array(sol['x'])
     return sol
