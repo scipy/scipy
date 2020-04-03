@@ -86,10 +86,8 @@ class SphericalVoronoi:
     --------
     Do some imports and take some points on a cube:
 
-    >>> from matplotlib import colors
-    >>> from mpl_toolkits.mplot3d.art3d import Poly3DCollection
     >>> import matplotlib.pyplot as plt
-    >>> from scipy.spatial import SphericalVoronoi
+    >>> from scipy.spatial import SphericalVoronoi, geometric_slerp
     >>> from mpl_toolkits.mplot3d import proj3d
     >>> # set input data
     >>> points = np.array([[0, 0, 1], [0, 0, -1], [1, 0, 0],
@@ -105,6 +103,7 @@ class SphericalVoronoi:
 
     >>> # sort vertices (optional, helpful for plotting)
     >>> sv.sort_vertices_of_regions()
+    >>> t_vals = np.linspace(0, 1, 2000)
     >>> fig = plt.figure()
     >>> ax = fig.add_subplot(111, projection='3d')
     >>> # plot the unit sphere for reference (optional)
@@ -121,10 +120,21 @@ class SphericalVoronoi:
     ...                    c='g')
     >>> # indicate Voronoi regions (as Euclidean polygons)
     >>> for region in sv.regions:
-    ...    random_color = colors.rgb2hex(np.random.rand(3))
-    ...    polygon = Poly3DCollection([sv.vertices[region]], alpha=1.0)
-    ...    polygon.set_color(random_color)
-    ...    ax.add_collection3d(polygon)
+    ...    n = len(region)
+    ...    for i in range(n):
+    ...        start = sv.vertices[region][i]
+    ...        end = sv.vertices[region][(i + 1) % n]
+    ...        result = geometric_slerp(start, end, t_vals)
+    ...        ax.plot(result[..., 0],
+    ...                result[..., 1],
+    ...                result[..., 2],
+    ...                c='k')
+    >>> ax.azim = 10
+    >>> ax.elev = 40
+    >>> _ = ax.set_xticks([])
+    >>> _ = ax.set_yticks([])
+    >>> _ = ax.set_zticks([])
+    >>> fig.set_size_inches(4, 4)
     >>> plt.show()
 
     """
