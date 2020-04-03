@@ -167,6 +167,18 @@ class TestRankData(object):
             assert_array_equal(r, expected_rank * data,
                                "test failed with n=%d" % n)
 
+    def test_axis(self):
+        data = [[0, 2, 1],
+                [4, 2, 2]]
+        expected0 = [[1., 1.5, 1.],
+                     [2., 1.5, 2.]]
+        r0 = rankdata(data, axis=0)
+        assert_array_equal(r0, expected0)
+        expected1 = [[1., 3., 2.],
+                     [3., 1.5, 1.5]]
+        r1 = rankdata(data, axis=1)
+        assert_array_equal(r1, expected1)
+
 
 _cases = (
     # values, method, expected

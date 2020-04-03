@@ -989,7 +989,7 @@ def _moment(a, moment, axis):
 def variation(a, axis=0, nan_policy='propagate'):
     """
     Compute the coefficient of variation.
-    
+
     The coefficient of variation is the ratio of the biased standard
     deviation to the mean.
 
@@ -1075,13 +1075,13 @@ def skew(a, axis=0, bias=True, nan_policy='propagate'):
     The sample skewness is computed as the Fisher-Pearson coefficient
     of skewness, i.e.
 
-    .. math:: 
+    .. math::
 
         g_1=\frac{m_3}{m_2^{3/2}}
 
     where
 
-    .. math:: 
+    .. math::
 
         m_i=\frac{1}{N}\sum_{n=1}^N(x[n]-\bar{x})^i
 
@@ -1090,7 +1090,7 @@ def skew(a, axis=0, bias=True, nan_policy='propagate'):
     corrected for bias and the value computed is the adjusted
     Fisher-Pearson standardized moment coefficient, i.e.
 
-    .. math:: 
+    .. math::
 
         G_1=\frac{k_3}{k_2^{3/2}}=
             \frac{\sqrt{N(N-1)}}{N-2}\frac{m_3}{m_2^{3/2}}.
@@ -1926,7 +1926,7 @@ HistogramResult = namedtuple('HistogramResult',
 def _histogram(a, numbins=10, defaultlimits=None, weights=None, printextras=False):
     """
     Create a histogram.
-    
+
     Separate the range into several bins and return the number of instances
     in each bin.
 
@@ -2218,7 +2218,7 @@ def obrientransform(*args):
 
     If we require that ``p < 0.05`` for significance, we cannot conclude
     that the variances are different.
-    
+
     """
     TINY = np.sqrt(np.finfo(float).eps)
 
@@ -2255,7 +2255,7 @@ def obrientransform(*args):
 def sem(a, axis=0, ddof=1, nan_policy='propagate'):
     """
     Compute standard error of the mean.
-    
+
     Calculate the standard error of the mean (or standard error of
     measurement) of the values in the input array.
 
@@ -2374,7 +2374,7 @@ def zscore(a, axis=0, ddof=0, nan_policy='propagate'):
            [ 0.26796377, -1.12598418,  1.23283094, -0.37481053],
            [-0.22095197,  0.24468594,  1.19042819, -1.21416216],
            [-0.82780366,  1.4457416 , -0.43867764, -0.1792603 ]])
-    
+
     """
     a = np.asanyarray(a)
 
@@ -2431,7 +2431,7 @@ def zmap(scores, compare, axis=0, ddof=0):
     >>> b = [0, 1, 2, 3, 4]
     >>> zmap(a, b)
     array([-1.06066017,  0.        ,  0.35355339,  0.70710678])
-    
+
     """
     scores, compare = map(np.asanyarray, [scores, compare])
     mns = compare.mean(axis=axis, keepdims=True)
@@ -2533,7 +2533,7 @@ def gstd(a, axis=0, ddof=1):
       mask=[[False, False, False],
             [False,  True,  True]],
       fill_value=999999)
-    
+
     """
     a = np.asanyarray(a)
     log = ma.log if isinstance(a, ma.MaskedArray) else np.log
@@ -2676,7 +2676,7 @@ def iqr(x, axis=None, rng=(25, 75), scale='raw', nan_policy='propagate',
     .. [1] "Interquartile range" https://en.wikipedia.org/wiki/Interquartile_range
     .. [2] "Robust measures of scale" https://en.wikipedia.org/wiki/Robust_measures_of_scale
     .. [3] "Quantile" https://en.wikipedia.org/wiki/Quantile
-    
+
     Examples
     --------
     >>> from scipy.stats import iqr
@@ -3153,7 +3153,7 @@ def f_oneway(*args):
     pvalue : float
         The associated p-value from the F-distribution.
 
-    Warns 
+    Warns
     -------
     F_onewayConstantInputWarning
         Raised if each of the input arrays is constant array.
@@ -3175,7 +3175,7 @@ def f_oneway(*args):
     with some loss of power.
 
     If each group is made of constant values, and
-    
+
     - There exist at least two groups with different values
          the function returns (``np.inf``, 0)
     - All values in all groups are the same, function returns (``np.nan``, ``np.nan``)
@@ -5851,7 +5851,7 @@ def _compute_prob_inside_method(m, n, g, h):
     Hodges, J.L. Jr.,
     "The Significance Probability of the Smirnov Two-Sample Test,"
     Arkiv fiur Matematik, 3, No. 43 (1958), 469-86.
-    
+
     """
     # Probability is symmetrical in m, n.  Computation below uses m >= n.
     if m < n:
@@ -7101,7 +7101,7 @@ def _cdf_distance(p, u_values, v_values, u_weights=None, v_weights=None):
     .. [1] Bellemare, Danihelka, Dabney, Mohamed, Lakshminarayanan, Hoyer,
            Munos "The Cramer Distance as a Solution to Biased Wasserstein
            Gradients" (2017). :arXiv:`1705.10743`.
-    
+
     """
     u_values, u_weights = _validate_distribution(u_values, u_weights)
     v_values, v_weights = _validate_distribution(v_values, v_weights)
@@ -7164,7 +7164,7 @@ def _validate_distribution(values, weights):
         Values as ndarray.
     weights : ndarray
         Weights as ndarray.
-    
+
     """
     # Validate the value array.
     values = np.asarray(values, dtype=float)
@@ -7253,7 +7253,7 @@ def _sum_of_squares(a, axis=0):
     --------
     _square_of_sums : The square(s) of the sum(s) (the opposite of
     `_sum_of_squares`).
-    
+
     """
     a, axis = _chk_asarray(a, axis)
     return np.sum(a*a, axis)
@@ -7279,7 +7279,7 @@ def _square_of_sums(a, axis=0):
     See Also
     --------
     _sum_of_squares : The sum of squares (the opposite of `square_of_sums`).
-    
+
     """
     a, axis = _chk_asarray(a, axis)
     s = np.sum(a, axis)
@@ -7289,9 +7289,13 @@ def _square_of_sums(a, axis=0):
         return float(s) * s
 
 
-def rankdata(a, method='average'):
+def rankdata(a, method='average', axis=None):
     """
     Assign ranks to data, dealing with ties appropriately.
+
+    By default (``axis=None``), the data array is first flattened, and a flat
+    array of ranks is returned. Separately reshape the rank array to the
+    shape of the data array if desired (see Examples).
 
     Ranks begin at 1.  The `method` argument controls how ranks are assigned
     to equal values.  See [1]_ for further discussion of ranking methods.
@@ -7299,7 +7303,7 @@ def rankdata(a, method='average'):
     Parameters
     ----------
     a : array_like
-        The array of values to be ranked.  The array is first flattened.
+        The array of values to be ranked.
     method : {'average', 'min', 'max', 'dense', 'ordinal'}, optional
         The method used to assign ranks to tied elements.
         The following methods are available (default is 'average'):
@@ -7316,11 +7320,14 @@ def rankdata(a, method='average'):
             elements.
           * 'ordinal': All values are given a distinct rank, corresponding to
             the order that the values occur in `a`.
+    axis : {None, int}, optional
+        Axis along which to perform the ranking. If ``None``, the data array
+        is first flattened.
 
     Returns
     -------
     ranks : ndarray
-         An array of length equal to the size of `a`, containing rank
+         An array of size equal to the size of `a`, containing rank
          scores.
 
     References
@@ -7340,10 +7347,18 @@ def rankdata(a, method='average'):
     array([ 1,  2,  3,  2])
     >>> rankdata([0, 2, 3, 2], method='ordinal')
     array([ 1,  2,  4,  3])
-    
+    >>> rankdata([[0, 2], [3, 2]]).reshape(2,2)
+    array([[1. , 2.5],
+          [4. , 2.5]])
+    >>> rankdata([[0, 2], [3, 2]], axis = 1)
+    array([[1., 2.],
+          [2., 1.]])
     """
     if method not in ('average', 'min', 'max', 'dense', 'ordinal'):
         raise ValueError('unknown method "{0}"'.format(method))
+
+    if axis is not None:
+        return np.apply_along_axis(rankdata, axis, a, method)
 
     arr = np.ravel(np.asarray(a))
     algo = 'mergesort' if method == 'ordinal' else 'quicksort'
