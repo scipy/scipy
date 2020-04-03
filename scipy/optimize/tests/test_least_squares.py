@@ -3,8 +3,7 @@ from itertools import product
 import numpy as np
 from numpy.linalg import norm
 from numpy.testing import (assert_, assert_allclose,
-                           assert_equal, suppress_warnings,
-                           assert_approx_equal)
+                           assert_equal, suppress_warnings)
 from pytest import raises as assert_raises
 from scipy.sparse import issparse, lil_matrix
 from scipy.sparse.linalg import aslinearoperator
@@ -73,21 +72,6 @@ def fun_bvp(x):
     u[1:-1, 1:-1] = x
     y = u[:-2, 1:-1] + u[2:, 1:-1] + u[1:-1, :-2] + u[1:-1, 2:] - 4 * x + x**3
     return y.ravel()
-
-
-buffer = np.empty(2)
-
-
-def fun_buffer_shared_rosenbrock(x):
-    buffer[:] = np.array([10 * (x[1] - x[0] ** 2), (1 - x[0])])
-    return buffer
-
-
-def test_buffer_shared():
-    x0_rosenbrock = np.array([2, 2])
-    res = least_squares(fun_buffer_shared_rosenbrock, x0_rosenbrock)
-    assert_approx_equal(res.x[0], 1.0)
-    assert_approx_equal(res.x[1], 1.0)
 
 
 class BroydenTridiagonal(object):
