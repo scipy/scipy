@@ -4,7 +4,7 @@
 #          SciPy Developers 2004-2011
 #
 import warnings
-import collections
+from collections.abc import Iterable
 import ctypes
 
 import numpy as np
@@ -150,7 +150,8 @@ class kstwo_gen(rv_continuous):
 
     """
     def _get_support(self, n):
-        return 0.5/(n if not isinstance(n, collections.Iterable) else np.asanyarray(n)), 1.0
+        return (0.5/(n if not isinstance(n, Iterable) else np.asanyarray(n)),
+                1.0)
 
     def _pdf(self, x, n):
         return kolmognp(n, x)
@@ -8394,29 +8395,31 @@ class argus_gen(rv_continuous):
     def _sf(self, x, chi):
         return _argus_phi(chi * np.sqrt(1 - x**2)) / _argus_phi(chi)
 
-    def _rvs(self, chi):
+    def _rvs(self, chi, size=1, random_state=None):
         chi = np.asarray(chi)
         if chi.size == 1:
-            out = self._rvs_scalar(chi, self._size)
+            out = self._rvs_scalar(chi, numsamples=size,
+                                   random_state=random_state)
         else:
-            shp, bc = _check_shape(chi.shape, self._size)
+            shp, bc = _check_shape(chi.shape, size)
             numsamples = int(np.prod(shp))
-            out = np.empty(self._size)
+            out = np.empty(size)
             it = np.nditer([chi],
                            flags=['multi_index'],
                            op_flags=[['readonly']])
             while not it.finished:
                 idx = tuple((it.multi_index[j] if not bc[j] else slice(None))
-                            for j in range(-len(self._size), 0))
-                r = self._rvs_scalar(it[0], numsamples)
+                            for j in range(-len(size), 0))
+                r = self._rvs_scalar(it[0], numsamples=numsamples,
+                                     random_state=random_state)
                 out[idx] = r.reshape(shp)
                 it.iternext()
 
-        if self._size == ():
+        if size == ():
             out = out[()]
         return out
 
-    def _rvs_scalar(self, chi, numsamples=None):
+    def _rvs_scalar(self, chi, numsamples=None, size=1, random_state=None):
         # if chi <= 2.611:
         # use rejection method, see Devroye:
         # Non-Uniform Random Variate Generation, 1986, section II.3.2.
@@ -8463,8 +8466,8 @@ class argus_gen(rv_continuous):
             simulated = 0
             while simulated < N:
                 k = N - simulated
-                u = self._random_state.uniform(size=k)
-                v = self._random_state.uniform(size=k)
+                u = random_state.uniform(size=k)
+                v = random_state.uniform(size=k)
                 # acceptance condition: u <= h(G_inv(v)). This simplifies to
                 z = 2 * np.log(echi * (1 - v) + v) / chi**2
                 accept = (u**2 + z <= 0)
@@ -8475,7 +8478,7 @@ class argus_gen(rv_continuous):
                     x[simulated:(simulated + num_accept)] = rvs
                     simulated += num_accept
 
-            if self._size == ():
+            if size == ():
                 # return scalar if rvs() is called without size specified
                 return x[0]
             return np.reshape(x, size1d)
@@ -8488,7 +8491,7 @@ class argus_gen(rv_continuous):
             umax = np.sqrt(2) / np.exp(0.5)
             vmax = 4 / np.exp(1)
             z = rvs_ratio_uniforms(f, umax, 0, vmax, size=numsamples,
-                                   random_state=self._random_state)
+                                   random_state=random_state)
             return np.sqrt(1 - z*z / chi**2)
 
     def _stats(self, chi):
