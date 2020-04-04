@@ -340,7 +340,9 @@ def test_kde_output_dtype(point_type, dataset_type, weights_type, bw_type):
     k = stats.kde.gaussian_kde(dataset, bw_method=bw, weights=weights)
     points = np.arange(5, dtype=point_type)
     result = k(points)
-    assert result.dtype == np.result_type(dataset, points, weights, k.factor)
+    # weights are always cast to float64
+    assert result.dtype == np.result_type(dataset, points, np.float64(weights),
+                                          k.factor)
 
 
 def test_pdf_logpdf():
