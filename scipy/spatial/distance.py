@@ -1096,8 +1096,7 @@ def chebyshev(u, v, w=None):
     v : (N,) array_like
         Input vector.
     w : (N,) array_like, optional
-        The weights for each value in `u` and `v`. Default is None,
-        which gives each value a weight of 1.0
+        Unused, as 'max' is a weightless operation. Here for API consistency.
 
     Returns
     -------
