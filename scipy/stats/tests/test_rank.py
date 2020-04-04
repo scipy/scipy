@@ -1,5 +1,6 @@
 import numpy as np
 from numpy.testing import assert_equal, assert_array_equal
+import pytest
 
 from scipy.stats import rankdata, tiecorrect
 
@@ -166,6 +167,18 @@ class TestRankData(object):
             expected_rank = 0.5 * (n + 1)
             assert_array_equal(r, expected_rank * data,
                                "test failed with n=%d" % n)
+
+    def test_nan_included_data(self):
+        assert_equal(rankdata([0, 2, 3, 2, np.nan, np.nan],
+                              nan_policy="propagate"), np.nan)
+
+        with pytest.raises(ValueError) as exc_info:
+            rankdata([0, 2, 3, 2, np.nan, np.nan], nan_policy="raise")
+        assert "The input contains nan values" in str(exc_info.value)
+
+        assert_array_equal(rankdata([0, 2, 3, 2, np.nan, np.nan],
+                                    nan_policy="omit"),
+                           [1.0, 2.5, 4.0, 2.5, np.nan, np.nan])
 
 
 _cases = (

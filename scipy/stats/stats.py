@@ -3791,7 +3791,8 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate'):
                 # only for those variables
                 variable_has_nan = np.isnan(a).sum(axis=axisout)
 
-    a_ranked = np.apply_along_axis(rankdata, axisout, a)
+    a_ranked = np.apply_along_axis(rankdata, axisout, a, nan_policy='omit')
+    a_ranked = np.apply_along_axis(ma.fix_invalid, axisout, a_ranked)
     rs = np.corrcoef(a_ranked, rowvar=axisout)
     dof = n_obs - 2  # degrees of freedom
 
@@ -7289,7 +7290,7 @@ def _square_of_sums(a, axis=0):
         return float(s) * s
 
 
-def rankdata(a, method='average'):
+def rankdata(a, method='average', nan_policy='propagate'):
     """
     Assign ranks to data, dealing with ties appropriately.
 
@@ -7316,6 +7317,13 @@ def rankdata(a, method='average'):
             elements.
           * 'ordinal': All values are given a distinct rank, corresponding to
             the order that the values occur in `a`.
+    nan_policy : {'propagate', 'raise', 'omit'}, optional
+        Defines how to handle when input contains nan.
+        The following options are available (default is 'propagate'):
+
+          * 'propagate': returns nan
+          * 'raise': throws an error
+          * 'omit': performs the calculations ignoring nan values
 
     Returns
     -------
@@ -7346,6 +7354,19 @@ def rankdata(a, method='average'):
         raise ValueError('unknown method "{0}"'.format(method))
 
     arr = np.ravel(np.asarray(a))
+    contains_nan, nan_policy = _contains_nan(arr, nan_policy)
+    nan_indexes = None
+    if contains_nan and nan_policy == 'propagate':
+        return np.nan
+    elif contains_nan and nan_policy == 'omit':
+        nan_indexes = np.argwhere(np.isnan(arr)).flatten().tolist()
+        arr = ma.fix_invalid(arr)
+
+    def fill_nan(rank, nan_indexes):
+        rank = rank.astype('float64')
+        rank[nan_indexes] = np.nan
+        return rank
+
     algo = 'mergesort' if method == 'ordinal' else 'quicksort'
     sorter = np.argsort(arr, kind=algo)
 
@@ -7353,23 +7374,28 @@ def rankdata(a, method='average'):
     inv[sorter] = np.arange(sorter.size, dtype=np.intp)
 
     if method == 'ordinal':
-        return inv + 1
+        rank = inv + 1
+        return fill_nan(rank, nan_indexes) if nan_indexes else rank
 
     arr = arr[sorter]
     obs = np.r_[True, arr[1:] != arr[:-1]]
     dense = obs.cumsum()[inv]
 
     if method == 'dense':
-        return dense
+        rank = dense
+        return fill_nan(rank, nan_indexes) if nan_indexes else rank
 
     # cumulative counts of each unique value
     count = np.r_[np.nonzero(obs)[0], len(obs)]
 
     if method == 'max':
-        return count[dense]
+        rank = count[dense]
+        return fill_nan(rank, nan_indexes) if nan_indexes else rank
 
     if method == 'min':
-        return count[dense - 1] + 1
+        rank = count[dense - 1] + 1
+        return fill_nan(rank, nan_indexes) if nan_indexes else rank
 
     # average method
-    return .5 * (count[dense] + count[dense - 1] + 1)
+    rank = .5 * (count[dense] + count[dense - 1] + 1)
+    return fill_nan(rank, nan_indexes) if nan_indexes else rank
