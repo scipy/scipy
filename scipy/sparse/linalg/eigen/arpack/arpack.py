@@ -45,7 +45,7 @@ import numpy as np
 import warnings
 from scipy.sparse.linalg.interface import aslinearoperator, LinearOperator
 from scipy.sparse import eye, issparse, isspmatrix, isspmatrix_csr
-from scipy.linalg import eig, eigh, lu_factor, lu_solve
+from scipy.linalg import eig, eigh, lu_factor, lu_solve, svd
 from scipy.sparse.sputils import isdense, is_pydata_spmatrix
 from scipy.sparse.linalg import gmres, splu
 from scipy.sparse.linalg.eigen.lobpcg import lobpcg
@@ -1834,9 +1834,11 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
         if n > m:
             X_dot = X_matmat = A.dot
             XH_dot = XH_mat = _herm(A).dot
+            transpose = False
         else:
             XH_dot = XH_mat = A.dot
             X_dot = X_matmat = _herm(A).dot
+            transpose = True
 
     def matvec_XH_X(x):
         return XH_dot(X_dot(x))
@@ -1857,52 +1859,22 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
         else:
             X = np.random.RandomState(52).randn(min(A.shape), k)
 
-        eigvals, eigvec = lobpcg(XH_X, X, tol=tol ** 2, maxiter=maxiter,
+        eigvals, eigvec = lobpcg(XH_X, X, tol=tol, maxiter=maxiter,
                                  largest=largest)
 
     elif solver == 'arpack' or solver is None:
-        eigvals, eigvec = eigsh(XH_X, k=k, tol=tol ** 2, maxiter=maxiter,
+        eigvals, eigvec = eigsh(XH_X, k=k, tol=tol, maxiter=maxiter,
                                 ncv=ncv, which=which, v0=v0)
 
     else:
         raise ValueError("solver must be either 'arpack', or 'lobpcg'.")
 
-    # Gramian matrices have real non-negative eigenvalues.
-    eigvals = np.maximum(eigvals.real, 0)
+    # compute the right singular vectors of X and update the left ones accordingly
+    u = X_dot(eigvec)
+    u, s, vh = svd(u, full_matrices=False)
+    vh = np.dot(vh, _herm(eigvec))
+    if not transpose:
+        return u[:, ::-1], s[::-1], vh[::-1]
+    else: # swap u and v
+        return _herm(vh[::-1]), s[::-1], _herm(u[:, ::-1])
 
-    # Use the sophisticated detection of small eigenvalues from pinvh.
-    t = eigvec.dtype.char.lower()
-    factor = {'f': 1E3, 'd': 1E6}
-    cond = factor[t] * np.finfo(t).eps
-    cutoff = cond * np.max(eigvals)
-
-    # Get a mask indicating which eigenpairs are not degenerately tiny,
-    # and create the re-ordered array of thresholded singular values.
-    above_cutoff = (eigvals > cutoff)
-    nlarge = above_cutoff.sum()
-    nsmall = k - nlarge
-    slarge = np.sqrt(eigvals[above_cutoff])
-    s = np.zeros_like(eigvals)
-    s[:nlarge] = slarge
-    if not return_singular_vectors:
-        return np.sort(s)
-
-    if n > m:
-        vlarge = eigvec[:, above_cutoff]
-        ularge = X_matmat(vlarge) / slarge if return_singular_vectors != 'vh' else None
-        vhlarge = _herm(vlarge)
-    else:
-        ularge = eigvec[:, above_cutoff]
-        vhlarge = _herm(X_matmat(ularge) / slarge) if return_singular_vectors != 'u' else None
-
-    u = _augmented_orthonormal_cols(ularge, nsmall) if ularge is not None else None
-    vh = _augmented_orthonormal_rows(vhlarge, nsmall) if vhlarge is not None else None
-
-    indexes_sorted = np.argsort(s)
-    s = s[indexes_sorted]
-    if u is not None:
-        u = u[:, indexes_sorted]
-    if vh is not None:
-        vh = vh[indexes_sorted]
-
-    return u, s, vh
