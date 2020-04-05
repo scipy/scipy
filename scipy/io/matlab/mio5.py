@@ -68,7 +68,8 @@ script I was working with.
 '''
 
 # Small fragments of current code adapted from matfile.py by Heiko
-# Henkelmann
+# Henkelmann; parts of the code for simplify_output=True adapted from
+# http://blog.nephics.com/2019/08/28/better-loadmat-for-scipy/.
 
 import os
 import time
@@ -98,9 +99,53 @@ from .mio5_params import (MatlabObject, MatlabFunction, MDTYPES, NP_TO_MTYPES,
                           NP_TO_MXTYPES, miCOMPRESSED, miMATRIX, miINT8,
                           miUTF8, miUINT32, mxCELL_CLASS, mxSTRUCT_CLASS,
                           mxOBJECT_CLASS, mxCHAR_CLASS, mxSPARSE_CLASS,
-                          mxDOUBLE_CLASS, mclass_info)
+                          mxDOUBLE_CLASS, mclass_info, mat_struct)
 
 from .streams import ZlibInputStream
+
+
+def _has_struct(elem):
+    """Determine if elem is an array and if first array item is a struct."""
+    return (isinstance(elem, np.ndarray) and (elem.size > 0) and
+            isinstance(elem[0], mat_struct))
+
+
+def _tolist(ndarray):
+    """Construct lists from cell arrays (loaded as numpy ndarrays), recursing
+    into items if they contain mat_struct objects."""
+    elem_list = []
+    for sub_elem in ndarray:
+        if isinstance(sub_elem, mat_struct):
+            elem_list.append(_todict(sub_elem))
+        elif _has_struct(sub_elem):
+            elem_list.append(_tolist(sub_elem))
+        else:
+            elem_list.append(sub_elem)
+    return elem_list
+
+
+def _todict(matobj):
+    """Construct nested dicts from mat_struct objects."""
+    d = {}
+    for f in matobj._fieldnames:
+        elem = matobj.__dict__[f]
+        if isinstance(elem, mat_struct):
+            d[f] = _todict(elem)
+        elif _has_struct(elem):
+            d[f] = _tolist(elem)
+        else:
+            d[f] = elem
+    return d
+
+
+def _check_keys(d):
+    """Convert mat objects in dict to nested dicts."""
+    for key in d:
+        if isinstance(d[key], mat_struct):
+            d[key] = _todict(d[key])
+        elif _has_struct(d[key]):
+            d[key] = _tolist(d[key])
+    return d
 
 
 class MatFile5Reader(MatFileReader):
@@ -133,8 +178,8 @@ class MatFile5Reader(MatFileReader):
                  matlab_compatible=False,
                  struct_as_record=True,
                  verify_compressed_data_integrity=True,
-                 uint16_codec=None
-                 ):
+                 uint16_codec=None,
+                 simplify_output=False):
         '''Initializer for matlab 5 file format reader
 
     %(matstream_arg)s
@@ -152,8 +197,8 @@ class MatFile5Reader(MatFileReader):
             chars_as_strings,
             matlab_compatible,
             struct_as_record,
-            verify_compressed_data_integrity
-            )
+            verify_compressed_data_integrity,
+            simplify_output)
         # Set uint16 codec
         if not uint16_codec:
             uint16_codec = sys.getdefaultencoding()
@@ -300,7 +345,10 @@ class MatFile5Reader(MatFileReader):
                 variable_names.remove(name)
                 if len(variable_names) == 0:
                     break
-        return mdict
+        if self.simplify_output:
+            return _check_keys(mdict)
+        else:
+            return mdict
 
     def list_variables(self):
         ''' list variables from stream '''
