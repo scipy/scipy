@@ -1029,6 +1029,16 @@ class TestWilcoxon(object):
         assert_equal(w, 27)
         assert_almost_equal(p, 0.3176447, decimal=6)
 
+    def test_nan_included(self):
+        x1 = [125, 115, 130, 140, 140, 115, 140, 125, 140, 135]
+        x2 = [125, 115, 130, 140, 140, 115, 140, 125, 140, 135, np.nan]
+        x3 = [125, 115, 130, 140, 140, 115, 140, 125, 140, 135, np.nan, np.nan]
+        w1, p1 = stats.wilcoxon(x1)
+        w2, p2 = stats.wilcoxon(x2)
+        w3, p3 = stats.wilcoxon(x3)
+        assert_array_equal(np.array([w1, p1]), np.array([w2, p2]),
+                           np.array([w3, p3]))
+
 
 class TestKstat(object):
     def test_moments_normal_distribution(self):

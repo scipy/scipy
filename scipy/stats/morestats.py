@@ -5,7 +5,7 @@ from collections import namedtuple
 import numpy as np
 from numpy import (isscalar, r_, log, around, unique, asarray,
                    zeros, arange, sort, amin, amax, any, atleast_1d,
-                   sqrt, ceil, floor, array, compress,
+                   sqrt, ceil, floor, array, compress, ma,
                    pi, exp, ravel, count_nonzero, sin, cos, arctan2, hypot)
 
 from scipy import optimize
@@ -2873,6 +2873,7 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
         # Keep all non-zero differences
         d = compress(np.not_equal(d, 0), d, axis=-1)
 
+    d = ma.masked_invalid(d).compressed()  # remove nan
     count = len(d)
     if count < 10:
         warnings.warn("Sample size too small for normal approximation.")
