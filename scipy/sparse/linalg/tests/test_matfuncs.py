@@ -507,13 +507,13 @@ class TestExpM(object):
         # Nilpotent exponential, used to trigger a failure (gh-8029)
 
         for scale in [1.0, 1e-3, 1e-6]:
-            for n in range(120):
+            for n in range(0, 80, 3):
+                sc = scale ** np.arange(n, -1, -1)
+                if np.any(sc < 1e-300):
+                    break
+
                 A = np.diag(np.arange(1, n + 1), -1) * scale
                 B = expm(A)
-
-                sc = scale**np.arange(n, -1, -1)
-                if np.any(sc < 1e-300):
-                    continue
 
                 got = B
                 expected = binom(np.arange(n + 1)[:,None],
