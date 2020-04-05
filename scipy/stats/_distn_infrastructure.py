@@ -15,6 +15,7 @@ from scipy._lib import doccer
 from ._distr_params import distcont, distdiscrete
 from scipy._lib._util import check_random_state
 from scipy._lib._util import _valarray as valarray
+from scipy._lib._util import _lazyselect
 
 from scipy.special import (comb, chndtr, entr, rel_entr, xlogy, ive)
 
@@ -1058,10 +1059,12 @@ class rv_generic(object):
                     mu2p = self._munp(2, *goodargs)
                     if mu is None:
                         mu = self._munp(1, *goodargs)
-                    mu2 = mu2p - mu * mu
-                    if np.isinf(mu):
-                        # if mean is inf then var is also inf
-                        mu2 = np.inf
+                    # if mean is inf then var is also inf
+                    mu2 = _lazyselect(
+                        [np.isfinite(mu)],
+                        [lambda mu: mu2p - mu**2],
+                        [mu],
+                        default=np.inf)
                 out0 = default.copy()
                 place(out0, cond, mu2 * scale * scale)
                 output.append(out0)

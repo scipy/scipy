@@ -6876,7 +6876,11 @@ class trapz_gen(rv_continuous):
     -----
     The trapezoidal distribution can be represented with an up-sloping line
     from ``loc`` to ``(loc + c*scale)``, then constant to ``(loc + d*scale)``
-    and then downsloping from ``(loc + d*scale)`` to ``(loc+scale)``.
+    and then downsloping from ``(loc + d*scale)`` to ``(loc+scale)``.  This
+    defines the trapezoid base from ``loc`` to ``(loc+scale)`` and the flat
+    top from ``c`` to ``d`` proportional to the position along the base
+    with ``0 <= c <= d <= 1``.  When ``c=d``, this is equivalent to `triang`
+    with the same values for ``loc``, ``scale`` and ``c``.
 
     `trapz` takes :math:`c` and :math:`d` as shape parameters.
 
@@ -6920,6 +6924,36 @@ class trapz_gen(rv_continuous):
                       0.5 * q * (1 + d - c) + 0.5 * c,
                       1 - np.sqrt((1 - q) * (d - c + 1) * (1 - d))]
         return np.select(condlist, choicelist)
+
+    def _munp(self, n, c, d):
+        # Using van Dorn parameterization as given on wikipedia, with
+        # a=bottom left, b=top left, c=top right, d=bottom right, then
+        # E[X^(k+2)] = h/(k(k-1)) [(d^k-c^k)/(d-c) - ((b^k - a^k)/(b-a)]
+        # with h = 2/((d+c) - (a+b)).  The corresponding parameterization
+        # in scipy, has a'=loc, b'=loc+c*scale, c'=loc+d*scale, d'=loc+scale,
+        # which for standard form reduces to a'=0, b'=c, c'=d, d'=1.
+        # Simplifying E[X^n] gives the dc' term as (d^(n+2) - 1)/(d - 1) and
+        # the ab' term as c^(n-1). The dc' term has numerical difficulties
+        # near d=1, so replace (1 - c^k)/(1-c) with expm1(k*log(c))/(c-1).
+        # Testing with k=20 for c=(1e-30,1-eps) shows that this is stable.
+        # We still require an explicit test for d=1 to prevent divide by zero,
+        # and now a test for d=0 to prevent log(0).
+        ab_term = c**(n+1)
+        dc_term = _lazyselect(
+            [d == 0.0, (0 < d) & (d < 1), d == 1.0],
+            [lambda d: 1.0,
+             lambda d: np.expm1((n+2)*np.log(d))/(d-1.0),
+             lambda d: n+2],
+            [d])
+        val = 2.0/((1.0+d-c)*(n+1)*(n+2)) * (dc_term - ab_term)
+        #print(f"trapz μ^{n}({c},{d})={val} with dc={dc_term}, ab={ab_term}")
+        return val
+
+    def _entropy(self, c, d):
+        # Using van Dorn parameterization and entropy formula given on
+        # wikipedia gives a'=loc, b'=loc+c*scale, c'=loc+d*scale, d'=loc+scale,
+        # which for loc=0, scale=1 is a'=0, b'=c, c'=d, d'=1
+        return 0.5*(1.0 - d + c)/(1.0 + d - c) + np.log(0.5*(1.0 + d - c))
 
 
 trapz = trapz_gen(a=0.0, b=1.0, name="trapz")

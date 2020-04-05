@@ -3154,6 +3154,22 @@ class TestTrapz(object):
         assert_almost_equal(stats.trapz.cdf(0.9, 0.2, 0.8), 0.96875)
         assert_almost_equal(stats.trapz.cdf(1.0, 0.2, 0.8), 1.0)
 
+        # issue #11795: improve precision of trapz stats
+        # Apply formulas from wikipedia for the following van Dorn parameters:
+        a, b, c, d = -3, -1, 2, 3
+        assert_almost_equal(stats.trapz.mean(1/3, 5/6, -3, 6), 2/9, decimal=13)
+        assert_almost_equal(stats.trapz.var(1/3, 5/6, -3, 6),
+                            2/9 * 105/12 - (2/9)**2, decimal=13)
+        assert_almost_equal(stats.trapz.entropy(1/3, 5/6, -3, 6),
+                            (d - c + b - a)/(2*(d + c - b - a))
+                            + np.log((d + c - b -a)/2),
+                            decimal=13)
+
+        # Check corner cases where scipy d=0 or d=1.
+        assert_almost_equal(stats.trapz.mean(0, 0, -3, 6), -1, decimal=13)
+        assert_almost_equal(stats.trapz.mean(0, 1, -3, 6), 0, decimal=13)
+        assert_almost_equal(stats.trapz.var(0, 1, -3, 6), 3, decimal=13)
+
     def test_trapz_vect(self):
         # test that array-valued shapes and arguments are handled
         c = np.array([0.1, 0.2, 0.3])
@@ -3169,6 +3185,16 @@ class TestTrapz(object):
             res[i] = stats.trapz.pdf(x1, c1, d1)
 
         assert_allclose(v, res.reshape(v.shape), atol=1e-15)
+
+        # Check that the stats() method supports vector arguments.
+        v = np.asarray(stats.trapz.stats(c, d, moments="mvsk"))
+        cc, dd = np.broadcast_arrays(c, d)
+        res = np.empty((cc.size, 4))  # 4 stats returned per value
+        ind = np.arange(cc.size)
+        for i, c1, d1 in zip(ind, cc.ravel(), dd.ravel()):
+            res[i] = stats.trapz.stats(c1, d1, moments="mvsk")
+
+        assert_allclose(v, res.T.reshape(v.shape), atol=1e-15)
 
 
 class TestTriang(object):
