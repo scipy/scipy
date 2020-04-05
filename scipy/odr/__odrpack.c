@@ -152,7 +152,7 @@ void fcn_callback(int *n, int *m, int *np, int *nq, int *ldn, int *ldm,
       if ((result_array =
            (PyArrayObject *) PyArray_ContiguousFromObject(result,
                                                           NPY_DOUBLE, 0,
-                                                          2)) == NULL)
+                                                          3)) == NULL)
         {
           PYERR2(odr_error,
                  "Result from function call is not a proper array of floats.");
@@ -211,7 +211,7 @@ void fcn_callback(int *n, int *m, int *np, int *nq, int *ldn, int *ldm,
       if ((result_array =
            (PyArrayObject *) PyArray_ContiguousFromObject(result,
                                                           NPY_DOUBLE, 0,
-                                                          2)) == NULL)
+                                                          3)) == NULL)
         {
           PYERR2(odr_error,
                  "Result from function call is not a proper array of floats.");
