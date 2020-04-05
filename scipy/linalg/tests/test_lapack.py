@@ -1920,7 +1920,7 @@ def test_gejsv_with_rank_deficient_matrix(dtype):
     sva[k:] = 0
     SIGMA = np.diag(work[0] / work[1] * sva[:n])
     A_rank_k = u @ SIGMA @ v.T
-    sva, u, v, work, iwork, info = gejsv(A_rank_k)
+    sva, u, v, work, iwork, info = gejsv(A_rank_k, joba='R')
     assert_equal(iwork[0], k)
     assert_equal(iwork[1], k)
 
