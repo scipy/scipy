@@ -128,7 +128,7 @@ def loadmat(file_name, mdict=None, appendmat=True, **kwargs):
         MATLAB variables to read from the file. The reader will skip any
         variable with a name not in this sequence, possibly saving some read
         processing.
-    simplify_output : False, optional
+    simplify_cells : False, optional
         If True, return a simplified dict structure (which is useful if the mat
         file contains cell arrays). Note that this only affects the structure
         of the result and not its contents (which is identical for both output

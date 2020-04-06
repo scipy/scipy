@@ -68,7 +68,7 @@ script I was working with.
 '''
 
 # Small fragments of current code adapted from matfile.py by Heiko
-# Henkelmann; parts of the code for simplify_output=True adapted from
+# Henkelmann; parts of the code for simplify_cells=True adapted from
 # http://blog.nephics.com/2019/08/28/better-loadmat-for-scipy/.
 
 import os
@@ -179,7 +179,7 @@ class MatFile5Reader(MatFileReader):
                  struct_as_record=True,
                  verify_compressed_data_integrity=True,
                  uint16_codec=None,
-                 simplify_output=False):
+                 simplify_cells=False):
         '''Initializer for matlab 5 file format reader
 
     %(matstream_arg)s
@@ -198,7 +198,7 @@ class MatFile5Reader(MatFileReader):
             matlab_compatible,
             struct_as_record,
             verify_compressed_data_integrity,
-            simplify_output)
+            simplify_cells)
         # Set uint16 codec
         if not uint16_codec:
             uint16_codec = sys.getdefaultencoding()
@@ -345,7 +345,7 @@ class MatFile5Reader(MatFileReader):
                 variable_names.remove(name)
                 if len(variable_names) == 0:
                     break
-        if self.simplify_output:
+        if self.simplify_cells:
             return _check_keys(mdict)
         else:
             return mdict
