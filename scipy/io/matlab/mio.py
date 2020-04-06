@@ -132,7 +132,8 @@ def loadmat(file_name, mdict=None, appendmat=True, **kwargs):
         If True, return a simplified dict structure (which is useful if the mat
         file contains cell arrays). Note that this only affects the structure
         of the result and not its contents (which is identical for both output
-        structures).
+        structures). If True, this automatically sets `struct_as_record` to
+        False and `squeeze_me` to True, which is required to simplify cells.
 
     Returns
     -------

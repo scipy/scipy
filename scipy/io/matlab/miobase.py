@@ -368,14 +368,8 @@ class MatFileReader(object):
         self.verify_compressed_data_integrity = verify_compressed_data_integrity
         self.simplify_cells = simplify_cells
         if simplify_cells:
-            if not squeeze_me:
-                warnings.warn("Setting simplify_cells=True requires setting "
-                              "squeeze_me=True.")
-                self.squeeze_me = True
-            if struct_as_record:
-                warnings.warn("Setting simplify_cells=True requires setting "
-                              "struct_as_record=False.")
-                self.struct_as_record = False
+            self.squeeze_me = True
+            self.struct_as_record = False
 
     def set_matlab_compatible(self):
         ''' Sets options to return arrays as MATLAB loads them '''
