@@ -541,9 +541,10 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     # Solve trivial problem, eliminate variables, tighten bounds, etc.
     if solver_options.pop('presolve', True):
         rr = solver_options.pop('rr', True)
-        (lp, revstack, complete, status, message) = _presolve(lp, rr, tol)
+        (lp, revstack, complete, status, message, presolve_effect) = _presolve(lp, rr, tol)
     else:
         message = None
+        presolve_effect = None
 
     # print("After presolve():")
     # print("_linprog(): lp.c=", lp.c)
@@ -621,6 +622,7 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         'status': status,
         'message': message,
         'nit': iteration,
-        'success': status == 0}
+        'success': status == 0,
+        'presolve': presolve_effect}
     
     return OptimizeResult(sol)

@@ -600,10 +600,11 @@ def _presolve(lp, rr, tol=1e-9):
 
     p_red = {'vars': len(lp.c), 'eqs': lp.A_eq.shape[0], 'ineqs': lp.A_ub.shape[0]}
 
-    print("Presolve: vars removed: {:d}/{:d}, equations removed: {:d}/{:d}, inequalities removed: {:d}/{:d}"
-          .format(p_org["vars"] - p_red["vars"], p_org["vars"],
-                  p_org["eqs"] - p_red["eqs"], p_org["eqs"],
-                  p_org["ineqs"] - p_red["ineqs"], p_org["ineqs"]))
+    # Output: [nvars eliminated neqs eliminated redundant nineqs eliminated]
+    presolve_effect = [p_org["vars"], p_org["vars"] - p_red["vars"],
+                       p_org["eqs"], p_org["eqs"] - p_red["eqs"], 
+                       0, p_org["ineqs"],
+                       p_org["ineqs"] - p_red["ineqs"]]
 
     # Return the reduced problem with status numeral
     # 0 : Optimization terminated successfully
@@ -619,7 +620,8 @@ def _presolve(lp, rr, tol=1e-9):
     complete = _presolve_complete(p_stat)
     message = ""
     if complete:
-        return (lp, revstack, complete, status, message)
+        # __print_presolve_effect(p_org, p_red, p_red["eqs"] - A_eq.shape[0])
+        return (lp, revstack, complete, status, message, presolve_effect)
 
     # If not complete: remove redundant (linearly dependent) rows from
     # equality constraints.
@@ -636,10 +638,9 @@ def _presolve(lp, rr, tol=1e-9):
                 warn(redundancy_warning, OptimizeWarning, stacklevel=1)
             if status != 0:
                 complete = True
-            print("Presolve redundancy check (sparse): equations removed: {:d}, remain {:d}"
-                  .format(p_red["eqs"] - A_eq.shape[0], A_eq.shape[0]))
+        presolve_effect[4] = p_red["eqs"] - A_eq.shape[0]
         return (lp._replace(A_eq=A_eq, b_eq=b_eq),
-                revstack, complete, status, message)
+                revstack, complete, status, message, presolve_effect)
 
     # This is a wild guess for which redundancy removal algorithm will be
     # faster. More testing would be good.
@@ -666,11 +667,21 @@ def _presolve(lp, rr, tol=1e-9):
             status = 4
         if status != 0:
             complete = True
-    if rr:
-        print("Presolve redundancy check (dense): equations removed: {:d}, remain {:d}"
-              .format(p_red["eqs"] - A_eq.shape[0], A_eq.shape[0]))
+    # __print_presolve_effect(p_org, p_red, p_red["eqs"] - A_eq.shape[0])
+    presolve_effect[4] = p_red["eqs"] - A_eq.shape[0]
     return (lp._replace(A_eq=A_eq, b_eq=b_eq),
-            revstack, complete, status, message)
+            revstack, complete, status, message, presolve_effect)
+
+
+def __print_presolve_effect(p_org, p_red, redundant):
+    """
+    Print effect of _presolve() reduction
+    """
+    print("Presolve: vars removed: {:d}/{:d}, eqs removed: {:d}+{:d}/{:d}, "
+          "ineqs removed: {:d}/{:d}"
+          .format(p_org["vars"] - p_red["vars"], p_org["vars"],
+                  p_org["eqs"] - p_red["eqs"], redundant, p_org["eqs"],
+                  p_org["ineqs"] - p_red["ineqs"], p_org["ineqs"]))
 
 
 def _presolve_complete(p_stat):
@@ -713,14 +724,17 @@ def _presolve_check_feasibility(lp, p_stat, tol):
     """
     # Check bounds
     p_stat['feasible'] = _presolve_infeasible_bounds(lp, tol)
+    # print("_presolve_infeasible_bounds(): ", p_stat['feasible'])
 
     # Check constraints implied by equalities
     if not _presolve_complete(p_stat):
         p_stat['feasible'] = _presolve_infeasible_equality_constraints(lp, tol)
+        # print("_presolve_infeasible_equality_constraints(): ", p_stat['feasible'])
 
     # Check constraints implied by inequalities
     if not _presolve_complete(p_stat):
         p_stat['feasible'] = _presolve_infeasible_inequality_constraints(lp, tol)
+        # print("_presolve_infeasible_equality_constraints(): ", p_stat['feasible'])
 
     # Return status
     return p_stat
@@ -871,7 +885,13 @@ def _presolve_infeasible_equality_constraints(lp, tol):
         l_eq = np.sum(lp.A_eq * H, 1)
 
     # Check whether b_eq is within this range
-    return np.all(l_eq - tol <= lp.b_eq) and np.all(lp.b_eq <= u_eq + tol)
+    check = np.all(l_eq - tol <= lp.b_eq) and np.all(lp.b_eq <= u_eq + tol)
+    # if not check:
+    #     print("l_eq=", l_eq)
+    #     print("b_eq=", lp.b_eq)
+    #     print("u_eq=", u_eq)
+    #     print("pass=", np.logical_and(l_eq - tol <= lp.b_eq, lp.b_eq <= u_eq + tol))
+    return check
 
 
 def _presolve_infeasible_inequality_constraints(lp, tol):
