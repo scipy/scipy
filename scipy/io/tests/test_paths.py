@@ -21,7 +21,7 @@ class TestPaths:
         with tempdir() as temp_dir:
             path = Path(temp_dir) / 'data.mat'
             scipy.io.savemat(path, {'data': self.data})
-            assert_(path.is_file())
+            assert path.is_file()
 
     def test_loadmat(self):
         # Save data with string path, load with pathlib.Path
@@ -30,7 +30,7 @@ class TestPaths:
             scipy.io.savemat(str(path), {'data': self.data})
 
             mat_contents = scipy.io.loadmat(path)
-            assert_((mat_contents['data'] == self.data).all())
+            assert (mat_contents['data'] == self.data).all()
 
     def test_whosmat(self):
         # Save data with string path, load with pathlib.Path
@@ -39,7 +39,7 @@ class TestPaths:
             scipy.io.savemat(str(path), {'data': self.data})
 
             contents = scipy.io.whosmat(path)
-            assert_(contents[0] == ('data', (1, 5), 'int64'))
+            assert contents[0] == ('data', (1, 5), 'int64')
 
     def test_readsav(self):
         path = Path(__file__).parent / 'data/scalar_string.sav'
@@ -53,14 +53,14 @@ class TestPaths:
             scipy.io.harwell_boeing.hb_write(str(path), data)
 
             data_new = scipy.io.harwell_boeing.hb_read(path)
-            assert_((data_new != data).nnz == 0)
+            assert (data_new != data).nnz == 0
 
     def test_hb_write(self):
         with tempdir() as temp_dir:
             data = scipy.sparse.csr_matrix(scipy.sparse.eye(3))
             path = Path(temp_dir) / 'data.hb'
             scipy.io.harwell_boeing.hb_write(path, data)
-            assert_(path.is_file())
+            assert path.is_file()
 
     def test_mmio_read(self):
         # Save data with string path, load with pathlib.Path
@@ -70,7 +70,7 @@ class TestPaths:
             scipy.io.mmwrite(str(path), data)
 
             data_new = scipy.io.mmread(path)
-            assert_((data_new != data).nnz == 0)
+            assert (data_new != data).nnz == 0
 
     def test_mmio_write(self):
         with tempdir() as temp_dir:
