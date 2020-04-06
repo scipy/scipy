@@ -2579,6 +2579,29 @@ def interpn(points, values, xi, method="linear", bounds_error=True,
 
     .. versionadded:: 0.14
 
+    Examples
+    --------
+    Evaluate a simple example function on the points of a regular 3-D grid:
+
+    >>> from scipy.interpolate import interpn
+    >>> def value_func_3d(x, y, z):
+    ...     return 2 * x + 3 * y - z
+    >>> x = np.linspace(0, 5)
+    >>> y = np.linspace(0, 5)
+    >>> z = np.linspace(0, 5)
+    >>> points = (x, y, z)
+    >>> values = value_func_3d(*np.meshgrid(*points))
+
+    Evaluate the interpolating function at the point
+    ``(x,y,z) = (2.21, 3.12, 1.15)``
+
+    >>> point = np.array([2.21, 3.12, 1.15])
+    >>> print(interpn(points, values, point))
+    [11.72]
+
+    which is indeed a close approximation to
+    ``[value_func_3d(2.21, 3.12, 1.15)]``.
+
     See also
     --------
     NearestNDInterpolator : Nearest neighbor interpolation on unstructured
