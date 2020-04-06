@@ -102,10 +102,10 @@ class csr_matrix(_cs_matrix):
 
     Duplicate entries are summed together:
 
-    >>> row = np.array(0, 1, 2, 0)
-    >>> col = np.array(0, 1, 1, 0)
-    >>> data = np.array(1, 2, 4, 8)
-    >>> csr_matrix((data, (row, col)), shape=(3,3)).todense()
+    >>> row = np.array([0, 1, 2, 0])
+    >>> col = np.array([0, 1, 1, 0])
+    >>> data = np.array([1, 2, 4, 8])
+    >>> csr_matrix((data, (row, col)), shape=(3,3)).toarray()
     array([[9, 0, 0],
            [0, 2, 0],
            [4, 0, 0]])
