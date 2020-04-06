@@ -1,3 +1,4 @@
+import sys
 import inspect
 import numpy as np
 from .bdf import BDF
@@ -154,7 +155,8 @@ def find_active_events(g, g_new, direction):
 
 
 def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
-              events=None, vectorized=False, args=None, **options):
+              events=None, vectorized=False, args=None, verbose=False,
+              **options):
     """Solve an initial value problem for a system of ODEs.
 
     This function numerically integrates a system of ordinary differential
@@ -275,6 +277,9 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
         So if, for example, `fun` has the signature ``fun(t, y, a, b, c)``,
         then `jac` (if given) and any event functions must have the same
         signature, and `args` must be a tuple of length 3.
+    verbose : bool, optional
+        Whether time stepping info, i.e. t and dt, are to be printed while
+        integration. Default is False.
     options
         Options passed to a chosen solver. All options available for already
         implemented solvers are listed below.
@@ -571,6 +576,7 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
         t_events = None
         y_events = None
 
+    n = 0
     status = None
     while status is None:
         message = solver.step()
@@ -636,6 +642,13 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
 
         if t_eval is not None and dense_output:
             ti.append(t)
+
+        # Print status
+        n += 1
+        if verbose:
+            sys.stdout.write("%d:  t = %.5e,  dt = %.5e\n" % (
+                n, solver.t, solver.t - solver.t_old))
+            sys.stdout.flush()
 
     message = MESSAGES.get(status, message)
 
