@@ -375,13 +375,15 @@ class TestODR(object):
             [0.03632366, 0.06642266, 0.08373122, 0.03988822, -0.0092536,
             -0.03750469, -0.03198903, 0.01642066, 0.01293648, -0.05627085]])
 
-        beta_solution = np.array([-4.43863482, 444.95461327, -440.51978586, 2.36860998,
-            -265.64757342, 266.81217572])
+        beta_solution = np.array([
+            2.62920235756665876536e+00, -1.26608484996299608838e+02, 1.29703572775403074502e+02,
+            -1.88560985401185465804e+00, 7.83834160771274923718e+01, -7.64124076838087091801e+01])
 
         # model's function and Jacobians
         def func(beta, x):
             y0 = beta[0] + beta[1] * x[0, :] + beta[2] * x[1, :]
             y1 = beta[3] + beta[4] * x[0, :] + beta[5] * x[1, :]
+
             return np.vstack((y0, y1))
 
         def df_dbeta_odr(beta, x):
@@ -391,6 +393,7 @@ class TestODR(object):
 
             dy0 = np.array([ones, x[0, :], x[1, :], zeros, zeros, zeros])
             dy1 = np.array([zeros, zeros, zeros, ones, x[0, :], x[1, :]])
+
             return np.stack((dy0, dy1))
 
         def df_dx_odr(beta, x):
@@ -416,11 +419,12 @@ class TestODR(object):
 
         data = RealData(x_meas, y_meas, sx=std_dev_x, sy=std_dev_y)
 
-        odr_obj = ODR(data, model_f, beta0=0.9 * beta_true)
+        odr_obj = ODR(data, model_f, beta0=0.9 * beta_true, maxit=100)
         #odr_obj.set_iprint(init=2, iter=0, iter_step=1, final=1)
-        odr_obj.set_job(deriv=2)
+        odr_obj.set_job(deriv=3)
 
         odr_out = odr_obj.run()
 
         # check results
+        assert_equal(odr_out.info, 1)
         assert_array_almost_equal(odr_out.beta, beta_solution)
