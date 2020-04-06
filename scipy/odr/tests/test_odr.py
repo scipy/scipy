@@ -357,11 +357,11 @@ class TestODR(object):
         sol2 = odr2.run()
         assert_equal(sol1.beta, sol2.beta)
 
-    # verify bugfix in #11800
+    # verify bugfix for #11800 in #11802
     def test_ticket_11800(self):
         # parameters
         beta_true = np.array([1.0, 2.3, 1.1, -1.0, 1.3, 0.5])
-        nr_measurements = 10;
+        nr_measurements = 10
 
         std_dev_x = 0.01
         x_error = np.array([[0.00063445, 0.00515731, 0.00162719, 0.01022866,
