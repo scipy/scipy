@@ -6940,20 +6940,19 @@ class trapz_gen(rv_continuous):
         # and now a test for d=0 to prevent log(0).
         ab_term = c**(n+1)
         dc_term = _lazyselect(
-            [d == 0.0, (0 < d) & (d < 1), d == 1.0],
+            [d == 0.0, (0.0 < d) & (d < 1.0), d == 1.0],
             [lambda d: 1.0,
-             lambda d: np.expm1((n+2)*np.log(d))/(d-1.0),
+             lambda d: np.expm1((n+2) * np.log(d)) / (d-1.0),
              lambda d: n+2],
             [d])
-        val = 2.0/((1.0+d-c)*(n+1)*(n+2)) * (dc_term - ab_term)
-        #print(f"trapz μ^{n}({c},{d})={val} with dc={dc_term}, ab={ab_term}")
+        val = 2.0 / (1.0+d-c) * (dc_term - ab_term) / ((n+1) * (n+2))
         return val
 
     def _entropy(self, c, d):
         # Using van Dorn parameterization and entropy formula given on
         # wikipedia gives a'=loc, b'=loc+c*scale, c'=loc+d*scale, d'=loc+scale,
         # which for loc=0, scale=1 is a'=0, b'=c, c'=d, d'=1
-        return 0.5*(1.0 - d + c)/(1.0 + d - c) + np.log(0.5*(1.0 + d - c))
+        return 0.5 * (1.0-d+c) / (1.0+d-c) + np.log(0.5 * (1.0+d-c))
 
 
 trapz = trapz_gen(a=0.0, b=1.0, name="trapz")
