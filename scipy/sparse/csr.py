@@ -108,7 +108,7 @@ class csr_matrix(_cs_matrix):
     >>> csr_matrix((data, (row, col)), shape=(3, 3)).toarray()
     array([[9, 0, 0],
            [0, 2, 0],
-           [4, 0, 0]])
+           [0, 4, 0]])
 
     As an example of how to construct a CSR matrix incrementally,
     the following snippet builds a term-document matrix from texts:
