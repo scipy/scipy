@@ -169,6 +169,12 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
       ACM Transactions on Mathematical Software, 38, 1.
 
     """
+    # check bounds
+    if bounds is not None:
+        for lb, ub in bounds:
+            if lb is not None and ub is not None and lb > ub:
+                raise ValueError('bounds should be given as (min, max) pairs.')
+    
     # handle fprime/approx_grad
     if approx_grad:
         fun = func

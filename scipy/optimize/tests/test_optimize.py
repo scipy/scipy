@@ -1145,6 +1145,17 @@ class TestLBFGSBBounds(object):
         assert_(d['warnflag'] == 0, d['task'])
         assert_allclose(x, self.solution, atol=1e-6)
 
+    @pytest.mark.parametrize('bounds', [
+        ([(10, 1), (1, 10)]),
+        ([(1, 10), (10, 1)]),
+        ([(10, 1), (10, 1)])
+    ])
+    def test_l_bfgs_b_wrong_bounds(self, bounds):
+        with pytest.raises(ValueError, match='.*bounds.*'):
+            optimize.fmin_l_bfgs_b(self.fun, [0, -1],
+                                         fprime=self.jac,
+                                         bounds=bounds)
+
     def test_l_bfgs_b_funjac(self):
         # L-BFGS-B with fun and jac combined and extra arguments
         x, f, d = optimize.fmin_l_bfgs_b(self.fj, [0, -1], args=(2.0, ),
