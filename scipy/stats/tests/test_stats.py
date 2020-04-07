@@ -2037,7 +2037,7 @@ class TestIQR(object):
         assert_equal(stats.iqr(d, axis=(1, 3))[2, 2],
                      stats.iqr(d[2, :, 2,:].ravel()))
 
-        assert_raises(IndexError, stats.iqr, d, axis=4)
+        assert_raises(np.AxisError, stats.iqr, d, axis=4)
         assert_raises(ValueError, stats.iqr, d, axis=(0, 0))
 
     def test_rng(self):
