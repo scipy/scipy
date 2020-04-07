@@ -568,7 +568,7 @@ def _presolve(lp, rr, tol=1e-9):
     status = 0              # all OK unless determined otherwise
     message = ""
 
-    # Lower and upper bounds. Copy to prevent feedback (see comments below).
+    # Lower and upper bounds. Copy to prevent feedback.
     lb = bounds[:, 0].copy()
     ub = bounds[:, 1].copy()
 
@@ -587,8 +587,8 @@ def _presolve(lp, rr, tol=1e-9):
         where = np.where
         vstack = np.vstack
 
-    # upper bounds >= lower bounds
-    if np.any(ub <= lb) or np.any(lb == np.inf) or np.any(ub == -np.inf):
+    # upper bounds > lower bounds
+    if np.any(ub < lb) or np.any(lb == np.inf) or np.any(ub == -np.inf):
         status = 2
         message = ("The problem is (trivially) infeasible since one "
                    "or more upper bounds are smaller than the corresponding "
@@ -655,7 +655,6 @@ def _presolve(lp, rr, tol=1e-9):
             return (_LPProblem(c, A_ub, b_ub, A_eq, b_eq, bounds, x0),
                     c0, x, revstack, complete, status, message)
         # variables will equal upper/lower bounds will be removed later
-        # >> the statements below also change bounds and lp <<
         lb[np.logical_and(zero_col, c < 0)] = ub[
             np.logical_and(zero_col, c < 0)]
         ub[np.logical_and(zero_col, c > 0)] = lb[
@@ -681,7 +680,6 @@ def _presolve(lp, rr, tol=1e-9):
             else:
                 # sets upper and lower bounds at that fixed value - variable
                 # will be removed later
-                # >> the statements below also change bounds and lp <<
                 lb[col] = val
                 ub[col] = val
         A_eq = A_eq[np.logical_not(singleton_row), :]
@@ -702,13 +700,11 @@ def _presolve(lp, rr, tol=1e-9):
                 if val < lb[col] - tol:  # infeasible
                     complete = True
                 elif val < ub[col]:  # new upper bound
-                    # >> the statement below also changes bounds and lp <<
                     ub[col] = val
             else:  # lower bound
                 if val > ub[col] + tol:  # infeasible
                     complete = True
                 elif val > lb[col]:  # new lower bound
-                    # >> the statement below also changes bounds and lp <<
                     lb[col] = val
             if complete:
                 status = 2
@@ -1251,7 +1247,7 @@ def _display_summary(message, status, fun, iteration):
     print("         Iterations: {0:d}".format(iteration))
 
 
-def _postsolve(x, postsolve_args, complete=False, copy=False):
+def _postsolve(x, postsolve_args, complete=False):
     """
     Given solution x to presolved, standard form linear program x, add
     fixed variables back into the problem and undo the variable substitutions

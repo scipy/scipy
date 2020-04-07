@@ -508,8 +508,6 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     """
     meth = method.lower()
 
-    # print("linprog() bounds: at entry ", bounds)
-
     if x0 is not None and meth != "revised simplex":
         warning_message = "x0 is used only when method is 'revised simplex'. "
         warn(warning_message, OptimizeWarning)
@@ -518,17 +516,13 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     lp, solver_options = _parse_linprog(lp, options)
     tol = solver_options.get('tol', 1e-9)
 
-    # print("linprog() bounds: after _parse_linprog ", lp[5])
-
     iteration = 0
-    complete = False    # will become True if solved in presolve
+    complete = False  # will become True if solved in presolve
     undo = []
 
     # Keep the original arrays to calculate slack/residuals for original
     # problem.
     lp_o = deepcopy(lp)
-
-    # print("linprog() bounds: copied into lp_o ", lp_o[5])
 
     # Solve trivial problem, eliminate variables, tighten bounds, etc.
     c0 = 0  # we might get a constant term in the objective
@@ -536,15 +530,11 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         rr = solver_options.pop('rr', True)
         (lp, c0, x, undo, complete, status, message) = _presolve(lp, rr, tol)
 
-    # print("linprog() bounds: bounds after presolve ", bounds)
-    # print("linprog() bounds: in lp_o after presolve ", lp_o[5])
-    # print("linprog() bounds: in lp after presolve ", lp[5])
-
     C, b_scale = 1, 1  # for trivial unscaling if autoscale is not used
     postsolve_args = (lp_o._replace(bounds=lp.bounds), undo, C, b_scale)
 
     if not complete:
-        A, b, c, c0, x0 = _get_Abc(lp, c0)  # , undo
+        A, b, c, c0, x0 = _get_Abc(lp, c0)
         if solver_options.pop('autoscale', False):
             A, b, c, x0, C, b_scale = _autoscale(A, b, c, x0)
             postsolve_args = postsolve_args[:-2] + (C, b_scale)
@@ -565,21 +555,11 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
             raise ValueError('Unknown solver %s' % method)
 
     # Eliminate artificial variables, re-introduce presolved variables, etc.
-    # need modified bounds here to translate variables appropriately
     disp = solver_options.get('disp', False)
 
-    # print("linprog() bounds: input to postsolve ", postsolve_args[0][5])
-
-    # x, fun, slack, con, status, message = _postprocess(x, postsolve_args,
-    #                                                    complete, status,
-    #                                                    message, tol,
-    #                                                    iteration, disp)
-
-    x, fun, slack, con = _postsolve(x, postsolve_args, complete, tol)
+    x, fun, slack, con = _postsolve(x, postsolve_args, complete)
 
     status, message = _check_result(x, fun, status, slack, con, lp_o.bounds, tol, message)
-    # not bounds output from _postsolve anymore, because the reconstruction
-    # there is removed and the return argument as well
 
     if disp:
         _display_summary(message, status, fun, iteration)

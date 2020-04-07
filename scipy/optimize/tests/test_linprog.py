@@ -358,6 +358,20 @@ class LinprogCommonTests(object):
 
         assert_raises(ValueError, f, [1, 2], A_ub=np.zeros((1, 1, 3)), b_eq=1)
 
+    def test_bounds_fixed(self):
+
+        def g(c, bounds):
+            res = linprog(c, bounds=bounds, method=self.method, options=self.options)
+            return res
+
+        # Test fixed bounds (upper equal to lower)
+        res = g([1], bounds=(1, 1))
+        _assert_success(res, 1, 1)
+        res = g([1, 2, 3], bounds=[(5, 5), (-1, -1), (3, 3)])
+        _assert_success(res, 12, [5, -1, 3])
+        res = g([1, 1], bounds=[(1, 1), (1, 3)])
+        _assert_success(res, 2, [1, 1])
+
     def test_bounds_infeasible(self):
 
         def g(c, bounds):
@@ -373,7 +387,6 @@ class LinprogCommonTests(object):
         _assert_infeasible(res)
 
         dopr = self.options.get('presolve', True)
-        # print("do presolve? ", dopr," method=", self.method)
         if not dopr and self.method == 'simplex':
             # For the simplex method, the cases below do not result in an
             # infeasible status, but in a RuntimeWarning. This is a
