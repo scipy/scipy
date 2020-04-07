@@ -386,6 +386,7 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0,
     ...     return 2*(x-3)**2+1
     >>> leastsq(func, 0)
     (array([2.99999999]), 1)
+
     """
     x0 = asarray(x0).flatten()
     n = len(x0)
