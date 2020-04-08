@@ -2055,6 +2055,30 @@ class TestNdimageMorphology:
         output = ndimage.white_tophat(array, structure=structure)
         assert_array_equal(expected, output)
 
+    def test_white_tophat03_uint(self):
+        # Backwards compatibility test case
+        # The expected array was determined in SciPy 1.4.1.
+        for dtype in [numpy.uint8, numpy.uint16, numpy.uint32, numpy.uint64]:
+            array = numpy.array([[1, 0, 0, 0, 0, 0, 0],
+                                 [0, 1, 1, 1, 1, 1, 0],
+                                 [0, 1, 1, 1, 1, 1, 0],
+                                 [0, 1, 1, 1, 1, 1, 0],
+                                 [0, 1, 1, 1, 0, 1, 0],
+                                 [0, 1, 1, 1, 1, 1, 0],
+                                 [0, 0, 0, 0, 0, 0, 1]], dtype=dtype)
+            structure = numpy.ones((3, 3), dtype=dtype)
+            m = numpy.iinfo(dtype).max
+            expected = numpy.array([[0, m, m, 0, 0, 0, 0],
+                                    [m, 0, 0, 1, 1, 1, 0],
+                                    [m, 0, 0, 1, 1, 1, 0],
+                                    [0, 1, 1, 0, 0, 0, m],
+                                    [0, 1, 1, 0, m, 0, m],
+                                    [0, 1, 1, 0, 0, 0, m],
+                                    [0, 0, 0, m, m, m, 1]], dtype=dtype)
+
+            output = ndimage.white_tophat(array, structure=structure)
+            assert_array_equal(expected, output)
+
     def test_white_tophat04(self):
         array = numpy.eye(5, dtype=numpy.bool_)
         structure = numpy.ones((3, 3), dtype=numpy.bool_)
