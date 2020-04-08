@@ -2804,7 +2804,6 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
         Specifies the window applied to the signal in the Fourier
         domain.  See below for details.
     domain : string, optional
-
         A string indicating the domain of the input `x`:
         ``time``
            Consider the input `x` as time-domain. (Default)
