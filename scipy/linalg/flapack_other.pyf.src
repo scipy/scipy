@@ -1891,22 +1891,22 @@ subroutine <prefix2>gejsv(joba,jobu,jobv,jobr,jobt,jobp,m,n,a,lda,sva,u,ldu,v,ld
     ! the right singular vectors of [A], respectively. The matrices [U] and [V]
     ! are computed and stored in the arrays U and V, respectively. The diagonal
     ! of [SIGMA] is computed and stored in the array SVA.
-    callstatement(*f2py_func)(joba,jobu,jobv,jobr,jobt,jobp,&m,&n,a,&lda,sva,u,&ldu,v,&ldv,work,&lwork,iwork,&info)
+    callstatement(*f2py_func)((joba==0?"C":(joba==1?"E":(joba==2?"F":(joba==3?"G":(joba==4?"A":"R"))))),(jobu==0?"U":(jobu==1?"F":(jobu==2?"W":"N"))),(jobv==0?"V":(jobv==1?"J":(jobv==2?"W":"N"))),(jobr?"R":"N"),(jobt?"T":"N"),(jobp?"P":"N"),&m,&n,a,&lda,sva,u,&ldu,v,&ldv,work,&lwork,iwork,&info)
     callprotoargument char*,char*,char*,char*,char*,char*,int*,int*,<ctype2>*,int*,<ctype2>*,<ctype2>*,int*,<ctype2>*,int*,<ctype2>*,int*,int*,int*
 
-    character intent(in, optional) :: joba='A'
-    character intent(in, optional) :: jobu='U'
-    character intent(in, optional) :: jobv='V'
-    character intent(in, optional) :: jobr='R'
-    character intent(in, optional) :: jobt='T'
-    character intent(in, optional) :: jobp='P'
+    integer intent(in, optional), check((0 <= joba) && (joba < 6)) :: joba = 4
+    integer intent(in, optional), check((0 <= jobu) && (jobu < 4)) :: jobu = 0
+    integer intent(in, optional), check((0 <= jobv) && (jobv < 4)) :: jobv = 0
+    integer intent(in, optional), check((jobr == 0) || (jobr == 1)) :: jobr = 1
+    integer intent(in, optional), check((jobt == 0) || (jobt == 1)) :: jobt = 1
+    integer intent(in, optional), check((jobp == 0) || (jobp == 1)) :: jobp = 1
 
     integer intent(hide), depend(a) :: m = shape(a,0)
     integer intent(hide), depend(a) :: n = shape(a,1)
     <ftype2> dimension(m, n), intent(in) :: a
     integer intent(hide), depend(m) :: lda = max(1, m)
     <ftype2> intent(out), dimension(n) :: sva
-    <ftype2> intent(out), depend(ldu, jobu, m, n), dimension(ldu, (*jobu=='F'?m:n)) :: u
+    <ftype2> intent(out), depend(ldu, jobu, m, n), dimension(ldu, (jobu==1?m:n)) :: u
     integer intent(hide), depend(m) :: ldu = max(1, m)
     <ftype2> intent(out), dimension(ldv, n) :: v
     integer intent(hide), depend(n) :: ldv = max(1, n)
@@ -1931,22 +1931,22 @@ subroutine <prefix2c>gejsv(joba,jobu,jobv,jobr,jobt,jobp,m,n,a,lda,sva,u,ldu,v,l
     ! the right singular vectors of [A], respectively. The matrices [U] and [V]
     ! are computed and stored in the arrays U and V, respectively. The diagonal
     ! of [SIGMA] is computed and stored in the array SVA.
-    callstatement(*f2py_func)(joba,jobu,jobv,jobr,jobt,jobp,&m,&n,a,&lda,sva,u,&ldu,v,&ldv,cwork,&lwork,rwork,&lrwork,iwork,&info)
+    callstatement(*f2py_func)((joba==0?"C":(joba==1?"E":(joba==2?"F":(joba==3?"G":(joba==4?"A":"R"))))),(jobu==0?"U":(jobu==1?"F":(jobu==2?"W":"N"))),(jobv==0?"V":(jobv==1?"J":(jobv==2?"W":"N"))),(jobr?"R":"N"),(jobt?"T":"N"),(jobp?"P":"N"),&m,&n,a,&lda,sva,u,&ldu,v,&ldv,cwork,&lwork,rwork,&lrwork,iwork,&info)
     callprotoargument char*,char*,char*,char*,char*,char*,int*,int*,<ctype2c>*,int*,<ctype2>*,<ctype2c>*,int*,<ctype2c>*,int*,<ctype2c>*,int*,<ctype2>*,int*,int*,int*
 
-    character intent(in, optional) :: joba='A'
-    character intent(in, optional) :: jobu='U'
-    character intent(in, optional) :: jobv='V'
-    character intent(in, optional) :: jobr='R'
-    character intent(in, optional) :: jobt='T'
-    character intent(in, optional) :: jobp='P'
+    integer intent(in, optional), check((0 <= joba) && (joba < 6)) :: joba = 4
+    integer intent(in, optional), check((0 <= jobu) && (jobu < 4)) :: jobu = 0
+    integer intent(in, optional), check((0 <= jobv) && (jobv < 4)) :: jobv = 0
+    integer intent(in, optional), check((jobr == 0) || (jobr == 1)) :: jobr = 1
+    integer intent(in, optional), check((jobt == 0) || (jobt == 1)) :: jobt = 1
+    integer intent(in, optional), check((jobp == 0) || (jobp == 1)) :: jobp = 1
 
     integer intent(hide), depend(a) :: m = shape(a, 0)
     integer intent(hide), depend(a) :: n = shape(a, 1)
     <ftype2c> dimension(m, n), intent(in) :: a
     integer intent(hide), depend(m) :: lda = max(1, m)
     <ftype2> intent(out), depend(n), dimension(n) :: sva
-    <ftype2c> intent(out), depend(ldu, jobu, m, n), dimension(ldu, (*jobu=='F'?m:n)) :: u
+    <ftype2c> intent(out), depend(ldu, jobu, m, n), dimension(ldu, (jobu==1?m:n)) :: u
     integer intent(hide), depend(m) :: ldu = max(1, m)
     <ftype2c> intent(out), dimension(ldv, n) :: v
     integer intent(hide), depend(n) :: ldv = max(1, n)

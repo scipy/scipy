@@ -1795,12 +1795,12 @@ def test_getc2_gesc2():
 
 @pytest.mark.parametrize('size', [(6, 5), (5, 5)])
 @pytest.mark.parametrize('dtype', DTYPES)
-@pytest.mark.parametrize('joba', ['C', 'E', 'F', 'G', 'A', 'R'])
-@pytest.mark.parametrize('jobu', ['U', 'F', 'W', 'N'])
-@pytest.mark.parametrize('jobv', ['V', 'J', 'W', 'N'])
-@pytest.mark.parametrize('jobr', ['R', 'N'])
-@pytest.mark.parametrize('jobt', ['T', 'N'])
-@pytest.mark.parametrize('jobp', ['P', 'N'])
+@pytest.mark.parametrize('joba', range(6))  # 'C', 'E', 'F', 'G', 'A', 'R'
+@pytest.mark.parametrize('jobu', range(4))  # 'U', 'F', 'W', 'N'
+@pytest.mark.parametrize('jobv', range(4))  # 'V', 'J', 'W', 'N'
+@pytest.mark.parametrize('jobr', [0, 1])
+@pytest.mark.parametrize('jobt', [0, 1])
+@pytest.mark.parametrize('jobp', [0, 1])
 def test_gejsv_general(size, dtype, joba, jobu, jobv, jobr, jobt, jobp):
     """Test the lapack routine ?gejsv.
 
@@ -1835,14 +1835,14 @@ def test_gejsv_general(size, dtype, joba, jobu, jobv, jobr, jobt, jobp):
     # Set up checks for invalid job? combinations
     # if an invalid combination occurs we set the appropriate
     # exit status.
-    lsvec = jobu in {'U', 'F'}  # Calculate left singular vectors
-    rsvec = jobv in {'V', 'J'}  # Calculate right singular vectors
-    l2tran = (jobt == 'T') and (m == n)
+    lsvec = jobu < 2  # Calculate left singular vectors
+    rsvec = jobv < 2 # Calculate right singular vectors
+    l2tran = (jobt == 1) and (m == n)
     is_complex = np.iscomplexobj(A)
 
-    invalid_real_jobv = (jobv == 'J') and (not lsvec) and (not is_complex)
-    invalid_cplx_jobu = (jobu == 'W') and not (rsvec and l2tran) and is_complex
-    invalid_cplx_jobv = (jobv == 'W') and not (lsvec and l2tran) and is_complex
+    invalid_real_jobv = (jobv == 1) and (not lsvec) and (not is_complex)
+    invalid_cplx_jobu = (jobu == 2) and not (rsvec and l2tran) and is_complex
+    invalid_cplx_jobv = (jobv == 2) and not (lsvec and l2tran) and is_complex
 
     # Set the exit status to the expected value.
     # Here we only check for invalid combinations, not individual
@@ -1873,7 +1873,7 @@ def test_gejsv_general(size, dtype, joba, jobu, jobv, jobr, jobt, jobp):
         sigma = (work[0] / work[1]) * sva[:n]
         assert_allclose(sigma, svd(A, compute_uv=False), atol=atol)
 
-        if jobu == 'F':
+        if jobu == 1:
             # If JOBU = 'F', then u contains the M-by-M matrix of
             # the left singular vectors, including an ONB of the orthogonal
             # complement of the Range(A)
@@ -1915,7 +1915,7 @@ def test_gejsv_with_rank_deficient_matrix(dtype):
     A = generate_random_dtype_array((m, n), dtype)
 
     # check that iwork[0] and iwork[1] are the correct rank
-    sva, u, v, work, iwork, info = gejsv(A)
+    sva, u, v, work, iwork, info = gejsv(A, joba=4)
 
     # Keep only the first k singular values of A
     # We then reconstruct A with only the first k singular values
@@ -1933,12 +1933,6 @@ def test_gejsv_with_rank_deficient_matrix(dtype):
                         (np.complex, (1, 0), {}, -17),
                         (np.float, (1, 1), {}, 0),
                         (np.float, None, {}, 0),
-                        (np.float, (3, 2), {'joba': 'L'}, -1),
-                        (np.float, (3, 2), {'jobu': 'L'}, -2),
-                        (np.float, (3, 2), {'jobv': 'L'}, -3),
-                        (np.float, (3, 2), {'jobr': 'L'}, -4),
-                        (np.float, (3, 2), {'jobt': 'L'}, -5),
-                        (np.float, (3, 2), {'jobp': 'L'}, -6),
                         (np.float, (3, 5), {}, -8),
                         (np.float, (3, 2), {'lwork': 0}, -17),
                           ])
@@ -1962,6 +1956,21 @@ def test_gejsv_edge_arguments(dtype, shape, kwargs, status):
         assert_equal(np.count_nonzero(sva), 0)
         assert_equal(np.count_nonzero(u), 0)
         assert_equal(np.count_nonzero(v), 0)
+
+
+@pytest.mark.parametrize(('kwargs'),
+                         ({'joba': 9},
+                          {'jobu': 9},
+                          {'jobv': 9},
+                          {'jobr': 9},
+                          {'jobt': 9},
+                          {'jobp': 9})
+                         )
+def test_gejsv_invalid_job_arguments(kwargs):
+    """Test invalid job arguments raise an Exception"""
+    A = np.ones((2, 2), dtype=float)
+    gejsv = get_lapack_funcs('gejsv', dtype=float)
+    assert_raises(Exception, gejsv, A, **kwargs)
 
 
 @pytest.mark.parametrize("A,sva_expect,u_expect,v_expect",
