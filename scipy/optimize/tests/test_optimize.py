@@ -1167,7 +1167,7 @@ class TestLBFGSBBounds(object):
     def test_minimize_l_bfgs_b_incorrect_bounds(self, bounds):
         with pytest.raises(ValueError, match='.*bounds.*'):
             optimize.minimize(self.fun, [0, -1], method='L-BFGS-B',
-                                jac=self.jac, bounds=bounds)
+                              jac=self.jac, bounds=bounds)
 
     def test_minimize_l_bfgs_b_bounds_FD(self):
         # test that initial starting value outside bounds doesn't raise
