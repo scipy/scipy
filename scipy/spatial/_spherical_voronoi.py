@@ -212,24 +212,22 @@ class SphericalVoronoi:
             h, vh, circle = -h, -vh, -circle
         circle_radius = np.sqrt(np.maximum(0, self.radius**2 - h**2))
 
+        # calculate the north and south poles in this basis
+        poles = [[0, 0, self.radius], [0, 0, -self.radius]]
+
         # calculate spherical voronoi diagram on the circle
         lower_dimensional = SphericalVoronoi(circle[:, :2],
                                              radius=circle_radius)
         n = len(lower_dimensional.vertices)
         vertices = h * np.ones((n, 3))
         vertices[:, :2] = lower_dimensional.vertices
-        vertices = vertices @ vh
-
-        # calculate the north and south poles in this basis
-        poles = [[0, 0, self.radius], [0, 0, -self.radius]] @ vh
 
         # north and south poles are also Voronoi vertices
-        vertices = np.concatenate((vertices, poles))
+        self.vertices = np.concatenate((vertices, poles)) @ vh + self.center
 
         # each region contains two vertices from the plane and the north and
         # south poles
         self.regions = [[a, n, b, n + 1] for a, b in lower_dimensional.regions]
-        self.vertices = vertices + self.center
 
     def _calc_vertices_regions(self):
         """
