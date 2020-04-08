@@ -210,38 +210,25 @@ class SphericalVoronoi:
         h = np.mean(circle[:, 2])
         if h < 0:
             h, vh, circle = -h, -vh, -circle
-        midpoint = np.array([0, 0, h]) @ vh
         circle_radius = np.sqrt(np.maximum(0, self.radius**2 - h**2))
+
+        # calculate spherical voronoi diagram on the circle
+        lower_dimensional = SphericalVoronoi(circle[:, :2],
+                                             radius=circle_radius)
+        n = len(lower_dimensional.vertices)
+        vertices = h * np.ones((n, 3))
+        vertices[:, :2] = lower_dimensional.vertices
+        vertices = vertices @ vh
 
         # calculate the north and south poles in this basis
         poles = [[0, 0, self.radius], [0, 0, -self.radius]] @ vh
-
-        # simplicial neighbors are adjacent on the circle
-        angles = np.arctan2(circle[:, 1], circle[:, 0])
-        indices = np.argsort(angles)
-
-        # Voronoi vertices lie halfway between neighboring pairs
-        vertices = centered[indices] + centered[np.roll(indices, 1)]
-        vertices -= 2 * midpoint
-        vertices /= np.linalg.norm(vertices, axis=1)[:, np.newaxis]
-        vertices *= circle_radius
-        vertices += midpoint
 
         # north and south poles are also Voronoi vertices
         vertices = np.concatenate((vertices, poles))
 
         # each region contains two vertices from the plane and the north and
         # south poles
-        invf = np.argsort(indices)
-        invb = np.argsort(np.roll(indices, 1))
-
-        n = len(self.points)
-        regions = np.vstack([invf,            # forward neighbor
-                             [n] * n,         # north pole
-                             invb,            # backward neighbor
-                             [n + 1] * n]).T  # south pole
-
-        self.regions = [list(region) for region in regions]
+        self.regions = [[a, n, b, n + 1] for a, b in lower_dimensional.regions]
         self.vertices = vertices + self.center
 
     def _calc_vertices_regions(self):

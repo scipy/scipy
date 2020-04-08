@@ -13,6 +13,7 @@ from scipy.spatial import _spherical_voronoi as spherical_voronoi
 from scipy.spatial.transform import Rotation
 from scipy.optimize import linear_sum_assignment
 from scipy.constants import golden as phi
+from scipy.spatial import geometric_slerp
 
 
 TOL = 1E-10
@@ -382,3 +383,15 @@ class TestSphericalVoronoi(object):
         sv = SphericalVoronoi(points)
         areas = sv.calculate_areas()
         assert_almost_equal(areas, 4 * np.pi / len(points))
+
+    def test_ultra_close_gens(self):
+        # use geometric_slerp to produce generators that
+        # are close together, to push the limits
+        # of the area (angle) calculations
+        # also, limit generators to a single hemisphere
+        path = geometric_slerp([0, 0, 1],
+                               [1, 0, 0],
+                               t=np.linspace(0, 1, 1000))
+        sv = SphericalVoronoi(path)
+        areas = sv.calculate_areas()
+        assert_almost_equal(areas.sum(), 4 * np.pi)
