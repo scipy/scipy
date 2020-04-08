@@ -1145,17 +1145,6 @@ class TestLBFGSBBounds(object):
         assert_(d['warnflag'] == 0, d['task'])
         assert_allclose(x, self.solution, atol=1e-6)
 
-    @pytest.mark.parametrize('bounds', [
-        ([(10, 1), (1, 10)]),
-        ([(1, 10), (10, 1)]),
-        ([(10, 1), (10, 1)])
-    ])
-    def test_l_bfgs_b_wrong_bounds(self, bounds):
-        with pytest.raises(ValueError, match='.*bounds.*'):
-            optimize.fmin_l_bfgs_b(self.fun, [0, -1],
-                                         fprime=self.jac,
-                                         bounds=bounds)
-
     def test_l_bfgs_b_funjac(self):
         # L-BFGS-B with fun and jac combined and extra arguments
         x, f, d = optimize.fmin_l_bfgs_b(self.fj, [0, -1], args=(2.0, ),
@@ -1169,6 +1158,16 @@ class TestLBFGSBBounds(object):
                                 jac=self.jac, bounds=self.bounds)
         assert_(res['success'], res['message'])
         assert_allclose(res.x, self.solution, atol=1e-6)
+
+    @pytest.mark.parametrize('bounds', [
+        ([(10, 1), (1, 10)]),
+        ([(1, 10), (10, 1)]),
+        ([(10, 1), (10, 1)])
+    ])
+    def test_minimize_l_bfgs_b_incorrect_bounds(self, bounds):
+        with pytest.raises(ValueError, match='.*bounds.*'):
+            optimize.minimize(self.fun, [0, -1], method='L-BFGS-B',
+                                jac=self.jac, bounds=bounds)
 
     def test_minimize_l_bfgs_b_bounds_FD(self):
         # test that initial starting value outside bounds doesn't raise
