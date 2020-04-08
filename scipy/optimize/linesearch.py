@@ -270,6 +270,7 @@ def line_search_wolfe2(f, myfprime, xk, pk, gfk=None, old_fval=None,
     ...     return [2*x[0], 2*x[1]]
 
     We can find alpha that satisfies strong Wolfe conditions.
+
     >>> start_point = np.array([1.8, 1.7])
     >>> search_gradient = np.array([-1.0, -1.0])
     >>> line_search(obj_func, obj_grad, start_point, search_gradient)
