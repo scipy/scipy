@@ -69,7 +69,7 @@ def configuration(parent_package='', top_path=None):
     if sys.platform == 'win32':
         EXTRA_COMPILE_ARGS.append('/std:c++14')
     else:
-        EXTRA_COMPILE_ARGS.append('std=c++14')
+        EXTRA_COMPILE_ARGS.append('-std=c++14')
 
     # -O3 takes longer to compile, but passes unit tests -- could use?
     #EXTRA_COMPILE_ARGS.append('-O3')
