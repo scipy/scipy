@@ -28,10 +28,8 @@ def _get_version(CMakeLists, start_token, end_token=')'):
     return s[start_idx:end_idx].strip()
 
 def configuration(parent_package='', top_path=None):
-    from numpy import get_include
-    from scipy._build_utils.system_info import get_info
-    from numpy.distutils.misc_util import Configuration
 
+    from numpy.distutils.misc_util import Configuration
     config = Configuration('_highs', parent_package, top_path)
 
     # HiGHS info
@@ -49,7 +47,7 @@ def configuration(parent_package='', top_path=None):
         #('OPENMP', None),
         ('CMAKE_BUILD_TYPE', '"Release"'),
         ('HiGHSRELEASE', None),
-        ('IPX_ON', None),
+        ('IPX_ON', 'ON'),
         ('HIGHS_GITHASH', '"%s"' % GITHASH),
         ('HIGHS_COMPILATION_DATE', '"' + TODAY_DATE +'"'),
         ('HIGHS_VERSION_MAJOR', HIGHS_VERSION_MAJOR),
@@ -64,56 +62,26 @@ def configuration(parent_package='', top_path=None):
         'HiGHSDEV',
         'OSI_FOUND',
     ]
+    # -O3 takes longer to compile, but passes unit tests -- could use?
+    EXTRA_COMPILE_ARGS = ['-std=c++14'] # '-O3']
 
-    EXTRA_COMPILE_ARGS = ['-std=c++14']
-
-    # BASICLU
+    # Compile BASICLU as a static library to appease clang:
+    # (won't allow -std=c++14 option for C sources)
     basiclu_sources = _get_sources('src/CMakeLists.txt', 'set(basiclu_sources\n', ')')
     config.add_library(
         'basiclu',
-        basiclu_sources,
+        sources=basiclu_sources,
         include_dirs=[
             str(pathlib.Path('src/')),
             str(pathlib.Path('src/ipm/basiclu/include/')),
         ],
-        language="c",
-        define_macros=DEFINE_MACROS,
-        undef_macros=UNDEF_MACROS)
+        language='c',
+        macros=DEFINE_MACROS,
+    )
 
-    # IPX
+    # Compile the rest of the sources all together, linking the BASICLU static library
     ipx_sources = _get_sources('src/CMakeLists.txt', 'set(ipx_sources\n', ')')
-    config.add_library(
-        'ipx',
-        ipx_sources,
-        include_dirs=[
-            str(pathlib.Path('src/')),
-            str(pathlib.Path('src/ipm/ipx/include/')),
-            str(pathlib.Path('src/ipm/basiclu/include/')),
-        ],
-        language="c++",
-        libraries=['basiclu'],
-        define_macros=DEFINE_MACROS,
-        undef_macros=UNDEF_MACROS,
-        extra_compile_args=EXTRA_COMPILE_ARGS)
-
-    # HiGHS
     highs_sources = _get_sources('src/CMakeLists.txt', 'set(sources\n', ')')
-    config.add_library(
-        'highs',
-        highs_sources,
-        include_dirs=[
-            str(pathlib.Path('pyHiGHS/src/')),
-            str(pathlib.Path('src/')),
-            str(pathlib.Path('src/ipm/ipx/include/')),
-            str(pathlib.Path('src/lp_data/')),
-        ],
-        language="c++",
-        libraries=['ipx'],
-        define_macros=DEFINE_MACROS,
-        undef_macros=UNDEF_MACROS,
-        extra_compile_args=EXTRA_COMPILE_ARGS)
-
-    # Wrapper over HiGHS C++ API
     WRAPPER_INCLUDE_DIRS = [
         str(pathlib.Path('src/ipm/basiclu/include/')),
         str(pathlib.Path('external/')),
@@ -127,13 +95,18 @@ def configuration(parent_package='', top_path=None):
     ]
     config.add_extension(
         'highs_wrapper',
-        sources=[str(pathlib.Path('pyHiGHS/src/highs_wrapper.cxx'))],
-        include_dirs=WRAPPER_INCLUDE_DIRS,
-        language="c++",
+        sources=[
+            str(pathlib.Path('pyHiGHS/src/highs_wrapper.cxx'))
+        ] + ipx_sources + highs_sources,
+        include_dirs=[
+            str(pathlib.Path('pyHiGHS/src/')),
+        ] + WRAPPER_INCLUDE_DIRS,
+        language='c++',
+        libraries=['basiclu'],
         define_macros=DEFINE_MACROS,
         undef_macros=UNDEF_MACROS,
         extra_compile_args=EXTRA_COMPILE_ARGS,
-        libraries=['highs'])
+    )
 
     return config
 
