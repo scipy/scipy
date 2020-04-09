@@ -1836,7 +1836,7 @@ def test_gejsv_general(size, dtype, joba, jobu, jobv, jobr, jobt, jobp):
     # if an invalid combination occurs we set the appropriate
     # exit status.
     lsvec = jobu < 2  # Calculate left singular vectors
-    rsvec = jobv < 2 # Calculate right singular vectors
+    rsvec = jobv < 2  # Calculate right singular vectors
     l2tran = (jobt == 1) and (m == n)
     is_complex = np.iscomplexobj(A)
 
@@ -1907,7 +1907,7 @@ def test_gejsv_with_rank_deficient_matrix(dtype):
     seed(42)
 
     if dtype == np.complex128:
-        pytest.skip("Test sometimes incorrectly returns "\
+        pytest.skip("Test sometimes incorrectly returns "
                     "an extra very small singular value")
     m, n = (6, 5)  # Desired shape of A
     k = 3  # Desired number of singular values
