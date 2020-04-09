@@ -26,7 +26,7 @@ def _replace_inf(x):
     x[infs] = np.sign(x[infs])*CONST_INF 
     return x
 
-def _linprog_highs(lp, solver, time_limit=1, presolve=False, parallel=False,
+def _linprog_highs(lp, solver, time_limit=1, presolve=True, parallel=False,
                    disp = False, maxiter=None, autoscale=False,
                    **unknown_options):
     r"""
@@ -131,6 +131,7 @@ def _linprog_highs(lp, solver, time_limit=1, presolve=False, parallel=False,
     _check_unknown_options(unknown_options)
 
     statuses = {
+        12: (1, "Iteration limit reached."),
         9: (0, "Optimization terminated successfully."),
         8: (3, "The problem is unbounded."),
         7: (2, "The problem is infeasible."),
@@ -187,16 +188,8 @@ def _linprog_highs(lp, solver, time_limit=1, presolve=False, parallel=False,
     lb = _replace_inf(lb)
     ub = _replace_inf(ub)
 
-    print("c=", c, ", type= ", type(c), "dtype= ", c.dtype)
-    print("A=\n", A.todense(), ", type= ", type(A), "dtype= ", A.dtype)
-    print("rhs=", rhs, ", type= ", type(rhs), "dtype= ", rhs.dtype)
-    print("lhs=", lhs, ", type= ", type(lhs), "dtype= ", lhs.dtype)
-    print("lb=", lb, ", type= ", type(lb), "dtype= ", lb.dtype)
-    print("ub=", ub, ", type= ", type(ub), "dtype= ", ub.dtype)
-    print("options=", options)
     res = highs_wrapper(c, A.indptr, A.indices, A.data, lhs, rhs,
                         lb, ub, options)
-    print(res)
 
     sol = {'x': res.get('x', None),
            'slack': res.get('slack', None),

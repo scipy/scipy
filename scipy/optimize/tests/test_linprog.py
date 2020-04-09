@@ -1277,6 +1277,8 @@ class LinprogCommonTests(object):
                       method=self.method, options=self.options)
         # solution vector x is not unique
         _assert_success(res, desired_fun=-2)
+        # HiGHS IPM had an issue where the following wasn't true!
+        assert_equal(c @ res.x, res.fun)
 
     def test_bug_8973_2(self):
         """
