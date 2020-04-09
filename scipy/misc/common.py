@@ -52,6 +52,10 @@ def central_diff_weights(Np, ndiv=1):
     This value is close to the analytical solution:
     f'(x) = 4x, so f'(3) = 12
 
+    References
+    ----------
+    .. [1] https://en.wikipedia.org/wiki/Finite_difference
+
     """
     if Np < ndiv + 1:
         raise ValueError("Number of points must be at least the derivative order + 1.")
