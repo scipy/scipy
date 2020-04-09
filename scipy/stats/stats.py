@@ -5291,7 +5291,7 @@ def ttest_rel(a, b, axis=0, nan_policy='propagate'):
         raise ValueError('unequal length arrays')
 
     if a.size == 0 or b.size == 0:
-        return np.nan, np.nan
+        return Ttest_relResult(np.nan, np.nan)
 
     n = a.shape[axis]
     df = n - 1
