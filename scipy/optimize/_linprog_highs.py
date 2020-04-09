@@ -15,15 +15,13 @@ References
 
 import numpy as np
 from .optimize import _check_unknown_options
-from pyHiGHS import highs_wrapper
+from ._highs.highs_wrapper import highs_wrapper, CONST_INF
 from scipy.sparse import csc_matrix, vstack, issparse
-
-from pyHiGHS import CONST_INF
 
 def _replace_inf(x):
     # Replace `np.inf` with CONST_INF
     infs = (np.abs(x) == np.inf)
-    x[infs] = np.sign(x[infs])*CONST_INF 
+    x[infs] = np.sign(x[infs])*CONST_INF
     return x
 
 def _linprog_highs(lp, solver, time_limit=1, presolve=True, parallel=False,
@@ -135,6 +133,7 @@ def _linprog_highs(lp, solver, time_limit=1, presolve=True, parallel=False,
         9: (0, "Optimization terminated successfully."),
         8: (3, "The problem is unbounded."),
         7: (2, "The problem is infeasible."),
+        12: (1, "Iteration limit reached."),
     }
     # "Iteration limit reached.",
     # "The problem appears infeasible, as the phase one auxiliary "
