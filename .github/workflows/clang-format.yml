@@ -1,0 +1,16 @@
+name: test-clang-format
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v1
+    - uses: DoozyX/clang-format-lint-action@v0.5
+      with:
+        source: 'app/ src/Highs.h ./src/lp_data ./src/mip ./src/simplex ./src/presolve ./src/util'
+        #./src/test ./interfaces'
+        extensions: 'h,cpp,c'
+        clangFormatVersion: 9
