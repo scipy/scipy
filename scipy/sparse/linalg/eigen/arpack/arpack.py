@@ -1820,6 +1820,7 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
             X_matmat = A.matmat
             XH_dot = A.rmatvec
             XH_mat = A.rmatmat
+            transpose = False
         else:
             X_dot = A.rmatvec
             X_matmat = A.rmatmat
@@ -1829,6 +1830,7 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
             dtype = getattr(A, 'dtype', None)
             if dtype is None:
                 dtype = A.dot(np.zeros([m, 1])).dtype
+            transpose = True
 
     else:
         if n > m:
@@ -1870,11 +1872,25 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
         raise ValueError("solver must be either 'arpack', or 'lobpcg'.")
 
     # compute the right singular vectors of X and update the left ones accordingly
-    u = X_dot(eigvec)
+    u = X_matmat(eigvec)
     u, s, vh = svd(u, full_matrices=False)
     vh = np.dot(vh, _herm(eigvec))
+    s = s[::-1]
+    if not return_singular_vectors:
+        return s
+    u = u[:, ::-1]
+    vh = vh[::-1]
+    return_u = (return_singular_vectors == 'u')
+    return_vh = (return_singular_vectors == 'vh')
     if not transpose:
-        return u[:, ::-1], s[::-1], vh[::-1]
+        if return_vh:
+            u = None
+        if return_u:
+            vh = None
+        return u, s, vh
     else: # swap u and v
-        return _herm(vh[::-1]), s[::-1], _herm(u[:, ::-1])
-
+        if return_u:
+            return _herm(vh), s, None
+        if return_vh:
+            return None, s, _herm(u)
+        return _herm(vh), s, _herm(u)
