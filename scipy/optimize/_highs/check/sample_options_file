@@ -1,0 +1,8 @@
+# Options file for HiGHS
+# Comments start with a # on the first entry of a line.
+# Each option must be specified on a new line
+# Empty lines are ignored.
+
+presolve = on
+small_matrix_value = 0.001
+mps_parser_type_free = true

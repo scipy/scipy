@@ -1,0 +1,19 @@
+#ifndef HCONFIG_H_
+#define HCONFIG_H_
+
+#cmakedefine EXT_PRESOLVE
+#cmakedefine OPENMP
+#cmakedefine SCIP_DEV
+#cmakedefine HiGHSDEV
+#cmakedefine OSI_FOUND
+#cmakedefine CMAKE_BUILD_TYPE "@CMAKE_BUILD_TYPE@"
+#cmakedefine HiGHSRELEASE
+#cmakedefine IPX_ON
+#define HIGHS_GITHASH "@GITHASH@"
+#define HIGHS_COMPILATION_DATE "@TODAY@"
+#define HIGHS_VERSION_MAJOR @HIGHS_VERSION_MAJOR@
+#define HIGHS_VERSION_MINOR @HIGHS_VERSION_MINOR@
+#define HIGHS_VERSION_PATCH @HIGHS_VERSION_PATCH@
+#define HIGHS_DIR "@CMAKE_SOURCE_DIR@"
+
+#endif /* HCONFIG_H_ */
