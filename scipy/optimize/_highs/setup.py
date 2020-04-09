@@ -1,4 +1,5 @@
 
+import sys
 import pathlib
 from datetime import datetime
 
@@ -62,8 +63,16 @@ def configuration(parent_package='', top_path=None):
         'HiGHSDEV',
         'OSI_FOUND',
     ]
+
+    # HiGHS written using C++11 standard, we use C++14 for std::make_unique
+    EXTRA_COMPILE_ARGS = []
+    if sys.platform == 'win32':
+        EXTRA_COMPILE_ARGS.append('/std:c++14')
+    else:
+        EXTRA_COMPILE_ARGS.append('std=c++14')
+
     # -O3 takes longer to compile, but passes unit tests -- could use?
-    EXTRA_COMPILE_ARGS = ['-std=c++14'] # '-O3']
+    #EXTRA_COMPILE_ARGS.append('-O3')
 
     # Compile BASICLU as a static library to appease clang:
     # (won't allow -std=c++14 option for C sources)
