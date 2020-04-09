@@ -378,6 +378,15 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0,
 
     The solution, `x`, is always a 1-D array, regardless of the shape of `x0`,
     or whether `x0` is a scalar.
+
+    Examples
+    --------
+    >>> from scipy.optimize import leastsq
+    >>> def func(x):
+    ...     return 2*(x-3)**2+1
+    >>> leastsq(func, 0)
+    (array([2.99999999]), 1)
+
     """
     x0 = asarray(x0).flatten()
     n = len(x0)
