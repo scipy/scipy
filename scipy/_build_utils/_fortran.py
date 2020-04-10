@@ -4,7 +4,8 @@ import glob
 from distutils.dep_util import newer
 
 
-__all__ = ['needs_g77_abi_wrapper', 'get_g77_abi_wrappers']
+__all__ = ['needs_g77_abi_wrapper', 'get_g77_abi_wrappers',
+           'gfortran_legacy_flag_hook']
 
 
 def uses_mkl(info):
@@ -43,3 +44,27 @@ def get_g77_abi_wrappers(info):
             os.path.join(path, 'src', 'wrap_dummy_g77_abi.f'),
         ]
     return wrapper_sources
+
+
+def gfortran_legacy_flag_hook(cmd, ext):
+    """
+    Pre-build hook to add dd gfortran legacy flag -fallow-argument-mismatch
+    """
+    from .compiler_helper import try_add_flag
+    from distutils.version import LooseVersion
+
+    if isinstance(ext, dict):
+        # build_clib
+        compilers = ((cmd._f_compiler, ext.setdefault('extra_f77_compile_args', [])),
+                      (cmd._f_compiler, ext.setdefault('extra_f90_compile_args', [])))
+    else:
+        # build_ext
+        compilers = ((cmd._f77_compiler, ext.extra_f77_compile_args),
+                     (cmd._f90_compiler, ext.extra_f90_compile_args))
+
+    for compiler, args in compilers:
+        if compiler is None:
+            continue
+
+        if compiler.compiler_type == "gnu95" and compiler.version >= LooseVersion("10"):
+            try_add_flag(args, compiler, "-fallow-argument-mismatch")
