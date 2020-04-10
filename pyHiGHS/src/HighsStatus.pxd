@@ -4,7 +4,7 @@
 from libcpp.string cimport string
 
 cdef extern from "HighsStatus.h" nogil:
-    cdef enum HighsStatus:
+    ctypedef enum HighsStatus:
         HighsStatusOK "HighsStatus::OK"
         HighsStatusWarning "HighsStatus::Warning"
         HighsStatusError "HighsStatus::Error"

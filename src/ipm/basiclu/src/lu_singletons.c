@@ -8,7 +8,6 @@
  */
 
 #include "lu_internal.h"
-#include "lu_timer.h"
 
 static lu_int singleton_cols
 (
@@ -166,7 +165,6 @@ lu_int lu_singletons(
 
     lu_int i, j, pos, put, rank, Bnz, ok;
     double tic[2];
-    lu_tic(tic);
 
     /* -------------------------------- */
     /* Check matrix and build transpose */
@@ -285,7 +283,6 @@ lu_int lu_singletons(
 
     this->matrix_nz = Bnz;
     this->rank = rank;
-    this->time_singletons = lu_toc(tic);
     return BASICLU_OK;
 }
 

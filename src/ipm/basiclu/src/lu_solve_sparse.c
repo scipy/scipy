@@ -6,7 +6,6 @@
  */
 
 #include "lu_internal.h"
-#include "lu_timer.h"
 
 void lu_solve_sparse(
     struct lu *this, const lu_int nrhs, const lu_int *irhs, const double *xrhs,
@@ -45,7 +44,6 @@ void lu_solve_sparse(
 
     lu_int Lflops = 0, Uflops = 0, Rflops = 0;
     double tic[2], elapsed;
-    lu_tic(tic);
 
     if (trans == 't' || trans == 'T')
     {
@@ -280,9 +278,6 @@ void lu_solve_sparse(
         *p_nlhs = nz;
     }
 
-    elapsed = lu_toc(tic);
-    this->time_solve += elapsed;
-    this->time_solve_total += elapsed;
     this->Lflops += Lflops;
     this->Uflops += Uflops;
     this->Rflops += Rflops;

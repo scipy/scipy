@@ -14,6 +14,7 @@
 #include "util/HighsSort.h"
 
 #include <cstddef>
+#include <vector>
 
 #include "lp_data/HConst.h"
 
@@ -220,8 +221,12 @@ void sortSetData(const int num_entries, const int* set, const double* data0,
                  const double* data1, const double* data2, int* sorted_set,
                  double* sorted_data0, double* sorted_data1,
                  double* sorted_data2) {
-  int* sort_set = (int*)malloc(sizeof(int) * (1 + num_entries));
-  int* perm = (int*)malloc(sizeof(int) * (1 + num_entries));
+  std::vector<int> sort_set_vec(1 + num_entries);
+  std::vector<int> perm_vec(1 + num_entries);
+
+  int* sort_set = &sort_set_vec[0];
+  int* perm = &perm_vec[0];
+
   for (int ix = 0; ix < num_entries; ix++) {
     sort_set[1 + ix] = set[ix];
     perm[1 + ix] = ix;
@@ -233,6 +238,4 @@ void sortSetData(const int num_entries, const int* set, const double* data0,
     if (data1 != NULL) sorted_data1[ix] = data1[perm[1 + ix]];
     if (data2 != NULL) sorted_data2[ix] = data2[perm[1 + ix]];
   }
-  free(sort_set);
-  free(perm);
 }

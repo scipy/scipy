@@ -32,7 +32,6 @@
 #include "lu_internal.h"
 #include "lu_list.h"
 #include "lu_file.h"
-#include "lu_timer.h"
 
 /*
  * MAXROW_SMALL is the maximum number of off-diagonal elements in the pivot
@@ -81,7 +80,6 @@ lu_int lu_pivot(struct lu *this)
     lu_int room, need, pos, j;
     lu_int status = BASICLU_OK;
     double tic[2];
-    lu_tic(tic);
 
     assert(nz_row >= 1);
     assert(nz_col >= 1);
@@ -140,7 +138,6 @@ lu_int lu_pivot(struct lu *this)
     }
 
     this->factor_flops += (nz_col-1) * (nz_row-1);
-    this->time_elim_pivot += lu_toc(tic);
     return status;
 }
 
