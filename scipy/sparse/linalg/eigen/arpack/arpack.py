@@ -1888,7 +1888,7 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
         if return_u:
             vh = None
         return u, s, vh
-    else: # swap u and v
+    else:
         if return_u:
             return _herm(vh), s, None
         if return_vh:
