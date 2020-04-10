@@ -3154,7 +3154,7 @@ def f_oneway(*args):
         The associated p-value from the F-distribution.
 
     Warns
-    -------
+    -----
     F_onewayConstantInputWarning
         Raised if each of the input arrays is constant array.
         In this case F-value is either infinite or isn't defined, so
