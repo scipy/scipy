@@ -6880,7 +6880,8 @@ class trapz_gen(rv_continuous):
     defines the trapezoid base from ``loc`` to ``(loc+scale)`` and the flat
     top from ``c`` to ``d`` proportional to the position along the base
     with ``0 <= c <= d <= 1``.  When ``c=d``, this is equivalent to `triang`
-    with the same values for ``loc``, ``scale`` and ``c``.
+    with the same values for ``loc``, ``scale`` and ``c``.  `stats` implements
+    the method of [1]_ for computing moments.
 
     `trapz` takes :math:`c` and :math:`d` as shape parameters.
 
@@ -6891,6 +6892,13 @@ class trapz_gen(rv_continuous):
     The scale parameter changes the width from 1 to `scale`.
 
     %(example)s
+
+    References
+    ----------
+    .. [1] Kacker, R.N. and Lawrence, J.F. (2007). Trapezoidal and triangular
+       distributions for Type B evaluation of standard uncertainty.
+       Metrologia 44, 117–127. https://doi.org/10.1088/0026-1394/44/2/003
+
 
     """
     def _argcheck(self, c, d):
