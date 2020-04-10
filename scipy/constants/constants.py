@@ -98,7 +98,7 @@ arcmin = arcminute = degree / 60
 arcsec = arcsecond = arcmin / 60
 
 # time in second
-minute = 60.0
+minute = 60
 hour = 60 * minute
 day = 24 * hour
 week = 7 * day
@@ -112,13 +112,13 @@ yard = 3 * foot
 mile = 1760 * yard
 mil = inch / 1000
 pt = point = inch / 72  # typography
-survey_foot = 1200.0 / 3937
+survey_foot = 1200 / 3937
 survey_mile = 5280 * survey_foot
-nautical_mile = 1852.0
+nautical_mile = 1852
 fermi = 1e-15
 angstrom = 1e-10
 micron = 1e-6
-au = astronomical_unit = 149597870700.0
+au = astronomical_unit = 149597870700
 light_year = Julian_year * c
 parsec = au / arcsec
 
@@ -210,7 +210,7 @@ def convert_temperature(val, old_scale, new_scale):
     Examples
     --------
     >>> from scipy.constants import convert_temperature
-    >>> convert_temperature(np.array([-40, 40.0]), 'Celsius', 'Kelvin')
+    >>> convert_temperature(np.array([-40, 40]), 'Celsius', 'Kelvin')
     array([ 233.15,  313.15])
 
     """
@@ -220,9 +220,9 @@ def convert_temperature(val, old_scale, new_scale):
     elif old_scale.lower() in ['kelvin', 'k']:
         tempo = _np.asanyarray(val)
     elif old_scale.lower() in ['fahrenheit', 'f']:
-        tempo = (_np.asanyarray(val) - 32.) * 5. / 9. + zero_Celsius
+        tempo = (_np.asanyarray(val) - 32) * 5 / 9 + zero_Celsius
     elif old_scale.lower() in ['rankine', 'r']:
-        tempo = _np.asanyarray(val) * 5. / 9.
+        tempo = _np.asanyarray(val) * 5 / 9
     else:
         raise NotImplementedError("%s scale is unsupported: supported scales "
                                   "are Celsius, Kelvin, Fahrenheit, and "
@@ -233,9 +233,9 @@ def convert_temperature(val, old_scale, new_scale):
     elif new_scale.lower() in ['kelvin', 'k']:
         res = tempo
     elif new_scale.lower() in ['fahrenheit', 'f']:
-        res = (tempo - zero_Celsius) * 9. / 5. + 32.
+        res = (tempo - zero_Celsius) * 9 / 5 + 32
     elif new_scale.lower() in ['rankine', 'r']:
-        res = tempo * 9. / 5.
+        res = tempo * 9 / 5
     else:
         raise NotImplementedError("'%s' scale is unsupported: supported "
                                   "scales are 'Celsius', 'Kelvin', "
