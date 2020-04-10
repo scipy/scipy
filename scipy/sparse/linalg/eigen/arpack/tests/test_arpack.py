@@ -709,7 +709,7 @@ def test_svd_LM_ones_matrix():
                 # Check that the largest singular value is near sqrt(n*m)
                 # and the other singular values have been forced to zero.
                 assert_allclose(np.max(s), np.sqrt(n*m))
-                s_array = np.array(sorted(s)[:-1])
+                s_array = np.array(sorted(s)[:-1])/np.max(s)
                 assert_array_equal(s_array + 1.0, np.ones_like(s_array))
 #                assert_array_equal(sorted(s)[:-1], 0)
 
