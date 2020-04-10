@@ -29,6 +29,7 @@ Generate C code coverage listing under build/lcov/:
 # This is a generic test runner script for projects using NumPy's test
 # framework. Change the following values to adapt to your project:
 #
+import multiprocessing
 
 PROJECT_MODULE = "scipy"
 PROJECT_ROOT_FILES = ['scipy', 'LICENSE.txt', 'setup.py']
@@ -522,4 +523,5 @@ def run_mypy(args):
 
 
 if __name__ == "__main__":
+    multiprocessing.freeze_support()
     main(argv=sys.argv[1:])
