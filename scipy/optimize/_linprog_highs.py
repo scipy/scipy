@@ -18,14 +18,16 @@ from .optimize import _check_unknown_options
 from ._highs.highs_wrapper import highs_wrapper, CONST_INF
 from scipy.sparse import csc_matrix, vstack, issparse
 
+
 def _replace_inf(x):
     # Replace `np.inf` with CONST_INF
     infs = (np.abs(x) == np.inf)
     x[infs] = np.sign(x[infs])*CONST_INF
     return x
 
-def _linprog_highs(lp, solver, time_limit=1, presolve=False, parallel=False,
-                   disp = False, maxiter=None, autoscale=False,
+
+def _linprog_highs(lp, solver, time_limit=1, presolve=True, parallel=False,
+                   disp=False, maxiter=None, autoscale=False,
                    **unknown_options):
     r"""
     Solve the following linear programming problem using one of the HiGHS
@@ -129,6 +131,7 @@ def _linprog_highs(lp, solver, time_limit=1, presolve=False, parallel=False,
     _check_unknown_options(unknown_options)
 
     statuses = {
+        12: (1, "Iteration limit reached."),
         9: (0, "Optimization terminated successfully."),
         8: (3, "The problem is unbounded."),
         7: (2, "The problem is infeasible."),
@@ -171,7 +174,7 @@ def _linprog_highs(lp, solver, time_limit=1, presolve=False, parallel=False,
         'solver': solver,
         'parallel': parallel,
         'time_limit': time_limit,
-        'message_level': disp * 1, # 0 is none, 1 is some. Simplex only?
+        'message_level': disp * 1,  # 0 is none, 1 is some. Simplex only?
         'write_solution_to_file': False,
         'solution_file': 'test.sol',
         'write_solution_pretty': True,
@@ -186,16 +189,8 @@ def _linprog_highs(lp, solver, time_limit=1, presolve=False, parallel=False,
     lb = _replace_inf(lb)
     ub = _replace_inf(ub)
 
-    print("c=", c, ", type= ", type(c), "dtype= ", c.dtype)
-    print("A=\n", A.todense(), ", type= ", type(A), "dtype= ", A.dtype)
-    print("rhs=", rhs, ", type= ", type(rhs), "dtype= ", rhs.dtype)
-    print("lhs=", lhs, ", type= ", type(lhs), "dtype= ", lhs.dtype)
-    print("lb=", lb, ", type= ", type(lb), "dtype= ", lb.dtype)
-    print("ub=", ub, ", type= ", type(ub), "dtype= ", ub.dtype)
-    print("options=", options)
     res = highs_wrapper(c, A.indptr, A.indices, A.data, lhs, rhs,
                         lb, ub, options)
-    print(res)
 
     sol = {'x': res.get('x', None),
            'slack': res.get('slack', None),
