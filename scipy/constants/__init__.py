@@ -6,12 +6,42 @@ Constants (:mod:`scipy.constants`)
 .. currentmodule:: scipy.constants
 
 
+CODATA Fundamental Physical Constants 
+=====================================
+The physical constants in the dictionary
+
+.. data:: physical_constants
+
+are taken from the 2018th version of the CODATA internationally recommended
+values of the Fundamental Physical Constants [1]_ . They can be either
+accessed directly via
+
+.. autosummary::
+   :toctree: generated/
+   
+   value      -- Value in physical_constants indexed by key
+   unit       -- Unit in physical_constants indexed by key
+   precision  -- Relative precision in physical_constants indexed by key
+   find       -- Return list of physical_constant keys with a given string
+   ConstantWarning -- Constant sought not in newest CODATA data set
+
+or via
+
+``scipy.constants.physical_constants[name] = (value, unit, uncertainty)``.
+
+A complete list of the available constants is given in the following:
+
+======================================================================  ====
+%(constant_names)s
+======================================================================  ====
+
+
 About the SI units
 ==================
 In 2019 seven SI base units were (re)defined to serve as a basis for all 
 physical quantities by the BIPM. They can be summarized as followed even though
 for a more detailed background the information provided by the BIPM is
-recommended (see [1]_):
+recommended (see [2]_):
 
 - The second (:math:`\mathrm{s}`) as the SI unit of time is derived from the
   unperturbed ground-state hyperfine transition frequency of the caesium-133
@@ -45,7 +75,7 @@ can be used with the SI prefixes.
 However, one has to keep in mind that different systems of measurement apply
 for different problems and therefore the SI units are not necessarily the
 best (in terms of convenience) units for every problem. An overview of
-different systems of measurement can be found on Wikipedia [2]_ .
+different systems of measurement can be found on Wikipedia [3]_ .
 
 
 About the notation of physical units
@@ -65,34 +95,6 @@ form is also the recommended form for tables or figures where
 numerical value(s) is/are put in the table rows or on the axis ticks.
 
 
-List of all constants
-=====================
-The constants in the dictionary
-
-.. data:: physical_constants
-
-are taken from [3]_ and can be either accessed directly via
-
-.. autosummary::
-   :toctree: generated/
-   
-   value      -- Value in physical_constants indexed by key
-   unit       -- Unit in physical_constants indexed by key
-   precision  -- Relative precision in physical_constants indexed by key
-   find       -- Return list of physical_constant keys with a given string
-   ConstantWarning -- Constant sought not in newest CODATA data set
-
-or via
-
-``scipy.constants.physical_constants[name] = (value, unit, uncertainty)``.
-
-A complete list of the available constants is given in the following:
-
-======================================================================  ====
-%(constant_names)s
-======================================================================  ====
-
-
 Auxilliary functions
 ====================
 Besides the constants the following auxilliary functions are provided for
@@ -108,12 +110,12 @@ the users convencience:
 
 References
 ==========
-.. [1] Introduction to SI units,
-   https://www.bipm.org/en/measurement-units/
-.. [2] Wikipedia, Systems of measurements,
-   https://en.wikipedia.org/wiki/System_of_measurement
-.. [3] Fundamental Physical Constants --- Complete Listing, 2018 CODATA
+.. [1] Fundamental Physical Constants --- Complete Listing, 2018 CODATA
    adjustment, https://physics.nist.gov/cuu/Constants/Table/allascii.txt
+.. [2] Introduction to SI units,
+   https://www.bipm.org/en/measurement-units
+.. [3] Wikipedia, Systems of measurements,
+   https://en.wikipedia.org/wiki/System_of_measurement
 """
 
 
