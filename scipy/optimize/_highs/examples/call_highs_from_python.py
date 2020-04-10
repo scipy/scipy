@@ -9,6 +9,7 @@ rl = (0.0, 0.0)
 astart = (0, 2, 4)
 aindex = (0, 1, 0, 1)
 avalue = (1.0, 2.0, 1.0, 3.0)
-rc, cv, cd, rv, rd , cbs, rbs = Highs_call(cc, cl, cu, rl, ru, astart, aindex, avalue)
+rc, cv, cd, rv, rd, cbs, rbs = Highs_call(cc, cl, cu, rl, ru,
+                                          astart, aindex, avalue)
 
 print(rc, cv, cd, rv, rd, cbs, rbs)

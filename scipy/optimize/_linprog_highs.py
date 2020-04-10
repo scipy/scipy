@@ -18,14 +18,16 @@ from .optimize import _check_unknown_options
 from ._highs.highs_wrapper import highs_wrapper, CONST_INF
 from scipy.sparse import csc_matrix, vstack, issparse
 
+
 def _replace_inf(x):
     # Replace `np.inf` with CONST_INF
     infs = (np.abs(x) == np.inf)
     x[infs] = np.sign(x[infs])*CONST_INF
     return x
 
+
 def _linprog_highs(lp, solver, time_limit=1, presolve=True, parallel=False,
-                   disp = False, maxiter=None, autoscale=False,
+                   disp=False, maxiter=None, autoscale=False,
                    **unknown_options):
     r"""
     Solve the following linear programming problem using one of the HiGHS
@@ -172,7 +174,7 @@ def _linprog_highs(lp, solver, time_limit=1, presolve=True, parallel=False,
         'solver': solver,
         'parallel': parallel,
         'time_limit': time_limit,
-        'message_level': disp * 1, # 0 is none, 1 is some. Simplex only?
+        'message_level': disp * 1,  # 0 is none, 1 is some. Simplex only?
         'write_solution_to_file': False,
         'solution_file': 'test.sol',
         'write_solution_pretty': True,

@@ -5,6 +5,7 @@ import unittest
 import numpy as np
 from pyHiGHS import highs_wrapper
 
+
 class TestHiGHS(unittest.TestCase):
 
     def test_simple_presolve(self):
@@ -26,6 +27,7 @@ class TestHiGHS(unittest.TestCase):
         options['presolve'] = False
         res = highs_wrapper(c, A, rhs, lhs, lb, ub, options=options)
         self.assertEqual(res['col_value'].tolist(), [1, 2])
+
 
 if __name__ == '__main__':
     unittest.main()
