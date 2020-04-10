@@ -6,7 +6,6 @@
  */
 
 #include "lu_internal.h"
-#include "lu_timer.h"
 
 lu_int basiclu_factorize
 (
@@ -28,7 +27,6 @@ lu_int basiclu_factorize
     struct lu this;
     lu_int status;
     double tic[2], elapsed, factor_cost;
-    lu_tic(tic);
 
     status = lu_load(&this, istore, xstore, Li, Lx, Ui, Ux, Wi, Wx);
     if (status != BASICLU_OK)
@@ -126,18 +124,9 @@ build_factors:
 
     this.update_cost_denom = factor_cost * 250;
 
-    #if 0
-    elapsed = this.time_factorize + lu_toc(tic);
-    printf(" 1e-6 * factor_cost / time_factorize: %.2f\n",
-           1e-6 * factor_cost / elapsed);
-    #endif
-
     if (this.rank < this.m)
         status = BASICLU_WARNING_singular_matrix;
 
 return_to_caller:
-    elapsed = lu_toc(tic);
-    this.time_factorize += elapsed;
-    this.time_factorize_total += elapsed;
     return lu_save(&this, istore, xstore, status);
 }

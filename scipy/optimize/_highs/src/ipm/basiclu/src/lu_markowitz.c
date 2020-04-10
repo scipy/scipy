@@ -33,7 +33,6 @@
 
 #include "lu_internal.h"
 #include "lu_list.h"
-#include "lu_timer.h"
 
 lu_int lu_markowitz(struct lu *this)
 {
@@ -61,7 +60,6 @@ lu_int lu_markowitz(struct lu *this)
     const int_least64_t M = m;
     int_least64_t nz1, nz2, mc, MC;
 
-    lu_tic(tic);
     pivot_row = -1;             /* row of best pivot so far */
     pivot_col = -1;             /* col of best pivot so far */
     MC = M*M;                   /* Markowitz cost of best pivot so far */
@@ -186,6 +184,5 @@ done:
         this->min_colnz = min_colnz;
     if (min_rownz >= 0)
         this->min_rownz = min_rownz;
-    this->time_search_pivot += lu_toc(tic);
     return BASICLU_OK;
 }
