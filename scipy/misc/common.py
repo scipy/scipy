@@ -40,13 +40,13 @@ def central_diff_weights(Np, ndiv=1):
 
     >>> from scipy.misc import central_diff_weights
     >>> def f(x):
-    ...     return 2*x**2+3
+    ...     return 2 * x**2 + 3
     >>> x = 3.0 # derivative point
     >>> h = 0.1 # differential step
     >>> Np = 3 # point number for central derivative
     >>> weights = central_diff_weights(Np) # weights for first derivative
-    >>> vals = [f(x+(i-Np/2)*h) for i in range(Np)]
-    >>> sum(w*v for (w, v) in zip(weights, vals))/h
+    >>> vals = [f(x + (i - Np/2) * h) for i in range(Np)]
+    >>> sum(w * v for (w, v) in zip(weights, vals))/h
     11.79999999999998
 
     This value is close to the analytical solution:
