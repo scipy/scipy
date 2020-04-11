@@ -32,6 +32,9 @@ The module contains:
    algorithms (e.g., hybrid Powell, Levenberg-Marquardt or large-scale
    methods such as Newton-Krylov [KK]_).
 
+6. Linear programming (:func:`linprog`), minimize a linear objective function
+   subject to linear equality and inequality constraints.
+
 Below, several examples demonstrate their basic usage.
 
 
@@ -1346,6 +1349,78 @@ not.
 Preconditioning is an art, science, and industry. Here, we were lucky
 in making a simple choice that worked reasonably well, but there is a
 lot more depth to this topic than is shown here.
+
+Linear programming (:func:`linprog`)
+------------------------------------
+
+The function :func:`linprog` can minimize a linear objective function
+subject to linear equality and inequality constraints. This kind of
+problem is well known as Linear programming. Linear programming solves
+problems of the following form:
+
+.. math::
+
+        \min_x \ & c^T x \\
+        \mbox{such that} \ & A_{ub} x \leq b_{ub},\\
+        & A_{eq} x = b_{eq},\\
+        & l \leq x \leq u ,
+
+where :math:`x` is a vector of decision variables; :math:`c`, :math:`b_{ub}`,
+:math:`b_{eq}`, :math:`l`, and :math:`u` are vectors; and :math:`A_{ub}` and
+:math:`A_{eq}` are matrices.
+
+In this tutorial, we will try to solve some typical linear programming
+problems using :func:`linprog`.
+
+Linear programming example
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Consider the following simple linear programming problem:
+
+.. math::
+        \max_{x_1, x_2, x_3, x_4} \ & 29x_1 + 45x_2 \\
+        \mbox{such that} \ & 2x_1 + 8x_2 + x_3 = 60\\
+        & 4x_1 + 4x_2 + x_4 = 60\\
+        & x_i \geq 0 ,
+
+We can solve it with mathematical deformations and :func:`linprog` like:
+
+::
+
+    from scipy.optimize import linprog
+    import numpy as np
+
+    c = np.array([-29.0, -45.0, 0.0, 0.0])
+    A_ub = np.diag([-1.0, -1.0, -1.0, -1.0])
+    b_ub = np.array([0.0, 0.0, 0.0, 0.0])
+    A_eq = np.array([[2.0, 8.0, 1.0, 0.0], [4.0, 4.0, 0.0, 1.0]])
+    b_eq = np.array([60.0, 60.0])
+
+    result = linprog(c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq)
+
+The result is
+
+::
+
+    >>> print(result)
+    con: array([8.84959661e-09, 9.21134813e-09])
+    fun: -514.9999999215997
+    message: 'Optimization terminated successfully.'
+    nit: 4
+    slack: array([1.00000000e+01, 5.00000000e+00, 2.18431841e-11, 4.09903469e-11])
+    status: 0
+    success: True
+    x: array([1.00000000e+01, 5.00000000e+00, 2.18431841e-11, 4.09903469e-11])
+
+::
+
+    >>> [print("x_", i, ":", np.round(result.x[i], 2)) for i in range(len(result.x))]
+    x_ 0 : 10.0
+    x_ 1 : 5.0
+    x_ 2 : 0.0
+    x_ 3 : 0.0
+
+
 
 .. rubric:: References
 
