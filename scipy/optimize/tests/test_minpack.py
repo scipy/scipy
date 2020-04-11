@@ -556,7 +556,7 @@ class TestCurveFit(object):
         ydata = np.array([np.nan, np.nan, np.nan])
         result = curve_fit(f, xdata, ydata, ignore_nan=True)
 
-        assert result == np.nan
+        assert np.isnan(result)
 
     def test_empty_inputs(self):
         # Test both with and without bounds (regression test for gh-9864)
