@@ -7,6 +7,7 @@ from numpy.testing import (assert_, assert_almost_equal, assert_array_equal,
                            assert_array_almost_equal, assert_allclose,
                            assert_warns, suppress_warnings)
 from pytest import raises as assert_raises
+from pytest import fail
 import numpy as np
 from numpy import array, float64
 from multiprocessing.pool import ThreadPool
@@ -543,15 +544,12 @@ class TestCurveFit(object):
         # Test for handling of NaNs in input data when ignore_nan flag is set: gh-11841
         f = lambda x, a, b: a*x + b
 
-        xdata = np.array([1, 2, 3])
-        ydata = np.array([3, 4, 6])
-        expected = curve_fit(f, xdata, ydata)
-
         xdata = np.array([1, 2, np.nan, 3, 4 ,np.nan])
         ydata = np.array([3, 4, 5, 6, np.nan, 7])
-        result = curve_fit(f, xdata, ydata, ignore_nan=True)
-
-        assert result == expected
+        try:
+            curve_fit(f, xdata, ydata, ignore_nan=True)
+        except ValueError:
+            fail("Did raise ValueError when it should not!")
 
         # Test all NaNs data
         xdata = np.array([np.nan, np.nan, np.nan])
