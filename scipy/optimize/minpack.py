@@ -517,7 +517,7 @@ def _initialize_feasible(lb, ub):
 
 def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
               check_finite=True, bounds=(-np.inf, np.inf), method=None,
-              jac=None, **kwargs):
+              jac=None, ignore_nan=False, **kwargs):
     """
     Use non-linear least squares to fit a function, f, to data.
 
@@ -714,6 +714,15 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
                          "Use 'trf' or 'dogbox' instead.")
 
     # optimization may produce garbage for float32 inputs, cast them to float64
+
+    # ignore NaNs in an array being fit
+    if ignore_nan:
+        xy = np.vstack((xdata, ydata))
+        if np.isnan(xy).all():
+            return np.nan
+        xy = xy[:, ~np.isnan(xy).any(axis=0)]
+        xdata = xy[0]
+        ydata = xy[1]
 
     # NaNs cannot be handled
     if check_finite:

@@ -539,6 +539,26 @@ class TestCurveFit(object):
         assert_raises(ValueError, curve_fit, lambda x, a, b: a*x + b,
                       xdata, ydata, **{"check_finite": True})
 
+    def test_ignore_nan(self):
+        # Test for handling of NaNs in input data when ignore_nan flag is set: gh-11841
+        f = lambda x, a, b: a*x + b
+
+        xdata = np.array([1, 2, 3])
+        ydata = np.array([3, 4, 6])
+        expected = curve_fit(f, xdata, ydata)
+
+        xdata = np.array([1, 2, np.nan, 3, 4 ,np.nan])
+        ydata = np.array([3, 4, 5, 6, np.nan, 7])
+        result = curve_fit(f, xdata, ydata, ignore_nan=True)
+
+        assert result == expected
+
+        xdata = np.array([np.nan, np.nan, np.nan])
+        ydata = np.array([np.nan, np.nan, np.nan])
+        result = curve_fit(f, xdata, ydata, ignore_nan=True)
+
+        assert result == np.nan
+
     def test_empty_inputs(self):
         # Test both with and without bounds (regression test for gh-9864)
         assert_raises(ValueError, curve_fit, lambda x, a: a*x, [], [])
