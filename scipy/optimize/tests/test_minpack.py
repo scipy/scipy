@@ -553,6 +553,7 @@ class TestCurveFit(object):
 
         assert result == expected
 
+        # Test all NaNs data
         xdata = np.array([np.nan, np.nan, np.nan])
         ydata = np.array([np.nan, np.nan, np.nan])
         result = curve_fit(f, xdata, ydata, ignore_nan=True)
