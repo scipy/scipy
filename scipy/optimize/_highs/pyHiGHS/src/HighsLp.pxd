@@ -25,7 +25,7 @@ cdef extern from "HighsLp.h" nogil:
         vector[double] rowLower_
         vector[double] rowUpper_
 
-    cdef enum HighsModelStatus:
+    ctypedef enum HighsModelStatus:
         HighsModelStatusNOTSET "HighsModelStatus::NOTSET"
         HighsModelStatusLOAD_ERROR "HighsModelStatus::LOAD_ERROR"
         HighsModelStatusMODEL_ERROR "HighsModelStatus::MODEL_ERROR"

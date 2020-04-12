@@ -33,8 +33,7 @@ set(basiclu_sources
     ipm/basiclu/src/lu_dfs.c
     ipm/basiclu/src/lu_garbage_perm.c
     ipm/basiclu/src/lu_residual_test.c
-    ipm/basiclu/src/lu_solve_for_update.c
-    ipm/basiclu/src/lu_timer.c)
+    ipm/basiclu/src/lu_solve_for_update.c)
 
 set(ipx_sources
     ipm/ipx/src/basiclu_kernel.cc

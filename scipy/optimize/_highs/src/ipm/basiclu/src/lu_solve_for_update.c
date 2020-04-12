@@ -6,7 +6,6 @@
  */
 
 #include "lu_internal.h"
-#include "lu_timer.h"
 
 lu_int lu_solve_for_update(
     struct lu *this, const lu_int nrhs, const lu_int *irhs, const double *xrhs,
@@ -47,7 +46,6 @@ lu_int lu_solve_for_update(
     const lu_int want_solution = p_nlhs && ilhs && xlhs;
     lu_int Lflops = 0, Uflops = 0, Rflops = 0;
     double tic[2], elapsed;
-    lu_tic(tic);
 
     if (trans == 't' || trans == 'T')
     {
@@ -355,9 +353,6 @@ lu_int lu_solve_for_update(
     }
 
 done:
-    elapsed = lu_toc(tic);
-    this->time_solve += elapsed;
-    this->time_solve_total += elapsed;
     this->Lflops += Lflops;
     this->Uflops += Uflops;
     this->Rflops += Rflops;

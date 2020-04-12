@@ -10,7 +10,6 @@
 #include "lu_internal.h"
 #include "lu_list.h"
 #include "lu_file.h"
-#include "lu_timer.h"
 
 #define GAP (-1)
 #define FLIP(i) (-(i)-1)
@@ -468,7 +467,6 @@ lu_int lu_update(struct lu *this, double xtbl)
     lu_int nreach, *col_reach, *row_reach;
     double spike_diag, newpiv, piverr;
     double tic[2], elapsed;
-    lu_tic(tic);
 
     assert(nforrest < m);
 
@@ -889,9 +887,6 @@ lu_int lu_update(struct lu *this, double xtbl)
         assert(nz == Unz);
     }
 
-    elapsed = lu_toc(tic);
-    this->time_update += elapsed;
-    this->time_update_total += elapsed;
     this->pivot_error = piverr / (1.0 + fabs(newpiv));
     this->Unz = Unz;
     this->btran_for_update = -1;
