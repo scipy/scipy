@@ -226,6 +226,16 @@ def get_build_ext_override():
     from numpy.distutils.command.build_ext import build_ext as old_build_ext
 
     class build_ext(old_build_ext):
+        def finalize_options(self):
+            super().finalize_options()
+
+            # Disable distutils parallel build, due to race conditions
+            # in numpy.distutils (Numpy issue gh-15957)
+            if self.parallel:
+                print("NOTE: -j build option not supportd. Set NPY_NUM_BUILD_JOBS=4 "
+                      "for parallel build.")
+            self.parallel = None
+
         def build_extension(self, ext):
             # When compiling with GNU compilers, use a version script to
             # hide symbols during linking.
@@ -278,6 +288,12 @@ def get_build_clib_override():
     from numpy.distutils.command.build_clib import build_clib as old_build_clib
 
     class build_clib(old_build_clib):
+        def finalize_options(self):
+            super().finalize_options()
+
+            # Disable parallelization (see build_ext above)
+            self.parallel = None
+
         def build_a_library(self, build_info, lib_name, libraries):
             # Allow late configuration
             hooks = build_info.get('_pre_build_hook', ())
