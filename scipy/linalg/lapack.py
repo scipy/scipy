@@ -495,6 +495,11 @@ All functions
    cpttrs
    zpttrs
 
+   spteqr
+   dpteqr
+   cpteqr
+   zpteqr
+
    crot
    zrot
 
