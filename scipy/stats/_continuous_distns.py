@@ -6880,7 +6880,7 @@ class trapz_gen(rv_continuous):
     defines the trapezoid base from ``loc`` to ``(loc+scale)`` and the flat
     top from ``c`` to ``d`` proportional to the position along the base
     with ``0 <= c <= d <= 1``.  When ``c=d``, this is equivalent to `triang`
-    with the same values for ``loc``, ``scale`` and ``c``.  `stats` implements
+    with the same values for `loc`, `scale` and `c`.  `stats` implements
     the method of [1]_ for computing moments.
 
     `trapz` takes :math:`c` and :math:`d` as shape parameters.
@@ -6934,15 +6934,17 @@ class trapz_gen(rv_continuous):
         return np.select(condlist, choicelist)
 
     def _munp(self, n, c, d):
-        # Using van Dorn parameterization as given on wikipedia, with
-        # a=bottom left, b=top left, c=top right, d=bottom right, then
-        # E[X^(k+2)] = h/(k(k-1)) [(d^k-c^k)/(d-c) - ((b^k - a^k)/(b-a)]
-        # with h = 2/((d+c) - (a+b)).  The corresponding parameterization
-        # in scipy, has a'=loc, b'=loc+c*scale, c'=loc+d*scale, d'=loc+scale,
-        # which for standard form reduces to a'=0, b'=c, c'=d, d'=1.
-        # Simplifying E[X^n] gives the dc' term as (d^(n+2) - 1)/(d - 1) and
-        # the ab' term as c^(n-1). The dc' term has numerical difficulties
-        # near d=1, so replace (1 - c^k)/(1-c) with expm1(k*log(c))/(c-1).
+        # Using the parameterization from Kracker, et al., with
+        # a=bottom left, c=top left, d=top right, b=bottom right, then
+        #     E[X^n] = h/(n+1)/(n+2) [(b^{n+2}-d^{n+2})/(b-d)
+        #                             - ((c^{n+2} - a^{n+2})/(c-a)]
+        # with h = 2/((b-a) - (d-c)). The corresponding parameterization
+        # in scipy, has a'=loc, c'=loc+c*scale, d'=loc+d*scale, b'=loc+scale,
+        # which for standard form reduces to a'=0, b'=1, c'=c, d'=d.
+        # Substituting into E[X^n] gives the bd' term as (1 - d^{n+2})/(1 - d)
+        # and the ac' term as c^{n-1} for the standard form. The bd' term has
+        # numerical difficulties near d=1, so replace (1 - d^{n+2})/(1-d)
+        # with expm1((n+2)*log(d))/(d-1).
         # Testing with k=20 for c=(1e-30,1-eps) shows that this is stable.
         # We still require an explicit test for d=1 to prevent divide by zero,
         # and now a test for d=0 to prevent log(0).
@@ -6957,9 +6959,12 @@ class trapz_gen(rv_continuous):
         return val
 
     def _entropy(self, c, d):
-        # Using van Dorn parameterization and entropy formula given on
-        # wikipedia gives a'=loc, b'=loc+c*scale, c'=loc+d*scale, d'=loc+scale,
-        # which for loc=0, scale=1 is a'=0, b'=c, c'=d, d'=1
+        # Using van Dorn parameterization from wikipedia with
+        # a=bottom left, c=top left, d=top right, b=bottom right
+        # gives a'=loc, b'=loc+c*scale, c'=loc+d*scale, d'=loc+scale,
+        # which for loc=0, scale=1 is a'=0, b'=c, c'=d, d'=1.
+        # Substituting into the entropy formula from wikipedia gives
+        # the following result.
         return 0.5 * (1.0-d+c) / (1.0+d-c) + np.log(0.5 * (1.0+d-c))
 
 
