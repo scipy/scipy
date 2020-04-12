@@ -1379,11 +1379,100 @@ Consider the following simple linear programming problem:
 
 .. math::
         \max_{x_1, x_2, x_3, x_4} \ & 29x_1 + 45x_2 \\
-        \mbox{such that} \ & 2x_1 + 8x_2 + x_3 = 60\\
+        \mbox{such that} \
+        & x_1 -x_2 -3x_3 \leq 5\\
+        & 2x_1 -3x_2 -7x_3 + 3x_4 \geq 10\\
+        & 2x_1 + 8x_2 + x_3 = 60\\
         & 4x_1 + 4x_2 + x_4 = 60\\
         & x_i \geq 0 ,
 
-We can solve it with mathematical deformations and :func:`linprog` like:
+We need some mathematical deformations to convert the target problem to the form of :func:`linprog`.
+
+First of all, let's consider the objective function. The problem has 4 decision variables :math:`x_1, x_2, x_3, x_4`.
+We define a vector of decision variables :math:`x = [x_1, x_2, x_3, x_4]`. The problem want to maximize the objective
+function, but :func:`linprog` can accept a minimization problem. This is easily remedied by converting the maximize
+:math:`29x_1 + 45x_2` to minimizing :math:`-29x_1 -45x_2`. Also, :math:`x_3, x_4` are not shown in the objective
+function. That means the weights elements of the objective function for :math:`x_3, x_4` are zeros. So, the objective
+function can be converted to:
+
+.. math::
+        \min_{x_1, x_2, x_3, x_4} \ -29x_1 -45x_2 + 0x_3 + 0x_4
+
+By recalling vector multiplication, the objective weights vector :math:`c` of :func:`linprog` in this problem
+should be
+
+.. math::
+        c = [-29, -45, 0, 0]
+
+Next, let's consider the two inequality constraints. These can be converted by using the "greater than" inequality
+constraint to a "less than" inequality constraint by multiplying both sides by a factor of :math:`-1`:
+
+.. math::
+        x_1 -x_2 -3x_3 + 0x_4  &\leq 5\\
+        -2x_1 + 3x_2 + 7x_3 - 3x_4 &\leq -10\\
+
+These equations can be converted as matrix form:
+
+.. math::
+    A_{ub} x \leq b_{ub}\\
+
+where
+
+.. math::
+   :nowrap:
+
+    \begin{equation*} A_{ub} =
+    \begin{bmatrix} 1 & -1 & -3 & 0 \\
+                    -2 & 3 & 7 & -3
+    \end{bmatrix}
+    \end{equation*}
+
+.. math::
+   :nowrap:
+
+    \begin{equation*} b_{ub} =
+    \begin{bmatrix} 5 \\
+                    -10
+    \end{bmatrix}
+    \end{equation*}
+
+Next, let's consider the two equality constraints. These can be converted like:
+
+.. math::
+        2x_1 + 8x_2 + 1x_3 + 0x_4 &= 60\\
+        4x_1 + 4x_2 + 0x_3 + 1x_4 &= 60\\
+
+These equations can be converted as matrix form:
+
+.. math::
+    A_{eq} x = b_{eq}\\
+
+where
+
+.. math::
+   :nowrap:
+
+    \begin{equation*} A_{eq} =
+    \begin{bmatrix} 2 & 8 & 1 & 0 \\
+                    4 & 4 & 0 & 1
+    \end{bmatrix}
+    \end{equation*}
+
+.. math::
+   :nowrap:
+
+    \begin{equation*} b_{eq} =
+    \begin{bmatrix} 60 \\
+                    60
+    \end{bmatrix}
+    \end{equation*}
+
+The last inequality constraint :math:`x_i \geq 0` is minimum value constraint for all decision variables, which can be
+applied as the ``bounds`` argument of :func:`linprog`. As you can see the API doc :func:`linprog`, the default values of
+``bound`` argument is ``(0, None)`` that means all decision variables are non-negative. So, we don't need to do anything
+the last inequality constraint in this case.
+
+Finally, we can solve the desired problem using the mathematical converts and :func:`linprog`.
 
 ::
 
@@ -1391,10 +1480,14 @@ We can solve it with mathematical deformations and :func:`linprog` like:
     import numpy as np
 
     c = np.array([-29.0, -45.0, 0.0, 0.0])
-    A_ub = np.diag([-1.0, -1.0, -1.0, -1.0])
-    b_ub = np.array([0.0, 0.0, 0.0, 0.0])
-    A_eq = np.array([[2.0, 8.0, 1.0, 0.0], [4.0, 4.0, 0.0, 1.0]])
-    b_eq = np.array([60.0, 60.0])
+    A_ub = np.array([[1.0, -1.0, -3.0, 0.0],
+                    [-2.0, 3.0, 7.0, -3.0]])
+    b_ub = np.array([[5.0],
+                    [-10.0]])
+    A_eq = np.array([[2.0, 8.0, 1.0, 0.0],
+                     [4.0, 4.0, 0.0, 1.0]])
+    b_eq = np.array([[60.0],
+                    [60.0]])
 
     result = linprog(c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq)
 
@@ -1403,22 +1496,22 @@ The result is
 ::
 
     >>> print(result)
-    con: array([8.84959661e-09, 9.21134813e-09])
-    fun: -514.9999999215997
+    con: array([3.07489501e-09, 3.19440119e-09])
+    fun: -500.79999997382595
     message: 'Optimization terminated successfully.'
-    nit: 4
-    slack: array([1.00000000e+01, 5.00000000e+00, 2.18431841e-11, 4.09903469e-11])
+    nit: 5
+    slack: array([ 1.0000000e+00, -1.0003518e-09])
     status: 0
     success: True
-    x: array([1.00000000e+01, 5.00000000e+00, 2.18431841e-11, 4.09903469e-11])
+    x: array([9.2000000e+00, 5.2000000e+00, 4.3425461e-11, 2.4000000e+00])
 
 ::
 
     >>> [print("x_", i, ":", np.round(result.x[i], 2)) for i in range(len(result.x))]
-    x_ 0 : 10.0
-    x_ 1 : 5.0
+    x_ 0 : 9.2
+    x_ 1 : 5.2
     x_ 2 : 0.0
-    x_ 3 : 0.0
+    x_ 3 : 2.4
 
 
 
