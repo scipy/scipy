@@ -2865,6 +2865,11 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
     >>> plt.legend(['data', 'resampled'], loc='best')
     >>> plt.show()
     """
+
+    if domain not in ('time', 'freq'):
+        raise ValueError("Acceptable domain flags are 'time' or"
+                         " 'freq', not domain={}".format(domain))
+
     x = np.asarray(x)
     Nx = x.shape[axis]
 
@@ -2879,8 +2884,6 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
             X = sp_fft.fft(x, axis=axis)
     elif domain == 'freq':
         X = x
-    else:
-        raise NotImplementedError("domain should be 'time' or 'freq'")
 
     # Apply window to spectrum
     if window is not None:
