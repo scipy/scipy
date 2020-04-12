@@ -3,7 +3,6 @@
 
 import operator
 import math
-import sys
 import timeit
 from scipy.spatial import cKDTree
 from . import sigtools, dlti
@@ -17,6 +16,7 @@ from ._arraytools import axis_slice, axis_reverse, odd_ext, even_ext, const_ext
 from .filter_design import cheby1, _validate_sos
 from .fir_filter_design import firwin
 from ._sosfilt import _sosfilt
+import warnings
 
 
 __all__ = ['correlate', 'correlate2d',
@@ -914,7 +914,8 @@ def _conv_ops(x_shape, h_shape, mode):
         elif mode == "valid":
             direct_ops = (s2 - s1 + 1) * s1 if s2 >= s1 else (s1 - s2 + 1) * s2
         elif mode == "same":
-            direct_ops = s1 * s2 if s1 < s2 else s1 * s2 - (s2 // 2) * ((s2 + 1) // 2)
+            direct_ops = (s1 * s2 if s1 < s2 else
+                          s1 * s2 - (s2 // 2) * ((s2 + 1) // 2))
     else:
         if mode == "full":
             direct_ops = min(_prod(s1), _prod(s2)) * _prod(out_shape)
@@ -1376,7 +1377,12 @@ def medfilt(volume, kernel_size=None):
         An array the same size as input containing the median filtered
         result.
 
-    See also
+    Warns
+    -----
+    UserWarning
+        If array size is smaller than kernel size along any dimension
+
+    See Also
     --------
     scipy.ndimage.median_filter
 
@@ -1395,6 +1401,9 @@ def medfilt(volume, kernel_size=None):
     for k in range(volume.ndim):
         if (kernel_size[k] % 2) != 1:
             raise ValueError("Each element of kernel_size should be odd.")
+    if any(k > s for k, s in zip(kernel_size, volume.shape)):
+        warnings.warn('kernel_size exceeds volume extent: the volume will be '
+                      'zero-padded.')
 
     domain = np.ones(kernel_size)
 
@@ -3928,8 +3937,8 @@ def _validate_pad(padtype, padlen, x, axis, ntaps):
 
     # x's 'axis' dimension must be bigger than edge.
     if x.shape[axis] <= edge:
-        raise ValueError("The length of the input vector x must be greater than "
-                         "padlen, which is %d." % edge)
+        raise ValueError("The length of the input vector x must be greater "
+                         "than padlen, which is %d." % edge)
 
     if padtype is not None and edge > 0:
         # Make an extension of length `edge` at each

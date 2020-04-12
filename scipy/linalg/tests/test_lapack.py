@@ -2215,7 +2215,6 @@ def test_pteqr_NAG_f08jgf(compute_z, d, e, d_expect, z_expect):
     assert_allclose(_d, d_expect, atol=atol)
     assert_allclose(np.abs(_z), np.abs(z_expect), atol=atol)
 
-
 @pytest.mark.parametrize('dtype', DTYPES)
 @pytest.mark.parametrize('matrix_size', [(3, 4), (7, 6), (6, 6)])
 def test_geqrfp(dtype, matrix_size):

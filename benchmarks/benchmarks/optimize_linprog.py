@@ -1,19 +1,35 @@
-"""
-Benchmarks for Linear Programming
-"""
-
-# Import testing parameters
-from scipy.optimize import linprog, OptimizeWarning
-from scipy.linalg import toeplitz
-from scipy.optimize.tests.test_linprog import lpgen_2d, magic_square
-from numpy.testing import suppress_warnings
-from scipy.optimize._remove_redundancy import _remove_redundancy, _remove_redundancy_dense, _remove_redundancy_sparse
-from scipy.optimize._linprog_util import _presolve, _clean_inputs, _LPProblem
-from scipy.sparse import csc_matrix, csr_matrix, issparse
-import numpy as np
 import os
 
+import numpy as np
+from numpy.testing import suppress_warnings
+
 from .common import Benchmark
+
+try:
+    from scipy.optimize import linprog, OptimizeWarning
+except ImportError:
+    pass
+
+try:
+    from scipy.optimize.tests.test_linprog import lpgen_2d, magic_square
+    from scipy.optimize._remove_redundancy import (
+        _remove_redundancy, _remove_redundancy_dense,
+        _remove_redundancy_sparse
+    )
+    from scipy.optimize._linprog_util import _presolve, _clean_inputs, _LPProblem
+except ImportError:
+    pass
+
+try:
+    from scipy.linalg import toeplitz
+except ImportError:
+    pass
+
+try:
+    from scipy.sparse import csc_matrix, csr_matrix, issparse
+except ImportError:
+    pass
+
 
 try:
     # the value of SCIPY_XSLOW is used to control whether slow benchmarks run

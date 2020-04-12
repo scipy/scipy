@@ -29,14 +29,19 @@ def _mt_fft(x):
     return fft.fft(x, workers=2)
 
 
-@pytest.mark.skipif(multiprocessing.get_start_method() != 'fork',
-                    reason=('multiprocessing with spawn method is not'
-                            ' compatible with pytest.'))
 def test_mixed_threads_processes(x):
     # Test that the fft threadpool is safe to use before & after fork
+
+    # Must use fork to work around python 3.8 bug
+    # https://bugs.python.org/issue38501
+    try:
+        mp = multiprocessing.get_context('fork')
+    except ValueError:
+        pytest.skip('fork method not available')
+
     expect = fft.fft(x, workers=2)
 
-    with multiprocessing.Pool(2) as p:
+    with mp.Pool(2) as p:
         res = p.map(_mt_fft, [x for _ in range(4)])
 
     for r in res:

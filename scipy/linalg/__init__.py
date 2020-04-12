@@ -95,8 +95,8 @@ Decompositions
    rsf2csf - Real to complex Schur form
    hessenberg - Hessenberg form of a matrix
    cdf2rdf - Complex diagonal form to real diagonal block form
-   cossin - Cosine sine decomposition of a unitary or orthogonal matrix   
-   
+   cossin - Cosine sine decomposition of a unitary or orthogonal matrix
+
 .. seealso::
 
    `scipy.linalg.interpolative` -- Interpolative matrix decompositions
@@ -189,8 +189,6 @@ Low-level routines
    `scipy.linalg.cython_lapack` -- Low-level LAPACK functions for Cython
 
 """  # noqa: E501
-
-from .linalg_version import linalg_version as __version__
 
 from .misc import *
 from .basic import *

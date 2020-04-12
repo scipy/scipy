@@ -1,7 +1,7 @@
 from numpy.testing import suppress_warnings
 
 try:
-    import mpmath as mp
+    import mpmath as mp  # type: ignore[import]
 except ImportError:
     pass
 

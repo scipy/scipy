@@ -264,7 +264,7 @@ def get_build_ext_override():
                     cc = sysconfig.get_config_var("CC")
                     if not cc:
                         cc = ""
-                    compiler_name = os.path.basename(cc)
+                    compiler_name = os.path.basename(cc.split(" ")[0])
                     is_gcc = "gcc" in compiler_name or "g++" in compiler_name
             return is_gcc and sysconfig.get_config_var('GNULD') == 'yes'
 

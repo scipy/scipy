@@ -215,7 +215,7 @@ class VarReader4(object):
             with dtype 'U1', shape given by `hdr` ``dims``
         '''
         arr = self.read_sub_array(hdr).astype(np.uint8)
-        S = arr.tostring().decode('latin-1')
+        S = arr.tobytes().decode('latin-1')
         return np.ndarray(shape=hdr.dims,
                           dtype=np.dtype('U1'),
                           buffer=np.array(S)).copy()
@@ -448,7 +448,7 @@ class VarWriter4(object):
         self.oned_as = file_writer.oned_as
 
     def write_bytes(self, arr):
-        self.file_stream.write(arr.tostring(order='F'))
+        self.file_stream.write(arr.tobytes(order='F'))
 
     def write_string(self, s):
         self.file_stream.write(s)

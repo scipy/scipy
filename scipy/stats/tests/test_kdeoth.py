@@ -316,6 +316,33 @@ def test_kde_integer_input():
     assert_array_almost_equal(kde(x1), y_expected, decimal=6)
 
 
+_ftypes = [getattr(np, dtype) for dtype in ['float32', 'float64', 'float96',
+                                            'float128', 'int32', 'int64']
+           if hasattr(np, dtype)]
+
+@pytest.mark.parametrize("bw_type", _ftypes + ["scott", "silverman"])
+@pytest.mark.parametrize("weights_type", _ftypes)
+@pytest.mark.parametrize("dataset_type", _ftypes)
+@pytest.mark.parametrize("point_type", _ftypes)
+def test_kde_output_dtype(point_type, dataset_type, weights_type, bw_type):
+    # test that for any given combination of input datatypes we get the
+    # appropriate result datatype
+    weights = np.arange(5, dtype=weights_type)
+
+    if bw_type in ["scott", "silverman"]:
+        bw = bw_type
+    else:
+        bw = bw_type(3)
+
+    dataset = np.arange(5, dtype=dataset_type)
+    k = stats.kde.gaussian_kde(dataset, bw_method=bw, weights=weights)
+    points = np.arange(5, dtype=point_type)
+    result = k(points)
+    # weights are always cast to float64
+    assert result.dtype == np.result_type(dataset, points, np.float64(weights),
+                                          k.factor)
+
+
 def test_pdf_logpdf():
     np.random.seed(1)
     n_basesample = 50

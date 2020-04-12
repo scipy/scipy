@@ -1,7 +1,5 @@
 import re
 import os
-import glob
-from distutils.dep_util import newer
 
 
 __all__ = ['needs_g77_abi_wrapper', 'get_g77_abi_wrappers']
@@ -24,6 +22,7 @@ def needs_g77_abi_wrapper(info):
     except KeyError:
         needs_wrapper = uses_mkl(info)
     return needs_wrapper
+
 
 def get_g77_abi_wrappers(info):
     """

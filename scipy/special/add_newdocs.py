@@ -6,8 +6,9 @@
 # _generate_pyx.py to generate the docstrings for the ufuncs in
 # scipy.special at the C level when the ufuncs are created at compile
 # time.
+from typing import Dict
 
-docdict = {}
+docdict: Dict[str, str] = {}
 
 
 def get(name):
@@ -111,6 +112,10 @@ add_newdoc("voigt_profile",
     The Voigt profile is a convolution of a 1-D Normal distribution with
     standard deviation ``sigma`` and a 1-D Cauchy distribution with half-width at
     half-maximum ``gamma``.
+
+    If ``sigma = 0``, PDF of Cauchy distribution is returned.
+    Conversely, if ``gamma = 0``, PDF of Normal distribution is returned.
+    If ``sigma = gamma = 0``, the return value is ``Inf`` for ``x = 0``, and ``0`` for all other ``x``.
 
     Parameters
     ----------
