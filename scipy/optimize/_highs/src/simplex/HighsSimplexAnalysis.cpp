@@ -185,7 +185,7 @@ void HighsSimplexAnalysis::setup(const HighsLp& lp, const HighsOptions& options,
   AnIterTraceIterDl = 1;
   AnIterTraceRec* lcAnIter = &AnIterTrace[0];
   lcAnIter->AnIterTraceIter = AnIterIt0;
-  lcAnIter->AnIterTraceTime = timer_->getTime();
+  lcAnIter->AnIterTraceTime = timer_->getWallTime();
 
   initialiseValueDistribution("Primal step summary", "", 1e-16, 1e16, 10.0,
                               primal_step_distribution);
@@ -636,8 +636,8 @@ void HighsSimplexAnalysis::reportFactorTimer() {
         int thread_factor_iClock = thread_clock[clock_id];
         timer.clock_num_call[all_factor_iClock] +=
             timer.clock_num_call[thread_factor_iClock];
-        timer.clock_ticks[all_factor_iClock] +=
-            timer.clock_ticks[thread_factor_iClock];
+        timer.clock_time[all_factor_iClock] +=
+            timer.clock_time[thread_factor_iClock];
       }
     }
     printf("reportFactorTimer: HFactor clocks for all %d threads\n",
@@ -665,7 +665,7 @@ void HighsSimplexAnalysis::iterationRecord() {
       AnIterTraceNumRec++;
       AnIterTraceRec& lcAnIter = AnIterTrace[AnIterTraceNumRec];
       lcAnIter.AnIterTraceIter = simplex_iteration_count;
-      lcAnIter.AnIterTraceTime = timer_->getTime();
+      lcAnIter.AnIterTraceTime = timer_->getWallTime();
       if (average_fraction_of_possible_minor_iterations_performed > 0) {
         lcAnIter.AnIterTraceMulti =
             average_fraction_of_possible_minor_iterations_performed;
@@ -921,7 +921,7 @@ void HighsSimplexAnalysis::summaryReport() {
       AnIterTraceNumRec++;
       AnIterTraceRec& lcAnIter = AnIterTrace[AnIterTraceNumRec];
       lcAnIter.AnIterTraceIter = simplex_iteration_count;
-      lcAnIter.AnIterTraceTime = timer_->getTime();
+      lcAnIter.AnIterTraceTime = timer_->getWallTime();
       if (average_fraction_of_possible_minor_iterations_performed > 0) {
         lcAnIter.AnIterTraceMulti =
             average_fraction_of_possible_minor_iterations_performed;
