@@ -73,7 +73,8 @@ def configuration(parent_package='', top_path=None):
     OPTIMIZATIONS = []
     if sys.platform == 'win32':
         EXTRA_COMPILE_ARGS.append('/std:c++14')
-        OPTIMIZATIONS.append('/O2', '/Ob2')
+        OPTIMIZATIONS.append('/O2')
+        OPTIMIZATIONS.append('/Ob2')
     else:
         EXTRA_COMPILE_ARGS.append('-std=c++14')
         OPTIMIZATIONS.append('-O3')
