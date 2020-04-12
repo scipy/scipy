@@ -135,10 +135,12 @@ def fsolve(func, x0, args=(), fprime=None, full_output=0,
 
     Examples
     --------
+    We can find the roots of a function.
+
     >>> from scipy.optimize import fsolve
     >>> def func(x):
-    ...     return [x[0]*np.cos(x[1]) - 4,
-    ...             x[1]*x[0] - x[1] - 5]
+    ...     return [x[0] * np.cos(x[1]) - 4,
+    ...             x[1] * x[0] - x[1] - 5]
     >>> root = fsolve(func, [1, 1])
     >>> root
     array([6.50409711, 0.90841421])
