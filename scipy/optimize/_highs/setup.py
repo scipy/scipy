@@ -67,16 +67,16 @@ def configuration(parent_package='', top_path=None):
         'OSI_FOUND',
     ]
 
-    # HiGHS written using C++11 standard, we use C++14 for std::make_unique
+    # HiGHS written using C++11 standard, we use C++14 for std::make_unique;
+    # -O3 is used for all libraries in HiGHS
     EXTRA_COMPILE_ARGS = []
+    OPTIMIZATIONS = []
     if sys.platform == 'win32':
         EXTRA_COMPILE_ARGS.append('/std:c++14')
+        OPTIMIZATIONS.append('/O2', '/Ob2')
     else:
         EXTRA_COMPILE_ARGS.append('-std=c++14')
-
-    # -O3 takes longer to compile, but passes unit tests -- could use?
-    # EXTRA_COMPILE_ARGS.append('-O3')
-    EXTRA_COMPILE_ARGS = ['-std=c++14']  # '-O3']
+        OPTIMIZATIONS.append('-O3')
 
     # Compile BASICLU as a static library to appease clang:
     # (won't allow -std=c++14 option for C sources)
@@ -91,6 +91,7 @@ def configuration(parent_package='', top_path=None):
         ],
         language='c',
         macros=DEFINE_MACROS,
+        extra_compile_args=OPTIMIZATIONS,
     )
 
     # Compile the rest of the sources all together,
@@ -120,7 +121,7 @@ def configuration(parent_package='', top_path=None):
         libraries=['basiclu'],
         define_macros=DEFINE_MACROS,
         undef_macros=UNDEF_MACROS,
-        extra_compile_args=EXTRA_COMPILE_ARGS,
+        extra_compile_args=EXTRA_COMPILE_ARGS + OPTIMIZATIONS,
     )
 
     return config
