@@ -23,7 +23,7 @@
 #include "lp_data/HighsStatus.h"
 
 class HighsLp;
-class IpxSolution;
+struct IpxSolution;
 class HighsOptions;
 class HighsModelObject;
 
