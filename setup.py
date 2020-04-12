@@ -3,6 +3,7 @@ import sys
 import pathlib
 from datetime import datetime
 
+
 def _get_sources(CMakeLists, start_token, end_token):
     # Read in sources from CMakeLists.txt
     CMakeLists = pathlib.Path(__file__).parent / CMakeLists
@@ -19,6 +20,7 @@ def _get_sources(CMakeLists, start_token, end_token):
     sources = [str(pathlib.Path('src/' + s)) for s in sources]
     return sources
 
+
 # Grab some more info about HiGHS from root CMakeLists
 def _get_version(CMakeLists, start_token, end_token=')'):
     CMakeLists = pathlib.Path(__file__).parent / CMakeLists
@@ -27,6 +29,7 @@ def _get_version(CMakeLists, start_token, end_token=')'):
         start_idx = s.find(start_token) + len(start_token) + 1
         end_idx = s[start_idx:].find(end_token) + len(s[:start_idx])
     return s[start_idx:end_idx].strip()
+
 
 def configuration(parent_package='', top_path=None):
 
@@ -44,39 +47,42 @@ def configuration(parent_package='', top_path=None):
     # We provide an empty HConfig.h file and do the defs and undefs
     # here:
     TODAY_DATE = datetime.today().strftime('%Y-%m-%d')
+    # ('OPENMP', None), ?
     DEFINE_MACROS = [
-        #('OPENMP', None),
         ('CMAKE_BUILD_TYPE', '"Release"'),
         ('HiGHSRELEASE', None),
         ('IPX_ON', 'ON'),
         ('HIGHS_GITHASH', '"%s"' % GITHASH),
-        ('HIGHS_COMPILATION_DATE', '"' + TODAY_DATE +'"'),
+        ('HIGHS_COMPILATION_DATE', '"' + TODAY_DATE + '"'),
         ('HIGHS_VERSION_MAJOR', HIGHS_VERSION_MAJOR),
         ('HIGHS_VERSION_MINOR', HIGHS_VERSION_MINOR),
         ('HIGHS_VERSION_PATCH', HIGHS_VERSION_PATCH),
         ('HIGHS_DIR', '"' + HIGHS_DIR + '"'),
     ]
     UNDEF_MACROS = [
-        'OPENMP', # unconditionally disable openmp
+        'OPENMP',  # unconditionally disable openmp
         'EXT_PRESOLVE',
         'SCIP_DEV',
         'HiGHSDEV',
         'OSI_FOUND',
     ]
 
-    # HiGHS written using C++11 standard, we use C++14 for std::make_unique
+    # HiGHS written using C++11 standard
+    # -O3 is used for all libraries in HiGHS
     EXTRA_COMPILE_ARGS = []
+    OPTIMIZATIONS = []
     if sys.platform == 'win32':
-        EXTRA_COMPILE_ARGS.append('/std:c++14')
+        EXTRA_COMPILE_ARGS.append('/std:c++11')
+        OPTIMIZATIONS.append('/O2')
+        OPTIMIZATIONS.append('/Ob2')
     else:
-        EXTRA_COMPILE_ARGS.append('-std=c++14')
-
-    # -O3 takes longer to compile, but passes unit tests -- could use?
-    #EXTRA_COMPILE_ARGS.append('-O3')
+        EXTRA_COMPILE_ARGS.append('-std=c++11')
+        OPTIMIZATIONS.append('-O3')
 
     # Compile BASICLU as a static library to appease clang:
     # (won't allow -std=c++14 option for C sources)
-    basiclu_sources = _get_sources('src/CMakeLists.txt', 'set(basiclu_sources\n', ')')
+    basiclu_sources = _get_sources('src/CMakeLists.txt',
+                                   'set(basiclu_sources\n', ')')
     config.add_library(
         'basiclu',
         sources=basiclu_sources,
@@ -86,9 +92,11 @@ def configuration(parent_package='', top_path=None):
         ],
         language='c',
         macros=DEFINE_MACROS,
+        extra_compile_args=OPTIMIZATIONS,
     )
 
-    # Compile the rest of the sources all together, linking the BASICLU static library
+    # Compile the rest of the sources all together,
+    # linking the BASICLU static library
     ipx_sources = _get_sources('src/CMakeLists.txt', 'set(ipx_sources\n', ')')
     highs_sources = _get_sources('src/CMakeLists.txt', 'set(sources\n', ')')
     WRAPPER_INCLUDE_DIRS = [
@@ -114,10 +122,11 @@ def configuration(parent_package='', top_path=None):
         libraries=['basiclu'],
         define_macros=DEFINE_MACROS,
         undef_macros=UNDEF_MACROS,
-        extra_compile_args=EXTRA_COMPILE_ARGS,
+        extra_compile_args=EXTRA_COMPILE_ARGS + OPTIMIZATIONS,
     )
 
     return config
+
 
 if __name__ == '__main__':
     from numpy.distutils.core import setup
