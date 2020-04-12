@@ -387,6 +387,10 @@ basis_.valid_, hmos_[0].basis_.valid_);
         HighsLp& reduced_lp = presolve_info.getReducedProblem();
         // Validate the reduced LP
         assert(assessLp(reduced_lp, options_) == HighsStatus::OK);
+        call_status = cleanBounds(options_, reduced_lp);
+        return_status =
+            interpretCallStatus(call_status, return_status, "cleanBounds");
+        if (return_status == HighsStatus::Error) return return_status;
         // Add reduced lp object to vector of HighsModelObject,
         // so the last one in lp_ is the presolved one.
 

@@ -55,6 +55,8 @@ HighsStatus assessMatrix(const HighsOptions& options, const int vec_dim,
                          const double small_matrix_value,
                          const double large_matrix_value, bool normalise);
 
+HighsStatus cleanBounds(const HighsOptions& options, HighsLp& lp);
+
 HighsStatus scaleLpColCosts(const HighsOptions& options, HighsLp& lp,
                             vector<double>& colScale, const bool interval,
                             const int from_col, const int to_col,

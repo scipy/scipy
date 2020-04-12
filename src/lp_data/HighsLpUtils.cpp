@@ -615,6 +615,51 @@ HighsStatus assessMatrix(const HighsOptions& options, const int vec_dim,
   return return_status;
 }
 
+HighsStatus cleanBounds(const HighsOptions& options, HighsLp& lp) {
+  double max_residual = 0;
+  int num_change = 0;
+  for (int iCol = 0; iCol < lp.numCol_; iCol++) {
+    double residual = lp.colLower_[iCol] - lp.colUpper_[iCol];
+    if (residual > options.primal_feasibility_tolerance) {
+      HighsLogMessage(options.logfile, HighsMessageType::ERROR,
+                      "Column %d has inconsistent bounds [%g, %g] (residual = "
+                      "%g) after presolve ",
+                      iCol, lp.colLower_[iCol], lp.colUpper_[iCol], residual);
+      return HighsStatus::Error;
+    } else if (residual > 0) {
+      num_change++;
+      max_residual = std::max(residual, max_residual);
+      double mid = 0.5 * (lp.colLower_[iCol] + lp.colUpper_[iCol]);
+      lp.colLower_[iCol] = mid;
+      lp.colUpper_[iCol] = mid;
+    }
+  }
+  for (int iRow = 0; iRow < lp.numRow_; iRow++) {
+    double residual = lp.rowLower_[iRow] - lp.rowUpper_[iRow];
+    if (residual > options.primal_feasibility_tolerance) {
+      HighsLogMessage(options.logfile, HighsMessageType::ERROR,
+                      "Row %d has inconsistent bounds [%g, %g] (residual = %g) "
+                      "after presolve ",
+                      iRow, lp.rowLower_[iRow], lp.rowUpper_[iRow], residual);
+      return HighsStatus::Error;
+    } else if (residual > 0) {
+      num_change++;
+      max_residual = std::max(residual, max_residual);
+      double mid = 0.5 * (lp.rowLower_[iRow] + lp.rowUpper_[iRow]);
+      lp.rowLower_[iRow] = mid;
+      lp.rowUpper_[iRow] = mid;
+    }
+  }
+  if (num_change) {
+    HighsLogMessage(options.logfile, HighsMessageType::WARNING,
+                    "Resolved %d inconsistent bounds (maximum residual = "
+                    "%9.4g) after presolve ",
+                    num_change, max_residual);
+    return HighsStatus::Warning;
+  }
+  return HighsStatus::OK;
+}
+
 HighsStatus scaleLpColCosts(const HighsOptions& options, HighsLp& lp,
                             vector<double>& colScale, const bool interval,
                             const int from_col, const int to_col,
