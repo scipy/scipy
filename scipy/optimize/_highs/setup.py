@@ -68,16 +68,13 @@ def configuration(parent_package='', top_path=None):
     ]
 
     # HiGHS written using C++11 standard
-    # -O3 is used for all libraries in HiGHS
+    # -O3 is used for all libraries in HiGHS, but we will stick to
+    # scipy defaults (varies by compiler)
     EXTRA_COMPILE_ARGS = []
-    OPTIMIZATIONS = []
     if sys.platform == 'win32':
         EXTRA_COMPILE_ARGS.append('/std:c++11')
-        OPTIMIZATIONS.append('/O2')
-        OPTIMIZATIONS.append('/Ob2')
     else:
         EXTRA_COMPILE_ARGS.append('-std=c++11')
-        OPTIMIZATIONS.append('-O3')
 
     # Compile BASICLU as a static library to appease clang:
     # (won't allow -std=c++14 option for C sources)
@@ -92,7 +89,6 @@ def configuration(parent_package='', top_path=None):
         ],
         language='c',
         macros=DEFINE_MACROS,
-        extra_compile_args=OPTIMIZATIONS,
     )
 
     # Compile the rest of the sources all together,
@@ -122,7 +118,7 @@ def configuration(parent_package='', top_path=None):
         libraries=['basiclu'],
         define_macros=DEFINE_MACROS,
         undef_macros=UNDEF_MACROS,
-        extra_compile_args=EXTRA_COMPILE_ARGS + OPTIMIZATIONS,
+        extra_compile_args=EXTRA_COMPILE_ARGS,
     )
 
     return config
