@@ -3659,19 +3659,12 @@ class geninvgauss_gen(rv_continuous):
         def logpdf_single(x, p, b):
             return _stats.geninvgauss_gen_logpdf(x, p, b)
 
-        return logpdf_single(x, p, b)
-        # z = sc.kve(p, b)
-        # z_inf = np.isinf(z)
-        # if z_inf.any():
-        #     msg = ("Infinite values encountered in scipy.special.kve(p, b). "
-        #            "Values replaced by NaN to avoid incorrect results.")
-        #     warnings.warn(msg, RuntimeWarning)
-        #     z[z_inf] = np.nan
-        # c = -np.log(2) - np.log(z) + b
-        # return _lazywhere(x > 0, (x, p, b, c),
-        #                   lambda x, p, b, c:
-        #                       c + (p - 1)*np.log(x) - b*(x + 1/x)/2,
-        #                   -np.inf)
+        z = logpdf_single(x, p, b)
+        if np.isnan(z).any():
+            msg = ("Infinite values encountered in scipy.special.kve(p, b). "
+                   "Values replaced by NaN to avoid incorrect results.")
+            warnings.warn(msg, RuntimeWarning)
+        return z
 
     def _pdf(self, x, p, b):
         # relying on logpdf avoids overflow of x**(p-1) for large x and p

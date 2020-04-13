@@ -486,9 +486,6 @@ cpdef geninvgauss_gen_logpdf(double x, double p, double b):
 
     z = cs.kve(p, b)
     if math.isinf(z):
-        msg = ("Infinite values encountered in scipy.special.kve(p, b). "
-               "Values replaced by NaN to avoid incorrect results.")
-        warnings.warn(msg, RuntimeWarning)
         return math.nan
 
     if x <= 0:
