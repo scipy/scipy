@@ -634,6 +634,57 @@ class TestTbtrs(object):
         assert_raises(Exception, tbtrs, ab, b)
 
 
+class TestGbsvx:
+
+    def test_nag_f07bbf(self):
+        ab = np.array(((0, 0, -3.66, -2.13),
+                       (0, 2.54, -2.73, 4.07),
+                       (-0.23, 2.46, 2.46, -3.82),
+                       (-6.98, 2.56, -4.78, 0)))
+        b = np.array((( 4.42, -36.01),
+                      (27.13, -31.67),
+                      (-6.14,  -1.16),
+                      (10.50, -25.82)))
+        desired = np.array(((-2.0, 1),
+                            (3.0, -4.0),
+                            (1.0, 7.0),
+                            (-4.0, -2.0)))
+        kl, ku = 1, 2
+        gbsvx = get_lapack_funcs('gbsvx', dtype=ab.dtype)
+        ab, afb, ipiv, equed, r, c, b, x, rcond, ferr, berr, work, info = gbsvx(ab=ab, kl=kl, ku=ku, b=b)
+        assert_equal(info, 0)
+        assert_allclose(x, desired)
+
+    def test_nag_f07bpfe(self):
+        ab =  np.array(((0, 0, 0.97 - 2.84j, 0.59 - 0.48j),
+                        (0, -2.05 - 0.85j, -3.99 + 4.01j, 3.33 - 1.04j),
+                        (-1.65 + 2.26j, -1.48 - 1.75j, -1.06 + 1.94j, -0.46 + -1.72j),
+                        (6.30j, -0.77 + 2.83j, 4.48 - 1.09j, 0)))
+        b =  np.array(((-1.06 + 21.50j, 12.85 + 2.84j),
+                       (-22.72 - 53.90j, -70.22 + 21.57j),
+                       ( 28.24 - 38.60j, -20.73 - 1.23j),
+                       (-34.56 + 16.73j, 26.01 + 31.97j)))
+        desired = np.array(((-3.0 + 2.0j, 1.0 + 6.0j),
+                            (1.0 - 7.0j, -7.0 - 4.0j),
+                            (-5.0 + 4.0j, 3.0 + 5.0j),
+                            (6.0 - 8.0j, -8.0 + 2.0j)))
+        kl, ku = 1, 2
+        gbsvx = get_lapack_funcs('gbsvx', dtype=ab.dtype)
+        ab, afb, ipiv, equed, r, c, b, x, rcond, ferr, berr, work, info = gbsvx(ab=ab, kl=kl, ku=ku, b=b)
+        assert_equal(info, 0)
+        assert_allclose(x, desired)
+
+    @pytest.mark.parametrize('dtype', DTYPES)
+    @pytest.mark.parametrize('kwargs', ({'fact': 'A'}, {'trans': 'A'},
+                                        {'equed': 'A'},
+                                        {'kl': -1}, {'ku': -1}))
+    def test_invalid_variables(self, dtype, kwargs):
+        ab = np.ones((1, 1))
+        b = np.ones((1, 1))
+        gbsvx = get_lapack_funcs('gbsvx', dtype=ab.dtype)
+        assert_raises(Exception, gbsvx, ab=ab, b=b, **kwargs)
+
+
 def test_lartg():
     for dtype in 'fdFD':
         lartg = get_lapack_funcs('lartg', dtype=dtype)

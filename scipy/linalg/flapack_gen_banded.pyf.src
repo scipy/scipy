@@ -23,7 +23,87 @@ subroutine <prefix>gbsv(n,kl,ku,nrhs,ab,piv,b,info)
     intent(in,out,copy,out=lub) ab
 
 end subroutine <prefix>gbsv
-   
+
+
+subroutine <prefix2>gbsvx(fact,trans,n,kl,ku,nrhs,ab,ldab,afb,ldafb,ipiv,equed,r,c,b,ldb,x,ldx,rcond,ferr,berr,work,iwork,info)
+     ! ?GBSVX uses the LU factorization to compute the solution to a real
+     ! system of linear equations A * X = B, A**T * X = B, or A**H * X = B,
+     ! where A is a band matrix of order N with KL subdiagonals and KU
+     ! superdiagonals, and X and B are N-by-NRHS matrices.
+
+     ! Error bounds on the solution and a condition estimate are also
+     ! provided.
+
+    callstatement (*f2py_func)(fact,trans,&n,&kl,&ku,&nrhs,ab,&ldab,afb,&ldafb,ipiv,equed,r,c,b,&ldb,x,&ldx,&rcond,ferr,berr,work,iwork,&info)
+    callprotoargument char*,char*,int*,int*,int*,int*,<ctype2>*,int*,<ctype2>*,int*,int*,char*,<ctype2>*,<ctype2>*,<ctype2>*,int*,<ctype2>*,int*,<ctype2>*,<ctype2>*,<ctype2>*,<ctype2>*,int*,int*
+
+    character intent(in), check((*fact=='F')||(*fact=='N')||(*fact=='E')) :: fact = 'N'
+    character intent(in), check((*trans=='N')||(*trans=='T')||(*trans=='C')) :: trans = 'N'
+    integer depend(ab),intent(hide):: n = shape(ab,1)
+    integer intent(in), check(0 <= kl) :: kl = 0
+    integer intent(in), check(0 <= ku) :: ku = 0
+    integer intent(hide), depend(b) :: nrhs = shape(b,1)
+    <ftype2> intent(in,out,copy, out=a), dimension(ldab,n) :: ab
+    integer intent(hide), depend(a) :: ldab = kl + ku + 1
+    <ftype2> optional, intent(in,out,copy,out=lu), dimension(2*kl + ku + 1, n) :: afb
+    integer intent(hide) depend(kl, ku) :: ldafb = 2*kl + ku + 1
+    integer optional, intent(in,out,copy,out=piv), depend(n), dimension(n) :: ipiv
+    character optional, intent(in,out), check((*equed=='N')||(*equed=='R')||(*equed=='C')||(*equed=='B')) :: equed = 'N'
+    <ftype2> optional, intent(in,out), depend(n), dimension(n) :: r
+    <ftype2> optional, intent(in,out), depend(n), dimension(n) :: c
+    <ftype2>  intent(in, out), depend(n), dimension(ldb, nrhs) :: b
+    integer intent(hide) :: ldb = max(1, n)
+    <ftype2> depend(n, nrhs), intent(out), dimension(ldx, nrhs) :: x
+    integer intent(hide) :: ldx = max(1, n)
+    <ftype2> intent(out) :: rcond
+    <ftype2> intent(out), depend(nrhs), dimension(nrhs) :: ferr
+    <ftype2> intent(out), depend(nrhs), dimension(nrhs) :: berr
+    <ftype2> intent(out), depend(n), dimension(3 * n) :: work
+    integer intent(hide), depend(n), dimension(n) :: iwork
+    integer intent(out) :: info
+end subroutine <prefix2>gbsvx
+
+
+subroutine <prefix2c>gbsvx(fact,trans,n,kl,ku,nrhs,ab,ldab,afb,ldafb,ipiv,equed,r,c,b,ldb,x,ldx,rcond,ferr,berr,work,rwork,info)
+     ! ?GBSVX uses the LU factorization to compute the solution to a real
+     ! system of linear equations A * X = B, A**T * X = B, or A**H * X = B,
+     ! where A is a band matrix of order N with KL subdiagonals and KU
+     ! superdiagonals, and X and B are N-by-NRHS matrices.
+
+     ! Error bounds on the solution and a condition estimate are also
+     ! provided.
+
+    callstatement (*f2py_func)(fact,trans,&n,&kl,&ku,&nrhs,ab,&ldab,afb,&ldafb,ipiv,equed,r,c,b,&ldb,x,&ldx,&rcond,ferr,berr,work,rwork,&info)
+    callprotoargument char*,char*,int*,int*,int*,int*,<ctype2c>*,int*,<ctype2c>*,int*,int*,char*,<ctype2>*,<ctype2>*,<ctype2c>*,int*,<ctype2c>*,int*,<ctype2>*,<ctype2>*,<ctype2>*,<ctype2c>*,<ctype2>*,int*
+
+    character intent(in), check((*fact=='F')||(*fact=='N')||(*fact=='E')) :: fact = 'N'
+    character intent(in), check((*trans=='N')||(*trans=='T')||(*trans=='C')) :: trans = 'N'
+
+    integer depend(ab),intent(hide):: n = shape(ab,1)
+    integer intent(in), check(0 <= kl) :: kl = 0
+    integer intent(in), check(0 <= ku) :: ku = 0
+    integer intent(hide), depend(b) :: nrhs = shape(b,1)
+    <ftype2c> intent(in,out,copy), depend(kl,ku), dimension(kl+ku+1,n) :: ab
+    integer intent(hide), depend(a) :: ldab = kl + ku + 1
+    <ftype2c> optional, depend(kl, ku, n), intent(in,out,copy,out=lua), dimension(2*kl + ku + 1, n) :: afb
+    integer intent(hide) depend(kl, ku) :: ldafb = 2*kl + ku + 1
+    integer optional, intent(in,out,copy,out=piv), depend(n), dimension(n) :: ipiv
+    character optional, intent(in,out), check((*equed=='N')||(*equed=='R')||(*equed=='C')||(*equed=='B')) :: equed = 'N'
+    <ftype2> optional, intent(in,out), depend(n), dimension(n) :: r
+    <ftype2> optional, intent(in,out), depend(n), dimension(n) :: c
+    <ftype2c>  intent(in,out), depend(n), dimension(ldb, nrhs) :: b
+    integer intent(hide) :: ldb = max(1, n)
+    <ftype2c> depend(n, nrhs), intent(out), dimension(ldx, nrhs) :: x
+    integer intent(hide) :: ldx = max(1, n)
+    <ftype2> intent(out) :: rcond
+    <ftype2> intent(out), depend(nrhs), dimension(nrhs) :: ferr
+    <ftype2> intent(out), depend(nrhs), dimension(nrhs) :: berr
+    <ftype2c> intent(out), depend(n), dimension(2 * n) :: work
+    <ftype2> intent(hide), depend(n), dimension(n) :: rwork
+    integer intent(out) :: info
+end subroutine <prefix2c>gbsvx
+
+
 subroutine <prefix>gbtrf(m,n,ab,kl,ku,ldab,ipiv,info)
     ! in :Band:dgbtrf.f
     ! lu,ipiv,info = dgbtrf(ab,kl,ku,[m,n,ldab,overwrite_ab])
