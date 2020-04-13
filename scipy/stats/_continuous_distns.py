@@ -6945,7 +6945,7 @@ class trapz_gen(rv_continuous):
         # and the ac' term as c^{n-1} for the standard form. The bd' term has
         # numerical difficulties near d=1, so replace (1 - d^{n+2})/(1-d)
         # with expm1((n+2)*log(d))/(d-1).
-        # Testing with k=20 for c=(1e-30,1-eps) shows that this is stable.
+        # Testing with n=18 for c=(1e-30,1-eps) shows that this is stable.
         # We still require an explicit test for d=1 to prevent divide by zero,
         # and now a test for d=0 to prevent log(0).
         ab_term = c**(n+1)
