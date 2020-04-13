@@ -3156,16 +3156,22 @@ class TestTrapz(object):
 
         # issue #11795: improve precision of trapz stats
         # Apply formulas from wikipedia for the following van Dorn parameters:
-        a, b, c, d = -3, -1, 2, 3
-        assert_almost_equal(stats.trapz.mean(1/3, 5/6, -3, 6), 2/9, decimal=13)
-        assert_almost_equal(stats.trapz.var(1/3, 5/6, -3, 6),
-                            2/9 * 105/12 - (2/9)**2, decimal=13)
-        assert_almost_equal(stats.trapz.entropy(1/3, 5/6, -3, 6),
-                            0.5 * (d-c+b-a) / (d+c-b-a)
-                            + np.log(0.5 * (d+c-b-a)),
-                            decimal=13)
+        a, b, c, d = -3, -1, 2, 3  # => 1/3, 5/6, -3, 6
+        p1, p2, loc, scale = (b-a) / (d-a), (c-a) / (d-a), a, d-a
+        h = 2 / (d+c-b-a)
+        moment = lambda n: h * ((d**(n+2) - c**(n+2)) / (d-c)
+                                - (b**(n+2) - a**(n+2)) / (b-a)) / (n+1) / (n+2)
+        mean = moment(1)
+        var = moment(2) - mean**2
+        entropy = 0.5 * (d-c+b-a) / (d+c-b-a) + np.log(0.5 * (d+c-b-a))
+        assert_almost_equal(stats.trapz.mean(p1, p2, loc, scale),
+                            mean, decimal=13)
+        assert_almost_equal(stats.trapz.var(p1, p2, loc, scale),
+                            var, decimal=13)
+        assert_almost_equal(stats.trapz.entropy(p1, p2, loc, scale),
+                            entropy, decimal=13)
 
-        # Check corner cases where scipy d=0 or d=1.
+        # Check boundary cases where scipy d=0 or d=1.
         assert_almost_equal(stats.trapz.mean(0, 0, -3, 6), -1, decimal=13)
         assert_almost_equal(stats.trapz.mean(0, 1, -3, 6), 0, decimal=13)
         assert_almost_equal(stats.trapz.var(0, 1, -3, 6), 3, decimal=13)
