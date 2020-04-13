@@ -6,6 +6,7 @@ import sys
 import subprocess
 import time
 from functools import reduce
+from collections import namedtuple
 
 from numpy.testing import (assert_equal, assert_array_almost_equal, assert_,
                            assert_allclose, assert_almost_equal,
@@ -636,6 +637,9 @@ class TestTbtrs(object):
 
 class TestGbsvx:
 
+    fields = 'ab afb ipiv equed r c b x rcond ferr berr work info'.split()
+    Actual = namedtuple('Actual', fields)
+
     def test_nag_f07bbf(self):
         ab = np.array(((0, 0, -3.66, -2.13),
                        (0, 2.54, -2.73, 4.07),
@@ -651,14 +655,15 @@ class TestGbsvx:
                             (-4.0, -2.0)))
         kl, ku = 1, 2
         gbsvx = get_lapack_funcs('gbsvx', dtype=ab.dtype)
-        ab, afb, ipiv, equed, r, c, b, x, rcond, ferr, berr, work, info = gbsvx(ab=ab, kl=kl, ku=ku, b=b)
-        assert_equal(info, 0)
-        assert_allclose(x, desired)
+        actual = self.Actual(*gbsvx(ab=ab, kl=kl, ku=ku, b=b))
+        assert_equal(actual.info, 0)
+        assert_allclose(actual.x, desired)
 
     def test_nag_f07bpfe(self):
         ab =  np.array(((0, 0, 0.97 - 2.84j, 0.59 - 0.48j),
                         (0, -2.05 - 0.85j, -3.99 + 4.01j, 3.33 - 1.04j),
-                        (-1.65 + 2.26j, -1.48 - 1.75j, -1.06 + 1.94j, -0.46 + -1.72j),
+                        (-1.65 + 2.26j, -1.48 - 1.75j,
+                         -1.06 + 1.94j, -0.46 -1.72j),
                         (6.30j, -0.77 + 2.83j, 4.48 - 1.09j, 0)))
         b =  np.array(((-1.06 + 21.50j, 12.85 + 2.84j),
                        (-22.72 - 53.90j, -70.22 + 21.57j),
@@ -670,9 +675,9 @@ class TestGbsvx:
                             (6.0 - 8.0j, -8.0 + 2.0j)))
         kl, ku = 1, 2
         gbsvx = get_lapack_funcs('gbsvx', dtype=ab.dtype)
-        ab, afb, ipiv, equed, r, c, b, x, rcond, ferr, berr, work, info = gbsvx(ab=ab, kl=kl, ku=ku, b=b)
-        assert_equal(info, 0)
-        assert_allclose(x, desired)
+        actual = self.Actual(*gbsvx(ab=ab, kl=kl, ku=ku, b=b))
+        assert_equal(actual.info, 0)
+        assert_allclose(actual.x, desired)
 
     @pytest.mark.parametrize('dtype', DTYPES)
     @pytest.mark.parametrize('kwargs', ({'fact': 'A'}, {'trans': 'A'},
