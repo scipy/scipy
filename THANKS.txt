@@ -165,8 +165,8 @@ Surhud More for enhancing scipy.optimize.curve_fit to accept covariant errors
 on data.
 Antonio H. Ribeiro for implementing iirnotch, iirpeak functions and
     trust-exact and trust-constr optimization methods.
-Matt Haberland for the interior point linear programming method and
-    SciPy development videos.
+Matt Haberland for improvements to scipy.optimize, scipy.linalg.lapack, and
+    developer documentation.
 Ilhan Polat for bug fixes on Riccati solvers.
 Sebastiano Vigna for code in the stats package related to Kendall's tau.
 John Draper for bug fixes.
@@ -231,6 +231,8 @@ Grzegorz Mrukwa for a bug fix in rectangular_lsap.cpp
 Santiago Hernandez for a bug fix in scipy.optimize._differentialevolution.py.
 Dan Kleeman for implementing nan_policy in stats.zscores and winsorize
 James Wright for simple documentation fixes
+Sam Wallan for scipy.linalg.lapack enhancements
+Richard Weiss for a bug fix in scipy.optimize._differentialevolution.py.
 
 Institutions
 ------------

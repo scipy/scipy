@@ -412,12 +412,12 @@ def cwt(data, wavelet, widths, dtype=None, **kwargs):
     dtype : data-type, optional
         The desired data type of output. Defaults to ``float64`` if the
         output of `wavelet` is real and ``complex128`` if it is complex.
-        
+
         .. versionadded:: 1.4.0
-        
+
     kwargs
         Keyword arguments passed to wavelet function.
-        
+
         .. versionadded:: 1.4.0
 
     Returns
@@ -431,7 +431,7 @@ def cwt(data, wavelet, widths, dtype=None, **kwargs):
     .. versionadded:: 1.4.0
 
     For non-symmetric, complex-valued wavelets, the input signal is convolved
-    with the time-reversed complex-conjugate of the wavelet data [1].    
+    with the time-reversed complex-conjugate of the wavelet data [1].
 
     ::
 

@@ -21,6 +21,7 @@ from numpy.random import rand, randint, seed
 
 from scipy.linalg import _flapack as flapack, lapack
 from scipy.linalg import inv, svd, cholesky, solve, ldl, norm, block_diag, qr
+from scipy.linalg import eigh
 from scipy.linalg.lapack import _compute_lwork
 from scipy.stats import ortho_group, unitary_group
 
@@ -2064,7 +2065,7 @@ def test_pttrf_pttrs_NAG(d, e, d_expect, e_expect, b, x_expect):
     # examples: f07jrf and f07csf (complex)
     # NAG examples provide 4 decimals.
     # (Links expire, so please search for "NAG Library Manual Mark 26" online)
-    
+
     atol = 1e-4
     pttrf = get_lapack_funcs('pttrf', dtype=e[0])
     _d, _e, info = pttrf(d, e)
@@ -2074,12 +2075,145 @@ def test_pttrf_pttrs_NAG(d, e, d_expect, e_expect, b, x_expect):
     pttrs = get_lapack_funcs('pttrs', dtype=e[0])
     _x, info = pttrs(_d, _e.conj(), b)
     assert_allclose(_x, x_expect, atol=atol)
-    
+
     # also test option `lower`
     if e.dtype in COMPLEX_DTYPES:
         _x, info = pttrs(_d, _e, b, lower=1)
         assert_allclose(_x, x_expect, atol=atol)
-        
+
+
+def pteqr_get_d_e_A_z(dtype, realtype, n, compute_z):
+    # used by ?pteqr tests to build parameters
+    # returns tuple of (d, e, A, z)
+    if compute_z == 1:
+        # build Hermitian A from Q**T * tri * Q = A by creating Q and tri
+        A_eig = generate_random_dtype_array((n, n), dtype)
+        A_eig = A_eig + np.diag(np.zeros(n) + 4*n)
+        A_eig = (A_eig + A_eig.conj().T) / 2
+        # obtain right eigenvectors (orthogonal)
+        vr = eigh(A_eig)[1]
+        # create tridiagonal matrix
+        d = generate_random_dtype_array((n,), realtype) + 4
+        e = generate_random_dtype_array((n-1,), realtype)
+        tri = np.diag(d) + np.diag(e, 1) + np.diag(e, -1)
+        # Build A using these factors that sytrd would: (Q**T * tri * Q = A)
+        A = vr @ tri @ vr.conj().T
+        # vr is orthogonal
+        z = vr
+
+    else:
+        # d and e are always real per lapack docs.
+        d = generate_random_dtype_array((n,), realtype)
+        e = generate_random_dtype_array((n-1,), realtype)
+
+        # make SPD
+        d = d + 4
+        A = np.diag(d) + np.diag(e, 1) + np.diag(e, -1)
+        z = np.diag(d) + np.diag(e, -1) + np.diag(e, 1)
+    return (d, e, A, z)
+
+
+@pytest.mark.parametrize("dtype,realtype",
+                         zip(DTYPES, REAL_DTYPES + REAL_DTYPES))
+@pytest.mark.parametrize("compute_z", range(3))
+def test_pteqr(dtype, realtype, compute_z):
+    '''
+    Tests the ?pteqr lapack routine for all dtypes and compute_z parameters.
+    It generates random SPD matrix diagonals d and e, and then confirms
+    correct eigenvalues with scipy.linalg.eig. With applicable compute_z=2 it
+    tests that z can reform A.
+    '''
+    seed(42)
+    atol = 1000*np.finfo(dtype).eps
+    pteqr = get_lapack_funcs(('pteqr'), dtype=dtype)
+
+    n = 10
+
+    d, e, A, z = pteqr_get_d_e_A_z(dtype, realtype, n, compute_z)
+
+    d_pteqr, e_pteqr, z_pteqr, info = pteqr(d=d, e=e, z=z, compute_z=compute_z)
+    assert_equal(info, 0, "info = {}, should be 0.".format(info))
+
+    # compare the routine's eigenvalues with scipy.linalg.eig's.
+    assert_allclose(np.sort(eigh(A)[0]), np.sort(d_pteqr), atol=atol)
+
+    if compute_z:
+        # verify z_pteqr as orthogonal
+        assert_allclose(z_pteqr @ np.conj(z_pteqr).T, np.identity(n),
+                        atol=atol)
+        # verify that z_pteqr recombines to A
+        assert_allclose(z_pteqr @ np.diag(d_pteqr) @ np.conj(z_pteqr).T,
+                        A, atol=atol)
+
+
+@pytest.mark.parametrize("dtype,realtype",
+                         zip(DTYPES, REAL_DTYPES + REAL_DTYPES))
+@pytest.mark.parametrize("compute_z", range(3))
+def test_pteqr_error_non_spd(dtype, realtype, compute_z):
+    seed(42)
+    pteqr = get_lapack_funcs(('pteqr'), dtype=dtype)
+
+    n = 10
+    d, e, A, z = pteqr_get_d_e_A_z(dtype, realtype, n, compute_z)
+
+    # test with non-spd matrix
+    d_pteqr, e_pteqr, z_pteqr, info = pteqr(d - 4, e, z=z, compute_z=compute_z)
+    assert info > 0
+
+
+@pytest.mark.parametrize("dtype,realtype",
+                         zip(DTYPES, REAL_DTYPES + REAL_DTYPES))
+@pytest.mark.parametrize("compute_z", range(3))
+def test_pteqr_raise_error_wrong_shape(dtype, realtype, compute_z):
+    seed(42)
+    pteqr = get_lapack_funcs(('pteqr'), dtype=dtype)
+    n = 10
+    d, e, A, z = pteqr_get_d_e_A_z(dtype, realtype, n, compute_z)
+    # test with incorrect/incompatible array sizes
+    assert_raises(ValueError, pteqr, d[:-1], e, z=z, compute_z=compute_z)
+    assert_raises(ValueError, pteqr, d, e[:-1], z=z, compute_z=compute_z)
+    if compute_z:
+        assert_raises(ValueError, pteqr, d, e, z=z[:-1], compute_z=compute_z)
+
+
+@pytest.mark.parametrize("dtype,realtype",
+                         zip(DTYPES, REAL_DTYPES + REAL_DTYPES))
+@pytest.mark.parametrize("compute_z", range(3))
+def test_pteqr_error_singular(dtype, realtype, compute_z):
+    seed(42)
+    pteqr = get_lapack_funcs(('pteqr'), dtype=dtype)
+    n = 10
+    d, e, A, z = pteqr_get_d_e_A_z(dtype, realtype, n, compute_z)
+    # test with singular matrix
+    d[0] = 0
+    e[0] = 0
+    d_pteqr, e_pteqr, z_pteqr, info = pteqr(d, e, z=z, compute_z=compute_z)
+    assert info > 0
+
+
+@pytest.mark.parametrize("compute_z,d,e,d_expect,z_expect",
+                         [(2,  # "I"
+                           np.array([4.16, 5.25, 1.09, .62]),
+                           np.array([3.17, -.97, .55]),
+                           np.array([8.0023, 1.9926, 1.0014, 0.1237]),
+                           np.array([[0.6326, 0.6245, -0.4191, 0.1847],
+                                     [0.7668, -0.4270, 0.4176, -0.2352],
+                                     [-0.1082, 0.6071, 0.4594, -0.6393],
+                                     [-0.0081, 0.2432, 0.6625, 0.7084]])),
+                          ])
+def test_pteqr_NAG_f08jgf(compute_z, d, e, d_expect, z_expect):
+    '''
+    Implements real (f08jgf) example from NAG Manual Mark 26.
+    Tests for correct outputs.
+    '''
+    # the NAG manual has 4 decimals accuracy
+    atol = 1e-4
+    pteqr = get_lapack_funcs(('pteqr'), dtype=d.dtype)
+
+    z = np.diag(d) + np.diag(e, 1) + np.diag(e, -1)
+    _d, _e, _z, info = pteqr(d=d, e=e, z=z, compute_z=compute_z)
+    assert_allclose(_d, d_expect, atol=atol)
+    assert_allclose(np.abs(_z), np.abs(z_expect), atol=atol)
 
 @pytest.mark.parametrize('dtype', DTYPES)
 @pytest.mark.parametrize('matrix_size', [(3, 4), (7, 6), (6, 6)])
