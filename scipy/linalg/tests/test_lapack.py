@@ -690,6 +690,46 @@ class TestGbsvx:
         assert_raises(Exception, gbsvx, ab=ab, b=b, **kwargs)
 
 
+    @pytest.mark.parametrize('dtype', DTYPES)
+    @pytest.mark.parametrize('fact', ('N', 'E'))
+    @pytest.mark.parametrize('trans', ('N', 'T', 'C'))
+    def test_random_non_equilibrated (self, dtype, fact, trans):
+        seed(1724)
+        atol = 100 * np.finfo(dtype).eps
+        m, n = 6, 6
+        kl, ku = 2, 1
+        gbsvx = get_lapack_funcs('gbsvx', dtype=dtype)
+
+        # Generate the random m x n banded matrix `A` and convert it
+        # to band storage
+        A = generate_random_dtype_array((m, n), dtype)
+        A = np.triu(np.tril(A, k=ku), k=-kl)
+        A = sps.dia_matrix(A)
+
+        ab = np.flipud(A.data)
+        x = generate_random_dtype_array((n, n), dtype)
+        b = A@x
+
+        actual = self.Actual(*gbsvx(ab=ab,
+                                    kl=kl,
+                                    ku=ku,
+                                    b=b,
+                                    fact=fact,
+                                    trans=trans))
+
+        assert_equal(actual.info, 0)
+        assert np.count_nonzero(actual.afb)
+
+        # Compare the solution using the calculated solution `x_`
+        # to the pre-calculated solution
+        if trans == 'N':
+            assert_allclose(b, A@actual.x, atol=atol)
+        elif trans == 'T':
+            assert_allclose(b, A.T @ actual.x, atol=atol)
+        else:
+            assert_allclose(b, A.conj().T @ actual.x, atol=atol)
+
+
 def test_lartg():
     for dtype in 'fdFD':
         lartg = get_lapack_funcs('lartg', dtype=dtype)
