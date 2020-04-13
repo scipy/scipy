@@ -29,13 +29,13 @@ subroutine <prefix>gttrf(n, dl, d, du, du2, ipiv, info)
     callstatement (*f2py_func)(&n, dl, d, du, du2, ipiv, &info)
     callprotoargument int*, <ctype>*, <ctype>*, <ctype>*, <ctype>*, int*, int*
 
-    integer intent(hide),   depend(d) :: n = max(3, len(d))
+    integer intent(hide), depend(d) :: n = max(3, len(d))
     <ftype> intent(in,out,copy), depend(n), dimension(n-1) :: dl
-    <ftype> intent(in,out,copy),            dimension(n)   :: d
+    <ftype> intent(in,out,copy), dimension(n) :: d
     <ftype> intent(in,out,copy), depend(n), dimension(n-1) :: du
-    <ftype> intent(out),    depend(n), dimension(n-2)    :: du2
-    integer intent(out),    depend(n), dimension(n)      :: ipiv
-    integer intent(out)                                  :: info
+    <ftype> intent(out), depend(n), dimension(n-2) :: du2
+    integer intent(out), depend(n), dimension(n) :: ipiv
+    integer intent(out) :: info
 
 end subroutine <prefix>gttrf
 
@@ -51,17 +51,17 @@ subroutine <prefix>gttrs(trans, n, nrhs, dl, d, du, du2, ipiv, b, ldb, info)
     callprotoargument char*, int*, int*, <ctype>*, <ctype>*, <ctype>*, <ctype>*, int*, <ctype>*, int*, int*
     threadsafe
 
-    character  optional, intent(in), check(*trans=='N'||*trans=='T'||*trans=='C') :: trans = "N"
-    integer    intent(hide), depend(d) :: n = max(3, len(d))
-    integer    intent(hide), depend(b) :: nrhs = max(1, shape(b, 1))
-    integer    intent(hide), depend(n) :: ldb = max(1, n)
-    <ftype>    intent(in), depend(n), dimension(n - 1) :: dl
-    <ftype>    intent(in),            dimension(n)     :: d
-    <ftype>    intent(in), depend(n), dimension(n - 1) :: du
-    <ftype>    intent(in), depend(n), dimension(n - 2) :: du2
-    integer    intent(in), depend(n), dimension(n)     :: ipiv
-    <ftype>    intent(in, out, copy, out=x), dimension(ldb, nrhs) :: b
-    integer    intent(out) :: info
+    character optional, intent(in), check(*trans=='N'||*trans=='T'||*trans=='C') :: trans = "N"
+    integer intent(hide), depend(d) :: n = max(3, len(d))
+    integer intent(hide), depend(b) :: nrhs = max(1, shape(b, 1))
+    integer intent(hide), depend(n) :: ldb = max(1, n)
+    <ftype> intent(in), depend(n), dimension(n - 1) :: dl
+    <ftype> intent(in), dimension(n) :: d
+    <ftype> intent(in), depend(n), dimension(n - 1) :: du
+    <ftype> intent(in), depend(n), dimension(n - 2) :: du2
+    integer intent(in), depend(n), dimension(n) :: ipiv
+    <ftype> intent(in, out, copy, out=x), dimension(ldb, nrhs) :: b
+    integer intent(out) :: info
 
 end subroutine gttrs
 
@@ -79,28 +79,29 @@ subroutine <prefix2>gtsvx(fact,trans,n,nrhs,dl,d,du,dlf,df,duf,du2,ipiv,b,ldb,x,
 
     character optional, intent(in), check(*fact=='F'||*fact=='N') :: fact = 'N'
     character optional, intent(in), check(*trans=='N'||*trans=='C'||*trans=='T') :: trans = 'N'
-    integer intent(hide), depend(d), check(n > 1) :: n = len(d)
-    integer intent(hide), depend(b) :: nrhs = max(1, shape(b, 1))
-    <ftype2> intent(in), depend(n), dimension(n-1) :: dl
+    integer intent(hide), depend(d) :: n = len(d)
+    integer intent(hide), depend(b) :: nrhs = shape(b, 1)
+    <ftype2> intent(in), depend(n), dimension(MAX(0, n-1)) :: dl
     <ftype2> intnet(in), dimension(n) :: d
-    <ftype2> intent(in), depend(n), dimension(n-1) :: du
-    <ftype2> optional, intent(in,out), depend(n), dimension(n-1) :: dlf
+    <ftype2> intent(in), depend(n), dimension(MAX(0, n-1)) :: du
+    <ftype2> optional, intent(in,out), depend(n), dimension(MAX(0,n-1)) :: dlf
     <ftype2> optional, intent(in,out), depend(n), dimension(n) :: df
-    <ftype2> optional, intent(in,out), depend(n), dimension(n-1) :: duf
-    <ftype2> optional, intent(in,out), depend(n), dimension(n-2) :: du2
+    <ftype2> optional, intent(in,out), depend(n), dimension(MAX(0,n-1)) :: duf
+    <ftype2> optional, intent(in,out), depend(n), dimension(MAX(0,n-2)) :: du2
     integer optional, intent(in,out), depend(n), dimension(n) :: ipiv
     <ftype2> intent(in), dimension(ldb, nrhs) :: b
-    integer intent(hide), depend(b), check(ldb >= n) :: ldb = max(1, shape(b, 0))
-    <ftype2> dimension(n,nrhs),depend(n,nrhs),intent(out) :: x
-    integer intent(hide), depend(n) :: ldx = n
+    integer intent(hide), check(ldb >= n), depend(b) :: ldb = max(1, shape(b, 0))
+    <ftype2> intent(out), dimension(ldx,nrhs) :: x
+    integer intent(hide) :: ldx = MAX(1, shape(b, 0))
     <ftype2> intent(out) :: rcond
-    <ftype2> intent(out),dimension(nrhs),depend(nrhs) :: ferr
-    <ftype2> intent(out),dimension(nrhs),depend(nrhs) :: berr
-    <ftype2> dimension(3*n),depend(n),intent(hide,cache) :: work
-    integer intent(hide,cache),dimension(n),depend(n) :: iwork
+    <ftype2> intent(out), dimension(nrhs),depend(nrhs) :: ferr
+    <ftype2> intent(out), dimension(nrhs),depend(nrhs) :: berr
+    <ftype2> intent(hide, cache), dimension(3*n),depend(n) :: work
+    integer intent(hide, cache), dimension(n), depend(n) :: iwork
     integer intent(out) :: info
 
 end subroutine <prefix2>gtsvx
+
 
 subroutine <prefix2c>gtsvx(fact,trans,n,nrhs,dl,d,du,dlf,df,duf,du2,ipiv,b,ldb,x,ldx,rcond,ferr,berr,work,rwork,info)
     ! ?GTSVX uses the LU factorization to compute the solution to a
@@ -115,23 +116,23 @@ subroutine <prefix2c>gtsvx(fact,trans,n,nrhs,dl,d,du,dlf,df,duf,du2,ipiv,b,ldb,x
 
     character optional, intent(in), check(*fact=='F'||*fact=='N') :: fact = 'N'
     character optional, intent(in), check(*trans=='N'||*trans=='C'||*trans=='T') :: trans = 'N'
-    integer intent(hide), depend(d), check(n > 1) :: n = len(d)
-    integer intent(hide), depend(b) :: nrhs = max(1, shape(b, 1))
-    <ftype2c> intent(in), depend(n), dimension(n-1) :: dl
+    integer intent(hide), depend(d) :: n = len(d)
+    integer intent(hide), depend(b) :: nrhs = shape(b, 1)
+    <ftype2c> intent(in), depend(n), dimension(MAX(0, n-1)) :: dl
     <ftype2c> intnet(in), dimension(n) :: d
-    <ftype2c> intent(in), depend(n), dimension(n-1) :: du
-    <ftype2c> optional, intent(in,out), depend(n), dimension(n-1) :: dlf
+    <ftype2c> intent(in), depend(n), dimension(MAX(0, n-1)) :: du
+    <ftype2c> optional, intent(in,out), depend(n), dimension(MAX(0,n-1)) :: dlf
     <ftype2c> optional, intent(in,out), depend(n), dimension(n) :: df
-    <ftype2c> optional, intent(in,out), depend(n), dimension(n-1) :: duf
-    <ftype2c> optional, intent(in,out), depend(n), dimension(n-2) :: du2
+    <ftype2c> optional, intent(in,out), depend(n), dimension(MAX(0,n-1)) :: duf
+    <ftype2c> optional, intent(in,out), depend(n), dimension(MAX(0,n-2)) :: du2
     integer optional, intent(in,out), depend(n), dimension(n) :: ipiv
     <ftype2c> intent(in), dimension(ldb, nrhs) :: b
-    integer intent(hide), depend(b), check(ldb >= n) :: ldb = max(1, shape(b, 0))
-    <ftype2c> dimension(n,nrhs),depend(n,nrhs),intent(out) :: x
-    integer intent(hide), depend(n) :: ldx = n
+    integer intent(hide), check(ldb >= n), depend(b) :: ldb = max(1, shape(b, 0))
+    <ftype2c> intent(out), dimension(ldx,nrhs) :: x
+    integer intent(hide) :: ldx = MAX(1, shape(b, 0))
     <ftype2> intent(out) :: rcond
-    <ftype2> intent(out),dimension(nrhs),depend(nrhs) :: ferr
-    <ftype2> intent(out),dimension(nrhs),depend(nrhs) :: berr
+    <ftype2> intent(out), dimension(nrhs),depend(nrhs) :: ferr
+    <ftype2> intent(out), dimension(nrhs),depend(nrhs) :: berr
     <ftype2c> dimension(2*n),depend(n),intent(hide,cache) :: work
     <ftype2> intent(hide,cache),dimension(n),depend(n) :: rwork
     integer intent(out) :: info

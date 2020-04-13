@@ -1831,7 +1831,8 @@ def test_gttrf_gttrs(dtype):
 
     for i, m in enumerate(_dl):
         # L is given in a factored form.
-        # See http://www.hpcavf.uclan.ac.uk/softwaredoc/sgi_scsl_html/sgi_html/ch03.html
+        # See
+        # www.hpcavf.uclan.ac.uk/softwaredoc/sgi_scsl_html/sgi_html/ch03.html
         piv = ipiv[i] - 1
         # right multiply by permutation matrix
         L[:, [i, piv]] = L[:, [piv, i]]
@@ -2246,40 +2247,12 @@ def test_orcsd_uncsd(dtype_):
     assert_allclose(X, Xc, rtol=0., atol=1e4*np.finfo(dtype_).eps)
 
 
-def gttrf_to_lu(n, dtype, dlf, df, duf, du2f, ipiv):
-    U = np.diag(df, 0) + np.diag(duf, 1) + np.diag(du2f, 2)
-    L = np.eye(n, dtype=dtype)
-    for i, m in enumerate(dlf):
-        # L is given in a factored form.
-        # See http://www.hpcavf.uclan.ac.uk/softwaredoc/sgi_scsl_html/sgi_html/ch03.html
-        piv = ipiv[i] - 1
-        # right multiply by permutation matrix
-        L[:, [i, piv]] = L[:, [piv, i]]
-        # right multiply by Li, rank-one modification of identity
-        L[:, i] += L[:, i+1]*m
-
-    # one last permutation
-    i, piv = -1, ipiv[-1] - 1
-    # right multiply by final permutation matrix
-    L[:, [i, piv]] = L[:, [piv, i]]
-    return (L, U)
-
-
-def gtsvx_factorize_gttrf(fact, input_args):
-    if fact == "F":
-        gttrf = get_lapack_funcs('gttrf', dtype=input_args[0].dtype)
-        return gttrf(*input_args)
-    return (None, None, None, None, None, None)
-
-
-@pytest.mark.parametrize("dtype,trans", list(zip(DTYPES, ["N"]*len(DTYPES)))
-                         + list(zip(REAL_DTYPES, ["T"]*len(REAL_DTYPES)))
-                         + list(zip(COMPLEX_DTYPES,
-                                    ["C"]*len(COMPLEX_DTYPES))))
+@pytest.mark.parametrize("dtype", DTYPES)
+@pytest.mark.parametrize("trans_bool", [False, True])
 @pytest.mark.parametrize("fact", ["F", "N"])
-def test_gtsvx(dtype, trans, fact):
+def test_gtsvx(dtype, trans_bool, fact):
     """
-    Thess tests uses ?gtsvx to solve a random Ax=b system for each dtype.
+    These tests uses ?gtsvx to solve a random Ax=b system for each dtype.
     It tests that the outputs define an LU matrix, that inputs are unmodified,
     transposal options, incompatible shapes, singular matrices, and
     singular factorizations. It parametrizes DTYPES and the 'fact' value along
@@ -2289,7 +2262,7 @@ def test_gtsvx(dtype, trans, fact):
     # set test tolerance appropriate for dtype
     atol = 100 * np.finfo(dtype).eps
     # obtain routine
-    gtsvx = get_lapack_funcs('gtsvx', dtype=dtype)
+    gtsvx, gttrf = get_lapack_funcs(('gtsvx', 'gttrf'), dtype=dtype)
     # Generate random tridiagonal matrix A
     n = 10
     dl = generate_random_dtype_array((n-1,), dtype=dtype)
@@ -2299,17 +2272,15 @@ def test_gtsvx(dtype, trans, fact):
     # generate random solution x
     x = generate_random_dtype_array((n, 2), dtype=dtype)
     # create b from x for equation Ax=b
-    if trans == 'N':
-        b = A @ x
-    else:
-        b = (A.conj().T) @ x
+    trans = ("T" if dtype in REAL_DTYPES else "C") if trans_bool else "N"
+    b = (A.conj().T if trans_bool else A) @ x
 
     # store a copy of the inputs to check they haven't been modified later
     inputs_cpy = [dl.copy(), d.copy(), du.copy(), b.copy()]
 
     # set these to None if fact = 'N', or the output of gttrf is fact = 'F'
-    dlf_, df_, duf_, du2f_, ipiv_, info_ = gtsvx_factorize_gttrf(fact,
-                                                                 (dl, d, du))
+    dlf_, df_, duf_, du2f_, ipiv_, info_ = \
+        gttrf(dl, d, du) if fact == 'F' else [None]*6
 
     gtsvx_out = gtsvx(dl, d, du, b, fact=fact, trans=trans, dlf=dlf_, df=df_,
                       duf=duf_, du2=du2f_, ipiv=ipiv_)
@@ -2337,17 +2308,13 @@ def test_gtsvx(dtype, trans, fact):
             .format(berr.shape[0], b.shape[1]))
 
 
-@pytest.mark.parametrize("dtype,trans", list(zip(DTYPES, ["N"]*len(DTYPES)))
-                         + list(zip(REAL_DTYPES, ["T"]*len(REAL_DTYPES)))
-                         + list(zip(COMPLEX_DTYPES,
-                                    ["C"]*len(COMPLEX_DTYPES))))
+@pytest.mark.parametrize("dtype", DTYPES)
+@pytest.mark.parametrize("trans_bool", [0, 1])
 @pytest.mark.parametrize("fact", ["F", "N"])
-def test_gtsvx_error_singular(dtype, trans, fact):
+def test_gtsvx_error_singular(dtype, trans_bool, fact):
     seed(42)
-    # set test tolerance appropriate for dtype
-    atol = 100 * np.finfo(dtype).eps
     # obtain routine
-    gtsvx = get_lapack_funcs('gtsvx', dtype=dtype)
+    gtsvx, gttrf = get_lapack_funcs(('gtsvx', 'gttrf'), dtype=dtype)
     # Generate random tridiagonal matrix A
     n = 10
     dl = generate_random_dtype_array((n-1,), dtype=dtype)
@@ -2357,14 +2324,12 @@ def test_gtsvx_error_singular(dtype, trans, fact):
     # generate random solution x
     x = generate_random_dtype_array((n, 2), dtype=dtype)
     # create b from x for equation Ax=b
-    if trans == 'N':
-        b = A @ x
-    else:
-        b = (A.conj().T) @ x
+    trans = "T" if dtype in REAL_DTYPES else "C"
+    b = (A.conj().T if trans_bool else A) @ x
 
     # set these to None if fact = 'N', or the output of gttrf is fact = 'F'
-    dlf_, df_, duf_, du2f_, ipiv_, info_ = gtsvx_factorize_gttrf(fact,
-                                                                 (dl, d, du))
+    dlf_, df_, duf_, du2f_, ipiv_, info_ = \
+        gttrf(dl, d, du) if fact == 'F' else [None]*6
 
     gtsvx_out = gtsvx(dl, d, du, b, fact=fact, trans=trans, dlf=dlf_, df=df_,
                       duf=duf_, du2=du2f_, ipiv=ipiv_)
@@ -2372,13 +2337,9 @@ def test_gtsvx_error_singular(dtype, trans, fact):
     # test with singular matrix
     # no need to test inputs with fact "F" since ?gttrf already does.
     if fact == "N":
-
-        L, U = gttrf_to_lu(n, dtype, dlf, df, duf, du2f, ipiv)
-        # check that the outputs define an LU decomposition of A
-        assert_allclose(A, L @ U, atol=atol)
+        # Construct a singular example manually
         d[-1] = 0
         dl[-1] = 0
-
         # solve using routine
         gtsvx_out = gtsvx(dl, d, du, b)
         dlf, df, duf, du2f, ipiv, x_soln, rcond, ferr, berr, info = gtsvx_out
@@ -2398,15 +2359,13 @@ def test_gtsvx_error_singular(dtype, trans, fact):
         assert info > 0, "info should be > 0 for singular matrix"
 
 
-@pytest.mark.parametrize("dtype,trans", list(zip(DTYPES, ["N"]*len(DTYPES)))
-                         + list(zip(REAL_DTYPES, ["T"]*len(REAL_DTYPES)))
-                         + list(zip(COMPLEX_DTYPES,
-                                    ["C"]*len(COMPLEX_DTYPES))))
+@pytest.mark.parametrize("dtype", DTYPES*2)
+@pytest.mark.parametrize("trans_bool", [False, True])
 @pytest.mark.parametrize("fact", ["F", "N"])
-def test_gtsvx_error_incompatible_size(dtype, trans, fact):
+def test_gtsvx_error_incompatible_size(dtype, trans_bool, fact):
     seed(42)
     # obtain routine
-    gtsvx = get_lapack_funcs('gtsvx', dtype=dtype)
+    gtsvx, gttrf = get_lapack_funcs(('gtsvx', 'gttrf'), dtype=dtype)
     # Generate random tridiagonal matrix A
     n = 10
     dl = generate_random_dtype_array((n-1,), dtype=dtype)
@@ -2416,13 +2375,13 @@ def test_gtsvx_error_incompatible_size(dtype, trans, fact):
     # generate random solution x
     x = generate_random_dtype_array((n, 2), dtype=dtype)
     # create b from x for equation Ax=b
-    if trans == 'N':
-        b = A @ x
-    else:
-        b = (A.conj().T) @ x
+    trans = "T" if dtype in REAL_DTYPES else "C"
+    b = (A.conj().T if trans_bool else A) @ x
+
     # set these to None if fact = 'N', or the output of gttrf is fact = 'F'
-    dlf_, df_, duf_, du2f_, ipiv_, info_ = gtsvx_factorize_gttrf(fact,
-                                                                 (dl, d, du))
+    dlf_, df_, duf_, du2f_, ipiv_, info_ = \
+        gttrf(dl, d, du) if fact == 'F' else [None]*6
+
     if fact == "N":
         assert_raises(ValueError, gtsvx, dl[:-1], d, du, b,
                       fact=fact, trans=trans, dlf=dlf_, df=df_,
