@@ -8,6 +8,8 @@ from numpy cimport ndarray, int64_t, float64_t, intp_t
 import warnings
 import numpy as np
 import scipy.stats, scipy.special
+import scipy.special.cython_special as cs
+import math
 
 
 cdef double von_mises_cdf_series(double k, double x, unsigned int p):
@@ -477,3 +479,20 @@ def _local_correlations(distx, disty, global_corr='mgc'):
     corr_mat[:, local_vary <= 0] = 0
 
     return corr_mat
+
+
+cpdef geninvgauss_gen_logpdf(double x, double p, double b):
+    cdef double z, c
+
+    z = cs.kve(p, b)
+    if math.isinf(z):
+        msg = ("Infinite values encountered in scipy.special.kve(p, b). "
+               "Values replaced by NaN to avoid incorrect results.")
+        warnings.warn(msg, RuntimeWarning)
+        return math.nan
+
+    if x <= 0:
+        return -math.inf
+
+    c = -math.log(2) - math.log(z) + b
+    return c + (p - 1)*math.log(x) - b*(x + 1/x)/2
