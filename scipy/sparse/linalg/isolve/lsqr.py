@@ -328,7 +328,7 @@ def lsqr(A, b, damp=0.0, atol=1e-8, btol=1e-8, conlim=1e8,
     if show:
         print(' ')
         print('LSQR            Least-squares solution of  Ax = b')
-        str1 = 'The matrix A has %8g rows  and %8g cols' % (m, n)
+        str1 = f'The matrix A has {m} rows and {n} columns'
         str2 = 'damp = %20.14e   calc_var = %8g' % (damp, calc_var)
         str3 = 'atol = %8.2e                 conlim = %8.2e' % (atol, conlim)
         str4 = 'btol = %8.2e               iter_lim = %8g' % (btol, iter_lim)
