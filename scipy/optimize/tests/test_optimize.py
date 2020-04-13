@@ -1565,9 +1565,6 @@ class TestBrute:
 
         optimize.brute(f, [(-1, 1)], Ns=3, finish=None)
 
-    @pytest.mark.skipif(multiprocessing.get_start_method() != 'fork',
-                        reason=('multiprocessing with spawn method is not'
-                                ' compatible with pytest.'))
     def test_workers(self):
         # check that parallel evaluation works
         resbrute = optimize.brute(brute_func, self.rranges, args=self.params,
