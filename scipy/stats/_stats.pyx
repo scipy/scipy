@@ -486,7 +486,7 @@ cpdef double geninvgauss_logpdf(double x, double p, double b):
     return _geninvgauss_logpdf_kernel(x, p, b)
 
 
-cdef _geninvgauss_logpdf_kernel(double x, double p, double b):
+cdef double _geninvgauss_logpdf_kernel(double x, double p, double b):
     cdef double z, c
 
     if x <= 0:
