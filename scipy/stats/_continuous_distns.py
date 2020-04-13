@@ -372,7 +372,7 @@ class norm_gen(rv_continuous):
             return sc.factorial2(n - 1)
         else:
             return 0.
- 
+
 
 norm = norm_gen(name='norm')
 
