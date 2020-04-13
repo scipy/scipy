@@ -3,13 +3,14 @@ from libc cimport math
 cimport cython
 cimport numpy as np
 from numpy.math cimport PI
+from numpy.math cimport INFINITY
+from numpy.math cimport NAN
 from numpy cimport ndarray, int64_t, float64_t, intp_t
 
 import warnings
 import numpy as np
 import scipy.stats, scipy.special
 import scipy.special.cython_special as cs
-import math
 
 
 cdef double von_mises_cdf_series(double k, double x, unsigned int p):
@@ -481,15 +482,39 @@ def _local_correlations(distx, disty, global_corr='mgc'):
     return corr_mat
 
 
-cpdef geninvgauss_gen_logpdf(double x, double p, double b):
+cpdef double geninvgauss_logpdf(double x, double p, double b):
+    return _geninvgauss_logpdf_kernel(x, p, b)
+
+
+cdef _geninvgauss_logpdf_kernel(double x, double p, double b):
     cdef double z, c
 
     z = cs.kve(p, b)
     if math.isinf(z):
-        return math.nan
+        return NAN
 
     if x <= 0:
-        return -math.inf
+        return -INFINITY
 
     c = -math.log(2) - math.log(z) + b
     return c + (p - 1)*math.log(x) - b*(x + 1/x)/2
+
+
+cdef double _geninvgauss_pdf(double x, void *user_data) except *:
+    # destined to be used in a LowLevelCallable
+    # can't use nogil because cs.kve isn't marked nogil
+    cdef double p, b
+
+    p = (<double *>user_data)[0]
+    b = (<double *>user_data)[1]
+
+    if x <= 0:
+        return 0.
+
+    return math.exp(_geninvgauss_logpdf_kernel(x, p, b))
+
+
+# Ctypes declarations of the callables above
+import ctypes
+_geninvgauss_pdf_t = ctypes.CFUNCTYPE(ctypes.c_double, ctypes.c_double, ctypes.c_void_p)
+_geninvgauss_pdf_ctypes = ctypes.cast(<size_t>&_geninvgauss_pdf, _geninvgauss_pdf_t)

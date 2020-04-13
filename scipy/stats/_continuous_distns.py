@@ -6,11 +6,13 @@
 import warnings
 import functools
 import collections
+import ctypes
 
 import numpy as np
 
 from scipy._lib.doccer import (extend_notes_in_docstring,
                                replace_notes_in_docstring)
+from scipy._lib._ccallback import LowLevelCallable
 from scipy import optimize
 from scipy import integrate
 from scipy import interpolate
@@ -3657,7 +3659,7 @@ class geninvgauss_gen(rv_continuous):
         # otherwise c = -inf and the results are often incorrect
         @np.vectorize
         def logpdf_single(x, p, b):
-            return _stats.geninvgauss_gen_logpdf(x, p, b)
+            return _stats.geninvgauss_logpdf(x, p, b)
 
         z = logpdf_single(x, p, b)
         if np.isnan(z).any():
@@ -3669,6 +3671,19 @@ class geninvgauss_gen(rv_continuous):
     def _pdf(self, x, p, b):
         # relying on logpdf avoids overflow of x**(p-1) for large x and p
         return np.exp(self._logpdf(x, p, b))
+
+    def _cdf(self, x, *args):
+        _a, _b = self._get_support(*args)
+
+        @np.vectorize
+        def _cdf_single(x, *args):
+            p, b = args
+            user_data = np.array([p, b], float).ctypes.data_as(ctypes.c_void_p)
+            llc = LowLevelCallable.from_cython(_stats, '_geninvgauss_pdf', user_data)
+
+            return integrate.quad(llc, _a, x)[0]
+
+        return _cdf_single(x, *args)
 
     def _logquasipdf(self, x, p, b):
         # log of the quasi-density (w/o normalizing constant) used in _rvs
