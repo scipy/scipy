@@ -22,6 +22,9 @@ from scipy.sparse.linalg.dsolve import (spsolve, use_solver, splu, spilu,
         MatrixRankWarning, _superlu, spsolve_triangular, factorized)
 import scipy.sparse
 
+from scipy._lib._testutils import check_free_memory
+
+
 sup_sparse_efficiency = suppress_warnings()
 sup_sparse_efficiency.filter(SparseEfficiencyWarning)
 
@@ -181,8 +184,10 @@ class TestFactorized(object):
     @pytest.mark.slow
     @pytest.mark.skipif(not has_umfpack, reason="umfpack not available")
     def test_bug_8278(self):
+        check_free_memory(8000)
         use_solver(useUmfpack=True)
         A, b = setup_bug_8278()
+        A = A.tocsc()
         f = factorized(A)
         x = f(b)
         assert_array_almost_equal(A @ x, b)
@@ -425,6 +430,7 @@ class TestLinsolve(object):
     @pytest.mark.slow
     @pytest.mark.skipif(not has_umfpack, reason="umfpack not available")
     def test_bug_8278(self):
+        check_free_memory(8000)
         use_solver(useUmfpack=True)
         A, b = setup_bug_8278()
         x = spsolve(A, b)
