@@ -168,6 +168,7 @@ from collections import namedtuple
 
 import numpy as np
 from numpy import array, asarray, ma
+from numpy.testing import suppress_warnings
 
 from scipy.spatial.distance import cdist
 from scipy.ndimage import measurements
@@ -2846,7 +2847,6 @@ def median_absolute_deviation(x, axis=0, center=np.median, scale=1.4826,
     apply_over_axes_func = np.apply_over_axes
 
     if contains_nan and nan_policy == 'omit':
-        # Way faster than carrying the masks around
         arr = ma.masked_invalid(x)
         # override functions for masked array
         apply_over_axes_func = np.ma.apply_over_axes
@@ -2858,10 +2858,10 @@ def median_absolute_deviation(x, axis=0, center=np.median, scale=1.4826,
         med = center(arr)
         mad = np.median(np.abs(arr - med))
     else:
-        # Note: Before Numpy 1.17.0, np.median reports RuntimeWarning when
-        # input has np.nan. It should be suppressed.
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", category=RuntimeWarning)
+        with suppress_warnings() as sup:
+            # Note: Before numpy 1.17.0, np.median reports RuntimeWarning
+            # when input has np.nan
+            sup.filter(RuntimeWarning, "Invalid value encountered in median")
             med = apply_over_axes_func(center, arr, axis)
             mad = center(np.abs(arr - med), axis=axis)
 
