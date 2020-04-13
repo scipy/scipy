@@ -2858,8 +2858,12 @@ def median_absolute_deviation(x, axis=0, center=np.median, scale=1.4826,
         med = center(arr)
         mad = np.median(np.abs(arr - med))
     else:
-        med = apply_over_axes_func(center, arr, axis)
-        mad = center(np.abs(arr - med), axis=axis)
+        # Note: Before Numpy 1.17.0, np.median reports RuntimeWarning when
+        # input has np.nan. It should be suppressed.
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=RuntimeWarning)
+            med = apply_over_axes_func(center, arr, axis)
+            mad = center(np.abs(arr - med), axis=axis)
 
     return scale * mad
 
