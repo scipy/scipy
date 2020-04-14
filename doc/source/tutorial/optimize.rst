@@ -1384,7 +1384,10 @@ Consider the following simple linear programming problem:
         & 2x_1 -3x_2 -7x_3 + 3x_4 \geq 10\\
         & 2x_1 + 8x_2 + x_3 = 60\\
         & 4x_1 + 4x_2 + x_4 = 60\\
-        & x_i \geq 0 ,
+        & 0 \leq x_0\\
+        & 0 \leq x_1 \leq 5\\
+        & x_2 \leq 0.5\\
+        & -3 \leq x_3 \leq 0\\
 
 We need some mathematical manipulations to convert the target problem to the form accepted by :func:`linprog`.
 
@@ -1405,7 +1408,9 @@ should be
         c = [-29, -45, 0, 0]
 
 Next, let's consider the two inequality constraints. These can be converted by using the "greater than" inequality
-constraint to a "less than" inequality constraint by multiplying both sides by a factor of :math:`-1`:
+constraint to a "less than" inequality constraint by multiplying both sides by a factor of :math:`-1`. The first
+one is the "less than" inequality constraint, however second one is the "greater than" inequality constraint. So, only
+second one is only being converted to align inequality sign direction:
 
 .. math::
         x_1 -x_2 -3x_3 + 0x_4  &\leq 5\\
@@ -1467,52 +1472,46 @@ where
     \end{bmatrix}
     \end{equation*}
 
-The last inequality constraint :math:`x_i \geq 0` is minimum value constraint for all decision variables, which can be
-applied as the ``bounds`` argument of :func:`linprog`. As you can see the API doc :func:`linprog`, the default values of
-``bound`` argument is ``(0, None)`` that means all decision variables are non-negative. So, we don't need to do anything
-the last inequality constraint in this case.
+Lastly, let's consider the minimum and maximum inequality constraints for each decision variable, which is known as
+"box constraint". These kind of constraints can be applied as the ``bounds`` argument of :func:`linprog`.
+As you can see the API doc :func:`linprog`, the default values of ``bounds`` argument is ``(0, None)`` that means
+all decision variables are non-negative. So, we need to set each bound as ``bounds`` argument in this case.
 
 Finally, we can solve the transformed problem using :func:`linprog`.
 
 ::
 
-    from scipy.optimize import linprog
-    import numpy as np
-
-    c = np.array([-29.0, -45.0, 0.0, 0.0])
-    A_ub = np.array([[1.0, -1.0, -3.0, 0.0],
-                    [-2.0, 3.0, 7.0, -3.0]])
-    b_ub = np.array([[5.0],
-                    [-10.0]])
-    A_eq = np.array([[2.0, 8.0, 1.0, 0.0],
-                     [4.0, 4.0, 0.0, 1.0]])
-    b_eq = np.array([[60.0],
-                    [60.0]])
-
-    result = linprog(c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq)
+    >>> from scipy.optimize import linprog
+    >>> import numpy as np
+    >>> c = np.array([-29.0, -45.0, 0.0, 0.0])
+    >>> A_ub = np.array([[1.0, -1.0, -3.0, 0.0],
+    ...                [-2.0, 3.0, 7.0, -3.0]])
+    >>> b_ub = np.array([[5.0],
+    ...                [-10.0]])
+    >>> A_eq = np.array([[2.0, 8.0, 1.0, 0.0],
+    ...                 [4.0, 4.0, 0.0, 1.0]])
+    >>> b_eq = np.array([[60.0],
+    ...                [60.0]])
+    >>> x0_bounds = (0, None)
+    >>> x1_bounds = (0, 5.0)
+    >>> x2_bounds = (None, 0.5)
+    >>> x3_bounds = (-3.0, 0)
+    >>> bounds = [x0_bounds, x1_bounds, x2_bounds, x3_bounds]
+    >>> result = linprog(c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq, bounds=bounds)
 
 The result is
 
 ::
 
     >>> print(result)
-    con: array([3.07489501e-09, 3.19440119e-09])
-    fun: -500.79999997382595
-    message: 'Optimization terminated successfully.'
-    nit: 5
-    slack: array([ 1.0000000e+00, -1.0003518e-09])
-    status: 0
-    success: True
-    x: array([9.2000000e+00, 5.2000000e+00, 4.3425461e-11, 2.4000000e+00])
-
-::
-
-    >>> [print("x_", i, ":", np.round(result.x[i], 2)) for i in range(len(result.x))]
-    x_ 0 : 9.2
-    x_ 1 : 5.2
-    x_ 2 : 0.0
-    x_ 3 : 2.4
-
+    con: array([42.58855175, 45.54023356])
+    fun: -143.26958745795812
+    message: 'The algorithm terminated successfully and determined that the problem is infeasible.'
+    nit: 4
+    slack: array([  2.89860769, -12.11677835])
+    status: 2
+    success: False
+    x: array([ 2.41503507,  1.62741268, -0.43792331, -1.71002454])
 
 
 .. rubric:: References
