@@ -1355,7 +1355,7 @@ Linear programming (:func:`linprog`)
 
 The function :func:`linprog` can minimize a linear objective function
 subject to linear equality and inequality constraints. This kind of
-problem is well known as Linear programming. Linear programming solves
+problem is well known as linear programming. Linear programming solves
 problems of the following form:
 
 .. math::
@@ -1369,8 +1369,8 @@ where :math:`x` is a vector of decision variables; :math:`c`, :math:`b_{ub}`,
 :math:`b_{eq}`, :math:`l`, and :math:`u` are vectors; and :math:`A_{ub}` and
 :math:`A_{eq}` are matrices.
 
-In this tutorial, we will try to solve some typical linear programming
-problems using :func:`linprog`.
+In this tutorial, we will try to solve a typical linear programming
+problem using :func:`linprog`.
 
 Linear programming example
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1386,14 +1386,14 @@ Consider the following simple linear programming problem:
         & 4x_1 + 4x_2 + x_4 = 60\\
         & x_i \geq 0 ,
 
-We need some mathematical deformations to convert the target problem to the form of :func:`linprog`.
+We need some mathematical manipulations to convert the target problem to the form accepted by :func:`linprog`.
 
 First of all, let's consider the objective function. The problem has 4 decision variables :math:`x_1, x_2, x_3, x_4`.
-We define a vector of decision variables :math:`x = [x_1, x_2, x_3, x_4]`. The problem want to maximize the objective
-function, but :func:`linprog` can accept a minimization problem. This is easily remedied by converting the maximize
+We define a vector of decision variables :math:`x = [x_1, x_2, x_3, x_4]`. We want to maximize the objective
+function, but :func:`linprog` can only accept a minimization problem. This is easily remedied by converting the maximize
 :math:`29x_1 + 45x_2` to minimizing :math:`-29x_1 -45x_2`. Also, :math:`x_3, x_4` are not shown in the objective
-function. That means the weights elements of the objective function for :math:`x_3, x_4` are zeros. So, the objective
-function can be converted to:
+function. That means the weights corresponding with :math:`x_3, x_4` are zero. So, the objective function can be
+converted to:
 
 .. math::
         \min_{x_1, x_2, x_3, x_4} \ -29x_1 -45x_2 + 0x_3 + 0x_4
@@ -1411,7 +1411,7 @@ constraint to a "less than" inequality constraint by multiplying both sides by a
         x_1 -x_2 -3x_3 + 0x_4  &\leq 5\\
         -2x_1 + 3x_2 + 7x_3 - 3x_4 &\leq -10\\
 
-These equations can be converted as matrix form:
+These equations can be converted to matrix form:
 
 .. math::
     A_{ub} x \leq b_{ub}\\
@@ -1436,13 +1436,13 @@ where
     \end{bmatrix}
     \end{equation*}
 
-Next, let's consider the two equality constraints. These can be converted like:
+Next, let's consider the two equality constraints. Showing zero weights explicitly, these are:
 
 .. math::
         2x_1 + 8x_2 + 1x_3 + 0x_4 &= 60\\
         4x_1 + 4x_2 + 0x_3 + 1x_4 &= 60\\
 
-These equations can be converted as matrix form:
+These equations can be converted to matrix form:
 
 .. math::
     A_{eq} x = b_{eq}\\
@@ -1472,7 +1472,7 @@ applied as the ``bounds`` argument of :func:`linprog`. As you can see the API do
 ``bound`` argument is ``(0, None)`` that means all decision variables are non-negative. So, we don't need to do anything
 the last inequality constraint in this case.
 
-Finally, we can solve the desired problem using the mathematical converts and :func:`linprog`.
+Finally, we can solve the transformed problem using :func:`linprog`.
 
 ::
 
