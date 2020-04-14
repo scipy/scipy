@@ -7,8 +7,14 @@ import os
 def try_compile(compiler, code=None, flags=[], ext=None):
     """Returns True if the compiler is able to compile the given code"""
     from distutils.errors import CompileError
+    from numpy.distutils.fcompiler import FCompiler
 
-    code = code or 'int main (int argc, char **argv) { return 0; }'
+    if code is None:
+        if isinstance(compiler, FCompiler):
+            code = "      program main\n      return\n      end"
+        else:
+            code = 'int main (int argc, char **argv) { return 0; }'
+
     ext = ext or compiler.src_extensions[0]
 
     with tempfile.TemporaryDirectory() as temp_dir:

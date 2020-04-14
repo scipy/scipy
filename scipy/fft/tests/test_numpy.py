@@ -304,12 +304,8 @@ class TestFFTThreadSafe(object):
 @pytest.mark.parametrize("func", [fft.fft, fft.ifft, fft.rfft, fft.irfft])
 def test_multiprocess(func):
     # Test that fft still works after fork (gh-10422)
-    try:
-        mp = multiprocessing.get_context('fork')
-    except ValueError:
-        pytest.skip('fork method not available')
 
-    with mp.Pool(2) as p:
+    with multiprocessing.Pool(2) as p:
         res = p.map(func, [np.ones(100) for _ in range(4)])
 
     expect = func(np.ones(100))
