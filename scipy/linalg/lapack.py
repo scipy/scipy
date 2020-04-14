@@ -268,6 +268,11 @@ All functions
    cgtsv
    zgtsv
 
+   sgtsvx
+   dgtsvx
+   cgtsvx
+   zgtsvx
+
    chbevd
    zhbevd
 

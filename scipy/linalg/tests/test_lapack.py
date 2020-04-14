@@ -1832,7 +1832,8 @@ def test_gttrf_gttrs(dtype):
 
     for i, m in enumerate(_dl):
         # L is given in a factored form.
-        # See http://www.hpcavf.uclan.ac.uk/softwaredoc/sgi_scsl_html/sgi_html/ch03.html
+        # See
+        # www.hpcavf.uclan.ac.uk/softwaredoc/sgi_scsl_html/sgi_html/ch03.html
         piv = ipiv[i] - 1
         # right multiply by permutation matrix
         L[:, [i, piv]] = L[:, [piv, i]]
@@ -2378,3 +2379,197 @@ def test_orcsd_uncsd(dtype_):
 
     Xc = U @ S @ VH
     assert_allclose(X, Xc, rtol=0., atol=1e4*np.finfo(dtype_).eps)
+
+
+@pytest.mark.parametrize("dtype", DTYPES)
+@pytest.mark.parametrize("trans_bool", [False, True])
+@pytest.mark.parametrize("fact", ["F", "N"])
+def test_gtsvx(dtype, trans_bool, fact):
+    """
+    These tests uses ?gtsvx to solve a random Ax=b system for each dtype.
+    It tests that the outputs define an LU matrix, that inputs are unmodified,
+    transposal options, incompatible shapes, singular matrices, and
+    singular factorizations. It parametrizes DTYPES and the 'fact' value along
+    with the fact related inputs.
+    """
+    seed(42)
+    # set test tolerance appropriate for dtype
+    atol = 100 * np.finfo(dtype).eps
+    # obtain routine
+    gtsvx, gttrf = get_lapack_funcs(('gtsvx', 'gttrf'), dtype=dtype)
+    # Generate random tridiagonal matrix A
+    n = 10
+    dl = generate_random_dtype_array((n-1,), dtype=dtype)
+    d = generate_random_dtype_array((n,), dtype=dtype)
+    du = generate_random_dtype_array((n-1,), dtype=dtype)
+    A = np.diag(dl, -1) + np.diag(d) + np.diag(du, 1)
+    # generate random solution x
+    x = generate_random_dtype_array((n, 2), dtype=dtype)
+    # create b from x for equation Ax=b
+    trans = ("T" if dtype in REAL_DTYPES else "C") if trans_bool else "N"
+    b = (A.conj().T if trans_bool else A) @ x
+
+    # store a copy of the inputs to check they haven't been modified later
+    inputs_cpy = [dl.copy(), d.copy(), du.copy(), b.copy()]
+
+    # set these to None if fact = 'N', or the output of gttrf is fact = 'F'
+    dlf_, df_, duf_, du2f_, ipiv_, info_ = \
+        gttrf(dl, d, du) if fact == 'F' else [None]*6
+
+    gtsvx_out = gtsvx(dl, d, du, b, fact=fact, trans=trans, dlf=dlf_, df=df_,
+                      duf=duf_, du2=du2f_, ipiv=ipiv_)
+    dlf, df, duf, du2f, ipiv, x_soln, rcond, ferr, berr, info = gtsvx_out
+    assert_(info == 0, "?gtsvx info = {}, should be zero".format(info))
+
+    # assure that inputs are unmodified
+    assert_array_equal(dl, inputs_cpy[0])
+    assert_array_equal(d, inputs_cpy[1])
+    assert_array_equal(du, inputs_cpy[2])
+    assert_array_equal(b, inputs_cpy[3])
+
+    # test that x_soln matches the expected x
+    assert_allclose(x, x_soln, atol=atol)
+
+    # assert that the outputs are of correct type or shape
+    # rcond should be a scalar
+    assert_(hasattr(rcond, "__len__") is not True,
+            "rcond should be scalar but is {}".format(rcond))
+    # ferr should be length of # of cols in x
+    assert_(ferr.shape[0] == b.shape[1], "ferr.shape is {} but shoud be {},"
+            .format(ferr.shape[0], b.shape[1]))
+    # berr should be length of # of cols in x
+    assert_(berr.shape[0] == b.shape[1], "berr.shape is {} but shoud be {},"
+            .format(berr.shape[0], b.shape[1]))
+
+
+@pytest.mark.parametrize("dtype", DTYPES)
+@pytest.mark.parametrize("trans_bool", [0, 1])
+@pytest.mark.parametrize("fact", ["F", "N"])
+def test_gtsvx_error_singular(dtype, trans_bool, fact):
+    seed(42)
+    # obtain routine
+    gtsvx, gttrf = get_lapack_funcs(('gtsvx', 'gttrf'), dtype=dtype)
+    # Generate random tridiagonal matrix A
+    n = 10
+    dl = generate_random_dtype_array((n-1,), dtype=dtype)
+    d = generate_random_dtype_array((n,), dtype=dtype)
+    du = generate_random_dtype_array((n-1,), dtype=dtype)
+    A = np.diag(dl, -1) + np.diag(d) + np.diag(du, 1)
+    # generate random solution x
+    x = generate_random_dtype_array((n, 2), dtype=dtype)
+    # create b from x for equation Ax=b
+    trans = "T" if dtype in REAL_DTYPES else "C"
+    b = (A.conj().T if trans_bool else A) @ x
+
+    # set these to None if fact = 'N', or the output of gttrf is fact = 'F'
+    dlf_, df_, duf_, du2f_, ipiv_, info_ = \
+        gttrf(dl, d, du) if fact == 'F' else [None]*6
+
+    gtsvx_out = gtsvx(dl, d, du, b, fact=fact, trans=trans, dlf=dlf_, df=df_,
+                      duf=duf_, du2=du2f_, ipiv=ipiv_)
+    dlf, df, duf, du2f, ipiv, x_soln, rcond, ferr, berr, info = gtsvx_out
+    # test with singular matrix
+    # no need to test inputs with fact "F" since ?gttrf already does.
+    if fact == "N":
+        # Construct a singular example manually
+        d[-1] = 0
+        dl[-1] = 0
+        # solve using routine
+        gtsvx_out = gtsvx(dl, d, du, b)
+        dlf, df, duf, du2f, ipiv, x_soln, rcond, ferr, berr, info = gtsvx_out
+        # test for the singular matrix.
+        assert info > 0, "info should be > 0 for singular matrix"
+
+    elif fact == 'F':
+        # assuming that a singular factorization is input
+        df_[-1] = 0
+        duf_[-1] = 0
+        du2f_[-1] = 0
+
+        gtsvx_out = gtsvx(dl, d, du, b, fact=fact, dlf=dlf_, df=df_, duf=duf_,
+                          du2=du2f_, ipiv=ipiv_)
+        dlf, df, duf, du2f, ipiv, x_soln, rcond, ferr, berr, info = gtsvx_out
+        # info should not be zero and should provide index of illegal value
+        assert info > 0, "info should be > 0 for singular matrix"
+
+
+@pytest.mark.parametrize("dtype", DTYPES*2)
+@pytest.mark.parametrize("trans_bool", [False, True])
+@pytest.mark.parametrize("fact", ["F", "N"])
+def test_gtsvx_error_incompatible_size(dtype, trans_bool, fact):
+    seed(42)
+    # obtain routine
+    gtsvx, gttrf = get_lapack_funcs(('gtsvx', 'gttrf'), dtype=dtype)
+    # Generate random tridiagonal matrix A
+    n = 10
+    dl = generate_random_dtype_array((n-1,), dtype=dtype)
+    d = generate_random_dtype_array((n,), dtype=dtype)
+    du = generate_random_dtype_array((n-1,), dtype=dtype)
+    A = np.diag(dl, -1) + np.diag(d) + np.diag(du, 1)
+    # generate random solution x
+    x = generate_random_dtype_array((n, 2), dtype=dtype)
+    # create b from x for equation Ax=b
+    trans = "T" if dtype in REAL_DTYPES else "C"
+    b = (A.conj().T if trans_bool else A) @ x
+
+    # set these to None if fact = 'N', or the output of gttrf is fact = 'F'
+    dlf_, df_, duf_, du2f_, ipiv_, info_ = \
+        gttrf(dl, d, du) if fact == 'F' else [None]*6
+
+    if fact == "N":
+        assert_raises(ValueError, gtsvx, dl[:-1], d, du, b,
+                      fact=fact, trans=trans, dlf=dlf_, df=df_,
+                      duf=duf_, du2=du2f_, ipiv=ipiv_)
+        assert_raises(ValueError, gtsvx, dl, d[:-1], du, b,
+                      fact=fact, trans=trans, dlf=dlf_, df=df_,
+                      duf=duf_, du2=du2f_, ipiv=ipiv_)
+        assert_raises(ValueError, gtsvx, dl, d, du[:-1], b,
+                      fact=fact, trans=trans, dlf=dlf_, df=df_,
+                      duf=duf_, du2=du2f_, ipiv=ipiv_)
+        assert_raises(Exception, gtsvx, dl, d, du, b[:-1],
+                      fact=fact, trans=trans, dlf=dlf_, df=df_,
+                      duf=duf_, du2=du2f_, ipiv=ipiv_)
+    else:
+        assert_raises(ValueError, gtsvx, dl, d, du, b,
+                      fact=fact, trans=trans, dlf=dlf_[:-1], df=df_,
+                      duf=duf_, du2=du2f_, ipiv=ipiv_)
+        assert_raises(ValueError, gtsvx, dl, d, du, b,
+                      fact=fact, trans=trans, dlf=dlf_, df=df_[:-1],
+                      duf=duf_, du2=du2f_, ipiv=ipiv_)
+        assert_raises(ValueError, gtsvx, dl, d, du, b,
+                      fact=fact, trans=trans, dlf=dlf_, df=df_,
+                      duf=duf_[:-1], du2=du2f_, ipiv=ipiv_)
+        assert_raises(ValueError, gtsvx, dl, d, du, b,
+                      fact=fact, trans=trans, dlf=dlf_, df=df_,
+                      duf=duf_, du2=du2f_[:-1], ipiv=ipiv_)
+
+
+@pytest.mark.parametrize("du,d,dl,b,x",
+                         [(np.array([2.1, -1.0, 1.9, 8.0]),
+                           np.array([3.0, 2.3, -5.0, -0.9, 7.1]),
+                           np.array([3.4, 3.6, 7.0, -6.0]),
+                           np.array([[2.7, 6.6], [-.5, 10.8], [2.6, -3.2],
+                                     [.6, -11.2], [2.7, 19.1]]),
+                           np.array([[-4, 5], [7, -4], [3, -3], [-4, -2],
+                                     [-3, 1]])),
+                          (np.array([2 - 1j, 2 + 1j, -1 + 1j, 1 - 1j]),
+                           np.array([-1.3 + 1.3j, -1.3 + 1.3j, -1.3 + 3.3j,
+                                     -.3 + 4.3j, -3.3 + 1.3j]),
+                           np.array([1 - 2j, 1 + 1j, 2 - 3j, 1 + 1j]),
+                           np.array([[2.4 - 5j, 2.7 + 6.9j],
+                                     [3.4 + 18.2j, -6.9 - 5.3j],
+                                     [-14.7 + 9.7j, -6 - .6j],
+                                     [31.9 - 7.7j, -3.9 + 9.3j],
+                                     [-1 + 1.6j, -3 + 12.2j]]),
+                           np.array([[1 + 1j, 2 - 1j], [3 - 1j, 1 + 2j],
+                                     [4 + 5j, -1 + 1j], [-1 - 2j, 2 + 1j],
+                                     [1 - 1j, 2 - 2j]]))])
+def test_gtsvx_NAG(du, d, dl, b, x):
+    # Test to ensure wrapper is consistent with NAG Manual Mark 26
+    # example problems: real (f07cbf) and complex (f07cpf)
+    gtsvx = get_lapack_funcs('gtsvx', dtype=d.dtype)
+
+    gtsvx_out = gtsvx(dl, d, du, b)
+    dlf, df, duf, du2f, ipiv, x_soln, rcond, ferr, berr, info = gtsvx_out
+
+    assert_array_almost_equal(x, x_soln)
