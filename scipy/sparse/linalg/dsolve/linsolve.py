@@ -85,6 +85,8 @@ def _get_umf_family(A):
         A_new.data = A.data
         A_new.indptr = np.array(A.indptr, copy=False, dtype=np.int64)
         A_new.indices = np.array(A.indices, copy=False, dtype=np.int64)
+    else:
+        A_new = A
 
     return family, A_new
 
