@@ -1410,7 +1410,7 @@ should be
 Next, let's consider the two inequality constraints. These can be converted by using the "greater than" inequality
 constraint to a "less than" inequality constraint by multiplying both sides by a factor of :math:`-1`. The first
 one is the "less than" inequality constraint, however second one is the "greater than" inequality constraint. So, only
-second one is only being converted to align inequality sign direction:
+second one should be converted to align inequality sign direction:
 
 .. math::
         x_1 -x_2 -3x_3 + 0x_4  &\leq 5\\
@@ -1473,9 +1473,10 @@ where
     \end{equation*}
 
 Lastly, let's consider the minimum and maximum inequality constraints for each decision variable, which is known as
-"box constraint". These kind of constraints can be applied as the ``bounds`` argument of :func:`linprog`.
+"box constraint". These constraints can be applied as the ``bounds`` argument of :func:`linprog`.
 As you can see the API doc :func:`linprog`, the default values of ``bounds`` argument is ``(0, None)`` that means
-all decision variables are non-negative. So, we need to set each bound as ``bounds`` argument in this case.
+all decision variables are non-negative. Using None indicates that there is no bound. So, we need to set each bound
+as ``bounds`` argument in this case.
 
 Finally, we can solve the transformed problem using :func:`linprog`.
 
@@ -1504,14 +1505,14 @@ The result is
 ::
 
     >>> print(result)
-    con: array([42.58855175, 45.54023356])
-    fun: -143.26958745795812
+        con: array([42.58855175, 45.54023356])
+        fun: -143.26958745795812
     message: 'The algorithm terminated successfully and determined that the problem is infeasible.'
-    nit: 4
-    slack: array([  2.89860769, -12.11677835])
-    status: 2
+        nit: 4
+      slack: array([  2.89860769, -12.11677835])
+     status: 2
     success: False
-    x: array([ 2.41503507,  1.62741268, -0.43792331, -1.71002454])
+          x: array([ 2.41503507,  1.62741268, -0.43792331, -1.71002454])
 
 
 .. rubric:: References
