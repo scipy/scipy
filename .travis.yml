@@ -42,6 +42,7 @@ matrix:
         - TESTMODE=fast
         - COVERAGE=
         - NUMPYSPEC="--pre --upgrade --timeout=60 -f $PRE_WHEELS numpy"
+        - CYTHONSPEC="--pre"
         # Need a test with most recent Python version where we build from an
         # sdist (uses pip build isolation), to check that the version we
         # specify in pyproject.toml (will be older than --pre --upgrade) works
@@ -73,6 +74,7 @@ matrix:
       env:
         - TESTMODE=full
         - NUMPYSPEC="--pre --upgrade --timeout=60 -f $PRE_WHEELS numpy"
+        - CYTHONSPEC="--pre"
     - python: 3.6
       if: type = pull_request
       env:
@@ -137,7 +139,7 @@ before_install:
   - python -V -V
   - python -c 'import sys; print("Python debug build:", hasattr(sys, "gettotalrefcount"))'
   - travis_retry pip install --upgrade pip setuptools wheel
-  - travis_retry pip install cython
+  - travis_retry pip install $CYTHONSPEC cython
   - if [ -n "$NUMPYSPEC" ]; then travis_retry pip install $NUMPYSPEC; fi
   - travis_retry pip install --upgrade pytest pytest-xdist mpmath argparse Pillow codecov
   - |
