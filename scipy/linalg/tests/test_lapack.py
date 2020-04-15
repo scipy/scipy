@@ -2656,14 +2656,9 @@ def test_ptsvx_error_raise_errors(dtype, realtype, fact, df_de_lambda):
     df, ef, info = df_de_lambda(d, e)
 
     # test with malformatted array sizes
-    with assert_raises(ValueError):
-        ptsvx(d[:-1], e, b, fact=fact, df=df, ef=ef)
-    with assert_raises(ValueError):
-        ptsvx(d, e[:-1], b, fact=fact, df=df, ef=ef)
-    df, ef, x, rcond, ferr, berr, info = ptsvx(d, e, b[:-1], fact=fact,
-                                               df=df, ef=ef)
-    # this info returns -9
-    assert info < 0
+    assert_raises(ValueError, ptsvx, d[:-1], e, b, fact=fact, df=df, ef=ef)
+    assert_raises(ValueError, ptsvx, d, e[:-1], b, fact=fact, df=df, ef=ef)
+    assert_raises(Exception, ptsvx, d, e, b[:-1], fact=fact, df=df, ef=ef)
 
 
 @pytest.mark.parametrize("dtype,realtype", zip(DTYPES, REAL_DTYPES
