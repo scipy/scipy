@@ -264,7 +264,7 @@ class BSpline(object):
 
         Notes
         -----
-        The order of the B-spline, `k`, is inferred from the length of `t` as
+        The degree of the B-spline, `k`, is inferred from the length of `t` as
         ``len(t)-2``. The knot vector is constructed by appending and prepending
         ``k+1`` elements to internal knots `t`.
 
@@ -281,7 +281,7 @@ class BSpline(object):
         >>> k
         3
 
-        Construct a second order B-spline on ``[0, 1, 1, 2]``, and compare
+        Construct a quadratic B-spline on ``[0, 1, 1, 2]``, and compare
         to its explicit form:
 
         >>> t = [-1, 0, 1, 1, 2]
