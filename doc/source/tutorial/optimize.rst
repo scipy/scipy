@@ -1385,14 +1385,14 @@ Consider the following simple linear programming problem:
         & 2x_1 + 8x_2 + x_3 = 60\\
         & 4x_1 + 4x_2 + x_4 = 60\\
         & 0 \leq x_0\\
-        & 0 \leq x_1 \leq 5\\
+        & 0 \leq x_1 \leq 6\\
         & x_2 \leq 0.5\\
-        & -3 \leq x_3 \leq 0\\
+        & -3 \leq x_3\\
 
 We need some mathematical manipulations to convert the target problem to the form accepted by :func:`linprog`.
 
 First of all, let's consider the objective function. The problem has 4 decision variables :math:`x_1, x_2, x_3, x_4`.
-We define a vector of decision variables :math:`x = [x_1, x_2, x_3, x_4]`. We want to maximize the objective
+We define a vector of decision variables :math:`x = [x_1, x_2, x_3, x_4]^T`. We want to maximize the objective
 function, but :func:`linprog` can only accept a minimization problem. This is easily remedied by converting the maximize
 :math:`29x_1 + 45x_2` to minimizing :math:`-29x_1 -45x_2`. Also, :math:`x_3, x_4` are not shown in the objective
 function. That means the weights corresponding with :math:`x_3, x_4` are zero. So, the objective function can be
@@ -1405,7 +1405,7 @@ By recalling vector multiplication, the objective weights vector :math:`c` of :f
 should be
 
 .. math::
-        c = [-29, -45, 0, 0]
+        c = [-29, -45, 0, 0]^T
 
 Next, let's consider the two inequality constraints. The first one is a "less than" inequality; however, the second one
 is a "greater than" inequality. :func:`linprog` only accepts "less than" inequality constraints, so we multiply both
@@ -1472,25 +1472,20 @@ where
     \end{equation*}
 
 Lastly, let's consider the separate inequality constraints on each decision variable, which are known as
-"box constraints" or "simple bounds". These constraints can be applied using the bounds argument of :func:linprog.
-As noted in the :func:linprog documentation, the default value of bounds is (0, None), meaning that the
+"box constraints" or "simple bounds". These constraints can be applied using the bounds argument of :func:`linprog`.
+As noted in the :func:`linprog` documentation, the default value of bounds is (0, None), meaning that the
 lower bound on each decision variable is 0, and the upper bound on each decision variable is infinity:
 all the decision variables are non-negative. Our bounds are different, so we specify the lower and upper bound on each
-decision variable as a tuple and group these tuples into a list:
+decision variable as a tuple and group these tuples into a list.
 
-  x0_bounds = (0, None)
-  x1_bounds = (0, 5.0)
-  x2_bounds = (None, 0.5)
-  x3_bounds = (-3.0, 0)
-  bounds = [x0_bounds, x1_bounds, x2_bounds, x3_bounds]
 
 Finally, we can solve the transformed problem using :func:`linprog`.
 
 ::
 
-    >>> from scipy.optimize import linprog
     >>> import numpy as np
-    >>> c = np.array([-29.0, -45.0, 0.0, 0.0])
+    >>> from scipy.optimize import linprog
+    >>> c = np.array([-29.0, -45.0, 0.0, 0.0]).T
     >>> A_ub = np.array([[1.0, -1.0, -3.0, 0.0],
     ...                [-2.0, 3.0, 7.0, -3.0]])
     >>> b_ub = np.array([[5.0],
@@ -1505,11 +1500,6 @@ Finally, we can solve the transformed problem using :func:`linprog`.
     >>> x3_bounds = (-3.0, 0)
     >>> bounds = [x0_bounds, x1_bounds, x2_bounds, x3_bounds]
     >>> result = linprog(c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq, bounds=bounds)
-
-The result is
-
-::
-
     >>> print(result)
         con: array([42.58855175, 45.54023356])  # may vary
         fun: -143.26958745795812  # may vary
@@ -1520,6 +1510,50 @@ The result is
     success: False
           x: array([ 2.41503507,  1.62741268, -0.43792331, -1.71002454])  # may vary
 
+The result shows our problem is infeasible. It means that there is no solution vector that satisfies all the
+constraints. What did we do wrong? If we check the code carefully, we can notice that we've set the :math:`x_3` bound
+constraint wrong. We've set the maximum bound for :math:`x_3` to :math:`0`. However, it is not need.
+
+We can solve it with correct bound setting:
+
+::
+    >>> x3_bounds = (-3.0, None)
+    >>> bounds = [x0_bounds, x1_bounds, x2_bounds, x3_bounds]
+    >>> result = linprog(c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq, bounds = bounds)
+    >>> print(result)
+         con: array([9.78840831e-09, 1.04662945e-08])  # may vary
+         fun: -505.97435889013434  # may vary
+     message: 'Optimization terminated successfully.'  # may vary
+         nit: 4
+       slack: array([ 6.52747190e-10, -2.26730279e-09])  # may vary
+      status: 0
+     success: True
+           x: array([ 9.41025641,  5.17948718, -0.25641026,  1.64102564])  # may vary
+
+The result show the optimization is succeeded.
+We can check the objective value (``result.fun``) is same as :math:`c.Tx`:
+
+::
+    >>> print(c.T @ result.x)
+    -505.97435889013434  # may vary
+
+We can also check all constraints are almost all satisfied:
+
+::
+    >>> print(A_ub @ x)
+    [[  5.]  # may vary
+    [-10.]]  # may vary
+    >>> print(b_ub)
+    [[  5.]  # may vary
+    [-10.]]  # may vary
+    >>> print(A_eq @ x)
+    [[59.99999999]  # may vary
+    [59.99999999]]  # may vary
+    >>> print(b_eq)
+    [[60.]  # may vary
+    [60.]]  # may vary
+    >>> print([0 <= result.x[0], 0 <= result.x[1] <= 6.0, result.x[2] <= 0.5, -3.0 <= result.x[3]])
+    [True, True, True, True]
 
 .. rubric:: References
 
