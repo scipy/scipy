@@ -1,6 +1,5 @@
 import numpy as np
 import math
-from sklearn.utils import check_array
 from . import linear_sum_assignment
 from . import minimize_scalar
 
@@ -80,16 +79,13 @@ def quadratic_assignment(
             Gives users the option to solve QAP rather than the Graph Matching Problem
             (GMP). This is accomplished through trivial negation of the objective function.
 
-        Attributes
-        ----------
+        Returns
+        -------
 
-        perm_inds_ : array, size (n,) where n is the number of vertices in the fitted graphs.
-            The indices of the optimal permutation (with the fixed seeds given) on the nodes of B,
+        row_ind, col_ind : array
+            An array of row indices and one of corresponding column indices giving
+            the optimal optimal permutation (with the fixed seeds given) on the nodes of B,
             to best minimize the objective function :math:`f(P) = trace(A^T PBP^T )`.
-
-
-        score_ : float
-            The objective function value of for the optimal permutation found.
 
 
         References
@@ -106,8 +102,8 @@ def quadratic_assignment(
 
         """
 
-    cost_matrix = check_array(cost_matrix, copy=True, ensure_2d=True)
-    dist_matrix = check_array(dist_matrix, copy=True, ensure_2d=True)
+    cost_matrix = np.asarray(cost_matrix)
+    dist_matrix = np.asarray(dist_matrix)
     seed_cost = np.asarray(seed_cost)
     seed_dist = np.asarray(seed_dist)
 
@@ -183,7 +179,7 @@ def quadratic_assignment(
                 n_unseed, n_unseed
             )  # generate a nxn matrix where each entry is a random integer [0,1]
             for i in range(10):  # perform 10 iterations of Sinkhorn balancing
-                K = _skp(K)
+                K = _doubly_stochastic(K)
             J = np.ones((n_unseed, n_unseed)) / float(
                 n_unseed
             )  # initialize J, a doubly stochastic barycenter
@@ -257,7 +253,7 @@ def quadratic_assignment(
         np.transpose(cost_matrix) @ dist_matrix[np.ix_(perm_inds, perm_inds)]
     )
 
-    return (np.arange(n),perm_inds)
+    return (np.arange(n), perm_inds)
 
 
 def _unshuffle(array, n):
@@ -265,7 +261,8 @@ def _unshuffle(array, n):
     unshuffle[array] = np.array(range(n))
     return unshuffle
 
-def _skp(P):
+
+def _doubly_stochastic(P):
     # Title: sinkhorn_knopp Source Code
     # Author: Tabanpour, B
     # Date: 2018
@@ -319,10 +316,10 @@ def _skp(P):
 
     P_eps = np.copy(P)
     while (
-            np.any(np.sum(P_eps, axis=1) < min_thresh)
-            or np.any(np.sum(P_eps, axis=1) > max_thresh)
-            or np.any(np.sum(P_eps, axis=0) < min_thresh)
-            or np.any(np.sum(P_eps, axis=0) > max_thresh)
+        np.any(np.sum(P_eps, axis=1) < min_thresh)
+        or np.any(np.sum(P_eps, axis=1) > max_thresh)
+        or np.any(np.sum(P_eps, axis=0) < min_thresh)
+        or np.any(np.sum(P_eps, axis=0) > max_thresh)
     ):
 
         c = 1 / P.T.dot(r)
