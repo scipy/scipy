@@ -1407,10 +1407,9 @@ should be
 .. math::
         c = [-29, -45, 0, 0]
 
-Next, let's consider the two inequality constraints. These can be converted by using the "greater than" inequality
-constraint to a "less than" inequality constraint by multiplying both sides by a factor of :math:`-1`. The first
-one is the "less than" inequality constraint, however second one is the "greater than" inequality constraint. So, only
-second one should be converted to align inequality sign direction:
+Next, let's consider the two inequality constraints. The first one is a "less than" inequality; however, the second one
+is a "greater than" inequality. :func:`linprog` only accepts "less than" inequality constraints, so we multiply both
+sides of the second inequality by :math:-1 to get:
 
 .. math::
         x_1 -x_2 -3x_3 + 0x_4  &\leq 5\\
@@ -1472,11 +1471,18 @@ where
     \end{bmatrix}
     \end{equation*}
 
-Lastly, let's consider the minimum and maximum inequality constraints for each decision variable, which is known as
-"box constraint". These constraints can be applied as the ``bounds`` argument of :func:`linprog`.
-As you can see the API doc :func:`linprog`, the default values of ``bounds`` argument is ``(0, None)`` that means
-all decision variables are non-negative. Using None indicates that there is no bound. So, we need to set each bound
-as ``bounds`` argument in this case.
+Lastly, let's consider the separate inequality constraints on each decision variable, which are known as
+"box constraints" or "simple bounds". These constraints can be applied using the bounds argument of :func:linprog.
+As noted in the :func:linprog documentation, the default value of bounds is (0, None), meaning that the
+lower bound on each decision variable is 0, and the upper bound on each decision variable is infinity:
+all the decision variables are non-negative. Our bounds are different, so we specify the lower and upper bound on each
+decision variable as a tuple and group these tuples into a list:
+
+  x0_bounds = (0, None)
+  x1_bounds = (0, 5.0)
+  x2_bounds = (None, 0.5)
+  x3_bounds = (-3.0, 0)
+  bounds = [x0_bounds, x1_bounds, x2_bounds, x3_bounds]
 
 Finally, we can solve the transformed problem using :func:`linprog`.
 
@@ -1495,7 +1501,7 @@ Finally, we can solve the transformed problem using :func:`linprog`.
     ...                [60.0]])
     >>> x0_bounds = (0, None)
     >>> x1_bounds = (0, 5.0)
-    >>> x2_bounds = (None, 0.5)
+    >>> x2_bounds = (-np.inf, 0.5)  # +/- np.inf can be used instead of None
     >>> x3_bounds = (-3.0, 0)
     >>> bounds = [x0_bounds, x1_bounds, x2_bounds, x3_bounds]
     >>> result = linprog(c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq, bounds=bounds)
@@ -1505,14 +1511,14 @@ The result is
 ::
 
     >>> print(result)
-        con: array([42.58855175, 45.54023356])
-        fun: -143.26958745795812
+        con: array([42.58855175, 45.54023356])  # may vary
+        fun: -143.26958745795812  # may vary
     message: 'The algorithm terminated successfully and determined that the problem is infeasible.'
         nit: 4
-      slack: array([  2.89860769, -12.11677835])
+      slack: array([  2.89860769, -12.11677835])  # may vary
      status: 2
     success: False
-          x: array([ 2.41503507,  1.62741268, -0.43792331, -1.71002454])
+          x: array([ 2.41503507,  1.62741268, -0.43792331, -1.71002454])  # may vary
 
 
 .. rubric:: References
