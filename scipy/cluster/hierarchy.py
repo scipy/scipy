@@ -1453,8 +1453,20 @@ def cut_tree_balanced(Z, max_cluster_size):
 
     >>> cluster_id, cluster_level = \
             cluster.hierarchy.cut_tree_balanced(Z, max_cluster_size=10)
+
     >>> cluster_id[:10]
+    array([19,  4, 10, 12, 20, 12, 14,  9, 15,  2])
+
     >>> cluster_level[:10]
+    array([array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]),
+           array([0, 0, 0, 1]), array([0, 0, 0, 0, 0, 0, 0, 0, 1]),
+           array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]),
+           array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
+           array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]),
+           array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]),
+           array([0, 0, 0, 0, 0, 0, 0, 1]),
+           array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]),
+           array([0, 0, 1, 0])], dtype=object)
 
     """
     # Assert that the input max_cluster_size is >= 1
