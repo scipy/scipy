@@ -133,6 +133,24 @@ def quadratic_assignment(
     ).all() == False:
         msg = "Seed array entries must be less than or equal to n-1"
         raise ValueError(msg)
+    elif type(n_init) is not int and n_init <= 0:
+        msg = '"n_init" must be a positive integer'
+        raise TypeError(msg)
+    elif not init_method == "barycenter" and not init_method == "rand":
+        msg = 'Invalid "init_method" parameter string'
+        raise ValueError(msg)
+    elif max_iter <= 0 and type(max_iter) is not int:
+        msg = '"max_iter" must be a positive integer'
+        raise TypeError(msg)
+    elif type(shuffle_input) is not bool:
+        msg = '"shuffle_input" must be a boolean'
+        raise TypeError(msg)
+    elif eps <= 0 and type(eps) is not float:
+        msg = '"eps" must be a positive float'
+        raise TypeError(msg)
+    elif type(maximize) is not bool:
+        msg = '"maximize" must be a boolean'
+        raise TypeError(msg)
 
     n = cost_matrix.shape[0]  # number of vertices in graphs
     n_seeds = seed_cost.shape[0]  # number of seeds
@@ -240,18 +258,6 @@ def quadratic_assignment(
             score = score_new
             perm_inds = np.zeros(n, dtype=int)
             perm_inds[permutation_cost] = permutation_dist[perm_inds_new]
-
-    permutation_cost_unshuffle = _unshuffle(permutation_cost, n)
-    cost_matrix = cost_matrix[
-        np.ix_(permutation_cost_unshuffle, permutation_cost_unshuffle)
-    ]
-    permutation_dist_unshuffle = _unshuffle(permutation_dist, n)
-    dist_matrix = dist_matrix[
-        np.ix_(permutation_dist_unshuffle, permutation_dist_unshuffle)
-    ]
-    score = np.trace(
-        np.transpose(cost_matrix) @ dist_matrix[np.ix_(perm_inds, perm_inds)]
-    )
 
     return (np.arange(n), perm_inds)
 
