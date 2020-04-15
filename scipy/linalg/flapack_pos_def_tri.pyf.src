@@ -172,8 +172,8 @@ subroutine <prefix2c>ptsvx(fact, n, nrhs, d, e, df, ef, b, ldb, x, ldx, rcond, f
     <ftype2> intent(out) :: rcond
     <ftype2> intent(out), depend(nrhs), dimension(nrhs) :: ferr
     <ftype2> intent(out), depend(nrhs), dimension(nrhs) :: berr
-    <ftype2c> intent(hide,cache), depend(n), dimension(2*n) :: work
-    <ftype2> intent(hide,cache), depend(n), dimension(2*n) :: rwork
+    <ftype2c> intent(hide,cache), depend(n), dimension(n) :: work
+    <ftype2> intent(hide,cache), depend(n), dimension(n) :: rwork
     integer intent(out) :: info
 
 end subroutine <prefix2c>ptsvx
