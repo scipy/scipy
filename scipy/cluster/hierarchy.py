@@ -1451,7 +1451,8 @@ def cut_tree_balanced(Z, max_cluster_size):
 
     Perform a balanced cut tree of the linkage matrix.
 
-    >>> [cluster_id, cluster_level] = cut_tree_balanced(Z, max_cluster_size=10)
+    >>> cluster_id, cluster_level = \
+            cluster.hierarchy.cut_tree_balanced(Z, max_cluster_size=10)
     >>> cluster_id[:10]
     >>> cluster_level[:10]
 
@@ -1475,7 +1476,8 @@ def cut_tree_balanced(Z, max_cluster_size):
     # Initialize the resulting cluster level vector (containing for each data
     # sample its corresponding cluster tree level)
     cluster_level = np.empty((full_cut.shape[1],), dtype=object)
-    for i in range(full_cut.shape[1]): cluster_level[i] = np.array([0],int)
+    for i in range(full_cut.shape[1]): 
+        cluster_level[i] = np.array([0],int)
 
     # Scan the full cut matrix from the last column (root tree level) to the
     # first column (leaves tree level)
