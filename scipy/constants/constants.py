@@ -98,7 +98,7 @@ arcmin = arcminute = degree / 60
 arcsec = arcsecond = arcmin / 60
 
 # time in second
-minute = 60
+minute = 60.0
 hour = 60 * minute
 day = 24 * hour
 week = 7 * day
@@ -112,13 +112,13 @@ yard = 3 * foot
 mile = 1760 * yard
 mil = inch / 1000
 pt = point = inch / 72  # typography
-survey_foot = 1200 / 3937
+survey_foot = 1200.0 / 3937
 survey_mile = 5280 * survey_foot
-nautical_mile = 1852
+nautical_mile = 1852.0
 fermi = 1e-15
 angstrom = 1e-10
 micron = 1e-6
-au = astronomical_unit = 149597870700
+au = astronomical_unit = 149597870700.0
 light_year = Julian_year * c
 parsec = au / arcsec
 
