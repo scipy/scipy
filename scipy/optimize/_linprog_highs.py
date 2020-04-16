@@ -194,6 +194,8 @@ def _linprog_highs(lp, solver, time_limit=1, presolve=True, parallel=False,
 
     sol = {'x': res.get('x', None),
            'slack': res.get('slack', None),
+           'lambda': res.get('lambda', None),
+           's': res.get('s', None),
            'fun': res.get('fun', None),
            'con': res.get('con', None),
            'status': statuses[res['status']][0],
