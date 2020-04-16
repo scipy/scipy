@@ -54,11 +54,11 @@ from . import hierarchy_test_data
 # Matplotlib is not a scipy dependency but is optionally used in dendrogram, so
 # check if it's available
 try:
-    import matplotlib
+    import matplotlib  # type: ignore[import]
     # and set the backend to be Agg (no gui)
     matplotlib.use('Agg')
     # before importing pyplot
-    import matplotlib.pyplot as plt
+    import matplotlib.pyplot as plt  # type: ignore[import]
     have_matplotlib = True
 except Exception:
     have_matplotlib = False
@@ -1055,4 +1055,3 @@ def test_Heap():
     pair = heap.get_min()
     assert_equal(pair['key'], 1)
     assert_equal(pair['value'], 10)
-
