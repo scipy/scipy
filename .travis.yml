@@ -38,6 +38,15 @@ matrix:
           grep -rlIP '[^\x00-\x7F]' scipy | grep '\.pyx\?' | sort > unicode.out; grep -rlI '# -\*- coding: \(utf-8\|latin-1\) -\*-' scipy | grep '\.pyx\?' | sort > coding.out; comm -23 unicode.out coding.out > test_code.out; cat test_code.out;  test \! -s test_code.out
     - python: 3.7
       if: type = pull_request
+      arch: arm64
+      dist: bionic
+      env:
+        - TESTMODE=fast
+        - COVERAGE=
+        - USE_SDIST=1
+        - PIP_NO_CACHE_DIR=off
+    - python: 3.7
+      if: type = pull_request
       env:
         - TESTMODE=fast
         - COVERAGE=
@@ -109,6 +118,7 @@ matrix:
         - TESTMODE=fast
         - COVERAGE=
         - NUMPYSPEC="--upgrade numpy --no-cache-dir"
+
 cache:
   directories:
     - $HOME/.ccache
@@ -117,7 +127,7 @@ cache:
 before_install:
   - echo $TRAVIS_OS_NAME
   - |
-    if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
+    if [ "$TRAVIS_OS_NAME" == "linux" ]; then
       free -m
       export PATH=/usr/lib/ccache:$PATH
     fi
@@ -145,25 +155,23 @@ before_install:
     fi
   - python -V -V
   - python -c 'import sys; print("Python debug build:", hasattr(sys, "gettotalrefcount"))'
-  - travis_retry pip install --upgrade pip setuptools wheel
-  - travis_retry pip install cython
-  - if [ -n "$NUMPYSPEC" ]; then travis_retry pip install $NUMPYSPEC; fi
-  - travis_retry pip install --upgrade pytest pytest-xdist mpmath argparse Pillow codecov
+  - |
+    if [[ "$NUMPYSPEC" && "$TRAVIS_CPU_ARCH" != "arm64" ]]; then
+         travis_retry pip install --upgrade pip setuptools wheel cython $NUMPYSPEC pytest pytest-xdist mpmath argparse Pillow codecov gmpy2 pybind11
+    fi
   - |
     if [ -n "${USE_DEBUG}" ]; then
         # see gh-10676; need to pin pytest version with debug
         # Python 3.6
         travis_retry pip install pytest==5.0.1
     fi
-  - travis_retry pip install gmpy2  # speeds up mpmath (scipy.special tests)
-  - travis_retry pip install pybind11
   - |
     if [ -z "${USE_DEBUG}" -a "${TRAVIS_CPU_ARCH}" == "amd64" -a "${TRAVIS_PYTHON_VERSION}" != "3.8" ]; then
         travis_retry pip install numba==0.47
         travis_retry pip install --only-binary=:all: sparse
     fi
   - |
-    if [ "${TESTMODE}" == "full" ]; then
+    if [ "${TESTMODE}" == "full"  ]; then
         travis_retry pip install pytest-cov coverage matplotlib scikit-umfpack scikit-sparse
     fi
   - |
@@ -174,16 +182,33 @@ before_install:
     if [ "${ASV_CHECK}" == "1" ]; then
         travis_retry pip install "asv>=0.4.1"
     fi
-  - pip uninstall -y nose
-  - ccache -s
+  - |
+    if [ "${TRAVIS_CPU_ARCH}" != "arm64" ]; then
+         pip uninstall -y nose
+         ccache -s
+    fi
   - cd ..
   - set -o pipefail
+  - if [[ "${TRAVIS_CPU_ARCH}" == "arm64" ]]; then
+      wget -q "https://github.com/conda-forge/miniforge/releases/download/4.8.2-1/Miniforge3-4.8.2-1-Linux-aarch64.sh"  -O miniconda.sh;
+      chmod +x miniconda.sh;
+      ./miniconda.sh -b -p $HOME/miniconda3;
+      export PATH=$HOME/miniconda3/bin:$PATH;
+      conda config --set always_yes yes --set auto_update_conda false;
+      conda install pip conda;
+      conda update -n base conda;
+      conda info -a;
+      conda install pytest pytest-xdist scipy mpmath Cython pybind11;
+    fi
 script:
   - python -c 'import numpy as np; print("relaxed strides checking:", np.ones((10,1),order="C").flags.f_contiguous)'
   # Make sure that relaxed strides checking is actually in effect; otherwise fail loudly
   - if [ "$NPY_RELAXED_STRIDES_CHECKING" == "1" ]; then python -c'import numpy as np; assert np.ones((10,1),order="C").flags.f_contiguous'; fi
   # Test that mpmath actually uses gmpy2
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then python -c 'import mpmath.libmp; assert mpmath.libmp.BACKEND == "gmpy"'; fi
+  - |
+    if [[ "$TRAVIS_OS_NAME" == "linux" && "$TRAVIS_CPU_ARCH" != "arm64" ]]; then
+      python -c 'import mpmath.libmp; assert mpmath.libmp.BACKEND == "gmpy"';
+    fi
   - |
     if [ "${USE_WHEEL}" == "1" ]; then
         # Run setup.py build before pip wheel, to build in current directory
@@ -208,8 +233,14 @@ script:
         cd ..
         USE_WHEEL_BUILD="--no-build"
     fi
-  - export SCIPY_AVAILABLE_MEM=3G
-  - python -u runtests.py -g -m $TESTMODE $COVERAGE $USE_WHEEL_BUILD -- -rfEX -n 3 2>&1 | tee runtests.log
+  - |
+    if [[ "$TRAVIS_CPU_ARCH" == "arm64" ]]; then
+      python -u runtests.py --parallel=4 -g -m $TESTMODE $COVERAGE $USE_WHEEL_BUILD -- -rfEX 2>&1 | tee runtests.log
+    else
+      export SCIPY_AVAILABLE_MEM=3G
+      python -u runtests.py -g -m $TESTMODE $COVERAGE $USE_WHEEL_BUILD -- -rfEX -n 3 2>&1 | tee runtests.log
+    fi
+
   - tools/validate_runtests_log.py $TESTMODE < runtests.log
   - if [ "${REFGUIDE_CHECK}" == "1" ]; then python runtests.py -g --refguide-check; fi
   - if [ "${ASV_CHECK}" == "1" ]; then (cd benchmarks && python -masv check -E existing); fi
