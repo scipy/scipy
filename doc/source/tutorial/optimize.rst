@@ -1409,7 +1409,7 @@ should be
 
 Next, let's consider the two inequality constraints. The first one is a "less than" inequality; however, the second one
 is a "greater than" inequality. :func:`linprog` only accepts "less than" inequality constraints, so we multiply both
-sides of the second inequality by :math:-1 to get:
+sides of the second inequality by :math:`-1` to get:
 
 .. math::
         x_1 -x_2 -3x_3 + 0x_4  &\leq 5\\
@@ -1512,14 +1512,15 @@ Finally, we can solve the transformed problem using :func:`linprog`.
 
 The result shows our problem is infeasible. It means that there is no solution vector that satisfies all the
 constraints. What did we do wrong? If we check the code carefully, we can notice that we've set the :math:`x_3` bound
-constraint wrong. We've set the maximum bound for :math:`x_3` to :math:`0`. However, it is not need.
+constraint wrong. We've set the maximum bound for :math:`x_3` to :math:`0`. However, it is not needed.
 
-We can solve it with correct bound setting:
+We can solve it with correct bound settings:
 
 ::
+
     >>> x3_bounds = (-3.0, None)
     >>> bounds = [x0_bounds, x1_bounds, x2_bounds, x3_bounds]
-    >>> result = linprog(c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq, bounds = bounds)
+    >>> result = linprog(c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq, bounds=bounds)
     >>> print(result)
          con: array([9.78840831e-09, 1.04662945e-08])  # may vary
          fun: -505.97435889013434  # may vary
@@ -1530,16 +1531,19 @@ We can solve it with correct bound setting:
      success: True
            x: array([ 9.41025641,  5.17948718, -0.25641026,  1.64102564])  # may vary
 
-The result show the optimization is succeeded.
+The result shows the optimization was succeeded.
 We can check the objective value (``result.fun``) is same as :math:`c.Tx`:
 
 ::
-    >>> print(c.T @ result.x)
+
+    >>> x = np.array([result.x]).T
+    >>> print(c.T @ x)
     -505.97435889013434  # may vary
 
 We can also check all constraints are almost all satisfied:
 
 ::
+
     >>> print(A_ub @ x)
     [[  5.]  # may vary
     [-10.]]  # may vary
