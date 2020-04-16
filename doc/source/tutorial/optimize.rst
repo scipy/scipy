@@ -1512,7 +1512,7 @@ Finally, we can solve the transformed problem using :func:`linprog`.
 
 The result shows our problem is infeasible. It means that there is no solution vector that satisfies all the
 constraints. What did we do wrong? If we check the code carefully, we can notice that we've set the :math:`x_3` bound
-constraint wrong. We've set the maximum bound for :math:`x_3` to :math:`0`. However, it is not needed.
+constraint wrong. We've set the maximum bound for :math:`x_3` to :math:`0`, but it is not needed.
 
 We can solve it with correct bound settings:
 
