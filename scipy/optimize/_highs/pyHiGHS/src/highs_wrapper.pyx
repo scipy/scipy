@@ -2,7 +2,7 @@
 # cython: language_level=3
 
 from libc.stdio cimport FILE, tmpfile
-from libcpp.memory cimport unique_ptr, make_unique
+from libcpp.memory cimport unique_ptr
 
 from HConst cimport ML_NONE
 from Highs cimport Highs
@@ -257,6 +257,14 @@ def highs_wrapper(
                 Message corresponding to model status code.
             - `x` : list
                 Solution variables.
+            - `slack` : list
+                Slack variables.
+            - `lambda` : list
+                Lagrange multipliers assoicated with the constraints
+                Ax = b.
+            - `s` : list
+                Lagrange multipliers associated with the constraints
+                x >= 0.
             - `fun`
                 Final objective value.
             - `simplex_nit` : int
@@ -353,10 +361,10 @@ def highs_wrapper(
         lp.Avalue_.empty()
 
     # Create the options
+    cdef Highs highs
     apply_options(options, highs)
 
     # Make a Highs object and pass it everything
-    cdef Highs highs
     cdef HighsStatus init_status = highs.passModel(lp)
     if init_status != HighsStatusOK:
         if init_status != HighsStatusWarning:
@@ -386,7 +394,7 @@ def highs_wrapper(
 
     # We might need an info object if we can look up the solution and a place to put solution
     cdef HighsInfo info
-    cdef unique_ptr[HighsSolution] solution
+    cdef HighsSolution solution
 
     print('Got', highs.highsModelStatusToString(model_status).decode())
 
@@ -417,12 +425,24 @@ def highs_wrapper(
             HighsModelStatusREACHED_ITERATION_LIMIT,
     ]:
         info = highs.getHighsInfo()
-        solution = make_unique[HighsSolution](highs.getSolution())
+        solution = highs.getSolution()
         return {
             'status': <int> model_status,
             'message': highs.highsModelStatusToString(model_status).decode(),
-            'x': [solution.get().col_value[ii] for ii in range(numcol)],
-            'slack': [solution.get().row_value[ii] for ii in range(numrow)],
+
+            # Primal solution
+            'x': [solution.col_value[ii] for ii in range(numcol)],
+
+            # Ax + s = b => Ax = b - s
+            'slack': [rhs[ii] - solution.row_value[ii] for ii in range(numrow)],
+
+            # slacks in HiGHS appear as Ax - s, not Ax + s, so lambda is negated;
+            # lambda are the lagrange multipliers associated with Ax=b
+            'lambda': [-1*solution.row_dual[ii] for ii in range(numrow)],
+
+            # s are the lagrange multipliers associated with bound conditions
+            's': [solution.col_dual[ii] for ii in range(numcol) if solution.col_dual[ii]],
+
             'fun': info.objective_function_value,
             'simplex_nit': info.simplex_iteration_count,
             'ipm_nit': info.ipm_iteration_count,

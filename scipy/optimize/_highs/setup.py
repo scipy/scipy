@@ -3,6 +3,11 @@ import sys
 import pathlib
 from datetime import datetime
 
+def pre_build_hook(build_ext, ext):
+    from scipy._build_utils.compiler_helper import get_cxx_std_flag
+    std_flag = get_cxx_std_flag(build_ext._cxx_compiler)
+    if std_flag is not None:
+        ext.extra_compile_args.append(std_flag)
 
 def _get_sources(CMakeLists, start_token, end_token):
     # Read in sources from CMakeLists.txt
@@ -67,20 +72,8 @@ def configuration(parent_package='', top_path=None):
         'OSI_FOUND',
     ]
 
-    # HiGHS written using C++11 standard, we use C++14 for std::make_unique;
-    # -O3 is used for all libraries in HiGHS
-    EXTRA_COMPILE_ARGS = []
-    OPTIMIZATIONS = []
-    if sys.platform == 'win32':
-        EXTRA_COMPILE_ARGS.append('/std:c++14')
-        OPTIMIZATIONS.append('/O2')
-        OPTIMIZATIONS.append('/Ob2')
-    else:
-        EXTRA_COMPILE_ARGS.append('-std=c++14')
-        OPTIMIZATIONS.append('-O3')
-
     # Compile BASICLU as a static library to appease clang:
-    # (won't allow -std=c++14 option for C sources)
+    # (won't allow -std=c++11/14 option for C sources)
     basiclu_sources = _get_sources('src/CMakeLists.txt',
                                    'set(basiclu_sources\n', ')')
     config.add_library(
@@ -92,7 +85,6 @@ def configuration(parent_package='', top_path=None):
         ],
         language='c',
         macros=DEFINE_MACROS,
-        extra_compile_args=OPTIMIZATIONS,
     )
 
     # Compile the rest of the sources all together,
@@ -110,7 +102,7 @@ def configuration(parent_package='', top_path=None):
         str(pathlib.Path('src/interfaces/')),
         str(pathlib.Path('pyHiGHS/src/')),
     ]
-    config.add_extension(
+    ext = config.add_extension(
         'highs_wrapper',
         sources=[
             str(pathlib.Path('pyHiGHS/src/highs_wrapper.cxx'))
@@ -122,8 +114,9 @@ def configuration(parent_package='', top_path=None):
         libraries=['basiclu'],
         define_macros=DEFINE_MACROS,
         undef_macros=UNDEF_MACROS,
-        extra_compile_args=EXTRA_COMPILE_ARGS + OPTIMIZATIONS,
     )
+    # Add c++11/14 support:
+    ext._pre_build_hook = pre_build_hook
 
     return config
 

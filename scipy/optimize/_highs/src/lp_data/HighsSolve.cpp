@@ -58,7 +58,8 @@ HighsStatus solveUnconstrainedLp(HighsModelObject& highs_model_object) {
   unscaled_solution_params.num_dual_infeasibilities = 0;
 
   for (int iCol = 0; iCol < lp.numCol_; iCol++) {
-    double cost = (int)lp.sense_ * lp.colCost_[iCol];
+    double cost = lp.colCost_[iCol];
+    double dual = (int)lp.sense_ * cost;
     double lower = lp.colLower_[iCol];
     double upper = lp.colUpper_[iCol];
     double value;
@@ -90,21 +91,21 @@ HighsStatus solveUnconstrainedLp(HighsModelObject& highs_model_object) {
       // Free column: must have zero cost
       value = 0;
       status = HighsBasisStatus::ZERO;
-      if (fabs(cost) > dual_feasibility_tolerance) unbounded = true;
-    } else if (cost >= dual_feasibility_tolerance) {
-      // Column with sufficiently positive cost: set to lower bound
+      if (fabs(dual) > dual_feasibility_tolerance) unbounded = true;
+    } else if (dual >= dual_feasibility_tolerance) {
+      // Column with sufficiently positive dual: set to lower bound
       // and check for unboundedness
       if (highs_isInfinity(-lower)) unbounded = true;
       value = lower;
       status = HighsBasisStatus::LOWER;
-    } else if (cost <= -dual_feasibility_tolerance) {
-      // Column with sufficiently negative cost: set to upper bound
+    } else if (dual <= -dual_feasibility_tolerance) {
+      // Column with sufficiently negative dual: set to upper bound
       // and check for unboundedness
       if (highs_isInfinity(upper)) unbounded = true;
       value = upper;
       status = HighsBasisStatus::UPPER;
     } else {
-      // Column with sufficiently small cost: set to lower bound (if
+      // Column with sufficiently small dual: set to lower bound (if
       // finite) otherwise upper bound
       if (highs_isInfinity(-lower)) {
         value = upper;
@@ -115,7 +116,7 @@ HighsStatus solveUnconstrainedLp(HighsModelObject& highs_model_object) {
       }
     }
     solution.col_value[iCol] = value;
-    solution.col_dual[iCol] = cost;
+    solution.col_dual[iCol] = (int)lp.sense_ * dual;
     basis.col_status[iCol] = status;
     objective += value * cost;
     unscaled_solution_params.sum_primal_infeasibilities += primal_infeasibility;

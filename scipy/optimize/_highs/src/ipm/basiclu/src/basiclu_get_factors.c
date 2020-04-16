@@ -116,7 +116,7 @@ lu_int basiclu_get_factors
                 colptr[Windex[pos]]++;
         }
         put = 0;
-        for (long k = 0; k < m; k++) /* set column pointers */
+        for (k = 0; k < m; k++) /* set column pointers */
         {
             j = pivotcol[k];
             Ucolptr[k] = put;
@@ -127,7 +127,7 @@ lu_int basiclu_get_factors
         }
         Ucolptr[m] = put;
         assert(put == this.Unz+m);
-        for (long k = 0; k < m; k++) /* scatter row k */
+        for (k = 0; k < m; k++) /* scatter row k */
         {
             j = pivotcol[k];
             for (pos = Wbegin[j]; pos < Wend[j]; pos++)
