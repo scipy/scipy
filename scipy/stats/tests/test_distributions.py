@@ -4268,7 +4268,7 @@ class TestHistogram(object):
     def test_munp(self):
         for n in range(4):
             assert_allclose(self.norm_template._munp(n),
-                            stats.norm._munp(n, 1.0, 2.5), rtol=0.05)
+                            stats.norm(1.0, 2.5).moment(n), rtol=0.05)
 
     def test_entropy(self):
         assert_allclose(self.norm_template.entropy(),

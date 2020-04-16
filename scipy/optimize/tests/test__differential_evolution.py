@@ -1,7 +1,6 @@
 """
 Unit tests for the differential global minimization algorithm.
 """
-import gc
 import multiprocessing
 import sys
 import platform
@@ -21,11 +20,6 @@ from numpy.testing import (assert_equal, assert_allclose,
                            assert_string_equal, assert_, suppress_warnings)
 from pytest import raises as assert_raises, warns
 import pytest
-
-
-knownfail_on_py38 = pytest.mark.xfail(
-    sys.version_info >= (3, 8), run=False,
-    reason='Python 3.8 hangs when cleaning up MapWrapper')
 
 
 class TestDifferentialEvolutionSolver(object):
@@ -561,7 +555,6 @@ class TestDifferentialEvolutionSolver(object):
         assert_(solver._mapwrapper._mapfunc is map)
         solver.solve()
 
-    @knownfail_on_py38
     def test_immediate_updating(self):
         # check setting of immediate updating, with default workers
         bounds = [(0., 2.), (0., 2.)]
@@ -571,12 +564,10 @@ class TestDifferentialEvolutionSolver(object):
         # should raise a UserWarning because the updating='immediate'
         # is being overridden by the workers keyword
         with warns(UserWarning):
-            solver = DifferentialEvolutionSolver(rosen, bounds, workers=2)
+            with DifferentialEvolutionSolver(rosen, bounds, workers=2) as solver:
+                pass
         assert_(solver._updating == 'deferred')
-        del solver
-        gc.collect()  # ensure MapWrapper cleans up properly
 
-    @knownfail_on_py38
     def test_parallel(self):
         # smoke test for parallelization with deferred updating
         bounds = [(0., 2.), (0., 2.)]
@@ -591,8 +582,6 @@ class TestDifferentialEvolutionSolver(object):
             assert_(solver._mapwrapper.pool is not None)
             assert_(solver._updating == 'deferred')
             solver.solve()
-        del solver
-        gc.collect()  # ensure MapWrapper cleans up properly
 
     def test_converged(self):
         solver = DifferentialEvolutionSolver(rosen, [(0, 2), (0, 2)])

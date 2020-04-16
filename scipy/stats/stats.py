@@ -3154,7 +3154,7 @@ def f_oneway(*args):
         The associated p-value from the F-distribution.
 
     Warns
-    -------
+    -----
     F_onewayConstantInputWarning
         Raised if each of the input arrays is constant array.
         In this case F-value is either infinite or isn't defined, so
@@ -7350,9 +7350,9 @@ def rankdata(a, method='average', *, axis=None):
     >>> rankdata([[0, 2], [3, 2]]).reshape(2,2)
     array([[1. , 2.5],
           [4. , 2.5]])
-    >>> rankdata([[0, 2], [3, 2]], axis = 1)
-    array([[1., 2.],
-          [2., 1.]])
+    >>> rankdata([[0, 2, 2], [3, 2, 5]], axis=1)
+    array([[1. , 2.5, 2.5],
+           [2. , 1. , 3. ]])
     """
     if method not in ('average', 'min', 'max', 'dense', 'ordinal'):
         raise ValueError('unknown method "{0}"'.format(method))

@@ -268,6 +268,11 @@ All functions
    cgtsv
    zgtsv
 
+   sgtsvx
+   dgtsvx
+   cgtsvx
+   zgtsvx
+
    chbevd
    zhbevd
 
@@ -494,6 +499,11 @@ All functions
    dpttrs
    cpttrs
    zpttrs
+
+   spteqr
+   dpteqr
+   cpteqr
+   zpteqr
 
    crot
    zrot

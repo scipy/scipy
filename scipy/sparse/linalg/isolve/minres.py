@@ -55,6 +55,20 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None,
         User-supplied function to call after each iteration.  It is called
         as callback(xk), where xk is the current solution vector.
 
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.sparse import csc_matrix
+    >>> from scipy.sparse.linalg import minres
+    >>> A = csc_matrix([[3, 2, 0], [1, -1, 0], [0, 5, 1]], dtype=float)
+    >>> A = A + A.T
+    >>> b = np.array([2, 4, -1], dtype=float)
+    >>> x, exitCode = minres(A, b)
+    >>> print(exitCode)            # 0 indicates successful convergence
+    0
+    >>> np.allclose(A.dot(x), b)
+    True
+
     References
     ----------
     Solution of sparse indefinite systems of linear equations,
