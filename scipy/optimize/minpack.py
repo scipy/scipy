@@ -144,7 +144,7 @@ def fsolve(func, x0, args=(), fprime=None, full_output=0,
     >>> root = fsolve(func, [1, 1])
     >>> root
     array([6.50409711, 0.90841421])
-    >>> np.isclose(func(root), [0.0, 0.0]) # f(root) should be almost 0.0.
+    >>> np.isclose(func(root), [0.0, 0.0])  # func(root) should be almost 0.0.
     array([ True,  True])
 
     """
