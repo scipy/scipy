@@ -1791,6 +1791,47 @@ def lsim2(system, U=None, T=None, X0=None, **kwargs):
     numerator and denominator should be specified in descending exponent
     order (e.g. ``s^2 + 3s + 5`` would be represented as ``[1, 3, 5]``).
 
+    See Also
+    --------
+    lsim
+
+    Examples
+    --------
+
+    We'll use `lsim2` to simulate an analog Bessel filter applied to
+    a signal.
+
+    >>> from scipy.signal import bessel, lsim2
+    >>> import matplotlib.pyplot as plt
+
+    Create a low-pass Bessel filter with a cutoff of 16 Hz.
+
+    >>> b, a = bessel(N=6, Wn=2*np.pi*16, btype='lowpass', analog=True)
+
+    Generate data to which the filter is applied.
+
+    >>> t = np.linspace(0, 1.25, 500, endpoint=False)
+
+    The input signal is the sum of three sinusoidal curves, with
+    frequencies 4 Hz, 40 Hz, and 80 Hz.  The filter should mostly
+    eliminate the 40 Hz and 80 Hz components, leaving just the 4 Hz signal.
+
+    >>> u = (np.cos(2*np.pi*4*t) + np.sin(2*np.pi*40*t) +
+    ...      0.5*np.cos(2*np.pi*80*t))
+
+    Simulate the filter with `lsim2`.
+
+    >>> tout, yout, xout = lsim2((b, a), U=u, T=t)
+
+    Plot the result.
+
+    >>> plt.plot(t, u, 'r', alpha=0.5, linewidth=1, label='input')
+    >>> plt.plot(tout, yout, 'k', linewidth=1.5, label='output')
+    >>> plt.legend(loc='best', shadow=True, framealpha=1)
+    >>> plt.grid(alpha=0.3)
+    >>> plt.xlabel('t')
+    >>> plt.show()
+
     """
     if isinstance(system, lti):
         sys = system._as_ss()
