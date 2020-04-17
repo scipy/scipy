@@ -1535,7 +1535,7 @@ We can check the objective value (``result.fun``) is same as :math:`c^Tx`:
 
 ::
 
-    >>> x = np.array([result.x]).T
+    >>> x = np.array(result.x)
     >>> print(c @ x)
     -505.97435889013434  # may vary
 
