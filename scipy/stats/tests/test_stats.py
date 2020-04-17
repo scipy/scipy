@@ -4429,9 +4429,9 @@ class TestFOneWay(object):
         a, b = np.arange(0, 3, 2), np.arange(2, 5, 2)
         for _ in range(ndim - 1):
             a, b = a[:, np.newaxis], b[:, np.newaxis]
-        F, p = stats.f_oneway([0,2], [2,4])
-        assert F.ndim == 0
-        assert F == 2.0
+        F, p = stats.f_oneway(a, b)
+        assert F.ndim == a.ndim - 1
+        assert_array_equal(F, 2.0)
 
     def test_large_integer_array(self):
         a = np.array([655, 788], dtype=np.uint16)
