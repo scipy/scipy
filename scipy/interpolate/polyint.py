@@ -439,6 +439,23 @@ def approximate_taylor_polynomial(f,x,degree,scale,order=None):
     Choosing order somewhat larger than degree may improve the higher-order
     terms.
 
+    Examples
+    --------
+    We can calculate Taylor approximation polynomials of sin function with
+    various degrees:
+
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy import interpolate
+    >>> x = np.linspace(-10.0, 10.0, num=100)
+    >>> plt.plot(x, np.sin(x), label="sin curve")
+    >>> for degree in np.arange(1, 15, step=2):
+    >>>     sin_taylor = interpolate.approximate_taylor_polynomial(np.sin, 0,
+    ...                                                             degree, 1)
+    >>>     plt.plot(x, sin_taylor(x), label=f"degree={degree}")
+    >>> plt.legend()
+    >>> plt.axis([-10, 10, -10, 10])
+    >>> plt.show()
+
     """
     if order is None:
         order = degree
