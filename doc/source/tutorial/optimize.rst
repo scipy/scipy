@@ -1531,7 +1531,7 @@ We can solve it with correct bound settings:
      success: True
            x: array([ 9.41025641,  5.17948718, -0.25641026,  1.64102564])  # may vary
 
-The result shows the optimization was succeeded.
+The result shows the optimization was successful.
 We can check the objective value (``result.fun``) is same as :math:`c^Tx`:
 
 ::
