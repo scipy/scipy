@@ -1,6 +1,8 @@
 # distutils: language=c++
 # cython: language_level=3
 
+import logging
+
 from libc.stdio cimport FILE, tmpfile
 from libcpp.memory cimport unique_ptr
 
@@ -287,11 +289,8 @@ def highs_wrapper(
     `options['solution_file']` is unset or `''`, then the solution
     will be printed to `stdout`.
 
-    If `ipm_iteration_limit` is reached, no solution will be
-    available, as in general interior-point methods are not feasible
-    while they are running.  However, if `simplex_iteration_limit` is
-    reached there will be a solution available, as each iteration is
-    at a feasible vertex.
+    If any iteration limit is reached, no solution will be
+    available.
 
     References
     ----------
@@ -368,7 +367,7 @@ def highs_wrapper(
     cdef HighsStatus init_status = highs.passModel(lp)
     if init_status != HighsStatusOK:
         if init_status != HighsStatusWarning:
-            print("Error setting HighsLp");
+            logging.warning("Error setting HighsLp");
             return <int>HighsStatusError
 
     # Solve the fool thing
@@ -389,19 +388,14 @@ def highs_wrapper(
             # The scaled model has been solved to optimality, but not the
             # unscaled model, flag this up, but report the scaled model
             # status
-            print('model_status is not optimal, using scaled_model_status instead.')
+            logging.warning('model_status is not optimal, using scaled_model_status instead.')
             model_status = scaled_model_status
 
     # We might need an info object if we can look up the solution and a place to put solution
     cdef HighsInfo info
     cdef HighsSolution solution
 
-    print('Got', highs.highsModelStatusToString(model_status).decode())
-
-    # If the status is bad, don't look up the solution;
-    # note that if solver==ipm and iteration limit is reached,
-    # there is in general no solution available, but if
-    # solver==simplex, we're always on a feasible vertex
+    # If the status is bad, don't look up the solution
     if model_status in [
             HighsModelStatusNOTSET,
             HighsModelStatusLOAD_ERROR,
@@ -412,17 +406,23 @@ def highs_wrapper(
             HighsModelStatusPOSTSOLVE_ERROR,
             HighsModelStatusPRIMAL_INFEASIBLE,
             HighsModelStatusPRIMAL_UNBOUNDED,
-    ] or (model_status == HighsModelStatusREACHED_ITERATION_LIMIT and options.get('solver', None) == 'ipm'):
+            HighsModelStatusREACHED_ITERATION_LIMIT,
+    ]:
+        info = highs.getHighsInfo()
         return {
             'status': <int> model_status,
             'message': highs.highsModelStatusToString(model_status).decode(),
+            'simplex_nit': info.simplex_iteration_count,
+            'ipm_nit': info.ipm_iteration_count,
+            'fun': info.objective_function_value,
+            'crossover_nit': info.crossover_iteration_count,
+            'con': info.sum_primal_infeasibilities,
         }
     # If the model status is such that the solution can be read
     elif model_status in [
             HighsModelStatusOPTIMAL,
             HighsModelStatusREACHED_DUAL_OBJECTIVE_VALUE_UPPER_BOUND,
             HighsModelStatusREACHED_TIME_LIMIT,
-            HighsModelStatusREACHED_ITERATION_LIMIT,
     ]:
         info = highs.getHighsInfo()
         solution = highs.getSolution()
