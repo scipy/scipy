@@ -56,19 +56,19 @@ def test_quadratic_assignment():
 
 def test_linear_sum_assignment_input_validation():
     A = np.identity(2)
-    B=A
+    B = A
     with pytest.raises(TypeError):
-        quadratic_assignment(A,B,n_init=-1.5)
+        quadratic_assignment(A, B, n_init=-1.5)
     with pytest.raises(ValueError):
-        quadratic_assignment(A,B,init_method="random")
+        quadratic_assignment(A, B, init_method="random")
     with pytest.raises(TypeError):
-        quadratic_assignment(A,B,max_iter=-1.5)
+        quadratic_assignment(A, B, max_iter=-1.5)
     with pytest.raises(TypeError):
-        quadratic_assignment(A,B,shuffle_input="hey")
+        quadratic_assignment(A, B, shuffle_input="hey")
     with pytest.raises(TypeError):
-        quadratic_assignment(A,B,eps=-1)
+        quadratic_assignment(A, B, eps=-1)
     with pytest.raises(TypeError):
-        quadratic_assignment(A,B,gmp="hey")
+        quadratic_assignment(A, B, gmp="hey")
     with pytest.raises(ValueError):
         quadratic_assignment(
             np.random.random((3, 3)),
