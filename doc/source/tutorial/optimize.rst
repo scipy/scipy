@@ -1544,7 +1544,7 @@ We can also check all constraints are almost all satisfied:
 
 ::
 
-    >>> print(A_ub @ x)
+    >>> print(b_ub - A_ub @ x)  # this is equivalent to result.slack
     [[  5.]  # may vary
     [-10.]]  # may vary
     >>> print(b_ub)
