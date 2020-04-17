@@ -1392,7 +1392,7 @@ Consider the following simple linear programming problem:
 We need some mathematical manipulations to convert the target problem to the form accepted by :func:`linprog`.
 
 First of all, let's consider the objective function. 
-We define a vector of decision variables :math:`x = [x_1, x_2, x_3, x_4]^T`. We want to maximize the objective
+We want to maximize the objective
 function, but :func:`linprog` can only accept a minimization problem. This is easily remedied by converting the maximize
 :math:`29x_1 + 45x_2` to minimizing :math:`-29x_1 -45x_2`. Also, :math:`x_3, x_4` are not shown in the objective
 function. That means the weights corresponding with :math:`x_3, x_4` are zero. So, the objective function can be
