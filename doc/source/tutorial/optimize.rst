@@ -1550,7 +1550,7 @@ We can also check all constraints are almost all satisfied:
     >>> print(b_ub)
     [[  5.]  # may vary
     [-10.]]  # may vary
-    >>> print(A_eq @ x)
+    >>> print(b_eq - A_eq @ x)  # this is equivalent to result.con
     [[59.99999999]  # may vary
     [59.99999999]]  # may vary
     >>> print(b_eq)
