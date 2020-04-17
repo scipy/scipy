@@ -104,56 +104,77 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
     message_level : int {0, 1, 2, 4}
         Verbosity level, corresponds to:
 
-            `0`: ML_NONE
-            `1`: ML_VERBOSE
-            `2`: ML_DETAILED
-            `4`: ML_MINIMAL
+            ``0``: ML_NONE
+
+            ``1``: ML_VERBOSE
+
+            ``2``: ML_DETAILED
+
+            ``4``: ML_MINIMAL
 
         Default is 0.
     primal_feasibility_tolerance : double
         Primal feasibility tolerance.
     simplex_crash_strategy : int {0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
         Strategy for simplex crash: off / LTSSF / Bixby (0/1/2).
-        Default is `0`.  Corresponds to the following:
+        Default is ``0``.  Corresponds to the following:
 
-            `0`: `SIMPLEX_CRASH_STRATEGY_OFF`
-            `1`: `SIMPLEX_CRASH_STRATEGY_LTSSF_K`
-            `2`: `SIMPLEX_CRASH_STRATEGY_BIXBY`
-            `3`: `SIMPLEX_CRASH_STRATEGY_LTSSF_PRI`
-            `4`: `SIMPLEX_CRASH_STRATEGY_LTSF_K`
-            `5`: `SIMPLEX_CRASH_STRATEGY_LTSF_PRI`
-            `6`: `SIMPLEX_CRASH_STRATEGY_LTSF`
-            `7`: `SIMPLEX_CRASH_STRATEGY_BIXBY_NO_NONZERO_COL_COSTS`
-            `8`: `SIMPLEX_CRASH_STRATEGY_BASIC`
-            `9`: `SIMPLE_CRASH_STRATEGY_TEST_SING`
+            ``0``: `SIMPLEX_CRASH_STRATEGY_OFF`
+
+            ``1``: `SIMPLEX_CRASH_STRATEGY_LTSSF_K`
+
+            ``2``: `SIMPLEX_CRASH_STRATEGY_BIXBY`
+
+            ``3``: `SIMPLEX_CRASH_STRATEGY_LTSSF_PRI`
+
+            ``4``: `SIMPLEX_CRASH_STRATEGY_LTSF_K`
+
+            ``5``: `SIMPLEX_CRASH_STRATEGY_LTSF_PRI`
+
+            ``6``: `SIMPLEX_CRASH_STRATEGY_LTSF`
+
+            ``7``: `SIMPLEX_CRASH_STRATEGY_BIXBY_NO_NONZERO_COL_COSTS`
+
+            ``8``: `SIMPLEX_CRASH_STRATEGY_BASIC`
+
+            ``9``: `SIMPLE_CRASH_STRATEGY_TEST_SING`
 
     simplex_dual_edge_weight_strategy : int {0, 1, 2, 3, 4}
         Strategy for simplex dual edge weights:
         Dantzig / Devex / Steepest Edge. Corresponds
         to the following:
 
-            `0`: `SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_DANTZIG`
-            `1`: `SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_DEVEX`
-            `2`: `SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_STEEPEST_EDGE_TO_DEVEX_SWITCH`
-            `3`: `SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_STEEPEST_EDGE`
-            `4`: `SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_STEEPEST_EDGE_UNIT_INITIAL`
+            ``0``: `SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_DANTZIG`
+
+            ``1``: `SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_DEVEX`
+
+            ``2``: `SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_STEEPEST_EDGE_TO_DEVEX_SWITCH`
+
+            ``3``: `SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_STEEPEST_EDGE`
+
+            ``4``: `SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_STEEPEST_EDGE_UNIT_INITIAL`
 
     simplex_primal_edge_weight_strategy : int {0, 1}
         Strategy for simplex primal edge weights:
         Dantzig / Devex.  Corresponds to the following:
 
-            `0`: `SIMPLEX_PRIMAL_EDGE_WEIGHT_STRATEGY_DANTZIG`
-            `1`: `SIMPLEX_PRIMAL_EDGE_WEIGHT_STRATEGY_DEVEX`
+            ``0``: `SIMPLEX_PRIMAL_EDGE_WEIGHT_STRATEGY_DANTZIG`
+
+            ``1``: `SIMPLEX_PRIMAL_EDGE_WEIGHT_STRATEGY_DEVEX`
 
     simplex_strategy : int {0, 1, 2, 3, 4}
         Strategy for simplex solver. Default: 1. Corresponds
         to the following:
 
-            `0`: `SIMPLEX_STRATEGY_MIN`
-            `1`: `SIMPLEX_STRATEGY_DUAL`
-            `2`: `SIMPLEX_STRATEGY_DUAL_TASKS`
-            `3`: `SIMPLEX_STRATEGY_DUAL_MULTI`
-            `4`: `SIMPLEX_STRATEGY_PRIMAL`
+            ``0``: `SIMPLEX_STRATEGY_MIN`
+
+            ``1``: `SIMPLEX_STRATEGY_DUAL`
+
+            ``2``: `SIMPLEX_STRATEGY_DUAL_TASKS`
+
+            ``3``: `SIMPLEX_STRATEGY_DUAL_MULTI`
+
+            ``4``: `SIMPLEX_STRATEGY_PRIMAL`
 
     simplex_update_limit : int
         Limit on the number of simplex UPDATE operations.
