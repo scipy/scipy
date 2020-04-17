@@ -9,33 +9,11 @@ Optimization (:mod:`scipy.optimize`)
 
 .. currentmodule:: scipy.optimize
 
+.. contents::
+
 The :mod:`scipy.optimize` package provides several commonly used
 optimization algorithms. A detailed listing is available:
 :mod:`scipy.optimize` (can also be found by ``help(scipy.optimize)``).
-
-The module contains:
-
-1. Unconstrained and constrained minimization of multivariate scalar
-   functions (:func:`minimize`) using a variety of algorithms (e.g., BFGS,
-   Nelder-Mead simplex, Newton Conjugate Gradient, COBYLA or SLSQP).
-
-2. Global optimization routines  (e.g., :func:`basinhopping`,
-   :func:`differential_evolution`, :func:`shgo`, :func:`dual_annealing`).
-
-3. Least-squares minimization (:func:`least_squares`) and curve fitting
-   (:func:`curve_fit`) algorithms.
-
-4. Scalar univariate functions minimizers (:func:`minimize_scalar`) and
-   root finders (:func:`root_scalar`).
-
-5. Multivariate equation system solvers (:func:`root`) using a variety of
-   algorithms (e.g., hybrid Powell, Levenberg-Marquardt or large-scale
-   methods such as Newton-Krylov [KK]_).
-
-6. Linear programming (:func:`linprog`), minimize a linear objective function
-   subject to linear equality and inequality constraints.
-
-Below, several examples demonstrate their basic usage.
 
 
 Unconstrained minimization of multivariate scalar functions (:func:`minimize`)
