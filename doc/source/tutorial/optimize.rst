@@ -1385,7 +1385,7 @@ Consider the following simple linear programming problem:
         & 2x_1 + 8x_2 + x_3 = 60\\
         & 4x_1 + 4x_2 + x_4 = 60\\
         & 0 \leq x_0\\
-        & 0 \leq x_1 \leq 6\\
+        & 0 \leq x_1 \leq 5\\
         & x_2 \leq 0.5\\
         & -3 \leq x_3\\
 
@@ -1497,39 +1497,38 @@ Finally, we can solve the transformed problem using :func:`linprog`.
     >>> x0_bounds = (0, None)
     >>> x1_bounds = (0, 5.0)
     >>> x2_bounds = (-np.inf, 0.5)  # +/- np.inf can be used instead of None
-    >>> x3_bounds = (-3.0, 0)
-    >>> bounds = [x0_bounds, x1_bounds, x2_bounds, x3_bounds]
-    >>> result = linprog(c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq, bounds=bounds)
-    >>> print(result)
-        con: array([42.58855175, 45.54023356])  # may vary
-        fun: -143.26958745795812  # may vary
-    message: 'The algorithm terminated successfully and determined that the problem is infeasible.'
-        nit: 4
-      slack: array([  2.89860769, -12.11677835])  # may vary
-     status: 2
-    success: False
-          x: array([ 2.41503507,  1.62741268, -0.43792331, -1.71002454])  # may vary
-
-The result shows our problem is infeasible. It means that there is no solution vector that satisfies all the
-constraints. What did we do wrong? If we check the code carefully, we can notice that we've set the :math:`x_3` bound
-constraint wrong. We've set the maximum bound for :math:`x_3` to :math:`0`, but it is not needed.
-
-We can solve it with correct bound settings:
-
-::
-
     >>> x3_bounds = (-3.0, None)
     >>> bounds = [x0_bounds, x1_bounds, x2_bounds, x3_bounds]
     >>> result = linprog(c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq, bounds=bounds)
     >>> print(result)
-         con: array([9.78840831e-09, 1.04662945e-08])  # may vary
-         fun: -505.97435889013434  # may vary
-     message: 'Optimization terminated successfully.'  # may vary
-         nit: 4
-       slack: array([ 6.52747190e-10, -2.26730279e-09])  # may vary
-      status: 0
-     success: True
-           x: array([ 9.41025641,  5.17948718, -0.25641026,  1.64102564])  # may vary
+         con: array([15.5361242 , 16.61288005])  # may vary
+         fun: -370.2321976308326  # may vary
+     message: 'The algorithm terminated successfully and determined that the problem is infeasible.'
+         nit: 6
+       slack: array([ 0.79314989, -1.76308532])  # may vary
+      status: 2
+     success: False
+           x: array([ 6.60059391,  3.97366609, -0.52664076,  1.09007993])  # may vary
+
+The result states that our problem is infeasible, meaning that there is no solution vector that satisfies all the
+constraints. That doesn't necessarily mean we did anything wrong; some problems truly are infeasible.
+Suppose, however, that we decided that our bound constraint on :math:x_1 were too tight and that it could be loosened
+to :math:0 \leq x_1 \leq 6\\. After adjusting our code x1_bounds = (0, 6) to reflect the change and executing it again:
+
+::
+
+    >>> x1_bounds = (0, 6)
+    >>> bounds = [x0_bounds, x1_bounds, x2_bounds, x3_bounds]
+    >>> result = linprog(c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq, bounds=bounds)
+    >>> print(result)
+        con: array([9.78840831e-09, 1.04662945e-08])  # may vary
+        fun: -505.97435889013434  # may vary
+    message: 'Optimization terminated successfully.'
+        nit: 4
+      slack: array([ 6.52747190e-10, -2.26730279e-09])  # may vary
+     status: 0
+    success: True
+          x: array([ 9.41025641,  5.17948718, -0.25641026,  1.64102564])  # may vary
 
 The result shows the optimization was successful.
 We can check the objective value (``result.fun``) is same as :math:`c^Tx`:
@@ -1558,6 +1557,23 @@ We can also check all constraints are almost all satisfied:
     [60.]]  # may vary
     >>> print([0 <= result.x[0], 0 <= result.x[1] <= 6.0, result.x[2] <= 0.5, -3.0 <= result.x[3]])
     [True, True, True, True]
+
+If we need greater accuracy, typically at the expense of speed, we can solve using the ``revised simplex`` method:
+
+::
+
+    >>> result = linprog(c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq,
+                     bounds=bounds, method='revised simplex')
+    >>> print(result)
+        con: array([0.00000000e+00, 7.10542736e-15])  # may vary
+        fun: -505.97435897435895    # may vary
+    message: 'Optimization terminated successfully.'
+        nit: 5
+      slack: array([ 1.77635684e-15, -3.55271368e-15])  # may vary
+     status: 0
+    success: True
+          x: array([ 9.41025641,  5.17948718, -0.25641026,  1.64102564])  # may vary
+
 
 .. rubric:: References
 
