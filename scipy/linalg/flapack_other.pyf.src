@@ -1911,7 +1911,7 @@ subroutine <prefix2>gejsv(joba,jobu,jobv,jobr,jobt,jobp,m,n,a,lda,sva,u,ldu,v,ld
     <ftype2> intent(out), dimension(ldv, n) :: v
     integer intent(hide), depend(n) :: ldv = max(1, n)
     <ftype2> intent(out), depend(lwork), dimension(lwork) :: work
-    integer intent(in, optional), depend(m, n) :: lwork=2*max(2*m+n, max(4*n+n*n,2*n+n*n+6))
+    integer intent(in, optional), depend(m, n) :: lwork = max(6*n+2*n*n, max(2*m+n, max(4*n+n*n, max(2*n+n*n+6, 7))))
     integer intent(out), depend(m ,n), dimension(m+3*n) :: iwork
     integer intent(out) :: info
 
@@ -1951,7 +1951,7 @@ subroutine <prefix2c>gejsv(joba,jobu,jobv,jobr,jobt,jobp,m,n,a,lda,sva,u,ldu,v,l
     <ftype2c> intent(out), dimension(ldv, n) :: v
     integer intent(hide), depend(n) :: ldv = max(1, n)
     <ftype2c> intent(hide), dimension(lwork) :: cwork
-    integer intent(in, optional), depend(m, n) :: lwork=5*n + 2*n*n
+    integer intent(in, optional), depend(m, n) :: lwork = max(5*n + 2*n*n, 2*n + 1)
     <ftype2> intent(out), depend(lwork), dimension(max(7,lwork)) :: rwork
     integer intent(in, optional), depend(m,n) :: lrwork=2*max(7,max(2*m,n))
     integer intent(out), depend(m, n), dimension(max(4, 2*m + n)) :: iwork
