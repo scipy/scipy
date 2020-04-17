@@ -131,7 +131,6 @@ def _linprog_highs(lp, solver, time_limit=1, presolve=True, parallel=False,
     _check_unknown_options(unknown_options)
 
     statuses = {
-        12: (1, "Iteration limit reached."),
         9: (0, "Optimization terminated successfully."),
         8: (3, "The problem is unbounded."),
         7: (2, "The problem is infeasible."),
@@ -175,14 +174,11 @@ def _linprog_highs(lp, solver, time_limit=1, presolve=True, parallel=False,
         'parallel': parallel,
         'time_limit': time_limit,
         'message_level': disp * 1,  # 0 is none, 1 is some. Simplex only?
-        'write_solution_to_file': False,
-        'solution_file': 'test.sol',
-        'write_solution_pretty': True,
     }
 
-    # this doesn't seem to work, and I don't see an equivalent for IPM
-    if maxiter is not None and solver == 'simplex':
+    if maxiter is not None:
         options['simplex_iteration_limit'] = maxiter
+        options['ipm_iteration_limit'] = maxiter
 
     rhs = _replace_inf(rhs)
     lhs = _replace_inf(lhs)
