@@ -219,7 +219,17 @@ def test_unknown_solver():
 
     assert_raises(ValueError, linprog,
                   c, A_ub=A_ub, b_ub=b_ub, method='ekki-ekki-ekki')
+    assert_raises(ValueError, linprog,
+                  c, A_ub=A_ub, b_ub=b_ub, method='highs-ekki')
 
+def test_choose_solver():
+    # test that HiGHS can automatically choose a solver
+    c = np.array([-3, -2])
+    A_ub = [[2, 1], [1, 1], [1, 0]]
+    b_ub = [10, 8, 4]
+
+    res = linprog(c, A_ub, b_ub, method='highs')
+    _assert_success(res, desired_fun=-18.0, desired_x=[2, 6])
 
 A_ub = None
 b_ub = None
@@ -358,6 +368,21 @@ class LinprogCommonTests(object):
             # there aren't 3-D sparse matrices
 
         assert_raises(ValueError, f, [1, 2], A_ub=np.zeros((1, 1, 3)), b_eq=1)
+
+    def test_maxiter(self):
+        # test iteration limit w/ Enzo example
+        c = [4, 8, 3, 0, 0, 0]
+        A = [
+            [2, 5, 3, -1, 0, 0],
+            [3, 2.5, 8, 0, -1, 0],
+            [8, 10, 4, 0, 0, -1]]
+        b = [185, 155, 600]
+        np.random.seed(0)
+        maxiter = 3
+        res = linprog(c, A_eq=A, b_eq=b, method=self.method,
+                      options={"maxiter": maxiter})
+        _assert_iteration_limit_reached(res, maxiter)
+        assert_equal(res.nit, maxiter)
 
     def test_empty_constraint_1(self):
         c = [-1, -2]
@@ -1653,16 +1678,6 @@ class TestLinprogIPSpecific(object):
                           options={"ip": True, "disp": True})
             # ip code is independent of sparse/dense
         _assert_success(res, desired_fun=-64.049494229)
-
-    def test_maxiter(self):
-        # test iteration limit
-        A, b, c = lpgen_2d(20, 20)
-        maxiter = np.random.randint(6) + 1  # problem takes 7 iterations
-        res = linprog(c, A_ub=A, b_ub=b, method=self.method,
-                      options={"maxiter": maxiter})
-        # maxiter is independent of sparse/dense
-        _assert_iteration_limit_reached(res, maxiter)
-        assert_equal(res.nit, maxiter)
 
     def test_bug_8664(self):
         # interior-point has trouble with this when presolve is off

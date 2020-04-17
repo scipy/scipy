@@ -339,12 +339,29 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     This section describes the available solvers that can be selected by the
     'method' parameter.
 
+    :ref:`'highs-simplex' <optimize.linprog-highs-simplex>` and
+    :ref:`'highs-ipm' <optimize.linprog-highs-ipm>` are interfaces to the
+    HiGHS simplex and interior-point method solvers [13]_, respectively.
+    'highs' chooses between the two automatically. These are the fastest linear
+    programming solvers in SciPy, especially for large, sparse problems.
     :ref:`'interior-point' <optimize.linprog-interior-point>` is the default
-    as it is typically the fastest and most robust method.
+    as it was the fastest and most robust method before the recent
+    addition of the HiGHS solvers. This may change in a future release.
     :ref:`'revised simplex' <optimize.linprog-revised_simplex>` is more
-    accurate for the problems it solves.
+    accurate than interior-point for the problems it solves.
     :ref:`'simplex' <optimize.linprog-simplex>` is the legacy method and is
     included for backwards compatibility and educational purposes.
+
+    Method *highs-simplex* is a wrapper of the C++ high performance dual
+    revised simplex implementation (HSOL) [13]_, [14]_. Method *highs-ipm*
+    is a wrapper of a C++ implementation of an **i**nterior-/**p**oint
+    **m**ethod [13]_; it features a crossover routine, so it is as accurate as
+    a simplex solver. These are the fastest methods available in SciPy,
+    especially for large, sparse problems; which of these two is faster is
+    problem-dependent. For new code, we recommend explicitly choosing one of
+    these methods.
+
+    .. versionadded:: 1.5.0
 
     Method *interior-point* uses the primal-dual path following algorithm
     as outlined in [4]_. This algorithm supports sparse constraint matrices and
@@ -369,7 +386,8 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
 
     .. versionadded:: 0.15.0
 
-    Before applying any method, a presolve procedure based on [8]_ attempts
+    Before applying *interior-point*, *revised simplex*, or *simplex*,
+    a presolve procedure based on [8]_ attempts
     to identify trivial infeasibilities, trivial unboundedness, and potential
     problem simplifications. Specifically, it checks for:
 
@@ -449,6 +467,12 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
             Journal in  Numerische Mathematik 16.5 (1971): 414-434.
     .. [12] Tomlin, J. A. "On scaling linear programming problems."
             Mathematical Programming Study 4 (1975): 146-166.
+    .. [13] Huangfu, Q., Galabova, I., Feldmeier, M., and Hall, J. A. J.
+            "HiGHS - high performance software for linear optimization."
+            Available 4/16/2020 at https://www.maths.ed.ac.uk/hall/HiGHS/#guide
+    .. [14] Huangfu, Q. and Hall, J. A. J. "Parallelizing the dual revised
+            simplex method." Mathematical Programming Computation, 10 (1),
+            119-142, 2018. DOI: 10.1007/s12532-017-0130-5
 
     Examples
     --------
@@ -521,8 +545,11 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         if callback is not None:
             raise NotImplementedError("HiGHS solvers do not support the "
                                       "callback interface.")
-        highs_solvers = {'highs-ipm': 'ipm', 'highs-simplex': 'simplex'}
-        sol = _linprog_highs(lp, solver=highs_solvers[meth],  # meth[6:]?
+        highs_solvers = {'highs-ipm': 'ipm', 'highs-simplex': 'simplex',
+                         'highs':None}
+        if meth not in highs_solvers:
+            raise ValueError('Unknown solver %s' % method)
+        sol = _linprog_highs(lp, solver=highs_solvers[meth],
                              **solver_options)
         return OptimizeResult(sol)
 
