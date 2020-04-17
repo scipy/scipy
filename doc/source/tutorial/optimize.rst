@@ -1475,7 +1475,7 @@ Lastly, let's consider the separate inequality constraints on each decision vari
 "box constraints" or "simple bounds". These constraints can be applied using the bounds argument of :func:`linprog`.
 As noted in the :func:`linprog` documentation, the default value of bounds is ``(0, None)``, meaning that the
 lower bound on each decision variable is 0, and the upper bound on each decision variable is infinity:
-all the decision variables are non-negative. Our bounds are different, so we specify the lower and upper bound on each
+all the decision variables are non-negative. Our bounds are different, so we will need to specify the lower and upper bound on each
 decision variable as a tuple and group these tuples into a list.
 
 
