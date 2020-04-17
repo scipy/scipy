@@ -9,7 +9,6 @@
 import os
 import warnings
 from collections import namedtuple
-import multiprocessing
 
 from numpy.testing import (dec, assert_, assert_equal,
                            assert_almost_equal, assert_array_almost_equal,
@@ -4425,6 +4424,15 @@ class TestFOneWay(object):
         F, p = stats.f_oneway([0,2], [2,4])
         assert_equal(F, 2.0)
 
+    @pytest.mark.parametrize('ndim', (1, 2, 3))
+    def test_ndim(self, ndim):
+        a, b = np.arange(0, 3, 2), np.arange(2, 5, 2)
+        for _ in range(ndim - 1):
+            a, b = a[:, np.newaxis], b[:, np.newaxis]
+        F, p = stats.f_oneway([0,2], [2,4])
+        assert F.ndim == 0
+        assert F == 2.0
+
     def test_large_integer_array(self):
         a = np.array([655, 788], dtype=np.uint16)
         b = np.array([789, 772], dtype=np.uint16)
@@ -4470,12 +4478,15 @@ class TestFOneWay(object):
             assert_allclose(res[0], f, rtol=rtol,
                             err_msg='Failing testcase: %s' % test_case)
 
+    @pytest.mark.parametrize('ndim', (1, 2, 3))
     @pytest.mark.parametrize("a, b, expected",[
         (np.array([42, 42, 42]), np.array([7, 7, 7]), (np.inf, 0)),
         (np.array([42, 42, 42]), np.array([42, 42, 42]), (np.nan, np.nan))
         ])
-    def test_constant_input(self, a, b, expected):
+    def test_constant_input(self, a, b, expected, ndim):
         # For more details, look on https://github.com/scipy/scipy/issues/11669
+        for _ in range(ndim - 1):
+            a, b = a[:, np.newaxis], b[:, np.newaxis]
         with assert_warns(stats.F_onewayConstantInputWarning):
             f, p = stats.f_oneway(a, b)
             assert f, p == expected

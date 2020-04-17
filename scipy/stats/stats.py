@@ -3229,12 +3229,12 @@ def f_oneway(*args):
     # Based on https://github.com/scipy/scipy/issues/11669
     const_groups = True
     for group in args:
-        if not all(x == group[0] for x in group):
+        if not (group == group.ravel()[0]).all():
             const_groups = False
             break
     if const_groups:
         warnings.warn(F_onewayConstantInputWarning())
-        if len(set(group[0] for group in args)) > 1:
+        if len(set(group.ravel()[0] for group in args)) > 1:
             return F_onewayResult(np.inf, 0)
         else:
             return F_onewayResult(np.nan, np.nan)
