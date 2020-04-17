@@ -1903,8 +1903,8 @@ subroutine <prefix2>gejsv(joba,jobu,jobv,jobr,jobt,jobp,m,n,a,lda,sva,u,ldu,v,ld
 
     integer intent(hide), depend(a) :: m = shape(a,0)
     integer intent(hide), depend(a) :: n = shape(a,1)
-    <ftype2> dimension(m, n), intent(in) :: a
-    integer intent(hide), depend(m) :: lda = max(1, m)
+    <ftype2> dimension(lda, n), intent(in) :: a
+    integer intent(hide), depend(a) :: lda = max(1, shape(a, 0))
     <ftype2> intent(out), dimension(n) :: sva
     <ftype2> intent(out), depend(ldu, jobu, m, n), dimension(ldu, (jobu==1?m:n)) :: u
     integer intent(hide), depend(m) :: ldu = max(1, m)
@@ -1943,8 +1943,8 @@ subroutine <prefix2c>gejsv(joba,jobu,jobv,jobr,jobt,jobp,m,n,a,lda,sva,u,ldu,v,l
 
     integer intent(hide), depend(a) :: m = shape(a, 0)
     integer intent(hide), depend(a) :: n = shape(a, 1)
-    <ftype2c> dimension(m, n), intent(in) :: a
-    integer intent(hide), depend(m) :: lda = max(1, m)
+    <ftype2c> dimension(lda, n), intent(in) :: a
+    integer intent(hide), depend(a) :: lda = max(1, shape(a, 0))
     <ftype2> intent(out), depend(n), dimension(n) :: sva
     <ftype2c> intent(out), depend(ldu, jobu, m, n), dimension(ldu, (jobu==1?m:n)) :: u
     integer intent(hide), depend(m) :: ldu = max(1, m)
