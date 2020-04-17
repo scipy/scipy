@@ -1513,11 +1513,11 @@ We can check the objective value (``result.fun``) is same as :math:`c^Tx`:
 
 ::
 
-    >>> x = np.array([result.x]).T
+    >>> x = np.array(result.x)
     >>> print(c @ x)
     -505.97435889013434  # may vary
 
-We can also check all constraints are almost all satisfied:
+We can also check that all constraints are satisfied within reasonable tolerances:
 
 ::
 
