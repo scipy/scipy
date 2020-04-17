@@ -3229,11 +3229,12 @@ def f_oneway(*args):
     # Based on https://github.com/scipy/scipy/issues/11669
     const_groups = True
     for group in args:
-        if not (group == group.ravel()[0]).all():
+        if not (group == group[:1]).all():  # look along the first dim
             const_groups = False
             break
     if const_groups:
         warnings.warn(F_onewayConstantInputWarning())
+        # XXX this is not correct, needs to be first-axis-wise somehow
         if len(set(group.ravel()[0] for group in args)) > 1:
             return F_onewayResult(np.inf, 0)
         else:
