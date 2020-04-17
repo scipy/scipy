@@ -1401,7 +1401,7 @@ converted to:
 .. math::
         \min_{x_1, x_2, x_3, x_4} \ -29x_1 -45x_2 + 0x_3 + 0x_4
 
-By recalling vector multiplication, the objective weights vector :math:`c` of :func:`linprog` in this problem
+If we define the vector of decision variables :math:`x = [x_1, x_2, x_3, x_4]^T`, the objective weights vector :math:`c` of :func:`linprog` in this problem
 should be
 
 .. math::
