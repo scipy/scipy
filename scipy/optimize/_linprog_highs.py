@@ -26,8 +26,17 @@ def _replace_inf(x):
     return x
 
 
-def _linprog_highs(lp, solver, time_limit=1, presolve=True, parallel=False,
+def _linprog_highs(lp, solver, time_limit=None, presolve=True,
                    disp=False, maxiter=None, autoscale=False,
+                   dual_feasibility_tolerance=None,
+                   dual_objective_value_upper_bound=None,
+                   message_level=1,
+                   primal_feasibility_tolerance=None,
+                   simplex_crash_strategy=None,
+                   simplex_dual_edge_weight_strategy=None,
+                   simplex_primal_edge_weight_strategy=None,
+                   simplex_strategy=None,
+                   simplex_update_limit=None,
                    **unknown_options):
     r"""
     Solve the following linear programming problem using one of the HiGHS
@@ -74,11 +83,10 @@ def _linprog_highs(lp, solver, time_limit=1, presolve=True, parallel=False,
         Set to ``True`` if indicators of optimization status are to be printed
         to the console each iteration; default ``False``.
     time_limit : float
-        The maximum time allotted to solve the problem; default 1s.
+        The maximum time in seconds allotted to solve the problem; default is
+        unlimited.
     presolve : bool
         Set to ``False`` if presolve is to be disabled; default ``True``.
-    parallel : bool
-        Set to ``True`` to enable parallelization; default ``False``.
     autoscale : bool
         Set to ``True`` to automatically perform equilibration.
         Consider using this option if the numerical values in the
@@ -88,6 +96,58 @@ def _linprog_highs(lp, solver, time_limit=1, presolve=True, parallel=False,
         Optional arguments not used by this particular solver. If
         `unknown_options` is non-empty, a warning is issued listing all
         unused options.
+    dual_feasibility_tolerance : double
+        Dual feasibility tolerance
+    dual_objective_value_upper_bound : double
+        Upper bound on objective value for dual simplex:
+        algorithm terminates if reached
+    message_level : int {0, 1, 2, 4}
+        Verbosity level, corresponds to:
+            `0`: ML_NONE
+            `1`: ML_VERBOSE
+            `2`: ML_DETAILED
+            `4`: ML_MINIMAL
+        Default is 0.
+    primal_feasibility_tolerance : double
+        Primal feasibility tolerance.
+    simplex_crash_strategy : int {0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
+        Strategy for simplex crash: off / LTSSF / Bixby (0/1/2).
+        Default is `0`.  Corresponds to the following:
+            `0`: `SIMPLEX_CRASH_STRATEGY_OFF`
+            `1`: `SIMPLEX_CRASH_STRATEGY_LTSSF_K`
+            `2`: `SIMPLEX_CRASH_STRATEGY_BIXBY`
+            `3`: `SIMPLEX_CRASH_STRATEGY_LTSSF_PRI`
+            `4`: `SIMPLEX_CRASH_STRATEGY_LTSF_K`
+            `5`: `SIMPLEX_CRASH_STRATEGY_LTSF_PRI`
+            `6`: `SIMPLEX_CRASH_STRATEGY_LTSF`
+            `7`: `SIMPLEX_CRASH_STRATEGY_BIXBY_NO_NONZERO_COL_COSTS`
+            `8`: `SIMPLEX_CRASH_STRATEGY_BASIC`
+            `9`: `SIMPLE_CRASH_STRATEGY_TEST_SING`
+    simplex_dual_edge_weight_strategy : int {0, 1, 2, 3, 4}
+        Strategy for simplex dual edge weights:
+        Dantzig / Devex / Steepest Edge. Corresponds
+        to the following:
+            `0`: `SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_DANTZIG`
+            `1`: `SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_DEVEX`
+            `2`: `SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_STEEPEST_EDGE_TO_DEVEX_SWITCH`
+            `3`: `SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_STEEPEST_EDGE`
+            `4`: `SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_STEEPEST_EDGE_UNIT_INITIAL`
+    simplex_primal_edge_weight_strategy : int {0, 1}
+        Strategy for simplex primal edge weights:
+        Dantzig / Devex.  Corresponds to the following:
+            `0`: `SIMPLEX_PRIMAL_EDGE_WEIGHT_STRATEGY_DANTZIG`
+            `1`: `SIMPLEX_PRIMAL_EDGE_WEIGHT_STRATEGY_DEVEX`
+    simplex_strategy : int {0, 1, 2, 3, 4}
+        Strategy for simplex solver. Default: 1. Corresponds
+        to the following:
+            `0`: `SIMPLEX_STRATEGY_MIN`
+            `1`: `SIMPLEX_STRATEGY_DUAL`
+            `2`: `SIMPLEX_STRATEGY_DUAL_TASKS`
+            `3`: `SIMPLEX_STRATEGY_DUAL_MULTI`
+            `4`: `SIMPLEX_STRATEGY_PRIMAL`
+    simplex_update_limit : int
+        Limit on the number of simplex UPDATE operations.
+
 
     Returns
     -------
@@ -100,7 +160,7 @@ def _linprog_highs(lp, solver, time_limit=1, presolve=True, parallel=False,
             fun : float
                 The optimal value of the objective function ``c @ x``.
             slack : 1D array
-                The (nominally positive) values of the slack variables,
+                The (nominally positive) values of the slack,
                 ``b_ub - A_ub @ x``.
             con : 1D array
                 The (nominally zero) residuals of the equality constraints,
@@ -113,13 +173,13 @@ def _linprog_highs(lp, solver, time_limit=1, presolve=True, parallel=False,
 
                 ``0`` : Optimization terminated successfully.
 
-                ``1`` : Iteration limit reached.
+                ``1`` : Iteration or time limit reached.
 
                 ``2`` : Problem appears to be infeasible.
 
                 ``3`` : Problem appears to be unbounded.
 
-                ``4`` : Numerical difficulties encountered.
+                ``4`` : The HiGHS solver ran into a problem.
 
             nit : int
                 The total number of iterations performed in all phases.
@@ -131,24 +191,20 @@ def _linprog_highs(lp, solver, time_limit=1, presolve=True, parallel=False,
     _check_unknown_options(unknown_options)
 
     statuses = {
-        9: (0, "Optimization terminated successfully."),
-        8: (3, "The problem is unbounded."),
+        0: (4, 'HiGHS Status Code 0: HighsModelStatusNOTSET'),
+        1: (4, 'HiGHS Status Code 1: HighsModelStatusLOAD_ERROR'),
+        2: (4, 'HiGHS Status Code 2: HighsModelStatusMODEL_ERROR'),
+        3: (4, 'HiGHS Status Code 3: HighsModelStatusMODEL_EMPTY'),
+        4: (4, 'HiGHS Status Code 4: HighsModelStatusPRESOLVE_ERROR'),
+        5: (4, 'HiGHS Status Code 5: HighsModelStatusSOLVE_ERROR'),
+        6: (4, 'HiGHS Status Code 6: HighsModelStatusPOSTSOLVE_ERROR'),
+        10: (4, 'HiGHS Status Code 10: HighsModelStatusREACHED_DUAL_OBJECTIVE_VALUE_UPPER_BOUND'),
         7: (2, "The problem is infeasible."),
+        8: (3, "The problem is unbounded."),
+        9: (0, "Optimization terminated successfully."),
+        11: (1, "Time limit reached."),
         12: (1, "Iteration limit reached."),
     }
-    # "Iteration limit reached.",
-    # "The problem appears infeasible, as the phase one auxiliary "
-    # "problem terminated successfully with a residual of {0:.1e}, "
-    # "greater than the tolerance {1} required for the solution to "
-    # "be considered feasible. Consider increasing the tolerance to "
-    # "be greater than {0:.1e}. If this tolerance is unnaceptably "
-    # "large, the problem is likely infeasible.",
-    # "The problem is unbounded, as the simplex algorithm found "
-    # "a basic feasible solution from which there is a direction "
-    # "with negative reduced cost in which all decision variables "
-    # "increase.",
-    # "Numerical difficulties encountered; consider trying "
-    # "method='interior-point'.",
 
     c, A_ub, b_ub, A_eq, b_eq, bounds, x0 = lp
 
@@ -171,15 +227,22 @@ def _linprog_highs(lp, solver, time_limit=1, presolve=True, parallel=False,
         'presolve': presolve,
         'sense': 1,  # minimization
         'solver': solver,
-        'parallel': parallel,
         'time_limit': time_limit,
-        'message_level': disp * 1,  # 0 is none, 1 is some. Simplex only?
+        'message_level': message_level*disp,
+        # 'dual_feasibility_tolerance' : dual_feasibility_tolerance,
+        # 'dual_objective_value_upper_bound' : dual_objective_value_upper_bound,
+        # 'primal_feasibility_tolerance' : primal_feasibility_tolerance,
+        # 'simplex_crash_strategy' : simplex_crash_strategy,
+        # 'simplex_dual_edge_weight_strategy' : simplex_dual_edge_weight_strategy,
+        # 'simplex_primal_edge_weight_strategy' : simplex_primal_edge_weight_strategy,
+        # 'simplex_strategy' : simplex_strategy,
+        # 'simplex_update_limit' : simplex_update_limit,
     }
 
-    if maxiter is not None:
-        options['simplex_iteration_limit'] = maxiter
-        options['ipm_iteration_limit'] = maxiter
+    options['ipm_iteration_limit'] = maxiter
+    options['simplex_iteration_limit'] = maxiter
 
+    # np.inf doesn't work; use very large constant
     rhs = _replace_inf(rhs)
     lhs = _replace_inf(lhs)
     lb = _replace_inf(lb)
@@ -190,13 +253,14 @@ def _linprog_highs(lp, solver, time_limit=1, presolve=True, parallel=False,
 
     sol = {'x': res.get('x', None),
            'slack': res.get('slack', None),
-           #'lambda': res.get('lambda', None),
-           #'s': res.get('s', None),
+           # TODO: Add/test dual info like:
+           # 'lambda': res.get('lambda', None),
+           # 's': res.get('s', None),
            'fun': res.get('fun', None),
            'con': res.get('con', None),
            'status': statuses[res['status']][0],
            'success': res['status'] == 9,
-           'message': res['message'],
+           'message': statuses[res['status']][1],
            'nit': (res.get('simplex_nit', 0) if solver == 'simplex'
                    else res.get('ipm_nit', 0))
            }
