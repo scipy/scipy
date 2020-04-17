@@ -399,10 +399,6 @@ def highs_wrapper(
     cdef HighsSolution solution
 
     # If the status is bad, don't look up the solution
-    #print('primal_status is', info.primal_status)
-    #print('dual_status is', info.dual_status)
-    #print('model_status is', <int>model_status)
-    #if info.primal_status != PrimalDualStatusSTATUS_FEASIBLE_POINT:
     if model_status in [
             HighsModelStatusNOTSET,
             HighsModelStatusLOAD_ERROR,
