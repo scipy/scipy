@@ -222,6 +222,7 @@ def test_unknown_solver():
     assert_raises(ValueError, linprog,
                   c, A_ub=A_ub, b_ub=b_ub, method='highs-ekki')
 
+
 def test_choose_solver():
     # test that HiGHS can automatically choose a solver
     c = np.array([-3, -2])
@@ -230,6 +231,7 @@ def test_choose_solver():
 
     res = linprog(c, A_ub, b_ub, method='highs')
     _assert_success(res, desired_fun=-18.0, desired_x=[2, 6])
+
 
 A_ub = None
 b_ub = None

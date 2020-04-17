@@ -354,8 +354,8 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
 
     Method *highs-simplex* is a wrapper of the C++ high performance dual
     revised simplex implementation (HSOL) [13]_, [14]_. Method *highs-ipm*
-    is a wrapper of a C++ implementation of an **i**nterior-/**p**oint
-    **m**ethod [13]_; it features a crossover routine, so it is as accurate as
+    is a wrapper of a C++ implementation of an **i**\ nterior-\ **p**\ oint
+    **m**\ ethod [13]_; it features a crossover routine, so it is as accurate as
     a simplex solver. These are the fastest methods available in SciPy,
     especially for large, sparse problems; which of these two is faster is
     problem-dependent. For new code, we recommend explicitly choosing one of
