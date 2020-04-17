@@ -148,8 +148,8 @@ def quadratic_assignment(
     elif eps <= 0 and type(eps) is not float:
         msg = '"eps" must be a positive float'
         raise TypeError(msg)
-    elif type(gmp) is not bool:
-        msg = '"gmp" must be a boolean'
+    elif type(maximize) is not bool:
+        msg = '"maximize" must be a boolean'
         raise TypeError(msg)
 
     n = cost_matrix.shape[0]  # number of vertices in graphs
