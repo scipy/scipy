@@ -2143,7 +2143,7 @@ def impulse(system, X0=None, T=None, N=None):
 
     >>> from scipy import signal
     >>> system = ([1.0], [1.0, 2.0, 1.0])
-    >>> t, y = signal.impulse2(system)
+    >>> t, y = signal.impulse(system)
     >>> import matplotlib.pyplot as plt
     >>> plt.plot(t, y)
 
