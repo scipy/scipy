@@ -2037,7 +2037,7 @@ class TestIQR(object):
         assert_equal(stats.iqr(d, axis=(1, 3))[2, 2],
                      stats.iqr(d[2, :, 2,:].ravel()))
 
-        assert_raises(IndexError, stats.iqr, d, axis=4)
+        assert_raises(np.AxisError, stats.iqr, d, axis=4)
         assert_raises(ValueError, stats.iqr, d, axis=(0, 0))
 
     def test_rng(self):
@@ -4470,6 +4470,16 @@ class TestFOneWay(object):
             assert_allclose(res[0], f, rtol=rtol,
                             err_msg='Failing testcase: %s' % test_case)
 
+    @pytest.mark.parametrize("a, b, expected",[
+        (np.array([42, 42, 42]), np.array([7, 7, 7]), (np.inf, 0)),
+        (np.array([42, 42, 42]), np.array([42, 42, 42]), (np.nan, np.nan))
+        ])
+    def test_constant_input(self, a, b, expected):
+        # For more details, look on https://github.com/scipy/scipy/issues/11669
+        with assert_warns(stats.F_onewayConstantInputWarning):
+            f, p = stats.f_oneway(a, b)
+            assert f, p == expected
+
 
 class TestKruskal(object):
     def test_simple(self):
@@ -5234,9 +5244,6 @@ class TestMGCStat(object):
         assert_approx_equal(stat, 1.0, significant=1)
         assert_approx_equal(pvalue, 0.001, significant=1)
 
-    @pytest.mark.skipif(multiprocessing.get_start_method() != 'fork',
-                        reason=('multiprocessing with spawn method is not'
-                                ' compatible with pytest.'))
     def test_workers(self):
         np.random.seed(12345678)
 
