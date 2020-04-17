@@ -331,8 +331,8 @@ def kron(A, B, format=None):
             return coo_matrix(output_shape)
 
         # expand entries of a into blocks
-        row = A.row.repeat(B.nnz)
-        col = A.col.repeat(B.nnz)
+        row = A.row.repeat(B.nnz).astype(np.int64)
+        col = A.col.repeat(B.nnz).astype(np.int64)
         data = A.data.repeat(B.nnz)
 
         row *= B.shape[0]
