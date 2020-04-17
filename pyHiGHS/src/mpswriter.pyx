@@ -7,12 +7,14 @@ from libcpp.vector cimport vector
 from libcpp.string cimport string
 
 from HighsStatus cimport HighsStatus
-
-from scipy.sparse import csc_matrix
+from HighsLp cimport (
+    ObjSense,
+    ObjSenseMINIMIZE,
+)
 
 cdef extern from "HMPSIO.h" nogil:
     HighsStatus writeMPS(FILE* logfile, const char* filename, const int& numRow, const int& numCol,
-                         const int& numInt, const int& objSense, const double& objOffset,
+                         const int& numInt, const ObjSense& objSense, const double& objOffset,
                          const vector[int]& Astart, const vector[int]& Aindex,
                          const vector[double]& Avalue, const vector[double]& colCost,
                          const vector[double]& colLower, const vector[double]& colUpper,
@@ -23,7 +25,7 @@ cdef extern from "HMPSIO.h" nogil:
 def mpswriter(
         string filename,
         const double[::1] c,
-        A,
+        A, # should be a scipy.sparse.csc_matrix!
         const double[::1] rhs,
         const double[::1] lhs,
         const double[::1] lb,
@@ -32,12 +34,11 @@ def mpswriter(
         const bool use_free_format=True):
 
     cdef int ii = 0
-    A = csc_matrix(A)
 
     cdef int numRow = A.shape[0]
     cdef int numCol = A.shape[1]
-    cdef int numInt = A.nnz
-    cdef int objSense = 1 # MIN for now
+    cdef int numInt = integer_valued.size
+    cdef ObjSense objSense = ObjSenseMINIMIZE # MIN for now
     cdef double objOffset = 0 # This is a RHS on cost row
 
     cdef vector[int] Astart = A.indptr

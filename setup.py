@@ -3,6 +3,18 @@ import sys
 import pathlib
 from datetime import datetime
 
+#from setuptools.command.build_clib import build_clib as _build_clib
+
+#class build_clib(_build_clib):
+#    def build_libraries(self, libraries):
+#        #from scipy._build_utils.compiler_helper import get_cxx_std_flag
+#        #std_flag = get_cxx_std_flag(build_ext._cxx_compiler)
+#        #if std_flag is not None:
+#        #    ext.extra_compile_args.append(std_flag)
+#        print(libraries)
+#
+#        _build_clib.build_libraries(libraries)
+
 def pre_build_hook(build_ext, ext):
     from scipy._build_utils.compiler_helper import get_cxx_std_flag
     std_flag = get_cxx_std_flag(build_ext._cxx_compiler)
@@ -24,7 +36,6 @@ def _get_sources(CMakeLists, start_token, end_token):
     # Make relative to setup.py
     sources = [str(pathlib.Path('src/' + s)) for s in sources]
     return sources
-
 
 # Grab some more info about HiGHS from root CMakeLists
 def _get_version(CMakeLists, start_token, end_token=')'):
@@ -80,42 +91,76 @@ def configuration(parent_package='', top_path=None):
         'basiclu',
         sources=basiclu_sources,
         include_dirs=[
-            str(pathlib.Path('src/')),
-            str(pathlib.Path('src/ipm/basiclu/include/')),
+            'src/',
+            'src/ipm/basiclu/include/',
         ],
         language='c',
         macros=DEFINE_MACROS,
     )
 
-    # Compile the rest of the sources all together,
-    # linking the BASICLU static library
+    # Compile ipx and highs as static libraries;
+    # must pass _pre_build_hook as build_info member:
+    # see https://github.com/scipy/scipy/blob/2190a7427a8d10a3a506294e87ff1330c426cb63/setup.py#L299
     ipx_sources = _get_sources('src/CMakeLists.txt', 'set(ipx_sources\n', ')')
+    config.add_library(
+        'ipx',
+        sources=ipx_sources,
+        include_dirs=[
+            'src/ipm/ipx/include/',
+            'src/ipm/basiclu/include/',
+        ],
+        libraries=['basiclu'],
+        language='c++',
+        macros=DEFINE_MACROS,
+        _pre_build_hook=pre_build_hook,
+    )
     highs_sources = _get_sources('src/CMakeLists.txt', 'set(sources\n', ')')
-    WRAPPER_INCLUDE_DIRS = [
-        str(pathlib.Path('src/ipm/basiclu/include/')),
-        str(pathlib.Path('external/')),
-        str(pathlib.Path('src/')),
-        str(pathlib.Path('src/ipm/ipx/include/')),
-        str(pathlib.Path('src/lp_data/')),
-        str(pathlib.Path('src/io/')),
-        str(pathlib.Path('src/mip/')),
-        str(pathlib.Path('src/interfaces/')),
-        str(pathlib.Path('pyHiGHS/src/')),
-    ]
+    config.add_library(
+        'highs',
+        sources=highs_sources,
+        include_dirs=[
+            'src/',
+            'src/io/',
+            'src/ipm/ipx/include/',
+        ],
+        libraries=['ipx'],
+        language='c++',
+        macros=DEFINE_MACROS,
+        _pre_build_hook=pre_build_hook,
+    )
+
+    # highs_wrapper:
     ext = config.add_extension(
         'highs_wrapper',
-        sources=[
-            str(pathlib.Path('pyHiGHS/src/highs_wrapper.cxx'))
-        ] + ipx_sources + highs_sources,
+        sources=['pyHiGHS/src/highs_wrapper.cxx'],
         include_dirs=[
-            str(pathlib.Path('pyHiGHS/src/')),
-        ] + WRAPPER_INCLUDE_DIRS,
+            'pyHiGHS/src/',
+            'src/',
+            'src/lp_data/',
+        ],
         language='c++',
-        libraries=['basiclu'],
+        libraries=['highs'],
         define_macros=DEFINE_MACROS,
         undef_macros=UNDEF_MACROS,
     )
     # Add c++11/14 support:
+    ext._pre_build_hook = pre_build_hook
+
+    # wrapper around HiGHS writeMPS:
+    ext = config.add_extension(
+        'mpswriter',
+        sources=['pyHiGHS/src/mpswriter.cxx'],
+        include_dirs=[
+            'pyHiGHS/src/',
+            'src/',
+            'src/io/',
+            'src/lp_data/',
+        ],
+        language='c++',
+        libraries=['highs'],
+        define_macros=DEFINE_MACROS,
+        undef_macros=UNDEF_MACROS,
+    )
     ext._pre_build_hook = pre_build_hook
 
     return config
