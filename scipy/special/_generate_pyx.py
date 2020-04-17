@@ -137,6 +137,8 @@ include "_cython_special.pxi"
 STUBS = """\
 from typing import Any, Type
 
+import numpy as np
+
 __all__ = [
     {ALL}
 ]
@@ -1330,15 +1332,14 @@ def generate_fused_funcs(modname, ufunc_fn_prefix, fused_funcs):
 def generate_ufuncs_type_stubs(module_name: str, ufuncs: List[Ufunc]):
     stubs, module_all = [], []
     for ufunc in ufuncs:
-        stubs.append(f'{ufunc.name}: Any')
+        stubs.append(f'{ufunc.name}: np.ufunc')
         if not ufunc.name.startswith('_'):
             module_all.append(f"'{ufunc.name}'")
     # jn is an alias for jv.
     module_all.append("'jn'")
+    stubs.append('jn: np.ufunc')
     module_all.sort()
     stubs.sort()
-    # Make sure jn goes last so that jv has been declared.
-    stubs.append('jn: Type[jv]')
 
     contents = STUBS.format(
         ALL=',\n    '.join(module_all),
