@@ -12,6 +12,8 @@ from HighsLp cimport (
     ObjSenseMINIMIZE,
 )
 
+from scipy.sparse import csc_matrix
+
 cdef extern from "HMPSIO.h" nogil:
     HighsStatus writeMPS(FILE* logfile, const char* filename, const int& numRow, const int& numCol,
                          const int& numInt, const ObjSense& objSense, const double& objOffset,
@@ -25,13 +27,43 @@ cdef extern from "HMPSIO.h" nogil:
 def mpswriter(
         string filename,
         const double[::1] c,
-        A, # should be a scipy.sparse.csc_matrix!
-        const double[::1] rhs,
+        A,
         const double[::1] lhs,
+        const double[::1] rhs,
         const double[::1] lb,
         const double[::1] ub,
         const int[::1] integer_valued,
-        const bool use_free_format=True):
+        const bool use_free_format=False):
+    '''MPS writer: create MPS file from matrices.
+
+    Parameters
+    ----------
+    filename : bytes (string)
+        Name of MPS file to write out to.  Will be overwritten.
+    c : 1-D array (numcol,)
+        Objective coefficient values (assumes minimization).
+    A : 2-D array (numrow, numcol), scipy.sparse.csc_matrix
+        Sparse inequality constraint matrix.
+    lhs : 1-D array (numrow,)
+        Left hand side inequality values.
+    rhs : 1-D array (numrow,)
+        Right hand side inequality values.
+    lb : 1-D array (numcol,)
+        Lower bounds of solution variables.
+    ub : 1-D array (numcol,)
+        Upper bounds of solution variables.
+    integer_valued : 1-D array (numint,)
+        Indices of integer valued solution variables.
+    use_free_format : bool, optional
+        Use MPS free format.  Default is False.
+
+    Notes
+    -----
+    Wrapper over HiGHS `writeMPS` function.
+    '''
+
+    if not isinstance(A, csc_matrix):
+        raise ValueError('A must be a scipy.sparse.csc_matrix!')
 
     cdef int ii = 0
 

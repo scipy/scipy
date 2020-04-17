@@ -86,48 +86,30 @@ def configuration(parent_package='', top_path=None):
         macros=DEFINE_MACROS,
     )
 
-    # Compile ipx and highs as static libraries;
-    # must pass _pre_build_hook as build_info member:
-    # see https://github.com/scipy/scipy/blob/2190a7427a8d10a3a506294e87ff1330c426cb63/setup.py#L299
-    ipx_sources = _get_sources('src/CMakeLists.txt', 'set(ipx_sources\n', ')')
-    config.add_library(
-        'ipx',
-        sources=ipx_sources,
-        include_dirs=[
-            'src/ipm/ipx/include/',
-            'src/ipm/basiclu/include/',
-        ],
-        libraries=['basiclu'],
-        language='c++',
-        macros=DEFINE_MACROS,
-        _pre_build_hook=pre_build_hook,
-    )
-    highs_sources = _get_sources('src/CMakeLists.txt', 'set(sources\n', ')')
-    config.add_library(
-        'highs',
-        sources=highs_sources,
-        include_dirs=[
-            'src/',
-            'src/io/',
-            'src/ipm/ipx/include/',
-        ],
-        libraries=['ipx', 'basiclu'],
-        language='c++',
-        macros=DEFINE_MACROS,
-        _pre_build_hook=pre_build_hook,
-    )
-
     # highs_wrapper:
+    ipx_sources = _get_sources('src/CMakeLists.txt', 'set(ipx_sources\n', ')')
+    highs_sources = _get_sources('src/CMakeLists.txt', 'set(sources\n', ')')
     ext = config.add_extension(
         'highs_wrapper',
-        sources=['pyHiGHS/src/highs_wrapper.cxx'],
+        sources=['pyHiGHS/src/highs_wrapper.cxx'] + highs_sources + ipx_sources,
         include_dirs=[
+
+            # highs_wrapper
             'pyHiGHS/src/',
             'src/',
             'src/lp_data/',
+
+            # highs
+            'src/',
+            'src/io/',
+            'src/ipm/ipx/include/',
+
+            # IPX
+            'src/ipm/ipx/include/',
+            'src/ipm/basiclu/include/',
         ],
         language='c++',
-        libraries=['highs', 'ipx', 'basiclu'],
+        libraries=['basiclu'],
         define_macros=DEFINE_MACROS,
         undef_macros=UNDEF_MACROS,
     )
@@ -137,7 +119,16 @@ def configuration(parent_package='', top_path=None):
     # wrapper around HiGHS writeMPS:
     ext = config.add_extension(
         'mpswriter',
-        sources=['pyHiGHS/src/mpswriter.cxx'],
+        sources=[
+            # we should be using using highs shared library;
+            # next best thing is compiling minimal set of sources
+            'pyHiGHS/src/mpswriter.cxx',
+            'src/util/HighsUtils.cpp',
+            'src/io/HighsIO.cpp',
+            'src/io/HMPSIO.cpp',
+            'src/lp_data/HighsModelUtils.cpp',
+            'src/util/stringutil.cpp',
+        ],
         include_dirs=[
             'pyHiGHS/src/',
             'src/',
@@ -145,7 +136,7 @@ def configuration(parent_package='', top_path=None):
             'src/lp_data/',
         ],
         language='c++',
-        libraries=['highs', 'ipx', 'basiclu'],
+        libraries=['basiclu'],
         define_macros=DEFINE_MACROS,
         undef_macros=UNDEF_MACROS,
     )
