@@ -135,7 +135,8 @@ def fsolve(func, x0, args=(), fprime=None, full_output=0,
 
     Examples
     --------
-    We can find the roots of a function.
+    Find a solution to the system of equations:
+    ``x0*cos(x1) = 4,  x1*x0 - x1 = 5``.
 
     >>> from scipy.optimize import fsolve
     >>> def func(x):
