@@ -3,18 +3,6 @@ import sys
 import pathlib
 from datetime import datetime
 
-#from setuptools.command.build_clib import build_clib as _build_clib
-
-#class build_clib(_build_clib):
-#    def build_libraries(self, libraries):
-#        #from scipy._build_utils.compiler_helper import get_cxx_std_flag
-#        #std_flag = get_cxx_std_flag(build_ext._cxx_compiler)
-#        #if std_flag is not None:
-#        #    ext.extra_compile_args.append(std_flag)
-#        print(libraries)
-#
-#        _build_clib.build_libraries(libraries)
-
 def pre_build_hook(build_ext, ext):
     from scipy._build_utils.compiler_helper import get_cxx_std_flag
     std_flag = get_cxx_std_flag(build_ext._cxx_compiler)
@@ -123,7 +111,7 @@ def configuration(parent_package='', top_path=None):
             'src/io/',
             'src/ipm/ipx/include/',
         ],
-        libraries=['ipx'],
+        libraries=['ipx', 'basiclu'],
         language='c++',
         macros=DEFINE_MACROS,
         _pre_build_hook=pre_build_hook,
@@ -139,7 +127,7 @@ def configuration(parent_package='', top_path=None):
             'src/lp_data/',
         ],
         language='c++',
-        libraries=['highs'],
+        libraries=['highs', 'ipx', 'basiclu'],
         define_macros=DEFINE_MACROS,
         undef_macros=UNDEF_MACROS,
     )
@@ -157,7 +145,7 @@ def configuration(parent_package='', top_path=None):
             'src/lp_data/',
         ],
         language='c++',
-        libraries=['highs'],
+        libraries=['highs', 'ipx', 'basiclu'],
         define_macros=DEFINE_MACROS,
         undef_macros=UNDEF_MACROS,
     )
