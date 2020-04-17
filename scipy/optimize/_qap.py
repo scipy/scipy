@@ -259,7 +259,6 @@ def quadratic_assignment(
             perm_inds = np.zeros(n, dtype=int)
             perm_inds[permutation_cost] = permutation_dist[perm_inds_new]
 
-
     return (np.arange(n), perm_inds)
 
 
