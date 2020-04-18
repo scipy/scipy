@@ -205,7 +205,6 @@ class TestRankData(object):
         assert_equal(r.dtype, dtype)
 
 
-
 _cases = (
     # values, method, expected
     ([], 'average', []),
