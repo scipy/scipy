@@ -9,7 +9,6 @@
 import os
 import warnings
 from collections import namedtuple
-import multiprocessing
 
 from numpy.testing import (dec, assert_, assert_equal,
                            assert_almost_equal, assert_array_almost_equal,
@@ -50,6 +49,7 @@ LITTLE = array([0.99999991,0.99999992,0.99999993,0.99999994,0.99999995,0.9999999
 HUGE = array([1e+12,2e+12,3e+12,4e+12,5e+12,6e+12,7e+12,8e+12,9e+12], float)
 TINY = array([1e-12,2e-12,3e-12,4e-12,5e-12,6e-12,7e-12,8e-12,9e-12], float)
 ROUND = array([0.5,1.5,2.5,3.5,4.5,5.5,6.5,7.5,8.5], float)
+
 
 class TestTrimmedStats(object):
     # TODO: write these tests to handle missing values properly
@@ -4416,20 +4416,34 @@ class TestSigmaClip(object):
 class TestFOneWay(object):
     def test_trivial(self):
         # A trivial test of stats.f_oneway, with F=0.
-        F, p = stats.f_oneway([0,2], [0,2])
+        F, p = stats.f_oneway([0, 2], [0, 2])
         assert_equal(F, 0.0)
+        assert_equal(p, 1.0)
 
     def test_basic(self):
         # Despite being a floating point calculation, this data should
         # result in F being exactly 2.0.
-        F, p = stats.f_oneway([0,2], [2,4])
+        F, p = stats.f_oneway([0, 2], [2, 4])
         assert_equal(F, 2.0)
+        assert_allclose(p, 1 - np.sqrt(0.5), rtol=1e-14)
+
+    def test_known_exact(self):
+        # Another trivial dataset for which the exact F and p can be
+        # calculated.
+        F, p = stats.f_oneway([2], [2], [2, 3, 4])
+        # The use of assert_equal might be too optimistic, but the calculation
+        # in this case is trivial enough that it is likely to go through with
+        # no loss of precision.
+        assert_equal(F, 3/5)
+        assert_equal(p, 5/8)
 
     def test_large_integer_array(self):
         a = np.array([655, 788], dtype=np.uint16)
         b = np.array([789, 772], dtype=np.uint16)
         F, p = stats.f_oneway(a, b)
-        assert_almost_equal(F, 0.77450216931805538)
+        # The expected value was verified by computing it with mpmath with
+        # 40 digits of precision.
+        assert_allclose(F, 0.77450216931805540, rtol=1e-14)
 
     def test_result_attributes(self):
         a = np.array([655, 788], dtype=np.uint16)
@@ -4470,7 +4484,7 @@ class TestFOneWay(object):
             assert_allclose(res[0], f, rtol=rtol,
                             err_msg='Failing testcase: %s' % test_case)
 
-    @pytest.mark.parametrize("a, b, expected",[
+    @pytest.mark.parametrize("a, b, expected", [
         (np.array([42, 42, 42]), np.array([7, 7, 7]), (np.inf, 0)),
         (np.array([42, 42, 42]), np.array([42, 42, 42]), (np.nan, np.nan))
         ])
@@ -4479,6 +4493,67 @@ class TestFOneWay(object):
         with assert_warns(stats.F_onewayConstantInputWarning):
             f, p = stats.f_oneway(a, b)
             assert f, p == expected
+
+    def test_2d_inputs(self):
+        a = np.array([[1, 4, 3, 3],
+                      [2, 5, 3, 3],
+                      [3, 6, 3, 3],
+                      [2, 3, 3, 3],
+                      [1, 4, 3, 3]])
+        b = np.array([[3, 1, 5, 3],
+                      [4, 6, 5, 3],
+                      [4, 3, 5, 3],
+                      [1, 5, 5, 3],
+                      [5, 5, 5, 3],
+                      [2, 3, 5, 3],
+                      [8, 2, 5, 3],
+                      [2, 2, 5, 3]])
+        c = np.array([[4, 3, 4, 3],
+                      [4, 2, 4, 3],
+                      [5, 4, 4, 3],
+                      [5, 4, 4, 3]])
+
+        with assert_warns(stats.F_onewayConstantInputWarning):
+            f, p = stats.f_oneway(a, b, c)
+
+        # Verify the result computed with the 2d arrays matches the result
+        # from calling f_oneway individually on each slice.
+        for j in [0, 1]:
+            fj, pj = stats.f_oneway(a[:, j], b[:, j], c[:, j])
+            assert_allclose(f[j], fj, rtol=1e-14)
+            assert_allclose(p[j], pj, rtol=1e-14)
+        for j in [2, 3]:
+            with assert_warns(stats.F_onewayConstantInputWarning):
+                fj, pj = stats.f_oneway(a[:, j], b[:, j], c[:, j])
+                assert_equal(f[j], fj)
+                assert_equal(p[j], pj)
+
+    def test_length0_error(self):
+        # Require at least one value in each group.
+
+        with assert_warns(stats.F_onewayBadInputSizesWarning):
+            result = stats.f_oneway([1, 2, 3], [], [4, 5, 6, 7])
+            assert_equal(result, (np.nan, np.nan))
+
+        with assert_warns(stats.F_onewayBadInputSizesWarning):
+            ncols = 3
+            a = np.ones((4, ncols))
+            b = np.ones((0, ncols))
+            c = np.ones((5, ncols))
+            f, p = stats.f_oneway(a, b, c)
+            nans = np.full((ncols,), fill_value=np.nan)
+            assert_equal(f, nans)
+            assert_equal(p, nans)
+
+    def test_all_length_one(self):
+        with assert_warns(stats.F_onewayBadInputSizesWarning):
+            result = stats.f_oneway([10], [11], [12], [13])
+            assert_equal(result, (np.nan, np.nan))
+
+    @pytest.mark.parametrize('args', [(), ([1, 2, 3],)])
+    def test_too_few_inputs(self, args):
+        with assert_raises(TypeError):
+            stats.f_oneway(*args)
 
 
 class TestKruskal(object):
