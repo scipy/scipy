@@ -18,9 +18,9 @@ from .common_tests import check_named_results
 # Matplotlib is not a scipy dependency but is optionally used in probplot, so
 # check if it's available
 try:
-    import matplotlib
+    import matplotlib  # type: ignore[import]
     matplotlib.rcParams['backend'] = 'Agg'
-    import matplotlib.pyplot as plt
+    import matplotlib.pyplot as plt  # type: ignore[import]
     have_matplotlib = True
 except Exception:
     have_matplotlib = False
