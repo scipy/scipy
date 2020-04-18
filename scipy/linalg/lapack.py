@@ -115,8 +115,6 @@ All functions
 
    sgejsv
    dgejsv
-   cgejsv
-   zgejsv
 
    sgels
    dgels
