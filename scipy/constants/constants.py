@@ -210,7 +210,7 @@ def convert_temperature(val, old_scale, new_scale):
     Examples
     --------
     >>> from scipy.constants import convert_temperature
-    >>> convert_temperature(np.array([-40, 40.0]), 'Celsius', 'Kelvin')
+    >>> convert_temperature(np.array([-40, 40]), 'Celsius', 'Kelvin')
     array([ 233.15,  313.15])
 
     """
@@ -220,9 +220,9 @@ def convert_temperature(val, old_scale, new_scale):
     elif old_scale.lower() in ['kelvin', 'k']:
         tempo = _np.asanyarray(val)
     elif old_scale.lower() in ['fahrenheit', 'f']:
-        tempo = (_np.asanyarray(val) - 32.) * 5. / 9. + zero_Celsius
+        tempo = (_np.asanyarray(val) - 32) * 5 / 9 + zero_Celsius
     elif old_scale.lower() in ['rankine', 'r']:
-        tempo = _np.asanyarray(val) * 5. / 9.
+        tempo = _np.asanyarray(val) * 5 / 9
     else:
         raise NotImplementedError("%s scale is unsupported: supported scales "
                                   "are Celsius, Kelvin, Fahrenheit, and "
@@ -233,9 +233,9 @@ def convert_temperature(val, old_scale, new_scale):
     elif new_scale.lower() in ['kelvin', 'k']:
         res = tempo
     elif new_scale.lower() in ['fahrenheit', 'f']:
-        res = (tempo - zero_Celsius) * 9. / 5. + 32.
+        res = (tempo - zero_Celsius) * 9 / 5 + 32
     elif new_scale.lower() in ['rankine', 'r']:
-        res = tempo * 9. / 5.
+        res = tempo * 9 / 5
     else:
         raise NotImplementedError("'%s' scale is unsupported: supported "
                                   "scales are 'Celsius', 'Kelvin', "

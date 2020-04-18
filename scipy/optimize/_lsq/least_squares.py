@@ -261,10 +261,10 @@ def least_squares(
         ``fun(x, *args, **kwargs)``, i.e., the minimization proceeds with
         respect to its first argument. The argument ``x`` passed to this
         function is an ndarray of shape (n,) (never a scalar, even for n=1).
-        It must return a 1-D array_like of shape (m,) or a scalar. If the
-        argument ``x`` is complex or the function ``fun`` returns complex
-        residuals, it must be wrapped in a real function of real arguments,
-        as shown at the end of the Examples section.
+        It must allocate and return a 1-D array_like of shape (m,) or a scalar.
+        If the argument ``x`` is complex or the function ``fun`` returns
+        complex residuals, it must be wrapped in a real function of real
+        arguments, as shown at the end of the Examples section.
     x0 : array_like with shape (n,) or float
         Initial guess on independent variables. If float, it will be treated
         as a 1-D array with one element.

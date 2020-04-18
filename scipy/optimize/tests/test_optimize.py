@@ -1159,6 +1159,16 @@ class TestLBFGSBBounds(object):
         assert_(res['success'], res['message'])
         assert_allclose(res.x, self.solution, atol=1e-6)
 
+    @pytest.mark.parametrize('bounds', [
+        ([(10, 1), (1, 10)]),
+        ([(1, 10), (10, 1)]),
+        ([(10, 1), (10, 1)])
+    ])
+    def test_minimize_l_bfgs_b_incorrect_bounds(self, bounds):
+        with pytest.raises(ValueError, match='.*bounds.*'):
+            optimize.minimize(self.fun, [0, -1], method='L-BFGS-B',
+                              jac=self.jac, bounds=bounds)
+
     def test_minimize_l_bfgs_b_bounds_FD(self):
         # test that initial starting value outside bounds doesn't raise
         # an error (done with clipping).
@@ -1555,9 +1565,6 @@ class TestBrute:
 
         optimize.brute(f, [(-1, 1)], Ns=3, finish=None)
 
-    @pytest.mark.skipif(multiprocessing.get_start_method() != 'fork',
-                        reason=('multiprocessing with spawn method is not'
-                                ' compatible with pytest.'))
     def test_workers(self):
         # check that parallel evaluation works
         resbrute = optimize.brute(brute_func, self.rranges, args=self.params,
