@@ -1489,7 +1489,7 @@ Finally, we can solve the transformed problem using :func:`linprog`.
 The result states that our problem is infeasible, meaning that there is no solution vector that satisfies all the
 constraints. That doesn't necessarily mean we did anything wrong; some problems truly are infeasible.
 Suppose, however, that we were to decide that our bound constraint on :math:`x_1` was too tight and that it could be loosened
-to :math:0 \leq x_1 \leq 6\\. After adjusting our code x1_bounds = (0, 6) to reflect the change and executing it again:
+to :math:`0 \leq x_1 \leq 6`. After adjusting our code ``x1_bounds = (0, 6)`` to reflect the change and executing it again:
 
 ::
 
@@ -1520,17 +1520,11 @@ We can also check that all constraints are satisfied within reasonable tolerance
 ::
 
     >>> print(b_ub - A_ub @ x)  # this is equivalent to result.slack
-    [[  5.]  # may vary
-    [-10.]]  # may vary
-    >>> print(b_ub)
-    [[  5.]  # may vary
-    [-10.]]  # may vary
+    [[ 6.52747190e-10]  # may vary
+    [-2.26730279e-09]]  # may vary
     >>> print(b_eq - A_eq @ x)  # this is equivalent to result.con
-    [[59.99999999]  # may vary
-    [59.99999999]]  # may vary
-    >>> print(b_eq)
-    [[60.]  # may vary
-    [60.]]  # may vary
+    [[9.78840831e-09]  # may vary
+    [1.04662945e-08]]  # may vary
     >>> print([0 <= result.x[0], 0 <= result.x[1] <= 6.0, result.x[2] <= 0.5, -3.0 <= result.x[3]])
     [True, True, True, True]
 
