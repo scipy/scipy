@@ -482,7 +482,7 @@ def _local_correlations(distx, disty, global_corr='mgc'):
     return corr_mat
 
 
-cpdef double geninvgauss_logpdf(double x, double p, double b):
+cpdef double geninvgauss_logpdf(double x, double p, double b) nogil:
     return _geninvgauss_logpdf_kernel(x, p, b)
 
 
@@ -502,7 +502,6 @@ cdef double _geninvgauss_logpdf_kernel(double x, double p, double b) nogil:
 
 cdef double _geninvgauss_pdf(double x, void *user_data) nogil except *:
     # destined to be used in a LowLevelCallable
-    # can't use nogil because cs.kve isn't marked nogil
     cdef double p, b
 
     if x <= 0:
