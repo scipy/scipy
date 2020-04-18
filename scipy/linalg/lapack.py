@@ -53,6 +53,11 @@ All functions
    cgbsv
    zgbsv
 
+   sgbsvx
+   dgbsvx
+   cgbsvx
+   zgbsvx
+
    sgbtrf
    dgbtrf
    cgbtrf
