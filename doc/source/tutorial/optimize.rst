@@ -1488,7 +1488,7 @@ Finally, we can solve the transformed problem using :func:`linprog`.
 
 The result states that our problem is infeasible, meaning that there is no solution vector that satisfies all the
 constraints. That doesn't necessarily mean we did anything wrong; some problems truly are infeasible.
-Suppose, however, that we decided that our bound constraint on :math:x_1 were too tight and that it could be loosened
+Suppose, however, that we were to decide that our bound constraint on :math:`x_1` was too tight and that it could be loosened
 to :math:0 \leq x_1 \leq 6\\. After adjusting our code x1_bounds = (0, 6) to reflect the change and executing it again:
 
 ::
