@@ -2865,6 +2865,9 @@ def median_absolute_deviation(x, axis=0, center=np.median, scale=1.4826,
             med = apply_over_axes_func(center, arr, axis)
             mad = center(np.abs(arr - med), axis=axis)
 
+    if np.ma.is_masked(mad):
+        mad = mad.filled(np.nan)
+
     return scale * mad
 
 
