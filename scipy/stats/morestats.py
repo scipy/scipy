@@ -2234,6 +2234,12 @@ def bartlett(*args):
 
     The very small p-value suggests that the populations do not have equal
     variances.
+
+    This is not surprising, given that the sample variance of `b` is much
+    larger than that of `a` and `c`:
+
+    >>> [np.var(x, ddof=1) for x in [a, b, c]]
+    [0.007054444444444413, 0.13073888888888888, 0.008890000000000002]
     """
     # Handle empty input and input that is not 1d
     for a in args:
@@ -2331,6 +2337,12 @@ def levene(*args, **kwds):
 
     The small p-value suggests that the populations do not have equal
     variances.
+
+    This is not surprising, given that the sample variance of `b` is much
+    larger than that of `a` and `c`:
+
+    >>> [np.var(x, ddof=1) for x in [a, b, c]]
+    [0.007054444444444413, 0.13073888888888888, 0.008890000000000002]
     """
     # Handle keyword arguments.
     center = 'median'
@@ -2587,6 +2599,12 @@ def fligner(*args, **kwds):
 
     The small p-value suggests that the populations do not have equal
     variances.
+
+    This is not surprising, given that the sample variance of `b` is much
+    larger than that of `a` and `c`:
+
+    >>> [np.var(x, ddof=1) for x in [a, b, c]]
+    [0.007054444444444413, 0.13073888888888888, 0.008890000000000002]
     """
     # Handle empty input
     for a in args:
