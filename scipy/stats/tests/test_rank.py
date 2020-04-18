@@ -169,7 +169,6 @@ class TestRankData(object):
             assert_array_equal(r, expected_rank * data,
                                "test failed with n=%d" % n)
 
-
     def test_nan_included_data(self):
         assert_equal(rankdata([0, 2, 3, 2, np.nan, np.nan],
                               nan_policy="propagate"), np.nan)
