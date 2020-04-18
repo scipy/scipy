@@ -331,9 +331,15 @@ def kron(A, B, format=None):
             return coo_matrix(output_shape)
 
         # expand entries of a into blocks
-        row = A.row.repeat(B.nnz).astype(np.int64)
-        col = A.col.repeat(B.nnz).astype(np.int64)
+        row = A.row.repeat(B.nnz)
+        col = A.col.repeat(B.nnz)
         data = A.data.repeat(B.nnz)
+
+        if A.shape[0]*B.shape[0] > np.iinfo('int32').max:
+            row = row.astype(np.int64)
+
+        if A.shape[1]*B.shape[1] > np.iinfo('int32').max:
+            col = col.astype(np.int64)
 
         row *= B.shape[0]
         col *= B.shape[1]
