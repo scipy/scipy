@@ -360,6 +360,17 @@ class norm_gen(rv_continuous):
 
         return loc, scale
 
+    def _munp(self, n):
+        """
+        @returns Moments of standard normal distribution for integer n >= 0
+
+        See eq. 16 of https://arxiv.org/abs/1209.4340v2
+        """
+        if n % 2 == 0:
+            return sc.factorial2(n - 1)
+        else:
+            return 0.
+
 
 norm = norm_gen(name='norm')
 
@@ -2896,7 +2907,7 @@ class gamma_gen(rv_continuous):
                 # shape and scale are both free.
                 # The MLE for the shape parameter `a` is the solution to:
                 # np.log(a) - sc.digamma(a) - np.log(xbar) +
-                #                             np.log(data.mean) = 0
+                #                             np.log(data).mean() = 0
                 s = np.log(xbar) - np.log(data).mean()
                 func = lambda a: np.log(a) - sc.digamma(a) - s
                 aest = (3-s + np.sqrt((s-3)**2 + 24*s)) / (12*s)

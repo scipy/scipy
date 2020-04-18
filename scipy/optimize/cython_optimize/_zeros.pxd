@@ -1,3 +1,9 @@
+# Legacy public Cython API declarations
+#
+# NOTE: due to the way Cython ABI compatibility works, **no changes
+# should be made to this file** --- any API additions/changes should be
+# done in `cython_optimize.pxd` (see gh-11793).
+
 ctypedef double (*callback_type)(double, void*)
 
 ctypedef struct zeros_parameters:

@@ -86,10 +86,8 @@ class SphericalVoronoi:
     --------
     Do some imports and take some points on a cube:
 
-    >>> from matplotlib import colors
-    >>> from mpl_toolkits.mplot3d.art3d import Poly3DCollection
     >>> import matplotlib.pyplot as plt
-    >>> from scipy.spatial import SphericalVoronoi
+    >>> from scipy.spatial import SphericalVoronoi, geometric_slerp
     >>> from mpl_toolkits.mplot3d import proj3d
     >>> # set input data
     >>> points = np.array([[0, 0, 1], [0, 0, -1], [1, 0, 0],
@@ -105,6 +103,7 @@ class SphericalVoronoi:
 
     >>> # sort vertices (optional, helpful for plotting)
     >>> sv.sort_vertices_of_regions()
+    >>> t_vals = np.linspace(0, 1, 2000)
     >>> fig = plt.figure()
     >>> ax = fig.add_subplot(111, projection='3d')
     >>> # plot the unit sphere for reference (optional)
@@ -121,10 +120,21 @@ class SphericalVoronoi:
     ...                    c='g')
     >>> # indicate Voronoi regions (as Euclidean polygons)
     >>> for region in sv.regions:
-    ...    random_color = colors.rgb2hex(np.random.rand(3))
-    ...    polygon = Poly3DCollection([sv.vertices[region]], alpha=1.0)
-    ...    polygon.set_color(random_color)
-    ...    ax.add_collection3d(polygon)
+    ...    n = len(region)
+    ...    for i in range(n):
+    ...        start = sv.vertices[region][i]
+    ...        end = sv.vertices[region][(i + 1) % n]
+    ...        result = geometric_slerp(start, end, t_vals)
+    ...        ax.plot(result[..., 0],
+    ...                result[..., 1],
+    ...                result[..., 2],
+    ...                c='k')
+    >>> ax.azim = 10
+    >>> ax.elev = 40
+    >>> _ = ax.set_xticks([])
+    >>> _ = ax.set_yticks([])
+    >>> _ = ax.set_zticks([])
+    >>> fig.set_size_inches(4, 4)
     >>> plt.show()
 
     """
@@ -148,7 +158,7 @@ class SphericalVoronoi:
             self.center = np.array(center)
 
         # test degenerate input
-        self._rank = np.linalg.matrix_rank(self.points - self.center,
+        self._rank = np.linalg.matrix_rank(self.points - self.points[0],
                                            tol=self.threshold * self.radius)
         if self._rank <= 1:
             raise ValueError("Rank of input points must be at least 2")
@@ -170,14 +180,19 @@ class SphericalVoronoi:
         # center the points
         centered = self.points - self.center
 
-        # calculate an orthogonal transformation using SVD
-        _, _, vh = np.linalg.svd(centered)
+        # calculate an orthogonal transformation which puts circle on x-y axis
+        _, _, vh = np.linalg.svd(centered - np.roll(centered, 1, axis=0))
+
+        # apply transformation
+        circle = centered @ vh.T
+        h = np.mean(circle[:, 2])
+        if h < 0:
+            h, vh, circle = -h, -vh, -circle
+        midpoint = np.array([0, 0, h]) @ vh
+        circle_radius = np.sqrt(np.maximum(0, self.radius**2 - h**2))
 
         # calculate the north and south poles in this basis
         poles = [[0, 0, self.radius], [0, 0, -self.radius]] @ vh
-
-        # project points into inverse basis (such that z-components are zero)
-        circle = centered @ vh.T[:, :2]
 
         # simplicial neighbors are adjacent on the circle
         angles = np.arctan2(circle[:, 1], circle[:, 0])
@@ -185,8 +200,10 @@ class SphericalVoronoi:
 
         # Voronoi vertices lie halfway between neighboring pairs
         vertices = centered[indices] + centered[np.roll(indices, 1)]
+        vertices -= 2 * midpoint
         vertices /= np.linalg.norm(vertices, axis=1)[:, np.newaxis]
-        vertices *= self.radius
+        vertices *= circle_radius
+        vertices += midpoint
 
         # north and south poles are also Voronoi vertices
         vertices = np.concatenate((vertices, poles))

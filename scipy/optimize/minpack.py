@@ -133,6 +133,21 @@ def fsolve(func, x0, args=(), fprime=None, full_output=0,
     -----
     ``fsolve`` is a wrapper around MINPACK's hybrd and hybrj algorithms.
 
+    Examples
+    --------
+    Find a solution to the system of equations:
+    ``x0*cos(x1) = 4,  x1*x0 - x1 = 5``.
+
+    >>> from scipy.optimize import fsolve
+    >>> def func(x):
+    ...     return [x[0] * np.cos(x[1]) - 4,
+    ...             x[1] * x[0] - x[1] - 5]
+    >>> root = fsolve(func, [1, 1])
+    >>> root
+    array([6.50409711, 0.90841421])
+    >>> np.isclose(func(root), [0.0, 0.0])  # func(root) should be almost 0.0.
+    array([ True,  True])
+
     """
     options = {'col_deriv': col_deriv,
                'xtol': xtol,
@@ -378,6 +393,15 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0,
 
     The solution, `x`, is always a 1-D array, regardless of the shape of `x0`,
     or whether `x0` is a scalar.
+
+    Examples
+    --------
+    >>> from scipy.optimize import leastsq
+    >>> def func(x):
+    ...     return 2*(x-3)**2+1
+    >>> leastsq(func, 0)
+    (array([2.99999999]), 1)
+
     """
     x0 = asarray(x0).flatten()
     n = len(x0)

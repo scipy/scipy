@@ -1,7 +1,6 @@
 """
 Unit tests for the differential global minimization algorithm.
 """
-import gc
 import multiprocessing
 import sys
 import platform
@@ -21,11 +20,6 @@ from numpy.testing import (assert_equal, assert_allclose,
                            assert_string_equal, assert_, suppress_warnings)
 from pytest import raises as assert_raises, warns
 import pytest
-
-
-knownfail_on_py38 = pytest.mark.xfail(
-    sys.version_info >= (3, 8), run=False,
-    reason='Python 3.8 hangs when cleaning up MapWrapper')
 
 
 class TestDifferentialEvolutionSolver(object):
@@ -241,15 +235,26 @@ class TestDifferentialEvolutionSolver(object):
     def test_callback_terminates(self):
         # test that if the callback returns true, then the minimization halts
         bounds = [(0, 2), (0, 2)]
+        expected_msg = 'callback function requested stop early by returning True'
 
-        def callback(param, convergence=0.):
+        def callback_python_true(param, convergence=0.):
             return True
 
-        result = differential_evolution(rosen, bounds, callback=callback)
+        result = differential_evolution(rosen, bounds, callback=callback_python_true)
+        assert_string_equal(result.message, expected_msg)
 
-        assert_string_equal(result.message,
-                                'callback function requested stop early '
-                                'by returning True')
+        def callback_evaluates_true(param, convergence=0.):
+            # DE should stop if bool(self.callback) is True
+            return [10]
+
+        result = differential_evolution(rosen, bounds, callback=callback_evaluates_true)
+        assert_string_equal(result.message, expected_msg)
+
+        def callback_evaluates_false(param, convergence=0.):
+            return []
+
+        result = differential_evolution(rosen, bounds, callback=callback_evaluates_false)
+        assert result.success
 
     def test_args_tuple_is_passed(self):
         # test that the args tuple is passed to the cost function properly.
@@ -550,7 +555,6 @@ class TestDifferentialEvolutionSolver(object):
         assert_(solver._mapwrapper._mapfunc is map)
         solver.solve()
 
-    @knownfail_on_py38
     def test_immediate_updating(self):
         # check setting of immediate updating, with default workers
         bounds = [(0., 2.), (0., 2.)]
@@ -560,12 +564,10 @@ class TestDifferentialEvolutionSolver(object):
         # should raise a UserWarning because the updating='immediate'
         # is being overridden by the workers keyword
         with warns(UserWarning):
-            solver = DifferentialEvolutionSolver(rosen, bounds, workers=2)
+            with DifferentialEvolutionSolver(rosen, bounds, workers=2) as solver:
+                pass
         assert_(solver._updating == 'deferred')
-        del solver
-        gc.collect()  # ensure MapWrapper cleans up properly
 
-    @knownfail_on_py38
     def test_parallel(self):
         # smoke test for parallelization with deferred updating
         bounds = [(0., 2.), (0., 2.)]
@@ -580,8 +582,6 @@ class TestDifferentialEvolutionSolver(object):
             assert_(solver._mapwrapper.pool is not None)
             assert_(solver._updating == 'deferred')
             solver.solve()
-        del solver
-        gc.collect()  # ensure MapWrapper cleans up properly
 
     def test_converged(self):
         solver = DifferentialEvolutionSolver(rosen, [(0, 2), (0, 2)])
@@ -1150,7 +1150,10 @@ class TestDifferentialEvolutionSolver(object):
 
         with suppress_warnings() as sup:
             sup.filter(UserWarning)
-            res = differential_evolution(f, bounds, strategy='rand1bin',
+            # original Lampinen test was with rand1bin, but that takes a
+            # huge amount of CPU time. Changing strategy to best1bin speeds
+            # things up a lot
+            res = differential_evolution(f, bounds, strategy='best1bin',
                                          seed=1234, constraints=constraints,
                                          maxiter=5000)
 
