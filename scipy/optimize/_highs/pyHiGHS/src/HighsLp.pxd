@@ -40,6 +40,10 @@ cdef extern from "HighsLp.h" nogil:
         HighsModelStatusREACHED_TIME_LIMIT "HighsModelStatus::REACHED_TIME_LIMIT"
         HighsModelStatusREACHED_ITERATION_LIMIT "HighsModelStatus::REACHED_ITERATION_LIMIT"
 
+    ctypedef enum ObjSense:
+        ObjSenseMINIMIZE "ObjSense::MINIMIZE" = 1
+        ObjSenseMAXIMIZE "ObjSense::MAXIMIZE" = -1
+
     cdef cppclass HighsSolution:
         vector[double] col_value
         vector[double] col_dual

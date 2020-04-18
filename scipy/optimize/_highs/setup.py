@@ -25,7 +25,6 @@ def _get_sources(CMakeLists, start_token, end_token):
     sources = [str(pathlib.Path('src/' + s)) for s in sources]
     return sources
 
-
 # Grab some more info about HiGHS from root CMakeLists
 def _get_version(CMakeLists, start_token, end_token=')'):
     CMakeLists = pathlib.Path(__file__).parent / CMakeLists
@@ -80,42 +79,67 @@ def configuration(parent_package='', top_path=None):
         'basiclu',
         sources=basiclu_sources,
         include_dirs=[
-            str(pathlib.Path('src/')),
-            str(pathlib.Path('src/ipm/basiclu/include/')),
+            'src/',
+            'src/ipm/basiclu/include/',
         ],
         language='c',
         macros=DEFINE_MACROS,
     )
 
-    # Compile the rest of the sources all together,
-    # linking the BASICLU static library
+    # highs_wrapper:
     ipx_sources = _get_sources('src/CMakeLists.txt', 'set(ipx_sources\n', ')')
     highs_sources = _get_sources('src/CMakeLists.txt', 'set(sources\n', ')')
-    WRAPPER_INCLUDE_DIRS = [
-        str(pathlib.Path('src/ipm/basiclu/include/')),
-        str(pathlib.Path('external/')),
-        str(pathlib.Path('src/')),
-        str(pathlib.Path('src/ipm/ipx/include/')),
-        str(pathlib.Path('src/lp_data/')),
-        str(pathlib.Path('src/io/')),
-        str(pathlib.Path('src/mip/')),
-        str(pathlib.Path('src/interfaces/')),
-        str(pathlib.Path('pyHiGHS/src/')),
-    ]
     ext = config.add_extension(
         'highs_wrapper',
-        sources=[
-            str(pathlib.Path('pyHiGHS/src/highs_wrapper.cxx'))
-        ] + ipx_sources + highs_sources,
+        sources=['pyHiGHS/src/highs_wrapper.cxx'] + highs_sources + ipx_sources,
         include_dirs=[
-            str(pathlib.Path('pyHiGHS/src/')),
-        ] + WRAPPER_INCLUDE_DIRS,
+
+            # highs_wrapper
+            'pyHiGHS/src/',
+            'src/',
+            'src/lp_data/',
+
+            # highs
+            'src/',
+            'src/io/',
+            'src/ipm/ipx/include/',
+
+            # IPX
+            'src/ipm/ipx/include/',
+            'src/ipm/basiclu/include/',
+        ],
         language='c++',
         libraries=['basiclu'],
         define_macros=DEFINE_MACROS,
         undef_macros=UNDEF_MACROS,
     )
     # Add c++11/14 support:
+    ext._pre_build_hook = pre_build_hook
+
+    # wrapper around HiGHS writeMPS:
+    ext = config.add_extension(
+        'mpswriter',
+        sources=[
+            # we should be using using highs shared library;
+            # next best thing is compiling minimal set of sources
+            'pyHiGHS/src/mpswriter.cxx',
+            'src/util/HighsUtils.cpp',
+            'src/io/HighsIO.cpp',
+            'src/io/HMPSIO.cpp',
+            'src/lp_data/HighsModelUtils.cpp',
+            'src/util/stringutil.cpp',
+        ],
+        include_dirs=[
+            'pyHiGHS/src/',
+            'src/',
+            'src/io/',
+            'src/lp_data/',
+        ],
+        language='c++',
+        libraries=['basiclu'],
+        define_macros=DEFINE_MACROS,
+        undef_macros=UNDEF_MACROS,
+    )
     ext._pre_build_hook = pre_build_hook
 
     return config
