@@ -2883,7 +2883,7 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
             X = sp_fft.rfft(x, axis=axis)
         else:  # Full complex FFT
             X = sp_fft.fft(x, axis=axis)
-    elif domain == 'freq':
+    else:  # domain == 'freq'
         X = x
 
     # Apply window to spectrum

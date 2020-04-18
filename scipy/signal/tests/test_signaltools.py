@@ -16,7 +16,7 @@ from numpy.testing import (
 from numpy import array, arange
 import numpy as np
 
-from scipy import fftpack
+from scipy.fft import fft
 from scipy.ndimage.filters import correlate1d
 from scipy.optimize import fmin, linear_sum_assignment
 from scipy import signal
@@ -1123,7 +1123,7 @@ class TestResample(object):
     def test_input_domain(self):
         # Test if both input domain modes produce the same results.
         tsig = np.arange(256) + 0j
-        fsig = fftpack.fft(tsig)
+        fsig = fft(tsig)
         num = 256
         assert_allclose(
             signal.resample(fsig, num, domain='freq'),
