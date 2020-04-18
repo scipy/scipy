@@ -660,11 +660,11 @@ def correlate(input, weights, output=None, mode='reflect', cval=0.0,
     >>> from scipy.ndimage import correlate
     >>> input_img = np.arange(25).reshape(5,5)
     >>> print(input_img)
-    array([[ 0,  1,  2,  3,  4],
-           [ 5,  6,  7,  8,  9],
-           [10, 11, 12, 13, 14],
-           [15, 16, 17, 18, 19],
-           [20, 21, 22, 23, 24]])
+    [[ 0,  1,  2,  3,  4],
+     [ 5,  6,  7,  8,  9],
+     [10, 11, 12, 13, 14],
+     [15, 16, 17, 18, 19],
+     [20, 21, 22, 23, 24]])
 
     Define a kernel (weights) for correlation. In this example, it is for sum of
     center and up, down, left and right next elements.
@@ -677,11 +677,11 @@ def correlate(input, weights, output=None, mode='reflect', cval=0.0,
     For example, element [2,2] is 7 + 11 + 12 + 13 + 17 = 60
 
     >>> correlate(input_img, weights)
-    array([[  6,  10,  15,  20,  24],
-           [ 26,  30,  35,  40,  44],
-           [ 51,  55,  60,  65,  69],
-           [ 76,  80,  85,  90,  94],
-           [ 96, 100, 105, 110, 114]])
+    [[  6,  10,  15,  20,  24],
+     [ 26,  30,  35,  40,  44],
+     [ 51,  55,  60,  65,  69],
+     [ 76,  80,  85,  90,  94],
+     [ 96, 100, 105, 110, 114]])
 
     """
     return _correlate_or_convolve(input, weights, output, mode, cval,
