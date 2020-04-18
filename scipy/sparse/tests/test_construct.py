@@ -280,6 +280,14 @@ class TestConstructUtils(object):
                 expected = np.kron(a,b)
                 assert_array_equal(result,expected)
 
+    def test_kron_large(self):
+        n = 2**16
+        a = construct.eye(1, n, n-1)
+        b = construct.eye(n, 1, 1-n)
+
+        construct.kron(a, a)
+        construct.kron(b, b)
+
     def test_kronsum(self):
         cases = []
 
