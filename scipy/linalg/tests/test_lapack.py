@@ -21,6 +21,7 @@ from numpy.random import rand, randint, seed
 
 from scipy.linalg import _flapack as flapack, lapack
 from scipy.linalg import inv, svd, cholesky, solve, ldl, norm, block_diag, qr
+from scipy.linalg import eigh
 from scipy.linalg.lapack import _compute_lwork
 from scipy.stats import ortho_group, unitary_group
 
@@ -2013,7 +2014,8 @@ def test_gttrf_gttrs(dtype):
 
     for i, m in enumerate(_dl):
         # L is given in a factored form.
-        # See http://www.hpcavf.uclan.ac.uk/softwaredoc/sgi_scsl_html/sgi_html/ch03.html
+        # See
+        # www.hpcavf.uclan.ac.uk/softwaredoc/sgi_scsl_html/sgi_html/ch03.html
         piv = ipiv[i] - 1
         # right multiply by permutation matrix
         L[:, [i, piv]] = L[:, [piv, i]]
@@ -2246,7 +2248,7 @@ def test_pttrf_pttrs_NAG(d, e, d_expect, e_expect, b, x_expect):
     # examples: f07jrf and f07csf (complex)
     # NAG examples provide 4 decimals.
     # (Links expire, so please search for "NAG Library Manual Mark 26" online)
-    
+
     atol = 1e-4
     pttrf = get_lapack_funcs('pttrf', dtype=e[0])
     _d, _e, info = pttrf(d, e)
@@ -2256,12 +2258,146 @@ def test_pttrf_pttrs_NAG(d, e, d_expect, e_expect, b, x_expect):
     pttrs = get_lapack_funcs('pttrs', dtype=e[0])
     _x, info = pttrs(_d, _e.conj(), b)
     assert_allclose(_x, x_expect, atol=atol)
-    
+
     # also test option `lower`
     if e.dtype in COMPLEX_DTYPES:
         _x, info = pttrs(_d, _e, b, lower=1)
         assert_allclose(_x, x_expect, atol=atol)
-        
+
+
+def pteqr_get_d_e_A_z(dtype, realtype, n, compute_z):
+    # used by ?pteqr tests to build parameters
+    # returns tuple of (d, e, A, z)
+    if compute_z == 1:
+        # build Hermitian A from Q**T * tri * Q = A by creating Q and tri
+        A_eig = generate_random_dtype_array((n, n), dtype)
+        A_eig = A_eig + np.diag(np.zeros(n) + 4*n)
+        A_eig = (A_eig + A_eig.conj().T) / 2
+        # obtain right eigenvectors (orthogonal)
+        vr = eigh(A_eig)[1]
+        # create tridiagonal matrix
+        d = generate_random_dtype_array((n,), realtype) + 4
+        e = generate_random_dtype_array((n-1,), realtype)
+        tri = np.diag(d) + np.diag(e, 1) + np.diag(e, -1)
+        # Build A using these factors that sytrd would: (Q**T * tri * Q = A)
+        A = vr @ tri @ vr.conj().T
+        # vr is orthogonal
+        z = vr
+
+    else:
+        # d and e are always real per lapack docs.
+        d = generate_random_dtype_array((n,), realtype)
+        e = generate_random_dtype_array((n-1,), realtype)
+
+        # make SPD
+        d = d + 4
+        A = np.diag(d) + np.diag(e, 1) + np.diag(e, -1)
+        z = np.diag(d) + np.diag(e, -1) + np.diag(e, 1)
+    return (d, e, A, z)
+
+
+@pytest.mark.parametrize("dtype,realtype",
+                         zip(DTYPES, REAL_DTYPES + REAL_DTYPES))
+@pytest.mark.parametrize("compute_z", range(3))
+def test_pteqr(dtype, realtype, compute_z):
+    '''
+    Tests the ?pteqr lapack routine for all dtypes and compute_z parameters.
+    It generates random SPD matrix diagonals d and e, and then confirms
+    correct eigenvalues with scipy.linalg.eig. With applicable compute_z=2 it
+    tests that z can reform A.
+    '''
+    seed(42)
+    atol = 1000*np.finfo(dtype).eps
+    pteqr = get_lapack_funcs(('pteqr'), dtype=dtype)
+
+    n = 10
+
+    d, e, A, z = pteqr_get_d_e_A_z(dtype, realtype, n, compute_z)
+
+    d_pteqr, e_pteqr, z_pteqr, info = pteqr(d=d, e=e, z=z, compute_z=compute_z)
+    assert_equal(info, 0, "info = {}, should be 0.".format(info))
+
+    # compare the routine's eigenvalues with scipy.linalg.eig's.
+    assert_allclose(np.sort(eigh(A)[0]), np.sort(d_pteqr), atol=atol)
+
+    if compute_z:
+        # verify z_pteqr as orthogonal
+        assert_allclose(z_pteqr @ np.conj(z_pteqr).T, np.identity(n),
+                        atol=atol)
+        # verify that z_pteqr recombines to A
+        assert_allclose(z_pteqr @ np.diag(d_pteqr) @ np.conj(z_pteqr).T,
+                        A, atol=atol)
+
+
+@pytest.mark.parametrize("dtype,realtype",
+                         zip(DTYPES, REAL_DTYPES + REAL_DTYPES))
+@pytest.mark.parametrize("compute_z", range(3))
+def test_pteqr_error_non_spd(dtype, realtype, compute_z):
+    seed(42)
+    pteqr = get_lapack_funcs(('pteqr'), dtype=dtype)
+
+    n = 10
+    d, e, A, z = pteqr_get_d_e_A_z(dtype, realtype, n, compute_z)
+
+    # test with non-spd matrix
+    d_pteqr, e_pteqr, z_pteqr, info = pteqr(d - 4, e, z=z, compute_z=compute_z)
+    assert info > 0
+
+
+@pytest.mark.parametrize("dtype,realtype",
+                         zip(DTYPES, REAL_DTYPES + REAL_DTYPES))
+@pytest.mark.parametrize("compute_z", range(3))
+def test_pteqr_raise_error_wrong_shape(dtype, realtype, compute_z):
+    seed(42)
+    pteqr = get_lapack_funcs(('pteqr'), dtype=dtype)
+    n = 10
+    d, e, A, z = pteqr_get_d_e_A_z(dtype, realtype, n, compute_z)
+    # test with incorrect/incompatible array sizes
+    assert_raises(ValueError, pteqr, d[:-1], e, z=z, compute_z=compute_z)
+    assert_raises(ValueError, pteqr, d, e[:-1], z=z, compute_z=compute_z)
+    if compute_z:
+        assert_raises(ValueError, pteqr, d, e, z=z[:-1], compute_z=compute_z)
+
+
+@pytest.mark.parametrize("dtype,realtype",
+                         zip(DTYPES, REAL_DTYPES + REAL_DTYPES))
+@pytest.mark.parametrize("compute_z", range(3))
+def test_pteqr_error_singular(dtype, realtype, compute_z):
+    seed(42)
+    pteqr = get_lapack_funcs(('pteqr'), dtype=dtype)
+    n = 10
+    d, e, A, z = pteqr_get_d_e_A_z(dtype, realtype, n, compute_z)
+    # test with singular matrix
+    d[0] = 0
+    e[0] = 0
+    d_pteqr, e_pteqr, z_pteqr, info = pteqr(d, e, z=z, compute_z=compute_z)
+    assert info > 0
+
+
+@pytest.mark.parametrize("compute_z,d,e,d_expect,z_expect",
+                         [(2,  # "I"
+                           np.array([4.16, 5.25, 1.09, .62]),
+                           np.array([3.17, -.97, .55]),
+                           np.array([8.0023, 1.9926, 1.0014, 0.1237]),
+                           np.array([[0.6326, 0.6245, -0.4191, 0.1847],
+                                     [0.7668, -0.4270, 0.4176, -0.2352],
+                                     [-0.1082, 0.6071, 0.4594, -0.6393],
+                                     [-0.0081, 0.2432, 0.6625, 0.7084]])),
+                          ])
+def test_pteqr_NAG_f08jgf(compute_z, d, e, d_expect, z_expect):
+    '''
+    Implements real (f08jgf) example from NAG Manual Mark 26.
+    Tests for correct outputs.
+    '''
+    # the NAG manual has 4 decimals accuracy
+    atol = 1e-4
+    pteqr = get_lapack_funcs(('pteqr'), dtype=d.dtype)
+
+    z = np.diag(d) + np.diag(e, 1) + np.diag(e, -1)
+    _d, _e, _z, info = pteqr(d=d, e=e, z=z, compute_z=compute_z)
+    assert_allclose(_d, d_expect, atol=atol)
+    assert_allclose(np.abs(_z), np.abs(z_expect), atol=atol)
+
 
 @pytest.mark.parametrize('dtype', DTYPES)
 @pytest.mark.parametrize('matrix_size', [(3, 4), (7, 6), (6, 6)])
@@ -2426,3 +2562,356 @@ def test_orcsd_uncsd(dtype_):
 
     Xc = U @ S @ VH
     assert_allclose(X, Xc, rtol=0., atol=1e4*np.finfo(dtype_).eps)
+
+
+@pytest.mark.parametrize("dtype", DTYPES)
+@pytest.mark.parametrize("trans_bool", [False, True])
+@pytest.mark.parametrize("fact", ["F", "N"])
+def test_gtsvx(dtype, trans_bool, fact):
+    """
+    These tests uses ?gtsvx to solve a random Ax=b system for each dtype.
+    It tests that the outputs define an LU matrix, that inputs are unmodified,
+    transposal options, incompatible shapes, singular matrices, and
+    singular factorizations. It parametrizes DTYPES and the 'fact' value along
+    with the fact related inputs.
+    """
+    seed(42)
+    # set test tolerance appropriate for dtype
+    atol = 100 * np.finfo(dtype).eps
+    # obtain routine
+    gtsvx, gttrf = get_lapack_funcs(('gtsvx', 'gttrf'), dtype=dtype)
+    # Generate random tridiagonal matrix A
+    n = 10
+    dl = generate_random_dtype_array((n-1,), dtype=dtype)
+    d = generate_random_dtype_array((n,), dtype=dtype)
+    du = generate_random_dtype_array((n-1,), dtype=dtype)
+    A = np.diag(dl, -1) + np.diag(d) + np.diag(du, 1)
+    # generate random solution x
+    x = generate_random_dtype_array((n, 2), dtype=dtype)
+    # create b from x for equation Ax=b
+    trans = ("T" if dtype in REAL_DTYPES else "C") if trans_bool else "N"
+    b = (A.conj().T if trans_bool else A) @ x
+
+    # store a copy of the inputs to check they haven't been modified later
+    inputs_cpy = [dl.copy(), d.copy(), du.copy(), b.copy()]
+
+    # set these to None if fact = 'N', or the output of gttrf is fact = 'F'
+    dlf_, df_, duf_, du2f_, ipiv_, info_ = \
+        gttrf(dl, d, du) if fact == 'F' else [None]*6
+
+    gtsvx_out = gtsvx(dl, d, du, b, fact=fact, trans=trans, dlf=dlf_, df=df_,
+                      duf=duf_, du2=du2f_, ipiv=ipiv_)
+    dlf, df, duf, du2f, ipiv, x_soln, rcond, ferr, berr, info = gtsvx_out
+    assert_(info == 0, "?gtsvx info = {}, should be zero".format(info))
+
+    # assure that inputs are unmodified
+    assert_array_equal(dl, inputs_cpy[0])
+    assert_array_equal(d, inputs_cpy[1])
+    assert_array_equal(du, inputs_cpy[2])
+    assert_array_equal(b, inputs_cpy[3])
+
+    # test that x_soln matches the expected x
+    assert_allclose(x, x_soln, atol=atol)
+
+    # assert that the outputs are of correct type or shape
+    # rcond should be a scalar
+    assert_(hasattr(rcond, "__len__") is not True,
+            "rcond should be scalar but is {}".format(rcond))
+    # ferr should be length of # of cols in x
+    assert_(ferr.shape[0] == b.shape[1], "ferr.shape is {} but shoud be {},"
+            .format(ferr.shape[0], b.shape[1]))
+    # berr should be length of # of cols in x
+    assert_(berr.shape[0] == b.shape[1], "berr.shape is {} but shoud be {},"
+            .format(berr.shape[0], b.shape[1]))
+
+
+@pytest.mark.parametrize("dtype", DTYPES)
+@pytest.mark.parametrize("trans_bool", [0, 1])
+@pytest.mark.parametrize("fact", ["F", "N"])
+def test_gtsvx_error_singular(dtype, trans_bool, fact):
+    seed(42)
+    # obtain routine
+    gtsvx, gttrf = get_lapack_funcs(('gtsvx', 'gttrf'), dtype=dtype)
+    # Generate random tridiagonal matrix A
+    n = 10
+    dl = generate_random_dtype_array((n-1,), dtype=dtype)
+    d = generate_random_dtype_array((n,), dtype=dtype)
+    du = generate_random_dtype_array((n-1,), dtype=dtype)
+    A = np.diag(dl, -1) + np.diag(d) + np.diag(du, 1)
+    # generate random solution x
+    x = generate_random_dtype_array((n, 2), dtype=dtype)
+    # create b from x for equation Ax=b
+    trans = "T" if dtype in REAL_DTYPES else "C"
+    b = (A.conj().T if trans_bool else A) @ x
+
+    # set these to None if fact = 'N', or the output of gttrf is fact = 'F'
+    dlf_, df_, duf_, du2f_, ipiv_, info_ = \
+        gttrf(dl, d, du) if fact == 'F' else [None]*6
+
+    gtsvx_out = gtsvx(dl, d, du, b, fact=fact, trans=trans, dlf=dlf_, df=df_,
+                      duf=duf_, du2=du2f_, ipiv=ipiv_)
+    dlf, df, duf, du2f, ipiv, x_soln, rcond, ferr, berr, info = gtsvx_out
+    # test with singular matrix
+    # no need to test inputs with fact "F" since ?gttrf already does.
+    if fact == "N":
+        # Construct a singular example manually
+        d[-1] = 0
+        dl[-1] = 0
+        # solve using routine
+        gtsvx_out = gtsvx(dl, d, du, b)
+        dlf, df, duf, du2f, ipiv, x_soln, rcond, ferr, berr, info = gtsvx_out
+        # test for the singular matrix.
+        assert info > 0, "info should be > 0 for singular matrix"
+
+    elif fact == 'F':
+        # assuming that a singular factorization is input
+        df_[-1] = 0
+        duf_[-1] = 0
+        du2f_[-1] = 0
+
+        gtsvx_out = gtsvx(dl, d, du, b, fact=fact, dlf=dlf_, df=df_, duf=duf_,
+                          du2=du2f_, ipiv=ipiv_)
+        dlf, df, duf, du2f, ipiv, x_soln, rcond, ferr, berr, info = gtsvx_out
+        # info should not be zero and should provide index of illegal value
+        assert info > 0, "info should be > 0 for singular matrix"
+
+
+@pytest.mark.parametrize("dtype", DTYPES*2)
+@pytest.mark.parametrize("trans_bool", [False, True])
+@pytest.mark.parametrize("fact", ["F", "N"])
+def test_gtsvx_error_incompatible_size(dtype, trans_bool, fact):
+    seed(42)
+    # obtain routine
+    gtsvx, gttrf = get_lapack_funcs(('gtsvx', 'gttrf'), dtype=dtype)
+    # Generate random tridiagonal matrix A
+    n = 10
+    dl = generate_random_dtype_array((n-1,), dtype=dtype)
+    d = generate_random_dtype_array((n,), dtype=dtype)
+    du = generate_random_dtype_array((n-1,), dtype=dtype)
+    A = np.diag(dl, -1) + np.diag(d) + np.diag(du, 1)
+    # generate random solution x
+    x = generate_random_dtype_array((n, 2), dtype=dtype)
+    # create b from x for equation Ax=b
+    trans = "T" if dtype in REAL_DTYPES else "C"
+    b = (A.conj().T if trans_bool else A) @ x
+
+    # set these to None if fact = 'N', or the output of gttrf is fact = 'F'
+    dlf_, df_, duf_, du2f_, ipiv_, info_ = \
+        gttrf(dl, d, du) if fact == 'F' else [None]*6
+
+    if fact == "N":
+        assert_raises(ValueError, gtsvx, dl[:-1], d, du, b,
+                      fact=fact, trans=trans, dlf=dlf_, df=df_,
+                      duf=duf_, du2=du2f_, ipiv=ipiv_)
+        assert_raises(ValueError, gtsvx, dl, d[:-1], du, b,
+                      fact=fact, trans=trans, dlf=dlf_, df=df_,
+                      duf=duf_, du2=du2f_, ipiv=ipiv_)
+        assert_raises(ValueError, gtsvx, dl, d, du[:-1], b,
+                      fact=fact, trans=trans, dlf=dlf_, df=df_,
+                      duf=duf_, du2=du2f_, ipiv=ipiv_)
+        assert_raises(Exception, gtsvx, dl, d, du, b[:-1],
+                      fact=fact, trans=trans, dlf=dlf_, df=df_,
+                      duf=duf_, du2=du2f_, ipiv=ipiv_)
+    else:
+        assert_raises(ValueError, gtsvx, dl, d, du, b,
+                      fact=fact, trans=trans, dlf=dlf_[:-1], df=df_,
+                      duf=duf_, du2=du2f_, ipiv=ipiv_)
+        assert_raises(ValueError, gtsvx, dl, d, du, b,
+                      fact=fact, trans=trans, dlf=dlf_, df=df_[:-1],
+                      duf=duf_, du2=du2f_, ipiv=ipiv_)
+        assert_raises(ValueError, gtsvx, dl, d, du, b,
+                      fact=fact, trans=trans, dlf=dlf_, df=df_,
+                      duf=duf_[:-1], du2=du2f_, ipiv=ipiv_)
+        assert_raises(ValueError, gtsvx, dl, d, du, b,
+                      fact=fact, trans=trans, dlf=dlf_, df=df_,
+                      duf=duf_, du2=du2f_[:-1], ipiv=ipiv_)
+
+
+@pytest.mark.parametrize("du,d,dl,b,x",
+                         [(np.array([2.1, -1.0, 1.9, 8.0]),
+                           np.array([3.0, 2.3, -5.0, -0.9, 7.1]),
+                           np.array([3.4, 3.6, 7.0, -6.0]),
+                           np.array([[2.7, 6.6], [-.5, 10.8], [2.6, -3.2],
+                                     [.6, -11.2], [2.7, 19.1]]),
+                           np.array([[-4, 5], [7, -4], [3, -3], [-4, -2],
+                                     [-3, 1]])),
+                          (np.array([2 - 1j, 2 + 1j, -1 + 1j, 1 - 1j]),
+                           np.array([-1.3 + 1.3j, -1.3 + 1.3j, -1.3 + 3.3j,
+                                     -.3 + 4.3j, -3.3 + 1.3j]),
+                           np.array([1 - 2j, 1 + 1j, 2 - 3j, 1 + 1j]),
+                           np.array([[2.4 - 5j, 2.7 + 6.9j],
+                                     [3.4 + 18.2j, -6.9 - 5.3j],
+                                     [-14.7 + 9.7j, -6 - .6j],
+                                     [31.9 - 7.7j, -3.9 + 9.3j],
+                                     [-1 + 1.6j, -3 + 12.2j]]),
+                           np.array([[1 + 1j, 2 - 1j], [3 - 1j, 1 + 2j],
+                                     [4 + 5j, -1 + 1j], [-1 - 2j, 2 + 1j],
+                                     [1 - 1j, 2 - 2j]]))])
+def test_gtsvx_NAG(du, d, dl, b, x):
+    # Test to ensure wrapper is consistent with NAG Manual Mark 26
+    # example problems: real (f07cbf) and complex (f07cpf)
+    gtsvx = get_lapack_funcs('gtsvx', dtype=d.dtype)
+
+    gtsvx_out = gtsvx(dl, d, du, b)
+    dlf, df, duf, du2f, ipiv, x_soln, rcond, ferr, berr, info = gtsvx_out
+
+    assert_array_almost_equal(x, x_soln)
+
+
+@pytest.mark.parametrize("dtype,realtype", zip(DTYPES, REAL_DTYPES
+                                               + REAL_DTYPES))
+@pytest.mark.parametrize("fact,df_de_lambda",
+                         [("F",
+                           lambda d, e:get_lapack_funcs('pttrf',
+                                                        dtype=e.dtype)(d, e)),
+                          ("N", lambda d, e: (None, None, None))])
+def test_ptsvx(dtype, realtype, fact, df_de_lambda):
+    '''
+    This tests the ?ptsvx lapack routine wrapper to solve a random system
+    Ax = b for all dtypes and input variations. Tests for: unmodified
+    input parameters, fact options, incompatible matrix shapes raise an error,
+    and singular matrices return info of illegal value.
+    '''
+    seed(42)
+    # set test tolerance appropriate for dtype
+    atol = 100 * np.finfo(dtype).eps
+    ptsvx = get_lapack_funcs('ptsvx', dtype=dtype)
+    n = 5
+    # create diagonals according to size and dtype
+    d = generate_random_dtype_array((n,), realtype) + 4
+    e = generate_random_dtype_array((n-1,), dtype)
+    A = np.diag(d) + np.diag(e, -1) + np.diag(np.conj(e), 1)
+    x_soln = generate_random_dtype_array((n, 2), dtype=dtype)
+    b = A @ x_soln
+
+    # use lambda to determine what df, ef are
+    df, ef, info = df_de_lambda(d, e)
+
+    # create copy to later test that they are unmodified
+    diag_cpy = [d.copy(), e.copy(), b.copy()]
+
+    # solve using routine
+    df, ef, x, rcond, ferr, berr, info = ptsvx(d, e, b, fact=fact,
+                                               df=df, ef=ef)
+    # d, e, and b should be unmodified
+    assert_array_equal(d, diag_cpy[0])
+    assert_array_equal(e, diag_cpy[1])
+    assert_array_equal(b, diag_cpy[2])
+    assert_(info == 0, "info should be 0 but is {}.".format(info))
+    assert_array_almost_equal(x_soln, x)
+
+    # test that the factors from ptsvx can be recombined to make A
+    L = np.diag(ef, -1) + np.diag(np.ones(n))
+    D = np.diag(df)
+    assert_allclose(A, L@D@(np.conj(L).T), atol=atol)
+
+    # assert that the outputs are of correct type or shape
+    # rcond should be a scalar
+    assert not hasattr(rcond, "__len__"), \
+        "rcond should be scalar but is {}".format(rcond)
+    # ferr should be length of # of cols in x
+    assert_(ferr.shape == (2,), "ferr.shape is {} but shoud be ({},)"
+            .format(ferr.shape, x_soln.shape[1]))
+    # berr should be length of # of cols in x
+    assert_(berr.shape == (2,), "berr.shape is {} but shoud be ({},)"
+            .format(berr.shape, x_soln.shape[1]))
+
+@pytest.mark.parametrize("dtype,realtype", zip(DTYPES, REAL_DTYPES
+                                               + REAL_DTYPES))
+@pytest.mark.parametrize("fact,df_de_lambda",
+                         [("F",
+                           lambda d, e:get_lapack_funcs('pttrf',
+                                                        dtype=e.dtype)(d, e)),
+                          ("N", lambda d, e: (None, None, None))])
+def test_ptsvx_error_raise_errors(dtype, realtype, fact, df_de_lambda):
+    seed(42)
+    ptsvx = get_lapack_funcs('ptsvx', dtype=dtype)
+    n = 5
+    # create diagonals according to size and dtype
+    d = generate_random_dtype_array((n,), realtype) + 4
+    e = generate_random_dtype_array((n-1,), dtype)
+    A = np.diag(d) + np.diag(e, -1) + np.diag(np.conj(e), 1)
+    x_soln = generate_random_dtype_array((n, 2), dtype=dtype)
+    b = A @ x_soln
+
+    # use lambda to determine what df, ef are
+    df, ef, info = df_de_lambda(d, e)
+
+    # test with malformatted array sizes
+    assert_raises(ValueError, ptsvx, d[:-1], e, b, fact=fact, df=df, ef=ef)
+    assert_raises(ValueError, ptsvx, d, e[:-1], b, fact=fact, df=df, ef=ef)
+    assert_raises(Exception, ptsvx, d, e, b[:-1], fact=fact, df=df, ef=ef)
+
+
+@pytest.mark.parametrize("dtype,realtype", zip(DTYPES, REAL_DTYPES
+                                               + REAL_DTYPES))
+@pytest.mark.parametrize("fact,df_de_lambda",
+                         [("F",
+                           lambda d, e:get_lapack_funcs('pttrf',
+                                                        dtype=e.dtype)(d, e)),
+                          ("N", lambda d, e: (None, None, None))])
+def test_ptsvx_non_SPD_singular(dtype, realtype, fact, df_de_lambda):
+    seed(42)
+    ptsvx = get_lapack_funcs('ptsvx', dtype=dtype)
+    n = 5
+    # create diagonals according to size and dtype
+    d = generate_random_dtype_array((n,), realtype) + 4
+    e = generate_random_dtype_array((n-1,), dtype)
+    A = np.diag(d) + np.diag(e, -1) + np.diag(np.conj(e), 1)
+    x_soln = generate_random_dtype_array((n, 2), dtype=dtype)
+    b = A @ x_soln
+
+    # use lambda to determine what df, ef are
+    df, ef, info = df_de_lambda(d, e)
+
+    if fact == "N":
+        d[3] = 0
+        # obtain new df, ef
+        df, ef, info = df_de_lambda(d, e)
+        # solve using routine
+        df, ef, x, rcond, ferr, berr, info = ptsvx(d, e, b)
+        # test for the singular matrix.
+        assert info > 0 and info <= n
+
+        # non SPD matrix
+        d = generate_random_dtype_array((n,), realtype)
+        df, ef, x, rcond, ferr, berr, info = ptsvx(d, e, b)
+        assert info > 0 and info <= n
+    else:
+        # assuming that someone is using a singular factorization
+        df, ef, info = df_de_lambda(d, e)
+        df[0] = 0
+        ef[0] = 0
+        df, ef, x, rcond, ferr, berr, info = ptsvx(d, e, b, fact=fact,
+                                                   df=df, ef=ef)
+        assert info > 0
+
+
+@pytest.mark.parametrize('d,e,b,x',
+                         [(np.array([4, 10, 29, 25, 5]),
+                           np.array([-2, -6, 15, 8]),
+                           np.array([[6, 10], [9, 4], [2, 9], [14, 65],
+                                     [7, 23]]),
+                           np.array([[2.5, 2], [2, -1], [1, -3],
+                                     [-1, 6], [3, -5]])),
+                          (np.array([16, 41, 46, 21]),
+                           np.array([16 + 16j, 18 - 9j, 1 - 4j]),
+                           np.array([[64 + 16j, -16 - 32j],
+                                     [93 + 62j, 61 - 66j],
+                                     [78 - 80j, 71 - 74j],
+                                     [14 - 27j, 35 + 15j]]),
+                           np.array([[2 + 1j, -3 - 2j],
+                                     [1 + 1j, 1 + 1j],
+                                     [1 - 2j, 1 - 2j],
+                                     [1 - 1j, 2 + 1j]]))])
+def test_ptsvx_NAG(d, e, b, x):
+    # test to assure that wrapper is consistent with NAG Manual Mark 26
+    # example problemss: f07jbf, f07jpf
+    # (Links expire, so please search for "NAG Library Manual Mark 26" online)
+
+    # obtain routine with correct type based on e.dtype
+    ptsvx = get_lapack_funcs('ptsvx', dtype=e.dtype)
+    # solve using routine
+    df, ef, x_ptsvx, rcond, ferr, berr, info = ptsvx(d, e, b)
+    # determine ptsvx's solution and x are the same.
+    assert_array_almost_equal(x, x_ptsvx)

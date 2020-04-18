@@ -37,15 +37,21 @@
       COMPLEX FUNCTION WCLADIV( X, Y )
       COMPLEX            X, Y
       COMPLEX            Z
-      EXTERNAL CLADIV
-      CALL CLADIV(Z, X, Y)
-      WCLADIV = Z
+      EXTERNAL SLADIV
+      INTRINSIC          AIMAG, CMPLX, REAL
+      REAL               ZI, ZR
+      CALL SLADIV( REAL( X ), AIMAG( X ), REAL( Y ), AIMAG( Y ), ZR,
+     $             ZI )
+      WCLADIV = CMPLX( ZR, ZI )
       END FUNCTION
 
       DOUBLE COMPLEX FUNCTION WZLADIV( X, Y )
       DOUBLE COMPLEX     X, Y
       DOUBLE COMPLEX     Z
-      EXTERNAL ZLADIV
-      CALL ZLADIV(Z, X, Y)
-      WZLADIV = Z
+      EXTERNAL DLADIV
+      INTRINSIC          DBLE, DCMPLX, DIMAG
+      DOUBLE PRECISION   ZI, ZR
+      CALL DLADIV( DBLE( X ), DIMAG( X ), DBLE( Y ), DIMAG( Y ), ZR,
+     $             ZI )
+      WZLADIV = DCMPLX( ZR, ZI )
       END FUNCTION
