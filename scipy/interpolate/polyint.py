@@ -450,7 +450,7 @@ def approximate_taylor_polynomial(f,x,degree,scale,order=None):
     >>> plt.plot(x, np.sin(x), label="sin curve")
     >>> for degree in np.arange(1, 15, step=2):
     ...     sin_taylor = approximate_taylor_polynomial(np.sin, 0, degree, 1,
-    ...                                                 order=degree + 2)
+    ...                                                order=degree + 2)
     ...     plt.plot(x, sin_taylor(x), label=f"degree={degree}")
     >>> plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left',
     ...             borderaxespad=0.0, shadow=True)
