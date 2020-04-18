@@ -453,7 +453,7 @@ def approximate_taylor_polynomial(f,x,degree,scale,order=None):
     ...                                                order=degree + 2)
     ...     plt.plot(x, sin_taylor(x), label=f"degree={degree}")
     >>> plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left',
-    ...             borderaxespad=0.0, shadow=True)
+    ...            borderaxespad=0.0, shadow=True)
     >>> plt.tight_layout()
     >>> plt.axis([-10, 10, -10, 10])
     >>> plt.show()
