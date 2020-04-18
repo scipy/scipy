@@ -32,6 +32,7 @@ from collections.abc import Iterable
 import warnings
 import numpy
 import operator
+from numpy.core.multiarray import normalize_axis_index
 from . import _ni_support
 from . import _nd_image
 from . import _ni_docstrings
@@ -84,7 +85,7 @@ def correlate1d(input, weights, axis=-1, output=None, mode="reflect",
         raise RuntimeError('no filter weights given')
     if not weights.flags.contiguous:
         weights = weights.copy()
-    axis = _ni_support._check_axis(axis, input.ndim)
+    axis = normalize_axis_index(axis, input.ndim)
     if _invalid_origin(origin, len(weights)):
         raise ValueError('Invalid origin; origin must satisfy '
                          '-(len(weights) // 2) <= origin <= '
@@ -329,7 +330,7 @@ def prewitt(input, axis=-1, output=None, mode="reflect", cval=0.0):
     >>> plt.show()
     """
     input = numpy.asarray(input)
-    axis = _ni_support._check_axis(axis, input.ndim)
+    axis = normalize_axis_index(axis, input.ndim)
     output = _ni_support._get_output(output, input)
     modes = _ni_support._normalize_sequence(mode, input.ndim)
     correlate1d(input, [-1, 0, 1], axis, output, modes[axis], cval, 0)
@@ -366,7 +367,7 @@ def sobel(input, axis=-1, output=None, mode="reflect", cval=0.0):
     >>> plt.show()
     """
     input = numpy.asarray(input)
-    axis = _ni_support._check_axis(axis, input.ndim)
+    axis = normalize_axis_index(axis, input.ndim)
     output = _ni_support._get_output(output, input)
     modes = _ni_support._normalize_sequence(mode, input.ndim)
     correlate1d(input, [-1, 0, 1], axis, output, modes[axis], cval, 0)
@@ -784,7 +785,7 @@ def uniform_filter1d(input, size, axis=-1, output=None,
     input = numpy.asarray(input)
     if numpy.iscomplexobj(input):
         raise TypeError('Complex type not supported')
-    axis = _ni_support._check_axis(axis, input.ndim)
+    axis = normalize_axis_index(axis, input.ndim)
     if size < 1:
         raise RuntimeError('incorrect filter size')
     output = _ni_support._get_output(output, input)
@@ -898,7 +899,7 @@ def minimum_filter1d(input, size, axis=-1, output=None,
     input = numpy.asarray(input)
     if numpy.iscomplexobj(input):
         raise TypeError('Complex type not supported')
-    axis = _ni_support._check_axis(axis, input.ndim)
+    axis = normalize_axis_index(axis, input.ndim)
     if size < 1:
         raise RuntimeError('incorrect filter size')
     output = _ni_support._get_output(output, input)
@@ -955,7 +956,7 @@ def maximum_filter1d(input, size, axis=-1, output=None,
     input = numpy.asarray(input)
     if numpy.iscomplexobj(input):
         raise TypeError('Complex type not supported')
-    axis = _ni_support._check_axis(axis, input.ndim)
+    axis = normalize_axis_index(axis, input.ndim)
     if size < 1:
         raise RuntimeError('incorrect filter size')
     output = _ni_support._get_output(output, input)
@@ -1372,7 +1373,7 @@ def generic_filter1d(input, function, filter_size, axis=-1,
     output = _ni_support._get_output(output, input)
     if filter_size < 1:
         raise RuntimeError('invalid filter size')
-    axis = _ni_support._check_axis(axis, input.ndim)
+    axis = normalize_axis_index(axis, input.ndim)
     if (filter_size // 2 + origin < 0) or (filter_size // 2 + origin >=
                                            filter_size):
         raise ValueError('invalid origin')

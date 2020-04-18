@@ -1,6 +1,7 @@
 from multiprocessing import Pool, get_start_method
 from multiprocessing.pool import Pool as PWL
 import os
+import math
 
 import numpy as np
 from numpy.testing import assert_equal, assert_
@@ -97,9 +98,11 @@ def test_mapwrapper_serial():
         p = MapWrapper(0)
 
 
-@pytest.mark.skipif(get_start_method() != 'fork',
-                    reason=('multiprocessing with spawn method is not'
-                            ' compatible with pytest.'))
+def test_pool():
+    with Pool(2) as p:
+        p.map(math.sin, [1,2,3, 4])
+
+
 def test_mapwrapper_parallel():
     in_arg = np.arange(10.)
     out_arg = np.sin(in_arg)
