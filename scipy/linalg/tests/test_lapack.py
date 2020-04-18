@@ -1795,7 +1795,7 @@ def test_getc2_gesc2():
 
 
 @pytest.mark.parametrize('size', [(6, 5), (5, 5)])
-@pytest.mark.parametrize('dtype', DTYPES)
+@pytest.mark.parametrize('dtype', REAL_DTYPES)
 @pytest.mark.parametrize('joba', range(6))  # 'C', 'E', 'F', 'G', 'A', 'R'
 @pytest.mark.parametrize('jobu', range(4))  # 'U', 'F', 'W', 'N'
 @pytest.mark.parametrize('jobv', range(4))  # 'V', 'J', 'W', 'N'
@@ -1855,55 +1855,55 @@ def test_gejsv_general(size, dtype, joba, jobu, jobv, jobr, jobt, jobp):
     else:
         exit_status = 0
 
-    sva, u, v, work, iwork, info = gejsv(A,
-                                         joba=joba,
-                                         jobu=jobu,
-                                         jobv=jobv,
-                                         jobr=jobr,
-                                         jobt=jobt,
-                                         jobp=jobp)
+    if (jobu > 1) and (jobv == 1):
+        assert_raises(Exception, gejsv, A, joba, jobu, jobv, jobr, jobt, jobp)
+    else:
+        sva, u, v, work, iwork, info = gejsv(A,
+                                             joba=joba,
+                                             jobu=jobu,
+                                             jobv=jobv,
+                                             jobr=jobr,
+                                             jobt=jobt,
+                                             jobp=jobp)
 
-    # Check that ?gejsv exited successfully/as expected
-    assert_equal(info, exit_status)
+        # Check that ?gejsv exited successfully/as expected
+        assert_equal(info, exit_status)
 
-    # If exit_status is non-zero the combination of jobs is invalid.
-    # We test this above but no calculations are performed.
-    if not exit_status:
+        # If exit_status is non-zero the combination of jobs is invalid.
+        # We test this above but no calculations are performed.
+        if not exit_status:
 
-        # Check the returned singular values
-        sigma = (work[0] / work[1]) * sva[:n]
-        assert_allclose(sigma, svd(A, compute_uv=False), atol=atol)
+            # Check the returned singular values
+            sigma = (work[0] / work[1]) * sva[:n]
+            assert_allclose(sigma, svd(A, compute_uv=False), atol=atol)
 
-        if jobu == 1:
-            # If JOBU = 'F', then u contains the M-by-M matrix of
-            # the left singular vectors, including an ONB of the orthogonal
-            # complement of the Range(A)
-            # However, to recalculate A we are concerned about the
-            # first n singular values and so can ignore the latter.
-            #TODO: Add a test for ONB?
-            u = u[:, :n]
+            if jobu == 1:
+                # If JOBU = 'F', then u contains the M-by-M matrix of
+                # the left singular vectors, including an ONB of the orthogonal
+                # complement of the Range(A)
+                # However, to recalculate A we are concerned about the
+                # first n singular values and so can ignore the latter.
+                # TODO: Add a test for ONB?
+                u = u[:, :n]
 
-        if lsvec and rsvec:
-            assert_allclose(u @ np.diag(sigma) @ v.conj().T, A, atol=atol)
-        if lsvec:
-            assert_allclose(u.conj().T @ u, np.identity(n), atol=atol)
-        if rsvec:
-            assert_allclose(v.conj().T @ v, np.identity(n), atol=atol)
+            if lsvec and rsvec:
+                assert_allclose(u @ np.diag(sigma) @ v.conj().T, A, atol=atol)
+            if lsvec:
+                assert_allclose(u.conj().T @ u, np.identity(n), atol=atol)
+            if rsvec:
+                assert_allclose(v.conj().T @ v, np.identity(n), atol=atol)
 
-        assert_equal(iwork[0], np.linalg.matrix_rank(A))
-        assert_equal(iwork[1], np.count_nonzero(sigma))
-        # iwork[2] is non-zero if requested accuracy is not warranted for the
-        # data. This should never occur for these tests.
-        assert_equal(iwork[2], 0)
+            assert_equal(iwork[0], np.linalg.matrix_rank(A))
+            assert_equal(iwork[1], np.count_nonzero(sigma))
+            # iwork[2] is non-zero if requested accuracy is not warranted for
+            # the data. This should never occur for these tests.
+            assert_equal(iwork[2], 0)
 
 
-@pytest.mark.parametrize(('dtype', 'shape', 'kwargs', 'status'), [
-                        (np.float, (1, 0), {}, 0),
-                        (np.complex, (1, 0), {}, -17),
-                        (np.float, (1, 1), {}, 0),
-                        (np.float, None, {}, 0),
-                        (np.float, (3, 5), {}, -8),
-                        (np.float, (3, 2), {'lwork': 0}, -17),
+@pytest.mark.parametrize(('dtype', 'shape', 'kwargs', 'status'),
+                         [(np.float, (1, 0), {}, 0),
+                          (np.float, (1, 1), {}, 0),
+                          (np.float, None, {}, 0),
                           ])
 def test_gejsv_edge_arguments(dtype, shape, kwargs, status):
     """Test edge arguments return expected status"""
