@@ -1312,19 +1312,19 @@ class SmoothSphereBivariateSpline(SphereBivariateSpline):
     ----------
     theta, phi, r : array_like
         1-D sequences of data points (order is not important). Coordinates
-        must be given in radians. Theta must lie within the interval (0, pi),
-        and phi must lie within the interval (0, 2pi).
+        must be given in radians. Theta must lie within the interval
+        ``(0, pi)``, and phi must lie within the open interval ``(0, 2pi)``.
     w : array_like, optional
         Positive 1-D sequence of weights.
     s : float, optional
         Positive smoothing factor defined for estimation condition:
         ``sum((w(i)*(r(i) - s(theta(i), phi(i))))**2, axis=0) <= s``
-        Default ``s=len(w)`` which should be a good value if 1/w[i] is an
-        estimate of the standard deviation of r[i].
+        Default ``s=len(w)`` which should be a good value if ``1/w[i]`` is an
+        estimate of the standard deviation of ``r[i]``.
     eps : float, optional
         A threshold for determining the effective rank of an over-determined
-        linear system of equations. `eps` should have a value between 0 and 1,
-        the default is 1e-16.
+        linear system of equations. `eps` should have a value within the open
+        interval ``(0, 1)``. The default is 1e-16.
 
     Notes
     -----
@@ -1380,6 +1380,19 @@ class SmoothSphereBivariateSpline(SphereBivariateSpline):
     """
 
     def __init__(self, theta, phi, r, w=None, s=0., eps=1E-16):
+
+        # invalid input check
+        if np.any(theta <= 0.0) or np.any(np.pi <= theta):
+            raise ValueError('theta should be between (0, pi)')
+        if np.any(phi <= 0.0) or np.any(2.0 * np.pi <= phi):
+            raise ValueError('phi should be between (0, 2pi)')
+        if w is not None and np.any(w < 0.0):
+            raise ValueError('w should be positive')
+        if s < 0.0:
+            raise ValueError('s should be positive')
+        if not 0.0 < eps < 1.0:
+            raise ValueError('eps should be between (0, 1)')
+
         if np.issubclass_(w, float):
             w = ones(len(theta)) * w
         nt_, tt_, np_, tp_, c, fp, ier = dfitpack.spherfit_smth(theta, phi,
