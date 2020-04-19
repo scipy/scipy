@@ -689,14 +689,13 @@ class TestGbsvx:
         gbsvx = get_lapack_funcs('gbsvx', dtype=ab.dtype)
         assert_raises(Exception, gbsvx, ab=ab, b=b, **kwargs)
 
-
     @pytest.mark.parametrize('dtype', DTYPES)
     @pytest.mark.parametrize('fact', ('N', 'E'))
     @pytest.mark.parametrize('trans', ('N', 'T', 'C'))
     def test_random_non_equilibrated (self, dtype, fact, trans):
         seed(1724)
         atol = 100 * np.finfo(dtype).eps
-        m, n = 6, 6
+        m, n, nrhs = 6, 6, 6
         kl, ku = 2, 1
         gbsvx = get_lapack_funcs('gbsvx', dtype=dtype)
 
@@ -707,7 +706,7 @@ class TestGbsvx:
         A = sps.dia_matrix(A)
 
         ab = np.flipud(A.data)
-        x = generate_random_dtype_array((n, n), dtype)
+        x = generate_random_dtype_array((n, nrhs), dtype)
         b = A@x
 
         actual = self.Actual(*gbsvx(ab=ab,
