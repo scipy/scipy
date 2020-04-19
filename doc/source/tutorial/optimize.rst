@@ -1480,7 +1480,7 @@ Finally, we can solve the transformed problem using :func:`linprog`.
          con: array([15.5361242 , 16.61288005])  # may vary
          fun: -370.2321976308326  # may vary
      message: 'The algorithm terminated successfully and determined that the problem is infeasible.'
-         nit: 6
+         nit: 6  # may vary
        slack: array([ 0.79314989, -1.76308532])  # may vary
       status: 2
      success: False
