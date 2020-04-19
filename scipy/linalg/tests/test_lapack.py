@@ -734,7 +734,8 @@ class TestGbsvx:
 
     @pytest.mark.parametrize('dtype', DTYPES)
     @pytest.mark.parametrize('equed', ('R', 'C', 'B'))
-    def test_random_equilibrated(self, dtype, equed):
+    @pytest.mark.parametrize('trans', ('N', 'T', 'C'))
+    def test_random_equilibrated(self, dtype, equed, trans):
         seed(1724)
         atol = 100 * np.finfo(dtype).eps
         m, n, nrhs = 6, 6, 4
@@ -790,7 +791,12 @@ class TestGbsvx:
 
         # Compare the solution using the calculated solution `x`
         # to the pre-calculated solution
-        assert_allclose(b, A @ actual.x, atol=atol)
+        if trans == 'N':
+            assert_allclose(b, A @ actual.x, atol=atol)
+        elif trans == 'T':
+            assert_allclose(b, A.T @ actual.x, atol=atol)
+        else:
+            assert_allclose(b, A.conj().T @ actual.x, atol=atol)
 
 
 
