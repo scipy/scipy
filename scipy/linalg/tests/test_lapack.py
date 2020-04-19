@@ -733,48 +733,66 @@ class TestGbsvx:
             assert_allclose(b, A.conj().T @ actual.x, atol=atol)
 
     @pytest.mark.parametrize('dtype', DTYPES)
-    def test_random_equilibrated(self, dtype):
+    @pytest.mark.parametrize('equed', ('R', 'C', 'B'))
+    def test_random_equilibrated(self, dtype, equed):
         seed(1724)
         atol = 100 * np.finfo(dtype).eps
         m, n, nrhs = 6, 6, 4
         kl, ku = 2, 1
-        gbsvx, gbtrf = get_lapack_funcs(('gbsvx', 'gbtrf'), dtype=dtype)
+        funcs = 'gbsvx', 'gbtrf', 'geequb'
+        gbsvx, gbtrf, geequb = get_lapack_funcs(funcs, dtype=dtype)
 
-        # Generate the random m x n banded matrix `A` and convert it
-        # to band storage
+        # Generate ``A``, ``x`` s.t. Ax = b is a linear system of equations
         A = generate_random_dtype_array((m, n), dtype)
-        A = np.triu(np.tril(A, k=ku), k=-kl)
-        A = sps.dia_matrix(A)
         x = generate_random_dtype_array((n, nrhs), dtype)
         b = A @ x
 
+        # Calculate the row and column vectors required to equilibriate A
+        r, c, _, _, _, _ = geequb(A)
+
+        if equed == 'B':
+            A = np.diag(r) @ A @ np.diag(c)
+        elif equed == 'R':
+            A = np.diag(r) @ A
+        elif equed == 'C':
+            A = A @ np.diag(c)
+
+        # Convert the matrix A into banded storage
+        A = np.triu(np.tril(A, k=ku), k=-kl)
+        A = sps.dia_matrix(A)
+        ab = np.flipud(A.data)
+
         # Generate the lu factorization using gbtrf
-        ab = np.zeros((2*kl+ku+1, n), dtype=dtype)
-        ab[kl:] = np.flipud(A.data)
-        afb, ipiv, info = gbtrf(ab, kl, ku)
+        afb = np.zeros((2*kl+ku+1, n), dtype=dtype)
+        afb[kl:] = np.flipud(A.data)
+        afb, ipiv, info = gbtrf(afb, kl, ku)
 
         # FIXME: Increment needs to be implemented at the wrapper level
         for i in range(len(ipiv)):
             ipiv[i] += 1
 
-        actual = self.Actual(*gbsvx(ab=np.flipud(A.data),
+        actual = self.Actual(*gbsvx(ab=ab,
                                     afb=afb,
                                     kl=kl,
                                     ku=ku,
                                     b=b,
+                                    r=r,
+                                    c=c,
                                     ipiv=ipiv,
                                     fact='F',
-                                    trans='N'))
+                                    equed=equed,
+                                    trans=trans))
 
         assert_equal(actual.info, 0)
+        assert np.isscalar(actual.rcond)
+        assert_equal(actual.ferr.shape, (nrhs,))
+        assert_equal(actual.berr.shape, (nrhs,))
 
         # Compare the solution using the calculated solution `x`
         # to the pre-calculated solution
         assert_allclose(b, A @ actual.x, atol=atol)
 
-        assert np.isscalar(actual.rcond)
-        assert_equal(actual.ferr.shape, (nrhs,))
-        assert_equal(actual.berr.shape, (nrhs,))
+
 
 
 def test_lartg():
