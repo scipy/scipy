@@ -165,6 +165,9 @@ class UnivariateSpline(object):
     """
     def __init__(self, x, y, w=None, bbox=[None]*2, k=3, s=None,
                  ext=0, check_finite=False):
+        x, y = np.asarray(x), np.asarray(y)
+        if w is not None:
+            w = np.asarray(w)
 
         if check_finite:
             w_finite = np.isfinite(w).all() if w is not None else True
@@ -178,6 +181,11 @@ class UnivariateSpline(object):
         else:
             if not np.all(diff(x) > 0.0):
                 raise ValueError("x must be strictly increasing if s = 0")
+
+        if x.size != y.size:
+            raise ValueError("x and y should have a same length")
+        elif w is not None and not x.size == y.size == w.size:
+            raise ValueError("x, y, and w should have a same length")
 
         # _data == x,y,w,xb,xe,k,s,n,t,c,fp,fpint,nrdata,ier
         try:
@@ -1087,7 +1095,7 @@ class LSQBivariateSpline(BivariateSpline):
         Degrees of the bivariate spline. Default is 3.
     eps : float, optional
         A threshold for determining the effective rank of an over-determined
-        linear system of equations. `eps` should have a value between 0 and 1,
+        linear system of equations. `eps` should have a value within the 0 and 1,
         the default is 1e-16.
 
     See Also
@@ -1722,7 +1730,7 @@ class RectSphereBivariateSpline(SphereBivariateSpline):
 
         u, v = np.ravel(u), np.ravel(v)
 
-        if not np.all(0.0 < u) or not np.all(u < np.pi):
+        if np.any(u <= 0.0) or np.any(np.pi <= u):
             raise ValueError('u should be between (0, pi)')
         if not -np.pi <= v[0] < np.pi:
             raise ValueError('v[0] should be between [-pi, pi)')

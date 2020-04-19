@@ -223,6 +223,22 @@ class TestUnivariateSpline(object):
         assert_raises(ValueError, LSQUnivariateSpline,
                 **dict(x=x, y=y, t=t, w=w, check_finite=True))
 
+    def test_invalid_input(self):
+
+        with assert_raises(ValueError) as exc_info:
+            x_values = [1, 2, 4, 6, 8.5]
+            y_values = [0.5, 0.8, 1.3, 2.5]
+            UnivariateSpline(x_values, y_values)
+        assert "x and y should have a same length" in str(exc_info.value)
+
+        with assert_raises(ValueError) as exc_info:
+            x_values = [1, 2, 4, 6, 8.5]
+            y_values = [0.5, 0.8, 1.3, 2.5, 2.8]
+            w_values = [-1.0, 1.0, 1.0, 1.0]
+            UnivariateSpline(x_values, y_values, w=w_values)
+        assert "x, y, and w should have a same length" in str(exc_info.value)
+
+
 
 class TestLSQBivariateSpline(object):
     # NOTE: The systems in this test class are rank-deficient
