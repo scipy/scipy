@@ -1385,7 +1385,7 @@ should be
 .. math::
         c = [-29, -45, 0, 0]^T
 
-Next, let's consider the two inequality constraints. The first one is a "less than" inequality; however, the second one
+Next, let's consider the two inequality constraints. The first one is a "less than" inequality, so it is already in the form accepted by `linprog`.
 is a "greater than" inequality. :func:`linprog` only accepts "less than" inequality constraints, so we multiply both
 sides of the second inequality by :math:`-1` to get:
 
