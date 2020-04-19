@@ -656,6 +656,7 @@ def correlate(input, weights, output=None, mode='reflect', cval=0.0,
     --------
     Correlation is the process of moving a filter mask often referred to
     as kernel over the image and computing the sum of products at each location.
+
     >>> from scipy.ndimage import correlate
     >>> input_img = np.arange(25).reshape(5,5)
     >>> print(input_img)
@@ -673,7 +674,7 @@ def correlate(input, weights, output=None, mode='reflect', cval=0.0,
     ...            [0, 1, 0]]
 
     We can calculate a correlation result:
-    For example, element [2,2] is 7 + 11 + 12 + 13 + 17 = 60
+    For example, element ``[2,2]`` is ``7 + 11 + 12 + 13 + 17 = 60``.
 
     >>> correlate(input_img, weights)
     array([[  6,  10,  15,  20,  24],
