@@ -1269,6 +1269,7 @@ def ks_onesamp(x, cdf, args=(), alternative="two-sided", mode='auto'):
     return scipy.stats.stats.ks_1samp(
         x, cdf, args=args, alternative=alternative, mode=mode)
 
+
 ks_1samp = ks_onesamp
 
 
@@ -1308,6 +1309,7 @@ def ks_twosamp(x, y, alternative="two-sided", mode='auto'):
     alternative = {'t': 'two-sided', 'g':'greater', 'l': 'less'}.get(
        alternative.lower()[0], alternative)
     return scipy.stats.stats.ks_2samp(x, y, alternative=alternative, mode=mode)
+
 
 ks_2samp = ks_twosamp
 

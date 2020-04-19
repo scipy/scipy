@@ -5339,8 +5339,6 @@ def ttest_rel(a, b, axis=0, nan_policy='propagate'):
     return Ttest_relResult(t, prob)
 
 
-
-
 # Map from names to lambda_ values used in power_divergence().
 _power_div_lambda_names = {
     "pearson": 1,
