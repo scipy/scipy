@@ -81,7 +81,9 @@ Statistical tests
    ttest_ind
    ttest_rel
    chisquare
+   kstest
    ks_2samp
+   ks_1samp
    ks_twosamp
    mannwhitneyu
    rankdata
