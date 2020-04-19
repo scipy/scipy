@@ -699,15 +699,15 @@ class TestGbsvx:
         kl, ku = 2, 1
         gbsvx = get_lapack_funcs('gbsvx', dtype=dtype)
 
-        # Generate the random m x n banded matrix `A` and convert it
-        # to band storage
+        # Generate ``A``, ``x`` s.t. Ax = b is a linear system of equations
         A = generate_random_dtype_array((m, n), dtype)
+        x = generate_random_dtype_array((n, nrhs), dtype)
+        b = A @ x
+
+        # Convert the matrix A into banded storage
         A = np.triu(np.tril(A, k=ku), k=-kl)
         A = sps.dia_matrix(A)
-
         ab = np.flipud(A.data)
-        x = generate_random_dtype_array((n, nrhs), dtype)
-        b = A@x
 
         actual = self.Actual(*gbsvx(ab=ab,
                                     kl=kl,
@@ -723,7 +723,7 @@ class TestGbsvx:
         assert_equal(actual.berr.shape, (nrhs,))
         assert_equal(actual.afb.shape, (2 * kl + ku + 1, n))
 
-        # Compare the solution using the calculated solution `x_`
+        # Compare the solution using the calculated solution `x`
         # to the pre-calculated solution
         if trans == 'N':
             assert_allclose(b, A@actual.x, atol=atol)
