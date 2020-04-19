@@ -1500,7 +1500,7 @@ to :math:`0 \leq x_1 \leq 6`. After adjusting our code ``x1_bounds = (0, 6)`` to
         con: array([9.78840831e-09, 1.04662945e-08])  # may vary
         fun: -505.97435889013434  # may vary
     message: 'Optimization terminated successfully.'
-        nit: 4
+        nit: 4  # may vary
       slack: array([ 6.52747190e-10, -2.26730279e-09])  # may vary
      status: 0
     success: True
