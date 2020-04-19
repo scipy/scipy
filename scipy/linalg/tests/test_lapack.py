@@ -1743,24 +1743,24 @@ def test_syequb():
         assert_equal(np.log2(s).astype(int), desired_log2s)
 
 
-def test_heequb():
+@pytest.mark.parametrize("dtype", COMPLEX_DTYPES)
+def test_heequb(dtype):
     desired_log2s = np.array([[-2, -7, -2, -4, -2, -3, -2, -2, -1, -2],
                               [1, -10, 0, -6, -1, -4, -1, -2, -1, -2]])
-    for ind, dtype in enumerate(COMPLEX_DTYPES):
-        heequb = get_lapack_funcs('heequb', dtype=dtype)
+    heequb = get_lapack_funcs('heequb', dtype=dtype)
 
-        d = np.array([dtype(1j) * 2**x for x in range(-5, 5)], dtype=dtype)
-        A = np.diag(d)
-        subdiags = np.array([dtype(1j) * 2**(9-x) for x in range(9)],
-                            dtype=dtype)
-        A[range(1, 10), range(0, 9)] = subdiags
-        s, scond, amax, info = heequb(A, lower=1)
+    d = np.array([dtype(1j) * 2**x for x in range(-5, 5)], dtype=dtype)
+    A = np.diag(d)
+    subdiags = np.array([dtype(1j) * 2**(9-x) for x in range(9)],
+                        dtype=dtype)
+    A[range(1, 10), range(0, 9)] = subdiags
+    s, scond, amax, info = heequb(A, lower=1)
 
-        # See gh-10741
-        pre3_7_lapack_result = np.log2(s).astype(int) == desired_log2s[0, :]
-        post3_7_lapack_result = np.log2(s).astype(int) == desired_log2s[1, :]
-
-        assert pre3_7_lapack_result.all() or post3_7_lapack_result.all()
+    assert_equal(info, 0)
+    try:
+        assert_allclose(np.log2(s), desired_log2s[0, :])
+    except AssertionError as e:
+        assert_allclose(np.log2(s), desired_log2s[1, :])
 
 
 def test_getc2_gesc2():
