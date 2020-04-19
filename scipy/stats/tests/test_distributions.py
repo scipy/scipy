@@ -484,9 +484,7 @@ class TestTruncnorm(object):
     def test_gh_2477_large_values(self):
         # Check a case that used to fail because of extreme tailness.
         low, high = 100, 101
-        with np.errstate(divide='ignore'):
-            x = stats.truncnorm.rvs(low, high, 0, 1, size=10)
-        print(low, x.min(), x.max(), high)
+        x = stats.truncnorm.rvs(low, high, 0, 1, size=10)
         assert_(low <= x.min() <= x.max() <= high), str([low, high, x])
 
         # Check some additional extreme tails
@@ -495,6 +493,10 @@ class TestTruncnorm(object):
         assert_(low < x.min() < x.max() < high)
 
         low, high = 10000, 10001
+        x = stats.truncnorm.rvs(low, high, 0, 1, size=10)
+        assert_(low < x.min() < x.max() < high)
+
+        low, high = -10001, -10000
         x = stats.truncnorm.rvs(low, high, 0, 1, size=10)
         assert_(low < x.min() < x.max() < high)
 
@@ -580,21 +582,25 @@ class TestTruncnorm(object):
         # using both the _norm_XXX() and _norm_logXXX() functions, and by
         # removing the _stats and _munp methods in truncnorm tp force
         # numerical quadrature.
+        # For m,v,s,k expect k to have the largest error as it is
+        # constructed from powers of lower moments
+
         self._test_moments_one_range(-30, 30, [0, 1, 0.0, 0.0])
         self._test_moments_one_range(-10, 10, [0, 1, 0.0, 0.0])
-        self._test_moments_one_range(-3, 3, [0, 0.97333692, 0.0, -0.17111444])
-        self._test_moments_one_range(-2, 2, [0, 0.7737413, 0.0, -0.63446328])
+        self._test_moments_one_range(-3, 3, [0.0000000000000000, 0.9733369246625415, 0.0000000000000000, -0.1711144363977444])
+        self._test_moments_one_range(-2, 2, [0.0000000000000000, 0.7737413035499232, 0.0000000000000000, -0.6344632828703505])
 
-        self._test_moments_one_range(0, np.inf, [0.79788456, 0.36338023, 0.99527175, 0.8691773])
+        self._test_moments_one_range(0, np.inf, [0.7978845608028654, 0.3633802276324186, 0.9952717464311565, 0.8691773036059725])
+        self._test_moments_one_range(-np.inf, 0, [-0.7978845608028654, 0.3633802276324186, -0.9952717464311565, 0.8691773036059725])
 
-        self._test_moments_one_range(-1, 3, [0.2827861, 0.61614174, 0.53930185, -0.20582065])
-        self._test_moments_one_range(-3, 1, [-0.2827861, 0.61614174, -0.53930185, -0.20582065])
+        self._test_moments_one_range(-1, 3, [0.2827861107271540, 0.6161417353578292, 0.5393018494027878, -0.2058206513527461])
+        self._test_moments_one_range(-3, 1, [-0.2827861107271540, 0.6161417353578292, -0.5393018494027878, -0.2058206513527461])
 
-        self._test_moments_one_range(-10, -9, [-9.10845629, 0.01144881, -1.89856073, 5.07334611])
-        self._test_moments_one_range(-20, -19, [-19.05234395, 0.00272507, -1.9838686, 5.87208674])
-        self._test_moments_one_range(-30, -29, [-29.03440124, 0.00118066, -1.99297727, 5.9303358])
-        self._test_moments_one_range(-40, -39, [-39.02560741993262, 0.0006548, -1.99631464, 5.61677584])
-        self._test_moments_one_range(39, 40, [39.02560741993262, 0.0006548, 1.99631464, 5.61677584])
+        self._test_moments_one_range(-10, -9, [-9.1084562880124764, 0.0114488058210104, -1.8985607337519652, 5.0733457094223553])
+        self._test_moments_one_range(-20, -19, [-19.0523439459766628, 0.0027250730180314, -1.9838694022629291, 5.8717850028287586])
+        self._test_moments_one_range(-30, -29, [-29.0344012377394698, 0.0011806603928891, -1.9930304534611458, 5.8854062968996566])
+        self._test_moments_one_range(-40, -39, [-39.0256074199326264, 0.0006548826719649, -1.9963146354109957, 5.6167758371700494])
+        self._test_moments_one_range(39, 40, [39.0256074199326264, 0.0006548826719649, 1.9963146354109957, 5.6167758371700494])
 
     def test_9902_moments(self):
         m, v = stats.truncnorm.stats(0, np.inf, moments='mv')
@@ -607,6 +613,15 @@ class TestTruncnorm(object):
         x = stats.truncnorm.rvs(low, high, 0, 1, size=10)
         assert_(low < x.min() < x.max() < high)
 
+    def test_gh_11299_rvs(self):
+        # Arose from investigating gh-11299
+        # Test multiple shape parameters simultaneously.
+        low = [-10, 10, -np.inf, -5, -np.inf, -np.inf, -45, -45, 40, -10, 40]
+        high = [-5, 11, 5, np.inf, 40, -40, 40, -40, 45, np.inf, np.inf]
+        x = stats.truncnorm.rvs(low, high, size=(5, len(low)))
+        assert np.shape(x) == (5, len(low))
+        assert_(np.all(low <= x.min(axis=0)))
+        assert_(np.all(x.max(axis=0) <= high))
 
 class TestHypergeom(object):
     def setup_method(self):
