@@ -645,9 +645,9 @@ class TestGbsvx:
                        (0, 2.54, -2.73, 4.07),
                        (-0.23, 2.46, 2.46, -3.82),
                        (-6.98, 2.56, -4.78, 0)))
-        b = np.array((( 4.42, -36.01),
+        b = np.array(((4.42, -36.01),
                       (27.13, -31.67),
-                      (-6.14,  -1.16),
+                      (-6.14, -1.16),
                       (10.50, -25.82)))
         desired = np.array(((-2.0, 1),
                             (3.0, -4.0),
@@ -660,15 +660,15 @@ class TestGbsvx:
         assert_allclose(actual.x, desired)
 
     def test_nag_f07bpfe(self):
-        ab =  np.array(((0, 0, 0.97 - 2.84j, 0.59 - 0.48j),
-                        (0, -2.05 - 0.85j, -3.99 + 4.01j, 3.33 - 1.04j),
-                        (-1.65 + 2.26j, -1.48 - 1.75j,
-                         -1.06 + 1.94j, -0.46 -1.72j),
-                        (6.30j, -0.77 + 2.83j, 4.48 - 1.09j, 0)))
-        b =  np.array(((-1.06 + 21.50j, 12.85 + 2.84j),
-                       (-22.72 - 53.90j, -70.22 + 21.57j),
-                       ( 28.24 - 38.60j, -20.73 - 1.23j),
-                       (-34.56 + 16.73j, 26.01 + 31.97j)))
+        ab = np.array(((0, 0, 0.97 - 2.84j, 0.59 - 0.48j),
+                       (0, -2.05 - 0.85j, -3.99 + 4.01j, 3.33 - 1.04j),
+                       (-1.65 + 2.26j, -1.48 - 1.75j,
+                        -1.06 + 1.94j, -0.46 - 1.72j),
+                       (6.30j, -0.77 + 2.83j, 4.48 - 1.09j, 0)))
+        b = np.array(((-1.06 + 21.50j, 12.85 + 2.84j),
+                      (-22.72 - 53.90j, -70.22 + 21.57j),
+                      (28.24 - 38.60j, -20.73 - 1.23j),
+                      (-34.56 + 16.73j, 26.01 + 31.97j)))
         desired = np.array(((-3.0 + 2.0j, 1.0 + 6.0j),
                             (1.0 - 7.0j, -7.0 - 4.0j),
                             (-5.0 + 4.0j, 3.0 + 5.0j),
@@ -692,7 +692,7 @@ class TestGbsvx:
     @pytest.mark.parametrize('dtype', DTYPES)
     @pytest.mark.parametrize('fact', ('N', 'E'))
     @pytest.mark.parametrize('trans', ('N', 'T', 'C'))
-    def test_random_non_equilibrated (self, dtype, fact, trans):
+    def test_random_non_equilibrated(self, dtype, fact, trans):
         seed(1724)
         atol = 100 * np.finfo(dtype).eps
         m, n, nrhs = 6, 6, 4
