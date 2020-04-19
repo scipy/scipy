@@ -322,7 +322,7 @@ def splu(A, permc_spec=None, diag_pivot_thresh=None,
     if options is not None:
         _options.update(options)
 
-    # Ensure no column permutations applied
+    # Ensure that no column permutations are applied
     if (_options["ColPerm"] == "NATURAL"):
         _options["SymmetricMode"] = True
 
