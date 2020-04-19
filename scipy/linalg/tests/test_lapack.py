@@ -695,7 +695,7 @@ class TestGbsvx:
     def test_random_non_equilibrated (self, dtype, fact, trans):
         seed(1724)
         atol = 100 * np.finfo(dtype).eps
-        m, n, nrhs = 6, 6, 6
+        m, n, nrhs = 6, 6, 4
         kl, ku = 2, 1
         gbsvx = get_lapack_funcs('gbsvx', dtype=dtype)
 
@@ -718,6 +718,10 @@ class TestGbsvx:
 
         assert_equal(actual.info, 0)
         assert np.count_nonzero(actual.afb)
+        assert np.isscalar(actual.rcond)
+        assert_equal(actual.ferr.shape, (nrhs,))
+        assert_equal(actual.berr.shape, (nrhs,))
+        assert_equal(actual.afb.shape, (2 * kl + ku + 1, n))
 
         # Compare the solution using the calculated solution `x_`
         # to the pre-calculated solution
