@@ -732,6 +732,50 @@ class TestGbsvx:
         else:
             assert_allclose(b, A.conj().T @ actual.x, atol=atol)
 
+    @pytest.mark.parametrize('dtype', DTYPES)
+    def test_random_equilibrated(self, dtype):
+        seed(1724)
+        atol = 100 * np.finfo(dtype).eps
+        m, n, nrhs = 6, 6, 4
+        kl, ku = 2, 1
+        gbsvx, gbtrf = get_lapack_funcs(('gbsvx', 'gbtrf'), dtype=dtype)
+
+        # Generate the random m x n banded matrix `A` and convert it
+        # to band storage
+        A = generate_random_dtype_array((m, n), dtype)
+        A = np.triu(np.tril(A, k=ku), k=-kl)
+        A = sps.dia_matrix(A)
+        x = generate_random_dtype_array((n, nrhs), dtype)
+        b = A @ x
+
+        # Generate the lu factorization using gbtrf
+        ab = np.zeros((2*kl+ku+1, n), dtype=dtype)
+        ab[kl:] = np.flipud(A.data)
+        afb, ipiv, info = gbtrf(ab, kl, ku)
+
+        # FIXME: Increment needs to be implemented at the wrapper level
+        for i in range(len(ipiv)):
+            ipiv[i] += 1
+
+        actual = self.Actual(*gbsvx(ab=np.flipud(A.data),
+                                    afb=afb,
+                                    kl=kl,
+                                    ku=ku,
+                                    b=b,
+                                    ipiv=ipiv,
+                                    fact='F',
+                                    trans='N'))
+
+        assert_equal(actual.info, 0)
+
+        # Compare the solution using the calculated solution `x`
+        # to the pre-calculated solution
+        assert_allclose(b, A @ actual.x, atol=atol)
+
+        assert np.isscalar(actual.rcond)
+        assert_equal(actual.ferr.shape, (nrhs,))
+        assert_equal(actual.berr.shape, (nrhs,))
+
 
 def test_lartg():
     for dtype in 'fdFD':
