@@ -1449,7 +1449,7 @@ where
     \end{bmatrix}
     \end{equation*}
 
-Lastly, let's consider the separate inequality constraints on each decision variable, which are known as
+Lastly, let's consider the separate inequality constraints on individual decision variables, which are known as
 "box constraints" or "simple bounds". These constraints can be applied using the bounds argument of :func:`linprog`.
 As noted in the :func:`linprog` documentation, the default value of bounds is ``(0, None)``, meaning that the
 lower bound on each decision variable is 0, and the upper bound on each decision variable is infinity:
