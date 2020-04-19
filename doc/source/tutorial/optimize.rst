@@ -1519,12 +1519,10 @@ We can also check that all constraints are satisfied within reasonable tolerance
 
 ::
 
-    >>> print(b_ub - A_ub @ x)  # this is equivalent to result.slack
-    [[ 6.52747190e-10]  # may vary
-    [-2.26730279e-09]]  # may vary
-    >>> print(b_eq - A_eq @ x)  # this is equivalent to result.con
-    [[9.78840831e-09]  # may vary
-    [1.04662945e-08]]  # may vary
+    >>> print(b_ub - (A_ub @ x).flatten())  # this is equivalent to result.slack
+    [ 6.52747190e-10, -2.26730279e-09]  # may vary
+    >>> print(b_eq - (A_eq @ x).flatten())  # this is equivalent to result.con
+    [ 9.78840831e-09, 1.04662945e-08]]  # may vary
     >>> print([0 <= result.x[0], 0 <= result.x[1] <= 6.0, result.x[2] <= 0.5, -3.0 <= result.x[3]])
     [True, True, True, True]
 
