@@ -1535,7 +1535,7 @@ If we need greater accuracy, typically at the expense of speed, we can solve usi
         con: array([0.00000000e+00, 7.10542736e-15])  # may vary
         fun: -505.97435897435895    # may vary
     message: 'Optimization terminated successfully.'
-        nit: 5
+        nit: 5  # may vary
       slack: array([ 1.77635684e-15, -3.55271368e-15])  # may vary
      status: 0
     success: True
