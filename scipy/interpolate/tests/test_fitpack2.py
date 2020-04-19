@@ -419,33 +419,32 @@ class TestSmoothSphereBivariateSpline(object):
         phi = array([.5 * pi, pi, 1.5 * pi, .5 * pi, pi, 1.5 * pi, .5 * pi, pi,
                      1.5 * pi])
         r = array([3, 3, 3, 3, 3, 3, 3, 3, 3])
-        SmoothSphereBivariateSpline(theta, phi, r, s=1E10)
 
         with assert_raises(ValueError) as exc_info:
-            invalid_theta = array([0.0 * pi, .25 * pi, .25 * pi, .5 * pi,
+            invalid_theta = array([-0.1 * pi, .25 * pi, .25 * pi, .5 * pi,
                                    .5 * pi, .5 * pi, .75 * pi, .75 * pi,
                                    .75 * pi])
             SmoothSphereBivariateSpline(invalid_theta, phi, r, s=1E10)
-        assert "theta should be between (0, pi)" in str(exc_info.value)
+        assert "theta should be between [0, pi]" in str(exc_info.value)
 
         with assert_raises(ValueError) as exc_info:
             invalid_theta = array([.25 * pi, .25 * pi, .25 * pi, .5 * pi,
                                    .5 * pi, .5 * pi, .75 * pi, .75 * pi,
-                                   1.0 * pi])
+                                   1.1 * pi])
             SmoothSphereBivariateSpline(invalid_theta, phi, r, s=1E10)
-        assert "theta should be between (0, pi)" in str(exc_info.value)
+        assert "theta should be between [0, pi]" in str(exc_info.value)
 
         with assert_raises(ValueError) as exc_info:
-            invalid_phi = array([.0 * pi, pi, 1.5 * pi, .5 * pi, pi, 1.5 * pi,
+            invalid_phi = array([-.1 * pi, pi, 1.5 * pi, .5 * pi, pi, 1.5 * pi,
                                  .5 * pi, pi, 1.5 * pi])
             SmoothSphereBivariateSpline(theta, invalid_phi, r, s=1E10)
-        assert "phi should be between (0, 2pi)" in str(exc_info.value)
+        assert "phi should be between [0, 2pi]" in str(exc_info.value)
 
         with assert_raises(ValueError) as exc_info:
             invalid_phi = array([1.0 * pi, pi, 1.5 * pi, .5 * pi, pi, 1.5 * pi,
-                                 .5 * pi, pi, 2.0 * pi])
+                                 .5 * pi, pi, 2.1 * pi])
             SmoothSphereBivariateSpline(theta, invalid_phi, r, s=1E10)
-        assert "phi should be between (0, 2pi)" in str(exc_info.value)
+        assert "phi should be between [0, 2pi]" in str(exc_info.value)
 
         with assert_raises(ValueError) as exc_info:
             invalid_w = array([-1.0, 1.0, 1.5, 0.5, 1.0, 1.5, 0.5, 1.0, 1.0])
