@@ -100,7 +100,7 @@ entropy(%(shapes)s, loc=0, scale=1)
     (Differential) entropy of the RV.
 """
 _doc_fit = """\
-fit(data, %(shapes)s, loc=0, scale=1)
+fit(data, %(shapes)s, loc, scale)
     Parameter estimates for generic data.
 """
 _doc_expect = """\
