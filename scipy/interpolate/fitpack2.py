@@ -1543,13 +1543,13 @@ class RectSphereBivariateSpline(SphereBivariateSpline):
     ----------
     u : array_like
         1-D array of colatitude coordinates in strictly ascending order.
-        Coordinates must be given in radians and lie within the interval
-        (0, pi).
+        Coordinates must be given in radians and lie within the open interval
+        ``(0, pi)``.
     v : array_like
         1-D array of longitude coordinates in strictly ascending order.
-        Coordinates must be given in radians. First element (v[0]) must lie
-        within the interval [-pi, pi). Last element (v[-1]) must satisfy
-        v[-1] <= v[0] + 2*pi.
+        Coordinates must be given in radians. First element (``v[0]``) must lie
+        within the interval ``[-pi, pi)``. Last element (``v[-1]``) must satisfy
+        ``v[-1] <= v[0] + 2*pi``.
     r : array_like
         2-D array of data with shape ``(u.size, v.size)``.
     s : float, optional
