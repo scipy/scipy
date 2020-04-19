@@ -1387,7 +1387,7 @@ should be
 
 Next, let's consider the two inequality constraints. The first one is a "less than" inequality, so it is already in the form accepted by `linprog`.
 The second one is a "greater than" inequality, so we need to multiply both sides by :math:`-1` to convert it to a "less than" inequality.
-sides of the second inequality by :math:`-1` to get:
+Explicitly showing zero coefficients, we have:
 
 .. math::
         x_1 -x_2 -3x_3 + 0x_4  &\leq 5\\
