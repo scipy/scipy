@@ -394,6 +394,90 @@ class TestLSQSphereBivariateSpline(object):
         assert_array_almost_equal(self.lut_lsq([], []), np.zeros((0,0)))
         assert_array_almost_equal(self.lut_lsq([], [], grid=False), np.zeros((0,)))
 
+    def test_invalid_input(self):
+        ntheta, nphi = 70, 90
+        theta = linspace(0.5 / (ntheta - 1), 1 - 0.5 / (ntheta - 1),
+                         ntheta) * pi
+        phi = linspace(0.5 / (nphi - 1), 1 - 0.5 / (nphi - 1), nphi) * 2. * pi
+        data = ones((theta.shape[0], phi.shape[0]))
+        # define knots and extract data values at the knots
+        knotst = theta[::5]
+        knotsp = phi[::5]
+
+        with assert_raises(ValueError) as exc_info:
+            invalid_theta = linspace(-0.1, 1.0, num=ntheta) * pi
+            invalid_lats, lons = meshgrid(invalid_theta, phi)
+            LSQSphereBivariateSpline(invalid_lats.ravel(), lons.ravel(),
+                                     data.T.ravel(), knotst, knotsp)
+        assert "theta should be between [0, pi]" in str(exc_info.value)
+
+        with assert_raises(ValueError) as exc_info:
+            invalid_theta = linspace(0.1, 1.1, num=ntheta) * pi
+            invalid_lats, lons = meshgrid(invalid_theta, phi)
+            LSQSphereBivariateSpline(invalid_lats.ravel(), lons.ravel(),
+                                     data.T.ravel(), knotst, knotsp)
+        assert "theta should be between [0, pi]" in str(exc_info.value)
+
+        with assert_raises(ValueError) as exc_info:
+            invalid_phi = linspace(-0.1, 1.0, num=ntheta) * 2.0 * pi
+            lats, invalid_lons = meshgrid(theta, invalid_phi)
+            LSQSphereBivariateSpline(lats.ravel(), invalid_lons.ravel(),
+                                     data.T.ravel(), knotst, knotsp)
+        assert "phi should be between [0, 2pi]" in str(exc_info.value)
+
+        with assert_raises(ValueError) as exc_info:
+            invalid_phi = linspace(0.0, 1.1, num=ntheta) * 2.0 * pi
+            lats, invalid_lons = meshgrid(theta, invalid_phi)
+            LSQSphereBivariateSpline(lats.ravel(), invalid_lons.ravel(),
+                                     data.T.ravel(), knotst, knotsp)
+        assert "phi should be between [0, 2pi]" in str(exc_info.value)
+
+        lats, lons = meshgrid(theta, phi)
+
+        with assert_raises(ValueError) as exc_info:
+            invalid_knotst = np.copy(knotst)
+            invalid_knotst[0] = -0.1
+            LSQSphereBivariateSpline(lats.ravel(), lons.ravel(),
+                                     data.T.ravel(), invalid_knotst, knotsp)
+        assert "tt should be between (0, pi)" in str(exc_info.value)
+
+        with assert_raises(ValueError) as exc_info:
+            invalid_knotst = np.copy(knotst)
+            invalid_knotst[0] = pi
+            LSQSphereBivariateSpline(lats.ravel(), lons.ravel(),
+                                     data.T.ravel(), invalid_knotst, knotsp)
+        assert "tt should be between (0, pi)" in str(exc_info.value)
+
+        with assert_raises(ValueError) as exc_info:
+            invalid_knotsp = np.copy(knotsp)
+            invalid_knotsp[0] = -0.1
+            LSQSphereBivariateSpline(lats.ravel(), lons.ravel(),
+                                     data.T.ravel(), knotst, invalid_knotsp)
+        assert "tp should be between (0, 2pi)" in str(exc_info.value)
+
+        with assert_raises(ValueError) as exc_info:
+            invalid_knotsp = np.copy(knotsp)
+            invalid_knotsp[0] = 2 * pi
+            LSQSphereBivariateSpline(lats.ravel(), lons.ravel(),
+                                     data.T.ravel(), knotst, invalid_knotsp)
+        assert "tp should be between (0, 2pi)" in str(exc_info.value)
+
+        with assert_raises(ValueError) as exc_info:
+            invalid_w = array([-1.0, 1.0, 1.5, 0.5, 1.0, 1.5, 0.5, 1.0, 1.0])
+            LSQSphereBivariateSpline(lats.ravel(), lons.ravel(), data.T.ravel(),
+                                     knotst, knotsp, w=invalid_w)
+        assert "w should be positive" in str(exc_info.value)
+
+        with assert_raises(ValueError) as exc_info:
+            LSQSphereBivariateSpline(lats.ravel(), lons.ravel(), data.T.ravel(),
+                                     knotst, knotsp, eps=0.0)
+        assert "eps should be between (0, 1)" in str(exc_info.value)
+
+        with assert_raises(ValueError) as exc_info:
+            LSQSphereBivariateSpline(lats.ravel(), lons.ravel(), data.T.ravel(),
+                                     knotst, knotsp, eps=1.0)
+        assert "eps should be between (0, 1)" in str(exc_info.value)
+
 
 class TestSmoothSphereBivariateSpline(object):
     def setup_method(self):

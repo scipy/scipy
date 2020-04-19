@@ -1313,7 +1313,7 @@ class SmoothSphereBivariateSpline(SphereBivariateSpline):
     theta, phi, r : array_like
         1-D sequences of data points (order is not important). Coordinates
         must be given in radians. Theta must lie within the interval
-        ``[0, pi]``, and phi must lie within the open interval ``[0, 2pi]``.
+        ``[0, pi]``, and phi must lie within the interval ``[0, 2pi]``.
     w : array_like, optional
         Positive 1-D sequence of weights.
     s : float, optional
@@ -1324,7 +1324,7 @@ class SmoothSphereBivariateSpline(SphereBivariateSpline):
     eps : float, optional
         A threshold for determining the effective rank of an over-determined
         linear system of equations. `eps` should have a value within the open
-        interval ``(0, 1)``. The default is 1e-16.
+        interval ``(0, 1)``, the default is 1e-16.
 
     Notes
     -----
@@ -1381,7 +1381,7 @@ class SmoothSphereBivariateSpline(SphereBivariateSpline):
 
     def __init__(self, theta, phi, r, w=None, s=0., eps=1E-16):
 
-        # invalid input check
+        # input validation
         if np.any(theta < 0.0) or np.any(np.pi < theta):
             raise ValueError('theta should be between [0, pi]')
         if np.any(phi < 0.0) or np.any(2.0 * np.pi < phi):
@@ -1421,8 +1421,8 @@ class LSQSphereBivariateSpline(SphereBivariateSpline):
     ----------
     theta, phi, r : array_like
         1-D sequences of data points (order is not important). Coordinates
-        must be given in radians. Theta must lie within the interval (0, pi),
-        and phi must lie within the interval (0, 2pi).
+        must be given in radians. Theta must lie within the interval
+        ``[0, pi]``, and phi must lie within the interval ``[0, 2pi]``.
     tt, tp : array_like
         Strictly ordered 1-D sequences of knots coordinates.
         Coordinates must satisfy ``0 < tt[i] < pi``, ``0 < tp[i] < 2*pi``.
@@ -1431,8 +1431,8 @@ class LSQSphereBivariateSpline(SphereBivariateSpline):
         and `r`.
     eps : float, optional
         A threshold for determining the effective rank of an over-determined
-        linear system of equations. `eps` should have a value between 0 and 1,
-        the default is 1e-16.
+        linear system of equations. `eps` should have a value within the
+        open interval ``(0, 1)``, the default is 1e-16.
 
     Notes
     -----
@@ -1494,6 +1494,21 @@ class LSQSphereBivariateSpline(SphereBivariateSpline):
     """
 
     def __init__(self, theta, phi, r, tt, tp, w=None, eps=1E-16):
+
+        # input validation
+        if np.any(theta < 0.0) or np.any(np.pi < theta):
+            raise ValueError('theta should be between [0, pi]')
+        if np.any(phi < 0.0) or np.any(2.0 * np.pi < phi):
+            raise ValueError('phi should be between [0, 2pi]')
+        if np.any(tt <= 0.0) or np.any(np.pi <= tt):
+            raise ValueError('tt should be between (0, pi)')
+        if np.any(tp <= 0.0) or np.any(2.0 * np.pi <= tp):
+            raise ValueError('tp should be between (0, 2pi)')
+        if w is not None and np.any(w < 0.0):
+            raise ValueError('w should be positive')
+        if not 0.0 < eps < 1.0:
+            raise ValueError('eps should be between (0, 1)')
+
         if np.issubclass_(w, float):
             w = ones(len(theta)) * w
         nt_, np_ = 8 + len(tt), 8 + len(tp)
