@@ -413,7 +413,7 @@ def spilu(A, drop_tol=None, fill_factor=None, drop_rule=None, permc_spec=None,
     if options is not None:
         _options.update(options)
 
-    # Ensure no column permutations applied
+    # Ensure that no column permutations are applied
     if (_options["ColPerm"] == "NATURAL"):
         _options["SymmetricMode"] = True
 
