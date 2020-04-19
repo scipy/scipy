@@ -86,7 +86,7 @@ class UnivariateSpline(object):
         2-sequence specifying the boundary of the approximation interval. If
         None (default), ``bbox=[x[0], x[-1]]``.
     k : int, optional
-        Degree of the smoothing spline.  Must be <= 5.
+        Degree of the smoothing spline.  Must be 1 <= k <= 5.
         Default is k=3, a cubic spline.
     s : float or None, optional
         Positive smoothing factor used to choose the number of knots.  Number
@@ -165,7 +165,7 @@ class UnivariateSpline(object):
     """
     def __init__(self, x, y, w=None, bbox=[None]*2, k=3, s=None,
                  ext=0, check_finite=False):
-        x, y = np.asarray(x), np.asarray(y)
+        x, y, bbox = np.asarray(x), np.asarray(y), np.asarray(bbox)
         if w is not None:
             w = np.asarray(w)
 
@@ -186,6 +186,12 @@ class UnivariateSpline(object):
             raise ValueError("x and y should have a same length")
         elif w is not None and not x.size == y.size == w.size:
             raise ValueError("x, y, and w should have a same length")
+        elif bbox.shape != (2,):
+            raise ValueError("bbox shape should be (2,)")
+        elif not (1 <= k <= 5):
+            raise ValueError("k should be 1 <= k <= 5")
+        elif s is not None and s < 0.0:
+            raise ValueError("s should be s >= 0.0")
 
         # _data == x,y,w,xb,xe,k,s,n,t,c,fp,fpint,nrdata,ier
         try:
@@ -1095,8 +1101,8 @@ class LSQBivariateSpline(BivariateSpline):
         Degrees of the bivariate spline. Default is 3.
     eps : float, optional
         A threshold for determining the effective rank of an over-determined
-        linear system of equations. `eps` should have a value within the 0 and 1,
-        the default is 1e-16.
+        linear system of equations. `eps` should have a value within the open
+        interval (0, 1), the default is 1e-16.
 
     See Also
     --------

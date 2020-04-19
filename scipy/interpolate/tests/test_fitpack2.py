@@ -238,6 +238,18 @@ class TestUnivariateSpline(object):
             UnivariateSpline(x_values, y_values, w=w_values)
         assert "x, y, and w should have a same length" in str(exc_info.value)
 
+        with assert_raises(ValueError) as exc_info:
+            bbox = (-1)
+            UnivariateSpline(x_values, y_values, bbox=bbox)
+        assert "bbox shape should be (2,)" in str(exc_info.value)
+
+        with assert_raises(ValueError) as exc_info:
+            UnivariateSpline(x_values, y_values, k=6)
+        assert "k should be 1 <= k <= 5" in str(exc_info.value)
+
+        with assert_raises(ValueError) as exc_info:
+            UnivariateSpline(x_values, y_values, s=-1.0)
+        assert "s should be s >= 0.0" in str(exc_info.value)
 
 
 class TestLSQBivariateSpline(object):
