@@ -240,6 +240,79 @@ def _chk2_asarray(a, b, axis):
     return a, b, outaxis
 
 
+def _shape_with_dropped_axis(a, axis):
+    """
+    Given an array `a` and an integer `axis`, return the shape
+    of `a` with the `axis` dimension removed.
+
+    Examples
+    --------
+    >>> a = np.zeros((3, 5, 2))
+    >>> _shape_with_dropped_axis(a, 1)
+    (3, 2)
+    """
+    shp = list(a.shape)
+    try:
+        del shp[axis]
+    except IndexError:
+        raise np.AxisError(axis, a.ndim) from None
+    return tuple(shp)
+
+
+def _broadcast_shapes(shape1, shape2):
+    """
+    Given two shapes (i.e. tuples of integers), return the shape
+    that would result from broadcasting two arrays with the given
+    shapes.
+
+    Examples
+    --------
+    >>> _broadcast_shapes((2, 1), (4, 1, 3))
+    (4, 2, 3)
+    """
+    d = len(shape1) - len(shape2)
+    if d <= 0:
+        shp1 = (1,)*(-d) + shape1
+        shp2 = shape2
+    elif d > 0:
+        shp1 = shape1
+        shp2 = (1,)*d + shape2
+    shape = []
+    for n1, n2 in zip(shp1, shp2):
+        if n1 == 1:
+            n = n2
+        elif n2 == 1 or n1 == n2:
+            n = n1
+        else:
+            raise ValueError(f'shapes {shape1} and {shape2} could not be '
+                             'broadcast together')
+        shape.append(n)
+    return tuple(shape)
+
+
+def _broadcast_shapes_with_dropped_axis(a, b, axis):
+    """
+    Given two arrays `a` and `b` and an integer `axis`, find the
+    shape of the broadcast result after dropping `axis` from the
+    shapes of `a` and `b`.
+
+    Examples
+    --------
+    >>> a = np.zeros((5, 2, 1))
+    >>> b = np.zeros((1, 9, 3))
+    >>> _broadcast_shapes_with_dropped_axis(a, b, 1)
+    (5, 3)
+    """
+    shp1 = _shape_with_dropped_axis(a, axis)
+    shp2 = _shape_with_dropped_axis(b, axis)
+    try:
+        shp = _broadcast_shapes(shp1, shp2)
+    except ValueError:
+        raise ValueError(f'non-axis shapes {shp1} and {shp2} could not be '
+                         'broadcast together') from None
+    return shp
+
+
 def gmean(a, axis=0, dtype=None):
     """
     Compute the geometric mean along the specified axis.
@@ -5079,6 +5152,48 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
     return Ttest_indResult(*res)
 
 
+def _ttest_nans(a, b, axis, namedtuple_type):
+    """
+    Generate an array of `nan`, with shape determined by `a`, `b` and `axis`.
+
+    This function is used by ttest_ind and ttest_rel to create the return
+    value when one of the inputs has size 0.
+
+    The shapes of the arrays are determined by dropping `axis` from the
+    shapes of `a` and `b` and broadcasting what is left.
+
+    The return value is a named tuple of the type given in `namedtuple_type`.
+
+    Examples
+    --------
+    >>> a = np.zeros((9, 2))
+    >>> b = np.zeros((5, 1))
+    >>> _ttest_nans(a, b, 0, Ttest_indResult)
+    Ttest_indResult(statistic=array([nan, nan]), pvalue=array([nan, nan]))
+
+    >>> a = np.zeros((3, 0, 9))
+    >>> b = np.zeros((1, 10))
+    >>> stat, p = _ttest_nans(a, b, -1, Ttest_indResult)
+    >>> stat
+    array([], shape=(3, 0), dtype=float64)
+    >>> p
+    array([], shape=(3, 0), dtype=float64)
+
+    >>> a = np.zeros(10)
+    >>> b = np.zeros(7)
+    >>> _ttest_nans(a, b, 0, Ttest_indResult)
+    Ttest_indResult(statistic=nan, pvalue=nan)
+    """
+    shp = _broadcast_shapes_with_dropped_axis(a, b, axis)
+    if len(shp) == 0:
+        t = np.nan
+        p = np.nan
+    else:
+        t = np.full(shp, fill_value=np.nan)
+        p = t.copy()
+    return namedtuple_type(t, p)
+
+
 def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate'):
     """
     Calculate the T-test for the means of *two independent* samples of scores.
@@ -5109,7 +5224,6 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate'):
           * 'propagate': returns nan
           * 'raise': throws an error
           * 'omit': performs the calculations ignoring nan values
-
 
     Returns
     -------
@@ -5190,7 +5304,7 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate'):
         return mstats_basic.ttest_ind(a, b, axis, equal_var)
 
     if a.size == 0 or b.size == 0:
-        return Ttest_indResult(np.nan, np.nan)
+        return _ttest_nans(a, b, axis, Ttest_indResult)
 
     v1 = np.var(a, axis, ddof=1)
     v2 = np.var(b, axis, ddof=1)
@@ -5205,6 +5319,14 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate'):
     res = _ttest_ind_from_stats(np.mean(a, axis), np.mean(b, axis), denom, df)
 
     return Ttest_indResult(*res)
+
+
+def _get_len(a, axis, msg):
+    try:
+        n = a.shape[axis]
+    except IndexError:
+        raise np.AxisError(axis, a.ndim, msg) from None
+    return n
 
 
 Ttest_relResult = namedtuple('Ttest_relResult', ('statistic', 'pvalue'))
@@ -5287,11 +5409,13 @@ def ttest_rel(a, b, axis=0, nan_policy='propagate'):
         bb = ma.array(b, mask=m, copy=True)
         return mstats_basic.ttest_rel(aa, bb, axis)
 
-    if a.shape[axis] != b.shape[axis]:
+    na = _get_len(a, axis, "first argument")
+    nb = _get_len(b, axis, "second argument")
+    if na != nb:
         raise ValueError('unequal length arrays')
 
-    if a.size == 0 or b.size == 0:
-        return np.nan, np.nan
+    if na == 0:
+        return _ttest_nans(a, b, axis, Ttest_relResult)
 
     n = a.shape[axis]
     df = n - 1
