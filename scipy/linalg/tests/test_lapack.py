@@ -1900,31 +1900,33 @@ def test_gejsv_general(size, dtype, joba, jobu, jobv, jobr, jobt, jobp):
             assert_equal(iwork[2], 0)
 
 
-@pytest.mark.parametrize(('dtype', 'shape', 'kwargs', 'status'),
-                         [(np.float, (1, 0), {}, 0),
-                          (np.float, (1, 1), {}, 0),
-                          (np.float, None, {}, 0),
-                          ])
-def test_gejsv_edge_arguments(dtype, shape, kwargs, status):
+@pytest.mark.parametrize('dtype', REAL_DTYPES)
+def test_gejsv_edge_arguments(dtype):
     """Test edge arguments return expected status"""
-    A = np.ones(shape, dtype=dtype)
     gejsv = get_lapack_funcs('gejsv', dtype=dtype)
-    sva, u, v, work, iwork, info = gejsv(A, **kwargs)
-    assert_equal(info, status)
 
-    # The argument tests occur before any calculations are performed
-    # but we still expect the wrapper to generate the output arrays.
-    m, n = (1, 1) if shape is None else shape
-    assert_equal((max(1, m), n), u.shape)
-    assert_equal((max(1, n), n), v.shape)
-    assert_equal((n,), sva.shape)
+    # scalar A
+    sva, u, v, work, iwork, info = gejsv(1.)
+    assert_equal(info, 0)
+    assert_equal(u.shape, (1, 1))
+    assert_equal(v.shape, (1, 1))
+    assert_equal(sva, np.array([1.], dtype=dtype))
 
-    # As no calculations are performed all output arrays should be strictly
-    # zero when info != 0.
-    if status != 0:
-        assert_equal(np.count_nonzero(sva), 0)
-        assert_equal(np.count_nonzero(u), 0)
-        assert_equal(np.count_nonzero(v), 0)
+    # 1d A
+    A = np.ones((1,), dtype=dtype)
+    sva, u, v, work, iwork, info = gejsv(A)
+    assert_equal(info, 0)
+    assert_equal(u.shape, (1, 1))
+    assert_equal(v.shape, (1, 1))
+    assert_equal(sva, np.array([1.], dtype=dtype))
+
+    # 2d empty A
+    A = np.ones((1, 0), dtype=dtype)
+    sva, u, v, work, iwork, info = gejsv(A)
+    assert_equal(info, 0)
+    assert_equal(u.shape, (1, 0))
+    assert_equal(v.shape, (1, 0))
+    assert_equal(sva, np.array([], dtype=dtype))
 
 
 @pytest.mark.parametrize(('kwargs'),
