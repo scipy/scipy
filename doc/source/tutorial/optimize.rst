@@ -1465,7 +1465,7 @@ Finally, we can solve the transformed problem using :func:`linprog`.
     >>> from scipy.optimize import linprog
     >>> c = np.array([-29.0, -45.0, 0.0, 0.0])
     >>> A_ub = np.array([[1.0, -1.0, -3.0, 0.0],
-    ...                [-2.0, 3.0, 7.0, -3.0]])
+    ...                 [-2.0, 3.0, 7.0, -3.0]])
     >>> b_ub = np.array([5.0, -10.0])
     >>> A_eq = np.array([[2.0, 8.0, 1.0, 0.0],
     ...                 [4.0, 4.0, 0.0, 1.0]])
