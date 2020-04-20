@@ -223,33 +223,91 @@ class TestUnivariateSpline(object):
         assert_raises(ValueError, LSQUnivariateSpline,
                 **dict(x=x, y=y, t=t, w=w, check_finite=True))
 
-    def test_invalid_input(self):
+    def test_invalid_input_for_univariate_spline(self):
 
-        with assert_raises(ValueError) as exc_info:
+        with assert_raises(ValueError) as info:
             x_values = [1, 2, 4, 6, 8.5]
             y_values = [0.5, 0.8, 1.3, 2.5]
             UnivariateSpline(x_values, y_values)
-        assert "x and y should have a same length" in str(exc_info.value)
+        assert "x and y should have a same length" in str(info.value)
 
-        with assert_raises(ValueError) as exc_info:
+        with assert_raises(ValueError) as info:
             x_values = [1, 2, 4, 6, 8.5]
             y_values = [0.5, 0.8, 1.3, 2.5, 2.8]
             w_values = [-1.0, 1.0, 1.0, 1.0]
             UnivariateSpline(x_values, y_values, w=w_values)
-        assert "x, y, and w should have a same length" in str(exc_info.value)
+        assert "x, y, and w should have a same length" in str(info.value)
 
-        with assert_raises(ValueError) as exc_info:
+        with assert_raises(ValueError) as info:
             bbox = (-1)
             UnivariateSpline(x_values, y_values, bbox=bbox)
-        assert "bbox shape should be (2,)" in str(exc_info.value)
+        assert "bbox shape should be (2,)" in str(info.value)
 
-        with assert_raises(ValueError) as exc_info:
+        with assert_raises(ValueError) as info:
             UnivariateSpline(x_values, y_values, k=6)
-        assert "k should be 1 <= k <= 5" in str(exc_info.value)
+        assert "k should be 1 <= k <= 5" in str(info.value)
 
-        with assert_raises(ValueError) as exc_info:
+        with assert_raises(ValueError) as info:
             UnivariateSpline(x_values, y_values, s=-1.0)
-        assert "s should be s >= 0.0" in str(exc_info.value)
+        assert "s should be s >= 0.0" in str(info.value)
+
+    def test_invalid_input_for_interpolated_univariate_spline(self):
+
+        with assert_raises(ValueError) as info:
+            x_values = [1, 2, 4, 6, 8.5]
+            y_values = [0.5, 0.8, 1.3, 2.5]
+            InterpolatedUnivariateSpline(x_values, y_values)
+        assert "x and y should have a same length" in str(info.value)
+
+        with assert_raises(ValueError) as info:
+            x_values = [1, 2, 4, 6, 8.5]
+            y_values = [0.5, 0.8, 1.3, 2.5, 2.8]
+            w_values = [-1.0, 1.0, 1.0, 1.0]
+            InterpolatedUnivariateSpline(x_values, y_values, w=w_values)
+        assert "x, y, and w should have a same length" in str(info.value)
+
+        with assert_raises(ValueError) as info:
+            bbox = (-1)
+            InterpolatedUnivariateSpline(x_values, y_values, bbox=bbox)
+        assert "bbox shape should be (2,)" in str(info.value)
+
+        with assert_raises(ValueError) as info:
+            InterpolatedUnivariateSpline(x_values, y_values, k=6)
+        assert "k should be 1 <= k <= 5" in str(info.value)
+
+    def test_invalid_input_for_lsq_univariate_spline(self):
+
+        x_values = [1, 2, 4, 6, 8.5]
+        y_values = [0.5, 0.8, 1.3, 2.5, 2.8]
+        spl = UnivariateSpline(x_values, y_values, check_finite=True)
+        t_values = spl.get_knots()[3:4]  # interior knots w/ default k=3
+
+        with assert_raises(ValueError) as info:
+            x_values = [1, 2, 4, 6, 8.5]
+            y_values = [0.5, 0.8, 1.3, 2.5]
+            LSQUnivariateSpline(x_values, y_values, t_values)
+        assert "x and y should have a same length" in str(info.value)
+
+        with assert_raises(ValueError) as info:
+            x_values = [1, 2, 4, 6, 8.5]
+            y_values = [0.5, 0.8, 1.3, 2.5, 2.8]
+            w_values = [-1.0, 1.0, 1.0, 1.0]
+            LSQUnivariateSpline(x_values, y_values, t_values, w=w_values)
+        assert "x, y, and w should have a same length" in str(info.value)
+
+        with assert_raises(ValueError) as info:
+            bbox = (100, -100)
+            LSQUnivariateSpline(x_values, y_values, t_values, bbox=bbox)
+        assert "Interior knots t must satisfy Schoenberg-Whitney conditions" in str(info.value)
+
+        with assert_raises(ValueError) as info:
+            bbox = (-1)
+            LSQUnivariateSpline(x_values, y_values, t_values, bbox=bbox)
+        assert "bbox shape should be (2,)" in str(info.value)
+
+        with assert_raises(ValueError) as info:
+            LSQUnivariateSpline(x_values, y_values, t_values, k=6)
+        assert "k should be 1 <= k <= 5" in str(info.value)
 
 
 class TestLSQBivariateSpline(object):

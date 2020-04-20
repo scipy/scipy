@@ -165,10 +165,23 @@ class UnivariateSpline(object):
     """
     def __init__(self, x, y, w=None, bbox=[None]*2, k=3, s=None,
                  ext=0, check_finite=False):
+
+        x, y, w, bbox = self.validate_input(x, y, w, bbox, k, s, ext,
+                                            check_finite)
+
+        # _data == x,y,w,xb,xe,k,s,n,t,c,fp,fpint,nrdata,ier
+        data = dfitpack.fpcurf0(x, y, k, w=w, xb=bbox[0],
+                                xe=bbox[1], s=s)
+        if data[-1] == 1:
+            # nest too small, setting to maximum bound
+            data = self._reset_nest(data)
+        self._data = data
+        self._reset_class()
+
+    def validate_input(self, x, y, w, bbox, k, s, ext, check_finite):
         x, y, bbox = np.asarray(x), np.asarray(y), np.asarray(bbox)
         if w is not None:
             w = np.asarray(w)
-
         if check_finite:
             w_finite = np.isfinite(w).all() if w is not None else True
             if (not np.isfinite(x).all() or not np.isfinite(y).all() or
@@ -181,7 +194,6 @@ class UnivariateSpline(object):
         else:
             if not np.all(diff(x) > 0.0):
                 raise ValueError("x must be strictly increasing if s = 0")
-
         if x.size != y.size:
             raise ValueError("x and y should have a same length")
         elif w is not None and not x.size == y.size == w.size:
@@ -193,19 +205,12 @@ class UnivariateSpline(object):
         elif s is not None and s < 0.0:
             raise ValueError("s should be s >= 0.0")
 
-        # _data == x,y,w,xb,xe,k,s,n,t,c,fp,fpint,nrdata,ier
         try:
             self.ext = _extrap_modes[ext]
         except KeyError:
             raise ValueError("Unknown extrapolation mode %s." % ext)
 
-        data = dfitpack.fpcurf0(x, y, k, w=w, xb=bbox[0],
-                                xe=bbox[1], s=s)
-        if data[-1] == 1:
-            # nest too small, setting to maximum bound
-            data = self._reset_nest(data)
-        self._data = data
-        self._reset_class()
+        return x, y, w, bbox
 
     @classmethod
     def _from_tck(cls, tck, ext=0):
@@ -611,6 +616,9 @@ class InterpolatedUnivariateSpline(UnivariateSpline):
     def __init__(self, x, y, w=None, bbox=[None]*2, k=3,
                  ext=0, check_finite=False):
 
+        x, y, w, bbox = self.validate_input(x, y, w, bbox, k, None,
+                                            ext, check_finite)
+
         if check_finite:
             w_finite = np.isfinite(w).all() if w is not None else True
             if (not np.isfinite(x).all() or not np.isfinite(y).all() or
@@ -623,11 +631,6 @@ class InterpolatedUnivariateSpline(UnivariateSpline):
         self._data = dfitpack.fpcurf0(x, y, k, w=w, xb=bbox[0],
                                       xe=bbox[1], s=0)
         self._reset_class()
-
-        try:
-            self.ext = _extrap_modes[ext]
-        except KeyError:
-            raise ValueError("Unknown extrapolation mode %s." % ext)
 
 
 _fpchec_error_string = """The input parameters have been rejected by fpchec. \
@@ -750,6 +753,9 @@ class LSQUnivariateSpline(UnivariateSpline):
     def __init__(self, x, y, t, w=None, bbox=[None]*2, k=3,
                  ext=0, check_finite=False):
 
+        x, y, w, bbox = self.validate_input(x, y, w, bbox, k, None, ext,
+                                            check_finite)
+
         if check_finite:
             w_finite = np.isfinite(w).all() if w is not None else True
             if (not np.isfinite(x).all() or not np.isfinite(y).all() or
@@ -775,11 +781,6 @@ class LSQUnivariateSpline(UnivariateSpline):
         data = dfitpack.fpcurfm1(x, y, k, t, w=w, xb=xb, xe=xe)
         self._data = data[:-3] + (None, None, data[-1])
         self._reset_class()
-
-        try:
-            self.ext = _extrap_modes[ext]
-        except KeyError:
-            raise ValueError("Unknown extrapolation mode %s." % ext)
 
 
 # ############### Bivariate spline ####################
