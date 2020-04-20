@@ -7582,17 +7582,17 @@ class truncnorm_gen(rv_continuous):
         g2 = mu4 / mu2**2 - 3
         return mu, mu2, g1, g2
 
-    def _rvs(self, a, b):
+    def _rvs(self, a, b, size=1, random_state=None):
         # if a and b are scalar, use _rvs_scalar, otherwise need to create
         # output by iterating over parameters
         if np.isscalar(a) and np.isscalar(b):
-            out = self._rvs_scalar(a, b, self._size)
+            out = self._rvs_scalar(a, b, size, random_state=random_state)
         elif a.size == 1 and b.size == 1:
-            out = self._rvs_scalar(a.item(), b.item(), self._size)
+            out = self._rvs_scalar(a.item(), b.item(), size, random_state=random_state)
         else:
-            # When this method is called, self._size will be a (possibly empty)
+            # When this method is called, size will be a (possibly empty)
             # tuple of integers.  It will not be None; if `size=None` is passed
-            # to `rvs()`, self._size will be the empty tuple ().
+            # to `rvs()`, size will be the empty tuple ().
 
             a, b = np.broadcast_arrays(a, b)
             # a and b now have the same shape.
@@ -7600,11 +7600,11 @@ class truncnorm_gen(rv_continuous):
             # `shp` is the shape of the blocks of random variates that are
             # generated for each combination of parameters associated with
             # broadcasting a and b.
-            # bc is a tuple the same lenth as self._size.  The values
+            # bc is a tuple the same length as size.  The values
             # in bc are bools.  If bc[j] is True, it means that
             # entire axis is filled in for a given combination of the
             # broadcast arguments.
-            shp, bc = _check_shape(a.shape, self._size)
+            shp, bc = _check_shape(a.shape, size)
 
             # `numsamples` is the total number of variates to be generated
             # for each combination of the input arguments.
@@ -7612,7 +7612,7 @@ class truncnorm_gen(rv_continuous):
 
             # `out` is the array to be returned.  It is filled in in the
             # loop below.
-            out = np.empty(self._size)
+            out = np.empty(size)
 
             it = np.nditer([a, b],
                            flags=['multi_index'],
@@ -7624,19 +7624,19 @@ class truncnorm_gen(rv_continuous):
                 # index value from it.multi_index.  len(it.multi_index) might
                 # be less than len(bc), and in that case we want to align these
                 # two sequences to the right, so the loop variable j runs from
-                # -len(self._size) to 0.  This doesn't cause an IndexError, as
+                # -len(size) to 0.  This doesn't cause an IndexError, as
                 # bc[j] will be True in those cases where it.multi_index[j]
                 # would cause an IndexError.
                 idx = tuple((it.multi_index[j] if not bc[j] else slice(None))
-                            for j in range(-len(self._size), 0))
-                out[idx] = self._rvs_scalar(it[0], it[1], numsamples).reshape(shp)
+                            for j in range(-len(size), 0))
+                out[idx] = self._rvs_scalar(it[0], it[1], numsamples, random_state).reshape(shp)
                 it.iternext()
 
-        if self._size == ():
+        if size == ():
             out = out[()]
         return out
 
-    def _rvs_scalar(self, a, b, numsamples=None):
+    def _rvs_scalar(self, a, b, numsamples=None, random_state=None):
         if not numsamples:
             numsamples = 1
 
@@ -7644,14 +7644,9 @@ class truncnorm_gen(rv_continuous):
         size1d = tuple(np.atleast_1d(numsamples))
         N = np.prod(size1d)  # number of rvs needed, reshape upon return
         # Calculate some rvs
-        U = self._random_state.random_sample(N)
-        # U[0] = 0.5
+        U = random_state.random_sample(N)
         x = self._ppf(U, a, b)
-
         rvs = np.reshape(x, size1d)
-        if self._size == ():
-            # return scalar in that case; however, return array if size == 1
-            return rvs[0]
         return rvs
 
 
@@ -8419,7 +8414,7 @@ class argus_gen(rv_continuous):
             out = out[()]
         return out
 
-    def _rvs_scalar(self, chi, numsamples=None, size=1, random_state=None):
+    def _rvs_scalar(self, chi, numsamples=None, random_state=None):
         # if chi <= 2.611:
         # use rejection method, see Devroye:
         # Non-Uniform Random Variate Generation, 1986, section II.3.2.
@@ -8478,9 +8473,6 @@ class argus_gen(rv_continuous):
                     x[simulated:(simulated + num_accept)] = rvs
                     simulated += num_accept
 
-            if size == ():
-                # return scalar if rvs() is called without size specified
-                return x[0]
             return np.reshape(x, size1d)
         else:
             # use ratio of uniforms method
