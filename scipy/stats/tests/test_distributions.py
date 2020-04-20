@@ -3154,8 +3154,9 @@ class TestTrapz(object):
         assert_almost_equal(stats.trapz.cdf(0.9, 0.2, 0.8), 0.96875)
         assert_almost_equal(stats.trapz.cdf(1.0, 0.2, 0.8), 1.0)
 
+    def test_moments_and_entropy(self):
         # issue #11795: improve precision of trapz stats
-        # Apply formulas from wikipedia for the following van Dorn parameters:
+        # Apply formulas from Wikipedia for the following parameters:
         a, b, c, d = -3, -1, 2, 3  # => 1/3, 5/6, -3, 6
         p1, p2, loc, scale = (b-a) / (d-a), (c-a) / (d-a), a, d-a
         h = 2 / (d+c-b-a)
