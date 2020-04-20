@@ -3,7 +3,6 @@
 
 import operator
 import math
-import sys
 import timeit
 from scipy.spatial import cKDTree
 from . import sigtools, dlti
@@ -915,7 +914,8 @@ def _conv_ops(x_shape, h_shape, mode):
         elif mode == "valid":
             direct_ops = (s2 - s1 + 1) * s1 if s2 >= s1 else (s1 - s2 + 1) * s2
         elif mode == "same":
-            direct_ops = s1 * s2 if s1 < s2 else s1 * s2 - (s2 // 2) * ((s2 + 1) // 2)
+            direct_ops = (s1 * s2 if s1 < s2 else
+                          s1 * s2 - (s2 // 2) * ((s2 + 1) // 2))
     else:
         if mode == "full":
             direct_ops = min(_prod(s1), _prod(s2)) * _prod(out_shape)
@@ -1377,12 +1377,12 @@ def medfilt(volume, kernel_size=None):
         An array the same size as input containing the median filtered
         result.
 
-    Warns 
-    -------
+    Warns
+    -----
     UserWarning
         If array size is smaller than kernel size along any dimension
 
-    See also
+    See Also
     --------
     scipy.ndimage.median_filter
 
@@ -1402,7 +1402,8 @@ def medfilt(volume, kernel_size=None):
         if (kernel_size[k] % 2) != 1:
             raise ValueError("Each element of kernel_size should be odd.")
     if any(k > s for k, s in zip(kernel_size, volume.shape)):
-        warnings.warn('kernel_size exceeds volume extent: the volume will be zero-padded.')
+        warnings.warn('kernel_size exceeds volume extent: the volume will be '
+                      'zero-padded.')
 
     domain = np.ones(kernel_size)
 
@@ -2781,7 +2782,7 @@ def invresz(r, p, k, tol=1e-3, rtype='avg'):
     return numerator[::-1], denominator
 
 
-def resample(x, num, t=None, axis=0, window=None):
+def resample(x, num, t=None, axis=0, window=None, domain='time'):
     """
     Resample `x` to `num` samples using Fourier method along the given axis.
 
@@ -2803,6 +2804,10 @@ def resample(x, num, t=None, axis=0, window=None):
     window : array_like, callable, string, float, or tuple, optional
         Specifies the window applied to the signal in the Fourier
         domain.  See below for details.
+    domain : string, optional
+        A string indicating the domain of the input `x`:
+        ``time`` Consider the input `x` as time-domain (Default),
+        ``freq`` Consider the input `x` as frequency-domain.
 
     Returns
     -------
@@ -2861,17 +2866,25 @@ def resample(x, num, t=None, axis=0, window=None):
     >>> plt.legend(['data', 'resampled'], loc='best')
     >>> plt.show()
     """
+
+    if domain not in ('time', 'freq'):
+        raise ValueError("Acceptable domain flags are 'time' or"
+                         " 'freq', not domain={}".format(domain))
+
     x = np.asarray(x)
     Nx = x.shape[axis]
 
     # Check if we can use faster real FFT
     real_input = np.isrealobj(x)
 
-    # Forward transform
-    if real_input:
-        X = sp_fft.rfft(x, axis=axis)
-    else:  # Full complex FFT
-        X = sp_fft.fft(x, axis=axis)
+    if domain == 'time':
+        # Forward transform
+        if real_input:
+            X = sp_fft.rfft(x, axis=axis)
+        else:  # Full complex FFT
+            X = sp_fft.fft(x, axis=axis)
+    else:  # domain == 'freq'
+        X = x
 
     # Apply window to spectrum
     if window is not None:
@@ -3936,8 +3949,8 @@ def _validate_pad(padtype, padlen, x, axis, ntaps):
 
     # x's 'axis' dimension must be bigger than edge.
     if x.shape[axis] <= edge:
-        raise ValueError("The length of the input vector x must be greater than "
-                         "padlen, which is %d." % edge)
+        raise ValueError("The length of the input vector x must be greater "
+                         "than padlen, which is %d." % edge)
 
     if padtype is not None and edge > 0:
         # Make an extension of length `edge` at each

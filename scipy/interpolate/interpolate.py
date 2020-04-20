@@ -518,8 +518,14 @@ class interp1d(_Interpolator1D):
                 # to get the correct shape of the output, which we then fill
                 # with nans.
                 # For slinear or zero order spline, we just pass nans through.
-                if np.isnan(self.x).any():
-                    xx = np.linspace(min(self.x), max(self.x), len(self.x))
+                mask = np.isnan(self.x)
+                if mask.any():
+                    sx = self.x[~mask]
+                    if sx.size == 0:
+                        raise ValueError("`x` array is all-nan")                        
+                    xx = np.linspace(np.nanmin(self.x),
+                                     np.nanmax(self.x),
+                                     len(self.x))
                     rewrite_nan = True
                 if np.isnan(self._y).any():
                     yy = np.ones_like(self._y)

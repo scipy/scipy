@@ -3,11 +3,14 @@ from libc cimport math
 cimport cython
 cimport numpy as np
 from numpy.math cimport PI
+from numpy.math cimport INFINITY
+from numpy.math cimport NAN
 from numpy cimport ndarray, int64_t, float64_t, intp_t
 
 import warnings
 import numpy as np
 import scipy.stats, scipy.special
+cimport scipy.special.cython_special as cs
 
 
 cdef double von_mises_cdf_series(double k, double x, unsigned int p):
@@ -477,3 +480,34 @@ def _local_correlations(distx, disty, global_corr='mgc'):
     corr_mat[:, local_vary <= 0] = 0
 
     return corr_mat
+
+
+cpdef double geninvgauss_logpdf(double x, double p, double b) nogil:
+    return _geninvgauss_logpdf_kernel(x, p, b)
+
+
+cdef double _geninvgauss_logpdf_kernel(double x, double p, double b) nogil:
+    cdef double z, c
+
+    if x <= 0:
+        return -INFINITY
+
+    z = cs.kve(p, b)
+    if math.isinf(z):
+        return NAN
+
+    c = -math.log(2) - math.log(z) + b
+    return c + (p - 1)*math.log(x) - b*(x + 1/x)/2
+
+
+cdef double _geninvgauss_pdf(double x, void *user_data) nogil except *:
+    # destined to be used in a LowLevelCallable
+    cdef double p, b
+
+    if x <= 0:
+        return 0.
+
+    p = (<double *>user_data)[0]
+    b = (<double *>user_data)[1]
+
+    return math.exp(_geninvgauss_logpdf_kernel(x, p, b))
