@@ -1,6 +1,47 @@
 ! Signatures for f2py-wrappers of FORTRAN LAPACK Other Auxillary and Computational functions.
 !
 
+subroutine <prefix2>gejsv(joba,jobu,jobv,jobr,jobt,jobp,m,n,a,lda,sva,u,ldu,v,ldv,work,workout,lwork,iwork,iworkout,info)
+    ! ?GEJSV computes the singular value decomposition (SVD) of a complex
+    ! M-by-N matrix [A], where M >= N. The SVD of [A] is written as
+    !
+    !              [A] = [U] * [SIGMA] * [V]^*,
+    !
+    ! where [SIGMA] is an N-by-N (M-by-N) matrix which is zero except for its N
+    ! diagonal elements, [U] is an M-by-N (or M-by-M) unitary matrix, and
+    ! [V] is an N-by-N unitary matrix. The diagonal elements of [SIGMA] are
+    ! the singular values of [A]. The columns of [U] and [V] are the left and
+    ! the right singular vectors of [A], respectively. The matrices [U] and [V]
+    ! are computed and stored in the arrays U and V, respectively. The diagonal
+    ! of [SIGMA] is computed and stored in the array SVA.
+    callstatement {int i;(*f2py_func)(&"CEFGAR"[joba],&"UFWN"[jobu],&"VJWN"[jobv],(jobr?"R":"N"),(jobt?"T":"N"),(jobp?"P":"N"),&m,&n,a,&lda,sva,u,&ldu,v,&ldv,work,&lwork,iwork,&info);for(i=0;i\<7;i++){workout[i] = work[i];}for(i=0;i\<3;i++){iworkout[i] = iwork[i];}}
+    callprotoargument char*,char*,char*,char*,char*,char*,int*,int*,<ctype2>*,int*,<ctype2>*,<ctype2>*,int*,<ctype2>*,int*,<ctype2>*,int*,int*,int*
+
+    integer intent(in, optional), check((0 <= joba) && (joba < 6)) :: joba = 4
+    integer intent(in, optional), check((0 <= jobu) && (jobu < 4)) :: jobu = 0
+    integer intent(in, optional), check((0 <= jobv) && (jobv < 4) && ((jobv < 1) || (1 < jobv) || ((jobv == 1) && (jobu < 2)))), depend(jobu) :: jobv = 0
+    integer intent(in, optional), check((jobr == 0) || (jobr == 1)) :: jobr = 1
+    integer intent(in, optional), check((jobt == 0) || (jobt == 1)) :: jobt = 0
+    integer intent(in, optional), check((jobp == 0) || (jobp == 1)) :: jobp = 1
+
+    integer intent(hide), depend(a), check(m>=n), depend(n) :: m = shape(a, 0)
+    integer intent(hide), depend(a) :: n = shape(a, 1)
+    <ftype2> intent(in), dimension(lda, n) :: a
+    integer intent(hide), depend(a) :: lda = max(1, shape(a, 0))
+    <ftype2> intent(out), depend(n), dimension(n) :: sva
+    <ftype2> intent(out), depend(ldu, n, jobt, jobu, m), dimension(((jobt == 0)&&(jobu == 3)?0:m), ((jobt == 0)&&(jobu == 3)?0:(jobu == 1?m:n))) :: u
+    integer intent(hide), depend(m, jobu) :: ldu = max(1, (jobu < 3?m:1))
+    <ftype2> intent(out), depend(ldv, n, jobt, jobv), dimension(((jobt == 0)&&(jobv == 3)?0:ldv),((jobt == 0)&&(jobv == 3)?0:n)) :: v
+    integer intent(hide), depend(n, jobv) :: ldv = max(1, (jobv < 3?n:1))
+    <ftype2> intent(hide), depend(lwork), dimension(lwork) :: work
+    <ftype2> intent(out), dimension(7) :: workout
+    integer intent(in, optional), depend(m, n), check(lwork>=7) :: lwork = max(6*n+2*n*n, max(2*m+n, max(4*n+n*n, max(2*n+n*n+6, 7))))
+    integer intent(hide), depend(m ,n), dimension(MAX(3, m+3*n)) :: iwork
+    integer intent(out), dimension(3) :: iworkout
+    integer intent(out) :: info
+
+end subroutine <prefix2>gejsv
+
 subroutine <prefix2>tgsen(ijob,wantq,wantz,select,n,a,lda,b,ldb,alphar,alphai,beta,q,ldq,z,ldz,m,pl,pr,dif,work,lwork,iwork,liwork,info)
 
     callstatement (*f2py_func)(&ijob,&wantq,&wantz,select,&n,a,&lda,b,&ldb,alphar,alphai,beta,q,&ldq,z,&ldz,&m,&pl,&pr,dif,work,&lwork,iwork,&liwork,&info)
