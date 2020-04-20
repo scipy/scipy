@@ -672,8 +672,8 @@ def test_bug_11886():
     def opt(x):
         return x[0]**2+x[1]**2
 
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
+    with np.testing.suppress_warnings() as sup:
+        sup.filter(PendingDeprecationWarning)
         A = np.matrix(np.diag([1, 1]))
     lin_cons = LinearConstraint(A, -1, np.inf)
     minimize(opt, 2*[1], constraints = lin_cons)
