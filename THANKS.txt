@@ -233,6 +233,7 @@ Dan Kleeman for implementing nan_policy in stats.zscores and winsorize
 James Wright for simple documentation fixes
 Sam Wallan for scipy.linalg.lapack enhancements
 Richard Weiss for a bug fix in scipy.optimize._differentialevolution.py.
+Luigi F. Cruz for adding time/frequency domain option to scipy.signal.resample.
 
 Institutions
 ------------

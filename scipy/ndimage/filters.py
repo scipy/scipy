@@ -643,9 +643,46 @@ def correlate(input, weights, output=None, mode='reflect', cval=0.0,
     %(cval)s
     %(origin_multiple)s
 
+    Returns
+    -------
+    result : ndarray
+        The result of correlation of `input` with `weights`.
+
     See Also
     --------
     convolve : Convolve an image with a kernel.
+
+    Examples
+    --------
+    Correlation is the process of moving a filter mask often referred to
+    as kernel over the image and computing the sum of products at each location.
+
+    >>> from scipy.ndimage import correlate
+    >>> input_img = np.arange(25).reshape(5,5)
+    >>> print(input_img)
+    [[ 0  1  2  3  4]
+    [ 5  6  7  8  9]
+    [10 11 12 13 14]
+    [15 16 17 18 19]
+    [20 21 22 23 24]]
+
+    Define a kernel (weights) for correlation. In this example, it is for sum of
+    center and up, down, left and right next elements.
+
+    >>> weights = [[0, 1, 0],
+    ...            [1, 1, 1],
+    ...            [0, 1, 0]]
+
+    We can calculate a correlation result:
+    For example, element ``[2,2]`` is ``7 + 11 + 12 + 13 + 17 = 60``.
+
+    >>> correlate(input_img, weights)
+    array([[  6,  10,  15,  20,  24],
+        [ 26,  30,  35,  40,  44],
+        [ 51,  55,  60,  65,  69],
+        [ 76,  80,  85,  90,  94],
+        [ 96, 100, 105, 110, 114]])
+
     """
     return _correlate_or_convolve(input, weights, output, mode, cval,
                                   origin, False)
