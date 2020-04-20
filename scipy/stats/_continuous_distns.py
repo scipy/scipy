@@ -6934,7 +6934,7 @@ class trapz_gen(rv_continuous):
         return np.select(condlist, choicelist)
 
     def _munp(self, n, c, d):
-        # Using the parameterization from Kracker, et al., with
+        # Using the parameterization from Kacker, 2007, with
         # a=bottom left, c=top left, d=top right, b=bottom right, then
         #     E[X^n] = h/(n+1)/(n+2) [(b^{n+2}-d^{n+2})/(b-d)
         #                             - ((c^{n+2} - a^{n+2})/(c-a)]
@@ -6959,11 +6959,11 @@ class trapz_gen(rv_continuous):
         return val
 
     def _entropy(self, c, d):
-        # Using van Dorn parameterization from wikipedia with
-        # a=bottom left, c=top left, d=top right, b=bottom right
+        # Using the parameterization from Wikipedia (van Dorp, 2003)
+        # with a=bottom left, c=top left, d=top right, b=bottom right
         # gives a'=loc, b'=loc+c*scale, c'=loc+d*scale, d'=loc+scale,
         # which for loc=0, scale=1 is a'=0, b'=c, c'=d, d'=1.
-        # Substituting into the entropy formula from wikipedia gives
+        # Substituting into the entropy formula from Wikipedia gives
         # the following result.
         return 0.5 * (1.0-d+c) / (1.0+d-c) + np.log(0.5 * (1.0+d-c))
 
