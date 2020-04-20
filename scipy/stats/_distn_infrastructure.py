@@ -2192,7 +2192,11 @@ class rv_continuous(rv_generic):
             provided will be determined by a call to ``_fitstart(data)``).
             No default value.
         kwds : floats, optional
-            Starting values for the location and scale parameters; no default.
+            - shape: Estimated from ``self._fitstart(data)`` by default.
+            - loc: Estimated from ``self._fit_loc_scale_support(data)``
+            based on the `shape` parameter, by default.
+            - scale: Estimated from ``self._fit_loc_scale_support(data)``
+            based on the `shape` parameter, by default.
             Special keyword arguments are recognized as holding certain
             parameters fixed:
 
