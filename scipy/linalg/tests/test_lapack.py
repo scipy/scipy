@@ -680,9 +680,11 @@ class TestGbsvx:
         assert_allclose(actual.x, desired)
 
     @pytest.mark.parametrize('dtype', DTYPES)
-    @pytest.mark.parametrize('kwargs', ({'fact': 'A'}, {'trans': 'A'},
+    @pytest.mark.parametrize('kwargs', ({'fact': 999},
+                                        {'trans': 999},
                                         {'equed': 'A'},
-                                        {'kl': -1}, {'ku': -1}))
+                                        {'kl': -1},
+                                        {'ku': -1}))
     def test_invalid_variables(self, dtype, kwargs):
         ab = np.ones((1, 1))
         b = np.ones((1, 1))
@@ -690,8 +692,8 @@ class TestGbsvx:
         assert_raises(Exception, gbsvx, ab=ab, b=b, **kwargs)
 
     @pytest.mark.parametrize('dtype', DTYPES)
-    @pytest.mark.parametrize('fact', ('N', 'E'))
-    @pytest.mark.parametrize('trans', ('N', 'T', 'C'))
+    @pytest.mark.parametrize('fact', (0, 1))
+    @pytest.mark.parametrize('trans', (0, 1, 2))
     def test_random_non_equilibrated(self, dtype, fact, trans):
         seed(1724)
         atol = 100 * np.finfo(dtype).eps
@@ -720,9 +722,9 @@ class TestGbsvx:
 
         # Compare the solution using the calculated solution `x`
         # to the pre-calculated solution
-        if trans == 'N':
+        if trans == 0:
             assert_allclose(b, A@actual.x, atol=atol)
-        elif trans == 'T':
+        elif trans == 1:
             assert_allclose(b, A.T @ actual.x, atol=atol)
         else:
             assert_allclose(b, A.conj().T @ actual.x, atol=atol)
@@ -734,7 +736,7 @@ class TestGbsvx:
 
     @pytest.mark.parametrize('dtype', DTYPES)
     @pytest.mark.parametrize('equed', ('R', 'C', 'B'))
-    @pytest.mark.parametrize('trans', ('N', 'T', 'C'))
+    @pytest.mark.parametrize('trans', (0, 1, 2))
     def test_random_equilibrated(self, dtype, equed, trans):
         seed(1724)
         atol = 100 * np.finfo(dtype).eps
@@ -772,7 +774,7 @@ class TestGbsvx:
         for i in range(len(ipiv)):
             ipiv[i] += 1
 
-        result = gbsvx(kl, ku, ab, b, 'F', trans, afb, ipiv, equed, r, c)
+        result = gbsvx(kl, ku, ab, b, 2, trans, afb, ipiv, equed, r, c)
         actual = self.Actual(*result)
 
         assert_equal(actual.info, 0)
@@ -782,26 +784,26 @@ class TestGbsvx:
 
         # Compare the solution using the calculated solution `x`
         # to the pre-calculated solution
-        if trans == 'N':
+        if trans == 0:
             assert_allclose(b, A @ actual.x, atol=atol)
-        elif trans == 'T':
+        elif trans == 1:
             assert_allclose(b, A.T @ actual.x, atol=atol)
         else:
             assert_allclose(b, A.conj().T @ actual.x, atol=atol)
 
         # Now that we know the calls work correctly check if invalid shapes
         # fail by raising an exception rather than seg faulting.
-        assert_raises(Exception, gbsvx, kl, ku, ab[:-1], b, 'F',
+        assert_raises(Exception, gbsvx, kl, ku, ab[:-1], b, 2,
                       trans, afb, ipiv, equed, r, c)
-        assert_raises(Exception, gbsvx, kl, ku, ab, b[:-1], 'F',
+        assert_raises(Exception, gbsvx, kl, ku, ab, b[:-1], 2,
                       trans, afb, ipiv, equed, r, c)
-        assert_raises(Exception, gbsvx, kl, ku, ab, b, 'F',
+        assert_raises(Exception, gbsvx, kl, ku, ab, b, 2,
                       trans, afb[:-1], ipiv, equed, r, c)
-        assert_raises(Exception, gbsvx, kl, ku, ab, b, 'F',
+        assert_raises(Exception, gbsvx, kl, ku, ab, b, 2,
                       trans, afb, ipiv[:-1], equed, r, c)
-        assert_raises(Exception, gbsvx, kl, ku, ab, b, 'F',
+        assert_raises(Exception, gbsvx, kl, ku, ab, b, 2,
                       trans, afb, ipiv, equed, r[:-1], c)
-        assert_raises(Exception, gbsvx, kl, ku, ab, b, 'F',
+        assert_raises(Exception, gbsvx, kl, ku, ab, b, 2,
                       trans, afb, ipiv, equed, r, c[:-1])
 
 

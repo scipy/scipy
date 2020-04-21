@@ -34,11 +34,12 @@ subroutine <prefix2>gbsvx(fact,trans,n,kl,ku,nrhs,ab,ldab,afb,ldafb,ipiv,equed,r
      ! Error bounds on the solution and a condition estimate are also
      ! provided.
 
-    callstatement (*f2py_func)(fact,trans,&n,&kl,&ku,&nrhs,ab,&ldab,afb,&ldafb,ipiv,equed,r,c,b,&ldb,x,&ldx,&rcond,ferr,berr,work,iwork,&info)
+    callstatement (*f2py_func)(&"NEF"[fact],&"NTC"[trans],&n,&kl,&ku,&nrhs,ab,&ldab,afb,&ldafb,ipiv,equed,r,c,b,&ldb,x,&ldx,&rcond,ferr,berr,work,iwork,&info)
     callprotoargument char*,char*,int*,int*,int*,int*,<ctype2>*,int*,<ctype2>*,int*,int*,char*,<ctype2>*,<ctype2>*,<ctype2>*,int*,<ctype2>*,int*,<ctype2>*,<ctype2>*,<ctype2>*,<ctype2>*,int*,int*
 
-    character intent(in), check((*fact=='F')||(*fact=='N')||(*fact=='E')) :: fact = 'N'
-    character intent(in), check((*trans=='N')||(*trans=='T')||(*trans=='C')) :: trans = 'N'
+    integer intent(in), check((0<=fact) && (fact<3)) :: fact = 0
+    integer intent(in), check((0<=trans) && (trans<3)) :: trans = 0
+
     integer depend(ab),intent(hide):: n = shape(ab,1)
     integer intent(in), check(0<=kl) :: kl
     integer intent(in), check(0<=ku) :: ku
@@ -73,11 +74,11 @@ subroutine <prefix2c>gbsvx(fact,trans,n,kl,ku,nrhs,ab,ldab,afb,ldafb,ipiv,equed,
      ! Error bounds on the solution and a condition estimate are also
      ! provided.
 
-    callstatement (*f2py_func)(fact,trans,&n,&kl,&ku,&nrhs,ab,&ldab,afb,&ldafb,ipiv,equed,r,c,b,&ldb,x,&ldx,&rcond,ferr,berr,work,rwork,&info)
+    callstatement (*f2py_func)(&"NEF"[fact],&"NTC"[trans],&n,&kl,&ku,&nrhs,ab,&ldab,afb,&ldafb,ipiv,equed,r,c,b,&ldb,x,&ldx,&rcond,ferr,berr,work,rwork,&info)
     callprotoargument char*,char*,int*,int*,int*,int*,<ctype2c>*,int*,<ctype2c>*,int*,int*,char*,<ctype2>*,<ctype2>*,<ctype2c>*,int*,<ctype2c>*,int*,<ctype2>*,<ctype2>*,<ctype2>*,<ctype2c>*,<ctype2>*,int*
 
-    character intent(in), check((*fact=='F')||(*fact=='N')||(*fact=='E')) :: fact = 'N'
-    character intent(in), check((*trans=='N')||(*trans=='T')||(*trans=='C')) :: trans = 'N'
+    integer intent(in), check((0<=fact) && (fact<3)) :: fact = 0
+    integer intent(in), check((0<=trans) && (trans<3)) :: trans = 0
 
     integer depend(ab),intent(hide):: n = shape(ab,1)
     integer intent(in), check(0<=kl) :: kl
