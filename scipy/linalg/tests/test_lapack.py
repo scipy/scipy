@@ -732,6 +732,11 @@ class TestGbsvx:
         else:
             assert_allclose(b, A.conj().T @ actual.x, atol=atol)
 
+        # Now that we know the calls work correctly check if invalid shapes
+        # fail by raising an exception rather than seg faulting.
+        assert_raises(Exception, gbsvx, kl, ku, ab[:-1], b, fact, trans)
+        assert_raises(Exception, gbsvx, kl, ku, ab, b[:-1], fact, trans)
+
     @pytest.mark.parametrize('dtype', DTYPES)
     @pytest.mark.parametrize('equed', ('R', 'C', 'B'))
     @pytest.mark.parametrize('trans', ('N', 'T', 'C'))
@@ -798,7 +803,20 @@ class TestGbsvx:
         else:
             assert_allclose(b, A.conj().T @ actual.x, atol=atol)
 
-
+        # Now that we know the calls work correctly check if invalid shapes
+        # fail by raising an exception rather than seg faulting.
+        assert_raises(Exception, gbsvx, kl, ku, ab[:-1], b, 'F',
+                      trans, afb, ipiv, equed, r, c)
+        assert_raises(Exception, gbsvx, kl, ku, ab, b[:-1], 'F',
+                      trans, afb, ipiv, equed, r, c)
+        assert_raises(Exception, gbsvx, kl, ku, ab, b, 'F',
+                      trans, afb[:-1], ipiv, equed, r, c)
+        assert_raises(Exception, gbsvx, kl, ku, ab, b, 'F',
+                      trans, afb, ipiv[:-1], equed, r, c)
+        assert_raises(Exception, gbsvx, kl, ku, ab, b, 'F',
+                      trans, afb, ipiv, equed, r[:-1], c)
+        assert_raises(Exception, gbsvx, kl, ku, ab, b, 'F',
+                      trans, afb, ipiv, equed, r, c[:-1])
 
 
 def test_lartg():
