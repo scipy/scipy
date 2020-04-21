@@ -1179,6 +1179,12 @@ def test_weightedtau():
     tau, p_value = stats.weightedtau(x, y)
     assert_approx_equal(tau, -0.56694968153682723)
 
+def test_segfault_issue_9710():
+    # https://github.com/scipy/scipy/issues/9710
+    # This test was created to check  segfault
+    stats.weightedtau([1], [1.0])
+    stats.weightedtau([1], [1.0])
+    stats.weightedtau([np.nan], [52])
 
 def test_kendall_tau_large():
     n = 172.
