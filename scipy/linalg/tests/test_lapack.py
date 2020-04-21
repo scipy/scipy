@@ -709,12 +709,7 @@ class TestGbsvx:
         A = sps.dia_matrix(A)
         ab = np.flipud(A.data)
 
-        actual = self.Actual(*gbsvx(ab=ab,
-                                    kl=kl,
-                                    ku=ku,
-                                    b=b,
-                                    fact=fact,
-                                    trans=trans))
+        actual = self.Actual(*gbsvx(kl, ku, ab, b, fact, trans))
 
         assert_equal(actual.info, 0)
         assert np.count_nonzero(actual.afb)
@@ -777,17 +772,8 @@ class TestGbsvx:
         for i in range(len(ipiv)):
             ipiv[i] += 1
 
-        actual = self.Actual(*gbsvx(ab=ab,
-                                    afb=afb,
-                                    kl=kl,
-                                    ku=ku,
-                                    b=b,
-                                    r=r,
-                                    c=c,
-                                    ipiv=ipiv,
-                                    fact='F',
-                                    equed=equed,
-                                    trans=trans))
+        result = gbsvx(kl, ku, ab, b, 'F', trans, afb, ipiv, equed, r, c)
+        actual = self.Actual(*result)
 
         assert_equal(actual.info, 0)
         assert np.isscalar(actual.rcond)
