@@ -676,4 +676,4 @@ def test_bug_11886():
         sup.filter(PendingDeprecationWarning)
         A = np.matrix(np.diag([1, 1]))
     lin_cons = LinearConstraint(A, -1, np.inf)
-    minimize(opt, 2*[1], constraints = lin_cons)
+    minimize(opt, 2*[1], constraints = lin_cons)  # just checking that there are no errors
