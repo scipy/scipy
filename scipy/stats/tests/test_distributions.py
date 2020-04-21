@@ -3134,25 +3134,25 @@ class TestTrapz(object):
         assert_almost_equal(stats.trapz.pdf(x, 0, 1), stats.uniform.pdf(x))
         assert_almost_equal(stats.trapz.cdf(x, 0, 1), stats.uniform.cdf(x))
 
-    def test_cases(self):
+    @pytest.mark.parametrize('method, inputs, expected', [
         # edge cases
-        assert_almost_equal(stats.trapz.pdf(0, 0, 0), 2)
-        assert_almost_equal(stats.trapz.pdf(1, 1, 1), 2)
-        assert_almost_equal(stats.trapz.pdf(0.5, 0, 0.8),
-                            1.11111111111111111)
-        assert_almost_equal(stats.trapz.pdf(0.5, 0.2, 1.0),
-                            1.11111111111111111)
-
+        ('pdf', (0, 0, 0), 2),
+        ('pdf', (1, 1, 1), 2),
+        ('pdf', (0.5, 0, 0.8), 1.11111111111111111),
+        ('pdf', (0.5, 0.2, 1.0), 1.11111111111111111),
         # straightforward case
-        assert_almost_equal(stats.trapz.pdf(0.1, 0.2, 0.8), 0.625)
-        assert_almost_equal(stats.trapz.pdf(0.5, 0.2, 0.8), 1.25)
-        assert_almost_equal(stats.trapz.pdf(0.9, 0.2, 0.8), 0.625)
-
-        assert_almost_equal(stats.trapz.cdf(0.1, 0.2, 0.8), 0.03125)
-        assert_almost_equal(stats.trapz.cdf(0.2, 0.2, 0.8), 0.125)
-        assert_almost_equal(stats.trapz.cdf(0.5, 0.2, 0.8), 0.5)
-        assert_almost_equal(stats.trapz.cdf(0.9, 0.2, 0.8), 0.96875)
-        assert_almost_equal(stats.trapz.cdf(1.0, 0.2, 0.8), 1.0)
+        ('pdf', (0.1, 0.2, 0.8), 0.625),
+        ('pdf', (0.5, 0.2, 0.8), 1.25),
+        ('pdf', (0.9, 0.2, 0.8), 0.625),
+        ('cdf', (0.1, 0.2, 0.8), 0.03125),
+        ('cdf', (0.2, 0.2, 0.8), 0.125),
+        ('cdf', (0.5, 0.2, 0.8), 0.5),
+        ('cdf', (0.9, 0.2, 0.8), 0.96875),
+        ('cdf', (1.0, 0.2, 0.8), 1.0)
+    ])
+    def test_cases(self, method, inputs, expected):
+        result = getattr(stats.trapz, method)(*inputs)
+        assert_almost_equal(result, expected)
 
     def test_moments_and_entropy(self):
         # issue #11795: improve precision of trapz stats
@@ -3205,23 +3205,24 @@ class TestTrapz(object):
 
 
 class TestTriang(object):
-    def test_edge_cases(self):
+    @pytest.mark.parametrize('method, inputs, expected', [
+        ('pdf', (0, 0), 2),
+        ('pdf', (0.5, 0), 1.),
+        ('pdf', (1, 0), 0.),
+        ('pdf', (0, 1), 0),
+        ('pdf', (0.5, 1), 1.),
+        ('pdf', (1, 1), 2),
+        ('cdf', (0., 0.), 0.),
+        ('cdf', (0.5, 0.), 0.75),
+        ('cdf', (1.0, 0.), 1.0),
+        ('cdf', (0., 1.), 0.),
+        ('cdf', (0.5, 1.), 0.25),
+        ('cdf', (1., 1.), 1)
+    ])
+    def test_edge_cases(self, method, inputs, expected):
         with np.errstate(all='raise'):
-            assert_equal(stats.triang.pdf(0, 0), 2.)
-            assert_equal(stats.triang.pdf(0.5, 0), 1.)
-            assert_equal(stats.triang.pdf(1, 0), 0.)
-
-            assert_equal(stats.triang.pdf(0, 1), 0)
-            assert_equal(stats.triang.pdf(0.5, 1), 1.)
-            assert_equal(stats.triang.pdf(1, 1), 2)
-
-            assert_equal(stats.triang.cdf(0., 0.), 0.)
-            assert_equal(stats.triang.cdf(0.5, 0.), 0.75)
-            assert_equal(stats.triang.cdf(1.0, 0.), 1.0)
-
-            assert_equal(stats.triang.cdf(0., 1.), 0.)
-            assert_equal(stats.triang.cdf(0.5, 1.), 0.25)
-            assert_equal(stats.triang.cdf(1., 1.), 1)
+            result = getattr(stats.triang, method)(*inputs)
+            assert_equal(result, expected)
 
 
 class TestMielke(object):
