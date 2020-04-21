@@ -1057,7 +1057,29 @@ class SmoothBivariateSpline(BivariateSpline):
     """
 
     def __init__(self, x, y, z, w=None, bbox=[None] * 4, kx=3, ky=3, s=None,
-                 eps=None):
+                 eps=1e-16):
+        x, y, z, bbox = np.asarray(x), np.asarray(y), np.asarray(z),\
+                        np.asarray(bbox)
+        if w is not None:
+            w = np.asarray(w)
+
+        if not x.size == y.size == z.size:
+            raise ValueError('x, y, and z should have a same length')
+        if w is not None:
+            if not x.size == w.size:
+                raise ValueError('x, y, z, and w should have a same length')
+            elif np.any(w<0.0):
+                raise ValueError('w should be positive')
+        if not bbox.shape == (4,):
+            raise ValueError('bbox shape should be (4,)')
+        if x.size < (kx+1)*(ky+1):
+            raise ValueError('The length of x, y and z should be at least'
+                             ' (kx+1) * (ky+1)')
+        if s is not None and s < 0.0:
+            raise ValueError("s should be s >= 0.0")
+        if not 0.0 < eps < 1.0:
+            raise ValueError('eps should be between (0, 1)')
+
         xb, xe, yb, ye = bbox
         nx, tx, ny, ty, c, fp, wrk1, ier = dfitpack.surfit_smth(x, y, z, w,
                                                                 xb, xe, yb,

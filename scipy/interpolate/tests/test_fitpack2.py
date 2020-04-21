@@ -291,7 +291,7 @@ class TestUnivariateSpline(object):
         with assert_raises(ValueError) as info:
             x_values = [1, 2, 4, 6, 8.5]
             y_values = [0.5, 0.8, 1.3, 2.5, 2.8]
-            w_values = [-1.0, 1.0, 1.0, 1.0]
+            w_values = [1.0, 1.0, 1.0, 1.0]
             LSQUnivariateSpline(x_values, y_values, t_values, w=w_values)
         assert "x, y, and w should have a same length" in str(info.value)
 
@@ -451,6 +451,49 @@ class TestSmoothBivariateSpline(object):
         res2 = interp_(xi, yi)
         assert_almost_equal(res1, res2)
 
+    def test_invalid_input(self):
+
+        with assert_raises(ValueError) as info:
+            x = np.linspace(1.0, 10.0)
+            y = np.linspace(1.0, 10.0)
+            z = np.linspace(1.0, 10.0, num=10)
+            SmoothBivariateSpline(x, y, z)
+        assert "x, y, and z should have a same length" in str(info.value)
+
+        with assert_raises(ValueError) as info:
+            x = np.linspace(1.0, 10.0)
+            y = np.linspace(1.0, 10.0)
+            z = np.linspace(1.0, 10.0)
+            w = np.linspace(1.0, 10.0, num=20)
+            SmoothBivariateSpline(x, y, z, w=w)
+        assert "x, y, z, and w should have a same length" in str(info.value)
+
+        with assert_raises(ValueError) as info:
+            w = np.linspace(-1.0, 10.0)
+            SmoothBivariateSpline(x, y, z, w=w)
+        assert "w should be positive" in str(info.value)
+
+        with assert_raises(ValueError) as info:
+            bbox = (-100, 100, -100)
+            SmoothBivariateSpline(x, y, z, bbox=bbox)
+        assert "bbox shape should be (4,)" in str(info.value)
+
+        with assert_raises(ValueError) as info:
+            SmoothBivariateSpline(x, y, z, kx=10, ky=10)
+        assert "The length of x, y and z should be at least (kx+1) * (ky+1)" in\
+               str(info.value)
+
+        with assert_raises(ValueError) as info:
+            SmoothBivariateSpline(x, y, z, s=-1.0)
+        assert "s should be s >= 0.0" in str(info.value)
+
+        with assert_raises(ValueError) as exc_info:
+            SmoothBivariateSpline(x, y, z, eps=0.0)
+        assert "eps should be between (0, 1)" in str(exc_info.value)
+
+        with assert_raises(ValueError) as exc_info:
+            SmoothBivariateSpline(x, y, z, eps=1.0)
+        assert "eps should be between (0, 1)" in str(exc_info.value)
 
 class TestLSQSphereBivariateSpline(object):
     def setup_method(self):
