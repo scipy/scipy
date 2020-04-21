@@ -943,7 +943,7 @@ def _boxcox_conf_interval(x, lmax, alpha):
     return lmminus, lmplus
 
 
-def boxcox(x, lmbda=None, alpha=None):
+def boxcox(x, lmbda=None, bounds=None, alpha=None):
     r"""
     Return a dataset transformed by a Box-Cox power transformation.
 
@@ -956,6 +956,8 @@ def boxcox(x, lmbda=None, alpha=None):
 
         If `lmbda` is None, find the lambda that maximizes the log-likelihood
         function and return it as the second output argument.
+    bounds : tuple, optional
+        Lower and upper bound on lmbda.
     alpha : {None, float}, optional
         If ``alpha`` is not None, return the ``100 * (1-alpha)%`` confidence
         interval for `lmbda` as the third output argument.
@@ -1046,7 +1048,7 @@ def boxcox(x, lmbda=None, alpha=None):
         return special.boxcox(x, lmbda)
 
     # If lmbda=None, find the lmbda that maximizes the log-likelihood function.
-    lmax = boxcox_normmax(x, method='mle')
+    lmax = boxcox_normmax(x, bounds=bounds, method='mle')
     y = boxcox(x, lmax)
 
     if alpha is None:
@@ -1057,7 +1059,7 @@ def boxcox(x, lmbda=None, alpha=None):
         return y, lmax, interval
 
 
-def boxcox_normmax(x, brack=(-2.0, 2.0), method='pearsonr'):
+def boxcox_normmax(x, bounds=None, brack=(-2.0, 2.0), method='pearsonr'):
     """Compute optimal Box-Cox transform parameter for input data.
 
     Parameters
@@ -1123,8 +1125,22 @@ def boxcox_normmax(x, brack=(-2.0, 2.0), method='pearsonr'):
     >>> plt.show()
 
     """
+    # if bounds is None, use simple Brent optimisation
+    if bounds is None:
+        def optimizer(func, args):
+            return optimize.brent(func, brack=brack, args=args)
 
-    def _pearsonr(x, brack):
+    # otherwise use bounded Brent optimisation
+    else:
+        # input checks on bounds
+        if not isinstance(bounds, tuple) or len(bounds) != 2:
+            raise ValueError("`bounds` must be a tuple of length 2, "
+                             "but found: {}".format(bounds))
+
+        def optimizer(func, args):
+            return optimize.fminbound(func, bounds[0], bounds[1], args=args)
+
+    def _pearsonr(x):
         osm_uniform = _calc_uniform_order_statistic_medians(len(x))
         xvals = distributions.norm.ppf(osm_uniform)
 
@@ -1138,19 +1154,19 @@ def boxcox_normmax(x, brack=(-2.0, 2.0), method='pearsonr'):
             r, prob = stats.pearsonr(xvals, yvals)
             return 1 - r
 
-        return optimize.brent(_eval_pearsonr, brack=brack, args=(xvals, x))
+        return optimizer(_eval_pearsonr, args=(xvals, x))
 
-    def _mle(x, brack):
+    def _mle(x):
         def _eval_mle(lmb, data):
             # function to minimize
             return -boxcox_llf(lmb, data)
 
-        return optimize.brent(_eval_mle, brack=brack, args=(x,))
+        return optimizer(_eval_mle, args=(x,))
 
     def _all(x, brack):
         maxlog = np.zeros(2, dtype=float)
-        maxlog[0] = _pearsonr(x, brack)
-        maxlog[1] = _mle(x, brack)
+        maxlog[0] = _pearsonr(x)
+        maxlog[1] = _mle(x)
         return maxlog
 
     methods = {'pearsonr': _pearsonr,
