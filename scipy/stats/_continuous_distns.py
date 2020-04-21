@@ -6880,8 +6880,8 @@ class trapz_gen(rv_continuous):
     defines the trapezoid base from ``loc`` to ``(loc+scale)`` and the flat
     top from ``c`` to ``d`` proportional to the position along the base
     with ``0 <= c <= d <= 1``.  When ``c=d``, this is equivalent to `triang`
-    with the same values for `loc`, `scale` and `c`.  `stats` implements
-    the method of [1]_ for computing moments.
+    with the same values for `loc`, `scale` and `c`.
+    The method of [1]_ is used for computing moments.
 
     `trapz` takes :math:`c` and :math:`d` as shape parameters.
 
