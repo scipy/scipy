@@ -478,7 +478,8 @@ class LinearVectorFunction(object):
             self.J = A.toarray()
             self.sparse_jacobian = False
         else:
-            self.J = np.atleast_2d(A)
+            # np.asarray makes sure A is ndarray and not matrix
+            self.J = np.atleast_2d(np.asarray(A))
             self.sparse_jacobian = False
 
         self.m, self.n = self.J.shape
