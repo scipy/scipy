@@ -1017,21 +1017,11 @@ class BivariateSpline(_BivariateSplineBase):
         return dfitpack.dblint(tx, ty, c, kx, ky, xa, xb, ya, yb)
 
     @staticmethod
-    def validate_input(x, y, z, bbox, kx, ky):
-        x, y, z, bbox = np.asarray(x), np.asarray(y), np.asarray(z), \
-                        np.asarray(bbox)
+    def validate_input(x, y, z, w, kx, ky, eps):
+        x, y, z = np.asarray(x), np.asarray(y), np.asarray(z)
         if not x.size == y.size == z.size:
             raise ValueError('x, y, and z should have a same length')
-        if not bbox.shape == (4,):
-            raise ValueError('bbox shape should be (4,)')
-        if x.size < (kx + 1) * (ky + 1):
-            raise ValueError('The length of x, y and z should be at least'
-                             ' (kx+1) * (ky+1)')
 
-        return x, y, z, bbox
-
-    @staticmethod
-    def validate_w_and_eps(x, w, eps):
         if w is not None:
             w = np.asarray(w)
             if not x.size == w.size:
@@ -1040,7 +1030,10 @@ class BivariateSpline(_BivariateSplineBase):
                 raise ValueError('w should be positive')
         if (eps is not None) and (not 0.0 < eps < 1.0):
             raise ValueError('eps should be between (0, 1)')
-        return w
+        if x.size < (kx + 1) * (ky + 1):
+            raise ValueError('The length of x, y and z should be at least'
+                             ' (kx+1) * (ky+1)')
+        return x, y, z, w
 
 
 class SmoothBivariateSpline(BivariateSpline):
@@ -1085,8 +1078,10 @@ class SmoothBivariateSpline(BivariateSpline):
     def __init__(self, x, y, z, w=None, bbox=[None] * 4, kx=3, ky=3, s=None,
                  eps=1e-16):
 
-        x, y, z, bbox = self.validate_input(x, y, z, bbox, kx, ky)
-        w = self.validate_w_and_eps(x, w, eps)
+        x, y, z, w = self.validate_input(x, y, z, w, kx, ky, eps)
+        bbox = ravel(bbox)
+        if not bbox.shape == (4,):
+            raise ValueError('bbox shape should be (4,)')
         if s is not None and s < 0.0:
             raise ValueError("s should be s >= 0.0")
 
@@ -1153,8 +1148,11 @@ class LSQBivariateSpline(BivariateSpline):
     def __init__(self, x, y, z, tx, ty, w=None, bbox=[None]*4, kx=3, ky=3,
                  eps=None):
 
-        x, y, z, bbox = self.validate_input(x, y, z, bbox, kx, ky)
-        w = self.validate_w_and_eps(x, w, eps)
+        x, y, z, w = self.validate_input(x, y, z, w, kx, ky, eps)
+        bbox = ravel(bbox)
+        if not bbox.shape == (4,):
+            raise ValueError('bbox shape should be (4,)')
+
 
         nx = 2*kx+2+len(tx)
         ny = 2*ky+2+len(ty)
@@ -1218,21 +1216,23 @@ class RectBivariateSpline(BivariateSpline):
     """
 
     def __init__(self, x, y, z, bbox=[None] * 4, kx=3, ky=3, s=0):
-        x, y = ravel(x), ravel(y)
+        x, y, bbox = ravel(x), ravel(y), ravel(bbox)
+        z = np.asarray(z)
         if not np.all(diff(x) > 0.0):
             raise ValueError('x must be strictly increasing')
         if not np.all(diff(y) > 0.0):
             raise ValueError('y must be strictly increasing')
-        if not ((x.min() == x[0]) and (x.max() == x[-1])):
-            raise ValueError('x must be strictly ascending')
-        if not ((y.min() == y[0]) and (y.max() == y[-1])):
-            raise ValueError('y must be strictly ascending')
         if not x.size == z.shape[0]:
             raise ValueError('x dimension of z must have same number of '
                              'elements as x')
         if not y.size == z.shape[1]:
             raise ValueError('y dimension of z must have same number of '
                              'elements as y')
+        if not bbox.shape == (4,):
+            raise ValueError('bbox shape should be (4,)')
+        if s is not None and s < 0.0:
+            raise ValueError("s should be s >= 0.0")
+
         z = ravel(z)
         xb, xe, yb, ye = bbox
         nx, tx, ny, ty, c, fp, ier = dfitpack.regrid_smth(x, y, z, xb, xe, yb,

@@ -538,6 +538,7 @@ class TestSmoothBivariateSpline(object):
             SmoothBivariateSpline(x, y, z, eps=1.0)
         assert "eps should be between (0, 1)" in str(exc_info.value)
 
+
 class TestLSQSphereBivariateSpline(object):
     def setup_method(self):
         # define the input data and coordinates
@@ -774,6 +775,55 @@ class TestRectBivariateSpline(object):
         z = array([[1,2,1,2,1],[1,2,1,2,1],[1,2,3,2,1],[1,2,2,2,1],[1,2,1,2,1]])
         lut = RectBivariateSpline(x,y,z)
         assert_allclose(lut(x, y), lut(x[:,None], y[None,:], grid=False))
+
+    def test_invalid_input(self):
+
+        with assert_raises(ValueError) as info:
+            x = array([6, 2, 3, 4, 5])
+            y = array([1, 2, 3, 4, 5])
+            z = array([[1, 2, 1, 2, 1], [1, 2, 1, 2, 1], [1, 2, 3, 2, 1],
+                       [1, 2, 2, 2, 1], [1, 2, 1, 2, 1]])
+            RectBivariateSpline(x, y, z)
+        assert "x must be strictly increasing" in str(info.value)
+
+        with assert_raises(ValueError) as info:
+            x = array([1, 2, 3, 4, 5])
+            y = array([2, 2, 3, 4, 5])
+            z = array([[1, 2, 1, 2, 1], [1, 2, 1, 2, 1], [1, 2, 3, 2, 1],
+                       [1, 2, 2, 2, 1], [1, 2, 1, 2, 1]])
+            RectBivariateSpline(x, y, z)
+        assert "y must be strictly increasing" in str(info.value)
+
+        with assert_raises(ValueError) as info:
+            x = array([1, 2, 3, 4, 5])
+            y = array([1, 2, 3, 4, 5])
+            z = array([[1, 2, 1, 2, 1], [1, 2, 1, 2, 1], [1, 2, 3, 2, 1],
+                       [1, 2, 2, 2, 1]])
+            RectBivariateSpline(x, y, z)
+        assert "x dimension of z must have same number of elements as x"\
+               in str(info.value)
+
+        with assert_raises(ValueError) as info:
+            x = array([1, 2, 3, 4, 5])
+            y = array([1, 2, 3, 4, 5])
+            z = array([[1, 2, 1, 2], [1, 2, 1, 2], [1, 2, 3, 2],
+                       [1, 2, 2, 2], [1, 2, 1, 2]])
+            RectBivariateSpline(x, y, z)
+        assert "y dimension of z must have same number of elements as y"\
+               in str(info.value)
+
+        with assert_raises(ValueError) as info:
+            x = array([1, 2, 3, 4, 5])
+            y = array([1, 2, 3, 4, 5])
+            z = array([[1, 2, 1, 2, 1], [1, 2, 1, 2, 1], [1, 2, 3, 2, 1],
+                       [1, 2, 2, 2, 1], [1, 2, 1, 2, 1]])
+            bbox = (-100, 100, -100)
+            RectBivariateSpline(x, y, z, bbox=bbox)
+        assert "bbox shape should be (4,)" in str(info.value)
+
+        with assert_raises(ValueError) as info:
+            RectBivariateSpline(x, y, z, s=-1.0)
+        assert "s should be s >= 0.0" in str(info.value)
 
 
 class TestRectSphereBivariateSpline(object):
