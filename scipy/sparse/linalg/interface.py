@@ -137,9 +137,7 @@ class LinearOperator(object):
 
     """
 
-
-    ndim  = 2
-
+    ndim = 2
 
     def __new__(cls, *args, **kwargs):
         if cls is LinearOperator:
