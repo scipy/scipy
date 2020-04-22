@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 import os.path
 from os.path import join
 
@@ -8,6 +6,8 @@ from scipy._build_utils import numpy_nodepr_api
 def configuration(parent_package='',top_path=None):
     from numpy.distutils.misc_util import Configuration
     from scipy._build_utils.system_info import get_info
+    from scipy._build_utils import gfortran_legacy_flag_hook
+
     config = Configuration('optimize',parent_package, top_path)
 
     include_dirs = [join(os.path.dirname(__file__), '..', '_lib', 'src')]
@@ -19,6 +19,17 @@ def configuration(parent_package='',top_path=None):
                          libraries=['minpack'],
                          depends=(["minpack.h","__minpack.h"]
                                   + minpack_src),
+                         include_dirs=include_dirs,
+                         **numpy_nodepr_api)
+
+    config.add_library('rectangular_lsap',
+                       sources='rectangular_lsap/rectangular_lsap.cpp',
+                       headers='rectangular_lsap/rectangular_lsap.h')
+    config.add_extension('_lsap_module',
+                         sources=['_lsap_module.c'],
+                         libraries=['rectangular_lsap'],
+                         depends=(['rectangular_lsap/rectangular_lsap.cpp',
+                                   'rectangular_lsap/rectangular_lsap.h']),
                          include_dirs=include_dirs,
                          **numpy_nodepr_api)
 
@@ -65,12 +76,14 @@ def configuration(parent_package='',top_path=None):
                          **numpy_nodepr_api)
 
     sources = ['slsqp.pyf', 'slsqp_optmz.f']
-    config.add_extension('_slsqp', sources=[join('slsqp', x) for x in sources],
-                         **numpy_nodepr_api)
+    ext = config.add_extension('_slsqp', sources=[join('slsqp', x) for x in sources],
+                               **numpy_nodepr_api)
+    ext._pre_build_hook = gfortran_legacy_flag_hook
 
-    config.add_extension('_nnls', sources=[join('nnls', x)
-                                          for x in ["nnls.f","nnls.pyf"]],
-                         **numpy_nodepr_api)
+    ext = config.add_extension('_nnls', sources=[join('nnls', x)
+                                                 for x in ["nnls.f","nnls.pyf"]],
+                               **numpy_nodepr_api)
+    ext._pre_build_hook = gfortran_legacy_flag_hook
 
     config.add_extension('_group_columns', sources=['_group_columns.c'],)
 
@@ -81,6 +94,14 @@ def configuration(parent_package='',top_path=None):
     config.add_subpackage('_trlib')
 
     config.add_subpackage('_trustregion_constr')
+
+    # Cython optimize API for zeros functions
+    config.add_subpackage('cython_optimize')
+    config.add_data_files('cython_optimize.pxd')
+    config.add_data_files(os.path.join('cython_optimize', '*.pxd'))
+    config.add_extension(
+        'cython_optimize._zeros',
+        sources=[os.path.join('cython_optimize', '_zeros.c')])
 
     config.add_subpackage('_shgo_lib')
     config.add_data_dir('_shgo_lib')

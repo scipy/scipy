@@ -1,12 +1,9 @@
 """Test functions for the sparse.linalg._expm_multiply module
 """
 
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
-from numpy.testing import assert_allclose, assert_, assert_equal
-from scipy._lib._numpy_compat import suppress_warnings
-
+from numpy.testing import (assert_allclose, assert_, assert_equal,
+                           suppress_warnings)
 from scipy.sparse import SparseEfficiencyWarning
 import scipy.linalg
 from scipy.sparse.linalg._expm_multiply import (_theta, _compute_p_max,
@@ -209,7 +206,7 @@ class TestExpmActionInterval(object):
     
         # Test A int, B complex
         A = scipy.sparse.diags(np.arange(5),format='csr', dtype=int)
-        B = 1j*np.ones(5, dtype=complex)
+        B = np.full(5, 1j, dtype=complex)
         Aexpm = scipy.sparse.diags(np.exp(np.arange(5)),format='csr')
         assert_allclose(expm_multiply(A,B,0,1)[-1], Aexpm.dot(B))
 

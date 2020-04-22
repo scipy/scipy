@@ -1,7 +1,5 @@
 # Created by Pearu Peterson, September 2002
 
-from __future__ import division, print_function, absolute_import
-
 __usage__ = """
 Build fftpack:
   python setup_fftpack.py build
@@ -323,8 +321,8 @@ class TestShift(object):
 class TestOverwrite(object):
     """Check input overwrite behavior """
 
-    real_dtypes = [np.float32, np.float64]
-    dtypes = real_dtypes + [np.complex64, np.complex128]
+    real_dtypes = (np.float32, np.float64)
+    dtypes = real_dtypes + (np.complex64, np.complex128)
 
     def _check(self, x, routine, *args, **kwargs):
         x2 = x.copy()

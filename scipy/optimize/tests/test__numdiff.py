@@ -1,5 +1,3 @@
-from __future__ import division
-
 import math
 from itertools import product
 
@@ -45,7 +43,7 @@ def test_group_columns():
 class TestAdjustSchemeToBounds(object):
     def test_no_bounds(self):
         x0 = np.zeros(3)
-        h = np.ones(3) * 1e-2
+        h = np.full(3, 1e-2)
         inf_lower = np.empty_like(x0)
         inf_upper = np.empty_like(x0)
         inf_lower.fill(-np.inf)
@@ -199,6 +197,20 @@ class TestApproxDerivativesDense(object):
         assert_allclose(jac_diff_3, jac_true, rtol=1e-9)
         assert_allclose(jac_diff_4, jac_true, rtol=1e-12)
 
+    def test_scalar_scalar_abs_step(self):
+        # can approx_derivative use abs_step?
+        x0 = 1.0
+        jac_diff_2 = approx_derivative(self.fun_scalar_scalar, x0,
+                                       method='2-point', abs_step=1.49e-8)
+        jac_diff_3 = approx_derivative(self.fun_scalar_scalar, x0,
+                                       abs_step=1.49e-8)
+        jac_diff_4 = approx_derivative(self.fun_scalar_scalar, x0,
+                                       method='cs', abs_step=1.49e-8)
+        jac_true = self.jac_scalar_scalar(x0)
+        assert_allclose(jac_diff_2, jac_true, rtol=1e-6)
+        assert_allclose(jac_diff_3, jac_true, rtol=1e-9)
+        assert_allclose(jac_diff_4, jac_true, rtol=1e-12)
+
     def test_scalar_vector(self):
         x0 = 0.5
         jac_diff_2 = approx_derivative(self.fun_scalar_vector, x0,
@@ -221,6 +233,20 @@ class TestApproxDerivativesDense(object):
         jac_true = self.jac_vector_scalar(x0)
         assert_allclose(jac_diff_2, jac_true, rtol=1e-6)
         assert_allclose(jac_diff_3, jac_true, rtol=1e-7)
+        assert_allclose(jac_diff_4, jac_true, rtol=1e-12)
+
+    def test_vector_scalar_abs_step(self):
+        # can approx_derivative use abs_step?
+        x0 = np.array([100.0, -0.5])
+        jac_diff_2 = approx_derivative(self.fun_vector_scalar, x0,
+                                       method='2-point', abs_step=1.49e-8)
+        jac_diff_3 = approx_derivative(self.fun_vector_scalar, x0,
+                                       abs_step=1.49e-8, rel_step=np.inf)
+        jac_diff_4 = approx_derivative(self.fun_vector_scalar, x0,
+                                       method='cs', abs_step=1.49e-8)
+        jac_true = self.jac_vector_scalar(x0)
+        assert_allclose(jac_diff_2, jac_true, rtol=1e-6)
+        assert_allclose(jac_diff_3, jac_true, rtol=3e-9)
         assert_allclose(jac_diff_4, jac_true, rtol=1e-12)
 
     def test_vector_vector(self):
@@ -438,7 +464,7 @@ class TestApproxDerivativeSparse(object):
             assert_(isinstance(J, csr_matrix))
             assert_allclose(J.toarray(), self.J_true, rtol=1e-6)
 
-            rel_step = 1e-8 * np.ones_like(self.x0)
+            rel_step = np.full_like(self.x0, 1e-8)
             rel_step[::2] *= -1
             J = approx_derivative(self.fun, self.x0, method=method,
                                   rel_step=rel_step, sparsity=(A, groups))

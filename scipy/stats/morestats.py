@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 import math
 import warnings
 from collections import namedtuple
@@ -10,12 +8,12 @@ from numpy import (isscalar, r_, log, around, unique, asarray,
                    sqrt, ceil, floor, array, compress,
                    pi, exp, ravel, count_nonzero, sin, cos, arctan2, hypot)
 
-from scipy._lib.six import string_types
 from scipy import optimize
 from scipy import special
 from . import statlib
 from . import stats
-from .stats import find_repeats, _contains_nan
+from .stats import find_repeats
+from .mstats_basic import _contains_nan
 from .contingency import chi2_contingency
 from . import distributions
 from ._distn_infrastructure import rv_generic
@@ -149,11 +147,11 @@ def mvsdist(data):
     Returns
     -------
     mdist : "frozen" distribution object
-        Distribution object representing the mean of the data
+        Distribution object representing the mean of the data.
     vdist : "frozen" distribution object
-        Distribution object representing the variance of the data
+        Distribution object representing the variance of the data.
     sdist : "frozen" distribution object
-        Distribution object representing the standard deviation of the data
+        Distribution object representing the standard deviation of the data.
 
     See Also
     --------
@@ -308,7 +306,7 @@ def kstat(data, n=2):
 
 def kstatvar(data, n=2):
     r"""
-    Returns an unbiased estimator of the variance of the k-statistic.
+    Return an unbiased estimator of the variance of the k-statistic.
 
     See `kstat` for more details of the k-statistic.
 
@@ -439,7 +437,7 @@ def _parse_dist_kw(dist, enforce_subclass=True):
     """
     if isinstance(dist, rv_generic):
         pass
-    elif isinstance(dist, string_types):
+    elif isinstance(dist, str):
         try:
             dist = getattr(distributions, dist)
         except AttributeError:
@@ -629,7 +627,7 @@ def probplot(x, sparams=(), dist='norm', fit=True, plot=None, rvalue=False):
 
 def ppcc_max(x, brack=(0.0, 1.0), dist='tukeylambda'):
     """
-    Calculate the shape parameter that maximizes the PPCC
+    Calculate the shape parameter that maximizes the PPCC.
 
     The probability plot correlation coefficient (PPCC) plot can be used to
     determine the optimal shape parameter for a one-parameter family of
@@ -656,7 +654,7 @@ def ppcc_max(x, brack=(0.0, 1.0), dist='tukeylambda'):
         The shape parameter at which the probability plot correlation
         coefficient reaches its max value.
 
-    See also
+    See Also
     --------
     ppcc_plot, probplot, boxcox
 
@@ -736,7 +734,7 @@ def ppcc_plot(x, a, b, dist='tukeylambda', plot=None, N=80):
     ----------
     x : array_like
         Input array.
-    a, b: scalar
+    a, b : scalar
         Lower and upper bounds of the shape parameter to use.
     dist : str or stats.distributions instance, optional
         Distribution or distribution function name.  Objects that look enough
@@ -759,7 +757,7 @@ def ppcc_plot(x, a, b, dist='tukeylambda', plot=None, N=80):
     ppcc : ndarray
         The calculated probability plot correlation coefficient values.
 
-    See also
+    See Also
     --------
     ppcc_max, probplot, boxcox_normplot, tukeylambda
 
@@ -896,11 +894,18 @@ def boxcox_llf(lmb, data):
     if N == 0:
         return np.nan
 
-    y = boxcox(data, lmb)
-    y_mean = np.mean(y, axis=0)
-    llf = (lmb - 1) * np.sum(np.log(data), axis=0)
-    llf -= N / 2.0 * np.log(np.sum((y - y_mean)**2. / N, axis=0))
-    return llf
+    logdata = np.log(data)
+
+    # Compute the variance of the transformed data.
+    if lmb == 0:
+        variance = np.var(logdata, axis=0)
+    else:
+        # Transform without the constant offset 1/lmb.  The offset does
+        # not effect the variance, and the subtraction of the offset can
+        # lead to loss of precision.
+        variance = np.var(data**lmb / lmb, axis=0)
+
+    return (lmb - 1) * np.sum(logdata, axis=0) - N/2 * np.log(variance)
 
 
 def _boxcox_conf_interval(x, lmax, alpha):
@@ -940,12 +945,12 @@ def _boxcox_conf_interval(x, lmax, alpha):
 
 def boxcox(x, lmbda=None, alpha=None):
     r"""
-    Return a positive dataset transformed by a Box-Cox power transformation.
+    Return a dataset transformed by a Box-Cox power transformation.
 
     Parameters
     ----------
     x : ndarray
-        Input array.  Should be 1-dimensional.
+        Input array.  Must be positive 1-dimensional.  Must not be constant.
     lmbda : {None, scalar}, optional
         If `lmbda` is not None, do the transformation for that value.
 
@@ -1025,8 +1030,14 @@ def boxcox(x, lmbda=None, alpha=None):
 
     """
     x = np.asarray(x)
+    if x.ndim != 1:
+        raise ValueError("Data must be 1-dimensional.")
+
     if x.size == 0:
         return x
+
+    if np.all(x == x[0]):
+        raise ValueError("Data must not be constant.")
 
     if any(x <= 0):
         raise ValueError("Data must be positive.")
@@ -1333,6 +1344,13 @@ def yeojohnson(x, lmbda=None):
     if x.size == 0:
         return x
 
+    if np.issubdtype(x.dtype, np.complexfloating):
+        raise ValueError('Yeo-Johnson transformation is not defined for '
+                         'complex numbers.')
+
+    if np.issubdtype(x.dtype, np.integer):
+        x = x.astype(np.float64, copy=False)
+
     if lmbda is not None:
         return _yeojohnson_transform(x, lmbda)
 
@@ -1462,7 +1480,10 @@ def yeojohnson_llf(lmb, data):
 
 
 def yeojohnson_normmax(x, brack=(-2, 2)):
-    """Compute optimal Yeo-Johnson transform parameter for input data, using
+    """
+    Compute optimal Yeo-Johnson transform parameter.
+    
+    Compute optimal Yeo-Johnson transform parameter for input data, using
     maximum likelihood estimation.
 
     Parameters
@@ -1479,13 +1500,13 @@ def yeojohnson_normmax(x, brack=(-2, 2)):
     maxlog : float
         The optimal transform parameter found.
 
-    Notes
-    -----
-    .. versionadded:: 1.2.0
-
     See Also
     --------
     yeojohnson, yeojohnson_llf, yeojohnson_normplot
+
+    Notes
+    -----
+    .. versionadded:: 1.2.0
 
     Examples
     --------
@@ -1656,7 +1677,7 @@ def shapiro(x):
 
 
 # Values from Stephens, M A, "EDF Statistics for Goodness of Fit and
-#             Some Comparisons", Journal of he American Statistical
+#             Some Comparisons", Journal of the American Statistical
 #             Association, Vol. 69, Issue 347, Sept. 1974, pp 730-737
 _Avals_norm = array([0.576, 0.656, 0.787, 0.918, 1.092])
 _Avals_expon = array([0.922, 1.078, 1.341, 1.606, 1.957])
@@ -1676,9 +1697,9 @@ AndersonResult = namedtuple('AndersonResult', ('statistic',
 
 def anderson(x, dist='norm'):
     """
-    Anderson-Darling test for data coming from a particular distribution
+    Anderson-Darling test for data coming from a particular distribution.
 
-    The Anderson-Darling tests the null hypothesis that a sample is
+    The Anderson-Darling test tests the null hypothesis that a sample is
     drawn from a population that follows a particular distribution.
     For the Anderson-Darling test, the critical values depend on
     which distribution is being tested against.  This function works
@@ -1688,18 +1709,19 @@ def anderson(x, dist='norm'):
     Parameters
     ----------
     x : array_like
-        array of sample data
-    dist : {'norm','expon','logistic','gumbel','gumbel_l', gumbel_r',
+        Array of sample data.
+    dist : {'norm', 'expon', 'logistic', 'gumbel', 'gumbel_l', 'gumbel_r',
         'extreme1'}, optional
-        the type of distribution to test against.  The default is 'norm'
-        and 'extreme1', 'gumbel_l' and 'gumbel' are synonyms.
+        The type of distribution to test against.  The default is 'norm'.
+        The names 'extreme1', 'gumbel_l' and 'gumbel' are synonyms for the
+        same distribution.
 
     Returns
     -------
     statistic : float
-        The Anderson-Darling test statistic
+        The Anderson-Darling test statistic.
     critical_values : list
-        The critical values for this distribution
+        The critical values for this distribution.
     significance_level : list
         The significance levels for the corresponding critical values
         in percents.  The function returns critical values for a
@@ -1912,11 +1934,12 @@ def anderson_ksamp(samples, midrank=True):
     statistic : float
         Normalized k-sample Anderson-Darling test statistic.
     critical_values : array
-        The critical values for significance levels 25%, 10%, 5%, 2.5%, 1%.
+        The critical values for significance levels 25%, 10%, 5%, 2.5%, 1%,
+        0.5%, 0.1%.
     significance_level : float
         An approximate significance level at which the null hypothesis for the
         provided samples can be rejected. The value is floored / capped at
-        1% / 25%.
+        0.1% / 25%.
 
     Raises
     ------
@@ -2051,7 +2074,7 @@ AnsariResult = namedtuple('AnsariResult', ('statistic', 'pvalue'))
 
 def ansari(x, y):
     """
-    Perform the Ansari-Bradley test for equal scale parameters
+    Perform the Ansari-Bradley test for equal scale parameters.
 
     The Ansari-Bradley test is a non-parametric test for the equality
     of the scale parameter of the distributions from which two
@@ -2060,14 +2083,14 @@ def ansari(x, y):
     Parameters
     ----------
     x, y : array_like
-        arrays of sample data
+        Arrays of sample data.
 
     Returns
     -------
     statistic : float
-        The Ansari-Bradley test statistic
+        The Ansari-Bradley test statistic.
     pvalue : float
-        The p-value of the hypothesis test
+        The p-value of the hypothesis test.
 
     See Also
     --------
@@ -2147,7 +2170,7 @@ BartlettResult = namedtuple('BartlettResult', ('statistic', 'pvalue'))
 
 def bartlett(*args):
     """
-    Perform Bartlett's test for equal variances
+    Perform Bartlett's test for equal variances.
 
     Bartlett's test tests the null hypothesis that all input samples
     are from populations with equal variances.  For samples
@@ -2196,6 +2219,27 @@ def bartlett(*args):
            Tests. Proceedings of the Royal Society of London. Series A,
            Mathematical and Physical Sciences, Vol. 160, No.901, pp. 268-282.
 
+    Examples
+    --------
+    Test whether or not the lists `a`, `b` and `c` come from populations
+    with equal variances.
+
+    >>> from scipy.stats import bartlett
+    >>> a = [8.88, 9.12, 9.04, 8.98, 9.00, 9.08, 9.01, 8.85, 9.06, 8.99]
+    >>> b = [8.88, 8.95, 9.29, 9.44, 9.15, 9.58, 8.36, 9.18, 8.67, 9.05]
+    >>> c = [8.95, 9.12, 8.95, 8.85, 9.03, 8.84, 9.07, 8.98, 8.86, 8.98]
+    >>> stat, p = bartlett(a, b, c)
+    >>> p
+    1.1254782518834628e-05
+
+    The very small p-value suggests that the populations do not have equal
+    variances.
+
+    This is not surprising, given that the sample variance of `b` is much
+    larger than that of `a` and `c`:
+
+    >>> [np.var(x, ddof=1) for x in [a, b, c]]
+    [0.007054444444444413, 0.13073888888888888, 0.008890000000000002]
     """
     # Handle empty input and input that is not 1d
     for a in args:
@@ -2271,13 +2315,34 @@ def levene(*args, **kwds):
 
     References
     ----------
-    .. [1]  https://www.itl.nist.gov/div898/handbook/eda/section3/eda35a.htm
-    .. [2]   Levene, H. (1960). In Contributions to Probability and Statistics:
-               Essays in Honor of Harold Hotelling, I. Olkin et al. eds.,
-               Stanford University Press, pp. 278-292.
-    .. [3]  Brown, M. B. and Forsythe, A. B. (1974), Journal of the American
-              Statistical Association, 69, 364-367
+    .. [1] https://www.itl.nist.gov/div898/handbook/eda/section3/eda35a.htm
+    .. [2] Levene, H. (1960). In Contributions to Probability and Statistics:
+           Essays in Honor of Harold Hotelling, I. Olkin et al. eds.,
+           Stanford University Press, pp. 278-292.
+    .. [3] Brown, M. B. and Forsythe, A. B. (1974), Journal of the American
+           Statistical Association, 69, 364-367
 
+    Examples
+    --------
+    Test whether or not the lists `a`, `b` and `c` come from populations
+    with equal variances.
+
+    >>> from scipy.stats import levene
+    >>> a = [8.88, 9.12, 9.04, 8.98, 9.00, 9.08, 9.01, 8.85, 9.06, 8.99]
+    >>> b = [8.88, 8.95, 9.29, 9.44, 9.15, 9.58, 8.36, 9.18, 8.67, 9.05]
+    >>> c = [8.95, 9.12, 8.95, 8.85, 9.03, 8.84, 9.07, 8.98, 8.86, 8.98]
+    >>> stat, p = levene(a, b, c)
+    >>> p
+    0.002431505967249681
+
+    The small p-value suggests that the populations do not have equal
+    variances.
+
+    This is not surprising, given that the sample variance of `b` is much
+    larger than that of `a` and `c`:
+
+    >>> [np.var(x, ddof=1) for x in [a, b, c]]
+    [0.007054444444444413, 0.13073888888888888, 0.008890000000000002]
     """
     # Handle keyword arguments.
     center = 'median'
@@ -2357,15 +2422,15 @@ def binom_test(x, n=None, p=0.5, alternative='two-sided'):
 
     Parameters
     ----------
-    x : integer or array_like
-        the number of successes, or if x has length 2, it is the
+    x : int or array_like
+        The number of successes, or if x has length 2, it is the
         number of successes and the number of failures.
-    n : integer
-        the number of trials.  This is ignored if x gives both the
-        number of successes and failures
+    n : int
+        The number of trials.  This is ignored if x gives both the
+        number of successes and failures.
     p : float, optional
-        The hypothesized probability of success.  0 <= p <= 1. The
-        default value is p = 0.5
+        The hypothesized probability of success.  ``0 <= p <= 1``. The
+        default value is ``p = 0.5``.
     alternative : {'two-sided', 'greater', 'less'}, optional
         Indicates the alternative hypothesis. The default value is
         'two-sided'.
@@ -2373,7 +2438,7 @@ def binom_test(x, n=None, p=0.5, alternative='two-sided'):
     Returns
     -------
     p-value : float
-        The p-value of the hypothesis test
+        The p-value of the hypothesis test.
 
     References
     ----------
@@ -2394,7 +2459,7 @@ def binom_test(x, n=None, p=0.5, alternative='two-sided'):
     because the returned p-value is greater than the critical value of 5%.
 
     """
-    x = atleast_1d(x).astype(np.integer)
+    x = atleast_1d(x).astype(np.int_)
     if len(x) == 2:
         n = x[1] + x[0]
         x = x[0]
@@ -2519,6 +2584,27 @@ def fligner(*args, **kwds):
            applications to the outer continental shelf biding data.
            Technometrics, 23(4), 351-361.
 
+    Examples
+    --------
+    Test whether or not the lists `a`, `b` and `c` come from populations
+    with equal variances.
+
+    >>> from scipy.stats import fligner
+    >>> a = [8.88, 9.12, 9.04, 8.98, 9.00, 9.08, 9.01, 8.85, 9.06, 8.99]
+    >>> b = [8.88, 8.95, 9.29, 9.44, 9.15, 9.58, 8.36, 9.18, 8.67, 9.05]
+    >>> c = [8.95, 9.12, 8.95, 8.85, 9.03, 8.84, 9.07, 8.98, 8.86, 8.98]
+    >>> stat, p = fligner(a, b, c)
+    >>> p
+    0.00450826080004775
+
+    The small p-value suggests that the populations do not have equal
+    variances.
+
+    This is not surprising, given that the sample variance of `b` is much
+    larger than that of `a` and `c`:
+
+    >>> [np.var(x, ddof=1) for x in [a, b, c]]
+    [0.007054444444444413, 0.13073888888888888, 0.008890000000000002]
     """
     # Handle empty input
     for a in args:
@@ -2717,20 +2803,22 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
     Parameters
     ----------
     x : array_like
-        The first set of measurements.
+        Either the first set of measurements (in which case `y` is the second
+        set of measurements), or the differences between two sets of
+        measurements (in which case `y` is not to be specified.)  Must be
+        one-dimensional.
     y : array_like, optional
-        The second set of measurements.  If `y` is not given, then the `x`
-        array is considered to be the differences between the two sets of
-        measurements.
-    zero_method : {"pratt", "wilcox", "zsplit"}, optional. Default is "wilcox".
-        "pratt":
-            includes zero-differences in the ranking process,
-            but drops the ranks of the zeros, see [4]_, (more conservative)
-        "wilcox":
-            discards all zero-differences, the default
-        "zsplit":
-            includes zero-differences in the ranking process and split the
-            zero rank between positive and negative ones
+        Either the second set of measurements (if `x` is the first set of
+        measurements), or not specified (if `x` is the differences between
+        two sets of measurements.)  Must be one-dimensional.
+    zero_method : {'pratt', 'wilcox', 'zsplit'}, optional
+        The following options are available (default is 'wilcox'):
+     
+          * 'pratt': Includes zero-differences in the ranking process,
+            but drops the ranks of the zeros, see [4]_, (more conservative).
+          * 'wilcox': Discards all zero-differences, the default.
+          * 'zsplit': Includes zero-differences in the ranking process and 
+            split the zero rank between positive and negative ones.
     correction : bool, optional
         If True, apply continuity correction by adjusting the Wilcoxon rank
         statistic by 0.5 towards the mean value when computing the
@@ -2760,13 +2848,14 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
     is that the differences are symmetric, see [2]_.
     The two-sided test has the null hypothesis that the median of the
     differences is zero against the alternative that it is different from
-    zero. The one-sided test has the null that the median is positive against
-    the alternative that the it is negative (``alternative == 'less'``),
-    or vice versa (``alternative == 'greater.'``).
+    zero. The one-sided test has the null hypothesis that the median is 
+    positive against the alternative that it is negative 
+    (``alternative == 'less'``), or vice versa (``alternative == 'greater.'``).
 
-    The test uses a normal approximation to derive the p-value. A typical rule
-    is to require that n > 20. For smaller n, exact tables can be used to find
-    critical values.
+    The test uses a normal approximation to derive the p-value (if
+    ``zero_method == 'pratt'``, the approximation is adjusted as in [5]_).
+    A typical rule is to require that n > 20 ([2]_, p. 383). For smaller n,
+    exact tables can be used to find critical values.
 
     References
     ----------
@@ -2777,6 +2866,10 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
        Vol. 54, 1959, pp. 655-667. :doi:`10.1080/01621459.1959.10501526`
     .. [4] Wilcoxon, F., Individual Comparisons by Ranking Methods,
        Biometrics Bulletin, Vol. 1, 1945, pp. 80-83. :doi:`10.2307/3001968`
+    .. [5] Cureton, E.E., The Normal Approximation to the Signed-Rank
+       Sampling Distribution When Zero Differences are Present,
+       Journal of the American Statistical Association, Vol. 62, 1967,
+       pp. 1068-1069. :doi:`10.1080/01621459.1967.10500917`
 
     Examples
     --------
@@ -2823,11 +2916,21 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
 
     if y is None:
         d = asarray(x)
+        if d.ndim > 1:
+            raise ValueError('Sample x must be one-dimensional.')
     else:
         x, y = map(asarray, (x, y))
+        if x.ndim > 1 or y.ndim > 1:
+            raise ValueError('Samples x and y must be one-dimensional.')
         if len(x) != len(y):
-            raise ValueError('Unequal N in wilcoxon. Aborting.')
+            raise ValueError('The samples x and y must have the same length.')
         d = x - y
+
+    if zero_method in ["wilcox", "pratt"]:
+        n_zero = np.sum(d == 0, axis=0)
+        if n_zero == len(d):
+            raise ValueError("zero_method 'wilcox' and 'pratt' do not work if "
+                             "the x - y is zero for all elements.")
 
     if zero_method == "wilcox":
         # Keep all non-zero differences
@@ -2852,7 +2955,7 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
     # i.e. the sum of the ranks, so r_minus and the min can be inferred
     # (If alternative='pratt', r_plus + r_minus = count*(count+1)/2 - r_zero.)
     # [3] uses the r_plus for the one-sided test, keep min for two-sided test
-    # to keep backwards compatability
+    # to keep backwards compatibility
     if alternative == "two-sided":
         T = min(r_plus, r_minus)
     else:
@@ -2862,6 +2965,9 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
 
     if zero_method == "pratt":
         r = r[d != 0]
+        # normal approximation needs to be adjusted, see Cureton (1967)
+        mn -= n_zero * (n_zero + 1.) * 0.25
+        se -= n_zero * (n_zero + 1.) * (2. * n_zero + 1.)
 
     replist, repnum = find_repeats(r)
     if repnum.size != 0:
@@ -2896,7 +3002,7 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
 
 def median_test(*args, **kwds):
     """
-    Mood's median test.
+    Perform a Mood's median test.
 
     Test that two or more samples come from populations with the same median.
 
@@ -2929,7 +3035,7 @@ def median_test(*args, **kwds):
         If True, *and* there are just two samples, apply Yates' correction
         for continuity when computing the test statistic associated with
         the contingency table.  Default is True.
-    lambda_ : float or str, optional.
+    lambda_ : float or str, optional
         By default, the statistic computed in this test is Pearson's
         chi-squared statistic.  `lambda_` allows a statistic from the
         Cressie-Read power divergence family to be used instead.  See
@@ -3118,16 +3224,31 @@ def median_test(*args, **kwds):
     return stat, p, grand_median, table
 
 
-def _circfuncs_common(samples, high, low):
+def _circfuncs_common(samples, high, low, nan_policy='propagate'):
+    # Ensure samples are array-like and size is not zero
     samples = np.asarray(samples)
     if samples.size == 0:
-        return np.nan, np.nan
+        return np.nan, np.asarray(np.nan), np.asarray(np.nan), None
 
-    ang = (samples - low)*2.*pi / (high - low)
-    return samples, ang
+    # Recast samples as radians that range between 0 and 2 pi and calculate
+    # the sine and cosine
+    sin_samp = sin((samples - low)*2.*pi / (high - low))
+    cos_samp = cos((samples - low)*2.*pi / (high - low))
+
+    # Apply the NaN policy
+    contains_nan, nan_policy = _contains_nan(samples, nan_policy)
+    if contains_nan and nan_policy == 'omit':
+        mask = np.isnan(samples)
+        # Set the sines and cosines that are NaN to zero
+        sin_samp[mask] = 0.0
+        cos_samp[mask] = 0.0
+    else:
+        mask = None
+
+    return samples, sin_samp, cos_samp, mask
 
 
-def circmean(samples, high=2*pi, low=0, axis=None):
+def circmean(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     """
     Compute the circular mean for samples in a range.
 
@@ -3142,6 +3263,10 @@ def circmean(samples, high=2*pi, low=0, axis=None):
     axis : int, optional
         Axis along which means are computed.  The default is to compute
         the mean of the flattened array.
+    nan_policy : {'propagate', 'raise', 'omit'}, optional
+        Defines how to handle when input contains nan. 'propagate' returns nan,
+        'raise' throws an error, 'omit' performs the calculations ignoring nan
+        values. Default is 'propagate'.
 
     Returns
     -------
@@ -3159,33 +3284,58 @@ def circmean(samples, high=2*pi, low=0, axis=None):
     0.4
 
     """
-    samples, ang = _circfuncs_common(samples, high, low)
-    S = sin(ang).sum(axis=axis)
-    C = cos(ang).sum(axis=axis)
-    res = arctan2(S, C)
-    mask = res < 0
+    samples, sin_samp, cos_samp, nmask = _circfuncs_common(samples, high, low,
+                                                           nan_policy=nan_policy)
+    sin_sum = sin_samp.sum(axis=axis)
+    cos_sum = cos_samp.sum(axis=axis)
+    res = arctan2(sin_sum, cos_sum)
+
+    mask_nan = ~np.isnan(res)
+    if mask_nan.ndim > 0:
+        mask = res[mask_nan] < 0
+    else:
+        mask = res < 0
+
     if mask.ndim > 0:
-        res[mask] += 2*pi
+        mask_nan[mask_nan] = mask
+        res[mask_nan] += 2*pi
     elif mask:
         res += 2*pi
+
+    # Set output to NaN if no samples went into the mean
+    if nmask is not None:
+        if nmask.all():
+            res = np.full(shape=res.shape, fill_value=np.nan)
+        else:
+            # Find out if any of the axis that are being averaged consist
+            # entirely of NaN.  If one exists, set the result (res) to NaN
+            nshape = 0 if axis is None else axis
+            smask = nmask.shape[nshape] == nmask.sum(axis=axis)
+            if smask.any():
+                res[smask] = np.nan
+
     return res*(high - low)/2.0/pi + low
 
 
-def circvar(samples, high=2*pi, low=0, axis=None):
+def circvar(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     """
-    Compute the circular variance for samples assumed to be in a range
+    Compute the circular variance for samples assumed to be in a range.
 
     Parameters
     ----------
     samples : array_like
         Input array.
-    low : float or int, optional
-        Low boundary for circular variance range.  Default is 0.
     high : float or int, optional
         High boundary for circular variance range.  Default is ``2*pi``.
+    low : float or int, optional
+        Low boundary for circular variance range.  Default is 0.
     axis : int, optional
         Axis along which variances are computed.  The default is to compute
         the variance of the flattened array.
+    nan_policy : {'propagate', 'raise', 'omit'}, optional
+        Defines how to handle when input contains nan. 'propagate' returns nan,
+        'raise' throws an error, 'omit' performs the calculations ignoring nan
+        values. Default is 'propagate'.
 
     Returns
     -------
@@ -3204,14 +3354,22 @@ def circvar(samples, high=2*pi, low=0, axis=None):
     2.19722457734
 
     """
-    samples, ang = _circfuncs_common(samples, high, low)
-    S = sin(ang).mean(axis=axis)
-    C = cos(ang).mean(axis=axis)
-    R = hypot(S, C)
+    samples, sin_samp, cos_samp, mask = _circfuncs_common(samples, high, low,
+                                                          nan_policy=nan_policy)
+    if mask is None:
+        sin_mean = sin_samp.mean(axis=axis)
+        cos_mean = cos_samp.mean(axis=axis)
+    else:
+        nsum = np.asarray(np.sum(~mask, axis=axis).astype(float))
+        nsum[nsum == 0] = np.nan
+        sin_mean = sin_samp.sum(axis=axis) / nsum
+        cos_mean = cos_samp.sum(axis=axis) / nsum
+    R = hypot(sin_mean, cos_mean)
+
     return ((high - low)/2.0/pi)**2 * 2 * log(1/R)
 
 
-def circstd(samples, high=2*pi, low=0, axis=None):
+def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     """
     Compute the circular standard deviation for samples assumed to be in the
     range [low to high].
@@ -3220,14 +3378,18 @@ def circstd(samples, high=2*pi, low=0, axis=None):
     ----------
     samples : array_like
         Input array.
-    low : float or int, optional
-        Low boundary for circular standard deviation range.  Default is 0.
     high : float or int, optional
         High boundary for circular standard deviation range.
         Default is ``2*pi``.
+    low : float or int, optional
+        Low boundary for circular standard deviation range.  Default is 0.
     axis : int, optional
         Axis along which standard deviations are computed.  The default is
         to compute the standard deviation of the flattened array.
+    nan_policy : {'propagate', 'raise', 'omit'}, optional
+        Defines how to handle when input contains nan. 'propagate' returns nan,
+        'raise' throws an error, 'omit' performs the calculations ignoring nan
+        values. Default is 'propagate'.
 
     Returns
     -------
@@ -3246,8 +3408,16 @@ def circstd(samples, high=2*pi, low=0, axis=None):
     0.063564063306
 
     """
-    samples, ang = _circfuncs_common(samples, high, low)
-    S = sin(ang).mean(axis=axis)
-    C = cos(ang).mean(axis=axis)
-    R = hypot(S, C)
+    samples, sin_samp, cos_samp, mask = _circfuncs_common(samples, high, low,
+                                                          nan_policy=nan_policy)
+    if mask is None:
+        sin_mean = sin_samp.mean(axis=axis)
+        cos_mean = cos_samp.mean(axis=axis)
+    else:
+        nsum = np.asarray(np.sum(~mask, axis=axis).astype(float))
+        nsum[nsum == 0] = np.nan
+        sin_mean = sin_samp.sum(axis=axis) / nsum
+        cos_mean = cos_samp.sum(axis=axis) / nsum
+    R = hypot(sin_mean, cos_mean)
+
     return ((high - low)/2.0/pi) * sqrt(-2*log(R))

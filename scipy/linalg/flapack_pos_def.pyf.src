@@ -1,6 +1,53 @@
 ! Signatures for f2py-wrappers of FORTRAN LAPACK Positive Definite Matrix functions.
 !
 
+subroutine <prefix>pstrf(n,a,lda,piv,rank_c,tol,work,info,lower)
+    ! c,x,info = pstrf(a,b,lower=0,overwrite_a=0,overwrite_b=0)
+    ! Solve A * X = B.
+    ! A is symmetric/hermitian positive semidefinite
+    ! P**T * A * P = U**T * U ,  if UPLO = 'U',
+    ! P**T * A * P = L  * L**T,  if UPLO = 'L',
+    ! where U is an upper triangular matrix and L is lower triangular, and
+    ! P is stored as vector PIV.
+
+    callstatement (*f2py_func)((lower?"L":"U"),&n,a,&lda,piv,&rank_c,&tol,work,&info)
+    callprotoargument char*,int*,<ctype>*,int*,int*,int*,<ctypereal>*,<ctypereal>*,int*
+    
+    integer optional,intent(in),check(lower==0||lower==1) :: lower = 0
+    integer depend(a),intent(hide):: n = shape(a,0)
+    <ftype> dimension(n,n),check(shape(a,0)==shape(a,1)),intent(in,out,copy,out=c) :: a
+    integer intent(hide),depend(a) :: lda=max(1,shape(a, 0))
+    integer intent(out),dimension(n),depend(n) :: piv
+    integer intent(out) :: rank_c
+    <ftypereal> optional, intent(in) :: tol = -1.0
+    <ftypereal> intent(hide),dimension(2*n),depend(n) :: work
+    integer intent(out) :: info
+end subroutine <prefix>pstrf
+
+
+subroutine <prefix>pstf2(n,a,lda,piv,rank_c,tol,work,info,lower)
+    ! c,x,info = pstf2(a,b,lower=0,overwrite_a=0,overwrite_b=0)
+    ! Solve A * X = B.
+    ! A is symmetric positive semidefinite
+    ! P**T * A * P = U**T * U ,  if UPLO = 'U',
+    ! P**T * A * P = L  * L**T,  if UPLO = 'L',
+    ! where U is an upper triangular matrix and L is lower triangular, and
+    ! P is stored as vector PIV.
+
+    callstatement (*f2py_func)((lower?"L":"U"),&n,a,&lda,piv,&rank_c,&tol,work,&info)
+    callprotoargument char*,int*,<ctype>*,int*,int*,int*,<ctypereal>*,<ctypereal>*,int*
+
+    integer optional,intent(in),check(lower==0||lower==1) :: lower = 0
+    integer depend(a),intent(hide):: n = shape(a,0)
+    <ftype> dimension(n,n),check(shape(a,0)==shape(a,1)),intent(in,out,copy,out=c) :: a
+    integer intent(hide),depend(a) :: lda=max(1,shape(a, 0))
+    integer intent(out),dimension(n),depend(n) :: piv
+    integer intent(out) :: rank_c
+    <ftypereal> optional,intent(in) :: tol = -1.0
+    <ftypereal> intent(hide),dimension(2*n),depend(n) :: work
+    integer intent(out) :: info
+end subroutine <prefix>pstf2
+
 
 subroutine <prefix>posv(n,nrhs,a,b,info,lower)
     ! c,x,info = posv(a,b,lower=0,overwrite_a=0,overwrite_b=0)

@@ -1,7 +1,6 @@
 import numpy as np
 from numpy.linalg import lstsq
 from numpy.testing import assert_allclose, assert_equal, assert_
-from pytest import raises as assert_raises
 
 from scipy.sparse import rand
 from scipy.sparse.linalg import aslinearoperator
@@ -107,6 +106,19 @@ class BaseMixin(object):
         assert_(res.status == 1 or res.status == 3)
         assert_(isinstance(res.message, str))
         assert_(res.success)
+
+    # This is a test for issue #9982.
+    def test_almost_singular(self):
+        A = np.array(
+            [[0.8854232310355122, 0.0365312146937765, 0.0365312146836789],
+             [0.3742460132129041, 0.0130523214078376, 0.0130523214077873],
+             [0.9680633871281361, 0.0319366128718639, 0.0319366128718388]])
+
+        b = np.array(
+            [0.0055029366538097, 0.0026677442422208, 0.0066612514782381])
+
+        result = lsq_linear(A, b, method=self.method)
+        assert_(result.cost < 1.1e-8)
 
 
 class SparseMixin(object):

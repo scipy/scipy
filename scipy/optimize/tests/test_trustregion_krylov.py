@@ -5,14 +5,11 @@ To run it in its simplest form::
   nosetests test_optimize.py
 
 """
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 from scipy.optimize._trlib import (get_trlib_quadratic_subproblem)
-from numpy.testing import (assert_, assert_array_equal,
+from numpy.testing import (assert_,
                            assert_almost_equal,
-                           assert_equal, assert_array_almost_equal,
-                           assert_array_less)
+                           assert_equal, assert_array_almost_equal)
 
 KrylovQP = get_trlib_quadratic_subproblem(tol_rel_i=1e-8, tol_rel_b=1e-6)
 KrylovQP_disp = get_trlib_quadratic_subproblem(tol_rel_i=1e-8, tol_rel_b=1e-6, disp=True)

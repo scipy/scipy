@@ -1,6 +1,11 @@
 ===============================
-Building From Source on Mac OSX
+Building from source on Mac OSX
 ===============================
+
+.. note::
+
+   This document has not been maintained and is retained for reference only.
+   For building on macOS, please see :ref:`quickstart-mac`.
 
 These instructions describe how to build NumPy and SciPy libraries from
 source.
@@ -21,9 +26,9 @@ Alternatively, use Python from one of the OS X package managers
 Compilers (C/C++/FORTRAN/Cython)
 --------------------------------
 
-Though virtually any commercial C/C++ compiler may be used with SciPy, OS X
-comes with GNU C compilers pre-installed. The only thing missing is the GNU
-FORTRAN compiler.
+Though virtually any commercial C/C++ compiler may be used with SciPy, Clang C/C++ compiler,
+which is a Xcode command line tool, can be used for OS X.
+The only thing missing is the GNU FORTRAN compiler.
 
 We recommend gfortran; this is a free, open source, F95 compiler. We suggest you
 use the following binaries:
@@ -35,7 +40,7 @@ use the following binaries:
 See `this site <http://r.research.att.com/tools/>`__ for the most recent links.
 
 Unless you are building from released source packages, the `Cython
-<http://cython.org/>`__ compiler is also needed.
+<https://cython.org/>`__ compiler is also needed.
 
 BLAS/LAPACK Installation
 ------------------------

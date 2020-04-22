@@ -1,7 +1,4 @@
-from __future__ import division, print_function, absolute_import
-
 import scipy.sparse.linalg as la
-import scipy.sparse as sp
 import scipy.io as io
 import numpy as np
 import sys

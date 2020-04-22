@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 def configuration(parent_package='',top_path=None):
     from scipy._build_utils.system_info import get_info, NotFoundError
     lapack_opt = get_info("lapack_opt")
@@ -8,6 +6,7 @@ def configuration(parent_package='',top_path=None):
     config = Configuration('scipy',parent_package,top_path)
     config.add_subpackage('cluster')
     config.add_subpackage('constants')
+    config.add_subpackage('fft')
     config.add_subpackage('fftpack')
     config.add_subpackage('integrate')
     config.add_subpackage('interpolate')

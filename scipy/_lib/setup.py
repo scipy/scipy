@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 import os
 
 
@@ -42,6 +40,8 @@ def configuration(parent_package='',top_path=None):
                          sources=["messagestream.c"] + [get_messagestream_config],
                          depends=depends,
                          include_dirs=[include_dir])
+
+    config.add_subpackage('_uarray')
 
     return config
 

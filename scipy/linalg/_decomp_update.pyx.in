@@ -32,8 +32,6 @@ Routines for updating QR decompositions
 #    Updating the QR Decomposition. ACM Trans. Math. Softw. 16, 3693-77 (1990).
 #
 
-from __future__ import absolute_import
-
 __all__ = ['qr_delete', 'qr_insert', 'qr_update']
 
 {{py:
@@ -61,7 +59,7 @@ from numpy.linalg import LinAlgError
 
 # This is used in place of, e.g., cnp.NPY_C_CONTIGUOUS, to indicate that a C
 # F or non contiguous array is acceptable.
-cdef int ARRAY_ANYORDER = 0
+DEF ARRAY_ANYORDER = 0
 
 cdef int MEMORY_ERROR = libc.limits.INT_MAX
 
@@ -1207,7 +1205,7 @@ cdef form_qTu(cnp.ndarray q, cnp.ndarray u, void* qTuvoid, int* qTus,
     cdef void* uvoid
     cdef int qs[2]
     cdef int us[2]
-    cdef int ldu
+    cdef int ldu, p
 
     if cnp.PyArray_CHKFLAGS(q, cnp.NPY_F_CONTIGUOUS):
         qvoid = extract(q, qs)

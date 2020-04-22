@@ -10,10 +10,7 @@ Functions
 
 """
 
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
-from scipy._lib.six import callable
 from scipy.optimize import _cobyla
 from .optimize import OptimizeResult, _check_unknown_options
 try:
@@ -28,7 +25,7 @@ __all__ = ['fmin_cobyla']
 def fmin_cobyla(func, x0, cons, args=(), consargs=None, rhobeg=1.0,
                 rhoend=1e-4, maxfun=1000, disp=None, catol=2e-4):
     """
-    Minimize a function using the Constrained Optimization BY Linear
+    Minimize a function using the Constrained Optimization By Linear
     Approximation (COBYLA) method. This method wraps a FORTRAN
     implementation of the algorithm.
 
@@ -79,13 +76,13 @@ def fmin_cobyla(func, x0, cons, args=(), consargs=None, rhobeg=1.0,
     Suppose the function is being minimized over k variables. At the
     jth iteration the algorithm has k+1 points v_1, ..., v_(k+1),
     an approximate solution x_j, and a radius RHO_j.
-    (i.e. linear plus a constant) approximations to the objective
+    (i.e., linear plus a constant) approximations to the objective
     function and constraint functions such that their function values
     agree with the linear approximation on the k+1 points v_1,.., v_(k+1).
     This gives a linear program to solve (where the linear approximations
     of the constraint functions are constrained to be non-negative).
 
-    However the linear approximations are likely only good
+    However, the linear approximations are likely only good
     approximations near the current simplex, so the linear program is
     given the further requirement that the solution, which
     will become x_(j+1), must be within RHO_j from x_j. RHO_j only
@@ -265,7 +262,8 @@ def _minimize_cobyla(fun, x0, args=(), constraints=(),
                                       'in COBYLA subroutine.',
                                    4: 'Did not converge to a solution '
                                       'satisfying the constraints. See '
-                                      '`maxcv` for magnitude of violation.'
+                                      '`maxcv` for magnitude of violation.',
+                                   5: 'NaN result encountered.'
                                    }.get(info[0], 'Unknown exit status.'),
                           nfev=int(info[1]),
                           fun=info[2],

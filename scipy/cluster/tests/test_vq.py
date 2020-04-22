@@ -1,13 +1,11 @@
 
-from __future__ import division, print_function, absolute_import
-
 import warnings
 import sys
 
 import numpy as np
 from numpy.testing import (assert_array_equal, assert_array_almost_equal,
-                           assert_allclose, assert_equal, assert_)
-from scipy._lib._numpy_compat import suppress_warnings
+                           assert_allclose, assert_equal, assert_,
+                           suppress_warnings)
 import pytest
 from pytest import raises as assert_raises
 
@@ -256,7 +254,7 @@ class TestKMean(object):
 
         # minit='random' can give warnings, filter those
         with suppress_warnings() as sup:
-            sup.filter(message="One of the clusters is empty. Re-run")
+            sup.filter(message="One of the clusters is empty. Re-run.")
             kmeans2(data, 3, minit='random')
             kmeans2(data[:, :1], 3, minit='random')  # special case (1-D)
 

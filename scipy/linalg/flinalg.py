@@ -2,8 +2,6 @@
 # Author: Pearu Peterson, March 2002
 #
 
-from __future__ import division, print_function, absolute_import
-
 __all__ = ['get_flinalg_funcs']
 
 # The following ensures that possibly missing flavor (C or Fortran) is
@@ -28,7 +26,7 @@ _type_conv = {'f':'s', 'd':'d', 'F':'c', 'D':'z'}  # 'd' will be default for 'i'
 
 def get_flinalg_funcs(names,arrays=(),debug=0):
     """Return optimal available _flinalg function objects with
-    names. arrays are used to determine optimal prefix."""
+    names. Arrays are used to determine optimal prefix."""
     ordering = []
     for i in range(len(arrays)):
         t = arrays[i].dtype.char

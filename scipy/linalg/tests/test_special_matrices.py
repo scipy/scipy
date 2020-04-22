@@ -1,14 +1,10 @@
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 from numpy import arange, add, array, eye, copy, sqrt
 from numpy.testing import (assert_equal, assert_array_equal,
                            assert_array_almost_equal, assert_allclose)
 from pytest import raises as assert_raises
 
-from scipy._lib.six import xrange
-
-from scipy import fftpack
+from scipy.fft import fft
 from scipy.special import comb
 from scipy.linalg import (toeplitz, hankel, circulant, hadamard, leslie, dft,
                           companion, tri, triu, tril, kron, block_diag,
@@ -328,7 +324,7 @@ class TestHelmert(object):
             H_full = helmert(n, full=True)
             H_partial = helmert(n)
             for U in H_full[1:, :].T, H_partial.T:
-                C = np.eye(n) - np.ones((n, n)) / n
+                C = np.eye(n) - np.full((n, n), 1 / n)
                 assert_allclose(U.dot(U.T), C)
                 assert_allclose(U.T.dot(U), np.eye(n-1), atol=1e-12)
 
@@ -506,7 +502,7 @@ class TestInvHilbert(object):
         assert_allclose(invhilbert(17), invh17.astype(float), rtol=1e-12)
 
     def test_inverse(self):
-        for n in xrange(1, 10):
+        for n in range(1, 10):
             a = hilbert(n)
             b = invhilbert(n)
             # The Hilbert matrix is increasingly badly conditioned,
@@ -607,7 +603,7 @@ def test_dft():
     x = array([0, 1, 2, 3, 4, 5, 0, 1])
     m = dft(8)
     mx = m.dot(x)
-    fx = fftpack.fft(x)
+    fx = fft(x)
     assert_array_almost_equal(mx, fx)
 
 

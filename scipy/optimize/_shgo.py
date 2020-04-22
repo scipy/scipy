@@ -2,8 +2,6 @@
 shgo: The simplicial homology global optimisation algorithm
 """
 
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 import time
 import logging
@@ -45,7 +43,7 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
         Constraints definition.
         Function(s) ``R**n`` in the form::
 
-            g(x) <= 0 applied as g : R^n -> R^m
+            g(x) >= 0 applied as g : R^n -> R^m
             h(x) == 0 applied as h : R^n -> R^p
 
         Each constraint is defined in a dictionary with fields:
@@ -167,12 +165,12 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
 
         * minimize_every_iter : bool
             If True then promising global sampling points will be passed to a
-            local minimisation routine every iteration. If False then only the
-            final minimiser pool will be run. Defaults to False.
+            local minimization routine every iteration. If False then only the
+            final minimizer pool will be run. Defaults to False.
         * local_iter : int
-            Only evaluate a few of the best minimiser pool candidates every
+            Only evaluate a few of the best minimizer pool candidates every
             iteration. If False all potential points are passed to the local
-            minimisation routine.
+            minimization routine.
         * infty_constraints: bool
             If True then any sampling points generated which are outside will
             the feasible domain will be saved and given an objective function
@@ -197,7 +195,7 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
         problems where the convergence is relatively fast.
         User defined sampling functions must accept two arguments of ``n``
         sampling points of dimension ``dim`` per call and output an array of
-        sampling points with shape `n x dim`. 
+        sampling points with shape `n x dim`.
 
     Returns
     -------
@@ -214,14 +212,14 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
         ``nfev`` the total number of objective function evaluations including
         the sampling calls,
         ``nlfev`` the total number of objective function evaluations
-        culminating from all local search optimisations,
+        culminating from all local search optimizations,
         ``nit`` number of iterations performed by the global routine.
 
     Notes
     -----
-    Global optimization using simplicial homology global optimisation [1]_.
-    Appropriate for solving general purpose NLP and blackbox optimisation
-    problems to global optimality (low dimensional problems).
+    Global optimization using simplicial homology global optimization [1]_.
+    Appropriate for solving general purpose NLP and blackbox optimization
+    problems to global optimality (low-dimensional problems).
 
     In general, the optimization problems are of the form::
 
@@ -238,14 +236,14 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
     specified using the `bounds` argument.
 
     While most of the theoretical advantages of SHGO are only proven for when
-    ``f(x)`` is a Lipschitz smooth function. The algorithm is also proven to
+    ``f(x)`` is a Lipschitz smooth function, the algorithm is also proven to
     converge to the global optimum for the more general case where ``f(x)`` is
     non-continuous, non-convex and non-smooth, if the default sampling method
     is used [1]_.
 
     The local search method may be specified using the ``minimizer_kwargs``
-    parameter which is passed on to ``scipy.optimize.minimize``. By default
-    the ``SLSQP`` method is used. In general it is recommended to use the
+    parameter which is passed on to ``scipy.optimize.minimize``. By default,
+    the ``SLSQP`` method is used. In general, it is recommended to use the
     ``SLSQP`` or ``COBYLA`` local minimization if inequality constraints
     are defined for the problem since the other methods do not use constraints.
 
@@ -253,7 +251,7 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
     sequence. The primitive polynomials and various sets of initial direction
     numbers for generating Sobol sequences is provided by [3]_ by Frances Kuo
     and Stephen Joe. The original program sobol.cc (MIT) is available and
-    described at http://web.maths.unsw.edu.au/~fkuo/sobol/ translated to
+    described at https://web.maths.unsw.edu.au/~fkuo/sobol/ translated to
     Python 3 by Carl Sandrock 2016-03-31.
 
     References
@@ -267,7 +265,7 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
            better  two-dimensional projections", SIAM J. Sci. Comput. 30,
            2635-2654.
     .. [4] Hoch, W and Schittkowski, K (1981) "Test examples for nonlinear
-           programming codes", Lecture Notes in Economics and mathematical
+           programming codes", Lecture Notes in Economics and Mathematical
            Systems, 187. Springer-Verlag, New York.
            http://www.ai7.uni-bayreuth.de/test_problem_coll.pdf
     .. [5] Wales, DJ (2015) "Perspective: Insight into reaction coordinates and
@@ -294,7 +292,7 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
     >>> result.x
     array([ 0.99999851,  0.99999704,  0.99999411,  0.9999882 ])
 
-    Next we consider the Eggholder function, a problem with several local
+    Next, we consider the Eggholder function, a problem with several local
     minima and one global minimum. We will demonstrate the use of arguments and
     the capabilities of `shgo`.
     (https://en.wikipedia.org/wiki/Test_functions_for_optimization)
@@ -307,7 +305,7 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
     ...
     >>> bounds = [(-512, 512), (-512, 512)]
 
-    `shgo` has two built-in low discrepancy sampling sequences.  First we will
+    `shgo` has two built-in low discrepancy sampling sequences. First, we will
     input 30 initial sampling points of the Sobol sequence:
 
     >>> result = shgo(eggholder, bounds, n=30, sampling_method='sobol')
@@ -400,9 +398,9 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
          fun: 29.894378159142136
         funl: array([29.89437816])
      message: 'Optimization terminated successfully.'
-        nfev: 119
+        nfev: 114
          nit: 3
-       nlfev: 40
+       nlfev: 35
        nlhev: 0
        nljev: 5
      success: True
@@ -432,7 +430,7 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
         # with a warning
         shc.find_lowest_vertex()
         shc.break_routine = True
-        shc.fail_routine(mes="Failed to find a feasible minimiser point. "
+        shc.fail_routine(mes="Failed to find a feasible minimizer point. "
                              "Lowest sampling point = {}".format(shc.f_lowest))
         shc.res.fun = shc.f_lowest
         shc.res.x = shc.x_lowest
@@ -454,7 +452,7 @@ class SHGO(object):
 
         # Input checks
         methods = ['sobol', 'simplicial']
-        if sampling_method not in methods:
+        if isinstance(sampling_method, str) and sampling_method not in methods:
             raise ValueError(("Unknown sampling_method specified."
                               " Valid methods: {}").format(', '.join(methods)))
 
@@ -492,7 +490,7 @@ class SHGO(object):
                 constraints = (constraints,)
 
             for cons in constraints:
-                if cons['type'] is 'ineq':
+                if cons['type'] == 'ineq':
                     self.g_cons.append(cons['fun'])
                     try:
                         self.g_args.append(cons['args'])
@@ -595,7 +593,7 @@ class SHGO(object):
         self.n = n  # Sampling points per iteration
         self.nc = n  # Sampling points to sample in current iteration
         self.n_prc = 0  # Processed points (used to track Delaunay iters)
-        self.n_sampled = 0  # To track no. of sampling points already generated
+        self.n_sampled = 0  # To track number of sampling points already generated
         self.fn = 0  # Number of feasible sampling points evaluations performed
         self.hgr = 0  # Homology group rank
 
@@ -618,7 +616,7 @@ class SHGO(object):
             self.minimizers = self.simplex_minimizers
             self.sampling_method = sampling_method
 
-        elif (sampling_method == 'sobol') or (type(sampling_method) is not str):
+        elif sampling_method == 'sobol' or not isinstance(sampling_method, str):
             self.iterate_complex = self.iterate_delaunay
             self.minimizers = self.delaunay_complex_minimisers
             # Sampling method used
@@ -633,7 +631,9 @@ class SHGO(object):
             else:
                 # A user defined sampling method:
                 # self.sampling_points = sampling_method
-                self.sampling = sampling_method
+                self.sampling = self.sampling_custom
+                self.sampling_function = sampling_method  # F(n, d)
+                self.sampling_method = 'custom'
 
         # Local controls
         self.stop_l_iter = False  # Local minimisation iterations
@@ -656,7 +656,7 @@ class SHGO(object):
     def init_options(self, options):
         """
         Initiates the options.
-        
+
         Can also be useful to change parameters after class initiation.
 
         Parameters
@@ -712,7 +712,7 @@ class SHGO(object):
 
         If uniform sampling is used, every iteration adds 'n' sampling points.
 
-        Iterations if a stopping criteria (ex. sampling points or
+        Iterations if a stopping criteria (e.g., sampling points or
         processing time) has been met.
 
         """
@@ -736,14 +736,14 @@ class SHGO(object):
 
     def find_minima(self):
         """
-        Construct the minimiser pool, map the minimisers to local minima
+        Construct the minimizer pool, map the minimizers to local minima
         and sort the results into a global return object.
         """
         self.minimizers()
-        if len(self.X_min) is not 0:
-            # Minimise the pool of minimisers with local minimisation methods
+        if len(self.X_min) != 0:
+            # Minimize the pool of minimizers with local minimization methods
             # Note that if Options['local_iter'] is an `int` instead of default
-            # value False then only that number of candidates will be minimised
+            # value False then only that number of candidates will be minimized
             self.minimise_pool(self.local_iter)
             # Sort results and build the global return object
             self.sort_result()
@@ -808,7 +808,7 @@ class SHGO(object):
         Specify in options (with ``self.f_min_true = options['f_min']``)
         and the tolerance with ``f_tol = options['f_tol']``
         """
-        # If no minimiser has been found use the lowest sampling value
+        # If no minimizer has been found use the lowest sampling value
         if len(self.LMC.xl_maps) == 0:
             self.find_lowest_vertex()
 
@@ -868,10 +868,10 @@ class SHGO(object):
     def iterate(self):
         self.iterate_complex()
 
-        # Build minimiser pool
+        # Build minimizer pool
         if self.minimize_every_iter:
             if not self.break_routine:
-                self.find_minima()  # Process minimiser pool
+                self.find_minima()  # Process minimizer pool
 
         # Algorithm updates
         self.iters_done += 1
@@ -919,15 +919,15 @@ class SHGO(object):
                 if self.disp:
                     logging.info('=' * 60)
                     logging.info(
-                        'v.x = {} is minimiser'.format(self.HC.V[x].x_a))
-                    logging.info('v.f = {} is minimiser'.format(self.HC.V[x].f))
+                        'v.x = {} is minimizer'.format(self.HC.V[x].x_a))
+                    logging.info('v.f = {} is minimizer'.format(self.HC.V[x].f))
                     logging.info('=' * 30)
 
                 if self.HC.V[x] not in self.minimizer_pool:
                     self.minimizer_pool.append(self.HC.V[x])
 
                 if self.disp:
-                    logging.info('Neighbours:')
+                    logging.info('Neighbors:')
                     logging.info('=' * 30)
                     for vn in self.HC.V[x].nn:
                         logging.info('x = {} || f = {}'.format(vn.x, vn.f))
@@ -952,17 +952,17 @@ class SHGO(object):
 
         return self.X_min
 
-    # Local minimisation
-    # Minimiser pool processing
+    # Local minimization
+    # Minimizer pool processing
     def minimise_pool(self, force_iter=False):
         """
         This processing method can optionally minimise only the best candidate
-        solutions in the minimiser pool
+        solutions in the minimizer pool
 
         Parameters
         ----------
         force_iter : int
-                     Number of starting minimisers to process (can be sepcified
+                     Number of starting minimizers to process (can be sepcified
                      globally or locally)
 
         """
@@ -971,7 +971,7 @@ class SHGO(object):
         # build the topograph first before minimizing
         lres_f_min = self.minimize(self.X_min[0], ind=self.minimizer_pool[0])
 
-        # Trim minimised point from current minimiser set
+        # Trim minimized point from current minimizer set
         self.trim_min_pool(0)
 
         # Force processing to only
@@ -1000,17 +1000,17 @@ class SHGO(object):
                 self.stop_l_iter = True
                 break
 
-            # Construct topograph from current minimiser set
-            # (NOTE: This is a very small topograph using only the miniser pool
+            # Construct topograph from current minimizer set
+            # (NOTE: This is a very small topograph using only the minizer pool
             #        , it might be worth using some graph theory tools instead.
             self.g_topograph(lres_f_min.x, self.X_min)
 
-            # Find local minimum at the miniser with the greatest euclidean
+            # Find local minimum at the miniser with the greatest Euclidean
             # distance from the current solution
             ind_xmin_l = self.Z[:, -1]
             lres_f_min = self.minimize(self.Ss[-1, :], self.minimizer_pool[-1])
 
-            # Trim minimised point from current minimiser set
+            # Trim minimised point from current minimizer set
             self.trim_min_pool(ind_xmin_l)
 
         # Reset controls
@@ -1057,12 +1057,12 @@ class SHGO(object):
         Parameters
         ----------
         v_min : Vertex object
-                The minimiser vertex
+                The minimizer vertex
 
         Returns
         -------
         cbounds : list of lists
-            List of size dim with length-2 list of bounds for each dimension
+            List of size dimension with length-2 list of bounds for each dimension
 
         """
         cbounds = [[x_b_i[0], x_b_i[1]] for x_b_i in self.bounds]
@@ -1090,12 +1090,12 @@ class SHGO(object):
         Parameters
         ----------
         v_min : Vertex object
-                The minimiser vertex
+                The minimizer vertex
 
         Returns
         -------
         cbounds : list of lists
-            List of size dim with length-2 list of bounds for each dimension
+            List of size dimension with length-2 list of bounds for each dimension
         """
         cbounds = [[x_b_i[0], x_b_i[1]] for x_b_i in self.bounds]
 
@@ -1110,7 +1110,7 @@ class SHGO(object):
         Parameters
         ----------
         x_min : vector of floats
-            Current starting point to minimise.
+            Current starting point to minimize.
 
         Returns
         -------
@@ -1146,13 +1146,14 @@ class SHGO(object):
             if 'bounds' in self.min_solver_args:
                 self.minimizer_kwargs['bounds'] = g_bounds
 
-            if self.disp:
-                print('bounds in kwarg:')
-                print(self.minimizer_kwargs['bounds'])
         else:
             g_bounds = self.construct_lcb_delaunay(x_min, ind=ind)
             if 'bounds' in self.min_solver_args:
                 self.minimizer_kwargs['bounds'] = g_bounds
+
+        if self.disp and 'bounds' in self.minimizer_kwargs:
+            print('bounds in kwarg:')
+            print(self.minimizer_kwargs['bounds'])
 
         # Local minimization using scipy.optimize.minimize:
         lres = minimize(self.func, x_min, **self.minimizer_kwargs)
@@ -1160,14 +1161,14 @@ class SHGO(object):
         if self.disp:
             print('lres = {}'.format(lres))
 
-        # Local function evals for all minimisers
+        # Local function evals for all minimizers
         self.res.nlfev += lres.nfev
         if 'njev' in lres:
             self.res.nljev += lres.njev
         if 'nhev' in lres:
             self.res.nlhev += lres.nhev
 
-        try:  # Needed because of the brain dead 1x1 numpy arrays
+        try:  # Needed because of the brain dead 1x1 NumPy arrays
             lres.fun = lres.fun[0]
         except (IndexError, TypeError):
             lres.fun
@@ -1178,7 +1179,7 @@ class SHGO(object):
 
         return lres
 
-    # Post local minimisation processing
+    # Post local minimization processing
     def sort_result(self):
         """
         Sort results and build the global return object
@@ -1205,7 +1206,7 @@ class SHGO(object):
     def sampled_surface(self, infty_cons_sampl=False):
         """
         Sample the function surface.
-        
+
         There are 2 modes, if ``infty_cons_sampl`` is True then the sampled
         points that are generated outside the feasible domain will be
         assigned an ``inf`` value in accordance with SHGO rules.
@@ -1213,7 +1214,7 @@ class SHGO(object):
         evaluations at the computational costs of more Delaunay triangulation
         points.
 
-        If ``infty_cons_sampl`` is False then the infeasible points are discarded
+        If ``infty_cons_sampl`` is False, then the infeasible points are discarded
         and only a subspace of the sampled points are used. This comes at the
         cost of the loss of guaranteed convergence and usually requires more
         objective function evaluations.
@@ -1237,14 +1238,14 @@ class SHGO(object):
         self.n_sampled = self.nc
 
     def delaunay_complex_minimisers(self):
-        # Construct complex minimisers on the current sampling set.
+        # Construct complex minimizers on the current sampling set.
         # if self.fn >= (self.dim + 1):
         if self.fn >= (self.dim + 2):
             # TODO: Check on strange Qhull error where the number of vertices
             # required for an initial simplex is higher than n + 1?
             if self.dim < 2:  # Scalar objective functions
                 if self.disp:
-                    print('Constructing 1D minimizer pool')
+                    print('Constructing 1-D minimizer pool')
 
                 self.ax_subspace()
                 self.surface_topo_ref()
@@ -1267,7 +1268,7 @@ class SHGO(object):
 
             if self.disp:
                 logging.info(
-                    "Minimiser pool = SHGO.X_min = {}".format(self.X_min))
+                    "Minimizer pool = SHGO.X_min = {}".format(self.X_min))
         else:
             if self.disp:
                 print(
@@ -1294,7 +1295,7 @@ class SHGO(object):
         Carl Sandrock 2016-03-31
 
         The original program is available and described at
-        http://web.maths.unsw.edu.au/~fkuo/sobol/
+        https://web.maths.unsw.edu.au/~fkuo/sobol/
         """
         import gzip
         import os
@@ -1329,7 +1330,7 @@ class SHGO(object):
 
         for j in range(1, D):
             F_int = [int(item) for item in next(f).strip().split()]
-            (d, s, a), m = F_int[:3], [0] + F_int[3:]
+            (_, s, a), m = F_int[:3], [0] + F_int[3:]
 
             if L <= s:
                 for i in range(1, L + 1):
@@ -1371,6 +1372,21 @@ class SHGO(object):
                             + self.bounds[i][0])
         return self.C
 
+    def sampling_custom(self, n, dim):
+        """
+        Generates uniform sampling points in a hypercube and scales the points
+        to the bound limits.
+        """
+        # Generate sampling points.
+        # Generate uniform sample points in [0, 1]^m \subset R^m
+        self.C = self.sampling_function(n, dim)
+        # Distribute over bounds
+        for i in range(len(self.bounds)):
+            self.C[:, i] = (self.C[:, i] *
+                            (self.bounds[i][1] - self.bounds[i][0])
+                            + self.bounds[i][0])
+        return self.C
+
     def sampling_subspace(self):
         """Find subspace of feasible points from g_func definition"""
         # Subspace of feasible points.
@@ -1380,7 +1396,7 @@ class SHGO(object):
                 self.res.message = ('No sampling point found within the '
                                     + 'feasible set. Increasing sampling '
                                     + 'size.')
-                # sampling correctly for both 1D and >1D cases
+                # sampling correctly for both 1-D and >1-D cases
                 if self.disp:
                     print(self.res.message)
 
@@ -1407,7 +1423,7 @@ class SHGO(object):
         Find the objective function output reference table
         """
         # TODO: Replace with cached wrapper
-        
+
         # Note: This process can be pooled easily
         # Obj. function returns to be used as reference table.:
         f_cache_bool = False
@@ -1491,7 +1507,7 @@ class SHGO(object):
 
     def minimizers_1D(self):
         """
-        Returns the indexes of all minimizers
+        Returns the indices of all minimizers
         """
         self.minimizer_pool = []
         # Note: Can implement parallelization here
@@ -1526,7 +1542,7 @@ class SHGO(object):
     @staticmethod
     def find_neighbors_delaunay(pindex, triang):
         """
-        Returns the indexes of points connected to ``pindex`` on the Gabriel
+        Returns the indices of points connected to ``pindex`` on the Gabriel
         chain subgraph of the Delaunay triangulation.
         """
         return triang.vertex_neighbor_vertices[1][
@@ -1551,7 +1567,7 @@ class SHGO(object):
 
     def delaunay_minimizers(self):
         """
-        Returns the indexes of all minimizers
+        Returns the indices of all minimizers
         """
         self.minimizer_pool = []
         # Note: Can easily be parralized
@@ -1644,7 +1660,7 @@ class LMapCache:
         results['funl'] = self.f_maps[ind_sorted]
         results['funl'] = results['funl'].T
 
-        # Find global of all minimisers
+        # Find global of all minimizers
         results['x'] = self.xl_maps[ind_sorted[0]]  # Save global minima
         results['fun'] = self.f_maps[ind_sorted[0]]  # Save global fun value
 

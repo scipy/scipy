@@ -1,9 +1,8 @@
 """
 Tests for the stats.mstats module (support for masked arrays)
 """
-from __future__ import division, print_function, absolute_import
-
 import warnings
+import platform
 
 import numpy as np
 from numpy import nan
@@ -18,7 +17,7 @@ from pytest import raises as assert_raises
 from numpy.ma.testutils import (assert_equal, assert_almost_equal,
     assert_array_almost_equal, assert_array_almost_equal_nulp, assert_,
     assert_allclose, assert_array_equal)
-from scipy._lib._numpy_compat import suppress_warnings
+from numpy.testing import suppress_warnings
 
 
 class TestMquantiles(object):
@@ -246,7 +245,17 @@ class TestCorr(object):
         attributes = ('correlation', 'pvalue')
         check_named_results(res, attributes, ma=True)
 
+    @pytest.mark.skipif(platform.machine() == 'ppc64le',
+                        reason="fails/crashes on ppc64le")
     def test_kendalltau(self):
+        # check case with with maximum disorder and p=1
+        x = ma.array(np.array([9, 2, 5, 6]))
+        y = ma.array(np.array([4, 7, 9, 11]))
+        # Cross-check with exact result from R:
+        # cor.test(x,y,method="kendall",exact=1)
+        expected = [0.0, 1.0]
+        assert_almost_equal(np.asarray(mstats.kendalltau(x, y)), expected)
+        
         # simple case without ties
         x = ma.array(np.arange(10))
         y = ma.array(np.arange(10))
@@ -410,6 +419,14 @@ class TestTrimming(object):
         assert_equal(mstats.trimboth(x).count(), 60)
         assert_equal(mstats.trimtail(x).count(), 80)
 
+    def test_trimr(self):
+        x = ma.arange(10)
+        result = mstats.trimr(x, limits=(0.15, 0.14), inclusive=(False, False))
+        expected = ma.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+                            mask=[1, 1, 0, 0, 0, 0, 0, 0, 0, 1])
+        assert_equal(result, expected)
+        assert_equal(result.mask, expected.mask)
+
     def test_trimmedmean(self):
         data = ma.array([77, 87, 88,114,151,210,219,246,253,262,
                          296,299,306,376,428,515,666,1310,2611])
@@ -435,6 +452,19 @@ class TestTrimming(object):
         winsorized = mstats.winsorize(data)
         assert_equal(winsorized.mask, data.mask)
 
+    def test_winsorization_nan(self):
+        data = ma.array([np.nan, np.nan, 0, 1, 2])
+        assert_raises(ValueError, mstats.winsorize, data, (0.05, 0.05),
+                      nan_policy='raise')
+        # Testing propagate (default behavior)
+        assert_equal(mstats.winsorize(data, (0.4, 0.4)),
+                     ma.array([2, 2, 2, 2, 2]))
+        assert_equal(mstats.winsorize(data, (0.8, 0.8)),
+                     ma.array([np.nan, np.nan, np.nan, np.nan, np.nan]))
+        assert_equal(mstats.winsorize(data, (0.4, 0.4), nan_policy='omit'),
+                     ma.array([np.nan, np.nan, 2, 2, 2]))
+        assert_equal(mstats.winsorize(data, (0.8, 0.8), nan_policy='omit'),
+                     ma.array([np.nan, np.nan, 2, 2, 2]))
 
 class TestMoments(object):
     # Comparison numbers are found using R v.1.5.1
@@ -556,7 +586,7 @@ class TestMoments(object):
         im[:50, :] += 1
         im[:, :50] += 1
         cp = im.copy()
-        a = mstats.mode(im, None)
+        mstats.mode(im, None)
         assert_equal(im, cp)
 
 
@@ -1079,8 +1109,8 @@ class TestCompareWithStats(object):
         np.random.seed(1234567)
         x = np.random.randn(n)
         y = x + np.random.randn(n)
-        xm = np.ones(len(x) + 5) * 1e16
-        ym = np.ones(len(y) + 5) * 1e16
+        xm = np.full(len(x) + 5, 1e16)
+        ym = np.full(len(y) + 5, 1e16)
         xm[0:len(x)] = x
         ym[0:len(y)] = y
         mask = xm > 9e15
@@ -1089,10 +1119,10 @@ class TestCompareWithStats(object):
         return x, y, xm, ym
 
     def generate_xy_sample2D(self, n, nx):
-        x = np.ones((n, nx)) * np.nan
-        y = np.ones((n, nx)) * np.nan
-        xm = np.ones((n+5, nx)) * np.nan
-        ym = np.ones((n+5, nx)) * np.nan
+        x = np.full((n, nx), np.nan)
+        y = np.full((n, nx), np.nan)
+        xm = np.full((n+5, nx), np.nan)
+        ym = np.full((n+5, nx), np.nan)
 
         for i in range(nx):
             x[:, i], y[:, i], dx, dy = self.generate_xy_sample(n)

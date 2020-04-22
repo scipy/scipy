@@ -28,9 +28,8 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from __future__ import division, print_function, absolute_import
-
 import numpy
+from numpy.core.multiarray import normalize_axis_index
 from . import _ni_support
 from . import _nd_image
 
@@ -72,7 +71,7 @@ def _get_output_fourier_complex(output, input):
 
 def fourier_gaussian(input, sigma, n=-1, axis=-1, output=None):
     """
-    Multi-dimensional Gaussian fourier filter.
+    Multidimensional Gaussian fourier filter.
 
     The array is multiplied with the fourier transform of a Gaussian
     kernel.
@@ -119,7 +118,7 @@ def fourier_gaussian(input, sigma, n=-1, axis=-1, output=None):
     """
     input = numpy.asarray(input)
     output = _get_output_fourier(output, input)
-    axis = _ni_support._check_axis(axis, input.ndim)
+    axis = normalize_axis_index(axis, input.ndim)
     sigmas = _ni_support._normalize_sequence(sigma, input.ndim)
     sigmas = numpy.asarray(sigmas, dtype=numpy.float64)
     if not sigmas.flags.contiguous:
@@ -131,9 +130,9 @@ def fourier_gaussian(input, sigma, n=-1, axis=-1, output=None):
 
 def fourier_uniform(input, size, n=-1, axis=-1, output=None):
     """
-    Multi-dimensional uniform fourier filter.
+    Multidimensional uniform fourier filter.
 
-    The array is multiplied with the fourier transform of a box of given
+    The array is multiplied with the Fourier transform of a box of given
     size.
 
     Parameters
@@ -178,7 +177,7 @@ def fourier_uniform(input, size, n=-1, axis=-1, output=None):
     """
     input = numpy.asarray(input)
     output = _get_output_fourier(output, input)
-    axis = _ni_support._check_axis(axis, input.ndim)
+    axis = normalize_axis_index(axis, input.ndim)
     sizes = _ni_support._normalize_sequence(size, input.ndim)
     sizes = numpy.asarray(sizes, dtype=numpy.float64)
     if not sizes.flags.contiguous:
@@ -189,7 +188,7 @@ def fourier_uniform(input, size, n=-1, axis=-1, output=None):
 
 def fourier_ellipsoid(input, size, n=-1, axis=-1, output=None):
     """
-    Multi-dimensional ellipsoid fourier filter.
+    Multidimensional ellipsoid Fourier filter.
 
     The array is multiplied with the fourier transform of a ellipsoid of
     given sizes.
@@ -240,7 +239,7 @@ def fourier_ellipsoid(input, size, n=-1, axis=-1, output=None):
     """
     input = numpy.asarray(input)
     output = _get_output_fourier(output, input)
-    axis = _ni_support._check_axis(axis, input.ndim)
+    axis = normalize_axis_index(axis, input.ndim)
     sizes = _ni_support._normalize_sequence(size, input.ndim)
     sizes = numpy.asarray(sizes, dtype=numpy.float64)
     if not sizes.flags.contiguous:
@@ -251,9 +250,9 @@ def fourier_ellipsoid(input, size, n=-1, axis=-1, output=None):
 
 def fourier_shift(input, shift, n=-1, axis=-1, output=None):
     """
-    Multi-dimensional fourier shift filter.
+    Multidimensional Fourier shift filter.
 
-    The array is multiplied with the fourier transform of a shift operation.
+    The array is multiplied with the Fourier transform of a shift operation.
 
     Parameters
     ----------
@@ -297,7 +296,7 @@ def fourier_shift(input, shift, n=-1, axis=-1, output=None):
     """
     input = numpy.asarray(input)
     output = _get_output_fourier_complex(output, input)
-    axis = _ni_support._check_axis(axis, input.ndim)
+    axis = normalize_axis_index(axis, input.ndim)
     shifts = _ni_support._normalize_sequence(shift, input.ndim)
     shifts = numpy.asarray(shifts, dtype=numpy.float64)
     if not shifts.flags.contiguous:

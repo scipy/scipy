@@ -10,8 +10,6 @@ Spherical Voronoi Cython Code
 # Distributed under the same BSD license as Scipy.
 #
 
-from __future__ import absolute_import
-
 import numpy as np
 cimport numpy as np
 cimport cython

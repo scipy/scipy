@@ -15,7 +15,7 @@
 #include <ctype.h>
 
 
-/*********************************************************************** 
+/***********************************************************************
  * SuperLUObject methods
  */
 
@@ -24,11 +24,7 @@ static PyObject *SuperLU_solve(SuperLUObject * self, PyObject * args,
 {
     volatile PyArrayObject *b, *x = NULL;
     volatile SuperMatrix B = { 0 };
-#ifndef NPY_PY3K
-    volatile char itrans = 'N';
-#else
     volatile int itrans = 'N';
-#endif
     volatile int info;
     volatile trans_t trans;
     volatile SuperLUStat_t stat = { 0 };
@@ -41,13 +37,8 @@ static PyObject *SuperLU_solve(SuperLUObject * self, PyObject * args,
         return NULL;
     }
 
-#ifndef NPY_PY3K
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O!|c", kwlist,
-                                     &PyArray_Type, &b, &itrans))
-#else
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "O!|C", kwlist,
                                      &PyArray_Type, &b, &itrans))
-#endif
         return NULL;
 
     /* solve transposed system: matrix was passed row-wise instead of
@@ -123,7 +114,7 @@ PyMethodDef SuperLU_methods[] = {
 };
 
 
-/*********************************************************************** 
+/***********************************************************************
  * SuperLUType methods
  */
 
@@ -131,8 +122,10 @@ static void SuperLU_dealloc(SuperLUObject * self)
 {
     Py_XDECREF(self->cached_U);
     Py_XDECREF(self->cached_L);
+    Py_XDECREF(self->py_csc_construct_func);
     self->cached_U = NULL;
     self->cached_L = NULL;
+    self->py_csc_construct_func = NULL;
     SUPERLU_FREE(self->perm_r);
     SUPERLU_FREE(self->perm_c);
     self->perm_r = NULL;
@@ -187,7 +180,8 @@ static PyObject *SuperLU_getter(PyObject *selfp, void *data)
         int ok;
         if (self->cached_U == NULL) {
             ok = LU_to_csc_matrix(&self->L, &self->U,
-                                  &self->cached_L, &self->cached_U);
+                                  &self->cached_L, &self->cached_U,
+                                  self->py_csc_construct_func);
             if (ok != 0) {
                 return NULL;
             }
@@ -225,12 +219,7 @@ PyGetSetDef SuperLU_getset[] = {
 
 
 PyTypeObject SuperLUType = {
-#if defined(NPY_PY3K)
     PyVarObject_HEAD_INIT(NULL, 0)
-#else
-    PyObject_HEAD_INIT(NULL)
-    0,
-#endif
     "SuperLU",
     sizeof(SuperLUObject),
     0,
@@ -440,13 +429,14 @@ static int LU_to_csc(SuperMatrix *L, SuperMatrix *U,
                      Dtype_t dtype);
 
 int LU_to_csc_matrix(SuperMatrix *L, SuperMatrix *U,
-                     PyObject **L_csc, PyObject **U_csc)
+                     PyObject **L_csc, PyObject **U_csc,
+                     PyObject *py_csc_construct_func)
 {
     SCformat *Lstore;
     NCformat *Ustore;
     PyObject *U_indices = NULL, *U_indptr = NULL, *U_data = NULL;
     PyObject *L_indices = NULL, *L_indptr = NULL, *L_data = NULL;
-    PyObject *scipy_sparse = NULL, *datatuple = NULL, *shape = NULL;
+    PyObject *datatuple = NULL, *shape = NULL;
     int result = -1, ok;
     int type;
     npy_intp dims[1];
@@ -504,11 +494,6 @@ int LU_to_csc_matrix(SuperMatrix *L, SuperMatrix *U,
     }
 
     /* Create sparse matrices */
-    scipy_sparse = PyImport_ImportModule("scipy.sparse");
-    if (scipy_sparse == NULL) {
-        goto fail;
-    }
-
     shape = Py_BuildValue("ii", L->nrow, L->ncol);
     if (shape == NULL) {
         goto fail;
@@ -518,8 +503,8 @@ int LU_to_csc_matrix(SuperMatrix *L, SuperMatrix *U,
     if (datatuple == NULL) {
         goto fail;
     }
-    *L_csc = PyObject_CallMethod(scipy_sparse, "csc_matrix",
-                                 "OO", datatuple, shape);
+    *L_csc = PyObject_CallFunction(py_csc_construct_func,
+                                   "OO", datatuple, shape);
     if (*L_csc == NULL) {
         goto fail;
     }
@@ -531,8 +516,8 @@ int LU_to_csc_matrix(SuperMatrix *L, SuperMatrix *U,
         *L_csc = NULL;
         goto fail;
     }
-    *U_csc = PyObject_CallMethod(scipy_sparse, "csc_matrix",
-                                 "OO", datatuple, shape);
+    *U_csc = PyObject_CallFunction(py_csc_construct_func,
+                                   "OO", datatuple, shape);
     if (*U_csc == NULL) {
         Py_DECREF(*L_csc);
         *L_csc = NULL;
@@ -540,7 +525,7 @@ int LU_to_csc_matrix(SuperMatrix *L, SuperMatrix *U,
     }
 
     result = 0;
-    
+
 fail:
     Py_XDECREF(U_indices);
     Py_XDECREF(U_indptr);
@@ -549,7 +534,6 @@ fail:
     Py_XDECREF(L_indptr);
     Py_XDECREF(L_data);
     Py_XDECREF(shape);
-    Py_XDECREF(scipy_sparse);
     Py_XDECREF(datatuple);
 
     return result;
@@ -592,7 +576,7 @@ LU_to_csc(SuperMatrix *L, SuperMatrix *U,
         PyErr_SetString(PyExc_ValueError, "unknown dtype");
         return -1;
     }
-    
+
 #define IS_ZERO(p)                                                      \
     ((dtype == SLU_S) ? (*(float*)(p) == 0) :                           \
      ((dtype == SLU_D) ? (*(double*)(p) == 0) :                         \
@@ -689,7 +673,7 @@ size_error:
 
 
 PyObject *newSuperLUObject(SuperMatrix * A, PyObject * option_dict,
-                           int intype, int ilu)
+                           int intype, int ilu, PyObject * py_csc_construct_func)
 {
 
     /* A must be in SLU_NC format used by the factorization routine. */
@@ -727,6 +711,7 @@ PyObject *newSuperLUObject(SuperMatrix * A, PyObject * option_dict,
     self->U.Store = NULL;
     self->cached_U = NULL;
     self->cached_L = NULL;
+    self->py_csc_construct_func = NULL;
     self->type = intype;
 
     jmpbuf_ptr = (volatile jmp_buf *)superlu_python_jmpbuf();
@@ -741,7 +726,7 @@ PyObject *newSuperLUObject(SuperMatrix * A, PyObject * option_dict,
     StatInit((SuperLUStat_t *)&stat);
 
     /* calc column permutation */
-    get_perm_c(options.ColPerm, A, self->perm_c);	
+    get_perm_c(options.ColPerm, A, self->perm_c);
 
     /* apply column permutation */
     sp_preorder((superlu_options_t*)&options, A, self->perm_c, (int*)etree,
@@ -797,6 +782,9 @@ PyObject *newSuperLUObject(SuperMatrix * A, PyObject * option_dict,
 	}
 	goto fail;
     }
+
+    Py_INCREF(py_csc_construct_func);
+    self->py_csc_construct_func = py_csc_construct_func;
 
     /* free memory */
     SUPERLU_FREE((void*)etree);
@@ -1023,11 +1011,9 @@ static int droprule_cvt(PyObject * input, int *value)
     else if (PyString_Check(input) || PyUnicode_Check(input)) {
         /* Comma-separated string */
         char *fmt = "s";
-#if PY_MAJOR_VERSION >= 3
         if (PyBytes_Check(input)) {
             fmt = "y";
         }
-#endif
 	seq = PyObject_CallMethod(input, "split", fmt, ",");
 	if (seq == NULL || !PySequence_Check(seq))
 	    goto fail;

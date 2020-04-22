@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 from os.path import join, dirname
 
 import numpy as np
@@ -127,7 +125,7 @@ def naive_dst1(x, norm=None):
 
 
 def naive_dct4(x, norm=None):
-    """Calculate textbook definition version  of DCT-IV."""
+    """Calculate textbook definition version of DCT-IV."""
     x = np.array(x, copy=True)
     N = len(x)
     y = np.zeros(N)
@@ -142,7 +140,7 @@ def naive_dct4(x, norm=None):
 
 
 def naive_dst4(x, norm=None):
-    """Calculate textbook definition version  of DST-IV."""
+    """Calculate textbook definition version of DST-IV."""
     x = np.array(x, copy=True)
     N = len(x)
     y = np.zeros(N)
@@ -235,7 +233,7 @@ class _TestDCTIBase(_TestDCTBase):
 
 class _TestDCTIIBase(_TestDCTBase):
     def test_definition_matlab(self):
-        # Test correspondence with matlab (orthornomal mode).
+        # Test correspondence with MATLAB (orthornomal mode).
         for i in range(len(X)):
             dt = np.result_type(np.float32, self.rdt)
             x = np.array(X[i], dtype=dt)
@@ -695,17 +693,16 @@ class TestOverwrite(object):
 
     real_dtypes = [np.float32, np.float64]
 
-    def _check(self, x, routine, type, fftsize, axis, norm, overwrite_x,
-               should_overwrite, **kw):
+    def _check(self, x, routine, type, fftsize, axis, norm, overwrite_x, **kw):
         x2 = x.copy()
         routine(x2, type, fftsize, axis, norm, overwrite_x=overwrite_x)
 
         sig = "%s(%s%r, %r, axis=%r, overwrite_x=%r)" % (
             routine.__name__, x.dtype, x.shape, fftsize, axis, overwrite_x)
-        if not should_overwrite:
+        if not overwrite_x:
             assert_equal(x2, x, err_msg="spurious overwrite in %s" % sig)
 
-    def _check_1d(self, routine, dtype, shape, axis, overwritable_dtypes):
+    def _check_1d(self, routine, dtype, shape, axis):
         np.random.seed(1234)
         if np.issubdtype(dtype, np.complexfloating):
             data = np.random.randn(*shape) + 1j*np.random.randn(*shape)
@@ -716,41 +713,32 @@ class TestOverwrite(object):
         for type in [1, 2, 3, 4]:
             for overwrite_x in [True, False]:
                 for norm in [None, 'ortho']:
-                    should_overwrite = (overwrite_x
-                                        and dtype in overwritable_dtypes
-                                        and (len(shape) == 1 or
-                                             (axis % len(shape) == len(shape)-1
-                                              )))
                     self._check(data, routine, type, None, axis, norm,
-                                overwrite_x, should_overwrite)
+                                overwrite_x)
 
     def test_dct(self):
-        overwritable = self.real_dtypes
         for dtype in self.real_dtypes:
-            self._check_1d(dct, dtype, (16,), -1, overwritable)
-            self._check_1d(dct, dtype, (16, 2), 0, overwritable)
-            self._check_1d(dct, dtype, (2, 16), 1, overwritable)
+            self._check_1d(dct, dtype, (16,), -1)
+            self._check_1d(dct, dtype, (16, 2), 0)
+            self._check_1d(dct, dtype, (2, 16), 1)
 
     def test_idct(self):
-        overwritable = self.real_dtypes
         for dtype in self.real_dtypes:
-            self._check_1d(idct, dtype, (16,), -1, overwritable)
-            self._check_1d(idct, dtype, (16, 2), 0, overwritable)
-            self._check_1d(idct, dtype, (2, 16), 1, overwritable)
+            self._check_1d(idct, dtype, (16,), -1)
+            self._check_1d(idct, dtype, (16, 2), 0)
+            self._check_1d(idct, dtype, (2, 16), 1)
 
     def test_dst(self):
-        overwritable = self.real_dtypes
         for dtype in self.real_dtypes:
-            self._check_1d(dst, dtype, (16,), -1, overwritable)
-            self._check_1d(dst, dtype, (16, 2), 0, overwritable)
-            self._check_1d(dst, dtype, (2, 16), 1, overwritable)
+            self._check_1d(dst, dtype, (16,), -1)
+            self._check_1d(dst, dtype, (16, 2), 0)
+            self._check_1d(dst, dtype, (2, 16), 1)
 
     def test_idst(self):
-        overwritable = self.real_dtypes
         for dtype in self.real_dtypes:
-            self._check_1d(idst, dtype, (16,), -1, overwritable)
-            self._check_1d(idst, dtype, (16, 2), 0, overwritable)
-            self._check_1d(idst, dtype, (2, 16), 1, overwritable)
+            self._check_1d(idst, dtype, (16,), -1)
+            self._check_1d(idst, dtype, (16, 2), 0)
+            self._check_1d(idst, dtype, (2, 16), 1)
 
 
 class Test_DCTN_IDCTN(object):

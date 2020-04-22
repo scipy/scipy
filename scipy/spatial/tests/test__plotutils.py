@@ -1,9 +1,5 @@
-from __future__ import division, print_function, absolute_import
-
 import pytest
-from numpy.testing import assert_, assert_array_equal
-from scipy._lib._numpy_compat import suppress_warnings
-
+from numpy.testing import assert_, assert_array_equal, suppress_warnings
 try:
     import matplotlib
     matplotlib.rcParams['backend'] = 'Agg'

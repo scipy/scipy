@@ -1,8 +1,6 @@
 """
 Simple benchmarks for the sparse module
 """
-from __future__ import division, print_function, absolute_import
-
 import warnings
 import time
 import timeit
@@ -313,6 +311,8 @@ class NullSlice(Benchmark):
         for density in self.params[0]:
             for fmt in self.params[1]:
                 self._setup(density, fmt)
+
+    setup_cache.timeout = 120
 
     def setup(self, density, format):
         # Unpickling is faster than computing the random matrix...

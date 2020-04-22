@@ -212,7 +212,7 @@ exit:
 static PyObject *Py_Correlate(PyObject *obj, PyObject *args)
 {
     PyArrayObject *input = NULL, *output = NULL, *weights = NULL;
-    PyArray_Dims origin;
+    PyArray_Dims origin = {NULL, 0};
     int mode;
     double cval;
 
@@ -297,7 +297,7 @@ static PyObject *Py_MinOrMaxFilter(PyObject *obj, PyObject *args)
 {
     PyArrayObject *input = NULL, *output = NULL, *footprint = NULL;
     PyArrayObject *structure = NULL;
-    PyArray_Dims origin;
+    PyArray_Dims origin = {NULL, 0};
     int mode, minimum;
     double cval;
 
@@ -333,7 +333,7 @@ exit:
 static PyObject *Py_RankFilter(PyObject *obj, PyObject *args)
 {
     PyArrayObject *input = NULL, *output = NULL, *footprint = NULL;
-    PyArray_Dims origin;
+    PyArray_Dims origin = {NULL, 0};
     int mode, rank;
     double cval;
 
@@ -450,12 +450,6 @@ static PyObject *Py_GenericFilter1D(PyObject *obj, PyObject *args)
         /* 'Legacy' low-level callable */
         func = PyCapsule_GetPointer(fnc, NULL);
         data = PyCapsule_GetContext(fnc);
-#if PY_VERSION_HEX < 0x03000000
-    } else if (PyCObject_Check(fnc)) {
-        /* 'Legacy' low-level callable on Py2 */
-        func = PyCObject_AsVoidPtr(fnc);
-        data = PyCObject_GetDesc(fnc);
-#endif
     } else {
         int ret;
 
@@ -528,7 +522,7 @@ static PyObject *Py_GenericFilter(PyObject *obj, PyObject *args)
     void *func = NULL, *data = NULL;
     NI_PythonCallbackData cbdata;
     int mode;
-    PyArray_Dims origin;
+    PyArray_Dims origin = {NULL, 0};
     double cval;
     ccallback_t callback;
     static ccallback_signature_t callback_signatures[] = {
@@ -577,12 +571,6 @@ static PyObject *Py_GenericFilter(PyObject *obj, PyObject *args)
     if (PyCapsule_CheckExact(fnc) && PyCapsule_GetName(fnc) == NULL) {
         func = PyCapsule_GetPointer(fnc, NULL);
         data = PyCapsule_GetContext(fnc);
-#if PY_VERSION_HEX < 0x03000000
-    } else if (PyCObject_Check(fnc)) {
-        /* 'Legacy' low-level callable on Py2 */
-        func = PyCObject_AsVoidPtr(fnc);
-        data = PyCObject_GetDesc(fnc);
-#endif
     } else {
         int ret;
 
@@ -788,12 +776,6 @@ static PyObject *Py_GeometricTransform(PyObject *obj, PyObject *args)
         if (PyCapsule_CheckExact(fnc) && PyCapsule_GetName(fnc) == NULL) {
             func = PyCapsule_GetPointer(fnc, NULL);
             data = PyCapsule_GetContext(fnc);
-#if PY_VERSION_HEX < 0x03000000
-        } else if (PyCObject_Check(fnc)) {
-            /* 'Legacy' low-level callable on Py2 */
-            func = PyCObject_AsVoidPtr(fnc);
-            data = PyCObject_GetDesc(fnc);
-#endif
         } else {
             int ret;
 
@@ -1043,17 +1025,10 @@ exit:
     return PyErr_Occurred() ? NULL : Py_BuildValue("");
 }
 
-#ifdef NPY_PY3K
 static void _FreeCoordinateList(PyObject *obj)
 {
     NI_FreeCoordinateList((NI_CoordinateList*)PyCapsule_GetPointer(obj, NULL));
 }
-#else
-static void _FreeCoordinateList(void* ptr)
-{
-    NI_FreeCoordinateList((NI_CoordinateList*)ptr);
-}
-#endif
 
 static PyObject *Py_BinaryErosion(PyObject *obj, PyObject *args)
 {
@@ -1063,7 +1038,7 @@ static PyObject *Py_BinaryErosion(PyObject *obj, PyObject *args)
     int border_value, invert, center_is_true;
     int changed = 0, return_coordinates;
     NI_CoordinateList *coordinate_list = NULL;
-    PyArray_Dims origin;
+    PyArray_Dims origin = {NULL, 0};
 
     if (!PyArg_ParseTuple(args, "O&O&O&O&iO&iii",
                           NI_ObjectToInputArray, &input,
@@ -1113,7 +1088,7 @@ static PyObject *Py_BinaryErosion2(PyObject *obj, PyObject *args)
     PyArrayObject *array = NULL, *strct = NULL, *mask = NULL;
     PyObject *cobj = NULL;
     int invert, niter;
-    PyArray_Dims origin;
+    PyArray_Dims origin = {NULL, 0};
 
     if (!PyArg_ParseTuple(args, "O&O&O&iO&iO",
                           NI_ObjectToInputOutputArray, &array,
@@ -1190,7 +1165,6 @@ static PyMethodDef methods[] = {
     {NULL, NULL, 0, NULL}
 };
 
-#ifdef NPY_PY3K
 static struct PyModuleDef moduledef = {
     PyModuleDef_HEAD_INIT,
     "_nd_image",
@@ -1212,10 +1186,3 @@ PyObject *PyInit__nd_image(void)
 
     return m;
 }
-#else
-PyMODINIT_FUNC init_nd_image(void)
-{
-    Py_InitModule("_nd_image", methods);
-    import_array();
-}
-#endif

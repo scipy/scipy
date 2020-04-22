@@ -4,7 +4,7 @@ SciPy Roadmap
 =============
 
 This roadmap page contains only the most important ideas and needs for SciPy
-going forward.  For a more detailed roadmap, including per-submodule status,
+going forward.  For a more detailed roadmap, including per-subpackage status,
 many more ideas, API stability and more, see :ref:`scipy-roadmap-detailed`.
 
 
@@ -53,11 +53,8 @@ along.  The tentative plan is:
 Fourier transform enhancements
 ------------------------------
 
-We want to integrate PocketFFT into ``scipy.fftpack`` for significant
-performance improvements (see `this NumPy PR
-<https://github.com/numpy/numpy/pull/11888>`__ for details),
-add a backend system to support PyFFTW and mkl-fft,
-and align the function signatures of ``numpy.fft`` and ``scipy.fftpack``.
+The new ``scipy.fft`` subpackage should be extended to add a backend system with
+support for PyFFTW and mkl-fft.
 
 
 Support for distributed arrays and GPU arrays
@@ -90,22 +87,13 @@ looks like the best way forward long-term.  Until Flang support materializes,
 we need to streamline and better document the MSVC + gfortran build.
 
 
-Improve benchmark system for ``optimize``
------------------------------------------
+Statistics enhancements
+-----------------------
 
-``scipy.optimize`` has an extensive set of benchmarks for accuracy and speed of
-the global optimizers. That has allowed adding new optimizers (``shgo`` and
-``dual_annealing``) with significantly better performance than the existing
-ones.  The ``optimize`` benchmark system itself is slow and hard to use
-however; we need to make it faster and make it easier to compare performance of
-optimizers via plotting performance profiles.
+The `scipy.stats` enhancements listed in the :ref:`scipy-roadmap-detailed` are of
+particularly high importance to the project.
 
-
-Linear programming enhancements
--------------------------------
-
-Recently all known issues with ``optimize.linprog`` have been solved.  Now we
-have many ideas for additional functionality (e.g. integer constraints, sparse
-matrix support, performance improvements), see gh-9269.
-
-
+- Improve the options for fitting a probability distribution to data.
+- Expand the set of hypothesis tests.  In particular, include all the basic
+  variations of analysis of variance.
+- Add confidence intervals for all statistical tests.

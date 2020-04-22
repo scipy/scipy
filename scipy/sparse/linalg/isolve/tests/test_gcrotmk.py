@@ -2,10 +2,8 @@
 """Tests for the linalg.isolve.gcrotmk module
 """
 
-from __future__ import division, print_function, absolute_import
-
-from numpy.testing import assert_, assert_allclose, assert_equal
-from scipy._lib._numpy_compat import suppress_warnings
+from numpy.testing import (assert_, assert_allclose, assert_equal,
+                           suppress_warnings)
 
 import numpy as np
 from numpy import zeros, array, allclose
@@ -59,7 +57,7 @@ class TestGCROTMK(object):
         assert_(allclose(x1, x0, rtol=1e-14))
 
     def test_arnoldi(self):
-        np.random.rand(1234)
+        np.random.seed(1)
 
         A = eye(2000) + rand(2000, 2000, density=5e-4)
         b = np.random.rand(2000)
@@ -72,7 +70,7 @@ class TestGCROTMK(object):
 
         assert_equal(flag0, 1)
         assert_equal(flag1, 1)
-        assert_(np.linalg.norm(A.dot(x0) - b) > 1e-3)
+        assert np.linalg.norm(A.dot(x0) - b) > 1e-3
 
         assert_allclose(x0, x1)
 

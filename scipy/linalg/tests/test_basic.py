@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 import warnings
 import itertools
 import numpy as np
@@ -10,10 +8,9 @@ from numpy.random import random
 
 from numpy.testing import (assert_equal, assert_almost_equal, assert_,
                            assert_array_almost_equal, assert_allclose,
-                           assert_array_equal)
+                           assert_array_equal, suppress_warnings)
 import pytest
 from pytest import raises as assert_raises
-from scipy._lib._numpy_compat import suppress_warnings
 
 from scipy.linalg import (solve, inv, det, lstsq, pinv, pinv2, pinvh, norm,
                           solve_banded, solveh_banded, solve_triangular,
@@ -21,8 +18,6 @@ from scipy.linalg import (solve, inv, det, lstsq, pinv, pinv2, pinvh, norm,
                           matrix_balance, LinAlgWarning)
 
 from scipy.linalg._testutils import assert_no_overwrite
-
-from scipy._lib._version import NumpyVersion
 
 REAL_DTYPES = [np.float32, np.float64, np.longdouble]
 COMPLEX_DTYPES = [np.complex64, np.complex128, np.clongdouble]
@@ -809,6 +804,26 @@ class TestSolveTriangular(object):
         sol = solve_triangular(A, b, lower=True, trans=1)
         assert_array_almost_equal(sol, [[.5-.5j, -.25-.25j], [0, 0.5]])
 
+        # check other option combinations with complex rhs
+        b = np.diag([1+1j, 1+2j])
+        sol = solve_triangular(A, b, lower=True, trans=0)
+        assert_array_almost_equal(sol, [[1, 0], [-0.5j, 0.5+1j]])
+
+        sol = solve_triangular(A, b, lower=True, trans=1)
+        assert_array_almost_equal(sol, [[1, 0.25-0.75j], [0, 0.5+1j]])
+
+        sol = solve_triangular(A, b, lower=True, trans=2)
+        assert_array_almost_equal(sol, [[1j, -0.75-0.25j], [0, 0.5+1j]])
+
+        sol = solve_triangular(A.T, b, lower=False, trans=0)
+        assert_array_almost_equal(sol, [[1, 0.25-0.75j], [0, 0.5+1j]])
+
+        sol = solve_triangular(A.T, b, lower=False, trans=1)
+        assert_array_almost_equal(sol, [[1, 0], [-0.5j, 0.5+1j]])
+
+        sol = solve_triangular(A.T, b, lower=False, trans=2)
+        assert_array_almost_equal(sol, [[1j, 0], [-0.5, 0.5+1j]])
+
     def test_check_finite(self):
         """
         solve_triangular on a simple 2x2 matrix.
@@ -939,7 +954,7 @@ class TestLstsq(object):
                         assert_allclose(dot(a, x), b,
                                         atol=25 * _eps_cast(a1.dtype),
                                         rtol=25 * _eps_cast(a1.dtype),
-                                         err_msg="driver: %s" % lapack_driver)
+                                        err_msg="driver: %s" % lapack_driver)
 
     def test_simple_overdet(self):
         for dtype in REAL_DTYPES:
@@ -1279,6 +1294,28 @@ class TestPinvSymmetric(object):
         assert_array_almost_equal(np.dot(a, a_pinv), np.eye(3))
 
 
+def test_pinv_pinv2_comparison():  # As reported in gh-8861
+    I_6 = np.eye(6)
+    Ts = np.diag([-1] * 4 + [-2], k=-1) + np.diag([-2] + [-1] * 4, k=1)
+    T = I_6 + Ts
+    A = 25 * (np.kron(I_6, T) + np.kron(Ts, I_6))
+
+    Ap, Ap2 = pinv(A), pinv2(A)
+
+    tol = 1e-11
+    assert_allclose(A @ Ap @ A - A, A @ Ap2 @ A - A, rtol=0., atol=tol)
+    assert_allclose(Ap @ A @ Ap - Ap, Ap2 @ A @ Ap2 - Ap2, rtol=0., atol=tol)
+
+
+@pytest.mark.parametrize('scale', (1e-20, 1., 1e20))
+@pytest.mark.parametrize('pinv_', (pinv, pinvh, pinv2))
+def test_auto_rcond(scale, pinv_):
+    x = np.array([[1, 0], [0, 1e-10]]) * scale
+    expected = np.diag(1. / np.diag(x))
+    x_inv = pinv_(x)
+    assert_allclose(x_inv, expected)
+
+
 class TestVectorNorms(object):
 
     def test_types(self):
@@ -1322,7 +1359,6 @@ class TestVectorNorms(object):
         assert_allclose(norm(a, axis=1), [[3.60555128, 4.12310563]] * 2)
         assert_allclose(norm(a, 1, axis=1), [[5.] * 2] * 2)
 
-    @pytest.mark.skipif(NumpyVersion(np.__version__) < '1.10.0', reason="")
     def test_keepdims_kwd(self):
         a = np.array([[[2, 1], [3, 4]]] * 2, 'd')
         b = norm(a, axis=1, keepdims=True)
@@ -1370,7 +1406,6 @@ class TestMatrixNorms(object):
         assert_allclose(b, d)
         assert_(b.shape == c.shape == d.shape)
 
-    @pytest.mark.skipif(NumpyVersion(np.__version__) < '1.10.0', reason="")
     def test_keepdims_kwd(self):
         a = np.arange(120, dtype='d').reshape(2, 3, 4, 5)
         b = norm(a, ord=np.inf, axis=(1, 0), keepdims=True)

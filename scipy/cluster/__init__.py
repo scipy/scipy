@@ -8,7 +8,7 @@ Clustering package (:mod:`scipy.cluster`)
 :mod:`scipy.cluster.vq`
 
 Clustering algorithms are useful in information theory, target detection,
-communications, compression, and other areas.  The `vq` module only
+communications, compression, and other areas. The `vq` module only
 supports vector quantization and the k-means algorithms.
 
 :mod:`scipy.cluster.hierarchy`
@@ -20,8 +20,6 @@ calculating statistics on clusters, cutting linkages
 to generate flat clusters, and visualizing clusters with dendrograms.
 
 """
-from __future__ import division, print_function, absolute_import
-
 __all__ = ['vq', 'hierarchy']
 
 from . import vq, hierarchy

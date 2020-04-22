@@ -3,8 +3,6 @@
 # Requires Cython version 0.17 or greater due to type templating.
 ######################################################################
 
-from __future__ import absolute_import
-
 cimport cython
 from cython cimport sizeof
 import numpy as np
@@ -57,7 +55,7 @@ ctypedef fused data_t:
 ######################################################################
 cdef void fused_nonzero_line(data_t *p, np.intp_t stride,
                              np.uintp_t *line, np.intp_t L) nogil:
-    cdef np.uintp_t i
+    cdef np.intp_t i
     for i in range(L):
         line[i] = FOREGROUND if \
             (<data_t *> ((<char *> p) + i * stride))[0] \
@@ -69,7 +67,7 @@ cdef void fused_nonzero_line(data_t *p, np.intp_t stride,
 ######################################################################
 cdef void fused_read_line(data_t *p, np.intp_t stride,
                           np.uintp_t *line, np.intp_t L) nogil:
-    cdef np.uintp_t i
+    cdef np.intp_t i
     for i in range(L):
         line[i] = <np.uintp_t> (<data_t *> ((<char *> p) + i * stride))[0]
 
@@ -80,7 +78,7 @@ cdef void fused_read_line(data_t *p, np.intp_t stride,
 ######################################################################
 cdef bint fused_write_line(data_t *p, np.intp_t stride,
                            np.uintp_t *line, np.intp_t L) nogil:
-    cdef np.uintp_t i
+    cdef np.intp_t i
     for i in range(L):
         # Check before overwrite, as this prevents us accidentally writing a 0
         # in the foreground, which allows us to retry even when operating
@@ -178,7 +176,7 @@ cdef np.uintp_t label_line_with_neighbor(np.uintp_t *line,
                                          np.uintp_t next_region,
                                          np.uintp_t *mergetable) nogil:
     cdef:
-        np.uintp_t i
+        np.intp_t i
 
     for i in range(L):
         if line[i] != BACKGROUND:
@@ -257,7 +255,7 @@ cpdef _label(np.ndarray input,
         np.uintp_t *neighbor_buffer
         np.uintp_t *tmp
         np.uintp_t next_region, src_label, dest_label
-        int mergetable_size
+        np.uintp_t mergetable_size
         np.uintp_t *mergetable
 
     axis = -1  # choose best axis based on output
@@ -271,7 +269,7 @@ cpdef _label(np.ndarray input,
 
     # we only process this many neighbors from the itstruct iterator before
     # reaching the center, where we stop
-    num_neighbors = (structure.size / 3) // 2
+    num_neighbors = structure.size // (3 * 2)
 
     # Create two buffer arrays for reading/writing labels.
     # Add an entry at the end and beginning to simplify some bounds checks.

@@ -1,9 +1,7 @@
-from __future__ import division, print_function, absolute_import
-
-from scipy._lib._numpy_compat import suppress_warnings
+from numpy.testing import suppress_warnings
 
 try:
-    import mpmath as mp
+    import mpmath as mp  # type: ignore[import]
 except ImportError:
     pass
 
@@ -12,7 +10,7 @@ try:
     # https://github.com/sympy/sympy/issues/11255
     with suppress_warnings() as sup:
         sup.filter(DeprecationWarning, "inspect.getargspec.. is deprecated")
-        from sympy.abc import x
+        from sympy.abc import x  # type: ignore[import]
 except ImportError:
     pass
 

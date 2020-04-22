@@ -1,5 +1,3 @@
-from __future__ import absolute_import
-
 cimport cython
 from scipy.linalg.cython_lapack cimport dlartg
 from scipy.linalg.cython_blas cimport drot

@@ -208,21 +208,23 @@ static PyObject *Py_gstrf(PyObject * self, PyObject * args,
     PyArrayObject *rowind, *colptr, *nzvals;
     SuperMatrix A = { 0 };
     PyObject *result;
+    PyObject *py_csc_construct_func = NULL;
     PyObject *option_dict = NULL;
     int type;
     int ilu = 0;
 
     static char *kwlist[] = { "N", "nnz", "nzvals", "colind", "rowptr",
-	"options", "ilu",
+        "csc_construct_func", "options", "ilu",
 	NULL
     };
 
     int res =
-	PyArg_ParseTupleAndKeywords(args, keywds, "iiO!O!O!|Oi", kwlist,
+	PyArg_ParseTupleAndKeywords(args, keywds, "iiO!O!O!O|Oi", kwlist,
 				    &N, &nnz,
 				    &PyArray_Type, &nzvals,
 				    &PyArray_Type, &rowind,
 				    &PyArray_Type, &colptr,
+                                    &py_csc_construct_func,
 				    &option_dict,
 				    &ilu);
 
@@ -247,7 +249,7 @@ static PyObject *Py_gstrf(PyObject * self, PyObject * args,
 	goto fail;
     }
 
-    result = newSuperLUObject(&A, option_dict, type, ilu);
+    result = newSuperLUObject(&A, option_dict, type, ilu, py_csc_construct_func);
     if (result == NULL) {
 	goto fail;
     }
@@ -306,8 +308,6 @@ static PyMethodDef SuperLU_Methods[] = {
     {NULL, NULL}
 };
 
-#if PY_VERSION_HEX >= 0x03000000
-
 static struct PyModuleDef moduledef = {
     PyModuleDef_HEAD_INIT,
     "_superlu",
@@ -346,31 +346,3 @@ PyObject *PyInit__superlu(void)
 
     return m;
 }
-
-#else
-
-PyMODINIT_FUNC init_superlu(void)
-{
-    PyObject *m, *d;
-
-    import_array();
-
-    SuperLUType.ob_type = &PyType_Type;
-    if (PyType_Ready(&SuperLUType) < 0) {
-	return;
-    }
-
-    SuperLUGlobalType.ob_type = &PyType_Type;
-    if (PyType_Ready(&SuperLUGlobalType) < 0) {
-	return;
-    }
-
-    m = Py_InitModule("_superlu", SuperLU_Methods);
-    d = PyModule_GetDict(m);
-
-    Py_INCREF(&PyArrayFlags_Type);
-    PyDict_SetItemString(d, "SuperLU",
-			 (PyObject *) & SuperLUType);
-}
-
-#endif

@@ -28,11 +28,11 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from __future__ import division, print_function, absolute_import
-
-import math
-import numpy
+import itertools
 import warnings
+
+import numpy
+from numpy.core.multiarray import normalize_axis_index
 
 from . import _ni_support
 from . import _nd_image
@@ -55,7 +55,7 @@ __all__ = ['spline_filter1d', 'spline_filter', 'geometric_transform',
 def spline_filter1d(input, order=3, axis=-1, output=numpy.float64,
                     mode='mirror'):
     """
-    Calculate a one-dimensional spline filter along the given axis.
+    Calculate a 1-D spline filter along the given axis.
 
     The lines of the array along the given axis are filtered by a
     spline filter. The order of the spline must be >= 2 and <= 5.
@@ -81,10 +81,10 @@ def spline_filter1d(input, order=3, axis=-1, output=numpy.float64,
     Notes
     -----
     All functions in `ndimage.interpolation` do spline interpolation of
-    the input image. If using b-splines of `order > 1`, the input image
-    values have to be converted to b-spline coefficients first, which is
-    done by applying this one-dimensional filter sequentially along all
-    axes of the input. All functions that require b-spline coefficients
+    the input image. If using B-splines of `order > 1`, the input image
+    values have to be converted to B-spline coefficients first, which is
+    done by applying this 1-D filter sequentially along all
+    axes of the input. All functions that require B-spline coefficients
     will automatically filter their inputs, a behavior controllable with
     the `prefilter` keyword argument. For functions that accept a `mode`
     parameter, the result will only be correct if it matches the `mode`
@@ -100,14 +100,14 @@ def spline_filter1d(input, order=3, axis=-1, output=numpy.float64,
         output[...] = numpy.array(input)
     else:
         mode = _ni_support._extend_mode_to_code(mode)
-        axis = _ni_support._check_axis(axis, input.ndim)
+        axis = normalize_axis_index(axis, input.ndim)
         _nd_image.spline_filter1d(input, order, axis, output, mode)
     return output
 
 
 def spline_filter(input, order=3, output=numpy.float64, mode='mirror'):
     """
-    Multi-dimensional spline filter.
+    Multidimensional spline filter.
 
     For more details, see `spline_filter1d`.
 
@@ -117,8 +117,8 @@ def spline_filter(input, order=3, output=numpy.float64, mode='mirror'):
 
     Notes
     -----
-    The multi-dimensional filter is implemented as a sequence of
-    one-dimensional spline filters. The intermediate arrays are stored
+    The multidimensional filter is implemented as a sequence of
+    1-D spline filters. The intermediate arrays are stored
     in the same data type as the output. Therefore, for output types
     with a limited precision, the results may be imprecise because
     intermediate results may be stored with insufficient precision.
@@ -201,12 +201,12 @@ def geometric_transform(input, mapping, output_shape=None,
     callback function must return the coordinates at which the input must
     be interpolated in ``input_coordinates``. The rank of the input and
     output arrays are given by ``input_rank`` and ``output_rank``
-    respectively.  ``user_data`` is the data pointer provided
+    respectively. ``user_data`` is the data pointer provided
     to `scipy.LowLevelCallable` as-is.
 
     The callback function must return an integer error status that is zero
     if something went wrong and one otherwise. If an error occurs, you should
-    normally set the python error status with an informative message
+    normally set the Python error status with an informative message
     before returning, otherwise a default error message is set by the
     calling function.
 
@@ -379,7 +379,7 @@ def affine_transform(input, matrix, offset=0.0, output_shape=None,
 
             - ``(ndim, ndim)``: the linear transformation matrix for each
               output coordinate.
-            - ``(ndim,)``: assume that the 2D transformation matrix is
+            - ``(ndim,)``: assume that the 2-D transformation matrix is
               diagonal, with the diagonal specified by the given value. A more
               efficient algorithm is then used that exploits the separability
               of the problem.
@@ -420,8 +420,8 @@ def affine_transform(input, matrix, offset=0.0, output_shape=None,
 
     .. versionchanged:: 0.18.0
         Previously, the exact interpretation of the affine transformation
-        depended on whether the matrix was supplied as a one-dimensional or
-        two-dimensional array. If a one-dimensional array was supplied
+        depended on whether the matrix was supplied as a 1-D or a
+        2-D array. If a 1-D array was supplied
         to the matrix parameter, the output pixel value at index ``o``
         was determined from the input image at position
         ``matrix * (o + offset)``.
@@ -475,9 +475,9 @@ def affine_transform(input, matrix, offset=0.0, output_shape=None,
         offset = offset.copy()
     if matrix.ndim == 1:
         warnings.warn(
-            "The behaviour of affine_transform with a one-dimensional "
+            "The behavior of affine_transform with a 1-D "
             "array supplied for the matrix parameter has changed in "
-            "scipy 0.18.0."
+            "SciPy 0.18.0."
         )
         _nd_image.zoom_shift(filtered, matrix, offset/matrix, output, order,
                              mode, cval)
@@ -602,14 +602,6 @@ def zoom(input, zoom, output=None, order=3, mode='constant', cval=0.0,
     output_shape = tuple(
             [int(round(ii * jj)) for ii, jj in zip(input.shape, zoom)])
 
-    output_shape_old = tuple(
-            [int(ii * jj) for ii, jj in zip(input.shape, zoom)])
-    if output_shape != output_shape_old:
-        warnings.warn(
-                "From scipy 0.13.0, the output shape of zoom() is calculated "
-                "with round() instead of int() - for these inputs the size of "
-                "the returned array has changed.", UserWarning)
-
     zoom_div = numpy.array(output_shape, float) - 1
     # Zooming to infinite values is unpredictable, so just choose
     # zoom factor 1 instead
@@ -622,18 +614,6 @@ def zoom(input, zoom, output=None, order=3, mode='constant', cval=0.0,
     zoom = numpy.ascontiguousarray(zoom)
     _nd_image.zoom_shift(filtered, zoom, None, output, order, mode, cval)
     return output
-
-
-def _minmax(coor, minc, maxc):
-    if coor[0] < minc[0]:
-        minc[0] = coor[0]
-    if coor[0] > maxc[0]:
-        maxc[0] = coor[0]
-    if coor[1] < minc[1]:
-        minc[1] = coor[1]
-    if coor[1] > maxc[1]:
-        maxc[1] = coor[1]
-    return minc, maxc
 
 
 @docfiller
@@ -669,84 +649,98 @@ def rotate(input, angle, axes=(1, 0), reshape=True, output=None, order=3,
     rotate : ndarray
         The rotated input.
 
+    Examples
+    --------
+    >>> from scipy import ndimage, misc
+    >>> import matplotlib.pyplot as plt
+    >>> fig = plt.figure(figsize=(10, 3))
+    >>> ax1, ax2, ax3 = fig.subplots(1, 3)
+    >>> img = misc.ascent()
+    >>> img_45 = ndimage.rotate(img, 45, reshape=False)
+    >>> full_img_45 = ndimage.rotate(img, 45, reshape=True)
+    >>> ax1.imshow(img, cmap='gray')
+    >>> ax1.set_axis_off()
+    >>> ax2.imshow(img_45, cmap='gray')
+    >>> ax2.set_axis_off()
+    >>> ax3.imshow(full_img_45, cmap='gray')
+    >>> ax3.set_axis_off()
+    >>> fig.set_tight_layout(True)
+    >>> plt.show()
+    >>> print(img.shape)
+    (512, 512)
+    >>> print(img_45.shape)
+    (512, 512)
+    >>> print(full_img_45.shape)
+    (724, 724)
+
     """
-    input = numpy.asarray(input)
+    input_arr = numpy.asarray(input)
+    ndim = input_arr.ndim
+
+    if ndim < 2:
+        raise ValueError('input array should be at least 2D')
+
     axes = list(axes)
-    rank = input.ndim
+
+    if len(axes) != 2:
+        raise ValueError('axes should contain exactly two values')
+
+    if not all([float(ax).is_integer() for ax in axes]):
+        raise ValueError('axes should contain only integer values')
+
     if axes[0] < 0:
-        axes[0] += rank
+        axes[0] += ndim
     if axes[1] < 0:
-        axes[1] += rank
-    if axes[0] < 0 or axes[1] < 0 or axes[0] > rank or axes[1] > rank:
-        raise RuntimeError('invalid rotation plane specified')
-    if axes[0] > axes[1]:
-        axes = axes[1], axes[0]
-    angle = numpy.pi / 180 * angle
-    m11 = math.cos(angle)
-    m12 = math.sin(angle)
-    m21 = -math.sin(angle)
-    m22 = math.cos(angle)
-    matrix = numpy.array([[m11, m12],
-                          [m21, m22]], dtype=numpy.float64)
-    iy = input.shape[axes[0]]
-    ix = input.shape[axes[1]]
+        axes[1] += ndim
+    if axes[0] < 0 or axes[1] < 0 or axes[0] >= ndim or axes[1] >= ndim:
+        raise ValueError('invalid rotation plane specified')
+
+    axes.sort()
+
+    angle_rad = numpy.deg2rad(angle)
+    c, s = numpy.cos(angle_rad), numpy.sin(angle_rad)
+
+    rot_matrix = numpy.array([[c, s],
+                              [-s, c]])
+
+    img_shape = numpy.asarray(input_arr.shape)
+    in_plane_shape = img_shape[axes]
     if reshape:
-        mtrx = numpy.array([[m11, -m21],
-                            [-m12, m22]], dtype=numpy.float64)
-        minc = [0, 0]
-        maxc = [0, 0]
-        coor = numpy.dot(mtrx, [0, ix])
-        minc, maxc = _minmax(coor, minc, maxc)
-        coor = numpy.dot(mtrx, [iy, 0])
-        minc, maxc = _minmax(coor, minc, maxc)
-        coor = numpy.dot(mtrx, [iy, ix])
-        minc, maxc = _minmax(coor, minc, maxc)
-        oy = int(maxc[0] - minc[0] + 0.5)
-        ox = int(maxc[1] - minc[1] + 0.5)
+        # Compute transformed input bounds
+        iy, ix = in_plane_shape
+        out_bounds = rot_matrix @ [[0, 0, iy, iy],
+                                   [0, ix, 0, ix]]
+        # Compute the shape of the transformed input plane
+        out_plane_shape = (out_bounds.ptp(axis=1) + 0.5).astype(int)
     else:
-        oy = input.shape[axes[0]]
-        ox = input.shape[axes[1]]
-    offset = numpy.zeros((2,), dtype=numpy.float64)
-    offset[0] = float(oy) / 2.0 - 0.5
-    offset[1] = float(ox) / 2.0 - 0.5
-    offset = numpy.dot(matrix, offset)
-    tmp = numpy.zeros((2,), dtype=numpy.float64)
-    tmp[0] = float(iy) / 2.0 - 0.5
-    tmp[1] = float(ix) / 2.0 - 0.5
-    offset = tmp - offset
-    output_shape = list(input.shape)
-    output_shape[axes[0]] = oy
-    output_shape[axes[1]] = ox
+        out_plane_shape = img_shape[axes]
+
+    out_center = rot_matrix @ ((out_plane_shape - 1) / 2)
+    in_center = (in_plane_shape - 1) / 2
+    offset = in_center - out_center
+
+    output_shape = img_shape
+    output_shape[axes] = out_plane_shape
     output_shape = tuple(output_shape)
-    output = _ni_support._get_output(output, input,
-                                     shape=output_shape)
-    if input.ndim <= 2:
-        affine_transform(input, matrix, offset, output_shape, output,
+
+    output = _ni_support._get_output(output, input_arr, shape=output_shape)
+
+    if ndim <= 2:
+        affine_transform(input_arr, rot_matrix, offset, output_shape, output,
                          order, mode, cval, prefilter)
     else:
-        coordinates = []
-        size = numpy.prod(input.shape, axis=0)
-        size //= input.shape[axes[0]]
-        size //= input.shape[axes[1]]
-        for ii in range(input.ndim):
-            if ii not in axes:
-                coordinates.append(0)
-            else:
-                coordinates.append(slice(None, None, None))
-        iter_axes = list(range(input.ndim))
-        iter_axes.reverse()
-        iter_axes.remove(axes[0])
-        iter_axes.remove(axes[1])
-        os = (output_shape[axes[0]], output_shape[axes[1]])
-        for ii in range(size):
-            ia = input[tuple(coordinates)]
-            oa = output[tuple(coordinates)]
-            affine_transform(ia, matrix, offset, os, oa, order, mode,
-                             cval, prefilter)
-            for jj in iter_axes:
-                if coordinates[jj] < input.shape[jj] - 1:
-                    coordinates[jj] += 1
-                    break
-                else:
-                    coordinates[jj] = 0
+        # If ndim > 2, the rotation is applied over all the planes
+        # parallel to axes
+        planes_coord = itertools.product(
+            *[[slice(None)] if ax in axes else range(img_shape[ax])
+              for ax in range(ndim)])
+
+        out_plane_shape = tuple(out_plane_shape)
+
+        for coordinates in planes_coord:
+            ia = input_arr[coordinates]
+            oa = output[coordinates]
+            affine_transform(ia, rot_matrix, offset, out_plane_shape,
+                             oa, order, mode, cval, prefilter)
+
     return output

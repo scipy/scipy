@@ -1,7 +1,5 @@
 """Sparse DIAgonal format"""
 
-from __future__ import division, print_function, absolute_import
-
 __docformat__ = "restructuredtext en"
 
 __all__ = ['dia_matrix', 'isspmatrix_dia']
@@ -42,7 +40,7 @@ class dia_matrix(_data_matrix):
     ndim : int
         Number of dimensions (this is always 2)
     nnz
-        Number of nonzero elements
+        Number of stored values, including explicit zeros
     data
         DIA format data array of the matrix
     offsets
@@ -72,6 +70,19 @@ class dia_matrix(_data_matrix):
            [0, 2, 3, 0],
            [0, 0, 3, 4]])
 
+    >>> from scipy.sparse import dia_matrix
+    >>> n = 10
+    >>> ex = np.ones(n)
+    >>> data = np.array([ex, 2 * ex, ex])
+    >>> offsets = np.array([-1, 0, 1])
+    >>> dia_matrix((data, offsets), shape=(n, n)).toarray()
+    array([[2., 1., 0., ..., 0., 0., 0.],
+           [1., 2., 1., ..., 0., 0., 0.],
+           [0., 1., 2., ..., 0., 0., 0.],
+           ...,
+           [0., 0., 0., ..., 2., 1., 0.],
+           [0., 0., 0., ..., 1., 2., 1.],
+           [0., 0., 0., ..., 0., 1., 2.]])
     """
     format = 'dia'
 

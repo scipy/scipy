@@ -5,7 +5,7 @@ Alpha Distribution
 ==================
 
 One shape parameter :math:`\alpha>0` (parameter :math:`\beta` in DATAPLOT
-is a scale-parameter). The suport for the standard form is :math:`x>0`.
+is a scale-parameter). The support for the standard form is :math:`x>0`.
 
 .. math::
    :nowrap:

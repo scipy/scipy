@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 from . import _nnls
 from numpy import asarray_chkfinite, zeros, double
 
@@ -28,6 +26,10 @@ def nnls(A, b, maxiter=None):
     rnorm : float
         The residual, ``|| Ax-b ||_2``.
 
+    See Also
+    --------
+    lsq_linear : Linear least squares with bounds on the variables
+
     Notes
     -----
     The FORTRAN code was published in the book below. The algorithm
@@ -38,19 +40,36 @@ def nnls(A, b, maxiter=None):
     ----------
     Lawson C., Hanson R.J., (1987) Solving Least Squares Problems, SIAM
 
+     Examples
+    --------
+    >>> from scipy.optimize import nnls
+    ...
+    >>> A = np.array([[1, 0], [1, 0], [0, 1]])
+    >>> b = np.array([2, 1, 1])
+    >>> nnls(A, b)
+    (array([1.5, 1. ]), 0.7071067811865475)
+
+    >>> b = np.array([-1, -1, -1])
+    >>> nnls(A, b)
+    (array([0., 0.]), 1.7320508075688772)
+
     """
 
     A, b = map(asarray_chkfinite, (A, b))
 
     if len(A.shape) != 2:
-        raise ValueError("expected matrix")
+        raise ValueError("Expected a two-dimensional array (matrix)" +
+                         ", but the shape of A is %s" % (A.shape, ))
     if len(b.shape) != 1:
-        raise ValueError("expected vector")
+        raise ValueError("Expected a one-dimensional array (vector" +
+                         ", but the shape of b is %s" % (b.shape, ))
 
     m, n = A.shape
 
     if m != b.shape[0]:
-        raise ValueError("incompatible dimensions")
+        raise ValueError(
+                "Incompatible dimensions. The first dimension of " +
+                "A is %s, while the shape of b is %s" % (m, (b.shape[0], )))
 
     maxiter = -1 if maxiter is None else int(maxiter)
 

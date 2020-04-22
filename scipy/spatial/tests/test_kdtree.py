@@ -1,8 +1,6 @@
 # Copyright Anne M. Archibald 2008
 # Released under the scipy license
 
-from __future__ import division, print_function, absolute_import
-
 from numpy.testing import (assert_equal, assert_array_equal, assert_,
                            assert_almost_equal, assert_array_almost_equal)
 from pytest import raises as assert_raises
@@ -334,7 +332,7 @@ class Test_random_ball_compiled_periodic(ball_consistency):
         np.random.seed(1234)
         self.data = np.random.uniform(size=(n,m))
         self.T = cKDTree(self.data,leafsize=2, boxsize=1)
-        self.x = np.ones(m) * 0.1
+        self.x = np.full(m, 0.1)
         self.p = 2.
         self.eps = 0
         self.d = 0.2
@@ -1160,7 +1158,7 @@ def test_ckdtree_memuse():
     try:
         import resource
     except ImportError:
-        # resource is not available on Windows with Python 2.6
+        # resource is not available on Windows
         return
     # Make some data
     dx, dy = 0.05, 0.05
@@ -1212,7 +1210,7 @@ def test_ckdtree_weights():
                 weights=(weights, None))
         c4 = tree1.count_neighbors(tree1, np.linspace(0, 10, i),
                 weights=(None, weights))
-        c5 = tree1.count_neighbors(tree1, np.linspace(0, 10, i),
+        tree1.count_neighbors(tree1, np.linspace(0, 10, i),
                 weights=weights)
 
         assert_array_equal(c1, c2)
@@ -1224,7 +1222,6 @@ def test_ckdtree_weights():
         w1 = weights.copy()
         w1[i] = 0
         data2 = data[w1 != 0]
-        w2 = weights[w1 != 0]
         tree2 = cKDTree(data2)
 
         c1 = tree1.count_neighbors(tree1, np.linspace(0, 10, 100),
@@ -1308,8 +1305,8 @@ def test_ckdtree_duplicated_inputs():
     n = 1024
     for m in range(1, 8):
         data = np.concatenate([
-            np.ones((n // 2, m)) * 1,
-            np.ones((n // 2, m)) * 2], axis=0)
+            np.full((n // 2, m), 1),
+            np.full((n // 2, m), 2)], axis=0)
 
         # it shall not divide more than 3 nodes.
         # root left (1), and right (2)
@@ -1360,6 +1357,90 @@ def test_short_knn():
             [0., 0.01, np.inf, np.inf],
             [0., np.inf, np.inf, np.inf]])
 
+def test_query_ball_point_vector_r():
+
+    np.random.seed(1234)
+    data = np.random.normal(size=(100, 3))
+    query = np.random.normal(size=(100, 3))
+    tree = cKDTree(data)
+    d = np.random.uniform(0, 0.3, size=len(query))
+
+    rvector = tree.query_ball_point(query, d)
+    rscalar = [tree.query_ball_point(qi, di) for qi, di in zip(query, d)]
+    for a, b in zip(rvector, rscalar):
+        assert_array_equal(sorted(a), sorted(b))
+
+def test_query_ball_point_length():
+
+    np.random.seed(1234)
+    data = np.random.normal(size=(100, 3))
+    query = np.random.normal(size=(100, 3))
+    tree = cKDTree(data)
+    d = 0.3
+
+    length = tree.query_ball_point(query, d, return_length=True)
+    length2 = [len(ind) for ind in tree.query_ball_point(query, d, return_length=False)]
+    length3 = [len(tree.query_ball_point(qi, d)) for qi in query]
+    length4 = [tree.query_ball_point(qi, d, return_length=True) for qi in query]
+    assert_array_equal(length, length2)
+    assert_array_equal(length, length3)
+    assert_array_equal(length, length4)
+
+def test_discontiguous():
+
+    np.random.seed(1234)
+    data = np.random.normal(size=(100, 3))
+    d_contiguous = np.arange(100) * 0.04
+    d_discontiguous = np.ascontiguousarray(
+                          np.arange(100)[::-1] * 0.04)[::-1]
+    query_contiguous = np.random.normal(size=(100, 3))
+    query_discontiguous = np.ascontiguousarray(query_contiguous.T).T
+    assert query_discontiguous.strides[-1] != query_contiguous.strides[-1]
+    assert d_discontiguous.strides[-1] != d_contiguous.strides[-1]
+
+    tree = cKDTree(data)
+
+    length1 = tree.query_ball_point(query_contiguous,
+                                    d_contiguous, return_length=True)
+    length2 = tree.query_ball_point(query_discontiguous,
+                                    d_discontiguous, return_length=True)
+
+    assert_array_equal(length1, length2)
+
+    d1, i1 = tree.query(query_contiguous, 1)
+    d2, i2 = tree.query(query_discontiguous, 1)
+
+    assert_array_equal(d1, d2)
+    assert_array_equal(i1, i2)
+
+
+@pytest.mark.parametrize("balanced_tree, compact_nodes",
+    [(True, False),
+     (True, True),
+     (False, False),
+     (False, True)])
+def test_cdktree_empty_input(balanced_tree, compact_nodes):
+    # https://github.com/scipy/scipy/issues/5040
+    np.random.seed(1234)
+    empty_v3 = np.empty(shape=(0, 3))
+    query_v3 = np.ones(shape=(1, 3))
+    query_v2 = np.ones(shape=(2, 3))
+
+    tree = cKDTree(empty_v3, balanced_tree=balanced_tree, compact_nodes=compact_nodes)
+    length = tree.query_ball_point(query_v3, 0.3, return_length=True)
+    assert length == 0
+
+    dd, ii = tree.query(query_v2, 2)
+    assert ii.shape == (2, 2)
+    assert dd.shape == (2, 2)
+    assert np.isinf(dd).all()
+
+    N = tree.count_neighbors(tree, [0, 1])
+    assert_array_equal(N, [0, 0])
+
+    M = tree.sparse_distance_matrix(tree, 0.3)
+    assert M.shape == (0, 0)
+
 class Test_sorted_query_ball_point(object):
 
     def setup_method(self):
@@ -1370,6 +1451,10 @@ class Test_sorted_query_ball_point(object):
     def test_return_sorted_True(self):
         idxs_list = self.ckdt.query_ball_point(self.x, 1., return_sorted=True)
         for idxs in idxs_list:
+            assert_array_equal(idxs, sorted(idxs))
+
+        for xi in self.x:
+            idxs = self.ckdt.query_ball_point(xi, 1., return_sorted=True)
             assert_array_equal(idxs, sorted(idxs))
 
     def test_return_sorted_None(self):

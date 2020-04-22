@@ -2,8 +2,6 @@
 ltisys -- a collection of classes and functions for modeling linear
 time invariant systems.
 """
-from __future__ import division, print_function, absolute_import
-
 #
 # Author: Travis Oliphant 2001
 #
@@ -26,11 +24,9 @@ import warnings
 # np.linalg.qr fails on some tests with LinAlgError: zgeqrf returns -7
 # use scipy's qr until this is solved
 
-import scipy._lib.six as six
 from scipy.linalg import qr as s_qr
 from scipy import integrate, interpolate, linalg
 from scipy.interpolate import interp1d
-from scipy._lib.six import xrange
 from .filter_design import (tf2zpk, zpk2tf, normalize, freqs, freqz, freqs_zpk,
                             freqz_zpk)
 from .lti_conversion import (tf2ss, abcd_normalize, ss2tf, zpk2ss, ss2zpk,
@@ -1345,7 +1341,7 @@ class StateSpace(LinearTimeInvariant):
 
     def _check_binop_other(self, other):
         return isinstance(other, (StateSpace, np.ndarray, float, complex,
-                                  np.number) + six.integer_types)
+                                  np.number, int))
 
     def __mul__(self, other):
         """
@@ -1795,6 +1791,47 @@ def lsim2(system, U=None, T=None, X0=None, **kwargs):
     numerator and denominator should be specified in descending exponent
     order (e.g. ``s^2 + 3s + 5`` would be represented as ``[1, 3, 5]``).
 
+    See Also
+    --------
+    lsim
+
+    Examples
+    --------
+
+    We'll use `lsim2` to simulate an analog Bessel filter applied to
+    a signal.
+
+    >>> from scipy.signal import bessel, lsim2
+    >>> import matplotlib.pyplot as plt
+
+    Create a low-pass Bessel filter with a cutoff of 16 Hz.
+
+    >>> b, a = bessel(N=6, Wn=2*np.pi*16, btype='lowpass', analog=True)
+
+    Generate data to which the filter is applied.
+
+    >>> t = np.linspace(0, 1.25, 500, endpoint=False)
+
+    The input signal is the sum of three sinusoidal curves, with
+    frequencies 4 Hz, 40 Hz, and 80 Hz.  The filter should mostly
+    eliminate the 40 Hz and 80 Hz components, leaving just the 4 Hz signal.
+
+    >>> u = (np.cos(2*np.pi*4*t) + np.sin(2*np.pi*40*t) +
+    ...      0.5*np.cos(2*np.pi*80*t))
+
+    Simulate the filter with `lsim2`.
+
+    >>> tout, yout, xout = lsim2((b, a), U=u, T=t)
+
+    Plot the result.
+
+    >>> plt.plot(t, u, 'r', alpha=0.5, linewidth=1, label='input')
+    >>> plt.plot(tout, yout, 'k', linewidth=1.5, label='output')
+    >>> plt.legend(loc='best', shadow=True, framealpha=1)
+    >>> plt.grid(alpha=0.3)
+    >>> plt.xlabel('t')
+    >>> plt.show()
+
     """
     if isinstance(system, lti):
         sys = system._as_ss()
@@ -1971,7 +2008,7 @@ def lsim(system, U, T, X0=None, interp=True):
         # Zero input: just use matrix exponential
         # take transpose because state is a row vector
         expAT_dt = linalg.expm(transpose(A) * dt)
-        for i in xrange(1, n_steps):
+        for i in range(1, n_steps):
             xout[i] = dot(xout[i-1], expAT_dt)
         yout = squeeze(dot(xout, transpose(C)))
         return T, squeeze(yout), squeeze(xout)
@@ -2003,7 +2040,7 @@ def lsim(system, U, T, X0=None, interp=True):
         expMT = linalg.expm(transpose(M))
         Ad = expMT[:n_states, :n_states]
         Bd = expMT[n_states:, :n_states]
-        for i in xrange(1, n_steps):
+        for i in range(1, n_steps):
             xout[i] = dot(xout[i-1], Ad) + dot(U[i-1], Bd)
     else:
         # Linear interpolation between steps
@@ -2025,7 +2062,7 @@ def lsim(system, U, T, X0=None, interp=True):
         Ad = expMT[:n_states, :n_states]
         Bd1 = expMT[n_states+n_inputs:, :n_states]
         Bd0 = expMT[n_states:n_states + n_inputs, :n_states] - Bd1
-        for i in xrange(1, n_steps):
+        for i in range(1, n_steps):
             xout[i] = (dot(xout[i-1], Ad) + dot(U[i-1], Bd0) + dot(U[i], Bd1))
 
     yout = (squeeze(dot(xout, transpose(C))) + squeeze(dot(U, transpose(D))))
@@ -2102,11 +2139,12 @@ def impulse(system, X0=None, T=None, N=None):
 
     Examples
     --------
-    Second order system with a repeated root: x''(t) + 2*x(t) + x(t) = u(t)
+    Compute the impulse response of a second order system with a repeated
+    root: ``x''(t) + 2*x'(t) + x(t) = u(t)``
 
     >>> from scipy import signal
     >>> system = ([1.0], [1.0, 2.0, 1.0])
-    >>> t, y = signal.impulse2(system)
+    >>> t, y = signal.impulse(system)
     >>> import matplotlib.pyplot as plt
     >>> plt.plot(t, y)
 
@@ -2188,7 +2226,8 @@ def impulse2(system, X0=None, T=None, N=None, **kwargs):
 
     Examples
     --------
-    Second order system with a repeated root: x''(t) + 2*x(t) + x(t) = u(t)
+    Compute the impulse response of a second order system with a repeated
+    root: ``x''(t) + 2*x'(t) + x(t) = u(t)``
 
     >>> from scipy import signal
     >>> system = ([1.0], [1.0, 2.0, 1.0])
@@ -3013,7 +3052,7 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
            in linear state feedback", International Journal of Control, Vol. 41
            pp. 1129-1155, 1985.
     .. [2] A.L. Tits and Y. Yang, "Globally convergent algorithms for robust
-           pole assignment by state feedback, IEEE Transactions on Automatic
+           pole assignment by state feedback", IEEE Transactions on Automatic
            Control, Vol. 41, pp. 1432-1452, 1996.
 
     Examples

@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 from numpy.testing import assert_allclose, assert_array_equal
 from pytest import raises as assert_raises
@@ -52,7 +50,7 @@ class TestMLS(object):
                     assert_allclose(tester[0], out_len, err_msg=err_msg)
                     # steady-state is -1
                     err_msg = "mls steady-state has incorrect value"
-                    assert_allclose(tester[1:], -1 * np.ones(out_len - 1),
+                    assert_allclose(tester[1:], np.full(out_len - 1, -1),
                                     err_msg=err_msg)
                     # let's do the split thing using a couple options
                     for n in (1, 2**(nbits - 1)):

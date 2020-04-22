@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 from scipy.constants import constants, codata, find, value
 from numpy.testing import (assert_equal, assert_,
                            assert_almost_equal)
@@ -19,8 +17,8 @@ def test_find():
                                 'natural unit of mass',
                                 'natural unit of energy',
                                 'natural unit of energy in MeV',
-                                'natural unit of mom.um',
-                                'natural unit of mom.um in MeV/c',
+                                'natural unit of momentum',
+                                'natural unit of momentum in MeV/c',
                                 'natural unit of length',
                                 'natural unit of time']))
 

@@ -1,5 +1,3 @@
-from __future__ import division, absolute_import, print_function
-
 import warnings
 
 import numpy as np
@@ -136,3 +134,19 @@ class GaussianKDE(Benchmark):
         # test gaussian_kde evaluate on many points
         self.kernel(self.positions)
 
+
+class GroupSampling(Benchmark):
+    param_names = ['dim']
+    params = [[3, 10, 50, 200]]
+
+    def setup(self, dim):
+        np.random.seed(12345678)
+
+    def time_unitary_group(self, dim):
+        stats.unitary_group.rvs(dim)
+
+    def time_ortho_group(self, dim):
+        stats.ortho_group.rvs(dim)
+
+    def time_special_ortho_group(self, dim):
+        stats.special_ortho_group.rvs(dim)

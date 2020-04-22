@@ -11,8 +11,6 @@ repository.
 """
 # Author: Pauli Virtanen <pav@iki.fi>. This script is in the public domain.
 
-from __future__ import division, print_function, absolute_import
-
 import optparse
 import re
 import sys
@@ -20,18 +18,7 @@ import os
 import io
 import subprocess
 
-try:
-    from scipy._lib.six import PY3
-except ImportError:
-    sys.path.insert(0, os.path.join(os.path.dirname(__file__),
-                                    os.pardir, 'scipy', 'lib'))
-    from six import PY3
-if PY3:
-    stdout_b = sys.stdout.buffer
-else:
-    stdout_b = sys.stdout
-
-
+stdout_b = sys.stdout.buffer
 MAILMAP_FILE = os.path.join(os.path.dirname(__file__), "..", ".mailmap")
 
 

@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from __future__ import print_function
 import sys, os, re
 import glob
 from datetime import date
@@ -7,12 +6,23 @@ import warnings
 
 import numpy as np
 
+# Currently required to build scipy.fft docs
+os.environ['_SCIPY_BUILDING_DOC'] = 'True'
+
 # Check Sphinx version
 import sphinx
-if sphinx.__version__ < "1.6":
-    raise RuntimeError("Sphinx 1.6 or newer required")
+if sphinx.__version__ < "2.0":
+    raise RuntimeError("Sphinx 2.0 or newer required")
 
-needs_sphinx = '1.6'
+needs_sphinx = '2.0'
+
+# Workaround for sphinx-doc/sphinx#6573
+# ua._Function should not be treated as an attribute
+from sphinx.util import inspect
+import scipy._lib.uarray as ua
+old_isdesc = inspect.isdescriptor
+inspect.isdescriptor = (lambda obj: old_isdesc(obj)
+                        and not isinstance(obj, ua._Function))
 
 # -----------------------------------------------------------------------------
 # General configuration
@@ -101,19 +111,10 @@ show_authors = False
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = 'sphinx'
 
-# Enusre all our internal links work
+# Ensure all our internal links work
 nitpicky = True
 exclude_patterns = [  # glob-style
-    # these are all included directly in dev/index.rst:
-    'dev/decisions.rst',
-    'dev/deprecations.rst',
-    'dev/distributing.rst',
-    'dev/github.rst',
-    'dev/licensing.rst',
-    'dev/modules.rst',
-    'dev/newfeatures.rst',
-    'dev/releasing.rst',
-    'dev/versioning.rst',
+
 ]
 
 # be strict about warnings in our examples, we should write clean code
@@ -130,6 +131,9 @@ for key in (
         ):
     warnings.filterwarnings(  # deal with other modules having bad imports
         'ignore', message=".*" + key, category=DeprecationWarning)
+warnings.filterwarnings(  # matplotlib<->pyparsing issue
+    'ignore', message="Exception creating Regex for oneOf.*",
+    category=SyntaxWarning)
 # warnings in examples (mostly) that we allow
 # TODO: eventually these should be eliminated!
 for key in (
@@ -320,8 +324,9 @@ latex_elements = {
 # -----------------------------------------------------------------------------
 intersphinx_mapping = {
     'python': ('https://docs.python.org/dev', None),
-    'numpy': ('https://docs.scipy.org/doc/numpy', None),
+    'numpy': ('https://numpy.org/devdocs', None),
     'matplotlib': ('https://matplotlib.org', None),
+    'asv': ('https://asv.readthedocs.io/en/stable/', None),
 }
 
 

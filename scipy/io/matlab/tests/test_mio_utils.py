@@ -2,12 +2,9 @@
 
 """
 
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 
-from numpy.testing import assert_array_equal, assert_array_almost_equal, \
-     assert_
+from numpy.testing import assert_array_equal, assert_
 
 from scipy.io.matlab.mio_utils import squeeze_element, chars_to_strings
 
@@ -15,7 +12,7 @@ from scipy.io.matlab.mio_utils import squeeze_element, chars_to_strings
 def test_squeeze_element():
     a = np.zeros((1,3))
     assert_array_equal(np.squeeze(a), squeeze_element(a))
-    # 0d output from squeeze gives scalar
+    # 0-D output from squeeze gives scalar
     sq_int = squeeze_element(np.zeros((1,1), dtype=float))
     assert_(isinstance(sq_int, float))
     # Unless it's a structured array
@@ -43,4 +40,3 @@ def test_chars_strings():
     arr = np.array([['']], dtype='U1')
     out_arr = np.array([''], dtype='U1')
     assert_array_equal(chars_to_strings(arr), out_arr)
-

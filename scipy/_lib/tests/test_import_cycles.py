@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 import sys
 import subprocess
 
@@ -9,6 +7,7 @@ MODULES = [
     "scipy.cluster.vq",
     "scipy.cluster.hierarchy",
     "scipy.constants",
+    "scipy.fft",
     "scipy.fftpack",
     "scipy.integrate",
     "scipy.interpolate",
@@ -44,9 +43,8 @@ MODULES = [
 
 
 def test_modules_importable():
-    # Check that all modules are importable in a new Python
-    # process. This is not necessarily true (esp on Python 2) if there
-    # are import cycles present.
+    # Check that all modules are importable in a new Python process.
+    #This is not necessarily true if there are import cycles present.
     for module in MODULES:
         cmd = 'import {}'.format(module)
         subprocess.check_call([sys.executable, '-c', cmd])

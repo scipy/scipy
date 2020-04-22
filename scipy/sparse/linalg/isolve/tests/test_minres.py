@@ -1,9 +1,8 @@
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 from numpy.testing import assert_equal, assert_allclose, assert_
 from scipy.sparse.linalg.isolve import minres
-import pytest
+from scipy.linalg import norm
+
 from pytest import raises as assert_raises
 from .test_iterative import assert_normclose
 
@@ -27,9 +26,7 @@ def test_singular():
     assert_normclose(A.dot(xp), b, tol=1e-5)
 
 
-@pytest.mark.skip(reason="Skip Until gh #6843 is fixed")
-def test_gh_6843():
-    """check if x0 is being used by tracing iterates"""
+def test_x0_is_used_by():
     A, b = get_sample_problem()
     # Random x0 to feed minres
     np.random.seed(12345)
@@ -63,3 +60,39 @@ def test_asymmetric_fail():
     A[2, 1] = 2
     with assert_raises(ValueError):
         xp, info = minres(A, b, check=True)
+
+
+def test_minres_non_default_x0():
+    np.random.seed(1234)
+    tol = 10**(-6)
+    a = np.random.randn(5, 5)
+    a = np.dot(a, a.T)
+    b = np.random.randn(5)
+    c = np.random.randn(5)
+    x = minres(a, b, x0=c, tol=tol)[0]
+    assert norm(a.dot(x) - b) < tol
+
+
+def test_minres_precond_non_default_x0():
+    np.random.seed(12345)
+    tol = 10**(-6)
+    a = np.random.randn(5, 5)
+    a = np.dot(a, a.T)
+    b = np.random.randn(5)
+    c = np.random.randn(5)
+    m = np.random.randn(5, 5)
+    m = np.dot(m, m.T)
+    x = minres(a, b, M=m, x0=c, tol=tol)[0]
+    assert norm(a.dot(x) - b) < tol
+
+
+def test_minres_precond_exact_x0():
+    np.random.seed(1234)
+    tol = 10**(-6)
+    a = np.eye(10)
+    b = np.ones(10)
+    c = np.ones(10)
+    m = np.random.randn(10, 10)
+    m = np.dot(m, m.T)
+    x = minres(a, b, M=m, x0=c, tol=tol)[0]
+    assert norm(a.dot(x) - b) < tol

@@ -3,8 +3,6 @@
 # Author: Jordi Montes <jomsdev@gmail.com>
 # August 28, 2017
 
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 
 from scipy._lib._util import check_random_state
@@ -93,7 +91,7 @@ def clarkson_woodruff_transform(input_matrix, sketch_size, seed=None):
     precise, observe the following result which is adapted from the
     proof of Theorem 14 of [2]_ via Markov's Inequality. If we have
     a sketch size ``sketch_size=k`` which is at least
-    
+
     .. math:: k \geq \frac{2}{\epsilon^2\delta}
 
     Then for any fixed vector ``x``,

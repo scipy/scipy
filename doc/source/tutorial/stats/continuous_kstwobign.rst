@@ -1,15 +1,15 @@
 
 .. _continuous-kstwobign:
 
-KStwo Distribution
-==================
+KStwobign Distribution
+======================
 
 This is the limiting distribution of the normalized maximum absolute differences between an
 empirical distribution function, computed from :math:`n` samples or observations,
 and a comparison (or target) cumulative distribution function.  (``ksone`` is the distribution
 of the unnormalized positive differences, :math:`D_n^+`.)
 
-Writing :math:`D_n = \sup_t \left|F_{empirical,n}(t) - F_{target}(t)-\right|`,
+Writing :math:`D_n = \sup_t \left|F_{empirical,n}(t) - F_{target}(t)\right|`,
 the normalization factor is :math:`\sqrt{n}`, and ``kstwobign`` is the limiting distribution
 of the :math:`\sqrt{n} D_n` values as :math:`n\rightarrow\infty`.
 
@@ -21,7 +21,7 @@ where :math:`m` and :math:`n` are "big".
 Writing :math:`D_{m,n} = \sup_t \left|F_{1,m}(t)-F_{2,n}(t)\right|`,  where
 :math:`F_{1,m}` and :math:`F_{2,n}` are the two empirical distribution functions, then
 ``kstwobign`` is also the limiting distribution of the :math:`\sqrt{\left(\frac{mn}{m+n}\right)D_{m,n}}` values,
-as :math:`m,n\rightarrow\infty`.
+as :math:`m,n\rightarrow\infty` and :math:`m/n\rightarrow a \ne 0, \infty`.
 
 There are no shape parameters, and the support is :math:`x\in\left[0,\infty\right)`.
 
@@ -43,6 +43,9 @@ References
 
 -  Kolmogoroff, A. "Confidence Limits for an Unknown Distribution Function.""
    *Ann. Math. Statist.* 12 (1941), no. 4, 461--463.
+
+-  Smirnov, N. "On the estimation of the discrepancy between empirical curves of distribution for two independent samples"
+   *Bull. Math. Univ. Moscou.*, 2 (1039), 2-26.
 
 -  Feller, W. "On the Kolmogorov-Smirnov Limit Theorems for Empirical Distributions."
    *Ann. Math. Statist.* 19 (1948), no. 2, 177--189. and "Errata"  *Ann. Math. Statist.* 21 (1950), no. 2, 301--302.

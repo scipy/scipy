@@ -17,21 +17,18 @@
 #
 #-------------------------------------------------------------------------------
 
-from __future__ import division, print_function, absolute_import
-
 # Standard library imports.
 import warnings
 
 # SciPy imports.
-from scipy._lib.six import callable, string_types
 from scipy import linalg, special
 from scipy.special import logsumexp
-from scipy._lib._numpy_compat import cov
+from scipy._lib._util import check_random_state
 
-from numpy import (atleast_2d, reshape, zeros, newaxis, dot, exp, pi, sqrt,
-                   ravel, power, atleast_1d, squeeze, sum, transpose, ones)
+from numpy import (asarray, atleast_2d, reshape, zeros, newaxis, dot, exp, pi,
+                   sqrt, ravel, power, atleast_1d, squeeze, sum, transpose,
+                   ones, cov)
 import numpy as np
-from numpy.random import choice, multivariate_normal
 
 # Local imports.
 from . import mvn
@@ -190,7 +187,7 @@ class gaussian_kde(object):
 
     """
     def __init__(self, dataset, bw_method=None, weights=None):
-        self.dataset = atleast_2d(dataset)
+        self.dataset = atleast_2d(asarray(dataset))
         if not self.dataset.size > 1:
             raise ValueError("`dataset` input should have multiple elements.")
 
@@ -227,7 +224,7 @@ class gaussian_kde(object):
                      the dimensionality of the KDE.
 
         """
-        points = atleast_2d(points)
+        points = atleast_2d(asarray(points))
 
         d, m = points.shape
         if d != self.d:
@@ -240,7 +237,8 @@ class gaussian_kde(object):
                     self.d)
                 raise ValueError(msg)
 
-        result = zeros((m,), dtype=float)
+        output_dtype = np.common_type(self.covariance, points)
+        result = zeros((m,), dtype=output_dtype)
 
         whitening = linalg.cholesky(self.inv_cov)
         scaled_dataset = dot(whitening, self.dataset)
@@ -436,7 +434,7 @@ class gaussian_kde(object):
 
         return result
 
-    def resample(self, size=None):
+    def resample(self, size=None, seed=None):
         """
         Randomly sample a dataset from the estimated pdf.
 
@@ -446,6 +444,16 @@ class gaussian_kde(object):
             The number of samples to draw.  If not provided, then the size is
             the same as the effective number of samples in the underlying
             dataset.
+        seed : {None, int, `~np.random.RandomState`, `~np.random.Generator`}, optional
+            This parameter defines the object to use for drawing random
+            variates.
+            If `seed` is `None` the `~np.random.RandomState` singleton is used.
+            If `seed` is an int, a new ``RandomState`` instance is used, seeded
+            with seed.
+            If `seed` is already a ``RandomState`` or ``Generator`` instance,
+            then that object is used.
+            Default is None.
+            Specify `seed` for reproducible drawing of random variates.
 
         Returns
         -------
@@ -456,9 +464,11 @@ class gaussian_kde(object):
         if size is None:
             size = int(self.neff)
 
-        norm = transpose(multivariate_normal(zeros((self.d,), float),
-                                             self.covariance, size=size))
-        indices = choice(self.n, size=size, p=self.weights)
+        random_state = check_random_state(seed)
+        norm = transpose(random_state.multivariate_normal(
+            zeros((self.d,), float), self.covariance, size=size
+        ))
+        indices = random_state.choice(self.n, size=size, p=self.weights)
         means = self.dataset[:, indices]
 
         return means + norm
@@ -525,7 +535,7 @@ class gaussian_kde(object):
 
         >>> import matplotlib.pyplot as plt
         >>> fig, ax = plt.subplots()
-        >>> ax.plot(x1, np.ones(x1.shape) / (4. * x1.size), 'bo',
+        >>> ax.plot(x1, np.full(x1.shape, 1 / (4. * x1.size)), 'bo',
         ...         label='Data points (rescaled)')
         >>> ax.plot(xs, y1, label='Scott (default)')
         >>> ax.plot(xs, y2, label='Silverman')
@@ -540,7 +550,7 @@ class gaussian_kde(object):
             self.covariance_factor = self.scotts_factor
         elif bw_method == 'silverman':
             self.covariance_factor = self.silverman_factor
-        elif np.isscalar(bw_method) and not isinstance(bw_method, string_types):
+        elif np.isscalar(bw_method) and not isinstance(bw_method, str):
             self._bw_method = 'use constant'
             self.covariance_factor = lambda: bw_method
         elif callable(bw_method):

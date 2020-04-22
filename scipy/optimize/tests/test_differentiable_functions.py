@@ -1,13 +1,15 @@
-from __future__ import division, print_function, absolute_import
+import pytest
 import numpy as np
 from numpy.testing import (TestCase, assert_array_almost_equal,
-                           assert_array_equal, assert_)
+                           assert_array_equal, assert_, assert_allclose,
+                           assert_equal)
 from scipy.sparse import csr_matrix
 from scipy.sparse.linalg import LinearOperator
 from scipy.optimize._differentiable_functions import (ScalarFunction,
                                                       VectorFunction,
                                                       LinearVectorFunction,
                                                       IdentityVectorFunction)
+from scipy.optimize._hessian_update_strategy import BFGS
 
 
 class ExScalarFunction:
@@ -49,9 +51,9 @@ class TestScalarFunction(TestCase):
         approx = ScalarFunction(ex.fun, x0, (), '2-point',
                                 ex.hess, None, (-np.inf, np.inf))
         nfev += 3
+        ngev += 1
         assert_array_equal(ex.nfev, nfev)
         assert_array_equal(analit.nfev+approx.nfev, nfev)
-        assert_array_equal(ex.ngev, ngev)
         assert_array_equal(analit.ngev+approx.ngev, ngev)
         assert_array_equal(analit.f, approx.f)
         assert_array_almost_equal(analit.g, approx.g)
@@ -63,14 +65,13 @@ class TestScalarFunction(TestCase):
         ngev += 1
         assert_array_equal(ex.nfev, nfev)
         assert_array_equal(analit.nfev+approx.nfev, nfev)
-        assert_array_equal(ex.ngev, ngev)
         assert_array_equal(analit.ngev+approx.ngev, ngev)
         f_approx = approx.fun(x)
         g_approx = approx.grad(x)
         nfev += 3
+        ngev += 1
         assert_array_equal(ex.nfev, nfev)
         assert_array_equal(analit.nfev+approx.nfev, nfev)
-        assert_array_equal(ex.ngev, ngev)
         assert_array_equal(analit.ngev+approx.ngev, ngev)
         assert_array_almost_equal(f_analit, f_approx)
         assert_array_almost_equal(g_analit, g_approx)
@@ -80,14 +81,13 @@ class TestScalarFunction(TestCase):
         ngev += 1
         assert_array_equal(ex.nfev, nfev)
         assert_array_equal(analit.nfev+approx.nfev, nfev)
-        assert_array_equal(ex.ngev, ngev)
         assert_array_equal(analit.ngev+approx.ngev, ngev)
 
         g_approx = approx.grad(x)
         nfev += 3
+        ngev += 1
         assert_array_equal(ex.nfev, nfev)
         assert_array_equal(analit.nfev+approx.nfev, nfev)
-        assert_array_equal(ex.ngev, ngev)
         assert_array_equal(analit.ngev+approx.ngev, ngev)
         assert_array_almost_equal(g_analit, g_approx)
 
@@ -98,14 +98,13 @@ class TestScalarFunction(TestCase):
         ngev += 1
         assert_array_equal(ex.nfev, nfev)
         assert_array_equal(analit.nfev+approx.nfev, nfev)
-        assert_array_equal(ex.ngev, ngev)
         assert_array_equal(analit.ngev+approx.ngev, ngev)
         f_approx = approx.fun(x)
         g_approx = approx.grad(x)
         nfev += 3
+        ngev += 1
         assert_array_equal(ex.nfev, nfev)
         assert_array_equal(analit.nfev+approx.nfev, nfev)
-        assert_array_equal(ex.ngev, ngev)
         assert_array_equal(analit.ngev+approx.ngev, ngev)
         assert_array_almost_equal(f_analit, f_approx)
         assert_array_almost_equal(g_analit, g_approx)
@@ -117,17 +116,49 @@ class TestScalarFunction(TestCase):
         ngev += 1
         assert_array_equal(ex.nfev, nfev)
         assert_array_equal(analit.nfev+approx.nfev, nfev)
-        assert_array_equal(ex.ngev, ngev)
         assert_array_equal(analit.ngev+approx.ngev, ngev)
         f_approx = approx.fun(x)
         g_approx = approx.grad(x)
         nfev += 3
+        ngev += 1
         assert_array_equal(ex.nfev, nfev)
         assert_array_equal(analit.nfev+approx.nfev, nfev)
-        assert_array_equal(ex.ngev, ngev)
         assert_array_equal(analit.ngev+approx.ngev, ngev)
         assert_array_almost_equal(f_analit, f_approx)
         assert_array_almost_equal(g_analit, g_approx)
+
+    def test_fun_and_grad(self):
+        ex = ExScalarFunction()
+
+        def fg_allclose(x, y):
+            assert_allclose(x[0], y[0])
+            assert_allclose(x[1], y[1])
+
+        # with analytic gradient
+        x0 = [2.0, 0.3]
+        analit = ScalarFunction(ex.fun, x0, (), ex.grad,
+                                ex.hess, None, (-np.inf, np.inf))
+
+        fg = ex.fun(x0), ex.grad(x0)
+        fg_allclose(analit.fun_and_grad(x0), fg)
+        assert(analit.ngev == 1)
+
+        x0[1] = 1.
+        fg = ex.fun(x0), ex.grad(x0)
+        fg_allclose(analit.fun_and_grad(x0), fg)
+
+        # with finite difference gradient
+        x0 = [2.0, 0.3]
+        sf = ScalarFunction(ex.fun, x0, (), '3-point',
+                                ex.hess, None, (-np.inf, np.inf))
+        assert(sf.ngev == 1)
+        fg = ex.fun(x0), ex.grad(x0)
+        fg_allclose(sf.fun_and_grad(x0), fg)
+        assert(sf.ngev == 1)
+
+        x0[1] = 1.
+        fg = ex.fun(x0), ex.grad(x0)
+        fg_allclose(sf.fun_and_grad(x0), fg)
 
     def test_finite_difference_hess_linear_operator(self):
         ex = ExScalarFunction()
@@ -253,6 +284,48 @@ class TestScalarFunction(TestCase):
         assert_array_equal(ex.nhev, nhev)
         assert_array_equal(analit.nhev+approx.nhev, nhev)
 
+    def test_x_storage_overlap(self):
+        # Scalar_Function should not store references to arrays, it should
+        # store copies - this checks that updating an array in-place causes
+        # Scalar_Function.x to be updated.
+
+        def f(x):
+            return np.sum(np.asarray(x) ** 2)
+
+        x = np.array([1., 2., 3.])
+        sf = ScalarFunction(f, x, (), '3-point', lambda x: x, None, (-np.inf, np.inf))
+
+        assert x is not sf.x
+        assert_equal(sf.fun(x), 14.0)
+        assert x is not sf.x
+
+        x[0] = 0.
+        f1 = sf.fun(x)
+        assert_equal(f1, 13.0)
+
+        x[0] = 1
+        f2 = sf.fun(x)
+        assert_equal(f2, 14.0)
+        assert x is not sf.x
+
+        # now test with a HessianUpdate strategy specified
+        hess = BFGS()
+        x = np.array([1., 2., 3.])
+        sf = ScalarFunction(f, x, (), '3-point', hess, None, (-np.inf, np.inf))
+
+        assert x is not sf.x
+        assert_equal(sf.fun(x), 14.0)
+        assert x is not sf.x
+
+        x[0] = 0.
+        f1 = sf.fun(x)
+        assert_equal(f1, 13.0)
+
+        x[0] = 1
+        f2 = sf.fun(x)
+        assert_equal(f2, 14.0)
+        assert x is not sf.x
+
 
 class ExVectorialFunction:
 
@@ -285,7 +358,6 @@ class TestVectorialFunction(TestCase):
         njev = 0
 
         x0 = [1.0, 0.0]
-        v0 = [0.0, 1.0]
         analit = VectorFunction(ex.fun, x0, ex.jac, ex.hess, None, None,
                                 (-np.inf, np.inf), None)
         nfev += 1
@@ -503,6 +575,49 @@ class TestVectorialFunction(TestCase):
         assert_array_equal(analit.njev+approx.njev, njev)
         assert_array_equal(ex.nhev, nhev)
         assert_array_equal(analit.nhev+approx.nhev, nhev)
+
+    def test_x_storage_overlap(self):
+        # VectorFunction should not store references to arrays, it should
+        # store copies - this checks that updating an array in-place causes
+        # Scalar_Function.x to be updated.
+        ex = ExVectorialFunction()
+        x0 = np.array([1.0, 0.0])
+
+        vf = VectorFunction(ex.fun, x0, '3-point', ex.hess, None, None,
+                            (-np.inf, np.inf), None)
+
+        assert x0 is not vf.x
+        assert_equal(vf.fun(x0), ex.fun(x0))
+        assert x0 is not vf.x
+
+        x0[0] = 2.
+        assert_equal(vf.fun(x0), ex.fun(x0))
+        assert x0 is not vf.x
+
+        x0[0] = 1.
+        assert_equal(vf.fun(x0), ex.fun(x0))
+        assert x0 is not vf.x
+
+        # now test with a HessianUpdate strategy specified
+        hess = BFGS()
+        x0 = np.array([1.0, 0.0])
+        vf = VectorFunction(ex.fun, x0, '3-point', hess, None, None,
+                            (-np.inf, np.inf), None)
+
+        with pytest.warns(UserWarning):
+            # filter UserWarning because ExVectorialFunction is linear and
+            # a quasi-Newton approximation is used for the Hessian.
+            assert x0 is not vf.x
+            assert_equal(vf.fun(x0), ex.fun(x0))
+            assert x0 is not vf.x
+
+            x0[0] = 2.
+            assert_equal(vf.fun(x0), ex.fun(x0))
+            assert x0 is not vf.x
+
+            x0[0] = 1.
+            assert_equal(vf.fun(x0), ex.fun(x0))
+            assert x0 is not vf.x
 
 
 def test_LinearVectorFunction():
