@@ -1165,7 +1165,7 @@ def boxcox_normmax(x, bounds=None, brack=(-2.0, 2.0), method='pearsonr'):
 
         return optimizer(_eval_mle, args=(x,))
 
-    def _all(x, brack):
+    def _all(x):
         maxlog = np.zeros(2, dtype=float)
         maxlog[0] = _pearsonr(x)
         maxlog[1] = _mle(x)
