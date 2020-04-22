@@ -2116,23 +2116,24 @@ def squareform(X, force="no", checks=True):
 
     Notes
     -----
-    1. v = squareform(X)
+    1. ``v = squareform(X)``
 
-       Given a square d-by-d symmetric distance matrix X,
-       ``v = squareform(X)`` returns a ``d * (d-1) / 2`` (or
-       :math:`{n \\choose 2}`) sized vector v.
+       Given a square :math:`n`-by-:math:`n` symmetric distance matrix :math:`X`,
+       ``v = squareform(X)`` returns a
+       :math:`{n \\choose 2} = \\frac{n(n-1)}{2}` sized vector :math:`v`
+       where :math:`v[{n \\choose 2}-{n-i \\choose 2} + (j-i-1)]`
+       is the distance between points ``i`` and ``j``, :math:`i \\not= j`.
+       If :math:`X` is non-square or asymmetric, an error is raised.
 
-      :math:`v[{n \\choose 2}-{n-i \\choose 2} + (j-i-1)]` is the distance
-      between points i and j. If X is non-square or asymmetric, an error
-      is returned.
+    2. ``X = squareform(v)``
 
-    2. X = squareform(v)
-
-      Given a ``d*(d-1)/2`` sized v for some integer ``d >= 2`` encoding
-      distances as described, ``X = squareform(v)`` returns a d by d distance
-      matrix X.  The ``X[i, j]`` and ``X[j, i]`` values are set to
-      :math:`v[{n \\choose 2}-{n-i \\choose 2} + (j-i-1)]` and all
-      diagonal elements are zero.
+       Given a :math:`\\frac{n(n-1)}{2}` sized vector :math:`v`
+       for some integer :math:`n \\geq 1` encoding distances as described,
+       ``X = squareform(v)`` returns a
+       :math:`n`-by-:math:`n` distance matrix :math:`X`.
+       The ``X[i, j]`` and ``X[j, i]`` values are set to
+       :math:`v[{n \\choose 2}-{n-i \\choose 2} + (j-i-1)]`
+       and all diagonal elements are zero.
 
     In SciPy 0.19.0, ``squareform`` stopped casting all input types to
     float64, and started returning arrays of the same dtype as the input.
