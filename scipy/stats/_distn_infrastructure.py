@@ -889,11 +889,13 @@ class rv_generic(object):
 
     def _support_mask(self, x, *args):
         a, b = self._get_support(*args)
-        return (a <= x) & (x <= b)
+        with np.errstate(invalid='ignore'):
+            return (a <= x) & (x <= b)
 
     def _open_support_mask(self, x, *args):
         a, b = self._get_support(*args)
-        return (a < x) & (x < b)
+        with np.errstate(invalid='ignore'):
+            return (a < x) & (x < b)
 
     def _rvs(self, *args):
         # This method must handle self._size being a tuple, and it must
@@ -1056,10 +1058,9 @@ class rv_generic(object):
                     mu2p = self._munp(2, *goodargs)
                     if mu is None:
                         mu = self._munp(1, *goodargs)
-                    mu2 = mu2p - mu * mu
-                    if np.isinf(mu):
-                        # if mean is inf then var is also inf
-                        mu2 = np.inf
+                    # if mean is inf then var is also inf
+                    with np.errstate(invalid='ignore'):
+                        mu2 = np.where(np.isfinite(mu), mu2p - mu**2, np.inf)
                 out0 = default.copy()
                 place(out0, cond, mu2 * scale * scale)
                 output.append(out0)
@@ -2484,6 +2485,8 @@ class rv_continuous(rv_generic):
         `scipy.integrate.quad` can verify whether the integral exists or is
         finite. For example ``cauchy(0).mean()`` returns ``np.nan`` and
         ``cauchy(0).expect()`` returns ``0.0``.
+
+        The function is not vectorized.
 
         Examples
         --------

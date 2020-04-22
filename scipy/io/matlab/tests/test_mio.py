@@ -1024,7 +1024,7 @@ def test_str_round():
     stream.truncate(0)
     stream.seek(0)
     # Make Fortran ordered version of string
-    in_str = in_arr.tostring(order='F')
+    in_str = in_arr.tobytes(order='F')
     in_from_str = np.ndarray(shape=a.shape,
                              dtype=in_arr.dtype,
                              order='F',

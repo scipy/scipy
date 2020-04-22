@@ -11,7 +11,12 @@ class TestVoigtProfile(object):
     @pytest.mark.parametrize('x, sigma, gamma', [
         (np.nan, 1, 1),
         (0, np.nan, 1),
-        (0, 1, np.nan)
+        (0, 1, np.nan),
+        (1, np.nan, 0),
+        (np.nan, 1, 0),
+        (1, 0, np.nan),
+        (np.nan, 0, 1),
+        (np.nan, 0, 0)
     ])
     def test_nan(self, x, sigma, gamma):
         assert np.isnan(sc.voigt_profile(x, sigma, gamma))
@@ -56,4 +61,25 @@ class TestVoigtProfile(object):
             sc.voigt_profile(-x, 1, 1),
             rtol=1e-15,
             atol=0
+        )
+
+    @pytest.mark.parametrize('x, sigma, gamma, desired', [
+        (0, 0, 0, np.inf),
+        (1, 0, 0, 0)
+    ])
+    def test_corner_cases(self, x, sigma, gamma, desired):
+        assert sc.voigt_profile(x, sigma, gamma) == desired
+
+    @pytest.mark.parametrize('sigma1, gamma1, sigma2, gamma2', [
+        (0, 1, 1e-16, 1),
+        (1, 0, 1, 1e-16),
+        (0, 0, 1e-16, 1e-16)
+    ])
+    def test_continuity(self, sigma1, gamma1, sigma2, gamma2):
+        x = np.linspace(1, 10, 20)
+        assert_allclose(
+            sc.voigt_profile(x, sigma1, gamma1),
+            sc.voigt_profile(x, sigma2, gamma2),
+            rtol=1e-16,
+            atol=1e-16
         )
