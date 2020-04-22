@@ -159,13 +159,12 @@ def _toint64(x):
         j = 1
         l = i + 1
 
-    i = -1
     for i in range(l - 1):
         result[perm[i]] = j
         if x[perm[i]] != x[perm[i + 1]]:
             j += 1
 
-    result[perm[i + 1]] = j
+    result[perm[l - 1]] = j
     return np.array(result, dtype=np.int64)
 
 

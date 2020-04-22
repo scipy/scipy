@@ -1181,9 +1181,11 @@ def test_weightedtau():
 
 def test_segfault_issue_9710():
     # https://github.com/scipy/scipy/issues/9710
-    # This test was created to check  segfault
+    # This test was created to check segfault
+    # In issue SEGFAULT only repros in optimized builds after calling the function twice
     stats.weightedtau([1], [1.0])
     stats.weightedtau([1], [1.0])
+    # The code below also caused SEGFAULT
     stats.weightedtau([np.nan], [52])
 
 def test_kendall_tau_large():
