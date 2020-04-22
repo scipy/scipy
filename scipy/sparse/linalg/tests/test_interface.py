@@ -366,3 +366,8 @@ def test_adjoint_conjugate():
 
     assert_equal(B.dot(v), Y.dot(v))
     assert_equal(B.H.dot(v), Y.T.conj().dot(v))
+
+def test_ndim():
+    X = np.array([[1]])
+    A = interface.aslinearoperator(X)
+    assert_equal(A.ndim, 2)
