@@ -255,12 +255,14 @@ The simplex method supports callback functions, such as:
 
    linprog_verbose_callback -- Sample callback function for linprog (simplex).
 
-Assignment problems:
+Assignment problems
+===================
 
 .. autosummary::
    :toctree: generated/
 
    linear_sum_assignment -- Solves the linear-sum assignment problem.
+   quadratic_assignment -- Solves the Quadratic Assignment Problem and the Graph Matching Problem.
 
 Utilities
 =========
