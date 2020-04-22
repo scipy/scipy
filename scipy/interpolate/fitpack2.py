@@ -1068,7 +1068,7 @@ class SmoothBivariateSpline(BivariateSpline):
         if w is not None:
             if not x.size == w.size:
                 raise ValueError('x, y, z, and w should have a same length')
-            elif np.any(w<0.0):
+            elif np.any(w < 0.0):
                 raise ValueError('w should be positive')
         if not bbox.shape == (4,):
             raise ValueError('bbox shape should be (4,)')
