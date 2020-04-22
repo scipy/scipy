@@ -75,10 +75,6 @@ def quadratic_assignment(
             A positive, threshold stopping criteria such that FW continues to iterate
             while Frobenius norm of :math:`(P_{i}-P_{i+1}) > eps`
 
-        gmp : bool (default = True)
-            Gives users the option to solve QAP rather than the Graph Matching Problem
-            (GMP). This is accomplished through trivial negation of the objective function.
-
         Returns
         -------
 
