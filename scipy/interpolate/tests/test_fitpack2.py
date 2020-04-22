@@ -387,6 +387,49 @@ class TestLSQBivariateSpline(object):
         assert_array_equal(lut([], []), np.zeros((0,0)))
         assert_array_equal(lut([], [], grid=False), np.zeros((0,)))
 
+    def test_invalid_input(self):
+        s = 0.1
+        tx = [1 + s, 3 - s]
+        ty = [1 + s, 3 - s]
+
+        with assert_raises(ValueError) as info:
+            x = np.linspace(1.0, 10.0)
+            y = np.linspace(1.0, 10.0)
+            z = np.linspace(1.0, 10.0, num=10)
+            LSQBivariateSpline(x, y, z, tx, ty)
+        assert "x, y, and z should have a same length" in str(info.value)
+
+        with assert_raises(ValueError) as info:
+            x = np.linspace(1.0, 10.0)
+            y = np.linspace(1.0, 10.0)
+            z = np.linspace(1.0, 10.0)
+            w = np.linspace(1.0, 10.0, num=20)
+            LSQBivariateSpline(x, y, z, tx, ty, w=w)
+        assert "x, y, z, and w should have a same length" in str(info.value)
+
+        with assert_raises(ValueError) as info:
+            w = np.linspace(-1.0, 10.0)
+            LSQBivariateSpline(x, y, z, tx, ty, w=w)
+        assert "w should be positive" in str(info.value)
+
+        with assert_raises(ValueError) as info:
+            bbox = (-100, 100, -100)
+            LSQBivariateSpline(x, y, z, tx, ty, bbox=bbox)
+        assert "bbox shape should be (4,)" in str(info.value)
+
+        with assert_raises(ValueError) as info:
+            LSQBivariateSpline(x, y, z, tx, ty, kx=10, ky=10)
+        assert "The length of x, y and z should be at least (kx+1) * (ky+1)" in \
+               str(info.value)
+
+        with assert_raises(ValueError) as exc_info:
+            LSQBivariateSpline(x, y, z, tx, ty, eps=0.0)
+        assert "eps should be between (0, 1)" in str(exc_info.value)
+
+        with assert_raises(ValueError) as exc_info:
+            LSQBivariateSpline(x, y, z, tx, ty, eps=1.0)
+        assert "eps should be between (0, 1)" in str(exc_info.value)
+
 
 class TestSmoothBivariateSpline(object):
     def test_linear_constant(self):
