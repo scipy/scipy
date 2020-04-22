@@ -1331,7 +1331,7 @@ class TestBoxcox(object):
 
     @pytest.mark.parametrize("bounds", [(-1, 1), (0, 1), (-2, -1)])
     def test_bounds(self, bounds):
-        y, lmbda = stats.boxcox(_boxcox_data, lmbda=None, bounds=bounds)
+        _, lmbda = stats.boxcox(_boxcox_data, lmbda=None, bounds=bounds)
         assert bounds[0] < lmbda < bounds[1]
 
 
@@ -1356,7 +1356,7 @@ class TestBoxcoxNormmax(object):
         maxlog_all = stats.boxcox_normmax(self.x, method='all')
         assert_allclose(maxlog_all, [1.804465, 1.758101], rtol=1e-6)
 
-    @pytest.mark.parametrize("method", ["mle", "pearsonr", "all"])
+    @pytest.mark.parametrize("method", ["mle", "pearsonr"])
     @pytest.mark.parametrize("bounds", [(-1, 1), (0, 1), (-2, -1)])
     def test_bounds(self, method, bounds):
         maxlog = stats.boxcox_normmax(self.x, bounds=bounds, method=method)

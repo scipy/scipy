@@ -956,7 +956,7 @@ def boxcox(x, lmbda=None, bounds=None, alpha=None):
 
         If `lmbda` is None, find the lambda that maximizes the log-likelihood
         function and return it as the second output argument.
-    bounds : tuple, optional
+    bounds : {None, tuple}, optional
         Lower and upper bound on lmbda.
     alpha : {None, float}, optional
         If ``alpha`` is not None, return the ``100 * (1-alpha)%`` confidence
@@ -1066,6 +1066,8 @@ def boxcox_normmax(x, bounds=None, brack=(-2.0, 2.0), method='pearsonr'):
     ----------
     x : array_like
         Input array.
+    bounds : {None, tuple}, optional
+        Lower and upper bound on lmbda.
     brack : 2-tuple, optional
         The starting interval for a downhill bracket search with
         `optimize.brent`.  Note that this is in most cases not critical; the
@@ -1176,7 +1178,7 @@ def boxcox_normmax(x, bounds=None, brack=(-2.0, 2.0), method='pearsonr'):
         raise ValueError("Method %s not recognized." % method)
 
     optimfunc = methods[method]
-    return optimfunc(x, brack)
+    return optimfunc(x)
 
 
 def _normplot(method, x, la, lb, plot=None, N=80):
