@@ -52,7 +52,7 @@ class QuadraticAssignment(Benchmark):
         quadratic_assignment(self.cost_matrix, self.dist_matrix)
 
     def track_score(self, qap_prob):
-        row, col = quadratic_assignment(self.cost_matrix, self.dist_matrix)
-        score = int(np.trace(np.transpose(self.cost_matrix) @ self.dist_matrix[np.ix_(col, col)]))
+        res = quadratic_assignment(self.cost_matrix, self.dist_matrix)
+        score = int(res['score'])
         percent_diff = (score - self.opt_solution) / self.opt_solution
         return percent_diff
