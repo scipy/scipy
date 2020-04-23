@@ -1803,7 +1803,7 @@ def test_getc2_gesc2():
 @pytest.mark.parametrize('jobv', range(4))  # 'V', 'J', 'W', 'N'
 @pytest.mark.parametrize('jobr', [0, 1])
 @pytest.mark.parametrize('jobt', [0, 1])  # When `jobt` and `jobp` are parametrized,
-@pytest.mark.parametrize('jobp', [0, 1])  #    test_heequb fails. See gh-11902.
+@pytest.mark.parametrize('jobp', [0, 1])  # test_heequb fails. See gh-11902.
 def test_gejsv_general(size, dtype, joba, jobu, jobv, jobr, jobt, jobp):
     """Test the lapack routine ?gejsv.
 
