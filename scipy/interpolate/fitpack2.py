@@ -958,8 +958,8 @@ class BivariateSpline(_BivariateSplineBase):
     SmoothSphereBivariateSpline :
         to create a smooth bivariate spline in spherical coordinates
     LSQSphereBivariateSpline :
-        to create a bivariate spline approximation in spherical coordinates
-        using weighted least-squares fitting
+        to create a bivariate spline in spherical coordinates using
+        weighted least-squares fitting
     bisplrep : older wrapping of FITPACK
     bisplev : older wrapping of FITPACK
     """
