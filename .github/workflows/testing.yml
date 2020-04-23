@@ -28,7 +28,7 @@ jobs:
 
         # virtualenv needed for the multibuild steps
         pip install virtualenv
-        brew install libmpc gcc@6 suitesparse
+        brew install libmpc gcc@6 suitesparse swig
         # The openblas binary used here was built using a gfortran older than 7,
         # so it needs the older abi libgfortran.
         export FC=gfortran-6
@@ -73,6 +73,8 @@ jobs:
         echo "runtime_library_dirs = $PWD/openblas/lib" >> site.cfg
         # remove a spurious gcc/gfortran toolchain install
         rm -rf /usr/local/Cellar/gcc/9.2.0_2
+        #
+        export PATH="$PATH:$PWD/openblas"
 
     - name: Install packages
       run: |
