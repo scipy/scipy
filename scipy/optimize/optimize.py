@@ -2473,6 +2473,23 @@ def bracket(func, xa=0.0, xb=1.0, args=(), grow_limit=110.0, maxiter=1000):
     funcalls : int
         Number of function evaluations made.
 
+    Examples
+    --------
+    This function can find a downward convex region of a function:
+
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.optimize import bracket
+    >>> def f(x):
+    ...     return 10*x**2 + 3*x + 5
+    >>> x = np.linspace(-2, 2)
+    >>> y = f(x)
+    >>> xa, xb, xc, fa, fb, fc, funcalls = bracket(f)
+    >>> plt.plot(x, y, "-k")
+    >>> plt.plot(xa, fa, "ro")
+    >>> plt.plot(xb, fb, "x")
+    >>> plt.plot(xc, fc, "bo")
+    >>> plt.show()
+
     """
     _gold = 1.618034  # golden ratio: (1.0+sqrt(5.0))/2.0
     _verysmall_num = 1e-21
