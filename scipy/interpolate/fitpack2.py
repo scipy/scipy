@@ -86,7 +86,7 @@ class UnivariateSpline(object):
         2-sequence specifying the boundary of the approximation interval. If
         None (default), ``bbox=[x[0], x[-1]]``.
     k : int, optional
-        Degree of the smoothing spline.  Must be 1 <= k <= 5.
+        Degree of the smoothing spline.  Must be 1 <= `k` <= 5.
         Default is k=3, a cubic spline.
     s : float or None, optional
         Positive smoothing factor used to choose the number of knots.  Number
@@ -950,12 +950,16 @@ class BivariateSpline(_BivariateSplineBase):
     UnivariateSpline :
         a similar class for univariate spline interpolation
     SmoothBivariateSpline :
-        to create a BivariateSpline through the given points
+        to create a bivariate spline through the given points
     LSQBivariateSpline :
-        to create a BivariateSpline using weighted least-squares fitting
-    RectSphereBivariateSpline
+        to create a bivariate spline using weighted least-squares fitting
+    RectSphereBivariateSpline :
+        to create a bivariate spline over a rectangular mesh on a sphere
     SmoothSphereBivariateSpline :
-    LSQSphereBivariateSpline
+        to create a smooth bivariate spline in spherical coordinates
+    LSQSphereBivariateSpline :
+        to create a bivariate spline approximation in spherical coordinates
+        using weighted least-squares fitting
     bisplrep : older wrapping of FITPACK
     bisplev : older wrapping of FITPACK
     """
@@ -1015,7 +1019,7 @@ class BivariateSpline(_BivariateSplineBase):
         return dfitpack.dblint(tx, ty, c, kx, ky, xa, xb, ya, yb)
 
     @staticmethod
-    def validate_input(x, y, z, w, kx, ky, eps):
+    def _validate_input(x, y, z, w, kx, ky, eps):
         x, y, z = np.asarray(x), np.asarray(y), np.asarray(z)
         if not x.size == y.size == z.size:
             raise ValueError('x, y, and z should have a same length')
@@ -1057,7 +1061,8 @@ class SmoothBivariateSpline(BivariateSpline):
         estimate of the standard deviation of ``z[i]``.
     eps : float, optional
         A threshold for determining the effective rank of an over-determined
-        linear system of equations. `eps` should have a value between 0 and 1,
+        linear system of equations. `eps` should have a value within the open
+        interval (0, 1).
         the default is 1e-16.
 
     See Also
@@ -1076,7 +1081,7 @@ class SmoothBivariateSpline(BivariateSpline):
     def __init__(self, x, y, z, w=None, bbox=[None] * 4, kx=3, ky=3, s=None,
                  eps=1e-16):
 
-        x, y, z, w = self.validate_input(x, y, z, w, kx, ky, eps)
+        x, y, z, w = self._validate_input(x, y, z, w, kx, ky, eps)
         bbox = ravel(bbox)
         if not bbox.shape == (4,):
             raise ValueError('bbox shape should be (4,)')
@@ -1146,7 +1151,7 @@ class LSQBivariateSpline(BivariateSpline):
     def __init__(self, x, y, z, tx, ty, w=None, bbox=[None]*4, kx=3, ky=3,
                  eps=None):
 
-        x, y, z, w = self.validate_input(x, y, z, w, kx, ky, eps)
+        x, y, z, w = self._validate_input(x, y, z, w, kx, ky, eps)
         bbox = ravel(bbox)
         if not bbox.shape == (4,):
             raise ValueError('bbox shape should be (4,)')
