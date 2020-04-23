@@ -770,10 +770,6 @@ class TestGbsvx:
         afb[kl:] = np.flipud(A.data)
         afb, ipiv, info = gbtrf(afb, kl, ku)
 
-        # FIXME: Increment needs to be implemented at the wrapper level
-        for i in range(len(ipiv)):
-            ipiv[i] += 1
-
         result = gbsvx(kl, ku, ab, b, 2, trans, afb, ipiv, equed, r, c)
         actual = self.Actual(*result)
 
