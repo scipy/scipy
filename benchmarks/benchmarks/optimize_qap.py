@@ -30,6 +30,7 @@ class QuadraticAssignment(Benchmark):
               "tai60a", "tai60b", "tai64c", "tai80a", "tai100a", "tai100b", "tai150b", "tai256c",
               "tho30", "tho40", "tho150", "wil50", "wil100"]
     param_names = ['QAP Problem']
+
     def setup(self, qap_prob):
         dir_path = os.path.dirname(os.path.realpath(__file__))
         datafile = os.path.join(dir_path, "qapdata", qap_prob + ".dat")
