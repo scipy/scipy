@@ -40,13 +40,13 @@ subroutine <prefix2>gbsvx(fact,trans,n,kl,ku,nrhs,ab,ldab,afb,ldafb,piv,equed,r,
     integer intent(in), check((0<=fact) && (fact<3)) :: fact = 0
     integer intent(in), check((0<=trans) && (trans<3)) :: trans = 0
 
-    integer depend(ab),intent(hide):: n = shape(ab,1)
+    integer depend(ab), intent(hide) :: n = shape(ab, 1)
     integer intent(in), check(0<=kl) :: kl
     integer intent(in), check(0<=ku) :: ku
-    integer intent(hide), depend(b) :: nrhs = shape(b,1)
-    <ftype2> intent(in,out,copy,out=a), dimension(ldab,n), check(kl+ku+1==shape(ab,0)) :: ab
-    integer intent(hide), depend(ab) :: ldab = max(1, shape(ab,0))
-    <ftype2> optional, intent(in,out,copy,out=lu), depend(kl, ku), dimension(2*kl+ku+1,n), check(2*kl+ku+1==shape(afb,0)) :: afb
+    integer intent(hide), depend(b) :: nrhs = shape(b, 1)
+    <ftype2> intent(in,out,copy,out=sab), dimension(ldab, n), check(kl+ku+1 == shape(ab, 0)) :: ab
+    integer intent(hide), depend(ab) :: ldab = max(1, shape(ab, 0))
+    <ftype2> optional, intent(in,out,copy,out=lu), depend(kl, ku), dimension(2*kl+ku+1, n), check(2*kl+ku+1 == shape(afb, 0)) :: afb
     integer intent(hide), depend(afb)  :: ldafb = max(1, shape(afb, 0))
     integer optional, intent(in,out,copy,out=ipiv), depend(n), dimension(n) :: piv
     character optional, intent(in,out), check((*equed=='N')||(*equed=='R')||(*equed=='C')||(*equed=='B')) :: equed = 'N'
@@ -59,7 +59,7 @@ subroutine <prefix2>gbsvx(fact,trans,n,kl,ku,nrhs,ab,ldab,afb,ldafb,piv,equed,r,
     <ftype2> intent(out) :: rcond
     <ftype2> intent(out), depend(nrhs), dimension(nrhs) :: ferr
     <ftype2> intent(out), depend(nrhs), dimension(nrhs) :: berr
-    <ftype2> intent(out), depend(n), dimension(3 * n) :: work
+    <ftype2> intent(out), depend(n), dimension(3*n) :: work
     integer intent(hide), depend(n), dimension(n) :: iwork
     integer intent(out) :: info
 end subroutine <prefix2>gbsvx
@@ -80,15 +80,15 @@ subroutine <prefix2c>gbsvx(fact,trans,n,kl,ku,nrhs,ab,ldab,afb,ldafb,piv,equed,r
     integer intent(in), check((0<=fact) && (fact<3)) :: fact = 0
     integer intent(in), check((0<=trans) && (trans<3)) :: trans = 0
 
-    integer depend(ab),intent(hide):: n = shape(ab,1)
+    integer depend(ab), intent(hide) :: n = shape(ab, 1)
     integer intent(in), check(0<=kl) :: kl
     integer intent(in), check(0<=ku) :: ku
-    integer intent(hide), depend(b) :: nrhs = shape(b,1)
-    <ftype2c> intent(in,out,copy,out=a), dimension(ldab,n), check(kl+ku+1==shape(ab,0)) :: ab
-    integer intent(hide), depend(ab) :: ldab = max(1, shape(ab,0))
+    integer intent(hide), depend(b) :: nrhs = shape(b, 1)
+    <ftype2c> intent(in,out,copy,out=sab), dimension(ldab,n), check(kl+ku+1==shape(ab,0)) :: ab
+    integer intent(hide), depend(ab) :: ldab = max(1, shape(ab, 0))
     <ftype2c> optional, intent(in,out,copy,out=lu), depend(kl, ku), dimension(2*kl+ku+1,n), check(2*kl+ku+1==shape(afb,0)) :: afb
     integer intent(hide), depend(afb)  :: ldafb = max(1, shape(afb, 0))
-    integer optional, intent(in,out,copy,out=piv), depend(n), dimension(n) :: piv
+    integer optional, intent(in,out,copy,out=ipiv), depend(n), dimension(n) :: piv
     character optional, intent(in,out), check((*equed=='N')||(*equed=='R')||(*equed=='C')||(*equed=='B')) :: equed = 'N'
     <ftype2> optional, intent(in,out), depend(n), dimension(n) :: r
     <ftype2> optional, intent(in,out), depend(n), dimension(n) :: c
@@ -99,7 +99,7 @@ subroutine <prefix2c>gbsvx(fact,trans,n,kl,ku,nrhs,ab,ldab,afb,ldafb,piv,equed,r
     <ftype2> intent(out) :: rcond
     <ftype2> intent(out), depend(nrhs), dimension(nrhs) :: ferr
     <ftype2> intent(out), depend(nrhs), dimension(nrhs) :: berr
-    <ftype2c> intent(out), depend(n), dimension(2 * n) :: work
+    <ftype2c> intent(out), depend(n), dimension(2*n) :: work
     <ftype2> intent(hide), depend(n), dimension(n) :: rwork
     integer intent(out) :: info
 end subroutine <prefix2c>gbsvx
