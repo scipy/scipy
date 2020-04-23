@@ -1743,24 +1743,24 @@ def test_syequb():
         assert_equal(np.log2(s).astype(int), desired_log2s)
 
 
-def test_heequb():
+@pytest.mark.parametrize("dtype", COMPLEX_DTYPES)
+def test_heequb(dtype):
     desired_log2s = np.array([[-2, -7, -2, -4, -2, -3, -2, -2, -1, -2],
                               [1, -10, 0, -6, -1, -4, -1, -2, -1, -2]])
-    for ind, dtype in enumerate(COMPLEX_DTYPES):
-        heequb = get_lapack_funcs('heequb', dtype=dtype)
+    heequb = get_lapack_funcs('heequb', dtype=dtype)
 
-        d = np.array([dtype(1j) * 2**x for x in range(-5, 5)], dtype=dtype)
-        A = np.diag(d)
-        subdiags = np.array([dtype(1j) * 2**(9-x) for x in range(9)],
-                            dtype=dtype)
-        A[range(1, 10), range(0, 9)] = subdiags
-        s, scond, amax, info = heequb(A, lower=1)
+    d = np.array([dtype(1j) * 2**x for x in range(-5, 5)], dtype=dtype)
+    A = np.diag(d)
+    subdiags = np.array([dtype(1j) * 2**(9-x) for x in range(9)],
+                        dtype=dtype)
+    A[range(1, 10), range(0, 9)] = subdiags
+    s, scond, amax, info = heequb(A, lower=1)
 
-        # See gh-10741
-        pre3_7_lapack_result = np.log2(s).astype(int) == desired_log2s[0, :]
-        post3_7_lapack_result = np.log2(s).astype(int) == desired_log2s[1, :]
-
-        assert pre3_7_lapack_result.all() or post3_7_lapack_result.all()
+    assert_equal(info, 0)
+    try:
+        assert_allclose(np.log2(s), desired_log2s[0, :])
+    except AssertionError as e:
+        assert_allclose(np.log2(s), desired_log2s[1, :])
 
 
 def test_getc2_gesc2():
@@ -1792,6 +1792,190 @@ def test_getc2_gesc2():
         else:
             assert_array_almost_equal(desired_cplx.astype(dtype),
                                       x/scale, decimal=4)
+
+
+@pytest.mark.parametrize('size', [(6, 5), (5, 5)])
+@pytest.mark.parametrize('dtype', REAL_DTYPES)
+@pytest.mark.parametrize('joba', range(6))  # 'C', 'E', 'F', 'G', 'A', 'R'
+@pytest.mark.parametrize('jobu', range(4))  # 'U', 'F', 'W', 'N'
+@pytest.mark.parametrize('jobv', range(4))  # 'V', 'J', 'W', 'N'
+@pytest.mark.parametrize('jobr', [0, 1])
+@pytest.mark.parametrize('jobt', [0, 1])
+@pytest.mark.parametrize('jobp', [0, 1])
+def test_gejsv_general(size, dtype, joba, jobu, jobv, jobr, jobt, jobp):
+    """Test the lapack routine ?gejsv.
+
+    This function tests that a singular value decomposition can be performed
+    on the random M-by-N matrix A. The test performs the SVD using ?gejsv
+    then performs the following checks:
+
+    * ?gejsv exist successfully (info == 0)
+    * The returned singular values are correct
+    * `A` can be reconstructed from `u`, `SIGMA`, `v`
+    * Ensure that u.T @ u is the identity matrix
+    * Ensure that v.T @ v is the identity matrix
+    * The reported matrix rank
+    * The reported number of singular values
+    * If denormalized floats are required
+
+    Notes
+    -----
+    joba specifies several choices effecting the calculation's accuracy
+    Although all arguments are tested, the tests only check that the correct
+    solution is returned - NOT that the prescribed actions are performed
+    internally.
+    """
+    seed(42)
+
+    # Define some constants for later use:
+    m, n = size
+    atol = 100 * np.finfo(dtype).eps
+    A = generate_random_dtype_array(size, dtype)
+    gejsv = get_lapack_funcs('gejsv', dtype=dtype)
+
+    # Set up checks for invalid job? combinations
+    # if an invalid combination occurs we set the appropriate
+    # exit status.
+    lsvec = jobu < 2  # Calculate left singular vectors
+    rsvec = jobv < 2  # Calculate right singular vectors
+    l2tran = (jobt == 1) and (m == n)
+    is_complex = np.iscomplexobj(A)
+
+    invalid_real_jobv = (jobv == 1) and (not lsvec) and (not is_complex)
+    invalid_cplx_jobu = (jobu == 2) and not (rsvec and l2tran) and is_complex
+    invalid_cplx_jobv = (jobv == 2) and not (lsvec and l2tran) and is_complex
+
+    # Set the exit status to the expected value.
+    # Here we only check for invalid combinations, not individual
+    # parameters.
+    if invalid_cplx_jobu:
+        exit_status = -2
+    elif invalid_real_jobv or invalid_cplx_jobv:
+        exit_status = -3
+    else:
+        exit_status = 0
+
+    if (jobu > 1) and (jobv == 1):
+        assert_raises(Exception, gejsv, A, joba, jobu, jobv, jobr, jobt, jobp)
+    else:
+        sva, u, v, work, iwork, info = gejsv(A,
+                                             joba=joba,
+                                             jobu=jobu,
+                                             jobv=jobv,
+                                             jobr=jobr,
+                                             jobt=jobt,
+                                             jobp=jobp)
+
+        # Check that ?gejsv exited successfully/as expected
+        assert_equal(info, exit_status)
+
+        # If exit_status is non-zero the combination of jobs is invalid.
+        # We test this above but no calculations are performed.
+        if not exit_status:
+
+            # Check the returned singular values
+            sigma = (work[0] / work[1]) * sva[:n]
+            assert_allclose(sigma, svd(A, compute_uv=False), atol=atol)
+
+            if jobu == 1:
+                # If JOBU = 'F', then u contains the M-by-M matrix of
+                # the left singular vectors, including an ONB of the orthogonal
+                # complement of the Range(A)
+                # However, to recalculate A we are concerned about the
+                # first n singular values and so can ignore the latter.
+                # TODO: Add a test for ONB?
+                u = u[:, :n]
+
+            if lsvec and rsvec:
+                assert_allclose(u @ np.diag(sigma) @ v.conj().T, A, atol=atol)
+            if lsvec:
+                assert_allclose(u.conj().T @ u, np.identity(n), atol=atol)
+            if rsvec:
+                assert_allclose(v.conj().T @ v, np.identity(n), atol=atol)
+
+            assert_equal(iwork[0], np.linalg.matrix_rank(A))
+            assert_equal(iwork[1], np.count_nonzero(sigma))
+            # iwork[2] is non-zero if requested accuracy is not warranted for
+            # the data. This should never occur for these tests.
+            assert_equal(iwork[2], 0)
+
+
+@pytest.mark.parametrize('dtype', REAL_DTYPES)
+def test_gejsv_edge_arguments(dtype):
+    """Test edge arguments return expected status"""
+    gejsv = get_lapack_funcs('gejsv', dtype=dtype)
+
+    # scalar A
+    sva, u, v, work, iwork, info = gejsv(1.)
+    assert_equal(info, 0)
+    assert_equal(u.shape, (1, 1))
+    assert_equal(v.shape, (1, 1))
+    assert_equal(sva, np.array([1.], dtype=dtype))
+
+    # 1d A
+    A = np.ones((1,), dtype=dtype)
+    sva, u, v, work, iwork, info = gejsv(A)
+    assert_equal(info, 0)
+    assert_equal(u.shape, (1, 1))
+    assert_equal(v.shape, (1, 1))
+    assert_equal(sva, np.array([1.], dtype=dtype))
+
+    # 2d empty A
+    A = np.ones((1, 0), dtype=dtype)
+    sva, u, v, work, iwork, info = gejsv(A)
+    assert_equal(info, 0)
+    assert_equal(u.shape, (1, 0))
+    assert_equal(v.shape, (1, 0))
+    assert_equal(sva, np.array([], dtype=dtype))
+
+
+@pytest.mark.parametrize(('kwargs'),
+                         ({'joba': 9},
+                          {'jobu': 9},
+                          {'jobv': 9},
+                          {'jobr': 9},
+                          {'jobt': 9},
+                          {'jobp': 9})
+                         )
+def test_gejsv_invalid_job_arguments(kwargs):
+    """Test invalid job arguments raise an Exception"""
+    A = np.ones((2, 2), dtype=float)
+    gejsv = get_lapack_funcs('gejsv', dtype=float)
+    assert_raises(Exception, gejsv, A, **kwargs)
+
+
+@pytest.mark.parametrize("A,sva_expect,u_expect,v_expect",
+                         [(np.array([[2.27, -1.54, 1.15, -1.94],
+                                     [0.28, -1.67, 0.94, -0.78],
+                                     [-0.48, -3.09, 0.99, -0.21],
+                                     [1.07, 1.22, 0.79, 0.63],
+                                     [-2.35, 2.93, -1.45, 2.30],
+                                     [0.62, -7.39, 1.03, -2.57]]),
+                           np.array([9.9966, 3.6831, 1.3569, 0.5000]),
+                           np.array([[0.2774, -0.6003, -0.1277, 0.1323],
+                                     [0.2020, -0.0301, 0.2805, 0.7034],
+                                     [0.2918, 0.3348, 0.6453, 0.1906],
+                                     [-0.0938, -0.3699, 0.6781, -0.5399],
+                                     [-0.4213, 0.5266, 0.0413, -0.0575],
+                                     [0.7816, 0.3353, -0.1645, -0.3957]]),
+                           np.array([[0.1921, -0.8030, 0.0041, -0.5642],
+                                     [-0.8794, -0.3926, -0.0752, 0.2587],
+                                     [0.2140, -0.2980, 0.7827, 0.5027],
+                                     [-0.3795, 0.3351, 0.6178, -0.6017]]))])
+def test_gejsv_NAG(A, sva_expect, u_expect, v_expect):
+    """
+    This test implements the example found in the NAG manual, f08khf.
+    An example was not found for the complex case.
+    """
+    # NAG manual provides accuracy up to 4 decimals
+    atol = 1e-4
+    gejsv = get_lapack_funcs('gejsv', dtype=A.dtype)
+
+    sva, u, v, work, iwork, info = gejsv(A)
+
+    assert_allclose(sva_expect, sva, atol=atol)
+    assert_allclose(u_expect, u, atol=atol)
+    assert_allclose(v_expect, v, atol=atol)
 
 
 @pytest.mark.parametrize("dtype", DTYPES)

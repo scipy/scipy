@@ -51,26 +51,30 @@ _status_message = {'success': 'Optimization terminated successfully.',
 
 
 class MemoizeJac(object):
-    """ Decorator that caches the value gradient of function each time it
-    is called. """
+    """ Decorator that caches the return values of a function returning `(fun, grad)`
+        each time it is called. """
 
     def __init__(self, fun):
         self.fun = fun
         self.jac = None
+        self._value = None
         self.x = None
 
+    def _compute_if_needed(self, x, *args):
+        if not np.all(x == self.x) or self._value is None or self.jac is None:
+            self.x = np.asarray(x).copy()
+            fg = self.fun(x, *args)
+            self.jac = fg[1]
+            self._value = fg[0]
+
     def __call__(self, x, *args):
-        self.x = np.asarray(x).copy()
-        fg = self.fun(x, *args)
-        self.jac = fg[1]
-        return fg[0]
+        """ returns the the function value """
+        self._compute_if_needed(x, *args)
+        return self._value
 
     def derivative(self, x, *args):
-        if self.jac is not None and np.all(x == self.x):
-            return self.jac
-        else:
-            self(x, *args)
-            return self.jac
+        self._compute_if_needed(x, *args)
+        return self.jac
 
 
 class OptimizeResult(dict):

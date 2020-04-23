@@ -6876,7 +6876,12 @@ class trapz_gen(rv_continuous):
     -----
     The trapezoidal distribution can be represented with an up-sloping line
     from ``loc`` to ``(loc + c*scale)``, then constant to ``(loc + d*scale)``
-    and then downsloping from ``(loc + d*scale)`` to ``(loc+scale)``.
+    and then downsloping from ``(loc + d*scale)`` to ``(loc+scale)``.  This
+    defines the trapezoid base from ``loc`` to ``(loc+scale)`` and the flat
+    top from ``c`` to ``d`` proportional to the position along the base
+    with ``0 <= c <= d <= 1``.  When ``c=d``, this is equivalent to `triang`
+    with the same values for `loc`, `scale` and `c`.
+    The method of [1]_ is used for computing moments.
 
     `trapz` takes :math:`c` and :math:`d` as shape parameters.
 
@@ -6887,6 +6892,13 @@ class trapz_gen(rv_continuous):
     The scale parameter changes the width from 1 to `scale`.
 
     %(example)s
+
+    References
+    ----------
+    .. [1] Kacker, R.N. and Lawrence, J.F. (2007). Trapezoidal and triangular
+       distributions for Type B evaluation of standard uncertainty.
+       Metrologia 44, 117–127. https://doi.org/10.1088/0026-1394/44/2/003
+
 
     """
     def _argcheck(self, c, d):
@@ -6920,6 +6932,40 @@ class trapz_gen(rv_continuous):
                       0.5 * q * (1 + d - c) + 0.5 * c,
                       1 - np.sqrt((1 - q) * (d - c + 1) * (1 - d))]
         return np.select(condlist, choicelist)
+
+    def _munp(self, n, c, d):
+        # Using the parameterization from Kacker, 2007, with
+        # a=bottom left, c=top left, d=top right, b=bottom right, then
+        #     E[X^n] = h/(n+1)/(n+2) [(b^{n+2}-d^{n+2})/(b-d)
+        #                             - ((c^{n+2} - a^{n+2})/(c-a)]
+        # with h = 2/((b-a) - (d-c)). The corresponding parameterization
+        # in scipy, has a'=loc, c'=loc+c*scale, d'=loc+d*scale, b'=loc+scale,
+        # which for standard form reduces to a'=0, b'=1, c'=c, d'=d.
+        # Substituting into E[X^n] gives the bd' term as (1 - d^{n+2})/(1 - d)
+        # and the ac' term as c^{n-1} for the standard form. The bd' term has
+        # numerical difficulties near d=1, so replace (1 - d^{n+2})/(1-d)
+        # with expm1((n+2)*log(d))/(d-1).
+        # Testing with n=18 for c=(1e-30,1-eps) shows that this is stable.
+        # We still require an explicit test for d=1 to prevent divide by zero,
+        # and now a test for d=0 to prevent log(0).
+        ab_term = c**(n+1)
+        dc_term = _lazyselect(
+            [d == 0.0, (0.0 < d) & (d < 1.0), d == 1.0],
+            [lambda d: 1.0,
+             lambda d: np.expm1((n+2) * np.log(d)) / (d-1.0),
+             lambda d: n+2],
+            [d])
+        val = 2.0 / (1.0+d-c) * (dc_term - ab_term) / ((n+1) * (n+2))
+        return val
+
+    def _entropy(self, c, d):
+        # Using the parameterization from Wikipedia (van Dorp, 2003)
+        # with a=bottom left, c=top left, d=top right, b=bottom right
+        # gives a'=loc, b'=loc+c*scale, c'=loc+d*scale, d'=loc+scale,
+        # which for loc=0, scale=1 is a'=0, b'=c, c'=d, d'=1.
+        # Substituting into the entropy formula from Wikipedia gives
+        # the following result.
+        return 0.5 * (1.0-d+c) / (1.0+d-c) + np.log(0.5 * (1.0+d-c))
 
 
 trapz = trapz_gen(a=0.0, b=1.0, name="trapz")

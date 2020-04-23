@@ -3154,6 +3154,29 @@ class TestTrapz(object):
         assert_almost_equal(stats.trapz.cdf(0.9, 0.2, 0.8), 0.96875)
         assert_almost_equal(stats.trapz.cdf(1.0, 0.2, 0.8), 1.0)
 
+    def test_moments_and_entropy(self):
+        # issue #11795: improve precision of trapz stats
+        # Apply formulas from Wikipedia for the following parameters:
+        a, b, c, d = -3, -1, 2, 3  # => 1/3, 5/6, -3, 6
+        p1, p2, loc, scale = (b-a) / (d-a), (c-a) / (d-a), a, d-a
+        h = 2 / (d+c-b-a)
+        moment = lambda n: h * ((d**(n+2) - c**(n+2)) / (d-c)
+                                - (b**(n+2) - a**(n+2)) / (b-a)) / (n+1) / (n+2)
+        mean = moment(1)
+        var = moment(2) - mean**2
+        entropy = 0.5 * (d-c+b-a) / (d+c-b-a) + np.log(0.5 * (d+c-b-a))
+        assert_almost_equal(stats.trapz.mean(p1, p2, loc, scale),
+                            mean, decimal=13)
+        assert_almost_equal(stats.trapz.var(p1, p2, loc, scale),
+                            var, decimal=13)
+        assert_almost_equal(stats.trapz.entropy(p1, p2, loc, scale),
+                            entropy, decimal=13)
+
+        # Check boundary cases where scipy d=0 or d=1.
+        assert_almost_equal(stats.trapz.mean(0, 0, -3, 6), -1, decimal=13)
+        assert_almost_equal(stats.trapz.mean(0, 1, -3, 6), 0, decimal=13)
+        assert_almost_equal(stats.trapz.var(0, 1, -3, 6), 3, decimal=13)
+
     def test_trapz_vect(self):
         # test that array-valued shapes and arguments are handled
         c = np.array([0.1, 0.2, 0.3])
@@ -3169,6 +3192,16 @@ class TestTrapz(object):
             res[i] = stats.trapz.pdf(x1, c1, d1)
 
         assert_allclose(v, res.reshape(v.shape), atol=1e-15)
+
+        # Check that the stats() method supports vector arguments.
+        v = np.asarray(stats.trapz.stats(c, d, moments="mvsk"))
+        cc, dd = np.broadcast_arrays(c, d)
+        res = np.empty((cc.size, 4))  # 4 stats returned per value
+        ind = np.arange(cc.size)
+        for i, c1, d1 in zip(ind, cc.ravel(), dd.ravel()):
+            res[i] = stats.trapz.stats(c1, d1, moments="mvsk")
+
+        assert_allclose(v, res.T.reshape(v.shape), atol=1e-15)
 
 
 class TestTriang(object):

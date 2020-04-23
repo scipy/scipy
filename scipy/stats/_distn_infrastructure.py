@@ -1058,10 +1058,9 @@ class rv_generic(object):
                     mu2p = self._munp(2, *goodargs)
                     if mu is None:
                         mu = self._munp(1, *goodargs)
-                    mu2 = mu2p - mu * mu
-                    if np.isinf(mu):
-                        # if mean is inf then var is also inf
-                        mu2 = np.inf
+                    # if mean is inf then var is also inf
+                    with np.errstate(invalid='ignore'):
+                        mu2 = np.where(np.isfinite(mu), mu2p - mu**2, np.inf)
                 out0 = default.copy()
                 place(out0, cond, mu2 * scale * scale)
                 output.append(out0)
