@@ -1,7 +1,6 @@
 import numpy as np
 import math
-from . import linear_sum_assignment
-from . import minimize_scalar
+from . import linear_sum_assignment, minimize_scalar, OptimizeResult
 
 
 def quadratic_assignment(
@@ -16,87 +15,97 @@ def quadratic_assignment(
     shuffle_input=True,
     eps=0.1,
 ):
-    """Solve the quadratic assignment problem
+    """
+    Solve the quadratic assignment problem
 
-        This class solves the Quadratic Assignment Problem and the Graph Matching Problem
-        (QAP) through an implementation of the Fast Approximate QAP Algorithm (FAQ) (these
-        two problems are the same up to a sign change) [1].
+    This class solves the Quadratic Assignment Problem and the Graph
+    Matching Problem (QAP) through an implementation of the Fast
+    Approximate QAP Algorithm (FAQ) (these two problems are the same up
+    to a sign change) [1].
 
-        This algorithm can be thought of as finding an alignment of the vertices of two
-        graphs which minimizes the number of induced edge disagreements, or, in the case
-        of weighted graphs, the sum of squared differences of edge weight disagreements.
-        The option to add seeds (known vertex correspondence between some nodes) is also
-        available [2].
-
-
-        Parameters
-        ----------
-        cost_matrix : 2d-array, square, positive
-            A square adjacency matrix
-
-        dist_matrix : 2d-array, square, positive
-            A square adjacency matrix
-
-        seed_cost : 1d-array, shape (m , 1) where m <= number of nodes (default = [])
-            An array where each entry is an index of a node in `cost_matrix`.
-
-        seeds_dist : 1d-array, shape (m , 1) where m <= number of nodes (default = [])
-            An array where each entry is an index of a node in `dist_matrix` The elements of
-            `seed_cost` and `seed_dist` are vertices which are known to be matched, that is,
-            `seed_cost[i]` is matched to vertex `seed_dist[i]`.
-
-        maximize : bool (default = False)
-            Gives users the option to solve the Graph Matching Problem (GMP) rather than QAP.
-            This is accomplished through trivial negation of the objective function.
-
-        n_init : int, positive (default = 1)
-            Number of random initializations of the starting permutation matrix that
-            the FAQ algorithm will undergo. n_init automatically set to 1 if
-            init_method = 'barycenter'
-
-        init_method : string (default = 'barycenter')
-            The initial position chosen
-
-            "barycenter" : the non-informative “flat doubly stochastic matrix,”
-            :math:`J=1*1^T /n` , i.e the barycenter of the feasible region
-
-            "rand" : some random point near :math:`J, (J+K)/2`, where K is some random doubly
-            stochastic matrix
-
-        max_iter : int, positive (default = 30)
-            Integer specifying the max number of Franke-Wolfe iterations.
-            FAQ typically converges with modest number of iterations.
-
-        shuffle_input : bool (default = True)
-            Gives users the option to shuffle the nodes of A matrix to avoid results
-            from inputs that were already matched.
-
-        eps : float (default = 0.1)
-            A positive, threshold stopping criteria such that FW continues to iterate
-            while Frobenius norm of :math:`(P_{i}-P_{i+1}) > eps`
-
-        Returns
-        -------
-
-        row_ind, col_ind : array
-            An array of row indices and one of corresponding column indices giving
-            the optimal optimal permutation (with the fixed seeds given) on the nodes of B,
-            to best minimize the objective function :math:`f(P) = trace(A^T PBP^T )`.
+    This algorithm can be thought of as finding an alignment of the
+    vertices of two graphs which minimizes the number of induced edge
+    disagreements, or, in the caseof weighted graphs, the sum of squared
+    differences of edge weight disagreements. The option to add seeds
+    (known vertex correspondence between some nodes) is also available
+    [2].
 
 
-        References
-        ----------
-        .. [1] J.T. Vogelstein, J.M. Conroy, V. Lyzinski, L.J. Podrazik, S.G. Kratzer,
-            E.T. Harley, D.E. Fishkind, R.J. Vogelstein, and C.E. Priebe, “Fast
-            approximate quadratic programming for graph matching,” PLOS one, vol. 10,
-            no. 4, p. e0121002, 2015.
+    Parameters
+    ----------
+    cost_matrix : 2d-array, square, positive
+        A square adjacency matrix
 
-        .. [2] D. Fishkind, S. Adali, H. Patsolic, L. Meng, D. Singh, V. Lyzinski, C. Priebe,
-            Seeded graph matching, Pattern Recognit. 87 (2019) 203–215
+    dist_matrix : 2d-array, square, positive
+        A square adjacency matrix
+
+    seed_cost : 1d-array, optional, (default = [])
+        An array where each entry is an index of a node in `cost_matrix`
+        (shape (m , 1) where m <= number of nodes).
+
+    seeds_dist : 1d-array, optional, (default = [])
+        An array where each entry is an index of a node in `dist_matrix`
+        The elements of `seed_cost` and `seed_dist` are vertices which
+        are known to be matched, that is, `seed_cost[i]` is matched to
+        vertex `seed_dist[i]`. Array shape (m , 1)
+        where m <= number of nodes
+
+    maximize : bool (default = False)
+        Gives users the option to solve the Graph Matching Problem (GMP)
+        rather than QAP. This is accomplished through trivial negation
+        of the objective function.
+
+
+    options : dict, optional
+        A dictionary of solver options. All methods accept the following
+        options:
+
+            n_init : int, positive (default = 1)
+               Number of random initializations of the starting
+               permutation matrix that the FAQ algorithm will undergo.
+               n_init automatically set to 1 if init_method = 'barycenter'
+            init_method : string (default = 'barycenter')
+               The initial position chosen:
+               "barycenter" : the non-informative “flat doubly stochastic
+               matrix,”:math:`J=1*1^T /n` , i.e the barycenter of the
+               feasible region
+               "rand" : some random point near :math:`J, (J+K)/2`, where K
+               is some random doubly stochastic matrix
+            max_iter : int, positive (default = 30)
+               Integer specifying the max number of Franke-Wolfe iterations.
+               FAQ typically converges with modest number of iterations.
+            shuffle_input : bool (default = True)
+               Gives users the option to shuffle the nodes of `cost_matrix`
+               to avoid results from inputs that were already matched.
+            eps : float (default = 0.1)
+               A positive, threshold stopping criteria such that FW
+               continues to iterate while Frobenius norm of
+               :math:`(P_{i}-P_{i+1}) > eps`
+
+    Returns
+    -------
+
+    row_ind, col_ind : array
+        An array of row indices and one of corresponding column indices giving
+        the optimal optimal permutation (with the fixed seeds given) on the
+        nodes of B, to best minimize the objective function
+        :math:`f(P) = trace(A^T PBP^T )`.
+
+
+    References
+    ----------
+    .. [1] J.T. Vogelstein, J.M. Conroy, V. Lyzinski, L.J. Podrazik,
+           S.G. Kratzer, E.T. Harley, D.E. Fishkind, R.J. Vogelstein, and
+           C.E. Priebe, “Fast approximate quadratic programming for graph
+           matching,” PLOS one, vol. 10, no. 4, p. e0121002, 2015.
+
+    .. [2] D. Fishkind, S. Adali, H. Patsolic, L. Meng, D. Singh, V. Lyzinski,
+           C. Priebe, Seeded graph matching, Pattern Recognit. 87 (2019)
+           203–215
 
 
 
-        """
+    """
 
     cost_matrix = np.asarray(cost_matrix)
     dist_matrix = np.asarray(dist_matrix)
@@ -112,7 +121,7 @@ def quadratic_assignment(
     ):
         msg = "Adjacency matrix entries must be square"
         raise ValueError(msg)
-    elif (cost_matrix >= 0).all() == False or (dist_matrix >= 0).all() == False:
+    elif not (cost_matrix >= 0).all() or not (dist_matrix >= 0).all():
         msg = "Adjacency matrix entries must be greater than or equal to zero"
         raise ValueError(msg)
     elif seed_cost.shape[0] != seed_dist.shape[0]:
@@ -121,12 +130,13 @@ def quadratic_assignment(
     elif seed_cost.shape[0] > cost_matrix.shape[0]:
         msg = "There cannot be more seeds than there are nodes"
         raise ValueError(msg)
-    elif (seed_cost >= 0).all() == False or (seed_dist >= 0).all() == False:
+    elif not (seed_cost >= 0).all() or not (seed_dist >= 0).all():
         msg = "Seed array entries must be greater than or equal to zero"
         raise ValueError(msg)
-    elif (seed_cost <= (cost_matrix.shape[0] - 1)).all() == False or (
-        seed_dist <= (cost_matrix.shape[0] - 1)
-    ).all() == False:
+    elif (
+        not (seed_cost <= (cost_matrix.shape[0] - 1)).all()
+        or not (seed_dist <= (cost_matrix.shape[0] - 1)).all()
+    ):
         msg = "Seed array entries must be less than or equal to n-1"
         raise ValueError(msg)
     elif type(n_init) is not int and n_init <= 0:
@@ -166,8 +176,10 @@ def quadratic_assignment(
         # shuffle_input to avoid results from inputs that were already matched
 
     seed_cost_c = np.setdiff1d(range(n), seed_cost)
-    permutation_cost = np.concatenate([seed_cost, seed_cost_c], axis=None).astype(int)
-    permutation_dist = np.concatenate([seed_dist, seed_dist_c], axis=None).astype(int)
+    permutation_cost = np.concatenate([seed_cost, seed_cost_c],
+                                      axis=None).astype(int)
+    permutation_dist = np.concatenate([seed_dist, seed_dist_c],
+                                      axis=None).astype(int)
     cost_matrix = cost_matrix[np.ix_(permutation_cost, permutation_cost)]
     dist_matrix = dist_matrix[np.ix_(permutation_dist, permutation_dist)]
 
@@ -191,7 +203,8 @@ def quadratic_assignment(
         if init_method == "rand":
             K = np.random.rand(
                 n_unseed, n_unseed
-            )  # generate a nxn matrix where each entry is a random integer [0,1]
+            )
+            # generate a nxn matrix where each entry is a random integer [0,1]
             for i in range(10):  # perform 10 iterations of Sinkhorn balancing
                 K = _doubly_stochastic(K)
             J = np.ones((n_unseed, n_unseed)) / float(
@@ -255,7 +268,19 @@ def quadratic_assignment(
             perm_inds = np.zeros(n, dtype=int)
             perm_inds[permutation_cost] = permutation_dist[perm_inds_new]
 
-    return (np.arange(n), perm_inds)
+    permutation_cost_unshuffle = _unshuffle(permutation_cost, n)
+    cost_matrix = cost_matrix[np.ix_(permutation_cost_unshuffle,
+                                     permutation_cost_unshuffle)]
+    permutation_dist_unshuffle = _unshuffle(permutation_dist, n)
+    dist_matrix = dist_matrix[np.ix_(permutation_dist_unshuffle,
+                                     permutation_dist_unshuffle)]
+
+    score = np.trace(np.transpose(cost_matrix) @
+                     dist_matrix[np.ix_(perm_inds, perm_inds)])
+
+    sol = {"row": np.arange(n), "col": perm_inds, "score": score}
+
+    return OptimizeResult(sol)
 
 
 def _unshuffle(array, n):
@@ -275,23 +300,25 @@ def _doubly_stochastic(P):
     #
     # Copyright (c) 2016 Baruch Tabanpour
     #
-    # Permission is hereby granted, free of charge, to any person obtaining a copy
-    # of this software and associated documentation files (the "Software"), to deal
-    # in the Software without restriction, including without limitation the rights
-    # to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-    # copies of the Software, and to permit persons to whom the Software is
-    # furnished to do so, subject to the following conditions:
+    # Permission is hereby granted, free of charge, to any person obtaining a
+    # copy of this software and associated documentation files (the
+    # "Software"), to deal in the Software without restriction, including
+    # without limitation the rights to use, copy, modify, merge, publish,
+    # distribute, sublicense, and/or sell copies of the Software, and to
+    # permit persons to whom the Software is furnished to do so, subject to
+    # the following conditions:
 
-    # The above copyright notice and this permission notice shall be included in
-    # all copies or substantial portions of the Software.
+    # The above copyright notice and this permission notice shall be included
+    # in all copies or substantial portions of the Software.
     #
-    # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-    # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-    # FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-    # AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-    # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-    # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-    # THE SOFTWARE.
+    # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+    # OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+    # MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+    # IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+    # CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+    # TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+    # SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
     max_iter = 1000
     epsilon = 1e-3
     epsilon = int(epsilon)
