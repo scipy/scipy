@@ -166,8 +166,8 @@ class UnivariateSpline(object):
     def __init__(self, x, y, w=None, bbox=[None]*2, k=3, s=None,
                  ext=0, check_finite=False):
 
-        x, y, w, bbox = self.validate_input(x, y, w, bbox, k, s, ext,
-                                            check_finite)
+        x, y, w, bbox, self.ext = self.validate_input(x, y, w, bbox, k, s, ext,
+                                                      check_finite)
 
         # _data == x,y,w,xb,xe,k,s,n,t,c,fp,fpint,nrdata,ier
         data = dfitpack.fpcurf0(x, y, k, w=w, xb=bbox[0],
@@ -178,7 +178,8 @@ class UnivariateSpline(object):
         self._data = data
         self._reset_class()
 
-    def validate_input(self, x, y, w, bbox, k, s, ext, check_finite):
+    @staticmethod
+    def validate_input(x, y, w, bbox, k, s, ext, check_finite):
         x, y, bbox = np.asarray(x), np.asarray(y), np.asarray(bbox)
         if w is not None:
             w = np.asarray(w)
@@ -206,11 +207,11 @@ class UnivariateSpline(object):
             raise ValueError("s should be s >= 0.0")
 
         try:
-            self.ext = _extrap_modes[ext]
+            ext = _extrap_modes[ext]
         except KeyError:
             raise ValueError("Unknown extrapolation mode %s." % ext)
 
-        return x, y, w, bbox
+        return x, y, w, bbox, ext
 
     @classmethod
     def _from_tck(cls, tck, ext=0):
@@ -321,9 +322,6 @@ class UnivariateSpline(object):
         # empty input yields empty output
         if x.size == 0:
             return array([])
-#        if nu is None:
-#            return dfitpack.splev(*(self._eval_args+(x,)))
-#        return dfitpack.splder(nu=nu,*(self._eval_args+(x,)))
         if ext is None:
             ext = self.ext
         else:
@@ -616,7 +614,7 @@ class InterpolatedUnivariateSpline(UnivariateSpline):
     def __init__(self, x, y, w=None, bbox=[None]*2, k=3,
                  ext=0, check_finite=False):
 
-        x, y, w, bbox = self.validate_input(x, y, w, bbox, k, None,
+        x, y, w, bbox, self.ext = self.validate_input(x, y, w, bbox, k, None,
                                             ext, check_finite)
 
         if check_finite:
@@ -753,8 +751,8 @@ class LSQUnivariateSpline(UnivariateSpline):
     def __init__(self, x, y, t, w=None, bbox=[None]*2, k=3,
                  ext=0, check_finite=False):
 
-        x, y, w, bbox = self.validate_input(x, y, w, bbox, k, None, ext,
-                                            check_finite)
+        x, y, w, bbox, self.ext = self.validate_input(x, y, w, bbox, k, None,
+                                                      ext, check_finite)
 
         if check_finite:
             w_finite = np.isfinite(w).all() if w is not None else True
@@ -1152,7 +1150,6 @@ class LSQBivariateSpline(BivariateSpline):
         bbox = ravel(bbox)
         if not bbox.shape == (4,):
             raise ValueError('bbox shape should be (4,)')
-
 
         nx = 2*kx+2+len(tx)
         ny = 2*ky+2+len(ty)
@@ -1803,7 +1800,10 @@ class RectSphereBivariateSpline(SphereBivariateSpline):
 
         r = np.ravel(r)
         nu, tu, nv, tv, c, fp, ier = dfitpack.regrid_smth_spher(iopt, ider,
-                                       u.copy(), v.copy(), r.copy(), r0, r1, s)
+                                                                u.copy(),
+                                                                v.copy(),
+                                                                r.copy(),
+                                                                r0, r1, s)
 
         if ier not in [0, -1, -2]:
             msg = _spfit_messages.get(ier, 'ier=%s' % (ier))
