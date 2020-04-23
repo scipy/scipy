@@ -39,19 +39,19 @@ def test_quadratic_assignment():
     seed_cost = [4, 8, 10]
     seed_dist = [opt_perm[z] for z in seed_cost]
 
-    row, col = quadratic_assignment(cost_matrix, dist_matrix)
+    res = quadratic_assignment(cost_matrix, dist_matrix)
 
-    assert 11156 <= _score(cost_matrix, dist_matrix, col) < 21000
+    assert 11156 <= res['score'] < 21000
 
-    row, col = quadratic_assignment(
+    res = quadratic_assignment(
         cost_matrix, dist_matrix, init_method="rand", n_init=100
     )
 
-    assert 11156 <= _score(cost_matrix, dist_matrix, col) < 13500
+    assert 11156 <= res['score'] < 13500
 
-    row, col = quadratic_assignment(cost_matrix, dist_matrix, seed_cost, seed_dist)
+    res = quadratic_assignment(cost_matrix, dist_matrix, seed_cost, seed_dist)
 
-    assert 11156 <= _score(cost_matrix, dist_matrix, col) < 21000
+    assert 11156 <= res['score'] < 21000
 
 
 def test_linear_sum_assignment_input_validation():
@@ -88,12 +88,15 @@ def test_linear_sum_assignment_input_validation():
             np.identity(3), np.identity(3), np.identity(3), np.arange(2)
         )
     with pytest.raises(ValueError):
-        quadratic_assignment(np.identity(3), np.identity(3), np.arange(1), np.arange(2))
+        quadratic_assignment(np.identity(3), np.identity(3),
+                             np.arange(1), np.arange(2))
     with pytest.raises(ValueError):
-        quadratic_assignment(np.identity(3), np.identity(3), np.arange(5), np.arange(5))
+        quadratic_assignment(np.identity(3), np.identity(3),
+                             np.arange(5), np.arange(5))
     with pytest.raises(ValueError):
         quadratic_assignment(
-            np.identity(3), np.identity(3), -1 * np.arange(2), -1 * np.arange(2)
+            np.identity(3), np.identity(3), -1 * np.arange(2),
+            -1 * np.arange(2)
         )
 
 
