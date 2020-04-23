@@ -919,6 +919,12 @@ class TestRectSphereBivariateSpline(object):
             RectSphereBivariateSpline(lats, lons, data)
         assert "v[-1] should be v[0] + 2pi or less" in str(exc_info.value)
 
+        with assert_raises(ValueError) as exc_info:
+            lats = np.linspace(10, 170, 9) * np.pi / 180.
+            lons = np.linspace(10, 350, 18) * np.pi / 180.
+            RectSphereBivariateSpline(lats, lons, data, s=-1)
+        assert "s should be positive" in str(exc_info.value)
+
 
 def _numdiff_2d(func, x, y, dx=0, dy=0, eps=1e-8):
     if dx == 0 and dy == 0:

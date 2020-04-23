@@ -1546,7 +1546,6 @@ class LSQSphereBivariateSpline(SphereBivariateSpline):
 
     def __init__(self, theta, phi, r, tt, tp, w=None, eps=1E-16):
 
-        # input validation
         if np.any(theta < 0.0) or np.any(np.pi < theta):
             raise ValueError('theta should be between [0, pi]')
         if np.any(phi < 0.0) or np.any(2.0 * np.pi < phi):
@@ -1798,6 +1797,9 @@ class RectSphereBivariateSpline(SphereBivariateSpline):
         if pole_continuity[0] is False and pole_flat[0] is True:
             raise ValueError('if pole_continuity is False, so must be '
                              'pole_flat')
+
+        if s < 0.0:
+            raise ValueError('s should be positive')
 
         r = np.ravel(r)
         nu, tu, nv, tv, c, fp, ier = dfitpack.regrid_smth_spher(iopt, ider,
