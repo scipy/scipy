@@ -97,6 +97,8 @@ class LinearOperator(object):
     args : tuple
         For linear operators describing products etc. of other linear
         operators, the operands of the binary operation.
+    ndim : int
+        Number of dimensions (this is always 2)
 
     See Also
     --------
@@ -134,6 +136,9 @@ class LinearOperator(object):
     array([ 2.,  3.])
 
     """
+
+    ndim = 2
+
     def __new__(cls, *args, **kwargs):
         if cls is LinearOperator:
             # Operate as _CustomLinearOperator factory.
