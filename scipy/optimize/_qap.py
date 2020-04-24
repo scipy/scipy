@@ -40,14 +40,14 @@ def quadratic_assignment(
         A square adjacency matrix
 
     seed_cost : 1d-array, optional, (default = [])
-        An array where each entry is an index of a node in `cost_matrix`
+        An array where each entry is an index of a node in 'cost_matrix'
         (shape (m , 1) where m <= number of nodes).
 
     seeds_dist : 1d-array, optional, (default = [])
-        An array where each entry is an index of a node in `dist_matrix`
-        The elements of `seed_cost` and `seed_dist` are vertices which
-        are known to be matched, that is, `seed_cost[i]` is matched to
-        vertex `seed_dist[i]`. Array shape (m , 1)
+        An array where each entry is an index of a node in 'dist_matrix'
+        The elements of 'seed_cost' and 'seed_dist' are vertices which
+        are known to be matched, that is, 'seed_cost[i]' is matched to
+        vertex 'seed_dist[i]'. Array shape (m , 1)
         where m <= number of nodes
 
     maximize : bool (default = False)
@@ -66,21 +66,21 @@ def quadratic_assignment(
                n_init automatically set to 1 if init_method = 'barycenter'
             init_method : string (default = 'barycenter')
                The initial position chosen:
-               "barycenter" : the non-informative “flat doubly stochastic
-               matrix,”:math:`J=1*1^T /n` , i.e the barycenter of the
+               "barycenter" : the non-informative "flat doubly stochastic
+               matrix,":math:'J=1*1^T /n' , i.e the barycenter of the
                feasible region
-               "rand" : some random point near :math:`J, (J+K)/2`, where K
+               "rand" : some random point near :math:'J, (J+K)/2', where K
                is some random doubly stochastic matrix
             max_iter : int, positive (default = 30)
                Integer specifying the max number of Franke-Wolfe iterations.
                FAQ typically converges with modest number of iterations.
             shuffle_input : bool (default = True)
-               Gives users the option to shuffle the nodes of `cost_matrix`
+               Gives users the option to shuffle the nodes of 'cost_matrix'
                to avoid results from inputs that were already matched.
             eps : float (default = 0.1)
                A positive, threshold stopping criteria such that FW
                continues to iterate while Frobenius norm of
-               :math:`(P_{i}-P_{i+1}) > eps`
+               :math:'(P_{i}-P_{i+1}) > eps'
 
     Returns
     -------
@@ -89,15 +89,15 @@ def quadratic_assignment(
         An array of row indices and one of corresponding column indices giving
         the optimal optimal permutation (with the fixed seeds given) on the
         nodes of B, to best minimize the objective function
-        :math:`f(P) = trace(A^T PBP^T )`.
+        :math:'f(P) = trace(A^T PBP^T )'.
 
 
     References
     ----------
     .. [1] J.T. Vogelstein, J.M. Conroy, V. Lyzinski, L.J. Podrazik,
            S.G. Kratzer, E.T. Harley, D.E. Fishkind, R.J. Vogelstein, and
-           C.E. Priebe, “Fast approximate quadratic programming for graph
-           matching,” PLOS one, vol. 10, no. 4, p. e0121002, 2015.
+           C.E. Priebe, "Fast approximate quadratic programming for graph
+           matching," PLOS one, vol. 10, no. 4, p. e0121002, 2015.
 
     .. [2] D. Fishkind, S. Adali, H. Patsolic, L. Meng, D. Singh, V. Lyzinski,
            C. Priebe, Seeded graph matching, Pattern Recognit. 87 (2019)
