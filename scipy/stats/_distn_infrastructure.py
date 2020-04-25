@@ -100,7 +100,7 @@ entropy(%(shapes)s, loc=0, scale=1)
     (Differential) entropy of the RV.
 """
 _doc_fit = """\
-fit(data, %(shapes)s)
+fit(data)
     Parameter estimates for generic data.
 """
 _doc_expect = """\
@@ -2193,7 +2193,7 @@ class rv_continuous(rv_generic):
             No default value.
         kwds : floats, optional
             - shape: Estimated from ``self._fitstart(data)`` by default.
-            - loc: Estimated from ``self._fit_loc_scale_support(data)``
+            - `loc`: initial guess of the distribution's location parameter. 
             based on the `shape` parameter, by default.
             - scale: Estimated from ``self._fit_loc_scale_support(data)``
             based on the `shape` parameter, by default.
