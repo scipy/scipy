@@ -558,9 +558,8 @@ def _kendall_p_exact(n, c):
             if j <= c:
                 new[j:] -= new[:c+1-j]
         prob = np.sum(new)
-        prob = max(0.0, min(1.0, prob))
     
-    return prob
+    return np.clip(prob, 0, 1)
 
 
 KendalltauResult = namedtuple('KendalltauResult', ('correlation', 'pvalue'))
