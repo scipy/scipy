@@ -13,7 +13,7 @@ def quadratic_assignment(
     init_method="barycenter",
     max_iter=30,
     shuffle_input=True,
-    eps=0.1,
+    eps=0.05,
 ):
     """
     Solve the quadratic assignment problem
@@ -25,7 +25,7 @@ def quadratic_assignment(
 
     This algorithm can be thought of as finding an alignment of the
     vertices of two graphs which minimizes the number of induced edge
-    disagreements, or, in the caseof weighted graphs, the sum of squared
+    disagreements, or, in the case of weighted graphs, the sum of squared
     differences of edge weight disagreements. The option to add seeds
     (known vertex correspondence between some nodes) is also available
     [2].
@@ -84,13 +84,18 @@ def quadratic_assignment(
 
     Returns
     -------
+    res : OptimizeResult
+        A :class:`scipy.optimize.OptimizeResult` consisting of the fields:
 
-    row_ind, col_ind : array
-        An array of row indices and one of corresponding column indices giving
-        the optimal optimal permutation (with the fixed seeds given) on the
-        nodes of B, to best minimize the objective function
-        :math:'f(P) = trace(A^T PBP^T )'.
-
+            col_ind : 1-D array
+                An array of column indices corresponding to the optimal optimal
+                permutation (with the fixed seeds given) on the
+                nodes of B, to best minimize the objective function
+                :math:'f(P) = trace(A^T PBP^T )'.
+            score : float
+                The optimal value of the objective function.
+            nit : int
+                The total number of iterations performed in all phases.
 
     References
     ----------
@@ -103,7 +108,17 @@ def quadratic_assignment(
            C. Priebe, Seeded graph matching, Pattern Recognit. 87 (2019)
            203–215
 
+    Examples
+    --------
 
+    >>> cost = [[0,22,53,53],[22,0,40,62],[53,40,0,55],[53,62,55,0]]
+    >>> dist = [[0,3,0,2],[3,0,0,1],[0,0,0,4],[2,1,4,0]]
+    >>> from scipy.optimize import quadratic_assignment
+    >>> quadratic_assignment(cost,dist)
+       col: array([2, 3, 0, 1])
+       nit: 30
+       row: array([0, 1, 2, 3])
+     score: 790
 
     """
 
@@ -278,9 +293,9 @@ def quadratic_assignment(
     score = np.trace(np.transpose(cost_matrix) @
                      dist_matrix[np.ix_(perm_inds, perm_inds)])
 
-    sol = {"row": np.arange(n), "col": perm_inds, "score": score}
+    res = {"col_ind": perm_inds, "score": score, "nit": n_init}
 
-    return OptimizeResult(sol)
+    return OptimizeResult(res)
 
 
 def _unshuffle(array, n):
