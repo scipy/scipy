@@ -2187,22 +2187,20 @@ class rv_continuous(rv_generic):
         ----------
         data : array_like
             Data to use in calculating the MLEs.
-        args : floats, optional
+        arg1, arg2, arg3,... : floats, optional
             Starting value(s) for any shape-characterizing arguments (those not
             provided will be determined by a call to ``_fitstart(data)``).
             No default value.
         kwds : floats, optional
-            - shape: Estimated from ``self._fitstart(data)`` by default.
-            - `loc`: initial guess of the distribution's location parameter. 
-            based on the `shape` parameter, by default.
-            - scale: Estimated from ``self._fit_loc_scale_support(data)``
-            based on the `shape` parameter, by default.
+            - `loc`: initial guess of the distribution's location parameter.
+            - `scale`: initial guess of the distribution's scale parameter.
+
             Special keyword arguments are recognized as holding certain
             parameters fixed:
 
             - f0...fn : hold respective shape parameters fixed.
               Alternatively, shape parameters to fix can be specified by name.
-              For example, if ``self.shapes == "a, b"``, ``fa``and ``fix_a``
+              For example, if ``self.shapes == "a, b"``, ``fa`` and ``fix_a``
               are equivalent to ``f0``, and ``fb`` and ``fix_b`` are
               equivalent to ``f1``.
 
