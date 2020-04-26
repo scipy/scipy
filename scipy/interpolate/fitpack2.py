@@ -1435,9 +1435,9 @@ class SmoothSphereBivariateSpline(SphereBivariateSpline):
     def __init__(self, theta, phi, r, w=None, s=0., eps=1E-16):
 
         # input validation
-        if np.any(theta < 0.0) or np.any(np.pi < theta):
+        if not ((0.0 <= theta).all() and (theta <= np.pi).all()):
             raise ValueError('theta should be between [0, pi]')
-        if np.any(phi < 0.0) or np.any(2.0 * np.pi < phi):
+        if not ((0.0 <= phi).all() and (phi <= 2.0 * np.pi).all()):
             raise ValueError('phi should be between [0, 2pi]')
         if w is not None and np.any(w < 0.0):
             raise ValueError('w should be positive')
@@ -1774,7 +1774,7 @@ class RectSphereBivariateSpline(SphereBivariateSpline):
 
         u, v = np.ravel(u), np.ravel(v)
 
-        if np.any(u <= 0.0) or np.any(np.pi <= u):
+        if not ((0.0 < u).all() and (u < np.pi).all()):
             raise ValueError('u should be between (0, pi)')
         if not -np.pi <= v[0] < np.pi:
             raise ValueError('v[0] should be between [-pi, pi)')
