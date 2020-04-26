@@ -596,14 +596,14 @@ class TestLSQSphereBivariateSpline(object):
             lats, invalid_lons = meshgrid(theta, invalid_phi)
             LSQSphereBivariateSpline(lats.ravel(), invalid_lons.ravel(),
                                      data.T.ravel(), knotst, knotsp)
-        assert "phi should be between [0, 2pi)" in str(exc_info.value)
+        assert "phi should be between [0, 2pi]" in str(exc_info.value)
 
         with assert_raises(ValueError) as exc_info:
             invalid_phi = linspace(0.0, 1.1, num=ntheta) * 2.0 * pi
             lats, invalid_lons = meshgrid(theta, invalid_phi)
             LSQSphereBivariateSpline(lats.ravel(), invalid_lons.ravel(),
                                      data.T.ravel(), knotst, knotsp)
-        assert "phi should be between [0, 2pi)" in str(exc_info.value)
+        assert "phi should be between [0, 2pi]" in str(exc_info.value)
 
         lats, lons = meshgrid(theta, phi)
 
@@ -695,13 +695,13 @@ class TestSmoothSphereBivariateSpline(object):
             invalid_phi = array([-.1 * pi, pi, 1.5 * pi, .5 * pi, pi, 1.5 * pi,
                                  .5 * pi, pi, 1.5 * pi])
             SmoothSphereBivariateSpline(theta, invalid_phi, r, s=1E10)
-        assert "phi should be between [0, 2pi)" in str(exc_info.value)
+        assert "phi should be between [0, 2pi]" in str(exc_info.value)
 
         with assert_raises(ValueError) as exc_info:
             invalid_phi = array([1.0 * pi, pi, 1.5 * pi, .5 * pi, pi, 1.5 * pi,
-                                 .5 * pi, pi, 2.0 * pi])
+                                 .5 * pi, pi, 2.1 * pi])
             SmoothSphereBivariateSpline(theta, invalid_phi, r, s=1E10)
-        assert "phi should be between [0, 2pi)" in str(exc_info.value)
+        assert "phi should be between [0, 2pi]" in str(exc_info.value)
 
         with assert_raises(ValueError) as exc_info:
             invalid_w = array([-1.0, 1.0, 1.5, 0.5, 1.0, 1.5, 0.5, 1.0, 1.0])

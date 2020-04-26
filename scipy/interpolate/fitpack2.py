@@ -1354,7 +1354,7 @@ class SmoothSphereBivariateSpline(SphereBivariateSpline):
     theta, phi, r : array_like
         1-D sequences of data points (order is not important). Coordinates
         must be given in radians. Theta must lie within the interval
-        ``[0, pi]``, and phi must lie within the interval ``[0, 2pi)``.
+        ``[0, pi]``, and phi must lie within the interval ``[0, 2pi]``.
     w : array_like, optional
         Positive 1-D sequence of weights.
     s : float, optional
@@ -1425,8 +1425,8 @@ class SmoothSphereBivariateSpline(SphereBivariateSpline):
         # input validation
         if not ((0.0 <= theta).all() and (theta <= np.pi).all()):
             raise ValueError('theta should be between [0, pi]')
-        if not ((0.0 <= phi).all() and (phi < 2.0 * np.pi).all()):
-            raise ValueError('phi should be between [0, 2pi)')
+        if not ((0.0 <= phi).all() and (phi <= 2.0 * np.pi).all()):
+            raise ValueError('phi should be between [0, 2pi]')
         if w is not None and not (w >= 0.0).all():
             raise ValueError('w should be positive')
         if not s >= 0.0:
@@ -1463,7 +1463,7 @@ class LSQSphereBivariateSpline(SphereBivariateSpline):
     theta, phi, r : array_like
         1-D sequences of data points (order is not important). Coordinates
         must be given in radians. Theta must lie within the interval
-        ``[0, pi]``, and phi must lie within the interval ``[0, 2pi)``.
+        ``[0, pi]``, and phi must lie within the interval ``[0, 2pi]``.
     tt, tp : array_like
         Strictly ordered 1-D sequences of knots coordinates.
         Coordinates must satisfy ``0 < tt[i] < pi``, ``0 < tp[i] < 2*pi``.
@@ -1538,8 +1538,8 @@ class LSQSphereBivariateSpline(SphereBivariateSpline):
 
         if not ((0.0 <= theta).all() and (theta <= np.pi).all()):
             raise ValueError('theta should be between [0, pi]')
-        if not ((0.0 <= phi).all() and (phi < 2*np.pi).all()):
-            raise ValueError('phi should be between [0, 2pi)')
+        if not ((0.0 <= phi).all() and (phi <= 2*np.pi).all()):
+            raise ValueError('phi should be between [0, 2pi]')
         if not ((0.0 < tt).all() and (tt < np.pi).all()):
             raise ValueError('tt should be between (0, pi)')
         if not ((0.0 < tp).all() and (tp < 2*np.pi).all()):
