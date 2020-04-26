@@ -911,7 +911,7 @@ class TestRectSphereBivariateSpline(object):
             lats = np.linspace(10, 170, 9) * np.pi / 180.
             lons = np.linspace(-181, 10, 18) * np.pi / 180.
             RectSphereBivariateSpline(lats, lons, data)
-        assert "v[0] should be between [-pi, pi]" in str(exc_info.value)
+        assert "v[0] should be between [-pi, pi)" in str(exc_info.value)
 
         with assert_raises(ValueError) as exc_info:
             lats = np.linspace(10, 170, 9) * np.pi / 180.

@@ -1615,7 +1615,7 @@ class RectSphereBivariateSpline(SphereBivariateSpline):
     v : array_like
         1-D array of longitude coordinates in strictly ascending order.
         Coordinates must be given in radians. First element (``v[0]``) must lie
-        within the interval ``[-pi, pi]``. Last element (``v[-1]``) must satisfy
+        within the interval ``[-pi, pi)``. Last element (``v[-1]``) must satisfy
         ``v[-1] <= v[0] + 2*pi``.
     r : array_like
         2-D array of data with shape ``(u.size, v.size)``.
@@ -1663,9 +1663,9 @@ class RectSphereBivariateSpline(SphereBivariateSpline):
     Suppose we have global data on a coarse grid
 
     >>> lats = np.linspace(10, 170, 9) * np.pi / 180.
-    >>> lons = np.linspace(0, 360, 18) * np.pi / 180.
+    >>> lons = np.linspace(0, 350, 18) * np.pi / 180.
     >>> data = np.dot(np.atleast_2d(90. - np.linspace(-80., 80., 18)).T,
-    ...               np.atleast_2d(180. - np.abs(np.linspace(0., 360., 9)))).T
+    ...               np.atleast_2d(180. - np.abs(np.linspace(0., 350., 9)))).T
 
     We want to interpolate it to a global one-degree grid
 
@@ -1763,8 +1763,8 @@ class RectSphereBivariateSpline(SphereBivariateSpline):
 
         if not ((0.0 <= u).all() and (u <= np.pi).all()):
             raise ValueError('u should be between [0, pi]')
-        if not -np.pi <= v[0] <= np.pi:
-            raise ValueError('v[0] should be between [-pi, pi]')
+        if not -np.pi <= v[0] < np.pi:
+            raise ValueError('v[0] should be between [-pi, pi)')
         if not v[-1] <= v[0] + 2*np.pi:
             raise ValueError('v[-1] should be v[0] + 2pi or less ')
 
