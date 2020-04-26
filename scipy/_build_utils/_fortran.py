@@ -339,22 +339,28 @@ def get_blas_lapack_symbols():
     if cached is not None:
         return cached
 
-    # Symbols not in Cython Lapack interface
-    symbols = """
-    sisnan dlaisnan slaisnan ilaenv iparmq lsamen xerbla
-    cgegs cgegv cgelsx cgeqpf cggsvd cggsvp clahrd clatzm ctzrqf
-    dgegs dgegv dgelsx dgeqpf dggsvd dggsvp dlahrd dlatzm dtzrqf
-    sgegs sgegv sgelsx sgeqpf sggsvd sggsvp slahrd slatzm stzrqf
-    zgegs zgegv zgelsx zgeqpf zggsvd zggsvp zlahrd zlatzm ztzrqf
-    """.split()
-
+    # Obtain symbol list from Cython Blas/Lapack interface
     srcdir = os.path.join(os.path.dirname(__file__), os.pardir, 'linalg')
+
+    symbols = []
+
+    # Get symbols from the generated files
     for fn in ['cython_blas_signatures.txt', 'cython_lapack_signatures.txt']:
         with open(os.path.join(srcdir, fn), 'r') as f:
             for line in f:
                 m = re.match(r"^\s*[a-z]+\s+([a-z0-9]+)\(", line)
                 if m:
                     symbols.append(m.group(1))
+
+    # Get the rest from the generator script
+    # (we cannot import it directly here, so use exec)
+    sig_fn = os.path.join(srcdir, '_cython_signature_generator.py')
+    with open(sig_fn, 'r') as f:
+        code = f.read()
+    ns = {'__name__': '<module>'}
+    exec(code, ns)
+    symbols.extend(ns['blas_exclusions'])
+    symbols.extend(ns['lapack_exclusions'])
 
     get_blas_lapack_symbols.cached = tuple(sorted(set(symbols)))
     return get_blas_lapack_symbols.cached
