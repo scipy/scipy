@@ -2118,21 +2118,20 @@ def squareform(X, force="no", checks=True):
     -----
     1. ``v = squareform(X)``
 
-       Given a square :math:`n`-by-:math:`n` symmetric distance matrix :math:`X`,
-       ``v = squareform(X)`` returns a
-       :math:`{n \\choose 2} = \\frac{n(n-1)}{2}` sized vector :math:`v`
-       where :math:`v[{n \\choose 2}-{n-i \\choose 2} + (j-i-1)]`
-       is the distance between points ``i`` and ``j``, :math:`i \\not= j`.
-       If :math:`X` is non-square or asymmetric, an error is raised.
+       Given a square n-by-n symmetric distance matrix `X`,
+       ``v = squareform(X)`` returns a `n * (n-1) / 2`
+       (i.e. binomial coefficient n choose 2) sized vector `v`
+       where :math:`v[{n \\choose 2} - {n-i \\choose 2} + (j-i-1)]`
+       is the distance between distinct points `i` and `j`.
+       If `X` is non-square or asymmetric, an error is raised.
 
     2. ``X = squareform(v)``
 
-       Given a :math:`\\frac{n(n-1)}{2}` sized vector :math:`v`
-       for some integer :math:`n \\geq 1` encoding distances as described,
-       ``X = squareform(v)`` returns a
-       :math:`n`-by-:math:`n` distance matrix :math:`X`.
+       Given a `n * (n-1) / 2` sized vector `v`
+       for some integer `n >= 1` encoding distances as described,
+       ``X = squareform(v)`` returns a n-by-n distance matrix `X`.
        The ``X[i, j]`` and ``X[j, i]`` values are set to
-       :math:`v[{n \\choose 2}-{n-i \\choose 2} + (j-i-1)]`
+       :math:`v[{n \\choose 2} - {n-i \\choose 2} + (j-i-1)]`
        and all diagonal elements are zero.
 
     In SciPy 0.19.0, ``squareform`` stopped casting all input types to
