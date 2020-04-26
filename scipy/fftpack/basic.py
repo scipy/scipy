@@ -387,7 +387,7 @@ def fft2(x, shape=None, axes=(-2,-1), overwrite_x=False):
     array([[0, 0, 0, 0, 0],
            [1, 1, 1, 1, 1],
            [2, 2, 2, 2, 2],
-           [3, 3, 3, 3, 3]
+           [3, 3, 3, 3, 3],
            [4, 4, 4, 4, 4]])
     >>> np.allclose(y, ifft2(fft2(y)))
     True
@@ -417,7 +417,7 @@ def ifft2(x, shape=None, axes=(-2,-1), overwrite_x=False):
     array([[0, 0, 0, 0, 0],
            [1, 1, 1, 1, 1],
            [2, 2, 2, 2, 2],
-           [3, 3, 3, 3, 3]
+           [3, 3, 3, 3, 3],
            [4, 4, 4, 4, 4]])
     >>> np.allclose(y, fft2(ifft2(y)))
     True
