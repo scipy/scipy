@@ -2118,18 +2118,18 @@ def squareform(X, force="no", checks=True):
     -----
     1. ``v = squareform(X)``
 
-       Given a square n-by-n symmetric distance matrix `X`,
-       ``v = squareform(X)`` returns a `n * (n-1) / 2`
+       Given a square n-by-n symmetric distance matrix ``X``,
+       ``v = squareform(X)`` returns a ``n * (n-1) / 2``
        (i.e. binomial coefficient n choose 2) sized vector `v`
        where :math:`v[{n \\choose 2} - {n-i \\choose 2} + (j-i-1)]`
-       is the distance between distinct points `i` and `j`.
-       If `X` is non-square or asymmetric, an error is raised.
+       is the distance between distinct points ``i`` and ``j``.
+       If ``X`` is non-square or asymmetric, an error is raised.
 
     2. ``X = squareform(v)``
 
-       Given a `n * (n-1) / 2` sized vector `v`
-       for some integer `n >= 1` encoding distances as described,
-       ``X = squareform(v)`` returns a n-by-n distance matrix `X`.
+       Given a ``n * (n-1) / 2`` sized vector ``v``
+       for some integer ``n >= 1`` encoding distances as described,
+       ``X = squareform(v)`` returns a n-by-n distance matrix ``X``.
        The ``X[i, j]`` and ``X[j, i]`` values are set to
        :math:`v[{n \\choose 2} - {n-i \\choose 2} + (j-i-1)]`
        and all diagonal elements are zero.
