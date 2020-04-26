@@ -335,6 +335,10 @@ def kron(A, B, format=None):
         col = A.col.repeat(B.nnz)
         data = A.data.repeat(B.nnz)
 
+        if max(A.shape[0]*B.shape[0], A.shape[1]*B.shape[1]) > np.iinfo('int32').max:
+            row = row.astype(np.int64)
+            col = col.astype(np.int64)
+
         row *= B.shape[0]
         col *= B.shape[1]
 
