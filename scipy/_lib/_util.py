@@ -413,7 +413,7 @@ def rng_integers(gen, low, high=None, size=None, dtype='int64',
     `RandomState.randint` (with endpoint=False) and
     `RandomState.random_integers` (with endpoint=True).
 
-    Return random integers from the “discrete uniform” distribution of the
+    Return random integers from the "discrete uniform" distribution of the
     specified dtype. If high is None (the default), then results are from
     0 to low.
 
@@ -436,7 +436,7 @@ def rng_integers(gen, low, high=None, size=None, dtype='int64',
         returned.
     dtype: {str, dtype}, optional
         Desired dtype of the result. All dtypes are determined by their name,
-        i.e., ‘int64’, ‘int’, etc, so byteorder is not available and a specific
+        i.e., 'int64', 'int', etc, so byteorder is not available and a specific
         precision may have different C types depending on the platform.
         The default value is np.int_.
     endpoint: bool, optional
