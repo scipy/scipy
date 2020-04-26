@@ -12,7 +12,7 @@ import numpy as np
 try:
     from numpy.random import Generator as Generator
 except ImportError:
-    class Generator():
+    class Generator():  # type: ignore[no-redef]
         pass
 
 
