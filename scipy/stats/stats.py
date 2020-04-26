@@ -413,12 +413,12 @@ def mode(a, axis=0, nan_policy='propagate'):
     ...               [4, 7, 5, 9]])
     >>> from scipy import stats
     >>> stats.mode(a)
-    (array([[3, 1, 0, 0]]), array([[1, 1, 1, 1]]))
+    ModeResult(mode=array([[3, 1, 0, 0]]), count=array([[1, 1, 1, 1]]))
 
     To get mode of whole array, specify ``axis=None``:
 
     >>> stats.mode(a, axis=None)
-    (array([3]), array([3]))
+    ModeResult(mode=array([3]), count=array([3]))
 
     """
     a, axis = _chk_asarray(a, axis)

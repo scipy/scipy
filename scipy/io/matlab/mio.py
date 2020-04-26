@@ -262,6 +262,17 @@ def savemat(file_name, mdict,
     oned_as : {'row', 'column'}, optional
         If 'column', write 1-D NumPy arrays as column vectors.
         If 'row', write 1-D NumPy arrays as row vectors.
+
+    Examples
+    --------
+    >>> from scipy.io import savemat
+    >>> a = np.arange(20)
+    >>> mdic = {"a": a, "label": "experiment"}
+    >>> mdic
+    {'a': array([ 0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15, 16,
+        17, 18, 19]),
+    'label': 'experiment'}
+    >>> savemat("matlab_matrix.mat", mdic)
     """
     with _open_file_context(file_name, appendmat, 'wb') as file_stream:
         if format == '4':

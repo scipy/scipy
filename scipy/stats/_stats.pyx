@@ -164,7 +164,7 @@ def _toint64(x):
         if x[perm[i]] != x[perm[i + 1]]:
             j += 1
 
-    result[perm[i + 1]] = j
+    result[perm[l - 1]] = j
     return np.array(result, dtype=np.int64)
 
 
