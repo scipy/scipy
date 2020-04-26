@@ -87,7 +87,7 @@ class UnivariateSpline(object):
         None (default), ``bbox=[x[0], x[-1]]``.
     k : int, optional
         Degree of the smoothing spline.  Must be 1 <= `k` <= 5.
-        Default is `k`=3, a cubic spline.
+        Default is `k` = 3, a cubic spline.
     s : float or None, optional
         Positive smoothing factor used to choose the number of knots.  Number
         of knots will be increased until the smoothing condition is satisfied::
@@ -306,7 +306,7 @@ class UnivariateSpline(object):
         nu  : int
             The order of derivative of the spline to compute.
         ext : int
-            Controls the value returned for elements of ``x`` not in the
+            Controls the value returned for elements of `x` not in the
             interval defined by the knot sequence.
 
             * if ext=0 or 'extrapolate', return the extrapolated value.
@@ -666,7 +666,7 @@ class LSQUnivariateSpline(UnivariateSpline):
         None (default), ``bbox = [x[0], x[-1]]``.
     k : int, optional
         Degree of the smoothing spline.  Must be 1 <= `k` <= 5.
-        Default is `k`=3, a cubic spline.
+        Default is `k` = 3, a cubic spline.
     ext : int or str, optional
         Controls the extrapolation mode for elements
         not in the interval defined by the knot sequence.
