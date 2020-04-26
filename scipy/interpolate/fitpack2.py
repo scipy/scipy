@@ -616,12 +616,6 @@ class InterpolatedUnivariateSpline(UnivariateSpline):
 
         x, y, w, bbox, self.ext = self.validate_input(x, y, w, bbox, k, None,
                                             ext, check_finite)
-
-        if check_finite:
-            w_finite = np.isfinite(w).all() if w is not None else True
-            if (not np.isfinite(x).all() or not np.isfinite(y).all() or
-                    not w_finite):
-                raise ValueError("Input must not contain NaNs or infs.")
         if not np.all(diff(x) > 0.0):
             raise ValueError('x must be strictly increasing')
 
@@ -753,12 +747,6 @@ class LSQUnivariateSpline(UnivariateSpline):
 
         x, y, w, bbox, self.ext = self.validate_input(x, y, w, bbox, k, None,
                                                       ext, check_finite)
-
-        if check_finite:
-            w_finite = np.isfinite(w).all() if w is not None else True
-            if (not np.isfinite(x).all() or not np.isfinite(y).all() or
-                    not w_finite or not np.isfinite(t).all()):
-                raise ValueError("Input(s) must not contain NaNs or infs.")
         if not np.all(diff(x) >= 0.0):
             raise ValueError('x must be increasing')
 
