@@ -2450,7 +2450,7 @@ def bracket(func, xa=0.0, xb=1.0, args=(), grow_limit=110.0, maxiter=1000):
     Bracket the minimum of the function.
 
     Given a function and distinct initial points, search in the
-    downhill direction (as defined by the initital points) and return
+    downhill direction (as defined by the initial points) and return
     new points xa, xb, xc that bracket the minimum of the function
     f(xa) > f(xb) < f(xc). It doesn't always mean that obtained
     solution will satisfy xa<=x<=xb.
@@ -2487,11 +2487,14 @@ def bracket(func, xa=0.0, xb=1.0, args=(), grow_limit=110.0, maxiter=1000):
     ...     return 10*x**2 + 3*x + 5
     >>> x = np.linspace(-2, 2)
     >>> y = f(x)
-    >>> xa, xb, xc, fa, fb, fc, funcalls = bracket(f)
+    >>> init_xa, init_xb = 0, 1
+    >>> xa, xb, xc, fa, fb, fc, funcalls = bracket(f, xa=init_xa, xb=init_xb)
+    >>> plt.axvline(x=init_xa, color="k", linestyle="--")
+    >>> plt.axvline(x=init_xb, color="k", linestyle="--")
     >>> plt.plot(x, y, "-k")
-    >>> plt.plot(xa, fa, "ro")
-    >>> plt.plot(xb, fb, "x")
-    >>> plt.plot(xc, fc, "bo")
+    >>> plt.plot(xa, fa, "bx")
+    >>> plt.plot(xb, fb, "rx")
+    >>> plt.plot(xc, fc, "bx")
     >>> plt.show()
 
     """
