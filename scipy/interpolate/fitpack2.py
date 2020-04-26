@@ -203,7 +203,7 @@ class UnivariateSpline(object):
             raise ValueError("bbox shape should be (2,)")
         elif not (1 <= k <= 5):
             raise ValueError("k should be 1 <= k <= 5")
-        elif s is not None and s < 0.0:
+        elif s is not None and not s >= 0.0:
             raise ValueError("s should be s >= 0.0")
 
         try:
@@ -1014,13 +1014,13 @@ class BivariateSpline(_BivariateSplineBase):
 
         if w is not None:
             w = np.asarray(w)
-            if not x.size == w.size:
+            if x.size != w.size:
                 raise ValueError('x, y, z, and w should have a same length')
-            elif np.any(w < 0.0):
+            elif not np.all(w >= 0.0):
                 raise ValueError('w should be positive')
         if (eps is not None) and (not 0.0 < eps < 1.0):
             raise ValueError('eps should be between (0, 1)')
-        if x.size < (kx + 1) * (ky + 1):
+        if not x.size >= (kx + 1) * (ky + 1):
             raise ValueError('The length of x, y and z should be at least'
                              ' (kx+1) * (ky+1)')
         return x, y, z, w
@@ -1073,7 +1073,7 @@ class SmoothBivariateSpline(BivariateSpline):
         bbox = ravel(bbox)
         if not bbox.shape == (4,):
             raise ValueError('bbox shape should be (4,)')
-        if s is not None and s < 0.0:
+        if s is not None and not s >= 0.0:
             raise ValueError("s should be s >= 0.0")
 
         xb, xe, yb, ye = bbox
@@ -1220,7 +1220,7 @@ class RectBivariateSpline(BivariateSpline):
                              'elements as y')
         if not bbox.shape == (4,):
             raise ValueError('bbox shape should be (4,)')
-        if s is not None and s < 0.0:
+        if s is not None and not s >= 0.0:
             raise ValueError("s should be s >= 0.0")
 
         z = ravel(z)
@@ -1354,7 +1354,7 @@ class SmoothSphereBivariateSpline(SphereBivariateSpline):
     theta, phi, r : array_like
         1-D sequences of data points (order is not important). Coordinates
         must be given in radians. Theta must lie within the interval
-        ``[0, pi]``, and phi must lie within the interval ``[0, 2pi]``.
+        ``[0, pi]``, and phi must lie within the interval ``[0, 2pi)``.
     w : array_like, optional
         Positive 1-D sequence of weights.
     s : float, optional
@@ -1425,11 +1425,11 @@ class SmoothSphereBivariateSpline(SphereBivariateSpline):
         # input validation
         if not ((0.0 <= theta).all() and (theta <= np.pi).all()):
             raise ValueError('theta should be between [0, pi]')
-        if not ((0.0 <= phi).all() and (phi <= 2.0 * np.pi).all()):
-            raise ValueError('phi should be between [0, 2pi]')
-        if w is not None and np.any(w < 0.0):
+        if not ((0.0 <= phi).all() and (phi < 2.0 * np.pi).all()):
+            raise ValueError('phi should be between [0, 2pi)')
+        if w is not None and not (w >= 0.0).all():
             raise ValueError('w should be positive')
-        if s < 0.0:
+        if not s >= 0.0:
             raise ValueError('s should be positive')
         if not 0.0 < eps < 1.0:
             raise ValueError('eps should be between (0, 1)')
@@ -1463,7 +1463,7 @@ class LSQSphereBivariateSpline(SphereBivariateSpline):
     theta, phi, r : array_like
         1-D sequences of data points (order is not important). Coordinates
         must be given in radians. Theta must lie within the interval
-        ``[0, pi]``, and phi must lie within the interval ``[0, 2pi]``.
+        ``[0, pi]``, and phi must lie within the interval ``[0, 2pi)``.
     tt, tp : array_like
         Strictly ordered 1-D sequences of knots coordinates.
         Coordinates must satisfy ``0 < tt[i] < pi``, ``0 < tp[i] < 2*pi``.
@@ -1536,15 +1536,15 @@ class LSQSphereBivariateSpline(SphereBivariateSpline):
 
     def __init__(self, theta, phi, r, tt, tp, w=None, eps=1E-16):
 
-        if np.any(theta < 0.0) or np.any(np.pi < theta):
+        if not ((0.0 <= theta).all() and (theta <= np.pi).all()):
             raise ValueError('theta should be between [0, pi]')
-        if np.any(phi < 0.0) or np.any(2.0 * np.pi < phi):
-            raise ValueError('phi should be between [0, 2pi]')
-        if np.any(tt <= 0.0) or np.any(np.pi <= tt):
+        if not ((0.0 <= phi).all() and (phi < 2*np.pi).all()):
+            raise ValueError('phi should be between [0, 2pi)')
+        if not ((0.0 < tt).all() and (tt < np.pi).all()):
             raise ValueError('tt should be between (0, pi)')
-        if np.any(tp <= 0.0) or np.any(2.0 * np.pi <= tp):
+        if not ((0.0 < tp).all() and (tp < 2*np.pi).all()):
             raise ValueError('tp should be between (0, 2pi)')
-        if w is not None and np.any(w < 0.0):
+        if w is not None and not (w >= 0.0).all():
             raise ValueError('w should be positive')
         if not 0.0 < eps < 1.0:
             raise ValueError('eps should be between (0, 1)')
@@ -1611,8 +1611,8 @@ class RectSphereBivariateSpline(SphereBivariateSpline):
     ----------
     u : array_like
         1-D array of colatitude coordinates in strictly ascending order.
-        Coordinates must be given in radians and lie within the open interval
-        ``(0, pi)``.
+        Coordinates must be given in radians and lie within the interval
+        ``[0, pi]``.
     v : array_like
         1-D array of longitude coordinates in strictly ascending order.
         Coordinates must be given in radians. First element (``v[0]``) must lie
@@ -1762,8 +1762,8 @@ class RectSphereBivariateSpline(SphereBivariateSpline):
 
         u, v = np.ravel(u), np.ravel(v)
 
-        if not ((0.0 < u).all() and (u < np.pi).all()):
-            raise ValueError('u should be between (0, pi)')
+        if not ((0.0 <= u).all() and (u <= np.pi).all()):
+            raise ValueError('u should be between [0, pi]')
         if not -np.pi <= v[0] < np.pi:
             raise ValueError('v[0] should be between [-pi, pi)')
         if not v[-1] <= v[0] + 2*np.pi:
@@ -1788,7 +1788,7 @@ class RectSphereBivariateSpline(SphereBivariateSpline):
             raise ValueError('if pole_continuity is False, so must be '
                              'pole_flat')
 
-        if s < 0.0:
+        if not s >= 0.0:
             raise ValueError('s should be positive')
 
         r = np.ravel(r)

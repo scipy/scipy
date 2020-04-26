@@ -596,14 +596,14 @@ class TestLSQSphereBivariateSpline(object):
             lats, invalid_lons = meshgrid(theta, invalid_phi)
             LSQSphereBivariateSpline(lats.ravel(), invalid_lons.ravel(),
                                      data.T.ravel(), knotst, knotsp)
-        assert "phi should be between [0, 2pi]" in str(exc_info.value)
+        assert "phi should be between [0, 2pi)" in str(exc_info.value)
 
         with assert_raises(ValueError) as exc_info:
             invalid_phi = linspace(0.0, 1.1, num=ntheta) * 2.0 * pi
             lats, invalid_lons = meshgrid(theta, invalid_phi)
             LSQSphereBivariateSpline(lats.ravel(), invalid_lons.ravel(),
                                      data.T.ravel(), knotst, knotsp)
-        assert "phi should be between [0, 2pi]" in str(exc_info.value)
+        assert "phi should be between [0, 2pi)" in str(exc_info.value)
 
         lats, lons = meshgrid(theta, phi)
 
@@ -695,13 +695,13 @@ class TestSmoothSphereBivariateSpline(object):
             invalid_phi = array([-.1 * pi, pi, 1.5 * pi, .5 * pi, pi, 1.5 * pi,
                                  .5 * pi, pi, 1.5 * pi])
             SmoothSphereBivariateSpline(theta, invalid_phi, r, s=1E10)
-        assert "phi should be between [0, 2pi]" in str(exc_info.value)
+        assert "phi should be between [0, 2pi)" in str(exc_info.value)
 
         with assert_raises(ValueError) as exc_info:
             invalid_phi = array([1.0 * pi, pi, 1.5 * pi, .5 * pi, pi, 1.5 * pi,
-                                 .5 * pi, pi, 2.1 * pi])
+                                 .5 * pi, pi, 2.0 * pi])
             SmoothSphereBivariateSpline(theta, invalid_phi, r, s=1E10)
-        assert "phi should be between [0, 2pi]" in str(exc_info.value)
+        assert "phi should be between [0, 2pi)" in str(exc_info.value)
 
         with assert_raises(ValueError) as exc_info:
             invalid_w = array([-1.0, 1.0, 1.5, 0.5, 1.0, 1.5, 0.5, 1.0, 1.0])
@@ -896,16 +896,16 @@ class TestRectSphereBivariateSpline(object):
                       np.atleast_2d(180. - np.abs(np.linspace(0., 350., 9)))).T
 
         with assert_raises(ValueError) as exc_info:
-            lats = np.linspace(0, 170, 9) * np.pi / 180.
+            lats = np.linspace(-1, 170, 9) * np.pi / 180.
             lons = np.linspace(0, 350, 18) * np.pi / 180.
             RectSphereBivariateSpline(lats, lons, data)
-        assert "u should be between (0, pi)" in str(exc_info.value)
+        assert "u should be between [0, pi]" in str(exc_info.value)
 
         with assert_raises(ValueError) as exc_info:
-            lats = np.linspace(10, 180, 9) * np.pi / 180.
+            lats = np.linspace(10, 181, 9) * np.pi / 180.
             lons = np.linspace(0, 350, 18) * np.pi / 180.
             RectSphereBivariateSpline(lats, lons, data)
-        assert "u should be between (0, pi)" in str(exc_info.value)
+        assert "u should be between [0, pi]" in str(exc_info.value)
 
         with assert_raises(ValueError) as exc_info:
             lats = np.linspace(10, 170, 9) * np.pi / 180.
