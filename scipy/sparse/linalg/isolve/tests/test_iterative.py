@@ -482,6 +482,30 @@ def test_maxiter_worsening(solver):
         assert_(error <= tol*best_error)
 
 
+@pytest.mark.parametrize("solver", [cg, cgs, bicg, bicgstab, gmres, qmr, minres, lgmres, gcrotmk])
+def test_x0_working(solver):
+    # Easy problem
+    np.random.seed(1)
+    n = 10
+    A = np.random.rand(n, n)
+    A = A.dot(A.T)
+    b = np.random.rand(n)
+    x0 = np.random.rand(n)
+
+    if solver is minres:
+        kw = dict(tol=1e-6)
+    else:
+        kw = dict(atol=0, tol=1e-6)
+
+    x, info = solver(A, b, **kw)
+    assert_equal(info, 0)
+    assert_(np.linalg.norm(A.dot(x) - b) <= 1e-6*np.linalg.norm(b))
+
+    x, info = solver(A, b, x0=x0, **kw)
+    assert_equal(info, 0)
+    assert_(np.linalg.norm(A.dot(x) - b) <= 1e-6*np.linalg.norm(b))
+
+
 #------------------------------------------------------------------------------
 
 class TestQMR(object):
