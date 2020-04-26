@@ -1188,8 +1188,8 @@ def _filter_ridge_lines(cwt, ridge_lines, window_size=None, min_length=None,
 
 
 def find_peaks_cwt(vector, widths, wavelet=None, max_distances=None,
-                   gap_thresh=None, min_length=None, window_size=None,
-                   min_snr=1, noise_perc=10):
+                   gap_thresh=None, min_length=None,
+                   min_snr=1, noise_perc=10, window_size=None):
     """
     Find peaks in a 1-D array with wavelet transformation.
 
@@ -1223,9 +1223,6 @@ def find_peaks_cwt(vector, widths, wavelet=None, max_distances=None,
     min_length : int, optional
         Minimum length a ridge line needs to be acceptable.
         Default is ``cwt.shape[0] / 4``, ie 1/4-th the number of widths.
-    window_size : int, optional
-        Size of window to use to calculate noise floor.
-        Default is ``cwt.shape[1] / 20``.
     min_snr : float, optional
         Minimum SNR ratio. Default 1. The signal is the value of
         the cwt matrix at the shortest length scale (``cwt[0, loc]``), the
@@ -1235,6 +1232,9 @@ def find_peaks_cwt(vector, widths, wavelet=None, max_distances=None,
         When calculating the noise floor, percentile of data points
         examined below which to consider noise. Calculated using
         `stats.scoreatpercentile`.  Default is 10.
+    window_size : int, optional
+        Size of window to use to calculate noise floor.
+        Default is ``cwt.shape[1] / 20``.
 
     Returns
     -------
