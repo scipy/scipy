@@ -135,13 +135,29 @@ include "_cython_special.pxi"
 """
 
 STUBS = """\
-from typing import Any, Type
+from typing import Any, Dict
 
 import numpy as np
 
 __all__ = [
+    'geterr',
+    'seterr',
+    'errstate',
     {ALL}
 ]
+
+def geterr() -> Dict[str, str]: ...
+def seterr(**kwargs: str) -> Dict[str, str]: ...
+
+class errstate:
+    def __init__(self, **kargs: str) -> None: ...
+    def __enter__(self) -> None: ...
+    def __exit__(
+        self,
+        exc_type: Any,  # Unused
+        exc_value: Any,  # Unused
+        traceback: Any,  # Unused
+    ) -> None: ...
 
 {STUBS}
 
