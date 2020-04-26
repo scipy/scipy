@@ -23,7 +23,8 @@ class YaoLiu04(Benchmark):
     :math:`i = 1, ..., n`
 
     .. [1] Yao X., Liu Y. (1997) Fast evolution strategies.
-    In: Angeline P.J., Reynolds R.G., McDonnell J.R., Eberhart R. (eds) Evolutionary Programming VI. EP 1997.
+    In: Angeline P.J., Reynolds R.G., McDonnell J.R., Eberhart R. (eds)
+    Evolutionary Programming VI. EP 1997.
     Lecture Notes in Computer Science, vol 1213. Springer, Berlin, Heidelberg
 
     .. [2] Mishra, S. Global Optimization by Differential Evolution and
@@ -69,7 +70,8 @@ class YaoLiu09(Benchmark):
     :math:`i = 1, ..., n`
 
     .. [1] Yao X., Liu Y. (1997) Fast evolution strategies.
-    In: Angeline P.J., Reynolds R.G., McDonnell J.R., Eberhart R. (eds) Evolutionary Programming VI. EP 1997.
+    In: Angeline P.J., Reynolds R.G., McDonnell J.R., Eberhart R. (eds)
+    Evolutionary Programming VI. EP 1997.
     Lecture Notes in Computer Science, vol 1213. Springer, Berlin, Heidelberg
 
     .. [2] Gavana, A. Global Optimization Benchmarks and AMPGO retrieved 2015
