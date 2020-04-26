@@ -381,7 +381,6 @@ def fft2(x, shape=None, axes=(-2,-1), overwrite_x=False):
     Examples
     --------
     >>> from scipy.fftpack import fft2, ifft2
-    >>> import numpy as np
     >>> y = np.mgrid[:5, :5][0]
     >>> y
     array([[0, 0, 0, 0, 0],
@@ -411,7 +410,6 @@ def ifft2(x, shape=None, axes=(-2,-1), overwrite_x=False):
     Examples
     --------
     >>> from scipy.fftpack import fft2, ifft2
-    >>> import numpy as np
     >>> y = np.mgrid[:5, :5][0]
     >>> y
     array([[0, 0, 0, 0, 0],
