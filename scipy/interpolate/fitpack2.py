@@ -87,7 +87,7 @@ class UnivariateSpline(object):
         None (default), ``bbox=[x[0], x[-1]]``.
     k : int, optional
         Degree of the smoothing spline.  Must be 1 <= `k` <= 5.
-        Default is k=3, a cubic spline.
+        Default is `k`=3, a cubic spline.
     s : float or None, optional
         Positive smoothing factor used to choose the number of knots.  Number
         of knots will be increased until the smoothing condition is satisfied::
@@ -301,8 +301,8 @@ class UnivariateSpline(object):
         ----------
         x : array_like
             A 1-D array of points at which to return the value of the smoothed
-            spline or its derivatives. Note: x can be unordered but the
-            evaluation is more efficient if x is (partially) ordered.
+            spline or its derivatives. Note: `x` can be unordered but the
+            evaluation is more efficient if `x` is (partially) ordered.
         nu  : int
             The order of derivative of the spline to compute.
         ext : int
@@ -666,7 +666,7 @@ class LSQUnivariateSpline(UnivariateSpline):
         None (default), ``bbox = [x[0], x[-1]]``.
     k : int, optional
         Degree of the smoothing spline.  Must be 1 <= `k` <= 5.
-        Default is k=3, a cubic spline.
+        Default is `k`=3, a cubic spline.
     ext : int or str, optional
         Controls the extrapolation mode for elements
         not in the interval defined by the knot sequence.
@@ -1050,8 +1050,7 @@ class SmoothBivariateSpline(BivariateSpline):
     eps : float, optional
         A threshold for determining the effective rank of an over-determined
         linear system of equations. `eps` should have a value within the open
-        interval (0, 1).
-        the default is 1e-16.
+        interval ``(0, 1)``, the default is 1e-16.
 
     See Also
     --------
@@ -1121,7 +1120,7 @@ class LSQBivariateSpline(BivariateSpline):
     eps : float, optional
         A threshold for determining the effective rank of an over-determined
         linear system of equations. `eps` should have a value within the open
-        interval (0, 1), the default is 1e-16.
+        interval ``(0, 1)``, the default is 1e-16.
 
     See Also
     --------
