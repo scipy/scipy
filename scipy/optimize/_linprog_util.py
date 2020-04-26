@@ -760,11 +760,11 @@ def _presolve(lp, rr, tol=1e-9):
             i = np.flatnonzero(i_f)
             # Number of variables to restore
             N = len(i)
-            index_offset = list(range(N))
+            index_offset = np.arange(N)
             # Create insert indices
-            insert_indices = np.subtract(i, index_offset).flatten()
+            insert_indices = i - index_offset
             x_rev = np.insert(x_mod.astype(float), insert_indices, x_undo)
-            return (x_rev)
+            return x_rev
 
         # Use revstack as a list of functions, currently just this one.
         revstack.append(rev)
@@ -1069,7 +1069,8 @@ def _get_Abc(lp, c0):
         zeros = np.zeros
         eye = np.eye
 
-    # Rows will be reversed, which feeds back into bounds, so copy
+    # Variables lbs and ubs (see below) may be changed, which feeds back into
+    # bounds, so copy.
     bounds = np.array(bounds, copy=True)
 
     # modify problem such that all variables have only non-negativity bounds
