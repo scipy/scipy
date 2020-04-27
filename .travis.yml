@@ -45,6 +45,7 @@ matrix:
         - COVERAGE=
         - USE_SDIST=1
         - PIP_NO_CACHE_DIR=off
+        - NUMPYSPEC="numpy==1.18.1"
     - python: 3.7
       if: type = pull_request
       env:
@@ -155,9 +156,11 @@ before_install:
     fi
   - python -V -V
   - python -c 'import sys; print("Python debug build:", hasattr(sys, "gettotalrefcount"))'
+  # arm64 build uses conda (there aren't any arm64 wheels on PyPI, need
+  # Miniforge / conda-forge), so skip arm64 here
   - |
-    if [[ "$NUMPYSPEC" && "$TRAVIS_CPU_ARCH" != "arm64" ]]; then
-         travis_retry pip install --upgrade pip setuptools wheel cython $NUMPYSPEC pytest pytest-xdist mpmath argparse Pillow codecov gmpy2 pybind11
+    if [[ "$TRAVIS_CPU_ARCH" != "arm64" ]]; then
+         travis_retry pip install --upgrade pip setuptools wheel $NUMPYSPEC cython pytest pytest-xdist mpmath argparse Pillow codecov gmpy2 pybind11
     fi
   - |
     if [ -n "${USE_DEBUG}" ]; then
@@ -171,7 +174,7 @@ before_install:
         travis_retry pip install --only-binary=:all: sparse
     fi
   - |
-    if [ "${TESTMODE}" == "full"  ]; then
+    if [ "${TESTMODE}" == "full" ]; then
         travis_retry pip install pytest-cov coverage matplotlib scikit-umfpack scikit-sparse
     fi
   - |
@@ -185,8 +188,8 @@ before_install:
   - |
     if [ "${TRAVIS_CPU_ARCH}" != "arm64" ]; then
          pip uninstall -y nose
-         ccache -s
     fi
+  - ccache -s
   - cd ..
   - set -o pipefail
   - if [[ "${TRAVIS_CPU_ARCH}" == "arm64" ]]; then
@@ -198,17 +201,14 @@ before_install:
       conda install pip conda;
       conda update -n base conda;
       conda info -a;
-      conda install pytest pytest-xdist scipy mpmath Cython pybind11;
+      conda install pytest pytest-xdist $NUMPYSPEC mpmath Cython pybind11;
     fi
 script:
   - python -c 'import numpy as np; print("relaxed strides checking:", np.ones((10,1),order="C").flags.f_contiguous)'
   # Make sure that relaxed strides checking is actually in effect; otherwise fail loudly
   - if [ "$NPY_RELAXED_STRIDES_CHECKING" == "1" ]; then python -c'import numpy as np; assert np.ones((10,1),order="C").flags.f_contiguous'; fi
   # Test that mpmath actually uses gmpy2
-  - |
-    if [[ "$TRAVIS_OS_NAME" == "linux" && "$TRAVIS_CPU_ARCH" != "arm64" ]]; then
-      python -c 'import mpmath.libmp; assert mpmath.libmp.BACKEND == "gmpy"';
-    fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then python -c 'import mpmath.libmp; assert mpmath.libmp.BACKEND == "gmpy"'; fi
   - |
     if [ "${USE_WHEEL}" == "1" ]; then
         # Run setup.py build before pip wheel, to build in current directory
@@ -233,11 +233,11 @@ script:
         cd ..
         USE_WHEEL_BUILD="--no-build"
     fi
+  - export SCIPY_AVAILABLE_MEM=3G
   - |
     if [[ "$TRAVIS_CPU_ARCH" == "arm64" ]]; then
       python -u runtests.py --parallel=4 -g -m $TESTMODE $COVERAGE $USE_WHEEL_BUILD -- -rfEX 2>&1 | tee runtests.log
     else
-      export SCIPY_AVAILABLE_MEM=3G
       python -u runtests.py -g -m $TESTMODE $COVERAGE $USE_WHEEL_BUILD -- -rfEX -n 3 2>&1 | tee runtests.log
     fi
 
