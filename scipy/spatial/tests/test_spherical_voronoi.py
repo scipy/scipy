@@ -166,7 +166,7 @@ class TestSphericalVoronoi(object):
         expected = sorted([[0, 6, 5, 2, 3], [2, 3, 10, 11, 8, 7], [0, 6, 4, 1],
                            [4, 8, 7, 5, 6], [9, 11, 10], [2, 7, 5],
                            [1, 4, 8, 11, 9], [0, 3, 10, 9, 1]])
-        expected = list(itertools.chain(*sorted(expected)))
+        expected = list(itertools.chain(*sorted(expected)))  # type: ignore
         sv = SphericalVoronoi(self.points)
         sv.sort_vertices_of_regions()
         actual = list(itertools.chain(*sorted(sv.regions)))
