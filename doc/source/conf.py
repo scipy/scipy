@@ -113,6 +113,7 @@ pygments_style = 'sphinx'
 
 # Ensure all our internal links work
 nitpicky = True
+nitpick_ignore = [('py:class', 'Union[numpy.ndarray, List, None]')]
 exclude_patterns = [  # glob-style
 
 ]

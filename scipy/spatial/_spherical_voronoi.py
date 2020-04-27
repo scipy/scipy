@@ -11,6 +11,7 @@ Spherical Voronoi Code
 # Distributed under the same BSD license as SciPy.
 #
 
+from typing import Optional, List, Union
 import warnings
 import numpy as np
 import scipy
@@ -20,7 +21,7 @@ from scipy.spatial import cKDTree
 __all__ = ['SphericalVoronoi']
 
 
-def calculate_solid_angles(R):
+def calculate_solid_angles(R: np.ndarray):
     """Calculates the solid angles of plane triangles. Implements the method of
     Van Oosterom and Strackee [VanOosterom]_ with some modifications. Assumes
     that input points have unit norm."""
@@ -163,7 +164,11 @@ class SphericalVoronoi:
     >>> plt.show()
 
     """
-    def __init__(self, points, radius=1, center=None, threshold=1e-06):
+    def __init__(self,
+                 points: np.ndarray,
+                 radius: Optional[float] = 1,
+                 center: Optional[Union[np.ndarray, List]] = None,
+                 threshold: float = 1e-06):
 
         if radius is None:
             radius = 1.
