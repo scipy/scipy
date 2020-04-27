@@ -102,7 +102,7 @@ entropy(%(shapes)s, loc=0, scale=1)
 _doc_fit = """\
 fit(data)
     Parameter estimates for generic data.
-    See [`scipy.stats.rv_continuous.fit`](https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.rv_continuous.fit.html#scipy.stats.rv_continuous.fit) for detailed documentation of the
+    See `scipy.stats.rv_continuous.fit <https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.rv_continuous.fit.html#scipy.stats.rv_continuous.fit>`__ for detailed documentation of the
     keyword arguments.
 """
 _doc_expect = """\
