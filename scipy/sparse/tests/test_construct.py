@@ -7,6 +7,7 @@ from numpy.testing import (assert_equal, assert_,
 import pytest
 from pytest import raises as assert_raises
 from scipy._lib._testutils import check_free_memory
+from scipy._lib._util import check_random_state
 
 from scipy.sparse import csr_matrix, coo_matrix, construct
 from scipy.sparse.construct import rand as sprand
@@ -19,11 +20,8 @@ sparse_formats = ['csr','csc','coo','bsr','dia','lil','dok']
 
 def _sprandn(m, n, density=0.01, format="coo", dtype=None, random_state=None):
     # Helper function for testing.
-    if random_state is None:
-        random_state = np.random
-    elif isinstance(random_state, (int, np.integer)):
-        random_state = np.random.RandomState(random_state)
-    data_rvs = random_state.randn
+    random_state = check_random_state(random_state)
+    data_rvs = random_state.standard_normal
     return construct.random(m, n, density, format, dtype,
                             random_state, data_rvs)
 
@@ -280,6 +278,14 @@ class TestConstructUtils(object):
                 expected = np.kron(a,b)
                 assert_array_equal(result,expected)
 
+    def test_kron_large(self):
+        n = 2**16
+        a = construct.eye(1, n, n-1)
+        b = construct.eye(n, 1, 1-n)
+
+        construct.kron(a, a)
+        construct.kron(b, b)
+
     def test_kronsum(self):
         cases = []
 
@@ -450,7 +456,14 @@ class TestConstructUtils(object):
 
     def test_rand(self):
         # Simple distributional checks for sparse.rand.
-        for random_state in None, 4321, np.random.RandomState():
+        random_states = [None, 4321, np.random.RandomState()]
+        try:
+            gen = np.random.default_rng()
+            random_states.append(gen)
+        except AttributeError:
+            pass
+
+        for random_state in random_states:
             x = sprand(10, 20, density=0.5, dtype=np.float64,
                        random_state=random_state)
             assert_(np.all(np.less_equal(0, x.data)))
@@ -460,7 +473,14 @@ class TestConstructUtils(object):
         # Simple distributional checks for sparse.randn.
         # Statistically, some of these should be negative
         # and some should be greater than 1.
-        for random_state in None, 4321, np.random.RandomState():
+        random_states = [None, 4321, np.random.RandomState()]
+        try:
+            gen = np.random.default_rng()
+            random_states.append(gen)
+        except AttributeError:
+            pass
+
+        for random_state in random_states:
             x = _sprandn(10, 20, density=0.5, dtype=np.float64,
                          random_state=random_state)
             assert_(np.any(np.less(x.data, 0)))

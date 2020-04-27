@@ -22,6 +22,7 @@ from pytest import raises as assert_raises
 from scipy import optimize
 from scipy.optimize._minimize import MINIMIZE_METHODS
 from scipy.optimize._differentiable_functions import ScalarFunction
+from scipy.optimize.optimize import MemoizeJac
 
 
 def test_check_grad():
@@ -1666,3 +1667,76 @@ def test_result_x_shape_when_len_x_is_one():
         res = optimize.minimize(fun, np.array([0.1]), method=method, jac=jac,
                                 hess=hess)
         assert res.x.shape == (1,)
+
+
+class FunctionWithGradient(object):
+    def __init__(self):
+        self.number_of_calls = 0
+
+    def __call__(self, x):
+        self.number_of_calls += 1
+        return np.sum(x**2), 2 * x
+
+
+@pytest.fixture
+def function_with_gradient():
+    return FunctionWithGradient()
+
+
+def test_memoize_jac_function_before_gradient(function_with_gradient):
+    memoized_function = MemoizeJac(function_with_gradient)
+
+    x0 = np.array([1.0, 2.0])
+    assert_allclose(memoized_function(x0), 5.0)
+    assert function_with_gradient.number_of_calls == 1
+
+    assert_allclose(memoized_function.derivative(x0), 2 * x0)
+    assert function_with_gradient.number_of_calls == 1, \
+        "function is not recomputed " \
+        "if gradient is requested after function value"
+
+    assert_allclose(
+        memoized_function(2 * x0), 20.0,
+        err_msg="different input triggers new computation")
+    assert function_with_gradient.number_of_calls == 2, \
+        "different input triggers new computation"
+
+
+def test_memoize_jac_gradient_before_function(function_with_gradient):
+    memoized_function = MemoizeJac(function_with_gradient)
+
+    x0 = np.array([1.0, 2.0])
+    assert_allclose(memoized_function.derivative(x0), 2 * x0)
+    assert function_with_gradient.number_of_calls == 1
+
+    assert_allclose(memoized_function(x0), 5.0)
+    assert function_with_gradient.number_of_calls == 1, \
+        "function is not recomputed " \
+        "if function value is requested after gradient"
+
+    assert_allclose(
+        memoized_function.derivative(2 * x0), 4 * x0,
+        err_msg="different input triggers new computation")
+    assert function_with_gradient.number_of_calls == 2, \
+        "different input triggers new computation"
+
+
+def test_memoize_jac_with_bfgs(function_with_gradient):
+    """ Tests that using MemoizedJac in combination with ScalarFunction
+        and BFGS does not lead to repeated function evaluations.
+        Tests changes made in response to GH11868.
+    """
+    memoized_function = MemoizeJac(function_with_gradient)
+    jac = memoized_function.derivative
+    hess = optimize.BFGS()
+
+    x0 = np.array([1.0, 0.5])
+    scalar_function = ScalarFunction(
+        memoized_function, x0, (), jac, hess, None, None)
+    assert function_with_gradient.number_of_calls == 1
+
+    scalar_function.fun(x0 + 0.1)
+    assert function_with_gradient.number_of_calls == 2
+
+    scalar_function.fun(x0 + 0.2)
+    assert function_with_gradient.number_of_calls == 3

@@ -171,7 +171,8 @@ from numpy import array, asarray, ma
 
 from scipy.spatial.distance import cdist
 from scipy.ndimage import measurements
-from scipy._lib._util import _lazywhere, check_random_state, MapWrapper
+from scipy._lib._util import (_lazywhere, check_random_state, MapWrapper,
+                              rng_integers)
 import scipy.special as special
 from scipy import linalg
 from . import distributions
@@ -413,12 +414,12 @@ def mode(a, axis=0, nan_policy='propagate'):
     ...               [4, 7, 5, 9]])
     >>> from scipy import stats
     >>> stats.mode(a)
-    (array([[3, 1, 0, 0]]), array([[1, 1, 1, 1]]))
+    ModeResult(mode=array([[3, 1, 0, 0]]), count=array([[1, 1, 1, 1]]))
 
     To get mode of whole array, specify ``axis=None``:
 
     >>> stats.mode(a, axis=None)
-    (array([3]), array([3]))
+    ModeResult(mode=array([3]), count=array([3]))
 
     """
     a, axis = _chk_asarray(a, axis)
@@ -4351,7 +4352,7 @@ def _perm_test(x, y, stat, compute_distance, reps=1000, workers=-1,
     # generate seeds for each rep (change to new parallel random number
     # capabilities in numpy >= 1.17+)
     random_state = check_random_state(random_state)
-    random_states = [np.random.RandomState(random_state.randint(1 << 32,
+    random_states = [np.random.RandomState(rng_integers(random_state, 1 << 32,
                      size=4, dtype=np.uint32)) for _ in range(reps)]
 
     # parallelizes with specified workers over number of reps and set seeds

@@ -2,9 +2,10 @@
 # Author:  Travis Oliphant  2002-2011 with contributions from
 #          SciPy Developers 2004-2011
 #
+from functools import partial
 from scipy import special
 from scipy.special import entr, logsumexp, betaln, gammaln as gamln
-from scipy._lib._util import _lazywhere
+from scipy._lib._util import _lazywhere, rng_integers
 
 from numpy import floor, ceil, log, exp, sqrt, log1p, expm1, tanh, cosh, sinh
 
@@ -819,15 +820,10 @@ class randint_gen(rv_discrete):
 
     def _rvs(self, low, high):
         """An array of *size* random integers >= ``low`` and < ``high``."""
-        if hasattr(self._random_state, 'integers'):
-            # isinstance(self._random_state, np.random.Generator)
-            int_fun = self._random_state.integers
-        else:
-            int_fun = self._random_state.randint
-
         if np.asarray(low).size == 1 and np.asarray(high).size == 1:
             # no need to vectorize in that case
-            return int_fun(low, high, size=self._size)
+            return rng_integers(self._random_state, low, high, size=self._size)
+
         if self._size is not None:
             # NumPy's RandomState.randint() doesn't broadcast its arguments.
             # Use `broadcast_to()` to extend the shapes of low and high
@@ -835,7 +831,8 @@ class randint_gen(rv_discrete):
             # randint without needing to pass it a `size` argument.
             low = np.broadcast_to(low, self._size)
             high = np.broadcast_to(high, self._size)
-        randint = np.vectorize(int_fun, otypes=[np.int_])
+        randint = np.vectorize(partial(rng_integers, self._random_state),
+                               otypes=[np.int_])
         return randint(low, high)
 
     def _entropy(self, low, high):

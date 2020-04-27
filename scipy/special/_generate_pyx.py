@@ -135,11 +135,29 @@ include "_cython_special.pxi"
 """
 
 STUBS = """\
-from typing import Any, Type
+from typing import Any, Dict
+
+import numpy as np
 
 __all__ = [
+    'geterr',
+    'seterr',
+    'errstate',
     {ALL}
 ]
+
+def geterr() -> Dict[str, str]: ...
+def seterr(**kwargs: str) -> Dict[str, str]: ...
+
+class errstate:
+    def __init__(self, **kargs: str) -> None: ...
+    def __enter__(self) -> None: ...
+    def __exit__(
+        self,
+        exc_type: Any,  # Unused
+        exc_value: Any,  # Unused
+        traceback: Any,  # Unused
+    ) -> None: ...
 
 {STUBS}
 
@@ -1330,15 +1348,14 @@ def generate_fused_funcs(modname, ufunc_fn_prefix, fused_funcs):
 def generate_ufuncs_type_stubs(module_name: str, ufuncs: List[Ufunc]):
     stubs, module_all = [], []
     for ufunc in ufuncs:
-        stubs.append(f'{ufunc.name}: Any')
+        stubs.append(f'{ufunc.name}: np.ufunc')
         if not ufunc.name.startswith('_'):
             module_all.append(f"'{ufunc.name}'")
     # jn is an alias for jv.
     module_all.append("'jn'")
+    stubs.append('jn: np.ufunc')
     module_all.sort()
     stubs.sort()
-    # Make sure jn goes last so that jv has been declared.
-    stubs.append('jn: Type[jv]')
 
     contents = STUBS.format(
         ALL=',\n    '.join(module_all),

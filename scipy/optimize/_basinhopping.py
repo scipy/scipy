@@ -308,7 +308,18 @@ class Metropolis(object):
         If new is higher than old, there is a chance it will be accepted,
         less likely for larger differences.
         """
-        w = math.exp(min(0, -float(energy_new - energy_old) * self.beta))
+        with np.errstate(invalid='ignore'):
+            # The energy values being fed to Metropolis are 1-length arrays, and if
+            # they are equal, their difference is 0, which gets multiplied by beta,
+            # which is inf, and array([0]) * float('inf') causes
+            #
+            # RuntimeWarning: invalid value encountered in multiply
+            #
+            # Ignore this warning so so when the algorithm is on a flat plane, it always
+            # accepts the step, to try to move off the plane.
+            prod = -(energy_new - energy_old) * self.beta
+            w = math.exp(min(0, prod))
+
         rand = self.random_gen.uniform()
         return w >= rand
 
