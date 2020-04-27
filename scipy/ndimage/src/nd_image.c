@@ -1102,7 +1102,7 @@ static PyObject *Py_BinaryErosion2(PyObject *obj, PyObject *args)
     if (!_validate_origin(array, origin)) {
         goto exit;
     }
-    if (NpyCapsule_Check(cobj)) {
+    if (PyCapsule_CheckExact(cobj)) {
         NI_CoordinateList *cobj_data = NpyCapsule_AsVoidPtr(cobj);
         if (!NI_BinaryErosion2(array, strct, mask, niter, origin.ptr, invert,
                                &cobj_data)) {

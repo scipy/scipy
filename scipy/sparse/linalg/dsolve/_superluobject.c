@@ -811,13 +811,13 @@ PyObject *newSuperLUObject(SuperMatrix * A, PyObject * option_dict,
     char *s = "";                               \
     PyObject *tmpobj = NULL;                    \
     if (input == Py_None) return 1;             \
-    if (PyString_Check(input)) {                \
-        s = PyString_AS_STRING(input);          \
+    if (PyBytes_Check(input)) {                \
+        s = PyBytes_AS_STRING(input);          \
     }                                           \
     else if (PyUnicode_Check(input)) {          \
         tmpobj = PyUnicode_AsASCIIString(input);\
         if (tmpobj == NULL) return 0;           \
-        s = PyString_AS_STRING(tmpobj);         \
+        s = PyBytes_AS_STRING(tmpobj);         \
     }                                           \
     else if (PyInt_Check(input)) {              \
         i = PyInt_AsLong(input);                \
@@ -1008,7 +1008,7 @@ static int droprule_cvt(PyObject * input, int *value)
 	*value = PyInt_AsLong(input);
 	return 1;
     }
-    else if (PyString_Check(input) || PyUnicode_Check(input)) {
+    else if (PyBytes_Check(input) || PyUnicode_Check(input)) {
         /* Comma-separated string */
         char *fmt = "s";
         if (PyBytes_Check(input)) {
