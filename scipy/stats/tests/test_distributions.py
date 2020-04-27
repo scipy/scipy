@@ -5780,11 +5780,21 @@ class TestArgus:
         x = stats.argus.rvs(50, size=500, random_state=325)
         assert_almost_equal(stats.argus(50).mean(), x.mean(), decimal=4)
 
-    def test_argus_rvs_ratio_uniforms(self):
-        # test that the ratio of uniforms algorithms works for chi > 2.611
-        x = stats.argus.rvs(3.5, size=1500, random_state=1535)
-        assert_almost_equal(stats.argus(3.5).mean(), x.mean(), decimal=3)
-        assert_almost_equal(stats.argus(3.5).std(), x.std(), decimal=3)
+    def test_rvs_small_chi(self):
+        # chi < 1: rejection method
+        x = stats.argus.rvs(0.1, size=500, random_state=325)
+        _, p = stats.kstest(x, "argus", (0.1, ))
+        assert_(p > 0.05)
+
+    @pytest.mark.parametrize('chi, random_state', [
+            [0.1, 325],   # chi < 1: rejection method
+            [3.5, 135]    # for chi > 1.825, transform conditional Gamma distr.
+        ])
+    def test_rvs_conditional_gamma(self, chi, random_state):
+        # for chi > 1.825, rvs transforms a conditional Gamma distribution
+        x = stats.argus.rvs(chi, size=500, random_state=random_state)
+        _, p = stats.kstest(x, "argus", (chi, ))
+        assert_(p > 0.05)
 
     # Expected values were computed with mpmath.
     @pytest.mark.parametrize('chi, expected_mean',

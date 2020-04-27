@@ -21,7 +21,6 @@ import scipy.special as sc
 import scipy.special._ufuncs as scu
 from scipy._lib._util import _lazyselect, _lazywhere
 from . import _stats
-from ._rvs_sampling import rvs_ratio_uniforms
 from ._tukeylambda_stats import (tukeylambda_variance as _tlvar,
                                  tukeylambda_kurtosis as _tlkurt)
 from ._distn_infrastructure import (
@@ -9124,76 +9123,79 @@ class argus_gen(rv_continuous):
         return out
 
     def _rvs_scalar(self, chi, numsamples=None, random_state=None):
-        # if chi <= 2.611:
+        # if chi <= 1.825:
         # use rejection method, see Devroye:
         # Non-Uniform Random Variate Generation, 1986, section II.3.2.
         # write: self.pdf = c * g(x) * h(x), where
         # h is [0,1]-valued and g is a density
-        # g(x) = d1 * chi**2 * x * exp(-chi**2 * (1 - x**2) / 2), 0 <= x <= 1
+        # we use two ways to write f
+        #
+        # Case 1:
+        # note that the pdf of ARGUS converges to 3*x*sqrt(1-x**2)
+        # write g(x) = 3*x*sqrt(1-x**2), h(x) = exp(-chi**2 (1-x**2) / 2)
+        #
+        # Case 2:
+        # g(x) = chi**2 * x * exp(-chi**2 * (1-x**2)/2) / (1 - exp(chi**2 /2))
         # h(x) = sqrt(1 - x**2), 0 <= x <= 1
-        # Integrating g, we get:
-        # G(x) = d1 * exp(-chi**2 * (1 - x**2) / 2) - d2
-        # d1 and d2 are determined by G(0) = 0 and G(1) = 1
-        # d1 = 1 / (1 - exp(-0.5 * chi**2))
-        # d2 = 1 / (exp(0.5 * chi**2) - 1)
-        # => G(x) = (exp(chi**2 * x**2 /2) - 1) / (exp(chi**2 / 2) - 1)
-        # expected number of iterations is c with
-        # c = -np.expm1(-0.5 * chi**2) * chi / (_norm_pdf_C * _argus_phi(chi))
-        # note that G can be inverted easily, so we can sample
-        # rvs from this distribution
-        # G_inv(y) = sqrt(2 * log(1 + (exp(chi**2 / 2) - 1) * y) / chi**2)
-        # to avoid an overflow of exp(chi**2 / 2), it is convenient to write
-        # G_inv(y) = sqrt(1 + 2 * log(exp(-chi**2 / 2) * (1-y) + y) / chi**2)
         #
-        # if chi > 2.611:
-        # use ratio of uniforms method applied to a transformed variable of X
-        # (X is ARGUS with parameter chi):
-        # Y = chi * sqrt(1 - X**2) has density proportional to
-        # u**2 * exp(-u**2 / 2) on [0, chi] (Maxwell distribution conditioned
-        # on [0, chi]). Apply ratio of uniforms to this density to generate
-        # samples of Y and convert back to X
+        # In both cases, the cdf G of g can be easily computed to apply the
+        # rejection method. We use case 1 for chi < 1,
+        # case 2 for 1 <= chi <= 1.825
         #
-        # The expected number of iterations using the rejection method
-        # increases with increasing chi, whereas the expected number of
-        # iterations using the ratio of uniforms method decreases with
-        # increasing chi. The crossover occurs where
-        # chi*(1 - exp(-0.5*chi**2)) = 8*sqrt(2)*exp(-1.5) => chi ~ 2.611
-        # Switching algorithms at chi=2.611 means that the expected number of
-        # iterations is always below 2.2.
+        # if chi > 1.825:
+        # use relation to the Gamma distribution: if X is ARGUS with parameter
+        # chi), then Y = chi**2 * (1 - X**2) / 2 has density proportional to
+        # sqrt(u) * exp(-u) on [0, chi**2 / 2], i.e. a Gamma(3/2) distribution
+        # conditioned on [0, chi**2 / 2]).
+        #
+        # The points 1 and 1.825 are determined by a comparison of the
+        # runtime of the different methods
 
-        if chi <= 2.611:
-            # use rejection method
-            size1d = tuple(np.atleast_1d(numsamples))
-            N = int(np.prod(size1d))
-            x = np.zeros(N)
-            echi = np.exp(-chi**2 / 2)
-            simulated = 0
+        size1d = tuple(np.atleast_1d(numsamples))
+        N = int(np.prod(size1d))
+        x = np.zeros(N)
+        simulated = 0
+        chi2 = chi * chi
+
+        if chi < 1:
+            d = -chi2 / 2
             while simulated < N:
                 k = N - simulated
                 u = random_state.uniform(size=k)
                 v = random_state.uniform(size=k)
-                # acceptance condition: u <= h(G_inv(v)). This simplifies to
-                z = 2 * np.log(echi * (1 - v) + v) / chi**2
+                z = v**(2/3)
+                accept = (np.log(u) <= d * z)
+                num_accept = np.sum(accept)
+                if num_accept > 0:
+                    rvs = np.sqrt(1 - z[accept])
+                    x[simulated:(simulated + num_accept)] = rvs
+                    simulated += num_accept
+        elif chi <= 1.825:
+            echi = np.exp(-chi2 / 2)
+            while simulated < N:
+                k = N - simulated
+                u = random_state.uniform(size=k)
+                v = random_state.uniform(size=k)
+                z = 2 * np.log(echi * (1 - v) + v) / chi2
                 accept = (u**2 + z <= 0)
                 num_accept = np.sum(accept)
                 if num_accept > 0:
-                    # rvs follow a distribution with density g: rvs = G_inv(v)
                     rvs = np.sqrt(1 + z[accept])
                     x[simulated:(simulated + num_accept)] = rvs
                     simulated += num_accept
-
-            return np.reshape(x, size1d)
         else:
-            # use ratio of uniforms method
-            def f(x):
-                return np.where((x >= 0) & (x <= chi),
-                                np.exp(2*np.log(x) - x**2/2), 0)
+            # conditional Gamma
+            while simulated < N:
+                k = N - simulated
+                g = random_state.standard_gamma(1.5, size=k)
+                accept = (g <= chi2 / 2)
+                num_accept = np.sum(accept)
+                if num_accept > 0:
+                    x[simulated:(simulated + num_accept)] = g[accept]
+                    simulated += num_accept
+            x = np.sqrt(1 - 2 * x / chi2)
 
-            umax = np.sqrt(2) / np.exp(0.5)
-            vmax = 4 / np.exp(1)
-            z = rvs_ratio_uniforms(f, umax, 0, vmax, size=numsamples,
-                                   random_state=random_state)
-            return np.sqrt(1 - z*z / chi**2)
+        return np.reshape(x, size1d)
 
     def _stats(self, chi):
         # need to ensure that dtype is float
