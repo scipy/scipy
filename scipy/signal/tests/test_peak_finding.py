@@ -839,10 +839,9 @@ class TestFindPeaksCwt(object):
 
         found_locs = find_peaks_cwt(test_data, widths, gap_thresh=2, min_snr=3,
                                          min_length=None, window_size=None)
-        np.testing.assert_raises(AssertionError, np.testing.assert_array_equal,
-                                 len(found_locs), len(act_locs),
-                                 "Unexpectedly found all maximum locations")
+        with pytest.raises(AssertionError):
+            assert_array_equal(len(found_locs), len(act_locs))
         found_locs = find_peaks_cwt(test_data, widths, gap_thresh=2, min_snr=3,
                                          min_length=None, window_size=20)
-        np.testing.assert_array_equal(len(found_locs), len(act_locs),
-                        "Found maximum locations did not equal those expected")
+        assert_array_equal(len(found_locs), len(act_locs),
+                           "Found maximum locations did not equal those expected")
