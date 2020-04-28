@@ -1743,26 +1743,22 @@ def test_syequb():
         assert_equal(np.log2(s).astype(int), desired_log2s)
 
 
-@pytest.mark.skip(reason="This fails inexplicably when some ?gejsv tests "
-                  "run. See gh-11902.")
-@pytest.mark.parametrize("dtype", COMPLEX_DTYPES)
-def test_heequb(dtype):
-    desired_log2s = np.array([[-2, -7, -2, -4, -2, -3, -2, -2, -1, -2],
-                              [1, -10, 0, -6, -1, -4, -1, -2, -1, -2]])
-    heequb = get_lapack_funcs('heequb', dtype=dtype)
-
-    d = np.array([dtype(1j) * 2**x for x in range(-5, 5)], dtype=dtype)
-    A = np.diag(d)
-    subdiags = np.array([dtype(1j) * 2**(9-x) for x in range(9)],
-                        dtype=dtype)
-    A[range(1, 10), range(0, 9)] = subdiags
-    s, scond, amax, info = heequb(A, lower=1)
-
+def test_heequb():
+    # zheequb has a bug for versions =< LAPACK 3.9.0
+    # See Reference-LAPACK gh-61 and gh-408
+    # Hence the zheequb test is customized accordingly to avoid
+    # work scaling.
+    A = np.diag([2]*5 + [1002]*5) + np.diag(np.ones(9), k=1)*1j
+    s, scond, amax, info = lapack.zheequb(A)
     assert_equal(info, 0)
-    try:
-        assert_allclose(np.log2(s), desired_log2s[0, :])
-    except AssertionError as e:
-        assert_allclose(np.log2(s), desired_log2s[1, :])
+    assert_allclose(np.log2(s), [0., -1.]*2 + [0.] + [-4]*5)
+
+    A = np.diag(2**np.abs(np.arange(-5, 6)) + 0j)
+    A[5, 5] = 1024
+    A[5, 0] = 16j
+    s, scond, amax, info = lapack.cheequb(A.astype(np.complex64), lower=1)
+    assert_equal(info, 0)
+    assert_allclose(np.log2(s), [-2, -1, -1, 0, 0, -5, 0, -1, -1, -2, -2])
 
 
 def test_getc2_gesc2():
@@ -1802,9 +1798,8 @@ def test_getc2_gesc2():
 @pytest.mark.parametrize('jobu', range(4))  # 'U', 'F', 'W', 'N'
 @pytest.mark.parametrize('jobv', range(4))  # 'V', 'J', 'W', 'N'
 @pytest.mark.parametrize('jobr', [0, 1])
-@pytest.mark.parametrize('jobt', [0, 1])  # When `jobt` and `jobp` are parametrized,
-@pytest.mark.parametrize('jobp', [0, 1])  # test_heequb fails. See gh-11902.
-def test_gejsv_general(size, dtype, joba, jobu, jobv, jobr, jobt, jobp):
+@pytest.mark.parametrize('jobp', [0, 1])
+def test_gejsv_general(size, dtype, joba, jobu, jobv, jobr, jobp, jobt=0):
     """Test the lapack routine ?gejsv.
 
     This function tests that a singular value decomposition can be performed
@@ -1826,6 +1821,9 @@ def test_gejsv_general(size, dtype, joba, jobu, jobv, jobr, jobt, jobp):
     Although all arguments are tested, the tests only check that the correct
     solution is returned - NOT that the prescribed actions are performed
     internally.
+
+    jobt is, as of v3.9.0, still experimental and removed to cut down number of
+    test cases. However keyword itself is tested externally.
     """
     seed(42)
 
