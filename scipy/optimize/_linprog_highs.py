@@ -21,7 +21,7 @@ from scipy.sparse import csc_matrix, vstack, issparse
 
 def _replace_inf(x):
     # Replace `np.inf` with CONST_INF
-    infs = (np.abs(x) == np.inf)
+    infs = np.isinf(x)
     x[infs] = np.sign(x[infs])*CONST_INF
     return x
 
