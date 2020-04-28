@@ -542,9 +542,14 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     if solver_options.pop('presolve', True):
         rr = solver_options.pop('rr', True)
         (lp, revstack, complete, status, message, presolve_effect) = _presolve(lp, rr, tol)
+        # [nvars eliminated neqs eliminated redundant nineqs eliminated]
+        print("Presolve: nvars={:d}-elim={:d} neqs={:d}-elim={:d}-redu={:d} nineq={:d}-elim{:d}".
+              format(presolve_effect[0], presolve_effect[1], presolve_effect[2],
+                     presolve_effect[3], presolve_effect[4], presolve_effect[5], presolve_effect[6]))
     else:
         message = None
         presolve_effect = None
+        print("Presolve: not carried out")
 
     # print("After presolve():")
     # print("_linprog(): lp.c=", lp.c)

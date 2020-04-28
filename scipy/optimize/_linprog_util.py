@@ -602,7 +602,7 @@ def _presolve(lp, rr, tol=1e-9):
 
     # Output: [nvars eliminated neqs eliminated redundant nineqs eliminated]
     presolve_effect = [p_org["vars"], p_org["vars"] - p_red["vars"],
-                       p_org["eqs"], p_org["eqs"] - p_red["eqs"], 
+                       p_org["eqs"], p_org["eqs"] - p_red["eqs"],
                        0, p_org["ineqs"],
                        p_org["ineqs"] - p_red["ineqs"]]
 
