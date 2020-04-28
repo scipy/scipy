@@ -398,18 +398,7 @@ def highs_wrapper(
     cdef HighsSolution solution
 
     # If the status is bad, don't look up the solution
-    if model_status in [
-            HighsModelStatusNOTSET,
-            HighsModelStatusLOAD_ERROR,
-            HighsModelStatusMODEL_ERROR,
-            HighsModelStatusMODEL_EMPTY,
-            HighsModelStatusPRESOLVE_ERROR,
-            HighsModelStatusSOLVE_ERROR,
-            HighsModelStatusPOSTSOLVE_ERROR,
-            HighsModelStatusPRIMAL_INFEASIBLE,
-            HighsModelStatusPRIMAL_UNBOUNDED,
-            HighsModelStatusREACHED_ITERATION_LIMIT,
-    ]:
+    if info.primal_status != PrimalDualStatusSTATUS_FEASIBLE_POINT:
         return {
             'status': <int> model_status,
             'message': highs.highsModelStatusToString(model_status).decode(),
