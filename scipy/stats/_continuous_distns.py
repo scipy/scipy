@@ -4195,6 +4195,101 @@ class laplace_gen(rv_continuous):
     def _entropy(self):
         return np.log(2)+1
 
+    def fit(self, data, *args, **kwds):
+        """
+        Maximum likelihood estimate for the location and scale parameters.
+
+        Exact forumulas are used to calculate the loc and scale, unless they
+        are provided in floc or fscale.
+
+        Parameters
+        ----------
+        data : array_like
+            Data to use in calculating the maximum likelihood estimate.
+        floc : float, optional
+            Hold the location parameter fixed to the specified value.
+        fscale : float, optional
+            Hold the scale parameter fixed to the specified value.
+
+        Returns
+        -------
+        loc, scale : float
+            Maximum likelihood estimates for the location and scale.
+
+        Notes
+        -----
+        An error is raised if floc and fscale are given. A warning is raised
+        if a provided parameter does not match MLE equations to indicate that
+        the optimizer will be used to determine the best fit.
+        """
+        if len(args) > 0:
+            raise TypeError("Too many arguments.")
+
+        floc = kwds.pop('floc', None)
+        fscale = kwds.pop('fscale', None)
+
+        _remove_optimizer_parameters(kwds)
+
+        if floc is not None and fscale is not None:
+            # This check is for consistency with `rv_continuous.fit`.
+            # Without this check, this function would just return the
+            # parameters that were given.
+            raise ValueError("All parameters fixed. There is nothing to "
+                             "optimize.")
+
+        data = np.asarray(data)
+
+        if not np.isfinite(data).all():
+            raise RuntimeError("The data contains non-finite values.")
+
+        # MLE for the laplace distribution
+        # --------------------------------
+        # scale is given by the equation
+        #    \frac{1}{n}\sum_{i=0}^{n}{|x_i - loc|}
+        # loc is given by
+        #    data.median()
+        # Source: Statistical Distributions, 3rd Edition. Evans, Hastings,
+        #        and Peacock (2000),(pg. 124)
+        # If either floc or fscale are provided but do not match MLE
+        # equations, the optimizer will be used to determine the other value.
+
+        # Predetermine MLE results for comparison
+
+        loc = np.median(data)
+
+        scale = 0
+        n = len(data)
+        for i in range(n):
+            scale += np.abs(data[i] - loc)
+        scale = scale/n
+
+        if ((floc is None or np.isclose(floc, loc)) and
+                (fscale is None or np.isclose(fscale, scale))):
+            # Maximum Likelihood Equations used in 3 cases:
+            #   * floc and fscale are not set
+            #   * only floc set, matches MLE equation
+            #   * only fscale set, matches MLE equation
+            return loc, scale
+        else:
+            # Raise warning to indicate optimizer usage for loc or scale
+            if floc is not None:
+                # use optimizer to determine scale for custom floc
+                msg = ("Supplied floc did not match the maxmimum "
+                       "likelihood estimate equation, using optimizer "
+                       "to determine scale")
+                warnings.warn(msg, RuntimeWarning)
+                return super(laplace_gen, self).fit(data, floc=floc, *args,
+                                                    **kwds)
+
+            if fscale is not None:
+                # use optimizer to determine loc for custom fscale
+                msg = ("Supplied fscale did not match the maxmimum "
+                       "likelihood estimate equation, using optimizer "
+                       "to determine loc")
+                warnings.warn(msg, RuntimeWarning)
+                return super(laplace_gen, self).fit(data, fscale=fscale, *args,
+                                                    **kwds)
+
 
 laplace = laplace_gen(name='laplace')
 
