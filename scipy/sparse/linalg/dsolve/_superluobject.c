@@ -11,7 +11,6 @@
 #define PY_ARRAY_UNIQUE_SYMBOL _scipy_sparse_superlu_ARRAY_API
 
 #include "_superluobject.h"
-#include "numpy/npy_3kcompat.h"
 #include <ctype.h>
 
 
@@ -819,8 +818,8 @@ PyObject *newSuperLUObject(SuperMatrix * A, PyObject * option_dict,
         if (tmpobj == NULL) return 0;           \
         s = PyBytes_AS_STRING(tmpobj);         \
     }                                           \
-    else if (PyInt_Check(input)) {              \
-        i = PyInt_AsLong(input);                \
+    else if (PyLong_Check(input)) {              \
+        i = PyLong_AsLong(input);                \
     }
 
 #define ENUM_CHECK_FINISH(message)              \
@@ -1004,8 +1003,8 @@ static int droprule_cvt(PyObject * input, int *value)
         /* Leave as default */
         return 1;
     }
-    else if (PyInt_Check(input)) {
-        *value = PyInt_AsLong(input);
+    else if (PyLong_Check(input)) {
+        *value = PyLong_AsLong(input);
         return 1;
     }
     else if (PyBytes_Check(input) || PyUnicode_Check(input)) {
@@ -1068,7 +1067,7 @@ static int int_cvt(PyObject * input, int *value)
 {
     if (input == Py_None)
         return 1;
-    *value = PyInt_AsLong(input);
+    *value = PyLong_AsLong(input);
     if (PyErr_Occurred())
         return 0;
     return 1;
