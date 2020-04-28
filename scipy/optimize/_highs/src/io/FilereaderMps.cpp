@@ -21,7 +21,7 @@
 
 FilereaderRetcode FilereaderMps::readModelFromFile(const HighsOptions& options,
                                                    HighsLp& model) {
-  const char* filename = options.model_file.c_str();
+  const std::string filename = options.model_file;
 
   // if free format parser
   // Parse file and return status.
@@ -45,12 +45,12 @@ FilereaderRetcode FilereaderMps::readModelFromFile(const HighsOptions& options,
   }
 
   // else use fixed format parser
-  FilereaderRetcode return_code = readMPS(
-      options.logfile, filename, -1, -1, model.numRow_, model.numCol_,
-      model.numInt_, model.sense_, model.offset_, model.Astart_, model.Aindex_,
-      model.Avalue_, model.colCost_, model.colLower_, model.colUpper_,
-      model.rowLower_, model.rowUpper_, model.integrality_, model.col_names_,
-      model.row_names_, options.keep_n_rows);
+  FilereaderRetcode return_code =
+      readMPS(options.logfile, filename, -1, -1, model.numRow_, model.numCol_,
+              model.sense_, model.offset_, model.Astart_, model.Aindex_,
+              model.Avalue_, model.colCost_, model.colLower_, model.colUpper_,
+              model.rowLower_, model.rowUpper_, model.integrality_,
+              model.col_names_, model.row_names_, options.keep_n_rows);
   if (namesWithSpaces(model.numCol_, model.col_names_)) {
     HighsLogMessage(options.logfile, HighsMessageType::WARNING,
                     "Model has column names with spaces");
@@ -69,14 +69,14 @@ FilereaderRetcode FilereaderMps::readModelFromFile(const HighsOptions& options,
 }
 
 HighsStatus FilereaderMps::writeModelToFile(const HighsOptions& options,
-                                            const char* filename,
+                                            const std::string filename,
                                             HighsLp& model) {
   return writeLpAsMPS(options, filename, model);
 }
 
-FilereaderRetcode FilereaderMps::readModelFromFile(const char* filename,
+FilereaderRetcode FilereaderMps::readModelFromFile(const std::string filename,
                                                    HighsModelBuilder& model) {
-  if (filename) {
+  if (filename.c_str()) {
   }  // surpress warning.
   if (model.getNumberOfVariables() > 0) {
   }  // surpress warning.

@@ -13,9 +13,7 @@
 
 #include "../external/cxxopts.hpp"
 #include "io/HighsIO.h"
-#include "io/LoadProblem.h"
-//#include "lp_data/HighsOptions.h"
-#include "LoadOptions.h"
+#include "io/LoadOptions.h"
 #include "util/stringutil.h"
 
 bool loadOptions(int argc, char** argv, HighsOptions& options) {

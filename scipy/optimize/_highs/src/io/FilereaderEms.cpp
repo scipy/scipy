@@ -25,11 +25,11 @@ FilereaderRetcode FilereaderEms::readModelFromFile(const HighsOptions& options,
   std::ifstream f;
   int i;
 
-  const char* filename = options.model_file.c_str();
+  const std::string filename = options.model_file;
   f.open(filename, std::ios::in);
   if (f.is_open()) {
     std::string line;
-    int numCol, numRow, AcountX;
+    int numCol, numRow, AcountX, num_int;
     bool indices_from_one = false;
 
     // counts
@@ -65,7 +65,6 @@ FilereaderRetcode FilereaderEms::readModelFromFile(const HighsOptions& options,
 
     model.numCol_ = numCol;
     model.numRow_ = numRow;
-    model.nnz_ = AcountX;
 
     // matrix
     std::getline(f, line);
@@ -151,11 +150,11 @@ FilereaderRetcode FilereaderEms::readModelFromFile(const HighsOptions& options,
     while (trim(line) == "" && f) std::getline(f, line);
 
     if (trim(line) == "integer_columns") {
-      f >> model.numInt_;
-      if (model.numInt_) {
+      f >> num_int;
+      if (num_int) {
         model.integrality_.resize(model.numCol_, 0);
         int iCol;
-        for (i = 0; i < model.numInt_; i++) {
+        for (i = 0; i < num_int; i++) {
           f >> iCol;
           if (indices_from_one) iCol--;
           model.integrality_[iCol] = 1;
@@ -214,10 +213,11 @@ FilereaderRetcode FilereaderEms::readModelFromFile(const HighsOptions& options,
 }
 
 HighsStatus FilereaderEms::writeModelToFile(const HighsOptions& options,
-                                            const char* filename,
+                                            const std::string filename,
                                             HighsLp& model) {
   std::ofstream f;
   f.open(filename, std::ios::out);
+  int num_nz = model.Astart_[model.numCol_];
 
   // counts
   f << "n_rows" << std::endl;
@@ -225,18 +225,18 @@ HighsStatus FilereaderEms::writeModelToFile(const HighsOptions& options,
   f << "n_columns" << std::endl;
   f << model.numCol_ << std::endl;
   f << "n_matrix_elements" << std::endl;
-  f << model.nnz_ << std::endl;
+  f << num_nz << std::endl;
 
   // matrix
   f << "matrix" << std::endl;
   for (int i = 0; i < model.numCol_ + 1; i++) f << model.Astart_[i] << " ";
   f << std::endl;
 
-  for (int i = 0; i < model.nnz_; i++) f << model.Aindex_[i] << " ";
+  for (int i = 0; i < num_nz; i++) f << model.Aindex_[i] << " ";
   f << std::endl;
 
   f << std::setprecision(9);
-  for (int i = 0; i < model.nnz_; i++) f << model.Avalue_[i] << " ";
+  for (int i = 0; i < num_nz; i++) f << model.Avalue_[i] << " ";
   f << std::endl;
 
   // cost and bounds
@@ -258,7 +258,8 @@ HighsStatus FilereaderEms::writeModelToFile(const HighsOptions& options,
   f << std::endl;
 
   f << "column_costs" << std::endl;
-  for (int i = 0; i < model.numCol_; i++) f << model.colCost_[i] << " ";
+  for (int i = 0; i < model.numCol_; i++)
+    f << (int)model.sense_ * model.colCost_[i] << " ";
   f << std::endl;
 
   if (model.row_names_.size() > 0 && model.col_names_.size() > 0) {
@@ -276,16 +277,16 @@ HighsStatus FilereaderEms::writeModelToFile(const HighsOptions& options,
   // todo: integer variables.
 
   if (model.offset_ != 0)
-    f << "shift" << std::endl << model.offset_ << std::endl;
+    f << "shift" << std::endl << (int)model.sense_ * model.offset_ << std::endl;
 
   f << std::endl;
   f.close();
   return HighsStatus::OK;
 }
 
-FilereaderRetcode FilereaderEms::readModelFromFile(const char* filename,
+FilereaderRetcode FilereaderEms::readModelFromFile(const std::string filename,
                                                    HighsModelBuilder& model) {
-  if (filename) {
+  if (filename.c_str()) {
   }  // surpress warning.
   if (model.getNumberOfVariables() > 0) {
   }  // surpress warning.

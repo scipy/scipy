@@ -1557,6 +1557,15 @@ HighsStatus changeBounds(const HighsOptions& options, const char* type,
   return HighsStatus::OK;
 }
 
+int getNumInt(const HighsLp& lp) {
+  int num_int = 0;
+  if (lp.integrality_.size()) {
+    for (int iCol = 0; iCol < lp.numCol_; iCol++)
+      if (lp.integrality_[iCol]) num_int++;
+  }
+  return num_int;
+}
+
 HighsStatus getLpCosts(const HighsLp& lp, const int from_col, const int to_col,
                        double* XcolCost) {
   if (from_col < 0 || to_col >= lp.numCol_) return HighsStatus::Error;
@@ -1614,59 +1623,6 @@ HighsStatus getLpMatrixCoefficient(const HighsLp& lp, const int Xrow,
   return HighsStatus::OK;
 }
 
-HighsStatus writeLpAsMPS(const HighsOptions& options, const char* filename,
-                         const HighsLp& lp, const bool free_format) {
-  bool warning_found = false;
-  bool have_col_names = lp.col_names_.size();
-  bool have_row_names = lp.row_names_.size();
-  std::vector<std::string> local_col_names;
-  std::vector<std::string> local_row_names;
-  local_col_names.resize(lp.numCol_);
-  local_row_names.resize(lp.numRow_);
-  //
-  // Initialise the local names to any existing names
-  if (have_col_names) local_col_names = lp.col_names_;
-  if (have_row_names) local_row_names = lp.row_names_;
-  //
-  // Normalise the column names
-  int max_col_name_length = HIGHS_CONST_I_INF;
-  if (!free_format) max_col_name_length = 8;
-  HighsStatus col_name_status = normaliseNames(
-      options, "Column", lp.numCol_, local_col_names, max_col_name_length);
-  if (col_name_status == HighsStatus::Error) return col_name_status;
-  warning_found = col_name_status == HighsStatus::Warning || warning_found;
-  //
-  // Normalise the row names
-  int max_row_name_length = HIGHS_CONST_I_INF;
-  if (!free_format) max_row_name_length = 8;
-  HighsStatus row_name_status = normaliseNames(
-      options, "Row", lp.numRow_, local_row_names, max_row_name_length);
-  if (row_name_status == HighsStatus::Error) return col_name_status;
-  warning_found = row_name_status == HighsStatus::Warning || warning_found;
-
-  int max_name_length = std::max(max_col_name_length, max_row_name_length);
-  bool use_free_format = free_format;
-  if (!free_format) {
-    if (max_name_length > 8) {
-      HighsLogMessage(options.logfile, HighsMessageType::WARNING,
-                      "Maximum name length is %d so using free format rather "
-                      "than fixed format",
-                      max_name_length);
-      use_free_format = true;
-      warning_found = true;
-    }
-  }
-  HighsStatus write_status = writeMPS(
-      options.logfile, filename, lp.numRow_, lp.numCol_, lp.numInt_, lp.sense_,
-      lp.offset_, lp.Astart_, lp.Aindex_, lp.Avalue_, lp.colCost_, lp.colLower_,
-      lp.colUpper_, lp.rowLower_, lp.rowUpper_, lp.integrality_,
-      local_col_names, local_row_names, use_free_format);
-  if (write_status == HighsStatus::OK && warning_found)
-    return HighsStatus::Warning;
-  ;
-  return write_status;
-}
-
 // Methods for reporting an LP, including its row and column data and matrix
 //
 // Report the whole LP
@@ -1695,13 +1651,14 @@ void reportLpDimensions(const HighsOptions& options, const HighsLp& lp) {
     lp_num_nz = lp.Astart_[lp.numCol_];
   HighsPrintMessage(options.output, options.message_level, ML_MINIMAL,
                     "LP has %d columns, %d rows", lp.numCol_, lp.numRow_);
-  if (lp.numInt_) {
+  int num_int = getNumInt(lp);
+  if (num_int) {
     HighsPrintMessage(options.output, options.message_level, ML_MINIMAL,
                       ", %d nonzeros and %d integer columns\n", lp_num_nz,
-                      lp.numInt_);
+                      num_int);
   } else {
     HighsPrintMessage(options.output, options.message_level, ML_MINIMAL,
-                      " and %d nonzeros\n", lp_num_nz, lp.numInt_);
+                      " and %d nonzeros\n", lp_num_nz, num_int);
   }
 }
 
@@ -1745,7 +1702,7 @@ void reportLpColVectors(const HighsOptions& options, const HighsLp& lp) {
   if (lp.numCol_ <= 0) return;
   std::string type;
   int count;
-  bool have_integer_columns = lp.numInt_;
+  bool have_integer_columns = getNumInt(lp);
   bool have_col_names = lp.col_names_.size();
 
   HighsPrintMessage(options.output, options.message_level, ML_VERBOSE,
@@ -1834,12 +1791,12 @@ void reportLpColMatrix(const HighsOptions& options, const HighsLp& lp) {
   }
 }
 
-void reportMatrix(const HighsOptions& options, const char* message,
+void reportMatrix(const HighsOptions& options, const std::string message,
                   const int num_col, const int num_nz, const int* start,
                   const int* index, const double* value) {
   if (num_col <= 0) return;
   HighsPrintMessage(options.output, options.message_level, ML_VERBOSE,
-                    "%6s Index              Value\n", message);
+                    "%6s Index              Value\n", message.c_str());
   for (int col = 0; col < num_col; col++) {
     HighsPrintMessage(options.output, options.message_level, ML_VERBOSE,
                       "    %8d Start   %10d\n", col, start[col]);
@@ -1853,7 +1810,7 @@ void reportMatrix(const HighsOptions& options, const char* message,
 }
 
 #ifdef HiGHSDEV
-void analyseLp(const HighsLp& lp, const char* message) {
+void analyseLp(const HighsLp& lp, const std::string message) {
   vector<double> min_colBound;
   vector<double> min_rowBound;
   vector<double> colRange;
@@ -1871,7 +1828,7 @@ void analyseLp(const HighsLp& lp, const char* message) {
   for (int row = 0; row < lp.numRow_; row++)
     rowRange[row] = lp.rowUpper_[row] - lp.rowLower_[row];
 
-  printf("\n%s model data: Analysis\n", message);
+  printf("\n%s model data: Analysis\n", message.c_str());
   analyseVectorValues("Column costs", lp.numCol_, lp.colCost_);
   analyseVectorValues("Column lower bounds", lp.numCol_, lp.colLower_);
   analyseVectorValues("Column upper bounds", lp.numCol_, lp.colUpper_);
@@ -2258,8 +2215,8 @@ HighsStatus transformIntoEqualityProblem(const HighsLp& lp,
     assert((int)equality_lp.Aindex_.size() == (int)equality_lp.Avalue_.size());
     const int nnz = equality_lp.Astart_[equality_lp.numCol_];
 
-    if (lp.rowLower_[row] == -HIGHS_CONST_INF &&
-        lp.rowUpper_[row] == HIGHS_CONST_INF) {
+    if (lp.rowLower_[row] <= -HIGHS_CONST_INF &&
+        lp.rowUpper_[row] >= HIGHS_CONST_INF) {
       // free row
       equality_lp.Astart_.push_back(nnz + 1);
       equality_lp.Aindex_.push_back(row);
@@ -2270,7 +2227,7 @@ HighsStatus transformIntoEqualityProblem(const HighsLp& lp,
       equality_lp.colUpper_.push_back(HIGHS_CONST_INF);
       equality_lp.colCost_.push_back(0);
     } else if (lp.rowLower_[row] > -HIGHS_CONST_INF &&
-               lp.rowUpper_[row] == HIGHS_CONST_INF) {
+               lp.rowUpper_[row] >= HIGHS_CONST_INF) {
       // only lower bound
       rhs[row] = lp.rowLower_[row];
 
@@ -2282,7 +2239,7 @@ HighsStatus transformIntoEqualityProblem(const HighsLp& lp,
       equality_lp.colLower_.push_back(0);
       equality_lp.colUpper_.push_back(HIGHS_CONST_INF);
       equality_lp.colCost_.push_back(0);
-    } else if (lp.rowLower_[row] == -HIGHS_CONST_INF &&
+    } else if (lp.rowLower_[row] <= -HIGHS_CONST_INF &&
                lp.rowUpper_[row] < HIGHS_CONST_INF) {
       // only upper bound
       rhs[row] = lp.rowUpper_[row];

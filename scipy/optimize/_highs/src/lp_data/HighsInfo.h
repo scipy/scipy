@@ -151,6 +151,8 @@ class HighsInfo : public HighsInfoStruct {
     if (records.size() > 0) deleteRecords();
   }
 
+  void clear();
+
  private:
   void deleteRecords() {
     for (unsigned int i = 0; i < records.size(); i++) delete records[i];
@@ -198,7 +200,7 @@ class HighsInfo : public HighsInfoStruct {
 
     record_int = new InfoRecordInt("num_primal_infeasibilities",
                                    "Number of primal infeasibilities", advanced,
-                                   &num_primal_infeasibilities, 0);
+                                   &num_primal_infeasibilities, -1);
     records.push_back(record_int);
 
     record_double = new InfoRecordDouble(
@@ -213,7 +215,7 @@ class HighsInfo : public HighsInfoStruct {
 
     record_int = new InfoRecordInt("num_dual_infeasibilities",
                                    "Number of dual infeasibilities", advanced,
-                                   &num_dual_infeasibilities, 0);
+                                   &num_dual_infeasibilities, -1);
     records.push_back(record_int);
 
     record_double = new InfoRecordDouble("max_dual_infeasibility",

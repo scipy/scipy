@@ -793,25 +793,14 @@ HighsStatus HighsSimplexInterface::changeCoefficient(const int Xrow,
   return HighsStatus::OK;
 }
 
-void HighsSimplexInterface::shiftObjectiveValue(const double Xshift) {
-  printf(
-      "Where is shiftObjectiveValue required - so I can interpret what's "
-      "required\n");
-  // Update the LP objective value with the shift
-  highs_model_object.simplex_info_.dual_objective_value += Xshift;
-  // Update the LP offset with the shift
-  highs_model_object.lp_.offset_ += Xshift;
-  if (highs_model_object.simplex_lp_status_.valid) {
-    // Update the simplex LP offset with the shift
-    highs_model_object.simplex_lp_.offset_ += Xshift;
-  }
-}
-
 HighsStatus HighsSimplexInterface::changeObjectiveSense(const ObjSense Xsense) {
   HighsLp& lp = highs_model_object.lp_;
   if ((Xsense == ObjSense::MINIMIZE) != (lp.sense_ == ObjSense::MINIMIZE)) {
     // Flip the LP objective sense
     lp.sense_ = Xsense;
+    highs_model_object.scaled_model_status_ = HighsModelStatus::NOTSET;
+    highs_model_object.unscaled_model_status_ =
+        highs_model_object.scaled_model_status_;
   }
   HighsSimplexLpStatus& simplex_lp_status =
       highs_model_object.simplex_lp_status_;
@@ -821,9 +810,6 @@ HighsStatus HighsSimplexInterface::changeObjectiveSense(const ObjSense Xsense) {
         (simplex_lp.sense_ == ObjSense::MINIMIZE)) {
       // Flip the objective sense
       simplex_lp.sense_ = Xsense;
-      highs_model_object.scaled_model_status_ = HighsModelStatus::NOTSET;
-      highs_model_object.unscaled_model_status_ =
-          highs_model_object.scaled_model_status_;
     }
   }
   return HighsStatus::OK;
@@ -1718,4 +1704,8 @@ int HighsSimplexInterface::get_basic_indices(int* bind) {
       bind[row] = var;
   }
   return 0;
+}
+
+void HighsSimplexInterface::clearBasis() {
+  highs_model_object.simplex_lp_status_.has_basis = false;
 }

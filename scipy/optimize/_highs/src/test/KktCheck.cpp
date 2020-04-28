@@ -138,7 +138,7 @@ void KktCheck::chDualFeas() {
   // check values of z_j are dual feasible
   for (i = 0; i < numCol; i++) {
     // j not in L or U
-    if (colLower[i] == -HIGHS_CONST_INF && colUpper[i] == HIGHS_CONST_INF) {
+    if (colLower[i] <= -HIGHS_CONST_INF && colUpper[i] >= HIGHS_CONST_INF) {
       if (fabs(colDual[i]) > tol) {
         if (print == 1)
           std::cout << "Dual feasibility fail: l=-inf, x[" << cIndexRev[i]

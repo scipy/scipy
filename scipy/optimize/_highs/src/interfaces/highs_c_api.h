@@ -67,6 +67,12 @@ int Highs_writeModel(void* highs,          //!< HiGHS object reference
 );
 
 /*
+ * @brief
+ */
+int Highs_clearModel(void* highs  //!< HiGHS object reference
+);
+
+/*
  * @brief Runs HiGHS
  */
 int Highs_run(void* highs  //!< HiGHS object reference
@@ -169,6 +175,12 @@ int Highs_getHighsStringOptionValue(
     void* highs,         //!< HiGHS object reference
     const char* option,  //!< name of the option
     char* value  //!< pointer to allocated memory to store value of option
+);
+
+/*
+ * @brief
+ */
+int Highs_resetHighsOptions(void* highs  //!< HiGHS object reference
 );
 
 /*
@@ -287,6 +299,26 @@ int Highs_getReducedColumn(void* highs,         //!< HiGHS object reference
                            double* col_vector,  //!< Column required
                            int* col_num_nz,     //!< Number of nonzeros
                            int* col_indices     //!< Indices of nonzeros
+);
+
+/**
+ * @brief Passes a basis to HiGHS
+ */
+int Highs_setBasis(void* highs,           //!< HiGHS object reference
+                   const int* colstatus,  //!< Column status
+                   const int* rowstatus   //!< Row status
+);
+
+/**
+ * @brief Sets up a logical basis in HiGHS
+ */
+int Highs_setLogicalBasis(void* highs  //!< HiGHS object reference
+);
+
+/**
+ * @brief Returns the cumulative wall-clock time spent in Highs_run();
+ */
+double Highs_getHighsRunTime(void* highs  //!< HiGHS object reference
 );
 
 /**
@@ -645,6 +677,12 @@ int Highs_deleteRowsBySet(
 int Highs_deleteRowsByMask(
     void* highs,  //!< HiGHS object reference
     int* mask     //!< Full length array with 1 => delete; 0 => not
+);
+
+/**
+ * @brief Returns the value of infinity used by HiGHS
+ */
+double Highs_getHighsInfinity(void* highs  //!< HiGHS object reference
 );
 
 /**

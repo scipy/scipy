@@ -20,6 +20,7 @@
 #include "io/HighsIO.h"
 #include "lp_data/HConst.h"
 #include "simplex/HSimplex.h"
+#include "simplex/HSimplexDebug.h"
 #include "simplex/SimplexTimer.h"
 #include "util/HighsRandom.h"
 #include "util/HighsUtils.h"
@@ -27,7 +28,6 @@
 using std::runtime_error;
 
 HighsStatus HPrimal::solve() {
-  HighsSolutionParams& scaled_solution_params = workHMO.scaled_solution_params_;
   HighsSimplexInfo& simplex_info = workHMO.simplex_info_;
   HighsSimplexLpStatus& simplex_lp_status = workHMO.simplex_lp_status_;
   workHMO.scaled_model_status_ = HighsModelStatus::NOTSET;
@@ -102,47 +102,52 @@ HighsStatus HPrimal::solve() {
   solvePhase = ??InfeasCount > 0 ? 1 : 2;
   */
   solvePhase = 0;  // Frig to skip while (solvePhase) {*}
+  assert(simplex_lp_status.has_primal_objective_value);
+  simplex_info.updated_primal_objective_value =
+      simplex_info.primal_objective_value;
   solve_bailout = false;
-  // Check that the model is OK to solve:
-  //
-  // Level 0 just checks the flags
-  //
-  // Level 1 also checks that the basis is OK and that the necessary
-  // data in work* is populated.
-  //
-  // Level 2 (will) checks things like the nonbasic duals and basic
-  // primal values
-  //
-  // Level 3 (will) checks expensive things like the INVERT and
-  // steepeest edge weights
-  //
-  // ToDo Write primal simplex equivalent
-  /*
-  bool ok = ok_to_solve(workHMO, 1, solvePhase);
-  if (!ok) {printf("NOT OK TO SOLVE???\n"); cout << flush;}
-  assert(ok);
-  */
+  // Possibly bail out immediately if iteration limit is current value
+  if (bailout()) return HighsStatus::Warning;
+    // Check that the model is OK to solve:
+    //
+    // Level 0 just checks the flags
+    //
+    // Level 1 also checks that the basis is OK and that the necessary
+    // data in work* is populated.
+    //
+    // Level 2 (will) checks things like the nonbasic duals and basic
+    // primal values
+    //
+    // Level 3 (will) checks expensive things like the INVERT and
+    // steepeest edge weights
+    //
+    // ToDo Write primal simplex equivalent
+    /*
+    bool ok = ok_to_solve(workHMO, 1, solvePhase);
+    if (!ok) {printf("NOT OK TO SOLVE???\n"); cout << flush;}
+    assert(ok);
+    */
 #ifdef HiGHSDEV
-  //  reportSimplexLpStatus(simplex_lp_status, "Before HPrimal major solving
-  //  loop");
+    //  reportSimplexLpStatus(simplex_lp_status, "Before HPrimal major solving
+    //  loop");
 #endif
   // The major solving loop
 
   while (solvePhase) {
     /*
-    int it0 = scaled_solution_params.simplex_iteration_count;
+    int it0 = iteration_counts_.simplex;
     switch (solvePhase) {
       case 1:
         analysis->simplexTimerStart(SimplexPrimalPhase1Clock);
         solvePhase1();
         analysis->simplexTimerStop(SimplexPrimalPhase1Clock);
         simplex_info.primal_phase1_iteration_count +=
-    (scaled_solution_params.simplex_iteration_count - it0); break; case 2:
+    (iteration_counts_.simplex - it0); break; case 2:
         analysis->simplexTimerStart(SimplexPrimalPhase2Clock);
         solvePhase2();
         analysis->simplexTimerStop(SimplexPrimalPhase2Clock);
         simplex_info.primal_phase2_iteration_count +=
-    (scaled_solution_params.simplex_iteration_count - it0); break; case 4:
+    (iteration_counts_.simplex - it0); break; case 4:
     break; default: solvePhase = 0; break;
     }
     // Jump for primal
@@ -157,14 +162,14 @@ HighsStatus HPrimal::solve() {
              HighsModelStatus::REACHED_ITERATION_LIMIT);
   analysis = &workHMO.simplex_analysis_;
   if (solvePhase == 2) {
-    int it0 = scaled_solution_params.simplex_iteration_count;
+    int it0 = workHMO.iteration_counts_.simplex;
 
     analysis->simplexTimerStart(SimplexPrimalPhase2Clock);
     solvePhase2();
     analysis->simplexTimerStop(SimplexPrimalPhase2Clock);
 
     simplex_info.primal_phase2_iteration_count +=
-        (scaled_solution_params.simplex_iteration_count - it0);
+        (workHMO.iteration_counts_.simplex - it0);
     if (bailout()) return HighsStatus::Warning;
   }
   /*
@@ -182,14 +187,17 @@ void HPrimal::solvePhase2() {
 
   // When starting a new phase the (updated) primal objective function
   // value isn't known. Indicate this so that when the value
-  // computed from scratch in build() isn't checked against the the
+  // computed from scratch in rebuild() isn't checked against the the
   // updated value
-  simplex_lp_status.has_primal_objective_value = 0;
+  simplex_lp_status.has_primal_objective_value = false;
+  simplex_lp_status.has_dual_objective_value = false;
   // Set invertHint so that it's assigned when first tested
   invertHint = INVERT_HINT_NO;
   // Set solvePhase=2 so it's set if solvePhase2() is called directly
   solvePhase = 2;
   solve_bailout = false;
+  // Possibly bail out immediately if iteration limit is current value
+  if (bailout()) return;
   // Set up local copies of model dimensions
   solver_num_col = workHMO.simplex_lp_.numCol_;
   solver_num_row = workHMO.simplex_lp_.numRow_;
@@ -264,7 +272,6 @@ void HPrimal::solvePhase2() {
         break;
       }
     }
-    if (bailout()) return;
     // If the data are fresh from rebuild() and no flips have occurred, break
     // out of the outer loop to see what's ocurred
     if (simplex_lp_status.has_fresh_rebuild && num_flip_since_rebuild == 0)
@@ -290,8 +297,29 @@ void HPrimal::solvePhase2() {
 void HPrimal::primalRebuild() {
   HighsSimplexInfo& simplex_info = workHMO.simplex_info_;
   HighsSimplexLpStatus& simplex_lp_status = workHMO.simplex_lp_status_;
-  // Move this to Simplex class once it's created
-  //  simplex_method.record_pivots(-1, -1, 0);  // Indicate REINVERT
+
+  // Record whether the update objective value should be tested. If
+  // the objective value is known, then the updated objective value
+  // should be correct - once the correction due to recomputing the
+  // dual values has been applied.
+  //
+  // Note that computePrimalObjectiveValue sets
+  // has_primal_objective_value
+  //
+  // Have to do this before INVERT, as this permutes the indices of
+  // basic variables, and baseValue only corresponds to the new
+  // ordering once computePrimal has been called
+  const bool check_updated_objective_value =
+      simplex_lp_status.has_primal_objective_value;
+  double previous_primal_objective_value;
+  if (check_updated_objective_value) {
+    debugUpdatedObjectiveValue(workHMO, algorithm, solvePhase, "Before INVERT");
+    previous_primal_objective_value =
+        simplex_info.updated_primal_objective_value;
+  } else {
+    // Reset the knowledge of previous objective values
+    debugUpdatedObjectiveValue(workHMO, algorithm, -1, "");
+  }
 
   // Rebuild workHMO.factor_ - only if we got updates
   int sv_invertHint = invertHint;
@@ -324,41 +352,31 @@ void HPrimal::primalRebuild() {
   analysis->simplexTimerStop(ComputePrimalClock);
 
   // Primal objective section
+  //
   analysis->simplexTimerStart(ComputePrObjClock);
   computePrimalObjectiveValue(workHMO);
   analysis->simplexTimerStop(ComputePrObjClock);
 
-  double primal_objective_value = simplex_info.primal_objective_value;
-#ifdef HiGHSDEV
-  // Check the objective value maintained by updating against the
-  // value when computed exactly - so long as there is a value to
-  // check against
-  if (simplex_lp_status.has_primal_objective_value) {
-    double absPrimalObjectiveError = fabs(
-        simplex_info.updated_primal_objective_value - primal_objective_value);
-    double rlvPrimalObjectiveError =
-        absPrimalObjectiveError / max(1.0, fabs(primal_objective_value));
-    // TODO Investigate these Primal objective value errors
-    if (rlvPrimalObjectiveError >= 1e-8) {
-      HighsLogMessage(workHMO.options_.logfile, HighsMessageType::WARNING,
-                      "Primal objective value error |rel| = %12g (%12g)",
-                      absPrimalObjectiveError, rlvPrimalObjectiveError);
-    }
+  if (check_updated_objective_value) {
+    // Apply the objective value correction due to computing primal
+    // values from scratch.
+    const double primal_objective_value_correction =
+        simplex_info.primal_objective_value - previous_primal_objective_value;
+    simplex_info.updated_primal_objective_value +=
+        primal_objective_value_correction;
+    debugUpdatedObjectiveValue(workHMO, algorithm);
   }
-#endif
-  simplex_info.updated_primal_objective_value = primal_objective_value;
+  // Now that there's a new primal_objective_value, reset the updated
+  // value
+  simplex_info.updated_primal_objective_value =
+      simplex_info.primal_objective_value;
 
-  analysis->simplexTimerStart(ComputePrIfsClock);
-  computePrimalInfeasible(workHMO);
-  analysis->simplexTimerStop(ComputePrIfsClock);
+  computeSimplexInfeasible(workHMO);
+  // Determine whether simplex_info.num_primal_infeasibilities and
+  // simplex_info.num_dual_infeasibilities can be used
+  copySimplexInfeasible(workHMO);
 
-  analysis->simplexTimerStart(ComputeDuIfsClock);
-  computeDualInfeasible(workHMO);
-  analysis->simplexTimerStop(ComputeDuIfsClock);
-
-  analysis->simplexTimerStart(ReportRebuildClock);
   reportRebuild(sv_invertHint);
-  analysis->simplexTimerStop(ReportRebuildClock);
 
 #ifdef HiGHSDEV
   if (simplex_info.analyse_rebuild_time) {
@@ -368,8 +386,7 @@ void HPrimal::primalRebuild() {
         analysis->simplexTimerRead(IteratePrimalRebuildClock);
     printf(
         "Primal     rebuild %d (%1d) on iteration %9d: Total rebuild time %g\n",
-        total_rebuilds, sv_invertHint,
-        workHMO.scaled_solution_params_.simplex_iteration_count,
+        total_rebuilds, sv_invertHint, workHMO.iteration_counts_.simplex,
         total_rebuild_time);
   }
 #endif
@@ -431,8 +448,8 @@ void HPrimal::primalChooseColumn() {
         // Always take free
         // TODO: if we found free,
         // Then deal with it in dual phase 1
-        if (workLower[iCol] == -HIGHS_CONST_INF &&
-            workUpper[iCol] == HIGHS_CONST_INF) {
+        if (workLower[iCol] <= -HIGHS_CONST_INF &&
+            workUpper[iCol] >= HIGHS_CONST_INF) {
           columnIn = iCol;
           break;
         }
@@ -622,7 +639,9 @@ void HPrimal::primalUpdate() {
   simplex_info.updated_primal_objective_value +=
       workDual[columnIn] * thetaPrimal;
 
-  computePrimalInfeasible(workHMO);
+  // Why is the detailed primal infeasibility information needed?
+  computeSimplexPrimalInfeasible(workHMO);
+  copySimplexPrimalInfeasible(workHMO);
 
   // If flipped, then no need touch the pivots
   if (flipped) {
@@ -747,20 +766,18 @@ void HPrimal::primalUpdate() {
   }
   // Move this to Simplex class once it's created
   // simplex_method.record_pivots(columnIn, columnOut, alpha);
-  workHMO.scaled_solution_params_.simplex_iteration_count++;
+  workHMO.iteration_counts_.simplex++;
 
   // Report on the iteration
   iterationAnalysis();
 }
 
 void HPrimal::iterationAnalysisData() {
-  HighsSolutionParams& scaled_solution_params = workHMO.scaled_solution_params_;
   HighsSimplexInfo& simplex_info = workHMO.simplex_info_;
   analysis->simplex_strategy = SIMPLEX_STRATEGY_PRIMAL;
   analysis->edge_weight_mode = DualEdgeWeightMode::DANTZIG;
   analysis->solve_phase = solvePhase;
-  analysis->simplex_iteration_count =
-      scaled_solution_params.simplex_iteration_count;
+  analysis->simplex_iteration_count = workHMO.iteration_counts_.simplex;
   analysis->devex_iteration_count = 0;
   analysis->pivotal_row_index = rowOut;
   analysis->leaving_variable = columnOut;
@@ -778,13 +795,11 @@ void HPrimal::iterationAnalysisData() {
   analysis->numerical_trouble = numericalTrouble;
   analysis->objective_value = simplex_info.updated_primal_objective_value;
   analysis->num_primal_infeasibilities =
-      scaled_solution_params.num_primal_infeasibilities;
-  analysis->num_dual_infeasibilities =
-      scaled_solution_params.num_dual_infeasibilities;
+      simplex_info.num_primal_infeasibilities;
+  analysis->num_dual_infeasibilities = simplex_info.num_dual_infeasibilities;
   analysis->sum_primal_infeasibilities =
-      scaled_solution_params.sum_primal_infeasibilities;
-  analysis->sum_dual_infeasibilities =
-      scaled_solution_params.sum_dual_infeasibilities;
+      simplex_info.sum_primal_infeasibilities;
+  analysis->sum_dual_infeasibilities = simplex_info.sum_dual_infeasibilities;
 #ifdef HiGHSDEV
   analysis->basis_condition = simplex_info.invert_condition;
 #endif
@@ -801,9 +816,11 @@ void HPrimal::iterationAnalysis() {
 }
 
 void HPrimal::reportRebuild(const int rebuild_invert_hint) {
+  analysis->simplexTimerStart(ReportRebuildClock);
   iterationAnalysisData();
   analysis->invert_hint = rebuild_invert_hint;
   analysis->invertReport();
+  analysis->simplexTimerStop(ReportRebuildClock);
 }
 
 bool HPrimal::bailout() {
@@ -817,7 +834,7 @@ bool HPrimal::bailout() {
   } else if (workHMO.timer_.readRunHighsClock() > workHMO.options_.time_limit) {
     solve_bailout = true;
     workHMO.scaled_model_status_ = HighsModelStatus::REACHED_TIME_LIMIT;
-  } else if (workHMO.scaled_solution_params_.simplex_iteration_count >=
+  } else if (workHMO.iteration_counts_.simplex >=
              workHMO.options_.simplex_iteration_limit) {
     solve_bailout = true;
     workHMO.scaled_model_status_ = HighsModelStatus::REACHED_ITERATION_LIMIT;
