@@ -7,7 +7,7 @@ from numpy.testing import (assert_, assert_almost_equal, assert_array_equal,
                            assert_array_almost_equal, assert_allclose,
                            assert_warns, suppress_warnings)
 from pytest import raises as assert_raises
-from pytest import fail
+from pytest import approx
 import numpy as np
 from numpy import array, float64
 from multiprocessing.pool import ThreadPool
@@ -545,11 +545,12 @@ class TestCurveFit(object):
         f = lambda x, a, b: a*x + b
 
         xdata = np.array([1, 2, np.nan, 3, 4, np.nan])
-        ydata = np.array([3, 4, 5, 6, np.nan, 7])
-        try:
-            curve_fit(f, xdata, ydata, ignore_nan=True)
-        except ValueError:
-            fail("Did raise ValueError when it should not!")
+        ydata = np.array([1, 2, 5, 3, np.nan, 7])
+
+        result = curve_fit(f, xdata, ydata, ignore_nan=True)
+        expected = np.array([1, 0])
+
+        assert result == approx(expected)
 
         # Test all NaNs data
         xdata = np.array([np.nan, np.nan, np.nan])
