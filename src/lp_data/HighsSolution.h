@@ -19,7 +19,6 @@
 
 #include "lp_data/HighsInfo.h"
 #include "lp_data/HighsLp.h"
-#include "lp_data/HighsSolution.h"
 #include "lp_data/HighsStatus.h"
 
 class HighsLp;
@@ -66,13 +65,15 @@ HighsStatus analyseHighsBasicSolution(
 // but not corrected.
 HighsStatus analyseHighsBasicSolution(
     FILE* logfile, const HighsLp& lp, const HighsBasis& basis,
-    const HighsSolution& solution, const HighsModelStatus model_status,
+    const HighsSolution& solution, const HighsIterationCounts& iteration_counts,
+    const HighsModelStatus model_status,
     const HighsSolutionParams& solution_params, const string message);
 
 // As above, but with report_level
 HighsStatus analyseHighsBasicSolution(
     FILE* logfile, const HighsLp& lp, const HighsBasis& basis,
-    const HighsSolution& solution, const HighsModelStatus model_status,
+    const HighsSolution& solution, const HighsIterationCounts& iteration_counts,
+    const HighsModelStatus model_status,
     const HighsSolutionParams& solution_params, const string message,
     const int report_level);
 
@@ -109,7 +110,7 @@ HighsStatus ipxToHighsBasicSolution(FILE* logfile, const HighsLp& lp,
                                     HighsSolution& highs_solution);
 #endif
 
-std::string iterationsToString(const HighsSolutionParams& solution_params);
+std::string iterationsToString(const HighsIterationCounts& iterations_counts);
 
 void resetModelStatusAndSolutionParams(HighsModelObject& highs_model_object);
 void resetModelStatusAndSolutionParams(HighsModelStatus& model_status,
@@ -119,24 +120,21 @@ void resetSolutionParams(HighsSolutionParams& solution_params,
                          const HighsOptions& options);
 
 void invalidateSolutionParams(HighsSolutionParams& solution_params);
-void invalidateSolutionIterationCountAndObjectiveParams(
-    HighsSolutionParams& solution_params);
 void invalidateSolutionStatusParams(HighsSolutionParams& solution_params);
 void invalidateSolutionInfeasibilityParams(
     HighsSolutionParams& solution_params);
 
 bool equalSolutionParams(const HighsSolutionParams& solution_params0,
                          const HighsSolutionParams& solution_params1);
-bool equalSolutionIterationCountAndObjectiveParams(
-    const HighsSolutionParams& solution_params0,
-    const HighsSolutionParams& solution_params1);
+bool equalSolutionObjectiveParams(const HighsSolutionParams& solution_params0,
+                                  const HighsSolutionParams& solution_params1);
 bool equalSolutionStatusParams(const HighsSolutionParams& solution_params0,
                                const HighsSolutionParams& solution_params1);
 bool equalSolutionInfeasibilityParams(
     const HighsSolutionParams& solution_params0,
     const HighsSolutionParams& solution_params1);
 
-void copySolutionIterationCountAndObjectiveParams(
+void copySolutionObjectiveParams(
     const HighsSolutionParams& from_solution_params,
     HighsSolutionParams& to_solution_params);
 

@@ -40,8 +40,7 @@ void HighsPrintMessage(FILE* pass_output, const int pass_message_level,
       int len;
       len = vsnprintf(msgbuffer, sizeof(msgbuffer), format, argptr);
       if (len >= (int)sizeof(msgbuffer)) {
-        /* output was truncated: for now just ensure string is null-terminated
-         */
+        // Output was truncated: for now just ensure string is null-terminated
         msgbuffer[sizeof(msgbuffer) - 1] = '\0';
       }
       printmsgcb(level, msgbuffer, msgcb_data);
@@ -65,8 +64,7 @@ void HighsLogMessage(FILE* pass_logfile, HighsMessageType type,
   va_start(argptr, format);
 
   if (logmsgcb == NULL) {
-    fprintf(pass_logfile, "%02d:%02d:%02d [%-7s] ", timeinfo->tm_hour,
-            timeinfo->tm_min, timeinfo->tm_sec, HighsMessageTypeTag[(int)type]);
+    fprintf(pass_logfile, "%-7s: ", HighsMessageTypeTag[(int)type]);
     vfprintf(pass_logfile, format, argptr);
     fprintf(pass_logfile, "\n");
   } else {
@@ -99,9 +97,6 @@ void HighsSetMessageCallback(
 }
 
 void HighsSetIO(HighsOptions& options) {
-  //  logfile = options.logfile;
-  //  output = options.output;
-  //  message_level = options.message_level;
   printmsgcb = options.printmsgcb;
   logmsgcb = options.logmsgcb;
   msgcb_data = options.msgcb_data;

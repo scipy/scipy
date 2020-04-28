@@ -41,10 +41,10 @@ enum class HighsModelStatus {
   NOTSET = 0,
   LOAD_ERROR,
   MODEL_ERROR,
-  MODEL_EMPTY,
   PRESOLVE_ERROR,
   SOLVE_ERROR,
   POSTSOLVE_ERROR,
+  MODEL_EMPTY,
   PRIMAL_INFEASIBLE,
   PRIMAL_UNBOUNDED,
   OPTIMAL,
@@ -61,8 +61,6 @@ class HighsLp {
   // Model data
   int numCol_ = 0;
   int numRow_ = 0;
-  int numInt_ = 0;
-  int nnz_ = 0;
 
   std::vector<int> Astart_;
   std::vector<int> Aindex_;
@@ -84,31 +82,35 @@ class HighsLp {
 
   std::vector<int> integrality_;
 
+  bool equalButForNames(const HighsLp& lp) {
+    if (this->numCol_ != lp.numCol_ || this->numRow_ != lp.numRow_ ||
+        this->sense_ != lp.sense_ || this->offset_ != lp.offset_ ||
+        this->model_name_ != lp.model_name_)
+      return false;
+
+    if (this->colCost_ != lp.colCost_) return false;
+
+    if (this->colUpper_ != lp.colUpper_ || this->colLower_ != lp.colLower_ ||
+        this->rowUpper_ != lp.rowUpper_ || this->rowLower_ != lp.rowLower_)
+      return false;
+
+    if (this->Astart_ != lp.Astart_ || this->Aindex_ != lp.Aindex_ ||
+        this->Avalue_ != lp.Avalue_)
+      return false;
+
+    return true;
+  }
   bool operator==(const HighsLp& lp) {
-    if (numCol_ != lp.numCol_ || numRow_ != lp.numRow_ || nnz_ != lp.nnz_ ||
-        sense_ != lp.sense_ || offset_ != lp.offset_ ||
-        model_name_ != lp.model_name_)
+    if (!equalButForNames(lp)) return false;
+    if (this->row_names_ != lp.row_names_ || this->col_names_ != lp.col_names_)
       return false;
-
-    if (row_names_ != lp.row_names_ || col_names_ != lp.col_names_)
-      return false;
-
-    if (colCost_ != lp.colCost_) return false;
-
-    if (colUpper_ != lp.colUpper_ || colLower_ != lp.colLower_ ||
-        rowUpper_ != lp.rowUpper_ || rowLower_ != lp.rowLower_)
-      return false;
-
-    if (Astart_ != lp.Astart_ || Aindex_ != lp.Aindex_ || Avalue_ != lp.Avalue_)
-      return false;
-
     return true;
   }
 };
 
 // Cost, column and row scaling factors
 struct HighsScale {
-  bool is_scaled_;
+  bool is_scaled_ = false;
   double cost_;
   std::vector<double> col_;
   std::vector<double> row_;
@@ -154,10 +156,10 @@ struct HighsSimplexLpStatus {
 
 struct HighsSimplexInfo {
   bool initialised = false;
-  // Simplex information regarding primal and dual solution, objective
-  // and iteration counts for this Highs Model Object. This is
-  // information which should be retained from one run to the next in
-  // order to provide hot starts.
+  // Simplex information regarding primal solution, dual solution and
+  // objective for this Highs Model Object. This is information which
+  // should be retained from one run to the next in order to provide
+  // hot starts.
   //
   // Part of working model which are assigned and populated as much as
   // possible when a model is being defined
@@ -170,7 +172,8 @@ struct HighsSimplexInfo {
   // is required to compute them. Knowledge of them is indicated by
   // has_nonbasic_dual_values
   //
-  // workShift: WTF
+  // workShift: Values added to workCost in order that workDual
+  // remains feasible, thereby remaining dual feasible in phase 2
   //
   std::vector<double> workCost_;
   std::vector<double> workDual_;
@@ -216,12 +219,10 @@ struct HighsSimplexInfo {
 
   double dual_simplex_cost_perturbation_multiplier;
   int update_limit;
-  //  int iteration_limit;
-  //  double dual_objective_value_upper_bound;
 
   // Internal options - can't be changed externally
+  bool run_quiet = false;
   bool store_squared_primal_infeasibility = false;
-  bool allow_primal_flips_for_dual_feasibility = true;
 #ifndef HiGHSDEV
   bool analyse_lp_solution = false;  // true;//
 #else
@@ -241,7 +242,16 @@ struct HighsSimplexInfo {
   bool analyse_rebuild_time = false;
 #endif
   // Simplex runtime information
+  int allow_cost_perturbation = true;
   int costs_perturbed = 0;
+
+  int num_primal_infeasibilities = -1;
+  double max_primal_infeasibility;
+  double sum_primal_infeasibilities;
+  int num_dual_infeasibilities = -1;
+  double max_dual_infeasibility;
+  double sum_dual_infeasibilities;
+
   // Records of cumulative iteration counts - updated at the end of a phase
   int dual_phase1_iteration_count = 0;
   int dual_phase2_iteration_count = 0;
@@ -311,9 +321,6 @@ struct HighsSolutionParams {
   // Input to solution analysis method
   double primal_feasibility_tolerance;
   double dual_feasibility_tolerance;
-  int simplex_iteration_count = 0;
-  int ipm_iteration_count = 0;
-  int crossover_iteration_count = 0;
   int primal_status = PrimalDualStatus::STATUS_NOTSET;
   int dual_status = PrimalDualStatus::STATUS_NOTSET;
   // Output from solution analysis method
@@ -324,6 +331,12 @@ struct HighsSolutionParams {
   int num_dual_infeasibilities;
   double sum_dual_infeasibilities;
   double max_dual_infeasibility;
+};
+
+struct HighsIterationCounts {
+  int simplex = 0;
+  int ipm = 0;
+  int crossover = 0;
 };
 
 struct HighsSolution {
@@ -360,8 +373,10 @@ struct HighsRanging {
   std::vector<int> rowBoundRangeDnOutCol_;
 };
 
-// Make sure the dimensions of solution are the same as numRow_ and numCol_.
+// Make sure the dimensions of solution and basis are the same as
+// numRow_ and numCol_
 bool isSolutionConsistent(const HighsLp& lp, const HighsSolution& solution);
+bool isBasisConsistent(const HighsLp& lp, const HighsBasis& basis);
 
 // If debug this method terminates the program when the status is not OK. If
 // standard build it only prints a message.

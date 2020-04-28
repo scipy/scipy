@@ -23,7 +23,6 @@ FreeFormatParserReturnCode HMpsFF::loadProblem(FILE* logfile,
 
   lp.numRow_ = std::move(numRow);
   lp.numCol_ = std::move(numCol);
-  lp.nnz_ = Avalue.size();
 
   lp.sense_ = objSense;
   lp.offset_ = objOffset;
@@ -512,7 +511,7 @@ HMpsFF::parsekey HMpsFF::parseRhs(FILE* logfile, std::ifstream& file) {
       }
     } else if (rowidx == -1) {
       // objective shift
-      objOffset = val;
+      objOffset = -val;
     }
   };
 

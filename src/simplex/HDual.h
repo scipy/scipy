@@ -78,6 +78,8 @@ class HDual {
    */
   HighsStatus solve();
 
+  const SimplexAlgorithm algorithm = SimplexAlgorithm::DUAL;
+
  public:
   /**
    * @brief Set solver options from simplex options
@@ -292,9 +294,8 @@ class HDual {
                               );
   */
 
-#ifdef HiGHSDEV
-  double checkDualObjectiveValue(const char* message, int phase = 2);
-#endif
+  bool reachedExactDualObjectiveValueUpperBound();
+  double computeExactDualObjectiveValue();
 
   /**
    * @brief PAMI: Choose the indices of a good set of rows to leave the
@@ -384,9 +385,14 @@ class HDual {
    */
   void majorRollback();
 
+  void assessPhase1Optimality();
+  void assessPhase1OptimalityWithOriginalCosts();
+
   bool checkNonUnitWeightError(std::string message);
   bool dualInfoOk(const HighsLp& lp);
-  bool bailout();
+  bool bailoutReturn();
+  bool bailoutOnTimeIterations();
+  bool bailoutOnDualObjective();
 
   bool solve_bailout;  //!< Set true if control is to be returned immediately to
                        //!< calling function

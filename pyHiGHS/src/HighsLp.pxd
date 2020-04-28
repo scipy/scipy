@@ -11,10 +11,6 @@ cdef extern from "HighsLp.h" nogil:
     cdef cppclass HighsLp:
         int numCol_
         int numRow_
-        int numInt_
-        int nnz_
-
-        string model_name_
 
         vector[int] Astart_
         vector[int] Aindex_
@@ -24,6 +20,17 @@ cdef extern from "HighsLp.h" nogil:
         vector[double] colUpper_
         vector[double] rowLower_
         vector[double] rowUpper_
+
+        ObjSense sense_
+        double offset_
+
+        string model_name_
+        string lp_name_
+
+        vector[string] row_names_
+        vector[string] col_names_
+
+        vector[int] integrality_
 
     ctypedef enum HighsModelStatus:
         HighsModelStatusNOTSET "HighsModelStatus::NOTSET"

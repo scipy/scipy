@@ -7,15 +7,17 @@
 /*    Available as open-source under the MIT License                     */
 /*                                                                       */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-/**@file io/HToyIO_C.h
- * @brief C wrapper to read an LP model in toy format
+/**@file lp_data/HSimplexReport.h
+ * @brief
  * @author Julian Hall, Ivet Galabova, Qi Huangfu and Michael Feldmeier
  */
-#ifndef IO_HTOYIO_C_H_
-#define IO_HTOYIO_C_H_
+#ifndef SIMPLEX_HSIMPLEXREPORT_H_
+#define SIMPLEX_HSIMPLEXREPORT_H_
 
-int readToy_LP_c(const char* filename, int* m_p, int* n_p, int* maxmin,
-                 double* offset, double** A, double** b, double** c,
-                 double** lb, double** ub);
+#include "lp_data/HighsModelObject.h"
+#include "simplex/SimplexConst.h"
 
-#endif /* IO_HTOYIO_C_H_ */
+void reportSimplexPhaseIterations(const HighsModelObject& highs_model_object,
+                                  const SimplexAlgorithm algorithm,
+                                  const bool initialise = false);
+#endif  // SIMPLEX_HSIMPLEXREPORT_H_

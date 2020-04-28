@@ -123,9 +123,6 @@ class HighsSimplexInterface {
   HighsStatus changeCoefficient(const int Xrow, const int Xcol,
                                 const double XnewValue);
 
-  // Shift the objective
-  void shiftObjectiveValue(const double Xshift);
-
   // Utilities to get/change costs and bounds
   // Change the objective sense
   HighsStatus changeObjectiveSense(const ObjSense Xsense);
@@ -234,6 +231,11 @@ class HighsSimplexInterface {
    */
   int get_basic_indices(int* bind  //!> Indices of basic variables
   );
+
+  /**
+   * @brief Clear the simplex basis
+   */
+  void clearBasis();
 };
 
 #endif /* SIMPLEX_HIGHSSIMPLEXINTERFACE_H_ */

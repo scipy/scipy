@@ -186,12 +186,6 @@ HighsStatus changeBounds(const HighsOptions& options, const char* type,
                          const double infinite_bound);
 
 /**
- * @brief Write out the LP as an MPS file
- */
-HighsStatus writeLpAsMPS(const HighsOptions& options, const char* filename,
-                         const HighsLp& lp, const bool free = true);
-
-/**
  * @brief Report the data of an LP
  */
 void reportLp(const HighsOptions& options,
@@ -237,9 +231,12 @@ void reportLpColMatrix(const HighsOptions& options,
                        const HighsLp& lp  //!< LP whose data are to be reported
 );
 
-void reportMatrix(const HighsOptions& options, const char* message,
+void reportMatrix(const HighsOptions& options, const std::string message,
                   const int num_col, const int num_nz, const int* start,
                   const int* index, const double* value);
+
+// Get the number of integer-valued columns in the LP
+int getNumInt(const HighsLp& lp);
 
 // Get the costs for a contiguous set of columns
 HighsStatus getLpCosts(const HighsLp& lp, const int from_col, const int to_col,
@@ -259,7 +256,7 @@ HighsStatus getLpMatrixCoefficient(const HighsLp& lp, const int row,
                                    const int col, double* val);
 #ifdef HiGHSDEV
 // Analyse the data in an LP problem
-void analyseLp(const HighsLp& lp, const char* message);
+void analyseLp(const HighsLp& lp, const std::string message);
 #endif
 
 // void writeSolutionToFile(FILE* file, const HighsLp& lp, const HighsBasis&

@@ -30,3 +30,10 @@ cdef extern from "HConst.h" nogil:
         SOLVER_OPTION_SIMPLEX "SolverOption::SOLVER_OPTION_SIMPLEX" = -1
         SOLVER_OPTION_CHOOSE "SolverOption::SOLVER_OPTION_CHOOSE"
         SOLVER_OPTION_IPM "SolverOption::SOLVER_OPTION_IPM"
+
+    cdef enum PrimalDualStatus:
+        PrimalDualStatusSTATUS_NOT_SET "PrimalDualStatus::STATUS_NOT_SET" = -1
+        PrimalDualStatusSTATUS_NO_SOLUTION "PrimalDualStatus::STATUS_NO_SOLUTION"
+        PrimalDualStatusSTATUS_UNKNOWN "PrimalDualStatus::STATUS_UNKOWN"
+        PrimalDualStatusSTATUS_INFEASIBLE_POINT "PrimalDualStatus::STATUS_INFEASIBLE_POINT"
+        PrimalDualStatusSTATUS_FEASIBLE_POINT "PrimalDualStatus::STATUS_FEASIBLE_POINT"

@@ -6,7 +6,10 @@ import logging
 from libc.stdio cimport FILE, tmpfile
 from libcpp.memory cimport unique_ptr
 
-from HConst cimport ML_NONE
+from HConst cimport (
+    ML_NONE,
+    PrimalDualStatusSTATUS_FEASIBLE_POINT,
+)
 from Highs cimport Highs
 from HighsStatus cimport (
     HighsStatus,
@@ -307,7 +310,6 @@ def highs_wrapper(
     cdef HighsLp lp
     lp.numCol_ = numcol
     lp.numRow_ = numrow
-    lp.nnz_ = numnz
 
     lp.colCost_.resize(numcol)
     lp.colLower_.resize(numcol)
@@ -392,7 +394,7 @@ def highs_wrapper(
             model_status = scaled_model_status
 
     # We might need an info object if we can look up the solution and a place to put solution
-    cdef HighsInfo info
+    cdef HighsInfo info = highs.getHighsInfo() # it should always be safe to get the info object
     cdef HighsSolution solution
 
     # If the status is bad, don't look up the solution
@@ -408,7 +410,6 @@ def highs_wrapper(
             HighsModelStatusPRIMAL_UNBOUNDED,
             HighsModelStatusREACHED_ITERATION_LIMIT,
     ]:
-        info = highs.getHighsInfo()
         return {
             'status': <int> model_status,
             'message': highs.highsModelStatusToString(model_status).decode(),
@@ -416,15 +417,10 @@ def highs_wrapper(
             'ipm_nit': info.ipm_iteration_count,
             'fun': info.objective_function_value,
             'crossover_nit': info.crossover_iteration_count,
-            'con': info.sum_primal_infeasibilities,
         }
     # If the model status is such that the solution can be read
-    elif model_status in [
-            HighsModelStatusOPTIMAL,
-            HighsModelStatusREACHED_DUAL_OBJECTIVE_VALUE_UPPER_BOUND,
-            HighsModelStatusREACHED_TIME_LIMIT,
-    ]:
-        info = highs.getHighsInfo()
+    else:
+        # Should be safe to read the solution:
         solution = highs.getSolution()
         return {
             'status': <int> model_status,
@@ -434,6 +430,7 @@ def highs_wrapper(
             'x': [solution.col_value[ii] for ii in range(numcol)],
 
             # Ax + s = b => Ax = b - s
+            # Note: this is for all constraints (A_ub and A_eq)
             'slack': [rhs[ii] - solution.row_value[ii] for ii in range(numrow)],
 
             # slacks in HiGHS appear as Ax - s, not Ax + s, so lambda is negated;
@@ -447,7 +444,6 @@ def highs_wrapper(
             'simplex_nit': info.simplex_iteration_count,
             'ipm_nit': info.ipm_iteration_count,
             'crossover_nit': info.crossover_iteration_count,
-            'con': info.sum_primal_infeasibilities,
         }
 
 # Export some things

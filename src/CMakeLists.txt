@@ -77,9 +77,7 @@ set(sources
     io/HighsIO.cpp
     io/HMPSIO.cpp
     io/HMpsFF.cpp
-    io/HToyIO.cpp
     io/LoadOptions.cpp
-    io/LoadProblem.cpp
     lp_data/Highs.cpp
     lp_data/HighsInfo.cpp
     lp_data/HighsLp.cpp
@@ -108,6 +106,8 @@ set(sources
     simplex/HQPrimal.cpp
 #    simplex/HRanging.cpp
     simplex/HSimplex.cpp
+    simplex/HSimplexDebug.cpp
+    simplex/HSimplexReport.cpp
     simplex/HVector.cpp
     test/KktCheck.cpp
     test/KktChStep.cpp
@@ -124,10 +124,7 @@ set(headers
     io/FilereaderMps.h
     io/HMpsFF.h
     io/HMPSIO.h
-    io/HToyIO_C.h
-    io/HToyIO.h
     io/HighsIO.h
-    io/LoadProblem.h
     io/LoadOptions.h
     lp_data/HConst.h
     lp_data/HighsAnalysis.h
@@ -158,6 +155,8 @@ set(headers
     simplex/HQPrimal.h
 #    simplex/HRanging.h
     simplex/HSimplex.h
+    simplex/HSimplexDebug.h
+    simplex/HSimplexReport.h
     simplex/SimplexConst.h
     presolve/Presolve.h
     presolve/PresolveAnalysis.h

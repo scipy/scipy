@@ -56,34 +56,6 @@ void report_basis(HighsLp& lp, HighsBasis& basis);
 void report_basis(HighsLp& lp, SimplexBasis& simplex_basis);
 #endif
 
-/*
-// Increment iteration count (here!) and (possibly) store the pivots for
-// debugging NLA
-void record_pivots(int columnIn, int columnOut, double alpha) {
-  // NB This is where the iteration count is updated!
-  if (columnIn >= 0) scaled_solution_params.simplex_iteration_count++;
-#ifdef HiGHSDEV
-  historyColumnIn.push_back(columnIn);
-  historyColumnOut.push_back(columnOut);
-  historyAlpha.push_back(alpha);
-#endif
-}
-#ifdef HiGHSDEV
-// Store and write out the pivots for debugging NLA
-void writePivots(const char* suffix) {
-  string filename = "z-" + simplex_lp_->model_name_ + "-" + suffix;
-  ofstream output(filename.c_str());
-  int count = historyColumnIn.size();
-  double current_run_highs_time = timer_->readRunHighsClock();
-  output << simplex_lp_->model_name_ << " " << count << "\t" <<
-current_run_highs_time << endl; output << setprecision(12); for (int i = 0; i <
-count; i++) { output << historyColumnIn[i] << "\t"; output <<
-historyColumnOut[i] << "\t"; output << historyAlpha[i] << endl;
-  }
-  output.close();
-}
-#endif
-*/
 void computeDualObjectiveValue(HighsModelObject& highs_model_object,
                                int phase = 2);
 
@@ -161,12 +133,12 @@ void setup_num_basic_logicals(HighsModelObject& highs_model_object);
 void reportSimplexProfiling(HighsModelObject& highs_model_object);
 
 #endif
-
+void setRunQuiet(HighsModelObject& highs_model_object);
 /**
  * @brief Get the Hager condition number estimate for the basis matrix of a
  * model
  */
-double computeBasisCondition(HighsModelObject& highs_model_object);
+double computeBasisCondition(const HighsModelObject& highs_model_object);
 
 bool work_arrays_ok(HighsModelObject& highs_model_object, int phase);
 
@@ -185,14 +157,17 @@ int computeFactor(HighsModelObject& highs_model_object);
 // of basic variables
 void computePrimal(HighsModelObject& highs_model_object);
 
-void computePrimalInfeasible(HighsModelObject& highs_model_object,
-                             const bool report = false);
+void computeSimplexInfeasible(HighsModelObject& highs_model_object);
+void computeSimplexPrimalInfeasible(HighsModelObject& highs_model_object);
+void computeSimplexDualInfeasible(HighsModelObject& highs_model_object);
 
-void computeDualInfeasible(HighsModelObject& highs_model_object,
-                           const bool report = false);
+void computeDualInfeasibleWithFlips(HighsModelObject& highs_model_object);
 
-void computeDualInfeasibleWithFlips(HighsModelObject& highs_model_object,
-                                    const bool report = false);
+void computeSimplexLpDualInfeasible(HighsModelObject& highs_model_object);
+
+void copySimplexInfeasible(HighsModelObject& highs_model_object);
+void copySimplexDualInfeasible(HighsModelObject& highs_model_object);
+void copySimplexPrimalInfeasible(HighsModelObject& highs_model_object);
 
 void choosePriceTechnique(const int price_strategy, const double row_ep_density,
                           bool& use_col_price, bool& use_row_price_w_switch);

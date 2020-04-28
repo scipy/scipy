@@ -3,18 +3,6 @@ import sys
 import pathlib
 from datetime import datetime
 
-#from setuptools.command.build_clib import build_clib as _build_clib
-
-#class build_clib(_build_clib):
-#    def build_libraries(self, libraries):
-#        #from scipy._build_utils.compiler_helper import get_cxx_std_flag
-#        #std_flag = get_cxx_std_flag(build_ext._cxx_compiler)
-#        #if std_flag is not None:
-#        #    ext.extra_compile_args.append(std_flag)
-#        print(libraries)
-#
-#        _build_clib.build_libraries(libraries)
-
 def pre_build_hook(build_ext, ext):
     from scipy._build_utils.compiler_helper import get_cxx_std_flag
     std_flag = get_cxx_std_flag(build_ext._cxx_compiler)
@@ -98,48 +86,30 @@ def configuration(parent_package='', top_path=None):
         macros=DEFINE_MACROS,
     )
 
-    # Compile ipx and highs as static libraries;
-    # must pass _pre_build_hook as build_info member:
-    # see https://github.com/scipy/scipy/blob/2190a7427a8d10a3a506294e87ff1330c426cb63/setup.py#L299
-    ipx_sources = _get_sources('src/CMakeLists.txt', 'set(ipx_sources\n', ')')
-    config.add_library(
-        'ipx',
-        sources=ipx_sources,
-        include_dirs=[
-            'src/ipm/ipx/include/',
-            'src/ipm/basiclu/include/',
-        ],
-        libraries=['basiclu'],
-        language='c++',
-        macros=DEFINE_MACROS,
-        _pre_build_hook=pre_build_hook,
-    )
-    highs_sources = _get_sources('src/CMakeLists.txt', 'set(sources\n', ')')
-    config.add_library(
-        'highs',
-        sources=highs_sources,
-        include_dirs=[
-            'src/',
-            'src/io/',
-            'src/ipm/ipx/include/',
-        ],
-        libraries=['ipx'],
-        language='c++',
-        macros=DEFINE_MACROS,
-        _pre_build_hook=pre_build_hook,
-    )
-
     # highs_wrapper:
+    ipx_sources = _get_sources('src/CMakeLists.txt', 'set(ipx_sources\n', ')')
+    highs_sources = _get_sources('src/CMakeLists.txt', 'set(sources\n', ')')
     ext = config.add_extension(
         'highs_wrapper',
-        sources=['pyHiGHS/src/highs_wrapper.cxx'],
+        sources=['pyHiGHS/src/highs_wrapper.cxx'] + highs_sources + ipx_sources,
         include_dirs=[
+
+            # highs_wrapper
             'pyHiGHS/src/',
             'src/',
             'src/lp_data/',
+
+            # highs
+            'src/',
+            'src/io/',
+            'src/ipm/ipx/include/',
+
+            # IPX
+            'src/ipm/ipx/include/',
+            'src/ipm/basiclu/include/',
         ],
         language='c++',
-        libraries=['highs'],
+        libraries=['basiclu'],
         define_macros=DEFINE_MACROS,
         undef_macros=UNDEF_MACROS,
     )
@@ -149,7 +119,16 @@ def configuration(parent_package='', top_path=None):
     # wrapper around HiGHS writeMPS:
     ext = config.add_extension(
         'mpswriter',
-        sources=['pyHiGHS/src/mpswriter.cxx'],
+        sources=[
+            # we should be using using highs shared library;
+            # next best thing is compiling minimal set of sources
+            'pyHiGHS/src/mpswriter.cxx',
+            'src/util/HighsUtils.cpp',
+            'src/io/HighsIO.cpp',
+            'src/io/HMPSIO.cpp',
+            'src/lp_data/HighsModelUtils.cpp',
+            'src/util/stringutil.cpp',
+        ],
         include_dirs=[
             'pyHiGHS/src/',
             'src/',
@@ -157,7 +136,7 @@ def configuration(parent_package='', top_path=None):
             'src/lp_data/',
         ],
         language='c++',
-        libraries=['highs'],
+        libraries=['basiclu'],
         define_macros=DEFINE_MACROS,
         undef_macros=UNDEF_MACROS,
     )

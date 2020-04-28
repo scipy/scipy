@@ -264,7 +264,6 @@ static int processSolve(gamshighs_t* gh) {
     case HighsModelStatus::NOTSET:
     case HighsModelStatus::LOAD_ERROR:
     case HighsModelStatus::MODEL_ERROR:
-    case HighsModelStatus::MODEL_EMPTY:
     case HighsModelStatus::PRESOLVE_ERROR:
     case HighsModelStatus::SOLVE_ERROR:
     case HighsModelStatus::POSTSOLVE_ERROR:
@@ -272,20 +271,9 @@ static int processSolve(gamshighs_t* gh) {
       gmoSolveStatSet(gmo, gmoSolveStat_SolverErr);
       break;
 
-    case HighsModelStatus::REACHED_DUAL_OBJECTIVE_VALUE_UPPER_BOUND:
-      // TODO is there a solution to write and is it feasible?
-      // gmoModelStatSet(gmo, havesol ? gmoModelStat_InfeasibleIntermed :
-      // gmoModelStat_NoSolutionReturned);
+    case HighsModelStatus::MODEL_EMPTY:
       gmoModelStatSet(gmo, gmoModelStat_NoSolutionReturned);
       gmoSolveStatSet(gmo, gmoSolveStat_Solver);
-      break;
-
-    case HighsModelStatus::PRIMAL_UNBOUNDED:
-      // TODO is there a (feasible) solution to write?
-      // gmoModelStatSet(gmo, havesol ? gmoModelStat_Unbounded :
-      // gmoModelStat_UnboundedNoSolution);
-      gmoModelStatSet(gmo, gmoModelStat_UnboundedNoSolution);
-      gmoSolveStatSet(gmo, gmoSolveStat_Normal);
       break;
 
     case HighsModelStatus::PRIMAL_INFEASIBLE:
@@ -296,26 +284,26 @@ static int processSolve(gamshighs_t* gh) {
       gmoSolveStatSet(gmo, gmoSolveStat_Normal);
       break;
 
-      // case HighsModelStatus::PRIMAL_FEASIBLE:
-      /*
-      gmoModelStatSet(gmo, gmoModelStat_Feasible);
-      gmoSolveStatSet(gmo, gmoSolveStat_Solver);
-      writesol = true;
+    case HighsModelStatus::PRIMAL_UNBOUNDED:
+      // TODO is there a (feasible) solution to write?
+      // gmoModelStatSet(gmo, havesol ? gmoModelStat_Unbounded :
+      // gmoModelStat_UnboundedNoSolution);
+      gmoModelStatSet(gmo, gmoModelStat_UnboundedNoSolution);
+      gmoSolveStatSet(gmo, gmoSolveStat_Normal);
       break;
-      */
-
-      // case HighsModelStatus::DUAL_FEASIBLE:
-      /*
-      gmoModelStatSet(gmo, gmoModelStat_InfeasibleIntermed);
-      gmoSolveStatSet(gmo, gmoSolveStat_Solver);
-      writesol = true;
-      break;
-      */
 
     case HighsModelStatus::OPTIMAL:
       gmoModelStatSet(gmo, gmoModelStat_OptimalGlobal);
       gmoSolveStatSet(gmo, gmoSolveStat_Normal);
       writesol = true;
+      break;
+
+    case HighsModelStatus::REACHED_DUAL_OBJECTIVE_VALUE_UPPER_BOUND:
+      // TODO is there a solution to write and is it feasible?
+      // gmoModelStatSet(gmo, havesol ? gmoModelStat_InfeasibleIntermed :
+      // gmoModelStat_NoSolutionReturned);
+      gmoModelStatSet(gmo, gmoModelStat_NoSolutionReturned);
+      gmoSolveStatSet(gmo, gmoSolveStat_Solver);
       break;
 
     case HighsModelStatus::REACHED_TIME_LIMIT:

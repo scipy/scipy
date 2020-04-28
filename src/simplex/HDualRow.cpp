@@ -304,56 +304,54 @@ bool HDualRow::chooseFinal() {
 }
 
 void HDualRow::updateFlip(HVector* bfrtColumn) {
-  //  checkDualObjectiveValue("Before update_flip");
-  double* workDual = &workHMO.simplex_info_.workDual_[0];  //
-  //  double *workLower = &workHMO.simplex_info_.workLower_[0];
-  //  double *workUpper = &workHMO.simplex_info_.workUpper_[0];
-  //  double *workValue = &workHMO.simplex_info_.workValue_[0];
+  double* workDual = &workHMO.simplex_info_.workDual_[0];
   double dual_objective_value_change = 0;
   bfrtColumn->clear();
   for (int i = 0; i < workCount; i++) {
     const int iCol = workData[i].first;
     const double change = workData[i].second;
-
-    double lcdual_objective_value_change = change * workDual[iCol];
-    //    printf("%6d: [%11.4g, %11.4g, %11.4g], (%11.4g) DlObj = %11.4g
-    //    dual_objective_value_change = %11.4g\n",
-    //	   iCol, workLower[iCol], workValue[iCol], workUpper[iCol], change,
-    // lcdual_objective_value_change, dual_objective_value_change);
-    dual_objective_value_change += lcdual_objective_value_change;
-    flip_bound(workHMO, iCol);  // workModel->flipBound(iCol);
+    double local_dual_objective_change = change * workDual[iCol];
+    local_dual_objective_change *= workHMO.scale_.cost_;
+    dual_objective_value_change += local_dual_objective_change;
+    flip_bound(workHMO, iCol);
     workHMO.matrix_.collect_aj(*bfrtColumn, iCol, change);
   }
   workHMO.simplex_info_.updated_dual_objective_value +=
       dual_objective_value_change;
-  //  &workHMO.>checkDualObjectiveValue("After  update_flip");
 }
 
 void HDualRow::updateDual(double theta) {
-  //  &workHMO.>checkDualObjectiveValue("Before update_dual");
   analysis->simplexTimerStart(UpdateDualClock);
   double* workDual = &workHMO.simplex_info_.workDual_[0];
+  double dual_objective_value_change = 0;
   for (int i = 0; i < packCount; i++) {
     workDual[packIndex[i]] -= theta * packValue[i];
     // Identify the change to the dual objective
     int iCol = packIndex[i];
-    double dlDual = theta * packValue[i];
-    double iColWorkValue = workHMO.simplex_info_.workValue_[iCol];
-    double dlDuObj =
-        workHMO.simplex_basis_.nonbasicFlag_[iCol] * (-iColWorkValue * dlDual);
-    dlDuObj *= workHMO.scale_.cost_;
-    workHMO.simplex_info_.updated_dual_objective_value += dlDuObj;
+    const double delta_dual = theta * packValue[i];
+    const double local_value = workHMO.simplex_info_.workValue_[iCol];
+    double local_dual_objective_change =
+        workHMO.simplex_basis_.nonbasicFlag_[iCol] *
+        (-local_value * delta_dual);
+    local_dual_objective_change *= workHMO.scale_.cost_;
+    dual_objective_value_change += local_dual_objective_change;
   }
+  workHMO.simplex_info_.updated_dual_objective_value +=
+      dual_objective_value_change;
   analysis->simplexTimerStop(UpdateDualClock);
 }
 
 void HDualRow::createFreelist() {
+  double* workLower = &workHMO.simplex_info_.workLower_[0];
+  double* workUpper = &workHMO.simplex_info_.workUpper_[0];
   freeList.clear();
   const int* nonbasicFlag = &workHMO.simplex_basis_.nonbasicFlag_[0];
   int ckFreeListSize = 0;
   const int numTot = workHMO.simplex_lp_.numCol_ + workHMO.simplex_lp_.numRow_;
   for (int i = 0; i < numTot; i++) {
-    if (nonbasicFlag[i] && workRange[i] > 1.5 * HIGHS_CONST_INF) {
+    //    if (nonbasicFlag[i] && workRange[i] > 1.5 * HIGHS_CONST_INF) {
+    if (nonbasicFlag[i] && highs_isInfinity(-workLower[i]) &&
+        highs_isInfinity(workUpper[i])) {
       freeList.insert(i);
       ckFreeListSize++;
     }

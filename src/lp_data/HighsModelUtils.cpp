@@ -295,9 +295,6 @@ std::string utilHighsModelStatusToString(const HighsModelStatus model_status) {
     case HighsModelStatus::MODEL_ERROR:
       return "Model error";
       break;
-    case HighsModelStatus::MODEL_EMPTY:
-      return "Model empty";
-      break;
     case HighsModelStatus::PRESOLVE_ERROR:
       return "Presolve error";
       break;
@@ -306,6 +303,9 @@ std::string utilHighsModelStatusToString(const HighsModelStatus model_status) {
       break;
     case HighsModelStatus::POSTSOLVE_ERROR:
       return "Postsolve error";
+      break;
+    case HighsModelStatus::MODEL_EMPTY:
+      return "Model empty";
       break;
     case HighsModelStatus::PRIMAL_INFEASIBLE:
       return "Infeasible";  //"Primal infeasible";
@@ -335,6 +335,20 @@ std::string utilHighsModelStatusToString(const HighsModelStatus model_status) {
   return "";
 }
 
+void copyHighsIterationCounts(const HighsIterationCounts& iteration_counts,
+                              HighsInfo& info) {
+  info.simplex_iteration_count = iteration_counts.simplex;
+  info.ipm_iteration_count = iteration_counts.ipm;
+  info.crossover_iteration_count = iteration_counts.crossover;
+}
+
+void copyHighsIterationCounts(const HighsInfo& info,
+                              HighsIterationCounts& iteration_counts) {
+  iteration_counts.simplex = info.simplex_iteration_count;
+  iteration_counts.ipm = info.ipm_iteration_count;
+  iteration_counts.crossover = info.crossover_iteration_count;
+}
+
 // Deduce the HighsStatus value corresponding to a HighsModelStatus value.
 HighsStatus highsStatusFromHighsModelStatus(HighsModelStatus model_status) {
   switch (model_status) {
@@ -344,14 +358,14 @@ HighsStatus highsStatusFromHighsModelStatus(HighsModelStatus model_status) {
       return HighsStatus::Error;
     case HighsModelStatus::MODEL_ERROR:
       return HighsStatus::Error;
-    case HighsModelStatus::MODEL_EMPTY:
-      return HighsStatus::OK;
     case HighsModelStatus::PRESOLVE_ERROR:
       return HighsStatus::Error;
     case HighsModelStatus::SOLVE_ERROR:
       return HighsStatus::Error;
     case HighsModelStatus::POSTSOLVE_ERROR:
       return HighsStatus::Error;
+    case HighsModelStatus::MODEL_EMPTY:
+      return HighsStatus::OK;
     case HighsModelStatus::PRIMAL_INFEASIBLE:
       return HighsStatus::OK;
     case HighsModelStatus::PRIMAL_UNBOUNDED:
