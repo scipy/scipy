@@ -546,7 +546,8 @@ class TestCurveFit(object):
         xdata = np.array([1, 2, np.nan, 3, 4, np.nan])
         ydata = np.array([1, 2, 5, 3, np.nan, 7])
 
-        result = curve_fit(f, xdata, ydata, ignore_nan=True)
+        result, _ = curve_fit(f, xdata, ydata, ignore_nan=True)
+
         expected = np.array([1, 0])
 
         assert_allclose(result, expected)
