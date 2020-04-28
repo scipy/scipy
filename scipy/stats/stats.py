@@ -1234,11 +1234,8 @@ def kurtosis(a, axis=0, fisher=True, bias=True, nan_policy='propagate'):
     m2 = moment(a, 2, axis)
     m4 = moment(a, 4, axis)
     zero = (m2 == 0)
-    olderr = np.seterr(all='ignore')
-    try:
+    with np.errstate(all='ignore'):
         vals = np.where(zero, 0, m4 / m2**2.0)
-    finally:
-        np.seterr(**olderr)
 
     if not bias:
         can_correct = (n > 3) & (m2 > 0)
@@ -3797,13 +3794,10 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate'):
     dof = n_obs - 2  # degrees of freedom
 
     # rs can have elements equal to 1, so avoid zero division warnings
-    olderr = np.seterr(divide='ignore')
-    try:
+    with np.errstate(divide='ignore'):
         # clip the small negative values possibly caused by rounding
         # errors before taking the square root
         t = rs * np.sqrt((dof/((rs+1.0)*(1.0-rs))).clip(0))
-    finally:
-        np.seterr(**olderr)
 
     prob = 2 * distributions.t.sf(np.abs(t), dof)
 

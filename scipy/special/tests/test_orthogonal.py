@@ -14,14 +14,11 @@ class TestCheby(object):
     def test_chebyc(self):
         C0 = orth.chebyc(0)
         C1 = orth.chebyc(1)
-        olderr = np.seterr(all='ignore')
-        try:
+        with np.errstate(all='ignore'):
             C2 = orth.chebyc(2)
             C3 = orth.chebyc(3)
             C4 = orth.chebyc(4)
             C5 = orth.chebyc(5)
-        finally:
-            np.seterr(**olderr)
 
         assert_array_almost_equal(C0.c,[2],13)
         assert_array_almost_equal(C1.c,[1,0],13)
@@ -263,14 +260,11 @@ class TestCall(object):
                 orth.sh_legendre(%(n)d)
                 """ % dict(n=n)).split()
             ])
-        olderr = np.seterr(all='ignore')
-        try:
+        with np.errstate(all='ignore'):
             for pstr in poly:
                 p = eval(pstr)
                 assert_almost_equal(p(0.315), np.poly1d(p.coef)(0.315),
                                     err_msg=pstr)
-        finally:
-            np.seterr(**olderr)
 
 
 class TestGenlaguerre(object):

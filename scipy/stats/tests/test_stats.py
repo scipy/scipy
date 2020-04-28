@@ -4072,21 +4072,15 @@ class TestGeoMean(object):
         #  Test a 1d list with zero element
         a = [10, 20, 30, 40, 50, 60, 70, 80, 90, 0]
         desired = 0.0  # due to exp(-inf)=0
-        olderr = np.seterr(all='ignore')
-        try:
+        with np.errstate(all='ignore'):
             check_equal_gmean(a, desired)
-        finally:
-            np.seterr(**olderr)
 
     def test_1d_array0(self):
         #  Test a 1d array with zero element
         a = np.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 0])
         desired = 0.0  # due to exp(-inf)=0
-        olderr = np.seterr(all='ignore')
-        try:
+        with np.errstate(all='ignore'):
             check_equal_gmean(a, desired)
-        finally:
-            np.seterr(**olderr)
 
 
 class TestGeometricStandardDeviation(object):

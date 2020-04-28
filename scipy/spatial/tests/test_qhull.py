@@ -303,11 +303,8 @@ class TestUtilities(object):
         eps = np.finfo(float).eps
 
         c = barycentric_transform(tri.transform, centroids)
-        olderr = np.seterr(invalid="ignore")
-        try:
+        with np.errstate(invalid="ignore"):
             ok = np.isnan(c).all(axis=1) | (abs(c - sc)/sc < 0.1).all(axis=1)
-        finally:
-            np.seterr(**olderr)
 
         assert_(ok.all(), "%s %s" % (err_msg, np.nonzero(~ok)))
 
