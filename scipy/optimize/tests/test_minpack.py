@@ -7,7 +7,6 @@ from numpy.testing import (assert_, assert_almost_equal, assert_array_equal,
                            assert_array_almost_equal, assert_allclose,
                            assert_warns, suppress_warnings)
 from pytest import raises as assert_raises
-from pytest import approx
 import numpy as np
 from numpy import array, float64
 from multiprocessing.pool import ThreadPool
@@ -550,14 +549,14 @@ class TestCurveFit(object):
         result = curve_fit(f, xdata, ydata, ignore_nan=True)
         expected = np.array([1, 0])
 
-        assert result == approx(expected)
+        assert_allclose(result, expected)
 
         # Test all NaNs data
         xdata = np.array([np.nan, np.nan, np.nan])
         ydata = np.array([np.nan, np.nan, np.nan])
         result = curve_fit(f, xdata, ydata, ignore_nan=True)
 
-        assert np.isnan(result)
+        assert_(np.isnan(result))
 
     def test_empty_inputs(self):
         # Test both with and without bounds (regression test for gh-9864)
