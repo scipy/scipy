@@ -294,11 +294,8 @@ class TestEig(object):
                    [16, 25, 27, 14, 23],
                    [24, 35, 18, 21, 22]])
 
-        olderr = np.seterr(all='ignore')
-        try:
+        with np.errstate(all='ignore'):
             self._check_gen_eig(A, B)
-        finally:
-            np.seterr(**olderr)
 
     def test_falker(self):
         # Test matrices giving some Nan generalized eigenvalues.
@@ -310,11 +307,8 @@ class TestEig(object):
         A = bmat([[I3, Z], [Z, -K]])
         B = bmat([[Z, I3], [M, D]])
 
-        olderr = np.seterr(all='ignore')
-        try:
+        with np.errstate(all='ignore'):
             self._check_gen_eig(A, B)
-        finally:
-            np.seterr(**olderr)
 
     def test_bad_geneig(self):
         # Ticket #709 (strange return values from DGGEV)
@@ -334,13 +328,10 @@ class TestEig(object):
 
         # With a buggy LAPACK, this can fail for different omega on different
         # machines -- so we need to test several values
-        olderr = np.seterr(all='ignore')
-        try:
+        with np.errstate(all='ignore'):
             for k in range(100):
                 A, B = matrices(omega=k*5./100)
                 self._check_gen_eig(A, B)
-        finally:
-            np.seterr(**olderr)
 
     def test_make_eigvals(self):
         # Step through all paths in _make_eigvals
@@ -2276,12 +2267,8 @@ class TestOrdQZ(object):
         cls.B = [B1, B2, B3, B4, A5]
 
     def qz_decomp(self, sort):
-        try:
-            olderr = np.seterr('raise')
+        with np.errstate(all='raise'):
             ret = [ordqz(Ai, Bi, sort=sort) for Ai, Bi in zip(self.A, self.B)]
-        finally:
-            np.seterr(**olderr)
-
         return tuple(ret)
 
     def check(self, A, B, sort, AA, BB, alpha, beta, Q, Z):

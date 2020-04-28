@@ -3340,8 +3340,7 @@ def test_regression_tukey_lambda():
     # non-positive lambdas.
     x = np.linspace(-5.0, 5.0, 101)
 
-    olderr = np.seterr(divide='ignore')
-    try:
+    with np.errstate(divide='ignore'):
         for lam in [0.0, -1.0, -2.0, np.array([[-1.0], [0.0], [-2.0]])]:
             p = stats.tukeylambda.pdf(x, lam)
             assert_((p != 0.0).all())
@@ -3349,8 +3348,6 @@ def test_regression_tukey_lambda():
 
         lam = np.array([[-1.0], [0.0], [2.0]])
         p = stats.tukeylambda.pdf(x, lam)
-    finally:
-        np.seterr(**olderr)
 
     assert_(~np.isnan(p).all())
     assert_((p[0] != 0.0).all())
@@ -3391,11 +3388,8 @@ def test_frozen_fit_ticket_1536():
     true = np.array([0.25, 0., 0.5])
     x = stats.lognorm.rvs(true[0], true[1], true[2], size=100)
 
-    olderr = np.seterr(divide='ignore')
-    try:
+    with np.errstate(divide='ignore'):
         params = np.array(stats.lognorm.fit(x, floc=0.))
-    finally:
-        np.seterr(**olderr)
 
     assert_almost_equal(params, true, decimal=2)
 
@@ -3543,8 +3537,7 @@ def test_ksone_fit_freeze():
          -0.10943985, -0.35243174, 0.06897665, -0.03553363, -0.0701746,
          -0.06037974, 0.37670779, -0.21684405])
 
-    try:
-        olderr = np.seterr(invalid='ignore')
+    with np.errstate(invalid='ignore'):
         with suppress_warnings() as sup:
             sup.filter(IntegrationWarning,
                        "The maximum number of subdivisions .50. has been "
@@ -3552,8 +3545,6 @@ def test_ksone_fit_freeze():
             sup.filter(RuntimeWarning,
                        "floating point number truncated to an integer")
             stats.ksone.fit(d)
-    finally:
-        np.seterr(**olderr)
 
 
 def test_norm_logcdf():

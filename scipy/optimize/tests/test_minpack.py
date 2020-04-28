@@ -837,11 +837,8 @@ class TestFixedPoint(object):
         def func(x):
             return 2.0*x
         x0 = [0.3, 0.15]
-        olderr = np.seterr(all='ignore')
-        try:
+        with np.errstate(all='ignore'):
             x = fixed_point(func, x0)
-        finally:
-            np.seterr(**olderr)
         assert_almost_equal(x, [0.0, 0.0])
 
     def test_array_basic1(self):
@@ -850,11 +847,8 @@ class TestFixedPoint(object):
             return c * x**2
         c = array([0.75, 1.0, 1.25])
         x0 = [1.1, 1.15, 0.9]
-        olderr = np.seterr(all='ignore')
-        try:
+        with np.errstate(all='ignore'):
             x = fixed_point(func, x0, args=(c,))
-        finally:
-            np.seterr(**olderr)
         assert_almost_equal(x, 1.0/c)
 
     def test_array_basic2(self):

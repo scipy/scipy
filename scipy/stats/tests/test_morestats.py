@@ -202,11 +202,8 @@ class TestAnderson(object):
         x2 = rs.standard_normal(size=50)
         A, crit, sig = stats.anderson(x1, 'expon')
         assert_array_less(A, crit[-2:])
-        olderr = np.seterr(all='ignore')
-        try:
+        with np.errstate(all='ignore'):
             A, crit, sig = stats.anderson(x2, 'expon')
-        finally:
-            np.seterr(**olderr)
         assert_(A > crit[-1])
 
     def test_gumbel(self):

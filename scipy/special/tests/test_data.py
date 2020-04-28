@@ -491,8 +491,5 @@ def _test_factory(test, dtype=np.double):
     """Boost test"""
     with suppress_warnings() as sup:
         sup.filter(IntegrationWarning, "The occurrence of roundoff error is detected")
-        olderr = np.seterr(all='ignore')
-        try:
+        with np.errstate(all='ignore'):
             test.check(dtype=dtype)
-        finally:
-            np.seterr(**olderr)

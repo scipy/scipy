@@ -79,21 +79,15 @@ class TestGeoMean(object):
         #  Test a 1d masked array with zero element
         a = np.ma.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 0])
         desired = 41.4716627439
-        olderr = np.seterr(all='ignore')
-        try:
+        with np.errstate(all='ignore'):
             check_equal_gmean(a, desired)
-        finally:
-            np.seterr(**olderr)
 
     def test_1d_ma_inf(self):
         #  Test a 1d masked array with negative element
         a = np.ma.array([10, 20, 30, 40, 50, 60, 70, 80, 90, -1])
         desired = 41.4716627439
-        olderr = np.seterr(all='ignore')
-        try:
+        with np.errstate(all='ignore'):
             check_equal_gmean(a, desired)
-        finally:
-            np.seterr(**olderr)
 
     @pytest.mark.skipif(not hasattr(np, 'float96'), reason='cannot find float96 so skipping')
     def test_1d_float96(self):
@@ -1392,8 +1386,7 @@ class TestCompareWithStats(object):
                 assert_equal(r[0][1], rm[0][1])
 
     def test_normaltest(self):
-        np.seterr(over='raise')
-        with suppress_warnings() as sup:
+        with np.errstate(over='raise'), suppress_warnings() as sup:
             sup.filter(UserWarning, "kurtosistest only valid for n>=20")
             for n in self.get_n():
                 if n > 8:

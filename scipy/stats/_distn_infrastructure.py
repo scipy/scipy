@@ -775,9 +775,8 @@ class rv_generic(object):
     # The primed mu is a widely used notation for the noncentral moment.
     def _munp(self, n, *args):
         # Silence floating point warnings from integration.
-        olderr = np.seterr(all='ignore')
-        vals = self.generic_moment(n, *args)
-        np.seterr(**olderr)
+        with np.errstate(all='ignore'):
+            vals = self.generic_moment(n, *args)
         return vals
 
     def _argcheck_rvs(self, *args, **kwargs):
@@ -2412,9 +2411,8 @@ class rv_continuous(rv_generic):
 
         # upper limit is often inf, so suppress warnings when integrating
         _a, _b = self._get_support(*args)
-        olderr = np.seterr(over='ignore')
-        h = integrate.quad(integ, _a, _b)[0]
-        np.seterr(**olderr)
+        with np.errstate(over='ignore'):
+            h = integrate.quad(integ, _a, _b)[0]
 
         if not np.isnan(h):
             return h
@@ -2530,9 +2528,8 @@ class rv_continuous(rv_generic):
             invfac = 1.0
         kwds['args'] = args
         # Silence floating point warnings from integration.
-        olderr = np.seterr(all='ignore')
-        vals = integrate.quad(fun, lb, ub, **kwds)[0] / invfac
-        np.seterr(**olderr)
+        with np.errstate(all='ignore'):
+            vals = integrate.quad(fun, lb, ub, **kwds)[0] / invfac
         return vals
 
 

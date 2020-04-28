@@ -179,8 +179,7 @@ class CheckOptimizeParameterized(CheckOptimize):
         func = lambda x: -np.e**-x
         fprime = lambda x: -func(x)
         x0 = [0]
-        olderr = np.seterr(over='ignore')
-        try:
+        with np.errstate(over='ignore'):
             if self.use_wrapper:
                 opts = {'disp': self.disp}
                 x = optimize.minimize(func, x0, jac=fprime, method='BFGS',
@@ -188,8 +187,6 @@ class CheckOptimizeParameterized(CheckOptimize):
             else:
                 x = optimize.fmin_bfgs(func, x0, fprime, disp=self.disp)
             assert_(not np.isfinite(func(x)))
-        finally:
-            np.seterr(**olderr)
 
     def test_powell(self):
         # Powell (direction set) optimization routine
