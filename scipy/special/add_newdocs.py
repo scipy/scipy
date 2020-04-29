@@ -354,7 +354,8 @@ add_newdoc("airye",
     Returns
     -------
     eAi, eAip, eBi, eBip : array_like
-        Airy functions Ai and Bi, and their derivatives Aip and Bip
+        Exponentially scaled Airy functions eAi and eBi, and their derivatives 
+        eAip and eBip
 
     Notes
     -----
@@ -369,6 +370,24 @@ add_newdoc("airye",
     .. [1] Donald E. Amos, "AMOS, A Portable Package for Bessel Functions
            of a Complex Argument and Nonnegative Order",
            http://netlib.org/amos/
+           
+    Examples
+    --------
+    We can compute exponentially scaled Airy functions and their derivatives:
+    
+    >>> from scipy.special import airye
+    >>> import matplotlib.pyplot as plt
+    >>> x = np.linspace(40, 200)
+    >>> eAi, eAip, eBi, eBip = airye(x)
+    >>> plt.subplot(211)
+    >>> plt.plot(x, eAi, label="eAi")
+    >>> plt.plot(x, eBi, label="eBi")
+    >>> plt.subplot(211)
+    >>> plt.plot(x, eAip, label="eAip")
+    >>> plt.plot(x, eBip, label="eBip")
+    >>> plt.legend()
+    >>> plt.show()
+    
     """)
 
 add_newdoc("bdtr",
