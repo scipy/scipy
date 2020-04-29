@@ -15,7 +15,23 @@ References
 
 import numpy as np
 from .optimize import _check_unknown_options
-from ._highs.highs_wrapper import highs_wrapper, CONST_INF
+from ._highs.highs_wrapper import (
+    highs_wrapper,
+    CONST_INF,
+    MODEL_STATUS_NOTSET,
+    MODEL_STATUS_LOAD_ERROR,
+    MODEL_STATUS_MODEL_ERROR,
+    MODEL_STATUS_MODEL_EMPTY,
+    MODEL_STATUS_PRESOLVE_ERROR,
+    MODEL_STATUS_SOLVE_ERROR,
+    MODEL_STATUS_POSTSOLVE_ERROR,
+    MODEL_STATUS_PRIMAL_INFEASIBLE,
+    MODEL_STATUS_PRIMAL_UNBOUNDED,
+    MODEL_STATUS_OPTIMAL,
+    MODEL_STATUS_REACHED_DUAL_OBJECTIVE_VALUE_UPPER_BOUND as MODEL_STATUS_RDOVUB,
+    MODEL_STATUS_REACHED_TIME_LIMIT,
+    MODEL_STATUS_REACHED_ITERATION_LIMIT,
+)
 from scipy.sparse import csc_matrix, vstack, issparse
 
 
@@ -222,19 +238,19 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
     _check_unknown_options(unknown_options)
 
     statuses = {
-        0: (4, 'HiGHS Status Code 0: HighsModelStatusNOTSET'),
-        1: (4, 'HiGHS Status Code 1: HighsModelStatusLOAD_ERROR'),
-        2: (4, 'HiGHS Status Code 2: HighsModelStatusMODEL_ERROR'),
-        3: (4, 'HiGHS Status Code 3: HighsModelStatusMODEL_EMPTY'),
-        4: (4, 'HiGHS Status Code 4: HighsModelStatusPRESOLVE_ERROR'),
-        5: (4, 'HiGHS Status Code 5: HighsModelStatusSOLVE_ERROR'),
-        6: (4, 'HiGHS Status Code 6: HighsModelStatusPOSTSOLVE_ERROR'),
-        10: (4, 'HiGHS Status Code 10: HighsModelStatusREACHED_DUAL_OBJECTIVE_VALUE_UPPER_BOUND'),
-        7: (2, "The problem is infeasible."),
-        8: (3, "The problem is unbounded."),
-        9: (0, "Optimization terminated successfully."),
-        11: (1, "Time limit reached."),
-        12: (1, "Iteration limit reached."),
+        MODEL_STATUS_NOTSET: (4, 'HiGHS Status Code 0: HighsModelStatusNOTSET'),
+        MODEL_STATUS_LOAD_ERROR: (4, 'HiGHS Status Code 1: HighsModelStatusLOAD_ERROR'),
+        MODEL_STATUS_MODEL_ERROR: (4, 'HiGHS Status Code 2: HighsModelStatusMODEL_ERROR'),
+        MODEL_STATUS_MODEL_EMPTY: (4, 'HiGHS Status Code 3: HighsModelStatusMODEL_EMPTY'),
+        MODEL_STATUS_PRESOLVE_ERROR: (4, 'HiGHS Status Code 4: HighsModelStatusPRESOLVE_ERROR'),
+        MODEL_STATUS_SOLVE_ERROR: (4, 'HiGHS Status Code 5: HighsModelStatusSOLVE_ERROR'),
+        MODEL_STATUS_POSTSOLVE_ERROR: (4, 'HiGHS Status Code 6: HighsModelStatusPOSTSOLVE_ERROR'),
+        MODEL_STATUS_RDOVUB: (4, 'HiGHS Status Code 10: HighsModelStatusREACHED_DUAL_OBJECTIVE_VALUE_UPPER_BOUND'),
+        MODEL_STATUS_PRIMAL_INFEASIBLE: (2, "The problem is infeasible."),
+        MODEL_STATUS_PRIMAL_UNBOUNDED: (3, "The problem is unbounded."),
+        MODEL_STATUS_OPTIMAL: (0, "Optimization terminated successfully."),
+        MODEL_STATUS_REACHED_TIME_LIMIT: (1, "Time limit reached."),
+        MODEL_STATUS_REACHED_ITERATION_LIMIT: (1, "Iteration limit reached."),
     }
 
     c, A_ub, b_ub, A_eq, b_eq, bounds, x0 = lp
@@ -279,6 +295,9 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
     lb = _replace_inf(lb)
     ub = _replace_inf(ub)
 
+    #from scipy.optimize._highs.mpswriter import mpswriter
+    #mpswriter(b'test_enzo_example_c_with_infeasibility.txt', c, A, lhs, rhs, lb, ub, np.array([], dtype=np.int32))
+
     res = highs_wrapper(c, A.indptr, A.indices, A.data, lhs, rhs,
                         lb, ub, options)
 
@@ -290,7 +309,7 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
            'fun': res.get('fun', None),
            'con': res.get('con', None),
            'status': statuses[res['status']][0],
-           'success': res['status'] == 9,
+           'success': res['status'] == MODEL_STATUS_OPTIMAL,
            'message': statuses[res['status']][1],
            'nit': (res.get('simplex_nit', 0) if solver == 'simplex'
                    else res.get('ipm_nit', 0))

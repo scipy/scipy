@@ -45,6 +45,7 @@ cdef apply_options(dict options, Highs & highs):
     if options.get('message_level', None) == ML_NONE:
         f = tmpfile()
         highs.setHighsLogfile(f)
+        highs.setHighsOutput(f)
 
     # Do all the ints
     for opt in [
@@ -370,7 +371,7 @@ def highs_wrapper(
     if init_status != HighsStatusOK:
         if init_status != HighsStatusWarning:
             logging.warning("Error setting HighsLp");
-            return <int>HighsStatusError
+            return <int> HighsStatusError
 
     # Solve the fool thing
     cdef HighsStatus run_status = highs.run()
@@ -397,8 +398,23 @@ def highs_wrapper(
     cdef HighsInfo info = highs.getHighsInfo() # it should always be safe to get the info object
     cdef HighsSolution solution
 
+    print(highs.highsPrimalDualStatusToString(info.primal_status).decode())
+    print(highs.highsModelStatusToString(model_status).decode())
+
     # If the status is bad, don't look up the solution
     if info.primal_status != PrimalDualStatusSTATUS_FEASIBLE_POINT:
+#    if model_status in [
+#            HighsModelStatusNOTSET,
+#            HighsModelStatusLOAD_ERROR,
+#            HighsModelStatusMODEL_ERROR,
+#            HighsModelStatusMODEL_EMPTY,
+#            HighsModelStatusPRESOLVE_ERROR,
+#            HighsModelStatusSOLVE_ERROR,
+#            HighsModelStatusPOSTSOLVE_ERROR,
+#            HighsModelStatusPRIMAL_INFEASIBLE,
+#            HighsModelStatusPRIMAL_UNBOUNDED,
+#            HighsModelStatusREACHED_ITERATION_LIMIT,
+#    ]:
         return {
             'status': <int> model_status,
             'message': highs.highsModelStatusToString(model_status).decode(),
@@ -442,3 +458,17 @@ from HConst cimport (
 )
 CONST_I_INF = HIGHS_CONST_I_INF
 CONST_INF = HIGHS_CONST_INF
+
+MODEL_STATUS_NOTSET = <int> HighsModelStatusNOTSET
+MODEL_STATUS_LOAD_ERROR = <int> HighsModelStatusLOAD_ERROR
+MODEL_STATUS_MODEL_ERROR = <int> HighsModelStatusMODEL_ERROR
+MODEL_STATUS_MODEL_EMPTY = <int> HighsModelStatusMODEL_EMPTY
+MODEL_STATUS_PRESOLVE_ERROR = <int> HighsModelStatusPRESOLVE_ERROR
+MODEL_STATUS_SOLVE_ERROR = <int> HighsModelStatusSOLVE_ERROR
+MODEL_STATUS_POSTSOLVE_ERROR = <int> HighsModelStatusPOSTSOLVE_ERROR
+MODEL_STATUS_PRIMAL_INFEASIBLE = <int> HighsModelStatusPRIMAL_INFEASIBLE
+MODEL_STATUS_PRIMAL_UNBOUNDED = <int> HighsModelStatusPRIMAL_UNBOUNDED
+MODEL_STATUS_OPTIMAL = <int> HighsModelStatusOPTIMAL
+MODEL_STATUS_REACHED_DUAL_OBJECTIVE_VALUE_UPPER_BOUND = <int> HighsModelStatusREACHED_DUAL_OBJECTIVE_VALUE_UPPER_BOUND
+MODEL_STATUS_REACHED_TIME_LIMIT = <int> HighsModelStatusREACHED_TIME_LIMIT
+MODEL_STATUS_REACHED_ITERATION_LIMIT = <int> HighsModelStatusREACHED_ITERATION_LIMIT

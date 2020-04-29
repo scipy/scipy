@@ -33,13 +33,13 @@ cdef extern from "HighsLp.h" nogil:
         vector[int] integrality_
 
     ctypedef enum HighsModelStatus:
-        HighsModelStatusNOTSET "HighsModelStatus::NOTSET"
+        HighsModelStatusNOTSET "HighsModelStatus::NOTSET" = 0
         HighsModelStatusLOAD_ERROR "HighsModelStatus::LOAD_ERROR"
         HighsModelStatusMODEL_ERROR "HighsModelStatus::MODEL_ERROR"
-        HighsModelStatusMODEL_EMPTY "HighsModelStatus::MODEL_EMPTY"
         HighsModelStatusPRESOLVE_ERROR "HighsModelStatus::PRESOLVE_ERROR"
         HighsModelStatusSOLVE_ERROR "HighsModelStatus::SOLVE_ERROR"
         HighsModelStatusPOSTSOLVE_ERROR "HighsModelStatus::POSTSOLVE_ERROR"
+        HighsModelStatusMODEL_EMPTY "HighsModelStatus::MODEL_EMPTY"
         HighsModelStatusPRIMAL_INFEASIBLE "HighsModelStatus::PRIMAL_INFEASIBLE"
         HighsModelStatusPRIMAL_UNBOUNDED "HighsModelStatus::PRIMAL_UNBOUNDED"
         HighsModelStatusOPTIMAL "HighsModelStatus::OPTIMAL"
