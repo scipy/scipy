@@ -731,6 +731,9 @@ class _TestCommon(object):
 
         # Test all-zero matrix.
         assert_equal(self.spmatrix((40, 16130)).diagonal(), np.zeros(40))
+        # Test empty matrix
+        # https://github.com/scipy/scipy/issues/11949
+        assert_equal(self.spmatrix((0, 0)).diagonal(), np.empty(0))
 
     def test_reshape(self):
         # This first example is taken from the lil_matrix reshaping test.

@@ -320,6 +320,8 @@ class dia_matrix(_data_matrix):
 
     def diagonal(self, k=0):
         rows, cols = self.shape
+        if rows == 0 or cols == 0:
+            return np.empty(0)
         if k <= -rows or k >= cols:
             raise ValueError("k exceeds matrix dimensions")
         idx, = np.nonzero(self.offsets == k)

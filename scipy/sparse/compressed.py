@@ -529,6 +529,8 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
 
     def diagonal(self, k=0):
         rows, cols = self.shape
+        if rows == 0 or cols == 0:
+            return np.empty(0)
         if k <= -rows or k >= cols:
             raise ValueError("k exceeds matrix dimensions")
         fn = getattr(_sparsetools, self.format + "_diagonal")
