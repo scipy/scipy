@@ -99,9 +99,10 @@ jobs:
   - powershell: |
       $pyversion = python -c "import sys; print(sys.version.split()[0])"
       Write-Host "Python Version: $pyversion"
-      function Download-OpenBLAS($ilp64, $target) {
+      function Download-OpenBLAS($ilp64, $targetdir) {
           if ($ilp64 -eq '1') { $target_name = "openblas64_.a" } else { $target_name = "openblas.a" }
           #$target = "C:\\hostedtoolcache\\windows\\Python\\$pyversion\\$(PYTHON_ARCH)\\lib\\$target_name"
+          $target = "$targetdir\$target_name"
           Write-Host "target path: $target"
           $old_value = $env:NPY_USE_BLAS_ILP64
           $env:NPY_USE_BLAS_ILP64 = $ilp64
@@ -110,10 +111,10 @@ jobs:
           cp $openblas $target
       }
       mkdir openblaslib
-      $target = "$pwd\openblaslib"
-      Download-OpenBLAS('0', $target)
+      $targetdir = "$pwd\openblaslib"
+      Download-OpenBLAS('0', $targetdir)
       If ($env:NPY_USE_BLAS_ILP64 -eq '1') {
-          Download-OpenBLAS('1', $target)
+          Download-OpenBLAS('1', $targetdir)
       }
     displayName: 'Download / Install OpenBLAS'
   - powershell: |
@@ -161,11 +162,13 @@ jobs:
       $env:PATH = "C:\\ProgramData\\chocolatey\\lib\\mingw\\tools\\install\\mingw$(BITS)\\bin;" + $env:PATH
 
       mkdir dist
-      if ($(BITS) -eq 32) {
-          $env:OPENBLAS = "$pwd\openblaslib"
+
+      If ( Test-Path env:NPY_USE_BLAS_ILP64 ){
+        echo "##vso[task.setvariable variable=OPENBLAS64_]$pwd\openblaslib"
       } else {
-          $env:OPENBLAS64_ = "$pwd\openblaslib"
+        echo "##vso[task.setvariable variable=OPENBLAS]$pwd\openblaslib"
       }
+
       pip wheel --no-build-isolation -v -v -v --wheel-dir=dist .
       ls dist -r | Foreach-Object {
           pip install $_.FullName
