@@ -455,10 +455,8 @@ class coo_matrix(_data_matrix, _minmax_mixin):
 
     def diagonal(self, k=0):
         rows, cols = self.shape
-        if rows == 0 or cols == 0:
-            return np.empty(0)
         if k <= -rows or k >= cols:
-            raise ValueError("k exceeds matrix dimensions")
+            return np.empty(0, dtype=self.data.dtype)
         diag = np.zeros(min(rows + min(k, 0), cols - max(k, 0)),
                         dtype=self.dtype)
         diag_mask = (self.row + k) == self.col
