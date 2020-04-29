@@ -25,9 +25,6 @@ cdef extern from "py3k.h":
     int npy_PyFile_Check(object file)
 
 
-cdef bint IS_PYPY = ('__pypy__' in sys.modules)
-
-
 DEF _BLOCK_SIZE = 131072
 
 BLOCK_SIZE = _BLOCK_SIZE  # public
