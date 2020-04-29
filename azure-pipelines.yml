@@ -169,6 +169,8 @@ jobs:
       } else {
         echo "##vso[task.setvariable variable=OPENBLAS]$pwd\openblaslib"
       }
+      Write-Host "::: $(OPENBLAS)"
+      Write-Host "::: $(OPENBLAS64_)"
 
       pip wheel --no-build-isolation -v -v -v --wheel-dir=dist .
       ls dist -r | Foreach-Object {
