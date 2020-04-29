@@ -100,10 +100,10 @@ jobs:
       Write-Host "pwd: $pwd"
       $pyversion = python -c "import sys; print(sys.version.split()[0])"
       Write-Host "Python Version: $pyversion"
-      function Download-OpenBLAS($ilp64, $targetdir) {
+      function Download-OpenBLAS($ilp64) {
           if ($ilp64 -eq '1') { $target_name = "openblas64_.a" } else { $target_name = "openblas.a" }
           #$target = "C:\\hostedtoolcache\\windows\\Python\\$pyversion\\$(PYTHON_ARCH)\\lib\\$target_name"
-          $target = "$targetdir\$target_name"
+          $target = "$pwd\openblaslib\$target_name"
           Write-Host "target path: $target"
           $old_value = $env:NPY_USE_BLAS_ILP64
           $env:NPY_USE_BLAS_ILP64 = $ilp64
@@ -113,10 +113,9 @@ jobs:
           cp $openblas $target
       }
       mkdir openblaslib
-      $targetdir = "$pwd\openblaslib"
-      Download-OpenBLAS('0', $targetdir)
+      Download-OpenBLAS('0')
       If ($env:NPY_USE_BLAS_ILP64 -eq '1') {
-          Download-OpenBLAS('1', $targetdir)
+          Download-OpenBLAS('1')
       }
     displayName: 'Download / Install OpenBLAS'
   - powershell: |
