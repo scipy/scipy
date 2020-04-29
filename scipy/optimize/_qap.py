@@ -134,8 +134,6 @@ def quadratic_assignment(
 
     >>> n = cost.shape[0]
     >>> P = np.zeros((n,n))
-    >>> n = cost.shape[0]
-    >>> P = np.zeros((n,n))
     >>> P[np.arange(n),res['col_ind']] = 1
     >>> score = int(np.trace(cost.T @ P @ dist @ P.T))
     >>> print(score)
