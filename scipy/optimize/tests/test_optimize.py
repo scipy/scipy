@@ -850,6 +850,7 @@ class TestOptimizeSimple(CheckOptimize):
             else:
                 kwargs['options'] = dict(maxiter=5)
 
+        # organise jac/hess
         if method in ('fmin_ncg',):
             kwargs['fprime'] = jac
         elif method in ('newton-cg',):
@@ -858,6 +859,10 @@ class TestOptimizeSimple(CheckOptimize):
                         'trust-constr'):
             kwargs['jac'] = jac
             kwargs['hess'] = hess
+
+        # methods that require bounds
+        if method in ('differential-evolution'):
+            kwargs['bounds'] = [(0., 2.)] * 10
 
         # Run with callback
         results = []
