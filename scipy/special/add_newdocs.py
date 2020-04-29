@@ -382,7 +382,7 @@ add_newdoc("airye",
     >>> plt.subplot(211)
     >>> plt.plot(x, eAi, label="eAi")
     >>> plt.plot(x, eBi, label="eBi")
-    >>> plt.subplot(211)
+    >>> plt.subplot(212)
     >>> plt.plot(x, eAip, label="eAip")
     >>> plt.plot(x, eBip, label="eBip")
     >>> plt.legend()
