@@ -283,12 +283,3 @@ HighsStatus FilereaderEms::writeModelToFile(const HighsOptions& options,
   f.close();
   return HighsStatus::OK;
 }
-
-FilereaderRetcode FilereaderEms::readModelFromFile(const std::string filename,
-                                                   HighsModelBuilder& model) {
-  if (filename.c_str()) {
-  }  // surpress warning.
-  if (model.getNumberOfVariables() > 0) {
-  }  // surpress warning.
-  return FilereaderRetcode::NOT_IMPLEMENTED;
-}

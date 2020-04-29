@@ -73,12 +73,3 @@ HighsStatus FilereaderMps::writeModelToFile(const HighsOptions& options,
                                             HighsLp& model) {
   return writeLpAsMPS(options, filename, model);
 }
-
-FilereaderRetcode FilereaderMps::readModelFromFile(const std::string filename,
-                                                   HighsModelBuilder& model) {
-  if (filename.c_str()) {
-  }  // surpress warning.
-  if (model.getNumberOfVariables() > 0) {
-  }  // surpress warning.
-  return FilereaderRetcode::PARSERERROR;
-}

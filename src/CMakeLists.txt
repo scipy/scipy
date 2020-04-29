@@ -70,6 +70,7 @@ set(ipx_sources
 endif()
 
 set(sources
+    ../external/filereaderlp/reader.cpp
     io/Filereader.cpp
     io/FilereaderLp.cpp
     io/FilereaderEms.cpp
@@ -83,7 +84,6 @@ set(sources
     lp_data/HighsLp.cpp
     lp_data/HighsLpUtils.cpp
     lp_data/HighsModelUtils.cpp
-    lp_data/HighsModelBuilder.cpp
     lp_data/HighsSolution.cpp
     lp_data/HighsSolve.cpp
     lp_data/HighsStatus.cpp
@@ -117,6 +117,9 @@ set(sources
     interfaces/highs_c_api.cpp)
 
 set(headers
+    ../external/filereaderlp/builder.hpp
+    ../external/filereaderlp/model.hpp
+    ../external/filereaderlp/reader.hpp
     ipm/IpxStatus.h
     io/Filereader.h
     io/FilereaderLp.h
@@ -138,7 +141,6 @@ set(headers
     lp_data/HighsSolution.h
     lp_data/HighsSolve.h
     lp_data/HighsStatus.h
-    lp_data/HighsModelBuilder.h
     mip/HighsMipSolver.h
     mip/SolveMip.h
     simplex/HApp.h
