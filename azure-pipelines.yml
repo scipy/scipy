@@ -107,6 +107,7 @@ jobs:
           Write-Host "target path: $target"
           $old_value = $env:NPY_USE_BLAS_ILP64
           $env:NPY_USE_BLAS_ILP64 = $ilp64
+          Write-Host ":: $ilp64  $(BITS)"
           $openblas = python tools/openblas_support.py
           $env:NPY_USE_BLAS_ILP64 = $old_value
           cp $openblas $target
