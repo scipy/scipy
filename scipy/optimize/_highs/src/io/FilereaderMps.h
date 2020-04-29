@@ -21,8 +21,6 @@ class FilereaderMps : public Filereader {
  public:
   FilereaderRetcode readModelFromFile(const HighsOptions& options,
                                       HighsLp& model);
-  FilereaderRetcode readModelFromFile(const std::string filename,
-                                      HighsModelBuilder& model);
   HighsStatus writeModelToFile(const HighsOptions& options,
                                const std::string filename, HighsLp& model);
 };

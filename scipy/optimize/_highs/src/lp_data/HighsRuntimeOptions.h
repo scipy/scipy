@@ -11,7 +11,7 @@
 #ifndef LP_DATA_HIGHSRUNTIMEOPTIONS_H_
 #define LP_DATA_HIGHSRUNTIMEOPTIONS_H_
 
-#include "../external/cxxopts.hpp"
+#include "cxxopts.hpp"
 #include "io/HighsIO.h"
 #include "io/LoadOptions.h"
 #include "util/stringutil.h"

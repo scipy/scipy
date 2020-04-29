@@ -279,9 +279,9 @@ add_subdirectory(app)
 add_subdirectory(check)
 add_subdirectory(src)
 
-# # Comment out for scaffold/ tests
+# # # Comment out for scaffold/ tests
 # add_subdirectory(scaffold)
 
-# # Only needed if it defines a target like a main executable. For methods stick
-# # to header-only.
+# # # Only needed if it defines a target like a main executable. For methods stick
+# # # to header-only.
 # add_subdirectory(dev_presolve)

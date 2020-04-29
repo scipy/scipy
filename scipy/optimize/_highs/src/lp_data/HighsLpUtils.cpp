@@ -69,6 +69,19 @@ HighsStatus assessLp(HighsLp& lp, const HighsOptions& options,
         interpretCallStatus(call_status, return_status, "assessBounds");
     if (return_status == HighsStatus::Error) return return_status;
     // Assess the LP matrix
+    //
+    // The start of column 0 must be zero. It's possible to make
+    // everything consistent with the start being positive but, in
+    // particular, this means that the number of nonzeros is no longer
+    // lp.Astart_[lp.numCol_], a real banana skin to avoid just for
+    // the few wierdos who want lp.Astart_[0] to be positive. Hence
+    // it's not permitted!
+    if (lp.Astart_[0]) {
+      HighsLogMessage(options.logfile, HighsMessageType::ERROR,
+                      "LP has nonzero value (%d) for the start of column 0\n",
+                      lp.Astart_[0]);
+      return HighsStatus::Error;
+    }
     int lp_num_nz = lp.Astart_[lp.numCol_];
     call_status = assessMatrix(
         options, lp.numRow_, 0, lp.numCol_ - 1, lp.numCol_, lp_num_nz,

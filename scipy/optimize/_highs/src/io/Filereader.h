@@ -16,7 +16,6 @@
 
 #include "io/HighsIO.h"
 #include "lp_data/HighsLp.h"
-#include "lp_data/HighsModelBuilder.h"
 #include "lp_data/HighsOptions.h"
 
 enum class FilereaderRetcode {
@@ -34,8 +33,6 @@ class Filereader {
  public:
   virtual FilereaderRetcode readModelFromFile(const HighsOptions& options,
                                               HighsLp& model) = 0;
-  virtual FilereaderRetcode readModelFromFile(const std::string filename,
-                                              HighsModelBuilder& model) = 0;
   virtual HighsStatus writeModelToFile(const HighsOptions& options,
                                        const std::string filename,
                                        HighsLp& model) = 0;
