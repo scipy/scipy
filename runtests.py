@@ -494,9 +494,6 @@ def working_dir(new_dir):
 
 
 def run_mypy(args):
-    if args.no_build:
-        raise ValueError('Cannot run mypy with --no-build')
-
     try:
         import mypy.api
     except ImportError:
@@ -505,22 +502,31 @@ def run_mypy(args):
             "pip install -r mypy_requirements.txt from the repo root"
         )
 
-    site_dir = build_project(args)
     config = os.path.join(
         os.path.dirname(os.path.abspath(__file__)),
         "mypy.ini",
     )
-    with working_dir(site_dir):
-        # By default mypy won't color the output since it isn't being
-        # invoked from a tty.
-        os.environ['MYPY_FORCE_COLOR'] = '1'
-        # Change to the site directory to make sure mypy doesn't pick
-        # up any type stubs in the source tree.
+    # By default mypy won't color the output since it isn't
+    # being invoked from a tty.
+    os.environ['MYPY_FORCE_COLOR'] = "1"
+    if args.no_build:
         report, errors, status = mypy.api.run([
             "--config-file",
             config,
-            PROJECT_MODULE,
+            "-p",
+            "scipy",
         ])
+    else:
+        site_dir = build_project(args)
+        with working_dir(site_dir):
+            # Change to the site directory to make sure mypy doesn't
+            # pick up any type stubs in the source tree.
+            report, errors, status = mypy.api.run([
+                "--config-file",
+                config,
+                PROJECT_MODULE,
+                "--no-incremental",
+            ])
     print(report, end='')
     print(errors, end='', file=sys.stderr)
     return status
