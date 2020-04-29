@@ -423,6 +423,9 @@ All functions
    cpbsv
    zpbsv
 
+   spbsvx
+   dpbsvx
+
    spbtrf
    dpbtrf
    cpbtrf

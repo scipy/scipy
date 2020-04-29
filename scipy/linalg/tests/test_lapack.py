@@ -499,6 +499,34 @@ class TestDlasd4(object):
                         rtol=100*np.finfo(np.float64).eps)
 
 
+class TestPbsvx:
+
+    def test_nag_f07hbf(self):
+        ab_ = np.array([(0, 2.68, -2.39, -2.22),
+                       (5.49, 5.63, 2.60, 5.17)])
+        b_ = np.array([(22.09, 5.10),
+                       (9.31, 30.81),
+                       (-5.24, -25.82),
+                       (11.83, 22.90)])
+        x_ = np.array([(5.0000, -2.0000),
+                       (-2.0000, 6.0000),
+                       (-3.0000, -1.0000),
+                       (1.0000, 4.0000)])
+        atol = 100 * np.finfo(ab_.dtype).eps
+        pbsvx = get_lapack_funcs('pbsvx', dtype=ab_.dtype)
+        ab, afb, e, s, x, rcond, ferr, berr, info = pbsvx(ab=ab_, b=b_,kd=1)
+
+        assert_equal(ab, ab_)
+        assert_equal(afb.shape, ab_.shape)
+        assert_equal(e, b'N')
+        assert_equal(s.shape, (4,))
+        assert_allclose(x, x_, atol=atol)
+        assert np.isscalar(rcond)
+        assert_equal(ferr.shape, (2,))
+        assert_equal(berr.shape, (2,))
+        assert_equal(info, 0)
+
+
 class TestTbtrs(object):
 
     @pytest.mark.parametrize('dtype', DTYPES)
