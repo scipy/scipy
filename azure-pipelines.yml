@@ -166,7 +166,7 @@ jobs:
 
       If ( Test-Path env:NPY_USE_BLAS_ILP64 ){
         #echo "##vso[task.setvariable variable=OPENBLAS_ILP64]$pwd\openblaslib"
-        $env:OPENBLAS64_ = "$pwd\openblaslib"
+        $env:OPENBLAS_ILP64 = "$pwd\openblaslib"
       } else {
         #echo "##vso[task.setvariable variable=OPENBLAS]$pwd\openblaslib"
         $env:OPENBLAS = "$pwd\openblaslib"
