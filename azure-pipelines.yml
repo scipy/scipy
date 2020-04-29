@@ -97,6 +97,7 @@ jobs:
   - script: python -m pip install --upgrade pip setuptools wheel
     displayName: 'Install tools'
   - powershell: |
+      Write-Host "pwd: $pwd"
       $pyversion = python -c "import sys; print(sys.version.split()[0])"
       Write-Host "Python Version: $pyversion"
       function Download-OpenBLAS($ilp64, $targetdir) {
