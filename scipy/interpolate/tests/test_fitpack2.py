@@ -149,7 +149,7 @@ class TestUnivariateSpline(object):
         assert_allclose(f.derivative()(x), 0, atol=1e-15)
 
     def test_integral_out_of_bounds(self):
-        # Regression test for gh-7906: .integral(a, b) is wrong if both 
+        # Regression test for gh-7906: .integral(a, b) is wrong if both
         # a and b are out-of-bounds
         x = np.linspace(0., 1., 7)
         for ext in range(4):

@@ -522,7 +522,7 @@ class interp1d(_Interpolator1D):
                 if mask.any():
                     sx = self.x[~mask]
                     if sx.size == 0:
-                        raise ValueError("`x` array is all-nan")                        
+                        raise ValueError("`x` array is all-nan")
                     xx = np.linspace(np.nanmin(self.x),
                                      np.nanmax(self.x),
                                      len(self.x))

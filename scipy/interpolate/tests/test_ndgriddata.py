@@ -160,7 +160,7 @@ class TestGriddata(object):
                           method=method)
             assert_raises(ValueError, griddata, x, y, xi3,
                           method=method)
-        
+
 
 def test_nearest_options():
     # smoke test that NearestNDInterpolator accept cKDTree options
