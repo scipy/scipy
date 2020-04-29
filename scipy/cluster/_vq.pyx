@@ -75,7 +75,7 @@ cdef int _vq(vq_type *obs, vq_type *code_book,
         The number of features of each observation.
     nobs : int
         The number of observations.
-    codes : vq_type*
+    codes : int32_t*
         The pointer to the new codes array.
     low_dist : vq_type*
         low_dist[i] is the Euclidean distance from obs[i] to the corresponding
