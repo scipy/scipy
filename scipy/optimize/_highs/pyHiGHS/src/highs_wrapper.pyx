@@ -398,9 +398,6 @@ def highs_wrapper(
     cdef HighsInfo info = highs.getHighsInfo() # it should always be safe to get the info object
     cdef HighsSolution solution
 
-    print(highs.highsPrimalDualStatusToString(info.primal_status).decode())
-    print(highs.highsModelStatusToString(model_status).decode())
-
     # If the status is bad, don't look up the solution
     if info.primal_status != PrimalDualStatusSTATUS_FEASIBLE_POINT:
 #    if model_status in [
