@@ -6,8 +6,7 @@ from . import linear_sum_assignment, minimize_scalar, OptimizeResult
 def quadratic_assignment(
     cost_matrix,
     dist_matrix,
-    seed_cost=[],
-    seed_dist=[],
+    seed=np.array([[], []]).T,
     maximize=False,
     n_init=1,
     init_method="barycenter",
@@ -21,14 +20,14 @@ def quadratic_assignment(
     This class solves the Quadratic Assignment Problem and the Graph
     Matching Problem (QAP) through an implementation of the Fast
     Approximate QAP Algorithm (FAQ) (these two problems are the same up
-    to a sign change) [1].
+    to a sign change) [1]_.
 
     This algorithm can be thought of as finding an alignment of the
     vertices of two graphs which minimizes the number of induced edge
     disagreements, or, in the case of weighted graphs, the sum of squared
     differences of edge weight disagreements. The option to add seeds
     (known vertex correspondence between some nodes) is also available
-    [2].
+    [2]_.
 
 
     Parameters
@@ -39,16 +38,14 @@ def quadratic_assignment(
     dist_matrix : 2d-array, square, positive
         A square adjacency matrix
 
-    seed_cost : 1d-array, optional, (default = [])
-        An array where each entry is an index of a node in 'cost_matrix'
-        (shape (m , 1) where m <= number of nodes).
-
-    seeds_dist : 1d-array, optional, (default = [])
-        An array where each entry is an index of a node in 'dist_matrix'
+    seed : 2d-array, optional, (default = [[],[]])
+        Allows the user apply a seed, fixing part of the matching between
+        the two adjacency matrices.
+        For column 1, each entry is an index of a node in 'cost_matrix'.
+        For column 2, each entry is an index of a node in 'dist_matrix'
         The elements of 'seed_cost' and 'seed_dist' are vertices which
-        are known to be matched, that is, 'seed_cost[i]' is matched to
-        vertex 'seed_dist[i]'. Array shape (m , 1)
-        where m <= number of nodes
+        are known to be matched, that is, 'seed[0, i]' is matched to
+        vertex 'seed[1, i]'. Array shape (m , 2) where m <= number of nodes
 
     maximize : bool (default = False)
         Gives users the option to solve the Graph Matching Problem (GMP)
@@ -61,26 +58,37 @@ def quadratic_assignment(
         options:
 
             n_init : int, positive (default = 1)
-               Number of random initializations of the starting
-               permutation matrix that the FAQ algorithm will undergo.
-               n_init automatically set to 1 if init_method = 'barycenter'
+                Number of random initializations of the starting
+                permutation matrix that the FAQ algorithm will undergo.
             init_method : string (default = 'barycenter')
-               The initial position chosen:
-               "barycenter" : the non-informative "flat doubly stochastic
-               matrix,":math:'J=1*1^T /n' , i.e the barycenter of the
-               feasible region
-               "rand" : some random point near :math:'J, (J+K)/2', where K
-               is some random doubly stochastic matrix
+                The algorithm may be sensitive to the initial permutation
+                matrix (or search position) chosen due to the possibility
+                of several local minima within the feasible region.
+                With only 1 initialization, a barycenter init will
+                likely return a more accurate permutation.
+                Choosing several random initializations as opposed to
+                the non-informative barycenter will likely result in a
+                more accurate result at the cost of higher runtime.
+                The initial position chosen:
+                "barycenter" : the non-informative "flat doubly stochastic
+                matrix,":math:'J=1*1^T /n' , i.e the barycenter of the
+                feasible region (where n is the number of nodes and '1' is
+                a (n,1) array of ones)
+                "rand" : some random point near :math:'J, (J+K)/2', where K
+                is some random doubly stochastic matrix
             max_iter : int, positive (default = 30)
-               Integer specifying the max number of Franke-Wolfe iterations.
-               FAQ typically converges with modest number of iterations.
+                Integer specifying the max number of Franke-Wolfe iterations.
+                FAQ typically converges with modest number of iterations.
             shuffle_input : bool (default = True)
-               Gives users the option to shuffle the nodes of 'cost_matrix'
-               to avoid results from inputs that were already matched.
-            eps : float (default = 0.1)
-               A positive, threshold stopping criteria such that FW
-               continues to iterate while Frobenius norm of
-               :math:'(P_{i}-P_{i+1}) > eps'
+                To avoid artificially high or low matching due to inherent
+                sorting of input adjacency matrices, gives users the option
+                to shuffle the nodes of 'cost_matrix'. Results are then
+                unshuffled so that returned 'col_ind' matches node order
+                of inputs
+            eps : float (default = 0.05)
+                A positive, threshold stopping criteria such that Franke-
+                Wolfe continues to iterate while Frobenius norm of
+                :math:'(P_{i}-P_{i+1}) > eps'
 
     Returns
     -------
@@ -88,10 +96,12 @@ def quadratic_assignment(
         A :class:`scipy.optimize.OptimizeResult` consisting of the fields:
 
             col_ind : 1-D array
-                An array of column indices corresponding to the optimal optimal
-                permutation (with the fixed seeds given) on the
+                An array of column indices corresponding to the optimal
+                permutation (with the fixed seeds given) of the
                 nodes of B, to best minimize the objective function
                 :math:'f(P) = trace(A^T PBP^T )'.
+                P is a permutation matrix where P[i,col_ind[i]] = 1
+                for 0<=i<n and
             score : float
                 The optimal value of the objective function.
             nit : int
@@ -111,21 +121,46 @@ def quadratic_assignment(
     Examples
     --------
 
-    >>> cost = [[0,22,53,53],[22,0,40,62],[53,40,0,55],[53,62,55,0]]
-    >>> dist = [[0,3,0,2],[3,0,0,1],[0,0,0,4],[2,1,4,0]]
+
+    >>> cost = np.array([[0,22,53,53],[22,0,40,62],[53,40,0,55],[53,62,55,0]])
+    >>> dist = np.array([[0,3,0,2],[3,0,0,1],[0,0,0,4],[2,1,4,0]])
     >>> from scipy.optimize import quadratic_assignment
-    >>> quadratic_assignment(cost,dist)
-       col: array([2, 3, 0, 1])
-       nit: 30
-       row: array([0, 1, 2, 3])
-     score: 790
+    >>> res = quadratic_assignment(cost,dist)
+    >>> print(res)
+       col_ind: array([2, 3, 0, 1])
+           nit: 30
+         score: 790
+
+    To demonstrate explicitly how the 'score' value
+    :math:'f(P) = trace(A^T PBP^T )' is calculated, one may construct the
+    permutation matrix, and perform the necessary algebra.
+
+    >>> n = cost.shape[0]
+    >>> P = np.zeros((n,n))
+    >>> n = cost.shape[0]
+    >>> P = np.zeros((n,n))
+    >>> P[np.arange(n),res['col_ind']] = 1
+    >>> score = int(np.trace(cost.T @ P @ dist @ P.T))
+    >>> print(score)
+        790
+
+    As you can see, the value here matches res['score'] reported above.
+    Alternatively, to avoid constructing the permutation, one can also
+    perform the following calculation.
+
+    >>> score = np.trace(cost.T @ dist[np.ix_(res['col_ind'], res['col_ind'])])
+    >>> print(score)
+        790
+
+    Here, we are simply permuting the distance matrix.
+
+
 
     """
 
     cost_matrix = np.asarray(cost_matrix)
     dist_matrix = np.asarray(dist_matrix)
-    seed_cost = np.asarray(seed_cost)
-    seed_dist = np.asarray(seed_dist)
+    seed = np.asarray(seed)
 
     if cost_matrix.shape[0] != dist_matrix.shape[0]:
         msg = "Adjacency matrices must be of equal size"
@@ -139,19 +174,16 @@ def quadratic_assignment(
     elif not (cost_matrix >= 0).all() or not (dist_matrix >= 0).all():
         msg = "Adjacency matrix entries must be greater than or equal to zero"
         raise ValueError(msg)
-    elif seed_cost.shape[0] != seed_dist.shape[0]:
-        msg = "Seed arrays must be of equal size"
-        raise ValueError(msg)
-    elif seed_cost.shape[0] > cost_matrix.shape[0]:
+    elif seed.shape[0] > cost_matrix.shape[0]:
         msg = "There cannot be more seeds than there are nodes"
         raise ValueError(msg)
-    elif not (seed_cost >= 0).all() or not (seed_dist >= 0).all():
+    elif seed.shape[1] != 2:
+        msg = "Seed array entry must have two columns"
+        raise ValueError(msg)
+    elif not (seed >= 0).all():
         msg = "Seed array entries must be greater than or equal to zero"
         raise ValueError(msg)
-    elif (
-        not (seed_cost <= (cost_matrix.shape[0] - 1)).all()
-        or not (seed_dist <= (cost_matrix.shape[0] - 1)).all()
-    ):
+    elif not (seed <= (cost_matrix.shape[0] - 1)).all():
         msg = "Seed array entries must be less than or equal to n-1"
         raise ValueError(msg)
     elif type(n_init) is not int and n_init <= 0:
@@ -174,26 +206,25 @@ def quadratic_assignment(
         raise TypeError(msg)
 
     n = cost_matrix.shape[0]  # number of vertices in graphs
-    n_seeds = seed_cost.shape[0]  # number of seeds
+    n_seeds = seed.shape[0]  # number of seeds
     n_unseed = n - n_seeds
 
-    score = math.inf
     perm_inds = np.zeros(n)
 
     obj_func_scalar = 1
     if maximize:
         obj_func_scalar = -1
-        score = 0
+    score = obj_func_scalar * math.inf
 
-    seed_dist_c = np.setdiff1d(range(n), seed_dist)
+    seed_dist_c = np.setdiff1d(range(n), seed[:, 1])
     if shuffle_input:
         seed_dist_c = np.random.permutation(seed_dist_c)
         # shuffle_input to avoid results from inputs that were already matched
 
-    seed_cost_c = np.setdiff1d(range(n), seed_cost)
-    permutation_cost = np.concatenate([seed_cost, seed_cost_c],
+    seed_cost_c = np.setdiff1d(range(n), seed[:, 0])
+    permutation_cost = np.concatenate([seed[:, 0], seed_cost_c],
                                       axis=None).astype(int)
-    permutation_dist = np.concatenate([seed_dist, seed_dist_c],
+    permutation_dist = np.concatenate([seed[:, 1], seed_dist_c],
                                       axis=None).astype(int)
     cost_matrix = cost_matrix[np.ix_(permutation_cost, permutation_cost)]
     dist_matrix = dist_matrix[np.ix_(permutation_dist, permutation_dist)]
@@ -207,11 +238,6 @@ def quadratic_assignment(
     B12 = dist_matrix[:n_seeds, n_seeds:]
     B21 = dist_matrix[n_seeds:, :n_seeds]
     B22 = dist_matrix[n_seeds:, n_seeds:]
-    A11T = np.transpose(A11)
-    A12T = np.transpose(A12)
-    A22T = np.transpose(A22)
-    B21T = np.transpose(B21)
-    B22T = np.transpose(B22)
 
     for i in range(n_init):
         # setting initialization matrix
@@ -236,7 +262,7 @@ def quadratic_assignment(
         # OPTIMIZATION WHILE LOOP BEGINS
         while grad_P > eps and n_iter < max_iter:
             delta_f = (
-                const_sum + A22 @ P @ B22T + A22T @ P @ B22
+                const_sum + A22 @ P @ B22.T + A22.T @ P @ B22
             )  # computing the gradient of f(P) = -tr(APB^tP^t)
             rows, cols = linear_sum_assignment(
                 obj_func_scalar * delta_f
@@ -246,11 +272,11 @@ def quadratic_assignment(
 
             def f(x):  # computing the original optimization function
                 return obj_func_scalar * (
-                    np.trace(A11T @ B11)
-                    + np.trace(np.transpose(x * P + (1 - x) * Q) @ A21 @ B21T)
-                    + np.trace(np.transpose(x * P + (1 - x) * Q) @ A12T @ B12)
+                    np.trace(A11.T @ B11)
+                    + np.trace(np.transpose(x * P + (1 - x) * Q) @ A21 @ B21.T)
+                    + np.trace(np.transpose(x * P + (1 - x) * Q) @ A12.T @ B12)
                     + np.trace(
-                        A22T
+                        A22.T
                         @ (x * P + (1 - x) * Q)
                         @ B22
                         @ np.transpose(x * P + (1 - x) * Q)
