@@ -382,6 +382,8 @@ add_newdoc("airye",
     >>> plt.subplot(211)
     >>> plt.plot(x, eAi, "-r", label="eAi")
     >>> plt.plot(x, eBi, "-b", label="eBi")
+    >>> plt.grid(True)
+    >>> plt.legend()
     >>> plt.subplot(212)
     >>> plt.plot(x, eAip, "-r", label="eAip")
     >>> plt.plot(x, eBip, "-b", label="eBip")
