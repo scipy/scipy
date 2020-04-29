@@ -172,7 +172,7 @@ jobs:
         $env:OPENBLAS = "$pwd\openblaslib"
       }
       Write-Host "::: $env:OPENBLAS"
-      Write-Host "::: $env:OPENBLAS64_"
+      Write-Host "::: $env:OPENBLAS_ILP64"
 
       pip wheel --no-build-isolation -v -v -v --wheel-dir=dist .
       ls dist -r | Foreach-Object {
