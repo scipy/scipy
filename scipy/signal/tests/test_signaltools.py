@@ -803,7 +803,7 @@ class TestOAConvolve(object):
         assert_array_almost_equal(out, expected)
 
     @pytest.mark.parametrize('shape_a_0, shape_b_0',
-                             gen_oa_shapes([50, 47, 6, 4]))
+                             gen_oa_shapes([50, 47, 6, 4, 1]))
     @pytest.mark.parametrize('is_complex', [True, False])
     @pytest.mark.parametrize('mode', ['full', 'valid', 'same'])
     def test_1d_noaxes(self, shape_a_0, shape_b_0,
