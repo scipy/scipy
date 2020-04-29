@@ -165,9 +165,11 @@ jobs:
       mkdir dist
 
       If ( Test-Path env:NPY_USE_BLAS_ILP64 ){
-        echo "##vso[task.setvariable variable=OPENBLAS64_]$pwd\openblaslib"
+        #echo "##vso[task.setvariable variable=OPENBLAS64_]$pwd\openblaslib"
+        $env:OPENBLAS64_ = "$pwd\openblaslib"
       } else {
-        echo "##vso[task.setvariable variable=OPENBLAS]$pwd\openblaslib"
+        #echo "##vso[task.setvariable variable=OPENBLAS]$pwd\openblaslib"
+        $env:OPENBLAS = "$pwd\openblaslib"
       }
       Write-Host "::: $env:OPENBLAS"
       Write-Host "::: $env:OPENBLAS64_"
