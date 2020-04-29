@@ -42,7 +42,7 @@ def quadratic_assignment(
         Allows the user apply a seed, fixing part of the matching between
         the two adjacency matrices.
         For column 1, each entry is an index of a node in 'cost_matrix'.
-        For column 2, each entry is an index of a node in 'dist_matrix'
+        For column 2, each entry is an index of a node in 'dist_matrix'.
         The elements of 'seed_cost' and 'seed_dist' are vertices which
         are known to be matched, that is, 'seed[0, i]' is matched to
         vertex 'seed[1, i]'. Array shape (m , 2) where m <= number of nodes
@@ -101,7 +101,7 @@ def quadratic_assignment(
                 nodes of B, to best minimize the objective function
                 :math:'f(P) = trace(A^T PBP^T )'.
                 P is a permutation matrix where P[i,col_ind[i]] = 1
-                for 0<=i<n and
+                for 0<=i<n and and 0 elsewhere.
             score : float
                 The optimal value of the objective function.
             nit : int
@@ -121,15 +121,14 @@ def quadratic_assignment(
     Examples
     --------
 
-
     >>> cost = np.array([[0,22,53,53],[22,0,40,62],[53,40,0,55],[53,62,55,0]])
     >>> dist = np.array([[0,3,0,2],[3,0,0,1],[0,0,0,4],[2,1,4,0]])
     >>> from scipy.optimize import quadratic_assignment
     >>> res = quadratic_assignment(cost,dist)
     >>> print(res)
-       col_ind: array([2, 3, 0, 1])
-           nit: 30
-         score: 790
+     col_ind: array([2, 3, 0, 1])
+         nit: 1
+       score: 790
 
     To demonstrate explicitly how the 'score' value
     :math:'f(P) = trace(A^T PBP^T )' is calculated, one may construct the
@@ -153,8 +152,6 @@ def quadratic_assignment(
         790
 
     Here, we are simply permuting the distance matrix.
-
-
 
     """
 
