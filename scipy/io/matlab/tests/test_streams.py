@@ -21,8 +21,6 @@ from scipy.io.matlab.streams import (make_stream,
     GenericStream, ZlibInputStream,
     _read_into, _read_string, BLOCK_SIZE)
 
-IS_PYPY = ('__pypy__' in sys.modules)
-
 
 @contextmanager
 def setup_test_file():
