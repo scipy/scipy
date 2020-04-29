@@ -66,6 +66,7 @@ The `minimize` function supports the following methods:
    optimize.minimize-trustncg
    optimize.minimize-trustkrylov
    optimize.minimize-trustexact
+   optimize.minimize-differentialevolution
 
 Constraints are passed to `minimize` function as a single object or
 as a list of objects from the following classes:

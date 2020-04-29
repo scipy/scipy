@@ -81,7 +81,8 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
             - 'trust-ncg'   :ref:`(see here) <optimize.minimize-trustncg>`
             - 'trust-exact' :ref:`(see here) <optimize.minimize-trustexact>`
             - 'trust-krylov' :ref:`(see here) <optimize.minimize-trustkrylov>`
-            - 'differential-evolution' :ref:`(see here) <optimize.differential_evolution>`
+            - 'differential-evolution'
+                :ref:`(see here) <optimize.minimize-differentialevolution>`
             - custom - a callable object (added in version 0.14.0),
               see below for description.
 
@@ -338,8 +339,9 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     used to solve the subproblems with increasing levels of accuracy
     as the iterate gets closer to a solution.
 
-    Method :ref:`differential-evolution <optimize.differential_evolution>` uses
-    differential evolution for constrained optimization.
+    Method
+    :ref:`differential-evolution <optimize.minimize-differentialevolution>`
+    uses differential evolution for constrained optimization.
 
     **Finite-Difference Options**
 
@@ -645,7 +647,8 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         return _minimize_trustregion_exact(fun, x0, args, jac, hess,
                                            callback=callback, **options)
     elif meth == 'differential-evolution':
-        return differential_evolution(fun, bounds, args=args, constraints=constraints,
+        return differential_evolution(fun, bounds, args=args,
+                                      constraints=constraints,
                                       callback=callback, **options)
     else:
         raise ValueError('Unknown solver %s' % method)

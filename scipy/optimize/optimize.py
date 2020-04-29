@@ -3192,7 +3192,7 @@ def show_options(solver=None, method=None, disp=True):
     - :ref:`SLSQP       <optimize.minimize-slsqp>`
     - :ref:`dogleg      <optimize.minimize-dogleg>`
     - :ref:`trust-ncg   <optimize.minimize-trustncg>`
-    - :ref:`differential-evolution <optimize.differential_evolution>`
+    - :ref:`differential-evolution <optimize.minimize-differentialevolution>`
 
     `scipy.optimize.root`
 
