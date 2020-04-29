@@ -37,7 +37,7 @@ def test_quadratic_assignment():
     n = 12
     opt_perm = np.array([7, 5, 1, 3, 10, 4, 8, 6, 9, 11, 2, 12]) - [1] * n
     seed_cost = [4, 8, 10]
-    seed_dist = [opt_perm[z] for z in seed_cost]
+    seed = np.asarray([seed_cost, [opt_perm[z] for z in seed_cost]]).T
 
     res = quadratic_assignment(cost_matrix, dist_matrix)
 
@@ -49,14 +49,18 @@ def test_quadratic_assignment():
 
     assert 11156 <= res['score'] < 13500
 
-    res = quadratic_assignment(cost_matrix, dist_matrix, seed_cost, seed_dist)
+    res = quadratic_assignment(cost_matrix, dist_matrix, seed)
 
     assert 11156 <= res['score'] < 21000
 
 
-def test_linear_sum_assignment_input_validation():
+def test_quadratic_assignment_input_validation():
     A = np.identity(2)
     B = A
+
+    #Type Error Checks: making sure single value parameters are of
+    #correct type
+
     with pytest.raises(TypeError):
         quadratic_assignment(A, B, n_init=-1.5)
     with pytest.raises(ValueError):
@@ -73,35 +77,29 @@ def test_linear_sum_assignment_input_validation():
         quadratic_assignment(
             np.random.random((3, 3)),
             np.random.random((4, 4)),
-            np.arange(2),
-            np.arange(2),
+            _range_matrix(2, 2),
         )
     with pytest.raises(ValueError):
         quadratic_assignment(
             np.random.random((3, 4)),
             np.random.random((3, 4)),
-            np.arange(2),
-            np.arange(2),
+            _range_matrix(2, 2),
         )
     with pytest.raises(ValueError):
         quadratic_assignment(
-            np.identity(3), np.identity(3), np.identity(3), np.arange(2)
+            np.identity(3), np.identity(3),  _range_matrix(2, 3)
         )
     with pytest.raises(ValueError):
         quadratic_assignment(np.identity(3), np.identity(3),
-                             np.arange(1), np.arange(2))
-    with pytest.raises(ValueError):
-        quadratic_assignment(np.identity(3), np.identity(3),
-                             np.arange(5), np.arange(5))
+                             _range_matrix(5, 2))
     with pytest.raises(ValueError):
         quadratic_assignment(
-            np.identity(3), np.identity(3), -1 * np.arange(2),
-            -1 * np.arange(2)
+            np.identity(3), np.identity(3), -1 * _range_matrix(2, 2),
         )
 
 
-def _score(A, B, col):
-    A = np.asarray(A)
-    B = np.asarray(B)
-    col = np.asarray(col)
-    return np.trace(np.transpose(A) @ B[np.ix_(col, col)])
+def _range_matrix(a, b):
+    mat = np.zeros((a, b))
+    for i in range(b):
+        mat[:, i] = np.arange(a)
+    return mat
