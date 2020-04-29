@@ -73,7 +73,7 @@ def quadratic_assignment(
                 "barycenter" : the non-informative "flat doubly stochastic
                 matrix,":math:'J=1*1^T /n' , i.e the barycenter of the
                 feasible region (where n is the number of nodes and '1' is
-                a (n,1) array of ones)
+                a (n, 1) array of ones)
                 "rand" : some random point near :math:'J, (J+K)/2', where K
                 is some random doubly stochastic matrix
             max_iter : int, positive (default = 30)
@@ -100,8 +100,6 @@ def quadratic_assignment(
                 permutation (with the fixed seeds given) of the
                 nodes of B, to best minimize the objective function
                 :math:'f(P) = trace(A^T PBP^T )'.
-                P is a permutation matrix where P[i,col_ind[i]] = 1
-                for 0<=i<n and and 0 elsewhere.
             score : float
                 The optimal value of the objective function.
             nit : int
@@ -144,7 +142,7 @@ def quadratic_assignment(
         790
 
     As you can see, the value here matches res['score'] reported above.
-    Alternatively, to avoid constructing the permutation, one can also
+    Alternatively, to avoid constructing the permutation matrix, one can also
     perform the following calculation.
 
     >>> score = np.trace(cost.T @ dist[np.ix_(res['col_ind'], res['col_ind'])])
@@ -219,10 +217,10 @@ def quadratic_assignment(
         # shuffle_input to avoid results from inputs that were already matched
 
     seed_cost_c = np.setdiff1d(range(n), seed[:, 0])
-    permutation_cost = np.concatenate([seed[:, 0], seed_cost_c],
-                                      axis=None).astype(int)
-    permutation_dist = np.concatenate([seed[:, 1], seed_dist_c],
-                                      axis=None).astype(int)
+    permutation_cost = np.concatenate([seed[:, 0],
+                                       seed_cost_c], axis=None).astype(int)
+    permutation_dist = np.concatenate([seed[:, 1],
+                                       seed_dist_c], axis=None).astype(int)
     cost_matrix = cost_matrix[np.ix_(permutation_cost, permutation_cost)]
     dist_matrix = dist_matrix[np.ix_(permutation_dist, permutation_dist)]
 
@@ -239,9 +237,7 @@ def quadratic_assignment(
     for i in range(n_init):
         # setting initialization matrix
         if init_method == "rand":
-            K = np.random.rand(
-                n_unseed, n_unseed
-            )
+            K = np.random.rand(n_unseed, n_unseed)
             # generate a nxn matrix where each entry is a random integer [0,1]
             for i in range(10):  # perform 10 iterations of Sinkhorn balancing
                 K = _doubly_stochastic(K)
@@ -307,14 +303,17 @@ def quadratic_assignment(
             perm_inds[permutation_cost] = permutation_dist[perm_inds_new]
 
     permutation_cost_unshuffle = _unshuffle(permutation_cost, n)
-    cost_matrix = cost_matrix[np.ix_(permutation_cost_unshuffle,
-                                     permutation_cost_unshuffle)]
+    cost_matrix = cost_matrix[
+        np.ix_(permutation_cost_unshuffle, permutation_cost_unshuffle)
+    ]
     permutation_dist_unshuffle = _unshuffle(permutation_dist, n)
-    dist_matrix = dist_matrix[np.ix_(permutation_dist_unshuffle,
-                                     permutation_dist_unshuffle)]
+    dist_matrix = dist_matrix[
+        np.ix_(permutation_dist_unshuffle, permutation_dist_unshuffle)
+    ]
 
-    score = np.trace(np.transpose(cost_matrix) @
-                     dist_matrix[np.ix_(perm_inds, perm_inds)])
+    score = np.trace(
+        np.transpose(cost_matrix) @ dist_matrix[np.ix_(perm_inds, perm_inds)]
+    )
 
     res = {"col_ind": perm_inds, "score": score, "nit": n_init}
 
