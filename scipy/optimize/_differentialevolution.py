@@ -847,6 +847,10 @@ class DifferentialEvolutionSolver(object):
                 DE_result.message = ("The solution does not satisfy the"
                                     " constraints, MAXCV = " % DE_result.maxcv)
 
+        # an OptimizeResult should also have a status attribute
+        # set to zero if successful, one otherwise
+        DE_result.status = int(not DE_result.success)
+
         return DE_result
 
     def _calculate_population_energies(self, population):

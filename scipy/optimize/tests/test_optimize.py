@@ -1505,15 +1505,20 @@ class TestOptimizeResultAttributes(object):
                 sup.filter(RuntimeWarning,
                            ("Method .+ does not use (gradient|Hessian.*)"
                             " information"))
+                sup.filter(RuntimeWarning,
+                           ("Method .+ cannot handle bounds."))
+                sup.filter(RuntimeWarning,
+                           ("Method .+ cannot handle constraints nor bounds."))
+
                 res = optimize.minimize(self.func, self.x0, method=method,
                                         jac=self.jac, hess=self.hess,
-                                        hessp=self.hessp)
+                                        hessp=self.hessp, bounds=self.bounds)
             for attribute in attributes:
                 if method in skip and attribute in skip[method]:
                     continue
 
-                assert_(hasattr(res, attribute))
-                assert_(attribute in dir(res))
+                assert hasattr(res, attribute)
+                assert attribute in dir(res)
 
 
 def f1(z, *params):
