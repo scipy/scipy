@@ -563,6 +563,12 @@ class TestPbsvx:
         assert_equal(ferr.shape, (nrhs,))
         assert_equal(berr.shape, (nrhs,))
 
+        # Now that we know the tests pass as expected try test with
+        # invalid shapes for some arguments.
+        assert_raises(Exception, pbsvx, ab[:-1], b, 2, lower, kd, afb, 'N')
+        assert_raises(Exception, pbsvx, ab[:,:-1], b, 2, lower, kd, afb, 'N')
+        assert_raises(Exception, pbsvx, ab, b[:-1], 2, lower, kd, afb, 'N')
+
     @pytest.mark.parametrize('dtype', REAL_DTYPES)
     @pytest.mark.parametrize('lower', (0, 1))
     def test_random_example_factored(self, dtype, lower):
@@ -602,7 +608,16 @@ class TestPbsvx:
         assert_equal(ferr.shape, (nrhs,))
         assert_equal(berr.shape, (nrhs,))
 
-    def _pb_array(self, dtype, kd, lda, ldab, lower):
+        # Now that we know the tests pass as expected try test with
+        # invalid shapes for some arguments.
+        assert_raises(Exception, pbsvx, ab[:-1], b, 2, lower, kd, afb, 'N')
+        assert_raises(Exception, pbsvx, ab[:,:-1], b, 2, lower, kd, afb, 'N')
+        assert_raises(Exception, pbsvx, ab, b[:-1], 2, lower, kd, afb, 'N')
+        assert_raises(Exception, pbsvx, ab, b, 2, lower, kd, afb[:-1], 'N')
+        assert_raises(Exception, pbsvx, ab, b, 2, lower, kd, afb[:,:-1], 'N')
+
+    @staticmethod
+    def _pb_array(dtype, kd, lda, ldab, lower):
         """Construct a random symmetric positive banded array A"""
         # Construct the diagonal and kd super/sub diagonals of A with
         # the corresponding offsets.
