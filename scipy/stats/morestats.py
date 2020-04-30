@@ -2452,11 +2452,11 @@ def binom_test(x, n=None, p=0.5, alternative='two-sided'):
     15 cars are inspected for safety, 3 were found to be unsafe. Test the
     manufacturer's claim:
 
-    >>> stats.binom_test(3, n=15, p=0.1, alternative='greater')
-    0.18406106910639114
+    >>> stats.binom_test(3, n=15, p=0.1, alternative='less')
+    0.9444443699924641
 
     The null hypothesis cannot be rejected at the 5% level of significance
-    because the returned p-value is greater than the critical value of 5%.
+    because the returned p-value is greater than 0.05.
 
     """
     x = atleast_1d(x).astype(np.int_)
