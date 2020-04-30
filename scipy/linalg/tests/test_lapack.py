@@ -539,7 +539,10 @@ class TestPbsvx:
         # Generate the random system A @ x = b where A is a symmetric
         # positive banded matrix
         b = generate_random_dtype_array((ldb, nrhs), dtype=dtype)
-        A, ab = self._pb_array(dtype, kd, lda, ldab, lower)
+        A = self._pb_array(dtype, kd, lda, ldab, lower)
+
+        # Convert to banded form
+        ab = np.flipud(A.data[:kd + 1]) if lower else np.flipud(A.data[kd:])
 
         kwargs = {'ab': ab,
                   'b': b,
@@ -560,7 +563,6 @@ class TestPbsvx:
         assert_equal(ferr.shape, (nrhs,))
         assert_equal(berr.shape, (nrhs,))
 
-
     @pytest.mark.parametrize('dtype', REAL_DTYPES)
     @pytest.mark.parametrize('lower', (0, 1))
     def test_random_example_factored(self, dtype, lower):
@@ -573,7 +575,10 @@ class TestPbsvx:
         # Generate the random system A @ x = b where A is a symmetric
         # positive banded matrix
         b = generate_random_dtype_array((ldb, nrhs), dtype=dtype)
-        A, ab = self._pb_array(dtype, kd, lda, ldab, lower)
+        A = self._pb_array(dtype, kd, lda, ldab, lower)
+
+        # Convert to banded form
+        ab = np.flipud(A.data[:kd + 1]) if lower else np.flipud(A.data[kd:])
 
         # Compute the Cholesky factorization afb
         afb, _ = pbtrf(ab, lower=lower)
@@ -598,11 +603,7 @@ class TestPbsvx:
         assert_equal(berr.shape, (nrhs,))
 
     def _pb_array(self, dtype, kd, lda, ldab, lower):
-        """Construct a random symetric poitive banded array A
-
-        This returns the array A as both a standard NumPy array and in
-        banded form. Further it ensures A is strictly diagonally
-        dominant."""
+        """Construct a random symmetric positive banded array A"""
         # Construct the diagonal and kd super/sub diagonals of A with
         # the corresponding offsets.
         min_kd_width = lda - kd
@@ -617,9 +618,8 @@ class TestPbsvx:
         a = sps.diags(bands, np.arange(-kd, kd + 1), format='dia')
         # Ensure a is strictly diagonally dominant
         a.setdiag(a.toarray().sum(axis=0))
-        # Convert to banded form
-        ab = np.flipud(a.data[:kd + 1]) if lower else np.flipud(a.data[kd:])
-        return a.toarray(), ab
+
+        return a
 
 
 class TestTbtrs(object):
