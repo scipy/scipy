@@ -206,7 +206,7 @@ before_install:
       conda install pip conda;
       conda update -n base conda;
       conda info -a;
-      conda install pytest pytest-xdist numpy mpmath Cython pybind11;
+      conda install pytest pytest-xdist $NUMPYSPEC mpmath Cython pybind11;
     fi
 
 
