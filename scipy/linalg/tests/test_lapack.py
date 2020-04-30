@@ -536,9 +536,73 @@ class TestPbsvx:
         atol = 100 * np.finfo(dtype).eps
         pbsvx = get_lapack_funcs('pbsvx', dtype=dtype)
 
-        # Generate the random solution 'b'
+        # Generate the random system A @ x = b where A is a symmetric
+        # positive banded matrix
         b = generate_random_dtype_array((ldb, nrhs), dtype=dtype)
+        A, ab = self._pb_array(dtype, kd, lda, ldab, lower)
 
+        kwargs = {'ab': ab,
+                  'b': b,
+                  'kd': kd,
+                  'lower': lower,
+                  'fact': fact,
+                  'equed': 'N',
+                  }
+
+        ab, afb, e, s, x, rcond, ferr, berr, info = pbsvx(**kwargs)
+
+        assert_equal(info, 0)
+        assert_allclose(A @ x, b, atol=atol)
+
+        # The following are system dependent, rather than check the
+        # actual values we check that they are the correct shape
+        assert np.isscalar(rcond)
+        assert_equal(ferr.shape, (nrhs,))
+        assert_equal(berr.shape, (nrhs,))
+
+
+    @pytest.mark.parametrize('dtype', REAL_DTYPES)
+    @pytest.mark.parametrize('lower', (0, 1))
+    def test_random_example_factored(self, dtype, lower):
+        seed(1724)
+        lda, ldb, nrhs, kd = 4, 4, 3, 2
+        ldab = kd + 1
+        atol = 100 * np.finfo(dtype).eps
+        pbsvx, pbtrf = get_lapack_funcs(('pbsvx', 'pbtrf'), dtype=dtype)
+
+        # Generate the random system A @ x = b where A is a symmetric
+        # positive banded matrix
+        b = generate_random_dtype_array((ldb, nrhs), dtype=dtype)
+        A, ab = self._pb_array(dtype, kd, lda, ldab, lower)
+
+        # Compute the Cholesky factorization afb
+        afb, _ = pbtrf(ab, lower=lower)
+
+        kwargs = {'ab': ab,
+                  'afb': afb,
+                  'b': b,
+                  'kd': kd,
+                  'lower': lower,
+                  'fact': 2,
+                  'equed': 'N',
+                  }
+        ab, afb, e, s, x, rcond, ferr, berr, info = pbsvx(**kwargs)
+
+        assert_equal(info, 0)
+        assert_allclose(A @ x, b, atol=atol)
+
+        # The following are system dependent, rather than check the
+        # actual values we check that they are the correct shape
+        assert np.isscalar(rcond)
+        assert_equal(ferr.shape, (nrhs,))
+        assert_equal(berr.shape, (nrhs,))
+
+    def _pb_array(self, dtype, kd, lda, ldab, lower):
+        """Construct a random symetric poitive banded array A
+
+        This returns the array A as both a standard NumPy array and in
+        banded form. Further it ensures A is strictly diagonally
+        dominant."""
         # Construct the diagonal and kd super/sub diagonals of A with
         # the corresponding offsets.
         min_kd_width = lda - kd
@@ -548,26 +612,14 @@ class TestPbsvx:
         sub_diags = [generate_random_dtype_array((width,), dtype)
                      for width in sub_diag_widths]
         bands = sub_diags + [main_diagonal] + sub_diags[::-1]
-
         # Construct the symmetric positive definite band matrix A from
         # the bands and offsets.
         a = sps.diags(bands, np.arange(-kd, kd + 1), format='dia')
         # Ensure a is strictly diagonally dominant
         a.setdiag(a.toarray().sum(axis=0))
         # Convert to banded form
-        ab = np.flipud(a.data[:kd+1]) if lower else np.flipud(a.data[kd:])
-
-        kwargs = dict(ab=ab, b=b, kd=kd, lower=lower, fact=fact, equed='N')
-        ab, afb, e, s, x, rcond, ferr, berr, info = pbsvx(**kwargs)
-
-        assert_equal(info, 0)
-        assert_allclose(a @ x, b, atol=atol)
-
-        # The following are system dependent, rather than check the
-        # actual values we check that they are the correct shape
-        assert np.isscalar(rcond)
-        assert_equal(ferr.shape, (nrhs,))
-        assert_equal(berr.shape, (nrhs,))
+        ab = np.flipud(a.data[:kd + 1]) if lower else np.flipud(a.data[kd:])
+        return a.toarray(), ab
 
 
 class TestTbtrs(object):
