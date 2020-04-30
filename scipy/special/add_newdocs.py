@@ -377,20 +377,40 @@ add_newdoc("airye",
     
     >>> from scipy.special import airye
     >>> import matplotlib.pyplot as plt
-    >>> x = np.linspace(40, 200)
-    >>> eAi, eAip, eBi, eBip = airye(x)
-    >>> plt.subplot(211)
-    >>> plt.plot(x, eAi, "-r", label="eAi")
-    >>> plt.plot(x, eBi, "-b", label="eBi")
-    >>> plt.grid(True)
-    >>> plt.legend()
-    >>> plt.subplot(212)
-    >>> plt.plot(x, eAip, "-r", label="eAip")
-    >>> plt.plot(x, eBip, "-b", label="eBip")
-    >>> plt.grid(True)
-    >>> plt.legend()
-    >>> plt.tight_layout()
+    >>> z = np.linspace(0, 50, 500)
+    >>> eAi, eAip, eBi, eBip = airye(z)
+    >>> f, ax = plt.subplots(2, 1, sharex=True)
+    >>> for ind, data in enumerate([[eAi, eAip, ["eAi", "eAip"]],
+    ...                             [eBi, eBip, ["eBi", "eBip"]]]):
+    >>>     ax[ind].plot(z, data[0], "-r", z, data[1], "-b")
+    >>>     ax[ind].legend(data[2])
+    >>>     ax[ind].grid(True)
     >>> plt.show()
+    
+    We can compute these using usual non-scaled Airy functions by:
+    
+    >>> from scipy.special import airy
+    >>> Ai, Aip, Bi, Bip = airy(z)
+    >>> np.allclose(eAi, Ai * np.exp(2.0 / 3.0 * z * np.sqrt(z)))
+    True
+    >>> np.allclose(eAip, Aip * np.exp(2.0 / 3.0 * z * np.sqrt(z)))
+    True
+    >>> np.allclose(eBi, Bi * np.exp(-abs(np.real(2.0 / 3.0 * z * np.sqrt(z)))))
+    True
+    >>> np.allclose(eBip, Bip * np.exp(-abs(np.real(2.0 / 3.0 * z * np.sqrt(z)))))
+    True
+    
+    Comparing non-scaled and exponentially scaled ones, the usual non-scaled 
+    function quickly underflows for large values, whereas the exponentially
+    scaled function does not.
+    
+    >>> f, ax = plt.subplots(2, 1, sharex=True)
+    >>> for ind, data in enumerate([[Ai, eAi, ["Ai", "eAi"]],
+    ...                             [Aip, eAip, ["Aip", "eAip"]]]):
+    >>>     ax[ind].plot(z, data[0], "-r", z, data[1], "-b")
+    >>>     ax[ind].legend(data[2])
+    >>>     ax[ind].grid(True)
+    >>> plt.show()       
     
     """)
 
