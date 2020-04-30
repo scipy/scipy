@@ -1,6 +1,7 @@
 # After changing this file, check it on:
 #   http://lint.travis-ci.org/
 language: python
+
 addons:
   apt:
     packages: &common_packages
@@ -13,12 +14,14 @@ addons:
     - ccache
     - swig
     - libmpc-dev
+
 env:
   global:
    # Wheelhouse for pre-release wheels
    - PRE_WHEELS="https://7933911d6844c6c53a7d-47bd50c35cd79bd838daf386af554a83.ssl.cf2.rackcdn.com"
    # Using a single thread can actually speed up some computations on Travis
    - OPENBLAS_NUM_THREADS=1
+
 matrix:
   include:
     - python: 3.6
@@ -43,9 +46,9 @@ matrix:
       env:
         - TESTMODE=fast
         - COVERAGE=
-        - USE_SDIST=1
+        - USE_WHEEL=1
         - PIP_NO_CACHE_DIR=off
-        - NUMPYSPEC="numpy==1.18.1"
+        - NUMPYSPEC="numpy"
     - python: 3.7
       if: type = pull_request
       env:
@@ -125,6 +128,8 @@ cache:
     - $HOME/.ccache
     - $HOME/.cache/pip
     - $HOME/Library/Caches/pip
+
+
 before_install:
   - echo $TRAVIS_OS_NAME
   - |
@@ -201,8 +206,10 @@ before_install:
       conda install pip conda;
       conda update -n base conda;
       conda info -a;
-      conda install pytest pytest-xdist $NUMPYSPEC mpmath Cython pybind11;
+      conda install pytest pytest-xdist numpy mpmath Cython pybind11;
     fi
+
+
 script:
   - python -c 'import numpy as np; print("relaxed strides checking:", np.ones((10,1),order="C").flags.f_contiguous)'
   # Make sure that relaxed strides checking is actually in effect; otherwise fail loudly
@@ -246,6 +253,8 @@ script:
   - if [ "${ASV_CHECK}" == "1" ]; then (cd benchmarks && python -masv check -E existing); fi
   # Check dynamic symbol hiding works on Linux
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then ./tools/check_pyext_symbol_hiding.sh build; fi
+
+
 after_script:
   - ccache -s
   # Upload coverage information
@@ -260,6 +269,8 @@ after_script:
         codecov -X gcov
         popd
     fi
+
+
 notifications:
   # Perhaps we should have status emails sent to the mailing list, but
   # let's wait to see what people think before turning that on.
