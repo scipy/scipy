@@ -1,3 +1,4 @@
+# Nightly test of scipy, against the nightly build of Python
 name: Nightly build
 
 on:
@@ -5,6 +6,8 @@ on:
     branches: [ master ]
   pull_request:
     branches: [ master ]
+  schedule:
+    - cron:  '0 0 * * *'
 
 jobs:
   test_nightly:
