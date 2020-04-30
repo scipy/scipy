@@ -724,15 +724,19 @@ class _TestCommon(object):
         for m in mats:
             rows, cols = array(m).shape
             sparse_mat = self.spmatrix(m)
-            # Test all possible values ok k
             for k in range(-rows-1, cols+2):
                 assert_equal(sparse_mat.diagonal(k=k), diag(m, k=k))
+            # Test for k beyound boundaries(issue #11949)
+            assert_equal(sparse_mat.diagonal(k=10), diag(m, k=10))
+            assert_equal(sparse_mat.diagonal(k=-99), diag(m, k=-99))
 
         # Test all-zero matrix.
         assert_equal(self.spmatrix((40, 16130)).diagonal(), np.zeros(40))
         # Test empty matrix
         # https://github.com/scipy/scipy/issues/11949
         assert_equal(self.spmatrix((0, 0)).diagonal(), np.empty(0))
+        assert_equal(self.spmatrix((15, 0)).diagonal(), np.empty(0))
+        assert_equal(self.spmatrix((0, 5)).diagonal(10), np.empty(0))
 
     def test_reshape(self):
         # This first example is taken from the lil_matrix reshaping test.
