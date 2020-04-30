@@ -100,23 +100,18 @@ jobs:
       Write-Host "pwd: $pwd"
       $pyversion = python -c "import sys; print(sys.version.split()[0])"
       Write-Host "Python Version: $pyversion"
-      function Download-OpenBLAS($ilp64) {
-          if ($ilp64 -eq '1') { $target_name = "openblas64_.a" } else { $target_name = "openblas.a" }
-          #$target = "C:\\hostedtoolcache\\windows\\Python\\$pyversion\\$(PYTHON_ARCH)\\lib\\$target_name"
-          $target = "$pwd\openblaslib\$target_name"
-          Write-Host "target path: $target"
-          $old_value = $env:NPY_USE_BLAS_ILP64
-          $env:NPY_USE_BLAS_ILP64 = $ilp64
-          Write-Host ":: $ilp64  $(BITS)"
-          $openblas = python tools/openblas_support.py
-          $env:NPY_USE_BLAS_ILP64 = $old_value
-          cp $openblas $target
-      }
       mkdir openblaslib
-      Download-OpenBLAS('0')
-      If ($env:NPY_USE_BLAS_ILP64 -eq '1') {
-          Download-OpenBLAS('1')
+      if ($env:NPY_USE_BLAS_ILP64 -eq '1') {
+          $target_name = "openblas64_.a"
+      } else {
+          $target_name = "openblas.a"
       }
+      $target = "$pwd\openblaslib\$target_name"
+      Write-Host "target path: $target"
+      $openblas = python tools/openblas_support.py
+      Write-Host "openblas path: $openblas"
+      cp $openblas $target
+      Get-ChildItem -Path openblaslib
     displayName: 'Download / Install OpenBLAS'
   - powershell: |
       # wheels appear to use mingw64 version 6.3.0, but 6.4.0
@@ -164,15 +159,17 @@ jobs:
 
       mkdir dist
 
+      # Set the environment variable, either OPENBLAS64_ or
+      # OPENBLAS, to the directory that holds the .a file.
       If ( Test-Path env:NPY_USE_BLAS_ILP64 ){
-        #echo "##vso[task.setvariable variable=OPENBLAS_ILP64]$pwd\openblaslib"
-        $env:OPENBLAS_ILP64 = "$pwd\openblaslib"
+        # echo "##vso[task.setvariable variable=OPENBLAS64_]$pwd\openblaslib"
+        $env:OPENBLAS64_ = "$pwd\openblaslib"
       } else {
-        #echo "##vso[task.setvariable variable=OPENBLAS]$pwd\openblaslib"
+        # echo "##vso[task.setvariable variable=OPENBLAS]$pwd\openblaslib"
         $env:OPENBLAS = "$pwd\openblaslib"
       }
       Write-Host "::: $env:OPENBLAS"
-      Write-Host "::: $env:OPENBLAS_ILP64"
+      Write-Host "::: $env:OPENBLAS64_"
 
       pip wheel --no-build-isolation -v -v -v --wheel-dir=dist .
       ls dist -r | Foreach-Object {
