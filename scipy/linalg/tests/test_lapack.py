@@ -526,6 +526,49 @@ class TestPbsvx:
         assert_equal(berr.shape, (2,))
         assert_equal(info, 0)
 
+    @pytest.mark.parametrize('dtype', REAL_DTYPES)
+    @pytest.mark.parametrize('lower', (0, 1))
+    @pytest.mark.parametrize('fact', (0, 1))
+    def test_random_example_non_factored(self, dtype, lower, fact):
+        seed(1724)
+        lda, ldb, nrhs, kd = 4, 4, 3, 2
+        ldab = kd + 1
+        atol = 100 * np.finfo(dtype).eps
+        pbsvx = get_lapack_funcs('pbsvx', dtype=dtype)
+
+        # Generate the random solution 'b'
+        b = generate_random_dtype_array((ldb, nrhs), dtype=dtype)
+
+        # Construct the diagonal and kd super/sub diagonals of A with
+        # the corresponding offsets.
+        min_kd_width = lda - kd
+        main_diag_width = ldab + 1
+        sub_diag_widths = range(min_kd_width, main_diag_width)
+        main_diagonal = generate_random_dtype_array((main_diag_width,), dtype)
+        sub_diags = [generate_random_dtype_array((width,), dtype)
+                     for width in sub_diag_widths]
+        bands = sub_diags + [main_diagonal] + sub_diags[::-1]
+
+        # Construct the symmetric positive definite band matrix A from
+        # the bands and offsets.
+        a = sps.diags(bands, np.arange(-kd, kd + 1), format='dia')
+        # Ensure a is strictly diagonally dominant
+        a.setdiag(a.toarray().sum(axis=0))
+        # Convert to banded form
+        ab = np.flipud(a.data[:kd+1]) if lower else np.flipud(a.data[kd:])
+
+        kwargs = dict(ab=ab, b=b, kd=kd, lower=lower, fact=fact, equed='N')
+        ab, afb, e, s, x, rcond, ferr, berr, info = pbsvx(**kwargs)
+
+        assert_equal(info, 0)
+        assert_allclose(a @ x, b, atol=atol)
+
+        # The following are system dependent, rather than check the
+        # actual values we check that they are the correct shape
+        assert np.isscalar(rcond)
+        assert_equal(ferr.shape, (nrhs,))
+        assert_equal(berr.shape, (nrhs,))
+
 
 class TestTbtrs(object):
 
