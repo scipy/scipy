@@ -301,13 +301,22 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
     res = highs_wrapper(c, A.indptr, A.indices, A.data, lhs, rhs,
                         lb, ub, options)
 
+    # HiGHS represents constraints as lhs/rhs, so
+    # Ax + s = b => Ax = b - s
+    # and we need to split up s by A_ub and A_eq
+    slack = res.get('slack', None)
+    con = None
+    if slack is not None:
+        con = slack[len(b_ub):]
+        slack = slack[:len(b_ub)]
+
     sol = {'x': res.get('x', None),
-           'slack': res.get('slack', None),
+           'slack': slack,
            # TODO: Add/test dual info like:
            # 'lambda': res.get('lambda', None),
            # 's': res.get('s', None),
            'fun': res.get('fun', None),
-           'con': res.get('con', None),
+           'con': con,
            'status': statuses[res['status']][0],
            'success': res['status'] == MODEL_STATUS_OPTIMAL,
            'message': statuses[res['status']][1],
