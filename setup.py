@@ -232,7 +232,7 @@ def get_build_ext_override():
             # Disable distutils parallel build, due to race conditions
             # in numpy.distutils (Numpy issue gh-15957)
             if self.parallel:
-                print("NOTE: -j build option not supportd. Set NPY_NUM_BUILD_JOBS=4 "
+                print("NOTE: -j build option not supported. Set NPY_NUM_BUILD_JOBS=4 "
                       "for parallel build.")
             self.parallel = None
 
@@ -277,6 +277,48 @@ def get_build_ext_override():
                     compiler_name = os.path.basename(cc.split(" ")[0])
                     is_gcc = "gcc" in compiler_name or "g++" in compiler_name
             return is_gcc and sysconfig.get_config_var('GNULD') == 'yes'
+
+    # Overriding due to https://github.com/numpy/numpy/issues/12530, which
+    # is showing up in Azure CI as:
+    #         ValueError: path is on mount 'c:', start on mount 'D:'
+    def _process_unlinkable_fobjects(self, objects, libraries,
+                                     fcompiler, library_dirs,
+                                     unlinkable_fobjects):
+        libraries = list(libraries)
+        objects = list(objects)
+        unlinkable_fobjects = list(unlinkable_fobjects)
+
+        # Expand possible fake static libraries to objects
+        for lib in list(libraries):
+            for libdir in library_dirs:
+                fake_lib = os.path.join(libdir, lib + '.fobjects')
+                if os.path.isfile(fake_lib):
+                    # Replace fake static library
+                    libraries.remove(lib)
+                    with open(fake_lib, 'r') as f:
+                        unlinkable_fobjects.extend(f.read().splitlines())
+
+                    # Expand C objects
+                    c_lib = os.path.join(libdir, lib + '.cobjects')
+                    with open(c_lib, 'r') as f:
+                        objects.extend(f.read().splitlines())
+
+        def relpath_safe(p):
+            try:
+                return os.path.relpath(p)
+            except ValueError:
+                # on windows, caused by different drive letter
+                return os.path.abspath(p)
+
+        # Wrap unlinkable objects to a linkable one
+        if unlinkable_fobjects:
+            fobjects = [relpath_safe(obj) for obj in unlinkable_fobjects]
+            wrapped = fcompiler.wrap_unlinkable_objects(
+                    fobjects, output_dir=self.build_temp,
+                    extra_dll_dir=self.extra_dll_dir)
+            objects.extend(wrapped)
+
+        return objects, libraries
 
     return build_ext
 
