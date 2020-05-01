@@ -557,7 +557,7 @@ def _kpp(data, k):
             init[i, :] = data[np.random.randint(dims)]
 
         else:
-            D2 = (cdist(init[:i,:], data)**2).min(axis=0)
+            D2 = cdist(init[:i,:], data, metric='sqeuclidean').min(axis=0)
             probs = D2/D2.sum()
             cumprobs = probs.cumsum()
             r = np.random.rand()
