@@ -100,18 +100,32 @@ jobs:
       Write-Host "pwd: $pwd"
       $pyversion = python -c "import sys; print(sys.version.split()[0])"
       Write-Host "Python Version: $pyversion"
-      mkdir openblaslib
-      if ($env:NPY_USE_BLAS_ILP64 -eq '1') {
-          $target_name = "openblas64_.a"
-      } else {
-          $target_name = "openblas.a"
+      #
+      function Download-OpenBLAS($ilp64) {
+          if ($ilp64 -eq '1') {
+              $target_name = "openblas64_.a"
+          } else {
+              $target_name = "openblas.a"
+          }
+          $target = "$pwd\openblaslib\$target_name"
+          Write-Host "target path: $target"
+          $old_value = $env:NPY_USE_BLAS_ILP64
+          $env:NPY_USE_BLAS_ILP64 = $ilp64
+          $openblas = python tools/openblas_support.py
+          $env:NPY_USE_BLAS_ILP64 = $old_value
+          cp $openblas $target
       }
-      $target = "$pwd\openblaslib\$target_name"
-      Write-Host "target path: $target"
-      $openblas = python tools/openblas_support.py
-      Write-Host "openblas path: $openblas"
-      cp $openblas $target
+      # Create a directory to hold the .a files.
+      mkdir openblaslib
+      #
+      Download-OpenBLAS('0')
+      # Note: we need both 32-bit and 64-bit libs to build the ilp64 version.
+      If ($env:NPY_USE_BLAS_ILP64 -eq '1') {
+          Download-OpenBLAS('1')
+      }
+      #
       Get-ChildItem -Path openblaslib
+      #
     displayName: 'Download / Install OpenBLAS'
   - powershell: |
       # wheels appear to use mingw64 version 6.3.0, but 6.4.0
