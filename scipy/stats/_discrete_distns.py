@@ -665,15 +665,18 @@ class pbinom(rv_discrete):
 
     def __init__(self, probs, seed=None):
         self.probs = np.asarray(probs)
-        self.number_trials = self.probs.size
-        if self.probs.shape != (self.number_trials,):
+        self._number_trials = self.probs.size
+        self._pmf_list = self._get_pmf_xi()
+        self._cdf_list = self._get_cdf(self._pmf_list)
+        super(pbinom, self).__init__(seed=seed, a=0, b=len(probs))
+
+    def _argcheck(self, probs):
+        if probs.shape != (probs.size,):
             raise ValueError(
                 "Input must be an one-dimensional array or a list.")
-        if not ((self.probs <= 1).all() and (self.probs >= 0).all()):
+        if not ((probs <= 1).all() and (probs >= 0).all()):
             raise ValueError("All probabilities must be between 0 and 1")
-        self._pmf_list = self._get_pmf_xi()
-        self.cdf_list = self._get_cdf(self._pmf_list)
-        super(pbinom, self).__init__(seed=seed, a=0, b=len(probs))
+        return
 
     def _rvs(self):
         return sum((self._random_state.binomial(1, p) for p in self.probs))
@@ -736,9 +739,9 @@ class pbinom(rv_discrete):
         :param event_probabilities: array of single event probabilities
         :type event_probabilities: numpy.array
         """
-        cdf = np.empty(self.number_trials + 1)
+        cdf = np.empty(self._number_trials + 1)
         cdf[0] = event_probabilities[0]
-        for i in range(1, self.number_trials + 1):
+        for i in range(1, self._number_trials + 1):
             cdf[i] = cdf[i - 1] + event_probabilities[i]
         return cdf
 
@@ -748,17 +751,17 @@ class pbinom(rv_discrete):
         The components ``xi`` make up the probability mass function, i.e.
         :math:`\\xi(k) = pmf(k) = Pr(X = k)`.
         """
-        chi = np.empty(self.number_trials + 1, dtype=complex)
+        chi = np.empty(self._number_trials + 1, dtype=complex)
         chi[0] = 1
         half_number_trials = int(
-            self.number_trials / 2 + self.number_trials % 2)
+            self._number_trials / 2 + self._number_trials % 2)
         # set first half of chis:
         chi[1:half_number_trials + 1] = self._get_chi(
             np.arange(1, half_number_trials + 1))
         # set second half of chis:
-        chi[half_number_trials + 1:self.number_trials + 1] = np.conjugate(
-            chi[1:self.number_trials - half_number_trials + 1][::-1])
-        chi /= self.number_trials + 1
+        chi[half_number_trials + 1:self._number_trials + 1] = np.conjugate(
+            chi[1:self._number_trials - half_number_trials + 1][::-1])
+        chi /= self._number_trials + 1
         xi = np.fft.fft(chi)
         if self._check_xi_are_real(xi, eps=1e-15):
             xi = xi.real
@@ -795,15 +798,15 @@ class pbinom(rv_discrete):
                 assert (type(k) == int or type(k) == np.int64), \
                         "Values in input list must be integers"
                 assert k >= 0, 'Values in input list cannot be negative.'
-                assert k <= self.number_trials, \
+                assert k <= self._number_trials, \
                     'Values in input list must be smaller or equal to the ' \
                     'number of input probabilities "n"'
         except TypeError:
             assert (type(x) == int or type(x) == np.int64), \
                 'Input value must be an integer.'
             assert x >= 0, "Input value cannot be negative."
-            assert x <= self.number_trials, \
-                'Input value cannot be greater than ' + str(self.number_trials)
+            assert x <= self._number_trials, \
+                'Input value cannot be greater than ' + str(self._number_trials)
         return True
 
     @staticmethod
