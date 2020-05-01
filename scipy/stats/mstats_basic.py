@@ -143,15 +143,23 @@ def argstoarray(*args):
 
     >>> from scipy.stats.mstats import argstoarray
     >>> argstoarray([1, 2, 3], [4, 5, 6])
-    [[1.0 2.0 3.0]
-     [4.0 5.0 6.0]]
+    masked_array(
+     data=[[1.0, 2.0, 3.0],
+           [4.0, 5.0, 6.0]],
+     mask=[[False, False, False],
+           [False, False, False]],
+     fill_value=1e+20)
 
     The returned masked array filled with missing values when the lengths of
     sequences are different.
 
     >>> argstoarray([1, 3], [4, 5, 6])
-    [[1.0 3.0 --]
-     [4.0 5.0 6.0]]
+    masked_array(
+     data=[[1.0, 3.0, --],
+           [4.0, 5.0, 6.0]],
+     mask=[[False, False,  True],
+           [False, False, False]],
+     fill_value=1e+20)
 
     """
     if len(args) == 1 and not isinstance(args[0], ndarray):
