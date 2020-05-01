@@ -263,6 +263,7 @@ Discrete Distributions in `scipy.stats`
    discrete_poisson
    discrete_geom
    discrete_nbinom
+   discrete_pbinom
    discrete_hypergeom
    discrete_zipf
    discrete_logser
