@@ -101,7 +101,7 @@ jobs:
       Write-Host "Python Version: $pyversion"
       function Download-OpenBLAS($ilp64) {
           if ($ilp64 -eq '1') { $target_name = "openblas64_.a" } else { $target_name = "openblas.a" }
-          $target = "C:\\hostedtoolcache\\windows\\Python\\$pyversion\\$(PYTHON_ARCH)\\lib\\$target_name"
+          $target = "$pwd\openblaslib\$target_name"
           Write-Host "target path: $target"
           $old_value = $env:NPY_USE_BLAS_ILP64
           $env:NPY_USE_BLAS_ILP64 = $ilp64
@@ -109,11 +109,31 @@ jobs:
           $env:NPY_USE_BLAS_ILP64 = $old_value
           cp $openblas $target
       }
+      mkdir openblaslib
       Download-OpenBLAS('0')
       If ($env:NPY_USE_BLAS_ILP64 -eq '1') {
           Download-OpenBLAS('1')
       }
     displayName: 'Download / Install OpenBLAS'
+  - bash: |
+      echo "[openblas]" >> site.cfg
+      echo "libraries = openblas" >> site.cfg
+      echo "library_dirs = d:\a\1\s\openblaslib" >> site.cfg
+      echo "include_dirs = d:\a\1\s\openblaslib" >> site.cfg
+      echo "runtime_library_dirs = d:\a\1\s\openblaslib" >> site.cfg
+    displayName: 'Set basic site.cfg for openblas'
+  - bash: |
+      # 64-bit integer OpenBLAS SciPy builds need both 32-bit
+      # integer OpenBLAS from above, and 64-bit suffix static
+      # lib specified here as well
+      echo "    " >> site.cfg
+      echo "[openblas64_]" >> site.cfg
+      echo "libraries = openblas64_" >> site.cfg
+      echo "library_dirs = d:\a\1\s\openblaslib" >> site.cfg
+      echo "include_dirs = d:\a\1\s\openblaslib" >> site.cfg
+      echo "runtime_library_dirs = d:\a\1\s\openblaslib" >> site.cfg
+    displayName: 'Adjust site.cfg for ilp64 case'
+    condition: eq(variables['NPY_USE_BLAS_ILP64'], 1)
   - powershell: |
       # wheels appear to use mingw64 version 6.3.0, but 6.4.0
       # is the closest match available from choco package manager
