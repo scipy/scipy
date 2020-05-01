@@ -1397,8 +1397,8 @@ class TestPBinom(object):
             rtol=1e-15, atol=1e-15
             )
 
-        # For different probabilities p_j, the Poisson Binomial distribution and
-        # the Binomial distribution are different:
+        # For different probabilities p_j, the Poisson Binomial distribution
+        # and the Binomial distribution are different:
         pb = stats.pbinom(probs=[0.5, 0.5, 0.8, 0.8])
         bn = binom(4, p=0.5)
         assert int(np.amax(bn.pmf(cases))) != int(pb.amax())
