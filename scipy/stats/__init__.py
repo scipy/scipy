@@ -161,6 +161,7 @@ Discrete distributions
    nbinom            -- Negative Binomial
    planck            -- Planck (Discrete Exponential)
    poisson           -- Poisson
+   pbinom            -- Poisson Binomial
    randint           -- Discrete Uniform
    skellam           -- Skellam
    zipf              -- Zipf
