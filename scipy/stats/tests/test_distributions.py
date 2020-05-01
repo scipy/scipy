@@ -1174,6 +1174,236 @@ class TestPoisson(object):
         assert_allclose(result, expected)
 
 
+class TestPBinom(object):
+    def test_rvs(self):
+        vals = stats.pbinom.rvs(
+            probs=[0.5, 0.25, 0.3, 0.2], size=(2, 50)
+            )
+        assert_(numpy.all(vals >= 0) & numpy.all(vals <= 4))
+        assert_(numpy.shape(vals) == (2, 50))
+        assert_(vals.dtype.char in typecodes['AllInteger'])
+        val = stats.binom.rvs(probs=[0.5, 0.25])
+        assert_(isinstance(val, int))
+        val = stats.binom([0.5, 0.25]).rvs(3)
+        assert_(isinstance(val, numpy.ndarray))
+        assert_(val.dtype.char in typecodes['AllInteger'])
+
+    def test_check_rv_input():
+        """Test tat inputs are positive integers."""
+        p = [1, 1]
+        pb = stats.pbinom(probs=p)
+        assert pb.check_rv_input([1, 2])
+        assert pb.check_rv_input(2)
+
+        with pytest.raises(AssertionError):
+            pb.check_rv_input(-1)
+            pytest.fail("Input value cannot be negative.")
+        with pytest.raises(AssertionError):
+            pb.check_rv_input(1.7)
+            pytest.fail("Input value must be an integer.")
+
+    def test_pmf(self):
+        vals = stats.pbinom.pmf(1, probs=[0.5])
+        assert_allclose(vals, 0.5, rtol=1e-15, atol=1e-15)
+
+        p = [0.3, 0.5]
+        vals = stats.pbinom.pmf([2, 1, 0], probs=p)
+        assert_allclose(vals, [0.15, 0.5, 0.35], rtol=1e-15, atol=1e-15)
+
+        # Compare results with the ones obtained with the R poibin package
+        # [Rpoibin]_
+        p = [0.4163448, 0.3340270, 0.9689613]
+        vals = stats.pbinom.pmf([0, 1, 2, 3], probs=p)
+        vals_ref = np.array([0.0120647, 0.39129134, 0.46189012, 0.13475384])
+        assert_allclose(vals, vals_ref, rtol=1e-15, atol=1e-15)
+
+        p = [
+            0.9955901, 0.5696224, 0.8272597, 0.3818746, 0.4290036, 0.8707646,
+            0.8858267, 0.7557183
+            ]
+        vals = stats.pbinom.pmf([0, 2, 7, 8], probs=p)
+        vals_ref = np.array([4.17079659e-07, 2.46250608e-03, 2.02460933e-01,
+                            4.48023378e-02])
+        assert_allclose(vals, vals_ref, rtol=1e-15, atol=1e-15)
+
+    def test_binomial(self):
+        """
+        The case when probabilities are IID should yield the
+        exact same distribution as a binomial distribution.
+        """
+        binom_dist = stats.binom(10, 0.4)
+        pbinom_dist = stats.pbinom(probs=([0.4]*10))
+
+        assert_allclose(binom_dist.pmf(2), pbinom_dist.pmf(2), rtol=1e-15)
+        assert_allclose(binom_dist.pmf(7), pbinom_dist.pmf(7), rtol=1e-15)
+        assert_allclose(binom_dist.cdf(8), pbinom_dist.cdf(8), rtol=1e-15)
+
+        p = [0.5, 0.5]
+        vals = stats.pbinom.pmf([2, 1, 0], probs=p)
+        assert_allclose(vals, [0.25, 0.5, 0.25], rtol=1e-15, atol=1e-15)
+
+        bn = stats.binom(2, p[0])
+        pb = stats.pbinom(probs=p)
+        assert_allclose(
+            (bn.pmf(0)), int(pb.pmf(0)), rtol=1e-15, atol=1e-15
+            )
+
+        # For different probabilities p_j, the Poisson Binomial distribution
+        # and the Binomial distribution are different:
+        bn = stats.binom(2, p[0])
+        pb = stats.pbinom(probs=([0.5, 0.8])
+        assert int(bn.pmf(0)) != int(pb.pmf(0))
+
+    def test_pmf_accuracy():
+        """Compare accuracy of the probability mass function.
+
+        Compare the results with the accuracy check proposed in [Hong2013]_,
+        equation (15).
+        """
+        [p1, p2, p3] = np.around(np.random.random_sample(size=3), decimals=2)
+        [n1, n2, n3] = np.random.random_integers(1, 10, size=3)
+        nn = n1 + n2 + n3
+        l1 = [p1 for i in range(n1)]
+        l2 = [p2 for i in range(n2)]
+        l3 = [p3 for i in range(n3)]
+        p = l1 + l2 + l3
+        b1 = binom(n=n1, p=p1)
+        b2 = binom(n=n2, p=p2)
+        b3 = binom(n=n3, p=p3)
+        k = np.random.randint(0, nn + 1)
+        chi_bn = 0
+        for j in range(0, k+1):
+            for i in range(0, j+1):
+                chi_bn += b1.pmf(i) * b2.pmf(j - i) * b3.pmf(k - j)
+        pb = stats.pbinom(probs=(p))
+        chi_pb = pb.pmf(k)
+        assert_allclose(chi_bn, chi_pb, rtol=0, atol=1e-10)
+
+    def test_cdf():
+        """Test the cumulative distribution function."""
+        p = [1, 1]
+        pb = stats.pbinom(probs=(p))
+        assert_allclose(
+            pb.cdf([1, 2]), np.array([0., 1.]), rtol=1e-15, atol=1e-15
+            )
+        assert_allclose(
+            pb.cdf(2), np.array(1.), rtol=1e-15, atol=1e-15
+            )
+
+    def test_cdf_pb_binom():
+        """Compare the cumulative distribution function with the binomial limit
+        case.
+        """
+        # For equal probabilites p_j, the Poisson Binomial distribution reduces
+        # to the Binomial one:
+        p = [0.5, 0.5]
+        pb = stats.pbinom(probs=p)
+        bn = binom(n=2, p=p[0])
+        assert_allclose((bn.cdf(0)), int(pb.cdf(0)), rtol=1e-15, atol=1e-15)
+
+        # For different probabilities p_j, the Poisson Binomial distribution
+        # and the Binomial distribution are different:
+        p = [0.5, 0.8]
+        pb = stats.pbinom(probs=p)
+        bn = binom(2, p=0.5)
+        assert int(bn.cdf(0)) != int(pb.cdf(0))
+
+    def test_cdf_accuracy():
+        """Compare accuracy of the cumulative distribution function.
+
+        Compare the results with the ones obtained with the R poibin package
+        [Rpoibin]_.
+        """
+        p = [0.1, 0.1]
+        pb = stats.pbinom(probs=p)
+        assert_allclose(
+            np.abs(pb.cdf([0, 2]), np.array([0.81, 1.])), rtol=0, atol=1e-10
+            )
+        p = [0.5, 1.0]
+        pb = stats.pbinom(probs=p)
+        assert_allclose(
+            np.abs(pb.cdf([1, 2]), np.array([0.5, 1.])), rtol=0,atol=1e-10
+            )
+        p = [0.1, 0.5]
+        pb = stats.pbinom(probs=p)
+        assert_allclose(
+            np.abs(pb.cdf([0, 1, 2]), np.array([0.45, 0.95, 1.])),
+            rtol=0,atol=1e-10
+            )
+        p = [0.1, 0.5, 0.7]
+        pb = stats.pbinom(probs=p)
+        assert_allclose(
+            np.abs(pb.cdf([0, 1, 2]), np.array([0.135, 0.6, 0.965]),
+            rtol=0,atol=1e-10
+            )
+
+    def test_check_xi_are_real():
+        """Test the check that the ``xi`` values are real."""
+        pb = stats.pbinom(probs=[0])
+        xi = np.array([1 + 0j, 1.8 + 0j], dtype=complex)
+        assert pb.check_xi_are_real(xi)
+        xi = np.array([1 + 99j, 1.8 + 0j], dtype=complex)
+        assert not pb.check_xi_are_real(xi)
+
+    def test_stats(self):
+        p = [0, 0, 0, 1, 1, 1]
+        pb = stats.pbinom(probs=p)
+        assert_equal((pb.mean(), 3.0)
+
+        p = [0.1, 0.1, 0.1, 0.9, 0.9, 0.9]
+        pb = stats.pbinom(probs=p)
+        assert_equal(pb.var(), np.array([0.54]))
+
+        # For equal probabilites p_j, the Poisson Binomial distribution reduces
+        # to the Binomial one:
+        p = [0.5]*4
+        pb = stats.pbinom(probs=p)
+        bn = binom(n=4, p=p[0])
+        assert_allclose(
+            pb.stats('mvsk'), bn.stats('mvsk'),
+            rtol=1e-15, atol=1e-15
+            )
+
+        # For different probabilities p_j, the Poisson Binomial distribution
+        # and the Binomial distribution are different:
+        pb = [0.5, 0.5, 0.8, 0.8]
+        pb = stats.pbinom(probs=p)
+        bn = binom(4, p=0.5)
+        assert int(bn.mean()) != int(pb.mean())
+        assert int(bn.var()) != int(pb.var())
+
+        p = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6]
+        pb = stats.pbinom(probs=p)
+        _, _, pbs, _ = pb.stats('mvs')
+        assert_allclose(
+            pbs, np.array([0.1941243876059742]),
+            rtol=1e-15, atol=1e-15
+            )
+
+    def test_amax():
+        """Test amax function."""
+        p = [0.1, 0.1, 0.1, 0.9, 0.9, 0.9]
+        pb = stats.pbinom(probs=p)
+        assert_allclose(pb.amax(), np.array([0.59122]))
+
+        # For equal probabilites p_j, the Poisson Binomial distribution reduces
+        # to the Binomial one:
+        p = [0.5, 0.5, 0.5, 0.5]
+        pb = stats.pbinom(probs=p)
+        bn = binom(n=4, p=p[0])
+        cases = [0, 1, 2, 3, 4]
+        assert_allclose(
+            np.amax(bn.pmf(cases)), pb.amax(),
+            rtol=1e-15, atol=1e-15
+            )
+
+        # For different probabilities p_j, the Poisson Binomial distribution and
+        # the Binomial distribution are different:
+        pb = stats.pbinom(probs=[0.5, 0.5, 0.8, 0.8])
+        bn = binom(4, p=0.5)
+        assert int(np.amax(bn.pmf(cases))) != int(pb.amax())
+
+
 class TestKSTwo(object):
     def setup_method(self):
         np.random.seed(1234)
