@@ -80,11 +80,6 @@ def correlate1d(input, weights, axis=-1, output=None, mode="reflect",
     if numpy.iscomplexobj(input):
         raise TypeError('Complex type not supported')
     output = _ni_support._get_output(output, input)
-    temp_needed = numpy.shares_memory(input, output)
-    if temp_needed:
-        # input and output arrays cannot share memory
-        temp = output
-        output = _ni_support._get_output(output.dtype, input)
     weights = numpy.asarray(weights, dtype=numpy.float64)
     if weights.ndim != 1 or weights.shape[0] < 1:
         raise RuntimeError('no filter weights given')
@@ -98,9 +93,6 @@ def correlate1d(input, weights, axis=-1, output=None, mode="reflect",
     mode = _ni_support._extend_mode_to_code(mode)
     _nd_image.correlate1d(input, weights, axis, output, mode, cval,
                           origin)
-    if temp_needed:
-        temp[...] = output
-        output = temp
     return output
 
 
