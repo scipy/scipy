@@ -3004,13 +3004,81 @@ def set_link_color_palette(palette):
     _link_line_colors = palette
 
 
+def reorder_leaves(Z, leaves_order):
+    # first, we build a tree
+    n = Z.shape[0] + 1
+    ch = np.zeros((n - 1, 2))
+    for i in range(n - 1):
+        ch[i]=(Z[i][0], Z[i][1])  # ch[i] = children of node n+i
+    Z = Z.astype('int32')
+    new_Z = np.zeros((n - 1, 4), dtype=float)
+    p = np.zeros(2*n-1,dtype='int32') # array of parents
+    for i in range(n - 1):
+        p[Z[i, 0]] = i + n
+        p[Z[i, 1]] = i + n
+
+    cnt=0
+    used = [False for i in range(2*n-1)]
+    top_level = np.array(leaves_order, dtype='int')
+    new_top_level = np.array([], dtype='int')
+    sizes = np.ones(2*n-1)
+    old_inner_node_number = np.zeros(n-1,dtype='int') # correspondence between new and old inner node numbering
+
+    height = np.zeros(n-1, dtype=float)
+    for i in range(n-1):
+        height[i] = Z[i][2] # height[i] corresponds to cluster n+i
+
+    while top_level.shape[0] != 1:
+        for j in range(top_level.shape[0]-1): # top level of builded tree
+            node1 = top_level[j]
+            node2 = top_level[j+1]
+            node1_old = node1
+            node2_old = node2
+
+            # change numbering to old numbers in tree
+            if node1_old > n-1:
+                node1_old = old_inner_node_number[node1_old - n]
+            if node2_old > n-1:
+                node2_old = old_inner_node_number[node2_old - n]
+
+            if p[node1_old] == p[node2_old]: # same parent in the old tree
+                sizes[n+cnt] = sizes[node1] + sizes[node2]
+                new_Z[cnt] = [node1, node2, height[p[node1_old]-n], sizes[n+cnt]]
+                new_top_level = np.append(new_top_level, n + cnt)
+                used[node1] = True
+                used[node2] = True
+                old_inner_node_number[cnt] = p[node1_old]
+                cnt += 1
+            if not used[node1]:
+                new_top_level = np.append(new_top_level, node1)
+
+        if not used[top_level[top_level.shape[0]-1]]:
+            new_top_level = np.append(new_top_level, top_level[top_level.shape[0] - 1])
+
+        top_level = new_top_level
+        new_top_level = np.array([], dtype='int')
+
+    return new_Z
+    """
+    for l in leaves_order:
+        if used[l]:
+            continue
+        used[l] = True
+        while True:
+            parent = p[l]
+            is_left_child = (ch[parent][0] == l)
+            if is_left_child:
+                right_sibling = ch[parent][1]
+    """
+
+
 def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
                get_leaves=True, orientation='top', labels=None,
                count_sort=False, distance_sort=False, show_leaf_counts=True,
                no_plot=False, no_labels=False, leaf_font_size=None,
                leaf_rotation=None, leaf_label_func=None,
                show_contracted=False, link_color_func=None, ax=None,
-               above_threshold_color='C0'):
+               above_threshold_color='C0', leaves_order=None):
     """
     Plot the hierarchical clustering as a dendrogram.
 
@@ -3268,7 +3336,12 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
     #         or results in a crossing, an exception will be thrown. Passing
     #         None orders leaf nodes based on the order they appear in the
     #         pre-order traversal.
-    Z = np.asarray(Z, order='c')
+    if leaves_order is None:
+        Z = np.asarray(Z, order='c')
+    else:
+        # reorder linkage matrix according to 'leaves_order'
+        Z = np.asarray(reorder_leaves(Z, leaves_order), order='c')
+
 
     if orientation not in ["top", "left", "bottom", "right"]:
         raise ValueError("orientation must be one of 'top', 'left', "
