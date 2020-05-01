@@ -2323,7 +2323,7 @@ def factorial(n, exact=False):
         if np.ndim(n) == 0:
             if np.isnan(n):
                 return n
-            return 0 if n < 0 else math.factorial(n)
+            return 0 if n < 0 else math.factorial(operator.index(n))
         else:
             n = asarray(n)
             un = np.unique(n).astype(object)
@@ -2349,7 +2349,7 @@ def factorial(n, exact=False):
 
             # Calculate products of each range of numbers
             if un.size:
-                val = math.factorial(un[0])
+                val = math.factorial(operator.index(un[0]))
                 out[n == un[0]] = val
                 for i in range(len(un) - 1):
                     prev = un[i] + 1
