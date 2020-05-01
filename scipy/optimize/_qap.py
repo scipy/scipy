@@ -32,10 +32,10 @@ def quadratic_assignment(
 
     Parameters
     ----------
-    cost_matrix : 2d-array, square, positive
+    cost_matrix : 2d-array, square
         A square adjacency matrix
 
-    dist_matrix : 2d-array, square, positive
+    dist_matrix : 2d-array, square
         A square adjacency matrix
 
     seed : 2d-array, optional, (default = [[],[]])
