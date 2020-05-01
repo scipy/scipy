@@ -632,6 +632,205 @@ class poisson_gen(rv_discrete):
 poisson = poisson_gen(name="poisson", longname='A Poisson')
 
 
+class pbinom(rv_discrete):
+    r"""A Poisson binomial discrete random variable.
+
+    %(before_notes)s
+
+    Notes
+    -----
+
+    Probability distribution of a series of independent Bernoulli
+    random variables that are not necessarily identically distributed.
+
+    For details see: http://en.wikipedia.org/wiki/Poisson_binomial_distribution
+
+    `pbinom` takes ``probs``, a sequence of success probabilities :math:`p_i \\
+    in [0, 1] \\forall i \\in [0, N]` for :math:`N` independent but not
+    identically distributed Bernoulli random variables.
+    Implementation as described in the reference [Hong2013]_.
+
+    References:
+    .. [Hong2013] Yili Hong, On computing the distribution function for the
+    Poisson binomial distribution,
+    Computational Statistics & Data Analysis, Volume 59, March 2013,
+    Pages 41-51, ISSN 0167-9473,
+    http://dx.doi.org/10.1016/j.csda.2012.10.006.
+
+    %(after_notes)s
+
+    %(example)s
+
+    """
+
+    def __init__(self, probs, seed=None):
+        self.probs = np.asarray(probs)
+        self.number_trials = self.probs.size
+        if self.probs.shape != (self.number_trials,):
+            raise ValueError(
+                "Input must be an one-dimensional array or a list.")
+        if not ((self.probs <= 1).all() and (self.probs >= 0).all()):
+            raise ValueError("All probabilities must be between 0 and 1")
+        self._pmf_list = self._get_pmf_xi()
+        self.cdf_list = self._get_cdf(self._pmf_list)
+        super(pbinom, self).__init__(seed=seed, a=0, b=len(probs))
+
+    def _rvs(self):
+        return sum((self._random_state.binomial(1, p) for p in self.probs))
+
+    def _pmf(self, x):
+        """Calculate the probability mass function ``pmf`` for the input values.
+
+        The ``pmf`` is defined as
+
+        .. math::
+
+            pmf(k) = Pr(X = k), k = 0, 1, ..., n.
+
+        :param x: number of successful trials for which the
+            probability mass function is calculated
+        :type x: int or list of integers
+        """
+        self._check_rv_input(x)
+        return self._pmf_list[x]
+
+    def _cdf(self, x):
+        """Calculate the cumulative distribution function for the input values.
+
+        The cumulative distribution function ``cdf`` for a number ``k`` of
+        successes is defined as
+
+        .. math::
+
+            cdf(k) = Pr(X \\leq k), k = 0, 1, ..., n.
+
+        :param x: number of successful trials for which the
+            cumulative distribution function is calculated
+        :type x: int or list of integers
+        """
+        self._check_rv_input(x)
+        return self._cdf_list[x]
+
+    def _stats(self, probs, moments='mv'):
+        mu = np.sum(self.probs)
+        var = np.dot((1 - self.probs), self.probs)
+        g1, g2 = None, None
+        if 's' in moments:
+            g1 = (1 - 2*self.probs)
+            g1 = np.multiply(g1, np.multiply((1 - self.probs), self.probs))
+            g1 = g1.sum()/np.power(np.sqrt(var), 3)
+        if 'k' in moments:
+            g2 = (1 - 6*np.multiply((1 - self.probs), self.probs))
+            g2 = np.multiply(g2, np.multiply((1 - self.probs), self.probs))
+            g2 = g1.sum()/np.power(np.sqrt(var), 4)
+        return mu, var, g1, g2
+
+    # Methods to obtain pmf and cdf
+
+    def _get_cdf(self, event_probabilities):
+        """Return the values of the cumulative density function.
+
+        Return a list which contains all the values of the cumulative
+        density function for :math:`i = 0, 1, ..., n`.
+
+        :param event_probabilities: array of single event probabilities
+        :type event_probabilities: numpy.array
+        """
+        cdf = np.empty(self.number_trials + 1)
+        cdf[0] = event_probabilities[0]
+        for i in range(1, self.number_trials + 1):
+            cdf[i] = cdf[i - 1] + event_probabilities[i]
+        return cdf
+
+    def _get_pmf_xi(self):
+        """Return the values of the variable ``xi``.
+
+        The components ``xi`` make up the probability mass function, i.e.
+        :math:`\\xi(k) = pmf(k) = Pr(X = k)`.
+        """
+        chi = np.empty(self.number_trials + 1, dtype=complex)
+        chi[0] = 1
+        half_number_trials = int(
+            self.number_trials / 2 + self.number_trials % 2)
+        # set first half of chis:
+        chi[1:half_number_trials + 1] = self._get_chi(
+            np.arange(1, half_number_trials + 1))
+        # set second half of chis:
+        chi[half_number_trials + 1:self.number_trials + 1] = np.conjugate(
+            chi[1:self.number_trials - half_number_trials + 1][::-1])
+        chi /= self.number_trials + 1
+        xi = np.fft.fft(chi)
+        if self._check_xi_are_real(xi, eps=1e-15):
+            xi = xi.real
+        else:
+            raise TypeError("pmf / xi values have to be real.")
+        xi += np.finfo(type(xi[0])).eps
+        return xi
+
+    def _get_chi(self, idx_array):
+        """Return the values of ``chi`` for the specified indices.
+
+        :param idx_array: array of indices for which the ``chi`` values should
+            be calculated
+        :type idx_array: numpy.array
+        """
+        # get_z:
+        exp_value = np.exp(self.omega * idx_array * 1j)
+        xy = 1 - self.success_probabilities + \
+            self.success_probabilities * exp_value[:, np.newaxis]
+        # sum over the principal values of the arguments of z:
+        argz_sum = np.arctan2(xy.imag, xy.real).sum(axis=1)
+        # get d value:
+        exparg = np.log(np.abs(xy)).sum(axis=1)
+        d_value = np.exp(exparg)
+        # get chi values:
+        chi = d_value * np.exp(argz_sum * 1j)
+        return chi
+
+    # Auxiliary functions
+
+    def _check_rv_input(self, x):
+        try:
+            for k in x:
+                assert (type(k) == int or type(k) == np.int64), \
+                        "Values in input list must be integers"
+                assert k >= 0, 'Values in input list cannot be negative.'
+                assert k <= self.number_trials, \
+                    'Values in input list must be smaller or equal to the ' \
+                    'number of input probabilities "n"'
+        except TypeError:
+            assert (type(x) == int or type(x) == np.int64), \
+                'Input value must be an integer.'
+            assert x >= 0, "Input value cannot be negative."
+            assert x <= self.number_trials, \
+                'Input value cannot be greater than ' + str(self.number_trials)
+        return True
+
+    @staticmethod
+    def _check_xi_are_real(xi_values, eps=np.finfo(float).eps):
+        """Check whether all the ``xi``s have imaginary part equal to 0.
+
+        The probabilities :math:`\\xi(k) = pmf(k) = Pr(X = k)` have to be
+        positive and must have imaginary part equal to zero.
+
+        :param xi_values: single event probabilities
+        :type xi_values: complex
+        """
+
+        return np.all(xi_values.imag <= eps)
+
+    # Methods to obtain other parameters
+
+    def amax(self):
+        return np.amax(self._pmf_list)
+
+    def argmax(self):
+        return np.argmax(self._pmf_list)
+
+
+pbinom = pbinom(name="pbinom", longname='A Poisson Binomial')
+
+
 class planck_gen(rv_discrete):
     r"""A Planck discrete exponential random variable.
 
