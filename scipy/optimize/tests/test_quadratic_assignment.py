@@ -41,17 +41,27 @@ def test_quadratic_assignment():
 
     res = quadratic_assignment(cost_matrix, dist_matrix)
 
+    # check ofv with barycenter initialization
     assert 11156 <= res['score'] < 21000
+    assert res['score'] == _score(cost_matrix, dist_matrix, res['col_ind'])
 
+    # check ofv with 100 random initializations
     res = quadratic_assignment(
         cost_matrix, dist_matrix, init_method="rand", n_init=100
     )
 
     assert 11156 <= res['score'] < 13500
 
+    # check ofv with seeds
     res = quadratic_assignment(cost_matrix, dist_matrix, seed)
 
     assert 11156 <= res['score'] < 21000
+
+    # check that max_iter is obeying with low input value
+    iter = 5
+    res = quadratic_assignment(cost_matrix, dist_matrix, max_iter=iter)
+
+    assert iter >= res['nit']
 
 
 def test_quadratic_assignment_input_validation():
@@ -108,3 +118,10 @@ def _range_matrix(a, b):
     for i in range(b):
         mat[:, i] = np.arange(a)
     return mat
+
+
+def _score(A, B, col):
+    A = np.asarray(A)
+    B = np.asarray(B)
+    col = np.asarray(col)
+    return np.trace(np.transpose(A) @ B[np.ix_(col, col)])
