@@ -5,6 +5,8 @@ Linear Algebra (`scipy.linalg`)
 
 .. currentmodule:: scipy
 
+.. contents::
+
 When SciPy is built using the optimized ATLAS LAPACK and BLAS
 libraries, it has very fast linear algebra capabilities. If you dig
 deep enough, all of the raw LAPACK and BLAS libraries are available

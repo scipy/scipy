@@ -7,6 +7,8 @@ Signal Processing (`scipy.signal`)
 
 .. currentmodule:: scipy.signal
 
+.. contents::
+
 The signal processing toolbox currently contains some filtering
 functions, a limited set of filter design tools, and a few B-spline
 interpolation algorithms for 1- and 2-D data. While the

@@ -5,6 +5,8 @@ Spatial data structures and algorithms (`scipy.spatial`)
 
 .. currentmodule:: scipy.spatial
 
+.. contents::
+
 `scipy.spatial` can compute triangulations, Voronoi diagrams, and
 convex hulls of a set of points, by leveraging the `Qhull
 <http://qhull.org/>`__ library.

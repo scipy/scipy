@@ -7,6 +7,7 @@ Sparse eigenvalue problems with ARPACK
 
 .. currentmodule:: scipy.sparse.linalg
 
+.. contents::
 
 Introduction
 ------------

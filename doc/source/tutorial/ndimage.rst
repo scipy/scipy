@@ -5,6 +5,8 @@ Multidimensional image processing (`scipy.ndimage`)
 
 .. currentmodule:: scipy.ndimage
 
+.. contents::
+
 .. _ndimage-introduction:
 
 Introduction

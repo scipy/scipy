@@ -8,6 +8,8 @@ Statistics (`scipy.stats`)
 
 .. currentmodule:: scipy
 
+.. contents::
+
 Introduction
 ------------
 

@@ -5,6 +5,8 @@ Integration (:mod:`scipy.integrate`)
 
 .. currentmodule:: scipy.integrate
 
+.. contents::
+
 The :mod:`scipy.integrate` sub-package provides several integration
 techniques including an ordinary differential equation integrator. An
 overview of the module is provided by the help command:
