@@ -526,7 +526,33 @@ class TestPbsvx:
         assert_equal(berr.shape, (2,))
         assert_equal(info, 0)
 
-    @pytest.mark.parametrize('dtype', REAL_DTYPES)
+    def test_nag_f07hbf(self):
+        ab_ = np.array([(0,  1.08 - 1.73j, -0.04 + 0.29j, -0.33 + 2.24j),
+                        (9.39, 1.69, 2.65, 2.17)])
+        b_ = np.array([(-12.42 + 68.42j, 54.30 - 56.56j),
+                       (-9.93 + 0.88j, 18.32 + 4.76j),
+                       (-27.30 - 0.01j, -4.40 + 9.97j),
+                       (5.31 + 23.63j, 9.43 + 1.41j)])
+        x_ = np.array([(-1.0000 + 8.0000j,  5.0000 - 6.0000j),
+                       ( 2.0000 - 3.0000j,  2.0000 + 3.0000j),
+                       (-4.0000 - 5.0000j, -8.0000 + 4.0000j),
+                       ( 7.0000 + 6.0000j, -1.0000 - 7.0000j)])
+
+        atol = 100 * np.finfo(ab_.dtype).eps
+        pbsvx = get_lapack_funcs('pbsvx', dtype=ab_.dtype)
+        ab, afb, e, s, x, rcond, ferr, berr, info = pbsvx(ab=ab_, b=b_, kd=1)
+
+        assert_equal(ab, ab_)
+        assert_equal(afb.shape, ab_.shape)
+        assert_equal(e, b'N')
+        assert_equal(s.shape, (4,))
+        assert_allclose(x, x_, atol=atol)
+        assert np.isscalar(rcond)
+        assert_equal(ferr.shape, (2,))
+        assert_equal(berr.shape, (2,))
+        assert_equal(info, 0)
+
+    @pytest.mark.parametrize('dtype', DTYPES)
     @pytest.mark.parametrize('lower', (0, 1))
     @pytest.mark.parametrize('fact', (0, 1))
     def test_random_example_non_factored(self, dtype, lower, fact):
@@ -569,7 +595,7 @@ class TestPbsvx:
         assert_raises(Exception, pbsvx, ab[:,:-1], b, 2, lower, kd, afb, 'N')
         assert_raises(Exception, pbsvx, ab, b[:-1], 2, lower, kd, afb, 'N')
 
-    @pytest.mark.parametrize('dtype', REAL_DTYPES)
+    @pytest.mark.parametrize('dtype', DTYPES)
     @pytest.mark.parametrize('lower', (0, 1))
     def test_random_example_factored(self, dtype, lower):
         seed(1724)
@@ -624,17 +650,25 @@ class TestPbsvx:
         min_kd_width = lda - kd
         main_diag_width = ldab + 1
         sub_diag_widths = range(min_kd_width, main_diag_width)
-        main_diagonal = generate_random_dtype_array((main_diag_width,), dtype)
-        sub_diags = [generate_random_dtype_array((width,), dtype)
-                     for width in sub_diag_widths]
-        bands = sub_diags + [main_diagonal] + sub_diags[::-1]
+
+        # Construct the set of super diagonal(s), main diagonal and
+        # set of sub diagonal(s)
+        # Ensure matrix is Hermatian for complex case and at least
+        # symmetric for real case
+        main_diag = generate_random_dtype_array((main_diag_width,), dtype)
+        sub_diag = [generate_random_dtype_array((width,), dtype)
+                           for width in sub_diag_widths]
+        sup_diag = [x.conj() for x in reversed(sub_diag)]
+
         # Construct the symmetric positive definite band matrix A from
         # the bands and offsets.
-        a = sps.diags(bands, np.arange(-kd, kd + 1), format='dia')
-        # Ensure a is strictly diagonally dominant
-        a.setdiag(a.toarray().sum(axis=0))
+        bands = sub_diag + [main_diag] + sup_diag
+        A = sps.diags(bands, np.arange(-kd, kd + 1), format='dia')
 
-        return a
+        # Ensure a is strictly diagonally dominant
+        A.setdiag(A.toarray().sum(axis=0).real)
+
+        return A
 
 
 class TestTbtrs(object):
