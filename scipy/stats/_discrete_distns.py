@@ -659,6 +659,8 @@ class pbinom(rv_discrete):
 
     %(after_notes)s
 
+    .. versionadded:: 1.5.0
+
     %(example)s
 
     """
