@@ -80,6 +80,11 @@ def correlate1d(input, weights, axis=-1, output=None, mode="reflect",
     if numpy.iscomplexobj(input):
         raise TypeError('Complex type not supported')
     output = _ni_support._get_output(output, input)
+    temp_needed = numpy.shares_memory(input, output)
+    if temp_needed:
+        # input and output arrays cannot share memory
+        temp = output
+        output = _ni_support._get_output(output.dtype, input)
     weights = numpy.asarray(weights, dtype=numpy.float64)
     if weights.ndim != 1 or weights.shape[0] < 1:
         raise RuntimeError('no filter weights given')
@@ -93,6 +98,9 @@ def correlate1d(input, weights, axis=-1, output=None, mode="reflect",
     mode = _ni_support._extend_mode_to_code(mode)
     _nd_image.correlate1d(input, weights, axis, output, mode, cval,
                           origin)
+    if temp_needed:
+        temp[...] = output
+        output = temp
     return output
 
 
@@ -618,10 +626,18 @@ def _correlate_or_convolve(input, weights, output, mode, cval, origin,
     if not weights.flags.contiguous:
         weights = weights.copy()
     output = _ni_support._get_output(output, input)
+    temp_needed = numpy.shares_memory(input, output)
+    if temp_needed:
+        # input and output arrays cannot share memory
+        temp = output
+        output = _ni_support._get_output(output.dtype, input)
     if not isinstance(mode, str) and isinstance(mode, Iterable):
         raise RuntimeError("A sequence of modes is not supported")
     mode = _ni_support._extend_mode_to_code(mode)
     _nd_image.correlate(input, weights, output, mode, cval, origins)
+    if temp_needed:
+        temp[...] = output
+        output = temp
     return output
 
 
@@ -1035,6 +1051,11 @@ def _min_or_max_filter(input, size, footprint, structure, output, mode,
     if numpy.iscomplexobj(input):
         raise TypeError('Complex type not supported')
     output = _ni_support._get_output(output, input)
+    temp_needed = numpy.shares_memory(input, output)
+    if temp_needed:
+        # input and output arrays cannot share memory
+        temp = output
+        output = _ni_support._get_output(output.dtype, input)
     origins = _ni_support._normalize_sequence(origin, input.ndim)
     if separable:
         sizes = _ni_support._normalize_sequence(size, input.ndim)
@@ -1073,6 +1094,9 @@ def _min_or_max_filter(input, size, footprint, structure, output, mode,
         mode = _ni_support._extend_mode_to_code(mode)
         _nd_image.min_or_max_filter(input, footprint, structure, output,
                                     mode, cval, origins, minimum)
+    if temp_needed:
+        temp[...] = output
+        output = temp
     return output
 
 
@@ -1209,6 +1233,11 @@ def _rank_filter(input, rank, size=None, footprint=None, output=None,
                               origins)
     else:
         output = _ni_support._get_output(output, input)
+        temp_needed = numpy.shares_memory(input, output)
+        if temp_needed:
+            # input and output arrays cannot share memory
+            temp = output
+            output = _ni_support._get_output(output.dtype, input)
         if not isinstance(mode, str) and isinstance(mode, Iterable):
             raise RuntimeError(
                 "A sequence of modes is not supported by non-separable rank "
@@ -1216,6 +1245,9 @@ def _rank_filter(input, rank, size=None, footprint=None, output=None,
         mode = _ni_support._extend_mode_to_code(mode)
         _nd_image.rank_filter(input, rank, footprint, output, mode, cval,
                               origins)
+        if temp_needed:
+            temp[...] = output
+            output = temp
         return output
 
 
