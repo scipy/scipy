@@ -140,10 +140,6 @@ jobs:
       choco install -y mingw --forcex86 --force --version=6.4.0
     displayName: 'Install 32-bit mingw for 32-bit builds'
     condition: and(succeeded(), eq(variables['BITS'], 32))
-  - powershell: |
-      choco install -y mingw --force --version=6.4.0
-    displayName: 'Install 64-bit mingw for 64-bit builds'
-    condition: and(succeeded(), eq(variables['BITS'], 64))
   - script: python -m pip install numpy cython==0.29.14 pybind11 pytest pytest-timeout pytest-xdist pytest-env pytest-cov Pillow mpmath
     displayName: 'Install dependencies'
   - powershell: |
