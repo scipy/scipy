@@ -526,17 +526,17 @@ class TestPbsvx:
         assert_equal(berr.shape, (2,))
         assert_equal(info, 0)
 
-    def test_nag_f07hbf(self):
-        ab_ = np.array([(0,  1.08 - 1.73j, -0.04 + 0.29j, -0.33 + 2.24j),
+    def test_nag_f07hpf(self):
+        ab_ = np.array([(0, 1.08 - 1.73j, -0.04 + 0.29j, -0.33 + 2.24j),
                         (9.39, 1.69, 2.65, 2.17)])
         b_ = np.array([(-12.42 + 68.42j, 54.30 - 56.56j),
                        (-9.93 + 0.88j, 18.32 + 4.76j),
                        (-27.30 - 0.01j, -4.40 + 9.97j),
                        (5.31 + 23.63j, 9.43 + 1.41j)])
-        x_ = np.array([(-1.0000 + 8.0000j,  5.0000 - 6.0000j),
-                       ( 2.0000 - 3.0000j,  2.0000 + 3.0000j),
+        x_ = np.array([(-1.0000 + 8.0000j, 5.0000 - 6.0000j),
+                       (2.0000 - 3.0000j, 2.0000 + 3.0000j),
                        (-4.0000 - 5.0000j, -8.0000 + 4.0000j),
-                       ( 7.0000 + 6.0000j, -1.0000 - 7.0000j)])
+                       (7.0000 + 6.0000j, -1.0000 - 7.0000j)])
 
         atol = 100 * np.finfo(ab_.dtype).eps
         pbsvx = get_lapack_funcs('pbsvx', dtype=ab_.dtype)
@@ -565,7 +565,7 @@ class TestPbsvx:
         # Generate the random system A @ x = b where A is a symmetric
         # positive banded matrix
         b = generate_random_dtype_array((ldb, nrhs), dtype=dtype)
-        A = self._pb_array(dtype, kd, lda, ldab, lower)
+        A = self._pb_array(dtype, kd, lda, ldab)
 
         # Convert to banded form
         ab = np.flipud(A.data[:kd + 1]) if lower else np.flipud(A.data[kd:])
@@ -575,8 +575,7 @@ class TestPbsvx:
                   'kd': kd,
                   'lower': lower,
                   'fact': fact,
-                  'equed': 'N',
-                  }
+                  'equed': 'N'}
 
         ab, afb, e, s, x, rcond, ferr, berr, info = pbsvx(**kwargs)
 
@@ -599,15 +598,15 @@ class TestPbsvx:
     @pytest.mark.parametrize('lower', (0, 1))
     def test_random_example_factored(self, dtype, lower):
         seed(1724)
-        lda, ldb, nrhs, kd = 4, 4, 3, 2
+        n, nrhs, kd = 4, 3, 2
         ldab = kd + 1
         atol = 100 * np.finfo(dtype).eps
         pbsvx, pbtrf = get_lapack_funcs(('pbsvx', 'pbtrf'), dtype=dtype)
 
         # Generate the random system A @ x = b where A is a symmetric
         # positive banded matrix
-        b = generate_random_dtype_array((ldb, nrhs), dtype=dtype)
-        A = self._pb_array(dtype, kd, lda, ldab, lower)
+        b = generate_random_dtype_array((n, nrhs), dtype=dtype)
+        A = self._pb_array(dtype, kd, n, ldab)
 
         # Convert to banded form
         ab = np.flipud(A.data[:kd + 1]) if lower else np.flipud(A.data[kd:])
@@ -621,8 +620,8 @@ class TestPbsvx:
                   'kd': kd,
                   'lower': lower,
                   'fact': 2,
-                  'equed': 'N',
-                  }
+                  'equed': 'N'}
+
         ab, afb, e, s, x, rcond, ferr, berr, info = pbsvx(**kwargs)
 
         assert_equal(info, 0)
@@ -643,22 +642,23 @@ class TestPbsvx:
         assert_raises(Exception, pbsvx, ab, b, 2, lower, kd, afb[:,:-1], 'N')
 
     @staticmethod
-    def _pb_array(dtype, kd, lda, ldab, lower):
+    def _pb_array(dtype, kd, n, ldab):
         """Construct a random symmetric positive banded array A"""
-        # Construct the diagonal and kd super/sub diagonals of A with
-        # the corresponding offsets.
-        min_kd_width = lda - kd
+        min_kd_width = n - kd
         main_diag_width = ldab + 1
         sub_diag_widths = range(min_kd_width, main_diag_width)
 
         # Construct the set of super diagonal(s), main diagonal and
         # set of sub diagonal(s)
-        # Ensure matrix is Hermatian for complex case and at least
-        # symmetric for real case
+        # Ensure matrix is Hermatian for complex dtypes and at least
+        # symmetric for real dtypes
         main_diag = generate_random_dtype_array((main_diag_width,), dtype)
         sub_diag = [generate_random_dtype_array((width,), dtype)
-                           for width in sub_diag_widths]
-        sup_diag = [x.conj() for x in reversed(sub_diag)]
+                    for width in sub_diag_widths]
+        if dtype in COMPLEX_DTYPES:
+            sup_diag = [x.conj() for x in reversed(sub_diag)]
+        else:
+            sup_diag = sub_diag[::-1]
 
         # Construct the symmetric positive definite band matrix A from
         # the bands and offsets.
