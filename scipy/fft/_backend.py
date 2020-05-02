@@ -73,7 +73,6 @@ def set_global_backend(backend):
     >>> set_global_backend("scipy")  # Sets global backend
     >>> fft([1])  # Calls the global backend
     array([1.+0.j])
-
     """
     backend = _backend_from_arg(backend)
     ua.set_global_backend(backend)
@@ -105,7 +104,6 @@ def register_backend(backend):
     >>> register_backend("scipy")  # Register a new backend
     >>> fft([1])  # Calls the global backend first, and then use the new one
     array([1.+0.j])
-
     """
     backend = _backend_from_arg(backend)
     ua.register_backend(backend)
@@ -132,6 +130,12 @@ def set_backend(backend, coerce=False, only=False):
        BackendNotImplemented error will be raised immediately. Ignoring any
        lower priority backends.
 
+    Examples
+    --------
+    >>> import scipy.fft as fft
+    >>> with fft.set_backend('scipy', only=True):
+    ...     fft.fft([1])  # Always calls the scipy implementation
+    array([1.+0.j])
     """
     backend = _backend_from_arg(backend)
     return ua.set_backend(backend, coerce=coerce, only=only)
