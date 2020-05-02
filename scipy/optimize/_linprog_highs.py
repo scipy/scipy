@@ -88,8 +88,9 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
     ----------
     lp :  _LPProblem
         A ``scipy.optimize._linprog_util._LPProblem`` ``namedtuple``.
-    solver : "ipm" or "simplex"
-        Which HiGHS solver to use.
+    solver : "ipm" or "simplex" or None
+        Which HiGHS solver to use.  If `None`, HiGHS will determine which
+        solver to use based on the problem.
 
     Options
     -------
@@ -127,6 +128,8 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
             ``2``: ML_DETAILED
 
             ``4``: ML_MINIMAL
+
+            ``7``: ML_ALWAYS
 
         Default is 0.
     primal_feasibility_tolerance : double
