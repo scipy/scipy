@@ -38,14 +38,14 @@ def quadratic_assignment(
     dist_matrix : 2d-array, square
         A square adjacency matrix
 
-    seed : 2d-array, optional, (default = [[],[]])
+    seed : 2d-array, optional, (default = np.array([[], []]).T)
         Allows the user apply a seed, fixing part of the matching between
         the two adjacency matrices.
         For column 1, each entry is an index of a node in 'cost_matrix'.
         For column 2, each entry is an index of a node in 'dist_matrix'.
-        The elements of 'seed_cost' and 'seed_dist' are vertices which
-        are known to be matched, that is, 'seed[0, i]' is matched to
-        vertex 'seed[1, i]'. Array shape (m , 2) where m <= number of nodes
+        The elements of 'seed[:, 0]' and 'seed_dist[:,1]' are vertices which
+        are known to be matched, that is, 'seed[i, 0]' is matched to
+        vertex 'seed[i, 1]'. Array shape (m , 2) where m <= number of nodes
 
     maximize : bool (default = False)
         Gives users the option to solve the Graph Matching Problem (GMP)
@@ -125,7 +125,7 @@ def quadratic_assignment(
     >>> res = quadratic_assignment(cost,dist)
     >>> print(res)
      col_ind: array([2, 3, 0, 1])
-         nit: 1
+         nit: 30
        score: 790
 
     To demonstrate explicitly how the 'score' value
@@ -178,6 +178,10 @@ def quadratic_assignment(
         raise ValueError(msg)
     elif not (seed <= (cost_matrix.shape[0] - 1)).all():
         msg = "Seed array entries must be less than or equal to n-1"
+        raise ValueError(msg)
+    elif not len(set(seed[:, 0])) == len(seed[:, 0]) or not \
+            len(set(seed[:, 1])) == len(seed[:, 1]):
+        msg = "Seed column entries must be unique"
         raise ValueError(msg)
     elif type(n_init) is not int and n_init <= 0:
         msg = '"n_init" must be a positive integer'
