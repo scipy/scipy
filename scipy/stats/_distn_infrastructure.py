@@ -2867,6 +2867,7 @@ class rv_discrete(rv_generic):
         self._cdfvec = vectorize(self._cdf_single, otypes='d')
         self.vecentropy = vectorize(self._entropy)
         self.shapes = shapes
+
         if values is not None:
             raise ValueError("rv_discrete.__init__(..., values != None, ...)")
 
