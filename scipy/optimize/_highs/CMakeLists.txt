@@ -2,7 +2,7 @@
 # means, adding the subdirectories for all CMake projects in this tree, and
 # finding external libraries and turning them into imported targets.
 
-cmake_minimum_required(VERSION 3.0.0)
+cmake_minimum_required(VERSION 3.15)
 
 project(HIGHS LANGUAGES CXX C)
 
@@ -279,9 +279,9 @@ add_subdirectory(app)
 add_subdirectory(check)
 add_subdirectory(src)
 
-# # # Comment out for scaffold/ tests
+# # Comment out for scaffold/ tests
 # add_subdirectory(scaffold)
 
-# # # Only needed if it defines a target like a main executable. For methods stick
-# # # to header-only.
+# # Only needed if it defines a target like a main executable. For methods stick
+# # to header-only.
 # add_subdirectory(dev_presolve)

@@ -66,54 +66,6 @@ void Presolve::load(const HighsLp& lp) {
   timer.recordFinish(MATRIX_COPY);
 }
 
-void PresolveInfo::negateColDuals(bool reduced) {
-  if (reduced)
-    for (unsigned int col = 0; col < reduced_solution_.col_dual.size(); col++)
-      reduced_solution_.col_dual[col] = reduced_solution_.col_dual[col];
-  else
-    for (unsigned int col = 0; col < recovered_solution_.col_dual.size(); col++)
-      recovered_solution_.col_dual[col] = recovered_solution_.col_dual[col];
-  return;
-}
-
-void PresolveInfo::negateReducedCosts() {
-  for (unsigned int col = 0; col < reduced_lp_.colCost_.size(); col++)
-    reduced_lp_.colCost_[col] = -reduced_lp_.colCost_[col];
-}
-
-HighsLp& PresolveInfo::getReducedProblem() {
-  if (presolve_.size() == 0) {
-    std::cout << "Error during presolve. No presolve initialized." << std::endl;
-  } else if (presolve_[0].status != presolve_[0].stat::Reduced) {
-    std::cout << "Error during presolve. No reduced LP. status: "
-              << presolve_[0].status << std::endl;
-  } else {
-    if (presolve_[0].numRow == 0 && presolve_[0].numCol == 0) {
-      // Reduced problem has been already moved to this.reduced_lp_;
-      return reduced_lp_;
-    } else {
-      // Move vectors so no copying happens. presolve does not need that lp
-      // any more.
-      reduced_lp_.numCol_ = presolve_[0].numCol;
-      reduced_lp_.numRow_ = presolve_[0].numRow;
-      reduced_lp_.Astart_ = std::move(presolve_[0].Astart);
-      reduced_lp_.Aindex_ = std::move(presolve_[0].Aindex);
-      reduced_lp_.Avalue_ = std::move(presolve_[0].Avalue);
-      reduced_lp_.colCost_ = std::move(presolve_[0].colCost);
-      reduced_lp_.colLower_ = std::move(presolve_[0].colLower);
-      reduced_lp_.colUpper_ = std::move(presolve_[0].colUpper);
-      reduced_lp_.rowLower_ = std::move(presolve_[0].rowLower);
-      reduced_lp_.rowUpper_ = std::move(presolve_[0].rowUpper);
-
-      reduced_lp_.sense_ = ObjSense::MINIMIZE;
-      reduced_lp_.offset_ = 0;
-      reduced_lp_.model_name_ =
-          std::move(presolve_[0].modelName);  //"Presolved model";
-    }
-  }
-  return reduced_lp_;
-}
-
 void Presolve::setBasisInfo(
     const std::vector<HighsBasisStatus>& pass_col_status,
     const std::vector<HighsBasisStatus>& pass_row_status) {
@@ -2298,6 +2250,9 @@ HighsPostsolveStatus Presolve::postsolve(const HighsSolution& reduced_solution,
 
   for (int i = 0; i < numCol; ++i) {
     int iCol = eqIndexOfReduced.at(i);
+    assert(iCol < (int)valuePrimal.size());
+    assert(iCol < (int)valueColDual.size());
+    assert(iCol >= 0);
     valuePrimal[iCol] = colValue.at(i);
     valueColDual[iCol] = colDual.at(i);
     col_status.at(iCol) = temp_col_status.at(i);

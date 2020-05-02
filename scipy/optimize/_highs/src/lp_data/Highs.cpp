@@ -197,25 +197,35 @@ HighsStatus Highs::writeHighsInfo(const std::string filename) {
   return return_status;
 }
 
-HighsStatus Highs::passModel(const HighsLp& lp) {
+HighsStatus Highs::reset() {
   HighsStatus return_status = HighsStatus::OK;
-  HighsStatus call_status;
-  // Copy the LP to the internal LP
-  lp_ = lp;
-  // Check validity of the LP, normalising its values (by default).
-  call_status = assessLp(lp_, options_);
-  return_status = interpretCallStatus(call_status, return_status, "assessLp");
-  if (return_status == HighsStatus::Error) return return_status;
   // Clear the status, solution, basis and info associated with any previous
   // model
-  call_status = clearSolver();
+  HighsStatus call_status = clearSolver();
   return_status =
       interpretCallStatus(call_status, return_status, "clearSolver");
+
   if (return_status == HighsStatus::Error) return return_status;
   // Clear any HiGHS model object
   hmos_.clear();
   // Create a HiGHS model object for this LP
   hmos_.push_back(HighsModelObject(lp_, options_, timer_));
+
+  presolve_.clear();
+  return HighsStatus::OK;
+}
+
+HighsStatus Highs::passModel(const HighsLp& lp) {
+  HighsStatus return_status = HighsStatus::OK;
+  // Copy the LP to the internal LP
+  lp_ = lp;
+  // Check validity of the LP, normalising its values (by default).
+  HighsStatus call_status = assessLp(lp_, options_);
+  return_status = interpretCallStatus(call_status, return_status, "assessLp");
+  if (return_status == HighsStatus::Error) return return_status;
+
+  return_status = reset();
+
   return return_status;
 }
 
@@ -428,16 +438,17 @@ basis_.valid_, hmos_[0].basis_.valid_);
     //    printf("Writing before_presolve.mps\n");
     //    writeModel("before_presolve.mps");
 
+    // Run and time presolve.
     const double from_presolve_time = timer_.read(timer_.presolve_clock);
     this_presolve_time = -from_presolve_time;
     timer_.start(timer_.presolve_clock);
-    PresolveInfo presolve_info(options_.presolve, lp_, timer_);
-    HighsPresolveStatus presolve_status = runPresolve(presolve_info);
+
+    HighsPresolveStatus presolve_status = runPresolve();
     timer_.stop(timer_.presolve_clock);
     const double to_presolve_time = timer_.read(timer_.presolve_clock);
     this_presolve_time += to_presolve_time;
-    //    printf("\nHighs::run() 2: presolve status = %d\n",
-    //    (int)presolve_status);fflush(stdout);
+    presolve_.info_.presolve_time = this_presolve_time;
+
     // Run solver.
     switch (presolve_status) {
       case HighsPresolveStatus::NotPresolved: {
@@ -475,7 +486,7 @@ basis_.valid_, hmos_[0].basis_.valid_);
         break;
       }
       case HighsPresolveStatus::Reduced: {
-        HighsLp& reduced_lp = presolve_info.getReducedProblem();
+        HighsLp& reduced_lp = presolve_.getReducedProblem();
         // Validate the reduced LP
         assert(assessLp(reduced_lp, options_) == HighsStatus::OK);
         call_status = cleanBounds(options_, reduced_lp);
@@ -586,16 +597,18 @@ basis_.valid_, hmos_[0].basis_.valid_);
           hmos_[solved_hmo].solution_.col_dual.resize(0);
           hmos_[solved_hmo].solution_.row_dual.resize(0);
         }
-        presolve_info.reduced_solution_ = hmos_[solved_hmo].solution_;
-        presolve_info.presolve_[0].setBasisInfo(
-            hmos_[solved_hmo].basis_.col_status,
-            hmos_[solved_hmo].basis_.row_status);
-        // Run postsolve
+
+        presolve_.data_.reduced_solution_ = hmos_[solved_hmo].solution_;
+        presolve_.setBasisInfo(hmos_[solved_hmo].basis_.col_status,
+                               hmos_[solved_hmo].basis_.row_status);
+
         this_postsolve_time = -timer_.read(timer_.postsolve_clock);
         timer_.start(timer_.postsolve_clock);
-        HighsPostsolveStatus postsolve_status = runPostsolve(presolve_info);
+        HighsPostsolveStatus postsolve_status = runPostsolve();
         timer_.stop(timer_.postsolve_clock);
         this_postsolve_time += -timer_.read(timer_.postsolve_clock);
+        presolve_.info_.postsolve_time = this_postsolve_time;
+
         if (postsolve_status == HighsPostsolveStatus::SolutionRecovered) {
           HighsPrintMessage(options_.output, options_.message_level, ML_VERBOSE,
                             "Postsolve finished\n");
@@ -606,13 +619,13 @@ basis_.valid_, hmos_[0].basis_.valid_);
           // parameters
           resetModelStatusAndSolutionParams(hmos_[original_hmo]);
           // Set solution and its status
-          hmos_[original_hmo].solution_ = presolve_info.recovered_solution_;
+          hmos_[original_hmo].solution_ = presolve_.data_.recovered_solution_;
           //
           // Set basis and its status
           hmos_[original_hmo].basis_.col_status =
-              presolve_info.presolve_[0].getColStatus();
+              presolve_.data_.presolve_[0].getColStatus();
           hmos_[original_hmo].basis_.row_status =
-              presolve_info.presolve_[0].getRowStatus();
+              presolve_.data_.presolve_[0].getRowStatus();
           hmos_[original_hmo].basis_.valid_ = true;
           analyseHighsBasicSolution(options_.logfile, hmos_[original_hmo],
                                     "after returning from postsolve");
@@ -1476,45 +1489,72 @@ std::string Highs::highsPrimalDualStatusToString(const int primal_dual_status) {
 }
 
 // Private methods
-HighsPresolveStatus Highs::runPresolve(PresolveInfo& info) {
+HighsPresolveStatus Highs::runPresolve() {
+  // Exit if the problem is empty or if presolve is set to off.
   if (options_.presolve == off_string) return HighsPresolveStatus::NotPresolved;
+  if (lp_.numCol_ == 0 && lp_.numRow_ == 0)
+    return HighsPresolveStatus::NullError;
 
-  if (info.lp_ == nullptr) return HighsPresolveStatus::NullError;
+  // Clear info from previous runs if lp_ has been modified.
+  if (presolve_.has_run_) presolve_.clear();
 
-  if (info.presolve_.size() == 0) return HighsPresolveStatus::NotReduced;
+  // Presolve.
+  presolve_.init(lp_, timer_);
+  HighsPresolveStatus presolve_return_status = presolve_.run();
 
-  info.presolve_[0].load(*(info.lp_));
-
-  // Initialize a new presolve class instance for the LP given in presolve info
-  HighsPresolveStatus presolve_return_status = info.presolve_[0].presolve();
-
+  // Handle max case.
   if (presolve_return_status == HighsPresolveStatus::Reduced &&
-      info.lp_->sense_ == ObjSense::MAXIMIZE)
-    info.negateReducedCosts();
+      lp_.sense_ == ObjSense::MAXIMIZE)
+    presolve_.negateReducedLpCost();
 
+  // Update reduction counts.
+  switch (presolve_.presolve_status_) {
+    case HighsPresolveStatus::Reduced: {
+      HighsLp& reduced_lp = presolve_.getReducedProblem();
+      presolve_.info_.n_cols_removed = lp_.numCol_ - reduced_lp.numCol_;
+      presolve_.info_.n_rows_removed = lp_.numRow_ - reduced_lp.numRow_;
+      presolve_.info_.n_nnz_removed =
+          (int)lp_.Avalue_.size() - (int)reduced_lp.Avalue_.size();
+      break;
+    }
+    case HighsPresolveStatus::ReducedToEmpty: {
+      presolve_.info_.n_cols_removed = lp_.numCol_;
+      presolve_.info_.n_rows_removed = lp_.numRow_;
+      presolve_.info_.n_nnz_removed = (int)lp_.Avalue_.size();
+      break;
+    }
+    default:
+      break;
+  }
   return presolve_return_status;
 }
 
-HighsPostsolveStatus Highs::runPostsolve(PresolveInfo& info) {
-  if (info.presolve_.size() != 0) {
-    // Handle max case.
-    if (info.lp_->sense_ == ObjSense::MAXIMIZE) info.negateColDuals(true);
+HighsPostsolveStatus Highs::runPostsolve() {
+  assert(presolve_.has_run_);
+  bool solution_ok = isSolutionConsistent(presolve_.getReducedProblem(),
+                                          presolve_.data_.reduced_solution_);
+  if (!solution_ok) return HighsPostsolveStatus::ReducedSolutionDimenionsError;
 
-    bool solution_ok =
-        isSolutionConsistent(info.getReducedProblem(), info.reduced_solution_);
-    if (!solution_ok)
-      return HighsPostsolveStatus::ReducedSolutionDimenionsError;
-
-    // todo: error handling + see todo in run()
-    info.presolve_[0].postsolve(info.reduced_solution_,
-                                info.recovered_solution_);
-
-    if (info.lp_->sense_ == ObjSense::MAXIMIZE) info.negateColDuals(false);
-
-    return HighsPostsolveStatus::SolutionRecovered;
-  } else {
+  // Run postsolve
+  if (presolve_.presolve_status_ != HighsPresolveStatus::Reduced &&
+      presolve_.presolve_status_ != HighsPresolveStatus::ReducedToEmpty)
     return HighsPostsolveStatus::NoPostsolve;
-  }
+
+  // Handle max case.
+  if (lp_.sense_ == ObjSense::MAXIMIZE) presolve_.negateReducedLpColDuals(true);
+
+  HighsPostsolveStatus postsolve_status =
+      presolve_.data_.presolve_[0].postsolve(
+          presolve_.data_.reduced_solution_,
+          presolve_.data_.recovered_solution_);
+
+  if (postsolve_status != HighsPostsolveStatus::SolutionRecovered)
+    return postsolve_status;
+
+  if (lp_.sense_ == ObjSense::MAXIMIZE)
+    presolve_.negateReducedLpColDuals(false);
+
+  return HighsPostsolveStatus::SolutionRecovered;
 }
 
 // The method below runs calls solveLp to solve the LP associated with
