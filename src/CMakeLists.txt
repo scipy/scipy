@@ -91,6 +91,7 @@ set(sources
     mip/HighsMipSolver.cpp
     mip/SolveMip.cpp
     presolve/Presolve.cpp
+    presolve/PresolveComponent.cpp
     presolve/PresolveAnalysis.cpp
     presolve/HPreData.cpp
     simplex/HCrash.cpp
@@ -161,12 +162,14 @@ set(headers
     simplex/HSimplexReport.h
     simplex/SimplexConst.h
     presolve/Presolve.h
+    presolve/PresolveComponent.h
     presolve/PresolveAnalysis.h
     presolve/HPreData.h
     simplex/HVector.h
     test/KktCheck.h
     test/KktChStep.h
     util/stringutil.h
+    util/HighsComponent.h
     util/HighsRandom.h
     util/HighsSort.h
     util/HighsTimer.h

@@ -29,6 +29,7 @@ using std::list;
 using std::string;
 
 enum class HighsPostsolveStatus {
+  NotPresolved = -1,
   ReducedSolutionEmpty,
   ReducedSolutionDimenionsError,
   SolutionRecovered,
@@ -117,7 +118,6 @@ class Presolve : public HPreData {
  private:
   bool hasChange;
   int status = 0;  // 0 is unassigned, see enum stat
-  friend class PresolveInfo;
 
   list<int> singRow;  // singleton rows
   list<int> singCol;  // singleton columns
@@ -241,40 +241,6 @@ class Presolve : public HPreData {
   //
 
   string countsFile;
-};
-
-// comment out whole class and see what the issue is.
-
-// Class for easy communication between Presolve and Highs. A single
-// instance of PresolveInfo handles a single presolve execution on one
-// LP.
-class PresolveInfo {
- public:
-  PresolveInfo() {}
-  // option_presolve : off_string means don't presolve.
-  PresolveInfo(std::string option_presolve, const HighsLp& lp,
-               HighsTimer& timer) {
-    if (option_presolve != off_string) {
-      lp_ = &lp;
-      presolve_.push_back(Presolve(timer));
-    }
-  }
-
-  void negateReducedCosts();
-  void negateColDuals(bool reduced);
-  HighsLp& getReducedProblem();
-  HighsPresolveStatus presolve_status_;
-  HighsPostsolveStatus postsolve_status_;
-
- public:
-  // Original problem is lp_.
-  const HighsLp* lp_;
-  std::vector<Presolve> presolve_;
-  HighsLp reduced_lp_;
-
-  // todo: make reduced one const.
-  HighsSolution reduced_solution_;
-  HighsSolution recovered_solution_;
 };
 
 #endif /* PRESOLVE_HPRESOLVE_H_ */

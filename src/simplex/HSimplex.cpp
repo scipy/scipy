@@ -1322,8 +1322,12 @@ bool equilibrationScaleMatrix(HighsModelObject& highs_model_object) {
   // Limits on scaling factors
   double max_allow_scale;
   double min_allow_scale;
+  // Now that HIGHS_CONST_INF =
+  // std::numeric_limits<double>::infinity(), this Qi-trick doesn't
+  // work so, in recognition, use the old value of HIGHS_CONST_INF
+  const double finite_infinity = 1e200;
   if (hsol_scaling) {
-    max_allow_scale = HIGHS_CONST_INF;
+    max_allow_scale = finite_infinity;
   } else {
     max_allow_scale = pow(
         2.0, highs_model_object.options_.allowed_simplex_matrix_scale_factor);
@@ -1336,14 +1340,14 @@ bool equilibrationScaleMatrix(HighsModelObject& highs_model_object) {
   double max_allow_row_scale = max_allow_scale;
 
   // Search up to 6 times
-  vector<double> row_min_value(numRow, HIGHS_CONST_INF);
-  vector<double> row_max_value(numRow, 1 / HIGHS_CONST_INF);
+  vector<double> row_min_value(numRow, finite_infinity);
+  vector<double> row_max_value(numRow, 1 / finite_infinity);
   for (int search_count = 0; search_count < 6; search_count++) {
     // Find column scale, prepare row data
     for (int iCol = 0; iCol < numCol; iCol++) {
       // For column scale (find)
-      double col_min_value = HIGHS_CONST_INF;
-      double col_max_value = 1 / HIGHS_CONST_INF;
+      double col_min_value = finite_infinity;
+      double col_max_value = 1 / finite_infinity;
       double abs_col_cost = fabs(colCost[iCol]);
       if (include_cost_in_scaling && abs_col_cost != 0) {
         col_min_value = min(col_min_value, abs_col_cost);
@@ -1374,15 +1378,15 @@ bool equilibrationScaleMatrix(HighsModelObject& highs_model_object) {
       rowScale[iRow] =
           min(max(min_allow_row_scale, row_equilibration), max_allow_row_scale);
     }
-    row_min_value.assign(numRow, HIGHS_CONST_INF);
-    row_max_value.assign(numRow, 1 / HIGHS_CONST_INF);
+    row_min_value.assign(numRow, finite_infinity);
+    row_max_value.assign(numRow, 1 / finite_infinity);
   }
   // Make it numerically better
   // Also determine the max and min row and column scaling factors
-  double min_col_scale = HIGHS_CONST_INF;
-  double max_col_scale = 1 / HIGHS_CONST_INF;
-  double min_row_scale = HIGHS_CONST_INF;
-  double max_row_scale = 1 / HIGHS_CONST_INF;
+  double min_col_scale = finite_infinity;
+  double max_col_scale = 1 / finite_infinity;
+  double min_row_scale = finite_infinity;
+  double max_row_scale = 1 / finite_infinity;
   const double log2 = log(2.0);
   for (int iCol = 0; iCol < numCol; iCol++) {
     colScale[iCol] = pow(2.0, floor(log(colScale[iCol]) / log2 + 0.5));
@@ -1395,29 +1399,29 @@ bool equilibrationScaleMatrix(HighsModelObject& highs_model_object) {
     max_row_scale = max(rowScale[iRow], max_row_scale);
   }
   // Apply scaling to matrix and bounds
-  double matrix_min_value = HIGHS_CONST_INF;
+  double matrix_min_value = finite_infinity;
   double matrix_max_value = 0;
-  double min_original_col_equilibration = HIGHS_CONST_INF;
+  double min_original_col_equilibration = finite_infinity;
   double sum_original_log_col_equilibration = 0;
   double max_original_col_equilibration = 0;
-  double min_original_row_equilibration = HIGHS_CONST_INF;
+  double min_original_row_equilibration = finite_infinity;
   double sum_original_log_row_equilibration = 0;
   double max_original_row_equilibration = 0;
-  double min_col_equilibration = HIGHS_CONST_INF;
+  double min_col_equilibration = finite_infinity;
   double sum_log_col_equilibration = 0;
   double max_col_equilibration = 0;
-  double min_row_equilibration = HIGHS_CONST_INF;
+  double min_row_equilibration = finite_infinity;
   double sum_log_row_equilibration = 0;
   double max_row_equilibration = 0;
-  vector<double> original_row_min_value(numRow, HIGHS_CONST_INF);
-  vector<double> original_row_max_value(numRow, 1 / HIGHS_CONST_INF);
-  row_min_value.assign(numRow, HIGHS_CONST_INF);
-  row_max_value.assign(numRow, 1 / HIGHS_CONST_INF);
+  vector<double> original_row_min_value(numRow, finite_infinity);
+  vector<double> original_row_max_value(numRow, 1 / finite_infinity);
+  row_min_value.assign(numRow, finite_infinity);
+  row_max_value.assign(numRow, 1 / finite_infinity);
   for (int iCol = 0; iCol < numCol; iCol++) {
-    double original_col_min_value = HIGHS_CONST_INF;
-    double original_col_max_value = 1 / HIGHS_CONST_INF;
-    double col_min_value = HIGHS_CONST_INF;
-    double col_max_value = 1 / HIGHS_CONST_INF;
+    double original_col_min_value = finite_infinity;
+    double original_col_max_value = 1 / finite_infinity;
+    double col_min_value = finite_infinity;
+    double col_max_value = 1 / finite_infinity;
     for (int k = Astart[iCol]; k < Astart[iCol + 1]; k++) {
       int iRow = Aindex[k];
       const double original_value = fabs(Avalue[k]);
@@ -3518,8 +3522,8 @@ void correctDual(HighsModelObject& highs_model_object,
           HighsPrintMessage(
               highs_model_object.options_.output,
               highs_model_object.options_.message_level, ML_VERBOSE,
-              "Move %s: shift = %g; objective change = %g\n", direction.c_str(),
-              shift, local_dual_objective_change);
+              "Move %s: cost shift = %g; objective change = %g\n",
+              direction.c_str(), shift, local_dual_objective_change);
         }
       }
     }
@@ -3534,8 +3538,8 @@ void correctDual(HighsModelObject& highs_model_object,
     HighsPrintMessage(
         highs_model_object.options_.output,
         highs_model_object.options_.message_level, ML_DETAILED,
-        "Performed %d shift(s): total = %g; objective change = %g\n", num_shift,
-        sum_shift, shift_dual_objective_value_change);
+        "Performed %d cost shift(s): total = %g; objective change = %g\n",
+        num_shift, sum_shift, shift_dual_objective_value_change);
   *free_infeasibility_count = workCount;
 }
 

@@ -21,7 +21,7 @@
 #include "lp_data/HighsModelObject.h"
 #include "lp_data/HighsOptions.h"
 #include "lp_data/HighsStatus.h"
-#include "presolve/Presolve.h"
+#include "presolve/PresolveComponent.h"
 #include "util/HighsTimer.h"
 
 /**
@@ -737,8 +737,9 @@ class Highs {
 
   HighsStatus runLpSolver(const int model_index, const string message);
 
-  HighsPresolveStatus runPresolve(PresolveInfo& presolve_info);
-  HighsPostsolveStatus runPostsolve(PresolveInfo& presolve_info);
+  PresolveComponent presolve_;
+  HighsPresolveStatus runPresolve();
+  HighsPostsolveStatus runPostsolve();
 
   HighsStatus openWriteFile(const string filename, const string method_name,
                             FILE*& file, bool& html) const;
@@ -757,6 +758,8 @@ class Highs {
 
   bool updateHighsSolutionBasis();
   bool getHighsModelStatusAndInfo(const int solved_hmo);
+
+  HighsStatus reset();
 
   void clearModelStatus();
   void clearSolution();
