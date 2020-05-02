@@ -1,0 +1,8 @@
+scipy/io/__init__.py
+scipy/io/matlab/tests/test_mio.py
+scipy/linalg/_decomp_cossin.py
+scipy/linalg/decomp.py
+scipy/signal/_upfirdn_apply.pyx
+scipy/signal/fir_filter_design.py
+scipy/signal/tests/test_signaltools.py
+scipy/stats/_continuous_distns.py
