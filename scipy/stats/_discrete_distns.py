@@ -12,7 +12,7 @@ from numpy import floor, ceil, log, exp, sqrt, log1p, expm1, tanh, cosh, sinh
 import numpy as np
 
 from ._distn_infrastructure import (
-        rv_discrete, _ncx2_pdf, _ncx2_cdf, get_distribution_names)
+        rv_discrete, _ncx2_pdf, _ncx2_cdf, get_distribution_names, rv_frozen_pbinom)
 
 
 class binom_gen(rv_discrete):
@@ -632,7 +632,7 @@ class poisson_gen(rv_discrete):
 poisson = poisson_gen(name="poisson", longname='A Poisson')
 
 
-class pbinom(rv_discrete):
+class pbinom_gen(rv_discrete):
     r"""A Poisson binomial discrete random variable.
 
     %(before_notes)s
@@ -665,23 +665,47 @@ class pbinom(rv_discrete):
 
     """
 
-    def __init__(self, probs, seed=None):
-        self.probs = np.asarray(probs)
-        self._number_trials = self.probs.size
+    eps = 1e-15
+
+    def __new__(cls, probs, a=0, b=np.inf, name=None, badvalue=None,
+                moment_tol=1e-8, values=None, inc=1, longname=None,
+                shapes=None, extradoc=None, seed=None):
+        return super(pbinom_gen, cls).__new__(cls)
+
+    def __call__(self, probs, *args, **kwds):
+        return rv_frozen_pbinom(self, np.asarray(probs), *args, **kwds)
+
+    def __init__(self, *args, **kwds):
+        if 'probs' in kwds:
+            probs = np.asarray(kwds['probs'])
+        super(pbinom_gen, self).__init__(a=0, b=len(probs), probs=probs)
+        self._n = self.probs.size
+        self._omega = 2 * np.pi / (self._n + 1)
         self._pmf_list = self._get_pmf_xi()
         self._cdf_list = self._get_cdf(self._pmf_list)
-        super(pbinom, self).__init__(seed=seed, a=0, b=len(probs))
 
-    def _argcheck(self, probs):
-        if probs.shape != (probs.size,):
+    def _argcheck(self):
+        check = True
+        if self.probs.shape != (self.probs.size,):
+            check = False
             raise ValueError(
                 "Input must be an one-dimensional array or a list.")
-        if not ((probs <= 1).all() and (probs >= 0).all()):
+        if not ((self.probs <= 1).all() and (self.probs >= 0).all()):
+            check = False
             raise ValueError("All probabilities must be between 0 and 1")
-        return
+        return check
 
     def _rvs(self):
-        return sum((self._random_state.binomial(1, p) for p in self.probs))
+        if (self._size is None) or (self._size is ()):
+            self._size = 1
+        array = np.random.choice(
+            len(self._pmf_list),
+            np.prod(self._size),
+            replace=True,
+            p=self._pmf_list
+            )
+        array = array.reshape(self._size)
+        return array
 
     def _pmf(self, x):
         """Calculate the probability mass function ``pmf`` for the input values.
@@ -696,7 +720,6 @@ class pbinom(rv_discrete):
             probability mass function is calculated
         :type x: int or list of integers
         """
-        self._check_rv_input(x)
         return self._pmf_list[x]
 
     def _cdf(self, x):
@@ -713,10 +736,9 @@ class pbinom(rv_discrete):
             cumulative distribution function is calculated
         :type x: int or list of integers
         """
-        self._check_rv_input(x)
         return self._cdf_list[x]
 
-    def _stats(self, probs, moments='mv'):
+    def _stats(self, moments='mv'):
         mu = np.sum(self.probs)
         var = np.dot((1 - self.probs), self.probs)
         g1, g2 = None, None
@@ -727,7 +749,7 @@ class pbinom(rv_discrete):
         if 'k' in moments:
             g2 = (1 - 6*np.multiply((1 - self.probs), self.probs))
             g2 = np.multiply(g2, np.multiply((1 - self.probs), self.probs))
-            g2 = g1.sum()/np.power(np.sqrt(var), 4)
+            g2 = g2.sum()/np.power(np.sqrt(var), 4)
         return mu, var, g1, g2
 
     # Methods to obtain pmf and cdf
@@ -741,9 +763,9 @@ class pbinom(rv_discrete):
         :param event_probabilities: array of single event probabilities
         :type event_probabilities: numpy.array
         """
-        cdf = np.empty(self._number_trials + 1)
+        cdf = np.empty(self._n + 1)
         cdf[0] = event_probabilities[0]
-        for i in range(1, self._number_trials + 1):
+        for i in range(1, self._n + 1):
             cdf[i] = cdf[i - 1] + event_probabilities[i]
         return cdf
 
@@ -753,19 +775,19 @@ class pbinom(rv_discrete):
         The components ``xi`` make up the probability mass function, i.e.
         :math:`\\xi(k) = pmf(k) = Pr(X = k)`.
         """
-        chi = np.empty(self._number_trials + 1, dtype=complex)
+        chi = np.empty(self._n + 1, dtype=complex)
         chi[0] = 1
-        half_number_trials = int(
-            self._number_trials / 2 + self._number_trials % 2)
+        half_n = int(
+            self._n / 2 + self._n % 2)
         # set first half of chis:
-        chi[1:half_number_trials + 1] = self._get_chi(
-            np.arange(1, half_number_trials + 1))
+        chi[1:half_n + 1] = self._get_chi(
+            np.arange(1, half_n + 1))
         # set second half of chis:
-        chi[half_number_trials + 1:self._number_trials + 1] = np.conjugate(
-            chi[1:self._number_trials - half_number_trials + 1][::-1])
-        chi /= self._number_trials + 1
+        chi[half_n + 1:self._n + 1] = np.conjugate(
+            chi[1:self._n - half_n + 1][::-1])
+        chi /= self._n + 1
         xi = np.fft.fft(chi)
-        if self._check_xi_are_real(xi, eps=1e-15):
+        if np.all(xi.imag <= self.eps):
             xi = xi.real
         else:
             raise TypeError("pmf / xi values have to be real.")
@@ -780,9 +802,8 @@ class pbinom(rv_discrete):
         :type idx_array: numpy.array
         """
         # get_z:
-        exp_value = np.exp(self.omega * idx_array * 1j)
-        xy = 1 - self.success_probabilities + \
-            self.success_probabilities * exp_value[:, np.newaxis]
+        exp_value = np.exp(self._omega * idx_array * 1j)
+        xy = 1 - self.probs + self.probs * exp_value[:, np.newaxis]
         # sum over the principal values of the arguments of z:
         argz_sum = np.arctan2(xy.imag, xy.real).sum(axis=1)
         # get d value:
@@ -791,38 +812,6 @@ class pbinom(rv_discrete):
         # get chi values:
         chi = d_value * np.exp(argz_sum * 1j)
         return chi
-
-    # Auxiliary functions
-
-    def _check_rv_input(self, x):
-        try:
-            for k in x:
-                assert (type(k) == int or type(k) == np.int64), \
-                        "Values in input list must be integers"
-                assert k >= 0, 'Values in input list cannot be negative.'
-                assert k <= self._number_trials, \
-                    'Values in input list must be smaller or equal to the ' \
-                    'number of input probabilities "n"'
-        except TypeError:
-            assert (type(x) == int or type(x) == np.int64), \
-                'Input value must be an integer.'
-            assert x >= 0, "Input value cannot be negative."
-            assert x <= self._number_trials, \
-                'Input value cannot be greater than ' + str(self._number_trials)
-        return True
-
-    @staticmethod
-    def _check_xi_are_real(xi_values, eps=np.finfo(float).eps):
-        """Check whether all the ``xi``s have imaginary part equal to 0.
-
-        The probabilities :math:`\\xi(k) = pmf(k) = Pr(X = k)` have to be
-        positive and must have imaginary part equal to zero.
-
-        :param xi_values: single event probabilities
-        :type xi_values: complex
-        """
-
-        return np.all(xi_values.imag <= eps)
 
     # Methods to obtain other parameters
 
@@ -833,7 +822,7 @@ class pbinom(rv_discrete):
         return np.argmax(self._pmf_list)
 
 
-pbinom = pbinom(name="pbinom", longname='A Poisson Binomial')
+pbinom = pbinom_gen(probs=[0], name="pbinom", longname='A Poisson Binomial')
 
 
 class planck_gen(rv_discrete):
