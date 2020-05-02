@@ -530,7 +530,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
     def diagonal(self, k=0):
         rows, cols = self.shape
         if k <= -rows or k >= cols:
-            raise ValueError("k exceeds matrix dimensions")
+            return np.empty(0, dtype=self.data.dtype)
         fn = getattr(_sparsetools, self.format + "_diagonal")
         y = np.empty(min(rows + min(k, 0), cols - max(k, 0)),
                      dtype=upcast(self.dtype))
