@@ -669,14 +669,6 @@ class pbinom_gen(rv_discrete):
 
     eps = 1e-15
 
-    def __new__(cls, probs, a=0, b=np.inf, name=None, badvalue=None,
-                moment_tol=1e-8, values=None, inc=1, longname=None,
-                shapes=None, extradoc=None, seed=None):
-        return super(pbinom_gen, cls).__new__(cls)
-
-    def __call__(self, probs, *args, **kwds):
-        return rv_frozen_pbinom(self, np.asarray(probs), *args, **kwds)
-
     def __init__(self, *args, **kwds):
         if 'probs' in kwds:
             probs = np.asarray(kwds['probs'])
@@ -685,6 +677,32 @@ class pbinom_gen(rv_discrete):
         self._omega = 2 * np.pi / (self._n + 1)
         self._pmf_list = self._get_pmf_xi()
         self._cdf_list = self._get_cdf(self._pmf_list)
+
+    def __new__(cls, probs, a=0, b=np.inf, name=None, badvalue=None,
+                moment_tol=1e-8, values=None, inc=1, longname=None,
+                shapes=None, extradoc=None, seed=None):
+        return super(pbinom_gen, cls).__new__(cls)
+
+    def __call__(self, probs, *args, **kwds):
+        return rv_frozen_pbinom(self, np.asarray(probs), *args, **kwds)
+
+    def _updated_ctor_param(self, probs):
+        """ Return the current version of _ctor_param, possibly updated by user.
+
+            Used by freezing and pickling.
+            Keep this in sync with the signature of __init__.
+        """
+        dct = self._ctor_param.copy()
+        dct['probs'] = probs
+        dct['a'] = self.a
+        dct['b'] = self.b
+        dct['badvalue'] = self.badvalue
+        dct['moment_tol'] = self.moment_tol
+        dct['inc'] = self.inc
+        dct['name'] = self.name
+        dct['shapes'] = self.shapes
+        dct['extradoc'] = self.extradoc
+        return dct
 
     def _argcheck(self):
         check = True
@@ -824,7 +842,7 @@ class pbinom_gen(rv_discrete):
         return np.argmax(self._pmf_list)
 
 
-pbinom = pbinom_gen(probs=[0], name="pbinom", longname='A Poisson Binomial')
+pbinom = pbinom_gen(probs=[], name="pbinom", longname='A Poisson Binomial')
 
 
 class planck_gen(rv_discrete):

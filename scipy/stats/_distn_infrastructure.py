@@ -517,7 +517,7 @@ class rv_frozen_pbinom(rv_frozen):
         self.kwds = kwds
 
         # create a new instance
-        self.dist = dist.__class__(**dist._updated_ctor_param_pbinom(probs))
+        self.dist = dist.__class__(**dist._updated_ctor_param(probs))
 
         shapes, _, _ = self.dist._parse_args(*args, **kwds)
         self.a, self.b = self.dist._get_support(*shapes)
@@ -2930,24 +2930,6 @@ class rv_discrete(rv_generic):
             Keep this in sync with the signature of __init__.
         """
         dct = self._ctor_param.copy()
-        dct['a'] = self.a
-        dct['b'] = self.b
-        dct['badvalue'] = self.badvalue
-        dct['moment_tol'] = self.moment_tol
-        dct['inc'] = self.inc
-        dct['name'] = self.name
-        dct['shapes'] = self.shapes
-        dct['extradoc'] = self.extradoc
-        return dct
-
-    def _updated_ctor_param_pbinom(self, probs):
-        """ Return the current version of _ctor_param, possibly updated by user.
-
-            Used by freezing and pickling.
-            Keep this in sync with the signature of __init__.
-        """
-        dct = self._ctor_param.copy()
-        dct['probs'] = probs
         dct['a'] = self.a
         dct['b'] = self.b
         dct['badvalue'] = self.badvalue
