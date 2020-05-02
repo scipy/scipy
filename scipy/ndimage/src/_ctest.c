@@ -5,13 +5,11 @@
 #ifdef OLDAPI
 #define MOD _ctest_oldapi
 #define MODSTR "_ctest_oldapi"
-#define PY3K_INIT PyInit__ctest_oldapi
-#define PY2K_INIT init_ctest_oldapi
+#define PYINIT PyInit__ctest_oldapi
 #else
 #define MOD _ctest
 #define MODSTR "_ctest"
-#define PY3K_INIT PyInit__ctest
-#define PY2K_INIT init_ctest
+#define PYINIT PyInit__ctest
 #endif
 
 
@@ -199,7 +197,7 @@ static struct PyModuleDef MOD = {
 
 
 PyMODINIT_FUNC
-PY3K_INIT(void)
+PYINIT(void)
 {
     return PyModule_Create(&MOD);
 }
