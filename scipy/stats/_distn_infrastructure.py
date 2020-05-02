@@ -508,6 +508,28 @@ class rv_frozen(object):
         return self.dist.support(*self.args, **self.kwds)
 
 
+# Frozen RV class
+class rv_frozen_pbinom(rv_frozen):
+
+    def __init__(self, dist, probs, *args, **kwds):
+
+        self.args = args
+        self.kwds = kwds
+
+        # create a new instance
+        self.dist = dist.__class__(**dist._updated_ctor_param_pbinom(probs))
+
+        shapes, _, _ = self.dist._parse_args(*args, **kwds)
+        self.a, self.b = self.dist._get_support(*shapes)
+        self.probs = probs
+
+    def amax(self):
+        return self.dist.amax(*self.args, **self.kwds)
+
+    def argmax(self):
+        return self.dist.argmax(*self.args, **self.kwds)
+
+
 # This should be rewritten
 def argsreduce(cond, *args):
     """Return the sequence of ravel(args[i]) where ravel(condition) is
@@ -2825,7 +2847,7 @@ class rv_discrete(rv_generic):
 
     def __init__(self, a=0, b=inf, name=None, badvalue=None,
                  moment_tol=1e-8, values=None, inc=1, longname=None,
-                 shapes=None, extradoc=None, seed=None):
+                 shapes=None, extradoc=None, seed=None, probs=None):
 
         super(rv_discrete, self).__init__(seed)
 
@@ -2845,7 +2867,8 @@ class rv_discrete(rv_generic):
         self._cdfvec = vectorize(self._cdf_single, otypes='d')
         self.vecentropy = vectorize(self._entropy)
         self.shapes = shapes
-
+        if probs is not None:
+            self.probs = probs
         if values is not None:
             raise ValueError("rv_discrete.__init__(..., values != None, ...)")
 
@@ -2907,6 +2930,24 @@ class rv_discrete(rv_generic):
             Keep this in sync with the signature of __init__.
         """
         dct = self._ctor_param.copy()
+        dct['a'] = self.a
+        dct['b'] = self.b
+        dct['badvalue'] = self.badvalue
+        dct['moment_tol'] = self.moment_tol
+        dct['inc'] = self.inc
+        dct['name'] = self.name
+        dct['shapes'] = self.shapes
+        dct['extradoc'] = self.extradoc
+        return dct
+
+    def _updated_ctor_param_pbinom(self, probs):
+        """ Return the current version of _ctor_param, possibly updated by user.
+
+            Used by freezing and pickling.
+            Keep this in sync with the signature of __init__.
+        """
+        dct = self._ctor_param.copy()
+        dct['probs'] = probs
         dct['a'] = self.a
         dct['b'] = self.b
         dct['badvalue'] = self.badvalue
