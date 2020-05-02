@@ -5160,7 +5160,12 @@ class maxwell_gen(rv_continuous):
 
     def _pdf(self, x):
         # maxwell.pdf(x) = sqrt(2/pi)x**2 * exp(-x**2/2)
-        return np.sqrt(2.0/np.pi)*x*x*np.exp(-x*x/2.0)
+        # The value 0.7978845608028654 is sqrt(2/pi).
+        return 0.7978845608028654*x*x*np.exp(-x*x/2.0)
+
+    def _logpdf(self, x):
+        # The value -0.22579135264472744 is log(sqrt(2/pi)).
+        return -0.22579135264472744 + 2*np.log(x) - 0.5*x*x
 
     def _cdf(self, x):
         return sc.gammainc(1.5, x*x/2.0)
