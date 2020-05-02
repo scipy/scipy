@@ -150,3 +150,16 @@ class GroupSampling(Benchmark):
 
     def time_special_ortho_group(self, dim):
         stats.special_ortho_group.rvs(dim)
+
+
+class PBinom(Benchmark):
+
+    param_names = ['dim']
+    params = [[5, 10, 50, 100]]
+
+    def setup(self, dim):
+        np.random.seed(12345678)
+
+    def time_init(self, dim):
+        self.p = np.random.uniform(0, 1, dim)
+        stats.pbinom(probs=self.p)
