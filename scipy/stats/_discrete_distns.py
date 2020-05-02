@@ -12,7 +12,9 @@ from numpy import floor, ceil, log, exp, sqrt, log1p, expm1, tanh, cosh, sinh
 import numpy as np
 
 from ._distn_infrastructure import (
-        rv_discrete, _ncx2_pdf, _ncx2_cdf, get_distribution_names, rv_frozen_pbinom)
+        rv_discrete, _ncx2_pdf, _ncx2_cdf, get_distribution_names,
+        rv_frozen_pbinom
+        )
 
 
 class binom_gen(rv_discrete):
