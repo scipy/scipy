@@ -48,45 +48,60 @@ cdef apply_options(dict options, Highs & highs):
         highs.setHighsOutput(f)
 
     # Do all the ints
-    for opt in [
+    for opt in set([
+            'allowed_simplex_cost_scale_factor',
+            'allowed_simplex_matrix_scale_factor',
+            'dual_simplex_cleanup_strategy',
             'ipm_iteration_limit',
+            'keep_n_rows',
             'max_threads',
             'message_level',
             'min_threads',
             'simplex_crash_strategy',
             'simplex_dual_edge_weight_strategy',
+            'simplex_dualise_strategy',
             'simplex_iteration_limit',
+            'simplex_permute_strategy',
+            'simplex_price_strategy',
             'simplex_primal_edge_weight_strategy',
             'simplex_scale_strategy',
             'simplex_strategy',
             'simplex_update_limit',
-            'small_matrix_value']:
+            'small_matrix_value',
+    ]):
         val = options.get(opt, None)
         if val is not None:
             highs.setHighsOptionValueInt(opt.encode(), val)
 
     # Do all the doubles
-    for opt in [
+    for opt in set([
             'dual_feasibility_tolerance',
             'dual_objective_value_upper_bound',
+            'dual_simplex_cost_perturbation_multiplier',
+            'dual_steepest_edge_weight_log_error_threshhold',
             'infinite_bound',
             'infinite_cost',
             'large_matrix_value',
             'primal_feasibility_tolerance',
+            'simplex_initial_condition_tolerance',
             'small_matrix_value',
-            'time_limit']:
+            'time_limit'
+    ]):
         val = options.get(opt, None)
         if val is not None:
             highs.setHighsOptionValueDbl(opt.encode(), val)
 
     # Do all the strings
-    for opt in ['solver']:
+    for opt in set(['solver']):
         val = options.get(opt, None)
         if val is not None:
             highs.setHighsOptionValueStr(opt.encode(), val.encode())
 
     # Do all the bool to strings
-    for opt in ['parallel', 'presolve']:
+    for opt in set([
+            'parallel',
+            'presolve',
+    ]):
         val = options.get(opt, None)
         if val is not None:
             if val:
@@ -94,6 +109,19 @@ cdef apply_options(dict options, Highs & highs):
             else:
                 val0 = b'off'
             highs.setHighsOptionValueStr(opt.encode(), val0)
+
+    # Do the actual bools
+    for opt in set([
+            'less_infeasible_DSE_check',
+            'less_infeasible_DSE_choose_row',
+            'mps_parser_type_free',
+            'run_as_hsol',
+            'simplex_initial_condition_check',
+            'use_original_HFactor_logic',
+    ]):
+        val = options.get(opt, None)
+        if val is not None:
+            highs.setHighsOptionValueBool(opt.encode(), val)
 
 def highs_wrapper(
         double[::1] c,
@@ -136,11 +164,21 @@ def highs_wrapper(
     options : dict
         A dictionary of solver options with the following fields:
 
+            - allowed_simplex_cost_scale_factor : int
+                Undocumented advanced option.
+            - allowed_simplex_matrix_scale_factor : int
+                Undocumented advanced option.
             - dual_feasibility_tolerance : double
                 Dual feasibility tolerance
             - dual_objective_value_upper_bound : double
                 Upper bound on objective value for dual simplex:
                 algorithm terminates if reached
+            - dual_simplex_cleanup_strategy : int
+                Undocumented advanced option.
+            - dual_simplex_cost_perturbation_multiplier : double
+                Undocumented advanced option.
+            - dual_steepest_edge_weight_log_error_threshhold : double
+                Undocumented advanced option.
             - infinite_bound : double
                 Limit on abs(constraint bound): values larger than
                 this will be treated as infinite
@@ -149,27 +187,43 @@ def highs_wrapper(
                 will be treated as infinite.
             - ipm_iteration_limit : int
                 Iteration limit for interior-point solver.
+            - keep_n_rows : int {-1, 0, 1}
+                Undocumented advanced option.
+
+                    - `-1`: KEEP_N_ROWS_DELETE_ROWS
+                    - `0`: KEEP_N_ROWS_DELETE_ENTRIES
+                    - `1`: KEEP_N_ROWS_KEEP_ROWS
+
             - large_matrix_value : double
                 Upper limit on abs(matrix entries): values larger than
                 this will be treated as infinite
+            - less_infeasible_DSE_check : bool
+                Undocumented advanced option.
+            - less_infeasible_DSE_choose_row : bool
+                Undocumented advanced option.
             - max_threads : int
                 Maximum number of threads in parallel execution.
-            - message_level : int {0, 1, 2, 4}
+            - message_level : int {0, 1, 2, 4, 7}
                 Verbosity level, corresponds to:
 
                     - `0`: ML_NONE
                     - `1`: ML_VERBOSE
                     - `2`: ML_DETAILED
                     - `4`: ML_MINIMAL
+                    - `7`: ML_ALWAYS
 
             - min_threads : int
                 Minimum number of threads in parallel execution.
+            - mps_parser_type_free : bool
+                Use free format MPS parsing.
             - parallel : bool
                 Run the solver in serial (False) or parallel (True).
             - presolve : bool
                 Run the presolve or not (or if `None`, then choose).
             - primal_feasibility_tolerance : double
                 Primal feasibility tolerance.
+            - run_as_hsol : bool
+                Undocumented advanced option.
             - sense : int {1, -1}
                 `sense=1` corresponds to the MIN problem, `sense=-1`
                 corresponds to the MAX problem. TODO: NOT IMPLEMENTED
@@ -188,6 +242,8 @@ def highs_wrapper(
                     - `8`: `SIMPLEX_CRASH_STRATEGY_BASIC`
                     - `9`: `SIMPLE_CRASH_STRATEGY_TEST_SING`
 
+            - simplex_dualise_strategy : int
+                Undocumented advanced option.
             - simplex_dual_edge_weight_strategy : int {0, 1, 2, 3, 4}
                 Strategy for simplex dual edge weights:
                 Dantzig / Devex / Steepest Edge. Corresponds
@@ -199,8 +255,16 @@ def highs_wrapper(
                     - `3`: `SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_STEEPEST_EDGE`
                     - `4`: `SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_STEEPEST_EDGE_UNIT_INITIAL`
 
+            - simplex_initial_condition_check : bool
+                Undocumented advanced option.
+            - simplex_initial_condition_tolerance : double
+                Undocumented advanced option.
             - simplex_iteration_limit : int
                 Iteration limit for simplex solver.
+            - simplex_permute_strategy : int
+                Undocumented advanced option.
+            - simplex_price_strategy : int
+                Undocumented advanced option.
             - simplex_primal_edge_weight_strategy : int {0, 1}
                 Strategy for simplex primal edge weights:
                 Dantzig / Devex.  Corresponds to the following:
@@ -234,13 +298,15 @@ def highs_wrapper(
             - small_matrix_value : double
                 Lower limit on abs(matrix entries): values smaller
                 than this will be treated as zero.
+            - solution_file : str
+                Solution file
             - solver : str {'simplex', 'ipm'}
                 Choose which solver to use.  If `solver='simplex'`
                 and `parallel=True` then PAMI will be used.
             - time_limit : double
                 Max number of seconds to run the solver for.
-            - solution_file : str
-                Solution file
+            - use_original_HFactor_logic : bool
+                Undocumented advanced option.
             - write_solution_to_file : bool
                 Write the primal and dual solution to a file
             - write_solution_pretty : bool
