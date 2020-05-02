@@ -1033,7 +1033,6 @@ void HDual::iterationAnalysisData() {
   analysis->leaving_variable = columnOut;
   analysis->entering_variable = columnIn;
   analysis->invert_hint = invertHint;
-  analysis->freelist_size = dualRow.freeListSize;
   analysis->reduced_rhs_value = 0;
   analysis->reduced_cost_value = 0;
   analysis->edge_weight = 0;

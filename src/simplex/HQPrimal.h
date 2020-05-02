@@ -118,9 +118,6 @@ class HQPrimal {
   HVector row_ep;
   HVector row_ap;
   HVector col_aq;
-
-  double row_epDensity;
-  double columnDensity;
 };
 
 #endif /* SIMPLEX_HQPRIMAL_H_ */

@@ -82,9 +82,6 @@ class HPrimal {
   HVector row_ep;
   HVector row_ap;
   HVector col_aq;
-
-  double row_epDensity;
-  double columnDensity;
 };
 
 #endif /* SIMPLEX_HPRIMAL_H_ */

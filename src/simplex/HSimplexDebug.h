@@ -14,6 +14,8 @@
 #ifndef SIMPLEX_HSIMPLEXDEBUG_H_
 #define SIMPLEX_HSIMPLEXDEBUG_H_
 
+#include <set>
+
 #include "lp_data/HighsModelObject.h"
 #include "lp_data/HighsOptions.h"
 #include "simplex/SimplexConst.h"
@@ -41,4 +43,6 @@ HighsDebugStatus debugBasisCondition(const HighsModelObject& highs_model_object,
                                      const std::string message);
 HighsDebugStatus debugCleanup(HighsModelObject& highs_model_object,
                               const std::vector<double>& original_dual);
+HighsDebugStatus debugFreeListNumEntries(
+    const HighsModelObject& highs_model_object, const std::set<int>& freeList);
 #endif  // SIMPLEX_HSIMPLEXDEBUG_H_
