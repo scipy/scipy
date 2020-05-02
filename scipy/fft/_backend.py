@@ -27,6 +27,7 @@ _named_backends = {
     'scipy': _ScipyBackend,
 }
 
+
 def _backend_from_arg(backend):
     """Maps strings to known backends and validates the backend"""
 
@@ -63,6 +64,16 @@ def set_global_backend(backend):
     -----
     This will overwrite the previously set global backend, which, by default, is
     the SciPy implementation.
+
+    Examples
+    --------
+    We can set the global fft backend:
+
+    >>> from scipy.fft import fft, set_global_backend
+    >>> set_global_backend("scipy")  # Sets global backend
+    >>> fft([1])  # Calls the global backend
+    array([1.+0.j])
+
     """
     backend = _backend_from_arg(backend)
     ua.set_global_backend(backend)
@@ -85,6 +96,15 @@ def register_backend(backend):
     Raises
     ------
     ValueError: If the backend does not implement ``numpy.scipy.fft``.
+
+    Examples
+    --------
+    We can register a new fft backend:
+
+    >>> from scipy.fft import fft, register_backend
+    >>> register_backend("scipy")  # Register a new backend
+    >>> fft([1])  # Calls the global backend first, and then use the new one
+    array([1.+0.j])
 
     """
     backend = _backend_from_arg(backend)
@@ -112,12 +132,6 @@ def set_backend(backend, coerce=False, only=False):
        BackendNotImplemented error will be raised immediately. Ignoring any
        lower priority backends.
 
-    Examples
-    --------
-    >>> import scipy.fft as fft
-    >>> with fft.set_backend('scipy', only=True):
-    ...     fft.fft([1])  # Always calls the scipy implementation
-    array([1.+0.j])
     """
     backend = _backend_from_arg(backend)
     return ua.set_backend(backend, coerce=coerce, only=only)
