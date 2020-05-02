@@ -127,6 +127,7 @@ distdiscrete = [
     ['nbinom', (0.4, 0.4)],  # from tickets: 583
     ['planck', (0.51,)],   # 4.1
     ['poisson', (0.6,)],
+    ['pbinom', ()],
     ['randint', (7, 31)],
     ['skellam', (15, 8)],
     ['zipf', (6.5,)],
