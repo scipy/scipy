@@ -111,6 +111,11 @@ def test_quadratic_assignment_input_validation():
         quadratic_assignment(
             np.identity(3), np.identity(3), -1 * _range_matrix(2, 2),
         )
+    # columns of seed matrix must be unique
+    with pytest.raises(ValueError):
+        quadratic_assignment(
+            np.identity(3), np.identity(3), np.ones((2, 2)),
+        )
 
 
 def _range_matrix(a, b):
