@@ -717,7 +717,7 @@ class pbinom_gen(rv_discrete):
         return check
 
     def _rvs(self):
-        if (self._size is None) or (self._size is ()):
+        if (self._size is None) or (self._size == ()):
             self._size = 1
         array = np.random.choice(
             len(self._pmf_list),
