@@ -1,4 +1,5 @@
 import numpy as np
+from numpy.testing import suppress_warnings
 
 from .common import Benchmark
 
@@ -23,6 +24,18 @@ class HierarchyLinkage(Benchmark):
 
 
 class KMeans(Benchmark):
+    params = [2, 10, 50]
+    param_names = ['k']
+
+    def __init__(self):
+        rnd = np.random.RandomState(0)
+        self.obs = rnd.rand(1000, 5)
+
+    def time_kmeans(self, k):
+        kmeans(self.obs, k, iter=10)
+
+
+class KMeans2(Benchmark):
     params = [[2, 10, 50], ['random', 'points', '++']]
     param_names = ['k', 'init']
 
@@ -30,11 +43,12 @@ class KMeans(Benchmark):
         rnd = np.random.RandomState(0)
         self.obs = rnd.rand(1000, 5)
 
-    def time_kmeans(self, k, init):
-        kmeans(self.obs, k, iter=10)
-
     def time_kmeans2(self, k, init):
-        kmeans2(self.obs, k, minit=init, iter=10)
+        with suppress_warnings() as sup:
+            sup.filter(UserWarning,
+                       "One of the clusters is empty. Re-run kmeans with a "
+                       "different initialization")
+            kmeans2(self.obs, k, minit=init, iter=10)
 
 
 class VQ(Benchmark):
