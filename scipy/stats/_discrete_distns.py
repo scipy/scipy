@@ -646,18 +646,11 @@ class pbinom_gen(rv_discrete):
     random variables that are not necessarily identically distributed.
 
     For details see: http://en.wikipedia.org/wiki/Poisson_binomial_distribution
+    For details of implementation see: https://dx.doi.org/10.1016/j.csda.2012.10.006
 
     `pbinom` takes ``probs``, a sequence of success probabilities :math:`p_i \\
     in [0, 1] \\forall i \\in [0, N]` for :math:`N` independent but not
     identically distributed Bernoulli random variables.
-    Implementation as described in the reference [Hong2013]_.
-
-    References:
-    .. [Hong2013] Yili Hong, On computing the distribution function for the
-    Poisson binomial distribution,
-    Computational Statistics & Data Analysis, Volume 59, March 2013,
-    Pages 41-51, ISSN 0167-9473,
-    http://dx.doi.org/10.1016/j.csda.2012.10.006.
 
     %(after_notes)s
 
@@ -672,7 +665,9 @@ class pbinom_gen(rv_discrete):
     def __init__(self, *args, **kwds):
         if 'probs' in kwds:
             probs = np.asarray(kwds['probs'])
-        super(pbinom_gen, self).__init__(a=0, b=len(probs))
+        super(pbinom_gen, self).__init__(
+            name="pbinom", longname='A Poisson Binomial', a=0, b=len(probs)
+            )
         self.probs = probs
         self._n = self.probs.size
         self._omega = 2 * np.pi / (self._n + 1)
@@ -684,8 +679,28 @@ class pbinom_gen(rv_discrete):
                 shapes=None, extradoc=None, seed=None):
         return super(pbinom_gen, cls).__new__(cls)
 
+    def freeze_pbinom(self, probs, *args, **kwds):
+        """Freeze the distribution for the given arguments.
+
+        Parameters
+        ----------
+        probs : array_like
+            Probabilities of the independent Bernoulli trials
+        arg1, arg2, arg3,... : array_like
+            The shape parameter(s) for the distribution.  Should include all
+            the non-optional arguments, may include ``loc`` and ``scale``.
+
+        Returns
+        -------
+        rv_frozen_pbinom : rv_frozen_pbinom instance
+            The frozen distribution.
+
+        """
+        return rv_frozen_pbinom(self, np.asarray(probs), *args, **kwds)
+
     def __call__(self, probs, *args, **kwds):
         return rv_frozen_pbinom(self, np.asarray(probs), *args, **kwds)
+    __call__.__doc__ = freeze_pbinom.__doc__
 
     def _updated_ctor_param(self, probs):
         """ Return the current version of _ctor_param, possibly updated by user.
@@ -729,48 +744,56 @@ class pbinom_gen(rv_discrete):
         return array
 
     def _pmf(self, x):
-        """Calculate the probability mass function ``pmf`` for the input values.
-
-        The ``pmf`` is defined as
-
-        .. math::
-
-            pmf(k) = Pr(X = k), k = 0, 1, ..., n.
-
-        :param x: number of successful trials for which the
-            probability mass function is calculated
-        :type x: int or list of integers
-        """
         return self._pmf_list[x]
 
     def _cdf(self, x):
-        """Calculate the cumulative distribution function for the input values.
-
-        The cumulative distribution function ``cdf`` for a number ``k`` of
-        successes is defined as
-
-        .. math::
-
-            cdf(k) = Pr(X \\leq k), k = 0, 1, ..., n.
-
-        :param x: number of successful trials for which the
-            cumulative distribution function is calculated
-        :type x: int or list of integers
-        """
         return self._cdf_list[x]
 
     def _stats(self, moments='mv'):
+        """
+
+        The mean is defined as
+
+        .. math::
+
+            mean = \sum_{i=1}^{n} p_{i}.
+
+        The variance is defined as
+
+        .. math::
+
+            \sigma^{2} = \sum_{i=1}^{n} (1-p_{i})p_{i}.
+
+        The skewness is defined as
+
+        .. math::
+
+            \frac{1}{\sigma^{3}} = \sum_{i=1}^{n} (1-2*p_{i})(1-p_{i})p_{i}.
+
+        """
         mu = np.sum(self.probs)
-        var = np.dot((1 - self.probs), self.probs)
+        var = np.dot((np.asarray(1) - self.probs), self.probs)
         g1, g2 = None, None
         if 's' in moments:
-            g1 = (1 - 2*self.probs)
-            g1 = np.multiply(g1, np.multiply((1 - self.probs), self.probs))
-            g1 = g1.sum()/np.power(np.sqrt(var), 3)
+            g1 = np.asarray(1) - 2*self.probs
+            g1 = np.multiply(
+                g1, np.multiply((np.asarray(1) - self.probs), self.probs)
+                )
+            div = np.power(np.sqrt(var), 3)
+            g1 = np.divide(g1.sum(), div, where=(div != 0))
         if 'k' in moments:
-            g2 = (1 - 6*np.multiply((1 - self.probs), self.probs))
-            g2 = np.multiply(g2, np.multiply((1 - self.probs), self.probs))
-            g2 = g2.sum()/np.power(np.sqrt(var), 4)
+            g2 = (
+                np.asarray(1) - 6*np.multiply(
+                    (np.asarray(1) - self.probs), self.probs
+                    )
+                    )
+            g2 = np.multiply(
+                g2, np.multiply(
+                    (np.asarray(1) - self.probs), self.probs
+                    )
+                    )
+            div = np.power(np.sqrt(var), 4)
+            g2 = np.divide(g2.sum(), div, where=(div != 0))
         return mu, var, g1, g2
 
     # Methods to obtain pmf and cdf
