@@ -726,7 +726,7 @@ class _TestCommon(object):
             sparse_mat = self.spmatrix(m)
             for k in range(-rows-1, cols+2):
                 assert_equal(sparse_mat.diagonal(k=k), diag(m, k=k))
-            # Test for k beyound boundaries(issue #11949)
+            # Test for k beyond boundaries(issue #11949)
             assert_equal(sparse_mat.diagonal(k=10), diag(m, k=10))
             assert_equal(sparse_mat.diagonal(k=-99), diag(m, k=-99))
 
