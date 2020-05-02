@@ -565,13 +565,8 @@ class TestTbtrs(object):
         # the corresponding offsets.
         band_widths = range(lda, lda - kd - 1, -1)
         band_offsets = np.arange(ldab) if uplo == 'U' else np.arange(ldab) * -1
-        if dtype in REAL_DTYPES:
-            b = rand(ldb, nrhs).astype(dtype)
-            bands = [rand(width).astype(dtype) for width in band_widths]
-        elif dtype in COMPLEX_DTYPES:
-            b = (rand(ldb, nrhs) + rand(ldb, nrhs) * 1j).astype(dtype)
-            bands = [(rand(width) + rand(width) * 1j).astype(dtype)
-                     for width in band_widths]
+        bands = [generate_random_dtype_array((width,), dtype)
+                 for width in band_widths]
 
         if diag == 'U':  # A must be unit triangular
             bands[0] = np.ones(lda, dtype=dtype)
@@ -579,6 +574,9 @@ class TestTbtrs(object):
         # Construct the diagonal banded matrix A from the bands and offsets.
         a = sps.diags(bands, band_offsets, format='dia')
         ab = np.flipud(a.data) if uplo == 'U' else a.data
+
+        # The RHS values.
+        b = generate_random_dtype_array((ldb, nrhs), dtype)
 
         tbtrs = get_lapack_funcs('tbtrs', dtype=dtype)
         x, info = tbtrs(ab=ab, b=b, uplo=uplo, trans=trans, diag=diag)
