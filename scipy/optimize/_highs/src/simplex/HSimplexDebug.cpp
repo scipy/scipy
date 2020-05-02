@@ -86,6 +86,10 @@ const double cleanup_excessive_absolute_nonbasic_dual_change_norm =
 const double cleanup_excessive_relative_nonbasic_dual_change_norm =
     sqrt(cleanup_large_relative_nonbasic_dual_change_norm);
 
+const double freelist_excessive_pct_num_entries = 25.0;
+const double freelist_large_pct_num_entries = 10.0;
+const double freelist_fair_pct_num_entries = 1.0;
+
 HighsDebugStatus debugComputePrimal(const HighsModelObject& highs_model_object,
                                     const std::vector<double>& primal_rhs) {
   // Non-trivially expensive analysis of computed primal values.
@@ -749,5 +753,54 @@ HighsDebugStatus debugCleanup(HighsModelObject& highs_model_object,
       "with %d meaningful sign change(s)\n",
       value_adjective.c_str(), cleanup_absolute_nonbasic_dual_change_norm,
       cleanup_relative_nonbasic_dual_change_norm, num_dual_sign_change);
+  return return_status;
+}
+
+HighsDebugStatus debugFreeListNumEntries(
+    const HighsModelObject& highs_model_object, const std::set<int>& freeList) {
+  if (highs_model_object.options_.highs_debug_level < HIGHS_DEBUG_LEVEL_CHEAP)
+    printf("FreeList   :   Reporting nonzero free list size\n");
+  //    return HighsDebugStatus::NOT_CHECKED;
+
+  int freelist_num_entries = 0;
+  if (freeList.size() > 0) {
+    std::set<int>::iterator sit;
+    for (sit = freeList.begin(); sit != freeList.end(); sit++)
+      freelist_num_entries++;
+  }
+
+  const int numTot = highs_model_object.simplex_lp_.numCol_ +
+                     highs_model_object.simplex_lp_.numRow_;
+  double pct_freelist_num_entries = (100.0 * freelist_num_entries) / numTot;
+
+  std::string value_adjective;
+  int report_level;
+  HighsDebugStatus return_status = HighsDebugStatus::NOT_CHECKED;
+
+  if (pct_freelist_num_entries > freelist_excessive_pct_num_entries) {
+    value_adjective = "Excessive";
+    report_level = ML_ALWAYS;
+  } else if (pct_freelist_num_entries > freelist_large_pct_num_entries) {
+    value_adjective = "Large";
+    report_level = ML_DETAILED;
+  } else if (pct_freelist_num_entries > freelist_fair_pct_num_entries) {
+    value_adjective = "Fair";
+    report_level = ML_VERBOSE;
+  } else {
+    value_adjective = "OK";
+    if (freelist_num_entries) {
+      report_level = ML_ALWAYS;
+    } else {
+      report_level = ML_VERBOSE;
+    }
+    return_status = HighsDebugStatus::OK;
+  }
+
+  HighsPrintMessage(
+      highs_model_object.options_.output,
+      highs_model_object.options_.message_level, report_level,
+      "FreeList   :   %-9s percentage (%6.2g) of %d variables on free list\n",
+      value_adjective.c_str(), pct_freelist_num_entries, numTot);
+
   return return_status;
 }

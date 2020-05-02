@@ -12,7 +12,7 @@ def pre_build_hook(build_ext, ext):
 def _get_sources(CMakeLists, start_token, end_token):
     # Read in sources from CMakeLists.txt
     CMakeLists = pathlib.Path(__file__).parent / CMakeLists
-    with open(CMakeLists, 'r') as f:
+    with open(CMakeLists, 'r', encoding='utf-8') as f:
         s = f.read()
 
         # Find block where sources are listed
@@ -28,7 +28,7 @@ def _get_sources(CMakeLists, start_token, end_token):
 # Grab some more info about HiGHS from root CMakeLists
 def _get_version(CMakeLists, start_token, end_token=')'):
     CMakeLists = pathlib.Path(__file__).parent / CMakeLists
-    with open(CMakeLists, 'r') as f:
+    with open(CMakeLists, 'r', encoding='utf-8') as f:
         s = f.read()
         start_idx = s.find(start_token) + len(start_token) + 1
         end_idx = s[start_idx:].find(end_token) + len(s[:start_idx])

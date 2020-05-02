@@ -158,10 +158,6 @@ class HMatrix {
   std::vector<int> AR_Nend;
   std::vector<int> ARindex;
   std::vector<double> ARvalue;
-
-  // Properties of data held in HMatrix.h
-  int haveMatrixColumnWise;
-  int haveMatrixRowWise;
 };
 
 #endif /* SIMPLEX_HMATRIX_H_ */
