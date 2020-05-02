@@ -16,7 +16,7 @@ from scipy.sparse import csc_matrix
 
 cdef extern from "HMPSIO.h" nogil:
     HighsStatus writeMPS(FILE* logfile, const char* filename, const int& numRow, const int& numCol,
-                         const int& numInt, const ObjSense& objSense, const double& objOffset,
+                         const ObjSense& objSense, const double& objOffset,
                          const vector[int]& Astart, const vector[int]& Aindex,
                          const vector[double]& Avalue, const vector[double]& colCost,
                          const vector[double]& colLower, const vector[double]& colUpper,
@@ -69,7 +69,6 @@ def mpswriter(
 
     cdef int numRow = A.shape[0]
     cdef int numCol = A.shape[1]
-    cdef int numInt = integer_valued.size
     cdef ObjSense objSense = ObjSenseMINIMIZE # MIN for now
     cdef double objOffset = 0 # This is a RHS on cost row
 
@@ -110,7 +109,7 @@ def mpswriter(
 
     writeMPS(
         logfile, filename.c_str(), numRow, numCol,
-        numInt, objSense, objOffset,
+        objSense, objOffset,
         Astart, Aindex,
         Avalue, colCost,
         colLower, colUpper,

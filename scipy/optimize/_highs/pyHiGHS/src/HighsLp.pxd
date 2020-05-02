@@ -11,10 +11,6 @@ cdef extern from "HighsLp.h" nogil:
     cdef cppclass HighsLp:
         int numCol_
         int numRow_
-        int numInt_
-        int nnz_
-
-        string model_name_
 
         vector[int] Astart_
         vector[int] Aindex_
@@ -25,14 +21,25 @@ cdef extern from "HighsLp.h" nogil:
         vector[double] rowLower_
         vector[double] rowUpper_
 
+        ObjSense sense_
+        double offset_
+
+        string model_name_
+        string lp_name_
+
+        vector[string] row_names_
+        vector[string] col_names_
+
+        vector[int] integrality_
+
     ctypedef enum HighsModelStatus:
-        HighsModelStatusNOTSET "HighsModelStatus::NOTSET"
+        HighsModelStatusNOTSET "HighsModelStatus::NOTSET" = 0
         HighsModelStatusLOAD_ERROR "HighsModelStatus::LOAD_ERROR"
         HighsModelStatusMODEL_ERROR "HighsModelStatus::MODEL_ERROR"
-        HighsModelStatusMODEL_EMPTY "HighsModelStatus::MODEL_EMPTY"
         HighsModelStatusPRESOLVE_ERROR "HighsModelStatus::PRESOLVE_ERROR"
         HighsModelStatusSOLVE_ERROR "HighsModelStatus::SOLVE_ERROR"
         HighsModelStatusPOSTSOLVE_ERROR "HighsModelStatus::POSTSOLVE_ERROR"
+        HighsModelStatusMODEL_EMPTY "HighsModelStatus::MODEL_EMPTY"
         HighsModelStatusPRIMAL_INFEASIBLE "HighsModelStatus::PRIMAL_INFEASIBLE"
         HighsModelStatusPRIMAL_UNBOUNDED "HighsModelStatus::PRIMAL_UNBOUNDED"
         HighsModelStatusOPTIMAL "HighsModelStatus::OPTIMAL"

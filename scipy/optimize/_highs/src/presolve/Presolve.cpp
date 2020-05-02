@@ -66,56 +66,6 @@ void Presolve::load(const HighsLp& lp) {
   timer.recordFinish(MATRIX_COPY);
 }
 
-void PresolveInfo::negateColDuals(bool reduced) {
-  if (reduced)
-    for (unsigned int col = 0; col < reduced_solution_.col_dual.size(); col++)
-      reduced_solution_.col_dual[col] = reduced_solution_.col_dual[col];
-  else
-    for (unsigned int col = 0; col < recovered_solution_.col_dual.size(); col++)
-      recovered_solution_.col_dual[col] = recovered_solution_.col_dual[col];
-  return;
-}
-
-void PresolveInfo::negateReducedCosts() {
-  for (unsigned int col = 0; col < reduced_lp_.colCost_.size(); col++)
-    reduced_lp_.colCost_[col] = -reduced_lp_.colCost_[col];
-}
-
-HighsLp& PresolveInfo::getReducedProblem() {
-  if (presolve_.size() == 0) {
-    std::cout << "Error during presolve. No presolve initialized." << std::endl;
-  } else if (presolve_[0].status != presolve_[0].stat::Reduced) {
-    std::cout << "Error during presolve. No reduced LP. status: "
-              << presolve_[0].status << std::endl;
-  } else {
-    if (presolve_[0].numRow == 0 && presolve_[0].numCol == 0) {
-      // Reduced problem has been already moved to this.reduced_lp_;
-      return reduced_lp_;
-    } else {
-      // Move vectors so no copying happens. presolve does not need that lp
-      // any more.
-      reduced_lp_.numCol_ = presolve_[0].numCol;
-      reduced_lp_.numRow_ = presolve_[0].numRow;
-      reduced_lp_.Astart_ = std::move(presolve_[0].Astart);
-      reduced_lp_.Aindex_ = std::move(presolve_[0].Aindex);
-      reduced_lp_.Avalue_ = std::move(presolve_[0].Avalue);
-      reduced_lp_.colCost_ = std::move(presolve_[0].colCost);
-      reduced_lp_.colLower_ = std::move(presolve_[0].colLower);
-      reduced_lp_.colUpper_ = std::move(presolve_[0].colUpper);
-      reduced_lp_.rowLower_ = std::move(presolve_[0].rowLower);
-      reduced_lp_.rowUpper_ = std::move(presolve_[0].rowUpper);
-
-      reduced_lp_.sense_ = ObjSense::MINIMIZE;
-      reduced_lp_.offset_ = 0;
-      reduced_lp_.model_name_ =
-          std::move(presolve_[0].modelName);  //"Presolved model";
-
-      reduced_lp_.nnz_ = reduced_lp_.Avalue_.size();
-    }
-  }
-  return reduced_lp_;
-}
-
 void Presolve::setBasisInfo(
     const std::vector<HighsBasisStatus>& pass_col_status,
     const std::vector<HighsBasisStatus>& pass_row_status) {
@@ -788,13 +738,13 @@ void Presolve::initializeVectors() {
   implRowValueUpper = rowUpper;
 
   for (int i = 0; i < numRow; ++i) {
-    if (rowLower.at(i) == -HIGHS_CONST_INF) implRowDualUpper.at(i) = 0;
-    if (rowUpper.at(i) == HIGHS_CONST_INF) implRowDualLower.at(i) = 0;
+    if (rowLower.at(i) <= -HIGHS_CONST_INF) implRowDualUpper.at(i) = 0;
+    if (rowUpper.at(i) >= HIGHS_CONST_INF) implRowDualLower.at(i) = 0;
   }
 
   for (int i = 0; i < numCol; ++i) {
-    if (colLower.at(i) == -HIGHS_CONST_INF) implColDualUpper.at(i) = 0;
-    if (colUpper.at(i) == HIGHS_CONST_INF) implColDualLower.at(i) = 0;
+    if (colLower.at(i) <= -HIGHS_CONST_INF) implColDualUpper.at(i) = 0;
+    if (colUpper.at(i) >= HIGHS_CONST_INF) implColDualLower.at(i) = 0;
   }
 
   colCostAtEl = colCost;
@@ -842,8 +792,8 @@ void Presolve::removeEmptyColumn(int j) {
   flagCol.at(j) = 0;
   singCol.remove(j);
   double value;
-  if ((colCost.at(j) < 0 && colUpper.at(j) == HIGHS_CONST_INF) ||
-      (colCost.at(j) > 0 && colLower.at(j) == -HIGHS_CONST_INF)) {
+  if ((colCost.at(j) < 0 && colUpper.at(j) >= HIGHS_CONST_INF) ||
+      (colCost.at(j) > 0 && colLower.at(j) <= -HIGHS_CONST_INF)) {
     if (iPrint > 0) cout << "PR: Problem unbounded." << endl;
     status = Unbounded;
     return;
@@ -890,17 +840,17 @@ void Presolve::rowDualBoundsDominatedColumns() {
         exit(-1);
       }
 
-      if (colLower.at(col) == -HIGHS_CONST_INF ||
-          colUpper.at(col) == HIGHS_CONST_INF) {
+      if (colLower.at(col) <= -HIGHS_CONST_INF ||
+          colUpper.at(col) >= HIGHS_CONST_INF) {
         if (colLower.at(col) > -HIGHS_CONST_INF &&
-            colUpper.at(col) == HIGHS_CONST_INF) {
+            colUpper.at(col) >= HIGHS_CONST_INF) {
           if (Avalue.at(k) > 0)
             if ((colCost.at(col) / Avalue.at(k)) < implRowDualUpper.at(i))
               implRowDualUpper.at(i) = colCost.at(col) / Avalue.at(k);
           if (Avalue.at(k) < 0)
             if ((colCost.at(col) / Avalue.at(k)) > implRowDualLower.at(i))
               implRowDualLower.at(i) = colCost.at(col) / Avalue.at(k);
-        } else if (colLower.at(col) == -HIGHS_CONST_INF &&
+        } else if (colLower.at(col) <= -HIGHS_CONST_INF &&
                    colUpper.at(col) < HIGHS_CONST_INF) {
           if (Avalue.at(k) > 0)
             if ((colCost.at(col) / Avalue.at(k)) > implRowDualLower.at(i))
@@ -908,8 +858,8 @@ void Presolve::rowDualBoundsDominatedColumns() {
           if (Avalue.at(k) < 0)
             if ((colCost.at(col) / Avalue.at(k)) < implRowDualUpper.at(i))
               implRowDualUpper.at(i) = colCost.at(col) / Avalue.at(k);
-        } else if (colLower.at(col) == -HIGHS_CONST_INF &&
-                   colUpper.at(col) == HIGHS_CONST_INF) {
+        } else if (colLower.at(col) <= -HIGHS_CONST_INF &&
+                   colUpper.at(col) >= HIGHS_CONST_INF) {
           // all should be removed earlier but use them
           if ((colCost.at(col) / Avalue.at(k)) > implRowDualLower.at(i))
             implRowDualLower.at(i) = colCost.at(col) / Avalue.at(k);
@@ -999,7 +949,7 @@ void Presolve::removeDominatedColumns() {
 
       // check if it is dominated
       if (colCost.at(j) - d > tol) {
-        if (colLower.at(j) == -HIGHS_CONST_INF) {
+        if (colLower.at(j) <= -HIGHS_CONST_INF) {
           if (iPrint > 0) cout << "PR: Problem unbounded." << endl;
           status = Unbounded;
           return;
@@ -1011,7 +961,7 @@ void Presolve::removeDominatedColumns() {
                << " removed. Value := " << valuePrimal.at(j) << endl;
         countRemovedCols(DOMINATED_COLS);
       } else if (colCost.at(j) - e < -tol) {
-        if (colUpper.at(j) == HIGHS_CONST_INF) {
+        if (colUpper.at(j) >= HIGHS_CONST_INF) {
           if (iPrint > 0) cout << "PR: Problem unbounded." << endl;
           status = Unbounded;
           return;
@@ -1070,7 +1020,7 @@ void Presolve::removeIfWeaklyDominated(const int j, const double d,
 
       // calculate new bounds
       if (colLower.at(j) > -HIGHS_CONST_INF ||
-          colUpper.at(j) == HIGHS_CONST_INF)
+          colUpper.at(j) >= HIGHS_CONST_INF)
         for (int kk = Astart.at(j); kk < Aend.at(j); ++kk)
           if (flagRow.at(Aindex.at(kk)) && d < HIGHS_CONST_INF) {
             i = Aindex.at(kk);
@@ -1091,7 +1041,7 @@ void Presolve::removeIfWeaklyDominated(const int j, const double d,
             }
           }
 
-      if (colLower.at(j) == -HIGHS_CONST_INF ||
+      if (colLower.at(j) <= -HIGHS_CONST_INF ||
           colUpper.at(j) < HIGHS_CONST_INF)
         for (int kk = Astart.at(j); kk < Aend.at(j); ++kk)
           if (flagRow.at(Aindex.at(kk)) && e > -HIGHS_CONST_INF) {
@@ -1318,14 +1268,14 @@ void Presolve::removeSecondColumnSingletonInDoubletonRow(const int j,
   flagRow.at(i) = 0;
   double value;
   if (colCost.at(j) > 0) {
-    if (colLower.at(j) == -HIGHS_CONST_INF) {
+    if (colLower.at(j) <= -HIGHS_CONST_INF) {
       if (iPrint > 0) cout << "PR: Problem unbounded." << endl;
       status = Unbounded;
       return;
     }
     value = colLower.at(j);
   } else if (colCost.at(j) < 0) {
-    if (colUpper.at(j) == HIGHS_CONST_INF) {
+    if (colUpper.at(j) >= HIGHS_CONST_INF) {
       if (iPrint > 0) cout << "PR: Problem unbounded." << endl;
       status = Unbounded;
       return;
@@ -1359,8 +1309,8 @@ void Presolve::removeColumnSingletons() {
       i = Aindex.at(k);
 
       // free
-      if (colLower.at(col) == -HIGHS_CONST_INF &&
-          colUpper.at(col) == HIGHS_CONST_INF) {
+      if (colLower.at(col) <= -HIGHS_CONST_INF &&
+          colUpper.at(col) >= HIGHS_CONST_INF) {
         timer.recordStart(FREE_SING_COL);
         removeFreeColumnSingleton(col, i, k);
         it = singCol.erase(it);
@@ -1422,12 +1372,12 @@ pair<double, double> Presolve::getBoundsImpliedFree(double lowInit,
 
       if ((Avalue.at(k) < 0 && ARvalue.at(kk) > 0) ||
           (Avalue.at(k) > 0 && ARvalue.at(kk) < 0))
-        if (l == -HIGHS_CONST_INF) {
+        if (l <= -HIGHS_CONST_INF) {
           low = -HIGHS_CONST_INF;
           break;
         } else
           low -= ARvalue.at(kk) * l;
-      else if (u == HIGHS_CONST_INF) {
+      else if (u >= HIGHS_CONST_INF) {
         low = -HIGHS_CONST_INF;
         break;
       } else
@@ -1451,12 +1401,12 @@ pair<double, double> Presolve::getBoundsImpliedFree(double lowInit,
       // low::
       if ((Avalue.at(k) < 0 && ARvalue.at(kk) > 0) ||
           (Avalue.at(k) > 0 && ARvalue.at(kk) < 0))
-        if (u == HIGHS_CONST_INF) {
+        if (u >= HIGHS_CONST_INF) {
           upp = HIGHS_CONST_INF;
           break;
         } else
           upp -= ARvalue.at(kk) * u;
-      else if (l == -HIGHS_CONST_INF) {
+      else if (l <= -HIGHS_CONST_INF) {
         upp = HIGHS_CONST_INF;
         break;
       } else
@@ -1507,11 +1457,11 @@ bool Presolve::removeIfImpliedFree(int col, int i, int k) {
   double low, upp;
 
   if (yi > 0) {
-    if (rowUpper.at(i) == HIGHS_CONST_INF) return false;
+    if (rowUpper.at(i) >= HIGHS_CONST_INF) return false;
     low = rowUpper.at(i);
     upp = rowUpper.at(i);
   } else if (yi < 0) {
-    if (rowLower.at(i) == -HIGHS_CONST_INF) return false;
+    if (rowLower.at(i) <= -HIGHS_CONST_INF) return false;
     low = rowLower.at(i);
     upp = rowLower.at(i);
   } else {
@@ -2300,6 +2250,9 @@ HighsPostsolveStatus Presolve::postsolve(const HighsSolution& reduced_solution,
 
   for (int i = 0; i < numCol; ++i) {
     int iCol = eqIndexOfReduced.at(i);
+    assert(iCol < (int)valuePrimal.size());
+    assert(iCol < (int)valueColDual.size());
+    assert(iCol >= 0);
     valuePrimal[iCol] = colValue.at(i);
     valueColDual[iCol] = colDual.at(i);
     col_status.at(iCol) = temp_col_status.at(i);
@@ -2664,11 +2617,11 @@ HighsPostsolveStatus Presolve::postsolve(const HighsSolution& reduced_solution,
         }
 
         else if ((ck > 0 && aik > 0) || (ck < 0 && aik < 0)) {
-          if (low == -HIGHS_CONST_INF)
+          if (low <= -HIGHS_CONST_INF)
             cout << "ERROR UNBOUNDED? unnecessary check";
           xkValue = low;
         } else if ((ck > 0 && aik < 0) || (ck < 0 && aik > 0)) {
-          if (upp == HIGHS_CONST_INF)
+          if (upp >= HIGHS_CONST_INF)
             cout << "ERROR UNBOUNDED? unnecessary check";
           xkValue = upp;
         }

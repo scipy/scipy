@@ -14,21 +14,9 @@
 #ifndef IO_FILEREADER_H_
 #define IO_FILEREADER_H_
 
+#include "io/HighsIO.h"
 #include "lp_data/HighsLp.h"
-#include "lp_data/HighsModelBuilder.h"
 #include "lp_data/HighsOptions.h"
-
-enum class HighsInputStatus {
-  OK,
-  FileNotFound,
-  ErrorMatrixDimensions,
-  ErrorMatrixIndices,
-  ErrorMatrixStart,
-  ErrorMatrixValue,
-  ErrorColBounds,
-  ErrorRowBounds,
-  ErrorObjective
-};
 
 enum class FilereaderRetcode {
   OK = 0,
@@ -37,21 +25,19 @@ enum class FilereaderRetcode {
   NOT_IMPLEMENTED = 3
 };
 
+void interpretFilereaderRetcode(FILE* logfile, const std::string filename,
+                                const FilereaderRetcode code);
+std::string extractModelName(const std::string filename);
+
 class Filereader {
  public:
   virtual FilereaderRetcode readModelFromFile(const HighsOptions& options,
                                               HighsLp& model) = 0;
-  virtual FilereaderRetcode readModelFromFile(const char* filename,
-                                              HighsModelBuilder& model) = 0;
   virtual HighsStatus writeModelToFile(const HighsOptions& options,
-                                       const char* filename,
+                                       const std::string filename,
                                        HighsLp& model) = 0;
-  static Filereader* getFilereader(const char* filename);
+  static Filereader* getFilereader(const std::string filename);
 
   virtual ~Filereader(){};
 };
-
-// Return a string representation of ParseStatus.
-std::string HighsInputStatusToString(HighsInputStatus status);
-
 #endif

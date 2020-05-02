@@ -191,6 +191,8 @@ OptionStatus getOptionValue(FILE* logfile, const std::string& name,
                             const std::vector<OptionRecord*>& option_records,
                             std::string& value);
 
+void resetOptions(std::vector<OptionRecord*>& option_records);
+
 HighsStatus writeOptionsToFile(FILE* file,
                                const std::vector<OptionRecord*>& option_records,
                                const bool report_only_non_default_values = true,
@@ -240,6 +242,7 @@ struct HighsOptionsStruct {
   double primal_feasibility_tolerance;
   double dual_feasibility_tolerance;
   double dual_objective_value_upper_bound;
+  int highs_debug_level;
   int simplex_strategy;
   int simplex_scale_strategy;
   int simplex_crash_strategy;
@@ -410,6 +413,12 @@ class HighsOptions : public HighsOptionsStruct {
         advanced, &dual_objective_value_upper_bound, -HIGHS_CONST_INF,
         HIGHS_CONST_INF, HIGHS_CONST_INF);
     records.push_back(record_double);
+
+    record_int =
+        new OptionRecordInt("highs_debug_level", "Debugging level in HiGHS",
+                            advanced, &highs_debug_level, HIGHS_DEBUG_LEVEL_MIN,
+                            HIGHS_DEBUG_LEVEL_MIN, HIGHS_DEBUG_LEVEL_MAX);
+    records.push_back(record_int);
 
     record_int =
         new OptionRecordInt("simplex_strategy", "Strategy for simplex solver",

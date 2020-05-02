@@ -85,6 +85,8 @@ buildDebug/
 Makefile
 Makefile_opt_sw
 ml.mps
+ml.lp
+ml.ems
 options_file
 
 # Visual C++ cache files
