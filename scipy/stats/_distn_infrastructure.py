@@ -2847,7 +2847,7 @@ class rv_discrete(rv_generic):
 
     def __init__(self, a=0, b=inf, name=None, badvalue=None,
                  moment_tol=1e-8, values=None, inc=1, longname=None,
-                 shapes=None, extradoc=None, seed=None, probs=None):
+                 shapes=None, extradoc=None, seed=None):
 
         super(rv_discrete, self).__init__(seed)
 
@@ -2867,8 +2867,6 @@ class rv_discrete(rv_generic):
         self._cdfvec = vectorize(self._cdf_single, otypes='d')
         self.vecentropy = vectorize(self._entropy)
         self.shapes = shapes
-        if probs is not None:
-            self.probs = probs
         if values is not None:
             raise ValueError("rv_discrete.__init__(..., values != None, ...)")
 

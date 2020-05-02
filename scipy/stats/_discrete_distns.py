@@ -672,7 +672,8 @@ class pbinom_gen(rv_discrete):
     def __init__(self, *args, **kwds):
         if 'probs' in kwds:
             probs = np.asarray(kwds['probs'])
-        super(pbinom_gen, self).__init__(a=0, b=len(probs), probs=probs)
+        super(pbinom_gen, self).__init__(a=0, b=len(probs))
+        self.probs = probs
         self._n = self.probs.size
         self._omega = 2 * np.pi / (self._n + 1)
         self._pmf_list = self._get_pmf_xi()
