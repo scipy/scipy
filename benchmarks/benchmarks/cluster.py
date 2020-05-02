@@ -23,18 +23,18 @@ class HierarchyLinkage(Benchmark):
 
 
 class KMeans(Benchmark):
-    params = [2, 10, 50]
-    param_names = ['k']
+    params = [[2, 10, 50], ['random', 'points', '++']]
+    param_names = ['k', 'init']
 
     def __init__(self):
         rnd = np.random.RandomState(0)
         self.obs = rnd.rand(1000, 5)
 
-    def time_kmeans(self, k):
+    def time_kmeans(self, k, init):
         kmeans(self.obs, k, iter=10)
 
-    def time_kmeans2(self, k):
-        kmeans2(self.obs, k, iter=10)
+    def time_kmeans2(self, k, init):
+        kmeans2(self.obs, k, minit=init, iter=10)
 
 
 class VQ(Benchmark):
