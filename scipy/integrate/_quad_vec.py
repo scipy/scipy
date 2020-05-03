@@ -103,7 +103,7 @@ class _Bunch(object):
 
 def quad_vec(f, a, b, epsabs=1e-200, epsrel=1e-8, norm='2', cache_size=100e6, limit=10000,
              workers=1, points=None, quadrature=None, full_output=False):
-    """Adaptive integration of a vector-valued function.
+    r"""Adaptive integration of a vector-valued function.
 
     Parameters
     ----------
@@ -208,7 +208,7 @@ def quad_vec(f, a, b, epsabs=1e-200, epsrel=1e-8, norm='2', cache_size=100e6, li
     >>> y, err = quad_vec(f, x0, x1)
     >>> plt.plot(n, y)
     >>> plt.xlabel("n")
-    >>> plt.ylabel(r"$\int_{0}^{2} x^n \mathrm{d}x$")
+    >>> plt.ylabel(r"$\int_{0}^{2} x^n dx$")
     >>> plt.show()
 
     """
