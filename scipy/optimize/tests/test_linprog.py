@@ -1778,32 +1778,6 @@ class TestLinprogHiGHSSimplex(LinprogHiGHSTests):
     options = {}
 
 
-    def test_slack_lpgen_2d_trivial(self):
-        for m in range(1, 10):
-            for n in range(1, 10):
-                A_ub, b_ub, c = lpgen_2d(m, n)
-                res0 = linprog(c, A_ub, b_ub, method='revised simplex')
-                res1 = linprog(c, A_ub, b_ub, method='highs-simplex')
-                assert_allclose(res0.slack, res1.slack, atol=1e-10)
-
-
-    def test_magic_square_slack(self):
-        for n in range(1, 10):
-            A, b, c, _numbers = magic_square(n)
-            res0 = linprog(c, A_ub, b_ub, method='revised simplex')
-            res1 = linprog(c, A_ub, b_ub, method='highs-simplex')
-            assert_allclose(res0.slack, res1.slack, atol=1e-10)
-
-
-    def test_nontrivial_problem_slack(self):
-
-        c, A_ub, b_ub, A_eq, b_eq, x_star, f_star = nontrivial_problem()
-        res0 = linprog(c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq, method='revised simplex')
-        res1 = linprog(c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq, method='highs-simplex')
-        print(res0.slack, res1.slack)
-        assert_allclose(res0.slack, res1.slack[:len(res0.slack)], atol=1e-10)
-
-
 #######################################
 # HiGHS-Simplex Option-Specific Tests #
 #######################################
