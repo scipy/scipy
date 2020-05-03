@@ -200,6 +200,10 @@ def quad_vec(f, a, b, epsabs=1e-200, epsrel=1e-8, norm='2', cache_size=100e6, li
     --------
     We can compute integrations of a vector-valued functions:
 
+    .. math::
+
+           y = \int_{0}^{2} x^n \mathrm{d}x
+
     >>> from scipy.integrate import quad_vec
     >>> import matplotlib.pyplot as plt
     >>> n = np.linspace(0.0, 10.0)
@@ -208,7 +212,7 @@ def quad_vec(f, a, b, epsabs=1e-200, epsrel=1e-8, norm='2', cache_size=100e6, li
     >>> y, err = quad_vec(f, x0, x1)
     >>> plt.plot(n, y)
     >>> plt.xlabel("n")
-    >>> plt.ylabel(r"$\int_{0}^{2} x^n \mathrm{d}x$")
+    >>> plt.ylabel("y")
     >>> plt.show()
 
     """
