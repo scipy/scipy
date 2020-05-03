@@ -14,7 +14,8 @@ References
 """
 
 import numpy as np
-from .optimize import _check_unknown_options
+from .optimize import _check_unknown_options, OptimizeWarning
+from warnings import warn
 from ._highs.highs_wrapper import (
     highs_wrapper,
     CONST_INF,
@@ -42,8 +43,18 @@ def _replace_inf(x):
     return x
 
 
+def _check_invalid_option_values(option, option_str, allowed, default):
+    warning_message = ("Option {0} is {1}, "
+                       "but only values in {2} are allowed. Using default."
+                       .format(option_str, option, allowed))
+    if option not in allowed:
+        warn(warning_message, OptimizeWarning)
+        return default
+    return option
+
+
 def _linprog_highs(lp, solver, time_limit=None, presolve=True,
-                   disp=False, maxiter=None, autoscale=False,
+                   disp=False, maxiter=None,
                    dual_feasibility_tolerance=None,
                    dual_objective_value_upper_bound=None,
                    message_level=1,
@@ -89,13 +100,15 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
     lp :  _LPProblem
         A ``scipy.optimize._linprog_util._LPProblem`` ``namedtuple``.
     solver : "ipm" or "simplex" or None
-        Which HiGHS solver to use.  If `None`, HiGHS will determine which
+        Which HiGHS solver to use.  If ``None``, HiGHS will determine which
         solver to use based on the problem.
 
     Options
     -------
     maxiter : int
-        The maximum number of iterations to perform in either phase.
+        The maximum number of iterations to perform in either phase. For
+        ``solver='ipm'``, this does not include the number of crossover
+        iterations.
     disp : bool
         Set to ``True`` if indicators of optimization status are to be printed
         to the console each iteration; default ``False``.
@@ -103,22 +116,17 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
         The maximum time in seconds allotted to solve the problem; default is
         unlimited.
     presolve : bool
-        Set to ``False`` if presolve is to be disabled; default ``True``.
-    autoscale : bool
-        Set to ``True`` to automatically perform equilibration.
-        Consider using this option if the numerical values in the
-        constraints are separated by several orders of magnitude.
-        Default: ``False``.
-    unknown_options : dict
-        Optional arguments not used by this particular solver. If
-        `unknown_options` is non-empty, a warning is issued listing all
-        unused options.
+        Presolve attempts to  identify trivial infeasibilities,
+        identify trivial unboundedness, and simplify the problem before
+        sending the problem to the main solver. It is generally recommended
+        to keep the default setting ``True``; set to ``False`` if presolve is
+        to be disabled.
     dual_feasibility_tolerance : double
         Dual feasibility tolerance
     dual_objective_value_upper_bound : double
         Upper bound on objective value for dual simplex:
         algorithm terminates if reached
-    message_level : int {0, 1, 2, 4}
+    message_level : int {0, 1, 2, 4, 7}
         Verbosity level, corresponds to:
 
             ``0``: ML_NONE
@@ -131,7 +139,8 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
 
             ``7``: ML_ALWAYS
 
-        Default is 0.
+        Default is 1, but note:
+        this option is ignored unless option ``disp`` is ``True``.
     primal_feasibility_tolerance : double
         Primal feasibility tolerance.
     simplex_crash_strategy : int {0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
@@ -197,7 +206,10 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
 
     simplex_update_limit : int
         Limit on the number of simplex UPDATE operations.
-
+    unknown_options : dict
+        Optional arguments not used by this particular solver. If
+        `unknown_options` is non-empty, a warning is issued listing all
+        unused options.
 
     Returns
     -------
@@ -232,13 +244,64 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
                 ``4`` : The HiGHS solver ran into a problem.
 
             nit : int
-                The total number of iterations performed in all phases.
+                The total number of iterations performed.
+                For ``solver='simplex'``, this includes iterations in all
+                phases. For ``solver='ipm'``, this does not include
+                crossover iterations.
             message : str
                 A string descriptor of the exit status of the algorithm.
 
     """
 
     _check_unknown_options(unknown_options)
+
+    warning_message = ("Option `dual_feasibility_tolerance` is {0}, "
+                       "but only positive values are allowed. Using default."
+                       .format(dual_feasibility_tolerance))
+    if (dual_feasibility_tolerance is not None and
+            dual_feasibility_tolerance < 0):
+        dual_feasibility_tolerance = None
+        warn(warning_message, OptimizeWarning)
+
+    warning_message = ("Option `primal_feasibility_tolerance` is {0}, "
+                       "but only positive values are allowed. Using default."
+                       .format(primal_feasibility_tolerance))
+    if (primal_feasibility_tolerance is not None and
+            primal_feasibility_tolerance < 0):
+        primal_feasibility_tolerance = None
+        warn(warning_message, OptimizeWarning)
+
+    warning_message = ("Option `simplex_update_limit` is {0}, "
+                       "but only positive values are allowed. Using default."
+                       .format(simplex_update_limit))
+    if (simplex_update_limit is not None and
+            simplex_update_limit < 0):
+        simplex_update_limit = None
+        warn(warning_message, OptimizeWarning)
+
+    message_level = (
+        _check_invalid_option_values(message_level, 'message_level',
+                                     {0, 1, 2, 4, 7}, 1))
+
+    simplex_crash_strategy = (
+        _check_invalid_option_values(simplex_crash_strategy,
+                                     'simplex_crash_strategy',
+                                     {None}.union(set(range(10))), None))
+
+    simplex_dual_edge_weight_strategy = (
+        _check_invalid_option_values(simplex_dual_edge_weight_strategy,
+                                     'simplex_dual_edge_weight_strategy',
+                                     {None}.union(set(range(5))), None))
+
+    simplex_primal_edge_weight_strategy = (
+        _check_invalid_option_values(simplex_primal_edge_weight_strategy,
+                                     'simplex_primal_edge_weight_strategy',
+                                     {None}.union(set(range(2))), None))
+
+    simplex_strategy = (
+        _check_invalid_option_values(simplex_strategy,
+                                     'simplex_strategy',
+                                     {None}.union(set(range(5))), None))
 
     statuses = {
         MODEL_STATUS_NOTSET: (4, 'HiGHS Status Code 0: HighsModelStatusNOTSET'),
@@ -323,8 +386,7 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
            'status': statuses[res['status']][0],
            'success': res['status'] == MODEL_STATUS_OPTIMAL,
            'message': statuses[res['status']][1],
-           'nit': (res.get('simplex_nit', 0) if solver == 'simplex'
-                   else res.get('ipm_nit', 0))
+           'nit': res.get('simplex_nit', 0) or res.get('ipm_nit', 0)
            }
     if sol['x'] is not None:
         sol['x'] = np.array(sol['x'])

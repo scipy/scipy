@@ -979,6 +979,30 @@ class LinprogCommonTests(object):
         _assert_success(res, desired_fun=0, desired_x=np.zeros_like(c),
                         atol=2e-6)
 
+    def test_optimize_result(self):
+        # check all fields in OptimizeResult
+        np.random.seed(0)
+        m_eq, m_ub, n = 10, 20, 50
+        c = np.random.rand(n)-0.5
+        A_ub = np.random.rand(m_ub, n)-0.5
+        b_ub = np.random.rand(m_ub)-0.5
+        A_eq = np.random.rand(m_eq, n)-0.5
+        b_eq = np.random.rand(m_eq)-0.5
+        lb = -np.random.rand(n)
+        ub = np.random.rand(n)
+        lb[lb < -np.random.rand()] = -np.inf
+        ub[ub > np.random.rand()] = np.inf
+        bounds = np.vstack((lb, ub)).T
+        res = linprog(c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq,
+                      bounds=bounds, method=self.method, options=self.options)
+        assert_(res.success)
+        assert_(res.nit)
+        assert_(not res.status)
+        assert_(res.message == "Optimization terminated successfully.")
+        assert_allclose(c @ res.x, res.fun)
+        assert_allclose(b_eq - A_eq @ res.x, res.con, atol=1e-12)
+        assert_allclose(b_ub - A_ub @ res.x, res.slack, atol=1e-12)
+
     #################
     # Bug Fix Tests #
     #################
@@ -1381,7 +1405,11 @@ class LinprogCommonTests(object):
                 1.00663296e+09, 1.07374182e+09, 1.07374182e+09,
                 1.07374182e+09, 1.07374182e+09, 1.07374182e+09,
                 1.07374182e+09]
-        o = {"autoscale": True}
+
+        # HiGHS don't use autoscale option
+        o = {}
+        if not self.method.startswith("highs"):
+            o = {"autoscale": True}
         o.update(self.options)
 
         with suppress_warnings() as sup:
@@ -1451,6 +1479,21 @@ class LinprogHiGHSTests(LinprogCommonTests):
         res = linprog(c, A_ub=A_ub, b_ub=b_ub, method=self.method)
         _assert_success(res, desired_fun=-18.0, desired_x=[2, 6])
 
+    @pytest.mark.parametrize("options",
+                             [{"message_level": 3},
+                              {"dual_feasibility_tolerance": -1},
+                              {"primal_feasibility_tolerance": -1},
+                              {"simplex_crash_strategy": 10},
+                              {"simplex_dual_edge_weight_strategy": 10},
+                              {"simplex_primal_edge_weight_strategy": 10},
+                              {"simplex_strategy": 10},
+                              {"simplex_update_limit": -1}
+                              ])
+    def test_invalid_option_values(self, options):
+        def f(options):
+            linprog(1, method=self.method, options=options)
+        options.update(self.options)
+        assert_warns(OptimizeWarning, f, options=options)
 
 ################################
 # Simplex Option-Specific Tests#
