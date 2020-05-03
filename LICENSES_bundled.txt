@@ -11,11 +11,6 @@ Files: doc/scipy-sphinx-theme/*
 License: 3-clause BSD, PSF and Apache 2.0
   For details, see doc/sphinxext/LICENSE.txt
 
-Name: Six
-Files: scipy/_lib/six.py
-License: MIT
-  For details, see the header inside scipy/_lib/six.py
-
 Name: Decorator
 Files: scipy/_lib/decorator.py
 License: 2-clause BSD
