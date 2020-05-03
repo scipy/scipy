@@ -1048,7 +1048,6 @@ void HighsSimplexAnalysis::iterationReport(const bool header) {
 #ifdef HiGHSDEV
   reportDensity(header, iteration_report_message_level);
   reportIterationData(header, iteration_report_message_level);
-  //  reportFreeListSize(header, iteration_report_message_level);
 #endif
   HighsPrintMessage(output, message_level, iteration_report_message_level,
                     "\n");
@@ -1202,16 +1201,6 @@ void HighsSimplexAnalysis::reportIterationData(const bool header,
                       numerical_trouble, pivotal_row_index, leaving_variable,
                       entering_variable, primal_delta, dual_step, primal_step,
                       pivot_value_from_column);
-  }
-}
-
-void HighsSimplexAnalysis::reportFreeListSize(const bool header,
-                                              const int this_message_level) {
-  if (header) {
-    HighsPrintMessage(output, message_level, this_message_level, " FreeLsZ");
-  } else {
-    HighsPrintMessage(output, message_level, this_message_level, " %7d",
-                      freelist_size);
   }
 }
 
