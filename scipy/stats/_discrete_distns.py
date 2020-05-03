@@ -822,7 +822,7 @@ class randint_gen(rv_discrete):
         """An array of *size* random integers >= ``low`` and < ``high``."""
         if np.asarray(low).size == 1 and np.asarray(high).size == 1:
             # no need to vectorize in that case
-            return rng_integers(self._random_state, low, high, size=size)
+            return rng_integers(random_state, low, high, size=size)
 
         if size is not None:
             # NumPy's RandomState.randint() doesn't broadcast its arguments.

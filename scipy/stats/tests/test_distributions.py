@@ -4334,3 +4334,15 @@ class TestArgus(object):
         x = stats.argus.rvs(3.5, size=1500, random_state=1535)
         assert_almost_equal(stats.argus(3.5).mean(), x.mean(), decimal=3)
         assert_almost_equal(stats.argus(3.5).std(), x.std(), decimal=3)
+
+
+def test_rvs_no_size_warning():
+    class rvs_no_size_gen(stats.rv_continuous):
+        def _rvs(self):
+            return 1
+
+    rvs_no_size = rvs_no_size_gen(name='rvs_no_size')
+
+    with assert_warns(np.VisibleDeprecationWarning):
+        rvs_no_size.rvs()
+
