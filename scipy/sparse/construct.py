@@ -738,8 +738,8 @@ def random(m, n, density=0.01, format='coo', dtype=None,
     >>> from scipy.sparse import random
     >>> from scipy.stats import rv_continuous
     >>> class CustomDistribution(rv_continuous):
-    ...     def _rvs(self, *args, **kwargs):
-    ...         return self._random_state.randn(*kwargs['size'])
+    ...     def _rvs(self,  size=1, random_state=None):
+    ...         return random_state.randn(size)
     >>> X = CustomDistribution(seed=2906)
     >>> Y = X()  # get a frozen version of the distribution
     >>> S = random(3, 4, density=0.25, random_state=2906, data_rvs=Y.rvs)
