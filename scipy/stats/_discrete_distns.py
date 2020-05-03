@@ -37,7 +37,7 @@ class binom_gen(rv_discrete):
     %(example)s
 
     """
-    def _rvs(self, n, p, size=1, random_state=None):
+    def _rvs(self, n, p, size=None, random_state=None):
         return random_state.binomial(n, p, size)
 
     def _argcheck(self, n, p):
@@ -113,7 +113,7 @@ class bernoulli_gen(binom_gen):
     %(example)s
 
     """
-    def _rvs(self, p, size=1, random_state=None):
+    def _rvs(self, p, size=None, random_state=None):
         return binom_gen._rvs(self, 1, p, size=size, random_state=random_state)
 
     def _argcheck(self, p):
@@ -187,7 +187,7 @@ class betabinom_gen(rv_discrete):
 
     """
 
-    def _rvs(self, n, a, b, size=1, random_state=None):
+    def _rvs(self, n, a, b, size=None, random_state=None):
         p = random_state.beta(a, b, size)
         return random_state.binomial(n, p, size)
 
@@ -257,7 +257,7 @@ class nbinom_gen(rv_discrete):
     %(example)s
 
     """
-    def _rvs(self, n, p, size=1, random_state=None):
+    def _rvs(self, n, p, size=None, random_state=None):
         return random_state.negative_binomial(n, p, size)
 
     def _argcheck(self, n, p):
@@ -325,7 +325,7 @@ class geom_gen(rv_discrete):
     %(example)s
 
     """
-    def _rvs(self, p, size=1, random_state=None):
+    def _rvs(self, p, size=None, random_state=None):
         return random_state.geometric(p, size=size)
 
     def _argcheck(self, p):
@@ -427,7 +427,7 @@ class hypergeom_gen(rv_discrete):
     >>> R = hypergeom.rvs(M, n, N, size=10)
 
     """
-    def _rvs(self, M, n, N, size=1, random_state=None):
+    def _rvs(self, M, n, N, size=None, random_state=None):
         return random_state.hypergeometric(n, M-n, N, size=size)
 
     def _get_support(self, M, n, N):
@@ -537,7 +537,7 @@ class logser_gen(rv_discrete):
     %(example)s
 
     """
-    def _rvs(self, p, size=1, random_state=None):
+    def _rvs(self, p, size=None, random_state=None):
         # looks wrong for p>0.5, too few k=1
         # trying to use generic is worse, no k=1 at all
         return random_state.logseries(p, size=size)
@@ -595,7 +595,7 @@ class poisson_gen(rv_discrete):
     def _argcheck(self, mu):
         return mu >= 0
 
-    def _rvs(self, mu, size=1, random_state=None):
+    def _rvs(self, mu, size=None, random_state=None):
         return random_state.poisson(mu, size)
 
     def _logpmf(self, k, mu):
@@ -683,7 +683,7 @@ class planck_gen(rv_discrete):
         temp = self._cdf(vals1, lambda_)
         return np.where(temp >= q, vals1, vals)
 
-    def _rvs(self, lambda_, size=1, random_state=None):
+    def _rvs(self, lambda_, size=None, random_state=None):
         # use relation to geometric distribution for sampling
         p = -expm1(-lambda_)
         return random_state.geometric(p, size=size) - 1.0
@@ -818,7 +818,7 @@ class randint_gen(rv_discrete):
         g2 = -6.0/5.0 * (d*d + 1.0) / (d*d - 1.0)
         return mu, var, g1, g2
 
-    def _rvs(self, low, high, size=1, random_state=None):
+    def _rvs(self, low, high, size=None, random_state=None):
         """An array of *size* random integers >= ``low`` and < ``high``."""
         if np.asarray(low).size == 1 and np.asarray(high).size == 1:
             # no need to vectorize in that case
@@ -867,7 +867,7 @@ class zipf_gen(rv_discrete):
     %(example)s
 
     """
-    def _rvs(self, a, size=1, random_state=None):
+    def _rvs(self, a, size=None, random_state=None):
         return random_state.zipf(a, size=size)
 
     def _argcheck(self, a):
@@ -937,7 +937,7 @@ class dlaplace_gen(rv_discrete):
     def _entropy(self, a):
         return a / sinh(a) - log(tanh(a/2.0))
 
-    def _rvs(self, a, size=1, random_state=None):
+    def _rvs(self, a, size=None, random_state=None):
         # The discrete Laplace is equivalent to the two-sided geometric
         # distribution with PMF:
         #   f(k) = (1 - alpha)/(1 + alpha) * alpha^abs(k)
@@ -993,7 +993,7 @@ class skellam_gen(rv_discrete):
     %(example)s
 
     """
-    def _rvs(self, mu1, mu2, size=1, random_state=None):
+    def _rvs(self, mu1, mu2, size=None, random_state=None):
         n = size
         return (random_state.poisson(mu1, n) -
                 random_state.poisson(mu2, n))
@@ -1057,7 +1057,7 @@ class yulesimon_gen(rv_discrete):
     %(example)s
 
     """
-    def _rvs(self, alpha, size=1, random_state=None):
+    def _rvs(self, alpha, size=None, random_state=None):
         E1 = random_state.standard_exponential(size)
         E2 = random_state.standard_exponential(size)
         ans = ceil(-E1 / log1p(-exp(-E2 / alpha)))

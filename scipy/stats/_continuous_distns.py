@@ -293,7 +293,7 @@ class norm_gen(rv_continuous):
     %(example)s
 
     """
-    def _rvs(self, size=1, random_state=None):
+    def _rvs(self, size=None, random_state=None):
         return random_state.standard_normal(size)
 
     def _pdf(self, x):
@@ -583,7 +583,7 @@ class beta_gen(rv_continuous):
     %(example)s
 
     """
-    def _rvs(self, a, b, size=1, random_state=None):
+    def _rvs(self, a, b, size=None, random_state=None):
         return random_state.beta(a, b, size)
 
     def _pdf(self, x, a, b):
@@ -759,7 +759,7 @@ class betaprime_gen(rv_continuous):
     """
     _support_mask = rv_continuous._open_support_mask
 
-    def _rvs(self, a, b, size=1, random_state=None):
+    def _rvs(self, a, b, size=None, random_state=None):
         u1 = gamma.rvs(a, size=size, random_state=random_state)
         u2 = gamma.rvs(b, size=size, random_state=random_state)
         return u1 / u2
@@ -1198,7 +1198,7 @@ class chi_gen(rv_continuous):
 
     """
 
-    def _rvs(self, df, size=1, random_state=None):
+    def _rvs(self, df, size=None, random_state=None):
         return np.sqrt(chi2.rvs(df, size=size, random_state=random_state))
 
     def _pdf(self, x, df):
@@ -1254,7 +1254,7 @@ class chi2_gen(rv_continuous):
     %(example)s
 
     """
-    def _rvs(self, df, size=1, random_state=None):
+    def _rvs(self, df, size=None, random_state=None):
         return random_state.chisquare(df, size)
 
     def _pdf(self, x, df):
@@ -1348,7 +1348,7 @@ class dgamma_gen(rv_continuous):
     %(example)s
 
     """
-    def _rvs(self, a, size=1, random_state=None):
+    def _rvs(self, a, size=None, random_state=None):
         u = random_state.uniform(size=size)
         gm = gamma.rvs(a, size=size, random_state=random_state)
         return gm * np.where(u >= 0.5, 1, -1)
@@ -1404,7 +1404,7 @@ class dweibull_gen(rv_continuous):
     %(example)s
 
     """
-    def _rvs(self, c, size=1, random_state=None):
+    def _rvs(self, c, size=None, random_state=None):
         u = random_state.uniform(size=size)
         w = weibull_min.rvs(c, size=size, random_state=random_state)
         return w * (np.where(u >= 0.5, 1, -1))
@@ -1466,7 +1466,7 @@ class expon_gen(rv_continuous):
     %(example)s
 
     """
-    def _rvs(self, size=1, random_state=None):
+    def _rvs(self, size=None, random_state=None):
         return random_state.standard_exponential(size)
 
     def _pdf(self, x):
@@ -1583,7 +1583,7 @@ class exponnorm_gen(rv_continuous):
     %(example)s
 
     """
-    def _rvs(self, K, size=1, random_state=None):
+    def _rvs(self, K, size=None, random_state=None):
         expval = random_state.standard_exponential(size) * K
         gval = random_state.standard_normal(size)
         return expval + gval
@@ -1770,7 +1770,7 @@ class fatiguelife_gen(rv_continuous):
     """
     _support_mask = rv_continuous._open_support_mask
 
-    def _rvs(self, c, size=1, random_state=None):
+    def _rvs(self, c, size=None, random_state=None):
         z = random_state.standard_normal(size)
         x = 0.5*c*z
         x2 = x*x
@@ -1831,7 +1831,7 @@ class foldcauchy_gen(rv_continuous):
     %(example)s
 
     """
-    def _rvs(self, c, size=1, random_state=None):
+    def _rvs(self, c, size=None, random_state=None):
         return abs(cauchy.rvs(loc=c, size=size,
                               random_state=random_state))
 
@@ -1873,7 +1873,7 @@ class f_gen(rv_continuous):
     %(example)s
 
     """
-    def _rvs(self, dfn, dfd, size=1, random_state=None):
+    def _rvs(self, dfn, dfd, size=None, random_state=None):
         return random_state.f(dfn, dfd, size)
 
     def _pdf(self, x, dfn, dfd):
@@ -1965,7 +1965,7 @@ class foldnorm_gen(rv_continuous):
     def _argcheck(self, c):
         return c >= 0
 
-    def _rvs(self, c, size=1, random_state=None):
+    def _rvs(self, c, size=None, random_state=None):
         return abs(random_state.standard_normal(size) + c)
 
     def _pdf(self, x, c):
@@ -2812,7 +2812,7 @@ class gamma_gen(rv_continuous):
     %(example)s
 
     """
-    def _rvs(self, a, size=1, random_state=None):
+    def _rvs(self, a, size=None, random_state=None):
         return random_state.standard_gamma(a, size)
 
     def _pdf(self, x, a):
@@ -3381,7 +3381,7 @@ class halfnorm_gen(rv_continuous):
     %(example)s
 
     """
-    def _rvs(self, size=1, random_state=None):
+    def _rvs(self, size=None, random_state=None):
         return abs(random_state.standard_normal(size=size))
 
     def _pdf(self, x):
@@ -3594,7 +3594,7 @@ class invgauss_gen(rv_continuous):
     """
     _support_mask = rv_continuous._open_support_mask
 
-    def _rvs(self, mu, size=1, random_state=None):
+    def _rvs(self, mu, size=None, random_state=None):
         return random_state.wald(mu, 1.0, size=size)
 
     def _pdf(self, x, mu):
@@ -3697,7 +3697,7 @@ class geninvgauss_gen(rv_continuous):
                           lambda x, p, b: (p - 1)*np.log(x) - b*(x + 1/x)/2,
                           -np.inf)
 
-    def _rvs(self, p, b, size=1, random_state=None):
+    def _rvs(self, p, b, size=None, random_state=None):
         # if p and b are scalar, use _rvs_scalar, otherwise need to create
         # output by iterating over parameters
         if np.isscalar(p) and np.isscalar(b):
@@ -3978,7 +3978,7 @@ class norminvgauss_gen(rv_continuous):
         sq = np.hypot(1, x)  # reduce overflows
         return fac1 * sc.k1e(a * sq) * np.exp(b*x - a*sq) / sq
 
-    def _rvs(self, a, b, size=1, random_state=None):
+    def _rvs(self, a, b, size=None, random_state=None):
         # note: X = b * V + sqrt(V) * X is norminvgaus(a,b) if X is standard
         # normal and V is invgauss(mu=1/sqrt(a**2 - b**2))
         gamma = np.sqrt(a**2 - b**2)
@@ -4167,7 +4167,7 @@ class laplace_gen(rv_continuous):
     %(example)s
 
     """
-    def _rvs(self, size=1, random_state=None):
+    def _rvs(self, size=None, random_state=None):
         return random_state.laplace(0, 1, size=size)
 
     def _pdf(self, x):
@@ -4370,7 +4370,7 @@ class levy_stable_gen(rv_continuous):
 
     """
 
-    def _rvs(self, alpha, beta, size=1, random_state=None):
+    def _rvs(self, alpha, beta, size=None, random_state=None):
 
         def alpha1func(alpha, beta, TH, aTH, bTH, cosTH, tanTH, W):
             return (2/np.pi*(np.pi/2 + bTH)*tanTH -
@@ -4787,7 +4787,7 @@ class logistic_gen(rv_continuous):
     %(example)s
 
     """
-    def _rvs(self, size=1, random_state=None):
+    def _rvs(self, size=None, random_state=None):
         return random_state.logistic(size=size)
 
     def _pdf(self, x):
@@ -4844,7 +4844,7 @@ class loggamma_gen(rv_continuous):
     %(example)s
 
     """
-    def _rvs(self, c, size=1, random_state=None):
+    def _rvs(self, c, size=None, random_state=None):
         return np.log(random_state.gamma(c, size=size))
 
     def _pdf(self, x, c):
@@ -4959,7 +4959,7 @@ class lognorm_gen(rv_continuous):
     """
     _support_mask = rv_continuous._open_support_mask
 
-    def _rvs(self, s, size=1, random_state=None):
+    def _rvs(self, s, size=None, random_state=None):
         return np.exp(s * random_state.standard_normal(size))
 
     def _pdf(self, x, s):
@@ -5087,7 +5087,7 @@ class gilbrat_gen(rv_continuous):
     """
     _support_mask = rv_continuous._open_support_mask
 
-    def _rvs(self, size=1, random_state=None):
+    def _rvs(self, size=None, random_state=None):
         return np.exp(random_state.standard_normal(size))
 
     def _pdf(self, x):
@@ -5145,7 +5145,7 @@ class maxwell_gen(rv_continuous):
 
     %(example)s
     """
-    def _rvs(self, size=1, random_state=None):
+    def _rvs(self, size=None, random_state=None):
         return chi.rvs(3.0, size=size, random_state=random_state)
 
     def _pdf(self, x):
@@ -5585,7 +5585,7 @@ class moyal_gen(rv_continuous):
     %(example)s
 
     """
-    def _rvs(self, size=1, random_state=None):
+    def _rvs(self, size=None, random_state=None):
         u1 = gamma.rvs(a = 0.5, scale = 2, size=size, random_state=random_state)
         return -np.log(u1)
 
@@ -5708,7 +5708,7 @@ class ncx2_gen(rv_continuous):
     def _argcheck(self, df, nc):
         return (df > 0) & (nc >= 0)
 
-    def _rvs(self, df, nc, size=1, random_state=None):
+    def _rvs(self, df, nc, size=None, random_state=None):
         return random_state.noncentral_chisquare(df, nc, size)
 
     def _logpdf(self, x, df, nc):
@@ -5784,7 +5784,7 @@ class ncf_gen(rv_continuous):
     def _argcheck(self, df1, df2, nc):
         return (df1 > 0) & (df2 > 0) & (nc >= 0)
 
-    def _rvs(self, dfn, dfd, nc, size=1, random_state=None):
+    def _rvs(self, dfn, dfd, nc, size=None, random_state=None):
         return random_state.noncentral_f(dfn, dfd, nc, size)
 
     def _pdf_skip(self, x, dfn, dfd, nc):
@@ -5866,7 +5866,7 @@ class t_gen(rv_continuous):
     def _argcheck(self, df):
         return df > 0
 
-    def _rvs(self, df, size=1, random_state=None):
+    def _rvs(self, df, size=None, random_state=None):
         return random_state.standard_t(df, size=size)
 
     def _pdf(self, x, df):
@@ -5941,7 +5941,7 @@ class nct_gen(rv_continuous):
     def _argcheck(self, df, nc):
         return (df > 0) & (nc == nc)
 
-    def _rvs(self, df, nc, size=1, random_state=None):
+    def _rvs(self, df, nc, size=None, random_state=None):
         n = norm.rvs(loc=nc, size=size, random_state=random_state)
         c2 = chi2.rvs(df, size=size, random_state=random_state)
         return n * np.sqrt(df) / np.sqrt(c2)
@@ -6250,7 +6250,7 @@ class pearson3_gen(rv_continuous):
         ans[invmask] = gamma._cdf(transx, alpha)
         return ans
 
-    def _rvs(self, skew, size=1, random_state=None):
+    def _rvs(self, skew, size=None, random_state=None):
         skew = np.broadcast_to(skew, size)
         ans, _, _, mask, invmask, beta, alpha, zeta = (
             self._preprocess([0], skew))
@@ -6457,7 +6457,7 @@ class rdist_gen(rv_continuous):
     def _ppf(self, q, c):
         return 2*beta._ppf(q, c/2, c/2) - 1
 
-    def _rvs(self, c, size=1, random_state=None):
+    def _rvs(self, c, size=None, random_state=None):
         return 2 * random_state.beta(c/2, c/2, size) - 1
 
     def _munp(self, n, c):
@@ -6492,7 +6492,7 @@ class rayleigh_gen(rv_continuous):
     """
     _support_mask = rv_continuous._open_support_mask
 
-    def _rvs(self, size=1, random_state=None):
+    def _rvs(self, size=None, random_state=None):
         return chi.rvs(2, size=size, random_state=random_state)
 
     def _pdf(self, r):
@@ -6642,7 +6642,7 @@ class rice_gen(rv_continuous):
     def _argcheck(self, b):
         return b >= 0
 
-    def _rvs(self, b, size=1, random_state=None):
+    def _rvs(self, b, size=None, random_state=None):
         # https://en.wikipedia.org/wiki/Rice_distribution
         t = b/np.sqrt(2) + random_state.standard_normal(size=(2,) + size)
         return np.sqrt((t*t).sum(axis=0))
@@ -6712,7 +6712,7 @@ class recipinvgauss_gen(rv_continuous):
         isqx = 1.0/np.sqrt(x)
         return 1.0-_norm_cdf(isqx*trm1)-np.exp(2.0/mu)*_norm_cdf(-isqx*trm2)
 
-    def _rvs(self, mu, size=1, random_state=None):
+    def _rvs(self, mu, size=None, random_state=None):
         return 1.0/random_state.wald(mu, 1.0, size=size)
 
 
@@ -6762,7 +6762,7 @@ class semicircular_gen(rv_continuous):
     def _ppf(self, q):
         return rdist._ppf(q, 3)
 
-    def _rvs(self, size=1, random_state=None):
+    def _rvs(self, size=None, random_state=None):
         # generate values uniformly distributed on the area under the pdf
         # (semi-circle) by randomly generating the radius and angle
         r = np.sqrt(random_state.uniform(size=size))
@@ -6827,7 +6827,7 @@ class skew_norm_gen(rv_continuous):
     def _sf(self, x, a):
         return self._cdf(-x, -a)
 
-    def _rvs(self, a, size=1, random_state=None):
+    def _rvs(self, a, size=None, random_state=None):
         u0 = random_state.normal(size=size)
         v = random_state.normal(size=size)
         d = a/np.sqrt(1 + a**2)
@@ -6979,7 +6979,7 @@ class triang_gen(rv_continuous):
     %(example)s
 
     """
-    def _rvs(self, c, size=1, random_state=None):
+    def _rvs(self, c, size=None, random_state=None):
         return random_state.triangular(0, c, 1, size)
 
     def _argcheck(self, c):
@@ -7582,7 +7582,7 @@ class truncnorm_gen(rv_continuous):
         g2 = mu4 / mu2**2 - 3
         return mu, mu2, g1, g2
 
-    def _rvs(self, a, b, size=1, random_state=None):
+    def _rvs(self, a, b, size=None, random_state=None):
         # if a and b are scalar, use _rvs_scalar, otherwise need to create
         # output by iterating over parameters
         if np.isscalar(a) and np.isscalar(b):
@@ -7726,7 +7726,7 @@ class uniform_gen(rv_continuous):
     %(example)s
 
     """
-    def _rvs(self, size=1, random_state=None):
+    def _rvs(self, size=None, random_state=None):
         return random_state.uniform(0.0, 1.0, size)
 
     def _pdf(self, x):
@@ -7926,7 +7926,7 @@ class vonmises_gen(rv_continuous):
     %(example)s
 
     """
-    def _rvs(self, kappa, size=1, random_state=None):
+    def _rvs(self, kappa, size=None, random_state=None):
         return random_state.vonmises(0.0, kappa, size=size)
 
     def _pdf(self, x, kappa):
@@ -7971,7 +7971,7 @@ class wald_gen(invgauss_gen):
     """
     _support_mask = rv_continuous._open_support_mask
 
-    def _rvs(self, size=1, random_state=None):
+    def _rvs(self, size=None, random_state=None):
         return random_state.wald(1.0, 1.0, size=size)
 
     def _pdf(self, x):
@@ -8390,7 +8390,7 @@ class argus_gen(rv_continuous):
     def _sf(self, x, chi):
         return _argus_phi(chi * np.sqrt(1 - x**2)) / _argus_phi(chi)
 
-    def _rvs(self, chi, size=1, random_state=None):
+    def _rvs(self, chi, size=None, random_state=None):
         chi = np.asarray(chi)
         if chi.size == 1:
             out = self._rvs_scalar(chi, numsamples=size,

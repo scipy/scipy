@@ -913,8 +913,8 @@ class rv_generic(object):
             return (a < x) & (x < b)
 
     def _rvs(self, *args, size=None, random_state=None):
-        # This method must handle self._size being a tuple, and it must
-        # properly broadcast *args and self._size.  self._size might be
+        # This method must handle size being a tuple, and it must
+        # properly broadcast *args and size.  size might be
         # an empty tuple, which means a scalar random variate is to be
         # generated.
 
