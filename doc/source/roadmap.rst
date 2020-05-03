@@ -8,29 +8,6 @@ going forward.  For a more detailed roadmap, including per-subpackage status,
 many more ideas, API stability and more, see :ref:`scipy-roadmap-detailed`.
 
 
-Evolve BLAS and LAPACK support
-------------------------------
-
-The Python and Cython interfaces to BLAS and LAPACK in ``scipy.linalg`` are one
-of the most important things that SciPy provides. In general ``scipy.linalg``
-is in good shape, however we can make a number of improvements:
-
-1. Library support. Our released wheels now ship with OpenBLAS, which is
-currently the only feasible performant option (ATLAS is too slow, MKL cannot be
-the default due to licensing issues, Accelerate support is dropped because
-Apple doesn't update Accelerate anymore). OpenBLAS isn't very stable though,
-sometimes its releases break things and it has issues with threading (currently
-the only issue for using SciPy with PyPy3).  We need at the very least better
-support for debugging OpenBLAS issues, and better documentation on how to build
-SciPy with it.  An option is to use BLIS for a BLAS interface (see `numpy
-gh-7372 <https://github.com/numpy/numpy/issues/7372>`__).
-
-2. Support for newer LAPACK features.  In SciPy 1.2.0 we increased the minimum
-supported version of LAPACK to 3.4.0.  Now that we dropped Python 2.7, we can
-increase that version further (MKL + Python 2.7 was the blocker for >3.4.0
-previously) and start adding support for new features in LAPACK.
-
-
 Implement sparse arrays in addition to sparse matrices
 ------------------------------------------------------
 
@@ -66,18 +43,6 @@ make use of these protocols in SciPy as well.  That will make it possible to
 (re)implement SciPy functions like, e.g., those in ``scipy.signal`` for Dask
 or GPU arrays (see
 `NEP 18 - use outside of NumPy <http://www.numpy.org/neps/nep-0018-array-function-protocol.html#use-outside-of-numpy>`__).
-
-
-Improve source builds on Windows
---------------------------------
-
-SciPy critically relies on Fortran code. This is still problematic on Windows.
-There are currently only two options: using Intel Fortran, or using
-MSVC + gfortran.  The former is expensive, while the latter works (it's what we
-use for releases) but is quite hard to do correctly.  For allowing contributors
-and end users to reliably build SciPy on Windows, using the Flang compiler
-looks like the best way forward long-term.  Until Flang support materializes,
-we need to streamline and better document the MSVC + gfortran build.
 
 
 Statistics enhancements

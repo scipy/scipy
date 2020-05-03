@@ -65,9 +65,8 @@ Making this easier is a priority.  In addition, we should run them in our CI
 (gh-8779 is an ongoing attempt at this).
 
 
-Other
-`````
-
+Use of Cython
+`````````````
 Regarding Cython code:
 
 - It's not clear how much functionality can be Cythonized without making the
@@ -75,22 +74,23 @@ Regarding Cython code:
 - Cython's old syntax for using NumPy arrays should be removed and replaced
   with Cython memoryviews.
 
-Regarding build environments:
 
-- SciPy builds from source on Windows now with a MSVC + MinGW-w64 gfortran
-  toolchain, which we're using for official releases.
-  MSVC + Intel Fortran + MKL works as well, and is easier for users (as long
-  as they have access to ifort and MKL of course).  This mainly needs better
-  documentation at the moment.
-- We're aiming to gradually increase the minimum version of LAPACK that is
-  required, so we can use newer features.  Support for Accelerate on macOS
-  has been dropped.  We do rely quite heavily on OpenBLAS, and its stability
-  is a worry (often only one of the recent releases works without test
-  failures) - improvements in testing and build documentation at least are
-  needed.
+Windows build issues
+````````````````````
+SciPy critically relies on Fortran code. This is still problematic on Windows.
+There are currently only two options: using Intel Fortran, or using MSVC +
+gfortran.  The former is expensive, while the latter works (it's what we use
+for releases) but is quite hard to do correctly.  For allowing contributors and
+end users to reliably build SciPy on Windows, using the Flang compiler looks
+like the best way forward long-term.  Until Flang support materializes, we need
+to streamline and better document the MSVC + gfortran build.
 
-Continuous integration is in good shape, it covers Windows, macOS and Linux, as well
-as a range of versions of our dependencies and building release quality wheels.
+
+Continuous integration
+``````````````````````
+Continuous integration is in good shape, it currently covers the Windows, macOS
+and Linux, ARM64 and ppc64le platforms, as well as a range of versions of our
+dependencies and building release quality wheels.
 
 
 Modules
@@ -148,9 +148,7 @@ are in good shape.
 
 linalg
 ``````
-``scipy.linalg`` is in good shape.  We have started requiring more recent
-LAPACK versions (minimum version increases from 3.1.0 to 3.4.0 in SciPy 1.2.0);
-we want to add support for newer features in LAPACK.
+``scipy.linalg`` is in good shape.
 
 Needed:
 
@@ -163,6 +161,27 @@ Ideas for new features:
 
 - Add type-generic wrappers in the Cython BLAS and LAPACK
 - Make many of the linear algebra routines into gufuncs
+
+**BLAS and LAPACK**
+
+The Python and Cython interfaces to BLAS and LAPACK in ``scipy.linalg`` are one
+of the most important things that SciPy provides. In general ``scipy.linalg``
+is in good shape, however we can make a number of improvements:
+
+1. Library support. Our released wheels now ship with OpenBLAS, which is
+currently the only feasible performant option (ATLAS is too slow, MKL cannot be
+the default due to licensing issues, Accelerate support is dropped because
+Apple doesn't update Accelerate anymore). OpenBLAS isn't very stable though,
+sometimes its releases break things and it has issues with threading (currently
+the only issue for using SciPy with PyPy3).  We need at the very least better
+support for debugging OpenBLAS issues, and better documentation on how to build
+SciPy with it.  An option is to use BLIS for a BLAS interface (see `numpy
+gh-7372 <https://github.com/numpy/numpy/issues/7372>`__).
+
+2. Support for newer LAPACK features.  In SciPy 1.2.0 we increased the minimum
+supported version of LAPACK to 3.4.0.  Now that we dropped Python 2.7, we can
+increase that version further (MKL + Python 2.7 was the blocker for >3.4.0
+previously) and start adding support for new features in LAPACK.
 
 
 misc
