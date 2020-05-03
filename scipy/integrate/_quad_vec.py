@@ -198,7 +198,7 @@ def quad_vec(f, a, b, epsabs=1e-200, epsrel=1e-8, norm='2', cache_size=100e6, li
 
     Examples
     --------
-    We can compute integrations of a vector-valued functions:
+    We can compute integrations of a vector-valued function:
 
     >>> from scipy.integrate import quad_vec
     >>> import matplotlib.pyplot as plt
