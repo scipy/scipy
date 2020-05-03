@@ -99,7 +99,7 @@ def quadratic_assignment(
                 An array of column indices corresponding to the optimal
                 permutation (with the fixed seeds given) of the
                 nodes of B, to best minimize the objective function
-                :math:'f(P) = trace(A^T PBP^T )'.
+                :math:'f(P) = trace(A^T PBP^T)'.
             score : float
                 The optimal value of the objective function.
             nit : int
@@ -184,22 +184,22 @@ def quadratic_assignment(
         msg = "Seed column entries must be unique"
         raise ValueError(msg)
     elif type(n_init) is not int and n_init <= 0:
-        msg = '"n_init" must be a positive integer'
+        msg = "'n_init' must be a positive integer"
         raise TypeError(msg)
     elif not init_method == "barycenter" and not init_method == "rand":
-        msg = 'Invalid "init_method" parameter string'
+        msg = "Invalid 'init_method' parameter string"
         raise ValueError(msg)
     elif max_iter <= 0 and type(max_iter) is not int:
-        msg = '"max_iter" must be a positive integer'
+        msg = "'max_iter' must be a positive integer"
         raise TypeError(msg)
     elif type(shuffle_input) is not bool:
-        msg = '"shuffle_input" must be a boolean'
+        msg = "'shuffle_input' must be a boolean"
         raise TypeError(msg)
     elif eps <= 0 and type(eps) is not float:
-        msg = '"eps" must be a positive float'
+        msg = "'eps' must be a positive float"
         raise TypeError(msg)
     elif type(maximize) is not bool:
-        msg = '"maximize" must be a boolean'
+        msg = "'maximize' must be a boolean"
         raise TypeError(msg)
 
     n = cost_matrix.shape[0]  # number of vertices in graphs
@@ -240,7 +240,7 @@ def quadratic_assignment(
         # setting initialization matrix
         if init_method == "rand":
             K = np.random.rand(n_unseed, n_unseed)
-            # generate a nxn matrix where each entry is a random integer [0,1]
+            # generate a nxn matrix where each entry is a random integer [0, 1]
             for i in range(10):  # perform 10 iterations of Sinkhorn balancing
                 K = _doubly_stochastic(K)
             J = np.ones((n_unseed, n_unseed)) / float(
