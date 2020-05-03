@@ -100,7 +100,7 @@ def test_quadratic_assignment_input_validation():
     # test for only two seed columns
     with pytest.raises(ValueError):
         quadratic_assignment(
-            np.identity(3), np.identity(3),  _range_matrix(2, 3)
+            np.identity(3), np.identity(3), _range_matrix(2, 3)
         )
     # can't have more seed nodes than cost/dist nodes
     with pytest.raises(ValueError):
