@@ -40,6 +40,38 @@ COMPLEX_DTYPES = [np.complex64, np.complex128]
 DTYPES = REAL_DTYPES + COMPLEX_DTYPES
 
 
+def _to_banded(a, kl, ku):
+    """Convert the banded matrix `a` to banded storage `ab`
+
+    The matrix a is stored in `ab` using the matrix diagonal ordered form::
+
+        ab[u + i - j, j] == a[i,j]
+
+    """
+    m, n = a.shape
+    ab = np.zeros((kl + ku + 1, n), a.dtype)
+    for j in range(n):
+        low = max(0, j - ku)
+        high = min(m, j + kl + 1)
+        for i in range(low, high):
+            ab[ku + i - j, j] = a[i, j]
+    return ab
+
+
+def _to_symmetric_banded(a, uplo, kd):
+    """Convert the symmetric banded matrix `a` to banded storage `ab`
+
+    The matrix a is stored in `ab` either in lower diagonal or upper
+    diagonal ordered form:
+
+        ab[u + i - j, j] == a[i,j]        (if upper form; i <= j)
+        ab[    i - j, j] == a[i,j]        (if lower form; i >= j)
+
+    """
+    kl, ku = (kd, 0) if uplo == 'L' else (0, kd)
+    return _to_banded(a, kl, ku)
+
+
 def generate_random_dtype_array(shape, dtype):
     # generates a random matrix of desired data type of shape
     if dtype in COMPLEX_DTYPES:
@@ -560,6 +592,7 @@ class TestTbtrs(object):
         # b is of shape ldb x nrhs matrix
         lda, ldb, nrhs, kd = 4, 4, 3, 2
         ldab = kd + 1
+        tbtrs = get_lapack_funcs('tbtrs', dtype=dtype)
 
         # Construct the diagonal and kd super/sub diagonals of A with
         # the corresponding offsets.
@@ -573,12 +606,11 @@ class TestTbtrs(object):
 
         # Construct the diagonal banded matrix A from the bands and offsets.
         a = sps.diags(bands, band_offsets, format='dia')
-        ab = np.flipud(a.data) if uplo == 'U' else a.data
+        ab = _to_symmetric_banded(a.toarray(), uplo, kd)
 
         # The RHS values.
         b = generate_random_dtype_array((ldb, nrhs), dtype)
 
-        tbtrs = get_lapack_funcs('tbtrs', dtype=dtype)
         x, info = tbtrs(ab=ab, b=b, uplo=uplo, trans=trans, diag=diag)
         assert_equal(info, 0)
 
