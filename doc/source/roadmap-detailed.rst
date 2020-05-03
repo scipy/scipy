@@ -82,8 +82,7 @@ There are currently only two options: using Intel Fortran, or using MSVC +
 gfortran.  The former is expensive, while the latter works (it's what we use
 for releases) but is quite hard to do correctly.  For allowing contributors and
 end users to reliably build SciPy on Windows, using the Flang compiler looks
-like the best way forward long-term.  Until Flang support materializes, we need
-to streamline and better document the MSVC + gfortran build.
+like the best way forward long-term.
 
 
 Continuous integration
