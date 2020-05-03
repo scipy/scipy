@@ -202,12 +202,12 @@ def quad_vec(f, a, b, epsabs=1e-200, epsrel=1e-8, norm='2', cache_size=100e6, li
 
     >>> from scipy.integrate import quad_vec
     >>> import matplotlib.pyplot as plt
-    >>> alpha = np.linspace(0.0, 10.0, num=30)
+    >>> alpha = np.linspace(0.0, 2.0, num=30)
     >>> f = lambda x: x**alpha
     >>> x0, x1 = 0, 2
     >>> y, err = quad_vec(f, x0, x1)
     >>> plt.plot(alpha, y)
-    >>> plt.xlabel(r"\alpha")
+    >>> plt.xlabel(r"$\alpha$")
     >>> plt.ylabel(r"$\int_{0}^{2} x^\alpha dx$")
     >>> plt.show()
 
