@@ -50,13 +50,6 @@ along.  The tentative plan is:
   stand-alone package.
 
 
-Fourier transform enhancements
-------------------------------
-
-The new ``scipy.fft`` subpackage should be extended to add a backend system with
-support for PyFFTW and mkl-fft.
-
-
 Support for distributed arrays and GPU arrays
 ---------------------------------------------
 

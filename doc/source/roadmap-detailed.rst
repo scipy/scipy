@@ -108,12 +108,8 @@ This module is basically done, low-maintenance and without open issues.
 
 fft
 ````
+This module is in good shape.
 
-Ideas for new features:
-
-- Add a backend/plugin system.  At the moment pyFFTW is monkeypatching SciPy,
-  and ``mkl_fft`` provides ``fftpack``-compatible functions as well.  We should
-  provide a method to support such packages.
 
 integrate
 `````````
@@ -414,12 +410,12 @@ The following improvements will help SciPy better serve this role.
   - multivariate t distribution
   - mixture distributions
 
-- Improve the core calculations provided by SciPy's probability distributions 
+- Improve the core calculations provided by SciPy's probability distributions
   so they can robustly handle wide ranges of parameter values.  Specifically,
   replace many of the PDF and CDF methods from the Fortran library CDFLIB
   used in scipy.special with better code, perhaps ported from the Boost C++
   library.
-  
+
 In addition, we should:
 
 - Continue work on making the function signatures of ``stats`` and
@@ -432,5 +428,5 @@ In addition, we should:
   example implement an exact two-sided KS test (see
   `gh-8341 <https://github.com/scipy/scipy/issues/8341>`__) or a one-sided
   Wilcoxon test (see `gh-9046 <https://github.com/scipy/scipy/issues/9046>`__).
-- Address the various issues regarding ``stats.mannwhitneyu``, and pick up the 
+- Address the various issues regarding ``stats.mannwhitneyu``, and pick up the
   stalled PR in `gh-4933 <https://github.com/scipy/scipy/pull/4933>`__.
