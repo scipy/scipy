@@ -289,7 +289,7 @@ class TestKMean(object):
         res = kmeans(x, 1, thresh=1e16)
         assert_allclose(res[0], np.array([4.]))
         assert_allclose(res[1], 2.3999999999999999)
-        
+
     def test_kmeans2_kpp_low_dim(self):
         # Regression test for gh-11462
         prev_res = np.array([[-1.95266667, 0.898],
@@ -305,8 +305,9 @@ class TestKMean(object):
         centers = np.vstack([5 * np.ones(n_dim),
                              -5 * np.ones(n_dim)])
         np.random.seed(42)
-        data = np.vstack([np.random.multivariate_normal(centers[0], np.eye(n_dim), size=size),
-                          np.random.multivariate_normal(centers[1], np.eye(n_dim), size=size)])
-        # 20x100 dataset
+        data = np.vstack([
+            np.random.multivariate_normal(centers[0], np.eye(n_dim), size=size),
+            np.random.multivariate_normal(centers[1], np.eye(n_dim), size=size)
+        ])
         res, _ = kmeans2(data, 2, minit='++')
         assert_array_almost_equal(res, centers, decimal=0)
