@@ -114,8 +114,8 @@ def quadratic_assignment(
            matching," PLOS one, vol. 10, no. 4, p. e0121002, 2015.
 
     .. [2] D. Fishkind, S. Adali, H. Patsolic, L. Meng, D. Singh, V. Lyzinski,
-           C. Priebe, Seeded graph matching, Pattern Recognit. 87 (2019)
-           203–215
+           C. Priebe, "Seeded graph matching", Pattern Recognit. 87 (2019):
+           203–215.
 
     Examples
     --------
@@ -127,8 +127,8 @@ def quadratic_assignment(
     >>> res = quadratic_assignment(cost,dist)
     >>> print(res)
      col_ind: array([0, 3, 2, 1])
-     nit: 9
-   score: 3260
+         nit: 9
+       score: 3260
 
     To demonstrate explicitly how the `score` value
     :math:`f(P) = trace(A^T PBP^T )` is calculated, one may construct the
@@ -139,7 +139,7 @@ def quadratic_assignment(
     >>> P[np.arange(n),res['col_ind']] = 1
     >>> score = int(np.trace(cost.T @ P @ dist @ P.T))
     >>> print(score)
-        3260
+    3260
 
     As you can see, the value here matches res['score'] reported above.
     Alternatively, to avoid constructing the permutation matrix, one can also
@@ -147,7 +147,7 @@ def quadratic_assignment(
 
     >>> score = np.trace(cost.T @ dist[np.ix_(res['col_ind'], res['col_ind'])])
     >>> print(score)
-        3260
+    3260
 
     Here, we are simply permuting the distance matrix.
 
