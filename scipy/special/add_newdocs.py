@@ -404,13 +404,10 @@ add_newdoc("airye",
     function quickly underflows for large values, whereas the exponentially
     scaled function does not.
     
-    >>> f, ax = plt.subplots(2, 1, sharex=True)
-    >>> for ind, data in enumerate([[Ai, eAi, ["Ai", "eAi"]],
-    ...                             [Aip, eAip, ["Aip", "eAip"]]]):
-    ...     ax[ind].plot(z, data[0], "-r", z, data[1], "-b")
-    ...     ax[ind].legend(data[2])
-    ...     ax[ind].grid(True)
-    >>> plt.show()       
+    >>> airy(200)
+    (0.0, 0.0, nan, nan)
+    >>> airye(200)
+    (0.07501041684381093, -1.0609012305109042, 0.15003188417418148, 2.1215836725571093)
     
     """)
 
