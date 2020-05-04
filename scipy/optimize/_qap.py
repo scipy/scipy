@@ -6,7 +6,7 @@ from . import linear_sum_assignment, minimize_scalar, OptimizeResult
 def quadratic_assignment(
     cost_matrix,
     dist_matrix,
-    seed=np.array([[], []]).T,
+    seed=None,
     maximize=False,
     n_init=1,
     init_method="barycenter",
@@ -38,7 +38,7 @@ def quadratic_assignment(
     dist_matrix : 2d-array, square
         A square adjacency matrix
 
-    seed : 2d-array, optional, (default = np.array([[], []]).T)
+    seed : 2d-array, optional, (default = None)
         Allows the user apply a seed, fixing part of the matching between
         the two adjacency matrices.
         For column 1, each entry is an index of a node in 'cost_matrix'.
@@ -103,7 +103,8 @@ def quadratic_assignment(
             score : float
                 The optimal value of the objective function.
             nit : int
-                The total number of iterations performed in all phases.
+                The total number of Franke-Wolfe iterations performed during
+                optimization.
 
     References
     ----------
@@ -119,14 +120,14 @@ def quadratic_assignment(
     Examples
     --------
 
-    >>> cost = np.array([[0,22,53,53],[22,0,40,62],[53,40,0,55],[53,62,55,0]])
-    >>> dist = np.array([[0,3,0,2],[3,0,0,1],[0,0,0,4],[2,1,4,0]])
+    >>> cost = [[0,80,150,170],[80,0,130,100],[150,130,0,120],[170,100,120,0]]
+    >>> dist = [[0,5,2,7],[0,0,3,8],[0,0,0,3],[0,0,0,0]]
     >>> from scipy.optimize import quadratic_assignment
     >>> res = quadratic_assignment(cost,dist)
     >>> print(res)
-     col_ind: array([2, 3, 0, 1])
-         nit: 30
-       score: 790
+     col_ind: array([0, 3, 2, 1])
+     nit: 9
+   score: 3260
 
     To demonstrate explicitly how the 'score' value
     :math:'f(P) = trace(A^T PBP^T )' is calculated, one may construct the
@@ -137,7 +138,7 @@ def quadratic_assignment(
     >>> P[np.arange(n),res['col_ind']] = 1
     >>> score = int(np.trace(cost.T @ P @ dist @ P.T))
     >>> print(score)
-        790
+        3260
 
     As you can see, the value here matches res['score'] reported above.
     Alternatively, to avoid constructing the permutation matrix, one can also
@@ -145,7 +146,7 @@ def quadratic_assignment(
 
     >>> score = np.trace(cost.T @ dist[np.ix_(res['col_ind'], res['col_ind'])])
     >>> print(score)
-        790
+        3260
 
     Here, we are simply permuting the distance matrix.
 
@@ -153,6 +154,9 @@ def quadratic_assignment(
 
     cost_matrix = np.asarray(cost_matrix)
     dist_matrix = np.asarray(dist_matrix)
+
+    if seed is None:
+        seed = np.array([[], []]).T
     seed = np.asarray(seed)
 
     if cost_matrix.shape[0] != dist_matrix.shape[0]:
@@ -177,25 +181,25 @@ def quadratic_assignment(
         msg = "Seed array entries must be greater than or equal to zero"
         raise ValueError(msg)
     elif not (seed <= (cost_matrix.shape[0] - 1)).all():
-        msg = "Seed array entries must be less than or equal to n-1"
+        msg = "Seed array entries must be less than the number of nodes"
         raise ValueError(msg)
     elif not len(set(seed[:, 0])) == len(seed[:, 0]) or not \
             len(set(seed[:, 1])) == len(seed[:, 1]):
         msg = "Seed column entries must be unique"
         raise ValueError(msg)
-    elif type(n_init) is not int and n_init <= 0:
+    elif type(n_init) is not int or n_init <= 0:
         msg = "'n_init' must be a positive integer"
         raise TypeError(msg)
-    elif not init_method == "barycenter" and not init_method == "rand":
+    elif init_method not in {'barycenter','rand'}:
         msg = "Invalid 'init_method' parameter string"
         raise ValueError(msg)
-    elif max_iter <= 0 and type(max_iter) is not int:
+    elif max_iter <= 0 or type(max_iter) is not int:
         msg = "'max_iter' must be a positive integer"
         raise TypeError(msg)
     elif type(shuffle_input) is not bool:
         msg = "'shuffle_input' must be a boolean"
         raise TypeError(msg)
-    elif eps <= 0 and type(eps) is not float:
+    elif eps <= 0 or type(eps) is not float:
         msg = "'eps' must be a positive float"
         raise TypeError(msg)
     elif type(maximize) is not bool:
@@ -317,7 +321,7 @@ def quadratic_assignment(
         np.transpose(cost_matrix) @ dist_matrix[np.ix_(perm_inds, perm_inds)]
     )
 
-    res = {"col_ind": perm_inds, "score": score, "nit": n_init}
+    res = {"col_ind": perm_inds, "score": score, "nit": n_iter}
 
     return OptimizeResult(res)
 
