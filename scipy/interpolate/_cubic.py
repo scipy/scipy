@@ -117,10 +117,10 @@ class CubicHermiteSpline(PPoly):
 
     See Also
     --------
-    Akima1DInterpolator
-    PchipInterpolator
-    CubicSpline
-    PPoly
+    Akima1DInterpolator : Akima 1D interpolator.
+    PchipInterpolator : PCHIP 1-D monotonic cubic interpolator.
+    CubicSpline : Cubic spline data interpolator.
+    PPoly : Piecewise polynomial in terms of coefficients and breakpoints
 
     Notes
     -----
@@ -185,10 +185,10 @@ class PchipInterpolator(CubicHermiteSpline):
 
     See Also
     --------
-    CubicHermiteSpline
-    Akima1DInterpolator
-    CubicSpline
-    PPoly
+    CubicHermiteSpline : Piecewise-cubic interpolator.
+    Akima1DInterpolator : Akima 1D interpolator.
+    CubicSpline : Cubic spline data interpolator.
+    PPoly : Piecewise polynomial in terms of coefficients and breakpoints.
 
     Notes
     -----
@@ -327,7 +327,7 @@ def pchip_interpolate(xi, yi, x, der=0, axis=0):
 
     See Also
     --------
-    PchipInterpolator
+    PchipInterpolator : PCHIP 1-D monotonic cubic interpolator.
 
     Returns
     -------
@@ -391,9 +391,9 @@ class Akima1DInterpolator(CubicHermiteSpline):
 
     See Also
     --------
-    PchipInterpolator
-    CubicSpline
-    PPoly
+    PchipInterpolator : PCHIP 1-D monotonic cubic interpolator.
+    CubicSpline : Cubic spline data interpolator.
+    PPoly : Piecewise polynomial in terms of coefficients and breakpoints
 
     Notes
     -----
@@ -544,9 +544,9 @@ class CubicSpline(CubicHermiteSpline):
 
     See Also
     --------
-    Akima1DInterpolator
-    PchipInterpolator
-    PPoly
+    Akima1DInterpolator : Akima 1D interpolator.
+    PchipInterpolator : PCHIP 1-D monotonic cubic interpolator.
+    PPoly : Piecewise polynomial in terms of coefficients and breakpoints.
 
     Notes
     -----
