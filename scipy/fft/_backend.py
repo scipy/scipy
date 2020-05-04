@@ -70,7 +70,7 @@ def set_global_backend(backend):
     We can set the global fft backend:
 
     >>> from scipy.fft import fft, set_global_backend
-    >>> set_global_backend("scipy")  # Sets global backend
+    >>> set_global_backend("scipy")  # Sets global backend. "scipy" is the default backend.
     >>> fft([1])  # Calls the global backend
     array([1.+0.j])
     """
@@ -102,7 +102,7 @@ def register_backend(backend):
 
     >>> from scipy.fft import fft, register_backend
     >>> register_backend("scipy")  # Register a new backend
-    >>> fft([1])  # Calls the global backend first, and then use the new one
+    >>> fft([1])  # Calls the global backend first, then use the new one if it failed
     array([1.+0.j])
     """
     backend = _backend_from_arg(backend)
