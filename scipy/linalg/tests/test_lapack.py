@@ -587,29 +587,29 @@ class TestTbtrs(object):
     @pytest.mark.parametrize('diag', ['N', 'U'])
     def test_random_matrices(self, dtype, trans, uplo, diag):
         seed(1724)
-        # lda, ldb, nrhs, kd are used to specify A and b.
-        # A is of shape lda x ldb with kd super/sub-diagonals
-        # b is of shape ldb x nrhs matrix
-        lda, ldb, nrhs, kd = 4, 4, 3, 2
+        # n, nrhs, kd are used to specify A and b.
+        # A is of shape n x n with kd super/sub-diagonals
+        # b is of shape n x nrhs matrix
+        n, nrhs, kd = 4, 3, 2
         ldab = kd + 1
         tbtrs = get_lapack_funcs('tbtrs', dtype=dtype)
 
         # Construct the diagonal and kd super/sub diagonals of A with
         # the corresponding offsets.
-        band_widths = range(lda, lda - kd - 1, -1)
+        band_widths = range(n, n - kd - 1, -1)
         band_offsets = np.arange(ldab) if uplo == 'U' else np.arange(ldab) * -1
         bands = [generate_random_dtype_array((width,), dtype)
                  for width in band_widths]
 
         if diag == 'U':  # A must be unit triangular
-            bands[0] = np.ones(lda, dtype=dtype)
+            bands[0] = np.ones(n, dtype=dtype)
 
         # Construct the diagonal banded matrix A from the bands and offsets.
         a = sps.diags(bands, band_offsets, format='dia')
         ab = _to_symmetric_banded(a.toarray(), uplo, kd)
 
         # The RHS values.
-        b = generate_random_dtype_array((ldb, nrhs), dtype)
+        b = generate_random_dtype_array((n, nrhs), dtype)
 
         x, info = tbtrs(ab=ab, b=b, uplo=uplo, trans=trans, diag=diag)
         assert_equal(info, 0)
