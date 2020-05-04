@@ -391,6 +391,23 @@ def krogh_interpolate(xi, yi, x, der=0, axis=0):
     process. If you want to evaluate it repeatedly consider using the class
     KroghInterpolator (which is what this function uses).
 
+    Examples
+    --------
+    We can interpolate 2D observed data using krogh interpolation:
+
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.interpolate import krogh_interpolate
+    >>> x_observed = [9, 28, 38, 58, 88, 98, 108, 118, 148, 158, 168, 178,
+    ...             188, 198, 208, 218, 228, 238, 278, 288, 298]
+    >>> y_observed = [41, 80, 112, 294, 286, 110, 59, 70, 104, 59, 59, 72,
+    ...             87, 99, 64, 60, 74, 151, 157, 57, 83]
+    >>> x = np.linspace(min(x_observed), max(x_observed), num=100)
+    >>> y = krogh_interpolate(x_observed, y_observed, x)
+    >>> plt.plot(x_observed, y_observed, "o", label="observation")
+    >>> plt.plot(x, y, label="krogh interpolation")
+    >>> plt.legend()
+    >>> plt.show()
+
     """
     P = KroghInterpolator(xi, yi, axis=axis)
     if der == 0:
@@ -675,6 +692,23 @@ def barycentric_interpolate(xi, yi, x, axis=0):
     If you want to call this many times with the same xi (but possibly
     varying yi or x) you should use the class `BarycentricInterpolator`.
     This is what this function uses internally.
+
+    Examples
+    --------
+    We can interpolate 2D observed data using barycentric interpolation:
+
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.interpolate import barycentric_interpolate
+    >>> x_observed = [9, 28, 38, 58, 88, 98, 108, 118, 148, 158, 168, 178,
+    ...             188, 198, 208, 218, 228, 238, 278, 288, 298]
+    >>> y_observed = [41, 80, 112, 294, 286, 110, 59, 70, 104, 59, 59, 72,
+    ...             87, 99, 64, 60, 74, 151, 157, 57, 83]
+    >>> x = np.linspace(min(x_observed), max(x_observed), num=100)
+    >>> y = barycentric_interpolate(x_observed, y_observed, x)
+    >>> plt.plot(x_observed, y_observed, "o", label="observation")
+    >>> plt.plot(x, y, label="barycentric interpolation")
+    >>> plt.legend()
+    >>> plt.show()
 
     """
     return BarycentricInterpolator(xi, yi, axis=axis)(x)
