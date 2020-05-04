@@ -41,11 +41,11 @@ def quadratic_assignment(
     seed : 2d-array, optional, (default = None)
         Allows the user apply a seed, fixing part of the matching between
         the two adjacency matrices.
-        For column 1, each entry is an index of a node in 'cost_matrix'.
-        For column 2, each entry is an index of a node in 'dist_matrix'.
-        The elements of 'seed[:, 0]' and 'seed_dist[:,1]' are vertices which
-        are known to be matched, that is, 'seed[i, 0]' is matched to
-        vertex 'seed[i, 1]'. Array shape (m , 2) where m <= number of nodes
+        For column 1, each entry is an index of a node in `cost_matrix`.
+        For column 2, each entry is an index of a node in `dist_matrix`.
+        The elements of ``seed[:, 0]`` and ``seed[:,1]`` are vertices
+        which are known to be matched, that is, `seed[i, 0]` is matched to
+        vertex `seed[i, 1]`. Array shape (m , 2) where m <= number of nodes
 
     maximize : bool (default = False)
         Gives users the option to solve the Graph Matching Problem (GMP)
@@ -71,10 +71,10 @@ def quadratic_assignment(
                 more accurate result at the cost of higher runtime.
                 The initial position chosen:
                 "barycenter" : the non-informative "flat doubly stochastic
-                matrix,":math:'J=1*1^T /n' , i.e the barycenter of the
+                matrix,":math:`J=1*1^T /n` , i.e the barycenter of the
                 feasible region (where n is the number of nodes and '1' is
                 a (n, 1) array of ones)
-                "rand" : some random point near :math:'J, (J+K)/2', where K
+                "rand" : some random point near :math:`J, (J+K)/2`, where K
                 is some random doubly stochastic matrix
             max_iter : int, positive (default = 30)
                 Integer specifying the max number of Franke-Wolfe iterations.
@@ -82,13 +82,13 @@ def quadratic_assignment(
             shuffle_input : bool (default = True)
                 To avoid artificially high or low matching due to inherent
                 sorting of input adjacency matrices, gives users the option
-                to shuffle the nodes of 'cost_matrix'. Results are then
-                unshuffled so that returned 'col_ind' matches node order
+                to shuffle the nodes of `cost_matrix`. Results are then
+                unshuffled so that returned `col_ind` matches the node order
                 of inputs
             eps : float (default = 0.05)
                 A positive, threshold stopping criteria such that Franke-
                 Wolfe continues to iterate while Frobenius norm of
-                :math:'(P_{i}-P_{i+1}) > eps'
+                :math:`(P_{i}-P_{i+1}) > eps`
 
     Returns
     -------
@@ -99,7 +99,7 @@ def quadratic_assignment(
                 An array of column indices corresponding to the optimal
                 permutation (with the fixed seeds given) of the
                 nodes of B, to best minimize the objective function
-                :math:'f(P) = trace(A^T PBP^T)'.
+                :math:`f(P) = trace(A^T PBP^T)`.
             score : float
                 The optimal value of the objective function.
             nit : int
@@ -120,8 +120,9 @@ def quadratic_assignment(
     Examples
     --------
 
-    >>> cost = [[0,80,150,170],[80,0,130,100],[150,130,0,120],[170,100,120,0]]
-    >>> dist = [[0,5,2,7],[0,0,3,8],[0,0,0,3],[0,0,0,0]]
+    >>> cost = np.array([[0,80,150,170],[80,0,130,100],
+    >>> [150,130,0,120],[170,100,120,0]])
+    >>> dist = np.array([[0,5,2,7],[0,0,3,8],[0,0,0,3],[0,0,0,0]])
     >>> from scipy.optimize import quadratic_assignment
     >>> res = quadratic_assignment(cost,dist)
     >>> print(res)
@@ -129,8 +130,8 @@ def quadratic_assignment(
      nit: 9
    score: 3260
 
-    To demonstrate explicitly how the 'score' value
-    :math:'f(P) = trace(A^T PBP^T )' is calculated, one may construct the
+    To demonstrate explicitly how the `score` value
+    :math:`f(P) = trace(A^T PBP^T )` is calculated, one may construct the
     permutation matrix, and perform the necessary algebra.
 
     >>> n = cost.shape[0]
@@ -159,51 +160,45 @@ def quadratic_assignment(
         seed = np.array([[], []]).T
     seed = np.asarray(seed)
 
+    # ValueError check
+    msg = None
     if cost_matrix.shape[0] != dist_matrix.shape[0]:
         msg = "Adjacency matrices must be of equal size"
-        raise ValueError(msg)
     elif (
         cost_matrix.shape[0] != cost_matrix.shape[1]
         or dist_matrix.shape[0] != dist_matrix.shape[1]
     ):
         msg = "Adjacency matrix entries must be square"
-        raise ValueError(msg)
     elif not (cost_matrix >= 0).all() or not (dist_matrix >= 0).all():
         msg = "Adjacency matrix entries must be greater than or equal to zero"
-        raise ValueError(msg)
     elif seed.shape[0] > cost_matrix.shape[0]:
         msg = "There cannot be more seeds than there are nodes"
-        raise ValueError(msg)
     elif seed.shape[1] != 2:
         msg = "Seed array entry must have two columns"
-        raise ValueError(msg)
     elif not (seed >= 0).all():
         msg = "Seed array entries must be greater than or equal to zero"
-        raise ValueError(msg)
     elif not (seed <= (cost_matrix.shape[0] - 1)).all():
         msg = "Seed array entries must be less than the number of nodes"
-        raise ValueError(msg)
     elif not len(set(seed[:, 0])) == len(seed[:, 0]) or not \
             len(set(seed[:, 1])) == len(seed[:, 1]):
         msg = "Seed column entries must be unique"
-        raise ValueError(msg)
-    elif type(n_init) is not int or n_init <= 0:
-        msg = "'n_init' must be a positive integer"
-        raise TypeError(msg)
-    elif init_method not in {'barycenter','rand'}:
+    elif init_method not in {'barycenter', 'rand'}:
         msg = "Invalid 'init_method' parameter string"
+    if msg is not None:
         raise ValueError(msg)
+
+    # TypeError check
+    if type(n_init) is not int or n_init <= 0:
+        msg = "'n_init' must be a positive integer"
     elif max_iter <= 0 or type(max_iter) is not int:
         msg = "'max_iter' must be a positive integer"
-        raise TypeError(msg)
     elif type(shuffle_input) is not bool:
         msg = "'shuffle_input' must be a boolean"
-        raise TypeError(msg)
     elif eps <= 0 or type(eps) is not float:
         msg = "'eps' must be a positive float"
-        raise TypeError(msg)
     elif type(maximize) is not bool:
         msg = "'maximize' must be a boolean"
+    if msg is not None:
         raise TypeError(msg)
 
     n = cost_matrix.shape[0]  # number of vertices in graphs
