@@ -383,7 +383,7 @@ def krogh_interpolate(xi, yi, x, der=0, axis=0):
 
     See Also
     --------
-    KroghInterpolator
+    KroghInterpolator : Krogh interpolator
 
     Notes
     -----
@@ -684,7 +684,7 @@ def barycentric_interpolate(xi, yi, x, axis=0):
 
     See Also
     --------
-    BarycentricInterpolator
+    BarycentricInterpolator : Bary centric interpolator
 
     Notes
     -----
