@@ -559,26 +559,28 @@ class TestTbtrs(object):
         # A is of shape n x n with kd super/sub-diagonals
         # b is of shape n x nrhs matrix
         n, nrhs, kd = 4, 3, 2
-        ldab = kd + 1
-        kl, ku = (0, kd) if uplo == 'U' else (kd, 0)
         tbtrs = get_lapack_funcs('tbtrs', dtype=dtype)
+
+        is_upper = (uplo == 'U')
+        ku = kd * is_upper
+        kl = kd - ku
 
         # Construct the diagonal and kd super/sub diagonals of A with
         # the corresponding offsets.
-        band_widths = range(n, n - kd - 1, -1)
-        band_offsets = np.arange(ldab) if uplo == 'U' else np.arange(ldab) * -1
+        band_offsets = range(ku, -kl - 1, -1)
+        band_widths = [n - abs(x) for x in band_offsets]
         bands = [generate_random_dtype_array((width,), dtype)
                  for width in band_widths]
 
         if diag == 'U':  # A must be unit triangular
-            bands[0] = np.ones(n, dtype=dtype)
+            bands[ku] = np.ones(n, dtype=dtype)
 
         # Construct the diagonal banded matrix A from the bands and offsets.
         a = sps.diags(bands, band_offsets, format='dia')
 
         # Convert A into banded storage form
         ab = np.zeros((kd + 1, n), dtype)
-        for row, k in enumerate(range(ku, -kl - 1, -1)):
+        for row, k in enumerate(band_offsets):
             ab[row, max(k, 0):min(n+k, n)] = a.diagonal(k)
 
         # The RHS values.
