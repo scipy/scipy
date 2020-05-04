@@ -184,7 +184,6 @@ class SphericalVoronoi:
         # test degenerate input
         self._rank = np.linalg.matrix_rank(self.points - self.points[0],
                                            tol=threshold * self.radius)
-        print(self._rank, self._dim)
         if self._rank < self._dim:
             raise ValueError("Rank of input points must be at least {0}".format(self._dim))
 
