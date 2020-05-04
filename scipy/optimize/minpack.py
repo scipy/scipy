@@ -580,7 +580,7 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         `sigma` by a constant factor. This constant is set by demanding that the
         reduced `chisq` for the optimal parameters `popt` when using the
         *scaled* `sigma` equals unity. In other words, `sigma` is scaled to
-        match the sample variance of the residuals after the fit. Default is False
+        match the sample variance of the residuals after the fit. Default is False.
         Mathematically,
         ``pcov(absolute_sigma=False) = pcov(absolute_sigma=True) * chisq(popt)/(M-N)``
     check_finite : bool, optional
