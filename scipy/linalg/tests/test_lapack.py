@@ -697,19 +697,24 @@ class TestGbsvx:
     def test_random_non_equilibrated(self, dtype, fact, trans):
         seed(1724)
         atol = 100 * np.finfo(dtype).eps
-        m, n, nrhs = 6, 6, 4
+        n, nrhs, kl, ku = 6, 4, 2, 1
         kl, ku = 2, 1
         gbsvx = get_lapack_funcs('gbsvx', dtype=dtype)
 
+        # Construct the diagonal banded matrix A from the bands and offsets.
+        band_offsets = range(ku, -kl - 1, -1)
+        widths = [n - abs(x) for x in band_offsets]
+        bands = [generate_random_dtype_array((w,), dtype) for w in widths]
+
         # Generate ``A``, ``x`` s.t. Ax = b is a linear system of equations
-        A = generate_random_dtype_array((m, n), dtype)
+        A = sps.diags(bands, band_offsets, format='dia').toarray()
         x = generate_random_dtype_array((n, nrhs), dtype)
         b = A @ x
 
         # Convert the matrix A into banded storage
-        A = np.triu(np.tril(A, k=ku), k=-kl)
-        A = sps.dia_matrix(A)
-        ab = np.flipud(A.data)
+        ab = np.zeros((kl + ku + 1, n), dtype)
+        for row, k in enumerate(band_offsets):
+            ab[row, max(k, 0):min(n + k, n)] = A.diagonal(k)
 
         actual = self.Actual(*gbsvx(kl, ku, ab, b, fact, trans))
 
@@ -740,13 +745,17 @@ class TestGbsvx:
     def test_random_equilibrated(self, dtype, equed, trans):
         seed(1724)
         atol = 100 * np.finfo(dtype).eps
-        m, n, nrhs = 6, 6, 4
-        kl, ku = 2, 1
+        n, nrhs, kl, ku = 6, 4, 2, 1
         funcs = 'gbsvx', 'gbtrf', 'geequb'
         gbsvx, gbtrf, geequb = get_lapack_funcs(funcs, dtype=dtype)
 
+        # Construct the diagonal banded matrix A from the bands and offsets.
+        band_offsets = range(ku, -kl - 1, -1)
+        widths = [n - abs(x) for x in band_offsets]
+        bands = [generate_random_dtype_array((w,), dtype) for w in widths]
+
         # Generate ``A``, ``x`` s.t. Ax = b is a linear system of equations
-        A = generate_random_dtype_array((m, n), dtype)
+        A = sps.diags(bands, band_offsets, format='dia').toarray()
         x = generate_random_dtype_array((n, nrhs), dtype)
         b = A @ x
 
@@ -761,13 +770,13 @@ class TestGbsvx:
             A = A @ np.diag(c)
 
         # Convert the matrix A into banded storage
-        A = np.triu(np.tril(A, k=ku), k=-kl)
-        A = sps.dia_matrix(A)
-        ab = np.flipud(A.data)
+        ab = np.zeros((kl + ku + 1, n), dtype)
+        for row, k in enumerate(band_offsets):
+            ab[row, max(k, 0):min(n + k, n)] = A.diagonal(k)
 
         # Generate the lu factorization using gbtrf
         afb = np.zeros((2*kl+ku+1, n), dtype=dtype)
-        afb[kl:] = np.flipud(A.data)
+        afb[kl:] = ab
         afb, ipiv, info = gbtrf(afb, kl, ku)
 
         result = gbsvx(kl, ku, ab, b, 2, trans, afb, ipiv, equed, r, c)
