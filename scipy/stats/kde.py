@@ -238,8 +238,19 @@ class gaussian_kde(object):
                     self.d)
                 raise ValueError(msg)
 
-        result = gaussian_kernel_estimate(self.dataset.T, self.weights[:, None], points.T,
-                                          self.inv_cov)
+        output_dtype = np.common_type(self.covariance, points)
+        itemsize = np.dtype(output_dtype).itemsize
+        if itemsize == 4:
+            spec = 'float'
+        elif itemsize == 8:
+            spec = 'double'
+        elif itemsize in (12, 16):
+            spec = 'long double'
+        else:
+            raise TypeError('%s has unexpected item size %d' %
+                            (output_dtype, itemsize))
+        result = gaussian_kernel_estimate[spec](self.dataset.T, self.weights[:, None],
+                                                points.T, self.inv_cov, output_dtype)
         return result[:, 0]
 
     __call__ = evaluate

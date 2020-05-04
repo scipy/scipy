@@ -516,13 +516,12 @@ cdef double _geninvgauss_pdf(double x, void *user_data) nogil except *:
 ctypedef fused real:
     float
     double
-    int
-    long
+    long double
 
 
 @cython.wraparound(False)
 @cython.boundscheck(False)
-def gaussian_kernel_estimate(points, real[:, :] values, xi, precision):
+def gaussian_kernel_estimate(points, values, xi, precision, dtype, real _=0):
     """
     def gaussian_kernel_estimate(points, real[:, :] values, xi, precision)
 
@@ -545,13 +544,15 @@ def gaussian_kernel_estimate(points, real[:, :] values, xi, precision):
         Multivariate Gaussian kernel estimate evaluated at the input coordinates.
     """
     cdef:
-        double[:, :] points_, xi_, estimate, whitening
+        real[:, :] points_, xi_, values_, estimate, whitening
         int i, j, k
-        int n = points.shape[0]
-        int d = points.shape[1]
-        int p = values.shape[1]
-        int m = xi.shape[0]
-        double arg, residual, norm
+        int n, d, m, p
+        real arg, residual, norm
+    
+    n = points.shape[0]
+    d = points.shape[1]
+    m = xi.shape[0]
+    p = values.shape[1]
 
     if xi.shape[1] != d:
         raise ValueError("points and xi must have same trailing dim")
@@ -559,17 +560,18 @@ def gaussian_kernel_estimate(points, real[:, :] values, xi, precision):
         raise ValueError("precision matrix must match data dims")
 
     # Rescale the data
-    whitening = np.linalg.cholesky(precision)
-    points_ = np.dot(points, whitening).astype(np.float64, copy=False)
-    xi_ = np.dot(xi, whitening).astype(np.float64, copy=False)
+    whitening = np.linalg.cholesky(precision).astype(dtype, copy=False)
+    points_ = np.dot(points, whitening).astype(dtype, copy=False)
+    xi_ = np.dot(xi, whitening).astype(dtype, copy=False)
+    values_ = values.astype(dtype, copy=False)
 
     # Evaluate the normalisation
-    norm = (2 * np.pi) ** (- d / 2)
+    norm = (2 * math.M_PI) ** (- d / 2)
     for i in range(d):
         norm *= whitening[i, i]
 
     # Create the result array and evaluate the weighted sum
-    estimate = np.zeros((m, p))
+    estimate = np.zeros((m, p), dtype)
     for i in range(n):
         for j in range(m):
             arg = 0
@@ -579,6 +581,6 @@ def gaussian_kernel_estimate(points, real[:, :] values, xi, precision):
 
             arg = math.exp(-arg / 2) * norm
             for k in range(p):
-                estimate[j, k] += values[i, k] * arg
+                estimate[j, k] += values_[i, k] * arg
 
     return np.asarray(estimate)
