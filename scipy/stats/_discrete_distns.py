@@ -669,8 +669,6 @@ class pbinom_gen(rv_discrete):
             name="pbinom", longname='A Poisson Binomial', a=0, b=len(probs)
             )
         self.probs = probs
-        self._n = self.probs.size
-        self._omega = 2 * np.pi / (self._n + 1)
         self._pmf_list = self._get_pmf_xi()
         self._cdf_list = self._get_cdf(self._pmf_list)
 
@@ -744,7 +742,7 @@ class pbinom_gen(rv_discrete):
         return array
 
     def _get_support(self):
-        return self.a, self._n
+        return self.a, self.probs.size
 
     def _pmf(self, x):
         return self._pmf_list[x]
@@ -810,9 +808,10 @@ class pbinom_gen(rv_discrete):
         :param event_probabilities: array of single event probabilities
         :type event_probabilities: numpy.array
         """
-        cdf = np.empty(self._n + 1)
+        n = self.probs.size
+        cdf = np.empty(n + 1)
         cdf[0] = event_probabilities[0]
-        for i in range(1, self._n + 1):
+        for i in range(1, n + 1):
             cdf[i] = cdf[i - 1] + event_probabilities[i]
         return cdf
 
@@ -822,17 +821,18 @@ class pbinom_gen(rv_discrete):
         The components ``xi`` make up the probability mass function, i.e.
         :math:`\\xi(k) = pmf(k) = Pr(X = k)`.
         """
-        chi = np.empty(self._n + 1, dtype=complex)
+        n = self.probs.size
+        chi = np.empty(n + 1, dtype=complex)
         chi[0] = 1
         half_n = int(
-            self._n / 2 + self._n % 2)
+            n / 2 + n % 2)
         # set first half of chis:
         chi[1:half_n + 1] = self._get_chi(
             np.arange(1, half_n + 1))
         # set second half of chis:
-        chi[half_n + 1:self._n + 1] = np.conjugate(
-            chi[1:self._n - half_n + 1][::-1])
-        chi /= self._n + 1
+        chi[half_n + 1:n + 1] = np.conjugate(
+            chi[1:n - half_n + 1][::-1])
+        chi /= n + 1
         xi = np.fft.fft(chi)
         if np.all(xi.imag <= self.eps):
             xi = xi.real
@@ -849,7 +849,8 @@ class pbinom_gen(rv_discrete):
         :type idx_array: numpy.array
         """
         # get_z:
-        exp_value = np.exp(self._omega * idx_array * 1j)
+        _omega = 2 * np.pi / (self.probs.size + 1)
+        exp_value = np.exp(_omega * idx_array * 1j)
         xy = 1 - self.probs + self.probs * exp_value[:, np.newaxis]
         # sum over the principal values of the arguments of z:
         argz_sum = np.arctan2(xy.imag, xy.real).sum(axis=1)
