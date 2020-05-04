@@ -743,6 +743,9 @@ class pbinom_gen(rv_discrete):
         array = array.reshape(self._size)
         return array
 
+    def _get_support(self):
+        return self.a, self._n
+
     def _pmf(self, x):
         return self._pmf_list[x]
 
