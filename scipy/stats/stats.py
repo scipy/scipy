@@ -6426,6 +6426,21 @@ def ranksums(x, y):
     ----------
     .. [1] https://en.wikipedia.org/wiki/Wilcoxon_rank-sum_test
 
+    Examples
+    --------
+    We can test the hypothesis that two independent unequal-sized samples are
+    drawn from the same distribution with computing the Wilcoxon rank-sum
+    statistic.
+
+    >>> from scipy.stats import ranksums
+    >>> sample1 = np.random.uniform(-1, 1, 200)
+    >>> sample2 = np.random.uniform(-0.5, 1.5, 300) # a shifted distribution
+    >>> ranksums(sample1, sample2)
+    RanksumsResult(statistic=-7.887059, pvalue=3.09390448e-15)  # may vary
+
+    The p-value of less than ``0.05`` indicates that this test rejects the
+    hypothesis at the 5% significance level.
+
     """
     x, y = map(np.asarray, (x, y))
     n1 = len(x)

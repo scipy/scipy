@@ -74,7 +74,8 @@ compile binaries without having to pay attention to ABI, i.e.,
     ABI compatibility = API compatibility
 
 Cython API backward/forward compatibility will be handled with a
-similar deprecation/removal policy as for the Python API.
+similar deprecation/removal policy as for the Python API, see
+:ref:`deprecations`.
 
 
 Implementing ABI stability in SciPy
@@ -120,3 +121,42 @@ necessary to maintain the ABI stability aim above:
   public API.  The interface declarations should not contain any
   declarations of struct members.  Allocation, freeing, and attribute
   access of data structures should be done with functions.
+
+
+.. _deprecating-public-cython-api:
+
+Deprecating public Cython APIs
+------------------------------
+
+To deprecate a public Cython API function, for example::
+
+    # scipy/something/foo.pxd
+    cdef public int somefunc()
+
+    # scipy/something/foo.pyx
+    cdef public int somefunc():
+        return 42
+
+you can add use the ``scipy._lib.deprecation.deprecate_cython_api``
+function to do the deprecations at the end of the corresponding
+``.pyx`` file::
+
+    # scipy/something/foo.pyx
+    cdef public int somefunc():
+        return 42
+
+    from scipy._lib.deprecation import deprecate_cython_api
+    import scipy.something.foo as mod
+    deprecate_cython_api(mod, "somefunc", new_name="scipy.something.newfunc",
+                         message="Deprecated in Scipy 1.5.0")
+    del deprecate_cython_api, mod
+
+After this, Cython modules that ``cimport somefunc``, will emit a
+`DeprecationWarning` at import time.
+
+There is no way to deprecate Cython data structures and types.  They
+can be however removed after all functions using them in the API are
+removed, having gone through the deprecation cycle.
+
+Whole Cython modules can be deprecated similarly as Python modules, by
+emitting a `DeprecationWarning` on the top-level.

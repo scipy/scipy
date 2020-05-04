@@ -6,7 +6,9 @@ from scipy._build_utils import numpy_nodepr_api
 def configuration(parent_package='',top_path=None):
     from numpy.distutils.misc_util import Configuration
     from scipy._build_utils.system_info import get_info
-    from scipy._build_utils import gfortran_legacy_flag_hook
+    from scipy._build_utils import (gfortran_legacy_flag_hook,
+                                    blas_ilp64_pre_build_hook, combine_dict,
+                                    uses_blas64, get_f2py_int64_options)
 
     config = Configuration('optimize',parent_package, top_path)
 
@@ -46,17 +48,23 @@ def configuration(parent_package='',top_path=None):
                          depends=(rootfind_src + rootfind_hdr),
                          **numpy_nodepr_api)
 
-    lapack = get_info('lapack_opt')
-    if 'define_macros' in numpy_nodepr_api:
-        if ('define_macros' in lapack) and (lapack['define_macros'] is not None):
-            lapack['define_macros'] = (lapack['define_macros'] +
-                                       numpy_nodepr_api['define_macros'])
-        else:
-            lapack['define_macros'] = numpy_nodepr_api['define_macros']
+    if uses_blas64():
+        lapack = get_info('lapack_ilp64_opt')
+        f2py_options = get_f2py_int64_options()
+        pre_build_hook = blas_ilp64_pre_build_hook(lapack)
+    else:
+        lapack = get_info('lapack_opt')
+        f2py_options = None
+        pre_build_hook = None
+
+    lapack = combine_dict(lapack, numpy_nodepr_api)
+
     sources = ['lbfgsb.pyf', 'lbfgsb.f', 'linpack.f', 'timer.f']
-    config.add_extension('_lbfgsb',
-                         sources=[join('lbfgsb_src',x) for x in sources],
-                         **lapack)
+    ext = config.add_extension('_lbfgsb',
+                               sources=[join('lbfgsb_src',x) for x in sources],
+                               f2py_options=f2py_options,
+                               **lapack)
+    ext._pre_build_hook = pre_build_hook
 
     sources = ['moduleTNC.c','tnc.c']
     config.add_extension('moduleTNC',

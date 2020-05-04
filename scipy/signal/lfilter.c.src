@@ -6,11 +6,6 @@
 #define PY_ARRAY_UNIQUE_SYMBOL _scipy_signal_ARRAY_API
 #define NO_IMPORT_ARRAY
 #include <numpy/ndarrayobject.h>
-#include <numpy/npy_3kcompat.h>
-
-#if PY_VERSION_HEX >= 0x03000000
-#define PyNumber_Divide PyNumber_TrueDivide
-#endif
 
 #include "sigtools.h"
 
@@ -697,7 +692,7 @@ static void OBJECT_filt(char *b, char *a, char *x, char *y, char *Z,
             /* Calculate first delay (output) */
             tmp1 = PyNumber_Multiply(*ptr_b, *xn);
             if (tmp1 == NULL) return;
-            tmp2 = PyNumber_Divide(tmp1, *a0);
+            tmp2 = PyNumber_TrueDivide(tmp1, *a0);
             if (tmp2 == NULL) {
                 Py_DECREF(tmp1);
                 return;
@@ -715,7 +710,7 @@ static void OBJECT_filt(char *b, char *a, char *x, char *y, char *Z,
             for (n = 0; n < len_b - 2; n++) {
                 tmp1 = PyNumber_Multiply(*xn, *ptr_b);
                 if (tmp1 == NULL) return;
-                tmp2 = PyNumber_Divide(tmp1, *a0);
+                tmp2 = PyNumber_TrueDivide(tmp1, *a0);
                 if (tmp2 == NULL) {
                     Py_DECREF(tmp1);
                     return;
@@ -729,7 +724,7 @@ static void OBJECT_filt(char *b, char *a, char *x, char *y, char *Z,
                     Py_DECREF(tmp3);
                     return;
                 }
-                tmp2 = PyNumber_Divide(tmp1, *a0);
+                tmp2 = PyNumber_TrueDivide(tmp1, *a0);
                 Py_DECREF(tmp1);
                 if (tmp2 == NULL) {
                     Py_DECREF(tmp3);
@@ -747,7 +742,7 @@ static void OBJECT_filt(char *b, char *a, char *x, char *y, char *Z,
             /* Calculate last delay */
             tmp1 = PyNumber_Multiply(*xn, *ptr_b);
             if (tmp1 == NULL) return;
-            tmp3 = PyNumber_Divide(tmp1, *a0);
+            tmp3 = PyNumber_TrueDivide(tmp1, *a0);
             Py_DECREF(tmp1);
             if (tmp3 == NULL) return;
             tmp1 = PyNumber_Multiply(*yn, *ptr_a);
@@ -755,7 +750,7 @@ static void OBJECT_filt(char *b, char *a, char *x, char *y, char *Z,
                 Py_DECREF(tmp3);
                 return;
             }
-            tmp2 = PyNumber_Divide(tmp1, *a0);
+            tmp2 = PyNumber_TrueDivide(tmp1, *a0);
             Py_DECREF(tmp1);
             if (tmp2 == NULL) {
                 Py_DECREF(tmp3);
@@ -769,7 +764,7 @@ static void OBJECT_filt(char *b, char *a, char *x, char *y, char *Z,
             tmp1 = PyNumber_Multiply(*xn, *ptr_b);
             if (tmp1 == NULL) return;
             Py_XDECREF(*yn);
-            *yn = PyNumber_Divide(tmp1, *a0);
+            *yn = PyNumber_TrueDivide(tmp1, *a0);
             Py_DECREF(tmp1);
             if (*yn == NULL) return;
         }
