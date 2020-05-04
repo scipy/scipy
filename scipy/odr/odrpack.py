@@ -396,7 +396,7 @@ class RealData(Data):
         """ Convert covariance matrix(-ices) to weights.
         """
 
-        from numpy.dual import inv
+        from scipy.linalg import inv
 
         if len(cov.shape) == 2:
             return inv(cov)
