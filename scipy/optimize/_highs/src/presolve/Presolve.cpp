@@ -18,6 +18,7 @@
 
 //#include "simplex/HFactor.h"
 #include <algorithm>
+#include <cassert>
 #include <cmath>
 #include <cstdio>
 #include <iomanip>
@@ -27,6 +28,8 @@
 #include <sstream>
 
 #include "test/KktChStep.h"
+
+namespace presolve {
 
 using std::cout;
 using std::endl;
@@ -41,6 +44,10 @@ using std::ofstream;
 using std::setprecision;
 using std::setw;
 using std::stringstream;
+
+constexpr int iPrint = 0;
+// todo:
+// iKKTcheck = 1;
 
 void Presolve::load(const HighsLp& lp) {
   timer.recordStart(MATRIX_COPY);
@@ -73,16 +80,154 @@ void Presolve::setBasisInfo(
   row_status = pass_row_status;
 }
 
+// printing with cout goes here.
+void reportDev(const string& message) {
+  if (iPrint == 0) return;
+
+  std::cout << message << std::flush;
+  return;
+}
+
+void printMainLoop(const MainLoop& l) {
+  if (iPrint == 0) return;
+
+  std::cout << "    loop : " << l.rows << "," << l.cols << "," << l.nnz << "   "
+            << std::endl;
+}
+
+void printDevStats(const DevStats& stats) {
+  assert(stats.n_loops == stats.loops.size());
+  if (iPrint == 0) return;
+
+  std::cout << "dev-presolve-stats::" << std::endl;
+  std::cout << "  n_loops = " << stats.n_loops << std::endl;
+  std::cout << "    loop : rows, cols, nnz " << std::endl;
+  for (const MainLoop l : stats.loops) printMainLoop(l);
+  return;
+}
+
+void getRowsColsNnz(const std::vector<int>& flagRow,
+                    const std::vector<int>& flagCol,
+                    const std::vector<int>& nzRow,
+                    const std::vector<int>& nzCol, int& _rows, int& _cols,
+                    int& _nnz) {
+  int numCol = flagCol.size();
+  int numRow = flagRow.size();
+  int rows = 0;
+  int cols = 0;
+
+  std::vector<int> nnz_rows(numRow, 0);
+  std::vector<int> nnz_cols(numCol, 0);
+
+  int total_rows = 0;
+  int total_cols = 0;
+
+  for (int i = 0; i < numRow; i++)
+    if (flagRow.at(i)) {
+      rows++;
+      nnz_rows[i] += nzRow[i];
+      total_rows += nzRow[i];
+    }
+
+  for (int j = 0; j < numCol; j++)
+    if (flagCol.at(j)) {
+      cols++;
+      nnz_cols[j] += nzCol[j];
+      total_cols += nzCol[j];
+    }
+
+  // Nonzeros.
+  assert(total_cols == total_rows);
+
+  _rows = rows;
+  _cols = cols;
+  _nnz = total_cols;
+}
+
+void Presolve::reportDevMidMainLoop() {
+  if (iPrint == 0) return;
+
+  int rows = 0;
+  int cols = 0;
+  int nnz = 0;
+  getRowsColsNnz(flagRow, flagCol, nzRow, nzCol, rows, cols, nnz);
+
+  std::cout << "                                             counts " << rows
+            << ",  " << cols << ", " << nnz << std::endl;
+}
+
+void Presolve::reportDevMainLoop() {
+  if (iPrint == 0) return;
+
+  int rows = 0;
+  int cols = 0;
+  int nnz = 0;
+
+  getRowsColsNnz(flagRow, flagCol, nzRow, nzCol, rows, cols, nnz);
+
+  dev_stats.n_loops++;
+  dev_stats.loops.push_back(MainLoop{rows, cols, nnz});
+
+  std::cout << "Starting loop " << dev_stats.n_loops;
+
+  printMainLoop(dev_stats.loops[dev_stats.n_loops - 1]);
+  return;
+}
+
+int Presolve::runPresolvers(const std::vector<Presolver>& order) {
+  //***************** main loop ******************
+
+  checkBoundsAreConsistent();
+  if (status) return status;
+
+  for (Presolver main_loop_presolver : order) {
+    double time_start = timer.timer_.readRunHighsClock();
+    if (iPrint) std::cout << "----> ";
+    auto it = kPresolverNames.find(main_loop_presolver);
+    assert(it != kPresolverNames.end());
+    if (iPrint) std::cout << (*it).second << std::endl;
+
+    switch (main_loop_presolver) {
+      case Presolver::kMainRowSingletons:
+        removeRowSingletons();
+        break;
+      case Presolver::kMainForcing:
+        removeForcingConstraints();
+        break;
+      case Presolver::kMainColSingletons:
+        removeColumnSingletons();
+        break;
+      case Presolver::kMainDoubletonEq:
+        removeDoubletonEquations();
+        break;
+      case Presolver::kMainDominatedCols:
+        removeDominatedColumns();
+        break;
+    }
+
+    double time_end = timer.timer_.readRunHighsClock();
+    if (iPrint)
+      std::cout << (*it).second << " time: " << time_end - time_start
+                << std::endl;
+    reportDevMidMainLoop();
+    if (status) return status;
+  }
+
+  //***************** main loop ******************
+  return status;
+}
+
 int Presolve::presolve(int print) {
-  iPrint = print;
-
-  // iPrint = 1;
-  // iKKTcheck = 1;
-  // chk.print = 1;
-
   if (iPrint > 0) {
     cout << "Presolve started ..." << endl;
     cout << "Original problem ... N=" << numCol << "  M=" << numRow << endl;
+  }
+
+  if (iPrint < 0) {
+    stringstream ss;
+    ss << "dev-presolve: model:      rows, colx, nnz , " << modelName << ":  "
+       << numRow << ",  " << numCol << ",  " << (int)Avalue.size() << std::endl;
+    reportDev(ss.str());
   }
 
   initializeVectors();
@@ -99,40 +244,38 @@ int Presolve::presolve(int print) {
     }
   timer.recordFinish(FIXED_COL);
 
+  std::vector<Presolver> pre_release_order;
+  pre_release_order.push_back(Presolver::kMainRowSingletons);
+  pre_release_order.push_back(Presolver::kMainForcing);
+  pre_release_order.push_back(Presolver::kMainRowSingletons);
+  pre_release_order.push_back(Presolver::kMainDoubletonEq);
+  pre_release_order.push_back(Presolver::kMainRowSingletons);
+  pre_release_order.push_back(Presolver::kMainColSingletons);
+  pre_release_order.push_back(Presolver::kMainDominatedCols);
+
   while (hasChange == 1) {
     hasChange = false;
-    if (iPrint > 0) cout << "PR: main loop " << iter << ":" << endl;
-    //***************** main loop ******************
-    checkBoundsAreConsistent();
+
+    reportDevMainLoop();
+    int run_status = runPresolvers(pre_release_order);
+    assert(run_status == status);
     if (status) return status;
 
-    removeRowSingletons();
-    if (status) return status;
-    removeForcingConstraints(iter);
-    if (status) return status;
+    // todo: next ~~~
+    // Exit check: less than 10 % of what we had before.
 
-    removeRowSingletons();
-    if (status) return status;
-    removeDoubletonEquations();
-    if (status) return status;
-
-    removeRowSingletons();
-    if (status) return status;
-    removeColumnSingletons();
-    if (status) return status;
-
-    removeDominatedColumns();
-    if (status) return status;
-
-    //***************** main loop ******************
     iter++;
   }
+
+  reportDevMainLoop();
 
   timer.recordStart(RESIZE_MATRIX);
   checkForChanges(iter);
   timer.recordFinish(RESIZE_MATRIX);
 
   timer.updateInfo();
+
+  printDevStats(dev_stats);
 
   return status;
 }
@@ -587,6 +730,12 @@ void Presolve::resizeProblem() {
   numCol = nC;
   numTot = nR + nC;
 
+  if (iPrint < 0) {
+    stringstream ss;
+    ss << ",  Reduced : " << numRow << ",  " << numCol << ",  ";
+    reportDev(ss.str());
+  }
+
   if (nR + nC == 0) {
     status = Empty;
     return;
@@ -622,6 +771,13 @@ void Presolve::resizeProblem() {
       }
     }
   }
+
+  if (iPrint < 0) {
+    stringstream ss;
+    ss << Avalue.size() << ", ";
+    reportDev(ss.str());
+  }
+
   // For KKT checker: pass vectors before you trim them
   if (iKKTcheck == 1) {
     chk.setFlags(flagRow, flagCol);
@@ -1679,7 +1835,7 @@ void Presolve::dominatedConstraintProcedure(const int i, const double g,
   }
 }
 
-void Presolve::removeForcingConstraints(int mainIter) {
+void Presolve::removeForcingConstraints() {
   double g, h;
   pair<double, double> implBounds;
 
@@ -1731,8 +1887,6 @@ void Presolve::removeForcingConstraints(int mainIter) {
       }
       timer.recordFinish(FORCING_ROW);
     }
-  if (mainIter) {
-  }  // surpress warning.
 }
 
 void Presolve::removeRowSingletons() {
@@ -3406,3 +3560,5 @@ void Presolve::countRemovedRows(PresolveRule rule) {
 void Presolve::countRemovedCols(PresolveRule rule) {
   timer.increaseCount(false, rule);
 }
+
+}  // namespace presolve

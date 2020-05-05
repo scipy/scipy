@@ -759,7 +759,9 @@ HighsDebugStatus debugCleanup(HighsModelObject& highs_model_object,
 HighsDebugStatus debugFreeListNumEntries(
     const HighsModelObject& highs_model_object, const std::set<int>& freeList) {
   if (highs_model_object.options_.highs_debug_level < HIGHS_DEBUG_LEVEL_CHEAP)
-    printf("FreeList   :   Reporting nonzero free list size\n");
+    HighsPrintMessage(highs_model_object.options_.output,
+                      highs_model_object.options_.message_level, ML_ALWAYS,
+                      "FreeList   :   Reporting nonzero free list size\n");
   //    return HighsDebugStatus::NOT_CHECKED;
 
   int freelist_num_entries = 0;
