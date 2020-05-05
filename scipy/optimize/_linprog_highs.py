@@ -375,8 +375,8 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
     lb = _replace_inf(lb)
     ub = _replace_inf(ub)
 
-    from scipy.optimize._highs.mpswriter import mpswriter
-    mpswriter(b'test.mps', c, A, lhs, rhs, lb, ub, np.array([], dtype=np.int32))
+    #from scipy.optimize._highs.mpswriter import mpswriter
+    #mpswriter(b'test.mps', c, A, lhs, rhs, lb, ub, np.array([], dtype=np.int32))
 
     res = highs_wrapper(c, A.indptr, A.indices, A.data, lhs, rhs,
                         lb, ub, options)
