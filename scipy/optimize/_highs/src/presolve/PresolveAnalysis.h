@@ -132,8 +132,9 @@ class PresolveTimer {
   void updateInfo();
   double getTotalTime() { return total_time_; }
 
- private:
   HighsTimer& timer_;
+
+ private:
   std::vector<PresolveRuleInfo> rules_;
 
   double total_time_ = 0.0;

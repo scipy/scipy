@@ -23,9 +23,8 @@
 // The structure of component is general, of the presolve component - presolve
 // specific.
 
-namespace {}
 struct PresolveComponentData : public HighsComponentData {
-  std::vector<Presolve> presolve_;
+  std::vector<presolve::Presolve> presolve_;
   HighsLp reduced_lp_;
 
   // todo: make reduced one const.
