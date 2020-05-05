@@ -100,7 +100,7 @@ def register_backend(backend):
     --------
     We can register a new fft backend:
 
-    >>> from scipy.fft import fft, register_backend
+    >>> from scipy.fft import fft, register_backend, set_global_backend
     >>> class NoopBackend:  # define an invalid Backend
     ...     __ua_domain__ = "numpy.scipy.fft"
     ...     def __ua_function__(self, func, args, kwargs):
