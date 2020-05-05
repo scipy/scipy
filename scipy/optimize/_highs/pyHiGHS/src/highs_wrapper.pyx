@@ -3,7 +3,6 @@
 
 import logging
 
-from libc.stdio cimport FILE, tmpfile
 from libcpp.memory cimport unique_ptr
 
 from HConst cimport (
@@ -41,11 +40,9 @@ cdef apply_options(dict options, Highs & highs):
     '''Take options from dictionary and apply to HiGHS object.'''
 
     # Send logging to dummy file to get rid of output from stdout
-    cdef FILE * f
     if options.get('message_level', None) == ML_NONE:
-        f = tmpfile()
-        highs.setHighsLogfile(f)
-        highs.setHighsOutput(f)
+        highs.setHighsLogfile(NULL)
+        highs.setHighsOutput(NULL)
 
     # Do all the ints
     for opt in set([
@@ -433,11 +430,15 @@ def highs_wrapper(
     apply_options(options, highs)
 
     # Make a Highs object and pass it everything
+    cdef HighsModelStatus err_model_status = HighsModelStatusNOTSET
     cdef HighsStatus init_status = highs.passModel(lp)
     if init_status != HighsStatusOK:
         if init_status != HighsStatusWarning:
-            logging.warning("Error setting HighsLp");
-            return <int> HighsStatusError
+            err_model_status = HighsModelStatusMODEL_ERROR
+            return {
+                'status': <int> err_model_status,
+                'message': highs.highsModelStatusToString(err_model_status).decode(),
+            }
 
     # Solve the fool thing
     cdef HighsStatus run_status = highs.run()
