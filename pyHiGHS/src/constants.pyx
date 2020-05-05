@@ -1,3 +1,6 @@
+# distutils: language=c++
+# cython: language_level=3
+
 '''Export enum values and constants from HiGHS.'''
 
 from HConst cimport (
