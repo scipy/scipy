@@ -123,9 +123,9 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
         The maximum time in seconds allotted to solve the problem; default is
         unlimited (CONST_INF).
     presolve : bool
-        Presolve attempts to  identify trivial infeasibilities,
+        Presolve attempts to identify trivial infeasibilities,
         identify trivial unboundedness, and simplify the problem before
-        sending the problem to the main solver. It is generally recommended
+        sending it to the main solver. It is generally recommended
         to keep the default setting ``True``; set to ``False`` if presolve is
         to be disabled.
     dual_feasibility_tolerance : double
