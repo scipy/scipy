@@ -107,7 +107,7 @@ def register_backend(backend):
     ...          return NotImplemented
     >>> set_global_backend(NoopBackend())  # set the invalid backend as global
     >>> register_backend("scipy")  # Register a new backend
-    >>> fft([1])  # The registered backend will only be called if the global backend returns `NotImplemented`
+    >>> fft([1])  # The registered backend is called because the global backend returns `NotImplemented`
     array([1.+0.j])
     """
     backend = _backend_from_arg(backend)
