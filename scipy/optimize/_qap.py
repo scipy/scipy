@@ -17,8 +17,8 @@ def quadratic_assignment(
     """
     Solve the quadratic assignment problem
 
-    This class solves the Quadratic Assignment Problem and the Graph
-    Matching Problem (QAP) through an implementation of the Fast
+    This class solves the Quadratic Assignment Problem (QAP) and the
+    Graph Matching Problem through an implementation of the Fast
     Approximate QAP Algorithm (FAQ) (these two problems are the same up
     to a sign change) [1]_.
 
@@ -29,13 +29,18 @@ def quadratic_assignment(
     (known vertex correspondence between some nodes) is also available
     [2]_.
 
+    Note that the quadratic assignment problem is NP-hard, is not
+    known to be solvable in polynomial time, and is computationally
+    intractable. Therefore, the results given are approximations,
+    not guaranteed to be exact solutions.
+
 
     Parameters
     ----------
-    cost_matrix : 2d-array, square
+    cost_matrix : 2d-array, square, non-negative
         A square adjacency matrix
 
-    dist_matrix : 2d-array, square
+    dist_matrix : 2d-array, square, non-negative
         A square adjacency matrix
 
     seed : 2d-array, optional, (default = None)
@@ -98,7 +103,7 @@ def quadratic_assignment(
             col_ind : 1-D array
                 An array of column indices corresponding to the optimal
                 permutation (with the fixed seeds given) of the
-                nodes of B, to best minimize the objective function
+                nodes of `dist_matrix`, to best minimize the objective function
                 :math:`f(P) = trace(A^T PBP^T)`.
             score : float
                 The optimal value of the objective function.
@@ -291,7 +296,7 @@ def quadratic_assignment(
         )  # Project onto the set of permutation matrices
         perm_inds_new = np.concatenate(
             (np.arange(n_seeds), np.array([x + n_seeds for x in col]))
-        )
+        ).astype(int)
 
         score_new = np.trace(
             np.transpose(cost_matrix)
