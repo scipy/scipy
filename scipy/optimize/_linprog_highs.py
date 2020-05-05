@@ -129,10 +129,13 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
         to keep the default setting ``True``; set to ``False`` if presolve is
         to be disabled.
     dual_feasibility_tolerance : double
-        Dual feasibility tolerance.  Default is 1e-07.
+        Dual feasibility tolerance.  Default is 1e-07.  When
+        ``solver='ipm'`` this is interpreted as the optimality
+        tolerance.
     dual_objective_value_upper_bound : double
         Upper bound on objective value for dual simplex:
         algorithm terminates if reached.  Default is ``CONST_INF``.
+        When ``solver='ipm'`` this value is ignored.
     message_level : int {0, 1, 2, 4, 7}
         Verbosity level, corresponds to:
 
@@ -149,7 +152,9 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
         Default is ``MESSAGE_LEVEL_NONE``, but note:
         this option is ignored unless option ``disp`` is ``True``.
     primal_feasibility_tolerance : double
-        Primal feasibility tolerance.  Default is 1e-07.
+        Primal feasibility tolerance.  Default is 1e-07.  When
+        ``solver='ipm'`` this is interpreted as the feasibility
+        tolerance.
     simplex_crash_strategy : int {0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
         Strategy for simplex crash: off / LTSSF / Bixby (0/1/2).
         Default is ``0``.  Corresponds to the following:
@@ -370,8 +375,8 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
     lb = _replace_inf(lb)
     ub = _replace_inf(ub)
 
-    #from scipy.optimize._highs.mpswriter import mpswriter
-    #mpswriter(b'test_enzo_example_c_with_infeasibility.txt', c, A, lhs, rhs, lb, ub, np.array([], dtype=np.int32))
+    from scipy.optimize._highs.mpswriter import mpswriter
+    mpswriter(b'test.mps', c, A, lhs, rhs, lb, ub, np.array([], dtype=np.int32))
 
     res = highs_wrapper(c, A.indptr, A.indices, A.data, lhs, rhs,
                         lb, ub, options)
