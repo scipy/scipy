@@ -1,4 +1,15 @@
 #################
+## Files not
+## needed by
+## scipy
+#################
+app/
+checks/
+examples/
+src/interfaces/
+!/src/interfaces/highs_c_api.*
+
+#################
 ## Eclipse
 #################
 

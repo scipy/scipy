@@ -747,3 +747,4 @@ int Highs_getNumNz(void* highs  //!< HiGHS object reference
 #endif
 
 #endif
+

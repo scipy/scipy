@@ -503,3 +503,4 @@ int Highs_getNumNz(void* highs) {
   if (numCol <= 0) return 0;
   return ((Highs*)highs)->getLp().Astart_[numCol];
 }
+
