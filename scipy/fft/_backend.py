@@ -101,14 +101,16 @@ def register_backend(backend):
     We can register a new fft backend:
 
     >>> from scipy.fft import fft, register_backend, set_global_backend
-    >>> class NoopBackend:  # define an invalid Backend
+    >>> class NoopBackend:  # Define an invalid Backend
     ...     __ua_domain__ = "numpy.scipy.fft"
     ...     def __ua_function__(self, func, args, kwargs):
     ...          return NotImplemented
-    >>> set_global_backend(NoopBackend())  # set the invalid backend as global
+    >>> set_global_backend(NoopBackend())  # Set the invalid backend as global
     >>> register_backend("scipy")  # Register a new backend
     >>> fft([1])  # The registered backend is called because the global backend returns `NotImplemented`
     array([1.+0.j])
+    >>> set_global_backend("scipy")  # Restore global backend to default
+
     """
     backend = _backend_from_arg(backend)
     ua.register_backend(backend)
