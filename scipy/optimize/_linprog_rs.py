@@ -333,7 +333,7 @@ def _phase_two(c, A, x, b, callback, postsolve_args, maxiter, tol, disp,
     else:
         B = LU(A, b)
 
-    for iteration in range(iteration, iteration + maxiter):
+    while iteration < maxiter:
 
         if disp or callback is not None:
             if phase_one_n is not None:
@@ -394,8 +394,11 @@ def _phase_two(c, A, x, b, callback, postsolve_args, maxiter, tol, disp,
         x[b] = x[b] - th_star*u     # take step
         x[j] = th_star
         B.update(ab[i][l], j)       # modify basis
-        b = B.b                     # similar to b[ab[i][l]] = j
-    else:
+        b = B.b                     # similar to b[ab[i][l]] =
+
+        iteration += 1
+
+    if iteration == maxiter:
         status = 1
 
     return x, b, status, iteration

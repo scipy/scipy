@@ -1,0 +1,8 @@
+prune /
+include CMakeLists.txt
+include PYREADME.rst
+include LICENSE
+global-include *.pxd *.pyx
+graft src/
+graft external/
+global-exclude *~ *.pyc \#*\#
