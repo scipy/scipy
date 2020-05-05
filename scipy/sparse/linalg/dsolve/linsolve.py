@@ -319,6 +319,11 @@ def splu(A, permc_spec=None, diag_pivot_thresh=None,
                     PanelSize=panel_size, Relax=relax)
     if options is not None:
         _options.update(options)
+
+    # Ensure that no column permutations are applied
+    if (_options["ColPerm"] == "NATURAL"):
+        _options["SymmetricMode"] = True
+
     return _superlu.gstrf(N, A.nnz, A.data, A.indices, A.indptr,
                           csc_construct_func=csc_construct_func,
                           ilu=False, options=_options)
@@ -405,6 +410,11 @@ def spilu(A, drop_tol=None, fill_factor=None, drop_rule=None, permc_spec=None,
                     PanelSize=panel_size, Relax=relax)
     if options is not None:
         _options.update(options)
+
+    # Ensure that no column permutations are applied
+    if (_options["ColPerm"] == "NATURAL"):
+        _options["SymmetricMode"] = True
+
     return _superlu.gstrf(N, A.nnz, A.data, A.indices, A.indptr,
                           csc_construct_func=csc_construct_func,
                           ilu=True, options=_options)

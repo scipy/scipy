@@ -5,7 +5,7 @@ from scipy.special._mptestutils import mp_assert_allclose
 from scipy.special._precompute.utils import lagrange_inversion
 
 try:
-    import sympy
+    import sympy  # type: ignore[import]
 except ImportError:
     sympy = MissingModule('sympy')
 

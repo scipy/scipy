@@ -18,9 +18,9 @@ from .common_tests import check_named_results
 # Matplotlib is not a scipy dependency but is optionally used in probplot, so
 # check if it's available
 try:
-    import matplotlib
+    import matplotlib  # type: ignore[import]
     matplotlib.rcParams['backend'] = 'Agg'
-    import matplotlib.pyplot as plt
+    import matplotlib.pyplot as plt  # type: ignore[import]
     have_matplotlib = True
 except Exception:
     have_matplotlib = False
@@ -202,11 +202,8 @@ class TestAnderson(object):
         x2 = rs.standard_normal(size=50)
         A, crit, sig = stats.anderson(x1, 'expon')
         assert_array_less(A, crit[-2:])
-        olderr = np.seterr(all='ignore')
-        try:
+        with np.errstate(all='ignore'):
             A, crit, sig = stats.anderson(x2, 'expon')
-        finally:
-            np.seterr(**olderr)
         assert_(A > crit[-1])
 
     def test_gumbel(self):

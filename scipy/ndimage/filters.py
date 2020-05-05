@@ -32,6 +32,7 @@ from collections.abc import Iterable
 import warnings
 import numpy
 import operator
+from numpy.core.multiarray import normalize_axis_index
 from . import _ni_support
 from . import _nd_image
 from . import _ni_docstrings
@@ -84,7 +85,7 @@ def correlate1d(input, weights, axis=-1, output=None, mode="reflect",
         raise RuntimeError('no filter weights given')
     if not weights.flags.contiguous:
         weights = weights.copy()
-    axis = _ni_support._check_axis(axis, input.ndim)
+    axis = normalize_axis_index(axis, input.ndim)
     if _invalid_origin(origin, len(weights)):
         raise ValueError('Invalid origin; origin must satisfy '
                          '-(len(weights) // 2) <= origin <= '
@@ -329,7 +330,7 @@ def prewitt(input, axis=-1, output=None, mode="reflect", cval=0.0):
     >>> plt.show()
     """
     input = numpy.asarray(input)
-    axis = _ni_support._check_axis(axis, input.ndim)
+    axis = normalize_axis_index(axis, input.ndim)
     output = _ni_support._get_output(output, input)
     modes = _ni_support._normalize_sequence(mode, input.ndim)
     correlate1d(input, [-1, 0, 1], axis, output, modes[axis], cval, 0)
@@ -366,7 +367,7 @@ def sobel(input, axis=-1, output=None, mode="reflect", cval=0.0):
     >>> plt.show()
     """
     input = numpy.asarray(input)
-    axis = _ni_support._check_axis(axis, input.ndim)
+    axis = normalize_axis_index(axis, input.ndim)
     output = _ni_support._get_output(output, input)
     modes = _ni_support._normalize_sequence(mode, input.ndim)
     correlate1d(input, [-1, 0, 1], axis, output, modes[axis], cval, 0)
@@ -617,10 +618,18 @@ def _correlate_or_convolve(input, weights, output, mode, cval, origin,
     if not weights.flags.contiguous:
         weights = weights.copy()
     output = _ni_support._get_output(output, input)
+    temp_needed = numpy.shares_memory(input, output)
+    if temp_needed:
+        # input and output arrays cannot share memory
+        temp = output
+        output = _ni_support._get_output(output.dtype, input)
     if not isinstance(mode, str) and isinstance(mode, Iterable):
         raise RuntimeError("A sequence of modes is not supported")
     mode = _ni_support._extend_mode_to_code(mode)
     _nd_image.correlate(input, weights, output, mode, cval, origins)
+    if temp_needed:
+        temp[...] = output
+        output = temp
     return output
 
 
@@ -642,9 +651,46 @@ def correlate(input, weights, output=None, mode='reflect', cval=0.0,
     %(cval)s
     %(origin_multiple)s
 
+    Returns
+    -------
+    result : ndarray
+        The result of correlation of `input` with `weights`.
+
     See Also
     --------
     convolve : Convolve an image with a kernel.
+
+    Examples
+    --------
+    Correlation is the process of moving a filter mask often referred to
+    as kernel over the image and computing the sum of products at each location.
+
+    >>> from scipy.ndimage import correlate
+    >>> input_img = np.arange(25).reshape(5,5)
+    >>> print(input_img)
+    [[ 0  1  2  3  4]
+    [ 5  6  7  8  9]
+    [10 11 12 13 14]
+    [15 16 17 18 19]
+    [20 21 22 23 24]]
+
+    Define a kernel (weights) for correlation. In this example, it is for sum of
+    center and up, down, left and right next elements.
+
+    >>> weights = [[0, 1, 0],
+    ...            [1, 1, 1],
+    ...            [0, 1, 0]]
+
+    We can calculate a correlation result:
+    For example, element ``[2,2]`` is ``7 + 11 + 12 + 13 + 17 = 60``.
+
+    >>> correlate(input_img, weights)
+    array([[  6,  10,  15,  20,  24],
+        [ 26,  30,  35,  40,  44],
+        [ 51,  55,  60,  65,  69],
+        [ 76,  80,  85,  90,  94],
+        [ 96, 100, 105, 110, 114]])
+
     """
     return _correlate_or_convolve(input, weights, output, mode, cval,
                                   origin, False)
@@ -784,7 +830,7 @@ def uniform_filter1d(input, size, axis=-1, output=None,
     input = numpy.asarray(input)
     if numpy.iscomplexobj(input):
         raise TypeError('Complex type not supported')
-    axis = _ni_support._check_axis(axis, input.ndim)
+    axis = normalize_axis_index(axis, input.ndim)
     if size < 1:
         raise RuntimeError('incorrect filter size')
     output = _ni_support._get_output(output, input)
@@ -898,7 +944,7 @@ def minimum_filter1d(input, size, axis=-1, output=None,
     input = numpy.asarray(input)
     if numpy.iscomplexobj(input):
         raise TypeError('Complex type not supported')
-    axis = _ni_support._check_axis(axis, input.ndim)
+    axis = normalize_axis_index(axis, input.ndim)
     if size < 1:
         raise RuntimeError('incorrect filter size')
     output = _ni_support._get_output(output, input)
@@ -955,7 +1001,7 @@ def maximum_filter1d(input, size, axis=-1, output=None,
     input = numpy.asarray(input)
     if numpy.iscomplexobj(input):
         raise TypeError('Complex type not supported')
-    axis = _ni_support._check_axis(axis, input.ndim)
+    axis = normalize_axis_index(axis, input.ndim)
     if size < 1:
         raise RuntimeError('incorrect filter size')
     output = _ni_support._get_output(output, input)
@@ -997,6 +1043,11 @@ def _min_or_max_filter(input, size, footprint, structure, output, mode,
     if numpy.iscomplexobj(input):
         raise TypeError('Complex type not supported')
     output = _ni_support._get_output(output, input)
+    temp_needed = numpy.shares_memory(input, output)
+    if temp_needed:
+        # input and output arrays cannot share memory
+        temp = output
+        output = _ni_support._get_output(output.dtype, input)
     origins = _ni_support._normalize_sequence(origin, input.ndim)
     if separable:
         sizes = _ni_support._normalize_sequence(size, input.ndim)
@@ -1035,6 +1086,9 @@ def _min_or_max_filter(input, size, footprint, structure, output, mode,
         mode = _ni_support._extend_mode_to_code(mode)
         _nd_image.min_or_max_filter(input, footprint, structure, output,
                                     mode, cval, origins, minimum)
+    if temp_needed:
+        temp[...] = output
+        output = temp
     return output
 
 
@@ -1171,6 +1225,11 @@ def _rank_filter(input, rank, size=None, footprint=None, output=None,
                               origins)
     else:
         output = _ni_support._get_output(output, input)
+        temp_needed = numpy.shares_memory(input, output)
+        if temp_needed:
+            # input and output arrays cannot share memory
+            temp = output
+            output = _ni_support._get_output(output.dtype, input)
         if not isinstance(mode, str) and isinstance(mode, Iterable):
             raise RuntimeError(
                 "A sequence of modes is not supported by non-separable rank "
@@ -1178,6 +1237,9 @@ def _rank_filter(input, rank, size=None, footprint=None, output=None,
         mode = _ni_support._extend_mode_to_code(mode)
         _nd_image.rank_filter(input, rank, footprint, output, mode, cval,
                               origins)
+        if temp_needed:
+            temp[...] = output
+            output = temp
         return output
 
 
@@ -1372,7 +1434,7 @@ def generic_filter1d(input, function, filter_size, axis=-1,
     output = _ni_support._get_output(output, input)
     if filter_size < 1:
         raise RuntimeError('invalid filter size')
-    axis = _ni_support._check_axis(axis, input.ndim)
+    axis = normalize_axis_index(axis, input.ndim)
     if (filter_size // 2 + origin < 0) or (filter_size // 2 + origin >=
                                            filter_size):
         raise ValueError('invalid origin')

@@ -22,6 +22,7 @@ from pytest import raises as assert_raises
 from scipy import optimize
 from scipy.optimize._minimize import MINIMIZE_METHODS
 from scipy.optimize._differentiable_functions import ScalarFunction
+from scipy.optimize.optimize import MemoizeJac
 
 
 def test_check_grad():
@@ -178,8 +179,7 @@ class CheckOptimizeParameterized(CheckOptimize):
         func = lambda x: -np.e**-x
         fprime = lambda x: -func(x)
         x0 = [0]
-        olderr = np.seterr(over='ignore')
-        try:
+        with np.errstate(over='ignore'):
             if self.use_wrapper:
                 opts = {'disp': self.disp}
                 x = optimize.minimize(func, x0, jac=fprime, method='BFGS',
@@ -187,8 +187,6 @@ class CheckOptimizeParameterized(CheckOptimize):
             else:
                 x = optimize.fmin_bfgs(func, x0, fprime, disp=self.disp)
             assert_(not np.isfinite(func(x)))
-        finally:
-            np.seterr(**olderr)
 
     def test_powell(self):
         # Powell (direction set) optimization routine
@@ -1159,6 +1157,16 @@ class TestLBFGSBBounds(object):
         assert_(res['success'], res['message'])
         assert_allclose(res.x, self.solution, atol=1e-6)
 
+    @pytest.mark.parametrize('bounds', [
+        ([(10, 1), (1, 10)]),
+        ([(1, 10), (10, 1)]),
+        ([(10, 1), (10, 1)])
+    ])
+    def test_minimize_l_bfgs_b_incorrect_bounds(self, bounds):
+        with pytest.raises(ValueError, match='.*bounds.*'):
+            optimize.minimize(self.fun, [0, -1], method='L-BFGS-B',
+                              jac=self.jac, bounds=bounds)
+
     def test_minimize_l_bfgs_b_bounds_FD(self):
         # test that initial starting value outside bounds doesn't raise
         # an error (done with clipping).
@@ -1555,9 +1563,6 @@ class TestBrute:
 
         optimize.brute(f, [(-1, 1)], Ns=3, finish=None)
 
-    @pytest.mark.skipif(multiprocessing.get_start_method() != 'fork',
-                        reason=('multiprocessing with spawn method is not'
-                                ' compatible with pytest.'))
     def test_workers(self):
         # check that parallel evaluation works
         resbrute = optimize.brute(brute_func, self.rranges, args=self.params,
@@ -1659,3 +1664,76 @@ def test_result_x_shape_when_len_x_is_one():
         res = optimize.minimize(fun, np.array([0.1]), method=method, jac=jac,
                                 hess=hess)
         assert res.x.shape == (1,)
+
+
+class FunctionWithGradient(object):
+    def __init__(self):
+        self.number_of_calls = 0
+
+    def __call__(self, x):
+        self.number_of_calls += 1
+        return np.sum(x**2), 2 * x
+
+
+@pytest.fixture
+def function_with_gradient():
+    return FunctionWithGradient()
+
+
+def test_memoize_jac_function_before_gradient(function_with_gradient):
+    memoized_function = MemoizeJac(function_with_gradient)
+
+    x0 = np.array([1.0, 2.0])
+    assert_allclose(memoized_function(x0), 5.0)
+    assert function_with_gradient.number_of_calls == 1
+
+    assert_allclose(memoized_function.derivative(x0), 2 * x0)
+    assert function_with_gradient.number_of_calls == 1, \
+        "function is not recomputed " \
+        "if gradient is requested after function value"
+
+    assert_allclose(
+        memoized_function(2 * x0), 20.0,
+        err_msg="different input triggers new computation")
+    assert function_with_gradient.number_of_calls == 2, \
+        "different input triggers new computation"
+
+
+def test_memoize_jac_gradient_before_function(function_with_gradient):
+    memoized_function = MemoizeJac(function_with_gradient)
+
+    x0 = np.array([1.0, 2.0])
+    assert_allclose(memoized_function.derivative(x0), 2 * x0)
+    assert function_with_gradient.number_of_calls == 1
+
+    assert_allclose(memoized_function(x0), 5.0)
+    assert function_with_gradient.number_of_calls == 1, \
+        "function is not recomputed " \
+        "if function value is requested after gradient"
+
+    assert_allclose(
+        memoized_function.derivative(2 * x0), 4 * x0,
+        err_msg="different input triggers new computation")
+    assert function_with_gradient.number_of_calls == 2, \
+        "different input triggers new computation"
+
+
+def test_memoize_jac_with_bfgs(function_with_gradient):
+    """ Tests that using MemoizedJac in combination with ScalarFunction
+        and BFGS does not lead to repeated function evaluations.
+        Tests changes made in response to GH11868.
+    """
+    memoized_function = MemoizeJac(function_with_gradient)
+    jac = memoized_function.derivative
+    hess = optimize.BFGS()
+
+    x0 = np.array([1.0, 0.5])
+    scalar_function = ScalarFunction(
+        memoized_function, x0, (), jac, hess, None, None)
+    assert function_with_gradient.number_of_calls == 1
+
+    scalar_function.fun(x0 + 0.1)
+    assert function_with_gradient.number_of_calls == 2
+
+    scalar_function.fun(x0 + 0.2)
+    assert function_with_gradient.number_of_calls == 3

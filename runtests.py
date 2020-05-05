@@ -49,6 +49,11 @@ else:
 
 import sys
 import os
+# the following multiprocessing import is necessary to prevent tests that use
+# multiprocessing from hanging on >= Python3.8 (macOS) using pytest. Just the
+# import is enough...
+import multiprocessing
+
 
 # In case we are run from the source directory, we don't want to import the
 # project from there:

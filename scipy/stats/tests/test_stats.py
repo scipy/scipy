@@ -1179,6 +1179,14 @@ def test_weightedtau():
     tau, p_value = stats.weightedtau(x, y)
     assert_approx_equal(tau, -0.56694968153682723)
 
+def test_segfault_issue_9710():
+    # https://github.com/scipy/scipy/issues/9710
+    # This test was created to check segfault
+    # In issue SEGFAULT only repros in optimized builds after calling the function twice
+    stats.weightedtau([1], [1.0])
+    stats.weightedtau([1], [1.0])
+    # The code below also caused SEGFAULT
+    stats.weightedtau([np.nan], [52])
 
 def test_kendall_tau_large():
     n = 172.
@@ -2037,7 +2045,7 @@ class TestIQR(object):
         assert_equal(stats.iqr(d, axis=(1, 3))[2, 2],
                      stats.iqr(d[2, :, 2,:].ravel()))
 
-        assert_raises(IndexError, stats.iqr, d, axis=4)
+        assert_raises(np.AxisError, stats.iqr, d, axis=4)
         assert_raises(ValueError, stats.iqr, d, axis=(0, 0))
 
     def test_rng(self):
@@ -4064,21 +4072,15 @@ class TestGeoMean(object):
         #  Test a 1d list with zero element
         a = [10, 20, 30, 40, 50, 60, 70, 80, 90, 0]
         desired = 0.0  # due to exp(-inf)=0
-        olderr = np.seterr(all='ignore')
-        try:
+        with np.errstate(all='ignore'):
             check_equal_gmean(a, desired)
-        finally:
-            np.seterr(**olderr)
 
     def test_1d_array0(self):
         #  Test a 1d array with zero element
         a = np.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 0])
         desired = 0.0  # due to exp(-inf)=0
-        olderr = np.seterr(all='ignore')
-        try:
+        with np.errstate(all='ignore'):
             check_equal_gmean(a, desired)
-        finally:
-            np.seterr(**olderr)
 
 
 class TestGeometricStandardDeviation(object):
@@ -4469,6 +4471,16 @@ class TestFOneWay(object):
 
             assert_allclose(res[0], f, rtol=rtol,
                             err_msg='Failing testcase: %s' % test_case)
+
+    @pytest.mark.parametrize("a, b, expected",[
+        (np.array([42, 42, 42]), np.array([7, 7, 7]), (np.inf, 0)),
+        (np.array([42, 42, 42]), np.array([42, 42, 42]), (np.nan, np.nan))
+        ])
+    def test_constant_input(self, a, b, expected):
+        # For more details, look on https://github.com/scipy/scipy/issues/11669
+        with assert_warns(stats.F_onewayConstantInputWarning):
+            f, p = stats.f_oneway(a, b)
+            assert f, p == expected
 
 
 class TestKruskal(object):
@@ -5234,9 +5246,6 @@ class TestMGCStat(object):
         assert_approx_equal(stat, 1.0, significant=1)
         assert_approx_equal(pvalue, 0.001, significant=1)
 
-    @pytest.mark.skipif(multiprocessing.get_start_method() != 'fork',
-                        reason=('multiprocessing with spawn method is not'
-                                ' compatible with pytest.'))
     def test_workers(self):
         np.random.seed(12345678)
 

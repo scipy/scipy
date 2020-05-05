@@ -29,8 +29,10 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import itertools
-import numpy
 import warnings
+
+import numpy
+from numpy.core.multiarray import normalize_axis_index
 
 from . import _ni_support
 from . import _nd_image
@@ -98,7 +100,7 @@ def spline_filter1d(input, order=3, axis=-1, output=numpy.float64,
         output[...] = numpy.array(input)
     else:
         mode = _ni_support._extend_mode_to_code(mode)
-        axis = _ni_support._check_axis(axis, input.ndim)
+        axis = normalize_axis_index(axis, input.ndim)
         _nd_image.spline_filter1d(input, order, axis, output, mode)
     return output
 

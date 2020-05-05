@@ -13,7 +13,7 @@
     // benchmarked
     "repo": "..",
     "dvcs": "git",
-    "branches": ["master"],
+    "branches": ["HEAD"],
 
     // The base URL to "how a commit for the project.
     "show_commit_url": "https://github.com/scipy/scipy/commit/",
@@ -29,7 +29,7 @@
     "matrix": {
         "numpy": [],
         "Tempita": [],
-        "Cython": ["0.29.13"],
+        "Cython": ["0.29.14"],
         "pytest": [],
         "pybind11": [],
         "six": [],

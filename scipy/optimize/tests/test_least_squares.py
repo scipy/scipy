@@ -369,6 +369,8 @@ class BaseMixin(object):
                       method=self.method, ftol=None, xtol=None, gtol=None)
 
     def test_convergence_with_only_one_tolerance_enabled(self):
+        if self.method == 'lm':
+            return  # should not do test
         x0 = [-2, 1]
         x_opt = [1, 1]
         for ftol, xtol, gtol in [(1e-8, None, None),
@@ -744,3 +746,11 @@ def test_basic():
     # test that 'method' arg is really optional
     res = least_squares(fun_trivial, 2.0)
     assert_allclose(res.x, 0, atol=1e-10)
+
+
+def test_small_tolerances_for_lm():
+    for ftol, xtol, gtol in [(None, 1e-13, 1e-13),
+                             (1e-13, None, 1e-13),
+                             (1e-13, 1e-13, None)]:
+        assert_raises(ValueError, least_squares, fun_trivial, 2.0, xtol=xtol,
+                      ftol=ftol, gtol=gtol, method='lm')

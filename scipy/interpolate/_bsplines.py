@@ -2,6 +2,7 @@ import functools
 import operator
 
 import numpy as np
+from numpy.core.multiarray import normalize_axis_index
 from scipy.linalg import (get_lapack_funcs, LinAlgError,
                           cholesky_banded, cho_solve_banded)
 from . import _bspl
@@ -189,9 +190,9 @@ class BSpline(object):
 
         n = self.t.shape[0] - self.k - 1
 
-        if not (0 <= axis < self.c.ndim):
-            raise ValueError("%s must be between 0 and %s" % (axis, c.ndim))
+        axis = normalize_axis_index(axis, self.c.ndim)
 
+        # Note that the normalized axis is stored in the object.
         self.axis = axis
         if axis != 0:
             # roll the interpolation axis to be the first one in self.c
@@ -263,7 +264,7 @@ class BSpline(object):
 
         Notes
         -----
-        The order of the B-spline, `k`, is inferred from the length of `t` as
+        The degree of the B-spline, `k`, is inferred from the length of `t` as
         ``len(t)-2``. The knot vector is constructed by appending and prepending
         ``k+1`` elements to internal knots `t`.
 
@@ -280,7 +281,7 @@ class BSpline(object):
         >>> k
         3
 
-        Construct a second order B-spline on ``[0, 1, 1, 2]``, and compare
+        Construct a quadratic B-spline on ``[0, 1, 1, 2]``, and compare
         to its explicit form:
 
         >>> t = [-1, 0, 1, 1, 2]
@@ -741,10 +742,7 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
 
     y = np.asarray(y)
 
-    if not -y.ndim <= axis < y.ndim:
-        raise ValueError("axis {} is out of bounds".format(axis))
-    if axis < 0:
-        axis += y.ndim
+    axis = normalize_axis_index(axis, y.ndim)
 
     # special-case k=0 right away
     if k == 0:
@@ -972,10 +970,7 @@ def make_lsq_spline(x, y, t, k=3, w=None, axis=0, check_finite=True):
         w = np.ones_like(x)
     k = operator.index(k)
 
-    if not -y.ndim <= axis < y.ndim:
-        raise ValueError("axis {} is out of bounds".format(axis))
-    if axis < 0:
-        axis += y.ndim
+    axis = normalize_axis_index(axis, y.ndim)
 
     y = np.rollaxis(y, axis)    # now internally interp axis is zero
 

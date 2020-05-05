@@ -113,6 +113,10 @@ add_newdoc("voigt_profile",
     standard deviation ``sigma`` and a 1-D Cauchy distribution with half-width at
     half-maximum ``gamma``.
 
+    If ``sigma = 0``, PDF of Cauchy distribution is returned.
+    Conversely, if ``gamma = 0``, PDF of Normal distribution is returned.
+    If ``sigma = gamma = 0``, the return value is ``Inf`` for ``x = 0``, and ``0`` for all other ``x``.
+
     Parameters
     ----------
     x : array_like

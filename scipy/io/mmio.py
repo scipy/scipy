@@ -99,7 +99,7 @@ def mmwrite(target, a, comment='', field=None, precision=None, symmetry=None):
 
 
 ###############################################################################
-class MMFile (object):
+class MMFile:
     __slots__ = ('_rows',
                  '_cols',
                  '_entries',
@@ -289,40 +289,45 @@ class MMFile (object):
             True if the calling function should close this file when done,
             false otherwise.
         """
-        close_it = False
-        if isinstance(filespec, str):
-            close_it = True
+        # If 'filespec' is path-like (str, pathlib.Path, os.DirEntry, other class
+        # implementing a '__fspath__' method), try to convert it to str. If this
+        # fails by throwing a 'TypeError', assume it's an open file handle and
+        # return it as-is.
+        try:
+            filespec = os.fspath(filespec)
+        except TypeError:
+            return filespec, False
 
-            # open for reading
-            if mode[0] == 'r':
+        # 'filespec' is definitely a str now
 
-                # determine filename plus extension
-                if not os.path.isfile(filespec):
-                    if os.path.isfile(filespec+'.mtx'):
-                        filespec = filespec + '.mtx'
-                    elif os.path.isfile(filespec+'.mtx.gz'):
-                        filespec = filespec + '.mtx.gz'
-                    elif os.path.isfile(filespec+'.mtx.bz2'):
-                        filespec = filespec + '.mtx.bz2'
-                # open filename
-                if filespec.endswith('.gz'):
-                    import gzip
-                    stream = gzip.open(filespec, mode)
-                elif filespec.endswith('.bz2'):
-                    import bz2
-                    stream = bz2.BZ2File(filespec, 'rb')
-                else:
-                    stream = open(filespec, mode)
+        # open for reading
+        if mode[0] == 'r':
 
-            # open for writing
-            else:
-                if filespec[-4:] != '.mtx':
+            # determine filename plus extension
+            if not os.path.isfile(filespec):
+                if os.path.isfile(filespec+'.mtx'):
                     filespec = filespec + '.mtx'
+                elif os.path.isfile(filespec+'.mtx.gz'):
+                    filespec = filespec + '.mtx.gz'
+                elif os.path.isfile(filespec+'.mtx.bz2'):
+                    filespec = filespec + '.mtx.bz2'
+            # open filename
+            if filespec.endswith('.gz'):
+                import gzip
+                stream = gzip.open(filespec, mode)
+            elif filespec.endswith('.bz2'):
+                import bz2
+                stream = bz2.BZ2File(filespec, 'rb')
+            else:
                 stream = open(filespec, mode)
-        else:
-            stream = filespec
 
-        return stream, close_it
+        # open for writing
+        else:
+            if filespec[-4:] != '.mtx':
+                filespec = filespec + '.mtx'
+            stream = open(filespec, mode)
+
+        return stream, True
 
     # -------------------------------------------------------------------------
     @staticmethod

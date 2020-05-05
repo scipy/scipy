@@ -16,6 +16,7 @@ from numpy.testing import (
 from numpy import array, arange
 import numpy as np
 
+from scipy.fft import fft
 from scipy.ndimage.filters import correlate1d
 from scipy.optimize import fmin, linear_sum_assignment
 from scipy import signal
@@ -802,7 +803,7 @@ class TestOAConvolve(object):
         assert_array_almost_equal(out, expected)
 
     @pytest.mark.parametrize('shape_a_0, shape_b_0',
-                             gen_oa_shapes([50, 47, 6, 4]))
+                             gen_oa_shapes([50, 47, 6, 4, 1]))
     @pytest.mark.parametrize('is_complex', [True, False])
     @pytest.mark.parametrize('mode', ['full', 'valid', 'same'])
     def test_1d_noaxes(self, shape_a_0, shape_b_0,
@@ -1117,6 +1118,16 @@ class TestResample(object):
         assert_allclose(
             signal.resample(y, num, axis=1, window=window),
             signal.resample(y_complex, num, axis=1, window=window).real,
+            atol=1e-9)
+
+    def test_input_domain(self):
+        # Test if both input domain modes produce the same results.
+        tsig = np.arange(256) + 0j
+        fsig = fft(tsig)
+        num = 256
+        assert_allclose(
+            signal.resample(fsig, num, domain='freq'),
+            signal.resample(tsig, num, domain='time'),
             atol=1e-9)
 
     @pytest.mark.parametrize('nx', (1, 2, 3, 5, 8))

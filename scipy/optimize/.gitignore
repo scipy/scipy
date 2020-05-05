@@ -1,6 +1,0 @@
-
-# Ignore cython generated files for HiGHS integration
-_highs/pyHiGHS/src/highs_wrapper.cxx
-_highs/pyHiGHS/src/linprog.cxx
-_highs/pyHiGHS/src/linprog_mps.cxx
-_highs/pyHiGHS/src/mpswriter.cxx

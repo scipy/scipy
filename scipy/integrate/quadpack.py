@@ -35,6 +35,13 @@ def quad_explain(output=sys.stdout):
     -------
     None
 
+    Examples
+    --------
+    We can show detailed information of the `integrate.quad` function in stdout:
+
+    >>> from scipy.integrate import quad_explain
+    >>> quad_explain()
+
     """
     output.write(quad.__doc__)
 
@@ -385,7 +392,7 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
 
     if ier in [1,2,3,4,5,7]:
         if full_output:
-            if weight in ['cos', 'sin'] and (b == Inf or a == Inf):
+            if weight in ['cos', 'sin'] and (b == Inf or a == -Inf):
                 return retval[:-1] + (msg, explain)
             else:
                 return retval[:-1] + (msg,)

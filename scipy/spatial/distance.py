@@ -1096,8 +1096,7 @@ def chebyshev(u, v, w=None):
     v : (N,) array_like
         Input vector.
     w : (N,) array_like, optional
-        The weights for each value in `u` and `v`. Default is None,
-        which gives each value a weight of 1.0
+        Unused, as 'max' is a weightless operation. Here for API consistency.
 
     Returns
     -------
@@ -1216,8 +1215,7 @@ def canberra(u, v, w=None):
     v = _validate_vector(v, dtype=np.float64)
     if w is not None:
         w = _validate_weights(w)
-    olderr = np.seterr(invalid='ignore')
-    try:
+    with np.errstate(invalid='ignore'):
         abs_uv = abs(u - v)
         abs_u = abs(u)
         abs_v = abs(v)
@@ -1225,8 +1223,6 @@ def canberra(u, v, w=None):
         if w is not None:
             d = w * d
         d = np.nansum(d)
-    finally:
-        np.seterr(**olderr)
     return d
 
 
@@ -2117,23 +2113,23 @@ def squareform(X, force="no", checks=True):
 
     Notes
     -----
-    1. v = squareform(X)
+    1. ``v = squareform(X)``
 
-       Given a square d-by-d symmetric distance matrix X,
-       ``v = squareform(X)`` returns a ``d * (d-1) / 2`` (or
-       :math:`{n \\choose 2}`) sized vector v.
+       Given a square n-by-n symmetric distance matrix ``X``,
+       ``v = squareform(X)`` returns a ``n * (n-1) / 2``
+       (i.e. binomial coefficient n choose 2) sized vector `v`
+       where :math:`v[{n \\choose 2} - {n-i \\choose 2} + (j-i-1)]`
+       is the distance between distinct points ``i`` and ``j``.
+       If ``X`` is non-square or asymmetric, an error is raised.
 
-      :math:`v[{n \\choose 2}-{n-i \\choose 2} + (j-i-1)]` is the distance
-      between points i and j. If X is non-square or asymmetric, an error
-      is returned.
+    2. ``X = squareform(v)``
 
-    2. X = squareform(v)
-
-      Given a ``d*(d-1)/2`` sized v for some integer ``d >= 2`` encoding
-      distances as described, ``X = squareform(v)`` returns a d by d distance
-      matrix X.  The ``X[i, j]`` and ``X[j, i]`` values are set to
-      :math:`v[{n \\choose 2}-{n-i \\choose 2} + (j-i-1)]` and all
-      diagonal elements are zero.
+       Given a ``n * (n-1) / 2`` sized vector ``v``
+       for some integer ``n >= 1`` encoding distances as described,
+       ``X = squareform(v)`` returns a n-by-n distance matrix ``X``.
+       The ``X[i, j]`` and ``X[j, i]`` values are set to
+       :math:`v[{n \\choose 2} - {n-i \\choose 2} + (j-i-1)]`
+       and all diagonal elements are zero.
 
     In SciPy 0.19.0, ``squareform`` stopped casting all input types to
     float64, and started returning arrays of the same dtype as the input.
