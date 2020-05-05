@@ -6226,7 +6226,11 @@ class pearson3_gen(rv_continuous):
         v = alpha / (beta**2)
         s = 2.0 / (alpha**0.5) * np.sign(beta)
         k = 6.0 / alpha
-        return m, v, s, k
+        for i in [m, v, s, k]: 
+            if np.any(i.size) == 0: 
+                return (0, 0, 0, 0)
+        else: 
+            return np.float(m), np.float(v), np.float(s), np.float(k)
 
     def _pdf(self, x, skew):
         # pearson3.pdf(x, skew) = abs(beta) / gamma(alpha) *

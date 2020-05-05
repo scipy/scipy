@@ -337,6 +337,14 @@ def test_nomodify_gh9900_regression():
     npt.assert_almost_equal(tn.cdf(1, -np.inf, 0), 1)                     # Not 1.6826894921370859
     npt.assert_almost_equal(tn.cdf(-1, -np.inf, 0), 0.31731050786291415)  # Not -0.6826894921370859
 
+def test_gh11746_regression():
+    # Regression test for gh-11746
+    prsn3 = stats.pearson3
+    # Use the right-half truncated normal
+    # Check that the cdf and _cdf return the same result.
+    npt.assert_equal(prsn3.moment(1, skew=0), 0.0)
+    npt.assert_almost_equal(prsn3.moment(2, skew=1), 1.0)
+
 
 def test_broadcast_gh9990_regression():
     # Regression test for gh-9990
