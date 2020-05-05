@@ -16,9 +16,16 @@ References
 import numpy as np
 from .optimize import _check_unknown_options, OptimizeWarning
 from warnings import warn
-from ._highs.highs_wrapper import (
-    highs_wrapper,
+from ._highs.highs_wrapper import highs_wrapper
+from ._highs.constants cimport (
+    CONST_I_INF,
     CONST_INF,
+    MESSAGE_LEVEL_NONE,
+    MESSAGE_LEVEL_VERBOSE,
+    MESSAGE_LEVEL_DETAILED,
+    MESSAGE_LEVEL_MINIMAL,
+    MESSAGE_LEVEL_ALWAYS,
+
     MODEL_STATUS_NOTSET,
     MODEL_STATUS_LOAD_ERROR,
     MODEL_STATUS_MODEL_ERROR,
@@ -57,7 +64,7 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
                    disp=False, maxiter=None,
                    dual_feasibility_tolerance=None,
                    dual_objective_value_upper_bound=None,
-                   message_level=1,
+                   message_level=MESSAGE_LEVEL_NONE,
                    primal_feasibility_tolerance=None,
                    simplex_crash_strategy=None,
                    simplex_dual_edge_weight_strategy=None,
@@ -108,13 +115,13 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
     maxiter : int
         The maximum number of iterations to perform in either phase. For
         ``solver='ipm'``, this does not include the number of crossover
-        iterations.
+        iterations.  Default is ``CONST_I_INF``.
     disp : bool
         Set to ``True`` if indicators of optimization status are to be printed
         to the console each iteration; default ``False``.
     time_limit : float
         The maximum time in seconds allotted to solve the problem; default is
-        unlimited.
+        unlimited (CONST_INF).
     presolve : bool
         Presolve attempts to  identify trivial infeasibilities,
         identify trivial unboundedness, and simplify the problem before
@@ -122,27 +129,27 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
         to keep the default setting ``True``; set to ``False`` if presolve is
         to be disabled.
     dual_feasibility_tolerance : double
-        Dual feasibility tolerance
+        Dual feasibility tolerance.  Default is 1e-07.
     dual_objective_value_upper_bound : double
         Upper bound on objective value for dual simplex:
-        algorithm terminates if reached
+        algorithm terminates if reached.  Default is ``CONST_INF``.
     message_level : int {0, 1, 2, 4, 7}
         Verbosity level, corresponds to:
 
-            ``0``: ML_NONE
+            ``0``: MESSAGE_LEVEL_NONE
 
-            ``1``: ML_VERBOSE
+            ``1``: MESSAGE_LEVEL_VERBOSE
 
-            ``2``: ML_DETAILED
+            ``2``: MESSAGE_LEVEL_DETAILED
 
-            ``4``: ML_MINIMAL
+            ``4``: MESSAGE_LEVEL_MINIMAL
 
-            ``7``: ML_ALWAYS
+            ``7``: MESSAGE_LEVEL_ALWAYS
 
-        Default is 1, but note:
+        Default is ``MESSAGE_LEVEL_NONE``, but note:
         this option is ignored unless option ``disp`` is ``True``.
     primal_feasibility_tolerance : double
-        Primal feasibility tolerance.
+        Primal feasibility tolerance.  Default is 1e-07.
     simplex_crash_strategy : int {0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
         Strategy for simplex crash: off / LTSSF / Bixby (0/1/2).
         Default is ``0``.  Corresponds to the following:
@@ -169,8 +176,8 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
 
     simplex_dual_edge_weight_strategy : int {0, 1, 2, 3, 4}
         Strategy for simplex dual edge weights:
-        Dantzig / Devex / Steepest Edge. Corresponds
-        to the following:
+        Dantzig / Devex / Steepest Edge.  Default is ``2``.
+        Corresponds to the following:
 
             ``0``: `SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_DANTZIG`
 
@@ -184,14 +191,15 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
 
     simplex_primal_edge_weight_strategy : int {0, 1}
         Strategy for simplex primal edge weights:
-        Dantzig / Devex.  Corresponds to the following:
+        Dantzig / Devex.  Default is ``0``.
+        Corresponds to the following:
 
             ``0``: `SIMPLEX_PRIMAL_EDGE_WEIGHT_STRATEGY_DANTZIG`
 
             ``1``: `SIMPLEX_PRIMAL_EDGE_WEIGHT_STRATEGY_DEVEX`
 
     simplex_strategy : int {0, 1, 2, 3, 4}
-        Strategy for simplex solver. Default: 1. Corresponds
+        Strategy for simplex solver. Default: ``1``. Corresponds
         to the following:
 
             ``0``: `SIMPLEX_STRATEGY_MIN`
@@ -205,7 +213,8 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
             ``4``: `SIMPLEX_STRATEGY_PRIMAL`
 
     simplex_update_limit : int
-        Limit on the number of simplex UPDATE operations.
+        Limit on the number of simplex UPDATE operations.  Default
+        is ``5000``.
     unknown_options : dict
         Optional arguments not used by this particular solver. If
         `unknown_options` is non-empty, a warning is issued listing all
