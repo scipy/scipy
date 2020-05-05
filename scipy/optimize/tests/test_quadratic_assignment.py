@@ -57,6 +57,12 @@ def test_quadratic_assignment():
 
     assert 11156 <= res['score'] < 21000
 
+    # check performance when seeds are the global optimum
+    seed = np.asarray([np.arange(n), [opt_perm[z] for z in np.arange(n)]]).T
+    res = quadratic_assignment(cost_matrix, dist_matrix, seed)
+
+    assert 11156 == res['score']
+
     # check that max_iter is obeying with low input value
     iter = 5
     res = quadratic_assignment(cost_matrix, dist_matrix, max_iter=iter)
@@ -89,6 +95,12 @@ def test_quadratic_assignment_input_validation():
             np.random.random((3, 3)),
             np.random.random((4, 4)),
             _range_matrix(2, 2),
+        )
+    # test that cost/dist matrices must be nonnegative
+    with pytest.raises(ValueError):
+        quadratic_assignment(
+            -1 * np.random.random((3, 3)),
+            np.random.random((4, 4))
         )
     # test that non square matrices return error
     with pytest.raises(ValueError):
