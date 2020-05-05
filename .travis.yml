@@ -221,7 +221,7 @@ script:
         # Run setup.py build before pip wheel, to build in current directory
         # and make more efficient use of ccache
         echo "setup.py build"
-        python tools/suppress_output.py python setup.py build
+        python tools/suppress_output.py python setup.py build -j2
         echo "pip wheel"
         python tools/suppress_output.py pip wheel --no-build-isolation .
         pip install --no-cache-dir scipy*.whl
