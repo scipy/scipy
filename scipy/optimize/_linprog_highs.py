@@ -204,8 +204,9 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
             ``1``: `SIMPLEX_PRIMAL_EDGE_WEIGHT_STRATEGY_DEVEX`
 
     simplex_strategy : int {0, 1, 2, 3, 4}
-        Strategy for simplex solver. Default: ``1``. Corresponds
-        to the following:
+        Strategy for simplex solver. Default: ``1``.  Note that
+        ``SIMPLEX_STRATEGY_PRIMAL`` is a WIP and is known to fail
+        on some problems.  Corresponds to the following:
 
             ``0``: `SIMPLEX_STRATEGY_MIN`
 
