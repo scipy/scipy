@@ -17,7 +17,7 @@ import numpy as np
 from .optimize import _check_unknown_options, OptimizeWarning
 from warnings import warn
 from ._highs.highs_wrapper import highs_wrapper
-from ._highs.constants cimport (
+from ._highs.constants import (
     CONST_I_INF,
     CONST_INF,
     MESSAGE_LEVEL_NONE,
