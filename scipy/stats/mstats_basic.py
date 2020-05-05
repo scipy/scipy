@@ -537,9 +537,9 @@ def _kendall_p_exact(n, c):
     elif n == 2:
         prob = 1.0
     elif c == 0:
-        prob = 2.0/np.math.factorial(n)
+        prob = 2.0/np.math.factorial(n) if n < 171 else 0.0
     elif c == 1:
-        prob = 2.0/np.math.factorial(n-1)
+        prob = 2.0/np.math.factorial(n-1) if n < 172 else 0.0
     elif 4*c == n*(n-1):
         prob = 1.0
     elif n < 171:
