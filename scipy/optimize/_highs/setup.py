@@ -142,6 +142,18 @@ def configuration(parent_package='', top_path=None):
     )
     ext._pre_build_hook = pre_build_hook
 
+    # Export constants and enums from HiGHS:
+    config.add_extension(
+        'constants',
+        sources=['pyHiGHS/src/constants.cxx'],
+        include_dirs=[
+            'pyHiGHS/src/',
+            'src',
+            'src/lp_data/',
+        ],
+        language='c++',
+    )
+
     return config
 
 

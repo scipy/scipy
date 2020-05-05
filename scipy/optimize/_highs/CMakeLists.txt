@@ -283,5 +283,5 @@ add_subdirectory(src)
 # add_subdirectory(scaffold)
 
 # # Only needed if it defines a target like a main executable. For methods stick
-# # to header-only.
+# # to header-only.
 # add_subdirectory(dev_presolve)
