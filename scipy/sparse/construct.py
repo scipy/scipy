@@ -761,7 +761,7 @@ greater than %d - this is not supported on this machine
         raise ValueError(msg % np.iinfo(tp).max)
 
     # Number of non zero values
-    k = round(density * m * n)
+    k = int(round(density * m * n))
 
     if random_state is None:
         random_state = np.random
