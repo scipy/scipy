@@ -236,7 +236,7 @@ class TestSphericalVoronoi(object):
         thetas = np.linspace(0, 2 * np.pi, n, endpoint=False)
         points = np.vstack([np.sin(thetas), np.cos(thetas), np.zeros(n)]).T
         with pytest.raises(ValueError, match="Rank of input points"):
-            spherical_voronoi.SphericalVoronoi(points)
+            spherical_voronoi.SphericalVoronoi(points + center, center=center)
 
     @pytest.mark.parametrize("dim", range(2, 7))
     def test_higher_dimensions(self, dim):
