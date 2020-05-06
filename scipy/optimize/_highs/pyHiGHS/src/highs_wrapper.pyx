@@ -63,11 +63,15 @@ cdef str _opt_warning(name, val, valid_set=None):
 
             # INT
             if r.type == HighsOptionTypeINT:
-                lower_bound = (<OptionRecordInt*> r).lower_bound
-                upper_bound = (<OptionRecordInt*> r).upper_bound
-                default_value = (<OptionRecordInt*> r).default_value
+                lower_bound = int((<OptionRecordInt*> r).lower_bound)
+                upper_bound = int((<OptionRecordInt*> r).upper_bound)
+                default_value = int((<OptionRecordInt*> r).default_value)
+                if upper_bound - lower_bound < 10:
+                    int_range = str(set(range(lower_bound, upper_bound + 1)))
+                else:
+                    int_range = '[%d, %d]' % (lower_bound, upper_bound)
                 return ('Option "%s" is "%s", but only values in %s are allowed. '
-                        'Using default: %d.' % (str(name), str(val), str(set(range(int(lower_bound), int(upper_bound)+1))), int(default_value)))
+                        'Using default: %d.' % (str(name), str(val), int_range, default_value))
 
             # DOUBLE
             if r.type == HighsOptionTypeDOUBLE:
