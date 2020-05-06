@@ -6320,7 +6320,7 @@ def _parse_kstest_args(data1, data2, args, N):
 
     # Returns xvals, yvals, cdf
     # where cdf is a cdf function, or None
-    # and yvals is eithe an array_like of values or None
+    # and yvals is either an array_like of values or None
     rvsfunc, cdf = None, None
     if isinstance(data1, str):
         rvsfunc = getattr(distributions, data1).rvs
