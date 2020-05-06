@@ -110,6 +110,7 @@ def spline_filter1d(input, order=3, axis=-1, output=numpy.float64,
     ...             [sp_filter_axis_1, "spline filter (axis=1)"]]):
     ...     ax[ind].imshow(data[0], cmap='gray_r')
     ...     ax[ind].set_title(data[1])
+    >>> plt.tight_layout()
     >>> plt.show()
 
     """
@@ -160,6 +161,7 @@ def spline_filter(input, order=3, output=numpy.float64, mode='mirror'):
     ...                             [sp_filter, "spline filter"]]):
     ...     ax[ind].imshow(data[0], cmap='gray_r')
     ...     ax[ind].set_title(data[1])
+    >>> plt.tight_layout()
     >>> plt.show()
 
     """
