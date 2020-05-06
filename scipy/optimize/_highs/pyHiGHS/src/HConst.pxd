@@ -37,3 +37,9 @@ cdef extern from "HConst.h" nogil:
         PrimalDualStatusSTATUS_UNKNOWN "PrimalDualStatus::STATUS_UNKOWN"
         PrimalDualStatusSTATUS_INFEASIBLE_POINT "PrimalDualStatus::STATUS_INFEASIBLE_POINT"
         PrimalDualStatusSTATUS_FEASIBLE_POINT "PrimalDualStatus::STATUS_FEASIBLE_POINT"
+
+    cdef enum HighsOptionType:
+        HighsOptionTypeBOOL "HighsOptionType::BOOL" = 0
+        HighsOptionTypeINT "HighsOptionType::INT"
+        HighsOptionTypeDOUBLE "HighsOptionType::DOUBLE"
+        HighsOptionTypeSTRING "HighsOptionType::STRING"
