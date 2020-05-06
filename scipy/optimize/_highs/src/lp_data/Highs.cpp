@@ -748,6 +748,12 @@ basis_.valid_, hmos_[0].basis_.valid_);
   }
   HighsPrintMessage(options_.output, options_.message_level, ML_MINIMAL,
                     "Time       : %0.3g\n", this_solve_time);
+  HighsPrintMessage(options_.output, options_.message_level, ML_MINIMAL,
+                    "Time Pre   : %0.3g\n", this_presolve_time);
+  HighsPrintMessage(options_.output, options_.message_level, ML_MINIMAL,
+                    "Time PreLP : %0.3g\n", this_solve_presolved_lp_time);
+  HighsPrintMessage(options_.output, options_.message_level, ML_MINIMAL,
+                    "Time PostLP: %0.3g\n", this_solve_original_lp_time);
   if (this_solve_time > 0) {
     HighsPrintMessage(options_.output, options_.message_level, ML_MINIMAL,
                       "For LP %16s",

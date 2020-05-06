@@ -96,7 +96,7 @@ void printMainLoop(const MainLoop& l) {
 }
 
 void printDevStats(const DevStats& stats) {
-  assert(stats.n_loops == stats.loops.size());
+  assert(stats.n_loops == (int)stats.loops.size());
   if (iPrint == 0) return;
 
   std::cout << "dev-presolve-stats::" << std::endl;
