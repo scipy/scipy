@@ -270,53 +270,9 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
 
     _check_unknown_options(unknown_options)
 
-    warning_message = ("Option `dual_feasibility_tolerance` is {0}, "
-                       "but only positive values are allowed. Using default."
-                       .format(dual_feasibility_tolerance))
-    if (dual_feasibility_tolerance is not None and
-            dual_feasibility_tolerance < 0):
-        dual_feasibility_tolerance = None
-        warn(warning_message, OptimizeWarning)
-
-    warning_message = ("Option `primal_feasibility_tolerance` is {0}, "
-                       "but only positive values are allowed. Using default."
-                       .format(primal_feasibility_tolerance))
-    if (primal_feasibility_tolerance is not None and
-            primal_feasibility_tolerance < 0):
-        primal_feasibility_tolerance = None
-        warn(warning_message, OptimizeWarning)
-
-    warning_message = ("Option `simplex_update_limit` is {0}, "
-                       "but only positive values are allowed. Using default."
-                       .format(simplex_update_limit))
-    if (simplex_update_limit is not None and
-            simplex_update_limit < 0):
-        simplex_update_limit = None
-        warn(warning_message, OptimizeWarning)
-
     message_level = (
         _check_invalid_option_values(message_level, 'message_level',
                                      {0, 1, 2, 4, 7}, 1))
-
-    simplex_crash_strategy = (
-        _check_invalid_option_values(simplex_crash_strategy,
-                                     'simplex_crash_strategy',
-                                     {None}.union(set(range(10))), None))
-
-    simplex_dual_edge_weight_strategy = (
-        _check_invalid_option_values(simplex_dual_edge_weight_strategy,
-                                     'simplex_dual_edge_weight_strategy',
-                                     {None}.union(set(range(5))), None))
-
-    simplex_primal_edge_weight_strategy = (
-        _check_invalid_option_values(simplex_primal_edge_weight_strategy,
-                                     'simplex_primal_edge_weight_strategy',
-                                     {None}.union(set(range(2))), None))
-
-    simplex_strategy = (
-        _check_invalid_option_values(simplex_strategy,
-                                     'simplex_strategy',
-                                     {None}.union(set(range(5))), None))
 
     statuses = {
         MODEL_STATUS_NOTSET: (4, 'HiGHS Status Code 0: HighsModelStatusNOTSET'),
