@@ -15,6 +15,7 @@
 #define PRESOLVE_PRESOLVE_H_
 
 #include <list>
+#include <map>
 #include <stack>
 #include <stdexcept>
 #include <string>
@@ -49,6 +50,34 @@ enum class HighsPresolveStatus {
   NullError
 };
 
+namespace presolve {
+
+enum class Presolver {
+  kMainRowSingletons,
+  kMainForcing,
+  kMainColSingletons,
+  kMainDoubletonEq,
+  kMainDominatedCols,
+};
+
+const std::map<Presolver, std::string> kPresolverNames{
+    {Presolver::kMainRowSingletons, "Row singletons ()"},
+    {Presolver::kMainForcing, "Forcing rows ()"},
+    {Presolver::kMainColSingletons, "Col singletons ()"},
+    {Presolver::kMainDoubletonEq, "Doubleton eq ()"},
+    {Presolver::kMainDominatedCols, "Dominated Cols()"}};
+
+struct MainLoop {
+  int rows;
+  int cols;
+  int nnz;
+};
+
+struct DevStats {
+  int n_loops = 0;
+  std::vector<MainLoop> loops;
+};
+
 class Presolve : public HPreData {
  public:
   Presolve(HighsTimer& timer_ref) : timer(timer_ref) {
@@ -57,7 +86,6 @@ class Presolve : public HPreData {
     objShift = 0;
     hasChange = true;
     iKKTcheck = 0;
-    iPrint = 0;
     countsFile = "";
   }
 
@@ -75,7 +103,6 @@ class Presolve : public HPreData {
   string modelName;
 
  private:
-  int iPrint;
   int iKKTcheck;
   int presolve(int print);
 
@@ -151,7 +178,7 @@ class Presolve : public HPreData {
   int getSingColElementIndexInA(int j);
 
   // forcing constraints
-  void removeForcingConstraints(int mainIter);
+  void removeForcingConstraints();
   pair<double, double> getImpliedRowBounds(int row);
   void setVariablesToBoundForForcingRow(const int row, const bool isLower);
   void dominatedConstraintProcedure(const int i, const double g,
@@ -241,6 +268,15 @@ class Presolve : public HPreData {
   //
 
   string countsFile;
+
+  // Dev presolve
+  // April 2020
+  void reportDevMainLoop();
+  void reportDevMidMainLoop();
+  DevStats dev_stats;
+  int runPresolvers(const std::vector<Presolver>& order);
 };
+
+}  // namespace presolve
 
 #endif /* PRESOLVE_HPRESOLVE_H_ */

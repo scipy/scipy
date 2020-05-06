@@ -708,6 +708,7 @@ class Highs {
 #ifdef OSI_FOUND
   friend class OsiHiGHSSolverInterface;
 #endif
+  void getPresolveReductionCounts(int& rows, int& cols, int& nnz) const;
 
  private:
   HighsSolution solution_;

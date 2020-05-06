@@ -16,7 +16,7 @@
 
 HighsStatus PresolveComponent::init(const HighsLp& lp, HighsTimer& timer) {
   assert(options_.presolve_on);
-  data_.presolve_.push_back(Presolve(timer));
+  data_.presolve_.push_back(presolve::Presolve(timer));
   data_.presolve_[0].load(lp);
   return HighsStatus::OK;
 }
@@ -31,7 +31,7 @@ HighsStatus PresolveComponent::setOptions(const HighsOptions& options) {
 
   assert(options_.presolve_on);
   return HighsStatus::OK;
-};
+}
 
 void PresolveComponent::setBasisInfo(
     const std::vector<HighsBasisStatus>& pass_col_status,

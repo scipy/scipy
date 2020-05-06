@@ -1406,8 +1406,8 @@ class LinprogCommonTests(object):
                 1.07374182e+09, 1.07374182e+09, 1.07374182e+09,
                 1.07374182e+09]
 
-        # HiGHS don't use autoscale option
         o = {}
+        # HiGHS methods don't use autoscale option
         if not self.method.startswith("highs"):
             o = {"autoscale": True}
         o.update(self.options)
