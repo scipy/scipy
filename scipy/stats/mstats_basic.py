@@ -13,8 +13,7 @@ __all__ = ['argstoarray',
            'describe',
            'f_oneway', 'find_repeats','friedmanchisquare',
            'kendalltau','kendalltau_seasonal','kruskal','kruskalwallis',
-           'ks_twosamp','ks_2samp','kurtosis','kurtosistest',
-           'ks_1samp', 'kstest',
+           'kurtosis','kurtosistest',
            'linregress',
            'mannwhitneyu', 'meppf','mode','moment','mquantiles','msign',
            'normaltest',
@@ -1229,109 +1228,6 @@ def kruskal(*args):
 
 
 kruskalwallis = kruskal
-
-
-def ks_onesamp(x, cdf, args=(), alternative="two-sided", mode='auto'):
-    """
-    Computes the Kolmogorov-Smirnov test on one sample of masked values.
-
-    Missing values in `x` are discarded.
-
-    Parameters
-    ----------
-    x : array_like
-        a 1-D array of observations of random variables.
-    cdf : str or callable
-        If a string, it should be the name of a distribution in `scipy.stats`.
-        If a callable, that callable is used to calculate the cdf.
-    args : tuple, sequence, optional
-        Distribution parameters, used if `cdf` is a string.
-    alternative : {'two-sided', 'less', 'greater'}, optional
-        Indicates the alternative hypothesis.  Default is 'two-sided'.
-    mode : {'auto', 'exact', 'asymp'}, optional
-        Defines the method used for calculating the p-value.
-        The following options are available (default is 'auto'):
-
-          * 'auto' : use 'exact' for small size arrays, 'asymp' for large
-          * 'exact' : use approximation to exact distribution of test statistic
-          * 'asymp' : use asymptotic distribution of test statistic
-
-    Returns
-    -------
-    d : float
-        Value of the Kolmogorov Smirnov test
-    p : float
-        Corresponding p-value.
-
-    """
-    alternative = {'t': 'two-sided', 'g':'greater', 'l': 'less'}.get(
-       alternative.lower()[0], alternative)
-    return scipy.stats.stats.ks_1samp(
-        x, cdf, args=args, alternative=alternative, mode=mode)
-
-
-ks_1samp = ks_onesamp
-
-
-def ks_twosamp(x, y, alternative="two-sided", mode='auto'):
-    """
-    Computes the Kolmogorov-Smirnov test on two samples.
-
-    Missing values in `x` and/or `y` are discarded.
-
-    Parameters
-    ----------
-    x : array_like
-        First data set
-    y : array_like
-        Second data set
-    alternative : {'two-sided', 'less', 'greater'}, optional
-        Indicates the alternative hypothesis.  Default is 'two-sided'.
-    mode : {'auto', 'exact', 'asymp'}, optional
-        Defines the method used for calculating the p-value.
-        The following options are available (default is 'auto'):
-
-          * 'auto' : use 'exact' for small size arrays, 'asymp' for large
-          * 'exact' : use approximation to exact distribution of test statistic
-          * 'asymp' : use asymptotic distribution of test statistic
-
-    Returns
-    -------
-    d : float
-        Value of the Kolmogorov Smirnov test
-    p : float
-        Corresponding p-value.
-
-    """
-    # Ideally this would be accomplished by
-    # ks_2samp = scipy.stats.stats.ks_2samp
-    # but the circular dependencies between mstats_basic and stats prevent that.
-    alternative = {'t': 'two-sided', 'g':'greater', 'l': 'less'}.get(
-       alternative.lower()[0], alternative)
-    return scipy.stats.stats.ks_2samp(x, y, alternative=alternative, mode=mode)
-
-
-ks_2samp = ks_twosamp
-
-
-def kstest(data1, data2, args=(), alternative='two-sided', mode='auto'):
-    """
-
-    Parameters
-    ----------
-    data1 : array_like
-    data2 : str, callable or array_like
-    args : tuple, sequence, optional
-        Distribution parameters, used if `data1` or `data2` are strings.
-    alternative : str, as documented in stats.kstest
-    mode : str, as documented in stats.kstest
-
-    Returns
-    -------
-    tuple of (K-S statistic, probability)
-
-    """
-    return scipy.stats.stats.kstest(data1, data2, args, alternative=alternative, mode=mode)
 
 
 def trima(a, limits=None, inclusive=(True,True)):

@@ -5832,6 +5832,8 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', mode='auto'):
     (0.131016895759829, 0.058826222555312224)
 
     """
+    alternative = {'t': 'two-sided', 'g':'greater', 'l': 'less'}.get(
+       alternative.lower()[0], alternative)
     if alternative not in ['two-sided', 'greater', 'less']:
         raise ValueError("Unexpected alternative %s" % alternative)
     if np.ma.is_masked(x):
@@ -6242,6 +6244,8 @@ def ks_2samp(x, y, alternative='two-sided', mode='auto'):
     """
     if mode not in ['auto', 'exact', 'asymp']:
         raise ValueError(f'Invalid value for mode: {mode}')
+    alternative = {'t': 'two-sided', 'g':'greater', 'l': 'less'}.get(
+       alternative.lower()[0], alternative)
     if alternative not in ['two-sided', 'less', 'greater']:
         raise ValueError(f'Invalid value for alternative: {alternative}')
     MAX_AUTO_N = 10000  # 'auto' will attempt to be exact if n1,n2 <= MAX_AUTO_N
