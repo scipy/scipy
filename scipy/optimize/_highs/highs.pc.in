@@ -1,0 +1,12 @@
+prefix=@CMAKE_INSTALL_PREFIX@
+libdir=@CMAKE_INSTALL_PREFIX@/lib
+includedir=@CMAKE_INSTALL_PREFIX@/@include@
+
+Name: HiGHS
+Description: Linear Optimization Software
+URL: https://github.com/ERGO-Code/HiGHS
+Version: @HIGHS_VERSION_MAJOR@.@HIGHS_VERSION_MINOR@.@HIGHS_VERSION_PATCH@
+Libs: -L${libdir} -lhighs
+#TODO Libs.private (when HiGHS lib is build as static lib)
+Cflags: -I${includedir}
+Requires:

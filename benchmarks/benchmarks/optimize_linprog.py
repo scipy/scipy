@@ -39,7 +39,9 @@ except ValueError:
 
 methods = [("interior-point", {"sparse": True}),
            ("interior-point", {"sparse": False}),
-           ("revised simplex", {})]
+           ("revised simplex", {}),
+           ("highs-ipm", {}),
+           ("highs-simplex", {})]
 rr_methods = [_remove_redundancy, _remove_redundancy_dense,
               _remove_redundancy_sparse]
 presolve_methods = ['sparse', 'dense']
