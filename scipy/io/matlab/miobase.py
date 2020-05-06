@@ -7,7 +7,6 @@ MATLAB is a registered trademark of the Mathworks inc.
 """
 import operator
 import functools
-import warnings
 
 import numpy as np
 from scipy._lib import doccer

@@ -110,41 +110,41 @@ def _has_struct(elem):
             isinstance(elem[0], mat_struct))
 
 
-def _tolist(ndarray):
+def _inspect_cell_array(ndarray):
     """Construct lists from cell arrays (loaded as numpy ndarrays), recursing
     into items if they contain mat_struct objects."""
     elem_list = []
     for sub_elem in ndarray:
         if isinstance(sub_elem, mat_struct):
-            elem_list.append(_todict(sub_elem))
+            elem_list.append(_matstruct_to_dict(sub_elem))
         elif _has_struct(sub_elem):
-            elem_list.append(_tolist(sub_elem))
+            elem_list.append(_inspect_cell_array(sub_elem))
         else:
             elem_list.append(sub_elem)
     return elem_list
 
 
-def _todict(matobj):
+def _matstruct_to_dict(matobj):
     """Construct nested dicts from mat_struct objects."""
     d = {}
     for f in matobj._fieldnames:
         elem = matobj.__dict__[f]
         if isinstance(elem, mat_struct):
-            d[f] = _todict(elem)
+            d[f] = _matstruct_to_dict(elem)
         elif _has_struct(elem):
-            d[f] = _tolist(elem)
+            d[f] = _inspect_cell_array(elem)
         else:
             d[f] = elem
     return d
 
 
-def _check_keys(d):
+def _simplify_cells(d):
     """Convert mat objects in dict to nested dicts."""
     for key in d:
         if isinstance(d[key], mat_struct):
-            d[key] = _todict(d[key])
+            d[key] = _matstruct_to_dict(d[key])
         elif _has_struct(d[key]):
-            d[key] = _tolist(d[key])
+            d[key] = _inspect_cell_array(d[key])
     return d
 
 
@@ -346,7 +346,7 @@ class MatFile5Reader(MatFileReader):
                 if len(variable_names) == 0:
                     break
         if self.simplify_cells:
-            return _check_keys(mdict)
+            return _simplify_cells(mdict)
         else:
             return mdict
 
