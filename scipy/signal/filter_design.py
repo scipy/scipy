@@ -2083,6 +2083,8 @@ def iirdesign(wp, ws, gpass, gstop, analog=False, ftype='ellip', output='ba',
             - Bandstop:  wp = [0.1, 0.6],   ws = [0.2, 0.5]
 
         For analog filters, `wp` and `ws` are angular frequencies (e.g., rad/s).
+        Note, that for bandpass and bandstop filters passband must lie strictly inside 
+        stopband or vice versa.
     gpass : float
         The maximum loss in the passband (dB).
     gstop : float
@@ -2178,6 +2180,14 @@ def iirdesign(wp, ws, gpass, gstop, analog=False, ftype='ellip', output='ba',
 
     wp = atleast_1d(wp)
     ws = atleast_1d(ws)
+
+    if wp.shape[0] != ws.shape[0]:
+        raise ValueError("Passband and stopband frequencies must"
+                         " have the same dimension.")
+    if wp.shape == 2 and not((ws[0] < wp[0] and wp[1] < ws[1]) or
+            (wp[0] < ws[0] and ws[1] < wp[1]))
+        raise ValueError("Passband must lie strictly inside stopband"
+                         " or vice versa")
 
     band_type = 2 * (len(wp) - 1)
     band_type += 1
