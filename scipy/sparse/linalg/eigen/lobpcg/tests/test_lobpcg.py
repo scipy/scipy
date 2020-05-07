@@ -323,7 +323,7 @@ def test_diagonal_data_types():
     """Check lobpcg for diagonal matrices for all matrix types.
     """
     np.random.seed(1234)
-    n = 50
+    n = 40
     m = 4
     # Define the generalized eigenvalue problem Av = cBv
     # where (c, v) is a generalized eigenpair,
