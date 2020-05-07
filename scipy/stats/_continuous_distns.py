@@ -4219,49 +4219,25 @@ class laplace_gen(rv_continuous):
         Notes
         -----
         An error is raised if floc and fscale are given. A warning is raised
-        if a provided parameter does not match MLE equations to indicate that
-        the optimizer will be used to determine the best fit.
+        if either `floc` or `fscale` is provided but does not match the exact
+        MLE value; the generic implementation in rv_continuous, numerical
+        optimization, will be used to determine the best fit.
         """
-        if len(args) > 0:
-            raise TypeError("Too many arguments.")
-
         floc = kwds.pop('floc', None)
         fscale = kwds.pop('fscale', None)
 
-        _remove_optimizer_parameters(kwds)
-
-        if floc is not None and fscale is not None:
-            # This check is for consistency with `rv_continuous.fit`.
-            # Without this check, this function would just return the
-            # parameters that were given.
-            raise ValueError("All parameters fixed. There is nothing to "
-                             "optimize.")
-
-        data = np.asarray(data)
-
-        if not np.isfinite(data).all():
-            raise RuntimeError("The data contains non-finite values.")
+        check_fit_input_parameters(data, args,
+                                   kwds, fixed_param=(floc, fscale))
 
         # MLE for the laplace distribution
-        # --------------------------------
-        # scale is given by the equation
-        #    \frac{1}{n}\sum_{i=0}^{n}{|x_i - loc|}
         # loc is given by
-        #    data.median()
-        # Source: Statistical Distributions, 3rd Edition. Evans, Hastings,
-        #        and Peacock (2000),(pg. 124)
-        # If either floc or fscale are provided but do not match MLE
-        # equations, the optimizer will be used to determine the other value.
-
-        # Predetermine MLE results for comparison
-
         loc = np.median(data)
 
-        scale = 0
-        n = len(data)
-        for i in range(n):
-            scale += np.abs(data[i] - loc)
-        scale = scale/n
+        # scale is given by
+        scale = (np.sum(np.abs(data - loc))) / len(data)
+
+        # Source: Statistical Distributions, 3rd Edition. Evans, Hastings,
+        # and Peacock (2000), Page 124
 
         if ((floc is None or np.isclose(floc, loc)) and
                 (fscale is None or np.isclose(fscale, scale))):
@@ -4274,24 +4250,42 @@ class laplace_gen(rv_continuous):
             # Raise warning to indicate optimizer usage for loc or scale
             if floc is not None:
                 # use optimizer to determine scale for custom floc
-                msg = ("Supplied floc did not match the maxmimum "
-                       "likelihood estimate equation, using optimizer "
-                       "to determine scale")
+                msg = ("Supplied `floc` did not match the analytical maximum "
+                       "likelihood estimate equation; using numerical "
+                       "optimization to determine `scale`.")
                 warnings.warn(msg, RuntimeWarning)
                 return super(laplace_gen, self).fit(data, floc=floc, *args,
                                                     **kwds)
 
             if fscale is not None:
                 # use optimizer to determine loc for custom fscale
-                msg = ("Supplied fscale did not match the maxmimum "
-                       "likelihood estimate equation, using optimizer "
-                       "to determine loc")
+                msg = ("Supplied `fscale` did not match the analytical "
+                       "maximum likelihood estimate equation;"
+                       "using numerical optimization to determine `loc`.")
                 warnings.warn(msg, RuntimeWarning)
                 return super(laplace_gen, self).fit(data, fscale=fscale, *args,
                                                     **kwds)
 
 
 laplace = laplace_gen(name='laplace')
+
+
+def check_fit_input_parameters(data, args, kwds, fixed_param):
+    if len(args) > 0:
+        raise TypeError("Too many arguments.")
+
+    _remove_optimizer_parameters(kwds)
+
+    if None not in fixed_param:
+        # This check is for consistency with `rv_continuous.fit`.
+        # Without this check, this function would just return the
+        # parameters that were given.
+        raise ValueError("All parameters fixed. There is nothing to "
+                         "optimize.")
+
+    data = np.asarray(data)
+    if not np.isfinite(data).all():
+        raise RuntimeError("The data contains non-finite values.")
 
 
 class levy_gen(rv_continuous):

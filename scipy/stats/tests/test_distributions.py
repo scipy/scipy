@@ -1374,6 +1374,40 @@ class TestDLaplace(object):
         assert_equal((m, s), (0., 0.))
         assert_allclose((v, k), (4., 3.25))
 
+    @pytest.mark.parametrize("rvs_loc", [-1, 0, 1, 2])
+    @pytest.mark.parametrize("rvs_scale", [1, 2, 3, 4])
+    def test_fit(self, rvs_loc, rvs_scale):
+        # tests that various inputs follow expected behavior
+        # for a variety of `loc` and `scale`.
+        data = stats.laplace.rvs(size=100, loc=rvs_loc, scale=rvs_scale)
+
+        # MLE estimates are given by
+        loc_mle = np.median(data)
+        scale_mle = np.sum(np.abs(data - loc_mle)) / len(data)
+
+        # standard outputs should match MLE
+        loc, scale = stats.laplace.fit(data)
+        assert_equal(loc, loc_mle)
+        assert_equal(scale, scale_mle)
+
+        # fixed parameter matches MLE should use MLE for other
+        loc, scale = stats.laplace.fit(data, floc=loc_mle)
+        assert_equal(scale, scale_mle)
+        loc, scale = stats.laplace.fit(data, fscale=scale_mle)
+        assert_equal(loc, loc_mle)
+
+        # warning raised when fixed parameters don't match MLE
+        assert_warns(RuntimeWarning,
+                     stats.laplace.fit, data, floc=loc_mle - 1)
+        assert_warns(RuntimeWarning,
+                     stats.laplace.fit, data, fscale=scale_mle - 1)
+        # erro raised when both `floc` and `fscale` are fixed
+        assert_raises(ValueError, stats.laplace.fit, data, floc=loc_mle,
+                      fscale=scale_mle)
+
+        # error is raised with non-finite values
+        assert_raises(RuntimeError, stats.laplace.fit, [np.nan])
+
 
 class TestInvGamma(object):
     def test_invgamma_inf_gh_1866(self):
