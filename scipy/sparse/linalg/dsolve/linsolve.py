@@ -79,7 +79,7 @@ def _get_umf_family(A):
             % (f_type, i_type)
         raise ValueError(msg)
 
-    if np.prod(A.shape) > np.iinfo(np.int32).max:
+    if A.shape[0]*A.shape[1] > np.iinfo(np.int32).max:  # np.prod can overflow
         family = family[0] + "l"
         A_new = A.__class__(A.shape)
         A_new.data = A.data
