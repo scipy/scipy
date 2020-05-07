@@ -555,6 +555,7 @@ cdef class _Qhull:
         cdef np.ndarray[np.npy_int, ndim=1] id_map
         cdef double dist
         cdef int facet_ndim
+        cdef np.npy_intp * coplanar_shape
         cdef unsigned int lower_bound
         cdef unsigned int swapped_index
 
@@ -600,6 +601,7 @@ cdef class _Qhull:
 
         ncoplanar = 0
         coplanar = np.zeros((10, 3), dtype=np.intc)
+        coplanar_shape = coplanar.shape
 
         # Retrieve facet information
         with nogil:
@@ -651,7 +653,7 @@ cdef class _Qhull:
                         point = <pointT*>facet.coplanarset.e[i].p
                         vertex = qh_nearvertex(self._qh, facet, point, &dist)
 
-                        if ncoplanar >= coplanar.shape[0]:
+                        if ncoplanar >= coplanar_shape[0]:
                             with gil:
                                 tmp = coplanar
                                 coplanar = None
@@ -2067,6 +2069,7 @@ class Delaunay(_QhullUser):
         cdef int k
         cdef np.ndarray[np.double_t, ndim=2] x
         cdef np.ndarray[np.npy_int, ndim=1] out_
+        cdef np.npy_intp * x_shape
 
         xi = np.asanyarray(xi)
 
@@ -2076,6 +2079,7 @@ class Delaunay(_QhullUser):
         xi_shape = xi.shape
         xi = xi.reshape(-1, xi.shape[-1])
         x = np.ascontiguousarray(xi.astype(np.double))
+        x_shape = x.shape
 
         start = 0
 
@@ -2090,7 +2094,7 @@ class Delaunay(_QhullUser):
 
         if bruteforce:
             with nogil:
-                for k in range(x.shape[0]):
+                for k in range(x_shape[0]):
                     isimplex = _find_simplex_bruteforce(
                         &info, c,
                         <double*>x.data + info.ndim*k,
@@ -2098,7 +2102,7 @@ class Delaunay(_QhullUser):
                     out_[k] = isimplex
         else:
             with nogil:
-                for k in range(x.shape[0]):
+                for k in range(x_shape[0]):
                     isimplex = _find_simplex(&info, c,
                                              <double*>x.data + info.ndim*k,
                                              &start, eps, eps_broad)
@@ -2119,6 +2123,7 @@ class Delaunay(_QhullUser):
         cdef DelaunayInfo_t info
         cdef double z[NPY_MAXDIMS+1]
         cdef int i, j, k
+        cdef np.npy_intp * x_shape
 
         if xi.shape[-1] != self.ndim:
             raise ValueError("xi has different dimensionality than "
@@ -2127,6 +2132,7 @@ class Delaunay(_QhullUser):
         xi_shape = xi.shape
         xi = xi.reshape(-1, xi.shape[-1])
         x = np.ascontiguousarray(xi.astype(np.double))
+        x_shape = x.shape
 
         _get_delaunay_info(&info, self, 0, 0, 0)
 
@@ -2134,7 +2140,7 @@ class Delaunay(_QhullUser):
         out_ = out
 
         with nogil:
-            for i in range(x.shape[0]):
+            for i in range(x_shape[0]):
                 for j in range(info.nsimplex):
                     _lift_point(&info, (<double*>x.data) + info.ndim*i, z)
                     out_[i,j] = _distplane(&info, j, z)

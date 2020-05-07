@@ -249,6 +249,8 @@ cpdef _label(np.ndarray input,
         np.intp_t L, delta, i
         np.intp_t si, so, ss
         np.intp_t total_offset
+        np.intp_t output_ndim, structure_ndim, strides
+        np.npy_intp * output_shape
         bint needs_self_labeling, valid, center, use_previous, overflowed
         np.ndarray _line_buffer, _neighbor_buffer
         np.uintp_t *line_buffer
@@ -302,15 +304,19 @@ cpdef _label(np.ndarray input,
         next_region = 2
 
         # Used for labeling single lines
-        temp = [1] * structure.ndim
+        structure_ndim = structure.ndim
+        temp = [1] * structure_ndim
         temp[axis] = 0
         use_previous = (structure[tuple(temp)] != 0)
+        output_ndim = output.ndim
+        output_shape = output.shape
+        output_strides = output.strides
 
         with nogil:
             while PyArray_ITER_NOTDONE(iti):
                 # Optimization - for 2D, line_buffer becomes next iteration's
                 # neighbor buffer
-                if output.ndim == 2:
+                if output_ndim == 2:
                     tmp = line_buffer
                     line_buffer = neighbor_buffer
                     neighbor_buffer = tmp
@@ -335,20 +341,20 @@ cpdef _label(np.ndarray input,
                     # Check that the neighbor line is in bounds
                     valid = True
                     total_offset = 0
-                    for idim in range(structure.ndim):
+                    for idim in range(structure_ndim):
                         if idim == axis:
                             continue
                         delta = (itstruct.coordinates[idim] - 1)  # 1,1,1... is center
-                        if not (0 <= (ito.coordinates[idim] + delta) < output.shape[idim]):
+                        if not (0 <= (ito.coordinates[idim] + delta) < output_shape[idim]):
                             valid = False
                             break
-                        total_offset += delta * output.strides[idim]
+                        total_offset += delta * output_strides[idim]
 
                     if valid:
                         # Optimization (see above) - for 2D, line_buffer
                         # becomes next iteration's neighbor buffer, so no
                         # need to read it here.
-                        if output.ndim != 2:
+                        if output_ndim != 2:
                             read_line(<char *> PyArray_ITER_DATA(ito) + total_offset, so,
                                       neighbor_buffer, L)
 
