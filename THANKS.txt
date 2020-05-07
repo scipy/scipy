@@ -228,6 +228,7 @@ Domen Gorjup and Janko Slavič for continuous wavelet transform with complex
     wavelets fix.
 Søren Fuglede Jørgensen for improvements to scipy.sparse.csgraph
 Grzegorz Mrukwa for a bug fix in rectangular_lsap.cpp
+Milad Sadeghi.DM for adding khatri_rao matrix product to scipy.linalg.matfuncs.py
 Santiago Hernandez for a bug fix in scipy.optimize._differentialevolution.py.
 Dan Kleeman for implementing nan_policy in stats.zscores and winsorize
 James Wright for simple documentation fixes
