@@ -149,7 +149,7 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
 
             ``7``: MESSAGE_LEVEL_ALWAYS
 
-        Default is ``MESSAGE_LEVEL_NONE``, but note:
+        Default is ``MESSAGE_LEVEL_MINIMAL``, but note:
         this option is ignored unless option ``disp`` is ``True``.
     primal_feasibility_tolerance : double
         Primal feasibility tolerance.  Default is 1e-07.  When
@@ -272,7 +272,7 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
 
     message_level = (
         _check_invalid_option_values(message_level, 'message_level',
-                                     {0, 1, 2, 4, 7}, 1))
+                                     {0, 1, 2, 4, 7}, MESSAGE_LEVEL_MINIMAL))
 
     statuses = {
         MODEL_STATUS_NOTSET: (4, 'HiGHS Status Code 0: HighsModelStatusNOTSET'),
