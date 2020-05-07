@@ -3264,6 +3264,12 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
     above_threshold_color : str, optional
         This matplotlib color string sets the color of the links above the
         color_threshold. The default is ``'C0'``.
+    leaves_order : iterable, optional
+        Plots the leaves in the order specified by a vector of
+        original observation indices. If the vector contains duplicates
+        or results in a crossing, an exception will be thrown. Passing
+        None orders leaf nodes based on the order they appear in the
+        pre-order traversal.
 
     Returns
     -------
@@ -3326,16 +3332,17 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
     >>> hierarchy.set_link_color_palette(None)  # reset to default after use
     >>> plt.show()
 
+    An example with custom leaves ordering:
+
+    >>> from scipy.cluster import hierarchy
+    >>> X = [[0,0], [0,1], [0,4], [2,4], [6,3],[7,3], [8,3]]
+    >>> Z = hierarchy.linkage(X, method='single')
+
+    >>> fig, axes = plt.subplots(1, 2, figsize=(8, 3))
+    >>> dn1 = hierarchy.dendrogram(Z, ax=axes[0])
+    >>> dn2 = hierarchy.dendrogram(Z, ax=axes[1], leaves_order = [3,2,1,0,6,4,5])
+    >>> plt.show()
     """
-    # This feature was thought about but never implemented (still useful?):
-    #
-    #         ... = dendrogram(..., leaves_order=None)
-    #
-    #         Plots the leaves in the order specified by a vector of
-    #         original observation indices. If the vector contains duplicates
-    #         or results in a crossing, an exception will be thrown. Passing
-    #         None orders leaf nodes based on the order they appear in the
-    #         pre-order traversal.
     if leaves_order is None:
         Z = np.asarray(Z, order='c')
     else:
