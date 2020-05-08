@@ -279,7 +279,7 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
     # Catch message_level warnings that HiGHS currently misses:
     message_level = (
         _check_invalid_option_values(message_level, 'message_level',
-                                     {None, 0, 1, 2, 4, 7}, MESSAGE_LEVEL_MINIMAL))
+                                     {None, 0, 1, 2, 3, 4, 5, 6, 7}, MESSAGE_LEVEL_MINIMAL))
 
     # SIMPLEX_STRATEGY_PRIMAL (4) is experimental -- disallow use!
     simplex_strategy = (
