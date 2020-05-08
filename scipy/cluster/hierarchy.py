@@ -3009,20 +3009,20 @@ def reorder_leaves(Z, leaves_order):
     n = Z.shape[0] + 1
     ch = np.zeros((n - 1, 2))
     for i in range(n - 1):
-        ch[i]=(Z[i][0], Z[i][1])  # ch[i] = children of node n+i
+        ch[i] = (Z[i][0], Z[i][1])  # ch[i] = children of node n+i
     Z = Z.astype('int32')
     new_Z = np.zeros((n - 1, 4), dtype=float)
-    p = np.zeros(2*n-1,dtype='int32') # array of parents
+    p = np.zeros(2*n-1, dtype='int32') # array of parents
     for i in range(n - 1):
         p[Z[i, 0]] = i + n
         p[Z[i, 1]] = i + n
 
-    cnt=0
+    cnt = 0
     used = [False for i in range(2*n-1)]
     top_level = np.array(leaves_order, dtype='int')
     new_top_level = np.array([], dtype='int')
     sizes = np.ones(2*n-1)
-    old_inner_node_number = np.zeros(n-1,dtype='int') # correspondence between new and old inner node numbering
+    old_inner_node_number = np.zeros(n-1, dtype='int') # correspondence between new and old inner node numbering
 
     height = np.zeros(n-1, dtype=float)
     for i in range(n-1):
@@ -3059,17 +3059,6 @@ def reorder_leaves(Z, leaves_order):
         new_top_level = np.array([], dtype='int')
 
     return new_Z
-    """
-    for l in leaves_order:
-        if used[l]:
-            continue
-        used[l] = True
-        while True:
-            parent = p[l]
-            is_left_child = (ch[parent][0] == l)
-            if is_left_child:
-                right_sibling = ch[parent][1]
-    """
 
 
 def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
