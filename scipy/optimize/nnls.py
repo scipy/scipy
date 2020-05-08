@@ -1,10 +1,11 @@
 from . import _nnls
 from numpy import asarray_chkfinite, zeros, double
+import logging
 
 __all__ = ['nnls']
 
 
-def nnls(A, b, maxiter=None):
+def nnls(A, b, maxiter=None, factor=0.01):
     """
     Solve ``argmin_x || Ax - b ||_2`` for ``x>=0``. This is a wrapper
     for a FORTRAN non-negative least squares solver.
@@ -18,6 +19,10 @@ def nnls(A, b, maxiter=None):
     maxiter: int, optional
         Maximum number of iterations, optional.
         Default is ``3 * A.shape[1]``.
+    factor: float, optional
+        A scalar which determines when to end the search due to lack
+        of linear independence.
+        Default is ``0.01``.
 
     Returns
     -------
@@ -77,8 +82,11 @@ def nnls(A, b, maxiter=None):
     zz = zeros((m,), dtype=double)
     index = zeros((n,), dtype=int)
 
-    x, rnorm, mode = _nnls.nnls(A, m, n, b, w, zz, index, maxiter)
+    x, rnorm, mode, iterationquit = _nnls.nnls(A, m, n, b, w, zz, index, maxiter, factor)
     if mode != 1:
         raise RuntimeError("too many iterations")
+    
+    if iterationquit == 1:
+        logging.info("NNLS quitting on iteration count.")
 
     return x, rnorm

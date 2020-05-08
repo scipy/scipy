@@ -49,7 +49,8 @@ C     MAXITER THE MAXIMUM ALLOWED NUMBER OF ITERATIONS.
 C             IF NEGATIVE, THE LIMIT IS TAKEN AS THE DEFAULT, 3*N.              
 C   
 C     ------------------------------------------------------------------
-      SUBROUTINE NNLS (A,MDA,M,N,B,X,RNORM,W,ZZ,INDEX,MODE,MAXITER) 
+      SUBROUTINE NNLS (A,MDA,M,N,B,X,RNORM,W,ZZ,INDEX,MODE,MAXITER,
+     $      FACTOR, ITERATIONQUIT)  
 C     ------------------------------------------------------------------
       integer I, II, IP, ITER, ITMAX, IZ, IZ1, IZ2, IZMAX, J, JJ, JZ, L
       integer M, MDA, MODE,N, NPP1, NSETP, RTNKEY
@@ -61,9 +62,10 @@ c     double precision A(MDA,N), B(M), W(N), X(N), ZZ(M)
       double precision ALPHA, ASAVE, CC, DIFF, DUMMY, FACTOR, RNORM
       double precision SM, SS, T, TEMP, TWO, UNORM, UP, WMAX
       double precision ZERO, ZTEST
-      parameter(FACTOR = 0.01d0)
+      integer ITERATIONQUIT
       parameter(TWO = 2.0d0, ZERO = 0.0d0)
 C     ------------------------------------------------------------------
+      ITERATIONQUIT=0
       MODE=1
       IF (M .le. 0 .or. N .le. 0) then
          MODE=2
@@ -197,7 +199,7 @@ C
       ITER=ITER+1   
       IF (ITER .gt. ITMAX) then
          MODE=3
-         write (*,'(/a)') ' NNLS quitting on iteration count.'
+         ITERATIONQUIT=1
          GO TO 350 
       endif
 C   

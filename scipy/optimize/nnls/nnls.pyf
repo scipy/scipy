@@ -3,7 +3,7 @@
 
 python module _nnls ! in 
     interface  ! in :_nnls
-        subroutine nnls(a,mda,m,n,b,x,rnorm,w,zz,index_bn,mode,maxiter) ! in :nnls:NNLS.F
+        subroutine nnls(a,mda,m,n,b,x,rnorm,w,zz,index_bn,mode,maxiter,factor,iterationquit) ! in :nnls:NNLS.F
             double precision dimension(mda,*), intent(copy) :: a
             integer optional,check(shape(a,0)==mda),depend(a) :: mda=shape(a,0)
             integer :: m
@@ -16,6 +16,8 @@ python module _nnls ! in
             integer dimension(*) :: index_bn
             integer , intent(out):: mode
             integer :: maxiter
+            double precision :: factor
+            integer, intent(out) :: iterationquit
         end subroutine nnls
     end interface
 end python module _nnls

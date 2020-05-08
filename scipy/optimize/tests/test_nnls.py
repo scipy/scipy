@@ -32,3 +32,11 @@ class TestNNLS(object):
         with assert_raises(RuntimeError):
             nnls(a, b, maxiter=1)
 
+    def test_nnls_with_factor(self):
+        a = arange(25.0).reshape(-1,5)
+        x = arange(5.0)
+        y = dot(a, x)
+        factor = 0.001
+        x, res = nnls(a, y, factor=factor)
+        assert_(res < 1e-7)
+        assert_(norm(dot(a, x)-y) < 1e-7)
