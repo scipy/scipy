@@ -79,14 +79,14 @@ def _get_umf_family(A):
             % (f_type, i_type)
         raise ValueError(msg)
 
-    if A.shape[0]*A.shape[1] > np.iinfo(np.int32).max:  # np.prod can overflow
-        family = family[0] + "l"
-        A_new = A.__class__(A.shape)
-        A_new.data = A.data
-        A_new.indptr = np.array(A.indptr, copy=False, dtype=np.int64)
-        A_new.indices = np.array(A.indices, copy=False, dtype=np.int64)
-    else:
-        A_new = A
+    # See gh-8278. Considered converting only if
+    # A.shape[0]*A.shape[1] > np.iinfo(np.int32).max,
+    # but that didn't always fix the issue.
+    family = family[0] + "l"
+    A_new = A.__class__(A.shape)
+    A_new.data = A.data
+    A_new.indptr = np.array(A.indptr, copy=False, dtype=np.int64)
+    A_new.indices = np.array(A.indices, copy=False, dtype=np.int64)
 
     return family, A_new
 
