@@ -11,9 +11,9 @@ __all__ = ['orthogonal_procrustes']
 
 def orthogonal_procrustes(A, B, check_finite=True):
     """
-    Compute the matrix solution of the orthogonal Procrustes problem.
+    Compute the matrix solution of the orthogonal (or unitary) Procrustes problem.
 
-    Given matrices A and B of equal shape, find an orthogonal matrix R
+    Given matrices A and B of equal shape, find an orthogonal (unitary in the case of complex input matrices) matrix R
     that most closely maps A to B using the algorithm given in [1]_.
 
     Parameters
@@ -70,7 +70,17 @@ def orthogonal_procrustes(A, B, check_finite=True):
     >>> sca
     9.0
 
+    # Complex example for the unitary Procrustes problem
+    >>> n = 4
+    >>> A = np.random.rand(n,n)+1j*np.random.rand(n,n)
+    >>> Q, _ = np.linalg.qr(np.random.rand(n,)+1j*np.random.rand(n,n)) # a random unitary matrix
+    >>> B = A@Q+1e-4*(np.random.randn(n,n)+1j*np.random.randn(n,n))    # B is A@Q plus complex noise
+    >>> R, _ = unitary_procrustes(A,B)                                 # find best estimate of Q
+    >>> print('Should be small: %g'%np.linalg.norm(R-Q))
+    Should be small: 0.00111944
+    
     """
+    
     if check_finite:
         A = np.asarray_chkfinite(A)
         B = np.asarray_chkfinite(B)
@@ -83,7 +93,8 @@ def orthogonal_procrustes(A, B, check_finite=True):
         raise ValueError('the shapes of A and B differ (%s vs %s)' % (
             A.shape, B.shape))
     # Be clever with transposes, with the intention to save memory.
-    u, w, vt = svd(B.T.dot(A).T)
-    R = u.dot(vt)
+    # The conjugate has no effect for real inputs, but gives the correct solution for complex inputs.
+    u, w, vt = svd((B.T@np.conjugate(A)).T)
+    R = u@vt
     scale = w.sum()
     return R, scale
