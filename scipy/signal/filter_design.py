@@ -2072,7 +2072,9 @@ def iirdesign(wp, ws, gpass, gstop, analog=False, ftype='ellip', output='ba',
     Parameters
     ----------
     wp, ws : float
-        Passband and stopband edge frequencies.
+        Passband and stopband edge frequencies. Possible values are scalars
+        (for lowpass and highpass filters) or ranges (for bandpass and bandstop
+        filters).
         For digital filters, these are in the same units as `fs`. By default,
         `fs` is 2 half-cycles/sample, so these are normalized from 0 to 1,
         where 1 is the Nyquist frequency. For example:
@@ -2083,8 +2085,8 @@ def iirdesign(wp, ws, gpass, gstop, analog=False, ftype='ellip', output='ba',
             - Bandstop:  wp = [0.1, 0.6],   ws = [0.2, 0.5]
 
         For analog filters, `wp` and `ws` are angular frequencies (e.g., rad/s).
-        Note, that for bandpass and bandstop filters passband must lie strictly inside 
-        stopband or vice versa.
+        Note, that for bandpass and bandstop filters passband must lie strictly
+        inside stopband or vice versa.
     gpass : float
         The maximum loss in the passband (dB).
     gstop : float
@@ -2185,7 +2187,7 @@ def iirdesign(wp, ws, gpass, gstop, analog=False, ftype='ellip', output='ba',
         raise ValueError("Passband and stopband frequencies must"
                          " have the same dimension.")
     if wp.shape == 2 and not((ws[0] < wp[0] and wp[1] < ws[1]) or
-            (wp[0] < ws[0] and ws[1] < wp[1]))
+            (wp[0] < ws[0] and ws[1] < wp[1])):
         raise ValueError("Passband must lie strictly inside stopband"
                          " or vice versa")
 
