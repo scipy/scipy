@@ -28,6 +28,25 @@ see e.g. `NEP 37 - A dispatch protocol for NumPy-like modules <https://numpy.org
 and SciPy is an important "client" for those features.
 
 
+Performance improvements
+------------------------
+
+Speed improvements, lower memory usage and the ability to parallelize
+algorithms are beneficial to most science domains and use cases.  We have
+established an API design pattern for multiprocessing - using the ``workers``
+keyword - that can be adopted in many more functions.
+
+Enabling the use of an accelerator like Pythran, possibly via Transonic, and
+making it easier for users to use Numba's ``@njit`` in their code that relies
+on SciPy functionality would unlock a lot of performance gain.  That needs a
+strategy though, all solutions are still maturing (see for example
+`this overview <https://fluiddyn.bitbucket.io/transonic-vision.html>`__).
+
+Finally, many individual functions can be optimized for performance.
+``scipy.optimize`` and ``scipy.interpolate`` functions are particularly often
+requested in this respect.
+
+
 Statistics enhancements
 -----------------------
 

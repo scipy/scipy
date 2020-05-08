@@ -168,19 +168,19 @@ of the most important things that SciPy provides. In general ``scipy.linalg``
 is in good shape, however we can make a number of improvements:
 
 1. Library support. Our released wheels now ship with OpenBLAS, which is
-currently the only feasible performant option (ATLAS is too slow, MKL cannot be
-the default due to licensing issues, Accelerate support is dropped because
-Apple doesn't update Accelerate anymore). OpenBLAS isn't very stable though,
-sometimes its releases break things and it has issues with threading (currently
-the only issue for using SciPy with PyPy3).  We need at the very least better
-support for debugging OpenBLAS issues, and better documentation on how to build
-SciPy with it.  An option is to use BLIS for a BLAS interface (see `numpy
-gh-7372 <https://github.com/numpy/numpy/issues/7372>`__).
+   currently the only feasible performant option (ATLAS is too slow, MKL cannot
+   be the default due to licensing issues, Accelerate support is dropped
+   because Apple doesn't update Accelerate anymore). OpenBLAS isn't very stable
+   though, sometimes its releases break things and it has issues with threading
+   (currently the only issue for using SciPy with PyPy3).  We need at the very
+   least better support for debugging OpenBLAS issues, and better documentation
+   on how to build SciPy with it.  An option is to use BLIS for a BLAS
+   interface (see `numpy gh-7372 <https://github.com/numpy/numpy/issues/7372>`__).
 
 2. Support for newer LAPACK features.  In SciPy 1.2.0 we increased the minimum
-supported version of LAPACK to 3.4.0.  Now that we dropped Python 2.7, we can
-increase that version further (MKL + Python 2.7 was the blocker for >3.4.0
-previously) and start adding support for new features in LAPACK.
+   supported version of LAPACK to 3.4.0.  Now that we dropped Python 2.7, we
+   can increase that version further (MKL + Python 2.7 was the blocker for
+   >3.4.0 previously) and start adding support for new features in LAPACK.
 
 
 misc
