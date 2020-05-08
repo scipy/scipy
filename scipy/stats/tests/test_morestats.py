@@ -109,7 +109,7 @@ class TestShapiro(object):
         x1 = [0.11, 7.87, 4.61, 10.14, 7.95, 3.14, 0.46,
               4.43, 0.21, 4.75, 0.71, 1.52, 3.24,
               0.93, 0.42, 4.97, 9.53, 4.55, 0.47, 6.66]
-        w, pw = stats.shapiro
+        w, pw = stats.shapiro(x1)
         shapiro_test = stats.shapiro(x1)
         assert_almost_equal(w, 0.90047299861907959, decimal=6)
         assert_almost_equal(shapiro_test.statistic, 0.90047299861907959, decimal=6)
