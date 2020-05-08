@@ -250,7 +250,6 @@ cpdef _label(np.ndarray input,
         np.intp_t si, so, ss
         np.intp_t total_offset
         np.intp_t output_ndim, structure_ndim, strides
-        np.npy_intp * output_shape
         bint needs_self_labeling, valid, center, use_previous, overflowed
         np.ndarray _line_buffer, _neighbor_buffer
         np.uintp_t *line_buffer
@@ -303,7 +302,6 @@ cpdef _label(np.ndarray input,
         # 2... = working labels, will be compacted on output
         next_region = 2
 
-        # Used for labeling single lines
         structure_ndim = structure.ndim
         temp = [1] * structure_ndim
         temp[axis] = 0
@@ -324,6 +322,7 @@ cpdef _label(np.ndarray input,
                 # copy nonzero values in input to line_buffer as FOREGROUND
                 nonzero_line(PyArray_ITER_DATA(iti), si, line_buffer, L)
 
+                # Used for labeling single lines
                 needs_self_labeling = True
 
                 # Take neighbor labels

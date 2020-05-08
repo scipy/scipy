@@ -555,7 +555,6 @@ cdef class _Qhull:
         cdef np.ndarray[np.npy_int, ndim=1] id_map
         cdef double dist
         cdef int facet_ndim
-        cdef np.npy_intp * coplanar_shape
         cdef unsigned int lower_bound
         cdef unsigned int swapped_index
 
@@ -2069,7 +2068,6 @@ class Delaunay(_QhullUser):
         cdef int k
         cdef np.ndarray[np.double_t, ndim=2] x
         cdef np.ndarray[np.npy_int, ndim=1] out_
-        cdef np.npy_intp * x_shape
 
         xi = np.asanyarray(xi)
 
@@ -2123,7 +2121,6 @@ class Delaunay(_QhullUser):
         cdef DelaunayInfo_t info
         cdef double z[NPY_MAXDIMS+1]
         cdef int i, j, k
-        cdef np.npy_intp * x_shape
 
         if xi.shape[-1] != self.ndim:
             raise ValueError("xi has different dimensionality than "
