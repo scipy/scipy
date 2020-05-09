@@ -1599,7 +1599,7 @@ def normaltest(a, axis=0, nan_policy='propagate'):
 
     return NormaltestResult(k2, distributions.chi2.sf(k2, 2))
 
-Jarque_beratestResult = namedtuple('Jarque_beratestResult', ('statistic', 'pvalue'))
+Jarque_beraResult = namedtuple('Jarque_beraResult', ('statistic', 'pvalue'))
 
 def jarque_bera(x):
     """
@@ -1637,7 +1637,7 @@ def jarque_bera(x):
     >>> x = np.random.normal(0, 1, 100000)
     >>> jarque_bera_test = stats.jarque_bera(x)
     >>> jarque_bera_test
-    Jarque_beratestResult(4.7165707989581342, 0.09458225503041906)
+    Jarque_beraResult(4.7165707989581342, 0.09458225503041906)
     >>> jarque_bera_test.statistic
     4.7165707989581342
     >>> jarque_bera_test.pvalue
@@ -1656,7 +1656,7 @@ def jarque_bera(x):
     jb_value = n / 6 * (skewness**2 + (kurtosis - 3)**2 / 4)
     p = 1 - distributions.chi2.cdf(jb_value, 2)
 
-    return Jarque_beratestResult(jb_value, p)
+    return Jarque_beraResult(jb_value, p)
 
 
 #####################################
