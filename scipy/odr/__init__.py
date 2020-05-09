@@ -124,7 +124,7 @@ References
 
 from .odrpack import *
 from .models import *
-from . import add_newdocs
+from . import add_newdocs as _add_newdocs  # for odr.odr() docstring import
 
 __all__ = [s for s in dir()
            if not (s.startswith('_') or s in ('odr_stop', 'odr_error'))]
