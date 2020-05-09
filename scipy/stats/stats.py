@@ -1637,11 +1637,11 @@ def jarque_bera(x):
     >>> x = np.random.normal(0, 1, 100000)
     >>> jarque_bera_test = stats.jarque_bera(x)
     >>> jarque_bera_test
-    Jarque_beraResult(4.7165707989581342, 0.09458225503041906)
+    Jarque_beraResult(statistic=4.716570798957913, pvalue=0.0945822550304295)
     >>> jarque_bera_test.statistic
-    4.7165707989581342
+    4.716570798957913
     >>> jarque_bera_test.pvalue
-    0.09458225503041906
+    0.0945822550304295
 
     """
     x = np.asarray(x)
