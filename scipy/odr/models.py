@@ -114,7 +114,7 @@ def polynomial(order):
     a polynomial model:
 
     >>> import matplotlib.pyplot as plt
-    >>> from scipy.odr import odrpack as odr
+    >>> from scipy import odr
     >>> from scipy.odr.models import polynomial
     >>> x = np.linspace(0.0, 5.0)
     >>> y = np.sin(x)
