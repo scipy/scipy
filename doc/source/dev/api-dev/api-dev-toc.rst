@@ -8,3 +8,4 @@ SciPy API Development Guide
    :maxdepth: 1
 
    nan_policy
+   special_ufuncs
