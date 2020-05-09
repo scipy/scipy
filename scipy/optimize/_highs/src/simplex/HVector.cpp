@@ -33,6 +33,14 @@ void HVector::setup(int size_) {
   packCount = 0;
   packIndex.resize(size);
   packValue.resize(size);
+
+  // Initialise three values that are initialised in clear(), but
+  // weren't originally initialised in setup(). Probably doesn't
+  // matter, since clear() is usually called before a vector is
+  // (re-)used.
+  packFlag = false;
+  syntheticTick = 0;
+  next = 0;
 }
 
 void HVector::clear() {
@@ -50,27 +58,12 @@ void HVector::clear() {
       array[index[i]] = 0;
     }
   }
-  // Possibly check that the vector is cleared
-  bool ckClear = false;
-  if (ckClear) {
-    for (int i = 0; i < size; i++) {
-      if (array[i] != 0) {
-        printf("Error: cleared array[%d]=%g\n", i, array[i]);
-        fflush(stdout);
-      }
-    }
-  }
   // Reset the flag to indicate when to pack
   packFlag = false;
   // Zero the number of stored indices
   count = 0;
-
-  // fakeTick is soon to be deleted
-  //    fakeTick = 0;
-
   // Zero the synthetic clock for operations with this vector
   syntheticTick = 0;
-
   // Initialise the next value
   next = 0;
 }
@@ -96,8 +89,7 @@ void HVector::tight() {
 void HVector::pack() {
   /*
    * Packing (if packFlag set): Pack values/indices in Vector.array
-   * into packValue/Index when using default data structure, just
-   * indices when using the 1-byte pointer ultra-sparse representation
+   * into packValue/Index
    */
   if (packFlag) {
     packFlag = false;
@@ -116,7 +108,6 @@ void HVector::copy(const HVector* from) {
    * Copy from another HVector structure to this instance
    */
   clear();
-  //    fakeTick = from->fakeTick;
   syntheticTick = from->syntheticTick;
   const int fromCount = count = from->count;
   const int* fromIndex = &from->index[0];

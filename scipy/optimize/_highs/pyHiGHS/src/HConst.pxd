@@ -3,11 +3,11 @@
 
 cdef extern from "HConst.h" nogil:
 
-    const int HIGHS_CONST_I_INF = 2147483647
-    const double HIGHS_CONST_INF = 1e200
-    const double HIGHS_CONST_TINY = 1e-14
-    const double HIGHS_CONST_ZERO = 1e-50
-    const int HIGHS_THREAD_LIMIT = 8
+    int HIGHS_CONST_I_INF
+    double HIGHS_CONST_INF
+    double HIGHS_CONST_TINY
+    double HIGHS_CONST_ZERO
+    int HIGHS_THREAD_LIMIT
 
     cdef enum HighsPrintMessageLevel:
         ML_MIN = 0
@@ -37,3 +37,9 @@ cdef extern from "HConst.h" nogil:
         PrimalDualStatusSTATUS_UNKNOWN "PrimalDualStatus::STATUS_UNKOWN"
         PrimalDualStatusSTATUS_INFEASIBLE_POINT "PrimalDualStatus::STATUS_INFEASIBLE_POINT"
         PrimalDualStatusSTATUS_FEASIBLE_POINT "PrimalDualStatus::STATUS_FEASIBLE_POINT"
+
+    cdef enum HighsOptionType:
+        HighsOptionTypeBOOL "HighsOptionType::BOOL" = 0
+        HighsOptionTypeINT "HighsOptionType::INT"
+        HighsOptionTypeDOUBLE "HighsOptionType::DOUBLE"
+        HighsOptionTypeSTRING "HighsOptionType::STRING"

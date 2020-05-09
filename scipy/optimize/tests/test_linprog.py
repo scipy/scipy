@@ -1480,7 +1480,7 @@ class LinprogHiGHSTests(LinprogCommonTests):
         _assert_success(res, desired_fun=-18.0, desired_x=[2, 6])
 
     @pytest.mark.parametrize("options",
-                             [{"message_level": 3},
+                             [{"message_level": -1},
                               {"dual_feasibility_tolerance": -1},
                               {"primal_feasibility_tolerance": -1},
                               {"simplex_crash_strategy": 10},

@@ -136,7 +136,7 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
         Upper bound on objective value for dual simplex:
         algorithm terminates if reached.  Default is ``CONST_INF``.
         When ``solver='ipm'`` this value is ignored.
-    message_level : int {0, 1, 2, 4, 7}
+    message_level : int {0, 1, 2, 3, 4, 5, 6, 7}
         Verbosity level, corresponds to:
 
             ``0``: MESSAGE_LEVEL_NONE
@@ -145,12 +145,21 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
 
             ``2``: MESSAGE_LEVEL_DETAILED
 
+            ``3``: MESSAGE_LEVEL_VERBOSE | MESSAGE_LEVEL_DETAILED
+
             ``4``: MESSAGE_LEVEL_MINIMAL
+
+            ``5``: MESSAGE_LEVEL_MINIMAL | MESSAGE_LEVEL_VERBOSE
+
+            ``6``: MESSAGE_LEVEL_MINIMAL | MESSAGE_LEVEL_DETAILED
 
             ``7``: MESSAGE_LEVEL_ALWAYS
 
-        Default is ``MESSAGE_LEVEL_NONE``, but note:
+        Default is ``MESSAGE_LEVEL_MINIMAL``, but note:
         this option is ignored unless option ``disp`` is ``True``.
+        ``message_level`` behaves like a bitmask, i.e., any
+        combination of levels is possible using the bit-or
+        operator.
     primal_feasibility_tolerance : double
         Primal feasibility tolerance.  Default is 1e-07.  When
         ``solver='ipm'`` this is interpreted as the feasibility
@@ -203,10 +212,9 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
 
             ``1``: `SIMPLEX_PRIMAL_EDGE_WEIGHT_STRATEGY_DEVEX`
 
-    simplex_strategy : int {0, 1, 2, 3, 4}
-        Strategy for simplex solver. Default: ``1``.  Note that
-        ``SIMPLEX_STRATEGY_PRIMAL`` is a WIP and is known to fail
-        on some problems.  Corresponds to the following:
+    simplex_strategy : int {0, 1, 2, 3}
+        Strategy for simplex solver. Default: ``1``.
+        Corresponds to the following:
 
             ``0``: `SIMPLEX_STRATEGY_MIN`
 
@@ -215,8 +223,6 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
             ``2``: `SIMPLEX_STRATEGY_DUAL_TASKS`
 
             ``3``: `SIMPLEX_STRATEGY_DUAL_MULTI`
-
-            ``4``: `SIMPLEX_STRATEGY_PRIMAL`
 
     simplex_update_limit : int
         Limit on the number of simplex UPDATE operations.  Default
@@ -270,53 +276,15 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
 
     _check_unknown_options(unknown_options)
 
-    warning_message = ("Option `dual_feasibility_tolerance` is {0}, "
-                       "but only positive values are allowed. Using default."
-                       .format(dual_feasibility_tolerance))
-    if (dual_feasibility_tolerance is not None and
-            dual_feasibility_tolerance < 0):
-        dual_feasibility_tolerance = None
-        warn(warning_message, OptimizeWarning)
-
-    warning_message = ("Option `primal_feasibility_tolerance` is {0}, "
-                       "but only positive values are allowed. Using default."
-                       .format(primal_feasibility_tolerance))
-    if (primal_feasibility_tolerance is not None and
-            primal_feasibility_tolerance < 0):
-        primal_feasibility_tolerance = None
-        warn(warning_message, OptimizeWarning)
-
-    warning_message = ("Option `simplex_update_limit` is {0}, "
-                       "but only positive values are allowed. Using default."
-                       .format(simplex_update_limit))
-    if (simplex_update_limit is not None and
-            simplex_update_limit < 0):
-        simplex_update_limit = None
-        warn(warning_message, OptimizeWarning)
-
+    # Catch message_level warnings that HiGHS currently misses:
     message_level = (
         _check_invalid_option_values(message_level, 'message_level',
-                                     {0, 1, 2, 4, 7}, 1))
+                                     {None, 0, 1, 2, 3, 4, 5, 6, 7}, MESSAGE_LEVEL_MINIMAL))
 
-    simplex_crash_strategy = (
-        _check_invalid_option_values(simplex_crash_strategy,
-                                     'simplex_crash_strategy',
-                                     {None}.union(set(range(10))), None))
-
-    simplex_dual_edge_weight_strategy = (
-        _check_invalid_option_values(simplex_dual_edge_weight_strategy,
-                                     'simplex_dual_edge_weight_strategy',
-                                     {None}.union(set(range(5))), None))
-
-    simplex_primal_edge_weight_strategy = (
-        _check_invalid_option_values(simplex_primal_edge_weight_strategy,
-                                     'simplex_primal_edge_weight_strategy',
-                                     {None}.union(set(range(2))), None))
-
+    # SIMPLEX_STRATEGY_PRIMAL (4) is experimental -- disallow use!
     simplex_strategy = (
-        _check_invalid_option_values(simplex_strategy,
-                                     'simplex_strategy',
-                                     {None}.union(set(range(5))), None))
+        _check_invalid_option_values(simplex_strategy, 'simplex_strategy',
+                                     {None, 0, 1, 2, 3}, 1))
 
     statuses = {
         MODEL_STATUS_NOTSET: (4, 'HiGHS Status Code 0: HighsModelStatusNOTSET'),

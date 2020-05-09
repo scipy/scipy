@@ -42,8 +42,6 @@ class HVector {
   vector<int> index;     //!< Packed indices of nonzeros
   vector<double> array;  //!< Full-length array of values
 
-  //    int pseudoTick;
-  //    double fakeTick;
   double syntheticTick;  //!< Synthetic clock for operations with this vector
 
   // For update
