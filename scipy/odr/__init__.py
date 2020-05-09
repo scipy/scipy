@@ -34,8 +34,6 @@ Prebuilt models:
 
 .. data:: quadratic
 
-.. data:: polynomial
-
 Usage information
 =================
 
