@@ -191,6 +191,7 @@ scipy/ndimage/src/_cytest.c
 scipy/optimize/_bglu_dense.c
 scipy/optimize/cobyla/_cobylamodule.c
 scipy/optimize/lbfgsb_src/_lbfgsbmodule.c
+scipy/optimize/lbfgsb_src/_lbfgsb-f2pywrappers.f
 scipy/optimize/minpack2/minpack2module.c
 scipy/optimize/nnls/_nnlsmodule.c
 scipy/optimize/slsqp/_slsqpmodule.c
