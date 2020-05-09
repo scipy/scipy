@@ -1604,7 +1604,7 @@ def yeojohnson_normplot(x, la, lb, plot=None, N=80):
     return _normplot('yeojohnson', x, la, lb, plot, N)
 
 
-ShapirotestResult = namedtuple('ShapirotestResult', ('statistic', 'pvalue'))
+ShapiroResult = namedtuple('ShapiroResult', ('statistic', 'pvalue'))
 
 def shapiro(x):
     """
@@ -1656,7 +1656,7 @@ def shapiro(x):
     >>> x = stats.norm.rvs(loc=5, scale=3, size=100)
     >>> shapiro_test = stats.shapiro(x)
     >>> shapiro_test
-    ShapirotestResult(statistic=0.9772805571556091, pvalue=0.08144091814756393)
+    ShapiroResult(statistic=0.9772805571556091, pvalue=0.08144091814756393)
     >>> shapiro_test.statistic
     0.9772805571556091
     >>> shapiro_test.pvalue
@@ -1680,7 +1680,7 @@ def shapiro(x):
     if N > 5000:
         warnings.warn("p-value may not be accurate for N > 5000.")
 
-    return ShapirotestResult(w, pw)
+    return ShapiroResult(w, pw)
 
 
 # Values from Stephens, M A, "EDF Statistics for Goodness of Fit and
