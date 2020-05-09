@@ -24,15 +24,15 @@ Package Content
 
 Prebuilt models:
 
-.. data:: exponential
+    exponential
 
-.. data:: multilinear
+    multilinear
 
-.. data:: unilinear
+    unilinear
 
-.. data:: quadratic
+    quadratic
 
-.. data:: polynomial
+    polynomial
 
 Usage information
 =================
