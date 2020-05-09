@@ -1323,13 +1323,17 @@ def cut_tree(Z, n_clusters=None, height=None):
 
     Returns
     -------
-    cutree : array
+    cutree : ndarray
         An array indicating group membership at each agglomeration step. I.e.,
         for a full cut tree, in the first column each data point is in its own
         cluster. At the next step, two nodes are merged. Finally, all
         singleton and non-singleton clusters are in one group. If `n_clusters`
         or `height` are given, the columns correspond to the columns of
         `n_clusters` or `height`.
+
+    See Also
+    --------
+    cut_tree_balanced
 
     Examples
     --------
@@ -1405,58 +1409,57 @@ def cut_tree_balanced(Z, max_cluster_size):
     Parameters
     ----------
     Z : ndarray
-        The linkage matrix resulting from calling the method
-        scipy.cluster.hierarchy.ward(). I.e. it contains the hierarchical
-        clustering encoded as a linkage matrix.
-
+        The linkage matrix resulting from calling `ward`. I.e. it contains the
+        hierarchical clustering encoded as a linkage matrix.
     max_cluster_size : int
-        maximum number of data samples contained within the resulting clusters.
+        Maximum number of data samples contained within the resulting clusters.
         Thus, all resulting clusters will contain a number of data samples
-        "<= max_cluster_size". Note that max_cluster_size must be ">= 1".
+        ``<= max_cluster_size``. Must be >= 1.
 
     Returns
     -------
     cluster_id : ndarray
-        one-dimensional numpy array of integers containing for each input
-        sample its corresponding cluster id. The cluster id is an integer which
-        is higher for deeper tree levels.
-
+        One-dimensional array of integers containing for each input sample its
+        corresponding cluster id. The cluster id is an integer which is higher
+        for deeper tree levels.
     cluster_level : ndarray
-        one-dimensional numpy array of integer arrays containing for each input
+        One-dimensional array of integer arrays containing for each input
         sample its corresponding cluster tree level, i.e. a sequence of
-        0s and 1s. Note that the cluster level is longer for deeper tree
-        levels, being [0] the root cluster, [0, 0] and [0, 1] its offspring, and
-        so on. Also note that in each cluster splitting, the label 0 denotes
-        the bigger cluster, while the label 1 denotes the smallest.
+        0's and 1's. Note that the cluster level is longer for deeper tree
+        levels, being [0] the root cluster, [0, 0] and [0, 1] its offspring,
+        and so on. Also note that in each cluster splitting, the label 0
+        denotes the bigger cluster, while the label 1 denotes the smallest.
+
+    See Also
+    --------
+    cut_tree
 
     Examples
     --------
-    >>> from scipy import cluster
+    >>> from scipy.cluster import hierarchy
     >>> from scipy import stats
 
     Initialize the random seed.
 
     >>> np.random.seed(14)
 
-    Create a input matrix containing 100 data samples with 4 dimensions. 
-    Note: using gamma() in order to generate an unbalanced distribution. 
-    If a regular cut_tree() would be performed, one big and many small clusters
-    would be obtained.
+    Create a input matrix containing 100 data samples with 4 dimensions.
+    Note: using `gamma` in order to generate an unbalanced distribution.
+    If a regular ``cut_tree()`` would be performed, one big and many small
+    clusters would be obtained.
 
-    >>> X = stats.gamma.rvs(0.1, size=400).reshape((100,4))
+    >>> X = stats.gamma.rvs(0.1, size=400).reshape((100, 4))
 
-    Compute the linkage matrix using the scipy ward() method.
+    Compute the linkage matrix using the scipy ward() method:
 
-    >>> Z = cluster.hierarchy.ward(X)
+    >>> Z = hierarchy.ward(X)
 
-    Perform a balanced cut tree of the linkage matrix.
+    Perform a balanced cut tree of the linkage matrix:
 
-    >>> cluster_id, cluster_level = \
-            cluster.hierarchy.cut_tree_balanced(Z, max_cluster_size=10)
-
+    >>> cluster_id, cluster_level = hierarchy.cut_tree_balanced(
+    ...                                              Z, max_cluster_size=10)
     >>> cluster_id[:10]
     array([19,  4, 10, 12, 20, 12, 14,  9, 15,  2])
-
     >>> cluster_level[:10]
     array([array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]),
            array([0, 0, 0, 1]), array([0, 0, 0, 0, 0, 0, 0, 0, 1]),
@@ -1472,7 +1475,7 @@ def cut_tree_balanced(Z, max_cluster_size):
     # Assert that the input max_cluster_size is >= 1
     if not max_cluster_size >= 1:
         raise ValueError("max_cluster_size should be >= 1, is: {}"
-                        .format(max_cluster_size))
+                         .format(max_cluster_size))
 
     # Perform a full cut tree of the linkage matrix
     full_cut = cut_tree(Z)
@@ -1488,13 +1491,12 @@ def cut_tree_balanced(Z, max_cluster_size):
     # Initialize the resulting cluster level vector (containing for each data
     # sample its corresponding cluster tree level)
     cluster_level = np.empty((full_cut.shape[1],), dtype=object)
-    for i in range(full_cut.shape[1]): 
+    for i in range(full_cut.shape[1]):
         cluster_level[i] = np.array([0],int)
 
     # Scan the full cut matrix from the last column (root tree level) to the
     # first column (leaves tree level)
     for curr_column in range(full_cut.shape[1]-1, -1, -1):
-
         # Get a list of unique group ids and their count within the current
         # tree level
         values, counts = np.unique(full_cut[:, curr_column],
@@ -1507,12 +1509,10 @@ def cut_tree_balanced(Z, max_cluster_size):
 
         # For each group id within the current tree level
         for curr_elem_pos in range(values.size):
-
             # If it is a valid group id (i.e. not yet marked with -1)
             # Note: data samples which were alredy included in a valid
             # cluster id are marked with the group id -1 (see below)
             if (values[curr_elem_pos] >= 0):
-
                 # Select the current group id
                 selected_curr_value = values[curr_elem_pos]
 
@@ -1555,7 +1555,6 @@ def cut_tree_balanced(Z, max_cluster_size):
                 # for each data sample, and mark them as clustered (-1)
                 # If the number of elements is below max_cluster_size
                 if (counts[curr_elem_pos] <= max_cluster_size):
-
                     # Relate vector positions to the current cluster id
                     cluster_id[selected_curr_elems] = last_cluster_id
 
