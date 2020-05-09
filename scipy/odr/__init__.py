@@ -22,8 +22,6 @@ Package Content
    OdrError      -- Error exception.
    OdrStop       -- Stop exception.
 
-   polynomial    -- Factory function for a general polynomial model.
-
 Prebuilt models:
 
 .. data:: exponential
