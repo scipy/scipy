@@ -11,7 +11,7 @@ import warnings
 from collections import namedtuple
 import multiprocessing
 
-from numpy.testing import (dec, assert_, assert_equal,
+from numpy.testing import (assert_, assert_equal,
                            assert_almost_equal, assert_array_almost_equal,
                            assert_array_equal, assert_approx_equal,
                            assert_allclose, assert_warns, suppress_warnings)
@@ -5192,7 +5192,7 @@ class TestMGCStat(object):
 
         return x, y
 
-    @dec.slow
+    @pytest.mark.slow
     @pytest.mark.parametrize("sim_type, obs_stat, obs_pvalue", [
         ("linear", 0.97, 1/1000),           # test linear simulation
         ("nonlinear", 0.163, 1/1000),       # test spiral simulation
@@ -5209,7 +5209,7 @@ class TestMGCStat(object):
         assert_approx_equal(stat, obs_stat, significant=1)
         assert_approx_equal(pvalue, obs_pvalue, significant=1)
 
-    @dec.slow
+    @pytest.mark.slow
     @pytest.mark.parametrize("sim_type, obs_stat, obs_pvalue", [
         ("linear", 0.184, 1/1000),           # test linear simulation
         ("nonlinear", 0.0190, 0.117),        # test spiral simulation
@@ -5225,7 +5225,7 @@ class TestMGCStat(object):
         assert_approx_equal(stat, obs_stat, significant=1)
         assert_approx_equal(pvalue, obs_pvalue, significant=1)
 
-    @dec.slow
+    @pytest.mark.slow
     def test_twosamp(self):
         np.random.seed(12345678)
 
