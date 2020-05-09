@@ -1599,7 +1599,9 @@ def normaltest(a, axis=0, nan_policy='propagate'):
 
     return NormaltestResult(k2, distributions.chi2.sf(k2, 2))
 
+
 Jarque_beraResult = namedtuple('Jarque_beraResult', ('statistic', 'pvalue'))
+
 
 def jarque_bera(x):
     """
