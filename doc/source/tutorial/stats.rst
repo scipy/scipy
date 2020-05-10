@@ -55,11 +55,6 @@ and in some cases we assume that individual objects are imported as
 
     >>> from scipy.stats import norm
 
-For consistency between Python 2 and Python 3, we'll also ensure
-that ``print`` is a function:
-
-    >>> from __future__ import print_function
-
 Getting help
 ^^^^^^^^^^^^
 
