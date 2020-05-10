@@ -1492,7 +1492,7 @@ def cut_tree_balanced(Z, max_cluster_size):
     # sample its corresponding cluster tree level)
     cluster_level = np.empty((full_cut.shape[1],), dtype=object)
     for i in range(full_cut.shape[1]):
-        cluster_level[i] = np.array([0],int)
+        cluster_level[i] = np.array([0], int)
 
     # Scan the full cut matrix from the last column (root tree level) to the
     # first column (leaves tree level)
