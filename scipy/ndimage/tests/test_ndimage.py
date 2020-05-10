@@ -79,6 +79,14 @@ class TestNdimage:
         output = ndimage.convolve1d(array, weights)
         assert_array_almost_equal(output, expected)
 
+    def test_correlate01_overlap(self):
+        array = numpy.arange(256).reshape(16, 16)
+        weights = numpy.array([2])
+        expected = 2 * array
+
+        ndimage.correlate1d(array, weights, output=array)
+        assert_array_almost_equal(array, expected)
+
     def test_correlate02(self):
         array = numpy.array([1, 2, 3])
         kernel = numpy.array([1])
@@ -491,6 +499,14 @@ class TestNdimage:
         output2 = ndimage.gaussian_filter(input, 1.0, output=otype)
         assert_array_almost_equal(output1, output2)
 
+    def test_gauss_memory_overlap(self):
+        input = numpy.arange(100 * 100).astype(numpy.float32)
+        input.shape = (100, 100)
+        otype = numpy.float64
+        output1 = ndimage.gaussian_filter(input, 1.0)
+        ndimage.gaussian_filter(input, 1.0, output=input)
+        assert_array_almost_equal(output1, input)
+
     def test_prewitt01(self):
         for type_ in self.types:
             array = numpy.array([[3, 2, 5, 1, 4],
@@ -751,6 +767,16 @@ class TestNdimage:
                                    [2, 2, 1, 1, 1],
                                    [5, 3, 3, 1, 1]], output)
 
+    def test_minimum_filter05_overlap(self):
+        array = numpy.array([[3, 2, 5, 1, 4],
+                             [7, 6, 9, 3, 5],
+                             [5, 8, 3, 7, 1]])
+        filter_shape = numpy.array([2, 3])
+        ndimage.minimum_filter(array, filter_shape, output=array)
+        assert_array_almost_equal([[2, 2, 1, 1, 1],
+                                   [2, 2, 1, 1, 1],
+                                   [5, 3, 3, 1, 1]], array)
+
     def test_minimum_filter06(self):
         array = numpy.array([[3, 2, 5, 1, 4],
                              [7, 6, 9, 3, 5],
@@ -934,6 +960,21 @@ class TestNdimage:
         assert_array_almost_equal(expected, output)
         output = ndimage.percentile_filter(array, 17, size=(2, 3))
         assert_array_almost_equal(expected, output)
+
+    def test_rank06_overlap(self):
+        array = numpy.array([[3, 2, 5, 1, 4],
+                             [5, 8, 3, 7, 1],
+                             [5, 6, 9, 3, 5]])
+        array_copy = array.copy()
+        expected = [[2, 2, 1, 1, 1],
+                    [3, 3, 2, 1, 1],
+                    [5, 5, 3, 3, 1]]
+        ndimage.rank_filter(array, 1, size=[2, 3], output=array)
+        assert_array_almost_equal(expected, array)
+
+        ndimage.percentile_filter(array_copy, 17, size=(2, 3),
+                                  output=array_copy)
+        assert_array_almost_equal(expected, array_copy)
 
     def test_rank07(self):
         array = numpy.array([[3, 2, 5, 1, 4],
@@ -3441,6 +3482,11 @@ class TestNdimage:
                                iterations=3, output=out)
         assert_array_almost_equal(out, expected)
 
+        # test with output memory overlap
+        ndimage.binary_erosion(data, struct, border_value=1,
+                               iterations=3, output=data)
+        assert_array_almost_equal(data, expected)
+
     def test_binary_erosion31(self):
         struct = [[0, 1, 0],
                   [1, 1, 1],
@@ -4357,6 +4403,16 @@ class TestNdimage:
         assert_array_almost_equal([[2, 2, 1, 1, 1],
                                    [2, 3, 1, 3, 1],
                                    [5, 5, 3, 3, 1]], output)
+
+    def test_grey_erosion01_overlap(self):
+        array = numpy.array([[3, 2, 5, 1, 4],
+                             [7, 6, 9, 3, 5],
+                             [5, 8, 3, 7, 1]])
+        footprint = [[1, 0, 1], [1, 1, 0]]
+        ndimage.grey_erosion(array, footprint=footprint, output=array)
+        assert_array_almost_equal([[2, 2, 1, 1, 1],
+                                   [2, 3, 1, 3, 1],
+                                   [5, 5, 3, 3, 1]], array)
 
     def test_grey_erosion02(self):
         array = numpy.array([[3, 2, 5, 1, 4],

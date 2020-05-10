@@ -2,6 +2,7 @@ import os
 
 import numpy as np
 from ._fortran import *
+from .system_info import combine_dict
 
 
 # Don't use the deprecated NumPy C API. Define this to a fixed version instead of

@@ -184,8 +184,8 @@ class SphericalVoronoi:
         # test degenerate input
         self._rank = np.linalg.matrix_rank(self.points - self.points[0],
                                            tol=threshold * self.radius)
-        if self._rank <= 1:
-            raise ValueError("Rank of input points must be at least 2")
+        if self._rank < self._dim:
+            raise ValueError("Rank of input points must be at least {0}".format(self._dim))
 
         if cKDTree(self.points).query_pairs(threshold * self.radius):
             raise ValueError("Duplicate generators present.")
@@ -197,38 +197,6 @@ class SphericalVoronoi:
 
         self._calc_vertices_regions()
 
-    def _handle_geodesic_input(self):
-
-        # center the points
-        centered = self.points - self.center
-
-        # calculate an orthogonal transformation which puts circle on x-y axis
-        _, _, vh = np.linalg.svd(centered - np.roll(centered, 1, axis=0))
-
-        # apply transformation
-        circle = centered @ vh.T
-        h = np.mean(circle[:, 2])
-        if h < 0:
-            h, vh, circle = -h, -vh, -circle
-        circle_radius = np.sqrt(np.maximum(0, self.radius**2 - h**2))
-
-        # calculate the north and south poles in this basis
-        poles = [[0, 0, self.radius], [0, 0, -self.radius]]
-
-        # calculate spherical voronoi diagram on the circle
-        lower_dimensional = SphericalVoronoi(circle[:, :2],
-                                             radius=circle_radius)
-        n = len(lower_dimensional.vertices)
-        vertices = h * np.ones((n, 3))
-        vertices[:, :2] = lower_dimensional.vertices
-
-        # north and south poles are also Voronoi vertices
-        self.vertices = np.concatenate((vertices, poles)) @ vh + self.center
-
-        # each region contains two vertices from the plane and the north and
-        # south poles
-        self.regions = [[a, n, b, n + 1] for a, b in lower_dimensional.regions]
-
     def _calc_vertices_regions(self):
         """
         Calculates the Voronoi vertices and regions of the generators stored
@@ -238,10 +206,6 @@ class SphericalVoronoi:
         This algorithm was discussed at PyData London 2015 by
         Tyler Reddy, Ross Hemsley and Nikolai Nowaczyk
         """
-        if self._dim == 3 and self._rank == 2:
-            self._handle_geodesic_input()
-            return
-
         # get Convex Hull
         conv = scipy.spatial.ConvexHull(self.points)
         # get circumcenters of Convex Hull triangles from facet equations
@@ -296,8 +260,6 @@ class SphericalVoronoi:
         """
         if self._dim != 3:
             raise TypeError("Only supported for three-dimensional point sets")
-        if self._rank == 2:
-            return  # regions are sorted by construction
         _voronoi.sort_vertices_of_regions(self._simplices, self.regions)
 
     def calculate_areas(self):

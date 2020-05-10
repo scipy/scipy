@@ -11,7 +11,7 @@ import warnings
 from collections import namedtuple
 import multiprocessing
 
-from numpy.testing import (dec, assert_, assert_equal,
+from numpy.testing import (assert_, assert_equal,
                            assert_almost_equal, assert_array_almost_equal,
                            assert_array_equal, assert_approx_equal,
                            assert_allclose, assert_warns, suppress_warnings)
@@ -3648,20 +3648,34 @@ class TestJarqueBera(object):
         y = np.random.chisquare(10000, 100000)
         z = np.random.rayleigh(1, 100000)
 
+        assert_equal(stats.jarque_bera(x)[0], stats.jarque_bera(x).statistic)
+        assert_equal(stats.jarque_bera(x)[1], stats.jarque_bera(x).pvalue)
+
+        assert_equal(stats.jarque_bera(y)[0], stats.jarque_bera(y).statistic)
+        assert_equal(stats.jarque_bera(y)[1], stats.jarque_bera(y).pvalue)
+
+        assert_equal(stats.jarque_bera(z)[0], stats.jarque_bera(z).statistic)
+        assert_equal(stats.jarque_bera(z)[1], stats.jarque_bera(z).pvalue)
+
         assert_(stats.jarque_bera(x)[1] > stats.jarque_bera(y)[1])
+        assert_(stats.jarque_bera(x).pvalue > stats.jarque_bera(y).pvalue)
+
         assert_(stats.jarque_bera(x)[1] > stats.jarque_bera(z)[1])
+        assert_(stats.jarque_bera(x).pvalue > stats.jarque_bera(z).pvalue)
+
         assert_(stats.jarque_bera(y)[1] > stats.jarque_bera(z)[1])
+        assert_(stats.jarque_bera(y).pvalue > stats.jarque_bera(z).pvalue)
 
     def test_jarque_bera_array_like(self):
         np.random.seed(987654321)
         x = np.random.normal(0, 1, 100000)
 
-        JB1, p1 = stats.jarque_bera(list(x))
-        JB2, p2 = stats.jarque_bera(tuple(x))
-        JB3, p3 = stats.jarque_bera(x.reshape(2, 50000))
+        jb_test1 = JB1, p1 = stats.jarque_bera(list(x))
+        jb_test2 = JB2, p2 = stats.jarque_bera(tuple(x))
+        jb_test3 = JB3, p3 = stats.jarque_bera(x.reshape(2, 50000))
 
-        assert_(JB1 == JB2 == JB3)
-        assert_(p1 == p2 == p3)
+        assert_(JB1 == JB2 == JB3 == jb_test1.statistic == jb_test2.statistic == jb_test3.statistic)
+        assert_(p1 == p2 == p3 == jb_test1.pvalue == jb_test2.pvalue == jb_test3.pvalue)
 
     def test_jarque_bera_size(self):
         assert_raises(ValueError, stats.jarque_bera, [])
@@ -5192,7 +5206,7 @@ class TestMGCStat(object):
 
         return x, y
 
-    @dec.slow
+    @pytest.mark.slow
     @pytest.mark.parametrize("sim_type, obs_stat, obs_pvalue", [
         ("linear", 0.97, 1/1000),           # test linear simulation
         ("nonlinear", 0.163, 1/1000),       # test spiral simulation
@@ -5209,7 +5223,7 @@ class TestMGCStat(object):
         assert_approx_equal(stat, obs_stat, significant=1)
         assert_approx_equal(pvalue, obs_pvalue, significant=1)
 
-    @dec.slow
+    @pytest.mark.slow
     @pytest.mark.parametrize("sim_type, obs_stat, obs_pvalue", [
         ("linear", 0.184, 1/1000),           # test linear simulation
         ("nonlinear", 0.0190, 0.117),        # test spiral simulation
@@ -5225,7 +5239,7 @@ class TestMGCStat(object):
         assert_approx_equal(stat, obs_stat, significant=1)
         assert_approx_equal(pvalue, obs_pvalue, significant=1)
 
-    @dec.slow
+    @pytest.mark.slow
     def test_twosamp(self):
         np.random.seed(12345678)
 

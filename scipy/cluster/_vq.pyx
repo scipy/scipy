@@ -325,7 +325,7 @@ def update_cluster_means(np.ndarray obs, np.ndarray labels, int nc):
 
     Notes
     -----
-    The empty clusters will be set to all zeros and the curresponding elements
+    The empty clusters will be set to all zeros and the corresponding elements
     in `has_members` will be `False`. The upper level function should decide
     how to deal with them.
     """
