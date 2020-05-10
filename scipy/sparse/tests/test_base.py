@@ -17,10 +17,11 @@ Run tests if sparse is not installed:
   python tests/test_base.py
 """
 
-import operator
 import contextlib
 import functools
+import operator
 import platform
+import sys
 from distutils.version import LooseVersion
 
 import numpy as np
@@ -47,6 +48,9 @@ from scipy.sparse.linalg import splu, expm, inv
 from scipy._lib.decorator import decorator
 
 import pytest
+
+
+IS_COLAB = ('google.colab' in sys.modules)
 
 
 def assert_in(member, collection, msg=None):
@@ -4389,6 +4393,7 @@ class TestBSR(sparse_test_class(getset=False,
     def test_setdiag_comprehensive(self):
         pass
 
+    @pytest.mark.skipif(IS_COLAB, reason="exceeds memory limit")
     def test_scalar_idx_dtype(self):
         # Check that index dtype takes into account all parameters
         # passed to sparsetools, including the scalar ones
