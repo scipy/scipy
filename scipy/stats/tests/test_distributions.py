@@ -1374,8 +1374,8 @@ class TestDLaplace(object):
         assert_equal((m, s), (0., 0.))
         assert_allclose((v, k), (4., 3.25))
 
-    @pytest.mark.parametrize("rvs_loc", [-1, 0, 1, 2])
-    @pytest.mark.parametrize("rvs_scale", [1, 2, 3, 4])
+    @pytest.mark.parametrize("rvs_loc", [-5, 0, 1, 2])
+    @pytest.mark.parametrize("rvs_scale", [1, 2, 3, 10])
     def test_fit(self, rvs_loc, rvs_scale):
         # tests that various inputs follow expected behavior
         # for a variety of `loc` and `scale`.
@@ -1401,12 +1401,25 @@ class TestDLaplace(object):
                      stats.laplace.fit, data, floc=loc_mle - 1)
         assert_warns(RuntimeWarning,
                      stats.laplace.fit, data, fscale=scale_mle - 1)
-        # erro raised when both `floc` and `fscale` are fixed
-        assert_raises(ValueError, stats.laplace.fit, data, floc=loc_mle,
+        # error raised when both `floc` and `fscale` are fixed
+        assert_raises(RuntimeError, stats.laplace.fit, data, floc=loc_mle,
                       fscale=scale_mle)
 
         # error is raised with non-finite values
         assert_raises(RuntimeError, stats.laplace.fit, [np.nan])
+
+
+    @pytest.mark.parametrize("rvs_scale,rvs_loc", [(10,-5)])
+    def test_fit_MLE_comp_optimzer(self, rvs_loc, rvs_scale):
+        data = stats.laplace.rvs(size=1000, loc=rvs_loc, scale=rvs_scale)
+
+        # that MLE estimates are almost equal to optimizer
+        loc, scale = stats.laplace.fit(data)
+        loc_opt, scale_opt = super(type(stats.laplace),
+                                   stats.laplace).fit(data)
+        assert_allclose(loc_opt, loc, atol=.01)
+        assert_allclose(scale_opt, scale, atol=.01)
+        
 
 
 class TestInvGamma(object):

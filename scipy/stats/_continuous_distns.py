@@ -4280,7 +4280,7 @@ def check_fit_input_parameters(data, args, kwds, fixed_param):
         # This check is for consistency with `rv_continuous.fit`.
         # Without this check, this function would just return the
         # parameters that were given.
-        raise ValueError("All parameters fixed. There is nothing to "
+        raise RuntimeError("All parameters fixed. There is nothing to "
                          "optimize.")
 
     data = np.asarray(data)
