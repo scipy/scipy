@@ -57,11 +57,14 @@ class TestBinnedStatistic(object):
         orig = u[0]
         u[0] = np.inf
         assert_raises(ValueError, binned_statistic, u, x, 'std', bins=10)
+        # need to test for non-python specific ints, e.g. np.int8, np.int64
+        # note np.int will pass the isinstance(bins, int) test but other int no
+        assert_raises(ValueError, binned_statistic, u, x, 'std', bins=np.int64(10))
         u[0] = np.nan
-        assert_raises(ValueError, binned_statistic, x, u, 'count', bins=10)
+        assert_raises(ValueError, binned_statistic, u, x, 'count', bins=10)
+        # needs to raise on non language int types too, e.g np.int
         # replace original value, u belongs the class
         u[0] = orig
-        assert_raises(ValueError, binned_statistic, u, x, 'count', bins=10)
 
     def test_1d_result_attributes(self):
         x = self.x
