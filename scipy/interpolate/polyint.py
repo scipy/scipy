@@ -515,7 +515,7 @@ class BarycentricInterpolator(_Interpolator1D):
     def __init__(self, xi, yi=None, axis=0):
         _Interpolator1D.__init__(self, xi, yi, axis)
 
-        self.xi = np.asarray(xi)
+        self.xi = np.asfarray(xi)
         self.set_yi(yi)
         self.n = len(self.xi)
 
