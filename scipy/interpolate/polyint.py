@@ -397,10 +397,8 @@ def krogh_interpolate(xi, yi, x, der=0, axis=0):
 
     >>> import matplotlib.pyplot as plt
     >>> from scipy.interpolate import krogh_interpolate
-    >>> x_observed = [9, 28, 38, 58, 88, 98, 108, 118, 148, 158, 168, 178,
-    ...             188, 198, 208, 218, 228, 238, 278, 288, 298]
-    >>> y_observed = [41, 80, 112, 294, 286, 110, 59, 70, 104, 59, 59, 72,
-    ...             87, 99, 64, 60, 74, 151, 157, 57, 83]
+    >>> x_observed = np.linspace(0.0, 10.0, 11)
+    >>> y_observed = np.sin(x_observed)
     >>> x = np.linspace(min(x_observed), max(x_observed), num=100)
     >>> y = krogh_interpolate(x_observed, y_observed, x)
     >>> plt.plot(x_observed, y_observed, "o", label="observation")
