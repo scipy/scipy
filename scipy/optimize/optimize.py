@@ -3223,17 +3223,17 @@ def show_options(solver=None, method=None, disp=True):
 
     >>> from scipy.optimize import show_options
     >>> show_options(solver="minimize")
+    ...
 
     Specifying a method is possible:
 
     >>> show_options(solver="minimize", method="Nelder-Mead")
+    ...
 
     We can also get the documentations as a string:
 
     >>> show_options(solver="minimize", method="Nelder-Mead", disp=False)
-    Minimization of scalar function of one or more variables using the
-    Nelder-Mead algorithm.
-    ...
+    Minimization of scalar function of one or more variables using the ...
 
     """
     import textwrap
