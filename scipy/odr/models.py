@@ -115,10 +115,9 @@ def polynomial(order):
 
     >>> import matplotlib.pyplot as plt
     >>> from scipy import odr
-    >>> from scipy.odr.models import polynomial
     >>> x = np.linspace(0.0, 5.0)
     >>> y = np.sin(x)
-    >>> poly_model = polynomial(3)  # using third polynomial model
+    >>> poly_model = odr.polynomial(3)  # using third order polynomial model
     >>> data = odr.Data(x, y)
     >>> odr_obj = odr.ODR(data, poly_model)
     >>> output = odr_obj.run()  # running ODR fitting
