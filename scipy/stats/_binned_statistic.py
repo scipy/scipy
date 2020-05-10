@@ -1,6 +1,7 @@
 import builtins
 import numpy as np
 from numpy.testing import suppress_warnings
+from operator import index
 from collections import namedtuple
 
 __all__ = ['binned_statistic',
@@ -516,6 +517,13 @@ def binned_statistic_dd(sample, values, statistic='mean',
     known_stats = ['mean', 'median', 'count', 'sum', 'std', 'min', 'max']
     if not callable(statistic) and statistic not in known_stats:
         raise ValueError('invalid statistic %r' % (statistic,))
+
+    try:
+        bins = index(bins)
+    except TypeError:
+        # bins is not an integer
+        pass
+    # If bins was an integer-like object, now it is an actual Python int.
 
     # NOTE: for _bin_edges(), see e.g. gh-11365
     if isinstance(bins, int) and not np.isfinite(sample).all():
