@@ -4230,41 +4230,23 @@ class laplace_gen(rv_continuous):
                                    kwds, fixed_param=(floc, fscale))
 
         # MLE for the laplace distribution
-        # loc is given by
-        loc = np.median(data)
 
-        # scale is given by
-        scale = (np.sum(np.abs(data - loc))) / len(data)
+        if floc is None:
+            # loc is given by
+            loc = np.median(data)
+        else: 
+            loc = floc
+
+        if fscale is None:
+            # scale is given by
+            scale = (np.sum(np.abs(data - loc))) / len(data)
+        else:
+            scale = fscale
 
         # Source: Statistical Distributions, 3rd Edition. Evans, Hastings,
         # and Peacock (2000), Page 124
 
-        if ((floc is None or np.isclose(floc, loc)) and
-                (fscale is None or np.isclose(fscale, scale))):
-            # Maximum Likelihood Equations used in 3 cases:
-            #   * floc and fscale are not set
-            #   * only floc set, matches MLE equation
-            #   * only fscale set, matches MLE equation
-            return loc, scale
-        else:
-            # Raise warning to indicate optimizer usage for loc or scale
-            if floc is not None:
-                # use optimizer to determine scale for custom floc
-                msg = ("Supplied `floc` did not match the analytical maximum "
-                       "likelihood estimate equation; using numerical "
-                       "optimization to determine `scale`.")
-                warnings.warn(msg, RuntimeWarning)
-                return super(laplace_gen, self).fit(data, floc=floc, *args,
-                                                    **kwds)
-
-            if fscale is not None:
-                # use optimizer to determine loc for custom fscale
-                msg = ("Supplied `fscale` did not match the analytical "
-                       "maximum likelihood estimate equation;"
-                       "using numerical optimization to determine `loc`.")
-                warnings.warn(msg, RuntimeWarning)
-                return super(laplace_gen, self).fit(data, fscale=fscale, *args,
-                                                    **kwds)
+        return loc, scale
 
 
 laplace = laplace_gen(name='laplace')

@@ -1396,20 +1396,15 @@ class TestDLaplace(object):
         loc, scale = stats.laplace.fit(data, fscale=scale_mle)
         assert_equal(loc, loc_mle)
 
-        # warning raised when fixed parameters don't match MLE
-        assert_warns(RuntimeWarning,
-                     stats.laplace.fit, data, floc=loc_mle - 1)
-        assert_warns(RuntimeWarning,
-                     stats.laplace.fit, data, fscale=scale_mle - 1)
         # error raised when both `floc` and `fscale` are fixed
         assert_raises(RuntimeError, stats.laplace.fit, data, floc=loc_mle,
                       fscale=scale_mle)
 
         # error is raised with non-finite values
         assert_raises(RuntimeError, stats.laplace.fit, [np.nan])
+        assert_raises(RuntimeError, stats.laplace.fit, [np.inf])
 
-
-    @pytest.mark.parametrize("rvs_scale,rvs_loc", [(10,-5)])
+    @pytest.mark.parametrize("rvs_scale,rvs_loc", [(10, -5)])
     def test_fit_MLE_comp_optimzer(self, rvs_loc, rvs_scale):
         data = stats.laplace.rvs(size=1000, loc=rvs_loc, scale=rvs_scale)
 
@@ -1419,7 +1414,15 @@ class TestDLaplace(object):
                                    stats.laplace).fit(data)
         assert_allclose(loc_opt, loc, atol=.01)
         assert_allclose(scale_opt, scale, atol=.01)
-        
+
+    def test_fixed_parameter(self):
+        data = np.array([1.0, 1.0, 3.0, 5.0, 8.0, 14.0])
+        # with floc fixed to 6, scale should be 4.
+        loc, scale = stats.laplace.fit(data, floc=6)
+        assert_allclose(scale, 4)
+        # with scale fixed to 6, loc should be 4.
+        loc, scale = stats.laplace.fit(data, fscale=6)
+        assert_allclose(loc, 4)
 
 
 class TestInvGamma(object):
