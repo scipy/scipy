@@ -4,6 +4,7 @@ import glob
 import shutil
 import textwrap
 import platform
+import hashlib
 
 from tempfile import mkstemp, gettempdir
 from urllib.request import urlopen, Request
@@ -51,18 +52,32 @@ def download_openblas(target, arch, ilp64):
         suffix = 'macosx_10_9_x86_64-gf_1becaaa.tar.gz'
         filename = f'{ANACONDA}/{OPENBLAS_LONG}/download/openblas{fnsuffix}-{OPENBLAS_LONG}-{suffix}'
         typ = 'tar.gz'
+        if fnsuffix == "64_":
+            md5_expected = '17b028d96516ff4b61f9ce1bd6a634eb'
+        else:
+            md5_expected = '3f1f86d38c1905207a77c91295c5cd16'
     elif arch == 'windows':
         if IS_32BIT:
             suffix = 'win32-gcc_7_1_0.zip'
+            md5_expected = 'e6b6bdfd52d4cd046d37974d07f74b2b'
         else:
             suffix = 'win_amd64-gcc_7_1_0.zip'
+            if fnsuffix == "64_":
+                md5_expected = 'e656948a57a8a624c9ba020ea5f5fbf6'
+            else:
+                md5_expected = '0647bbb62b37618f5134e3980bf0d81e'
         filename = f'{ANACONDA}/{OPENBLAS_LONG}/download/openblas{fnsuffix}-{OPENBLAS_LONG}-{suffix}'
         typ = 'zip'
     elif 'x86' in arch:
         if IS_32BIT:
             suffix = 'manylinux1_i686.tar.gz'
+            md5_expected = '3fd7035a3cd1aa3661ac83b86537e448'
         else:
             suffix = 'manylinux1_x86_64.tar.gz'
+            if fnsuffix == "64_":
+                md5_expected = 'f76bfb6fc91ba8336994c9ff8e519e3b'
+            else:
+                md5_expected = 'c0ef9b61ad337d8b97d8dc38b44da2d2'
         filename = f'{ANACONDA}/{OPENBLAS_LONG}/download/openblas{fnsuffix}-{OPENBLAS_LONG}-{suffix}'
         typ = 'tar.gz'
     if not filename:
@@ -76,6 +91,12 @@ def download_openblas(target, arch, ilp64):
             headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.3'}
             req = Request(url=filename, headers=headers)
             fid.write(urlopen(req).read())
+        with open(target, 'rb') as binary_to_check:
+            data = binary_to_check.read()
+            md5_returned = hashlib.md5(data).hexdigest()
+            if md5_returned != md5_expected:
+                raise ValueError('md5 hash mismatch for downloaded OpenBLAS')
+
     except HTTPError as e:
         print(f'Could not download "{filename}"')
         print(f'Error message: {e}')
