@@ -196,8 +196,7 @@ static struct PyModuleDef MOD = {
 };
 
 
-PyMODINIT_FUNC
-PYINIT(void)
+PyObject *PYINIT(void)
 {
     return PyModule_Create(&MOD);
 }
