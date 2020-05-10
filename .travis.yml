@@ -18,9 +18,10 @@ addons:
 env:
   global:
    # Wheelhouse for pre-release wheels
-   - PRE_WHEELS="https://7933911d6844c6c53a7d-47bd50c35cd79bd838daf386af554a83.ssl.cf2.rackcdn.com"
+   - PRE_WHEELS="https://pypi.anaconda.org/scipy-wheels-nightly/simple"
    # Using a single thread can actually speed up some computations on Travis
    - OPENBLAS_NUM_THREADS=1
+   - OTHERSPEC=""
 
 matrix:
   include:
@@ -55,7 +56,8 @@ matrix:
       env:
         - TESTMODE=fast
         - COVERAGE=
-        - NUMPYSPEC="--pre --upgrade --timeout=60 -f $PRE_WHEELS numpy"
+        - NUMPYSPEC="--pre --upgrade --timeout=60 -i $PRE_WHEELS numpy"
+        - OTHERSPEC="--pre --upgrade --timeout=60"
         # Need a test with most recent Python version where we build from an
         # sdist (uses pip build isolation), to check that the version we
         # specify in pyproject.toml (will be older than --pre --upgrade) works
@@ -86,7 +88,8 @@ matrix:
       if: type = pull_request
       env:
         - TESTMODE=full
-        - NUMPYSPEC="--pre --upgrade --timeout=60 -f $PRE_WHEELS numpy"
+        - NUMPYSPEC="--pre --upgrade --timeout=60 -i $PRE_WHEELS numpy"
+        - OTHERSPEC="--pre --upgrade --timeout=60"
         - NPY_USE_BLAS_ILP64=1
     - python: 3.6
       if: type = pull_request
@@ -166,7 +169,8 @@ before_install:
   # Miniforge / conda-forge), so skip arm64 here
   - |
     if [[ "$TRAVIS_CPU_ARCH" != "arm64" ]]; then
-         travis_retry pip install --upgrade pip setuptools wheel $NUMPYSPEC cython pytest pytest-xdist mpmath argparse Pillow codecov gmpy2 pybind11
+         travis_retry pip install --upgrade pip setuptools wheel $OTHERSPEC cython pytest pytest-xdist mpmath argparse Pillow codecov gmpy2 pybind11
+         travis_retry pip install --upgrade $NUMPYSPEC
     fi
   - |
     if [ -n "${USE_DEBUG}" ]; then
