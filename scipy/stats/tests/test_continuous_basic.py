@@ -340,8 +340,6 @@ def test_nomodify_gh9900_regression():
 def test_gh11746_regression():
     # Regression test for gh-11746
     prsn3 = stats.pearson3
-    # Use the right-half truncated normal
-    # Check that the cdf and _cdf return the same result.
     npt.assert_equal(prsn3.moment(1, skew=0), 0.0)
     npt.assert_almost_equal(prsn3.moment(2, skew=1), 1.0)
 

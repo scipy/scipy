@@ -6219,16 +6219,19 @@ class pearson3_gen(rv_continuous):
         # for all skew args.
         return np.ones(np.shape(skew), dtype=bool)
 
+    def _norm_stats(self):
+        return 0.0, 1.0, 0.0, 0.0
+    
     def _stats(self, skew):
-        _, _, _, _, _, beta, alpha, zeta = (
+        _, _, _, _, invmask, beta, alpha, zeta = (
             self._preprocess([1], skew))
         m = zeta + alpha / beta
         v = alpha / (beta**2)
         s = 2.0 / (alpha**0.5) * np.sign(beta)
         k = 6.0 / alpha
-        for i in [m, v, s, k]: 
-            if np.any(i.size) == 0: 
-                return (0, 0, 0, 0)
+        if invmask == False:
+            m,v,s,k = self._norm_stats() 
+            return m,v,s,k
         else: 
             return np.float(m), np.float(v), np.float(s), np.float(k)
 
