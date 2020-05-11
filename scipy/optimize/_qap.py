@@ -48,7 +48,7 @@ def quadratic_assignment(
         the two adjacency matrices.
         For column 1, each entry is an index of a node in `cost_matrix`.
         For column 2, each entry is an index of a node in `dist_matrix`.
-        The elements of ``seed[:, 0]`` and ``seed[:,1]`` are vertices
+        The elements of ``seed[:, 0]`` and ``seed[:, 1]`` are vertices
         which are known to be matched, that is, `seed[i, 0]` is matched to
         vertex `seed[i, 1]`. Array shape (m , 2) where m <= number of nodes
 
@@ -126,9 +126,9 @@ def quadratic_assignment(
     --------
 
     >>> cost = np.array([[0, 80, 150, 170], [80, 0, 130, 100],
-    ... [150, 130, 0, 120], [170, 100, 120, 0]])
+    ...         [150, 130, 0, 120], [170, 100, 120, 0]])
     >>> dist = np.array([[0, 5, 2, 7], [0, 0, 3, 8],
-    ... [0, 0, 0, 3], [0, 0, 0, 0]])
+    ...         [0, 0, 0, 3], [0, 0, 0, 0]])
     >>> from scipy.optimize import quadratic_assignment
     >>> res = quadratic_assignment(cost,dist)
     >>> print(res)
