@@ -593,10 +593,6 @@ def check_fit_args_fix(distfn, arg, rvs):
         sup.filter(category=DeprecationWarning, message=".*frechet_")
         sup.filter(category=RuntimeWarning,
                    message="The shape parameter of the erlang")
-        sup.filter(category=RuntimeWarning,
-                   message="Supplied `floc` did not match")
-        sup.filter(category=RuntimeWarning,
-                   message="Supplied `fscale` did not match")
 
         vals = distfn.fit(rvs, floc=0)
         vals2 = distfn.fit(rvs, fscale=1)
