@@ -49,16 +49,19 @@ class TestBinnedStatistic(object):
 
         assert_allclose(stat1, stat2)
 
-    def test_non_finite_inputs(self):
+    def test_non_finite_inputs_and_int_bins(self):
         # if either `values` or `sample` contain np.inf or np.nan throw
         # see issue gh-9010 for more
         x = self.x
         u = self.u
         orig = u[0]
         u[0] = np.inf
-        assert_raises(ValueError, binned_statistic, x, u, 'std', bins=10)
+        assert_raises(ValueError, binned_statistic, u, x, 'std', bins=10)
+        # need to test for non-python specific ints, e.g. np.int8, np.int64
+        assert_raises(ValueError, binned_statistic, u, x, 'std',
+                      bins=np.int64(10))
         u[0] = np.nan
-        assert_raises(ValueError, binned_statistic, x, u, 'count', bins=10)
+        assert_raises(ValueError, binned_statistic, u, x, 'count', bins=10)
         # replace original value, u belongs the class
         u[0] = orig
 
