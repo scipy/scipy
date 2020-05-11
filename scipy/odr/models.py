@@ -83,11 +83,19 @@ def _exp_est(data):
     return np.array([1., 1.])
 
 
-multilinear = Model(_lin_fcn, fjacb=_lin_fjb,
+class _MultilinearModel(Model):
+    """
+    Multilinear Model
+
+    """
+    def __init__(self):
+        super().__init__(_lin_fcn, fjacb=_lin_fjb,
                fjacd=_lin_fjd, estimate=_lin_est,
                meta={'name': 'Arbitrary-dimensional Linear',
                      'equ':'y = B_0 + Sum[i=1..m, B_i * x_i]',
                      'TeXequ':r'$y=\beta_0 + \sum_{i=1}^m \beta_i x_i$'})
+
+multilinear = _MultilinearModel()
 
 
 def polynomial(order):
