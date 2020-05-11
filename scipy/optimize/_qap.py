@@ -125,9 +125,10 @@ def quadratic_assignment(
     Examples
     --------
 
-    >>> cost = np.array([[0,80,150,170],[80,0,130,100],
-    >>> [150,130,0,120],[170,100,120,0]])
-    >>> dist = np.array([[0,5,2,7],[0,0,3,8],[0,0,0,3],[0,0,0,0]])
+    >>> cost = np.array([[0, 80, 150, 170], [80, 0, 130, 100],
+    ... [150, 130, 0, 120], [170, 100, 120, 0]])
+    >>> dist = np.array([[0, 5, 2, 7], [0, 0, 3, 8],
+    ... [0, 0, 0, 3], [0, 0, 0, 0]])
     >>> from scipy.optimize import quadratic_assignment
     >>> res = quadratic_assignment(cost,dist)
     >>> print(res)
