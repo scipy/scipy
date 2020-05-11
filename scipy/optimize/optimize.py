@@ -3217,6 +3217,24 @@ def show_options(solver=None, method=None, disp=True):
     - :ref:`simplex         <optimize.linprog-simplex>`
     - :ref:`interior-point  <optimize.linprog-interior-point>`
 
+    Examples
+    --------
+    We can print documentations of a solver in stdout:
+
+    >>> from scipy.optimize import show_options
+    >>> show_options(solver="minimize")
+    ...
+
+    Specifying a method is possible:
+
+    >>> show_options(solver="minimize", method="Nelder-Mead")
+    ...
+
+    We can also get the documentations as a string:
+
+    >>> show_options(solver="minimize", method="Nelder-Mead", disp=False)
+    Minimization of scalar function of one or more variables using the ...
+
     """
     import textwrap
 
