@@ -61,7 +61,6 @@ class TestBinnedStatistic(object):
         assert_raises(ValueError, binned_statistic, u, x, 'std', bins=np.int64(10))
         u[0] = np.nan
         assert_raises(ValueError, binned_statistic, u, x, 'count', bins=10)
-        # needs to raise on non language int types too, e.g np.int
         # replace original value, u belongs the class
         u[0] = orig
 
