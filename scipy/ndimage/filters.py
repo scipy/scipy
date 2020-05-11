@@ -618,7 +618,7 @@ def _correlate_or_convolve(input, weights, output, mode, cval, origin,
     if not weights.flags.contiguous:
         weights = weights.copy()
     output = _ni_support._get_output(output, input)
-    temp_needed = numpy.shares_memory(input, output)
+    temp_needed = numpy.may_share_memory(input, output)
     if temp_needed:
         # input and output arrays cannot share memory
         temp = output
@@ -1043,7 +1043,7 @@ def _min_or_max_filter(input, size, footprint, structure, output, mode,
     if numpy.iscomplexobj(input):
         raise TypeError('Complex type not supported')
     output = _ni_support._get_output(output, input)
-    temp_needed = numpy.shares_memory(input, output)
+    temp_needed = numpy.may_share_memory(input, output)
     if temp_needed:
         # input and output arrays cannot share memory
         temp = output
@@ -1225,7 +1225,7 @@ def _rank_filter(input, rank, size=None, footprint=None, output=None,
                               origins)
     else:
         output = _ni_support._get_output(output, input)
-        temp_needed = numpy.shares_memory(input, output)
+        temp_needed = numpy.may_share_memory(input, output)
         if temp_needed:
             # input and output arrays cannot share memory
             temp = output
