@@ -4296,11 +4296,11 @@ class _ParallelP(object):
         self.random_states = random_states
 
     def __call__(self, index):
-        permx = self.random_states[index].permutation(self.x)
-        permy = self.random_states[index].permutation(self.y)
+        order = self.random_states[index].permutation(self.y.shape[0])
+        permy = self.y[order][:, order]
 
         # calculate permuted stats, store in null distribution
-        perm_stat = _mgc_stat(permx, permy, self.compute_distance)[0]
+        perm_stat = _mgc_stat(self.x, permy, self.compute_distance)[0]
 
         return perm_stat
 
@@ -4429,6 +4429,7 @@ def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000,
         shapes ``(n, p)`` and ``(m, p)``, this optional will be overriden and
         set to ``True``. Set to ``True`` if ``x`` and ``y`` both have shapes
         ``(n, p)`` and a two sample test is desired. The default is ``False``.
+        Note that this will not run if inputs are distance matrices.
     random_state : int or np.random.RandomState instance, optional
         If already a RandomState instance, use it.
         If seed is an int, return a new RandomState instance seeded with seed.
@@ -4630,7 +4631,14 @@ def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000,
         warnings.warn(msg, RuntimeWarning)
 
     if is_twosamp:
+        if compute_distance is None:
+            raise ValueError("Cannot run if inputs are distance matrices")
         x, y = _two_sample_transform(x, y)
+
+    if compute_distance is not None:
+        # compute distance matrices for x and y
+        x = compute_distance(x)
+        y = compute_distance(y)
 
     # calculate MGC stat
     stat, stat_dict = _mgc_stat(x, y, compute_distance)
@@ -4649,7 +4657,7 @@ def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000,
     return MGCResult(stat, pvalue, mgc_dict)
 
 
-def _mgc_stat(x, y, compute_distance):
+def _mgc_stat(distx, disty, compute_distance):
     r"""
     Helper function that calculates the MGC stat. See above for use.
 
@@ -4675,15 +4683,6 @@ def _mgc_stat(x, y, compute_distance):
             - opt_scale : (float, float)
                 The estimated optimal scale as a `(x, y)` pair.
     """
-    # set distx and disty to x and y when compute_distance = None
-    distx = x
-    disty = y
-
-    if compute_distance is not None:
-        # compute distance matrices for x and y
-        distx = compute_distance(x)
-        disty = compute_distance(y)
-
     # calculate MGC map and optimal scale
     stat_mgc_map = _local_correlations(distx, disty, global_corr='mgc')
 
