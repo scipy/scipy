@@ -58,7 +58,8 @@ class TestBinnedStatistic(object):
         u[0] = np.inf
         assert_raises(ValueError, binned_statistic, u, x, 'std', bins=10)
         # need to test for non-python specific ints, e.g. np.int8, np.int64
-        assert_raises(ValueError, binned_statistic, u, x, 'std', bins=np.int64(10))
+        assert_raises(ValueError, binned_statistic, u, x, 'std',
+                      bins=np.int64(10))
         u[0] = np.nan
         assert_raises(ValueError, binned_statistic, u, x, 'count', bins=10)
         # replace original value, u belongs the class
