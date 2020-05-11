@@ -244,7 +244,7 @@ def _binary_erosion(input, structure, iterations, mask, output,
     else:
         output = bool
     output = _ni_support._get_output(output, input)
-    temp_needed = numpy.shares_memory(input, output)
+    temp_needed = numpy.may_share_memory(input, output)
     if temp_needed:
         # input and output arrays cannot share memory
         temp = output
