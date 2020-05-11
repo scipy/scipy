@@ -2966,6 +2966,26 @@ class TestRayleigh(object):
         y = stats.rayleigh.logsf(50)
         assert_allclose(y, -1250)
 
+    @pytest.mark.parametrize("floc", [-1, 0, 1, 2, 3])
+    @pytest.mark.parametrize("fscale", [.5, 1, 2, 3, 4])
+    def test_fit(self, floc, fscale):
+        data = stats.rayleigh.rvs(size=250, loc=floc, scale=fscale)
+        
+        scale_expect = (np.sum((data - floc) ** 2) / (2 * len(data))) ** .5
+        # when floc is provided, MLE should be used for scale
+        loc, scale = stats.rayleigh.fit(data, floc=floc)
+        assert_equal(loc, floc)
+        assert_equal(scale, scale_expect)
+
+        # check that MLE results are similar to optimizer
+        # non-fixed floc falls back on optimizer
+        loc_opt, scale_opt = stats.rayleigh.fit(data)
+        # only need to test scale result from MLE.
+        assert_allclose(scale_opt, scale, atol=.1, rtol=.1)
+
+        assert_raises(RuntimeError, stats.rayleigh.fit, data, floc=floc, fscale=fscale)
+
+
 
 class TestExponWeib(object):
 

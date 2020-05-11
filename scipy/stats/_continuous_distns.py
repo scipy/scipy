@@ -6540,8 +6540,65 @@ class rayleigh_gen(rv_continuous):
     def _entropy(self):
         return _EULER/2.0 + 1 - 0.5*np.log(2)
 
+    def fit(self, data, *args, **kwds):
+        """
+        Maxmimum likelihood estimation for Rayleigh Distribution of the
+        `scale` parameter when `floc` is fixed.
+
+        Parameters
+        ----------
+        data : array_like
+            Data to use in calculating the maximum likelihood estimate.
+
+        Returns
+        -------
+        loc, scale : float
+            Maximum likelihood estimate for the scale, provided loc.
+
+        Notes:
+        If `floc` is not set, then the generic implementation of numerical
+        optimization from .rv_continuous will be used to determine `loc` and
+        `scale`.
+        """
+        fscale = kwds.pop('fscale', None)
+        floc = kwds.pop('floc', None)
+
+        check_fit_input_parameters(data, args, kwds,
+                                   fixed_param=(fscale, floc))
+
+        if floc is None and fscale is None:
+            return super(rayleigh_gen, self).fit(data, *args, **kwds)
+        elif fscale is not None:
+            return super(rayleigh_gen, self).fit(data, fscale=fscale, *args,
+                                                 **kwds)
+        else:
+            data = np.asarray(data)
+            # scale is given by MLE
+            scale = (np.sum((data - floc) ** 2) / (2 * len(data))) ** .5
+            # Source: Statistical Distributions, 3rd Edition. Evans, Hastings,
+            # and Peacock (2000), Page 175
+            return floc, scale
+
 
 rayleigh = rayleigh_gen(a=0.0, name="rayleigh")
+
+
+def check_fit_input_parameters(data, args, kwds, fixed_param):
+    if len(args) > 0:
+        raise TypeError("Too many arguments.")
+
+    _remove_optimizer_parameters(kwds)
+
+    if None not in fixed_param:
+        # This check is for consistency with `rv_continuous.fit`.
+        # Without this check, this function would just return the
+        # parameters that were given.
+        raise RuntimeError("All parameters fixed. There is nothing to "
+                           "optimize.")
+
+    data = np.asarray(data)
+    if not np.isfinite(data).all():
+        raise RuntimeError("The data contains non-finite values.")
 
 
 class reciprocal_gen(rv_continuous):
