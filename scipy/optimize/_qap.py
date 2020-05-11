@@ -120,7 +120,7 @@ def quadratic_assignment(
 
     .. [2] D. Fishkind, S. Adali, H. Patsolic, L. Meng, D. Singh, V. Lyzinski,
            C. Priebe, "Seeded graph matching", Pattern Recognit. 87 (2019):
-           203–215.
+           203-215.
 
     Examples
     --------
