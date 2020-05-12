@@ -17,6 +17,24 @@ OPENBLAS_LONG = 'v0.3.9'
 BASE_LOC = ''
 ANACONDA = 'https://anaconda.org/multibuild-wheels-staging/openblas-libs'
 ARCHITECTURES = ['', 'windows', 'darwin', 'aarch64', 'x86', 'ppc64le', 's390x']
+sha256_vals = {
+'openblas64_-v0.3.9-macosx_10_9_x86_64-gf_1becaaa.tar.gz':
+'53f606a7da75d390287f1c51b2af7866b8fe7553a26d2474f827daf0e5c8a886',
+'openblas64_-v0.3.9-manylinux1_x86_64.tar.gz':
+'6fe5b1e2a4baa16833724bcc94a80b22e9c99fc1b9a2ddbce4f1f82a8002d906',
+'openblas64_-v0.3.9-win_amd64-gcc_7_1_0.zip':
+'15d24a66c5b22cc7b3120e831658f491c7a063804c33813235044a6f8b56686d',
+'openblas-v0.3.9-macosx_10_9_x86_64-gf_1becaaa.tar.gz': 
+'8221397b9cfb8cb22f3efb7f228ef901e13f9fd89c7d7d0cb7b8a79b0610bf33',
+'openblas-v0.3.9-manylinux1_i686.tar.gz': 
+'31abf8eccb697a320a998ce0f59045edc964602f815d78690c5a23839819261c',
+'openblas-v0.3.9-manylinux1_x86_64.tar.gz':
+'d9c39acbafae9b1daef19c2738ec938109a59e9322f93eb9a3c50869d220deff',
+'openblas-v0.3.9-win32-gcc_7_1_0.zip':
+'69a7dc265e8a8e45b358637d11cb1710ce88c4456634c7ce37d429b1d9bc9aaa',
+'openblas-v0.3.9-win_amd64-gcc_7_1_0.zip': 
+'0cea06f4a2afebaa6255854f73f237802fc6b58eaeb1a8b1c22d87cc399e0d48'
+}
 
 IS_32BIT = sys.maxsize < 2**32
 def get_arch():
@@ -52,32 +70,18 @@ def download_openblas(target, arch, ilp64):
         suffix = 'macosx_10_9_x86_64-gf_1becaaa.tar.gz'
         filename = f'{ANACONDA}/{OPENBLAS_LONG}/download/openblas{fnsuffix}-{OPENBLAS_LONG}-{suffix}'
         typ = 'tar.gz'
-        if fnsuffix == "64_":
-            md5_expected = '17b028d96516ff4b61f9ce1bd6a634eb'
-        else:
-            md5_expected = '3f1f86d38c1905207a77c91295c5cd16'
     elif arch == 'windows':
         if IS_32BIT:
             suffix = 'win32-gcc_7_1_0.zip'
-            md5_expected = 'e6b6bdfd52d4cd046d37974d07f74b2b'
         else:
             suffix = 'win_amd64-gcc_7_1_0.zip'
-            if fnsuffix == "64_":
-                md5_expected = 'e656948a57a8a624c9ba020ea5f5fbf6'
-            else:
-                md5_expected = '0647bbb62b37618f5134e3980bf0d81e'
         filename = f'{ANACONDA}/{OPENBLAS_LONG}/download/openblas{fnsuffix}-{OPENBLAS_LONG}-{suffix}'
         typ = 'zip'
     elif 'x86' in arch:
         if IS_32BIT:
             suffix = 'manylinux1_i686.tar.gz'
-            md5_expected = '3fd7035a3cd1aa3661ac83b86537e448'
         else:
             suffix = 'manylinux1_x86_64.tar.gz'
-            if fnsuffix == "64_":
-                md5_expected = 'f76bfb6fc91ba8336994c9ff8e519e3b'
-            else:
-                md5_expected = 'c0ef9b61ad337d8b97d8dc38b44da2d2'
         filename = f'{ANACONDA}/{OPENBLAS_LONG}/download/openblas{fnsuffix}-{OPENBLAS_LONG}-{suffix}'
         typ = 'tar.gz'
     if not filename:
@@ -93,9 +97,10 @@ def download_openblas(target, arch, ilp64):
             fid.write(urlopen(req).read())
         with open(target, 'rb') as binary_to_check:
             data = binary_to_check.read()
-            md5_returned = hashlib.md5(data).hexdigest()
-            if md5_returned != md5_expected:
-                raise ValueError('md5 hash mismatch for downloaded OpenBLAS')
+            sha256_returned = hashlib.sha256(data).hexdigest()
+            sha256_expected = sha256_vals[os.path.basename(filename)]
+            if sha256_returned != sha256_expected:
+                raise ValueError('sha256 hash mismatch for downloaded OpenBLAS')
 
     except HTTPError as e:
         print(f'Could not download "{filename}"')
