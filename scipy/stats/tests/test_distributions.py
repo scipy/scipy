@@ -2986,7 +2986,6 @@ class TestRayleigh(object):
         assert_raises(RuntimeError, stats.rayleigh.fit, data, floc=floc, fscale=fscale)
 
 
-
 class TestExponWeib(object):
 
     def test_pdf_logpdf(self):
