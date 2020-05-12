@@ -23,7 +23,7 @@ def _lin_fjb(B, x):
 
 def _lin_fjd(B, x):
     b = B[1:]
-    b = np.repeat(b, (x.shape[-1],)*b.shape[-1],axis=0)
+    b = np.repeat(b, (x.shape[-1],)*b.shape[-1], axis=0)
     b.shape = x.shape
     return b
 
@@ -49,8 +49,8 @@ def _poly_fcn(B, x, powers):
 
 
 def _poly_fjacb(B, x, powers):
-    res = np.concatenate((np.ones(x.shape[-1], float), np.power(x,
-        powers).flat))
+    res = np.concatenate((np.ones(x.shape[-1], float),
+                          np.power(x, powers).flat))
     res.shape = (B.shape[-1], x.shape[-1])
     return res
 
@@ -61,7 +61,7 @@ def _poly_fjacd(B, x, powers):
 
     b = b * powers
 
-    return np.sum(b * np.power(x, powers-1),axis=0)
+    return np.sum(b * np.power(x, powers-1), axis=0)
 
 
 def _exp_fcn(B, x):
@@ -84,16 +84,19 @@ def _exp_est(data):
 
 
 class _MultilinearModel(Model):
-    """
-    Multilinear Model
+    r"""
+    Arbitrary-dimensional linear model defined by:
+
+    :math:`y=\beta_0 + \sum_{i=1}^m \beta_i x_i`
 
     """
     def __init__(self):
-        super().__init__(_lin_fcn, fjacb=_lin_fjb,
-               fjacd=_lin_fjd, estimate=_lin_est,
-               meta={'name': 'Arbitrary-dimensional Linear',
-                     'equ':'y = B_0 + Sum[i=1..m, B_i * x_i]',
-                     'TeXequ':r'$y=\beta_0 + \sum_{i=1}^m \beta_i x_i$'})
+        super().__init__(
+            _lin_fcn, fjacb=_lin_fjb, fjacd=_lin_fjd, estimate=_lin_est,
+            meta={'name': 'Arbitrary-dimensional Linear',
+                  'equ': 'y = B_0 + Sum[i=1..m, B_i * x_i]',
+                  'TeXequ': r'$y=\beta_0 + \sum_{i=1}^m \beta_i x_i$'})
+
 
 multilinear = _MultilinearModel()
 
@@ -158,10 +161,22 @@ def polynomial(order):
                         (len_beta-1)})
 
 
-exponential = Model(_exp_fcn, fjacd=_exp_fjd, fjacb=_exp_fjb,
-                    estimate=_exp_est, meta={'name':'Exponential',
-                    'equ': 'y= B_0 + exp(B_1 * x)',
-                    'TeXequ': r'$y=\beta_0 + e^{\beta_1 x}$'})
+class _ExponentialModel(Model):
+    r"""
+    Exponential model defined by:
+
+    :math:`y=\beta_0 + e^{\beta_1 x}`
+
+    """
+    def __init__(self):
+        super().__init__(_exp_fcn, fjacd=_exp_fjd, fjacb=_exp_fjb,
+                         estimate=_exp_est,
+                         meta={'name': 'Exponential',
+                               'equ': 'y= B_0 + exp(B_1 * x)',
+                               'TeXequ': r'$y=\beta_0 + e^{\beta_1 x}$'})
+
+
+exponential = _ExponentialModel()
 
 
 def _unilin(B, x):
@@ -202,12 +217,37 @@ def _quad_est(data):
     return (1.,1.,1.)
 
 
-unilinear = Model(_unilin, fjacd=_unilin_fjd, fjacb=_unilin_fjb,
-                  estimate=_unilin_est, meta={'name': 'Univariate Linear',
-                  'equ': 'y = B_0 * x + B_1',
-                  'TeXequ': '$y = \\beta_0 x + \\beta_1$'})
+class _UnilinearModel(Model):
+    r"""
+    Univariate linear model defined by:
 
-quadratic = Model(_quadratic, fjacd=_quad_fjd, fjacb=_quad_fjb,
-                  estimate=_quad_est, meta={'name': 'Quadratic',
+    :math:`y = \\beta_0 x + \\beta_1`
+
+    """
+    def __init__(self):
+        super().__init__(_unilin, fjacd=_unilin_fjd, fjacb=_unilin_fjb,
+                         estimate=_unilin_est,
+                         meta={'name': 'Univariate Linear',
+                               'equ': 'y = B_0 * x + B_1',
+                               'TeXequ': '$y = \\beta_0 x + \\beta_1$'})
+
+
+unilinear = _UnilinearModel()
+
+
+class _QuadraticModel(Model):
+    r"""
+    Quadratic model defined by:
+
+    :math:`y = \\beta_0 x^2 + \\beta_1 x + \\beta_2`
+
+    """
+    def __init__(self):
+        super().__init__(
+            _quadratic, fjacd=_quad_fjd, fjacb=_quad_fjb, estimate=_quad_est,
+            meta={'name': 'Quadratic',
                   'equ': 'y = B_0*x**2 + B_1*x + B_2',
                   'TeXequ': '$y = \\beta_0 x^2 + \\beta_1 x + \\beta_2'})
+
+
+quadratic = _QuadraticModel()
