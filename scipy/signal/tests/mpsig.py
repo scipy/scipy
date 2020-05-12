@@ -3,7 +3,7 @@ Some signal functions implemented using mpmath.
 """
 
 try:
-    import mpmath
+    import mpmath  # type: ignore[import]
 except ImportError:
     mpmath = None
 

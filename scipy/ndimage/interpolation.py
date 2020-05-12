@@ -29,8 +29,10 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import itertools
-import numpy
 import warnings
+
+import numpy
+from numpy.core.multiarray import normalize_axis_index
 
 from . import _ni_support
 from . import _nd_image
@@ -87,6 +89,30 @@ def spline_filter1d(input, order=3, axis=-1, output=numpy.float64,
     the `prefilter` keyword argument. For functions that accept a `mode`
     parameter, the result will only be correct if it matches the `mode`
     used when filtering.
+
+    See Also
+    --------
+    spline_filter : Multidimensional spline filter.
+
+    Examples
+    --------
+    We can filter an image using 1-D spline along the given axis:
+
+    >>> from scipy.ndimage import spline_filter1d
+    >>> import matplotlib.pyplot as plt
+    >>> orig_img = np.eye(20)  # create an image
+    >>> orig_img[10, :] = 1.0
+    >>> sp_filter_axis_0 = spline_filter1d(orig_img, axis=0)
+    >>> sp_filter_axis_1 = spline_filter1d(orig_img, axis=1)
+    >>> f, ax = plt.subplots(1, 3, sharex=True)
+    >>> for ind, data in enumerate([[orig_img, "original image"],
+    ...             [sp_filter_axis_0, "spline filter (axis=0)"],
+    ...             [sp_filter_axis_1, "spline filter (axis=1)"]]):
+    ...     ax[ind].imshow(data[0], cmap='gray_r')
+    ...     ax[ind].set_title(data[1])
+    >>> plt.tight_layout()
+    >>> plt.show()
+
     """
     if order < 0 or order > 5:
         raise RuntimeError('spline order not supported')
@@ -98,7 +124,7 @@ def spline_filter1d(input, order=3, axis=-1, output=numpy.float64,
         output[...] = numpy.array(input)
     else:
         mode = _ni_support._extend_mode_to_code(mode)
-        axis = _ni_support._check_axis(axis, input.ndim)
+        axis = normalize_axis_index(axis, input.ndim)
         _nd_image.spline_filter1d(input, order, axis, output, mode)
     return output
 
@@ -111,7 +137,7 @@ def spline_filter(input, order=3, output=numpy.float64, mode='mirror'):
 
     See Also
     --------
-    spline_filter1d
+    spline_filter1d : Calculate a 1-D spline filter along the given axis.
 
     Notes
     -----
@@ -120,6 +146,23 @@ def spline_filter(input, order=3, output=numpy.float64, mode='mirror'):
     in the same data type as the output. Therefore, for output types
     with a limited precision, the results may be imprecise because
     intermediate results may be stored with insufficient precision.
+
+    Examples
+    --------
+    We can filter an image using multidimentional splines:
+
+    >>> from scipy.ndimage import spline_filter
+    >>> import matplotlib.pyplot as plt
+    >>> orig_img = np.eye(20)  # create an image
+    >>> orig_img[10, :] = 1.0
+    >>> sp_filter = spline_filter(orig_img, order=3)
+    >>> f, ax = plt.subplots(1, 2, sharex=True)
+    >>> for ind, data in enumerate([[orig_img, "original image"],
+    ...                             [sp_filter, "spline filter"]]):
+    ...     ax[ind].imshow(data[0], cmap='gray_r')
+    ...     ax[ind].set_title(data[1])
+    >>> plt.tight_layout()
+    >>> plt.show()
 
     """
     if order < 2 or order > 5:

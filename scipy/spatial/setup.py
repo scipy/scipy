@@ -82,6 +82,9 @@ def configuration(parent_package='', top_path=None):
     # Add license files
     config.add_data_files('qhull_src/COPYING.txt')
 
+    # Type stubs
+    config.add_data_files('*.pyi')
+
     return config
 
 

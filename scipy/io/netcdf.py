@@ -409,7 +409,7 @@ class netcdf_file(object):
     def _write(self):
         self.fp.seek(0)
         self.fp.write(b'CDF')
-        self.fp.write(array(self.version_byte, '>b').tostring())
+        self.fp.write(array(self.version_byte, '>b').tobytes())
 
         # Write headers and data.
         self._write_numrecs()
@@ -519,7 +519,7 @@ class netcdf_file(object):
 
         # Write data.
         if not var.isrec:
-            self.fp.write(var.data.tostring())
+            self.fp.write(var.data.tobytes())
             count = var.data.size * var.data.itemsize
             self._write_var_padding(var, var._vsize - count)
         else:  # record variable
@@ -541,7 +541,7 @@ class netcdf_file(object):
                 if not rec.shape and (rec.dtype.byteorder == '<' or
                         (rec.dtype.byteorder == '=' and LITTLE_ENDIAN)):
                     rec = rec.byteswap()
-                self.fp.write(rec.tostring())
+                self.fp.write(rec.tobytes())
                 # Padding
                 count = rec.size * rec.itemsize
                 self._write_var_padding(var, var._vsize - count)
@@ -591,7 +591,7 @@ class netcdf_file(object):
         if not values.shape and (values.dtype.byteorder == '<' or
                 (values.dtype.byteorder == '=' and LITTLE_ENDIAN)):
             values = values.byteswap()
-        self.fp.write(values.tostring())
+        self.fp.write(values.tobytes())
         count = values.size * values.itemsize
         self.fp.write(b'\x00' * (-count % 4))  # pad
 
@@ -776,7 +776,7 @@ class netcdf_file(object):
             self._pack_int64(begin)
 
     def _pack_int(self, value):
-        self.fp.write(array(value, '>i').tostring())
+        self.fp.write(array(value, '>i').tobytes())
     _pack_int32 = _pack_int
 
     def _unpack_int(self):
@@ -784,7 +784,7 @@ class netcdf_file(object):
     _unpack_int32 = _unpack_int
 
     def _pack_int64(self, value):
-        self.fp.write(array(value, '>q').tostring())
+        self.fp.write(array(value, '>q').tobytes())
 
     def _unpack_int64(self):
         return frombuffer(self.fp.read(8), '>q')[0]
@@ -1030,7 +1030,7 @@ class netcdf_variable(object):
         """
         if '_FillValue' in self._attributes:
             fill_value = np.array(self._attributes['_FillValue'],
-                                  dtype=self.data.dtype).tostring()
+                                  dtype=self.data.dtype).tobytes()
             if len(fill_value) == self.itemsize():
                 return fill_value
             else:

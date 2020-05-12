@@ -600,6 +600,7 @@ cdef class _Qhull:
 
         ncoplanar = 0
         coplanar = np.zeros((10, 3), dtype=np.intc)
+        coplanar_shape = coplanar.shape
 
         # Retrieve facet information
         with nogil:
@@ -651,7 +652,7 @@ cdef class _Qhull:
                         point = <pointT*>facet.coplanarset.e[i].p
                         vertex = qh_nearvertex(self._qh, facet, point, &dist)
 
-                        if ncoplanar >= coplanar.shape[0]:
+                        if ncoplanar >= coplanar_shape[0]:
                             with gil:
                                 tmp = coplanar
                                 coplanar = None
@@ -2076,6 +2077,7 @@ class Delaunay(_QhullUser):
         xi_shape = xi.shape
         xi = xi.reshape(-1, xi.shape[-1])
         x = np.ascontiguousarray(xi.astype(np.double))
+        x_shape = x.shape
 
         start = 0
 
@@ -2090,7 +2092,7 @@ class Delaunay(_QhullUser):
 
         if bruteforce:
             with nogil:
-                for k in range(x.shape[0]):
+                for k in range(x_shape[0]):
                     isimplex = _find_simplex_bruteforce(
                         &info, c,
                         <double*>x.data + info.ndim*k,
@@ -2098,7 +2100,7 @@ class Delaunay(_QhullUser):
                     out_[k] = isimplex
         else:
             with nogil:
-                for k in range(x.shape[0]):
+                for k in range(x_shape[0]):
                     isimplex = _find_simplex(&info, c,
                                              <double*>x.data + info.ndim*k,
                                              &start, eps, eps_broad)
@@ -2127,6 +2129,7 @@ class Delaunay(_QhullUser):
         xi_shape = xi.shape
         xi = xi.reshape(-1, xi.shape[-1])
         x = np.ascontiguousarray(xi.astype(np.double))
+        x_shape = x.shape
 
         _get_delaunay_info(&info, self, 0, 0, 0)
 
@@ -2134,7 +2137,7 @@ class Delaunay(_QhullUser):
         out_ = out
 
         with nogil:
-            for i in range(x.shape[0]):
+            for i in range(x_shape[0]):
                 for j in range(info.nsimplex):
                     _lift_point(&info, (<double*>x.data) + info.ndim*i, z)
                     out_[i,j] = _distplane(&info, j, z)
@@ -2764,7 +2767,7 @@ class HalfspaceIntersection(_QhullUser):
     >>> c[-1] = -1
     >>> A = np.hstack((halfspaces[:, :-1], norm_vector))
     >>> b = - halfspaces[:, -1:]
-    >>> res = linprog(c, A_ub=A, b_ub=b)
+    >>> res = linprog(c, A_ub=A, b_ub=b, bounds=(None, None))
     >>> x = res.x[:-1]
     >>> y = res.x[-1]
     >>> circle = Circle(x, radius=y, alpha=0.3)

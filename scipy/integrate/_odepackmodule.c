@@ -29,7 +29,6 @@ the result tuple when the full_output argument is non-zero.
 */
 
 #include "Python.h"
-#include "numpy/npy_3kcompat.h"
 
 #include "numpy/arrayobject.h"
 
@@ -813,7 +812,7 @@ PyInit__odepack(void)
     import_array();
     d = PyModule_GetDict(m);
 
-    s = PyUString_FromString(" 1.9 ");
+    s = PyUnicode_FromString(" 1.9 ");
     PyDict_SetItemString(d, "__version__", s);
     odepack_error = PyErr_NewException ("odepack.error", NULL, NULL);
     Py_DECREF(s);

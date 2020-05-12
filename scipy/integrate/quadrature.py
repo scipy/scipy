@@ -393,7 +393,7 @@ def simps(y, x=None, dx=1, axis=-1, even='avg'):
     x : array_like, optional
         If given, the points at which `y` is sampled.
     dx : int, optional
-        Spacing of integration points along axis of `y`. Only used when
+        Spacing of integration points along axis of `x`. Only used when
         `x` is None. Default is 1.
     axis : int, optional
         Axis along which to integrate. Default is the last axis.

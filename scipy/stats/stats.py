@@ -171,7 +171,8 @@ from numpy import array, asarray, ma
 
 from scipy.spatial.distance import cdist
 from scipy.ndimage import measurements
-from scipy._lib._util import _lazywhere, check_random_state, MapWrapper
+from scipy._lib._util import (_lazywhere, check_random_state, MapWrapper,
+                              rng_integers)
 import scipy.special as special
 from scipy import linalg
 from . import distributions
@@ -192,7 +193,8 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
            'scoreatpercentile', 'percentileofscore',
            'cumfreq', 'relfreq', 'obrientransform',
            'sem', 'zmap', 'zscore', 'iqr', 'gstd', 'median_absolute_deviation',
-           'sigmaclip', 'trimboth', 'trim1', 'trim_mean', 'f_oneway',
+           'sigmaclip', 'trimboth', 'trim1', 'trim_mean',
+           'f_oneway', 'F_onewayConstantInputWarning',
            'PearsonRConstantInputWarning', 'PearsonRNearConstantInputWarning',
            'pearsonr', 'fisher_exact', 'SpearmanRConstantInputWarning',
            'spearmanr', 'pointbiserialr',
@@ -412,12 +414,12 @@ def mode(a, axis=0, nan_policy='propagate'):
     ...               [4, 7, 5, 9]])
     >>> from scipy import stats
     >>> stats.mode(a)
-    (array([[3, 1, 0, 0]]), array([[1, 1, 1, 1]]))
+    ModeResult(mode=array([[3, 1, 0, 0]]), count=array([[1, 1, 1, 1]]))
 
     To get mode of whole array, specify ``axis=None``:
 
     >>> stats.mode(a, axis=None)
-    (array([3]), array([3]))
+    ModeResult(mode=array([3]), count=array([3]))
 
     """
     a, axis = _chk_asarray(a, axis)
@@ -988,7 +990,7 @@ def _moment(a, moment, axis):
 def variation(a, axis=0, nan_policy='propagate'):
     """
     Compute the coefficient of variation.
-    
+
     The coefficient of variation is the ratio of the biased standard
     deviation to the mean.
 
@@ -1074,13 +1076,13 @@ def skew(a, axis=0, bias=True, nan_policy='propagate'):
     The sample skewness is computed as the Fisher-Pearson coefficient
     of skewness, i.e.
 
-    .. math:: 
+    .. math::
 
         g_1=\frac{m_3}{m_2^{3/2}}
 
     where
 
-    .. math:: 
+    .. math::
 
         m_i=\frac{1}{N}\sum_{n=1}^N(x[n]-\bar{x})^i
 
@@ -1089,7 +1091,7 @@ def skew(a, axis=0, bias=True, nan_policy='propagate'):
     corrected for bias and the value computed is the adjusted
     Fisher-Pearson standardized moment coefficient, i.e.
 
-    .. math:: 
+    .. math::
 
         G_1=\frac{k_3}{k_2^{3/2}}=
             \frac{\sqrt{N(N-1)}}{N-2}\frac{m_3}{m_2^{3/2}}.
@@ -1232,11 +1234,8 @@ def kurtosis(a, axis=0, fisher=True, bias=True, nan_policy='propagate'):
     m2 = moment(a, 2, axis)
     m4 = moment(a, 4, axis)
     zero = (m2 == 0)
-    olderr = np.seterr(all='ignore')
-    try:
+    with np.errstate(all='ignore'):
         vals = np.where(zero, 0, m4 / m2**2.0)
-    finally:
-        np.seterr(**olderr)
 
     if not bias:
         can_correct = (n > 3) & (m2 > 0)
@@ -1601,6 +1600,9 @@ def normaltest(a, axis=0, nan_policy='propagate'):
     return NormaltestResult(k2, distributions.chi2.sf(k2, 2))
 
 
+Jarque_beraResult = namedtuple('Jarque_beraResult', ('statistic', 'pvalue'))
+
+
 def jarque_bera(x):
     """
     Perform the Jarque-Bera goodness of fit test on sample data.
@@ -1635,11 +1637,13 @@ def jarque_bera(x):
     >>> from scipy import stats
     >>> np.random.seed(987654321)
     >>> x = np.random.normal(0, 1, 100000)
-    >>> y = np.random.rayleigh(1, 100000)
-    >>> stats.jarque_bera(x)
-    (4.7165707989581342, 0.09458225503041906)
-    >>> stats.jarque_bera(y)
-    (6713.7098548143422, 0.0)
+    >>> jarque_bera_test = stats.jarque_bera(x)
+    >>> jarque_bera_test
+    Jarque_beraResult(statistic=4.716570798957913, pvalue=0.0945822550304295)
+    >>> jarque_bera_test.statistic
+    4.716570798957913
+    >>> jarque_bera_test.pvalue
+    0.0945822550304295
 
     """
     x = np.asarray(x)
@@ -1654,7 +1658,7 @@ def jarque_bera(x):
     jb_value = n / 6 * (skewness**2 + (kurtosis - 3)**2 / 4)
     p = 1 - distributions.chi2.cdf(jb_value, 2)
 
-    return jb_value, p
+    return Jarque_beraResult(jb_value, p)
 
 
 #####################################
@@ -1925,7 +1929,7 @@ HistogramResult = namedtuple('HistogramResult',
 def _histogram(a, numbins=10, defaultlimits=None, weights=None, printextras=False):
     """
     Create a histogram.
-    
+
     Separate the range into several bins and return the number of instances
     in each bin.
 
@@ -2217,7 +2221,7 @@ def obrientransform(*args):
 
     If we require that ``p < 0.05`` for significance, we cannot conclude
     that the variances are different.
-    
+
     """
     TINY = np.sqrt(np.finfo(float).eps)
 
@@ -2254,7 +2258,7 @@ def obrientransform(*args):
 def sem(a, axis=0, ddof=1, nan_policy='propagate'):
     """
     Compute standard error of the mean.
-    
+
     Calculate the standard error of the mean (or standard error of
     measurement) of the values in the input array.
 
@@ -2373,7 +2377,7 @@ def zscore(a, axis=0, ddof=0, nan_policy='propagate'):
            [ 0.26796377, -1.12598418,  1.23283094, -0.37481053],
            [-0.22095197,  0.24468594,  1.19042819, -1.21416216],
            [-0.82780366,  1.4457416 , -0.43867764, -0.1792603 ]])
-    
+
     """
     a = np.asanyarray(a)
 
@@ -2430,7 +2434,7 @@ def zmap(scores, compare, axis=0, ddof=0):
     >>> b = [0, 1, 2, 3, 4]
     >>> zmap(a, b)
     array([-1.06066017,  0.        ,  0.35355339,  0.70710678])
-    
+
     """
     scores, compare = map(np.asanyarray, [scores, compare])
     mns = compare.mean(axis=axis, keepdims=True)
@@ -2532,7 +2536,7 @@ def gstd(a, axis=0, ddof=1):
       mask=[[False, False, False],
             [False,  True,  True]],
       fill_value=999999)
-    
+
     """
     a = np.asanyarray(a)
     log = ma.log if isinstance(a, ma.MaskedArray) else np.log
@@ -2675,7 +2679,7 @@ def iqr(x, axis=None, rng=(25, 75), scale='raw', nan_policy='propagate',
     .. [1] "Interquartile range" https://en.wikipedia.org/wiki/Interquartile_range
     .. [2] "Robust measures of scale" https://en.wikipedia.org/wiki/Robust_measures_of_scale
     .. [3] "Quantile" https://en.wikipedia.org/wiki/Quantile
-    
+
     Examples
     --------
     >>> from scipy.stats import iqr
@@ -2829,7 +2833,12 @@ def median_absolute_deviation(x, axis=0, center=np.median, scale=1.4826,
 
     # Consistent with `np.var` and `np.std`.
     if not x.size:
-        return np.nan
+        nan_shape = [item for i, item in enumerate(x.shape) if i != axis]
+        nan_array = np.full(nan_shape, np.nan)
+        if not nan_array.size:
+            return np.nan
+        else:
+            return nan_array
 
     contains_nan, nan_policy = _contains_nan(x, nan_policy)
 
@@ -3116,6 +3125,17 @@ def trim_mean(a, proportiontocut, axis=0):
 F_onewayResult = namedtuple('F_onewayResult', ('statistic', 'pvalue'))
 
 
+class F_onewayConstantInputWarning(RuntimeWarning):
+    """Warning generated by `f_oneway` when an input is constant, e.g.
+       each of the samples provided is a constant array"""
+
+    def __init__(self, msg=None):
+        if msg is None:
+            msg = ("Each of the input arrays is constant;"
+                    "the F-value is not defined or infinite")
+        self.args = (msg,)
+
+
 def f_oneway(*args):
     """
     Perform one-way ANOVA.
@@ -3136,6 +3156,13 @@ def f_oneway(*args):
     pvalue : float
         The associated p-value from the F-distribution.
 
+    Warns
+    -----
+    F_onewayConstantInputWarning
+        Raised if each of the input arrays is constant array.
+        In this case F-value is either infinite or isn't defined, so
+        ``np.inf`` or ``np.nan`` is returned for F-value
+
     Notes
     -----
     The ANOVA test has important assumptions that must be satisfied in order
@@ -3150,7 +3177,14 @@ def f_oneway(*args):
     possible to use the Kruskal-Wallis H-test (`scipy.stats.kruskal`) although
     with some loss of power.
 
+    If each group is made of constant values, and
+
+    - There exist at least two groups with different values
+         the function returns (``np.inf``, 0)
+    - All values in all groups are the same, function returns (``np.nan``, ``np.nan``)
+
     The algorithm is from Heiman[2], pp.394-7.
+
 
     References
     ----------
@@ -3191,6 +3225,22 @@ def f_oneway(*args):
     num_groups = len(args)
     alldata = np.concatenate(args)
     bign = len(alldata)
+
+    # Check if the values within each group are constant
+    # And the common value in at least one group is different
+    # from that in another group - special cases
+    # Based on https://github.com/scipy/scipy/issues/11669
+    const_groups = True
+    for group in args:
+        if not all(x == group[0] for x in group):
+            const_groups = False
+            break
+    if const_groups:
+        warnings.warn(F_onewayConstantInputWarning())
+        if len(set(group[0] for group in args)) > 1:
+            return F_onewayResult(np.inf, 0)
+        else:
+            return F_onewayResult(np.nan, np.nan)
 
     # Determine the mean of the data, and subtract that from all inputs to a
     # variance (via sum_of_sq / sq_of_sum) calculation.  Variance is invariance
@@ -3749,13 +3799,10 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate'):
     dof = n_obs - 2  # degrees of freedom
 
     # rs can have elements equal to 1, so avoid zero division warnings
-    olderr = np.seterr(divide='ignore')
-    try:
+    with np.errstate(divide='ignore'):
         # clip the small negative values possibly caused by rounding
         # errors before taking the square root
         t = rs * np.sqrt((dof/((rs+1.0)*(1.0-rs))).clip(0))
-    finally:
-        np.seterr(**olderr)
 
     prob = 2 * distributions.t.sf(np.abs(t), dof)
 
@@ -4304,7 +4351,7 @@ def _perm_test(x, y, stat, compute_distance, reps=1000, workers=-1,
     # generate seeds for each rep (change to new parallel random number
     # capabilities in numpy >= 1.17+)
     random_state = check_random_state(random_state)
-    random_states = [np.random.RandomState(random_state.randint(1 << 32,
+    random_states = [np.random.RandomState(rng_integers(random_state, 1 << 32,
                      size=4, dtype=np.uint32)) for _ in range(reps)]
 
     # parallelizes with specified workers over number of reps and set seeds
@@ -5804,7 +5851,7 @@ def _compute_prob_inside_method(m, n, g, h):
     Hodges, J.L. Jr.,
     "The Significance Probability of the Smirnov Two-Sample Test,"
     Arkiv fiur Matematik, 3, No. 43 (1958), 469-86.
-    
+
     """
     # Probability is symmetrical in m, n.  Computation below uses m >= n.
     if m < n:
@@ -6383,6 +6430,21 @@ def ranksums(x, y):
     References
     ----------
     .. [1] https://en.wikipedia.org/wiki/Wilcoxon_rank-sum_test
+
+    Examples
+    --------
+    We can test the hypothesis that two independent unequal-sized samples are
+    drawn from the same distribution with computing the Wilcoxon rank-sum
+    statistic.
+
+    >>> from scipy.stats import ranksums
+    >>> sample1 = np.random.uniform(-1, 1, 200)
+    >>> sample2 = np.random.uniform(-0.5, 1.5, 300) # a shifted distribution
+    >>> ranksums(sample1, sample2)
+    RanksumsResult(statistic=-7.887059, pvalue=3.09390448e-15)  # may vary
+
+    The p-value of less than ``0.05`` indicates that this test rejects the
+    hypothesis at the 5% significance level.
 
     """
     x, y = map(np.asarray, (x, y))
@@ -7054,7 +7116,7 @@ def _cdf_distance(p, u_values, v_values, u_weights=None, v_weights=None):
     .. [1] Bellemare, Danihelka, Dabney, Mohamed, Lakshminarayanan, Hoyer,
            Munos "The Cramer Distance as a Solution to Biased Wasserstein
            Gradients" (2017). :arXiv:`1705.10743`.
-    
+
     """
     u_values, u_weights = _validate_distribution(u_values, u_weights)
     v_values, v_weights = _validate_distribution(v_values, v_weights)
@@ -7117,7 +7179,7 @@ def _validate_distribution(values, weights):
         Values as ndarray.
     weights : ndarray
         Weights as ndarray.
-    
+
     """
     # Validate the value array.
     values = np.asarray(values, dtype=float)
@@ -7206,7 +7268,7 @@ def _sum_of_squares(a, axis=0):
     --------
     _square_of_sums : The square(s) of the sum(s) (the opposite of
     `_sum_of_squares`).
-    
+
     """
     a, axis = _chk_asarray(a, axis)
     return np.sum(a*a, axis)
@@ -7232,7 +7294,7 @@ def _square_of_sums(a, axis=0):
     See Also
     --------
     _sum_of_squares : The sum of squares (the opposite of `square_of_sums`).
-    
+
     """
     a, axis = _chk_asarray(a, axis)
     s = np.sum(a, axis)
@@ -7242,9 +7304,13 @@ def _square_of_sums(a, axis=0):
         return float(s) * s
 
 
-def rankdata(a, method='average'):
+def rankdata(a, method='average', *, axis=None):
     """
     Assign ranks to data, dealing with ties appropriately.
+
+    By default (``axis=None``), the data array is first flattened, and a flat
+    array of ranks is returned. Separately reshape the rank array to the
+    shape of the data array if desired (see Examples).
 
     Ranks begin at 1.  The `method` argument controls how ranks are assigned
     to equal values.  See [1]_ for further discussion of ranking methods.
@@ -7252,7 +7318,7 @@ def rankdata(a, method='average'):
     Parameters
     ----------
     a : array_like
-        The array of values to be ranked.  The array is first flattened.
+        The array of values to be ranked.
     method : {'average', 'min', 'max', 'dense', 'ordinal'}, optional
         The method used to assign ranks to tied elements.
         The following methods are available (default is 'average'):
@@ -7269,11 +7335,14 @@ def rankdata(a, method='average'):
             elements.
           * 'ordinal': All values are given a distinct rank, corresponding to
             the order that the values occur in `a`.
+    axis : {None, int}, optional
+        Axis along which to perform the ranking. If ``None``, the data array
+        is first flattened.
 
     Returns
     -------
     ranks : ndarray
-         An array of length equal to the size of `a`, containing rank
+         An array of size equal to the size of `a`, containing rank
          scores.
 
     References
@@ -7293,10 +7362,26 @@ def rankdata(a, method='average'):
     array([ 1,  2,  3,  2])
     >>> rankdata([0, 2, 3, 2], method='ordinal')
     array([ 1,  2,  4,  3])
-    
+    >>> rankdata([[0, 2], [3, 2]]).reshape(2,2)
+    array([[1. , 2.5],
+          [4. , 2.5]])
+    >>> rankdata([[0, 2, 2], [3, 2, 5]], axis=1)
+    array([[1. , 2.5, 2.5],
+           [2. , 1. , 3. ]])
     """
     if method not in ('average', 'min', 'max', 'dense', 'ordinal'):
         raise ValueError('unknown method "{0}"'.format(method))
+
+    if axis is not None:
+        a = np.asarray(a)
+        if a.size == 0:
+            # The return values of `normalize_axis_index` are ignored.  The
+            # call validates `axis`, even though we won't use it.
+            # use scipy._lib._util._normalize_axis_index when available
+            np.core.multiarray.normalize_axis_index(axis, a.ndim)
+            dt = np.float64 if method == 'average' else np.int_
+            return np.empty(a.shape, dtype=dt)
+        return np.apply_along_axis(rankdata, axis, a, method)
 
     arr = np.ravel(np.asarray(a))
     algo = 'mergesort' if method == 'ordinal' else 'quicksort'

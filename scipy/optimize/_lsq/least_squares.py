@@ -102,7 +102,7 @@ def prepare_bounds(bounds, n):
     return lb, ub
 
 
-def check_tolerance(ftol, xtol, gtol):
+def check_tolerance(ftol, xtol, gtol, method):
     def check(tol, name):
         if tol is None:
             tol = 0
@@ -116,7 +116,10 @@ def check_tolerance(ftol, xtol, gtol):
     xtol = check(xtol, "xtol")
     gtol = check(gtol, "gtol")
 
-    if ftol < EPS and xtol < EPS and gtol < EPS:
+    if method == "lm" and (ftol < EPS or xtol < EPS or gtol < EPS):
+        raise ValueError("All tolerances must be higher than machine epsilon "
+                         "({:.2e}) for method 'lm'.".format(EPS))
+    elif ftol < EPS and xtol < EPS and gtol < EPS:
         raise ValueError("At least one of the tolerances must be higher than "
                          "machine epsilon ({:.2e}).".format(EPS))
 
@@ -258,10 +261,10 @@ def least_squares(
         ``fun(x, *args, **kwargs)``, i.e., the minimization proceeds with
         respect to its first argument. The argument ``x`` passed to this
         function is an ndarray of shape (n,) (never a scalar, even for n=1).
-        It must return a 1-D array_like of shape (m,) or a scalar. If the
-        argument ``x`` is complex or the function ``fun`` returns complex
-        residuals, it must be wrapped in a real function of real arguments,
-        as shown at the end of the Examples section.
+        It must allocate and return a 1-D array_like of shape (m,) or a scalar.
+        If the argument ``x`` is complex or the function ``fun`` returns
+        complex residuals, it must be wrapped in a real function of real
+        arguments, as shown at the end of the Examples section.
     x0 : array_like with shape (n,) or float
         Initial guess on independent variables. If float, it will be treated
         as a 1-D array with one element.
@@ -793,7 +796,7 @@ def least_squares(
 
     x_scale = check_x_scale(x_scale, x0)
 
-    ftol, xtol, gtol = check_tolerance(ftol, xtol, gtol)
+    ftol, xtol, gtol = check_tolerance(ftol, xtol, gtol, method)
 
     def fun_wrapped(x):
         return np.atleast_1d(fun(x, *args, **kwargs))

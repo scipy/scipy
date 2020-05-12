@@ -21,8 +21,6 @@ from scipy.io.matlab.streams import (make_stream,
     GenericStream, ZlibInputStream,
     _read_into, _read_string, BLOCK_SIZE)
 
-IS_PYPY = ('__pypy__' in sys.modules)
-
 
 @contextmanager
 def setup_test_file():
@@ -90,7 +88,7 @@ def test_read():
 
 class TestZlibInputStream(object):
     def _get_data(self, size):
-        data = np.random.randint(0, 256, size).astype(np.uint8).tostring()
+        data = np.random.randint(0, 256, size).astype(np.uint8).tobytes()
         compressed_data = zlib.compress(data)
         stream = BytesIO(compressed_data)
         return stream, len(compressed_data), data
@@ -122,7 +120,7 @@ class TestZlibInputStream(object):
 
     def test_read_max_length(self):
         size = 1234
-        data = np.random.randint(0, 256, size).astype(np.uint8).tostring()
+        data = np.random.randint(0, 256, size).astype(np.uint8).tobytes()
         compressed_data = zlib.compress(data)
         compressed_stream = BytesIO(compressed_data + b"abbacaca")
         stream = ZlibInputStream(compressed_stream, len(compressed_data))
@@ -133,7 +131,7 @@ class TestZlibInputStream(object):
         assert_raises(IOError, stream.read, 1)
 
     def test_read_bad_checksum(self):
-        data = np.random.randint(0, 256, 10).astype(np.uint8).tostring()
+        data = np.random.randint(0, 256, 10).astype(np.uint8).tobytes()
         compressed_data = zlib.compress(data)
 
         # break checksum
@@ -175,7 +173,7 @@ class TestZlibInputStream(object):
         assert_raises(IOError, stream.read, 12)
 
     def test_seek_bad_checksum(self):
-        data = np.random.randint(0, 256, 10).astype(np.uint8).tostring()
+        data = np.random.randint(0, 256, 10).astype(np.uint8).tobytes()
         compressed_data = zlib.compress(data)
 
         # break checksum
@@ -198,7 +196,7 @@ class TestZlibInputStream(object):
     def test_all_data_read_overlap(self):
         COMPRESSION_LEVEL = 6
 
-        data = np.arange(33707000).astype(np.uint8).tostring()
+        data = np.arange(33707000).astype(np.uint8).tobytes()
         compressed_data = zlib.compress(data, COMPRESSION_LEVEL)
         compressed_data_len = len(compressed_data)
 
@@ -214,7 +212,7 @@ class TestZlibInputStream(object):
     def test_all_data_read_bad_checksum(self):
         COMPRESSION_LEVEL = 6
 
-        data = np.arange(33707000).astype(np.uint8).tostring()
+        data = np.arange(33707000).astype(np.uint8).tobytes()
         compressed_data = zlib.compress(data, COMPRESSION_LEVEL)
         compressed_data_len = len(compressed_data)
 

@@ -93,6 +93,7 @@ CPython               MS Visual C++    C Standard
 3.3, 3.4                10.0           C90 & some of C99
 3.5, 3.6                14.0           C90 & most of C99
 3.7                     15.7           C90 & most of C99
+3.8                     15.7           C90 & most of C99
 ===================   ==============   ===================
 
 
@@ -104,24 +105,25 @@ C and C++ language standards for SciPy are generally guidelines
 rather than official decisions. This is particularly true of
 attempting to predict adoption timelines for newer standards.
 
-================  ===========================================
+================  =======================================================================
  Date              C Standard
-================  ===========================================
+================  =======================================================================
  <= 2018           C90
  2019              C90 for old code, may consider C99 for new
  2020              C99
- ?                 C11
+ 2020              C11
+ ?                 C14 some C++14 features can be used, typically limited by MSVC support
  ?                 C17, C18
-================  ===========================================
+================  =======================================================================
 
-The use of MSVisual Studio 9.0 (which doesn't have support C99)
+The use of MS Visual Studio 9.0 (which doesn't have support C99)
 to build Python2.7 has meant that C code in SciPy has had to conform
 to the earlier C90 standard for the language and standard library.
 With the dropping of Python2.7 for SciPy 1.3.x, the C90 restriction is no
-longer imposed by compilers.
-Even though C99 has been a standard for 20 years, experience has shown that
-not all features are supported equally well across all platforms.
-The expectation is that C99 code will become acceptable in 2020.
+longer imposed by compilers. For GCC version < 5, an explicit ``-std=c99``
+may have to be added by the user if C99 features are used in SciPy code.
+*Note: even though C99 has been a standard for 20 years, experience has shown
+that not all features are supported equally well across all platforms.*
 
 C18 is a bug fix for C11, so C11 may be skipped entirely.
 
@@ -173,6 +175,7 @@ SciPy always requires a recent Cython compiler.
  Tool    Tool Version  SciPy version
 ======== ============ ===============
 Cython     >= 0.29.13  1.4.1
+Cython     >= 0.29.14  1.5.0
 ======== ============ ===============
 
 

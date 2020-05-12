@@ -18,9 +18,9 @@ from .common_tests import check_named_results
 # Matplotlib is not a scipy dependency but is optionally used in probplot, so
 # check if it's available
 try:
-    import matplotlib
+    import matplotlib  # type: ignore[import]
     matplotlib.rcParams['backend'] = 'Agg'
-    import matplotlib.pyplot as plt
+    import matplotlib.pyplot as plt  # type: ignore[import]
     have_matplotlib = True
 except Exception:
     have_matplotlib = False
@@ -110,21 +110,31 @@ class TestShapiro(object):
               4.43, 0.21, 4.75, 0.71, 1.52, 3.24,
               0.93, 0.42, 4.97, 9.53, 4.55, 0.47, 6.66]
         w, pw = stats.shapiro(x1)
-        assert_almost_equal(w, 0.90047299861907959, 6)
-        assert_almost_equal(pw, 0.042089745402336121, 6)
+        shapiro_test = stats.shapiro(x1)
+        assert_almost_equal(w, 0.90047299861907959, decimal=6)
+        assert_almost_equal(shapiro_test.statistic, 0.90047299861907959, decimal=6)
+        assert_almost_equal(pw, 0.042089745402336121, decimal=6)
+        assert_almost_equal(shapiro_test.pvalue, 0.042089745402336121, decimal=6)
+
         x2 = [1.36, 1.14, 2.92, 2.55, 1.46, 1.06, 5.27, -1.11,
               3.48, 1.10, 0.88, -0.51, 1.46, 0.52, 6.20, 1.69,
               0.08, 3.67, 2.81, 3.49]
         w, pw = stats.shapiro(x2)
-        assert_almost_equal(w, 0.9590270, 6)
-        assert_almost_equal(pw, 0.52460, 3)
+        shapiro_test = stats.shapiro(x2)
+        assert_almost_equal(w, 0.9590270, decimal=6)
+        assert_almost_equal(shapiro_test.statistic, 0.9590270, decimal=6)
+        assert_almost_equal(pw, 0.52460, decimal=3)
+        assert_almost_equal(shapiro_test.pvalue, 0.52460, decimal=3)
 
         # Verified against R
         np.random.seed(12345678)
         x3 = stats.norm.rvs(loc=5, scale=3, size=100)
         w, pw = stats.shapiro(x3)
+        shapiro_test = stats.shapiro(x3)
         assert_almost_equal(w, 0.9772805571556091, decimal=6)
+        assert_almost_equal(shapiro_test.statistic, 0.9772805571556091, decimal=6)
         assert_almost_equal(pw, 0.08144091814756393, decimal=3)
+        assert_almost_equal(shapiro_test.pvalue, 0.08144091814756393, decimal=3)
 
         # Extracted from original paper
         x4 = [0.139, 0.157, 0.175, 0.256, 0.344, 0.413, 0.503, 0.577, 0.614,
@@ -133,22 +143,32 @@ class TestShapiro(object):
         W_expected = 0.83467
         p_expected = 0.000914
         w, pw = stats.shapiro(x4)
+        shapiro_test = stats.shapiro(x4)
         assert_almost_equal(w, W_expected, decimal=4)
+        assert_almost_equal(shapiro_test.statistic, W_expected, decimal=4)
         assert_almost_equal(pw, p_expected, decimal=5)
+        assert_almost_equal(shapiro_test.pvalue, p_expected, decimal=5)
 
     def test_2d(self):
         x1 = [[0.11, 7.87, 4.61, 10.14, 7.95, 3.14, 0.46,
               4.43, 0.21, 4.75], [0.71, 1.52, 3.24,
               0.93, 0.42, 4.97, 9.53, 4.55, 0.47, 6.66]]
         w, pw = stats.shapiro(x1)
-        assert_almost_equal(w, 0.90047299861907959, 6)
-        assert_almost_equal(pw, 0.042089745402336121, 6)
+        shapiro_test = stats.shapiro(x1)
+        assert_almost_equal(w, 0.90047299861907959, decimal=6)
+        assert_almost_equal(shapiro_test.statistic, 0.90047299861907959, decimal=6)
+        assert_almost_equal(pw, 0.042089745402336121, decimal=6)
+        assert_almost_equal(shapiro_test.pvalue, 0.042089745402336121, decimal=6)
+
         x2 = [[1.36, 1.14, 2.92, 2.55, 1.46, 1.06, 5.27, -1.11,
               3.48, 1.10], [0.88, -0.51, 1.46, 0.52, 6.20, 1.69,
               0.08, 3.67, 2.81, 3.49]]
         w, pw = stats.shapiro(x2)
-        assert_almost_equal(w, 0.9590270, 6)
-        assert_almost_equal(pw, 0.52460, 3)
+        shapiro_test = stats.shapiro(x2)
+        assert_almost_equal(w, 0.9590270, decimal=6)
+        assert_almost_equal(shapiro_test.statistic, 0.9590270, decimal=6)
+        assert_almost_equal(pw, 0.52460, decimal=3)
+        assert_almost_equal(shapiro_test.pvalue, 0.52460, decimal=3)
 
     def test_empty_input(self):
         assert_raises(ValueError, stats.shapiro, [])
@@ -168,8 +188,11 @@ class TestShapiro(object):
         x[9] = np.nan
 
         w, pw = stats.shapiro(x)
+        shapiro_test = stats.shapiro(x)
         assert_equal(w, np.nan)
+        assert_equal(shapiro_test.statistic, np.nan)
         assert_almost_equal(pw, 1.0)
+        assert_almost_equal(shapiro_test.pvalue, 1.0)
 
 
 class TestAnderson(object):
@@ -202,11 +225,8 @@ class TestAnderson(object):
         x2 = rs.standard_normal(size=50)
         A, crit, sig = stats.anderson(x1, 'expon')
         assert_array_less(A, crit[-2:])
-        olderr = np.seterr(all='ignore')
-        try:
+        with np.errstate(all='ignore'):
             A, crit, sig = stats.anderson(x2, 'expon')
-        finally:
-            np.seterr(**olderr)
         assert_(A > crit[-1])
 
     def test_gumbel(self):

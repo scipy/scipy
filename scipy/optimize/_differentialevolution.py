@@ -125,7 +125,8 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
             - 'latinhypercube'
             - 'random'
             - array specifying the initial population. The array should have
-              shape ``(M, len(x))``, where len(x) is the number of parameters.
+              shape ``(M, len(x))``, where M is the total population size and
+              len(x) is the number of parameters.
               `init` is clipped to `bounds` before use.
 
         The default is 'latinhypercube'. Latin Hypercube sampling tries to
@@ -407,7 +408,8 @@ class DifferentialEvolutionSolver(object):
             - 'latinhypercube'
             - 'random'
             - array specifying the initial population. The array should have
-              shape ``(M, len(x))``, where len(x) is the number of parameters.
+              shape ``(M, len(x))``, where M is the total population size and
+              len(x) is the number of parameters.
               `init` is clipped to `bounds` before use.
 
         The default is 'latinhypercube'. Latin Hypercube sampling tries to
@@ -708,6 +710,9 @@ class DifferentialEvolutionSolver(object):
         """
         Return True if the solver has converged.
         """
+        if np.any(np.isinf(self.population_energies)):
+            return False
+
         return (np.std(self.population_energies) <=
                 self.atol +
                 self.tol * np.abs(np.mean(self.population_energies)))
@@ -765,25 +770,15 @@ class DifferentialEvolutionSolver(object):
                       % (nit,
                          self.population_energies[0]))
 
+            if self.callback:
+                c = self.tol / (self.convergence + _MACHEPS)
+                warning_flag = bool(self.callback(self.x, convergence=c))
+                if warning_flag:
+                    status_message = ('callback function requested stop early'
+                                      ' by returning True')
+
             # should the solver terminate?
-            convergence = self.convergence
-
-            if (self.callback and
-                    self.callback(self._scale_parameters(self.population[0]),
-                                  convergence=self.tol / convergence) is True):
-
-                warning_flag = True
-                status_message = ('callback function requested stop early '
-                                  'by returning True')
-                break
-
-            if np.any(np.isinf(self.population_energies)):
-                intol = False
-            else:
-                intol = (np.std(self.population_energies) <=
-                         self.atol +
-                         self.tol * np.abs(np.mean(self.population_energies)))
-            if warning_flag or intol:
+            if warning_flag or self.converged():
                 break
 
         else:

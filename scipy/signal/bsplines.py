@@ -295,11 +295,6 @@ def cspline1d(signal, lamb=0.0):
 def qspline1d(signal, lamb=0.0):
     """Compute quadratic spline coefficients for rank-1 array.
 
-    Find the quadratic spline coefficients for a 1-D signal assuming
-    mirror-symmetric boundary conditions. To obtain the signal back from the
-    spline representation mirror-symmetric-convolve these coefficients with a
-    length 3 FIR window [1.0, 6.0, 1.0]/ 8.0 .
-
     Parameters
     ----------
     signal : ndarray
@@ -310,7 +305,34 @@ def qspline1d(signal, lamb=0.0):
     Returns
     -------
     c : ndarray
-        Cubic spline coefficients.
+        Quadratic spline coefficients.
+
+    See Also
+    --------
+    qspline1d_eval : Evaluate a quadratic spline at the new set of points.
+
+    Notes
+    -----
+    Find the quadratic spline coefficients for a 1-D signal assuming
+    mirror-symmetric boundary conditions. To obtain the signal back from the
+    spline representation mirror-symmetric-convolve these coefficients with a
+    length 3 FIR window [1.0, 6.0, 1.0]/ 8.0 .
+
+    Examples
+    --------
+    We can filter a signal to reduce and smooth out high-frequency noise with
+    a quadratic spline:
+
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.signal import qspline1d, qspline1d_eval
+    >>> sig = np.repeat([0., 1., 0.], 100)
+    >>> sig += np.random.randn(len(sig))*0.05  # add noise
+    >>> time = np.linspace(0, len(sig))
+    >>> filtered = qspline1d_eval(qspline1d(sig), time)
+    >>> plt.plot(sig, label="signal")
+    >>> plt.plot(time, filtered, label="filtered")
+    >>> plt.legend()
+    >>> plt.show()
 
     """
     if lamb != 0.0:
@@ -358,6 +380,28 @@ def cspline1d_eval(cj, newx, dx=1.0, x0=0):
 def qspline1d_eval(cj, newx, dx=1.0, x0=0):
     """Evaluate a quadratic spline at the new set of points.
 
+    Parameters
+    ----------
+    cj : ndarray
+        Quadratic spline coefficients
+    newx : ndarray
+        New set of points.
+    dx : float, optional
+        Old sample-spacing, the default value is 1.0.
+    x0 : int, optional
+        Old origin, the default value is 0.
+
+    Returns
+    -------
+    res : ndarray
+        Evaluated a quadratic spline points.
+
+    See Also
+    --------
+    qspline1d : Compute quadratic spline coefficients for rank-1 array.
+
+    Notes
+    -----
     `dx` is the old sample-spacing while `x0` was the old origin. In
     other-words the old-sample points (knot-points) for which the `cj`
     represent spline coefficients were at equally-spaced points of::
@@ -365,6 +409,22 @@ def qspline1d_eval(cj, newx, dx=1.0, x0=0):
       oldx = x0 + j*dx  j=0...N-1, with N=len(cj)
 
     Edges are handled using mirror-symmetric boundary conditions.
+
+    Examples
+    --------
+    We can filter a signal to reduce and smooth out high-frequency noise with
+    a quadratic spline:
+
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.signal import qspline1d, qspline1d_eval
+    >>> sig = np.repeat([0., 1., 0.], 100)
+    >>> sig += np.random.randn(len(sig))*0.05  # add noise
+    >>> time = np.linspace(0, len(sig))
+    >>> filtered = qspline1d_eval(qspline1d(sig), time)
+    >>> plt.plot(sig, label="signal")
+    >>> plt.plot(time, filtered, label="filtered")
+    >>> plt.legend()
+    >>> plt.show()
 
     """
     newx = (asarray(newx) - x0) / dx

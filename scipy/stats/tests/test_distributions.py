@@ -484,9 +484,7 @@ class TestTruncnorm(object):
     def test_gh_2477_large_values(self):
         # Check a case that used to fail because of extreme tailness.
         low, high = 100, 101
-        with np.errstate(divide='ignore'):
-            x = stats.truncnorm.rvs(low, high, 0, 1, size=10)
-        print(low, x.min(), x.max(), high)
+        x = stats.truncnorm.rvs(low, high, 0, 1, size=10)
         assert_(low <= x.min() <= x.max() <= high), str([low, high, x])
 
         # Check some additional extreme tails
@@ -495,6 +493,10 @@ class TestTruncnorm(object):
         assert_(low < x.min() < x.max() < high)
 
         low, high = 10000, 10001
+        x = stats.truncnorm.rvs(low, high, 0, 1, size=10)
+        assert_(low < x.min() < x.max() < high)
+
+        low, high = -10001, -10000
         x = stats.truncnorm.rvs(low, high, 0, 1, size=10)
         assert_(low < x.min() < x.max() < high)
 
@@ -566,12 +568,12 @@ class TestTruncnorm(object):
             assert_almost_equal(stats.truncnorm.sf(xvals, low, high), stats.truncnorm.cdf(xvals2, -high, -low)[::-1])
             assert_almost_equal(stats.truncnorm.pdf(xvals, low, high), stats.truncnorm.pdf(xvals2, -high, -low)[::-1])
 
-    def _test_moments_one_range(self, a, b, expected):
+    def _test_moments_one_range(self, a, b, expected, decimal_s=7):
         m0, v0, s0, k0 = expected[:4]
         m, v, s, k = stats.truncnorm.stats(a, b, moments='mvsk')
         assert_almost_equal(m, m0)
         assert_almost_equal(v, v0)
-        assert_almost_equal(s, s0)
+        assert_almost_equal(s, s0, decimal=decimal_s)
         assert_almost_equal(k, k0)
 
     @pytest.mark.xfail_on_32bit("reduced accuracy with 32bit platforms.")
@@ -580,21 +582,25 @@ class TestTruncnorm(object):
         # using both the _norm_XXX() and _norm_logXXX() functions, and by
         # removing the _stats and _munp methods in truncnorm tp force
         # numerical quadrature.
+        # For m,v,s,k expect k to have the largest error as it is
+        # constructed from powers of lower moments
+
         self._test_moments_one_range(-30, 30, [0, 1, 0.0, 0.0])
         self._test_moments_one_range(-10, 10, [0, 1, 0.0, 0.0])
-        self._test_moments_one_range(-3, 3, [0, 0.97333692, 0.0, -0.17111444])
-        self._test_moments_one_range(-2, 2, [0, 0.7737413, 0.0, -0.63446328])
+        self._test_moments_one_range(-3, 3, [0.0000000000000000, 0.9733369246625415, 0.0000000000000000, -0.1711144363977444])
+        self._test_moments_one_range(-2, 2, [0.0000000000000000, 0.7737413035499232, 0.0000000000000000, -0.6344632828703505])
 
-        self._test_moments_one_range(0, np.inf, [0.79788456, 0.36338023, 0.99527175, 0.8691773])
+        self._test_moments_one_range(0, np.inf, [0.7978845608028654, 0.3633802276324186, 0.9952717464311565, 0.8691773036059725])
+        self._test_moments_one_range(-np.inf, 0, [-0.7978845608028654, 0.3633802276324186, -0.9952717464311565, 0.8691773036059725])
 
-        self._test_moments_one_range(-1, 3, [0.2827861, 0.61614174, 0.53930185, -0.20582065])
-        self._test_moments_one_range(-3, 1, [-0.2827861, 0.61614174, -0.53930185, -0.20582065])
+        self._test_moments_one_range(-1, 3, [0.2827861107271540, 0.6161417353578292, 0.5393018494027878, -0.2058206513527461])
+        self._test_moments_one_range(-3, 1, [-0.2827861107271540, 0.6161417353578292, -0.5393018494027878, -0.2058206513527461])
 
-        self._test_moments_one_range(-10, -9, [-9.10845629, 0.01144881, -1.89856073, 5.07334611])
-        self._test_moments_one_range(-20, -19, [-19.05234395, 0.00272507, -1.9838686, 5.87208674])
-        self._test_moments_one_range(-30, -29, [-29.03440124, 0.00118066, -1.99297727, 5.9303358])
-        self._test_moments_one_range(-40, -39, [-39.02560741993262, 0.0006548, -1.99631464, 5.61677584])
-        self._test_moments_one_range(39, 40, [39.02560741993262, 0.0006548, 1.99631464, 5.61677584])
+        self._test_moments_one_range(-10, -9, [-9.1084562880124764, 0.0114488058210104, -1.8985607337519652, 5.0733457094223553])
+        self._test_moments_one_range(-20, -19, [-19.0523439459766628, 0.0027250730180314, -1.9838694022629291, 5.8717850028287586])
+        self._test_moments_one_range(-30, -29, [-29.0344012377394698, 0.0011806603928891, -1.9930304534611458, 5.8854062968996566], decimal_s=6)
+        self._test_moments_one_range(-40, -39, [-39.0256074199326264, 0.0006548826719649, -1.9963146354109957, 5.6167758371700494])
+        self._test_moments_one_range(39, 40, [39.0256074199326264, 0.0006548826719649, 1.9963146354109957, 5.6167758371700494])
 
     def test_9902_moments(self):
         m, v = stats.truncnorm.stats(0, np.inf, moments='mv')
@@ -607,6 +613,15 @@ class TestTruncnorm(object):
         x = stats.truncnorm.rvs(low, high, 0, 1, size=10)
         assert_(low < x.min() < x.max() < high)
 
+    def test_gh_11299_rvs(self):
+        # Arose from investigating gh-11299
+        # Test multiple shape parameters simultaneously.
+        low = [-10, 10, -np.inf, -5, -np.inf, -np.inf, -45, -45, 40, -10, 40]
+        high = [-5, 11, 5, np.inf, 40, -40, 40, -40, 45, np.inf, np.inf]
+        x = stats.truncnorm.rvs(low, high, size=(5, len(low)))
+        assert np.shape(x) == (5, len(low))
+        assert_(np.all(low <= x.min(axis=0)))
+        assert_(np.all(x.max(axis=0) <= high))
 
 class TestHypergeom(object):
     def setup_method(self):
@@ -3139,6 +3154,29 @@ class TestTrapz(object):
         assert_almost_equal(stats.trapz.cdf(0.9, 0.2, 0.8), 0.96875)
         assert_almost_equal(stats.trapz.cdf(1.0, 0.2, 0.8), 1.0)
 
+    def test_moments_and_entropy(self):
+        # issue #11795: improve precision of trapz stats
+        # Apply formulas from Wikipedia for the following parameters:
+        a, b, c, d = -3, -1, 2, 3  # => 1/3, 5/6, -3, 6
+        p1, p2, loc, scale = (b-a) / (d-a), (c-a) / (d-a), a, d-a
+        h = 2 / (d+c-b-a)
+        moment = lambda n: h * ((d**(n+2) - c**(n+2)) / (d-c)
+                                - (b**(n+2) - a**(n+2)) / (b-a)) / (n+1) / (n+2)
+        mean = moment(1)
+        var = moment(2) - mean**2
+        entropy = 0.5 * (d-c+b-a) / (d+c-b-a) + np.log(0.5 * (d+c-b-a))
+        assert_almost_equal(stats.trapz.mean(p1, p2, loc, scale),
+                            mean, decimal=13)
+        assert_almost_equal(stats.trapz.var(p1, p2, loc, scale),
+                            var, decimal=13)
+        assert_almost_equal(stats.trapz.entropy(p1, p2, loc, scale),
+                            entropy, decimal=13)
+
+        # Check boundary cases where scipy d=0 or d=1.
+        assert_almost_equal(stats.trapz.mean(0, 0, -3, 6), -1, decimal=13)
+        assert_almost_equal(stats.trapz.mean(0, 1, -3, 6), 0, decimal=13)
+        assert_almost_equal(stats.trapz.var(0, 1, -3, 6), 3, decimal=13)
+
     def test_trapz_vect(self):
         # test that array-valued shapes and arguments are handled
         c = np.array([0.1, 0.2, 0.3])
@@ -3154,6 +3192,16 @@ class TestTrapz(object):
             res[i] = stats.trapz.pdf(x1, c1, d1)
 
         assert_allclose(v, res.reshape(v.shape), atol=1e-15)
+
+        # Check that the stats() method supports vector arguments.
+        v = np.asarray(stats.trapz.stats(c, d, moments="mvsk"))
+        cc, dd = np.broadcast_arrays(c, d)
+        res = np.empty((cc.size, 4))  # 4 stats returned per value
+        ind = np.arange(cc.size)
+        for i, c1, d1 in zip(ind, cc.ravel(), dd.ravel()):
+            res[i] = stats.trapz.stats(c1, d1, moments="mvsk")
+
+        assert_allclose(v, res.T.reshape(v.shape), atol=1e-15)
 
 
 class TestTriang(object):
@@ -3292,8 +3340,7 @@ def test_regression_tukey_lambda():
     # non-positive lambdas.
     x = np.linspace(-5.0, 5.0, 101)
 
-    olderr = np.seterr(divide='ignore')
-    try:
+    with np.errstate(divide='ignore'):
         for lam in [0.0, -1.0, -2.0, np.array([[-1.0], [0.0], [-2.0]])]:
             p = stats.tukeylambda.pdf(x, lam)
             assert_((p != 0.0).all())
@@ -3301,8 +3348,6 @@ def test_regression_tukey_lambda():
 
         lam = np.array([[-1.0], [0.0], [2.0]])
         p = stats.tukeylambda.pdf(x, lam)
-    finally:
-        np.seterr(**olderr)
 
     assert_(~np.isnan(p).all())
     assert_((p[0] != 0.0).all())
@@ -3343,11 +3388,8 @@ def test_frozen_fit_ticket_1536():
     true = np.array([0.25, 0., 0.5])
     x = stats.lognorm.rvs(true[0], true[1], true[2], size=100)
 
-    olderr = np.seterr(divide='ignore')
-    try:
+    with np.errstate(divide='ignore'):
         params = np.array(stats.lognorm.fit(x, floc=0.))
-    finally:
-        np.seterr(**olderr)
 
     assert_almost_equal(params, true, decimal=2)
 
@@ -3495,8 +3537,7 @@ def test_ksone_fit_freeze():
          -0.10943985, -0.35243174, 0.06897665, -0.03553363, -0.0701746,
          -0.06037974, 0.37670779, -0.21684405])
 
-    try:
-        olderr = np.seterr(invalid='ignore')
+    with np.errstate(invalid='ignore'):
         with suppress_warnings() as sup:
             sup.filter(IntegrationWarning,
                        "The maximum number of subdivisions .50. has been "
@@ -3504,8 +3545,6 @@ def test_ksone_fit_freeze():
             sup.filter(RuntimeWarning,
                        "floating point number truncated to an integer")
             stats.ksone.fit(d)
-    finally:
-        np.seterr(**olderr)
 
 
 def test_norm_logcdf():
@@ -4145,6 +4184,28 @@ def test_crystalball_function_moments():
     assert_allclose(expected_5th_moment, calculated_5th_moment, rtol=0.001)
 
 
+@pytest.mark.parametrize(
+    'df1,df2,x',
+    [(2, 2, [-0.5, 0.2, 1.0, 2.3]),
+     (4, 11, [-0.5, 0.2, 1.0, 2.3]),
+     (7, 17, [1, 2, 3, 4, 5])]
+)
+def test_ncf_edge_case(df1, df2, x):
+    # Test for edge case described in gh-11660.
+    # Non-central Fisher distribution when nc = 0
+    # should be the same as Fisher distribution.
+    nc = 0
+    expected_cdf = stats.f.cdf(x, df1, df2)
+    calculated_cdf = stats.ncf.cdf(x, df1, df2, nc)
+    assert_allclose(expected_cdf, calculated_cdf, rtol=1e-14)
+
+    # when ncf_gen._skip_pdf will be used instead of generic pdf,
+    # this additional test will be useful.
+    expected_pdf = stats.f.pdf(x, df1, df2)
+    calculated_pdf = stats.ncf.pdf(x, df1, df2, nc)
+    assert_allclose(expected_pdf, calculated_pdf, rtol=1e-6)
+
+
 def test_ncf_variance():
     # Regression test for gh-10658 (incorrect variance formula for ncf).
     # The correct value of ncf.var(2, 6, 4), 42.75, can be verified with, for
@@ -4246,7 +4307,7 @@ class TestHistogram(object):
     def test_munp(self):
         for n in range(4):
             assert_allclose(self.norm_template._munp(n),
-                            stats.norm._munp(n, 1.0, 2.5), rtol=0.05)
+                            stats.norm(1.0, 2.5).moment(n), rtol=0.05)
 
     def test_entropy(self):
         assert_allclose(self.norm_template.entropy(),
@@ -4273,3 +4334,15 @@ class TestArgus(object):
         x = stats.argus.rvs(3.5, size=1500, random_state=1535)
         assert_almost_equal(stats.argus(3.5).mean(), x.mean(), decimal=3)
         assert_almost_equal(stats.argus(3.5).std(), x.std(), decimal=3)
+
+
+def test_rvs_no_size_warning():
+    class rvs_no_size_gen(stats.rv_continuous):
+        def _rvs(self):
+            return 1
+
+    rvs_no_size = rvs_no_size_gen(name='rvs_no_size')
+
+    with assert_warns(np.VisibleDeprecationWarning):
+        rvs_no_size.rvs()
+

@@ -288,6 +288,11 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
     # LBFGSB is sent 'old-style' bounds, 'new-style' bounds are required by
     # approx_derivative and ScalarFunction
     new_bounds = old_bound_to_new(bounds)
+
+    # check bounds
+    if (new_bounds[0] > new_bounds[1]).any():
+        raise ValueError("LBFGSB - one of the lower bounds is greater than an upper bound.")
+
     # initial vector must lie within the bounds. Otherwise ScalarFunction and
     # approx_derivative will cause problems
     x0 = np.clip(x0, new_bounds[0], new_bounds[1])
@@ -304,7 +309,9 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
 
     func_and_grad = sf.fun_and_grad
 
-    nbd = zeros(n, int32)
+    fortran_int = _lbfgsb.types.intvar.dtype
+
+    nbd = zeros(n, fortran_int)
     low_bnd = zeros(n, float64)
     upper_bnd = zeros(n, float64)
     bounds_map = {(None, None): 0,
@@ -328,11 +335,11 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
     f = array(0.0, float64)
     g = zeros((n,), float64)
     wa = zeros(2*m*n + 5*n + 11*m*m + 8*m, float64)
-    iwa = zeros(3*n, int32)
+    iwa = zeros(3*n, fortran_int)
     task = zeros(1, 'S60')
     csave = zeros(1, 'S60')
-    lsave = zeros(4, int32)
-    isave = zeros(44, int32)
+    lsave = zeros(4, fortran_int)
+    isave = zeros(44, fortran_int)
     dsave = zeros(29, float64)
 
     task[:] = 'START'
@@ -344,7 +351,7 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
         _lbfgsb.setulb(m, x, low_bnd, upper_bnd, nbd, f, g, factr,
                        pgtol, wa, iwa, task, iprint, csave, lsave,
                        isave, dsave, maxls)
-        task_str = task.tostring()
+        task_str = task.tobytes()
         if task_str.startswith(b'FG'):
             # The minimization routine wants f and g at the current x.
             # Note that interruptions due to maxfun are postponed
@@ -365,7 +372,7 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
         else:
             break
 
-    task_str = task.tostring().strip(b'\x00').strip()
+    task_str = task.tobytes().strip(b'\x00').strip()
     if task_str.startswith(b'CONV'):
         warnflag = 0
     elif sf.nfev > maxfun or n_iterations >= maxiter:
@@ -416,6 +423,7 @@ class LbfgsInvHessProduct(LinearOperator):
        storage." Mathematics of computation 35.151 (1980): 773-782.
 
     """
+
     def __init__(self, sk, yk):
         """Construct the operator."""
         if sk.shape != yk.shape or sk.ndim != 2:

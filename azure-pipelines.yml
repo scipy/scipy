@@ -64,6 +64,10 @@ jobs:
   condition: and(succeeded(), ne(variables['Build.SourceBranch'], 'refs/heads/master'))  # skip for PR merges
   pool:
     vmImage: 'VS2017-Win2016'
+  variables:
+    # OPENBLAS64_ variable has same value
+    # but only needed for ILP64 build below
+    OPENBLAS: '$(Agent.BuildDirectory)\openblaslib'
   strategy:
     maxParallel: 4
     matrix:
@@ -71,26 +75,24 @@ jobs:
           PYTHON_VERSION: '3.6'
           PYTHON_ARCH: 'x86'
           TEST_MODE: full
-          OPENBLAS: $(OPENBLAS_32)
           BITS: 32
         Python36-64bit-full:
           PYTHON_VERSION: '3.6'
           PYTHON_ARCH: 'x64'
           TEST_MODE: full
-          OPENBLAS: $(OPENBLAS_64)
           BITS: 64
         Python37-64bit-full:
           PYTHON_VERSION: '3.7'
           PYTHON_ARCH: 'x64'
           TEST_MODE: full
-          OPENBLAS: $(OPENBLAS_64)
           BITS: 64
-        Python38-64bit-full:
+        Python38-64bit-full-ilp64:
           PYTHON_VERSION: '3.8'
           PYTHON_ARCH: 'x64'
           TEST_MODE: full
-          OPENBLAS: $(OPENBLAS_64)
+          NPY_USE_BLAS_ILP64: 1
           BITS: 64
+          OPENBLAS64_: $(OPENBLAS)
   steps:
   - task: UsePythonVersion@0
     inputs:
@@ -102,10 +104,21 @@ jobs:
   - powershell: |
       $pyversion = python -c "import sys; print(sys.version.split()[0])"
       Write-Host "Python Version: $pyversion"
-      $target = "C:\\hostedtoolcache\\windows\\Python\\$pyversion\\$(PYTHON_ARCH)\\lib\\openblas.a"
-      Write-Host "target path: $target"
-      $openblas = python tools/openblas_support.py
-      cp $openblas $target
+      function Download-OpenBLAS($ilp64) {
+          if ($ilp64 -eq '1') { $target_name = "openblas64_.a" } else { $target_name = "openblas.a" }
+          $target = "$(OPENBLAS)\$target_name"
+          Write-Host "target path: $target"
+          $old_value = $env:NPY_USE_BLAS_ILP64
+          $env:NPY_USE_BLAS_ILP64 = $ilp64
+          $openblas = python tools/openblas_support.py
+          $env:NPY_USE_BLAS_ILP64 = $old_value
+          cp $openblas $target
+      }
+      mkdir $(OPENBLAS)
+      Download-OpenBLAS('0')
+      If ($env:NPY_USE_BLAS_ILP64 -eq '1') {
+          Download-OpenBLAS('1')
+      }
     displayName: 'Download / Install OpenBLAS'
   - powershell: |
       # wheels appear to use mingw64 version 6.3.0, but 6.4.0
@@ -113,10 +126,6 @@ jobs:
       choco install -y mingw --forcex86 --force --version=6.4.0
     displayName: 'Install 32-bit mingw for 32-bit builds'
     condition: and(succeeded(), eq(variables['BITS'], 32))
-  - powershell: |
-      choco install -y mingw --force --version=6.4.0
-    displayName: 'Install 64-bit mingw for 64-bit builds'
-    condition: and(succeeded(), eq(variables['BITS'], 64))
   - script: python -m pip install numpy cython==0.29.14 pybind11 pytest pytest-timeout pytest-xdist pytest-env pytest-cov Pillow mpmath
     displayName: 'Install dependencies'
   - powershell: |
