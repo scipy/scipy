@@ -221,7 +221,7 @@ class _UnilinearModel(Model):
     r"""
     Univariate linear model defined by:
 
-    :math:`y = \\beta_0 x + \\beta_1`
+    :math:`y = \beta_0 x + \beta_1`
 
     """
     def __init__(self):
@@ -239,7 +239,7 @@ class _QuadraticModel(Model):
     r"""
     Quadratic model defined by:
 
-    :math:`y = \\beta_0 x^2 + \\beta_1 x + \\beta_2`
+    :math:`y = \beta_0 x^2 + \beta_1 x + \beta_2`
 
     """
     def __init__(self):
