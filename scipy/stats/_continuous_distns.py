@@ -4218,10 +4218,7 @@ class laplace_gen(rv_continuous):
 
         Notes
         -----
-        An error is raised if floc and fscale are given. A warning is raised
-        if either `floc` or `fscale` is provided but does not match the exact
-        MLE value; the generic implementation in rv_continuous, numerical
-        optimization, will be used to determine the best fit.
+        An error is raised if floc and fscale are fixed.
         """
         floc = kwds.pop('floc', None)
         fscale = kwds.pop('fscale', None)
@@ -4234,7 +4231,7 @@ class laplace_gen(rv_continuous):
         if floc is None:
             # loc is given by
             loc = np.median(data)
-        else: 
+        else:
             loc = floc
 
         if fscale is None:

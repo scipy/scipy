@@ -1390,11 +1390,26 @@ class TestDLaplace(object):
         assert_equal(loc, loc_mle)
         assert_equal(scale, scale_mle)
 
-        # fixed parameter matches MLE should use MLE for other
+        # fixed parameter should use MLE for other
         loc, scale = stats.laplace.fit(data, floc=loc_mle)
         assert_equal(scale, scale_mle)
         loc, scale = stats.laplace.fit(data, fscale=scale_mle)
         assert_equal(loc, loc_mle)
+
+        # test with non-mle fixed parameter
+        # create scale with non-median loc
+        loc = rvs_loc * 2
+        scale_mle = np.sum(np.abs(data - loc)) / len(data)
+        
+        # fixed loc to non median, scale should match 
+        # scale calculation with modified loc
+        loc, scale = stats.laplace.fit(data, floc=loc)
+        assert_equal(scale, scale_mle)
+
+        # fixed scale created with non median loc, 
+        # loc output should still be the data median.
+        loc, scale = stats.laplace.fit(data, fscale=scale_mle)
+        assert_equal(loc_mle, loc)
 
         # error raised when both `floc` and `fscale` are fixed
         assert_raises(RuntimeError, stats.laplace.fit, data, floc=loc_mle,
@@ -1404,18 +1419,28 @@ class TestDLaplace(object):
         assert_raises(RuntimeError, stats.laplace.fit, [np.nan])
         assert_raises(RuntimeError, stats.laplace.fit, [np.inf])
 
-    @pytest.mark.parametrize("rvs_scale,rvs_loc", [(10, -5)])
+    @pytest.mark.parametrize("rvs_scale,rvs_loc", [(10, -5),
+                                                   (5, 10),
+                                                   (.2, .5)])
     def test_fit_MLE_comp_optimzer(self, rvs_loc, rvs_scale):
         data = stats.laplace.rvs(size=1000, loc=rvs_loc, scale=rvs_scale)
 
-        # that MLE estimates are almost equal to optimizer
+        # test that the objective function result of the analytical MLEs is
+        # less than or equal to that of the numerically optimized estimate
         loc, scale = stats.laplace.fit(data)
         loc_opt, scale_opt = super(type(stats.laplace),
                                    stats.laplace).fit(data)
-        assert_allclose(loc_opt, loc, atol=.01)
-        assert_allclose(scale_opt, scale, atol=.01)
 
-    def test_fixed_parameter(self):
+        # the log-likelihood function for laplace is given by:
+        def ll(loc, scale, data):
+            return -1 * (- (len(data)) * np.log(2*scale) -
+                         (1/scale)*np.sum(np.abs(data - loc)))
+        ll_mle = ll(loc, scale, data)
+        ll_opt = ll(loc_opt, scale_opt, data)
+
+        assert ll_mle <= ll_opt
+
+    def test_fit_simple_non_random_data(self):
         data = np.array([1.0, 1.0, 3.0, 5.0, 8.0, 14.0])
         # with floc fixed to 6, scale should be 4.
         loc, scale = stats.laplace.fit(data, floc=6)
