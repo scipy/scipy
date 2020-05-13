@@ -327,3 +327,20 @@ class TestSphericalVoronoi(object):
         sv = SphericalVoronoi(points)
         areas = sv.calculate_areas()
         assert_almost_equal(areas, 4 * np.pi / len(points))
+
+    @pytest.mark.parametrize("radius", [1, 1.])
+    @pytest.mark.parametrize("center", [None, (1, 2, 3), (1., 2., 3.)])
+    def test_attribute_types(self, radius, center):
+        points = radius * self.points
+        if center is not None:
+            points += center
+
+        sv = SphericalVoronoi(points, radius=radius, center=center)
+        assert sv.points.dtype is np.dtype(np.float64)
+        assert sv.center.dtype is np.dtype(np.float64)
+        assert isinstance(sv.radius, float)
+
+    def test_incorrect_array_dimensions(self):
+        points = np.zeros((4, 3, 2))
+        with pytest.raises(TypeError, match="must be a 2D array."):
+            spherical_voronoi.SphericalVoronoi(points)
