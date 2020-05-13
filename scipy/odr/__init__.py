@@ -23,16 +23,10 @@ Package Content
    OdrStop       -- Stop exception.
 
    polynomial    -- Factory function for a general polynomial model.
-
-Prebuilt models:
-
-.. data:: exponential
-
-.. data:: multilinear
-
-.. data:: unilinear
-
-.. data:: quadratic
+   exponential   -- Exponential model
+   multilinear   -- Arbitrary-dimensional linear model
+   unilinear     -- Univariate linear model
+   quadratic     -- Quadratic model
 
 Usage information
 =================

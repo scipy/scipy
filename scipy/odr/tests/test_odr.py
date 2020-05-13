@@ -4,7 +4,9 @@ from numpy import pi
 from numpy.testing import (assert_array_almost_equal,
                            assert_equal, assert_warns)
 from pytest import raises as assert_raises
-from scipy.odr import Data, Model, ODR, RealData, OdrStop, OdrWarning
+from scipy.odr import (Data, Model, ODR, RealData, OdrStop, OdrWarning,
+                       multilinear, exponential, unilinear, quadratic,
+                       polynomial)
 
 
 class TestODR(object):
@@ -428,3 +430,45 @@ class TestODR(object):
         # check results
         assert_equal(odr_out.info, 1)
         assert_array_almost_equal(odr_out.beta, beta_solution)
+
+    def test_multilinear_model(self):
+        x = np.linspace(0.0, 5.0)
+        y = 10.0 + 5.0 * x
+        data = Data(x, y)
+        odr_obj = ODR(data, multilinear)
+        output = odr_obj.run()
+        assert_array_almost_equal(output.beta, [10.0, 5.0])
+
+    def test_exponential_model(self):
+        x = np.linspace(0.0, 5.0)
+        y = -10.0 + np.exp(0.5*x)
+        data = Data(x, y)
+        odr_obj = ODR(data, exponential)
+        output = odr_obj.run()
+        assert_array_almost_equal(output.beta, [-10.0, 0.5])
+
+    def test_polynomial_model(self):
+        x = np.linspace(0.0, 5.0)
+        y = 1.0 + 2.0 * x + 3.0 * x ** 2 + 4.0 * x ** 3
+        poly_model = polynomial(3)
+        data = Data(x, y)
+        odr_obj = ODR(data, poly_model)
+        output = odr_obj.run()
+        assert_array_almost_equal(output.beta, [1.0, 2.0, 3.0, 4.0])
+
+    def test_unilinear_model(self):
+        x = np.linspace(0.0, 5.0)
+        y = 1.0 * x + 2.0
+        data = Data(x, y)
+        odr_obj = ODR(data, unilinear)
+        output = odr_obj.run()
+        assert_array_almost_equal(output.beta, [1.0, 2.0])
+
+    def test_quadratic_model(self):
+        x = np.linspace(0.0, 5.0)
+        y = 1.0 * x ** 2 + 2.0 * x + 3.0
+        data = Data(x, y)
+        odr_obj = ODR(data, quadratic)
+        output = odr_obj.run()
+        assert_array_almost_equal(output.beta, [1.0, 2.0, 3.0])
+
