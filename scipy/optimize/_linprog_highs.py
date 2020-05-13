@@ -64,7 +64,7 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
                    disp=False, maxiter=None,
                    dual_feasibility_tolerance=None,
                    dual_objective_value_upper_bound=None,
-                   message_level=MESSAGE_LEVEL_NONE,
+                   message_level=MESSAGE_LEVEL_MINIMAL,
                    primal_feasibility_tolerance=None,
                    simplex_crash_strategy=None,
                    simplex_dual_edge_weight_strategy=None,
@@ -373,4 +373,6 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
            }
     if sol['x'] is not None:
         sol['x'] = np.array(sol['x'])
+        sol['slack'] = np.array(sol['slack'])
+        sol['con'] = np.array(sol['con'])
     return sol
