@@ -1,4 +1,4 @@
-from multiprocessing import Pool, get_start_method
+from multiprocessing import Pool
 from multiprocessing.pool import Pool as PWL
 import os
 import math
