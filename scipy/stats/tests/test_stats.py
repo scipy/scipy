@@ -9,7 +9,6 @@
 import os
 import warnings
 from collections import namedtuple
-import multiprocessing
 
 from numpy.testing import (assert_, assert_equal,
                            assert_almost_equal, assert_array_almost_equal,

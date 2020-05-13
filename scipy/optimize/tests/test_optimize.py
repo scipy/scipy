@@ -10,7 +10,6 @@ To run it in its simplest form::
 
 """
 import itertools
-import multiprocessing
 import numpy as np
 from numpy.testing import (assert_allclose, assert_equal,
                            assert_,

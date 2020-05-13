@@ -502,7 +502,6 @@ class TestNdimage:
     def test_gauss_memory_overlap(self):
         input = numpy.arange(100 * 100).astype(numpy.float32)
         input.shape = (100, 100)
-        otype = numpy.float64
         output1 = ndimage.gaussian_filter(input, 1.0)
         ndimage.gaussian_filter(input, 1.0, output=input)
         assert_array_almost_equal(output1, input)
