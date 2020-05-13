@@ -2977,12 +2977,17 @@ class TestRayleigh(object):
         assert_equal(loc, floc)
         assert_equal(scale, scale_expect)
 
-        # check that MLE results are similar to optimizer
-        # non-fixed floc falls back on optimizer
-        loc_opt, scale_opt = stats.rayleigh.fit(data)
-        # only need to test scale result from MLE.
-        assert_allclose(scale_opt, scale, atol=.1, rtol=.1)
+        # test that the objective function result of the analytical MLEs is
+        # less than or equal to that of the numerically optimized estimate
 
+        # non-fixed floc falls back on optimizer
+        loc_scale_opt = stats.rayleigh.fit(data)
+        
+        func = stats.rayleigh._reduce_func((1,2), {})[1]
+
+        ll_mle = func((loc, scale), data)
+        ll_opt = func(loc_scale_opt, data)
+        assert_allclose(ll_mle, ll_opt, atol=.5, rtol=.5)
         assert_raises(RuntimeError, stats.rayleigh.fit, data, floc=floc, fscale=fscale)
 
 
