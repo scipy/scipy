@@ -101,7 +101,7 @@ class _MultilinearModel(Model):
     >>> odr_obj = odr.ODR(data, odr.multilinear)
     >>> output = odr_obj.run()
     >>> print(output.beta)
-    [10.0, 5.0]
+    [10.  5.]
 
     """
     def __init__(self):
@@ -192,7 +192,7 @@ class _ExponentialModel(Model):
     >>> odr_obj = odr.ODR(data, odr.exponential)
     >>> output = odr_obj.run()
     >>> print(output.beta)
-    [-10.0, 0.5]
+    [-10.    0.5]
 
     """
     def __init__(self):
@@ -261,7 +261,7 @@ class _UnilinearModel(Model):
     >>> odr_obj = odr.ODR(data, odr.unilinear)
     >>> output = odr_obj.run()
     >>> print(output.beta)
-    [1.0, 2.0]
+    [1. 2.]
 
     """
     def __init__(self):
@@ -292,7 +292,7 @@ class _QuadraticModel(Model):
     >>> odr_obj = odr.ODR(data, odr.quadratic)
     >>> output = odr_obj.run()
     >>> print(output.beta)
-    [1.0, 2.0, 3.0]
+    [1. 2. 3.]
 
     """
     def __init__(self):
