@@ -85,9 +85,23 @@ def _exp_est(data):
 
 class _MultilinearModel(Model):
     r"""
-    Arbitrary-dimensional linear model defined by:
+    Arbitrary-dimensional linear model
 
-    :math:`y=\beta_0 + \sum_{i=1}^m \beta_i x_i`
+    This model is defined by: :math:`y=\beta_0 + \sum_{i=1}^m \beta_i x_i`
+
+    Examples
+    --------
+    We can calculate orthogonal distance regression with an arbitrary
+    dimensional linear model:
+
+    >>> from scipy import odr
+    >>> x = np.linspace(0.0, 5.0)
+    >>> y = 10.0 + 5.0 * x
+    >>> data = odr.Data(x, y)
+    >>> odr_obj = odr.ODR(data, odr.multilinear)
+    >>> output = odr_obj.run()
+    >>> print(output.beta)
+    [10.0, 5.0]
 
     """
     def __init__(self):
@@ -163,9 +177,22 @@ def polynomial(order):
 
 class _ExponentialModel(Model):
     r"""
-    Exponential model defined by:
+    Exponential model
 
-    :math:`y=\beta_0 + e^{\beta_1 x}`
+    This model is defined by :math:`y=\beta_0 + e^{\beta_1 x}`
+
+    Examples
+    --------
+    We can calculate orthogonal distance regression with an exponential model:
+
+    >>> from scipy import odr
+    >>> x = np.linspace(0.0, 5.0)
+    >>> y = -10.0 + np.exp(0.5*x)
+    >>> data = odr.Data(x, y)
+    >>> odr_obj = odr.ODR(data, odr.exponential)
+    >>> output = odr_obj.run()
+    >>> print(output.beta)
+    [-10.0, 0.5]
 
     """
     def __init__(self):
@@ -219,9 +246,22 @@ def _quad_est(data):
 
 class _UnilinearModel(Model):
     r"""
-    Univariate linear model defined by:
+    Univariate linear model
 
-    :math:`y = \beta_0 x + \beta_1`
+    This model is defined by :math:`y = \beta_0 x + \beta_1`
+
+    Examples
+    --------
+    We can calculate orthogonal distance regression with an unilinear model:
+
+    >>> from scipy import odr
+    >>> x = np.linspace(0.0, 5.0)
+    >>> y = 1.0 * x + 2.0
+    >>> data = odr.Data(x, y)
+    >>> odr_obj = odr.ODR(data, odr.unilinear)
+    >>> output = odr_obj.run()
+    >>> print(output.beta)
+    [1.0, 2.0]
 
     """
     def __init__(self):
@@ -237,9 +277,22 @@ unilinear = _UnilinearModel()
 
 class _QuadraticModel(Model):
     r"""
-    Quadratic model defined by:
+    Quadratic model
 
-    :math:`y = \beta_0 x^2 + \beta_1 x + \beta_2`
+    This model is defined by: :math:`y = \beta_0 x^2 + \beta_1 x + \beta_2`
+
+    Examples
+    --------
+    We can calculate orthogonal distance regression with a quadratic model:
+
+    >>> from scipy import odr
+    >>> x = np.linspace(0.0, 5.0)
+    >>> y = 1.0 * x ** 2 + 2.0 * x + 3.0
+    >>> data = odr.Data(x, y)
+    >>> odr_obj = odr.ODR(data, odr.quadratic)
+    >>> output = odr_obj.run()
+    >>> print(output.beta)
+    [1.0, 2.0, 3.0]
 
     """
     def __init__(self):
