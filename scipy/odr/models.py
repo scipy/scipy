@@ -87,7 +87,7 @@ class _MultilinearModel(Model):
     r"""
     Arbitrary-dimensional linear model
 
-    This model is defined by: :math:`y=\beta_0 + \sum_{i=1}^m \beta_i x_i`
+    This model is defined by :math:`y=\beta_0 + \sum_{i=1}^m \beta_i x_i`
 
     Examples
     --------
@@ -279,7 +279,7 @@ class _QuadraticModel(Model):
     r"""
     Quadratic model
 
-    This model is defined by: :math:`y = \beta_0 x^2 + \beta_1 x + \beta_2`
+    This model is defined by :math:`y = \beta_0 x^2 + \beta_1 x + \beta_2`
 
     Examples
     --------
