@@ -48,7 +48,7 @@ class BSpline(object):
 
         S(x) = \sum_{j=0}^{n-1} c_j  B_{j, k; t}(x)
 
-    where :math:`B_{j, k; t}` are B-spline basis functions of order `k`
+    where :math:`B_{j, k; t}` are B-spline basis functions of degree `k`
     and knots `t`.
 
     Parameters
@@ -58,7 +58,7 @@ class BSpline(object):
     c : ndarray, shape (>=n, ...)
         spline coefficients
     k : int
-        B-spline order
+        B-spline degree
     extrapolate : bool or 'periodic', optional
         whether to extrapolate beyond the base interval, ``t[k] .. t[n]``,
         or to return nans.
