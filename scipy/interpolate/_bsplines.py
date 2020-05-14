@@ -48,7 +48,7 @@ class BSpline(object):
 
         S(x) = \sum_{j=0}^{n-1} c_j  B_{j, k; t}(x)
 
-    where :math:`B_{j, k; t}` are B-spline basis functions of degree `k`
+    where :math:`B_{j, k; t}` are B-spline basis functions of order `k`
     and knots `t`.
 
     Parameters
