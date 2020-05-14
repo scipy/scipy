@@ -56,6 +56,7 @@ struct ipx_info {
     ipxint updates_start;       /* # basis updates for starting basis */
     ipxint updates_ipm;         /* # basis updates in IPM */
     ipxint updates_crossover;   /* # basis updates in crossover */
+    ipxint pushes_crossover;    /* # Primal/Dual pushes in crossover */
 
     /* major computation times */
     double time_total;          /* total runtime (wallclock) */

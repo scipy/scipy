@@ -301,11 +301,11 @@ HighsStatus calculateResidual(const HighsLp& lp, HighsSolution& solution,
 double vectorProduct(const std::vector<double>& v1,
                      const std::vector<double>& v2);
 
-void logPresolveReductions(const HighsOptions& options, const HighsLp& lp,
-                           const HighsLp& presolve_lp);
+void reportPresolveReductions(const HighsOptions& options, const HighsLp& lp,
+                              const HighsLp& presolve_lp);
 
-void logPresolveReductions(const HighsOptions& options, const HighsLp& lp,
-                           const bool presolve_to_empty);
+void reportPresolveReductions(const HighsOptions& options, const HighsLp& lp,
+                              const bool presolve_to_empty);
 
 bool isLessInfeasibleDSECandidate(const HighsOptions& options,
                                   const HighsLp& lp);
