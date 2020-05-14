@@ -246,6 +246,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     (array([1., 1., 1., 1., 1.]), 1.9216496320061384e-19)
 
     Let's try and do a constrained minimization
+
     >>> from scipy.optimize import NonlinearConstraint, Bounds
     >>> def constr_f(x):
     ...     return np.array(x[0] + x[1])
