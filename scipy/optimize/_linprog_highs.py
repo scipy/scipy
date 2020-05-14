@@ -269,6 +269,10 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
                 For ``solver='simplex'``, this includes iterations in all
                 phases. For ``solver='ipm'``, this does not include
                 crossover iterations.
+            crossover_nit : int
+                The number of primal/dual pushes performed during the
+                crossover routine for ``solver='ipm'``.  This is ``0``
+                for ``solver='simplex'``.
             message : str
                 A string descriptor of the exit status of the algorithm.
 
@@ -369,7 +373,8 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
            'status': statuses[res['status']][0],
            'success': res['status'] == MODEL_STATUS_OPTIMAL,
            'message': statuses[res['status']][1],
-           'nit': res.get('simplex_nit', 0) or res.get('ipm_nit', 0)
+           'nit': res.get('simplex_nit', 0) or res.get('ipm_nit', 0),
+           'crossover_nit' : res.get('crossover_nit'),
            }
     if sol['x'] is not None:
         sol['x'] = np.array(sol['x'])
