@@ -89,7 +89,7 @@ def _read_fmt_chunk(fid, is_big_endian):
             raise ValueError("Binary structure of wave file is not compliant")
 
     if format_tag not in KNOWN_WAVE_FORMATS:
-        raise ValueError("Unknown wave file format")
+        raise ValueError(f"Unknown wave file format: {format_tag:#06x}")
 
     # move file pointer to next chunk
     if size > (bytes_read):
@@ -162,15 +162,15 @@ def _read_riff_chunk(fid):
         fmt = '>I'
     else:
         # There are also .wav files with "FFIR" or "XFIR" signatures?
-        raise ValueError("File format {}... not "
-                         "understood.".format(repr(str1)))
+        raise ValueError(f"File format {repr(str1)} not understood. Only "
+                         "'RIFF' and 'RIFX' supported.")
 
     # Size of entire file
     file_size = struct.unpack(fmt, fid.read(4))[0] + 8
 
     str2 = fid.read(4)
     if str2 != b'WAVE':
-        raise ValueError("Not a WAV file.")
+        raise ValueError(f"Not a WAV file. RIFF form type is {repr(str2)}.")
 
     return file_size, is_big_endian
 
@@ -285,7 +285,7 @@ def read(filename, mmap=False):
                 else:
                     raise ValueError("Unexpected end of file.")
             elif len(chunk_id) < 4:
-                raise ValueError("Incomplete wav chunk.")
+                raise ValueError(f"Incomplete chunk ID: {repr(chunk_id)}")
 
             if chunk_id == b'fmt ':
                 fmt_chunk_received = True
