@@ -285,7 +285,13 @@ def read(filename, mmap=False):
                 else:
                     raise ValueError("Unexpected end of file.")
             elif len(chunk_id) < 4:
-                raise ValueError(f"Incomplete chunk ID: {repr(chunk_id)}")
+                msg = f"Incomplete chunk ID: {repr(chunk_id)}"
+                # If we have the data, ignore the broken chunk
+                if fmt_chunk_received and data_chunk_received:
+                    warnings.warn(msg + ", ignoring it.", WavFileWarning,
+                                  stacklevel=2)
+                else:
+                    raise ValueError(msg)
 
             if chunk_id == b'fmt ':
                 fmt_chunk_received = True
