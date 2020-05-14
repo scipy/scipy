@@ -67,6 +67,8 @@ class CheckOptimize(object):
         self.funccalls = 0
         self.gradcalls = 0
         self.trace = []
+        self.best_x = None
+        self.best_fun = np.inf
 
     def func(self, x):
         self.funccalls += 1
@@ -76,6 +78,11 @@ class CheckOptimize(object):
         logZ = np.log(sum(np.exp(log_pdot)))
         f = logZ - np.dot(self.K, x)
         self.trace.append(np.copy(x))
+
+        if f < self.best_fun:
+            self.best_fun = f
+            self.best_x = x
+
         return f
 
     def grad(self, x):
@@ -1120,6 +1127,31 @@ class TestOptimizeSimple(CheckOptimize):
             if np.array_equal(self.trace[i - 1], self.trace[i]):
                 raise RuntimeError(
                     "Duplicate evaluations made by {}".format(method))
+
+    @pytest.mark.parametrize('method', ['nelder-mead', 'cg', 'bfgs',
+                                        'l-bfgs-b', 'tnc',
+                                        'cobyla', 'slsqp', 'trust-constr',
+                                        'dogleg', 'trust-ncg', 'trust-exact',
+                                        'trust-krylov'])
+    def test_gh12111(self, method):
+        # check that minimizer result is the same as the best solution
+        # calculated by the objective function
+        jac = hess = None
+        if method in ('newton-cg', 'trust-krylov', 'trust-exact',
+                      'trust-ncg', 'dogleg'):
+            jac = self.grad
+        if method in ('trust-krylov', 'trust-exact', 'trust-ncg',
+                      'dogleg'):
+            hess = self.hess
+
+        with np.errstate(invalid='ignore'), suppress_warnings() as sup:
+            # for trust-constr
+            sup.filter(UserWarning, "delta_grad == 0.*")
+            res = optimize.minimize(self.func, self.startparams,
+                                    method=method, jac=jac, hess=hess)
+
+            assert_equal(res.fun, self.best_fun)
+            assert_equal(res.x, self.best_x)
 
 
 class TestLBFGSBBounds(object):
