@@ -1836,6 +1836,8 @@ def distance_transform_bf(input, metric="euclidean", sampling=None,
     metric : str, optional
         Three types of distance metric are supported: 'euclidean', 'taxicab',
         and 'chessboard'.
+        
+        The default is 'euclidean'.
     sampling : {int, sequence of ints}, optional
         This parameter is only used in the case of the euclidean `metric`
         distance transform.
