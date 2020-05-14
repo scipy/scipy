@@ -504,3 +504,25 @@ int Highs_getNumNz(void* highs) {
   return ((Highs*)highs)->getLp().Astart_[numCol];
 }
 
+const char* Highs_highsModelStatusToChar(void* highs,
+                                         int int_highs_model_status) {
+  const char* illegal_highs_model_status = "Model status out of range";
+  if (int_highs_model_status < (int)HighsModelStatus::HIGHS_MODEL_STATUS_MIN ||
+      int_highs_model_status > (int)HighsModelStatus::HIGHS_MODEL_STATUS_MAX)
+    return illegal_highs_model_status;
+  return ((Highs*)highs)
+      ->highsModelStatusToString(
+          static_cast<HighsModelStatus>(int_highs_model_status))
+      .c_str();
+}
+
+const char* Highs_primalDualStatusToChar(void* highs,
+                                         int int_primal_dual_status) {
+  const char* illegal_primal_dual_status = "Primal/Dual status out of range";
+  if (int_primal_dual_status < PrimalDualStatus::STATUS_MIN ||
+      int_primal_dual_status > PrimalDualStatus::STATUS_MAX)
+    return illegal_primal_dual_status;
+  return ((Highs*)highs)
+      ->primalDualStatusToString(int_primal_dual_status)
+      .c_str();
+}

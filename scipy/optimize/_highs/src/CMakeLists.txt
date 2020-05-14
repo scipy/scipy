@@ -1,4 +1,6 @@
 # Define library.
+# Outdated CMake approach: update in progress
+if (NOT FAST_BUILD)
 include_directories(ipm/ipx/src)
 include_directories(ipm/ipx/include)
 include_directories(ipm/basiclu/src)
@@ -348,3 +350,63 @@ install(FILES "${HIGHS_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/highs-config.cmake"
     DESTINATION lib/cmake/highs)
 install(FILES "${HIGHS_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/highs.pc" 
     DESTINATION lib/pkg-config)
+
+else() 
+
+# FAST_BUILD is set to on.
+# At the moment used only for gradually updating the CMake targets build and install / export.
+# Define library in modern CMake using target_*()
+# No interfaces (apart from c); No ipx; New (short) ctest instances.
+add_library(libhighs)
+target_sources(libhighs PRIVATE 
+    ../external/filereaderlp/reader.cpp
+    io/Filereader.cpp
+    io/FilereaderLp.cpp
+    io/FilereaderEms.cpp
+    io/FilereaderMps.cpp
+    io/HighsIO.cpp
+    io/HMPSIO.cpp
+    io/HMpsFF.cpp
+    io/LoadOptions.cpp
+    lp_data/Highs.cpp
+    lp_data/HighsInfo.cpp
+    lp_data/HighsLp.cpp
+    lp_data/HighsLpUtils.cpp
+    lp_data/HighsModelUtils.cpp
+    lp_data/HighsSolution.cpp
+    lp_data/HighsSolve.cpp
+    lp_data/HighsStatus.cpp
+    lp_data/HighsOptions.cpp
+    mip/HighsMipSolver.cpp
+    mip/SolveMip.cpp
+    presolve/Presolve.cpp
+    presolve/PresolveComponent.cpp
+    presolve/PresolveAnalysis.cpp
+    presolve/HPreData.cpp
+    simplex/HCrash.cpp
+    simplex/HDual.cpp
+    simplex/HDualRHS.cpp
+    simplex/HDualRow.cpp
+    simplex/HDualMulti.cpp
+    simplex/HFactor.cpp
+    simplex/HighsSimplexAnalysis.cpp
+    simplex/HighsSimplexInterface.cpp
+    simplex/HMatrix.cpp
+    simplex/HPrimal.cpp
+    simplex/HQPrimal.cpp
+    simplex/HSimplex.cpp
+    simplex/HSimplexDebug.cpp
+    simplex/HSimplexReport.cpp
+    simplex/HVector.cpp
+    test/KktCheck.cpp
+    test/KktChStep.cpp
+    util/HighsSort.cpp
+    util/HighsUtils.cpp
+    util/stringutil.cpp
+    interfaces/highs_c_api.cpp)
+
+target_include_directories(libhighs PUBLIC . ipm/ io/ lp_data/ mip/ simplex/ 
+                           presolve/ util/ test/ interfaces/ ../external/)
+target_include_directories(libhighs PUBLIC ${HIGHS_BINARY_DIR})
+
+endif()

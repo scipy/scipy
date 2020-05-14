@@ -102,6 +102,8 @@ class Presolve : public HPreData {
   // todo: clear the public from below.
   string modelName;
 
+  std::vector<Presolver> order;
+
  private:
   int iKKTcheck;
   int presolve(int print);

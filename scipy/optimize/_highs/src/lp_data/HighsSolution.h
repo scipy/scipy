@@ -102,12 +102,17 @@ void analyseSimplexAndHighsSolutionDifferences(
 #endif
 
 #ifdef IPX_ON
-HighsStatus ipxToHighsBasicSolution(FILE* logfile, const HighsLp& lp,
-                                    const std::vector<double>& rhs,
-                                    const std::vector<char>& constraint_type,
-                                    const IpxSolution& ipx_solution,
-                                    HighsBasis& highs_basis,
-                                    HighsSolution& highs_solution);
+HighsStatus ipxSolutionToHighsSolution(
+    FILE* logfile, const HighsLp& lp, const std::vector<double>& rhs,
+    const std::vector<char>& constraint_type, const int ipx_num_col,
+    const int ipx_num_row, const std::vector<double>& ipx_x,
+    const std::vector<double>& ipx_slack_vars,
+    // const std::vector<double>& ipx_y,
+    HighsSolution& highs_solution);
+HighsStatus ipxBasicSolutionToHighsBasicSolution(
+    FILE* logfile, const HighsLp& lp, const std::vector<double>& rhs,
+    const std::vector<char>& constraint_type, const IpxSolution& ipx_solution,
+    HighsBasis& highs_basis, HighsSolution& highs_solution);
 #endif
 
 std::string iterationsToString(const HighsIterationCounts& iterations_counts);

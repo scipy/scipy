@@ -377,6 +377,8 @@ void LpSolver::RunCrossover() {
             crossover.time_primal() + crossover.time_dual();
         info_.updates_crossover =
             crossover.primal_pivots() + crossover.dual_pivots();
+        info_.pushes_crossover =
+            crossover.primal_pushes() + crossover.dual_pushes();
         if (info_.status_crossover != IPX_STATUS_optimal) {
             // Crossover failed. Discard solution.
             x_crossover_.resize(0);

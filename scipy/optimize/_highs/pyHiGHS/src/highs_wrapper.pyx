@@ -203,6 +203,7 @@ cdef apply_options(dict options, Highs & highs):
             b'less_infeasible_DSE_choose_row',
             b'mps_parser_type_free',
             b'run_as_hsol',
+            b'run_crossover',
             b'simplex_initial_condition_check',
             b'use_original_HFactor_logic',
     ]):
@@ -317,6 +318,9 @@ def highs_wrapper(
                 Primal feasibility tolerance.
             - run_as_hsol : bool
                 Undocumented advanced option.
+            - run_crossover : bool
+                Advanced option. Toggles running the crossover routine
+                for IPX.
             - sense : int {1, -1}
                 `sense=1` corresponds to the MIN problem, `sense=-1`
                 corresponds to the MAX problem. TODO: NOT IMPLEMENTED

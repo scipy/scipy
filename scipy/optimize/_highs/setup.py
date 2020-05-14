@@ -41,8 +41,8 @@ def configuration(parent_package='', top_path=None):
     config = Configuration('_highs', parent_package, top_path)
 
     # HiGHS info
-    HIGHS_VERSION_MAJOR = _get_version('CMakeLists.txt', 'HIGHS_VERSION_MAJOR')
-    HIGHS_VERSION_MINOR = _get_version('CMakeLists.txt', 'HIGHS_VERSION_MINOR')
+    _major_dot_minor = _get_version('CMakeLists.txt', 'project(HIGHS VERSION', 'LANGUAGES CXX C')
+    HIGHS_VERSION_MAJOR, HIGHS_VERSION_MINOR = _major_dot_minor.split('.')
     HIGHS_VERSION_PATCH = _get_version('CMakeLists.txt', 'HIGHS_VERSION_PATCH')
     GITHASH = 'n/a'
     HIGHS_DIR = str(pathlib.Path(__file__).parent.resolve())

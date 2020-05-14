@@ -703,6 +703,24 @@ int Highs_getNumRows(void* highs  //!< HiGHS object reference
 int Highs_getNumNz(void* highs  //!< HiGHS object reference
 );
 
+/**
+ * @brief Returns a pointer to a character representation of a HiGHS model
+ * status
+ */
+const char* Highs_highsModelStatusToChar(
+    void* highs,                //!< HiGHS object reference
+    int int_highs_model_status  //!< Status to interpret
+);
+
+/**
+ * @brief Returns a pointer to a character representation of a primal/dual
+ * status
+ */
+const char* Highs_primalDualStatusToChar(
+    void* highs,                //!< HiGHS object reference
+    int int_primal_dual_status  //!< Status to interpret
+);
+
 // /**
 //  * @brief Returns the current model
 //  */

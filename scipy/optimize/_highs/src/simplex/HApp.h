@@ -264,6 +264,12 @@ HighsStatus runSimplexSolver(HighsModelObject& highs_model_object) {
     scaled_solution_params.objective_function_value =
         simplex_info.primal_objective_value;
 
+    if (highs_model_object.scaled_model_status_ == HighsModelStatus::OPTIMAL) {
+      highs_model_object.scaled_solution_params_.primal_status =
+          PrimalDualStatus::STATUS_FEASIBLE_POINT;
+      highs_model_object.scaled_solution_params_.dual_status =
+          PrimalDualStatus::STATUS_FEASIBLE_POINT;
+    }
     // Official finish of solver
 #ifdef HiGHSDEV
     analysis.simplexTimerStop(SimplexTotalClock);
@@ -336,11 +342,14 @@ HighsStatus tryToSolveUnscaledLp(HighsModelObject& highs_model_object) {
     // Set the model and solution status according to the unscaled solution
     // parameters
     if (num_unscaled_primal_infeasibilities == 0 &&
-        num_unscaled_dual_infeasibilities == 0)
+        num_unscaled_dual_infeasibilities == 0) {
       highs_model_object.unscaled_model_status_ = HighsModelStatus::OPTIMAL;
-
-    if (highs_model_object.unscaled_model_status_ == HighsModelStatus::OPTIMAL)
+      highs_model_object.unscaled_solution_params_.primal_status =
+          PrimalDualStatus::STATUS_FEASIBLE_POINT;
+      highs_model_object.unscaled_solution_params_.dual_status =
+          PrimalDualStatus::STATUS_FEASIBLE_POINT;
       return HighsStatus::OK;
+    }
 
     // Not optimal
     assert(num_unscaled_primal_infeasibilities > 0 ||

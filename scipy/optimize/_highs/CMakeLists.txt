@@ -4,10 +4,27 @@
 
 cmake_minimum_required(VERSION 3.15)
 
-project(HIGHS LANGUAGES CXX C)
+project(HIGHS VERSION 1.0 LANGUAGES CXX C)
 
-set(HIGHS_VERSION_MAJOR 1)
-set(HIGHS_VERSION_MINOR 0)
+# use C++11 standard
+set(CMAKE_CXX_STANDARD 11)
+
+### Require out-of-source builds
+file(TO_CMAKE_PATH "${PROJECT_BINARY_DIR}/CMakeLists.txt" LOC_PATH)
+if(EXISTS "${LOC_PATH}")
+    message(FATAL_ERROR "You cannot build in a source directory (or any directory with a CMakeLists.txt file). 
+    Please make a build subdirectory. Feel free to remove CMakeCache.txt and CMakeFiles.")
+endif()
+
+# Fast build: No interfaces (apart from c); No ipx; New (short) ctest instances, 
+# static library and exe without PIC. Used for gradually updating the CMake 
+# targets build and install / export.
+
+# Note: Not ON by default. Still need to fix the exe generation dir: rename from 
+# app/ to bin/
+option(FAST_BUILD "Fast build: only build static lib and exe and quick test." OFF)
+if (NOT FAST_BUILD)
+
 set(HIGHS_VERSION_PATCH 0)
 
 set(CMAKE_C_FLAGS_RELWITHDEBINFO "${CMAKE_C_FLAGS_DEBUG} ${CMAKE_C_FLAGS_RELEASE}")
@@ -223,9 +240,6 @@ include_directories(
 # set the correct rpath for OS X
 set(CMAKE_MACOSX_RPATH ON)
 
-# use C++11 standard
-set(CMAKE_CXX_STANDARD 11)
-
 # explicitly switch on colored output for ninja
 if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     if(CMAKE_GENERATOR STREQUAL "Ninja")
@@ -285,3 +299,120 @@ add_subdirectory(src)
 # # Only needed if it defines a target like a main executable. For methods stick
 # # to header-only.
 # add_subdirectory(dev_presolve)
+
+else()
+message(STATUS "FAST BUILD set to on.
+ Note: The HiGHS team is preparing for our first official release. If you
+       experience any issues please let us know via email or on GitHub.")
+
+# todo: remove patch once release is official. 
+# add here to avoid compile errors.
+set(HIGHS_VERSION_PATCH 0)
+configure_file(${HIGHS_SOURCE_DIR}/src/HConfig.h.in ${HIGHS_BINARY_DIR}/HConfig.h)
+
+# condition added to src/CMakeLists.txt
+add_subdirectory(src)
+
+# No changes in app/ apart from a relative path
+add_subdirectory(app)
+
+# check/ not added here, instead define fewer tests: 
+# build, 3 feas, 1 infeas, 1 unbounded. 1 parallel, 1 no presolve
+enable_testing()
+
+# Check whether targets build OK.
+add_test(NAME highs-lib-build
+         COMMAND ${CMAKE_COMMAND}
+                 --build ${HIGHS_BINARY_DIR}
+                 --target libhighs
+         )
+
+set_tests_properties(highs-lib-build
+                     PROPERTIES
+                     RESOURCE_LOCK libhighs)
+
+add_test(NAME highs-exe-build
+         COMMAND ${CMAKE_COMMAND}
+                 --build ${HIGHS_BINARY_DIR}
+                 --target highs
+         )
+
+set_tests_properties(highs-exe-build
+                     PROPERTIES
+                     RESOURCE_LOCK highs)
+
+set(successInstances
+    "25fv47\;2888\; 5.501846\;"
+    "80bau3b\;3760\; 9.872242\;"
+    "greenbea\;5249\;-7.255525\;")
+
+set(optionsInstances
+    "adlittle\;81\; 2.254950\;")
+
+set(infeasibleInstances
+    "bgetam\;        infeasible")
+
+set(unboundedInstances
+     "gas11\;         unbounded")
+     
+# define settings
+set(settings
+    ""
+    "--presolve=off"
+    "--parallel=on")
+
+# define function to add tests
+# More Modern CMake: avoid macros if you can
+function(add_instance_tests instances solutionstatus setting)
+# loop over the instances
+foreach(instance ${${instances}})
+    # add default tests
+    # treat the instance as a tuple (list) of two values
+    list(GET instance 0 name)
+    list(GET instance 1 iter)
+
+    if(${solutionstatus} STREQUAL "Optimal")
+        list(GET instance 2 optval)
+    endif()
+
+    # specify the instance and the settings load command
+    set(inst "${HIGHS_SOURCE_DIR}/check/instances/${name}.mps")
+
+    add_test(NAME ${name}${setting} COMMAND $<TARGET_FILE:highs> ${setting}
+            ${inst})
+
+    set_tests_properties (${name}${setting} PROPERTIES
+            DEPENDS unit_tests_all)
+    set_tests_properties (${name}${setting} PROPERTIES
+            PASS_REGULAR_EXPRESSION
+            "Model   status      : ${solutionstatus}")
+
+    if(${solutionstatus} STREQUAL "Optimal")
+        if(${setting} STREQUAL "--presolve=off")
+            set_tests_properties (${name}${setting} PROPERTIES
+                    PASS_REGULAR_EXPRESSION
+                    "Simplex   iterations: ${iter}\nObjective value     : ${optval}")
+        else()
+            set_tests_properties (${name}${setting} PROPERTIES
+                    PASS_REGULAR_EXPRESSION
+                    "Objective value     : ${optval}")
+        endif()
+    endif()
+endforeach(instance)
+
+endfunction()
+
+# add tests for success and fail instances
+add_instance_tests(successInstances "Optimal" " ")
+add_instance_tests(failInstances "Fail" " ")
+add_instance_tests(infeasibleInstances "Infeasible" " ")
+add_instance_tests(unboundedInstances "Unbounded" " ")
+
+foreach(setting ${settings})
+    add_instance_tests(optionsInstances "Optimal" ${setting})
+endforeach()
+
+# Dashboards later on.
+# include(CTest)
+
+endif()

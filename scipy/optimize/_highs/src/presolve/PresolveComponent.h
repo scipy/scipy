@@ -51,6 +51,7 @@ struct PresolveComponentOptions : public HighsComponentOptions {
   bool is_valid = false;
   // presolve options later when needed.
   bool presolve_on = true;
+  std::vector<presolve::Presolver> order;
 };
 
 class PresolveComponent : public HighsComponent {
