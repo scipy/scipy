@@ -88,7 +88,7 @@ def test_quadratic_assignment_input_validation():
     with pytest.raises(TypeError):
         quadratic_assignment(A, B, eps=-1)
     with pytest.raises(TypeError):
-        quadratic_assignment(A, B, gmp="hey")
+        quadratic_assignment(A, B, maximize="hey")
     # test that cost and dist matrices of different sizes return error
     with pytest.raises(ValueError):
         quadratic_assignment(
@@ -100,7 +100,7 @@ def test_quadratic_assignment_input_validation():
     with pytest.raises(ValueError):
         quadratic_assignment(
             -1 * np.random.random((3, 3)),
-            np.random.random((4, 4))
+            np.random.random((3, 3))
         )
     # test that non square matrices return error
     with pytest.raises(ValueError):
@@ -122,6 +122,11 @@ def test_quadratic_assignment_input_validation():
     with pytest.raises(ValueError):
         quadratic_assignment(
             np.identity(3), np.identity(3), -1 * _range_matrix(2, 2),
+        )
+    # seeds can't have values greater than number of nodes
+    with pytest.raises(ValueError):
+        quadratic_assignment(
+            np.identity(5), np.identity(5), 2 * _range_matrix(4, 2),
         )
     # columns of seed matrix must be unique
     with pytest.raises(ValueError):
