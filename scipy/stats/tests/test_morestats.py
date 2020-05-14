@@ -1040,9 +1040,9 @@ class TestWilcoxon(object):
         assert_almost_equal(p, 0.3176447, decimal=6)
 
     def test_exact_basic(self):
-        for n in range(3, 26):
-            val, cnt = _get_wilcoxon_distr(n)
-            assert_equal(len(val), len(cnt))
+        for n in range(1, 26):
+            cnt = _get_wilcoxon_distr(n)
+            assert_equal(n*(n+1)/2 + 1, len(cnt))
             assert_equal(sum(cnt), 2**n)
 
     def test_exact_pval(self):
@@ -1071,9 +1071,9 @@ class TestWilcoxon(object):
         assert_raises(ValueError, stats.wilcoxon, d, method="exact")
 
     def test_auto(self):
-        # auto default to exact if there are no ties and n<= 20
-        x = np.arange(0, 20) + 0.5
-        y = np.arange(20, 0, -1)
+        # auto default to exact if there are no ties and n<= 25
+        x = np.arange(0, 25) + 0.5
+        y = np.arange(25, 0, -1)
         assert_equal(stats.wilcoxon(x, y),
                      stats.wilcoxon(x, y, method="exact"))
 
@@ -1084,8 +1084,8 @@ class TestWilcoxon(object):
             w, p = stats.wilcoxon(d)
         assert_equal(stats.wilcoxon(d, method="approx"), (w, p))
 
-        # use approximation for samples > 20
-        d = np.arange(1, 22)
+        # use approximation for samples > 25
+        d = np.arange(1, 27)
         assert_equal(stats.wilcoxon(d), stats.wilcoxon(d, method="approx"))
 
 

@@ -17,7 +17,7 @@ def _generate_wilcoxon_exact_table(N):
     Return a dictionary that maps n=3,...N to the corresponding list of counts
     """
     res_dict = {}
-    for n in range(3, N+1):
+    for n in range(1, N+1):
         res = []
         ranks = np.arange(n) + 1
         M = n*(n + 1)/2
@@ -40,7 +40,7 @@ def _generate_wilcoxon_exact_table_fast(N):
     but harder to follow.
     """
     res_dict = {}
-    for n in range(3, N+1):
+    for n in range(1, N+1):
         ranks = np.arange(n) + 1
         M = int(n*(n + 1)/2)
         res = np.zeros(M + 1, dtype=int)
@@ -54,6 +54,8 @@ def _generate_wilcoxon_exact_table_fast(N):
 
 
 COUNTS = {
+    1: [1, 1],
+    2: [1, 1, 1, 1],
     3: [1, 1, 1, 2, 1, 1, 1],
     4: [1, 1, 1, 2, 2, 2, 2, 2, 1, 1, 1],
     5: [1, 1, 1, 2, 2, 3, 3, 3, 3, 3, 3, 2, 2, 1, 1, 1],

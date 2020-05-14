@@ -137,8 +137,8 @@ def _get_wilcoxon_distr(n):
     """
     Distribution of counts of the Wilcoxon ranksum statistic r_plus (sum of
     ranks of positive differences).
-    Returns tuple (r, c) with possible ranks r = 0, ..., n*(n+1)/2 and
-    the corresponding counts/frequencies
+    Returns an array with the counts/frequencies of all the possible ranks
+    r = 0, ..., n*(n+1)/2
     """
     cnt = _wilcoxon_data.COUNTS.get(n)
 
@@ -146,4 +146,4 @@ def _get_wilcoxon_distr(n):
         raise ValueError("The exact distribution of the Wilcoxon test "
                          "statistic is not implemented for n={}".format(n))
 
-    return np.arange(n*(n+1)/2 + 1, dtype=int), np.array(cnt, dtype=int)
+    return np.array(cnt, dtype=int)
