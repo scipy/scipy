@@ -1,5 +1,5 @@
 import numpy as np
-from numpy.dual import eig
+from scipy.linalg import eig
 from scipy.special import comb
 from scipy.signal import convolve
 

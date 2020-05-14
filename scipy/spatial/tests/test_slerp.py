@@ -1,7 +1,7 @@
 from __future__ import division, absolute_import, print_function
 
 import numpy as np
-from numpy.testing import assert_equal, assert_allclose
+from numpy.testing import assert_allclose
 
 import pytest
 from scipy.spatial import geometric_slerp
@@ -192,9 +192,9 @@ class TestGeometricSlerp(object):
         # geometric_slerp() should appropriately handle
         # interpolation parameters < 0 and > 1
         with pytest.raises(ValueError, match='interpolation parameter'):
-            actual = geometric_slerp(start=np.array([1, 0]),
-                                     end=np.array([0, 1]),
-                                     t=t)
+            _ = geometric_slerp(start=np.array([1, 0]),
+                                end=np.array([0, 1]),
+                                t=t)
 
     @pytest.mark.parametrize("start, end", [
         (np.array([1]),
@@ -208,9 +208,9 @@ class TestGeometricSlerp(object):
         # it does not make sense to interpolate the set of
         # two points that is the 0-sphere
         with pytest.raises(ValueError, match='at least two-dim'):
-            actual = geometric_slerp(start=start,
-                                     end=end,
-                                     t=np.linspace(0, 1, 4))
+            _ = geometric_slerp(start=start,
+                                end=end,
+                                t=np.linspace(0, 1, 4))
 
     @pytest.mark.parametrize("tol", [
         # an integer currently raises
@@ -224,10 +224,10 @@ class TestGeometricSlerp(object):
         # geometric_slerp() should raise if tol is not
         # a suitable float type
         with pytest.raises(ValueError, match='must be a float'):
-            actual = geometric_slerp(start=np.array([1, 0]),
-                                     end=np.array([0, 1]),
-                                     t=np.linspace(0, 1, 5),
-                                     tol=tol)
+            _ = geometric_slerp(start=np.array([1, 0]),
+                                end=np.array([0, 1]),
+                                t=np.linspace(0, 1, 5),
+                                tol=tol)
 
     @pytest.mark.parametrize("tol", [
         -5e-6,
@@ -236,10 +236,10 @@ class TestGeometricSlerp(object):
     def test_tol_sign(self, tol):
         # geometric_slerp() currently handles negative
         # tol values, as long as they are floats
-        actual = geometric_slerp(start=np.array([1, 0]),
-                                 end=np.array([0, 1]),
-                                 t=np.linspace(0, 1, 5),
-                                 tol=tol)
+        _ = geometric_slerp(start=np.array([1, 0]),
+                            end=np.array([0, 1]),
+                            t=np.linspace(0, 1, 5),
+                            tol=tol)
 
     @pytest.mark.parametrize("start, end", [
         # 1-sphere (circle) with one point at origin
@@ -316,9 +316,9 @@ class TestGeometricSlerp(object):
         ])
     def test_t_values_conversion(self, t):
         with pytest.raises(ValueError):
-            scrambled_results = geometric_slerp(start=np.array([1]),
-                                                end=np.array([0]),
-                                                t=t)
+            _ = geometric_slerp(start=np.array([1]),
+                                end=np.array([0]),
+                                t=t)
 
     def test_accept_arraylike(self):
         # array-like support requested by reviewer

@@ -1215,8 +1215,7 @@ def canberra(u, v, w=None):
     v = _validate_vector(v, dtype=np.float64)
     if w is not None:
         w = _validate_weights(w)
-    olderr = np.seterr(invalid='ignore')
-    try:
+    with np.errstate(invalid='ignore'):
         abs_uv = abs(u - v)
         abs_u = abs(u)
         abs_v = abs(v)
@@ -1224,8 +1223,6 @@ def canberra(u, v, w=None):
         if w is not None:
             d = w * d
         d = np.nansum(d)
-    finally:
-        np.seterr(**olderr)
     return d
 
 

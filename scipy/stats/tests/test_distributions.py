@@ -568,12 +568,12 @@ class TestTruncnorm(object):
             assert_almost_equal(stats.truncnorm.sf(xvals, low, high), stats.truncnorm.cdf(xvals2, -high, -low)[::-1])
             assert_almost_equal(stats.truncnorm.pdf(xvals, low, high), stats.truncnorm.pdf(xvals2, -high, -low)[::-1])
 
-    def _test_moments_one_range(self, a, b, expected):
+    def _test_moments_one_range(self, a, b, expected, decimal_s=7):
         m0, v0, s0, k0 = expected[:4]
         m, v, s, k = stats.truncnorm.stats(a, b, moments='mvsk')
         assert_almost_equal(m, m0)
         assert_almost_equal(v, v0)
-        assert_almost_equal(s, s0)
+        assert_almost_equal(s, s0, decimal=decimal_s)
         assert_almost_equal(k, k0)
 
     @pytest.mark.xfail_on_32bit("reduced accuracy with 32bit platforms.")
@@ -598,7 +598,7 @@ class TestTruncnorm(object):
 
         self._test_moments_one_range(-10, -9, [-9.1084562880124764, 0.0114488058210104, -1.8985607337519652, 5.0733457094223553])
         self._test_moments_one_range(-20, -19, [-19.0523439459766628, 0.0027250730180314, -1.9838694022629291, 5.8717850028287586])
-        self._test_moments_one_range(-30, -29, [-29.0344012377394698, 0.0011806603928891, -1.9930304534611458, 5.8854062968996566])
+        self._test_moments_one_range(-30, -29, [-29.0344012377394698, 0.0011806603928891, -1.9930304534611458, 5.8854062968996566], decimal_s=6)
         self._test_moments_one_range(-40, -39, [-39.0256074199326264, 0.0006548826719649, -1.9963146354109957, 5.6167758371700494])
         self._test_moments_one_range(39, 40, [39.0256074199326264, 0.0006548826719649, 1.9963146354109957, 5.6167758371700494])
 
@@ -3340,8 +3340,7 @@ def test_regression_tukey_lambda():
     # non-positive lambdas.
     x = np.linspace(-5.0, 5.0, 101)
 
-    olderr = np.seterr(divide='ignore')
-    try:
+    with np.errstate(divide='ignore'):
         for lam in [0.0, -1.0, -2.0, np.array([[-1.0], [0.0], [-2.0]])]:
             p = stats.tukeylambda.pdf(x, lam)
             assert_((p != 0.0).all())
@@ -3349,8 +3348,6 @@ def test_regression_tukey_lambda():
 
         lam = np.array([[-1.0], [0.0], [2.0]])
         p = stats.tukeylambda.pdf(x, lam)
-    finally:
-        np.seterr(**olderr)
 
     assert_(~np.isnan(p).all())
     assert_((p[0] != 0.0).all())
@@ -3391,11 +3388,8 @@ def test_frozen_fit_ticket_1536():
     true = np.array([0.25, 0., 0.5])
     x = stats.lognorm.rvs(true[0], true[1], true[2], size=100)
 
-    olderr = np.seterr(divide='ignore')
-    try:
+    with np.errstate(divide='ignore'):
         params = np.array(stats.lognorm.fit(x, floc=0.))
-    finally:
-        np.seterr(**olderr)
 
     assert_almost_equal(params, true, decimal=2)
 
@@ -3543,8 +3537,7 @@ def test_ksone_fit_freeze():
          -0.10943985, -0.35243174, 0.06897665, -0.03553363, -0.0701746,
          -0.06037974, 0.37670779, -0.21684405])
 
-    try:
-        olderr = np.seterr(invalid='ignore')
+    with np.errstate(invalid='ignore'):
         with suppress_warnings() as sup:
             sup.filter(IntegrationWarning,
                        "The maximum number of subdivisions .50. has been "
@@ -3552,8 +3545,6 @@ def test_ksone_fit_freeze():
             sup.filter(RuntimeWarning,
                        "floating point number truncated to an integer")
             stats.ksone.fit(d)
-    finally:
-        np.seterr(**olderr)
 
 
 def test_norm_logcdf():
@@ -4343,3 +4334,15 @@ class TestArgus(object):
         x = stats.argus.rvs(3.5, size=1500, random_state=1535)
         assert_almost_equal(stats.argus(3.5).mean(), x.mean(), decimal=3)
         assert_almost_equal(stats.argus(3.5).std(), x.std(), decimal=3)
+
+
+def test_rvs_no_size_warning():
+    class rvs_no_size_gen(stats.rv_continuous):
+        def _rvs(self):
+            return 1
+
+    rvs_no_size = rvs_no_size_gen(name='rvs_no_size')
+
+    with assert_warns(np.VisibleDeprecationWarning):
+        rvs_no_size.rvs()
+

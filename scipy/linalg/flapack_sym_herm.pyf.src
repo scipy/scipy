@@ -762,8 +762,8 @@ subroutine <prefix2>syevr(compute_v,range,lower,n,a,lda,vl,vu,il,iu,abstol,w,z,m
     <ftype2> optional,intent(in) :: vl=0.0
     <ftype2> optional,intent(in),check(vu>=vl),depend(vl) :: vu=1.0
     <ftype2> intent(in) :: abstol=0.0
-    integer optional,intent(in),depend(n),check(lwork>=1||lwork==-1) :: lwork=max(26*n,1)
-    integer optional,intent(in),depend(n),check(liwork>=1||liwork==-1):: liwork= max(1,10*n)
+    integer optional,intent(in),depend(n),check(lwork>=max(1,26*n)||lwork==-1) :: lwork=max(26*n,1)
+    integer optional,intent(in),depend(n),check(liwork>=max(1,10*n)||liwork==-1):: liwork= max(1,10*n)
 
     integer intent(hide),depend(a) :: n=shape(a,0)
     integer intent(hide),depend(n) :: lda=max(1,n)
@@ -827,27 +827,34 @@ subroutine <prefix2c>heevr(compute_v,range,lower,n,a,lda,vl,vu,il,iu,abstol,w,z,
     integer optional,intent(in),check(compute_v==1||compute_v==0):: compute_v = 1
     character optional,intent(in),check(*range=='A'||*range=='V' ||*range=='I') :: range='A'
     integer optional,intent(in),check(lower==0||lower==1) :: lower = 0
-    integer optional,intent(in) :: il=1
-    integer optional,intent(in),depend(n) :: iu=n
+    integer optional,intent(in),check(il>=1) :: il=1
+    integer optional,intent(in),check(iu>=il||iu<=n),depend(il,n) :: iu=n
     <ftype2> optional,intent(in) :: vl=0.0
     <ftype2> optional,intent(in),check(vu>vl),depend(vl) :: vu=1.0
     <ftype2> intent(in) :: abstol=0.0
-    integer optional,intent(in),depend(n),check(lwork>=1||lwork==-1) :: lwork=max(2*n,1)
-    integer optional,intent(in),depend(n),check(lwork>=1||lwork==-1) :: lrwork=max(24*n,1)
-    integer optional,intent(in),depend(n),check(liwork>=1||liwork==-1):: liwork= max(1,10*n)
+    integer optional,intent(in),depend(n),check(lwork>=max(2*n,1)||lwork==-1) :: lwork=max(2*n,1)
+    integer optional,intent(in),depend(n),check(lrwork>=max(24*n,1)||lrwork==-1) :: lrwork=max(24*n,1)
+    integer optional,intent(in),depend(n),check(liwork>=max(1,10*n)||liwork==-1):: liwork= max(1,10*n)
 
     integer intent(hide),depend(a) :: n=shape(a,0)
     integer intent(hide),depend(n) :: lda=max(1,n)
     integer intent(hide),depend(z) :: ldz=max(1,shape(z,0))
     <ftype2c>  intent(hide),dimension(lwork),depend(lwork) :: work
-    <ftype2> intent(hide),dimension(lrwork) :: rwork
+    <ftype2> intent(hide),dimension(lrwork),depend(lrwork) :: rwork
     integer intent(hide),dimension(liwork),depend(liwork) :: iwork
 
     <ftype2> intent(out),dimension(n),depend(n) :: w
     <ftype2c> intent(out),dimension((compute_v?MAX(0,n):0),(compute_v?(*range=='I'?iu-il+1:MAX(1,n)):0)),depend(n,compute_v,range,iu,il) :: z
     integer intent(out) :: m
-    ! Only returned if range=='A' or range=='I' and il, iu = 1, n
-    integer intent(out),dimension((compute_v?(2*(*range=='A'||(*range=='I' && iu-il+1==n)?n:0)):0)),depend(n,iu,il,range,compute_v) :: isuppz
+    ! MKL implementation has a bug that still accesses isuppz array even if
+    ! range=='A' or range=='I' and il, iu = 1, n which is not the case for
+    ! the reference implementation. Hence here isuppz is allocated regardless
+    ! of the settings. It is wasteful but necessary. The bug is fixed in
+    ! mkl 2020 update 2 and when time comes change this line with
+    !
+    ! integer intent(out),dimension((compute_v?(2*(*range=='A'||(*range=='I' && iu-il+1==n)?n:0)):0)),depend(n,iu,il,range,compute_v) :: isuppz
+    !
+    integer intent(out),dimension(2*max(1,n)),depend(n) :: isuppz
     integer intent(out) :: info
 
 end subroutine <prefix2c>heevr

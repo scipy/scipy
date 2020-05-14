@@ -555,32 +555,37 @@ class TestTbtrs(object):
     @pytest.mark.parametrize('diag', ['N', 'U'])
     def test_random_matrices(self, dtype, trans, uplo, diag):
         seed(1724)
-        # lda, ldb, nrhs, kd are used to specify A and b.
-        # A is of shape lda x ldb with kd super/sub-diagonals
-        # b is of shape ldb x nrhs matrix
-        lda, ldb, nrhs, kd = 4, 4, 3, 2
-        ldab = kd + 1
+        # n, nrhs, kd are used to specify A and b.
+        # A is of shape n x n with kd super/sub-diagonals
+        # b is of shape n x nrhs matrix
+        n, nrhs, kd = 4, 3, 2
+        tbtrs = get_lapack_funcs('tbtrs', dtype=dtype)
+
+        is_upper = (uplo == 'U')
+        ku = kd * is_upper
+        kl = kd - ku
 
         # Construct the diagonal and kd super/sub diagonals of A with
         # the corresponding offsets.
-        band_widths = range(lda, lda - kd - 1, -1)
-        band_offsets = np.arange(ldab) if uplo == 'U' else np.arange(ldab) * -1
-        if dtype in REAL_DTYPES:
-            b = rand(ldb, nrhs).astype(dtype)
-            bands = [rand(width).astype(dtype) for width in band_widths]
-        elif dtype in COMPLEX_DTYPES:
-            b = (rand(ldb, nrhs) + rand(ldb, nrhs) * 1j).astype(dtype)
-            bands = [(rand(width) + rand(width) * 1j).astype(dtype)
-                     for width in band_widths]
+        band_offsets = range(ku, -kl - 1, -1)
+        band_widths = [n - abs(x) for x in band_offsets]
+        bands = [generate_random_dtype_array((width,), dtype)
+                 for width in band_widths]
 
         if diag == 'U':  # A must be unit triangular
-            bands[0] = np.ones(lda, dtype=dtype)
+            bands[ku] = np.ones(n, dtype=dtype)
 
         # Construct the diagonal banded matrix A from the bands and offsets.
         a = sps.diags(bands, band_offsets, format='dia')
-        ab = np.flipud(a.data) if uplo == 'U' else a.data
 
-        tbtrs = get_lapack_funcs('tbtrs', dtype=dtype)
+        # Convert A into banded storage form
+        ab = np.zeros((kd + 1, n), dtype)
+        for row, k in enumerate(band_offsets):
+            ab[row, max(k, 0):min(n+k, n)] = a.diagonal(k)
+
+        # The RHS values.
+        b = generate_random_dtype_array((n, nrhs), dtype)
+
         x, info = tbtrs(ab=ab, b=b, uplo=uplo, trans=trans, diag=diag)
         assert_equal(info, 0)
 
@@ -1743,26 +1748,22 @@ def test_syequb():
         assert_equal(np.log2(s).astype(int), desired_log2s)
 
 
-@pytest.mark.skip(reason="This fails inexplicably when some ?gejsv tests "
-                  "run. See gh-11902.")
-@pytest.mark.parametrize("dtype", COMPLEX_DTYPES)
-def test_heequb(dtype):
-    desired_log2s = np.array([[-2, -7, -2, -4, -2, -3, -2, -2, -1, -2],
-                              [1, -10, 0, -6, -1, -4, -1, -2, -1, -2]])
-    heequb = get_lapack_funcs('heequb', dtype=dtype)
-
-    d = np.array([dtype(1j) * 2**x for x in range(-5, 5)], dtype=dtype)
-    A = np.diag(d)
-    subdiags = np.array([dtype(1j) * 2**(9-x) for x in range(9)],
-                        dtype=dtype)
-    A[range(1, 10), range(0, 9)] = subdiags
-    s, scond, amax, info = heequb(A, lower=1)
-
+def test_heequb():
+    # zheequb has a bug for versions =< LAPACK 3.9.0
+    # See Reference-LAPACK gh-61 and gh-408
+    # Hence the zheequb test is customized accordingly to avoid
+    # work scaling.
+    A = np.diag([2]*5 + [1002]*5) + np.diag(np.ones(9), k=1)*1j
+    s, scond, amax, info = lapack.zheequb(A)
     assert_equal(info, 0)
-    try:
-        assert_allclose(np.log2(s), desired_log2s[0, :])
-    except AssertionError as e:
-        assert_allclose(np.log2(s), desired_log2s[1, :])
+    assert_allclose(np.log2(s), [0., -1.]*2 + [0.] + [-4]*5)
+
+    A = np.diag(2**np.abs(np.arange(-5, 6)) + 0j)
+    A[5, 5] = 1024
+    A[5, 0] = 16j
+    s, scond, amax, info = lapack.cheequb(A.astype(np.complex64), lower=1)
+    assert_equal(info, 0)
+    assert_allclose(np.log2(s), [-2, -1, -1, 0, 0, -5, 0, -1, -1, -2, -2])
 
 
 def test_getc2_gesc2():
@@ -1802,9 +1803,8 @@ def test_getc2_gesc2():
 @pytest.mark.parametrize('jobu', range(4))  # 'U', 'F', 'W', 'N'
 @pytest.mark.parametrize('jobv', range(4))  # 'V', 'J', 'W', 'N'
 @pytest.mark.parametrize('jobr', [0, 1])
-@pytest.mark.parametrize('jobt', [0, 1])  # When `jobt` and `jobp` are parametrized,
-@pytest.mark.parametrize('jobp', [0, 1])  # test_heequb fails. See gh-11902.
-def test_gejsv_general(size, dtype, joba, jobu, jobv, jobr, jobt, jobp):
+@pytest.mark.parametrize('jobp', [0, 1])
+def test_gejsv_general(size, dtype, joba, jobu, jobv, jobr, jobp, jobt=0):
     """Test the lapack routine ?gejsv.
 
     This function tests that a singular value decomposition can be performed
@@ -1826,6 +1826,9 @@ def test_gejsv_general(size, dtype, joba, jobu, jobv, jobr, jobt, jobp):
     Although all arguments are tested, the tests only check that the correct
     solution is returned - NOT that the prescribed actions are performed
     internally.
+
+    jobt is, as of v3.9.0, still experimental and removed to cut down number of
+    test cases. However keyword itself is tested externally.
     """
     seed(42)
 

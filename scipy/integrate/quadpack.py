@@ -35,6 +35,13 @@ def quad_explain(output=sys.stdout):
     -------
     None
 
+    Examples
+    --------
+    We can show detailed information of the `integrate.quad` function in stdout:
+
+    >>> from scipy.integrate import quad_explain
+    >>> quad_explain()
+
     """
     output.write(quad.__doc__)
 

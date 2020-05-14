@@ -128,6 +128,9 @@ scipy/__config__.py
 scipy/_lib/_ccallback_c.c
 scipy/_lib/messagestream.c
 scipy/_lib/src/messagestream_config.h
+scipy/_lib/_test_deprecation_call.c
+scipy/_lib/_test_deprecation_def.c
+scipy/_lib/_test_deprecation_def.h
 scipy/cluster/_vq.c
 scipy/cluster/_hierarchy.c
 scipy/cluster/_optimal_leaf_ordering.c
@@ -188,6 +191,7 @@ scipy/ndimage/src/_cytest.c
 scipy/optimize/_bglu_dense.c
 scipy/optimize/cobyla/_cobylamodule.c
 scipy/optimize/lbfgsb_src/_lbfgsbmodule.c
+scipy/optimize/lbfgsb_src/_lbfgsb-f2pywrappers.f
 scipy/optimize/minpack2/minpack2module.c
 scipy/optimize/nnls/_nnlsmodule.c
 scipy/optimize/slsqp/_slsqpmodule.c

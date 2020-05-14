@@ -1234,11 +1234,8 @@ def kurtosis(a, axis=0, fisher=True, bias=True, nan_policy='propagate'):
     m2 = moment(a, 2, axis)
     m4 = moment(a, 4, axis)
     zero = (m2 == 0)
-    olderr = np.seterr(all='ignore')
-    try:
+    with np.errstate(all='ignore'):
         vals = np.where(zero, 0, m4 / m2**2.0)
-    finally:
-        np.seterr(**olderr)
 
     if not bias:
         can_correct = (n > 3) & (m2 > 0)
@@ -1603,6 +1600,9 @@ def normaltest(a, axis=0, nan_policy='propagate'):
     return NormaltestResult(k2, distributions.chi2.sf(k2, 2))
 
 
+Jarque_beraResult = namedtuple('Jarque_beraResult', ('statistic', 'pvalue'))
+
+
 def jarque_bera(x):
     """
     Perform the Jarque-Bera goodness of fit test on sample data.
@@ -1637,11 +1637,13 @@ def jarque_bera(x):
     >>> from scipy import stats
     >>> np.random.seed(987654321)
     >>> x = np.random.normal(0, 1, 100000)
-    >>> y = np.random.rayleigh(1, 100000)
-    >>> stats.jarque_bera(x)
-    (4.7165707989581342, 0.09458225503041906)
-    >>> stats.jarque_bera(y)
-    (6713.7098548143422, 0.0)
+    >>> jarque_bera_test = stats.jarque_bera(x)
+    >>> jarque_bera_test
+    Jarque_beraResult(statistic=4.716570798957913, pvalue=0.0945822550304295)
+    >>> jarque_bera_test.statistic
+    4.716570798957913
+    >>> jarque_bera_test.pvalue
+    0.0945822550304295
 
     """
     x = np.asarray(x)
@@ -1656,7 +1658,7 @@ def jarque_bera(x):
     jb_value = n / 6 * (skewness**2 + (kurtosis - 3)**2 / 4)
     p = 1 - distributions.chi2.cdf(jb_value, 2)
 
-    return jb_value, p
+    return Jarque_beraResult(jb_value, p)
 
 
 #####################################
@@ -3797,13 +3799,10 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate'):
     dof = n_obs - 2  # degrees of freedom
 
     # rs can have elements equal to 1, so avoid zero division warnings
-    olderr = np.seterr(divide='ignore')
-    try:
+    with np.errstate(divide='ignore'):
         # clip the small negative values possibly caused by rounding
         # errors before taking the square root
         t = rs * np.sqrt((dof/((rs+1.0)*(1.0-rs))).clip(0))
-    finally:
-        np.seterr(**olderr)
 
     prob = 2 * distributions.t.sf(np.abs(t), dof)
 
@@ -6431,6 +6430,21 @@ def ranksums(x, y):
     References
     ----------
     .. [1] https://en.wikipedia.org/wiki/Wilcoxon_rank-sum_test
+
+    Examples
+    --------
+    We can test the hypothesis that two independent unequal-sized samples are
+    drawn from the same distribution with computing the Wilcoxon rank-sum
+    statistic.
+
+    >>> from scipy.stats import ranksums
+    >>> sample1 = np.random.uniform(-1, 1, 200)
+    >>> sample2 = np.random.uniform(-0.5, 1.5, 300) # a shifted distribution
+    >>> ranksums(sample1, sample2)
+    RanksumsResult(statistic=-7.887059, pvalue=3.09390448e-15)  # may vary
+
+    The p-value of less than ``0.05`` indicates that this test rejects the
+    hypothesis at the 5% significance level.
 
     """
     x, y = map(np.asarray, (x, y))

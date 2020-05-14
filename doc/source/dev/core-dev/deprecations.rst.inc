@@ -14,7 +14,8 @@ something from the public API:
 #. Propose to deprecate the functionality on the scipy-dev mailing list and get
    agreement that that's OK.
 #. Add a ``DeprecationWarning`` for it, which states that the functionality was
-   deprecated, and in which release.
+   deprecated, and in which release. For Cython APIs, see
+   :ref:`deprecating-public-cython-api` for the practical steps.
 #. Mention the deprecation in the release notes for that release.
 #. Wait till at least 6 months after the release date of the release that
    introduced the ``DeprecationWarning`` before removing the functionality.
