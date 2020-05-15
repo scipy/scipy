@@ -2949,6 +2949,8 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
     elif method == "exact":
         # get frequencies cnt of the possible positive ranksums r_plus
         cnt = _get_wilcoxon_distr(count)
+        # note: r_plus is int (ties not allowed), need int for slices below
+        r_plus = int(r_plus)
         if alternative == "two-sided":
             p_less = np.sum(cnt[:r_plus + 1]) / 2**count
             p_greater = np.sum(cnt[r_plus:]) / 2**count
