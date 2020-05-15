@@ -93,6 +93,52 @@ def lagrange(x, w):
 # !! Need to find argument for keeping initialize. If it isn't
 # !! found, get rid of it!
 
+def hermite(x, y, m):
+    """
+    A function that calculates the Hermite Interpolation polynomial based on the set of x-values,
+    the set of y-values (where y = f(x)), and the derivatives of f at the y-values. It is more accurate
+    than Langrangian Interpolation, but it is more complicated and computationally expensive.
+
+    Inputs
+    -----
+
+    x : array-like
+        x contains the x-values we will interpolate.
+
+    y : array-like
+        y is the set f(x), where f is the function we wish to interpolate.
+
+    m : array-like
+        m contains the derivative of f at f(x) for all values in x
+
+    Output
+    -----
+
+    hermite_poly : 'numpy.poly1d' instance
+        hermite_poly is the polynomial that interpolates f.
+
+    Example
+    -------
+        >>> x = [0, 1, 2, 3, 4, 5]
+        >>> y = numpy.poly1d([3, 2, 1])(x)
+        >>> m = numpy.poly1d([3, 2, 1]).deriv()(x)
+        >>> hermite_poly = hermite(x, y, m)
+    """
+
+    def lagrange_basis_polynomial(x, i):
+        L = 1
+        for j in range(0, len(x)):
+            if i != j:
+                L *= np.poly1d([1, -x[j]]) / (x[i] - x[j])
+
+        return L
+
+    hermite_poly = 0
+    for i in range(0, len(x)):
+        L = lagrange_basis_polynomial(x, i)
+        hermite_poly += (y[i] + np.poly1d([1, -x[i]]) * (m[i] - 2 * y[i] * L.deriv())) * L ** 2
+
+    return hermite_poly
 
 class interp2d(object):
     """
