@@ -130,7 +130,7 @@ def quadratic_assignment(
     >>> dist = np.array([[0, 5, 2, 7], [0, 0, 3, 8],
     ...         [0, 0, 0, 3], [0, 0, 0, 0]])
     >>> from scipy.optimize import quadratic_assignment
-    >>> res = quadratic_assignment(cost,dist)
+    >>> res = quadratic_assignment(cost, dist)
     >>> print(res)
      col_ind: array([0, 3, 2, 1])
          nit: 9
@@ -141,8 +141,8 @@ def quadratic_assignment(
     permutation matrix, and perform the necessary algebra.
 
     >>> n = cost.shape[0]
-    >>> P = np.zeros((n,n))
-    >>> P[np.arange(n),res['col_ind']] = 1
+    >>> P = np.zeros((n, n))
+    >>> P[np.arange(n), res['col_ind']] = 1
     >>> score = int(np.trace(cost.T @ P @ dist @ P.T))
     >>> print(score)
     3260
