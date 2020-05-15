@@ -47,7 +47,7 @@ def test_quadratic_assignment():
 
     # check ofv with 100 random initializations
     res = quadratic_assignment(
-        cost_matrix, dist_matrix, init_method="rand", n_init=100
+        cost_matrix, dist_matrix, init_method="rand", n_init=50
     )
 
     assert 11156 <= res['score'] < 13500
