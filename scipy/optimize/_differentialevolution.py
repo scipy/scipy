@@ -125,7 +125,8 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
             - 'latinhypercube'
             - 'random'
             - array specifying the initial population. The array should have
-              shape ``(M, len(x))``, where len(x) is the number of parameters.
+              shape ``(M, len(x))``, where M is the total population size and
+              len(x) is the number of parameters.
               `init` is clipped to `bounds` before use.
 
         The default is 'latinhypercube'. Latin Hypercube sampling tries to
@@ -407,7 +408,8 @@ class DifferentialEvolutionSolver(object):
             - 'latinhypercube'
             - 'random'
             - array specifying the initial population. The array should have
-              shape ``(M, len(x))``, where len(x) is the number of parameters.
+              shape ``(M, len(x))``, where M is the total population size and
+              len(x) is the number of parameters.
               `init` is clipped to `bounds` before use.
 
         The default is 'latinhypercube'. Latin Hypercube sampling tries to

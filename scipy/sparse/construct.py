@@ -7,8 +7,10 @@ __all__ = ['spdiags', 'eye', 'identity', 'kron', 'kronsum',
            'hstack', 'vstack', 'bmat', 'rand', 'random', 'diags', 'block_diag']
 
 
+from functools import partial
 import numpy as np
 
+from scipy._lib._util import check_random_state, rng_integers
 from .sputils import upcast, get_index_dtype, isscalarlike
 
 from .csr import csr_matrix
@@ -334,6 +336,10 @@ def kron(A, B, format=None):
         row = A.row.repeat(B.nnz)
         col = A.col.repeat(B.nnz)
         data = A.data.repeat(B.nnz)
+
+        if max(A.shape[0]*B.shape[0], A.shape[1]*B.shape[1]) > np.iinfo('int32').max:
+            row = row.astype(np.int64)
+            col = col.astype(np.int64)
 
         row *= B.shape[0]
         col *= B.shape[1]
@@ -732,8 +738,8 @@ def random(m, n, density=0.01, format='coo', dtype=None,
     >>> from scipy.sparse import random
     >>> from scipy.stats import rv_continuous
     >>> class CustomDistribution(rv_continuous):
-    ...     def _rvs(self, *args, **kwargs):
-    ...         return self._random_state.randn(*self._size)
+    ...     def _rvs(self,  size=None, random_state=None):
+    ...         return random_state.randn(*size)
     >>> X = CustomDistribution(seed=2906)
     >>> Y = X()  # get a frozen version of the distribution
     >>> S = random(3, 4, density=0.25, random_state=2906, data_rvs=Y.rvs)
@@ -763,23 +769,22 @@ greater than %d - this is not supported on this machine
     # Number of non zero values
     k = int(density * m * n)
 
-    if random_state is None:
-        random_state = np.random
-    elif isinstance(random_state, (int, np.integer)):
-        random_state = np.random.RandomState(random_state)
+    random_state = check_random_state(random_state)
 
     if data_rvs is None:
         if np.issubdtype(dtype, np.integer):
-            randint = random_state.randint
-
             def data_rvs(n):
-                return randint(np.iinfo(dtype).min, np.iinfo(dtype).max,
-                               n, dtype=dtype)
+                return rng_integers(random_state,
+                                    np.iinfo(dtype).min,
+                                    np.iinfo(dtype).max,
+                                    n,
+                                    dtype=dtype)
         elif np.issubdtype(dtype, np.complexfloating):
             def data_rvs(n):
-                return random_state.rand(n) + random_state.rand(n) * 1j
+                return (random_state.uniform(size=n) +
+                        random_state.uniform(size=n) * 1j)
         else:
-            data_rvs = random_state.rand
+            data_rvs = partial(random_state.uniform, 0., 1.)
 
     ind = random_state.choice(mn, size=k, replace=False)
 
@@ -805,7 +810,7 @@ def rand(m, n, density=0.01, format="coo", dtype=None, random_state=None):
         sparse matrix format.
     dtype : dtype, optional
         type of the returned matrix values.
-    random_state : {numpy.random.RandomState, int}, optional
+    random_state : {numpy.random.RandomState, int, np.random.Generator}, optional
         Random number generator or random seed. If not given, the singleton
         numpy.random will be used.
 

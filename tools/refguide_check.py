@@ -109,10 +109,11 @@ OTHER_MODULE_DOCS = {
 # these names are known to fail doctesting and we like to keep it that way
 # e.g. sometimes pseudocode is acceptable etc
 DOCTEST_SKIPLIST = set([
-    'scipy.stats.kstwobign', # inaccurate cdf or ppf
+    'scipy.stats.kstwobign',  # inaccurate cdf or ppf
     'scipy.stats.levy_stable',
-    'scipy.special.sinc', # comes from numpy
-    'scipy.misc.who', # comes from numpy
+    'scipy.special.sinc',  # comes from numpy
+    'scipy.misc.who',  # comes from numpy
+    'scipy.optimize.show_options',
     'io.rst',   # XXX: need to figure out how to deal w/ mat files
 ])
 

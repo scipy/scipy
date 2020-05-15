@@ -743,11 +743,12 @@ def oaconvolve(in1, in2, mode="full", axes=None):
     in1, in2, axes = _init_freq_conv_axes(in1, in2, mode, axes,
                                           sorted_axes=True)
 
-    if not axes:
-        return in1*in2
-
     s1 = in1.shape
     s2 = in2.shape
+
+    if not axes:
+        ret = in1 * in2
+        return _apply_conv_mode(ret, s1, s2, mode, axes)
 
     # Calculate this now since in1 is changed later
     shape_final = [None if i not in axes else
@@ -2782,7 +2783,7 @@ def invresz(r, p, k, tol=1e-3, rtype='avg'):
     return numerator[::-1], denominator
 
 
-def resample(x, num, t=None, axis=0, window=None):
+def resample(x, num, t=None, axis=0, window=None, domain='time'):
     """
     Resample `x` to `num` samples using Fourier method along the given axis.
 
@@ -2804,6 +2805,10 @@ def resample(x, num, t=None, axis=0, window=None):
     window : array_like, callable, string, float, or tuple, optional
         Specifies the window applied to the signal in the Fourier
         domain.  See below for details.
+    domain : string, optional
+        A string indicating the domain of the input `x`:
+        ``time`` Consider the input `x` as time-domain (Default),
+        ``freq`` Consider the input `x` as frequency-domain.
 
     Returns
     -------
@@ -2862,17 +2867,25 @@ def resample(x, num, t=None, axis=0, window=None):
     >>> plt.legend(['data', 'resampled'], loc='best')
     >>> plt.show()
     """
+
+    if domain not in ('time', 'freq'):
+        raise ValueError("Acceptable domain flags are 'time' or"
+                         " 'freq', not domain={}".format(domain))
+
     x = np.asarray(x)
     Nx = x.shape[axis]
 
     # Check if we can use faster real FFT
     real_input = np.isrealobj(x)
 
-    # Forward transform
-    if real_input:
-        X = sp_fft.rfft(x, axis=axis)
-    else:  # Full complex FFT
-        X = sp_fft.fft(x, axis=axis)
+    if domain == 'time':
+        # Forward transform
+        if real_input:
+            X = sp_fft.rfft(x, axis=axis)
+        else:  # Full complex FFT
+            X = sp_fft.fft(x, axis=axis)
+    else:  # domain == 'freq'
+        X = x
 
     # Apply window to spectrum
     if window is not None:

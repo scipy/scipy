@@ -113,6 +113,9 @@ All functions
    cgehrd_lwork
    zgehrd_lwork
 
+   sgejsv
+   dgejsv
+
    sgels
    dgels
    cgels

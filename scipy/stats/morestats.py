@@ -1604,6 +1604,8 @@ def yeojohnson_normplot(x, la, lb, plot=None, N=80):
     return _normplot('yeojohnson', x, la, lb, plot, N)
 
 
+ShapiroResult = namedtuple('ShapiroResult', ('statistic', 'pvalue'))
+
 def shapiro(x):
     """
     Perform the Shapiro-Wilk test for normality.
@@ -1618,7 +1620,7 @@ def shapiro(x):
 
     Returns
     -------
-    W : float
+    statistic : float
         The test statistic.
     p-value : float
         The p-value for the hypothesis test.
@@ -1652,8 +1654,13 @@ def shapiro(x):
     >>> from scipy import stats
     >>> np.random.seed(12345678)
     >>> x = stats.norm.rvs(loc=5, scale=3, size=100)
-    >>> stats.shapiro(x)
-    (0.9772805571556091, 0.08144091814756393)
+    >>> shapiro_test = stats.shapiro(x)
+    >>> shapiro_test
+    ShapiroResult(statistic=0.9772805571556091, pvalue=0.08144091814756393)
+    >>> shapiro_test.statistic
+    0.9772805571556091
+    >>> shapiro_test.pvalue
+    0.08144091814756393
 
     """
     x = np.ravel(x)
@@ -1673,7 +1680,7 @@ def shapiro(x):
     if N > 5000:
         warnings.warn("p-value may not be accurate for N > 5000.")
 
-    return w, pw
+    return ShapiroResult(w, pw)
 
 
 # Values from Stephens, M A, "EDF Statistics for Goodness of Fit and
@@ -2219,6 +2226,27 @@ def bartlett(*args):
            Tests. Proceedings of the Royal Society of London. Series A,
            Mathematical and Physical Sciences, Vol. 160, No.901, pp. 268-282.
 
+    Examples
+    --------
+    Test whether or not the lists `a`, `b` and `c` come from populations
+    with equal variances.
+
+    >>> from scipy.stats import bartlett
+    >>> a = [8.88, 9.12, 9.04, 8.98, 9.00, 9.08, 9.01, 8.85, 9.06, 8.99]
+    >>> b = [8.88, 8.95, 9.29, 9.44, 9.15, 9.58, 8.36, 9.18, 8.67, 9.05]
+    >>> c = [8.95, 9.12, 8.95, 8.85, 9.03, 8.84, 9.07, 8.98, 8.86, 8.98]
+    >>> stat, p = bartlett(a, b, c)
+    >>> p
+    1.1254782518834628e-05
+
+    The very small p-value suggests that the populations do not have equal
+    variances.
+
+    This is not surprising, given that the sample variance of `b` is much
+    larger than that of `a` and `c`:
+
+    >>> [np.var(x, ddof=1) for x in [a, b, c]]
+    [0.007054444444444413, 0.13073888888888888, 0.008890000000000002]
     """
     # Handle empty input and input that is not 1d
     for a in args:
@@ -2294,13 +2322,34 @@ def levene(*args, **kwds):
 
     References
     ----------
-    .. [1]  https://www.itl.nist.gov/div898/handbook/eda/section3/eda35a.htm
-    .. [2]   Levene, H. (1960). In Contributions to Probability and Statistics:
-               Essays in Honor of Harold Hotelling, I. Olkin et al. eds.,
-               Stanford University Press, pp. 278-292.
-    .. [3]  Brown, M. B. and Forsythe, A. B. (1974), Journal of the American
-              Statistical Association, 69, 364-367
+    .. [1] https://www.itl.nist.gov/div898/handbook/eda/section3/eda35a.htm
+    .. [2] Levene, H. (1960). In Contributions to Probability and Statistics:
+           Essays in Honor of Harold Hotelling, I. Olkin et al. eds.,
+           Stanford University Press, pp. 278-292.
+    .. [3] Brown, M. B. and Forsythe, A. B. (1974), Journal of the American
+           Statistical Association, 69, 364-367
 
+    Examples
+    --------
+    Test whether or not the lists `a`, `b` and `c` come from populations
+    with equal variances.
+
+    >>> from scipy.stats import levene
+    >>> a = [8.88, 9.12, 9.04, 8.98, 9.00, 9.08, 9.01, 8.85, 9.06, 8.99]
+    >>> b = [8.88, 8.95, 9.29, 9.44, 9.15, 9.58, 8.36, 9.18, 8.67, 9.05]
+    >>> c = [8.95, 9.12, 8.95, 8.85, 9.03, 8.84, 9.07, 8.98, 8.86, 8.98]
+    >>> stat, p = levene(a, b, c)
+    >>> p
+    0.002431505967249681
+
+    The small p-value suggests that the populations do not have equal
+    variances.
+
+    This is not surprising, given that the sample variance of `b` is much
+    larger than that of `a` and `c`:
+
+    >>> [np.var(x, ddof=1) for x in [a, b, c]]
+    [0.007054444444444413, 0.13073888888888888, 0.008890000000000002]
     """
     # Handle keyword arguments.
     center = 'median'
@@ -2542,6 +2591,27 @@ def fligner(*args, **kwds):
            applications to the outer continental shelf biding data.
            Technometrics, 23(4), 351-361.
 
+    Examples
+    --------
+    Test whether or not the lists `a`, `b` and `c` come from populations
+    with equal variances.
+
+    >>> from scipy.stats import fligner
+    >>> a = [8.88, 9.12, 9.04, 8.98, 9.00, 9.08, 9.01, 8.85, 9.06, 8.99]
+    >>> b = [8.88, 8.95, 9.29, 9.44, 9.15, 9.58, 8.36, 9.18, 8.67, 9.05]
+    >>> c = [8.95, 9.12, 8.95, 8.85, 9.03, 8.84, 9.07, 8.98, 8.86, 8.98]
+    >>> stat, p = fligner(a, b, c)
+    >>> p
+    0.00450826080004775
+
+    The small p-value suggests that the populations do not have equal
+    variances.
+
+    This is not surprising, given that the sample variance of `b` is much
+    larger than that of `a` and `c`:
+
+    >>> [np.var(x, ddof=1) for x in [a, b, c]]
+    [0.007054444444444413, 0.13073888888888888, 0.008890000000000002]
     """
     # Handle empty input
     for a in args:

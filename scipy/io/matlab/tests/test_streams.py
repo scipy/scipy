@@ -3,7 +3,6 @@
 """
 
 import os
-import sys
 import zlib
 
 from io import BytesIO
@@ -20,8 +19,6 @@ from pytest import raises as assert_raises
 from scipy.io.matlab.streams import (make_stream,
     GenericStream, ZlibInputStream,
     _read_into, _read_string, BLOCK_SIZE)
-
-IS_PYPY = ('__pypy__' in sys.modules)
 
 
 @contextmanager

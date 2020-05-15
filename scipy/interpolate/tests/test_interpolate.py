@@ -695,6 +695,13 @@ class TestInterp1D(object):
                 assert_(np.isnan(outn).all())
                 assert_equal(out.shape, outn.shape)
 
+    def test_all_nans(self):
+        # regression test for gh-11637: interp1d core dumps with all-nan `x`
+        x = np.ones(10) * np.nan
+        y = np.arange(10)
+        with assert_raises(ValueError):
+            interp1d(x, y, kind='cubic')
+
     def test_read_only(self):
         x = np.arange(0, 10)
         y = np.exp(-x / 3.0)
