@@ -2463,8 +2463,13 @@ class RegularGridInterpolator(object):
 
         for i, p in enumerate(points):
             if not np.all(np.diff(p) > 0.):
-                points, values = _make_points_and_values_ascending(points,
-                                                                   values)
+                if np.all(np.diff(p) < 0.):
+                    points, values = _make_points_and_values_ascending(points,
+                                                                       values)
+                else:
+                    raise ValueError(
+                        "The points in dimension %d must be strictly "
+                        "ascending or descending" % i)
             if not np.asarray(p).ndim == 1:
                 raise ValueError("The points in dimension %d must be "
                                  "1-dimensional" % i)
@@ -2666,7 +2671,11 @@ def interpn(points, values, xi, method="linear", bounds_error=True,
     # sanity check input grid
     for i, p in enumerate(points):
         if not np.all(np.diff(p) > 0.):
-            points, values = _make_points_and_values_ascending(points, values)
+            if np.all(np.diff(p) < 0.):
+                points, values = _make_points_and_values_ascending(points, values)
+            else:
+                raise ValueError("The points in dimension %d must be strictly "
+                                 "ascending or descending" % i)
         if not np.asarray(p).ndim == 1:
             raise ValueError("The points in dimension %d must be "
                              "1-dimensional" % i)
