@@ -38,20 +38,11 @@ class QuadraticAssignment(Benchmark):
 
     def setup(self, qap_prob):
         dir_path = os.path.dirname(os.path.realpath(__file__))
-        datafile = os.path.join(dir_path, "qapdata", qap_prob + ".dat")
-        slnfile = os.path.join(dir_path, "qapdata/qapsoln", qap_prob + ".sln")
-        with open(datafile) as f:
-            f = [int(elem) for elem in f.read().split()]
-
-            # adjusting
-            f = np.array(f[1:])
-            n = int(math.sqrt(len(f) / 2))
-            f = f.reshape(2 * n, n)
-            self.cost_matrix = f[:n, :]
-            self.dist_matrix = f[n:, :]
-        with open(slnfile) as f:
-            f = [int(elem) for elem in f.read().split()]
-            self.opt_solution = f[1]
+        datafile = np.load(os.path.join(dir_path, "qapdata/qap_probs.npz"), allow_pickle = True)
+        slnfile = np.load(os.path.join(dir_path, "qapdata/qap_sols.npz"), allow_pickle = True)
+        self.cost_matrix = datafile[qap_prob][0]
+        self.dist_matrix = datafile[qap_prob][1]
+        self.opt_solution = slnfile[qap_prob]
 
     def time_evaluation(self, qap_prob):
         quadratic_assignment(self.cost_matrix, self.dist_matrix)
