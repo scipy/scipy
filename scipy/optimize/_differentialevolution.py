@@ -195,7 +195,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     creating trial candidates, which suit some problems more than others. The
     'best1bin' strategy is a good starting point for many systems. In this
     strategy two members of the population are randomly chosen. Their difference
-    is used to mutate the best member (the `best` in `best1bin`), :math:`b_0`,
+    is used to mutate the best member (the 'best' in 'best1bin'), :math:`b_0`,
     so far:
 
     .. math::
