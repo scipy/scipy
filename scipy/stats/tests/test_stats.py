@@ -4092,7 +4092,14 @@ class TestGeoMean(object):
         #  Test a 1d array with zero element
         a = np.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 0])
         desired = 0.0  # due to exp(-inf)=0
-        with np.errstate(all='ignore'):
+        with np.errstate(divide='ignore'):
+            check_equal_gmean(a, desired)
+
+    def test_1d_list_neg(self):
+        #  Test a 1d list with negative element
+        a = [10, 20, 30, 40, 50, 60, 70, 80, 90, -1]
+        desired = np.nan  # due to log(-1) = nan
+        with np.errstate(invalid='ignore'):
             check_equal_gmean(a, desired)
 
 
