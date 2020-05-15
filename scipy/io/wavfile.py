@@ -12,6 +12,7 @@ import sys
 import numpy
 import struct
 import warnings
+from enum import IntEnum
 
 
 __all__ = [
@@ -25,10 +26,12 @@ class WavFileWarning(UserWarning):
     pass
 
 
-WAVE_FORMAT_PCM = 0x0001
-WAVE_FORMAT_IEEE_FLOAT = 0x0003
-WAVE_FORMAT_EXTENSIBLE = 0xfffe
-KNOWN_WAVE_FORMATS = (WAVE_FORMAT_PCM, WAVE_FORMAT_IEEE_FLOAT)
+class WAVE_FORMAT(IntEnum):
+    PCM = 0x0001
+    IEEE_FLOAT = 0x0003
+    EXTENSIBLE = 0xfffe
+
+KNOWN_WAVE_FORMATS = {WAVE_FORMAT.PCM, WAVE_FORMAT.IEEE_FLOAT}
 
 # assumes file pointer is immediately
 #  after the 'fmt ' id
@@ -69,7 +72,7 @@ def _read_fmt_chunk(fid, is_big_endian):
 
     format_tag, channels, fs, bytes_per_second, block_align, bit_depth = res
 
-    if format_tag == WAVE_FORMAT_EXTENSIBLE and size >= (16+2):
+    if format_tag == WAVE_FORMAT.EXTENSIBLE and size >= (16+2):
         ext_chunk_size = struct.unpack(fmt+'H', fid.read(2))[0]
         bytes_read += 2
         if ext_chunk_size >= 22:
@@ -119,7 +122,7 @@ def _read_data_chunk(fid, format_tag, channels, bit_depth, is_big_endian,
             dtype = '>'
         else:
             dtype = '<'
-        if format_tag == WAVE_FORMAT_PCM:
+        if format_tag == WAVE_FORMAT.PCM:
             dtype += 'i%d' % bytes_per_sample
         else:
             dtype += 'f%d' % bytes_per_sample
@@ -268,7 +271,7 @@ def read(filename, mmap=False):
         data_chunk_received = False
         channels = 1
         bit_depth = 8
-        format_tag = WAVE_FORMAT_PCM
+        format_tag = WAVE_FORMAT.PCM
         while fid.tell() < file_size:
             # read the next chunk
             chunk_id = fid.read(4)
@@ -403,9 +406,9 @@ def write(filename, rate, data):
         # fmt chunk
         header_data += b'fmt '
         if dkind == 'f':
-            format_tag = WAVE_FORMAT_IEEE_FLOAT
+            format_tag = WAVE_FORMAT.IEEE_FLOAT
         else:
-            format_tag = WAVE_FORMAT_PCM
+            format_tag = WAVE_FORMAT.PCM
         if data.ndim == 1:
             channels = 1
         else:
