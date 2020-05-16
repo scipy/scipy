@@ -43,7 +43,7 @@ convert_strides(npy_intp* instrides,npy_intp* convstrides,int size,int N)
 }
 
 
-static char doc_cspline2d[] = "cspline2d(input {, lambda, precision}) -> ck\n"
+static char doc_cspline2d[] = "out = cspline2d(input {, lambda, precision})\n"
 "\n"
 "    Coefficients for 2-D cubic (3rd order) B-spline.\n"
 "\n"
@@ -52,7 +52,6 @@ static char doc_cspline2d[] = "cspline2d(input {, lambda, precision}) -> ck\n"
 "\n"
 "    Parameters\n"
 "    ----------\n"
-"\n"
 "    input : ndarray\n"
 "        The input signal.\n"
 "\n"
@@ -125,7 +124,7 @@ static PyObject *cspline2d(PyObject *NPY_UNUSED(dummy), PyObject *args)
 
 }
 
-static char doc_qspline2d[] = "qspline2d(input {, lambda, precision}) -> qk\n"
+static char doc_qspline2d[] = "out = qspline2d(input {, lambda, precision})\n"
 "\n"
 "    Coefficients for 2-D quadratic (2nd order) B-spline:\n"
 "\n"
@@ -134,7 +133,6 @@ static char doc_qspline2d[] = "qspline2d(input {, lambda, precision}) -> qk\n"
 "\n"
 "    Parameters\n"
 "    ----------\n"
-"\n"
 "    input : ndarray\n"
 "        The input signal.\n"
 "\n"
@@ -208,7 +206,7 @@ static PyObject *qspline2d(PyObject *NPY_UNUSED(dummy), PyObject *args)
 
 }
 
-static char doc_FIRsepsym2d[] = " sepfir2d(input, hrow, hcol) -> output\n"
+static char doc_FIRsepsym2d[] = "out = sepfir2d(input, hrow, hcol)\n"
 "\n"
 "    Convolve with a 2-D separable FIR filter.\n"
 "\n"
@@ -219,7 +217,6 @@ static char doc_FIRsepsym2d[] = " sepfir2d(input, hrow, hcol) -> output\n"
 "\n"
 "    Parameters\n"
 "    ----------\n"
-"\n"
 "    input : ndarray\n"
 "        The input signal.\n"
 "\n"
@@ -320,7 +317,7 @@ static PyObject *FIRsepsym2d(PyObject *NPY_UNUSED(dummy), PyObject *args)
 
 }
 
-static char doc_IIRsymorder1[] = " symiirorder1(input, c0, z1 {, precision}) -> output\n"
+static char doc_IIRsymorder1[] = "out = symiirorder1(input, c0, z1 {, precision})\n"
 "\n"
 "    Implement a smoothing IIR filter with mirror-symmetric boundary conditions\n"
 "    using a cascade of first-order sections.  The second section uses a\n"
@@ -441,7 +438,7 @@ static PyObject *IIRsymorder1(PyObject *NPY_UNUSED(dummy), PyObject *args)
 
 }
 
-static char doc_IIRsymorder2[] = " symiirorder2(input, r, omega {, precision}) -> output\n"
+static char doc_IIRsymorder2[] = "out = symiirorder2(input, r, omega {, precision})\n"
 "\n"
 "    Implement a smoothing IIR filter with mirror-symmetric boundary conditions\n"
 "    using a cascade of second-order sections.  The second section uses a\n"
