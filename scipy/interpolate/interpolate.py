@@ -136,7 +136,10 @@ def hermite(x, y, m):
     hermite_poly = 0
     for i in range(0, len(x)):
         L = lagrange_basis_polynomial(x, i)
-        hermite_poly += (y[i] + np.poly1d([1, -x[i]]) * (m[i] - 2 * y[i] * L.deriv())) * L ** 2
+        #For some truly bizzare reason, adding an int to a poly1d instance returns a poly1d instance
+        #but adding a numpy.int64 or numpy.float64 returns an array.
+        #For this reason, we have to make sure that x[i], y[i], and m[i] are normal floats.
+        hermite_poly += (float(y[i]) + np.poly1d([1, -x[i]]) * (float(m[i]) - 2 * float(y[i]) * L.deriv())) * L * L
 
     return hermite_poly
 
@@ -1030,6 +1033,7 @@ class PPoly(_PPolyBase):
     unstable. Precision problems can start to appear for orders
     larger than 20-30.
     """
+
     def _evaluate(self, x, nu, extrapolate, out):
         _ppoly.evaluate(self.c.reshape(self.c.shape[0], self.c.shape[1], -1),
                         self.x, x, nu, bool(extrapolate), out)

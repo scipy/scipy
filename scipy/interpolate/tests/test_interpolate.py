@@ -9,7 +9,7 @@ import pytest
 from numpy import mgrid, pi, sin, ogrid, poly1d, linspace
 import numpy as np
 
-from scipy.interpolate import (interp1d, interp2d, lagrange, PPoly, BPoly,
+from scipy.interpolate import (interp1d, interp2d, lagrange, hermite, PPoly, BPoly,
          splrep, splev, splantider, splint, sproot, Akima1DInterpolator,
          RegularGridInterpolator, LinearNDInterpolator, NearestNDInterpolator,
          RectBivariateSpline, interpn, NdPPoly, BSpline)
@@ -726,6 +726,16 @@ class TestLagrange(object):
         pl = lagrange(xs,ys)
         assert_array_almost_equal(p.coeffs,pl.coeffs)
 
+
+class TestHermite(object):
+    def test_hermite(self):
+        polynomial = np.poly1d([1, 2, 3, 4, 5])
+        x = np.random.random(4)
+        y = polynomial(x)
+        m = polynomial.deriv()(x)
+        H = hermite(x, y, m)
+        np.testing.assert_array_almost_equal(y, H(x))
+        np.testing.assert_array_almost_equal(m, H.deriv()(x))
 
 class TestAkima1DInterpolator(object):
     def test_eval(self):
