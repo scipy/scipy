@@ -2869,7 +2869,7 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
         else:
             method = "approx"
 
-    n_zero = np.sum(d == 0, axis=0)
+    n_zero = np.sum(d == 0)
     if n_zero > 0 and method == "exact":
         method = "approx"
         warnings.warn("Exact p-value calculation does not work if there are "
@@ -2882,18 +2882,18 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
                                  "work if x - y is zero for all elements.")
         if zero_method == "wilcox":
             # Keep all non-zero differences
-            d = compress(np.not_equal(d, 0), d, axis=-1)
+            d = compress(np.not_equal(d, 0), d)
 
     count = len(d)
     if count < 10 and method == "approx":
         warnings.warn("Sample size too small for normal approximation.")
 
     r = stats.rankdata(abs(d))
-    r_plus = np.sum((d > 0) * r, axis=0)
-    r_minus = np.sum((d < 0) * r, axis=0)
+    r_plus = np.sum((d > 0) * r)
+    r_minus = np.sum((d < 0) * r)
 
     if zero_method == "zsplit":
-        r_zero = np.sum((d == 0) * r, axis=0)
+        r_zero = np.sum((d == 0) * r)
         r_plus += r_zero / 2.
         r_minus += r_zero / 2.
 
