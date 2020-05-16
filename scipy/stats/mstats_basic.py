@@ -1264,7 +1264,7 @@ def ks_1samp(x, cdf, args=(), alternative="two-sided", mode='auto'):
         Corresponding p-value.
 
     """
-    alternative = {'t': 'two-sided', 'g':'greater', 'l': 'less'}.get(
+    alternative = {'t': 'two-sided', 'g': 'greater', 'l': 'less'}.get(
        alternative.lower()[0], alternative)
     return scipy.stats.stats.ks_1samp(
         x, cdf, args=args, alternative=alternative, mode=mode)

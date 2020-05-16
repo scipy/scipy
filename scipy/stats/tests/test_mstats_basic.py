@@ -656,17 +656,17 @@ class TestMisc(object):
     def test_kstwosamp(self):
         x = [[nan,nan, 4, 2, 16, 26, 5, 1, 5, 1, 2, 3, 1],
              [4, 3, 5, 3, 2, 7, 3, 1, 1, 2, 3, 5, 3],
-             [3, 2, 5, 6, 18, 4, 9, 1, 1,nan, 1, 1,nan],
+             [3, 2, 5, 6, 18, 4, 9, 1, 1, nan, 1, 1,nan],
              [nan, 6, 11, 4, 17,nan, 6, 1, 1, 2, 5, 1, 1]]
         x = ma.fix_invalid(x).T
         (winter,spring,summer,fall) = x.T
 
-        assert_almost_equal(np.round(mstats.ks_twosamp(winter,spring),4),
-                            (0.1818,0.9628))
-        assert_almost_equal(np.round(mstats.ks_twosamp(winter,spring,'g'),4),
-                            (0.1469,0.6886))
-        assert_almost_equal(np.round(mstats.ks_twosamp(winter,spring,'l'),4),
-                            (0.1818,0.6011))
+        assert_almost_equal(np.round(mstats.ks_twosamp(winter,spring), 4),
+                            (0.1818, 0.9628))
+        assert_almost_equal(np.round(mstats.ks_twosamp(winter,spring,'g'), 4),
+                            (0.1469, 0.6886))
+        assert_almost_equal(np.round(mstats.ks_twosamp(winter,spring,'l'), 4),
+                            (0.1818, 0.6011))
 
     def test_friedmanchisq(self):
         # No missing values

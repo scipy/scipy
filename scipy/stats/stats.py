@@ -5785,12 +5785,6 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', mode='auto'):
     (0.44435602715924361, 0.038850142705171065)
 
     >>> np.random.seed(987654321) # set random seed to get the same result
-    >>> stats.ks_1samp('norm', stats.norm.cdf, N=100)
-    (0.058352892479417884, 0.8653960860778898)
-
-    The above lines are equivalent to:
-
-    >>> np.random.seed(987654321)
     >>> stats.ks_1samp(stats.norm.rvs(size=100), stats.norm.cdf)
     (0.058352892479417884, 0.8653960860778898)
 
@@ -5832,7 +5826,7 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', mode='auto'):
     (0.131016895759829, 0.058826222555312224)
 
     """
-    alternative = {'t': 'two-sided', 'g':'greater', 'l': 'less'}.get(
+    alternative = {'t': 'two-sided', 'g': 'greater', 'l': 'less'}.get(
        alternative.lower()[0], alternative)
     if alternative not in ['two-sided', 'greater', 'less']:
         raise ValueError("Unexpected alternative %s" % alternative)
@@ -5840,6 +5834,7 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', mode='auto'):
         x = x.compressed()
 
     N = len(x)
+    x = np.sort(x)
     cdfvals = cdf(x, *args)
 
     if alternative == 'greater':
@@ -6244,7 +6239,7 @@ def ks_2samp(x, y, alternative='two-sided', mode='auto'):
     """
     if mode not in ['auto', 'exact', 'asymp']:
         raise ValueError(f'Invalid value for mode: {mode}')
-    alternative = {'t': 'two-sided', 'g':'greater', 'l': 'less'}.get(
+    alternative = {'t': 'two-sided', 'g': 'greater', 'l': 'less'}.get(
        alternative.lower()[0], alternative)
     if alternative not in ['two-sided', 'less', 'greater']:
         raise ValueError(f'Invalid value for alternative: {alternative}')
