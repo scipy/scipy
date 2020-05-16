@@ -95,6 +95,8 @@ def lagrange(x, w):
 
 def hermite(x, y, m):
     """
+    Returns a hermite interpolating polynomial.
+
     A function that calculates the Hermite Interpolation polynomial based on the set of x-values,
     the set of y-values (where y = f(x)), and the derivatives of f at the y-values. It is more accurate
     than Langrangian Interpolation, but it is more complicated and computationally expensive.
