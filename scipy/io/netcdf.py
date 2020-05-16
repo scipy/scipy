@@ -141,7 +141,7 @@ class netcdf_file(object):
     NetCDF files are a self-describing binary data format. The file contains
     metadata that describes the dimensions and variables in the file. More
     details about NetCDF files can be found `here
-    <https://www.unidata.ucar.edu/software/netcdf/docs/user_guide.html>`__. There
+    <https://www.unidata.ucar.edu/software/netcdf/guide_toc.html>`__. There
     are three main sections to a NetCDF data structure:
 
     1. Dimensions
@@ -652,7 +652,7 @@ class netcdf_file(object):
         for var in range(count):
             (name, dimensions, shape, attributes,
              typecode, size, dtype_, begin_, vsize) = self._read_var()
-            # https://www.unidata.ucar.edu/software/netcdf/docs/user_guide.html
+            # https://www.unidata.ucar.edu/software/netcdf/guide_toc.html
             # Note that vsize is the product of the dimension lengths
             # (omitting the record dimension) and the number of bytes
             # per value (determined from the type), increased to the

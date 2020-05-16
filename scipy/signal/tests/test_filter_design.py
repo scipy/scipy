@@ -1990,7 +1990,7 @@ class TestBessel(object):
             p2 = np.sort(np.concatenate(_cplxreal(besselap(N, 'mag')[1])))
             assert_array_almost_equal(p1, p2, decimal=10)
 
-        # Compare to http://www.rane.com/note147.html
+        # Compare to https://www.ranecommercial.com/legacy/note147.html
         # "Table 1 - Bessel Crossovers of Second, Third, and Fourth-Order"
         a = [1, 1, 1/3]
         b2, a2 = bessel(2, 1, norm='delay', analog=True)
