@@ -1400,7 +1400,8 @@ class StateSpace(LinearTimeInvariant):
         return StateSpace(np.asarray(a, dtype=common_dtype),
                           np.asarray(b, dtype=common_dtype),
                           np.asarray(c, dtype=common_dtype),
-                          np.asarray(d, dtype=common_dtype))
+                          np.asarray(d, dtype=common_dtype),
+                          **self._dt_dict)
 
     def __rmul__(self, other):
         """Pre-multiply a scalar or matrix (but not StateSpace)"""
@@ -1417,11 +1418,12 @@ class StateSpace(LinearTimeInvariant):
         return StateSpace(np.asarray(a, dtype=common_dtype),
                           np.asarray(b, dtype=common_dtype),
                           np.asarray(c, dtype=common_dtype),
-                          np.asarray(d, dtype=common_dtype))
+                          np.asarray(d, dtype=common_dtype),
+                          **self._dt_dict)
 
     def __neg__(self):
         """Negate the system (equivalent to pre-multiplying by -1)."""
-        return StateSpace(self.A, self.B, -self.C, -self.D)
+        return StateSpace(self.A, self.B, -self.C, -self.D, **self._dt_dict)
 
     def __add__(self, other):
         """
@@ -1469,7 +1471,8 @@ class StateSpace(LinearTimeInvariant):
         return StateSpace(np.asarray(a, dtype=common_dtype),
                           np.asarray(b, dtype=common_dtype),
                           np.asarray(c, dtype=common_dtype),
-                          np.asarray(d, dtype=common_dtype))
+                          np.asarray(d, dtype=common_dtype),
+                          **self._dt_dict)
 
     def __sub__(self, other):
         if not self._check_binop_other(other):
