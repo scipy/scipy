@@ -5737,7 +5737,7 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', mode='auto'):
     Parameters
     ----------
     x : array_like
-        a 1-D array of observations of random variables.
+        a 1-D array of observations of iid random variables.
     cdf : callable
         callable used to calculate the cdf.
     args : tuple, sequence, optional
@@ -5761,7 +5761,7 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', mode='auto'):
     Returns
     -------
     statistic : float
-        KS test statistic, either D, D+ or D-.
+        KS test statistic, either D, D+ or D- (depending on the value of 'alternative')
     pvalue :  float
         One-tailed or two-tailed p-value.
 
@@ -5781,36 +5781,36 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', mode='auto'):
     >>> from scipy import stats
 
     >>> x = np.linspace(-15, 15, 9)
-    >>> stats.kstest(x, 'norm')
+    >>> stats.ks_1samp(x, stats.norm.cdf)
     (0.44435602715924361, 0.038850142705171065)
 
     >>> np.random.seed(987654321) # set random seed to get the same result
-    >>> stats.kstest('norm', False, N=100)
+    >>> stats.ks_1samp('norm', stats.norm.cdf, N=100)
     (0.058352892479417884, 0.8653960860778898)
 
     The above lines are equivalent to:
 
     >>> np.random.seed(987654321)
-    >>> stats.kstest(stats.norm.rvs(size=100), 'norm')
+    >>> stats.ks_1samp(stats.norm.rvs(size=100), stats.norm.cdf)
     (0.058352892479417884, 0.8653960860778898)
 
     *Test against one-sided alternative hypothesis*
 
-    Shift distribution to larger values, so that ``cdf_dgp(x) < norm.cdf(x)``:
+    Shift distribution to larger values, so that `` CDF(x) < norm.cdf(x)``:
 
     >>> np.random.seed(987654321)
     >>> x = stats.norm.rvs(loc=0.2, size=100)
-    >>> stats.kstest(x,'norm', alternative = 'less')
+    >>> stats.ks_1samp(x, stats.norm.cdf, alternative='less')
     (0.12464329735846891, 0.040989164077641749)
 
     Reject equal distribution against alternative hypothesis: less
 
-    >>> stats.kstest(x,'norm', alternative = 'greater')
+    >>> stats.ks_1samp(x, stats.norm.cdf, alternative='greater')
     (0.0072115233216311081, 0.98531158590396395)
 
     Don't reject equal distribution against alternative hypothesis: greater
 
-    >>> stats.kstest(x,'norm', mode='asymp')
+    >>> stats.ks_1samp(x, stats.norm.cdf)
     (0.12464329735846891, 0.08944488871182088)
 
     *Testing t distributed random variables against normal distribution*
@@ -5820,7 +5820,7 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', mode='auto'):
     sample came from the normal distribution:
 
     >>> np.random.seed(987654321)
-    >>> stats.kstest(stats.t.rvs(100,size=100),'norm')
+    >>> stats.ks_1samp(stats.t.rvs(100,size=100), stats.norm.cdf)
     (0.072018929165471257, 0.6505883498379312)
 
     With 3 degrees of freedom the t distribution looks sufficiently different
@@ -5828,7 +5828,7 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', mode='auto'):
     sample came from the normal distribution at the 10% level:
 
     >>> np.random.seed(987654321)
-    >>> stats.kstest(stats.t.rvs(3,size=100),'norm')
+    >>> stats.ks_1samp(stats.t.rvs(3,size=100), stats.norm.cdf)
     (0.131016895759829, 0.058826222555312224)
 
     """
@@ -6321,6 +6321,7 @@ def _parse_kstest_args(data1, data2, args, N):
     # Returns xvals, yvals, cdf
     # where cdf is a cdf function, or None
     # and yvals is either an array_like of values, or None
+    # and xvals is array_like.
     rvsfunc, cdf = None, None
     if isinstance(data1, str):
         rvsfunc = getattr(distributions, data1).rvs
@@ -6454,7 +6455,7 @@ def kstest(data1, data2, args=(), N=20, alternative='two-sided', mode='auto'):
     sample came from the normal distribution:
 
     >>> np.random.seed(987654321)
-    >>> stats.kstest(stats.t.rvs(100,size=100),'norm')
+    >>> stats.kstest(stats.t.rvs(100,size=100), 'norm')
     (0.072018929165471257, 0.6505883498379312)
 
     With 3 degrees of freedom the t distribution looks sufficiently different
@@ -6462,7 +6463,7 @@ def kstest(data1, data2, args=(), N=20, alternative='two-sided', mode='auto'):
     sample came from the normal distribution at the 10% level:
 
     >>> np.random.seed(987654321)
-    >>> stats.kstest(stats.t.rvs(3,size=100),'norm')
+    >>> stats.kstest(stats.t.rvs(3,size=100), 'norm')
     (0.131016895759829, 0.058826222555312224)
 
     """

@@ -420,7 +420,7 @@ def _kolmogn(n, x, cdf=True):
         if nxsquared >= 2.2:
             prob = 2 * scipy.special.smirnov(n, x)
             return _clip_prob(prob)
-        # Fall through and compute 1-cdf
+        # Fall through and compute the SF as 1.0-CDF
     if nxsquared >= 18.0:
         cdfprob = 1.0
     elif n <= 100000 and n * x**1.5 <= 1.4:

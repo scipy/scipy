@@ -1231,7 +1231,7 @@ def kruskal(*args):
 kruskalwallis = kruskal
 
 
-def ks_onesamp(x, cdf, args=(), alternative="two-sided", mode='auto'):
+def ks_1samp(x, cdf, args=(), alternative="two-sided", mode='auto'):
     """
     Computes the Kolmogorov-Smirnov test on one sample of masked values.
 
@@ -1270,10 +1270,7 @@ def ks_onesamp(x, cdf, args=(), alternative="two-sided", mode='auto'):
         x, cdf, args=args, alternative=alternative, mode=mode)
 
 
-ks_1samp = ks_onesamp
-
-
-def ks_twosamp(x, y, alternative="two-sided", mode='auto'):
+def ks_2samp(x, y, alternative="two-sided", mode='auto'):
     """
     Computes the Kolmogorov-Smirnov test on two samples.
 
@@ -1311,7 +1308,7 @@ def ks_twosamp(x, y, alternative="two-sided", mode='auto'):
     return scipy.stats.stats.ks_2samp(x, y, alternative=alternative, mode=mode)
 
 
-ks_2samp = ks_twosamp
+ks_twosamp = ks_2samp
 
 
 def kstest(data1, data2, args=(), alternative='two-sided', mode='auto'):
