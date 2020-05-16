@@ -2347,7 +2347,8 @@ class RegularGridInterpolator(object):
     Parameters
     ----------
     points : tuple of ndarray of float, with shapes (m1, ), ..., (mn, )
-        The points defining the regular grid in n dimensions.
+        The points defining the regular grid in n dimensions. The points in
+        all dimensions must be strictly ascending or descending.
 
     values : array_like, shape (m1, ..., mn, ...)
         The data on the regular grid in n dimensions.
@@ -2464,6 +2465,7 @@ class RegularGridInterpolator(object):
         for i, p in enumerate(points):
             if not np.all(np.diff(p) > 0.):
                 if np.all(np.diff(p) < 0.):
+                    # input is descending, so make it ascending
                     points, values = _make_points_and_values_ascending(points,
                                                                        values)
                 else:
@@ -2577,7 +2579,8 @@ def interpn(points, values, xi, method="linear", bounds_error=True,
     Parameters
     ----------
     points : tuple of ndarray of float, with shapes (m1, ), ..., (mn, )
-        The points defining the regular grid in n dimensions.
+        The points defining the regular grid in n dimensions. The points in
+        all dimensions must be strictly ascending or descending.
 
     values : array_like, shape (m1, ..., mn, ...)
         The data on the regular grid in n dimensions.
@@ -2672,7 +2675,9 @@ def interpn(points, values, xi, method="linear", bounds_error=True,
     for i, p in enumerate(points):
         if not np.all(np.diff(p) > 0.):
             if np.all(np.diff(p) < 0.):
-                points, values = _make_points_and_values_ascending(points, values)
+                # input is descending, so make it ascending
+                points, values = _make_points_and_values_ascending(points,
+                                                                   values)
             else:
                 raise ValueError("The points in dimension %d must be strictly "
                                  "ascending or descending" % i)

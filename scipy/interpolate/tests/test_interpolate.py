@@ -2857,3 +2857,13 @@ class TestInterpN(object):
         test_result = interpn(points_shuffled, values_shuffled, pts)
 
         assert_array_equal(correct_result, test_result)
+
+    def test_invalid_input(self):
+        x = np.array([.5, 2., 0., 4., 5.5])  # not ascending or descending
+        y = np.array([.5, 2., 3., 4., 5.5])
+        z = np.array([[1, 2, 1, 2, 1], [1, 2, 1, 2, 1], [1, 2, 3, 2, 1],
+                      [1, 2, 2, 2, 1], [1, 2, 1, 2, 1]])
+        xi = np.array([[1, 2.3, 6.3, 0.5, 3.3, 1.2, 3],
+                       [1, 3.3, 1.2, -4.0, 5.0, 1.0, 3]]).T
+
+        assert_raises(ValueError, interpn, (x, y), z, xi,)
