@@ -579,7 +579,7 @@ def read(filename, mmap=False):
                 fmt_chunk = _read_fmt_chunk(fid, is_big_endian)
                 format_tag, channels, fs = fmt_chunk[1:4]
                 bit_depth = fmt_chunk[6]
-                if bit_depth not in (8, 16, 32, 64, 96, 128):
+                if bit_depth not in {8, 16, 32, 64, 96, 128}:
                     raise ValueError("Unsupported bit depth: the wav file "
                                      "has {}-bit data.".format(bit_depth))
             elif chunk_id == b'fact':
@@ -593,7 +593,7 @@ def read(filename, mmap=False):
             elif chunk_id == b'LIST':
                 # Someday this could be handled properly but for now skip it
                 _skip_unknown_chunk(fid, is_big_endian)
-            elif chunk_id in (b'JUNK', b'Fake'):
+            elif chunk_id in {b'JUNK', b'Fake'}:
                 # Skip alignment chunks without warning
                 _skip_unknown_chunk(fid, is_big_endian)
             else:
