@@ -149,6 +149,10 @@ static char doc_qspline2d[] = "qspline2d(input {, lambda, precision}) -> qk\n"
 "    -------\n"
 "    output : ndarray\n"
 "        The filtered signal.\n"
+"\n"
+"    Examples\n"
+"    --------\n"
+"    Examples are given :ref:`in the tutorial <tutorial-signal-bsplines>`.\n"
 "\n";
  
 static PyObject *qspline2d(PyObject *NPY_UNUSED(dummy), PyObject *args)
@@ -229,6 +233,10 @@ static char doc_FIRsepsym2d[] = " sepfir2d(input, hrow, hcol) -> output\n"
 "    -------\n"
 "    output : ndarray\n"
 "        The filtered signal.\n"
+"\n"
+"    Examples\n"
+"    --------\n"
+"    Examples are given :ref:`in the tutorial <tutorial-signal-bsplines>`.\n"
 "\n";
  
 static PyObject *FIRsepsym2d(PyObject *NPY_UNUSED(dummy), PyObject *args)
