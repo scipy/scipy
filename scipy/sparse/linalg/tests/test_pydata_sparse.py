@@ -8,7 +8,7 @@ from numpy.testing import assert_allclose
 
 try:
     import sparse
-except ImportError:
+except Exception:
     sparse = None
 
 pytestmark = pytest.mark.skipif(sparse is None,
