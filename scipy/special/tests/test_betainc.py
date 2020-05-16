@@ -1,10 +1,10 @@
 import numpy as np
 import scipy.special as sc
 import pytest
-from numpy.testing import assert_allclose 
+from numpy.testing import assert_allclose
 
 
-class Testbetainc(object):
+class Testbetainc:
     def test(self):
         val = sc.betainc(0.5, 1, 1)
         assert_allclose(val, 1)
@@ -19,11 +19,11 @@ class Testbetainc(object):
         val = sc.betainc(a, b, x)
         assert np.isnan(val)
 
-    @pytest.mark.parametrize('a, b, x', [
-        (0.0, 3, 0.5),
-        (3.0, 0, 0.5),
-        (0.0, 0, 0.5),
+    @pytest.mark.parametrize('a, b, x, result', [
+        (0.0, 3, 0.5, 1.0),
+        (3.0, 0, 0.5, 1.0),
+        (0.0, 0, 0.5, np.nan),
     ])
-    def test_domain_edge(self, a, b, x):
+    def test_domain_edge(self, a, b, x, result):
         val = sc.betainc(a, b, x)
-        assert_allclose(val, 1.0) 
+        assert_allclose(val, result)

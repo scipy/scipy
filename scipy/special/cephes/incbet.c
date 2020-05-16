@@ -80,7 +80,11 @@ double incbet(double aa, double bb, double xx)
     if (aa < 0.0 || bb < 0.0)
 	goto domerr;
 
-    if (aa == 0.0 || bb == 0.0)
+    if (aa == 0.0 && bb == 0.0)
+	    return (NPY_NAN);
+
+    if ((aa == 0.0 && bb > 0.0 && npy_isfinite(bb)) ||
+		    (aa > 0.0 && bb == 0.0 && npy_isfinite(aa)))
 	return (1.0);
 
     if ((xx <= 0.0) || (xx >= 1.0)) {
