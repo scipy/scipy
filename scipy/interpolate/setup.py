@@ -16,20 +16,16 @@ def configuration(parent_package='',top_path=None):
         pre_build_hook = ilp64_pre_build_hook
         f2py_options = get_f2py_int64_options()
         define_macros = [("HAVE_ILP64", None)]
-        fitpack64_name = "fitpack64"
     else:
         pre_build_hook = None
         f2py_options = None
         define_macros = []
-        fitpack64_name = "fitpack"
 
     config = Configuration('interpolate', parent_package, top_path)
 
     fitpack_src = [join('fitpack', '*.f')]
-    config.add_library('fitpack', sources=fitpack_src)
-    if fitpack64_name != "fitpack":
-        config.add_library('fitpack64', sources=fitpack_src,
-                           _pre_build_hook=pre_build_hook)
+    config.add_library('fitpack', sources=fitpack_src,
+                       _pre_build_hook=pre_build_hook)
 
     config.add_extension('interpnd',
                          sources=['interpnd.c'])
@@ -44,13 +40,14 @@ def configuration(parent_package='',top_path=None):
     config.add_extension('_fitpack',
                          sources=['src/_fitpackmodule.c'],
                          libraries=['fitpack'],
+                         define_macros=define_macros,
                          depends=(['src/__fitpack.h']
                                   + fitpack_src)
                          )
 
     config.add_extension('dfitpack',
                          sources=['src/fitpack.pyf'],
-                         libraries=[fitpack64_name],
+                         libraries=['fitpack'],
                          define_macros=define_macros,
                          depends=fitpack_src,
                          f2py_options=f2py_options
