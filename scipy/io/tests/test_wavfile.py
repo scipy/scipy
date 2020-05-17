@@ -16,6 +16,7 @@ def datafile(fn):
 
 
 def test_read_1():
+    # 32-bit PCM (which uses extensible format)
     for mmap in [False, True]:
         filename = 'test-44100Hz-le-1ch-4bytes.wav'
         rate, data = wavfile.read(datafile(filename), mmap=mmap)
@@ -28,6 +29,7 @@ def test_read_1():
 
 
 def test_read_2():
+    # 8-bit unsigned PCM
     for mmap in [False, True]:
         filename = 'test-8000Hz-le-2ch-1byteu.wav'
         rate, data = wavfile.read(datafile(filename), mmap=mmap)
@@ -40,6 +42,7 @@ def test_read_2():
 
 
 def test_read_3():
+    # Little-endian float
     for mmap in [False, True]:
         filename = 'test-44100Hz-2ch-32bit-float-le.wav'
         rate, data = wavfile.read(datafile(filename), mmap=mmap)
@@ -52,6 +55,7 @@ def test_read_3():
 
 
 def test_read_4():
+    # Contains unsupported 'PEAK' chunk
     for mmap in [False, True]:
         with suppress_warnings() as sup:
             sup.filter(wavfile.WavFileWarning,
@@ -67,6 +71,7 @@ def test_read_4():
 
 
 def test_read_5():
+    # Big-endian float
     for mmap in [False, True]:
         filename = 'test-44100Hz-2ch-32bit-float-be.wav'
         rate, data = wavfile.read(datafile(filename), mmap=mmap)
@@ -80,15 +85,36 @@ def test_read_5():
         del data
 
 
-def test_read_fail():
+def test_read_unknown_filetype_fail():
+    # Not an RIFF
     for mmap in [False, True]:
         filename = 'example_1.nc'
-        fp = open(datafile(filename), 'rb')
-        raises(ValueError, wavfile.read, fp, mmap=mmap)
-        fp.close()
+        with open(datafile(filename), 'rb') as fp:
+            with raises(ValueError, match="CDF.*'RIFF' and 'RIFX' supported"):
+                wavfile.read(fp, mmap=mmap)
+
+
+def test_read_unknown_riff_form_type():
+    # RIFF, but not WAVE form
+    for mmap in [False, True]:
+        filename = 'Transparent Busy.ani'
+        with open(datafile(filename), 'rb') as fp:
+            with raises(ValueError, match='Not a WAV file.*ACON'):
+                wavfile.read(fp, mmap=mmap)
+
+
+def test_read_unknown_wave_format():
+    # RIFF and WAVE, but not supported format
+    for mmap in [False, True]:
+        filename = 'test-8000Hz-le-1ch-1byte-ulaw.wav'
+        with open(datafile(filename), 'rb') as fp:
+            with raises(ValueError, match='Unknown wave file format.*MULAW.*'
+                        'Supported formats'):
+                wavfile.read(fp, mmap=mmap)
 
 
 def test_read_early_eof_with_data():
+    # File ends inside 'data' chunk, but we keep incomplete data
     for mmap in [False, True]:
         filename = 'test-44100Hz-le-1ch-4bytes-early-eof.wav'
         with open(datafile(filename), 'rb') as fp:
@@ -102,6 +128,7 @@ def test_read_early_eof_with_data():
 
 
 def test_read_early_eof():
+    # File ends after 'fact' chunk at boundary, no data read
     for mmap in [False, True]:
         filename = 'test-44100Hz-le-1ch-4bytes-early-eof-no-data.wav'
         with open(datafile(filename), 'rb') as fp:
@@ -110,11 +137,12 @@ def test_read_early_eof():
 
 
 def test_read_incomplete_chunk():
+    # File ends inside 'fmt ' chunk ID, no data read
     for mmap in [False, True]:
         filename = 'test-44100Hz-le-1ch-4bytes-incomplete-chunk.wav'
-        fp = open(datafile(filename), 'rb')
-        raises(ValueError, wavfile.read, fp, mmap=mmap)
-        fp.close()
+        with open(datafile(filename), 'rb') as fp:
+            with raises(ValueError, match="Incomplete chunk ID.*b'f'"):
+                wavfile.read(fp, mmap=mmap)
 
 
 def _check_roundtrip(realfile, rate, dtype, channels):
