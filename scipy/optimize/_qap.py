@@ -26,8 +26,8 @@ def quadratic_assignment(
 
     .. math::
 
-        \min_P & \ -\text{trace}(APB^T P^T)}\\
-        \mbox{s.t. } & {P \ \epsilon \ \mathcal{P}} \\
+        \min_P & \ {-\text{trace}(APB^T P^T)}\\
+        \mbox{s.t. } & {P \ \epsilon \ \mathcal{P}}\\
 
     where :math:`\mathcal{P}` is the set of all permutation matrices,
     and :math:`A` and :math:`B` are adjacency matrices.
@@ -48,12 +48,12 @@ def quadratic_assignment(
     Parameters
     ----------
     cost_matrix : 2d-array, square, non-negative
-        A square adjacency matrix. In this implementation, `` `cost-matrix` =
-        :math: `A` `` in the objective function above.
+        A square adjacency matrix. In this implementation, `cost-matrix` =
+        :math: `A` in the objective function above.
 
     dist_matrix : 2d-array, square, non-negative
-        A square adjacency matrix.  In this implementation, `` `dist-matrix` =
-        :math: `B` `` in the objective function above.
+        A square adjacency matrix.  In this implementation, `dist-matrix` =
+        :math: `B` in the objective function above.
 
     seed : 2d-array, optional, (default = None)
         Allows the user apply a seed, fixing part of the matching between
