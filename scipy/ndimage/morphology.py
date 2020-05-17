@@ -1833,9 +1833,8 @@ def distance_transform_bf(input, metric="euclidean", sampling=None,
     ----------
     input : array_like
         Input
-    metric : str, optional
-        Three types of distance metric are supported: 'euclidean', 'taxicab',
-        and 'chessboard'.
+    metric : {'euclidean', 'taxicab', 'chessboard'}, optional
+        'cityblock' and 'manhattan' are also valid, and map to 'taxicab'.
         
         The default is 'euclidean'.
     sampling : float, or sequence of float, optional
@@ -1971,8 +1970,10 @@ def distance_transform_cdt(input, metric='chessboard', return_distances=True,
         the dimensionality of the array. These choices correspond to the
         common interpretations of the 'taxicab' and the 'chessboard'
         distance metrics in two dimensions.
+        
+        'cityblock' and 'manhattan' are also valid, and map to 'taxicab'.
 
-        The default for `metric` is 'chessboard'.
+        The default is 'chessboard'.
     return_distances, return_indices : bool, optional
         The `return_distances`, and `return_indices` flags can be used to
         indicate if the distance transform, the feature transform, or both
