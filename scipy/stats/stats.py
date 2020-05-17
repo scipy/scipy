@@ -558,6 +558,7 @@ def tmean(a, limits=None, inclusive=(True, True), axis=None):
 
     """
     a = asarray(a)
+    a = a.astype(float)
     if limits is None:
         return np.mean(a, axis)
     am = _mask_to_limits(a, limits, inclusive)
