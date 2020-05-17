@@ -92,6 +92,16 @@ and Linux, ARM64 and ppc64le platforms, as well as a range of versions of our
 dependencies and building release quality wheels.
 
 
+Size of binaries
+````````````````
+SciPy binaries are quite large (e.g. an unzipped manylinux wheel for 1.4.1 is
+91 MB), and this can be problematic - for example for use in AWS Lambda, which
+has a 250 MB size limit. We aim to keep binary size as low as possible; when
+adding new compiled extensions, this needs checking. Stripping of debug symbols
+in ``multibuild`` can likely be improved (see `this issue
+<https://github.com/matthew-brett/multibuild/issues/162>`__).
+
+
 Modules
 -------
 
