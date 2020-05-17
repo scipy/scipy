@@ -1379,7 +1379,6 @@ class TestDLaplace(object):
     def test_fit(self, rvs_loc, rvs_scale):
         # tests that various inputs follow expected behavior
         # for a variety of `loc` and `scale`.
-        np.random.seed(1234)
         data = stats.laplace.rvs(size=100, loc=rvs_loc, scale=rvs_scale)
 
         # MLE estimates are given by
@@ -1424,7 +1423,6 @@ class TestDLaplace(object):
                                                    (5, 10),
                                                    (.2, .5)])
     def test_fit_MLE_comp_optimzer(self, rvs_loc, rvs_scale):
-        np.random.seed(1234)
         data = stats.laplace.rvs(size=1000, loc=rvs_loc, scale=rvs_scale)
 
         # the log-likelihood function for laplace is given by
