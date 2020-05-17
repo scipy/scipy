@@ -166,19 +166,16 @@ class SphericalVoronoi:
     def __init__(self, points, radius=1, center=None, threshold=1e-06):
 
         if radius is None:
-            radius = 1
+            radius = 1.
             warnings.warn('`radius` is `None`. '
                           'This will raise an error in a future version. '
                           'Please provide a floating point number '
                           '(i.e. `radius=1`).',
                           DeprecationWarning)
 
-        self.points = np.array(points, dtype=float)
-        if points.ndim != 2:
-            raise TypeError("`points` must be a 2D array.")
-
         self.radius = float(radius)
-        self._dim = points.shape[1]
+        self.points = np.array(points).astype(np.double)
+        self._dim = len(points[0])
         if center is None:
             self.center = np.zeros(self._dim)
         else:

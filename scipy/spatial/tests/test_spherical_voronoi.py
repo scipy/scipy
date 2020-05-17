@@ -339,8 +339,3 @@ class TestSphericalVoronoi(object):
         assert sv.points.dtype is np.dtype(np.float64)
         assert sv.center.dtype is np.dtype(np.float64)
         assert isinstance(sv.radius, float)
-
-    def test_incorrect_array_dimensions(self):
-        points = np.zeros((4, 3, 2))
-        with pytest.raises(TypeError, match="must be a 2D array."):
-            spherical_voronoi.SphericalVoronoi(points)
