@@ -762,7 +762,7 @@ def cosine(u, v, w=None):
 
 def hamming(u, v, w=None):
     """
-    Compute the Hamming distance between two 1-D arrays.
+    Compute the Hamming distance between two 1-D arrays or strings.
 
     The Hamming distance between 1-D arrays `u` and `v`, is simply the
     proportion of disagreeing components in `u` and `v`. If `u` and `v` are
@@ -775,6 +775,9 @@ def hamming(u, v, w=None):
     where :math:`c_{ij}` is the number of occurrences of
     :math:`\\mathtt{u[k]} = i` and :math:`\\mathtt{v[k]} = j` for
     :math:`k < n`.
+
+    If strings are supplied, each letter is handled as a single position in
+    a 1-D array.
 
     Parameters
     ----------
@@ -789,7 +792,7 @@ def hamming(u, v, w=None):
     Returns
     -------
     hamming : double
-        The Hamming distance between vectors `u` and `v`.
+        The Hamming distance between vectors or strings `u` and `v`.
 
     Examples
     --------
@@ -802,12 +805,21 @@ def hamming(u, v, w=None):
     0.33333333333333331
     >>> distance.hamming([1, 0, 0], [3, 0, 0])
     0.33333333333333331
+    >>> distance.hamming("hello", "world")
+    0.8
+    >>> distance.hamming("same", "same")
+    0.0
 
     """
+    if isinstance(u, str) and isinstance(v, str):
+        u = list(u)
+        v = list(v)
     u = _validate_vector(u)
     v = _validate_vector(v)
     if u.shape != v.shape:
-        raise ValueError('The 1d arrays must have equal lengths.')
+        raise ValueError("The 1d arrays must have equal lengths.")
+    if u.shape == (0,):
+        raise ValueError("The supplied arrays must not be empty.")
     u_ne_v = u != v
     if w is not None:
         w = _validate_weights(w)
