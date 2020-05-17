@@ -230,11 +230,13 @@ HighsStatus solveLp(HighsModelObject& model, const string message) {
       return HighsStatus::Error;
     }
   }
-  call_status = analyseHighsBasicSolution(
-      options.logfile, model.lp_, model.basis_, model.solution_,
-      model.iteration_counts_, model.unscaled_model_status_,
-      model.unscaled_solution_params_, message);
-  return_status = interpretCallStatus(call_status, return_status,
-                                      "analyseHighsBasicSolution");
+  if (model.basis_.valid_) {
+    call_status = analyseHighsBasicSolution(
+        options.logfile, model.lp_, model.basis_, model.solution_,
+        model.iteration_counts_, model.unscaled_model_status_,
+        model.unscaled_solution_params_, message);
+    return_status = interpretCallStatus(call_status, return_status,
+                                        "analyseHighsBasicSolution");
+  }
   return return_status;
 }

@@ -2413,8 +2413,8 @@ HighsStatus dualizeEqualityProblem(const HighsLp& lp, HighsLp& dual) {
   return HighsStatus::OK;
 }
 
-void logPresolveReductions(const HighsOptions& options, const HighsLp& lp,
-                           const HighsLp& presolve_lp) {
+void reportPresolveReductions(const HighsOptions& options, const HighsLp& lp,
+                              const HighsLp& presolve_lp) {
   int num_col_from = lp.numCol_;
   int num_row_from = lp.numRow_;
   int num_els_from = lp.Astart_[num_col_from];
@@ -2426,16 +2426,16 @@ void logPresolveReductions(const HighsOptions& options, const HighsLp& lp,
   } else {
     num_els_to = 0;
   }
-  HighsLogMessage(options.logfile, HighsMessageType::INFO,
-                  "Presolve reductions: columns %d(-%d); rows %d(-%d) "
-                  "elements %d(-%d)",
-                  num_col_to, (num_col_from - num_col_to), num_row_to,
-                  (num_row_from - num_row_to), num_els_to,
-                  (num_els_from - num_els_to));
+  HighsPrintMessage(options.logfile, options.message_level, ML_ALWAYS,
+                    "Presolve : Reductions: rows %d(-%d); columns %d(-%d); "
+                    "elements %d(-%d)\n",
+                    num_row_to, (num_row_from - num_row_to), num_col_to,
+                    (num_col_from - num_col_to), num_els_to,
+                    (num_els_from - num_els_to));
 }
 
-void logPresolveReductions(const HighsOptions& options, const HighsLp& lp,
-                           const bool presolve_to_empty) {
+void reportPresolveReductions(const HighsOptions& options, const HighsLp& lp,
+                              const bool presolve_to_empty) {
   int num_col_from = lp.numCol_;
   int num_row_from = lp.numRow_;
   int num_els_from = lp.Astart_[num_col_from];
@@ -2454,12 +2454,12 @@ void logPresolveReductions(const HighsOptions& options, const HighsLp& lp,
     num_els_to = num_els_from;
     message = "- Not reduced";
   }
-  HighsLogMessage(options.logfile, HighsMessageType::INFO,
-                  "Presolve reductions: columns %d(-%d); rows %d(-%d) "
-                  "elements %d(-%d) %s",
-                  num_col_to, (num_col_from - num_col_to), num_row_to,
-                  (num_row_from - num_row_to), num_els_to,
-                  (num_els_from - num_els_to), message.c_str());
+  HighsPrintMessage(options.logfile, options.message_level, ML_ALWAYS,
+                    "Presolve : Reductions: rows %d(-%d); columns %d(-%d); "
+                    "elements %d(-%d) %s\n",
+                    num_row_to, (num_row_from - num_row_to), num_col_to,
+                    (num_col_from - num_col_to), num_els_to,
+                    (num_els_from - num_els_to), message.c_str());
 }
 
 bool isLessInfeasibleDSECandidate(const HighsOptions& options,

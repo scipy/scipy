@@ -802,12 +802,92 @@ void analyseSimplexAndHighsSolutionDifferences(
 #endif
 
 #ifdef IPX_ON
-HighsStatus ipxToHighsBasicSolution(FILE* logfile, const HighsLp& lp,
-                                    const std::vector<double>& rhs,
-                                    const std::vector<char>& constraint_type,
-                                    const IpxSolution& ipx_solution,
-                                    HighsBasis& highs_basis,
-                                    HighsSolution& highs_solution) {
+HighsStatus ipxSolutionToHighsSolution(
+    FILE* logfile, const HighsLp& lp, const std::vector<double>& rhs,
+    const std::vector<char>& constraint_type, const int ipx_num_col,
+    const int ipx_num_row, const std::vector<double>& ipx_x,
+    const std::vector<double>& ipx_slack_vars,
+    // const std::vector<double>& ipx_y,
+    HighsSolution& highs_solution) {
+  // Resize the HighsSolution
+  highs_solution.col_value.resize(lp.numCol_);
+  highs_solution.row_value.resize(lp.numRow_);
+  //  highs_solution.col_dual.resize(lp.numCol_);
+  //  highs_solution.row_dual.resize(lp.numRow_);
+
+  const std::vector<double>& ipx_col_value = ipx_x;
+  const std::vector<double>& ipx_row_value = ipx_slack_vars;
+  //  const std::vector<double>& ipx_col_dual = ipx_x;
+  //  const std::vector<double>& ipx_row_dual = ipx_y;
+
+  // Row activities are needed to set activity values of free rows -
+  // which are ignored by IPX
+  vector<double> row_activity;
+  bool get_row_activities = ipx_num_row < lp.numRow_;
+#ifdef HiGHSDEV
+  // For debugging, get the row activities if there are any boxed
+  // constraints
+  get_row_activities = get_row_activities || ipx_num_col > lp.numCol_;
+#endif
+  if (get_row_activities) row_activity.assign(lp.numRow_, 0);
+  for (int col = 0; col < lp.numCol_; col++) {
+    highs_solution.col_value[col] = ipx_col_value[col];
+    //    highs_solution.col_dual[col] = ipx_col_dual[col];
+    if (get_row_activities) {
+      // Accumulate row activities to assign value to free rows
+      for (int el = lp.Astart_[col]; el < lp.Astart_[col + 1]; el++) {
+        int row = lp.Aindex_[el];
+        row_activity[row] += highs_solution.col_value[col] * lp.Avalue_[el];
+      }
+    }
+  }
+  int ipx_row = 0;
+  int ipx_slack = lp.numCol_;
+  int num_boxed_rows = 0;
+  for (int row = 0; row < lp.numRow_; row++) {
+    double lower = lp.rowLower_[row];
+    double upper = lp.rowUpper_[row];
+    if (lower <= -HIGHS_CONST_INF && upper >= HIGHS_CONST_INF) {
+      // Free row - removed by IPX so set it to its row activity
+      highs_solution.row_value[row] = row_activity[row];
+      //      highs_solution.row_dual[row] = 0;
+    } else {
+      // Non-free row, so IPX will have it
+      if ((lower > -HIGHS_CONST_INF && upper < HIGHS_CONST_INF) &&
+          (lower < upper)) {
+        // Boxed row - look at its slack
+        num_boxed_rows++;
+        highs_solution.row_value[row] = ipx_col_value[ipx_slack];
+        //	highs_solution.row_dual[row] = -ipx_col_dual[ipx_slack];
+        // Update the slack to be used for boxed rows
+        ipx_slack++;
+      } else {
+        highs_solution.row_value[row] = rhs[ipx_row] - ipx_row_value[ipx_row];
+        //        highs_solution.row_dual[row] = -ipx_row_dual[ipx_row];
+      }
+      // Update the IPX row index
+      ipx_row++;
+    }
+  }
+  assert(ipx_row == ipx_num_row);
+  assert(ipx_slack == ipx_num_col);
+
+  // Flip dual according to lp.sense_
+  /*
+  for (int iCol = 0; iCol < lp.numCol_; iCol++) {
+    highs_solution.col_dual[iCol] *= (int)lp.sense_;
+  }
+  for (int iRow = 0; iRow < lp.numRow_; iRow++) {
+    highs_solution.row_dual[iRow] *= (int)lp.sense_;
+  }
+  */
+  return HighsStatus::OK;
+}
+
+HighsStatus ipxBasicSolutionToHighsBasicSolution(
+    FILE* logfile, const HighsLp& lp, const std::vector<double>& rhs,
+    const std::vector<char>& constraint_type, const IpxSolution& ipx_solution,
+    HighsBasis& highs_basis, HighsSolution& highs_solution) {
   // Resize the HighsSolution and HighsBasis
   highs_solution.col_value.resize(lp.numCol_);
   highs_solution.row_value.resize(lp.numRow_);

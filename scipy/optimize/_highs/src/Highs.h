@@ -703,12 +703,16 @@ class Highs {
   std::string highsModelStatusToString(
       const HighsModelStatus model_status) const;
 
-  std::string highsPrimalDualStatusToString(const int primal_dual_status);
+  std::string primalDualStatusToString(const int primal_dual_status);
 
 #ifdef OSI_FOUND
   friend class OsiHiGHSSolverInterface;
 #endif
   void getPresolveReductionCounts(int& rows, int& cols, int& nnz) const;
+  PresolveComponentInfo getPresolveInfo() const { return presolve_.info_; }
+  void setPresolveOptions(const PresolveComponentOptions& options) {
+    presolve_.options_ = options;
+  }
 
  private:
   HighsSolution solution_;

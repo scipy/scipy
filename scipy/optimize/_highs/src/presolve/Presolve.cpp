@@ -244,20 +244,23 @@ int Presolve::presolve(int print) {
     }
   timer.recordFinish(FIXED_COL);
 
-  std::vector<Presolver> pre_release_order;
-  pre_release_order.push_back(Presolver::kMainRowSingletons);
-  pre_release_order.push_back(Presolver::kMainForcing);
-  pre_release_order.push_back(Presolver::kMainRowSingletons);
-  pre_release_order.push_back(Presolver::kMainDoubletonEq);
-  pre_release_order.push_back(Presolver::kMainRowSingletons);
-  pre_release_order.push_back(Presolver::kMainColSingletons);
-  pre_release_order.push_back(Presolver::kMainDominatedCols);
+  if (order.size() == 0) {
+    // pre_release_order:
+    order.push_back(Presolver::kMainRowSingletons);
+    order.push_back(Presolver::kMainForcing);
+    order.push_back(Presolver::kMainRowSingletons);
+    order.push_back(Presolver::kMainDoubletonEq);
+    order.push_back(Presolver::kMainRowSingletons);
+    order.push_back(Presolver::kMainColSingletons);
+    order.push_back(Presolver::kMainDominatedCols);
+  }
+  // Else: The order has been modified for experiments
 
   while (hasChange == 1) {
     hasChange = false;
 
     reportDevMainLoop();
-    int run_status = runPresolvers(pre_release_order);
+    int run_status = runPresolvers(order);
     assert(run_status == status);
     if (status) return status;
 
