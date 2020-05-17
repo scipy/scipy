@@ -1973,7 +1973,7 @@ def distance_transform_cdt(input, metric='chessboard', return_distances=True,
     ----------
     input : array_like
         Input
-    metric : {'chessboard', 'taxicab'}, optional
+    metric : str or array_like, optional
         The `metric` determines the type of chamfering that is done. If the
         `metric` is equal to 'taxicab' a structure is generated using
         generate_binary_structure with a squared distance equal to 1. If
@@ -1982,6 +1982,9 @@ def distance_transform_cdt(input, metric='chessboard', return_distances=True,
         the dimensionality of the array. These choices correspond to the
         common interpretations of the 'taxicab' and the 'chessboard'
         distance metrics in two dimensions.
+        
+        A custom metric may be provided, in the form of a matrix where
+        each dimension has a length of three.
         
         'cityblock' and 'manhattan' are also valid, and map to 'taxicab'.
 
