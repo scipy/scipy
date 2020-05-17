@@ -15,7 +15,7 @@ def quadratic_assignment(
     eps=0.05,
 ):
     r"""
-    Solve the quadratic assignment problem
+    Solve the quadratic assignment problem.
 
     This function solves the Quadratic Assignment Problem (QAP) and the
     Graph Matching Problem through an implementation of the Fast
