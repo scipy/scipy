@@ -9,18 +9,28 @@ def quadratic_assignment(
     seed=None,
     maximize=False,
     n_init=1,
-    init_method="barycenter",
-    max_iter=30,
+    init="barycenter",
+    maxiter=30,
     shuffle_input=True,
     eps=0.05,
 ):
-    """
+    r"""
     Solve the quadratic assignment problem
 
-    This class solves the Quadratic Assignment Problem (QAP) and the
+    This function solves the Quadratic Assignment Problem (QAP) and the
     Graph Matching Problem through an implementation of the Fast
     Approximate QAP Algorithm (FAQ) (these two problems are the same up
     to a sign change) [1]_.
+
+    Quadratic Assignment solves problems of the following form:
+
+    .. math::
+
+        \min_P & \ -\text{trace}(APB^T P^T)}\\
+        \mbox{s.t. } & {P \ \epsilon \ \mathcal{P}} \\
+
+    where :math:`\mathcal{P}` is the set of all permutation matrices,
+    and :math:`A` and :math:`B` are adjacency matrices.
 
     This algorithm can be thought of as finding an alignment of the
     vertices of two graphs which minimizes the number of induced edge
@@ -38,10 +48,12 @@ def quadratic_assignment(
     Parameters
     ----------
     cost_matrix : 2d-array, square, non-negative
-        A square adjacency matrix
+        A square adjacency matrix. In this implementation, `` `cost-matrix` =
+        :math: `A` `` in the objective function above.
 
     dist_matrix : 2d-array, square, non-negative
-        A square adjacency matrix
+        A square adjacency matrix.  In this implementation, `` `dist-matrix` =
+        :math: `B` `` in the objective function above.
 
     seed : 2d-array, optional, (default = None)
         Allows the user apply a seed, fixing part of the matching between
@@ -49,8 +61,9 @@ def quadratic_assignment(
         For column 1, each entry is an index of a node in `cost_matrix`.
         For column 2, each entry is an index of a node in `dist_matrix`.
         The elements of ``seed[:, 0]`` and ``seed[:, 1]`` are vertices
-        which are known to be matched, that is, `seed[i, 0]` is matched to
-        vertex `seed[i, 1]`. Array shape (m , 2) where m <= number of nodes
+        which are known to be matched, that is, ``seed[i, 0]`` is matched to
+        vertex ``seed[i, 1]``. Array shape ``(m , 2)`` where ``m <= number of
+        nodes``.
 
     maximize : bool (default = False)
         Gives users the option to solve the Graph Matching Problem (GMP)
@@ -65,23 +78,28 @@ def quadratic_assignment(
             n_init : int, positive (default = 1)
                 Number of random initializations of the starting
                 permutation matrix that the FAQ algorithm will undergo.
-            init_method : string (default = 'barycenter')
+            init : string (default = 'barycenter')
                 The algorithm may be sensitive to the initial permutation
                 matrix (or search position) chosen due to the possibility
                 of several local minima within the feasible region.
                 With only 1 initialization, a barycenter init will
                 likely return a more accurate permutation.
+
                 Choosing several random initializations as opposed to
                 the non-informative barycenter will likely result in a
                 more accurate result at the cost of higher runtime.
+
                 The initial position chosen:
+
                 "barycenter" : the non-informative "flat doubly stochastic
-                matrix,":math:`J=1*1^T /n` , i.e the barycenter of the
-                feasible region (where n is the number of nodes and '1' is
-                a (n, 1) array of ones)
-                "rand" : some random point near :math:`J, (J+K)/2`, where K
-                is some random doubly stochastic matrix
-            max_iter : int, positive (default = 30)
+                matrix," :math:`J=1*1^T /n` , i.e the barycenter of the
+                feasible region (where :math:`n` is the number of nodes and
+                :math:`1` is a ``(n, 1)`` array of ones).
+
+                "rand" : some random point near :math:`J`, defined as
+                :math:`(J+K)/2`, where :math:`K` is some random doubly
+                stochastic matrix
+            maxiter : int, positive (default = 30)
                 Integer specifying the max number of Franke-Wolfe iterations.
                 FAQ typically converges with modest number of iterations.
             shuffle_input : bool (default = True)
@@ -93,7 +111,8 @@ def quadratic_assignment(
             eps : float (default = 0.05)
                 A positive, threshold stopping criteria such that Franke-
                 Wolfe continues to iterate while Frobenius norm of
-                :math:`(P_{i}-P_{i+1}) > eps`
+                :math:`(P_{i}-P_{i+1}) > eps`, where :math:`i` is the
+                iteration number
 
     Returns
     -------
@@ -103,8 +122,8 @@ def quadratic_assignment(
             col_ind : 1-D array
                 An array of column indices corresponding to the optimal
                 permutation (with the fixed seeds given) of the
-                nodes of `dist_matrix`, to best minimize the objective function
-                :math:`f(P) = trace(A^T PBP^T)`.
+                nodes of `dist_matrix`, to best minimize the objective
+                function.
             score : float
                 The optimal value of the objective function.
             nit : int
@@ -188,7 +207,7 @@ def quadratic_assignment(
     elif not len(set(seed[:, 0])) == len(seed[:, 0]) or not \
             len(set(seed[:, 1])) == len(seed[:, 1]):
         msg = "Seed column entries must be unique"
-    elif init_method not in {'barycenter', 'rand'}:
+    elif init not in {'barycenter', 'rand'}:
         msg = "Invalid 'init_method' parameter string"
     if msg is not None:
         raise ValueError(msg)
@@ -196,7 +215,7 @@ def quadratic_assignment(
     # TypeError check
     if type(n_init) is not int or n_init <= 0:
         msg = "'n_init' must be a positive integer"
-    elif max_iter <= 0 or type(max_iter) is not int:
+    elif maxiter <= 0 or type(maxiter) is not int:
         msg = "'max_iter' must be a positive integer"
     elif type(shuffle_input) is not bool:
         msg = "'shuffle_input' must be a boolean"
@@ -243,7 +262,7 @@ def quadratic_assignment(
 
     for i in range(n_init):
         # setting initialization matrix
-        if init_method == "rand":
+        if init == "rand":
             K = np.random.rand(n_unseed, n_unseed)
             # generate a nxn matrix where each entry is a random integer [0, 1]
             for i in range(10):  # perform 10 iterations of Sinkhorn balancing
@@ -252,7 +271,7 @@ def quadratic_assignment(
                 n_unseed
             )  # initialize J, a doubly stochastic barycenter
             P = (K + J) / 2
-        elif init_method == "barycenter":
+        elif init == "barycenter":
             P = np.ones((n_unseed, n_unseed)) / float(n_unseed)
 
         const_sum = A21 @ np.transpose(B21) + np.transpose(A12) @ B12
@@ -260,7 +279,7 @@ def quadratic_assignment(
         n_iter = 0  # number of FW iterations
 
         # OPTIMIZATION WHILE LOOP BEGINS
-        while grad_P > eps and n_iter < max_iter:
+        while grad_P > eps and n_iter < maxiter:
             delta_f = (
                 const_sum + A22 @ P @ B22.T + A22.T @ P @ B22
             )  # computing the gradient of f(P) = -tr(APB^tP^t)
