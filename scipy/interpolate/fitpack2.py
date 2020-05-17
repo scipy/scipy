@@ -1114,6 +1114,25 @@ class BivariateSpline(_BivariateSplineBase):
         kx, ky = self.degrees
         return dfitpack.dblint(tx, ty, c, kx, ky, xa, xb, ya, yb)
 
+    @staticmethod
+    def _validate_input(x, y, z, w, kx, ky, eps):
+        x, y, z = np.asarray(x), np.asarray(y), np.asarray(z)
+        if not x.size == y.size == z.size:
+            raise ValueError('x, y, and z should have a same length')
+
+        if w is not None:
+            w = np.asarray(w)
+            if x.size != w.size:
+                raise ValueError('x, y, z, and w should have a same length')
+            elif not np.all(w >= 0.0):
+                raise ValueError('w should be positive')
+        if (eps is not None) and (not 0.0 < eps < 1.0):
+            raise ValueError('eps should be between (0, 1)')
+        if not x.size >= (kx + 1) * (ky + 1):
+            raise ValueError('The length of x, y and z should be at least'
+                             ' (kx+1) * (ky+1)')
+        return x, y, z, w
+
 
 class _DerivedBivariateSpline(_BivariateSplineBase):
     """Bivariate spline constructed from the coefficients and knots of another

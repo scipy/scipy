@@ -995,6 +995,40 @@ class TestRectSphereBivariateSpline(object):
         zi2 = array([lut(xp, yp)[0,0] for xp, yp in zip(xi, yi)])
         assert_almost_equal(zi, zi2)
 
+    def test_invalid_input(self):
+        data = np.dot(np.atleast_2d(90. - np.linspace(-80., 80., 18)).T,
+                      np.atleast_2d(180. - np.abs(np.linspace(0., 350., 9)))).T
+
+        with assert_raises(ValueError) as exc_info:
+            lats = np.linspace(-1, 170, 9) * np.pi / 180.
+            lons = np.linspace(0, 350, 18) * np.pi / 180.
+            RectSphereBivariateSpline(lats, lons, data)
+        assert "u should be between [0, pi]" in str(exc_info.value)
+
+        with assert_raises(ValueError) as exc_info:
+            lats = np.linspace(10, 181, 9) * np.pi / 180.
+            lons = np.linspace(0, 350, 18) * np.pi / 180.
+            RectSphereBivariateSpline(lats, lons, data)
+        assert "u should be between [0, pi]" in str(exc_info.value)
+
+        with assert_raises(ValueError) as exc_info:
+            lats = np.linspace(10, 170, 9) * np.pi / 180.
+            lons = np.linspace(-181, 10, 18) * np.pi / 180.
+            RectSphereBivariateSpline(lats, lons, data)
+        assert "v[0] should be between [-pi, pi)" in str(exc_info.value)
+
+        with assert_raises(ValueError) as exc_info:
+            lats = np.linspace(10, 170, 9) * np.pi / 180.
+            lons = np.linspace(-10, 360, 18) * np.pi / 180.
+            RectSphereBivariateSpline(lats, lons, data)
+        assert "v[-1] should be v[0] + 2pi or less" in str(exc_info.value)
+
+        with assert_raises(ValueError) as exc_info:
+            lats = np.linspace(10, 170, 9) * np.pi / 180.
+            lons = np.linspace(10, 350, 18) * np.pi / 180.
+            RectSphereBivariateSpline(lats, lons, data, s=-1)
+        assert "s should be positive" in str(exc_info.value)
+
     def test_derivatives_grid(self):
         y = linspace(0.01, 2*pi-0.01, 7)
         x = linspace(0.01, pi-0.01, 7)
