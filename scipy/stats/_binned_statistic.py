@@ -392,9 +392,9 @@ def binned_statistic_dd(sample, values, statistic='mean',
           * 'sum' : compute the sum of values for points within each bin.
             This is identical to a weighted histogram.
           * 'std' : compute the standard deviation within each bin. This
-            is implicitly calculated with ddof=0. If the number of values within a given bin is 0 or 1, 
-the computed standard deviation value will be 0 for the bin.
-            the computed value will be 0.
+            is implicitly calculated with ddof=0. If the number of values
+            within a given bin is 0 or 1, the computed standard deviation value
+            will be 0 for the bin.
           * 'min' : compute the minimum of values for points within each bin.
             Empty bins will be represented by NaN.
           * 'max' : compute the maximum of values for point within each bin.
