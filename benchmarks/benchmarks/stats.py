@@ -170,5 +170,5 @@ class BinnedStatistic(Benchmark):
 
     def time_binned_statistic_dd_std_reuse_bin(self):
         stats.binned_statistic_dd(
-            [self.inp[0], self.inp[1]], self.inp[2], statistic="mean",
+            [self.inp[0], self.inp[1]], self.inp[2], statistic="std",
             binned_statistic_result=self.ret)
