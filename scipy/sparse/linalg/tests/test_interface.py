@@ -15,10 +15,6 @@ from scipy.sparse.linalg import interface
 from scipy.sparse.sputils import matrix
 
 
-# Only test matmul operator (A @ B) when available (Python 3.5+)
-TEST_MATMUL = hasattr(operator, 'matmul')
-
-
 class TestLinearOperator(object):
     def setup_method(self):
         self.A = np.array([[1,2,3],
@@ -172,9 +168,6 @@ class TestLinearOperator(object):
             assert_(isinstance(C**2, interface._PowerLinearOperator))
 
     def test_matmul(self):
-        if not TEST_MATMUL:
-            pytest.skip("matmul is only tested in Python 3.5+")
-
         D = {'shape': self.A.shape,
              'matvec': lambda x: np.dot(self.A, x).reshape(self.A.shape[0]),
              'rmatvec': lambda x: np.dot(self.A.T.conj(),
