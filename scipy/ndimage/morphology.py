@@ -1827,7 +1827,7 @@ def distance_transform_bf(input, metric="euclidean", sampling=None,
 
     In addition to the distance transform, the feature transform can
     be calculated. In this case the index of the closest background
-    element is returned along the first axis of the result.
+    element to each foreground element is returned in a separate array.
 
     Parameters
     ----------
@@ -1838,34 +1838,42 @@ def distance_transform_bf(input, metric="euclidean", sampling=None,
         
         The default is 'euclidean'.
     sampling : float, or sequence of float, optional
-        This parameter is only used in the case of the euclidean `metric`
-        distance transform.
+        This parameter is only used when `metric` is 'euclidean'.
         
         Spacing of elements along each dimension. If a sequence, must be of
         length equal to the input rank; if a single number, this is used for
         all axes. If not specified, a grid spacing of unity is implied.
-    return_distances : bool, optional
-        The `return_distances` flag can be used to indicate if the distance
-        transform is returned.
+    return_distances, return_indices : bool, optional
+        These flags can be used to indicate whether the distance transform,
+        the feature transform, or both, must be calculated.
 
-        The default is True.
-    return_indices : bool, optional
-        The `return_indices` flags can be used to indicate if the feature
-        transform is returned.
-
-        The default is False.
-    distances : float64 ndarray, optional
-        Optional output array to hold distances (if `return_distances` is
-        True).
-    indices : int64 ndarray, optional
-        Optional output array to hold indices (if `return_indices` is True).
+        The `return_distances` default is True, and the
+        `return_indices` default is False.
+    distances : ndarray, optional
+        An output array to store the calculated distance transform, instead of 
+        returning it.
+        
+        This parameter is only used when `return_distances` is True.
+        It must be the same shape as `input`, and of type float64 if `metric` is
+        'euclidean', uint32 otherwise.
+    indices : int32 ndarray, optional
+        An output array to store the calculated feature transform, instead of 
+        returning it.
+        
+        Its shape must be `(input.ndim,) + input.shape`.
 
     Returns
     -------
-    distances : ndarray
-        Distance array if `return_distances` is True.
-    indices : ndarray
-        Indices array if `return_indices` is True.
+    distances : ndarray, optional
+        The calculated distance transform. Returned only when
+        `return_distances` is True and `distances` is not supplied.
+    indices : int32 ndarray, optional
+        The calculated feature transform. It has an input-shaped array for each 
+        dimension of the input. See distance_transform_edt documentation for an 
+        example.
+        
+        Returned only when `return_indices` is True and `indicies` is not 
+        supplied.
 
     Notes
     -----
@@ -1956,6 +1964,10 @@ def distance_transform_cdt(input, metric='chessboard', return_distances=True,
                            return_indices=False, distances=None, indices=None):
     """
     Distance transform for chamfer type of transforms.
+    
+    In addition to the distance transform, the feature transform can
+    be calculated. In this case the index of the closest background
+    element to each foreground element is returned in a separate array.
 
     Parameters
     ----------
@@ -1975,19 +1987,35 @@ def distance_transform_cdt(input, metric='chessboard', return_distances=True,
 
         The default is 'chessboard'.
     return_distances, return_indices : bool, optional
-        The `return_distances`, and `return_indices` flags can be used to
-        indicate if the distance transform, the feature transform, or both
-        must be returned.
-
-        If the feature transform is returned (``return_indices=True``),
-        the index of the closest background element is returned along
-        the first axis of the result.
+        These flags can be used to indicate whether the distance transform,
+        the feature transform, or both, must be calculated.
 
         The `return_distances` default is True, and the
         `return_indices` default is False.
-    distances, indices : ndarrays of int32, optional
-        The `distances` and `indices` arguments can be used to give optional
-        output arrays that must be the same shape as `input`.
+    distances : int32 ndarray, optional
+        An output array to store the calculated distance transform, instead of 
+        returning it.
+        
+        This parameter is only used when `return_distances` is True.
+        It must be the same shape as `input`.
+    indices : int32 ndarray, optional
+        An output array to store the calculated feature transform, instead of 
+        returning it.
+        
+        Its shape must be `(input.ndim,) + input.shape`.
+
+    Returns
+    -------
+    distances : int32 ndarray, optional
+        The calculated distance transform. Returned only when
+        `return_distances` is True, and `distances` is not supplied.
+    indices : int32 ndarray, optional
+        The calculated feature transform. It has an input-shaped array for each 
+        dimension of the input. See distance_transform_edt documentation for an 
+        example.
+        
+        Returned only when `return_indices` is True, and `indicies` is not 
+        supplied.
 
     """
     if (not return_distances) and (not return_indices):
@@ -2077,7 +2105,7 @@ def distance_transform_edt(input, sampling=None, return_distances=True,
 
     In addition to the distance transform, the feature transform can
     be calculated. In this case the index of the closest background
-    element is returned along the first axis of the result.
+    element to each foreground element is returned in a separate array.
 
     Parameters
     ----------
@@ -2088,22 +2116,35 @@ def distance_transform_edt(input, sampling=None, return_distances=True,
         Spacing of elements along each dimension. If a sequence, must be of
         length equal to the input rank; if a single number, this is used for
         all axes. If not specified, a grid spacing of unity is implied.
-    return_distances : bool, optional
-        Whether to return distance matrix. At least one of
-        return_distances/return_indices must be True. Default is True.
-    return_indices : bool, optional
-        Whether to return indices matrix. Default is False.
-    distances : ndarray, optional
-        Used for output of distance array, must be of type float64.
-    indices : ndarray, optional
-        Used for output of indices, must be of type int32.
+    return_distances, return_indices : bool, optional
+        These flags can be used to indicate whether the distance transform,
+        the feature transform, or both, must be calculated.
+
+        The `return_distances` default is True, and the
+        `return_indices` default is False.
+    distances : float64 ndarray, optional
+        An output array to store the calculated distance transform, instead of 
+        returning it.
+        
+        This parameter is only used when `return_distances` is True.
+        It must be the same shape as `input`.
+    indices : int32 ndarray, optional
+        An output array to store the calculated feature transform, instead of 
+        returning it.
+        
+        Its shape must be `(input.ndim,) + input.shape`.
 
     Returns
     -------
-    distance_transform_edt : ndarray or list of ndarrays
-        Either distance matrix, index matrix, or a list of the two,
-        depending on `return_x` flags and `distance` and `indices`
-        input parameters.
+    distances : float64 ndarray, optional
+        The calculated distance transform. Returned only when
+        `return_distances` is True and `distances` is not supplied.
+    indices : int32 ndarray, optional
+        The calculated feature transform. It has an input-shaped array for each 
+        dimension of the input. See example below.
+        
+        Returned only when `return_indices` is True and `indicies` is not 
+        supplied.
 
     Notes
     -----
