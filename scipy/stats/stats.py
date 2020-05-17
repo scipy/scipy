@@ -5805,7 +5805,9 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', mode='auto'):
     Don't reject equal distribution against alternative hypothesis: greater
 
     >>> stats.ks_1samp(x, stats.norm.cdf)
-    (0.12464329735846891, 0.08944488871182088)
+    (0.12464329735846891, 0.08197335233541582)
+
+    Don't reject equal distribution against alternative hypothesis: two-sided
 
     *Testing t distributed random variables against normal distribution*
 
@@ -6415,33 +6417,33 @@ def kstest(data1, data2, args=(), N=20, alternative='two-sided', mode='auto'):
     (0.44435602715924361, 0.038850142705171065)
 
     >>> np.random.seed(987654321) # set random seed to get the same result
-    >>> stats.kstest('norm', False, N=100)
+    >>> stats.kstest(stats.norm.rvs(size=100), stats.norm.cdf)
     (0.058352892479417884, 0.8653960860778898)
 
     The above lines are equivalent to:
 
     >>> np.random.seed(987654321)
-    >>> stats.kstest(stats.norm.rvs(size=100), 'norm')
+    >>> stats.kstest(stats.norm.rvs, 'norm', N=100)
     (0.058352892479417884, 0.8653960860778898)
 
     *Test against one-sided alternative hypothesis*
 
-    Shift distribution to larger values, so that ``cdf_dgp(x) < norm.cdf(x)``:
+    Shift distribution to larger values, so that ``CDF(x) < norm.cdf(x)``:
 
     >>> np.random.seed(987654321)
     >>> x = stats.norm.rvs(loc=0.2, size=100)
-    >>> stats.kstest(x,'norm', alternative = 'less')
+    >>> stats.kstest(x, 'norm', alternative='less')
     (0.12464329735846891, 0.040989164077641749)
 
     Reject equal distribution against alternative hypothesis: less
 
-    >>> stats.kstest(x,'norm', alternative = 'greater')
+    >>> stats.kstest(x, 'norm', alternative='greater')
     (0.0072115233216311081, 0.98531158590396395)
 
     Don't reject equal distribution against alternative hypothesis: greater
 
-    >>> stats.kstest(x,'norm', mode='asymp')
-    (0.12464329735846891, 0.08944488871182088)
+    >>> stats.kstest(x, 'norm')
+    (0.12464329735846891, 0.08197335233541582)
 
     *Testing t distributed random variables against normal distribution*
 
@@ -6450,7 +6452,7 @@ def kstest(data1, data2, args=(), N=20, alternative='two-sided', mode='auto'):
     sample came from the normal distribution:
 
     >>> np.random.seed(987654321)
-    >>> stats.kstest(stats.t.rvs(100,size=100), 'norm')
+    >>> stats.kstest(stats.t.rvs(100, size=100), 'norm')
     (0.072018929165471257, 0.6505883498379312)
 
     With 3 degrees of freedom the t distribution looks sufficiently different
@@ -6458,7 +6460,7 @@ def kstest(data1, data2, args=(), N=20, alternative='two-sided', mode='auto'):
     sample came from the normal distribution at the 10% level:
 
     >>> np.random.seed(987654321)
-    >>> stats.kstest(stats.t.rvs(3,size=100), 'norm')
+    >>> stats.kstest(stats.t.rvs(3, size=100), 'norm')
     (0.131016895759829, 0.058826222555312224)
 
     """

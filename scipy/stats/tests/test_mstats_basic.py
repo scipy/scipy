@@ -650,22 +650,22 @@ class TestMisc(object):
                 [6]+[7]*2+[8]*4+[9]*9+[10]*16]
         result = [5*[3.1828]+11*[0.5591]+9*[0.0344]+3*[1.6086]+2*[5.2817]+2*[11.0538],
                   [10.4352]+2*[4.8599]+4*[1.3836]+9*[0.0061]+16*[0.7277]]
-        assert_almost_equal(np.round(mstats.obrientransform(*args).T,4),
-                            result,4)
+        assert_almost_equal(np.round(mstats.obrientransform(*args).T, 4),
+                            result, 4)
 
-    def test_kstwosamp(self):
+    def test_ks_2samp(self):
         x = [[nan,nan, 4, 2, 16, 26, 5, 1, 5, 1, 2, 3, 1],
              [4, 3, 5, 3, 2, 7, 3, 1, 1, 2, 3, 5, 3],
-             [3, 2, 5, 6, 18, 4, 9, 1, 1, nan, 1, 1,nan],
-             [nan, 6, 11, 4, 17,nan, 6, 1, 1, 2, 5, 1, 1]]
+             [3, 2, 5, 6, 18, 4, 9, 1, 1, nan, 1, 1, nan],
+             [nan, 6, 11, 4, 17, nan, 6, 1, 1, 2, 5, 1, 1]]
         x = ma.fix_invalid(x).T
-        (winter,spring,summer,fall) = x.T
+        (winter, spring, summer, fall) = x.T
 
-        assert_almost_equal(np.round(mstats.ks_twosamp(winter,spring), 4),
+        assert_almost_equal(np.round(mstats.ks_2samp(winter, spring), 4),
                             (0.1818, 0.9628))
-        assert_almost_equal(np.round(mstats.ks_twosamp(winter,spring,'g'), 4),
+        assert_almost_equal(np.round(mstats.ks_2samp(winter, spring, 'g'), 4),
                             (0.1469, 0.6886))
-        assert_almost_equal(np.round(mstats.ks_twosamp(winter,spring,'l'), 4),
+        assert_almost_equal(np.round(mstats.ks_2samp(winter, spring, 'l'), 4),
                             (0.1818, 0.6011))
 
     def test_friedmanchisq(self):

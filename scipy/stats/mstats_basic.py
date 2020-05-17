@@ -1303,7 +1303,7 @@ def ks_2samp(x, y, alternative="two-sided", mode='auto'):
     # Ideally this would be accomplished by
     # ks_2samp = scipy.stats.stats.ks_2samp
     # but the circular dependencies between mstats_basic and stats prevent that.
-    alternative = {'t': 'two-sided', 'g':'greater', 'l': 'less'}.get(
+    alternative = {'t': 'two-sided', 'g': 'greater', 'l': 'less'}.get(
        alternative.lower()[0], alternative)
     return scipy.stats.stats.ks_2samp(x, y, alternative=alternative, mode=mode)
 
