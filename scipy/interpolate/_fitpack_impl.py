@@ -35,6 +35,9 @@ from numpy import (atleast_1d, array, ones, zeros, sqrt, ravel, transpose,
 from . import dfitpack
 
 
+dfitpack_int = dfitpack.types.intvar.dtype
+
+
 def _intc_overflow(x, msg=None):
     """Cast the value to an intc and raise an OverflowError if the value
     cannot fit.
@@ -310,7 +313,7 @@ def splprep(x, w=None, u=None, ub=None, ue=None, k=3, task=0, s=None, t=None,
 
 
 _curfit_cache = {'t': array([], float), 'wrk': array([], float),
-                 'iwrk': array([], intc)}
+                 'iwrk': array([], dfitpack_int)}
 
 
 def splrep(x, y, w=None, xb=None, xe=None, k=3, task=0, s=None, t=None,
@@ -487,7 +490,7 @@ def splrep(x, y, w=None, xb=None, xe=None, k=3, task=0, s=None, t=None,
             _curfit_cache['wrk'] = empty((m*(k + 1) + nest*(8 + 5*k),), float)
         else:
             _curfit_cache['wrk'] = empty((m*(k + 1) + nest*(7 + 3*k),), float)
-        _curfit_cache['iwrk'] = empty((nest,), intc)
+        _curfit_cache['iwrk'] = empty((nest,), dfitpack_int)
     try:
         t = _curfit_cache['t']
         wrk = _curfit_cache['wrk']
