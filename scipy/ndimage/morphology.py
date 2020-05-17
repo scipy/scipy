@@ -1838,7 +1838,7 @@ def distance_transform_bf(input, metric="euclidean", sampling=None,
         and 'chessboard'.
         
         The default is 'euclidean'.
-    sampling : float or int, or sequence of same, optional
+    sampling : float, or sequence of float, optional
         This parameter is only used in the case of the euclidean `metric`
         distance transform.
         
@@ -2083,7 +2083,7 @@ def distance_transform_edt(input, sampling=None, return_distances=True,
     input : array_like
         Input data to transform. Can be any type but will be converted
         into binary: 1 wherever input equates to True, 0 elsewhere.
-    sampling : float or int, or sequence of same, optional
+    sampling : float, or sequence of float, optional
         Spacing of elements along each dimension. If a sequence, must be of
         length equal to the input rank; if a single number, this is used for
         all axes. If not specified, a grid spacing of unity is implied.
