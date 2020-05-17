@@ -92,7 +92,13 @@ def _read_fmt_chunk(fid, is_big_endian):
             raise ValueError("Binary structure of wave file is not compliant")
 
     if format_tag not in KNOWN_WAVE_FORMATS:
-        raise ValueError(f"Unknown wave file format: {format_tag:#06x}")
+        try:
+            format_name = WAVE_FORMAT(format_tag).name
+        except ValueError:
+            format_name = f'{format_tag:#06x}'
+        raise ValueError(f"Unknown wave file format: {format_name}. Supported "
+                         "formats: " +
+                         ', '.join(x.name for x in KNOWN_WAVE_FORMATS))
 
     # move file pointer to next chunk
     if size > (bytes_read):
