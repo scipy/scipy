@@ -559,10 +559,10 @@ def tmean(a, limits=None, inclusive=(True, True), axis=None):
     """
     a = asarray(a)
     if limits is None:
-        return np.mean(a, None)
-
-    am = _mask_to_limits(a.ravel(), limits, inclusive)
-    return am.mean(axis=axis)
+        return np.mean(a, axis)
+    am = _mask_to_limits(a, limits, inclusive)
+    amnan = am.filled(fill_value=np.nan)
+    return np.nanmean(amnan, axis=axis)
 
 
 def tvar(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
