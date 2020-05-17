@@ -1360,13 +1360,13 @@ def convolution_matrix(a, n, mode='full'):
         trim = min(n, len(a)) - 1
         tb = trim//2
         te = trim - tb
-        col0 = az[tb:-te]
-        row0 = raz[-n-tb:-tb] if tb else raz[-n-tb:]
+        col0 = az[tb:len(az)-te]
+        row0 = raz[-n-tb:len(raz)-tb]
     elif mode == 'valid':
         tb = min(n, len(a)) - 1
         te = tb
-        col0 = az[tb:-te]
-        row0 = raz[-n-tb:-tb]
+        col0 = az[tb:len(az)-te]
+        row0 = raz[-n-tb:len(raz)-tb]
     else:  # 'full'
         col0 = az
         row0 = raz[-n:]

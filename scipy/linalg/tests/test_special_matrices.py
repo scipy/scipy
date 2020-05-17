@@ -1,3 +1,5 @@
+
+import pytest
 import numpy as np
 from numpy import arange, add, array, eye, copy, sqrt
 from numpy.testing import (assert_equal, assert_array_equal,
@@ -12,7 +14,6 @@ from scipy.linalg import (toeplitz, hankel, circulant, hadamard, leslie, dft,
                           fiedler, fiedler_companion, eigvals,
                           convolution_matrix)
 from numpy.linalg import cond
-import itertools
 
 
 def get_mat(n):
@@ -640,32 +641,33 @@ def test_fiedler_companion():
                               np.array([7., 5., 3., 1.]))
 
 
-def test_convolution_matrix():
+class TestConvolutionMatrix:
     'test convolution_matrix vs. numpy.convolve for various parameters'
 
-    def test_vector(n, cpx):
+    def create_vector(self, n, cpx):
         'make a complex or real test vector of length n'
+        x = np.linspace(-2.5, 2.2, n)
         if cpx:
-            return np.random.normal(size=(n, 2)).view(np.complex128).ravel()
-        else:
-            return np.random.normal(size=(n,))
+            x = x + 1j*np.linspace(-1.5, 3.1, n)
+        return x
 
-    # first arg must be a 1d array, otherwise ValueError
-    with assert_raises(ValueError):
-        convolution_matrix(1, 4)
+    def test_bad_first_arg(self):
+        # first arg must be a 1d array, otherwise ValueError
+        with assert_raises(ValueError):
+            convolution_matrix(1, 4)
 
-    # mode must be in ('full','valid','same')
-    with assert_raises(ValueError):
-        convolution_matrix((1, 1), 4, mode='invalid argument')
+    def test_bad_mode(self):
+        # mode must be in ('full', 'valid', 'same')
+        with assert_raises(ValueError):
+            convolution_matrix((1, 1), 4, mode='invalid argument')
 
-    array_sizes = (2, 9, 100)
-    for cpx, na, nv, mode in itertools.product(
-            (False, True),
-            array_sizes,
-            array_sizes,
-            (None, 'full', 'valid', 'same')):
-        a = test_vector(na, cpx)
-        v = test_vector(nv, cpx)
+    @pytest.mark.parametrize('cpx', [False, True])
+    @pytest.mark.parametrize('na', [1, 2, 9])
+    @pytest.mark.parametrize('nv', [1, 2, 9])
+    @pytest.mark.parametrize('mode', [None, 'full', 'valid', 'same'])
+    def test_against_numpy_convolve(self, cpx, na, nv, mode):
+        a = self.create_vector(na, cpx)
+        v = self.create_vector(nv, cpx)
         if mode is None:
             y1 = np.convolve(v, a)
             A = convolution_matrix(a, nv)
