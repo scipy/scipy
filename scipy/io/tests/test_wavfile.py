@@ -6,7 +6,7 @@ from io import BytesIO
 import numpy as np
 from numpy.testing import (assert_equal, assert_, assert_array_equal,
                            suppress_warnings)
-from pytest import raises as assert_raises, warns as assert_warns
+from pytest import raises, warns
 
 from scipy.io import wavfile
 
@@ -84,7 +84,7 @@ def test_read_fail():
     for mmap in [False, True]:
         filename = 'example_1.nc'
         fp = open(datafile(filename), 'rb')
-        assert_raises(ValueError, wavfile.read, fp, mmap=mmap)
+        raises(ValueError, wavfile.read, fp, mmap=mmap)
         fp.close()
 
 
@@ -92,7 +92,7 @@ def test_read_early_eof_with_data():
     for mmap in [False, True]:
         filename = 'test-44100Hz-le-1ch-4bytes-early-eof.wav'
         with open(datafile(filename), 'rb') as fp:
-            with assert_warns(wavfile.WavFileWarning, match='Reached EOF'):
+            with warns(wavfile.WavFileWarning, match='Reached EOF'):
                 rate, data = wavfile.read(fp, mmap=mmap)
 
                 assert_(data.size > 0)
@@ -105,7 +105,7 @@ def test_read_early_eof():
     for mmap in [False, True]:
         filename = 'test-44100Hz-le-1ch-4bytes-early-eof-no-data.wav'
         with open(datafile(filename), 'rb') as fp:
-            with assert_raises(ValueError, match="Unexpected end of file."):
+            with raises(ValueError, match="Unexpected end of file."):
                 wavfile.read(fp, mmap=mmap)
 
 
@@ -113,7 +113,7 @@ def test_read_incomplete_chunk():
     for mmap in [False, True]:
         filename = 'test-44100Hz-le-1ch-4bytes-incomplete-chunk.wav'
         fp = open(datafile(filename), 'rb')
-        assert_raises(ValueError, wavfile.read, fp, mmap=mmap)
+        raises(ValueError, wavfile.read, fp, mmap=mmap)
         fp.close()
 
 
