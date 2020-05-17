@@ -584,8 +584,8 @@ class poisson_gen(rv_discrete):
     for :math:`k \ge 0`.
 
     `poisson` takes :math:`\mu` as shape parameter.
-    When k = 0, ``pmf`` method returns `1.0` instead
-    of the expected value `0.0`.
+    When mu = 0 then at quantile k = 0, ``pmf`` method
+    returns `1.0` instead of the expected value `0.0`.
 
     %(after_notes)s
 
