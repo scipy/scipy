@@ -646,8 +646,7 @@ def test_convolution_matrix():
     def test_vector(n, cpx):
         'make a complex or real test vector of length n'
         if cpx:
-            return np.random.normal(size=(n, 2))\
-                .astype(np.float64).view(np.complex128).ravel()
+            return np.random.normal(size=(n, 2)).view(np.complex128).ravel()
         else:
             return np.random.normal(size=(n,))
 
@@ -675,8 +674,3 @@ def test_convolution_matrix():
             A = convolution_matrix(a, nv, mode)
         y2 = A @ v
         assert_array_almost_equal(y1, y2)
-        if mode == 'full':
-            for i in range(A.shape[0]):
-                for j in range(A.shape[1]):
-                    assert_equal(A[i, j],
-                                 (a[i-j] if (0 <= (i-j) < len(a)) else 0))

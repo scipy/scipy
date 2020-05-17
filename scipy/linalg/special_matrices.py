@@ -1196,45 +1196,103 @@ def convolution_matrix(a, n, mode='full'):
     """
     Construct a convolution matrix.
 
-    Constructs the dense matrix representing convolution[1].
-
-    ``A = convolution_matrix(a, n[, mode])`` creates a matrix ``A`` such that
-    ``A @ v`` (or ``matmul(A, v)``) is equivalent to using
-    ``convolve(a, v[, mode])``. In the default 'full' mode, the entries of
-    ``A`` is given by ``A[i,j] == (a[i-j] if (0 <= (i-j) < m) else 0)``.
+    Constructs the Toeplitz matrix representing one-dimensional
+    convolution [1]_.  See the notes below for details.
 
     Parameters
     ----------
     a : (m,) array_like
         The 1-D array to convolve.
     n : int
-        The number of columns in the resulting matrix.
-        This is analogous to the length of `v` in ``numpy.convolve(a,v)``
+        The number of columns in the resulting matrix.  It gives the length
+        of the input to be convolved with `a`.  This is analogous to the
+        length of `v` in ``numpy.convolve(a, v)``.
     mode : str
-        This is analogous to `mode` in numpy.convolve(v, a, mode).
-        It must be one of ('full','valid','same').
+        This is analogous to `mode` in ``numpy.convolve(v, a, mode)``.
+        It must be one of ('full', 'valid', 'same').
         See below for how `mode` determines the shape of the result.
 
     Returns
     -------
     A : (k, n) ndarray
-        The convolution matrix whose row count `k` depends on `mode`
+        The convolution matrix whose row count `k` depends on `mode`::
 
-        =======  =========================
-         mode    k
-        =======  =========================
-        'full'   m + n -1
-        'same'   max(m,n)
-        'valid'  max(m,n) - min(m,n) + 1
-        =======  =========================
-
-    Notes
-    -----
-    .. versionadded:: 1.4.0
+            =======  =========================
+             mode    k
+            =======  =========================
+            'full'   m + n -1
+            'same'   max(m, n)
+            'valid'  max(m, n) - min(m, n) + 1
+            =======  =========================
 
     See Also
     --------
     toeplitz : Toeplitz matrix
+
+    Notes
+    -----
+    The code::
+
+        A = convolution_matrix(a, n, mode)
+
+    creates a Toeplitz matrix `A` such that ``A @ v`` is equivalent to
+    using ``convolve(a, v, mode)``.  The returned array always has `n`
+    columns.  The number of rows depends on the specified `mode`, as
+    explained above.
+
+    In the default 'full' mode, the entries of `A` are given by::
+
+        A[i, j] == (a[i-j] if (0 <= (i-j) < m) else 0)
+
+    where ``m = len(a)``.  Suppose, for example, the input array is
+    ``[x, y, z]``.  The convolution matrix has the form::
+
+        [x, 0, 0, ..., 0, 0]
+        [y, x, 0, ..., 0, 0]
+        [z, y, x, ..., 0, 0]
+        ...
+        [0, 0, 0, ..., x, 0]
+        [0, 0, 0, ..., y, x]
+        [0, 0, 0, ..., z, y]
+        [0, 0, 0, ..., 0, z]
+
+    In 'valid' mode, the entries of `A` are given by::
+
+        A[i, j] == (a[i-j+m-1] if (0 <= (i-j+m-1) < m) else 0)
+
+    This corresponds to a matrix whose rows are the subset of those from
+    the 'full' case where all the coefficients in `a` are contained in the
+    row.  For input ``[x, y, z]``, this array looks like::
+
+        [z, y, x, 0, 0, ..., 0, 0, 0]
+        [0, z, y, x, 0, ..., 0, 0, 0]
+        [0, 0, z, y, x, ..., 0, 0, 0]
+        ...
+        [0, 0, 0, 0, 0, ..., x, 0, 0]
+        [0, 0, 0, 0, 0, ..., y, x, 0]
+        [0, 0, 0, 0, 0, ..., z, y, x]
+
+    In the 'same' mode, the entries of `A` are given by::
+
+        d = (m - 1) // 2
+        A[i, j] == (a[i-j+d] if (0 <= (i-j+d) < m) else 0)
+
+    The typical application of the 'same' mode is when one has a signal of
+    length `n` (with `n` greater than ``len(a)``), and the desired output
+    is a filtered signal that is still of length `n`.
+
+    For input ``[x, y, z]``, this array looks like::
+
+        [y, x, 0, 0, ..., 0, 0, 0]
+        [z, y, x, 0, ..., 0, 0, 0]
+        [0, z, y, x, ..., 0, 0, 0]
+        [0, 0, z, y, ..., 0, 0, 0]
+        ...
+        [0, 0, 0, 0, ..., y, x, 0]
+        [0, 0, 0, 0, ..., z, y, x]
+        [0, 0, 0, 0, ..., 0, z, y]
+
+    .. versionadded:: 1.5.0
 
     References
     ----------
@@ -1243,21 +1301,56 @@ def convolution_matrix(a, n, mode='full'):
     Examples
     --------
     >>> from scipy.linalg import convolution_matrix
-    >>> convolution_matrix((-1, 2, -1), 5, mode='same')
-    array([[ 2, -1,  0,  0,  0],
-           [-1,  2, -1,  0,  0],
-           [ 0, -1,  2, -1,  0],
-           [ 0,  0, -1,  2, -1],
-           [ 0,  0,  0, -1,  2]])
+    >>> A = convolution_matrix([-1, 4, -2], 5, mode='same')
+    >>> A
+    array([[ 4, -1,  0,  0,  0],
+           [-2,  4, -1,  0,  0],
+           [ 0, -2,  4, -1,  0],
+           [ 0,  0, -2,  4, -1],
+           [ 0,  0,  0, -2,  4]])
 
+    Compare multiplication by `A` with the use of `numpy.convolve`.
+
+    >>> x = np.array([1, 2, 0, -3, 0.5])
+    >>> A @ x
+    array([  2. ,   6. ,  -1. , -12.5,   8. ])
+
+    Verify that ``A @ x`` produced the same result as applying the
+    convolution function.
+
+    >>> np.convolve([-1, 4, -2], x, mode='same')
+    array([  2. ,   6. ,  -1. , -12.5,   8. ])
+
+    For comparison to the case ``mode='same'`` shown above, here are the
+    matrices produced by ``mode='full'`` and ``mode='valid'`` for the
+    same coefficients and size.
+
+    >>> convolution_matrix([-1, 4, -2], 5, mode='full')
+    array([[-1,  0,  0,  0,  0],
+           [ 4, -1,  0,  0,  0],
+           [-2,  4, -1,  0,  0],
+           [ 0, -2,  4, -1,  0],
+           [ 0,  0, -2,  4, -1],
+           [ 0,  0,  0, -2,  4],
+           [ 0,  0,  0,  0, -2]])
+
+    >>> convolution_matrix([-1, 4, -2], 5, mode='valid')
+    array([[-2,  4, -1,  0,  0],
+           [ 0, -2,  4, -1,  0],
+           [ 0,  0, -2,  4, -1]])
     """
+    if n <= 0:
+        raise ValueError('n must be a positive integer.')
+
     a = np.asarray(a)
     if a.ndim != 1:
         raise ValueError('convolution_matrix expects a 1d array as input')
+    if a.size == 0:
+        raise ValueError('len(a) must be at least 1.')
 
     if mode not in ('full', 'valid', 'same'):
         raise ValueError(
-            "'mode' argument must be one of ('full','valid','same')")
+            "'mode' argument must be one of ('full', 'valid', 'same')")
 
     # create zero padded versions of the array
     az = np.pad(a, (0, n-1), 'constant')
