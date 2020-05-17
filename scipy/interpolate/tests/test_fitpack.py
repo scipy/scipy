@@ -5,12 +5,14 @@ import numpy as np
 from numpy.testing import (assert_equal, assert_allclose, assert_,
                            assert_almost_equal, assert_array_almost_equal)
 from pytest import raises as assert_raises
+import pytest
 
 from numpy import array, asarray, pi, sin, cos, arange, dot, ravel, sqrt, round
 from scipy import interpolate
 from scipy.interpolate.fitpack import (splrep, splev, bisplrep, bisplev,
      sproot, splprep, splint, spalde, splder, splantider, insert, dblint)
 from scipy.interpolate.dfitpack import regrid_smth
+from scipy.interpolate.fitpack2 import dfitpack_int
 
 
 def data_file(basename):
@@ -381,11 +383,16 @@ class TestSplder(object):
 
 class TestBisplrep(object):
     def test_overflow(self):
-        a = np.linspace(0, 1, 620)
-        b = np.linspace(0, 1, 620)
-        x, y = np.meshgrid(a, b)
-        z = np.random.rand(*x.shape)
-        assert_raises(OverflowError, bisplrep, x.ravel(), y.ravel(), z.ravel(), s=0)
+        from numpy.lib.stride_tricks import as_strided
+        if dfitpack_int.itemsize == 8:
+            size = 1500000**2
+        else:
+            size = 400**2
+        # Don't allocate a real array, as it's very big, but rely
+        # on that it's not referenced
+        x = as_strided(np.zeros(()), shape=(size,))
+        assert_raises(OverflowError, bisplrep, x, x, x, w=x,
+                      xb=0, xe=1, yb=0, ye=1, s=0)
 
     def test_regression_1310(self):
         # Regression test for gh-1310
