@@ -2258,9 +2258,9 @@ def distance_transform_edt(input, sampling=None, return_distances=True,
         if dt_inplace:
             dt = numpy.add.reduce(dt, axis=0)
             if distances.shape != dt.shape:
-                raise RuntimeError('indices has wrong shape')
+                raise RuntimeError('distances has wrong shape')
             if distances.dtype.type != numpy.float64:
-                raise RuntimeError('indices must be of float64 type')
+                raise RuntimeError('distances must be of float64 type')
             numpy.sqrt(dt, distances)
         else:
             dt = numpy.add.reduce(dt, axis=0)
