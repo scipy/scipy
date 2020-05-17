@@ -540,7 +540,7 @@ def tmean(a, limits=None, inclusive=(True, True), axis=None):
 
     Returns
     -------
-    tmean : float
+    tmean : ndarray
         Trimmed mean.
 
     See Also
