@@ -17,8 +17,8 @@ def datafile(fn):
 
 def test_read_1():
     for mmap in [False, True]:
-        rate, data = wavfile.read(datafile('test-44100Hz-le-1ch-4bytes.wav'),
-                                  mmap=mmap)
+        filename = 'test-44100Hz-le-1ch-4bytes.wav'
+        rate, data = wavfile.read(datafile(filename), mmap=mmap)
 
         assert_equal(rate, 44100)
         assert_(np.issubdtype(data.dtype, np.int32))
@@ -29,31 +29,35 @@ def test_read_1():
 
 def test_read_2():
     for mmap in [False, True]:
-        rate, data = wavfile.read(datafile('test-8000Hz-le-2ch-1byteu.wav'),
-                                  mmap=mmap)
+        filename = 'test-8000Hz-le-2ch-1byteu.wav'
+        rate, data = wavfile.read(datafile(filename), mmap=mmap)
+
         assert_equal(rate, 8000)
         assert_(np.issubdtype(data.dtype, np.uint8))
         assert_equal(data.shape, (800, 2))
 
         del data
 
+
 def test_read_3():
     for mmap in [False, True]:
-        rate, data = wavfile.read(datafile('test-44100Hz-2ch-32bit-float-le.wav'),
-                                  mmap=mmap)
+        filename = 'test-44100Hz-2ch-32bit-float-le.wav'
+        rate, data = wavfile.read(datafile(filename), mmap=mmap)
+
         assert_equal(rate, 44100)
         assert_(np.issubdtype(data.dtype, np.float32))
         assert_equal(data.shape, (441, 2))
 
         del data
 
+
 def test_read_4():
     for mmap in [False, True]:
         with suppress_warnings() as sup:
             sup.filter(wavfile.WavFileWarning,
                        "Chunk .non-data. not understood, skipping it")
-            rate, data = wavfile.read(datafile('test-48000Hz-2ch-64bit-float-le-wavex.wav'),
-                                      mmap=mmap)
+            filename = 'test-48000Hz-2ch-64bit-float-le-wavex.wav'
+            rate, data = wavfile.read(datafile(filename), mmap=mmap)
 
         assert_equal(rate, 48000)
         assert_(np.issubdtype(data.dtype, np.float64))
@@ -64,8 +68,9 @@ def test_read_4():
 
 def test_read_5():
     for mmap in [False, True]:
-        rate, data = wavfile.read(datafile('test-44100Hz-2ch-32bit-float-be.wav'),
-                                  mmap=mmap)
+        filename = 'test-44100Hz-2ch-32bit-float-be.wav'
+        rate, data = wavfile.read(datafile(filename), mmap=mmap)
+
         assert_equal(rate, 44100)
         assert_(np.issubdtype(data.dtype, np.float32))
         assert_(data.dtype.byteorder == '>' or (sys.byteorder == 'big' and
@@ -77,16 +82,19 @@ def test_read_5():
 
 def test_read_fail():
     for mmap in [False, True]:
-        fp = open(datafile('example_1.nc'), 'rb')
+        filename = 'example_1.nc'
+        fp = open(datafile(filename), 'rb')
         assert_raises(ValueError, wavfile.read, fp, mmap=mmap)
         fp.close()
 
 
 def test_read_early_eof_with_data():
     for mmap in [False, True]:
-        with open(datafile('test-44100Hz-le-1ch-4bytes-early-eof.wav'), 'rb') as fp:
+        filename = 'test-44100Hz-le-1ch-4bytes-early-eof.wav'
+        with open(datafile(filename), 'rb') as fp:
             with assert_warns(wavfile.WavFileWarning, match='Reached EOF'):
                 rate, data = wavfile.read(fp, mmap=mmap)
+
                 assert_(data.size > 0)
                 assert_equal(rate, 44100)
 
@@ -95,14 +103,16 @@ def test_read_early_eof_with_data():
 
 def test_read_early_eof():
     for mmap in [False, True]:
-        with open(datafile('test-44100Hz-le-1ch-4bytes-early-eof-no-data.wav'), 'rb') as fp:
+        filename = 'test-44100Hz-le-1ch-4bytes-early-eof-no-data.wav'
+        with open(datafile(filename), 'rb') as fp:
             with assert_raises(ValueError, match="Unexpected end of file."):
                 wavfile.read(fp, mmap=mmap)
 
 
 def test_read_incomplete_chunk():
     for mmap in [False, True]:
-        fp = open(datafile('test-44100Hz-le-1ch-4bytes-incomplete-chunk.wav'), 'rb')
+        filename = 'test-44100Hz-le-1ch-4bytes-incomplete-chunk.wav'
+        fp = open(datafile(filename), 'rb')
         assert_raises(ValueError, wavfile.read, fp, mmap=mmap)
         fp.close()
 
@@ -116,7 +126,7 @@ def _check_roundtrip(realfile, rate, dtype, channels):
     try:
         data = np.random.rand(100, channels)
         if channels == 1:
-            data = data[:,0]
+            data = data[:, 0]
         if dtype.kind == 'f':
             # The range of the float type should be in [-1, 1]
             data = data.astype(dtype)
@@ -163,6 +173,6 @@ def test_write_roundtrip():
                         continue
                     for rate in (8000, 32000):
                         for channels in (1, 2, 5):
-                            dt = np.dtype('%s%s%s' % (endianness, dtypechar, size))
+                            dt = np.dtype('%s%s%s' % (endianness, dtypechar,
+                                                      size))
                             _check_roundtrip(realfile, rate, dt, channels)
-
