@@ -5142,9 +5142,9 @@ class TestMGCErrorWarnings(object):
     def test_error_wrongdisttype(self):
         # raises error if metric is not a function
         x = np.arange(20)
-        metric = 0
+        compute_distance = 0
         assert_raises(ValueError, stats.multiscale_graphcorr, x, x,
-                      metric=metric)
+                      compute_distance=compute_distance)
 
     @pytest.mark.parametrize("reps", [
         -1,    # reps is negative
