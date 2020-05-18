@@ -176,7 +176,7 @@ def bspline(x, n):
 
     >>> knots = [-1.0, 0.0, -1.0]
     >>> bspline(knots, 2)
-    array([0.125 0.75  0.125])
+    array([0.125, 0.75, 0.125])
 
     >>> np.array_equal(bspline(knots, 2), quadratic(knots))
     True
@@ -233,10 +233,10 @@ def gauss_spline(x, n):
     >>> from scipy.signal import gauss_spline, bspline
     >>> knots = np.array([-1.0, 0.0, -1.0])
     >>> gauss_spline(knots, 3)
-    array([0.15418033 0.6909883  0.15418033])  # may vary
+    array([0.15418033, 0.6909883, 0.15418033])  # may vary
 
     >>> bspline(knots, 3)
-    array([0.16666667 0.66666667 0.16666667])  # may vary
+    array([0.16666667, 0.66666667, 0.16666667])  # may vary
 
     """
     signsq = (n + 1) / 12.0
@@ -273,7 +273,7 @@ def cubic(x):
 
     >>> knots = [-1.0, 0.0, -1.0]
     >>> bspline(knots, 2)
-    array([0.125 0.75  0.125])
+    array([0.125, 0.75, 0.125])
 
     >>> np.array_equal(bspline(knots, 2), quadratic(knots))
     True
@@ -325,7 +325,7 @@ def quadratic(x):
 
     >>> knots = [-1.0, 0.0, -1.0]
     >>> bspline(knots, 2)
-    array([0.125 0.75  0.125])
+    array([0.125, 0.75, 0.125])
 
     >>> np.array_equal(bspline(knots, 2), quadratic(knots))
     True
