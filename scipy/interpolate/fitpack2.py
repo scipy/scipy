@@ -28,6 +28,9 @@ from . import fitpack
 from . import dfitpack
 
 
+dfitpack_int = dfitpack.types.intvar.dtype
+
+
 # ############### Univariate spline ####################
 
 _curfit_messages = {1: """
@@ -1732,8 +1735,8 @@ class RectSphereBivariateSpline(SphereBivariateSpline):
 
     def __init__(self, u, v, r, s=0., pole_continuity=False, pole_values=None,
                  pole_exact=False, pole_flat=False):
-        iopt = np.array([0, 0, 0], dtype=int)
-        ider = np.array([-1, 0, -1, 0], dtype=int)
+        iopt = np.array([0, 0, 0], dtype=dfitpack_int)
+        ider = np.array([-1, 0, -1, 0], dtype=dfitpack_int)
         if pole_values is None:
             pole_values = (None, None)
         elif isinstance(pole_values, (float, np.float32, np.float64)):

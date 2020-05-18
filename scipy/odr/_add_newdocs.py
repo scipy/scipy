@@ -8,10 +8,10 @@ add_newdoc('scipy.odr', 'odr',
 
     See Also
     --------
-    ODR
-    Model
-    Data
-    RealData
+    ODR : The ODR class gathers all information and coordinates the running of the main fitting routine.
+    Model : The Model class stores information about the function you wish to fit.
+    Data : The data to fit.
+    RealData : Data with weights as actual std. dev.s and/or covariances.
 
     Notes
     -----

@@ -1604,6 +1604,8 @@ def yeojohnson_normplot(x, la, lb, plot=None, N=80):
     return _normplot('yeojohnson', x, la, lb, plot, N)
 
 
+ShapiroResult = namedtuple('ShapiroResult', ('statistic', 'pvalue'))
+
 def shapiro(x):
     """
     Perform the Shapiro-Wilk test for normality.
@@ -1618,7 +1620,7 @@ def shapiro(x):
 
     Returns
     -------
-    W : float
+    statistic : float
         The test statistic.
     p-value : float
         The p-value for the hypothesis test.
@@ -1652,8 +1654,13 @@ def shapiro(x):
     >>> from scipy import stats
     >>> np.random.seed(12345678)
     >>> x = stats.norm.rvs(loc=5, scale=3, size=100)
-    >>> stats.shapiro(x)
-    (0.9772805571556091, 0.08144091814756393)
+    >>> shapiro_test = stats.shapiro(x)
+    >>> shapiro_test
+    ShapiroResult(statistic=0.9772805571556091, pvalue=0.08144091814756393)
+    >>> shapiro_test.statistic
+    0.9772805571556091
+    >>> shapiro_test.pvalue
+    0.08144091814756393
 
     """
     x = np.ravel(x)
@@ -1673,7 +1680,7 @@ def shapiro(x):
     if N > 5000:
         warnings.warn("p-value may not be accurate for N > 5000.")
 
-    return w, pw
+    return ShapiroResult(w, pw)
 
 
 # Values from Stephens, M A, "EDF Statistics for Goodness of Fit and

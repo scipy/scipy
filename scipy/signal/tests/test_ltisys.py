@@ -803,6 +803,7 @@ class TestStateSpace(object):
 
         s_discrete = s1.to_discrete(0.1)
         s2_discrete = s2.to_discrete(0.2)
+        s3_discrete = s2.to_discrete(0.1)
 
         # Impulse response
         t = np.linspace(0, 1, 100)
@@ -898,6 +899,17 @@ class TestStateSpace(object):
         with assert_raises(TypeError):
             BadType() - s1
 
+        s = s_discrete + s3_discrete
+        assert_(s.dt == 0.1)
+
+        s = s_discrete * s3_discrete
+        assert_(s.dt == 0.1)
+
+        s = 3 * s_discrete
+        assert_(s.dt == 0.1)
+
+        s = -s_discrete
+        assert_(s.dt == 0.1)
 
 class TestTransferFunction(object):
     def test_initialization(self):

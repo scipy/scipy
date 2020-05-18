@@ -85,11 +85,16 @@ __docformat__ = "restructuredtext en"
 import re
 import warnings
 
-from numpy import asarray, array, zeros, int32, isscalar, real, imag, vstack
+from numpy import asarray, array, zeros, isscalar, real, imag, vstack
 
 from . import vode as _vode
 from . import _dop
 from . import lsoda as _lsoda
+
+
+_dop_int_dtype = _dop.types.intvar.dtype
+_vode_int_dtype = _vode.types.intvar.dtype
+_lsoda_int_dtype = _lsoda.types.intvar.dtype
 
 
 # ------------------------------------------------------------------------------
@@ -969,7 +974,7 @@ class vode(IntegratorBase):
         rwork[6] = self.min_step
         self.rwork = rwork
 
-        iwork = zeros((liw,), int32)
+        iwork = zeros((liw,), _vode_int_dtype)
         if self.ml is not None:
             iwork[0] = self.ml
         if self.mu is not None:
@@ -1082,7 +1087,7 @@ class zvode(vode):
         rwork[6] = self.min_step
         self.rwork = rwork
 
-        iwork = zeros((liw,), int32)
+        iwork = zeros((liw,), _vode_int_dtype)
         if self.ml is not None:
             iwork[0] = self.ml
         if self.mu is not None:
@@ -1157,7 +1162,7 @@ class dopri5(IntegratorBase):
         work[5] = self.max_step
         work[6] = self.first_step
         self.work = work
-        iwork = zeros((21,), int32)
+        iwork = zeros((21,), _dop_int_dtype)
         iwork[0] = self.nsteps
         iwork[2] = self.verbosity
         self.iwork = iwork
@@ -1219,7 +1224,7 @@ class dop853(dopri5):
         work[5] = self.max_step
         work[6] = self.first_step
         self.work = work
-        iwork = zeros((21,), int32)
+        iwork = zeros((21,), _dop_int_dtype)
         iwork[0] = self.nsteps
         iwork[2] = self.verbosity
         self.iwork = iwork
@@ -1314,7 +1319,7 @@ class lsoda(IntegratorBase):
         rwork[5] = self.max_step
         rwork[6] = self.min_step
         self.rwork = rwork
-        iwork = zeros((liw,), int32)
+        iwork = zeros((liw,), _lsoda_int_dtype)
         if self.ml is not None:
             iwork[0] = self.ml
         if self.mu is not None:

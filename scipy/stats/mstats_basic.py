@@ -137,6 +137,30 @@ def argstoarray(*args):
     `numpy.ma.row_stack` has identical behavior, but is called with a sequence
     of sequences.
 
+    Examples
+    --------
+    A 2D masked array constructed from a group of sequences is returned.
+
+    >>> from scipy.stats.mstats import argstoarray
+    >>> argstoarray([1, 2, 3], [4, 5, 6])
+    masked_array(
+     data=[[1.0, 2.0, 3.0],
+           [4.0, 5.0, 6.0]],
+     mask=[[False, False, False],
+           [False, False, False]],
+     fill_value=1e+20)
+
+    The returned masked array filled with missing values when the lengths of
+    sequences are different.
+
+    >>> argstoarray([1, 3], [4, 5, 6])
+    masked_array(
+     data=[[1.0, 3.0, --],
+           [4.0, 5.0, 6.0]],
+     mask=[[False, False,  True],
+           [False, False, False]],
+     fill_value=1e+20)
+
     """
     if len(args) == 1 and not isinstance(args[0], ndarray):
         output = ma.asarray(args[0])

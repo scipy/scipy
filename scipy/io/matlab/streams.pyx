@@ -19,11 +19,6 @@ cdef extern from "Python.h":
         pass
     ctypedef struct FILE
 
-cdef extern from "py3k.h":
-    FILE* npy_PyFile_Dup(object file, char *mode) except NULL
-    int npy_PyFile_DupClose(object file, FILE *handle) except -1
-    int npy_PyFile_Check(object file)
-
 
 DEF _BLOCK_SIZE = 131072
 
