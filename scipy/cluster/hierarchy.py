@@ -3005,58 +3005,67 @@ def set_link_color_palette(palette):
 
 
 def _reorder_leaves(Z, leaves_order):
-    # first, we build a tree
+    """"
+    Fiven a tree T, encoded az Z, builds a tree F
+    and its encoding new_Z s.t. leaves(F) == leaves_order
+    Variables:
+    ch[i] = children of node (n+i) in T
+    p - array of parents in tree T
+    height[i] is a value of Z[i][3] e.g. cost of creating node (n+i)
+    num_leaves[i] = number of leaves of a subtree rooted in a node i in T
+    """
+
     n = Z.shape[0] + 1
     ch = np.zeros((n - 1, 2), dtype='int32')
+    p  = np.zeros(2 * n - 1,  dtype='int32')
+    new_Z  = np.zeros((n - 1, 4), dtype=float)
+    height = np.zeros(n - 1, dtype=float)
+    num_leaves = np.ones(2 * n - 1)
     for i in range(n - 1):
-        ch[i] = (int(Z[i][0]), int(Z[i][1]))  # ch[i] = children of node n+i
-    new_Z = np.zeros((n - 1, 4), dtype=float)
-    p = np.zeros(2*n-1, dtype='int32')  # array of parents
-    for i in range(n - 1):
+        ch[i] = (int(Z[i][0]), int(Z[i][1]))
         p[int(Z[i, 0])] = i + n
         p[int(Z[i, 1])] = i + n
+        height[i] = Z[i][2]
+        num_leaves[n+i] = num_leaves[int(Z[i][0])] + num_leaves[int(Z[i][1])]
 
+    stack = []
     cnt = 0
-    used = [False for i in range(2*n-1)]
-    top_level = np.array(leaves_order, dtype='int')
-    new_top_level = np.array([], dtype='int')
-    sizes = np.ones(2*n-1)
-    old_inner_node_number = np.zeros(n-1, dtype='int')  # correspondence between new and old inner node numbering
-
-    height = np.zeros(n-1, dtype=float)
-    for i in range(n-1):
-        height[i] = Z[i][2]  # height[i] corresponds to cluster n+i
-
-    while top_level.shape[0] != 1:
-        for j in range(top_level.shape[0]-1):  # top level of builded tree
-            node1 = top_level[j]
-            node2 = top_level[j+1]
-            node1_old = node1
-            node2_old = node2
-
-            # change numbering to old numbers in tree
-            if node1_old > n-1:
-                node1_old = old_inner_node_number[node1_old - n]
-            if node2_old > n-1:
-                node2_old = old_inner_node_number[node2_old - n]
-
-            if p[node1_old] == p[node2_old]: # same parent in the old tree
-                sizes[n+cnt] = sizes[node1] + sizes[node2]
-                new_Z[cnt] = [node1, node2, height[p[node1_old]-n], sizes[n+cnt]]
-                new_top_level = np.append(new_top_level, n + cnt)
-                used[node1] = True
-                used[node2] = True
-                old_inner_node_number[cnt] = p[node1_old]
-                cnt += 1
-            if not used[node1]:
-                new_top_level = np.append(new_top_level, node1)
-
-        if not used[top_level[top_level.shape[0]-1]]:
-            new_top_level = np.append(new_top_level, top_level[top_level.shape[0] - 1])
-
-        top_level = new_top_level
-        new_top_level = np.array([], dtype='int')
-
+    new_node_number = n
+    l_pointer = 0          # goes through leaves_order
+    v = leaves_order[0]    # v is a vertex which goes through T
+    color = np.zeros(2*n)  # 0 - unprocessed, 1 - on stack (waiting), 2 - fully processed
+    # note that v is a left child in F iff. color[p[v]] == 0 (during the algorithm)
+    while l_pointer <= n:
+        if v < n:  # v is a leaf
+            color[v] = 1   # tiny trick
+        if color[v] == 0:  # left subtree of v in F must've been already processed by now
+            color[v] = 1
+            l_pointer += 1
+            v = leaves_order[l_pointer]
+            continue
+        # otherwise color[v] == 1
+        color[v] = 2
+        if v == 2*n-2:
+            break
+        #  both subtrees should be OK
+        if color[p[v]] == 0:  # v is the left son in F
+            new_node = v
+            if v >= n:
+                new_node = new_node_number
+                new_node_number += 1
+            stack.append(new_node)
+            v = p[v]
+            continue
+        else:  # v is the right son in F
+            left_pair = stack.pop()
+            if v >= n:
+                new_Z[cnt] = [left_pair, new_node_number, height[p[v]-n], num_leaves[p[v]]]
+                new_node_number += 1
+            else:
+                new_Z[cnt] = [left_pair, v, height[p[v]-n], num_leaves[p[v]]]
+            cnt += 1
+            v = p[v]
+            continue
     return new_Z
 
 
