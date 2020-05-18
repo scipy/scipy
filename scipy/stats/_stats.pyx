@@ -1,6 +1,5 @@
 from cpython cimport bool
 from libc cimport math
-from libc.math cimport M_PI
 cimport cython
 cimport numpy as np
 from numpy.math cimport PI
@@ -567,7 +566,7 @@ def gaussian_kernel_estimate(points, values, xi, precision, dtype, real _=0):
     values_ = values.astype(dtype, copy=False)
 
     # Evaluate the normalisation
-    norm = (2 * M_PI) ** (- d / 2)
+    norm = (2 * PI) ** (- d / 2)
     for i in range(d):
         norm *= whitening[i, i]
 
