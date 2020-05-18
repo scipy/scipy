@@ -83,6 +83,12 @@ class TestTrimmedStats(object):
         y_true = [10.5, 11.5, 9, 10, 11, 12, 13]
         assert_array_almost_equal(y, y_true, decimal=8)
 
+        x_2d_with_nan = np.array(x_2d)
+        x_2d_with_nan[-1, -3:] = np.nan
+        y = stats.tmean(x_2d_with_nan, limits=(1,13), axis=0)
+        y_true = [7, 4.5, 5.5, 6.5, np.nan, np.nan, np.nan]
+        assert_array_almost_equal(y, y_true, decimal=8)
+
         with suppress_warnings() as sup:
             sup.record(RuntimeWarning, "Mean of empty slice")
 
