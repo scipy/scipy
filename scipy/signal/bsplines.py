@@ -212,9 +212,9 @@ def gauss_spline(x, n):
     -----
     The B-spline basis function can be approximated well by a zero-mean
     Gaussian function with standard-deviation equal to :math:`\sigma=(n+1)/12`
-    for large `n`:
+    for large `n` :
 
-    .. math::  \frac{1}{\sqrt {2\pi\sigma^2}}exp(-\frac{1}{2}(\frac{x^2}{\sigma})^2 )
+    .. math::  \frac{1}{\sqrt {2\pi\sigma^2}}exp(-\frac{x^2}{2\sigma})
 
     References
     ----------
