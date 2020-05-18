@@ -439,6 +439,8 @@ cdef void _apply_impl(DTYPE_t *x, np.intp_t len_x, DTYPE_t *h_trans_flip,
     cdef bint zpad
 
     zpad = (mode == MODE_CONSTANT and cval == 0)
+    if len_out == 0:
+        return
 
     while x_idx < len_x:
         h_idx = t * h_per_phase
@@ -457,6 +459,8 @@ cdef void _apply_impl(DTYPE_t *x, np.intp_t len_x, DTYPE_t *h_trans_flip,
             h_idx += 1
         # store and increment
         y_idx += 1
+        if y_idx >= len_out:
+            return
         t += down
         x_idx += t // up
         # which phase of the filter to use
@@ -473,10 +477,11 @@ cdef void _apply_impl(DTYPE_t *x, np.intp_t len_x, DTYPE_t *h_trans_flip,
                 xval = _extend_left(x, x_conv_idx, len_x, mode, cval)
             else:
                 xval = x[x_conv_idx]
-            if y_idx < len_out:
-                out[y_idx] += xval * h_trans_flip[h_idx]
+            out[y_idx] += xval * h_trans_flip[h_idx]
             h_idx += 1
         y_idx += 1
+        if y_idx >= len_out:
+            return
         t += down
         x_idx += t / up  # integer div
         t = t % up
