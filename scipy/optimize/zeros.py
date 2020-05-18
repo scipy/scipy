@@ -107,7 +107,10 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
     If `x0` is a sequence with more than one item, then `newton` returns an
     array, and `func` must be vectorized and return a sequence or array of the
     same shape as its first argument. If `fprime` or `fprime2` is given, then
-    its return must also have the same shape.
+    its return must also have the same shape. This means that an array of `x0`
+    is not treated as a multivariate case and `fprime` and `fprime2` must not
+    be mis-interpreted as Jacobian or Hessian of `func`. Instead, zeros of
+    the function are found at each starting point `x0` present in the array.
 
     Parameters
     ----------
