@@ -4289,10 +4289,9 @@ class _ParallelP(object):
     """
     Helper function to calculate parallel p-value.
     """
-    def __init__(self, x, y, compute_distance, random_states):
+    def __init__(self, x, y, random_states):
         self.x = x
         self.y = y
-        self.compute_distance = compute_distance
         self.random_states = random_states
 
     def __call__(self, index):
@@ -4300,12 +4299,12 @@ class _ParallelP(object):
         permy = self.y[order][:, order]
 
         # calculate permuted stats, store in null distribution
-        perm_stat = _mgc_stat(self.x, permy, self.compute_distance)[0]
+        perm_stat = _mgc_stat(self.x, permy)[0]
 
         return perm_stat
 
 
-def _perm_test(x, y, stat, compute_distance, reps=1000, workers=-1,
+def _perm_test(x, y, stat, reps=1000, workers=-1,
                random_state=None):
     r"""
     Helper function that calculates the p-value. See below for uses.
@@ -4316,10 +4315,6 @@ def _perm_test(x, y, stat, compute_distance, reps=1000, workers=-1,
         `x` and `y` have shapes `(n, p)` and `(n, q)`.
     stat : float
         The sample test statistic.
-    compute_distance : callable
-        A function that computes the distance or similarity among the samples
-        within each data matrix. Set to `None` if `x` and `y` are already
-        distance.
     reps : int, optional
         The number of replications used to estimate the null when using the
         permutation test. The default is 1000 replications.
@@ -4351,8 +4346,7 @@ def _perm_test(x, y, stat, compute_distance, reps=1000, workers=-1,
 
     # parallelizes with specified workers over number of reps and set seeds
     mapwrapper = MapWrapper(workers)
-    parallelp = _ParallelP(x=x, y=y, compute_distance=compute_distance,
-                           random_states=random_states)
+    parallelp = _ParallelP(x=x, y=y, random_states=random_states)
     null_dist = np.array(list(mapwrapper(parallelp, range(reps))))
 
     # calculate p-value and significant permutation map through list
@@ -4366,15 +4360,11 @@ def _perm_test(x, y, stat, compute_distance, reps=1000, workers=-1,
     return pvalue, null_dist
 
 
-def _euclidean_dist(x):
-    return cdist(x, x)
-
-
 MGCResult = namedtuple('MGCResult', ('stat', 'pvalue', 'mgc_dict'))
 
 
-def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000,
-                         workers=1, is_twosamp=False, random_state=None):
+def multiscale_graphcorr(x, y, metric="euclidean", reps=1000,
+                         workers=1, is_twosamp=False, random_state=None, **kwargs):
     r"""
     Computes the Multiscale Graph Correlation (MGC) test statistic.
 
@@ -4402,17 +4392,22 @@ def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000,
         the number of samples and `p` and `q` are the number of dimensions,
         then the MGC independence test will be run.  Alternatively, ``x`` and
         ``y`` can have shapes ``(n, n)`` if they are distance or similarity
-        matrices, and ``compute_distance`` must be sent to ``None``. If ``x``
+        matrices, and ``metric`` must be sent to ``None``. If ``x``
         and ``y`` have shapes ``(n, p)`` and ``(m, p)``, an unpaired
         two-sample MGC test will be run.
-    compute_distance : callable, optional
-        A function that computes the distance or similarity among the samples
-        within each data matrix. Set to ``None`` if ``x`` and ``y`` are
+    metric : str or callable, optional
+        The distance metric to use. If a string, the distance function can be
+        ‘braycurtis’, ‘canberra’, ‘chebyshev’, ‘cityblock’, ‘correlation’,
+        ‘cosine’, ‘dice’, ‘euclidean’, ‘hamming’, ‘jaccard’, ‘jensenshannon’,
+        ‘kulsinski’, ‘mahalanobis’, ‘matching’, ‘minkowski’, ‘rogerstanimoto’,
+        ‘russellrao’, ‘seuclidean’, ‘sokalmichener’, ‘sokalsneath’, ‘sqeuclidean’,
+        ‘wminkowski’, ‘yule’. Set to ``None`` if ``x`` and ``y`` are
         already distance matrices. The default uses the euclidean norm metric.
         If you are calling a custom function, either create the distance
         matrix before-hand or create a function of the form
-        ``compute_distance(x)`` where `x` is the data matrix for which
-        pairwise distances are calculated.
+        ``metric(x, **kwargs)`` where ``x`` is the data matrix for which
+        pairwise distances are calculated and ``kwargs`` are additional keyword
+        arguements.
     reps : int, optional
         The number of replications used to estimate the null when using the
         permutation test. The default is ``1000``.
@@ -4434,6 +4429,10 @@ def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000,
         If already a RandomState instance, use it.
         If seed is an int, return a new RandomState instance seeded with seed.
         If None, use np.random.RandomState. Default is None.
+    **kwargs : dict, optional
+        Extra arguments to metric. Refer to ``scipy.spatial.cdist`` for more info.
+        Additionally, if extra arguements need to passed for your distance function
+        they can be done here.
 
     Returns
     -------
@@ -4616,9 +4615,9 @@ def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000,
     x = x.astype(np.float64)
     y = y.astype(np.float64)
 
-    # check if compute_distance_matrix if a callable()
-    if not callable(compute_distance) and compute_distance is not None:
-        raise ValueError("Compute_distance must be a function.")
+    # check if metric if a callable()
+    if not callable(metric) and metric is not None:
+        raise ValueError("metric must be a function.")
 
     # check if number of reps exists, integer, or > 0 (if under 1000 raises
     # warning)
@@ -4631,22 +4630,25 @@ def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000,
         warnings.warn(msg, RuntimeWarning)
 
     if is_twosamp:
-        if compute_distance is None:
+        if metric is None:
             raise ValueError("Cannot run if inputs are distance matrices")
         x, y = _two_sample_transform(x, y)
 
-    if compute_distance is not None:
-        # compute distance matrices for x and y
-        x = compute_distance(x)
-        y = compute_distance(y)
+    # compute distance matrices for x and y
+    if callable(metric):
+        x = metric(x, **kwargs)
+        y = metric(y, **kwargs)
+    elif isinstance(metric, str):
+        x = cdist(x, x, metric=metric, **kwargs)
+        y = cdist(y, y, metric=metric, **kwargs)
 
     # calculate MGC stat
-    stat, stat_dict = _mgc_stat(x, y, compute_distance)
+    stat, stat_dict = _mgc_stat(x, y)
     stat_mgc_map = stat_dict["stat_mgc_map"]
     opt_scale = stat_dict["opt_scale"]
 
     # calculate permutation MGC p-value
-    pvalue, null_dist = _perm_test(x, y, stat, compute_distance, reps=reps,
+    pvalue, null_dist = _perm_test(x, y, stat, reps=reps,
                                    workers=workers, random_state=random_state)
 
     # save all stats (other than stat/p-value) in dictionary
@@ -4657,7 +4659,7 @@ def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000,
     return MGCResult(stat, pvalue, mgc_dict)
 
 
-def _mgc_stat(distx, disty, compute_distance):
+def _mgc_stat(distx, disty):
     r"""
     Helper function that calculates the MGC stat. See above for use.
 
@@ -4666,10 +4668,6 @@ def _mgc_stat(distx, disty, compute_distance):
     x, y : ndarray
         `x` and `y` have shapes `(n, p)` and `(n, q)` or `(n, n)` and `(n, n)`
         if distance matrices.
-    compute_distance : callable
-        A function that computes the distance or similarity among the samples
-        within each data matrix. Set to `None` if `x` and `y` are already
-        distance.
 
     Returns
     -------
