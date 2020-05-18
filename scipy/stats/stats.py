@@ -4621,7 +4621,7 @@ def multiscale_graphcorr(x, y, metric="euclidean", reps=1000,
     y = y.astype(np.float64)
 
     # check if metric if a callable()
-    if not callable(metric) and metric is not None:
+    if not callable(metric) and not isinstance(metric, str) and metric is not None:
         raise ValueError("metric must be a function.")
 
     # check if number of reps exists, integer, or > 0 (if under 1000 raises
