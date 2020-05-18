@@ -13,7 +13,7 @@ def quadratic_assignment(A, B, maximize=False):
         \\min_P \\& \\ {-\\text{trace}(APB^T P^T)}\\\\
         \\mbox{s.t. } \\& {P \\ \\epsilon \\ \\mathcal{P}}\\\\
 
-    Here and :math:`A` and :math:`B` are non-negative square matrices and
+    Here :math:`A` and :math:`B` are non-negative square matrices and
     :math:`\\mathcal{P}` is the set of all permutation matrices.
 
     The QAP is a NP-hard problem. This function uses Umeyama's
