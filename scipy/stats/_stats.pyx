@@ -1,6 +1,6 @@
 from cpython cimport bool
 from libc cimport math
-from libc.math import M_PI
+from libc.math cimport M_PI
 cimport cython
 cimport numpy as np
 from numpy.math cimport PI
