@@ -9,7 +9,7 @@ import numpy as np
 __all__ = ['needs_g77_abi_wrapper', 'get_g77_abi_wrappers',
            'gfortran_legacy_flag_hook', 'blas_ilp64_pre_build_hook',
            'get_f2py_int64_options', 'generic_pre_build_hook',
-           'write_file_content']
+           'write_file_content', 'ilp64_pre_build_hook']
 
 
 def uses_mkl(info):
@@ -97,6 +97,18 @@ def get_f2py_int64_options():
     write_file_content(f2cmap_fn, text)
 
     return ['--f2cmap', f2cmap_fn]
+
+
+def ilp64_pre_build_hook(cmd, ext):
+    """
+    Pre-build hook for adding Fortran compiler flags that change
+    default integer size to 64-bit.
+    """
+    fcompiler_flags = {
+        'gnu95': ['-fdefault-integer-8'],
+    }
+    return generic_pre_build_hook(cmd, ext, fcompiler_flags=fcompiler_flags,
+                                  source_fnpart="_ilp64")
 
 
 def blas_ilp64_pre_build_hook(blas_info):

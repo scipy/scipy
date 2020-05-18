@@ -262,7 +262,7 @@ A Recent version of:
 =============  ========  =============================================
  Tool          Version    URL
 =============  ========  =============================================
-setuptools     Recent     https://https://pypi.org/project/setuptools/
+setuptools     Recent     https://pypi.org/project/setuptools/
 wheel          Recent     https://pythonwheels.com
 multibuild     Recent     https://github.com/matthew-brett/multibuild
 =============  ========  =============================================

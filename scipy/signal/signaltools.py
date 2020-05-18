@@ -743,11 +743,12 @@ def oaconvolve(in1, in2, mode="full", axes=None):
     in1, in2, axes = _init_freq_conv_axes(in1, in2, mode, axes,
                                           sorted_axes=True)
 
-    if not axes:
-        return in1*in2
-
     s1 = in1.shape
     s2 = in2.shape
+
+    if not axes:
+        ret = in1 * in2
+        return _apply_conv_mode(ret, s1, s2, mode, axes)
 
     # Calculate this now since in1 is changed later
     shape_final = [None if i not in axes else

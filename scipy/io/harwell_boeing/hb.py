@@ -490,6 +490,19 @@ def hb_read(path_or_open_file):
         - integer for pointer/indices
         - exponential format for float values, and int format
 
+    Examples
+    --------
+    We can read and write a harwell-boeing format file:
+
+    >>> from scipy.io.harwell_boeing import hb_read, hb_write
+    >>> from scipy.sparse import csr_matrix, eye
+    >>> data = csr_matrix(eye(3))  # create a sparse matrix
+    >>> hb_write("data.hb", data)  # write a hb file
+    >>> print(hb_read("data.hb"))  # read a hb file
+      (0, 0)	1.0
+      (1, 1)	1.0
+      (2, 2)	1.0
+
     """
     def _get_matrix(fid):
         hb = HBFile(fid)
@@ -527,6 +540,19 @@ def hb_write(path_or_open_file, m, hb_info=None):
         - assembled, non-symmetric, real matrices
         - integer for pointer/indices
         - exponential format for float values, and int format
+
+    Examples
+    --------
+    We can read and write a harwell-boeing format file:
+
+    >>> from scipy.io.harwell_boeing import hb_read, hb_write
+    >>> from scipy.sparse import csr_matrix, eye
+    >>> data = csr_matrix(eye(3))  # create a sparse matrix
+    >>> hb_write("data.hb", data)  # write a hb file
+    >>> print(hb_read("data.hb"))  # read a hb file
+      (0, 0)	1.0
+      (1, 1)	1.0
+      (2, 2)	1.0
 
     """
     m = m.tocsc(copy=False)

@@ -58,7 +58,7 @@ class BSpline(object):
     c : ndarray, shape (>=n, ...)
         spline coefficients
     k : int
-        B-spline order
+        B-spline degree
     extrapolate : bool or 'periodic', optional
         whether to extrapolate beyond the base interval, ``t[k] .. t[n]``,
         or to return nans.

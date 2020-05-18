@@ -383,13 +383,28 @@ def krogh_interpolate(xi, yi, x, der=0, axis=0):
 
     See Also
     --------
-    KroghInterpolator
+    KroghInterpolator : Krogh interpolator
 
     Notes
     -----
     Construction of the interpolating polynomial is a relatively expensive
     process. If you want to evaluate it repeatedly consider using the class
     KroghInterpolator (which is what this function uses).
+
+    Examples
+    --------
+    We can interpolate 2D observed data using krogh interpolation:
+
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.interpolate import krogh_interpolate
+    >>> x_observed = np.linspace(0.0, 10.0, 11)
+    >>> y_observed = np.sin(x_observed)
+    >>> x = np.linspace(min(x_observed), max(x_observed), num=100)
+    >>> y = krogh_interpolate(x_observed, y_observed, x)
+    >>> plt.plot(x_observed, y_observed, "o", label="observation")
+    >>> plt.plot(x, y, label="krogh interpolation")
+    >>> plt.legend()
+    >>> plt.show()
 
     """
     P = KroghInterpolator(xi, yi, axis=axis)
@@ -515,7 +530,7 @@ class BarycentricInterpolator(_Interpolator1D):
     def __init__(self, xi, yi=None, axis=0):
         _Interpolator1D.__init__(self, xi, yi, axis)
 
-        self.xi = np.asarray(xi)
+        self.xi = np.asfarray(xi)
         self.set_yi(yi)
         self.n = len(self.xi)
 
@@ -667,7 +682,7 @@ def barycentric_interpolate(xi, yi, x, axis=0):
 
     See Also
     --------
-    BarycentricInterpolator
+    BarycentricInterpolator : Bary centric interpolator
 
     Notes
     -----
@@ -675,6 +690,21 @@ def barycentric_interpolate(xi, yi, x, axis=0):
     If you want to call this many times with the same xi (but possibly
     varying yi or x) you should use the class `BarycentricInterpolator`.
     This is what this function uses internally.
+
+    Examples
+    --------
+    We can interpolate 2D observed data using barycentric interpolation:
+
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.interpolate import barycentric_interpolate
+    >>> x_observed = np.linspace(0.0, 10.0, 11)
+    >>> y_observed = np.sin(x_observed)
+    >>> x = np.linspace(min(x_observed), max(x_observed), num=100)
+    >>> y = barycentric_interpolate(x_observed, y_observed, x)
+    >>> plt.plot(x_observed, y_observed, "o", label="observation")
+    >>> plt.plot(x, y, label="barycentric interpolation")
+    >>> plt.legend()
+    >>> plt.show()
 
     """
     return BarycentricInterpolator(xi, yi, axis=axis)(x)

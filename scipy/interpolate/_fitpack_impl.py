@@ -28,22 +28,25 @@ import warnings
 import numpy as np
 from . import _fitpack
 from numpy import (atleast_1d, array, ones, zeros, sqrt, ravel, transpose,
-                   empty, iinfo, intc, asarray)
+                   empty, iinfo, asarray)
 
 # Try to replace _fitpack interface with
 #  f2py-generated version
 from . import dfitpack
 
 
-def _intc_overflow(x, msg=None):
-    """Cast the value to an intc and raise an OverflowError if the value
+dfitpack_int = dfitpack.types.intvar.dtype
+
+
+def _int_overflow(x, msg=None):
+    """Cast the value to an dfitpack_int and raise an OverflowError if the value
     cannot fit.
     """
-    if x > iinfo(intc).max:
+    if x > iinfo(dfitpack_int).max:
         if msg is None:
-            msg = '%r cannot fit into an intc' % x
+            msg = '%r cannot fit into an %r' % (x, dfitpack_int)
         raise OverflowError(msg)
-    return intc(x)
+    return dfitpack_int.type(x)
 
 
 _iermess = {
@@ -97,7 +100,7 @@ _iermess2 = {
 }
 
 _parcur_cache = {'t': array([], float), 'wrk': array([], float),
-                 'iwrk': array([], intc), 'u': array([], float),
+                 'iwrk': array([], dfitpack_int), 'u': array([], float),
                  'ub': 0, 'ue': 1}
 
 
@@ -212,7 +215,7 @@ def splprep(x, w=None, u=None, ub=None, ue=None, k=3, task=0, s=None, t=None,
     """
     if task <= 0:
         _parcur_cache = {'t': array([], float), 'wrk': array([], float),
-                         'iwrk': array([], intc), 'u': array([], float),
+                         'iwrk': array([], dfitpack_int), 'u': array([], float),
                          'ub': 0, 'ue': 1}
     x = atleast_1d(x)
     idim, m = x.shape
@@ -310,7 +313,7 @@ def splprep(x, w=None, u=None, ub=None, ue=None, k=3, task=0, s=None, t=None,
 
 
 _curfit_cache = {'t': array([], float), 'wrk': array([], float),
-                 'iwrk': array([], intc)}
+                 'iwrk': array([], dfitpack_int)}
 
 
 def splrep(x, y, w=None, xb=None, xe=None, k=3, task=0, s=None, t=None,
@@ -487,7 +490,7 @@ def splrep(x, y, w=None, xb=None, xe=None, k=3, task=0, s=None, t=None,
             _curfit_cache['wrk'] = empty((m*(k + 1) + nest*(8 + 5*k),), float)
         else:
             _curfit_cache['wrk'] = empty((m*(k + 1) + nest*(7 + 3*k),), float)
-        _curfit_cache['iwrk'] = empty((nest,), intc)
+        _curfit_cache['iwrk'] = empty((nest,), dfitpack_int)
     try:
         t = _curfit_cache['t']
         wrk = _curfit_cache['wrk']
@@ -793,7 +796,7 @@ def spalde(x, tck):
 
 
 _surfit_cache = {'tx': array([], float), 'ty': array([], float),
-                 'wrk': array([], float), 'iwrk': array([], intc)}
+                 'wrk': array([], float), 'iwrk': array([], dfitpack_int)}
 
 
 def bisplrep(x, y, z, w=None, xb=None, xe=None, yb=None, ye=None,
@@ -948,10 +951,10 @@ def bisplrep(x, y, z, w=None, xb=None, xe=None, yb=None, ye=None,
     if bx > by:
         b1, b2 = by, by + u - kx
     msg = "Too many data points to interpolate"
-    lwrk1 = _intc_overflow(u*v*(2 + b1 + b2) +
-                           2*(u + v + km*(m + ne) + ne - kx - ky) + b2 + 1,
-                           msg=msg)
-    lwrk2 = _intc_overflow(u*v*(b2 + 1) + b2, msg=msg)
+    lwrk1 = _int_overflow(u*v*(2 + b1 + b2) +
+                          2*(u + v + km*(m + ne) + ne - kx - ky) + b2 + 1,
+                          msg=msg)
+    lwrk2 = _int_overflow(u*v*(b2 + 1) + b2, msg=msg)
     tx, ty, c, o = _fitpack._surfit(x, y, z, w, xb, xe, yb, ye, kx, ky,
                                     task, s, eps, tx, ty, nxest, nyest,
                                     wrk, lwrk1, lwrk2)

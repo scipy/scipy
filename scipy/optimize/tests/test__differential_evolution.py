@@ -2,7 +2,6 @@
 Unit tests for the differential global minimization algorithm.
 """
 import multiprocessing
-import sys
 import platform
 
 from scipy.optimize._differentialevolution import (DifferentialEvolutionSolver,

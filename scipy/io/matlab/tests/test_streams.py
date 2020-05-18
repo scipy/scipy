@@ -3,7 +3,6 @@
 """
 
 import os
-import sys
 import zlib
 
 from io import BytesIO
