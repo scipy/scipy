@@ -1344,7 +1344,8 @@ def convolution_matrix(a, n, mode='full'):
 
     a = np.asarray(a)
     if a.ndim != 1:
-        raise ValueError('convolution_matrix expects a 1d array as input')
+        raise ValueError('convolution_matrix expects a one-dimensional '
+                         'array as input')
     if a.size == 0:
         raise ValueError('len(a) must be at least 1.')
 

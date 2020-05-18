@@ -642,23 +642,35 @@ def test_fiedler_companion():
 
 
 class TestConvolutionMatrix:
-    'test convolution_matrix vs. numpy.convolve for various parameters'
+    """
+    Test convolution_matrix vs. numpy.convolve for various parameters.
+    """
 
     def create_vector(self, n, cpx):
-        'make a complex or real test vector of length n'
+        """Make a complex or real test vector of length n."""
         x = np.linspace(-2.5, 2.2, n)
         if cpx:
             x = x + 1j*np.linspace(-1.5, 3.1, n)
         return x
 
+    def test_bad_n(self):
+        # n must be a positive integer
+        with pytest.raises(ValueError, match='n must be a positive integer'):
+            convolution_matrix([1, 2, 3], 0)
+
     def test_bad_first_arg(self):
         # first arg must be a 1d array, otherwise ValueError
-        with assert_raises(ValueError):
+        with pytest.raises(ValueError, match='one-dimensional'):
             convolution_matrix(1, 4)
+
+    def test_empty_first_arg(self):
+        # first arg must have at least one value
+        with pytest.raises(ValueError, match=r'len\(a\)'):
+            convolution_matrix([], 4)
 
     def test_bad_mode(self):
         # mode must be in ('full', 'valid', 'same')
-        with assert_raises(ValueError):
+        with pytest.raises(ValueError, match='mode.*must be one of'):
             convolution_matrix((1, 1), 4, mode='invalid argument')
 
     @pytest.mark.parametrize('cpx', [False, True])
