@@ -374,7 +374,7 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
            'success': res['status'] == MODEL_STATUS_OPTIMAL,
            'message': statuses[res['status']][1],
            'nit': res.get('simplex_nit', 0) or res.get('ipm_nit', 0),
-           'crossover_nit' : res.get('crossover_nit'),
+           'crossover_nit': res.get('crossover_nit'),
            }
     if sol['x'] is not None:
         sol['x'] = np.array(sol['x'])

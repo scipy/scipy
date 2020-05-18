@@ -551,7 +551,7 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
             raise NotImplementedError("HiGHS solvers do not support the "
                                       "callback interface.")
         highs_solvers = {'highs-ipm': 'ipm', 'highs-simplex': 'simplex',
-                         'highs':None}
+                         'highs': None}
         if meth not in highs_solvers:
             raise ValueError('Unknown solver %s' % method)
         sol = _linprog_highs(lp, solver=highs_solvers[meth],
