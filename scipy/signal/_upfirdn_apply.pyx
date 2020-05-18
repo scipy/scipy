@@ -63,13 +63,6 @@ def _output_len(np.intp_t len_h,
                 np.intp_t up,
                 np.intp_t down):
     """The output length that results from a given input"""
-    return _c_output_len(len_h, in_len, up, down)
-
-
-cdef np.intp_t _c_output_len(np.intp_t len_h,
-                             np.intp_t in_len,
-                             np.intp_t up,
-                             np.intp_t down) nogil:
     # ceil(((in_len - 1) * up + len_h) / down), but using integer arithmetic
     return (((in_len - 1) * up + len_h) - 1) // down + 1
 
@@ -483,5 +476,5 @@ cdef void _apply_impl(DTYPE_t *x, np.intp_t len_x, DTYPE_t *h_trans_flip,
         if y_idx >= len_out:
             return
         t += down
-        x_idx += t / up  # integer div
+        x_idx += t // up
         t = t % up
