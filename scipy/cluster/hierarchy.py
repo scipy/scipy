@@ -3004,32 +3004,31 @@ def set_link_color_palette(palette):
     _link_line_colors = palette
 
 
-def reorder_leaves(Z, leaves_order):
+def _reorder_leaves(Z, leaves_order):
     # first, we build a tree
     n = Z.shape[0] + 1
-    ch = np.zeros((n - 1, 2))
+    ch = np.zeros((n - 1, 2), dtype='int32')
     for i in range(n - 1):
-        ch[i] = (Z[i][0], Z[i][1])  # ch[i] = children of node n+i
-    Z = Z.astype('int32')
+        ch[i] = (int(Z[i][0]), int(Z[i][1]))  # ch[i] = children of node n+i
     new_Z = np.zeros((n - 1, 4), dtype=float)
-    p = np.zeros(2*n-1, dtype='int32') # array of parents
+    p = np.zeros(2*n-1, dtype='int32')  # array of parents
     for i in range(n - 1):
-        p[Z[i, 0]] = i + n
-        p[Z[i, 1]] = i + n
+        p[int(Z[i, 0])] = i + n
+        p[int(Z[i, 1])] = i + n
 
     cnt = 0
     used = [False for i in range(2*n-1)]
     top_level = np.array(leaves_order, dtype='int')
     new_top_level = np.array([], dtype='int')
     sizes = np.ones(2*n-1)
-    old_inner_node_number = np.zeros(n-1, dtype='int') # correspondence between new and old inner node numbering
+    old_inner_node_number = np.zeros(n-1, dtype='int')  # correspondence between new and old inner node numbering
 
     height = np.zeros(n-1, dtype=float)
     for i in range(n-1):
-        height[i] = Z[i][2] # height[i] corresponds to cluster n+i
+        height[i] = Z[i][2]  # height[i] corresponds to cluster n+i
 
     while top_level.shape[0] != 1:
-        for j in range(top_level.shape[0]-1): # top level of builded tree
+        for j in range(top_level.shape[0]-1):  # top level of builded tree
             node1 = top_level[j]
             node2 = top_level[j+1]
             node1_old = node1
@@ -3336,8 +3335,7 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
         Z = np.asarray(Z, order='c')
     else:
         # reorder linkage matrix according to 'leaves_order'
-        Z = np.asarray(reorder_leaves(Z, leaves_order), order='c')
-
+        Z = np.asarray(_reorder_leaves(Z, leaves_order), order='c')
 
     if orientation not in ["top", "left", "bottom", "right"]:
         raise ValueError("orientation must be one of 'top', 'left', "
