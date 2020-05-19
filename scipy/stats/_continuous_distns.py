@@ -6584,7 +6584,7 @@ class rayleigh_gen(rv_continuous):
                     return ll([loc, scale_mle(loc, data)], data)
 
                 def get_tuple(loc, data):
-                    return (*loc, scale_mle(loc, data))
+                    return (loc, scale_mle(loc, data))
 
                 return x0[0], func, get_tuple
             return super(rayleigh_gen,
