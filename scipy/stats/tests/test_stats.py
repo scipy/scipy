@@ -85,7 +85,7 @@ class TestTrimmedStats(object):
 
         x_2d_with_nan = np.array(x_2d)
         x_2d_with_nan[-1, -3:] = np.nan
-        y = stats.tmean(x_2d_with_nan, limits=(1,13), axis=0)
+        y = stats.tmean(x_2d_with_nan, limits=(1, 13), axis=0)
         y_true = [7, 4.5, 5.5, 6.5, np.nan, np.nan, np.nan]
         assert_array_almost_equal(y, y_true, decimal=8)
 
@@ -96,7 +96,8 @@ class TestTrimmedStats(object):
             y_true = [4, 10, 17, 21, np.nan, np.nan, np.nan, np.nan, np.nan]
             assert_array_almost_equal(y, y_true, decimal=8)
 
-            y = stats.tmean(x_2d, limits=(2, 21), inclusive=(False, True), axis=1)
+            y = stats.tmean(x_2d, limits=(2, 21),
+                            inclusive=(False, True), axis=1)
             y_true = [4.5, 10, 17, 21, np.nan, np.nan, np.nan, np.nan, np.nan]
             assert_array_almost_equal(y, y_true, decimal=8)
 
