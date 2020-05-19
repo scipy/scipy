@@ -81,7 +81,9 @@ dist:
 	$(CURDIR)/build/env/bin/python -mpip install ..
 	make PYTHON="$(CURDIR)/build/env/bin/python" doc-dist
 
-doc-dist: html html-scipyorg
+doc-dist: VERSIONWARNING=-t versionwarning
+
+doc-dist: html-scipyorg html
 	test -d build/latex || make latex
 	make -C build/latex all-pdf LATEXOPTS="-halt-on-error"
 	-test -d build/htmlhelp || make htmlhelp-build
@@ -123,7 +125,7 @@ html-build:
 
 html-scipyorg:
 	mkdir -p build/html build/doctrees
-	$(SPHINXBUILD) -WT --keep-going -t scipyorg -b html $(ALLSPHINXOPTS) build/html-scipyorg $(FILES)
+	$(SPHINXBUILD) -WT --keep-going -t scipyorg $(VERSIONWARNING) -b html $(ALLSPHINXOPTS) build/html-scipyorg $(FILES)
 	@echo
 	@echo "Build finished. The HTML pages are in build/html-scipyorg."
 
