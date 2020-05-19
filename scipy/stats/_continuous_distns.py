@@ -6542,8 +6542,8 @@ class rayleigh_gen(rv_continuous):
 
     def fit(self, data, *args, **kwds):
         """
-        Maxmimum likelihood estimation for Rayleigh Distribution of the
-        `scale` parameter when `floc` is fixed.
+        Maxmimum likelihood estimation of the `scale` parameter
+        is used in the numerical optimization to determine `loc`.
 
         Parameters
         ----------
@@ -6556,28 +6556,47 @@ class rayleigh_gen(rv_continuous):
             Maximum likelihood estimate for the scale, provided loc.
 
         Notes:
-        If `floc` is not set, then the generic implementation of numerical
-        optimization from .rv_continuous will be used to determine `loc` and
-        `scale`.
+        If `floc` is fixed, the maximum likelihood scale may be calculated
+        without numerical optimization. Otherwise, numerical optimization
+        from `.rv_continuous` will be  conducted to determine `loc` and its
+        scale based on MLE.
         """
-        fscale = kwds.pop('fscale', None)
+
         floc = kwds.pop('floc', None)
 
-        check_fit_input_parameters(data, args, kwds,
-                                   fixed_param=(fscale, floc))
-
-        if floc is None and fscale is None:
-            return super(rayleigh_gen, self).fit(data, *args, **kwds)
-        elif fscale is not None:
-            return super(rayleigh_gen, self).fit(data, fscale=fscale, *args,
-                                                 **kwds)
-        else:
-            data = np.asarray(data)
-            # scale is given by MLE
-            scale = (np.sum((data - floc) ** 2) / (2 * len(data))) ** .5
+        def scale_mle(loc, data):
             # Source: Statistical Distributions, 3rd Edition. Evans, Hastings,
             # and Peacock (2000), Page 175
-            return floc, scale
+            return (np.sum((data - loc) ** 2) / (2 * len(data))) ** .5
+
+        """
+        if `floc` is not fixed, provide a `_reduce_func` for `.rv_continuous`
+        to use. '_reduce_func' returns:
+            - the parameter to optimize from `x0`, loc
+            - `func` to minimize, and
+            - `get_tuple` to obtain the dependent parameter, as
+               numerical optimization over `func` only indicates
+               the independent parameter's solution.
+        """
+        if floc is None:
+            def _reduce_func(x0, ll, args, kwds):
+                def func(loc, data):
+                    return ll([loc, scale_mle(loc, data)], data)
+
+                def get_tuple(loc, data):
+                    return (*loc, scale_mle(loc, data))
+
+                return x0[0], func, get_tuple
+            return super(rayleigh_gen,
+                         self).fit(data, _reduce_func=_reduce_func,
+                                   *args, **kwds)
+        else:
+            # if `floc` is fixed, determine `scale` with MLE
+            fscale = kwds.pop('fscale', None)
+            check_fit_input_parameters(data, args, kwds,
+                                       fixed_param=(fscale, floc))
+            data = np.asarray(data)
+            return floc, scale_mle(floc, data)
 
 
 rayleigh = rayleigh_gen(a=0.0, name="rayleigh")

@@ -2970,24 +2970,35 @@ class TestRayleigh(object):
     @pytest.mark.parametrize("fscale", [.5, 1, 2, 3, 4])
     def test_fit(self, floc, fscale):
         data = stats.rayleigh.rvs(size=250, loc=floc, scale=fscale)
-        
-        scale_expect = (np.sum((data - floc) ** 2) / (2 * len(data))) ** .5
-        # when floc is provided, MLE should be used for scale
+
+        def scale_mle(data, floc):
+            return (np.sum((data - floc) ** 2) / (2 * len(data))) ** .5
+
+        scale_expect = scale_mle(data, floc)
+        # when `floc` is provided, direct MLE equation is used
         loc, scale = stats.rayleigh.fit(data, floc=floc)
         assert_equal(loc, floc)
         assert_equal(scale, scale_expect)
 
+        # with both parameters free, `loc` is numerically optimized
+        # using the objective function with the MLE for scale
+        loc, scale = stats.rayleigh.fit(data)
+        # test that `scale` is related to `loc` by the MLE
+        assert_equal(scale, scale_mle(data, loc))
+
         # test that the objective function result of the analytical MLEs is
         # less than or equal to that of the numerically optimized estimate
+        loc_scale_opt = super(type(stats.rayleigh), stats.rayleigh).fit(data)
 
-        # non-fixed floc falls back on optimizer
-        loc_scale_opt = stats.rayleigh.fit(data)
-        
-        func = stats.rayleigh._reduce_func((1,2), {})[1]
+        # obtain objective function
+        args = [data, (stats.rayleigh._fitstart(data),)]
+        func = stats.rayleigh._reduce_func(args, {})[1]
 
         ll_mle = func((loc, scale), data)
         ll_opt = func(loc_scale_opt, data)
-        assert_allclose(ll_mle, ll_opt, atol=.5, rtol=.5)
+        assert ll_mle < ll_opt or np.allclose(ll_opt,ll_mle)
+
+        # An error is raised if both parameters are fixed
         assert_raises(RuntimeError, stats.rayleigh.fit, data, floc=floc, fscale=fscale)
 
 

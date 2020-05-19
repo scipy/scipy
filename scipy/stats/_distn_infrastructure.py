@@ -2283,7 +2283,10 @@ class rv_continuous(rv_generic):
         loc = kwds.pop('loc', start[-2])
         scale = kwds.pop('scale', start[-1])
         args += (loc, scale)
+        _reduce_func = kwds.pop('_reduce_func', None)
         x0, func, restore, args = self._reduce_func(args, kwds)
+        if _reduce_func is not None:
+            x0, func, get_tuple = _reduce_func(x0, func, args, kwds)
 
         optimizer = kwds.pop('optimizer', optimize.fmin)
         # convert string to function in scipy.optimize
@@ -2302,6 +2305,8 @@ class rv_continuous(rv_generic):
             raise TypeError("Unknown arguments: %s." % kwds)
 
         vals = optimizer(func, x0, args=(ravel(data),), disp=0)
+        if _reduce_func is not None and get_tuple is not None:
+            vals = get_tuple(vals, ravel(data))
         if restore is not None:
             vals = restore(args, vals)
         vals = tuple(vals)
