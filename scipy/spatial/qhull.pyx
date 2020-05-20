@@ -208,13 +208,14 @@ from libc.stdlib cimport qsort
 #------------------------------------------------------------------------------
 
 cdef extern from "qhull_misc.h":
+    ctypedef int CBLAS_INT   # actual type defined in the header file
     void qhull_misc_lib_check()
-    void qh_dgetrf(int *m, int *n, double *a, int *lda, int *ipiv,
-                   int *info) nogil
-    void qh_dgetrs(char *trans, int *n, int *nrhs, double *a, int *lda,
-                   int *ipiv, double *b, int *ldb, int *info) nogil
-    void qh_dgecon(char *norm, int *n, double *a, int *lda, double *anorm,
-                   double *rcond, double *work, int *iwork, int *info) nogil
+    void qh_dgetrf(CBLAS_INT *m, CBLAS_INT *n, double *a, CBLAS_INT *lda, CBLAS_INT *ipiv,
+                   CBLAS_INT *info) nogil
+    void qh_dgetrs(char *trans, CBLAS_INT *n, CBLAS_INT *nrhs, double *a, CBLAS_INT *lda,
+                   CBLAS_INT *ipiv, double *b, CBLAS_INT *ldb, CBLAS_INT *info) nogil
+    void qh_dgecon(char *norm, CBLAS_INT *n, double *a, CBLAS_INT *lda, double *anorm,
+                   double *rcond, double *work, CBLAS_INT *iwork, CBLAS_INT *info) nogil
 
 
 #------------------------------------------------------------------------------
@@ -1077,9 +1078,10 @@ def _get_barycentric_transforms(np.ndarray[np.double_t, ndim=2] points,
     cdef np.ndarray[np.double_t, ndim=2] T
     cdef np.ndarray[np.double_t, ndim=3] Tinvs
     cdef int isimplex
-    cdef int i, j, n, nrhs, lda, ldb
-    cdef int info = 0
-    cdef int ipiv[NPY_MAXDIMS+1]
+    cdef int i, j
+    cdef CBLAS_INT n, nrhs, lda, ldb
+    cdef CBLAS_INT info = 0
+    cdef CBLAS_INT ipiv[NPY_MAXDIMS+1]
     cdef int ndim, nsimplex
     cdef double centroid[NPY_MAXDIMS]
     cdef double c[NPY_MAXDIMS+1]
@@ -1089,7 +1091,7 @@ def _get_barycentric_transforms(np.ndarray[np.double_t, ndim=2] points,
     cdef double rcond_limit
 
     cdef double work[4*NPY_MAXDIMS]
-    cdef int iwork[NPY_MAXDIMS]
+    cdef CBLAS_INT iwork[NPY_MAXDIMS]
 
     cdef double x1, x2, x3
     cdef double y1, y2, y3
