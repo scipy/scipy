@@ -519,10 +519,21 @@ class nhypergeom_gen(rv_discrete):
 
     The negative hypergeometric distribution models the probability
     of :math:`k` successes in a sample of exactly :math:`r` failures
-    where :math:`N` are the total number of elements and :math:`K`
-    are defined to be successes.
+    taken without replacement where :math:`N` are the total number
+    of elements and :math:`K` are defined to be successes.
+
+    The negative hypergeometric distribution models the number of
+    successful samples in a sample with :math:`r` number of failures.
+    It is equivalent to observing :math:`k` successes in :math:`k+r-1`
+    samples with :math:`k+r`'th sample being a failure. The former
+    can be modelled as a hypergeometric distribution. Refer
+    :ref:`hypergeom` for more information.
 
     %(before_notes)s
+
+    See Also
+    --------
+    hypergeom
 
     Notes
     -----
