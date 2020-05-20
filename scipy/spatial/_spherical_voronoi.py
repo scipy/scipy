@@ -173,13 +173,13 @@ class SphericalVoronoi:
                           '(i.e. `radius=1`).',
                           DeprecationWarning)
 
+        self.radius = float(radius)
         self.points = np.array(points).astype(np.double)
-        self.radius = radius
         self._dim = len(points[0])
         if center is None:
             self.center = np.zeros(self._dim)
         else:
-            self.center = np.array(center)
+            self.center = np.array(center, dtype=float)
 
         # test degenerate input
         self._rank = np.linalg.matrix_rank(self.points - self.points[0],
