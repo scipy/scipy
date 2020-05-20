@@ -514,6 +514,117 @@ class hypergeom_gen(rv_discrete):
 hypergeom = hypergeom_gen(name='hypergeom')
 
 
+class nhypergeom_gen(rv_discrete):
+    r"""A negative hypergeometric discrete random variable.
+
+    The negative hypergeometric distribution models the probability
+    of :math:`k` successes in a sample of exactly :math:`r` failures
+    where :math:`N` are the total number of elements and :math:`K`
+    are defined to be successes.
+
+    %(before_notes)s
+
+    Notes
+    -----
+    The symbols used to denote the shape parameters (`N`, `K`, and `r`) are not
+    universally accepted.  See the Examples for a clarification of the
+    definitions used here.
+
+    The probability mass function is defined as,
+
+    .. math:: f(k; N, K, r) = \frac{{{k+r-1}\choose{k}}{{N-r-k}\choose{K-k}}}
+                              {N \choose K}\quad
+
+    for :math:`k \in 0, 1, 2, ..., K`, where the binomial
+    coefficients are defined as,
+
+    .. math:: \binom{n}{k} \equiv \frac{n!}{k! (n - k)!}.
+
+    The cumulative distribution, survivor function, hazard function,
+    cumulative hazard function, and inverse distribution function,
+    moment generating function, and characteristic function on the
+    support of :math:`k` are mathematically intractab
+
+    %(after_notes)s
+
+    Examples
+    --------
+    >>> from scipy.stats import nhypergeom
+    >>> import matplotlib.pyplot as plt
+
+    Suppose we have a collection of 20 animals, of which 7 are dogs.
+    Then if we want to know the probability of finding a given number
+    of dogs (successes) if we have a sample with exactly 12 animals
+    that aren't dogs, we can initialize a frozen distribution and
+    plot the probability mass function:
+
+    >>> [N, K, r] = [20, 7, 12]
+    >>> rv = nhypergeom(N, K, r)
+    >>> x = np.arange(0, K)
+    >>> pmf_dogs = rv.pmf(x)
+
+    >>> fig = plt.figure()
+    >>> ax = fig.add_subplot(111)
+    >>> ax.plot(x, pmf_dogs, 'bo')
+    >>> ax.vlines(x, 0, pmf_dogs, lw=2)
+    >>> ax.set_xlabel('# of dogs in our group with given failures')
+    >>> ax.set_ylabel('nhypergeom PMF')
+    >>> plt.show()
+
+    Instead of using a frozen distribution we can also use `nhypergeom`
+    methods directly.  To for example obtain the cumulative distribution
+    function, use:
+
+    >>> prb = nhypergeom.pmf(x, N, K, r)
+
+    And to generate random numbers:
+
+    >>> R = nhypergeom.rvs(N, K, r, size=10)
+
+    """
+    def _rvs(self, N, K, r, size=None, random_state=None):
+        # FIXME: I wasn't able to find a method to sample
+        # from this distribution.
+        return random_state.negetive_hypergeometric(N, N-K, r, size=size)
+
+    def _get_support(self, N, K, r):
+        return K
+
+    def _argcheck(self, N, K, r):
+        cond = (N >= 0)
+        cond &= (K >= 0) & (K <= N)
+        cond &= (r >= 0) & (r >= N-K)
+        return cond
+
+    def _logpmf(self, k, N, K, r):
+        result = (betaln(k+r, k+1) + betaln(k-r, 1) +
+                  betaln(N-r-k+1, 1) + betaln(N-r-k+1, K-k+1) -
+                  betaln(N+1, K+1) - betaln(N+1, 1))
+        return result
+
+    def _pmf(self, k, N, K, r):
+        # same as the following but numerically more precise
+        # return comb(k+r-1, k) * comb(N-r-k, K-k) / comb(N, k)
+        return exp(self._logpmf(k, N, K, r))
+
+    def _stats(self, N, K, r):
+        # Promote the datatype to at least float
+        # mu = rK / (N-K+1)
+        N, K, r = 1.*N, 1.*K, 1.*r
+        mu = r*K / (N-K+1)
+
+        var = r*(N+1)*K / ((N-K+1)*(N-K+2))
+        var *= 1 - r / (N-K+1)
+
+        # The skew and kurtosis are mathematically
+        # intractable so return np.nan
+        g1, g2 = np.nan, np.nan
+        return mu, var, g1, g2
+
+
+nhypergeom = nhypergeom_gen(name='nhypergeom')
+
+
 # FIXME: Fails _cdfvec
 class logser_gen(rv_discrete):
     r"""A Logarithmic (Log-Series, Series) discrete random variable.
