@@ -583,7 +583,7 @@ class nhypergeom_gen(rv_discrete):
     >>> plt.show()
 
     Instead of using a frozen distribution we can also use `nhypergeom`
-    methods directly.  To for example obtain the cumulative distribution
+    methods directly.  To for example obtain the probability mass
     function, use:
 
     >>> prb = nhypergeom.pmf(x, N, K, r)
@@ -604,7 +604,7 @@ class nhypergeom_gen(rv_discrete):
     def _argcheck(self, N, K, r):
         cond = (N >= 0)
         cond &= (K >= 0) & (K <= N)
-        cond &= (r >= 0) & (r >= N-K)
+        cond &= (r >= 0) & (r <= N-K)
         return cond
 
     def _logpmf(self, k, N, K, r):
