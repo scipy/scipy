@@ -47,7 +47,7 @@ _status_message = {'success': 'Optimization terminated successfully.',
                               'exceeded.',
                    'pr_loss': 'Desired error not necessarily achieved due '
                               'to precision loss.',
-                   'nan': 'NaN result encountered.'}
+                   'nan': 'NaN result encountered.',
                    'out_of_bounds': 'The result is outside of the provided '
                                     'bounds.'}
 
@@ -2854,19 +2854,20 @@ def _minimize_powell(func, x0, args=(), callback=None, bounds=None,
     return_all : bool, optional
         Set to True to return a list of the best solution at each of the
         iterations.
-    bounds : sequence
-        Sequence of ``(min, max)`` pairs for each element in ``x0``. None
-        is used to specify no bound. If bounds are not provided, then an
-        unbounded line search will be used. If bounds are provided and
-        the initial guess is within the bounds, then every function
-        evaluation throughout the minimization procedure will be within
-        the bounds. If bounds are provided, the initial guess is outside
-        the bounds, and `direc` is full rank (or left to default), then
-        some function evaluations during the first iteration may be
-        outside the bounds, but every function evaluation after the first
-        iteration will be within the bounds. If `direc` is not full rank,
-        then some parameters may not be optimized and the solution is not
-        guarenteed to be within the bounds.
+    bounds : `Bounds`
+        If bounds are not provided, then an unbounded line search will be used.
+        If bounds are provided and the initial guess is within the bounds, then
+        every function evaluation throughout the minimization procedure will be
+        within the bounds. If bounds are provided, the initial guess is outside
+        the bounds, and `direc` is full rank (or left to default), then some
+        function evaluations during the first iteration may be outside the
+        bounds, but every function evaluation after the first iteration will be
+        within the bounds. If `direc` is not full rank, then some parameters may
+        not be optimized and the solution is not guaranteed to be within the
+        bounds.
+    return_all : bool, optional
+        Set to True to return a list of the best solution at each of the
+        iterations.
     """
     _check_unknown_options(unknown_options)
     maxfun = maxfev
@@ -2907,12 +2908,12 @@ def _minimize_powell(func, x0, args=(), callback=None, bounds=None,
     if bounds is None:
         # don't make these arrays of all +/- inf. because
         # _linesearch_powell will do an unnecessary check of all the elements.
-        # just keep them None, an _linesearch_powell will not have to check
+        # just keep them None, _linesearch_powell will not have to check
         # all the elements.
         lower_bound, upper_bound = None, None
     else:
         # bounds is standardized in _minimize.py.
-        lower_bound, upper_bound = bounds
+        lower_bound, upper_bound = bounds.lb, bounds.ub
         if np.any(lower_bound > x0) or np.any(x0 > upper_bound):
             warnings.warn("Initial guess is not within the specified bounds",
                           OptimizeWarning, 3)
@@ -2980,7 +2981,7 @@ def _minimize_powell(func, x0, args=(), callback=None, bounds=None,
     # established warning flags for maxfev and maxiter, so the out of bounds
     # warning flag becomes 3, but is checked for first.
     if bounds and (np.any(lower_bound > x) or np.any(x > upper_bound)):
-        warnflag = 3
+        warnflag = 4
         msg = _status_message['out_of_bounds']
     elif fcalls[0] >= maxfun:
         warnflag = 1
