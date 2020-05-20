@@ -319,12 +319,18 @@ def test_NaN_warnings():
     for r in record:
         assert r.category is not RuntimeWarning
 
+
 def test_lil_matrix():
-    # Test that using lil sparse matrix do not cause error 
-    G_dense = np.array([[0, 3, 0, 0 ,0],
+    # Test that using lil sparse matrix do not cause error
+    G_dense = np.array([[0, 3, 0, 0, 0],
                         [0, 0, -1, 0, 0],
                         [0, 0, 0, 2, 0],
                         [0, 0, 0, 0, 4],
-                        [0, 0, 0, 0, 0]])
+                        [0, 0, 0, 0, 0]], dtype=float)
+    SP = shortest_path(G_dense)
+    G_csr = scipy.sparse.csr_matrix(G_dense)
+    G_csc = scipy.sparse.csc_matrix(G_dense)
     G_lil = scipy.sparse.lil_matrix(G_dense)
-    shortest_path(G_lil)
+    assert_array_almost_equal(SP, shortest_path(G_csr))
+    assert_array_almost_equal(SP, shortest_path(G_csc))
+    assert_array_almost_equal(SP, shortest_path(G_lil))
