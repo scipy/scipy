@@ -165,10 +165,12 @@ class _PSD(object):
             raise np.linalg.LinAlgError('singular matrix')
         s_pinv = _pinv_1d(s, eps)
         U = np.multiply(u, np.sqrt(s_pinv))
+        L = np.multiply(u, np.sqrt(np.where(s > eps, s, 0)))
 
         # Initialize the eagerly precomputed attributes.
         self.rank = len(d)
         self.U = U
+        self.L = L
         self.log_pdet = np.sum(np.log(d))
 
         # Initialize an attribute to be lazily computed.
@@ -636,6 +638,30 @@ class multivariate_normal_gen(multi_rv_generic):
         out = self._cdf(x, mean, cov, maxpts, abseps, releps)
         return out
 
+    def _rvs(self, mean, cov_L, size, random_state=None):
+        """
+        Parameters
+        ----------
+        mean : ndarray
+            Mean of the distribution
+        cov_L : ndarray
+            A decomposition such that np.dot(cov_L, cov_L.T)
+            is the covariance matrix.
+        size : integer
+            Number of samples to draw.
+        %(_doc_random_state)s
+
+        Notes
+        -----
+        As this function does no argument checking, it should not be
+        called directly; use 'rvs' instead.
+
+        """
+        random_state = self._get_random_state(random_state)
+        std_norm = random_state.standard_normal((size, mean.size))
+        out = mean + np.dot(std_norm, cov_L.T)
+        return _squeeze_output(out)
+
     def rvs(self, mean=None, cov=1, size=1, random_state=None):
         """
         Draw random samples from a multivariate normal distribution.
@@ -659,10 +685,8 @@ class multivariate_normal_gen(multi_rv_generic):
 
         """
         dim, mean, cov = self._process_parameters(None, mean, cov)
-
-        random_state = self._get_random_state(random_state)
-        out = random_state.multivariate_normal(mean, cov, size)
-        return _squeeze_output(out)
+        cov_info = _PSD(cov, allow_singular=True)
+        return self._rvs(mean, cov_info.L, size, random_state)
 
     def entropy(self, mean=None, cov=1):
         """
@@ -766,7 +790,7 @@ class multivariate_normal_frozen(multi_rv_frozen):
         return _squeeze_output(out)
 
     def rvs(self, size=1, random_state=None):
-        return self._dist.rvs(self.mean, self.cov, size, random_state)
+        return self._dist._rvs(self.mean, self.cov_info.L, size, random_state)
 
     def entropy(self):
         """
