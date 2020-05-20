@@ -320,8 +320,8 @@ def test_NaN_warnings():
         assert r.category is not RuntimeWarning
 
 
-def test_lil_matrix():
-    # Test that using lil sparse matrix do not cause error
+def test_sparse_matrices():
+    # Test that using lil,csr and csc sparse matrix do not cause error
     G_dense = np.array([[0, 3, 0, 0, 0],
                         [0, 0, -1, 0, 0],
                         [0, 0, 0, 2, 0],
