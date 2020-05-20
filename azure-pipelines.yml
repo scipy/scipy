@@ -67,7 +67,7 @@ jobs:
   variables:
     # OPENBLAS64_ variable has same value
     # but only needed for ILP64 build below
-    OPENBLAS: '$(Agent.BuildDirectory)\openblaslib'
+    OPENBLAS: '$(Agent.HomeDirectory)\openblaslib'
   strategy:
     maxParallel: 4
     matrix:
