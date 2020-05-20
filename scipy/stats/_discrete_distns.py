@@ -604,7 +604,7 @@ class nhypergeom_gen(rv_discrete):
 
     def _pmf(self, k, N, K, r):
         # same as the following but numerically more precise
-        # return comb(k+r-1, k) * comb(N-r-k, K-k) / comb(N, k)
+        # return comb(k+r-1, k) * comb(N-r-k, K-k) / comb(N, K)
         return exp(self._logpmf(k, N, K, r))
 
     def _stats(self, N, K, r):
