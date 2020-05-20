@@ -615,7 +615,7 @@ def test_onesided_bounded_powell_stability():
     # are large to test the stability of the transformation.
     kwargs = {'method': 'Powell',
               'bounds': [(-np.inf, 1e6)] * 3,
-              'options': {'ftol': 1e-8, 'xtol':1e-8}}
+              'options': {'ftol': 1e-8, 'xtol': 1e-8}}
     x0 = [1, 1, 1]
 
     # df/dx is constant.
