@@ -191,6 +191,15 @@ else:
         html_logo = '_static/scipyshiny_small.png'
         html_sidebars = {'index': ['indexsidebar.html', 'searchbox.html']}
 
+if 'versionwarning' in tags:
+    # Specific to docs.scipy.org deployment.
+    # See https://github.com/scipy/docs.scipy.org/blob/master/_static/versionwarning.js_t
+    src = '$.getScript("/doc/_static/versionwarning.js");'
+    html_context = {
+        'VERSIONCHECK_JS': src
+    }
+    html_js_files = ['versioncheck.js']
+
 html_title = "%s v%s Reference Guide" % (project, version)
 html_static_path = ['_static']
 html_last_updated_fmt = '%b %d, %Y'
