@@ -6580,7 +6580,7 @@ class rayleigh_gen(rv_continuous):
                the independent parameter's solution.
         """
         check_fit_input_parameters(data, args, kwds,
-                                       fixed_param=(fscale, floc))
+                                   fixed_param=(fscale, floc))
         if floc is not None:
             # if `floc` is fixed, determine `scale` with MLE
             data = np.asarray(data)
@@ -6590,7 +6590,7 @@ class rayleigh_gen(rv_continuous):
             return super(rayleigh_gen,
                          self).fit(data, fscale=fscale)
         else:
-            # both `floc` and `fscale` are free, use 
+            # both `floc` and `fscale` are free, use
             # custom `_reduce_func`
             def _reduce_func(x0, ll, args, kwds):
                 def func(loc, data):
@@ -6602,6 +6602,7 @@ class rayleigh_gen(rv_continuous):
                 return x0[0], func, get_tuple
             return super(rayleigh_gen,
                          self).fit(data, _reduce_func=_reduce_func)
+
 
 rayleigh = rayleigh_gen(a=0.0, name="rayleigh")
 

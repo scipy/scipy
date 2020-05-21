@@ -2999,10 +2999,11 @@ class TestRayleigh(object):
 
         ll_mle = func((loc, scale), data)
         ll_opt = func(loc_scale_opt, data)
-        assert ll_mle < ll_opt or np.allclose(ll_opt,ll_mle)
+        assert ll_mle < ll_opt or np.allclose(ll_opt, ll_mle)
 
         # An error is raised if both parameters are fixed
-        assert_raises(RuntimeError, stats.rayleigh.fit, data, floc=floc, fscale=fscale)
+        assert_raises(RuntimeError, stats.rayleigh.fit, data, floc=floc,
+                      fscale=fscale)
 
 
 class TestExponWeib(object):
