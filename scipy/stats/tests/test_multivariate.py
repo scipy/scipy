@@ -260,17 +260,22 @@ class TestMultivariateNormal(object):
 
     def test_frozen(self):
         # The frozen distribution should agree with the regular one
+        rvs_seed = 4567
         np.random.seed(1234)
         x = np.random.randn(5)
         mean = np.random.randn(5)
         cov = np.abs(np.random.randn(5))
-        norm_frozen = multivariate_normal(mean, cov)
+        norm_frozen = multivariate_normal(mean, cov, seed=rvs_seed)
         assert_allclose(norm_frozen.pdf(x), multivariate_normal.pdf(x, mean, cov))
         assert_allclose(norm_frozen.logpdf(x),
                         multivariate_normal.logpdf(x, mean, cov))
         assert_allclose(norm_frozen.cdf(x), multivariate_normal.cdf(x, mean, cov))
         assert_allclose(norm_frozen.logcdf(x),
                         multivariate_normal.logcdf(x, mean, cov))
+        n = 2
+        assert_array_almost_equal(
+            norm_frozen.rvs(n), multivariate_normal.rvs(mean, cov, size=n,
+                                                        random_state=rvs_seed))
 
     def test_pseudodet_pinv(self):
         # Make sure that pseudo-inverse and pseudo-det agree on cutoff
