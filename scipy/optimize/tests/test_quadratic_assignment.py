@@ -5,16 +5,35 @@ from scipy.optimize import quadratic_assignment
 
 
 @pytest.mark.parametrize("n", [10, 100])
-def test_weighted_graph_isomorphism(n):
+@pytest.mark.parametrize("directed", [False, True])
+def test_weighted_graph_isomorphism(n, directed):
     rng = np.random.RandomState(seed=0)
     A = np.abs(rng.randn(n, n))
-    A = A + A.T
+    if not directed:
+        A = (A + A.T) / 2
 
     P = rng.permutation(n)
     B = A[P][:, P]
 
     result = quadratic_assignment(A, B, maximize=True)
     assert_array_equal(result.col_ind, P)
+
+
+def test_directed_weighted_graph_matching():
+    # Example in section IVB of Umeyama:
+    # "An eigendecomposition approach to weighted graph matching"
+    A = np.array([[0, 3, 4, 2],
+                  [0, 0, 1, 2],
+                  [1, 0, 0, 1],
+                  [0, 0, 1, 0]])
+
+    B = np.array([[0, 4, 2, 4],
+                  [0, 0, 1, 0],
+                  [0, 2, 0, 2],
+                  [0, 1, 2, 0]])
+
+    result = quadratic_assignment(A, B, maximize=True)
+    assert_array_equal(result.col_ind, [0, 2, 3, 1])
 
 
 class TestQAP():
@@ -30,7 +49,8 @@ class TestQAP():
                            [8, 5, 0, 5],
                            [4, 2, 5, 0]])
 
-    # Example in section IIIB of Umeyama: "Weighted graph matching problems".
+    # Example in section IIIB of Umeyama:
+    # "An eigendecomposition approach to weighted graph matching"
     @pytest.mark.parametrize("maximize,permutation,score",
                              [(False, [3, 2, 1, 0], 200),
                               (True, [2, 3, 0, 1], 286)])

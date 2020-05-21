@@ -2,20 +2,20 @@ import numpy as np
 from . import linear_sum_assignment, OptimizeResult
 
 
-def eigenvectors(x):
-    # get eigenvectors sorted by eigenvalue magnitude (large to small)
-    l, v = np.linalg.eig(x)
-    indices = np.argsort(l, kind='merge')[::-1]
-    return v[:, indices]
-
-
 def umeyama_eigendecomposition(A, B, maximize=False):
-    # Finds an approximate solution to QAP using Umeyama's method
-    W = np.abs(eigenvectors(B)) @ np.abs(eigenvectors(A)).T
+    """Finds an approximate solution to QAP using Umeyama's method."""
+    # 'Correct' non-hermitian matrices
+    if (A != A.T).any() or (B != B.T).any():
+        A = (A + A.T) / 2 + 1j * (A - A.T) / 2
+        B = (B + B.T) / 2 + 1j * (B - B.T) / 2
+
+    va = np.linalg.eigh(A)[1]
+    vb = np.linalg.eigh(B)[1]
+    W = np.abs(vb) @ np.abs(va).T
     _, col_ind = linear_sum_assignment(W, maximize=maximize)
 
     # faster version of `float(np.trace(A @ B[col_ind][:, col_ind].T))`
-    score = float(np.sum(A * B[col_ind][:, col_ind]))
+    score = float(np.real(np.sum(A * B[col_ind][:, col_ind])))
     return OptimizeResult({"col_ind": col_ind, "score": score})
 
 
