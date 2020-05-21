@@ -2979,6 +2979,9 @@ class TestRayleigh(object):
         loc, scale = stats.rayleigh.fit(data, floc=floc)
         assert_equal(loc, floc)
         assert_equal(scale, scale_expect)
+        # when `fscale` is fixed, standard numerical optimization is used.
+        loc, scale = stats.rayleigh.fit(data, fscale=.6)
+        assert_equal(scale, .6)
 
         # with both parameters free, `loc` is numerically optimized
         # using the objective function with the MLE for scale
