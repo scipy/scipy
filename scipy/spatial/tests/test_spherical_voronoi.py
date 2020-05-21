@@ -12,6 +12,7 @@ from scipy.spatial import SphericalVoronoi, distance
 from scipy.spatial import _spherical_voronoi as spherical_voronoi
 from scipy.optimize import linear_sum_assignment
 from scipy.constants import golden as phi
+from scipy.special import gamma
 
 
 TOL = 1E-10
@@ -56,9 +57,19 @@ def _generate_icosahedron():
     return np.concatenate([np.roll(x, i, axis=1) for i in range(3)])
 
 
-def _generate_polyhedron(name):
+def _generate_polytope(name):
+    polygons = ["triangle", "square", "pentagon", "hexagon", "heptagon",
+                "octagon", "nonagon", "decagon", "undecagon", "dodecagon"]
+    polyhedra = ["tetrahedron", "cube", "octahedron", "dodecahedron",
+                 "icosahedron"]
+    if name not in polygons and name not in polyhedra:
+        raise ValueError("unrecognized polytope")
 
-    if name == "tetrahedron":
+    if name in polygons:
+        n = polygons.index(name) + 3
+        thetas = np.linspace(0, 2 * np.pi, n, endpoint=False)
+        p = np.vstack([np.cos(thetas), np.sin(thetas)]).T
+    elif name == "tetrahedron":
         p = _generate_tetrahedron()
     elif name == "cube":
         p = _generate_cube()
@@ -68,10 +79,13 @@ def _generate_polyhedron(name):
         p = _generate_dodecahedron()
     elif name == "icosahedron":
         p = _generate_icosahedron()
-    else:
-        raise ValueError("unrecognized polyhedron")
 
     return p / np.linalg.norm(p, axis=1)[:, np.newaxis]
+
+
+def _hypersphere_area(dim, radius):
+    # https://en.wikipedia.org/wiki/N-sphere#Closed_forms
+    return 2 * np.pi**(dim / 2) / gamma(dim / 2) * radius**(dim - 1)
 
 
 class TestSphericalVoronoi(object):
@@ -298,35 +312,45 @@ class TestSphericalVoronoi(object):
         res = linear_sum_assignment(dist)
         assert dist[res].sum() < TOL
 
+    @pytest.mark.parametrize("n", [10, 500])
+    @pytest.mark.parametrize("dim", [2, 3])
     @pytest.mark.parametrize("radius", [0.5, 1, 2])
-    @pytest.mark.parametrize("center", [(0, 0, 0), (1, 2, 3)])
-    def test_area_reconstitution(self, radius, center):
-        for points in [self.points, self.hemisphere_points,
-                       self.hemisphere_points2]:
-            sv = SphericalVoronoi(radius * points + center,
-                                  radius=radius,
-                                  center=center)
-            areas = sv.calculate_areas()
-            assert_almost_equal(areas.sum(), 4 * np.pi * radius**2)
+    @pytest.mark.parametrize("shift", [False, True])
+    @pytest.mark.parametrize("single_hemisphere", [False, True])
+    def test_area_reconstitution(self, n, dim, radius, shift,
+                                 single_hemisphere):
+        # sample points uniformly on the hypersphere
+        rng = np.random.RandomState(seed=0)
+        points = rng.randn(n, dim)
+        points /= np.linalg.norm(points, axis=1)[:, np.newaxis]
 
-    @pytest.mark.parametrize("radius", [0.5, 1, 2])
-    def test_area_reconstitution_large_input(self, radius):
-        np.random.seed(0)
-        n = 1000
-        points = np.random.uniform(-1, 1, (n, 3))
-        points /= np.linalg.norm(points, axis=1).reshape((n, 1))
+        # move all points to one side of the sphere for single-hemisphere test
+        if single_hemisphere:
+            points[:, 0] = np.abs(points[:, 0])
 
-        sv = SphericalVoronoi(radius * points, radius=radius)
+        center = (np.arange(dim) + 1) * shift
+        points = radius * points + center
+
+        sv = SphericalVoronoi(points, radius=radius, center=center)
         areas = sv.calculate_areas()
-        assert_almost_equal(areas.sum(), 4 * np.pi * radius**2)
+        assert_almost_equal(areas.sum(), _hypersphere_area(dim, radius))
 
-    @pytest.mark.parametrize("poly", ["tetrahedron", "cube", "octahedron",
+    @pytest.mark.parametrize("poly", ["triangle", "dodecagon",
+                                      "tetrahedron", "cube", "octahedron",
                                       "dodecahedron", "icosahedron"])
-    def test_equal_area_regions(self, poly):
-        points = _generate_polyhedron(poly)
+    def test_equal_area_reconstitution(self, poly):
+        points = _generate_polytope(poly)
+        n, dim = points.shape
         sv = SphericalVoronoi(points)
         areas = sv.calculate_areas()
-        assert_almost_equal(areas, 4 * np.pi / len(points))
+        assert_almost_equal(areas, _hypersphere_area(dim, 1) / n)
+
+    def test_area_unsupported_dimension(self):
+        dim = 4
+        points = np.concatenate((-np.eye(dim), np.eye(dim)))
+        sv = SphericalVoronoi(points)
+        with pytest.raises(TypeError, match="Only supported"):
+            sv.calculate_areas()
 
     @pytest.mark.parametrize("radius", [1, 1.])
     @pytest.mark.parametrize("center", [None, (1, 2, 3), (1., 2., 3.)])
