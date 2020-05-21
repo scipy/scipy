@@ -1,5 +1,5 @@
 import numpy as np
-from . import linear_sum_assignment, OptimizeResult
+from ._qap_umeyama import umeyama_eigendecomposition
 
 
 def quadratic_assignment(A, B, maximize=False):
@@ -96,13 +96,4 @@ def quadratic_assignment(A, B, maximize=False):
     if (B < 0).any():
         raise ValueError("``B`` contains negative entries")
 
-    def eigenvectors(x):
-        # get eigenvectors sorted by eigenvalue magnitude (large to small)
-        l, v = np.linalg.eig(x)
-        indices = np.argsort(l, kind='merge')[::-1]
-        return v[:, indices]
-
-    W = np.abs(eigenvectors(B)) @ np.abs(eigenvectors(A)).T
-    _, col_ind = linear_sum_assignment(W, maximize=maximize)
-    score = float(np.trace(A @ B[col_ind][:, col_ind].T))
-    return OptimizeResult({"col_ind": col_ind, "score": score})
+    return umeyama_eigendecomposition(A, B, maximize)
