@@ -111,11 +111,15 @@ def test_quadratic_assignment_input_validation():
     # correct type
 
     with pytest.raises(TypeError):
-        quadratic_assignment(A, B, n_init=-1.5)
+        quadratic_assignment(A, B, n_init=1.5)
+    with pytest.raises(ValueError):
+        quadratic_assignment(A, B, n_init=-1)
     with pytest.raises(ValueError):
         quadratic_assignment(A, B, init="random")
     with pytest.raises(TypeError):
-        quadratic_assignment(A, B, maxiter=-1.5)
+        quadratic_assignment(A, B, maxiter=1.5)
+    with pytest.raises(ValueError):
+        quadratic_assignment(A, B, maxiter=-1)
     with pytest.raises(TypeError):
         quadratic_assignment(A, B, shuffle_input="hey")
     with pytest.raises(TypeError):
@@ -139,6 +143,12 @@ def test_quadratic_assignment_input_validation():
     with pytest.raises(ValueError):
         quadratic_assignment(
             np.random.random((3, 4)),
+            np.random.random((3, 3)),
+            _range_matrix(2, 2),
+        )
+    with pytest.raises(ValueError):
+        quadratic_assignment(
+            np.random.random((3, 3)),
             np.random.random((3, 4)),
             _range_matrix(2, 2),
         )
