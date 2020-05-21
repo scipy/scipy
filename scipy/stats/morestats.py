@@ -2714,7 +2714,7 @@ WilcoxonResult = namedtuple('WilcoxonResult', ('statistic', 'pvalue'))
 
 
 def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
-             alternative="two-sided", method='auto'):
+             alternative="two-sided", mode='auto'):
     """
     Calculate the Wilcoxon signed-rank test.
 
@@ -2750,7 +2750,7 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
     alternative : {"two-sided", "greater", "less"}, optional
         The alternative hypothesis to be tested, see Notes. Default is
         "two-sided".
-    method : {"auto", "exact", "approx"}
+    mode : {"auto", "exact", "approx"}
         Method to calculate the p-value, see Notes. Default is "auto".
 
     Returns
@@ -2760,7 +2760,7 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
         differences above or below zero, whichever is smaller.
         Otherwise the sum of the ranks of the differences above zero.
     pvalue : float
-        The p-value for the test depending on `alternative` and `method`.
+        The p-value for the test depending on `alternative` and `mode`.
 
     See Also
     --------
@@ -2778,10 +2778,10 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
     the alternative that the it is negative (``alternative == 'less'``),
     or vice versa (``alternative == 'greater.'``).
 
-    To derive the p-value, the exact distribution (``method == 'exact'``)
-    can be used for sample sizes of up to 25. The default ``method == 'auto'``
+    To derive the p-value, the exact distribution (``mode == 'exact'``)
+    can be used for sample sizes of up to 25. The default ``mode == 'auto'``
     uses the exact distribution if there are at most 25 observations and no
-    ties, otherwise a normal approximation is used (``method == 'approx'``).
+    ties, otherwise a normal approximation is used (``mode == 'approx'``).
 
     The treatment of ties can be controlled by the parameter `zero_method`.
     If ``zero_method == 'pratt'``, the normal approximation is adjusted as in
@@ -2831,7 +2831,7 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
     the median is greater than zero. The p-values above are exact. Using the
     normal approximation gives very similar values:
 
-    >>> w, p = wilcoxon(d, method='approx')
+    >>> w, p = wilcoxon(d, mode='approx')
     >>> w, p
     (24.0, 0.04088813291185591)
 
@@ -2840,8 +2840,8 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
     case (the minimum of sum of ranks above and below zero).
 
     """
-    if method not in ["auto", "approx", "exact"]:
-        raise ValueError("method must be either 'auto', 'approx' or 'exact'")
+    if mode not in ["auto", "approx", "exact"]:
+        raise ValueError("mode must be either 'auto', 'approx' or 'exact'")
 
     if zero_method not in ["wilcox", "pratt", "zsplit"]:
         raise ValueError("Zero method must be either 'wilcox' "
@@ -2863,19 +2863,19 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
             raise ValueError('The samples x and y must have the same length.')
         d = x - y
 
-    if method == "auto":
+    if mode == "auto":
         if len(d) <= 25:
-            method = "exact"
+            mode = "exact"
         else:
-            method = "approx"
+            mode = "approx"
 
     n_zero = np.sum(d == 0)
-    if n_zero > 0 and method == "exact":
-        method = "approx"
+    if n_zero > 0 and mode == "exact":
+        mode = "approx"
         warnings.warn("Exact p-value calculation does not work if there are "
                       "ties. Switching to normal approximation.")
 
-    if method == "approx":
+    if mode == "approx":
         if zero_method in ["wilcox", "pratt"]:
             if n_zero == len(d):
                 raise ValueError("zero_method 'wilcox' and 'pratt' do not "
@@ -2885,7 +2885,7 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
             d = compress(np.not_equal(d, 0), d)
 
     count = len(d)
-    if count < 10 and method == "approx":
+    if count < 10 and mode == "approx":
         warnings.warn("Sample size too small for normal approximation.")
 
     r = stats.rankdata(abs(d))
@@ -2909,7 +2909,7 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
     else:
         T = r_plus
 
-    if method == "approx":
+    if mode == "approx":
         mn = count * (count + 1.) * 0.25
         se = count * (count + 1.) * (2. * count + 1.)
 
@@ -2946,7 +2946,7 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
             prob = distributions.norm.sf(z)
         else:
             prob = distributions.norm.cdf(z)
-    elif method == "exact":
+    elif mode == "exact":
         # get frequencies cnt of the possible positive ranksums r_plus
         cnt = _get_wilcoxon_distr(count)
         # note: r_plus is int (ties not allowed), need int for slices below
