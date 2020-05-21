@@ -4414,6 +4414,7 @@ class TestSigmaClip(object):
 
 
 class TestFOneWay(object):
+
     def test_trivial(self):
         # A trivial test of stats.f_oneway, with F=0.
         F, p = stats.f_oneway([0, 2], [0, 2])
@@ -4494,7 +4495,8 @@ class TestFOneWay(object):
             f, p = stats.f_oneway(a, b)
             assert f, p == expected
 
-    def test_2d_inputs(self):
+    @pytest.mark.parametrize('axis', [-2, -1, 0, 1])
+    def test_2d_inputs(self, axis):
         a = np.array([[1, 4, 3, 3],
                       [2, 5, 3, 3],
                       [3, 6, 3, 3],
@@ -4513,28 +4515,57 @@ class TestFOneWay(object):
                       [5, 4, 4, 3],
                       [5, 4, 4, 3]])
 
-        with assert_warns(stats.F_onewayConstantInputWarning):
-            f, p = stats.f_oneway(a, b, c)
+        if axis in [-1, 1]:
+            a = a.T
+            b = b.T
+            c = c.T
+            take_axis = 0
+        else:
+            take_axis = 1
 
-        # Verify the result computed with the 2d arrays matches the result
-        # from calling f_oneway individually on each slice.
+        with assert_warns(stats.F_onewayConstantInputWarning):
+            f, p = stats.f_oneway(a, b, c, axis=axis)
+
+        # Verify that the result computed with the 2d arrays matches
+        # the result of calling f_oneway individually on each slice.
         for j in [0, 1]:
-            fj, pj = stats.f_oneway(a[:, j], b[:, j], c[:, j])
+            fj, pj = stats.f_oneway(np.take(a, j, take_axis),
+                                    np.take(b, j, take_axis),
+                                    np.take(c, j, take_axis))
             assert_allclose(f[j], fj, rtol=1e-14)
             assert_allclose(p[j], pj, rtol=1e-14)
         for j in [2, 3]:
             with assert_warns(stats.F_onewayConstantInputWarning):
-                fj, pj = stats.f_oneway(a[:, j], b[:, j], c[:, j])
+                fj, pj = stats.f_oneway(np.take(a, j, take_axis),
+                                        np.take(b, j, take_axis),
+                                        np.take(c, j, take_axis))
                 assert_equal(f[j], fj)
                 assert_equal(p[j], pj)
 
-    def test_length0_error(self):
-        # Require at least one value in each group.
+    def test_3d_inputs(self):
+        # Some 3-d arrays. (There is nothing special about the values.)
+        a = 1/np.arange(1.0, 4*5*7 + 1).reshape(4, 5, 7)
+        b = 2/np.arange(1.0, 4*8*7 + 1).reshape(4, 8, 7)
+        c = np.cos(1/np.arange(1.0, 4*4*7 + 1).reshape(4, 4, 7))
 
+        f, p = stats.f_oneway(a, b, c, axis=1)
+
+        assert f.shape == (4, 7)
+        assert p.shape == (4, 7)
+
+        for i in range(a.shape[0]):
+            for j in range(a.shape[2]):
+                fij, pij = stats.f_oneway(a[i, :, j], b[i, :, j], c[i, :, j])
+                assert_allclose(fij, f[i, j])
+                assert_allclose(pij, p[i, j])
+
+    def test_length0_1d_error(self):
+        # Require at least one value in each group.
         with assert_warns(stats.F_onewayBadInputSizesWarning):
             result = stats.f_oneway([1, 2, 3], [], [4, 5, 6, 7])
             assert_equal(result, (np.nan, np.nan))
 
+    def test_length0_2d_error(self):
         with assert_warns(stats.F_onewayBadInputSizesWarning):
             ncols = 3
             a = np.ones((4, ncols))
@@ -4554,6 +4585,18 @@ class TestFOneWay(object):
     def test_too_few_inputs(self, args):
         with assert_raises(TypeError):
             stats.f_oneway(*args)
+
+    def test_axis_error(self):
+        a = np.ones((3, 4))
+        b = np.ones((5, 4))
+        with assert_raises(np.AxisError):
+            stats.f_oneway(a, b, axis=2)
+
+    def test_bad_shapes(self):
+        a = np.ones((3, 4))
+        b = np.ones((5, 4))
+        with assert_raises(ValueError):
+            stats.f_oneway(a, b, axis=1)
 
 
 class TestKruskal(object):
