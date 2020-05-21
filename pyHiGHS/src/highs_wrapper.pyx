@@ -100,7 +100,7 @@ cdef str _opt_warning(string name, val, valid_set=None):
                 '%s'
                 'Using default: %s.' % (name.decode(), str(val), descr, default_value))
 
-    # We don't know what type?
+    # We don't know what type (should be unreachable)?
     return('Option "%s" is "%s", but this is not a valid value. '
            'See documentation for valid options. '
            'Using default.' % (name.decode(), str(val)))
@@ -185,10 +185,10 @@ cdef apply_options(dict options, Highs & highs):
     ]):
         val = options.get(opt.decode(), None)
         if val is not None:
-            if val in [True, False]:
-                if val == True:
+            if isinstance(val, bool):
+                if val:
                     val0 = b'on'
-                elif val == False:
+                else:
                     val0 = b'off'
                 opt_status = highs.setHighsOptionValueStr(opt, val0)
                 if opt_status != HighsStatusOK:
@@ -491,14 +491,15 @@ def highs_wrapper(
     lp.Avalue_.resize(numnz)
 
     # Be careful not index into nothing
-    cdef double * colcost_ptr = NULL
-    cdef double * collower_ptr = NULL
-    cdef double * colupper_ptr = NULL
-    cdef double * rowlower_ptr = NULL
-    cdef double * rowupper_ptr = NULL
-    cdef int * astart_ptr = NULL
-    cdef int * aindex_ptr = NULL
-    cdef double * avalue_ptr = NULL
+    cdef:
+        double * colcost_ptr = NULL
+        double * collower_ptr = NULL
+        double * colupper_ptr = NULL
+        double * rowlower_ptr = NULL
+        double * rowupper_ptr = NULL
+        int * astart_ptr = NULL
+        int * aindex_ptr = NULL
+        double * avalue_ptr = NULL
     if numrow > 0:
         rowlower_ptr = &lhs[0]
         rowupper_ptr = &rhs[0]
