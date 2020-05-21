@@ -13,9 +13,8 @@ def test_weighted_graph_isomorphism(n):
     P = rng.permutation(n)
     B = A[P][:, P]
 
-    res = quadratic_assignment(A, B, maximize=True)
-    assert_array_equal(res[0], np.arange(n))
-    assert_array_equal(res[1], P)
+    result = quadratic_assignment(A, B, maximize=True)
+    assert_array_equal(result.col_ind, P)
 
 
 class TestQAP():
@@ -32,12 +31,18 @@ class TestQAP():
                            [4, 2, 5, 0]])
 
     # Example in section IIIB of Umeyama: "Weighted graph matching problems".
-    @pytest.mark.parametrize("maximize,expected",
-                             [(False, [3, 2, 1, 0]), (True, [2, 3, 0, 1])])
-    def test_weighted_graph_matching(self, maximize, expected):
-        res = quadratic_assignment(self.A, self.B, maximize=maximize)
-        assert_array_equal(res[0], np.arange(len(self.A)))
-        assert_array_equal(res[1], expected)
+    @pytest.mark.parametrize("maximize,permutation,score",
+                             [(False, [3, 2, 1, 0], 200),
+                              (True, [2, 3, 0, 1], 286)])
+    def test_weighted_graph_matching(self, maximize, permutation, score):
+        result = quadratic_assignment(self.A, self.B, maximize=maximize)
+        assert_array_equal(result.col_ind, permutation)
+        assert result.score == score
+
+        n = len(self.A)
+        P = np.zeros((n, n), dtype=int)
+        P[np.arange(n), result.col_ind] = 1
+        assert score == np.trace(self.A @ P @ self.B.T @ P.T)
 
     def test_square_A(self):
         with pytest.raises(ValueError, match="must be a square matrix"):

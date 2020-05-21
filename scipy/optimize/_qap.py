@@ -1,24 +1,24 @@
 import numpy as np
-from . import linear_sum_assignment
+from . import linear_sum_assignment, OptimizeResult
 
 
 def quadratic_assignment(A, B, maximize=False):
     """Find an approximate solution to the quadratic assignment problem.
 
     This function finds approximate solutions to the quadratic assignment
-    problem (QAP), which is a problem of the form:
+    problem (QAP) [1]_, which is a problem of the form:
 
     .. math::
 
         \\min_P \\& \\ {-\\text{trace}(APB^T P^T)}\\\\
-        \\mbox{s.t. } \\& {P \\ \\epsilon \\ \\mathcal{P}}\\\\
+        \\mbox{s.t.} \\& {P \\ \\epsilon \\ \\mathcal{P}}\\\\
 
     Here :math:`A` and :math:`B` are non-negative square matrices and
     :math:`\\mathcal{P}` is the set of all permutation matrices.
 
     The QAP is a NP-hard problem. This function uses Umeyama's
-    eigendecomposition approach to find an approximate solution. The results
-    found are not guaranteed to be optimal.
+    eigendecomposition approach [2]_ to find an approximate solution. The
+    results found are not guaranteed to be optimal.
 
     Parameters
     ----------
@@ -33,20 +33,22 @@ def quadratic_assignment(A, B, maximize=False):
 
     Returns
     -------
-    row_ind, col_ind : array
-        An array of row indices and one of corresponding column indices giving
-        the assignment. The cost of the assignment can be computed as
-        ``np.trace(A.T[col_ind] @ B[col_ind].T)``. The row indices will be
-        sorted.
+    res : OptimizeResult
+        A :class:`scipy.optimize.OptimizeResult` consisting of the fields:
+            col_ind : array
+                An array of column indices giving the assignment.
+            score : float
+                The objective value of the assignment.
 
     References
     ----------
 
-    1. https://en.wikipedia.org/wiki/Quadratic_assignment_problem
+    .. [1] https://en.wikipedia.org/wiki/Quadratic_assignment_problem
 
-    2. S Umeyama. An eigendecomposition approach to weighted graph matching problems.
-       *IEEE Transactions on Pattern Analysis and Machine Intelligence*
-       10(5):695 - 703, September 1988, https://doi.org/10.1109/34.6778
+    .. [2] S Umeyama. An eigendecomposition approach to weighted graph matching
+           problems. *IEEE Transactions on Pattern Analysis and Machine
+           Intelligence* 10(5):695 - 703, September 1988,
+           https://doi.org/10.1109/34.6778
 
     Examples
     --------
@@ -60,11 +62,25 @@ def quadratic_assignment(A, B, maximize=False):
     ...               [8, 5, 0, 5],
     ...               [4, 2, 5, 0]])
     >>> from scipy.optimize import quadratic_assignment
-    >>> row_ind, col_ind = quadratic_assignment(A, B)
-    >>> print(row_ind)
-    array([0, 1, 2, 3])
-    >>> print(col_ind)
-    array([3, 2, 1, 0])
+    >>> res = quadratic_assignment(A, B)
+    >>> print(res)
+     col_ind: array([3, 2, 1, 0])
+       score: 200.0
+
+    The `score` value, :math:`trace(APB^T P^T)`, can be calculated by forming
+    the permutation matrix:
+    >>> n = len(A)
+    >>> P = np.zeros((n, n), dtype=int)
+    >>> P[np.arange(n), res.col_ind] = 1
+    >>> score = np.trace(A @ P @ B.T @ P.T)
+    >>> print(score)
+    200.0
+
+    Alternatively, the score can be calculated by applying the appropriate
+    permutation of ``B``:
+    >>> score = np.trace(A @ B[res.col_ind][:, res.col_ind].T)
+    >>> print(score)
+    200.0
     """
     A = np.asarray(A)
     B = np.asarray(B)
@@ -74,7 +90,7 @@ def quadratic_assignment(A, B, maximize=False):
     if B.ndim != 2:
         raise ValueError("``B`` must be a square matrix")
     if A.shape != B.shape:
-        raise ValueError("A and B must be of equal size")
+        raise ValueError("``A`` and ``B`` must be of equal size")
     if (A < 0).any():
         raise ValueError("``A`` contains negative entries")
     if (B < 0).any():
@@ -86,7 +102,7 @@ def quadratic_assignment(A, B, maximize=False):
         indices = np.argsort(l, kind='merge')[::-1]
         return v[:, indices]
 
-    cost_matrix = np.abs(eigenvectors(B)) @ np.abs(eigenvectors(A)).T
-    if maximize:
-        cost_matrix = -cost_matrix
-    return linear_sum_assignment(cost_matrix)
+    W = np.abs(eigenvectors(B)) @ np.abs(eigenvectors(A)).T
+    _, col_ind = linear_sum_assignment(W, maximize=maximize)
+    score = float(np.trace(A @ B[col_ind][:, col_ind].T))
+    return OptimizeResult({"col_ind": col_ind, "score": score})
