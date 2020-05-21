@@ -10,7 +10,7 @@ def quadratic_assignment(A, B, maximize=False):
 
     .. math::
 
-        \\min_P \\& \\ {-\\text{trace}(APB^T P^T)}\\\\
+        \\min_P \\& \\ {\\text{trace}(APB^T P^T)}\\\\
         \\mbox{s.t.} \\& {P \\ \\epsilon \\ \\mathcal{P}}\\\\
 
     Here :math:`A` and :math:`B` are non-negative square matrices and
