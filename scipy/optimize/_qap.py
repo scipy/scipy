@@ -217,7 +217,6 @@ def quadratic_assignment(
     if msg is not None:
         raise ValueError(msg)
 
-
     # TypeError check
     if type(shuffle_input) is not bool:
         msg = "'shuffle_input' must be a boolean"
