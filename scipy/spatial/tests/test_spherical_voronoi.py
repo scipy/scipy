@@ -80,12 +80,20 @@ def _generate_polytope(name):
     elif name == "icosahedron":
         p = _generate_icosahedron()
 
-    return p / np.linalg.norm(p, axis=1)[:, np.newaxis]
+    return p / np.linalg.norm(p, axis=1, keepdims=True)
 
 
 def _hypersphere_area(dim, radius):
     # https://en.wikipedia.org/wiki/N-sphere#Closed_forms
     return 2 * np.pi**(dim / 2) / gamma(dim / 2) * radius**(dim - 1)
+
+
+def _sample_sphere(n, dim, seed=None):
+    # Sample points uniformly at random from the hypersphere
+    rng = np.random.RandomState(seed=seed)
+    points = rng.randn(n, dim)
+    points /= np.linalg.norm(points, axis=1, keepdims=True)
+    return points
 
 
 class TestSphericalVoronoi(object):
@@ -255,9 +263,7 @@ class TestSphericalVoronoi(object):
     @pytest.mark.parametrize("dim", range(2, 7))
     def test_higher_dimensions(self, dim):
         n = 100
-        rng = np.random.RandomState(seed=0)
-        points = rng.randn(n, dim)
-        points /= np.linalg.norm(points, axis=1)[:, np.newaxis]
+        points = _sample_sphere(n, dim, seed=0)
         sv = SphericalVoronoi(points)
         assert sv.vertices.shape[1] == dim
         assert len(sv.regions) == n
@@ -319,10 +325,7 @@ class TestSphericalVoronoi(object):
     @pytest.mark.parametrize("single_hemisphere", [False, True])
     def test_area_reconstitution(self, n, dim, radius, shift,
                                  single_hemisphere):
-        # sample points uniformly on the hypersphere
-        rng = np.random.RandomState(seed=0)
-        points = rng.randn(n, dim)
-        points /= np.linalg.norm(points, axis=1)[:, np.newaxis]
+        points = _sample_sphere(n, dim, seed=0)
 
         # move all points to one side of the sphere for single-hemisphere test
         if single_hemisphere:
