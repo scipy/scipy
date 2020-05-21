@@ -1,5 +1,5 @@
 import numpy as np
-import math
+import operator
 from . import linear_sum_assignment, minimize_scalar, OptimizeResult
 
 
@@ -26,7 +26,7 @@ def quadratic_assignment(
 
     .. math::
 
-        \min_P & \ {-\text{trace}(APB^T P^T)}\\
+        \min_P & \ {\text{trace}(APB^T P^T)}\\
         \mbox{s.t. } & {P \ \epsilon \ \mathcal{P}}\\
 
     where :math:`\mathcal{P}` is the set of all permutation matrices,
@@ -48,12 +48,12 @@ def quadratic_assignment(
     Parameters
     ----------
     cost_matrix : 2d-array, square, non-negative
-        A square adjacency matrix. In this implementation, `cost-matrix` =
-        :math: `A` in the objective function above.
+        A square adjacency matrix. In this implementation, :math:`A` =
+        `cost-matrix` in the objective function above.
 
     dist_matrix : 2d-array, square, non-negative
         A square adjacency matrix.  In this implementation, `dist-matrix` =
-        :math: `B` in the objective function above.
+        :math:`B` in the objective function above.
 
     seed : 2d-array, optional, (default = None)
         Allows the user apply a seed, fixing part of the matching between
@@ -184,40 +184,42 @@ def quadratic_assignment(
     if seed is None:
         seed = np.array([[], []]).T
     seed = np.asarray(seed)
+    n_init = operator.index(n_init)
+    maxiter = operator.index(maxiter)
 
     # ValueError check
     msg = None
-    if cost_matrix.shape[0] != dist_matrix.shape[0]:
+    if cost_matrix.shape[0] != cost_matrix.shape[1]:
+        msg = "'cost_matrix' must be square"
+    elif dist_matrix.shape[0] != dist_matrix.shape[1]:
+        msg = "'dist_matrix' must be square"
+    elif cost_matrix.shape != dist_matrix.shape:
         msg = "Adjacency matrices must be of equal size"
-    elif (
-        cost_matrix.shape[0] != cost_matrix.shape[1]
-        or dist_matrix.shape[0] != dist_matrix.shape[1]
-    ):
-        msg = "Adjacency matrix entries must be square"
-    elif not (cost_matrix >= 0).all() or not (dist_matrix >= 0).all():
-        msg = "Adjacency matrix entries must be greater than or equal to zero"
+    elif (cost_matrix < 0).all() or (dist_matrix < 0).all():
+        msg = "Adjacency matrix contains negative entries"
     elif seed.shape[0] > cost_matrix.shape[0]:
         msg = "There cannot be more seeds than there are nodes"
     elif seed.shape[1] != 2:
         msg = "Seed array entry must have two columns"
     elif not (seed >= 0).all():
-        msg = "Seed array entries must be greater than or equal to zero"
-    elif not (seed <= (cost_matrix.shape[0] - 1)).all():
+        msg = "Seed array contains negative entries"
+    elif not (seed < len(cost_matrix)).all():
         msg = "Seed array entries must be less than the number of nodes"
     elif not len(set(seed[:, 0])) == len(seed[:, 0]) or not \
             len(set(seed[:, 1])) == len(seed[:, 1]):
         msg = "Seed column entries must be unique"
     elif init not in {'barycenter', 'rand'}:
         msg = "Invalid 'init_method' parameter string"
+    elif n_init <= 0:
+        msg = "'n_init' must be a positive integer"
+    elif maxiter <= 0:
+        msg = "'maxiter' must be a positive integer"
     if msg is not None:
         raise ValueError(msg)
 
+
     # TypeError check
-    if type(n_init) is not int or n_init <= 0:
-        msg = "'n_init' must be a positive integer"
-    elif maxiter <= 0 or type(maxiter) is not int:
-        msg = "'max_iter' must be a positive integer"
-    elif type(shuffle_input) is not bool:
+    if type(shuffle_input) is not bool:
         msg = "'shuffle_input' must be a boolean"
     elif eps <= 0 or type(eps) is not float:
         msg = "'eps' must be a positive float"
@@ -226,6 +228,7 @@ def quadratic_assignment(
     if msg is not None:
         raise TypeError(msg)
 
+    rng = np.random.RandomState()
     n = cost_matrix.shape[0]  # number of vertices in graphs
     n_seeds = seed.shape[0]  # number of seeds
     n_unseed = n - n_seeds
@@ -235,11 +238,11 @@ def quadratic_assignment(
     obj_func_scalar = 1
     if maximize:
         obj_func_scalar = -1
-    score = obj_func_scalar * math.inf
+    score = obj_func_scalar * np.inf
 
     seed_dist_c = np.setdiff1d(range(n), seed[:, 1])
     if shuffle_input:
-        seed_dist_c = np.random.permutation(seed_dist_c)
+        seed_dist_c = rng.permutation(seed_dist_c)
         # shuffle_input to avoid results from inputs that were already matched
 
     seed_cost_c = np.setdiff1d(range(n), seed[:, 0])
@@ -263,29 +266,27 @@ def quadratic_assignment(
     for i in range(n_init):
         # setting initialization matrix
         if init == "rand":
-            K = np.random.rand(n_unseed, n_unseed)
             # generate a nxn matrix where each entry is a random integer [0, 1]
-            for i in range(10):  # perform 10 iterations of Sinkhorn balancing
+            K = rng.rand(n_unseed, n_unseed)
+            # perform 10 iterations of Sinkhorn balancing
+            for i in range(10):
                 K = _doubly_stochastic(K)
-            J = np.ones((n_unseed, n_unseed)) / float(
-                n_unseed
-            )  # initialize J, a doubly stochastic barycenter
+            # initialize J, a doubly stochastic barycenter
+            J = np.ones((n_unseed, n_unseed)) / float(n_unseed)
             P = (K + J) / 2
         elif init == "barycenter":
             P = np.ones((n_unseed, n_unseed)) / float(n_unseed)
 
-        const_sum = A21 @ np.transpose(B21) + np.transpose(A12) @ B12
-        grad_P = math.inf  # gradient of P
+        const_sum = A21 @ B21.T + A12.T @ B12
+        grad_P = np.inf  # gradient of P
         n_iter = 0  # number of FW iterations
 
         # OPTIMIZATION WHILE LOOP BEGINS
         while grad_P > eps and n_iter < maxiter:
-            delta_f = (
-                const_sum + A22 @ P @ B22.T + A22.T @ P @ B22
-            )  # computing the gradient of f(P) = -tr(APB^tP^t)
-            rows, cols = linear_sum_assignment(
-                obj_func_scalar * delta_f
-            )  # run hungarian algorithm on gradient(f(P))
+            # computing the gradient of f(P) = -tr(APB^tP^t)
+            delta_f = (const_sum + A22 @ P @ B22.T + A22.T @ P @ B22)
+            # run hungarian algorithm on gradient(f(P))
+            rows, cols = linear_sum_assignment(obj_func_scalar * delta_f)
             Q = np.zeros((n_unseed, n_unseed))
             Q[rows, cols] = 1  # initialize search direction matrix Q
 
@@ -328,13 +329,13 @@ def quadratic_assignment(
             perm_inds = np.zeros(n, dtype=int)
             perm_inds[permutation_cost] = permutation_dist[perm_inds_new]
 
-    permutation_cost_unshuffle = _unshuffle(permutation_cost, n)
+    permutation_cost_inv = np.argsort(permutation_cost)
     cost_matrix = cost_matrix[
-        np.ix_(permutation_cost_unshuffle, permutation_cost_unshuffle)
+        np.ix_(permutation_cost_inv, permutation_cost_inv)
     ]
-    permutation_dist_unshuffle = _unshuffle(permutation_dist, n)
+    permutation_dist_inv = np.argsort(permutation_dist)
     dist_matrix = dist_matrix[
-        np.ix_(permutation_dist_unshuffle, permutation_dist_unshuffle)
+        np.ix_(permutation_dist_inv, permutation_dist_inv)
     ]
 
     score = np.trace(
@@ -344,12 +345,6 @@ def quadratic_assignment(
     res = {"col_ind": perm_inds, "score": score, "nit": n_iter}
 
     return OptimizeResult(res)
-
-
-def _unshuffle(array, n):
-    unshuffle = np.array(range(n))
-    unshuffle[array] = np.array(range(n))
-    return unshuffle
 
 
 def _doubly_stochastic(P):
