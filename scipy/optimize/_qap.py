@@ -1,5 +1,22 @@
 import numpy as np
-from ._qap_umeyama import umeyama_eigendecomposition
+from . import linear_sum_assignment, OptimizeResult
+
+
+def eigenvectors(x):
+    # get eigenvectors sorted by eigenvalue magnitude (large to small)
+    l, v = np.linalg.eig(x)
+    indices = np.argsort(l, kind='merge')[::-1]
+    return v[:, indices]
+
+
+def umeyama_eigendecomposition(A, B, maximize=False):
+    # Finds an approximate solution to QAP using Umeyama's method
+    W = np.abs(eigenvectors(B)) @ np.abs(eigenvectors(A)).T
+    _, col_ind = linear_sum_assignment(W, maximize=maximize)
+
+    # faster version of `float(np.trace(A @ B[col_ind][:, col_ind].T))`
+    score = float(np.sum(A * B[col_ind][:, col_ind]))
+    return OptimizeResult({"col_ind": col_ind, "score": score})
 
 
 def quadratic_assignment(A, B, maximize=False):
