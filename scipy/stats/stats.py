@@ -6312,8 +6312,6 @@ def _parse_kstest_args(data1, data2, args, N):
     # (xvals, cdf function,..)
     # (xvals, name of distribution, ...)
     # (name of distribution, name of distribution, ...)
-    # (name of distribution, empty string, ...)
-    # (name of distribution, False, ...)
 
     # Returns xvals, yvals, cdf
     # where cdf is a cdf function, or None
@@ -6325,18 +6323,7 @@ def _parse_kstest_args(data1, data2, args, N):
     elif callable(data1):
         rvsfunc = data1
 
-    if isinstance(data2, bool):
-        if not isinstance(data1, str):
-            raise ValueError("data2 may only be False if data1 is a str")
-        if data2:
-            raise ValueError("data2 must be False")
-        data2 = data1
     if isinstance(data2, str):
-        if isinstance(data1, str):
-            if data2 and data2 != data1:
-                raise ValueError("If data1 is string, data2 has to be the "
-                                 "same distribution")
-            data2 = data1
         cdf = getattr(distributions, data2).cdf
         data2 = None
     elif callable(data2):
@@ -6367,7 +6354,6 @@ def kstest(data1, data2, args=(), N=20, alternative='two-sided', mode='auto'):
         it is required to have a keyword argument `size`.
     data2 : str, bool, array_like or callable
         If a string, it should be the name of a distribution in `scipy.stats`.
-        If `data1` is a string then `data2` can be False or the same as `data1`.
         If a callable, that callable is used to calculate the cdf.
         If array_like, the two-sample test is performed (and data1 must be array_like)
     args : tuple, sequence, optional

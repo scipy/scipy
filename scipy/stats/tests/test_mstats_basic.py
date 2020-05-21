@@ -1437,6 +1437,7 @@ class TestCompareWithStats(object):
             assert_almost_equal(r.T, rm[0:len(x)])
 
     def test_ks_1samp(self):
+        """Checks that mstats.ks_1samp and stats.ks_1samp agree on masked arrays."""
         for mode in ['auto', 'exact', 'asymp']:
             with suppress_warnings() as sup:
                 for alternative in ['less', 'greater', 'two-sided']:
@@ -1449,6 +1450,7 @@ class TestCompareWithStats(object):
                         assert_equal(np.asarray(res1), np.asarray(res3))
 
     def test_kstest_1samp(self):
+        """Checks that 1-sample mstats.kstest and stats.kstest agree on masked arrays."""
         for mode in ['auto', 'exact', 'asymp']:
             with suppress_warnings() as sup:
                 for alternative in ['less', 'greater', 'two-sided']:
@@ -1461,6 +1463,8 @@ class TestCompareWithStats(object):
                         assert_equal(np.asarray(res1), np.asarray(res3))
 
     def test_ks_2samp(self):
+        """Checks that mstats.ks_2samp and stats.ks_2samp agree on masked arrays.
+        gh-8431"""
         for mode in ['auto', 'exact', 'asymp']:
             with suppress_warnings() as sup:
                 if mode in ['auto', 'exact']:
@@ -1476,6 +1480,7 @@ class TestCompareWithStats(object):
                         assert_equal(np.asarray(res1), np.asarray(res3))
 
     def test_kstest_2samp(self):
+        """Checks that 2-sample mstats.kstest and stats.kstest agree on masked arrays."""
         for mode in ['auto', 'exact', 'asymp']:
             with suppress_warnings() as sup:
                 if mode in ['auto', 'exact']:

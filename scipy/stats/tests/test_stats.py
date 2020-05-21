@@ -2942,6 +2942,8 @@ def test_kstest_allpaths():
 
 
 class TestKSTwoSamples(object):
+    """Tests 2-samples with K-S various sizes, alternatives, modes."""
+
     def _testOne(self, x1, x2, alternative, expected_statistic, expected_prob, mode='auto'):
         result = stats.ks_2samp(x1, x2, alternative, mode=mode)
         expected = np.array([expected_statistic, expected_prob])
