@@ -612,3 +612,26 @@ def check_fit_args_fix(distfn, arg, rvs):
             vals5 = distfn.fit(rvs, f2=arg[2])
             npt.assert_(len(vals5) == 2+len(arg))
             npt.assert_(vals5[2] == arg[2])
+
+
+@pytest.mark.parametrize('method', ['pdf', 'logpdf', 'cdf', 'logcdf',
+                                    'sf', 'logsf', 'ppf', 'isf'])
+@pytest.mark.parametrize('distname, args', distcont)
+def test_methods_with_lists(method, distname, args):
+    # Test that the continuous distributions can accept Python lists
+    # as arguments.
+    with npt.suppress_warnings() as sup:
+        sup.filter(category=DeprecationWarning, message=".*frechet_")
+        dist = getattr(stats, distname)
+        f = getattr(dist, method)
+        if distname == 'invweibull' and method.startswith('log'):
+            x = [1.5, 2]
+        else:
+            x = [0.1, 0.2]
+        shape2 = [[a]*2 for a in args]
+        loc = [0, 0.1]
+        scale = [1, 1.01]
+        result = f(x, *shape2, loc=loc, scale=scale)
+        npt.assert_allclose(result,
+                            [f(*v) for v in zip(x, *shape2, loc, scale)],
+                            rtol=1e-15, atol=1e-15)
