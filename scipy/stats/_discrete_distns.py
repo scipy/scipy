@@ -522,8 +522,6 @@ class nhypergeom_gen(rv_discrete):
     taken without replacement where :math:`N` are the total number
     of elements and :math:`K` are defined to be successes.
 
-    The negative hypergeometric distribution models the number of
-    successful samples in a sample with :math:`r` number of failures.
     It is equivalent to observing :math:`k` successes in :math:`k+r-1`
     samples with :math:`k+r`'th sample being a failure. The former
     can be modelled as a hypergeometric distribution. Refer
@@ -554,7 +552,7 @@ class nhypergeom_gen(rv_discrete):
     The cumulative distribution, survivor function, hazard function,
     cumulative hazard function, and inverse distribution function,
     moment generating function, and characteristic function on the
-    support of :math:`k` are mathematically intractab
+    support of :math:`k` are mathematically intractable.
 
     %(after_notes)s
 
@@ -565,9 +563,9 @@ class nhypergeom_gen(rv_discrete):
 
     Suppose we have a collection of 20 animals, of which 7 are dogs.
     Then if we want to know the probability of finding a given number
-    of dogs (successes) if we have a sample with exactly 12 animals
-    that aren't dogs, we can initialize a frozen distribution and
-    plot the probability mass function:
+    of dogs (successes) in a sample with exactly 12 animals that
+    aren't dogs (failures), we can initialize a frozen distribution
+    and plot the probability mass function:
 
     >>> [N, K, r] = [20, 7, 12]
     >>> rv = nhypergeom(N, K, r)
@@ -578,7 +576,7 @@ class nhypergeom_gen(rv_discrete):
     >>> ax = fig.add_subplot(111)
     >>> ax.plot(x, pmf_dogs, 'bo')
     >>> ax.vlines(x, 0, pmf_dogs, lw=2)
-    >>> ax.set_xlabel('# of dogs in our group with given failures')
+    >>> ax.set_xlabel('# of dogs in our group with given 12 failures')
     >>> ax.set_ylabel('nhypergeom PMF')
     >>> plt.show()
 
