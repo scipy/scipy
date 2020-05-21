@@ -9,7 +9,6 @@ import pytest
 from pytest import raises as assert_raises
 from pytest import warns as assert_warns
 from scipy.spatial import SphericalVoronoi, distance
-from scipy.spatial import _spherical_voronoi as spherical_voronoi
 from scipy.optimize import linear_sum_assignment
 from scipy.constants import golden as phi
 from scipy.special import gamma
@@ -191,7 +190,7 @@ class TestSphericalVoronoi(object):
                            [0, 0, 0, 1],
                            [0.5, 0.5, 0.5, 0.5]])
         with pytest.raises(TypeError, match="three-dimensional"):
-            sv = spherical_voronoi.SphericalVoronoi(points)
+            sv = SphericalVoronoi(points)
             sv.sort_vertices_of_regions()
 
     def test_num_vertices(self):
@@ -206,7 +205,7 @@ class TestSphericalVoronoi(object):
         assert_equal(actual, expected)
 
     def test_voronoi_circles(self):
-        sv = spherical_voronoi.SphericalVoronoi(self.points)
+        sv = SphericalVoronoi(self.points)
         for vertex in sv.vertices:
             distances = distance.cdist(sv.points, np.array([vertex]))
             closest = np.array(sorted(distances)[0:3])
@@ -218,21 +217,19 @@ class TestSphericalVoronoi(object):
         # related to Issue# 7046
         self.degenerate = np.concatenate((self.points, self.points))
         with assert_raises(ValueError):
-            spherical_voronoi.SphericalVoronoi(self.degenerate)
+            SphericalVoronoi(self.degenerate)
 
     def test_incorrect_radius_handling(self):
         # an exception should be raised if the radius provided
         # cannot possibly match the input generators
         with assert_raises(ValueError):
-            spherical_voronoi.SphericalVoronoi(self.points,
-                                                    radius=0.98)
+            SphericalVoronoi(self.points, radius=0.98)
 
     def test_incorrect_center_handling(self):
         # an exception should be raised if the center provided
         # cannot possibly match the input generators
         with assert_raises(ValueError):
-            spherical_voronoi.SphericalVoronoi(self.points,
-                                                    center=[0.1, 0, 0])
+            SphericalVoronoi(self.points, center=[0.1, 0, 0])
 
     def test_single_hemisphere_handling(self):
         # Test solution of Issues #9386, #8859
@@ -250,7 +247,7 @@ class TestSphericalVoronoi(object):
         thetas = np.linspace(0, 2 * np.pi, n, endpoint=False)
         points = np.vstack([np.sin(thetas), np.cos(thetas), np.zeros(n)]).T
         with pytest.raises(ValueError, match="Rank of input points"):
-            spherical_voronoi.SphericalVoronoi(points + center, center=center)
+            SphericalVoronoi(points + center, center=center)
 
     @pytest.mark.parametrize("dim", range(2, 7))
     def test_higher_dimensions(self, dim):
