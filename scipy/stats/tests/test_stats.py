@@ -3213,6 +3213,42 @@ def test_ttest_rel_nan_2nd_arg():
     assert_allclose(r2, (-2, 0.1835), atol=1e-4)
 
 
+def test_ttest_rel_empty_1d_returns_nan():
+    # Two empty inputs should return a Ttest_relResult containing nan
+    # for both values.
+    result = stats.ttest_rel([], [])
+    assert isinstance(result, stats.stats.Ttest_relResult)
+    assert_equal(result, (np.nan, np.nan))
+
+
+@pytest.mark.parametrize('b, expected_shape',
+                         [(np.empty((1, 5, 0)), (3, 5)),
+                          (np.empty((1, 0, 0)), (3, 0))])
+def test_ttest_rel_axis_size_zero(b, expected_shape):
+    # In this test, the length of the axis dimension is zero.
+    # The results should be arrays containing nan with shape
+    # given by the broadcast nonaxis dimensions.
+    a = np.empty((3, 1, 0))
+    result = stats.ttest_rel(a, b, axis=-1)
+    assert isinstance(result, stats.stats.Ttest_relResult)
+    expected_value = np.full(expected_shape, fill_value=np.nan)
+    assert_equal(result.statistic, expected_value)
+    assert_equal(result.pvalue, expected_value)
+
+
+def test_ttest_rel_nonaxis_size_zero():
+    # In this test, the length of the axis dimension is nonzero,
+    # but one of the nonaxis dimensions has length 0.  Check that
+    # we still get the correctly broadcast shape, which is (5, 0)
+    # in this case.
+    a = np.empty((1, 8, 0))
+    b = np.empty((5, 8, 1))
+    result = stats.ttest_rel(a, b, axis=1)
+    assert isinstance(result, stats.stats.Ttest_relResult)
+    assert_equal(result.statistic.shape, (5, 0))
+    assert_equal(result.pvalue.shape, (5, 0))
+
+
 def _desc_stats(x1, x2, axis=0):
     def _stats(x, axis=0):
         x = np.asarray(x)
@@ -3423,6 +3459,56 @@ def test_ttest_ind_nan_2nd_arg():
     # y = c(1.0, 2.0, 1.0, 2.0)
     # t.test(x, y, var.equal=TRUE)
     assert_allclose(r2, (-2.5354627641855498, 0.052181400457057901), atol=1e-15)
+
+
+def test_ttest_ind_empty_1d_returns_nan():
+    # Two empty inputs should return a Ttest_indResult containing nan
+    # for both values.
+    result = stats.ttest_ind([], [])
+    assert isinstance(result, stats.stats.Ttest_indResult)
+    assert_equal(result, (np.nan, np.nan))
+
+
+@pytest.mark.parametrize('b, expected_shape',
+                         [(np.empty((1, 5, 0)), (3, 5)),
+                          (np.empty((1, 0, 0)), (3, 0))])
+def test_ttest_ind_axis_size_zero(b, expected_shape):
+    # In this test, the length of the axis dimension is zero.
+    # The results should be arrays containing nan with shape
+    # given by the broadcast nonaxis dimensions.
+    a = np.empty((3, 1, 0))
+    result = stats.ttest_ind(a, b, axis=-1)
+    assert isinstance(result, stats.stats.Ttest_indResult)
+    expected_value = np.full(expected_shape, fill_value=np.nan)
+    assert_equal(result.statistic, expected_value)
+    assert_equal(result.pvalue, expected_value)
+
+
+def test_ttest_ind_nonaxis_size_zero():
+    # In this test, the length of the axis dimension is nonzero,
+    # but one of the nonaxis dimensions has length 0.  Check that
+    # we still get the correctly broadcast shape, which is (5, 0)
+    # in this case.
+    a = np.empty((1, 8, 0))
+    b = np.empty((5, 8, 1))
+    result = stats.ttest_ind(a, b, axis=1)
+    assert isinstance(result, stats.stats.Ttest_indResult)
+    assert_equal(result.statistic.shape, (5, 0))
+    assert_equal(result.pvalue.shape, (5, 0))
+
+
+def test_ttest_ind_nonaxis_size_zero_different_lengths():
+    # In this test, the length of the axis dimension is nonzero,
+    # and that size is different in the two inputs,
+    # and one of the nonaxis dimensions has length 0.  Check that
+    # we still get the correctly broadcast shape, which is (5, 0)
+    # in this case.
+    a = np.empty((1, 7, 0))
+    b = np.empty((5, 8, 1))
+    result = stats.ttest_ind(a, b, axis=1)
+    assert isinstance(result, stats.stats.Ttest_indResult)
+    assert_equal(result.statistic.shape, (5, 0))
+    assert_equal(result.pvalue.shape, (5, 0))
 
 
 def test_gh5686():
