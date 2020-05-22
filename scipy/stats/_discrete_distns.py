@@ -3,6 +3,7 @@
 #          SciPy Developers 2004-2011
 #
 from functools import partial
+from collections.abc import Iterable
 from scipy import special
 from scipy.special import entr, logsumexp, betaln, gammaln as gamln
 from scipy._lib._util import _lazywhere, rng_integers
@@ -595,20 +596,23 @@ class nhypergeom_gen(rv_discrete):
         # As there is no method to samples from this
         # distribution, this `_rvs` uses a brute force
         # method to sample from the distribution.
-        N, K, r = np.broadcast_arrays((N, K, r))
         oshape = K.shape
         K = K.ravel()
         N = N.ravel()
         r = r.ravel()
         k = np.c_[list(np.arange(ki) for ki in K)].T
         p = self._pmf(k, N, K, r)
-        samples = np.r_[list(random_state.choice(a=ki, size=size, p=pi)
-                        for ki, pi in zip(k, p))]
-        samples = samples.reshape(oshape)
+        samples = np.zeros((np.prod(oshape), int(np.prod(size))))
+        for i in range(int(np.prod(size))):
+            samples[i] = np.r_[list(random_state.choice(a=kj,
+                                                        size=size,
+                                                        p=pj)
+                               for kj, pj in zip(k, p))]
+        samples = samples.reshape(*(oshape + size))
         return samples
 
     def _get_support(self, N, K, r):
-        return K
+        return 0, K
 
     def _argcheck(self, N, K, r):
         cond = (N >= 0)

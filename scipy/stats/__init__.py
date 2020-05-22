@@ -165,6 +165,7 @@ Discrete distributions
    skellam           -- Skellam
    zipf              -- Zipf
    yulesimon         -- Yule-Simon
+   nhypergeom        -- Negatuve Hypergeometric
 
 An overview of statistical functions is given below.
 Several of these functions have a similar version in
