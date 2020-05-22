@@ -9,7 +9,6 @@
 import os
 import warnings
 from collections import namedtuple
-import multiprocessing
 
 from numpy.testing import (dec, assert_, assert_equal,
                            assert_almost_equal, assert_array_almost_equal,
@@ -2877,68 +2876,73 @@ def test_friedmanchisquare():
     assert_raises(ValueError, mstats.friedmanchisquare,x3[0],x3[1])
 
 
-def test_kstest():
-    # comparing with values from R
-    x = np.linspace(-1,1,9)
-    D,p = stats.kstest(x,'norm')
-    assert_almost_equal(D, 0.15865525393145705, 12)
-    assert_almost_equal(p, 0.95164069201518386, 1)
+class TestKSTest(object):
+    """Tests K-S 1-samples with K-S various sizes, alternatives, modes."""
 
-    x = np.linspace(-15,15,9)
-    D,p = stats.kstest(x,'norm')
-    assert_almost_equal(D, 0.44435602715924361, 15)
-    assert_almost_equal(p, 0.038850140086788665, 8)
+    def _testOne(self, x, alternative, expected_statistic, expected_prob, mode='auto', decimal=14):
+        result = stats.kstest(x, 'norm', alternative=alternative, mode=mode)
+        expected = np.array([expected_statistic, expected_prob])
+        assert_array_almost_equal(np.array(result), expected, decimal=decimal)
 
-    # test for namedtuple attribute results
-    attributes = ('statistic', 'pvalue')
-    res = stats.kstest(x, 'norm')
-    check_named_results(res, attributes)
+    def test_namedtuple_attributes(self):
+        x = np.linspace(-1, 1, 9)
+        # test for namedtuple attribute results
+        attributes = ('statistic', 'pvalue')
+        res = stats.kstest(x, 'norm')
+        check_named_results(res, attributes)
 
-    # the following tests rely on deterministicaly replicated rvs
-    np.random.seed(987654321)
-    x = stats.norm.rvs(loc=0.2, size=100)
-    D,p = stats.kstest(x, 'norm', mode='asymp')
-    assert_almost_equal(D, 0.12464329735846891, 15)
-    assert_almost_equal(p, 0.089444888711820769, 15)
-    assert_almost_equal(np.array(stats.kstest(x, 'norm', mode='asymp')),
-                np.array((0.12464329735846891, 0.089444888711820769)), 15)
-    assert_almost_equal(np.array(stats.kstest(x,'norm', alternative='less')),
-                np.array((0.12464329735846891, 0.040989164077641749)), 15)
-    # this 'greater' test fails with precision of decimal=14
-    assert_almost_equal(np.array(stats.kstest(x,'norm', alternative='greater')),
-                np.array((0.0072115233216310994, 0.98531158590396228)), 12)
+    def test_agree_with_r(self):
+        # comparing with some values from R
+        x = np.linspace(-1,1,9)
+        self._testOne(x, 'two-sided', 0.15865525393145705, 0.95164069201518386)
+
+        x = np.linspace(-15,15,9)
+        self._testOne(x, 'two-sided', 0.44435602715924361, 0.038850140086788665)
+
+        x = [-1.23, 0.06, -0.60, 0.17, 0.66, -0.17, -0.08, 0.27, -0.98, -0.99]
+        self._testOne(x, 'two-sided', 0.293580126801961, 0.293408463684361)
+        self._testOne(x, 'greater', 0.293580126801961, 0.146988835042376, mode='exact')
+        self._testOne(x, 'less', 0.109348552425692, 0.732768892470675, mode='exact')
+
+    def test_known_examples(self):
+        # the following tests rely on deterministically replicated rvs
+        np.random.seed(987654321)
+        x = stats.norm.rvs(loc=0.2, size=100)
+        self._testOne(x, 'two-sided', 0.12464329735846891, 0.089444888711820769, mode='asymp')
+        self._testOne(x, 'less', 0.12464329735846891, 0.040989164077641749)
+        self._testOne(x, 'greater', 0.0072115233216310994, 0.98531158590396228)
 
     # missing: no test that uses *args
 
-def test_kstest_allpaths():
-    # Check NaN input, output.
-    assert (np.isnan(kolmogn(np.nan, 1, True)))
-    with assert_raises(ValueError, match='n is not integral: 1.5'):
-        kolmogn(1.5, 1, True)
-    assert (np.isnan(kolmogn(-1, 1, True)))
+    def test_kstest_allpaths(self):
+        # Check NaN input, output.
+        assert (np.isnan(kolmogn(np.nan, 1, True)))
+        with assert_raises(ValueError, match='n is not integral: 1.5'):
+            kolmogn(1.5, 1, True)
+        assert np.isnan(kolmogn(-1, 1, True))
 
-    dataset = np.asarray([
-        # Check x out of range
-        (101, 1, True, 1.0),
-        (101, 1.1, True, 1.0),
-        (101, 0, True, 0.0),
-        (101, -0.1, True, 0.0),
+        dataset = np.asarray([
+            # Check x out of range
+            (101, 1, True, 1.0),
+            (101, 1.1, True, 1.0),
+            (101, 0, True, 0.0),
+            (101, -0.1, True, 0.0),
 
-        (32, 1.0 / 64, True, 0.0),  # Ruben-Gambino
-        (32, 1.0 / 64, False, 1.0),  # Ruben-Gambino
+            (32, 1.0 / 64, True, 0.0),  # Ruben-Gambino
+            (32, 1.0 / 64, False, 1.0),  # Ruben-Gambino
 
-        (32, 0.5, True, 0.9999999363163307),  # Miller
-        (32, 0.5, False, 6.368366937916623e-08),  # Miller 2 * special.smirnov(32, 0.5)
+            (32, 0.5, True, 0.9999999363163307),  # Miller
+            (32, 0.5, False, 6.368366937916623e-08),  # Miller 2 * special.smirnov(32, 0.5)
 
-        # Check some other paths
-        (32, 1.0 / 8, True, 0.34624229979775223),
-        (32, 1.0 / 4, True, 0.9699508336558085),
-        (1600, 0.49, False, 0.0),
-        (1600, 1 / 16.0, False, 7.0837876229702195e-06),  # 2 * special.smirnov(1600, 1/16.0)
-        (1600, 14 / 1600, False, 0.99962357317602),  # _kolmogn_DMTW
-        (1600, 1 / 32, False, 0.08603386296651416),  # _kolmogn_PelzGood
-    ])
-    FuncData(kolmogn, dataset, (0, 1, 2), 3).check(dtypes=[int, float, bool])
+            # Check some other paths
+            (32, 1.0 / 8, True, 0.34624229979775223),
+            (32, 1.0 / 4, True, 0.9699508336558085),
+            (1600, 0.49, False, 0.0),
+            (1600, 1 / 16.0, False, 7.0837876229702195e-06),  # 2 * special.smirnov(1600, 1/16.0)
+            (1600, 14 / 1600, False, 0.99962357317602),  # _kolmogn_DMTW
+            (1600, 1 / 32, False, 0.08603386296651416),  # _kolmogn_PelzGood
+        ])
+        FuncData(kolmogn, dataset, (0, 1, 2), 3).check(dtypes=[int, float, bool])
 
 
 class TestKSTwoSamples(object):
