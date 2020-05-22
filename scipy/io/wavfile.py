@@ -305,9 +305,6 @@ class WAVE_FORMAT(IntEnum):
 
 KNOWN_WAVE_FORMATS = {WAVE_FORMAT.PCM, WAVE_FORMAT.IEEE_FLOAT}
 
-# assumes file pointer is immediately
-#  after the 'fmt ' id
-
 
 def _read_fmt_chunk(fid, is_big_endian):
     """
@@ -327,6 +324,10 @@ def _read_fmt_chunk(fid, is_big_endian):
         bytes per sample, including all channels
     bit_depth : int
         bits per sample
+
+    Notes
+    -----
+    Assumes file pointer is immediately after the 'fmt ' id
     """
     if is_big_endian:
         fmt = '>'
@@ -380,9 +381,13 @@ def _read_fmt_chunk(fid, is_big_endian):
             bit_depth)
 
 
-# assumes file pointer is immediately after the 'data' id
 def _read_data_chunk(fid, format_tag, channels, bit_depth, is_big_endian,
                      mmap=False):
+    """
+    Notes
+    -----
+    Assumes file pointer is immediately after the 'data' id
+    """
     if is_big_endian:
         fmt = '>I'
     else:
