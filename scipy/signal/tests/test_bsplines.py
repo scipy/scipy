@@ -124,10 +124,10 @@ class TestBSplines(object):
         assert_allclose(bsp.gauss_spline(array([1.]), 1), array([0.04865217]))
 
     def test_gauss_spline_list(self):
-        # fix for gh-12152
+        # regression test for gh-12152 (accept array_like)
         knots = [-1.0, 0.0, -1.0]
         assert_almost_equal(bsp.gauss_spline(knots, 3),
-                            array([0.15418033, 0.6909883 , 0.15418033]))
+                            array([0.15418033, 0.6909883, 0.15418033]))
 
     def test_cubic(self):
         np.random.seed(12460)
