@@ -194,7 +194,10 @@ else:
 if 'versionwarning' in tags:
     # Specific to docs.scipy.org deployment.
     # See https://github.com/scipy/docs.scipy.org/blob/master/_static/versionwarning.js_t
-    src = '$.getScript("/doc/_static/versionwarning.js");'
+    src = ('var script = document.createElement("script");\n'
+           'script.type = "text/javascript";\n'
+           'script.src = "/doc/_static/versionwarning.js";\n'
+           'document.head.appendChild(script);');
     html_context = {
         'VERSIONCHECK_JS': src
     }
