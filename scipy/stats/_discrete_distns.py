@@ -525,13 +525,9 @@ class nhypergeom_gen(rv_discrete):
     It is equivalent to observing :math:`k` successes in :math:`k+r-1`
     samples with :math:`k+r`'th sample being a failure. The former
     can be modelled as a hypergeometric distribution. Refer
-    :ref:`hypergeom` for more information.
+    `hypergeom` distribution for more information.
 
     %(before_notes)s
-
-    See Also
-    --------
-    hypergeom
 
     Notes
     -----
@@ -589,6 +585,10 @@ class nhypergeom_gen(rv_discrete):
     And to generate random numbers:
 
     >>> R = nhypergeom.rvs(N, K, r, size=10)
+
+    See Also
+    --------
+    hypergeom
 
     """
     def _get_support(self, N, K, r):
