@@ -88,8 +88,8 @@ def configuration(parent_package='',top_path=None):
                                **numpy_nodepr_api)
     ext._pre_build_hook = gfortran_legacy_flag_hook
 
-    ext = config.add_extension('_nnls', sources=[join('nnls', x)
-                                                 for x in ["nnls.f","nnls.pyf"]],
+    ext = config.add_extension('__nnls', sources=[join('__nnls', x)
+                                                  for x in ["nnls.f","nnls.pyf"]],
                                **numpy_nodepr_api)
     ext._pre_build_hook = gfortran_legacy_flag_hook
 
