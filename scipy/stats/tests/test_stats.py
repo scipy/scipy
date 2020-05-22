@@ -2877,10 +2877,44 @@ def test_friedmanchisquare():
 
 
 class TestKSTest(object):
-    """Tests K-S 1-samples with K-S various sizes, alternatives, modes."""
+    """Tests kstest and ks_1samp agree with K-S various sizes, alternatives, modes."""
 
     def _testOne(self, x, alternative, expected_statistic, expected_prob, mode='auto', decimal=14):
         result = stats.kstest(x, 'norm', alternative=alternative, mode=mode)
+        expected = np.array([expected_statistic, expected_prob])
+        assert_array_almost_equal(np.array(result), expected, decimal=decimal)
+
+    def _test_kstest_and_ks1samp(self, x, alternative, mode='auto', decimal=14):
+        result = stats.kstest(x, 'norm', alternative=alternative, mode=mode)
+        result_1samp = stats.ks_1samp(x, stats.norm.cdf, alternative=alternative, mode=mode)
+        assert_array_almost_equal(np.array(result), result_1samp, decimal=decimal)
+
+    def test_namedtuple_attributes(self):
+        x = np.linspace(-1, 1, 9)
+        # test for namedtuple attribute results
+        attributes = ('statistic', 'pvalue')
+        res = stats.kstest(x, 'norm')
+        check_named_results(res, attributes)
+
+    def test_agree_with_ks_1samp(self):
+        x = np.linspace(-1,1,9)
+        self._test_kstest_and_ks1samp(x, 'two-sided')
+
+        x = np.linspace(-15,15,9)
+        self._test_kstest_and_ks1samp(x, 'two-sided')
+
+        x = [-1.23, 0.06, -0.60, 0.17, 0.66, -0.17, -0.08, 0.27, -0.98, -0.99]
+        self._test_kstest_and_ks1samp(x, 'two-sided')
+        self._test_kstest_and_ks1samp(x, 'greater', mode='exact')
+        self._test_kstest_and_ks1samp(x, 'less', mode='exact')
+
+    # missing: no test that uses *args
+
+class TestKSOneSample(object):
+    """Tests kstest and ks_samp 1-samples with K-S various sizes, alternatives, modes."""
+
+    def _testOne(self, x, alternative, expected_statistic, expected_prob, mode='auto', decimal=14):
+        result = stats.ks_1samp(x, stats.norm.cdf, alternative=alternative, mode=mode)
         expected = np.array([expected_statistic, expected_prob])
         assert_array_almost_equal(np.array(result), expected, decimal=decimal)
 
@@ -2888,7 +2922,7 @@ class TestKSTest(object):
         x = np.linspace(-1, 1, 9)
         # test for namedtuple attribute results
         attributes = ('statistic', 'pvalue')
-        res = stats.kstest(x, 'norm')
+        res = stats.ks_1samp(x, stats.norm.cdf)
         check_named_results(res, attributes)
 
     def test_agree_with_r(self):
@@ -2912,14 +2946,12 @@ class TestKSTest(object):
         self._testOne(x, 'less', 0.12464329735846891, 0.040989164077641749)
         self._testOne(x, 'greater', 0.0072115233216310994, 0.98531158590396228)
 
-    # missing: no test that uses *args
-
-    def test_kstest_allpaths(self):
+    def test_ks1samp_allpaths(self):
         # Check NaN input, output.
-        assert (np.isnan(kolmogn(np.nan, 1, True)))
+        assert_(np.isnan(kolmogn(np.nan, 1, True)))
         with assert_raises(ValueError, match='n is not integral: 1.5'):
             kolmogn(1.5, 1, True)
-        assert np.isnan(kolmogn(-1, 1, True))
+        assert_(np.isnan(kolmogn(-1, 1, True)))
 
         dataset = np.asarray([
             # Check x out of range
@@ -2943,6 +2975,8 @@ class TestKSTest(object):
             (1600, 1 / 32, False, 0.08603386296651416),  # _kolmogn_PelzGood
         ])
         FuncData(kolmogn, dataset, (0, 1, 2), 3).check(dtypes=[int, float, bool])
+
+    # missing: no test that uses *args
 
 
 class TestKSTwoSamples(object):

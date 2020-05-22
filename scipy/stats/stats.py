@@ -6056,10 +6056,11 @@ def _count_paths_outside_method(m, n, g, h):
     mg = m // g
     ng = n // g
 
-    #  0 <= x_j <= m is the smallest integer for which n*x_j - m*j < g*h
-    xj = [int(np.ceil((h + mg * j)/ng)) for j in range(n+1)]
-    xj = [_ for _ in xj if _ <= m]
-    lxj = len(xj)
+    # Not every x needs to be considered.
+    # xj holds the list of x values to be checked.
+    # Wherever n*x/m + ng*h crosses an integer
+    lxj = n + (mg-h)//mg
+    xj = [(h + mg * j + ng-1)//ng for j in range(lxj)]
     # B is an array just holding a few values of B(x,y), the ones needed.
     # B[j] == B(x_j, j)
     if lxj == 0:
@@ -6075,8 +6076,7 @@ def _count_paths_outside_method(m, n, g, h):
             raise FloatingPointError()
         for i in range(j):
             bin = np.round(special.binom(xj[j] - xj[i] + j - i, j-i))
-            dec = bin * B[i]
-            Bj -= dec
+            Bj -= bin * B[i]
         B[j] = Bj
         if not np.isfinite(Bj):
             raise FloatingPointError()
