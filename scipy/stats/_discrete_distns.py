@@ -591,26 +591,6 @@ class nhypergeom_gen(rv_discrete):
     >>> R = nhypergeom.rvs(N, K, r, size=10)
 
     """
-    def _rvs(self, N, K, r, size=None, random_state=None):
-        # As there is no method to samples from this
-        # distribution, this `_rvs` uses a brute force
-        # method to sample from the distribution.
-        oshape = K.shape
-        K = K.ravel()
-        N = N.ravel()
-        r = r.ravel()
-        k = np.c_[list(np.arange(ki) for ki in K)].T
-        p = self._pmf(k, N, K, r)
-        samples = np.zeros((int(np.prod(size)),
-                            int(np.prod(oshape))))
-        for i in range(int(np.prod(size))):
-            samples[i] = np.r_[list(random_state.choice(a=kj,
-                                                        size=size,
-                                                        p=pj)
-                               for kj, pj in zip(k, p))]
-        samples = samples.reshape(*(size + oshape))
-        return samples
-
     def _get_support(self, N, K, r):
         return 0, K
 
@@ -621,9 +601,9 @@ class nhypergeom_gen(rv_discrete):
         return cond
 
     def _logpmf(self, k, N, K, r):
-        result = (betaln(k+r, k+1) + betaln(k-r, 1) +
-                  betaln(N-r-k+1, 1) + betaln(N-r-k+1, K-k+1) -
-                  betaln(N+1, K+1) - betaln(N+1, 1))
+        result = (-betaln(k+1, r) + betaln(k+r, 1) -
+                  betaln(K-k+1, N-r-K+1) + betaln(N-r-k+1, 1) +
+                  betaln(K+1, N-K+1) - betaln(N+1, 1))
         return result
 
     def _pmf(self, k, N, K, r):
