@@ -3003,6 +3003,7 @@ class TestKSTwoSamples(object):
         self._testOne(data2, data2-0.5, 'greater', 0.0/3, 1.0)
         self._testOne(data2, data2-0.5, 'less', 1.0/3, 0.75)
 
+    @pytest.mark.slow
     def testMiddlingBoth(self):
         # 500, 600
         n1, n2 = 500, 600
@@ -3022,6 +3023,7 @@ class TestKSTwoSamples(object):
             self._testOne(x, y, 'less', 500.0 / n1 / n2, 0.9968735843165021, mode='exact')
             _check_warnings(w, RuntimeWarning, 1)
 
+    @pytest.mark.slow
     def testMediumBoth(self):
         # 1000, 1100
         n1, n2 = 1000, 1100
@@ -3097,6 +3099,7 @@ class TestKSTwoSamples(object):
         res = stats.ks_2samp([1, 2], [3])
         check_named_results(res, attributes)
 
+    @pytest.mark.slow
     def test_some_code_paths(self):
         # Check that some code paths are executed
         from scipy.stats.stats import _count_paths_outside_method, _compute_prob_inside_method
@@ -5270,6 +5273,7 @@ class TestMGCStat(object):
         assert_approx_equal(stat, 0.97, significant=1)
         assert_approx_equal(pvalue, 0.001, significant=1)
 
+    @pytest.mark.slow
     def test_random_state(self):
         # generate x and y
         x, y = self._simulations(samps=100, dims=1, sim_type="linear")
