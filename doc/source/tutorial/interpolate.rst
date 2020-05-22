@@ -399,7 +399,8 @@ passed in :obj:`mgrid <numpy.mgrid>`.
    >>> z = (x+y) * np.exp(-6.0*(x*x+y*y))
 
    >>> plt.figure()
-   >>> plt.pcolormesh(x_edges, y_edges, z, shading='flat')
+   >>> lims = dict(cmap='RdBu_r', vmin=-0.25, vmax=0.25)
+   >>> plt.pcolormesh(x_edges, y_edges, z, shading='flat', **lims)
    >>> plt.colorbar()
    >>> plt.title("Sparsely sampled function.")
    >>> plt.show()
@@ -413,7 +414,7 @@ passed in :obj:`mgrid <numpy.mgrid>`.
    >>> znew = interpolate.bisplev(xnew[:,0], ynew[0,:], tck)
 
    >>> plt.figure()
-   >>> plt.pcolormesh(xnew_edges, ynew_edges, znew, shading='flat')
+   >>> plt.pcolormesh(xnew_edges, ynew_edges, znew, shading='flat', **lims)
    >>> plt.colorbar()
    >>> plt.title("Interpolated function.")
    >>> plt.show()
@@ -495,8 +496,9 @@ This example shows how to interpolate scattered 2-D data:
     >>> x = np.random.rand(100)*4.0-2.0
     >>> y = np.random.rand(100)*4.0-2.0
     >>> z = x*np.exp(-x**2-y**2)
-    >>> ti = np.linspace(-2.0, 2.0, 100)
-    >>> XI, YI = np.meshgrid(ti, ti)
+    >>> edges = np.linspace(-2.0, 2.0, 101)
+    >>> centers = edges[:-1] + np.diff(edges[:2])[0] / 2.
+    >>> XI, YI = np.meshgrid(centers, centers)
 
     >>> # use RBF
     >>> rbf = Rbf(x, y, z, epsilon=2)
@@ -504,8 +506,10 @@ This example shows how to interpolate scattered 2-D data:
 
     >>> # plot the result
     >>> plt.subplot(1, 1, 1)
-    >>> plt.pcolor(XI, YI, ZI, cmap=cm.jet, shading='nearest')
-    >>> plt.scatter(x, y, 100, z, cmap=cm.jet)
+    >>> X_edges, Y_edges = np.meshgrid(edges, edges)
+    >>> lims = dict(cmap='RdBu_r', vmin=-0.4, vmax=0.4)
+    >>> plt.pcolormesh(X_edges, Y_edges, ZI, shading='flat', **lims)
+    >>> plt.scatter(x, y, 100, z, edgecolor='w', lw=0.1, **lims)
     >>> plt.title('RBF interpolation - multiquadrics')
     >>> plt.xlim(-2, 2)
     >>> plt.ylim(-2, 2)
