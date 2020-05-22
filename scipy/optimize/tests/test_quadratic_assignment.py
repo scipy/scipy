@@ -176,6 +176,11 @@ def test_quadratic_assignment_input_validation():
         quadratic_assignment(
             np.identity(3), np.identity(3), np.ones((2, 2)),
         )
+    # test init matrix not doubly stochastic
+    with pytest.raises(ValueError):
+        quadratic_assignment(
+            np.identity(3), np.identity(3), init=np.ones((3, 3))
+        )
 
 
 def _range_matrix(a, b):
