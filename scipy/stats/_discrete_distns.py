@@ -592,9 +592,20 @@ class nhypergeom_gen(rv_discrete):
 
     """
     def _rvs(self, N, K, r, size=None, random_state=None):
-        # FIXME: I wasn't able to find a method to sample
-        # from this distribution.
-        return random_state.negetive_hypergeometric(N, N-K, r, size=size)
+        # As there is no method to samples from this
+        # distribution, this `_rvs` uses a brute force
+        # method to sample from the distribution.
+        N, K, r = np.broadcast_arrays((N, K, r))
+        oshape = K.shape # (a, b, c, ..., z)
+        K = K.ravel()    # (a*b*c*...*z)
+        N = N.ravel()    # (a*b*c*...*z)
+        r = r.ravel()    # (a*b*c*...*z)
+        k = np.c_[np.arange(ki) for ki in K].T # (a*b*c*...*z, K)
+        p = self._pmf(k, N, K, r)              # (a*b*c*...*z, K)
+        samples = np.r_[random_state.choice(a=ki, size=size, p=pi)
+                   for ki, pi in zip(k, p)] # (a*b*c*...*z)
+        samples = samples.reshape(oshape)   # (a, b, c, ..., z)
+        return samples
 
     def _get_support(self, N, K, r):
         return K
