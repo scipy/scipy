@@ -1165,7 +1165,7 @@ def boxcox_normmax(x, bracket=None, bounds=None, method='pearsonr',
     def optimizer(func, args):
         return optimize.minimize_scalar(
             func, bounds=bounds, method=optimize_method, bracket=bracket,
-            args=args, tol=tol, options=options)
+            args=args, tol=tol, options=options).x.item()
 
     def _pearsonr(x):
         osm_uniform = _calc_uniform_order_statistic_medians(len(x))
