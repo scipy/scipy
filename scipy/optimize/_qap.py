@@ -26,7 +26,7 @@ def quadratic_assignment(
 
     .. math::
 
-        \min_P & \ {\text{trace}(APB^T P^T)}\\
+        \min_P & \ {\ \text{trace}(APB^T P^T)}\\
         \mbox{s.t. } & {P \ \epsilon \ \mathcal{P}}\\
 
     where :math:`\mathcal{P}` is the set of all permutation matrices,
@@ -52,8 +52,8 @@ def quadratic_assignment(
         `cost-matrix` in the objective function above.
 
     dist_matrix : 2d-array, square, non-negative
-        A square adjacency matrix.  In this implementation, `dist-matrix` =
-        :math:`B` in the objective function above.
+        A square adjacency matrix.  In this implementation, :math:`B` =
+        `dist-matrix` in the objective function above.
 
     seed : 2d-array, optional, (default = None)
         Allows the user apply a seed, fixing part of the matching between
@@ -78,7 +78,7 @@ def quadratic_assignment(
             n_init : int, positive (default = 1)
                 Number of random initializations of the starting
                 permutation matrix that the FAQ algorithm will undergo.
-            init : string (default = 'barycenter')
+            init : string (default = 'barycenter') or 2d-array
                 The algorithm may be sensitive to the initial permutation
                 matrix (or search position) chosen due to the possibility
                 of several local minima within the feasible region.
@@ -99,6 +99,10 @@ def quadratic_assignment(
                 "rand" : some random point near :math:`J`, defined as
                 :math:`(J+K)/2`, where :math:`K` is some random doubly
                 stochastic matrix
+
+                If an ndarray is passed, it should have the same shape as
+                `cost_matrix` and `dist_matrix`, and its rows and columns
+                must sum to 1 (doubly stochastic).
             maxiter : int, positive (default = 30)
                 Integer specifying the max number of Franke-Wolfe iterations.
                 FAQ typically converges with modest number of iterations.
@@ -195,20 +199,20 @@ def quadratic_assignment(
         msg = "'dist_matrix' must be square"
     elif cost_matrix.shape != dist_matrix.shape:
         msg = "Adjacency matrices must be of equal size"
-    elif (cost_matrix < 0).all() or (dist_matrix < 0).all():
+    elif (cost_matrix < 0).any() or (dist_matrix < 0).any():
         msg = "Adjacency matrix contains negative entries"
     elif seed.shape[0] > cost_matrix.shape[0]:
         msg = "There cannot be more seeds than there are nodes"
     elif seed.shape[1] != 2:
         msg = "Seed array entry must have two columns"
-    elif not (seed >= 0).all():
+    elif (seed < 0).any():
         msg = "Seed array contains negative entries"
-    elif not (seed < len(cost_matrix)).all():
+    elif (seed >= len(cost_matrix)).any():
         msg = "Seed array entries must be less than the number of nodes"
     elif not len(set(seed[:, 0])) == len(seed[:, 0]) or not \
             len(set(seed[:, 1])) == len(seed[:, 1]):
         msg = "Seed column entries must be unique"
-    elif init not in {'barycenter', 'rand'}:
+    elif isinstance(init, str) and init not in {'barycenter', 'rand'}:
         msg = "Invalid 'init_method' parameter string"
     elif n_init <= 0:
         msg = "'n_init' must be a positive integer"
@@ -264,7 +268,7 @@ def quadratic_assignment(
 
     for i in range(n_init):
         # setting initialization matrix
-        if init == "rand":
+        if isinstance(init, str) and init == "rand":
             # generate a nxn matrix where each entry is a random integer [0, 1]
             K = rng.rand(n_unseed, n_unseed)
             # perform 10 iterations of Sinkhorn balancing
@@ -273,9 +277,11 @@ def quadratic_assignment(
             # initialize J, a doubly stochastic barycenter
             J = np.ones((n_unseed, n_unseed)) / float(n_unseed)
             P = (K + J) / 2
-        elif init == "barycenter":
+        elif isinstance(init, str) and init == "barycenter":
             P = np.ones((n_unseed, n_unseed)) / float(n_unseed)
-
+        else:
+            _check_init_input(init, n)
+            P = init
         const_sum = A21 @ B21.T + A12.T @ B12
         grad_P = np.inf  # gradient of P
         n_iter = 0  # number of FW iterations
@@ -344,6 +350,18 @@ def quadratic_assignment(
     res = {"col_ind": perm_inds, "score": score, "nit": n_iter}
 
     return OptimizeResult(res)
+
+
+def _check_init_input(init, n):
+    row_sum = np.round(np.sum(init, axis=0), decimals=3)
+    col_sum = np.round(np.sum(init, axis=1), decimals=3)
+    msg = None
+    if init.shape != (n, n):
+        msg = "`init` matrix must have same shape as A and B"
+    elif (row_sum != 1.).any() or (col_sum != 1.).any() or (init < 0).any():
+        msg = "`init` matrix must be doubly stochastic"
+    if msg is not None:
+        raise ValueError(msg)
 
 
 def _doubly_stochastic(P):
