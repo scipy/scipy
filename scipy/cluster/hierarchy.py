@@ -3006,7 +3006,7 @@ def set_link_color_palette(palette):
 
 def _reorder_leaves(Z, leaves_order):
     """"
-    Fiven a tree T, encoded az Z, builds a tree F
+    Given a tree T, encoded az Z, builds a tree F
     and its encoding new_Z s.t. leaves(F) == leaves_order
     Variables:
     ch[i] = children of node (n+i) in T
@@ -3067,6 +3067,21 @@ def _reorder_leaves(Z, leaves_order):
             v = p[v]
             continue
     return new_Z
+
+
+def _is_permutation(l, n):
+    # if list l is a permutation of numbers from 0 to n-1
+    l = np.asarray(l, dtype='int64')
+    if l.shape[0] != n:
+        return False
+    used = [False for i in range(n)]
+    for i in l:
+        if i < 0 or i >= n:
+            return False
+        used[i] = True
+    if False in used:
+        return False
+    return True
 
 
 def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
@@ -3263,10 +3278,10 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
         color_threshold. The default is ``'C0'``.
     leaves_order : iterable, optional
         Plots the leaves in the order specified by a vector of
-        original observation indices. If the vector contains duplicates
-        or results in a crossing, an exception will be thrown. Passing
-        None orders leaf nodes based on the order they appear in the
-        pre-order traversal.
+        original observation indices. Indices should start from 0. 
+        If the vector contains duplicates or results in a crossing, an exception
+        will be thrown. Passing None orders leaf nodes based on the order they
+        appear in the pre-order traversal.
 
     Returns
     -------
@@ -3333,18 +3348,21 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
 
     >>> from scipy.cluster import hierarchy
     >>> X = [[0,0], [0,1], [0,4], [2,4], [6,3],[7,3], [8,3]]
-    >>> Z = hierarchy.linkage(X, method='single')
+    >>> Z = hierarchy.linkage(X, method = 'single')
 
-    >>> fig, axes = plt.subplots(1, 2, figsize=(8, 3))
-    >>> dn1 = hierarchy.dendrogram(Z, ax=axes[0])
-    >>> dn2 = hierarchy.dendrogram(Z, ax=axes[1], leaves_order = [3,2,1,0,6,4,5])
+    >>> fig, axes = plt.subplots(1, 2, figsize = (8, 3))
+    >>> dn1 = hierarchy.dendrogram(Z, ax = axes[0])
+    >>> dn2 = hierarchy.dendrogram(Z, ax = axes[1], leaves_order = [3,2,1,0,6,4,5])
     >>> plt.show()
     """
-    if leaves_order is None:
-        Z = np.asarray(Z, order='c')
-    else:
-        # reorder linkage matrix according to 'leaves_order'
-        Z = np.asarray(_reorder_leaves(Z, leaves_order), order='c')
+    Z = np.asarray(Z, order='c')
+    if leaves_order is not None:
+        # Do simple parameter corectness check first
+        # TODO= take into account truncation of a tree
+        if not _is_permutation(leaves_order, Z.shape[0] + 1):
+            raise ValueError("provided leaves order should be a permutation "
+                                 "of indices of the original leaves of the dendrogram")
+        Z = _reorder_leaves(Z, leaves_order)
 
     if orientation not in ["top", "left", "bottom", "right"]:
         raise ValueError("orientation must be one of 'top', 'left', "

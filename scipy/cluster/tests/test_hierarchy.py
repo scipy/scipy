@@ -930,6 +930,16 @@ class TestDendrogram(object):
         # reset color palette (global list)
         set_link_color_palette(None)
 
+    @pytest.mark.parametrize("order", [
+        [0, 1, 2, 3, 4, 5, 6, 7],  # wrong size of the list
+        [0, 1, 2, 3, 8, 5, 6],  # not a permutation
+        [0, 1, 2, 1, 2, 5, 6]  # not a permutation either
+        ]) 
+    def test_dendrogram_leaves_reordering_exceptions(self, order):
+        X = [[0, 0], [0, 1], [0, 4], [2, 4], [6, 3], [7, 3], [8, 3]]
+        Z = linkage(X, method='single')
+        assert_raises(ValueError, dendrogram, Z, leaves_order=order, no_plot=True)
+
 
 def calculate_maximum_distances(Z):
     # Used for testing correctness of maxdists.
