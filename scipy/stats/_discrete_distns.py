@@ -601,13 +601,14 @@ class nhypergeom_gen(rv_discrete):
         r = r.ravel()
         k = np.c_[list(np.arange(ki) for ki in K)].T
         p = self._pmf(k, N, K, r)
-        samples = np.zeros((np.prod(oshape), int(np.prod(size))))
+        samples = np.zeros((int(np.prod(size)),
+                            int(np.prod(oshape))))
         for i in range(int(np.prod(size))):
             samples[i] = np.r_[list(random_state.choice(a=kj,
                                                         size=size,
                                                         p=pj)
                                for kj, pj in zip(k, p))]
-        samples = samples.reshape(*(oshape + size))
+        samples = samples.reshape(*(size + oshape))
         return samples
 
     def _get_support(self, N, K, r):
