@@ -98,7 +98,7 @@ def quadratic_assignment(
 
                 "rand" : some random point near :math:`J`, defined as
                 :math:`(J+K)/2`, where :math:`K` is some random doubly
-                stochastic matrix
+                stochastic matrix.
 
                 If an ndarray is passed, it should have the same shape as
                 `cost_matrix` and `dist_matrix`, and its rows and columns
@@ -111,12 +111,12 @@ def quadratic_assignment(
                 sorting of input adjacency matrices, gives users the option
                 to shuffle the nodes of `cost_matrix`. Results are then
                 unshuffled so that returned `col_ind` matches the node order
-                of inputs
+                of inputs.
             eps : float (default = 0.05)
                 A positive, threshold stopping criteria such that Franke-
                 Wolfe continues to iterate while Frobenius norm of
                 :math:`(P_{i}-P_{i+1}) > eps`, where :math:`i` is the
-                iteration number
+                iteration number.
 
     Returns
     -------
