@@ -27,6 +27,7 @@ _named_backends = {
     'scipy': _ScipyBackend,
 }
 
+
 def _backend_from_arg(backend):
     """Maps strings to known backends and validates the backend"""
 
@@ -63,6 +64,15 @@ def set_global_backend(backend):
     -----
     This will overwrite the previously set global backend, which, by default, is
     the SciPy implementation.
+
+    Examples
+    --------
+    We can set the global fft backend:
+
+    >>> from scipy.fft import fft, set_global_backend
+    >>> set_global_backend("scipy")  # Sets global backend. "scipy" is the default backend.
+    >>> fft([1])  # Calls the global backend
+    array([1.+0.j])
     """
     backend = _backend_from_arg(backend)
     ua.set_global_backend(backend)
@@ -85,6 +95,21 @@ def register_backend(backend):
     Raises
     ------
     ValueError: If the backend does not implement ``numpy.scipy.fft``.
+
+    Examples
+    --------
+    We can register a new fft backend:
+
+    >>> from scipy.fft import fft, register_backend, set_global_backend
+    >>> class NoopBackend:  # Define an invalid Backend
+    ...     __ua_domain__ = "numpy.scipy.fft"
+    ...     def __ua_function__(self, func, args, kwargs):
+    ...          return NotImplemented
+    >>> set_global_backend(NoopBackend())  # Set the invalid backend as global
+    >>> register_backend("scipy")  # Register a new backend
+    >>> fft([1])  # The registered backend is called because the global backend returns `NotImplemented`
+    array([1.+0.j])
+    >>> set_global_backend("scipy")  # Restore global backend to default
 
     """
     backend = _backend_from_arg(backend)

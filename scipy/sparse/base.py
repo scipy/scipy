@@ -549,9 +549,9 @@ class spmatrix(object):
                 tr = np.asarray(other).transpose()
             return (self.transpose() * tr).transpose()
 
-    #####################################
-    # matmul (@) operator (Python 3.5+) #
-    #####################################
+    #######################
+    # matmul (@) operator #
+    #######################
 
     def __matmul__(self, other):
         if isscalarlike(other):

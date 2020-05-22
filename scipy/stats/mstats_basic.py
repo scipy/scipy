@@ -137,6 +137,30 @@ def argstoarray(*args):
     `numpy.ma.row_stack` has identical behavior, but is called with a sequence
     of sequences.
 
+    Examples
+    --------
+    A 2D masked array constructed from a group of sequences is returned.
+
+    >>> from scipy.stats.mstats import argstoarray
+    >>> argstoarray([1, 2, 3], [4, 5, 6])
+    masked_array(
+     data=[[1.0, 2.0, 3.0],
+           [4.0, 5.0, 6.0]],
+     mask=[[False, False, False],
+           [False, False, False]],
+     fill_value=1e+20)
+
+    The returned masked array filled with missing values when the lengths of
+    sequences are different.
+
+    >>> argstoarray([1, 3], [4, 5, 6])
+    masked_array(
+     data=[[1.0, 3.0, --],
+           [4.0, 5.0, 6.0]],
+     mask=[[False, False,  True],
+           [False, False, False]],
+     fill_value=1e+20)
+
     """
     if len(args) == 1 and not isinstance(args[0], ndarray):
         output = ma.asarray(args[0])
@@ -518,13 +542,10 @@ def spearmanr(x, y=None, use_ties=True, axis=None, nan_policy='propagate'):
         rs = ma.corrcoef(x_ranked, rowvar=False).data
 
         # rs can have elements equal to 1, so avoid zero division warnings
-        olderr = np.seterr(divide='ignore')
-        try:
+        with np.errstate(divide='ignore'):
             # clip the small negative values possibly caused by rounding
             # errors before taking the square root
             t = rs * np.sqrt((dof / ((rs+1.0) * (1.0-rs))).clip(0))
-        finally:
-            np.seterr(**olderr)
 
         prob = 2 * distributions.t.sf(np.abs(t), dof)
 
@@ -2250,11 +2271,8 @@ def skew(a, axis=0, bias=True):
     n = a.count(axis)
     m2 = moment(a, 2, axis)
     m3 = moment(a, 3, axis)
-    olderr = np.seterr(all='ignore')
-    try:
+    with np.errstate(all='ignore'):
         vals = ma.where(m2 == 0, 0, m3 / m2**1.5)
-    finally:
-        np.seterr(**olderr)
 
     if not bias:
         can_correct = (n > 2) & (m2 > 0)
@@ -2306,11 +2324,8 @@ def kurtosis(a, axis=0, fisher=True, bias=True):
     a, axis = _chk_asarray(a, axis)
     m2 = moment(a, 2, axis)
     m4 = moment(a, 4, axis)
-    olderr = np.seterr(all='ignore')
-    try:
+    with np.errstate(all='ignore'):
         vals = ma.where(m2 == 0, 0, m4 / m2**2.0)
-    finally:
-        np.seterr(**olderr)
 
     if not bias:
         n = a.count(axis)

@@ -321,6 +321,21 @@ class SphericalVorSort(Benchmark):
         """
         self.sv.sort_vertices_of_regions()
 
+
+class SphericalVorAreas(Benchmark):
+    params = [10, 100, 1000, 5000, 10000]
+    param_names = ['num_points']
+
+    def setup(self, num_points):
+        self.points = generate_spherical_points(num_points)
+        self.sv = SphericalVoronoi(self.points, radius=1,
+                                   center=np.zeros(3))
+
+    def time_spherical_polygon_area_calculation(self, num_points):
+        """Time the area calculation in the Spherical Voronoi code."""
+        self.sv.calculate_areas()
+
+
 class Xdist(Benchmark):
     params = ([10, 100, 1000], ['euclidean', 'minkowski', 'cityblock',
     'seuclidean', 'sqeuclidean', 'cosine', 'correlation', 'hamming', 'jaccard',

@@ -22,14 +22,11 @@ def test_eval_genlaguerre_restriction():
 
 def test_warnings():
     # ticket 1334
-    olderr = np.seterr(all='raise')
-    try:
+    with np.errstate(all='raise'):
         # these should raise no fp warnings
         orth.eval_legendre(1, 0)
         orth.eval_laguerre(1, 1)
         orth.eval_gegenbauer(1, 1, 0)
-    finally:
-        np.seterr(**olderr)
 
 
 class TestPolys(object):
@@ -66,13 +63,10 @@ class TestPolys(object):
             p = (p[0].astype(int),) + p[1:]
             return func(*p)
 
-        olderr = np.seterr(all='raise')
-        try:
+        with np.errstate(all='raise'):
             ds = FuncData(polyfunc, dataset, list(range(len(param_ranges)+2)), -1,
                           rtol=rtol)
             ds.check()
-        finally:
-            np.seterr(**olderr)
 
     def test_jacobi(self):
         self.check_poly(orth.eval_jacobi, orth.jacobi,
@@ -106,12 +100,9 @@ class TestPolys(object):
                    param_ranges=[], x_range=[-2, 2])
 
     def test_sh_chebyt(self):
-        olderr = np.seterr(all='ignore')
-        try:
+        with np.errstate(all='ignore'):
             self.check_poly(orth.eval_sh_chebyt, orth.sh_chebyt,
                             param_ranges=[], x_range=[0, 1])
-        finally:
-            np.seterr(**olderr)
 
     def test_sh_chebyu(self):
         self.check_poly(orth.eval_sh_chebyu, orth.sh_chebyu,
@@ -122,12 +113,9 @@ class TestPolys(object):
                    param_ranges=[], x_range=[-1, 1])
 
     def test_sh_legendre(self):
-        olderr = np.seterr(all='ignore')
-        try:
+        with np.errstate(all='ignore'):
             self.check_poly(orth.eval_sh_legendre, orth.sh_legendre,
                             param_ranges=[], x_range=[0, 1])
-        finally:
-            np.seterr(**olderr)
 
     def test_genlaguerre(self):
         self.check_poly(orth.eval_genlaguerre, orth.genlaguerre,
@@ -181,13 +169,10 @@ class TestRecurrence(object):
             kw = dict(sig='l'+(len(p)-1)*'d'+'->d')
             return func(*p, **kw)
 
-        olderr = np.seterr(all='raise')
-        try:
+        with np.errstate(all='raise'):
             ds = FuncData(polyfunc, dataset, list(range(len(param_ranges)+2)), -1,
                           rtol=rtol)
             ds.check()
-        finally:
-            np.seterr(**olderr)
 
     def test_jacobi(self):
         self.check_poly(orth.eval_jacobi,

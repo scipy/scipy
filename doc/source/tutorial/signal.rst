@@ -17,6 +17,7 @@ transfer-function formalism to provide a fast B-spline transform. To
 understand this section, you will need to understand that a signal in
 SciPy is an array of real or complex numbers.
 
+.. _tutorial-signal-bsplines:
 
 B-splines
 ---------

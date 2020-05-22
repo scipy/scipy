@@ -55,11 +55,6 @@ and in some cases we assume that individual objects are imported as
 
     >>> from scipy.stats import norm
 
-For consistency between Python 2 and Python 3, we'll also ensure
-that ``print`` is a function:
-
-    >>> from __future__ import print_function
-
 Getting help
 ^^^^^^^^^^^^
 
@@ -157,10 +152,8 @@ argument:
     >>> norm.rvs(size=3)
     array([-0.35687759,  1.34347647, -0.11710531])   # random
 
-.. TODO: Replace numpy.random HTML with `numpy.random` once NumPy updates doc
-
 Note that drawing random numbers relies on generators from
-`numpy.random <https://www.numpy.org/devdocs/reference/routines.random.html>`__
+`numpy.random`
 package. In the example above, the specific stream of
 random numbers is not reproducible across runs. To achieve reproducibility,
 you can explicitly seed a global variable

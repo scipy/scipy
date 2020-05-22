@@ -296,7 +296,7 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
     def diagonal(self, k=0):
         rows, cols = self.shape
         if k <= -rows or k >= cols:
-            raise ValueError("k exceeds matrix dimensions")
+            return np.empty(0, dtype=self.data.dtype)
         R, C = self.blocksize
         y = np.zeros(min(rows + min(k, 0), cols - max(k, 0)),
                      dtype=upcast(self.dtype))

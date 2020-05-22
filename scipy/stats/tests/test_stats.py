@@ -9,9 +9,8 @@
 import os
 import warnings
 from collections import namedtuple
-import multiprocessing
 
-from numpy.testing import (dec, assert_, assert_equal,
+from numpy.testing import (assert_, assert_equal,
                            assert_almost_equal, assert_array_almost_equal,
                            assert_array_equal, assert_approx_equal,
                            assert_allclose, assert_warns, suppress_warnings)
@@ -1179,6 +1178,14 @@ def test_weightedtau():
     tau, p_value = stats.weightedtau(x, y)
     assert_approx_equal(tau, -0.56694968153682723)
 
+def test_segfault_issue_9710():
+    # https://github.com/scipy/scipy/issues/9710
+    # This test was created to check segfault
+    # In issue SEGFAULT only repros in optimized builds after calling the function twice
+    stats.weightedtau([1], [1.0])
+    stats.weightedtau([1], [1.0])
+    # The code below also caused SEGFAULT
+    stats.weightedtau([np.nan], [52])
 
 def test_kendall_tau_large():
     n = 172.
@@ -2996,6 +3003,7 @@ class TestKSTwoSamples(object):
         self._testOne(data2, data2-0.5, 'greater', 0.0/3, 1.0)
         self._testOne(data2, data2-0.5, 'less', 1.0/3, 0.75)
 
+    @pytest.mark.slow
     def testMiddlingBoth(self):
         # 500, 600
         n1, n2 = 500, 600
@@ -3015,6 +3023,7 @@ class TestKSTwoSamples(object):
             self._testOne(x, y, 'less', 500.0 / n1 / n2, 0.9968735843165021, mode='exact')
             _check_warnings(w, RuntimeWarning, 1)
 
+    @pytest.mark.slow
     def testMediumBoth(self):
         # 1000, 1100
         n1, n2 = 1000, 1100
@@ -3090,6 +3099,7 @@ class TestKSTwoSamples(object):
         res = stats.ks_2samp([1, 2], [3])
         check_named_results(res, attributes)
 
+    @pytest.mark.slow
     def test_some_code_paths(self):
         # Check that some code paths are executed
         from scipy.stats.stats import _count_paths_outside_method, _compute_prob_inside_method
@@ -3640,20 +3650,34 @@ class TestJarqueBera(object):
         y = np.random.chisquare(10000, 100000)
         z = np.random.rayleigh(1, 100000)
 
+        assert_equal(stats.jarque_bera(x)[0], stats.jarque_bera(x).statistic)
+        assert_equal(stats.jarque_bera(x)[1], stats.jarque_bera(x).pvalue)
+
+        assert_equal(stats.jarque_bera(y)[0], stats.jarque_bera(y).statistic)
+        assert_equal(stats.jarque_bera(y)[1], stats.jarque_bera(y).pvalue)
+
+        assert_equal(stats.jarque_bera(z)[0], stats.jarque_bera(z).statistic)
+        assert_equal(stats.jarque_bera(z)[1], stats.jarque_bera(z).pvalue)
+
         assert_(stats.jarque_bera(x)[1] > stats.jarque_bera(y)[1])
+        assert_(stats.jarque_bera(x).pvalue > stats.jarque_bera(y).pvalue)
+
         assert_(stats.jarque_bera(x)[1] > stats.jarque_bera(z)[1])
+        assert_(stats.jarque_bera(x).pvalue > stats.jarque_bera(z).pvalue)
+
         assert_(stats.jarque_bera(y)[1] > stats.jarque_bera(z)[1])
+        assert_(stats.jarque_bera(y).pvalue > stats.jarque_bera(z).pvalue)
 
     def test_jarque_bera_array_like(self):
         np.random.seed(987654321)
         x = np.random.normal(0, 1, 100000)
 
-        JB1, p1 = stats.jarque_bera(list(x))
-        JB2, p2 = stats.jarque_bera(tuple(x))
-        JB3, p3 = stats.jarque_bera(x.reshape(2, 50000))
+        jb_test1 = JB1, p1 = stats.jarque_bera(list(x))
+        jb_test2 = JB2, p2 = stats.jarque_bera(tuple(x))
+        jb_test3 = JB3, p3 = stats.jarque_bera(x.reshape(2, 50000))
 
-        assert_(JB1 == JB2 == JB3)
-        assert_(p1 == p2 == p3)
+        assert_(JB1 == JB2 == JB3 == jb_test1.statistic == jb_test2.statistic == jb_test3.statistic)
+        assert_(p1 == p2 == p3 == jb_test1.pvalue == jb_test2.pvalue == jb_test3.pvalue)
 
     def test_jarque_bera_size(self):
         assert_raises(ValueError, stats.jarque_bera, [])
@@ -4064,21 +4088,15 @@ class TestGeoMean(object):
         #  Test a 1d list with zero element
         a = [10, 20, 30, 40, 50, 60, 70, 80, 90, 0]
         desired = 0.0  # due to exp(-inf)=0
-        olderr = np.seterr(all='ignore')
-        try:
+        with np.errstate(all='ignore'):
             check_equal_gmean(a, desired)
-        finally:
-            np.seterr(**olderr)
 
     def test_1d_array0(self):
         #  Test a 1d array with zero element
         a = np.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 0])
         desired = 0.0  # due to exp(-inf)=0
-        olderr = np.seterr(all='ignore')
-        try:
+        with np.errstate(all='ignore'):
             check_equal_gmean(a, desired)
-        finally:
-            np.seterr(**olderr)
 
 
 class TestGeometricStandardDeviation(object):
@@ -5190,7 +5208,7 @@ class TestMGCStat(object):
 
         return x, y
 
-    @dec.slow
+    @pytest.mark.slow
     @pytest.mark.parametrize("sim_type, obs_stat, obs_pvalue", [
         ("linear", 0.97, 1/1000),           # test linear simulation
         ("nonlinear", 0.163, 1/1000),       # test spiral simulation
@@ -5207,7 +5225,7 @@ class TestMGCStat(object):
         assert_approx_equal(stat, obs_stat, significant=1)
         assert_approx_equal(pvalue, obs_pvalue, significant=1)
 
-    @dec.slow
+    @pytest.mark.slow
     @pytest.mark.parametrize("sim_type, obs_stat, obs_pvalue", [
         ("linear", 0.184, 1/1000),           # test linear simulation
         ("nonlinear", 0.0190, 0.117),        # test spiral simulation
@@ -5223,7 +5241,7 @@ class TestMGCStat(object):
         assert_approx_equal(stat, obs_stat, significant=1)
         assert_approx_equal(pvalue, obs_pvalue, significant=1)
 
-    @dec.slow
+    @pytest.mark.slow
     def test_twosamp(self):
         np.random.seed(12345678)
 
@@ -5255,6 +5273,7 @@ class TestMGCStat(object):
         assert_approx_equal(stat, 0.97, significant=1)
         assert_approx_equal(pvalue, 0.001, significant=1)
 
+    @pytest.mark.slow
     def test_random_state(self):
         # generate x and y
         x, y = self._simulations(samps=100, dims=1, sim_type="linear")

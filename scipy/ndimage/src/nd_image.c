@@ -43,7 +43,6 @@
 #include "ni_measure.h"
 
 #include "ccallback.h"
-#include "numpy/npy_3kcompat.h"
 
 #if NPY_API_VERSION >= 0x0000000c
     #define HAVE_WRITEBACKIFCOPY
@@ -1059,7 +1058,7 @@ static PyObject *Py_BinaryErosion(PyObject *obj, PyObject *args)
         goto exit;
     }
     if (return_coordinates) {
-        cobj = NpyCapsule_FromVoidPtr(coordinate_list, _FreeCoordinateList);
+        cobj = PyCapsule_New(coordinate_list, NULL, _FreeCoordinateList);
     }
     #ifdef HAVE_WRITEBACKIFCOPY
         PyArray_ResolveWritebackIfCopy(output);
@@ -1102,8 +1101,8 @@ static PyObject *Py_BinaryErosion2(PyObject *obj, PyObject *args)
     if (!_validate_origin(array, origin)) {
         goto exit;
     }
-    if (NpyCapsule_Check(cobj)) {
-        NI_CoordinateList *cobj_data = NpyCapsule_AsVoidPtr(cobj);
+    if (PyCapsule_CheckExact(cobj)) {
+        NI_CoordinateList *cobj_data = PyCapsule_GetPointer(cobj, NULL);
         if (!NI_BinaryErosion2(array, strct, mask, niter, origin.ptr, invert,
                                &cobj_data)) {
             goto exit;

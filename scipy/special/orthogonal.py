@@ -138,15 +138,13 @@ class orthopoly1d(np.poly1d):
         poly = np.poly1d(roots, r=True)
         np.poly1d.__init__(self, poly.coeffs * float(kn))
 
-        # TODO: In numpy 1.13, there is no need to use __dict__ to access attributes
-        self.__dict__['weights'] = np.array(list(zip(roots,
-                                                     weights, equiv_weights)))
-        self.__dict__['weight_func'] = wfunc
-        self.__dict__['limits'] = limits
-        self.__dict__['normcoef'] = mu
+        self.weights = np.array(list(zip(roots, weights, equiv_weights)))
+        self.weight_func = wfunc
+        self.limits = limits
+        self.normcoef = mu
 
         # Note: eval_func will be discarded on arithmetic
-        self.__dict__['_eval_func'] = eval_func
+        self._eval_func = eval_func
 
     def __call__(self, v):
         if self._eval_func and not isinstance(v, np.poly1d):
@@ -157,18 +155,12 @@ class orthopoly1d(np.poly1d):
     def _scale(self, p):
         if p == 1.0:
             return
-        try:
-            self._coeffs
-        except AttributeError:
-            self.__dict__['coeffs'] *= p
-        else:
-            # the coeffs attr is be made private in future versions of NumPy
-            self._coeffs *= p
+        self._coeffs *= p
 
         evf = self._eval_func
         if evf:
-            self.__dict__['_eval_func'] = lambda x: evf(x) * p
-        self.__dict__['normcoef'] *= p
+            self._eval_func = lambda x: evf(x) * p
+        self.normcoef *= p
 
 
 def _gen_roots_and_weights(n, mu0, an_func, bn_func, f, df, symmetrize, mu):
