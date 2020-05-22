@@ -25,6 +25,7 @@ import scipy.stats.mstats as mstats
 import scipy.stats.mstats_basic as mstats_basic
 from .common_tests import check_named_results
 from scipy.sparse.sputils import matrix
+from scipy.spatial.distance import cdist
 
 """ Numbers in docstrings beginning with 'W' refer to the section numbers
     and headings found in the STATISTICS QUIZ of Leland Wilkinson.  These are
@@ -5273,6 +5274,17 @@ class TestMGCStat(object):
     def test_random_state(self):
         # generate x and y
         x, y = self._simulations(samps=100, dims=1, sim_type="linear")
+
+        # test stat and pvalue
+        stat, pvalue, _ = stats.multiscale_graphcorr(x, y, random_state=1)
+        assert_approx_equal(stat, 0.97, significant=1)
+        assert_approx_equal(pvalue, 0.001, significant=1)
+
+    def test_dist_perm(self):
+        # generate x and y
+        x, y = self._simulations(samps=100, dims=1, sim_type="linear")
+        distx = cdist(x, x, metric="euclidean")
+        disty = cdist(y, y, metric="euclidean")
 
         # test stat and pvalue
         stat, pvalue, _ = stats.multiscale_graphcorr(x, y, random_state=1)
