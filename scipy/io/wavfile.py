@@ -382,11 +382,30 @@ def _read_fmt_chunk(fid, is_big_endian):
 
 
 def _read_data_chunk(fid, format_tag, channels, bit_depth, is_big_endian,
-                     mmap=False):
+                     block_align, mmap=False):
     """
     Notes
     -----
     Assumes file pointer is immediately after the 'data' id
+
+    It's possible to not use all available bits in a container, or to store
+    samples in a container bigger than necessary, so bytes_per_sample uses
+    the actual reported container size (nBlockAlign / nChannels).  Real-world
+    examples:
+
+    Adobe Audition's "24-bit packed int (type 1, 20-bit)"
+
+        nChannels = 2, nBlockAlign = 6, wBitsPerSample = 20
+
+    http://www-mmsp.ece.mcgill.ca/Documents/AudioFormats/WAVE/Samples/AFsp/M1F1-int12-AFsp.wav
+    is:
+
+        nChannels = 2, nBlockAlign = 4, wBitsPerSample = 12
+
+    http://www-mmsp.ece.mcgill.ca/Documents/AudioFormats/WAVE/Docs/multichaudP.pdf
+    gives an example of:
+
+        nChannels = 2, nBlockAlign = 8, wBitsPerSample = 20
     """
     if is_big_endian:
         fmt = '>I'
@@ -396,8 +415,8 @@ def _read_data_chunk(fid, format_tag, channels, bit_depth, is_big_endian,
     # Size of the data subchunk in bytes
     size = struct.unpack(fmt, fid.read(4))[0]
 
-    # Number of bytes per sample
-    bytes_per_sample = bit_depth//8
+    # Number of bytes per sample (sample container size)
+    bytes_per_sample = block_align // channels
     if bit_depth == 8:
         dtype = 'u1'
     else:
@@ -584,6 +603,7 @@ def read(filename, mmap=False):
                 fmt_chunk = _read_fmt_chunk(fid, is_big_endian)
                 format_tag, channels, fs = fmt_chunk[1:4]
                 bit_depth = fmt_chunk[6]
+                block_align = fmt_chunk[5]
                 if bit_depth not in {8, 16, 32, 64, 96, 128}:
                     raise ValueError("Unsupported bit depth: the wav file "
                                      "has {}-bit data.".format(bit_depth))
@@ -594,7 +614,7 @@ def read(filename, mmap=False):
                 if not fmt_chunk_received:
                     raise ValueError("No fmt chunk before data")
                 data = _read_data_chunk(fid, format_tag, channels, bit_depth,
-                                        is_big_endian, mmap)
+                                        is_big_endian, block_align, mmap)
             elif chunk_id == b'LIST':
                 # Someday this could be handled properly but for now skip it
                 _skip_unknown_chunk(fid, is_big_endian)
