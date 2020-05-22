@@ -956,8 +956,10 @@ def boxcox(x, lmbda=None, bounds=None, alpha=None):
 
         If `lmbda` is None, find the lambda that maximizes the log-likelihood
         function and return it as the second output argument.
-    bounds : {None, tuple}, optional
-        Lower and upper bound on lmbda.
+    bounds : sequence, optional
+       Optional bounds for lmbda. Must have two items
+        corresponding to the optimization bounds. For more details,
+        see :func:`boxcox_normmax`.
     alpha : {None, float}, optional
         If ``alpha`` is not None, return the ``100 * (1-alpha)%`` confidence
         interval for `lmbda` as the third output argument.
@@ -1048,7 +1050,9 @@ def boxcox(x, lmbda=None, bounds=None, alpha=None):
         return special.boxcox(x, lmbda)
 
     # If lmbda=None, find the lmbda that maximizes the log-likelihood function.
-    lmax = boxcox_normmax(x, bounds=bounds, method='mle')
+    optimize_method = "bounded" if bounds is not None else "brent"
+    lmax = boxcox_normmax(x, bounds=bounds, method='mle',
+                          optimize_method=optimize_method)
     y = boxcox(x, lmax)
 
     if alpha is None:
@@ -1059,16 +1063,18 @@ def boxcox(x, lmbda=None, bounds=None, alpha=None):
         return y, lmax, interval
 
 
-def boxcox_normmax(x, bounds=None, brack=(-2.0, 2.0), method='pearsonr'):
+def boxcox_normmax(x, bracket=None, bounds=None, method='pearsonr',
+                   optimize_method='brent', tol=None, options=None):
     """Compute optimal Box-Cox transform parameter for input data.
 
     Parameters
     ----------
     x : array_like
         Input array.
-    bounds : {None, tuple}, optional
-        Lower and upper bound on lmbda.
-    brack : 2-tuple, optional
+    bounds : sequence, optional
+        For method 'bounded', `bounds` is mandatory and must have two items
+        corresponding to the optimization bounds.
+    bracket : 2-tuple, optional
         The starting interval for a downhill bracket search with
         `optimize.brent`.  Note that this is in most cases not critical; the
         final result is allowed to be outside this bracket.
@@ -1088,7 +1094,35 @@ def boxcox_normmax(x, bounds=None, brack=(-2.0, 2.0), method='pearsonr'):
         'all'
             Use all optimization methods available, and return all results.
             Useful to compare different methods.
+    bracket : sequence, optional
+        For methods 'brent' and 'golden', `bracket` defines the bracketing
+        interval and can either have three items ``(a, b, c)`` so that
+        ``a < b < c`` and ``fun(b) < fun(a), fun(c)`` or two items ``a`` and
+        ``c`` which are assumed to be a starting interval for a downhill
+        bracket search (see `bracket`); it doesn't always mean that the
+        obtained solution will satisfy ``a <= x <= c``.
+    bounds : sequence, optional
+        For method 'bounded', `bounds` is mandatory and must have two items
+        corresponding to the optimization bounds.
+    optimize_method : str or callable, optional
+        Type of solver.  Should be one of:
 
+            - 'Brent'     :ref:`(see here) <optimize.minimize_scalar-brent>`
+            - 'Bounded'   :ref:`(see here) <optimize.minimize_scalar-bounded>`
+            - 'Golden'    :ref:`(see here) <optimize.minimize_scalar-golden>`
+            - custom - a callable object (added in version 0.14.0), see below
+    tol : float, optional
+        Tolerance for termination. For detailed control, use solver-specific
+        options. See func:`minimize_scalar` for more details.
+    options : dict, optional
+        A dictionary of solver options.
+
+            maxiter : int
+                Maximum number of iterations to perform.
+            disp : bool
+                Set to True to print convergence messages.
+
+        See func:`minimize_scalar` for more details.
     Returns
     -------
     maxlog : float or ndarray
@@ -1097,7 +1131,7 @@ def boxcox_normmax(x, bounds=None, brack=(-2.0, 2.0), method='pearsonr'):
 
     See Also
     --------
-    boxcox, boxcox_llf, boxcox_normplot
+    boxcox, boxcox_llf, boxcox_normplot, minimize_scalar
 
     Examples
     --------
@@ -1127,20 +1161,11 @@ def boxcox_normmax(x, bounds=None, brack=(-2.0, 2.0), method='pearsonr'):
     >>> plt.show()
 
     """
-    # if bounds is None, use simple Brent optimisation
-    if bounds is None:
-        def optimizer(func, args):
-            return optimize.brent(func, brack=brack, args=args)
 
-    # otherwise use bounded Brent optimisation
-    else:
-        # input checks on bounds
-        if not isinstance(bounds, tuple) or len(bounds) != 2:
-            raise ValueError("`bounds` must be a tuple of length 2, "
-                             "but found: {}".format(bounds))
-
-        def optimizer(func, args):
-            return optimize.fminbound(func, bounds[0], bounds[1], args=args)
+    def optimizer(func, args):
+        return optimize.minimize_scalar(
+            func, bounds=bounds, method=optimize_method, bracket=bracket,
+            args=args, tol=tol, options=options)
 
     def _pearsonr(x):
         osm_uniform = _calc_uniform_order_statistic_medians(len(x))
@@ -1500,7 +1525,7 @@ def yeojohnson_llf(lmb, data):
 def yeojohnson_normmax(x, brack=(-2, 2)):
     """
     Compute optimal Yeo-Johnson transform parameter.
-    
+
     Compute optimal Yeo-Johnson transform parameter for input data, using
     maximum likelihood estimation.
 
@@ -2838,11 +2863,11 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
         two sets of measurements.)  Must be one-dimensional.
     zero_method : {'pratt', 'wilcox', 'zsplit'}, optional
         The following options are available (default is 'wilcox'):
-     
+
           * 'pratt': Includes zero-differences in the ranking process,
             but drops the ranks of the zeros, see [4]_, (more conservative).
           * 'wilcox': Discards all zero-differences, the default.
-          * 'zsplit': Includes zero-differences in the ranking process and 
+          * 'zsplit': Includes zero-differences in the ranking process and
             split the zero rank between positive and negative ones.
     correction : bool, optional
         If True, apply continuity correction by adjusting the Wilcoxon rank
@@ -2873,8 +2898,8 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
     is that the differences are symmetric, see [2]_.
     The two-sided test has the null hypothesis that the median of the
     differences is zero against the alternative that it is different from
-    zero. The one-sided test has the null hypothesis that the median is 
-    positive against the alternative that it is negative 
+    zero. The one-sided test has the null hypothesis that the median is
+    positive against the alternative that it is negative
     (``alternative == 'less'``), or vice versa (``alternative == 'greater.'``).
 
     The test uses a normal approximation to derive the p-value (if
