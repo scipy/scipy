@@ -1186,7 +1186,8 @@ class rv_generic(object):
 
         """
         args, loc, scale = self._parse_args(*args, **kwds)
-        if not (self._argcheck(*args) and (scale > 0)):
+        loc, scale = np.asanyarray(loc), np.asanyarray(scale)
+        if not (self._argcheck(*args) and np.all(scale > 0)):
             return nan
         if (floor(n) != n):
             raise ValueError("Moment must be an integer.")
@@ -1203,7 +1204,7 @@ class rv_generic(object):
 
         # Convert to transformed  X = L + S*Y
         # E[X^n] = E[(L+S*Y)^n] = L^n sum(comb(n, k)*(S/L)^k E[Y^k], k=0...n)
-        if loc == 0:
+        if np.all(loc == 0):
             return scale**n * val
         else:
             result = 0
