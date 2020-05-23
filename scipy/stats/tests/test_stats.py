@@ -2897,10 +2897,10 @@ class TestKSTest(object):
         check_named_results(res, attributes)
 
     def test_agree_with_ks_1samp(self):
-        x = np.linspace(-1,1,9)
+        x = np.linspace(-1, 1, 9)
         self._test_kstest_and_ks1samp(x, 'two-sided')
 
-        x = np.linspace(-15,15,9)
+        x = np.linspace(-15, 15, 9)
         self._test_kstest_and_ks1samp(x, 'two-sided')
 
         x = [-1.23, 0.06, -0.60, 0.17, 0.66, -0.17, -0.08, 0.27, -0.98, -0.99]
@@ -2927,10 +2927,10 @@ class TestKSOneSample(object):
 
     def test_agree_with_r(self):
         # comparing with some values from R
-        x = np.linspace(-1,1,9)
+        x = np.linspace(-1, 1, 9)
         self._testOne(x, 'two-sided', 0.15865525393145705, 0.95164069201518386)
 
-        x = np.linspace(-15,15,9)
+        x = np.linspace(-15, 15, 9)
         self._testOne(x, 'two-sided', 0.44435602715924361, 0.038850140086788665)
 
         x = [-1.23, 0.06, -0.60, 0.17, 0.66, -0.17, -0.08, 0.27, -0.98, -0.99]
