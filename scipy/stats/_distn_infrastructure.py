@@ -1190,6 +1190,8 @@ class rv_generic(object):
         loc, scale = np.broadcast_arrays(loc, scale)
         dtyp = np.find_common_type([loc.dtype, scale.dtype], [])
         cond = (scale <= 0)
+        if np.any(cond):
+            dtyp = np.float64
         output = zeros(loc.shape, dtype=dtyp)
         putmask(output, cond, nan)
         if (floor(n) != n):
