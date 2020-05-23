@@ -1270,7 +1270,7 @@ def ks_1samp(x, cdf, args=(), alternative="two-sided", mode='auto'):
         x, cdf, args=args, alternative=alternative, mode=mode)
 
 
-def ks_2samp(x, y, alternative="two-sided", mode='auto'):
+def ks_2samp(data1, data2, alternative="two-sided", mode='auto'):
     """
     Computes the Kolmogorov-Smirnov test on two samples.
 
@@ -1278,9 +1278,9 @@ def ks_2samp(x, y, alternative="two-sided", mode='auto'):
 
     Parameters
     ----------
-    x : array_like
+    data1 : array_like
         First data set
-    y : array_like
+    data2 : array_like
         Second data set
     alternative : {'two-sided', 'less', 'greater'}, optional
         Indicates the alternative hypothesis.  Default is 'two-sided'.
@@ -1305,7 +1305,7 @@ def ks_2samp(x, y, alternative="two-sided", mode='auto'):
     # but the circular dependencies between mstats_basic and stats prevent that.
     alternative = {'t': 'two-sided', 'g': 'greater', 'l': 'less'}.get(
        alternative.lower()[0], alternative)
-    return scipy.stats.stats.ks_2samp(x, y, alternative=alternative, mode=mode)
+    return scipy.stats.stats.ks_2samp(data1, data2, alternative=alternative, mode=mode)
 
 
 ks_twosamp = ks_2samp

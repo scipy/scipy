@@ -6137,7 +6137,7 @@ def _attempt_exact_2kssamp(n1, n2, g, d, alternative):
     return True, d, prob
 
 
-def ks_2samp(x, y, alternative='two-sided', mode='auto'):
+def ks_2samp(data1, data2, alternative='two-sided', mode='auto'):
     """
     Compute the Kolmogorov-Smirnov statistic on 2 samples.
 
@@ -6147,7 +6147,7 @@ def ks_2samp(x, y, alternative='two-sided', mode='auto'):
 
     Parameters
     ----------
-    x, y : sequence of 1-D ndarrays
+    data1, data2 : array_like, 1-Dimensional
         Two arrays of sample observations assumed to be drawn from a continuous
         distribution, sample sizes can be different.
     alternative : {'two-sided', 'less', 'greater'}, optional
@@ -6246,12 +6246,12 @@ def ks_2samp(x, y, alternative='two-sided', mode='auto'):
     if alternative not in ['two-sided', 'less', 'greater']:
         raise ValueError(f'Invalid value for alternative: {alternative}')
     MAX_AUTO_N = 10000  # 'auto' will attempt to be exact if n1,n2 <= MAX_AUTO_N
-    if np.ma.is_masked(x):
-        x = x.compressed()
-    if np.ma.is_masked(y):
-        y = y.compressed()
-    data1 = np.sort(x)
-    data2 = np.sort(y)
+    if np.ma.is_masked(data1):
+        data1 = data1.compressed()
+    if np.ma.is_masked(data2):
+        data2 = data2.compressed()
+    data1 = np.sort(data1)
+    data2 = np.sort(data2)
     n1 = data1.shape[0]
     n2 = data2.shape[0]
     if min(n1, n2) == 0:
@@ -6334,32 +6334,37 @@ def _parse_kstest_args(data1, data2, args, N):
     return data1, data2, cdf
 
 
-def kstest(data1, data2, args=(), N=20, alternative='two-sided', mode='auto'):
+def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', mode='auto'):
     """
-    Performs the Kolmogorov-Smirnov test for goodness of fit.
+    Performs the (one sample or two samples) Kolmogorov-Smirnov test for goodness of fit.
 
-    This performs a test of the distribution F(x) of an observed
+    The one-sample test performs a test of the distribution F(x) of an observed
     random variable against a given distribution G(x). Under the null
     hypothesis, the two distributions are identical, F(x)=G(x). The
     alternative hypothesis can be either 'two-sided' (default), 'less'
     or 'greater'. The KS test is only valid for continuous distributions.
+    The two-sample test tests whether the two independent samples are drawn
+    from the same continuous distribution.
 
     Parameters
     ----------
-    data1 : str, array_like, or callable
-        If a string, it should be the name of a distribution in `scipy.stats`.
+    rvs : str, array_like, or callable
         If an array, it should be a 1-D array of observations of random
         variables.
         If a callable, it should be a function to generate random variables;
         it is required to have a keyword argument `size`.
-    data2 : str, bool, array_like or callable
-        If a string, it should be the name of a distribution in `scipy.stats`.
+        If a string, it should be the name of a distribution in `scipy.stats`,
+        which will be used to generate random variables.
+    cdf : str, array_like or callable
+        If array_like, it should be a 1-D array of observations of random
+        variables, and the two-sample test is performed (and rvs must be array_like)
         If a callable, that callable is used to calculate the cdf.
-        If array_like, the two-sample test is performed (and data1 must be array_like)
+        If a string, it should be the name of a distribution in `scipy.stats`,
+        which will be used as the cdf function.
     args : tuple, sequence, optional
-        Distribution parameters, used if `data1` or `data2` are strings.
+        Distribution parameters, used if `rvs` or `cdf` are strings or callables.
     N : int, optional
-        Sample size if `data1` is string or callable.  Default is 20.
+        Sample size if `rvs` is string or callable.  Default is 20.
     alternative : {'two-sided', 'less', 'greater'}, optional
         Defines the alternative hypothesis.
         The following options are available (default is 'two-sided'):
@@ -6455,7 +6460,7 @@ def kstest(data1, data2, args=(), N=20, alternative='two-sided', mode='auto'):
         alternative = 'two-sided'
     if alternative not in ['two-sided', 'greater', 'less']:
         raise ValueError("Unexpected alternative %s" % alternative)
-    xvals, yvals, cdf = _parse_kstest_args(data1, data2, args, N)
+    xvals, yvals, cdf = _parse_kstest_args(rvs, cdf, args, N)
     if cdf:
         return ks_1samp(xvals, cdf, args=args, alternative=alternative, mode=mode)
     return ks_2samp(xvals, yvals, alternative=alternative, mode=mode)
