@@ -1187,8 +1187,11 @@ class rv_generic(object):
         """
         args, loc, scale = self._parse_args(*args, **kwds)
         loc, scale = np.asanyarray(loc), np.asanyarray(scale)
-        if not (self._argcheck(*args) and np.all(scale > 0)):
-            return nan
+        loc, scale = np.broadcast_arrays(loc, scale)
+        dtyp = np.find_common_type([loc.dtype, scale.dtype], [])
+        cond = (scale <= 0)
+        output = zeros(loc.shape, dtype=dtyp)
+        putmask(output, cond, nan)
         if (floor(n) != n):
             raise ValueError("Moment must be an integer.")
         if (n < 0):
@@ -1204,16 +1207,15 @@ class rv_generic(object):
 
         # Convert to transformed  X = L + S*Y
         # E[X^n] = E[(L+S*Y)^n] = L^n sum(comb(n, k)*(S/L)^k E[Y^k], k=0...n)
-        if np.all(loc == 0):
-            return scale**n * val
-        else:
-            result = 0
-            fac = float(scale) / float(loc)
-            for k in range(n):
-                valk = _moment_from_stats(k, mu, mu2, g1, g2, self._munp, args)
-                result += comb(n, k, exact=True)*(fac**k) * valk
-            result += fac**n * val
-            return result * loc**n
+        cond = (loc == 0)
+        fac = scale / loc
+        for k in range(n):
+            valk = _moment_from_stats(k, mu, mu2, g1, g2, self._munp, args)
+            output += comb(n, k, exact=True)*(fac**k) * valk
+        output += fac**n * val
+        putmask(output, ~cond, output * loc**n)
+        putmask(output, cond, scale**n * val)
+        return output
 
     def median(self, *args, **kwds):
         """
