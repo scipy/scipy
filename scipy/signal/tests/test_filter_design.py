@@ -14,9 +14,9 @@ from scipy.signal import (BadCoefficients, bessel, besselap, bilinear, buttap,
                           butter, buttord, cheb1ap, cheb1ord, cheb2ap,
                           cheb2ord, cheby1, cheby2, ellip, ellipap, ellipord,
                           firwin, freqs_zpk, freqs, freqz, freqz_zpk,
-                          group_delay, iirfilter, iirnotch, iirpeak, lp2bp,
-                          lp2bs, lp2hp, lp2lp, normalize, sos2tf, sos2zpk,
-                          sosfreqz, tf2sos, tf2zpk, zpk2sos, zpk2tf,
+                          group_delay, iirfilter, iirgammatone, iirnotch, 
+                          iirpeak, lp2bp, lp2bs, lp2hp, lp2lp, normalize, sos2tf, 
+                          sos2zpk, sosfreqz, tf2sos, tf2zpk, zpk2sos, zpk2tf,
                           bilinear_zpk, lp2lp_zpk, lp2hp_zpk, lp2bp_zpk,
                           lp2bs_zpk)
 from scipy.signal.filter_design import (_cplxreal, _cplxpair, _norm_factor,
@@ -3734,3 +3734,88 @@ class TestGroupDelay(object):
             w_out, gd = group_delay((1, 1), w)
             assert_array_almost_equal(w_out, [8])
             assert_array_almost_equal(gd, [0])
+
+
+class TestIIRGammatone(object):
+    # Test erroneus input cases.
+    def test_invalid_input(self):
+        # Cutoff frequency is not int or float.
+        assert_raises(ValueError, iirgammatone, [420, 460])
+        assert_raises(ValueError, iirgammatone, "440")
+
+        # Sampling rate is not int.
+        assert_raises(ValueError, iirgammatone, 440, fs=8000.01)
+        assert_raises(ValueError, iirgammatone, 220, fs="16000")
+
+        # Filter type is not ba, zpk, or sos
+        assert_raises(ValueError, iirgammatone, 440, output='bc')
+        assert_raises(ValueError, iirgammatone, 220, output='zpl')
+        assert_raises(ValueError, iirgammatone, 110, output='sod')
+
+        # Cutoff frequency is <= 0 or >= fs / 2.
+        fs = 16000
+        assert_raises(ValueError, iirgammatone, -fs)
+        assert_raises(ValueError, iirgammatone, 0)
+        assert_raises(ValueError, iirgammatone, fs / 2)
+        assert_raises(ValueError, iirgammatone, fs)
+
+    # All built-in IIR filters are real, so should have perfectly
+    # symmetrical poles and zeros. Then ba representation (using
+    # numpy.poly) will be purely real instead of having negligible
+    # imaginary parts.
+    def test_symmetry(self):
+        z, p, k = iirgammatone(440, fs=24000, output='zpk')
+        assert_array_equal(sorted(z), sorted(z.conj()))
+        assert_array_equal(sorted(p), sorted(p.conj()))
+        assert_equal(k, np.real(k))
+
+        b, a = iirgammatone(440, output='ba')
+        assert_(issubclass(b.dtype.type, np.floating))
+        assert_(issubclass(a.dtype.type, np.floating))
+
+    # Verify linear filter coefficients with MATLAB's answers
+    def test_ba_output(self):
+        b, a = iirgammatone(440, output='ba')
+        b2 = [1.31494461367464e-06, -5.03391196645395e-06,
+              7.00649426000897e-06, -4.18951968419854e-06,
+              9.02614910412011e-07]
+        a2 = [1.0, -7.65646235454218,
+              25.7584699322366, -49.7319214483238,
+              60.2667361289181, -46.9399590980486,
+              22.9474798808461, -6.43799381299034,
+              0.793651554625368]
+        assert_allclose(b, b2, rtol=1e-14)
+        assert_allclose(a, a2, rtol=1e-14)
+
+    # Verify pole-zero filter coefficients with MATLAB's answers
+    def test_zpk_output(self):
+        z, p, k = iirgammatone(440, output='zpk')
+        z2 = [1.36031191107849, 1.02624526258830,
+              0.887870326047240, 0.553803677557063]
+        p2 = [0.958002071507328 + 0.167055610384677j,
+              0.958002071507328 - 0.167055610384677j,
+              0.957037592841857 + 0.167975282376528j,
+              0.957037592841857 - 0.167975282376528j,
+              0.957077736869328 + 0.166086937748564j,
+              0.957077736869328 - 0.166086937748564j,
+              0.956113776052577 + 0.167015466133982j,
+              0.956113776052577 - 0.167015466133982j]
+        k2 = 1.31494461367464e-06
+        assert_array_almost_equal(z, z2, decimal=2)
+        assert_array_almost_equal(p, p2, decimal=2)
+        assert_array_almost_equal(k, k2, decimal=2)
+
+    # Verify second-order-section filter coefficients with MATLAB's answers
+    def test_sos_output(self):
+        sos = iirgammatone(440, output='sos')
+        sos2 = [[1.31494461367464e-06, 0.0, 0.0, 1.0,
+                 -1.91222755210515, 0.942047718685468],
+                [1.0, 0.0, 0.0, 1.0,
+                 -1.91415547373866, 0.943582665301611],
+                [1.0, -1.91411558863555,
+                 0.753345738979943, 1.0,
+                 -1.91407518568371, 0.944136649602010],
+                [1.0, -1.91411558863554,
+                 0.911172715898708, 1.0,
+                 -1.91600414301466, 0.945675545973329]]
+        assert_array_almost_equal(sos, sos2, decimal=2)

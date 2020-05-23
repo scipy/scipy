@@ -26,7 +26,8 @@ __all__ = ['findfreqs', 'freqs', 'freqz', 'tf2zpk', 'zpk2tf', 'normalize',
            'BadCoefficients', 'freqs_zpk', 'freqz_zpk',
            'tf2sos', 'sos2tf', 'zpk2sos', 'sos2zpk', 'group_delay',
            'sosfreqz', 'iirnotch', 'iirpeak', 'bilinear_zpk',
-           'lp2lp_zpk', 'lp2hp_zpk', 'lp2bp_zpk', 'lp2bs_zpk']
+           'lp2lp_zpk', 'lp2hp_zpk', 'lp2bp_zpk', 'lp2bs_zpk',
+           'iirgammatone']
 
 
 class BadCoefficients(UserWarning):
@@ -4841,6 +4842,141 @@ def _design_notch_peak_filter(w0, Q, ftype, fs=2.0):
     a = np.array([1.0, -2.0*gain*np.cos(w0), (2.0*gain-1.0)])
 
     return b, a
+
+
+def _hz_to_erb(hz):
+    """
+    Utility for converting from frequency (Hz) to the
+    Equivalent Rectangular Bandwith (ERB) scale
+    """
+    EarQ = 9.26449
+    minBW = 24.7
+    order = 1
+    return ((hz / EarQ) ** order + minBW ** order) ** (1 / order)
+
+
+def iirgammatone(freq, fs=16000, output='ba'):
+    """
+    IIR gammatone filter design.
+
+    This function computes the coefficients of an 8th order IIR
+    digital filter, which models a 4th order gammatone filter.
+
+    Parameters
+    ----------
+    freq : float
+        Center frequency of the filter in Hz.
+    fs : int, optional
+        The sampling frequency of the signal. `freq` must be between
+        0 and ``fs / 2``. Default is 16000.
+    output : {'ba', 'zpk', 'sos'}
+        Type of output:  numerator/denominator ('ba'), pole-zero ('zpk'), or
+        second-order sections ('sos'). Default is 'ba' for backwards
+        compatibility, but 'sos' should be used for general-purpose filtering.
+
+    Returns
+    -------
+    b, a : ndarray, ndarray
+        Numerator (`b`) and denominator (`a`) polynomials of the IIR filter.
+        Only returned if ``output='ba'``.
+    z, p, k : ndarray, ndarray, float
+        Zeros, poles, and system gain of the IIR filter transfer
+        function.  Only returned if ``output='zpk'``.
+    sos : ndarray
+        Second-order sections representation of the IIR filter.
+        Only returned if ``output=='sos'``.
+
+    Raises
+    ------
+    ValueError
+        If `freq` is not an integer or float,
+        if `freq` is <= 0 or >= ``fs / 2``,
+        if `fs` is not an integer,
+        if `output` is not 'ba', 'zpk', or 'sos'
+
+    See Also
+    --------
+    firgammatone
+    iirfilter
+    iirdesign
+
+    References
+    ----------
+    Slaney, Malcolm, "An Efficient Implementation of the
+    Patterson–Holdsworth Auditory Filter Bank", pp.34-39.
+
+    Examples
+    --------
+    Linear IIR Gammatone filter centered at 440 Hz
+
+    >>> from scipy import signal
+    >>> freq = 440
+    >>> signal.iirgammatone(freq)
+    """
+    output_types = ['ba', 'zpk', 'sos']
+
+    # Check for invalid input.
+    if not isinstance(freq, int) and not isinstance(freq, float):
+        raise ValueError("The cuttoff frequency must be an integer or float.")
+    if not isinstance(fs, int):
+        raise ValueError("The sampling frequency must be an integer.")
+    if freq <= 0 or freq >= fs / 2:
+        raise ValueError("Invalid cutoff frequency: frequency must be "
+                         "> 0 and < fs/2.")
+    if output not in output_types:
+        raise ValueError("Filter type must be ba, zpk, or sos.")
+
+    # Gammatone impulse response settings
+    T = 1./fs
+    bw = 2 * np.pi * 1.019 * _hz_to_erb(freq)
+    fr = 2 * freq * np.pi * T
+    bwT = bw * T
+
+    # Calculate the gain to normalize the volume at the center frequency
+    g1 = -2 * np.exp(2j * fr) * T
+    g2 = 2 * np.exp(-(bwT) + 1j * fr) * T
+    g3 = np.sqrt(3 + 2 ** (3 / 2)) * np.sin(fr)
+    g4 = np.sqrt(3 - 2 ** (3 / 2)) * np.sin(fr)
+    g5 = np.exp(2j * fr)
+
+    g = g1 + g2 * (np.cos(fr) - g4)
+    g *= (g1 + g2 * (np.cos(fr) + g4))
+    g *= (g1 + g2 * (np.cos(fr) - g3))
+    g *= (g1 + g2 * (np.cos(fr) + g3))
+    g /= ((-2 / np.exp(2 * bwT) - 2 * g5 + 2 * (1 + g5) / np.exp(bwT)) ** 4)
+    g = np.abs(g)
+
+    # Create empty filter coefficient lists
+    B = np.zeros((5))
+    A = np.zeros((9))
+
+    # Calculate the numerator coefficients
+    B[0] = (T ** 4) / g
+    B[1] = -4 * T ** 4 * np.cos(fr) / np.exp(bw * T) / g
+    B[2] = 6 * T ** 4 * np.cos(2 * fr) / np.exp(2 * bw * T) / g
+    B[3] = -4 * T ** 4 * np.cos(3 * fr) / np.exp(3 * bw * T) / g
+    B[4] = T ** 4 * np.cos(4 * fr) / np.exp(4 * bw * T) / g
+
+    # Calculate the denominator coefficients
+    A[0] = 1
+    A[1] = -8 * np.cos(fr) / np.exp(bw * T)
+    A[2] = 4 * (4 + 3 * np.cos(2 * fr)) / np.exp(2 * bw * T)
+    A[3] = -8 * (6 * np.cos(fr) + np.cos(3 * fr))
+    A[3] /= np.exp(3 * bw * T)
+    A[4] = 2 * (18 + 16 * np.cos(2 * fr) + np.cos(4 * fr))
+    A[4] /= np.exp(4 * bw * T)
+    A[5] = -8 * (6 * np.cos(fr) + np.cos(3 * fr))
+    A[5] /= np.exp(5 * bw * T)
+    A[6] = 4 * (4 + 3 * np.cos(2 * fr)) / np.exp(6 * bw * T)
+    A[7] = -8 * np.cos(fr) / np.exp(7 * bw * T)
+    A[8] = np.exp(-8 * bw * T)
+
+    if output == 'ba':
+        return B, A
+    elif output == 'zpk':
+        return tf2zpk(B, A)
+    elif output == 'sos':
+        return tf2sos(B, A)
 
 
 filter_dict = {'butter': [buttap, buttord],

@@ -1,6 +1,6 @@
 import numpy as np
 from numpy.testing import (assert_almost_equal, assert_array_almost_equal,
-                           assert_equal, assert_,
+                           assert_equal, assert_, assert_approx_equal,
                            assert_allclose, assert_warns)
 from pytest import raises as assert_raises
 import pytest
@@ -8,7 +8,7 @@ import pytest
 from scipy.fft import fft
 from scipy.special import sinc
 from scipy.signal import kaiser_beta, kaiser_atten, kaiserord, \
-    firwin, firwin2, freqz, remez, firls, minimum_phase
+    firwin, firwin2, freqz, remez, firls, minimum_phase, firgammatone
 
 
 def test_kaiser_beta():
@@ -639,3 +639,61 @@ class TestMinimumPhase(object):
              -0.014977068692269, -0.158416139047557]
         m = minimum_phase(h, 'hilbert', n_fft=2**19)
         assert_allclose(m, k, rtol=2e-3)
+
+
+class TestFIRGammatone(object):
+    # Test erroneous input cases.
+    def test_invalid_input(self):
+        # Cutoff frequency is not int or float.
+        assert_raises(ValueError, firgammatone, [420, 460])
+        assert_raises(ValueError, firgammatone, "440")
+
+        # The order of the filter is not int.
+        assert_raises(ValueError, firgammatone, 440, order=2.8)
+        assert_raises(ValueError, firgammatone, 220, order="4")
+
+        # Sampling rate is not int.
+        assert_raises(ValueError, firgammatone, 440, fs=8000.01)
+        assert_raises(ValueError, firgammatone, 220, fs="16000")
+
+        # numtaps is not int.
+        assert_raises(ValueError, firgammatone, 440, numtaps=4.5)
+        assert_raises(ValueError, firgammatone, 220, numtaps="120")
+
+        # scale is not boolean.
+        assert_raises(ValueError, firgammatone, 440, scale=0.5)
+        assert_raises(ValueError, firgammatone, 220, scale="False")
+
+        # Cutoff frequency is <= 0 or >= fs / 2.
+        fs = 16000
+        assert_raises(ValueError, firgammatone, -fs)
+        assert_raises(ValueError, firgammatone, 0)
+        assert_raises(ValueError, firgammatone, fs / 2)
+        assert_raises(ValueError, firgammatone, fs)
+
+        # Order is <= 0 or > 24.
+        assert_raises(ValueError, firgammatone, 440, order=-50)
+        assert_raises(ValueError, firgammatone, 220, order=0)
+        assert_raises(ValueError, firgammatone, 110, order=25)
+        assert_raises(ValueError, firgammatone, 55, order=50)
+
+    # Verify that the filter's frequency response is approximately 1
+    # at the cutoff frequency
+    def test_frequency_response(self):
+        fs = 16000
+
+        # Create a gammatone filter centered at 1000 Hz.
+        b = firgammatone(1000)
+        a = 1
+
+        # Calculate the frequency response for the gammatone filter.
+        freqs, response = freqz(b, a)
+
+        # Determine the peak magnitude of the response
+        # and the corresponding frequency.
+        response_max = np.max(np.abs(response))
+        freq_hz = freqs[np.argmax(np.abs(response))] / ((2 * np.pi) / fs)
+
+        # Ensure that the peak magnitude is 1 and the frequency is 1000 Hz
+        assert_approx_equal(response_max, 1, significant=2)
+        assert_approx_equal(freq_hz, 1000, significant=2)

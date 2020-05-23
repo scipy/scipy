@@ -88,6 +88,7 @@ Filter design
                     -- defined as pass and stop bands.
    firwin2       -- Windowed FIR filter design, with arbitrary frequency
                     -- response.
+   firgammatone  -- FIR gammatone filter design.
    freqs         -- Analog filter frequency response from TF coefficients.
    freqs_zpk     -- Analog filter frequency response from ZPK coefficients.
    freqz         -- Digital filter frequency response from TF coefficients.
@@ -96,6 +97,7 @@ Filter design
    group_delay   -- Digital filter group delay.
    iirdesign     -- IIR filter design given bands and gains.
    iirfilter     -- IIR filter design given order and critical frequencies.
+   iirgammatone  -- IIR gammatone filter design.
    kaiser_atten  -- Compute the attenuation of a Kaiser FIR filter, given
                     -- the number of taps and the transition width at
                     -- discontinuities in the frequency response.

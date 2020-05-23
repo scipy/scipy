@@ -11,9 +11,11 @@ from scipy.linalg import (toeplitz, hankel, solve, LinAlgError, LinAlgWarning,
                           lstsq)
 
 from . import sigtools
+from .filter_design import _hz_to_erb
 
 __all__ = ['kaiser_beta', 'kaiser_atten', 'kaiserord',
-           'firwin', 'firwin2', 'remez', 'firls', 'minimum_phase']
+           'firwin', 'firwin2', 'remez', 'firls', 'minimum_phase',
+           'firgammatone']
 
 
 def _get_fs(fs, nyq):
@@ -1260,3 +1262,98 @@ def minimum_phase(h, method='homomorphic', n_fft=None):
         h_minimum = h_temp.real
     n_out = n_half + len(h) % 2
     return h_minimum[:n_out]
+
+
+def firgammatone(freq, order=4, fs=16000, numtaps=240, scale=True):
+    """
+    FIR gammatone filter design.
+
+    This function computes the coefficients of a Nth order
+    finite impuse response Gammatone filter.
+
+    Parameters
+    ----------
+    freq : float
+        Center frequency of the filter in Hz.
+    order : int, optional
+        The order of the filter. Default is 4 to model the human
+        auditory system.
+    fs : int, optional
+        The sampling frequency of the signal. `freq` must be between
+        0 and ``fs / 2``. Default is 16000.
+    numtaps : int, optional
+        Length of the filter. Default is 240.
+    scale : bool, optional
+        Set to True to scale the filter so that the frequency
+        response is exactly unity at a certain frequency.
+
+    Returns
+    -------
+    f : (numtaps,) ndarray
+        Coefficients of length `numtaps` FIR gammatone filter.
+
+    Raises
+    ------
+    ValueError
+        If `freq` is not an integer or float,
+        if `freq` is <= 0 or >= ``fs / 2``,
+        if `order` is not an integer,
+        if `order` is <= 0 or > 24,
+        if `fs` is not an integer,
+        if `numtaps is not an integer,
+        if `scale` is not a boolean.
+
+
+    See Also
+    --------
+    iirgammatone
+    firwin
+    firwin2
+
+    References
+    ----------
+    Slaney, Malcolm, "An Efficient Implementation of the
+    Patterson–Holdsworth Auditory Filter Bank", pp.3-8.
+
+    Examples
+    --------
+    240-sample Gammatone filter centered at 440 Hz
+
+    >>> from scipy import signal
+    >>> freq = 440
+    >>> signal.firgammatone(freq)
+    """
+
+    # Check for invalid input
+    if not isinstance(freq, int) and not isinstance(freq, float):
+        raise ValueError("The cuttoff frequency must be an integer or float.")
+    if not isinstance(order, int):
+        raise ValueError("The order of the filter must be an integer.")
+    if not isinstance(fs, int):
+        raise ValueError("The sampling frequency must be an integer.")
+    if not isinstance(numtaps, int):
+        raise ValueError("numtaps must be an integer.")
+    if not isinstance(scale, bool):
+        raise ValueError("scale must be a boolean.")
+    if freq <= 0 or freq >= fs / 2:
+        raise ValueError("Invalid cutoff frequency: frequency must be "
+                         "> 0 and < fs/2.")
+    if order <= 0 or order > 24:
+        raise ValueError("Invalid order: order must be > 0 and <= 24.")
+
+    # Gammatone impulse response settings
+    t = np.linspace(0, numtaps / fs, numtaps)
+    bw = 1.019 * _hz_to_erb(freq)
+
+    # Calculate the gammatone filter
+    f = (t ** (order - 1)) * np.exp(-2 * np.pi * bw * t)
+    f *= np.cos(2 * np.pi * freq * t)
+
+    # Handle scaling if desired
+    if scale:
+        scale_factor = 2 * (2 * np.pi * bw) ** (order)
+        scale_factor /= np.math.factorial(order - 1)
+        scale_factor /= fs
+        f *= scale_factor
+
+    return f
