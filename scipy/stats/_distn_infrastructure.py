@@ -1193,7 +1193,8 @@ class rv_generic(object):
         if np.any(cond):
             dtyp = np.float64
         output = zeros(loc.shape, dtype=dtyp)
-        putmask(output, cond, nan)
+        if np.any(cond):
+            putmask(output, cond, nan)
         if (floor(n) != n):
             raise ValueError("Moment must be an integer.")
         if (n < 0):
