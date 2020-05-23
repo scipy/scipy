@@ -538,7 +538,7 @@ class nhypergeom_gen(rv_discrete):
     The probability mass function is defined as,
 
     .. math:: f(k; N, K, r) = \frac{{{k+r-1}\choose{k}}{{N-r-k}\choose{K-k}}}
-                              {N \choose K}
+                                   {{N \choose K}}
 
     for :math:`k \in 0, 1, 2, ..., K`, where the binomial
     coefficients are defined as,
