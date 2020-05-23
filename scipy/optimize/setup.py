@@ -3,24 +3,24 @@ from os.path import join
 
 from scipy._build_utils import numpy_nodepr_api
 
-def configuration(parent_package='',top_path=None):
+
+def configuration(parent_package='', top_path=None):
     from numpy.distutils.misc_util import Configuration
     from scipy._build_utils.system_info import get_info
     from scipy._build_utils import (gfortran_legacy_flag_hook,
                                     blas_ilp64_pre_build_hook, combine_dict,
                                     uses_blas64, get_f2py_int64_options)
 
-    config = Configuration('optimize',parent_package, top_path)
+    config = Configuration('optimize', parent_package, top_path)
 
     include_dirs = [join(os.path.dirname(__file__), '..', '_lib', 'src')]
 
-    minpack_src = [join('minpack','*f')]
-    config.add_library('minpack',sources=minpack_src)
+    minpack_src = [join('minpack', '*f')]
+    config.add_library('minpack', sources=minpack_src)
     config.add_extension('_minpack',
                          sources=['_minpackmodule.c'],
                          libraries=['minpack'],
-                         depends=(["minpack.h","__minpack.h"]
-                                  + minpack_src),
+                         depends=(["minpack.h", "__minpack.h"] + minpack_src),
                          include_dirs=include_dirs,
                          **numpy_nodepr_api)
 
@@ -35,12 +35,11 @@ def configuration(parent_package='',top_path=None):
                          include_dirs=include_dirs,
                          **numpy_nodepr_api)
 
-    rootfind_src = [join('Zeros','*.c')]
-    rootfind_hdr = [join('Zeros','zeros.h')]
+    rootfind_src = [join('Zeros', '*.c')]
+    rootfind_hdr = [join('Zeros', 'zeros.h')]
     config.add_library('rootfind',
                        sources=rootfind_src,
-                       headers=rootfind_hdr,
-                         **numpy_nodepr_api)
+                       headers=rootfind_hdr, **numpy_nodepr_api)
 
     config.add_extension('_zeros',
                          sources=['zeros.c'],
@@ -61,36 +60,35 @@ def configuration(parent_package='',top_path=None):
 
     sources = ['lbfgsb.pyf', 'lbfgsb.f', 'linpack.f', 'timer.f']
     ext = config.add_extension('_lbfgsb',
-                               sources=[join('lbfgsb_src',x) for x in sources],
+                               sources=[join('lbfgsb_src', x)
+                                        for x in sources],
                                f2py_options=f2py_options,
                                **lapack)
     ext._pre_build_hook = pre_build_hook
 
-    sources = ['moduleTNC.c','tnc.c']
+    sources = ['moduleTNC.c', 'tnc.c']
     config.add_extension('moduleTNC',
-                         sources=[join('tnc',x) for x in sources],
-                         depends=[join('tnc','tnc.h')],
+                         sources=[join('tnc', x) for x in sources],
+                         depends=[join('tnc', 'tnc.h')],
                          **numpy_nodepr_api)
 
     config.add_extension('_cobyla',
-                         sources=[join('cobyla',x) for x in ['cobyla.pyf',
-                                                             'cobyla2.f',
-                                                             'trstlp.f']],
+                         sources=[join('cobyla', x) for x in [
+                             'cobyla.pyf', 'cobyla2.f', 'trstlp.f']],
                          **numpy_nodepr_api)
 
     sources = ['minpack2.pyf', 'dcsrch.f', 'dcstep.f']
     config.add_extension('minpack2',
-                         sources=[join('minpack2',x) for x in sources],
+                         sources=[join('minpack2', x) for x in sources],
                          **numpy_nodepr_api)
 
     sources = ['slsqp.pyf', 'slsqp_optmz.f']
-    ext = config.add_extension('_slsqp', sources=[join('slsqp', x) for x in sources],
-                               **numpy_nodepr_api)
+    ext = config.add_extension('_slsqp', sources=[
+        join('slsqp', x) for x in sources], **numpy_nodepr_api)
     ext._pre_build_hook = gfortran_legacy_flag_hook
 
-    ext = config.add_extension('__nnls', sources=[join('__nnls', x)
-                                                  for x in ["nnls.f","nnls.pyf"]],
-                               **numpy_nodepr_api)
+    ext = config.add_extension('__nnls', sources=[
+        join('__nnls', x) for x in ["nnls.f", "nnls.pyf"]], **numpy_nodepr_api)
     ext._pre_build_hook = gfortran_legacy_flag_hook
 
     config.add_extension('_group_columns', sources=['_group_columns.c'],)
