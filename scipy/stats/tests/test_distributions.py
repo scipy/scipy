@@ -1439,7 +1439,8 @@ class TestLaplace(object):
                                    stats.laplace).fit(data)
         ll_mle = ll(loc, scale, data)
         ll_opt = ll(loc_opt, scale_opt, data)
-        assert ll_mle <= ll_opt
+        assert ll_mle < ll_opt or np.allclose(ll_mle, ll_opt,
+                                              atol=1e-15, rtol=1e-15)
 
     def test_fit_simple_non_random_data(self):
         data = np.array([1.0, 1.0, 3.0, 5.0, 8.0, 14.0])
