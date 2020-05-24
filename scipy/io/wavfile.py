@@ -567,9 +567,6 @@ def read(filename, mmap=False):
         file_size, is_big_endian = _read_riff_chunk(fid)
         fmt_chunk_received = False
         data_chunk_received = False
-        channels = 1
-        bit_depth = 8
-        format_tag = WAVE_FORMAT.PCM
         while fid.tell() < file_size:
             # read the next chunk
             chunk_id = fid.read(4)
