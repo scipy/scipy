@@ -4910,8 +4910,19 @@ def iirgammatone(freq, fs=16000, output='ba'):
     Linear IIR Gammatone filter centered at 440 Hz
 
     >>> from scipy import signal
-    >>> freq = 440
-    >>> signal.iirgammatone(freq)
+    >>> import matplotlib.pyplot as plt
+
+    >>> b, a = signal.iirgammatone(440)
+    >>> w, h = signal.freqz(b, a)
+    >>> plt.plot(w / ((2 * np.pi) / 16000), 20 * np.log10(abs(h)))
+    >>> plt.xscale('log')
+    >>> plt.title('Gammatone filter frequency response')
+    >>> plt.xlabel('Frequency [Hz]')
+    >>> plt.ylabel('Amplitude [dB]')
+    >>> plt.margins(0, 0.1)
+    >>> plt.grid(which='both', axis='both')
+    >>> plt.axvline(440, color='green') # cutoff frequency
+    >>> plt.show()
     """
     output_types = ['ba', 'zpk', 'sos']
 

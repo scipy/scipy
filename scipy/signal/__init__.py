@@ -97,7 +97,6 @@ Filter design
    group_delay   -- Digital filter group delay.
    iirdesign     -- IIR filter design given bands and gains.
    iirfilter     -- IIR filter design given order and critical frequencies.
-   iirgammatone  -- IIR gammatone filter design.
    kaiser_atten  -- Compute the attenuation of a Kaiser FIR filter, given
                     -- the number of taps and the transition width at
                     -- discontinuities in the frequency response.
@@ -159,6 +158,7 @@ Matlab-style IIR filter design
    bessel -- Bessel (no order selection available -- try butterod)
    iirnotch      -- Design second-order IIR notch digital filter.
    iirpeak       -- Design second-order IIR peak (resonant) digital filter.
+   iirgammatone  -- Gammatone
 
 Continuous-time linear systems
 ==============================

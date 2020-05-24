@@ -1282,7 +1282,8 @@ def firgammatone(freq, order=4, fs=16000, numtaps=240, scale=True):
         The sampling frequency of the signal. `freq` must be between
         0 and ``fs / 2``. Default is 16000.
     numtaps : int, optional
-        Length of the filter. Default is 240.
+        Length of the filter. Optimal ratio between numtaps
+        and fs is 0.015. Default is 240.
     scale : bool, optional
         Set to True to scale the filter so that the frequency
         response is exactly unity at a certain frequency.
@@ -1321,7 +1322,11 @@ def firgammatone(freq, order=4, fs=16000, numtaps=240, scale=True):
 
     >>> from scipy import signal
     >>> freq = 440
-    >>> signal.firgammatone(freq)
+    >>> signal.firgammatone(freq, numtaps=16)
+    array([ 0.00000000e+00,  2.68586728e-07,  1.97702315e-06,  5.90239274e-06,
+        1.18022128e-05,  1.82536512e-05,  2.26825900e-05,  2.15748723e-05,
+        1.08452242e-05, -1.36746652e-05, -5.56777430e-05, -1.17807768e-04,
+       -2.01126526e-04, -3.04675651e-04, -4.25179658e-04, -5.56926298e-04])
     """
 
     # Check for invalid input

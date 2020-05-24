@@ -3784,8 +3784,8 @@ class TestIIRGammatone(object):
               60.2667361289181, -46.9399590980486,
               22.9474798808461, -6.43799381299034,
               0.793651554625368]
-        assert_allclose(b, b2, rtol=1e-14)
-        assert_allclose(a, a2, rtol=1e-14)
+        assert_array_almost_equal(b, b2)
+        assert_array_almost_equal(a, a2)
 
     # Verify pole-zero filter coefficients with MATLAB's answers
     def test_zpk_output(self):
