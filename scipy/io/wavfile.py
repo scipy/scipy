@@ -376,6 +376,9 @@ def _read_fmt_chunk(fid, is_big_endian):
     if size > bytes_read:
         fid.read(size - bytes_read)
 
+    # fmt should always be 16, 18 or 40, but handle it just in case
+    _handle_pad_byte(fid, size)
+
     return (size, format_tag, channels, fs, bytes_per_second, block_align,
             bit_depth)
 
@@ -432,6 +435,8 @@ def _read_data_chunk(fid, format_tag, channels, bit_depth, is_big_endian,
                             shape=(size//bytes_per_sample,))
         fid.seek(start + size)
 
+    _handle_pad_byte(fid, size)
+
     if channels > 1:
         data = data.reshape(-1, channels)
     return data
@@ -451,6 +456,7 @@ def _skip_unknown_chunk(fid, is_big_endian):
     if data:
         size = struct.unpack(fmt, data)[0]
         fid.seek(size, 1)
+        _handle_pad_byte(fid, size)
 
 
 def _read_riff_chunk(fid):
@@ -474,6 +480,13 @@ def _read_riff_chunk(fid):
         raise ValueError(f"Not a WAV file. RIFF form type is {repr(str2)}.")
 
     return file_size, is_big_endian
+
+
+def _handle_pad_byte(fid, size):
+    # "If the chunk size is an odd number of bytes, a pad byte with value zero
+    # is written after ckData." So we need to seek past this after each chunk.
+    if size % 2:
+        fid.seek(1, 1)
 
 
 def read(filename, mmap=False):
