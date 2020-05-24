@@ -147,7 +147,9 @@ def test_cont_basic(distname, arg):
             arg = (1,)
         elif distname == 'ksone':
             arg = (3,)
-        check_named_args(distfn, x, arg, locscale_defaults, meths)
+        with npt.suppress_warnings() as sup:
+            sup.filter(RuntimeWarning, "invalid value")
+            check_named_args(distfn, x, arg, locscale_defaults, meths)
         check_random_state_property(distfn, arg)
         check_pickling(distfn, arg)
         check_freezing(distfn, arg)
