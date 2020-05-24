@@ -1374,6 +1374,8 @@ class TestDLaplace(object):
         assert_equal((m, s), (0., 0.))
         assert_allclose((v, k), (4., 3.25))
 
+
+class TestLaplace(object):
     @pytest.mark.parametrize("rvs_loc", [-5, 0, 1, 2])
     @pytest.mark.parametrize("rvs_scale", [1, 2, 3, 10])
     def test_fit(self, rvs_loc, rvs_scale):
