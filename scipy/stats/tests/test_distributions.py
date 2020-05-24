@@ -1389,14 +1389,14 @@ class TestLaplace(object):
 
         # standard outputs should match MLE
         loc, scale = stats.laplace.fit(data)
-        assert_equal(loc, loc_mle)
-        assert_equal(scale, scale_mle)
+        assert_allclose(loc, loc_mle, atol=1e-15, rtol=1e-15)
+        assert_allclose(scale, scale_mle, atol=1e-15, rtol=1e-15)
 
         # fixed parameter should use MLE for other
         loc, scale = stats.laplace.fit(data, floc=loc_mle)
-        assert_equal(scale, scale_mle)
+        assert_allclose(scale, scale_mle, atol=1e-15, rtol=1e-15)
         loc, scale = stats.laplace.fit(data, fscale=scale_mle)
-        assert_equal(loc, loc_mle)
+        assert_allclose(loc, loc_mle)
 
         # test with non-mle fixed parameter
         # create scale with non-median loc
@@ -1406,12 +1406,12 @@ class TestLaplace(object):
         # fixed loc to non median, scale should match
         # scale calculation with modified loc
         loc, scale = stats.laplace.fit(data, floc=loc)
-        assert_equal(scale, scale_mle)
+        assert_allclose(scale, scale_mle, atol=1e-15, rtol=1e-15)
 
         # fixed scale created with non median loc,
         # loc output should still be the data median.
         loc, scale = stats.laplace.fit(data, fscale=scale_mle)
-        assert_equal(loc_mle, loc)
+        assert_allclose(loc_mle, loc, atol=1e-15, rtol=1e-15)
 
         # error raised when both `floc` and `fscale` are fixed
         assert_raises(RuntimeError, stats.laplace.fit, data, floc=loc_mle,
@@ -1446,10 +1446,10 @@ class TestLaplace(object):
         data = np.array([1.0, 1.0, 3.0, 5.0, 8.0, 14.0])
         # with `floc` fixed to 6, scale should be 4.
         loc, scale = stats.laplace.fit(data, floc=6)
-        assert_allclose(scale, 4)
+        assert_allclose(scale, 4, atol=1e-15, rtol=1e-15)
         # with `fscale` fixed to 6, loc should be 4.
         loc, scale = stats.laplace.fit(data, fscale=6)
-        assert_allclose(loc, 4)
+        assert_allclose(loc, 4, atol=1e-15, rtol=1e-15)
 
 
 class TestInvGamma(object):
