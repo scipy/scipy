@@ -408,26 +408,23 @@ def _read_data_chunk(fid, format_tag, channels, bit_depth, is_big_endian,
         nChannels = 2, nBlockAlign = 8, wBitsPerSample = 20
     """
     if is_big_endian:
-        fmt = '>I'
+        fmt = '>'
     else:
-        fmt = '<I'
+        fmt = '<'
 
     # Size of the data subchunk in bytes
-    size = struct.unpack(fmt, fid.read(4))[0]
+    size = struct.unpack(fmt+'I', fid.read(4))[0]
 
     # Number of bytes per sample (sample container size)
     bytes_per_sample = block_align // channels
     if bit_depth == 8:
         dtype = 'u1'
     else:
-        if is_big_endian:
-            dtype = '>'
-        else:
-            dtype = '<'
         if format_tag == WAVE_FORMAT.PCM:
-            dtype += 'i%d' % bytes_per_sample
+            dtype = f'{fmt}i{bytes_per_sample}'
         else:
-            dtype += 'f%d' % bytes_per_sample
+            dtype = f'{fmt}f{bytes_per_sample}'
+
     if not mmap:
         data = numpy.frombuffer(fid.read(size), dtype=dtype)
     else:
