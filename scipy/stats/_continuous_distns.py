@@ -4195,12 +4195,16 @@ class laplace_gen(rv_continuous):
     def _entropy(self):
         return np.log(2)+1
 
+    @replace_notes_in_docstring(rv_continuous, notes="""\
+        This function uses explicit formulas for the maximum likelihood
+        estimation of the laplace distribution parameters, so the keyword
+        arguments `loc`, `scale`, and `optimizer` are ignored.\n\n""")
     def fit(self, data, *args, **kwds):
         """
         Maximum likelihood estimate for the location and scale parameters.
 
-        Exact forumulas are used to calculate the loc and scale, unless they
-        are provided in floc or fscale.
+        Exact formulas are used to calculate the location and scale, unless
+        they are provided in `floc` or `fscale`.
 
         Parameters
         ----------
@@ -4218,7 +4222,9 @@ class laplace_gen(rv_continuous):
 
         Notes
         -----
-        An error is raised if floc and fscale are fixed.
+        An error is raised if both `floc` and `fscale` are fixed. Explicit
+        formulas are used, so the keyword arguments `loc`, `scale`, and
+        `optimizer` are ignored.
         """
         floc = kwds.pop('floc', None)
         fscale = kwds.pop('fscale', None)
@@ -4229,13 +4235,11 @@ class laplace_gen(rv_continuous):
         # MLE for the laplace distribution
 
         if floc is None:
-            # loc is given by
             loc = np.median(data)
         else:
             loc = floc
 
         if fscale is None:
-            # scale is given by
             scale = (np.sum(np.abs(data - loc))) / len(data)
         else:
             scale = fscale
@@ -4260,7 +4264,7 @@ def check_fit_input_parameters(data, args, kwds, fixed_param):
         # Without this check, this function would just return the
         # parameters that were given.
         raise RuntimeError("All parameters fixed. There is nothing to "
-                         "optimize.")
+                           "optimize.")
 
     data = np.asarray(data)
     if not np.isfinite(data).all():
