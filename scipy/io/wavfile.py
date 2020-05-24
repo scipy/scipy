@@ -334,14 +334,13 @@ def _read_fmt_chunk(fid, is_big_endian):
     else:
         fmt = '<'
 
-    size = res = struct.unpack(fmt+'I', fid.read(4))[0]
-    bytes_read = 0
+    size = struct.unpack(fmt+'I', fid.read(4))[0]
 
     if size < 16:
         raise ValueError("Binary structure of wave file is not compliant")
 
     res = struct.unpack(fmt+'HHIIHH', fid.read(16))
-    bytes_read += 16
+    bytes_read = 16
 
     format_tag, channels, fs, bytes_per_second, block_align, bit_depth = res
 
@@ -374,7 +373,7 @@ def _read_fmt_chunk(fid, is_big_endian):
                          ', '.join(x.name for x in KNOWN_WAVE_FORMATS))
 
     # move file pointer to next chunk
-    if size > (bytes_read):
+    if size > bytes_read:
         fid.read(size - bytes_read)
 
     return (size, format_tag, channels, fs, bytes_per_second, block_align,
