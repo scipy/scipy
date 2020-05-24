@@ -228,6 +228,7 @@ def test_moments(distname, arg, normalization_ok, higher_ok, is_xfailing):
         distname = 'rv_histogram_instance'
 
     with npt.suppress_warnings() as sup:
+        sup.filter(RuntimeWarning, "invalid value")
         sup.filter(IntegrationWarning,
                    "The integral is probably divergent, or slowly convergent.")
         sup.filter(category=DeprecationWarning, message=".*frechet_")
