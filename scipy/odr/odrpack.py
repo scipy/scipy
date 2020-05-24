@@ -599,6 +599,10 @@ class Output(object):
             self.__dict__.update(output[3])
             self.stopreason = _report_error(self.info)
 
+        if hasattr(self, 'info'):
+            # it should be scaled by the residual variance
+            self.cov_beta *= self.res_var
+
     def pprint(self):
         """ Pretty-print important results.
         """
