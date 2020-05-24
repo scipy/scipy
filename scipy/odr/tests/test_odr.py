@@ -495,3 +495,21 @@ class TestODR(object):
         sd_ind = out.work_ind['sd']
         assert_array_almost_equal(out.sd_beta,
                                   out.work[sd_ind:sd_ind + len(out.sd_beta)])
+
+    def test_output_file_overwrite(self):
+        """
+        Verify fix for gh-1892
+        """
+        def func(b, x):
+            return b[0] + b[1] * x
+
+        p = Model(func)
+        data = Data(np.arange(10), 12 * np.arange(10))
+        ODR(data, p, beta0=[0.1, 13], errfile="error.dat", rptfile='report.dat',
+            ).run()
+        ODR(data, p, beta0=[0.1, 13], errfile="error.dat", rptfile='report.dat',
+            overwrite=True).run()
+        # remove output files for clean up
+        os.remove("error.dat")
+        os.remove("report.dat")
+
