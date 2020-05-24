@@ -154,6 +154,7 @@ Special Matrices
    block_diag - Construct a block diagonal matrix from submatrices
    circulant - Circulant matrix
    companion - Companion matrix
+   convolution_matrix - Convolution matrix
    dft - Discrete Fourier transform matrix
    fiedler - Fiedler matrix
    fiedler_companion - Fiedler companion matrix

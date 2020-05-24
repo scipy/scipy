@@ -50,6 +50,7 @@ HUGE = array([1e+12,2e+12,3e+12,4e+12,5e+12,6e+12,7e+12,8e+12,9e+12], float)
 TINY = array([1e-12,2e-12,3e-12,4e-12,5e-12,6e-12,7e-12,8e-12,9e-12], float)
 ROUND = array([0.5,1.5,2.5,3.5,4.5,5.5,6.5,7.5,8.5], float)
 
+
 class TestTrimmedStats(object):
     # TODO: write these tests to handle missing values properly
     dprec = np.finfo(np.float64).precision
@@ -3003,6 +3004,7 @@ class TestKSTwoSamples(object):
         self._testOne(data2, data2-0.5, 'greater', 0.0/3, 1.0)
         self._testOne(data2, data2-0.5, 'less', 1.0/3, 0.75)
 
+    @pytest.mark.slow
     def testMiddlingBoth(self):
         # 500, 600
         n1, n2 = 500, 600
@@ -3022,6 +3024,7 @@ class TestKSTwoSamples(object):
             self._testOne(x, y, 'less', 500.0 / n1 / n2, 0.9968735843165021, mode='exact')
             _check_warnings(w, RuntimeWarning, 1)
 
+    @pytest.mark.slow
     def testMediumBoth(self):
         # 1000, 1100
         n1, n2 = 1000, 1100
@@ -3097,6 +3100,7 @@ class TestKSTwoSamples(object):
         res = stats.ks_2samp([1, 2], [3])
         check_named_results(res, attributes)
 
+    @pytest.mark.slow
     def test_some_code_paths(self):
         # Check that some code paths are executed
         from scipy.stats.stats import _count_paths_outside_method, _compute_prob_inside_method
@@ -3208,6 +3212,42 @@ def test_ttest_rel_nan_2nd_arg():
     # y = c(1.0, 2.0, 1.0, 2.0)
     # t.test(x, y, paired=TRUE)
     assert_allclose(r2, (-2, 0.1835), atol=1e-4)
+
+
+def test_ttest_rel_empty_1d_returns_nan():
+    # Two empty inputs should return a Ttest_relResult containing nan
+    # for both values.
+    result = stats.ttest_rel([], [])
+    assert isinstance(result, stats.stats.Ttest_relResult)
+    assert_equal(result, (np.nan, np.nan))
+
+
+@pytest.mark.parametrize('b, expected_shape',
+                         [(np.empty((1, 5, 0)), (3, 5)),
+                          (np.empty((1, 0, 0)), (3, 0))])
+def test_ttest_rel_axis_size_zero(b, expected_shape):
+    # In this test, the length of the axis dimension is zero.
+    # The results should be arrays containing nan with shape
+    # given by the broadcast nonaxis dimensions.
+    a = np.empty((3, 1, 0))
+    result = stats.ttest_rel(a, b, axis=-1)
+    assert isinstance(result, stats.stats.Ttest_relResult)
+    expected_value = np.full(expected_shape, fill_value=np.nan)
+    assert_equal(result.statistic, expected_value)
+    assert_equal(result.pvalue, expected_value)
+
+
+def test_ttest_rel_nonaxis_size_zero():
+    # In this test, the length of the axis dimension is nonzero,
+    # but one of the nonaxis dimensions has length 0.  Check that
+    # we still get the correctly broadcast shape, which is (5, 0)
+    # in this case.
+    a = np.empty((1, 8, 0))
+    b = np.empty((5, 8, 1))
+    result = stats.ttest_rel(a, b, axis=1)
+    assert isinstance(result, stats.stats.Ttest_relResult)
+    assert_equal(result.statistic.shape, (5, 0))
+    assert_equal(result.pvalue.shape, (5, 0))
 
 
 def _desc_stats(x1, x2, axis=0):
@@ -3420,6 +3460,56 @@ def test_ttest_ind_nan_2nd_arg():
     # y = c(1.0, 2.0, 1.0, 2.0)
     # t.test(x, y, var.equal=TRUE)
     assert_allclose(r2, (-2.5354627641855498, 0.052181400457057901), atol=1e-15)
+
+
+def test_ttest_ind_empty_1d_returns_nan():
+    # Two empty inputs should return a Ttest_indResult containing nan
+    # for both values.
+    result = stats.ttest_ind([], [])
+    assert isinstance(result, stats.stats.Ttest_indResult)
+    assert_equal(result, (np.nan, np.nan))
+
+
+@pytest.mark.parametrize('b, expected_shape',
+                         [(np.empty((1, 5, 0)), (3, 5)),
+                          (np.empty((1, 0, 0)), (3, 0))])
+def test_ttest_ind_axis_size_zero(b, expected_shape):
+    # In this test, the length of the axis dimension is zero.
+    # The results should be arrays containing nan with shape
+    # given by the broadcast nonaxis dimensions.
+    a = np.empty((3, 1, 0))
+    result = stats.ttest_ind(a, b, axis=-1)
+    assert isinstance(result, stats.stats.Ttest_indResult)
+    expected_value = np.full(expected_shape, fill_value=np.nan)
+    assert_equal(result.statistic, expected_value)
+    assert_equal(result.pvalue, expected_value)
+
+
+def test_ttest_ind_nonaxis_size_zero():
+    # In this test, the length of the axis dimension is nonzero,
+    # but one of the nonaxis dimensions has length 0.  Check that
+    # we still get the correctly broadcast shape, which is (5, 0)
+    # in this case.
+    a = np.empty((1, 8, 0))
+    b = np.empty((5, 8, 1))
+    result = stats.ttest_ind(a, b, axis=1)
+    assert isinstance(result, stats.stats.Ttest_indResult)
+    assert_equal(result.statistic.shape, (5, 0))
+    assert_equal(result.pvalue.shape, (5, 0))
+
+
+def test_ttest_ind_nonaxis_size_zero_different_lengths():
+    # In this test, the length of the axis dimension is nonzero,
+    # and that size is different in the two inputs,
+    # and one of the nonaxis dimensions has length 0.  Check that
+    # we still get the correctly broadcast shape, which is (5, 0)
+    # in this case.
+    a = np.empty((1, 7, 0))
+    b = np.empty((5, 8, 1))
+    result = stats.ttest_ind(a, b, axis=1)
+    assert isinstance(result, stats.stats.Ttest_indResult)
+    assert_equal(result.statistic.shape, (5, 0))
+    assert_equal(result.pvalue.shape, (5, 0))
 
 
 def test_gh5686():
@@ -4429,22 +4519,37 @@ class TestSigmaClip(object):
 
 
 class TestFOneWay(object):
+
     def test_trivial(self):
         # A trivial test of stats.f_oneway, with F=0.
-        F, p = stats.f_oneway([0,2], [0,2])
+        F, p = stats.f_oneway([0, 2], [0, 2])
         assert_equal(F, 0.0)
+        assert_equal(p, 1.0)
 
     def test_basic(self):
         # Despite being a floating point calculation, this data should
         # result in F being exactly 2.0.
-        F, p = stats.f_oneway([0,2], [2,4])
+        F, p = stats.f_oneway([0, 2], [2, 4])
         assert_equal(F, 2.0)
+        assert_allclose(p, 1 - np.sqrt(0.5), rtol=1e-14)
+
+    def test_known_exact(self):
+        # Another trivial dataset for which the exact F and p can be
+        # calculated.
+        F, p = stats.f_oneway([2], [2], [2, 3, 4])
+        # The use of assert_equal might be too optimistic, but the calculation
+        # in this case is trivial enough that it is likely to go through with
+        # no loss of precision.
+        assert_equal(F, 3/5)
+        assert_equal(p, 5/8)
 
     def test_large_integer_array(self):
         a = np.array([655, 788], dtype=np.uint16)
         b = np.array([789, 772], dtype=np.uint16)
         F, p = stats.f_oneway(a, b)
-        assert_almost_equal(F, 0.77450216931805538)
+        # The expected value was verified by computing it with mpmath with
+        # 40 digits of precision.
+        assert_allclose(F, 0.77450216931805540, rtol=1e-14)
 
     def test_result_attributes(self):
         a = np.array([655, 788], dtype=np.uint16)
@@ -4485,7 +4590,7 @@ class TestFOneWay(object):
             assert_allclose(res[0], f, rtol=rtol,
                             err_msg='Failing testcase: %s' % test_case)
 
-    @pytest.mark.parametrize("a, b, expected",[
+    @pytest.mark.parametrize("a, b, expected", [
         (np.array([42, 42, 42]), np.array([7, 7, 7]), (np.inf, 0)),
         (np.array([42, 42, 42]), np.array([42, 42, 42]), (np.nan, np.nan))
         ])
@@ -4494,6 +4599,109 @@ class TestFOneWay(object):
         with assert_warns(stats.F_onewayConstantInputWarning):
             f, p = stats.f_oneway(a, b)
             assert f, p == expected
+
+    @pytest.mark.parametrize('axis', [-2, -1, 0, 1])
+    def test_2d_inputs(self, axis):
+        a = np.array([[1, 4, 3, 3],
+                      [2, 5, 3, 3],
+                      [3, 6, 3, 3],
+                      [2, 3, 3, 3],
+                      [1, 4, 3, 3]])
+        b = np.array([[3, 1, 5, 3],
+                      [4, 6, 5, 3],
+                      [4, 3, 5, 3],
+                      [1, 5, 5, 3],
+                      [5, 5, 5, 3],
+                      [2, 3, 5, 3],
+                      [8, 2, 5, 3],
+                      [2, 2, 5, 3]])
+        c = np.array([[4, 3, 4, 3],
+                      [4, 2, 4, 3],
+                      [5, 4, 4, 3],
+                      [5, 4, 4, 3]])
+
+        if axis in [-1, 1]:
+            a = a.T
+            b = b.T
+            c = c.T
+            take_axis = 0
+        else:
+            take_axis = 1
+
+        with assert_warns(stats.F_onewayConstantInputWarning):
+            f, p = stats.f_oneway(a, b, c, axis=axis)
+
+        # Verify that the result computed with the 2d arrays matches
+        # the result of calling f_oneway individually on each slice.
+        for j in [0, 1]:
+            fj, pj = stats.f_oneway(np.take(a, j, take_axis),
+                                    np.take(b, j, take_axis),
+                                    np.take(c, j, take_axis))
+            assert_allclose(f[j], fj, rtol=1e-14)
+            assert_allclose(p[j], pj, rtol=1e-14)
+        for j in [2, 3]:
+            with assert_warns(stats.F_onewayConstantInputWarning):
+                fj, pj = stats.f_oneway(np.take(a, j, take_axis),
+                                        np.take(b, j, take_axis),
+                                        np.take(c, j, take_axis))
+                assert_equal(f[j], fj)
+                assert_equal(p[j], pj)
+
+    def test_3d_inputs(self):
+        # Some 3-d arrays. (There is nothing special about the values.)
+        a = 1/np.arange(1.0, 4*5*7 + 1).reshape(4, 5, 7)
+        b = 2/np.arange(1.0, 4*8*7 + 1).reshape(4, 8, 7)
+        c = np.cos(1/np.arange(1.0, 4*4*7 + 1).reshape(4, 4, 7))
+
+        f, p = stats.f_oneway(a, b, c, axis=1)
+
+        assert f.shape == (4, 7)
+        assert p.shape == (4, 7)
+
+        for i in range(a.shape[0]):
+            for j in range(a.shape[2]):
+                fij, pij = stats.f_oneway(a[i, :, j], b[i, :, j], c[i, :, j])
+                assert_allclose(fij, f[i, j])
+                assert_allclose(pij, p[i, j])
+
+    def test_length0_1d_error(self):
+        # Require at least one value in each group.
+        with assert_warns(stats.F_onewayBadInputSizesWarning):
+            result = stats.f_oneway([1, 2, 3], [], [4, 5, 6, 7])
+            assert_equal(result, (np.nan, np.nan))
+
+    def test_length0_2d_error(self):
+        with assert_warns(stats.F_onewayBadInputSizesWarning):
+            ncols = 3
+            a = np.ones((4, ncols))
+            b = np.ones((0, ncols))
+            c = np.ones((5, ncols))
+            f, p = stats.f_oneway(a, b, c)
+            nans = np.full((ncols,), fill_value=np.nan)
+            assert_equal(f, nans)
+            assert_equal(p, nans)
+
+    def test_all_length_one(self):
+        with assert_warns(stats.F_onewayBadInputSizesWarning):
+            result = stats.f_oneway([10], [11], [12], [13])
+            assert_equal(result, (np.nan, np.nan))
+
+    @pytest.mark.parametrize('args', [(), ([1, 2, 3],)])
+    def test_too_few_inputs(self, args):
+        with assert_raises(TypeError):
+            stats.f_oneway(*args)
+
+    def test_axis_error(self):
+        a = np.ones((3, 4))
+        b = np.ones((5, 4))
+        with assert_raises(np.AxisError):
+            stats.f_oneway(a, b, axis=2)
+
+    def test_bad_shapes(self):
+        a = np.ones((3, 4))
+        b = np.ones((5, 4))
+        with assert_raises(ValueError):
+            stats.f_oneway(a, b, axis=1)
 
 
 class TestKruskal(object):
@@ -5270,6 +5478,7 @@ class TestMGCStat(object):
         assert_approx_equal(stat, 0.97, significant=1)
         assert_approx_equal(pvalue, 0.001, significant=1)
 
+    @pytest.mark.slow
     def test_random_state(self):
         # generate x and y
         x, y = self._simulations(samps=100, dims=1, sim_type="linear")
