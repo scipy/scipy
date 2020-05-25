@@ -4197,7 +4197,7 @@ class laplace_gen(rv_continuous):
 
     @replace_notes_in_docstring(rv_continuous, notes="""\
         This function uses explicit formulas for the maximum likelihood
-        estimation of the laplace distribution parameters, so the keyword
+        estimation of the Laplace distribution parameters, so the keyword
         arguments `loc`, `scale`, and `optimizer` are ignored.\n\n""")
     def fit(self, data, *args, **kwds):
         """
