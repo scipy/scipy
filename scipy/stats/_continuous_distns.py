@@ -4227,7 +4227,7 @@ class laplace_gen(rv_continuous):
 laplace = laplace_gen(name='laplace')
 
 
-def check_fit_input_parameters(data, args, kwds, fixed_param):
+def _check_fit_input_parameters(data, args, kwds, fixed_param):
     if len(args) > 0:
         raise TypeError("Too many arguments.")
 
