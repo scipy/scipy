@@ -202,6 +202,7 @@ Summary statistics
    mvsdist
    entropy
    median_absolute_deviation
+   median_abs_deviation
 
 Frequency statistics
 ====================
@@ -375,6 +376,7 @@ Warnings used in :mod:`scipy.stats`
    :toctree: generated/
 
    F_onewayConstantInputWarning
+   F_onewayBadInputSizesWarning
    PearsonRConstantInputWarning
    PearsonRNearConstantInputWarning
    SpearmanRConstantInputWarning

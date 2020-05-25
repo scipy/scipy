@@ -84,7 +84,7 @@ Variability
     zscore
     gstd
     iqr
-    median_absolute_deviation
+    median_abs_deviation
 
 Trimming Functions
 ------------------
@@ -193,8 +193,10 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
            'scoreatpercentile', 'percentileofscore',
            'cumfreq', 'relfreq', 'obrientransform',
            'sem', 'zmap', 'zscore', 'iqr', 'gstd', 'median_absolute_deviation',
+           'median_abs_deviation',
            'sigmaclip', 'trimboth', 'trim1', 'trim_mean',
            'f_oneway', 'F_onewayConstantInputWarning',
+           'F_onewayBadInputSizesWarning',
            'PearsonRConstantInputWarning', 'PearsonRNearConstantInputWarning',
            'pearsonr', 'fisher_exact', 'SpearmanRConstantInputWarning',
            'spearmanr', 'pointbiserialr',
@@ -238,6 +240,79 @@ def _chk2_asarray(a, b, axis):
         b = np.atleast_1d(b)
 
     return a, b, outaxis
+
+
+def _shape_with_dropped_axis(a, axis):
+    """
+    Given an array `a` and an integer `axis`, return the shape
+    of `a` with the `axis` dimension removed.
+
+    Examples
+    --------
+    >>> a = np.zeros((3, 5, 2))
+    >>> _shape_with_dropped_axis(a, 1)
+    (3, 2)
+    """
+    shp = list(a.shape)
+    try:
+        del shp[axis]
+    except IndexError:
+        raise np.AxisError(axis, a.ndim) from None
+    return tuple(shp)
+
+
+def _broadcast_shapes(shape1, shape2):
+    """
+    Given two shapes (i.e. tuples of integers), return the shape
+    that would result from broadcasting two arrays with the given
+    shapes.
+
+    Examples
+    --------
+    >>> _broadcast_shapes((2, 1), (4, 1, 3))
+    (4, 2, 3)
+    """
+    d = len(shape1) - len(shape2)
+    if d <= 0:
+        shp1 = (1,)*(-d) + shape1
+        shp2 = shape2
+    elif d > 0:
+        shp1 = shape1
+        shp2 = (1,)*d + shape2
+    shape = []
+    for n1, n2 in zip(shp1, shp2):
+        if n1 == 1:
+            n = n2
+        elif n2 == 1 or n1 == n2:
+            n = n1
+        else:
+            raise ValueError(f'shapes {shape1} and {shape2} could not be '
+                             'broadcast together')
+        shape.append(n)
+    return tuple(shape)
+
+
+def _broadcast_shapes_with_dropped_axis(a, b, axis):
+    """
+    Given two arrays `a` and `b` and an integer `axis`, find the
+    shape of the broadcast result after dropping `axis` from the
+    shapes of `a` and `b`.
+
+    Examples
+    --------
+    >>> a = np.zeros((5, 2, 1))
+    >>> b = np.zeros((1, 9, 3))
+    >>> _broadcast_shapes_with_dropped_axis(a, b, 1)
+    (5, 3)
+    """
+    shp1 = _shape_with_dropped_axis(a, axis)
+    shp2 = _shape_with_dropped_axis(b, axis)
+    try:
+        shp = _broadcast_shapes(shp1, shp2)
+    except ValueError:
+        raise ValueError(f'non-axis shapes {shp1} and {shp2} could not be '
+                         'broadcast together') from None
+    return shp
 
 
 def gmean(a, axis=0, dtype=None):
@@ -2576,7 +2651,7 @@ _scale_conversions = {'raw': 1.0,
                       'normal': special.erfinv(0.5) * 2.0 * math.sqrt(2.0)}
 
 
-def iqr(x, axis=None, rng=(25, 75), scale='raw', nan_policy='propagate',
+def iqr(x, axis=None, rng=(25, 75), scale=1.0, nan_policy='propagate',
         interpolation='linear', keepdims=False):
     r"""
     Compute the interquartile range of the data along the specified axis.
@@ -2609,10 +2684,13 @@ def iqr(x, axis=None, rng=(25, 75), scale='raw', nan_policy='propagate',
         The numerical value of scale will be divided out of the final
         result. The following string values are recognized:
 
-          'raw' : No scaling, just return the raw IQR.
-          'normal' : Scale by :math:`2 \sqrt{2} erf^{-1}(\frac{1}{2}) \approx 1.349`.
+          * 'raw' : No scaling, just return the raw IQR.
+            **Deprecated!**  Use `scale=1` instead.
+          * 'normal' : Scale by
+            :math:`2 \sqrt{2} erf^{-1}(\frac{1}{2}) \approx 1.349`.
 
-        The default is 'raw'. Array-like scale is also allowed, as long
+        The default is 1.0. The use of scale='raw' is deprecated.
+        Array-like scale is also allowed, as long
         as it broadcasts correctly to the output such that
         ``out / scale`` is a valid operation. The output dimensions
         depend on the input array, `x`, the `axis` argument, and the
@@ -2711,6 +2789,11 @@ def iqr(x, axis=None, rng=(25, 75), scale='raw', nan_policy='propagate',
         scale_key = scale.lower()
         if scale_key not in _scale_conversions:
             raise ValueError("{0} not a valid scale for `iqr`".format(scale))
+        if scale_key == 'raw':
+            warnings.warn(
+                "use of scale='raw' is deprecated, use scale=1.0 instead",
+                np.VisibleDeprecationWarning
+                )
         scale = _scale_conversions[scale_key]
 
     # Select the percentile function to use based on nans and policy
@@ -2738,9 +2821,9 @@ def iqr(x, axis=None, rng=(25, 75), scale='raw', nan_policy='propagate',
     return out
 
 
-def median_absolute_deviation(x, axis=0, center=np.median, scale=1.4826,
-                              nan_policy='propagate'):
-    """
+def median_abs_deviation(x, axis=0, center=np.median, scale=1.0,
+                         nan_policy='propagate'):
+    r"""
     Compute the median absolute deviation of the data along the given axis.
 
     The median absolute deviation (MAD, [1]_) computes the median over the
@@ -2749,7 +2832,7 @@ def median_absolute_deviation(x, axis=0, center=np.median, scale=1.4826,
 
     The MAD of an empty array is ``np.nan``.
 
-    .. versionadded:: 1.3.0
+    .. versionadded:: 1.5.0
 
     Parameters
     ----------
@@ -2760,19 +2843,24 @@ def median_absolute_deviation(x, axis=0, center=np.median, scale=1.4826,
         the MAD over the entire array.
     center : callable, optional
         A function that will return the central value. The default is to use
-        np.median. Any user defined function used will need to have the function
-        signature ``func(arr, axis)``.
-    scale : int, optional
-        The scaling factor applied to the MAD. The default scale (1.4826)
-        ensures consistency with the standard deviation for normally distributed
-        data.
+        np.median. Any user defined function used will need to have the
+        function signature ``func(arr, axis)``.
+    scale : scalar or str, optional
+        The numerical value of scale will be divided out of the final
+        result. The default is 1.0. The string "normal" is also accepted,
+        and results in `scale` being the inverse of the standard normal
+        quantile function at 0.75, which is approximately 0.67449.
+        Array-like scale is also allowed, as long as it broadcasts correctly
+        to the output such that ``out / scale`` is a valid operation. The
+        output dimensions depend on the input array, `x`, and the `axis`
+        argument.
     nan_policy : {'propagate', 'raise', 'omit'}, optional
         Defines how to handle when input contains nan.
         The following options are available (default is 'propagate'):
 
-          * 'propagate': returns nan
-          * 'raise': throws an error
-          * 'omit': performs the calculations ignoring nan values
+        * 'propagate': returns nan
+        * 'raise': throws an error
+        * 'omit': performs the calculations ignoring nan values
 
     Returns
     -------
@@ -2796,12 +2884,14 @@ def median_absolute_deviation(x, axis=0, center=np.median, scale=1.4826,
 
     References
     ----------
-    .. [1] "Median absolute deviation" https://en.wikipedia.org/wiki/Median_absolute_deviation
-    .. [2] "Robust measures of scale" https://en.wikipedia.org/wiki/Robust_measures_of_scale
+    .. [1] "Median absolute deviation",
+           https://en.wikipedia.org/wiki/Median_absolute_deviation
+    .. [2] "Robust measures of scale",
+           https://en.wikipedia.org/wiki/Robust_measures_of_scale
 
     Examples
     --------
-    When comparing the behavior of `median_absolute_deviation` with ``np.std``,
+    When comparing the behavior of `median_abs_deviation` with ``np.std``,
     the latter is affected when we change a single value of an array to have an
     outlier value while the MAD hardly changes:
 
@@ -2809,13 +2899,13 @@ def median_absolute_deviation(x, axis=0, center=np.median, scale=1.4826,
     >>> x = stats.norm.rvs(size=100, scale=1, random_state=123456)
     >>> x.std()
     0.9973906394005013
-    >>> stats.median_absolute_deviation(x)
-    1.2280762773108278
+    >>> stats.median_abs_deviation(x)
+    0.82832610097857
     >>> x[0] = 345.6
     >>> x.std()
     34.42304872314415
-    >>> stats.median_absolute_deviation(x)
-    1.2340335571164334
+    >>> stats.median_abs_deviation(x)
+    0.8323442311590675
 
     Axis handling example:
 
@@ -2823,13 +2913,29 @@ def median_absolute_deviation(x, axis=0, center=np.median, scale=1.4826,
     >>> x
     array([[10,  7,  4],
            [ 3,  2,  1]])
-    >>> stats.median_absolute_deviation(x)
-    array([5.1891, 3.7065, 2.2239])
-    >>> stats.median_absolute_deviation(x, axis=None)
-    2.9652
+    >>> stats.median_abs_deviation(x)
+    array([3.5, 2.5, 1.5])
+    >>> stats.median_abs_deviation(x, axis=None)
+    2.0
+
+    Scale normal example:
+
+    >>> x = stats.norm.rvs(size=1000000, scale=2, random_state=123456)
+    >>> stats.median_abs_deviation(x)
+    1.3487398527041636
+    >>> stats.median_abs_deviation(x, scale='normal')
+    1.9996446978061115
 
     """
     x = asarray(x)
+
+    # An error may be raised here, so fail-fast, before doing lengthy
+    # computations, even though `scale` is not used until later
+    if isinstance(scale, str):
+        if scale.lower() == 'normal':
+            scale = 0.6744897501960817  # special.ndtri(0.75)
+        else:
+            raise ValueError(f"{scale} is not a valid scale value.")
 
     # Consistent with `np.var` and `np.std`.
     if not x.size:
@@ -2858,12 +2964,133 @@ def median_absolute_deviation(x, axis=0, center=np.median, scale=1.4826,
         med = np.apply_over_axes(center, arr, axis)
         mad = np.median(np.abs(arr - med), axis=axis)
 
-    return scale * mad
+    return mad / scale
 
+
+# Keep the top newline so that the message does not show up on the stats page
+_median_absolute_deviation_deprec_msg = """
+To preserve the existing default behavior, use
+`scipy.stats.median_abs_deviation(..., scale=1/1.4826)`.
+The value 1.4826 is not numerically precise for scaling
+with a normal distribution. For a numerically precise value, use
+`scipy.stats.median_abs_deviation(..., scale='normal')`.
+"""
+
+
+# Due to numpy/gh-16349 we need to unindent the entire docstring
+@np.deprecate(old_name='median_absolute_deviation',
+              new_name='median_abs_deviation',
+              message=_median_absolute_deviation_deprec_msg)
+def median_absolute_deviation(x, axis=0, center=np.median, scale=1.4826,
+                              nan_policy='propagate'):
+    r"""
+Compute the median absolute deviation of the data along the given axis.
+
+The median absolute deviation (MAD, [1]_) computes the median over the
+absolute deviations from the median. It is a measure of dispersion
+similar to the standard deviation but more robust to outliers [2]_.
+
+The MAD of an empty array is ``np.nan``.
+
+.. versionadded:: 1.3.0
+
+Parameters
+----------
+x : array_like
+    Input array or object that can be converted to an array.
+axis : int or None, optional
+    Axis along which the range is computed. Default is 0. If None, compute
+    the MAD over the entire array.
+center : callable, optional
+    A function that will return the central value. The default is to use
+    np.median. Any user defined function used will need to have the function
+    signature ``func(arr, axis)``.
+scale : int, optional
+    The scaling factor applied to the MAD. The default scale (1.4826)
+    ensures consistency with the standard deviation for normally distributed
+    data.
+nan_policy : {'propagate', 'raise', 'omit'}, optional
+    Defines how to handle when input contains nan.
+    The following options are available (default is 'propagate'):
+
+    * 'propagate': returns nan
+    * 'raise': throws an error
+    * 'omit': performs the calculations ignoring nan values
+
+Returns
+-------
+mad : scalar or ndarray
+    If ``axis=None``, a scalar is returned. If the input contains
+    integers or floats of smaller precision than ``np.float64``, then the
+    output data-type is ``np.float64``. Otherwise, the output data-type is
+    the same as that of the input.
+
+See Also
+--------
+numpy.std, numpy.var, numpy.median, scipy.stats.iqr, scipy.stats.tmean,
+scipy.stats.tstd, scipy.stats.tvar
+
+Notes
+-----
+The `center` argument only affects the calculation of the central value
+around which the MAD is calculated. That is, passing in ``center=np.mean``
+will calculate the MAD around the mean - it will not calculate the *mean*
+absolute deviation.
+
+References
+----------
+.. [1] "Median absolute deviation",
+       https://en.wikipedia.org/wiki/Median_absolute_deviation
+.. [2] "Robust measures of scale",
+       https://en.wikipedia.org/wiki/Robust_measures_of_scale
+
+Examples
+--------
+When comparing the behavior of `median_absolute_deviation` with ``np.std``,
+the latter is affected when we change a single value of an array to have an
+outlier value while the MAD hardly changes:
+
+>>> from scipy import stats
+>>> x = stats.norm.rvs(size=100, scale=1, random_state=123456)
+>>> x.std()
+0.9973906394005013
+>>> stats.median_absolute_deviation(x)
+1.2280762773108278
+>>> x[0] = 345.6
+>>> x.std()
+34.42304872314415
+>>> stats.median_absolute_deviation(x)
+1.2340335571164334
+
+Axis handling example:
+
+>>> x = np.array([[10, 7, 4], [3, 2, 1]])
+>>> x
+array([[10,  7,  4],
+       [ 3,  2,  1]])
+>>> stats.median_absolute_deviation(x)
+array([5.1891, 3.7065, 2.2239])
+>>> stats.median_absolute_deviation(x, axis=None)
+2.9652
+"""
+    if isinstance(scale, str):
+        if scale.lower() == 'raw':
+            warnings.warn(
+                "use of scale='raw' is deprecated, use scale=1.0 instead",
+                np.VisibleDeprecationWarning
+                )
+            scale = 1.0
+
+    if not isinstance(scale, str):
+        scale = 1 / scale
+
+    return median_abs_deviation(x, axis=axis, center=center, scale=scale,
+                                nan_policy=nan_policy)
 
 #####################################
 #         TRIMMING FUNCTIONS        #
 #####################################
+
 
 SigmaclipResult = namedtuple('SigmaclipResult', ('clipped', 'lower', 'upper'))
 
@@ -3126,17 +3353,56 @@ F_onewayResult = namedtuple('F_onewayResult', ('statistic', 'pvalue'))
 
 
 class F_onewayConstantInputWarning(RuntimeWarning):
-    """Warning generated by `f_oneway` when an input is constant, e.g.
-       each of the samples provided is a constant array"""
+    """
+    Warning generated by `f_oneway` when an input is constant, e.g.
+    each of the samples provided is a constant array.
+    """
 
     def __init__(self, msg=None):
         if msg is None:
             msg = ("Each of the input arrays is constant;"
-                    "the F-value is not defined or infinite")
+                   "the F statistic is not defined or infinite")
         self.args = (msg,)
 
 
-def f_oneway(*args):
+class F_onewayBadInputSizesWarning(RuntimeWarning):
+    """
+    Warning generated by `f_oneway` when an input has length 0,
+    or if all the inputs have length 1.
+    """
+    pass
+
+
+def _create_f_oneway_nan_result(shape, axis):
+    """
+    This is a helper function for f_oneway for creating the return values
+    in certain degenerate conditions.  It creates return values that are
+    all nan with the appropriate shape for the given `shape` and `axis`.
+    """
+    axis = np.core.multiarray.normalize_axis_index(axis, len(shape))
+    shp = shape[:axis] + shape[axis+1:]
+    if shp == ():
+        f = np.nan
+        prob = np.nan
+    else:
+        f = np.full(shp, fill_value=np.nan)
+        prob = f.copy()
+    return F_onewayResult(f, prob)
+
+
+def _first(arr, axis):
+    """
+    Return arr[..., 0:1, ...] where 0:1 is in the `axis` position.
+    """
+    # When the oldest version of numpy supported by scipy is at
+    # least 1.15.0, this function can be replaced by np.take_along_axis
+    # (with appropriately configured arguments).
+    axis = np.core.multiarray.normalize_axis_index(axis, arr.ndim)
+    return arr[tuple(slice(None) if k != axis else slice(0, 1)
+               for k in range(arr.ndim))]
+
+
+def f_oneway(*args, axis=0):
     """
     Perform one-way ANOVA.
 
@@ -3147,21 +3413,31 @@ def f_oneway(*args):
     Parameters
     ----------
     sample1, sample2, ... : array_like
-        The sample measurements for each group.
+        The sample measurements for each group.  There must be at least
+        two arguments.  If the arrays are multidimensional, then all the
+        dimensions of the array must be the same except for `axis`.
+    axis : int, optional
+        Axis of the input arrays along which the test is applied.
+        Default is 0.
 
     Returns
     -------
     statistic : float
-        The computed F-value of the test.
+        The computed F statistic of the test.
     pvalue : float
-        The associated p-value from the F-distribution.
+        The associated p-value from the F distribution.
 
     Warns
     -----
     F_onewayConstantInputWarning
         Raised if each of the input arrays is constant array.
-        In this case F-value is either infinite or isn't defined, so
-        ``np.inf`` or ``np.nan`` is returned for F-value
+        In this case the F statistic is either infinite or isn't defined,
+        so ``np.inf`` or ``np.nan`` is returned.
+
+    F_onewayBadInputSizesWarning
+        Raised if the length of any input array is 0, or if all the input
+        arrays have length 1.  ``np.nan`` is returned for the F statistic
+        and the p-value in these cases.
 
     Notes
     -----
@@ -3173,18 +3449,23 @@ def f_oneway(*args):
     3. The population standard deviations of the groups are all equal.  This
        property is known as homoscedasticity.
 
-    If these assumptions are not true for a given set of data, it may still be
-    possible to use the Kruskal-Wallis H-test (`scipy.stats.kruskal`) although
-    with some loss of power.
+    If these assumptions are not true for a given set of data, it may still
+    be possible to use the Kruskal-Wallis H-test (`scipy.stats.kruskal`)
+    although with some loss of power.
 
-    If each group is made of constant values, and
+    The length of each group must be at least one, and there must be at
+    least one group with length greater than one.  If these conditions
+    are not satisfied, a warning is generated and (``np.nan``, ``np.nan``)
+    is returned.
 
-    - There exist at least two groups with different values
-         the function returns (``np.inf``, 0)
-    - All values in all groups are the same, function returns (``np.nan``, ``np.nan``)
+    If each group contains constant values, and there exist at least two
+    groups with different values, the function generates a warning and
+    returns (``np.inf``, 0).
 
-    The algorithm is from Heiman[2], pp.394-7.
+    If all values in all groups are the same, function generates a warning
+    and returns (``np.nan``, ``np.nan``).
 
+    The algorithm is from Heiman [2]_, pp.394-7.
 
     References
     ----------
@@ -3200,9 +3481,9 @@ def f_oneway(*args):
 
     Examples
     --------
-    >>> import scipy.stats as stats
+    >>> from scipy.stats import f_oneway
 
-    [3]_ Here are some data on a shell measurement (the length of the anterior
+    Here are some data [3]_ on a shell measurement (the length of the anterior
     adductor muscle scar, standardized by dividing by length) in the mussel
     Mytilus trossulus from five locations: Tillamook, Oregon; Newport, Oregon;
     Petersburg, Alaska; Magadan, Russia; and Tvarminne, Finland, taken from a
@@ -3216,44 +3497,106 @@ def f_oneway(*args):
     >>> magadan = [0.1033, 0.0915, 0.0781, 0.0685, 0.0677, 0.0697, 0.0764,
     ...            0.0689]
     >>> tvarminne = [0.0703, 0.1026, 0.0956, 0.0973, 0.1039, 0.1045]
-    >>> stats.f_oneway(tillamook, newport, petersburg, magadan, tvarminne)
-    (7.1210194716424473, 0.00028122423145345439)
+    >>> f_oneway(tillamook, newport, petersburg, magadan, tvarminne)
+    F_onewayResult(statistic=7.121019471642447, pvalue=0.0002812242314534544)
+
+    `f_oneway` accepts multidimensional input arrays.  When the inputs
+    are multidimensional and `axis` is not given, the test is performed
+    along the first axis of the input arrays.  For the following data, the
+    test is performed three times, once for each column.
+
+    >>> a = np.array([[9.87, 9.03, 6.81],
+    ...               [7.18, 8.35, 7.00],
+    ...               [8.39, 7.58, 7.68],
+    ...               [7.45, 6.33, 9.35],
+    ...               [6.41, 7.10, 9.33],
+    ...               [8.00, 8.24, 8.44]])
+    >>> b = np.array([[6.35, 7.30, 7.16],
+    ...               [6.65, 6.68, 7.63],
+    ...               [5.72, 7.73, 6.72],
+    ...               [7.01, 9.19, 7.41],
+    ...               [7.75, 7.87, 8.30],
+    ...               [6.90, 7.97, 6.97]])
+    >>> c = np.array([[3.31, 8.77, 1.01],
+    ...               [8.25, 3.24, 3.62],
+    ...               [6.32, 8.81, 5.19],
+    ...               [7.48, 8.83, 8.91],
+    ...               [8.59, 6.01, 6.07],
+    ...               [3.07, 9.72, 7.48]])
+    >>> F, p = f_oneway(a, b, c)
+    >>> F
+    array([1.75676344, 0.03701228, 3.76439349])
+    >>> p
+    array([0.20630784, 0.96375203, 0.04733157])
 
     """
+    if len(args) < 2:
+        raise TypeError(f'at least two inputs are required; got {len(args)}.')
+
     args = [np.asarray(arg, dtype=float) for arg in args]
+
     # ANOVA on N groups, each in its own array
     num_groups = len(args)
-    alldata = np.concatenate(args)
-    bign = len(alldata)
 
-    # Check if the values within each group are constant
-    # And the common value in at least one group is different
-    # from that in another group - special cases
+    # We haven't explicitly validated axis, but if it is bad, this call of
+    # np.concatenate will raise np.AxisError.  The call will raise ValueError
+    # if the dimensions of all the arrays, except the axis dimension, are not
+    # the same.
+    alldata = np.concatenate(args, axis=axis)
+    bign = alldata.shape[axis]
+
+    # Check this after forming alldata, so shape errors are detected
+    # and reported before checking for 0 length inputs.
+    if any(arg.shape[axis] == 0 for arg in args):
+        warnings.warn(F_onewayBadInputSizesWarning('at least one input '
+                                                   'has length 0'))
+        return _create_f_oneway_nan_result(alldata.shape, axis)
+
+    # Must have at least one group with length greater than 1.
+    if all(arg.shape[axis] == 1 for arg in args):
+        msg = ('all input arrays have length 1.  f_oneway requires that at '
+               'least one input has length greater than 1.')
+        warnings.warn(F_onewayBadInputSizesWarning(msg))
+        return _create_f_oneway_nan_result(alldata.shape, axis)
+
+    # Check if the values within each group are constant, and if the common
+    # value in at least one group is different from that in another group.
     # Based on https://github.com/scipy/scipy/issues/11669
-    const_groups = True
-    for group in args:
-        if not all(x == group[0] for x in group):
-            const_groups = False
-            break
-    if const_groups:
+
+    # If axis=0, say, and the groups have shape (n0, ...), (n1, ...), ...,
+    # then is_const is a boolean array with shape (num_groups, ...).
+    # It is True if the groups along the axis slice are each consant.
+    # In the typical case where each input array is 1-d, is_const is a
+    # 1-d array with length num_groups.
+    is_const = np.concatenate([(_first(a, axis) == a).all(axis=axis,
+                                                          keepdims=True)
+                               for a in args], axis=axis)
+
+    # all_const is a boolean array with shape (...) (see previous comment).
+    # It is True if the values within each group along the axis slice are
+    # the same (e.g. [[3, 3, 3], [5, 5, 5, 5], [4, 4, 4]]).
+    all_const = is_const.all(axis=axis)
+    if all_const.any():
         warnings.warn(F_onewayConstantInputWarning())
-        if len(set(group[0] for group in args)) > 1:
-            return F_onewayResult(np.inf, 0)
-        else:
-            return F_onewayResult(np.nan, np.nan)
+
+    # all_same_const is True if all the values in the groups along the axis=0
+    # slice are the same (e.g. [[3, 3, 3], [3, 3, 3, 3], [3, 3, 3]]).
+    all_same_const = (_first(alldata, axis) == alldata).all(axis=axis)
 
     # Determine the mean of the data, and subtract that from all inputs to a
-    # variance (via sum_of_sq / sq_of_sum) calculation.  Variance is invariance
+    # variance (via sum_of_sq / sq_of_sum) calculation.  Variance is invariant
     # to a shift in location, and centering all data around zero vastly
     # improves numerical stability.
-    offset = alldata.mean()
+    offset = alldata.mean(axis=axis, keepdims=True)
     alldata -= offset
 
-    normalized_ss = _square_of_sums(alldata) / bign
-    sstot = _sum_of_squares(alldata) - normalized_ss
+    normalized_ss = _square_of_sums(alldata, axis=axis) / bign
+
+    sstot = _sum_of_squares(alldata, axis=axis) - normalized_ss
+
     ssbn = 0
     for a in args:
-        ssbn += _square_of_sums(a - offset) / len(a)
+        ssbn += _square_of_sums(a - offset, axis=axis) / a.shape[axis]
 
     # Naming: variables ending in bn/b are for "between treatments", wn/w are
     # for "within treatments"
@@ -3263,9 +3606,25 @@ def f_oneway(*args):
     dfwn = bign - num_groups
     msb = ssbn / dfbn
     msw = sswn / dfwn
-    f = msb / msw
+    with np.errstate(divide='ignore', invalid='ignore'):
+        f = msb / msw
 
     prob = special.fdtrc(dfbn, dfwn, f)   # equivalent to stats.f.sf
+
+    # Fix any f values that should be inf or nan because the corresponding
+    # inputs were constant.
+    if np.isscalar(f):
+        if all_same_const:
+            f = np.nan
+            prob = np.nan
+        elif all_const:
+            f = np.inf
+            prob = 0.0
+    else:
+        f[all_const] = np.inf
+        prob[all_const] = 0.0
+        f[all_same_const] = np.nan
+        prob[all_same_const] = np.nan
 
     return F_onewayResult(f, prob)
 
@@ -5079,6 +5438,48 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
     return Ttest_indResult(*res)
 
 
+def _ttest_nans(a, b, axis, namedtuple_type):
+    """
+    Generate an array of `nan`, with shape determined by `a`, `b` and `axis`.
+
+    This function is used by ttest_ind and ttest_rel to create the return
+    value when one of the inputs has size 0.
+
+    The shapes of the arrays are determined by dropping `axis` from the
+    shapes of `a` and `b` and broadcasting what is left.
+
+    The return value is a named tuple of the type given in `namedtuple_type`.
+
+    Examples
+    --------
+    >>> a = np.zeros((9, 2))
+    >>> b = np.zeros((5, 1))
+    >>> _ttest_nans(a, b, 0, Ttest_indResult)
+    Ttest_indResult(statistic=array([nan, nan]), pvalue=array([nan, nan]))
+
+    >>> a = np.zeros((3, 0, 9))
+    >>> b = np.zeros((1, 10))
+    >>> stat, p = _ttest_nans(a, b, -1, Ttest_indResult)
+    >>> stat
+    array([], shape=(3, 0), dtype=float64)
+    >>> p
+    array([], shape=(3, 0), dtype=float64)
+
+    >>> a = np.zeros(10)
+    >>> b = np.zeros(7)
+    >>> _ttest_nans(a, b, 0, Ttest_indResult)
+    Ttest_indResult(statistic=nan, pvalue=nan)
+    """
+    shp = _broadcast_shapes_with_dropped_axis(a, b, axis)
+    if len(shp) == 0:
+        t = np.nan
+        p = np.nan
+    else:
+        t = np.full(shp, fill_value=np.nan)
+        p = t.copy()
+    return namedtuple_type(t, p)
+
+
 def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate'):
     """
     Calculate the T-test for the means of *two independent* samples of scores.
@@ -5109,7 +5510,6 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate'):
           * 'propagate': returns nan
           * 'raise': throws an error
           * 'omit': performs the calculations ignoring nan values
-
 
     Returns
     -------
@@ -5190,7 +5590,7 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate'):
         return mstats_basic.ttest_ind(a, b, axis, equal_var)
 
     if a.size == 0 or b.size == 0:
-        return Ttest_indResult(np.nan, np.nan)
+        return _ttest_nans(a, b, axis, Ttest_indResult)
 
     v1 = np.var(a, axis, ddof=1)
     v2 = np.var(b, axis, ddof=1)
@@ -5205,6 +5605,14 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate'):
     res = _ttest_ind_from_stats(np.mean(a, axis), np.mean(b, axis), denom, df)
 
     return Ttest_indResult(*res)
+
+
+def _get_len(a, axis, msg):
+    try:
+        n = a.shape[axis]
+    except IndexError:
+        raise np.AxisError(axis, a.ndim, msg) from None
+    return n
 
 
 Ttest_relResult = namedtuple('Ttest_relResult', ('statistic', 'pvalue'))
@@ -5287,11 +5695,13 @@ def ttest_rel(a, b, axis=0, nan_policy='propagate'):
         bb = ma.array(b, mask=m, copy=True)
         return mstats_basic.ttest_rel(aa, bb, axis)
 
-    if a.shape[axis] != b.shape[axis]:
+    na = _get_len(a, axis, "first argument")
+    nb = _get_len(b, axis, "second argument")
+    if na != nb:
         raise ValueError('unequal length arrays')
 
-    if a.size == 0 or b.size == 0:
-        return np.nan, np.nan
+    if na == 0:
+        return _ttest_nans(a, b, axis, Ttest_relResult)
 
     n = a.shape[axis]
     df = n - 1

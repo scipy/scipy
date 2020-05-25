@@ -175,7 +175,7 @@ SciPy always requires a recent Cython compiler.
  Tool    Tool Version  SciPy version
 ======== ============ ===============
 Cython     >= 0.29.13  1.4.1
-Cython     >= 0.29.14  1.5.0
+Cython     >= 0.29.18  1.5.0
 ======== ============ ===============
 
 
