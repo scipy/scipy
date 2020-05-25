@@ -1380,6 +1380,10 @@ def dice(u, v, w=None):
     dice : double
         The Dice dissimilarity between 1-D arrays `u` and `v`.
 
+   Note: This function computes the Dice dissimilarity index. To compute the 
+   Dice similiarity index, convert one to the other with similarity = 
+   1 - dissimilarity.
+   
     Examples
     --------
     >>> from scipy.spatial import distance
