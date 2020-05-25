@@ -84,7 +84,7 @@ Variability
     zscore
     gstd
     iqr
-    median_absolute_deviation
+    median_abs_deviation
 
 Trimming Functions
 ------------------
@@ -193,6 +193,7 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
            'scoreatpercentile', 'percentileofscore',
            'cumfreq', 'relfreq', 'obrientransform',
            'sem', 'zmap', 'zscore', 'iqr', 'gstd', 'median_absolute_deviation',
+           'median_abs_deviation',
            'sigmaclip', 'trimboth', 'trim1', 'trim_mean',
            'f_oneway', 'F_onewayConstantInputWarning',
            'F_onewayBadInputSizesWarning',
@@ -2650,7 +2651,7 @@ _scale_conversions = {'raw': 1.0,
                       'normal': special.erfinv(0.5) * 2.0 * math.sqrt(2.0)}
 
 
-def iqr(x, axis=None, rng=(25, 75), scale='raw', nan_policy='propagate',
+def iqr(x, axis=None, rng=(25, 75), scale=1.0, nan_policy='propagate',
         interpolation='linear', keepdims=False):
     r"""
     Compute the interquartile range of the data along the specified axis.
@@ -2683,10 +2684,13 @@ def iqr(x, axis=None, rng=(25, 75), scale='raw', nan_policy='propagate',
         The numerical value of scale will be divided out of the final
         result. The following string values are recognized:
 
-          'raw' : No scaling, just return the raw IQR.
-          'normal' : Scale by :math:`2 \sqrt{2} erf^{-1}(\frac{1}{2}) \approx 1.349`.
+          * 'raw' : No scaling, just return the raw IQR.
+            **Deprecated!**  Use `scale=1` instead.
+          * 'normal' : Scale by
+            :math:`2 \sqrt{2} erf^{-1}(\frac{1}{2}) \approx 1.349`.
 
-        The default is 'raw'. Array-like scale is also allowed, as long
+        The default is 1.0. The use of scale='raw' is deprecated.
+        Array-like scale is also allowed, as long
         as it broadcasts correctly to the output such that
         ``out / scale`` is a valid operation. The output dimensions
         depend on the input array, `x`, the `axis` argument, and the
@@ -2785,6 +2789,11 @@ def iqr(x, axis=None, rng=(25, 75), scale='raw', nan_policy='propagate',
         scale_key = scale.lower()
         if scale_key not in _scale_conversions:
             raise ValueError("{0} not a valid scale for `iqr`".format(scale))
+        if scale_key == 'raw':
+            warnings.warn(
+                "use of scale='raw' is deprecated, use scale=1.0 instead",
+                np.VisibleDeprecationWarning
+                )
         scale = _scale_conversions[scale_key]
 
     # Select the percentile function to use based on nans and policy
@@ -2812,9 +2821,9 @@ def iqr(x, axis=None, rng=(25, 75), scale='raw', nan_policy='propagate',
     return out
 
 
-def median_absolute_deviation(x, axis=0, center=np.median, scale=1.4826,
-                              nan_policy='propagate'):
-    """
+def median_abs_deviation(x, axis=0, center=np.median, scale=1.0,
+                         nan_policy='propagate'):
+    r"""
     Compute the median absolute deviation of the data along the given axis.
 
     The median absolute deviation (MAD, [1]_) computes the median over the
@@ -2823,7 +2832,7 @@ def median_absolute_deviation(x, axis=0, center=np.median, scale=1.4826,
 
     The MAD of an empty array is ``np.nan``.
 
-    .. versionadded:: 1.3.0
+    .. versionadded:: 1.5.0
 
     Parameters
     ----------
@@ -2834,19 +2843,24 @@ def median_absolute_deviation(x, axis=0, center=np.median, scale=1.4826,
         the MAD over the entire array.
     center : callable, optional
         A function that will return the central value. The default is to use
-        np.median. Any user defined function used will need to have the function
-        signature ``func(arr, axis)``.
-    scale : int, optional
-        The scaling factor applied to the MAD. The default scale (1.4826)
-        ensures consistency with the standard deviation for normally distributed
-        data.
+        np.median. Any user defined function used will need to have the
+        function signature ``func(arr, axis)``.
+    scale : scalar or str, optional
+        The numerical value of scale will be divided out of the final
+        result. The default is 1.0. The string "normal" is also accepted,
+        and results in `scale` being the inverse of the standard normal
+        quantile function at 0.75, which is approximately 0.67449.
+        Array-like scale is also allowed, as long as it broadcasts correctly
+        to the output such that ``out / scale`` is a valid operation. The
+        output dimensions depend on the input array, `x`, and the `axis`
+        argument.
     nan_policy : {'propagate', 'raise', 'omit'}, optional
         Defines how to handle when input contains nan.
         The following options are available (default is 'propagate'):
 
-          * 'propagate': returns nan
-          * 'raise': throws an error
-          * 'omit': performs the calculations ignoring nan values
+        * 'propagate': returns nan
+        * 'raise': throws an error
+        * 'omit': performs the calculations ignoring nan values
 
     Returns
     -------
@@ -2870,12 +2884,14 @@ def median_absolute_deviation(x, axis=0, center=np.median, scale=1.4826,
 
     References
     ----------
-    .. [1] "Median absolute deviation" https://en.wikipedia.org/wiki/Median_absolute_deviation
-    .. [2] "Robust measures of scale" https://en.wikipedia.org/wiki/Robust_measures_of_scale
+    .. [1] "Median absolute deviation",
+           https://en.wikipedia.org/wiki/Median_absolute_deviation
+    .. [2] "Robust measures of scale",
+           https://en.wikipedia.org/wiki/Robust_measures_of_scale
 
     Examples
     --------
-    When comparing the behavior of `median_absolute_deviation` with ``np.std``,
+    When comparing the behavior of `median_abs_deviation` with ``np.std``,
     the latter is affected when we change a single value of an array to have an
     outlier value while the MAD hardly changes:
 
@@ -2883,13 +2899,13 @@ def median_absolute_deviation(x, axis=0, center=np.median, scale=1.4826,
     >>> x = stats.norm.rvs(size=100, scale=1, random_state=123456)
     >>> x.std()
     0.9973906394005013
-    >>> stats.median_absolute_deviation(x)
-    1.2280762773108278
+    >>> stats.median_abs_deviation(x)
+    0.82832610097857
     >>> x[0] = 345.6
     >>> x.std()
     34.42304872314415
-    >>> stats.median_absolute_deviation(x)
-    1.2340335571164334
+    >>> stats.median_abs_deviation(x)
+    0.8323442311590675
 
     Axis handling example:
 
@@ -2897,13 +2913,29 @@ def median_absolute_deviation(x, axis=0, center=np.median, scale=1.4826,
     >>> x
     array([[10,  7,  4],
            [ 3,  2,  1]])
-    >>> stats.median_absolute_deviation(x)
-    array([5.1891, 3.7065, 2.2239])
-    >>> stats.median_absolute_deviation(x, axis=None)
-    2.9652
+    >>> stats.median_abs_deviation(x)
+    array([3.5, 2.5, 1.5])
+    >>> stats.median_abs_deviation(x, axis=None)
+    2.0
+
+    Scale normal example:
+
+    >>> x = stats.norm.rvs(size=1000000, scale=2, random_state=123456)
+    >>> stats.median_abs_deviation(x)
+    1.3487398527041636
+    >>> stats.median_abs_deviation(x, scale='normal')
+    1.9996446978061115
 
     """
     x = asarray(x)
+
+    # An error may be raised here, so fail-fast, before doing lengthy
+    # computations, even though `scale` is not used until later
+    if isinstance(scale, str):
+        if scale.lower() == 'normal':
+            scale = 0.6744897501960817  # special.ndtri(0.75)
+        else:
+            raise ValueError(f"{scale} is not a valid scale value.")
 
     # Consistent with `np.var` and `np.std`.
     if not x.size:
@@ -2932,12 +2964,133 @@ def median_absolute_deviation(x, axis=0, center=np.median, scale=1.4826,
         med = np.apply_over_axes(center, arr, axis)
         mad = np.median(np.abs(arr - med), axis=axis)
 
-    return scale * mad
+    return mad / scale
 
+
+# Keep the top newline so that the message does not show up on the stats page
+_median_absolute_deviation_deprec_msg = """
+To preserve the existing default behavior, use
+`scipy.stats.median_abs_deviation(..., scale=1/1.4826)`.
+The value 1.4826 is not numerically precise for scaling
+with a normal distribution. For a numerically precise value, use
+`scipy.stats.median_abs_deviation(..., scale='normal')`.
+"""
+
+
+# Due to numpy/gh-16349 we need to unindent the entire docstring
+@np.deprecate(old_name='median_absolute_deviation',
+              new_name='median_abs_deviation',
+              message=_median_absolute_deviation_deprec_msg)
+def median_absolute_deviation(x, axis=0, center=np.median, scale=1.4826,
+                              nan_policy='propagate'):
+    r"""
+Compute the median absolute deviation of the data along the given axis.
+
+The median absolute deviation (MAD, [1]_) computes the median over the
+absolute deviations from the median. It is a measure of dispersion
+similar to the standard deviation but more robust to outliers [2]_.
+
+The MAD of an empty array is ``np.nan``.
+
+.. versionadded:: 1.3.0
+
+Parameters
+----------
+x : array_like
+    Input array or object that can be converted to an array.
+axis : int or None, optional
+    Axis along which the range is computed. Default is 0. If None, compute
+    the MAD over the entire array.
+center : callable, optional
+    A function that will return the central value. The default is to use
+    np.median. Any user defined function used will need to have the function
+    signature ``func(arr, axis)``.
+scale : int, optional
+    The scaling factor applied to the MAD. The default scale (1.4826)
+    ensures consistency with the standard deviation for normally distributed
+    data.
+nan_policy : {'propagate', 'raise', 'omit'}, optional
+    Defines how to handle when input contains nan.
+    The following options are available (default is 'propagate'):
+
+    * 'propagate': returns nan
+    * 'raise': throws an error
+    * 'omit': performs the calculations ignoring nan values
+
+Returns
+-------
+mad : scalar or ndarray
+    If ``axis=None``, a scalar is returned. If the input contains
+    integers or floats of smaller precision than ``np.float64``, then the
+    output data-type is ``np.float64``. Otherwise, the output data-type is
+    the same as that of the input.
+
+See Also
+--------
+numpy.std, numpy.var, numpy.median, scipy.stats.iqr, scipy.stats.tmean,
+scipy.stats.tstd, scipy.stats.tvar
+
+Notes
+-----
+The `center` argument only affects the calculation of the central value
+around which the MAD is calculated. That is, passing in ``center=np.mean``
+will calculate the MAD around the mean - it will not calculate the *mean*
+absolute deviation.
+
+References
+----------
+.. [1] "Median absolute deviation",
+       https://en.wikipedia.org/wiki/Median_absolute_deviation
+.. [2] "Robust measures of scale",
+       https://en.wikipedia.org/wiki/Robust_measures_of_scale
+
+Examples
+--------
+When comparing the behavior of `median_absolute_deviation` with ``np.std``,
+the latter is affected when we change a single value of an array to have an
+outlier value while the MAD hardly changes:
+
+>>> from scipy import stats
+>>> x = stats.norm.rvs(size=100, scale=1, random_state=123456)
+>>> x.std()
+0.9973906394005013
+>>> stats.median_absolute_deviation(x)
+1.2280762773108278
+>>> x[0] = 345.6
+>>> x.std()
+34.42304872314415
+>>> stats.median_absolute_deviation(x)
+1.2340335571164334
+
+Axis handling example:
+
+>>> x = np.array([[10, 7, 4], [3, 2, 1]])
+>>> x
+array([[10,  7,  4],
+       [ 3,  2,  1]])
+>>> stats.median_absolute_deviation(x)
+array([5.1891, 3.7065, 2.2239])
+>>> stats.median_absolute_deviation(x, axis=None)
+2.9652
+"""
+    if isinstance(scale, str):
+        if scale.lower() == 'raw':
+            warnings.warn(
+                "use of scale='raw' is deprecated, use scale=1.0 instead",
+                np.VisibleDeprecationWarning
+                )
+            scale = 1.0
+
+    if not isinstance(scale, str):
+        scale = 1 / scale
+
+    return median_abs_deviation(x, axis=axis, center=center, scale=scale,
+                                nan_policy=nan_policy)
 
 #####################################
 #         TRIMMING FUNCTIONS        #
 #####################################
+
 
 SigmaclipResult = namedtuple('SigmaclipResult', ('clipped', 'lower', 'upper'))
 

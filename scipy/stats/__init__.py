@@ -201,6 +201,7 @@ Summary statistics
    mvsdist
    entropy
    median_absolute_deviation
+   median_abs_deviation
 
 Frequency statistics
 ====================
