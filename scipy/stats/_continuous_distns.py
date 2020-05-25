@@ -4203,8 +4203,8 @@ class laplace_gen(rv_continuous):
         floc = kwds.pop('floc', None)
         fscale = kwds.pop('fscale', None)
 
-        check_fit_input_parameters(data, args,
-                                   kwds, fixed_param=(floc, fscale))
+        _check_fit_input_parameters(data, args,
+                                    kwds, fixed_param=(floc, fscale))
 
         # MLE for the laplace distribution
 
