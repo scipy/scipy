@@ -1882,11 +1882,11 @@ class TestVariability(object):
 class TestMedianAbsDeviation(object):
     def setup_class(self):
         self.dat_nan = np.array([2.20, 2.20, 2.4, 2.4, 2.5, 2.7, 2.8, 2.9,
-                3.03, 3.03, 3.10, 3.37, 3.4, 3.4, 3.4, 3.5, 3.6, 3.7, 3.7,
-                3.7, 3.7, 3.77, 5.28, np.nan])
+                                 3.03, 3.03, 3.10, 3.37, 3.4, 3.4, 3.4, 3.5,
+                                 3.6, 3.7, 3.7, 3.7, 3.7, 3.77, 5.28, np.nan])
         self.dat = np.array([2.20, 2.20, 2.4, 2.4, 2.5, 2.7, 2.8, 2.9, 3.03,
-                3.03, 3.10, 3.37, 3.4, 3.4, 3.4, 3.5, 3.6, 3.7, 3.7,
-                3.7, 3.7, 3.77, 5.28, 28.95])
+                             3.03, 3.10, 3.37, 3.4, 3.4, 3.4, 3.5, 3.6, 3.7,
+                             3.7, 3.7, 3.7, 3.77, 5.28, 28.95])
 
     def test_median_abs_deviation(self):
         assert_almost_equal(stats.median_abs_deviation(self.dat, axis=None),
