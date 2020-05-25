@@ -120,6 +120,8 @@ Inferential Stats
    ttest_rel
    chisquare
    power_divergence
+   kstest
+   ks_1samp
    ks_2samp
    epps_singleton_2samp
    mannwhitneyu
@@ -177,7 +179,6 @@ import scipy.special as special
 from scipy import linalg
 from . import distributions
 from . import mstats_basic
-from .mstats_basic import _contains_nan
 from ._stats_mstats_common import (_find_repeats, linregress, theilslopes,
                                    siegelslopes)
 from ._stats import (_kendall_dis, _toint64, _weightedrankedtau,
@@ -202,12 +203,42 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
            'spearmanr', 'pointbiserialr',
            'kendalltau', 'weightedtau', 'multiscale_graphcorr',
            'linregress', 'siegelslopes', 'theilslopes', 'ttest_1samp',
-           'ttest_ind', 'ttest_ind_from_stats', 'ttest_rel', 'kstest',
-           'chisquare', 'power_divergence', 'ks_2samp', 'mannwhitneyu',
+           'ttest_ind', 'ttest_ind_from_stats', 'ttest_rel',
+           'kstest', 'ks_1samp', 'ks_2samp',
+           'chisquare', 'power_divergence', 'mannwhitneyu',
            'tiecorrect', 'ranksums', 'kruskal', 'friedmanchisquare',
            'rankdata', 'rvs_ratio_uniforms',
            'combine_pvalues', 'wasserstein_distance', 'energy_distance',
            'brunnermunzel', 'epps_singleton_2samp']
+
+
+def _contains_nan(a, nan_policy='propagate'):
+    policies = ['propagate', 'raise', 'omit']
+    if nan_policy not in policies:
+        raise ValueError("nan_policy must be one of {%s}" %
+                         ', '.join("'%s'" % s for s in policies))
+    try:
+        # Calling np.sum to avoid creating a huge array into memory
+        # e.g. np.isnan(a).any()
+        with np.errstate(invalid='ignore'):
+            contains_nan = np.isnan(np.sum(a))
+    except TypeError:
+        # This can happen when attempting to sum things which are not
+        # numbers (e.g. as in the function `mode`). Try an alternative method:
+        try:
+            contains_nan = np.nan in set(a.ravel())
+        except TypeError:
+            # Don't know what to do. Fall back to omitting nan values and
+            # issue a warning.
+            contains_nan = False
+            nan_policy = 'omit'
+            warnings.warn("The input array could not be properly checked for nan "
+                          "values. nan values will be ignored.", RuntimeWarning)
+
+    if contains_nan and nan_policy == 'raise':
+        raise ValueError("The input contains nan values")
+
+    return contains_nan, nan_policy
 
 
 def _chk_asarray(a, axis):
@@ -5718,167 +5749,6 @@ def ttest_rel(a, b, axis=0, nan_policy='propagate'):
     return Ttest_relResult(t, prob)
 
 
-KstestResult = namedtuple('KstestResult', ('statistic', 'pvalue'))
-
-
-def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', mode='approx'):
-    """
-    Perform the Kolmogorov-Smirnov test for goodness of fit.
-
-    This performs a test of the distribution F(x) of an observed
-    random variable against a given distribution G(x). Under the null
-    hypothesis, the two distributions are identical, F(x)=G(x). The
-    alternative hypothesis can be either 'two-sided' (default), 'less'
-    or 'greater'. The KS test is only valid for continuous distributions.
-
-    Parameters
-    ----------
-    rvs : str, array_like, or callable
-        If a string, it should be the name of a distribution in `scipy.stats`.
-        If an array, it should be a 1-D array of observations of random
-        variables.
-        If a callable, it should be a function to generate random variables;
-        it is required to have a keyword argument `size`.
-    cdf : str or callable
-        If a string, it should be the name of a distribution in `scipy.stats`.
-        If `rvs` is a string then `cdf` can be False or the same as `rvs`.
-        If a callable, that callable is used to calculate the cdf.
-    args : tuple, sequence, optional
-        Distribution parameters, used if `rvs` or `cdf` are strings.
-    N : int, optional
-        Sample size if `rvs` is string or callable.  Default is 20.
-    alternative : {'two-sided', 'less', 'greater'}, optional
-        Defines the alternative hypothesis.
-        The following options are available (default is 'two-sided'):
-
-          * 'two-sided'
-          * 'less': one-sided, see explanation in Notes
-          * 'greater': one-sided, see explanation in Notes
-    mode : {'approx', 'asymp'}, optional
-        Defines the distribution used for calculating the p-value.
-        The following options are available (default is 'approx'):
-
-          * 'approx': use approximation to exact distribution of test statistic
-          * 'asymp': use asymptotic distribution of test statistic
-
-    Returns
-    -------
-    statistic : float
-        KS test statistic, either D, D+ or D-.
-    pvalue :  float
-        One-tailed or two-tailed p-value.
-
-    See Also
-    --------
-    ks_2samp
-
-    Notes
-    -----
-    In the one-sided test, the alternative is that the empirical
-    cumulative distribution function of the random variable is "less"
-    or "greater" than the cumulative distribution function G(x) of the
-    hypothesis, ``F(x)<=G(x)``, resp. ``F(x)>=G(x)``.
-
-    Examples
-    --------
-    >>> from scipy import stats
-
-    >>> x = np.linspace(-15, 15, 9)
-    >>> stats.kstest(x, 'norm')
-    (0.44435602715924361, 0.038850142705171065)
-
-    >>> np.random.seed(987654321) # set random seed to get the same result
-    >>> stats.kstest('norm', False, N=100)
-    (0.058352892479417884, 0.88531190944151261)
-
-    The above lines are equivalent to:
-
-    >>> np.random.seed(987654321)
-    >>> stats.kstest(stats.norm.rvs(size=100), 'norm')
-    (0.058352892479417884, 0.88531190944151261)
-
-    *Test against one-sided alternative hypothesis*
-
-    Shift distribution to larger values, so that ``cdf_dgp(x) < norm.cdf(x)``:
-
-    >>> np.random.seed(987654321)
-    >>> x = stats.norm.rvs(loc=0.2, size=100)
-    >>> stats.kstest(x,'norm', alternative = 'less')
-    (0.12464329735846891, 0.040989164077641749)
-
-    Reject equal distribution against alternative hypothesis: less
-
-    >>> stats.kstest(x,'norm', alternative = 'greater')
-    (0.0072115233216311081, 0.98531158590396395)
-
-    Don't reject equal distribution against alternative hypothesis: greater
-
-    >>> stats.kstest(x,'norm', mode='asymp')
-    (0.12464329735846891, 0.08944488871182088)
-
-    *Testing t distributed random variables against normal distribution*
-
-    With 100 degrees of freedom the t distribution looks close to the normal
-    distribution, and the K-S test does not reject the hypothesis that the
-    sample came from the normal distribution:
-
-    >>> np.random.seed(987654321)
-    >>> stats.kstest(stats.t.rvs(100,size=100),'norm')
-    (0.072018929165471257, 0.67630062862479168)
-
-    With 3 degrees of freedom the t distribution looks sufficiently different
-    from the normal distribution, that we can reject the hypothesis that the
-    sample came from the normal distribution at the 10% level:
-
-    >>> np.random.seed(987654321)
-    >>> stats.kstest(stats.t.rvs(3,size=100),'norm')
-    (0.131016895759829, 0.058826222555312224)
-
-    """
-    if isinstance(rvs, str):
-        if (not cdf) or (cdf == rvs):
-            cdf = getattr(distributions, rvs).cdf
-            rvs = getattr(distributions, rvs).rvs
-        else:
-            raise AttributeError("if rvs is string, cdf has to be the "
-                                 "same distribution")
-
-    if isinstance(cdf, str):
-        cdf = getattr(distributions, cdf).cdf
-    if callable(rvs):
-        kwds = {'size': N}
-        vals = np.sort(rvs(*args, **kwds))
-    else:
-        vals = np.sort(rvs)
-        N = len(vals)
-    cdfvals = cdf(vals, *args)
-
-    # to not break compatibility with existing code
-    if alternative == 'two_sided':
-        alternative = 'two-sided'
-
-    if alternative in ['two-sided', 'greater']:
-        Dplus = (np.arange(1.0, N + 1)/N - cdfvals).max()
-        if alternative == 'greater':
-            return KstestResult(Dplus, distributions.ksone.sf(Dplus, N))
-
-    if alternative in ['two-sided', 'less']:
-        Dmin = (cdfvals - np.arange(0.0, N)/N).max()
-        if alternative == 'less':
-            return KstestResult(Dmin, distributions.ksone.sf(Dmin, N))
-
-    if alternative == 'two-sided':
-        D = np.max([Dplus, Dmin])
-        if mode == 'asymp':
-            return KstestResult(D, distributions.kstwobign.sf(D * np.sqrt(N)))
-        if mode == 'approx':
-            pval_two = distributions.kstwobign.sf(D * np.sqrt(N))
-            if N > 2666 or pval_two > 0.80 - N*0.3/1000:
-                return KstestResult(D, pval_two)
-            else:
-                return KstestResult(D, 2 * distributions.ksone.sf(D, N))
-
-
 # Map from names to lambda_ values used in power_divergence().
 _power_div_lambda_names = {
     "pearson": 1,
@@ -6229,7 +6099,182 @@ def chisquare(f_obs, f_exp=None, ddof=0, axis=0):
                             lambda_="pearson")
 
 
-Ks_2sampResult = namedtuple('Ks_2sampResult', ('statistic', 'pvalue'))
+KstestResult = namedtuple('KstestResult', ('statistic', 'pvalue'))
+
+
+def _compute_dplus(cdfvals):
+    """Computes D+ as used in the Kolmogorov-Smirnov test.
+
+    Parameters
+    ----------
+    cdfvals: array_like
+      Sorted array of CDF values between 0 and 1
+
+    Returns
+    -------
+      Maximum distance of the CDF values below Uniform(0, 1)
+"""
+    n = len(cdfvals)
+    return (np.arange(1.0, n + 1) / n - cdfvals).max()
+
+
+def _compute_dminus(cdfvals):
+    """Computes D- as used in the Kolmogorov-Smirnov test.
+
+    Parameters
+    ----------
+    cdfvals: array_like
+      Sorted array of CDF values between 0 and 1
+
+    Returns
+    -------
+      Maximum distance of the CDF values above Uniform(0, 1)
+    """
+    n = len(cdfvals)
+    return (cdfvals - np.arange(0.0, n)/n).max()
+
+
+def ks_1samp(x, cdf, args=(), alternative='two-sided', mode='auto'):
+    """
+    Performs the Kolmogorov-Smirnov test for goodness of fit.
+
+    This performs a test of the distribution F(x) of an observed
+    random variable against a given distribution G(x). Under the null
+    hypothesis, the two distributions are identical, F(x)=G(x). The
+    alternative hypothesis can be either 'two-sided' (default), 'less'
+    or 'greater'. The KS test is only valid for continuous distributions.
+
+    Parameters
+    ----------
+    x : array_like
+        a 1-D array of observations of iid random variables.
+    cdf : callable
+        callable used to calculate the cdf.
+    args : tuple, sequence, optional
+        Distribution parameters, used with `cdf`.
+    alternative : {'two-sided', 'less', 'greater'}, optional
+        Defines the alternative hypothesis.
+        The following options are available (default is 'two-sided'):
+
+          * 'two-sided'
+          * 'less': one-sided, see explanation in Notes
+          * 'greater': one-sided, see explanation in Notes
+    mode : {'auto', 'exact', 'approx', 'asymp'}, optional
+        Defines the distribution used for calculating the p-value.
+        The following options are available (default is 'auto'):
+
+          * 'auto' : selects one of the other options.
+          * 'exact' : uses the exact distribution of test statistic.
+          * 'approx' : approximates the two-sided probability with twice the one-sided probability
+          * 'asymp': uses asymptotic distribution of test statistic
+
+    Returns
+    -------
+    statistic : float
+        KS test statistic, either D, D+ or D- (depending on the value of 'alternative')
+    pvalue :  float
+        One-tailed or two-tailed p-value.
+
+    See Also
+    --------
+    ks_2samp, kstest
+
+    Notes
+    -----
+    In the one-sided test, the alternative is that the empirical
+    cumulative distribution function of the random variable is "less"
+    or "greater" than the cumulative distribution function G(x) of the
+    hypothesis, ``F(x)<=G(x)``, resp. ``F(x)>=G(x)``.
+
+    Examples
+    --------
+    >>> from scipy import stats
+
+    >>> x = np.linspace(-15, 15, 9)
+    >>> stats.ks_1samp(x, stats.norm.cdf)
+    (0.44435602715924361, 0.038850142705171065)
+
+    >>> np.random.seed(987654321) # set random seed to get the same result
+    >>> stats.ks_1samp(stats.norm.rvs(size=100), stats.norm.cdf)
+    (0.058352892479417884, 0.8653960860778898)
+
+    *Test against one-sided alternative hypothesis*
+
+    Shift distribution to larger values, so that `` CDF(x) < norm.cdf(x)``:
+
+    >>> np.random.seed(987654321)
+    >>> x = stats.norm.rvs(loc=0.2, size=100)
+    >>> stats.ks_1samp(x, stats.norm.cdf, alternative='less')
+    (0.12464329735846891, 0.040989164077641749)
+
+    Reject equal distribution against alternative hypothesis: less
+
+    >>> stats.ks_1samp(x, stats.norm.cdf, alternative='greater')
+    (0.0072115233216311081, 0.98531158590396395)
+
+    Don't reject equal distribution against alternative hypothesis: greater
+
+    >>> stats.ks_1samp(x, stats.norm.cdf)
+    (0.12464329735846891, 0.08197335233541582)
+
+    Don't reject equal distribution against alternative hypothesis: two-sided
+
+    *Testing t distributed random variables against normal distribution*
+
+    With 100 degrees of freedom the t distribution looks close to the normal
+    distribution, and the K-S test does not reject the hypothesis that the
+    sample came from the normal distribution:
+
+    >>> np.random.seed(987654321)
+    >>> stats.ks_1samp(stats.t.rvs(100,size=100), stats.norm.cdf)
+    (0.072018929165471257, 0.6505883498379312)
+
+    With 3 degrees of freedom the t distribution looks sufficiently different
+    from the normal distribution, that we can reject the hypothesis that the
+    sample came from the normal distribution at the 10% level:
+
+    >>> np.random.seed(987654321)
+    >>> stats.ks_1samp(stats.t.rvs(3,size=100), stats.norm.cdf)
+    (0.131016895759829, 0.058826222555312224)
+
+    """
+    alternative = {'t': 'two-sided', 'g': 'greater', 'l': 'less'}.get(
+       alternative.lower()[0], alternative)
+    if alternative not in ['two-sided', 'greater', 'less']:
+        raise ValueError("Unexpected alternative %s" % alternative)
+    if np.ma.is_masked(x):
+        x = x.compressed()
+
+    N = len(x)
+    x = np.sort(x)
+    cdfvals = cdf(x, *args)
+
+    if alternative == 'greater':
+        Dplus = _compute_dplus(cdfvals)
+        return KstestResult(Dplus, distributions.ksone.sf(Dplus, N))
+
+    if alternative == 'less':
+        Dminus = _compute_dminus(cdfvals)
+        return KstestResult(Dminus, distributions.ksone.sf(Dminus, N))
+
+    # alternative == 'two-sided':
+    Dplus = _compute_dplus(cdfvals)
+    Dminus = _compute_dminus(cdfvals)
+    D = np.max([Dplus, Dminus])
+    if mode == 'auto':  # Always select exact
+        mode = 'exact'
+    if mode == 'exact':
+        prob = distributions.kstwo.sf(D, N)
+    elif mode == 'asymp':
+        prob = distributions.kstwobign.sf(D * np.sqrt(N))
+    else:
+        # mode == 'approx'
+        prob = 2 * distributions.ksone.sf(D, N)
+    prob = np.clip(prob, 0, 1)
+    return KstestResult(D, prob)
+
+
+Ks_2sampResult = KstestResult
 
 
 def _compute_prob_inside_method(m, n, g, h):
@@ -6421,10 +6466,11 @@ def _count_paths_outside_method(m, n, g, h):
     mg = m // g
     ng = n // g
 
-    #  0 <= x_j <= m is the smallest integer for which n*x_j - m*j < g*h
-    xj = [int(np.ceil((h + mg * j)/ng)) for j in range(n+1)]
-    xj = [_ for _ in xj if _ <= m]
-    lxj = len(xj)
+    # Not every x needs to be considered.
+    # xj holds the list of x values to be checked.
+    # Wherever n*x/m + ng*h crosses an integer
+    lxj = n + (mg-h)//mg
+    xj = [(h + mg * j + ng-1)//ng for j in range(lxj)]
     # B is an array just holding a few values of B(x,y), the ones needed.
     # B[j] == B(x_j, j)
     if lxj == 0:
@@ -6440,8 +6486,7 @@ def _count_paths_outside_method(m, n, g, h):
             raise FloatingPointError()
         for i in range(j):
             bin = np.round(special.binom(xj[j] - xj[i] + j - i, j-i))
-            dec = bin * B[i]
-            Bj -= dec
+            Bj -= bin * B[i]
         B[j] = Bj
         if not np.isfinite(Bj):
             raise FloatingPointError()
@@ -6456,6 +6501,52 @@ def _count_paths_outside_method(m, n, g, h):
     return np.round(num_paths)
 
 
+def _attempt_exact_2kssamp(n1, n2, g, d, alternative):
+    """Attempts to compute the exact 2sample probability.
+
+    n1, n2 are the sample sizes
+    g is the gcd(n1, n2)
+    d is the computed max difference in ECDFs
+
+    Returns (success, d, probability)
+    """
+    lcm = (n1 // g) * n2
+    h = int(np.round(d * lcm))
+    d = h * 1.0 / lcm
+    if h == 0:
+        return True, d, 1.0
+    saw_fp_error, prob = False, np.nan
+    try:
+        if alternative == 'two-sided':
+            if n1 == n2:
+                prob = _compute_prob_outside_square(n1, h)
+            else:
+                prob = 1 - _compute_prob_inside_method(n1, n2, g, h)
+        else:
+            if n1 == n2:
+                # prob = binom(2n, n-h) / binom(2n, n)
+                # Evaluating in that form incurs roundoff errors
+                # from special.binom. Instead calculate directly
+                jrange = np.arange(h)
+                prob = np.prod((n1 - jrange) / (n1 + jrange + 1.0))
+            else:
+                num_paths = _count_paths_outside_method(n1, n2, g, h)
+                bin = special.binom(n1 + n2, n1)
+                if not np.isfinite(bin) or not np.isfinite(num_paths) or num_paths > bin:
+                    saw_fp_error = True
+                else:
+                    prob = num_paths / bin
+
+    except FloatingPointError:
+        saw_fp_error = True
+
+    if saw_fp_error:
+        return False, d, np.nan
+    if not (0 <= prob <= 1):
+        return False, d, prob
+    return True, d, prob
+
+
 def ks_2samp(data1, data2, alternative='two-sided', mode='auto'):
     """
     Compute the Kolmogorov-Smirnov statistic on 2 samples.
@@ -6466,7 +6557,7 @@ def ks_2samp(data1, data2, alternative='two-sided', mode='auto'):
 
     Parameters
     ----------
-    data1, data2 : sequence of 1-D ndarrays
+    data1, data2 : array_like, 1-Dimensional
         Two arrays of sample observations assumed to be drawn from a continuous
         distribution, sample sizes can be different.
     alternative : {'two-sided', 'less', 'greater'}, optional
@@ -6481,7 +6572,7 @@ def ks_2samp(data1, data2, alternative='two-sided', mode='auto'):
         The following options are available (default is 'auto'):
 
           * 'auto' : use 'exact' for small size arrays, 'asymp' for large
-          * 'exact' : use approximation to exact distribution of test statistic
+          * 'exact' : use exact distribution of test statistic
           * 'asymp' : use asymptotic distribution of test statistic
 
     Returns
@@ -6493,7 +6584,7 @@ def ks_2samp(data1, data2, alternative='two-sided', mode='auto'):
 
     See Also
     --------
-    kstest
+    kstest, ks_1samp, epps_singleton_2samp, anderson_ksamp
 
     Notes
     -----
@@ -6558,7 +6649,17 @@ def ks_2samp(data1, data2, alternative='two-sided', mode='auto'):
     (0.07999999999999996, 0.41126949729859719)
 
     """
-    LARGE_N = 10000  # 'auto' will attempt to be exact if n1,n2 <= LARGE_N
+    if mode not in ['auto', 'exact', 'asymp']:
+        raise ValueError(f'Invalid value for mode: {mode}')
+    alternative = {'t': 'two-sided', 'g': 'greater', 'l': 'less'}.get(
+       alternative.lower()[0], alternative)
+    if alternative not in ['two-sided', 'less', 'greater']:
+        raise ValueError(f'Invalid value for alternative: {alternative}')
+    MAX_AUTO_N = 10000  # 'auto' will attempt to be exact if n1,n2 <= MAX_AUTO_N
+    if np.ma.is_masked(data1):
+        data1 = data1.compressed()
+    if np.ma.is_masked(data2):
+        data2 = data2.compressed()
     data1 = np.sort(data1)
     data2 = np.sort(data2)
     n1 = data1.shape[0]
@@ -6581,10 +6682,7 @@ def ks_2samp(data1, data2, alternative='two-sided', mode='auto'):
     prob = -np.inf
     original_mode = mode
     if mode == 'auto':
-        if max(n1, n2) <= LARGE_N:
-            mode = 'exact'
-        else:
-            mode = 'asymp'
+        mode = 'exact' if max(n1, n2) <= MAX_AUTO_N else 'asymp'
     elif mode == 'exact':
         # If lcm(n1, n2) is too big, switch from exact to asymp
         if n1g >= np.iinfo(np.int).max / n2g:
@@ -6593,62 +6691,19 @@ def ks_2samp(data1, data2, alternative='two-sided', mode='auto'):
                 "Exact ks_2samp calculation not possible with samples sizes "
                 "%d and %d. Switching to 'asymp' " % (n1, n2), RuntimeWarning)
 
-    saw_fp_error = False
     if mode == 'exact':
-        lcm = (n1 // g) * n2
-        h = int(np.round(d * lcm))
-        d = h * 1.0 / lcm
-        if h == 0:
-            prob = 1.0
-        else:
-            try:
-                if alternative == 'two-sided':
-                    if n1 == n2:
-                        prob = _compute_prob_outside_square(n1, h)
-                    else:
-                        prob = 1 - _compute_prob_inside_method(n1, n2, g, h)
-                else:
-                    if n1 == n2:
-                        # prob = binom(2n, n-h) / binom(2n, n)
-                        # Evaluating in that form incurs roundoff errors
-                        # from special.binom. Instead calculate directly
-                        prob = 1.0
-                        for j in range(h):
-                            prob = (n1 - j) * prob / (n1 + j + 1)
-                    else:
-                        num_paths = _count_paths_outside_method(n1, n2, g, h)
-                        bin = special.binom(n1 + n2, n1)
-                        if not np.isfinite(bin) or not np.isfinite(num_paths) or num_paths > bin:
-                            raise FloatingPointError()
-                        prob = num_paths / bin
-
-            except FloatingPointError:
-                # Switch mode
-                mode = 'asymp'
-                saw_fp_error = True
-                # Can't raise warning here, inside the try
-            finally:
-                if saw_fp_error:
-                    if original_mode == 'exact':
-                        warnings.warn(
-                            "ks_2samp: Exact calculation overflowed. "
-                            "Switching to mode=%s" % mode, RuntimeWarning)
-                else:
-                    if prob > 1 or prob < 0:
-                        mode = 'asymp'
-                        if original_mode == 'exact':
-                            warnings.warn(
-                                "ks_2samp: Exact calculation incurred large"
-                                " rounding error. Switching to mode=%s" % mode,
-                                RuntimeWarning)
+        success, d, prob = _attempt_exact_2kssamp(n1, n2, g, d, alternative)
+        if not success:
+            mode = 'asymp'
+            if original_mode == 'exact':
+                warnings.warn(f"ks_2samp: Exact calculation unsuccessful. "
+                              f"Switching to mode={mode}.", RuntimeWarning)
 
     if mode == 'asymp':
         # The product n1*n2 is large.  Use Smirnov's asymptoptic formula.
         if alternative == 'two-sided':
-            en = np.sqrt(n1 * n2 / (n1 + n2))
-            # Switch to using kstwo.sf() when it becomes available.
-            # prob = distributions.kstwo.sf(d, int(np.round(en)))
-            prob = distributions.kstwobign.sf(en * d)
+            en = n1 * n2 / (n1 + n2)
+            prob = distributions.kstwo.sf(d, np.round(en))
         else:
             m, n = max(n1, n2), min(n1, n2)
             z = np.sqrt(m*n/(m+n)) * d
@@ -6656,8 +6711,169 @@ def ks_2samp(data1, data2, alternative='two-sided', mode='auto'):
             expt = -2 * z**2 - 2 * z * (m + 2*n)/np.sqrt(m*n*(m+n))/3.0
             prob = np.exp(expt)
 
-    prob = (0 if prob < 0 else (1 if prob > 1 else prob))
-    return Ks_2sampResult(d, prob)
+    prob = np.clip(prob, 0, 1)
+    return KstestResult(d, prob)
+
+
+def _parse_kstest_args(data1, data2, args, N):
+    # kstest allows many different variations of arguments.
+    # Pull out the parsing into a separate function
+    # (xvals, yvals, )  # 2sample
+    # (xvals, cdf function,..)
+    # (xvals, name of distribution, ...)
+    # (name of distribution, name of distribution, ...)
+
+    # Returns xvals, yvals, cdf
+    # where cdf is a cdf function, or None
+    # and yvals is either an array_like of values, or None
+    # and xvals is array_like.
+    rvsfunc, cdf = None, None
+    if isinstance(data1, str):
+        rvsfunc = getattr(distributions, data1).rvs
+    elif callable(data1):
+        rvsfunc = data1
+
+    if isinstance(data2, str):
+        cdf = getattr(distributions, data2).cdf
+        data2 = None
+    elif callable(data2):
+        cdf = data2
+        data2 = None
+
+    data1 = np.sort(rvsfunc(*args, size=N) if rvsfunc else data1)
+    return data1, data2, cdf
+
+
+def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', mode='auto'):
+    """
+    Performs the (one sample or two samples) Kolmogorov-Smirnov test for goodness of fit.
+
+    The one-sample test performs a test of the distribution F(x) of an observed
+    random variable against a given distribution G(x). Under the null
+    hypothesis, the two distributions are identical, F(x)=G(x). The
+    alternative hypothesis can be either 'two-sided' (default), 'less'
+    or 'greater'. The KS test is only valid for continuous distributions.
+    The two-sample test tests whether the two independent samples are drawn
+    from the same continuous distribution.
+
+    Parameters
+    ----------
+    rvs : str, array_like, or callable
+        If an array, it should be a 1-D array of observations of random
+        variables.
+        If a callable, it should be a function to generate random variables;
+        it is required to have a keyword argument `size`.
+        If a string, it should be the name of a distribution in `scipy.stats`,
+        which will be used to generate random variables.
+    cdf : str, array_like or callable
+        If array_like, it should be a 1-D array of observations of random
+        variables, and the two-sample test is performed (and rvs must be array_like)
+        If a callable, that callable is used to calculate the cdf.
+        If a string, it should be the name of a distribution in `scipy.stats`,
+        which will be used as the cdf function.
+    args : tuple, sequence, optional
+        Distribution parameters, used if `rvs` or `cdf` are strings or callables.
+    N : int, optional
+        Sample size if `rvs` is string or callable.  Default is 20.
+    alternative : {'two-sided', 'less', 'greater'}, optional
+        Defines the alternative hypothesis.
+        The following options are available (default is 'two-sided'):
+
+          * 'two-sided'
+          * 'less': one-sided, see explanation in Notes
+          * 'greater': one-sided, see explanation in Notes
+    mode : {'auto', 'exact', 'approx', 'asymp'}, optional
+        Defines the distribution used for calculating the p-value.
+        The following options are available (default is 'auto'):
+
+          * 'auto' : selects one of the other options.
+          * 'exact' : uses the exact distribution of test statistic.
+          * 'approx' : approximates the two-sided probability with twice the one-sided probability
+          * 'asymp': uses asymptotic distribution of test statistic
+
+    Returns
+    -------
+    statistic : float
+        KS test statistic, either D, D+ or D-.
+    pvalue :  float
+        One-tailed or two-tailed p-value.
+
+    See Also
+    --------
+    ks_2samp
+
+    Notes
+    -----
+    In the one-sided test, the alternative is that the empirical
+    cumulative distribution function of the random variable is "less"
+    or "greater" than the cumulative distribution function G(x) of the
+    hypothesis, ``F(x)<=G(x)``, resp. ``F(x)>=G(x)``.
+
+    Examples
+    --------
+    >>> from scipy import stats
+
+    >>> x = np.linspace(-15, 15, 9)
+    >>> stats.kstest(x, 'norm')
+    (0.44435602715924361, 0.038850142705171065)
+
+    >>> np.random.seed(987654321) # set random seed to get the same result
+    >>> stats.kstest(stats.norm.rvs(size=100), stats.norm.cdf)
+    (0.058352892479417884, 0.8653960860778898)
+
+    The above lines are equivalent to:
+
+    >>> np.random.seed(987654321)
+    >>> stats.kstest(stats.norm.rvs, 'norm', N=100)
+    (0.058352892479417884, 0.8653960860778898)
+
+    *Test against one-sided alternative hypothesis*
+
+    Shift distribution to larger values, so that ``CDF(x) < norm.cdf(x)``:
+
+    >>> np.random.seed(987654321)
+    >>> x = stats.norm.rvs(loc=0.2, size=100)
+    >>> stats.kstest(x, 'norm', alternative='less')
+    (0.12464329735846891, 0.040989164077641749)
+
+    Reject equal distribution against alternative hypothesis: less
+
+    >>> stats.kstest(x, 'norm', alternative='greater')
+    (0.0072115233216311081, 0.98531158590396395)
+
+    Don't reject equal distribution against alternative hypothesis: greater
+
+    >>> stats.kstest(x, 'norm')
+    (0.12464329735846891, 0.08197335233541582)
+
+    *Testing t distributed random variables against normal distribution*
+
+    With 100 degrees of freedom the t distribution looks close to the normal
+    distribution, and the K-S test does not reject the hypothesis that the
+    sample came from the normal distribution:
+
+    >>> np.random.seed(987654321)
+    >>> stats.kstest(stats.t.rvs(100, size=100), 'norm')
+    (0.072018929165471257, 0.6505883498379312)
+
+    With 3 degrees of freedom the t distribution looks sufficiently different
+    from the normal distribution, that we can reject the hypothesis that the
+    sample came from the normal distribution at the 10% level:
+
+    >>> np.random.seed(987654321)
+    >>> stats.kstest(stats.t.rvs(3, size=100), 'norm')
+    (0.131016895759829, 0.058826222555312224)
+
+    """
+    # to not break compatibility with existing code
+    if alternative == 'two_sided':
+        alternative = 'two-sided'
+    if alternative not in ['two-sided', 'greater', 'less']:
+        raise ValueError("Unexpected alternative %s" % alternative)
+    xvals, yvals, cdf = _parse_kstest_args(rvs, cdf, args, N)
+    if cdf:
+        return ks_1samp(xvals, cdf, args=args, alternative=alternative, mode=mode)
+    return ks_2samp(xvals, yvals, alternative=alternative, mode=mode)
 
 
 def tiecorrect(rankvals):

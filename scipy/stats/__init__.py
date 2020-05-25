@@ -249,9 +249,10 @@ Statistical tests
    ttest_ind
    ttest_ind_from_stats
    ttest_rel
-   kstest
    chisquare
    power_divergence
+   kstest
+   ks_1samp
    ks_2samp
    epps_singleton_2samp
    mannwhitneyu
