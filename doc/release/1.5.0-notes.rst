@@ -6,7 +6,7 @@ SciPy 1.5.0 Release Notes
 
 .. contents::
 
-SciPy 1.5.0 is the culmination of X months of hard work. It contains
+SciPy 1.5.0 is the culmination of 6 months of hard work. It contains
 many new features, numerous bug-fixes, improved test coverage and better
 documentation. There have been a number of deprecations and API changes
 in this release, which are documented below. All users are encouraged to
@@ -15,7 +15,7 @@ optimizations. Before upgrading, we recommend that users check that
 their own code does not use deprecated SciPy functionality (to do so,
 run your code with ``python -Wd`` and check for ``DeprecationWarning`` s).
 Our development attention will now shift to bug-fix releases on the
-1.3.x branch, and on adding new features on the master branch.
+1.5.x branch, and on adding new features on the master branch.
 
 This release requires Python 3.6+ and NumPy 1.14.5 or greater.
 
@@ -24,11 +24,29 @@ For running on PyPy, PyPy3 6.0+ and NumPy 1.15.0 are required.
 Highlights of this release
 --------------------------
 
+- wrapers for more than a dozen new ``LAPACK`` routines are now available
+  in `scipy.linalg.lapack`
+- `scipy.optimize` ``minimize`` methods using finite difference numerical 
+  differentiation have gained several new features and there have been
+  performance improvements in `scipy.optimize.linprog` and minimization
+  evaluations using a Hessian approximation
 -
 
 
 New features
 ============
+
+`scipy.cluster` improvements
+------------------------------
+Initialization of `scipy.cluster.vq.kmeans2` using ``minit="++"`` had a 
+quadratic complexity in the number of samples. It has been improved, resulting 
+in a now much faster, with quasi-linear complexity, initialization.
+
+`scipy.fft` improvements
+------------------------------
+A new keyword-only argument ``plan`` is added to all FFT functions in this 
+module. It is reserved for passing in a precomputed plan provided by 
+downstream FFT vendors, and it is currently not used in SciPy.
 
 `scipy.integrate` improvements
 ------------------------------
@@ -39,11 +57,61 @@ New features
 
 `scipy.io` improvements
 -----------------------
+`scipy.io.wavfile` error messages are more explicit about what's wrong, and 
+extraneous bytes at the ends of files are ignored instead of raising an error 
+when the data has successfully been read.
 
+`scipy.io.loadmat` gained a ``simplify_cells`` parameter, which if set to 
+``True`` simplifies the structure of the return value if the ``.mat`` file 
+contains cell arrays.
 
 `scipy.linalg` improvements
 ---------------------------
+`scipy.linalg.eigh` has been improved. Now various ``LAPACK`` drivers can be 
+selected at will and also subsets of eigenvalues can be requested via 
+``subset_by_value`` keyword. Another keyword ``subset_by_index`` is introduced.
+Keywords ``turbo`` and ``eigvals`` are deprecated.
 
+Similarly, standard and generalized Hermitian eigenvalue ``LAPACK`` routines 
+``?<sy/he>evx`` are added and existing ones now have full ``_lwork``
+counterparts.
+
+Wrappers for the following ``LAPACK`` routines have been added to 
+`scipy.linalg.lapack`:
+
+- ``?getc2``: computes the LU factorization of a general matrix with complete 
+pivoting
+- ``?gesc2``: solves a linear system given an LU factorization from ``?getc2``
+- ``?gejsv``: computes the singular value decomposition of a general matrix 
+with higher accuracy calculation of tiny singular values and their 
+corresponding singular vectors
+- ``?geqrfp``: computes the QR factorization of a general matrix with 
+non-negative elements on the diagonal of R
+- ``?gtsvx``: solves a linear system with general tridiagonal matrix
+- ``?gttrf``: computes the LU factorization of a tridiagonal matrix
+- ``?gttrs``: solves a linear system given an LU factorization from ``?gttrf``
+- ``?ptsvx``: solves a linear system with symmetric positive definite 
+tridiagonal matrix
+- ``?pttrf``: computes the LU factorization of a symmetric positive definite 
+tridiagonal matrix
+- ``?pttrs``: solves a linear system given an LU factorization from ``?pttrf``
+- ``?pteqr``: computes the eigenvectors and eigenvalues of a positive definite 
+tridiagonal matrix
+- ``?tbtrs``: solves a linear system with a triangular banded matrix
+- ``?csd``: computes the Cosine Sine decomposition of an orthogonal/unitary 
+matrix
+
+Generalized QR factorization routines (``?geqrf``) now have full ``_lwork`` 
+counterparts.
+
+`scipy.linalg.cossin` Cosine Sine decomposition of unitary matrices has been 
+added.
+
+The function `scipy.linalg.khatri_rao`, which computes the Khatri-Rao product,
+was added.
+
+The new function `scipy.linalg.convolution_matrix` constructs the Toeplitz 
+matrix representing one-dimensional convolution.
 
 `scipy.ndimage` improvements
 ----------------------------
@@ -51,26 +119,144 @@ New features
 
 `scipy.optimize` improvements
 -----------------------------
+The finite difference numerical differentiation used in various ``minimize``
+methods that use gradients has several new features:
 
+- 2-point, 3-point, or complex step finite differences can be used. Previously 
+  only a 2-step finite difference was available.
+- There is now the possibility to use a relative step size, previously only an
+  absolute step size was available.
+- If the ``minimize`` method uses bounds the numerical differentiation strictly 
+  obeys those limits.
+- The numerical differentiation machinery now makes use of a simple cache, 
+  which in some cases can reduce the number of function evaluations.
+
+There have been several improvements to `scipy.optimize.linprog`:
+
+- The ``linprog`` benchmark suite has been expanded considerably.
+- ``linprog``'s dense pivot-based redundancy removal routine and sparse 
+  presolve are faster
+- When ``scikit-sparse`` is available, solving sparse problems with 
+  ``method='interior-point'`` is faster
+
+The caching of values when optimizing a function returning both value and 
+gradient together has been improved, avoiding repeated function evaluations 
+when using a ``HessianApproximation`` such as ``BFGS``.
+
+``differential_evolution`` can now use the modern ``np.random.Generator`` as 
+well as the legacy ``np.random.RandomState`` as a seed.
 
 `scipy.signal` improvements
 ---------------------------
+A new optional argument ``include_nyquist`` is added to ``freqz`` functions in 
+this module. It is used for including the last frequency (Nyquist frequency).
 
+`scipy.signal.find_peaks_cwt` now accepts a ``window_size`` parameter for the 
+size of the window used to calculate the noise floor.
 
 `scipy.sparse` improvements
 ---------------------------
+Outer indexing is now faster when using a 2d column vector to select column 
+indices.
+
+`scipy.sparse.lil.tocsr` is faster
 
 `scipy.spatial` improvements
 ----------------------------
+`scipy.spatial.geometric_slerp` has been added to enable geometric 
+spherical linear interpolation on an n-sphere
+
+`scipy.spatial.SphericalVoronoi` now supports calculation of region areas in 2D 
+and 3D cases
+
+`scipy.special` improvements
+--------------------------
+The inverse error function and complimentary inverse error function now 
+provide a Cython interface and are now accessible as 
+`scipy.special.cython_special.erfinv` and `scipy.special.cython_special.erfcinv`
+respectively.
+
+`scipy.special.log_softmax` has been added to calculate the logarithm of softmax 
+function. It provides better accuracy than ``log(scipy.special.softmax(x))`` for 
+inputs that make softmax saturate.
 
 `scipy.stats` improvements
 --------------------------
+The function for generating random samples in `scipy.stats.dlaplace` has been 
+improved. The new function generates random samples by calculating the 
+difference between two independent and identically distributed geometric 
+distributions. This new function is approximately twice as fast as the previous 
+(default) function which generated samples by inverting the CDF. This new 
+function also uses less memory than the previous function. For one sample, the 
+new function uses ~25% less memory; for one million samples, it uses ~40% less 
+memory; for ten million samples, it uses ~60% less memory.
+
+`scipy.stats` functions that accept a seed for reproducible calculations using 
+random number generation (e.g. random variates from distributions) can now use 
+the modern ``np.random.Generator`` as well as the legacy 
+``np.random.RandomState`` as a seed.
+
+The ``axis`` parameter was added to `scipy.stats.rankdata`. This allows slices 
+of an array along the given axis to be ranked independently.
+
+The ``axis`` parameter was added to `scipy.stats.f_oneway`, allowing it compute 
+multiple one-way ANOVA tests for data stored in n-dimensional arrays.
+
+The PDF and CDF methods for ``stats.geninvgauss`` are now significantly faster 
+as  the numerical integration to calculate the CDF uses a Cython based 
+``LowLevelCallable``.
+
+Moments of the normal distribution (`scipy.stats.norm`) are now calculated using 
+analytical formulas instead of numerical integration for greater speed and 
+accuracy
+
+Moments and entropy trapezoidal distribution (`scipy.stats.trapz`) are now 
+calculated using analytical formulas instead of numerical integration for 
+greater speed and accuracy
+
+Methods of the truncated normal distribution (`scipy.stats.truncnorm`), 
+especially ``_rvs``, are significantly faster after a complete rewrite.
+
+Generation of random variates is now thread safe for all SciPy distributions. 
+3rd-party distributions may need to modify the signature of the ``_rvs()`` 
+method to conform to ``_rvs(self, ..., size=None, random_state=None)``. (A 
+one-time VisibleDeprecationWarning is emitted when using non-conformant 
+distributions.)
+
+The Kolmogorov-Smirnov two-sided test statistic distribution 
+(`scipy.stats.kstwo`) was added. Calculates the distribution of the K-S 
+two-sided statistic ``D_n`` for a sample of size n, using a mixture of exact 
+and asymptotic algorithms.
+
+The new function ``median_abs_deviation`` replaces the deprecated 
+``median_absolute_deviation``.
+
+The ``wilcoxon`` function now computes the p-value for Wilcoxon's signed rank 
+test using the exact distribution for inputs up to length 25.  The function has 
+a new ``mode`` parameter to specify how the p-value is to be computed.  The 
+default is ``"auto"``, which uses the exact distribution for inputs up to length 
+25 and the normal approximation for larger inputs.
 
 Deprecated features
 ===================
 
 `scipy` deprecations
 --------------------
+
+`scipy.special` changes
+-----------------------
+The ``bdtr``, ``bdtrc``, and ``bdtri`` functions are deprecating non-negative 
+non-integral ``n`` arguments. With this release ``n>0`` is still supported for 
+arbitrary ``n``. However, a deprecation warning is emitted notifying that 
+non-integral n will not be supported with SciPy ``1.7.0`` release.
+
+`scipy.stats` changes
+---------------------
+The function ``median_absolute_deviation`` is deprecated. Use 
+``median_abs_deviation`` instead.
+
+The use of the string ``"raw"`` with the ``scale`` parameter of ``iqr`` is 
+deprecated. Use ``scale=1`` instead.
 
 Backwards incompatible changes
 ==============================
@@ -80,9 +266,17 @@ Backwards incompatible changes
 
 `scipy.linalg` changes
 ----------------------
+The output signatures of ``?syevr``, ``?heevr`` have been changed from 
+``w, v, info`` to ``w, v, m, isuppz, info``
+
+The order of output arguments ``w``, ``v`` of ``<sy/he>{gv, gvd, gvx}`` is 
+swapped.
 
 `scipy.signal` changes
 ----------------------
+The output length of `scipy.signal.upfirdn` has been corrected, resulting 
+outputs may now be shorter for some combinations of up/down ratios and input 
+signal and filter lengths.
 
 `scipy.stats` changes
 ---------------------
@@ -90,11 +284,147 @@ Backwards incompatible changes
 
 Other changes
 =============
+Shims designed to ensure the compatibility of SciPy with Python 2.7 have now 
+been removed.
+
+Many warnings due to unused imports and unused assignments have been addressed.
 
 
 Authors
 =======
 
+* @endolith
+* Hameer Abbasi
+* ADmitri +
+* Wesley Alves +
+* Berkay Antmen +
+* Sylwester Arabas +
+* Arne Küderle +
+* Christoph Baumgarten
+* Peter Bell
+* Felix Berkenkamp
+* Jordão Bragantini +
+* Clemens Brunner +
+* Evgeni Burovski
+* Matthias Bussonnier +
+* CJ Carey
+* Derrick Chambers +
+* Leander Claes +
+* Christian Clauss
+* Luigi F. Cruz +
+* dankleeman
+* Andras Deak
+* Milad Sadeghi DM +
+* jeremie du boisberranger +
+* Stefan Endres
+* Malte Esders +
+* Leo Fang +
+* felixhekhorn +
+* Isuru Fernando
+* Andrew Fowlie
+* Lakshay Garg +
+* Gaurav Gijare +
+* GitHub
+* Ralf Gommers
+* Emmanuelle Gouillart +
+* Kevin Green +
+* Martin Grignard +
+* Maja Gwozdz
+* gyu-don +
+* Matt Haberland
+* hakeemo +
+* Charles Harris
+* Alex Henrie
+* Santi Hernandez +
+* William Hickman +
+* Till Hoffmann +
+* Anany Shrey Jain
+* Jakob Jakobson
+* Charles Jekel +
+* Julien Jerphanion +
+* Jiacheng-Liu +
+* Christoph Kecht +
+* Paul Kienzle +
+* Reidar Kind +
+* Dmitry E. Kislov +
+* Konrad +
+* Konrad0
+* Takuya KOUMURA +
+* Krzysztof Pióro
+* Peter Mahler Larsen
+* Eric Larson
+* Antony Lee
+* Gregory Lee +
+* Gregory R. Lee
+* Chelsea Liu
+* Cong Ma +
+* Kevin Mader +
+* Maja Gwóźdź +
+* Alex Marvin +
+* Matthias Kümmerer
+* Nikolay Mayorov
+* Mazay0 +
+* G. D. McBain
+* Nicholas McKibben +
+* Sabrina J. Mielke +
+* Sebastian J. Mielke +
+* Miloš Komarčević +
+* Shubham Mishra +
+* Santiago M. Mola +
+* Grzegorz Mrukwa +
+* Peyton Murray
+* Andrew Nelson
+* Nico Schlömer
+* nwjenkins +
+* odidev +
+* Sambit Panda
+* Vikas Pandey +
+* Rick Paris +
+* Harshal Prakash Patankar +
+* Balint Pato +
+* Matti Picus
+* Ilhan Polat
+* poom +
+* Siddhesh Poyarekar
+* Vladyslav Rachek +
+* Bharat Raghunathan
+* Manu Rajput +
+* Tyler Reddy
+* Andrew Reed +
+* Lucas Roberts
+* Ariel Rokem
+* Heshy Roskes
+* Matt Ruffalo
+* Atsushi Sakai +
+* Benjamin Santos +
+* Christoph Schock +
+* Lisa Schwetlick +
+* Chris Simpson +
+* Leo Singer
+* Kai Striega
+* Søren Fuglede Jørgensen
+* Seth Troisi +
+* Robert Uhl +
+* Paul van Mulbregt
+* Vasiliy +
+* Isaac Virshup +
+* Pauli Virtanen
+* Shakthi Visagan +
+* Jan Vleeshouwers +
+* Sam Wallan +
+* Lijun Wang +
+* Warren Weckesser
+* Richard Weiss +
+* wenhui-prudencemed +
+* Eric Wieser
+* Josh Wilson
+* James Wright +
+* Ruslan Yevdokymov +
+* Ziyao Zhang +
+
+A total of 128 people contributed to this release.
+People with a "+" by their names contributed a patch for the first time.
+This list of names is automatically generated, and may not be fully complete.
 
 Issues closed for 1.5.0
 -----------------------
