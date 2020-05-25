@@ -1942,8 +1942,6 @@ class TestCorrelate(object):
         assert_equal(lags[lag_index], expected)
 
 
-
-
 @pytest.mark.parametrize('dt', [np.csingle, np.cdouble, np.clongdouble])
 class TestCorrelateComplex(object):
     # The decimal precision to be used for comparing results.

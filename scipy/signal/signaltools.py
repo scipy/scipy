@@ -129,8 +129,6 @@ def correlate(in1, in2, mode='full', method='auto', return_lags=False):
         Returns a tuple (correlation, lags) for cross-correlation. Lags can
         be indexed with the np.argmax of the correlation to return the lag.
 
-        Infers the desired use of the 'fft' method in 'full' mode.
-
     Returns
     -------
     correlate : array
