@@ -2684,8 +2684,10 @@ def iqr(x, axis=None, rng=(25, 75), scale=1.0, nan_policy='propagate',
         The numerical value of scale will be divided out of the final
         result. The following string values are recognized:
 
-          'raw' : No scaling, just return the raw IQR.
-          'normal' : Scale by :math:`2 \sqrt{2} erf^{-1}(\frac{1}{2}) \approx 1.349`.
+          * 'raw' : No scaling, just return the raw IQR.
+            **Deprecated!**  Use `scale=1` instead.
+          * 'normal' : Scale by
+            :math:`2 \sqrt{2} erf^{-1}(\frac{1}{2}) \approx 1.349`.
 
         The default is 1.0. The use of scale='raw' is deprecated.
         Array-like scale is also allowed, as long
