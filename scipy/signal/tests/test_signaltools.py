@@ -1918,18 +1918,30 @@ class TestCorrelate(object):
         assert_allclose(correlate(a, b, mode='full'), [6, 17, 32, 23, 12])
         assert_allclose(correlate(a, b, mode='valid'), [32])
 
-    def test_return_lags(self):
+    @pytest.mark.parametrize("mode", ["valid", "same", "full"])
+    @pytest.mark.parametrize("behind", [True, False])
+    def test_return_lags(self, mode, behind, return_lags=True):
+        # generate random data
         x = np.random.random(1000)
+        # generate offset version of array to correlate with
+        if behind:
+            # y is behind x
+            y = np.array([*np.random.rand(100), *x])
+            expected = -100
+        else:
+            # y is ahead of x
+            y = x[100:]
+            expected = 100
+        # cross correlate, returning lag information
+        (correlation, lags) = correlate(x, y,
+                                        mode=mode,
+                                        return_lags=return_lags)
+        # identify the peak
+        lag_index = np.argmax(correlation)
+        # Check as expected
+        assert_equal(lags[lag_index], expected)
 
-        x_behind = np.pad(x, (100,0), 'constant')
-        (correlation, lags) = correlate(x, x_behind, return_lags=True)
-        lag_behind_index = np.argmax(correlation)
-        assert_equal(lags[lag_behind_index], -100)
 
-        x_ahead = x[100:]
-        (correlation, lags) = correlate(x, x_ahead, return_lags=True)
-        lag_ahead_index = np.argmax(correlation)
-        assert_equal(lags[lag_ahead_index], 100)
 
 
 @pytest.mark.parametrize('dt', [np.csingle, np.cdouble, np.clongdouble])

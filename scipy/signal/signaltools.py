@@ -215,10 +215,43 @@ def correlate(in1, in2, mode='full', method='auto', return_lags=False):
     except KeyError:
         raise ValueError("Acceptable mode flags are 'valid',"
                          " 'same', or 'full'.")
-
     if return_lags:
-        lags = np.arange(-in2.size+1, in1.size)
-        return (convolve(in1, _reverse_and_conj(in2), 'full', 'fft'), lags)
+        # cross correlate inputs
+        xcorr = convolve(in1, _reverse_and_conj(in2), mode, method)
+
+        # calculate lag ranges in different modes of operation
+        if mode == "full":
+            # the output is the full discrete linear convolution
+            # of the inputs. (Default)
+            lags = np.arange(-in2.size+1, in1.size)
+        elif mode == "same":
+            # the output is the same size as `in1`, centered
+            # with respect to the 'full' output.
+            # calculate the full output
+            lags = np.arange(-in2.size + 1, in1.size)
+            # determine the midpoint in the full output
+            mid = lags.size // 2
+            # determine lag_bound to be used with respect
+            # to the midpoint
+            lag_bound = in1.size // 2
+            # calculate lag ranges for even and odd scenarios
+            if xcorr.size % 2 == 0:
+                lags = lags[(mid-lag_bound):(mid+lag_bound)]
+            else:
+                lags = lags[(mid-lag_bound):(mid+lag_bound)+1]
+        elif mode == "valid":
+            # the output consists only of those elements that do not
+            # rely on the zero-padding. In 'valid' mode, either `in1` or `in2`
+            # must be at least as large as the other in every dimension.
+
+            # the lag_bound will be either negative or positive
+            # this let's us infer how to present the lag range
+            lag_bound = in1.size - in2.size
+            if lag_bound >= 0:
+                lags = np.arange(lag_bound + 1)
+            else:
+                lags = np.arange(lag_bound, 1)
+        return xcorr, lags
 
     # this either calls fftconvolve or this function with method=='direct'
     if method in ('fft', 'auto'):
