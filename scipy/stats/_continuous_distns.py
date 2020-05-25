@@ -4200,32 +4200,6 @@ class laplace_gen(rv_continuous):
         estimation of the Laplace distribution parameters, so the keyword
         arguments `loc`, `scale`, and `optimizer` are ignored.\n\n""")
     def fit(self, data, *args, **kwds):
-        """
-        Maximum likelihood estimate for the location and scale parameters.
-
-        Exact formulas are used to calculate the location and scale, unless
-        they are provided in `floc` or `fscale`.
-
-        Parameters
-        ----------
-        data : array_like
-            Data to use in calculating the maximum likelihood estimate.
-        floc : float, optional
-            Hold the location parameter fixed to the specified value.
-        fscale : float, optional
-            Hold the scale parameter fixed to the specified value.
-
-        Returns
-        -------
-        loc, scale : float
-            Maximum likelihood estimates for the location and scale.
-
-        Notes
-        -----
-        An error is raised if both `floc` and `fscale` are fixed. Explicit
-        formulas are used, so the keyword arguments `loc`, `scale`, and
-        `optimizer` are ignored.
-        """
         floc = kwds.pop('floc', None)
         fscale = kwds.pop('fscale', None)
 
