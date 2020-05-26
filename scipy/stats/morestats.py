@@ -1037,9 +1037,6 @@ def boxcox(x, lmbda=None, alpha=None):
     if x.size == 0:
         return x
 
-    if (lmbda is None) and np.all(x == x[0]):
-        raise ValueError("Data must not be constant.")
-
     if any(x <= 0):
         raise ValueError("Data must be positive.")
 
@@ -1047,6 +1044,9 @@ def boxcox(x, lmbda=None, alpha=None):
         return special.boxcox(x, lmbda)
 
     # If lmbda=None, find the lmbda that maximizes the log-likelihood function.
+    if np.all(x == x[0]):
+        raise ValueError("Data must not be constant.")
+
     lmax = boxcox_normmax(x, method='mle')
     y = boxcox(x, lmax)
 
