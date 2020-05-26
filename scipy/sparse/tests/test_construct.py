@@ -491,3 +491,9 @@ class TestConstructUtils(object):
         # for the dtype
         construct.random(10, 10, dtype='d')
 
+    def test_random_sparse_matrix_returns_correct_number_of_non_zero_elements(self):
+        # A 10 x 10 matrix, with density of 12.65%, should have 13 nonzero elements.
+        # 10 x 10 x 0.1265 = 12.65, which should be rounded up to 13, not 12.
+        sparse_matrix = construct.random(10, 10, density=0.1265)
+        assert_equal(sparse_matrix.count_nonzero(),13)
+
