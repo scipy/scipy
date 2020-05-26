@@ -218,10 +218,11 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         (all decision variables are non-negative).
         If a single tuple ``(min, max)`` is provided, then ``min`` and
         ``max`` will serve as bounds for all decision variables.
-    method : {'highs-simplex', 'highs-ipm', 'interior-point', 'revised simplex', 'simplex'}, optional
+    method : {'highs-simplex', 'highs-ipm', 'highs', 'interior-point', 'revised simplex', 'simplex'}, optional
         The algorithm used to solve the standard form problem.
         :ref:`'highs-simplex' <optimize.linprog-highs-simplex>`,
         :ref:`'highs-ipm' <optimize.linprog-highs-ipm>`,
+        :ref:`'highs' <optimize.linprog-highs>`,
         :ref:`'interior-point' <optimize.linprog-interior-point>` (default),
         :ref:`'revised simplex' <optimize.linprog-revised_simplex>`, and
         :ref:`'simplex' <optimize.linprog-simplex>` (legacy)
@@ -347,11 +348,13 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     :ref:`'highs-simplex' <optimize.linprog-highs-simplex>` and
     :ref:`'highs-ipm' <optimize.linprog-highs-ipm>` are interfaces to the
     HiGHS simplex and interior-point method solvers [13]_, respectively.
-    'highs' chooses between the two automatically. These are the fastest linear
-    programming solvers in SciPy, especially for large, sparse problems.
+    :ref:`'highs' <optimize.linprog-highs>` chooses between 
+    the two automatically. These are the fastest linear
+    programming solvers in SciPy, especially for large, sparse problems;
+    which of these two is faster is problem-dependent.
     :ref:`'interior-point' <optimize.linprog-interior-point>` is the default
     as it was the fastest and most robust method before the recent
-    addition of the HiGHS solvers. This may change in a future release.
+    addition of the HiGHS solvers.
     :ref:`'revised simplex' <optimize.linprog-revised_simplex>` is more
     accurate than interior-point for the problems it solves.
     :ref:`'simplex' <optimize.linprog-simplex>` is the legacy method and is
@@ -361,10 +364,9 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     revised simplex implementation (HSOL) [13]_, [14]_. Method *highs-ipm*
     is a wrapper of a C++ implementation of an **i**\ nterior-\ **p**\ oint
     **m**\ ethod [13]_; it features a crossover routine, so it is as accurate as
-    a simplex solver. These are the fastest methods available in SciPy,
-    especially for large, sparse problems; which of these two is faster is
-    problem-dependent. For new code, we recommend explicitly choosing one of
-    these methods.
+    a simplex solver. Method *highs* chooses between the two automatically.
+    For new code involving `linprog`, we recommend explicitly choosing one of
+    these three method values.
 
     .. versionadded:: 1.5.0
 
