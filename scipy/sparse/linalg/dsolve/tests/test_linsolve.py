@@ -179,7 +179,6 @@ class TestFactorized(object):
 
         assert_equal(A.has_sorted_indices, 0)
         assert_array_almost_equal(factorized(A)(b), expected)
-        assert_equal(A.has_sorted_indices, 1)
 
     @pytest.mark.slow
     @pytest.mark.skipif(not has_umfpack, reason="umfpack not available")
