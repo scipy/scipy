@@ -3035,9 +3035,13 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
         # note: r_plus is int (ties not allowed), need int for slices below
         r_plus = int(r_plus)
         if alternative == "two-sided":
-            p_less = np.sum(cnt[:r_plus + 1]) / 2**count
-            p_greater = np.sum(cnt[r_plus:]) / 2**count
-            prob = 2*min(p_greater, p_less)
+            if r_plus == (len(cnt) - 1) // 2:
+                # r_plus is the center of the distribution.
+                prob = 1.0
+            else:
+                p_less = np.sum(cnt[:r_plus + 1]) / 2**count
+                p_greater = np.sum(cnt[r_plus:]) / 2**count
+                prob = 2*min(p_greater, p_less)
         elif alternative == "greater":
             prob = np.sum(cnt[r_plus:]) / 2**count
         else:
