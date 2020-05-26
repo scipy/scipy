@@ -217,6 +217,9 @@ greater speed and accuracy
 Methods of the truncated normal distribution (`scipy.stats.truncnorm`), 
 especially ``_rvs``, are significantly faster after a complete rewrite.
 
+The `fit` method of the Laplace distribution,  `scipy.stats.laplace`, now uses the
+analytical formulas for the maximum likelihood estimates of the parameters.
+
 Generation of random variates is now thread safe for all SciPy distributions. 
 3rd-party distributions may need to modify the signature of the ``_rvs()`` 
 method to conform to ``_rvs(self, ..., size=None, random_state=None)``. (A 
