@@ -3017,8 +3017,8 @@ def _reorder_leaves(Z, leaves_order):
 
     n = Z.shape[0] + 1
     ch = np.zeros((n - 1, 2), dtype='int32')
-    p  = np.zeros(2 * n - 1,  dtype='int32')
-    new_Z  = np.zeros((n - 1, 4), dtype=float)
+    p = np.zeros(2 * n - 1, dtype='int32')
+    new_Z = np.zeros((n - 1, 4), dtype=float)
     height = np.zeros(n - 1, dtype=float)
     num_leaves = np.ones(2 * n - 1)
     for i in range(n - 1):
@@ -3035,15 +3035,21 @@ def _reorder_leaves(Z, leaves_order):
     v = leaves_order[0]    # v is a vertex which goes through T
     color = np.zeros(2*n)  # 0 - unprocessed, 1 - on stack (waiting), 2 - fully processed
     # note that v is a left child in F iff. color[p[v]] == 0 (during the algorithm)
+    _left = -1
+    _right = -1
     while l_pointer <= n:
         if v < n:  # v is a leaf
             color[v] = 1   # tiny trick
         if color[v] == 0:  # left subtree of v in F must've been already processed by now
+            if not(color[_left] == 2 and color[_right] == 0):
+                raise ValueError("Provided permutation results in a crossing!")
             color[v] = 1
             l_pointer += 1
             v = leaves_order[l_pointer]
             continue
         # otherwise color[v] == 1
+        if v >= n and not(color[_left] == 2 and color[_right] == 2):
+            raise ValueError("Provided permutation results in a crossing!")
         color[v] = 2
         if v == 2*n-2:
             break
@@ -3054,7 +3060,11 @@ def _reorder_leaves(Z, leaves_order):
                 new_node = new_node_number
                 new_node_number += 1
             stack.append(new_node)
+            _left = v
             v = p[v]
+            _temp=list(ch[v-n])
+            _temp.remove(_left)
+            _right=_temp[0]
             continue
         else:  # v is the right son in F
             left_pair = stack.pop()
@@ -3064,7 +3074,11 @@ def _reorder_leaves(Z, leaves_order):
             else:
                 new_Z[cnt] = [left_pair, v, height[p[v]-n], num_leaves[p[v]]]
             cnt += 1
+            _right=v
             v = p[v]
+            _temp = list(ch[v-n])
+            _temp.remove(_right)
+            _left = _temp[0]
             continue
     return new_Z
 

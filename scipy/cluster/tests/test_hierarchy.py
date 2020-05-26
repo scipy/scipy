@@ -935,7 +935,17 @@ class TestDendrogram(object):
         [0, 1, 2, 3, 8, 5, 6],  # not a permutation
         [0, 1, 2, 1, 2, 5, 6]  # not a permutation either
         ]) 
-    def test_dendrogram_leaves_reordering_exceptions(self, order):
+    def test_dendrogram_leaves_reorder_simple_mistakes(self, order):
+        X = [[0, 0], [0, 1], [0, 4], [2, 4], [6, 3], [7, 3], [8, 3]]
+        Z = linkage(X, method='single')
+        assert_raises(ValueError, dendrogram, Z, leaves_order=order, no_plot=True)
+
+    @pytest.mark.parametrize("order", [
+        [0, 3, 1, 2, 4, 5, 6],  # results in a crossing
+        [0, 1, 5, 4, 2, 3, 6],  # results in a crossing
+        [6, 0, 1, 2, 3, 5, 4]   # crossing at highest level
+        ])
+    def test_dendrogram_leaves_reorder_crossings(self, order):
         X = [[0, 0], [0, 1], [0, 4], [2, 4], [6, 3], [7, 3], [8, 3]]
         Z = linkage(X, method='single')
         assert_raises(ValueError, dendrogram, Z, leaves_order=order, no_plot=True)
