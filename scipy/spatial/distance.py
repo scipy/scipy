@@ -1383,8 +1383,8 @@ def dice(u, v, w=None):
     Notes
     -----
     This function computes the Dice dissimilarity index. To compute the 
-   Dice similiarity index, convert one to the other with similarity = 
-   1 - dissimilarity.
+    Dice similiarity index, convert one to the other with similarity = 
+    1 - dissimilarity.
    
     Examples
     --------
