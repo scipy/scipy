@@ -950,7 +950,8 @@ def boxcox(x, lmbda=None, alpha=None):
     Parameters
     ----------
     x : ndarray
-        Input array.  Must be positive 1-dimensional.  Must not be constant.
+        Input array. Must be positive 1-dimensional. If `lmbda` is None,
+        array must not be constant.
     lmbda : {None, scalar}, optional
         If `lmbda` is not None, do the transformation for that value.
 
@@ -1036,7 +1037,7 @@ def boxcox(x, lmbda=None, alpha=None):
     if x.size == 0:
         return x
 
-    if np.all(x == x[0]):
+    if (lmbda is None) and np.all(x == x[0]):
         raise ValueError("Data must not be constant.")
 
     if any(x <= 0):
