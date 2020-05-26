@@ -1087,6 +1087,21 @@ class TestWilcoxon(object):
         d = np.arange(26) + 1
         assert_raises(ValueError, stats.wilcoxon, d, mode="exact")
 
+    # These inputs were chosen to give a W statistic that is either the
+    # center of the distribution (when the length of the support is odd), or
+    # the value to the left of the center (when the length of the support is
+    # even).  Also, the numbers are chosen so that the W statistic is the
+    # sum of the positive values.
+    @pytest.mark.parametrize('x', [[-1, -2, 3],
+                                   [-1, 2, -3, -4, 5],
+                                   [-1, -2, 3, -4, -5, -6, 7, 8]])
+    def test_exact_p_1(self, x):
+        w, p = stats.wilcoxon(x)
+        x = np.array(x)
+        wtrue = x[x > 0].sum()
+        assert_equal(w, wtrue)
+        assert_equal(p, 1)
+
     def test_auto(self):
         # auto default to exact if there are no ties and n<= 25
         x = np.arange(0, 25) + 0.5
