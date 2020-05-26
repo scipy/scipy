@@ -4187,8 +4187,54 @@ class laplace_gen(rv_continuous):
     def _entropy(self):
         return np.log(2)+1
 
+    @replace_notes_in_docstring(rv_continuous, notes="""\
+        This function uses explicit formulas for the maximum likelihood
+        estimation of the Laplace distribution parameters, so the keyword
+        arguments `loc`, `scale`, and `optimizer` are ignored.\n\n""")
+    def fit(self, data, *args, **kwds):
+        floc = kwds.pop('floc', None)
+        fscale = kwds.pop('fscale', None)
+
+        _check_fit_input_parameters(data, args,
+                                    kwds, fixed_param=(floc, fscale))
+
+        # MLE for the laplace distribution
+
+        if floc is None:
+            loc = np.median(data)
+        else:
+            loc = floc
+
+        if fscale is None:
+            scale = (np.sum(np.abs(data - loc))) / len(data)
+        else:
+            scale = fscale
+
+        # Source: Statistical Distributions, 3rd Edition. Evans, Hastings,
+        # and Peacock (2000), Page 124
+
+        return loc, scale
+
 
 laplace = laplace_gen(name='laplace')
+
+
+def _check_fit_input_parameters(data, args, kwds, fixed_param):
+    if len(args) > 0:
+        raise TypeError("Too many arguments.")
+
+    _remove_optimizer_parameters(kwds)
+
+    if None not in fixed_param:
+        # This check is for consistency with `rv_continuous.fit`.
+        # Without this check, this function would just return the
+        # parameters that were given.
+        raise RuntimeError("All parameters fixed. There is nothing to "
+                           "optimize.")
+
+    data = np.asarray(data)
+    if not np.isfinite(data).all():
+        raise RuntimeError("The data contains non-finite values.")
 
 
 class levy_gen(rv_continuous):
