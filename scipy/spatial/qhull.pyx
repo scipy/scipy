@@ -2377,15 +2377,15 @@ class ConvexHull(_QhullUser):
     ...                        [0.4, 0.2],
     ...                        [0.3, 0.6]])
 
-    Call ConvexHull with the QG option. QG4 means 
+    Call ConvexHull with the QG option. QG4 means
     compute the portions of the hull not including
-    point 4, indicating the facets that are visible 
+    point 4, indicating the facets that are visible
     from point 4.
 
     >>> hull = ConvexHull(points=generators,
     ...                   qhull_options='QG4')
 
-    The "good" array indicates which facets are 
+    The "good" array indicates which facets are
     visible from point 4.
 
     >>> print(hull.simplices)
@@ -2722,7 +2722,7 @@ class HalfspaceIntersection(_QhullUser):
 
     >>> import matplotlib.pyplot as plt
     >>> fig = plt.figure()
-    >>> ax = fig.add_subplot('111', aspect='equal')
+    >>> ax = fig.add_subplot(1, 1, 1, aspect='equal')
     >>> xlim, ylim = (-1, 3), (-1, 3)
     >>> ax.set_xlim(xlim)
     >>> ax.set_ylim(ylim)
