@@ -171,10 +171,14 @@ and 3D cases
 
 `scipy.special` improvements
 --------------------------
-The inverse error function and complimentary inverse error function now 
-provide a Cython interface and are now accessible as 
-`scipy.special.cython_special.erfinv` and `scipy.special.cython_special.erfcinv`
-respectively.
+The following functions now have Cython interfaces in `cython_special`:
+
+- `scipy.special.erfinv`
+- `scipy.special.erfcinv`
+- `scipy.special.spherical_jn`
+- `scipy.special.spherical_yn`
+- `scipy.special.spherical_in`
+- `scipy.special.spherical_kn`
 
 `scipy.special.log_softmax` has been added to calculate the logarithm of softmax 
 function. It provides better accuracy than ``log(scipy.special.softmax(x))`` for 
