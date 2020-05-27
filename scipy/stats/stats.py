@@ -4469,6 +4469,7 @@ def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000,
        centering and unbiased modification) [3]_.
 
     #. For all values :math:`k` and :math:`l` from :math:`1, ..., n`,
+
        * The :math:`k`-nearest neighbor and :math:`l`-nearest neighbor graphs
          are calculated for each property. Here, :math:`G_k (i, j)` indicates
          the :math:`k`-smallest values of the :math:`i`-th row of :math:`A`
