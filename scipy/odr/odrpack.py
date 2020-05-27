@@ -589,7 +589,7 @@ class Output(object):
 
     """
 
-    def __init__(self, output):
+    def __init__(self, output, cov_scaled):
         self.beta = output[0]
         self.sd_beta = output[1]
         self.cov_beta = output[2]
@@ -599,8 +599,8 @@ class Output(object):
             self.__dict__.update(output[3])
             self.stopreason = _report_error(self.info)
 
-        if hasattr(self, 'info'):
-            # it should be scaled by the residual variance
+        if cov_scaled and hasattr(self, 'info'):
+            # it is scaled by the residual variance
             self.cov_beta *= self.res_var
 
     def pprint(self):
@@ -713,6 +713,10 @@ class ODR(object):
     iwork : ndarray, optional
         array to hold the integer-valued working data for ODRPACK. When
         restarting, takes the value of self.output.iwork.
+    cov_scaled : bool, optional
+        If True, `cov_beta` of `Ouput` is scaled by the residual variance. In
+        other words, `np.sqrt(np.diag(output.cov_beta * output.res_var)) ==
+        output.sd_beta`. The default value is False.
 
     Attributes
     ----------
@@ -727,9 +731,10 @@ class ODR(object):
     """
 
     def __init__(self, data, model, beta0=None, delta0=None, ifixb=None,
-        ifixx=None, job=None, iprint=None, errfile=None, rptfile=None,
-        ndigit=None, taufac=None, sstol=None, partol=None, maxit=None,
-        stpb=None, stpd=None, sclb=None, scld=None, work=None, iwork=None):
+                 ifixx=None, job=None, iprint=None, errfile=None, rptfile=None,
+                 ndigit=None, taufac=None, sstol=None, partol=None, maxit=None,
+                 stpb=None, stpd=None, sclb=None, scld=None, work=None,
+                 iwork=None, cov_scaled=False):
 
         self.data = data
         self.model = model
@@ -770,6 +775,7 @@ class ODR(object):
         self.iwork = _conv(iwork)
 
         self.output = None
+        self.cov_scaled = cov_scaled
 
         self._check()
 
@@ -1102,7 +1108,7 @@ class ODR(object):
             if obj is not None:
                 kwds[attr] = obj
 
-        self.output = Output(odr(*args, **kwds))
+        self.output = Output(odr(*args, **kwds), self.cov_scaled)
 
         return self.output
 
