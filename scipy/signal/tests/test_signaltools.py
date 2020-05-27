@@ -409,6 +409,7 @@ class TestConvolve2d(_TestConvolve2d):
         assert_raises(ValueError, convolve2d, [[[3]]], [[[4]]])
 
     @pytest.mark.slow
+    @pytest.mark.xfail_on_32bit("Can't create large array for test")
     def test_large_array(self):
         # Test indexing doesn't overflow an int (gh-10761)
         n = 2**31 // (1000 * np.int64().itemsize)
