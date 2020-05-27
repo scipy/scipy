@@ -1169,7 +1169,7 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
             if disp:
                 print("Divide-by-zero encountered: rhok assumed large")
         else:
-            rhok = 1./ rhok_inv
+            rhok = 1. / rhok_inv
 
         A1 = I - sk[:, np.newaxis] * yk[np.newaxis, :] * rhok
         A2 = I - yk[:, np.newaxis] * sk[np.newaxis, :] * rhok
