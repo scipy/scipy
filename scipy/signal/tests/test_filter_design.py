@@ -4,7 +4,7 @@ from distutils.version import LooseVersion
 import numpy as np
 from numpy.testing import (assert_array_almost_equal,
                            assert_array_equal, assert_array_less,
-                           assert_equal, assert_,
+                           assert_equal, assert_, assert_approx_equal,
                            assert_allclose, assert_warns, suppress_warnings)
 import pytest
 from pytest import raises as assert_raises
@@ -14,8 +14,8 @@ from scipy.signal import (BadCoefficients, bessel, besselap, bilinear, buttap,
                           butter, buttord, cheb1ap, cheb1ord, cheb2ap,
                           cheb2ord, cheby1, cheby2, ellip, ellipap, ellipord,
                           firwin, freqs_zpk, freqs, freqz, freqz_zpk,
-                          group_delay, iirfilter, iirgammatone, iirnotch, 
-                          iirpeak, lp2bp, lp2bs, lp2hp, lp2lp, normalize, sos2tf, 
+                          gammatone, group_delay, iirfilter, iirnotch, iirpeak, 
+                          lp2bp, lp2bs, lp2hp, lp2lp, normalize, sos2tf, 
                           sos2zpk, sosfreqz, tf2sos, tf2zpk, zpk2sos, zpk2tf,
                           bilinear_zpk, lp2lp_zpk, lp2hp_zpk, lp2bp_zpk,
                           lp2bs_zpk)
@@ -3736,46 +3736,64 @@ class TestGroupDelay(object):
             assert_array_almost_equal(gd, [0])
 
 
-class TestIIRGammatone(object):
+class TestGammatone(object):
     # Test erroneus input cases.
     def test_invalid_input(self):
-        # Cutoff frequency is not int or float.
-        assert_raises(ValueError, iirgammatone, [420, 460])
-        assert_raises(ValueError, iirgammatone, "440")
-
-        # Sampling rate is not int.
-        assert_raises(ValueError, iirgammatone, 440, fs=8000.01)
-        assert_raises(ValueError, iirgammatone, 220, fs="16000")
-
-        # Filter type is not ba, zpk, or sos
-        assert_raises(ValueError, iirgammatone, 440, output='bc')
-        assert_raises(ValueError, iirgammatone, 220, output='zpl')
-        assert_raises(ValueError, iirgammatone, 110, output='sod')
-
         # Cutoff frequency is <= 0 or >= fs / 2.
         fs = 16000
-        assert_raises(ValueError, iirgammatone, -fs)
-        assert_raises(ValueError, iirgammatone, 0)
-        assert_raises(ValueError, iirgammatone, fs / 2)
-        assert_raises(ValueError, iirgammatone, fs)
+        assert_raises(ValueError, gammatone, -fs, 'iir', fs=fs)
+        assert_raises(ValueError, gammatone, 0, 'fir', fs=fs)
+        assert_raises(ValueError, gammatone, fs / 2, 'iir', fs=fs)
+        assert_raises(ValueError, gammatone, fs, 'fir', fs=fs)
+
+        # Filter type is not fir or iir
+        assert_raises(ValueError, gammatone, 440, ftype='fie', fs=16000)
+        assert_raises(ValueError, gammatone, 220, ftype='it', fs=32000)
+
+        # Order is <= 0 or > 24 for FIR filter.
+        assert_raises(ValueError, gammatone, 440, 'fir', fs=16000, order=-50)
+        assert_raises(ValueError, gammatone, 220, 'fir', fs=32000, order=0)
+        assert_raises(ValueError, gammatone, 110, 'fir', fs=44100, order=25)
+        assert_raises(ValueError, gammatone, 55, 'fir', fs=48000, order=50)
+
+    # Verify that the filter's frequency response is approximately
+    # 1 at the cutoff frequency.
+    def test_frequency_response(self):
+        fs = 16000
+        ftypes = ['fir', 'iir']
+        for ftype in ftypes:
+            # Create a gammatone filter centered at 1000 Hz.
+            b, a = gammatone(1000, ftype, fs=fs)
+
+            # Calculate the frequency response.
+            freqs, response = freqz(b, a)
+
+            # Determine peak magnitude of the response
+            # and corresponding frequency.
+            response_max = np.max(np.abs(response))
+            freq_hz = freqs[np.argmax(np.abs(response))] / ((2 * np.pi) / fs)
+
+            # Check that the peak magnitude is 1 and the frequency is 1000 Hz.
+            assert_approx_equal(response_max, 1, significant=2)
+            assert_approx_equal(freq_hz, 1000, significant=2)
 
     # All built-in IIR filters are real, so should have perfectly
     # symmetrical poles and zeros. Then ba representation (using
     # numpy.poly) will be purely real instead of having negligible
     # imaginary parts.
-    def test_symmetry(self):
-        z, p, k = iirgammatone(440, fs=24000, output='zpk')
+    def test_iir_symmetry(self):
+        b, a = gammatone(440, 'iir', fs=24000)
+        z, p, k = tf2zpk(b, a)
         assert_array_equal(sorted(z), sorted(z.conj()))
         assert_array_equal(sorted(p), sorted(p.conj()))
         assert_equal(k, np.real(k))
 
-        b, a = iirgammatone(440, output='ba')
         assert_(issubclass(b.dtype.type, np.floating))
         assert_(issubclass(a.dtype.type, np.floating))
 
-    # Verify linear filter coefficients with MATLAB's answers
-    def test_ba_output(self):
-        b, a = iirgammatone(440, output='ba')
+    # Verify IIR filter coefficients with MATLAB's answers
+    def test_iir_ba_output(self):
+        b, a = gammatone(440, 'iir', fs=16000)
         b2 = [1.31494461367464e-06, -5.03391196645395e-06,
               7.00649426000897e-06, -4.18951968419854e-06,
               9.02614910412011e-07]
@@ -3786,36 +3804,3 @@ class TestIIRGammatone(object):
               0.793651554625368]
         assert_array_almost_equal(b, b2)
         assert_array_almost_equal(a, a2)
-
-    # Verify pole-zero filter coefficients with MATLAB's answers
-    def test_zpk_output(self):
-        z, p, k = iirgammatone(440, output='zpk')
-        z2 = [1.36031191107849, 1.02624526258830,
-              0.887870326047240, 0.553803677557063]
-        p2 = [0.958002071507328 + 0.167055610384677j,
-              0.958002071507328 - 0.167055610384677j,
-              0.957037592841857 + 0.167975282376528j,
-              0.957037592841857 - 0.167975282376528j,
-              0.957077736869328 + 0.166086937748564j,
-              0.957077736869328 - 0.166086937748564j,
-              0.956113776052577 + 0.167015466133982j,
-              0.956113776052577 - 0.167015466133982j]
-        k2 = 1.31494461367464e-06
-        assert_array_almost_equal(z, z2, decimal=2)
-        assert_array_almost_equal(p, p2, decimal=2)
-        assert_array_almost_equal(k, k2, decimal=2)
-
-    # Verify second-order-section filter coefficients with MATLAB's answers
-    def test_sos_output(self):
-        sos = iirgammatone(440, output='sos')
-        sos2 = [[1.31494461367464e-06, 0.0, 0.0, 1.0,
-                 -1.91222755210515, 0.942047718685468],
-                [1.0, 0.0, 0.0, 1.0,
-                 -1.91415547373866, 0.943582665301611],
-                [1.0, -1.91411558863555,
-                 0.753345738979943, 1.0,
-                 -1.91407518568371, 0.944136649602010],
-                [1.0, -1.91411558863554,
-                 0.911172715898708, 1.0,
-                 -1.91600414301466, 0.945675545973329]]
-        assert_array_almost_equal(sos, sos2, decimal=2)

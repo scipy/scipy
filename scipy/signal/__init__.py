@@ -88,12 +88,12 @@ Filter design
                     -- defined as pass and stop bands.
    firwin2       -- Windowed FIR filter design, with arbitrary frequency
                     -- response.
-   firgammatone  -- FIR gammatone filter design.
    freqs         -- Analog filter frequency response from TF coefficients.
    freqs_zpk     -- Analog filter frequency response from ZPK coefficients.
    freqz         -- Digital filter frequency response from TF coefficients.
    freqz_zpk     -- Digital filter frequency response from ZPK coefficients.
    sosfreqz      -- Digital filter frequency response for SOS format filter.
+   gammatone     -- FIR and IIR gammatone filter design.
    group_delay   -- Digital filter group delay.
    iirdesign     -- IIR filter design given bands and gains.
    iirfilter     -- IIR filter design given order and critical frequencies.
@@ -158,7 +158,6 @@ Matlab-style IIR filter design
    bessel -- Bessel (no order selection available -- try butterod)
    iirnotch      -- Design second-order IIR notch digital filter.
    iirpeak       -- Design second-order IIR peak (resonant) digital filter.
-   iirgammatone  -- Gammatone
 
 Continuous-time linear systems
 ==============================
