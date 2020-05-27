@@ -85,7 +85,7 @@ Measurements
    minimum
    minimum_position
    standard_deviation - Standard deviation of an N-D image array
-   sum - Sum of the values of the array
+   sum_labels - Sum of the values of the array
    variance - Variance of the values of an N-D image array
    watershed_ift
 
