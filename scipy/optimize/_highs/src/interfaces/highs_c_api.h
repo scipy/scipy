@@ -765,4 +765,3 @@ const char* Highs_primalDualStatusToChar(
 #endif
 
 #endif
-

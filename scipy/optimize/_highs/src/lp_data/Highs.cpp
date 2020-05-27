@@ -310,6 +310,7 @@ HighsStatus Highs::run() {
         options_.highs_debug_level, min_highs_debug_level);
     options_.highs_debug_level = min_highs_debug_level;
   }
+  writeModel("HighsRunModel.mps");
 #endif
 
 #ifdef OPENMP

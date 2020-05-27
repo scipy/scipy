@@ -54,16 +54,24 @@ enum iClockSimplex {
   ComputeDuObjClock,  //!< Computation of dual objective value in dual rebuild()
   ComputePrObjClock,  //!< Computation of primalal objective value in primal
                       //!< rebuild()
-  ReportRebuildClock,      //!< Reporting of log line in dual rebuild()
-  ChuzrDualClock,          //!< CHUZR - Dual
-  Chuzr1Clock,             //!< CHUZR - Primal stage 1
-  Chuzr2Clock,             //!< CHUZR - Primal stage 2
-  ChuzcPrimalClock,        //!< CHUZC - Primal
-  Chuzc0Clock,             //!< CHUZC - Dual stage 0
-  PriceChuzc1Clock,        //!< PRICE + CHUZC - Dual stage 1: parallel
-  Chuzc1Clock,             //!< CHUZC - Dual stage 1
-  Chuzc2Clock,             //!< CHUZC - Dual stage 2
-  Chuzc3Clock,             //!< CHUZC - Dual stage 3
+  ReportRebuildClock,  //!< Reporting of log line in dual rebuild()
+  ChuzrDualClock,      //!< CHUZR - Dual
+  Chuzr1Clock,         //!< CHUZR - Primal stage 1
+  Chuzr2Clock,         //!< CHUZR - Primal stage 2
+  ChuzcPrimalClock,    //!< CHUZC - Primal
+  Chuzc0Clock,         //!< CHUZC - Dual stage 0
+  PriceChuzc1Clock,    //!< PRICE + CHUZC - Dual stage 1: parallel
+  Chuzc1Clock,         //!< CHUZC - Dual stage 1
+  Chuzc2Clock,         //!< CHUZC - Dual stage 2
+  Chuzc3Clock,         //!< CHUZC - Dual stage 3
+
+  Chuzc3a0Clock,  //!< CHUZC - Dual stage 3a0
+  Chuzc3a1Clock,  //!< CHUZC - Dual stage 3a1
+  Chuzc3bClock,   //!< CHUZC - Dual stage 3b
+  Chuzc3cClock,   //!< CHUZC - Dual stage 3c
+  Chuzc3dClock,   //!< CHUZC - Dual stage 3d
+  Chuzc3eClock,   //!< CHUZC - Dual stage 3e
+
   Chuzc4Clock,             //!< CHUZC - Dual stage 4
   DevexWtClock,            //!< Calculation of Devex weight of entering variable
   FtranClock,              //!< FTRAN - pivotal column
@@ -137,6 +145,12 @@ class SimplexTimer {
     clock[Chuzc1Clock] = timer.clock_def("CHUZC1", "CC1");
     clock[Chuzc2Clock] = timer.clock_def("CHUZC2", "CC2");
     clock[Chuzc3Clock] = timer.clock_def("CHUZC3", "CC3");
+    clock[Chuzc3a0Clock] = timer.clock_def("CHUZC3a0", "C30");
+    clock[Chuzc3a1Clock] = timer.clock_def("CHUZC3a1", "C31");
+    clock[Chuzc3bClock] = timer.clock_def("CHUZC3b", "C3b");
+    clock[Chuzc3cClock] = timer.clock_def("CHUZC3c", "C3c");
+    clock[Chuzc3dClock] = timer.clock_def("CHUZC3d", "C3d");
+    clock[Chuzc3eClock] = timer.clock_def("CHUZC3e", "C3e");
     clock[Chuzc4Clock] = timer.clock_def("CHUZC4", "CC4");
     clock[DevexWtClock] = timer.clock_def("DEVEX_WT", "DWT");
     clock[FtranClock] = timer.clock_def("FTRAN", "COL");
@@ -172,6 +186,21 @@ class SimplexTimer {
     const double ideal_sum_time = timer.read(timer.solve_clock);
     printf("reportSimplexClockList: ideal_sum_time = %g\n", ideal_sum_time);
     timer.report_tl(grepStamp, clockList, ideal_sum_time, 1e-8);
+  };
+
+  void reportChuzc3ClockList(std::vector<int> simplex_clock_list,
+                             HighsTimerClock& simplex_timer_clock) {
+    HighsTimer& timer = simplex_timer_clock.timer_;
+    std::vector<int>& clock = simplex_timer_clock.clock_;
+    int simplex_clock_list_size = simplex_clock_list.size();
+    std::vector<int> clockList;
+    clockList.resize(simplex_clock_list_size);
+    for (int en = 0; en < simplex_clock_list_size; en++) {
+      clockList[en] = clock[simplex_clock_list[en]];
+    }
+    const double ideal_sum_time = timer.read(clock[Chuzc3Clock]);
+    printf("reportChuzc3ClockList: ideal_sum_time = %g\n", ideal_sum_time);
+    timer.report_tl("CHUZC3:", clockList, ideal_sum_time, 1e-8);
   };
 
   void reportSimplexTotalClock(HighsTimerClock& simplex_timer_clock) {
@@ -220,6 +249,13 @@ class SimplexTimer {
         UpdateFactorClock,    UpdateMatrixClock};
     reportSimplexClockList("SimplexInner", simplex_clock_list,
                            simplex_timer_clock);
+  };
+
+  void reportSimplexChuzc3Clock(HighsTimerClock& simplex_timer_clock) {
+    std::vector<int> simplex_clock_list{Chuzc3a0Clock, Chuzc3a1Clock,
+                                        Chuzc3bClock,  Chuzc3cClock,
+                                        Chuzc3dClock,  Chuzc3eClock};
+    reportChuzc3ClockList(simplex_clock_list, simplex_timer_clock);
   };
 
   void reportSimplexMultiInnerClock(HighsTimerClock& simplex_timer_clock) {

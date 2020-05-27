@@ -122,99 +122,99 @@ cdef apply_options(dict options, Highs & highs):
 
     # Do all the ints
     for opt in set([
-            b'allowed_simplex_cost_scale_factor',
-            b'allowed_simplex_matrix_scale_factor',
-            b'dual_simplex_cleanup_strategy',
-            b'ipm_iteration_limit',
-            b'keep_n_rows',
-            b'max_threads',
-            b'message_level',
-            b'min_threads',
-            b'simplex_crash_strategy',
-            b'simplex_dual_edge_weight_strategy',
-            b'simplex_dualise_strategy',
-            b'simplex_iteration_limit',
-            b'simplex_permute_strategy',
-            b'simplex_price_strategy',
-            b'simplex_primal_edge_weight_strategy',
-            b'simplex_scale_strategy',
-            b'simplex_strategy',
-            b'simplex_update_limit',
-            b'small_matrix_value',
+            'allowed_simplex_cost_scale_factor',
+            'allowed_simplex_matrix_scale_factor',
+            'dual_simplex_cleanup_strategy',
+            'ipm_iteration_limit',
+            'keep_n_rows',
+            'max_threads',
+            'message_level',
+            'min_threads',
+            'simplex_crash_strategy',
+            'simplex_dual_edge_weight_strategy',
+            'simplex_dualise_strategy',
+            'simplex_iteration_limit',
+            'simplex_permute_strategy',
+            'simplex_price_strategy',
+            'simplex_primal_edge_weight_strategy',
+            'simplex_scale_strategy',
+            'simplex_strategy',
+            'simplex_update_limit',
+            'small_matrix_value',
     ]):
-        val = options.get(opt.decode(), None)
+        val = options.get(opt, None)
         if val is not None:
-            opt_status = highs.setHighsOptionValueInt(opt, val)
+            opt_status = highs.setHighsOptionValueInt(opt.encode(), val)
             if opt_status != HighsStatusOK:
-                warn(_opt_warning(opt, val), OptimizeWarning)
+                warn(_opt_warning(opt.encode(), val), OptimizeWarning)
 
     # Do all the doubles
     for opt in set([
-            b'dual_feasibility_tolerance',
-            b'dual_objective_value_upper_bound',
-            b'dual_simplex_cost_perturbation_multiplier',
-            b'dual_steepest_edge_weight_log_error_threshhold',
-            b'infinite_bound',
-            b'infinite_cost',
-            b'large_matrix_value',
-            b'primal_feasibility_tolerance',
-            b'simplex_initial_condition_tolerance',
-            b'small_matrix_value',
-            b'time_limit'
+            'dual_feasibility_tolerance',
+            'dual_objective_value_upper_bound',
+            'dual_simplex_cost_perturbation_multiplier',
+            'dual_steepest_edge_weight_log_error_threshhold',
+            'infinite_bound',
+            'infinite_cost',
+            'large_matrix_value',
+            'primal_feasibility_tolerance',
+            'simplex_initial_condition_tolerance',
+            'small_matrix_value',
+            'time_limit'
     ]):
-        val = options.get(opt.decode(), None)
+        val = options.get(opt, None)
         if val is not None:
-            opt_status = highs.setHighsOptionValueDbl(opt, val)
+            opt_status = highs.setHighsOptionValueDbl(opt.encode(), val)
             if opt_status != HighsStatusOK:
-                warn(_opt_warning(opt, val), OptimizeWarning)
+                warn(_opt_warning(opt.encode(), val), OptimizeWarning)
 
 
     # Do all the strings
-    for opt in set([b'solver']):
-        val = options.get(opt.decode(), None)
+    for opt in set(['solver']):
+        val = options.get(opt, None)
         if val is not None:
-            opt_status = highs.setHighsOptionValueStr(opt, val.encode())
+            opt_status = highs.setHighsOptionValueStr(opt.encode(), val.encode())
             if opt_status != HighsStatusOK:
-                warn(_opt_warning(opt, val), OptimizeWarning)
+                warn(_opt_warning(opt.encode(), val), OptimizeWarning)
 
 
     # Do all the bool to strings
     for opt in set([
-            b'parallel',
-            b'presolve',
+            'parallel',
+            'presolve',
     ]):
-        val = options.get(opt.decode(), None)
+        val = options.get(opt, None)
         if val is not None:
             if isinstance(val, bool):
                 if val:
                     val0 = b'on'
                 else:
                     val0 = b'off'
-                opt_status = highs.setHighsOptionValueStr(opt, val0)
+                opt_status = highs.setHighsOptionValueStr(opt.encode(), val0)
                 if opt_status != HighsStatusOK:
-                    warn(_opt_warning(opt, val, valid_set=[True, False]), OptimizeWarning)
+                    warn(_opt_warning(opt.encode(), val, valid_set=[True, False]), OptimizeWarning)
             else:
-                warn(_opt_warning(opt, val, valid_set=[True, False]), OptimizeWarning)
+                warn(_opt_warning(opt.encode(), val, valid_set=[True, False]), OptimizeWarning)
 
 
     # Do the actual bools
     for opt in set([
-            b'less_infeasible_DSE_check',
-            b'less_infeasible_DSE_choose_row',
-            b'mps_parser_type_free',
-            b'run_as_hsol',
-            b'run_crossover',
-            b'simplex_initial_condition_check',
-            b'use_original_HFactor_logic',
+            'less_infeasible_DSE_check',
+            'less_infeasible_DSE_choose_row',
+            'mps_parser_type_free',
+            'run_as_hsol',
+            'run_crossover',
+            'simplex_initial_condition_check',
+            'use_original_HFactor_logic',
     ]):
-        val = options.get(opt.decode(), None)
+        val = options.get(opt, None)
         if val is not None:
             if val in [True, False]:
-                opt_status = highs.setHighsOptionValueBool(opt, val)
+                opt_status = highs.setHighsOptionValueBool(opt.encode(), val)
                 if opt_status != HighsStatusOK:
-                    warn(_opt_warning(opt, val), OptimizeWarning)
+                    warn(_opt_warning(opt.encode(), val), OptimizeWarning)
             else:
-                warn(_opt_warning(opt, val), OptimizeWarning)
+                warn(_opt_warning(opt.encode(), val), OptimizeWarning)
 
 
 def highs_wrapper(
@@ -231,181 +231,217 @@ def highs_wrapper(
 
     Assume problems of the form:
 
-        MIN/MAX c.T @ x
+        MIN c.T @ x
         s.t. lhs <= A @ x <= rhs
              lb <= x <= ub
-
-    Default is MIN.
 
     Parameters
     ----------
     c : 1-D array, (n,)
         Array of objective value coefficients.
     astart : 1-D array
+        CSC format index array.
     aindex : 1-D array
+        CSC format index array.
     avalue : 1-D array
+        Data array of the matrix.
     lhs : 1-D array (or None), (m,)
         Array of left hand side values of the inequality constraints.
-        If `lhs=None`, then an array of `-inf` is assumed.
+        If ``lhs=None``, then an array of ``-inf`` is assumed.
     rhs : 1-D array, (m,)
         Array of right hand side values of the inequality constraints.
     lb : 1-D array (or None), (n,)
-        Lower bounds on solution variables x.  If `lb=None`, then an
+        Lower bounds on solution variables x.  If ``lb=None``, then an
         array of all `0` is assumed.
     ub : 1-D array (or None), (n,)
-        Upper bounds on solution variables x.  If `ub=None`, then an
-        array of `inf` is assumed.
+        Upper bounds on solution variables x.  If ``ub=None``, then an
+        array of ``inf`` is assumed.
     options : dict
         A dictionary of solver options with the following fields:
 
             - allowed_simplex_cost_scale_factor : int
                 Undocumented advanced option.
+
             - allowed_simplex_matrix_scale_factor : int
                 Undocumented advanced option.
+
             - dual_feasibility_tolerance : double
                 Dual feasibility tolerance
+
             - dual_objective_value_upper_bound : double
                 Upper bound on objective value for dual simplex:
                 algorithm terminates if reached
+
             - dual_simplex_cleanup_strategy : int
                 Undocumented advanced option.
+
             - dual_simplex_cost_perturbation_multiplier : double
                 Undocumented advanced option.
+
             - dual_steepest_edge_weight_log_error_threshhold : double
                 Undocumented advanced option.
+
             - infinite_bound : double
                 Limit on abs(constraint bound): values larger than
                 this will be treated as infinite
+
             - infinite_cost : double
                 Limit on cost coefficient: values larger than this
                 will be treated as infinite.
+
             - ipm_iteration_limit : int
                 Iteration limit for interior-point solver.
+
             - keep_n_rows : int {-1, 0, 1}
                 Undocumented advanced option.
 
-                    - `-1`: KEEP_N_ROWS_DELETE_ROWS
-                    - `0`: KEEP_N_ROWS_DELETE_ENTRIES
-                    - `1`: KEEP_N_ROWS_KEEP_ROWS
+                    - ``-1``: ``KEEP_N_ROWS_DELETE_ROWS``
+                    - ``0``: ``KEEP_N_ROWS_DELETE_ENTRIES``
+                    - ``1``: ``KEEP_N_ROWS_KEEP_ROWS``
 
             - large_matrix_value : double
                 Upper limit on abs(matrix entries): values larger than
                 this will be treated as infinite
+
             - less_infeasible_DSE_check : bool
                 Undocumented advanced option.
+
             - less_infeasible_DSE_choose_row : bool
                 Undocumented advanced option.
+
             - max_threads : int
                 Maximum number of threads in parallel execution.
+
             - message_level : int {0, 1, 2, 4, 7}
                 Verbosity level, corresponds to:
 
-                    - `0`: ML_NONE
-                    - `1`: ML_VERBOSE
-                    - `2`: ML_DETAILED
-                    - `4`: ML_MINIMAL
-                    - `7`: ML_ALWAYS
+                    - ``0``: ``ML_NONE``
+                    - ``1``: ``ML_VERBOSE``
+                    - ``2``: ``ML_DETAILED``
+                    - ``4``: ``ML_MINIMAL``
+                    - ``7``: ``ML_ALWAYS``
 
             - min_threads : int
                 Minimum number of threads in parallel execution.
+
             - mps_parser_type_free : bool
                 Use free format MPS parsing.
+
             - parallel : bool
                 Run the solver in serial (False) or parallel (True).
+
             - presolve : bool
-                Run the presolve or not (or if `None`, then choose).
+                Run the presolve or not (or if ``None``, then choose).
+
             - primal_feasibility_tolerance : double
                 Primal feasibility tolerance.
+
             - run_as_hsol : bool
                 Undocumented advanced option.
+
             - run_crossover : bool
                 Advanced option. Toggles running the crossover routine
                 for IPX.
+
             - sense : int {1, -1}
-                `sense=1` corresponds to the MIN problem, `sense=-1`
+                ``sense=1`` corresponds to the MIN problem, ``sense=-1``
                 corresponds to the MAX problem. TODO: NOT IMPLEMENTED
+
             - simplex_crash_strategy : int {0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
                 Strategy for simplex crash: off / LTSSF / Bixby (0/1/2).
-                Default is `0`.  Corresponds to the following:
+                Default is ``0``.  Corresponds to the following:
 
-                    - `0`: `SIMPLEX_CRASH_STRATEGY_OFF`
-                    - `1`: `SIMPLEX_CRASH_STRATEGY_LTSSF_K`
-                    - `2`: `SIMPLEX_CRASH_STRATEGY_BIXBY`
-                    - `3`: `SIMPLEX_CRASH_STRATEGY_LTSSF_PRI`
-                    - `4`: `SIMPLEX_CRASH_STRATEGY_LTSF_K`
-                    - `5`: `SIMPLEX_CRASH_STRATEGY_LTSF_PRI`
-                    - `6`: `SIMPLEX_CRASH_STRATEGY_LTSF`
-                    - `7`: `SIMPLEX_CRASH_STRATEGY_BIXBY_NO_NONZERO_COL_COSTS`
-                    - `8`: `SIMPLEX_CRASH_STRATEGY_BASIC`
-                    - `9`: `SIMPLE_CRASH_STRATEGY_TEST_SING`
+                    - ``0``: ``SIMPLEX_CRASH_STRATEGY_OFF``
+                    - ``1``: ``SIMPLEX_CRASH_STRATEGY_LTSSF_K``
+                    - ``2``: ``SIMPLEX_CRASH_STRATEGY_BIXBY``
+                    - ``3``: ``SIMPLEX_CRASH_STRATEGY_LTSSF_PRI``
+                    - ``4``: ``SIMPLEX_CRASH_STRATEGY_LTSF_K``
+                    - ``5``: ``SIMPLEX_CRASH_STRATEGY_LTSF_PRI``
+                    - ``6``: ``SIMPLEX_CRASH_STRATEGY_LTSF``
+                    - ``7``: ``SIMPLEX_CRASH_STRATEGY_BIXBY_NO_NONZERO_COL_COSTS``
+                    - ``8``: ``SIMPLEX_CRASH_STRATEGY_BASIC``
+                    - ``9``: ``SIMPLE_CRASH_STRATEGY_TEST_SING``
 
             - simplex_dualise_strategy : int
                 Undocumented advanced option.
+
             - simplex_dual_edge_weight_strategy : int {0, 1, 2, 3, 4}
                 Strategy for simplex dual edge weights:
                 Dantzig / Devex / Steepest Edge. Corresponds
                 to the following:
 
-                    - `0`: `SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_DANTZIG`
-                    - `1`: `SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_DEVEX`
-                    - `2`: `SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_STEEPEST_EDGE_TO_DEVEX_SWITCH`
-                    - `3`: `SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_STEEPEST_EDGE`
-                    - `4`: `SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_STEEPEST_EDGE_UNIT_INITIAL`
+                    - ``0``: ``SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_DANTZIG``
+                    - ``1``: ``SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_DEVEX``
+                    - ``2``: ``SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_STEEPEST_EDGE_TO_DEVEX_SWITCH``
+                    - ``3``: ``SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_STEEPEST_EDGE``
+                    - ``4``: ``SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_STEEPEST_EDGE_UNIT_INITIAL``
 
             - simplex_initial_condition_check : bool
                 Undocumented advanced option.
+
             - simplex_initial_condition_tolerance : double
                 Undocumented advanced option.
+
             - simplex_iteration_limit : int
                 Iteration limit for simplex solver.
+
             - simplex_permute_strategy : int
                 Undocumented advanced option.
+
             - simplex_price_strategy : int
                 Undocumented advanced option.
+
             - simplex_primal_edge_weight_strategy : int {0, 1}
                 Strategy for simplex primal edge weights:
                 Dantzig / Devex.  Corresponds to the following:
 
-                    - `0`: `SIMPLEX_PRIMAL_EDGE_WEIGHT_STRATEGY_DANTZIG`
-                    - `1`: `SIMPLEX_PRIMAL_EDGE_WEIGHT_STRATEGY_DEVEX`
+                    - ``0``: ``SIMPLEX_PRIMAL_EDGE_WEIGHT_STRATEGY_DANTZIG``
+                    - ``1``: ``SIMPLEX_PRIMAL_EDGE_WEIGHT_STRATEGY_DEVEX``
 
             - simplex_scale_strategy : int {0, 1, 2, 3, 4, 5}
                 Strategy for scaling before simplex solver:
                 off / on (0/1)
 
-                    - `0`:  `SIMPLEX_SCALE_STRATEGY_OFF`
-                    - `1`: `SIMPLEX_SCALE_STRATEGY_HIGHS`
-                    - `2`: `SIMPLEX_SCALE_STRATEGY_HIGHS_FORCED`
-                    - `3`: `SIMPLEX_SCALE_STRATEGY_HIGHS_015`
-                    - `4`: `SIMPLEX_SCALE_STRATEGY_HIGHS_0157`
-                    - `5`: `SIMPLEX_SCALE_STRATEGY_HSOL`
+                    - ``0``:  ``SIMPLEX_SCALE_STRATEGY_OFF``
+                    - ``1``: ``SIMPLEX_SCALE_STRATEGY_HIGHS``
+                    - ``2``: ``SIMPLEX_SCALE_STRATEGY_HIGHS_FORCED``
+                    - ``3``: ``SIMPLEX_SCALE_STRATEGY_HIGHS_015``
+                    - ``4``: ``SIMPLEX_SCALE_STRATEGY_HIGHS_0157``
+                    - ``5``: ``SIMPLEX_SCALE_STRATEGY_HSOL``
 
             - simplex_strategy : int {0, 1, 2, 3, 4}
                 Strategy for simplex solver. Default: 1. Corresponds
                 to the following:
 
-                    - `0`: `SIMPLEX_STRATEGY_MIN`
-                    - `1`: `SIMPLEX_STRATEGY_DUAL`
-                    - `2`: `SIMPLEX_STRATEGY_DUAL_TASKS`
-                    - `3`: `SIMPLEX_STRATEGY_DUAL_MULTI`
-                    - `4`: `SIMPLEX_STRATEGY_PRIMAL`
+                    - ``0``: ``SIMPLEX_STRATEGY_MIN``
+                    - ``1``: ``SIMPLEX_STRATEGY_DUAL``
+                    - ``2``: ``SIMPLEX_STRATEGY_DUAL_TASKS``
+                    - ``3``: ``SIMPLEX_STRATEGY_DUAL_MULTI``
+                    - ``4``: ``SIMPLEX_STRATEGY_PRIMAL``
 
             - simplex_update_limit : int
                 Limit on the number of simplex UPDATE operations.
+
             - small_matrix_value : double
                 Lower limit on abs(matrix entries): values smaller
                 than this will be treated as zero.
+
             - solution_file : str
                 Solution file
+
             - solver : str {'simplex', 'ipm'}
-                Choose which solver to use.  If `solver='simplex'`
-                and `parallel=True` then PAMI will be used.
+                Choose which solver to use.  If ``solver='simplex'``
+                and ``parallel=True`` then PAMI will be used.
+
             - time_limit : double
                 Max number of seconds to run the solver for.
+
             - use_original_HFactor_logic : bool
                 Undocumented advanced option.
+
             - write_solution_to_file : bool
                 Write the primal and dual solution to a file
+
             - write_solution_pretty : bool
                 Write the primal and dual solution in a pretty
                 (human-readable) format
@@ -420,49 +456,56 @@ def highs_wrapper(
         REACHED_DUAL_OBJECTIVE_VALUE_UPPER_BOUND, REACHED_TIME_LIMIT,
         REACHED_ITERATION_LIMIT:
 
-            - `status` : int
+            - ``status`` : int
                 Model status code.
-            - `message` : str
+
+            - ``message`` : str
                 Message corresponding to model status code.
-            - `x` : list
+
+            - ``x`` : list
                 Solution variables.
-            - `slack` : list
+
+            - ``slack`` : list
                 Slack variables.
-            - `lambda` : list
+
+            - ``lambda`` : list
                 Lagrange multipliers assoicated with the constraints
                 Ax = b.
-            - `s` : list
+
+            - ``s`` : list
                 Lagrange multipliers associated with the constraints
                 x >= 0.
-            - `fun`
+
+            - ``fun``
                 Final objective value.
-            - `simplex_nit` : int
+
+            - ``simplex_nit`` : int
                 Number of iterations accomplished by the simplex
                 solver.
-            - `ipm_nit` : int
+
+            - ``ipm_nit`` : int
                 Number of iterations accomplished by the interior-
                 point solver.
 
         If model_status is not one of the above:
 
-            - `status` : int
+            - ``status`` : int
                 Model status code.
-            - `message` : str
+
+            - ``message`` : str
                 Message corresponding to model status code.
 
     Notes
     -----
-    If `options['write_solution_to_file']` is `True` but
-    `options['solution_file']` is unset or `''`, then the solution
-    will be printed to `stdout`.
+    If ``options['write_solution_to_file']`` is ``True`` but
+    ``options['solution_file']`` is unset or ``''``, then the solution
+    will be printed to ``stdout``.
 
     If any iteration limit is reached, no solution will be
     available.
 
-    `OptimizeWarning` will be raised if any option value set by
-    the user is found to be incorrect.  Some invalud values for
-    `message_level` are known to fail to raise these warnings
-    (3, 5, and 6 to be exact).
+    ``OptimizeWarning`` will be raised if any option value set by
+    the user is found to be incorrect.
 
     References
     ----------
@@ -490,7 +533,10 @@ def highs_wrapper(
     lp.Aindex_.resize(numnz)
     lp.Avalue_.resize(numnz)
 
-    # Be careful not index into nothing
+    # Explicitly create pointers to pass to HiGHS C++ API;
+    # do checking to make sure null memory-views are not
+    # accessed (e.g., &lhs[0] raises exception when lhs is
+    # empty!)
     cdef:
         double * colcost_ptr = NULL
         double * collower_ptr = NULL
@@ -546,17 +592,10 @@ def highs_wrapper(
                 'message': highs.highsModelStatusToString(err_model_status).decode(),
             }
 
-    # Solve the fool thing
+    # Solve the LP
     cdef HighsStatus run_status = highs.run()
 
     # Extract what we need from the solution
-    #     HighsModelStatus
-    #     solution
-    #     dual solution
-    #     objective value
-    #     Number of iterations (simplex or ipm)
-    #     sum of primal infeasibilities
-
     cdef HighsModelStatus model_status = highs.getModelStatus()
     cdef HighsModelStatus scaled_model_status = highs.getModelStatus(True)
     if model_status != scaled_model_status:
@@ -573,18 +612,6 @@ def highs_wrapper(
 
     # If the status is bad, don't look up the solution
     if info.primal_status != PrimalDualStatusSTATUS_FEASIBLE_POINT:
-#    if model_status in [
-#            HighsModelStatusNOTSET,
-#            HighsModelStatusLOAD_ERROR,
-#            HighsModelStatusMODEL_ERROR,
-#            HighsModelStatusMODEL_EMPTY,
-#            HighsModelStatusPRESOLVE_ERROR,
-#            HighsModelStatusSOLVE_ERROR,
-#            HighsModelStatusPOSTSOLVE_ERROR,
-#            HighsModelStatusPRIMAL_INFEASIBLE,
-#            HighsModelStatusPRIMAL_UNBOUNDED,
-#            HighsModelStatusREACHED_ITERATION_LIMIT,
-#    ]:
         return {
             'status': <int> model_status,
             'message': highs.highsModelStatusToString(model_status).decode(),

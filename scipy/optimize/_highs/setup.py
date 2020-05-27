@@ -1,3 +1,8 @@
+'''
+setup.py for HiGHS scipy interface
+
+Some CMake files are used to create source lists for compilation
+'''
 
 import sys
 import pathlib

@@ -269,6 +269,7 @@ struct HighsOptionsStruct {
   int simplex_permute_strategy;
   int dual_simplex_cleanup_strategy;
   int simplex_price_strategy;
+  int dual_chuzc_sort_strategy;
   bool simplex_initial_condition_check;
   double simplex_initial_condition_tolerance;
   double dual_steepest_edge_weight_log_error_threshhold;
@@ -584,6 +585,12 @@ class HighsOptions : public HighsOptionsStruct {
         &simplex_price_strategy, SIMPLEX_PRICE_STRATEGY_MIN,
         SIMPLEX_PRICE_STRATEGY_ROW_SWITCH_COL_SWITCH,
         SIMPLEX_PRICE_STRATEGY_MAX);
+    records.push_back(record_int);
+
+    record_int = new OptionRecordInt(
+        "dual_chuzc_sort_strategy", "Strategy for CHUZC sort in dual simplex",
+        advanced, &dual_chuzc_sort_strategy, SIMPLEX_DUAL_CHUZC_STRATEGY_MIN,
+        SIMPLEX_DUAL_CHUZC_STRATEGY_CHOOSE, SIMPLEX_DUAL_CHUZC_STRATEGY_MAX);
     records.push_back(record_int);
 
     record_bool =

@@ -16,6 +16,14 @@ if(EXISTS "${LOC_PATH}")
     Please make a build subdirectory. Feel free to remove CMakeCache.txt and CMakeFiles.")
 endif()
 
+# Use OpenMP if version is high enough.
+option(OPENMP "OpenMP" OFF)
+find_package(OpenMP 3.0)
+if(OpenMP_CXX_FOUND)
+    message(STATUS "Linking with OpenMP... ")
+    set(OPENMP ON)
+endif()
+
 # Fast build: No interfaces (apart from c); No ipx; New (short) ctest instances, 
 # static library and exe without PIC. Used for gradually updating the CMake 
 # targets build and install / export.
@@ -67,17 +75,7 @@ if(EXT_PRESOLVE_DIR)
     include_directories(${EXT_PRESOLVE_DIR}/external)
 endif()
 
-# whether to use OpenMP
-option(OPENMP "OpenMP" ON)
-if(OPENMP)
-    find_package(OpenMP)
-    if(OPENMP_FOUND)
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-    else()
-        set(OPENMP OFF)
-    endif()
-endif()
-message(STATUS "OpenMP: " ${OPENMP})
+
 
 # For the moment keep above coverage part in case we are testing at CI.
 option(CI "CI extended tests" ON)
@@ -293,12 +291,6 @@ add_subdirectory(app)
 add_subdirectory(check)
 add_subdirectory(src)
 
-# # Comment out for scaffold/ tests
-# add_subdirectory(scaffold)
-
-# # Only needed if it defines a target like a main executable. For methods stick
-# # to header-only.
-# add_subdirectory(dev_presolve)
 
 else()
 message(STATUS "FAST BUILD set to on.
@@ -416,3 +408,22 @@ endforeach()
 # include(CTest)
 
 endif()
+
+# Modern CMake link in FAST_BUILD mode
+# All uses of target_link_libraries with a target must be either 
+# all-keyword or all-plain.
+if (OPENMP)
+    if (FAST_BUILD)
+        target_link_libraries(libhighs PUBLIC OpenMP::OpenMP_CXX)
+    else()
+        target_link_libraries(libhighs OpenMP::OpenMP_CXX)
+    endif()
+endif()
+
+# # Comment out for scaffold/ tests
+# add_subdirectory(scaffold)
+
+# # Only needed if it defines a target like a main executable. For methods stick
+# # to header-only.
+# add_subdirectory(dev_presolve)
+

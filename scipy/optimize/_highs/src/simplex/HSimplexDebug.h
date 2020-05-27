@@ -45,4 +45,24 @@ HighsDebugStatus debugCleanup(HighsModelObject& highs_model_object,
                               const std::vector<double>& original_dual);
 HighsDebugStatus debugFreeListNumEntries(
     const HighsModelObject& highs_model_object, const std::set<int>& freeList);
+
+HighsDebugStatus debugDualChuzcFail(
+    const HighsOptions& options, const int workCount,
+    const std::vector<std::pair<int, double>>& workData, const double* workDual,
+    const double selectTheta, const double remainTheta);
+
+void debugDualChuzcWorkDataAndGroupReport(
+    const HighsModelObject& highs_model_object, const double workDelta,
+    const double workTheta, const std::string message,
+    const int report_workCount,
+    const std::vector<std::pair<int, double>>& report_workData,
+    const std::vector<int>& report_workGroup);
+HighsDebugStatus debugDualChuzcWorkDataAndGroup(
+    const HighsModelObject& highs_model_object, const double workDelta,
+    const double workTheta, const int workCount, const int alt_workCount,
+    const int breakIndex, const int alt_breakIndex,
+    const std::vector<std::pair<int, double>>& workData,
+    const std::vector<std::pair<int, double>>& sorted_workData,
+    const std::vector<int>& workGroup, const std::vector<int>& alt_workGroup);
+
 #endif  // SIMPLEX_HSIMPLEXDEBUG_H_

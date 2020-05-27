@@ -20,6 +20,9 @@
 #include "lp_data/HighsModelObject.h"
 
 class HVector;
+const double initial_total_change = 1e-12;
+const double initial_remain_theta = 1e100;
+const double max_select_theta = 1e18;
 
 /**
  * @brief Dual simplex ratio test for HiGHS
@@ -74,10 +77,28 @@ class HDualRow {
   /**
    * @brief Chooses the entering variable via BFRT and EXPAND
    *
-   * Can fail when there are excessive dual vaules due to EXPAND
+   * Can fail when there are excessive dual values due to EXPAND
    * perturbation not being relatively too small
    */
   bool chooseFinal();
+
+  /**
+   * @brief Identifies the groups of degenerate nodes in BFRT after a
+   * heap sort of ratios
+   */
+  bool chooseFinalWorkGroupQuad();
+  bool chooseFinalWorkGroupHeap();
+
+  void chooseFinalLargeAlpha(
+      int& breakIndex, int& breakGroup, int pass_workCount,
+      const std::vector<std::pair<int, double>>& pass_workData,
+      const std::vector<int>& pass_workGroup);
+
+  void reportWorkDataAndGroup(
+      const std::string message, const int reportWorkCount,
+      const std::vector<std::pair<int, double>>& reportWorkData,
+      const std::vector<int>& reportWorkGroup);
+  bool compareWorkDataAndGroup();
 
   /**
    * @brief Update bounds when flips have occurred, and accumulate the
@@ -148,10 +169,17 @@ class HDualRow {
   int workPivot;     //!< Index of the column entering the basis
   int workCount;     //!< Number of BFRT flips
 
-  std::vector<std::pair<int, double> >
+  std::vector<std::pair<int, double>>
       workData;  //!< Index-Value pairs for ratio test
   std::vector<int>
       workGroup;  //!< Pointers into workData for degenerate nodes in BFRT
+
+  // Independent identifiers for heap-based sort in BFRT
+  int alt_workCount;
+  std::vector<std::pair<int, double>> original_workData;
+  std::vector<std::pair<int, double>> sorted_workData;
+  std::vector<int> alt_workGroup;
+
   HighsSimplexAnalysis* analysis;
 };
 

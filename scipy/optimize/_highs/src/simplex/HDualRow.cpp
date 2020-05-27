@@ -22,6 +22,7 @@
 #include "simplex/HSimplexDebug.h"
 #include "simplex/HVector.h"
 #include "simplex/SimplexTimer.h"
+#include "util/HighsSort.h"
 
 using std::make_pair;
 using std::pair;
@@ -127,16 +128,12 @@ bool HDualRow::chooseFinal() {
    * (4) determine final flip variables
    */
 
-#ifdef HiGHSDEV
-  bool rp_Choose_final = false;
-  //   rp_Choose_final = true;
-#endif
   // 1. Reduce by large step BFRT
   analysis->simplexTimerStart(Chuzc2Clock);
   int fullCount = workCount;
   workCount = 0;
   double totalChange = 0;
-  double totalDelta = fabs(workDelta);
+  const double totalDelta = fabs(workDelta);
   double selectTheta = 10 * workTheta + 1e-7;
   for (;;) {
     for (int i = workCount; i < fullCount; i++) {
@@ -153,151 +150,273 @@ bool HDualRow::chooseFinal() {
   }
   analysis->simplexTimerStop(Chuzc2Clock);
 
-#ifdef HiGHSDEV
-  if (rp_Choose_final) printf("Completed  choose_final 1\n");
-#endif
   // 2. Choose by small step BFRT
+
+  bool use_quad_sort = false;
+  bool use_heap_sort = false;
+  const int dual_chuzc_sort_strategy =
+      workHMO.options_.dual_chuzc_sort_strategy;
+  if (dual_chuzc_sort_strategy == SIMPLEX_DUAL_CHUZC_STRATEGY_CHOOSE) {  // 0
+    // Use the quadratic cost sort for smaller values of workCount,
+    // otherwise use the heap-based sort
+    use_quad_sort = workCount < 100;
+    use_heap_sort = !use_quad_sort;
+  } else if (dual_chuzc_sort_strategy ==
+             SIMPLEX_DUAL_CHUZC_STRATEGY_QUAD) {  // 1
+    // Use the quadratic cost sort
+    use_quad_sort = true;
+  } else if (dual_chuzc_sort_strategy ==
+             SIMPLEX_DUAL_CHUZC_STRATEGY_HEAP) {  // 2
+    // Use the heap-based sort
+    use_heap_sort = true;
+  } else if (dual_chuzc_sort_strategy ==
+             SIMPLEX_DUAL_CHUZC_STRATEGY_BOTH) {  // 3
+    // Use the both sorts - for debugging
+    use_quad_sort = true;
+    use_heap_sort = true;
+  }
+  // Ensure that at least one sort is used!
+  assert(use_heap_sort || use_quad_sort);
+
+  if (use_heap_sort) {
+    // Take a copy of workData and workCount for the independent
+    // heap-based code
+    original_workData = workData;
+    alt_workCount = workCount;
+  }
   analysis->simplexTimerStart(Chuzc3Clock);
-  const double Td = workHMO.scaled_solution_params_.dual_feasibility_tolerance;
-  fullCount = workCount;
-  workCount = 0;
-  totalChange = 1e-12;
-  selectTheta = workTheta;
-  workGroup.clear();
-  workGroup.push_back(0);
-  const double iz_remainTheta = 1e100;
-  int prev_workCount = workCount;
-  double prev_remainTheta = iz_remainTheta;
-  double prev_selectTheta = selectTheta;
-  while (selectTheta < 1e18) {
-    double remainTheta = iz_remainTheta;
-#ifdef HiGHSDEV
-    if (rp_Choose_final)
-      printf(
-          "Performing choose_final 2; selectTheta = %11.4g; workCount=%d; "
-          "fullCount=%d\n",
-          selectTheta, workCount, fullCount);
-#endif
-    for (int i = workCount; i < fullCount; i++) {
-      int iCol = workData[i].first;
-      double value = workData[i].second;
-      double dual = workMove[iCol] * workDual[iCol];
-#ifdef HiGHSDEV
-      if (rp_Choose_final)
-        printf("iCol=%4d; v=%11.4g; d=%11.4g |", iCol, value, dual);
-#endif
-        // Tight satisfy
-#ifdef HiGHSDEV
-      if (rp_Choose_final)
-        printf(" %11.4g = dual ?<=? sTh * v = %11.4g; workCount=%2d", dual,
-               selectTheta * value, workCount);
-#endif
-      if (dual <= selectTheta * value) {
-        swap(workData[workCount++], workData[i]);
-        totalChange += value * (workRange[iCol]);
-      } else if (dual + Td < remainTheta * value) {
-        remainTheta = (dual + Td) / value;
-      }
-#ifdef HiGHSDEV
-      if (rp_Choose_final)
-        printf(": totCg=%11.4g; rmTh=%11.4g\n", totalChange, remainTheta);
-#endif
-    }
-    workGroup.push_back(workCount);
-    // Update selectTheta with the value of remainTheta;
-    selectTheta = remainTheta;
-    // Check for no change in this loop - to prevent infinite loop
-    if ((workCount == prev_workCount) && (prev_selectTheta == selectTheta) &&
-        (prev_remainTheta == remainTheta)) {
-#ifdef HiGHSDEV
-      printf("In choose_final: No change in loop 2 so return error\n");
-      double workDataNorm = 0;
-      double dualNorm = 0;
-      for (int i = 0; i < workCount; i++) {
-        int iCol = workData[i].first;
-        double value = workData[i].second;
-        workDataNorm += value * value;
-        value = workDual[iCol];
-        dualNorm += value * value;
-      }
-      workDataNorm += sqrt(workDataNorm);
-      dualNorm += sqrt(dualNorm);
-      printf("   workCount = %d; selectTheta=%g; remainTheta=%g\n", workCount,
-             selectTheta, remainTheta);
-      printf("workDataNorm = %g; dualNorm = %g\n", workDataNorm, dualNorm);
-#endif
+  if (use_quad_sort) {
+    // Use the O(n^2) quadratic sort for the candidates
+    analysis->simplexTimerStart(Chuzc3a0Clock);
+    bool choose_ok = chooseFinalWorkGroupQuad();
+    analysis->simplexTimerStop(Chuzc3a0Clock);
+    if (!choose_ok) {
       analysis->simplexTimerStop(Chuzc3Clock);
       return true;
     }
-    // Record the initial values of workCount, remainTheta and selectTheta for
-    // the next pass through the loop
-    prev_workCount = workCount;
-    prev_remainTheta = remainTheta;
-    prev_selectTheta = selectTheta;
-    if (totalChange >= totalDelta || workCount == fullCount) break;
   }
-
-#ifdef HiGHSDEV
-  if (rp_Choose_final) printf("Completed  choose_final 2\n");
-#endif
+  if (use_heap_sort) {
+    // Use the O(n log n) heap sort for the candidates
+    analysis->simplexTimerStart(Chuzc3a1Clock);
+    chooseFinalWorkGroupHeap();
+    analysis->simplexTimerStop(Chuzc3a1Clock);
+  }
   // 3. Choose large alpha
-  double finalCompare = 0;
-  for (int i = 0; i < workCount; i++)
-    finalCompare = max(finalCompare, workData[i].second);
-  finalCompare = min(0.1 * finalCompare, 1.0);
-  int countGroup = workGroup.size() - 1;
-  int breakGroup = -1;
-  int breakIndex = -1;
-  for (int iGroup = countGroup - 1; iGroup >= 0; iGroup--) {
-    double dMaxFinal = 0;
-    int iMaxFinal = -1;
-    for (int i = workGroup[iGroup]; i < workGroup[iGroup + 1]; i++) {
-      if (dMaxFinal < workData[i].second) {
-        dMaxFinal = workData[i].second;
-        iMaxFinal = i;
-      } else if (dMaxFinal == workData[i].second) {
-        int jCol = workData[iMaxFinal].first;
-        int iCol = workData[i].first;
-        if (workNumTotPermutation[iCol] < workNumTotPermutation[jCol]) {
-          iMaxFinal = i;
-        }
-      }
-    }
+  analysis->simplexTimerStart(Chuzc3bClock);
+  int breakIndex;
+  int breakGroup;
+  int alt_breakIndex;
+  int alt_breakGroup;
+  if (use_quad_sort)
+    chooseFinalLargeAlpha(breakIndex, breakGroup, workCount, workData,
+                          workGroup);
+  if (use_heap_sort)
+    chooseFinalLargeAlpha(alt_breakIndex, alt_breakGroup, alt_workCount,
+                          sorted_workData, alt_workGroup);
+  analysis->simplexTimerStop(Chuzc3bClock);
 
-    if (workData[iMaxFinal].second > finalCompare) {
-      breakIndex = iMaxFinal;
-      breakGroup = iGroup;
-      break;
-    }
+  if (!use_quad_sort) {
+    // If the quadratic sort is not being used, revert to the heap
+    // sort results
+    breakIndex = alt_breakIndex;
+    breakGroup = alt_breakGroup;
   }
+  analysis->simplexTimerStart(Chuzc3cClock);
 
-#ifdef HiGHSDEV
-  if (rp_Choose_final) printf("Completed  choose_final 3\n");
-#endif
   int sourceOut = workDelta < 0 ? -1 : 1;
-  workPivot = workData[breakIndex].first;
-  workAlpha = workData[breakIndex].second * sourceOut * workMove[workPivot];
+  if (use_quad_sort) {
+    workPivot = workData[breakIndex].first;
+    workAlpha = workData[breakIndex].second * sourceOut * workMove[workPivot];
+  } else {
+    workPivot = sorted_workData[breakIndex].first;
+    workAlpha =
+        sorted_workData[breakIndex].second * sourceOut * workMove[workPivot];
+  }
   if (workDual[workPivot] * workMove[workPivot] > 0) {
     workTheta = workDual[workPivot] / workAlpha;
   } else {
     workTheta = 0;
   }
 
+  analysis->simplexTimerStop(Chuzc3cClock);
+
+  if (use_quad_sort && use_heap_sort)
+    debugDualChuzcWorkDataAndGroup(
+        workHMO, workDelta, workTheta, workCount, alt_workCount, breakIndex,
+        alt_breakIndex, workData, sorted_workData, workGroup, alt_workGroup);
+
+  analysis->simplexTimerStart(Chuzc3dClock);
+
   // 4. Determine BFRT flip index: flip all
   fullCount = breakIndex;
   workCount = 0;
-  for (int i = 0; i < workGroup[breakGroup]; i++) {
-    const int iCol = workData[i].first;
-    const int move = workMove[iCol];
-    workData[workCount++] = make_pair(iCol, move * workRange[iCol]);
+  if (use_quad_sort) {
+    for (int i = 0; i < workGroup[breakGroup]; i++) {
+      const int iCol = workData[i].first;
+      const int move = workMove[iCol];
+      workData[workCount++] = make_pair(iCol, move * workRange[iCol]);
+    }
+  } else {
+    for (int i = 0; i < alt_workGroup[breakGroup]; i++) {
+      const int iCol = sorted_workData[i].first;
+      const int move = workMove[iCol];
+      workData[workCount++] = make_pair(iCol, move * workRange[iCol]);
+    }
   }
   if (workTheta == 0) workCount = 0;
+  analysis->simplexTimerStop(Chuzc3dClock);
+
+  analysis->simplexTimerStart(Chuzc3eClock);
+  /*
+  if (!use_quad_sort) {
+    for (int i = 0; i < workCount; i++) workData[i] = sorted_workData[i];
+  }
+  */
   sort(workData.begin(), workData.begin() + workCount);
+  analysis->simplexTimerStop(Chuzc3eClock);
   analysis->simplexTimerStop(Chuzc3Clock);
-#ifdef HiGHSDEV
-  if (rp_Choose_final) printf("Completed  choose_final 4\n");
-#endif
   return false;
+}
+
+bool HDualRow::chooseFinalWorkGroupQuad() {
+  const double Td = workHMO.scaled_solution_params_.dual_feasibility_tolerance;
+  int fullCount = workCount;
+  workCount = 0;
+  double totalChange = initial_total_change;
+  double selectTheta = workTheta;
+  const double totalDelta = fabs(workDelta);
+  workGroup.clear();
+  workGroup.push_back(0);
+  int prev_workCount = workCount;
+  double prev_remainTheta = initial_remain_theta;
+  double prev_selectTheta = selectTheta;
+  int debug_num_loop = 0;
+
+  while (selectTheta < max_select_theta) {
+    double remainTheta = initial_remain_theta;
+    debug_num_loop++;
+    int debug_loop_ln = 0;
+    for (int i = workCount; i < fullCount; i++) {
+      int iCol = workData[i].first;
+      double value = workData[i].second;
+      double dual = workMove[iCol] * workDual[iCol];
+      // Tight satisfy
+      if (dual <= selectTheta * value) {
+        swap(workData[workCount++], workData[i]);
+        totalChange += value * (workRange[iCol]);
+      } else if (dual + Td < remainTheta * value) {
+        remainTheta = (dual + Td) / value;
+      }
+      debug_loop_ln++;
+    }
+    workGroup.push_back(workCount);
+
+    // Update selectTheta with the value of remainTheta;
+    selectTheta = remainTheta;
+    // Check for no change in this loop - to prevent infinite loop
+    if ((workCount == prev_workCount) && (prev_selectTheta == selectTheta) &&
+        (prev_remainTheta == remainTheta)) {
+      debugDualChuzcFail(workHMO.options_, workCount, workData, workDual,
+                         selectTheta, remainTheta);
+      return false;
+    }
+    // Record the initial values of workCount, remainTheta and selectTheta for
+    // the next pass through the loop - to check for infinite loop condition
+    prev_workCount = workCount;
+    prev_remainTheta = remainTheta;
+    prev_selectTheta = selectTheta;
+    if (totalChange >= totalDelta || workCount == fullCount) break;
+  }
+  return true;
+}
+
+bool HDualRow::chooseFinalWorkGroupHeap() {
+  const double Td = workHMO.scaled_solution_params_.dual_feasibility_tolerance;
+  int fullCount = alt_workCount;
+  double totalChange = initial_total_change;
+  double selectTheta = workTheta;
+  const double totalDelta = fabs(workDelta);
+  int heap_num_en = 0;
+  std::vector<int> heap_i;
+  std::vector<double> heap_v;
+  heap_i.resize(fullCount + 1);
+  heap_v.resize(fullCount + 1);
+  for (int i = 0; i < fullCount; i++) {
+    int iCol = original_workData[i].first;
+    double value = original_workData[i].second;
+    double dual = workMove[iCol] * workDual[iCol];
+    double ratio = dual / value;
+    if (ratio < max_select_theta) {
+      heap_num_en++;
+      heap_i[heap_num_en] = i;
+      heap_v[heap_num_en] = ratio;
+    }
+  }
+  maxheapsort(&heap_v[0], &heap_i[0], heap_num_en);
+
+  alt_workCount = 0;
+  alt_workGroup.clear();
+  alt_workGroup.push_back(alt_workCount);
+  int this_group_first_entry = alt_workCount;
+  sorted_workData.resize(heap_num_en);
+  for (int en = 1; en <= heap_num_en; en++) {
+    int i = heap_i[en];
+    int iCol = original_workData[i].first;
+    double value = original_workData[i].second;
+    double dual = workMove[iCol] * workDual[iCol];
+    if (dual > selectTheta * value) {
+      // Breakpoint is in the next group, so record the pointer to its
+      // first entry
+      alt_workGroup.push_back(alt_workCount);
+      this_group_first_entry = alt_workCount;
+      selectTheta = (dual + Td) / value;
+      // End loop if all permitted groups have been identified
+      if (totalChange >= totalDelta) break;
+    }
+    // Store the breakpoint
+    sorted_workData[alt_workCount].first = iCol;
+    sorted_workData[alt_workCount].second = value;
+    totalChange += value * (workRange[iCol]);
+    alt_workCount++;
+  }
+  if (alt_workCount > this_group_first_entry)
+    alt_workGroup.push_back(alt_workCount);
+  return true;
+}
+
+void HDualRow::chooseFinalLargeAlpha(
+    int& breakIndex, int& breakGroup, int pass_workCount,
+    const std::vector<std::pair<int, double>>& pass_workData,
+    const std::vector<int>& pass_workGroup) {
+  double finalCompare = 0;
+  for (int i = 0; i < pass_workCount; i++)
+    finalCompare = max(finalCompare, pass_workData[i].second);
+  finalCompare = min(0.1 * finalCompare, 1.0);
+  int countGroup = pass_workGroup.size() - 1;
+  breakGroup = -1;
+  breakIndex = -1;
+  for (int iGroup = countGroup - 1; iGroup >= 0; iGroup--) {
+    double dMaxFinal = 0;
+    int iMaxFinal = -1;
+    for (int i = pass_workGroup[iGroup]; i < pass_workGroup[iGroup + 1]; i++) {
+      if (dMaxFinal < pass_workData[i].second) {
+        dMaxFinal = pass_workData[i].second;
+        iMaxFinal = i;
+      } else if (dMaxFinal == pass_workData[i].second) {
+        int jCol = pass_workData[iMaxFinal].first;
+        int iCol = pass_workData[i].first;
+        if (workNumTotPermutation[iCol] < workNumTotPermutation[jCol]) {
+          iMaxFinal = i;
+        }
+      }
+    }
+
+    if (pass_workData[iMaxFinal].second > finalCompare) {
+      breakIndex = iMaxFinal;
+      breakGroup = iGroup;
+      break;
+    }
+  }
 }
 
 void HDualRow::updateFlip(HVector* bfrtColumn) {

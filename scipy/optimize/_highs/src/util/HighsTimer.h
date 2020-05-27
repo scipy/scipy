@@ -257,6 +257,11 @@ class HighsTimer {
 #endif
       assert(clock_start[clock_list[i]] > 0);
     }
+    // Determine whether there are any times to report
+    int sum_calls = 0;
+    for (int i = 0; i < num_clock_list_entries; i++)
+      sum_calls += clock_num_call[clock_list[i]];
+    if (!sum_calls) return;
 
     // Report in one line the per-mille contribution from each clock
     // First give the 3-character clock names as column headers

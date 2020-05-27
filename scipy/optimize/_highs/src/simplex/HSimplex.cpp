@@ -60,7 +60,7 @@ void setSimplexOptions(HighsModelObject& highs_model_object) {
   simplex_info.store_squared_primal_infeasibility = true;
   // Option for analysing the LP solution
 #ifdef HiGHSDEV
-  bool useful_analysis = false;  // true;  //
+  bool useful_analysis = true;  // false;  //
   bool full_timing = false;
   // Options for reporting timing
   simplex_info.report_simplex_inner_clock = useful_analysis;
@@ -68,7 +68,7 @@ void setSimplexOptions(HighsModelObject& highs_model_object) {
   simplex_info.report_simplex_phases_clock = full_timing;
   simplex_info.report_HFactor_clock = useful_analysis;  // full_timing;//
   // Options for analysing the LP and simplex iterations
-  simplex_info.analyse_lp = false;  // useful_analysis;//
+  simplex_info.analyse_lp = useful_analysis;  // false;  //
   simplex_info.analyse_iterations = useful_analysis;
   //  simplex_info.analyse_invert_form = useful_analysis;
   //  simplex_info.analyse_invert_condition = useful_analysis;
@@ -1743,7 +1743,6 @@ void permuteSimplexLp(HighsModelObject& highs_model_object) {
   vector<double>& colCost = highs_model_object.simplex_lp_.colCost_;
   vector<double>& colLower = highs_model_object.simplex_lp_.colLower_;
   vector<double>& colUpper = highs_model_object.simplex_lp_.colUpper_;
-  vector<double>& colScale = highs_model_object.scale_.col_;
 
   // 2. Duplicate the original data to copy from
   vector<int> saveAstart = highs_model_object.simplex_lp_.Astart_;
@@ -1752,7 +1751,6 @@ void permuteSimplexLp(HighsModelObject& highs_model_object) {
   vector<double> saveColCost = highs_model_object.simplex_lp_.colCost_;
   vector<double> saveColLower = highs_model_object.simplex_lp_.colLower_;
   vector<double> saveColUpper = highs_model_object.simplex_lp_.colUpper_;
-  vector<double> saveColScale = highs_model_object.scale_.col_;
 
   // 3. Generate the permuted matrix and corresponding vectors of column data
   int countX = 0;
@@ -1767,7 +1765,15 @@ void permuteSimplexLp(HighsModelObject& highs_model_object) {
     colCost[i] = saveColCost[fromCol];
     colLower[i] = saveColLower[fromCol];
     colUpper[i] = saveColUpper[fromCol];
-    colScale[i] = saveColScale[fromCol];
+  }
+  if (highs_model_object.scale_.is_scaled_) {
+    // Permute any columns scaling factors
+    vector<double>& colScale = highs_model_object.scale_.col_;
+    vector<double> saveColScale = highs_model_object.scale_.col_;
+    for (int i = 0; i < numCol; i++) {
+      int fromCol = numColPermutation[i];
+      colScale[i] = saveColScale[fromCol];
+    }
   }
   assert(Astart[numCol] == countX);
   // Deduce the consequences of permuting the LP
@@ -2266,6 +2272,7 @@ void reportSimplexProfiling(HighsModelObject& highs_model_object) {
   } else if (simplex_info.simplex_strategy == SIMPLEX_STRATEGY_DUAL_PLAIN) {
     if (simplex_info.report_simplex_inner_clock) {
       simplex_timer.reportSimplexInnerClock(analysis.thread_simplex_clocks[0]);
+      simplex_timer.reportSimplexChuzc3Clock(analysis.thread_simplex_clocks[0]);
     }
     if (simplex_info.report_simplex_outer_clock) {
       simplex_timer.reportDualSimplexIterateClock(
