@@ -778,7 +778,7 @@ def test_sgesdd_lwork_bug_workaround():
         p.terminate()
 
     assert_equal(returncode, 0,
-                 "Code apparently failed: " + p.stdout.read())
+                 "Code apparently failed: " + p.stdout.read().decode())
 
 
 class TestSytrd(object):
