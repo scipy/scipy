@@ -3062,9 +3062,9 @@ def _reorder_leaves(Z, leaves_order):
             stack.append(new_node)
             _left = v
             v = p[v]
-            _temp=list(ch[v-n])
+            _temp = list(ch[v-n])
             _temp.remove(_left)
-            _right=_temp[0]
+            _right = _temp[0]
             continue
         else:  # v is the right son in F
             left_pair = stack.pop()
@@ -3074,7 +3074,7 @@ def _reorder_leaves(Z, leaves_order):
             else:
                 new_Z[cnt] = [left_pair, v, height[p[v]-n], num_leaves[p[v]]]
             cnt += 1
-            _right=v
+            _right = v
             v = p[v]
             _temp = list(ch[v-n])
             _temp.remove(_right)
