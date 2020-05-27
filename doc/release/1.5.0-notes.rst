@@ -216,9 +216,9 @@ the modern ``np.random.Generator`` as well as the legacy
 The ``axis`` parameter was added to `scipy.stats.rankdata`. This allows slices 
 of an array along the given axis to be ranked independently.
 
-The ``axis`` parameter was added to `scipy.stats.f_oneway`, allowing it compute 
-multiple one-way ANOVA tests for data stored in n-dimensional arrays. Some
-performance improvements to ``f_oneway`` as well.
+The ``axis`` parameter was added to `scipy.stats.f_oneway`, allowing it to
+compute multiple one-way ANOVA tests for data stored in n-dimensional
+arrays.  The performance of ``f_oneway`` was also improved for some cases.
 
 The PDF and CDF methods for ``stats.geninvgauss`` are now significantly faster 
 as  the numerical integration to calculate the CDF uses a Cython based 
