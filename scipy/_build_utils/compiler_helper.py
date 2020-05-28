@@ -83,3 +83,23 @@ def set_cxx_flags_hook(build_ext, ext):
             args.append(min_macos_flag)
             ext.extra_link_args.append(min_macos_flag)
 
+
+def set_cxx_flags_clib_hook(build_clib, build_info):
+    cc = build_clib.compiler
+    new_args = []
+    new_link_args = []
+
+    std_flag = get_cxx_std_flag(cc)
+    if std_flag is not None:
+        new_args.append(std_flag)
+
+    if sys.platform == 'darwin':
+        # Set min macOS version
+        min_macos_flag = '-mmacosx-version-min=10.9'
+        if has_flag(cc, min_macos_flag):
+            new_args.append(min_macos_flag)
+            new_link_args.append(min_macos_flag)
+
+    dict_append(build_info, extra_compiler_args=new_args,
+                extra_link_args=new_link_args)
+
