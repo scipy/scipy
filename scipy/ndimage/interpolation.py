@@ -36,16 +36,9 @@ from numpy.core.multiarray import normalize_axis_index
 
 from . import _ni_support
 from . import _nd_image
-from ._ni_docstrings import docdict
+from ._ni_docstrings import docfiller
 from scipy._lib import doccer
 
-# Change the default 'reflect' to 'constant' via modifying a copy of docdict
-docdict_copy = docdict.copy()
-del docdict
-docdict_copy['mode'] = docdict_copy['mode'].replace("Default is 'reflect'",
-                                                    "Default is 'constant'")
-
-docfiller = doccer.filldoc(docdict_copy)
 
 __all__ = ['spline_filter1d', 'spline_filter', 'geometric_transform',
            'map_coordinates', 'affine_transform', 'shift', 'zoom', 'rotate']
@@ -71,7 +64,7 @@ def spline_filter1d(input, order=3, axis=-1, output=numpy.float64,
     output : ndarray or dtype, optional
         The array in which to place the output, or the dtype of the returned
         array. Default is ``numpy.float64``.
-    %(mode)s
+    %(mode_mirror)s
 
     Returns
     -------
@@ -206,7 +199,7 @@ def geometric_transform(input, mapping, output_shape=None,
     order : int, optional
         The order of the spline interpolation, default is 3.
         The order has to be in the range 0-5.
-    %(mode)s
+    %(mode_constant)s
     %(cval)s
     %(prefilter)s
     extra_arguments : tuple, optional
@@ -329,7 +322,7 @@ def map_coordinates(input, coordinates, output=None, order=3,
     order : int, optional
         The order of the spline interpolation, default is 3.
         The order has to be in the range 0-5.
-    %(mode)s
+    %(mode_constant)s
     %(cval)s
     %(prefilter)s
 
@@ -441,7 +434,7 @@ def affine_transform(input, matrix, offset=0.0, output_shape=None,
     order : int, optional
         The order of the spline interpolation, default is 3.
         The order has to be in the range 0-5.
-    %(mode)s
+    %(mode_constant)s
     %(cval)s
     %(prefilter)s
 
@@ -548,7 +541,7 @@ def shift(input, shift, output=None, order=3, mode='constant', cval=0.0,
     order : int, optional
         The order of the spline interpolation, default is 3.
         The order has to be in the range 0-5.
-    %(mode)s
+    %(mode_constant)s
     %(cval)s
     %(prefilter)s
 
@@ -598,7 +591,7 @@ def zoom(input, zoom, output=None, order=3, mode='constant', cval=0.0,
     order : int, optional
         The order of the spline interpolation, default is 3.
         The order has to be in the range 0-5.
-    %(mode)s
+    %(mode_constant)s
     %(cval)s
     %(prefilter)s
 
@@ -681,7 +674,7 @@ def rotate(input, angle, axes=(1, 0), reshape=True, output=None, order=3,
     order : int, optional
         The order of the spline interpolation, default is 3.
         The order has to be in the range 0-5.
-    %(mode)s
+    %(mode_constant)s
     %(cval)s
     %(prefilter)s
 
