@@ -95,6 +95,29 @@ class Distribution(Benchmark):
     time_distribution.version = "fb22ae5386501008d945783921fe44aef3f82c1dafc40cddfaccaeec38b792b0"
 
 
+class FrozenDistribution(Benchmark):
+    params = [
+            ['multivariate_normal'],
+            ['rvs'],
+            [1000]
+    ]
+    param_names = ['distribution', 'method', 'dimension']
+
+    def setup(self, distribution, method, dim):
+        np.random.seed(4321)
+        if distribution == 'multivariate_normal':
+            mean = np.random.rand(dim)
+            eigvals = np.random.rand(dim)
+            eigvals *= dim / np.sum(eigvals)
+            cov = stats.random_correlation.rvs(eigvals)
+            self.dist = stats.multivariate_normal(mean, cov)
+
+    def time_frozen_distribution(self, distribution, method, dim):
+        if distribution == 'multivariate_normal':
+            if method == 'rvs':
+                self.dist.rvs(100)
+
+
 class DescriptiveStats(Benchmark):
     param_names = ['n_levels']
     params = [
