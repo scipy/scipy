@@ -8,7 +8,7 @@ def configuration(parent_package='', top_path=None):
     from scipy._build_utils.system_info import get_info
     from scipy._build_utils import combine_dict, uses_blas64
     from scipy._build_utils.compiler_helper import set_cxx_flags_hook
-    from distutils.sysconfig import get_python_inc
+    from distutils.sysconfig import get_python_inc, get_python_lib
 
     config = Configuration('spatial', parent_package, top_path)
 
@@ -27,6 +27,7 @@ def configuration(parent_package='', top_path=None):
     inc_dirs.append(get_numpy_include_dirs())
     inc_dirs.append(join(dirname(dirname(__file__)), '_lib'))
     inc_dirs.append(join(dirname(dirname(__file__)), '_build_utils', 'src'))
+    inc_dirs.append(join(get_python_lib(), 'cysignals'))
 
     if uses_blas64():
         lapack_opt = get_info('lapack_ilp64_opt')

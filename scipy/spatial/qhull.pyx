@@ -17,6 +17,7 @@ cimport cython
 from . cimport qhull
 from . cimport setlist
 from libc cimport stdlib
+from cysignals.signals cimport sig_on, sig_off
 from scipy._lib.messagestream cimport MessageStream
 
 from numpy.compat import asbytes
@@ -346,9 +347,12 @@ cdef class _Qhull:
                 coord = <coordT*>interior_point.data
             else:
                 coord = NULL
+
+            sig_on()
             exitcode = qh_new_qhull_scipy(self._qh, self.ndim, self.numpoints,
                                           <realT*>points.data, 0,
                                           options_c, NULL, self._messages.handle, coord)
+            sig_off()
 
         if exitcode != 0:
             msg = self._messages.get()
