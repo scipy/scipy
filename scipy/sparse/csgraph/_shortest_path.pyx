@@ -765,6 +765,7 @@ cdef int _dijkstra_directed(
             dist_matrix[i, v.index] = v.val
 
     free(nodes)
+    return 0
 
 @cython.boundscheck(False)
 cdef int _dijkstra_directed_multi(
@@ -791,7 +792,8 @@ cdef int _dijkstra_directed_multi(
         FibonacciNode* nodes = <FibonacciNode*> malloc(N *
                                                        sizeof(FibonacciNode))
     if nodes == NULL:
-        raise MemoryError("Failed to allocate memory in _dijkstra_directed_multi")
+        raise MemoryError("Failed to allocate memory in "
+                          "_dijkstra_directed_multi")
 
     # initialize the heap with each of the starting
     # nodes on the heap and in a scanned state with 0 values
@@ -812,6 +814,7 @@ cdef int _dijkstra_directed_multi(
         dist_matrix[v.index] = v.val
 
     free(nodes)
+    return 0
 
 @cython.boundscheck(False)
 cdef int _dijkstra_undirected(
@@ -865,6 +868,7 @@ cdef int _dijkstra_undirected(
             dist_matrix[i, v.index] = v.val
 
     free(nodes)
+    return 0
 
 @cython.boundscheck(False)
 cdef int _dijkstra_undirected_multi(
@@ -892,7 +896,8 @@ cdef int _dijkstra_undirected_multi(
         FibonacciNode* nodes = <FibonacciNode*> malloc(N *
                                                        sizeof(FibonacciNode))
     if nodes == NULL:
-        raise MemoryError("Failed to allocate memory in _dijkstra_undirected_multi")
+        raise MemoryError("Failed to allocate memory in "
+                          "_dijkstra_undirected_multi")
 
     _dijkstra_setup_heap_multi(&heap, nodes, source_indices,
                                sources, dist_matrix, return_pred)
@@ -913,6 +918,7 @@ cdef int _dijkstra_undirected_multi(
         dist_matrix[v.index] = v.val
 
     free(nodes)
+    return 0
 
 
 def bellman_ford(csgraph, directed=True, indices=None,
