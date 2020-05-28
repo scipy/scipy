@@ -10,8 +10,7 @@ def configuration(parent_package='', top_path=None):
     from scipy._build_utils import (gfortran_legacy_flag_hook,
                                     blas_ilp64_pre_build_hook, combine_dict,
                                     uses_blas64, get_f2py_int64_options)
-    from scipy._build_utils.compiler_helper import (
-        set_cxx_flags_hook, set_cxx_flags_clib_hook)
+    from scipy._build_utils.compiler_helper import set_cxx_flags_hook
 
     config = Configuration('optimize', parent_package, top_path)
 
@@ -26,18 +25,13 @@ def configuration(parent_package='', top_path=None):
                          include_dirs=include_dirs,
                          **numpy_nodepr_api)
 
-    config.add_library('rectangular_lsap',
-                       sources='rectangular_lsap/rectangular_lsap.cpp',
-                       headers='rectangular_lsap/rectangular_lsap.h',
-                       _pre_build_hook=set_cxx_flags_clib_hook)
-    config.add_extension(
+    lsap_module = config.add_extension(
         '_lsap_module',
-        sources=['_lsap_module.c'],
-        libraries=['rectangular_lsap'],
-        depends=(['rectangular_lsap/rectangular_lsap.cpp',
-                  'rectangular_lsap/rectangular_lsap.h']),
+        sources=['_lsap_module.c', 'rectangular_lsap/rectangular_lsap.cpp'],
+        depends=(['rectangular_lsap/rectangular_lsap.h']),
         include_dirs=include_dirs,
         **numpy_nodepr_api)
+    lsap_module._pre_build_hook = set_cxx_flags_hook
 
     rootfind_src = [join('Zeros', '*.c')]
     rootfind_hdr = [join('Zeros', 'zeros.h')]
