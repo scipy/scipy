@@ -116,16 +116,22 @@ upload:
 # Basic Sphinx generation rules for different formats
 #------------------------------------------------------------------------------
 
+.NOTPARALLEL: html-build html-scipyorg
+
+# It's hard to find the value of the -j parameter: https://news.ycombinator.com/item?id=9282218
+PID := $(shell cat /proc/$$$$/status | grep PPid | awk '{print $$2}')
+JJOBS := $(shell grep -aoP "\-j\x00\d+" /proc/$(PID)/cmdline | tr -d '\0')
+
 html: version-check html-build
 html-build:
 	mkdir -p build/html build/doctrees
-	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) build/html $(FILES)
+	$(SPHINXBUILD) $(JJOBS) -b html $(ALLSPHINXOPTS) build/html $(FILES)
 	@echo
 	@echo "Build finished. The HTML pages are in build/html."
 
 html-scipyorg:
 	mkdir -p build/html build/doctrees
-	$(SPHINXBUILD) -WT --keep-going -t scipyorg $(VERSIONWARNING) -b html $(ALLSPHINXOPTS) build/html-scipyorg $(FILES)
+	$(SPHINXBUILD) $(JJOBS) -WT --keep-going -t scipyorg $(VERSIONWARNING) -b html $(ALLSPHINXOPTS) build/html-scipyorg $(FILES)
 	@echo
 	@echo "Build finished. The HTML pages are in build/html-scipyorg."
 
