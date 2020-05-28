@@ -79,14 +79,14 @@ class TestGeoMean(object):
         #  Test a 1d masked array with zero element
         a = np.ma.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 0])
         desired = 41.4716627439
-        with np.errstate(all='ignore'):
+        with np.errstate(divide='ignore'):
             check_equal_gmean(a, desired)
 
     def test_1d_ma_inf(self):
         #  Test a 1d masked array with negative element
         a = np.ma.array([10, 20, 30, 40, 50, 60, 70, 80, 90, -1])
         desired = 41.4716627439
-        with np.errstate(all='ignore'):
+        with np.errstate(invalid='ignore'):
             check_equal_gmean(a, desired)
 
     @pytest.mark.skipif(not hasattr(np, 'float96'), reason='cannot find float96 so skipping')
@@ -249,7 +249,7 @@ class TestCorr(object):
         # cor.test(x,y,method="kendall",exact=1)
         expected = [0.0, 1.0]
         assert_almost_equal(np.asarray(mstats.kendalltau(x, y)), expected)
-        
+
         # simple case without ties
         x = ma.array(np.arange(10))
         y = ma.array(np.arange(10))
