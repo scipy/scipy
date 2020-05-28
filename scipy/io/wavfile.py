@@ -305,9 +305,6 @@ class WAVE_FORMAT(IntEnum):
 
 KNOWN_WAVE_FORMATS = {WAVE_FORMAT.PCM, WAVE_FORMAT.IEEE_FLOAT}
 
-# assumes file pointer is immediately
-#  after the 'fmt ' id
-
 
 def _read_fmt_chunk(fid, is_big_endian):
     """
@@ -327,20 +324,23 @@ def _read_fmt_chunk(fid, is_big_endian):
         bytes per sample, including all channels
     bit_depth : int
         bits per sample
+
+    Notes
+    -----
+    Assumes file pointer is immediately after the 'fmt ' id
     """
     if is_big_endian:
         fmt = '>'
     else:
         fmt = '<'
 
-    size = res = struct.unpack(fmt+'I', fid.read(4))[0]
-    bytes_read = 0
+    size = struct.unpack(fmt+'I', fid.read(4))[0]
 
     if size < 16:
         raise ValueError("Binary structure of wave file is not compliant")
 
     res = struct.unpack(fmt+'HHIIHH', fid.read(16))
-    bytes_read += 16
+    bytes_read = 16
 
     format_tag, channels, fs, bytes_per_second, block_align, bit_depth = res
 
@@ -373,37 +373,60 @@ def _read_fmt_chunk(fid, is_big_endian):
                          ', '.join(x.name for x in KNOWN_WAVE_FORMATS))
 
     # move file pointer to next chunk
-    if size > (bytes_read):
+    if size > bytes_read:
         fid.read(size - bytes_read)
+
+    # fmt should always be 16, 18 or 40, but handle it just in case
+    _handle_pad_byte(fid, size)
 
     return (size, format_tag, channels, fs, bytes_per_second, block_align,
             bit_depth)
 
 
-# assumes file pointer is immediately after the 'data' id
 def _read_data_chunk(fid, format_tag, channels, bit_depth, is_big_endian,
-                     mmap=False):
+                     block_align, mmap=False):
+    """
+    Notes
+    -----
+    Assumes file pointer is immediately after the 'data' id
+
+    It's possible to not use all available bits in a container, or to store
+    samples in a container bigger than necessary, so bytes_per_sample uses
+    the actual reported container size (nBlockAlign / nChannels).  Real-world
+    examples:
+
+    Adobe Audition's "24-bit packed int (type 1, 20-bit)"
+
+        nChannels = 2, nBlockAlign = 6, wBitsPerSample = 20
+
+    http://www-mmsp.ece.mcgill.ca/Documents/AudioFormats/WAVE/Samples/AFsp/M1F1-int12-AFsp.wav
+    is:
+
+        nChannels = 2, nBlockAlign = 4, wBitsPerSample = 12
+
+    http://www-mmsp.ece.mcgill.ca/Documents/AudioFormats/WAVE/Docs/multichaudP.pdf
+    gives an example of:
+
+        nChannels = 2, nBlockAlign = 8, wBitsPerSample = 20
+    """
     if is_big_endian:
-        fmt = '>I'
+        fmt = '>'
     else:
-        fmt = '<I'
+        fmt = '<'
 
     # Size of the data subchunk in bytes
-    size = struct.unpack(fmt, fid.read(4))[0]
+    size = struct.unpack(fmt+'I', fid.read(4))[0]
 
-    # Number of bytes per sample
-    bytes_per_sample = bit_depth//8
+    # Number of bytes per sample (sample container size)
+    bytes_per_sample = block_align // channels
     if bit_depth == 8:
         dtype = 'u1'
     else:
-        if is_big_endian:
-            dtype = '>'
-        else:
-            dtype = '<'
         if format_tag == WAVE_FORMAT.PCM:
-            dtype += 'i%d' % bytes_per_sample
+            dtype = f'{fmt}i{bytes_per_sample}'
         else:
-            dtype += 'f%d' % bytes_per_sample
+            dtype = f'{fmt}f{bytes_per_sample}'
+
     if not mmap:
         data = numpy.frombuffer(fid.read(size), dtype=dtype)
     else:
@@ -411,6 +434,8 @@ def _read_data_chunk(fid, format_tag, channels, bit_depth, is_big_endian,
         data = numpy.memmap(fid, dtype=dtype, mode='c', offset=start,
                             shape=(size//bytes_per_sample,))
         fid.seek(start + size)
+
+    _handle_pad_byte(fid, size)
 
     if channels > 1:
         data = data.reshape(-1, channels)
@@ -431,6 +456,7 @@ def _skip_unknown_chunk(fid, is_big_endian):
     if data:
         size = struct.unpack(fmt, data)[0]
         fid.seek(size, 1)
+        _handle_pad_byte(fid, size)
 
 
 def _read_riff_chunk(fid):
@@ -456,6 +482,13 @@ def _read_riff_chunk(fid):
     return file_size, is_big_endian
 
 
+def _handle_pad_byte(fid, size):
+    # "If the chunk size is an odd number of bytes, a pad byte with value zero
+    # is written after ckData." So we need to seek past this after each chunk.
+    if size % 2:
+        fid.seek(1, 1)
+
+
 def read(filename, mmap=False):
     """
     Open a WAV file
@@ -478,7 +511,8 @@ def read(filename, mmap=False):
         Sample rate of wav file.
     data : numpy array
         Data read from wav file. Data-type is determined from the file;
-        see Notes.
+        see Notes.  Data is 1-D for 1-channel WAV, or 2-D of shape
+        (Nsamples, Nchannels) otherwise.
 
     Notes
     -----
@@ -547,9 +581,6 @@ def read(filename, mmap=False):
         file_size, is_big_endian = _read_riff_chunk(fid)
         fmt_chunk_received = False
         data_chunk_received = False
-        channels = 1
-        bit_depth = 8
-        format_tag = WAVE_FORMAT.PCM
         while fid.tell() < file_size:
             # read the next chunk
             chunk_id = fid.read(4)
@@ -579,6 +610,7 @@ def read(filename, mmap=False):
                 fmt_chunk = _read_fmt_chunk(fid, is_big_endian)
                 format_tag, channels, fs = fmt_chunk[1:4]
                 bit_depth = fmt_chunk[6]
+                block_align = fmt_chunk[5]
                 if bit_depth not in {8, 16, 32, 64, 96, 128}:
                     raise ValueError("Unsupported bit depth: the wav file "
                                      "has {}-bit data.".format(bit_depth))
@@ -589,7 +621,7 @@ def read(filename, mmap=False):
                 if not fmt_chunk_received:
                     raise ValueError("No fmt chunk before data")
                 data = _read_data_chunk(fid, format_tag, channels, bit_depth,
-                                        is_big_endian, mmap)
+                                        is_big_endian, block_align, mmap)
             elif chunk_id == b'LIST':
                 # Someday this could be handled properly but for now skip it
                 _skip_unknown_chunk(fid, is_big_endian)
