@@ -2854,10 +2854,13 @@ def iqr(x, axis=None, rng=(25, 75), scale=1.0, nan_policy='propagate',
 
 
 def _mad_1d(x, center, nan_policy):
-    # Median absolute deviation for 1-d array x.  No warning is generated
-    # if x is empty or all nan.
-    # x must be a 1-d numpy array.
-    # If nan_policy is not 'propagate', it is assumed to be 'omit'.
+    # Median absolute deviation for 1-d array x.
+    # This is a helper function for `median_abs_deviation`; it assumes its
+    # arguments have been validated already.  In particular,  x must be a
+    # 1-d numpy array, center must be callable, and if nan_policy is not
+    # 'propagate', it is assumed to be 'omit', because 'raise' is handled
+    # in `median_abs_deviation`.
+    # No warning is generated if x is empty or all nan.
     isnan = np.isnan(x)
     if isnan.any():
         if nan_policy == 'propagate':
@@ -2933,10 +2936,6 @@ def median_abs_deviation(x, axis=0, center=np.median, scale=1.0,
     will calculate the MAD around the mean - it will not calculate the *mean*
     absolute deviation.
 
-    The default `center` function is `numpy.median`, but it is wrapped in
-    code that will prevent it from generating a warning if it is given an
-    empty input.
-
     The input array may contain `inf`, but if `center` returns `inf`, the
     corresponding MAD for that data will be `nan`.
 
@@ -2985,7 +2984,9 @@ def median_abs_deviation(x, axis=0, center=np.median, scale=1.0,
     1.9996446978061115
 
     """
-    x = asarray(x)
+    if not callable(center):
+        raise TypeError("The argument 'center' must be callable. The given "
+                        f"value {repr(center)} is not callable.")
 
     # An error may be raised here, so fail-fast, before doing lengthy
     # computations, even though `scale` is not used until later
@@ -2994,6 +2995,8 @@ def median_abs_deviation(x, axis=0, center=np.median, scale=1.0,
             scale = 0.6744897501960817  # special.ndtri(0.75)
         else:
             raise ValueError(f"{scale} is not a valid scale value.")
+
+    x = asarray(x)
 
     # Consistent with `np.var` and `np.std`.
     if not x.size:

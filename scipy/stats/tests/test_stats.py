@@ -1937,6 +1937,10 @@ class TestMedianAbsDeviation(object):
                                          axis=axis)
         assert_allclose(mad, expected, rtol=1e-15, atol=1e-15)
 
+    def test_center_not_callable(self):
+        with pytest.raises(TypeError, match='callable'):
+            stats.median_abs_deviation([1, 2, 3, 5], center=99)
+
 
 class TestMedianAbsoluteDeviation(object):
     def setup_class(self):
