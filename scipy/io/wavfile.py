@@ -511,7 +511,8 @@ def read(filename, mmap=False):
         Sample rate of wav file.
     data : numpy array
         Data read from wav file. Data-type is determined from the file;
-        see Notes.
+        see Notes.  Data is 1-D for 1-channel WAV, or 2-D of shape
+        (Nsamples, Nchannels) otherwise.
 
     Notes
     -----
