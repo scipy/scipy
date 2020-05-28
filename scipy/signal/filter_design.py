@@ -4869,17 +4869,21 @@ def gammatone(freq, ftype, order=None, numtaps=None, fs=None):
         Center frequency of the filter (expressed in the same units
         as `fs`).
     ftype : {'fir', 'iir'}
-        The type of filter the function generates.
+        The type of filter the function generates. If 'fir', the function
+        will generate an Nth order FIR gammatone filter. If 'iir', the
+        function will generate an 8th order digital IIR filter, modeled as
+        as 4th order gammatone filter.
     order : int, optional
         The order of the filter. Only used when ``ftype='fir'``.
-        Default is 4 to model the human auditory system.
+        Default is 4 to model the human auditory system. Must be between
+        0 and 24.
     numtaps : int, optional
         Length of the filter. Only used when ``ftype='fir'``.
         Default is ``fs*0.015`` if `fs` is greater than 1000,
         15 if `fs` is less than or equal to 1000.
     fs : int, optional
         The sampling frequency of the signal. `freq` must be between
-        0 and ``fs/2``.
+        0 and ``fs/2``. Default is 2.
 
     Returns
     -------
@@ -4889,11 +4893,9 @@ def gammatone(freq, ftype, order=None, numtaps=None, fs=None):
     Raises
     ------
     ValueError
-        If `freq` is less than or equal to 0
-        or greater than or equal to ``fs/2``,
-        if `ftype` is not 'fir' or 'iir',
-        if `order` is less than or equal to 0
-        or greater than 24 when ``ftype='fir'``
+        If `freq` is less than or equal to 0 or greater than or equal to
+        ``fs/2``, if `ftype` is not 'fir' or 'iir', if `order` is less than
+        or equal to 0 or greater than 24 when ``ftype='fir'``
 
     See Also
     --------
@@ -4903,7 +4905,8 @@ def gammatone(freq, ftype, order=None, numtaps=None, fs=None):
     References
     ----------
     .. [1] Slaney, Malcolm, "An Efficient Implementation of the
-        Patterson–Holdsworth Auditory Filter Bank", pp.3-8, 34-39.
+        Patterson–Holdsworth Auditory Filter Bank", Apple Computer
+        Technical Report 35, 1993, pp.3-8, 34-39.
 
     Examples
     --------
@@ -4946,8 +4949,8 @@ def gammatone(freq, ftype, order=None, numtaps=None, fs=None):
     # Check for invalid cutoff frequency or filter type
     filter_types = ['fir', 'iir']
     if freq <= 0 or freq >= fs / 2:
-        raise ValueError("Invalid cutoff frequency: frequency must be "
-                         "> 0 and < fs/2.")
+        raise ValueError("The frequency must be between 0 and {}"
+                         " (nyquist), but given {}.".format(fs / 2, freq))
     if ftype.lower() not in filter_types:
         raise ValueError('ftype must be either fir or iir.')
 
