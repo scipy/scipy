@@ -6579,29 +6579,32 @@ class rayleigh_gen(rv_continuous):
                numerical optimization over `func` only indicates
                the independent parameter's solution.
         """
-        check_fit_input_parameters(data, args, kwds,
-                                   fixed_param=(fscale, floc))
+
         if floc is not None:
+            check_fit_input_parameters(data, args, kwds,
+                                       fixed_param=(fscale, floc))
             # if `floc` is fixed, determine `scale` with MLE
             data = np.asarray(data)
             return floc, scale_mle(floc, data)
         if fscale is not None:
             # `fscale` is fixed, use standard numerical optimization
             return super(rayleigh_gen,
-                         self).fit(data, fscale=fscale)
+                         self).fit(data, fscale=fscale, *args, **kwds)
         else:
-            # both `floc` and `fscale` are free, use
-            # custom `_reduce_func`
-            def _reduce_func(x0, ll, args, kwds):
+            # both `floc` and `fscale` are free, use custom `_reduce_func`
+            def _reduce_func(x0, ll, *args, **kwds):
+                
                 def func(loc, data):
                     return ll([loc, scale_mle(loc, data)], data)
 
-                def get_tuple(loc, data):
-                    return (loc.item(), scale_mle(loc, data))
+                data = kwds.pop('data')
+                def restore(args, vals):
+                    return (vals.item(), scale_mle(vals, np.ravel(data)))
 
-                return x0[0], func, get_tuple
+                return x0[0], func, restore
             return super(rayleigh_gen,
-                         self).fit(data, _reduce_func=_reduce_func)
+                         self).fit(data, _reduce_func=_reduce_func,
+                                   *args, **kwds)
 
 
 rayleigh = rayleigh_gen(a=0.0, name="rayleigh")
