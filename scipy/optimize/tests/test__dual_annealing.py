@@ -173,6 +173,26 @@ class TestDualAnnealing:
         assert_raises(ValueError, dual_annealing, self.func,
                       invalid_bounds)
 
+    def test_local_search_option_bounds(self):
+        func = lambda x: np.sum((x-5) * (x-1))
+        bounds = list(zip([-6, -5], [6, 5]))
+        # Test bounds can be passed (see gh-10831)
+        dual_annealing(
+            func,
+            bounds=bounds,
+            local_search_options={"method": "SLSQP", "bounds": bounds})
+
+        with np.testing.suppress_warnings() as sup:
+            sup.record(RuntimeWarning, "Method CG cannot handle ")
+
+            dual_annealing(
+                func,
+                bounds=bounds,
+                local_search_options={"method": "CG", "bounds": bounds})
+
+            # Verify warning happened for Method cannot handle bounds.
+            assert sup.log
+
     def test_max_fun_ls(self):
         ret = dual_annealing(self.func, self.ld_bounds, maxfun=100,
                              seed=self.seed)
