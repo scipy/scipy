@@ -47,6 +47,13 @@ cdef inline int init(setlist_t *setlist, size_t n, size_t size_guess) except -1:
         setlist.sizes[j] = 0
         setlist.alloc_sizes[j] = size_guess
         setlist.sets[j] = <int*>libc.stdlib.malloc(sizeof(int) * size_guess)
+        if setlist.sets[j] == NULL:
+            for i in range(j):
+                libc.stdlib.free(<void*>setlist.sets[i])
+            libc.stdlib.free(<void*>setlist.sets)
+            libc.stdlib.free(<void*>setlist.sizes)
+            libc.stdlib.free(<void*>setlist.alloc_sizes)
+            raise MemoryError
 
     return 0
 
