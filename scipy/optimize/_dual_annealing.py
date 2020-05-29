@@ -256,14 +256,14 @@ class StrategyChain(object):
 
     def accept_reject(self, j, e, x_visit):
         r = self._rand_gen.uniform()
-        pqv_temp = (self.acceptance_param - 1.0) * (
-            e - self.energy_state.current_energy) / (
-                self.temperature_step + 1.)
+        pqv_temp = 1.0 - ((1.0 - self.acceptance_param) *
+            (e - self.energy_state.current_energy) / self.temperature_step)
         if pqv_temp <= 0.:
             pqv = 0.
         else:
             pqv = np.exp(np.log(pqv_temp) / (
                 1. - self.acceptance_param))
+
         if r <= pqv:
             # We accept the new location and update state
             self.energy_state.update_current(e, x_visit)

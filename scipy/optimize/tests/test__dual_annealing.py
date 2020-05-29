@@ -260,12 +260,12 @@ class TestDualAnnealing:
                          -5.00668935e-09], atol=4e-8)
         assert_allclose(ret.fun, 0.000000, atol=5e-13)
 
-    # TODO gh-10892 Fix incorrect accepted counts.
     @pytest.mark.parametrize('new_e, temp_step, accepted, accept_rate', [
-        (0, 100, 633, 1.0097587941791923),
-        (10, 100, 0, 0.8786035869128718),
-        (10, 60, 0, 0.6812920690579612),
-        (2, 100, 0, 0.9897404249173424),
+        (0, 100, 1000, 1.0097587941791923),
+        (0, 2, 1000, 1.2599210498948732),
+        (10, 100, 878, 0.8786035869128718),
+        (10, 60, 695, 0.6812920690579612),
+        (2, 100, 990, 0.9897404249173424),
     ])
     def test_accept_reject_probabilistic(
             self, new_e, temp_step, accepted, accept_rate):
