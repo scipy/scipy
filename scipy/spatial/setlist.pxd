@@ -76,6 +76,8 @@ cdef inline void free(setlist_t *setlist):
 cdef inline int add(setlist_t *setlist, int n, int value) nogil:
     """
     Add a value to set `n`
+
+    Returns 0 on success, 1 if n is outside of setlist size, -1 on memory error
     """
 
     cdef size_t i, sz

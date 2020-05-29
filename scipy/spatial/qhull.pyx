@@ -1963,7 +1963,8 @@ class Delaunay(_QhullUser):
                                 if simplices[i,j] != simplices[i,k]:
                                     if setlist.add(&sets, simplices[i,j], simplices[i,k]):
                                         with gil:
-                                            raise MemoryError
+                                            setlist.free(&sets)
+                                            raise MemoryError("memory allocation failed")
 
                 self._vertex_neighbor_vertices = setlist.tocsr(&sets)
             finally:
