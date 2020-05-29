@@ -2853,6 +2853,28 @@ def iqr(x, axis=None, rng=(25, 75), scale=1.0, nan_policy='propagate',
     return out
 
 
+def _mad_1d(x, center, nan_policy):
+    # Median absolute deviation for 1-d array x.
+    # This is a helper function for `median_abs_deviation`; it assumes its
+    # arguments have been validated already.  In particular,  x must be a
+    # 1-d numpy array, center must be callable, and if nan_policy is not
+    # 'propagate', it is assumed to be 'omit', because 'raise' is handled
+    # in `median_abs_deviation`.
+    # No warning is generated if x is empty or all nan.
+    isnan = np.isnan(x)
+    if isnan.any():
+        if nan_policy == 'propagate':
+            return np.nan
+        x = x[~isnan]
+    if x.size == 0:
+        # MAD of an empty array is nan.
+        return np.nan
+    # Edge cases have been handled, so do the basic MAD calculation.
+    med = center(x)
+    mad = np.median(np.abs(x - med))
+    return mad
+
+
 def median_abs_deviation(x, axis=0, center=np.median, scale=1.0,
                          nan_policy='propagate'):
     r"""
@@ -2914,6 +2936,9 @@ def median_abs_deviation(x, axis=0, center=np.median, scale=1.0,
     will calculate the MAD around the mean - it will not calculate the *mean*
     absolute deviation.
 
+    The input array may contain `inf`, but if `center` returns `inf`, the
+    corresponding MAD for that data will be `nan`.
+
     References
     ----------
     .. [1] "Median absolute deviation",
@@ -2959,7 +2984,9 @@ def median_abs_deviation(x, axis=0, center=np.median, scale=1.0,
     1.9996446978061115
 
     """
-    x = asarray(x)
+    if not callable(center):
+        raise TypeError("The argument 'center' must be callable. The given "
+                        f"value {repr(center)} is not callable.")
 
     # An error may be raised here, so fail-fast, before doing lengthy
     # computations, even though `scale` is not used until later
@@ -2969,32 +2996,34 @@ def median_abs_deviation(x, axis=0, center=np.median, scale=1.0,
         else:
             raise ValueError(f"{scale} is not a valid scale value.")
 
+    x = asarray(x)
+
     # Consistent with `np.var` and `np.std`.
     if not x.size:
-        nan_shape = [item for i, item in enumerate(x.shape) if i != axis]
-        nan_array = np.full(nan_shape, np.nan)
-        if not nan_array.size:
+        if axis is None:
             return np.nan
-        else:
-            return nan_array
+        nan_shape = tuple(item for i, item in enumerate(x.shape) if i != axis)
+        if nan_shape == ():
+            # Return nan, not array(nan)
+            return np.nan
+        return np.full(nan_shape, np.nan)
 
     contains_nan, nan_policy = _contains_nan(x, nan_policy)
 
-    if contains_nan and nan_policy == 'propagate':
-        return np.nan
-
-    if contains_nan and nan_policy == 'omit':
-        # Way faster than carrying the masks around
-        arr = ma.masked_invalid(x).compressed()
+    if contains_nan:
+        if axis is None:
+            mad = _mad_1d(x.ravel(), center, nan_policy)
+        else:
+            mad = np.apply_along_axis(_mad_1d, axis, x, center, nan_policy)
     else:
-        arr = x
-
-    if axis is None:
-        med = center(arr)
-        mad = np.median(np.abs(arr - med))
-    else:
-        med = np.apply_over_axes(center, arr, axis)
-        mad = np.median(np.abs(arr - med), axis=axis)
+        if axis is None:
+            med = center(x, axis=None)
+            mad = np.median(np.abs(x - med))
+        else:
+            # Wrap the call to center() in expand_dims() so it acts like
+            # keepdims=True was used.
+            med = np.expand_dims(center(x, axis=axis), axis)
+            mad = np.median(np.abs(x - med), axis=axis)
 
     return mad / scale
 

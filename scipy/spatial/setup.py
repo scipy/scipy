@@ -2,18 +2,12 @@ from os.path import join, dirname
 import glob
 
 
-def pre_build_hook(build_ext, ext):
-    from scipy._build_utils.compiler_helper import get_cxx_std_flag
-    std_flag = get_cxx_std_flag(build_ext._cxx_compiler)
-    if std_flag is not None:
-        ext.extra_compile_args.append(std_flag)
-
-
 def configuration(parent_package='', top_path=None):
     from numpy.distutils.misc_util import Configuration, get_numpy_include_dirs
     from numpy.distutils.misc_util import get_info as get_misc_info
     from scipy._build_utils.system_info import get_info
     from scipy._build_utils import combine_dict, uses_blas64
+    from scipy._build_utils.compiler_helper import set_cxx_flags_hook
     from distutils.sysconfig import get_python_inc
 
     config = Configuration('spatial', parent_package, top_path)
@@ -70,7 +64,7 @@ def configuration(parent_package='', top_path=None):
                          sources=['ckdtree.cxx'] + ckdtree_src,
                          depends=ckdtree_dep,
                          include_dirs=inc_dirs + [join('ckdtree', 'src')])
-    ext._pre_build_hook = pre_build_hook
+    ext._pre_build_hook = set_cxx_flags_hook
 
     # _distance_wrap
     config.add_extension('_distance_wrap',

@@ -216,9 +216,9 @@ the modern ``np.random.Generator`` as well as the legacy
 The ``axis`` parameter was added to `scipy.stats.rankdata`. This allows slices 
 of an array along the given axis to be ranked independently.
 
-The ``axis`` parameter was added to `scipy.stats.f_oneway`, allowing it compute 
-multiple one-way ANOVA tests for data stored in n-dimensional arrays. Some
-performance improvements to ``f_oneway`` as well.
+The ``axis`` parameter was added to `scipy.stats.f_oneway`, allowing it to
+compute multiple one-way ANOVA tests for data stored in n-dimensional
+arrays.  The performance of ``f_oneway`` was also improved for some cases.
 
 The PDF and CDF methods for ``stats.geninvgauss`` are now significantly faster 
 as  the numerical integration to calculate the CDF uses a Cython based 
@@ -650,6 +650,7 @@ Issues closed for 1.5.0
 * `#12173 <https://github.com/scipy/scipy/issues/12173>`__: Large memory usage when indexing sparse matrices with \`np.ix_\`
 * `#12178 <https://github.com/scipy/scipy/issues/12178>`__: BUG: stats: Some discrete distributions don't accept lists of...
 * `#12220 <https://github.com/scipy/scipy/issues/12220>`__: BUG, REL: gh_lists.py compromised scraping
+* `#12239 <https://github.com/scipy/scipy/issues/12239>`__: BUG: median absolute deviation handling of nan 
 
 Pull requests for 1.5.0
 -----------------------
@@ -1119,6 +1120,9 @@ Pull requests for 1.5.0
 * `#12194 <https://github.com/scipy/scipy/pull/12194>`__: MAINT: Module and example cleanups for doc build
 * `#12202 <https://github.com/scipy/scipy/pull/12202>`__: ENH: tool to DL release wheels from Anaconda
 * `#12210 <https://github.com/scipy/scipy/pull/12210>`__: Remove py.typed marker (at least for the release)
+* `#12217 <https://github.com/scipy/scipy/pull/12217>`__: BUG: stats: Fix handling of edge cases in median_abs_deviation.
 * `#12223 <https://github.com/scipy/scipy/pull/12223>`__: BUG: stats: wilcoxon returned p > 1 for certain inputs.
+* `#12227 <https://github.com/scipy/scipy/pull/12227>`__: BLD: Set macos min version when building rectangular_lsap
 * `#12229 <https://github.com/scipy/scipy/pull/12229>`__: MAINT: tools/gh_lists.py: fix http header case sensitivity issue
+* `#12236 <https://github.com/scipy/scipy/pull/12236>`__: DOC: Fix a couple grammatical mistakes in 1.5.0-notes.rst.
 
