@@ -1465,7 +1465,9 @@ class StateSpace(LinearTimeInvariant):
                 c = self.C
                 d = self.D + other
             else:
-                raise ValueError("Cannot add systems with incompatible dimensions")
+                raise ValueError("Cannot add systems with incompatible "
+                                 "dimensions ({} and {})"
+                                 .format(self.D.shape, other.shape))
 
         common_dtype = np.find_common_type((a.dtype, b.dtype, c.dtype, d.dtype), ())
         return StateSpace(np.asarray(a, dtype=common_dtype),
