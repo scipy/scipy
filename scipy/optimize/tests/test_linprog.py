@@ -382,6 +382,13 @@ class LinprogCommonTests(object):
         if do_presolve:
             assert_equal(res.nit, 0)
 
+        res = linprog([1, 1, 2], A_eq=[[1, 0, 0], [0, 1, 0]], b_eq=[1, 7],
+                      bounds=[(-5, 5), (0, 10), (3.5, 3.5)],
+                      method=self.method, options=self.options)
+        _assert_success(res, 15, [1, 7, 3.5])
+        if do_presolve:
+            assert_equal(res.nit, 0)
+
     def test_bounds_infeasible(self):
 
         # Test ill-valued bounds (upper less than lower)
