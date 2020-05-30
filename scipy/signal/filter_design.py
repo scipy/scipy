@@ -4849,11 +4849,11 @@ def _hz_to_erb(hz):
     """
     Utility for converting from frequency (Hz) to the
     Equivalent Rectangular Bandwith (ERB) scale
+    ERB = frequency / EarQ + minBW
     """
     EarQ = 9.26449
     minBW = 24.7
-    order = 1
-    return ((hz / EarQ) ** order + minBW ** order) ** (1 / order)
+    return hz / EarQ + minBW
 
 
 def gammatone(freq, ftype, order=None, numtaps=None, fs=None):
