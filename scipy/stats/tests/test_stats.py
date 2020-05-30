@@ -3265,6 +3265,18 @@ class TestKSTwoSamples(object):
         assert_raises(ValueError, stats.ks_2samp, [1], [])
         assert_raises(ValueError, stats.ks_2samp, [], [])
 
+    def test_gh12218(self):
+        """Ensure gh-12218 is fixed."""
+        # gh-1228 triggered a TypeError calculating sqrt(n1*n2*(n1+n2)).
+        # n1, n2 both large integers, the product exceeded 2^64
+        np.random.seed(12345678)
+        n1 = 2097152  # 2*^21
+        rvs1 = stats.uniform.rvs(size=n1, loc=0., scale=1)
+        rvs2 = rvs1 + 1  # Exact value of rvs2 doesn't matter.
+        stats.ks_2samp(rvs1, rvs2, alternative='greater', mode='asymp')
+        stats.ks_2samp(rvs1, rvs2, alternative='less', mode='asymp')
+        stats.ks_2samp(rvs1, rvs2, alternative='two-sided', mode='asymp')
+
 
 def test_ttest_rel():
     # regression test
