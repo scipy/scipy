@@ -421,13 +421,24 @@ def _read_data_chunk(fid, format_tag, channels, bit_depth, is_big_endian,
     # Number of bytes per sample (sample container size)
     bytes_per_sample = block_align // channels
     n_samples = size // bytes_per_sample
-    if bit_depth == 8:
-        dtype = 'u1'
-    else:
-        if format_tag == WAVE_FORMAT.PCM:
+
+    if format_tag == WAVE_FORMAT.PCM:
+        if 1 <= bit_depth <= 8 or bytes_per_sample == 3:
+            dtype = 'u1'
+        elif bit_depth <= 32:
             dtype = f'{fmt}i{bytes_per_sample}'
         else:
+            raise ValueError("Unsupported bit depth: the wav file "
+                             f"has {bit_depth}-bit data.")
+    elif format_tag == WAVE_FORMAT.IEEE_FLOAT:
+        if bit_depth in {16, 32, 64}:
             dtype = f'{fmt}f{bytes_per_sample}'
+        else:
+            raise ValueError("Unsupported bit depth: the wav file "
+                             f"has {bit_depth}-bit data.")
+    else:
+        # This should have been caught by _read_fmt_chunk already
+        raise ValueError(f"Unknown wave file format")
 
     start = fid.tell()
     if not mmap:
@@ -436,10 +447,21 @@ def _read_data_chunk(fid, format_tag, channels, bit_depth, is_big_endian,
         except io.UnsupportedOperation:  # not a C-like file
             fid.seek(start, 0)  # just in case it seeked, though it shouldn't
             data = numpy.frombuffer(fid.read(size), dtype=dtype)
+
+        if bytes_per_sample == 3:
+            a = numpy.zeros((len(data) // 3, 4), dtype=numpy.uint8)
+            a[:, 1:4] = data.reshape((-1, 3))
+            data = a.view(numpy.int32).reshape(a.shape[:-1])
+
     else:
-        data = numpy.memmap(fid, dtype=dtype, mode='c', offset=start,
-                            shape=(n_samples,))
-        fid.seek(start + size)
+        if bytes_per_sample in {1, 2, 4, 8}:
+            start = fid.tell()
+            data = numpy.memmap(fid, dtype=dtype, mode='c', offset=start,
+                                shape=(n_samples,))
+            fid.seek(start + size)
+        else:
+            raise ValueError("mmap=True not compatible with "
+                             f"{bytes_per_sample}-byte container size.")
 
     _handle_pad_byte(fid, size)
 
@@ -524,8 +546,6 @@ def read(filename, mmap=False):
 
     Notes
     -----
-    This function cannot read wav files with 24-bit data.
-
     Common data types: [1]_
 
     =====================  ===========  ===========  =============
@@ -533,11 +553,24 @@ def read(filename, mmap=False):
     =====================  ===========  ===========  =============
     32-bit floating-point  -1.0         +1.0         float32
     32-bit PCM             -2147483648  +2147483647  int32
+    24-bit PCM             -2147483648  +2147483392  int32
     16-bit PCM             -32768       +32767       int16
     8-bit PCM              0            255          uint8
     =====================  ===========  ===========  =============
 
-    Note that 8-bit PCM is unsigned.
+    Integer PCM WAV files can specify arbitrary bit depth, and this function
+    supports reading any depth from 1 to 32 bits.  Data is returned in the
+    smallest compatible numpy int type, in left-justified format.  8-bit and
+    lower PCM is unsigned, while 9-bit and higher is signed.
+
+    For example, 24-bit data will be stored as int32, with the MSB of the
+    24-bit data stored at the MSB of the int32, and typically the least
+    significant byte is 0x00.  (However, if a file actually contains data past
+    its specified bit depth, those bits will be read and preserved.)
+
+    The bit justification and sign matches WAV's native internal format, which
+    allows memory mapping of WAV files that use 1, 2, or 4 bytes per sample
+    (so 24-bit files cannot be memory-mapped).
 
     References
     ----------
@@ -619,9 +652,6 @@ def read(filename, mmap=False):
                 format_tag, channels, fs = fmt_chunk[1:4]
                 bit_depth = fmt_chunk[6]
                 block_align = fmt_chunk[5]
-                if bit_depth not in {8, 16, 32, 64, 96, 128}:
-                    raise ValueError("Unsupported bit depth: the wav file "
-                                     "has {}-bit data.".format(bit_depth))
             elif chunk_id == b'fact':
                 _skip_unknown_chunk(fid, is_big_endian)
             elif chunk_id == b'data':
