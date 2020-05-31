@@ -41,6 +41,9 @@ from numpy.random import seed, random
 from scipy.linalg._testutils import assert_no_overwrite
 from scipy.sparse.sputils import bmat, matrix
 
+from scipy._lib._testutils import check_free_memory
+from scipy.linalg.blas import HAS_ILP64
+
 
 def _random_hermitian_matrix(n, posdef=False, dtype=float):
     "Generate random sym/hermitian array of the given size n"
@@ -1140,6 +1143,16 @@ class TestSVD_GESDD(object):
              [0., 0., 0.16666667, 0.66666667, 0.16666667, 0.],
              [0., 0., 0., 0.16666667, 0.66666667, 0.16666667]])
         svd(b, lapack_driver=self.lapack_driver)
+
+    @pytest.mark.skipif(not HAS_ILP64, reason="64-bit LAPACK required")
+    @pytest.mark.slow
+    def test_large_matrix(self):
+        check_free_memory(free_mb=17000)
+        A = np.zeros([1, 2**31], dtype=np.float32)
+        A[0, -1] = 1
+        u, s, vh = svd(A, full_matrices=False)
+        assert_allclose(s[0], 1.0)
+        assert_allclose(u[0, 0] * vh[0, -1], 1.0)
 
 
 class TestSVD_GESVD(TestSVD_GESDD):
