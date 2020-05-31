@@ -3,22 +3,67 @@ import warnings
 import numpy as np
 cimport numpy as np
 cimport cython
-from libc.math cimport sqrt
+from cython.view cimport array
+from cpython.array cimport array as pyarray
+from libc.math cimport sqrt, sin, cos, atan2, pi, acos
 import scipy.linalg
 from scipy._lib._util import check_random_state
 from ._rotation_groups import create_group
 
 
-_AXIS_TO_IND = {'x': 0, 'y': 1, 'z': 2}
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cdef inline double[:] _cross3(const double[:] a, const double[:] b):
+    cdef double[:] result = np.empty((3,))
+    result[0] = a[1]*b[2] - a[2]*b[1]
+    result[1] = a[2]*b[0] - a[0]*b[2]
+    result[2] = a[0]*b[1] - a[1]*b[0]
+    return result
 
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cdef inline double _dot3(const double[:] a, const double[:] b):
+    return a[0]*b[0] + a[1]*b[1] + a[2]*b[2]
 
-def _elementary_basis_vector(axis):
-    b = np.zeros(3)
-    b[_AXIS_TO_IND[axis]] = 1
-    return b
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cdef inline double _norm3(const double[:] elems):
+    return sqrt(elems[0] * elems[0] + elems[1] * elems[1] + elems[2] * elems[2])
 
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cdef inline double _normalize_quat(double[:] elems):
+    cdef double norm = sqrt(
+        elems[0] * elems[0] + elems[1] * elems[1] +
+        elems[2] * elems[2] + elems[3] * elems[3]
+    )
 
-cdef _compute_euler_from_matrix(matrix, str seq, extrinsic=False):
+    if norm == 0:
+        raise ValueError("Found zero norm quaternions in `quat`.")
+
+    elems[0] /= norm
+    elems[1] /= norm
+    elems[2] /= norm
+    elems[3] /= norm
+
+    return norm
+
+cdef double[3] _ex = [1, 0, 0]
+cdef double[3] _ey = [0, 1, 0]
+cdef double[3] _ez = [0, 0, 1]
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cdef inline const double[:] _elementary_basis_vector(char axis):
+    if axis == b'x': return _ex
+    elif axis == b'y': return _ey
+    elif axis == b'z': return _ez
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cdef np.ndarray[double, ndim=2] _compute_euler_from_matrix(
+    np.ndarray[double, ndim=3] matrix, str seq, bint extrinsic=False
+):
     # The algorithm assumes intrinsic frame transformations. The algorithm
     # in the paper is formulated for rotation matrices which are transposition
     # rotation matrices used within Rotation.
@@ -30,111 +75,117 @@ cdef _compute_euler_from_matrix(matrix, str seq, extrinsic=False):
     if extrinsic:
         seq = seq[::-1]
 
-    if matrix.ndim == 2:
-        matrix = matrix[None, :, :]
-    num_rotations = matrix.shape[0]
+    cdef Py_ssize_t num_rotations = matrix.shape[0]
 
     # Step 0
     # Algorithm assumes axes as column vectors, here we use 1D vectors
-    n1 = _elementary_basis_vector(seq[0])
-    n2 = _elementary_basis_vector(seq[1])
-    n3 = _elementary_basis_vector(seq[2])
+    cdef const double[:] n1 = _elementary_basis_vector(seq[0])
+    cdef const double[:] n2 = _elementary_basis_vector(seq[1])
+    cdef const double[:] n3 = _elementary_basis_vector(seq[2])
 
     # Step 2
-    sl = np.dot(np.cross(n1, n2), n3)
-    cl = np.dot(n1, n3)
+    cdef double sl = _dot3(_cross3(n1, n2), n3) # TODO: always 1 or -1
+    cdef double cl = _dot3(n1, n3) # TODO: always zero
 
     # angle offset is lambda from the paper referenced in [2] from docstring of
     # `as_euler` function
-    offset = np.arctan2(sl, cl)
-    c = np.vstack((n2, np.cross(n1, n2), n1))
+    cdef double offset = atan2(sl, cl)
+    cdef np.ndarray[double, ndim=2] c = np.empty((3, 3))
+    c[0, :] = n2
+    c[1, :] = _cross3(n1, n2)
+    c[2, :] = n1
 
-    # Step 3
     rot = np.array([
         [1, 0, 0],
         [0, cl, sl],
         [0, -sl, cl],
     ])
-    res = np.einsum('...ij,...jk->...ik', c, matrix)
-    matrix_transformed = np.einsum('...ij,...jk->...ik', res, c.T.dot(rot))
 
-    # Step 4
-    angles = np.empty((num_rotations, 3))
-    # Ensure less than unit norm
-    positive_unity = matrix_transformed[:, 2, 2] > 1
-    negative_unity = matrix_transformed[:, 2, 2] < -1
-    matrix_transformed[positive_unity, 2, 2] = 1
-    matrix_transformed[negative_unity, 2, 2] = -1
-    angles[:, 1] = np.arccos(matrix_transformed[:, 2, 2])
+    # some forward definitions
+    cdef np.ndarray[double, ndim=2] angles = np.empty((num_rotations, 3))
+    cdef double[:] _angles # accessor for each rotation
+    cdef np.ndarray[double, ndim=2] res, matrix_transformed
+    cdef double eps = 1e-7
+    cdef bint safe1, safe2, safe, adjust
 
-    # Steps 5, 6
-    eps = 1e-7
-    safe1 = (np.abs(angles[:, 1]) >= eps)
-    safe2 = (np.abs(angles[:, 1] - np.pi) >= eps)
+    for ind in range(num_rotations):
+        _angles = angles[ind, :]
 
-    # Step 4 (Completion)
-    angles[:, 1] += offset
+        # Step 3
+        res = np.dot(c, matrix[ind, :, :])
+        matrix_transformed = np.dot(res, c.T.dot(rot))
 
-    # 5b
-    safe_mask = np.logical_and(safe1, safe2)
-    angles[safe_mask, 0] = np.arctan2(matrix_transformed[safe_mask, 0, 2],
-                                      -matrix_transformed[safe_mask, 1, 2])
-    angles[safe_mask, 2] = np.arctan2(matrix_transformed[safe_mask, 2, 0],
-                                      matrix_transformed[safe_mask, 2, 1])
+        # Step 4
+        # Ensure less than unit norm
+        matrix_transformed[2, 2] = min(matrix_transformed[2, 2], 1)
+        matrix_transformed[2, 2] = max(matrix_transformed[2, 2], -1)
+        _angles[1] = acos(matrix_transformed[2, 2])
 
-    if extrinsic:
-        # For extrinsic, set first angle to zero so that after reversal we
-        # ensure that third angle is zero
-        # 6a
-        angles[~safe_mask, 0] = 0
-        # 6b
-        angles[~safe1, 2] = np.arctan2(matrix_transformed[~safe1, 1, 0]
-                                       - matrix_transformed[~safe1, 0, 1],
-                                       matrix_transformed[~safe1, 0, 0]
-                                       + matrix_transformed[~safe1, 1, 1])
-        # 6c
-        angles[~safe2, 2] = -np.arctan2(matrix_transformed[~safe2, 1, 0]
-                                        + matrix_transformed[~safe2, 0, 1],
-                                        matrix_transformed[~safe2, 0, 0]
-                                        - matrix_transformed[~safe2, 1, 1])
-    else:
-        # For instrinsic, set third angle to zero
-        # 6a
-        angles[~safe_mask, 2] = 0
-        # 6b
-        angles[~safe1, 0] = np.arctan2(matrix_transformed[~safe1, 1, 0]
-                                       - matrix_transformed[~safe1, 0, 1],
-                                       matrix_transformed[~safe1, 0, 0]
-                                       + matrix_transformed[~safe1, 1, 1])
-        # 6c
-        angles[~safe2, 0] = np.arctan2(matrix_transformed[~safe2, 1, 0]
-                                       + matrix_transformed[~safe2, 0, 1],
-                                       matrix_transformed[~safe2, 0, 0]
-                                       - matrix_transformed[~safe2, 1, 1])
+        # Steps 5, 6
+        safe1 = abs(_angles[1]) >= eps
+        safe2 = abs(_angles[1] - pi) >= eps
+        safe = safe1 and safe2
 
-    # Step 7
-    if seq[0] == seq[2]:
-        # lambda = 0, so we can only ensure angle2 -> [0, pi]
-        adjust_mask = np.logical_or(angles[:, 1] < 0, angles[:, 1] > np.pi)
-    else:
-        # lambda = + or - pi/2, so we can ensure angle2 -> [-pi/2, pi/2]
-        adjust_mask = np.logical_or(angles[:, 1] < -np.pi / 2,
-                                    angles[:, 1] > np.pi / 2)
+        # Step 4 (Completion)
+        _angles[1] += offset
 
-    # Dont adjust gimbal locked angle sequences
-    adjust_mask = np.logical_and(adjust_mask, safe_mask)
+        # 5b
+        if safe:
+            _angles[0] = atan2(matrix_transformed[0, 2], -matrix_transformed[1, 2])
+            _angles[2] = atan2(matrix_transformed[2, 0], matrix_transformed[2, 1])
 
-    angles[adjust_mask, 0] += np.pi
-    angles[adjust_mask, 1] = 2 * offset - angles[adjust_mask, 1]
-    angles[adjust_mask, 2] -= np.pi
+        if extrinsic:
+            # For extrinsic, set first angle to zero so that after reversal we
+            # ensure that third angle is zero
+            # 6a
+            if not safe:
+                _angles[0] = 0
+            # 6b
+            elif not safe1:
+                _angles[2] = atan2(matrix_transformed[1, 0] - matrix_transformed[0, 1],
+                                   matrix_transformed[0, 0] + matrix_transformed[1, 1])
+            # 6c
+            elif not safe2:
+                _angles[2] = -atan2(matrix_transformed[1, 0] + matrix_transformed[0, 1],
+                                    matrix_transformed[0, 0] - matrix_transformed[1, 1])
+        else:
+            # For instrinsic, set third angle to zero
+            # 6a
+            if not safe:
+                _angles[2] = 0
+            # 6b
+            elif not safe1:
+                _angles[0] = atan2(matrix_transformed[1, 0] - matrix_transformed[0, 1],
+                                   matrix_transformed[0, 0] + matrix_transformed[1, 1])
+            # 6c
+            elif not safe2:
+                _angles[0] = atan2(matrix_transformed[1, 0] + matrix_transformed[0, 1],
+                                   matrix_transformed[0, 0] - matrix_transformed[1, 1])
 
-    angles[angles < -np.pi] += 2 * np.pi
-    angles[angles > np.pi] -= 2 * np.pi
+        # Step 7
+        if seq[0] == seq[2]:
+            # lambda = 0, so we can only ensure angle2 -> [0, pi]
+            adjust = _angles[1] < 0 or _angles[1] > pi
+        else:
+            # lambda = + or - pi/2, so we can ensure angle2 -> [-pi/2, pi/2]
+            adjust = _angles[1] < -pi / 2 or _angles[1] > pi / 2
 
-    # Step 8
-    if not np.all(safe_mask):
-        warnings.warn("Gimbal lock detected. Setting third angle to zero since"
-                      " it is not possible to uniquely determine all angles.")
+        # Dont adjust gimbal locked angle sequences
+        if adjust and safe:
+            _angles[0] += pi
+            _angles[1] = 2 * offset - _angles[1]
+            _angles[2] -= pi
+
+        for i in range(3):
+            if _angles[i] < -pi:
+                _angles[i] += 2 * pi
+            elif _angles[i] > pi:
+                _angles[i] -= 2 * pi
+
+        # Step 8
+        if not safe:
+            warnings.warn("Gimbal lock detected. Setting third angle to zero since"
+                          " it is not possible to uniquely determine all angles.")
 
     # Reverse role of extrinsic and intrinsic rotations, but let third angle be
     # zero for gimbal locked cases
@@ -143,38 +194,58 @@ cdef _compute_euler_from_matrix(matrix, str seq, extrinsic=False):
     return angles
 
 
-def _make_elementary_quat(axis, angles):
-    quat = np.zeros((angles.shape[0], 4))
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cdef inline double[:, :] _compose_quat(double[:, :] p, double[:, :] q):
+    cdef Py_ssize_t n = max(p.shape[0], q.shape[0])
+    cdef double[:, :] product = array(shape=(n, 4), itemsize=sizeof(double), format="d") # TODO: better init?
+    cdef double[:] cross
+    cdef double sum3
 
-    quat[:, 3] = np.cos(angles / 2)
-    quat[:, _AXIS_TO_IND[axis]] = np.sin(angles / 2)
-    return quat
+    for ind in range(n):
+        cross = _cross3(p[ind, :3], q[ind, :3])
+        product[ind, 0] = p[ind, 3] * q[ind, 0] + q[ind, 3] * p[ind, 0] + cross[0]
+        product[ind, 1] = p[ind, 3] * q[ind, 1] + q[ind, 3] * p[ind, 1] + cross[1]
+        product[ind, 2] = p[ind, 3] * q[ind, 2] + q[ind, 3] * p[ind, 2] + cross[2]
 
-
-def _compose_quat(p, q):
-    product = np.empty((max(p.shape[0], q.shape[0]), 4))
-    product[:, 3] = p[:, 3] * q[:, 3] - np.sum(p[:, :3] * q[:, :3], axis=1)
-    product[:, :3] = (p[:, None, 3] * q[:, :3] + q[:, None, 3] * p[:, :3] +
-                      np.cross(p[:, :3], q[:, :3]))
+        sum3 = p[ind, 0] * q[ind, 0] + p[ind, 1] * q[ind, 1] + p[ind, 2] * q[ind, 2]
+        product[ind, 3] = p[ind, 3] * q[ind, 3] - sum3
     return product
 
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cdef inline double[:, :] _make_elementary_quat(char axis, double[:] angles):
+    cdef Py_ssize_t n = angles.shape[0]
+    cdef double[:, :] quat = np.zeros((n, 4))
 
-def _elementary_quat_compose(seq, angles, intrinsic=False):
-    result = _make_elementary_quat(seq[0], angles[:, 0])
+    cdef int axis_ind
+    if axis == b'x':   axis_ind = 0
+    elif axis == b'y': axis_ind = 1
+    elif axis == b'z': axis_ind = 2
 
-    for idx, axis in enumerate(seq[1:], start=1):
+    for ind in range(n):
+        quat[ind, 3] = cos(angles[ind] / 2)
+        quat[ind, axis_ind] = sin(angles[ind] / 2)
+    return quat
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cdef double[:, :] _elementary_quat_compose(str seq, double[:, :] angles, bint intrinsic=False):
+    cdef double[:, :] result = _make_elementary_quat(seq[0], angles[:, 0])
+    cdef Py_ssize_t seq_len = len(seq)
+
+    for idx in range(1, seq_len):
         if intrinsic:
             result = _compose_quat(
                 result,
-                _make_elementary_quat(axis, angles[:, idx]))
+                _make_elementary_quat(seq[idx], angles[:, idx]))
         else:
             result = _compose_quat(
-                _make_elementary_quat(axis, angles[:, idx]),
+                _make_elementary_quat(seq[idx], angles[:, idx]),
                 result)
     return result
 
-
-class Rotation(object):
+cdef class Rotation(object):
     """Rotation in 3 dimensions.
 
     This class provides an interface to initialize from and represent rotations
@@ -366,6 +437,8 @@ class Rotation(object):
     output formats supported, consult the individual method's examples.
 
     """
+    cdef double[:, :] _quat
+    cdef bint _single
     def __init__(self, quat, normalize=True, copy=True):
         self._single = False
         quat = np.asarray(quat, dtype=float)
@@ -381,16 +454,11 @@ class Rotation(object):
             quat = quat[None, :]
             self._single = True
 
+        cdef Py_ssize_t num_rotations = quat.shape[0]
         if normalize:
             self._quat = quat.copy()
-            norms = scipy.linalg.norm(quat, axis=1)
-
-            zero_norms = norms == 0
-            if zero_norms.any():
-                raise ValueError("Found zero norm quaternions in `quat`.")
-
-            # Ensure norm is broadcasted along each column.
-            self._quat[~zero_norms] /= norms[~zero_norms][:, None]
+            for ind in range(num_rotations):
+                _normalize_quat(self._quat[ind, :])
         else:
             self._quat = quat.copy() if copy else quat
 
@@ -577,7 +645,7 @@ class Rotation(object):
         is_single = False
         matrix = np.asarray(matrix, dtype=float)
 
-        if matrix.ndim not in [2, 3] or matrix.shape[-2:] != (3, 3):
+        if matrix.ndim not in [2, 3] or matrix.shape[len(matrix.shape)-2:] != (3, 3):
             raise ValueError("Expected `matrix` to have shape (3, 3) or "
                              "(N, 3, 3), got {}".format(matrix.shape))
 
@@ -591,8 +659,8 @@ class Rotation(object):
         else:
             cmatrix = matrix
 
-        cdef int num_rotations = cmatrix.shape[0]
-        cdef int i, j, k
+        cdef Py_ssize_t num_rotations = cmatrix.shape[0]
+        cdef Py_ssize_t i, j, k
         cdef double norm
 
         cdef np.ndarray[double, ndim=2] decision_matrix = np.empty((num_rotations, 4))
@@ -619,12 +687,7 @@ class Rotation(object):
                 quat[ind, 3] = 1 + decision_matrix[ind, 3]
 
             # normalize
-            norm = sqrt(quat[ind, 0] * quat[ind, 0] + quat[ind, 1] * quat[ind, 1]
-                      + quat[ind, 2] * quat[ind, 2] + quat[ind, 3] * quat[ind, 3])
-            quat[ind, 0] /= norm
-            quat[ind, 1] /= norm
-            quat[ind, 2] /= norm
-            quat[ind, 3] /= norm
+            _normalize_quat(quat[ind, :])
 
         if is_single:
             return cls(quat[0], normalize=False, copy=False)
@@ -638,6 +701,8 @@ class Rotation(object):
         return cls.from_matrix(dcm)
 
     @classmethod
+    @cython.boundscheck(False)
+    @cython.wraparound(False)
     def from_rotvec(cls, rotvec):
         """Initialize from rotation vectors.
 
@@ -694,32 +759,37 @@ class Rotation(object):
         is_single = False
         rotvec = np.asarray(rotvec, dtype=float)
 
-        if rotvec.ndim not in [1, 2] or rotvec.shape[-1] != 3:
+        if rotvec.ndim not in [1, 2] or rotvec.shape[len(rotvec.shape)-1] != 3:
             raise ValueError("Expected `rot_vec` to have shape (3,) "
                              "or (N, 3), got {}".format(rotvec.shape))
 
         # If a single vector is given, convert it to a 2D 1 x 3 matrix but
         # set self._single to True so that we can return appropriate objects
         # in the `as_...` methods
+        cdef np.ndarray[double, ndim=2] crotvec
         if rotvec.shape == (3,):
-            rotvec = rotvec[None, :]
+            crotvec = rotvec[None, :]
             is_single = True
+        else:
+            crotvec = rotvec
 
-        num_rotations = rotvec.shape[0]
+        cdef Py_ssize_t num_rotations = crotvec.shape[0]
+        cdef double angle, scale, angle2
+        cdef np.ndarray[double, ndim=2] quat = np.empty((num_rotations, 4))
 
-        norms = np.linalg.norm(rotvec, axis=1)
-        small_angle = (norms <= 1e-3)
-        large_angle = ~small_angle
+        for ind in range(num_rotations):
+            angle = _norm3(crotvec[ind, :])
 
-        scale = np.empty(num_rotations)
-        scale[small_angle] = (0.5 - norms[small_angle] ** 2 / 48 +
-                              norms[small_angle] ** 4 / 3840)
-        scale[large_angle] = (np.sin(norms[large_angle] / 2) /
-                              norms[large_angle])
+            if angle <= 1e-3: # small angle
+                angle2 = angle * angle
+                scale = 0.5 - angle2 / 48 + angle2 * angle2 / 3840
+            else: # large angle
+                scale = sin(angle / 2) / angle
 
-        quat = np.empty((num_rotations, 4))
-        quat[:, :3] = scale[:, None] * rotvec
-        quat[:, 3] = np.cos(norms / 2)
+            quat[ind, 0] = scale * crotvec[ind, 0]
+            quat[ind, 1] = scale * crotvec[ind, 1]
+            quat[ind, 2] = scale * crotvec[ind, 2]
+            quat[ind, 3] = cos(angle / 2)
 
         if is_single:
             return cls(quat[0], normalize=False, copy=False)
@@ -925,10 +995,12 @@ class Rotation(object):
 
         """
         if self._single:
-            return self._quat[0].copy()
+            return np.array(self._quat[0], copy=True)
         else:
-            return self._quat.copy()
+            return np.array(self._quat, copy=True)
 
+    @cython.boundscheck(False)
+    @cython.wraparound(False)
     def as_matrix(self):
         """Represent as rotation matrix.
 
@@ -987,7 +1059,7 @@ class Rotation(object):
 
         .. versionadded:: 1.4.0
         """
-        cdef int num_rotations = len(self)
+        cdef Py_ssize_t num_rotations = len(self)
         cdef np.ndarray[double, ndim=3] matrix = np.empty((num_rotations, 3, 3))
 
         cdef double x, y, z, w, x2, y2, z2, w2
@@ -1033,6 +1105,8 @@ class Rotation(object):
     def as_dcm(self):
         return self.as_matrix()
 
+    @cython.boundscheck(False)
+    @cython.wraparound(False)
     def as_rotvec(self):
         """Represent as rotation vectors.
 
@@ -1079,23 +1153,23 @@ class Rotation(object):
         (2, 3)
 
         """
-        quat = self._quat.copy()
-        # w > 0 to ensure 0 <= angle <= pi
-        quat[quat[:, 3] < 0] *= -1
+        cdef Py_ssize_t num_rotations = len(self)
+        cdef double w, angle, scale, angle2
+        cdef np.ndarray[double, ndim=2] rotvec = np.empty((num_rotations, 3))
 
-        angle = 2 * np.arctan2(np.linalg.norm(quat[:, :3], axis=1), quat[:, 3])
+        for ind in range(num_rotations):
+            w = abs(self._quat[ind, 3]) # w > 0 to ensure 0 <= angle <= pi
+            angle = atan2(_norm3(self._quat[ind, :]), w)
 
-        small_angle = (angle <= 1e-3)
-        large_angle = ~small_angle
+            if angle <= 1e-3: # small angle
+                angle2 = angle * angle
+                scale = 2 + angle2 / 12 + 7 * angle2 * angle2 / 2880
+            else: # large angle
+                scale = angle / sin(angle / 2)
 
-        num_rotations = len(self)
-        scale = np.empty(num_rotations)
-        scale[small_angle] = (2 + angle[small_angle] ** 2 / 12 +
-                              7 * angle[small_angle] ** 4 / 2880)
-        scale[large_angle] = (angle[large_angle] /
-                              np.sin(angle[large_angle] / 2))
-
-        rotvec = scale[:, None] * quat[:, :3]
+            rotvec[ind, 0] = scale * self._quat[ind, 0]
+            rotvec[ind, 1] = scale * self._quat[ind, 1]
+            rotvec[ind, 2] = scale * self._quat[ind, 2]
 
         if self._single:
             return rotvec[0]
@@ -1202,7 +1276,10 @@ class Rotation(object):
 
         seq = seq.lower()
 
-        angles = _compute_euler_from_matrix(self.as_matrix(), seq, extrinsic)
+        matrix = self.as_matrix()
+        if matrix.ndim == 2:
+            matrix = matrix[None, :, :]
+        angles = _compute_euler_from_matrix(matrix, seq, extrinsic)
         if degrees:
             angles = np.rad2deg(angles)
 
@@ -1358,7 +1435,7 @@ class Rotation(object):
         else:
             return result
 
-    def __mul__(self, other):
+    def __mul__(Rotation self, Rotation other):
         """Compose this rotation with the other.
 
         If `p` and `q` are two rotations, then the composition of 'q followed
@@ -1466,7 +1543,7 @@ class Rotation(object):
                [ 0.78539816, -0.        , -0.        ]])
 
         """
-        quat = self._quat.copy()
+        cdef np.ndarray quat = np.array(self._quat, copy=True)
         quat[:, -1] *= -1
         if self._single:
             quat = quat[0]
