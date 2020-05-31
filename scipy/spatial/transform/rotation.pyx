@@ -1,6 +1,9 @@
 import re
 import warnings
 import numpy as np
+cimport numpy as np
+cimport cython
+from libc.math cimport sqrt
 import scipy.linalg
 from scipy._lib._util import check_random_state
 from ._rotation_groups import create_group
@@ -15,7 +18,7 @@ def _elementary_basis_vector(axis):
     return b
 
 
-def _compute_euler_from_matrix(matrix, seq, extrinsic=False):
+cdef _compute_euler_from_matrix(matrix, str seq, extrinsic=False):
     # The algorithm assumes intrinsic frame transformations. The algorithm
     # in the paper is formulated for rotation matrices which are transposition
     # rotation matrices used within Rotation.
@@ -477,6 +480,8 @@ class Rotation(object):
         return cls(quat, normalize=True)
 
     @classmethod
+    @cython.boundscheck(False)
+    @cython.wraparound(False)
     def from_matrix(cls, matrix):
         """Initialize from rotation matrix.
 
@@ -579,45 +584,56 @@ class Rotation(object):
         # If a single matrix is given, convert it to 3D 1 x 3 x 3 matrix but
         # set self._single to True so that we can return appropriate objects in
         # the `to_...` methods
+        cdef np.ndarray[double, ndim=3] cmatrix
         if matrix.shape == (3, 3):
-            matrix = matrix.reshape((1, 3, 3))
+            cmatrix = matrix.reshape((1, 3, 3))
             is_single = True
+        else:
+            cmatrix = matrix
 
-        num_rotations = matrix.shape[0]
+        cdef int num_rotations = cmatrix.shape[0]
+        cdef int i, j, k
+        cdef double norm
 
-        decision_matrix = np.empty((num_rotations, 4))
-        decision_matrix[:, :3] = matrix.diagonal(axis1=1, axis2=2)
-        decision_matrix[:, -1] = decision_matrix[:, :3].sum(axis=1)
-        choices = decision_matrix.argmax(axis=1)
+        cdef np.ndarray[double, ndim=2] decision_matrix = np.empty((num_rotations, 4))
+        decision_matrix[:, :3] = cmatrix.diagonal(axis1=1, axis2=2)
+        decision_matrix[:, 3] = decision_matrix[:, :3].sum(axis=1)
+        cdef np.ndarray[long, ndim=1] choices = decision_matrix.argmax(axis=1)
 
-        quat = np.empty((num_rotations, 4))
+        cdef np.ndarray[double, ndim=2] quat = np.empty((num_rotations, 4))
 
-        ind = np.nonzero(choices != 3)[0]
-        i = choices[ind]
-        j = (i + 1) % 3
-        k = (j + 1) % 3
+        for ind in range(num_rotations):
+            if choices[ind] != 3:
+                i = choices[ind]
+                j = (i + 1) % 3
+                k = (j + 1) % 3
 
-        quat[ind, i] = 1 - decision_matrix[ind, -1] + 2 * matrix[ind, i, i]
-        quat[ind, j] = matrix[ind, j, i] + matrix[ind, i, j]
-        quat[ind, k] = matrix[ind, k, i] + matrix[ind, i, k]
-        quat[ind, 3] = matrix[ind, k, j] - matrix[ind, j, k]
+                quat[ind, i] = 1 - decision_matrix[ind, 3] + 2 * cmatrix[ind, i, i]
+                quat[ind, j] = cmatrix[ind, j, i] + cmatrix[ind, i, j]
+                quat[ind, k] = cmatrix[ind, k, i] + cmatrix[ind, i, k]
+                quat[ind, 3] = cmatrix[ind, k, j] - cmatrix[ind, j, k]
+            else:
+                quat[ind, 0] = cmatrix[ind, 2, 1] - cmatrix[ind, 1, 2]
+                quat[ind, 1] = cmatrix[ind, 0, 2] - cmatrix[ind, 2, 0]
+                quat[ind, 2] = cmatrix[ind, 1, 0] - cmatrix[ind, 0, 1]
+                quat[ind, 3] = 1 + decision_matrix[ind, 3]
 
-        ind = np.nonzero(choices == 3)[0]
-        quat[ind, 0] = matrix[ind, 2, 1] - matrix[ind, 1, 2]
-        quat[ind, 1] = matrix[ind, 0, 2] - matrix[ind, 2, 0]
-        quat[ind, 2] = matrix[ind, 1, 0] - matrix[ind, 0, 1]
-        quat[ind, 3] = 1 + decision_matrix[ind, -1]
-
-        quat /= np.linalg.norm(quat, axis=1)[:, None]
+            # normalize
+            norm = sqrt(quat[ind, 0] * quat[ind, 0] + quat[ind, 1] * quat[ind, 1]
+                      + quat[ind, 2] * quat[ind, 2] + quat[ind, 3] * quat[ind, 3])
+            quat[ind, 0] /= norm
+            quat[ind, 1] /= norm
+            quat[ind, 2] /= norm
+            quat[ind, 3] /= norm
 
         if is_single:
             return cls(quat[0], normalize=False, copy=False)
         else:
             return cls(quat, normalize=False, copy=False)
 
+    # @np.deprecate(message="from_dcm is renamed to from_matrix in scipy 1.4.0 "
+    #                       "and will be removed in scipy 1.6.0")
     @classmethod
-    @np.deprecate(message="from_dcm is renamed to from_matrix in scipy 1.4.0 "
-                          "and will be removed in scipy 1.6.0")
     def from_dcm(cls, dcm):
         return cls.from_matrix(dcm)
 
@@ -971,45 +987,49 @@ class Rotation(object):
 
         .. versionadded:: 1.4.0
         """
-        x = self._quat[:, 0]
-        y = self._quat[:, 1]
-        z = self._quat[:, 2]
-        w = self._quat[:, 3]
+        cdef int num_rotations = len(self)
+        cdef np.ndarray[double, ndim=3] matrix = np.empty((num_rotations, 3, 3))
 
-        x2 = x * x
-        y2 = y * y
-        z2 = z * z
-        w2 = w * w
+        cdef double x, y, z, w, x2, y2, z2, w2
+        cdef double xy, zw, xz, yw, yz, xw
 
-        xy = x * y
-        zw = z * w
-        xz = x * z
-        yw = y * w
-        yz = y * z
-        xw = x * w
+        for ind in range(num_rotations):
+            x = self._quat[ind, 0]
+            y = self._quat[ind, 1]
+            z = self._quat[ind, 2]
+            w = self._quat[ind, 3]
 
-        num_rotations = len(self)
-        matrix = np.empty((num_rotations, 3, 3))
+            x2 = x * x
+            y2 = y * y
+            z2 = z * z
+            w2 = w * w
 
-        matrix[:, 0, 0] = x2 - y2 - z2 + w2
-        matrix[:, 1, 0] = 2 * (xy + zw)
-        matrix[:, 2, 0] = 2 * (xz - yw)
+            xy = x * y
+            zw = z * w
+            xz = x * z
+            yw = y * w
+            yz = y * z
+            xw = x * w
 
-        matrix[:, 0, 1] = 2 * (xy - zw)
-        matrix[:, 1, 1] = - x2 + y2 - z2 + w2
-        matrix[:, 2, 1] = 2 * (yz + xw)
+            matrix[ind, 0, 0] = x2 - y2 - z2 + w2
+            matrix[ind, 1, 0] = 2 * (xy + zw)
+            matrix[ind, 2, 0] = 2 * (xz - yw)
 
-        matrix[:, 0, 2] = 2 * (xz + yw)
-        matrix[:, 1, 2] = 2 * (yz - xw)
-        matrix[:, 2, 2] = - x2 - y2 + z2 + w2
+            matrix[ind, 0, 1] = 2 * (xy - zw)
+            matrix[ind, 1, 1] = - x2 + y2 - z2 + w2
+            matrix[ind, 2, 1] = 2 * (yz + xw)
+
+            matrix[ind, 0, 2] = 2 * (xz + yw)
+            matrix[ind, 1, 2] = 2 * (yz - xw)
+            matrix[ind, 2, 2] = - x2 - y2 + z2 + w2
 
         if self._single:
             return matrix[0]
         else:
             return matrix
 
-    @np.deprecate(message="as_dcm is renamed to as_matrix in scipy 1.4.0 "
-                          "and will be removed in scipy 1.6.0")
+    # @np.deprecate(message="as_dcm is renamed to as_matrix in scipy 1.4.0 "
+    #                       "and will be removed in scipy 1.6.0")
     def as_dcm(self):
         return self.as_matrix()
 
@@ -1784,10 +1804,10 @@ class Rotation(object):
 
         return cls(sample)
 
+    # @np.deprecate(message="match_vectors is deprecated in favor of "
+    #                       "align_vectors in scipy 1.4.0 and will be removed "
+    #                       "in scipy 1.6.0")
     @classmethod
-    @np.deprecate(message="match_vectors is deprecated in favor of "
-                          "align_vectors in scipy 1.4.0 and will be removed "
-                          "in scipy 1.6.0")
     def match_vectors(cls, a, b, weights=None, normalized=False):
         """Deprecated in favor of `align_vectors`."""
         a = np.asarray(a)
