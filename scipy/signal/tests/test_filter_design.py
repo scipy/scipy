@@ -3741,20 +3741,23 @@ class TestGammatone(object):
     def test_invalid_input(self):
         # Cutoff frequency is <= 0 or >= fs / 2.
         fs = 16000
-        assert_raises(ValueError, gammatone, -fs, 'iir', fs=fs)
-        assert_raises(ValueError, gammatone, 0, 'fir', fs=fs)
-        assert_raises(ValueError, gammatone, fs / 2, 'iir', fs=fs)
-        assert_raises(ValueError, gammatone, fs, 'fir', fs=fs)
+        with pytest.raises(ValueError, match='The frequency must be between '):
+            gammatone(-fs, 'iir', fs=fs)
+            gammatone(0, 'fir', fs=fs)
+            gammatone(fs / 2, 'iir', fs=fs)
+            gammatone(fs, 'fir', fs=fs)
 
         # Filter type is not fir or iir
-        assert_raises(ValueError, gammatone, 440, ftype='fie', fs=16000)
-        assert_raises(ValueError, gammatone, 220, ftype='it', fs=32000)
+        with pytest.raises(ValueError, match='ftype must be '):
+            gammatone(440, ftype='fie', fs=16000)
+            gammatone(220, ftype='it', fs=32000)
 
         # Order is <= 0 or > 24 for FIR filter.
-        assert_raises(ValueError, gammatone, 440, 'fir', fs=16000, order=-50)
-        assert_raises(ValueError, gammatone, 220, 'fir', fs=32000, order=0)
-        assert_raises(ValueError, gammatone, 110, 'fir', fs=44100, order=25)
-        assert_raises(ValueError, gammatone, 55, 'fir', fs=48000, order=50)
+        with pytest.raises(ValueError, match='Invalid order: '):
+            gammatone(440, 'fir', fs=16000, order=-50)
+            gammatone(220, 'fir', fs=32000, order=0)
+            gammatone(110, 'fir', fs=44100, order=25)
+            gammatone(55, 'fir', fs=48000, order=50)
 
     # Verify that the filter's frequency response is approximately
     # 1 at the cutoff frequency.
@@ -3774,8 +3777,8 @@ class TestGammatone(object):
             freq_hz = freqs[np.argmax(np.abs(response))] / ((2 * np.pi) / fs)
 
             # Check that the peak magnitude is 1 and the frequency is 1000 Hz.
-            assert_approx_equal(response_max, 1, significant=2)
-            assert_approx_equal(freq_hz, 1000, significant=2)
+            response_max == pytest.approx(1, rel=1e-2)
+            freq_hz == pytest.approx(1000, rel=1e-2)
 
     # All built-in IIR filters are real, so should have perfectly
     # symmetrical poles and zeros. Then ba representation (using
@@ -3784,9 +3787,9 @@ class TestGammatone(object):
     def test_iir_symmetry(self):
         b, a = gammatone(440, 'iir', fs=24000)
         z, p, k = tf2zpk(b, a)
-        assert_array_equal(sorted(z), sorted(z.conj()))
-        assert_array_equal(sorted(p), sorted(p.conj()))
-        assert_equal(k, np.real(k))
+        sorted(z) == pytest.approx(sorted(z.conj()))
+        sorted(p) == pytest.approx(sorted(p.conj()))
+        k == pytest.approx(np.real(k))
 
         assert_(issubclass(b.dtype.type, np.floating))
         assert_(issubclass(a.dtype.type, np.floating))
@@ -3802,5 +3805,5 @@ class TestGammatone(object):
               60.2667361289181, -46.9399590980486,
               22.9474798808461, -6.43799381299034,
               0.793651554625368]
-        assert_array_almost_equal(b, b2)
-        assert_array_almost_equal(a, a2)
+        b == pytest.approx(b2)
+        a == pytest.approx(a2)

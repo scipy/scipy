@@ -4861,7 +4861,7 @@ def gammatone(freq, ftype, order=None, numtaps=None, fs=None):
     Gammatone filter design.
 
     This function computes the coefficients of an FIR or IIR gammatone
-    digital filter [1].
+    digital filter [1]_.
 
     Parameters
     ----------
@@ -4881,7 +4881,7 @@ def gammatone(freq, ftype, order=None, numtaps=None, fs=None):
         Length of the filter. Only used when ``ftype='fir'``.
         Default is ``fs*0.015`` if `fs` is greater than 1000,
         15 if `fs` is less than or equal to 1000.
-    fs : int, optional
+    fs : float, optional
         The sampling frequency of the signal. `freq` must be between
         0 and ``fs/2``. Default is 2.
 
@@ -4943,15 +4943,15 @@ def gammatone(freq, ftype, order=None, numtaps=None, fs=None):
     # Set sampling rate if not passed
     if fs is None:
         fs = 2
-    else:
-        fs = operator.index(fs)
+    fs = float(fs)
 
     # Check for invalid cutoff frequency or filter type
+    ftype = ftype.lower()
     filter_types = ['fir', 'iir']
-    if freq <= 0 or freq >= fs / 2:
+    if not 0 < freq < fs / 2:
         raise ValueError("The frequency must be between 0 and {}"
                          " (nyquist), but given {}.".format(fs / 2, freq))
-    if ftype.lower() not in filter_types:
+    if ftype not in filter_types:
         raise ValueError('ftype must be either fir or iir.')
 
     # Calculate FIR gammatone filter
@@ -4959,19 +4959,14 @@ def gammatone(freq, ftype, order=None, numtaps=None, fs=None):
         # Set order and numtaps if not passed
         if order is None:
             order = 4
-        else:
-            order = operator.index(order)
+        order = operator.index(order)
 
         if numtaps is None:
-            if fs <= 1000:
-                numtaps = 15
-            else:
-                numtaps = int(fs * 0.015)
-        else:
-            numtaps = operator.index(numtaps)
+            numtaps = max(int(fs * 0.015), 15)
+        numtaps = operator.index(numtaps)
 
         # Check for invalid order
-        if order <= 0 or order > 24:
+        if not 0 < order <= 24:
             raise ValueError("Invalid order: order must be > 0 and <= 24.")
 
         # Gammatone impulse response settings
