@@ -1932,6 +1932,14 @@ def test_hamming_unequal_length():
     assert_raises(ValueError, whamming, x, y)
 
 
+def test_hamming_zero_length():
+    # Regression test for gh-4290.
+    x = []
+    y = []
+    # Used to give an AttributeError from ndarray.mean called on bool
+    assert_raises(ValueError, hamming, x, y)
+
+
 def test_hamming_string_array():
     # https://github.com/scikit-learn/scikit-learn/issues/4014
     a = np.array(['eggs', 'spam', 'spam', 'eggs', 'spam', 'spam', 'spam',
@@ -1944,6 +1952,16 @@ def test_hamming_string_array():
                   dtype='|S4')
     desired = 0.45
     assert_allclose(whamming(a, b), desired)
+
+
+def test_hamming_strings():
+    # https://github.com/scipy/scipy/issues/11991
+    a = "hello"
+    b = "world"
+    desired = 0.8
+    # This test can not use wrapped hamming because of the array
+    # conversion inside the wrap before the function call.
+    assert_allclose(hamming(a, b), desired)
 
 
 def test_minkowski_w():
