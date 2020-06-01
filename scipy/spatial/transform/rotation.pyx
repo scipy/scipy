@@ -5,7 +5,7 @@ cimport numpy as np
 cimport cython
 from cython.view cimport array
 from cpython.array cimport array as pyarray
-from libc.math cimport sqrt, sin, cos, atan2, pi, acos
+from libc.math cimport sqrt, sin, cos, atan2, pi, acos, NAN, isnan
 import scipy.linalg
 from scipy._lib._util import check_random_state
 from ._rotation_groups import create_group
@@ -32,14 +32,14 @@ cdef inline double _norm3(const double[:] elems):
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef inline double _normalize_quat(double[:] elems):
+cdef inline double _normalize4(double[:] elems):
     cdef double norm = sqrt(
         elems[0] * elems[0] + elems[1] * elems[1] +
         elems[2] * elems[2] + elems[3] * elems[3]
     )
 
     if norm == 0:
-        raise ValueError("Found zero norm quaternions in `quat`.")
+        return NAN
 
     elems[0] /= norm
     elems[1] /= norm
@@ -141,11 +141,11 @@ cdef np.ndarray[double, ndim=2] _compute_euler_from_matrix(
             if not safe:
                 _angles[0] = 0
             # 6b
-            elif not safe1:
+            if not safe1:
                 _angles[2] = atan2(matrix_transformed[1, 0] - matrix_transformed[0, 1],
                                    matrix_transformed[0, 0] + matrix_transformed[1, 1])
             # 6c
-            elif not safe2:
+            if not safe2:
                 _angles[2] = -atan2(matrix_transformed[1, 0] + matrix_transformed[0, 1],
                                     matrix_transformed[0, 0] - matrix_transformed[1, 1])
         else:
@@ -154,11 +154,11 @@ cdef np.ndarray[double, ndim=2] _compute_euler_from_matrix(
             if not safe:
                 _angles[2] = 0
             # 6b
-            elif not safe1:
+            if not safe1:
                 _angles[0] = atan2(matrix_transformed[1, 0] - matrix_transformed[0, 1],
                                    matrix_transformed[0, 0] + matrix_transformed[1, 1])
             # 6c
-            elif not safe2:
+            if not safe2:
                 _angles[0] = atan2(matrix_transformed[1, 0] + matrix_transformed[0, 1],
                                    matrix_transformed[0, 0] - matrix_transformed[1, 1])
 
@@ -193,23 +193,33 @@ cdef np.ndarray[double, ndim=2] _compute_euler_from_matrix(
         angles = angles[:, ::-1]
     return angles
 
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cdef inline void _compose_quat_single(double[:] p, double[:] q, double[:] r): # calculate p * q into r
+    cdef double[:] cross = _cross3(p[:3], q[:3])
+
+    r[0] = p[3]*q[0] + q[3]*p[0] + cross[0]
+    r[1] = p[3]*q[1] + q[3]*p[1] + cross[1]
+    r[2] = p[3]*q[2] + q[3]*p[2] + cross[2]
+    r[3] = p[3]*q[3] - p[0]*q[0] - p[1]*q[1] - p[2]*q[2]
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
 cdef inline double[:, :] _compose_quat(double[:, :] p, double[:, :] q):
     cdef Py_ssize_t n = max(p.shape[0], q.shape[0])
     cdef double[:, :] product = array(shape=(n, 4), itemsize=sizeof(double), format="d") # TODO: better init?
-    cdef double[:] cross
-    cdef double sum3
 
-    for ind in range(n):
-        cross = _cross3(p[ind, :3], q[ind, :3])
-        product[ind, 0] = p[ind, 3] * q[ind, 0] + q[ind, 3] * p[ind, 0] + cross[0]
-        product[ind, 1] = p[ind, 3] * q[ind, 1] + q[ind, 3] * p[ind, 1] + cross[1]
-        product[ind, 2] = p[ind, 3] * q[ind, 2] + q[ind, 3] * p[ind, 2] + cross[2]
+    # dealing with broadcasting
+    if p.shape[0] == 1:
+        for ind in range(n):
+            _compose_quat_single(p[0, :], q[ind, :], product[ind, :])
+    elif q.shape[0] == 1:
+        for ind in range(n):
+            _compose_quat_single(p[ind, :], q[0, :], product[ind, :])
+    else:
+        for ind in range(n):
+            _compose_quat_single(p[ind, :], q[ind, :], product[ind, :])
 
-        sum3 = p[ind, 0] * q[ind, 0] + p[ind, 1] * q[ind, 1] + p[ind, 2] * q[ind, 2]
-        product[ind, 3] = p[ind, 3] * q[ind, 3] - sum3
     return product
 
 @cython.boundscheck(False)
@@ -439,11 +449,14 @@ cdef class Rotation(object):
     """
     cdef double[:, :] _quat
     cdef bint _single
+
+    @cython.boundscheck(False)
+    @cython.wraparound(False)
     def __init__(self, quat, normalize=True, copy=True):
         self._single = False
         quat = np.asarray(quat, dtype=float)
 
-        if quat.ndim not in [1, 2] or quat.shape[-1] != 4:
+        if quat.ndim not in [1, 2] or quat.shape[len(quat.shape)-1] != 4:
             raise ValueError("Expected `quat` to have shape (4,) or (N x 4), "
                              "got {}.".format(quat.shape))
 
@@ -458,7 +471,8 @@ cdef class Rotation(object):
         if normalize:
             self._quat = quat.copy()
             for ind in range(num_rotations):
-                _normalize_quat(self._quat[ind, :])
+                if isnan(_normalize4(self._quat[ind, :])):
+                    raise ValueError("Found zero norm quaternions in `quat`.")
         else:
             self._quat = quat.copy() if copy else quat
 
@@ -687,7 +701,7 @@ cdef class Rotation(object):
                 quat[ind, 3] = 1 + decision_matrix[ind, 3]
 
             # normalize
-            _normalize_quat(quat[ind, :])
+            _normalize4(quat[ind, :])
 
         if is_single:
             return cls(quat[0], normalize=False, copy=False)
@@ -1154,12 +1168,19 @@ cdef class Rotation(object):
 
         """
         cdef Py_ssize_t num_rotations = len(self)
-        cdef double w, angle, scale, angle2
+        cdef double angle, scale, angle2
         cdef np.ndarray[double, ndim=2] rotvec = np.empty((num_rotations, 3))
+        cdef double[:] quat
 
         for ind in range(num_rotations):
-            w = abs(self._quat[ind, 3]) # w > 0 to ensure 0 <= angle <= pi
-            angle = atan2(_norm3(self._quat[ind, :]), w)
+            if self._quat[ind, 3] < 0: # w > 0 to ensure 0 <= angle <= pi
+                quat = self._quat[ind, :].copy()
+                for i in range(4):
+                    quat[i] *= -1
+            else:
+                quat = self._quat[ind, :]
+
+            angle = 2 * atan2(_norm3(quat), quat[3])
 
             if angle <= 1e-3: # small angle
                 angle2 = angle * angle
@@ -1167,9 +1188,9 @@ cdef class Rotation(object):
             else: # large angle
                 scale = angle / sin(angle / 2)
 
-            rotvec[ind, 0] = scale * self._quat[ind, 0]
-            rotvec[ind, 1] = scale * self._quat[ind, 1]
-            rotvec[ind, 2] = scale * self._quat[ind, 2]
+            rotvec[ind, 0] = scale * quat[0]
+            rotvec[ind, 1] = scale * quat[1]
+            rotvec[ind, 2] = scale * quat[2]
 
         if self._single:
             return rotvec[0]
@@ -1549,6 +1570,8 @@ cdef class Rotation(object):
             quat = quat[0]
         return self.__class__(quat, normalize=False, copy=False)
 
+    @cython.boundscheck(False)
+    @cython.wraparound(False)
     def magnitude(self):
         """Get the magnitude(s) of the rotation(s).
 
@@ -1571,10 +1594,11 @@ cdef class Rotation(object):
         3.141592653589793
         """
 
-        quat = self._quat.reshape((len(self), 4))
-        s = np.linalg.norm(quat[:, :3], axis=1)
-        c = np.abs(quat[:, 3])
-        angles = 2 * np.arctan2(s, c)
+        cdef Py_ssize_t num_rotations = len(self)
+        cdef np.ndarray[double, ndim=1] angles = np.empty((num_rotations,))
+
+        for ind in range(num_rotations):
+            angles[ind] = 2 * atan2(_norm3(self._quat[ind, :3]), abs(self._quat[ind, 3]))
 
         if self._single:
             return angles[0]
@@ -1807,7 +1831,7 @@ cdef class Rotation(object):
                [ 0.57735027,  0.57735027, -0.57735027,  0.        ]])
 
         """
-        return self.__class__(self._quat[indexer], normalize=False)
+        return self.__class__(np.asarray(self._quat)[indexer], normalize=False)
 
     @classmethod
     def identity(cls, num=None):
