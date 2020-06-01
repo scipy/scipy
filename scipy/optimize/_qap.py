@@ -283,11 +283,11 @@ def _quadratic_assignment_faq(
     for i in range(n_init):
         # setting initialization matrix
         if isinstance(init, str) and init == "rand":
-            # generate a nxn matrix where each entry is a random integer [0, 1]
+            # generate a nxn matrix where each entry is a random number [0, 1]
             K = rng.rand(n_unseed, n_unseed)
             # perform 10 iterations of Sinkhorn balancing
-            for i in range(10):
-                K = _doubly_stochastic(K)
+
+            K = _doubly_stochastic(K)
             # initialize J, a doubly stochastic barycenter
             J = np.ones((n_unseed, n_unseed)) / float(n_unseed)
             P = (K + J) / 2
@@ -378,86 +378,31 @@ def _check_init_input(init, n):
         raise ValueError(msg)
 
 
-def _doubly_stochastic(P):
+def _doubly_stochastic(P, eps=1e-3):
+    #cleaner implementation of btaba/sinkhorn_knopp
     # Title: sinkhorn_knopp Source Code
     # Author: Tabanpour, B
     # Date: 2018
     # Code version:  0.2
     # Availability: https://pypi.org/project/sinkhorn_knopp/
     #
-    # The MIT License
-    #
-    # Copyright (c) 2016 Baruch Tabanpour
-    #
-    # Permission is hereby granted, free of charge, to any person obtaining a
-    # copy of this software and associated documentation files (the
-    # "Software"), to deal in the Software without restriction, including
-    # without limitation the rights to use, copy, modify, merge, publish,
-    # distribute, sublicense, and/or sell copies of the Software, and to
-    # permit persons to whom the Software is furnished to do so, subject to
-    # the following conditions:
-
-    # The above copyright notice and this permission notice shall be included
-    # in all copies or substantial portions of the Software.
-    #
-    # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-    # OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-    # MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-    # IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
-    # CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
-    # TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
-    # SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
     max_iter = 1000
-    epsilon = 1e-3
-    epsilon = int(epsilon)
-    stopping_condition = None
-    iterations = 0
-    D1 = np.ones(1)
-    D2 = np.ones(1)
-    P = np.asarray(P)
+    c = 1 / P.sum(axis=0)
+    r = 1 / (P @ c)
+    P_eps = P
 
-    assert np.all(P >= 0)
-    assert P.ndim == 2
-    assert P.shape[0] == P.shape[1]
-
-    N = P.shape[0]
-    max_thresh = 1 + epsilon
-    min_thresh = 1 - epsilon
-
-    r = np.ones((N, 1))
-    pdotr = P.T.dot(r)
-    c = 1 / pdotr
-    pdotc = P.dot(c)
-    r = 1 / pdotc
-    del pdotr, pdotc
-
-    P_eps = np.copy(P)
-    while (
-        np.any(np.sum(P_eps, axis=1) < min_thresh)
-        or np.any(np.sum(P_eps, axis=1) > max_thresh)
-        or np.any(np.sum(P_eps, axis=0) < min_thresh)
-        or np.any(np.sum(P_eps, axis=0) > max_thresh)
-    ):
-
-        c = 1 / P.T.dot(r)
-        r = 1 / P.dot(c)
-
-        D1 = np.diag(np.squeeze(r))
-        D2 = np.diag(np.squeeze(c))
-        P_eps = D1.dot(P).dot(D2)
-
-        iterations += 1
-
-        if iterations >= max_iter:
-            stopping_condition = "max_iter"
+    for it in range(max_iter):
+        if ((np.abs(P_eps.sum(axis=1) - 1) < eps).all() and
+                (np.abs(P_eps.sum(axis=0) - 1) < eps).all()):
+            # All column/row sums ~= 1 within threshold
+            reason = f"Threshold satisfied within {it + 1} iterations"
             break
 
-    if not stopping_condition:
-        stopping_condition = "epsilon"
-
-    D1 = np.diag(np.squeeze(r))
-    D2 = np.diag(np.squeeze(c))
-    P_eps = D1.dot(P).dot(D2)
+        c = 1 / (r @ P)
+        r = 1 / (P @ c)
+        P_eps = r[:, None] * P * c
+    else:
+        reason = "Max iter reached"
 
     return P_eps
