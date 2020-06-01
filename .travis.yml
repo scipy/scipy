@@ -206,8 +206,11 @@ before_install:
     fi
   - |
     if [ -z "${USE_DEBUG}" -a "${TRAVIS_CPU_ARCH}" == "amd64" -a "${TRAVIS_PYTHON_VERSION}" != "3.8" ]; then
-        travis_retry pip install numba==0.49.1
-        travis_retry pip install --only-binary=:all: sparse
+        if ! expr "$NUMPYSPEC" : ".*--pre.*" > /dev/null; then
+            # Install these only when not using Numpy prerelease
+            travis_retry pip install numba==0.49.1
+            travis_retry pip install --only-binary=:all: sparse
+        fi
     fi
   - |
     if [ -n "${TEST_GROUP_COUNT}" ]; then
