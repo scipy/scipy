@@ -44,6 +44,7 @@ Author: PM Larsen
 #include <cmath>
 #include "rectangular_lsap.h"
 #include <vector>
+#include <stdint.h>
 
 static int
 augmenting_path(int nc, std::vector<double>& cost, std::vector<double>& u,
