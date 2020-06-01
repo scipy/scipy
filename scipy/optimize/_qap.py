@@ -286,7 +286,6 @@ def _quadratic_assignment_faq(
             # generate a nxn matrix where each entry is a random number [0, 1]
             K = rng.rand(n_unseed, n_unseed)
             # perform 10 iterations of Sinkhorn balancing
-
             K = _doubly_stochastic(K)
             # initialize J, a doubly stochastic barycenter
             J = np.ones((n_unseed, n_unseed)) / float(n_unseed)
