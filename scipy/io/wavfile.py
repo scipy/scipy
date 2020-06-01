@@ -307,6 +307,16 @@ class WAVE_FORMAT(IntEnum):
 KNOWN_WAVE_FORMATS = {WAVE_FORMAT.PCM, WAVE_FORMAT.IEEE_FLOAT}
 
 
+def _raise_bad_format(format_tag):
+    try:
+        format_name = WAVE_FORMAT(format_tag).name
+    except ValueError:
+        format_name = f'{format_tag:#06x}'
+    raise ValueError(f"Unknown wave file format: {format_name}. Supported "
+                     "formats: " +
+                     ', '.join(x.name for x in KNOWN_WAVE_FORMATS))
+
+
 def _read_fmt_chunk(fid, is_big_endian):
     """
     Returns
@@ -365,13 +375,7 @@ def _read_fmt_chunk(fid, is_big_endian):
             raise ValueError("Binary structure of wave file is not compliant")
 
     if format_tag not in KNOWN_WAVE_FORMATS:
-        try:
-            format_name = WAVE_FORMAT(format_tag).name
-        except ValueError:
-            format_name = f'{format_tag:#06x}'
-        raise ValueError(f"Unknown wave file format: {format_name}. Supported "
-                         "formats: " +
-                         ', '.join(x.name for x in KNOWN_WAVE_FORMATS))
+        _raise_bad_format(format_tag)
 
     # move file pointer to next chunk
     if size > bytes_read:
@@ -437,8 +441,7 @@ def _read_data_chunk(fid, format_tag, channels, bit_depth, is_big_endian,
             raise ValueError("Unsupported bit depth: the wav file "
                              f"has {bit_depth}-bit data.")
     else:
-        # This should have been caught by _read_fmt_chunk already
-        raise ValueError(f"Unknown wave file format")
+        _raise_bad_format(format_tag)
 
     start = fid.tell()
     if not mmap:
