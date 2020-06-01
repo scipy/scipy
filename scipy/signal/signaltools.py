@@ -1963,17 +1963,27 @@ def lfiltic(b, a, y, x=None):
     M = np.size(b) - 1
     K = max(M, N)
     y = np.asarray(y)
-    if y.dtype.kind in 'bui':
-        # ensure calculations are floating point
-        y = y.astype(np.float64)
-    zi = np.zeros(K, y.dtype)
+
     if x is None:
-        x = np.zeros(M, y.dtype)
+        result_type = np.result_type(np.asarray(b), np.asarray(a), y)
+        if result_type.kind in 'bui':
+            result_type = np.float64
+        x = np.zeros(M, dtype=result_type)
     else:
         x = np.asarray(x)
+
+        result_type = np.result_type(np.asarray(b), np.asarray(a), y, x)
+        if result_type.kind in 'bui':
+            result_type = np.float64
+        x = x.astype(result_type)
+
         L = np.size(x)
         if L < M:
             x = np.r_[x, np.zeros(M - L)]
+
+    y = y.astype(result_type)
+    zi = np.zeros(K, result_type)
+
     L = np.size(y)
     if L < N:
         y = np.r_[y, np.zeros(N - L)]
@@ -3460,7 +3470,7 @@ def lfilter_zi(b, a):
     elif len(b) < n:
         b = np.r_[b, np.zeros(n - len(b))]
 
-    IminusA = np.eye(n - 1) - linalg.companion(a).T
+    IminusA = np.eye(n - 1, dtype=np.result_type(a, b)) - linalg.companion(a).T
     B = b[1:] - a[1:] * b[0]
     # Solve zi = A*zi + B
     zi = np.linalg.solve(IminusA, B)
@@ -3537,8 +3547,11 @@ def sosfilt_zi(sos):
     if sos.ndim != 2 or sos.shape[1] != 6:
         raise ValueError('sos must be shape (n_sections, 6)')
 
+    if sos.dtype.kind in 'bui':
+        sos = sos.astype(np.float64)
+
     n_sections = sos.shape[0]
-    zi = np.empty((n_sections, 2))
+    zi = np.empty((n_sections, 2), dtype=sos.dtype)
     scale = 1.0
     for section in range(n_sections):
         b = sos[section, :3]
@@ -4267,6 +4280,12 @@ def decimate(x, q, n=None, ftype='iir', axis=-1, zero_phase=True):
         b, a = system.num, system.den
     else:
         raise ValueError('invalid ftype')
+
+    result_type = x.dtype
+    if result_type.kind in 'bui':
+        result_type = np.float64
+    b = np.asarray(b, dtype=result_type)
+    a = np.asarray(a, dtype=result_type)
 
     sl = [slice(None)] * x.ndim
     a = np.asarray(a)

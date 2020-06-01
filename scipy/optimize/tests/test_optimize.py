@@ -228,6 +228,35 @@ class CheckOptimizeParameterized(CheckOptimize):
                          [1.72949016, -0.44156936, 0.47576729]],
                         atol=1e-14, rtol=1e-7)
 
+    def test_powell_bounded(self):
+        # Powell (direction set) optimization routine
+        # same as test_powell above, but with bounds
+        bounds = [(-np.pi, np.pi) for _ in self.startparams]
+        if self.use_wrapper:
+            opts = {'maxiter': self.maxiter, 'disp': self.disp,
+                    'return_all': False}
+            res = optimize.minimize(self.func, self.startparams, args=(),
+                                    bounds=bounds, 
+                                    method='Powell', options=opts)
+            params, fopt, direc, numiter, func_calls, warnflag = (
+                    res['x'], res['fun'], res['direc'], res['nit'],
+                    res['nfev'], res['status'])
+
+            assert func_calls == self.funccalls
+            assert_allclose(self.func(params), self.func(self.solution),
+                            atol=1e-6)
+
+            # Ensure that function call counts are 'known good'.
+            # Generally, this takes 131 function calls. However, on some CI
+            # checks it finds 138 funccalls. This 20 call leeway was also
+            # included in the test_powell function.
+            # The exact evaluation count is sensitive to numerical error, and
+            # floating-point computations are not bit-for-bit reproducible
+            # across machines, and when using e.g. MKL, data alignment etc.
+            # affect the rounding error.
+            assert self.funccalls <= 131 + 20
+            assert self.gradcalls == 0
+
     def test_neldermead(self):
         # Nelder-Mead simplex algorithm
         if self.use_wrapper:
@@ -471,6 +500,152 @@ def test_neldermead_adaptive():
     res = optimize.minimize(func, p0, method='Nelder-Mead',
                             options={'adaptive': True})
     assert_equal(res.success, True)
+
+
+def test_bounded_powell_outsidebounds():
+    # With the bounded Powell method if you start outside the bounds the final
+    # should still be within the bounds (provided that the user doesn't make a
+    # bad choice for the `direc` argument).
+    func = lambda x: np.sum(x**2)
+    bounds = (-1, 1), (-1, 1), (-1, 1)
+    x0 = [-4, .5, -.8]
+
+    # we're starting outside the bounds, so we should get a warning
+    with assert_warns(optimize.OptimizeWarning):
+        res = optimize.minimize(func, x0, bounds=bounds, method="Powell")
+    assert_allclose(res.x, np.array([0.] * len(x0)), atol=1e-6)
+    assert_equal(res.success, True)
+    assert_equal(res.status, 0)
+
+    # However, now if we change the `direc` argument such that the
+    # set of vectors does not span the parameter space, then we may
+    # not end up back within the bounds. Here we see that the first
+    # parameter cannot be updated!
+    direc = [[0, 0, 0], [0, 1, 0], [0, 0, 1]]
+    # we're starting outside the bounds, so we should get a warning
+    with assert_warns(optimize.OptimizeWarning):
+        res = optimize.minimize(func, x0,
+                                bounds=bounds, method="Powell",
+                                options={'direc': direc})
+    assert_allclose(res.x, np.array([-4., 0, 0]), atol=1e-6)
+    assert_equal(res.success, False)
+    assert_equal(res.status, 4)
+
+
+def test_bounded_powell_vs_powell():
+    # here we test an example where the bounded Powell method
+    # will return a different result than the standard Powell
+    # method.
+
+    # first we test a simple example where the minimum is at
+    # the origin and the minimum that is within the bounds is
+    # larger than the minimum at the origin.
+    func = lambda x: np.sum(x**2)
+    bounds = (-5, -1), (-10, -0.1), (1, 9.2), (-4, 7.6), (-15.9, -2)
+    x0 = [-2.1, -5.2, 1.9, 0, -2]
+
+    options = {'ftol': 1e-10, 'xtol': 1e-10}
+
+    res_powell = optimize.minimize(func, x0, method="Powell", options=options)
+    assert_allclose(res_powell.x, 0., atol=1e-6)
+    assert_allclose(res_powell.fun, 0., atol=1e-6)
+
+    res_bounded_powell = optimize.minimize(func, x0, options=options,
+                                           bounds=bounds,
+                                           method="Powell")
+    p = np.array([-1, -0.1, 1, 0, -2])
+    assert_allclose(res_bounded_powell.x, p, atol=1e-6)
+    assert_allclose(res_bounded_powell.fun, func(p), atol=1e-6)
+
+    # now we test bounded Powell but with a mix of inf bounds.
+    bounds = (None, -1), (-np.inf, -.1), (1, np.inf), (-4, None), (-15.9, -2)
+    res_bounded_powell = optimize.minimize(func, x0, options=options,
+                                           bounds=bounds,
+                                           method="Powell")
+    p = np.array([-1, -0.1, 1, 0, -2])
+    assert_allclose(res_bounded_powell.x, p, atol=1e-6)
+    assert_allclose(res_bounded_powell.fun, func(p), atol=1e-6)
+
+    # next we test an example where the global minimum is within
+    # the bounds, but the bounded Powell method performs better
+    # than the standard Powell method.
+    def func(x):
+        t = np.sin(-x[0]) * np.cos(x[1]) * np.sin(-x[0] * x[1]) * np.cos(x[1])
+        t -= np.cos(np.sin(x[1] * x[2]) * np.cos(x[2]))
+        return t**2
+
+    bounds = [(-2, 5)] * 3
+    x0 = [-0.5, -0.5, -0.5]
+
+    res_powell = optimize.minimize(func, x0, method="Powell")
+    res_bounded_powell = optimize.minimize(func, x0,
+                                           bounds=bounds,
+                                           method="Powell")
+    assert_allclose(res_powell.fun, 0.007136253919761627, atol=1e-6)
+    assert_allclose(res_bounded_powell.fun, 0, atol=1e-6)
+
+    # next we test the previous example where the we provide Powell
+    # with (-inf, inf) bounds, and compare it to providing Powell
+    # with no bounds. They should end up the same.
+    bounds = [(-np.inf, np.inf)] * 3
+
+    res_bounded_powell = optimize.minimize(func, x0,
+                                           bounds=bounds,
+                                           method="Powell")
+    assert_allclose(res_powell.fun, res_bounded_powell.fun, atol=1e-6)
+    assert_allclose(res_powell.nfev, res_bounded_powell.nfev, atol=1e-6)
+    assert_allclose(res_powell.x, res_bounded_powell.x, atol=1e-6)
+
+    # now test when x0 starts outside of the bounds.
+    x0 = [45.46254415, -26.52351498, 31.74830248]
+    bounds = [(-2, 5)] * 3
+    # we're starting outside the bounds, so we should get a warning
+    with assert_warns(optimize.OptimizeWarning):
+        res_bounded_powell = optimize.minimize(func, x0,
+                                               bounds=bounds,
+                                               method="Powell")
+    assert_allclose(res_bounded_powell.fun, 0, atol=1e-6)
+
+
+def test_onesided_bounded_powell_stability():
+    # When the Powell method is bounded on only one side, a
+    # np.tan transform is done in order to convert it into a
+    # completely bounded problem. Here we do some simple tests
+    # of one-sided bounded Powell where the optimal solutions
+    # are large to test the stability of the transformation.
+    kwargs = {'method': 'Powell',
+              'bounds': [(-np.inf, 1e6)] * 3,
+              'options': {'ftol': 1e-8, 'xtol': 1e-8}}
+    x0 = [1, 1, 1]
+
+    # df/dx is constant.
+    f = lambda x: -np.sum(x)
+    res = optimize.minimize(f, x0, **kwargs)
+    assert_allclose(res.fun, -3e6, atol=1e-4)
+
+    # df/dx gets smaller and smaller.
+    def f(x):
+        return -np.abs(np.sum(x)) ** (0.1) * (1 if np.all(x > 0) else -1)
+
+    res = optimize.minimize(f, x0, **kwargs)
+    assert_allclose(res.fun, -(3e6) ** (0.1))
+
+    # df/dx gets larger and larger.
+    def f(x):
+        return -np.abs(np.sum(x)) ** 10 * (1 if np.all(x > 0) else -1)
+
+    res = optimize.minimize(f, x0, **kwargs)
+    assert_allclose(res.fun, -(3e6) ** 10, rtol=1e-7)
+
+    # df/dx gets larger for some of the variables and smaller for others.
+    def f(x):
+        t = -np.abs(np.sum(x[:2])) ** 5 - np.abs(np.sum(x[2:])) ** (0.1)
+        t *= (1 if np.all(x > 0) else -1)
+        return t
+
+    kwargs['bounds'] = [(-np.inf, 1e3)] * 3
+    res = optimize.minimize(f, x0, **kwargs)
+    assert_allclose(res.fun, -(2e3) ** 5 - (1e6) ** (0.1), rtol=1e-7)
 
 
 class TestOptimizeWrapperDisp(CheckOptimizeParameterized):
@@ -1403,6 +1578,230 @@ class TestNewtonCg(object):
         assert_(sol.success, sol.message)
         assert_allclose(sol.x, himmelblau_xopt, rtol=1e-4)
         assert_allclose(sol.fun, himmelblau_min, atol=1e-4)
+
+
+def test_line_for_search():
+    # _line_for_search is only used in _linesearch_powell, which is also
+    # tested below. Thus there are more tests of _line_for_search in the
+    # test_linesearch_powell_bounded function.
+
+    line_for_search = optimize.optimize._line_for_search
+    # args are x0, alpha, lower_bound, upper_bound
+    # returns lmin, lmax
+
+    lower_bound = np.array([-5.3, -1, -1.5, -3])
+    upper_bound = np.array([1.9, 1, 2.8, 3])
+
+    # test when starting in the bounds
+    x0 = np.array([0., 0, 0, 0])
+    # and when starting outside of the bounds
+    x1 = np.array([0., 2, -3, 0])
+
+    all_tests = (
+        (x0, np.array([1., 0, 0, 0]), -5.3, 1.9),
+        (x0, np.array([0., 1, 0, 0]), -1, 1),
+        (x0, np.array([0., 0, 1, 0]), -1.5, 2.8),
+        (x0, np.array([0., 0, 0, 1]), -3, 3),
+        (x0, np.array([1., 1, 0, 0]), -1, 1),
+        (x0, np.array([1., 0, -1, 2]), -1.5, 1.5),
+        (x0, np.array([2., 0, -1, 2]), -1.5, 0.95),
+        (x1, np.array([1., 0, 0, 0]), -5.3, 1.9),
+        (x1, np.array([0., 1, 0, 0]), -3, -1),
+        (x1, np.array([0., 0, 1, 0]), 1.5, 5.8),
+        (x1, np.array([0., 0, 0, 1]), -3, 3),
+        (x1, np.array([1., 1, 0, 0]), -3, -1),
+        (x1, np.array([1., 0, -1, 0]), -5.3, -1.5),
+    )
+
+    for x, alpha, lmin, lmax in all_tests:
+        mi, ma = line_for_search(x, alpha, lower_bound, upper_bound)
+        assert_allclose(mi, lmin, atol=1e-6)
+        assert_allclose(ma, lmax, atol=1e-6)
+
+    # now with infinite bounds
+    lower_bound = np.array([-np.inf, -1, -np.inf, -3])
+    upper_bound = np.array([np.inf, 1, 2.8, np.inf])
+
+    all_tests = (
+        (x0, np.array([1., 0, 0, 0]), -np.inf, np.inf),
+        (x0, np.array([0., 1, 0, 0]), -1, 1),
+        (x0, np.array([0., 0, 1, 0]), -np.inf, 2.8),
+        (x0, np.array([0., 0, 0, 1]), -3, np.inf),
+        (x0, np.array([1., 1, 0, 0]), -1, 1),
+        (x0, np.array([1., 0, -1, 2]), -1.5, np.inf),
+        (x1, np.array([1., 0, 0, 0]), -np.inf, np.inf),
+        (x1, np.array([0., 1, 0, 0]), -3, -1),
+        (x1, np.array([0., 0, 1, 0]), -np.inf, 5.8),
+        (x1, np.array([0., 0, 0, 1]), -3, np.inf),
+        (x1, np.array([1., 1, 0, 0]), -3, -1),
+        (x1, np.array([1., 0, -1, 0]), -5.8, np.inf),
+    )
+
+    for x, alpha, lmin, lmax in all_tests:
+        mi, ma = line_for_search(x, alpha, lower_bound, upper_bound)
+        assert_allclose(mi, lmin, atol=1e-6)
+        assert_allclose(ma, lmax, atol=1e-6)
+
+
+def test_linesearch_powell():
+    # helper function in optimize.py, not a public function.
+    linesearch_powell = optimize.optimize._linesearch_powell
+    # args are func, p, xi, fval, lower_bound=None, upper_bound=None, tol=1e-3
+    # returns new_fval, p + direction, direction
+    func = lambda x: np.sum((x - np.array([-1., 2., 1.5, -.4]))**2)
+    p0 = np.array([0., 0, 0, 0])
+    fval = func(p0)
+    lower_bound = np.array([-np.inf] * 4)
+    upper_bound = np.array([np.inf] * 4)
+
+    all_tests = (
+        (np.array([1., 0, 0, 0]), -1),
+        (np.array([0., 1, 0, 0]), 2),
+        (np.array([0., 0, 1, 0]), 1.5),
+        (np.array([0., 0, 0, 1]), -.4),
+        (np.array([-1., 0, 1, 0]), 1.25),
+        (np.array([0., 0, 1, 1]), .55),
+        (np.array([2., 0, -1, 1]), -.65),
+    )
+
+    for xi, l in all_tests:
+        f, p, direction = linesearch_powell(func, p0, xi,
+                                            fval=fval, tol=1e-5)
+        assert_allclose(f, func(l * xi), atol=1e-6)
+        assert_allclose(p, l * xi, atol=1e-6)
+        assert_allclose(direction, l * xi, atol=1e-6)
+
+        f, p, direction = linesearch_powell(func, p0, xi, tol=1e-5,
+                                            lower_bound=lower_bound,
+                                            upper_bound=upper_bound,
+                                            fval=fval)
+        assert_allclose(f, func(l * xi), atol=1e-6)
+        assert_allclose(p, l * xi, atol=1e-6)
+        assert_allclose(direction, l * xi, atol=1e-6)
+
+
+def test_linesearch_powell_bounded():
+    # helper function in optimize.py, not a public function.
+    linesearch_powell = optimize.optimize._linesearch_powell
+    # args are func, p, xi, fval, lower_bound=None, upper_bound=None, tol=1e-3
+    # returns new_fval, p+direction, direction
+    func = lambda x: np.sum((x-np.array([-1., 2., 1.5, -.4]))**2)
+    p0 = np.array([0., 0, 0, 0])
+    fval = func(p0)
+
+    # first choose bounds such that the same tests from
+    # test_linesearch_powell should pass.
+    lower_bound = np.array([-2.]*4)
+    upper_bound = np.array([2.]*4)
+
+    all_tests = (
+        (np.array([1., 0, 0, 0]), -1),
+        (np.array([0., 1, 0, 0]), 2),
+        (np.array([0., 0, 1, 0]), 1.5),
+        (np.array([0., 0, 0, 1]), -.4),
+        (np.array([-1., 0, 1, 0]), 1.25),
+        (np.array([0., 0, 1, 1]), .55),
+        (np.array([2., 0, -1, 1]), -.65),
+    )
+
+    for xi, l in all_tests:
+        f, p, direction = linesearch_powell(func, p0, xi, tol=1e-5,
+                                            lower_bound=lower_bound,
+                                            upper_bound=upper_bound,
+                                            fval=fval)
+        assert_allclose(f, func(l * xi), atol=1e-6)
+        assert_allclose(p, l * xi, atol=1e-6)
+        assert_allclose(direction, l * xi, atol=1e-6)
+
+    # now choose bounds such that unbounded vs bounded gives different results
+    lower_bound = np.array([-.3]*3 + [-1])
+    upper_bound = np.array([.45]*3 + [.9])
+
+    all_tests = (
+        (np.array([1., 0, 0, 0]), -.3),
+        (np.array([0., 1, 0, 0]), .45),
+        (np.array([0., 0, 1, 0]), .45),
+        (np.array([0., 0, 0, 1]), -.4),
+        (np.array([-1., 0, 1, 0]), .3),
+        (np.array([0., 0, 1, 1]), .45),
+        (np.array([2., 0, -1, 1]), -.15),
+    )
+
+    for xi, l in all_tests:
+        f, p, direction = linesearch_powell(func, p0, xi, tol=1e-5,
+                                            lower_bound=lower_bound,
+                                            upper_bound=upper_bound,
+                                            fval=fval)
+        assert_allclose(f, func(l * xi), atol=1e-6)
+        assert_allclose(p, l * xi, atol=1e-6)
+        assert_allclose(direction, l * xi, atol=1e-6)
+
+    # now choose as above but start outside the bounds
+    p0 = np.array([-1., 0, 0, 2])
+    fval = func(p0)
+
+    all_tests = (
+        (np.array([1., 0, 0, 0]), .7),
+        (np.array([0., 1, 0, 0]), .45),
+        (np.array([0., 0, 1, 0]), .45),
+        (np.array([0., 0, 0, 1]), -2.4),
+    )
+
+    for xi, l in all_tests:
+        f, p, direction = linesearch_powell(func, p0, xi, tol=1e-5,
+                                            lower_bound=lower_bound,
+                                            upper_bound=upper_bound,
+                                            fval=fval)
+        assert_allclose(f, func(p0 + l * xi), atol=1e-6)
+        assert_allclose(p, p0 + l * xi, atol=1e-6)
+        assert_allclose(direction, l * xi, atol=1e-6)
+
+    # now mix in inf
+    p0 = np.array([0., 0, 0, 0])
+    fval = func(p0)
+
+    # now choose bounds that mix inf
+    lower_bound = np.array([-.3, -np.inf, -np.inf, -1])
+    upper_bound = np.array([np.inf, .45, np.inf, .9])
+
+    all_tests = (
+        (np.array([1., 0, 0, 0]), -.3),
+        (np.array([0., 1, 0, 0]), .45),
+        (np.array([0., 0, 1, 0]), 1.5),
+        (np.array([0., 0, 0, 1]), -.4),
+        (np.array([-1., 0, 1, 0]), .3),
+        (np.array([0., 0, 1, 1]), .55),
+        (np.array([2., 0, -1, 1]), -.15),
+    )
+
+    for xi, l in all_tests:
+        f, p, direction = linesearch_powell(func, p0, xi, tol=1e-5,
+                                            lower_bound=lower_bound,
+                                            upper_bound=upper_bound,
+                                            fval=fval)
+        assert_allclose(f, func(l * xi), atol=1e-6)
+        assert_allclose(p, l * xi, atol=1e-6)
+        assert_allclose(direction, l * xi, atol=1e-6)
+
+    # now choose as above but start outside the bounds
+    p0 = np.array([-1., 0, 0, 2])
+    fval = func(p0)
+
+    all_tests = (
+        (np.array([1., 0, 0, 0]), .7),
+        (np.array([0., 1, 0, 0]), .45),
+        (np.array([0., 0, 1, 0]), 1.5),
+        (np.array([0., 0, 0, 1]), -2.4),
+    )
+
+    for xi, l in all_tests:
+        f, p, direction = linesearch_powell(func, p0, xi, tol=1e-5,
+                                            lower_bound=lower_bound,
+                                            upper_bound=upper_bound,
+                                            fval=fval)
+        assert_allclose(f, func(p0 + l * xi), atol=1e-6)
+        assert_allclose(p, p0 + l * xi, atol=1e-6)
+        assert_allclose(direction, l * xi, atol=1e-6)
 
 
 class TestRosen(object):

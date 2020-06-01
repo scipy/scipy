@@ -11,7 +11,7 @@ from scipy.special import roots_legendre
 from scipy.special import gammaln
 
 __all__ = ['fixed_quad', 'quadrature', 'romberg', 'trapz', 'simps', 'romb',
-           'cumtrapz', 'newton_cotes']
+           'cumtrapz', 'newton_cotes', 'AccuracyWarning']
 
 
 # Make See Also linking for our local copy work properly

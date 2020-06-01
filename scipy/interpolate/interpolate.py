@@ -818,9 +818,11 @@ class _PPolyBase(object):
         if x.ndim != 1:
             raise ValueError("invalid dimensions for x")
         if x.shape[0] != c.shape[1]:
-            raise ValueError("x and c have incompatible sizes")
+            raise ValueError("Shapes of x {} and c {} are incompatible"
+                             .format(x.shape, c.shape))
         if c.shape[2:] != self.c.shape[2:] or c.ndim != self.c.ndim:
-            raise ValueError("c and self.c have incompatible shapes")
+            raise ValueError("Shapes of c {} and self.c {} are incompatible"
+                             .format(c.shape, self.c.shape))
 
         if c.size == 0:
             return
@@ -1815,7 +1817,8 @@ class BPoly(_PPolyBase):
         """
         ya, yb = np.asarray(ya), np.asarray(yb)
         if ya.shape[1:] != yb.shape[1:]:
-            raise ValueError('ya and yb have incompatible dimensions.')
+            raise ValueError('Shapes of ya {} and yb {} are incompatible'
+                             .format(ya.shape, yb.shape))
 
         dta, dtb = ya.dtype, yb.dtype
         if (np.issubdtype(dta, np.complexfloating) or
