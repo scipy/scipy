@@ -67,7 +67,7 @@ def test_quadratic_assignment():
     assert iter >= res['nit']
 
 
-@pytest.mark.slow
+#@pytest.mark.slow
 def test_rand_qap():
     cost_matrix = [
         [0, 90, 10, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -103,7 +103,7 @@ def test_rand_qap():
         cost_matrix, dist_matrix, options={'init': "rand", 'n_init': 100}
     )
 
-    assert 11156 <= res['score'] < 13500
+    assert 11156 <= res['score'] < 14500
 
 
 def test_quadratic_assignment_input_validation():
