@@ -67,7 +67,7 @@ def test_quadratic_assignment():
     assert iter >= res['nit']
 
 
-#@pytest.mark.slow
+@pytest.mark.slow
 def test_rand_qap():
     cost_matrix = [
         [0, 90, 10, 0, 0, 0, 0, 0, 0, 0, 0, 0],
