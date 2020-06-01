@@ -6,13 +6,8 @@ from . import linear_sum_assignment, minimize_scalar, OptimizeResult
 def quadratic_assignment(
     cost_matrix,
     dist_matrix,
-    seed=None,
     maximize=False,
-    n_init=1,
-    init="barycenter",
-    maxiter=30,
-    shuffle_input=True,
-    eps=0.05,
+    options=None
 ):
     r"""
     Solve the quadratic assignment problem.
@@ -181,6 +176,25 @@ def quadratic_assignment(
     Here, we are simply permuting the distance matrix.
 
     """
+
+    if options is None:
+        options = {}
+
+    return _quadratic_assignment_faq(cost_matrix, dist_matrix, maximize,
+                                     **options)
+
+
+def _quadratic_assignment_faq(
+        cost_matrix,
+        dist_matrix,
+        maximize=False,
+        seed=None,
+        n_init=1,
+        init="barycenter",
+        maxiter=30,
+        shuffle_input=True,
+        eps=0.05
+):
 
     cost_matrix = np.asarray(cost_matrix)
     dist_matrix = np.asarray(dist_matrix)
