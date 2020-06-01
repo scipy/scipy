@@ -367,8 +367,8 @@ def _quadratic_assignment_faq(
 
 
 def _check_init_input(init, n):
-    row_sum = np.round(np.sum(init, axis=0), decimals=3)
-    col_sum = np.round(np.sum(init, axis=1), decimals=3)
+    row_sum = np.round(np.sum(init, axis=0), decimals=2)
+    col_sum = np.round(np.sum(init, axis=1), decimals=2)
     msg = None
     if init.shape != (n, n):
         msg = "`init` matrix must have same shape as A and B"
