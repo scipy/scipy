@@ -435,7 +435,7 @@ def _read_data_chunk(fid, format_tag, channels, bit_depth, is_big_endian,
             raise ValueError("Unsupported bit depth: the wav file "
                              f"has {bit_depth}-bit data.")
     elif format_tag == WAVE_FORMAT.IEEE_FLOAT:
-        if bit_depth in {16, 32, 64}:
+        if bit_depth in {32, 64}:
             dtype = f'{fmt}f{bytes_per_sample}'
         else:
             raise ValueError("Unsupported bit depth: the wav file "
