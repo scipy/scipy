@@ -379,7 +379,7 @@ def _check_init_input(init, n):
 
 
 def _doubly_stochastic(P, eps=1e-3):
-    #cleaner implementation of btaba/sinkhorn_knopp
+    # cleaner implementation of btaba/sinkhorn_knopp
     # Title: sinkhorn_knopp Source Code
     # Author: Tabanpour, B
     # Date: 2018
@@ -396,13 +396,10 @@ def _doubly_stochastic(P, eps=1e-3):
         if ((np.abs(P_eps.sum(axis=1) - 1) < eps).all() and
                 (np.abs(P_eps.sum(axis=0) - 1) < eps).all()):
             # All column/row sums ~= 1 within threshold
-            reason = f"Threshold satisfied within {it + 1} iterations"
             break
 
         c = 1 / (r @ P)
         r = 1 / (P @ c)
         P_eps = r[:, None] * P * c
-    else:
-        reason = "Max iter reached"
 
     return P_eps
