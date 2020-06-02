@@ -257,6 +257,22 @@ class CheckOptimizeParameterized(CheckOptimize):
             assert self.funccalls <= 131 + 20
             assert self.gradcalls == 0
 
+    def test_powell_return_length_1(self):
+        # the historic behaviour of fmin_powell was to return np.array(0) for
+        # a minimize whose x0 has size 1. See gh12298. This is probably a bug
+        # we we retain for back compatibility.
+        # x0 = np.array([0]) --> np.array(0)
+        dummy_func = lambda x: x**2
+
+        if self.use_wrapper:
+            res = optimize.minimize(dummy_func, [1], method='Powell')
+            xopt = res.x
+            assert xopt.shape == (1,)
+        else:
+            xopt = optimize.fmin_powell(dummy_func, [1])
+            assert xopt.shape == ()
+        assert xopt.size == 1
+
     def test_neldermead(self):
         # Nelder-Mead simplex algorithm
         if self.use_wrapper:

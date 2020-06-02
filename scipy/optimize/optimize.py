@@ -2657,7 +2657,8 @@ def _linesearch_powell(func, p, xi, tol=1e-3,
 
     # if xi is zero, then don't optimize
     if not np.any(xi):
-        return ((fval, p, xi) if fval is not None else (func(p), p, xi))
+        fret = fval if fval is not None else func(p)
+        return (np.squeeze(fret), p, xi)
     elif lower_bound is None and upper_bound is None:
         # non-bounded minimization
         alpha_min, fret, _, _ = brent(myfunc, full_output=1, tol=tol)
@@ -2813,6 +2814,7 @@ def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None,
             'return_all': retall}
 
     res = _minimize_powell(func, x0, args, callback=callback, **opts)
+    res['x'] = squeeze(res['x'])
 
     if full_output:
         retlist = (res['x'], res['fun'], res['direc'], res['nit'],
