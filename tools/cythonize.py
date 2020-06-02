@@ -181,9 +181,9 @@ def get_cython_dependencies(fullfrompath):
     fullfromdir = os.path.dirname(fullfrompath)
     deps = set()
     with open(fullfrompath, 'r') as f:
-        pxipattern = re.compile('include "([a-zA-Z0-9_]+\.pxi)"')
-        pxdpattern1 = re.compile('from \. cimport ([a-zA-Z0-9_]+)')
-        pxdpattern2 = re.compile('from \.([a-zA-Z0-9_]+) cimport')
+        pxipattern = re.compile(r'include "([a-zA-Z0-9_]+\.pxi)"')
+        pxdpattern1 = re.compile(r'from \. cimport ([a-zA-Z0-9_]+)')
+        pxdpattern2 = re.compile(r'from \.([a-zA-Z0-9_]+) cimport')
 
         for line in f:
             m = pxipattern.match(line)
