@@ -518,7 +518,7 @@ class DTRunner(doctest.DocTestRunner):
                                                     example, got)
 
 class Checker(doctest.OutputChecker):
-    obj_pattern = re.compile('at 0x[0-9a-fA-F]+>')
+    obj_pattern = re.compile(r'at 0x[0-9a-fA-F]+>')
     vanilla = doctest.OutputChecker()
     rndm_markers = {'# random', '# Random', '#random', '#Random', "# may vary"}
     stopwords = {'plt.', '.hist', '.show', '.ylim', '.subplot(',
@@ -590,9 +590,9 @@ class Checker(doctest.OutputChecker):
             # and then compare the tuples.
             try:
                 num = len(a_want)
-                regex = ('[\w\d_]+\(' +
-                         ', '.join(['[\w\d_]+=(.+)']*num) +
-                         '\)')
+                regex = (r'[\w\d_]+\(' +
+                         ', '.join([r'[\w\d_]+=(.+)']*num) +
+                         r'\)')
                 grp = re.findall(regex, got.replace('\n', ' '))
                 if len(grp) > 1:  # no more than one for now
                     return False

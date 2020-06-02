@@ -77,7 +77,7 @@ def main():
                         doc = getattr(module, func).__doc__.split('\n')
                         i = 0 if doc[0].strip() else 1
                         while True:
-                            if re.match(func + '\(.*\)', doc[i].strip()):
+                            if re.match(func + r'\(.*\)', doc[i].strip()):
                                 # ufunc docstrings contain the signature
                                 i +=2
                             else:

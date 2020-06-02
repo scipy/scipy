@@ -39,7 +39,7 @@ r_datameta = re.compile(r'^@[Dd][Aa][Tt][Aa]')
 r_relation = re.compile(r'^@[Rr][Ee][Ll][Aa][Tt][Ii][Oo][Nn]\s*(\S*)')
 r_attribute = re.compile(r'^\s*@[Aa][Tt][Tt][Rr][Ii][Bb][Uu][Tt][Ee]\s*(..*$)')
 
-r_nominal = re.compile('{(.+)}')
+r_nominal = re.compile(r'{(.+)}')
 r_date = re.compile(r"[Dd][Aa][Tt][Ee]\s+[\"']?(.+?)[\"']?$")
 
 # To get attributes name enclosed with ''
