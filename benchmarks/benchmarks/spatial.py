@@ -432,7 +432,7 @@ class GeometricSlerpBench(Benchmark):
                         t=self.t)
 
 class RotationBench(Benchmark):
-    params = [1, 10, 100]
+    params = [1, 10, 1000, 10000]
     param_names = ['num_rotations']
 
     def setup(self, num_rotations):
