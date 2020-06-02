@@ -176,30 +176,14 @@ def _check_roundtrip(realfile, rate, dtype, channels, tmpdir):
 
 def test_write_roundtrip(tmpdir):
     for realfile in (False, True):
-        for dtypechar in ('i', 'u', 'f', 'g', 'q'):
-            for size in (1, 2, 4, 8):
-                if size == 1 and dtypechar == 'i':
-                    # signed 8-bit integer PCM is not allowed
-                    continue
-                if size > 1 and dtypechar == 'u':
-                    # unsigned > 8-bit integer PCM is not allowed
-                    continue
-                if (size == 1 or size == 2) and dtypechar == 'f':
-                    # 8- or 16-bit float PCM is not expected
-                    continue
-                if dtypechar in 'gq':
-                    # no size allowed for these types
-                    if size == 1:
-                        size = ''
-                    else:
-                        continue
-
-                for endianness in ('>', '<'):
-                    if size == 1 and endianness == '<':
-                        continue
-                    for rate in (8000, 32000):
-                        for channels in (1, 2, 5):
-                            dt = np.dtype('%s%s%s' % (endianness, dtypechar,
-                                                      size))
-                            _check_roundtrip(realfile, rate, dt, channels,
-                                             tmpdir)
+        # signed 8-bit integer PCM is not allowed
+        # unsigned > 8-bit integer PCM is not allowed
+        # 8- or 16-bit float PCM is not expected
+        # no size allowed for g or q
+        for dt_str in {'|u1',
+                       '<i2', '<i4', '<i8', '<f4', '<f8', '<g', '<q',
+                       '>i2', '>i4', '>i8', '>f4', '>f8', '>g', '>q'}:
+            for rate in (8000, 32000):
+                for channels in (1, 2, 5):
+                    dt = np.dtype(dt_str)
+                    _check_roundtrip(realfile, rate, dt, channels, tmpdir)
