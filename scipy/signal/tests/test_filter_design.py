@@ -3612,6 +3612,7 @@ class TestIIRPeak(object):
 
 
 class TestIIRDesign(object):
+
     def test_exceptions(self):
         with pytest.raises(ValueError, match="have the same dimension"):
             iirdesign(0.2, [0.1, 0.3], 1, 40)
@@ -3625,6 +3626,7 @@ class TestIIRDesign(object):
             iirdesign([0.3, 0.6], [0.4, 0.7], 1, 40)
         with pytest.raises(ValueError, match="strictly inside stopband"):
             iirdesign([0.4, 0.7], [0.3, 0.6], 1, 40)
+
 
 class TestIIRFilter(object):
 
@@ -3669,7 +3671,6 @@ class TestIIRFilter(object):
         assert_raises(ValueError, iirfilter, 1, -1, btype='high')
         assert_raises(ValueError, iirfilter, 1, [1, 2], btype='band')
         assert_raises(ValueError, iirfilter, 1, [10, 20], btype='stop')
-
 
 
 class TestGroupDelay(object):
