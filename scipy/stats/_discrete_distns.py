@@ -540,16 +540,6 @@ class nhypergeom_gen(rv_discrete):
     .. math:: f(k; N, K, r) = \frac{{{k+r-1}\choose{k}}{{N-r-k}\choose{K-k}}}
                                    {{N \choose K}}
 
-    for :math:`k \in 0, 1, 2, ..., K`, where the binomial
-    coefficients are defined as,
-
-    .. math:: \binom{n}{k} \equiv \frac{n!}{k! (n - k)!}.
-
-    The cumulative distribution, survivor function, hazard function,
-    cumulative hazard function, and inverse distribution function,
-    moment generating function, and characteristic function on the
-    support of :math:`k` are mathematically intractable.
-
     %(after_notes)s
 
     Examples
