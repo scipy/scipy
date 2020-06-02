@@ -14,9 +14,9 @@ from scipy.signal import (BadCoefficients, bessel, besselap, bilinear, buttap,
                           butter, buttord, cheb1ap, cheb1ord, cheb2ap,
                           cheb2ord, cheby1, cheby2, ellip, ellipap, ellipord,
                           firwin, freqs_zpk, freqs, freqz, freqz_zpk,
-                          group_delay, iirfilter, iirnotch, iirpeak, lp2bp,
-                          lp2bs, lp2hp, lp2lp, normalize, sos2tf, sos2zpk,
-                          sosfreqz, tf2sos, tf2zpk, zpk2sos, zpk2tf,
+                          group_delay, iirdesign, iirfilter, iirnotch, iirpeak,
+                          lp2bp, lp2bs, lp2hp, lp2lp, normalize, sos2tf,
+                          sos2zpk, sosfreqz, tf2sos, tf2zpk, zpk2sos, zpk2tf,
                           bilinear_zpk, lp2lp_zpk, lp2hp_zpk, lp2bp_zpk,
                           lp2bs_zpk)
 from scipy.signal.filter_design import (_cplxreal, _cplxpair, _norm_factor,
@@ -3611,6 +3611,21 @@ class TestIIRPeak(object):
         assert_allclose(abs(hp[2]), 1, rtol=1e-10)
 
 
+class TestIIRDesign(object):
+    def test_exceptions(self):
+        with pytest.raises(ValueError, match="have the same dimension"):
+            iirdesign(0.2, [0.1, 0.3], 1, 40)
+        with pytest.raises(ValueError, match="can't be negative"):
+            iirdesign([0.1, 0.3], [-0.1, 0.5], 1, 40)
+        with pytest.raises(ValueError, match="strictly inside stopband"):
+            iirdesign([0.1, 0.4], [0.5, 0.6], 1, 40)
+        with pytest.raises(ValueError, match="strictly inside stopband"):
+            iirdesign([0.5, 0.6], [0.1, 0.4], 1, 40)
+        with pytest.raises(ValueError, match="strictly inside stopband"):
+            iirdesign([0.3, 0.6], [0.4, 0.7], 1, 40)
+        with pytest.raises(ValueError, match="strictly inside stopband"):
+            iirdesign([0.4, 0.7], [0.3, 0.6], 1, 40)
+
 class TestIIRFilter(object):
 
     def test_symmetry(self):
@@ -3654,6 +3669,7 @@ class TestIIRFilter(object):
         assert_raises(ValueError, iirfilter, 1, -1, btype='high')
         assert_raises(ValueError, iirfilter, 1, [1, 2], btype='band')
         assert_raises(ValueError, iirfilter, 1, [10, 20], btype='stop')
+
 
 
 class TestGroupDelay(object):
