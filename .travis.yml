@@ -154,6 +154,7 @@ before_install:
     if [ "$TRAVIS_OS_NAME" == "linux" ]; then
       free -m
       export PATH=/usr/lib/ccache:$PATH
+      ccache --zero-stats
     fi
   - |
     if [[ "$NPY_USE_BLAS_ILP64" == "1" ]]; then
