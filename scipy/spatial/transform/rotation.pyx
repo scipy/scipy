@@ -5,7 +5,8 @@ cimport numpy as np
 cimport cython
 from cython.view cimport array
 from cpython.array cimport array as pyarray
-from libc.math cimport sqrt, sin, cos, atan2, pi, acos, NAN, isnan
+from libc.math cimport sqrt, sin, cos, atan2, acos
+from numpy.math cimport PI as pi, NAN, isnan
 import scipy.linalg
 from scipy._lib._util import check_random_state
 from ._rotation_groups import create_group
