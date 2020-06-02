@@ -59,14 +59,14 @@ def main():
         while line:
             if '.. autosummary::' in line:
                 fnew.append(line.rstrip())
-                fnew.append(f.readline().rstrip()) # :toctree: generated/
-                fnew.append(f.readline().rstrip()) # blank line
+                fnew.append(f.readline().rstrip())  # :toctree: generated/
+                fnew.append(f.readline().rstrip())  # blank line
                 line = f.readline()
                 summaries = []
                 maxlen = 0
                 while line.strip():
                     func = line.split('--')[0].strip()
-                    ufunc = not '[+]' in line
+                    ufunc = '[+]' not in line
                     if len(func) > maxlen:
                         maxlen = len(func)
 
@@ -79,7 +79,7 @@ def main():
                         while True:
                             if re.match(func + r'\(.*\)', doc[i].strip()):
                                 # ufunc docstrings contain the signature
-                                i +=2
+                                i += 2
                             else:
                                 break
                         while i < len(doc) and doc[i].strip():
