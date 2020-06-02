@@ -529,7 +529,7 @@ def read(filename, mmap=False):
     Parameters
     ----------
     filename : string or open file handle
-        Input wav file.
+        Input WAV file.
     mmap : bool, optional
         Whether to read data as memory-mapped.
         Only to be used on real files (Default: False).
@@ -539,9 +539,9 @@ def read(filename, mmap=False):
     Returns
     -------
     rate : int
-        Sample rate of wav file.
+        Sample rate of WAV file.
     data : numpy array
-        Data read from wav file. Data-type is determined from the file;
+        Data read from WAV file. Data-type is determined from the file;
         see Notes.  Data is 1-D for 1-channel WAV, or 2-D of shape
         (Nsamples, Nchannels) otherwise. If a file-like input without a
         C-like file descriptor (e.g., :class:`python:io.BytesIO`) is
@@ -574,6 +574,9 @@ def read(filename, mmap=False):
     The bit justification and sign matches WAV's native internal format, which
     allows memory mapping of WAV files that use 1, 2, or 4 bytes per sample
     (so 24-bit files cannot be memory-mapped).
+
+    IEEE float PCM in 32- or 64-bit format is supported, with or without mmap.
+    Values exceeding [-1, +1] are not clipped.
 
     References
     ----------
