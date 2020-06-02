@@ -25,6 +25,11 @@ try:
 except ImportError:
     pass
 
+try:
+    from scipy.spatial.transform import Rotation
+except ImportError:
+    pass
+
 from .common import Benchmark, LimitedParamBenchmark
 
 
@@ -425,3 +430,27 @@ class GeometricSlerpBench(Benchmark):
         geometric_slerp(start=self.start,
                         end=self.end,
                         t=self.t)
+
+class RotationBench(Benchmark):
+    params = [1, 10, 100]
+    param_names = ['num_rotations']
+
+    def setup(self, num_rotations):
+        np.random.seed(1234)
+        self.rotataions = Rotation.random(num_rotations)
+
+    def time_matrix_conversion(self, num_rotations):
+        '''Time converting rotation from and to matrices'''
+        Rotation.from_matrix(self.rotataions.as_matrix())
+
+    def time_euler_conversion(self, num_rotations):
+        '''Time converting rotation from and to euler angles'''
+        Rotation.from_euler("XYZ", self.rotataions.as_euler("XYZ"))
+
+    def time_rotvec_conversion(self, num_rotations):
+        '''Time converting rotation from and to rotation vectors'''
+        Rotation.from_rotvec(self.rotataions.as_rotvec())
+
+    def time_mul_inv(self, num_rotations):
+        '''Time multiplication and inverse of rotations'''
+        self.rotataions * self.rotataions.inv()

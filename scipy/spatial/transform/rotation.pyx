@@ -1,30 +1,26 @@
 import re
 import warnings
 import numpy as np
-cimport numpy as np
-cimport cython
-from cython.view cimport array
-from cpython.array cimport array as pyarray
-from libc.math cimport sqrt, sin, cos, atan2, acos
-from numpy.math cimport PI as pi, NAN, isnan
-import scipy.linalg
 from scipy._lib._util import check_random_state
 from ._rotation_groups import create_group
 
+cimport numpy as np
+cimport cython
+from cython.view cimport array
+from libc.math cimport sqrt, sin, cos, atan2, acos
+from numpy.math cimport PI as pi, NAN, isnan # import PI from numpy to avoid MSVC error
+
 # utilities for empty array initialization
-np.import_array() # essential for PyArray_* functions
-cdef inline np.ndarray[double, ndim=1] _empty1(int n):
-    cdef np.npy_intp[1] dims = [n]
-    return np.PyArray_EMPTY(1, dims, np.NPY_DOUBLE, 0)
-cdef inline np.ndarray[double, ndim=2] _empty2(int n1, int n2):
-    cdef np.npy_intp[2] dims = [n1, n2]
-    return np.PyArray_EMPTY(2, dims, np.NPY_DOUBLE, 0)
-cdef inline np.ndarray[double, ndim=2] _empty3(int n1, int n2, int n3):
-    cdef np.npy_intp[3] dims = [n1, n2, n3]
-    return np.PyArray_EMPTY(3, dims, np.NPY_DOUBLE, 0)
-cdef inline np.ndarray[double, ndim=2] _zeros2(int n1, int n2):
-    cdef np.npy_intp[2] dims = [n1, n2]
-    return np.PyArray_ZEROS(2, dims, np.NPY_DOUBLE, 0)
+cdef inline double[:] _empty1(int n):
+    return array(shape=(n,), itemsize=sizeof(double), format=b"d")
+cdef inline double[:,:] _empty2(int n1, int n2):
+    return array(shape=(n1, n2), itemsize=sizeof(double), format=b"d")
+cdef inline double[:,:,:] _empty3(int n1, int n2, int n3):
+    return array(shape=(n1, n2, n3), itemsize=sizeof(double), format=b"d")
+cdef inline double[:,:] _zeros2(int n1, int n2):
+    cdef double[:,:] arr = array(shape=(n1, n2), itemsize=sizeof(double), format=b"d")
+    arr[:,:] = 0
+    return arr
 
 # flat implementations of numpy functions
 @cython.boundscheck(False)
@@ -38,17 +34,17 @@ cdef inline double[:] _cross3(const double[:] a, const double[:] b):
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef inline double _dot3(const double[:] a, const double[:] b):
+cdef inline double _dot3(const double[:] a, const double[:] b) nogil:
     return a[0]*b[0] + a[1]*b[1] + a[2]*b[2]
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef inline double _norm3(const double[:] elems):
+cdef inline double _norm3(const double[:] elems) nogil:
     return sqrt(elems[0] * elems[0] + elems[1] * elems[1] + elems[2] * elems[2])
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef inline double _normalize4(double[:] elems):
+cdef inline double _normalize4(double[:] elems) nogil:
     cdef double norm = sqrt(
         elems[0] * elems[0] + elems[1] * elems[1] +
         elems[2] * elems[2] + elems[3] * elems[3]
@@ -66,12 +62,11 @@ cdef inline double _normalize4(double[:] elems):
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef inline int _argmax(double[:] a):
+cdef inline int _argmax4(double[:] a) nogil:
     cdef int imax = 0
     cdef double vmax = a[0]
-    cdef Py_ssize_t n = len(a)
 
-    for i in range(1, n):
+    for i in range(1, 4):
         if a[i] > vmax:
             imax = i
             vmax = a[i]
@@ -93,7 +88,7 @@ cdef inline const double[:] _elementary_basis_vector(uchar axis):
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef np.ndarray[double, ndim=2] _compute_euler_from_matrix(
+cdef double[:,:] _compute_euler_from_matrix(
     np.ndarray[double, ndim=3] matrix, const uchar[:] seq, bint extrinsic=False
 ):
     # The algorithm assumes intrinsic frame transformations. The algorithm
@@ -122,10 +117,11 @@ cdef np.ndarray[double, ndim=2] _compute_euler_from_matrix(
     # angle offset is lambda from the paper referenced in [2] from docstring of
     # `as_euler` function
     cdef double offset = atan2(sl, cl)
-    cdef np.ndarray[double, ndim=2] c = _empty2(3, 3)
-    c[0, :] = n2
-    c[1, :] = _cross3(n1, n2)
-    c[2, :] = n1
+    cdef double[:,:] c_ = _empty2(3, 3)
+    c_[0, :] = n2
+    c_[1, :] = _cross3(n1, n2)
+    c_[2, :] = n1
+    cdef np.ndarray[double, ndim=2] c = np.asarray(c_)
 
     rot = np.array([
         [1, 0, 0],
@@ -134,9 +130,9 @@ cdef np.ndarray[double, ndim=2] _compute_euler_from_matrix(
     ])
 
     # some forward definitions
-    cdef np.ndarray[double, ndim=2] angles = _empty2(num_rotations, 3)
+    cdef double[:,:] angles = _empty2(num_rotations, 3), matrix_transformed
     cdef double[:] _angles # accessor for each rotation
-    cdef np.ndarray[double, ndim=2] res, matrix_transformed
+    cdef np.ndarray[double, ndim=2] res
     cdef double eps = 1e-7
     cdef bint safe1, safe2, safe, adjust
 
@@ -155,7 +151,7 @@ cdef np.ndarray[double, ndim=2] _compute_euler_from_matrix(
 
         # Steps 5, 6
         safe1 = abs(_angles[1]) >= eps
-        safe2 = abs(_angles[1] - pi) >= eps
+        safe2 = abs(_angles[1] - <double>pi) >= eps
         safe = safe1 and safe2
 
         # Step 4 (Completion)
@@ -274,7 +270,7 @@ cdef inline double[:, :] _make_elementary_quat(uchar axis, const double[:] angle
 @cython.wraparound(False)
 cdef double[:, :] _elementary_quat_compose(const uchar[:] seq, const double[:, :] angles, bint intrinsic=False):
     cdef double[:, :] result = _make_elementary_quat(seq[0], angles[:, 0])
-    cdef Py_ssize_t seq_len = len(seq)
+    cdef Py_ssize_t seq_len = seq.shape[0]
 
     for idx in range(1, seq_len):
         if intrinsic:
@@ -522,7 +518,7 @@ cdef class Rotation(object):
         return self._quat.shape[0]
 
     @classmethod
-    def from_quat(cls, quat, normalized=None):
+    def from_quat(cls, quat):
         """Initialize from quaternions.
 
         3D rotations can be represented using unit-norm quaternions [1]_.
@@ -533,11 +529,6 @@ cdef class Rotation(object):
             Each row is a (possibly non-unit norm) quaternion in scalar-last
             (x, y, z, w) format. Each quaternion will be normalized to unit
             norm.
-        normalized
-            Deprecated argument. Has no effect, input `quat` is always
-            normalized.
-
-            .. deprecated:: 1.4.0
 
         Returns
         -------
@@ -586,11 +577,6 @@ cdef class Rotation(object):
         >>> r.as_quat()
         array([0.        , 0.        , 0.70710678, 0.70710678])
         """
-        if normalized is not None:
-            warnings.warn("`normalized` is deprecated in scipy 1.4.0 and "
-                          "will be removed in scipy 1.6.0. The input `quat` "
-                          "is always normalized.", DeprecationWarning)
-
         return cls(quat, normalize=True)
 
     @classmethod
@@ -698,9 +684,9 @@ cdef class Rotation(object):
         # If a single matrix is given, convert it to 3D 1 x 3 x 3 matrix but
         # set self._single to True so that we can return appropriate objects in
         # the `to_...` methods
-        cdef np.ndarray[double, ndim=3] cmatrix
+        cdef double[:,:,:] cmatrix
         if matrix.shape == (3, 3):
-            cmatrix = matrix.reshape((1, 3, 3))
+            cmatrix = matrix[None,:,:]
             is_single = True
         else:
             cmatrix = matrix
@@ -710,14 +696,14 @@ cdef class Rotation(object):
         cdef double[:] decision = _empty1(4)
         cdef int choice
 
-        cdef np.ndarray[double, ndim=2] quat = _empty2(num_rotations, 4)
+        cdef double[:,:] quat = _empty2(num_rotations, 4)
 
         for ind in range(num_rotations):
             decision[0] = cmatrix[ind, 0, 0]
             decision[1] = cmatrix[ind, 1, 1]
             decision[2] = cmatrix[ind, 2, 2]
             decision[3] = cmatrix[ind, 0, 0] + cmatrix[ind, 1, 1] + cmatrix[ind, 2, 2]
-            choice = _argmax(decision)
+            choice = _argmax4(decision)
 
             if choice != 3:
                 i = choice
@@ -741,12 +727,6 @@ cdef class Rotation(object):
             return cls(quat[0], normalize=False, copy=False)
         else:
             return cls(quat, normalize=False, copy=False)
-
-    # @np.deprecate(message="from_dcm is renamed to from_matrix in scipy 1.4.0 "
-    #                       "and will be removed in scipy 1.6.0")
-    @classmethod
-    def from_dcm(cls, dcm):
-        return cls.from_matrix(dcm)
 
     @classmethod
     @cython.boundscheck(False)
@@ -814,7 +794,7 @@ cdef class Rotation(object):
         # If a single vector is given, convert it to a 2D 1 x 3 matrix but
         # set self._single to True so that we can return appropriate objects
         # in the `as_...` methods
-        cdef np.ndarray[double, ndim=2] crotvec
+        cdef double[:,:] crotvec
         if rotvec.shape == (3,):
             crotvec = rotvec[None, :]
             is_single = True
@@ -823,7 +803,7 @@ cdef class Rotation(object):
 
         cdef Py_ssize_t num_rotations = crotvec.shape[0]
         cdef double angle, scale, angle2
-        cdef np.ndarray[double, ndim=2] quat = _empty2(num_rotations, 4)
+        cdef double[:,:] quat = _empty2(num_rotations, 4)
 
         for ind in range(num_rotations):
             angle = _norm3(crotvec[ind, :])
@@ -1107,17 +1087,18 @@ cdef class Rotation(object):
 
         .. versionadded:: 1.4.0
         """
-        cdef Py_ssize_t num_rotations = len(self)
-        cdef np.ndarray[double, ndim=3] matrix = _empty3(num_rotations, 3, 3)
+        cdef double[:,:] quat = self._quat
+        cdef Py_ssize_t num_rotations = quat.shape[0]
+        cdef double[:,:,:] matrix = _empty3(num_rotations, 3, 3)
 
         cdef double x, y, z, w, x2, y2, z2, w2
         cdef double xy, zw, xz, yw, yz, xw
 
         for ind in range(num_rotations):
-            x = self._quat[ind, 0]
-            y = self._quat[ind, 1]
-            z = self._quat[ind, 2]
-            w = self._quat[ind, 3]
+            x = quat[ind, 0]
+            y = quat[ind, 1]
+            z = quat[ind, 2]
+            w = quat[ind, 3]
 
             x2 = x * x
             y2 = y * y
@@ -1143,15 +1124,11 @@ cdef class Rotation(object):
             matrix[ind, 1, 2] = 2 * (yz - xw)
             matrix[ind, 2, 2] = - x2 - y2 + z2 + w2
 
+        ret = np.asarray(matrix)
         if self._single:
-            return matrix[0]
+            return ret[0]
         else:
-            return matrix
-
-    # @np.deprecate(message="as_dcm is renamed to as_matrix in scipy 1.4.0 "
-    #                       "and will be removed in scipy 1.6.0")
-    def as_dcm(self):
-        return self.as_matrix()
+            return ret
 
     @cython.boundscheck(False)
     @cython.wraparound(False)
@@ -1203,7 +1180,7 @@ cdef class Rotation(object):
         """
         cdef Py_ssize_t num_rotations = len(self)
         cdef double angle, scale, angle2
-        cdef np.ndarray[double, ndim=2] rotvec = _empty2(num_rotations, 3)
+        cdef double[:,:] rotvec = _empty2(num_rotations, 3)
         cdef double[:] quat
 
         for ind in range(num_rotations):
@@ -1227,9 +1204,9 @@ cdef class Rotation(object):
             rotvec[ind, 2] = scale * quat[2]
 
         if self._single:
-            return rotvec[0]
+            return np.asarray(rotvec[0])
         else:
-            return rotvec
+            return np.asarray(rotvec)
 
     def as_euler(self, seq, degrees=False):
         """Represent as Euler angles.
@@ -1334,7 +1311,8 @@ cdef class Rotation(object):
         matrix = self.as_matrix()
         if matrix.ndim == 2:
             matrix = matrix[None, :, :]
-        angles = _compute_euler_from_matrix(matrix, seq.encode(), extrinsic)
+        angles = np.asarray(_compute_euler_from_matrix(
+            matrix, seq.encode(), extrinsic))
         if degrees:
             angles = np.rad2deg(angles)
 
@@ -1627,17 +1605,17 @@ cdef class Rotation(object):
         >>> r[0].magnitude()
         3.141592653589793
         """
-
-        cdef Py_ssize_t num_rotations = len(self)
-        cdef np.ndarray[double, ndim=1] angles = _empty1(num_rotations)
+        cdef double[:,:] quat = self._quat
+        cdef Py_ssize_t num_rotations = quat.shape[0]
+        cdef double[:] angles = _empty1(num_rotations)
 
         for ind in range(num_rotations):
-            angles[ind] = 2 * atan2(_norm3(self._quat[ind, :3]), abs(self._quat[ind, 3]))
+            angles[ind] = 2 * atan2(_norm3(quat[ind, :3]), abs(quat[ind, 3]))
 
         if self._single:
             return angles[0]
         else:
-            return angles
+            return np.asarray(angles)
 
     def mean(self, weights=None):
         """Get the mean of the rotations.
@@ -1939,69 +1917,6 @@ cdef class Rotation(object):
             sample = random_state.normal(size=(num, 4))
 
         return cls(sample)
-
-    # @np.deprecate(message="match_vectors is deprecated in favor of "
-    #                       "align_vectors in scipy 1.4.0 and will be removed "
-    #                       "in scipy 1.6.0")
-    @classmethod
-    def match_vectors(cls, a, b, weights=None, normalized=False):
-        """Deprecated in favor of `align_vectors`."""
-        a = np.asarray(a)
-        if a.ndim != 2 or a.shape[-1] != 3:
-            raise ValueError("Expected input `a` to have shape (N, 3), "
-                             "got {}".format(a.shape))
-        b = np.asarray(b)
-        if b.ndim != 2 or b.shape[-1] != 3:
-            raise ValueError("Expected input `b` to have shape (N, 3), "
-                             "got {}.".format(b.shape))
-
-        if a.shape != b.shape:
-            raise ValueError("Expected inputs `a` and `b` to have same shapes"
-                             ", got {} and {} respectively.".format(
-                                a.shape, b.shape))
-
-        if b.shape[0] == 1:
-            raise ValueError("Rotation cannot be estimated using a single "
-                             "vector.")
-
-        if weights is None:
-            weights = np.ones(b.shape[0])
-        else:
-            weights = np.asarray(weights)
-            if weights.ndim != 1:
-                raise ValueError("Expected `weights` to be 1 dimensional, got "
-                                 "shape {}.".format(weights.shape))
-            if weights.shape[0] != b.shape[0]:
-                raise ValueError("Expected `weights` to have number of values "
-                                 "equal to number of input vectors, got "
-                                 "{} values and {} vectors.".format(
-                                    weights.shape[0], b.shape[0]))
-        weights = weights / np.sum(weights)
-
-        if not normalized:
-            a = a / scipy.linalg.norm(a, axis=1)[:, None]
-            b = b / scipy.linalg.norm(b, axis=1)[:, None]
-
-        B = np.einsum('ji,jk->ik', weights[:, None] * a, b)
-        u, s, vh = np.linalg.svd(B)
-
-        # Correct improper rotation if necessary (as in Kabsch algorithm)
-        if np.linalg.det(u @ vh) < 0:
-            s[-1] = -s[-1]
-            u[:, -1] = -u[:, -1]
-
-        C = np.dot(u, vh)
-
-        zeta = (s[0]+s[1]) * (s[1]+s[2]) * (s[2]+s[0])
-        if np.abs(zeta) <= 1e-16:
-            raise ValueError("Three component error vector has infinite "
-                             "covariance. It is impossible to determine the "
-                             "rotation uniquely.")
-
-        kappa = s[0]*s[1] + s[1]*s[2] + s[2]*s[0]
-        sensitivity = ((kappa * np.eye(3) + np.dot(B, B.T)) /
-                       (zeta * a.shape[0]))
-        return cls.from_matrix(C), sensitivity
 
     @classmethod
     def align_vectors(cls, a, b, weights=None, return_sensitivity=False):
