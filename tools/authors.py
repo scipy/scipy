@@ -133,7 +133,7 @@ def load_name_map(filename):
             if line.startswith(u"#") or not line:
                 continue
 
-            m = re.match(u'^(.*?)\s*<(.*?)>(.*?)\s*<(.*?)>\s*$', line)
+            m = re.match(r'^(.*?)\s*<(.*?)>(.*?)\s*<(.*?)>\s*$', line)
             if not m:
                 print("Invalid line in .mailmap: '{!r}'".format(line), file=sys.stderr)
                 sys.exit(1)

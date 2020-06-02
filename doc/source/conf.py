@@ -125,9 +125,9 @@ warnings.filterwarnings('error')
 warnings.filterwarnings('default', module='sphinx')  # internal warnings
 # global weird ones that can be safely ignored
 for key in (
-        "'U' mode is deprecated",  # sphinx io
-        "OpenSSL\.rand is deprecated",  # OpenSSL package in linkcheck
-        "Using or importing the ABCs from",  # 3.5 importlib._bootstrap
+        r"'U' mode is deprecated",  # sphinx io
+        r"OpenSSL\.rand is deprecated",  # OpenSSL package in linkcheck
+        r"Using or importing the ABCs from",  # 3.5 importlib._bootstrap
         ):
     warnings.filterwarnings(  # deal with other modules having bad imports
         'ignore', message=".*" + key, category=DeprecationWarning)

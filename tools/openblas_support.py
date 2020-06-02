@@ -238,7 +238,7 @@ def test_setup(arches):
         try:
             try:
                 target = setup_openblas(arch, ilp64)
-            except:
+            except Exception:
                 print(f'Could not setup {arch}')
                 raise
             if not target:
@@ -272,7 +272,7 @@ def test_version(expected_version, ilp64=get_ilp64()):
         get_config = dll.openblas_get_config64_
     else:
         get_config = dll.openblas_get_config
-    get_config.restype=ctypes.c_char_p
+    get_config.restype = ctypes.c_char_p
     res = get_config()
     print('OpenBLAS get_config returned', str(res))
     check_str = b'OpenBLAS %s' % expected_version[0].encode()
@@ -286,10 +286,11 @@ def test_version(expected_version, ilp64=get_ilp64()):
     else:
         assert b"USE64BITINT" not in res
 
+
 if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser(
-        description='Download and expand an OpenBLAS archive for this ' \
+        description='Download and expand an OpenBLAS archive for this '
                     'architecture')
     parser.add_argument('--test', nargs='*', default=None,
         help='Test different architectures. "all", or any of %s' % ARCHITECTURES)
