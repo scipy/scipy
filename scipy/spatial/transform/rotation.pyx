@@ -26,7 +26,7 @@ cdef inline np.ndarray[double, ndim=2] _zeros2(int n1, int n2):
     cdef np.npy_intp[2] dims = [n1, n2]
     return np.PyArray_ZEROS(2, dims, np.NPY_DOUBLE, 0)
 
-# flat implementations
+# flat implementations of numpy functions
 @cython.boundscheck(False)
 @cython.wraparound(False)
 cdef inline double[:] _cross3(const double[:] a, const double[:] b):
@@ -63,6 +63,20 @@ cdef inline double _normalize4(double[:] elems):
     elems[3] /= norm
 
     return norm
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cdef inline int _argmax(double[:] a):
+    cdef int imax = 0
+    cdef double vmax = a[0]
+    cdef Py_ssize_t n = len(a)
+
+    for i in range(1, n):
+        if a[i] > vmax:
+            imax = i
+            vmax = a[i]
+
+    return imax
 
 ctypedef unsigned char uchar
 
@@ -693,22 +707,24 @@ cdef class Rotation(object):
 
         cdef Py_ssize_t num_rotations = cmatrix.shape[0]
         cdef Py_ssize_t i, j, k
-        cdef double norm
-
-        cdef np.ndarray[double, ndim=2] decision_matrix = _empty2(num_rotations, 4)
-        decision_matrix[:, :3] = cmatrix.diagonal(axis1=1, axis2=2)
-        decision_matrix[:, 3] = decision_matrix[:, :3].sum(axis=1)
-        cdef np.ndarray[long, ndim=1] choices = decision_matrix.argmax(axis=1)
+        cdef double[:] decision = _empty1(4)
+        cdef int choice
 
         cdef np.ndarray[double, ndim=2] quat = _empty2(num_rotations, 4)
 
         for ind in range(num_rotations):
-            if choices[ind] != 3:
-                i = choices[ind]
+            decision[0] = cmatrix[ind, 0, 0]
+            decision[1] = cmatrix[ind, 1, 1]
+            decision[2] = cmatrix[ind, 2, 2]
+            decision[3] = cmatrix[ind, 0, 0] + cmatrix[ind, 1, 1] + cmatrix[ind, 2, 2]
+            choice = _argmax(decision)
+
+            if choice != 3:
+                i = choice
                 j = (i + 1) % 3
                 k = (j + 1) % 3
 
-                quat[ind, i] = 1 - decision_matrix[ind, 3] + 2 * cmatrix[ind, i, i]
+                quat[ind, i] = 1 - decision[3] + 2 * cmatrix[ind, i, i]
                 quat[ind, j] = cmatrix[ind, j, i] + cmatrix[ind, i, j]
                 quat[ind, k] = cmatrix[ind, k, i] + cmatrix[ind, i, k]
                 quat[ind, 3] = cmatrix[ind, k, j] - cmatrix[ind, j, k]
@@ -716,7 +732,7 @@ cdef class Rotation(object):
                 quat[ind, 0] = cmatrix[ind, 2, 1] - cmatrix[ind, 1, 2]
                 quat[ind, 1] = cmatrix[ind, 0, 2] - cmatrix[ind, 2, 0]
                 quat[ind, 2] = cmatrix[ind, 1, 0] - cmatrix[ind, 0, 1]
-                quat[ind, 3] = 1 + decision_matrix[ind, 3]
+                quat[ind, 3] = 1 + decision[3]
 
             # normalize
             _normalize4(quat[ind, :])
