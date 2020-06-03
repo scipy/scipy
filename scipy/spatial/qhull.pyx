@@ -2323,11 +2323,13 @@ class ConvexHull(_QhullUser):
 
         .. versionadded:: 1.3.0
     area : float
-        Area of the convex hull.
+        Surface area of the convex hull when input dimension > 2. 
+        When input `points` are 2-dimensional, this is the perimeter of the convex hull.
 
         .. versionadded:: 0.17.0
     volume : float
-        Volume of the convex hull.
+        Volume of the convex hull when input dimension > 2. 
+        When input `points` are 2-dimensional, this is the area of the convex hull. 
 
         .. versionadded:: 0.17.0
 
