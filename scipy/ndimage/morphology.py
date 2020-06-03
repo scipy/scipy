@@ -1835,31 +1835,26 @@ def distance_transform_bf(input, metric="euclidean", sampling=None,
         Input
     metric : {'euclidean', 'taxicab', 'chessboard'}, optional
         'cityblock' and 'manhattan' are also valid, and map to 'taxicab'.
-        
         The default is 'euclidean'.
     sampling : float, or sequence of float, optional
         This parameter is only used when `metric` is 'euclidean'.
-        
         Spacing of elements along each dimension. If a sequence, must be of
         length equal to the input rank; if a single number, this is used for
         all axes. If not specified, a grid spacing of unity is implied.
     return_distances, return_indices : bool, optional
         These flags can be used to indicate whether the distance transform,
         the feature transform, or both, must be calculated.
-
         The `return_distances` default is True, and the
         `return_indices` default is False.
     distances : ndarray, optional
         An output array to store the calculated distance transform, instead of 
         returning it.
-        
         This parameter is only used when `return_distances` is True.
         It must be the same shape as `input`, and of type float64 if `metric` is
         'euclidean', uint32 otherwise.
     indices : int32 ndarray, optional
         An output array to store the calculated feature transform, instead of 
         returning it.
-        
         Its shape must be `(input.ndim,) + input.shape`.
 
     Returns
@@ -1871,7 +1866,6 @@ def distance_transform_bf(input, metric="euclidean", sampling=None,
         The calculated feature transform. It has an input-shaped array for each 
         dimension of the input. See distance_transform_edt documentation for an 
         example.
-        
         Returned only when `return_indices` is True and `indicies` is not 
         supplied.
 
@@ -1982,29 +1976,23 @@ def distance_transform_cdt(input, metric='chessboard', return_distances=True,
         the dimensionality of the array. These choices correspond to the
         common interpretations of the 'taxicab' and the 'chessboard'
         distance metrics in two dimensions.
-        
         A custom metric may be provided, in the form of a matrix where
         each dimension has a length of three.
-        
         'cityblock' and 'manhattan' are also valid, and map to 'taxicab'.
-
         The default is 'chessboard'.
     return_distances, return_indices : bool, optional
         These flags can be used to indicate whether the distance transform,
         the feature transform, or both, must be calculated.
-
         The `return_distances` default is True, and the
         `return_indices` default is False.
     distances : int32 ndarray, optional
         An output array to store the calculated distance transform, instead of 
         returning it.
-        
         This parameter is only used when `return_distances` is True.
         It must be the same shape as `input`.
     indices : int32 ndarray, optional
         An output array to store the calculated feature transform, instead of 
         returning it.
-        
         Its shape must be `(input.ndim,) + input.shape`.
 
     Returns
@@ -2016,7 +2004,6 @@ def distance_transform_cdt(input, metric='chessboard', return_distances=True,
         The calculated feature transform. It has an input-shaped array for each 
         dimension of the input. See distance_transform_edt documentation for an 
         example.
-        
         Returned only when `return_indices` is True, and `indicies` is not 
         supplied.
 
@@ -2122,19 +2109,16 @@ def distance_transform_edt(input, sampling=None, return_distances=True,
     return_distances, return_indices : bool, optional
         These flags can be used to indicate whether the distance transform,
         the feature transform, or both, must be calculated.
-
         The `return_distances` default is True, and the
         `return_indices` default is False.
     distances : float64 ndarray, optional
         An output array to store the calculated distance transform, instead of 
         returning it.
-        
         This parameter is only used when `return_distances` is True.
         It must be the same shape as `input`.
     indices : int32 ndarray, optional
         An output array to store the calculated feature transform, instead of 
         returning it.
-        
         Its shape must be `(input.ndim,) + input.shape`.
 
     Returns
@@ -2145,7 +2129,6 @@ def distance_transform_edt(input, sampling=None, return_distances=True,
     indices : int32 ndarray, optional
         The calculated feature transform. It has an input-shaped array for each 
         dimension of the input. See example below.
-        
         Returned only when `return_indices` is True and `indicies` is not 
         supplied.
 
