@@ -1862,6 +1862,7 @@ def distance_transform_bf(input, metric="euclidean", sampling=None,
     distances : ndarray, optional
         The calculated distance transform. Returned only when
         `return_distances` is True and `distances` is not supplied.
+        It will have the same shape as the input array.
     indices : int32 ndarray, optional
         The calculated feature transform. It has an input-shaped array for each 
         dimension of the input. See distance_transform_edt documentation for an 
@@ -2000,6 +2001,7 @@ def distance_transform_cdt(input, metric='chessboard', return_distances=True,
     distances : int32 ndarray, optional
         The calculated distance transform. Returned only when
         `return_distances` is True, and `distances` is not supplied.
+        It will have the same shape as the input array.
     indices : int32 ndarray, optional
         The calculated feature transform. It has an input-shaped array for each 
         dimension of the input. See distance_transform_edt documentation for an 
@@ -2126,6 +2128,7 @@ def distance_transform_edt(input, sampling=None, return_distances=True,
     distances : float64 ndarray, optional
         The calculated distance transform. Returned only when
         `return_distances` is True and `distances` is not supplied.
+        It will have the same shape as the input array.
     indices : int32 ndarray, optional
         The calculated feature transform. It has an input-shaped array for each 
         dimension of the input. See example below.
