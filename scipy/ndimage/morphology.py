@@ -1868,7 +1868,7 @@ def distance_transform_bf(input, metric="euclidean", sampling=None,
         The calculated feature transform. It has an input-shaped array for each 
         dimension of the input. See distance_transform_edt documentation for an 
         example.
-        Returned only when `return_indices` is True and `indicies` is not 
+        Returned only when `return_indices` is True and `indices` is not 
         supplied.
 
     Notes
@@ -2008,7 +2008,7 @@ def distance_transform_cdt(input, metric='chessboard', return_distances=True,
         The calculated feature transform. It has an input-shaped array for each 
         dimension of the input. See distance_transform_edt documentation for an 
         example.
-        Returned only when `return_indices` is True, and `indicies` is not 
+        Returned only when `return_indices` is True, and `indices` is not 
         supplied.
 
     """
@@ -2135,7 +2135,7 @@ def distance_transform_edt(input, sampling=None, return_distances=True,
     indices : int32 ndarray, optional
         The calculated feature transform. It has an input-shaped array for each 
         dimension of the input. See example below.
-        Returned only when `return_indices` is True and `indicies` is not 
+        Returned only when `return_indices` is True and `indices` is not 
         supplied.
 
     Notes
