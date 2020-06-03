@@ -1841,11 +1841,12 @@ def distance_transform_bf(input, metric="euclidean", sampling=None,
         Spacing of elements along each dimension. If a sequence, must be of
         length equal to the input rank; if a single number, this is used for
         all axes. If not specified, a grid spacing of unity is implied.
-    return_distances, return_indices : bool, optional
-        These flags can be used to indicate whether the distance transform,
-        the feature transform, or both, must be calculated.
-        The `return_distances` default is True, and the
-        `return_indices` default is False.
+    return_distances : bool, optional
+        Whether to calculate the distance transform.
+        Default is True.
+    return_indices : bool, optional
+        Whether to calculate the feature transform.
+        Default is False.
     distances : ndarray, optional
         An output array to store the calculated distance transform, instead of 
         returning it.
@@ -1981,11 +1982,12 @@ def distance_transform_cdt(input, metric='chessboard', return_distances=True,
         each dimension has a length of three.
         'cityblock' and 'manhattan' are also valid, and map to 'taxicab'.
         The default is 'chessboard'.
-    return_distances, return_indices : bool, optional
-        These flags can be used to indicate whether the distance transform,
-        the feature transform, or both, must be calculated.
-        The `return_distances` default is True, and the
-        `return_indices` default is False.
+    return_distances : bool, optional
+        Whether to calculate the distance transform.
+        Default is True.
+    return_indices : bool, optional
+        Whether to calculate the feature transform.
+        Default is False.
     distances : int32 ndarray, optional
         An output array to store the calculated distance transform, instead of 
         returning it.
@@ -2108,11 +2110,12 @@ def distance_transform_edt(input, sampling=None, return_distances=True,
         Spacing of elements along each dimension. If a sequence, must be of
         length equal to the input rank; if a single number, this is used for
         all axes. If not specified, a grid spacing of unity is implied.
-    return_distances, return_indices : bool, optional
-        These flags can be used to indicate whether the distance transform,
-        the feature transform, or both, must be calculated.
-        The `return_distances` default is True, and the
-        `return_indices` default is False.
+    return_distances : bool, optional
+        Whether to calculate the distance transform.
+        Default is True.
+    return_indices : bool, optional
+        Whether to calculate the feature transform.
+        Default is False.
     distances : float64 ndarray, optional
         An output array to store the calculated distance transform, instead of 
         returning it.
