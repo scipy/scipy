@@ -140,6 +140,19 @@ def _prune_array(array):
     return array
 
 
+def prod(iterable):
+    """
+    Product of a sequence of numbers.
+
+    Faster than np.prod for short lists like array shapes, and does
+    not overflow if using Python integers.
+    """
+    product = 1
+    for x in iterable:
+        product *= x
+    return product
+
+
 class DeprecatedImport(object):
     """
     Deprecated import with redirection and warning.
