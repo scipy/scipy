@@ -1499,7 +1499,6 @@ class TestF(object):
         data = [[stats.f, (2, 1), 1.0]]
         for _f, _args, _correct in data:
             ans = _f.pdf(_f.a, *_args)
-            print(_f, (_args), ans, _correct, ans == _correct)
 
         ans = [_f.pdf(_f.a, *_args) for _f, _args, _ in data]
         correct = [_correct_ for _f, _args, _correct_ in data]
