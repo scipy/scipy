@@ -2071,7 +2071,7 @@ def iirdesign(wp, ws, gpass, gstop, analog=False, ftype='ellip', output='ba',
 
     Parameters
     ----------
-    wp, ws : float or array like
+    wp, ws : float or array like, shape (2,)
         Passband and stopband edge frequencies. Possible values are scalars
         (for lowpass and highpass filters) or ranges (for bandpass and bandstop
         filters).
@@ -2183,9 +2183,10 @@ def iirdesign(wp, ws, gpass, gstop, analog=False, ftype='ellip', output='ba',
     wp = atleast_1d(wp)
     ws = atleast_1d(ws)
 
-    if wp.shape[0] != ws.shape[0]:
-        raise ValueError("Passband and stopband frequencies must"
-                         " have the same dimension.")
+    if wp.shape[0] != ws.shape[0] or wp.shape not in [(1,), (2,)]:
+        raise ValueError("wp and ws must have one or two elements each, and"
+                         "the same shape, got %s and %s"
+                         % (wp.shape, ws.shape))
     if wp.shape[0] == 2:
         if wp[0] < 0 or ws[0] < 0:
             raise ValueError("Values for wp, ws can't be negative")

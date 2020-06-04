@@ -3614,8 +3614,11 @@ class TestIIRPeak(object):
 class TestIIRDesign(object):
 
     def test_exceptions(self):
-        with pytest.raises(ValueError, match="have the same dimension"):
+        with pytest.raises(ValueError, match="the same shape"):
             iirdesign(0.2, [0.1, 0.3], 1, 40)
+        with pytest.raises(ValueError, match="the same shape"):
+            iirdesign(np.array([[0.3, 0.6], [0.3, 0.6]]),
+                      np.array([[0.4, 0.5], [0.4, 0.5]]), 1, 40)
         with pytest.raises(ValueError, match="can't be negative"):
             iirdesign([0.1, 0.3], [-0.1, 0.5], 1, 40)
         with pytest.raises(ValueError, match="strictly inside stopband"):
