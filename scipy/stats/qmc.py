@@ -4,8 +4,6 @@ Define function to generate sample of points in the unit hypercube.
 
 """
 
-from __future__ import division
-
 import copy
 import numpy as np
 from scipy.optimize import brute
@@ -17,7 +15,7 @@ __all__ = ['discrepancy', 'halton', 'orthogonal_latin_hypercube',
 
 
 def discrepancy(sample, bounds=None, iterative=False):
-    """Centered discrepancy on a given sample..
+    """Centered discrepancy on a given sample.
 
     The discrepancy is a uniformity criterion used to assess the space filling
     of a number of samples in a hypercube.
@@ -30,7 +28,7 @@ def discrepancy(sample, bounds=None, iterative=False):
     sample : array_like (n_samples, k_vars)
         The sample to compute the discrepancy from.
     bounds : tuple or array_like ([min, k_vars], [max, k_vars])
-        Desired range of transformed data. The transformation apply the bounds
+        Desired range of transformed data. The transformation applies the bounds
         on the sample and not the theoretical space, unit cube. Thus min and
         max values of the sample will coincide with the bounds.
     iterative : bool
@@ -44,8 +42,7 @@ def discrepancy(sample, bounds=None, iterative=False):
     References
     ----------
     [1] Fang et al. "Design and modeling for computer experiments",
-      Computer Science and Data Analysis Series Science and Data Analysis
-      Series, 2006.
+      Computer Science and Data Analysis Series, 2006.
 
     """
     sample = np.asarray(sample)
@@ -90,7 +87,7 @@ def _update_discrepancy(x_new, sample, initial_disc, bounds=None):
     initial_disc : float
         Centered discrepancy of the `sample`.
     bounds : tuple or array_like ([min, k_vars], [max, k_vars])
-        Desired range of transformed data. The transformation apply the bounds
+        Desired range of transformed data. The transformation applies the bounds
         on the sample and not the theoretical space, unit cube. Thus min and
         max values of the sample will coincide with the bounds.
 
@@ -100,6 +97,9 @@ def _update_discrepancy(x_new, sample, initial_disc, bounds=None):
         Centered discrepancy of the sample composed of `x_new` and `sample`.
 
     """
+    sample = np.asarray(sample)
+    x_new = np.asarray(x_new)
+
     # Sample scaling from bounds to unit hypercube
     if bounds is not None:
         min_ = bounds.min(axis=0)
@@ -244,10 +244,9 @@ def primes_from_2_to(n):
     """
     sieve = np.ones(n // 3 + (n % 6 == 2), dtype=np.bool)
     for i in range(1, int(n ** 0.5) // 3 + 1):
-        if sieve[i]:
-            k = 3 * i + 1 | 1
-            sieve[k * k // 3::2 * k] = False
-            sieve[k * (k - 2 * (i & 1) + 4) // 3::2 * k] = False
+        k = 3 * i + 1 | 1
+        sieve[k * k // 3::2 * k] = False
+        sieve[k * (k - 2 * (i & 1) + 4) // 3::2 * k] = False
     return np.r_[2, 3, ((3 * np.nonzero(sieve)[0][1:] + 1) | 1)]
 
 
@@ -280,7 +279,7 @@ def n_primes(n):
               953, 967, 971, 977, 983, 991, 997][:n]
 
     if len(primes) < n:
-        big_number = 10
+        big_number = 2000
         while 'Not enought primes':
             primes = primes_from_2_to(big_number)[:n]
             if len(primes) == n:
