@@ -13,7 +13,6 @@ cimport numpy as np
 from numpy.math cimport INFINITY
 
 from cpython.mem cimport PyMem_Malloc, PyMem_Realloc, PyMem_Free
-from libc.string cimport memset, memcpy
 from libcpp.vector cimport vector
 from libcpp.algorithm cimport sort
 
@@ -32,6 +31,21 @@ __all__ = ['cKDTree']
 cdef extern from *:
     int NPY_LIKELY(int)
     int NPY_UNLIKELY(int)
+
+cdef extern from *:
+    """
+    template <typename T>
+    T* array_new(std::intptr_t n) {
+        return new T[n];
+    }
+
+    template <typename T>
+    void array_delete(T* x) {
+        delete [] x;
+    }
+    """
+    T* array_new[T](np.intp_t) except +
+    void array_delete[T](T* x)
 
 
 # C++ implementations
@@ -122,7 +136,7 @@ cdef extern from "ckdtree_decl.h":
                             const np.float64_t p,
                             const np.float64_t eps,
                             const np.intp_t n_queries,
-                            vector[np.intp_t] **results,
+                            vector[np.intp_t] *results,
                             const int return_length) nogil except +
 
     int query_ball_tree(const ckdtree *self,
@@ -130,7 +144,7 @@ cdef extern from "ckdtree_decl.h":
                            const np.float64_t r,
                            const np.float64_t p,
                            const np.float64_t eps,
-                           vector[np.intp_t] **results) nogil except +
+                           vector[np.intp_t] *results) nogil except +
 
     int sparse_distance_matrix(const ckdtree *self,
                                   const ckdtree *other,
@@ -921,7 +935,7 @@ cdef class cKDTree:
 
         def _thread_func(np.intp_t start, np.intp_t stop):
             cdef:
-                vector[np.intp_t] **vvres
+                vector[np.intp_t] *vvres
                 np.intp_t i
                 np.intp_t *cur
                 int rlen
@@ -931,15 +945,7 @@ cdef class cKDTree:
             rlen = <int> return_length
 
             try:
-                vvres = (<vector[np.intp_t] **>
-                    PyMem_Malloc((stop-start) * sizeof(void*)))
-                if vvres == NULL:
-                    raise MemoryError()
-
-                memset(<void*> vvres, 0, (stop-start) * sizeof(void*))
-
-                for i in range(stop - start):
-                    vvres[i] = new vector[np.intp_t]()
+                vvres = array_new[vector[np.intp_t]](stop-start)
 
                 pvxx = &vxx[start, 0]
                 pvrr = &vrr[start + 0]
@@ -966,15 +972,10 @@ cdef class cKDTree:
 
                     cur = vvres[i].data()
                     for j in range(m):
-                        tmp[j] = cur[0]
-                        cur += 1
+                        tmp[j] = cur[j]
                     vout[start + i] = tmp
             finally:
-                if vvres != NULL:
-                    for i in range(stop-start):
-                        if vvres[i] != NULL:
-                            del vvres[i]
-                    PyMem_Free(vvres)
+                array_delete(vvres);
 
         # multithreading logic is similar to cKDTree.query
         if n_jobs == -1:
@@ -1022,7 +1023,7 @@ cdef class cKDTree:
         """
 
         cdef:
-            vector[np.intp_t] **vvres
+            vector[np.intp_t] *vvres
             np.intp_t i, j, n, m
             np.intp_t *cur
             list results
@@ -1038,15 +1039,7 @@ cdef class cKDTree:
         try:
 
             # allocate an array of std::vector<npy_intp>
-            vvres = (<vector[np.intp_t] **>
-                PyMem_Malloc(n * sizeof(void*)))
-            if vvres == NULL:
-                raise MemoryError()
-
-            memset(<void*> vvres, 0, n * sizeof(void*))
-
-            for i in range(n):
-                vvres[i] = new vector[np.intp_t]()
+            vvres = array_new[vector[np.intp_t]](n)
 
             # query in C++
             with nogil:
@@ -1069,11 +1062,7 @@ cdef class cKDTree:
                     results[i] = []
 
         finally:
-            if vvres != NULL:
-                for i in range(n):
-                    if vvres[i] != NULL:
-                        del vvres[i]
-                PyMem_Free(vvres)
+            array_delete(vvres);
 
         return results
 

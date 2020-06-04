@@ -16,14 +16,13 @@
 
 static void
 traverse_no_checking(const ckdtree *self, const ckdtree *other,
-                     std::vector<ckdtree_intp_t> **results,
+                     std::vector<ckdtree_intp_t> *results,
                      const ckdtreenode *node1, const ckdtreenode *node2)
 {
     const ckdtreenode *lnode1;
     const ckdtreenode *lnode2;
     const ckdtree_intp_t *sindices = self->raw_indices;
     const ckdtree_intp_t *oindices = other->raw_indices;
-    std::vector<ckdtree_intp_t> *results_i;
     ckdtree_intp_t i, j;
 
     if (node1->split_dim == -1) {   /* leaf node */
@@ -38,9 +37,9 @@ traverse_no_checking(const ckdtree *self, const ckdtree *other,
             const ckdtree_intp_t end2 = lnode2->end_idx;
 
             for (i = start1; i < end1; ++i) {
-                results_i = results[sindices[i]];
+                auto &results_i = results[sindices[i]];
                 for (j = start2; j < end2; ++j)
-                    results_i->push_back(oindices[j]);
+                    results_i.push_back(oindices[j]);
             }
         }
         else {
@@ -57,13 +56,12 @@ traverse_no_checking(const ckdtree *self, const ckdtree *other,
 
 template <typename MinMaxDist> static void
 traverse_checking(const ckdtree *self, const ckdtree *other,
-                  std::vector<ckdtree_intp_t> **results,
+                  std::vector<ckdtree_intp_t> *results,
                   const ckdtreenode *node1, const ckdtreenode *node2,
                   RectRectDistanceTracker<MinMaxDist> *tracker)
 {
     const ckdtreenode *lnode1;
     const ckdtreenode *lnode2;
-    std::vector<ckdtree_intp_t> *results_i;
     double d;
     ckdtree_intp_t i, j;
 
@@ -106,7 +104,7 @@ traverse_checking(const ckdtree *self, const ckdtree *other,
                 if (start2 < end2 - 1)
                     CKDTREE_PREFETCH(odata + oindices[start2+1] * m, 0, m);
 
-                results_i = results[sindices[i]];
+                auto &results_i = results[sindices[i]];
 
                 for (j = start2; j < end2; ++j) {
 
@@ -120,7 +118,7 @@ traverse_checking(const ckdtree *self, const ckdtree *other,
                             p, m, tmd);
 
                     if (d <= tub)
-                        results_i->push_back(other->raw_indices[j]);
+                        results_i.push_back(other->raw_indices[j]);
                 }
             }
 
@@ -183,7 +181,7 @@ traverse_checking(const ckdtree *self, const ckdtree *other,
 int
 query_ball_tree(const ckdtree *self, const ckdtree *other,
                 const double r, const double p, const double eps,
-                std::vector<ckdtree_intp_t> **results)
+                std::vector<ckdtree_intp_t> *results)
 {
 
 #define HANDLE(cond, kls) \
