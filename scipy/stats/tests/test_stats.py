@@ -5284,6 +5284,7 @@ class TestMGCStat(object):
 
     @pytest.mark.slow
     def test_dist_perm(self):
+        np.random.seed(12345678)
         # generate x and y
         x, y = self._simulations(samps=100, dims=1, sim_type="nonlinear")
         distx = cdist(x, x, metric="euclidean")
