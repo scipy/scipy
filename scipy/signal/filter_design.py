@@ -4970,7 +4970,7 @@ def gammatone(freq, ftype, order=None, numtaps=None, fs=None):
             raise ValueError("Invalid order: order must be > 0 and <= 24.")
 
         # Gammatone impulse response settings
-        t = np.linspace(0, numtaps / fs, numtaps)
+        t = np.arange(numtaps) / fs
         bw = 1.019 * _hz_to_erb(freq)
 
         # Calculate the FIR gammatone filter

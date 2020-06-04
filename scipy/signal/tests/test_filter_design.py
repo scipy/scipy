@@ -3787,14 +3787,28 @@ class TestGammatone(object):
     def test_iir_symmetry(self):
         b, a = gammatone(440, 'iir', fs=24000)
         z, p, k = tf2zpk(b, a)
-        sorted(z) == pytest.approx(sorted(z.conj()))
-        sorted(p) == pytest.approx(sorted(p.conj()))
-        k == pytest.approx(np.real(k))
+        assert_array_equal(sorted(z), sorted(z.conj()))
+        assert_array_equal(sorted(p), sorted(p.conj()))
+        assert_equal(k, np.real(k))
 
         assert_(issubclass(b.dtype.type, np.floating))
         assert_(issubclass(a.dtype.type, np.floating))
 
-    # Verify IIR filter coefficients with MATLAB's answers
+    # Verify FIR filter coefficients with the paper's
+    # Mathematica implementation
+    def test_fir_ba_output(self):
+        b, _ = gammatone(15, 'fir', fs=1000)
+        b2 = [0.0, 2.2608075649884e-04,
+              1.5077903981357e-03, 4.2033687753998e-03,
+              8.1508962726503e-03, 1.2890059089154e-02,
+              1.7833890391666e-02, 2.2392613558564e-02,
+              2.6055195863104e-02, 2.8435872863284e-02,
+              2.9293319149544e-02, 2.852976858014e-02,
+              2.6176557156294e-02, 2.2371510270395e-02,
+              1.7332485267759e-02]
+        assert_allclose(b, b2)
+
+    # Verify IIR filter coefficients with the paper's MATLAB implementation
     def test_iir_ba_output(self):
         b, a = gammatone(440, 'iir', fs=16000)
         b2 = [1.31494461367464e-06, -5.03391196645395e-06,
@@ -3805,5 +3819,5 @@ class TestGammatone(object):
               60.2667361289181, -46.9399590980486,
               22.9474798808461, -6.43799381299034,
               0.793651554625368]
-        b == pytest.approx(b2)
-        a == pytest.approx(a2)
+        assert_allclose(b, b2)
+        assert_allclose(a, a2)
