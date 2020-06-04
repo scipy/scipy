@@ -5292,6 +5292,5 @@ class TestMGCStat(object):
         stat_dist, pvalue_dist, _ = stats.multiscale_graphcorr(distx, disty,
                                                                compute_distance=None,
                                                                random_state=1)
-        stat, pvalue, _ = stats.multiscale_graphcorr(x, y, random_state=1)
-        assert_approx_equal(stat_dist, stat, significant=1)
-        assert_approx_equal(pvalue_dist, pvalue, significant=1)
+        assert_approx_equal(stat_dist, 0.163, significant=1)
+        assert_approx_equal(pvalue_dist, 0.001, significant=1)
