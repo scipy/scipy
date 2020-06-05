@@ -1413,7 +1413,7 @@ class Rotation(object):
         result = _compose_quat(self._quat, other._quat)
         if self._single and other._single:
             result = result[0]
-        return self.__class__(result, normalize=False, copy=False)
+        return self.__class__(result, normalize=True, copy=False)
 
     def inv(self):
         """Invert this rotation.
