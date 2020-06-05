@@ -15,6 +15,7 @@ from numpy.math cimport INFINITY
 from cpython.mem cimport PyMem_Malloc, PyMem_Realloc, PyMem_Free
 from libcpp.vector cimport vector
 from libcpp.algorithm cimport sort
+from libcpp cimport bool
 
 cimport cython
 
@@ -748,30 +749,25 @@ cdef class cKDTree:
             np.intp_t n, i, j
             int overflown
             const np.float64_t [:, ::1] xx
+            np.ndarray x_arr = np.ascontiguousarray(x, dtype=np.float64)
+            ckdtree *cself = self.cself
 
-        xshape = np.shape(x)
-
-        if len(xshape) == 0 or xshape[-1] != self.m:
-            raise ValueError("x must consist of vectors of length %d but "
-                             "has shape %s" % (int(self.m), xshape))
-
-        n = <np.intp_t> np.prod(xshape[:-1])
-        xx = np.ascontiguousarray(x, dtype=np.float64).reshape(n, self.m)
+        n = num_points(x_arr, cself.m)
+        xx = x_arr.reshape(n, cself.m)
 
         if p < 1:
             raise ValueError("Only p-norms with 1<=p<=infinity permitted")
-        if len(xshape) == 1:
-            single = True
-        else:
-            single = False
 
-        nearest = False
+        cdef:
+            bool single = (x_arr.ndim == 1)
+            bool nearest = False
+
         if np.isscalar(k):
             if k == 1:
                 nearest = True
             k = np.arange(1, k + 1)
 
-        retshape = xshape[:-1]
+        retshape = np.shape(x_arr)[:-1]
 
         # The C++ function touches all dd and ii entries,
         # setting the missing values.
@@ -790,7 +786,7 @@ cdef class cKDTree:
                 const np.float64_t *pxx = &xx[start,0]
                 np.intp_t *pkk = &kk[0]
             with nogil:
-                query_knn(self.cself, pdd, pii,
+                query_knn(cself, pdd, pii,
                     pxx, stop-start, pkk, kk.shape[0], kmax, eps, p, distance_upper_bound)
 
         if (n_jobs == -1):
@@ -839,7 +835,7 @@ cdef class cKDTree:
     # ----------------
 
     def query_ball_point(cKDTree self, object x, object r,
-                         np.float64_t p=2., np.float64_t eps=0, n_jobs=1,
+                         np.float64_t p=2., np.float64_t eps=0, np.intp_t n_jobs=1,
                          return_sorted=None,
                          return_length=False):
         """
@@ -901,32 +897,25 @@ cdef class cKDTree:
         """
 
         cdef:
-            const np.float64_t[::1] vrr
-            const np.float64_t[:, ::1] vxx
             object[::1] vout
             np.intp_t[::1] vlen
-            list tmp
-            np.intp_t i, j, n, m
-            np.intp_t xndim
+            np.ndarray x_arr = np.ascontiguousarray(x, dtype=np.float64)
+            ckdtree *cself = self.cself
+            bool rlen = return_length
+            # compatibility with the old bug not sorting scalar queries.
+            bool sort_output = return_sorted or (
+                return_sorted is None and x_arr.ndim > 1)
 
-        xshape = np.shape(x)
-        if xshape[-1] != self.m:
-            raise ValueError("Searching for a %d-dimensional point in a "
-                             "%d-dimensional KDTree" %
-                                 (int(xshape[-1]), int(self.m)))
+            np.intp_t n = num_points(x_arr, cself.m)
+            tuple retshape = np.shape(x_arr)[:-1]
 
-        vxx = np.ascontiguousarray(x, dtype=np.float64).reshape(-1, self.m)
-        vrr = np.ascontiguousarray(np.broadcast_to(r, xshape[:-1]), dtype=np.float64).reshape(-1)
+            np.ndarray r_arr = np.ascontiguousarray(
+                np.broadcast_to(r, retshape), dtype=np.float64)
 
-        retshape = xshape[:-1]
+            const np.float64_t *vxx = <np.float64_t*>x_arr.data
+            const np.float64_t *vrr = <np.float64_t*>r_arr.data
 
-        # scalar query if xndim == 1
-        xndim = len(xshape)
-
-        # allocate an array of std::vector<npy_intp>
-        n = np.prod(retshape)
-
-        if return_length:
+        if rlen:
             result = np.empty(retshape, dtype=np.intp)
             vlen = result.reshape(-1)
         else:
@@ -936,34 +925,29 @@ cdef class cKDTree:
         def _thread_func(np.intp_t start, np.intp_t stop):
             cdef:
                 vector[np.intp_t] *vvres
-                np.intp_t i
+                np.intp_t i, j, m
                 np.intp_t *cur
-                int rlen
                 const np.float64_t *pvxx
                 const np.float64_t *pvrr
-
-            rlen = <int> return_length
+                list tmp
 
             try:
+                # allocate an array of std::vector<npy_intp>
                 vvres = array_new[vector[np.intp_t]](stop-start)
 
-                pvxx = &vxx[start, 0]
-                pvrr = &vrr[start + 0]
+                pvxx = vxx + start * cself.m
+                pvrr = vrr + start
 
                 with nogil:
-                    query_ball_point(self.cself, pvxx,
+                    query_ball_point(cself, pvxx,
                         pvrr, p, eps, stop - start, vvres, rlen)
 
                 for i in range(stop - start):
-                    if return_length:
+                    if rlen:
                         vlen[start + i] = vvres[i].front()
                         continue
 
-                    if return_sorted:
-                        with nogil:
-                            sort(vvres[i].begin(), vvres[i].end())
-                    elif return_sorted is None and xndim > 1:
-                        # compatibility with the old bug not sorting scalar queries.
+                    if sort_output:
                         with nogil:
                             sort(vvres[i].begin(), vvres[i].end())
 
@@ -983,7 +967,7 @@ cdef class cKDTree:
 
         _run_threads(_thread_func, n, n_jobs)
 
-        if xndim == 1: # scalar query, unpack result.
+        if x_arr.ndim == 1: # scalar query, unpack result.
             result = result[()]
         return result
 
@@ -1505,7 +1489,8 @@ cdef class cKDTree:
         # set up the tree structure pointers
         self._post_init()
 
-def _run_threads(_thread_func, n, n_jobs):
+cdef _run_threads(_thread_func, np.intp_t n, np.intp_t n_jobs):
+    n_jobs = min(n, n_jobs)
     if n_jobs > 1:
         ranges = [(j * n // n_jobs, (j + 1) * n // n_jobs)
                         for j in range(n_jobs)]
@@ -1521,3 +1506,20 @@ def _run_threads(_thread_func, n, n_jobs):
 
     else:
         _thread_func(0, n)
+
+cdef np.intp_t num_points(np.ndarray x, np.intp_t pdim) except -1:
+    """Returns the number of points in ``x``
+
+    Also validates that the last axis represents the components of single point
+    in `pdim` dimensional space
+    """
+    cdef np.intp_t i, n
+
+    if x.ndim == 0 or x.shape[x.ndim - 1] != pdim:
+        raise ValueError("x must consist of vectors of length {} but "
+                         "has shape {}".format(pdim, np.shape(x)))
+    n = 1
+    for i in range(x.ndim - 1):
+        n *= x.shape[i]
+    return n
+
