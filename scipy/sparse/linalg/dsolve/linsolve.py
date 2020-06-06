@@ -6,6 +6,7 @@ from scipy.sparse import (isspmatrix_csc, isspmatrix_csr, isspmatrix,
                           SparseEfficiencyWarning, csc_matrix, csr_matrix)
 from scipy.sparse.sputils import is_pydata_spmatrix
 from scipy.linalg import LinAlgError
+import copy
 
 from . import _superlu
 
@@ -77,7 +78,15 @@ def _get_umf_family(A):
             % (f_type, i_type)
         raise ValueError(msg)
 
-    return family
+    # See gh-8278. Considered converting only if
+    # A.shape[0]*A.shape[1] > np.iinfo(np.int32).max,
+    # but that didn't always fix the issue.
+    family = family[0] + "l"
+    A_new = copy.copy(A)
+    A_new.indptr = np.array(A.indptr, copy=False, dtype=np.int64)
+    A_new.indices = np.array(A.indices, copy=False, dtype=np.int64)
+
+    return family, A_new
 
 def spsolve(A, b, permc_spec=None, use_umfpack=True):
     """Solve the sparse linear system Ax=b, where b may be a vector or a matrix.
@@ -175,7 +184,8 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
             raise ValueError("convert matrix data to double, please, using"
                   " .astype(), or set linsolve.useUmfpack = False")
 
-        umf = umfpack.UmfpackContext(_get_umf_family(A))
+        umf_family, A = _get_umf_family(A)
+        umf = umfpack.UmfpackContext(umf_family)
         x = umf.linsolve(umfpack.UMFPACK_A, A, b_vec,
                          autoTranspose=True)
     else:
@@ -464,7 +474,8 @@ def factorized(A):
             raise ValueError("convert matrix data to double, please, using"
                   " .astype(), or set linsolve.useUmfpack = False")
 
-        umf = umfpack.UmfpackContext(_get_umf_family(A))
+        umf_family, A = _get_umf_family(A)
+        umf = umfpack.UmfpackContext(umf_family)
 
         # Make LU decomposition.
         umf.numeric(A)

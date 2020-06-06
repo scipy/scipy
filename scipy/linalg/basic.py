@@ -335,7 +335,8 @@ def solve_triangular(a, b, trans=0, lower=False, unit_diagonal=False,
     if len(a1.shape) != 2 or a1.shape[0] != a1.shape[1]:
         raise ValueError('expected square matrix')
     if a1.shape[0] != b1.shape[0]:
-        raise ValueError('incompatible dimensions')
+        raise ValueError('shapes of a {} and b {} are incompatible'
+                         .format(a1.shape, b1.shape))
     overwrite_b = overwrite_b or _datacopied(b1, b)
     if debug:
         print('solve:overwrite_b=', overwrite_b)
@@ -862,7 +863,8 @@ def solve_circulant(c, b, singular='raise', tol=None,
     b = np.atleast_1d(b)
     nb = _get_axis_len("b", b, baxis)
     if nc != nb:
-        raise ValueError('Incompatible c and b axis lengths')
+        raise ValueError('Shapes of c {} and b {} are incompatible'
+                         .format(c.shape, b.shape))
 
     fc = np.fft.fft(np.rollaxis(c, caxis, c.ndim), axis=-1)
     abs_fc = np.abs(fc)

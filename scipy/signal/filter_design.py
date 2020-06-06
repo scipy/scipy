@@ -1195,8 +1195,12 @@ def sos2tf(sos):
     .. versionadded:: 0.16.0
     """
     sos = np.asarray(sos)
-    b = [1.]
-    a = [1.]
+    result_type = sos.dtype
+    if result_type.kind in 'bui':
+        result_type = np.float64
+
+    b = np.array([1], dtype=result_type)
+    a = np.array([1], dtype=result_type)
     n_sections = sos.shape[0]
     for section in range(n_sections):
         b = np.polymul(b, sos[section, :3])

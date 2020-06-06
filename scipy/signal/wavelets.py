@@ -375,7 +375,7 @@ def morlet2(M, s, w=5):
     >>> freq = np.linspace(1, fs/2, 100)
     >>> widths = w*fs / (2*freq*np.pi)
     >>> cwtm = signal.cwt(sig, signal.morlet2, widths, w=w)
-    >>> plt.pcolormesh(t, freq, np.abs(cwtm), cmap='viridis')
+    >>> plt.pcolormesh(t, freq, np.abs(cwtm), cmap='viridis', shading='gouraud')
     >>> plt.show()
 
     """

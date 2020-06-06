@@ -1837,9 +1837,9 @@ class rv_continuous(rv_generic):
 
         """
         args, loc, scale = self._parse_args(*args, **kwds)
-        _a, _b = self._get_support(*args)
         x, loc, scale = map(asarray, (x, loc, scale))
         args = tuple(map(asarray, args))
+        _a, _b = self._get_support(*args)
         dtyp = np.find_common_type([x.dtype, np.float64], [])
         x = np.asarray((x - loc)/scale, dtype=dtyp)
         cond0 = self._argcheck(*args) & (scale > 0)
@@ -1879,9 +1879,9 @@ class rv_continuous(rv_generic):
 
         """
         args, loc, scale = self._parse_args(*args, **kwds)
-        _a, _b = self._get_support(*args)
         x, loc, scale = map(asarray, (x, loc, scale))
         args = tuple(map(asarray, args))
+        _a, _b = self._get_support(*args)
         dtyp = np.find_common_type([x.dtype, np.float64], [])
         x = np.asarray((x - loc)/scale, dtype=dtyp)
         cond0 = self._argcheck(*args) & (scale > 0)
@@ -1922,9 +1922,9 @@ class rv_continuous(rv_generic):
 
         """
         args, loc, scale = self._parse_args(*args, **kwds)
-        _a, _b = self._get_support(*args)
         x, loc, scale = map(asarray, (x, loc, scale))
         args = tuple(map(asarray, args))
+        _a, _b = self._get_support(*args)
         dtyp = np.find_common_type([x.dtype, np.float64], [])
         x = np.asarray((x - loc)/scale, dtype=dtyp)
         cond0 = self._argcheck(*args) & (scale > 0)
@@ -1967,9 +1967,9 @@ class rv_continuous(rv_generic):
 
         """
         args, loc, scale = self._parse_args(*args, **kwds)
-        _a, _b = self._get_support(*args)
         x, loc, scale = map(asarray, (x, loc, scale))
         args = tuple(map(asarray, args))
+        _a, _b = self._get_support(*args)
         dtyp = np.find_common_type([x.dtype, np.float64], [])
         x = np.asarray((x - loc)/scale, dtype=dtyp)
         cond0 = self._argcheck(*args) & (scale > 0)
@@ -2010,9 +2010,9 @@ class rv_continuous(rv_generic):
 
         """
         args, loc, scale = self._parse_args(*args, **kwds)
-        _a, _b = self._get_support(*args)
         q, loc, scale = map(asarray, (q, loc, scale))
         args = tuple(map(asarray, args))
+        _a, _b = self._get_support(*args)
         cond0 = self._argcheck(*args) & (scale > 0) & (loc == loc)
         cond1 = (0 < q) & (q < 1)
         cond2 = cond0 & (q == 0)
@@ -2056,9 +2056,9 @@ class rv_continuous(rv_generic):
 
         """
         args, loc, scale = self._parse_args(*args, **kwds)
-        _a, _b = self._get_support(*args)
         q, loc, scale = map(asarray, (q, loc, scale))
         args = tuple(map(asarray, args))
+        _a, _b = self._get_support(*args)
         cond0 = self._argcheck(*args) & (scale > 0) & (loc == loc)
         cond1 = (0 < q) & (q < 1)
         cond2 = cond0 & (q == 1)
@@ -3017,9 +3017,9 @@ class rv_discrete(rv_generic):
 
         """
         args, loc, _ = self._parse_args(*args, **kwds)
-        _a, _b = self._get_support(*args)
         k, loc = map(asarray, (k, loc))
         args = tuple(map(asarray, args))
+        _a, _b = self._get_support(*args)
         k = asarray((k-loc))
         cond0 = self._argcheck(*args)
         cond1 = (k >= _a) & (k <= _b) & self._nonzero(k, *args)
@@ -3054,9 +3054,9 @@ class rv_discrete(rv_generic):
 
         """
         args, loc, _ = self._parse_args(*args, **kwds)
-        _a, _b = self._get_support(*args)
         k, loc = map(asarray, (k, loc))
         args = tuple(map(asarray, args))
+        _a, _b = self._get_support(*args)
         k = asarray((k-loc))
         cond0 = self._argcheck(*args)
         cond1 = (k >= _a) & (k <= _b) & self._nonzero(k, *args)
@@ -3092,9 +3092,9 @@ class rv_discrete(rv_generic):
 
         """
         args, loc, _ = self._parse_args(*args, **kwds)
-        _a, _b = self._get_support(*args)
         k, loc = map(asarray, (k, loc))
         args = tuple(map(asarray, args))
+        _a, _b = self._get_support(*args)
         k = asarray((k-loc))
         cond0 = self._argcheck(*args)
         cond1 = (k >= _a) & (k < _b)
@@ -3132,9 +3132,9 @@ class rv_discrete(rv_generic):
 
         """
         args, loc, _ = self._parse_args(*args, **kwds)
-        _a, _b = self._get_support(*args)
         k, loc = map(asarray, (k, loc))
         args = tuple(map(asarray, args))
+        _a, _b = self._get_support(*args)
         k = asarray((k-loc))
         cond0 = self._argcheck(*args)
         cond1 = (k >= _a) & (k < _b)
@@ -3173,9 +3173,9 @@ class rv_discrete(rv_generic):
 
         """
         args, loc, _ = self._parse_args(*args, **kwds)
-        _a, _b = self._get_support(*args)
         k, loc = map(asarray, (k, loc))
         args = tuple(map(asarray, args))
+        _a, _b = self._get_support(*args)
         k = asarray(k-loc)
         cond0 = self._argcheck(*args)
         cond1 = (k >= _a) & (k < _b)
@@ -3215,9 +3215,9 @@ class rv_discrete(rv_generic):
 
         """
         args, loc, _ = self._parse_args(*args, **kwds)
-        _a, _b = self._get_support(*args)
         k, loc = map(asarray, (k, loc))
         args = tuple(map(asarray, args))
+        _a, _b = self._get_support(*args)
         k = asarray(k-loc)
         cond0 = self._argcheck(*args)
         cond1 = (k >= _a) & (k < _b)
@@ -3255,9 +3255,9 @@ class rv_discrete(rv_generic):
 
         """
         args, loc, _ = self._parse_args(*args, **kwds)
-        _a, _b = self._get_support(*args)
         q, loc = map(asarray, (q, loc))
         args = tuple(map(asarray, args))
+        _a, _b = self._get_support(*args)
         cond0 = self._argcheck(*args) & (loc == loc)
         cond1 = (q > 0) & (q < 1)
         cond2 = (q == 1) & cond0
@@ -3296,9 +3296,9 @@ class rv_discrete(rv_generic):
 
         """
         args, loc, _ = self._parse_args(*args, **kwds)
-        _a, _b = self._get_support(*args)
         q, loc = map(asarray, (q, loc))
         args = tuple(map(asarray, args))
+        _a, _b = self._get_support(*args)
         cond0 = self._argcheck(*args) & (loc == loc)
         cond1 = (q > 0) & (q < 1)
         cond2 = (q == 1) & cond0

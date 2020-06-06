@@ -6,7 +6,6 @@ An extension of scipy.stats.stats to support masked arrays
 
 # TODO : f_value_wilks_lambda looks botched... what are dfnum & dfden for ?
 # TODO : ttest_rel looks botched:  what are x1,x2,v1,v2 for ?
-# TODO : reimplement ksonesamp
 
 
 __all__ = ['argstoarray',
@@ -14,7 +13,8 @@ __all__ = ['argstoarray',
            'describe',
            'f_oneway', 'find_repeats','friedmanchisquare',
            'kendalltau','kendalltau_seasonal','kruskal','kruskalwallis',
-           'ks_twosamp','ks_2samp','kurtosis','kurtosistest',
+           'ks_twosamp', 'ks_2samp', 'kurtosis', 'kurtosistest',
+           'ks_1samp', 'kstest',
            'linregress',
            'mannwhitneyu', 'meppf','mode','moment','mquantiles','msign',
            'normaltest',
@@ -44,13 +44,14 @@ from collections import namedtuple
 
 from . import distributions
 import scipy.special as special
+import scipy.stats.stats
+
 from ._stats_mstats_common import (
         _find_repeats,
         linregress as stats_linregress,
         theilslopes as stats_theilslopes,
         siegelslopes as stats_siegelslopes
         )
-
 
 def _chk_asarray(a, axis):
     # Always returns a masked array, raveled for axis=None
@@ -83,35 +84,6 @@ def _chk_size(a, b):
         raise ValueError("The size of the input array should match!"
                          " (%s <> %s)" % (na, nb))
     return (a, b, na)
-
-
-def _contains_nan(a, nan_policy='propagate'):
-    policies = ['propagate', 'raise', 'omit']
-    if nan_policy not in policies:
-        raise ValueError("nan_policy must be one of {%s}" %
-                         ', '.join("'%s'" % s for s in policies))
-    try:
-        # Calling np.sum to avoid creating a huge array into memory
-        # e.g. np.isnan(a).any()
-        with np.errstate(invalid='ignore'):
-            contains_nan = np.isnan(np.sum(a))
-    except TypeError:
-        # This can happen when attempting to sum things which are not
-        # numbers (e.g. as in the function `mode`). Try an alternative method:
-        try:
-            contains_nan = np.nan in set(a.ravel())
-        except TypeError:
-            # Don't know what to do. Fall back to omitting nan values and
-            # issue a warning.
-            contains_nan = False
-            nan_policy = 'omit'
-            warnings.warn("The input array could not be properly checked for nan "
-                          "values. nan values will be ignored.", RuntimeWarning)
-
-    if contains_nan and nan_policy == 'raise':
-        raise ValueError("The input contains nan values")
-
-    return contains_nan, nan_policy
 
 
 def argstoarray(*args):
@@ -1280,20 +1252,30 @@ def kruskal(*args):
 kruskalwallis = kruskal
 
 
-def ks_twosamp(data1, data2, alternative="two-sided"):
+def ks_1samp(x, cdf, args=(), alternative="two-sided", mode='auto'):
     """
-    Computes the Kolmogorov-Smirnov test on two samples.
+    Computes the Kolmogorov-Smirnov test on one sample of masked values.
 
-    Missing values are discarded.
+    Missing values in `x` are discarded.
 
     Parameters
     ----------
-    data1 : array_like
-        First data set
-    data2 : array_like
-        Second data set
+    x : array_like
+        a 1-D array of observations of random variables.
+    cdf : str or callable
+        If a string, it should be the name of a distribution in `scipy.stats`.
+        If a callable, that callable is used to calculate the cdf.
+    args : tuple, sequence, optional
+        Distribution parameters, used if `cdf` is a string.
     alternative : {'two-sided', 'less', 'greater'}, optional
         Indicates the alternative hypothesis.  Default is 'two-sided'.
+    mode : {'auto', 'exact', 'asymp'}, optional
+        Defines the method used for calculating the p-value.
+        The following options are available (default is 'auto'):
+
+          * 'auto' : use 'exact' for small size arrays, 'asymp' for large
+          * 'exact' : use approximation to exact distribution of test statistic
+          * 'asymp' : use asymptotic distribution of test statistic
 
     Returns
     -------
@@ -1303,34 +1285,71 @@ def ks_twosamp(data1, data2, alternative="two-sided"):
         Corresponding p-value.
 
     """
-    (data1, data2) = (ma.asarray(data1), ma.asarray(data2))
-    (n1, n2) = (data1.count(), data2.count())
-    n = (n1*n2/float(n1+n2))
-    mix = ma.concatenate((data1.compressed(), data2.compressed()))
-    mixsort = mix.argsort(kind='mergesort')
-    csum = np.where(mixsort < n1, 1./n1, -1./n2).cumsum()
-    # Check for ties
-    if len(np.unique(mix)) < (n1+n2):
-        csum = csum[np.r_[np.diff(mix[mixsort]).nonzero()[0],-1]]
-
-    alternative = str(alternative).lower()[0]
-    if alternative == 't':
-        d = ma.abs(csum).max()
-        prob = special.kolmogorov(np.sqrt(n)*d)
-    elif alternative == 'l':
-        d = -csum.min()
-        prob = np.exp(-2*n*d**2)
-    elif alternative == 'g':
-        d = csum.max()
-        prob = np.exp(-2*n*d**2)
-    else:
-        raise ValueError("Invalid value for the alternative hypothesis: "
-                         "should be in 'two-sided', 'less' or 'greater'")
-
-    return (d, prob)
+    alternative = {'t': 'two-sided', 'g': 'greater', 'l': 'less'}.get(
+       alternative.lower()[0], alternative)
+    return scipy.stats.stats.ks_1samp(
+        x, cdf, args=args, alternative=alternative, mode=mode)
 
 
-ks_2samp = ks_twosamp
+def ks_2samp(data1, data2, alternative="two-sided", mode='auto'):
+    """
+    Computes the Kolmogorov-Smirnov test on two samples.
+
+    Missing values in `x` and/or `y` are discarded.
+
+    Parameters
+    ----------
+    data1 : array_like
+        First data set
+    data2 : array_like
+        Second data set
+    alternative : {'two-sided', 'less', 'greater'}, optional
+        Indicates the alternative hypothesis.  Default is 'two-sided'.
+    mode : {'auto', 'exact', 'asymp'}, optional
+        Defines the method used for calculating the p-value.
+        The following options are available (default is 'auto'):
+
+          * 'auto' : use 'exact' for small size arrays, 'asymp' for large
+          * 'exact' : use approximation to exact distribution of test statistic
+          * 'asymp' : use asymptotic distribution of test statistic
+
+    Returns
+    -------
+    d : float
+        Value of the Kolmogorov Smirnov test
+    p : float
+        Corresponding p-value.
+
+    """
+    # Ideally this would be accomplished by
+    # ks_2samp = scipy.stats.stats.ks_2samp
+    # but the circular dependencies between mstats_basic and stats prevent that.
+    alternative = {'t': 'two-sided', 'g': 'greater', 'l': 'less'}.get(
+       alternative.lower()[0], alternative)
+    return scipy.stats.stats.ks_2samp(data1, data2, alternative=alternative, mode=mode)
+
+
+ks_twosamp = ks_2samp
+
+
+def kstest(data1, data2, args=(), alternative='two-sided', mode='auto'):
+    """
+
+    Parameters
+    ----------
+    data1 : array_like
+    data2 : str, callable or array_like
+    args : tuple, sequence, optional
+        Distribution parameters, used if `data1` or `data2` are strings.
+    alternative : str, as documented in stats.kstest
+    mode : str, as documented in stats.kstest
+
+    Returns
+    -------
+    tuple of (K-S statistic, probability)
+
+    """
+    return scipy.stats.stats.kstest(data1, data2, args, alternative=alternative, mode=mode)
 
 
 def trima(a, limits=None, inclusive=(True,True)):
@@ -2107,7 +2126,7 @@ def winsorize(a, limits=None, inclusive=(True, True), inplace=False,
                 a[idx[upidx:]] = a[idx[upidx - 1]]
         return a
 
-    contains_nan, nan_policy = _contains_nan(a, nan_policy)
+    contains_nan, nan_policy = scipy.stats.stats._contains_nan(a, nan_policy)
     # We are going to modify a: better make a copy
     a = ma.array(a, copy=np.logical_not(inplace))
 
