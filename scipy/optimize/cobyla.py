@@ -13,7 +13,7 @@ Functions
 from __future__ import division, print_function, absolute_import
 
 import functools
-from threading import Rlock
+from threading import RLock
 
 import numpy as np
 from scipy.optimize import _cobyla
