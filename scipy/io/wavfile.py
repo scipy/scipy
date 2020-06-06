@@ -427,9 +427,9 @@ def _read_data_chunk(fid, format_tag, channels, bit_depth, is_big_endian,
     n_samples = size // bytes_per_sample
 
     if format_tag == WAVE_FORMAT.PCM:
-        if 1 <= bit_depth <= 8 or bytes_per_sample == 3:
+        if 1 <= bit_depth <= 8 or bytes_per_sample in {3, 5, 6, 7}:
             dtype = 'u1'
-        elif bit_depth <= 32:
+        elif bit_depth <= 64:
             dtype = f'{fmt}i{bytes_per_sample}'
         else:
             raise ValueError("Unsupported bit depth: the wav file "
@@ -451,11 +451,12 @@ def _read_data_chunk(fid, format_tag, channels, bit_depth, is_big_endian,
             fid.seek(start, 0)  # just in case it seeked, though it shouldn't
             data = numpy.frombuffer(fid.read(size), dtype=dtype)
 
-        if bytes_per_sample == 3:
-            a = numpy.zeros((len(data) // 3, 4), dtype=numpy.uint8)
-            a[:, 1:] = data.reshape((-1, 3))
-            data = a.view(numpy.int32).reshape(a.shape[:-1])
-
+        if bytes_per_sample in {3, 5, 6, 7}:
+            dt = numpy.int32 if bytes_per_sample == 3 else numpy.int64
+            a = numpy.zeros((len(data) // bytes_per_sample, dt().itemsize),
+                            dtype=numpy.uint8)
+            a[:, -bytes_per_sample:] = data.reshape((-1, bytes_per_sample))
+            data = a.view(dt).reshape(a.shape[:-1])
     else:
         if bytes_per_sample in {1, 2, 4, 8}:
             start = fid.tell()
@@ -531,8 +532,8 @@ def read(filename, mmap=False):
     filename : string or open file handle
         Input WAV file.
     mmap : bool, optional
-        Whether to read data as memory-mapped.
-        Only to be used on real files (Default: False).
+        Whether to read data as memory-mapped (default: False).  Not compatible
+        with some bit depths; see Notes.  Only to be used on real files.
 
         .. versionadded:: 0.12.0
 
@@ -562,18 +563,18 @@ def read(filename, mmap=False):
     =====================  ===========  ===========  =============
 
     Integer PCM WAV files can specify arbitrary bit depth, and this function
-    supports reading any depth from 1 to 32 bits.  Data is returned in the
+    supports reading any depth from 1 to 64 bits.  Data is returned in the
     smallest compatible numpy int type, in left-justified format.  8-bit and
     lower PCM is unsigned, while 9-bit and higher is signed.
 
     For example, 24-bit data will be stored as int32, with the MSB of the
     24-bit data stored at the MSB of the int32, and typically the least
     significant byte is 0x00.  (However, if a file actually contains data past
-    its specified bit depth, those bits will be read and preserved.)
+    its specified bit depth, those bits will be read and output, too. [2]_)
 
-    The bit justification and sign matches WAV's native internal format, which
-    allows memory mapping of WAV files that use 1, 2, or 4 bytes per sample
-    (so 24-bit files cannot be memory-mapped).
+    This bit justification and sign matches WAV's native internal format, which
+    allows memory mapping of WAV files that use 1, 2, 4, or 8 bytes per sample
+    (so 24-bit files cannot be memory-mapped, but 32-bit can).
 
     IEEE float PCM in 32- or 64-bit format is supported, with or without mmap.
     Values exceeding [-1, +1] are not clipped.
@@ -584,6 +585,8 @@ def read(filename, mmap=False):
        Interface and Data Specifications 1.0", section "Data Format of the
        Samples", August 1991
        http://www.tactilemedia.com/info/MCI_Control_Info.html
+    .. [2] Adobe Systems Incorporated, "Adobe Audition 3 User Guide", section
+       "Audio file formats: 24-bit Packed Int (type 1, 20-bit)", 2007
 
     Examples
     --------
