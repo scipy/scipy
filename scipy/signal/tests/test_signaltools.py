@@ -1918,7 +1918,6 @@ class TestCorrelate(object):
         assert_allclose(correlate(a, b, mode='full'), [6, 17, 32, 23, 12])
         assert_allclose(correlate(a, b, mode='valid'), [32])
 
-
     @pytest.mark.parametrize("mode", ["valid", "same", "full"])
     @pytest.mark.parametrize("behind", [True, False])
     def test_return_lags(self, mode, behind):
