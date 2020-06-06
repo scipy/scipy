@@ -2,8 +2,6 @@
 Matrix functions that use Pade approximation with inverse scaling and squaring.
 
 """
-from __future__ import division, print_function, absolute_import
-
 import warnings
 
 import numpy as np
@@ -72,7 +70,7 @@ class _MatrixM1PowerOperator(LinearOperator):
         return _MatrixM1PowerOperator(self._A.T, self._p)
 
 
-#TODO renovate or move this function when scipy operators are more mature
+#TODO renovate or move this function when SciPy operators are more mature
 def _onenormest_m1_power(A, p,
         t=2, itmax=5, compute_v=False, compute_w=False):
     """
@@ -164,7 +162,7 @@ def _briggs_helper_function(a, k):
     Parameters
     ----------
     a : complex
-        A complex number preferably belonging to the closed negative real axis.
+        A complex number.
     k : integer
         A nonnegative integer.
 
@@ -175,10 +173,10 @@ def _briggs_helper_function(a, k):
 
     Notes
     -----
-    The algorithm as written in the publication does not handle k=0 or k=1
+    The algorithm as formulated in the reference does not handle k=0 or k=1
     correctly, so these are special-cased in this implementation.
     This function is intended to not allow `a` to belong to the closed
-    negative real axis, but this is constraint is relaxed.
+    negative real axis, but this constraint is relaxed.
 
     References
     ----------
@@ -232,8 +230,8 @@ def _fractional_power_superdiag_entry(l1, l2, t12, p):
 
     Notes
     -----
-    Some amount of care has been taken to return a real number
-    if all of the inputs are real.
+    Care has been taken to return a real number if possible when
+    all of the inputs are real numbers.
 
     References
     ----------
@@ -245,7 +243,7 @@ def _fractional_power_superdiag_entry(l1, l2, t12, p):
     """
     if l1 == l2:
         f12 = t12 * p * l1**(p-1)
-    elif abs(l1) < abs(l2) / 2 or abs(l2) < abs(l1) / 2:
+    elif abs(l2 - l1) > abs(l1 + l2) / 2:
         f12 = t12 * ((l2**p) - (l1**p)) / (l2 - l1)
     else:
         # This is Eq. (5.5) in [1].
@@ -268,7 +266,8 @@ def _logm_superdiag_entry(l1, l2, t12):
     """
     Compute a superdiagonal entry of a matrix logarithm.
 
-    This is Eq. (11.28) in [1]_.
+    This is like Eq. (11.28) in [1]_, except the determination of whether
+    l1 and l2 are sufficiently far apart has been modified.
 
     Parameters
     ----------
@@ -286,8 +285,8 @@ def _logm_superdiag_entry(l1, l2, t12):
 
     Notes
     -----
-    Some amount of care has been taken to return a real number
-    if all of the inputs are real.
+    Care has been taken to return a real number if possible when
+    all of the inputs are real numbers.
 
     References
     ----------
@@ -298,15 +297,13 @@ def _logm_superdiag_entry(l1, l2, t12):
     """
     if l1 == l2:
         f12 = t12 / l1
-    elif abs(l1) < abs(l2) / 2 or abs(l2) < abs(l1) / 2:
+    elif abs(l2 - l1) > abs(l1 + l2) / 2:
         f12 = t12 * (np.log(l2) - np.log(l1)) / (l2 - l1)
     else:
         z = (l2 - l1) / (l2 + l1)
-        ua = _unwindk(np.log(l2) - np.log(l1))
-        ub = _unwindk(np.log(1+z) - np.log(1-z))
-        u = ua + ub
+        u = _unwindk(np.log(l2) - np.log(l1))
         if u:
-            f12 = t12 * (2*np.arctanh(z) + 2*np.pi*1j*(ua + ub)) / (l2 - l1)
+            f12 = t12 * 2 * (np.arctanh(z) + np.pi*1j*u) / (l2 - l1)
         else:
             f12 = t12 * 2 * np.arctanh(z) / (l2 - l1)
     return f12
@@ -849,12 +846,12 @@ def _logm(A):
     Notes
     -----
     In this function we look at triangular matrices that are similar
-    to the input matrix.  If any diagonal entry of such a triangular matrix
+    to the input matrix. If any diagonal entry of such a triangular matrix
     is exactly zero then the original matrix is singular.
     The matrix logarithm does not exist for such matrices,
     but in such cases we will pretend that the diagonal entries that are zero
     are actually slightly positive by an ad-hoc amount, in the interest
-    of returning something more useful than NaN.  This will cause a warning.
+    of returning something more useful than NaN. This will cause a warning.
 
     """
     A = np.asarray(A)

@@ -1,8 +1,0 @@
-from bento.commands import hooks
-
-@hooks.pre_build
-def pbuild(context):
-    context.tweak_extension("_fftpack", features="c cshlib bento f2py pyext",
-                          includes="src", use="dfftpack fftpack CLIB")
-    context.tweak_extension("convolve", features="c cshlib bento f2py pyext",
-                          includes="src", use="dfftpack fftpack CLIB")

@@ -6,8 +6,6 @@ by P. Dierckx (see http://www.netlib.org/dierckx/) transformed
 to double routines by Pearu Peterson.
 """
 # Created by Pearu Peterson, June,August 2003
-from __future__ import division, print_function, absolute_import
-
 __all__ = [
     'UnivariateSpline',
     'InterpolatedUnivariateSpline',
@@ -23,16 +21,19 @@ __all__ = [
 
 import warnings
 
-from numpy import zeros, concatenate, alltrue, ravel, all, diff, array, ones
+from numpy import zeros, concatenate, ravel, diff, array, ones
 import numpy as np
 
 from . import fitpack
 from . import dfitpack
 
 
-################ Univariate spline ####################
+dfitpack_int = dfitpack.types.intvar.dtype
 
-_curfit_messages = {1:"""
+
+# ############### Univariate spline ####################
+
+_curfit_messages = {1: """
 The required storage space exceeds the available storage space, as
 specified by the parameter nest: nest too small. If nest is already
 large (say nest > m/2), it may also indicate that s is too small.
@@ -40,18 +41,18 @@ The approximation returned is the weighted least-squares spline
 according to the knots t[0],t[1],...,t[n-1]. (n=nest) the parameter fp
 gives the corresponding weighted sum of squared residuals (fp>s).
 """,
-                    2:"""
+                    2: """
 A theoretically impossible result was found during the iteration
-proces for finding a smoothing spline with fp = s: s too small.
+process for finding a smoothing spline with fp = s: s too small.
 There is an approximation returned but the corresponding weighted sum
 of squared residuals does not satisfy the condition abs(fp-s)/s < tol.""",
-                    3:"""
+                    3: """
 The maximal number of iterations maxit (set to 20 by the program)
 allowed for finding a smoothing spline with fp=s has been reached: s
 too small.
 There is an approximation returned but the corresponding weighted sum
 of squared residuals does not satisfy the condition abs(fp-s)/s < tol.""",
-                    10:"""
+                    10: """
 Error on entry, no approximation returned. The following conditions
 must hold:
 xb<=x[0]<x[1]<...<x[m-1]<=xe, w[i]>0, i=0..m-1
@@ -69,7 +70,7 @@ _extrap_modes = {0: 0, 'extrapolate': 0,
 
 class UnivariateSpline(object):
     """
-    One-dimensional smoothing spline fit to a given set of data points.
+    1-D smoothing spline fit to a given set of data points.
 
     Fits a spline y = spl(x) of degree `k` to the provided `x`, `y` data.  `s`
     specifies the number of knots by specifying a smoothing condition.
@@ -77,7 +78,8 @@ class UnivariateSpline(object):
     Parameters
     ----------
     x : (N,) array_like
-        1-D array of independent input data. Must be increasing.
+        1-D array of independent input data. Must be increasing;
+        must be strictly increasing if `s` is 0.
     y : (N,) array_like
         1-D array of dependent input data, of the same length as `x`.
     w : (N,) array_like, optional
@@ -87,8 +89,8 @@ class UnivariateSpline(object):
         2-sequence specifying the boundary of the approximation interval. If
         None (default), ``bbox=[x[0], x[-1]]``.
     k : int, optional
-        Degree of the smoothing spline.  Must be <= 5.
-        Default is k=3, a cubic spline.
+        Degree of the smoothing spline.  Must be 1 <= `k` <= 5.
+        Default is `k` = 3, a cubic spline.
     s : float or None, optional
         Positive smoothing factor used to choose the number of knots.  Number
         of knots will be increased until the smoothing condition is satisfied::
@@ -131,7 +133,7 @@ class UnivariateSpline(object):
 
     **NaN handling**: If the input arrays contain ``nan`` values, the result
     is not useful, since the underlying spline fitting routines cannot deal
-    with ``nan`` . A workaround is to use zero weights for not-a-number
+    with ``nan``. A workaround is to use zero weights for not-a-number
     data points:
 
     >>> from scipy.interpolate import UnivariateSpline
@@ -167,23 +169,52 @@ class UnivariateSpline(object):
     def __init__(self, x, y, w=None, bbox=[None]*2, k=3, s=None,
                  ext=0, check_finite=False):
 
-        if check_finite:
-            if not np.isfinite(x).all() or not np.isfinite(y).all():
-                raise ValueError("x and y array must not contain NaNs or infs.")
+        x, y, w, bbox, self.ext = self.validate_input(x, y, w, bbox, k, s, ext,
+                                                      check_finite)
 
         # _data == x,y,w,xb,xe,k,s,n,t,c,fp,fpint,nrdata,ier
-        try:
-            self.ext = _extrap_modes[ext]
-        except KeyError:
-            raise ValueError("Unknown extrapolation mode %s." % ext)
-
-        data = dfitpack.fpcurf0(x,y,k,w=w,
-                                xb=bbox[0],xe=bbox[1],s=s)
+        data = dfitpack.fpcurf0(x, y, k, w=w, xb=bbox[0],
+                                xe=bbox[1], s=s)
         if data[-1] == 1:
             # nest too small, setting to maximum bound
             data = self._reset_nest(data)
         self._data = data
         self._reset_class()
+
+    @staticmethod
+    def validate_input(x, y, w, bbox, k, s, ext, check_finite):
+        x, y, bbox = np.asarray(x), np.asarray(y), np.asarray(bbox)
+        if w is not None:
+            w = np.asarray(w)
+        if check_finite:
+            w_finite = np.isfinite(w).all() if w is not None else True
+            if (not np.isfinite(x).all() or not np.isfinite(y).all() or
+                    not w_finite):
+                raise ValueError("x and y array must not contain "
+                                 "NaNs or infs.")
+        if s is None or s > 0:
+            if not np.all(diff(x) >= 0.0):
+                raise ValueError("x must be increasing if s > 0")
+        else:
+            if not np.all(diff(x) > 0.0):
+                raise ValueError("x must be strictly increasing if s = 0")
+        if x.size != y.size:
+            raise ValueError("x and y should have a same length")
+        elif w is not None and not x.size == y.size == w.size:
+            raise ValueError("x, y, and w should have a same length")
+        elif bbox.shape != (2,):
+            raise ValueError("bbox shape should be (2,)")
+        elif not (1 <= k <= 5):
+            raise ValueError("k should be 1 <= k <= 5")
+        elif s is not None and not s >= 0.0:
+            raise ValueError("s should be s >= 0.0")
+
+        try:
+            ext = _extrap_modes[ext]
+        except KeyError:
+            raise ValueError("Unknown extrapolation mode %s." % ext)
+
+        return x, y, w, bbox, ext
 
     @classmethod
     def _from_tck(cls, tck, ext=0):
@@ -191,16 +222,16 @@ class UnivariateSpline(object):
         self = cls.__new__(cls)
         t, c, k = tck
         self._eval_args = tck
-        #_data == x,y,w,xb,xe,k,s,n,t,c,fp,fpint,nrdata,ier
-        self._data = (None,None,None,None,None,k,None,len(t),t,
-                      c,None,None,None,None)
+        # _data == x,y,w,xb,xe,k,s,n,t,c,fp,fpint,nrdata,ier
+        self._data = (None, None, None, None, None, k, None, len(t), t,
+                      c, None, None, None, None)
         self.ext = ext
         return self
 
     def _reset_class(self):
         data = self._data
-        n,t,c,k,ier = data[7],data[8],data[9],data[5],data[-1]
-        self._eval_args = t[:n],c[:n],k
+        n, t, c, k, ier = data[7], data[8], data[9], data[5], data[-1]
+        self._eval_args = t[:n], c[:n], k
         if ier == 0:
             # the spline returned has a residual sum of squares fp
             # such that abs(fp-s)/s <= tol with tol a relative
@@ -218,7 +249,7 @@ class UnivariateSpline(object):
             # error
             if ier == 1:
                 self._set_class(LSQUnivariateSpline)
-            message = _curfit_messages.get(ier,'ier=%s' % (ier))
+            message = _curfit_messages.get(ier, 'ier=%s' % (ier))
             warnings.warn(message)
 
     def _set_class(self, cls):
@@ -233,14 +264,15 @@ class UnivariateSpline(object):
     def _reset_nest(self, data, nest=None):
         n = data[10]
         if nest is None:
-            k,m = data[5],len(data[0])
+            k, m = data[5], len(data[0])
             nest = m+k+1  # this is the maximum bound for nest
         else:
             if not n <= nest:
                 raise ValueError("`nest` can only be increased")
-        t, c, fpint, nrdata = [np.resize(data[j], nest) for j in [8,9,11,12]]
+        t, c, fpint, nrdata = [np.resize(data[j], nest) for j in
+                               [8, 9, 11, 12]]
 
-        args = data[:8] + (t,c,n,fpint,nrdata,data[13])
+        args = data[:8] + (t, c, n, fpint, nrdata, data[13])
         data = dfitpack.fpcurf1(*args)
         return data
 
@@ -272,12 +304,12 @@ class UnivariateSpline(object):
         ----------
         x : array_like
             A 1-D array of points at which to return the value of the smoothed
-            spline or its derivatives. Note: x can be unordered but the
-            evaluation is more efficient if x is (partially) ordered.
+            spline or its derivatives. Note: `x` can be unordered but the
+            evaluation is more efficient if `x` is (partially) ordered.
         nu  : int
             The order of derivative of the spline to compute.
         ext : int
-            Controls the value returned for elements of ``x`` not in the
+            Controls the value returned for elements of `x` not in the
             interval defined by the knot sequence.
 
             * if ext=0 or 'extrapolate', return the extrapolated value.
@@ -293,9 +325,6 @@ class UnivariateSpline(object):
         # empty input yields empty output
         if x.size == 0:
             return array([])
-#        if nu is None:
-#            return dfitpack.splev(*(self._eval_args+(x,)))
-#        return dfitpack.splder(nu=nu,*(self._eval_args+(x,)))
         if ext is None:
             ext = self.ext
         else:
@@ -311,13 +340,13 @@ class UnivariateSpline(object):
         Internally, the knot vector contains ``2*k`` additional boundary knots.
         """
         data = self._data
-        k,n = data[5],data[7]
+        k, n = data[5], data[7]
         return data[8][k:n-k]
 
     def get_coeffs(self):
         """Return spline coefficients."""
         data = self._data
-        k,n = data[5],data[7]
+        k, n = data[5], data[7]
         return data[9][:n-k-1]
 
     def get_residual(self):
@@ -354,7 +383,7 @@ class UnivariateSpline(object):
         >>> spl.integral(0, 3)
         9.0
 
-        which agrees with :math:`\int x^2 dx = x^3 / 3` between the limits
+        which agrees with :math:`\\int x^2 dx = x^3 / 3` between the limits
         of 0 and 3.
 
         A caveat is that this routine assumes the spline to be zero outside of
@@ -366,7 +395,7 @@ class UnivariateSpline(object):
         0.0
 
         """
-        return dfitpack.splint(*(self._eval_args+(a,b)))
+        return dfitpack.splint(*(self._eval_args+(a, b)))
 
     def derivatives(self, x):
         """ Return all derivatives of the spline at the point x.
@@ -391,7 +420,7 @@ class UnivariateSpline(object):
         array([2.25, 3.0, 2.0, 0])
 
         """
-        d,ier = dfitpack.spalde(*(self._eval_args+(x,)))
+        d, ier = dfitpack.spalde(*(self._eval_args+(x,)))
         if not ier == 0:
             raise ValueError("Error code returned by spalde: %s" % ier)
         return d
@@ -403,12 +432,12 @@ class UnivariateSpline(object):
         """
         k = self._data[5]
         if k == 3:
-            z,m,ier = dfitpack.sproot(*self._eval_args[:2])
+            z, m, ier = dfitpack.sproot(*self._eval_args[:2])
             if not ier == 0:
                 raise ValueError("Error code returned by spalde: %s" % ier)
             return z[:m]
         raise NotImplementedError('finding roots unsupported for '
-                                    'non-cubic splines')
+                                  'non-cubic splines')
 
     def derivative(self, n=1):
         """
@@ -450,11 +479,14 @@ class UnivariateSpline(object):
         >>> spl.derivative().roots() / np.pi
         array([ 0.50000001,  1.5       ,  2.49999998])
 
-        This agrees well with roots :math:`\pi/2 + n\pi` of `cos(x) = sin'(x)`.
+        This agrees well with roots :math:`\\pi/2 + n\\pi` of
+        :math:`\\cos(x) = \\sin'(x)`.
 
         """
         tck = fitpack.splder(self._eval_args, n)
-        return UnivariateSpline._from_tck(tck, self.ext)
+        # if self.ext is 'const', derivative.ext will be 'zeros'
+        ext = 1 if self.ext == 3 else self.ext
+        return UnivariateSpline._from_tck(tck, ext=ext)
 
     def antiderivative(self, n=1):
         """
@@ -513,16 +545,16 @@ class UnivariateSpline(object):
 
 class InterpolatedUnivariateSpline(UnivariateSpline):
     """
-    One-dimensional interpolating spline for a given set of data points.
+    1-D interpolating spline for a given set of data points.
 
-    Fits a spline y = spl(x) of degree `k` to the provided `x`, `y` data. Spline
-    function passes through all provided points. Equivalent to
+    Fits a spline y = spl(x) of degree `k` to the provided `x`, `y` data.
+    Spline function passes through all provided points. Equivalent to
     `UnivariateSpline` with  s=0.
 
     Parameters
     ----------
     x : (N,) array_like
-        Input dimension of data points -- must be increasing
+        Input dimension of data points -- must be strictly increasing
     y : (N,) array_like
         input dimension of data points
     w : (N,) array_like, optional
@@ -585,20 +617,15 @@ class InterpolatedUnivariateSpline(UnivariateSpline):
     def __init__(self, x, y, w=None, bbox=[None]*2, k=3,
                  ext=0, check_finite=False):
 
-        if check_finite:
-            if (not np.isfinite(x).all() or not np.isfinite(y).all() or
-                    not np.isfinite(w).all()):
-                raise ValueError("Input must not contain NaNs or infs.")
+        x, y, w, bbox, self.ext = self.validate_input(x, y, w, bbox, k, None,
+                                            ext, check_finite)
+        if not np.all(diff(x) > 0.0):
+            raise ValueError('x must be strictly increasing')
 
         # _data == x,y,w,xb,xe,k,s,n,t,c,fp,fpint,nrdata,ier
-        self._data = dfitpack.fpcurf0(x,y,k,w=w,
-                                      xb=bbox[0],xe=bbox[1],s=0)
+        self._data = dfitpack.fpcurf0(x, y, k, w=w, xb=bbox[0],
+                                      xe=bbox[1], s=0)
         self._reset_class()
-
-        try:
-            self.ext = _extrap_modes[ext]
-        except KeyError:
-            raise ValueError("Unknown extrapolation mode %s." % ext)
 
 
 _fpchec_error_string = """The input parameters have been rejected by fpchec. \
@@ -618,7 +645,7 @@ This means that at least one of the following conditions is violated:
 
 class LSQUnivariateSpline(UnivariateSpline):
     """
-    One-dimensional spline with explicit internal knots.
+    1-D spline with explicit internal knots.
 
     Fits a spline y = spl(x) of degree `k` to the provided `x`, `y` data.  `t`
     specifies the internal knots of the spline
@@ -635,14 +662,14 @@ class LSQUnivariateSpline(UnivariateSpline):
             bbox[0] < t[0] < ... < t[-1] < bbox[-1]
 
     w : (N,) array_like, optional
-        weights for spline fitting.  Must be positive.  If None (default),
+        weights for spline fitting. Must be positive. If None (default),
         weights are all equal.
     bbox : (2,) array_like, optional
         2-sequence specifying the boundary of the approximation interval. If
         None (default), ``bbox = [x[0], x[-1]]``.
     k : int, optional
         Degree of the smoothing spline.  Must be 1 <= `k` <= 5.
-        Default is k=3, a cubic spline.
+        Default is `k` = 3, a cubic spline.
     ext : int or str, optional
         Controls the extrapolation mode for elements
         not in the interval defined by the knot sequence.
@@ -685,7 +712,7 @@ class LSQUnivariateSpline(UnivariateSpline):
 
     Examples
     --------
-    >>> from scipy.interpolate import LSQUnivariateSpline
+    >>> from scipy.interpolate import LSQUnivariateSpline, UnivariateSpline
     >>> import matplotlib.pyplot as plt
     >>> x = np.linspace(-3, 3, 50)
     >>> y = np.exp(-x**2) + 0.1 * np.random.randn(50)
@@ -705,15 +732,26 @@ class LSQUnivariateSpline(UnivariateSpline):
     >>> spl.get_knots()
     array([-3., -1., 0., 1., 3.])
 
+    Constructing lsq spline using the knots from another spline:
+
+    >>> x = np.arange(10)
+    >>> s = UnivariateSpline(x, x, s=0)
+    >>> s.get_knots()
+    array([ 0.,  2.,  3.,  4.,  5.,  6.,  7.,  9.])
+    >>> knt = s.get_knots()
+    >>> s1 = LSQUnivariateSpline(x, x, knt[1:-1])    # Chop 1st and last knot
+    >>> s1.get_knots()
+    array([ 0.,  2.,  3.,  4.,  5.,  6.,  7.,  9.])
+
     """
 
     def __init__(self, x, y, t, w=None, bbox=[None]*2, k=3,
                  ext=0, check_finite=False):
 
-        if check_finite:
-            if (not np.isfinite(x).all() or not np.isfinite(y).all() or
-                    not np.isfinite(w).all() or not np.isfinite(t).all()):
-                raise ValueError("Input(s) must not contain NaNs or infs.")
+        x, y, w, bbox, self.ext = self.validate_input(x, y, w, bbox, k, None,
+                                                      ext, check_finite)
+        if not np.all(diff(x) >= 0.0):
+            raise ValueError('x must be increasing')
 
         # _data == x,y,w,xb,xe,k,s,n,t,c,fp,fpint,nrdata,ier
         xb = bbox[0]
@@ -724,7 +762,7 @@ class LSQUnivariateSpline(UnivariateSpline):
             xe = x[-1]
         t = concatenate(([xb]*(k+1), t, [xe]*(k+1)))
         n = len(t)
-        if not alltrue(t[k+1:n-k]-t[k:n-k-1] > 0, axis=0):
+        if not np.all(t[k+1:n-k]-t[k:n-k-1] > 0, axis=0):
             raise ValueError('Interior knots t must satisfy '
                              'Schoenberg-Whitney conditions')
         if not dfitpack.fpchec(x, t, k) == 0:
@@ -733,13 +771,8 @@ class LSQUnivariateSpline(UnivariateSpline):
         self._data = data[:-3] + (None, None, data[-1])
         self._reset_class()
 
-        try:
-            self.ext = _extrap_modes[ext]
-        except KeyError:
-            raise ValueError("Unknown extrapolation mode %s." % ext)
 
-
-################ Bivariate spline ####################
+# ############### Bivariate spline ####################
 
 class _BivariateSplineBase(object):
     """ Base class for Bivariate spline s(x,y) interpolation on the rectangle
@@ -773,7 +806,7 @@ class _BivariateSplineBase(object):
         """ Return spline coefficients."""
         return self.tck[2]
 
-    def __call__(self, x, y, mth=None, dx=0, dy=0, grid=True):
+    def __call__(self, x, y, dx=0, dy=0, grid=True):
         """
         Evaluate the spline or its derivatives at given positions.
 
@@ -789,6 +822,9 @@ class _BivariateSplineBase(object):
             If `grid` is True: evaluate spline at the grid points
             defined by the coordinate arrays x, y. The arrays must be
             sorted to increasing order.
+
+            Note that the axis ordering is inverted relative to
+            the output of meshgrid.
         dx : int
             Order of x-derivative
 
@@ -803,16 +839,9 @@ class _BivariateSplineBase(object):
 
             .. versionadded:: 0.14.0
 
-        mth : str
-            Deprecated argument. Has no effect.
-
         """
         x = np.asarray(x)
         y = np.asarray(y)
-
-        if mth is not None:
-            warnings.warn("The `mth` argument is deprecated and will be removed",
-                          FutureWarning)
 
         tx, ty, c = self.tck[:3]
         kx, ky = self.degrees
@@ -821,11 +850,11 @@ class _BivariateSplineBase(object):
                 return np.zeros((x.size, y.size), dtype=self.tck[2].dtype)
 
             if dx or dy:
-                z,ier = dfitpack.parder(tx,ty,c,kx,ky,dx,dy,x,y)
+                z, ier = dfitpack.parder(tx, ty, c, kx, ky, dx, dy, x, y)
                 if not ier == 0:
                     raise ValueError("Error code returned by parder: %s" % ier)
             else:
-                z,ier = dfitpack.bispev(tx,ty,c,kx,ky,x,y)
+                z, ier = dfitpack.bispev(tx, ty, c, kx, ky, x, y)
                 if not ier == 0:
                     raise ValueError("Error code returned by bispev: %s" % ier)
         else:
@@ -841,11 +870,11 @@ class _BivariateSplineBase(object):
                 return np.zeros(shape, dtype=self.tck[2].dtype)
 
             if dx or dy:
-                z,ier = dfitpack.pardeu(tx,ty,c,kx,ky,dx,dy,x,y)
+                z, ier = dfitpack.pardeu(tx, ty, c, kx, ky, dx, dy, x, y)
                 if not ier == 0:
                     raise ValueError("Error code returned by pardeu: %s" % ier)
             else:
-                z,ier = dfitpack.bispeu(tx,ty,c,kx,ky,x,y)
+                z, ier = dfitpack.bispeu(tx, ty, c, kx, ky, x, y)
                 if not ier == 0:
                     raise ValueError("Error code returned by bispeu: %s" % ier)
 
@@ -853,41 +882,41 @@ class _BivariateSplineBase(object):
         return z
 
 
-_surfit_messages = {1:"""
+_surfit_messages = {1: """
 The required storage space exceeds the available storage space: nxest
 or nyest too small, or s too small.
 The weighted least-squares spline corresponds to the current set of
 knots.""",
-                    2:"""
+                    2: """
 A theoretically impossible result was found during the iteration
 process for finding a smoothing spline with fp = s: s too small or
 badly chosen eps.
 Weighted sum of squared residuals does not satisfy abs(fp-s)/s < tol.""",
-                    3:"""
+                    3: """
 the maximal number of iterations maxit (set to 20 by the program)
 allowed for finding a smoothing spline with fp=s has been reached:
 s too small.
 Weighted sum of squared residuals does not satisfy abs(fp-s)/s < tol.""",
-                    4:"""
+                    4: """
 No more knots can be added because the number of b-spline coefficients
 (nx-kx-1)*(ny-ky-1) already exceeds the number of data points m:
 either s or m too small.
 The weighted least-squares spline corresponds to the current set of
 knots.""",
-                    5:"""
+                    5: """
 No more knots can be added because the additional knot would (quasi)
 coincide with an old one: s too small or too large a weight to an
 inaccurate data point.
 The weighted least-squares spline corresponds to the current set of
 knots.""",
-                    10:"""
+                    10: """
 Error on entry, no approximation returned. The following conditions
 must hold:
 xb<=x[i]<=xe, yb<=y[i]<=ye, w[i]>0, i=0..m-1
 If iopt==-1, then
   xb<tx[kx+1]<tx[kx+2]<...<tx[nx-kx-2]<xe
   yb<ty[ky+1]<ty[ky+2]<...<ty[ny-ky-2]<ye""",
-                    -3:"""
+                    -3: """
 The coefficients of the spline returned have been computed as the
 minimal norm least-squares solution of a (numerically) rank deficient
 system (deficiency=%i). If deficiency is large, the results may be
@@ -909,16 +938,21 @@ class BivariateSpline(_BivariateSplineBase):
 
     See Also
     --------
-    UnivariateSpline : a similar class for univariate spline interpolation
+    UnivariateSpline :
+        a similar class for univariate spline interpolation
     SmoothBivariateSpline :
-        to create a BivariateSpline through the given points
+        to create a bivariate spline through the given points
     LSQBivariateSpline :
-        to create a BivariateSpline using weighted least-squares fitting
-    SphereBivariateSpline :
-        bivariate spline interpolation in spherical cooridinates
+        to create a bivariate spline using weighted least-squares fitting
+    RectSphereBivariateSpline :
+        to create a bivariate spline over a rectangular mesh on a sphere
+    SmoothSphereBivariateSpline :
+        to create a smooth bivariate spline in spherical coordinates
+    LSQSphereBivariateSpline :
+        to create a bivariate spline in spherical coordinates using
+        weighted least-squares fitting
     bisplrep : older wrapping of FITPACK
     bisplev : older wrapping of FITPACK
-
     """
 
     @classmethod
@@ -926,7 +960,8 @@ class BivariateSpline(_BivariateSplineBase):
         """Construct a spline object from given tck and degree"""
         self = cls.__new__(cls)
         if len(tck) != 5:
-            raise ValueError("tck should be a 5 element tuple of tx, ty, c, kx, ky")
+            raise ValueError("tck should be a 5 element tuple of tx,"
+                             " ty, c, kx, ky")
         self.tck = tck[:3]
         self.degrees = tck[3:]
         return self
@@ -970,9 +1005,28 @@ class BivariateSpline(_BivariateSplineBase):
             The value of the resulting integral.
 
         """
-        tx,ty,c = self.tck[:3]
-        kx,ky = self.degrees
-        return dfitpack.dblint(tx,ty,c,kx,ky,xa,xb,ya,yb)
+        tx, ty, c = self.tck[:3]
+        kx, ky = self.degrees
+        return dfitpack.dblint(tx, ty, c, kx, ky, xa, xb, ya, yb)
+
+    @staticmethod
+    def _validate_input(x, y, z, w, kx, ky, eps):
+        x, y, z = np.asarray(x), np.asarray(y), np.asarray(z)
+        if not x.size == y.size == z.size:
+            raise ValueError('x, y, and z should have a same length')
+
+        if w is not None:
+            w = np.asarray(w)
+            if x.size != w.size:
+                raise ValueError('x, y, z, and w should have a same length')
+            elif not np.all(w >= 0.0):
+                raise ValueError('w should be positive')
+        if (eps is not None) and (not 0.0 < eps < 1.0):
+            raise ValueError('eps should be between (0, 1)')
+        if not x.size >= (kx + 1) * (ky + 1):
+            raise ValueError('The length of x, y and z should be at least'
+                             ' (kx+1) * (ky+1)')
+        return x, y, z, w
 
 
 class SmoothBivariateSpline(BivariateSpline):
@@ -988,7 +1042,7 @@ class SmoothBivariateSpline(BivariateSpline):
     bbox : array_like, optional
         Sequence of length 4 specifying the boundary of the rectangular
         approximation domain.  By default,
-        ``bbox=[min(x,tx),max(x,tx), min(y,ty),max(y,ty)]``.
+        ``bbox=[min(x), max(x), min(y), max(y)]``.
     kx, ky : ints, optional
         Degrees of the bivariate spline. Default is 3.
     s : float, optional
@@ -998,15 +1052,15 @@ class SmoothBivariateSpline(BivariateSpline):
         estimate of the standard deviation of ``z[i]``.
     eps : float, optional
         A threshold for determining the effective rank of an over-determined
-        linear system of equations. `eps` should have a value between 0 and 1,
-        the default is 1e-16.
+        linear system of equations. `eps` should have a value within the open
+        interval ``(0, 1)``, the default is 1e-16.
 
     See Also
     --------
     bisplrep : an older wrapping of FITPACK
     bisplev : an older wrapping of FITPACK
     UnivariateSpline : a similar class for univariate spline interpolation
-    LSQUnivariateSpline : to create a BivariateSpline using weighted
+    LSQBivariateSpline : to create a BivariateSpline using weighted least-squares fitting
 
     Notes
     -----
@@ -1015,26 +1069,37 @@ class SmoothBivariateSpline(BivariateSpline):
     """
 
     def __init__(self, x, y, z, w=None, bbox=[None] * 4, kx=3, ky=3, s=None,
-                 eps=None):
-        xb,xe,yb,ye = bbox
-        nx,tx,ny,ty,c,fp,wrk1,ier = dfitpack.surfit_smth(x,y,z,w,
-                                                         xb,xe,yb,ye,
-                                                         kx,ky,s=s,
-                                                         eps=eps,lwrk2=1)
+                 eps=1e-16):
+
+        x, y, z, w = self._validate_input(x, y, z, w, kx, ky, eps)
+        bbox = ravel(bbox)
+        if not bbox.shape == (4,):
+            raise ValueError('bbox shape should be (4,)')
+        if s is not None and not s >= 0.0:
+            raise ValueError("s should be s >= 0.0")
+
+        xb, xe, yb, ye = bbox
+        nx, tx, ny, ty, c, fp, wrk1, ier = dfitpack.surfit_smth(x, y, z, w,
+                                                                xb, xe, yb,
+                                                                ye, kx, ky,
+                                                                s=s, eps=eps,
+                                                                lwrk2=1)
         if ier > 10:          # lwrk2 was to small, re-run
-            nx,tx,ny,ty,c,fp,wrk1,ier = dfitpack.surfit_smth(x,y,z,w,
-                                                         xb,xe,yb,ye,
-                                                         kx,ky,s=s,
-                                                         eps=eps,lwrk2=ier)
-        if ier in [0,-1,-2]:  # normal return
+            nx, tx, ny, ty, c, fp, wrk1, ier = dfitpack.surfit_smth(x, y, z, w,
+                                                                    xb, xe, yb,
+                                                                    ye, kx, ky,
+                                                                    s=s,
+                                                                    eps=eps,
+                                                                    lwrk2=ier)
+        if ier in [0, -1, -2]:  # normal return
             pass
         else:
-            message = _surfit_messages.get(ier,'ier=%s' % (ier))
+            message = _surfit_messages.get(ier, 'ier=%s' % (ier))
             warnings.warn(message)
 
         self.fp = fp
-        self.tck = tx[:nx],ty[:ny],c[:(nx-kx-1)*(ny-ky-1)]
-        self.degrees = kx,ky
+        self.tck = tx[:nx], ty[:ny], c[:(nx-kx-1)*(ny-ky-1)]
+        self.degrees = kx, ky
 
 
 class LSQBivariateSpline(BivariateSpline):
@@ -1057,8 +1122,8 @@ class LSQBivariateSpline(BivariateSpline):
         Degrees of the bivariate spline. Default is 3.
     eps : float, optional
         A threshold for determining the effective rank of an over-determined
-        linear system of equations. `eps` should have a value between 0 and 1,
-        the default is 1e-16.
+        linear system of equations. `eps` should have a value within the open
+        interval ``(0, 1)``, the default is 1e-16.
 
     See Also
     --------
@@ -1075,22 +1140,28 @@ class LSQBivariateSpline(BivariateSpline):
 
     def __init__(self, x, y, z, tx, ty, w=None, bbox=[None]*4, kx=3, ky=3,
                  eps=None):
+
+        x, y, z, w = self._validate_input(x, y, z, w, kx, ky, eps)
+        bbox = ravel(bbox)
+        if not bbox.shape == (4,):
+            raise ValueError('bbox shape should be (4,)')
+
         nx = 2*kx+2+len(tx)
         ny = 2*ky+2+len(ty)
-        tx1 = zeros((nx,),float)
-        ty1 = zeros((ny,),float)
+        tx1 = zeros((nx,), float)
+        ty1 = zeros((ny,), float)
         tx1[kx+1:nx-kx-1] = tx
         ty1[ky+1:ny-ky-1] = ty
 
-        xb,xe,yb,ye = bbox
-        tx1,ty1,c,fp,ier = dfitpack.surfit_lsq(x,y,z,tx1,ty1,w,
-                                               xb,xe,yb,ye,
-                                               kx,ky,eps,lwrk2=1)
+        xb, xe, yb, ye = bbox
+        tx1, ty1, c, fp, ier = dfitpack.surfit_lsq(x, y, z, tx1, ty1, w,
+                                                   xb, xe, yb, ye,
+                                                   kx, ky, eps, lwrk2=1)
         if ier > 10:
-            tx1,ty1,c,fp,ier = dfitpack.surfit_lsq(x,y,z,tx1,ty1,w,
-                                                   xb,xe,yb,ye,
-                                                   kx,ky,eps,lwrk2=ier)
-        if ier in [0,-1,-2]:  # normal return
+            tx1, ty1, c, fp, ier = dfitpack.surfit_lsq(x, y, z, tx1, ty1, w,
+                                                       xb, xe, yb, ye,
+                                                       kx, ky, eps, lwrk2=ier)
+        if ier in [0, -1, -2]:  # normal return
             pass
         else:
             if ier < -2:
@@ -1137,21 +1208,23 @@ class RectBivariateSpline(BivariateSpline):
     """
 
     def __init__(self, x, y, z, bbox=[None] * 4, kx=3, ky=3, s=0):
-        x, y = ravel(x), ravel(y)
-        if not all(diff(x) > 0.0):
-            raise TypeError('x must be strictly increasing')
-        if not all(diff(y) > 0.0):
-            raise TypeError('y must be strictly increasing')
-        if not ((x.min() == x[0]) and (x.max() == x[-1])):
-            raise TypeError('x must be strictly ascending')
-        if not ((y.min() == y[0]) and (y.max() == y[-1])):
-            raise TypeError('y must be strictly ascending')
+        x, y, bbox = ravel(x), ravel(y), ravel(bbox)
+        z = np.asarray(z)
+        if not np.all(diff(x) > 0.0):
+            raise ValueError('x must be strictly increasing')
+        if not np.all(diff(y) > 0.0):
+            raise ValueError('y must be strictly increasing')
         if not x.size == z.shape[0]:
-            raise TypeError('x dimension of z must have same number of '
-                            'elements as x')
+            raise ValueError('x dimension of z must have same number of '
+                             'elements as x')
         if not y.size == z.shape[1]:
-            raise TypeError('y dimension of z must have same number of '
-                            'elements as y')
+            raise ValueError('y dimension of z must have same number of '
+                             'elements as y')
+        if not bbox.shape == (4,):
+            raise ValueError('bbox shape should be (4,)')
+        if s is not None and not s >= 0.0:
+            raise ValueError("s should be s >= 0.0")
+
         z = ravel(z)
         xb, xe, yb, ye = bbox
         nx, tx, ny, ty, c, fp, ier = dfitpack.regrid_smth(x, y, z, xb, xe, yb,
@@ -1282,19 +1355,19 @@ class SmoothSphereBivariateSpline(SphereBivariateSpline):
     ----------
     theta, phi, r : array_like
         1-D sequences of data points (order is not important). Coordinates
-        must be given in radians. Theta must lie within the interval (0, pi),
-        and phi must lie within the interval (0, 2pi).
+        must be given in radians. Theta must lie within the interval
+        ``[0, pi]``, and phi must lie within the interval ``[0, 2pi]``.
     w : array_like, optional
         Positive 1-D sequence of weights.
     s : float, optional
         Positive smoothing factor defined for estimation condition:
         ``sum((w(i)*(r(i) - s(theta(i), phi(i))))**2, axis=0) <= s``
-        Default ``s=len(w)`` which should be a good value if 1/w[i] is an
-        estimate of the standard deviation of r[i].
+        Default ``s=len(w)`` which should be a good value if ``1/w[i]`` is an
+        estimate of the standard deviation of ``r[i]``.
     eps : float, optional
         A threshold for determining the effective rank of an over-determined
-        linear system of equations. `eps` should have a value between 0 and 1,
-        the default is 1e-16.
+        linear system of equations. `eps` should have a value within the open
+        interval ``(0, 1)``, the default is 1e-16.
 
     Notes
     -----
@@ -1350,6 +1423,19 @@ class SmoothSphereBivariateSpline(SphereBivariateSpline):
     """
 
     def __init__(self, theta, phi, r, w=None, s=0., eps=1E-16):
+
+        # input validation
+        if not ((0.0 <= theta).all() and (theta <= np.pi).all()):
+            raise ValueError('theta should be between [0, pi]')
+        if not ((0.0 <= phi).all() and (phi <= 2.0 * np.pi).all()):
+            raise ValueError('phi should be between [0, 2pi]')
+        if w is not None and not (w >= 0.0).all():
+            raise ValueError('w should be positive')
+        if not s >= 0.0:
+            raise ValueError('s should be positive')
+        if not 0.0 < eps < 1.0:
+            raise ValueError('eps should be between (0, 1)')
+
         if np.issubclass_(w, float):
             w = ones(len(theta)) * w
         nt_, tt_, np_, tp_, c, fp, ier = dfitpack.spherfit_smth(theta, phi,
@@ -1369,14 +1455,17 @@ class LSQSphereBivariateSpline(SphereBivariateSpline):
     Weighted least-squares bivariate spline approximation in spherical
     coordinates.
 
+    Determines a smooth bicubic spline according to a given
+    set of knots in the `theta` and `phi` directions.
+
     .. versionadded:: 0.11.0
 
     Parameters
     ----------
     theta, phi, r : array_like
         1-D sequences of data points (order is not important). Coordinates
-        must be given in radians. Theta must lie within the interval (0, pi),
-        and phi must lie within the interval (0, 2pi).
+        must be given in radians. Theta must lie within the interval
+        ``[0, pi]``, and phi must lie within the interval ``[0, 2pi]``.
     tt, tp : array_like
         Strictly ordered 1-D sequences of knots coordinates.
         Coordinates must satisfy ``0 < tt[i] < pi``, ``0 < tp[i] < 2*pi``.
@@ -1385,8 +1474,8 @@ class LSQSphereBivariateSpline(SphereBivariateSpline):
         and `r`.
     eps : float, optional
         A threshold for determining the effective rank of an over-determined
-        linear system of equations. `eps` should have a value between 0 and 1,
-        the default is 1e-16.
+        linear system of equations. `eps` should have a value within the
+        open interval ``(0, 1)``, the default is 1e-16.
 
     Notes
     -----
@@ -1448,6 +1537,20 @@ class LSQSphereBivariateSpline(SphereBivariateSpline):
     """
 
     def __init__(self, theta, phi, r, tt, tp, w=None, eps=1E-16):
+
+        if not ((0.0 <= theta).all() and (theta <= np.pi).all()):
+            raise ValueError('theta should be between [0, pi]')
+        if not ((0.0 <= phi).all() and (phi <= 2*np.pi).all()):
+            raise ValueError('phi should be between [0, 2pi]')
+        if not ((0.0 < tt).all() and (tt < np.pi).all()):
+            raise ValueError('tt should be between (0, pi)')
+        if not ((0.0 < tp).all() and (tp < 2*np.pi).all()):
+            raise ValueError('tp should be between (0, 2pi)')
+        if w is not None and not (w >= 0.0).all():
+            raise ValueError('w should be positive')
+        if not 0.0 < eps < 1.0:
+            raise ValueError('eps should be between (0, 1)')
+
         if np.issubclass_(w, float):
             w = ones(len(theta)) * w
         nt_, np_ = 8 + len(tt), 8 + len(tp)
@@ -1459,7 +1562,7 @@ class LSQSphereBivariateSpline(SphereBivariateSpline):
         if ier < -2:
             deficiency = 6 + (nt_ - 8) * (np_ - 7) + ier
             message = _spherefit_messages.get(-3) % (deficiency, -ier)
-            warnings.warn(message)
+            warnings.warn(message, stacklevel=2)
         elif ier not in [0, -1, -2]:
             message = _spherefit_messages.get(ier, 'ier=%s' % (ier))
             raise ValueError(message)
@@ -1509,12 +1612,14 @@ class RectSphereBivariateSpline(SphereBivariateSpline):
     Parameters
     ----------
     u : array_like
-        1-D array of latitude coordinates in strictly ascending order.
+        1-D array of colatitude coordinates in strictly ascending order.
         Coordinates must be given in radians and lie within the interval
-        (0, pi).
+        ``[0, pi]``.
     v : array_like
         1-D array of longitude coordinates in strictly ascending order.
-        Coordinates must be given in radians, and must lie within (0, 2pi).
+        Coordinates must be given in radians. First element (``v[0]``) must lie
+        within the interval ``[-pi, pi)``. Last element (``v[-1]``) must satisfy
+        ``v[-1] <= v[0] + 2*pi``.
     r : array_like
         2-D array of data with shape ``(u.size, v.size)``.
     s : float, optional
@@ -1593,7 +1698,7 @@ class RectSphereBivariateSpline(SphereBivariateSpline):
     >>> ax2.imshow(data_interp, interpolation='nearest')
     >>> plt.show()
 
-    Chosing the optimal value of ``s`` can be a delicate task. Recommended
+    Choosing the optimal value of ``s`` can be a delicate task. Recommended
     values for ``s`` depend on the accuracy of the data values.  If the user
     has an idea of the statistical errors on the data, she can also find a
     proper estimate for ``s``. By assuming that, if she specifies the
@@ -1617,7 +1722,7 @@ class RectSphereBivariateSpline(SphereBivariateSpline):
 
     >>> fig2 = plt.figure()
     >>> s = [3e9, 2e9, 1e9, 1e8]
-    >>> for ii in xrange(len(s)):
+    >>> for ii in range(len(s)):
     ...     lut = RectSphereBivariateSpline(lats, lons, data, s=s[ii])
     ...     data_interp = lut.ev(new_lats.ravel(),
     ...                          new_lons.ravel()).reshape((360, 180)).T
@@ -1630,8 +1735,8 @@ class RectSphereBivariateSpline(SphereBivariateSpline):
 
     def __init__(self, u, v, r, s=0., pole_continuity=False, pole_values=None,
                  pole_exact=False, pole_flat=False):
-        iopt = np.array([0, 0, 0], dtype=int)
-        ider = np.array([-1, 0, -1, 0], dtype=int)
+        iopt = np.array([0, 0, 0], dtype=dfitpack_int)
+        ider = np.array([-1, 0, -1, 0], dtype=dfitpack_int)
         if pole_values is None:
             pole_values = (None, None)
         elif isinstance(pole_values, (float, np.float32, np.float64)):
@@ -1658,28 +1763,42 @@ class RectSphereBivariateSpline(SphereBivariateSpline):
         ider[1], ider[3] = pole_flat
 
         u, v = np.ravel(u), np.ravel(v)
+
+        if not ((0.0 <= u).all() and (u <= np.pi).all()):
+            raise ValueError('u should be between [0, pi]')
+        if not -np.pi <= v[0] < np.pi:
+            raise ValueError('v[0] should be between [-pi, pi)')
+        if not v[-1] <= v[0] + 2*np.pi:
+            raise ValueError('v[-1] should be v[0] + 2pi or less ')
+
         if not np.all(np.diff(u) > 0.0):
-            raise TypeError('u must be strictly increasing')
+            raise ValueError('u must be strictly increasing')
         if not np.all(np.diff(v) > 0.0):
-            raise TypeError('v must be strictly increasing')
+            raise ValueError('v must be strictly increasing')
 
         if not u.size == r.shape[0]:
-            raise TypeError('u dimension of r must have same number of '
-                            'elements as u')
+            raise ValueError('u dimension of r must have same number of '
+                             'elements as u')
         if not v.size == r.shape[1]:
-            raise TypeError('v dimension of r must have same number of '
-                            'elements as v')
+            raise ValueError('v dimension of r must have same number of '
+                             'elements as v')
 
         if pole_continuity[1] is False and pole_flat[1] is True:
-            raise TypeError('if pole_continuity is False, so must be '
-                            'pole_flat')
+            raise ValueError('if pole_continuity is False, so must be '
+                             'pole_flat')
         if pole_continuity[0] is False and pole_flat[0] is True:
-            raise TypeError('if pole_continuity is False, so must be '
-                            'pole_flat')
+            raise ValueError('if pole_continuity is False, so must be '
+                             'pole_flat')
+
+        if not s >= 0.0:
+            raise ValueError('s should be positive')
 
         r = np.ravel(r)
         nu, tu, nv, tv, c, fp, ier = dfitpack.regrid_smth_spher(iopt, ider,
-                                       u.copy(), v.copy(), r.copy(), r0, r1, s)
+                                                                u.copy(),
+                                                                v.copy(),
+                                                                r.copy(),
+                                                                r0, r1, s)
 
         if ier not in [0, -1, -2]:
             msg = _spfit_messages.get(ier, 'ier=%s' % (ier))

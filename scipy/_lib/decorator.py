@@ -28,11 +28,9 @@
 # DAMAGE.
 
 """
-Decorator module, see http://pypi.python.org/pypi/decorator
+Decorator module, see https://pypi.python.org/pypi/decorator
 for the documentation.
 """
-from __future__ import print_function
-
 import re
 import sys
 import inspect
@@ -49,7 +47,7 @@ if sys.version >= '3':
         return cls.__init__
 else:
     class getfullargspec(object):
-        "A quick and dirty replacement for getfullargspec for Python 2.X"
+        "A quick and dirty replacement for getfullargspec for Python 2.x"
         def __init__(self, f):
             self.args, self.varargs, self.varkw, self.defaults = \
                 inspect.getargspec(f)
@@ -77,14 +75,15 @@ def getargspec(f):
     spec = getfullargspec(f)
     return ArgSpec(spec.args, spec.varargs, spec.varkw, spec.defaults)
 
-DEF = re.compile('\s*def\s*([_\w][_\w\d]*)\s*\(')
+
+DEF = re.compile(r'\s*def\s*([_\w][_\w\d]*)\s*\(')
 
 
 # basic functionality
 class FunctionMaker(object):
     """
     An object with the ability to create functions with a given signature.
-    It has attributes name, doc, module, signature, defaults, dict and
+    It has attributes name, doc, module, signature, defaults, dict, and
     methods update and make.
     """
 
@@ -146,7 +145,7 @@ class FunctionMaker(object):
         # check existence required attributes
         assert hasattr(self, 'name')
         if not hasattr(self, 'signature'):
-            raise TypeError('You are decorating a non function: %s' % func)
+            raise TypeError('You are decorating a non-function: %s' % func)
 
     def update(self, func, **kw):
         "Update the signature of func with the data in self"
@@ -188,7 +187,7 @@ class FunctionMaker(object):
         try:
             code = compile(src, filename, 'single')
             exec(code, evaldict)
-        except:
+        except:  # noqa: E722
             print('Error in generated code:', file=sys.stderr)
             print(src, file=sys.stderr)
             raise
@@ -202,8 +201,8 @@ class FunctionMaker(object):
     def create(cls, obj, body, evaldict, defaults=None,
                doc=None, module=None, addsource=True, **attrs):
         """
-        Create a function from the strings name, signature and body.
-        evaldict is the evaluation dictionary. If addsource is true an
+        Create a function from the strings name, signature, and body.
+        evaldict is the evaluation dictionary. If addsource is true, an
         attribute __source__ is added to the result. The attributes attrs
         are added, if any.
         """
@@ -281,6 +280,7 @@ class ContextManager(_GeneratorContextManager):
         return FunctionMaker.create(
             func, "with _self_: return _func_(%(shortsignature)s)",
             dict(_self_=self, _func_=func), __wrapped__=func)
+
 
 init = getfullargspec(_GeneratorContextManager.__init__)
 n_args = len(init.args)
@@ -390,9 +390,8 @@ def dispatch_on(*dispatch_args):
             An utility to introspect the dispatch algorithm
             """
             check(types)
-            lst = []
-            for anc in itertools.product(*ancestors(*types)):
-                lst.append(tuple(a.__name__ for a in anc))
+            lst = [tuple(a.__name__ for a in anc)
+                   for anc in itertools.product(*ancestors(*types))]
             return lst
 
         def _dispatch(dispatch_args, *args, **kw):

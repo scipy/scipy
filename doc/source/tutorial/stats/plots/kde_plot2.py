@@ -11,6 +11,7 @@ def my_kde_bandwidth(obj, fac=1./5):
     """We use Scott's Rule, multiplied by a constant factor."""
     return np.power(obj.n, -1./(obj.d+4)) * fac
 
+
 fig = plt.figure()
 ax = fig.add_subplot(111)
 

@@ -115,7 +115,7 @@ c          is used, the value of nu should be left unchanged between
 c          subsequent calls.
 c          in case iopt(1)=-1,the value of nu must be specified on entry
 c  tu    : real array of dimension at least nuest.
-c          on succesful exit, this array will contain the knots of the
+c          on successful exit, this array will contain the knots of the
 c          spline with respect to the u-variable, i.e. the position
 c          of the interior knots tu(5),...,tu(nu-4) as well as the
 c          position of the additional knots tu(1)=...=tu(4)=0 and
@@ -133,7 +133,7 @@ c          is used, the value of nv should be left unchanged between
 c          subsequent calls. in case iopt(1)=-1, the value of nv should
 c          be specified on entry.
 c  tv    : real array of dimension at least nvest.
-c          on succesful exit, this array will contain the knots of the
+c          on successful exit, this array will contain the knots of the
 c          spline with respect to the v-variable, i.e. the position of
 c          the interior knots tv(5),...,tv(nv-4) as well as the position
 c          of the additional knots tv(1),...,tv(4) and tv(nv-3),...,
@@ -145,13 +145,13 @@ c          tv(5),...tv(nv-4) must be supplied by the user, before entry.
 c          see also the restrictions (ier=10).
 c  u     : real array of dimension at least (m).
 c  v     : real array of dimension at least (m).
-c          on succesful exit, u(i),v(i) contains the co-ordinates of
+c          on successful exit, u(i),v(i) contains the co-ordinates of
 c          the i-th data point with respect to the transformed rectan-
 c          gular approximation domain, for i=1,2,...,m.
 c          if the computation mode iopt(1)=1 is used the values of
 c          u(i),v(i) should be left unchanged between subsequent calls.
 c  c     : real array of dimension at least (nuest-4)*(nvest-4).
-c          on succesful exit, c contains the coefficients of the spline
+c          on successful exit, c contains the coefficients of the spline
 c          approximation s(u,v).
 c  fp    : real. unless ier=10, fp contains the weighted sum of
 c          squared residuals of the spline approximation returned.
@@ -213,7 +213,7 @@ c            polar spline according to the current set of knots.
 c            the parameter fp gives the corresponding weighted sum of
 c            squared residuals (fp>s).
 c   ier=2  : error. a theoretically impossible result was found during
-c            the iteration proces for finding a smoothing spline with
+c            the iteration process for finding a smoothing spline with
 c            fp = s. probably causes : s too small or badly chosen eps.
 c            there is an approximation returned but the corresponding
 c            weighted sum of squared residuals does not satisfy the

@@ -46,6 +46,7 @@ npy_cdouble cbesh_wrap1( double v, npy_cdouble z);
 npy_cdouble cbesh_wrap1_e( double v, npy_cdouble z);  
 npy_cdouble cbesh_wrap2( double v, npy_cdouble z);
 npy_cdouble cbesh_wrap2_e( double v, npy_cdouble z);
+double sin_pi(double x);
 /* 
 int cairy_(double *, int *, int *, doublecomplex *, int *, int *);
 int cbiry_(doublecomplex *, int *, int *, doublecomplex *, int *, int *);

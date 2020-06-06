@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 from numpy import poly1d
 from scipy.special import beta
@@ -25,8 +23,8 @@ from scipy.special import beta
 #
 # t = mp.taylor(mpvar, 0, 8)
 # p, q = mp.pade(t, 4, 4)
-# print "p =", [mp.fp.mpf(c) for c in p]
-# print "q =", [mp.fp.mpf(c) for c in q]
+# print("p =", [mp.fp.mpf(c) for c in p])
+# print("q =", [mp.fp.mpf(c) for c in q])
 #---------------------------------------------------------------------------
 
 # Pade coefficients for the Tukey Lambda variance function.
@@ -60,7 +58,7 @@ def tukeylambda_variance(lam):
     -----
     In an interval around lambda=0, this function uses the [4,4] Pade
     approximation to compute the variance.  Otherwise it uses the standard
-    formula (http://en.wikipedia.org/wiki/Tukey_lambda_distribution).  The
+    formula (https://en.wikipedia.org/wiki/Tukey_lambda_distribution).  The
     Pade approximation is used because the standard formula has a removable
     discontinuity at lambda = 0, and does not produce accurate numerical
     results near lambda = 0.
@@ -130,8 +128,8 @@ def tukeylambda_variance(lam):
 # t = mp.taylor(mpkurt, 0, 9, method='quad', radius=0.01)
 # t = [mp.chop(c, tol=1e-15) for c in t]
 # p, q = mp.pade(t, 4, 4)
-# print "p =", [mp.fp.mpf(c) for c in p]
-# print "q =", [mp.fp.mpf(c) for c in q]
+# print("p =", [mp.fp.mpf(c) for c in p])
+# print("q =", [mp.fp.mpf(c) for c in q])
 #---------------------------------------------------------------------------
 
 # Pade coefficients for the Tukey Lambda kurtosis function.

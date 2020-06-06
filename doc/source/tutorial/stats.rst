@@ -4,92 +4,106 @@ Statistics (`scipy.stats`)
 .. sectionauthor:: Travis E. Oliphant
 .. sectionauthor:: Josef Perktold
 .. sectionauthor:: Nicky van Foreest
+.. sectionauthor:: Sambit Panda
+
+.. currentmodule:: scipy
 
 Introduction
 ------------
 
-In this tutorial we discuss many, but certainly not all, features of
+In this tutorial, we discuss many, but certainly not all, features of
 ``scipy.stats``. The intention here is to provide a user with a
-working knowledge of this package. We refer to the `reference manual
-<http://docs.scipy.org/doc/scipy/reference/stats.html>`_ for further
-details.
-
+working knowledge of this package. We refer to the
+:ref:`reference manual <statsrefmanual>` for further details.
 
 Note: This documentation is work in progress.
 
+.. toctree::
+   :maxdepth: 1
 
-Random Variables
+   stats/discrete
+   stats/continuous
+
+
+Random variables
 ----------------
 
 There are two general distribution classes that have been implemented
 for encapsulating :ref:`continuous random variables
 <continuous-random-variables>` and :ref:`discrete random variables
-<discrete-random-variables>` . Over 80 continuous random variables
+<discrete-random-variables>`. Over 80 continuous random variables
 (RVs) and 10 discrete random variables have been implemented using
-these classes. Besides this, new routines and distributions can easily
-added by the end user. (If you create one, please contribute it).
+these classes. Besides this, new routines and distributions can be
+easily added by the end user. (If you create one, please contribute it.)
 
 All of the statistics functions are located in the sub-package
 :mod:`scipy.stats` and a fairly complete listing of these functions
-can be obtained using ``info(stats)``.  The list of the random
+can be obtained using ``info(stats)``. The list of the random
 variables available can also be obtained from the docstring for the
 stats sub-package.
 
-In the discussion below we mostly focus on continuous RVs. Nearly all
-applies to discrete variables also, but we point out some differences
+In the discussion below, we mostly focus on continuous RVs. Nearly everything
+also applies to discrete variables, but we point out some differences
 here: :ref:`discrete_points_label`.
 
+In the code samples below, we assume that the :mod:`scipy.stats` package
+is imported as
 
-Getting Help
+    >>> from scipy import stats
+
+and in some cases we assume that individual objects are imported as
+
+    >>> from scipy.stats import norm
+
+Getting help
 ^^^^^^^^^^^^
 
 First of all, all distributions are accompanied with help
-functions. To obtain just some basic information we can call
+functions. To obtain just some basic information, we print the relevant
+docstring: ``print(stats.norm.__doc__)``.
 
-    >>> from scipy import stats
-    >>> from scipy.stats import norm
-    >>> print norm.__doc__
-
-To find the support, i.e., upper and lower bound of the distribution,
+To find the support, i.e., upper and lower bounds of the distribution,
 call:
 
-    >>> print 'bounds of distribution lower: %s, upper: %s' % (norm.a,norm.b)
+    >>> print('bounds of distribution lower: %s, upper: %s' % (norm.a, norm.b))
     bounds of distribution lower: -inf, upper: inf
 
 We can list all methods and properties of the distribution with
-``dir(norm)``.  As it turns out, some of the methods are private
-methods although they are not named as such (their name does not start
+``dir(norm)``. As it turns out, some of the methods are private,
+although they are not named as such (their names do not start
 with a leading underscore), for example ``veccdf``, are only available
 for internal calculation (those methods will give warnings when one tries to
 use them, and will be removed at some point).
 
-To obtain the `real` main methods, we list the methods of the frozen
+To obtain the *real* main methods, we list the methods of the frozen
 distribution. (We explain the meaning of a `frozen` distribution
 below).
 
     >>> rv = norm()
     >>> dir(rv)  # reformatted
-        ['__class__', '__delattr__', '__dict__', '__doc__', '__getattribute__',
-        '__hash__', '__init__', '__module__', '__new__', '__reduce__', '__reduce_ex__',
-        '__repr__', '__setattr__', '__str__', '__weakref__', 'args', 'cdf', 'dist',
-        'entropy', 'isf', 'kwds', 'moment', 'pdf', 'pmf', 'ppf', 'rvs', 'sf', 'stats']
+    ['__class__', '__delattr__', '__dict__', '__dir__', '__doc__', '__eq__',
+     '__format__', '__ge__', '__getattribute__', '__gt__', '__hash__',
+     '__init__', '__le__', '__lt__', '__module__', '__ne__', '__new__',
+     '__reduce__', '__reduce_ex__', '__repr__', '__setattr__', '__sizeof__',
+     '__str__', '__subclasshook__', '__weakref__', 'a', 'args', 'b', 'cdf',
+     'dist', 'entropy', 'expect', 'interval', 'isf', 'kwds', 'logcdf',
+     'logpdf', 'logpmf', 'logsf', 'mean', 'median', 'moment', 'pdf', 'pmf',
+     'ppf', 'random_state', 'rvs', 'sf', 'stats', 'std', 'var']
 
 Finally, we can obtain the list of available distribution through
 introspection:
 
-    >>> import warnings
-    >>> warnings.simplefilter('ignore', DeprecationWarning)
     >>> dist_continu = [d for d in dir(stats) if
-    ...                 isinstance(getattr(stats,d), stats.rv_continuous)]
+    ...                 isinstance(getattr(stats, d), stats.rv_continuous)]
     >>> dist_discrete = [d for d in dir(stats) if
-    ...                  isinstance(getattr(stats,d), stats.rv_discrete)]
-    >>> print 'number of continuous distributions:', len(dist_continu)
-    number of continuous distributions: 84
-    >>> print 'number of discrete distributions:  ', len(dist_discrete)
-    number of discrete distributions:   12
+    ...                  isinstance(getattr(stats, d), stats.rv_discrete)]
+    >>> print('number of continuous distributions: %d' % len(dist_continu))
+    number of continuous distributions: 101
+    >>> print('number of discrete distributions:   %d' % len(dist_discrete))
+    number of discrete distributions:   15
 
 
-Common Methods
+Common methods
 ^^^^^^^^^^^^^^
 
 The main public methods for continuous  RVs are:
@@ -112,22 +126,21 @@ Let's take a normal RV as an example.
 To compute the ``cdf`` at a number of points, we can pass a list or a numpy array.
 
     >>> norm.cdf([-1., 0, 1])
-    array([ 0.15865525,  0.5       ,  0.84134475])
+    array([ 0.15865525,  0.5,  0.84134475])
     >>> import numpy as np
     >>> norm.cdf(np.array([-1., 0, 1]))
-    array([ 0.15865525,  0.5       ,  0.84134475])
+    array([ 0.15865525,  0.5,  0.84134475])
 
-Thus, the basic methods such as `pdf`, `cdf`, and so on are vectorized
-with ``np.vectorize``.
+Thus, the basic methods, such as `pdf`, `cdf`, and so on, are vectorized.
 
 Other generally useful methods are supported too:
 
     >>> norm.mean(), norm.std(), norm.var()
     (0.0, 1.0, 1.0)
-    >>> norm.stats(moments = "mv")
+    >>> norm.stats(moments="mv")
     (array(0.0), array(1.0))
 
-To find the median of a distribution we can use the percent point
+To find the median of a distribution, we can use the percent point
 function ``ppf``, which is the inverse of the ``cdf``:
 
     >>> norm.ppf(0.5)
@@ -136,13 +149,29 @@ function ``ppf``, which is the inverse of the ``cdf``:
 To generate a sequence of random variates, use the ``size`` keyword
 argument:
 
-    >>> norm.rvs(size=5)
-    array([-0.35687759,  1.34347647, -0.11710531, -1.00725181, -0.51275702])
+    >>> norm.rvs(size=3)
+    array([-0.35687759,  1.34347647, -0.11710531])   # random
+
+Note that drawing random numbers relies on generators from
+`numpy.random`
+package. In the example above, the specific stream of
+random numbers is not reproducible across runs. To achieve reproducibility,
+you can explicitly seed a global variable
+
+    >>> np.random.seed(1234)
+
+Relying on a global state is not recommended, though. A better way is to use
+the `random_state` parameter, which accepts an instance of
+`numpy.random.RandomState` class, or an integer, which is then used to
+seed an internal ``RandomState`` object:
+
+    >>> norm.rvs(size=5, random_state=1234)
+    array([ 0.47143516, -1.19097569,  1.43270697, -0.3126519 , -0.72058873])
 
 Don't think that ``norm.rvs(5)`` generates 5 variates:
 
     >>> norm.rvs(5)
-    7.131624370075814
+    5.471435163732493
 
 Here, ``5`` with no keyword is being interpreted as the first possible
 keyword argument, ``loc``, which is the first of a pair of keyword arguments
@@ -150,19 +179,19 @@ taken by all continuous distributions.
 This brings us to the topic of the next subsection.
 
 
-Shifting and Scaling
+Shifting and scaling
 ^^^^^^^^^^^^^^^^^^^^
 
 All continuous distributions take ``loc`` and ``scale`` as keyword
 parameters to adjust the location and scale of the distribution,
-e.g. for the standard normal distribution the location is the mean and
+e.g., for the standard normal distribution, the location is the mean and
 the scale is the standard deviation.
 
-    >>> norm.stats(loc = 3, scale = 4, moments = "mv")
+    >>> norm.stats(loc=3, scale=4, moments="mv")
     (array(3.0), array(16.0))
 
-In many cases the standardized distribution for a random variable ``X``
-is obtained through the transformation ``(X - loc) / scale``.  The
+In many cases, the standardized distribution for a random variable ``X``
+is obtained through the transformation ``(X - loc) / scale``. The
 default values are ``loc = 0`` and ``scale = 1``.
 
 Smart use of ``loc`` and ``scale`` can help modify the standard
@@ -183,17 +212,17 @@ taking ``scale  = 1./lambda`` we get the proper scale.
 
 .. note:: Distributions that take shape parameters may
    require more than simple application of ``loc`` and/or
-   ``scale`` to achieve the desired form.  For example, the
+   ``scale`` to achieve the desired form. For example, the
    distribution of 2-D vector lengths given a constant vector
    of length :math:`R` perturbed by independent N(0, :math:`\sigma^2`)
    deviations in each component is
-   rice(:math:`R/\sigma`, scale= :math:`\sigma`).  The first argument
+   rice(:math:`R/\sigma`, scale= :math:`\sigma`). The first argument
    is a shape parameter that needs to be scaled along with :math:`x`.
 
 The uniform distribution is also interesting:
 
     >>> from scipy.stats import uniform
-    >>> uniform.cdf([0, 1, 2, 3, 4, 5], loc = 1, scale = 4)
+    >>> uniform.cdf([0, 1, 2, 3, 4, 5], loc=1, scale=4)
     array([ 0.  ,  0.  ,  0.25,  0.5 ,  0.75,  1.  ])
 
 
@@ -203,7 +232,7 @@ distribution like this, the first argument, i.e., the 5, gets passed
 to set the ``loc`` parameter. Let's see:
 
     >>> np.mean(norm.rvs(5, size=500))
-    4.983550784784704
+    5.0098355106969992
 
 Thus, to explain the output of the example of the last section:
 ``norm.rvs(5)`` generates a single normally distributed random variate with
@@ -215,12 +244,12 @@ can be minimized when calling more than one method of a given RV by
 using the technique of `Freezing a Distribution`_, as explained below.
 
 
-Shape Parameters
+Shape parameters
 ^^^^^^^^^^^^^^^^
 
 While a general continuous random variable can be shifted and scaled
 with the ``loc`` and ``scale`` parameters, some distributions require
-additional shape parameters. For instance, the gamma distribution, with density
+additional shape parameters. For instance, the gamma distribution with density
 
 .. math::
 
@@ -239,11 +268,11 @@ distribution. (We know from the above that this should be 1.)
     >>> gamma.shapes
     'a'
 
-Now we set the value of the shape variable to 1 to obtain the
+Now, we set the value of the shape variable to 1 to obtain the
 exponential distribution, so that we compare easily whether we get the
 results we expect.
 
-    >>>  gamma(1, scale=2.).stats(moments="mv")
+    >>> gamma(1, scale=2.).stats(moments="mv")
     (array(2.0), array(4.0))
 
 Notice that we can also specify shape parameters as keywords:
@@ -252,7 +281,7 @@ Notice that we can also specify shape parameters as keywords:
    (array(2.0), array(4.0))
 
 
-Freezing a Distribution
+Freezing a distribution
 ^^^^^^^^^^^^^^^^^^^^^^^
 
 Passing the ``loc`` and ``scale`` keywords time and again can become
@@ -270,13 +299,13 @@ instance of the distribution. Let us check this:
     >>> rv.mean(), rv.std()
     (2.0, 2.0)
 
-This is indeed what we should get.
+This is, indeed, what we should get.
 
 
 Broadcasting
 ^^^^^^^^^^^^
 
-The basic methods ``pdf`` and so on satisfy the usual numpy broadcasting rules. For
+The basic methods ``pdf``, and so on, satisfy the usual numpy broadcasting rules. For
 example, we can calculate the critical values for the upper tail of
 the t distribution for different probabilities and degrees of freedom.
 
@@ -284,7 +313,7 @@ the t distribution for different probabilities and degrees of freedom.
     array([[ 1.37218364,  1.81246112,  2.76376946],
            [ 1.36343032,  1.79588482,  2.71807918]])
 
-Here, the first row are the critical values for 10 degrees of freedom
+Here, the first row contains the critical values for 10 degrees of freedom
 and the second row for 11 degrees of freedom (d.o.f.). Thus, the
 broadcasting rules give the same result of calling ``isf`` twice:
 
@@ -295,7 +324,7 @@ broadcasting rules give the same result of calling ``isf`` twice:
 
 If the array with probabilities, i.e., ``[0.1, 0.05, 0.01]`` and the
 array of degrees of freedom i.e., ``[10, 11, 12]``, have the same
-array shape, then element wise matching is used. As an example, we can
+array shape, then element-wise matching is used. As an example, we can
 obtain the 10% tail for 10 d.o.f., the 5% tail for 11 d.o.f. and the
 1% tail for 12 d.o.f. by calling
 
@@ -305,20 +334,20 @@ obtain the 10% tail for 10 d.o.f., the 5% tail for 11 d.o.f. and the
 
 .. _discrete_points_label:
 
-Specific Points for Discrete Distributions
+Specific points for discrete distributions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Discrete distribution have mostly the same basic methods as the
-continuous distributions.  However ``pdf`` is replaced the probability
+Discrete distributions have mostly the same basic methods as the
+continuous distributions. However ``pdf`` is replaced by the probability
 mass function ``pmf``, no estimation methods, such as fit, are
 available, and ``scale`` is not a valid keyword parameter. The
-location parameter, keyword ``loc`` can still be used to shift the
+location parameter, keyword ``loc``, can still be used to shift the
 distribution.
 
 The computation of the cdf requires some extra attention. In the case
-of continuous distribution the cumulative distribution function is in
-most standard cases strictly monotonic increasing in the bounds (a,b)
-and has therefore a unique inverse. The cdf of a discrete
+of continuous distribution, the cumulative distribution function is, in
+most standard cases, strictly monotonic increasing in the bounds (a,b)
+and has, therefore, a unique inverse. The cdf of a discrete
 distribution, however, is a step function, hence the inverse cdf,
 i.e., the percent point function, requires a different definition:
 
@@ -327,7 +356,7 @@ i.e., the percent point function, requires a different definition:
     ppf(q) = min{x : cdf(x) >= q, x integer}
 
 For further info, see the docs `here
-<http://docs.scipy.org/doc/scipy/reference/tutorial/stats/discrete.html#percent-point-function-inverse-cdf>`__.
+<https://docs.scipy.org/doc/scipy/reference/tutorial/stats/discrete.html#percent-point-function-inverse-cdf>`__.
 
 
 We can look at the hypergeometric distribution as an example
@@ -343,8 +372,8 @@ cdf values, we get the initial integers back, for example
     array([0, 2, 4, 6])
     >>> prb = hypergeom.cdf(x, M, n, N)
     >>> prb
-    array([ 0.0001031991744066,  0.0521155830753351,  0.6083591331269301,
-            0.9897832817337386])
+    array([  1.03199174e-04,   5.21155831e-02,   6.08359133e-01,
+             9.89783282e-01])
     >>> hypergeom.ppf(prb, M, n, N)
     array([ 0.,  2.,  4.,  6.])
 
@@ -357,7 +386,7 @@ the next higher integer back:
     array([ 0.,  2.,  4.,  6.])
 
 
-Fitting Distributions
+Fitting distributions
 ^^^^^^^^^^^^^^^^^^^^^
 
 The main additional methods of the not frozen distribution are related
@@ -367,12 +396,12 @@ to the estimation of distribution parameters:
          and scale
 * fit_loc_scale: estimation of location and scale when shape parameters are given
 * nnlf:  negative log likelihood function
-* expect: Calculate the expectation of a function against the pdf or pmf
+* expect: calculate the expectation of a function against the pdf or pmf
 
 
 .. _performance_issues_label:
 
-Performance Issues and Cautionary Remarks
+Performance issues and cautionary remarks
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The performance of the individual methods, in terms of speed, varies
@@ -398,30 +427,30 @@ from the standard normal or from the t distribution take just above
 one second.
 
 
-Remaining Issues
+Remaining issues
 ^^^^^^^^^^^^^^^^
 
 The distributions in ``scipy.stats`` have recently been corrected and improved
-and gained a considerable test suite, however a few issues remain:
+and gained a considerable test suite; however, a few issues remain:
 
-* the distributions have been tested over some range of parameters,
-  however in some corner ranges, a few incorrect results may remain.
-* the maximum likelihood estimation in `fit` does not work with
+* The distributions have been tested over some range of parameters;
+  however, in some corner ranges, a few incorrect results may remain.
+* The maximum likelihood estimation in `fit` does not work with
   default starting parameters for all distributions and the user
   needs to supply good starting parameters. Also, for some
   distribution using a maximum likelihood estimator might
   inherently not be the best choice.
 
 
-Building Specific Distributions
+Building specific distributions
 -------------------------------
 
-The next examples shows how to build your own distributions.  Further
+The next examples shows how to build your own distributions. Further
 examples show the usage of the distributions and some statistical
 tests.
 
 
-Making a Continuous Distribution, i.e., Subclassing ``rv_continuous``
+Making a continuous distribution, i.e., subclassing ``rv_continuous``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Making continuous distributions is fairly simple.
@@ -446,10 +475,10 @@ Interestingly,  the ``pdf`` is now computed automatically:
              4.16333634e-12,   4.16333634e-12,   4.16333634e-12])
 
 
-Be aware of the performance issues mentions in
+Be aware of the performance issues mentioned in
 :ref:`performance_issues_label`. The computation of unspecified
 common methods can become very slow, since only general methods are
-called which, by their very nature, cannot use any specific
+called, which, by their very nature, cannot use any specific
 information about the distribution. Thus, as a cautionary example:
 
     >>> from scipy.integrate import quad
@@ -470,18 +499,13 @@ distribution.
 Subclassing ``rv_discrete``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-In the following we use ``stats.rv_discrete`` to generate a discrete
+In the following, we use `stats.rv_discrete` to generate a discrete
 distribution that has the probabilities of the truncated normal for the
 intervals centered around the integers.
 
-**General Info**
+**General info**
 
-From the docstring of rv_discrete, i.e.,
-
-    >>> from scipy.stats import rv_discrete
-    >>> help(rv_discrete)
-
-we learn that:
+From the docstring of rv_discrete, ``help(stats.rv_discrete)``,
 
   "You can construct an arbitrary discrete rv where P{X=xk} = pk by
   passing to the rv_discrete initialization method (through the values=
@@ -495,15 +519,15 @@ work:
 * The support points of the distribution xk have to be integers.
 * The number of significant digits (decimals) needs to be specified.
 
-In fact, if the last two requirements are not satisfied an exception
+In fact, if the last two requirements are not satisfied, an exception
 may be raised or the resulting numbers may be incorrect.
 
-**An Example**
+**An example**
 
-Let's do the work. First
+Let's do the work. First:
 
     >>> npoints = 20   # number of integer support points of the distribution minus 1
-    >>> npointsh = npoints / 2
+    >>> npointsh = npoints // 2
     >>> npointsf = float(npoints)
     >>> nbound = 4   # bounds for the truncated normal
     >>> normbound = (1+1/npointsf) * nbound   # actual bounds of truncated normal
@@ -514,7 +538,7 @@ Let's do the work. First
     >>> probs = np.diff(stats.truncnorm.cdf(gridlimitsnorm, -normbound, normbound))
     >>> gridint = grid
 
-And finally we can subclass ``rv_discrete``:
+And, finally, we can subclass ``rv_discrete``:
 
     >>> normdiscrete = stats.rv_discrete(values=(gridint,
     ...              np.round(probs, decimals=7)), name='normdiscrete')
@@ -522,13 +546,13 @@ And finally we can subclass ``rv_discrete``:
 Now that we have defined the distribution, we have access to all
 common methods of discrete distributions.
 
-    >>> print 'mean = %6.4f, variance = %6.4f, skew = %6.4f, kurtosis = %6.4f'% \
-    ...       normdiscrete.stats(moments =  'mvsk')
+    >>> print('mean = %6.4f, variance = %6.4f, skew = %6.4f, kurtosis = %6.4f' %
+    ...       normdiscrete.stats(moments='mvsk'))
     mean = -0.0000, variance = 6.3302, skew = 0.0000, kurtosis = -0.0076
 
     >>> nd_std = np.sqrt(normdiscrete.stats(moments='v'))
 
-**Testing the Implementation**
+**Testing the implementation**
 
 Let's generate a random sample and compare observed frequencies with
 the probabilities.
@@ -536,31 +560,30 @@ the probabilities.
     >>> n_sample = 500
     >>> np.random.seed(87655678)   # fix the seed for replicability
     >>> rvs = normdiscrete.rvs(size=n_sample)
-    >>> rvsnd = rvs
     >>> f, l = np.histogram(rvs, bins=gridlimits)
     >>> sfreq = np.vstack([gridint, f, probs*n_sample]).T
-    >>> print sfreq
-    [[ -1.00000000e+01   0.00000000e+00   2.95019349e-02]
-     [ -9.00000000e+00   0.00000000e+00   1.32294142e-01]
-     [ -8.00000000e+00   0.00000000e+00   5.06497902e-01]
-     [ -7.00000000e+00   2.00000000e+00   1.65568919e+00]
-     [ -6.00000000e+00   1.00000000e+00   4.62125309e+00]
-     [ -5.00000000e+00   9.00000000e+00   1.10137298e+01]
-     [ -4.00000000e+00   2.60000000e+01   2.24137683e+01]
-     [ -3.00000000e+00   3.70000000e+01   3.89503370e+01]
-     [ -2.00000000e+00   5.10000000e+01   5.78004747e+01]
-     [ -1.00000000e+00   7.10000000e+01   7.32455414e+01]
-     [  0.00000000e+00   7.40000000e+01   7.92618251e+01]
-     [  1.00000000e+00   8.90000000e+01   7.32455414e+01]
-     [  2.00000000e+00   5.50000000e+01   5.78004747e+01]
-     [  3.00000000e+00   5.00000000e+01   3.89503370e+01]
-     [  4.00000000e+00   1.70000000e+01   2.24137683e+01]
-     [  5.00000000e+00   1.10000000e+01   1.10137298e+01]
-     [  6.00000000e+00   4.00000000e+00   4.62125309e+00]
-     [  7.00000000e+00   3.00000000e+00   1.65568919e+00]
-     [  8.00000000e+00   0.00000000e+00   5.06497902e-01]
-     [  9.00000000e+00   0.00000000e+00   1.32294142e-01]
-     [  1.00000000e+01   0.00000000e+00   2.95019349e-02]]
+    >>> print(sfreq)
+    [[-1.00000000e+01  0.00000000e+00  2.95019349e-02]
+     [-9.00000000e+00  0.00000000e+00  1.32294142e-01]
+     [-8.00000000e+00  0.00000000e+00  5.06497902e-01]
+     [-7.00000000e+00  2.00000000e+00  1.65568919e+00]
+     [-6.00000000e+00  1.00000000e+00  4.62125309e+00]
+     [-5.00000000e+00  9.00000000e+00  1.10137298e+01]
+     [-4.00000000e+00  2.60000000e+01  2.24137683e+01]
+     [-3.00000000e+00  3.70000000e+01  3.89503370e+01]
+     [-2.00000000e+00  5.10000000e+01  5.78004747e+01]
+     [-1.00000000e+00  7.10000000e+01  7.32455414e+01]
+     [ 0.00000000e+00  7.40000000e+01  7.92618251e+01]
+     [ 1.00000000e+00  8.90000000e+01  7.32455414e+01]
+     [ 2.00000000e+00  5.50000000e+01  5.78004747e+01]
+     [ 3.00000000e+00  5.00000000e+01  3.89503370e+01]
+     [ 4.00000000e+00  1.70000000e+01  2.24137683e+01]
+     [ 5.00000000e+00  1.10000000e+01  1.10137298e+01]
+     [ 6.00000000e+00  4.00000000e+00  4.62125309e+00]
+     [ 7.00000000e+00  3.00000000e+00  1.65568919e+00]
+     [ 8.00000000e+00  0.00000000e+00  5.06497902e-01]
+     [ 9.00000000e+00  0.00000000e+00  1.32294142e-01]
+     [ 1.00000000e+01  0.00000000e+00  2.95019349e-02]]
 
 
 .. plot:: tutorial/examples/normdiscr_plot1.py
@@ -573,8 +596,8 @@ the probabilities.
    :include-source: 0
 
 
-Next, we can test, whether our sample was generated by our normdiscrete
-distribution. This also verifies whether the random numbers are generated
+Next, we can test whether our sample was generated by our norm-discrete
+distribution. This also verifies whether the random numbers were generated
 correctly.
 
 The chisquare test requires that there are a minimum number of observations
@@ -585,14 +608,14 @@ enough observations.
     >>> p2 = np.hstack([probs[:5].sum(), probs[5:-5], probs[-5:].sum()])
     >>> ch2, pval = stats.chisquare(f2, p2*n_sample)
 
-    >>> print 'chisquare for normdiscrete: chi2 = %6.3f pvalue = %6.4f' % (ch2, pval)
+    >>> print('chisquare for normdiscrete: chi2 = %6.3f pvalue = %6.4f' % (ch2, pval))
     chisquare for normdiscrete: chi2 = 12.466 pvalue = 0.4090
 
 The pvalue in this case is high, so we can be quite confident that
 our random sample was actually generated by the distribution.
 
 
-Analysing One Sample
+Analysing one sample
 --------------------
 
 First, we create some random variables. We set a seed so that in each run
@@ -608,33 +631,32 @@ that our sample consists of 1000 independently drawn (pseudo) random numbers.
 Since we did not specify the keyword arguments `loc` and `scale`, those are
 set to their default values zero and one.
 
-Descriptive Statistics
+Descriptive statistics
 ^^^^^^^^^^^^^^^^^^^^^^
 
-`x` is a numpy array, and we have direct access to all array methods, e.g.
+`x` is a numpy array, and we have direct access to all array methods, e.g.,
 
-    >>> print x.max(), x.min()  # equivalent to np.max(x), np.min(x)
-    5.26327732981 -3.78975572422
-    >>> print x.mean(), x.var() # equivalent to np.mean(x), np.var(x)
-    0.0140610663985 1.28899386208
+    >>> print(x.min())   # equivalent to np.min(x)
+    -3.78975572422
+    >>> print(x.max())   # equivalent to np.max(x)
+    5.26327732981
+    >>> print(x.mean())  # equivalent to np.mean(x)
+    0.0140610663985
+    >>> print(x.var())   # equivalent to np.var(x))
+    1.28899386208
 
-
-How do the some sample properties compare to their theoretical counterparts?
+How do the sample properties compare to their theoretical counterparts?
 
     >>> m, v, s, k = stats.t.stats(10, moments='mvsk')
     >>> n, (smin, smax), sm, sv, ss, sk = stats.describe(x)
 
-    >>> print 'distribution:',
-    distribution:
-    >>> sstr = 'mean = %6.4f, variance = %6.4f, skew = %6.4f, kurtosis = %6.4f'
-    >>> print sstr %(m, v, s ,k)
-    mean = 0.0000, variance = 1.2500, skew = 0.0000, kurtosis = 1.0000
-    >>> print 'sample:      ',
-    sample:
-    >>> print sstr %(sm, sv, ss, sk)
-    mean = 0.0141, variance = 1.2903, skew = 0.2165, kurtosis = 1.0556
+    >>> sstr = '%-14s mean = %6.4f, variance = %6.4f, skew = %6.4f, kurtosis = %6.4f'
+    >>> print(sstr % ('distribution:', m, v, s ,k))
+    distribution:  mean = 0.0000, variance = 1.2500, skew = 0.0000, kurtosis = 1.0000
+    >>> print(sstr % ('sample:', sm, sv, ss, sk))
+    sample:        mean = 0.0141, variance = 1.2903, skew = 0.2165, kurtosis = 1.0556
 
-Note: stats.describe uses the unbiased estimator for the variance, while
+Note: `stats.describe` uses the unbiased estimator for the variance, while
 np.var is the biased estimator.
 
 
@@ -648,7 +670,7 @@ T-test and KS-test
 We can use the t-test to test whether the mean of our sample differs
 in a statistically significant way from the theoretical expectation.
 
-    >>> print 't-statistic = %6.3f pvalue = %6.4f' %  stats.ttest_1samp(x, m)
+    >>> print('t-statistic = %6.3f pvalue = %6.4f' %  stats.ttest_1samp(x, m))
     t-statistic =  0.391 pvalue = 0.6955
 
 The pvalue is 0.7, this means that with an alpha error of, for
@@ -662,25 +684,25 @@ and so it does:
 
     >>> tt = (sm-m)/np.sqrt(sv/float(n))  # t-statistic for mean
     >>> pval = stats.t.sf(np.abs(tt), n-1)*2  # two-sided pvalue = Prob(abs(t)>tt)
-    >>> print 't-statistic = %6.3f pvalue = %6.4f' % (tt, pval)
+    >>> print('t-statistic = %6.3f pvalue = %6.4f' % (tt, pval))
     t-statistic =  0.391 pvalue = 0.6955
 
 The Kolmogorov-Smirnov test can be used to test the hypothesis that
 the sample comes from the standard t-distribution
 
-    >>> print 'KS-statistic D = %6.3f pvalue = %6.4f' % stats.kstest(x, 't', (10,))
-    KS-statistic D =  0.016 pvalue = 0.9606
+    >>> print('KS-statistic D = %6.3f pvalue = %6.4f' % stats.kstest(x, 't', (10,)))
+    KS-statistic D =  0.016 pvalue = 0.9571
 
-Again the p-value is high enough that we cannot reject the
+Again, the p-value is high enough that we cannot reject the
 hypothesis that the random sample really is distributed according to the
 t-distribution. In real applications, we don't know what the
 underlying distribution is. If we perform the Kolmogorov-Smirnov
 test of our sample against the standard normal distribution, then we
 also cannot reject the hypothesis that our sample was generated by the
-normal distribution given that in this example the p-value is almost 40%.
+normal distribution given that, in this example, the p-value is almost 40%.
 
-    >>> print 'KS-statistic D = %6.3f pvalue = %6.4f' % stats.kstest(x,'norm')
-    KS-statistic D =  0.028 pvalue = 0.3949
+    >>> print('KS-statistic D = %6.3f pvalue = %6.4f' % stats.kstest(x, 'norm'))
+    KS-statistic D =  0.028 pvalue = 0.3918
 
 However, the standard normal distribution has a variance of 1, while our
 sample has a variance of 1.29. If we standardize our sample and test it
@@ -689,13 +711,13 @@ that we cannot reject the hypothesis that the sample came form the
 normal distribution.
 
     >>> d, pval = stats.kstest((x-x.mean())/x.std(), 'norm')
-    >>> print 'KS-statistic D = %6.3f pvalue = %6.4f' % (d, pval)
-    KS-statistic D =  0.032 pvalue = 0.2402
+    >>> print('KS-statistic D = %6.3f pvalue = %6.4f' % (d, pval))
+    KS-statistic D =  0.032 pvalue = 0.2397
 
 Note: The Kolmogorov-Smirnov test assumes that we test against a
-distribution with given parameters, since in the last case we
-estimated mean and variance, this assumption is violated, and the
-distribution of the test statistic on which the p-value is based, is
+distribution with given parameters, since, in the last case, we
+estimated mean and variance, this assumption is violated and the
+distribution of the test statistic, on which the p-value is based, is
 not correct.
 
 Tails of the distribution
@@ -707,57 +729,57 @@ function, to obtain the critical values, or, more directly, we can use
 the inverse of the survival function
 
     >>> crit01, crit05, crit10 = stats.t.ppf([1-0.01, 1-0.05, 1-0.10], 10)
-    >>> print 'critical values from ppf at 1%%, 5%% and 10%% %8.4f %8.4f %8.4f'% (crit01, crit05, crit10)
+    >>> print('critical values from ppf at 1%%, 5%% and 10%% %8.4f %8.4f %8.4f' % (crit01, crit05, crit10))
     critical values from ppf at 1%, 5% and 10%   2.7638   1.8125   1.3722
-    >>> print 'critical values from isf at 1%%, 5%% and 10%% %8.4f %8.4f %8.4f'% tuple(stats.t.isf([0.01,0.05,0.10],10))
+    >>> print('critical values from isf at 1%%, 5%% and 10%% %8.4f %8.4f %8.4f' % tuple(stats.t.isf([0.01,0.05,0.10],10)))
     critical values from isf at 1%, 5% and 10%   2.7638   1.8125   1.3722
 
     >>> freq01 = np.sum(x>crit01) / float(n) * 100
     >>> freq05 = np.sum(x>crit05) / float(n) * 100
     >>> freq10 = np.sum(x>crit10) / float(n) * 100
-    >>> print 'sample %%-frequency at 1%%, 5%% and 10%% tail %8.4f %8.4f %8.4f'% (freq01, freq05, freq10)
+    >>> print('sample %%-frequency at 1%%, 5%% and 10%% tail %8.4f %8.4f %8.4f' % (freq01, freq05, freq10))
     sample %-frequency at 1%, 5% and 10% tail   1.4000   5.8000  10.5000
 
 In all three cases, our sample has more weight in the top tail than the
 underlying distribution.
 We can briefly check a larger sample to see if we get a closer match. In this
-case the empirical frequency is quite close to the theoretical probability,
-but if we repeat this several times the fluctuations are still pretty large.
+case, the empirical frequency is quite close to the theoretical probability,
+but if we repeat this several times, the fluctuations are still pretty large.
 
     >>> freq05l = np.sum(stats.t.rvs(10, size=10000) > crit05) / 10000.0 * 100
-    >>> print 'larger sample %%-frequency at 5%% tail %8.4f'% freq05l
+    >>> print('larger sample %%-frequency at 5%% tail %8.4f' % freq05l)
     larger sample %-frequency at 5% tail   4.8000
 
 We can also compare it with the tail of the normal distribution, which
 has less weight in the tails:
 
-    >>> print 'tail prob. of normal at 1%%, 5%% and 10%% %8.4f %8.4f %8.4f'% \
-    ...       tuple(stats.norm.sf([crit01, crit05, crit10])*100)
+    >>> print('tail prob. of normal at 1%%, 5%% and 10%% %8.4f %8.4f %8.4f' %
+    ...       tuple(stats.norm.sf([crit01, crit05, crit10])*100))
     tail prob. of normal at 1%, 5% and 10%   0.2857   3.4957   8.5003
 
-The chisquare test can be used to test, whether for a finite number of bins,
+The chisquare test can be used to test whether for a finite number of bins,
 the observed frequencies differ significantly from the probabilities of the
 hypothesized distribution.
 
     >>> quantiles = [0.0, 0.01, 0.05, 0.1, 1-0.10, 1-0.05, 1-0.01, 1.0]
     >>> crit = stats.t.ppf(quantiles, 10)
-    >>> print crit
-    [       -Inf -2.76376946 -1.81246112 -1.37218364  1.37218364  1.81246112
-      2.76376946         Inf]
+    >>> crit
+    array([       -inf, -2.76376946, -1.81246112, -1.37218364,  1.37218364,
+            1.81246112,  2.76376946,         inf])
     >>> n_sample = x.size
     >>> freqcount = np.histogram(x, bins=crit)[0]
     >>> tprob = np.diff(quantiles)
     >>> nprob = np.diff(stats.norm.cdf(crit))
     >>> tch, tpval = stats.chisquare(freqcount, tprob*n_sample)
     >>> nch, npval = stats.chisquare(freqcount, nprob*n_sample)
-    >>> print 'chisquare for t:      chi2 = %6.3f pvalue = %6.4f' % (tch, tpval)
-    chisquare for t:      chi2 =  2.300 pvalue = 0.8901
-    >>> print 'chisquare for normal: chi2 = %6.3f pvalue = %6.4f' % (nch, npval)
-    chisquare for normal: chi2 = 64.605 pvalue = 0.0000
+    >>> print('chisquare for t:      chi2 = %6.2f pvalue = %6.4f' % (tch, tpval))
+    chisquare for t:      chi2 =  2.30 pvalue = 0.8901
+    >>> print('chisquare for normal: chi2 = %6.2f pvalue = %6.4f' % (nch, npval))
+    chisquare for normal: chi2 = 64.60 pvalue = 0.0000
 
-We see that the standard normal distribution is clearly rejected while the
+We see that the standard normal distribution is clearly rejected, while the
 standard t-distribution cannot be rejected. Since the variance of our sample
-differs from both standard distribution, we can again redo the test taking
+differs from both standard distributions, we can again redo the test taking
 the estimate for scale and location into account.
 
 The fit method of the distributions can be used to estimate the parameters
@@ -770,14 +792,14 @@ estimated distribution.
     >>> nprob = np.diff(stats.norm.cdf(crit, loc=nloc, scale=nscale))
     >>> tch, tpval = stats.chisquare(freqcount, tprob*n_sample)
     >>> nch, npval = stats.chisquare(freqcount, nprob*n_sample)
-    >>> print 'chisquare for t:      chi2 = %6.3f pvalue = %6.4f' % (tch, tpval)
-    chisquare for t:      chi2 =  1.577 pvalue = 0.9542
-    >>> print 'chisquare for normal: chi2 = %6.3f pvalue = %6.4f' % (nch, npval)
-    chisquare for normal: chi2 = 11.084 pvalue = 0.0858
+    >>> print('chisquare for t:      chi2 = %6.2f pvalue = %6.4f' % (tch, tpval))
+    chisquare for t:      chi2 =  1.58 pvalue = 0.9542
+    >>> print('chisquare for normal: chi2 = %6.2f pvalue = %6.4f' % (nch, npval))
+    chisquare for normal: chi2 = 11.08 pvalue = 0.0858
 
 Taking account of the estimated parameters, we can still reject the
 hypothesis that our sample came from a normal distribution (at the 5% level),
-but again, with a p-value of 0.95, we cannot reject the t distribution.
+but again, with a p-value of 0.95, we cannot reject the t-distribution.
 
 
 Special tests for normal distributions
@@ -785,43 +807,45 @@ Special tests for normal distributions
 
 Since the normal distribution is the most common distribution in statistics,
 there are several additional functions available to test whether a sample
-could have been drawn from a normal distribution
+could have been drawn from a normal distribution.
 
-First we can test if skew and kurtosis of our sample differ significantly from
+First, we can test if skew and kurtosis of our sample differ significantly from
 those of a normal distribution:
 
-    >>> print 'normal skewtest teststat = %6.3f pvalue = %6.4f' % stats.skewtest(x)
+    >>> print('normal skewtest teststat = %6.3f pvalue = %6.4f' % stats.skewtest(x))
     normal skewtest teststat =  2.785 pvalue = 0.0054
-    >>> print 'normal kurtosistest teststat = %6.3f pvalue = %6.4f' % stats.kurtosistest(x)
+    >>> print('normal kurtosistest teststat = %6.3f pvalue = %6.4f' % stats.kurtosistest(x))
     normal kurtosistest teststat =  4.757 pvalue = 0.0000
 
 These two tests are combined in the normality test
 
-    >>> print 'normaltest teststat = %6.3f pvalue = %6.4f' % stats.normaltest(x)
+    >>> print('normaltest teststat = %6.3f pvalue = %6.4f' % stats.normaltest(x))
     normaltest teststat = 30.379 pvalue = 0.0000
 
-In all three tests the p-values are very low and we can reject the hypothesis
+In all three tests, the p-values are very low and we can reject the hypothesis
 that the our sample has skew and kurtosis of the normal distribution.
 
 Since skew and kurtosis of our sample are based on central moments, we get
 exactly the same results if we test the standardized sample:
 
-    >>> print 'normaltest teststat = %6.3f pvalue = %6.4f' % \
-    ...                      stats.normaltest((x-x.mean())/x.std())
+    >>> print('normaltest teststat = %6.3f pvalue = %6.4f' %
+    ...       stats.normaltest((x-x.mean())/x.std()))
     normaltest teststat = 30.379 pvalue = 0.0000
 
 Because normality is rejected so strongly, we can check whether the
 normaltest gives reasonable results for other cases:
 
-    >>> print 'normaltest teststat = %6.3f pvalue = %6.4f' % stats.normaltest(stats.t.rvs(10, size=100))
+    >>> print('normaltest teststat = %6.3f pvalue = %6.4f' %
+    ...       stats.normaltest(stats.t.rvs(10, size=100)))
     normaltest teststat =  4.698 pvalue = 0.0955
-    >>> print 'normaltest teststat = %6.3f pvalue = %6.4f' % stats.normaltest(stats.norm.rvs(size=1000))
+    >>> print('normaltest teststat = %6.3f pvalue = %6.4f' %
+    ...              stats.normaltest(stats.norm.rvs(size=1000)))
     normaltest teststat =  0.613 pvalue = 0.7361
 
 When testing for normality of a small sample of t-distributed observations
-and a large sample of normal distributed observation, then in neither case
+and a large sample of normal-distributed observations, then in neither case
 can we reject the null hypothesis that the sample comes from a normal
-distribution. In the first case this is because the test is not powerful
+distribution. In the first case, this is because the test is not powerful
 enough to distinguish a t and a normally distributed random variable in a
 small sample.
 
@@ -842,51 +866,48 @@ Test with sample with identical means:
     >>> rvs1 = stats.norm.rvs(loc=5, scale=10, size=500)
     >>> rvs2 = stats.norm.rvs(loc=5, scale=10, size=500)
     >>> stats.ttest_ind(rvs1, rvs2)
-    (-0.54890361750888583, 0.5831943748663857)
-
+    Ttest_indResult(statistic=-0.5489036175088705, pvalue=0.5831943748663959)
 
 Test with sample with different means:
 
     >>> rvs3 = stats.norm.rvs(loc=8, scale=10, size=500)
     >>> stats.ttest_ind(rvs1, rvs3)
-    (-4.5334142901750321, 6.507128186505895e-006)
-
+    Ttest_indResult(statistic=-4.533414290175026, pvalue=6.507128186389019e-06)
 
 Kolmogorov-Smirnov test for two samples ks_2samp
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-For the example where both samples are drawn from the same distribution,
-we cannot reject the null hypothesis since the pvalue is high
+For the example, where both samples are drawn from the same distribution,
+we cannot reject the null hypothesis, since the pvalue is high
 
     >>> stats.ks_2samp(rvs1, rvs2)
-    (0.025999999999999995, 0.99541195173064878)
+    KstestResult(statistic=0.026, pvalue=0.9959527565364388)
 
-In the second example, with different location, i.e. means, we can
-reject the null hypothesis since the pvalue is below 1%
+In the second example, with different location, i.e., means, we can
+reject the null hypothesis, since the pvalue is below 1%
 
     >>> stats.ks_2samp(rvs1, rvs3)
-    (0.11399999999999999, 0.0027132103661283141)
+    KstestResult(statistic=0.114, pvalue=0.00299005061044668)
 
-
-Kernel Density Estimation
+Kernel density estimation
 -------------------------
 
 A common task in statistics is to estimate the probability density function
-(PDF) of a random variable from a set of data samples.  This task is called
-density estimation.  The most well-known tool to do this is the histogram.
+(PDF) of a random variable from a set of data samples. This task is called
+density estimation. The most well-known tool to do this is the histogram.
 A histogram is a useful tool for visualization (mainly because everyone
-understands it), but doesn't use the available data very efficiently.  Kernel
-density estimation (KDE) is a more efficient tool for the same task.  The
-:func:`gaussian_kde` estimator can be used to estimate the PDF of univariate as
-well as multivariate data.  It works best if the data is unimodal.
+understands it), but doesn't use the available data very efficiently. Kernel
+density estimation (KDE) is a more efficient tool for the same task. The
+:func:`~stats.gaussian_kde` estimator can be used to estimate the PDF of univariate as
+well as multivariate data. It works best if the data is unimodal.
 
 
 Univariate estimation
 ^^^^^^^^^^^^^^^^^^^^^
 
-We start with a minimal amount of data in order to see how :func:`gaussian_kde`
-works, and what the different options for bandwidth selection do.  The data
-sampled from the PDF is show as blue dashes at the bottom of the figure (this
+We start with a minimal amount of data in order to see how :func:`~stats.gaussian_kde`
+works and what the different options for bandwidth selection do. The data
+sampled from the PDF are shown as blue dashes at the bottom of the figure (this
 is called a rug plot):
 
 .. plot::
@@ -910,8 +931,8 @@ is called a rug plot):
 
 We see that there is very little difference between Scott's Rule and
 Silverman's Rule, and that the bandwidth selection with a limited amount of
-data is probably a bit too wide.  We can define our own bandwidth function to
-get a less smoothed out result.
+data is probably a bit too wide. We can define our own bandwidth function to
+get a less smoothed-out result.
 
     >>> def my_kde_bandwidth(obj, fac=1./5):
     ...     """We use Scott's Rule, multiplied by a constant factor."""
@@ -934,10 +955,10 @@ We see that if we set bandwidth to be very narrow, the obtained estimate for
 the probability density function (PDF) is simply the sum of Gaussians around
 each data point.
 
-We now take a more realistic example, and look at the difference between the
-two available bandwidth selection rules.  Those rules are known to work well
+We now take a more realistic example and look at the difference between the
+two available bandwidth selection rules. Those rules are known to work well
 for (close to) normal distributions, but even for unimodal distributions that
-are quite strongly non-normal they work reasonably well.  As a non-normal
+are quite strongly non-normal they work reasonably well. As a non-normal
 distribution we take a Student's T distribution with 5 degrees of freedom.
 
 .. plot:: tutorial/stats/plots/kde_plot3.py
@@ -945,7 +966,7 @@ distribution we take a Student's T distribution with 5 degrees of freedom.
    :include-source: 1
 
 We now take a look at a bimodal distribution with one wider and one narrower
-Gaussian feature.  We expect that this will be a more difficult density to
+Gaussian feature. We expect that this will be a more difficult density to
 approximate, due to the different bandwidths required to accurately resolve
 each feature.
 
@@ -989,17 +1010,17 @@ each feature.
 
 As expected, the KDE is not as close to the true PDF as we would like due to
 the different characteristic size of the two features of the bimodal
-distribution.  By halving the default bandwidth (``Scott * 0.5``) we can do
+distribution. By halving the default bandwidth (``Scott * 0.5``), we can do
 somewhat better, while using a factor 5 smaller bandwidth than the default
-doesn't smooth enough.  What we really need though in this case is a
+doesn't smooth enough. What we really need, though, in this case, is a
 non-uniform (adaptive) bandwidth.
 
 
 Multivariate estimation
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-With :func:`gaussian_kde` we can perform multivariate as well as univariate
-estimation.  We demonstrate the bivariate case.  First we generate some random
+With :func:`~stats.gaussian_kde` we can perform multivariate, as well as univariate
+estimation. We demonstrate the bivariate case. First, we generate some random
 data with a model in which the two variates are correlated.
 
     >>> def measure(n):
@@ -1022,7 +1043,7 @@ Then we apply the KDE to the data:
     >>> kernel = stats.gaussian_kde(values)
     >>> Z = np.reshape(kernel.evaluate(positions).T, X.shape)
 
-Finally we plot the estimated bivariate distribution as a colormap, and plot
+Finally, we plot the estimated bivariate distribution as a colormap and plot
 the individual data points on top.
 
     >>> fig = plt.figure(figsize=(8, 6))
@@ -1041,3 +1062,131 @@ the individual data points on top.
    :align: center
    :include-source: 0
 
+
+Multiscale Graph Correlation (MGC)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+With :func:`~stats.multiscale_graphcorr`, we can test for independence on high
+dimensional and nonlinear data. Before we start, let's import some useful
+packages:
+
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt; plt.style.use('classic')
+    >>> from scipy.stats import multiscale_graphcorr
+
+Let's use a custom plotting function to plot the data relationship:
+
+    >>> def mgc_plot(x, y, sim_name, mgc_dict=None, only_viz=False,
+    ...              only_mgc=False):
+    ...     """Plot sim and MGC-plot"""
+    ...     if not only_mgc:
+    ...         # simulation
+    ...         plt.figure(figsize=(8, 8))
+    ...         ax = plt.gca()
+    ...         ax.set_title(sim_name + " Simulation", fontsize=20)
+    ...         ax.scatter(x, y)
+    ...         ax.set_xlabel('X', fontsize=15)
+    ...         ax.set_ylabel('Y', fontsize=15)
+    ...         ax.axis('equal')
+    ...         ax.tick_params(axis="x", labelsize=15)
+    ...         ax.tick_params(axis="y", labelsize=15)
+    ...         plt.show()
+    ...     if not only_viz:
+    ...         # local correlation map
+    ...         plt.figure(figsize=(8,8))
+    ...         ax = plt.gca()
+    ...         mgc_map = mgc_dict["mgc_map"]
+    ...         # draw heatmap
+    ...         ax.set_title("Local Correlation Map", fontsize=20)
+    ...         im = ax.imshow(mgc_map, cmap='YlGnBu')
+    ...         # colorbar
+    ...         cbar = ax.figure.colorbar(im, ax=ax)
+    ...         cbar.ax.set_ylabel("", rotation=-90, va="bottom")
+    ...         ax.invert_yaxis()
+    ...         # Turn spines off and create white grid.
+    ...         for edge, spine in ax.spines.items():
+    ...             spine.set_visible(False)
+    ...         # optimal scale
+    ...         opt_scale = mgc_dict["opt_scale"]
+    ...         ax.scatter(opt_scale[0], opt_scale[1],
+    ...                    marker='X', s=200, color='red')
+    ...         # other formatting
+    ...         ax.tick_params(bottom="off", left="off")
+    ...         ax.set_xlabel('#Neighbors for X', fontsize=15)
+    ...         ax.set_ylabel('#Neighbors for Y', fontsize=15)
+    ...         ax.tick_params(axis="x", labelsize=15)
+    ...         ax.tick_params(axis="y", labelsize=15)
+    ...         ax.set_xlim(0, 100)
+    ...         ax.set_ylim(0, 100)
+    ...         plt.show()
+
+Let's look at some linear data first:
+
+    >>> np.random.seed(12345678)
+    >>> x = np.linspace(-1, 1, num=100)
+    >>> y = x + 0.3 * np.random.random(x.size)
+
+The simulation relationship can be plotted below:
+
+    >>> mgc_plot(x, y, "Linear", only_viz=True)
+
+.. plot:: tutorial/stats/plots/mgc_plot1.py
+   :align: center
+   :include-source: 0
+
+Now, we can see the test statistic, p-value, and MGC map visualized below. The
+optimal scale is shown on the map as a red "x":
+
+    >>> stat, pvalue, mgc_dict = multiscale_graphcorr(x, y)
+    >>> print("MGC test statistic: ", round(stat, 1))
+    MGC test statistic:  1.0
+    >>> print("P-value: ", round(pvalue, 1))
+    P-value:  0.0
+    >>> mgc_plot(x, y, "Linear", mgc_dict, only_mgc=True)
+
+.. plot:: tutorial/stats/plots/mgc_plot2.py
+   :align: center
+   :include-source: 0
+
+It is clear from here, that MGC is able to determine a relationship between the
+input data matrices because the p-value is very low and the MGC test statistic
+is relatively high. The MGC-map indicates a **strongly linear relationship**.
+Intuitively, this is because having more neighbors will help in identifying a
+linear relationship between :math:`x` and :math:`y`. The optimal scale in this
+case is **equivalent to the global scale**, marked by a red spot on the map.
+
+The same can be done for nonlinear data sets. The following :math:`x` and
+:math:`y` arrays are derived from a nonlinear simulation:
+
+    >>> np.random.seed(12345678)
+    >>> unif = np.array(np.random.uniform(0, 5, size=100))
+    >>> x = unif * np.cos(np.pi * unif)
+    >>> y = unif * np.sin(np.pi * unif) + 0.4 * np.random.random(x.size)
+
+The simulation relationship can be plotted below:
+
+    >>> mgc_plot(x, y, "Spiral", only_viz=True)
+
+.. plot:: tutorial/stats/plots/mgc_plot3.py
+   :align: center
+   :include-source: 0
+
+Now, we can see the test statistic, p-value, and MGC map visualized below. The
+optimal scale is shown on the map as a red "x":
+
+    >>> stat, pvalue, mgc_dict = multiscale_graphcorr(x, y)
+    >>> print("MGC test statistic: ", round(stat, 1))
+    MGC test statistic:  0.2
+    >>> print("P-value: ", round(pvalue, 1))
+    P-value:  0.0
+    >>> mgc_plot(x, y, "Spiral", mgc_dict, only_mgc=True)
+
+.. plot:: tutorial/stats/plots/mgc_plot4.py
+   :align: center
+   :include-source: 0
+
+It is clear from here, that MGC is able to determine a relationship again
+because the p-value is very low and the MGC test statistic is relatively high.
+The MGC-map indicates a **strongly nonlinear relationship**. The optimal scale
+in this case is **equivalent to the local scale**, marked by a red spot on the
+map.

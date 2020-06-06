@@ -49,7 +49,7 @@ c          the front end.  This is needed to keep the full Schur form
 c          of H and also in the calculation of the eigenvectors of H.
 c
 c  IERR    Integer.  (OUTPUT)
-c          Error exit flag from dlaqrb or dtrevc.
+c          Error exit flag from dlahqr or dtrevc.
 c
 c\EndDoc
 c
@@ -61,7 +61,7 @@ c\Local variables:
 c     xxxxxx  real
 c
 c\Routines called:
-c     dlaqrb  ARPACK routine to compute the real Schur form of an
+c     dlahqr  ARPACK routine to compute the real Schur form of an
 c             upper Hessenberg matrix and last row of the Schur vectors.
 c     arscnd  ARPACK utility routine for timing.
 c     dmout   ARPACK utility routine that prints matrices
@@ -144,7 +144,7 @@ c     %----------------------%
 c     | External Subroutines |
 c     %----------------------%
 c
-      external   dcopy, dlacpy, dlaqrb, dtrevc, dvout, arscnd
+      external   dcopy, dlacpy, dlahqr, dtrevc, dvout, arscnd
 c
 c     %--------------------%
 c     | External Functions |
@@ -182,13 +182,17 @@ c     %-----------------------------------------------------------%
 c     | 1. Compute the eigenvalues, the last components of the    |
 c     |    corresponding Schur vectors and the full Schur form T  |
 c     |    of the current upper Hessenberg matrix H.              |
-c     | dlaqrb returns the full Schur form of H in WORKL(1:N**2)  |
+c     | dlahqr returns the full Schur form of H in WORKL(1:N**2)  |
 c     | and the last components of the Schur vectors in BOUNDS.   |
 c     %-----------------------------------------------------------%
 c
       call dlacpy ('All', n, n, h, ldh, workl, n)
-      call dlaqrb (.true., n, 1, n, workl, n, ritzr, ritzi, bounds,
-     &             ierr)
+      do 5 j = 1, n-1
+          bounds(j) = zero
+   5  continue
+      bounds(n) = 1
+      call dlahqr(.true., .true., n, 1, n, workl, n, ritzr, ritzi, 1, 1,
+     &            bounds, 1, ierr)
       if (ierr .ne. 0) go to 9000
 c
       if (msglvl .gt. 1) then

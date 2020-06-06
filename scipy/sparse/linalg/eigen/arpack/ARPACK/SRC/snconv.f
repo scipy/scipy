@@ -39,8 +39,8 @@ c     xxxxxx  real
 c
 c\Routines called:
 c     arscnd  ARPACK utility routine for timing.
-c     wslamch  LAPACK routine that determines machine constants.
-c     wslapy2  LAPACK routine to compute sqrt(x**2+y**2) carefully.
+c     slamch  LAPACK routine that determines machine constants.
+c     slapy2  LAPACK routine to compute sqrt(x**2+y**2) carefully.
 c
 c\Author
 c     Danny Sorensen               Phuong Vu
@@ -100,8 +100,8 @@ c     | External Functions |
 c     %--------------------%
 c
       Real
-     &           wslapy2, wslamch
-      external   wslapy2, wslamch
+     &           slapy2, slamch
+      external   slapy2, slamch
 
 c     %-----------------------%
 c     | Executable Statements |
@@ -125,12 +125,12 @@ c     %---------------------------------%
 c     | Get machine dependent constant. |
 c     %---------------------------------%
 c
-      eps23 = wslamch('Epsilon-Machine')
+      eps23 = slamch('Epsilon-Machine')
       eps23 = eps23**(2.0E+0 / 3.0E+0)
 c
       nconv  = 0
       do 20 i = 1, n
-         temp = max( eps23, wslapy2( ritzr(i), ritzi(i) ) )
+         temp = max( eps23, slapy2( ritzr(i), ritzi(i) ) )
          if (bounds(i) .le. tol*temp)   nconv = nconv + 1
    20 continue
 c 

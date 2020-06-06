@@ -16,7 +16,6 @@ import functools
 from threading import Rlock
 
 import numpy as np
-from scipy._lib.six import callable
 from scipy.optimize import _cobyla
 from .optimize import OptimizeResult, _check_unknown_options
 try:
@@ -44,9 +43,9 @@ def synchronized(func):
 
 @synchronized
 def fmin_cobyla(func, x0, cons, args=(), consargs=None, rhobeg=1.0,
-                rhoend=1e-4, iprint=1, maxfun=1000, disp=None, catol=2e-4):
+                rhoend=1e-4, maxfun=1000, disp=None, catol=2e-4):
     """
-    Minimize a function using the Constrained Optimization BY Linear
+    Minimize a function using the Constrained Optimization By Linear
     Approximation (COBYLA) method. This method wraps a FORTRAN
     implementation of the algorithm.
 
@@ -72,10 +71,8 @@ def fmin_cobyla(func, x0, cons, args=(), consargs=None, rhobeg=1.0,
     rhoend : float, optional
         Final accuracy in the optimization (not precisely guaranteed). This
         is a lower bound on the size of the trust region.
-    iprint : {0, 1, 2, 3}, optional
-        Controls the frequency of output; 0 implies no output.  Deprecated.
     disp : {0, 1, 2, 3}, optional
-        Over-rides the iprint interface.  Preferred.
+        Controls the frequency of output; 0 implies no output.
     maxfun : int, optional
         Maximum number of function evaluations.
     catol : float, optional
@@ -99,13 +96,13 @@ def fmin_cobyla(func, x0, cons, args=(), consargs=None, rhobeg=1.0,
     Suppose the function is being minimized over k variables. At the
     jth iteration the algorithm has k+1 points v_1, ..., v_(k+1),
     an approximate solution x_j, and a radius RHO_j.
-    (i.e. linear plus a constant) approximations to the objective
+    (i.e., linear plus a constant) approximations to the objective
     function and constraint functions such that their function values
     agree with the linear approximation on the k+1 points v_1,.., v_(k+1).
     This gives a linear program to solve (where the linear approximations
     of the constraint functions are constrained to be non-negative).
 
-    However the linear approximations are likely only good
+    However, the linear approximations are likely only good
     approximations near the current simplex, so the linear program is
     given the further requirement that the solution, which
     will become x_(j+1), must be within RHO_j from x_j. RHO_j only
@@ -177,24 +174,21 @@ def fmin_cobyla(func, x0, cons, args=(), consargs=None, rhobeg=1.0,
     con = tuple({'type': 'ineq', 'fun': c, 'args': consargs} for c in cons)
 
     # options
-    if disp is not None:
-        iprint = disp
     opts = {'rhobeg': rhobeg,
             'tol': rhoend,
-            'iprint': iprint,
-            'disp': iprint != 0,
+            'disp': disp,
             'maxiter': maxfun,
             'catol': catol}
 
     sol = _minimize_cobyla(func, x0, args, constraints=con,
                            **opts)
-    if iprint > 0 and not sol['success']:
+    if disp and not sol['success']:
         print("COBYLA failed to find a solution: %s" % (sol.message,))
     return sol['x']
 
 @synchronized
 def _minimize_cobyla(fun, x0, args=(), constraints=(),
-                     rhobeg=1.0, tol=1e-4, iprint=1, maxiter=1000,
+                     rhobeg=1.0, tol=1e-4, maxiter=1000,
                      disp=False, catol=2e-4, **unknown_options):
     """
     Minimize a scalar function of one or more variables using the
@@ -219,8 +213,7 @@ def _minimize_cobyla(fun, x0, args=(), constraints=(),
     _check_unknown_options(unknown_options)
     maxfun = maxiter
     rhoend = tol
-    if not disp:
-        iprint = 0
+    iprint = int(bool(disp))
 
     # check constraints
     if isinstance(constraints, dict):
@@ -283,29 +276,15 @@ def _minimize_cobyla(fun, x0, args=(), constraints=(),
                           status=int(info[0]),
                           success=info[0] == 1,
                           message={1: 'Optimization terminated successfully.',
-                                   2: 'Maximum number of function evaluations has '
-                                      'been exceeded.',
-                                   3: 'Rounding errors are becoming damaging in '
-                                      'COBYLA subroutine.',
-                                   4: 'Did not converge to a solution satisfying '
-                                      'the constraints. See `maxcv` for magnitude '
-                                      'of violation.'
+                                   2: 'Maximum number of function evaluations '
+                                      'has been exceeded.',
+                                   3: 'Rounding errors are becoming damaging '
+                                      'in COBYLA subroutine.',
+                                   4: 'Did not converge to a solution '
+                                      'satisfying the constraints. See '
+                                      '`maxcv` for magnitude of violation.',
+                                   5: 'NaN result encountered.'
                                    }.get(info[0], 'Unknown exit status.'),
                           nfev=int(info[1]),
                           fun=info[2],
                           maxcv=info[3])
-
-
-if __name__ == '__main__':
-
-    from math import sqrt
-
-    def fun(x):
-        return x[0] * x[1]
-
-    def cons(x):
-        return 1 - x[0]**2 - x[1]**2
-
-    x = fmin_cobyla(fun, [1., 1.], cons, iprint=3, disp=1)
-
-    print('\nTheoretical solution: %e, %e' % (1. / sqrt(2.), -1. / sqrt(2.)))

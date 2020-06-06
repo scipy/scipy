@@ -278,7 +278,7 @@ class LinearNDInterpolator(NDInterpolatorBase):
         eps_broad = sqrt(DBL_EPSILON)
 
         with nogil:
-            for i in xrange(xi.shape[0]):
+            for i in range(xi.shape[0]):
 
                 # 1) Find the simplex
 
@@ -290,15 +290,15 @@ class LinearNDInterpolator(NDInterpolatorBase):
 
                 if isimplex == -1:
                     # don't extrapolate
-                    for k in xrange(nvalues):
+                    for k in range(nvalues):
                         out[i,k] = fill_value
                     continue
 
-                for k in xrange(nvalues):
+                for k in range(nvalues):
                     out[i,k] = 0
 
-                for j in xrange(ndim+1):
-                    for k in xrange(nvalues):
+                for j in range(ndim+1):
+                    for k in range(nvalues):
                         m = simplices[isimplex,j]
                         out[i,k] = out[i,k] + c[j] * values[m,k]
 
@@ -361,7 +361,7 @@ cdef int _estimate_gradients_2d_global(qhull.DelaunayInfo_t *d, double *data,
     cdef double f1, f2, df2, ex, ey, L, L3, det, err, change
 
     # initialize
-    for ipoint in xrange(2*d.npoints):
+    for ipoint in range(2*d.npoints):
         y[ipoint] = 0
 
     #
@@ -427,18 +427,18 @@ cdef int _estimate_gradients_2d_global(qhull.DelaunayInfo_t *d, double *data,
     #
 
     # Gauss-Seidel
-    for iiter in xrange(maxiter):
+    for iiter in range(maxiter):
         err = 0
-        for ipoint in xrange(d.npoints):
-            for k in xrange(2*2):
+        for ipoint in range(d.npoints):
+            for k in range(2*2):
                 Q[k] = 0
-            for k in xrange(2):
+            for k in range(2):
                 s[k] = 0
 
             # walk over neighbours of given point
-            for jpoint2 in xrange(d.vertex_neighbors_indices[ipoint],
-                                  d.vertex_neighbors_indices[ipoint+1]):
-                ipoint2 = d.vertex_neighbors_indptr[jpoint2]
+            for jpoint2 in range(d.vertex_neighbors_indptr[ipoint],
+                                  d.vertex_neighbors_indptr[ipoint+1]):
+                ipoint2 = d.vertex_neighbors_indices[jpoint2]
 
                 # edge
                 ex = d.points[2*ipoint2 + 0] - d.points[2*ipoint + 0]
@@ -521,7 +521,7 @@ cpdef estimate_gradients_2d_global(tri, y, int maxiter=400, double tol=1e-6):
     qhull._get_delaunay_info(&info, tri, 0, 0, 1)
     nvalues = data.shape[0]
 
-    for k in xrange(nvalues):
+    for k in range(nvalues):
         with nogil:
             ret = _estimate_gradients_2d_global(
                 &info,
@@ -588,8 +588,7 @@ cdef double_or_complex _clough_tocher_2d_single(qhull.DelaunayInfo_t *d,
          c1101, c1011, c0111
     cdef double_or_complex \
          f1, f2, f3, df12, df13, df21, df23, df31, df32
-    cdef double \
-         g1, g2, g3
+    cdef double g[3]
     cdef double \
          e12x, e12y, e23x, e23y, e31x, e31y, \
          e14x, e14y, e24x, e24y, e34x, e34y
@@ -663,13 +662,13 @@ cdef double_or_complex _clough_tocher_2d_single(qhull.DelaunayInfo_t *d,
     # In [CT]_, it is suggested to pick `w` as the normal of the edge.
     # This choice is given by the formulas
     #
-    #    w_12 = E_24 + g1 * E_23
-    #    w_23 = E_34 + g2 * E_31
-    #    w_31 = E_14 + g3 * E_12
+    #    w_12 = E_24 + g[0] * E_23
+    #    w_23 = E_34 + g[1] * E_31
+    #    w_31 = E_14 + g[2] * E_12
     #
-    #    g1 = -(e24x*e23x + e24y*e23y) / (e23x**2 + e23y**2)
-    #    g2 = -(e34x*e31x + e34y*e31y) / (e31x**2 + e31y**2)
-    #    g3 = -(e14x*e12x + e14y*e12y) / (e12x**2 + e12y**2)
+    #    g[0] = -(e24x*e23x + e24y*e23y) / (e23x**2 + e23y**2)
+    #    g[1] = -(e34x*e31x + e34y*e31y) / (e31x**2 + e31y**2)
+    #    g[2] = -(e14x*e12x + e14y*e12y) / (e12x**2 + e12y**2)
     #
     # However, this choice gives an interpolant that is *not*
     # invariant under affine transforms. This has some bad
@@ -683,7 +682,7 @@ cdef double_or_complex _clough_tocher_2d_single(qhull.DelaunayInfo_t *d,
     # one observes that as eps -> 0, the absolute maximum value of the
     # interpolant approaches infinity.
     #
-    # So below, we aim to pick affine invariant `g1`, `g2`, `g3`.
+    # So below, we aim to pick affine invariant `g[k]`.
     # We choose
     #
     #     w = V_4' - V_4
@@ -699,18 +698,13 @@ cdef double_or_complex _clough_tocher_2d_single(qhull.DelaunayInfo_t *d,
     # peek into neighbouring triangles.
     #
 
-    for k in xrange(3):
+    for k in range(3):
         itri = d.neighbors[3*isimplex + k]
 
         if itri == -1:
             # No neighbour.
             # Compute derivative to the centroid direction (e_12 + e_13)/2.
-            if k == 0:
-                g1 = -2./3
-            elif k == 1:
-                g2 = -2./3
-            elif k == 2:
-                g3 = -2./3
+            g[k] = -1./2
             continue
 
         # Centroid of the neighbour, in our local barycentric coordinates
@@ -733,17 +727,17 @@ cdef double_or_complex _clough_tocher_2d_single(qhull.DelaunayInfo_t *d,
         # conclude that the choice below is affine-invariant.
 
         if k == 0:
-            g1 = (2*c[2] + c[1] - 1) / (2 - 3*c[2] - 3*c[1])
+            g[k] = (2*c[2] + c[1] - 1) / (2 - 3*c[2] - 3*c[1])
         elif k == 1:
-            g2 = (2*c[0] + c[2] - 1) / (2 - 3*c[0] - 3*c[2])
+            g[k] = (2*c[0] + c[2] - 1) / (2 - 3*c[0] - 3*c[2])
         elif k == 2:
-            g3 = (2*c[1] + c[0] - 1) / (2 - 3*c[1] - 3*c[0])
+            g[k] = (2*c[1] + c[0] - 1) / (2 - 3*c[1] - 3*c[0])
 
-    c0111 = (g1*(-c0300 + 3*c0210 - 3*c0120 + c0030)
+    c0111 = (g[0]*(-c0300 + 3*c0210 - 3*c0120 + c0030)
              + (-c0300 + 2*c0210 - c0120 + c0021 + c0201))/2
-    c1011 = (g2*(-c0030 + 3*c1020 - 3*c2010 + c3000)
+    c1011 = (g[1]*(-c0030 + 3*c1020 - 3*c2010 + c3000)
              + (-c0030 + 2*c1020 - c2010 + c2001 + c0021))/2
-    c1101 = (g3*(-c3000 + 3*c2100 - 3*c1200 + c0300)
+    c1101 = (g[2]*(-c3000 + 3*c2100 - 3*c1200 + c0300)
              + (-c3000 + 2*c2100 - c1200 + c2001 + c0201))/2
 
     c1002 = (c1101 + c1011 + c2001)/3
@@ -754,7 +748,7 @@ cdef double_or_complex _clough_tocher_2d_single(qhull.DelaunayInfo_t *d,
 
     # extended barycentric coordinates
     minval = b[0]
-    for k in xrange(3):
+    for k in range(3):
         if b[k] < minval:
             minval = b[k]
 
@@ -888,7 +882,7 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
         eps_broad = sqrt(eps)
 
         with nogil:
-            for i in xrange(xi.shape[0]):
+            for i in range(xi.shape[0]):
                 # 1) Find the simplex
 
                 isimplex = qhull._find_simplex(&info, c,
@@ -899,12 +893,12 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
 
                 if isimplex == -1:
                     # outside triangulation
-                    for k in xrange(nvalues):
+                    for k in range(nvalues):
                         out[i,k] = fill_value
                     continue
 
-                for k in xrange(nvalues):
-                    for j in xrange(ndim+1):
+                for k in range(nvalues):
+                    for j in range(ndim+1):
                         f[j] = values[simplices[isimplex,j],k]
                         df[2*j] = grad[simplices[isimplex,j],k,0]
                         df[2*j+1] = grad[simplices[isimplex,j],k,1]

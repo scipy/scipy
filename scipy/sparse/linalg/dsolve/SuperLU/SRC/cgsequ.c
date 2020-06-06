@@ -1,3 +1,13 @@
+/*! \file
+Copyright (c) 2003, The Regents of the University of California, through
+Lawrence Berkeley National Laboratory (subject to receipt of any required 
+approvals from U.S. Dept. of Energy) 
+
+All rights reserved. 
+
+The source code is distributed under BSD license, see the file License.txt
+at the top-level directory.
+*/
 
 /*! @file cgsequ.c
  * \brief Computes row and column scalings
@@ -92,7 +102,7 @@ cgsequ(SuperMatrix *A, float *r, float *c, float *rowcnd,
     int i, j, irow;
     float rcmin, rcmax;
     float bignum, smlnum;
-    extern float slamch_(char *);
+    extern float smach(char *);
     
     /* Test the input parameters. */
     *info = 0;
@@ -101,7 +111,7 @@ cgsequ(SuperMatrix *A, float *r, float *c, float *rowcnd,
 	*info = -1;
     if (*info != 0) {
 	i = -(*info);
-	xerbla_("cgsequ", &i);
+	input_error("cgsequ", &i);
 	return;
     }
 
@@ -117,7 +127,7 @@ cgsequ(SuperMatrix *A, float *r, float *c, float *rowcnd,
     Aval = Astore->nzval;
     
     /* Get machine constants. */
-    smlnum = slamch_("S");
+    smlnum = smach("S");  /* slamch_("S"); */
     bignum = 1. / smlnum;
 
     /* Compute row scale factors. */

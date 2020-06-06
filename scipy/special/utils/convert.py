@@ -1,12 +1,7 @@
 # This script is used to parse BOOST special function test data into something
 # we can easily import in numpy. It is ugly as hell, but it works.
-from __future__ import division, print_function, absolute_import
-
 import re
 import os
-
-from numpy import arccosh, log1p, expm1, arcsinh, arctanh
-from scipy.special import digamma, erfc, expi, erf, expn, gamma, gammaln, iv
 
 # Where to put the data (directory will be created)
 DATA_DIR = 'data'
@@ -107,7 +102,7 @@ DATA_FILES = [
     #'test_bessel_j.cpp',
     #'test_bessel_k.cpp',
     #'test_bessel_y.cpp',
-    # Those 3 files use arithmetic operations whithin the data, so we can't parse
+    # Those 3 files use arithmetic operations within the data, so we can't parse
     # them naively
     #'test_ellint_1.cpp',
     #'test_ellint_2.cpp',
@@ -191,6 +186,7 @@ def dump_datasets(filename):
         print(k, len(d))
         dfilename = os.path.join(datadir, k) + '.txt'
         dump_dataset(dfilename, d)
+
 
 if __name__ == '__main__':
     for filename in DATA_FILES:

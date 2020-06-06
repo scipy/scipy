@@ -1,3 +1,13 @@
+/*! \file
+Copyright (c) 2003, The Regents of the University of California, through
+Lawrence Berkeley National Laboratory (subject to receipt of any required 
+approvals from U.S. Dept. of Energy) 
+
+All rights reserved. 
+
+The source code is distributed under BSD license, see the file License.txt
+at the top-level directory.
+*/
 /*! @file izmax1.c
  * \brief Finds the index of the element whose real part has maximum absolute value
  *
@@ -43,7 +53,7 @@
 */  
 
 int
-izmax1_(int *n, doublecomplex *cx, int *incx)
+izmax1_slu(int *n, doublecomplex *cx, int *incx)
 {
 
 
@@ -109,5 +119,5 @@ L40:
 
 /*     End of IZMAX1 */
 
-} /* izmax1_ */
+} /* izmax1_slu */
 

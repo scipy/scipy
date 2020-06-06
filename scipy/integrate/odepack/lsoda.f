@@ -1457,11 +1457,8 @@ c counter illin is set to 0.  the optional outputs are loaded into
 c the work arrays before returning.
 c-----------------------------------------------------------------------
 c the maximum number of steps was taken before reaching tout. ----------
- 500  call xerrwv('lsoda--  at current t (=r1), mxstep (=i1) steps   ',
-     1   50, 201, 0, 0, 0, 0, 0, 0.0d0, 0.0d0)
-      call xerrwv('      taken on this call before reaching tout     ',
-     1   50, 201, 0, 1, mxstep, 0, 1, tn, 0.0d0)
-      istate = -1
+c Error message removed, see gh-7888
+ 500  istate = -1
       go to 580
 c ewt(i) .le. 0.0 for some i (not at start of problem). ----------------
  510  ewti = rwork(lewt+i-1)
@@ -1651,8 +1648,7 @@ c
  710  call xerrwv('lsoda--  repeated occurrences of illegal input    ',
      1   50, 302, 0, 0, 0, 0, 0, 0.0d0, 0.0d0)
 c
- 800  call xerrwv('lsoda--  run aborted.. apparent infinite loop     ',
-     1   50, 303, 2, 0, 0, 0, 0, 0.0d0, 0.0d0)
+ 800  istate = -8
       return
 c----------------------- end of subroutine lsoda -----------------------
       end

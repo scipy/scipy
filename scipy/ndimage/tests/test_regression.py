@@ -1,7 +1,5 @@
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
-from numpy.testing import assert_array_almost_equal, run_module_suite
+from numpy.testing import assert_array_almost_equal
 
 import scipy.ndimage as ndimage
 
@@ -27,11 +25,11 @@ def test_ticket_742():
         rank = len(mask.shape)
         la, co = ndimage.label(mask,
                                ndimage.generate_binary_structure(rank, rank))
-        slices = ndimage.find_objects(la)
+        _ = ndimage.find_objects(la)
 
     if np.dtype(np.intp) != np.dtype('i'):
         shape = (3,1240,1240)
-        a = np.random.rand(np.product(shape)).reshape(shape)
+        a = np.random.rand(np.prod(shape)).reshape(shape)
         # shouldn't crash
         SE(a)
 
@@ -45,6 +43,3 @@ def test_gh_issue_3025():
     d[35,258] = 1
     d[35,259] = 1
     assert ndimage.label(d, np.ones((3,3)))[1] == 1
-
-if __name__ == "__main__":
-    run_module_suite()

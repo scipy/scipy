@@ -10,24 +10,22 @@ on one version of Python.
 """
 
 
-import sys
-if sys.version_info >= (3, 4):
-    from pathlib import Path
-    import re
-    from numpy.testing import TestCase, assert_, run_module_suite
-    import scipy
+from pathlib import Path
+import re
+import tokenize
+from numpy.testing import assert_
+import scipy
 
-    class TestFFTPackImport(TestCase):
-        def test_fftpack_import(self):
-            base = Path(scipy.__file__).parent
-            regexp = r"\s*from.+\.fftpack import .*\n"
-            for path in base.rglob("*.py"):
-                if base / "fftpack" in path.parents:
-                    continue
-                with path.open() as file:
-                    assert_(all(not re.fullmatch(regexp, line)
-                                for line in file),
-                            "{} contains an import from fftpack".format(path))
-
-    if __name__ == "__main__":
-        run_module_suite(argv=sys.argv)
+class TestFFTPackImport(object):
+    def test_fftpack_import(self):
+        base = Path(scipy.__file__).parent
+        regexp = r"\s*from.+\.fftpack import .*\n"
+        for path in base.rglob("*.py"):
+            if base / "fftpack" in path.parents:
+                continue
+            # use tokenize to auto-detect encoding on systems where no
+            # default encoding is defined (e.g., LANG='C')
+            with tokenize.open(str(path)) as file:
+                assert_(all(not re.fullmatch(regexp, line)
+                            for line in file),
+                        "{0} contains an import from fftpack".format(path))

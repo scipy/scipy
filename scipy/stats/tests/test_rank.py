@@ -1,14 +1,11 @@
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
-from numpy.testing import TestCase, run_module_suite, assert_equal, \
-    assert_array_equal, dec
+from numpy.testing import assert_equal, assert_array_equal
 
 from scipy.stats import rankdata, tiecorrect
-from scipy._lib._version import NumpyVersion
+import pytest
 
 
-class TestTieCorrect(TestCase):
+class TestTieCorrect(object):
 
     def test_empty(self):
         """An empty array requires no correction, should return 1.0."""
@@ -66,8 +63,15 @@ class TestTieCorrect(TestCase):
         expected = 1.0 - ((T1**3 - T1) + (T2**3 - T2)) / (N**3 - N)
         assert_equal(c, expected)
 
+    def test_overflow(self):
+        ntie, k = 2000, 5
+        a = np.repeat(np.arange(k), ntie)
+        n = a.size  # ntie * k
+        out = tiecorrect(rankdata(a))
+        assert_equal(out, 1.0 - k * (ntie**3 - ntie) / float(n**3 - n))
 
-class TestRankData(TestCase):
+
+class TestRankData(object):
 
     def test_empty(self):
         """stats.rankdata([]) should return an empty array."""
@@ -116,7 +120,6 @@ class TestRankData(TestCase):
         r = rankdata(a2d)
         assert_array_equal(r, expected)
 
-    @dec.skipif(NumpyVersion(np.__version__) < '1.7.0')
     def test_rankdata_object_string(self):
         min_rank = lambda a: [1 + sum(i < j for i in a) for j in a]
         max_rank = lambda a: [sum(i <= j for i in a) for j in a]
@@ -165,6 +168,29 @@ class TestRankData(TestCase):
             assert_array_equal(r, expected_rank * data,
                                "test failed with n=%d" % n)
 
+    def test_axis(self):
+        data = [[0, 2, 1],
+                [4, 2, 2]]
+        expected0 = [[1., 1.5, 1.],
+                     [2., 1.5, 2.]]
+        r0 = rankdata(data, axis=0)
+        assert_array_equal(r0, expected0)
+        expected1 = [[1., 3., 2.],
+                     [3., 1.5, 1.5]]
+        r1 = rankdata(data, axis=1)
+        assert_array_equal(r1, expected1)
+
+    methods = ["average", "min", "max", "dense", "ordinal"]
+    dtypes = [np.float64] + [np.int_]*4
+    @pytest.mark.parametrize("axis", [0, 1])
+    @pytest.mark.parametrize("method, dtype", zip(methods, dtypes))
+    def test_size_0_axis(self, axis, method, dtype):
+        shape = (3, 0)
+        data = np.zeros(shape)
+        r = rankdata(data, method=method, axis=axis)
+        assert_equal(r.shape, shape)
+        assert_equal(r.dtype, dtype)
+
 
 _cases = (
     # values, method, expected
@@ -209,14 +235,6 @@ _cases = (
 
 
 def test_cases():
-
-    def check_case(values, method, expected):
+    for values, method, expected in _cases:
         r = rankdata(values, method=method)
         assert_array_equal(r, expected)
-
-    for values, method, expected in _cases:
-        yield check_case, values, method, expected
-
-
-if __name__ == "__main__":
-    run_module_suite()

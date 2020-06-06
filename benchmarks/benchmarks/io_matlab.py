@@ -1,4 +1,3 @@
-from __future__ import division, absolute_import, print_function
 from .common import set_mem_rlimit, run_monitored, get_mem_info
 
 import os
@@ -23,7 +22,7 @@ class MemUsage(Benchmark):
 
     @property
     def params(self):
-        return [self._get_sizes().keys(), [True, False]]
+        return [list(self._get_sizes().keys()), [True, False]]
 
     def _get_sizes(self):
         sizes = collections.OrderedDict([

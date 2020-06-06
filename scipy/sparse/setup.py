@@ -1,6 +1,3 @@
-#!/usr/bin/env python
-from __future__ import division, print_function, absolute_import
-
 import os
 import sys
 import subprocess
@@ -41,7 +38,6 @@ def configuration(parent_package='',top_path=None):
                'csr.h',
                'dense.h',
                'dia.h',
-               'py3k.h',
                'sparsetools.h',
                'util.h']
     depends = [os.path.join('sparsetools', hdr) for hdr in depends],
@@ -58,6 +54,7 @@ def configuration(parent_package='',top_path=None):
                          )
 
     return config
+
 
 if __name__ == '__main__':
     from numpy.distutils.core import setup

@@ -58,6 +58,8 @@
 #include "mconf.h"
 extern double MACHEP;
 
+#include <numpy/npy_math.h>
+
 static double ellik_neg_m(double phi, double m);
 
 double ellik(double phi,  double m)
@@ -82,12 +84,12 @@ double ellik(double phi,  double m)
 	return (phi);
     a = 1.0 - m;
     if (a == 0.0) {
-	if (fabs(phi) >= NPY_PI_2) {
-	    mtherr("ellik", SING);
+	if (fabs(phi) >= (double)NPY_PI_2) {
+	    sf_error("ellik", SF_ERROR_SINGULAR, NULL);
 	    return (NPY_INFINITY);
 	}
         /* DLMF 19.6.8, and 4.23.42 */
-       return asinh(tan(phi));
+       return npy_asinh(tan(phi));
     }
     npio2 = floor(phi / NPY_PI_2);
     if (fmod(fabs(npio2), 2.0) == 1.0)
@@ -162,16 +164,16 @@ double ellik(double phi,  double m)
  * negative m, we use a power series in phi for small m*phi*phi, an asymptotic
  * series in m for large m*phi*phi* and the relation to Carlson's symmetric
  * integral of the first kind.
- * 
+ *
  * F(phi, m) = sin(phi) * R_F(cos(phi)^2, 1 - m * sin(phi)^2, 1.0)
  *           = R_F(c-1, c-m, c)
  *
  * where c = csc(phi)^2. We use the second form of this for (approximately)
  * phi > 1/(sqrt(DBL_MAX) ~ 1e-154, where csc(phi)^2 overflows. Elsewhere we
  * use the first form, accounting for the smallness of phi.
- * 
+ *
  * The algorithm used is described in Carlson, B. C. Numerical computation of
- * real or complex elliptic integrals. (1994) http://arxiv.org/abs/math/9409227
+ * real or complex elliptic integrals. (1994) https://arxiv.org/abs/math/9409227
  * Most variable names reflect Carlson's usage.
  *
  * In this routine, we assume m < 0 and  0 > phi > pi/2.
@@ -195,7 +197,7 @@ double ellik_neg_m(double phi, double m)
         double b = -(1 + cp/sp/sp - a) / 4 / m;
         return (a + b) / sm;
     }
-    
+
     if (phi > 1e-153 && m > -1e305) {
         double s = sin(phi);
         double csc2 = 1.0 / (s*s);
@@ -210,7 +212,7 @@ double ellik_neg_m(double phi, double m)
         y = 1 - m*scale*scale;
         z = 1.0;
     }
-    
+
     if (x == y && x == z) {
         return scale / sqrt(x);
     }
@@ -221,7 +223,7 @@ double ellik_neg_m(double phi, double m)
     /* Carlson gives 1/pow(3*r, 1.0/6.0) for this constant. if r == eps,
      * it is ~338.38. */
     Q = 400.0 * MAX3(fabs(A0-x), fabs(A0-y), fabs(A0-z));
-    
+
     while (Q > fabs(A) && n <= 100) {
         double sx = sqrt(x1);
         double sy = sqrt(y1);
@@ -244,4 +246,3 @@ double ellik_neg_m(double phi, double m)
     return scale * (1.0 - E2/10.0 + E3/14.0 + E2*E2/24.0
                     - 3.0*E2*E3/44.0) / sqrt(A);
 }
-

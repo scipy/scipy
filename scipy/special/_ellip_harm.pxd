@@ -30,7 +30,7 @@
 
 import cython
 
-cimport sf_error
+from . cimport sf_error
 
 from libc.math cimport sqrt, fabs, pow
 from libc.stdlib cimport malloc, free
@@ -49,6 +49,11 @@ cdef extern from "lapack_defs.h":
 cdef inline double* lame_coefficients(double h2, double k2, int n, int p,
                                       void **bufferp, double signm,
                                       double signn) nogil:
+
+    # Ensure that the caller can safely call free(*bufferp) even if an
+    # invalid argument is found in the following validation code.
+    bufferp[0] = NULL
+
     if n < 0:
         sf_error.error("ellip_harm", sf_error.ARG, "invalid value for n")
         return NULL
@@ -63,7 +68,7 @@ cdef inline double* lame_coefficients(double h2, double k2, int n, int p,
 
     cdef double s2, alpha, beta, gamma, lamba_romain, pp, psi, t1, tol, vl, vu
     cdef int r, tp, j, size, i, info, lwork, liwork, c, iu
-    cdef char t
+    cdef Py_UNICODE t
 
     r = n/2
     alpha = h2

@@ -1,12 +1,10 @@
-from __future__ import division, print_function, absolute_import
-
 import os.path
-import warnings
 
 import numpy as np
 from numpy.testing import (assert_, assert_array_almost_equal, assert_equal,
                            assert_almost_equal, assert_array_equal,
-                           assert_raises, run_module_suite, TestCase)
+                           suppress_warnings)
+from pytest import raises as assert_raises
 
 import scipy.ndimage as ndimage
 
@@ -20,7 +18,7 @@ types = [np.int8, np.uint8, np.int16,
 np.mod(1., 1)  # Silence fmod bug on win-amd64. See #1408 and #1238.
 
 
-class Test_measurements_stats(TestCase):
+class Test_measurements_stats(object):
     """ndimage.measurements._stats() is a utility function used by other functions."""
 
     def test_a(self):
@@ -87,7 +85,7 @@ class Test_measurements_stats(TestCase):
             assert_array_equal(centers, [0.5, 8.0])
 
 
-class Test_measurements_select(TestCase):
+class Test_measurements_select(object):
     """ndimage.measurements._select() is a utility function used by other functions."""
 
     def test_basic(self):
@@ -542,16 +540,13 @@ def test_mean03():
 
 def test_mean04():
     labels = np.array([[1, 2], [2, 4]], np.int8)
-    olderr = np.seterr(all='ignore')
-    try:
+    with np.errstate(all='ignore'):
         for type in types:
             input = np.array([[1, 2], [3, 4]], type)
             output = ndimage.mean(input, labels=labels,
                                             index=[4, 8, 2])
             assert_array_almost_equal(output[[0,2]], [4.0, 2.5])
             assert_(np.isnan(output[1]))
-    finally:
-        np.seterr(**olderr)
 
 
 def test_minimum01():
@@ -662,17 +657,13 @@ def test_median03():
 
 
 def test_variance01():
-    olderr = np.seterr(all='ignore')
-    try:
-        with warnings.catch_warnings():
-            # Numpy 1.9 gives warnings for mean([])
-            warnings.filterwarnings('ignore', message="Mean of empty slice.")
-            for type in types:
-                input = np.array([], type)
+    with np.errstate(all='ignore'):
+        for type in types:
+            input = np.array([], type)
+            with suppress_warnings() as sup:
+                sup.filter(RuntimeWarning, "Mean of empty slice")
                 output = ndimage.variance(input)
-                assert_(np.isnan(output))
-    finally:
-        np.seterr(**olderr)
+            assert_(np.isnan(output))
 
 
 def test_variance02():
@@ -705,28 +696,21 @@ def test_variance05():
 
 def test_variance06():
     labels = [2, 2, 3, 3, 4]
-    olderr = np.seterr(all='ignore')
-    try:
+    with np.errstate(all='ignore'):
         for type in types:
             input = np.array([1, 3, 8, 10, 8], type)
             output = ndimage.variance(input, labels, [2, 3, 4])
             assert_array_almost_equal(output, [1.0, 1.0, 0.0])
-    finally:
-        np.seterr(**olderr)
 
 
 def test_standard_deviation01():
-    olderr = np.seterr(all='ignore')
-    try:
-        with warnings.catch_warnings():
-            # Numpy 1.9 gives warnings for mean([])
-            warnings.filterwarnings('ignore', message="Mean of empty slice.")
-            for type in types:
-                input = np.array([], type)
+    with np.errstate(all='ignore'):
+        for type in types:
+            input = np.array([], type)
+            with suppress_warnings() as sup:
+                sup.filter(RuntimeWarning, "Mean of empty slice")
                 output = ndimage.standard_deviation(input)
-                assert_(np.isnan(output))
-    finally:
-        np.seterr(**olderr)
+            assert_(np.isnan(output))
 
 
 def test_standard_deviation02():
@@ -759,26 +743,20 @@ def test_standard_deviation05():
 
 def test_standard_deviation06():
     labels = [2, 2, 3, 3, 4]
-    olderr = np.seterr(all='ignore')
-    try:
+    with np.errstate(all='ignore'):
         for type in types:
             input = np.array([1, 3, 8, 10, 8], type)
             output = ndimage.standard_deviation(input, labels, [2, 3, 4])
             assert_array_almost_equal(output, [1.0, 1.0, 0.0])
-    finally:
-        np.seterr(**olderr)
 
 
 def test_standard_deviation07():
     labels = [1]
-    olderr = np.seterr(all='ignore')
-    try:
+    with np.errstate(all='ignore'):
         for type in types:
             input = np.array([-0.00619519], type)
             output = ndimage.standard_deviation(input, labels, [1])
             assert_array_almost_equal(output, [0])
-    finally:
-        np.seterr(**olderr)
 
 
 def test_minimum_position01():
@@ -1106,6 +1084,3 @@ def test_stat_funcs_2d():
     max = ndimage.maximum(a, labels=lbl, index=[1, 2])
     assert_array_equal(max, [9, 5])
 
-
-if __name__ == "__main__":
-    run_module_suite()

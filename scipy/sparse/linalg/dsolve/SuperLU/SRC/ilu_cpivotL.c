@@ -1,3 +1,13 @@
+/*! \file
+Copyright (c) 2003, The Regents of the University of California, through
+Lawrence Berkeley National Laboratory (subject to receipt of any required 
+approvals from U.S. Dept. of Energy) 
+
+All rights reserved. 
+
+The source code is distributed under BSD license, see the file License.txt
+at the top-level directory.
+*/
 
 /*! @file ilu_cpivotL.c
  * \brief Performs numerical pivoting
@@ -90,7 +100,7 @@ ilu_cpivotL(
     n	       = Glu->n;
     lsub       = Glu->lsub;
     xlsub      = Glu->xlsub;
-    lusup      = Glu->lusup;
+    lusup      = (complex *) Glu->lusup;
     xlusup     = Glu->xlusup;
     fsupc      = (Glu->xsup)[(Glu->supno)[jcol]];
     nsupc      = jcol - fsupc;		/* excluding jcol; nsupc >= 0 */
