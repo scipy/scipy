@@ -22,9 +22,23 @@ except ImportError:
     izip = zip
 
 
+# Workaround as _cobyla.minimize is not threadsafe
+# due to an unknown f2py bug and can segfault, 
+# see gh-9658.
+
+from threading import Lock
+_module_lock = Lock()
+
+def synchronized(func):
+    def wrapper(*args, **kwargs):
+        with _module_lock:
+            return func(*args, **kwargs)
+    return wrapper
+
+
 __all__ = ['fmin_cobyla']
 
-
+@synchronized
 def fmin_cobyla(func, x0, cons, args=(), consargs=None, rhobeg=1.0,
                 rhoend=1e-4, iprint=1, maxfun=1000, disp=None, catol=2e-4):
     """
@@ -174,7 +188,7 @@ def fmin_cobyla(func, x0, cons, args=(), consargs=None, rhobeg=1.0,
         print("COBYLA failed to find a solution: %s" % (sol.message,))
     return sol['x']
 
-
+@synchronized
 def _minimize_cobyla(fun, x0, args=(), constraints=(),
                      rhobeg=1.0, tol=1e-4, iprint=1, maxiter=1000,
                      disp=False, catol=2e-4, **unknown_options):
