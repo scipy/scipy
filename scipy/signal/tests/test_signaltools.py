@@ -1924,7 +1924,7 @@ class TestCorrelate(object):
     def test_return_lags(self, mode, behind):
         # generate random data
         rng = np.random.RandomState(0)
-        x = rng.random(1000)
+        x = rng.rand(1000)
         # generate offset version of array to correlate with
         if behind:
             # y is behind x
