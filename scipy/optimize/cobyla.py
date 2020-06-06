@@ -12,6 +12,9 @@ Functions
 
 from __future__ import division, print_function, absolute_import
 
+import functools
+from threading import Rlock
+
 import numpy as np
 from scipy._lib.six import callable
 from scipy.optimize import _cobyla
@@ -21,22 +24,23 @@ try:
 except ImportError:
     izip = zip
 
+__all__ = ['fmin_cobyla']
 
-# Workaround as _cobyla.minimize is not threadsafe
+
+# Workarund as _cobyla.minimize is not threadsafe
 # due to an unknown f2py bug and can segfault, 
 # see gh-9658.
 
-from threading import Lock
-_module_lock = Lock()
+_module_lock = RLock()
 
 def synchronized(func):
+    @functools.wraps(func)
     def wrapper(*args, **kwargs):
         with _module_lock:
             return func(*args, **kwargs)
     return wrapper
 
 
-__all__ = ['fmin_cobyla']
 
 @synchronized
 def fmin_cobyla(func, x0, cons, args=(), consargs=None, rhobeg=1.0,
