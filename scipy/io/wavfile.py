@@ -453,7 +453,7 @@ def _read_data_chunk(fid, format_tag, channels, bit_depth, is_big_endian,
 
         if bytes_per_sample == 3:
             a = numpy.zeros((len(data) // 3, 4), dtype=numpy.uint8)
-            a[:, 1:4] = data.reshape((-1, 3))
+            a[:, 1:] = data.reshape((-1, 3))
             data = a.view(numpy.int32).reshape(a.shape[:-1])
 
     else:
