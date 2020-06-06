@@ -1944,6 +1944,34 @@ class TestBrute:
         assert_allclose(resbrute[1], brute_func(self.solution, *self.params),
                         atol=1e-3)
 
+        # test that brute can optimize an instance method (the other tests use
+        # a non-class based function
+        resbrute = optimize.brute(self.brute_func, self.rranges,
+                                  args=self.params, full_output=True,
+                                  finish=optimize.minimize)
+        assert_allclose(resbrute[0], self.solution, atol=1e-3)
+
+    def test_1D(self):
+        # test that for a 1-D problem the test function is passed an array,
+        # not a scalar.
+        def f(x):
+            assert_(len(x.shape) == 1)
+            assert_(x.shape[0] == 1)
+            return x ** 2
+
+        optimize.brute(f, [(-1, 1)], Ns=3, finish=None)
+
+    def test_workers(self):
+        # check that parallel evaluation works
+        resbrute = optimize.brute(brute_func, self.rranges, args=self.params,
+                                  full_output=True, finish=None)
+
+        resbrute1 = optimize.brute(brute_func, self.rranges, args=self.params,
+                                   full_output=True, finish=None, workers=2)
+
+        assert_allclose(resbrute1[-1], resbrute[-1])
+        assert_allclose(resbrute1[0], resbrute[0])
+
          
 def test_cobyla_threadsafe():
    
@@ -1980,36 +2008,6 @@ def test_cobyla_threadsafe():
             res = t.result()
    
    
-=======
-        # test that brute can optimize an instance method (the other tests use
-        # a non-class based function
-        resbrute = optimize.brute(self.brute_func, self.rranges,
-                                  args=self.params, full_output=True,
-                                  finish=optimize.minimize)
-        assert_allclose(resbrute[0], self.solution, atol=1e-3)
-
-    def test_1D(self):
-        # test that for a 1-D problem the test function is passed an array,
-        # not a scalar.
-        def f(x):
-            assert_(len(x.shape) == 1)
-            assert_(x.shape[0] == 1)
-            return x ** 2
-
-        optimize.brute(f, [(-1, 1)], Ns=3, finish=None)
-
-    def test_workers(self):
-        # check that parallel evaluation works
-        resbrute = optimize.brute(brute_func, self.rranges, args=self.params,
-                                  full_output=True, finish=None)
-
-        resbrute1 = optimize.brute(brute_func, self.rranges, args=self.params,
-                                   full_output=True, finish=None, workers=2)
-
-        assert_allclose(resbrute1[-1], resbrute[-1])
-        assert_allclose(resbrute1[0], resbrute[0])
-
-
 class TestIterationLimits(object):
     # Tests that optimisation does not give up before trying requested
     # number of iterations or evaluations. And that it does not succeed
