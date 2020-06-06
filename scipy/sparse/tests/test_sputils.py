@@ -149,3 +149,7 @@ class TestSparseUtils(object):
             np.dtype(sputils.get_index_dtype((a1, a2), maxval=too_big)),
             np.dtype('int64')
         )
+
+    def test_check_shape_overflow(self):
+        new_shape = sputils.check_shape([(10, -1)], (65535, 131070))
+        assert_equal(new_shape, (10, 858967245))
