@@ -179,10 +179,10 @@ def test_write_roundtrip(tmpdir):
         # signed 8-bit integer PCM is not allowed
         # unsigned > 8-bit integer PCM is not allowed
         # 8- or 16-bit float PCM is not expected
-        # no size allowed for g or q
+        # g and q are platform-dependent, so not included
         for dt_str in {'|u1',
-                       '<i2', '<i4', '<i8', '<f4', '<f8', '<g', '<q',
-                       '>i2', '>i4', '>i8', '>f4', '>f8', '>g', '>q'}:
+                       '<i2', '<i4', '<i8', '<f4', '<f8',
+                       '>i2', '>i4', '>i8', '>f4', '>f8'}:
             for rate in (8000, 32000):
                 for channels in (1, 2, 5):
                     dt = np.dtype(dt_str)
