@@ -612,6 +612,12 @@ class Test_rectangle:
 
     def test_max_two_sides(self):
         assert_almost_equal(self.rect.max_distance_point([2,2]),2*np.sqrt(2))
+    
+    def test_contains(self):
+        assert_equal(self.rect.contains([0.5,0.5]), True)
+
+    def test_center(self):
+        assert_array_almost_equal(self.rect.center(), [0.5,0.5])
 
     def test_split(self):
         less, greater = self.rect.split(0,0.1)
