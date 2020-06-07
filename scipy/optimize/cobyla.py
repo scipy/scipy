@@ -25,21 +25,16 @@ except ImportError:
 
 __all__ = ['fmin_cobyla']
 
-
 # Workarund as _cobyla.minimize is not threadsafe
 # due to an unknown f2py bug and can segfault, 
 # see gh-9658.
-
 _module_lock = RLock()
-
 def synchronized(func):
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
         with _module_lock:
             return func(*args, **kwargs)
     return wrapper
-
-
 
 @synchronized
 def fmin_cobyla(func, x0, cons, args=(), consargs=None, rhobeg=1.0,
