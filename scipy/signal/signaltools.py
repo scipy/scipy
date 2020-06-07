@@ -19,7 +19,7 @@ from ._sosfilt import _sosfilt
 import warnings
 
 
-__all__ = ['correlate', 'correlate2d',
+__all__ = ['correlate', 'correlation_lags', 'correlate2d',
            'convolve', 'convolve2d', 'fftconvolve', 'oaconvolve',
            'order_filter', 'medfilt', 'medfilt2d', 'wiener', 'lfilter',
            'lfiltic', 'sosfilt', 'deconvolve', 'hilbert', 'hilbert2',
@@ -85,7 +85,7 @@ def _inputs_swap_needed(mode, shape1, shape2, axes=None):
     return not ok1
 
 
-def correlate(in1, in2, mode='full', method='auto', return_lags=False):
+def correlate(in1, in2, mode='full', method='auto'):
     r"""
     Cross-correlate two N-dimensional arrays.
 
@@ -125,9 +125,6 @@ def correlate(in1, in2, mode='full', method='auto', return_lags=False):
            of which is faster (default).  See `convolve` Notes for more detail.
 
            .. versionadded:: 0.19.0
-    return_lags : bool, optional
-        Returns a tuple (correlation, lags) for cross-correlation. Lags can
-        be indexed with the np.argmax of the correlation to return the lag.
 
     Returns
     -------
@@ -213,43 +210,6 @@ def correlate(in1, in2, mode='full', method='auto', return_lags=False):
     except KeyError:
         raise ValueError("Acceptable mode flags are 'valid',"
                          " 'same', or 'full'.")
-    if return_lags:
-        # cross correlate inputs
-        xcorr = convolve(in1, _reverse_and_conj(in2), mode, method)
-
-        # calculate lag ranges in different modes of operation
-        if mode == "full":
-            # the output is the full discrete linear convolution
-            # of the inputs. (Default)
-            lags = np.arange(-in2.size+1, in1.size)
-        elif mode == "same":
-            # the output is the same size as `in1`, centered
-            # with respect to the 'full' output.
-            # calculate the full output
-            lags = np.arange(-in2.size + 1, in1.size)
-            # determine the midpoint in the full output
-            mid = lags.size // 2
-            # determine lag_bound to be used with respect
-            # to the midpoint
-            lag_bound = in1.size // 2
-            # calculate lag ranges for even and odd scenarios
-            if xcorr.size % 2 == 0:
-                lags = lags[(mid-lag_bound):(mid+lag_bound)]
-            else:
-                lags = lags[(mid-lag_bound):(mid+lag_bound)+1]
-        elif mode == "valid":
-            # the output consists only of those elements that do not
-            # rely on the zero-padding. In 'valid' mode, either `in1` or `in2`
-            # must be at least as large as the other in every dimension.
-
-            # the lag_bound will be either negative or positive
-            # this let's us infer how to present the lag range
-            lag_bound = in1.size - in2.size
-            if lag_bound >= 0:
-                lags = np.arange(lag_bound + 1)
-            else:
-                lags = np.arange(lag_bound, 1)
-        return xcorr, lags
 
     # this either calls fftconvolve or this function with method=='direct'
     if method in ('fft', 'auto'):
@@ -300,6 +260,73 @@ def correlate(in1, in2, mode='full', method='auto', return_lags=False):
     else:
         raise ValueError("Acceptable method flags are 'auto',"
                          " 'direct', or 'fft'.")
+
+
+def correlation_lags(in1, in2, mode='full'):
+    r"""
+    Calculate the lag/offset indices array for 1D cross-correlation.
+
+    Parameters
+    ----------
+    in1 : array_like
+        First input.
+    in2 : array_like
+        Second input. Should have the same number of dimensions as `in1`.
+    mode : str {'full', 'valid', 'same'}, optional
+        A string indicating the size of the output:
+
+        ``full``
+           The output is the full discrete linear cross-correlation
+           of the inputs. (Default)
+        ``valid``
+           The output consists only of those elements that do not
+           rely on the zero-padding. In 'valid' mode, either `in1` or `in2`
+           must be at least as large as the other in every dimension.
+        ``same``
+           The output is the same size as `in1`, centered
+           with respect to the 'full' output.
+
+    Returns
+    -------
+    lags : array
+        Returns an array containing cross-correlation lag/offset indices.
+        Indices can be indexed with the np.argmax of the correlation to return
+        the lag/offset.
+    """
+
+    # calculate lag ranges in different modes of operation
+    if mode == "full":
+        # the output is the full discrete linear convolution
+        # of the inputs. (Default)
+        lags = np.arange(-in2.size+1, in1.size)
+    elif mode == "same":
+        # the output is the same size as `in1`, centered
+        # with respect to the 'full' output.
+        # calculate the full output
+        lags = np.arange(-in2.size + 1, in1.size)
+        # determine the midpoint in the full output
+        mid = lags.size // 2
+        # determine lag_bound to be used with respect
+        # to the midpoint
+        lag_bound = in1.size // 2
+        # calculate lag ranges for even and odd scenarios
+        if in1.size % 2 == 0:
+            lags = lags[(mid-lag_bound):(mid+lag_bound)]
+        else:
+            lags = lags[(mid-lag_bound):(mid+lag_bound)+1]
+    elif mode == "valid":
+        # the output consists only of those elements that do not
+        # rely on the zero-padding. In 'valid' mode, either `in1` or `in2`
+        # must be at least as large as the other in every dimension.
+
+        # the lag_bound will be either negative or positive
+        # this let's us infer how to present the lag range
+        lag_bound = in1.size - in2.size
+        if lag_bound >= 0:
+            lags = np.arange(lag_bound + 1)
+        else:
+            lags = np.arange(lag_bound, 1)
+    return lags
 
 
 def _centered(arr, newshape):
