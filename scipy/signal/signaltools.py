@@ -260,9 +260,9 @@ def correlation_lags(in1_len, in2_len, mode='full'):
 
     Parameters
     ----------
-    in1_size : array size
+    in1_size : int
         First input size.
-    in2_size : array size
+    in2_size : int
         Second input size.
     mode : str {'full', 'valid', 'same'}, optional
         A string indicating the size of the output:
