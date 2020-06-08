@@ -187,14 +187,6 @@ def correlate(in1, in2, mode='full', method='auto'):
     >>> ax_orig.margins(0, 0.1)
     >>> fig.tight_layout()
     >>> fig.show()
-
-    Cross-correlation of a signal with its time-delayed self.
-
-    >>> x = np.random.random(1000)
-    >>> x_behind = np.pad(x, (100,0), 'constant')
-    >>> (correlation, lags) = signal.correlate(x, x_behind, return_lags=True)
-    >>> lag_behind_index = np.argmax(correlation)
-    >>> lag = lags[lag_behind_index]
     """
     in1 = np.asarray(in1)
     in2 = np.asarray(in2)
@@ -262,55 +254,83 @@ def correlate(in1, in2, mode='full', method='auto'):
                          " 'direct', or 'fft'.")
 
 
-def correlation_lags(in1, in2, mode='full'):
+def correlation_lags(in1_len, in2_len, mode='full'):
     r"""
-    Calculate the lag/offset indices array for 1D cross-correlation.
+    Calculates the lag / displacement indices array for 1D cross-correlation.
 
     Parameters
     ----------
-    in1 : array_like
-        First input.
-    in2 : array_like
-        Second input. Should have the same number of dimensions as `in1`.
+    in1_size : array size
+        First input size.
+    in2_size : array size
+        Second input size.
     mode : str {'full', 'valid', 'same'}, optional
         A string indicating the size of the output:
 
-        ``full``
-           The output is the full discrete linear cross-correlation
-           of the inputs. (Default)
-        ``valid``
-           The output consists only of those elements that do not
-           rely on the zero-padding. In 'valid' mode, either `in1` or `in2`
-           must be at least as large as the other in every dimension.
-        ``same``
-           The output is the same size as `in1`, centered
-           with respect to the 'full' output.
+        See the documentation `correlate` for more information.
+
+    See Also
+    --------
+    correlate : Used in conjunction with correlation_lags to produce a
+                1D cross-correlation.
 
     Returns
     -------
     lags : array
-        Returns an array containing cross-correlation lag/offset indices.
+        Returns an array containing cross-correlation lag / displacement indices.
         Indices can be indexed with the np.argmax of the correlation to return
-        the lag/offset.
+        the lag / displacement.
+
+    Notes
+    -----
+    Cross-correlation for continuous functions :math:`f` and :math:`g` is defined as:
+
+    .. math ::
+
+        \left ( f\star g \right )\left ( \tau \right )
+        \triangleq \int_{t_0}^{t_0 +T}
+        \overline{f\left ( t \right )}g\left ( t+\tau \right )dt
+
+    Where :math:`\tau` is defined as the displacement, also known as the lag.
+
+    Cross correlation for discrete functions :math:`f` and :math:`g` is defined as:
+
+    .. math ::
+        \left ( f\star g \right )\left [ n \right ]
+        \triangleq \sum_{-\infty}^{\infty}
+        \overline{f\left [ m \right ]}g\left [ m+n \right ]
+
+    Where :math:`n` is the lag.
+
+    Examples
+    --------
+    Cross-correlation of a signal with its time-delayed self.
+
+    >>> rng = np.random.RandomState(0)
+    >>> x = rng.standard_normal(1000)
+    >>> y = np.concatenate([rng.standard_normal(100), x])
+    >>> correlation = signal.correlate(x, y, mode="full")
+    >>> lags = signal.correlation_lags(x.size, y.size, mode="full")
+    >>> lag = lags[np.argmax(correlation)]
     """
 
     # calculate lag ranges in different modes of operation
     if mode == "full":
         # the output is the full discrete linear convolution
         # of the inputs. (Default)
-        lags = np.arange(-in2.size+1, in1.size)
+        lags = np.arange(-in2_len + 1, in1_len)
     elif mode == "same":
         # the output is the same size as `in1`, centered
         # with respect to the 'full' output.
         # calculate the full output
-        lags = np.arange(-in2.size + 1, in1.size)
+        lags = np.arange(-in2_len + 1, in1_len)
         # determine the midpoint in the full output
         mid = lags.size // 2
         # determine lag_bound to be used with respect
         # to the midpoint
-        lag_bound = in1.size // 2
+        lag_bound = in1_len // 2
         # calculate lag ranges for even and odd scenarios
-        if in1.size % 2 == 0:
+        if in1_len % 2 == 0:
             lags = lags[(mid-lag_bound):(mid+lag_bound)]
         else:
             lags = lags[(mid-lag_bound):(mid+lag_bound)+1]
@@ -321,7 +341,7 @@ def correlation_lags(in1, in2, mode='full'):
 
         # the lag_bound will be either negative or positive
         # this let's us infer how to present the lag range
-        lag_bound = in1.size - in2.size
+        lag_bound = in1_len - in2_len
         if lag_bound >= 0:
             lags = np.arange(lag_bound + 1)
         else:

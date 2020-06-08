@@ -17,6 +17,7 @@ Convolution
    correlate2d        -- 2-D correlation (more options).
    sepfir2d           -- Convolve with a 2-D separable FIR filter.
    choose_conv_method -- Chooses faster of FFT and direct convolution methods.
+   correlation_lags   -- Determines lag indices for 1D cross-correlation.
 
 B-splines
 =========

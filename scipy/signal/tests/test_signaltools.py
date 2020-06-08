@@ -1924,19 +1924,19 @@ class TestCorrelate(object):
 def test_correlation_lags(mode, behind):
     # generate random data
     rng = np.random.RandomState(0)
-    x = rng.standard_normal(1000)
+    in1 = rng.standard_normal(1000)
     # generate offset version of array to correlate with
     if behind:
         # y is behind x
-        y = np.concatenate([rng.standard_normal(100), x])
+        in2 = np.concatenate([rng.standard_normal(100), in1])
         expected = -100
     else:
         # y is ahead of x
-        y = x[100:]
+        in2 = in1[100:]
         expected = 100
     # cross correlate, returning lag information
-    correlation = correlate(x, y, mode=mode)
-    lags = correlation_lags(x, y, mode=mode)
+    correlation = correlate(in1, in2, mode=mode)
+    lags = correlation_lags(in1.size, in2.size, mode=mode)
     # identify the peak
     lag_index = np.argmax(correlation)
     # Check as expected
