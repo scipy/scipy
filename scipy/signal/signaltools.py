@@ -135,6 +135,8 @@ def correlate(in1, in2, mode='full', method='auto'):
     See Also
     --------
     choose_conv_method : contains more documentation on `method`.
+    correlation_lags : calculates the lag / displacement indices array for 1D
+        cross-correlation.
 
     Notes
     -----
