@@ -271,8 +271,7 @@ def correlation_lags(in1_len, in2_len, mode='full'):
 
     See Also
     --------
-    correlate : Used in conjunction with correlation_lags to produce a
-                1D cross-correlation.
+    correlate : Compute the N-dimensional cross-correlation.
 
     Returns
     -------
