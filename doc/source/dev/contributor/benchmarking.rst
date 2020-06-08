@@ -4,7 +4,7 @@
 
 .. _benchmarking-with-asv:
 
-Benchmarking SciPy with Airspeed Velocity
+Benchmarking SciPy with airspeed velocity
 =========================================
 
 *This document introduces benchmarking, including reviewing SciPy
@@ -14,8 +14,8 @@ locally, see* \ `Benchmarking SciPy`_\ *.*
 
 As written in the `airspeed velocity (asv) documentation`_:
 
- airspeed velocity (asv) is a tool for benchmarking Python packages over their
- lifetime. Runtime, memory consumption and even custom-computed values
+ Airspeed velocity (asv) is a tool for benchmarking Python packages over their
+ lifetime. Runtime, memory consumption, and even custom-computed values
  may be tracked. The results are displayed in an interactive web frontend
  that requires only a basic static webserver to host.
 
@@ -24,7 +24,7 @@ scipy`_. Each plot summarizes the execution time of a particular test
 over the commit history of the project; that is, as each commit is
 merged, the benchmark test is run, its execution time is measured, and
 the elapsed time is plotted. In addition to tracking the performance of
-the code a commit is *intended* to affect, running *all* benchmarks for
+the code, a commit is *intended* to affect, running *all* benchmarks for
 each commit is helpful for identifying unintentional regressions:
 significant increases in the execution time of one or more benchmark
 tests. As SciPy is a web of interconnected code, the repercussions of a
@@ -77,7 +77,7 @@ Results of this benchmark over the past few years are available by
 clicking on the `KleeMinty.time_klee_minty`_ link at `airspeed velocity
 of an unladen scipy`_. Note that each trace of the plot corresponds with
 a combination of benchmark parameters and environment settings
-(e.g. Cython version), and that the visibility of the traces can be
+(e.g., the Cython version), and that the visibility of the traces can be
 toggled using the control panel on the left.
 
 Running benchmarks locally

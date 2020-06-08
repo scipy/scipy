@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 __all__ = ['interp1d', 'interp2d', 'lagrange', 'PPoly', 'BPoly', 'NdPPoly',
            'RegularGridInterpolator', 'interpn']
 
@@ -14,8 +12,7 @@ from numpy import (array, transpose, searchsorted, atleast_1d, atleast_2d,
 
 import scipy.special as spec
 from scipy.special import comb
-
-from scipy._lib.six import xrange, integer_types, string_types
+from scipy._lib._util import prod
 
 from . import fitpack
 from . import dfitpack
@@ -25,13 +22,6 @@ from . import _ppoly
 from .fitpack2 import RectBivariateSpline
 from .interpnd import _ndim_coords_from_arrays
 from ._bsplines import make_interp_spline, BSpline
-
-
-def prod(x):
-    """Product of a list of numbers; ~40x faster vs np.prod for Python tuples"""
-    if len(x) == 0:
-        return 1
-    return functools.reduce(operator.mul, x)
 
 
 def lagrange(x, w):
@@ -49,7 +39,7 @@ def lagrange(x, w):
     x : array_like
         `x` represents the x-coordinates of a set of datapoints.
     w : array_like
-        `w` represents the y-coordinates of a set of datapoints, i.e. f(`x`).
+        `w` represents the y-coordinates of a set of datapoints, i.e., f(`x`).
 
     Returns
     -------
@@ -83,9 +73,9 @@ def lagrange(x, w):
 
     M = len(x)
     p = poly1d(0.0)
-    for j in xrange(M):
+    for j in range(M):
         pt = poly1d(w[j])
-        for k in xrange(M):
+        for k in range(M):
             if k == j:
                 continue
             fac = x[j]-x[k]
@@ -94,7 +84,7 @@ def lagrange(x, w):
     return p
 
 
-# !! Need to find argument for keeping initialize.  If it isn't
+# !! Need to find argument for keeping initialize. If it isn't
 # !! found, get rid of it!
 
 
@@ -134,10 +124,10 @@ class interp2d(object):
 
           >>> x = [0,1,2,0,1,2];  y = [0,0,0,3,3,3]; z = [1,2,3,4,5,6]
 
-        If `x` and `y` are multi-dimensional, they are flattened before use.
+        If `x` and `y` are multidimensional, they are flattened before use.
     z : array_like
         The values of the function to interpolate at the data points. If
-        `z` is a multi-dimensional array, it is flattened before use.  The
+        `z` is a multidimensional array, it is flattened before use.  The
         length of a flattened `z` array is either
         len(`x`)*len(`y`) if `x` and `y` specify the column and row coordinates
         or ``len(z) == len(x) == len(y)`` if `x` and `y` specify coordinates
@@ -159,11 +149,11 @@ class interp2d(object):
     See Also
     --------
     RectBivariateSpline :
-        Much faster 2D interpolation if your input data is on a grid
+        Much faster 2-D interpolation if your input data is on a grid
     bisplrep, bisplev :
         Spline interpolation based on FITPACK
     BivariateSpline : a more recent wrapper of the FITPACK routines
-    interp1d : one dimension version of this function
+    interp1d : 1-D version of this function
 
     Notes
     -----
@@ -256,9 +246,9 @@ class interp2d(object):
 
         Parameters
         ----------
-        x : 1D array
+        x : 1-D array
             x-coordinates of the mesh on which to interpolate.
-        y : 1D array
+        y : 1-D array
             y-coordinates of the mesh on which to interpolate.
         dx : int >= 0, < kx
             Order of partial derivatives in x.
@@ -272,7 +262,7 @@ class interp2d(object):
 
         Returns
         -------
-        z : 2D array with shape (len(y), len(x))
+        z : 2-D array with shape (len(y), len(x))
             The interpolated values.
         """
 
@@ -332,7 +322,7 @@ def _check_broadcast_up_to(arr_from, shape_to, name):
 
 def _do_extrapolate(fill_value):
     """Helper to check if fill_value == "extrapolate" without warnings"""
-    return (isinstance(fill_value, string_types) and
+    return (isinstance(fill_value, str) and
             fill_value == 'extrapolate')
 
 
@@ -341,7 +331,7 @@ class interp1d(_Interpolator1D):
     Interpolate a 1-D function.
 
     `x` and `y` are arrays of values used to approximate some function f:
-    ``y = f(x)``.  This class returns a function whose call method uses
+    ``y = f(x)``. This class returns a function whose call method uses
     interpolation to find the value of new points.
 
     Note that calling `interp1d` with NaNs present in input values results in
@@ -427,7 +417,7 @@ class interp1d(_Interpolator1D):
     def __init__(self, x, y, kind='linear', axis=-1,
                  copy=True, bounds_error=None, fill_value=np.nan,
                  assume_sorted=False):
-        """ Initialize a 1D linear interpolation class."""
+        """ Initialize a 1-D linear interpolation class."""
         _Interpolator1D.__init__(self, x, y, axis=axis)
 
         self.bounds_error = bounds_error  # used by fill_value setter
@@ -522,8 +512,14 @@ class interp1d(_Interpolator1D):
                 # to get the correct shape of the output, which we then fill
                 # with nans.
                 # For slinear or zero order spline, we just pass nans through.
-                if np.isnan(self.x).any():
-                    xx = np.linspace(min(self.x), max(self.x), len(self.x))
+                mask = np.isnan(self.x)
+                if mask.any():
+                    sx = self.x[~mask]
+                    if sx.size == 0:
+                        raise ValueError("`x` array is all-nan")
+                    xx = np.linspace(np.nanmin(self.x),
+                                     np.nanmax(self.x),
+                                     len(self.x))
                     rewrite_nan = True
                 if np.isnan(self._y).any():
                     yy = np.ones_like(self._y)
@@ -591,7 +587,7 @@ class interp1d(_Interpolator1D):
         x_new_indices = searchsorted(self.x, x_new)
 
         # 3. Clip x_new_indices so that they are within the range of
-        #    self.x indices and at least 1.  Removes mis-interpolation
+        #    self.x indices and at least 1. Removes mis-interpolation
         #    of x_new[n] = x[0]
         x_new_indices = x_new_indices.clip(1, len(self.x)-1).astype(int)
 
@@ -614,12 +610,12 @@ class interp1d(_Interpolator1D):
         return y_new
 
     def _call_nearest(self, x_new):
-        """ Find nearest neighbour interpolated y_new = f(x_new)."""
+        """ Find nearest neighbor interpolated y_new = f(x_new)."""
 
         # 2. Find where in the averaged data the values to interpolate
         #    would be inserted.
         #    Note: use side='left' (right) to searchsorted() to define the
-        #    halfway point to be nearest to the left (right) neighbour
+        #    halfway point to be nearest to the left (right) neighbor
         x_new_indices = searchsorted(self.x_bds, x_new, side='left')
 
         # 3. Clip x_new_indices so that they are within the range of x indices.
@@ -631,7 +627,7 @@ class interp1d(_Interpolator1D):
         return y_new
 
     def _call_previousnext(self, x_new):
-        """Use previous/next neighbour of x_new, y_new = f(x_new)."""
+        """Use previous/next neighbor of x_new, y_new = f(x_new)."""
 
         # 1. Get index of left/right value
         x_new_indices = searchsorted(self._x_shift, x_new, side=self._side)
@@ -654,7 +650,7 @@ class interp1d(_Interpolator1D):
         return out
 
     def _evaluate(self, x_new):
-        # 1. Handle values in x_new that are outside of x.  Throw error,
+        # 1. Handle values in x_new that are outside of x. Throw error,
         #    or return a list of mask array indicating the outofbounds values.
         #    The behavior is set by the bounds_error variable.
         x_new = asarray(x_new)
@@ -682,7 +678,7 @@ class interp1d(_Interpolator1D):
         """
 
         # If self.bounds_error is True, we raise an error if any x_new values
-        # fall outside the range of x.  Otherwise, we return an array indicating
+        # fall outside the range of x. Otherwise, we return an array indicating
         # which values are outside the boundary region.
         below_bounds = x_new < self.x[0]
         above_bounds = x_new > self.x[-1]
@@ -763,7 +759,7 @@ class _PPolyBase(object):
         Construct the piecewise polynomial without making checks.
 
         Takes the same parameters as the constructor. Input arguments
-        ``c`` and ``x`` must be arrays of the correct shape and type.  The
+        ``c`` and ``x`` must be arrays of the correct shape and type. The
         ``c`` array can only be of dtypes float and complex, and ``x``
         array must have dtype float.
         """
@@ -816,9 +812,11 @@ class _PPolyBase(object):
         if x.ndim != 1:
             raise ValueError("invalid dimensions for x")
         if x.shape[0] != c.shape[1]:
-            raise ValueError("x and c have incompatible sizes")
+            raise ValueError("Shapes of x {} and c {} are incompatible"
+                             .format(x.shape, c.shape))
         if c.shape[2:] != self.c.shape[2:] or c.ndim != self.c.ndim:
-            raise ValueError("c and self.c have incompatible shapes")
+            raise ValueError("Shapes of c {} and self.c {} are incompatible"
+                             .format(c.shape, self.c.shape))
 
         if c.size == 0:
             return
@@ -937,7 +935,7 @@ class PPoly(_PPolyBase):
     Parameters
     ----------
     c : ndarray, shape (k, m, ...)
-        Polynomial coefficients, order `k` and `m` intervals
+        Polynomial coefficients, order `k` and `m` intervals.
     x : ndarray, shape (m+1,)
         Polynomial breakpoints. Must be sorted in either increasing or
         decreasing order.
@@ -954,7 +952,7 @@ class PPoly(_PPolyBase):
         Breakpoints.
     c : ndarray
         Coefficients of the polynomials. They are reshaped
-        to a 3-dimensional array with the last dimension representing
+        to a 3-D array with the last dimension representing
         the trailing dimensions of the original coefficient array.
     axis : int
         Interpolation axis.
@@ -979,7 +977,7 @@ class PPoly(_PPolyBase):
     Notes
     -----
     High-order polynomials in the power basis can be numerically
-    unstable.  Precision problems can start to appear for orders
+    unstable. Precision problems can start to appear for orders
     larger than 20-30.
     """
     def _evaluate(self, x, nu, extrapolate, out):
@@ -993,7 +991,7 @@ class PPoly(_PPolyBase):
         Parameters
         ----------
         nu : int, optional
-            Order of derivative to evaluate. Default is 1, i.e. compute the
+            Order of derivative to evaluate. Default is 1, i.e., compute the
             first derivative. If negative, the antiderivative is returned.
 
         Returns
@@ -1040,7 +1038,7 @@ class PPoly(_PPolyBase):
         Parameters
         ----------
         nu : int, optional
-            Order of antiderivative to evaluate. Default is 1, i.e. compute
+            Order of antiderivative to evaluate. Default is 1, i.e., compute
             the first integral. If negative, the derivative is returned.
 
         Returns
@@ -1232,7 +1230,7 @@ class PPoly(_PPolyBase):
         else:
             r2 = np.empty(prod(self.c.shape[2:]), dtype=object)
             # this for-loop is equivalent to ``r2[...] = r``, but that's broken
-            # in numpy 1.6.0
+            # in NumPy 1.6.0
             for ii, root in enumerate(r):
                 r2[ii] = root
 
@@ -1289,7 +1287,7 @@ class PPoly(_PPolyBase):
             t, c, k = tck
 
         cvals = np.empty((k + 1, len(t)-1), dtype=c.dtype)
-        for m in xrange(k, -1, -1):
+        for m in range(k, -1, -1):
             y = fitpack.splev(t[:-1], tck, der=m)
             cvals[k - m, :] = y/spec.gamma(m+1)
 
@@ -1367,7 +1365,7 @@ class BPoly(_PPolyBase):
         Breakpoints.
     c : ndarray
         Coefficients of the polynomials. They are reshaped
-        to a 3-dimensional array with the last dimension representing
+        to a 3-D array with the last dimension representing
         the trailing dimensions of the original coefficient array.
     axis : int
         Interpolation axis.
@@ -1430,7 +1428,7 @@ class BPoly(_PPolyBase):
         Parameters
         ----------
         nu : int, optional
-            Order of derivative to evaluate. Default is 1, i.e. compute the
+            Order of derivative to evaluate. Default is 1, i.e., compute the
             first derivative. If negative, the antiderivative is returned.
 
         Returns
@@ -1483,7 +1481,7 @@ class BPoly(_PPolyBase):
         Parameters
         ----------
         nu : int, optional
-            Order of antiderivative to evaluate. Default is 1, i.e. compute
+            Order of antiderivative to evaluate. Default is 1, i.e., compute
             the first integral. If negative, the derivative is returned.
 
         Returns
@@ -1646,9 +1644,9 @@ class BPoly(_PPolyBase):
         Parameters
         ----------
         xi : array_like
-            sorted 1D array of x-coordinates
+            sorted 1-D array of x-coordinates
         yi : array_like or list of array_likes
-            ``yi[i][j]`` is the ``j``-th derivative known at ``xi[i]``
+            ``yi[i][j]`` is the ``j``th derivative known at ``xi[i]``
         orders : None or int or array_like of ints. Default: None.
             Specifies the degree of local polynomials. If not None, some
             derivatives are ignored.
@@ -1715,12 +1713,12 @@ class BPoly(_PPolyBase):
         try:
             k = max(len(yi[i]) + len(yi[i+1]) for i in range(m))
         except TypeError:
-            raise ValueError("Using a 1D array for y? Please .reshape(-1, 1).")
+            raise ValueError("Using a 1-D array for y? Please .reshape(-1, 1).")
 
         if orders is None:
             orders = [None] * m
         else:
-            if isinstance(orders, (integer_types, np.integer)):
+            if isinstance(orders, (int, np.integer)):
                 orders = [orders] * m
             k = max(k, max(orders))
 
@@ -1776,7 +1774,7 @@ class BPoly(_PPolyBase):
             Right-hand end point of the interval
         ya : array_like
             Derivatives at `xa`. `ya[0]` is the value of the function, and
-            `ya[i]` for ``i > 0`` is the value of the ``i``-th derivative.
+            `ya[i]` for ``i > 0`` is the value of the ``i``th derivative.
         yb : array_like
             Derivatives at `xb`.
 
@@ -1813,7 +1811,8 @@ class BPoly(_PPolyBase):
         """
         ya, yb = np.asarray(ya), np.asarray(yb)
         if ya.shape[1:] != yb.shape[1:]:
-            raise ValueError('ya and yb have incompatible dimensions.')
+            raise ValueError('Shapes of ya {} and yb {} are incompatible'
+                             .format(ya.shape, yb.shape))
 
         dta, dtb = ya.dtype, yb.dtype
         if (np.issubdtype(dta, np.complexfloating) or
@@ -1852,13 +1851,13 @@ class BPoly(_PPolyBase):
         Parameters
         ----------
         c : array_like
-            coefficient array, 1D
+            coefficient array, 1-D
         d : integer
 
         Returns
         -------
         array
-            coefficient array, 1D array of length `c.shape[0] + d`
+            coefficient array, 1-D array of length `c.shape[0] + d`
 
         Notes
         -----
@@ -2063,7 +2062,7 @@ class NdPPoly(object):
 
     def _derivative_inplace(self, nu, axis):
         """
-        Compute 1D derivative along a selected dimension in-place
+        Compute 1-D derivative along a selected dimension in-place
         May result to non-contiguous c array.
         """
         if nu < 0:
@@ -2097,7 +2096,7 @@ class NdPPoly(object):
 
     def _antiderivative_inplace(self, nu, axis):
         """
-        Compute 1D antiderivative along a selected dimension
+        Compute 1-D antiderivative along a selected dimension
         May result to non-contiguous c array.
         """
         if nu <= 0:
@@ -2220,7 +2219,7 @@ class NdPPoly(object):
         a, b : float
             Lower and upper bound for integration.
         axis : int
-            Dimension over which to compute the 1D integrals
+            Dimension over which to compute the 1-D integrals
         extrapolate : bool, optional
             Whether to extrapolate to out-of-bounds points based on first
             and last intervals, or to return NaNs.
@@ -2229,7 +2228,7 @@ class NdPPoly(object):
         -------
         ig : NdPPoly or array-like
             Definite integral of the piecewise polynomial over [a, b].
-            If the polynomial was 1-dimensional, an array is returned,
+            If the polynomial was 1D, an array is returned,
             otherwise, an NdPPoly object.
 
         """
@@ -2241,7 +2240,7 @@ class NdPPoly(object):
         ndim = len(self.x)
         axis = int(axis) % ndim
 
-        # reuse 1D integration routines
+        # reuse 1-D integration routines
         c = self.c
         swap = list(range(c.ndim))
         swap.insert(0, swap[axis])
@@ -2317,7 +2316,7 @@ class RegularGridInterpolator(object):
     Interpolation on a regular grid in arbitrary dimensions
 
     The data must be defined on a regular grid; the grid spacing however may be
-    uneven.  Linear and nearest-neighbour interpolation are supported. After
+    uneven. Linear and nearest-neighbor interpolation are supported. After
     setting up the interpolator object, the interpolation method (*linear* or
     *nearest*) may be chosen at each evaluation.
 
@@ -2362,7 +2361,7 @@ class RegularGridInterpolator(object):
 
     Examples
     --------
-    Evaluate a simple example function on the points of a 3D grid:
+    Evaluate a simple example function on the points of a 3-D grid:
 
     >>> from scipy.interpolate import RegularGridInterpolator
     >>> def f(x, y, z):
@@ -2372,7 +2371,7 @@ class RegularGridInterpolator(object):
     >>> z = np.linspace(7, 9, 33)
     >>> data = f(*np.meshgrid(x, y, z, indexing='ij', sparse=True))
 
-    ``data`` is now a 3D array with ``data[i,j,k] = f(x[i], y[j], z[k])``.
+    ``data`` is now a 3-D array with ``data[i,j,k] = f(x[i], y[j], z[k])``.
     Next, define an interpolating function from this data:
 
     >>> my_interpolating_function = RegularGridInterpolator((x, y, z), data)
@@ -2389,7 +2388,7 @@ class RegularGridInterpolator(object):
 
     See also
     --------
-    NearestNDInterpolator : Nearest neighbour interpolation on unstructured
+    NearestNDInterpolator : Nearest neighbor interpolation on unstructured
                             data in N dimensions
 
     LinearNDInterpolator : Piecewise linear interpolant on unstructured data
@@ -2583,9 +2582,28 @@ def interpn(points, values, xi, method="linear", bounds_error=True,
 
     .. versionadded:: 0.14
 
+    Examples
+    --------
+    Evaluate a simple example function on the points of a regular 3-D grid:
+
+    >>> from scipy.interpolate import interpn
+    >>> def value_func_3d(x, y, z):
+    ...     return 2 * x + 3 * y - z
+    >>> x = np.linspace(0, 5)
+    >>> y = np.linspace(0, 5)
+    >>> z = np.linspace(0, 5)
+    >>> points = (x, y, z)
+    >>> values = value_func_3d(*np.meshgrid(*points))
+
+    Evaluate the interpolating function at a point
+
+    >>> point = np.array([2.21, 3.12, 1.15])
+    >>> print(interpn(points, values, point))
+    [11.72]
+
     See also
     --------
-    NearestNDInterpolator : Nearest neighbour interpolation on unstructured
+    NearestNDInterpolator : Nearest neighbor interpolation on unstructured
                             data in N dimensions
 
     LinearNDInterpolator : Piecewise linear interpolant on unstructured data
@@ -2608,17 +2626,17 @@ def interpn(points, values, xi, method="linear", bounds_error=True,
 
     ndim = values.ndim
     if ndim > 2 and method == "splinef2d":
-        raise ValueError("The method spline2fd can only be used for "
+        raise ValueError("The method splinef2d can only be used for "
                          "2-dimensional input data")
     if not bounds_error and fill_value is None and method == "splinef2d":
-        raise ValueError("The method spline2fd does not support extrapolation.")
+        raise ValueError("The method splinef2d does not support extrapolation.")
 
     # sanity check consistency of input dimensions
     if len(points) > ndim:
         raise ValueError("There are %d point arrays, but values has %d "
                          "dimensions" % (len(points), ndim))
     if len(points) != ndim and method == 'splinef2d':
-        raise ValueError("The method spline2fd can only be used for "
+        raise ValueError("The method splinef2d can only be used for "
                          "scalar data with one point per coordinate")
 
     # sanity check input grid
@@ -2716,7 +2734,7 @@ class _ppform(PPoly):
         # Note: this spline representation is incompatible with FITPACK
         N = len(xk)-1
         sivals = np.empty((order+1, N), dtype=float)
-        for m in xrange(order, -1, -1):
+        for m in range(order, -1, -1):
             fact = spec.gamma(m+1)
             res = _fitpack._bspleval(xk[:-1], xk, cvals, order, m)
             res /= fact

@@ -1,8 +1,7 @@
 """ Test functions for the sparse.linalg.eigen.lobpcg module
 """
-from __future__ import division, print_function, absolute_import
-
 import itertools
+import platform
 
 import numpy as np
 from numpy.testing import (assert_almost_equal, assert_equal,
@@ -10,10 +9,11 @@ from numpy.testing import (assert_almost_equal, assert_equal,
 
 import pytest
 
-from scipy import (ones, rand, r_, diag)
-from scipy.linalg import (eig, eigh, toeplitz, orth)
-from scipy.sparse import (spdiags, diags, eye, random)
-from scipy.sparse.linalg import (eigs, LinearOperator)
+from numpy import ones, r_, diag
+from numpy.random import rand
+from scipy.linalg import eig, eigh, toeplitz, orth
+from scipy.sparse import spdiags, diags, eye
+from scipy.sparse.linalg import eigs, LinearOperator
 from scipy.sparse.linalg.eigen.lobpcg import lobpcg
 
 def ElasticRod(n):
@@ -256,7 +256,7 @@ def test_eigs_consistency(n, atol):
     assert_allclose(np.sort(vals), np.sort(lvals), atol=1e-14)
 
 
-def test_verbosity():
+def test_verbosity(tmpdir):
     """Check that nonzero verbosity level code runs.
     """
     A, B = ElasticRod(100)
@@ -269,6 +269,8 @@ def test_verbosity():
                   verbosityLevel=9)
 
 
+@pytest.mark.xfail(platform.machine() == 'ppc64le',
+                   reason="fails on ppc64le")
 def test_tolerance_float32():
     """Check lobpcg for attainable tolerance in float32.
     """
@@ -299,12 +301,29 @@ def test_random_initial_float32():
     assert_allclose(eigvals, -np.arange(1, 1 + m), atol=1e-2)
 
 
+def test_maxit_None():
+    """Check lobpcg if maxit=None runs 20 iterations (the default)
+    by checking the size of the iteration history output, which should
+    be the number of iterations plus 2 (initial and final values).
+    """
+    np.random.seed(1566950023)
+    n = 50
+    m = 4
+    vals = -np.arange(1, n + 1)
+    A = diags([vals], [0], (n, n))
+    A = A.astype(np.float32)
+    X = np.random.randn(n, m)
+    X = X.astype(np.float32)
+    _, _, l_h = lobpcg(A, X, tol=1e-8, maxiter=20, retLambdaHistory=True)
+    assert_allclose(np.shape(l_h)[0], 20+2)
+
+
 @pytest.mark.slow
 def test_diagonal_data_types():
     """Check lobpcg for diagonal matrices for all matrix types.
     """
     np.random.seed(1234)
-    n = 50
+    n = 40
     m = 4
     # Define the generalized eigenvalue problem Av = cBv
     # where (c, v) is a generalized eigenpair,
@@ -312,7 +331,8 @@ def test_diagonal_data_types():
     vals = np.arange(1, n + 1)
 
     list_sparse_format = ['bsr', 'coo', 'csc', 'csr', 'dia', 'dok', 'lil']
-    for s_f in list_sparse_format:
+    sparse_formats = len(list_sparse_format)
+    for s_f_i, s_f in enumerate(list_sparse_format):
 
         As64 = diags([vals * vals], [0], (n, n), format=s_f)
         As32 = As64.astype(np.float32)
@@ -369,8 +389,16 @@ def test_diagonal_data_types():
         Yf32 = np.eye(n, m_excluded, dtype=np.float32)
         listY = [Yf64, Yf32]
 
-        for A, B, M, X, Y in itertools.product(listA, listB, listM, listX,
-                                               listY):
+        tests = list(itertools.product(listA, listB, listM, listX, listY))
+        # This is one of the slower tests because there are >1,000 configs
+        # to test here, instead of checking product of all input, output types
+        # test each configuration for the first sparse format, and then
+        # for one additional sparse format. this takes 2/7=30% as long as
+        # testing all configurations for all sparse formats.
+        if s_f_i > 0:
+            tests = tests[s_f_i - 1::sparse_formats-1]
+
+        for A, B, M, X, Y in tests:
             eigvals, _ = lobpcg(A, X, B=B, M=M, Y=Y, tol=1e-4,
                                 maxiter=100, largest=False)
             assert_allclose(eigvals,

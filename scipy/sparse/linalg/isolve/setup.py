@@ -1,16 +1,22 @@
-from __future__ import division, print_function, absolute_import
-
 from os.path import join
 
 
 def configuration(parent_package='',top_path=None):
-    from scipy._build_utils.system_info import get_info, NotFoundError
+    from scipy._build_utils.system_info import get_info
     from numpy.distutils.misc_util import Configuration
-    from scipy._build_utils import get_g77_abi_wrappers
+    from scipy._build_utils import (get_g77_abi_wrappers, uses_blas64,
+                                    blas_ilp64_pre_build_hook, get_f2py_int64_options)
 
     config = Configuration('isolve',parent_package,top_path)
 
-    lapack_opt = get_info('lapack_opt')
+    if uses_blas64():
+        lapack_opt = get_info('lapack_ilp64_opt')
+        f2py_options = get_f2py_int64_options()
+        pre_build_hook = blas_ilp64_pre_build_hook(lapack_opt)
+    else:
+        lapack_opt = get_info('lapack_opt')
+        f2py_options = None
+        pre_build_hook = None
 
     # iterative methods
     methods = ['BiCGREVCOM.f.src',
@@ -29,9 +35,11 @@ def configuration(parent_package='',top_path=None):
     sources = [join('iterative', x) for x in sources]
     sources += get_g77_abi_wrappers(lapack_opt)
 
-    config.add_extension('_iterative',
-                         sources=sources,
-                         extra_info=lapack_opt)
+    ext = config.add_extension('_iterative',
+                               sources=sources,
+                               f2py_options=f2py_options,
+                               extra_info=lapack_opt)
+    ext._pre_build_hook = pre_build_hook
 
     config.add_data_dir('tests')
 

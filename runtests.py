@@ -49,12 +49,18 @@ else:
 
 import sys
 import os
+# the following multiprocessing import is necessary to prevent tests that use
+# multiprocessing from hanging on >= Python3.8 (macOS) using pytest. Just the
+# import is enough...
+import multiprocessing
+
 
 # In case we are run from the source directory, we don't want to import the
 # project from there:
 sys.path.pop(0)
 
 from argparse import ArgumentParser, REMAINDER
+import contextlib
 import shutil
 import subprocess
 import time
@@ -108,8 +114,7 @@ def main(argv):
     parser.add_argument("--debug", "-g", action="store_true",
                         help="Debug build")
     parser.add_argument("--parallel", "-j", type=int, default=1,
-                        help="Number of parallel jobs during build (requires "
-                             "NumPy 1.10 or greater).")
+                        help="Number of parallel jobs for build and testing")
     parser.add_argument("--show-build-log", action="store_true",
                         help="Show build output rather than using a log file")
     parser.add_argument("--bench", action="store_true",
@@ -125,17 +130,23 @@ def main(argv):
                         help="Arguments to pass to Nose, Python or shell")
     parser.add_argument("--pep8", action="store_true", default=False,
                         help="Perform pep8 check with pycodestyle.")
+    parser.add_argument("--mypy", action="store_true", default=False,
+                        help="Run mypy on the codebase")
     parser.add_argument("--doc", action="append", nargs="?",
                         const="html-scipyorg", help="Build documentation")
     args = parser.parse_args(argv)
 
     if args.pep8:
-        # os.system("flake8 scipy --ignore=F403,F841,F401,F811,F405,E121,E122,"
-        #           "E123,E125,E126,E127,E128,E226,E231,E251,E265,E266,E302,"
-        #           "E402,E501,E712,E721,E731,E741,W291,W293,W391,W503,W504"
-        #           "--exclude=scipy/_lib/six.py")
+        # Lint the source using the configuration in tox.ini.
         os.system("pycodestyle scipy benchmarks/benchmarks")
+        # Lint just the diff since branching off of master using a
+        # stricter configuration.
+        lint_diff = os.path.join(ROOT_DIR, 'tools', 'lint_diff.py')
+        os.system(lint_diff)
         sys.exit(0)
+
+    if args.mypy:
+        sys.exit(run_mypy(args))
 
     if args.bench_compare:
         args.bench = True
@@ -176,7 +187,7 @@ def main(argv):
             sys.modules['__main__'] = new_module('__main__')
             ns = dict(__name__='__main__',
                       __file__=extra_argv[0])
-            exec_(script, ns)
+            exec(script, ns)
             sys.exit(0)
         else:
             import code
@@ -364,7 +375,7 @@ def build_project(args):
     cmd += ['build']
     if args.parallel > 1:
         cmd += ['-j', str(args.parallel)]
-    # Install; avoid producing eggs so scipy can be imported from dst_dir.
+    # Install; avoid producing eggs so SciPy can be imported from dst_dir.
     cmd += ['install', '--prefix=' + dst_dir,
             '--single-version-externally-managed',
             '--record=' + dst_dir + 'tmp_install_log.txt']
@@ -372,7 +383,7 @@ def build_project(args):
     from distutils.sysconfig import get_python_lib
     site_dir = get_python_lib(prefix=dst_dir, plat_specific=True)
     # easy_install won't install to a path that Python by default cannot see
-    # and isn't on the PYTHONPATH.  Plus, it has to exist.
+    # and isn't on the PYTHONPATH. Plus, it has to exist.
     if not os.path.exists(site_dir):
         os.makedirs(site_dir)
     env['PYTHONPATH'] = site_dir
@@ -473,25 +484,48 @@ def lcov_generate():
         print("HTML output generated under build/lcov/")
 
 
-#
-# Python 3 support
-#
+@contextlib.contextmanager
+def working_dir(new_dir):
+    current_dir = os.getcwd()
+    try:
+        os.chdir(new_dir)
+        yield
+    finally:
+        os.chdir(current_dir)
 
-if sys.version_info[0] >= 3:
-    import builtins
-    exec_ = getattr(builtins, "exec")
-else:
-    def exec_(code, globs=None, locs=None):
-        """Execute code in a namespace."""
-        if globs is None:
-            frame = sys._getframe(1)
-            globs = frame.f_globals
-            if locs is None:
-                locs = frame.f_locals
-            del frame
-        elif locs is None:
-            locs = globs
-        exec("""exec code in globs, locs""")
+
+def run_mypy(args):
+    if args.no_build:
+        raise ValueError('Cannot run mypy with --no-build')
+
+    try:
+        import mypy.api
+    except ImportError:
+        raise RuntimeError(
+            "Mypy not found. Please install it by running "
+            "pip install -r mypy_requirements.txt from the repo root"
+        )
+
+    site_dir = build_project(args)
+    config = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)),
+        "mypy.ini",
+    )
+    with working_dir(site_dir):
+        # By default mypy won't color the output since it isn't being
+        # invoked from a tty.
+        os.environ['MYPY_FORCE_COLOR'] = '1'
+        # Change to the site directory to make sure mypy doesn't pick
+        # up any type stubs in the source tree.
+        report, errors, status = mypy.api.run([
+            "--config-file",
+            config,
+            PROJECT_MODULE,
+        ])
+    print(report, end='')
+    print(errors, end='', file=sys.stderr)
+    return status
+
 
 if __name__ == "__main__":
     main(argv=sys.argv[1:])

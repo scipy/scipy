@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 import os
 import sys
 from os.path import join, dirname
@@ -160,6 +158,9 @@ def configuration(parent_package='',top_path=None):
     config.add_data_files('tests/data/*.npz')
 
     config.add_subpackage('_precompute')
+
+    # Type stubs
+    config.add_data_files('*.pyi')
 
     return config
 

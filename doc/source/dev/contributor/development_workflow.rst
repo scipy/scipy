@@ -11,7 +11,7 @@ reading to see an example of fixing a bug and submitting a pull request.*
 
 In :ref:`quickstart-mac` or :ref:`quickstart-ubuntu`, you created your own
 fork (copy) of the SciPy repository, cloned the repository on your own machine,
-and and built SciPy from this source code. Before getting started here,
+and built SciPy from this source code. Before getting started here,
 there are two other things you need to do just once before you start modifying
 SciPy.
 
@@ -34,7 +34,7 @@ SciPy.
    associated the name ``origin`` with your fork. The reason you need both of
    these `"remotes"`_ is that you will typically start with the latest version
    of SciPy from the official repository ``upstream``, make changes, "push"
-   your changes to    your fork of the repository ``origin``, and then submit
+   your changes to your fork of the repository ``origin``, and then submit
    a "pull request" asking SciPy to "pull" your changes from your fork into
    the official repository.
 
@@ -46,7 +46,7 @@ In short:
 1. Start a new *feature branch* for each set of edits that you do.
    See :ref:`below <making-a-new-feature-branch>`.
 
-2. Hack away! See :ref:`below <editing-workflow>`
+2. Hack away! See :ref:`below <editing-workflow>`.
 
 3. When finished:
 
@@ -105,7 +105,7 @@ when it's time to submit a pull request.
 It's also a good idea to build this branch and run tests before continuing.
 Assuming you've followed :ref:`quickstart-mac` or :ref:`quickstart-ubuntu`
 to set up your development environment, you'll need to activate your
-development virtual environment, perform an in place build, and run tests::
+development virtual environment, perform an in-place build, and run tests::
 
    conda activate name-of-your-virtual-environment
    python setup.py build_ext --inplace
@@ -138,7 +138,7 @@ In more detail
    of related changes, move on to the next steps.
 
 #. Optional: Check which files have changed with ``git status`` (see `git
-   status`_).  You'll see a listing like this one::
+   status`_). You'll see a listing like this one::
 
      # On branch my-new-feature
      # Changed but not updated:
@@ -188,13 +188,13 @@ In more detail
 .. note::
 
    Assuming you have followed the instructions in these pages, git will create
-   a default link to your github_ repo called ``origin``.  In git >= 1.7 you
+   a default link to your github_ repo called ``origin``. In git >= 1.7, you
    can ensure that the link to origin is permanently set by using the
    ``--set-upstream`` option::
 
       git push --set-upstream origin my-new-feature
 
-   From now on git_ will know that ``my-new-feature`` is related to the
+   From now on, git_ will know that ``my-new-feature`` is related to the
    ``my-new-feature`` branch in your own github_ repo. Subsequent push calls
    are then simplified to the following::
 
@@ -217,15 +217,15 @@ Commit messages should be clear and follow a few basic rules.  Example::
    ENH: add functionality X to SciPy.<submodule>.
 
    The first line of the commit message starts with a capitalized acronym
-   (options listed below) indicating what type of commit this is.  Then a blank
+   (options listed below) indicating what type of commit this is. Then a blank
    line, then more text if needed.  Lines shouldn't be longer than 72
    characters.  If the commit is related to a ticket, indicate that with
-   "See #3456", "See ticket 3456", "Closes #3456" or similar.
+   "See #3456", "See ticket 3456", "Closes #3456", or similar.
 
 Describing the motivation for a change, the nature of a bug for bug fixes or
 some details on what an enhancement does are also good to include in a commit
-message.  Messages should be understandable without looking at the code
-changes.  A commit message like ``MAINT: fixed another one`` is an example of
+message. Messages should be understandable without looking at the code
+changes. A commit message like ``MAINT: fixed another one`` is an example of
 what not to do; the reader has to go look for context elsewhere.
 
 Standard acronyms to start the commit message with are::
@@ -307,4 +307,3 @@ Checklist before submitting a PR
 
 .. |setup.py| replace:: ``setup.py``
 .. _setup.py: https://github.com/scipy/scipy/blob/master/setup.py
-

@@ -1,5 +1,3 @@
-from __future__ import division, absolute_import, print_function
-
 import queue
 import threading
 import multiprocessing
@@ -306,6 +304,7 @@ class TestFFTThreadSafe(object):
 @pytest.mark.parametrize("func", [fft.fft, fft.ifft, fft.rfft, fft.irfft])
 def test_multiprocess(func):
     # Test that fft still works after fork (gh-10422)
+
     with multiprocessing.Pool(2) as p:
         res = p.map(func, [np.ones(100) for _ in range(4)])
 

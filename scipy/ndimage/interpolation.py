@@ -28,24 +28,17 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from __future__ import division, print_function, absolute_import
-
 import itertools
-import numpy
 import warnings
+
+import numpy
+from numpy.core.multiarray import normalize_axis_index
 
 from . import _ni_support
 from . import _nd_image
-from ._ni_docstrings import docdict
+from ._ni_docstrings import docfiller
 from scipy._lib import doccer
 
-# Change the default 'reflect' to 'constant' via modifying a copy of docdict
-docdict_copy = docdict.copy()
-del docdict
-docdict_copy['mode'] = docdict_copy['mode'].replace("Default is 'reflect'",
-                                                    "Default is 'constant'")
-
-docfiller = doccer.filldoc(docdict_copy)
 
 __all__ = ['spline_filter1d', 'spline_filter', 'geometric_transform',
            'map_coordinates', 'affine_transform', 'shift', 'zoom', 'rotate']
@@ -55,7 +48,7 @@ __all__ = ['spline_filter1d', 'spline_filter', 'geometric_transform',
 def spline_filter1d(input, order=3, axis=-1, output=numpy.float64,
                     mode='mirror'):
     """
-    Calculate a one-dimensional spline filter along the given axis.
+    Calculate a 1-D spline filter along the given axis.
 
     The lines of the array along the given axis are filtered by a
     spline filter. The order of the spline must be >= 2 and <= 5.
@@ -71,7 +64,7 @@ def spline_filter1d(input, order=3, axis=-1, output=numpy.float64,
     output : ndarray or dtype, optional
         The array in which to place the output, or the dtype of the returned
         array. Default is ``numpy.float64``.
-    %(mode)s
+    %(mode_mirror)s
 
     Returns
     -------
@@ -81,14 +74,38 @@ def spline_filter1d(input, order=3, axis=-1, output=numpy.float64,
     Notes
     -----
     All functions in `ndimage.interpolation` do spline interpolation of
-    the input image. If using b-splines of `order > 1`, the input image
-    values have to be converted to b-spline coefficients first, which is
-    done by applying this one-dimensional filter sequentially along all
-    axes of the input. All functions that require b-spline coefficients
+    the input image. If using B-splines of `order > 1`, the input image
+    values have to be converted to B-spline coefficients first, which is
+    done by applying this 1-D filter sequentially along all
+    axes of the input. All functions that require B-spline coefficients
     will automatically filter their inputs, a behavior controllable with
     the `prefilter` keyword argument. For functions that accept a `mode`
     parameter, the result will only be correct if it matches the `mode`
     used when filtering.
+
+    See Also
+    --------
+    spline_filter : Multidimensional spline filter.
+
+    Examples
+    --------
+    We can filter an image using 1-D spline along the given axis:
+
+    >>> from scipy.ndimage import spline_filter1d
+    >>> import matplotlib.pyplot as plt
+    >>> orig_img = np.eye(20)  # create an image
+    >>> orig_img[10, :] = 1.0
+    >>> sp_filter_axis_0 = spline_filter1d(orig_img, axis=0)
+    >>> sp_filter_axis_1 = spline_filter1d(orig_img, axis=1)
+    >>> f, ax = plt.subplots(1, 3, sharex=True)
+    >>> for ind, data in enumerate([[orig_img, "original image"],
+    ...             [sp_filter_axis_0, "spline filter (axis=0)"],
+    ...             [sp_filter_axis_1, "spline filter (axis=1)"]]):
+    ...     ax[ind].imshow(data[0], cmap='gray_r')
+    ...     ax[ind].set_title(data[1])
+    >>> plt.tight_layout()
+    >>> plt.show()
+
     """
     if order < 0 or order > 5:
         raise RuntimeError('spline order not supported')
@@ -100,28 +117,45 @@ def spline_filter1d(input, order=3, axis=-1, output=numpy.float64,
         output[...] = numpy.array(input)
     else:
         mode = _ni_support._extend_mode_to_code(mode)
-        axis = _ni_support._check_axis(axis, input.ndim)
+        axis = normalize_axis_index(axis, input.ndim)
         _nd_image.spline_filter1d(input, order, axis, output, mode)
     return output
 
 
 def spline_filter(input, order=3, output=numpy.float64, mode='mirror'):
     """
-    Multi-dimensional spline filter.
+    Multidimensional spline filter.
 
     For more details, see `spline_filter1d`.
 
     See Also
     --------
-    spline_filter1d
+    spline_filter1d : Calculate a 1-D spline filter along the given axis.
 
     Notes
     -----
-    The multi-dimensional filter is implemented as a sequence of
-    one-dimensional spline filters. The intermediate arrays are stored
+    The multidimensional filter is implemented as a sequence of
+    1-D spline filters. The intermediate arrays are stored
     in the same data type as the output. Therefore, for output types
     with a limited precision, the results may be imprecise because
     intermediate results may be stored with insufficient precision.
+
+    Examples
+    --------
+    We can filter an image using multidimentional splines:
+
+    >>> from scipy.ndimage import spline_filter
+    >>> import matplotlib.pyplot as plt
+    >>> orig_img = np.eye(20)  # create an image
+    >>> orig_img[10, :] = 1.0
+    >>> sp_filter = spline_filter(orig_img, order=3)
+    >>> f, ax = plt.subplots(1, 2, sharex=True)
+    >>> for ind, data in enumerate([[orig_img, "original image"],
+    ...                             [sp_filter, "spline filter"]]):
+    ...     ax[ind].imshow(data[0], cmap='gray_r')
+    ...     ax[ind].set_title(data[1])
+    >>> plt.tight_layout()
+    >>> plt.show()
 
     """
     if order < 2 or order > 5:
@@ -165,7 +199,7 @@ def geometric_transform(input, mapping, output_shape=None,
     order : int, optional
         The order of the spline interpolation, default is 3.
         The order has to be in the range 0-5.
-    %(mode)s
+    %(mode_constant)s
     %(cval)s
     %(prefilter)s
     extra_arguments : tuple, optional
@@ -201,12 +235,12 @@ def geometric_transform(input, mapping, output_shape=None,
     callback function must return the coordinates at which the input must
     be interpolated in ``input_coordinates``. The rank of the input and
     output arrays are given by ``input_rank`` and ``output_rank``
-    respectively.  ``user_data`` is the data pointer provided
+    respectively. ``user_data`` is the data pointer provided
     to `scipy.LowLevelCallable` as-is.
 
     The callback function must return an integer error status that is zero
     if something went wrong and one otherwise. If an error occurs, you should
-    normally set the python error status with an informative message
+    normally set the Python error status with an informative message
     before returning, otherwise a default error message is set by the
     calling function.
 
@@ -288,7 +322,7 @@ def map_coordinates(input, coordinates, output=None, order=3,
     order : int, optional
         The order of the spline interpolation, default is 3.
         The order has to be in the range 0-5.
-    %(mode)s
+    %(mode_constant)s
     %(cval)s
     %(prefilter)s
 
@@ -379,7 +413,7 @@ def affine_transform(input, matrix, offset=0.0, output_shape=None,
 
             - ``(ndim, ndim)``: the linear transformation matrix for each
               output coordinate.
-            - ``(ndim,)``: assume that the 2D transformation matrix is
+            - ``(ndim,)``: assume that the 2-D transformation matrix is
               diagonal, with the diagonal specified by the given value. A more
               efficient algorithm is then used that exploits the separability
               of the problem.
@@ -400,7 +434,7 @@ def affine_transform(input, matrix, offset=0.0, output_shape=None,
     order : int, optional
         The order of the spline interpolation, default is 3.
         The order has to be in the range 0-5.
-    %(mode)s
+    %(mode_constant)s
     %(cval)s
     %(prefilter)s
 
@@ -420,8 +454,8 @@ def affine_transform(input, matrix, offset=0.0, output_shape=None,
 
     .. versionchanged:: 0.18.0
         Previously, the exact interpretation of the affine transformation
-        depended on whether the matrix was supplied as a one-dimensional or
-        two-dimensional array. If a one-dimensional array was supplied
+        depended on whether the matrix was supplied as a 1-D or a
+        2-D array. If a 1-D array was supplied
         to the matrix parameter, the output pixel value at index ``o``
         was determined from the input image at position
         ``matrix * (o + offset)``.
@@ -475,9 +509,9 @@ def affine_transform(input, matrix, offset=0.0, output_shape=None,
         offset = offset.copy()
     if matrix.ndim == 1:
         warnings.warn(
-            "The behaviour of affine_transform with a one-dimensional "
+            "The behavior of affine_transform with a 1-D "
             "array supplied for the matrix parameter has changed in "
-            "scipy 0.18.0."
+            "SciPy 0.18.0."
         )
         _nd_image.zoom_shift(filtered, matrix, offset/matrix, output, order,
                              mode, cval)
@@ -507,7 +541,7 @@ def shift(input, shift, output=None, order=3, mode='constant', cval=0.0,
     order : int, optional
         The order of the spline interpolation, default is 3.
         The order has to be in the range 0-5.
-    %(mode)s
+    %(mode_constant)s
     %(cval)s
     %(prefilter)s
 
@@ -557,7 +591,7 @@ def zoom(input, zoom, output=None, order=3, mode='constant', cval=0.0,
     order : int, optional
         The order of the spline interpolation, default is 3.
         The order has to be in the range 0-5.
-    %(mode)s
+    %(mode_constant)s
     %(cval)s
     %(prefilter)s
 
@@ -640,7 +674,7 @@ def rotate(input, angle, axes=(1, 0), reshape=True, output=None, order=3,
     order : int, optional
         The order of the spline interpolation, default is 3.
         The order has to be in the range 0-5.
-    %(mode)s
+    %(mode_constant)s
     %(cval)s
     %(prefilter)s
 
@@ -678,7 +712,7 @@ def rotate(input, angle, axes=(1, 0), reshape=True, output=None, order=3,
     ndim = input_arr.ndim
 
     if ndim < 2:
-        raise ValueError('input array should be at least two-dimensional')
+        raise ValueError('input array should be at least 2D')
 
     axes = list(axes)
 

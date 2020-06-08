@@ -39,6 +39,7 @@ distcont = [
     ['gengamma', (4.4162385429431925, 3.1193091679242761)],
     ['gengamma', (4.4162385429431925, -3.1193091679242761)],
     ['genhalflogistic', (0.77274727809929322,)],
+    ['geninvgauss', (2.3, 1.5)],
     ['genlogistic', (0.41192440799679475,)],
     ['gennorm', (1.2988442399460265,)],
     ['halfgennorm', (0.6748054997000371,)],
@@ -62,6 +63,7 @@ distcont = [
     ['kappa4', (0.1, 0.0)],
     ['kappa3', (1.0,)],
     ['ksone', (1000,)],  # replace 22 by 100 to avoid failing range, ticket 956
+    ['kstwo', (10,)],
     ['kstwobign', ()],
     ['laplace', ()],
     ['levy', ()],
@@ -71,6 +73,7 @@ distcont = [
     ['logistic', ()],
     ['loglaplace', (3.2505926592051435,)],
     ['lognorm', (0.95368226960575331,)],
+    ['loguniform', (0.01, 1)],
     ['lomax', (1.8771398388773268,)],
     ['maxwell', ()],
     ['mielke', (10.4, 4.6)],
@@ -87,9 +90,9 @@ distcont = [
     ['powerlognorm', (2.1413923530064087, 0.44639540782048337)],
     ['powernorm', (4.4453652254590779,)],
     ['rayleigh', ()],
-    ['rdist', (0.9,)],   # feels also slow
+    ['rdist', (1.6,)],
     ['recipinvgauss', (0.63004267809369119,)],
-    ['reciprocal', (0.0062309367010521255, 1.0062309367010522)],
+    ['reciprocal', (0.01, 1)],
     ['rice', (0.7749725210111873,)],
     ['semicircular', ()],
     ['skewnorm', (4.0,)],
@@ -111,6 +114,7 @@ distcont = [
 
 distdiscrete = [
     ['bernoulli',(0.3,)],
+    ['betabinom', (5, 2.3, 0.63)],
     ['binom', (5, 0.4)],
     ['boltzmann',(1.4, 19)],
     ['dlaplace', (0.8,)],  # 0.5

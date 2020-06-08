@@ -1,5 +1,5 @@
 #############################
-Building From Source on Linux
+Building from source on Linux
 #############################
 
 ====================
@@ -53,7 +53,7 @@ can do
 
 If you don't want to any LAPACK, just do "``export LAPACK=``".
 
-You will find below additional installation instructions and advice
+Below, you will find additional installation instructions and advice
 for many major Linux distributions.
 
 
@@ -68,16 +68,16 @@ Specific instructions
 Debian / Ubuntu
 ===============
 
-To build from source the following packages are needed::
+To build from source, the following packages are needed::
 
    sudo apt-get install gcc gfortran python-dev libopenblas-dev liblapack-dev cython
 
-To customize which BLAS is used, you can setup a `site.cfg` file.  See
+To customize which BLAS is used, you can set up a `site.cfg` file. See
 the `site.cfg.example` file in the numpy source for the options you
 can set.
 
-Note that Debian and Ubuntu package optimized BLAS libraries in a
-exchangeable way.  You can install libraries such as ATLAS or OpenBLAS
+Note that Debian and Ubuntu package optimized BLAS libraries in an
+exchangeable way. You can install libraries, such as ATLAS or OpenBLAS
 and change the default one used via the alternatives mechanism:
 
 ::
@@ -91,7 +91,7 @@ and change the default one used via the alternatives mechanism:
     $ sudo update-alternatives --set libblas.so.3 /usr/lib/openblas-base/libopenblas.so.0
 
 See /usr/share/doc/libatlas3-base/README.Debian for instructions on
-how to build optimized ATLAS packages for your specific CPU.  The
+how to build optimized ATLAS packages for your specific CPU. The
 packaged OpenBLAS chooses the optimal code at runtime so it does not
 need recompiling unless the packaged version does not yet support the
 used CPU.
@@ -120,7 +120,7 @@ Intel MKL 11.0 (updated Dec 2012)
 
 Add the following lines to site.cfg in your top level NumPy directory
 to use Intel® MKL for Intel® 64 (or earlier known as em64t)
-architecture, considering the default installation path of Intel® MKL
+architecture, considering the default installation path of Intel® MKL,
 which is bundled with Intel® Composer XE SP1 version on Linux:
 
 ::
@@ -141,7 +141,7 @@ If you are building NumPy for 32 bit, please add as the following
 
 Instead of the layered linking approach for the Intel® MKL as shown
 above, you may also use the dynamic interface lib mkl_rt.lib. So, for
-both the ia32 and intel64 architecture make the change as below
+both the ia32 and intel64 architecture, make the change as below
 
 ::
 
@@ -154,9 +154,9 @@ something like:
 
    cc_exe = 'icc -O2 -g -openmp -avx'
 
-Here we use, default optimizations (-O2), OpenMP threading (-openmp)
-and Intel® AVX optimizations for Intel® Xeon E5 or E3 Series which are
-based on Intel® SandyBridge Architecture (-avx).  Run icc --help for
+Here, we use default optimizations (-O2), OpenMP threading (-openmp),
+and Intel® AVX optimizations for Intel® Xeon E5 or E3 Series, which are
+based on Intel® SandyBridge Architecture (-avx). Run icc --help for
 more information on processor-specific options.
 
 Compile and install NumPy with the Intel compiler (on 64-bit platforms replace "intel" with "intelem"):
@@ -173,8 +173,8 @@ platforms replace "intel" with "intelem"):
    python setup.py config --compiler=intel --fcompiler=intel build_clib --compiler=intel --fcompiler=intel build_ext --compiler=intel --fcompiler=intel install
 
 You'll have to set LD_LIBRARY_PATH to Intel® MKL libraries (exact
-values will depend on your architecture, compiler and library
-versions) and OpenMP library for NumPy to work.  If you build NumPy
+values will depend on your architecture, compiler, and library
+versions) and OpenMP library for NumPy to work. If you build NumPy
 for Intel® 64 platforms:
 
 ::
@@ -193,15 +193,15 @@ Fortran ABI mismatch
 ====================
 
 Some linear algebra libraries are built with G77 ABI and others with
-GFortran ABI and these two ABIs are incompatible. Therefore if you
-build scipy with `gfortran` and link to a linear algebra library like
-MKL which is built with G77 ABI then there'll be an exception or a
+GFortran ABI, and these two ABIs are incompatible. Therefore, if you
+build scipy with `gfortran` and link to a linear algebra library, like
+MKL, which is built with G77 ABI, then there'll be an exception or a
 segfault. SciPy fixes this by using the CBLAS API for the few
 functions in the BLAS API that suffers from this issue.
 
 Note that SciPy needs to know at build time, what needs to be done and
 the build system will automatically check whether linear algebra
-library is MKL and if so use the CBLAS API instead of the BLAS API.
+library is MKL and if so, use the CBLAS API instead of the BLAS API.
 If autodetection fails or if the user wants to override this
 autodetection mechanism, setting the environment variable
 `SCIPY_USE_G77_ABI_WRAPPER` to 0 or 1 to disable or enable using CBLAS

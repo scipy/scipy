@@ -58,6 +58,10 @@ jobs:
           path: doc/build/html-scipyorg
           destination: html-scipyorg
 
+      - store_artifacts:
+          path: doc/build/latex
+          destination: latex
+
       - persist_to_workspace:
           root: doc/build
           paths:

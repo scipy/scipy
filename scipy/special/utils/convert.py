@@ -1,7 +1,5 @@
 # This script is used to parse BOOST special function test data into something
 # we can easily import in numpy. It is ugly as hell, but it works.
-from __future__ import division, print_function, absolute_import
-
 import re
 import os
 

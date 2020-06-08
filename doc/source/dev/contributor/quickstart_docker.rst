@@ -3,7 +3,7 @@
 .. _quickstart-docker:
 
 =================================================
-Development Environment Quickstart Guide (Docker)
+Development environment quickstart guide (Docker)
 =================================================
 
 This document shows how to start developing SciPy in a Docker container.
@@ -28,8 +28,8 @@ provide a Docker image with suitable compilers already installed; you
 use the Docker engine to execute the image as a container, add the latest
 development version of SciPy and its build-time dependencies, and build
 SciPy.
-There are Docker hosts for several OS’s including
-macOS, Linux, and Windows; please follow the appropriate
+There are Docker hosts for several OS’s including:
+macOS, Linux, and Windows. Please follow the appropriate
 installation instructions for your operating system at `docs.docker.com`_.
 
 .. note::
@@ -41,7 +41,7 @@ installation instructions for your operating system at `docs.docker.com`_.
 Cloning SciPy
 -------------
 
-Before starting SciPy's docker container, you should create a copy of the
+Before starting SciPy's Docker container, you should create a copy of the
 SciPy source code on your computer. That way, you'll be able to access the
 same files both from your native operating system and within the container.
 
@@ -55,7 +55,7 @@ collective term that includes the Windows Command Prompt.*
    https://github.com/andyfaff/scipy, except with your GitHub username
    in place of "andyfaff".
 #. Click the big, green "Clone or download" button, and copy the ".git"
-   URL to the clipboard. The URL will be the same as your fork’s url,
+   URL to the clipboard. The URL will be the same as your fork’s URL,
    except it will end in ".git".
 #. Create a folder for the SciPy source code in a convenient place on
    your computer. `Navigate`_ to it in the terminal window.
@@ -90,7 +90,7 @@ container do not persist after you close it.
    ``scipy`` directory from the current directory of the host (``$PWD``) is
    made available in the container as ``/home/scipy``. The changes you make
    from the container to any of the files in that directory are also
-   visible in the host, and vice-versa.
+   visible in the host, and vice versa.
 
 #. You should now be in the container, with something like::
 
@@ -132,14 +132,14 @@ container do not persist after you close it.
    suite of tests that make sure SciPy is working as it should, and ``-v``
    activates the ``–verbose`` option to show all the test output.
 
-#. If you'll want to :ref:`build the documentation <rendering-documentation>`
+#. If you want to :ref:`build the documentation <rendering-documentation>`
    or import SciPy from any directory other than the SciPy root, you should
    set up SciPy for development::
 
       python3.7 setup.py develop
 
-From here, you can start a Python console (e.g. enter ``python3.7``) or
-execute Python scripts from the command line (e.g.
+From here, you can start a Python console (e.g., enter ``python3.7``) or
+execute Python scripts from the command line (e.g.,
 ``python3.7 scriptname.py``).
 
 You can make changes to files in the ``scipy`` directory in a text editor/IDE
@@ -152,7 +152,7 @@ If you would like to contribute changes to the SciPy project, please see
 :ref:`development-workflow`.
 
 Finally, although Python and pip are pre-installed on the provided
-Docker image, you are welcome to to install a different
+Docker image, you are welcome to install a different
 Python distribution and package manager, such as Anaconda. In this case, you
 can adapt the instructions from :ref:`quickstart-ubuntu`, using the
 container as you would any other Linux terminal. You've already cloned

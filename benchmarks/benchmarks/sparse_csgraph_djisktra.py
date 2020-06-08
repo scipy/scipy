@@ -1,5 +1,4 @@
 """benchmarks for the scipy.sparse.csgraph module"""
-from __future__ import print_function, absolute_import
 import numpy as np
 import scipy.sparse
 

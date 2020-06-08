@@ -16,8 +16,6 @@ Dept of MS&E, Stanford University.
 
 """
 
-from __future__ import division, print_function, absolute_import
-
 __all__ = ['lsmr']
 
 from numpy import zeros, infty, atleast_1d, result_type
@@ -229,7 +227,7 @@ def lsmr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
     if show:
         print(' ')
         print('LSMR            Least-squares solution of  Ax = b\n')
-        print('The matrix A has %8g rows  and %8g cols' % (m, n))
+        print(f'The matrix A has {m} rows and {n} columns')
         print('damp = %20.14e\n' % (damp))
         print('atol = %8.2e                 conlim = %8.2e\n' % (atol, conlim))
         print('btol = %8.2e             maxiter = %8g\n' % (btol, maxiter))

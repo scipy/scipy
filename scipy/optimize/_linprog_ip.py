@@ -18,11 +18,9 @@ References
 """
 # Author: Matt Haberland
 
-from __future__ import print_function, division, absolute_import
 import numpy as np
 import scipy as sp
 import scipy.sparse as sps
-import numbers
 from warnings import warn
 from scipy.linalg import LinAlgError
 from .optimize import OptimizeWarning, OptimizeResult, _check_unknown_options
@@ -31,6 +29,7 @@ has_umfpack = True
 has_cholmod = True
 try:
     from sksparse.cholmod import cholesky as cholmod
+    from sksparse.cholmod import analyze as cholmod_analyze
 except ImportError:
     has_cholmod = False
 try:
@@ -47,7 +46,7 @@ def _get_solver(M, sparse=False, lstsq=False, sym_pos=True,
 
     Parameters
     ----------
-    M : 2D array
+    M : 2-D array
         As defined in [4] Equation 8.31
     sparse : bool (default = False)
         True if the system to be solved is sparse. This is typically set
@@ -87,7 +86,14 @@ def _get_solver(M, sparse=False, lstsq=False, sym_pos=True,
                 def solve(r, sym_pos=False):
                     return sps.linalg.lsqr(M, r)[0]
             elif cholesky:
-                solve = cholmod(M)
+                try:
+                    # Will raise an exception in the first call,
+                    # or when the matrix changes due to a new problem
+                    _get_solver.cholmod_factor.cholesky_inplace(M)
+                except Exception:
+                    _get_solver.cholmod_factor = cholmod_analyze(M)
+                    _get_solver.cholmod_factor.cholesky_inplace(M)
+                solve = _get_solver.cholmod_factor
             else:
                 if has_umfpack and sym_pos:
                     solve = sps.linalg.factorized(M)
@@ -218,29 +224,20 @@ def _get_delta(A, b, c, x, y, z, tau, kappa, gamma, eta, sparse=False,
         # Reference [4] Eq. 8.6
         rhatp = eta(gamma) * r_P
         rhatd = eta(gamma) * r_D
-        rhatg = np.array(eta(gamma) * r_G).reshape((1,))
+        rhatg = eta(gamma) * r_G
 
         # Reference [4] Eq. 8.7
         rhatxs = gamma * mu - x * z
-        rhattk = np.array(gamma * mu - tau * kappa).reshape((1,))
+        rhattk = gamma * mu - tau * kappa
 
         if i == 1:
             if ip:  # if the correction is to get "initial point"
                 # Reference [4] Eq. 8.23
                 rhatxs = ((1 - alpha) * gamma * mu -
                           x * z - alpha**2 * d_x * d_z)
-                rhattk = np.array(
-                    (1 -
-                     alpha) *
-                    gamma *
-                    mu -
-                    tau *
-                    kappa -
-                    alpha**2 *
-                    d_tau *
-                    d_kappa).reshape(
-                    (1,
-                     ))
+                rhattk = ((1 - alpha) * gamma * mu -
+                    tau * kappa -
+                    alpha**2 * d_tau * d_kappa)
             else:  # if the correction is for "predictor-corrector"
                 # Reference [4] Eq. 8.13
                 rhatxs -= d_x * d_z
@@ -568,13 +565,13 @@ def _ip_hsd(A, b, c, c0, alpha0, beta, maxiter, disp, tol, sparse, lstsq,
 
     Parameters
     ----------
-    A : 2D array
-        2D array such that ``A @ x``, gives the values of the equality
+    A : 2-D array
+        2-D array such that ``A @ x``, gives the values of the equality
         constraints at ``x``.
-    b : 1D array
-        1D array of values representing the RHS of each equality constraint
+    b : 1-D array
+        1-D array of values representing the RHS of each equality constraint
         (row) in ``A`` (for standard form problem).
-    c : 1D array
+    c : 1-D array
         Coefficients of the linear objective function to be minimized (for
         standard form problem).
     c0 : float
@@ -635,7 +632,7 @@ def _ip_hsd(A, b, c, c0, alpha0, beta, maxiter, disp, tol, sparse, lstsq,
         iteration of the algorithm. The callback function must accept a single
         `scipy.optimize.OptimizeResult` consisting of the following fields:
 
-            x : 1D array
+            x : 1-D array
                 Current solution vector
             fun : float
                 Current value of the objective function
@@ -643,11 +640,11 @@ def _ip_hsd(A, b, c, c0, alpha0, beta, maxiter, disp, tol, sparse, lstsq,
                 True only when an algorithm has completed successfully,
                 so this is always False as the callback function is called
                 only while the algorithm is still iterating.
-            slack : 1D array
+            slack : 1-D array
                 The values of the slack variables. Each slack variable
                 corresponds to an inequality constraint. If the slack is zero,
                 the corresponding constraint is active.
-            con : 1D array
+            con : 1-D array
                 The (nominally zero) residuals of the equality constraints,
                 that is, ``b - A_eq @ x``
             phase : int
@@ -711,7 +708,7 @@ def _ip_hsd(A, b, c, c0, alpha0, beta, maxiter, disp, tol, sparse, lstsq,
     if disp:
         _display_iter(rho_p, rho_d, rho_g, "-", rho_mu, obj, header=True)
     if callback is not None:
-        x_o, fun, slack, con, _, _ = _postsolve(x/tau, postsolve_args,
+        x_o, fun, slack, con, _ = _postsolve(x/tau, postsolve_args,
                                                 tol=tol)
         res = OptimizeResult({'x': x_o, 'fun': fun, 'slack': slack,
                               'con': con, 'nit': iteration, 'phase': 1,
@@ -792,7 +789,7 @@ def _ip_hsd(A, b, c, c0, alpha0, beta, maxiter, disp, tol, sparse, lstsq,
         if disp:
             _display_iter(rho_p, rho_d, rho_g, alpha, rho_mu, obj)
         if callback is not None:
-            x_o, fun, slack, con, _, _ = _postsolve(x/tau, postsolve_args,
+            x_o, fun, slack, con, _ = _postsolve(x/tau, postsolve_args,
                                                     tol=tol)
             res = OptimizeResult({'x': x_o, 'fun': fun, 'slack': slack,
                                   'con': con, 'nit': iteration, 'phase': 1,
@@ -843,16 +840,16 @@ def _linprog_ip(c, c0, A, b, callback, postsolve_args, maxiter=1000, tol=1e-8,
 
     Parameters
     ----------
-    c : 1D array
+    c : 1-D array
         Coefficients of the linear objective function to be minimized.
     c0 : float
         Constant term in objective function due to fixed (and eliminated)
         variables. (Purely for display.)
-    A : 2D array
-        2D array such that ``A @ x``, gives the values of the equality
+    A : 2-D array
+        2-D array such that ``A @ x``, gives the values of the equality
         constraints at ``x``.
-    b : 1D array
-        1D array of values representing the right hand side of each equality
+    b : 1-D array
+        1-D array of values representing the right hand side of each equality
         constraint (row) in ``A``.
     callback : callable, optional
         Callback function to be executed once per iteration.
@@ -929,7 +926,7 @@ def _linprog_ip(c, c0, A, b, callback, postsolve_args, maxiter=1000, tol=1e-8,
 
     Returns
     -------
-    x : 1D array
+    x : 1-D array
         Solution vector.
     status : int
         An integer representing the exit status of the optimization::

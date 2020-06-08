@@ -1,6 +1,4 @@
-from __future__ import division, print_function, absolute_import
-
-import numpy as np
+import numpy as np  # np is actually used, in the decorators below.
 import pytest
 
 from scipy.special._testutils import MissingModule, check_version
@@ -11,17 +9,14 @@ from scipy.special._precompute.gammainc_asy import (
 from scipy.special._precompute.gammainc_data import gammainc, gammaincc
 
 try:
-    import sympy
+    import sympy  # type: ignore[import]
 except ImportError:
     sympy = MissingModule('sympy')
 
 try:
-    import mpmath as mp
+    import mpmath as mp  # type: ignore[import]
 except ImportError:
     mp = MissingModule('mpmath')
-
-
-_is_32bit_platform = np.intp(0).itemsize < 8
 
 
 @check_version(mp, '0.19')
@@ -37,7 +32,7 @@ def test_g():
 @pytest.mark.slow
 @check_version(mp, '0.19')
 @check_version(sympy, '0.7')
-@pytest.mark.xfail(condition=_is_32bit_platform, reason="rtol only 2e-11, see gh-6938")
+@pytest.mark.xfail_on_32bit("rtol only 2e-11, see gh-6938")
 def test_alpha():
     # Test data for the alpha_k. See DLMF 8.12.14.
     with mp.workdps(30):

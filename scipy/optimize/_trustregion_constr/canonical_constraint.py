@@ -10,7 +10,7 @@ class CanonicalConstraint(object):
         f_eq(x) = 0
         f_ineq(x) <= 0
 
-    Where ``f_eq`` and ``f_ineq`` are evaluated by a single function, see
+    where ``f_eq`` and ``f_ineq`` are evaluated by a single function, see
     below.
 
     The class is supposed to be instantiated by factory methods, which
@@ -27,7 +27,7 @@ class CanonicalConstraint(object):
     jac : callable
         Function to evaluate the Jacobian of the constraint. The signature
         is ``jac(x) -> J_eq, J_ineq``, where ``J_eq`` and ``J_ineq`` are
-        either ndarray of csr_matrix of shapes (n_eq, n) and (n_ineq, n)
+        either ndarray of csr_matrix of shapes (n_eq, n) and (n_ineq, n),
         respectively.
     hess : callable
         Function to evaluate the Hessian of the constraints multiplied
@@ -331,8 +331,8 @@ def initial_constraints_as_canonical(n, prepared_constraints, sparse_jacobian):
     """Convert initial values of the constraints to the canonical format.
 
     The purpose to avoid one additional call to the constraints at the initial
-    point. It takes saved values in `PreparedConstraint`, modify and
-    concatenate them to the the canonical constraint format.
+    point. It takes saved values in `PreparedConstraint`, modififies and
+    concatenates them to the the canonical constraint format.
     """
     c_eq = []
     c_ineq = []

@@ -31,6 +31,7 @@ def _mt_fft(x):
 
 def test_mixed_threads_processes(x):
     # Test that the fft threadpool is safe to use before & after fork
+
     expect = fft.fft(x, workers=2)
 
     with multiprocessing.Pool(2) as p:
@@ -40,6 +41,7 @@ def test_mixed_threads_processes(x):
         assert_allclose(r, expect)
 
     fft.fft(x, workers=2)
+
 
 def test_invalid_workers(x):
     cpus = os.cpu_count()
@@ -71,7 +73,6 @@ def test_set_get_workers():
 
 
 def test_set_workers_invalid():
-    cpus = os.cpu_count()
 
     with pytest.raises(ValueError, match='workers must not be zero'):
         with fft.set_workers(0):

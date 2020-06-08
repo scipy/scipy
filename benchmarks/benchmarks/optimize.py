@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 import os
 import time
 import inspect
@@ -14,6 +12,7 @@ try:
     from scipy.optimize.optimize import rosen, rosen_der, rosen_hess
     from scipy.optimize import (leastsq, basinhopping, differential_evolution,
                                 dual_annealing, OptimizeResult)
+    from scipy.optimize._minimize import MINIMIZE_METHODS
 except ImportError:
     pass
 
@@ -196,7 +195,6 @@ class _BenchOptimizers(Benchmark):
         t0 = time.time()
 
         res = dual_annealing(self.fun,
-                             None,
                              self.bounds)
 
         t1 = time.time()
@@ -225,10 +223,7 @@ class _BenchOptimizers(Benchmark):
         kwargs = self.minimizer_kwargs
 
         if methods is None:
-            methods = ["COBYLA", 'Powell', 'nelder-mead',
-                       'L-BFGS-B', 'BFGS', 'CG', 'TNC', 'SLSQP',
-                       "Newton-CG", 'dogleg', 'trust-ncg', 'trust-exact',
-                       'trust-krylov', 'trust-constr']
+            methods = MINIMIZE_METHODS
 
         # L-BFGS-B, BFGS, trust-constr can use gradients, but examine
         # performance when numerical differentiation is used.

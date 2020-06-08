@@ -1,15 +1,4 @@
-from typing import (
-    Callable,
-    Iterable,
-    Dict,
-    Tuple,
-    Any,
-    Set,
-    Optional,
-    Type,
-    Union,
-    List,
-)
+import typing
 import inspect
 import functools
 from . import _uarray  # type: ignore
@@ -17,8 +6,10 @@ import copyreg  # type: ignore
 import atexit
 import pickle
 
-ArgumentExtractorType = Callable[..., Tuple["Dispatchable", ...]]
-ArgumentReplacerType = Callable[[Tuple, Dict, Tuple], Tuple[Tuple, Dict]]
+ArgumentExtractorType = typing.Callable[..., typing.Tuple["Dispatchable", ...]]
+ArgumentReplacerType = typing.Callable[
+    [typing.Tuple, typing.Dict, typing.Tuple], typing.Tuple[typing.Tuple, typing.Dict]
+]
 
 from ._uarray import (  # type: ignore
     BackendNotImplementedError,
@@ -103,7 +94,7 @@ def generate_multimethod(
     argument_extractor: ArgumentExtractorType,
     argument_replacer: ArgumentReplacerType,
     domain: str,
-    default: Optional[Callable] = None,
+    default: typing.Optional[typing.Callable] = None,
 ):
     """
     Generates a multimethod.
@@ -191,7 +182,16 @@ def set_backend(backend, coerce=False, only=False):
     skip_backend: A context manager that allows skipping of backends.
     set_global_backend: Set a single, global backend for a domain.
     """
-    return _SetBackendContext(backend, coerce, only)
+    try:
+        return backend.__ua_cache__["set", coerce, only]
+    except AttributeError:
+        backend.__ua_cache__ = {}
+    except KeyError:
+        pass
+
+    ctx = _SetBackendContext(backend, coerce, only)
+    backend.__ua_cache__["set", coerce, only] = ctx
+    return ctx
 
 
 def skip_backend(backend):
@@ -210,7 +210,16 @@ def skip_backend(backend):
     set_backend: A context manager that allows setting of backends.
     set_global_backend: Set a single, global backend for a domain.
     """
-    return _SkipBackendContext(backend)
+    try:
+        return backend.__ua_cache__["skip"]
+    except AttributeError:
+        backend.__ua_cache__ = {}
+    except KeyError:
+        pass
+
+    ctx = _SkipBackendContext(backend)
+    backend.__ua_cache__["skip"] = ctx
+    return ctx
 
 
 def get_defaults(f):
@@ -282,7 +291,7 @@ def clear_backends(domain, registered=True, globals=False):
     .. warning::
         We caution library authors against using this function in
         their code. We do *not* support this use-case. This function
-        is meant to be used only by users themselves.
+        is meant to be used only by the users themselves.
 
     .. warning::
         Do NOT use this method inside a multimethod call, or the

@@ -6,10 +6,7 @@ Functions
 ---------
 - root : find a root of a scalar function.
 """
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
-from scipy._lib.six import callable
 
 from . import zeros as optzeros
 
@@ -109,7 +106,7 @@ def root_scalar(f, args=(), method=None, bracket=None,
     maxiter : int, optional
         Maximum number of iterations.
     options : dict, optional
-        A dictionary of solver options. E.g. ``k``, see
+        A dictionary of solver options. E.g., ``k``, see
         :obj:`show_options()` for details.
 
     Returns
@@ -319,7 +316,7 @@ def _root_scalar_brenth_doc():
     maxiter : int, optional
         Maximum number of iterations.
     options: dict, optional
-        Specifies any method-specific options not covered above
+        Specifies any method-specific options not covered above.
 
     """
     pass
@@ -337,7 +334,7 @@ def _root_scalar_toms748_doc():
     maxiter : int, optional
         Maximum number of iterations.
     options: dict, optional
-        Specifies any method-specific options not covered above
+        Specifies any method-specific options not covered above.
 
     """
     pass
@@ -360,7 +357,7 @@ def _root_scalar_secant_doc():
     x1 : float, required
         A second guess.
     options: dict, optional
-        Specifies any method-specific options not covered above
+        Specifies any method-specific options not covered above.
 
     """
     pass
@@ -386,7 +383,7 @@ def _root_scalar_newton_doc():
         `fprime` can also be a callable returning the derivative of `f`. In
         this case, it must accept the same arguments as `f`.
     options: dict, optional
-        Specifies any method-specific options not covered above
+        Specifies any method-specific options not covered above.
 
     """
     pass
@@ -417,7 +414,7 @@ def _root_scalar_halley_doc():
         `fprime2` can also be a callable returning the 2nd derivative of `f`.
         In this case, it must accept the same arguments as `f`.
     options: dict, optional
-        Specifies any method-specific options not covered above
+        Specifies any method-specific options not covered above.
 
     """
     pass
@@ -436,7 +433,7 @@ def _root_scalar_ridder_doc():
     maxiter : int, optional
         Maximum number of iterations.
     options: dict, optional
-        Specifies any method-specific options not covered above
+        Specifies any method-specific options not covered above.
 
     """
     pass
@@ -455,7 +452,7 @@ def _root_scalar_bisect_doc():
     maxiter : int, optional
         Maximum number of iterations.
     options: dict, optional
-        Specifies any method-specific options not covered above
+        Specifies any method-specific options not covered above.
 
     """
     pass

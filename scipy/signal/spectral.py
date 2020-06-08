@@ -1,8 +1,6 @@
 """Tools for spectral analysis.
 """
 
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 from scipy import fft as sp_fft
 from . import signaltools
@@ -11,7 +9,6 @@ from ._spectral import _lombscargle
 from ._arraytools import const_ext, even_ext, odd_ext, zero_ext
 import warnings
 
-from scipy._lib.six import string_types
 
 __all__ = ['periodogram', 'welch', 'lombscargle', 'csd', 'coherence',
            'spectrogram', 'stft', 'istft', 'check_COLA', 'check_NOLA']
@@ -38,7 +35,7 @@ def lombscargle(x,
     When *normalize* is True the computed periodogram is normalized by
     the residuals of the data around a constant reference model (at zero).
 
-    Input arrays should be one-dimensional and will be cast to float64.
+    Input arrays should be 1-D and will be cast to float64.
 
     Parameters
     ----------
@@ -718,7 +715,7 @@ def spectrogram(x, fs=1.0, window=('tukey', .25), nperseg=None, noverlap=None,
     Compute and plot the spectrogram.
 
     >>> f, t, Sxx = signal.spectrogram(x, fs)
-    >>> plt.pcolormesh(t, f, Sxx)
+    >>> plt.pcolormesh(t, f, Sxx, shading='gouraud')
     >>> plt.ylabel('Frequency [Hz]')
     >>> plt.xlabel('Time [sec]')
     >>> plt.show()
@@ -726,7 +723,7 @@ def spectrogram(x, fs=1.0, window=('tukey', .25), nperseg=None, noverlap=None,
     Note, if using output that is not one sided, then use the following:
 
     >>> f, t, Sxx = signal.spectrogram(x, fs, return_onesided=False)
-    >>> plt.pcolormesh(t, fftshift(f), fftshift(Sxx, axes=0))
+    >>> plt.pcolormesh(t, fftshift(f), fftshift(Sxx, axes=0), shading='gouraud')
     >>> plt.ylabel('Frequency [Hz]')
     >>> plt.xlabel('Time [sec]')
     >>> plt.show()
@@ -876,7 +873,7 @@ def check_COLA(window, nperseg, noverlap, tol=1e-10):
         raise ValueError('noverlap must be less than nperseg.')
     noverlap = int(noverlap)
 
-    if isinstance(window, string_types) or type(window) is tuple:
+    if isinstance(window, str) or type(window) is tuple:
         win = get_window(window, nperseg)
     else:
         win = np.asarray(window)
@@ -1004,7 +1001,7 @@ def check_NOLA(window, nperseg, noverlap, tol=1e-10):
         raise ValueError('noverlap must be a nonnegative integer')
     noverlap = int(noverlap)
 
-    if isinstance(window, string_types) or type(window) is tuple:
+    if isinstance(window, str) or type(window) is tuple:
         win = get_window(window, nperseg)
     else:
         win = np.asarray(window)
@@ -1162,7 +1159,7 @@ def stft(x, fs=1.0, window='hann', nperseg=256, noverlap=None, nfft=None,
     Compute and plot the STFT's magnitude.
 
     >>> f, t, Zxx = signal.stft(x, fs, nperseg=1000)
-    >>> plt.pcolormesh(t, f, np.abs(Zxx), vmin=0, vmax=amp)
+    >>> plt.pcolormesh(t, f, np.abs(Zxx), vmin=0, vmax=amp, shading='gouraud')
     >>> plt.title('STFT Magnitude')
     >>> plt.ylabel('Frequency [Hz]')
     >>> plt.xlabel('Time [sec]')
@@ -1307,7 +1304,7 @@ def istft(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
 
     >>> f, t, Zxx = signal.stft(x, fs=fs, nperseg=nperseg)
     >>> plt.figure()
-    >>> plt.pcolormesh(t, f, np.abs(Zxx), vmin=0, vmax=amp)
+    >>> plt.pcolormesh(t, f, np.abs(Zxx), vmin=0, vmax=amp, shading='gouraud')
     >>> plt.ylim([f[1], f[-1]])
     >>> plt.title('STFT Magnitude')
     >>> plt.ylabel('Frequency [Hz]')
@@ -1403,7 +1400,7 @@ def istft(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
         Zxx = np.transpose(Zxx, zouter+[freq_axis, time_axis])
 
     # Get window as array
-    if isinstance(window, string_types) or type(window) is tuple:
+    if isinstance(window, str) or type(window) is tuple:
         win = get_window(window, nperseg)
     else:
         win = np.asarray(window)
@@ -1956,7 +1953,7 @@ def _triage_segments(window, nperseg, input_length):
     """
 
     # parse window; if array like, then set nperseg = win.shape
-    if isinstance(window, string_types) or isinstance(window, tuple):
+    if isinstance(window, str) or isinstance(window, tuple):
         # if nperseg not specified
         if nperseg is None:
             nperseg = 256  # then change to default

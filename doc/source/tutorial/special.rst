@@ -51,7 +51,7 @@ drum head anchored at the edge:
    >>> from matplotlib import cm
    >>> fig = plt.figure()
    >>> ax = Axes3D(fig)
-   >>> ax.plot_surface(x, y, z, rstride=1, cstride=1, cmap=cm.jet)
+   >>> ax.plot_surface(x, y, z, rstride=1, cstride=1, cmap='RdBu_r', vmin=-0.5, vmax=0.5)
    >>> ax.set_xlabel('X')
    >>> ax.set_ylabel('Y')
    >>> ax.set_zlabel('Z')

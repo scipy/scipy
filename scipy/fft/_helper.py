@@ -1,7 +1,5 @@
 from functools import update_wrapper, lru_cache
-import numpy as np
 
-from . import _pocketfft
 from ._pocketfft import helper as _helper
 
 
@@ -12,16 +10,16 @@ def next_fast_len(target, real=False):
     strategy. This relies on efficient functions for small prime factors of the
     input length. Thus, the transforms are fastest when using composites of the
     prime factors handled by the fft implementation. If there are efficient
-    functions for all radices <= `n` then the result will be a number `x`
+    functions for all radices <= `n`, then the result will be a number `x`
     >= ``target`` with only prime factors < `n`. (Also known as `n`-smooth
     numbers)
 
     Parameters
     ----------
     target : int
-        Length to start searching from.  Must be a positive integer.
+        Length to start searching from. Must be a positive integer.
     real : bool, optional
-        True if the FFT involves real input or output (e.g. `rfft` or `hfft` but
+        True if the FFT involves real input or output (e.g., `rfft` or `hfft` but
         not `fft`). Defaults to False.
 
     Returns
@@ -32,7 +30,7 @@ def next_fast_len(target, real=False):
     Notes
     -----
     The result of this function may change in future as performance
-    considerations change, for example if new prime factors are added.
+    considerations change, for example, if new prime factors are added.
 
     Calling `fft` or `ifft` with real input data performs an ``'R2C'``
     transform internally.
@@ -62,14 +60,14 @@ def next_fast_len(target, real=False):
     pass
 
 
-# Directly wrap the c-function good_size but take the docstring etc. from the
+# Directly wrap the c-function good_size but take the docstring etc., from the
 # next_fast_len function above
 next_fast_len = update_wrapper(lru_cache()(_helper.good_size), next_fast_len)
 next_fast_len.__wrapped__ = _helper.good_size
 
 
 def _init_nd_shape_and_axes(x, shape, axes):
-    """Handle shape and axes arguments for n-dimensional transforms.
+    """Handle shape and axes arguments for N-D transforms.
 
     Returns the shape and axes in a standard form, taking into account negative
     values and checking for various potential errors.
@@ -79,7 +77,7 @@ def _init_nd_shape_and_axes(x, shape, axes):
     x : array_like
         The input array.
     shape : int or array_like of ints or None
-        The shape of the result.  If both `shape` and `axes` (see below) are
+        The shape of the result. If both `shape` and `axes` (see below) are
         None, `shape` is ``x.shape``; if `shape` is None but `axes` is
         not None, then `shape` is ``scipy.take(x.shape, axes, axis=0)``.
         If `shape` is -1, the size of the corresponding dimension of `x` is
@@ -88,14 +86,14 @@ def _init_nd_shape_and_axes(x, shape, axes):
         Axes along which the calculation is computed.
         The default is over all axes.
         Negative indices are automatically converted to their positive
-        counterpart.
+        counterparts.
 
     Returns
     -------
     shape : array
-        The shape of the result. It is a 1D integer array.
+        The shape of the result. It is a 1-D integer array.
     axes : array
-        The shape of the result. It is a 1D integer array.
+        The shape of the result. It is a 1-D integer array.
 
     """
     return _helper._init_nd_shape_and_axes(x, shape, axes)

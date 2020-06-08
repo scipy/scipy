@@ -78,7 +78,7 @@ def linear_sum_assignment(cost_matrix, maximize=False):
     """
     cost_matrix = np.asarray(cost_matrix)
     if len(cost_matrix.shape) != 2:
-        raise ValueError("expected a matrix (2-d array), got a %r array"
+        raise ValueError("expected a matrix (2-D array), got a %r array"
                          % (cost_matrix.shape,))
 
     if not (np.issubdtype(cost_matrix.dtype, np.number) or

@@ -2,28 +2,26 @@
 #
 # Further enhancements and tests added by numerous SciPy developers.
 #
-from __future__ import division, print_function, absolute_import
-
 import warnings
 
 import numpy as np
 from numpy.random import RandomState
 from numpy.testing import (assert_array_equal,
     assert_almost_equal, assert_array_less, assert_array_almost_equal,
-    assert_, assert_allclose, assert_equal, assert_warns)
+    assert_, assert_allclose, assert_equal, suppress_warnings)
 import pytest
 from pytest import raises as assert_raises
-from scipy._lib._numpy_compat import suppress_warnings
 
 from scipy import stats
 from .common_tests import check_named_results
+from .._hypotests import _get_wilcoxon_distr
 
 # Matplotlib is not a scipy dependency but is optionally used in probplot, so
 # check if it's available
 try:
-    import matplotlib
+    import matplotlib  # type: ignore[import]
     matplotlib.rcParams['backend'] = 'Agg'
-    import matplotlib.pyplot as plt
+    import matplotlib.pyplot as plt  # type: ignore[import]
     have_matplotlib = True
 except Exception:
     have_matplotlib = False
@@ -113,21 +111,31 @@ class TestShapiro(object):
               4.43, 0.21, 4.75, 0.71, 1.52, 3.24,
               0.93, 0.42, 4.97, 9.53, 4.55, 0.47, 6.66]
         w, pw = stats.shapiro(x1)
-        assert_almost_equal(w, 0.90047299861907959, 6)
-        assert_almost_equal(pw, 0.042089745402336121, 6)
+        shapiro_test = stats.shapiro(x1)
+        assert_almost_equal(w, 0.90047299861907959, decimal=6)
+        assert_almost_equal(shapiro_test.statistic, 0.90047299861907959, decimal=6)
+        assert_almost_equal(pw, 0.042089745402336121, decimal=6)
+        assert_almost_equal(shapiro_test.pvalue, 0.042089745402336121, decimal=6)
+
         x2 = [1.36, 1.14, 2.92, 2.55, 1.46, 1.06, 5.27, -1.11,
               3.48, 1.10, 0.88, -0.51, 1.46, 0.52, 6.20, 1.69,
               0.08, 3.67, 2.81, 3.49]
         w, pw = stats.shapiro(x2)
-        assert_almost_equal(w, 0.9590270, 6)
-        assert_almost_equal(pw, 0.52460, 3)
+        shapiro_test = stats.shapiro(x2)
+        assert_almost_equal(w, 0.9590270, decimal=6)
+        assert_almost_equal(shapiro_test.statistic, 0.9590270, decimal=6)
+        assert_almost_equal(pw, 0.52460, decimal=3)
+        assert_almost_equal(shapiro_test.pvalue, 0.52460, decimal=3)
 
         # Verified against R
         np.random.seed(12345678)
         x3 = stats.norm.rvs(loc=5, scale=3, size=100)
         w, pw = stats.shapiro(x3)
+        shapiro_test = stats.shapiro(x3)
         assert_almost_equal(w, 0.9772805571556091, decimal=6)
+        assert_almost_equal(shapiro_test.statistic, 0.9772805571556091, decimal=6)
         assert_almost_equal(pw, 0.08144091814756393, decimal=3)
+        assert_almost_equal(shapiro_test.pvalue, 0.08144091814756393, decimal=3)
 
         # Extracted from original paper
         x4 = [0.139, 0.157, 0.175, 0.256, 0.344, 0.413, 0.503, 0.577, 0.614,
@@ -136,22 +144,32 @@ class TestShapiro(object):
         W_expected = 0.83467
         p_expected = 0.000914
         w, pw = stats.shapiro(x4)
+        shapiro_test = stats.shapiro(x4)
         assert_almost_equal(w, W_expected, decimal=4)
+        assert_almost_equal(shapiro_test.statistic, W_expected, decimal=4)
         assert_almost_equal(pw, p_expected, decimal=5)
+        assert_almost_equal(shapiro_test.pvalue, p_expected, decimal=5)
 
     def test_2d(self):
         x1 = [[0.11, 7.87, 4.61, 10.14, 7.95, 3.14, 0.46,
               4.43, 0.21, 4.75], [0.71, 1.52, 3.24,
               0.93, 0.42, 4.97, 9.53, 4.55, 0.47, 6.66]]
         w, pw = stats.shapiro(x1)
-        assert_almost_equal(w, 0.90047299861907959, 6)
-        assert_almost_equal(pw, 0.042089745402336121, 6)
+        shapiro_test = stats.shapiro(x1)
+        assert_almost_equal(w, 0.90047299861907959, decimal=6)
+        assert_almost_equal(shapiro_test.statistic, 0.90047299861907959, decimal=6)
+        assert_almost_equal(pw, 0.042089745402336121, decimal=6)
+        assert_almost_equal(shapiro_test.pvalue, 0.042089745402336121, decimal=6)
+
         x2 = [[1.36, 1.14, 2.92, 2.55, 1.46, 1.06, 5.27, -1.11,
               3.48, 1.10], [0.88, -0.51, 1.46, 0.52, 6.20, 1.69,
               0.08, 3.67, 2.81, 3.49]]
         w, pw = stats.shapiro(x2)
-        assert_almost_equal(w, 0.9590270, 6)
-        assert_almost_equal(pw, 0.52460, 3)
+        shapiro_test = stats.shapiro(x2)
+        assert_almost_equal(w, 0.9590270, decimal=6)
+        assert_almost_equal(shapiro_test.statistic, 0.9590270, decimal=6)
+        assert_almost_equal(pw, 0.52460, decimal=3)
+        assert_almost_equal(shapiro_test.pvalue, 0.52460, decimal=3)
 
     def test_empty_input(self):
         assert_raises(ValueError, stats.shapiro, [])
@@ -159,7 +177,7 @@ class TestShapiro(object):
 
     def test_not_enough_values(self):
         assert_raises(ValueError, stats.shapiro, [1, 2])
-        assert_raises(ValueError, stats.shapiro, [[], [2]])
+        assert_raises(ValueError, stats.shapiro, np.array([[], [2]], dtype=object))
 
     def test_bad_arg(self):
         # Length of x is less than 3.
@@ -171,8 +189,11 @@ class TestShapiro(object):
         x[9] = np.nan
 
         w, pw = stats.shapiro(x)
+        shapiro_test = stats.shapiro(x)
         assert_equal(w, np.nan)
+        assert_equal(shapiro_test.statistic, np.nan)
         assert_almost_equal(pw, 1.0)
+        assert_almost_equal(shapiro_test.pvalue, 1.0)
 
 
 class TestAnderson(object):
@@ -205,11 +226,8 @@ class TestAnderson(object):
         x2 = rs.standard_normal(size=50)
         A, crit, sig = stats.anderson(x1, 'expon')
         assert_array_less(A, crit[-2:])
-        olderr = np.seterr(all='ignore')
-        try:
+        with np.errstate(all='ignore'):
             A, crit, sig = stats.anderson(x2, 'expon')
-        finally:
-            np.seterr(**olderr)
         assert_(A > crit[-1])
 
     def test_gumbel(self):
@@ -913,14 +931,18 @@ class TestWilcoxon(object):
         assert_raises(ValueError, stats.wilcoxon, [1, 2], [1, 2], "dummy")
         assert_raises(ValueError, stats.wilcoxon, [1, 2], [1, 2],
                       alternative="dummy")
+        assert_raises(ValueError, stats.wilcoxon, [1]*10, mode="xyz")
 
     def test_zero_diff(self):
         x = np.arange(20)
         # pratt and wilcox do not work if x - y == 0
-        assert_raises(ValueError, stats.wilcoxon, x, x, "wilcox")
-        assert_raises(ValueError, stats.wilcoxon, x, x, "pratt")
-        # ranksum is n*(n+1)/2, split in half if method == "zsplit"
-        assert_equal(stats.wilcoxon(x, x, "zsplit"), (20*21/4, 1.0))
+        assert_raises(ValueError, stats.wilcoxon, x, x, "wilcox",
+                      mode="approx")
+        assert_raises(ValueError, stats.wilcoxon, x, x, "pratt",
+                      mode="approx")
+        # ranksum is n*(n+1)/2, split in half if zero_method == "zsplit"
+        assert_equal(stats.wilcoxon(x, x, "zsplit", mode="approx"),
+                     (20*21/4, 1.0))
 
     def test_pratt(self):
         # regression test for gh-6805: p-value matches value from R package
@@ -929,7 +951,7 @@ class TestWilcoxon(object):
         y = [1, 2, 3, 5]
         with suppress_warnings() as sup:
             sup.filter(UserWarning, message="Sample size too small")
-            res = stats.wilcoxon(x, y, zero_method="pratt")
+            res = stats.wilcoxon(x, y, zero_method="pratt", mode="approx")
         assert_allclose(res, (0.0, 0.31731050786291415))
 
     def test_wilcoxon_arg_type(self):
@@ -937,9 +959,9 @@ class TestWilcoxon(object):
         # Address issue 6070.
         arr = [1, 2, 3, 0, -1, 3, 1, 2, 1, 1, 2]
 
-        _ = stats.wilcoxon(arr, zero_method="pratt")
-        _ = stats.wilcoxon(arr, zero_method="zsplit")
-        _ = stats.wilcoxon(arr, zero_method="wilcox")
+        _ = stats.wilcoxon(arr, zero_method="pratt", mode="approx")
+        _ = stats.wilcoxon(arr, zero_method="zsplit", mode="approx")
+        _ = stats.wilcoxon(arr, zero_method="wilcox", mode="approx")
 
     def test_accuracy_wilcoxon(self):
         freq = [1, 4, 16, 15, 8, 4, 5, 1, 2]
@@ -947,15 +969,15 @@ class TestWilcoxon(object):
         x = np.concatenate([[u] * v for u, v in zip(nums, freq)])
         y = np.zeros(x.size)
 
-        T, p = stats.wilcoxon(x, y, "pratt")
+        T, p = stats.wilcoxon(x, y, "pratt", mode="approx")
         assert_allclose(T, 423)
         assert_allclose(p, 0.0031724568006762576)
 
-        T, p = stats.wilcoxon(x, y, "zsplit")
+        T, p = stats.wilcoxon(x, y, "zsplit", mode="approx")
         assert_allclose(T, 441)
         assert_allclose(p, 0.0032145343172473055)
 
-        T, p = stats.wilcoxon(x, y, "wilcox")
+        T, p = stats.wilcoxon(x, y, "wilcox", mode="approx")
         assert_allclose(T, 327)
         assert_allclose(p, 0.00641346115861)
 
@@ -963,17 +985,17 @@ class TestWilcoxon(object):
         # > wilcox.test(x, y, paired=TRUE, exact=FALSE, correct={FALSE,TRUE})
         x = np.array([120, 114, 181, 188, 180, 146, 121, 191, 132, 113, 127, 112])
         y = np.array([133, 143, 119, 189, 112, 199, 198, 113, 115, 121, 142, 187])
-        T, p = stats.wilcoxon(x, y, correction=False)
+        T, p = stats.wilcoxon(x, y, correction=False, mode="approx")
         assert_equal(T, 34)
         assert_allclose(p, 0.6948866, rtol=1e-6)
-        T, p = stats.wilcoxon(x, y, correction=True)
+        T, p = stats.wilcoxon(x, y, correction=True, mode="approx")
         assert_equal(T, 34)
         assert_allclose(p, 0.7240817, rtol=1e-6)
 
     def test_wilcoxon_result_attributes(self):
         x = np.array([120, 114, 181, 188, 180, 146, 121, 191, 132, 113, 127, 112])
         y = np.array([133, 143, 119, 189, 112, 199, 198, 113, 115, 121, 142, 187])
-        res = stats.wilcoxon(x, y, correction=False)
+        res = stats.wilcoxon(x, y, correction=False, mode="approx")
         attributes = ('statistic', 'pvalue')
         check_named_results(res, attributes)
 
@@ -986,12 +1008,12 @@ class TestWilcoxon(object):
         #   > result = wilcox.test(rep(0.1, 10), exact=FALSE, correct=TRUE)
         #   > result$p.value
         #   [1] 0.001904195
-        stat, p = stats.wilcoxon([0.1] * 10)
+        stat, p = stats.wilcoxon([0.1] * 10, mode="approx")
         expected_p = 0.001565402
         assert_equal(stat, 0)
         assert_allclose(p, expected_p, rtol=1e-6)
 
-        stat, p = stats.wilcoxon([0.1] * 10, correction=True)
+        stat, p = stats.wilcoxon([0.1] * 10, correction=True, mode="approx")
         expected_p = 0.001904195
         assert_equal(stat, 0)
         assert_allclose(p, expected_p, rtol=1e-6)
@@ -1010,27 +1032,93 @@ class TestWilcoxon(object):
 
         with suppress_warnings() as sup:
             sup.filter(UserWarning, message="Sample size too small")
-            w, p = stats.wilcoxon(x, y, alternative="less")
+            w, p = stats.wilcoxon(x, y, alternative="less", mode="approx")
         assert_equal(w, 27)
         assert_almost_equal(p, 0.7031847, decimal=6)
 
         with suppress_warnings() as sup:
             sup.filter(UserWarning, message="Sample size too small")
-            w, p = stats.wilcoxon(x, y, alternative="less", correction=True)
+            w, p = stats.wilcoxon(x, y, alternative="less", correction=True,
+                                  mode="approx")
         assert_equal(w, 27)
         assert_almost_equal(p, 0.7233656, decimal=6)
 
         with suppress_warnings() as sup:
             sup.filter(UserWarning, message="Sample size too small")
-            w, p = stats.wilcoxon(x, y, alternative="greater")
+            w, p = stats.wilcoxon(x, y, alternative="greater", mode="approx")
         assert_equal(w, 27)
         assert_almost_equal(p, 0.2968153, decimal=6)
 
         with suppress_warnings() as sup:
             sup.filter(UserWarning, message="Sample size too small")
-            w, p = stats.wilcoxon(x, y, alternative="greater", correction=True)
+            w, p = stats.wilcoxon(x, y, alternative="greater", correction=True,
+                                  mode="approx")
         assert_equal(w, 27)
         assert_almost_equal(p, 0.3176447, decimal=6)
+
+    def test_exact_basic(self):
+        for n in range(1, 26):
+            cnt = _get_wilcoxon_distr(n)
+            assert_equal(n*(n+1)/2 + 1, len(cnt))
+            assert_equal(sum(cnt), 2**n)
+
+    def test_exact_pval(self):
+        # expected values computed with "R version 3.4.1 (2017-06-30)"
+        x = np.array([1.81, 0.82, 1.56, -0.48, 0.81, 1.28, -1.04, 0.23,
+                      -0.75, 0.14])
+        y = np.array([0.71, 0.65, -0.2, 0.85, -1.1, -0.45, -0.84, -0.24,
+                      -0.68, -0.76])
+        _, p = stats.wilcoxon(x, y, alternative="two-sided", mode="exact")
+        assert_almost_equal(p, 0.1054688, decimal=6)
+        _, p = stats.wilcoxon(x, y, alternative="less", mode="exact")
+        assert_almost_equal(p, 0.9580078, decimal=6)
+        _, p = stats.wilcoxon(x, y, alternative="greater", mode="exact")
+        assert_almost_equal(p, 0.05273438, decimal=6)
+
+        x = np.arange(0, 20) + 0.5
+        y = np.arange(20, 0, -1)
+        _, p = stats.wilcoxon(x, y, alternative="two-sided", mode="exact")
+        assert_almost_equal(p, 0.8694878, decimal=6)
+        _, p = stats.wilcoxon(x, y, alternative="less", mode="exact")
+        assert_almost_equal(p, 0.4347439, decimal=6)
+        _, p = stats.wilcoxon(x, y, alternative="greater", mode="exact")
+        assert_almost_equal(p, 0.5795889, decimal=6)
+
+        d = np.arange(26) + 1
+        assert_raises(ValueError, stats.wilcoxon, d, mode="exact")
+
+    # These inputs were chosen to give a W statistic that is either the
+    # center of the distribution (when the length of the support is odd), or
+    # the value to the left of the center (when the length of the support is
+    # even).  Also, the numbers are chosen so that the W statistic is the
+    # sum of the positive values.
+    @pytest.mark.parametrize('x', [[-1, -2, 3],
+                                   [-1, 2, -3, -4, 5],
+                                   [-1, -2, 3, -4, -5, -6, 7, 8]])
+    def test_exact_p_1(self, x):
+        w, p = stats.wilcoxon(x)
+        x = np.array(x)
+        wtrue = x[x > 0].sum()
+        assert_equal(w, wtrue)
+        assert_equal(p, 1)
+
+    def test_auto(self):
+        # auto default to exact if there are no ties and n<= 25
+        x = np.arange(0, 25) + 0.5
+        y = np.arange(25, 0, -1)
+        assert_equal(stats.wilcoxon(x, y),
+                     stats.wilcoxon(x, y, mode="exact"))
+
+        # if there are ties (i.e. zeros in d = x-y), then switch to approx
+        d = np.arange(0, 13)
+        with suppress_warnings() as sup:
+            sup.filter(UserWarning, message="Exact p-value calculation")
+            w, p = stats.wilcoxon(d)
+        assert_equal(stats.wilcoxon(d, mode="approx"), (w, p))
+
+        # use approximation for samples > 25
+        d = np.arange(1, 27)
+        assert_equal(stats.wilcoxon(d), stats.wilcoxon(d, mode="approx"))
 
 
 class TestKstat(object):
@@ -1145,9 +1233,7 @@ class TestPpccMax(object):
     def test_ppcc_max_basic(self):
         np.random.seed(1234567)
         x = stats.tukeylambda.rvs(-0.7, loc=2, scale=0.5, size=10000) + 1e4
-        # On Python 2.6 the result is accurate to 5 decimals. On Python >= 2.7
-        # it is accurate up to 16 decimals
-        assert_almost_equal(stats.ppcc_max(x), -0.71215366521264145, decimal=5)
+        assert_almost_equal(stats.ppcc_max(x), -0.71215366521264145, decimal=7)
 
     def test_dist(self):
         np.random.seed(1234567)
@@ -1168,15 +1254,11 @@ class TestPpccMax(object):
         x = stats.tukeylambda.rvs(-0.7, loc=2, scale=0.5, size=10000) + 1e4
         assert_raises(ValueError, stats.ppcc_max, x, brack=(0.0, 1.0, 0.5))
 
-        # On Python 2.6 the result is accurate to 5 decimals. On Python >= 2.7
-        # it is accurate up to 16 decimals
         assert_almost_equal(stats.ppcc_max(x, brack=(0, 1)),
-                            -0.71215366521264145, decimal=5)
+                            -0.71215366521264145, decimal=7)
 
-        # On Python 2.6 the result is accurate to 5 decimals. On Python >= 2.7
-        # it is accurate up to 16 decimals
         assert_almost_equal(stats.ppcc_max(x, brack=(-2, 2)),
-                            -0.71215366521264145, decimal=5)
+                            -0.71215366521264145, decimal=7)
 
 
 class TestBoxcox_llf(object):
@@ -1320,8 +1402,12 @@ class TestBoxcox(object):
 
     def test_boxcox_bad_arg(self):
         # Raise ValueError if any data value is negative.
-        x = np.array([-1])
+        x = np.array([-1, 2])
         assert_raises(ValueError, stats.boxcox, x)
+        # Raise ValueError if data is constant.
+        assert_raises(ValueError, stats.boxcox, np.array([1]))
+        # Raise ValueError if data is not 1-dimensional.
+        assert_raises(ValueError, stats.boxcox, np.array([[1], [2]]))
 
     def test_empty(self):
         assert_(stats.boxcox([]).shape == (0,))
@@ -1507,10 +1593,26 @@ class TestYeojohnson(object):
     def test_array_like(self):
         np.random.seed(54321)
         x = stats.norm.rvs(size=100, loc=0)
-        lmbda = 1.5
         xt1, _ = stats.yeojohnson(x)
         xt2, _ = stats.yeojohnson(list(x))
         assert_allclose(xt1, xt2, rtol=1e-12)
+
+    @pytest.mark.parametrize('dtype', [np.complex64, np.complex128])
+    def test_input_dtype_complex(self, dtype):
+        x = np.arange(6, dtype=dtype)
+        err_msg = ('Yeo-Johnson transformation is not defined for complex '
+                   'numbers.')
+        with pytest.raises(ValueError, match=err_msg):
+            stats.yeojohnson(x)
+
+    @pytest.mark.parametrize('dtype', [np.int8, np.uint8, np.int16, np.int32])
+    def test_input_dtype_integer(self, dtype):
+        x_int = np.arange(8, dtype=dtype)
+        x_float = np.arange(8, dtype=np.float64)
+        xt_int, lmbda_int = stats.yeojohnson(x_int)
+        xt_float, lmbda_float = stats.yeojohnson(x_float)
+        assert_allclose(xt_int, xt_float, rtol=1e-7)
+        assert_allclose(lmbda_int, lmbda_float, rtol=1e-7)
 
 
 class TestYeojohnsonNormmax(object):
@@ -1532,19 +1634,13 @@ class TestYeojohnsonNormmax(object):
 
 
 class TestCircFuncs(object):
-    def test_circfuncs(self):
+    @pytest.mark.parametrize("test_func,expected",
+                             [(stats.circmean, 0.167690146),
+                              (stats.circvar, 42.51955609),
+                              (stats.circstd, 6.520702116)])
+    def test_circfuncs(self, test_func, expected):
         x = np.array([355, 5, 2, 359, 10, 350])
-        M = stats.circmean(x, high=360)
-        Mval = 0.167690146
-        assert_allclose(M, Mval, rtol=1e-7)
-
-        V = stats.circvar(x, high=360)
-        Vval = 42.51955609
-        assert_allclose(V, Vval, rtol=1e-7)
-
-        S = stats.circstd(x, high=360)
-        Sval = 6.520702116
-        assert_allclose(S, Sval, rtol=1e-7)
+        assert_allclose(test_func(x, high=360), expected, rtol=1e-7)
 
     def test_circfuncs_small(self):
         x = np.array([20, 21, 22, 18, 19, 20.5, 19.2])
@@ -1610,16 +1706,115 @@ class TestCircFuncs(object):
         S2 = [stats.circstd(x[:, i], high=360) for i in range(x.shape[1])]
         assert_allclose(S1, S2, rtol=1e-11)
 
-    def test_circfuncs_array_like(self):
+    @pytest.mark.parametrize("test_func,expected",
+                             [(stats.circmean, 0.167690146),
+                              (stats.circvar, 42.51955609),
+                              (stats.circstd, 6.520702116)])
+    def test_circfuncs_array_like(self, test_func, expected):
         x = [355, 5, 2, 359, 10, 350]
-        assert_allclose(stats.circmean(x, high=360), 0.167690146, rtol=1e-7)
-        assert_allclose(stats.circvar(x, high=360), 42.51955609, rtol=1e-7)
-        assert_allclose(stats.circstd(x, high=360), 6.520702116, rtol=1e-7)
+        assert_allclose(test_func(x, high=360), expected, rtol=1e-7)
 
-    def test_empty(self):
-        assert_(np.isnan(stats.circmean([])))
-        assert_(np.isnan(stats.circstd([])))
-        assert_(np.isnan(stats.circvar([])))
+    @pytest.mark.parametrize("test_func", [stats.circmean, stats.circvar,
+                                           stats.circstd])
+    def test_empty(self, test_func):
+        assert_(np.isnan(test_func([])))
+
+    @pytest.mark.parametrize("test_func", [stats.circmean, stats.circvar,
+                                           stats.circstd])
+    def test_nan_propagate(self, test_func):
+        x = [355, 5, 2, 359, 10, 350, np.nan]
+        assert_(np.isnan(test_func(x, high=360)))
+
+    @pytest.mark.parametrize("test_func,expected",
+                             [(stats.circmean,
+                               {None: np.nan, 0: 355.66582264, 1: 0.28725053}),
+                              (stats.circvar,
+                               {None: np.nan, 0: 16.89976130, 1: 36.51366669}),
+                              (stats.circstd,
+                               {None: np.nan, 0: 4.11093193, 1: 6.04265394})])
+    def test_nan_propagate_array(self, test_func, expected):
+        x = np.array([[355, 5, 2, 359, 10, 350, 1],
+                      [351, 7, 4, 352, 9, 349, np.nan],
+                      [1, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan]])
+        for axis in expected.keys():
+            out = test_func(x, high=360, axis=axis)
+            if axis is None:
+                assert_(np.isnan(out))
+            else:
+                assert_allclose(out[0], expected[axis], rtol=1e-7)
+                assert_(np.isnan(out[1:]).all())
+
+    @pytest.mark.parametrize("test_func,expected",
+                             [(stats.circmean,
+                               {None: 359.4178026893944,
+                                0: np.array([353.0, 6.0, 3.0, 355.5, 9.5,
+                                             349.5]),
+                                1: np.array([0.16769015, 358.66510252])}),
+                              (stats.circvar,
+                               {None: 55.362093503276725,
+                                0: np.array([4.00081258, 1.00005077, 1.00005077,
+                                             12.25762620, 0.25000317,
+                                             0.25000317]),
+                                1: np.array([42.51955609, 67.09872148])}),
+                              (stats.circstd,
+                               {None: 7.440570778057074,
+                                0: np.array([2.00020313, 1.00002539, 1.00002539,
+                                             3.50108929, 0.50000317,
+                                             0.50000317]),
+                                1: np.array([6.52070212, 8.19138093])})])
+    def test_nan_omit_array(self, test_func, expected):
+        x = np.array([[355, 5, 2, 359, 10, 350, np.nan],
+                      [351, 7, 4, 352, 9, 349, np.nan],
+                      [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan]])
+        for axis in expected.keys():
+            out = test_func(x, high=360, nan_policy='omit', axis=axis)
+            if axis is None:
+                assert_allclose(out, expected[axis], rtol=1e-7)
+            else:
+                assert_allclose(out[:-1], expected[axis], rtol=1e-7)
+                assert_(np.isnan(out[-1]))
+
+    @pytest.mark.parametrize("test_func,expected",
+                             [(stats.circmean, 0.167690146),
+                              (stats.circvar, 42.51955609),
+                              (stats.circstd, 6.520702116)])
+    def test_nan_omit(self, test_func, expected):
+        x = [355, 5, 2, 359, 10, 350, np.nan]
+        assert_allclose(test_func(x, high=360, nan_policy='omit'),
+                        expected, rtol=1e-7)
+
+    @pytest.mark.parametrize("test_func", [stats.circmean, stats.circvar,
+                                           stats.circstd])
+    def test_nan_omit_all(self, test_func):
+        x = [np.nan, np.nan, np.nan, np.nan, np.nan]
+        assert_(np.isnan(test_func(x, nan_policy='omit')))
+
+    @pytest.mark.parametrize("test_func", [stats.circmean, stats.circvar,
+                                           stats.circstd])
+    def test_nan_omit_all_axis(self, test_func):
+        x = np.array([[np.nan, np.nan, np.nan, np.nan, np.nan],
+                      [np.nan, np.nan, np.nan, np.nan, np.nan]])
+        out = test_func(x, nan_policy='omit', axis=1)
+        assert_(np.isnan(out).all())
+        assert_(len(out) == 2)
+
+    @pytest.mark.parametrize("x",
+                             [[355, 5, 2, 359, 10, 350, np.nan],
+                              np.array([[355, 5, 2, 359, 10, 350, np.nan],
+                                        [351, 7, 4, 352, np.nan, 9, 349]])])
+    @pytest.mark.parametrize("test_func", [stats.circmean, stats.circvar,
+                                           stats.circstd])
+    def test_nan_raise(self, test_func, x):
+        assert_raises(ValueError, test_func, x, high=360, nan_policy='raise')
+
+    @pytest.mark.parametrize("x",
+                             [[355, 5, 2, 359, 10, 350, np.nan],
+                              np.array([[355, 5, 2, 359, 10, 350, np.nan],
+                                        [351, 7, 4, 352, np.nan, 9, 349]])])
+    @pytest.mark.parametrize("test_func", [stats.circmean, stats.circvar,
+                                           stats.circstd])
+    def test_bad_nan_policy(self, test_func, x):
+        assert_raises(ValueError, test_func, x, high=360, nan_policy='foobar')
 
     def test_circmean_scalar(self):
         x = 1.

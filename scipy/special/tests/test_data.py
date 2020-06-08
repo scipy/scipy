@@ -1,10 +1,8 @@
-from __future__ import division, print_function, absolute_import
-
 import os
 
 import numpy as np
 from numpy import arccosh, arcsinh, arctanh
-from scipy._lib._numpy_compat import suppress_warnings
+from numpy.testing import suppress_warnings
 import pytest
 
 from scipy.special import (
@@ -213,9 +211,9 @@ BOOST_TESTS = [
         data(assoc_legendre_p_boost_, 'assoc_legendre_p_ipp-assoc_legendre_p', (0,1,2), 3, rtol=1e-11),
 
         data(legendre_p_via_assoc_, 'legendre_p_ipp-legendre_p', (0,1), 2, rtol=1e-11),
-        data(legendre_p_via_assoc_, 'legendre_p_large_ipp-legendre_p_large', (0,1), 2, rtol=7e-14),
+        data(legendre_p_via_assoc_, 'legendre_p_large_ipp-legendre_p_large', (0,1), 2, rtol=9.6e-14),
         data(legendre_p_via_lpmn, 'legendre_p_ipp-legendre_p', (0,1), 2, rtol=5e-14, vectorized=False),
-        data(legendre_p_via_lpmn, 'legendre_p_large_ipp-legendre_p_large', (0,1), 2, rtol=7e-14, vectorized=False),
+        data(legendre_p_via_lpmn, 'legendre_p_large_ipp-legendre_p_large', (0,1), 2, rtol=9.6e-14, vectorized=False),
         data(lpn_, 'legendre_p_ipp-legendre_p', (0,1), 2, rtol=5e-14, vectorized=False),
         data(lpn_, 'legendre_p_large_ipp-legendre_p_large', (0,1), 2, rtol=3e-13, vectorized=False),
         data(eval_legendre_ld, 'legendre_p_ipp-legendre_p', (0,1), 2, rtol=6e-14),
@@ -493,8 +491,5 @@ def _test_factory(test, dtype=np.double):
     """Boost test"""
     with suppress_warnings() as sup:
         sup.filter(IntegrationWarning, "The occurrence of roundoff error is detected")
-        olderr = np.seterr(all='ignore')
-        try:
+        with np.errstate(all='ignore'):
             test.check(dtype=dtype)
-        finally:
-            np.seterr(**olderr)

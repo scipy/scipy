@@ -393,23 +393,28 @@ passed in :obj:`mgrid <numpy.mgrid>`.
 
    Define function over a sparse 20x20 grid
 
-   >>> x, y = np.mgrid[-1:1:20j, -1:1:20j]
+   >>> x_edges, y_edges = np.mgrid[-1:1:21j, -1:1:21j]
+   >>> x = x_edges[:-1, :-1] + np.diff(x_edges[:2, 0])[0] / 2.
+   >>> y = y_edges[:-1, :-1] + np.diff(y_edges[0, :2])[0] / 2.
    >>> z = (x+y) * np.exp(-6.0*(x*x+y*y))
 
    >>> plt.figure()
-   >>> plt.pcolor(x, y, z)
+   >>> lims = dict(cmap='RdBu_r', vmin=-0.25, vmax=0.25)
+   >>> plt.pcolormesh(x_edges, y_edges, z, shading='flat', **lims)
    >>> plt.colorbar()
    >>> plt.title("Sparsely sampled function.")
    >>> plt.show()
 
    Interpolate function over a new 70x70 grid
 
-   >>> xnew, ynew = np.mgrid[-1:1:70j, -1:1:70j]
+   >>> xnew_edges, ynew_edges = np.mgrid[-1:1:71j, -1:1:71j]
+   >>> xnew = xnew_edges[:-1, :-1] + np.diff(xnew_edges[:2, 0])[0] / 2.
+   >>> ynew = ynew_edges[:-1, :-1] + np.diff(ynew_edges[0, :2])[0] / 2.
    >>> tck = interpolate.bisplrep(x, y, z, s=0)
    >>> znew = interpolate.bisplev(xnew[:,0], ynew[0,:], tck)
 
    >>> plt.figure()
-   >>> plt.pcolor(xnew, ynew, znew)
+   >>> plt.pcolormesh(xnew_edges, ynew_edges, znew, shading='flat', **lims)
    >>> plt.colorbar()
    >>> plt.title("Interpolated function.")
    >>> plt.show()
@@ -491,8 +496,9 @@ This example shows how to interpolate scattered 2-D data:
     >>> x = np.random.rand(100)*4.0-2.0
     >>> y = np.random.rand(100)*4.0-2.0
     >>> z = x*np.exp(-x**2-y**2)
-    >>> ti = np.linspace(-2.0, 2.0, 100)
-    >>> XI, YI = np.meshgrid(ti, ti)
+    >>> edges = np.linspace(-2.0, 2.0, 101)
+    >>> centers = edges[:-1] + np.diff(edges[:2])[0] / 2.
+    >>> XI, YI = np.meshgrid(centers, centers)
 
     >>> # use RBF
     >>> rbf = Rbf(x, y, z, epsilon=2)
@@ -500,8 +506,10 @@ This example shows how to interpolate scattered 2-D data:
 
     >>> # plot the result
     >>> plt.subplot(1, 1, 1)
-    >>> plt.pcolor(XI, YI, ZI, cmap=cm.jet)
-    >>> plt.scatter(x, y, 100, z, cmap=cm.jet)
+    >>> X_edges, Y_edges = np.meshgrid(edges, edges)
+    >>> lims = dict(cmap='RdBu_r', vmin=-0.4, vmax=0.4)
+    >>> plt.pcolormesh(X_edges, Y_edges, ZI, shading='flat', **lims)
+    >>> plt.scatter(x, y, 100, z, edgecolor='w', lw=0.1, **lims)
     >>> plt.title('RBF interpolation - multiquadrics')
     >>> plt.xlim(-2, 2)
     >>> plt.ylim(-2, 2)

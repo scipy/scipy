@@ -1,6 +1,4 @@
 """Compressed Block Sparse Row matrix format"""
-from __future__ import division, print_function, absolute_import
-
 
 __docformat__ = "restructuredtext en"
 
@@ -16,8 +14,8 @@ from .base import isspmatrix, _formats, spmatrix
 from .sputils import (isshape, getdtype, to_native, upcast, get_index_dtype,
                       check_shape)
 from . import _sparsetools
-from ._sparsetools import (bsr_matvec, bsr_matvecs, csr_matmat_pass1,
-                           bsr_matmat_pass2, bsr_transpose, bsr_sort_indices,
+from ._sparsetools import (bsr_matvec, bsr_matvecs, csr_matmat_maxnnz,
+                           bsr_matmat, bsr_transpose, bsr_sort_indices,
                            bsr_tocsr)
 
 
@@ -42,7 +40,7 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
             is the standard BSR representation where the block column
             indices for row i are stored in ``indices[indptr[i]:indptr[i+1]]``
             and their corresponding block values are stored in
-            ``data[ indptr[i]: indptr[i+1] ]``.  If the shape parameter is not
+            ``data[ indptr[i]: indptr[i+1] ]``. If the shape parameter is not
             supplied, the matrix dimensions are inferred from the index arrays.
 
     Attributes
@@ -74,9 +72,9 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
     **Summary of BSR format**
 
     The Block Compressed Row (BSR) format is very similar to the Compressed
-    Sparse Row (CSR) format.  BSR is appropriate for sparse matrices with dense
+    Sparse Row (CSR) format. BSR is appropriate for sparse matrices with dense
     sub matrices like the last example below.  Block matrices often arise in
-    vector-valued finite element discretizations.  In such cases, BSR is
+    vector-valued finite element discretizations. In such cases, BSR is
     considerably more efficient than CSR and CSC for many sparse arithmetic
     operations.
 
@@ -209,7 +207,7 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
                 self._shape = check_shape(shape)
 
         if dtype is not None:
-            self.data = self.data.astype(dtype)
+            self.data = self.data.astype(dtype, copy=False)
 
         self.check_format(full_check=False)
 
@@ -298,7 +296,7 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
     def diagonal(self, k=0):
         rows, cols = self.shape
         if k <= -rows or k >= cols:
-            raise ValueError("k exceeds matrix dimensions")
+            return np.empty(0, dtype=self.data.dtype)
         R, C = self.blocksize
         y = np.zeros(min(rows + min(k, 0), cols - max(k, 0)),
                      dtype=upcast(self.dtype))
@@ -323,13 +321,13 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
     # Arithmetic methods #
     ######################
 
-    @np.deprecate(message="BSR matvec is deprecated in scipy 0.19.0. "
+    @np.deprecate(message="BSR matvec is deprecated in SciPy 0.19.0. "
                           "Use * operator instead.")
     def matvec(self, other):
         """Multiply matrix by vector."""
         return self * other
 
-    @np.deprecate(message="BSR matmat is deprecated in scipy 0.19.0. "
+    @np.deprecate(message="BSR matmat is deprecated in SciPy 0.19.0. "
                           "Use * operator instead.")
     def matmat(self, other):
         """Multiply this sparse matrix by other matrix."""
@@ -383,36 +381,31 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
             other = other.tobsr(blocksize=(n,C))
 
         idx_dtype = get_index_dtype((self.indptr, self.indices,
-                                     other.indptr, other.indices),
-                                    maxval=(M//R)*(N//C))
-        indptr = np.empty(self.indptr.shape, dtype=idx_dtype)
+                                     other.indptr, other.indices))
 
-        csr_matmat_pass1(M//R, N//C,
-                         self.indptr.astype(idx_dtype),
-                         self.indices.astype(idx_dtype),
-                         other.indptr.astype(idx_dtype),
-                         other.indices.astype(idx_dtype),
-                         indptr)
-
-        bnnz = indptr[-1]
+        bnnz = csr_matmat_maxnnz(M//R, N//C,
+                                 self.indptr.astype(idx_dtype),
+                                 self.indices.astype(idx_dtype),
+                                 other.indptr.astype(idx_dtype),
+                                 other.indices.astype(idx_dtype))
 
         idx_dtype = get_index_dtype((self.indptr, self.indices,
                                      other.indptr, other.indices),
                                     maxval=bnnz)
-        indptr = indptr.astype(idx_dtype)
+        indptr = np.empty(self.indptr.shape, dtype=idx_dtype)
         indices = np.empty(bnnz, dtype=idx_dtype)
         data = np.empty(R*C*bnnz, dtype=upcast(self.dtype,other.dtype))
 
-        bsr_matmat_pass2(M//R, N//C, R, C, n,
-                         self.indptr.astype(idx_dtype),
-                         self.indices.astype(idx_dtype),
-                         np.ravel(self.data),
-                         other.indptr.astype(idx_dtype),
-                         other.indices.astype(idx_dtype),
-                         np.ravel(other.data),
-                         indptr,
-                         indices,
-                         data)
+        bsr_matmat(bnnz, M//R, N//C, R, C, n,
+                   self.indptr.astype(idx_dtype),
+                   self.indices.astype(idx_dtype),
+                   np.ravel(self.data),
+                   other.indptr.astype(idx_dtype),
+                   other.indices.astype(idx_dtype),
+                   np.ravel(other.data),
+                   indptr,
+                   indices,
+                   data)
 
         data = data.reshape(-1,R,C)
 

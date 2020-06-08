@@ -20,9 +20,10 @@
 
 namespace {
 
-using namespace std;
 using pocketfft::shape_t;
 using pocketfft::stride_t;
+using std::size_t;
+using std::ptrdiff_t;
 
 namespace py = pybind11;
 
@@ -66,13 +67,13 @@ shape_t makeaxes(const py::array &in, const py::object &axes)
   auto tmp=axes.cast<std::vector<ptrdiff_t>>();
   auto ndim = in.ndim();
   if ((tmp.size()>size_t(ndim)) || (tmp.size()==0))
-    throw runtime_error("bad axes argument");
+    throw std::runtime_error("bad axes argument");
   for (auto& sz: tmp)
     {
     if (sz<0)
       sz += ndim;
     if ((sz>=ndim) || (sz<0))
-      throw invalid_argument("axes exceeds dimensionality of output");
+      throw std::invalid_argument("axes exceeds dimensionality of output");
     }
   return shape_t(tmp.begin(), tmp.end());
   }
@@ -82,7 +83,7 @@ shape_t makeaxes(const py::array &in, const py::object &axes)
   if (py::isinstance<py::array_t<T1>>(arr)) return func<double> args; \
   if (py::isinstance<py::array_t<T2>>(arr)) return func<float> args;  \
   if (py::isinstance<py::array_t<T3>>(arr)) return func<ldbl_t> args; \
-  throw runtime_error("unsupported data type"); \
+  throw std::runtime_error("unsupported data type"); \
   }
 
 template<typename T> T norm_fct(int inorm, size_t N)
@@ -90,7 +91,7 @@ template<typename T> T norm_fct(int inorm, size_t N)
   if (inorm==0) return T(1);
   if (inorm==2) return T(1/ldbl_t(N));
   if (inorm==1) return T(1/sqrt(ldbl_t(N)));
-  throw invalid_argument("invalid value for inorm (must be 0, 1, or 2)");
+  throw std::invalid_argument("invalid value for inorm (must be 0, 1, or 2)");
   }
 
 template<typename T> T norm_fct(int inorm, const shape_t &shape,
@@ -109,7 +110,7 @@ template<typename T> py::array_t<T> prepare_output(py::object &out_,
   if (out_.is_none()) return py::array_t<T>(dims);
   auto tmp = out_.cast<py::array_t<T>>();
   if (!tmp.is(out_)) // a new object was created during casting
-    throw runtime_error("unexpected data type for output array");
+    throw std::runtime_error("unexpected data type for output array");
   return tmp;
   }
 
@@ -119,17 +120,17 @@ template<typename T> py::array c2c_internal(const py::array &in,
   {
   auto axes = makeaxes(in, axes_);
   auto dims(copy_shape(in));
-  auto res = prepare_output<complex<T>>(out_, dims);
+  auto res = prepare_output<std::complex<T>>(out_, dims);
   auto s_in=copy_strides(in);
   auto s_out=copy_strides(res);
-  auto d_in=reinterpret_cast<const complex<T> *>(in.data());
-  auto d_out=reinterpret_cast<complex<T> *>(res.mutable_data());
+  auto d_in=reinterpret_cast<const std::complex<T> *>(in.data());
+  auto d_out=reinterpret_cast<std::complex<T> *>(res.mutable_data());
   {
   py::gil_scoped_release release;
   T fct = norm_fct<T>(inorm, dims, axes);
   pocketfft::c2c(dims, s_in, s_out, axes, forward, d_in, d_out, fct, nthreads);
   }
-  return res;
+  return move(res);
   }
 
 template<typename T> py::array c2c_sym_internal(const py::array &in,
@@ -138,18 +139,18 @@ template<typename T> py::array c2c_sym_internal(const py::array &in,
   {
   auto axes = makeaxes(in, axes_);
   auto dims(copy_shape(in));
-  auto res = prepare_output<complex<T>>(out_, dims);
+  auto res = prepare_output<std::complex<T>>(out_, dims);
   auto s_in=copy_strides(in);
   auto s_out=copy_strides(res);
   auto d_in=reinterpret_cast<const T *>(in.data());
-  auto d_out=reinterpret_cast<complex<T> *>(res.mutable_data());
+  auto d_out=reinterpret_cast<std::complex<T> *>(res.mutable_data());
   {
   py::gil_scoped_release release;
   T fct = norm_fct<T>(inorm, dims, axes);
   pocketfft::r2c(dims, s_in, s_out, axes, forward, d_in, d_out, fct, nthreads);
   // now fill in second half
   using namespace pocketfft::detail;
-  ndarr<complex<T>> ares(res.mutable_data(), dims, s_out);
+  ndarr<std::complex<T>> ares(res.mutable_data(), dims, s_out);
   rev_iter iter(ares, axes);
   while(iter.remaining()>0)
     {
@@ -158,7 +159,7 @@ template<typename T> py::array c2c_sym_internal(const py::array &in,
     iter.advance();
     }
   }
-  return res;
+  return move(res);
   }
 
 py::array c2c(const py::array &a, const py::object &axes_, bool forward,
@@ -179,11 +180,11 @@ template<typename T> py::array r2c_internal(const py::array &in,
   auto axes = makeaxes(in, axes_);
   auto dims_in(copy_shape(in)), dims_out(dims_in);
   dims_out[axes.back()] = (dims_out[axes.back()]>>1)+1;
-  py::array res = prepare_output<complex<T>>(out_, dims_out);
+  py::array res = prepare_output<std::complex<T>>(out_, dims_out);
   auto s_in=copy_strides(in);
   auto s_out=copy_strides(res);
   auto d_in=reinterpret_cast<const T *>(in.data());
-  auto d_out=reinterpret_cast<complex<T> *>(res.mutable_data());
+  auto d_out=reinterpret_cast<std::complex<T> *>(res.mutable_data());
   {
   py::gil_scoped_release release;
   T fct = norm_fct<T>(inorm, dims_in, axes);
@@ -253,7 +254,7 @@ template<typename T> py::array dct_internal(const py::array &in,
 py::array dct(const py::array &in, int type, const py::object &axes_,
   int inorm, py::object &out_, size_t nthreads)
   {
-  if ((type<1) || (type>4)) throw invalid_argument("invalid DCT type");
+  if ((type<1) || (type>4)) throw std::invalid_argument("invalid DCT type");
   DISPATCH(in, f64, f32, flong, dct_internal, (in, axes_, type, inorm, out_,
     nthreads))
   }
@@ -283,7 +284,7 @@ template<typename T> py::array dst_internal(const py::array &in,
 py::array dst(const py::array &in, int type, const py::object &axes_,
   int inorm, py::object &out_, size_t nthreads)
   {
-  if ((type<1) || (type>4)) throw invalid_argument("invalid DST type");
+  if ((type<1) || (type>4)) throw std::invalid_argument("invalid DST type");
   DISPATCH(in, f64, f32, flong, dst_internal, (in, axes_, type, inorm,
     out_, nthreads))
   }
@@ -297,12 +298,12 @@ template<typename T> py::array c2r_internal(const py::array &in,
   shape_t dims_in(copy_shape(in)), dims_out=dims_in;
   if (lastsize==0) lastsize=2*dims_in[axis]-1;
   if ((lastsize/2) + 1 != dims_in[axis])
-    throw invalid_argument("bad lastsize");
+    throw std::invalid_argument("bad lastsize");
   dims_out[axis] = lastsize;
   py::array res = prepare_output<T>(out_, dims_out);
   auto s_in=copy_strides(in);
   auto s_out=copy_strides(res);
-  auto d_in=reinterpret_cast<const complex<T> *>(in.data());
+  auto d_in=reinterpret_cast<const std::complex<T> *>(in.data());
   auto d_out=reinterpret_cast<T *>(res.mutable_data());
   {
   py::gil_scoped_release release;
@@ -346,38 +347,34 @@ py::array separable_hartley(const py::array &in, const py::object &axes_,
     out_, nthreads))
   }
 
-template<typename T>py::array complex2hartley(const py::array &in,
-  const py::array &tmp, const py::object &axes_, py::object &out_)
+template<typename T> py::array genuine_hartley_internal(const py::array &in,
+  const py::object &axes_, int inorm, py::object &out_, size_t nthreads)
   {
-  using namespace pocketfft::detail;
-  auto dims_out(copy_shape(in));
-  py::array out = prepare_output<T>(out_, dims_out);
-  cndarr<cmplx<T>> atmp(tmp.data(), copy_shape(tmp), copy_strides(tmp));
-  ndarr<T> aout(out.mutable_data(), copy_shape(out), copy_strides(out));
+  auto dims(copy_shape(in));
+  py::array res = prepare_output<T>(out_, dims);
   auto axes = makeaxes(in, axes_);
+  auto s_in=copy_strides(in);
+  auto s_out=copy_strides(res);
+  auto d_in=reinterpret_cast<const T *>(in.data());
+  auto d_out=reinterpret_cast<T *>(res.mutable_data());
   {
   py::gil_scoped_release release;
-  simple_iter iin(atmp);
-  rev_iter iout(aout, axes);
-  while(iin.remaining()>0)
-    {
-    auto v = atmp[iin.ofs()];
-    aout[iout.ofs()] = v.r+v.i;
-    aout[iout.rev_ofs()] = v.r-v.i;
-    iin.advance(); iout.advance();
-    }
+  T fct = norm_fct<T>(inorm, dims, axes);
+  pocketfft::r2r_genuine_hartley(dims, s_in, s_out, axes, d_in, d_out, fct,
+    nthreads);
   }
-  return out;
+  return res;
   }
 
 py::array genuine_hartley(const py::array &in, const py::object &axes_,
   int inorm, py::object &out_, size_t nthreads)
   {
-  auto tmp = r2c(in, axes_, true, inorm, None, nthreads);
-  DISPATCH(in, f64, f32, flong, complex2hartley, (in, tmp, axes_, out_))
+  DISPATCH(in, f64, f32, flong, genuine_hartley_internal, (in, axes_, inorm,
+    out_, nthreads))
   }
 
- PyObject * good_size(PyObject * self, PyObject * args)
+// Export good_size in raw C-API to reduce overhead (~4x faster)
+PyObject * good_size(PyObject * /*self*/, PyObject * args)
   {
   Py_ssize_t n_ = -1;
   int real = false;

@@ -32,28 +32,26 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from __future__ import division, print_function, absolute_import
-
 import os.path
 
 from functools import wraps, partial
-from scipy._lib.six import xrange, u
 
 import numpy as np
 import warnings
 from numpy.linalg import norm
 from numpy.testing import (verbose, assert_,
                            assert_array_equal, assert_equal,
-                           assert_almost_equal, assert_allclose)
+                           assert_almost_equal, assert_allclose,
+                           suppress_warnings)
 import pytest
 from pytest import raises as assert_raises
 
-from scipy._lib._numpy_compat import suppress_warnings
 from scipy.spatial.distance import (squareform, pdist, cdist, num_obs_y,
                                     num_obs_dm, is_valid_dm, is_valid_y,
                                     _validate_vector, _METRICS_NAMES)
 
 # these were missing: chebyshev cityblock kulsinski
+# jensenshannon, matching and seuclidean are referenced by string name.
 from scipy.spatial.distance import (braycurtis, canberra, chebyshev, cityblock,
                                     correlation, cosine, dice, euclidean,
                                     hamming, jaccard, jensenshannon,
@@ -440,8 +438,8 @@ class TestCdist(object):
         eps = 1e-07
         X1 = eo['cdist-X1']
         X2 = eo['cdist-X2']
-        Y1 = wcdist_no_const(X1, X2, u('euclidean'))
-        Y2 = wcdist_no_const(X1, X2, u('test_euclidean'))
+        Y1 = wcdist_no_const(X1, X2, 'euclidean')
+        Y2 = wcdist_no_const(X1, X2, 'test_euclidean')
         _assert_within_tol(Y1, Y2, eps, verbose > 2)
 
     def test_cdist_minkowski_random_p3d8(self):
@@ -710,7 +708,7 @@ class TestPdist(object):
         eps = 1e-07
         X = eo['pdist-double-inp']
         Y_right = eo['pdist-euclidean']
-        Y_test1 = wpdist_no_const(X, u('euclidean'))
+        Y_test1 = wpdist_no_const(X, 'euclidean')
         _assert_within_tol(Y_test1, Y_right, eps)
 
     def test_pdist_euclidean_random_float32(self):
@@ -766,6 +764,11 @@ class TestPdist(object):
         Y_right = eo['pdist-seuclidean']
         Y_test1 = pdist(X, 'seuclidean')
         _assert_within_tol(Y_test1, Y_right, eps)
+
+        # Check no error is raise when V has float32 dtype (#11171).
+        V = np.var(X, axis=0, ddof=1)
+        Y_test2 = pdist(X, 'seuclidean', V=V)
+        _assert_within_tol(Y_test2, Y_right, eps)
 
     def test_pdist_seuclidean_random_nonC(self):
         # Test pdist(X, 'test_sqeuclidean') [the non-C implementation]
@@ -1399,7 +1402,6 @@ class TestPdist(object):
         # gives the same behaviour (i.e. same result or same exception).
         # NOTE: The correctness should be checked within each metric tests.
         # NOTE: Extra args should be checked with a dedicated test
-        eps = 1e-07
         for eo_name in self.rnd_eo_names:
             # subsampling input data to speed-up tests
             # NOTE: num samples needs to be > than dimensions for mahalanobis
@@ -1523,7 +1525,7 @@ class TestSomeDistanceFunctions(object):
                 assert_almost_equal(dist1, 3.0)
                 dist1p5 = wminkowski(x, y, p=1.5)
                 assert_almost_equal(dist1p5, (1.0 + 2.0**1.5)**(2. / 3))
-                dist2 = wminkowski(x, y, p=2)
+                wminkowski(x, y, p=2)
 
             # Check that casting input to minimum scalar type doesn't affect result (issue #10262).
             # This could be extended to more test inputs with np.min_scalar_type(np.max(input_matrix)).
@@ -1622,7 +1624,7 @@ class TestSquareForm(object):
         assert_array_equal(rv, np.array([[0, 8.3], [8.3, 0]], dtype=dtype))
 
     def test_squareform_multi_matrix(self):
-        for n in xrange(2, 5):
+        for n in range(2, 5):
             self.check_squareform_multi_matrix(n)
 
     def check_squareform_multi_matrix(self, n):
@@ -1638,8 +1640,8 @@ class TestSquareForm(object):
         assert_equal(len(s), 2)
         assert_equal(len(Yr.shape), 1)
         assert_equal(s[0], s[1])
-        for i in xrange(0, s[0]):
-            for j in xrange(i + 1, s[1]):
+        for i in range(0, s[0]):
+            for j in range(i + 1, s[1]):
                 if i != j:
                     assert_equal(A[i, j], Y[k])
                     k += 1
@@ -1650,7 +1652,7 @@ class TestSquareForm(object):
 class TestNumObsY(object):
 
     def test_num_obs_y_multi_matrix(self):
-        for n in xrange(2, 10):
+        for n in range(2, 10):
             X = np.random.rand(n, 4)
             Y = wpdist_no_const(X)
             assert_equal(num_obs_y(Y), n)
@@ -1672,16 +1674,16 @@ class TestNumObsY(object):
         assert_(self.check_y(4))
 
     def test_num_obs_y_5_10(self):
-        for i in xrange(5, 16):
+        for i in range(5, 16):
             self.minit(i)
 
     def test_num_obs_y_2_100(self):
         # Tests num_obs_y(y) on 100 improper condensed distance matrices.
         # Expecting exception.
         a = set([])
-        for n in xrange(2, 16):
+        for n in range(2, 16):
             a.add(n * (n - 1) / 2)
-        for i in xrange(5, 105):
+        for i in range(5, 105):
             if i not in a:
                 assert_raises(ValueError, self.bad_y, i)
 
@@ -1702,7 +1704,7 @@ class TestNumObsY(object):
 class TestNumObsDM(object):
 
     def test_num_obs_dm_multi_matrix(self):
-        for n in xrange(1, 10):
+        for n in range(1, 10):
             X = np.random.rand(n, 4)
             Y = wpdist_no_const(X)
             A = squareform(Y)
@@ -1759,14 +1761,14 @@ class TestIsValidDM(object):
     def test_is_valid_dm_nonzero_diagonal_E(self):
         y = np.random.rand(10)
         D = squareform(y)
-        for i in xrange(0, 5):
+        for i in range(0, 5):
             D[i, i] = 2.0
         assert_raises(ValueError, is_valid_dm_throw, (D))
 
     def test_is_valid_dm_nonzero_diagonal_F(self):
         y = np.random.rand(10)
         D = squareform(y)
-        for i in xrange(0, 5):
+        for i in range(0, 5):
             D[i, i] = 2.0
         assert_equal(is_valid_dm(D), False)
 
@@ -1850,9 +1852,9 @@ class TestIsValidY(object):
 
     def test_is_valid_y_2_100(self):
         a = set([])
-        for n in xrange(2, 16):
+        for n in range(2, 16):
             a.add(n * (n - 1) / 2)
-        for i in xrange(5, 105):
+        for i in range(5, 105):
             if i not in a:
                 assert_raises(ValueError, self.bad_y, i)
 

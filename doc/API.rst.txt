@@ -83,7 +83,7 @@ section that the submodule in question is public.
 API definition
 --------------
 
-Every submodule listed below is public.  That means that these submodules are
+Every submodule listed below is public. That means that these submodules are
 unlikely to be renamed or changed in an incompatible way, and if that is
 necessary, a deprecation warning will be raised for one SciPy release before the
 change is made.
@@ -159,8 +159,8 @@ following, a *SciPy module* is defined as a Python package, say
 
 * Ideally, each SciPy module should be as self-contained as possible.
   That is, it should have minimal dependencies on other packages or
-  modules.  Even dependencies on other SciPy modules should be kept to
-  a minimum.  A dependency on NumPy is of course assumed.
+  modules. Even dependencies on other SciPy modules should be kept to
+  a minimum. A dependency on NumPy is of course assumed.
 
 * Directory ``yyy/`` contains:
 
@@ -187,7 +187,7 @@ following, a *SciPy module* is defined as a Python package, say
   module.
 
   Tutorial-style documentation with extensive examples should be
-  separate, and put under ``doc/source/tutorial/``
+  separate and put under ``doc/source/tutorial/``.
 
 See the existing SciPy submodules for guidance.
 

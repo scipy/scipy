@@ -85,15 +85,17 @@ double x;
     }
     if (x < -34.034) {
 	w = -x;
-	z = sin(NPY_PI * w);
-	if (z == 0.0)
-	    return (0.0);
+	z = sinpi(w);
+	if (z == 0.0) {
+	    return 0.0;
+	}
 	if (z < 0.0) {
 	    sign = 1;
 	    z = -z;
 	}
-	else
+	else {
 	    sign = -1;
+	}
 
 	y = log(w * z) - log(NPY_PI) + lgam(w);
 	if (y < -MAXLOG) {

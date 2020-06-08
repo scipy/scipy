@@ -1,4 +1,6 @@
 """
+.. _statsrefmanual:
+
 ==========================================
 Statistical functions (:mod:`scipy.stats`)
 ==========================================
@@ -61,6 +63,7 @@ Continuous distributions
    gamma             -- Gamma
    gengamma          -- Generalized gamma
    genhalflogistic   -- Generalized Half Logistic
+   geninvgauss       -- Generalized Inverse Gaussian
    gilbrat           -- Gilbrat
    gompertz          -- Gompertz (Truncated Gumbel)
    gumbel_r          -- Right Sided Gumbel, Log-Weibull, Fisher-Tippett, Extreme Value Type I
@@ -77,8 +80,9 @@ Continuous distributions
    johnsonsu         -- Johnson SU
    kappa4            -- Kappa 4 parameter
    kappa3            -- Kappa 3 parameter
-   ksone             -- Kolmogorov-Smirnov one-sided (no stats)
-   kstwobign         -- Kolmogorov-Smirnov two-sided test for Large N (no stats)
+   ksone             -- Distribution of Kolmogorov-Smirnov one-sided test statistic
+   kstwo             -- Distribution of Kolmogorov-Smirnov two-sided test statistic
+   kstwobign         -- Limiting Distribution of scaled Kolmogorov-Smirnov two-sided test statistic.
    laplace           -- Laplace
    levy              -- Levy
    levy_l
@@ -87,6 +91,7 @@ Continuous distributions
    loggamma          -- Log-Gamma
    loglaplace        -- Log-Laplace (Log Double Exponential)
    lognorm           -- Log-Normal
+   loguniform        -- Log-Uniform
    lomax             -- Lomax (Pareto of the second kind)
    maxwell           -- Maxwell
    mielke            -- Mielke's Beta-Kappa
@@ -103,14 +108,13 @@ Continuous distributions
    powerlognorm      -- Power log normal
    powernorm         -- Power normal
    rdist             -- R-distribution
-   reciprocal        -- Reciprocal
    rayleigh          -- Rayleigh
    rice              -- Rice
    recipinvgauss     -- Reciprocal Inverse Gaussian
    semicircular      -- Semicircular
    skewnorm          -- Skew normal
    t                 -- Student's T
-   trapz              -- Trapezoidal
+   trapz             -- Trapezoidal
    triang            -- Triangular
    truncexpon        -- Truncated Exponential
    truncnorm         -- Truncated Normal
@@ -147,6 +151,7 @@ Discrete distributions
    :toctree: generated/
 
    bernoulli         -- Bernoulli
+   betabinom         -- Beta-Binomial
    binom             -- Binomial
    boltzmann         -- Boltzmann (Truncated Discrete Exponential)
    dlaplace          -- Discrete Laplacian
@@ -196,6 +201,7 @@ Summary statistics
    mvsdist
    entropy
    median_absolute_deviation
+   median_abs_deviation
 
 Frequency statistics
 ====================
@@ -231,6 +237,7 @@ Correlation functions
    linregress
    siegelslopes
    theilslopes
+   multiscale_graphcorr
 
 Statistical tests
 =================
@@ -242,9 +249,10 @@ Statistical tests
    ttest_ind
    ttest_ind_from_stats
    ttest_rel
-   kstest
    chisquare
    power_divergence
+   kstest
+   ks_1samp
    ks_2samp
    epps_singleton_2samp
    mannwhitneyu
@@ -367,15 +375,16 @@ Warnings used in :mod:`scipy.stats`
 .. autosummary::
    :toctree: generated/
 
+   F_onewayConstantInputWarning
+   F_onewayBadInputSizesWarning
    PearsonRConstantInputWarning
    PearsonRNearConstantInputWarning
+   SpearmanRConstantInputWarning
 
 For many more stat related functions install the software R and the
 interface package rpy.
 
 """
-from __future__ import division, print_function, absolute_import
-
 from .stats import *
 from .distributions import *
 from .morestats import *
