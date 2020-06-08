@@ -92,6 +92,8 @@ m_p = proton_mass = _cd('proton mass')
 m_n = neutron_mass = _cd('neutron mass')
 m_u = u = atomic_mass = _cd('atomic mass constant')
 
+solar_mass = _cd('solar mass constant')
+
 # angle in rad
 degree = pi / 180
 arcmin = arcminute = degree / 60

@@ -11,6 +11,8 @@ Fundamental Physical Constants
 These constants are taken from CODATA Recommended Values of the Fundamental
 Physical Constants 2018.
 
+Also added are non-CODATA constants as necessary.
+
 Object
 ------
 physical_constants : dict
@@ -1492,6 +1494,13 @@ W to Z mass ratio                                           0.881 53            
 
 # -----------------------------------------------------------------------------
 
+extra_constants="""\
+solar mass constant                                         1.988 409 9 e+30         0.000 07                 kg"""
+
+txt2018 += extra_constants
+
+# -----------------------------------------------------------------------------
+
 physical_constants = {}
 
 
@@ -1526,12 +1535,10 @@ _physical_constants_2010 = parse_constants_2002to2014(txt2010)
 _physical_constants_2014 = parse_constants_2002to2014(txt2014)
 _physical_constants_2018 = parse_constants_2018toXXXX(txt2018)
 
-
 physical_constants.update(_physical_constants_2002)
 physical_constants.update(_physical_constants_2006)
 physical_constants.update(_physical_constants_2010)
 physical_constants.update(_physical_constants_2014)
-physical_constants.update(_physical_constants_2018)
 _current_constants = _physical_constants_2018
 _current_codata = "CODATA 2018"
 

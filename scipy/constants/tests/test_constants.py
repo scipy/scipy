@@ -1,4 +1,4 @@
-from numpy.testing import assert_equal, assert_allclose
+from numpy.testing import assert_equal, assert_allclose, assert_
 import scipy.constants as sc
 
 
@@ -24,6 +24,10 @@ def test_convert_temperature():
                     [491.67, 491.67], rtol=0., atol=1e-13)
     assert_allclose(sc.convert_temperature([491.67, 0.], 'rankine', 'kelvin'),
                     [273.15, 0.], rtol=0., atol=1e-13)
+
+
+def test_extra_constants_exist():
+    assert_(sc.solar_mass)
 
 
 def test_lambda_to_nu():
