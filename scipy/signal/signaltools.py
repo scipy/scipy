@@ -305,7 +305,7 @@ def correlation_lags(in1_len, in2_len, mode='full'):
     Examples
     --------
     Cross-correlation of a signal with its time-delayed self.
-
+    >>> from scipy import signal
     >>> rng = np.random.RandomState(0)
     >>> x = rng.standard_normal(1000)
     >>> y = np.concatenate([rng.standard_normal(100), x])
