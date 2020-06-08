@@ -28,6 +28,7 @@ using std::stack;
 using std::string;
 using std::vector;
 
+namespace presolve {
 struct change {
   int type;
   int row;
@@ -108,5 +109,28 @@ class HPreData {
   stack<change> chng;
   stack<pair<int, vector<double>>> oldBounds;  //(j, l, u)
 };
+
+struct MainLoop {
+  int rows;
+  int cols;
+  int nnz;
+};
+
+struct DevStats {
+  int n_loops = 0;
+  std::vector<MainLoop> loops;
+};
+
+struct PresolveStats {
+  DevStats dev;
+
+  int n_rows_removed = 0;
+  int n_cols_removed = 0;
+  int n_nnz_removed = 0;
+};
+
+void initPresolve(PresolveStats& stats);
+
+}  // namespace presolve
 
 #endif /* PRESOLVE_HPREDATA_H_ */

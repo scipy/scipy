@@ -20,18 +20,25 @@
 
 #include "util/HighsTimer.h"
 
+namespace presolve {
+
+constexpr double inf = std::numeric_limits<double>::infinity();
+
 enum PresolveRule {
   // Presolve rules.
   EMPTY_ROW,
   FIXED_COL,
   SING_ROW,
   DOUBLETON_EQUATION,
+  REMOVE_FORCING_CONSTRAINTS,
   FORCING_ROW,
   REDUNDANT_ROW,
   DOMINATED_ROW_BOUNDS,
+  REMOVE_COLUMN_SINGLETONS,
   FREE_SING_COL,
   SING_COL_DOUBLETON_INEQ,
   IMPLIED_FREE_SING_COL,
+  REMOVE_DOMINATED_COLUMNS,
   DOMINATED_COLS,
   WEAKLY_DOMINATED_COLS,
   DOMINATED_COL_BOUNDS,
@@ -119,13 +126,16 @@ class PresolveTimer {
   }
 
   void reportClocks() {
-    std::vector<int> clocks(PRESOLVE_RULES_COUNT - 1);
+    std::vector<int> clocks;
     for (int id = 0; id < PRESOLVE_RULES_COUNT - 1; id++) {
       assert(rules_[id].rule_id == id);
-      clocks[id] = rules_[id].clock_id;
+      clocks.push_back(rules_[id].clock_id);
     }
+    const int total_presolve_time_as_rule = TOTAL_PRESOLVE_TIME;
+    const double ideal_time = getRuleTime(total_presolve_time_as_rule);
+
     std::cout << std::endl;
-    timer_.report("grep-Presolve", clocks);
+    timer_.report_tl("grep-Presolve", clocks, ideal_time, 0);
     std::cout << std::endl;
   }
 
@@ -134,10 +144,27 @@ class PresolveTimer {
 
   HighsTimer& timer_;
 
+  double getRuleTime(const int rule_id) {
+    return timer_.read(rules_[rule_id].clock_id);
+  }
+
+  inline double getTime() { return timer_.readRunHighsClock(); }
+
+  inline bool reachLimit() {
+    if (time_limit == inf || time_limit <= 0) return false;
+    if (getTime() < time_limit) return false;
+    return true;
+  }
+
+  double start_time = 0.0;
+  double time_limit = 0.0;
+
  private:
   std::vector<PresolveRuleInfo> rules_;
 
   double total_time_ = 0.0;
 };
+
+}  // namespace presolve
 
 #endif

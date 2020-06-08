@@ -13,6 +13,10 @@
  */
 #include "presolve/PresolveAnalysis.h"
 
+#include <limits>
+
+namespace presolve {
+
 void initializePresolveRuleInfo(std::vector<PresolveRuleInfo>& rules) {
   assert((int)rules.size() == 0);
 
@@ -20,15 +24,21 @@ void initializePresolveRuleInfo(std::vector<PresolveRuleInfo>& rules) {
   rules.push_back(PresolveRuleInfo(FIXED_COL, "Fixed col", "FXC"));
   rules.push_back(PresolveRuleInfo(SING_ROW, "Sing row", "SGR"));
   rules.push_back(PresolveRuleInfo(DOUBLETON_EQUATION, "Doubleton eq", "DEQ"));
+  rules.push_back(
+      PresolveRuleInfo(REMOVE_FORCING_CONSTRAINTS, "Rm forcing cs", "RFC"));
   rules.push_back(PresolveRuleInfo(FORCING_ROW, "Forcing row", "FRR"));
   rules.push_back(PresolveRuleInfo(REDUNDANT_ROW, "Redundant row", "RDR"));
   rules.push_back(
       PresolveRuleInfo(DOMINATED_ROW_BOUNDS, "Dom row bounds", "DRB"));
+  rules.push_back(
+      PresolveRuleInfo(REMOVE_COLUMN_SINGLETONS, "Remove col sing", "RCS"));
   rules.push_back(PresolveRuleInfo(FREE_SING_COL, "Free sing col", "FSC"));
   rules.push_back(
       PresolveRuleInfo(SING_COL_DOUBLETON_INEQ, "Sing col dbtn ineq", "SCD"));
   rules.push_back(
       PresolveRuleInfo(IMPLIED_FREE_SING_COL, "Impl free sing col", "IFS"));
+  rules.push_back(
+      PresolveRuleInfo(REMOVE_DOMINATED_COLUMNS, "Rm dom col", "RDC"));
   rules.push_back(PresolveRuleInfo(DOMINATED_COLS, "Dominated col", "DMC"));
   rules.push_back(
       PresolveRuleInfo(WEAKLY_DOMINATED_COLS, "Weakly dom col", "WDC"));
@@ -49,3 +59,5 @@ void PresolveTimer::updateInfo() {
     rule.total_time = timer_.read(rule.clock_id);
   }
 }
+
+}  // namespace presolve

@@ -1298,7 +1298,7 @@ int HighsSimplexInterface::convertBaseStatToHighsBasis(const int* cstat,
       return -(row + 1);
     }
   }
-  assert(numBasic = lp.numRow_);
+  assert(numBasic == lp.numRow_);
   basis.valid_ = true;
   updateSimplexLpStatus(simplex_lp_status, LpAction::NEW_BASIS);
   return 0;
@@ -1630,7 +1630,7 @@ void HighsSimplexInterface::convertHighsToSimplexBasis() {
     assert(!error_found);
     if (error_found) return;
   }
-  assert(num_basic = lp.numRow_);
+  assert(num_basic == lp.numRow_);
   //  populate_work_arrays(highs_model_object); // Why might this have been done
   //  here?
   updateSimplexLpStatus(simplex_lp_status, LpAction::NEW_BASIS);

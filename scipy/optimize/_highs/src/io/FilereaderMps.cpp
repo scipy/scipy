@@ -19,6 +19,8 @@
 #include "lp_data/HighsLpUtils.h"
 #include "lp_data/HighsModelUtils.h"
 
+using free_format_parser::HMpsFF;
+
 FilereaderRetcode FilereaderMps::readModelFromFile(const HighsOptions& options,
                                                    HighsLp& model) {
   const std::string filename = options.model_file;
@@ -27,6 +29,9 @@ FilereaderRetcode FilereaderMps::readModelFromFile(const HighsOptions& options,
   // Parse file and return status.
   if (options.mps_parser_type_free) {
     HMpsFF parser{};
+    if (options.time_limit < HIGHS_CONST_INF && options.time_limit > 0)
+      parser.time_limit = options.time_limit;
+
     FreeFormatParserReturnCode result =
         parser.loadProblem(options.logfile, filename, model);
     switch (result) {
@@ -41,6 +46,11 @@ FilereaderRetcode FilereaderMps::readModelFromFile(const HighsOptions& options,
                         "Free format reader has detected row/col names with "
                         "spaces: switching to fixed format parser");
         break;
+      case FreeFormatParserReturnCode::TIMEOUT:
+        HighsLogMessage(options.logfile, HighsMessageType::WARNING,
+                        "Free format reader reached time_limit while parsing "
+                        "the input file");
+        return FilereaderRetcode::TIMEOUT;
     }
   }
 

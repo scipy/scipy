@@ -78,7 +78,7 @@ FilereaderRetcode FilereaderLp::readModelFromFile(const HighsOptions& options,
     model.Astart_.push_back(nz);
     model.sense_ = m.sense == ObjectiveSense::MIN ? ObjSense::MINIMIZE
                                                   : ObjSense::MAXIMIZE;
-  } catch (std::invalid_argument ex) {
+  } catch (std::invalid_argument& ex) {
     return FilereaderRetcode::PARSERERROR;
   }
   return FilereaderRetcode::OK;
