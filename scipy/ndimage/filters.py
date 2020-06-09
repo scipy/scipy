@@ -66,7 +66,7 @@ def correlate1d(input, weights, axis=-1, output=None, mode="reflect",
         1-D sequence of numbers.
     %(axis)s
     %(output)s
-    %(mode)s
+    %(mode_reflect)s
     %(cval)s
     %(origin)s
 
@@ -111,7 +111,7 @@ def convolve1d(input, weights, axis=-1, output=None, mode="reflect",
         1-D sequence of numbers.
     %(axis)s
     %(output)s
-    %(mode)s
+    %(mode_reflect)s
     %(cval)s
     %(origin)s
 
@@ -180,7 +180,7 @@ def gaussian_filter1d(input, sigma, axis=-1, order=0, output=None,
         kernel. A positive order corresponds to convolution with
         that derivative of a Gaussian.
     %(output)s
-    %(mode)s
+    %(mode_reflect)s
     %(cval)s
     truncate : float, optional
         Truncate the filter at this many standard deviations.
@@ -647,7 +647,7 @@ def correlate(input, weights, output=None, mode='reflect', cval=0.0,
     weights : ndarray
         array of weights, same number of dimensions as input
     %(output)s
-    %(mode)s
+    %(mode_reflect)s
     %(cval)s
     %(origin_multiple)s
 
@@ -710,7 +710,7 @@ def convolve(input, weights, output=None, mode='reflect', cval=0.0,
     weights : array_like
         Array of weights, same number of dimensions as input
     %(output)s
-    %(mode)s
+    %(mode_reflect)s
     cval : scalar, optional
         Value to fill past edges of input if `mode` is 'constant'. Default
         is 0.0
@@ -817,7 +817,7 @@ def uniform_filter1d(input, size, axis=-1, output=None,
         length of uniform filter
     %(axis)s
     %(output)s
-    %(mode)s
+    %(mode_reflect)s
     %(cval)s
     %(origin)s
 
@@ -919,7 +919,7 @@ def minimum_filter1d(input, size, axis=-1, output=None,
         length along which to calculate 1D minimum
     %(axis)s
     %(output)s
-    %(mode)s
+    %(mode_reflect)s
     %(cval)s
     %(origin)s
 
@@ -971,7 +971,7 @@ def maximum_filter1d(input, size, axis=-1, output=None,
         Length along which to calculate the 1-D maximum.
     %(axis)s
     %(output)s
-    %(mode)s
+    %(mode_reflect)s
     %(cval)s
     %(origin)s
 
@@ -1256,7 +1256,7 @@ def rank_filter(input, rank, size=None, footprint=None, output=None,
         indicates the largest element.
     %(size_foot)s
     %(output)s
-    %(mode)s
+    %(mode_reflect)s
     %(cval)s
     %(origin_multiple)s
 
@@ -1295,7 +1295,7 @@ def median_filter(input, size=None, footprint=None, output=None,
     %(input)s
     %(size_foot)s
     %(output)s
-    %(mode)s
+    %(mode_reflect)s
     %(cval)s
     %(origin_multiple)s
 
@@ -1335,7 +1335,7 @@ def percentile_filter(input, percentile, size=None, footprint=None,
         percentile = -20 equals percentile = 80
     %(size_foot)s
     %(output)s
-    %(mode)s
+    %(mode_reflect)s
     %(cval)s
     %(origin_multiple)s
 
@@ -1384,7 +1384,7 @@ def generic_filter1d(input, function, filter_size, axis=-1,
         Length of the filter.
     %(axis)s
     %(output)s
-    %(mode)s
+    %(mode_reflect)s
     %(cval)s
     %(origin)s
     %(extra_arguments)s
@@ -1462,7 +1462,7 @@ def generic_filter(input, function, size=None, footprint=None,
         Function to apply at each element.
     %(size_foot)s
     %(output)s
-    %(mode)s
+    %(mode_reflect)s
     %(cval)s
     %(origin_multiple)s
     %(extra_arguments)s

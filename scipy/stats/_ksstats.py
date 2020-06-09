@@ -106,7 +106,7 @@ def _clip_prob(p):
 
 def _select_and_clip_prob(cdfprob, sfprob, cdf=True):
     """Selects either the CDF or SF, and then clips to range 0<=p<=1."""
-    p = (cdfprob if cdf else sfprob)
+    p = np.where(cdf, cdfprob, sfprob)
     return _clip_prob(p)
 
 
@@ -414,25 +414,20 @@ def _kolmogn(n, x, cdf=True):
         return _select_and_clip_prob(1.0 - prob, prob, cdf=cdf)
 
     # Split CDF and SF as they have different cutoffs on nxsquared.
-    if cdf:
-        if nxsquared >= 18.0:
-            return 1.0
-        if n <= 100000:
-            if n * x**1.5 <= 1.4:
-                prob = _kolmogn_DMTW(n, x, cdf=True)
-                return _clip_prob(prob)
-        # n > 1e5 or  n * x**1.5 > 1.4
-        prob = _kolmogn_PelzGood(n, x, cdf=True)
-        return _clip_prob(prob)
-    # compute the SF
-    if nxsquared >= 370.0:
-        return 0.0
-    if nxsquared >= 2.2:
-        prob = 2 * scipy.special.smirnov(n, x)
-        return _clip_prob(prob)
-    # Compute the CDF and take its complement
-    cdfprob = _kolmogn(n, x, cdf=True)
-    return _clip_prob(1.0 - cdfprob)
+    if not cdf:
+        if nxsquared >= 370.0:
+            return 0.0
+        if nxsquared >= 2.2:
+            prob = 2 * scipy.special.smirnov(n, x)
+            return _clip_prob(prob)
+        # Fall through and compute the SF as 1.0-CDF
+    if nxsquared >= 18.0:
+        cdfprob = 1.0
+    elif n <= 100000 and n * x**1.5 <= 1.4:
+        cdfprob = _kolmogn_DMTW(n, x, cdf=True)
+    else:
+        cdfprob = _kolmogn_PelzGood(n, x, cdf=True)
+    return _select_and_clip_prob(cdfprob, 1.0 - cdfprob, cdf=cdf)
 
 
 def _kolmogn_p(n, x):
@@ -527,10 +522,15 @@ def kolmogn(n, x, cdf=True):
 
     The return value has shape the result of numpy broadcasting n and x.
     """
-    it = np.nditer([n, x, None])
-    for _n, _x, z in it:
-        z[...] = _kolmogn(int(_n), _x, cdf=cdf)
-    result = it.operands[2]
+    it = np.nditer([n, x, cdf, None], op_dtypes=[None, np.float, np.bool, np.float])
+    for _n, _x, _cdf, z in it:
+        if np.isnan(_n):
+            z[...] = _n
+            continue
+        if int(_n) != _n:
+            raise ValueError(f'n is not integral: {_n}')
+        z[...] = _kolmogn(int(_n), _x, cdf=_cdf)
+    result = it.operands[-1]
     return result
 
 
@@ -553,8 +553,13 @@ def kolmognp(n, x):
     """
     it = np.nditer([n, x, None])
     for _n, _x, z in it:
+        if np.isnan(_n):
+            z[...] = _n
+            continue
+        if int(_n) != _n:
+            raise ValueError(f'n is not integral: {_n}')
         z[...] = _kolmogn_p(int(_n), _x)
-    result = it.operands[2]
+    result = it.operands[-1]
     return result
 
 
@@ -577,8 +582,14 @@ def kolmogni(n, q, cdf=True):
 
     The return value has shape the result of numpy broadcasting n and x.
     """
-    it = np.nditer([n, q, None])
-    for _n, _q, z in it:
-        z[...] = _kolmogni(int(_n), _q if cdf else 1.0-_q, 1.0-_q if cdf else _q)
-    result = it.operands[2]
+    it = np.nditer([n, q, cdf, None])
+    for _n, _q, _cdf, z in it:
+        if np.isnan(_n):
+            z[...] = _n
+            continue
+        if int(_n) != _n:
+            raise ValueError(f'n is not integral: {_n}')
+        _pcdf, _psf = (_q, 1-_q) if _cdf else (1-_q, _q)
+        z[...] = _kolmogni(int(_n), _pcdf, _psf)
+    result = it.operands[-1]
     return result

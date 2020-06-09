@@ -890,7 +890,6 @@ static int rowperm_cvt(PyObject * input, rowperm_t * value)
 {
     ENUM_CHECK_INIT;
     ENUM_CHECK(NOROWPERM);
-    ENUM_CHECK(LargeDiag);
     ENUM_CHECK(MY_PERMR);
     ENUM_CHECK_FINISH("invalid value for 'RowPerm' parameter");
 }

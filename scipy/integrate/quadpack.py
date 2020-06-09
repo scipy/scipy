@@ -704,11 +704,12 @@ def nquad(func, ranges, args=None, opts=None, full_output=False):
     ----------
     func : {callable, scipy.LowLevelCallable}
         The function to be integrated. Has arguments of ``x0, ... xn``,
-        ``t0, tm``, where integration is carried out over ``x0, ... xn``, which
-        must be floats.  Function signature should be
-        ``func(x0, x1, ..., xn, t0, t1, ..., tm)``.  Integration is carried out
-        in order.  That is, integration over ``x0`` is the innermost integral,
-        and ``xn`` is the outermost.
+        ``t0, ... tm``, where integration is carried out over ``x0, ... xn``,
+        which must be floats.  Where ```t0, ... tm``` are extra arguments
+        passed in args.
+        Function signature should be ``func(x0, x1, ..., xn, t0, t1, ..., tm)``.
+        Integration is carried out in order.  That is, integration over ``x0``
+        is the innermost integral, and ``xn`` is the outermost.
 
         If the user desires improved integration performance, then `f` may
         be a `scipy.LowLevelCallable` with one of the signatures::
@@ -716,10 +717,9 @@ def nquad(func, ranges, args=None, opts=None, full_output=False):
             double func(int n, double *xx)
             double func(int n, double *xx, void *user_data)
 
-        where ``n`` is the number of extra parameters and args is an array
-        of doubles of the additional parameters, the ``xx`` array contains the
-        coordinates. The ``user_data`` is the data contained in the
-        `scipy.LowLevelCallable`.
+        where ``n`` is the number of variables and args.  The ``xx`` array
+        contains the coordinates and extra arguments. ``user_data`` is the data
+        contained in the `scipy.LowLevelCallable`.
     ranges : iterable object
         Each element of ranges may be either a sequence  of 2 numbers, or else
         a callable that returns such a sequence. ``ranges[0]`` corresponds to
@@ -778,7 +778,6 @@ def nquad(func, ranges, args=None, opts=None, full_output=False):
     >>> from scipy import integrate
     >>> func = lambda x0,x1,x2,x3 : x0**2 + x1*x2 - x3**3 + np.sin(x0) + (
     ...                                 1 if (x0-.2*x3-.5-.25*x1>0) else 0)
-    >>> points = [[lambda x1,x2,x3 : 0.2*x3 + 0.5 + 0.25*x1], [], [], []]
     >>> def opts0(*args, **kwargs):
     ...     return {'points':[0.2*args[2] + 0.5 + 0.25*args[0]]}
     >>> integrate.nquad(func, [[0,1], [-1,1], [.13,.8], [-.15,1]],

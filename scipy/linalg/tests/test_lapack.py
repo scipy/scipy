@@ -55,7 +55,7 @@ def test_lapack_documented():
     names = set(lapack.__doc__.split())
     ignore_list = set([
         'absolute_import', 'clapack', 'division', 'find_best_lapack_type',
-        'flapack', 'print_function',
+        'flapack', 'print_function', 'HAS_ILP64',
     ])
     missing = list()
     for name in dir(lapack):
@@ -778,7 +778,7 @@ def test_sgesdd_lwork_bug_workaround():
         p.terminate()
 
     assert_equal(returncode, 0,
-                 "Code apparently failed: " + p.stdout.read())
+                 "Code apparently failed: " + p.stdout.read().decode())
 
 
 class TestSytrd(object):
@@ -1748,6 +1748,7 @@ def test_syequb():
         assert_equal(np.log2(s).astype(int), desired_log2s)
 
 
+@pytest.mark.skipif(True, reason="Failing on some OpenBLAS version, see gh-12276")
 def test_heequb():
     # zheequb has a bug for versions =< LAPACK 3.9.0
     # See Reference-LAPACK gh-61 and gh-408

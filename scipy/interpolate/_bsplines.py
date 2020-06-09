@@ -8,16 +8,9 @@ from scipy.linalg import (get_lapack_funcs, LinAlgError,
 from . import _bspl
 from . import _fitpack_impl
 from . import _fitpack as _dierckx
+from scipy._lib._util import prod
 
 __all__ = ["BSpline", "make_interp_spline", "make_lsq_spline"]
-
-
-# copy-paste from interpolate.py
-def prod(x):
-    """Product of a list of numbers; ~40x faster vs np.prod for Python tuples"""
-    if len(x) == 0:
-        return 1
-    return functools.reduce(operator.mul, x)
 
 
 def _get_dtype(dtype):
@@ -790,14 +783,17 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
 
     y = np.rollaxis(y, axis)    # now internally interp axis is zero
 
-    if x.ndim != 1 or np.any(x[1:] <= x[:-1]):
+    if x.ndim != 1 or np.any(x[1:] < x[:-1]):
         raise ValueError("Expect x to be a 1-D sorted array_like.")
+    if np.any(x[1:] == x[:-1]):
+        raise ValueError("Expect x to not have duplicates")
     if k < 0:
         raise ValueError("Expect non-negative k.")
     if t.ndim != 1 or np.any(t[1:] < t[:-1]):
         raise ValueError("Expect t to be a 1-D sorted array_like.")
     if x.size != y.shape[0]:
-        raise ValueError('x and y are incompatible.')
+        raise ValueError('Shapes of x {} and y {} are incompatible'
+                         .format(x.shape, y.shape))
     if t.size < x.size + k + 1:
         raise ValueError('Got %d knots, need at least %d.' %
                          (t.size, x.size + k + 1))
@@ -983,11 +979,13 @@ def make_lsq_spline(x, y, t, k=3, w=None, axis=0, check_finite=True):
     if t.ndim != 1 or np.any(t[1:] - t[:-1] < 0):
         raise ValueError("Expect t to be a 1-D sorted array_like.")
     if x.size != y.shape[0]:
-        raise ValueError('x & y are incompatible.')
+        raise ValueError('Shapes of x {} and y {} are incompatible'
+                         .format(x.shape, y.shape))
     if k > 0 and np.any((x < t[k]) | (x > t[-k])):
         raise ValueError('Out of bounds w/ x = %s.' % x)
     if x.size != w.size:
-        raise ValueError('Incompatible weights.')
+        raise ValueError('Shapes of x {} and w {} are incompatible'
+                         .format(x.shape, w.shape))
 
     # number of coefficients
     n = t.size - k - 1

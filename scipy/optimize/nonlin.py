@@ -99,7 +99,7 @@ The solution can be found using the `newton_krylov` solver:
    # visualize
    import matplotlib.pyplot as plt
    x, y = mgrid[0:1:(nx*1j), 0:1:(ny*1j)]
-   plt.pcolor(x, y, sol)
+   plt.pcolormesh(x, y, sol, shading='gouraud')
    plt.colorbar()
    plt.show()
 

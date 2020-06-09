@@ -1,4 +1,4 @@
-from . import _nnls
+from . import __nnls
 from numpy import asarray_chkfinite, zeros, double
 
 __all__ = ['nnls']
@@ -77,7 +77,7 @@ def nnls(A, b, maxiter=None):
     zz = zeros((m,), dtype=double)
     index = zeros((n,), dtype=int)
 
-    x, rnorm, mode = _nnls.nnls(A, m, n, b, w, zz, index, maxiter)
+    x, rnorm, mode = __nnls.nnls(A, m, n, b, w, zz, index, maxiter)
     if mode != 1:
         raise RuntimeError("too many iterations")
 

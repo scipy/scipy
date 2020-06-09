@@ -1124,3 +1124,11 @@ def test_slerp_call_scalar_time():
     delta = r_interpolated * r_interpolated_expected.inv()
 
     assert_allclose(delta.magnitude(), 0, atol=1e-16)
+
+
+def test_multiplication_stability():
+    qs = Rotation.random(50, random_state=0)
+    rs = Rotation.random(1000, random_state=1)
+    for q in qs:
+        rs *= q * rs
+        assert_allclose(np.linalg.norm(rs.as_quat(), axis=1), 1)
