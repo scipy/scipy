@@ -33,21 +33,6 @@ cdef extern from *:
     int NPY_LIKELY(int)
     int NPY_UNLIKELY(int)
 
-cdef extern from *:
-    """
-    template <typename T>
-    T* array_new(std::intptr_t n) {
-        return new T[n];
-    }
-
-    template <typename T>
-    void array_delete(T* x) {
-        delete [] x;
-    }
-    """
-    T* array_new[T](np.intp_t) except +
-    void array_delete[T](T* x)
-
 
 # C++ implementations
 # ===================
@@ -924,42 +909,37 @@ cdef class cKDTree:
 
         def _thread_func(np.intp_t start, np.intp_t stop):
             cdef:
-                vector[np.intp_t] *vvres
+                vector[vector[np.intp_t]] vvres
                 np.intp_t i, j, m
                 np.intp_t *cur
                 const np.float64_t *pvxx
                 const np.float64_t *pvrr
                 list tmp
 
-            try:
-                # allocate an array of std::vector<npy_intp>
-                vvres = array_new[vector[np.intp_t]](stop-start)
+            vvres.resize(stop - start)
+            pvxx = vxx + start * cself.m
+            pvrr = vrr + start
 
-                pvxx = vxx + start * cself.m
-                pvrr = vrr + start
+            with nogil:
+                query_ball_point(cself, pvxx,
+                                 pvrr, p, eps, stop - start, vvres.data(), rlen)
 
-                with nogil:
-                    query_ball_point(cself, pvxx,
-                        pvrr, p, eps, stop - start, vvres, rlen)
+            for i in range(stop - start):
+                if rlen:
+                    vlen[start + i] = vvres[i].front()
+                    continue
 
-                for i in range(stop - start):
-                    if rlen:
-                        vlen[start + i] = vvres[i].front()
-                        continue
+                if sort_output:
+                    with nogil:
+                        sort(vvres[i].begin(), vvres[i].end())
 
-                    if sort_output:
-                        with nogil:
-                            sort(vvres[i].begin(), vvres[i].end())
+                m = <np.intp_t> (vvres[i].size())
+                tmp = m * [None]
 
-                    m = <np.intp_t> (vvres[i].size())
-                    tmp = m * [None]
-
-                    cur = vvres[i].data()
-                    for j in range(m):
-                        tmp[j] = cur[j]
-                    vout[start + i] = tmp
-            finally:
-                array_delete(vvres);
+                cur = vvres[i].data()
+                for j in range(m):
+                    tmp[j] = cur[j]
+                vout[start + i] = tmp
 
         # multithreading logic is similar to cKDTree.query
         if n_jobs == -1:
@@ -1007,7 +987,7 @@ cdef class cKDTree:
         """
 
         cdef:
-            vector[np.intp_t] *vvres
+            vector[vector[np.intp_t]] vvres
             np.intp_t i, j, n, m
             np.intp_t *cur
             list results
@@ -1020,33 +1000,27 @@ cdef class cKDTree:
 
         n = self.n
 
-        try:
+        # allocate an array of std::vector<npy_intp>
+        vvres.resize(n)
 
-            # allocate an array of std::vector<npy_intp>
-            vvres = array_new[vector[np.intp_t]](n)
+        # query in C++
+        with nogil:
+            query_ball_tree(self.cself, other.cself, r, p, eps, vvres.data())
 
-            # query in C++
-            with nogil:
-                query_ball_tree(self.cself, other.cself, r, p, eps, vvres)
-
-            # store the results in a list of lists
-            results = n * [None]
-            for i in range(n):
-                m = <np.intp_t> (vvres[i].size())
-                if NPY_LIKELY(m > 0):
-                    tmp = m * [None]
-                    with nogil:
-                        sort(vvres[i].begin(), vvres[i].end())
-                    cur = vvres[i].data()
-                    for j in range(m):
-                        tmp[j] = cur[0]
-                        cur += 1
-                    results[i] = tmp
-                else:
-                    results[i] = []
-
-        finally:
-            array_delete(vvres);
+        # store the results in a list of lists
+        results = n * [None]
+        for i in range(n):
+            m = <np.intp_t> (vvres[i].size())
+            if NPY_LIKELY(m > 0):
+                tmp = m * [None]
+                with nogil:
+                    sort(vvres[i].begin(), vvres[i].end())
+                cur = vvres[i].data()
+                for j in range(m):
+                    tmp[j] = cur[j]
+                results[i] = tmp
+            else:
+                results[i] = []
 
         return results
 
