@@ -1494,7 +1494,7 @@ W to Z mass ratio                                           0.881 53            
 
 # -----------------------------------------------------------------------------
 
-extra_constants="""
+extra_constants = """
 solar mass                                                  1.988 409 9 e+30         0.000 07                 kg"""
 
 txt2018 = txt2018 + extra_constants
