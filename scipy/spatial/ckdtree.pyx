@@ -544,7 +544,8 @@ cdef class cKDTree:
             self.boxsize_data = None
         else:
             self.boxsize_data = np.empty(2 * self.m, dtype=np.float64)
-            boxsize = np.float64(np.broadcast_to(boxsize, self.m))
+            boxsize = broadcast_contiguous(boxsize, shape=(self.m,),
+                                           dtype=np.float64)
             self.boxsize_data[:self.m] = boxsize
             self.boxsize_data[self.m:] = 0.5 * boxsize
 
@@ -908,9 +909,8 @@ cdef class cKDTree:
 
             np.intp_t n = num_points(x_arr, cself.m)
             tuple retshape = np.shape(x_arr)[:-1]
-
-            np.ndarray r_arr = np.ascontiguousarray(
-                np.broadcast_to(r, retshape), dtype=np.float64)
+            np.ndarray r_arr = broadcast_contiguous(r, shape=retshape,
+                                                    dtype=np.float64)
 
             const np.float64_t *vxx = <np.float64_t*>x_arr.data
             const np.float64_t *vrr = <np.float64_t*>r_arr.data
@@ -1523,3 +1523,16 @@ cdef np.intp_t num_points(np.ndarray x, np.intp_t pdim) except -1:
         n *= x.shape[i]
     return n
 
+cdef np.ndarray broadcast_contiguous(object x, tuple shape, object dtype) except +:
+    """Same as ``ascontiguousarray``, but broadcasting to ``shape`` first"""
+    # Avoid copying if possible
+    try:
+        if x.shape == shape:
+            return np.ascontiguousarray(x, dtype)
+    except AttributeError:
+        pass
+
+    # Assignment will broadcast automatically
+    cdef np.ndarray ret = np.empty(shape, dtype)
+    ret[...] = x
+    return ret
