@@ -1494,10 +1494,10 @@ W to Z mass ratio                                           0.881 53            
 
 # -----------------------------------------------------------------------------
 
-extra_constants="""\
-solar mass constant                                         1.988 409 9 e+30         0.000 07                 kg"""
+extra_constants="""
+solar mass                                                  1.988 409 9 e+30         0.000 07                 kg"""
 
-txt2018 += extra_constants
+txt2018 = txt2018 + extra_constants
 
 # -----------------------------------------------------------------------------
 
@@ -1539,6 +1539,7 @@ physical_constants.update(_physical_constants_2002)
 physical_constants.update(_physical_constants_2006)
 physical_constants.update(_physical_constants_2010)
 physical_constants.update(_physical_constants_2014)
+physical_constants.update(_physical_constants_2018)
 _current_constants = _physical_constants_2018
 _current_codata = "CODATA 2018"
 
