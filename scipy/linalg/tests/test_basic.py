@@ -1262,6 +1262,13 @@ class TestPinv(object):
         a_pinv2 = pinv2(a)
         assert_array_almost_equal(a_pinv, a_pinv2)
 
+    def test_tall_transposed(self):
+        a = random([10, 2])
+        a_pinv = pinv(a)
+        # The result will be transposed internally hence will be a C-layout
+        # instead of the typical LAPACK output with Fortran-layout
+        assert a_pinv.flags['C_CONTIGUOUS']
+
 
 class TestPinvSymmetric(object):
 
