@@ -1122,8 +1122,8 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
 
             A * x = w * M * x.
 
-        M must represent a real, symmetric matrix if A is real, and must
-        represent a complex, hermitian matrix if A is complex. For best
+        M must represent a real symmetric matrix if A is real, and must
+        represent a complex Hermitian matrix if A is complex. For best
         results, the data type of M should be the same as that of A.
         Additionally:
 
@@ -1353,7 +1353,7 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
           Minv=None, OPinv=None, mode='normal'):
     """
     Find k eigenvalues and eigenvectors of the real symmetric square matrix
-    or complex hermitian matrix A.
+    or complex Hermitian matrix A.
 
     Solves ``A * x[i] = w[i] * x[i]``, the standard eigenvalue problem for
     w[i] eigenvalues with corresponding eigenvectors x[i].
@@ -1363,14 +1363,14 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
     with corresponding eigenvectors x[i].
 
     Note that there is no specialized routine for the case when A is a complex
-    hermitian matrix. In this case, ``eigsh()`` will call ``eigs()`` and return the
+    Hermitian matrix. In this case, ``eigsh()`` will call ``eigs()`` and return the
     real parts of the eigenvalues thus obtained.
 
     Parameters
     ----------
     A : ndarray, sparse matrix or LinearOperator
         A square operator representing the operation ``A * x``, where ``A`` is
-        real symmetric or complex hermitian. For buckling mode (see below)
+        real symmetric or complex Hermitian. For buckling mode (see below)
         ``A`` must additionally be positive-definite.
     k : int, optional
         The number of eigenvalues and eigenvectors desired.
@@ -1392,8 +1392,8 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
 
             A @ x = w * M @ x.
 
-        M must represent a real, symmetric matrix if A is real, and must
-        represent a complex, hermitian matrix if A is complex. For best
+        M must represent a real symmetric matrix if A is real, and must
+        represent a complex Hermitian matrix if A is complex. For best
         results, the data type of M should be the same as that of A.
         Additionally:
 
@@ -1436,7 +1436,7 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
         smaller than n; it is recommended that ``ncv > 2*k``.
         Default: ``min(n, max(2*k + 1, 20))``
     which : str ['LM' | 'SM' | 'LA' | 'SA' | 'BE']
-        If A is a complex hermitian matrix, 'BE' is invalid.
+        If A is a complex Hermitian matrix, 'BE' is invalid.
         Which `k` eigenvectors and eigenvalues to find:
 
             'LM' : Largest (in magnitude) eigenvalues.
@@ -1553,7 +1553,7 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
     (13, 6)
 
     """
-    # complex hermitian matrices should be solved with eigs
+    # complex Hermitian matrices should be solved with eigs
     if np.issubdtype(A.dtype, np.complexfloating):
         if mode != 'normal':
             raise ValueError("mode=%s cannot be used with "

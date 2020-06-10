@@ -370,7 +370,7 @@ def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
 
     Notes
     -----
-    This function does not check the input array for being hermitian/symmetric
+    This function does not check the input array for being Hermitian/symmetric
     in order to allow for representing arrays with only their upper/lower
     triangular parts. Also, note that even though not taken into account,
     finiteness check applies to the whole array and unaffected by "lower"

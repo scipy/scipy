@@ -28,7 +28,7 @@ __all__ = ['lobpcg']
 
 def _report_nonhermitian(M, name):
     """
-    Report if `M` is not a hermitian matrix given its type.
+    Report if `M` is not a Hermitian matrix given its type.
     """
     from scipy.linalg import norm
 
