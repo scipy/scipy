@@ -2,6 +2,7 @@
 #include <cstdlib>
 #include <cstring>
 
+#include <algorithm>
 #include <vector>
 #include <string>
 #include <sstream>
@@ -207,5 +208,10 @@ query_ball_tree(const ckdtree *self, const ckdtree *other,
         HANDLE(1, BoxMinkowskiDistPp)
         {}
     }
+
+    for (size_t i = 0; i < self->n; ++i) {
+        std::sort(results[i].begin(), results[i].end());
+    }
+
     return 0;
 }

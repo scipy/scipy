@@ -110,7 +110,8 @@ query_ball_point(const ckdtree *self,
                  const double eps,
                  const ckdtree_intp_t n_queries,
                  std::vector<ckdtree_intp_t> *results,
-                 const int return_length);
+                 const bool return_length,
+                 const bool sort_output);
 
 int
 query_ball_tree(const ckdtree *self,

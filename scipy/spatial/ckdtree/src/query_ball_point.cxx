@@ -2,6 +2,7 @@
 #include <cstdlib>
 #include <cstring>
 
+#include <algorithm>
 #include <vector>
 #include <string>
 #include <sstream>
@@ -109,7 +110,9 @@ int
 query_ball_point(const ckdtree *self, const double *x,
                  const double *r, const double p, const double eps,
                  const ckdtree_intp_t n_queries,
-                 std::vector<ckdtree_intp_t> *results, const int return_length)
+                 std::vector<ckdtree_intp_t> *results,
+                 const bool return_length,
+                 const bool sort_output)
 {
 #define HANDLE(cond, kls) \
     if(cond) { \
@@ -139,6 +142,10 @@ query_ball_point(const ckdtree *self, const double *x,
             HANDLE(ckdtree_isinf(p), BoxMinkowskiDistPinf)
             HANDLE(1, BoxMinkowskiDistPp)
             {}
+        }
+
+        if (!return_length && sort_output) {
+            std::sort(results[i].begin(), results[i].end());
         }
     }
     return 0;

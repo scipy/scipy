@@ -117,13 +117,14 @@ cdef extern from "ckdtree_decl.h":
                            int cumulative) nogil except +
 
     int query_ball_point(const ckdtree *self,
-                            const np.float64_t *x,
-                            const np.float64_t *r,
-                            const np.float64_t p,
-                            const np.float64_t eps,
-                            const np.intp_t n_queries,
-                            vector[np.intp_t] *results,
-                            const int return_length) nogil except +
+                         const np.float64_t *x,
+                         const np.float64_t *r,
+                         const np.float64_t p,
+                         const np.float64_t eps,
+                         const np.intp_t n_queries,
+                         vector[np.intp_t] *results,
+                         const bool return_length,
+                         const bool sort_output) nogil except +
 
     int query_ball_tree(const ckdtree *self,
                            const ckdtree *other,
@@ -922,16 +923,13 @@ cdef class cKDTree:
 
             with nogil:
                 query_ball_point(cself, pvxx,
-                                 pvrr, p, eps, stop - start, vvres.data(), rlen)
+                                 pvrr, p, eps, stop - start, vvres.data(),
+                                 rlen, sort_output)
 
             for i in range(stop - start):
                 if rlen:
                     vlen[start + i] = vvres[i].front()
                     continue
-
-                if sort_output:
-                    with nogil:
-                        sort(vvres[i].begin(), vvres[i].end())
 
                 m = <np.intp_t> (vvres[i].size())
                 tmp = m * [None]
@@ -1013,8 +1011,6 @@ cdef class cKDTree:
             m = <np.intp_t> (vvres[i].size())
             if NPY_LIKELY(m > 0):
                 tmp = m * [None]
-                with nogil:
-                    sort(vvres[i].begin(), vvres[i].end())
                 cur = vvres[i].data()
                 for j in range(m):
                     tmp[j] = cur[j]
