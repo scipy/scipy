@@ -1362,6 +1362,10 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
     generalized eigenvalue problem for w[i] eigenvalues
     with corresponding eigenvectors x[i].
 
+    Note that there is no specialized routine for the case when A is a complex
+    hermitian matrix. In this case, ``eigsh()`` will call ``eigs()`` and return the
+    real parts of the eigenvalues thus obtained.
+
     Parameters
     ----------
     A : ndarray, sparse matrix or LinearOperator
