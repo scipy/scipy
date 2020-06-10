@@ -1498,7 +1498,7 @@ cdef np.intp_t num_points(np.ndarray x, np.intp_t pdim) except -1:
     return n
 
 cdef np.ndarray broadcast_contiguous(object x, tuple shape, object dtype) except +:
-    """Same as ``ascontiguousarray``, but broadcasting to ``shape`` first"""
+    """Broadcast ``x`` to ``shape`` and make contiguous, possibly by copying"""
     # Avoid copying if possible
     try:
         if x.shape == shape:
