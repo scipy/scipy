@@ -6,7 +6,7 @@ __docformat__ = "restructuredtext en"
 __all__ = ['spdiags', 'eye', 'identity', 'kron', 'kronsum',
            'hstack', 'vstack', 'bmat', 'rand', 'random', 'diags', 'block_diag']
 
-
+import numbers
 from functools import partial
 import numpy as np
 
@@ -675,17 +675,18 @@ def block_diag(mats, format=None, dtype=None):
     for ia, a in enumerate(mats):
         if issparse(a):
             a = a.tocsr()
-        else:
+        if isinstance(a, (list, numbers.Number)):
             a = csr_matrix(a)
         nrows, ncols = a.shape
-        for r in range(nrows):
-            for c in range(ncols):
-                row.append(r + r_idx)
-                col.append(c + c_idx)
-                data.append(a[r, c])
+        for r, c in zip(*a.nonzero()):
+            row.append(r + r_idx)
+            col.append(c + c_idx)
+            data.append(a[r, c])
         r_idx = r_idx + nrows
         c_idx = c_idx + ncols
-    return coo_matrix((data, (row, col)), dtype=dtype).asformat(format)
+    return coo_matrix((data, (row, col)),
+                      shape=(r_idx, c_idx),
+                      dtype=dtype).asformat(format)
 
 
 def random(m, n, density=0.01, format='coo', dtype=None,
