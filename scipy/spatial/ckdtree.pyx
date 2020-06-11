@@ -1037,7 +1037,7 @@ cdef class cKDTree:
         >>> for i in range(len(indexes)):
         ...     for j in indexes[i]:
         ...         plt.plot([obstacle_coords1[i, 0], obstacle_coords2[j, 0]],
-        ...             [obst1acle_coords1[i, 1], obstacle_coords2[j, 1]], "-r")
+        ...             [obstacle_coords1[i, 1], obstacle_coords2[j, 1]], "-r")
         >>> plt.show()
 
         """
