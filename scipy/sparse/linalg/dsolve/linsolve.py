@@ -574,7 +574,7 @@ def spsolve_triangular(A, b, lower=True, overwrite_A=False, overwrite_b=False,
             '{} and the shape of b is {}.'.format(A.shape, b.shape))
 
     # Init x as (a copy of) b.
-    x_dtype = np.result_type(A.data, b, np.float)
+    x_dtype = np.result_type(A.data, b, np.float64)
     if overwrite_b:
         if np.can_cast(b.dtype, x_dtype, casting='same_kind'):
             x = b

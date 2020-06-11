@@ -4633,7 +4633,7 @@ class TestNdimage:
         structure = numpy.ones((3, 3), dtype=numpy.bool_)
 
         # Check that type mismatch is properly handled
-        output = numpy.empty_like(array, dtype=numpy.float)
+        output = numpy.empty_like(array, dtype=numpy.float64)
         ndimage.white_tophat(array, structure=structure, output=output)
 
     def test_black_tophat01(self):
@@ -4688,7 +4688,7 @@ class TestNdimage:
         structure = numpy.ones((3, 3), dtype=numpy.bool_)
 
         # Check that type mismatch is properly handled
-        output = numpy.empty_like(array, dtype=numpy.float)
+        output = numpy.empty_like(array, dtype=numpy.float64)
         ndimage.black_tophat(array, structure=structure, output=output)
 
     def test_hit_or_miss01(self):

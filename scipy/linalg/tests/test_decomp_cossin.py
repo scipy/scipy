@@ -70,7 +70,7 @@ def test_cossin(dtype_, m, p, q, swap_sign):
 
 def test_cossin_mixed_types():
     seed(1234)
-    x = np.array(ortho_group.rvs(4), dtype=np.float)
+    x = np.array(ortho_group.rvs(4), dtype=np.float64)
     u, cs, vh = cossin([x[:2, :2],
                         np.array(x[:2, 2:], dtype=np.complex128),
                         x[2:, :2],
@@ -117,7 +117,7 @@ def test_cossin_error_non_square():
         cossin(np.array([[1, 2]]), 1, 1)
 
 def test_cossin_error_partitioning():
-    x = np.array(ortho_group.rvs(4), dtype=np.float)
+    x = np.array(ortho_group.rvs(4), dtype=np.float64)
     with pytest.raises(ValueError, match="invalid p=0.*0<p<4.*"):
         cossin(x, 0, 1)
     with pytest.raises(ValueError, match="invalid p=4.*0<p<4.*"):

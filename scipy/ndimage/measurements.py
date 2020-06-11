@@ -554,7 +554,7 @@ def _stats(input, labels=None, index=None, centered=False):
         if centered:
             sums_c = _sum_centered(labels)
         # make sure all index values are valid
-        idxs = numpy.asanyarray(index, numpy.int).copy()
+        idxs = numpy.asanyarray(index, numpy.int_).copy()
         found = (idxs >= 0) & (idxs < counts.size)
         idxs[~found] = 0
 
@@ -665,7 +665,7 @@ def mean(input, labels=None, index=None):
     """
 
     count, sum = _stats(input, labels, index)
-    return sum / numpy.asanyarray(count).astype(numpy.float)
+    return sum / numpy.asanyarray(count).astype(numpy.float64)
 
 
 def variance(input, labels=None, index=None):
@@ -831,7 +831,7 @@ def _select(input, labels=None, index=None, find_min=False, find_max=False,
         found = (unique_labels[idxs] == index)
     else:
         # labels are an integer type, and there aren't too many
-        idxs = numpy.asanyarray(index, numpy.int).copy()
+        idxs = numpy.asanyarray(index, numpy.int_).copy()
         found = (idxs >= 0) & (idxs <= labels.max())
 
     idxs[~ found] = labels.max() + 1
@@ -864,9 +864,9 @@ def _select(input, labels=None, index=None, find_min=False, find_max=False,
         result += [maxpos[idxs]]
     if find_median:
         locs = numpy.arange(len(labels))
-        lo = numpy.zeros(labels.max() + 2, numpy.int)
+        lo = numpy.zeros(labels.max() + 2, numpy.int_)
         lo[labels[::-1]] = locs[::-1]
-        hi = numpy.zeros(labels.max() + 2, numpy.int)
+        hi = numpy.zeros(labels.max() + 2, numpy.int_)
         hi[labels] = locs
         lo = lo[idxs]
         hi = hi[idxs]

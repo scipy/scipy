@@ -27,7 +27,7 @@ class TRLIBQuadraticSubproblem(BaseQuadraticSubproblem):
         if fwork_view.shape[0] > 0:
             fwork_ptr = &fwork_view[0]
         ctrlib.trlib_krylov_prepare_memory(itmax, fwork_ptr)
-        self.iwork = np.zeros([iwork_size], dtype=np.int)
+        self.iwork = np.zeros([iwork_size], dtype=np.int_)
         self.s  = np.empty(self.jac.shape)
         self.g  = np.empty(self.jac.shape)
         self.v  = np.empty(self.jac.shape)
@@ -36,7 +36,7 @@ class TRLIBQuadraticSubproblem(BaseQuadraticSubproblem):
         self.Hp = np.empty(self.jac.shape)
         self.Q  = np.empty([self.itmax+1, self.jac.shape[0]])
         self.timing = np.zeros([ctrlib.trlib_krylov_timing_size()],
-                               dtype=np.int)
+                               dtype=np.int_)
         self.init = ctrlib._TRLIB_CLS_INIT
 
     def solve(self, double trust_radius):

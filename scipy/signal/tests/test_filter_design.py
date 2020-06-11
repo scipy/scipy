@@ -3633,7 +3633,7 @@ class TestIIRFilter(object):
 
     def test_int_inputs(self):
         # Using integer frequency arguments and large N should not produce
-        # np.ints that wraparound to negative numbers
+        # numpy integers that wraparound to negative numbers
         k = iirfilter(24, 100, btype='low', analog=True, ftype='bessel',
                       output='zpk')[2]
         k2 = 9.999999999999989e+47
