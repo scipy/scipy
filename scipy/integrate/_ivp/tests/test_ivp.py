@@ -12,6 +12,10 @@ from scipy.integrate._ivp.base import ConstantDenseOutput
 from scipy.sparse import coo_matrix, csc_matrix
 
 
+def fun_zero(t, y):
+    return np.zeros_like(y)
+
+
 def fun_linear(t, y):
     return np.array([-y[0] - 5 * y[1], y[0] + y[1]])
 
@@ -968,3 +972,11 @@ def test_args():
     assert_allclose(y0events[0], np.ones_like(y0events[0]))
     assert_allclose(y0events[1], np.zeros_like(y0events[1]), atol=5e-14)
     assert_allclose(zfinalevents[2], [zfinal])
+
+
+@pytest.mark.parametrize('method', ['RK23', 'RK45', 'DOP853', 'Radau', 'BDF', 'LSODA'])
+def test_integration_zero_rhs(method):
+    result = solve_ivp(fun_zero, [0, 10], np.ones(3), method=method)
+    assert_(result.success)
+    assert_equal(result.status, 0)
+    assert_allclose(result.y, 1.0, rtol=1e-15)
