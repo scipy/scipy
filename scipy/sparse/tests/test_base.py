@@ -3947,11 +3947,11 @@ class TestLIL(sparse_test_class(minmax=False)):
     math_dtypes = [np.int_, np.float_, np.complex_]
 
     def test_dot(self):
-        A = zeros((10,10), np.complex)
+        A = zeros((10,10), np.complex128)
         A[0,3] = 10
         A[5,6] = 20j
 
-        B = lil_matrix((10,10), dtype=np.complex)
+        B = lil_matrix((10,10), dtype=np.complex128)
         B[0,3] = 10
         B[5,6] = 20j
 

@@ -334,7 +334,7 @@ def _center_distance_matrix(distx, global_corr='mgc', is_ranked=True):
         rank_distx = _rank_distance_matrix(distx)
 
     if global_corr == "rank":
-        distx = rank_distx.astype(np.float, copy=False)
+        distx = rank_distx.astype(np.float64, copy=False)
 
     # 'mgc' distance transform (col-wise mean) - default
     cdef ndarray exp_distx = np.repeat(((distx.mean(axis=0) * n) / (n-1)), n).reshape(-1, n).T

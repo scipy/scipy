@@ -4502,7 +4502,8 @@ class levy_stable_gen(rv_continuous):
                                 (np.cos(alpha*xi+(alpha-1)*theta)/np.cos(theta))
             if x0 > zeta:
                 def g(theta):
-                    return V(theta)*np.real(np.complex(x0-zeta)**(alpha/(alpha-1)))
+                    return (V(theta) *
+                            np.real(np.complex128(x0-zeta)**(alpha/(alpha-1))))
 
                 def f(theta):
                     return g(theta) * np.exp(-g(theta))
@@ -4566,7 +4567,8 @@ class levy_stable_gen(rv_continuous):
                 c_1 = 1 if alpha > 1 else .5 - xi/np.pi
 
                 def f(theta):
-                    return np.exp(-V(theta)*np.real(np.complex(x0-zeta)**(alpha/(alpha-1))))
+                    z = np.complex128(x0 - zeta)
+                    return np.exp(-V(theta) * np.real(z**(alpha/(alpha-1))))
 
                 with np.errstate(all="ignore"):
                     # spare calculating integral on null set
@@ -7603,7 +7605,8 @@ class truncnorm_gen(rv_continuous):
             return moments[-1]
 
         return _lazywhere((n >= 0) & (a == a) & (b == b), (n, a, b),
-                          np.vectorize(n_th_moment, otypes=[np.float]), np.nan)
+                          np.vectorize(n_th_moment, otypes=[np.float64]),
+                          np.nan)
 
     def _stats(self, a, b, moments='mv'):
         pA, pB = self._pdf(np.array([a, b]), a, b)
@@ -8370,7 +8373,7 @@ class crystalball_gen(rv_continuous):
             return A * lhs + rhs
 
         return N * _lazywhere(n + 1 < m, (n, beta, m),
-                              np.vectorize(n_th_moment, otypes=[np.float]),
+                              np.vectorize(n_th_moment, otypes=[np.float64]),
                               np.inf)
 
     def _argcheck(self, beta, m):
