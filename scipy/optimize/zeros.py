@@ -1,33 +1,37 @@
-from __future__ import division, print_function, absolute_import
-
 import warnings
 from collections import namedtuple
+import operator
 from . import _zeros
 import numpy as np
+
 
 _iter = 100
 _xtol = 2e-12
 _rtol = 4 * np.finfo(float).eps
 
-__all__ = ['newton', 'bisect', 'ridder', 'brentq', 'brenth', 'toms748', 'RootResults']
+__all__ = ['newton', 'bisect', 'ridder', 'brentq', 'brenth', 'toms748',
+           'RootResults']
 
-CONVERGED = 'converged'
-SIGNERR = 'sign error'
-CONVERR = 'convergence error'
-VALUEERR = 'value error'
-INPROGRESS = 'No error'
+# Must agree with CONVERGED, SIGNERR, CONVERR, ...  in zeros.h
 _ECONVERGED = 0
 _ESIGNERR = -1
 _ECONVERR = -2
 _EVALUEERR = -3
 _EINPROGRESS = 1
 
+CONVERGED = 'converged'
+SIGNERR = 'sign error'
+CONVERR = 'convergence error'
+VALUEERR = 'value error'
+INPROGRESS = 'No error'
+
+
 flag_map = {_ECONVERGED: CONVERGED, _ESIGNERR: SIGNERR, _ECONVERR: CONVERR,
             _EVALUEERR: VALUEERR, _EINPROGRESS: INPROGRESS}
 
 
 class RootResults(object):
-    """ Represents the root finding result.
+    """Represents the root finding result.
 
     Attributes
     ----------
@@ -43,6 +47,7 @@ class RootResults(object):
         Description of the cause of termination.
 
     """
+
     def __init__(self, root, iterations, function_calls, flag):
         self.root = root
         self.iterations = iterations
@@ -87,27 +92,29 @@ def _results_select(full_output, r):
 
 
 def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
-           fprime2=None, full_output=False, disp=True):
+           fprime2=None, x1=None, rtol=0.0,
+           full_output=False, disp=True):
     """
     Find a zero of a real or complex function using the Newton-Raphson
     (or secant or Halley's) method.
 
     Find a zero of the function `func` given a nearby starting point `x0`.
     The Newton-Raphson method is used if the derivative `fprime` of `func`
-    is provided, otherwise the secant method is used.  If the second order
+    is provided, otherwise the secant method is used. If the second order
     derivative `fprime2` of `func` is also provided, then Halley's method is
     used.
 
-    If `x0` is a sequence, then `newton` returns an array, and `func` must be
-    vectorized and return a sequence or array of the same shape as its first
-    argument.
+    If `x0` is a sequence with more than one item, then `newton` returns an
+    array, and `func` must be vectorized and return a sequence or array of the
+    same shape as its first argument. If `fprime` or `fprime2` is given, then
+    its return must also have the same shape.
 
     Parameters
     ----------
     func : callable
         The function whose zero is wanted. It must be a function of a
-        single variable of the form f(x,a,b,c...), where a,b,c... are extra
-        arguments that can be passed in the `args` parameter.
+        single variable of the form ``f(x,a,b,c...)``, where ``a,b,c...``
+        are extra arguments that can be passed in the `args` parameter.
     x0 : float, sequence, or ndarray
         An initial estimate of the zero that should be somewhere near the
         actual zero. If not scalar, then `func` must be vectorized and return
@@ -118,9 +125,9 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
     args : tuple, optional
         Extra arguments to be used in the function call.
     tol : float, optional
-        The allowable error of the zero value.  If `func` is complex-valued,
+        The allowable error of the zero value. If `func` is complex-valued,
         a larger `tol` is recommended as both the real and imaginary parts
-        of `x` contribute to `|x - x0|`.
+        of `x` contribute to ``|x - x0|``.
     maxiter : int, optional
         Maximum number of iterations.
     fprime2 : callable, optional
@@ -128,6 +135,11 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
         convenient. If it is None (default), then the normal Newton-Raphson
         or the secant method is used. If it is not None, then Halley's method
         is used.
+    x1 : float, optional
+        Another estimate of the zero that should be somewhere near the
+        actual zero. Used if `fprime` is not provided.
+    rtol : float, optional
+        Tolerance (relative) for termination.
     full_output : bool, optional
         If `full_output` is False (default), the root is returned.
         If True and `x0` is scalar, the return value is ``(x, r)``, where ``x``
@@ -137,10 +149,10 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
     disp : bool, optional
         If True, raise a RuntimeError if the algorithm didn't converge, with
         the error message containing the number of iterations and current
-        function value.  Otherwise the convergence status is recorded in a
+        function value. Otherwise, the convergence status is recorded in a
         `RootResults` return object.
         Ignored if `x0` is not scalar.
-        *Note: this has little to do with displaying, however
+        *Note: this has little to do with displaying, however,
         the `disp` keyword cannot be renamed for backwards compatibility.*
 
     Returns
@@ -149,7 +161,7 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
         Estimated location where function is zero.
     r : `RootResults`, optional
         Present if ``full_output=True`` and `x0` is scalar.
-        Object containing information about the convergence.  In particular,
+        Object containing information about the convergence. In particular,
         ``r.converged`` is True if the routine converged.
     converged : ndarray of bool, optional
         Present if ``full_output=True`` and `x0` is non-scalar.
@@ -161,18 +173,18 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
     See Also
     --------
     brentq, brenth, ridder, bisect
-    fsolve : find zeros in n dimensions.
+    fsolve : find zeros in N dimensions.
 
     Notes
     -----
     The convergence rate of the Newton-Raphson method is quadratic,
     the Halley method is cubic, and the secant method is
-    sub-quadratic.  This means that if the function is well behaved
-    the actual error in the estimated zero after the n-th iteration
+    sub-quadratic. This means that if the function is well-behaved
+    the actual error in the estimated zero after the nth iteration
     is approximately the square (cube for Halley) of the error
-    after the (n-1)-th step.  However, the stopping criterion used
+    after the (n-1)th step. However, the stopping criterion used
     here is the step size and there is no guarantee that a zero
-    has been found. Consequently the result should be verified.
+    has been found. Consequently, the result should be verified.
     Safer algorithms are brentq, brenth, ridder, and bisect,
     but they all require that the root first be bracketed in an
     interval where the function changes sign. The brentq algorithm
@@ -224,6 +236,7 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
 
     >>> f = lambda x, a: x**3 - a
     >>> fder = lambda x, a: 3 * x**2
+    >>> np.random.seed(4321)
     >>> x = np.random.randn(100)
     >>> a = np.arange(-50, 50)
     >>> vec_res = optimize.newton(f, x, fprime=fder, args=(a, ))
@@ -250,9 +263,10 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
     """
     if tol <= 0:
         raise ValueError("tol too small (%g <= 0)" % tol)
+    maxiter = operator.index(maxiter)
     if maxiter < 1:
         raise ValueError("maxiter must be greater than 0")
-    if not np.isscalar(x0):
+    if np.size(x0) > 1:
         return _array_newton(func, x0, fprime, args, tol, maxiter, fprime2,
                              full_output)
 
@@ -267,13 +281,20 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
             funcalls += 1
             # If fval is 0, a root has been found, then terminate
             if fval == 0:
-                return _results_select(full_output, (p0, funcalls, itr, _ECONVERGED))
+                return _results_select(
+                    full_output, (p0, funcalls, itr, _ECONVERGED))
             fder = fprime(p0, *args)
             funcalls += 1
             if fder == 0:
-                msg = "derivative was zero."
+                msg = "Derivative was zero."
+                if disp:
+                    msg += (
+                        " Failed to converge after %d iterations, value is %s."
+                        % (itr + 1, p0))
+                    raise RuntimeError(msg)
                 warnings.warn(msg, RuntimeWarning)
-                return _results_select(full_output, (p0, funcalls, itr + 1, _ECONVERR))
+                return _results_select(
+                    full_output, (p0, funcalls, itr + 1, _ECONVERR))
             newton_step = fval / fder
             if fprime2:
                 fder2 = fprime2(p0, *args)
@@ -281,43 +302,62 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
                 # Halley's method:
                 #   newton_step /= (1.0 - 0.5 * newton_step * fder2 / fder)
                 # Only do it if denominator stays close enough to 1
-                # Rationale:  If 1-adj < 0, then Halley sends x in the
-                # opposite direction to Newton.  Doesn't happen if x is close
+                # Rationale: If 1-adj < 0, then Halley sends x in the
+                # opposite direction to Newton. Doesn't happen if x is close
                 # enough to root.
                 adj = newton_step * fder2 / fder / 2
                 if np.abs(adj) < 1:
                     newton_step /= 1.0 - adj
             p = p0 - newton_step
-            if np.abs(p - p0) < tol:
-                return _results_select(full_output, (p, funcalls, itr + 1, _ECONVERGED))
+            if np.isclose(p, p0, rtol=rtol, atol=tol):
+                return _results_select(
+                    full_output, (p, funcalls, itr + 1, _ECONVERGED))
             p0 = p
     else:
         # Secant method
-        eps = (-1e-4 if x0 < 0 else 1e-4)
-        p1 = x0 * (1 + eps) + eps
+        if x1 is not None:
+            if x1 == x0:
+                raise ValueError("x1 and x0 must be different")
+            p1 = x1
+        else:
+            eps = 1e-4
+            p1 = x0 * (1 + eps)
+            p1 += (eps if p1 >= 0 else -eps)
         q0 = func(p0, *args)
         funcalls += 1
         q1 = func(p1, *args)
         funcalls += 1
+        if abs(q1) < abs(q0):
+            p0, p1, q0, q1 = p1, p0, q1, q0
         for itr in range(maxiter):
             if q1 == q0:
                 if p1 != p0:
-                    msg = "Tolerance of %s reached" % (p1 - p0)
+                    msg = "Tolerance of %s reached." % (p1 - p0)
+                    if disp:
+                        msg += (
+                            " Failed to converge after %d iterations, value is %s."
+                            % (itr + 1, p1))
+                        raise RuntimeError(msg)
                     warnings.warn(msg, RuntimeWarning)
                 p = (p1 + p0) / 2.0
-                return _results_select(full_output, (p, funcalls, itr + 1, _ECONVERGED))
+                return _results_select(
+                    full_output, (p, funcalls, itr + 1, _ECONVERGED))
             else:
-                p = p1 - q1 * (p1 - p0) / (q1 - q0)
-            if np.abs(p - p1) < tol:
-                return _results_select(full_output, (p, funcalls, itr + 1, _ECONVERGED))
-            p0 = p1
-            q0 = q1
+                if abs(q1) > abs(q0):
+                    p = (-q0 / q1 * p1 + p0) / (1 - q0 / q1)
+                else:
+                    p = (-q1 / q0 * p0 + p1) / (1 - q1 / q0)
+            if np.isclose(p, p1, rtol=rtol, atol=tol):
+                return _results_select(
+                    full_output, (p, funcalls, itr + 1, _ECONVERGED))
+            p0, q0 = p1, q1
             p1 = p
             q1 = func(p1, *args)
             funcalls += 1
 
     if disp:
-        msg = "Failed to converge after %d iterations, value is %s" % (itr + 1, p)
+        msg = ("Failed to converge after %d iterations, value is %s."
+               % (itr + 1, p))
         raise RuntimeError(msg)
 
     return _results_select(full_output, (p, funcalls, itr + 1, _ECONVERR))
@@ -328,13 +368,11 @@ def _array_newton(func, x0, fprime, args, tol, maxiter, fprime2, full_output):
     A vectorized version of Newton, Halley, and secant methods for arrays.
 
     Do not use this method directly. This method is called from `newton`
-    when ``np.isscalar(x0)`` is True. For docstring, see `newton`.
+    when ``np.size(x0) > 1`` is ``True``. For docstring, see `newton`.
     """
-    try:
-        p = np.asarray(x0, dtype=float)
-    except TypeError:
-        # can't convert complex to float
-        p = np.asarray(x0)
+    # Explicitly copy `x0` as `p` will be modified inplace, but the
+    # user's array should not be altered.
+    p = np.array(x0, copy=True)
 
     failures = np.ones_like(p, dtype=bool)
     nz_der = np.ones_like(failures)
@@ -358,6 +396,7 @@ def _array_newton(func, x0, fprime, args, tol, maxiter, fprime2, full_output):
                 fder2 = np.asarray(fprime2(p, *args))
                 dp = dp / (1.0 - 0.5 * dp * fder2[nz_der] / fder[nz_der])
             # only update nonzero derivatives
+            p = np.asarray(p, dtype=np.result_type(p, dp, np.float64))
             p[nz_der] -= dp
             failures[nz_der] = np.abs(dp) >= tol  # items not yet converged
             # stop iterating if there aren't any failures, not incl zero der
@@ -379,6 +418,7 @@ def _array_newton(func, x0, fprime, args, tol, maxiter, fprime2, full_output):
             # Secant Step
             dp = (q1 * (p1 - p))[nz_der] / (q1 - q0)[nz_der]
             # only update nonzero derivatives
+            p = np.asarray(p, dtype=np.result_type(p, p1, dp, np.float64))
             p[nz_der] = p1[nz_der] - dp
             active_zero_der = ~nz_der & active
             p[active_zero_der] = (p1 + p)[active_zero_der] / 2.0
@@ -402,7 +442,8 @@ def _array_newton(func, x0, fprime, args, tol, maxiter, fprime2, full_output):
                 rms = np.sqrt(
                     sum((p1[zero_der_nz_dp] - p[zero_der_nz_dp]) ** 2)
                 )
-                warnings.warn('RMS of {:g} reached'.format(rms), RuntimeWarning)
+                warnings.warn(
+                    'RMS of {:g} reached'.format(rms), RuntimeWarning)
         # Newton or Halley warnings
         else:
             all_or_some = 'all' if zero_der.all() else 'some'
@@ -453,18 +494,18 @@ def bisect(f, a, b, args=(),
         parameter cannot be smaller than its default value of
         ``4*np.finfo(float).eps``.
     maxiter : int, optional
-        if convergence is not achieved in `maxiter` iterations, an error is
-        raised.  Must be >= 0.
+        If convergence is not achieved in `maxiter` iterations, an error is
+        raised. Must be >= 0.
     args : tuple, optional
-        containing extra arguments for the function `f`.
+        Containing extra arguments for the function `f`.
         `f` is called by ``apply(f, (x)+args)``.
     full_output : bool, optional
-        If `full_output` is False, the root is returned.  If `full_output` is
+        If `full_output` is False, the root is returned. If `full_output` is
         True, the return value is ``(x, r)``, where x is the root, and r is
         a `RootResults` object.
     disp : bool, optional
         If True, raise RuntimeError if the algorithm didn't converge.
-        Otherwise the convergence status is recorded in a `RootResults`
+        Otherwise, the convergence status is recorded in a `RootResults`
         return object.
 
     Returns
@@ -472,7 +513,7 @@ def bisect(f, a, b, args=(),
     x0 : float
         Zero of `f` between `a` and `b`.
     r : `RootResults` (present if ``full_output = True``)
-        Object containing information about the convergence.  In particular,
+        Object containing information about the convergence. In particular,
         ``r.converged`` is True if the routine converged.
 
     Examples
@@ -500,6 +541,7 @@ def bisect(f, a, b, args=(),
     """
     if not isinstance(args, tuple):
         args = (args,)
+    maxiter = operator.index(maxiter)
     if xtol <= 0:
         raise ValueError("xtol too small (%g <= 0)" % xtol)
     if rtol < _rtol:
@@ -517,7 +559,7 @@ def ridder(f, a, b, args=(),
     Parameters
     ----------
     f : function
-        Python function returning a number.  f must be continuous, and f(a) and
+        Python function returning a number. f must be continuous, and f(a) and
         f(b) must have opposite signs.
     a : scalar
         One end of the bracketing interval [a,b].
@@ -533,18 +575,18 @@ def ridder(f, a, b, args=(),
         parameter cannot be smaller than its default value of
         ``4*np.finfo(float).eps``.
     maxiter : int, optional
-        if convergence is not achieved in `maxiter` iterations, an error is
-        raised.  Must be >= 0.
+        If convergence is not achieved in `maxiter` iterations, an error is
+        raised. Must be >= 0.
     args : tuple, optional
-        containing extra arguments for the function `f`.
+        Containing extra arguments for the function `f`.
         `f` is called by ``apply(f, (x)+args)``.
     full_output : bool, optional
-        If `full_output` is False, the root is returned.  If `full_output` is
+        If `full_output` is False, the root is returned. If `full_output` is
         True, the return value is ``(x, r)``, where `x` is the root, and `r` is
         a `RootResults` object.
     disp : bool, optional
         If True, raise RuntimeError if the algorithm didn't converge.
-        Otherwise the convergence status is recorded in any `RootResults`
+        Otherwise, the convergence status is recorded in any `RootResults`
         return object.
 
     Returns
@@ -557,7 +599,7 @@ def ridder(f, a, b, args=(),
 
     See Also
     --------
-    brentq, brenth, bisect, newton : one-dimensional root-finding
+    brentq, brenth, bisect, newton : 1-D root-finding
     fixed_point : scalar fixed-point finder
 
     Notes
@@ -596,6 +638,7 @@ def ridder(f, a, b, args=(),
     """
     if not isinstance(args, tuple):
         args = (args,)
+    maxiter = operator.index(maxiter)
     if xtol <= 0:
         raise ValueError("xtol too small (%g <= 0)" % xtol)
     if rtol < _rtol:
@@ -611,25 +654,25 @@ def brentq(f, a, b, args=(),
     Find a root of a function in a bracketing interval using Brent's method.
 
     Uses the classic Brent's method to find a zero of the function `f` on
-    the sign changing interval [a , b].  Generally considered the best of the
-    rootfinding routines here.  It is a safe version of the secant method that
-    uses inverse quadratic extrapolation.  Brent's method combines root
-    bracketing, interval bisection, and inverse quadratic interpolation.  It is
-    sometimes known as the van Wijngaarden-Dekker-Brent method.  Brent (1973)
+    the sign changing interval [a , b]. Generally considered the best of the
+    rootfinding routines here. It is a safe version of the secant method that
+    uses inverse quadratic extrapolation. Brent's method combines root
+    bracketing, interval bisection, and inverse quadratic interpolation. It is
+    sometimes known as the van Wijngaarden-Dekker-Brent method. Brent (1973)
     claims convergence is guaranteed for functions computable within [a,b].
 
-    [Brent1973]_ provides the classic description of the algorithm.  Another
+    [Brent1973]_ provides the classic description of the algorithm. Another
     description can be found in a recent edition of Numerical Recipes, including
-    [PressEtal1992]_.  Another description is at
-    http://mathworld.wolfram.com/BrentsMethod.html.  It should be easy to
-    understand the algorithm just by reading our code.  Our code diverges a bit
+    [PressEtal1992]_. A third description is at
+    http://mathworld.wolfram.com/BrentsMethod.html. It should be easy to
+    understand the algorithm just by reading our code. Our code diverges a bit
     from standard presentations: we choose a different formula for the
     extrapolation step.
 
     Parameters
     ----------
     f : function
-        Python function returning a number.  The function :math:`f`
+        Python function returning a number. The function :math:`f`
         must be continuous, and :math:`f(a)` and :math:`f(b)` must
         have opposite signs.
     a : scalar
@@ -650,18 +693,18 @@ def brentq(f, a, b, args=(),
         method will often satisfy the above condition with ``xtol/2``
         and ``rtol/2``. [Brent1973]_
     maxiter : int, optional
-        if convergence is not achieved in `maxiter` iterations, an error is
-        raised.  Must be >= 0.
+        If convergence is not achieved in `maxiter` iterations, an error is
+        raised. Must be >= 0.
     args : tuple, optional
-        containing extra arguments for the function `f`.
+        Containing extra arguments for the function `f`.
         `f` is called by ``apply(f, (x)+args)``.
     full_output : bool, optional
-        If `full_output` is False, the root is returned.  If `full_output` is
+        If `full_output` is False, the root is returned. If `full_output` is
         True, the return value is ``(x, r)``, where `x` is the root, and `r` is
         a `RootResults` object.
     disp : bool, optional
         If True, raise RuntimeError if the algorithm didn't converge.
-        Otherwise the convergence status is recorded in any `RootResults`
+        Otherwise, the convergence status is recorded in any `RootResults`
         return object.
 
     Returns
@@ -669,11 +712,15 @@ def brentq(f, a, b, args=(),
     x0 : float
         Zero of `f` between `a` and `b`.
     r : `RootResults` (present if ``full_output = True``)
-        Object containing information about the convergence.  In particular,
+        Object containing information about the convergence. In particular,
         ``r.converged`` is True if the routine converged.
 
-    See Also
-    --------
+    Notes
+    -----
+    `f` must be continuous.  f(a) and f(b) must have opposite signs.
+
+    Related functions fall into several classes:
+
     multivariate local optimizers
       `fmin`, `fmin_powell`, `fmin_cg`, `fmin_bfgs`, `fmin_ncg`
     nonlinear least squares minimizer
@@ -684,16 +731,12 @@ def brentq(f, a, b, args=(),
       `basinhopping`, `brute`, `differential_evolution`
     local scalar minimizers
       `fminbound`, `brent`, `golden`, `bracket`
-    n-dimensional root-finding
+    N-D root-finding
       `fsolve`
-    one-dimensional root-finding
+    1-D root-finding
       `brenth`, `ridder`, `bisect`, `newton`
     scalar fixed-point finder
       `fixed_point`
-
-    Notes
-    -----
-    `f` must be continuous.  f(a) and f(b) must have opposite signs.
 
     References
     ----------
@@ -725,6 +768,7 @@ def brentq(f, a, b, args=(),
     """
     if not isinstance(args, tuple):
         args = (args,)
+    maxiter = operator.index(maxiter)
     if xtol <= 0:
         raise ValueError("xtol too small (%g <= 0)" % xtol)
     if rtol < _rtol:
@@ -742,15 +786,15 @@ def brenth(f, a, b, args=(),
     A variation on the classic Brent routine to find a zero of the function f
     between the arguments a and b that uses hyperbolic extrapolation instead of
     inverse quadratic extrapolation. There was a paper back in the 1980's ...
-    f(a) and f(b) cannot have the same signs. Generally on a par with the
-    brent routine, but not as heavily tested.  It is a safe version of the
+    f(a) and f(b) cannot have the same signs. Generally, on a par with the
+    brent routine, but not as heavily tested. It is a safe version of the
     secant method that uses hyperbolic extrapolation. The version here is by
     Chuck Harris.
 
     Parameters
     ----------
     f : function
-        Python function returning a number.  f must be continuous, and f(a) and
+        Python function returning a number. f must be continuous, and f(a) and
         f(b) must have opposite signs.
     a : scalar
         One end of the bracketing interval [a,b].
@@ -770,18 +814,18 @@ def brenth(f, a, b, args=(),
         the method will often satisfy the above condition with
         ``xtol/2`` and ``rtol/2``.
     maxiter : int, optional
-        if convergence is not achieved in `maxiter` iterations, an error is
-        raised.  Must be >= 0.
+        If convergence is not achieved in `maxiter` iterations, an error is
+        raised. Must be >= 0.
     args : tuple, optional
-        containing extra arguments for the function `f`.
+        Containing extra arguments for the function `f`.
         `f` is called by ``apply(f, (x)+args)``.
     full_output : bool, optional
-        If `full_output` is False, the root is returned.  If `full_output` is
+        If `full_output` is False, the root is returned. If `full_output` is
         True, the return value is ``(x, r)``, where `x` is the root, and `r` is
         a `RootResults` object.
     disp : bool, optional
         If True, raise RuntimeError if the algorithm didn't converge.
-        Otherwise the convergence status is recorded in any `RootResults`
+        Otherwise, the convergence status is recorded in any `RootResults`
         return object.
 
     Returns
@@ -789,7 +833,7 @@ def brenth(f, a, b, args=(),
     x0 : float
         Zero of `f` between `a` and `b`.
     r : `RootResults` (present if ``full_output = True``)
-        Object containing information about the convergence.  In particular,
+        Object containing information about the convergence. In particular,
         ``r.converged`` is True if the routine converged.
 
     Examples
@@ -820,15 +864,16 @@ def brenth(f, a, b, args=(),
 
     fminbound, brent, golden, bracket : local scalar minimizers
 
-    fsolve : n-dimensional root-finding
+    fsolve : N-D root-finding
 
-    brentq, brenth, ridder, bisect, newton : one-dimensional root-finding
+    brentq, brenth, ridder, bisect, newton : 1-D root-finding
 
     fixed_point : scalar fixed-point finder
 
     """
     if not isinstance(args, tuple):
         args = (args,)
+    maxiter = operator.index(maxiter)
     if xtol <= 0:
         raise ValueError("xtol too small (%g <= 0)" % xtol)
     if rtol < _rtol:
@@ -852,9 +897,10 @@ def _within_tolerance(x, y, rtol, atol):
 
 def _notclose(fs, rtol=_rtol, atol=_xtol):
     # Ensure not None, not 0, all finite, and not very close to each other
-    notclosefvals = all(fs) and all(np.isfinite(fs)) and \
-                    not any(any(np.isclose(_f, fs[i + 1:], rtol=rtol, atol=atol))
-                            for i, _f in enumerate(fs[:-1]))
+    notclosefvals = (
+            all(fs) and all(np.isfinite(fs)) and
+            not any(any(np.isclose(_f, fs[i + 1:], rtol=rtol, atol=atol))
+                    for i, _f in enumerate(fs[:-1])))
     return notclosefvals
 
 
@@ -878,7 +924,7 @@ def _secant(xvals, fvals):
 
 
 def _update_bracket(ab, fab, c, fc):
-    """Update a bracket given (c, fc) with a < c < b.  Return the discarded endpoints"""
+    """Update a bracket given (c, fc), return the discarded endpoints."""
     fa, fb = fab
     idx = (0 if np.sign(fa) * np.sign(fc) > 0 else 1)
     rx, rfx = ab[idx], fab[idx]
@@ -887,7 +933,8 @@ def _update_bracket(ab, fab, c, fc):
     return rx, rfx
 
 
-def _compute_divided_differences(xvals, fvals, N=None, full=True, forward=True):
+def _compute_divided_differences(xvals, fvals, N=None, full=True,
+                                 forward=True):
     """Return a matrix of divided differences for the xvals, fvals pairs
 
     DD[i, j] = f[x_{i-j}, ..., x_i] for 0 <= j <= i
@@ -905,7 +952,8 @@ def _compute_divided_differences(xvals, fvals, N=None, full=True, forward=True):
         DD = np.zeros([M, N])
         DD[:, 0] = fvals[:]
         for i in range(1, N):
-            DD[i:, i] = np.diff(DD[i - 1:, i - 1]) / (xvals[i:] - xvals[:M - i])
+            DD[i:, i] = (np.diff(DD[i - 1:, i - 1]) /
+                         (xvals[i:] - xvals[:M - i]))
         return DD
 
     xvals = np.asarray(xvals)
@@ -990,7 +1038,7 @@ class TOMS748Solver(object):
     """
     _MU = 0.5
     _K_MIN = 1
-    _K_MAX = 100  # A very high value for real usage.  Expect 1, 2, maybe 3.
+    _K_MAX = 100  # A very high value for real usage. Expect 1, 2, maybe 3.
 
     def __init__(self):
         self.f = None
@@ -998,8 +1046,10 @@ class TOMS748Solver(object):
         self.function_calls = 0
         self.iterations = 0
         self.k = 2
-        self.ab = [np.nan, np.nan]  # ab=[a,b] is a global interval containing a root
-        self.fab = [np.nan, np.nan]  # fab is function values at a, b
+        # ab=[a,b] is a global interval containing a root
+        self.ab = [np.nan, np.nan]
+        # fab is function values at a, b
+        self.fab = [np.nan, np.nan]
         self.d = None
         self.fd = None
         self.e = None
@@ -1090,7 +1140,7 @@ class TOMS748Solver(object):
 
         for nsteps in range(2, self.k+2):
             # If the f-values are sufficiently separated, perform an inverse
-            # polynomial interpolation step.  Otherwise nsteps repeats of
+            # polynomial interpolation step. Otherwise, nsteps repeats of
             # an approximate Newton-Raphson step.
             if _notclose(self.fab + [fd, fe], rtol=0, atol=32*eps):
                 c0 = _inverse_poly_zero(self.ab[0], self.ab[1], d, e,
@@ -1206,7 +1256,7 @@ def toms748(f, a, b, args=(), k=1,
     Parameters
     ----------
     f : function
-        Python function returning a scalar.  The function :math:`f`
+        Python function returning a scalar. The function :math:`f`
         must be continuous, and :math:`f(a)` and :math:`f(b)`
         have opposite signs.
     a : scalar,
@@ -1217,7 +1267,8 @@ def toms748(f, a, b, args=(), k=1,
         containing extra arguments for the function `f`.
         `f` is called by ``f(x, *args)``.
     k : int, optional
-        The number of Newton quadratic steps to perform each iteration. ``k>=1``.
+        The number of Newton quadratic steps to perform each
+        iteration. ``k>=1``.
     xtol : scalar, optional
         The computed root ``x0`` will satisfy ``np.allclose(x, x0,
         atol=xtol, rtol=rtol)``, where ``x`` is the exact root. The
@@ -1226,15 +1277,15 @@ def toms748(f, a, b, args=(), k=1,
         The computed root ``x0`` will satisfy ``np.allclose(x, x0,
         atol=xtol, rtol=rtol)``, where ``x`` is the exact root.
     maxiter : int, optional
-        if convergence is not achieved in `maxiter` iterations, an error is
-        raised.  Must be >= 0.
+        If convergence is not achieved in `maxiter` iterations, an error is
+        raised. Must be >= 0.
     full_output : bool, optional
-        If `full_output` is False, the root is returned.  If `full_output` is
+        If `full_output` is False, the root is returned. If `full_output` is
         True, the return value is ``(x, r)``, where `x` is the root, and `r` is
         a `RootResults` object.
     disp : bool, optional
         If True, raise RuntimeError if the algorithm didn't converge.
-        Otherwise the convergence status is recorded in the `RootResults`
+        Otherwise, the convergence status is recorded in the `RootResults`
         return object.
 
     Returns
@@ -1242,13 +1293,13 @@ def toms748(f, a, b, args=(), k=1,
     x0 : float
         Approximate Zero of `f`
     r : `RootResults` (present if ``full_output = True``)
-        Object containing information about the convergence.  In particular,
+        Object containing information about the convergence. In particular,
         ``r.converged`` is True if the routine converged.
 
     See Also
     --------
     brentq, brenth, ridder, bisect, newton
-    fsolve : find zeroes in n dimensions.
+    fsolve : find zeroes in N dimensions.
 
     Notes
     -----
@@ -1268,7 +1319,7 @@ def toms748(f, a, b, args=(), k=1,
     For ``k=2``, the order is about 4.6 with asymptotically 3 function
     evaluations per iteration, and the efficiency index 1.66.
     For higher values of `k`, the efficiency index approaches
-    the `k`-th root of ``(3k-2)``, hence ``k=1`` or ``k=2`` are
+    the kth root of ``(3k-2)``, hence ``k=1`` or ``k=2`` are
     usually appropriate.
 
     References
@@ -1299,6 +1350,7 @@ def toms748(f, a, b, args=(), k=1,
         raise ValueError("xtol too small (%g <= 0)" % xtol)
     if rtol < _rtol / 4:
         raise ValueError("rtol too small (%g < %g)" % (rtol, _rtol))
+    maxiter = operator.index(maxiter)
     if maxiter < 1:
         raise ValueError("maxiter must be greater than 0")
     if not np.isfinite(a):
@@ -1306,7 +1358,7 @@ def toms748(f, a, b, args=(), k=1,
     if not np.isfinite(b):
         raise ValueError("b is not finite %s" % b)
     if a >= b:
-        raise ValueError("a and b are not an interval [%d, %d]" % (a, b))
+        raise ValueError("a and b are not an interval [{}, {}]".format(a, b))
     if not k >= 1:
         raise ValueError("k too small (%s < 1)" % k)
 

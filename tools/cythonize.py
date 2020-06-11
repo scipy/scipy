@@ -35,8 +35,6 @@ operates on the Cython .pyx files.
 
 """
 
-from __future__ import division, print_function, absolute_import
-
 import os
 import re
 import sys
@@ -79,12 +77,13 @@ def process_pyx(fromfile, tofile, cwd):
                 raise ImportError()
 
         if LooseVersion(cython_version) < LooseVersion(required_version):
-            raise Exception('Building SciPy requires Cython >= ' + required_version)
+            raise Exception('Building SciPy requires Cython >= {}, found '
+                            '{}'.format(required_version, cython_version))
 
     except ImportError:
         pass
 
-    flags = ['--fast-fail']
+    flags = ['--fast-fail', '-3']
     if tofile.endswith('.cxx'):
         flags += ['--cplus']
 
@@ -182,9 +181,9 @@ def get_cython_dependencies(fullfrompath):
     fullfromdir = os.path.dirname(fullfrompath)
     deps = set()
     with open(fullfrompath, 'r') as f:
-        pxipattern = re.compile('include "([a-zA-Z0-9_]+\.pxi)"')
-        pxdpattern1 = re.compile('from \. cimport ([a-zA-Z0-9_]+)')
-        pxdpattern2 = re.compile('from \.([a-zA-Z0-9_]+) cimport')
+        pxipattern = re.compile(r'include "([a-zA-Z0-9_]+\.pxi)"')
+        pxdpattern1 = re.compile(r'from \. cimport ([a-zA-Z0-9_]+)')
+        pxdpattern2 = re.compile(r'from \.([a-zA-Z0-9_]+) cimport')
 
         for line in f:
             m = pxipattern.match(line)
@@ -280,7 +279,7 @@ def find_process_files(root_dir):
                     toext = ".c"
                     with open(os.path.join(cur_dir, filename), 'rb') as f:
                         data = f.read()
-                        m = re.search(br"^\s*#\s*distutils:\s*language\s*=\s*c\+\+\s*$", data, re.I|re.M)
+                        m = re.search(br"^\s*#\s*distutils:\s*language\s*=\s*c\+\+\s*$", data, re.I | re.M)
                         if m:
                             toext = ".cxx"
                     fromfile = filename

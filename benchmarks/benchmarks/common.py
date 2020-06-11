@@ -1,8 +1,6 @@
 """
 Airspeed Velocity benchmark utilities
 """
-from __future__ import division, absolute_import, print_function
-
 import sys
 import os
 import re
@@ -89,7 +87,7 @@ def run_monitored(code):
         with open('/proc/%d/status' % process.pid, 'r') as f:
             procdata = f.read()
 
-        m = re.search('VmRSS:\s*(\d+)\s*kB', procdata, re.S | re.I)
+        m = re.search(r'VmRSS:\s*(\d+)\s*kB', procdata, re.S | re.I)
         if m is not None:
             memusage = float(m.group(1)) * 1e3
             peak_memusage = max(memusage, peak_memusage)

@@ -1,10 +1,10 @@
-from __future__ import division, print_function, absolute_import
 import numpy as np
 import pytest
 from scipy.linalg import block_diag
 from scipy.sparse import csc_matrix
 from numpy.testing import (TestCase, assert_array_almost_equal,
-                           assert_array_less, assert_allclose, assert_)
+                           assert_array_less, assert_,
+                           suppress_warnings)
 from pytest import raises
 from scipy.optimize import (NonlinearConstraint,
                             LinearConstraint,
@@ -12,7 +12,6 @@ from scipy.optimize import (NonlinearConstraint,
                             minimize,
                             BFGS,
                             SR1)
-from scipy._lib._numpy_compat import suppress_warnings
 
 
 class Maratos:
@@ -530,10 +529,10 @@ class TestTrustRegionConstr(TestCase):
         result1 = minimize(prob.fun, prob.x0,
                            method='L-BFGS-B',
                            jac='2-point')
-        with pytest.warns(UserWarning):
-            result2 = minimize(prob.fun, prob.x0,
-                               method='L-BFGS-B',
-                               jac='3-point')
+
+        result2 = minimize(prob.fun, prob.x0,
+                           method='L-BFGS-B',
+                           jac='3-point')
         assert_array_almost_equal(result.x, prob.x_opt, decimal=5)
         assert_array_almost_equal(result1.x, prob.x_opt, decimal=5)
         assert_array_almost_equal(result2.x, prob.x_opt, decimal=5)
@@ -615,3 +614,65 @@ class TestTrustRegionConstr(TestCase):
         # Also check existence of the 'niter' attribute, for backward
         # compatibility
         assert_(result.get('niter', -1) == 1)
+
+class TestEmptyConstraint(TestCase):
+    """
+    Here we minimize x^2+y^2 subject to x^2-y^2>1.
+    The actual minimum is at (0, 0) which fails the constraint.
+    Therefore we will find a minimum on the boundary at (+/-1, 0).
+
+    When minimizing on the boundary, optimize uses a set of
+    constraints that removes the constraint that sets that
+    boundary.  In our case, there's only one constraint, so
+    the result is an empty constraint.
+
+    This tests that the empty constraint works.
+    """
+    def test_empty_constraint(self):
+
+        def function(x):
+            return x[0]**2 + x[1]**2
+
+        def functionjacobian(x):
+            return np.array([2.*x[0], 2.*x[1]])
+
+        def functionhvp(x, v):
+            return 2.*v
+
+        def constraint(x):
+            return np.array([x[0]**2 - x[1]**2])
+
+        def constraintjacobian(x):
+            return np.array([[2*x[0], -2*x[1]]])
+
+        def constraintlcoh(x, v):
+            return np.array([[2., 0.], [0., -2.]]) * v[0]
+
+        constraint = NonlinearConstraint(constraint, 1., np.inf, constraintjacobian, constraintlcoh)
+
+        startpoint = [1., 2.]
+
+        bounds = Bounds([-np.inf, -np.inf], [np.inf, np.inf])
+
+        result = minimize(
+          function,
+          startpoint,
+          method='trust-constr',
+          jac=functionjacobian,
+          hessp=functionhvp,
+          constraints=[constraint],
+          bounds=bounds,
+        )
+
+        assert_array_almost_equal(abs(result.x), np.array([1, 0]), decimal=4)
+
+
+def test_bug_11886():
+    def opt(x):
+        return x[0]**2+x[1]**2
+
+    with np.testing.suppress_warnings() as sup:
+        sup.filter(PendingDeprecationWarning)
+        A = np.matrix(np.diag([1, 1]))
+    lin_cons = LinearConstraint(A, -1, np.inf)
+    minimize(opt, 2*[1], constraints = lin_cons)  # just checking that there are no errors

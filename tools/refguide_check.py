@@ -22,27 +22,26 @@ docstrings is valid python::
     $ python refguide_check.py --doctests optimize
 
 """
-from __future__ import print_function
-
-import sys
+import copy
+import doctest
+import glob
+import inspect
+import io
 import os
 import re
-import copy
-import inspect
-import warnings
-import doctest
-import tempfile
-import io
-import docutils.core
-from docutils.parsers.rst import directives
 import shutil
-import glob
-from doctest import NORMALIZE_WHITESPACE, ELLIPSIS, IGNORE_EXCEPTION_DETAIL
+import sys
+import tempfile
+import warnings
 from argparse import ArgumentParser
-from pkg_resources import parse_version
+from contextlib import contextmanager, redirect_stderr
+from doctest import NORMALIZE_WHITESPACE, ELLIPSIS, IGNORE_EXCEPTION_DETAIL
 
-import sphinx
+import docutils.core
 import numpy as np
+import sphinx
+from docutils.parsers.rst import directives
+from pkg_resources import parse_version
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'doc', 'sphinxext'))
 from numpydoc.docscrape_sphinx import get_doc_object
@@ -70,6 +69,7 @@ PUBLIC_SUBMODULES = [
     'cluster.hierarchy',
     'cluster.vq',
     'constants',
+    'fft',
     'fftpack',
     'fftpack.convolve',
     'integrate',
@@ -96,6 +96,7 @@ PUBLIC_SUBMODULES = [
     'special',
     'stats',
     'stats.mstats',
+    'stats.contingency',
 ]
 
 # Docs for these modules are included in the parent module
@@ -108,10 +109,11 @@ OTHER_MODULE_DOCS = {
 # these names are known to fail doctesting and we like to keep it that way
 # e.g. sometimes pseudocode is acceptable etc
 DOCTEST_SKIPLIST = set([
-    'scipy.stats.kstwobign', # inaccurate cdf or ppf
+    'scipy.stats.kstwobign',  # inaccurate cdf or ppf
     'scipy.stats.levy_stable',
-    'scipy.special.sinc', # comes from numpy
-    'scipy.misc.who', # comes from numpy
+    'scipy.special.sinc',  # comes from numpy
+    'scipy.misc.who',  # comes from numpy
+    'scipy.optimize.show_options',
     'io.rst',   # XXX: need to figure out how to deal w/ mat files
 ])
 
@@ -130,7 +132,12 @@ REFGUIDE_ALL_SKIPLIST = [
 REFGUIDE_AUTOSUMMARY_SKIPLIST = [
     r'scipy\.special\..*_roots',  # old aliases for scipy.special.*_roots
     r'scipy\.special\.jn',  # alias for jv
+    r'scipy\.ndimage\.sum',   # alias for sum_labels
     r'scipy\.linalg\.solve_lyapunov',  # deprecated name
+    r'scipy\.stats\.contingency\.chi2_contingency',
+    r'scipy\.stats\.contingency\.expected_freq',
+    r'scipy\.stats\.contingency\.margins',
+    r'scipy\.stats\.reciprocal',
 ]
 # deprecated windows in scipy.signal namespace
 for name in ('barthann', 'bartlett', 'blackmanharris', 'blackman', 'bohman',
@@ -322,7 +329,7 @@ def validate_rst_syntax(text, name, dots=True):
 
     ok_unknown_items = set([
         'mod', 'currentmodule', 'autosummary', 'data',
-        'obj', 'versionadded', 'versionchanged', 'module', 'class',
+        'obj', 'versionadded', 'versionchanged', 'module', 'class', 'meth',
         'ref', 'func', 'toctree', 'moduleauthor',
         'sectionauthor', 'codeauthor', 'eq', 'doi', 'DOI', 'arXiv', 'arxiv'
     ])
@@ -399,7 +406,6 @@ def check_rest(module, names, dots=True):
     except NameError:
         # python 3
         skip_types = (dict, str, float, int)
-
 
     results = []
 
@@ -512,8 +518,7 @@ class DTRunner(doctest.DocTestRunner):
                                                     example, got)
 
 class Checker(doctest.OutputChecker):
-    obj_pattern = re.compile('at 0x[0-9a-fA-F]+>')
-    int_pattern = re.compile('^[0-9]+L?$')
+    obj_pattern = re.compile(r'at 0x[0-9a-fA-F]+>')
     vanilla = doctest.OutputChecker()
     rndm_markers = {'# random', '# Random', '#random', '#Random', "# may vary"}
     stopwords = {'plt.', '.hist', '.show', '.ylim', '.subplot(',
@@ -551,11 +556,6 @@ class Checker(doctest.OutputChecker):
         if want.lstrip().startswith("#"):
             return True
 
-        # python 2 long integers are equal to python 3 integers
-        if self.int_pattern.match(want) and self.int_pattern.match(got):
-            if want.rstrip("L\r\n") == got.rstrip("L\r\n"):
-                return True
-
         # try the standard doctest
         try:
             if self.vanilla.check_output(want, got, optionflags):
@@ -590,9 +590,9 @@ class Checker(doctest.OutputChecker):
             # and then compare the tuples.
             try:
                 num = len(a_want)
-                regex = ('[\w\d_]+\(' +
-                         ', '.join(['[\w\d_]+=(.+)']*num) +
-                         '\)')
+                regex = (r'[\w\d_]+\(' +
+                         ', '.join([r'[\w\d_]+=(.+)']*num) +
+                         r'\)')
                 grp = re.findall(regex, got.replace('\n', ' '))
                 if len(grp) > 1:  # no more than one for now
                     return False
@@ -607,9 +607,9 @@ class Checker(doctest.OutputChecker):
             return self._do_check(a_want, a_got)
         except Exception:
             # heterog tuple, eg (1, np.array([1., 2.]))
-           try:
+            try:
                 return all(self._do_check(w, g) for w, g in zip(a_want, a_got))
-           except (TypeError, ValueError):
+            except (TypeError, ValueError):
                 return False
 
     def _do_check(self, want, got):
@@ -632,51 +632,37 @@ def _run_doctests(tests, full_name, verbose, doctest_warnings):
     runner = DTRunner(full_name, checker=Checker(), optionflags=flags,
                       verbose=verbose)
 
-    output = []
+    output = io.StringIO(newline='')
     success = True
-    def out(msg):
-        output.append(msg)
+    # Redirect stderr to the stdout or output
+    tmp_stderr = sys.stdout if doctest_warnings else output
 
-    class MyStderr(object):
-        """Redirect stderr to the current stdout"""
-        def write(self, msg):
-            if doctest_warnings:
-                sys.stdout.write(msg)
-            else:
-                out(msg)
-
-        # a flush method is required when a doctest uses multiprocessing
-        # multiprocessing/popen_fork.py flushes sys.stderr
-        def flush(self):
-            if doctest_warnings:
-                sys.stdout.flush()
+    @contextmanager
+    def temp_cwd():
+        cwd = os.getcwd()
+        tmpdir = tempfile.mkdtemp()
+        try:
+            os.chdir(tmpdir)
+            yield tmpdir
+        finally:
+            os.chdir(cwd)
+            shutil.rmtree(tmpdir)
 
     # Run tests, trying to restore global state afterward
-    old_printoptions = np.get_printoptions()
-    old_errstate = np.seterr()
-    old_stderr = sys.stderr
     cwd = os.getcwd()
-    tmpdir = tempfile.mkdtemp()
-    sys.stderr = MyStderr()
-    try:
-        os.chdir(tmpdir)
-
+    with np.errstate(), np.printoptions(), temp_cwd() as tmpdir, \
+            redirect_stderr(tmp_stderr):
         # try to ensure random seed is NOT reproducible
         np.random.seed(None)
 
         for t in tests:
             t.filename = short_path(t.filename, cwd)
-            fails, successes = runner.run(t, out=out)
+            fails, successes = runner.run(t, out=output.write)
             if fails > 0:
                 success = False
-    finally:
-        sys.stderr = old_stderr
-        os.chdir(cwd)
-        shutil.rmtree(tmpdir)
-        np.set_printoptions(**old_printoptions)
-        np.seterr(**old_errstate)
 
-    return success, output
+    output.seek(0)
+    return success, output.read()
 
 
 def check_doctests(module, verbose, ns=None,
@@ -722,7 +708,7 @@ def check_doctests(module, verbose, ns=None,
         if dots:
             output_dot('.' if success else 'F')
 
-        results.append((full_name, success, "".join(output)))
+        results.append((full_name, success, output))
 
         if HAVE_MATPLOTLIB:
             import matplotlib.pyplot as plt
@@ -743,6 +729,14 @@ def check_doctests_testfile(fname, verbose, ns=None,
 
     Notes
     -----
+
+    refguide can be signalled to skip testing code by adding
+    ``#doctest: +SKIP`` to the end of the line. If the output varies or is
+    random, add ``# may vary`` or ``# random`` to the comment. for example
+
+    >>> plt.plot(...)  # doctest: +SKIP
+    >>> random.randint(0,10)
+    5 # random
 
     We also try to weed out pseudocode:
     * We maintain a list of exceptions which signal pseudocode,
@@ -776,17 +770,13 @@ def check_doctests_testfile(fname, verbose, ns=None,
         return results
 
     full_name = fname
-    if sys.version_info.major <= 2:
-        with open(fname) as f:
-            text = f.read()
-    else:
-        with open(fname, encoding='utf-8') as f:
-            text = f.read()
+    with open(fname, encoding='utf-8') as f:
+        text = f.read()
 
     PSEUDOCODE = set(['some_function', 'some_module', 'import example',
                       'ctypes.CDLL',     # likely need compiling, skip it
                       'integrate.nquad(func,'  # ctypes integrate tutotial
-    ])
+                      ])
 
     # split the text into "blocks" and try to detect and omit pseudocode blocks.
     parser = doctest.DocTestParser()
@@ -810,7 +800,7 @@ def check_doctests_testfile(fname, verbose, ns=None,
     if dots:
         output_dot('.' if success else 'F')
 
-    results.append((full_name, success, "".join(output)))
+    results.append((full_name, success, output))
 
     if HAVE_MATPLOTLIB:
         import matplotlib.pyplot as plt
@@ -919,7 +909,8 @@ def main(argv):
             tut_results = check_doctests_testfile(filename, (args.verbose >= 2),
                     dots=dots, doctest_warnings=args.doctest_warnings)
 
-            def scratch(): pass        # stub out a "module", see below
+            def scratch():
+                pass        # stub out a "module", see below
             scratch.__name__ = filename
             results.append((scratch, tut_results))
 

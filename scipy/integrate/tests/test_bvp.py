@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 import sys
 
 try:
@@ -173,6 +171,34 @@ def shock_sol(x):
     return np.cos(np.pi * x) + erf(x / k) / erf(1 / k)
 
 
+def nonlin_bc_fun(x, y):
+    # laplace eq.
+    return np.stack([y[1], np.zeros_like(x)])
+
+
+def nonlin_bc_bc(ya, yb):
+    phiA, phipA = ya
+    phiC, phipC = yb
+
+    kappa, ioA, ioC, V, f = 1.64, 0.01, 1.0e-4, 0.5, 38.9
+
+    # Butler-Volmer Kinetics at Anode
+    hA = 0.0-phiA-0.0
+    iA = ioA * (np.exp(f*hA) - np.exp(-f*hA))
+    res0 = iA + kappa * phipA
+
+    # Butler-Volmer Kinetics at Cathode
+    hC = V - phiC - 1.0
+    iC = ioC * (np.exp(f*hC) - np.exp(-f*hC))
+    res1 = iC - kappa*phipC
+
+    return np.array([res0, res1])
+
+
+def nonlin_bc_sol(x):
+    return -0.13426436116763119 - 1.1308709 * x
+
+
 def test_modify_mesh():
     x = np.array([0, 1, 3, 9], dtype=float)
     x_new = modify_mesh(x, np.array([0]), np.array([2]))
@@ -298,7 +324,7 @@ def test_compute_global_jac():
 
     J_true = np.zeros((m * n + k, m * n + k))
     for i in range(m - 1):
-        J_true[i * n: (i + 1) * n, i * n: (i + 2) * n] = J_block(h[i], p)
+        J_true[i * n: (i + 1) * n, i * n: (i + 2) * n] = J_block(h[i], p[0])
 
     J_true[:(m - 1) * n:2, -1] = p * h**2/6 * (y[0, :-1] - y[0, 1:])
     J_true[1:(m - 1) * n:2, -1] = p * (h * (y[0, :-1] + y[0, 1:]) +
@@ -530,6 +556,30 @@ def test_shock_layer():
     assert_allclose(sol.sol(sol.x, 1), sol.yp, rtol=1e-10, atol=1e-10)
 
 
+def test_nonlin_bc():
+    x = np.linspace(0, 0.1, 5)
+    x_test = x
+    y = np.zeros([2, x.size])
+    sol = solve_bvp(nonlin_bc_fun, nonlin_bc_bc, x, y)
+
+    assert_equal(sol.status, 0)
+    assert_(sol.success)
+
+    assert_(sol.x.size < 8)
+
+    sol_test = sol.sol(x_test)
+    assert_allclose(sol_test[0], nonlin_bc_sol(x_test), rtol=1e-5, atol=1e-5)
+
+    f_test = nonlin_bc_fun(x_test, sol_test)
+    r = sol.sol(x_test, 1) - f_test
+    rel_res = r / (1 + np.abs(f_test))
+    norm_res = np.sum(rel_res ** 2, axis=0) ** 0.5
+
+    assert_(np.all(norm_res < 1e-3))
+    assert_allclose(sol.sol(sol.x), sol.y, rtol=1e-10, atol=1e-10)
+    assert_allclose(sol.sol(sol.x, 1), sol.yp, rtol=1e-10, atol=1e-10)
+
+
 def test_verbose():
     # Smoke test that checks the printing does something and does not crash
     x = np.linspace(0, 1, 5)
@@ -550,4 +600,3 @@ def test_verbose():
             assert_("Solved in" in text, text)
         if verbose >= 2:
             assert_("Max residual" in text, text)
-

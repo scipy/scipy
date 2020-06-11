@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 import warnings
 
 from distutils.version import LooseVersion
@@ -7,26 +5,25 @@ import numpy as np
 from numpy.testing import (assert_array_almost_equal,
                            assert_array_equal, assert_array_less,
                            assert_equal, assert_,
-                           assert_allclose, assert_warns)
+                           assert_allclose, assert_warns, suppress_warnings)
 import pytest
 from pytest import raises as assert_raises
-from scipy._lib._numpy_compat import suppress_warnings
 
 from numpy import array, spacing, sin, pi, sort, sqrt
 from scipy.signal import (BadCoefficients, bessel, besselap, bilinear, buttap,
                           butter, buttord, cheb1ap, cheb1ord, cheb2ap,
                           cheb2ord, cheby1, cheby2, ellip, ellipap, ellipord,
                           firwin, freqs_zpk, freqs, freqz, freqz_zpk,
-                          group_delay, iirfilter, iirnotch, iirpeak, lp2bp,
-                          lp2bs, lp2hp, lp2lp, normalize, sos2tf, sos2zpk,
-                          sosfreqz, tf2sos, tf2zpk, zpk2sos, zpk2tf,
+                          group_delay, iirdesign, iirfilter, iirnotch, iirpeak,
+                          lp2bp, lp2bs, lp2hp, lp2lp, normalize, sos2tf,
+                          sos2zpk, sosfreqz, tf2sos, tf2zpk, zpk2sos, zpk2tf,
                           bilinear_zpk, lp2lp_zpk, lp2hp_zpk, lp2bp_zpk,
                           lp2bs_zpk)
 from scipy.signal.filter_design import (_cplxreal, _cplxpair, _norm_factor,
                                         _bessel_poly, _bessel_zeros)
 
 try:
-    import mpmath
+    import mpmath  # type: ignore[import]
 except ImportError:
     mpmath = None
 
@@ -161,21 +158,26 @@ class TestCplxReal(object):
 
 class TestTf2zpk(object):
 
-    def test_simple(self):
+    @pytest.mark.parametrize('dt', (np.float64, np.complex128))
+    def test_simple(self, dt):
         z_r = np.array([0.5, -0.5])
         p_r = np.array([1.j / np.sqrt(2), -1.j / np.sqrt(2)])
         # Sort the zeros/poles so that we don't fail the test if the order
         # changes
         z_r.sort()
         p_r.sort()
-        b = np.poly(z_r)
-        a = np.poly(p_r)
+        b = np.poly(z_r).astype(dt)
+        a = np.poly(p_r).astype(dt)
 
         z, p, k = tf2zpk(b, a)
         z.sort()
-        p.sort()
+        # The real part of `p` is ~0.0, so sort by imaginary part
+        p = p[np.argsort(p.imag)]
+
         assert_array_almost_equal(z, z_r)
         assert_array_almost_equal(p, p_r)
+        assert_array_almost_equal(k, 1.)
+        assert k.dtype == dt
 
     def test_bad_filter(self):
         # Regression test for #651: better handling of badly conditioned
@@ -196,7 +198,7 @@ class TestZpk2Tf(object):
         b_r = np.array([1.])  # desired result
         a_r = np.array([1.])  # desired result
         # The test for the *type* of the return values is a regression
-        # test for ticket #1095.  In the case p=[], zpk2tf used to
+        # test for ticket #1095. In the case p=[], zpk2tf used to
         # return the scalar 1.0 instead of array([1.0]).
         assert_array_equal(b, b_r)
         assert_(isinstance(b, np.ndarray))
@@ -241,6 +243,20 @@ class TestSos2Zpk(object):
         assert_allclose(_cplxpair(p2), p)
         assert_allclose(k2, k)
 
+    def test_fewer_zeros(self):
+        """Test not the expected number of p/z (effectively at origin)."""
+        sos = butter(3, 0.1, output='sos')
+        z, p, k = sos2zpk(sos)
+        assert len(z) == 4
+        assert len(p) == 4
+
+        sos = butter(12, [5., 30.], 'bandpass', fs=1200., analog=False,
+                    output='sos')
+        with pytest.warns(BadCoefficients, match='Badly conditioned'):
+            z, p, k = sos2zpk(sos)
+        assert len(z) == 24
+        assert len(p) == 24
+
 
 class TestSos2Tf(object):
 
@@ -271,6 +287,17 @@ class TestTf2Sos(object):
 
 
 class TestZpk2Sos(object):
+
+    @pytest.mark.parametrize('dt', 'fdgFDG')
+    @pytest.mark.parametrize('pairing', ('nearest', 'keep_odd'))
+    def test_dtypes(self, dt, pairing):
+        z = np.array([-1, -1]).astype(dt)
+        ct = dt.upper()  # the poles have to be complex
+        p = np.array([0.57149 + 0.29360j, 0.57149 - 0.29360j]).astype(ct)
+        k = np.array(1).astype(dt)
+        sos = zpk2sos(z, p, k, pairing=pairing)
+        sos2 = [[1, 2, 1, 1, -1.14298, 0.41280]]  # octave & MATLAB
+        assert_array_almost_equal(sos, sos2, decimal=4)
 
     def test_basic(self):
         for pairing in ('nearest', 'keep_odd'):
@@ -780,6 +807,25 @@ class TestFreqz(object):
             w_out, h = freqz([1.0], worN=w, fs=100)
             assert_array_almost_equal(w_out, [8])
             assert_array_almost_equal(h, [1])
+
+    def test_nyquist(self):
+        w, h = freqz([1.0], worN=8, include_nyquist=True)
+        assert_array_almost_equal(w, np.pi * np.arange(8) / 7.)
+        assert_array_almost_equal(h, np.ones(8))
+        w, h = freqz([1.0], worN=9, include_nyquist=True)
+        assert_array_almost_equal(w, np.pi * np.arange(9) / 8.)
+        assert_array_almost_equal(h, np.ones(9))
+
+        for a in [1, np.ones(2)]:
+            w, h = freqz(np.ones(2), a, worN=0, include_nyquist=True)
+            assert_equal(w.shape, (0,))
+            assert_equal(h.shape, (0,))
+            assert_equal(h.dtype, np.dtype('complex128'))
+
+        w1, h1 = freqz([1.0], worN=8, whole = True, include_nyquist=True)
+        w2, h2 = freqz([1.0], worN=8, whole = True, include_nyquist=False)
+        assert_array_almost_equal(w1, w2)
+        assert_array_almost_equal(h1, h2)
 
 
 class TestSOSFreqz(object):
@@ -1418,6 +1464,19 @@ class TestButtord(object):
         assert_allclose(Wn, [4409.722701715714, 11025.47178084662],
                         rtol=1e-15)
 
+    def test_invalid_input(self):
+        with pytest.raises(ValueError) as exc_info:
+            buttord([20, 50], [14, 60], 3, 2)
+        assert "gpass should be smaller than gstop" in str(exc_info.value)
+
+        with pytest.raises(ValueError) as exc_info:
+            buttord([20, 50], [14, 60], -1, 2)
+        assert "gpass should be larger than 0.0" in str(exc_info.value)
+
+        with pytest.raises(ValueError) as exc_info:
+            buttord([20, 50], [14, 60], 1, -2)
+        assert "gstop should be larger than 0.0" in str(exc_info.value)
+
 
 class TestCheb1ord(object):
 
@@ -1515,6 +1574,19 @@ class TestCheb1ord(object):
 
         assert_equal(N, 8)
         assert_allclose(Wn, 4800, rtol=1e-15)
+
+    def test_invalid_input(self):
+        with pytest.raises(ValueError) as exc_info:
+            cheb1ord(0.2, 0.3, 3, 2)
+        assert "gpass should be smaller than gstop" in str(exc_info.value)
+
+        with pytest.raises(ValueError) as exc_info:
+            cheb1ord(0.2, 0.3, -1, 2)
+        assert "gpass should be larger than 0.0" in str(exc_info.value)
+
+        with pytest.raises(ValueError) as exc_info:
+            cheb1ord(0.2, 0.3, 1, -2)
+        assert "gstop should be larger than 0.0" in str(exc_info.value)
 
 
 class TestCheb2ord(object):
@@ -1617,6 +1689,19 @@ class TestCheb2ord(object):
         assert_equal(N, 9)
         assert_allclose(Wn, 103.4874609145164, rtol=1e-15)
 
+    def test_invalid_input(self):
+        with pytest.raises(ValueError) as exc_info:
+            cheb2ord([0.1, 0.6], [0.2, 0.5], 3, 2)
+        assert "gpass should be smaller than gstop" in str(exc_info.value)
+
+        with pytest.raises(ValueError) as exc_info:
+            cheb2ord([0.1, 0.6], [0.2, 0.5], -1, 2)
+        assert "gpass should be larger than 0.0" in str(exc_info.value)
+
+        with pytest.raises(ValueError) as exc_info:
+            cheb2ord([0.1, 0.6], [0.2, 0.5], 1, -2)
+        assert "gstop should be larger than 0.0" in str(exc_info.value)
+
 
 class TestEllipord(object):
 
@@ -1718,6 +1803,19 @@ class TestEllipord(object):
 
         assert_equal(N, 7)
         assert_allclose(Wn, [590.3293117737195, 2400], rtol=1e-5)
+
+    def test_invalid_input(self):
+        with pytest.raises(ValueError) as exc_info:
+            ellipord(0.2, 0.5, 3, 2)
+        assert "gpass should be smaller than gstop" in str(exc_info.value)
+
+        with pytest.raises(ValueError) as exc_info:
+            ellipord(0.2, 0.5, -1, 2)
+        assert "gpass should be larger than 0.0" in str(exc_info.value)
+
+        with pytest.raises(ValueError) as exc_info:
+            ellipord(0.2, 0.5, 1, -2)
+        assert "gstop should be larger than 0.0" in str(exc_info.value)
 
 
 class TestBessel(object):
@@ -1892,7 +1990,7 @@ class TestBessel(object):
             p2 = np.sort(np.concatenate(_cplxreal(besselap(N, 'mag')[1])))
             assert_array_almost_equal(p1, p2, decimal=10)
 
-        # Compare to http://www.rane.com/note147.html
+        # Compare to https://www.ranecommercial.com/legacy/note147.html
         # "Table 1 - Bessel Crossovers of Second, Third, and Fourth-Order"
         a = [1, 1, 1/3]
         b2, a2 = bessel(2, 1, norm='delay', analog=True)
@@ -3511,6 +3609,26 @@ class TestIIRPeak(object):
         # hp[2] correspond to the frequency that should be retained and
         # the frequency response should be very close to 1
         assert_allclose(abs(hp[2]), 1, rtol=1e-10)
+
+
+class TestIIRDesign(object):
+
+    def test_exceptions(self):
+        with pytest.raises(ValueError, match="the same shape"):
+            iirdesign(0.2, [0.1, 0.3], 1, 40)
+        with pytest.raises(ValueError, match="the same shape"):
+            iirdesign(np.array([[0.3, 0.6], [0.3, 0.6]]),
+                      np.array([[0.4, 0.5], [0.4, 0.5]]), 1, 40)
+        with pytest.raises(ValueError, match="can't be negative"):
+            iirdesign([0.1, 0.3], [-0.1, 0.5], 1, 40)
+        with pytest.raises(ValueError, match="strictly inside stopband"):
+            iirdesign([0.1, 0.4], [0.5, 0.6], 1, 40)
+        with pytest.raises(ValueError, match="strictly inside stopband"):
+            iirdesign([0.5, 0.6], [0.1, 0.4], 1, 40)
+        with pytest.raises(ValueError, match="strictly inside stopband"):
+            iirdesign([0.3, 0.6], [0.4, 0.7], 1, 40)
+        with pytest.raises(ValueError, match="strictly inside stopband"):
+            iirdesign([0.4, 0.7], [0.3, 0.6], 1, 40)
 
 
 class TestIIRFilter(object):

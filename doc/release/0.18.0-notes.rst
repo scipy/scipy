@@ -111,12 +111,12 @@ optimization process.
 Initial step size selection in CG and BFGS minimizers has been improved. We
 expect that this change will improve numeric stability of optimization in some
 cases. See pull request gh-5536 for details.
- 
+
 Handling of infinite bounds in SLSQP optimization has been improved. We expect
 that this change will improve numeric stability of optimization in the some
 cases. See pull request gh-6024 for details.
 
-A large suite of global optimization benchmarks has been added to 
+A large suite of global optimization benchmarks has been added to
 ``scipy/benchmarks/go_benchmark_functions``. See pull request gh-4191 for details.
 
 Nelder-Mead and Powell minimization will now only set defaults for
@@ -164,7 +164,7 @@ links to.
 
 Boolean distances, `scipy.spatial.pdist`, have been sped up. Improvements vary
 by the function and the input size. In many cases, one can expect a speed-up
-of x2--x10. 
+of x2--x10.
 
 New class `scipy.spatial.SphericalVoronoi` constructs Voronoi diagrams on the
 surface of a sphere. See pull request gh-5232 for details.
@@ -186,7 +186,7 @@ logarithm of the Gamma function. For real input, ``loggamma`` is compatible
 with `scipy.special.gammaln`. For complex input, it has more consistent
 behavior in the complex plane and should be preferred over ``gammaln``.
 
-Vectorized forms of spherical Bessel functions have been implemented as 
+Vectorized forms of spherical Bessel functions have been implemented as
 `scipy.special.spherical_jn`, `scipy.special.spherical_kn`,
 `scipy.special.spherical_in` and `scipy.special.spherical_yn`.
 They are recommended for use over ``sph_*`` functions, which are now deprecated.
@@ -271,7 +271,7 @@ that call generates a ``ValueError``.
 `scipy.io`
 ----------
 
-`scipy.io.netcdf` masking now gives precedence to the ``_FillValue`` attribute
+``scipy.io.netcdf`` masking now gives precedence to the ``_FillValue`` attribute
 over the ``missing_value`` attribute, if both are given. Also, data are only
 treated as missing if they match one of these attributes exactly: values that
 differ by roundoff from ``_FillValue`` or ``missing_value`` are no longer

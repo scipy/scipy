@@ -1,7 +1,5 @@
 ''' Classes for read / write of matlab (TM) 4 files
 '''
-from __future__ import division, print_function, absolute_import
-
 import sys
 import warnings
 
@@ -9,8 +7,6 @@ import numpy as np
 from numpy.compat import asbytes, asstr
 
 import scipy.sparse
-
-from scipy._lib.six import string_types
 
 from .miobase import (MatFileReader, docfiller, matdims, read_dtype,
                       convert_dtypes, arr_to_chars, arr_dtype_number)
@@ -120,7 +116,7 @@ class VarReader4(object):
         if O != 0:
             raise ValueError('O in MOPT integer should be 0, wrong format?')
         P, rest = divmod(rest, 10)  # data type code e.g miDOUBLE (see above)
-        T = rest  # matrix type code e.g. mxFULL_CLASS (see above)
+        T = rest  # matrix type code e.g., mxFULL_CLASS (see above)
         dims = (data['mrows'], data['ncols'])
         is_complex = data['imagf'] == 1
         dtype = self.dtypes[P]
@@ -154,7 +150,7 @@ class VarReader4(object):
         Parameters
         ----------
         hdr : object
-           object with attributes ``dtype``, ``dims``.  dtype is assumed to be
+           object with attributes ``dtype``, ``dims``. dtype is assumed to be
            the correct endianness
         copy : bool, optional
            copies array before return if True (default True)
@@ -163,7 +159,7 @@ class VarReader4(object):
         Returns
         -------
         arr : ndarray
-            of dtype givem by `hdr` ``dtype`` and shape givem by `hdr` ``dims``
+            of dtype given by `hdr` ``dtype`` and shape given by `hdr` ``dims``
         '''
         dt = hdr.dtype
         dims = hdr.dims
@@ -219,7 +215,7 @@ class VarReader4(object):
             with dtype 'U1', shape given by `hdr` ``dims``
         '''
         arr = self.read_sub_array(hdr).astype(np.uint8)
-        S = arr.tostring().decode('latin-1')
+        S = arr.tobytes().decode('latin-1')
         return np.ndarray(shape=hdr.dims,
                           dtype=np.dtype('U1'),
                           buffer=np.array(S)).copy()
@@ -239,21 +235,21 @@ class VarReader4(object):
         Notes
         -----
         MATLAB 4 real sparse arrays are saved in a N+1 by 3 array format, where
-        N is the number of non-zero values.  Column 1 values [0:N] are the
+        N is the number of non-zero values. Column 1 values [0:N] are the
         (1-based) row indices of the each non-zero value, column 2 [0:N] are the
-        column indices, column 3 [0:N] are the (real) values.  The last values
+        column indices, column 3 [0:N] are the (real) values. The last values
         [-1,0:2] of the rows, column indices are shape[0] and shape[1]
         respectively of the output matrix. The last value for the values column
         is a padding 0. mrows and ncols values from the header give the shape of
-        the stored matrix, here [N+1, 3].  Complex data is saved as a 4 column
+        the stored matrix, here [N+1, 3]. Complex data are saved as a 4 column
         matrix, where the fourth column contains the imaginary component; the
-        last value is again 0.  Complex sparse data do *not* have the header
+        last value is again 0. Complex sparse data do *not* have the header
         ``imagf`` field set to True; the fact that the data are complex is only
-        detectable because there are 4 storage columns
+        detectable because there are 4 storage columns.
         '''
         res = self.read_sub_array(hdr)
         tmp = res[:-1,:]
-        # All numbers are float64 in Matlab, but Scipy sparse expects int shape
+        # All numbers are float64 in Matlab, but SciPy sparse expects int shape
         dims = (int(res[-1,0]), int(res[-1,1]))
         I = np.ascontiguousarray(tmp[:,0],dtype='intc')  # fixes byte order also
         J = np.ascontiguousarray(tmp[:,1],dtype='intc')
@@ -286,10 +282,10 @@ class VarReader4(object):
 
             # Read only the row and column counts
             self.mat_stream.seek(dt.itemsize * (dims[0] - 1), 1)
-            rows = np.ndarray(shape=(1,), dtype=dt,
+            rows = np.ndarray(shape=(), dtype=dt,
                               buffer=self.mat_stream.read(dt.itemsize))
             self.mat_stream.seek(dt.itemsize * (dims[0] - 1), 1)
-            cols = np.ndarray(shape=(1,), dtype=dt,
+            cols = np.ndarray(shape=(), dtype=dt,
                               buffer=self.mat_stream.read(dt.itemsize))
 
             shape = (int(rows), int(cols))
@@ -381,9 +377,9 @@ class MatFile4Reader(MatFileReader):
         ----------
         variable_names : None or str or sequence of str, optional
             variable name, or sequence of variable names to get from Mat file /
-            file stream.  If None, then get all variables in file
+            file stream. If None, then get all variables in file.
         '''
-        if isinstance(variable_names, string_types):
+        if isinstance(variable_names, str):
             variable_names = [variable_names]
         elif variable_names is not None:
             variable_names = list(variable_names)
@@ -431,13 +427,13 @@ def arr_to_2d(arr, oned_as='row'):
     ----------
     arr : array
     oned_as : {'row', 'column'}, optional
-       Whether to reshape 1D vectors as row vectors or column vectors.
+       Whether to reshape 1-D vectors as row vectors or column vectors.
        See documentation for ``matdims`` for more detail
 
     Returns
     -------
     arr2d : array
-       2D version of the array
+       2-D version of the array
     '''
     dims = matdims(arr, oned_as)
     if len(dims) > 2:
@@ -452,7 +448,7 @@ class VarWriter4(object):
         self.oned_as = file_writer.oned_as
 
     def write_bytes(self, arr):
-        self.file_stream.write(arr.tostring(order='F'))
+        self.file_stream.write(arr.tobytes(order='F'))
 
     def write_string(self, s):
         self.file_stream.write(s)
@@ -551,7 +547,7 @@ class VarWriter4(object):
             T=mxCHAR_CLASS)
         if arr.dtype.kind == 'U':
             # Recode unicode to latin1
-            n_chars = np.product(dims)
+            n_chars = np.prod(dims)
             st_arr = np.ndarray(shape=(),
                                 dtype=arr_dtype_number(arr, n_chars),
                                 buffer=arr)
@@ -560,7 +556,7 @@ class VarWriter4(object):
         self.write_bytes(arr)
 
     def write_sparse(self, arr, name):
-        ''' Sparse matrices are 2D
+        ''' Sparse matrices are 2-D
 
         See docstring for VarReader4.read_sparse_array
         '''
@@ -602,16 +598,16 @@ class MatFile4Writer(object):
            mapping with method ``items`` return name, contents pairs
            where ``name`` which will appeak in the matlab workspace in
            file load, and ``contents`` is something writeable to a
-           matlab file, such as a numpy array.
+           matlab file, such as a NumPy array.
         write_header : {None, True, False}
            If True, then write the matlab file header before writing the
-           variables.  If None (the default) then write the file header
-           if we are at position 0 in the stream.  By setting False
+           variables. If None (the default) then write the file header
+           if we are at position 0 in the stream. By setting False
            here, and setting the stream position to the end of the file,
            you can append variables to a matlab file
         '''
         # there is no header for a matlab 4 mat file, so we ignore the
-        # ``write_header`` input argument.  It's there for compatibility
+        # ``write_header`` input argument. It's there for compatibility
         # with the matlab 5 version of this method
         self._matrix_writer = VarWriter4(self)
         for name, var in mdict.items():

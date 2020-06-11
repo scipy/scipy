@@ -1,9 +1,10 @@
 """
-==============================================
 Window functions (:mod:`scipy.signal.windows`)
 ==============================================
 
 The suite of window functions for filtering and spectral estimation.
+
+.. currentmodule:: scipy.signal.windows
 
 .. autosummary::
    :toctree: generated/

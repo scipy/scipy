@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 import os
 import sys
 import time
@@ -8,11 +6,10 @@ import numpy as np
 from numpy.testing import assert_
 import pytest
 
-from scipy._lib.six import reraise
 from scipy.special._testutils import assert_func_equal
 
 try:
-    import mpmath
+    import mpmath  # type: ignore[import]
 except ImportError:
     pass
 
@@ -173,9 +170,7 @@ def get_args(argspec, n):
         ms = np.asarray([1.5 if isinstance(spec, ComplexArg) else 1.0 for spec in argspec])
         ms = (n**(ms/sum(ms))).astype(int) + 1
 
-        args = []
-        for spec, m in zip(argspec, ms):
-            args.append(spec.values(m))
+        args = [spec.values(m) for spec, m in zip(argspec, ms)]
         args = np.array(np.broadcast_arrays(*np.ix_(*args))).reshape(nargs, -1).T
 
     return args
@@ -272,7 +267,11 @@ class MpmathData(object):
                     break
                 except AssertionError:
                     if j >= len(dps_list)-1:
-                        reraise(*sys.exc_info())
+                        # reraise the Exception
+                        tp, value, tb = sys.exc_info()
+                        if value.__traceback__ is not tb:
+                            raise value.with_traceback(tb)
+                        raise value
         finally:
             mpmath.mp.dps, mpmath.mp.prec = old_dps, old_prec
 

@@ -6,20 +6,18 @@ https://www.mathworks.com/access/helpdesk/help/pdf_doc/matlab/matfile_format.pdf
 
 (as of December 5 2008)
 '''
-from __future__ import division, print_function, absolute_import
-
 '''
 =================================
  Note on functions and mat files
 =================================
 
 The document above does not give any hints as to the storage of matlab
-function handles, or anonymous function handles.  I had therefore to
+function handles, or anonymous function handles. I had, therefore, to
 guess the format of matlab arrays of ``mxFUNCTION_CLASS`` and
 ``mxOPAQUE_CLASS`` by looking at example mat files.
 
-``mxFUNCTION_CLASS`` stores all types of matlab functions.  It seems to
-contain a struct matrix with a set pattern of fields.  For anonymous
+``mxFUNCTION_CLASS`` stores all types of matlab functions. It seems to
+contain a struct matrix with a set pattern of fields. For anonymous
 functions, a sub-fields of one of these fields seems to contain the
 well-named ``mxOPAQUE_CLASS``. This seems to contain:
 
@@ -27,9 +25,9 @@ well-named ``mxOPAQUE_CLASS``. This seems to contain:
 * 3 int8 strings
 * a matrix
 
-It seems that, whenever the mat file contains a ``mxOPAQUE_CLASS``
+It seems that whenever the mat file contains a ``mxOPAQUE_CLASS``
 instance, there is also an un-named matrix (name == '') at the end of
-the mat file.  I'll call this the ``__function_workspace__`` matrix.
+the mat file. I'll call this the ``__function_workspace__`` matrix.
 
 When I saved two anonymous functions in a mat file, or appended another
 anonymous function to the mat file, there was still only one
@@ -41,7 +39,7 @@ The ``__function_workspace__`` matrix appears to be of double class
 (``mxCLASS_DOUBLE``), but stored as uint8, the memory for which is in
 the format of a mini .mat file, without the first 124 bytes of the file
 header (the description and the subsystem_offset), but with the version
-U2 bytes, and the S2 endian test bytes.  There follow 4 zero bytes,
+U2 bytes, and the S2 endian test bytes. There follow 4 zero bytes,
 presumably for 8 byte padding, and then a series of ``miMATRIX``
 entries, as in a standard mat file. The ``miMATRIX`` entries appear to
 be series of un-named (name == '') matrices, and may also contain arrays
@@ -64,13 +62,14 @@ The mat files I was playing with are in ``tests/data``:
 * parabola.mat
 * some_functions.mat
 
-See ``tests/test_mio.py:test_mio_funcs.py`` for a debugging
+See ``tests/test_mio.py:test_mio_funcs.py`` for the debugging
 script I was working with.
 
 '''
 
 # Small fragments of current code adapted from matfile.py by Heiko
-# Henkelmann
+# Henkelmann; parts of the code for simplify_cells=True adapted from
+# http://blog.nephics.com/2019/08/28/better-loadmat-for-scipy/.
 
 import os
 import time
@@ -86,8 +85,6 @@ from numpy.compat import asbytes, asstr
 
 import scipy.sparse
 
-from scipy._lib.six import string_types
-
 from .byteordercodes import native_code, swapped_code
 
 from .miobase import (MatFileReader, docfiller, matdims, read_dtype,
@@ -102,9 +99,53 @@ from .mio5_params import (MatlabObject, MatlabFunction, MDTYPES, NP_TO_MTYPES,
                           NP_TO_MXTYPES, miCOMPRESSED, miMATRIX, miINT8,
                           miUTF8, miUINT32, mxCELL_CLASS, mxSTRUCT_CLASS,
                           mxOBJECT_CLASS, mxCHAR_CLASS, mxSPARSE_CLASS,
-                          mxDOUBLE_CLASS, mclass_info)
+                          mxDOUBLE_CLASS, mclass_info, mat_struct)
 
 from .streams import ZlibInputStream
+
+
+def _has_struct(elem):
+    """Determine if elem is an array and if first array item is a struct."""
+    return (isinstance(elem, np.ndarray) and (elem.size > 0) and
+            isinstance(elem[0], mat_struct))
+
+
+def _inspect_cell_array(ndarray):
+    """Construct lists from cell arrays (loaded as numpy ndarrays), recursing
+    into items if they contain mat_struct objects."""
+    elem_list = []
+    for sub_elem in ndarray:
+        if isinstance(sub_elem, mat_struct):
+            elem_list.append(_matstruct_to_dict(sub_elem))
+        elif _has_struct(sub_elem):
+            elem_list.append(_inspect_cell_array(sub_elem))
+        else:
+            elem_list.append(sub_elem)
+    return elem_list
+
+
+def _matstruct_to_dict(matobj):
+    """Construct nested dicts from mat_struct objects."""
+    d = {}
+    for f in matobj._fieldnames:
+        elem = matobj.__dict__[f]
+        if isinstance(elem, mat_struct):
+            d[f] = _matstruct_to_dict(elem)
+        elif _has_struct(elem):
+            d[f] = _inspect_cell_array(elem)
+        else:
+            d[f] = elem
+    return d
+
+
+def _simplify_cells(d):
+    """Convert mat objects in dict to nested dicts."""
+    for key in d:
+        if isinstance(d[key], mat_struct):
+            d[key] = _matstruct_to_dict(d[key])
+        elif _has_struct(d[key]):
+            d[key] = _inspect_cell_array(d[key])
+    return d
 
 
 class MatFile5Reader(MatFileReader):
@@ -137,15 +178,15 @@ class MatFile5Reader(MatFileReader):
                  matlab_compatible=False,
                  struct_as_record=True,
                  verify_compressed_data_integrity=True,
-                 uint16_codec=None
-                 ):
+                 uint16_codec=None,
+                 simplify_cells=False):
         '''Initializer for matlab 5 file format reader
 
     %(matstream_arg)s
     %(load_args)s
     %(struct_arg)s
     uint16_codec : {None, string}
-        Set codec to use for uint16 char arrays (e.g. 'utf-8').
+        Set codec to use for uint16 char arrays (e.g., 'utf-8').
         Use system default codec if None
         '''
         super(MatFile5Reader, self).__init__(
@@ -156,8 +197,8 @@ class MatFile5Reader(MatFileReader):
             chars_as_strings,
             matlab_compatible,
             struct_as_record,
-            verify_compressed_data_integrity
-            )
+            verify_compressed_data_integrity,
+            simplify_cells)
         # Set uint16 codec
         if not uint16_codec:
             uint16_codec = sys.getdefaultencoding()
@@ -190,7 +231,7 @@ class MatFile5Reader(MatFileReader):
 
         Sets up readers from parameters in `self`
         '''
-        # reader for top level stream.  We need this extra top-level
+        # reader for top level stream. We need this extra top-level
         # reader because we use the matrix_reader object to contain
         # compressed matrices (so they have their own stream)
         self._file_reader = VarReader5(self)
@@ -258,7 +299,7 @@ class MatFile5Reader(MatFileReader):
 
         If variable_names is None, then get all variables in file
         '''
-        if isinstance(variable_names, string_types):
+        if isinstance(variable_names, str):
             variable_names = [variable_names]
         elif variable_names is not None:
             variable_names = list(variable_names)
@@ -304,7 +345,10 @@ class MatFile5Reader(MatFileReader):
                 variable_names.remove(name)
                 if len(variable_names) == 0:
                     break
-        return mdict
+        if self.simplify_cells:
+            return _simplify_cells(mdict)
+        else:
+            return mdict
 
     def list_variables(self):
         ''' list variables from stream '''
@@ -335,13 +379,13 @@ def varmats_from_mat(file_obj):
     """ Pull variables out of mat 5 file as a sequence of mat file objects
 
     This can be useful with a difficult mat file, containing unreadable
-    variables.  This routine pulls the variables out in raw form and puts them,
-    unread, back into a file stream for saving or reading.  Another use is the
+    variables. This routine pulls the variables out in raw form and puts them,
+    unread, back into a file stream for saving or reading. Another use is the
     pathological case where there is more than one variable of the same name in
     the file; this routine returns the duplicates, whereas the standard reader
     will overwrite duplicates in the returned dictionary.
 
-    The file pointer in `file_obj` will be undefined.  File pointers for the
+    The file pointer in `file_obj` will be undefined. File pointers for the
     returned file-like objects are set at 0.
 
     Parameters
@@ -353,7 +397,7 @@ def varmats_from_mat(file_obj):
     -------
     named_mats : list
         list contains tuples of (name, BytesIO) where BytesIO is a file-like
-        object containing mat file contents as for a single variable.  The
+        object containing mat file contents as for a single variable. The
         BytesIO contains a string with the original header and a single var. If
         ``var_file_obj`` is an individual BytesIO instance, then save as a mat
         file with something like ``open('test.mat',
@@ -363,8 +407,8 @@ def varmats_from_mat(file_obj):
     --------
     >>> import scipy.io
 
-    BytesIO is from the ``io`` module in python 3, and is ``cStringIO`` for
-    python < 3.
+    BytesIO is from the ``io`` module in Python 3, and is ``cStringIO`` for
+    Python < 3.
 
     >>> mat_fileobj = BytesIO()
     >>> scipy.io.savemat(mat_fileobj, {'b': np.arange(10), 'a': 'a string'})
@@ -380,7 +424,7 @@ def varmats_from_mat(file_obj):
     # Initialize variable reading
     file_obj.seek(0)
     rdr.initialize_read()
-    mdict = rdr.read_file_header()
+    rdr.read_file_header()
     next_position = file_obj.tell()
     named_mats = []
     while not rdr.end_of_stream():
@@ -428,7 +472,7 @@ def to_writeable(source):
                   hasattr(source, 'items'))
     # Objects that don't implement mappings, but do have dicts
     if isinstance(source, np.generic):
-        # Numpy scalars are never mappings (pypy issue workaround)
+        # NumPy scalars are never mappings (PyPy issue workaround)
         pass
     elif not is_mapping and hasattr(source, '__dict__'):
         source = dict((key, value) for key, value in source.__dict__.items()
@@ -438,7 +482,7 @@ def to_writeable(source):
         dtype = []
         values = []
         for field, value in source.items():
-            if (isinstance(field, string_types) and
+            if (isinstance(field, str) and
                     field[0] not in '_0123456789'):
                 dtype.append((str(field), object))
                 values.append(value)
@@ -477,7 +521,7 @@ class VarWriter5(object):
         self._var_is_global = False
 
     def write_bytes(self, arr):
-        self.file_stream.write(arr.tostring(order='F'))
+        self.file_stream.write(arr.tobytes(order='F'))
 
     def write_string(self, s):
         self.file_stream.write(s)
@@ -499,8 +543,8 @@ class VarWriter5(object):
         # write tag with embedded data
         tag = np.zeros((), NDT_TAG_SMALL)
         tag['byte_count_mdtype'] = (byte_count << 16) + mdtype
-        # if arr.tostring is < 4, the element will be zero-padded as needed.
-        tag['data'] = arr.tostring(order='F')
+        # if arr.tobytes is < 4, the element will be zero-padded as needed.
+        tag['data'] = arr.tobytes(order='F')
         self.write_bytes(tag)
 
     def write_regular_element(self, arr, mdtype, byte_count):
@@ -659,10 +703,10 @@ class VarWriter5(object):
         '''
         if arr.size == 0 or np.all(arr == ''):
             # This an empty string array or a string array containing
-            # only empty strings.  Matlab cannot distinguish between a
+            # only empty strings. Matlab cannot distinguish between a
             # string array that is empty, and a string array containing
             # only empty strings, because it stores strings as arrays of
-            # char.  There is no way of having an array of char that is
+            # char. There is no way of having an array of char that is
             # not empty, but contains an empty string. We have to
             # special-case the array-with-empty-strings because even
             # empty strings have zero padding, which would otherwise
@@ -681,17 +725,17 @@ class VarWriter5(object):
         shape = arr.shape
         self.write_header(shape, mxCHAR_CLASS)
         if arr.dtype.kind == 'U' and arr.size:
-            # Make one long string from all the characters.  We need to
+            # Make one long string from all the characters. We need to
             # transpose here, because we're flattening the array, before
-            # we write the bytes.  The bytes have to be written in
+            # we write the bytes. The bytes have to be written in
             # Fortran order.
-            n_chars = np.product(shape)
+            n_chars = np.prod(shape)
             st_arr = np.ndarray(shape=(),
                                 dtype=arr_dtype_number(arr, n_chars),
                                 buffer=arr.T.copy())  # Fortran order
             # Recode with codec to give byte string
             st = st_arr.item().encode(codec)
-            # Reconstruct as one-dimensional byte array
+            # Reconstruct as 1-D byte array
             arr = np.ndarray(shape=(len(st),),
                              dtype='S1',
                              buffer=st)
@@ -806,7 +850,7 @@ class MatFile5Writer(object):
         hdr['endian_test'] = np.ndarray(shape=(),
                                       dtype='S2',
                                       buffer=np.uint16(0x4d49))
-        self.file_stream.write(hdr.tostring())
+        self.file_stream.write(hdr.tobytes())
 
     def put_variables(self, mdict, write_header=None):
         ''' Write variables in `mdict` to stream
@@ -816,12 +860,12 @@ class MatFile5Writer(object):
         mdict : mapping
            mapping with method ``items`` returns name, contents pairs where
            ``name`` which will appear in the matlab workspace in file load, and
-           ``contents`` is something writeable to a matlab file, such as a numpy
+           ``contents`` is something writeable to a matlab file, such as a NumPy
            array.
         write_header : {None, True, False}, optional
            If True, then write the matlab file header before writing the
-           variables.  If None (the default) then write the file header
-           if we are at position 0 in the stream.  By setting False
+           variables. If None (the default) then write the file header
+           if we are at position 0 in the stream. By setting False
            here, and setting the stream position to the end of the file,
            you can append variables to a matlab file
         '''
@@ -843,7 +887,7 @@ class MatFile5Writer(object):
                 tag = np.empty((), NDT_TAG_FULL)
                 tag['mdtype'] = miCOMPRESSED
                 tag['byte_count'] = len(out_str)
-                self.file_stream.write(tag.tostring())
+                self.file_stream.write(tag.tobytes())
                 self.file_stream.write(out_str)
             else:  # not compressing
                 self._matrix_writer.write_top(var, asbytes(name), is_global)

@@ -1,8 +1,6 @@
 """
 Simple benchmarks for the sparse module
 """
-from __future__ import division, print_function, absolute_import
-
 import warnings
 import time
 import timeit
@@ -330,6 +328,8 @@ class NullSlice(Benchmark):
             for fmt in self.params[1]:
                 self._setup(density, fmt)
 
+    setup_cache.timeout = 120
+
     def setup(self, density, format):
         # Unpickling is faster than computing the random matrix...
         with open('{}-{}.pck'.format(density, format), 'rb') as f:
@@ -439,3 +439,20 @@ class Densify(Benchmark):
 
     # Retain old benchmark results (remove this if changing the benchmark)
     time_toarray.version = "2fbf492ec800b982946a62785beda803460b913cc80080043a5d407025893b2b"
+
+
+class Random(Benchmark):
+    params = [
+        np.arange(0, 1.1, 0.1).tolist()
+    ]
+    param_names = ['density']
+
+    def setup(self, density):
+        warnings.simplefilter('ignore', SparseEfficiencyWarning)
+        self.nrows = 1000
+        self.ncols = 1000
+        self.format = 'csr'
+
+    def time_rand(self, density):
+        sparse.rand(self.nrows, self.ncols,
+                    format=self.format, density=density)

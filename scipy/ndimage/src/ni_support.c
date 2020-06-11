@@ -187,13 +187,8 @@ int NI_InitLineBuffer(PyArrayObject *array, int axis, npy_intp size1,
     case NPY_DOUBLE:
         break;
     default:
-#if PY_VERSION_HEX >= 0x03040000
         PyErr_Format(PyExc_RuntimeError, "array type %R not supported",
                      (PyObject *)PyArray_DTYPE(array));
-#else
-        PyErr_Format(PyExc_RuntimeError, "array type %d not supported",
-                     array_type);
-#endif
         return 0;
     }
 
@@ -231,6 +226,11 @@ int NI_ExtendLine(double *buffer, npy_intp line_length,
     double *first = buffer + size_before;
     double *last = first + line_length;
     double *src, *dst, val;
+
+    if ((line_length == 1) && (extend_mode == NI_EXTEND_MIRROR))
+    {
+        extend_mode = NI_EXTEND_NEAREST;
+    }
 
     switch (extend_mode) {
         /* aaaaaaaa|abcd|dddddddd */

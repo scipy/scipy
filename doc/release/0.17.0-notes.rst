@@ -43,7 +43,7 @@ from a linkage matrix, was added.
 
 `scipy.io.mmwrite` gained support for symmetric sparse matrices.
 
-`scipy.io.netcdf` gained support for masking and scaling data based on data
+``scipy.io.netcdf`` gained support for masking and scaling data based on data
 attributes.
 
 `scipy.optimize` improvements
@@ -142,7 +142,7 @@ elements obeys proper broadcasting rules.
 
 The default algorithm for `scipy.linalg.leastsq` has been changed to use
 LAPACK's function ``*gelsd``. Users wanting to get the previous behavior
-can use a new keyword ``lapack_driver="gelss"`` (allowed values are 
+can use a new keyword ``lapack_driver="gelss"`` (allowed values are
 "gelss", "gelsd" and "gelsy").
 
 ``scipy.sparse`` matrices and linear operators now support the matmul (``@``)
@@ -162,29 +162,29 @@ faster and provides the same functionality.
 ``scipy.stats.threshold`` and ``scipy.mstats.threshold`` are deprecated
 in favor of ``np.clip``. See issue #617 for details.
 
-``scipy.stats.ss`` is deprecated. This is a support function, not meant to 
+``scipy.stats.ss`` is deprecated. This is a support function, not meant to
 be exposed to the user. Also, the name is unclear. See issue #663 for details.
 
-``scipy.stats.square_of_sums`` is deprecated. This too is a support function 
+``scipy.stats.square_of_sums`` is deprecated. This too is a support function
 not meant to be exposed to the user. See issues #665 and #663 for details.
 
 ``scipy.stats.f_value``, ``scipy.stats.f_value_multivariate``,
-``scipy.stats.f_value_wilks_lambda``, and ``scipy.mstats.f_value_wilks_lambda`` 
-are deprecated. These are related to ANOVA, for which ``scipy.stats`` provides 
+``scipy.stats.f_value_wilks_lambda``, and ``scipy.mstats.f_value_wilks_lambda``
+are deprecated. These are related to ANOVA, for which ``scipy.stats`` provides
 quite limited functionality and these functions are not very useful standalone.
 See issues #660 and #650 for details.
 
-``scipy.stats.chisqprob`` is deprecated. This is an alias. ``stats.chi2.sf`` 
-should be used instead. 
+``scipy.stats.chisqprob`` is deprecated. This is an alias. ``stats.chi2.sf``
+should be used instead.
 
-``scipy.stats.betai`` is deprecated. This is an alias for ``special.betainc`` 
+``scipy.stats.betai`` is deprecated. This is an alias for ``special.betainc``
 which should be used instead.
 
 
 Backwards incompatible changes
 ==============================
 
-The functions ``stats.trim1`` and ``stats.trimboth`` now make sure the 
+The functions ``stats.trim1`` and ``stats.trimboth`` now make sure the
 elements trimmed are the lowest and/or highest, depending on the case.
 Slicing without at least partial sorting was previously done, but didn't
 make sense for unsorted input.

@@ -264,7 +264,7 @@ double igami(double a, double p)
 	return NPY_NAN;
     }
     else if ((a < 0) || (p < 0) || (p > 1)) {
-	mtherr("gammaincinv", DOMAIN);
+	sf_error("gammaincinv", SF_ERROR_DOMAIN, NULL);
     }
     else if (p == 0.0) {
 	return 0.0;
@@ -308,7 +308,7 @@ double igamci(double a, double q)
 	return NPY_NAN;
     }
     else if ((a < 0.0) || (q < 0.0) || (q > 1.0)) {
-	mtherr("gammainccinv", DOMAIN);
+	sf_error("gammainccinv", SF_ERROR_DOMAIN, NULL);
     }
     else if (q == 0.0) {
 	return NPY_INFINITY;

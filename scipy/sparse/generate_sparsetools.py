@@ -36,7 +36,7 @@ bsr_scale_rows      v iiiiII*TT
 bsr_scale_columns   v iiiiII*TT
 bsr_sort_indices    v iiii*I*I*T
 bsr_transpose       v iiiiIIT*I*I*T
-bsr_matmat_pass2    v iiiiiIITIIT*I*I*T
+bsr_matmat          v iiiiiiIITIIT*I*I*T
 bsr_matvec          v iiiiIITT*T
 bsr_matvecs         v iiiiiIITT*T
 bsr_elmul_bsr       v iiiiIITIIT*I*I*T
@@ -56,8 +56,8 @@ bsr_ge_bsr          v iiiiIITIIT*I*I*B
 CSC_ROUTINES = """
 csc_diagonal        v iiiIIT*T
 csc_tocsr           v iiIIT*I*I*T
-csc_matmat_pass1    v iiIIII*I
-csc_matmat_pass2    v iiIITIIT*I*I*T
+csc_matmat_maxnnz   l iiIIII
+csc_matmat          v iiIITIIT*I*I*T
 csc_matvec          v iiIITT*T
 csc_matvecs         v iiiIITT*T
 csc_elmul_csc       v iiIITIIT*I*I*T
@@ -75,8 +75,8 @@ csc_ge_csc          v iiIITIIT*I*I*B
 
 # csr.h
 CSR_ROUTINES = """
-csr_matmat_pass1    v iiIIII*I
-csr_matmat_pass2    v iiIITIIT*I*I*T
+csr_matmat_maxnnz   l iiIIII
+csr_matmat          v iiIITIIT*I*I*T
 csr_diagonal        v iiiIIT*T
 csr_tocsc           v iiIIT*I*I*T
 csr_tobsr           v iiiiIIT*I*I*T
@@ -100,6 +100,10 @@ csr_sort_indices    v iI*I*T
 csr_eliminate_zeros v ii*I*I*T
 csr_sum_duplicates  v ii*I*I*T
 get_csr_submatrix   v iiIITiiii*V*V*W
+csr_row_index       v iIIIT*I*T
+csr_row_slice       v iiiIIT*I*T
+csr_column_index1   v iIiiII*I*I
+csr_column_index2   v IIiIT*I*T
 csr_sample_values   v iiIITiII*T
 csr_count_blocks    i iiiiII
 csr_sample_offsets  i iiIIiII*I

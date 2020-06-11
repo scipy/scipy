@@ -17,7 +17,7 @@ SciPy Tutorial
    integrate
    optimize
    interpolate
-   fftpack
+   fft
    signal
    linalg
    arpack

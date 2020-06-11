@@ -4,7 +4,7 @@
 SciPy benchmarks
 ================
 
-Benchmarking Scipy with Airspeed Velocity.
+Benchmarking SciPy with Airspeed Velocity.
 
 
 Usage
@@ -12,20 +12,20 @@ Usage
 
 Airspeed Velocity manages building and Python virtualenvs by itself,
 unless told otherwise. Some of the benchmarking features in
-``runtests.py`` also tell ASV to use the Scipy compiled by
+``runtests.py`` also tell ASV to use the SciPy compiled by
 ``runtests.py``. To run the benchmarks, you do not need to install a
-development version of Scipy to your current Python environment.
+development version of SciPy to your current Python environment.
 
-Run a benchmark against currently checked out Scipy version (don't record the
+Run a benchmark against currently checked-out SciPy version (don't record the
 result)::
 
     python runtests.py --bench sparse.Arithmetic
 
-Compare change in benchmark results to another branch::
+Compare change in benchmark results with another branch::
 
     python runtests.py --bench-compare master sparse.Arithmetic
 
-Run benchmarks against the system-installed SciPy rather than rebuilding::
+Run benchmarks against the system-installed SciPy rather than rebuild::
 
     python runtests.py -n --bench sparse.Arithmetic
 
@@ -50,11 +50,11 @@ Command-line help is available as usual via ``asv --help`` and
 Writing benchmarks
 ------------------
 
-See `ASV documentation`_ for basics on how to write benchmarks.
+See `ASV documentation`_ for the basics on how to write benchmarks.
 
 Some things to consider:
 
-- When importing things from Scipy on the top of the test files, do it as::
+- When importing things from SciPy on the top of the test files, do it as::
 
       try:
           from scipy.sparse.linalg import onenormest
@@ -62,7 +62,7 @@ Some things to consider:
           pass
 
   The benchmark files need to be importable also when benchmarking old versions
-  of Scipy. The benchmarks themselves don't need any guarding against missing
+  of SciPy. The benchmarks themselves don't need any guarding against missing
   features --- only the top-level imports.
 
 - Try to keep the runtime of the benchmark reasonable.
@@ -71,7 +71,7 @@ Some things to consider:
   time measurements via ``time.clock``, even if it requires some juggling when
   writing the benchmark.
 
-- Preparing arrays etc. should generally be put in the ``setup`` method rather
+- Preparing arrays etc., should generally be put in the ``setup`` method rather
   than the ``time_`` methods, to avoid counting preparation time together with
   the time of the benchmarked operation.
 
@@ -81,7 +81,7 @@ Some things to consider:
   when there is any code change in the benchmark routine or in
   setup/setup_cache.
 
-  This can be controlled manually by setting a fixed benchmark verison
+  This can be controlled manually by setting a fixed benchmark version
   number, using the ``version`` attribute. See `ASV documentation`_
   for details.
 

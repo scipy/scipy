@@ -1,31 +1,32 @@
 #define NO_IMPORT_ARRAY
+#include "numpy/ndarrayobject.h"
 #include "sigtools.h"
 
-static int elsizes[] = {sizeof(Bool),
-			sizeof(byte),
-                        sizeof(ubyte),
-                        sizeof(short),
-                        sizeof(ushort),
+static int elsizes[] = {sizeof(npy_bool),
+			            sizeof(npy_byte),
+                        sizeof(npy_ubyte),
+                        sizeof(npy_short),
+                        sizeof(npy_ushort),
                         sizeof(int),
-			sizeof(uint),
-			sizeof(long),
-                        sizeof(ulong),
-                        sizeof(longlong),
-			sizeof(ulonglong),
+                        sizeof(npy_uint),
+                        sizeof(long),
+                        sizeof(npy_ulong),
+                        sizeof(npy_longlong),
+                        sizeof(npy_ulonglong),
                         sizeof(float),
                         sizeof(double),
-			sizeof(longdouble),
-                        sizeof(cfloat),
-                        sizeof(cdouble),
-			sizeof(clongdouble),
+                        sizeof(npy_longdouble),
+                        sizeof(npy_cfloat),
+                        sizeof(npy_cdouble),
+                        sizeof(npy_clongdouble),
                         sizeof(void *),
 			0,0,0,0};
 
-typedef void (OneMultAddFunction) (char *, char *, intp, char **, intp);
+typedef void (OneMultAddFunction) (char *, char *, npy_intp, char **, npy_intp);
 
 #define MAKE_ONEMULTADD(fname, type) \
-static void fname ## _onemultadd(char *sum, char *term1, intp str, char **pvals, intp n) { \
-        intp k; \
+static void fname ## _onemultadd(char *sum, char *term1, npy_intp str, char **pvals, npy_intp n) { \
+        npy_intp k; \
         type dsum = *(type*)sum; \
         for (k=0; k < n; k++) { \
           type tmp = *(type*)(term1 + k * str); \
@@ -34,21 +35,21 @@ static void fname ## _onemultadd(char *sum, char *term1, intp str, char **pvals,
         *(type*)(sum) = dsum; \
 }
 
-MAKE_ONEMULTADD(UBYTE, ubyte)
-MAKE_ONEMULTADD(USHORT, ushort)
-MAKE_ONEMULTADD(UINT, uint)
-MAKE_ONEMULTADD(ULONG, ulong)
-MAKE_ONEMULTADD(ULONGLONG, ulonglong)
+MAKE_ONEMULTADD(UBYTE, npy_ubyte)
+MAKE_ONEMULTADD(USHORT, npy_ushort)
+MAKE_ONEMULTADD(UINT, npy_uint)
+MAKE_ONEMULTADD(ULONG, npy_ulong)
+MAKE_ONEMULTADD(ULONGLONG, npy_ulonglong)
 
-MAKE_ONEMULTADD(BYTE, byte)
+MAKE_ONEMULTADD(BYTE, npy_byte)
 MAKE_ONEMULTADD(SHORT, short)
 MAKE_ONEMULTADD(INT, int)
 MAKE_ONEMULTADD(LONG, long)
-MAKE_ONEMULTADD(LONGLONG, longlong)
+MAKE_ONEMULTADD(LONGLONG, npy_longlong)
 
 MAKE_ONEMULTADD(FLOAT, float)
 MAKE_ONEMULTADD(DOUBLE, double)
-MAKE_ONEMULTADD(LONGDOUBLE, longdouble)
+MAKE_ONEMULTADD(LONGDOUBLE, npy_longdouble)
  
 #ifdef __GNUC__
 MAKE_ONEMULTADD(CFLOAT, __complex__ float)
@@ -64,18 +65,19 @@ static void fname ## _onemultadd2(char *sum, char *term1, char *term2) { \
   return; }
 
 #define MAKE_C_ONEMULTADD2(fname, type) \
-static void fname ## _onemultadd(char *sum, char *term1, intp str, char **pvals, intp n) { \
-        intp k; \
+static void fname ## _onemultadd(char *sum, char *term1, npy_intp str, \
+                                 char **pvals, npy_intp n) { \
+        npy_intp k; \
         for (k=0; k < n; k++) { \
           fname ## _onemultadd2(sum, term1 + k * str, pvals[k]); \
         } \
 }
 MAKE_C_ONEMULTADD(CFLOAT, float)
 MAKE_C_ONEMULTADD(CDOUBLE, double)
-MAKE_C_ONEMULTADD(CLONGDOUBLE, longdouble)
+MAKE_C_ONEMULTADD(CLONGDOUBLE, npy_longdouble)
 MAKE_C_ONEMULTADD2(CFLOAT, float)
 MAKE_C_ONEMULTADD2(CDOUBLE, double)
-MAKE_C_ONEMULTADD2(CLONGDOUBLE, longdouble)
+MAKE_C_ONEMULTADD2(CLONGDOUBLE, npy_longdouble)
 #endif /* __GNUC__ */
 
 static OneMultAddFunction *OneMultAdd[]={NULL,
@@ -102,13 +104,13 @@ static OneMultAddFunction *OneMultAdd[]={NULL,
 
 
 int pylab_convolve_2d (char  *in,        /* Input data Ns[0] x Ns[1] */
-		       intp   *instr,     /* Input strides */
+		       npy_intp   *instr,     /* Input strides */
 		       char  *out,       /* Output data */
-		       intp   *outstr,    /* Output strides */
+		       npy_intp   *outstr,    /* Output strides */
 		       char  *hvals,     /* coefficients in filter */
-		       intp   *hstr,      /* coefficients strides */ 
-		       intp   *Nwin,     /* Size of kernel Nwin[0] x Nwin[1] */
-		       intp   *Ns,        /* Size of image Ns[0] x Ns[1] */
+		       npy_intp   *hstr,      /* coefficients strides */ 
+		       npy_intp   *Nwin,     /* Size of kernel Nwin[0] x Nwin[1] */
+		       npy_intp   *Ns,        /* Size of image Ns[0] x Ns[1] */
 		       int   flag,       /* convolution parameters */
 		       char  *fillvalue) /* fill value */
 {
@@ -180,13 +182,13 @@ int pylab_convolve_2d (char  *in,        /* Input data Ns[0] x Ns[1] */
 	if (!bounds_pad_flag) ind0_memory = ind0*instr[0];
 
         if (bounds_pad_flag) {
-          intp k;
+          npy_intp k;
           for (k=0; k < Nwin[1]; k++) {
               indices[k] = fillvalue;
           }
         }
         else  {
-          intp k;
+          npy_intp k;
 	  for (k=0; k < Nwin[1]; k++) {
 	    ind1 = convolve ? (new_n-k) : (new_n+k);
 	    if (ind1 < 0) {

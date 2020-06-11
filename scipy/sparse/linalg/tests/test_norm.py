@@ -1,14 +1,11 @@
 """Test functions for the sparse.linalg.norm module
 """
 
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 from numpy.linalg import norm as npnorm
-from numpy.testing import assert_equal, assert_allclose
+from numpy.testing import assert_allclose
 from pytest import raises as assert_raises
 
-from scipy._lib._version import NumpyVersion
 import scipy.sparse
 from scipy.sparse.linalg import norm as spnorm
 

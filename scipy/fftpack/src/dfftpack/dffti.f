@@ -1,9 +1,0 @@
-      SUBROUTINE DFFTI (N,WSAVE)
-      IMPLICIT NONE
-      INTEGER :: N
-      DOUBLE PRECISION :: WSAVE(1)
-      IF (N .EQ. 1) RETURN
-      CALL DFFTI1 (N,WSAVE(N+1),WSAVE(2*N+1))
-      RETURN
-      END
-

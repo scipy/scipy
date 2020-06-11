@@ -13,9 +13,15 @@ python module dfitpack ! in
 
   usercode '''
 
-static double dmax(double* seq,int len) {
+#ifdef HAVE_ILP64
+typedef npy_int64 F_INT;
+#else
+typedef npy_int32 F_INT;
+#endif
+
+static double dmax(double* seq, F_INT len) {
   double val;
-  int i;
+  F_INT i;
   if (len<1)
     return -1e308;
   val = seq[0];
@@ -23,9 +29,9 @@ static double dmax(double* seq,int len) {
     if (seq[i]>val) val = seq[i];
   return val;
 }
-static double dmin(double* seq,int len) {
+static double dmin(double* seq,F_INT len) {
   double val;
-  int i;
+  F_INT i;
   if (len<1)
     return 1e308;
   val = seq[0];
@@ -33,59 +39,59 @@ static double dmin(double* seq,int len) {
     if (seq[i]<val) val = seq[i];
   return val;
 }
-static double calc_b(double* x,int m,double* tx,int nx) {
+static double calc_b(double* x,F_INT m,double* tx,F_INT nx) {
   double val1 = dmin(x,m);
   double val2 = dmin(tx,nx);
   if (val2>val1) return val1;
   val1 = dmax(tx,nx);
   return val2 - (val1-val2)/nx;
 }
-static double calc_e(double* x,int m,double* tx,int nx) {
+static double calc_e(double* x,F_INT m,double* tx,F_INT nx) {
   double val1 = dmax(x,m);
   double val2 = dmax(tx,nx);
   if (val2<val1) return val1;
   val1 = dmin(tx,nx);
   return val2 + (val2-val1)/nx;
 }
-static int imax(int i1,int i2) {
+static F_INT imax(F_INT i1,F_INT i2) {
   return MAX(i1,i2);
 }
 
-static int calc_surfit_lwrk1(int m, int kx, int ky, int nxest, int nyest) {
- int u = nxest-kx-1;
- int v = nyest-ky-1;
- int km = MAX(kx,ky)+1;
- int ne = MAX(nxest,nyest);
- int bx = kx*v+ky+1;
- int by = ky*u+kx+1;
- int b1,b2;
+static F_INT calc_surfit_lwrk1(F_INT m, F_INT kx, F_INT ky, F_INT nxest, F_INT nyest) {
+ F_INT u = nxest-kx-1;
+ F_INT v = nyest-ky-1;
+ F_INT km = MAX(kx,ky)+1;
+ F_INT ne = MAX(nxest,nyest);
+ F_INT bx = kx*v+ky+1;
+ F_INT by = ky*u+kx+1;
+ F_INT b1,b2;
  if (bx<=by) {b1=bx;b2=bx+v-ky;}
  else {b1=by;b2=by+u-kx;}
  return u*v*(2+b1+b2)+2*(u+v+km*(m+ne)+ne-kx-ky)+b2+1;
 }
-static int calc_surfit_lwrk2(int m, int kx, int ky, int nxest, int nyest) {
- int u = nxest-kx-1;
- int v = nyest-ky-1;
- int bx = kx*v+ky+1;
- int by = ky*u+kx+1;
- int b2 = (bx<=by?bx+v-ky:by+u-kx);
+static F_INT calc_surfit_lwrk2(F_INT m, F_INT kx, F_INT ky, F_INT nxest, F_INT nyest) {
+ F_INT u = nxest-kx-1;
+ F_INT v = nyest-ky-1;
+ F_INT bx = kx*v+ky+1;
+ F_INT by = ky*u+kx+1;
+ F_INT b2 = (bx<=by?bx+v-ky:by+u-kx);
  return u*v*(b2+1)+b2;
 }
 
-static int calc_spherfit_lwrk1(int m, int ntest, int npest) {
- int u = ntest-7;
- int v = npest-7;
+static F_INT calc_spherfit_lwrk1(F_INT m, F_INT ntest, F_INT npest) {
+ F_INT u = ntest-7;
+ F_INT v = npest-7;
  return 185+52*v+10*u+14*u*v+8*(u-1)*v*v+8*m;
 }
-static int calc_spherfit_lwrk2(int ntest, int npest) {
- int u = ntest-7;
- int v = npest-7;
+static F_INT calc_spherfit_lwrk2(F_INT ntest, F_INT npest) {
+ F_INT u = ntest-7;
+ F_INT v = npest-7;
  return 48+21*v+7*u*v+4*(u-1)*v*v;
 }
 
-static int calc_regrid_lwrk(int mx, int my, int kx, int ky,
-                            int nxest, int nyest) {
- int u = MAX(my, nxest);
+static F_INT calc_regrid_lwrk(F_INT mx, F_INT my, F_INT kx, F_INT ky,
+                            F_INT nxest, F_INT nyest) {
+ F_INT u = MAX(my, nxest);
  return 4+nxest*(my+2*kx+5)+nyest*(2*ky+5)+mx*(kx+1)+my*(ky+1)+u;
 }
 '''
@@ -163,7 +169,7 @@ static int calc_regrid_lwrk(int mx, int my, int kx, int ky,
        ! d,ier = spalde(t,c,k,x)
 
        threadsafe
-       callprotoargument double*,int*,double*,int*,double*,double*,int*
+       callprotoargument double*,F_INT*,double*,F_INT*,double*,double*,F_INT*
        callstatement {int k1=k+1; (*f2py_func)(t,&n,c,&k1,&x,d,&ier); }
 
        real*8 dimension(n) :: t
@@ -254,7 +260,7 @@ static int calc_regrid_lwrk(int mx, int my, int kx, int ky,
 
        fortranname fpcurf
        threadsafe
-       callprotoargument int*,double*,double*,double*,int*,double*,double*,int*,double*,int*,double*,int*,int*,int*,int*,double*,double*,double*,double*,double*,double*,double*,double*,double*,int*,int*
+       callprotoargument F_INT*,double*,double*,double*,F_INT*,double*,double*,F_INT*,double*,F_INT*,double*,F_INT*,F_INT*,F_INT*,F_INT*,double*,double*,double*,double*,double*,double*,double*,double*,double*,F_INT*,F_INT*
        callstatement (*f2py_func)(&iopt,x,y,w,&m,&xb,&xe,&k,&s,&nest,&tol,&maxit,&k1,&k2,&n,t,c,&fp,fpint,wrk,wrk+nest,wrk+nest*k2,wrk+nest*2*k2,wrk+nest*3*k2,nrdata,&ier)
 
        integer intent(hide) :: iopt = 0
@@ -287,7 +293,7 @@ static int calc_regrid_lwrk(int mx, int my, int kx, int ky,
 
        fortranname fpcurf
        threadsafe
-       callprotoargument int*,double*,double*,double*,int*,double*,double*,int*,double*,int*,double*,int*,int*,int*,int*,double*,double*,double*,double*,double*,double*,double*,double*,double*,int*,int*
+       callprotoargument F_INT*,double*,double*,double*,F_INT*,double*,double*,F_INT*,double*,F_INT*,double*,F_INT*,F_INT*,F_INT*,F_INT*,double*,double*,double*,double*,double*,double*,double*,double*,double*,F_INT*,F_INT*
        callstatement (*f2py_func)(&iopt,x,y,w,&m,&xb,&xe,&k,&s,&nest,&tol,&maxit,&k1,&k2,&n,t,c,&fp,fpint,wrk,wrk+nest,wrk+nest*k2,wrk+nest*2*k2,wrk+nest*3*k2,nrdata,&ier)
 
        integer intent(hide) :: iopt = 1
@@ -320,7 +326,7 @@ static int calc_regrid_lwrk(int mx, int my, int kx, int ky,
 
        fortranname fpcurf
        threadsafe
-       callprotoargument int*,double*,double*,double*,int*,double*,double*,int*,double*,int*,double*,int*,int*,int*,int*,double*,double*,double*,double*,double*,double*,double*,double*,double*,int*,int*
+       callprotoargument F_INT*,double*,double*,double*,F_INT*,double*,double*,F_INT*,double*,F_INT*,double*,F_INT*,F_INT*,F_INT*,F_INT*,double*,double*,double*,double*,double*,double*,double*,double*,double*,F_INT*,F_INT*
        callstatement (*f2py_func)(&iopt,x,y,w,&m,&xb,&xe,&k,&s,&nest,&tol,&maxit,&k1,&k2,&n,t,c,&fp,fpint,wrk,wrk+nest,wrk+nest*k2,wrk+nest*2*k2,wrk+nest*3*k2,nrdata,&ier)
 
        integer intent(hide) :: iopt = -1
@@ -698,6 +704,10 @@ static int calc_regrid_lwrk(int mx, int my, int kx, int ky,
        real*8 dimension(nx+ny-kx-ky-2),depend(nx,ny,kx,ky),intent(cache,hide) :: wrk
        real*8 :: dblint
      end function dblint
+
+     ! Fake common block for indicating the integer size
+     integer :: intvar
+     common /types/ intvar
   end interface
 end python module dfitpack
 

@@ -27,8 +27,6 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
-from __future__ import division, print_function, absolute_import
-
 __all__ = ['readsav']
 
 import struct
@@ -395,17 +393,13 @@ def _read_record(f):
     elif record['rectype'] == "HEAP_HEADER":
 
         record['nvalues'] = _read_long(f)
-        record['indices'] = []
-        for i in range(record['nvalues']):
-            record['indices'].append(_read_long(f))
+        record['indices'] = [_read_long(f) for _ in range(record['nvalues'])]
 
     elif record['rectype'] == "COMMONBLOCK":
 
         record['nvars'] = _read_long(f)
         record['name'] = _read_string(f)
-        record['varnames'] = []
-        for i in range(record['nvars']):
-            record['varnames'].append(_read_string(f))
+        record['varnames'] = [_read_string(f) for _ in range(record['nvars'])]
 
     elif record['rectype'] == "END_MARKER":
 
@@ -466,9 +460,7 @@ def _read_arraydesc(f):
 
         arraydesc['nmax'] = _read_long(f)
 
-        arraydesc['dims'] = []
-        for d in range(arraydesc['nmax']):
-            arraydesc['dims'].append(_read_long(f))
+        arraydesc['dims'] = [_read_long(f) for _ in range(arraydesc['nmax'])]
 
     elif arraydesc['arrstart'] == 18:
 
@@ -518,32 +510,27 @@ def _read_structdesc(f):
 
     if not structdesc['predef']:
 
-        structdesc['tagtable'] = []
-        for t in range(structdesc['ntags']):
-            structdesc['tagtable'].append(_read_tagdesc(f))
+        structdesc['tagtable'] = [_read_tagdesc(f)
+                                  for _ in range(structdesc['ntags'])]
 
         for tag in structdesc['tagtable']:
             tag['name'] = _read_string(f)
 
-        structdesc['arrtable'] = {}
-        for tag in structdesc['tagtable']:
-            if tag['array']:
-                structdesc['arrtable'][tag['name']] = _read_arraydesc(f)
+        structdesc['arrtable'] = {tag['name']: _read_arraydesc(f)
+                                  for tag in structdesc['tagtable']
+                                  if tag['array']}
 
-        structdesc['structtable'] = {}
-        for tag in structdesc['tagtable']:
-            if tag['structure']:
-                structdesc['structtable'][tag['name']] = _read_structdesc(f)
+        structdesc['structtable'] = {tag['name']: _read_structdesc(f)
+                                     for tag in structdesc['tagtable']
+                                     if tag['structure']}
 
         if structdesc['inherits'] or structdesc['is_super']:
             structdesc['classname'] = _read_string(f)
             structdesc['nsupclasses'] = _read_long(f)
-            structdesc['supclassnames'] = []
-            for s in range(structdesc['nsupclasses']):
-                structdesc['supclassnames'].append(_read_string(f))
-            structdesc['supclasstable'] = []
-            for s in range(structdesc['nsupclasses']):
-                structdesc['supclasstable'].append(_read_structdesc(f))
+            structdesc['supclassnames'] = [
+                _read_string(f) for _ in range(structdesc['nsupclasses'])]
+            structdesc['supclasstable'] = [
+                _read_structdesc(f) for _ in range(structdesc['nsupclasses'])]
 
         STRUCT_DICT[structdesc['name']] = structdesc
 
@@ -709,6 +696,36 @@ def readsav(file_name, idict=None, python_dict=False,
         returns a Python dictionary with all variable names in lowercase.
         If `idict` was specified, then variables are written to the
         dictionary specified, and the updated dictionary is returned.
+
+    Examples
+    --------
+    >>> from os.path import dirname, join as pjoin
+    >>> import scipy.io as sio
+    >>> from scipy.io import readsav
+
+    Get the filename for an example .sav file from the tests/data directory.
+
+    >>> data_dir = pjoin(dirname(sio.__file__), 'tests', 'data')
+    >>> sav_fname = pjoin(data_dir, 'array_float32_1d.sav')
+
+    Load the .sav file contents.
+
+    >>> sav_data = readsav(sav_fname)
+
+    Get keys of the .sav file contents.
+
+    >>> print(sav_data.keys())
+    dict_keys(['array1d'])
+
+    Access a content with a key.
+
+    >>> print(sav_data['array1d'])
+    [0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0.
+     0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0.
+     0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0.
+     0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0.
+     0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0.
+     0. 0. 0.]
 
     """
 

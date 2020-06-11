@@ -1,7 +1,5 @@
 """Benchmark problems for nonlinear least squares."""
 
-from __future__ import division
-
 from collections import OrderedDict
 import inspect
 import sys

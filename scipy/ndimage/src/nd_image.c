@@ -43,7 +43,6 @@
 #include "ni_measure.h"
 
 #include "ccallback.h"
-#include "numpy/npy_3kcompat.h"
 
 #if NPY_API_VERSION >= 0x0000000c
     #define HAVE_WRITEBACKIFCOPY
@@ -212,7 +211,7 @@ exit:
 static PyObject *Py_Correlate(PyObject *obj, PyObject *args)
 {
     PyArrayObject *input = NULL, *output = NULL, *weights = NULL;
-    PyArray_Dims origin;
+    PyArray_Dims origin = {NULL, 0};
     int mode;
     double cval;
 
@@ -297,7 +296,7 @@ static PyObject *Py_MinOrMaxFilter(PyObject *obj, PyObject *args)
 {
     PyArrayObject *input = NULL, *output = NULL, *footprint = NULL;
     PyArrayObject *structure = NULL;
-    PyArray_Dims origin;
+    PyArray_Dims origin = {NULL, 0};
     int mode, minimum;
     double cval;
 
@@ -333,7 +332,7 @@ exit:
 static PyObject *Py_RankFilter(PyObject *obj, PyObject *args)
 {
     PyArrayObject *input = NULL, *output = NULL, *footprint = NULL;
-    PyArray_Dims origin;
+    PyArray_Dims origin = {NULL, 0};
     int mode, rank;
     double cval;
 
@@ -450,12 +449,6 @@ static PyObject *Py_GenericFilter1D(PyObject *obj, PyObject *args)
         /* 'Legacy' low-level callable */
         func = PyCapsule_GetPointer(fnc, NULL);
         data = PyCapsule_GetContext(fnc);
-#if PY_VERSION_HEX < 0x03000000
-    } else if (PyCObject_Check(fnc)) {
-        /* 'Legacy' low-level callable on Py2 */
-        func = PyCObject_AsVoidPtr(fnc);
-        data = PyCObject_GetDesc(fnc);
-#endif
     } else {
         int ret;
 
@@ -528,7 +521,7 @@ static PyObject *Py_GenericFilter(PyObject *obj, PyObject *args)
     void *func = NULL, *data = NULL;
     NI_PythonCallbackData cbdata;
     int mode;
-    PyArray_Dims origin;
+    PyArray_Dims origin = {NULL, 0};
     double cval;
     ccallback_t callback;
     static ccallback_signature_t callback_signatures[] = {
@@ -577,12 +570,6 @@ static PyObject *Py_GenericFilter(PyObject *obj, PyObject *args)
     if (PyCapsule_CheckExact(fnc) && PyCapsule_GetName(fnc) == NULL) {
         func = PyCapsule_GetPointer(fnc, NULL);
         data = PyCapsule_GetContext(fnc);
-#if PY_VERSION_HEX < 0x03000000
-    } else if (PyCObject_Check(fnc)) {
-        /* 'Legacy' low-level callable on Py2 */
-        func = PyCObject_AsVoidPtr(fnc);
-        data = PyCObject_GetDesc(fnc);
-#endif
     } else {
         int ret;
 
@@ -675,15 +662,14 @@ exit:
 static PyObject *Py_SplineFilter1D(PyObject *obj, PyObject *args)
 {
     PyArrayObject *input = NULL, *output = NULL;
-    int axis, order;
+    int axis, order, mode;
 
-    if (!PyArg_ParseTuple(args, "O&iiO&",
-                          NI_ObjectToInputArray, &input,
-                          &order, &axis,
-                          NI_ObjectToOutputArray, &output))
+    if (!PyArg_ParseTuple(args, "O&iiO&i",
+                          NI_ObjectToInputArray, &input, &order, &axis,
+                          NI_ObjectToOutputArray, &output, &mode))
         goto exit;
 
-    NI_SplineFilter1D(input, order, axis, output);
+    NI_SplineFilter1D(input, order, axis, mode, output);
     #ifdef HAVE_WRITEBACKIFCOPY
         PyArray_ResolveWritebackIfCopy(output);
     #endif
@@ -789,12 +775,6 @@ static PyObject *Py_GeometricTransform(PyObject *obj, PyObject *args)
         if (PyCapsule_CheckExact(fnc) && PyCapsule_GetName(fnc) == NULL) {
             func = PyCapsule_GetPointer(fnc, NULL);
             data = PyCapsule_GetContext(fnc);
-#if PY_VERSION_HEX < 0x03000000
-        } else if (PyCObject_Check(fnc)) {
-            /* 'Legacy' low-level callable on Py2 */
-            func = PyCObject_AsVoidPtr(fnc);
-            data = PyCObject_GetDesc(fnc);
-#endif
         } else {
             int ret;
 
@@ -1044,17 +1024,10 @@ exit:
     return PyErr_Occurred() ? NULL : Py_BuildValue("");
 }
 
-#ifdef NPY_PY3K
 static void _FreeCoordinateList(PyObject *obj)
 {
     NI_FreeCoordinateList((NI_CoordinateList*)PyCapsule_GetPointer(obj, NULL));
 }
-#else
-static void _FreeCoordinateList(void* ptr)
-{
-    NI_FreeCoordinateList((NI_CoordinateList*)ptr);
-}
-#endif
 
 static PyObject *Py_BinaryErosion(PyObject *obj, PyObject *args)
 {
@@ -1064,7 +1037,7 @@ static PyObject *Py_BinaryErosion(PyObject *obj, PyObject *args)
     int border_value, invert, center_is_true;
     int changed = 0, return_coordinates;
     NI_CoordinateList *coordinate_list = NULL;
-    PyArray_Dims origin;
+    PyArray_Dims origin = {NULL, 0};
 
     if (!PyArg_ParseTuple(args, "O&O&O&O&iO&iii",
                           NI_ObjectToInputArray, &input,
@@ -1085,7 +1058,7 @@ static PyObject *Py_BinaryErosion(PyObject *obj, PyObject *args)
         goto exit;
     }
     if (return_coordinates) {
-        cobj = NpyCapsule_FromVoidPtr(coordinate_list, _FreeCoordinateList);
+        cobj = PyCapsule_New(coordinate_list, NULL, _FreeCoordinateList);
     }
     #ifdef HAVE_WRITEBACKIFCOPY
         PyArray_ResolveWritebackIfCopy(output);
@@ -1114,7 +1087,7 @@ static PyObject *Py_BinaryErosion2(PyObject *obj, PyObject *args)
     PyArrayObject *array = NULL, *strct = NULL, *mask = NULL;
     PyObject *cobj = NULL;
     int invert, niter;
-    PyArray_Dims origin;
+    PyArray_Dims origin = {NULL, 0};
 
     if (!PyArg_ParseTuple(args, "O&O&O&iO&iO",
                           NI_ObjectToInputOutputArray, &array,
@@ -1128,8 +1101,8 @@ static PyObject *Py_BinaryErosion2(PyObject *obj, PyObject *args)
     if (!_validate_origin(array, origin)) {
         goto exit;
     }
-    if (NpyCapsule_Check(cobj)) {
-        NI_CoordinateList *cobj_data = NpyCapsule_AsVoidPtr(cobj);
+    if (PyCapsule_CheckExact(cobj)) {
+        NI_CoordinateList *cobj_data = PyCapsule_GetPointer(cobj, NULL);
         if (!NI_BinaryErosion2(array, strct, mask, niter, origin.ptr, invert,
                                &cobj_data)) {
             goto exit;
@@ -1191,7 +1164,6 @@ static PyMethodDef methods[] = {
     {NULL, NULL, 0, NULL}
 };
 
-#ifdef NPY_PY3K
 static struct PyModuleDef moduledef = {
     PyModuleDef_HEAD_INIT,
     "_nd_image",
@@ -1213,10 +1185,3 @@ PyObject *PyInit__nd_image(void)
 
     return m;
 }
-#else
-PyMODINIT_FUNC init_nd_image(void)
-{
-    Py_InitModule("_nd_image", methods);
-    import_array();
-}
-#endif

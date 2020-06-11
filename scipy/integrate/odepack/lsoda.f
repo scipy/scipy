@@ -1648,8 +1648,7 @@ c
  710  call xerrwv('lsoda--  repeated occurrences of illegal input    ',
      1   50, 302, 0, 0, 0, 0, 0, 0.0d0, 0.0d0)
 c
- 800  call xerrwv('lsoda--  run aborted.. apparent infinite loop     ',
-     1   50, 303, 2, 0, 0, 0, 0, 0.0d0, 0.0d0)
+ 800  istate = -8
       return
 c----------------------- end of subroutine lsoda -----------------------
       end

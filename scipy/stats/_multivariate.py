@@ -1,13 +1,11 @@
 #
 # Author: Joris Vankerschaver 2013
 #
-from __future__ import division, print_function, absolute_import
-
 import math
 import numpy as np
 from numpy import asarray_chkfinite, asarray
 import scipy.linalg
-from scipy.misc import doccer
+from scipy._lib import doccer
 from scipy.special import gammaln, psi, multigammaln, xlogy, entr
 from scipy._lib._util import check_random_state
 from scipy.linalg.blas import drot
@@ -34,9 +32,13 @@ _LOG_PI = np.log(np.pi)
 
 
 _doc_random_state = """\
-random_state : None or int or np.random.RandomState instance, optional
-    If int or RandomState, use it for drawing the random variates.
-    If None (or np.random), the global np.random state is used.
+random_state : {None, int, np.random.RandomState, np.random.Generator}, optional
+    Used for drawing random variates.
+    If `seed` is `None` the `~np.random.RandomState` singleton is used.
+    If `seed` is an int, a new ``RandomState`` instance is used, seeded
+    with seed.
+    If `seed` is already a ``RandomState`` or ``Generator`` instance,
+    then that object is used.
     Default is None.
 """
 
@@ -193,10 +195,12 @@ class multi_rv_generic(object):
     def random_state(self):
         """ Get or set the RandomState object for generating random variates.
 
-        This can be either None or an existing RandomState object.
+        This can be either None, int, a RandomState instance, or a
+        np.random.Generator instance.
 
-        If None (or np.random), use the RandomState singleton used by np.random.
-        If already a RandomState instance, use it.
+        If None (or np.random), use the RandomState singleton used by
+        np.random.
+        If already a RandomState or Generator instance, use it.
         If an int, use a new RandomState instance seeded with seed.
 
         """
@@ -701,11 +705,14 @@ class multivariate_normal_frozen(multi_rv_frozen):
         allow_singular : bool, optional
             If this flag is True then tolerate a singular
             covariance matrix (default False).
-        seed : None or int or np.random.RandomState instance, optional
-            This parameter defines the RandomState object to use for drawing
-            random variates.
-            If None (or np.random), the global np.random state is used.
-            If integer, it is used to seed the local RandomState instance
+        seed : {None, int, `~np.random.RandomState`, `~np.random.Generator`}, optional
+            This parameter defines the object to use for drawing random
+            variates.
+            If `seed` is `None` the `~np.random.RandomState` singleton is used.
+            If `seed` is an int, a new ``RandomState`` instance is used, seeded
+            with seed.
+            If `seed` is already a ``RandomState`` or ``Generator`` instance,
+            then that object is used.
             Default is None.
         maxpts: integer, optional
             The maximum number of points to use for integration of the
@@ -1153,9 +1160,14 @@ class matrix_normal_frozen(multi_rv_frozen):
         Parameters
         ----------
         %(_matnorm_doc_default_callparams)s
-        seed : None or int or np.random.RandomState instance, optional
-            If int or RandomState, use it for drawing the random variates.
-            If None (or np.random), the global np.random state is used.
+       seed : {None, int, `~np.random.RandomState`, `~np.random.Generator`}, optional
+            This parameter defines the object to use for drawing random
+            variates.
+            If `seed` is `None` the `~np.random.RandomState` singleton is used.
+            If `seed` is an int, a new ``RandomState`` instance is used, seeded
+            with seed.
+            If `seed` is already a ``RandomState`` or ``Generator`` instance,
+            then that object is used.
             Default is None.
 
         Examples
@@ -1367,6 +1379,40 @@ class dirichlet_gen(multi_rv_generic):
     Note that the dirichlet interface is somewhat inconsistent.
     The array returned by the rvs function is transposed
     with respect to the format expected by the pdf and logpdf.
+
+    Examples
+    --------
+    >>> from scipy.stats import dirichlet
+
+    Generate a dirichlet random variable
+
+    >>> quantiles = np.array([0.2, 0.2, 0.6])  # specify quantiles
+    >>> alpha = np.array([0.4, 5, 15])  # specify concentration parameters
+    >>> dirichlet.pdf(quantiles, alpha)
+    0.2843831684937255
+
+    The same PDF but following a log scale
+
+    >>> dirichlet.logpdf(quantiles, alpha)
+    -1.2574327653159187
+
+    Once we specify the dirichlet distribution
+    we can then calculate quantities of interest
+
+    >>> dirichlet.mean(alpha)  # get the mean of the distribution
+    array([0.01960784, 0.24509804, 0.73529412])
+    >>> dirichlet.var(alpha) # get variance
+    array([0.00089829, 0.00864603, 0.00909517])
+    >>> dirichlet.entropy(alpha)  # calculate the differential entropy
+    -4.3280162474082715
+
+    We can also return random samples from the distribution
+
+    >>> dirichlet.rvs(alpha, size=1, random_state=1)
+    array([[0.00766178, 0.24670518, 0.74563305]])
+    >>> dirichlet.rvs(alpha, size=2, random_state=2)
+    array([[0.01639427, 0.1292273 , 0.85437844],
+           [0.00156917, 0.19033695, 0.80809388]])
 
     """
 
@@ -2004,8 +2050,8 @@ class wishart_gen(multi_rv_generic):
             Dimension of the scale matrix
         df : int
             Degrees of freedom
-        random_state : np.random.RandomState instance
-            RandomState used for drawing the random variates.
+        random_state : {`~np.random.RandomState`, `~np.random.Generator`}
+            Object used for drawing the random variates.
 
         Notes
         -----
@@ -2204,11 +2250,13 @@ class wishart_frozen(multi_rv_frozen):
         Degrees of freedom of the distribution
     scale : array_like
         Scale matrix of the distribution
-    seed : None or int or np.random.RandomState instance, optional
-        This parameter defines the RandomState object to use for drawing
-        random variates.
-        If None (or np.random), the global np.random state is used.
-        If integer, it is used to seed the local RandomState instance
+    seed : {None, int, `~np.random.RandomState`, `~np.random.Generator`}, optional
+        This parameter defines the object to use for drawing random variates.
+        If `seed` is `None` the `~np.random.RandomState` singleton is used.
+        If `seed` is an int, a new ``RandomState`` instance is used, seeded
+        with seed.
+        If `seed` is already a ``RandomState`` or ``Generator`` instance,
+        then that object is used.
         Default is None.
 
     """
@@ -2753,11 +2801,14 @@ class invwishart_frozen(multi_rv_frozen):
             Degrees of freedom of the distribution
         scale : array_like
             Scale matrix of the distribution
-        seed : None or int or np.random.RandomState instance, optional
-            This parameter defines the RandomState object to use for drawing
-            random variates.
-            If None (or np.random), the global np.random state is used.
-            If integer, it is used to seed the local RandomState instance
+        seed : {None, int, `~np.random.RandomState`, `~np.random.Generator`}, optional
+            This parameter defines the object to use for drawing random
+            variates.
+            If `seed` is `None` the `~np.random.RandomState` singleton is used.
+            If `seed` is an int, a new ``RandomState`` instance is used, seeded
+            with seed.
+            If `seed` is already a ``RandomState`` or ``Generator`` instance,
+            then that object is used.
             Default is None.
 
         """
@@ -2951,8 +3002,8 @@ class multinomial_gen(multi_rv_generic):
     See also
     --------
     scipy.stats.binom : The binomial distribution.
-    numpy.random.multinomial : Sampling from the multinomial distribution.
-    """
+    numpy.random.Generator.multinomial : Sampling from the multinomial distribution.
+    """  # noqa: E501
 
     def __init__(self, seed=None):
         super(multinomial_gen, self).__init__(seed)
@@ -3199,11 +3250,13 @@ class multinomial_frozen(multi_rv_frozen):
         number of trials
     p: array_like
         probability of a trial falling into each category; should sum to 1
-    seed : None or int or np.random.RandomState instance, optional
-        This parameter defines the RandomState object to use for drawing
-        random variates.
-        If None (or np.random), the global np.random state is used.
-        If integer, it is used to seed the local RandomState instance
+    seed : {None, int, `~np.random.RandomState`, `~np.random.Generator`}, optional
+        This parameter defines the object to use for drawing random variates.
+        If `seed` is `None` the `~np.random.RandomState` singleton is used.
+        If `seed` is an int, a new ``RandomState`` instance is used, seeded
+        with seed.
+        If `seed` is already a ``RandomState`` or ``Generator`` instance,
+        then that object is used.
         Default is None.
     """
     def __init__(self, n, p, seed=None):
@@ -3354,13 +3407,13 @@ class special_ortho_group_gen(multi_rv_generic):
         D = np.empty((dim,))
         for n in range(dim-1):
             x = random_state.normal(size=(dim-n,))
+            norm2 = np.dot(x, x)
+            x0 = x[0].item()
             D[n] = np.sign(x[0]) if x[0] != 0 else 1
-            x[0] += D[n]*np.sqrt((x*x).sum())
+            x[0] += D[n]*np.sqrt(norm2)
+            x /= np.sqrt((norm2 - x0**2 + x[0]**2) / 2.)
             # Householder transformation
-            Hx = (np.eye(dim-n) - 2.*np.outer(x, x)/(x*x).sum())
-            mat = np.eye(dim)
-            mat[n:, n:] = Hx
-            H = np.dot(H, mat)
+            H[:, n:] -= np.outer(np.dot(H[:, n:], x), x)
         D[-1] = (-1)**(dim-1)*D[:-1].prod()
         # Equivalent to np.dot(np.diag(D), H) but faster, apparently
         H = (D*H.T).T
@@ -3379,11 +3432,14 @@ class special_ortho_group_frozen(multi_rv_frozen):
         ----------
         dim : scalar
             Dimension of matrices
-        seed : None or int or np.random.RandomState instance, optional
-            This parameter defines the RandomState object to use for drawing
-            random variates.
-            If None (or np.random), the global np.random state is used.
-            If integer, it is used to seed the local RandomState instance
+        seed : {None, int, `~np.random.RandomState`, `~np.random.Generator`}, optional
+            This parameter defines the object to use for drawing random
+            variates.
+            If `seed` is `None` the `~np.random.RandomState` singleton is used.
+            If `seed` is an int, a new ``RandomState`` instance is used, seeded
+            with seed.
+            If `seed` is already a ``RandomState`` or ``Generator`` instance,
+            then that object is used.
             Default is None.
 
         Examples
@@ -3493,14 +3549,14 @@ class ortho_group_gen(multi_rv_generic):
         H = np.eye(dim)
         for n in range(dim):
             x = random_state.normal(size=(dim-n,))
+            norm2 = np.dot(x, x)
+            x0 = x[0].item()
             # random sign, 50/50, but chosen carefully to avoid roundoff error
             D = np.sign(x[0]) if x[0] != 0 else 1
-            x[0] += D*np.sqrt((x*x).sum())
+            x[0] += D * np.sqrt(norm2)
+            x /= np.sqrt((norm2 - x0**2 + x[0]**2) / 2.)
             # Householder transformation
-            Hx = -D*(np.eye(dim-n) - 2.*np.outer(x, x)/(x*x).sum())
-            mat = np.eye(dim)
-            mat[n:, n:] = Hx
-            H = np.dot(H, mat)
+            H[:, n:] = -D * (H[:, n:] - np.outer(np.dot(H[:, n:], x), x))
         return H
 
 

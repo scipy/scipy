@@ -1,5 +1,4 @@
 """ A sparse matrix in COOrdinate or 'triplet' format"""
-from __future__ import division, print_function, absolute_import
 
 __docformat__ = "restructuredtext en"
 
@@ -9,14 +8,15 @@ from warnings import warn
 
 import numpy as np
 
-from scipy._lib.six import zip as izip
 
 from ._sparsetools import coo_tocsr, coo_todense, coo_matvec
 from .base import isspmatrix, SparseEfficiencyWarning, spmatrix
 from .data import _data_matrix, _minmax_mixin
 from .sputils import (upcast, upcast_char, to_native, isshape, getdtype,
                       get_index_dtype, downcast_intp_index, check_shape,
-                      check_reshape_kwargs)
+                      check_reshape_kwargs, matrix)
+
+import operator
 
 
 class coo_matrix(_data_matrix, _minmax_mixin):
@@ -54,7 +54,7 @@ class coo_matrix(_data_matrix, _minmax_mixin):
     ndim : int
         Number of dimensions (this is always 2)
     nnz
-        Number of nonzero elements
+        Number of stored values, including explicit zeros
     data
         COO format data array of the matrix
     row
@@ -88,7 +88,7 @@ class coo_matrix(_data_matrix, _minmax_mixin):
 
     Examples
     --------
-    
+
     >>> # Constructing an empty matrix
     >>> from scipy.sparse import coo_matrix
     >>> coo_matrix((3, 4), dtype=np.int8).toarray()
@@ -145,8 +145,8 @@ class coo_matrix(_data_matrix, _minmax_mixin):
                     if len(row) == 0 or len(col) == 0:
                         raise ValueError('cannot infer dimensions from zero '
                                          'sized index arrays')
-                    M = np.max(row) + 1
-                    N = np.max(col) + 1
+                    M = operator.index(np.max(row)) + 1
+                    N = operator.index(np.max(col)) + 1
                     self._shape = check_shape((M, N))
                 else:
                     # Use 2 steps to ensure shape has length 2.
@@ -179,8 +179,12 @@ class coo_matrix(_data_matrix, _minmax_mixin):
 
                 if M.ndim != 2:
                     raise TypeError('expected dimension <= 2 array or matrix')
-                else:
-                    self._shape = check_shape(M.shape)
+
+                self._shape = check_shape(M.shape)
+                if shape is not None:
+                    if check_shape(shape) != self._shape:
+                        raise ValueError('inconsistent shapes: %s != %s' %
+                                         (shape, self._shape))
 
                 self.row, self.col = M.nonzero()
                 self.data = M[self.row, self.col]
@@ -443,7 +447,7 @@ class coo_matrix(_data_matrix, _minmax_mixin):
 
         self.sum_duplicates()
         dok = dok_matrix((self.shape), dtype=self.dtype)
-        dok._update(izip(izip(self.row,self.col),self.data))
+        dok._update(zip(zip(self.row,self.col),self.data))
 
         return dok
 
@@ -452,7 +456,7 @@ class coo_matrix(_data_matrix, _minmax_mixin):
     def diagonal(self, k=0):
         rows, cols = self.shape
         if k <= -rows or k >= cols:
-            raise ValueError("k exceeds matrix dimensions")
+            return np.empty(0, dtype=self.data.dtype)
         diag = np.zeros(min(rows + min(k, 0), cols - max(k, 0)),
                         dtype=self.dtype)
         diag_mask = (self.row + k) == self.col
@@ -563,14 +567,15 @@ class coo_matrix(_data_matrix, _minmax_mixin):
 
     def _add_dense(self, other):
         if other.shape != self.shape:
-            raise ValueError('Incompatible shapes.')
+            raise ValueError('Incompatible shapes ({} and {})'
+                             .format(self.shape, other.shape))
         dtype = upcast_char(self.dtype.char, other.dtype.char)
         result = np.array(other, dtype=dtype, copy=True)
         fortran = int(result.flags.f_contiguous)
         M, N = self.shape
         coo_todense(M, N, self.nnz, self.row, self.col, self.data,
                     result.ravel('A'), fortran)
-        return np.matrix(result, copy=False)
+        return matrix(result, copy=False)
 
     def _mul_vector(self, other):
         #output array

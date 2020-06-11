@@ -3,21 +3,17 @@ Lambert W function around 0 and compare it to various other
 approximations.
 
 """
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 
 try:
-    import mpmath
-    import matplotlib.pyplot as plt
+    import mpmath  # type: ignore[import]
+    import matplotlib.pyplot as plt  # type: ignore[import]
 except ImportError:
     pass
 
 
 def lambertw_pade():
-    derivs = []
-    for n in range(6):
-        derivs.append(mpmath.diff(mpmath.lambertw, 0, n=n))
+    derivs = [mpmath.diff(mpmath.lambertw, 0, n=n) for n in range(6)]
     p, q = mpmath.pade(derivs, 3, 2)
     return p, q
 

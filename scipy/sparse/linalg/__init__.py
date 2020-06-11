@@ -1,5 +1,4 @@
 """
-==================================================
 Sparse linear algebra (:mod:`scipy.sparse.linalg`)
 ==================================================
 
@@ -108,8 +107,6 @@ Exceptions
    ArpackError
 
 """
-
-from __future__ import division, print_function, absolute_import
 
 from .isolve import *
 from .dsolve import *

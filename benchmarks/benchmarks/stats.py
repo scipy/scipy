@@ -1,5 +1,3 @@
-from __future__ import division, absolute_import, print_function
-
 import warnings
 
 import numpy as np
@@ -31,7 +29,7 @@ class CorrelationFunctions(Benchmark):
         a = np.random.rand(2,2) * 10
         self.a = a
 
-    def time_fisher_exact(self, alternative):   
+    def time_fisher_exact(self, alternative):
         oddsratio, pvalue = stats.fisher_exact(self.a, alternative=alternative)
 
 
@@ -54,12 +52,12 @@ class InferentialStats(Benchmark):
 
 
 class Distribution(Benchmark):
-    param_names = ['distribution', 'properties']    
+    param_names = ['distribution', 'properties']
     params = [
         ['cauchy', 'gamma', 'beta'],
         ['pdf', 'cdf', 'rvs', 'fit']
     ]
-    
+
     def setup(self, distribution, properties):
         np.random.seed(12345678)
         self.x = np.random.rand(100)
@@ -110,3 +108,67 @@ class DescriptiveStats(Benchmark):
     def time_mode(self, n_levels):
         stats.mode(self.levels, axis=0)
 
+
+class GaussianKDE(Benchmark):
+    def setup(self):
+        np.random.seed(12345678)
+        n = 2000
+        m1 = np.random.normal(size=n)
+        m2 = np.random.normal(scale=0.5, size=n)
+
+        xmin = m1.min()
+        xmax = m1.max()
+        ymin = m2.min()
+        ymax = m2.max()
+
+        X, Y = np.mgrid[xmin:xmax:200j, ymin:ymax:200j]
+        self.positions = np.vstack([X.ravel(), Y.ravel()])
+        values = np.vstack([m1, m2])
+        self.kernel = stats.gaussian_kde(values)
+
+    def time_gaussian_kde_evaluate_few_points(self):
+        # test gaussian_kde evaluate on a small number of points
+        self.kernel(self.positions[:, :10])
+
+    def time_gaussian_kde_evaluate_many_points(self):
+        # test gaussian_kde evaluate on many points
+        self.kernel(self.positions)
+
+
+class GroupSampling(Benchmark):
+    param_names = ['dim']
+    params = [[3, 10, 50, 200]]
+
+    def setup(self, dim):
+        np.random.seed(12345678)
+
+    def time_unitary_group(self, dim):
+        stats.unitary_group.rvs(dim)
+
+    def time_ortho_group(self, dim):
+        stats.ortho_group.rvs(dim)
+
+    def time_special_ortho_group(self, dim):
+        stats.special_ortho_group.rvs(dim)
+
+
+class BinnedStatistic(Benchmark):
+
+    def setup(self):
+        np.random.seed(12345678)
+        self.inp = np.random.rand(9999).reshape(3, 3333) * 200
+        self.subbin_x_edges = np.arange(0, 200, dtype=np.float32)
+        self.subbin_y_edges = np.arange(0, 200, dtype=np.float64)
+        self.ret = stats.binned_statistic_dd(
+            [self.inp[0], self.inp[1]], self.inp[2], statistic="std",
+            bins=[self.subbin_x_edges, self.subbin_y_edges])
+
+    def time_binned_statistic_dd_std(self):
+        stats.binned_statistic_dd(
+            [self.inp[0], self.inp[1]], self.inp[2], statistic="std",
+            bins=[self.subbin_x_edges, self.subbin_y_edges])
+
+    def time_binned_statistic_dd_std_reuse_bin(self):
+        stats.binned_statistic_dd(
+            [self.inp[0], self.inp[1]], self.inp[2], statistic="std",
+            binned_statistic_result=self.ret)
