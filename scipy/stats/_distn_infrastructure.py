@@ -2399,7 +2399,7 @@ class rv_continuous(rv_generic):
         elif b < np.inf:
             return (data_b - b) + margin, 1
         else:
-            raise RuntimeError
+            raise RuntimeError("The data contains non-finite values.")
 
     def fit_loc_scale(self, data, *args):
         """
