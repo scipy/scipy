@@ -1130,6 +1130,7 @@ Pull requests for 1.5.0
 * `#12229 <https://github.com/scipy/scipy/pull/12229>`__: MAINT: tools/gh_lists.py: fix http header case sensitivity issue
 * `#12236 <https://github.com/scipy/scipy/pull/12236>`__: DOC: Fix a couple grammatical mistakes in 1.5.0-notes.rst.
 * `#12276 <https://github.com/scipy/scipy/pull/12276>`__: TST: skip `test_heequb`, it fails intermittently.
+* `#12285 <https://github.com/scipy/scipy/pull/12285>`__: CI: split travis arm64 run into two
 * `#12317 <https://github.com/scipy/scipy/pull/12317>`__: BUG: prevent error accumulation in `Rotation` multiplication
 * `#12318 <https://github.com/scipy/scipy/pull/12318>`__: BUG: sparse: avoid np.prod overflow in check_shape
 * `#12319 <https://github.com/scipy/scipy/pull/12319>`__: BUG: Make cobyla threadsafe
