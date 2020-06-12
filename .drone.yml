@@ -1,0 +1,29 @@
+---
+kind: pipeline
+name: test-on-amd64
+
+platform:
+  arch: amd64
+
+steps:
+- name: test
+  image: python:3.8
+  commands:
+  - |
+    apt-get update
+    apt-get install -y libatlas-base-dev liblapack-dev gfortran libgmp-dev libmpfr-dev libsuitesparse-dev swig libmpc-dev
+
+
+#---
+#kind: pipeline
+#name: test-on-arm64
+#
+#platform:
+#  arch: arm64
+#
+#steps:
+#- name: test
+#  image: image: python:3.7
+#  commands:
+#  - pip install -r requirements.txt
+#  - pytest
