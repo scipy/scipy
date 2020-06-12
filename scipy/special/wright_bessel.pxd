@@ -331,6 +331,7 @@ cdef inline double _P(double eps, double a, double b, double x,
         * cos(eps * sin(phi) - x_eps_a * sin(a*phi) + (1-b)*phi)
 
 
+# Note: Hardest argument range is large z, large b and small epsilon.
 @cython.cdivision(True)
 cdef inline double wright_bessel_integral(double a, double b, double x) nogil:
     cdef:
@@ -454,7 +455,6 @@ cdef inline double wright_bessel_integral(double a, double b, double x) nogil:
     return 1./M_PI * (res1 + res2)
 
 
-# Note: Hardest argument range is large z, large b and small epsilon
 @cython.cdivision(True)
 cdef inline double wright_bessel_scalar(double a, double b, double x) nogil:
     cdef:
