@@ -1580,7 +1580,7 @@ cdef class Rotation(object):
         quat[:, -1] *= -1
         if self._single:
             quat = quat[0]
-        return self.__class__(quat, normalize=False, copy=False)
+        return self.__class__(quat, copy=False)
 
     @cython.boundscheck(False)
     @cython.wraparound(False)
