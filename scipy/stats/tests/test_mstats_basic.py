@@ -880,7 +880,7 @@ class TestKruskal():
         check_named_results(res, attributes, ma=True)
 
 
-#TODO: for all ttest functions, add tests with masked array inputs
+# TODO: for all ttest functions, add tests with masked array inputs
 class TestTtest_rel():
     def test_vs_nonmasked(self):
         np.random.seed(1234567)
@@ -1354,12 +1354,7 @@ class TestCompareWithStats(object):
                 x, y, xm, ym = self.generate_xy_sample(n)
                 r = stats.skewtest(x)
                 rm = stats.mstats.skewtest(xm)
-                assert_allclose(r[0], rm[0], rtol=1e-15)
-                # TODO this test is not performed as it is a known issue that
-                # mstats returns a slightly different p-value what is a bit
-                # strange is that other tests like test_maskedarray_input don't
-                # fail!
-                #~ assert_almost_equal(r[1], rm[1])
+                assert_allclose(r, rm)
 
     def test_skewtest_result_attributes(self):
         x = np.array((-2, -1, 0, 1, 2, 3)*4)**2
