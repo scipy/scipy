@@ -75,7 +75,7 @@ def _geneig(a1, b1, left, right, overwrite_a, overwrite_b,
     ggev, = get_lapack_funcs(('ggev',), (a1, b1))
     cvl, cvr = left, right
     res = ggev(a1, b1, lwork=-1)
-    lwork = res[-2][0].real.astype(numpy.int)
+    lwork = res[-2][0].real.astype(numpy.int_)
     if ggev.typecode in 'cz':
         alpha, beta, vl, vr, work, info = ggev(a1, b1, cvl, cvr, lwork,
                                                overwrite_a, overwrite_b)

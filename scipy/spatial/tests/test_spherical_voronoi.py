@@ -290,7 +290,7 @@ class TestSphericalVoronoi(object):
 
         # generate points of the hypercube
         expected = np.vstack(list(itertools.product([-1, 1], repeat=dim)))
-        expected = expected.astype(np.float) / np.sqrt(dim)
+        expected = expected.astype(np.float64) / np.sqrt(dim)
 
         # test that Voronoi vertices are correctly placed
         dist = distance.cdist(sv.vertices, expected)
@@ -304,7 +304,7 @@ class TestSphericalVoronoi(object):
 
         # generate points of the hypercube
         points = np.vstack(list(itertools.product([-1, 1], repeat=dim)))
-        points = points.astype(np.float) / np.sqrt(dim)
+        points = points.astype(np.float64) / np.sqrt(dim)
         sv = SphericalVoronoi(points)
 
         # generate points of the cross-polytope
