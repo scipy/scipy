@@ -854,9 +854,9 @@ def test_getitem():
     ])
     r = Rotation.from_matrix(mat)
 
-    assert_allclose(r[0].as_matrix(), mat[0])
-    assert_allclose(r[1].as_matrix(), mat[1])
-    assert_allclose(r[:-1].as_matrix(), np.expand_dims(mat[0], axis=0))
+    assert_allclose(r[0].as_matrix(), mat[0], atol=1e-15)
+    assert_allclose(r[1].as_matrix(), mat[1], atol=1e-15)
+    assert_allclose(r[:-1].as_matrix(), np.expand_dims(mat[0], axis=0), atol=1e-15)
 
 
 def test_n_rotations():
