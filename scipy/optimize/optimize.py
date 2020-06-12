@@ -3217,9 +3217,8 @@ def show_options(solver=None, method=None, disp=True):
     - :ref:`simplex           <optimize.linprog-simplex>`
     - :ref:`interior-point    <optimize.linprog-interior-point>`
     - :ref:`revised simplex   <optimize.linprog-revised_simplex>`
-    - :ref:`highs             <optimize.linprog-highs>`
-    - :ref:`highs-simplex     <optimize.linprog-highs-simplex>`
-    - :ref:`highs-ipm         <optimize.linprog-highs-ipm>`
+    - :ref:`highs-ipm         <optimize.linprog-interior-point>`
+    - :ref:`highs-simplex     <optimize.linprog-interior-point>`
 
     """
     import textwrap
@@ -3266,7 +3265,6 @@ def show_options(solver=None, method=None, disp=True):
             ('revised simplex', 'scipy.optimize._linprog._linprog_rs'),
             ('highs-ipm', 'scipy.optimize._linprog._linprog_highs'),
             ('highs-simplex', 'scipy.optimize._linprog._linprog_highs'),
-            ('highs', 'scipy.optimize._linprog._linprog_highs'),
         ),
         'minimize_scalar': (
             ('brent', 'scipy.optimize.optimize._minimize_scalar_brent'),
