@@ -265,6 +265,7 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
                 A string descriptor of the algorithm status.
 
         Callback functions are not currently supported by the HiGHS methods.
+        
     options : dict, optional
         A dictionary of solver options. All methods accept the following
         options:
