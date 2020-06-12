@@ -37,7 +37,7 @@ jobs:
            curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py && \
            python3.6 get-pip.py && \
            pip3 --version && \
-           pip3 install setuptools wheel numpy cython==0.29.14 pybind11 pytest pytest-timeout pytest-xdist pytest-env pytest-cov Pillow mpmath matplotlib==3.1.3 --user && \
+           pip3 install setuptools wheel numpy==1.14.5 cython==0.29.18 pybind11 pytest pytest-timeout pytest-xdist pytest-env pytest-cov Pillow mpmath matplotlib==3.1.3 --user && \
            apt-get -y install gfortran-5 wget && \
            cd .. && \
            mkdir openblas && cd openblas && \
@@ -67,7 +67,7 @@ jobs:
   variables:
     # OPENBLAS64_ variable has same value
     # but only needed for ILP64 build below
-    OPENBLAS: '$(Agent.BuildDirectory)\openblaslib'
+    OPENBLAS: '$(Agent.HomeDirectory)\openblaslib'
   strategy:
     maxParallel: 4
     matrix:
@@ -126,7 +126,7 @@ jobs:
       choco install -y mingw --forcex86 --force --version=6.4.0
     displayName: 'Install 32-bit mingw for 32-bit builds'
     condition: and(succeeded(), eq(variables['BITS'], 32))
-  - script: python -m pip install numpy cython==0.29.14 pybind11 pytest pytest-timeout pytest-xdist pytest-env pytest-cov Pillow mpmath
+  - script: python -m pip install numpy cython==0.29.18 pybind11 pytest pytest-timeout pytest-xdist pytest-env pytest-cov Pillow mpmath
     displayName: 'Install dependencies'
   - powershell: |
       python -m pip install matplotlib

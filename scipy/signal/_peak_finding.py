@@ -1034,9 +1034,8 @@ def _identify_ridge_lines(matr, max_distances, gap_thresh):
 
     References
     ----------
-    Bioinformatics (2006) 22 (17): 2059-2065.
-    :doi:`10.1093/bioinformatics/btl355`
-    http://bioinformatics.oxfordjournals.org/content/22/17/2059.long
+    .. [1] Bioinformatics (2006) 22 (17): 2059-2065.
+       :doi:`10.1093/bioinformatics/btl355`
 
     Examples
     --------
@@ -1154,8 +1153,8 @@ def _filter_ridge_lines(cwt, ridge_lines, window_size=None, min_length=None,
 
     References
     ----------
-    Bioinformatics (2006) 22 (17): 2059-2065. :doi:`10.1093/bioinformatics/btl355`
-    http://bioinformatics.oxfordjournals.org/content/22/17/2059.long
+    .. [1] Bioinformatics (2006) 22 (17): 2059-2065.
+       :doi:`10.1093/bioinformatics/btl355`
 
     """
     num_points = cwt.shape[1]
@@ -1268,8 +1267,7 @@ def find_peaks_cwt(vector, widths, wavelet=None, max_distances=None,
     References
     ----------
     .. [1] Bioinformatics (2006) 22 (17): 2059-2065.
-        :doi:`10.1093/bioinformatics/btl355`
-        http://bioinformatics.oxfordjournals.org/content/22/17/2059.long
+       :doi:`10.1093/bioinformatics/btl355`
 
     Examples
     --------
@@ -1290,7 +1288,7 @@ def find_peaks_cwt(vector, widths, wavelet=None, max_distances=None,
     if wavelet is None:
         wavelet = ricker
 
-    cwt_dat = cwt(vector, wavelet, widths)
+    cwt_dat = cwt(vector, wavelet, widths, window_size=window_size)
     ridge_lines = _identify_ridge_lines(cwt_dat, max_distances, gap_thresh)
     filtered = _filter_ridge_lines(cwt_dat, ridge_lines, min_length=min_length,
                                    window_size=window_size, min_snr=min_snr,

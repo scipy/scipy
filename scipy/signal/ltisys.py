@@ -1400,7 +1400,8 @@ class StateSpace(LinearTimeInvariant):
         return StateSpace(np.asarray(a, dtype=common_dtype),
                           np.asarray(b, dtype=common_dtype),
                           np.asarray(c, dtype=common_dtype),
-                          np.asarray(d, dtype=common_dtype))
+                          np.asarray(d, dtype=common_dtype),
+                          **self._dt_dict)
 
     def __rmul__(self, other):
         """Pre-multiply a scalar or matrix (but not StateSpace)"""
@@ -1417,11 +1418,12 @@ class StateSpace(LinearTimeInvariant):
         return StateSpace(np.asarray(a, dtype=common_dtype),
                           np.asarray(b, dtype=common_dtype),
                           np.asarray(c, dtype=common_dtype),
-                          np.asarray(d, dtype=common_dtype))
+                          np.asarray(d, dtype=common_dtype),
+                          **self._dt_dict)
 
     def __neg__(self):
         """Negate the system (equivalent to pre-multiplying by -1)."""
-        return StateSpace(self.A, self.B, -self.C, -self.D)
+        return StateSpace(self.A, self.B, -self.C, -self.D, **self._dt_dict)
 
     def __add__(self, other):
         """
@@ -1463,13 +1465,16 @@ class StateSpace(LinearTimeInvariant):
                 c = self.C
                 d = self.D + other
             else:
-                raise ValueError("Cannot add systems with incompatible dimensions")
+                raise ValueError("Cannot add systems with incompatible "
+                                 "dimensions ({} and {})"
+                                 .format(self.D.shape, other.shape))
 
         common_dtype = np.find_common_type((a.dtype, b.dtype, c.dtype, d.dtype), ())
         return StateSpace(np.asarray(a, dtype=common_dtype),
                           np.asarray(b, dtype=common_dtype),
                           np.asarray(c, dtype=common_dtype),
-                          np.asarray(d, dtype=common_dtype))
+                          np.asarray(d, dtype=common_dtype),
+                          **self._dt_dict)
 
     def __sub__(self, other):
         if not self._check_binop_other(other):
@@ -1920,7 +1925,7 @@ def _cast_to_array_dtype(in1, in2):
 
     Those can be raised when casting complex to real.
     """
-    if numpy.issubdtype(in2.dtype, numpy.float):
+    if numpy.issubdtype(in2.dtype, numpy.float64):
         # dtype to cast to is not complex, so use .real
         in1 = in1.real.astype(in2.dtype)
     else:

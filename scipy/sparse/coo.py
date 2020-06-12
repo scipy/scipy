@@ -567,7 +567,8 @@ class coo_matrix(_data_matrix, _minmax_mixin):
 
     def _add_dense(self, other):
         if other.shape != self.shape:
-            raise ValueError('Incompatible shapes.')
+            raise ValueError('Incompatible shapes ({} and {})'
+                             .format(self.shape, other.shape))
         dtype = upcast_char(self.dtype.char, other.dtype.char)
         result = np.array(other, dtype=dtype, copy=True)
         fortran = int(result.flags.f_contiguous)

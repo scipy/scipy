@@ -84,7 +84,7 @@ Variability
     zscore
     gstd
     iqr
-    median_absolute_deviation
+    median_abs_deviation
 
 Trimming Functions
 ------------------
@@ -120,6 +120,8 @@ Inferential Stats
    ttest_rel
    chisquare
    power_divergence
+   kstest
+   ks_1samp
    ks_2samp
    epps_singleton_2samp
    mannwhitneyu
@@ -177,7 +179,6 @@ import scipy.special as special
 from scipy import linalg
 from . import distributions
 from . import mstats_basic
-from .mstats_basic import _contains_nan
 from ._stats_mstats_common import (_find_repeats, linregress, theilslopes,
                                    siegelslopes)
 from ._stats import (_kendall_dis, _toint64, _weightedrankedtau,
@@ -193,19 +194,51 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
            'scoreatpercentile', 'percentileofscore',
            'cumfreq', 'relfreq', 'obrientransform',
            'sem', 'zmap', 'zscore', 'iqr', 'gstd', 'median_absolute_deviation',
+           'median_abs_deviation',
            'sigmaclip', 'trimboth', 'trim1', 'trim_mean',
            'f_oneway', 'F_onewayConstantInputWarning',
+           'F_onewayBadInputSizesWarning',
            'PearsonRConstantInputWarning', 'PearsonRNearConstantInputWarning',
            'pearsonr', 'fisher_exact', 'SpearmanRConstantInputWarning',
            'spearmanr', 'pointbiserialr',
            'kendalltau', 'weightedtau', 'multiscale_graphcorr',
            'linregress', 'siegelslopes', 'theilslopes', 'ttest_1samp',
-           'ttest_ind', 'ttest_ind_from_stats', 'ttest_rel', 'kstest',
-           'chisquare', 'power_divergence', 'ks_2samp', 'mannwhitneyu',
+           'ttest_ind', 'ttest_ind_from_stats', 'ttest_rel',
+           'kstest', 'ks_1samp', 'ks_2samp',
+           'chisquare', 'power_divergence', 'mannwhitneyu',
            'tiecorrect', 'ranksums', 'kruskal', 'friedmanchisquare',
            'rankdata', 'rvs_ratio_uniforms',
            'combine_pvalues', 'wasserstein_distance', 'energy_distance',
            'brunnermunzel', 'epps_singleton_2samp']
+
+
+def _contains_nan(a, nan_policy='propagate'):
+    policies = ['propagate', 'raise', 'omit']
+    if nan_policy not in policies:
+        raise ValueError("nan_policy must be one of {%s}" %
+                         ', '.join("'%s'" % s for s in policies))
+    try:
+        # Calling np.sum to avoid creating a huge array into memory
+        # e.g. np.isnan(a).any()
+        with np.errstate(invalid='ignore'):
+            contains_nan = np.isnan(np.sum(a))
+    except TypeError:
+        # This can happen when attempting to sum things which are not
+        # numbers (e.g. as in the function `mode`). Try an alternative method:
+        try:
+            contains_nan = np.nan in set(a.ravel())
+        except TypeError:
+            # Don't know what to do. Fall back to omitting nan values and
+            # issue a warning.
+            contains_nan = False
+            nan_policy = 'omit'
+            warnings.warn("The input array could not be properly checked for nan "
+                          "values. nan values will be ignored.", RuntimeWarning)
+
+    if contains_nan and nan_policy == 'raise':
+        raise ValueError("The input contains nan values")
+
+    return contains_nan, nan_policy
 
 
 def _chk_asarray(a, axis):
@@ -238,6 +271,79 @@ def _chk2_asarray(a, b, axis):
         b = np.atleast_1d(b)
 
     return a, b, outaxis
+
+
+def _shape_with_dropped_axis(a, axis):
+    """
+    Given an array `a` and an integer `axis`, return the shape
+    of `a` with the `axis` dimension removed.
+
+    Examples
+    --------
+    >>> a = np.zeros((3, 5, 2))
+    >>> _shape_with_dropped_axis(a, 1)
+    (3, 2)
+    """
+    shp = list(a.shape)
+    try:
+        del shp[axis]
+    except IndexError:
+        raise np.AxisError(axis, a.ndim) from None
+    return tuple(shp)
+
+
+def _broadcast_shapes(shape1, shape2):
+    """
+    Given two shapes (i.e. tuples of integers), return the shape
+    that would result from broadcasting two arrays with the given
+    shapes.
+
+    Examples
+    --------
+    >>> _broadcast_shapes((2, 1), (4, 1, 3))
+    (4, 2, 3)
+    """
+    d = len(shape1) - len(shape2)
+    if d <= 0:
+        shp1 = (1,)*(-d) + shape1
+        shp2 = shape2
+    elif d > 0:
+        shp1 = shape1
+        shp2 = (1,)*d + shape2
+    shape = []
+    for n1, n2 in zip(shp1, shp2):
+        if n1 == 1:
+            n = n2
+        elif n2 == 1 or n1 == n2:
+            n = n1
+        else:
+            raise ValueError(f'shapes {shape1} and {shape2} could not be '
+                             'broadcast together')
+        shape.append(n)
+    return tuple(shape)
+
+
+def _broadcast_shapes_with_dropped_axis(a, b, axis):
+    """
+    Given two arrays `a` and `b` and an integer `axis`, find the
+    shape of the broadcast result after dropping `axis` from the
+    shapes of `a` and `b`.
+
+    Examples
+    --------
+    >>> a = np.zeros((5, 2, 1))
+    >>> b = np.zeros((1, 9, 3))
+    >>> _broadcast_shapes_with_dropped_axis(a, b, 1)
+    (5, 3)
+    """
+    shp1 = _shape_with_dropped_axis(a, axis)
+    shp2 = _shape_with_dropped_axis(b, axis)
+    try:
+        shp = _broadcast_shapes(shp1, shp2)
+    except ValueError:
+        raise ValueError(f'non-axis shapes {shp1} and {shp2} could not be '
+                         'broadcast together') from None
+    return shp
 
 
 def gmean(a, axis=0, dtype=None):
@@ -461,7 +567,7 @@ def mode(a, axis=0, nan_policy='propagate'):
 
     inds = np.ndindex(a_view.shape[:-1])
     modes = np.empty(a_view.shape[:-1], dtype=a.dtype)
-    counts = np.zeros(a_view.shape[:-1], dtype=np.int)
+    counts = np.zeros(a_view.shape[:-1], dtype=np.int_)
     for ind in inds:
         modes[ind], counts[ind] = _mode1D(a_view[ind])
     newshape = list(a.shape)
@@ -1600,6 +1706,9 @@ def normaltest(a, axis=0, nan_policy='propagate'):
     return NormaltestResult(k2, distributions.chi2.sf(k2, 2))
 
 
+Jarque_beraResult = namedtuple('Jarque_beraResult', ('statistic', 'pvalue'))
+
+
 def jarque_bera(x):
     """
     Perform the Jarque-Bera goodness of fit test on sample data.
@@ -1634,11 +1743,13 @@ def jarque_bera(x):
     >>> from scipy import stats
     >>> np.random.seed(987654321)
     >>> x = np.random.normal(0, 1, 100000)
-    >>> y = np.random.rayleigh(1, 100000)
-    >>> stats.jarque_bera(x)
-    (4.7165707989581342, 0.09458225503041906)
-    >>> stats.jarque_bera(y)
-    (6713.7098548143422, 0.0)
+    >>> jarque_bera_test = stats.jarque_bera(x)
+    >>> jarque_bera_test
+    Jarque_beraResult(statistic=4.716570798957913, pvalue=0.0945822550304295)
+    >>> jarque_bera_test.statistic
+    4.716570798957913
+    >>> jarque_bera_test.pvalue
+    0.0945822550304295
 
     """
     x = np.asarray(x)
@@ -1653,51 +1764,52 @@ def jarque_bera(x):
     jb_value = n / 6 * (skewness**2 + (kurtosis - 3)**2 / 4)
     p = 1 - distributions.chi2.cdf(jb_value, 2)
 
-    return jb_value, p
+    return Jarque_beraResult(jb_value, p)
 
 
 #####################################
 #        FREQUENCY FUNCTIONS        #
 #####################################
 
-@np.deprecate(message="`itemfreq` is deprecated and will be removed in a "
-              "future version. Use instead `np.unique(..., return_counts=True)`")
+# deindent to work around numpy/gh-16202
+@np.deprecate(
+    message="`itemfreq` is deprecated and will be removed in a "
+            "future version. Use instead `np.unique(..., return_counts=True)`")
 def itemfreq(a):
     """
-    Return a 2-D array of item frequencies.
+Return a 2-D array of item frequencies.
 
-    Parameters
-    ----------
-    a : (N,) array_like
-        Input array.
+Parameters
+----------
+a : (N,) array_like
+    Input array.
 
-    Returns
-    -------
-    itemfreq : (K, 2) ndarray
-        A 2-D frequency table.  Column 1 contains sorted, unique values from
-        `a`, column 2 contains their respective counts.
+Returns
+-------
+itemfreq : (K, 2) ndarray
+    A 2-D frequency table.  Column 1 contains sorted, unique values from
+    `a`, column 2 contains their respective counts.
 
-    Examples
-    --------
-    >>> from scipy import stats
-    >>> a = np.array([1, 1, 5, 0, 1, 2, 2, 0, 1, 4])
-    >>> stats.itemfreq(a)
-    array([[ 0.,  2.],
-           [ 1.,  4.],
-           [ 2.,  2.],
-           [ 4.,  1.],
-           [ 5.,  1.]])
-    >>> np.bincount(a)
-    array([2, 4, 2, 0, 1, 1])
+Examples
+--------
+>>> from scipy import stats
+>>> a = np.array([1, 1, 5, 0, 1, 2, 2, 0, 1, 4])
+>>> stats.itemfreq(a)
+array([[ 0.,  2.],
+       [ 1.,  4.],
+       [ 2.,  2.],
+       [ 4.,  1.],
+       [ 5.,  1.]])
+>>> np.bincount(a)
+array([2, 4, 2, 0, 1, 1])
 
-    >>> stats.itemfreq(a/10.)
-    array([[ 0. ,  2. ],
-           [ 0.1,  4. ],
-           [ 0.2,  2. ],
-           [ 0.4,  1. ],
-           [ 0.5,  1. ]])
-
-    """
+>>> stats.itemfreq(a/10.)
+array([[ 0. ,  2. ],
+       [ 0.1,  4. ],
+       [ 0.2,  2. ],
+       [ 0.4,  1. ],
+       [ 0.5,  1. ]])
+"""
     items, inv = np.unique(a, return_inverse=True)
     freq = np.bincount(inv)
     return np.array([items, freq]).T
@@ -2571,7 +2683,7 @@ _scale_conversions = {'raw': 1.0,
                       'normal': special.erfinv(0.5) * 2.0 * math.sqrt(2.0)}
 
 
-def iqr(x, axis=None, rng=(25, 75), scale='raw', nan_policy='propagate',
+def iqr(x, axis=None, rng=(25, 75), scale=1.0, nan_policy='propagate',
         interpolation='linear', keepdims=False):
     r"""
     Compute the interquartile range of the data along the specified axis.
@@ -2604,10 +2716,13 @@ def iqr(x, axis=None, rng=(25, 75), scale='raw', nan_policy='propagate',
         The numerical value of scale will be divided out of the final
         result. The following string values are recognized:
 
-          'raw' : No scaling, just return the raw IQR.
-          'normal' : Scale by :math:`2 \sqrt{2} erf^{-1}(\frac{1}{2}) \approx 1.349`.
+          * 'raw' : No scaling, just return the raw IQR.
+            **Deprecated!**  Use `scale=1` instead.
+          * 'normal' : Scale by
+            :math:`2 \sqrt{2} erf^{-1}(\frac{1}{2}) \approx 1.349`.
 
-        The default is 'raw'. Array-like scale is also allowed, as long
+        The default is 1.0. The use of scale='raw' is deprecated.
+        Array-like scale is also allowed, as long
         as it broadcasts correctly to the output such that
         ``out / scale`` is a valid operation. The output dimensions
         depend on the input array, `x`, the `axis` argument, and the
@@ -2706,6 +2821,11 @@ def iqr(x, axis=None, rng=(25, 75), scale='raw', nan_policy='propagate',
         scale_key = scale.lower()
         if scale_key not in _scale_conversions:
             raise ValueError("{0} not a valid scale for `iqr`".format(scale))
+        if scale_key == 'raw':
+            warnings.warn(
+                "use of scale='raw' is deprecated, use scale=1.0 instead",
+                np.VisibleDeprecationWarning
+                )
         scale = _scale_conversions[scale_key]
 
     # Select the percentile function to use based on nans and policy
@@ -2733,9 +2853,31 @@ def iqr(x, axis=None, rng=(25, 75), scale='raw', nan_policy='propagate',
     return out
 
 
-def median_absolute_deviation(x, axis=0, center=np.median, scale=1.4826,
-                              nan_policy='propagate'):
-    """
+def _mad_1d(x, center, nan_policy):
+    # Median absolute deviation for 1-d array x.
+    # This is a helper function for `median_abs_deviation`; it assumes its
+    # arguments have been validated already.  In particular,  x must be a
+    # 1-d numpy array, center must be callable, and if nan_policy is not
+    # 'propagate', it is assumed to be 'omit', because 'raise' is handled
+    # in `median_abs_deviation`.
+    # No warning is generated if x is empty or all nan.
+    isnan = np.isnan(x)
+    if isnan.any():
+        if nan_policy == 'propagate':
+            return np.nan
+        x = x[~isnan]
+    if x.size == 0:
+        # MAD of an empty array is nan.
+        return np.nan
+    # Edge cases have been handled, so do the basic MAD calculation.
+    med = center(x)
+    mad = np.median(np.abs(x - med))
+    return mad
+
+
+def median_abs_deviation(x, axis=0, center=np.median, scale=1.0,
+                         nan_policy='propagate'):
+    r"""
     Compute the median absolute deviation of the data along the given axis.
 
     The median absolute deviation (MAD, [1]_) computes the median over the
@@ -2744,7 +2886,7 @@ def median_absolute_deviation(x, axis=0, center=np.median, scale=1.4826,
 
     The MAD of an empty array is ``np.nan``.
 
-    .. versionadded:: 1.3.0
+    .. versionadded:: 1.5.0
 
     Parameters
     ----------
@@ -2755,19 +2897,24 @@ def median_absolute_deviation(x, axis=0, center=np.median, scale=1.4826,
         the MAD over the entire array.
     center : callable, optional
         A function that will return the central value. The default is to use
-        np.median. Any user defined function used will need to have the function
-        signature ``func(arr, axis)``.
-    scale : int, optional
-        The scaling factor applied to the MAD. The default scale (1.4826)
-        ensures consistency with the standard deviation for normally distributed
-        data.
+        np.median. Any user defined function used will need to have the
+        function signature ``func(arr, axis)``.
+    scale : scalar or str, optional
+        The numerical value of scale will be divided out of the final
+        result. The default is 1.0. The string "normal" is also accepted,
+        and results in `scale` being the inverse of the standard normal
+        quantile function at 0.75, which is approximately 0.67449.
+        Array-like scale is also allowed, as long as it broadcasts correctly
+        to the output such that ``out / scale`` is a valid operation. The
+        output dimensions depend on the input array, `x`, and the `axis`
+        argument.
     nan_policy : {'propagate', 'raise', 'omit'}, optional
         Defines how to handle when input contains nan.
         The following options are available (default is 'propagate'):
 
-          * 'propagate': returns nan
-          * 'raise': throws an error
-          * 'omit': performs the calculations ignoring nan values
+        * 'propagate': returns nan
+        * 'raise': throws an error
+        * 'omit': performs the calculations ignoring nan values
 
     Returns
     -------
@@ -2789,14 +2936,19 @@ def median_absolute_deviation(x, axis=0, center=np.median, scale=1.4826,
     will calculate the MAD around the mean - it will not calculate the *mean*
     absolute deviation.
 
+    The input array may contain `inf`, but if `center` returns `inf`, the
+    corresponding MAD for that data will be `nan`.
+
     References
     ----------
-    .. [1] "Median absolute deviation" https://en.wikipedia.org/wiki/Median_absolute_deviation
-    .. [2] "Robust measures of scale" https://en.wikipedia.org/wiki/Robust_measures_of_scale
+    .. [1] "Median absolute deviation",
+           https://en.wikipedia.org/wiki/Median_absolute_deviation
+    .. [2] "Robust measures of scale",
+           https://en.wikipedia.org/wiki/Robust_measures_of_scale
 
     Examples
     --------
-    When comparing the behavior of `median_absolute_deviation` with ``np.std``,
+    When comparing the behavior of `median_abs_deviation` with ``np.std``,
     the latter is affected when we change a single value of an array to have an
     outlier value while the MAD hardly changes:
 
@@ -2804,13 +2956,13 @@ def median_absolute_deviation(x, axis=0, center=np.median, scale=1.4826,
     >>> x = stats.norm.rvs(size=100, scale=1, random_state=123456)
     >>> x.std()
     0.9973906394005013
-    >>> stats.median_absolute_deviation(x)
-    1.2280762773108278
+    >>> stats.median_abs_deviation(x)
+    0.82832610097857
     >>> x[0] = 345.6
     >>> x.std()
     34.42304872314415
-    >>> stats.median_absolute_deviation(x)
-    1.2340335571164334
+    >>> stats.median_abs_deviation(x)
+    0.8323442311590675
 
     Axis handling example:
 
@@ -2818,47 +2970,188 @@ def median_absolute_deviation(x, axis=0, center=np.median, scale=1.4826,
     >>> x
     array([[10,  7,  4],
            [ 3,  2,  1]])
-    >>> stats.median_absolute_deviation(x)
-    array([5.1891, 3.7065, 2.2239])
-    >>> stats.median_absolute_deviation(x, axis=None)
-    2.9652
+    >>> stats.median_abs_deviation(x)
+    array([3.5, 2.5, 1.5])
+    >>> stats.median_abs_deviation(x, axis=None)
+    2.0
+
+    Scale normal example:
+
+    >>> x = stats.norm.rvs(size=1000000, scale=2, random_state=123456)
+    >>> stats.median_abs_deviation(x)
+    1.3487398527041636
+    >>> stats.median_abs_deviation(x, scale='normal')
+    1.9996446978061115
 
     """
+    if not callable(center):
+        raise TypeError("The argument 'center' must be callable. The given "
+                        f"value {repr(center)} is not callable.")
+
+    # An error may be raised here, so fail-fast, before doing lengthy
+    # computations, even though `scale` is not used until later
+    if isinstance(scale, str):
+        if scale.lower() == 'normal':
+            scale = 0.6744897501960817  # special.ndtri(0.75)
+        else:
+            raise ValueError(f"{scale} is not a valid scale value.")
+
     x = asarray(x)
 
     # Consistent with `np.var` and `np.std`.
     if not x.size:
-        nan_shape = [item for i, item in enumerate(x.shape) if i != axis]
-        nan_array = np.full(nan_shape, np.nan)
-        if not nan_array.size:
+        if axis is None:
             return np.nan
-        else:
-            return nan_array
+        nan_shape = tuple(item for i, item in enumerate(x.shape) if i != axis)
+        if nan_shape == ():
+            # Return nan, not array(nan)
+            return np.nan
+        return np.full(nan_shape, np.nan)
 
     contains_nan, nan_policy = _contains_nan(x, nan_policy)
 
-    if contains_nan and nan_policy == 'propagate':
-        return np.nan
-
-    if contains_nan and nan_policy == 'omit':
-        # Way faster than carrying the masks around
-        arr = ma.masked_invalid(x).compressed()
+    if contains_nan:
+        if axis is None:
+            mad = _mad_1d(x.ravel(), center, nan_policy)
+        else:
+            mad = np.apply_along_axis(_mad_1d, axis, x, center, nan_policy)
     else:
-        arr = x
+        if axis is None:
+            med = center(x, axis=None)
+            mad = np.median(np.abs(x - med))
+        else:
+            # Wrap the call to center() in expand_dims() so it acts like
+            # keepdims=True was used.
+            med = np.expand_dims(center(x, axis=axis), axis)
+            mad = np.median(np.abs(x - med), axis=axis)
 
-    if axis is None:
-        med = center(arr)
-        mad = np.median(np.abs(arr - med))
-    else:
-        med = np.apply_over_axes(center, arr, axis)
-        mad = np.median(np.abs(arr - med), axis=axis)
+    return mad / scale
 
-    return scale * mad
 
+# Keep the top newline so that the message does not show up on the stats page
+_median_absolute_deviation_deprec_msg = """
+To preserve the existing default behavior, use
+`scipy.stats.median_abs_deviation(..., scale=1/1.4826)`.
+The value 1.4826 is not numerically precise for scaling
+with a normal distribution. For a numerically precise value, use
+`scipy.stats.median_abs_deviation(..., scale='normal')`.
+"""
+
+
+# Due to numpy/gh-16349 we need to unindent the entire docstring
+@np.deprecate(old_name='median_absolute_deviation',
+              new_name='median_abs_deviation',
+              message=_median_absolute_deviation_deprec_msg)
+def median_absolute_deviation(x, axis=0, center=np.median, scale=1.4826,
+                              nan_policy='propagate'):
+    r"""
+Compute the median absolute deviation of the data along the given axis.
+
+The median absolute deviation (MAD, [1]_) computes the median over the
+absolute deviations from the median. It is a measure of dispersion
+similar to the standard deviation but more robust to outliers [2]_.
+
+The MAD of an empty array is ``np.nan``.
+
+.. versionadded:: 1.3.0
+
+Parameters
+----------
+x : array_like
+    Input array or object that can be converted to an array.
+axis : int or None, optional
+    Axis along which the range is computed. Default is 0. If None, compute
+    the MAD over the entire array.
+center : callable, optional
+    A function that will return the central value. The default is to use
+    np.median. Any user defined function used will need to have the function
+    signature ``func(arr, axis)``.
+scale : int, optional
+    The scaling factor applied to the MAD. The default scale (1.4826)
+    ensures consistency with the standard deviation for normally distributed
+    data.
+nan_policy : {'propagate', 'raise', 'omit'}, optional
+    Defines how to handle when input contains nan.
+    The following options are available (default is 'propagate'):
+
+    * 'propagate': returns nan
+    * 'raise': throws an error
+    * 'omit': performs the calculations ignoring nan values
+
+Returns
+-------
+mad : scalar or ndarray
+    If ``axis=None``, a scalar is returned. If the input contains
+    integers or floats of smaller precision than ``np.float64``, then the
+    output data-type is ``np.float64``. Otherwise, the output data-type is
+    the same as that of the input.
+
+See Also
+--------
+numpy.std, numpy.var, numpy.median, scipy.stats.iqr, scipy.stats.tmean,
+scipy.stats.tstd, scipy.stats.tvar
+
+Notes
+-----
+The `center` argument only affects the calculation of the central value
+around which the MAD is calculated. That is, passing in ``center=np.mean``
+will calculate the MAD around the mean - it will not calculate the *mean*
+absolute deviation.
+
+References
+----------
+.. [1] "Median absolute deviation",
+       https://en.wikipedia.org/wiki/Median_absolute_deviation
+.. [2] "Robust measures of scale",
+       https://en.wikipedia.org/wiki/Robust_measures_of_scale
+
+Examples
+--------
+When comparing the behavior of `median_absolute_deviation` with ``np.std``,
+the latter is affected when we change a single value of an array to have an
+outlier value while the MAD hardly changes:
+
+>>> from scipy import stats
+>>> x = stats.norm.rvs(size=100, scale=1, random_state=123456)
+>>> x.std()
+0.9973906394005013
+>>> stats.median_absolute_deviation(x)
+1.2280762773108278
+>>> x[0] = 345.6
+>>> x.std()
+34.42304872314415
+>>> stats.median_absolute_deviation(x)
+1.2340335571164334
+
+Axis handling example:
+
+>>> x = np.array([[10, 7, 4], [3, 2, 1]])
+>>> x
+array([[10,  7,  4],
+       [ 3,  2,  1]])
+>>> stats.median_absolute_deviation(x)
+array([5.1891, 3.7065, 2.2239])
+>>> stats.median_absolute_deviation(x, axis=None)
+2.9652
+"""
+    if isinstance(scale, str):
+        if scale.lower() == 'raw':
+            warnings.warn(
+                "use of scale='raw' is deprecated, use scale=1.0 instead",
+                np.VisibleDeprecationWarning
+                )
+            scale = 1.0
+
+    if not isinstance(scale, str):
+        scale = 1 / scale
+
+    return median_abs_deviation(x, axis=axis, center=center, scale=scale,
+                                nan_policy=nan_policy)
 
 #####################################
 #         TRIMMING FUNCTIONS        #
 #####################################
+
 
 SigmaclipResult = namedtuple('SigmaclipResult', ('clipped', 'lower', 'upper'))
 
@@ -3121,17 +3414,56 @@ F_onewayResult = namedtuple('F_onewayResult', ('statistic', 'pvalue'))
 
 
 class F_onewayConstantInputWarning(RuntimeWarning):
-    """Warning generated by `f_oneway` when an input is constant, e.g.
-       each of the samples provided is a constant array"""
+    """
+    Warning generated by `f_oneway` when an input is constant, e.g.
+    each of the samples provided is a constant array.
+    """
 
     def __init__(self, msg=None):
         if msg is None:
             msg = ("Each of the input arrays is constant;"
-                    "the F-value is not defined or infinite")
+                   "the F statistic is not defined or infinite")
         self.args = (msg,)
 
 
-def f_oneway(*args):
+class F_onewayBadInputSizesWarning(RuntimeWarning):
+    """
+    Warning generated by `f_oneway` when an input has length 0,
+    or if all the inputs have length 1.
+    """
+    pass
+
+
+def _create_f_oneway_nan_result(shape, axis):
+    """
+    This is a helper function for f_oneway for creating the return values
+    in certain degenerate conditions.  It creates return values that are
+    all nan with the appropriate shape for the given `shape` and `axis`.
+    """
+    axis = np.core.multiarray.normalize_axis_index(axis, len(shape))
+    shp = shape[:axis] + shape[axis+1:]
+    if shp == ():
+        f = np.nan
+        prob = np.nan
+    else:
+        f = np.full(shp, fill_value=np.nan)
+        prob = f.copy()
+    return F_onewayResult(f, prob)
+
+
+def _first(arr, axis):
+    """
+    Return arr[..., 0:1, ...] where 0:1 is in the `axis` position.
+    """
+    # When the oldest version of numpy supported by scipy is at
+    # least 1.15.0, this function can be replaced by np.take_along_axis
+    # (with appropriately configured arguments).
+    axis = np.core.multiarray.normalize_axis_index(axis, arr.ndim)
+    return arr[tuple(slice(None) if k != axis else slice(0, 1)
+               for k in range(arr.ndim))]
+
+
+def f_oneway(*args, axis=0):
     """
     Perform one-way ANOVA.
 
@@ -3142,21 +3474,31 @@ def f_oneway(*args):
     Parameters
     ----------
     sample1, sample2, ... : array_like
-        The sample measurements for each group.
+        The sample measurements for each group.  There must be at least
+        two arguments.  If the arrays are multidimensional, then all the
+        dimensions of the array must be the same except for `axis`.
+    axis : int, optional
+        Axis of the input arrays along which the test is applied.
+        Default is 0.
 
     Returns
     -------
     statistic : float
-        The computed F-value of the test.
+        The computed F statistic of the test.
     pvalue : float
-        The associated p-value from the F-distribution.
+        The associated p-value from the F distribution.
 
     Warns
     -----
     F_onewayConstantInputWarning
         Raised if each of the input arrays is constant array.
-        In this case F-value is either infinite or isn't defined, so
-        ``np.inf`` or ``np.nan`` is returned for F-value
+        In this case the F statistic is either infinite or isn't defined,
+        so ``np.inf`` or ``np.nan`` is returned.
+
+    F_onewayBadInputSizesWarning
+        Raised if the length of any input array is 0, or if all the input
+        arrays have length 1.  ``np.nan`` is returned for the F statistic
+        and the p-value in these cases.
 
     Notes
     -----
@@ -3168,18 +3510,23 @@ def f_oneway(*args):
     3. The population standard deviations of the groups are all equal.  This
        property is known as homoscedasticity.
 
-    If these assumptions are not true for a given set of data, it may still be
-    possible to use the Kruskal-Wallis H-test (`scipy.stats.kruskal`) although
-    with some loss of power.
+    If these assumptions are not true for a given set of data, it may still
+    be possible to use the Kruskal-Wallis H-test (`scipy.stats.kruskal`)
+    although with some loss of power.
 
-    If each group is made of constant values, and
+    The length of each group must be at least one, and there must be at
+    least one group with length greater than one.  If these conditions
+    are not satisfied, a warning is generated and (``np.nan``, ``np.nan``)
+    is returned.
 
-    - There exist at least two groups with different values
-         the function returns (``np.inf``, 0)
-    - All values in all groups are the same, function returns (``np.nan``, ``np.nan``)
+    If each group contains constant values, and there exist at least two
+    groups with different values, the function generates a warning and
+    returns (``np.inf``, 0).
 
-    The algorithm is from Heiman[2], pp.394-7.
+    If all values in all groups are the same, function generates a warning
+    and returns (``np.nan``, ``np.nan``).
 
+    The algorithm is from Heiman [2]_, pp.394-7.
 
     References
     ----------
@@ -3195,9 +3542,9 @@ def f_oneway(*args):
 
     Examples
     --------
-    >>> import scipy.stats as stats
+    >>> from scipy.stats import f_oneway
 
-    [3]_ Here are some data on a shell measurement (the length of the anterior
+    Here are some data [3]_ on a shell measurement (the length of the anterior
     adductor muscle scar, standardized by dividing by length) in the mussel
     Mytilus trossulus from five locations: Tillamook, Oregon; Newport, Oregon;
     Petersburg, Alaska; Magadan, Russia; and Tvarminne, Finland, taken from a
@@ -3211,44 +3558,106 @@ def f_oneway(*args):
     >>> magadan = [0.1033, 0.0915, 0.0781, 0.0685, 0.0677, 0.0697, 0.0764,
     ...            0.0689]
     >>> tvarminne = [0.0703, 0.1026, 0.0956, 0.0973, 0.1039, 0.1045]
-    >>> stats.f_oneway(tillamook, newport, petersburg, magadan, tvarminne)
-    (7.1210194716424473, 0.00028122423145345439)
+    >>> f_oneway(tillamook, newport, petersburg, magadan, tvarminne)
+    F_onewayResult(statistic=7.121019471642447, pvalue=0.0002812242314534544)
+
+    `f_oneway` accepts multidimensional input arrays.  When the inputs
+    are multidimensional and `axis` is not given, the test is performed
+    along the first axis of the input arrays.  For the following data, the
+    test is performed three times, once for each column.
+
+    >>> a = np.array([[9.87, 9.03, 6.81],
+    ...               [7.18, 8.35, 7.00],
+    ...               [8.39, 7.58, 7.68],
+    ...               [7.45, 6.33, 9.35],
+    ...               [6.41, 7.10, 9.33],
+    ...               [8.00, 8.24, 8.44]])
+    >>> b = np.array([[6.35, 7.30, 7.16],
+    ...               [6.65, 6.68, 7.63],
+    ...               [5.72, 7.73, 6.72],
+    ...               [7.01, 9.19, 7.41],
+    ...               [7.75, 7.87, 8.30],
+    ...               [6.90, 7.97, 6.97]])
+    >>> c = np.array([[3.31, 8.77, 1.01],
+    ...               [8.25, 3.24, 3.62],
+    ...               [6.32, 8.81, 5.19],
+    ...               [7.48, 8.83, 8.91],
+    ...               [8.59, 6.01, 6.07],
+    ...               [3.07, 9.72, 7.48]])
+    >>> F, p = f_oneway(a, b, c)
+    >>> F
+    array([1.75676344, 0.03701228, 3.76439349])
+    >>> p
+    array([0.20630784, 0.96375203, 0.04733157])
 
     """
+    if len(args) < 2:
+        raise TypeError(f'at least two inputs are required; got {len(args)}.')
+
     args = [np.asarray(arg, dtype=float) for arg in args]
+
     # ANOVA on N groups, each in its own array
     num_groups = len(args)
-    alldata = np.concatenate(args)
-    bign = len(alldata)
 
-    # Check if the values within each group are constant
-    # And the common value in at least one group is different
-    # from that in another group - special cases
+    # We haven't explicitly validated axis, but if it is bad, this call of
+    # np.concatenate will raise np.AxisError.  The call will raise ValueError
+    # if the dimensions of all the arrays, except the axis dimension, are not
+    # the same.
+    alldata = np.concatenate(args, axis=axis)
+    bign = alldata.shape[axis]
+
+    # Check this after forming alldata, so shape errors are detected
+    # and reported before checking for 0 length inputs.
+    if any(arg.shape[axis] == 0 for arg in args):
+        warnings.warn(F_onewayBadInputSizesWarning('at least one input '
+                                                   'has length 0'))
+        return _create_f_oneway_nan_result(alldata.shape, axis)
+
+    # Must have at least one group with length greater than 1.
+    if all(arg.shape[axis] == 1 for arg in args):
+        msg = ('all input arrays have length 1.  f_oneway requires that at '
+               'least one input has length greater than 1.')
+        warnings.warn(F_onewayBadInputSizesWarning(msg))
+        return _create_f_oneway_nan_result(alldata.shape, axis)
+
+    # Check if the values within each group are constant, and if the common
+    # value in at least one group is different from that in another group.
     # Based on https://github.com/scipy/scipy/issues/11669
-    const_groups = True
-    for group in args:
-        if not all(x == group[0] for x in group):
-            const_groups = False
-            break
-    if const_groups:
+
+    # If axis=0, say, and the groups have shape (n0, ...), (n1, ...), ...,
+    # then is_const is a boolean array with shape (num_groups, ...).
+    # It is True if the groups along the axis slice are each consant.
+    # In the typical case where each input array is 1-d, is_const is a
+    # 1-d array with length num_groups.
+    is_const = np.concatenate([(_first(a, axis) == a).all(axis=axis,
+                                                          keepdims=True)
+                               for a in args], axis=axis)
+
+    # all_const is a boolean array with shape (...) (see previous comment).
+    # It is True if the values within each group along the axis slice are
+    # the same (e.g. [[3, 3, 3], [5, 5, 5, 5], [4, 4, 4]]).
+    all_const = is_const.all(axis=axis)
+    if all_const.any():
         warnings.warn(F_onewayConstantInputWarning())
-        if len(set(group[0] for group in args)) > 1:
-            return F_onewayResult(np.inf, 0)
-        else:
-            return F_onewayResult(np.nan, np.nan)
+
+    # all_same_const is True if all the values in the groups along the axis=0
+    # slice are the same (e.g. [[3, 3, 3], [3, 3, 3, 3], [3, 3, 3]]).
+    all_same_const = (_first(alldata, axis) == alldata).all(axis=axis)
 
     # Determine the mean of the data, and subtract that from all inputs to a
-    # variance (via sum_of_sq / sq_of_sum) calculation.  Variance is invariance
+    # variance (via sum_of_sq / sq_of_sum) calculation.  Variance is invariant
     # to a shift in location, and centering all data around zero vastly
     # improves numerical stability.
-    offset = alldata.mean()
+    offset = alldata.mean(axis=axis, keepdims=True)
     alldata -= offset
 
-    normalized_ss = _square_of_sums(alldata) / bign
-    sstot = _sum_of_squares(alldata) - normalized_ss
+    normalized_ss = _square_of_sums(alldata, axis=axis) / bign
+
+    sstot = _sum_of_squares(alldata, axis=axis) - normalized_ss
+
     ssbn = 0
     for a in args:
-        ssbn += _square_of_sums(a - offset) / len(a)
+        ssbn += _square_of_sums(a - offset, axis=axis) / a.shape[axis]
 
     # Naming: variables ending in bn/b are for "between treatments", wn/w are
     # for "within treatments"
@@ -3258,9 +3667,25 @@ def f_oneway(*args):
     dfwn = bign - num_groups
     msb = ssbn / dfbn
     msw = sswn / dfwn
-    f = msb / msw
+    with np.errstate(divide='ignore', invalid='ignore'):
+        f = msb / msw
 
     prob = special.fdtrc(dfbn, dfwn, f)   # equivalent to stats.f.sf
+
+    # Fix any f values that should be inf or nan because the corresponding
+    # inputs were constant.
+    if np.isscalar(f):
+        if all_same_const:
+            f = np.nan
+            prob = np.nan
+        elif all_const:
+            f = np.inf
+            prob = 0.0
+    else:
+        f[all_const] = np.inf
+        prob[all_const] = 0.0
+        f[all_same_const] = np.nan
+        prob[all_same_const] = np.nan
 
     return F_onewayResult(f, prob)
 
@@ -5074,6 +5499,48 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
     return Ttest_indResult(*res)
 
 
+def _ttest_nans(a, b, axis, namedtuple_type):
+    """
+    Generate an array of `nan`, with shape determined by `a`, `b` and `axis`.
+
+    This function is used by ttest_ind and ttest_rel to create the return
+    value when one of the inputs has size 0.
+
+    The shapes of the arrays are determined by dropping `axis` from the
+    shapes of `a` and `b` and broadcasting what is left.
+
+    The return value is a named tuple of the type given in `namedtuple_type`.
+
+    Examples
+    --------
+    >>> a = np.zeros((9, 2))
+    >>> b = np.zeros((5, 1))
+    >>> _ttest_nans(a, b, 0, Ttest_indResult)
+    Ttest_indResult(statistic=array([nan, nan]), pvalue=array([nan, nan]))
+
+    >>> a = np.zeros((3, 0, 9))
+    >>> b = np.zeros((1, 10))
+    >>> stat, p = _ttest_nans(a, b, -1, Ttest_indResult)
+    >>> stat
+    array([], shape=(3, 0), dtype=float64)
+    >>> p
+    array([], shape=(3, 0), dtype=float64)
+
+    >>> a = np.zeros(10)
+    >>> b = np.zeros(7)
+    >>> _ttest_nans(a, b, 0, Ttest_indResult)
+    Ttest_indResult(statistic=nan, pvalue=nan)
+    """
+    shp = _broadcast_shapes_with_dropped_axis(a, b, axis)
+    if len(shp) == 0:
+        t = np.nan
+        p = np.nan
+    else:
+        t = np.full(shp, fill_value=np.nan)
+        p = t.copy()
+    return namedtuple_type(t, p)
+
+
 def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate'):
     """
     Calculate the T-test for the means of *two independent* samples of scores.
@@ -5104,7 +5571,6 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate'):
           * 'propagate': returns nan
           * 'raise': throws an error
           * 'omit': performs the calculations ignoring nan values
-
 
     Returns
     -------
@@ -5185,7 +5651,7 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate'):
         return mstats_basic.ttest_ind(a, b, axis, equal_var)
 
     if a.size == 0 or b.size == 0:
-        return Ttest_indResult(np.nan, np.nan)
+        return _ttest_nans(a, b, axis, Ttest_indResult)
 
     v1 = np.var(a, axis, ddof=1)
     v2 = np.var(b, axis, ddof=1)
@@ -5200,6 +5666,14 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate'):
     res = _ttest_ind_from_stats(np.mean(a, axis), np.mean(b, axis), denom, df)
 
     return Ttest_indResult(*res)
+
+
+def _get_len(a, axis, msg):
+    try:
+        n = a.shape[axis]
+    except IndexError:
+        raise np.AxisError(axis, a.ndim, msg) from None
+    return n
 
 
 Ttest_relResult = namedtuple('Ttest_relResult', ('statistic', 'pvalue'))
@@ -5282,11 +5756,13 @@ def ttest_rel(a, b, axis=0, nan_policy='propagate'):
         bb = ma.array(b, mask=m, copy=True)
         return mstats_basic.ttest_rel(aa, bb, axis)
 
-    if a.shape[axis] != b.shape[axis]:
+    na = _get_len(a, axis, "first argument")
+    nb = _get_len(b, axis, "second argument")
+    if na != nb:
         raise ValueError('unequal length arrays')
 
-    if a.size == 0 or b.size == 0:
-        return np.nan, np.nan
+    if na == 0:
+        return _ttest_nans(a, b, axis, Ttest_relResult)
 
     n = a.shape[axis]
     df = n - 1
@@ -5301,167 +5777,6 @@ def ttest_rel(a, b, axis=0, nan_policy='propagate'):
     t, prob = _ttest_finish(df, t)
 
     return Ttest_relResult(t, prob)
-
-
-KstestResult = namedtuple('KstestResult', ('statistic', 'pvalue'))
-
-
-def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', mode='approx'):
-    """
-    Perform the Kolmogorov-Smirnov test for goodness of fit.
-
-    This performs a test of the distribution F(x) of an observed
-    random variable against a given distribution G(x). Under the null
-    hypothesis, the two distributions are identical, F(x)=G(x). The
-    alternative hypothesis can be either 'two-sided' (default), 'less'
-    or 'greater'. The KS test is only valid for continuous distributions.
-
-    Parameters
-    ----------
-    rvs : str, array_like, or callable
-        If a string, it should be the name of a distribution in `scipy.stats`.
-        If an array, it should be a 1-D array of observations of random
-        variables.
-        If a callable, it should be a function to generate random variables;
-        it is required to have a keyword argument `size`.
-    cdf : str or callable
-        If a string, it should be the name of a distribution in `scipy.stats`.
-        If `rvs` is a string then `cdf` can be False or the same as `rvs`.
-        If a callable, that callable is used to calculate the cdf.
-    args : tuple, sequence, optional
-        Distribution parameters, used if `rvs` or `cdf` are strings.
-    N : int, optional
-        Sample size if `rvs` is string or callable.  Default is 20.
-    alternative : {'two-sided', 'less', 'greater'}, optional
-        Defines the alternative hypothesis.
-        The following options are available (default is 'two-sided'):
-
-          * 'two-sided'
-          * 'less': one-sided, see explanation in Notes
-          * 'greater': one-sided, see explanation in Notes
-    mode : {'approx', 'asymp'}, optional
-        Defines the distribution used for calculating the p-value.
-        The following options are available (default is 'approx'):
-
-          * 'approx': use approximation to exact distribution of test statistic
-          * 'asymp': use asymptotic distribution of test statistic
-
-    Returns
-    -------
-    statistic : float
-        KS test statistic, either D, D+ or D-.
-    pvalue :  float
-        One-tailed or two-tailed p-value.
-
-    See Also
-    --------
-    ks_2samp
-
-    Notes
-    -----
-    In the one-sided test, the alternative is that the empirical
-    cumulative distribution function of the random variable is "less"
-    or "greater" than the cumulative distribution function G(x) of the
-    hypothesis, ``F(x)<=G(x)``, resp. ``F(x)>=G(x)``.
-
-    Examples
-    --------
-    >>> from scipy import stats
-
-    >>> x = np.linspace(-15, 15, 9)
-    >>> stats.kstest(x, 'norm')
-    (0.44435602715924361, 0.038850142705171065)
-
-    >>> np.random.seed(987654321) # set random seed to get the same result
-    >>> stats.kstest('norm', False, N=100)
-    (0.058352892479417884, 0.88531190944151261)
-
-    The above lines are equivalent to:
-
-    >>> np.random.seed(987654321)
-    >>> stats.kstest(stats.norm.rvs(size=100), 'norm')
-    (0.058352892479417884, 0.88531190944151261)
-
-    *Test against one-sided alternative hypothesis*
-
-    Shift distribution to larger values, so that ``cdf_dgp(x) < norm.cdf(x)``:
-
-    >>> np.random.seed(987654321)
-    >>> x = stats.norm.rvs(loc=0.2, size=100)
-    >>> stats.kstest(x,'norm', alternative = 'less')
-    (0.12464329735846891, 0.040989164077641749)
-
-    Reject equal distribution against alternative hypothesis: less
-
-    >>> stats.kstest(x,'norm', alternative = 'greater')
-    (0.0072115233216311081, 0.98531158590396395)
-
-    Don't reject equal distribution against alternative hypothesis: greater
-
-    >>> stats.kstest(x,'norm', mode='asymp')
-    (0.12464329735846891, 0.08944488871182088)
-
-    *Testing t distributed random variables against normal distribution*
-
-    With 100 degrees of freedom the t distribution looks close to the normal
-    distribution, and the K-S test does not reject the hypothesis that the
-    sample came from the normal distribution:
-
-    >>> np.random.seed(987654321)
-    >>> stats.kstest(stats.t.rvs(100,size=100),'norm')
-    (0.072018929165471257, 0.67630062862479168)
-
-    With 3 degrees of freedom the t distribution looks sufficiently different
-    from the normal distribution, that we can reject the hypothesis that the
-    sample came from the normal distribution at the 10% level:
-
-    >>> np.random.seed(987654321)
-    >>> stats.kstest(stats.t.rvs(3,size=100),'norm')
-    (0.131016895759829, 0.058826222555312224)
-
-    """
-    if isinstance(rvs, str):
-        if (not cdf) or (cdf == rvs):
-            cdf = getattr(distributions, rvs).cdf
-            rvs = getattr(distributions, rvs).rvs
-        else:
-            raise AttributeError("if rvs is string, cdf has to be the "
-                                 "same distribution")
-
-    if isinstance(cdf, str):
-        cdf = getattr(distributions, cdf).cdf
-    if callable(rvs):
-        kwds = {'size': N}
-        vals = np.sort(rvs(*args, **kwds))
-    else:
-        vals = np.sort(rvs)
-        N = len(vals)
-    cdfvals = cdf(vals, *args)
-
-    # to not break compatibility with existing code
-    if alternative == 'two_sided':
-        alternative = 'two-sided'
-
-    if alternative in ['two-sided', 'greater']:
-        Dplus = (np.arange(1.0, N + 1)/N - cdfvals).max()
-        if alternative == 'greater':
-            return KstestResult(Dplus, distributions.ksone.sf(Dplus, N))
-
-    if alternative in ['two-sided', 'less']:
-        Dmin = (cdfvals - np.arange(0.0, N)/N).max()
-        if alternative == 'less':
-            return KstestResult(Dmin, distributions.ksone.sf(Dmin, N))
-
-    if alternative == 'two-sided':
-        D = np.max([Dplus, Dmin])
-        if mode == 'asymp':
-            return KstestResult(D, distributions.kstwobign.sf(D * np.sqrt(N)))
-        if mode == 'approx':
-            pval_two = distributions.kstwobign.sf(D * np.sqrt(N))
-            if N > 2666 or pval_two > 0.80 - N*0.3/1000:
-                return KstestResult(D, pval_two)
-            else:
-                return KstestResult(D, 2 * distributions.ksone.sf(D, N))
 
 
 # Map from names to lambda_ values used in power_divergence().
@@ -5814,7 +6129,182 @@ def chisquare(f_obs, f_exp=None, ddof=0, axis=0):
                             lambda_="pearson")
 
 
-Ks_2sampResult = namedtuple('Ks_2sampResult', ('statistic', 'pvalue'))
+KstestResult = namedtuple('KstestResult', ('statistic', 'pvalue'))
+
+
+def _compute_dplus(cdfvals):
+    """Computes D+ as used in the Kolmogorov-Smirnov test.
+
+    Parameters
+    ----------
+    cdfvals: array_like
+      Sorted array of CDF values between 0 and 1
+
+    Returns
+    -------
+      Maximum distance of the CDF values below Uniform(0, 1)
+"""
+    n = len(cdfvals)
+    return (np.arange(1.0, n + 1) / n - cdfvals).max()
+
+
+def _compute_dminus(cdfvals):
+    """Computes D- as used in the Kolmogorov-Smirnov test.
+
+    Parameters
+    ----------
+    cdfvals: array_like
+      Sorted array of CDF values between 0 and 1
+
+    Returns
+    -------
+      Maximum distance of the CDF values above Uniform(0, 1)
+    """
+    n = len(cdfvals)
+    return (cdfvals - np.arange(0.0, n)/n).max()
+
+
+def ks_1samp(x, cdf, args=(), alternative='two-sided', mode='auto'):
+    """
+    Performs the Kolmogorov-Smirnov test for goodness of fit.
+
+    This performs a test of the distribution F(x) of an observed
+    random variable against a given distribution G(x). Under the null
+    hypothesis, the two distributions are identical, F(x)=G(x). The
+    alternative hypothesis can be either 'two-sided' (default), 'less'
+    or 'greater'. The KS test is only valid for continuous distributions.
+
+    Parameters
+    ----------
+    x : array_like
+        a 1-D array of observations of iid random variables.
+    cdf : callable
+        callable used to calculate the cdf.
+    args : tuple, sequence, optional
+        Distribution parameters, used with `cdf`.
+    alternative : {'two-sided', 'less', 'greater'}, optional
+        Defines the alternative hypothesis.
+        The following options are available (default is 'two-sided'):
+
+          * 'two-sided'
+          * 'less': one-sided, see explanation in Notes
+          * 'greater': one-sided, see explanation in Notes
+    mode : {'auto', 'exact', 'approx', 'asymp'}, optional
+        Defines the distribution used for calculating the p-value.
+        The following options are available (default is 'auto'):
+
+          * 'auto' : selects one of the other options.
+          * 'exact' : uses the exact distribution of test statistic.
+          * 'approx' : approximates the two-sided probability with twice the one-sided probability
+          * 'asymp': uses asymptotic distribution of test statistic
+
+    Returns
+    -------
+    statistic : float
+        KS test statistic, either D, D+ or D- (depending on the value of 'alternative')
+    pvalue :  float
+        One-tailed or two-tailed p-value.
+
+    See Also
+    --------
+    ks_2samp, kstest
+
+    Notes
+    -----
+    In the one-sided test, the alternative is that the empirical
+    cumulative distribution function of the random variable is "less"
+    or "greater" than the cumulative distribution function G(x) of the
+    hypothesis, ``F(x)<=G(x)``, resp. ``F(x)>=G(x)``.
+
+    Examples
+    --------
+    >>> from scipy import stats
+
+    >>> x = np.linspace(-15, 15, 9)
+    >>> stats.ks_1samp(x, stats.norm.cdf)
+    (0.44435602715924361, 0.038850142705171065)
+
+    >>> np.random.seed(987654321) # set random seed to get the same result
+    >>> stats.ks_1samp(stats.norm.rvs(size=100), stats.norm.cdf)
+    (0.058352892479417884, 0.8653960860778898)
+
+    *Test against one-sided alternative hypothesis*
+
+    Shift distribution to larger values, so that `` CDF(x) < norm.cdf(x)``:
+
+    >>> np.random.seed(987654321)
+    >>> x = stats.norm.rvs(loc=0.2, size=100)
+    >>> stats.ks_1samp(x, stats.norm.cdf, alternative='less')
+    (0.12464329735846891, 0.040989164077641749)
+
+    Reject equal distribution against alternative hypothesis: less
+
+    >>> stats.ks_1samp(x, stats.norm.cdf, alternative='greater')
+    (0.0072115233216311081, 0.98531158590396395)
+
+    Don't reject equal distribution against alternative hypothesis: greater
+
+    >>> stats.ks_1samp(x, stats.norm.cdf)
+    (0.12464329735846891, 0.08197335233541582)
+
+    Don't reject equal distribution against alternative hypothesis: two-sided
+
+    *Testing t distributed random variables against normal distribution*
+
+    With 100 degrees of freedom the t distribution looks close to the normal
+    distribution, and the K-S test does not reject the hypothesis that the
+    sample came from the normal distribution:
+
+    >>> np.random.seed(987654321)
+    >>> stats.ks_1samp(stats.t.rvs(100,size=100), stats.norm.cdf)
+    (0.072018929165471257, 0.6505883498379312)
+
+    With 3 degrees of freedom the t distribution looks sufficiently different
+    from the normal distribution, that we can reject the hypothesis that the
+    sample came from the normal distribution at the 10% level:
+
+    >>> np.random.seed(987654321)
+    >>> stats.ks_1samp(stats.t.rvs(3,size=100), stats.norm.cdf)
+    (0.131016895759829, 0.058826222555312224)
+
+    """
+    alternative = {'t': 'two-sided', 'g': 'greater', 'l': 'less'}.get(
+       alternative.lower()[0], alternative)
+    if alternative not in ['two-sided', 'greater', 'less']:
+        raise ValueError("Unexpected alternative %s" % alternative)
+    if np.ma.is_masked(x):
+        x = x.compressed()
+
+    N = len(x)
+    x = np.sort(x)
+    cdfvals = cdf(x, *args)
+
+    if alternative == 'greater':
+        Dplus = _compute_dplus(cdfvals)
+        return KstestResult(Dplus, distributions.ksone.sf(Dplus, N))
+
+    if alternative == 'less':
+        Dminus = _compute_dminus(cdfvals)
+        return KstestResult(Dminus, distributions.ksone.sf(Dminus, N))
+
+    # alternative == 'two-sided':
+    Dplus = _compute_dplus(cdfvals)
+    Dminus = _compute_dminus(cdfvals)
+    D = np.max([Dplus, Dminus])
+    if mode == 'auto':  # Always select exact
+        mode = 'exact'
+    if mode == 'exact':
+        prob = distributions.kstwo.sf(D, N)
+    elif mode == 'asymp':
+        prob = distributions.kstwobign.sf(D * np.sqrt(N))
+    else:
+        # mode == 'approx'
+        prob = 2 * distributions.ksone.sf(D, N)
+    prob = np.clip(prob, 0, 1)
+    return KstestResult(D, prob)
+
+
+Ks_2sampResult = KstestResult
 
 
 def _compute_prob_inside_method(m, n, g, h):
@@ -6006,10 +6496,11 @@ def _count_paths_outside_method(m, n, g, h):
     mg = m // g
     ng = n // g
 
-    #  0 <= x_j <= m is the smallest integer for which n*x_j - m*j < g*h
-    xj = [int(np.ceil((h + mg * j)/ng)) for j in range(n+1)]
-    xj = [_ for _ in xj if _ <= m]
-    lxj = len(xj)
+    # Not every x needs to be considered.
+    # xj holds the list of x values to be checked.
+    # Wherever n*x/m + ng*h crosses an integer
+    lxj = n + (mg-h)//mg
+    xj = [(h + mg * j + ng-1)//ng for j in range(lxj)]
     # B is an array just holding a few values of B(x,y), the ones needed.
     # B[j] == B(x_j, j)
     if lxj == 0:
@@ -6025,8 +6516,7 @@ def _count_paths_outside_method(m, n, g, h):
             raise FloatingPointError()
         for i in range(j):
             bin = np.round(special.binom(xj[j] - xj[i] + j - i, j-i))
-            dec = bin * B[i]
-            Bj -= dec
+            Bj -= bin * B[i]
         B[j] = Bj
         if not np.isfinite(Bj):
             raise FloatingPointError()
@@ -6041,6 +6531,52 @@ def _count_paths_outside_method(m, n, g, h):
     return np.round(num_paths)
 
 
+def _attempt_exact_2kssamp(n1, n2, g, d, alternative):
+    """Attempts to compute the exact 2sample probability.
+
+    n1, n2 are the sample sizes
+    g is the gcd(n1, n2)
+    d is the computed max difference in ECDFs
+
+    Returns (success, d, probability)
+    """
+    lcm = (n1 // g) * n2
+    h = int(np.round(d * lcm))
+    d = h * 1.0 / lcm
+    if h == 0:
+        return True, d, 1.0
+    saw_fp_error, prob = False, np.nan
+    try:
+        if alternative == 'two-sided':
+            if n1 == n2:
+                prob = _compute_prob_outside_square(n1, h)
+            else:
+                prob = 1 - _compute_prob_inside_method(n1, n2, g, h)
+        else:
+            if n1 == n2:
+                # prob = binom(2n, n-h) / binom(2n, n)
+                # Evaluating in that form incurs roundoff errors
+                # from special.binom. Instead calculate directly
+                jrange = np.arange(h)
+                prob = np.prod((n1 - jrange) / (n1 + jrange + 1.0))
+            else:
+                num_paths = _count_paths_outside_method(n1, n2, g, h)
+                bin = special.binom(n1 + n2, n1)
+                if not np.isfinite(bin) or not np.isfinite(num_paths) or num_paths > bin:
+                    saw_fp_error = True
+                else:
+                    prob = num_paths / bin
+
+    except FloatingPointError:
+        saw_fp_error = True
+
+    if saw_fp_error:
+        return False, d, np.nan
+    if not (0 <= prob <= 1):
+        return False, d, prob
+    return True, d, prob
+
+
 def ks_2samp(data1, data2, alternative='two-sided', mode='auto'):
     """
     Compute the Kolmogorov-Smirnov statistic on 2 samples.
@@ -6051,7 +6587,7 @@ def ks_2samp(data1, data2, alternative='two-sided', mode='auto'):
 
     Parameters
     ----------
-    data1, data2 : sequence of 1-D ndarrays
+    data1, data2 : array_like, 1-Dimensional
         Two arrays of sample observations assumed to be drawn from a continuous
         distribution, sample sizes can be different.
     alternative : {'two-sided', 'less', 'greater'}, optional
@@ -6066,7 +6602,7 @@ def ks_2samp(data1, data2, alternative='two-sided', mode='auto'):
         The following options are available (default is 'auto'):
 
           * 'auto' : use 'exact' for small size arrays, 'asymp' for large
-          * 'exact' : use approximation to exact distribution of test statistic
+          * 'exact' : use exact distribution of test statistic
           * 'asymp' : use asymptotic distribution of test statistic
 
     Returns
@@ -6078,7 +6614,7 @@ def ks_2samp(data1, data2, alternative='two-sided', mode='auto'):
 
     See Also
     --------
-    kstest
+    kstest, ks_1samp, epps_singleton_2samp, anderson_ksamp
 
     Notes
     -----
@@ -6143,7 +6679,17 @@ def ks_2samp(data1, data2, alternative='two-sided', mode='auto'):
     (0.07999999999999996, 0.41126949729859719)
 
     """
-    LARGE_N = 10000  # 'auto' will attempt to be exact if n1,n2 <= LARGE_N
+    if mode not in ['auto', 'exact', 'asymp']:
+        raise ValueError(f'Invalid value for mode: {mode}')
+    alternative = {'t': 'two-sided', 'g': 'greater', 'l': 'less'}.get(
+       alternative.lower()[0], alternative)
+    if alternative not in ['two-sided', 'less', 'greater']:
+        raise ValueError(f'Invalid value for alternative: {alternative}')
+    MAX_AUTO_N = 10000  # 'auto' will attempt to be exact if n1,n2 <= MAX_AUTO_N
+    if np.ma.is_masked(data1):
+        data1 = data1.compressed()
+    if np.ma.is_masked(data2):
+        data2 = data2.compressed()
     data1 = np.sort(data1)
     data2 = np.sort(data2)
     n1 = data1.shape[0]
@@ -6166,74 +6712,28 @@ def ks_2samp(data1, data2, alternative='two-sided', mode='auto'):
     prob = -np.inf
     original_mode = mode
     if mode == 'auto':
-        if max(n1, n2) <= LARGE_N:
-            mode = 'exact'
-        else:
-            mode = 'asymp'
+        mode = 'exact' if max(n1, n2) <= MAX_AUTO_N else 'asymp'
     elif mode == 'exact':
         # If lcm(n1, n2) is too big, switch from exact to asymp
-        if n1g >= np.iinfo(np.int).max / n2g:
+        if n1g >= np.iinfo(np.int_).max / n2g:
             mode = 'asymp'
             warnings.warn(
                 "Exact ks_2samp calculation not possible with samples sizes "
                 "%d and %d. Switching to 'asymp' " % (n1, n2), RuntimeWarning)
 
-    saw_fp_error = False
     if mode == 'exact':
-        lcm = (n1 // g) * n2
-        h = int(np.round(d * lcm))
-        d = h * 1.0 / lcm
-        if h == 0:
-            prob = 1.0
-        else:
-            try:
-                if alternative == 'two-sided':
-                    if n1 == n2:
-                        prob = _compute_prob_outside_square(n1, h)
-                    else:
-                        prob = 1 - _compute_prob_inside_method(n1, n2, g, h)
-                else:
-                    if n1 == n2:
-                        # prob = binom(2n, n-h) / binom(2n, n)
-                        # Evaluating in that form incurs roundoff errors
-                        # from special.binom. Instead calculate directly
-                        prob = 1.0
-                        for j in range(h):
-                            prob = (n1 - j) * prob / (n1 + j + 1)
-                    else:
-                        num_paths = _count_paths_outside_method(n1, n2, g, h)
-                        bin = special.binom(n1 + n2, n1)
-                        if not np.isfinite(bin) or not np.isfinite(num_paths) or num_paths > bin:
-                            raise FloatingPointError()
-                        prob = num_paths / bin
-
-            except FloatingPointError:
-                # Switch mode
-                mode = 'asymp'
-                saw_fp_error = True
-                # Can't raise warning here, inside the try
-            finally:
-                if saw_fp_error:
-                    if original_mode == 'exact':
-                        warnings.warn(
-                            "ks_2samp: Exact calculation overflowed. "
-                            "Switching to mode=%s" % mode, RuntimeWarning)
-                else:
-                    if prob > 1 or prob < 0:
-                        mode = 'asymp'
-                        if original_mode == 'exact':
-                            warnings.warn(
-                                "ks_2samp: Exact calculation incurred large"
-                                " rounding error. Switching to mode=%s" % mode,
-                                RuntimeWarning)
+        success, d, prob = _attempt_exact_2kssamp(n1, n2, g, d, alternative)
+        if not success:
+            mode = 'asymp'
+            if original_mode == 'exact':
+                warnings.warn(f"ks_2samp: Exact calculation unsuccessful. "
+                              f"Switching to mode={mode}.", RuntimeWarning)
 
     if mode == 'asymp':
         # The product n1*n2 is large.  Use Smirnov's asymptoptic formula.
         if alternative == 'two-sided':
-            en = np.sqrt(n1 * n2 / (n1 + n2))
-            # Switch to using kstwo.sf() when it becomes available.
-            # prob = distributions.kstwo.sf(d, int(np.round(en)))
-            prob = distributions.kstwobign.sf(en * d)
+            en = n1 * n2 / (n1 + n2)
+            prob = distributions.kstwo.sf(d, np.round(en))
         else:
             m, n = max(n1, n2), min(n1, n2)
             z = np.sqrt(m*n/(m+n)) * d
@@ -6241,8 +6741,169 @@ def ks_2samp(data1, data2, alternative='two-sided', mode='auto'):
             expt = -2 * z**2 - 2 * z * (m + 2*n)/np.sqrt(m*n*(m+n))/3.0
             prob = np.exp(expt)
 
-    prob = (0 if prob < 0 else (1 if prob > 1 else prob))
-    return Ks_2sampResult(d, prob)
+    prob = np.clip(prob, 0, 1)
+    return KstestResult(d, prob)
+
+
+def _parse_kstest_args(data1, data2, args, N):
+    # kstest allows many different variations of arguments.
+    # Pull out the parsing into a separate function
+    # (xvals, yvals, )  # 2sample
+    # (xvals, cdf function,..)
+    # (xvals, name of distribution, ...)
+    # (name of distribution, name of distribution, ...)
+
+    # Returns xvals, yvals, cdf
+    # where cdf is a cdf function, or None
+    # and yvals is either an array_like of values, or None
+    # and xvals is array_like.
+    rvsfunc, cdf = None, None
+    if isinstance(data1, str):
+        rvsfunc = getattr(distributions, data1).rvs
+    elif callable(data1):
+        rvsfunc = data1
+
+    if isinstance(data2, str):
+        cdf = getattr(distributions, data2).cdf
+        data2 = None
+    elif callable(data2):
+        cdf = data2
+        data2 = None
+
+    data1 = np.sort(rvsfunc(*args, size=N) if rvsfunc else data1)
+    return data1, data2, cdf
+
+
+def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', mode='auto'):
+    """
+    Performs the (one sample or two samples) Kolmogorov-Smirnov test for goodness of fit.
+
+    The one-sample test performs a test of the distribution F(x) of an observed
+    random variable against a given distribution G(x). Under the null
+    hypothesis, the two distributions are identical, F(x)=G(x). The
+    alternative hypothesis can be either 'two-sided' (default), 'less'
+    or 'greater'. The KS test is only valid for continuous distributions.
+    The two-sample test tests whether the two independent samples are drawn
+    from the same continuous distribution.
+
+    Parameters
+    ----------
+    rvs : str, array_like, or callable
+        If an array, it should be a 1-D array of observations of random
+        variables.
+        If a callable, it should be a function to generate random variables;
+        it is required to have a keyword argument `size`.
+        If a string, it should be the name of a distribution in `scipy.stats`,
+        which will be used to generate random variables.
+    cdf : str, array_like or callable
+        If array_like, it should be a 1-D array of observations of random
+        variables, and the two-sample test is performed (and rvs must be array_like)
+        If a callable, that callable is used to calculate the cdf.
+        If a string, it should be the name of a distribution in `scipy.stats`,
+        which will be used as the cdf function.
+    args : tuple, sequence, optional
+        Distribution parameters, used if `rvs` or `cdf` are strings or callables.
+    N : int, optional
+        Sample size if `rvs` is string or callable.  Default is 20.
+    alternative : {'two-sided', 'less', 'greater'}, optional
+        Defines the alternative hypothesis.
+        The following options are available (default is 'two-sided'):
+
+          * 'two-sided'
+          * 'less': one-sided, see explanation in Notes
+          * 'greater': one-sided, see explanation in Notes
+    mode : {'auto', 'exact', 'approx', 'asymp'}, optional
+        Defines the distribution used for calculating the p-value.
+        The following options are available (default is 'auto'):
+
+          * 'auto' : selects one of the other options.
+          * 'exact' : uses the exact distribution of test statistic.
+          * 'approx' : approximates the two-sided probability with twice the one-sided probability
+          * 'asymp': uses asymptotic distribution of test statistic
+
+    Returns
+    -------
+    statistic : float
+        KS test statistic, either D, D+ or D-.
+    pvalue :  float
+        One-tailed or two-tailed p-value.
+
+    See Also
+    --------
+    ks_2samp
+
+    Notes
+    -----
+    In the one-sided test, the alternative is that the empirical
+    cumulative distribution function of the random variable is "less"
+    or "greater" than the cumulative distribution function G(x) of the
+    hypothesis, ``F(x)<=G(x)``, resp. ``F(x)>=G(x)``.
+
+    Examples
+    --------
+    >>> from scipy import stats
+
+    >>> x = np.linspace(-15, 15, 9)
+    >>> stats.kstest(x, 'norm')
+    (0.44435602715924361, 0.038850142705171065)
+
+    >>> np.random.seed(987654321) # set random seed to get the same result
+    >>> stats.kstest(stats.norm.rvs(size=100), stats.norm.cdf)
+    (0.058352892479417884, 0.8653960860778898)
+
+    The above lines are equivalent to:
+
+    >>> np.random.seed(987654321)
+    >>> stats.kstest(stats.norm.rvs, 'norm', N=100)
+    (0.058352892479417884, 0.8653960860778898)
+
+    *Test against one-sided alternative hypothesis*
+
+    Shift distribution to larger values, so that ``CDF(x) < norm.cdf(x)``:
+
+    >>> np.random.seed(987654321)
+    >>> x = stats.norm.rvs(loc=0.2, size=100)
+    >>> stats.kstest(x, 'norm', alternative='less')
+    (0.12464329735846891, 0.040989164077641749)
+
+    Reject equal distribution against alternative hypothesis: less
+
+    >>> stats.kstest(x, 'norm', alternative='greater')
+    (0.0072115233216311081, 0.98531158590396395)
+
+    Don't reject equal distribution against alternative hypothesis: greater
+
+    >>> stats.kstest(x, 'norm')
+    (0.12464329735846891, 0.08197335233541582)
+
+    *Testing t distributed random variables against normal distribution*
+
+    With 100 degrees of freedom the t distribution looks close to the normal
+    distribution, and the K-S test does not reject the hypothesis that the
+    sample came from the normal distribution:
+
+    >>> np.random.seed(987654321)
+    >>> stats.kstest(stats.t.rvs(100, size=100), 'norm')
+    (0.072018929165471257, 0.6505883498379312)
+
+    With 3 degrees of freedom the t distribution looks sufficiently different
+    from the normal distribution, that we can reject the hypothesis that the
+    sample came from the normal distribution at the 10% level:
+
+    >>> np.random.seed(987654321)
+    >>> stats.kstest(stats.t.rvs(3, size=100), 'norm')
+    (0.131016895759829, 0.058826222555312224)
+
+    """
+    # to not break compatibility with existing code
+    if alternative == 'two_sided':
+        alternative = 'two-sided'
+    if alternative not in ['two-sided', 'greater', 'less']:
+        raise ValueError("Unexpected alternative %s" % alternative)
+    xvals, yvals, cdf = _parse_kstest_args(rvs, cdf, args, N)
+    if cdf:
+        return ks_1samp(xvals, cdf, args=args, alternative=alternative, mode=mode)
+    return ks_2samp(xvals, yvals, alternative=alternative, mode=mode)
 
 
 def tiecorrect(rankvals):

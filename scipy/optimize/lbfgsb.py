@@ -34,7 +34,7 @@ Functions
 ## Modifications by Travis Oliphant and Enthought, Inc. for inclusion in SciPy
 
 import numpy as np
-from numpy import array, asarray, float64, int32, zeros
+from numpy import array, asarray, float64, zeros
 from . import _lbfgsb
 from .optimize import (MemoizeJac, OptimizeResult,
                        _check_unknown_options, _prepare_scalar_function)

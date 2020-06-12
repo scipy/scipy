@@ -502,7 +502,6 @@ class TestNdimage:
     def test_gauss_memory_overlap(self):
         input = numpy.arange(100 * 100).astype(numpy.float32)
         input.shape = (100, 100)
-        otype = numpy.float64
         output1 = ndimage.gaussian_filter(input, 1.0)
         ndimage.gaussian_filter(input, 1.0, output=input)
         assert_array_almost_equal(output1, input)
@@ -4634,7 +4633,7 @@ class TestNdimage:
         structure = numpy.ones((3, 3), dtype=numpy.bool_)
 
         # Check that type mismatch is properly handled
-        output = numpy.empty_like(array, dtype=numpy.float)
+        output = numpy.empty_like(array, dtype=numpy.float64)
         ndimage.white_tophat(array, structure=structure, output=output)
 
     def test_black_tophat01(self):
@@ -4689,7 +4688,7 @@ class TestNdimage:
         structure = numpy.ones((3, 3), dtype=numpy.bool_)
 
         # Check that type mismatch is properly handled
-        output = numpy.empty_like(array, dtype=numpy.float)
+        output = numpy.empty_like(array, dtype=numpy.float64)
         ndimage.black_tophat(array, structure=structure, output=output)
 
     def test_hit_or_miss01(self):

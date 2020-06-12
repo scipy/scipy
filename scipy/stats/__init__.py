@@ -201,6 +201,7 @@ Summary statistics
    mvsdist
    entropy
    median_absolute_deviation
+   median_abs_deviation
 
 Frequency statistics
 ====================
@@ -248,9 +249,10 @@ Statistical tests
    ttest_ind
    ttest_ind_from_stats
    ttest_rel
-   kstest
    chisquare
    power_divergence
+   kstest
+   ks_1samp
    ks_2samp
    epps_singleton_2samp
    mannwhitneyu
@@ -374,6 +376,7 @@ Warnings used in :mod:`scipy.stats`
    :toctree: generated/
 
    F_onewayConstantInputWarning
+   F_onewayBadInputSizesWarning
    PearsonRConstantInputWarning
    PearsonRNearConstantInputWarning
    SpearmanRConstantInputWarning

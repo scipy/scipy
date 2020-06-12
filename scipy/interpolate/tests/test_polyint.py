@@ -352,6 +352,12 @@ class TestBarycentric(object):
         values = barycentric_interpolate(self.xs, self.ys, self.test_xs)
         assert_almost_equal(P(self.test_xs), values)
 
+    def test_int_input(self):
+        x = 1000 * np.arange(1, 11)  # np.prod(x[-1] - x[:-1]) overflows
+        y = np.arange(1, 11)
+        value = barycentric_interpolate(x, y, 1000 * 9.5)
+        assert_almost_equal(value, 9.5)
+
 
 class TestPCHIP(object):
     def _make_random(self, npts=20):

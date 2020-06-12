@@ -1195,8 +1195,12 @@ def sos2tf(sos):
     .. versionadded:: 0.16.0
     """
     sos = np.asarray(sos)
-    b = [1.]
-    a = [1.]
+    result_type = sos.dtype
+    if result_type.kind in 'bui':
+        result_type = np.float64
+
+    b = np.array([1], dtype=result_type)
+    a = np.array([1], dtype=result_type)
     n_sections = sos.shape[0]
     for section in range(n_sections):
         b = np.polymul(b, sos[section, :3])
@@ -2071,8 +2075,10 @@ def iirdesign(wp, ws, gpass, gstop, analog=False, ftype='ellip', output='ba',
 
     Parameters
     ----------
-    wp, ws : float
-        Passband and stopband edge frequencies.
+    wp, ws : float or array like, shape (2,)
+        Passband and stopband edge frequencies. Possible values are scalars
+        (for lowpass and highpass filters) or ranges (for bandpass and bandstop
+        filters).
         For digital filters, these are in the same units as `fs`. By default,
         `fs` is 2 half-cycles/sample, so these are normalized from 0 to 1,
         where 1 is the Nyquist frequency. For example:
@@ -2083,6 +2089,8 @@ def iirdesign(wp, ws, gpass, gstop, analog=False, ftype='ellip', output='ba',
             - Bandstop:  wp = [0.1, 0.6],   ws = [0.2, 0.5]
 
         For analog filters, `wp` and `ws` are angular frequencies (e.g., rad/s).
+        Note, that for bandpass and bandstop filters passband must lie strictly
+        inside stopband or vice versa.
     gpass : float
         The maximum loss in the passband (dB).
     gstop : float
@@ -2178,6 +2186,18 @@ def iirdesign(wp, ws, gpass, gstop, analog=False, ftype='ellip', output='ba',
 
     wp = atleast_1d(wp)
     ws = atleast_1d(ws)
+
+    if wp.shape[0] != ws.shape[0] or wp.shape not in [(1,), (2,)]:
+        raise ValueError("wp and ws must have one or two elements each, and"
+                         "the same shape, got %s and %s"
+                         % (wp.shape, ws.shape))
+    if wp.shape[0] == 2:
+        if wp[0] < 0 or ws[0] < 0:
+            raise ValueError("Values for wp, ws can't be negative")
+        if not((ws[0] < wp[0] and wp[1] < ws[1]) or
+            (wp[0] < ws[0] and ws[1] < wp[1])):
+            raise ValueError("Passband must lie strictly inside stopband"
+                         " or vice versa")
 
     band_type = 2 * (len(wp) - 1)
     band_type += 1
@@ -4574,7 +4594,7 @@ def besselap(N, norm='phase'):
            of the ACM, Vol. 10, Issue 2, pp. 107-108, Feb. 1967,
            :DOI:`10.1145/363067.363115`
     .. [6] Miller and Bohn, "A Bessel Filter Crossover, and Its Relation to
-           Others", RaneNote 147, 1998, http://www.rane.com/note147.html
+           Others", RaneNote 147, 1998, https://www.ranecommercial.com/legacy/note147.html
 
     """
     if abs(int(N)) != N:

@@ -49,5 +49,9 @@ python module lsoda
          integer intent(hide),check(len(iwork)>=liw),depend(iwork) :: liw=len(iwork)
          integer intent(in) :: jt
        end subroutine lsoda
+
+       ! Fake common block for indicating the integer size
+       integer :: intvar
+       common /types/ intvar
     end interface
 end python module lsoda

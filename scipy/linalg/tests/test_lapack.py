@@ -55,7 +55,7 @@ def test_lapack_documented():
     names = set(lapack.__doc__.split())
     ignore_list = set([
         'absolute_import', 'clapack', 'division', 'find_best_lapack_type',
-        'flapack', 'print_function',
+        'flapack', 'print_function', 'HAS_ILP64',
     ])
     missing = list()
     for name in dir(lapack):
@@ -555,32 +555,37 @@ class TestTbtrs(object):
     @pytest.mark.parametrize('diag', ['N', 'U'])
     def test_random_matrices(self, dtype, trans, uplo, diag):
         seed(1724)
-        # lda, ldb, nrhs, kd are used to specify A and b.
-        # A is of shape lda x ldb with kd super/sub-diagonals
-        # b is of shape ldb x nrhs matrix
-        lda, ldb, nrhs, kd = 4, 4, 3, 2
-        ldab = kd + 1
+        # n, nrhs, kd are used to specify A and b.
+        # A is of shape n x n with kd super/sub-diagonals
+        # b is of shape n x nrhs matrix
+        n, nrhs, kd = 4, 3, 2
+        tbtrs = get_lapack_funcs('tbtrs', dtype=dtype)
+
+        is_upper = (uplo == 'U')
+        ku = kd * is_upper
+        kl = kd - ku
 
         # Construct the diagonal and kd super/sub diagonals of A with
         # the corresponding offsets.
-        band_widths = range(lda, lda - kd - 1, -1)
-        band_offsets = np.arange(ldab) if uplo == 'U' else np.arange(ldab) * -1
-        if dtype in REAL_DTYPES:
-            b = rand(ldb, nrhs).astype(dtype)
-            bands = [rand(width).astype(dtype) for width in band_widths]
-        elif dtype in COMPLEX_DTYPES:
-            b = (rand(ldb, nrhs) + rand(ldb, nrhs) * 1j).astype(dtype)
-            bands = [(rand(width) + rand(width) * 1j).astype(dtype)
-                     for width in band_widths]
+        band_offsets = range(ku, -kl - 1, -1)
+        band_widths = [n - abs(x) for x in band_offsets]
+        bands = [generate_random_dtype_array((width,), dtype)
+                 for width in band_widths]
 
         if diag == 'U':  # A must be unit triangular
-            bands[0] = np.ones(lda, dtype=dtype)
+            bands[ku] = np.ones(n, dtype=dtype)
 
         # Construct the diagonal banded matrix A from the bands and offsets.
         a = sps.diags(bands, band_offsets, format='dia')
-        ab = np.flipud(a.data) if uplo == 'U' else a.data
 
-        tbtrs = get_lapack_funcs('tbtrs', dtype=dtype)
+        # Convert A into banded storage form
+        ab = np.zeros((kd + 1, n), dtype)
+        for row, k in enumerate(band_offsets):
+            ab[row, max(k, 0):min(n+k, n)] = a.diagonal(k)
+
+        # The RHS values.
+        b = generate_random_dtype_array((n, nrhs), dtype)
+
         x, info = tbtrs(ab=ab, b=b, uplo=uplo, trans=trans, diag=diag)
         assert_equal(info, 0)
 
@@ -601,7 +606,7 @@ class TestTbtrs(object):
         """Test if invalid values of uplo, trans and diag raise exceptions"""
         # Argument checks occur independently of used datatype.
         # This mean we must not parameterize all available datatypes.
-        tbtrs = get_lapack_funcs('tbtrs', dtype=np.float)
+        tbtrs = get_lapack_funcs('tbtrs', dtype=np.float64)
         ab = rand(4, 2)
         b = rand(2, 4)
         assert_raises(Exception, tbtrs, ab, b, uplo, trans, diag)
@@ -773,7 +778,7 @@ def test_sgesdd_lwork_bug_workaround():
         p.terminate()
 
     assert_equal(returncode, 0,
-                 "Code apparently failed: " + p.stdout.read())
+                 "Code apparently failed: " + p.stdout.read().decode())
 
 
 class TestSytrd(object):
@@ -1743,6 +1748,7 @@ def test_syequb():
         assert_equal(np.log2(s).astype(int), desired_log2s)
 
 
+@pytest.mark.skipif(True, reason="Failing on some OpenBLAS version, see gh-12276")
 def test_heequb():
     # zheequb has a bug for versions =< LAPACK 3.9.0
     # See Reference-LAPACK gh-61 and gh-408

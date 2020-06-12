@@ -107,7 +107,7 @@ cdef bint sys_is_le = sys.byteorder == 'little'
 swapped_code = '>' if sys_is_le else '<'
 
 cdef cnp.dtype OPAQUE_DTYPE = mio5p.OPAQUE_DTYPE
-cdef cnp.dtype BOOL_DTYPE = np.dtype(np.bool)
+cdef cnp.dtype BOOL_DTYPE = np.dtype(np.bool_)
 
 
 cpdef cnp.uint32_t byteswap_u4(cnp.uint32_t u4):
@@ -415,7 +415,7 @@ cdef class VarReader5:
 
         The type of the array is usually given by the ``mdtype`` returned via
         ``read_element``.  Sparse logical arrays are an exception, where the
-        type of the array may be ``np.bool`` even if the ``mdtype`` claims the
+        type of the array may be ``np.bool_`` even if the ``mdtype`` claims the
         data is of float64 type.
 
         Parameters

@@ -5,11 +5,82 @@ from distutils.util import get_platform
 
 import numpy as np
 
+from .system_info import combine_dict
+
 
 __all__ = ['needs_g77_abi_wrapper', 'get_g77_abi_wrappers',
            'gfortran_legacy_flag_hook', 'blas_ilp64_pre_build_hook',
            'get_f2py_int64_options', 'generic_pre_build_hook',
-           'write_file_content']
+           'write_file_content', 'ilp64_pre_build_hook']
+
+
+def get_fcompiler_ilp64_flags():
+    """
+    Dictionary of compiler flags for switching to 8-byte default integer
+    size.
+    """
+    flags = {
+        'absoft': ['-i8'],  # Absoft
+        'compaq': ['-i8'],  # Compaq Fortran
+        'compaqv': ['/integer_size:64'],  # Compaq Visual Fortran
+        'g95': ['-i8'],  # g95
+        'gnu95': ['-fdefault-integer-8'],  # GNU gfortran
+        'ibm': ['-qintsize=8'],  # IBM XL Fortran
+        'intel': ['-i8'],  # Intel Fortran Compiler for 32-bit
+        'intele': ['-i8'],  # Intel Fortran Compiler for Itanium
+        'intelem': ['-i8'],  # Intel Fortran Compiler for 64-bit
+        'intelv': ['-i8'],  # Intel Visual Fortran Compiler for 32-bit
+        'intelev': ['-i8'],  # Intel Visual Fortran Compiler for Itanium
+        'intelvem': ['-i8'],  # Intel Visual Fortran Compiler for 64-bit
+        'lahey': ['--long'],  # Lahey/Fujitsu Fortran 95 Compiler
+        'mips': ['-i8'],  # MIPSpro Fortran Compiler
+        'nag': ['-i8'],  # NAGWare Fortran 95 compiler
+        'nagfor': ['-i8'],  # NAG Fortran compiler
+        'pathf95': ['-i8'],  # PathScale Fortran compiler
+        'pg': ['-i8'],  # Portland Group Fortran Compiler
+        'flang': ['-i8'],  # Portland Group Fortran LLVM Compiler
+        'sun': ['-i8'],  # Sun or Forte Fortran 95 Compiler
+    }
+    # No support for this:
+    # - g77
+    # - hpux
+    # Unknown:
+    # - vast
+    return flags
+
+
+def get_fcompiler_macro_include_flags(path):
+    """
+    Dictionary of compiler flags for cpp-style preprocessing, with
+    an #include search path, and safety options necessary for macro
+    expansion.
+    """
+    intel_opts = ['-fpp', '-I' + path]
+    nag_opts = ['-fpp', '-I' + path]
+
+    flags = {
+        'absoft': ['-W132', '-cpp', '-I' + path],
+        'gnu95': ['-cpp', '-ffree-line-length-none',
+                  '-ffixed-line-length-none', '-I' + path],
+        'intel': intel_opts,
+        'intele': intel_opts,
+        'intelem': intel_opts,
+        'intelv': intel_opts,
+        'intelev': intel_opts,
+        'intelvem': intel_opts,
+        'lahey': ['-Cpp', '--wide', '-I' + path],
+        'mips': ['-col120', '-I' + path],
+        'nag': nag_opts,
+        'nagfor': nag_opts,
+        'pathf95': ['-ftpp', '-macro-expand', '-I' + path],
+        'flang': ['-Mpreprocess', '-Mextend', '-I' + path],
+        'sun': ['-fpp', '-I' + path],
+    }
+    # No support for this:
+    # - ibm (line length option turns on fixed format)
+    # TODO:
+    # - pg
+    return flags
 
 
 def uses_mkl(info):
@@ -99,6 +170,15 @@ def get_f2py_int64_options():
     return ['--f2cmap', f2cmap_fn]
 
 
+def ilp64_pre_build_hook(cmd, ext):
+    """
+    Pre-build hook for adding Fortran compiler flags that change
+    default integer size to 64-bit.
+    """
+    fcompiler_flags = get_fcompiler_ilp64_flags()
+    return generic_pre_build_hook(cmd, ext, fcompiler_flags=fcompiler_flags)
+
+
 def blas_ilp64_pre_build_hook(blas_info):
     """
     Pre-build hook for adding ILP64 BLAS compilation flags, and
@@ -135,10 +215,8 @@ def _blas_ilp64_pre_build_hook(cmd, ext, blas_info):
     if prefix or suffix:
         include_dir = os.path.join(_get_build_src_dir(), 'blas64-include')
 
-        fcompiler_flags = {
-            'gnu95': ['-fdefault-integer-8', '-cpp', '-ffree-line-length-none',
-                      '-ffixed-line-length-none', '-I' + include_dir],
-        }
+        fcompiler_flags = combine_dict(get_fcompiler_ilp64_flags(),
+                                       get_fcompiler_macro_include_flags(include_dir))
 
         # Add the include dir for C code
         if isinstance(ext, dict):
@@ -176,9 +254,7 @@ def _blas_ilp64_pre_build_hook(cmd, ext, blas_info):
             text += old_text
             return text
     else:
-        fcompiler_flags = {
-            'gnu95': ['-fdefault-integer-8'],
-        }
+        fcompiler_flags = get_fcompiler_ilp64_flags()
         patch_source = None
 
     return generic_pre_build_hook(cmd, ext,

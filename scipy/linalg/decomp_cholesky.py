@@ -199,7 +199,8 @@ def cho_solve(c_and_lower, b, overwrite_b=False, check_finite=True):
     if c.ndim != 2 or c.shape[0] != c.shape[1]:
         raise ValueError("The factored matrix c is not square.")
     if c.shape[1] != b1.shape[0]:
-        raise ValueError("incompatible dimensions.")
+        raise ValueError("incompatible dimensions ({} and {})"
+                         .format(c.shape, b1.shape))
 
     overwrite_b = overwrite_b or _datacopied(b1, b)
 

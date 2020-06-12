@@ -1,8 +1,8 @@
 !    -*- f90 -*-
 ! Note: the context of this file is case sensitive.
 
-python module _nnls ! in 
-    interface  ! in :_nnls
+python module __nnls ! in
+    interface  ! in :__nnls
         subroutine nnls(a,mda,m,n,b,x,rnorm,w,zz,index_bn,mode,maxiter) ! in :nnls:NNLS.F
             double precision dimension(mda,*), intent(copy) :: a
             integer optional,check(shape(a,0)==mda),depend(a) :: mda=shape(a,0)
@@ -18,7 +18,7 @@ python module _nnls ! in
             integer :: maxiter
         end subroutine nnls
     end interface
-end python module _nnls
+end python module __nnls
 
 ! This file was auto-generated with f2py (version:2_5878).
 ! See http://cens.ioc.ee/projects/f2py2e/
