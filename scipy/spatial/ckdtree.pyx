@@ -1027,17 +1027,18 @@ cdef class cKDTree:
         >>> import numpy as np
         >>> from scipy.spatial import cKDTree
         >>> np.random.seed(21701)
-        >>> obstacle_coords1 = np.random.random((50, 2))
-        >>> obstacle_coords2 = np.random.random((50, 2))
-        >>> plt.plot(obstacle_coords1[:, 0], obstacle_coords1[:, 1], "xk")
-        >>> plt.plot(obstacle_coords2[:, 0], obstacle_coords2[:, 1], "og")
-        >>> kd_tree1 = cKDTree(obstacle_coords1)
-        >>> kd_tree2 = cKDTree(obstacle_coords2)
-        >>> indexes = kd_tree1.query_ball_tree(kd_tree2, r=0.1)
+        >>> points1 = np.random.random((15, 2))
+        >>> points2 = np.random.random((15, 2))
+        >>> plt.figure(figsize=(6, 6))
+        >>> plt.plot(points1[:, 0], points1[:, 1], "xk")
+        >>> plt.plot(points2[:, 0], points2[:, 1], "og")
+        >>> kd_tree1 = cKDTree(points1)
+        >>> kd_tree2 = cKDTree(points2)
+        >>> indexes = kd_tree1.query_ball_tree(kd_tree2, r=0.2)
         >>> for i in range(len(indexes)):
         ...     for j in indexes[i]:
-        ...         plt.plot([obstacle_coords1[i, 0], obstacle_coords2[j, 0]],
-        ...             [obstacle_coords1[i, 1], obstacle_coords2[j, 1]], "-r")
+        ...         plt.plot([points1[i, 0], points2[j, 0]],
+        ...             [points1[i, 1], points2[j, 1]], "-r")
         >>> plt.show()
 
         """
@@ -1138,15 +1139,16 @@ cdef class cKDTree:
 
         >>> import matplotlib.pyplot as plt
         >>> import numpy as np
-        >>> from scipy.spatial import cKDTree
+        >>> from scipy.spatial import KDTree
         >>> np.random.seed(21701)
-        >>> obstacle_coords = np.random.random((100, 2))
-        >>> plt.plot(obstacle_coords[:, 0], obstacle_coords[:, 1], "xk")
-        >>> kd_tree = cKDTree(obstacle_coords)
-        >>> pairs = kd_tree.query_pairs(r=0.1)
+        >>> points = np.random.random((20, 2))
+        >>> plt.figure(figsize=(6, 6))
+        >>> plt.plot(points[:, 0], points[:, 1], "xk")
+        >>> kd_tree = KDTree(points)
+        >>> pairs = kd_tree.query_pairs(r=0.2)
         >>> for (i, j) in pairs:
-        ...     plt.plot([obstacle_coords[i, 0], obstacle_coords[j, 0]],
-        ...     [obstacle_coords[i, 1], obstacle_coords[j, 1]], "-r")
+        ...     plt.plot([points[i, 0], points[j, 0]],
+        ...             [points[i, 1], points[j, 1]], "-r")
         >>> plt.show()
 
         """
