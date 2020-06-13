@@ -758,7 +758,8 @@ class TestFFTConvolve(object):
 
         out = fftconvolve(a, b, 'full', axes=[0])
         assert_allclose(out, expected, atol=1e-10)
-    
+
+
 def fftconvolve_err(*args, **kwargs):
     raise RuntimeError('Fell back to fftconvolve')
 
@@ -1921,19 +1922,21 @@ class TestCorrelate(object):
 
 @pytest.mark.parametrize("mode", ["valid", "same", "full"])
 @pytest.mark.parametrize("behind", [True, False])
-def test_correlation_lags(mode, behind):
+@pytest.mark.parametrize("input_size", [100, 1000, 10000, 100000])
+def test_correlation_lags(mode, behind, input_size):
     # generate random data
     rng = np.random.RandomState(0)
-    in1 = rng.standard_normal(1000)
+    in1 = rng.standard_normal(input_size)
+    offset = int(input_size/10)
     # generate offset version of array to correlate with
     if behind:
         # y is behind x
-        in2 = np.concatenate([rng.standard_normal(100), in1])
-        expected = -100
+        in2 = np.concatenate([rng.standard_normal(offset), in1])
+        expected = -offset
     else:
         # y is ahead of x
-        in2 = in1[100:]
-        expected = 100
+        in2 = in1[offset:]
+        expected = offset
     # cross correlate, returning lag information
     correlation = correlate(in1, in2, mode=mode)
     lags = correlation_lags(in1.size, in2.size, mode=mode)
@@ -1941,6 +1944,8 @@ def test_correlation_lags(mode, behind):
     lag_index = np.argmax(correlation)
     # Check as expected
     assert_equal(lags[lag_index], expected)
+    # Correlation and lags shape should match
+    assert_equal(lags.shape, correlation.shape)
 
 
 @pytest.mark.parametrize('dt', [np.csingle, np.cdouble, np.clongdouble])
