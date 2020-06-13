@@ -8,18 +8,19 @@ cimport numpy as np
 cimport cython
 from cython.view cimport array
 from libc.math cimport sqrt, sin, cos, atan2, acos
-from numpy.math cimport PI as pi, NAN, isnan # import PI from numpy to avoid MSVC error
+from numpy.math cimport PI as pi, NAN, isnan # avoid MSVC error
 
 # utilities for empty array initialization
 cdef inline double[:] _empty1(int n):
     return array(shape=(n,), itemsize=sizeof(double), format=b"d")
-cdef inline double[:,:] _empty2(int n1, int n2):
+cdef inline double[:, :] _empty2(int n1, int n2):
     return array(shape=(n1, n2), itemsize=sizeof(double), format=b"d")
-cdef inline double[:,:,:] _empty3(int n1, int n2, int n3):
+cdef inline double[:, :, :] _empty3(int n1, int n2, int n3):
     return array(shape=(n1, n2, n3), itemsize=sizeof(double), format=b"d")
-cdef inline double[:,:] _zeros2(int n1, int n2):
-    cdef double[:,:] arr = array(shape=(n1, n2), itemsize=sizeof(double), format=b"d")
-    arr[:,:] = 0
+cdef inline double[:, :] _zeros2(int n1, int n2):
+    cdef double[:, :] arr = array(shape=(n1, n2),
+        itemsize=sizeof(double), format=b"d")
+    arr[:, :] = 0
     return arr
 
 # flat implementations of numpy functions
@@ -40,15 +41,12 @@ cdef inline double _dot3(const double[:] a, const double[:] b) nogil:
 @cython.boundscheck(False)
 @cython.wraparound(False)
 cdef inline double _norm3(const double[:] elems) nogil:
-    return sqrt(elems[0] * elems[0] + elems[1] * elems[1] + elems[2] * elems[2])
+    return sqrt(_dot3(elems, elems))
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
 cdef inline double _normalize4(double[:] elems) nogil:
-    cdef double norm = sqrt(
-        elems[0] * elems[0] + elems[1] * elems[1] +
-        elems[2] * elems[2] + elems[3] * elems[3]
-    )
+    cdef double norm = sqrt(_dot3(elems, elems) + elems[3]*elems[3])
 
     if norm == 0:
         return NAN
@@ -88,7 +86,7 @@ cdef inline const double[:] _elementary_basis_vector(uchar axis):
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef double[:,:] _compute_euler_from_matrix(
+cdef double[:, :] _compute_euler_from_matrix(
     np.ndarray[double, ndim=3] matrix, const uchar[:] seq, bint extrinsic=False
 ):
     # The algorithm assumes intrinsic frame transformations. The algorithm
@@ -117,7 +115,7 @@ cdef double[:,:] _compute_euler_from_matrix(
     # angle offset is lambda from the paper referenced in [2] from docstring of
     # `as_euler` function
     cdef double offset = atan2(sl, cl)
-    cdef double[:,:] c_ = _empty2(3, 3)
+    cdef double[:, :] c_ = _empty2(3, 3)
     c_[0, :] = n2
     c_[1, :] = _cross3(n1, n2)
     c_[2, :] = n1
@@ -130,7 +128,8 @@ cdef double[:,:] _compute_euler_from_matrix(
     ])
 
     # some forward definitions
-    cdef double[:,:] angles = _empty2(num_rotations, 3), matrix_transformed
+    cdef double[:, :] angles = _empty2(num_rotations, 3)
+    cdef double[:, :] matrix_trans # transformed matrix
     cdef double[:] _angles # accessor for each rotation
     cdef np.ndarray[double, ndim=2] res
     cdef double eps = 1e-7
@@ -141,13 +140,13 @@ cdef double[:,:] _compute_euler_from_matrix(
 
         # Step 3
         res = np.dot(c, matrix[ind, :, :])
-        matrix_transformed = np.dot(res, c.T.dot(rot))
+        matrix_trans = np.dot(res, c.T.dot(rot))
 
         # Step 4
         # Ensure less than unit norm
-        matrix_transformed[2, 2] = min(matrix_transformed[2, 2], 1)
-        matrix_transformed[2, 2] = max(matrix_transformed[2, 2], -1)
-        _angles[1] = acos(matrix_transformed[2, 2])
+        matrix_trans[2, 2] = min(matrix_trans[2, 2], 1)
+        matrix_trans[2, 2] = max(matrix_trans[2, 2], -1)
+        _angles[1] = acos(matrix_trans[2, 2])
 
         # Steps 5, 6
         safe1 = abs(_angles[1]) >= eps
@@ -159,8 +158,8 @@ cdef double[:,:] _compute_euler_from_matrix(
 
         # 5b
         if safe:
-            _angles[0] = atan2(matrix_transformed[0, 2], -matrix_transformed[1, 2])
-            _angles[2] = atan2(matrix_transformed[2, 0], matrix_transformed[2, 1])
+            _angles[0] = atan2(matrix_trans[0, 2], -matrix_trans[1, 2])
+            _angles[2] = atan2(matrix_trans[2, 0], matrix_trans[2, 1])
 
         if extrinsic:
             # For extrinsic, set first angle to zero so that after reversal we
@@ -170,12 +169,12 @@ cdef double[:,:] _compute_euler_from_matrix(
                 _angles[0] = 0
             # 6b
             if not safe1:
-                _angles[2] = atan2(matrix_transformed[1, 0] - matrix_transformed[0, 1],
-                                   matrix_transformed[0, 0] + matrix_transformed[1, 1])
+                _angles[2] = atan2(matrix_trans[1, 0] - matrix_trans[0, 1],
+                                   matrix_trans[0, 0] + matrix_trans[1, 1])
             # 6c
             if not safe2:
-                _angles[2] = -atan2(matrix_transformed[1, 0] + matrix_transformed[0, 1],
-                                    matrix_transformed[0, 0] - matrix_transformed[1, 1])
+                _angles[2] = -atan2(matrix_trans[1, 0] + matrix_trans[0, 1],
+                                    matrix_trans[0, 0] - matrix_trans[1, 1])
         else:
             # For instrinsic, set third angle to zero
             # 6a
@@ -183,12 +182,12 @@ cdef double[:,:] _compute_euler_from_matrix(
                 _angles[2] = 0
             # 6b
             if not safe1:
-                _angles[0] = atan2(matrix_transformed[1, 0] - matrix_transformed[0, 1],
-                                   matrix_transformed[0, 0] + matrix_transformed[1, 1])
+                _angles[0] = atan2(matrix_trans[1, 0] - matrix_trans[0, 1],
+                                   matrix_trans[0, 0] + matrix_trans[1, 1])
             # 6c
             if not safe2:
-                _angles[0] = atan2(matrix_transformed[1, 0] + matrix_transformed[0, 1],
-                                   matrix_transformed[0, 0] - matrix_transformed[1, 1])
+                _angles[0] = atan2(matrix_trans[1, 0] + matrix_trans[0, 1],
+                                   matrix_trans[0, 0] - matrix_trans[1, 1])
 
         # Step 7
         if seq[0] == seq[2]:
@@ -212,8 +211,9 @@ cdef double[:,:] _compute_euler_from_matrix(
 
         # Step 8
         if not safe:
-            warnings.warn("Gimbal lock detected. Setting third angle to zero since"
-                          " it is not possible to uniquely determine all angles.")
+            warnings.warn("Gimbal lock detected. Setting third angle to zero "
+                          "since it is not possible to uniquely determine "
+                          "all angles.")
 
     # Reverse role of extrinsic and intrinsic rotations, but let third angle be
     # zero for gimbal locked cases
@@ -223,7 +223,9 @@ cdef double[:,:] _compute_euler_from_matrix(
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef inline void _compose_quat_single(const double[:] p, const double[:] q, double[:] r): # calculate p * q into r
+cdef inline void _compose_quat_single( # calculate p * q into r
+    const double[:] p, const double[:] q, double[:] r
+):
     cdef double[:] cross = _cross3(p[:3], q[:3])
 
     r[0] = p[3]*q[0] + q[3]*p[0] + cross[0]
@@ -233,26 +235,30 @@ cdef inline void _compose_quat_single(const double[:] p, const double[:] q, doub
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef inline double[:, :] _compose_quat(const double[:, :] p, const double[:, :] q):
+cdef inline double[:, :] _compose_quat(
+    const double[:, :] p, const double[:, :] q
+):
     cdef Py_ssize_t n = max(p.shape[0], q.shape[0])
     cdef double[:, :] product = _empty2(n, 4)
 
     # dealing with broadcasting
     if p.shape[0] == 1:
         for ind in range(n):
-            _compose_quat_single(p[0, :], q[ind, :], product[ind, :])
+            _compose_quat_single(p[0], q[ind], product[ind])
     elif q.shape[0] == 1:
         for ind in range(n):
-            _compose_quat_single(p[ind, :], q[0, :], product[ind, :])
+            _compose_quat_single(p[ind], q[0], product[ind])
     else:
         for ind in range(n):
-            _compose_quat_single(p[ind, :], q[ind, :], product[ind, :])
+            _compose_quat_single(p[ind], q[ind], product[ind])
 
     return product
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef inline double[:, :] _make_elementary_quat(uchar axis, const double[:] angles):
+cdef inline double[:, :] _make_elementary_quat(
+    uchar axis, const double[:] angles
+):
     cdef Py_ssize_t n = angles.shape[0]
     cdef double[:, :] quat = _zeros2(n, 4)
 
@@ -268,7 +274,9 @@ cdef inline double[:, :] _make_elementary_quat(uchar axis, const double[:] angle
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef double[:, :] _elementary_quat_compose(const uchar[:] seq, const double[:, :] angles, bint intrinsic=False):
+cdef double[:, :] _elementary_quat_compose(
+    const uchar[:] seq, const double[:, :] angles, bint intrinsic=False
+):
     cdef double[:, :] result = _make_elementary_quat(seq[0], angles[:, 0])
     cdef Py_ssize_t seq_len = seq.shape[0]
 
@@ -484,7 +492,7 @@ cdef class Rotation(object):
         self._single = False
         quat = np.asarray(quat, dtype=float)
 
-        if quat.ndim not in [1, 2] or quat.shape[len(quat.shape)-1] != 4:
+        if quat.ndim not in [1, 2] or quat.shape[len(quat.shape) - 1] != 4:
             raise ValueError("Expected `quat` to have shape (4,) or (N x 4), "
                              "got {}.".format(quat.shape))
 
@@ -677,16 +685,17 @@ cdef class Rotation(object):
         is_single = False
         matrix = np.asarray(matrix, dtype=float)
 
-        if matrix.ndim not in [2, 3] or matrix.shape[len(matrix.shape)-2:] != (3, 3):
+        if (matrix.ndim not in [2, 3] or
+            matrix.shape[len(matrix.shape)-2:] != (3, 3)):
             raise ValueError("Expected `matrix` to have shape (3, 3) or "
                              "(N, 3, 3), got {}".format(matrix.shape))
 
         # If a single matrix is given, convert it to 3D 1 x 3 x 3 matrix but
         # set self._single to True so that we can return appropriate objects in
         # the `to_...` methods
-        cdef double[:,:,:] cmatrix
+        cdef double[:, :, :] cmatrix
         if matrix.shape == (3, 3):
-            cmatrix = matrix[None,:,:]
+            cmatrix = matrix[None, :, :]
             is_single = True
         else:
             cmatrix = matrix
@@ -696,13 +705,14 @@ cdef class Rotation(object):
         cdef double[:] decision = _empty1(4)
         cdef int choice
 
-        cdef double[:,:] quat = _empty2(num_rotations, 4)
+        cdef double[:, :] quat = _empty2(num_rotations, 4)
 
         for ind in range(num_rotations):
             decision[0] = cmatrix[ind, 0, 0]
             decision[1] = cmatrix[ind, 1, 1]
             decision[2] = cmatrix[ind, 2, 2]
-            decision[3] = cmatrix[ind, 0, 0] + cmatrix[ind, 1, 1] + cmatrix[ind, 2, 2]
+            decision[3] = cmatrix[ind, 0, 0] + cmatrix[ind, 1, 1] \
+                        + cmatrix[ind, 2, 2]
             choice = _argmax4(decision)
 
             if choice != 3:
@@ -721,7 +731,7 @@ cdef class Rotation(object):
                 quat[ind, 3] = 1 + decision[3]
 
             # normalize
-            _normalize4(quat[ind, :])
+            _normalize4(quat[ind])
 
         if is_single:
             return cls(quat[0], normalize=False, copy=False)
@@ -794,7 +804,7 @@ cdef class Rotation(object):
         # If a single vector is given, convert it to a 2D 1 x 3 matrix but
         # set self._single to True so that we can return appropriate objects
         # in the `as_...` methods
-        cdef double[:,:] crotvec
+        cdef double[:, :] crotvec
         if rotvec.shape == (3,):
             crotvec = rotvec[None, :]
             is_single = True
@@ -803,15 +813,15 @@ cdef class Rotation(object):
 
         cdef Py_ssize_t num_rotations = crotvec.shape[0]
         cdef double angle, scale, angle2
-        cdef double[:,:] quat = _empty2(num_rotations, 4)
+        cdef double[:, :] quat = _empty2(num_rotations, 4)
 
         for ind in range(num_rotations):
             angle = _norm3(crotvec[ind, :])
 
-            if angle <= 1e-3: # small angle
+            if angle <= 1e-3:  # small angle
                 angle2 = angle * angle
                 scale = 0.5 - angle2 / 48 + angle2 * angle2 / 3840
-            else: # large angle
+            else:  # large angle
                 scale = sin(angle / 2) / angle
 
             quat[ind, 0] = scale * crotvec[ind, 0]
@@ -1087,9 +1097,9 @@ cdef class Rotation(object):
 
         .. versionadded:: 1.4.0
         """
-        cdef double[:,:] quat = self._quat
+        cdef double[:, :] quat = self._quat
         cdef Py_ssize_t num_rotations = quat.shape[0]
-        cdef double[:,:,:] matrix = _empty3(num_rotations, 3, 3)
+        cdef double[:, :, :] matrix = _empty3(num_rotations, 3, 3)
 
         cdef double x, y, z, w, x2, y2, z2, w2
         cdef double xy, zw, xz, yw, yz, xw
@@ -1180,11 +1190,11 @@ cdef class Rotation(object):
         """
         cdef Py_ssize_t num_rotations = len(self)
         cdef double angle, scale, angle2
-        cdef double[:,:] rotvec = _empty2(num_rotations, 3)
+        cdef double[:, :] rotvec = _empty2(num_rotations, 3)
         cdef double[:] quat
 
         for ind in range(num_rotations):
-            if self._quat[ind, 3] < 0: # w > 0 to ensure 0 <= angle <= pi
+            if self._quat[ind, 3] < 0:  # w > 0 to ensure 0 <= angle <= pi
                 quat = self._quat[ind, :].copy()
                 for i in range(4):
                     quat[i] *= -1
@@ -1193,10 +1203,10 @@ cdef class Rotation(object):
 
             angle = 2 * atan2(_norm3(quat), quat[3])
 
-            if angle <= 1e-3: # small angle
+            if angle <= 1e-3:  # small angle
                 angle2 = angle * angle
                 scale = 2 + angle2 / 12 + 7 * angle2 * angle2 / 2880
-            else: # large angle
+            else:  # large angle
                 scale = angle / sin(angle / 2)
 
             rotvec[ind, 0] = scale * quat[0]
@@ -1605,7 +1615,7 @@ cdef class Rotation(object):
         >>> r[0].magnitude()
         3.141592653589793
         """
-        cdef double[:,:] quat = self._quat
+        cdef double[:, :] quat = self._quat
         cdef Py_ssize_t num_rotations = quat.shape[0]
         cdef double[:] angles = _empty1(num_rotations)
 
