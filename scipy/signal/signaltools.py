@@ -9,6 +9,7 @@ from . import sigtools, dlti
 from ._upfirdn import upfirdn, _output_len, _upfirdn_modes
 from scipy import linalg, fft as sp_fft
 from scipy.fft._helper import _init_nd_shape_and_axes
+from scipy._lib._util import prod as _prod
 import numpy as np
 from scipy.special import lambertw
 from .windows import get_window
@@ -875,17 +876,6 @@ def _numeric_arrays(arrays, kinds='buifc'):
         if array_.dtype.kind not in kinds:
             return False
     return True
-
-
-def _prod(iterable):
-    """
-    Product of a list of numbers.
-    Faster than np.prod for short lists like array shapes.
-    """
-    product = 1
-    for x in iterable:
-        product *= x
-    return product
 
 
 def _conv_ops(x_shape, h_shape, mode):

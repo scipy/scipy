@@ -42,7 +42,7 @@ jobs:
             . venv/bin/activate
             pip install --install-option="--no-cython-compile" cython
             pip install numpy
-            pip install nose mpmath argparse Pillow codecov matplotlib Sphinx
+            pip install nose mpmath argparse Pillow codecov matplotlib "Sphinx!=3.1.0"
             pip install pybind11
 
       - run:

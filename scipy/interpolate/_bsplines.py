@@ -8,16 +8,9 @@ from scipy.linalg import (get_lapack_funcs, LinAlgError,
 from . import _bspl
 from . import _fitpack_impl
 from . import _fitpack as _dierckx
+from scipy._lib._util import prod
 
 __all__ = ["BSpline", "make_interp_spline", "make_lsq_spline"]
-
-
-# copy-paste from interpolate.py
-def prod(x):
-    """Product of a list of numbers; ~40x faster vs np.prod for Python tuples"""
-    if len(x) == 0:
-        return 1
-    return functools.reduce(operator.mul, x)
 
 
 def _get_dtype(dtype):
