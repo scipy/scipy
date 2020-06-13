@@ -1922,7 +1922,7 @@ class TestCorrelate(object):
 
 @pytest.mark.parametrize("mode", ["valid", "same", "full"])
 @pytest.mark.parametrize("behind", [True, False])
-@pytest.mark.parametrize("input_size", [100, 1000, 10000, 100000])
+@pytest.mark.parametrize("input_size", [100, 101, 1000, 1001, 10000, 10001])
 def test_correlation_lags(mode, behind, input_size):
     # generate random data
     rng = np.random.RandomState(0)
