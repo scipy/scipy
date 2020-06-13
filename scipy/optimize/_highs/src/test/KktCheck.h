@@ -23,7 +23,15 @@
 
 #include "lp_data/HConst.h"
 
+namespace presolve {
+namespace kkt_check {
+
 class KktCheck {
+ public:
+  virtual ~KktCheck() {}
+
+  bool istrueGlb = false;
+ private:
   // model
   int numCol;
   int numRow;
@@ -43,7 +51,6 @@ class KktCheck {
   int i, j, k;
   double tol;
 
-  bool istrueGlb;
 
   // index std::vectors
   std::vector<int> rIndexRev;
@@ -88,4 +95,8 @@ class KktCheck {
                          const std::vector<double>& rowUpper_,
                          const std::vector<double>& cost);
 };
+
+}  // namespace kkt_check
+}  // namespace presolve
+
 #endif /* TEST_KKTCHECK_H_ */

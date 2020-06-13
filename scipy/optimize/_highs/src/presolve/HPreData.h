@@ -38,6 +38,7 @@ struct change {
 class HPreData {
  public:
   HPreData();
+  virtual ~HPreData() {}
 
   // Model data
   int numCol;
@@ -104,7 +105,7 @@ class HPreData {
   vector<int> rIndex;
   vector<int> cIndex;
 
-  KktChStep chk;
+  kkt_check::KktChStep chk;
 
   stack<change> chng;
   stack<pair<int, vector<double>>> oldBounds;  //(j, l, u)

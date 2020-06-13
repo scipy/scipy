@@ -115,13 +115,14 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
     maxiter : int
         The maximum number of iterations to perform in either phase. For
         ``solver='ipm'``, this does not include the number of crossover
-        iterations.  Default is ``CONST_I_INF``.
+        iterations.  Default is the largest possible value for an ``int``
+        on the platform.
     disp : bool
         Set to ``True`` if indicators of optimization status are to be printed
         to the console each iteration; default ``False``.
     time_limit : float
         The maximum time in seconds allotted to solve the problem; default is
-        unlimited (CONST_INF).
+        the largest possible value for a ``double`` on the platform.
     presolve : bool
         Presolve attempts to identify trivial infeasibilities,
         identify trivial unboundedness, and simplify the problem before
@@ -129,41 +130,41 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
         to keep the default setting ``True``; set to ``False`` if presolve is
         to be disabled.
     dual_feasibility_tolerance : double
-        Dual feasibility tolerance.  Default is 1e-07.  When
-        ``solver='ipm'`` this is interpreted as the optimality
-        tolerance.
+        Dual feasibility tolerance.  Default is 1e-07.
+        This option is ignored when ``solver='ipm'``.
     dual_objective_value_upper_bound : double
         Upper bound on objective value for dual simplex:
-        algorithm terminates if reached.  Default is ``CONST_INF``.
+        algorithm terminates if reached.  Default is the largest possible
+        value for a ``double`` on the platform.
         When ``solver='ipm'`` this value is ignored.
     message_level : int {0, 1, 2, 3, 4, 5, 6, 7}
         Verbosity level, corresponds to:
 
-            ``0``: MESSAGE_LEVEL_NONE
+            ``0``: No messages
 
-            ``1``: MESSAGE_LEVEL_VERBOSE
+            ``1``: Verbose messaging
 
-            ``2``: MESSAGE_LEVEL_DETAILED
+            ``2``: Detailed messaging
 
-            ``3``: MESSAGE_LEVEL_VERBOSE | MESSAGE_LEVEL_DETAILED
+            ``3``: Verbose and Detailed messaging
 
-            ``4``: MESSAGE_LEVEL_MINIMAL
+            ``4``: Minimal messaging
 
-            ``5``: MESSAGE_LEVEL_MINIMAL | MESSAGE_LEVEL_VERBOSE
+            ``5``: Minimal messaging and Verbose messaging
 
-            ``6``: MESSAGE_LEVEL_MINIMAL | MESSAGE_LEVEL_DETAILED
+            ``6``: Minimal and Detailed messaging.
 
-            ``7``: MESSAGE_LEVEL_ALWAYS
+            ``7``: Show all messages
 
-        Default is ``MESSAGE_LEVEL_MINIMAL``, but note:
-        this option is ignored unless option ``disp`` is ``True``.
+        Default is 4, but note: this option is ignored unless
+        option ``disp`` is ``True``. "Verbose", "Detailed",
+        "Minimal", and "Minimal" are defined as in HiGHS.
         ``message_level`` behaves like a bitmask, i.e., any
         combination of levels is possible using the bit-or
         operator.
     primal_feasibility_tolerance : double
-        Primal feasibility tolerance.  Default is 1e-07.  When
-        ``solver='ipm'`` this is interpreted as the feasibility
-        tolerance.
+        Primal feasibility tolerance.  Default is 1e-07.
+        This option is ignored by ``solver='ipm'``.
     simplex_crash_strategy : int {0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
         Strategy for simplex crash: off / LTSSF / Bixby (0/1/2).
         Default is ``0``.  Corresponds to the following:
@@ -188,6 +189,8 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
 
             ``9``: `SIMPLE_CRASH_STRATEGY_TEST_SING`
 
+         ``SIMPLEX_CRASH_STRATEGY_*`` are defined as in HiGHS.
+
     simplex_dual_edge_weight_strategy : int {0, 1, 2, 3, 4}
         Strategy for simplex dual edge weights:
         Dantzig / Devex / Steepest Edge.  Default is ``2``.
@@ -203,6 +206,8 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
 
             ``4``: `SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_STEEPEST_EDGE_UNIT_INITIAL`
 
+        ``SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_*`` are defined as in HiGHS.
+
     simplex_primal_edge_weight_strategy : int {0, 1}
         Strategy for simplex primal edge weights:
         Dantzig / Devex.  Default is ``0``.
@@ -211,6 +216,8 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
             ``0``: `SIMPLEX_PRIMAL_EDGE_WEIGHT_STRATEGY_DANTZIG`
 
             ``1``: `SIMPLEX_PRIMAL_EDGE_WEIGHT_STRATEGY_DEVEX`
+
+        ``SIMPLEX_PRIMAL_EDGE_WEIGHT_STRATEGY_*`` are defined as in HiGHS.
 
     simplex_strategy : int {0, 1, 2, 3}
         Strategy for simplex solver. Default: ``1``.
@@ -224,12 +231,14 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
 
             ``3``: `SIMPLEX_STRATEGY_DUAL_MULTI`
 
+        ``SIMPLEX_STRATEGY_*`` are defined as in HiGHS.
+
     simplex_update_limit : int
         Limit on the number of simplex UPDATE operations.  Default
         is ``5000``.
     unknown_options : dict
         Optional arguments not used by this particular solver. If
-        `unknown_options` is non-empty, a warning is issued listing all
+        ``unknown_options`` is non-empty, a warning is issued listing all
         unused options.
 
     Returns

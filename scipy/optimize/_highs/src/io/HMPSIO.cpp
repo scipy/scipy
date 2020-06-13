@@ -667,10 +667,6 @@ HighsStatus writeMPS(
   for (int c_n = 0; c_n < numCol; c_n++) {
     if (Astart[c_n] == Astart[c_n + 1] && colCost[c_n] == 0) {
       // Possibly skip this column as it's zero and has no cost
-#ifdef HiGHSDEV
-#endif
-      printf("Column %d (%s) is zero and has no cost\n", c_n,
-             col_names[c_n].c_str());
       num_zero_no_cost_columns++;
       if (write_zero_no_cost_columns) {
         // Give the column a presence by writing out a zero cost
@@ -740,10 +736,6 @@ HighsStatus writeMPS(
         // Possibly skip this column if it's zero and has no cost
         if (!highs_isInfinity(ub) || lb) {
           // Column would have a bound to report
-          printf(
-              "Column %d (%s) is zero and has no cost, but nontrivial bounds "
-              "[%.15g, %.15g]\n",
-              c_n, col_names[c_n].c_str(), lb, ub);
           num_zero_no_cost_columns_in_bounds_section++;
         }
         if (write_zero_no_cost_columns) continue;

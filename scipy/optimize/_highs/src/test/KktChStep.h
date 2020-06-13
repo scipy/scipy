@@ -24,11 +24,15 @@
 
 #include "lp_data/HConst.h"
 
+namespace presolve {
+namespace kkt_check {
+
 class KktCheck;
 
 class KktChStep {
  public:
-  KktChStep() { print = 0; }
+  KktChStep() {}
+  virtual ~KktChStep() {}
 
   // model: full matrix in AR (row-wise) and working copy(column-wise)
   std::vector<int> ARstart;
@@ -66,7 +70,7 @@ class KktChStep {
   std::vector<double> colUpper;
   std::vector<double> rowLower;
   std::vector<double> rowUpper;
-  int print;
+  int print = 1;
 
   // basis
   std::vector<HighsBasisStatus> col_status;
@@ -109,5 +113,10 @@ class KktChStep {
   void makeKKTCheck();
   void resizeProblemMatrix(KktCheck& checker);
   void addCost(int col, double value);
+
+  bool pass = false;
 };
+
+}  // namespace kkt_check
+}  // namespace presolve
 #endif /* TEST_KKTCHSTEP_H_ */

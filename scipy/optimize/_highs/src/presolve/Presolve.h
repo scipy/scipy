@@ -25,6 +25,7 @@
 #include "lp_data/HighsLp.h"
 #include "presolve/HPreData.h"
 #include "presolve/PresolveAnalysis.h"
+#include "test/DevKkt.h"
 
 using std::list;
 using std::string;
@@ -72,16 +73,15 @@ const std::map<Presolver, std::string> kPresolverNames{
 class Presolve : public HPreData {
  public:
   Presolve(HighsTimer& timer_ref) : timer(timer_ref) {}
+  virtual ~Presolve() {}
 
   HighsPresolveStatus presolve();
   HighsPostsolveStatus postsolve(const HighsSolution& reduced_solution,
-                                 HighsSolution& recovered_solution);
+                                 const HighsBasis& reduced_basis,
+                                 HighsSolution& recovered_solution,
+                                 HighsBasis& recovered_basis);
 
-  void setBasisInfo(const std::vector<HighsBasisStatus>& pass_col_status,
-                    const std::vector<HighsBasisStatus>& pass_row_status);
-  const std::vector<HighsBasisStatus>& getRowStatus() { return row_status; }
-  const std::vector<HighsBasisStatus>& getColStatus() { return col_status; }
-
+  void setNumericalTolerances();
   void load(const HighsLp& lp);
   // todo: clear the public from below.
   string modelName;
@@ -165,7 +165,8 @@ class Presolve : public HPreData {
   void resizeImpliedBounds();
 
   // easy transformations
-  void removeIfFixed(int j);
+  void removeFixedCol(int j);
+  void removeFixed();
   void removeEmptyRow(int i);
   void removeEmptyColumn(int j);
   void removeRow(int i);
@@ -236,6 +237,17 @@ class Presolve : public HPreData {
   void countRemovedCols(PresolveRule rule);
 
   double tol = 0.0000001;
+  const double default_primal_feasiblility_tolerance = 1e-7;
+  const double default_dual_feasiblility_tolerance = 1e-7;
+  const double default_small_matrix_value = 1e-9;
+  double inconsistent_bounds_tolerance;
+  double fixed_column_tolerance;
+  double doubleton_equation_bound_tolerance;
+  double doubleton_inequality_bound_tolerance;
+  double presolve_small_matrix_value;
+  double empty_row_bound_tolerance;
+  double dominated_column_tolerance;
+  double weakly_dominated_column_tolerance;
 
   // postsolve
   bool noPostSolve = false;
@@ -272,6 +284,9 @@ class Presolve : public HPreData {
   void reportDevMidMainLoop();
   PresolveStats stats;
   int runPresolvers(const std::vector<Presolver>& order);
+
+  void checkKkt(bool final = false);
+  dev_kkt_check::State initState();
 };
 
 }  // namespace presolve

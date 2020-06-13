@@ -47,6 +47,14 @@ void initializePresolveRuleInfo(std::vector<PresolveRuleInfo>& rules) {
   rules.push_back(PresolveRuleInfo(EMPTY_COL, "Empty col", "EMC"));
   rules.push_back(PresolveRuleInfo(MATRIX_COPY, "Initialize matrix", "INM"));
   rules.push_back(PresolveRuleInfo(RESIZE_MATRIX, "Resize matrix", "RSM"));
+  //
+  rules.push_back(PresolveRuleInfo(RUN_PRESOLVERS, "Run Presolvers", "RPr"));
+  rules.push_back(
+      PresolveRuleInfo(REMOVE_ROW_SINGLETONS, "Rm row sing", "RRS"));
+  rules.push_back(
+      PresolveRuleInfo(REMOVE_DOUBLETON_EQUATIONS, "Rm dbleton eq", "RDE"));
+  rules.push_back(PresolveRuleInfo(REMOVE_EMPTY_ROW, "Rm empty row", "RER"));
+  //
   rules.push_back(
       PresolveRuleInfo(TOTAL_PRESOLVE_TIME, "Total presolve time", "TPT"));
 

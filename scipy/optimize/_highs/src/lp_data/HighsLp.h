@@ -58,6 +58,8 @@ enum class HighsModelStatus {
 /** SCIP/HiGHS Objective sense */
 enum class ObjSense { MINIMIZE = 1, MAXIMIZE = -1 };
 
+class HighsLp;
+
 class HighsLp {
  public:
   // Model data
@@ -84,30 +86,8 @@ class HighsLp {
 
   std::vector<int> integrality_;
 
-  bool equalButForNames(const HighsLp& lp) {
-    if (this->numCol_ != lp.numCol_ || this->numRow_ != lp.numRow_ ||
-        this->sense_ != lp.sense_ || this->offset_ != lp.offset_ ||
-        this->model_name_ != lp.model_name_)
-      return false;
-
-    if (this->colCost_ != lp.colCost_) return false;
-
-    if (this->colUpper_ != lp.colUpper_ || this->colLower_ != lp.colLower_ ||
-        this->rowUpper_ != lp.rowUpper_ || this->rowLower_ != lp.rowLower_)
-      return false;
-
-    if (this->Astart_ != lp.Astart_ || this->Aindex_ != lp.Aindex_ ||
-        this->Avalue_ != lp.Avalue_)
-      return false;
-
-    return true;
-  }
-  bool operator==(const HighsLp& lp) {
-    if (!equalButForNames(lp)) return false;
-    if (this->row_names_ != lp.row_names_ || this->col_names_ != lp.col_names_)
-      return false;
-    return true;
-  }
+  bool equalButForNames(const HighsLp& lp);
+  bool operator==(const HighsLp& lp);
 };
 
 // Cost, column and row scaling factors
@@ -383,5 +363,9 @@ bool isBasisConsistent(const HighsLp& lp, const HighsBasis& basis);
 // If debug this method terminates the program when the status is not OK. If
 // standard build it only prints a message.
 // void checkStatus(HighsStatus status);
+
+void clearSolutionUtil(HighsSolution& solution);
+void clearBasisUtil(HighsBasis& solution);
+void clearLp(HighsLp& lp);
 
 #endif

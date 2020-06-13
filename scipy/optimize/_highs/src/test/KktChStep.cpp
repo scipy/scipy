@@ -14,6 +14,7 @@
 #include "test/KktChStep.h"
 
 #include <utility>
+#include <cassert>
 
 #include "test/KktCheck.h"
 
@@ -23,6 +24,9 @@ using std::get;
 using std::pair;
 using std::setw;
 using std::vector;
+
+namespace presolve {
+namespace kkt_check {
 
 void KktChStep::replaceBasis(const vector<HighsBasisStatus>& columns,
                              const vector<HighsBasisStatus>& rows) {
@@ -75,9 +79,17 @@ void KktChStep::passBasis(const vector<HighsBasisStatus>& columns,
       j++;
     }
 
-  for (int i = 0; i < numCol; i++) col_status[eqIndexOfReduced[i]] = columns[i];
+  if (numCol > 0)
+    for (int i = 0; i < numCol; i++) {
+      assert(i < (int)eqIndexOfReduced.size());
+      assert(eqIndexOfReduced[i] < (int)col_status.size());
+      assert(eqIndexOfReduced[i] >= 0);
+      col_status[eqIndexOfReduced[i]] = columns[i];
+    }
 
-  for (int i = 0; i < numRow; i++) row_status[eqIndexOfReduROW[i]] = rows[i];
+  if (numRow > 0)
+    for (int i = 0; i < numRow; i++)
+      row_status[eqIndexOfReduROW[i]] = rows[i];
 }
 
 void KktChStep::passSolution(const vector<double>& colVal,
@@ -603,6 +615,8 @@ void KktChStep::makeKKTCheck() {
   if (count != numRow)
     std::cout << "Wrong number of basic variables: numRow = " << numRow
               << ", count = " << count << std::endl;
+
+  if (!checker.istrueGlb) pass = true;
 }
 
 void KktChStep::printA() {
@@ -668,3 +682,6 @@ void KktChStep::printAR() {
 
   cout << endl;
 }
+
+}  // namespace kkt_check
+}  // namespace presolve

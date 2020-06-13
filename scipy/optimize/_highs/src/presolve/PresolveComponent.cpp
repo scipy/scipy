@@ -33,12 +33,6 @@ HighsStatus PresolveComponent::setOptions(const HighsOptions& options) {
   return HighsStatus::OK;
 }
 
-void PresolveComponent::setBasisInfo(
-    const std::vector<HighsBasisStatus>& pass_col_status,
-    const std::vector<HighsBasisStatus>& pass_row_status) {
-  data_.presolve_[0].setBasisInfo(pass_col_status, pass_row_status);
-}
-
 void PresolveComponent::negateReducedLpColDuals(bool reduced) {
   if (reduced)
     for (unsigned int col = 0; col < data_.reduced_solution_.col_dual.size();
@@ -81,6 +75,8 @@ HighsPresolveStatus PresolveComponent::run() {
     // printing
     if (options_.dev) data_.presolve_[0].iPrint = -1;
 
+    data_.presolve_[0].setNumericalTolerances();
+
     // Run presolve.
     presolve_status_ = data_.presolve_[0].presolve();
   } else {
@@ -115,12 +111,7 @@ HighsPresolveStatus PresolveComponent::run() {
 
 void PresolveComponent::clear() {
   has_run_ = false;
-  data_.presolve_.clear();
-  HighsLp lp;
-  HighsSolution solution;
-  data_.reduced_lp_ = lp;
-  data_.reduced_solution_ = solution;
-  data_.recovered_solution_ = solution;
+  data_.clear();
 }
 namespace presolve {
 

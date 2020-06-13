@@ -144,9 +144,12 @@ cdef apply_options(dict options, Highs & highs):
     ]):
         val = options.get(opt, None)
         if val is not None:
-            opt_status = highs.setHighsOptionValueInt(opt.encode(), val)
-            if opt_status != HighsStatusOK:
+            if not isinstance(val, int):
                 warn(_opt_warning(opt.encode(), val), OptimizeWarning)
+            else:
+                opt_status = highs.setHighsOptionValueInt(opt.encode(), val)
+                if opt_status != HighsStatusOK:
+                    warn(_opt_warning(opt.encode(), val), OptimizeWarning)
 
     # Do all the doubles
     for opt in set([
@@ -617,7 +620,8 @@ def highs_wrapper(
             'message': highs.highsModelStatusToString(model_status).decode(),
             'simplex_nit': info.simplex_iteration_count,
             'ipm_nit': info.ipm_iteration_count,
-            'fun': info.objective_function_value,
+            #'fun': info.objective_function_value,
+            'fun': None,
             'crossover_nit': info.crossover_iteration_count,
         }
     # If the model status is such that the solution can be read

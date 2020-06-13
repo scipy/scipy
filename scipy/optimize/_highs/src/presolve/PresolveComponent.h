@@ -30,6 +30,20 @@ struct PresolveComponentData : public HighsComponentData {
   // todo: make reduced one const.
   HighsSolution reduced_solution_;
   HighsSolution recovered_solution_;
+
+  HighsBasis reduced_basis_;
+  HighsBasis recovered_basis_;
+
+  void clear() {
+    is_valid = false;
+
+    presolve_.clear();
+    clearLp(reduced_lp_);
+    clearSolutionUtil(reduced_solution_);
+    clearSolutionUtil(recovered_solution_);
+    clearBasisUtil(reduced_basis_);
+    clearBasisUtil(recovered_basis_);
+  }
 };
 
 // HighsComponentInfo is a placeholder for details we want to query from outside
@@ -72,9 +86,6 @@ class PresolveComponent : public HighsComponent {
   HighsLp& getReducedProblem() { return data_.reduced_lp_; }
 
   HighsStatus setOptions(const HighsOptions& options);
-
-  void setBasisInfo(const std::vector<HighsBasisStatus>& pass_col_status,
-                    const std::vector<HighsBasisStatus>& pass_row_status);
 
   void negateReducedLpColDuals(bool reduced);
   void negateReducedLpCost();

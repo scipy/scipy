@@ -614,18 +614,15 @@ basis_.valid_, hmos_[0].basis_.valid_);
         // solution(?) and basis that is, hopefully, optimal. This is
         // confirmed or corrected by hot-starting the simplex solver
         if (presolve_status == HighsPresolveStatus::ReducedToEmpty) {
-          // Have to resize the solution to correspond to an empty
-          // problem because runPostsolve checks this. Size of basis
-          // seems unimportant
-          hmos_[solved_hmo].solution_.col_value.resize(0);
-          hmos_[solved_hmo].solution_.row_value.resize(0);
-          hmos_[solved_hmo].solution_.col_dual.resize(0);
-          hmos_[solved_hmo].solution_.row_dual.resize(0);
+          clearSolutionUtil(hmos_[solved_hmo].solution_);
+          clearBasisUtil(hmos_[solved_hmo].basis_);
         }
 
         presolve_.data_.reduced_solution_ = hmos_[solved_hmo].solution_;
-        presolve_.setBasisInfo(hmos_[solved_hmo].basis_.col_status,
-                               hmos_[solved_hmo].basis_.row_status);
+        presolve_.data_.reduced_basis_.col_status =
+            hmos_[solved_hmo].basis_.col_status;
+        presolve_.data_.reduced_basis_.row_status =
+            hmos_[solved_hmo].basis_.row_status;
 
         this_postsolve_time = -timer_.read(timer_.postsolve_clock);
         timer_.start(timer_.postsolve_clock);
@@ -645,13 +642,14 @@ basis_.valid_, hmos_[0].basis_.valid_);
           resetModelStatusAndSolutionParams(hmos_[original_hmo]);
           // Set solution and its status
           hmos_[original_hmo].solution_ = presolve_.data_.recovered_solution_;
-          //
+
           // Set basis and its status
-          hmos_[original_hmo].basis_.col_status =
-              presolve_.data_.presolve_[0].getColStatus();
-          hmos_[original_hmo].basis_.row_status =
-              presolve_.data_.presolve_[0].getRowStatus();
           hmos_[original_hmo].basis_.valid_ = true;
+          hmos_[original_hmo].basis_.col_status =
+              presolve_.data_.recovered_basis_.col_status;
+          hmos_[original_hmo].basis_.row_status =
+              presolve_.data_.recovered_basis_.row_status;
+
           analyseHighsBasicSolution(options_.logfile, hmos_[original_hmo],
                                     "after returning from postsolve");
           // Now hot-start the simplex solver for the original_hmo
@@ -1610,8 +1608,9 @@ HighsPostsolveStatus Highs::runPostsolve() {
 
   HighsPostsolveStatus postsolve_status =
       presolve_.data_.presolve_[0].postsolve(
-          presolve_.data_.reduced_solution_,
-          presolve_.data_.recovered_solution_);
+          presolve_.data_.reduced_solution_, presolve_.data_.reduced_basis_,
+          presolve_.data_.recovered_solution_,
+          presolve_.data_.recovered_basis_);
 
   if (postsolve_status != HighsPostsolveStatus::SolutionRecovered)
     return postsolve_status;
@@ -1827,17 +1826,10 @@ void Highs::clearModelStatus() {
 void Highs::clearSolution() {
   info_.primal_status = (int)PrimalDualStatus::STATUS_NOTSET;
   info_.dual_status = (int)PrimalDualStatus::STATUS_NOTSET;
-  solution_.col_value.resize(0);
-  solution_.col_dual.resize(0);
-  solution_.row_value.resize(0);
-  solution_.row_dual.resize(0);
+  clearSolutionUtil(solution_);
 }
 
-void Highs::clearBasis() {
-  basis_.valid_ = false;
-  basis_.col_status.resize(0);
-  basis_.row_status.resize(0);
-}
+void Highs::clearBasis() { clearBasisUtil(basis_); }
 
 void Highs::clearInfo() { info_.clear(); }
 
@@ -1847,6 +1839,7 @@ void Highs::beforeReturnFromRun(HighsStatus& return_status) {
     // No model has been loaded: ensure that the status, solution,
     // basis and info associated with any previous model are cleared
     clearSolver();
+    return;
   } else {
     // A model has been loaded: remove any additional HMO created when solving
     if (hmos_.size() > 1) hmos_.pop_back();
