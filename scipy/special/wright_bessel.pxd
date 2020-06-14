@@ -151,16 +151,16 @@ cdef inline double _wb_small_a(double a, double b, double x, int order) nogil:
     else:
         dg = digamma(b)
         # dg1 = polygamma(1, b)
-        dg1 = zeta(2, x)
+        dg1 = zeta(2, b)
         # res = 1 - a*x*dg + a**2/2*x*(1+x)*(dg**2 - dg1)
         res = 1 + a*x*(-dg + 0.5*a*(1 + x)*(dg**2 - dg1))
         if order >= 3:
             # dg2 = polygamma(2, b)
-            dg2 = -2. * zeta(3, x)
+            dg2 = -2. * zeta(3, b)
             res += -a**3/6. * x*(x**2 + 3*x + 1)*(dg**3 - 3*dg*dg1 + dg2)
         if order >= 4:
             # dg3 = polygamma(3, b)
-            dg3 =  6 * zeta(4, x)
+            dg3 =  6 * zeta(4, b)
             res += a**4/24. * x*(x**3 + 6*x**2 + 7*x + 1) \
                    *(dg**4 - 6*dg**2*dg1 + 4*dg*dg2 + 3*dg1**2 - dg3)
         res *= exp(x) * rgamma(b)
@@ -515,8 +515,8 @@ cdef inline double wright_bessel_scalar(double a, double b, double x) nogil:
         # 20 term Taylor series around the approximate maximum term
         # => error mostly smaller 1e-13
         return _wb_large_a(a, b, x, 20)
-    elif (a <= 2) and (a*x >= pow(10.*fmax(1., b), 1+a)):
-        # asymptotic expansion in Z = (a*x)^(1/(1+a)) >= 10 * max(1, b)
+    elif (a <= 2) and (a * x >= pow(12. * fmax(1., b), 1 + a)):
+        # asymptotic expansion in Z = (a*x)^(1/(1+a)) >= 12 * max(1, b)
         # => precision ~ 1e-11 but can go down to ~1e-8 or 1e-7
         return _wb_asymptotic(a, b, x)
     else:
