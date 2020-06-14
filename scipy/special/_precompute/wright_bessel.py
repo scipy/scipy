@@ -4,6 +4,9 @@ of Wright's generalized Bessel function Phi(a, b, x).
 See https://dlmf.nist.gov/10.46.E1 with rho=a, beta=b, z=x.
 """
 from argparse import ArgumentParser, RawTextHelpFormatter
+import numpy as np
+from scipy.integrate import quad
+from scipy.optimize import minimize_scalar, curve_fit
 
 try:
     import sympy
@@ -145,7 +148,7 @@ def series_small_a_small_b():
 
 
 def asymptotic_series():
-    """Asymptotic expansion for large x
+    """Asymptotic expansion for large x.
 
     Phi(a, b, x) ~ Z^(1/2-b) * exp((1+a)/a * Z) * sum_k (-1)^k * C_k / Z^k
     Z = (a*x)^(1/(1+a))
@@ -233,20 +236,92 @@ def asymptotic_series():
     return s
 
 
+def optimal_epsilon_integral():
+    """Fit optimal choice of epsilon for integral representation.
+
+    The integrand of
+        int_0^pi P(eps, a, b, x, phi) * dphi
+    can exhibit oscillatory behaviour. It stems from the cosine of P and can be
+    minimized by minimizing the arc length of the argument
+        f(phi) = eps * sin(phi) - x * eps^(-a) * sin(a * phi) + (1 - b) * phi
+    of cos(f(phi)).
+    We minimize the arc length in eps for a grid of values (a, b, x) and fit a
+    parametric function to it.
+    """
+    def fp(eps, a, b, x, phi):
+        """Derivative of f w.r.t. phi."""
+        eps_a = np.power(1. * eps, -a)
+        return eps * np.cos(phi) - a * x * eps_a * np.cos(a * phi) + 1 - b
+
+    def arclength(eps, a, b, x, epsrel=1e-2, limit=100):
+        """Compute Arc length of f.
+
+        Note that the arg length of a function f fro t0 to t1 is given by
+            int_t0^t1 sqrt(1 + f'(t)^2) dt
+        """
+        return quad(lambda phi: np.sqrt(1 + fp(eps, a, b, x, phi)**2),
+                    0, np.pi,
+                    epsrel=epsrel, limit=100)[0]
+
+    # grid of minimal arc length values
+    data_a = np.array([1e-3, 0.1, 0.5, 0.9, 1, 2, 5, 8])
+    data_b = np.array([0, 1, 4, 7, 10])
+    data_x = [1, 1.5, 2, 4, 10, 20, 50, 100, 200, 500]
+    data_a, data_b, data_x = np.meshgrid(data_a, data_b, data_x)
+    data_a, data_b, data_x = (data_a.flatten(), data_b.flatten(),
+                              data_x.flatten())
+    best_eps = []
+    for i in range(data_x.size):
+        best_eps.append(
+            minimize_scalar(lambda eps: arclength(eps, data_a[i], data_b[i],
+                                                  data_x[i]),
+                            bounds=(1e-3, 1000),
+                            method='Bounded', options={'xatol': 1e-3}).x
+        )
+    best_eps = np.array(best_eps)
+    # pandas would be nice, but here a dictionary is enough
+    df = {'a': data_a,
+          'b': data_b,
+          'x': data_x,
+          'eps': best_eps,
+          }
+
+    def func(data, A0, A1, A2, A3, A4, A5):
+        """Compute parametric function to fit."""
+        a = data['a']
+        b = data['b']
+        x = data['x']
+        return (A0 * b + A1 * np.power(x, A2) * np.power(a, A3)
+                * (np.exp(-A4 * np.sqrt(a)) + A5))
+
+    func_params = list(curve_fit(func, df, df['eps'])[0])
+
+    s = "Fit optimal eps for integrand P via minimal arc length\n"
+    s += "with parametric function:\n"
+    s += "optimal_eps = A0 * b + A1 * np.power(x, A2) * np.power(a, A3)\n"
+    s += "             * (np.exp(-A4 * np.sqrt(a)) + A5)\n\n"
+    s += "Fitted parameters A0 to A5 are:\n"
+    s += ', '.join(['{:.5E}'.format(x) for x in func_params])
+    return s
+
+
 def main():
     parser = ArgumentParser(description=__doc__,
                             formatter_class=RawTextHelpFormatter)
-    parser.add_argument('action', type=int, choices=[1, 2, 3],
+    parser.add_argument('action', type=int, choices=[1, 2, 3, 4],
                         help='chose what expansion to precompute\n'
                              '1 : Series for small a\n'
                              '2 : Series for small a and small b\n'
                              '3 : Asymptotic series for large x\n'
-                             '    This may take some time.')
+                             '    This may take some time.\n'
+                             '4 : Fit optimal eps for integral representation.'
+                        )
     args = parser.parse_args()
 
     switch = {1: lambda: print(series_small_a()),
               2: lambda: print(series_small_a_small_b()),
               3: lambda: print(asymptotic_series()),
+              4: lambda: print(optimal_epsilon_integral())
               }
     switch.get(args.action, lambda: print("Invalid input."))()
 

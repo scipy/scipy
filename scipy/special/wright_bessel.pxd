@@ -310,15 +310,16 @@ cdef inline double _wb_asymptotic(double a, double b, double x) nogil:
 #
 # As K has a leading exp(-r), we factor this out and apply Gauss-Laguerre
 # quadrature rule:
-#   int_0^inf K(a, b, x, r+eps) dr = int_0^inf exp(-r) Kmod(..., r) dr
-# The integral over P is done via a Gauss-Legendre quadrature rule.
+#   int_0^inf K(a, b, x, r+eps) dr = exp(-eps) int_0^inf exp(-r) Kmod(.., r) dr
+# Note the shift r -> r+eps to have integation from 0 to infinity.
 #
+# The integral over P is done via a Gauss-Legendre quadrature rule.
 @cython.cdivision(True)
 cdef inline double _Kmod(double eps, double a, double b, double x,
                          double r) nogil:
     cdef double x_r_a
     x_r_a = x * pow(r + eps, -a)
-    return exp(-eps + x_r_a * cospi(a)) * pow(r + eps, -b) \
+    return exp(x_r_a * cospi(a)) * pow(r + eps, -b) \
         * sin(x_r_a * sinpi(a) + M_PI * b)
 
 
@@ -418,28 +419,29 @@ cdef inline double wright_bessel_integral(double a, double b, double x) nogil:
             0.0288429935805352, 0.02536067357001239, 0.02178024317012479,
             0.01811556071348939, 0.01438082276148557, 0.01059054838365097,
             0.006759799195745401, 0.002908622553155141]
+        # Fitted parameters for optimal choice of eps
+        # Call: python _precompute/wright_bessel.py 4
+        double *A = [0.26575, 55.827, 0.62564, 1.2511, 4.7228, 8.8881e-05]
 
     # We use the free choice of eps to make the integral better behaved.
-    # We try to make eps * sin(phi) and x * eps^(-a) * cos(a*phi) small at
-    # the same time. Otherwise, P can be highly oscillatory and unpredictable.
+    # 1. Concern is int_0 K ~ int_0 (r+eps)^(-b) .. dr
+    #    This is difficult as r -> 0  for large b. It behaves better for larger
+    #    values of eps.
+    # 2. Concern is oscillatory behaviour of P. Therefore, we'd like to
+    #    make the change in the argument of cosine small, i.e. make arc length
+    #    int_0^phi sqrt(1 + f'(phi)^2) dphi small, with
+    #    f(phi) = eps * sin(phi) - x * eps^(-a) * sin(a*phi) + (1-b)*phi
+    #    Proxy, make |f'(phi)| small.
     if b >= 8:
-        # int K ~ exp(-eps) and int P ~ eps^(1-beta)
-        eps = pow(b, -b/(1.-b))
-    if x > 1 and a > 1:
-        # set eps such that x*eps^(-a) = 2^(-a) < 0.5
-        eps = 2. * pow(x, 1./a)
-    elif x > 1 and a > 0:
-        # set eps such that eps ~ x * eps^(-rho), make it 0.5 of the solution.
-        eps = 0.5 * pow(x, 1./(1+a))
-        if x <= 5 and b >= 5:
-            eps = 2 * eps
-        elif a <= 0.1:
-            eps *= pow(2, log10(a))
+        # Make P small compared to K by setting eps large enough.
+        # int K ~ exp(-eps) and int P ~ eps^(1-b)
+        eps = pow(b, -b / (1. - b))
     else:
-        eps = 1.
+        eps = (A[0] * b + A[1] * pow(x, A[2]) * pow(a, A[3])
+               * (exp(-A[4] * sqrt(a)) + A[5]))
     # safeguard, higher better for larger a, lower better for tiny a.
-    eps = min(eps, 100.)
-    eps = max(eps, 1.)
+    eps = min(eps, 50.)
+    eps = max(eps, 3.)  # Note: 3 seems to be a pretty good choice in general.
 
     res1 = 0
     res2 = 0
@@ -448,6 +450,7 @@ cdef inline double wright_bessel_integral(double a, double b, double x) nogil:
         # y = (b-a)*(x+1)/2.0 + a  for integration from a=0 to b=pi
         y = M_PI * (x_legendre[k] + 1) / 2.0
         res2 += w_legendre[k] * _P(eps, a, b, x, y)
+    res1 *= exp(-eps)
     # (b-a)/2.0 * np.sum(w*func(y, *args), axis=-1)
     res2 *= M_PI/2.0
     res2 *= pow(eps, 1-b)
