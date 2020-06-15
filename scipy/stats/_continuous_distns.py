@@ -4195,7 +4195,7 @@ class laplace_gen(rv_continuous):
         floc = kwds.pop('floc', None)
         fscale = kwds.pop('fscale', None)
 
-        _check_fit_input_parameters(data, args,
+        _check_fit_input_parameters(self, data, args,
                                     kwds, fixed_param=(floc, fscale))
 
         # MLE for the laplace distribution
@@ -4219,8 +4219,8 @@ class laplace_gen(rv_continuous):
 laplace = laplace_gen(name='laplace')
 
 
-def _check_fit_input_parameters(data, args, kwds, fixed_param):
-    if len(args) > 0:
+def _check_fit_input_parameters(self, data, args, kwds, fixed_param):
+    if len(args) > self.numargs:
         raise TypeError("Too many arguments.")
 
     _remove_optimizer_parameters(kwds)
@@ -6620,8 +6620,8 @@ class rayleigh_gen(rv_continuous):
         """
 
         if floc is not None:
-            check_fit_input_parameters(data, args, kwds,
-                                       fixed_param=(fscale, floc))
+            _check_fit_input_parameters(self, data, args, kwds,
+                                        fixed_param=(fscale, floc))
             # if `floc` is fixed, determine `scale` with MLE
             data = np.asarray(data)
             return floc, scale_mle(floc, data)
@@ -6632,11 +6632,12 @@ class rayleigh_gen(rv_continuous):
         else:
             # both `floc` and `fscale` are free, use custom `_reduce_func`
             def _reduce_func(x0, ll, *args, **kwds):
-                
+
                 def func(loc, data):
                     return ll([loc, scale_mle(loc, data)], data)
 
                 data = kwds.pop('data')
+                
                 def restore(args, vals):
                     return (vals.item(), scale_mle(vals, np.ravel(data)))
 
@@ -6648,23 +6649,6 @@ class rayleigh_gen(rv_continuous):
 
 rayleigh = rayleigh_gen(a=0.0, name="rayleigh")
 
-
-def check_fit_input_parameters(data, args, kwds, fixed_param):
-    if len(args) > 0:
-        raise TypeError("Too many arguments.")
-
-    _remove_optimizer_parameters(kwds)
-
-    if None not in fixed_param:
-        # This check is for consistency with `rv_continuous.fit`.
-        # Without this check, this function would just return the
-        # parameters that were given.
-        raise RuntimeError("All parameters fixed. There is nothing to "
-                           "optimize.")
-
-    data = np.asarray(data)
-    if not np.isfinite(data).all():
-        raise RuntimeError("The data contains non-finite values.")
 
 
 class reciprocal_gen(rv_continuous):

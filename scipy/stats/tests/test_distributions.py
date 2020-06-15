@@ -3070,7 +3070,7 @@ class TestRayleigh(object):
         loc_scale_opt = super(type(stats.rayleigh), stats.rayleigh).fit(data)
 
         # obtain objective function
-        args = [data, (stats.rayleigh._fitstart(data),)]
+        args = [data, (stats.rayleigh._fitstart(data), )]
         func = stats.rayleigh._reduce_func(args, {})[1]
 
         ll_mle = func((loc, scale), data)
@@ -3080,6 +3080,8 @@ class TestRayleigh(object):
         # An error is raised if both parameters are fixed
         assert_raises(RuntimeError, stats.rayleigh.fit, data, floc=floc,
                       fscale=fscale)
+        
+        assert_raises(TypeError, stats.rayleigh.fit, data, 2)
 
 
 class TestExponWeib(object):
