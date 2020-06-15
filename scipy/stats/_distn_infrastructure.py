@@ -2314,7 +2314,7 @@ class rv_continuous(rv_generic):
         x0, func, restore, args = self._reduce_func(args, kwds)
         _reduce_func = kwds.pop('_reduce_func', None)
         if _reduce_func is not None:
-            x0, func, restore = _reduce_func(x0, func, args, **kwds, data=data)
+            x0, func, restore = _reduce_func(x0, func, data=data)
         optimizer = kwds.pop('optimizer', optimize.fmin)
         # convert string to function in scipy.optimize
         if not callable(optimizer) and isinstance(optimizer, str):
