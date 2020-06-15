@@ -4,7 +4,7 @@
 #          SciPy Developers 2004-2011
 #
 import warnings
-import collections
+from collections.abc import Iterable
 import ctypes
 
 import numpy as np
@@ -27,7 +27,8 @@ from ._distn_infrastructure import (get_distribution_names, _kurtosis,
                                     rv_continuous, _skew, valarray,
                                     _get_fixed_fit_value, _check_shape)
 from ._ksstats import kolmogn, kolmognp, kolmogni
-from ._constants import _XMIN, _EULER, _ZETA3, _XMAX, _LOGXMAX
+from ._constants import (_XMIN, _EULER, _ZETA3, _XMAX, _LOGXMAX,
+                         _SQRT_2_OVER_PI, _LOG_SQRT_2_OVER_PI)
 
 # In numpy 1.12 and above, np.power refuses to raise integers to negative
 # powers, and `np.float_power` is a new replacement.
@@ -35,7 +36,6 @@ try:
     float_power = np.float_power
 except AttributeError:
     float_power = np.power
-
 
 def _remove_optimizer_parameters(kwds):
     """
@@ -151,7 +151,8 @@ class kstwo_gen(rv_continuous):
 
     """
     def _get_support(self, n):
-        return 0.5/(n if not isinstance(n, collections.Iterable) else np.asanyarray(n)), 1.0
+        return (0.5/(n if not isinstance(n, Iterable) else np.asanyarray(n)),
+                1.0)
 
     def _pdf(self, x, n):
         return kolmognp(n, x)
@@ -293,8 +294,8 @@ class norm_gen(rv_continuous):
     %(example)s
 
     """
-    def _rvs(self):
-        return self._random_state.standard_normal(self._size)
+    def _rvs(self, size=None, random_state=None):
+        return random_state.standard_normal(size)
 
     def _pdf(self, x):
         # norm.pdf(x) = exp(-x**2/2)/sqrt(2*pi)
@@ -583,8 +584,8 @@ class beta_gen(rv_continuous):
     %(example)s
 
     """
-    def _rvs(self, a, b):
-        return self._random_state.beta(a, b, self._size)
+    def _rvs(self, a, b, size=None, random_state=None):
+        return random_state.beta(a, b, size)
 
     def _pdf(self, x, a, b):
         #                     gamma(a+b) * x**(a-1) * (1-x)**(b-1)
@@ -759,10 +760,9 @@ class betaprime_gen(rv_continuous):
     """
     _support_mask = rv_continuous._open_support_mask
 
-    def _rvs(self, a, b):
-        sz, rndm = self._size, self._random_state
-        u1 = gamma.rvs(a, size=sz, random_state=rndm)
-        u2 = gamma.rvs(b, size=sz, random_state=rndm)
+    def _rvs(self, a, b, size=None, random_state=None):
+        u1 = gamma.rvs(a, size=size, random_state=random_state)
+        u2 = gamma.rvs(b, size=size, random_state=random_state)
         return u1 / u2
 
     def _pdf(self, x, a, b):
@@ -1199,9 +1199,8 @@ class chi_gen(rv_continuous):
 
     """
 
-    def _rvs(self, df):
-        sz, rndm = self._size, self._random_state
-        return np.sqrt(chi2.rvs(df, size=sz, random_state=rndm))
+    def _rvs(self, df, size=None, random_state=None):
+        return np.sqrt(chi2.rvs(df, size=size, random_state=random_state))
 
     def _pdf(self, x, df):
         #                   x**(df-1) * exp(-x**2/2)
@@ -1256,8 +1255,8 @@ class chi2_gen(rv_continuous):
     %(example)s
 
     """
-    def _rvs(self, df):
-        return self._random_state.chisquare(df, self._size)
+    def _rvs(self, df, size=None, random_state=None):
+        return random_state.chisquare(df, size)
 
     def _pdf(self, x, df):
         # chi2.pdf(x, df) = 1 / (2*gamma(df/2)) * (x/2)**(df/2-1) * exp(-x/2)
@@ -1350,10 +1349,9 @@ class dgamma_gen(rv_continuous):
     %(example)s
 
     """
-    def _rvs(self, a):
-        sz, rndm = self._size, self._random_state
-        u = rndm.uniform(size=sz)
-        gm = gamma.rvs(a, size=sz, random_state=rndm)
+    def _rvs(self, a, size=None, random_state=None):
+        u = random_state.uniform(size=size)
+        gm = gamma.rvs(a, size=size, random_state=random_state)
         return gm * np.where(u >= 0.5, 1, -1)
 
     def _pdf(self, x, a):
@@ -1407,10 +1405,9 @@ class dweibull_gen(rv_continuous):
     %(example)s
 
     """
-    def _rvs(self, c):
-        sz, rndm = self._size, self._random_state
-        u = rndm.uniform(size=sz)
-        w = weibull_min.rvs(c, size=sz, random_state=rndm)
+    def _rvs(self, c, size=None, random_state=None):
+        u = random_state.uniform(size=size)
+        w = weibull_min.rvs(c, size=size, random_state=random_state)
         return w * (np.where(u >= 0.5, 1, -1))
 
     def _pdf(self, x, c):
@@ -1470,8 +1467,8 @@ class expon_gen(rv_continuous):
     %(example)s
 
     """
-    def _rvs(self):
-        return self._random_state.standard_exponential(self._size)
+    def _rvs(self, size=None, random_state=None):
+        return random_state.standard_exponential(size)
 
     def _pdf(self, x):
         # expon.pdf(x) = exp(-x)
@@ -1587,9 +1584,9 @@ class exponnorm_gen(rv_continuous):
     %(example)s
 
     """
-    def _rvs(self, K):
-        expval = self._random_state.standard_exponential(self._size) * K
-        gval = self._random_state.standard_normal(self._size)
+    def _rvs(self, K, size=None, random_state=None):
+        expval = random_state.standard_exponential(size) * K
+        gval = random_state.standard_normal(size)
         return expval + gval
 
     def _pdf(self, x, K):
@@ -1774,8 +1771,8 @@ class fatiguelife_gen(rv_continuous):
     """
     _support_mask = rv_continuous._open_support_mask
 
-    def _rvs(self, c):
-        z = self._random_state.standard_normal(self._size)
+    def _rvs(self, c, size=None, random_state=None):
+        z = random_state.standard_normal(size)
         x = 0.5*c*z
         x2 = x*x
         t = 1.0 + 2*x2 + 2*x*np.sqrt(1 + x2)
@@ -1835,9 +1832,9 @@ class foldcauchy_gen(rv_continuous):
     %(example)s
 
     """
-    def _rvs(self, c):
-        return abs(cauchy.rvs(loc=c, size=self._size,
-                              random_state=self._random_state))
+    def _rvs(self, c, size=None, random_state=None):
+        return abs(cauchy.rvs(loc=c, size=size,
+                              random_state=random_state))
 
     def _pdf(self, x, c):
         # foldcauchy.pdf(x, c) = 1/(pi*(1+(x-c)**2)) + 1/(pi*(1+(x+c)**2))
@@ -1877,8 +1874,8 @@ class f_gen(rv_continuous):
     %(example)s
 
     """
-    def _rvs(self, dfn, dfd):
-        return self._random_state.f(dfn, dfd, self._size)
+    def _rvs(self, dfn, dfd, size=None, random_state=None):
+        return random_state.f(dfn, dfd, size)
 
     def _pdf(self, x, dfn, dfd):
         #                      df2**(df2/2) * df1**(df1/2) * x**(df1/2-1)
@@ -1969,8 +1966,8 @@ class foldnorm_gen(rv_continuous):
     def _argcheck(self, c):
         return c >= 0
 
-    def _rvs(self, c):
-        return abs(self._random_state.standard_normal(self._size) + c)
+    def _rvs(self, c, size=None, random_state=None):
+        return abs(random_state.standard_normal(size) + c)
 
     def _pdf(self, x, c):
         # foldnormal.pdf(x, c) = sqrt(2/pi) * cosh(c*x) * exp(-(x**2+c**2)/2)
@@ -2816,8 +2813,8 @@ class gamma_gen(rv_continuous):
     %(example)s
 
     """
-    def _rvs(self, a):
-        return self._random_state.standard_gamma(a, self._size)
+    def _rvs(self, a, size=None, random_state=None):
+        return random_state.standard_gamma(a, size)
 
     def _pdf(self, x, a):
         # gamma.pdf(x, a) = x**(a-1) * exp(-x) / gamma(a)
@@ -3385,8 +3382,8 @@ class halfnorm_gen(rv_continuous):
     %(example)s
 
     """
-    def _rvs(self):
-        return abs(self._random_state.standard_normal(size=self._size))
+    def _rvs(self, size=None, random_state=None):
+        return abs(random_state.standard_normal(size=size))
 
     def _pdf(self, x):
         # halfnorm.pdf(x) = sqrt(2/pi) * exp(-x**2/2)
@@ -3598,8 +3595,8 @@ class invgauss_gen(rv_continuous):
     """
     _support_mask = rv_continuous._open_support_mask
 
-    def _rvs(self, mu):
-        return self._random_state.wald(mu, 1.0, size=self._size)
+    def _rvs(self, mu, size=None, random_state=None):
+        return random_state.wald(mu, 1.0, size=size)
 
     def _pdf(self, x, mu):
         # invgauss.pdf(x, mu) =
@@ -3701,17 +3698,17 @@ class geninvgauss_gen(rv_continuous):
                           lambda x, p, b: (p - 1)*np.log(x) - b*(x + 1/x)/2,
                           -np.inf)
 
-    def _rvs(self, p, b):
+    def _rvs(self, p, b, size=None, random_state=None):
         # if p and b are scalar, use _rvs_scalar, otherwise need to create
         # output by iterating over parameters
         if np.isscalar(p) and np.isscalar(b):
-            out = self._rvs_scalar(p, b, self._size)
+            out = self._rvs_scalar(p, b, size, random_state)
         elif p.size == 1 and b.size == 1:
-            out = self._rvs_scalar(p.item(), b.item(), self._size)
+            out = self._rvs_scalar(p.item(), b.item(), size, random_state)
         else:
-            # When this method is called, self._size will be a (possibly empty)
+            # When this method is called, size will be a (possibly empty)
             # tuple of integers.  It will not be None; if `size=None` is passed
-            # to `rvs()`, self._size will be the empty tuple ().
+            # to `rvs()`, size will be the empty tuple ().
 
             p, b = np.broadcast_arrays(p, b)
             # p and b now have the same shape.
@@ -3719,11 +3716,11 @@ class geninvgauss_gen(rv_continuous):
             # `shp` is the shape of the blocks of random variates that are
             # generated for each combination of parameters associated with
             # broadcasting p and b.
-            # bc is a tuple the same lenth as self._size.  The values
+            # bc is a tuple the same lenth as size.  The values
             # in bc are bools.  If bc[j] is True, it means that
             # entire axis is filled in for a given combination of the
             # broadcast arguments.
-            shp, bc = _check_shape(p.shape, self._size)
+            shp, bc = _check_shape(p.shape, size)
 
             # `numsamples` is the total number of variates to be generated
             # for each combination of the input arguments.
@@ -3731,7 +3728,7 @@ class geninvgauss_gen(rv_continuous):
 
             # `out` is the array to be returned.  It is filled in in the
             # loop below.
-            out = np.empty(self._size)
+            out = np.empty(size)
 
             it = np.nditer([p, b],
                            flags=['multi_index'],
@@ -3743,20 +3740,19 @@ class geninvgauss_gen(rv_continuous):
                 # index value from it.multi_index.  len(it.multi_index) might
                 # be less than len(bc), and in that case we want to align these
                 # two sequences to the right, so the loop variable j runs from
-                # -len(self._size) to 0.  This doesn't cause an IndexError, as
+                # -len(size) to 0.  This doesn't cause an IndexError, as
                 # bc[j] will be True in those cases where it.multi_index[j]
                 # would cause an IndexError.
                 idx = tuple((it.multi_index[j] if not bc[j] else slice(None))
-                            for j in range(-len(self._size), 0))
-                out[idx] = self._rvs_scalar(it[0], it[1],
-                                            numsamples).reshape(shp)
+                            for j in range(-len(size), 0))
+                out[idx] = self._rvs_scalar(it[0], it[1], numsamples, random_state).reshape(shp)
                 it.iternext()
 
-        if self._size == ():
+        if size == ():
             out = out[()]
         return out
 
-    def _rvs_scalar(self, p, b, numsamples=None):
+    def _rvs_scalar(self, p, b, numsamples, random_state):
         # following [2], the quasi-pdf is used instead of the pdf for the
         # generation of rvs
         invert_res = False
@@ -3835,8 +3831,8 @@ class geninvgauss_gen(rv_continuous):
             while simulated < N:
                 k = N - simulated
                 # simulate uniform rvs on [0, umax] and [vmin, vmax]
-                u = umax * self._random_state.uniform(size=k)
-                v = self._random_state.uniform(size=k)
+                u = umax * random_state.uniform(size=k)
+                v = random_state.uniform(size=k)
                 v = vmin + (vmax - vmin) * v
                 rvs = v / u + c
                 # rewrite acceptance condition u**2 <= pdf(rvs) by taking logs
@@ -3875,8 +3871,8 @@ class geninvgauss_gen(rv_continuous):
                 k = N - simulated
                 h, rvs = np.zeros(k), np.zeros(k)
                 # simulate uniform rvs on [x1, x2] and [0, y2]
-                u = self._random_state.uniform(size=k)
-                v = A * self._random_state.uniform(size=k)
+                u = random_state.uniform(size=k)
+                v = A * random_state.uniform(size=k)
                 cond1 = v <= A1
                 cond2 = np.logical_not(cond1) & (v <= A1 + A2)
                 cond3 = np.logical_not(cond1 | cond2)
@@ -3903,9 +3899,6 @@ class geninvgauss_gen(rv_continuous):
         rvs = np.reshape(x, size1d)
         if invert_res:
             rvs = 1 / rvs
-        if self._size == ():
-            # return scalar in that case; however, return array if size == 1
-            return rvs[0]
         return rvs
 
     def _mode(self, p, b):
@@ -3986,13 +3979,12 @@ class norminvgauss_gen(rv_continuous):
         sq = np.hypot(1, x)  # reduce overflows
         return fac1 * sc.k1e(a * sq) * np.exp(b*x - a*sq) / sq
 
-    def _rvs(self, a, b):
+    def _rvs(self, a, b, size=None, random_state=None):
         # note: X = b * V + sqrt(V) * X is norminvgaus(a,b) if X is standard
         # normal and V is invgauss(mu=1/sqrt(a**2 - b**2))
         gamma = np.sqrt(a**2 - b**2)
-        sz, rndm = self._size, self._random_state
-        ig = invgauss.rvs(mu=1/gamma, size=sz, random_state=rndm)
-        return b * ig + np.sqrt(ig) * norm.rvs(size=sz, random_state=rndm)
+        ig = invgauss.rvs(mu=1/gamma, size=size, random_state=random_state)
+        return b * ig + np.sqrt(ig) * norm.rvs(size=size, random_state=random_state)
 
     def _stats(self, a, b):
         gamma = np.sqrt(a**2 - b**2)
@@ -4176,8 +4168,8 @@ class laplace_gen(rv_continuous):
     %(example)s
 
     """
-    def _rvs(self):
-        return self._random_state.laplace(0, 1, size=self._size)
+    def _rvs(self, size=None, random_state=None):
+        return random_state.laplace(0, 1, size=size)
 
     def _pdf(self, x):
         # laplace.pdf(x) = 1/2 * exp(-abs(x))
@@ -4195,8 +4187,54 @@ class laplace_gen(rv_continuous):
     def _entropy(self):
         return np.log(2)+1
 
+    @replace_notes_in_docstring(rv_continuous, notes="""\
+        This function uses explicit formulas for the maximum likelihood
+        estimation of the Laplace distribution parameters, so the keyword
+        arguments `loc`, `scale`, and `optimizer` are ignored.\n\n""")
+    def fit(self, data, *args, **kwds):
+        floc = kwds.pop('floc', None)
+        fscale = kwds.pop('fscale', None)
+
+        _check_fit_input_parameters(data, args,
+                                    kwds, fixed_param=(floc, fscale))
+
+        # MLE for the laplace distribution
+
+        if floc is None:
+            loc = np.median(data)
+        else:
+            loc = floc
+
+        if fscale is None:
+            scale = (np.sum(np.abs(data - loc))) / len(data)
+        else:
+            scale = fscale
+
+        # Source: Statistical Distributions, 3rd Edition. Evans, Hastings,
+        # and Peacock (2000), Page 124
+
+        return loc, scale
+
 
 laplace = laplace_gen(name='laplace')
+
+
+def _check_fit_input_parameters(data, args, kwds, fixed_param):
+    if len(args) > 0:
+        raise TypeError("Too many arguments.")
+
+    _remove_optimizer_parameters(kwds)
+
+    if None not in fixed_param:
+        # This check is for consistency with `rv_continuous.fit`.
+        # Without this check, this function would just return the
+        # parameters that were given.
+        raise RuntimeError("All parameters fixed. There is nothing to "
+                           "optimize.")
+
+    data = np.asarray(data)
+    if not np.isfinite(data).all():
+        raise RuntimeError("The data contains non-finite values.")
 
 
 class levy_gen(rv_continuous):
@@ -4379,7 +4417,7 @@ class levy_stable_gen(rv_continuous):
 
     """
 
-    def _rvs(self, alpha, beta):
+    def _rvs(self, alpha, beta, size=None, random_state=None):
 
         def alpha1func(alpha, beta, TH, aTH, bTH, cosTH, tanTH, W):
             return (2/np.pi*(np.pi/2 + bTH)*tanTH -
@@ -4404,12 +4442,11 @@ class levy_stable_gen(rv_continuous):
                              beta0func, f2=otherwise)
             return res
 
-        sz = self._size
-        alpha = np.broadcast_to(alpha, sz)
-        beta = np.broadcast_to(beta, sz)
-        TH = uniform.rvs(loc=-np.pi/2.0, scale=np.pi, size=sz,
-                         random_state=self._random_state)
-        W = expon.rvs(size=sz, random_state=self._random_state)
+        alpha = np.broadcast_to(alpha, size)
+        beta = np.broadcast_to(beta, size)
+        TH = uniform.rvs(loc=-np.pi/2.0, scale=np.pi, size=size,
+                         random_state=random_state)
+        W = expon.rvs(size=size, random_state=random_state)
         aTH = alpha*TH
         bTH = beta*TH
         cosTH = np.cos(TH)
@@ -4465,7 +4502,8 @@ class levy_stable_gen(rv_continuous):
                                 (np.cos(alpha*xi+(alpha-1)*theta)/np.cos(theta))
             if x0 > zeta:
                 def g(theta):
-                    return V(theta)*np.real(np.complex(x0-zeta)**(alpha/(alpha-1)))
+                    return (V(theta) *
+                            np.real(np.complex128(x0-zeta)**(alpha/(alpha-1))))
 
                 def f(theta):
                     return g(theta) * np.exp(-g(theta))
@@ -4529,7 +4567,8 @@ class levy_stable_gen(rv_continuous):
                 c_1 = 1 if alpha > 1 else .5 - xi/np.pi
 
                 def f(theta):
-                    return np.exp(-V(theta)*np.real(np.complex(x0-zeta)**(alpha/(alpha-1))))
+                    z = np.complex128(x0 - zeta)
+                    return np.exp(-V(theta) * np.real(z**(alpha/(alpha-1))))
 
                 with np.errstate(all="ignore"):
                     # spare calculating integral on null set
@@ -4797,8 +4836,8 @@ class logistic_gen(rv_continuous):
     %(example)s
 
     """
-    def _rvs(self):
-        return self._random_state.logistic(size=self._size)
+    def _rvs(self, size=None, random_state=None):
+        return random_state.logistic(size=size)
 
     def _pdf(self, x):
         # logistic.pdf(x) = exp(-x) / (1+exp(-x))**2
@@ -4854,8 +4893,8 @@ class loggamma_gen(rv_continuous):
     %(example)s
 
     """
-    def _rvs(self, c):
-        return np.log(self._random_state.gamma(c, size=self._size))
+    def _rvs(self, c, size=None, random_state=None):
+        return np.log(random_state.gamma(c, size=size))
 
     def _pdf(self, x, c):
         # loggamma.pdf(x, c) = exp(c*x-exp(x)) / gamma(c)
@@ -4969,8 +5008,8 @@ class lognorm_gen(rv_continuous):
     """
     _support_mask = rv_continuous._open_support_mask
 
-    def _rvs(self, s):
-        return np.exp(s * self._random_state.standard_normal(self._size))
+    def _rvs(self, s, size=None, random_state=None):
+        return np.exp(s * random_state.standard_normal(size))
 
     def _pdf(self, x, s):
         # lognorm.pdf(x, s) = 1 / (s*x*sqrt(2*pi)) * exp(-1/2*(log(x)/s)**2)
@@ -5097,8 +5136,8 @@ class gilbrat_gen(rv_continuous):
     """
     _support_mask = rv_continuous._open_support_mask
 
-    def _rvs(self):
-        return np.exp(self._random_state.standard_normal(self._size))
+    def _rvs(self, size=None, random_state=None):
+        return np.exp(random_state.standard_normal(size))
 
     def _pdf(self, x):
         # gilbrat.pdf(x) = 1/(x*sqrt(2*pi)) * exp(-1/2*(log(x))**2)
@@ -5155,12 +5194,15 @@ class maxwell_gen(rv_continuous):
 
     %(example)s
     """
-    def _rvs(self):
-        return chi.rvs(3.0, size=self._size, random_state=self._random_state)
+    def _rvs(self, size=None, random_state=None):
+        return chi.rvs(3.0, size=size, random_state=random_state)
 
     def _pdf(self, x):
         # maxwell.pdf(x) = sqrt(2/pi)x**2 * exp(-x**2/2)
-        return np.sqrt(2.0/np.pi)*x*x*np.exp(-x*x/2.0)
+        return _SQRT_2_OVER_PI*x*x*np.exp(-x*x/2.0)
+
+    def _logpdf(self, x):
+        return _LOG_SQRT_2_OVER_PI + 2*np.log(x) - 0.5*x*x
 
     def _cdf(self, x):
         return sc.gammainc(1.5, x*x/2.0)
@@ -5595,9 +5637,8 @@ class moyal_gen(rv_continuous):
     %(example)s
 
     """
-    def _rvs(self):
-        sz, rndm = self._size, self._random_state
-        u1 = gamma.rvs(a = 0.5, scale = 2, size=sz, random_state=rndm)
+    def _rvs(self, size=None, random_state=None):
+        u1 = gamma.rvs(a = 0.5, scale = 2, size=size, random_state=random_state)
         return -np.log(u1)
 
     def _pdf(self, x):
@@ -5719,8 +5760,8 @@ class ncx2_gen(rv_continuous):
     def _argcheck(self, df, nc):
         return (df > 0) & (nc >= 0)
 
-    def _rvs(self, df, nc):
-        return self._random_state.noncentral_chisquare(df, nc, self._size)
+    def _rvs(self, df, nc, size=None, random_state=None):
+        return random_state.noncentral_chisquare(df, nc, size)
 
     def _logpdf(self, x, df, nc):
         cond = np.ones_like(x, dtype=bool) & (nc != 0)
@@ -5795,8 +5836,8 @@ class ncf_gen(rv_continuous):
     def _argcheck(self, df1, df2, nc):
         return (df1 > 0) & (df2 > 0) & (nc >= 0)
 
-    def _rvs(self, dfn, dfd, nc):
-        return self._random_state.noncentral_f(dfn, dfd, nc, self._size)
+    def _rvs(self, dfn, dfd, nc, size=None, random_state=None):
+        return random_state.noncentral_f(dfn, dfd, nc, size)
 
     def _pdf_skip(self, x, dfn, dfd, nc):
         # ncf.pdf(x, df1, df2, nc) = exp(nc/2 + nc*df1*x/(2*(df1*x+df2))) *
@@ -5877,8 +5918,8 @@ class t_gen(rv_continuous):
     def _argcheck(self, df):
         return df > 0
 
-    def _rvs(self, df):
-        return self._random_state.standard_t(df, size=self._size)
+    def _rvs(self, df, size=None, random_state=None):
+        return random_state.standard_t(df, size=size)
 
     def _pdf(self, x, df):
         #                                gamma((df+1)/2)
@@ -5952,10 +5993,9 @@ class nct_gen(rv_continuous):
     def _argcheck(self, df, nc):
         return (df > 0) & (nc == nc)
 
-    def _rvs(self, df, nc):
-        sz, rndm = self._size, self._random_state
-        n = norm.rvs(loc=nc, size=sz, random_state=rndm)
-        c2 = chi2.rvs(df, size=sz, random_state=rndm)
+    def _rvs(self, df, nc, size=None, random_state=None):
+        n = norm.rvs(loc=nc, size=size, random_state=random_state)
+        c2 = chi2.rvs(df, size=size, random_state=random_state)
         return n * np.sqrt(df) / np.sqrt(c2)
 
     def _pdf(self, x, df, nc):
@@ -6262,18 +6302,17 @@ class pearson3_gen(rv_continuous):
         ans[invmask] = gamma._cdf(transx, alpha)
         return ans
 
-    def _rvs(self, skew):
-        skew = np.broadcast_to(skew, self._size)
+    def _rvs(self, skew, size=None, random_state=None):
+        skew = np.broadcast_to(skew, size)
         ans, _, _, mask, invmask, beta, alpha, zeta = (
             self._preprocess([0], skew))
 
         nsmall = mask.sum()
         nbig = mask.size - nsmall
-        ans[mask] = self._random_state.standard_normal(nsmall)
-        ans[invmask] = (self._random_state.standard_gamma(alpha, nbig)/beta +
-                        zeta)
+        ans[mask] = random_state.standard_normal(nsmall)
+        ans[invmask] = random_state.standard_gamma(alpha, nbig)/beta + zeta
 
-        if self._size == ():
+        if size == ():
             ans = ans[0]
         return ans
 
@@ -6470,8 +6509,8 @@ class rdist_gen(rv_continuous):
     def _ppf(self, q, c):
         return 2*beta._ppf(q, c/2, c/2) - 1
 
-    def _rvs(self, c):
-        return 2 * self._random_state.beta(c/2, c/2, self._size) - 1
+    def _rvs(self, c, size=None, random_state=None):
+        return 2 * random_state.beta(c/2, c/2, size) - 1
 
     def _munp(self, n, c):
         numerator = (1 - (n % 2)) * sc.beta((n + 1.0) / 2, c / 2.0)
@@ -6505,8 +6544,8 @@ class rayleigh_gen(rv_continuous):
     """
     _support_mask = rv_continuous._open_support_mask
 
-    def _rvs(self):
-        return chi.rvs(2, size=self._size, random_state=self._random_state)
+    def _rvs(self, size=None, random_state=None):
+        return chi.rvs(2, size=size, random_state=random_state)
 
     def _pdf(self, r):
         # rayleigh.pdf(r) = r * exp(-r**2/2)
@@ -6739,10 +6778,9 @@ class rice_gen(rv_continuous):
     def _argcheck(self, b):
         return b >= 0
 
-    def _rvs(self, b):
+    def _rvs(self, b, size=None, random_state=None):
         # https://en.wikipedia.org/wiki/Rice_distribution
-        t = b/np.sqrt(2) + self._random_state.standard_normal(size=(2,) +
-                                                              self._size)
+        t = b/np.sqrt(2) + random_state.standard_normal(size=(2,) + size)
         return np.sqrt((t*t).sum(axis=0))
 
     def _cdf(self, x, b):
@@ -6810,8 +6848,8 @@ class recipinvgauss_gen(rv_continuous):
         isqx = 1.0/np.sqrt(x)
         return 1.0-_norm_cdf(isqx*trm1)-np.exp(2.0/mu)*_norm_cdf(-isqx*trm2)
 
-    def _rvs(self, mu):
-        return 1.0/self._random_state.wald(mu, 1.0, size=self._size)
+    def _rvs(self, mu, size=None, random_state=None):
+        return 1.0/random_state.wald(mu, 1.0, size=size)
 
 
 recipinvgauss = recipinvgauss_gen(a=0.0, name='recipinvgauss')
@@ -6860,11 +6898,11 @@ class semicircular_gen(rv_continuous):
     def _ppf(self, q):
         return rdist._ppf(q, 3)
 
-    def _rvs(self):
+    def _rvs(self, size=None, random_state=None):
         # generate values uniformly distributed on the area under the pdf
         # (semi-circle) by randomly generating the radius and angle
-        r = np.sqrt(self._random_state.uniform(size=self._size))
-        a = np.cos(np.pi * self._random_state.uniform(size=self._size))
+        r = np.sqrt(random_state.uniform(size=size))
+        a = np.cos(np.pi * random_state.uniform(size=size))
         return r * a
 
     def _stats(self):
@@ -6925,9 +6963,9 @@ class skew_norm_gen(rv_continuous):
     def _sf(self, x, a):
         return self._cdf(-x, -a)
 
-    def _rvs(self, a):
-        u0 = self._random_state.normal(size=self._size)
-        v = self._random_state.normal(size=self._size)
+    def _rvs(self, a, size=None, random_state=None):
+        u0 = random_state.normal(size=size)
+        v = random_state.normal(size=size)
         d = a/np.sqrt(1 + a**2)
         u1 = d*u0 + v*np.sqrt(1 - d**2)
         return np.where(u0 >= 0, u1, -u1)
@@ -7077,8 +7115,8 @@ class triang_gen(rv_continuous):
     %(example)s
 
     """
-    def _rvs(self, c):
-        return self._random_state.triangular(0, c, 1, self._size)
+    def _rvs(self, c, size=None, random_state=None):
+        return random_state.triangular(0, c, 1, size)
 
     def _argcheck(self, c):
         return (c >= 0) & (c <= 1)
@@ -7651,7 +7689,8 @@ class truncnorm_gen(rv_continuous):
             return moments[-1]
 
         return _lazywhere((n >= 0) & (a == a) & (b == b), (n, a, b),
-                          np.vectorize(n_th_moment, otypes=[np.float]), np.nan)
+                          np.vectorize(n_th_moment, otypes=[np.float64]),
+                          np.nan)
 
     def _stats(self, a, b, moments='mv'):
         pA, pB = self._pdf(np.array([a, b]), a, b)
@@ -7680,17 +7719,17 @@ class truncnorm_gen(rv_continuous):
         g2 = mu4 / mu2**2 - 3
         return mu, mu2, g1, g2
 
-    def _rvs(self, a, b):
+    def _rvs(self, a, b, size=None, random_state=None):
         # if a and b are scalar, use _rvs_scalar, otherwise need to create
         # output by iterating over parameters
         if np.isscalar(a) and np.isscalar(b):
-            out = self._rvs_scalar(a, b, self._size)
+            out = self._rvs_scalar(a, b, size, random_state=random_state)
         elif a.size == 1 and b.size == 1:
-            out = self._rvs_scalar(a.item(), b.item(), self._size)
+            out = self._rvs_scalar(a.item(), b.item(), size, random_state=random_state)
         else:
-            # When this method is called, self._size will be a (possibly empty)
+            # When this method is called, size will be a (possibly empty)
             # tuple of integers.  It will not be None; if `size=None` is passed
-            # to `rvs()`, self._size will be the empty tuple ().
+            # to `rvs()`, size will be the empty tuple ().
 
             a, b = np.broadcast_arrays(a, b)
             # a and b now have the same shape.
@@ -7698,11 +7737,11 @@ class truncnorm_gen(rv_continuous):
             # `shp` is the shape of the blocks of random variates that are
             # generated for each combination of parameters associated with
             # broadcasting a and b.
-            # bc is a tuple the same lenth as self._size.  The values
+            # bc is a tuple the same length as size.  The values
             # in bc are bools.  If bc[j] is True, it means that
             # entire axis is filled in for a given combination of the
             # broadcast arguments.
-            shp, bc = _check_shape(a.shape, self._size)
+            shp, bc = _check_shape(a.shape, size)
 
             # `numsamples` is the total number of variates to be generated
             # for each combination of the input arguments.
@@ -7710,7 +7749,7 @@ class truncnorm_gen(rv_continuous):
 
             # `out` is the array to be returned.  It is filled in in the
             # loop below.
-            out = np.empty(self._size)
+            out = np.empty(size)
 
             it = np.nditer([a, b],
                            flags=['multi_index'],
@@ -7722,19 +7761,19 @@ class truncnorm_gen(rv_continuous):
                 # index value from it.multi_index.  len(it.multi_index) might
                 # be less than len(bc), and in that case we want to align these
                 # two sequences to the right, so the loop variable j runs from
-                # -len(self._size) to 0.  This doesn't cause an IndexError, as
+                # -len(size) to 0.  This doesn't cause an IndexError, as
                 # bc[j] will be True in those cases where it.multi_index[j]
                 # would cause an IndexError.
                 idx = tuple((it.multi_index[j] if not bc[j] else slice(None))
-                            for j in range(-len(self._size), 0))
-                out[idx] = self._rvs_scalar(it[0], it[1], numsamples).reshape(shp)
+                            for j in range(-len(size), 0))
+                out[idx] = self._rvs_scalar(it[0], it[1], numsamples, random_state).reshape(shp)
                 it.iternext()
 
-        if self._size == ():
+        if size == ():
             out = out[()]
         return out
 
-    def _rvs_scalar(self, a, b, numsamples=None):
+    def _rvs_scalar(self, a, b, numsamples=None, random_state=None):
         if not numsamples:
             numsamples = 1
 
@@ -7742,14 +7781,9 @@ class truncnorm_gen(rv_continuous):
         size1d = tuple(np.atleast_1d(numsamples))
         N = np.prod(size1d)  # number of rvs needed, reshape upon return
         # Calculate some rvs
-        U = self._random_state.random_sample(N)
-        # U[0] = 0.5
+        U = random_state.random_sample(N)
         x = self._ppf(U, a, b)
-
         rvs = np.reshape(x, size1d)
-        if self._size == ():
-            # return scalar in that case; however, return array if size == 1
-            return rvs[0]
         return rvs
 
 
@@ -7829,8 +7863,8 @@ class uniform_gen(rv_continuous):
     %(example)s
 
     """
-    def _rvs(self):
-        return self._random_state.uniform(0.0, 1.0, self._size)
+    def _rvs(self, size=None, random_state=None):
+        return random_state.uniform(0.0, 1.0, size)
 
     def _pdf(self, x):
         return 1.0*(x == x)
@@ -8029,8 +8063,8 @@ class vonmises_gen(rv_continuous):
     %(example)s
 
     """
-    def _rvs(self, kappa):
-        return self._random_state.vonmises(0.0, kappa, size=self._size)
+    def _rvs(self, kappa, size=None, random_state=None):
+        return random_state.vonmises(0.0, kappa, size=size)
 
     def _pdf(self, x, kappa):
         # vonmises.pdf(x, \kappa) = exp(\kappa * cos(x)) / (2*pi*I[0](\kappa))
@@ -8074,8 +8108,8 @@ class wald_gen(invgauss_gen):
     """
     _support_mask = rv_continuous._open_support_mask
 
-    def _rvs(self):
-        return self._random_state.wald(1.0, 1.0, size=self._size)
+    def _rvs(self, size=None, random_state=None):
+        return random_state.wald(1.0, 1.0, size=size)
 
     def _pdf(self, x):
         # wald.pdf(x) = 1/sqrt(2*pi*x**3) * exp(-(x-1)**2/(2*x))
@@ -8423,7 +8457,7 @@ class crystalball_gen(rv_continuous):
             return A * lhs + rhs
 
         return N * _lazywhere(n + 1 < m, (n, beta, m),
-                              np.vectorize(n_th_moment, otypes=[np.float]),
+                              np.vectorize(n_th_moment, otypes=[np.float64]),
                               np.inf)
 
     def _argcheck(self, beta, m):
@@ -8493,29 +8527,31 @@ class argus_gen(rv_continuous):
     def _sf(self, x, chi):
         return _argus_phi(chi * np.sqrt(1 - x**2)) / _argus_phi(chi)
 
-    def _rvs(self, chi):
+    def _rvs(self, chi, size=None, random_state=None):
         chi = np.asarray(chi)
         if chi.size == 1:
-            out = self._rvs_scalar(chi, self._size)
+            out = self._rvs_scalar(chi, numsamples=size,
+                                   random_state=random_state)
         else:
-            shp, bc = _check_shape(chi.shape, self._size)
+            shp, bc = _check_shape(chi.shape, size)
             numsamples = int(np.prod(shp))
-            out = np.empty(self._size)
+            out = np.empty(size)
             it = np.nditer([chi],
                            flags=['multi_index'],
                            op_flags=[['readonly']])
             while not it.finished:
                 idx = tuple((it.multi_index[j] if not bc[j] else slice(None))
-                            for j in range(-len(self._size), 0))
-                r = self._rvs_scalar(it[0], numsamples)
+                            for j in range(-len(size), 0))
+                r = self._rvs_scalar(it[0], numsamples=numsamples,
+                                     random_state=random_state)
                 out[idx] = r.reshape(shp)
                 it.iternext()
 
-        if self._size == ():
+        if size == ():
             out = out[()]
         return out
 
-    def _rvs_scalar(self, chi, numsamples=None):
+    def _rvs_scalar(self, chi, numsamples=None, random_state=None):
         # if chi <= 2.611:
         # use rejection method, see Devroye:
         # Non-Uniform Random Variate Generation, 1986, section II.3.2.
@@ -8562,8 +8598,8 @@ class argus_gen(rv_continuous):
             simulated = 0
             while simulated < N:
                 k = N - simulated
-                u = self._random_state.uniform(size=k)
-                v = self._random_state.uniform(size=k)
+                u = random_state.uniform(size=k)
+                v = random_state.uniform(size=k)
                 # acceptance condition: u <= h(G_inv(v)). This simplifies to
                 z = 2 * np.log(echi * (1 - v) + v) / chi**2
                 accept = (u**2 + z <= 0)
@@ -8574,9 +8610,6 @@ class argus_gen(rv_continuous):
                     x[simulated:(simulated + num_accept)] = rvs
                     simulated += num_accept
 
-            if self._size == ():
-                # return scalar if rvs() is called without size specified
-                return x[0]
             return np.reshape(x, size1d)
         else:
             # use ratio of uniforms method
@@ -8587,7 +8620,7 @@ class argus_gen(rv_continuous):
             umax = np.sqrt(2) / np.exp(0.5)
             vmax = 4 / np.exp(1)
             z = rvs_ratio_uniforms(f, umax, 0, vmax, size=numsamples,
-                                   random_state=self._random_state)
+                                   random_state=random_state)
             return np.sqrt(1 - z*z / chi**2)
 
     def _stats(self, chi):

@@ -834,7 +834,7 @@ class TestDendrogram(object):
     def check_dendrogram_plot(self, orientation):
         # Tests dendrogram plotting.
         Z = linkage(hierarchy_test_data.ytdist, 'single')
-        expected = {'color_list': ['g', 'b', 'b', 'b', 'b'],
+        expected = {'color_list': ['C1', 'C0', 'C0', 'C0', 'C0'],
                     'dcoord': [[0.0, 138.0, 138.0, 0.0],
                                [0.0, 219.0, 219.0, 0.0],
                                [0.0, 255.0, 255.0, 219.0],
@@ -895,7 +895,7 @@ class TestDendrogram(object):
 
         R = dendrogram(Z, 2, 'lastp', show_contracted=True)
         plt.close()
-        assert_equal(R, {'color_list': ['b'],
+        assert_equal(R, {'color_list': ['C0'],
                          'dcoord': [[0.0, 295.0, 295.0, 0.0]],
                          'icoord': [[5.0, 5.0, 15.0, 15.0]],
                          'ivl': ['(2)', '(4)'],
@@ -903,7 +903,7 @@ class TestDendrogram(object):
 
         R = dendrogram(Z, 2, 'mtica', show_contracted=True)
         plt.close()
-        assert_equal(R, {'color_list': ['g', 'b', 'b', 'b'],
+        assert_equal(R, {'color_list': ['C1', 'C0', 'C0', 'C0'],
                          'dcoord': [[0.0, 138.0, 138.0, 0.0],
                                     [0.0, 255.0, 255.0, 0.0],
                                     [0.0, 268.0, 268.0, 255.0],

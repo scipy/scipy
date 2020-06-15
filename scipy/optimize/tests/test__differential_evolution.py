@@ -2,7 +2,6 @@
 Unit tests for the differential global minimization algorithm.
 """
 import multiprocessing
-import sys
 import platform
 
 from scipy.optimize._differentialevolution import (DifferentialEvolutionSolver,
@@ -1035,7 +1034,6 @@ class TestDifferentialEvolutionSolver(object):
 
         x_opt = (1.22797135, 4.24537337)
         f_opt = -0.095825
-        print(res)
         assert_allclose(f(x_opt), f_opt, atol=2e-5)
         assert_allclose(res.fun, f_opt, atol=1e-4)
         assert res.success

@@ -22,21 +22,11 @@ Package Content
    OdrError      -- Error exception.
    OdrStop       -- Stop exception.
 
-Prebuilt models:
-
-.. autosummary::
-
-   polynomial
-
-.. data:: exponential
-
-.. data:: multilinear
-
-.. data:: unilinear
-
-.. data:: quadratic
-
-.. data:: polynomial
+   polynomial    -- Factory function for a general polynomial model.
+   exponential   -- Exponential model
+   multilinear   -- Arbitrary-dimensional linear model
+   unilinear     -- Univariate linear model
+   quadratic     -- Quadratic model
 
 Usage information
 =================
@@ -128,6 +118,7 @@ References
 
 from .odrpack import *
 from .models import *
+from . import _add_newdocs
 
 __all__ = [s for s in dir()
            if not (s.startswith('_') or s in ('odr_stop', 'odr_error'))]

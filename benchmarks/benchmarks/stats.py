@@ -150,3 +150,25 @@ class GroupSampling(Benchmark):
 
     def time_special_ortho_group(self, dim):
         stats.special_ortho_group.rvs(dim)
+
+
+class BinnedStatistic(Benchmark):
+
+    def setup(self):
+        np.random.seed(12345678)
+        self.inp = np.random.rand(9999).reshape(3, 3333) * 200
+        self.subbin_x_edges = np.arange(0, 200, dtype=np.float32)
+        self.subbin_y_edges = np.arange(0, 200, dtype=np.float64)
+        self.ret = stats.binned_statistic_dd(
+            [self.inp[0], self.inp[1]], self.inp[2], statistic="std",
+            bins=[self.subbin_x_edges, self.subbin_y_edges])
+
+    def time_binned_statistic_dd_std(self):
+        stats.binned_statistic_dd(
+            [self.inp[0], self.inp[1]], self.inp[2], statistic="std",
+            bins=[self.subbin_x_edges, self.subbin_y_edges])
+
+    def time_binned_statistic_dd_std_reuse_bin(self):
+        stats.binned_statistic_dd(
+            [self.inp[0], self.inp[1]], self.inp[2], statistic="std",
+            binned_statistic_result=self.ret)

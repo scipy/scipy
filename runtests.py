@@ -137,11 +137,12 @@ def main(argv):
     args = parser.parse_args(argv)
 
     if args.pep8:
-        # os.system("flake8 scipy --ignore=F403,F841,F401,F811,F405,E121,E122,"
-        #           "E123,E125,E126,E127,E128,E226,E231,E251,E265,E266,E302,"
-        #           "E402,E501,E712,E721,E731,E741,W291,W293,W391,W503,W504"
-        #           "--exclude=scipy/_lib/six.py")
+        # Lint the source using the configuration in tox.ini.
         os.system("pycodestyle scipy benchmarks/benchmarks")
+        # Lint just the diff since branching off of master using a
+        # stricter configuration.
+        lint_diff = os.path.join(ROOT_DIR, 'tools', 'lint_diff.py')
+        os.system(lint_diff)
         sys.exit(0)
 
     if args.mypy:

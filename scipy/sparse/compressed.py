@@ -345,7 +345,8 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
 
     def _add_dense(self, other):
         if other.shape != self.shape:
-            raise ValueError('Incompatible shapes.')
+            raise ValueError('Incompatible shapes ({} and {})'
+                             .format(self.shape, other.shape))
         dtype = upcast_char(self.dtype.char, other.dtype.char)
         order = self._swap('CF')[0]
         result = np.array(other, dtype=dtype, order=order, copy=True)
@@ -530,7 +531,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
     def diagonal(self, k=0):
         rows, cols = self.shape
         if k <= -rows or k >= cols:
-            raise ValueError("k exceeds matrix dimensions")
+            return np.empty(0, dtype=self.data.dtype)
         fn = getattr(_sparsetools, self.format + "_diagonal")
         y = np.empty(min(rows + min(k, 0), cols - max(k, 0)),
                      dtype=upcast(self.dtype))

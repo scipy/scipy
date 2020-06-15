@@ -568,12 +568,12 @@ class TestTruncnorm(object):
             assert_almost_equal(stats.truncnorm.sf(xvals, low, high), stats.truncnorm.cdf(xvals2, -high, -low)[::-1])
             assert_almost_equal(stats.truncnorm.pdf(xvals, low, high), stats.truncnorm.pdf(xvals2, -high, -low)[::-1])
 
-    def _test_moments_one_range(self, a, b, expected):
+    def _test_moments_one_range(self, a, b, expected, decimal_s=7):
         m0, v0, s0, k0 = expected[:4]
         m, v, s, k = stats.truncnorm.stats(a, b, moments='mvsk')
         assert_almost_equal(m, m0)
         assert_almost_equal(v, v0)
-        assert_almost_equal(s, s0)
+        assert_almost_equal(s, s0, decimal=decimal_s)
         assert_almost_equal(k, k0)
 
     @pytest.mark.xfail_on_32bit("reduced accuracy with 32bit platforms.")
@@ -598,7 +598,7 @@ class TestTruncnorm(object):
 
         self._test_moments_one_range(-10, -9, [-9.1084562880124764, 0.0114488058210104, -1.8985607337519652, 5.0733457094223553])
         self._test_moments_one_range(-20, -19, [-19.0523439459766628, 0.0027250730180314, -1.9838694022629291, 5.8717850028287586])
-        self._test_moments_one_range(-30, -29, [-29.0344012377394698, 0.0011806603928891, -1.9930304534611458, 5.8854062968996566])
+        self._test_moments_one_range(-30, -29, [-29.0344012377394698, 0.0011806603928891, -1.9930304534611458, 5.8854062968996566], decimal_s=6)
         self._test_moments_one_range(-40, -39, [-39.0256074199326264, 0.0006548826719649, -1.9963146354109957, 5.6167758371700494])
         self._test_moments_one_range(39, 40, [39.0256074199326264, 0.0006548826719649, 1.9963146354109957, 5.6167758371700494])
 
@@ -1375,6 +1375,83 @@ class TestDLaplace(object):
         assert_allclose((v, k), (4., 3.25))
 
 
+class TestLaplace(object):
+    @pytest.mark.parametrize("rvs_loc", [-5, 0, 1, 2])
+    @pytest.mark.parametrize("rvs_scale", [1, 2, 3, 10])
+    def test_fit(self, rvs_loc, rvs_scale):
+        # tests that various inputs follow expected behavior
+        # for a variety of `loc` and `scale`.
+        data = stats.laplace.rvs(size=100, loc=rvs_loc, scale=rvs_scale)
+
+        # MLE estimates are given by
+        loc_mle = np.median(data)
+        scale_mle = np.sum(np.abs(data - loc_mle)) / len(data)
+
+        # standard outputs should match MLE
+        loc, scale = stats.laplace.fit(data)
+        assert_allclose(loc, loc_mle, atol=1e-15, rtol=1e-15)
+        assert_allclose(scale, scale_mle, atol=1e-15, rtol=1e-15)
+
+        # fixed parameter should use MLE for other
+        loc, scale = stats.laplace.fit(data, floc=loc_mle)
+        assert_allclose(scale, scale_mle, atol=1e-15, rtol=1e-15)
+        loc, scale = stats.laplace.fit(data, fscale=scale_mle)
+        assert_allclose(loc, loc_mle)
+
+        # test with non-mle fixed parameter
+        # create scale with non-median loc
+        loc = rvs_loc * 2
+        scale_mle = np.sum(np.abs(data - loc)) / len(data)
+
+        # fixed loc to non median, scale should match
+        # scale calculation with modified loc
+        loc, scale = stats.laplace.fit(data, floc=loc)
+        assert_allclose(scale, scale_mle, atol=1e-15, rtol=1e-15)
+
+        # fixed scale created with non median loc,
+        # loc output should still be the data median.
+        loc, scale = stats.laplace.fit(data, fscale=scale_mle)
+        assert_allclose(loc_mle, loc, atol=1e-15, rtol=1e-15)
+
+        # error raised when both `floc` and `fscale` are fixed
+        assert_raises(RuntimeError, stats.laplace.fit, data, floc=loc_mle,
+                      fscale=scale_mle)
+
+        # error is raised with non-finite values
+        assert_raises(RuntimeError, stats.laplace.fit, [np.nan])
+        assert_raises(RuntimeError, stats.laplace.fit, [np.inf])
+
+    @pytest.mark.parametrize("rvs_scale,rvs_loc", [(10, -5),
+                                                   (5, 10),
+                                                   (.2, .5)])
+    def test_fit_MLE_comp_optimzer(self, rvs_loc, rvs_scale):
+        data = stats.laplace.rvs(size=1000, loc=rvs_loc, scale=rvs_scale)
+
+        # the log-likelihood function for laplace is given by
+        def ll(loc, scale, data):
+            return -1 * (- (len(data)) * np.log(2*scale) -
+                         (1/scale)*np.sum(np.abs(data - loc)))
+
+        # test that the objective function result of the analytical MLEs is
+        # less than or equal to that of the numerically optimized estimate
+        loc, scale = stats.laplace.fit(data)
+        loc_opt, scale_opt = super(type(stats.laplace),
+                                   stats.laplace).fit(data)
+        ll_mle = ll(loc, scale, data)
+        ll_opt = ll(loc_opt, scale_opt, data)
+        assert ll_mle < ll_opt or np.allclose(ll_mle, ll_opt,
+                                              atol=1e-15, rtol=1e-15)
+
+    def test_fit_simple_non_random_data(self):
+        data = np.array([1.0, 1.0, 3.0, 5.0, 8.0, 14.0])
+        # with `floc` fixed to 6, scale should be 4.
+        loc, scale = stats.laplace.fit(data, floc=6)
+        assert_allclose(scale, 4, atol=1e-15, rtol=1e-15)
+        # with `fscale` fixed to 6, loc should be 4.
+        loc, scale = stats.laplace.fit(data, fscale=6)
+        assert_allclose(loc, 4, atol=1e-15, rtol=1e-15)
+
+
 class TestInvGamma(object):
     def test_invgamma_inf_gh_1866(self):
         # invgamma's moments are only finite for a>n
@@ -1422,7 +1499,6 @@ class TestF(object):
         data = [[stats.f, (2, 1), 1.0]]
         for _f, _args, _correct in data:
             ans = _f.pdf(_f.a, *_args)
-            print(_f, (_args), ans, _correct, ans == _correct)
 
         ans = [_f.pdf(_f.a, *_args) for _f, _args, _ in data]
         correct = [_correct_ for _f, _args, _correct_ in data]
@@ -3379,8 +3455,7 @@ def test_regression_tukey_lambda():
     # non-positive lambdas.
     x = np.linspace(-5.0, 5.0, 101)
 
-    olderr = np.seterr(divide='ignore')
-    try:
+    with np.errstate(divide='ignore'):
         for lam in [0.0, -1.0, -2.0, np.array([[-1.0], [0.0], [-2.0]])]:
             p = stats.tukeylambda.pdf(x, lam)
             assert_((p != 0.0).all())
@@ -3388,8 +3463,6 @@ def test_regression_tukey_lambda():
 
         lam = np.array([[-1.0], [0.0], [2.0]])
         p = stats.tukeylambda.pdf(x, lam)
-    finally:
-        np.seterr(**olderr)
 
     assert_(~np.isnan(p).all())
     assert_((p[0] != 0.0).all())
@@ -3430,11 +3503,8 @@ def test_frozen_fit_ticket_1536():
     true = np.array([0.25, 0., 0.5])
     x = stats.lognorm.rvs(true[0], true[1], true[2], size=100)
 
-    olderr = np.seterr(divide='ignore')
-    try:
+    with np.errstate(divide='ignore'):
         params = np.array(stats.lognorm.fit(x, floc=0.))
-    finally:
-        np.seterr(**olderr)
 
     assert_almost_equal(params, true, decimal=2)
 
@@ -3582,8 +3652,7 @@ def test_ksone_fit_freeze():
          -0.10943985, -0.35243174, 0.06897665, -0.03553363, -0.0701746,
          -0.06037974, 0.37670779, -0.21684405])
 
-    try:
-        olderr = np.seterr(invalid='ignore')
+    with np.errstate(invalid='ignore'):
         with suppress_warnings() as sup:
             sup.filter(IntegrationWarning,
                        "The maximum number of subdivisions .50. has been "
@@ -3591,8 +3660,6 @@ def test_ksone_fit_freeze():
             sup.filter(RuntimeWarning,
                        "floating point number truncated to an integer")
             stats.ksone.fit(d)
-    finally:
-        np.seterr(**olderr)
 
 
 def test_norm_logcdf():
@@ -4382,3 +4449,15 @@ class TestArgus(object):
         x = stats.argus.rvs(3.5, size=1500, random_state=1535)
         assert_almost_equal(stats.argus(3.5).mean(), x.mean(), decimal=3)
         assert_almost_equal(stats.argus(3.5).std(), x.std(), decimal=3)
+
+
+def test_rvs_no_size_warning():
+    class rvs_no_size_gen(stats.rv_continuous):
+        def _rvs(self):
+            return 1
+
+    rvs_no_size = rvs_no_size_gen(name='rvs_no_size')
+
+    with assert_warns(np.VisibleDeprecationWarning):
+        rvs_no_size.rvs()
+

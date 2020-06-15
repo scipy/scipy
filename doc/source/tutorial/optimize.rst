@@ -26,7 +26,7 @@ problem of minimizing the Rosenbrock function of :math:`N` variables:
 
 .. math::
 
-    f\left(\mathbf{x}\right)=\sum_{i=2}^{N}100\left(x_{i+1}-x_{i}^{2}\right)^{2}+\left(1-x_{i}\right)^{2}.
+    f\left(\mathbf{x}\right)=\sum_{i=1}^{N-1}100\left(x_{i+1}-x_{i}^{2}\right)^{2}+\left(1-x_{i}\right)^{2}.
 
 The minimum value of this function is 0 which is achieved when
 :math:`x_{i}=1.`
@@ -1233,7 +1233,7 @@ The problem we have can now be solved as follows:
     # visualize
     import matplotlib.pyplot as plt
     x, y = mgrid[0:1:(nx*1j), 0:1:(ny*1j)]
-    plt.pcolor(x, y, sol.x)
+    plt.pcolormesh(x, y, sol.x, shading='gouraud')
     plt.colorbar()
     plt.show()
 
@@ -1369,7 +1369,7 @@ Consider the following simple linear programming problem:
 
 We need some mathematical manipulations to convert the target problem to the form accepted by :func:`linprog`.
 
-First of all, let's consider the objective function. 
+First of all, let's consider the objective function.
 We want to maximize the objective
 function, but :func:`linprog` can only accept a minimization problem. This is easily remedied by converting the maximize
 :math:`29x_1 + 45x_2` to minimizing :math:`-29x_1 -45x_2`. Also, :math:`x_3, x_4` are not shown in the objective

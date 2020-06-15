@@ -554,12 +554,10 @@ def _kpp(data, k):
 
     for i in range(k):
         if i == 0:
-            init[i, :] = data[np.random.randint(dims)]
+            init[i, :] = data[np.random.randint(data.shape[0])]
 
         else:
-            D2 = np.array([min(
-                            [np.inner(init[j]-x, init[j]-x) for j in range(i)]
-                            ) for x in data])
+            D2 = cdist(init[:i,:], data, metric='sqeuclidean').min(axis=0)
             probs = D2/D2.sum()
             cumprobs = probs.cumsum()
             r = np.random.rand()

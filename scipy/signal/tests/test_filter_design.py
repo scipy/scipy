@@ -14,9 +14,9 @@ from scipy.signal import (BadCoefficients, bessel, besselap, bilinear, buttap,
                           butter, buttord, cheb1ap, cheb1ord, cheb2ap,
                           cheb2ord, cheby1, cheby2, ellip, ellipap, ellipord,
                           firwin, freqs_zpk, freqs, freqz, freqz_zpk,
-                          group_delay, iirfilter, iirnotch, iirpeak, lp2bp,
-                          lp2bs, lp2hp, lp2lp, normalize, sos2tf, sos2zpk,
-                          sosfreqz, tf2sos, tf2zpk, zpk2sos, zpk2tf,
+                          group_delay, iirdesign, iirfilter, iirnotch, iirpeak,
+                          lp2bp, lp2bs, lp2hp, lp2lp, normalize, sos2tf,
+                          sos2zpk, sosfreqz, tf2sos, tf2zpk, zpk2sos, zpk2tf,
                           bilinear_zpk, lp2lp_zpk, lp2hp_zpk, lp2bp_zpk,
                           lp2bs_zpk)
 from scipy.signal.filter_design import (_cplxreal, _cplxpair, _norm_factor,
@@ -1990,7 +1990,7 @@ class TestBessel(object):
             p2 = np.sort(np.concatenate(_cplxreal(besselap(N, 'mag')[1])))
             assert_array_almost_equal(p1, p2, decimal=10)
 
-        # Compare to http://www.rane.com/note147.html
+        # Compare to https://www.ranecommercial.com/legacy/note147.html
         # "Table 1 - Bessel Crossovers of Second, Third, and Fourth-Order"
         a = [1, 1, 1/3]
         b2, a2 = bessel(2, 1, norm='delay', analog=True)
@@ -3611,6 +3611,26 @@ class TestIIRPeak(object):
         assert_allclose(abs(hp[2]), 1, rtol=1e-10)
 
 
+class TestIIRDesign(object):
+
+    def test_exceptions(self):
+        with pytest.raises(ValueError, match="the same shape"):
+            iirdesign(0.2, [0.1, 0.3], 1, 40)
+        with pytest.raises(ValueError, match="the same shape"):
+            iirdesign(np.array([[0.3, 0.6], [0.3, 0.6]]),
+                      np.array([[0.4, 0.5], [0.4, 0.5]]), 1, 40)
+        with pytest.raises(ValueError, match="can't be negative"):
+            iirdesign([0.1, 0.3], [-0.1, 0.5], 1, 40)
+        with pytest.raises(ValueError, match="strictly inside stopband"):
+            iirdesign([0.1, 0.4], [0.5, 0.6], 1, 40)
+        with pytest.raises(ValueError, match="strictly inside stopband"):
+            iirdesign([0.5, 0.6], [0.1, 0.4], 1, 40)
+        with pytest.raises(ValueError, match="strictly inside stopband"):
+            iirdesign([0.3, 0.6], [0.4, 0.7], 1, 40)
+        with pytest.raises(ValueError, match="strictly inside stopband"):
+            iirdesign([0.4, 0.7], [0.3, 0.6], 1, 40)
+
+
 class TestIIRFilter(object):
 
     def test_symmetry(self):
@@ -3633,7 +3653,7 @@ class TestIIRFilter(object):
 
     def test_int_inputs(self):
         # Using integer frequency arguments and large N should not produce
-        # np.ints that wraparound to negative numbers
+        # numpy integers that wraparound to negative numbers
         k = iirfilter(24, 100, btype='low', analog=True, ftype='bessel',
                       output='zpk')[2]
         k2 = 9.999999999999989e+47

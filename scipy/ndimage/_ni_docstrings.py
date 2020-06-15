@@ -29,7 +29,7 @@ footprint : array, optional
     of dimensions of the input array, so that, if the input array is
     shape (10,10,10), and `size` is 2, then the actual size used is
     (2,2,2). When `footprint` is given, `size` is ignored.""")
-_mode_doc = (
+_mode_reflect_doc = (
 """mode : {'reflect', 'constant', 'nearest', 'mirror', 'wrap'}, optional
     The `mode` parameter determines how the input array is extended
     beyond its boundaries. Default is 'reflect'. Behavior for each valid
@@ -52,6 +52,12 @@ _mode_doc = (
 
     'wrap' (`a b c d | a b c d | a b c d`)
         The input is extended by wrapping around to the opposite edge.""")
+_mode_constant_doc = (
+    _mode_reflect_doc.replace("Default is 'reflect'", "Default is 'constant'"))
+_mode_mirror_doc = (
+    _mode_reflect_doc.replace("Default is 'reflect'", "Default is 'mirror'"))
+assert _mode_reflect_doc != _mode_constant_doc, 'Default not replaced'
+
 _mode_multiple_doc = (
 """mode : str or sequence, optional
     The `mode` parameter determines how the input array is extended
@@ -115,7 +121,9 @@ docdict = {
     'axis': _axis_doc,
     'output': _output_doc,
     'size_foot': _size_foot_doc,
-    'mode': _mode_doc,
+    'mode_constant': _mode_constant_doc,
+    'mode_mirror': _mode_mirror_doc,
+    'mode_reflect': _mode_reflect_doc,
     'mode_multiple': _mode_multiple_doc,
     'cval': _cval_doc,
     'origin': _origin_doc,
