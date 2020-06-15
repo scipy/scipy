@@ -6376,6 +6376,17 @@ class powerlaw_gen(rv_continuous):
     def _entropy(self, a):
         return 1 - 1.0/a - np.log(a)
 
+    def fit(self, data, *args, **kwds):
+
+        shape = kwds.pop('fix_a', kwds.pop('f0', None))
+
+        if shape is None:
+            data = np.asarray(data)
+            shape =  len(data) / np.sum(np.log(data))
+            kwds['fix_a'] = shape
+
+        return super(powerlaw_gen, self).fit(data, *args, **kwds)
+
 
 powerlaw = powerlaw_gen(a=0.0, b=1.0, name="powerlaw")
 

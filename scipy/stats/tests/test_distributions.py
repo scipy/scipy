@@ -1452,6 +1452,27 @@ class TestLaplace(object):
         assert_allclose(loc, 4, atol=1e-15, rtol=1e-15)
 
 
+class TestPowerlaw(object):
+    @pytest.mark.parametrize("shape,rvs_scale,rvs_loc", [(1, 10, 5),
+                                                         (7, 5, 10),
+                                                         (.5, .2, .5)])
+    def test_fit_MLE_comp_optimzer(self, shape, rvs_loc, rvs_scale):
+        data = stats.powerlaw.rvs(size=1000, a=shape, loc=rvs_loc,
+                                  scale=rvs_scale)
+
+        args = [data, (stats.powerlaw._fitstart(data), )]
+        ll = stats.powerlaw._reduce_func(args, {})[1]
+
+        # test that the objective function result of the analytical MLEs is
+        # less than or equal to that of the numerically optimized estimate
+        mle = stats.powerlaw.fit(data)
+        opt = super(type(stats.powerlaw), stats.powerlaw).fit(data)
+        ll_mle = ll(mle, data)
+        ll_opt = ll(opt, data)
+        assert ll_mle < ll_opt or np.allclose(ll_mle, ll_opt,
+                                              atol=1e-15, rtol=1e-15)
+
+
 class TestInvGamma(object):
     def test_invgamma_inf_gh_1866(self):
         # invgamma's moments are only finite for a>n
