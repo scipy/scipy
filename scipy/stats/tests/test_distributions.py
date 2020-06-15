@@ -3059,17 +3059,18 @@ class TestRayleigh(object):
         loc, scale = stats.rayleigh.fit(data, fscale=.6)
         assert_equal(scale, .6)
 
-        # with both parameters free, `loc` is numerically optimized
-        # using the objective function with the MLE for scale
+        # with both parameters free, one dimentional optimization is done
+        # over a new function that takes into account the dependent relation
+        # of `scale` to `loc`.
         loc, scale = stats.rayleigh.fit(data)
-        # test that `scale` is related to `loc` by the MLE
+        # test that `scale` is defined by its relation to `loc`
         assert_equal(scale, scale_mle(data, loc))
 
         # test that the objective function result of the analytical MLEs is
         # less than or equal to that of the numerically optimized estimate
         loc_scale_opt = super(type(stats.rayleigh), stats.rayleigh).fit(data)
 
-        # obtain objective function
+        # obtain objective function with same method as `rv_continuous.fit`
         args = [data, (stats.rayleigh._fitstart(data), )]
         func = stats.rayleigh._reduce_func(args, {})[1]
 
@@ -3080,7 +3081,7 @@ class TestRayleigh(object):
         # An error is raised if both parameters are fixed
         assert_raises(RuntimeError, stats.rayleigh.fit, data, floc=floc,
                       fscale=fscale)
-        
+        # an error is raised for extra positional arguments
         assert_raises(TypeError, stats.rayleigh.fit, data, 2)
 
 

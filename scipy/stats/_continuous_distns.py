@@ -6637,7 +6637,7 @@ class rayleigh_gen(rv_continuous):
                     return ll([loc, scale_mle(loc, data)], data)
 
                 data = kwds.pop('data')
-                
+
                 def restore(args, vals):
                     return (vals.item(), scale_mle(vals, np.ravel(data)))
 
