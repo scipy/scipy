@@ -995,7 +995,7 @@ cdef class cKDTree:
         """
         query_ball_tree(self, other, r, p=2., eps=0)
 
-        Find all pairs of points whose distance is at most r
+        Find all pairs of points between `self` and `other` whose distance is at most r
 
         Parameters
         ----------
@@ -1086,7 +1086,7 @@ cdef class cKDTree:
         """
         query_pairs(self, r, p=2., eps=0)
 
-        Find all pairs of points whose distance is at most r.
+        Find all pairs of points in `self` whose distance is at most r.
 
         Parameters
         ----------

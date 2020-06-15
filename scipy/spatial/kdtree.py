@@ -632,7 +632,8 @@ class KDTree(object):
             return result
 
     def query_ball_tree(self, other, r, p=2., eps=0):
-        """Find all pairs of points whose distance is at most r
+        """
+        Find all pairs of points between `self` and `other` whose distance is at most r
 
         Parameters
         ----------
@@ -702,7 +703,7 @@ class KDTree(object):
 
     def query_pairs(self, r, p=2., eps=0):
         """
-        Find all pairs of points within a distance.
+        Find all pairs of points in `self` whose distance is at most r.
 
         Parameters
         ----------
