@@ -12,30 +12,48 @@ from urllib.error import HTTPError
 import zipfile
 import tarfile
 
-OPENBLAS_V = 'v0.3.9'
-OPENBLAS_LONG = 'v0.3.9'
+OPENBLAS_V = 'v0.3.10'
+OPENBLAS_LONG = 'v0.3.10'
 BASE_LOC = ''
 ANACONDA = 'https://anaconda.org/multibuild-wheels-staging/openblas-libs'
 ARCHITECTURES = ['', 'windows', 'darwin', 'aarch64', 'x86', 'ppc64le', 's390x']
 sha256_vals = {
-'openblas64_-v0.3.9-macosx_10_9_x86_64-gf_1becaaa.tar.gz':
-'53f606a7da75d390287f1c51b2af7866b8fe7553a26d2474f827daf0e5c8a886',
-'openblas64_-v0.3.9-manylinux1_x86_64.tar.gz':
-'6fe5b1e2a4baa16833724bcc94a80b22e9c99fc1b9a2ddbce4f1f82a8002d906',
-'openblas64_-v0.3.9-win_amd64-gcc_7_1_0.zip':
-'15d24a66c5b22cc7b3120e831658f491c7a063804c33813235044a6f8b56686d',
-'openblas-v0.3.9-macosx_10_9_x86_64-gf_1becaaa.tar.gz': 
-'8221397b9cfb8cb22f3efb7f228ef901e13f9fd89c7d7d0cb7b8a79b0610bf33',
-'openblas-v0.3.9-manylinux1_i686.tar.gz': 
-'31abf8eccb697a320a998ce0f59045edc964602f815d78690c5a23839819261c',
-'openblas-v0.3.9-manylinux1_x86_64.tar.gz':
-'d9c39acbafae9b1daef19c2738ec938109a59e9322f93eb9a3c50869d220deff',
-'openblas-v0.3.9-win32-gcc_7_1_0.zip':
-'69a7dc265e8a8e45b358637d11cb1710ce88c4456634c7ce37d429b1d9bc9aaa',
-'openblas-v0.3.9-win_amd64-gcc_7_1_0.zip': 
-'0cea06f4a2afebaa6255854f73f237802fc6b58eaeb1a8b1c22d87cc399e0d48',
-'openblas-v0.3.9-manylinux2014_aarch64.tar.gz':
-'10d5ef5e9e19af5c199b59a17f43763e0c85ecf13cbc8f2d91e076f7847cdb5e'
+'openblas64_-v0.3.10-macosx_10_9_x86_64-gf_1becaaa.tar.gz':
+'91189592d0d801807843863a7249bf4f61621a2d056680d83723f8bb4019242b',
+'openblas64_-v0.3.10-manylinux1_x86_64.tar.gz':
+'dd363c96dd0eb7cf0db72e259f5aba676f5421baf9e1b6e0f1d1c882129be66e',
+'openblas64_-v0.3.10-manylinux2010_x86_64.tar.gz':
+'2291851d113b8310aae722149ea3dbda3dfe31fc08ec3698fad91923ffdd1b05',
+'openblas64_-v0.3.10-manylinux2014_aarch64.tar.gz':
+'da9ce72d8c920c633446864469f440dee347b53f7b72437148cfb0aa54b00a18',
+'openblas64_-v0.3.10-manylinux2014_ppc64le.tar.gz':
+'999e336c81800c7e5ff22628fc1fe3963be6e64f89744f98589b649f4c9a5199',
+'openblas64_-v0.3.10-manylinux2014_s390x.tar.gz':
+'e0347dd6f3f3a27d2f5e76d382e8a4a68e2e92f5f6a10e54ef65c7b14b44d0e8',
+'openblas64_-v0.3.10-win_amd64-gcc_7_1_0.zip':
+'662f1578d685a9a21da53230e9077c001205100eaa14ea56533c61dfbd0fe14b',
+'openblas-v0.3.10-macosx_10_9_i386-gf_1becaaa.tar.gz':
+'6862be10decda53d6a52211047f0a4398b80b3e8f71db8b8e94241ca0b5106ad',
+'openblas-v0.3.10-macosx_10_9_x86_64-gf_1becaaa.tar.gz':
+'c6940b5133e687ae7a4f9c7c794f6a6d92b619cf41e591e5db07aab5da118199',
+'openblas-v0.3.10-manylinux1_i686.tar.gz':
+'58645fa0b41819b0e0fbb86fd5ee8469f87da5db9a264c6d9f66887b7878ba31',
+'openblas-v0.3.10-manylinux1_x86_64.tar.gz':
+'57accc9125eea164e3e28c2945db1d8723ef533020aa1d1c8ff0fe4c281fe10b',
+'openblas-v0.3.10-manylinux2010_i686.tar.gz':
+'39626cb4d42b2e6187167712c58a748f13e3bd1eaae00aa48d8d1797c07a85c0',
+'openblas-v0.3.10-manylinux2010_x86_64.tar.gz':
+'5e471d171078618b718489ef7e6af1e250ceb5c50d9f9c9ba3cb2d018004fa45',
+'openblas-v0.3.10-manylinux2014_aarch64.tar.gz':
+'c9bf6cb7cd6bafc1252fc40ca368112caef902536a31660346308714f4ab7504',
+'openblas-v0.3.10-manylinux2014_ppc64le.tar.gz':
+'ef1a4f27b37a7fcd15bbe0457ceb395b726753c6b43884fce9ad52d18b8b4d27',
+'openblas-v0.3.10-manylinux2014_s390x.tar.gz':
+'498198057b0b479aa809916d6882f896925957ec399f469e4520d009bbfc258d',
+'openblas-v0.3.10-win32-gcc_7_1_0.zip':
+'e9212c5fc9d8620a1d091c2dc90d6f8b1a7943f636b2c482440d9b6f5be49ae4',
+'openblas-v0.3.10-win_amd64-gcc_7_1_0.zip':
+'2ffd656ed441070df2f7a7acb9e610c940701f7e560cc3fb827f4fa4750eeb37',
 }
 
 IS_32BIT = sys.maxsize < 2**32
