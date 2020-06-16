@@ -928,8 +928,6 @@ class KDTree(object):
         Examples
         --------
         You can compute a sparse distance matrix between two kd-trees:
-        You can compute a sparse distance matrix, which (`i`, `j`) element is
-        a distance between i-th and j-th points:
 
         >>> import numpy as np
         >>> from scipy.spatial import KDTree
@@ -938,8 +936,18 @@ class KDTree(object):
         >>> points2 = np.random.random((5, 2))
         >>> kd_tree1 = KDTree(points1)
         >>> kd_tree2 = KDTree(points2)
-        >>> sdm = kd_tree1.sparse_distance_matrix(kd_tree2, 1.0)
+        >>> sdm = kd_tree1.sparse_distance_matrix(kd_tree2, 0.3)
         >>> sdm.toarray()
+        array([[0.20220215, 0.14538496, 0.,         0.10257199, 0.        ],
+            [0.13491385, 0.27251306, 0.,         0.18793787, 0.        ],
+            [0.19262396, 0.,         0.,         0.25795122, 0.        ],
+            [0.14859639, 0.07076002, 0.,         0.04065851, 0.        ],
+            [0.17308768, 0.,         0.,         0.24823138, 0.        ]])
+
+        You can check distances above the `max_distance` are zeros:
+
+        >>> from scipy.spatial import distance_matrix
+        >>> distance_matrix(points1, points2)
         array([[0.20220215, 0.14538496, 0.43588092, 0.10257199, 0.4555495 ],
             [0.13491385, 0.27251306, 0.65944131, 0.18793787, 0.68184154],
             [0.19262396, 0.34121593, 0.72176889, 0.25795122, 0.74538858],
