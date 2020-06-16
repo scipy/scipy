@@ -1490,6 +1490,7 @@ cdef class cKDTree:
             [0.17308768, 0.,         0.,         0.24823138, 0.        ]])
 
         You can check distances above the `max_distance` are zeros:
+
         >>> from scipy.spatial import distance_matrix
         >>> distance_matrix(points1, points2)
         array([[0.20220215, 0.14538496, 0.43588092, 0.10257199, 0.4555495 ],
