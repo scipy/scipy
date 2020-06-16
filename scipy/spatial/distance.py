@@ -283,6 +283,9 @@ def _validate_mahalanobis_kwargs(X, m, n, **kwargs):
 
 
 def _validate_minkowski_kwargs(X, m, n, **kwargs):
+    w = kwargs.pop('w', None)
+    if w is not None:
+        kwargs['w'] = _validate_weights(w)
     if 'p' not in kwargs:
         kwargs['p'] = 2.
     else:
@@ -1706,6 +1709,13 @@ _METRICS_NAMES = list(_METRICS.keys())
 
 _TEST_METRICS = {'test_' + name: globals()[name] for name in _METRICS.keys()}
 
+# C implementations with weighted versions
+_C_WEIGHTED_METRICS = {
+    'chebyshev': 'weighted_chebyshev',
+    'minkowski': 'weighted_minkowski',
+    'wminkowski': 'old_weighted_minkowski',
+}
+
 
 def _select_weighted_metric(mstr, kwargs, out):
     kwargs = dict(kwargs)
@@ -1714,7 +1724,10 @@ def _select_weighted_metric(mstr, kwargs, out):
         # w=None is the same as omitting it
         kwargs.pop("w")
 
-    if mstr.startswith("test_") or mstr in _METRICS['wminkowski'].aka + _METRICS['hamming'].aka:
+    if mstr.startswith("test_") or mstr in (
+            _METRICS['hamming'].aka +
+            _METRICS['wminkowski'].aka +
+            _METRICS['minkowski'].aka):
         # These support weights
         pass
     elif "w" in kwargs:
@@ -2056,6 +2069,9 @@ def pdist(X, metric='euclidean', *args, **kwargs):
         if metric_name is not None:
             X, typ, kwargs = _validate_pdist_input(X, m, n,
                                                    metric_name, **kwargs)
+
+            if 'w' in kwargs:
+                metric_name = _C_WEIGHTED_METRICS.get(metric_name, metric_name)
 
             # get pdist wrapper
             pdist_fn = getattr(_distance_wrap,
@@ -2771,6 +2787,10 @@ def cdist(XA, XB, metric='euclidean', *args, **kwargs):
         if metric_name is not None:
             XA, XB, typ, kwargs = _validate_cdist_input(XA, XB, mA, mB, n,
                                                         metric_name, **kwargs)
+
+            if 'w' in kwargs:
+                metric_name = _C_WEIGHTED_METRICS.get(metric_name, metric_name)
+
             # get cdist wrapper
             cdist_fn = getattr(_distance_wrap,
                                "cdist_%s_%s_wrap" % (metric_name, typ))
