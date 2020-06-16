@@ -444,23 +444,12 @@ class Test_random_ball_linf_compiled_periodic(Test_random_ball_compiled_periodic
         self.p = np.inf
 
 
-def test_random_ball_vectorized():
-
-    n = 20
-    m = 5
-    T = KDTree(np.random.randn(n,m))
-
-    r = T.query_ball_point(np.random.randn(2,3,m),1)
-    assert_equal(r.shape,(2,3))
-    assert_(isinstance(r[0,0],list))
-
-
-def test_random_ball_vectorized_compiled():
-
+@pytest.mark.parametrize('TreeType', [KDTree, cKDTree])
+def test_random_ball_vectorized(TreeType):
     n = 20
     m = 5
     np.random.seed(1234)
-    T = cKDTree(np.random.randn(n,m))
+    T = TreeType(np.random.randn(n,m))
 
     r = T.query_ball_point(np.random.randn(2,3,m),1)
     assert_equal(r.shape,(2,3))
@@ -818,49 +807,28 @@ def check_onetree_query(T,d):
 
     assert_(s == T.query_pairs(d))
 
-def test_onetree_query():
+@pytest.mark.parametrize('TreeType', [KDTree, cKDTree])
+def test_onetree_query(TreeType):
     np.random.seed(0)
     n = 50
     k = 4
     points = np.random.randn(n,k)
-    T = KDTree(points)
+    T = TreeType(points)
     check_onetree_query(T, 0.1)
 
     points = np.random.randn(3*n,k)
     points[:n] *= 0.001
     points[n:2*n] += 2
-    T = KDTree(points)
+    T = TreeType(points)
     check_onetree_query(T, 0.1)
     check_onetree_query(T, 0.001)
     check_onetree_query(T, 0.00001)
     check_onetree_query(T, 1e-6)
 
 
-def test_onetree_query_compiled():
-    np.random.seed(0)
-    n = 100
-    k = 4
-    points = np.random.randn(n,k)
-    T = cKDTree(points)
-    check_onetree_query(T, 0.1)
-
-    points = np.random.randn(3*n,k)
-    points[:n] *= 0.001
-    points[n:2*n] += 2
-    T = cKDTree(points)
-    check_onetree_query(T, 0.1)
-    check_onetree_query(T, 0.001)
-    check_onetree_query(T, 0.00001)
-    check_onetree_query(T, 1e-6)
-
-
-def test_query_pairs_single_node():
-    tree = KDTree([[0, 1]])
-    assert_equal(tree.query_pairs(0.5), set())
-
-
-def test_query_pairs_single_node_compiled():
-    tree = cKDTree([[0, 1]])
+@pytest.mark.parametrize('TreeType', [KDTree, cKDTree])
+def test_query_pairs_single_node(TreeType):
+    tree = TreeType([[0, 1]])
     assert_equal(tree.query_pairs(0.5), set())
 
 
