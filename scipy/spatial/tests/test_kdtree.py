@@ -725,8 +725,6 @@ class Test_sparse_distance_matrix_compiled(sparse_distance_matrix_consistency):
         data2 = np.random.randn(n,m)
         self.T1 = cKDTree(data1,leafsize=2)
         self.T2 = cKDTree(data2,leafsize=2)
-        self.ref_T1 = KDTree(data1, leafsize=2)
-        self.ref_T2 = KDTree(data2, leafsize=2)
         self.r = 0.5
         self.n = n
         self.m = m
@@ -734,10 +732,12 @@ class Test_sparse_distance_matrix_compiled(sparse_distance_matrix_consistency):
         self.data2 = data2
         self.p = 2
 
-    def test_consistency_with_python(self):
+    def test_consistency(self):
+        # Test consistency with a distance_matrix
         M1 = self.T1.sparse_distance_matrix(self.T2, self.r)
-        M2 = self.ref_T1.sparse_distance_matrix(self.ref_T2, self.r)
-        assert_array_almost_equal(M1.todense(), M2.todense(), decimal=14)
+        expected = distance_matrix(self.T1.data, self.T2.data)
+        expected[expected > self.r] = 0
+        assert_array_almost_equal(M1.todense(), expected, decimal=14)
 
     def test_against_logic_error_regression(self):
         # regression test for gh-5077 logic error
