@@ -350,7 +350,7 @@ def _validate_weights(w, dtype=np.double):
 
 @_deprecated(
     msg="'wminkowski' metric is deprecated and will be removed in"
-        " SciPy 1.8, use 'minkowski' instead.")
+        " SciPy 1.8.0, use 'minkowski' instead.")
 def _validate_wminkowski_kwargs(X, m, n, **kwargs):
     w = kwargs.pop('w', None)
     if w is None:
@@ -531,9 +531,6 @@ def minkowski(u, v, p=2, w=None):
     return dist
 
 
-@_deprecated(
-    msg="scipy.distance.wminkowski is deprecated and will be removed in"
-        " SciPy 1.8, use scipy.distance.minkowski instead.")
 def wminkowski(u, v, p, w):
     """
     Compute the weighted Minkowski distance between two 1-D arrays.
@@ -562,9 +559,8 @@ def wminkowski(u, v, p, w):
 
     Notes
     -----
-    .. deprecated:: 1.6
-       `wminkowski` is deprecated and will be removed in SciPy 1.8.
-       Use the `minkowski` with the ``w`` argument instead.
+    `wminkowski` is deprecated and will be removed in SciPy 1.8.0.
+    Use `minkowski` with the ``w`` argument instead.
 
     Examples
     --------
@@ -583,6 +579,10 @@ def wminkowski(u, v, p, w):
     1.0
 
     """
+    warnings.warn(
+        message="scipy.distance.wminkowski is deprecated and will be removed in"
+                " SciPy 1.8.0, use scipy.distance.minkowski instead.",
+        category=DeprecationWarning)
     w = _validate_weights(w)
     return minkowski(u, v, p=p, w=w**p)
 
@@ -1972,8 +1972,7 @@ def pdist(X, metric='euclidean', *args, **kwargs):
        Computes the weighted Minkowski distance between each pair of
        vectors. (see wminkowski function documentation)
 
-    .. deprecated:: 1.6
-       'wminkowski' is deprecated and will be removed in SciPy 1.8.
+       'wminkowski' is deprecated and will be removed in SciPy 1.8.0.
        Use 'minkowski' instead.
 
     23. ``Y = pdist(X, f)``
@@ -2658,8 +2657,7 @@ def cdist(XA, XB, metric='euclidean', *args, **kwargs):
        Computes the weighted Minkowski distance between the
        vectors. (see `wminkowski` function documentation)
 
-    .. deprecated:: 1.6
-       'wminkowski' is deprecated and will be removed in SciPy 1.8.
+       'wminkowski' is deprecated and will be removed in SciPy 1.8.0.
        Use 'minkowski' instead.
 
     23. ``Y = cdist(XA, XB, f)``
