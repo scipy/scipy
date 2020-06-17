@@ -704,8 +704,8 @@ def kmeans2(data, k, iter=10, thresh=1e-5, minit='random',
                          "must be a positive integer." % iter)
     try:
         miss_meth = _valid_miss_meth[missing]
-    except KeyError:
-        raise ValueError("Unknown missing method %r" % (missing,))
+    except KeyError as e:
+        raise ValueError("Unknown missing method %r" % (missing,)) from e
 
     data = _asarray_validated(data, check_finite=check_finite)
     if data.ndim == 1:
@@ -737,8 +737,8 @@ def kmeans2(data, k, iter=10, thresh=1e-5, minit='random',
 
         try:
             init_meth = _valid_init_meth[minit]
-        except KeyError:
-            raise ValueError("Unknown init method %r" % (minit,))
+        except KeyError as e:
+            raise ValueError("Unknown init method %r" % (minit,)) from e
         else:
             code_book = init_meth(data, k)
 
