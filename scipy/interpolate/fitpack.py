@@ -358,9 +358,9 @@ def splev(x, tck, der=0, ext=0):
         # remap the out-of-bounds behavior
         try:
             extrapolate = {0: True, }[ext]
-        except KeyError:
+        except KeyError as e:
             raise ValueError("Extrapolation mode %s is not supported "
-                             "by BSpline." % ext)
+                             "by BSpline." % ext) from e
 
         return tck(x, der, extrapolate=extrapolate)
     else:
