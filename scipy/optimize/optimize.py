@@ -1162,16 +1162,15 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
             warnflag = 2
             break
 
-        try:  # this was handled in numeric, let it remaines for more safety
-            rhok = 1.0 / (np.dot(yk, sk))
-        except ZeroDivisionError:
+        rhok_inv = np.dot(yk, sk)
+        # this was handled in numeric, let it remaines for more safety
+        if rhok_inv == 0.:
             rhok = 1000.0
             if disp:
                 print("Divide-by-zero encountered: rhok assumed large")
-        if isinf(rhok):  # this is patch for NumPy
-            rhok = 1000.0
-            if disp:
-                print("Divide-by-zero encountered: rhok assumed large")
+        else:
+            rhok = 1. / rhok_inv
+
         A1 = I - sk[:, np.newaxis] * yk[np.newaxis, :] * rhok
         A2 = I - yk[:, np.newaxis] * sk[np.newaxis, :] * rhok
         Hk = np.dot(A1, np.dot(Hk, A2)) + (rhok * sk[:, np.newaxis] *
