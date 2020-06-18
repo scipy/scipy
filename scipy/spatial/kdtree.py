@@ -575,7 +575,6 @@ class KDTree(cKDTree):
             counts = counts.astype(int)
         return counts
 
-
     def sparse_distance_matrix(self, other, max_distance, p=2.):
         """
         Compute a sparse distance matrix
