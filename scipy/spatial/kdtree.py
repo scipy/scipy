@@ -347,21 +347,24 @@ class KDTree(cKDTree):
                 "in SciPy 1.8.0. Use KDTree.query_ball_point instead.",
                 DeprecationWarning)
 
+            # Convert index query to a lists of distance and index,
+            # sorted by distance
+            def inds_to_hits(point, neighbors):
+                dist = minkowski_distance(point, self.data[neighbors], p)
+                hits = sorted([(d, i) for d, i in zip(dist, neighbors)])
+                return [d for d, i in hits], [i for d, i in hits]
+
             x = np.asarray(x, dtype=np.float64)
             inds = super().query_ball_point(x, distance_upper_bound, p, eps)
 
             if isinstance(inds, list):
-                d = list(minkowski_distance(x, self.data[inds], p=p))
-                return d, inds
+                return inds_to_hits(x, inds)
 
-            d = np.empty_like(inds)
-            with np.nditer([inds], flags=['refs_ok', 'multi_index']) as it:
-                while not it.finished:
-                    d[it.multi_index] = list(minkowski_distance(
-                        x[it.multi_index], self.data[inds[it.multi_index]], p))
-                    it.iternext()
+            dists = np.empty_like(inds)
+            for idx in np.ndindex(inds.shape):
+                dists[idx], inds[idx] = inds_to_hits(x[idx], inds[idx])
 
-            return d, inds
+            return dists, inds
 
         d, i = super().query(x, k, eps, p, distance_upper_bound)
         if isinstance(i, int):
@@ -567,7 +570,11 @@ class KDTree(cKDTree):
         9
 
         """
-        return super().count_neighbors(other, r, p)
+        counts = super().count_neighbors(other, r, p)
+        if isinstance(counts, np.ndarray):
+            counts = counts.astype(int)
+        return counts
+
 
     def sparse_distance_matrix(self, other, max_distance, p=2.):
         """
