@@ -343,6 +343,21 @@ cdef class cKDTreeNode:
         readonly object       lesser
         readonly object       greater
 
+    def __lt__(self, cKDTreeNode other):
+        return self._node < other._node
+
+    def __gt__(self, cKDTreeNode other):
+        return self._node > other._node
+
+    def __le__(self, cKDTreeNode other):
+        return self._node <= other._node
+
+    def __ge__(self, cKDTreeNode other):
+        return self._node >= other._node
+
+    def __eq__(self, cKDTreeNode other):
+        return self._node == other._node
+
     cdef void _setup(cKDTreeNode self):
         cdef cKDTreeNode n1, n2
         self.split_dim = self._node.split_dim

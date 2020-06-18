@@ -213,7 +213,8 @@ class Test_vectorization:
     def test_single_query_all_neighbors(self, r):
         np.random.seed(1234)
         point = np.random.rand(self.kdtree.m)
-        d, i = self.kdtree.query(point, k=None, distance_upper_bound=r)
+        with pytest.warns(DeprecationWarning, match="k=None"):
+            d, i = self.kdtree.query(point, k=None, distance_upper_bound=r)
         assert isinstance(d, list)
         assert isinstance(i, list)
 
@@ -232,7 +233,8 @@ class Test_vectorization:
         r = 1.1
         np.random.seed(1234)
         points = np.random.rand(*query_shape, self.kdtree.m)
-        d, i = self.kdtree.query(points, k=None, distance_upper_bound=r)
+        with pytest.warns(DeprecationWarning, match="k=None"):
+            d, i = self.kdtree.query(points, k=None, distance_upper_bound=r)
         assert_equal(np.shape(d), query_shape)
         assert_equal(np.shape(i), query_shape)
 
