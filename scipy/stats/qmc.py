@@ -669,7 +669,10 @@ class OptimalDesign(QMCEngine):
         self.optimization = optimization
 
         self.best_doe = self.start_design
-        self.best_disc = np.inf
+        if self.start_design is not None:
+            self.best_disc = discrepancy(self.start_design)
+        else:
+            self.best_disc = np.inf
 
         self.olhs = OrthogonalLatinHypercube(self.k_vars, seed=self.rng)
 

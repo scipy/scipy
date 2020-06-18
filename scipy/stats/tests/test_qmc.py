@@ -164,51 +164,37 @@ class TestLHS(object):
         hist = np.histogram(sample[:, 1], bins=bins)
         assert_equal(hist[0], out)
 
-    @pytest.mark.xfail(raises=AssertionError, reason='Global optimization')
     def test_optimal_design(self):
-        np.random.seed(123456)
+        seed = 123456
 
-        olhs = qmc.OrthogonalLatinHypercube(k_vars=2)
-        start_design = olhs.random(n_samples=5)
+        olhs = qmc.OrthogonalLatinHypercube(k_vars=2, seed=seed)
+        sample_ref = olhs.random(n_samples=20)
+        disc_ref = qmc.discrepancy(sample_ref)
 
-        optimal = qmc.OptimalDesign(k_vars=2, start_design=start_design)
-        sample = optimal.random(n_samples=5)
-        out = np.array([[0.025, 0.223], [0.779, 0.677], [0.452, 0.043],
-                        [0.393, 0.992], [0.875, 0.416]])
-        assert_almost_equal(sample, out, decimal=1)
+        optimal_1 = qmc.OptimalDesign(k_vars=2, start_design=sample_ref, seed=seed)
+        sample_1 = optimal_1.random(n_samples=20)
+        disc_1 = qmc.discrepancy(sample_1)
 
-        corners = np.array([[0, 2], [10, 5]])
-        optimal = qmc.OptimalDesign(k_vars=2, start_design=start_design)
-        sample = optimal.random(n_samples=5)
-        sample = qmc.scale(sample, bounds=corners)
-        out = np.array([[5.189, 4.604], [3.553, 2.344], [6.275, 3.947],
-                        [0.457, 3.554], [9.705, 2.636]])
-        assert_almost_equal(sample, out, decimal=1)
+        assert disc_1 < disc_ref
 
-        optimal = qmc.OptimalDesign(k_vars=2, start_design=start_design, niter=2)
-        sample = optimal.random(n_samples=5)
-        out = np.array([[0.681, 0.231], [0.007, 0.719], [0.372, 0.101],
-                        [0.550, 0.456], [0.868, 0.845]])
-        assert_almost_equal(sample, out, decimal=1)
+        optimal_2 = qmc.OptimalDesign(k_vars=2, start_design=sample_ref, niter=2, seed=seed)
+        sample_2 = optimal_2.random(n_samples=20)
+        disc_2 = qmc.discrepancy(sample_2)
+        assert disc_2 < disc_1
 
-        optimal = qmc.OptimalDesign(k_vars=2, start_design=start_design, force=True)
-        sample = optimal.random(n_samples=5)
-        sample = qmc.scale(sample, bounds=corners)
-        out = np.array([[8.610, 4.303], [5.318, 3.498], [7.323, 2.288],
-                        [1.135, 2.657], [3.561, 4.938]])
-        assert_almost_equal(sample, out, decimal=1)
+        # resample is like doing another iteration
+        sample_1 = optimal_1.random(n_samples=20)
+        assert_allclose(sample_1, sample_2)
 
-        optimal = qmc.OptimalDesign(k_vars=2, start_design=start_design, optimization=False)
-        sample = optimal.random(n_samples=5)
-        sample = qmc.scale(sample, bounds=corners)
-        out = np.array([[1.052, 4.218], [2.477, 2.987], [7.616, 4.527],
-                        [9.134, 3.393], [4.064, 2.430]])
-        assert_almost_equal(sample, out, decimal=1)
+        optimal_3 = qmc.OptimalDesign(k_vars=2, start_design=sample_ref, force=True)
+        sample_3 = optimal_3.random(n_samples=20)
+        disc_3 = qmc.discrepancy(sample_3)
+        assert disc_3 < disc_ref
 
-        optimal = qmc.OptimalDesign(k_vars=2, start_design=start_design, optimization=False, niter=2)
-        sample = optimal.random(n_samples=5)
-        sample = qmc.scale(sample, bounds=corners)
-        print(sample)
-        out = np.array([[7.902, 2.166], [4.915, 2.741], [3.797, 3.365],
-                        [0.602, 4.896], [9.880, 4.215]])
-        assert_almost_equal(sample, out, decimal=1)
+        # no optimization
+        optimal_4 = qmc.OptimalDesign(k_vars=2, start_design=sample_ref,
+                                      optimization=False, niter=100, seed=seed)
+        sample_4 = optimal_4.random(n_samples=20)
+        disc_4 = qmc.discrepancy(sample_4)
+
+        assert disc_4 < disc_ref
