@@ -3,15 +3,48 @@
 Define function to generate sample of points in the unit hypercube.
 
 """
-
+from abc import ABC, abstractmethod
 import copy
 import numpy as np
 from scipy.optimize import brute
 from scipy._lib._util import check_random_state
 from scipy.optimize import basinhopping
+from scipy.stats._sobol import (
+    SobolEngine, NormalQMCEngine, MultivariateNormalQMCEngine
+)
 
-__all__ = ['discrepancy', 'halton', 'orthogonal_latin_hypercube',
-           'latin_hypercube', 'optimal_design']
+__all__ = ['discrepancy', 'Halton', 'OrthogonalLatinHypercube',
+           'LatinHypercube', 'OptimalDesign', 'SobolEngine',
+           'NormalQMCEngine', 'MultivariateNormalQMCEngine']
+
+
+def scale(sample, bounds, reverse=False):
+    """Sample scaling from unit hypercube to bounds range.
+
+    Parameters
+    ----------
+    sample : array_like (n_samples, k_vars)
+        Sample to scale.
+    bounds : tuple or array_like ([min, k_vars], [max, k_vars])
+        Desired range of transformed data. The transformation apply the bounds
+        on the sample and not the theoretical space, unit cube. Thus min and
+        max values of the sample will coincide with the bounds.
+    reverse : bool
+        Reverse the transformation, from bounds range to unit hypercube.
+
+    Returns
+    -------
+    sample : array_like (n_samples, k_vars)
+        Scaled-sample.
+
+    """
+    bounds = np.asarray(bounds)
+    min_ = np.min(bounds, axis=0)
+    max_ = np.max(bounds, axis=0)
+    if not reverse:
+        return sample * (max_ - min_) + min_
+    else:
+        return (sample - min_) / (max_ - min_)
 
 
 def discrepancy(sample, bounds=None, iterative=False):
@@ -280,7 +313,7 @@ def n_primes(n):
 
     if len(primes) < n:
         big_number = 2000
-        while 'Not enought primes':
+        while 'Not enough primes':
             primes = primes_from_2_to(big_number)[:n]
             if len(primes) == n:
                 break
@@ -322,31 +355,88 @@ def van_der_corput(n_samples, base=2, start_index=0):
     return sequence
 
 
-def halton(dim, n_samples, bounds=None, start_index=0):
+class QMCEngine(ABC):
+    """Quasi-Monte Carlo engine sampler.
+
+    Samples are distributed over the half-open interval [0, 1).
+
+    Examples
+    --------
+    Generate samples from a low discrepancy sequence of Halton.
+
+    >>> from scipy.stats import qmc
+    >>> sampler = qmc.Halton(k_vars=2)
+    >>> sample = sampler.random(n_samples=5)
+
+    Compute the quality of the sample using the discrepancy criterion.
+
+    >>> uniformity = qmc.discrepancy(sample)
+
+    If some wants to continue an existing design, extra points can be obtained.
+
+    >>> sampler.fast_forward(5)
+    >>> sample_continued = sampler.random(n_samples=5)
+
+    Finally, samples can be scaled to bounds.
+
+    >>> bounds = np.array([[0, 2], [10, 5]])
+    >>> sample_continued_scaled = qmc.scale(sample_continued, bounds)
+
+    """
+
+    @abstractmethod
+    def __init__(self, k_vars, seed=None):
+        """Engine initialization.
+
+        Parameters
+        ----------
+        k_vars : int
+            Dimension of the parameter space.
+        seed : int or `np.random.RandomState`, optional
+            If `seed` is not specified the `np.RandomState` singleton is used.
+            If `seed` is an int, a new `np.random.RandomState` instance is used,
+            seeded with seed.
+            If `seed` is already a `np.random.RandomState instance`, then that
+            `np.random.RandomState` instance is used.
+            Specify `seed` for repeatable sampling.
+        """
+        self.k_vars = k_vars
+        self.rng = check_random_state(seed)
+
+    @abstractmethod
+    def random(self, n_samples):
+        """Draw n_samples in the half-open interval [0, 1).
+
+        Parameters
+        ----------
+        n_samples : int
+            Number of samples to generate in the parameter space.
+
+        Returns
+        -------
+        sample : array_like (n_samples, k_vars)
+            QMC sample.
+        """
+        pass
+
+    def fast_forward(self, n):
+        """Fast-forward the sequence by n positions.
+
+        Parameters
+        ----------
+        n: int
+            Number of points to skip in the sequence.
+        """
+        pass
+
+
+class Halton(QMCEngine):
     """Halton sequence.
 
     Pseudo-random number generator that generalize the Van der Corput sequence
     for multiple dimensions. Halton sequence use base-two Van der Corput
     sequence for the first dimension, base-three for its second and base-n for
     its n-dimension.
-
-    Parameters
-    ----------
-    dim : int
-        Dimension of the parameter space.
-    n_samples : int
-        Number of samples to generate in the parameter space.
-    bounds : tuple or array_like ([min, k_vars], [max, k_vars])
-        Desired range of transformed data. The transformation apply the bounds
-        on the sample and not the theoretical space, unit cube. Thus min and
-        max values of the sample will coincide with the bounds.
-    start_index : int
-        Index to start the sequence from.
-
-    Returns
-    -------
-    sequence : array_like (n_samples, k_vars)
-        Sequence of Halton.
 
     References
     ----------
@@ -358,7 +448,8 @@ def halton(dim, n_samples, bounds=None, start_index=0):
     Generate samples from a low discrepancy sequence of Halton.
 
     >>> from scipy.stats import qmc
-    >>> sample = qmc.halton(dim=2, n_samples=5)
+    >>> sampler = qmc.Halton(k_vars=2)
+    >>> sample = sampler.random(n_samples=5)
 
     Compute the quality of the sample using the discrepancy criterion.
 
@@ -366,28 +457,54 @@ def halton(dim, n_samples, bounds=None, start_index=0):
 
     If some wants to continue an existing design, extra points can be obtained.
 
-    >>> sample_continued = qmc.halton(dim=2, n_samples=5, start_index=5)
+    >>> sampler.fast_forward(5)
+    >>> sample_continued = sampler.random(n_samples=5)
+
+    Finally, samples can be scaled to bounds.
+
+    >>> bounds = np.array([[0, 2], [10, 5]])
+    >>> sample_continued_scaled = qmc.scale(sample_continued, bounds)
 
     """
-    base = n_primes(dim)
 
-    # Generate a sample using a Van der Corput sequence per dimension.
-    sample = [van_der_corput(n_samples + 1, bdim, start_index) for bdim in base]
-    sample = np.array(sample).T[1:]
+    def __init__(self, k_vars):
+        """Engine initialization.
 
-    # Sample scaling from unit hypercube to feature range
-    if bounds is not None:
-        min_ = bounds.min(axis=0)
-        max_ = bounds.max(axis=0)
-        sample = sample * (max_ - min_) + min_
+        Parameters
+        ----------
+        k_vars : int
+            Dimension of the parameter space.
 
-    return sample
+        """
+        super().__init__(k_vars=k_vars)
+        self.base = n_primes(k_vars)
+        self.n_fast_forward = 0
+
+    def random(self, n_samples):
+        """Draw n_samples in the half-open interval [0, 1).
+
+        Parameters
+        ----------
+        n_samples : int
+            Number of samples to generate in the parameter space.
+
+        Returns
+        -------
+        sample : array_like (n_samples, k_vars)
+            QMC sample.
+        """
+        # Generate a sample using a Van der Corput sequence per dimension.
+        sample = [van_der_corput(n_samples + 1, int(bdim), self.n_fast_forward)
+                  for bdim in self.base]
+
+        self.n_fast_forward += n_samples
+        return np.array(sample).T[1:]
+
+    def fast_forward(self, n):
+        self.n_fast_forward += n
 
 
-global best_doe, best_disc
-
-
-def orthogonal_latin_hypercube(dim, n_samples, bounds=None, seed=None):
+class OrthogonalLatinHypercube(QMCEngine):
     """Orthogonal array-based Latin hypercube sampling (OA-LHS).
 
     Samples are uniformly distributed over the half-open interval [low, high)
@@ -396,60 +513,59 @@ def orthogonal_latin_hypercube(dim, n_samples, bounds=None, seed=None):
     On top of the constraints from the Latin Hypercube, an orthogonal array of
     size n_samples is defined and only one point is allowed per subspace.
 
-    Parameters
-    ----------
-    dim : int
-        Dimension of the parameter space.
-    n_samples : int
-        Number of samples to generate in the parameter space.
-    bounds : tuple or array_like ([min, k_vars], [max, k_vars])
-        Desired range of transformed data. The transformation apply the bounds
-        on the sample and not the theoretical space, unit cube. Thus min and
-        max values of the sample will coincide with the bounds.
-    seed : int or `np.random.RandomState`, optional
-        If `seed` is not specified the `np.RandomState` singleton is used.
-        If `seed` is an int, a new `np.random.RandomState` instance is used,
-        seeded with seed.
-        If `seed` is already a `np.random.RandomState instance`, then that
-        `np.random.RandomState` instance is used.
-        Specify `seed` for repeatable sampling.
-
-    Returns
-    -------
-    sample : ndarray (n_samples, k_vars)
-        Latin hypercube Sampling.
-
     References
     ----------
     [1] Art B. Owen, "Orthogonal arrays for computer experiments, integration
     and visualization", Statistica Sinica, 1992.
 
     """
-    sample = []
-    step = 1.0 / n_samples
 
-    rng = check_random_state(seed)
+    def __init__(self, k_vars, seed=None):
+        """Engine initialization.
 
-    for _ in range(dim):
-        # Enforce a unique point per grid
-        j = np.arange(n_samples) * step
-        temp = j + rng.uniform(low=0, high=step, size=n_samples)
-        rng.shuffle(temp)
+        Parameters
+        ----------
+        k_vars : int
+            Dimension of the parameter space.
+        seed : int or `np.random.RandomState`, optional
+            If `seed` is not specified the `np.RandomState` singleton is used.
+            If `seed` is an int, a new `np.random.RandomState` instance is used,
+            seeded with seed.
+            If `seed` is already a `np.random.RandomState instance`, then that
+            `np.random.RandomState` instance is used.
+            Specify `seed` for repeatable sampling.
 
-        sample.append(temp)
+        """
+        super().__init__(k_vars=k_vars, seed=seed)
 
-    sample = np.array(sample).T
+    def random(self, n_samples):
+        """Draw n_samples in the half-open interval [0, 1).
 
-    # Sample scaling from unit hypercube to feature range
-    if bounds is not None:
-        min_ = bounds.min(axis=0)
-        max_ = bounds.max(axis=0)
-        sample = sample * (max_ - min_) + min_
+        Parameters
+        ----------
+        n_samples : int
+            Number of samples to generate in the parameter space.
 
-    return sample
+        Returns
+        -------
+        sample : array_like (n_samples, k_vars)
+            QMC sample.
+        """
+        sample = []
+        step = 1.0 / n_samples
+
+        for _ in range(self.k_vars):
+            # Enforce a unique point per grid
+            j = np.arange(n_samples) * step
+            temp = j + self.rng.uniform(low=0, high=step, size=n_samples)
+            self.rng.shuffle(temp)
+
+            sample.append(temp)
+
+        return np.array(sample).T
 
 
-def latin_hypercube(dim, n_samples, bounds=None, centered=False, seed=None):
+class LatinHypercube(QMCEngine):
     """Latin hypercube sampling (LHS).
 
     Samples are uniformly distributed over the half-open interval [low, high)
@@ -459,31 +575,6 @@ def latin_hypercube(dim, n_samples, bounds=None, centered=False, seed=None):
     dimension. Within this multi-dimensional grid, n_samples are selected by
     ensuring there is only one sample per row and column.
 
-    Parameters
-    ----------
-    dim : int
-        Dimension of the parameter space.
-    n_samples : int
-        Number of samples to generate in the parametr space.
-    bounds : tuple or array_like ([min, k_vars], [max, k_vars])
-        Desired range of transformed data. The transformation apply the bounds
-        on the sample and not the theoretical space, unit cube. Thus min and
-        max values of the sample will coincide with the bounds.
-    centered : bool
-        Center the point within the multi-dimensional grid.
-    seed : int or `np.random.RandomState`, optional
-        If `seed` is not specified the `np.RandomState` singleton is used.
-        If `seed` is an int, a new `np.random.RandomState` instance is used,
-        seeded with seed.
-        If `seed` is already a `np.random.RandomState instance`, then that
-        `np.random.RandomState` instance is used.
-        Specify `seed` for repeatable sampling.
-
-    Returns
-    -------
-    sample : ndarray (n_samples, k_vars)
-        Latin hypercube Sampling.
-
     References
     ----------
     [1] Mckay et al., "A Comparison of Three Methods for Selecting Values of
@@ -491,27 +582,41 @@ def latin_hypercube(dim, n_samples, bounds=None, centered=False, seed=None):
     Technometrics, 1979.
 
     """
-    rng = check_random_state(seed)
-    if centered:
-        r = 0.5
-    else:
-        r = rng.random_sample((n_samples, dim))
 
-    q = rng.randint(low=1, high=n_samples, size=(n_samples, dim))
+    def __init__(self, k_vars, centered=False, seed=None):
+        """Engine initialization.
 
-    sample = 1. / n_samples * (q - r)
+        Parameters
+        ----------
+        k_vars : int
+            Dimension of the parameter space.
+        centered : bool
+            Center the point within the multi-dimensional grid.
+        seed : int or `np.random.RandomState`, optional
+            If `seed` is not specified the `np.RandomState` singleton is used.
+            If `seed` is an int, a new `np.random.RandomState` instance is used,
+            seeded with seed.
+            If `seed` is already a `np.random.RandomState instance`, then that
+            `np.random.RandomState` instance is used.
+            Specify `seed` for repeatable sampling.
 
-    # Sample scaling from unit hypercube to feature range
-    if bounds is not None:
-        min_ = bounds.min(axis=0)
-        max_ = bounds.max(axis=0)
-        sample = sample * (max_ - min_) + min_
+        """
+        super().__init__(k_vars=k_vars, seed=seed)
+        self.centered = centered
 
-    return sample
+    def random(self, n_samples):
+        if self.centered:
+            r = 0.5
+        else:
+            r = self.rng.random_sample((n_samples, self.k_vars))
+
+        q = self.rng.randint(low=1, high=n_samples,
+                             size=(n_samples, self.k_vars))
+
+        return 1. / n_samples * (q - r)
 
 
-def optimal_design(dim, n_samples, bounds=None, start_design=None, niter=1,
-                   force=False, optimization=True, seed=None):
+class OptimalDesign(QMCEngine):
     """Optimal design.
 
     Optimize the design by doing random permutations to lower the centered
@@ -522,39 +627,6 @@ def optimal_design(dim, n_samples, bounds=None, start_design=None, niter=1,
     toward 2D and 3D subprojections. Distance based design better space filling
     but less robust to subprojections.
 
-    Parameters
-    ----------
-    dim : int
-        Dimension of the parameter space.
-    n_samples : int
-        Number of samples to generate in the parameter space.
-    bounds : tuple or array_like ([min, k_vars], [max, k_vars])
-        Desired range of transformed data. The transformation apply the bounds
-        on the sample and not the theoretical space, unit cube. Thus min and
-        max values of the sample will coincide with the bounds.
-    start_design : array_like (n_samples, k_vars)
-        Initial design of experiment to optimize.
-    niter : int
-        Number of iteration to perform.
-    force : bool
-        If `optimization`, force *basinhopping* optimization. Otherwise
-        grid search is used.
-    optimization : bool
-        Optimal design using global optimization or random generation of
-        `niter` samples.
-    seed : int or `np.random.RandomState`, optional
-        If `seed` is not specified the `np.RandomState` singleton is used.
-        If `seed` is an int, a new `np.random.RandomState` instance is used,
-        seeded with seed.
-        If `seed` is already a `np.random.RandomState instance`, then that
-        `np.random.RandomState` instance is used.
-        Specify `seed` for repeatable sampling.
-
-    Returns
-    -------
-    sample : array_like (n_samples, k_vars)
-        Optimal Latin hypercube Sampling.
-
     References
     ----------
     [1] Damblin et al., "Numerical studies of space filling designs:
@@ -562,85 +634,119 @@ def optimal_design(dim, n_samples, bounds=None, start_design=None, niter=1,
     Journal of Simulation, 2013.
 
     """
-    global best_doe, best_disc
-    best_doe = start_design
-    best_disc = np.inf
-    rng = check_random_state(seed)
 
-    if (bounds is None) and (best_doe is not None):
-        bounds = np.array([best_doe.min(axis=0), best_doe.max(axis=0)])
-    if optimization:
-        if best_doe is None:
-            best_doe = orthogonal_latin_hypercube(dim, n_samples, bounds,
-                                                  seed=rng)
+    def __init__(self, k_vars, start_design=None, niter=1, force=False,
+                 optimization=True, seed=None):
+        """Engine initialization.
 
-        best_disc = discrepancy(best_doe, bounds)
+        Parameters
+        ----------
+        k_vars : int
+            Dimension of the parameter space.
+        start_design : array_like (n_samples, k_vars)
+            Initial design of experiment to optimize.
+        niter : int
+            Number of iteration to perform.
+        force : bool
+            If `optimization`, force *basinhopping* optimization. Otherwise
+            grid search is used.
+        optimization : bool
+            Optimal design using global optimization or random generation of
+            `niter` samples.
+        seed : int or `np.random.RandomState`, optional
+            If `seed` is not specified the `np.RandomState` singleton is used.
+            If `seed` is an int, a new `np.random.RandomState` instance is used,
+            seeded with seed.
+            If `seed` is already a `np.random.RandomState instance`, then that
+            `np.random.RandomState` instance is used.
+            Specify `seed` for repeatable sampling.
 
-        def _perturb_best_doe(x, bounds):
-            """Perturbe the DoE and keep track of the best DoE.
+        """
+        super().__init__(k_vars=k_vars, seed=seed)
+        self.start_design = start_design
+        self.niter = niter
+        self.force = force
+        self.optimization = optimization
 
-            Parameters
-            ----------
-            x : list of int
-                It is a list of:
-                    idx : int
-                        Index value of the components to compute
-            bounds : tuple or array_like ([min, k_vars], [max, k_vars])
-                Desired range of transformed data. The transformation apply the
-                bounds on the sample and not the theoretical space, unit cube.
-                Thus min and max values of the sample will coincide with the
-                bounds.
+        self.best_doe = self.start_design
+        self.best_disc = np.inf
 
-            Returns
-            -------
-            discrepancy : float
-                Centered discrepancy.
+        self.olhs = OrthogonalLatinHypercube(self.k_vars, seed=self.rng)
 
-            """
-            global best_doe, best_disc
+    def random(self, n_samples):
+        """Draw n_samples in the half-open interval [0, 1).
 
-            # Perturbe the DoE
-            doe = copy.deepcopy(best_doe)
-            col, row_1, row_2 = np.round(x).astype(int)
-            doe[row_1, col], doe[row_2, col] = doe[row_2, col], doe[row_1, col]
+        Parameters
+        ----------
+        n_samples : int
+            Number of samples to generate in the parameter space.
 
-            disc = _perturb_discrepancy(best_doe, row_1, row_2, col,
-                                       best_disc, bounds)
+        Returns
+        -------
+        sample : array_like (n_samples, k_vars)
+            QMC sample.
+        """
+        if self.optimization:
+            if self.best_doe is None:
+                self.best_doe = self.olhs.random(n_samples)
+                self.best_disc = discrepancy(self.best_doe)
 
-            if disc < best_disc:
-                best_disc = disc
-                best_doe = doe
+            def _perturb_best_doe(x):
+                """Perturb the DoE and keep track of the best DoE.
 
-            return disc
+                Parameters
+                ----------
+                x : list of int
+                    It is a list of:
+                        idx : int
+                            Index value of the components to compute
 
-        # Total number of possible design
-        complexity = dim * n_samples ** 2
+                Returns
+                -------
+                discrepancy : float
+                    Centered discrepancy.
 
-        if (complexity > 1e6) or force:
-            bounds_optim = ([0, dim - 1],
-                            [0, n_samples - 1],
-                            [0, n_samples - 1])
-        else:
-            bounds_optim = (slice(0, dim - 1, 1), slice(0, n_samples - 1, 1),
-                            slice(0, n_samples - 1, 1))
+                """
+                # Perturb the DoE
+                doe = copy.deepcopy(self.best_doe)
+                col, row_1, row_2 = np.round(x).astype(int)
+                doe[row_1, col], doe[row_2, col] = doe[row_2, col], doe[row_1, col]
 
-        for _ in range(niter):
-            if (complexity > 1e6) or force:
-                minimizer_kwargs = {"method": "L-BFGS-B",
-                                    "bounds": bounds_optim,
-                                    "args": (bounds,)}
-                _ = basinhopping(_perturb_best_doe, [0, 0, 0], niter=100,
-                                 minimizer_kwargs=minimizer_kwargs)
+                disc = _perturb_discrepancy(self.best_doe, row_1, row_2, col,
+                                            self.best_disc)
+
+                if disc < self.best_disc:
+                    self.best_disc = disc
+                    self.best_doe = doe
+
+                return disc
+
+            # Total number of possible design
+            complexity = self.k_vars * n_samples ** 2
+
+            if (complexity > 1e6) or self.force:
+                bounds_optim = ([0, self.k_vars - 1],
+                                [0, n_samples - 1],
+                                [0, n_samples - 1])
             else:
-                _ = brute(_perturb_best_doe, ranges=bounds_optim,
-                          finish=None, args=(bounds,))
+                bounds_optim = (slice(0, self.k_vars - 1, 1), slice(0, n_samples - 1, 1),
+                                slice(0, n_samples - 1, 1))
 
-    else:
-        for _ in range(niter):
-            doe = orthogonal_latin_hypercube(dim, n_samples, bounds, seed=rng)
-            disc = discrepancy(doe, bounds)
-            if disc < best_disc:
-                best_disc = disc
-                best_doe = doe
+            for _ in range(self.niter):
+                if (complexity > 1e6) or self.force:
+                    minimizer_kwargs = {"method": "L-BFGS-B",
+                                        "bounds": bounds_optim}
+                    _ = basinhopping(_perturb_best_doe, [0, 0, 0], niter=100,
+                                     minimizer_kwargs=minimizer_kwargs)
+                else:
+                    _ = brute(_perturb_best_doe, ranges=bounds_optim,
+                              finish=None)
+        else:
+            for _ in range(self.niter):
+                doe = self.olhs.random(n_samples)
+                disc = discrepancy(doe)
+                if disc < self.best_disc:
+                    self.best_disc = disc
+                    self.best_doe = doe
 
-    return best_doe
+        return self.best_doe

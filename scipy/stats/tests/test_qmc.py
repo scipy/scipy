@@ -7,6 +7,18 @@ import pytest
 
 
 class TestUtils(object):
+    def test_scale(self):
+        space = [[0, 0], [1, 1], [0.5, 0.5]]
+        corners = np.array([[-2, 0], [6, 5]])
+        out = [[-2, 0], [6, 5], [2, 2.5]]
+
+        scaled_space = qmc.scale(space, bounds=corners)
+
+        assert_allclose(scaled_space, out)
+
+        scaled_back_space = qmc.scale(scaled_space, bounds=corners, reverse=True)
+        assert_allclose(scaled_back_space, space)
+
     def test_discrepancy(self):
         space_0 = [[0.1, 0.5], [0.2, 0.4], [0.3, 0.3], [0.4, 0.2], [0.5, 0.1]]
         space_1 = [[1, 3], [2, 6], [3, 2], [4, 5], [5, 1], [6, 4]]
@@ -84,20 +96,27 @@ class TestQMC(object):
 
     def test_halton(self):
         # without bounds
-        sample = qmc.halton(dim=2, n_samples=5)
+        engine = qmc.Halton(k_vars=2)
+        sample = engine.random(n_samples=5)
 
-        out = np.array([[1/2, 1/3], [1/4, 2/3], [3/4, 1/9], [1/8, 4/9], [5/8, 7/9]])
+        out = np.array([[1 / 2, 1 / 3], [1 / 4, 2 / 3], [3 / 4, 1 / 9], [1 / 8, 4 / 9], [5 / 8, 7 / 9]])
         assert_almost_equal(sample, out, decimal=1)
+
+        assert engine.n_fast_forward == 5
 
         # with bounds
         corners = np.array([[0, 2], [10, 5]])
-        sample = qmc.halton(dim=2, n_samples=5, bounds=corners)
+        sample = qmc.scale(sample, bounds=corners)
 
         out = np.array([[5., 3.], [2.5, 4.], [7.5, 2.3], [1.25, 3.3], [6.25, 4.3]])
         assert_almost_equal(sample, out, decimal=1)
 
         # continuing
-        sample = qmc.halton(dim=2, n_samples=3, bounds=corners, start_index=2)
+        engine = qmc.Halton(k_vars=2)
+        engine.fast_forward(2)
+        sample = engine.random(n_samples=3)
+        sample = qmc.scale(sample, bounds=corners)
+
         out = np.array([[7.5, 2.3], [1.25, 3.3], [6.25, 4.3]])
         assert_almost_equal(sample, out, decimal=1)
 
@@ -108,12 +127,15 @@ class TestLHS(object):
 
         corners = np.array([[0, 2], [10, 5]])
 
-        sample = qmc.latin_hypercube(dim=2, n_samples=5, bounds=corners)
+        lhs = qmc.LatinHypercube(k_vars=2)
+        sample = lhs.random(n_samples=5)
+        sample = qmc.scale(sample, bounds=corners)
         out = np.array([[5.7, 3.2], [5.5, 3.9], [5.2, 3.6],
                         [5.1, 3.3], [5.8, 4.1]])
         assert_almost_equal(sample, out, decimal=1)
 
-        sample = qmc.latin_hypercube(dim=2, n_samples=5, centered=True)
+        lhs = qmc.LatinHypercube(k_vars=2, centered=True)
+        sample = lhs.random(n_samples=5)
         out = np.array([[0.1, 0.5], [0.3, 0.1], [0.7, 0.1],
                         [0.1, 0.1], [0.3, 0.7]])
         assert_almost_equal(sample, out, decimal=1)
@@ -123,14 +145,16 @@ class TestLHS(object):
 
         corners = np.array([[0, 2], [10, 5]])
 
-        sample = qmc.orthogonal_latin_hypercube(2, 5, bounds=corners)
+        olhs = qmc.OrthogonalLatinHypercube(k_vars=2)
+        sample = olhs.random(n_samples=5)
+        sample = qmc.scale(sample, bounds=corners)
         out = np.array([[3.933, 2.670], [7.794, 4.031], [4.520, 2.129],
                         [0.253, 4.976], [8.753, 3.249]])
         assert_almost_equal(sample, out, decimal=1)
 
         # Checking independency of the random numbers generated
         n_samples = 500
-        sample = qmc.orthogonal_latin_hypercube(dim=2, n_samples=n_samples)
+        sample = olhs.random(n_samples=n_samples)
         min_b = 50  # number of bins
         bins = np.linspace(0, 1, min(min_b, n_samples) + 1)
         hist = np.histogram(sample[:, 0], bins=bins)
@@ -144,35 +168,46 @@ class TestLHS(object):
     def test_optimal_design(self):
         np.random.seed(123456)
 
-        start_design = qmc.orthogonal_latin_hypercube(2, 5)
-        sample = qmc.optimal_design(dim=2, n_samples=5,
-                                    start_design=start_design)
+        olhs = qmc.OrthogonalLatinHypercube(k_vars=2)
+        start_design = olhs.random(n_samples=5)
+
+        optimal = qmc.OptimalDesign(k_vars=2, start_design=start_design)
+        sample = optimal.random(n_samples=5)
         out = np.array([[0.025, 0.223], [0.779, 0.677], [0.452, 0.043],
                         [0.393, 0.992], [0.875, 0.416]])
         assert_almost_equal(sample, out, decimal=1)
 
         corners = np.array([[0, 2], [10, 5]])
-        sample = qmc.optimal_design(2, 5, bounds=corners)
+        optimal = qmc.OptimalDesign(k_vars=2, start_design=start_design)
+        sample = optimal.random(n_samples=5)
+        sample = qmc.scale(sample, bounds=corners)
         out = np.array([[5.189, 4.604], [3.553, 2.344], [6.275, 3.947],
                         [0.457, 3.554], [9.705, 2.636]])
         assert_almost_equal(sample, out, decimal=1)
 
-        sample = qmc.optimal_design(2, 5, niter=2)
+        optimal = qmc.OptimalDesign(k_vars=2, start_design=start_design, niter=2)
+        sample = optimal.random(n_samples=5)
         out = np.array([[0.681, 0.231], [0.007, 0.719], [0.372, 0.101],
                         [0.550, 0.456], [0.868, 0.845]])
         assert_almost_equal(sample, out, decimal=1)
 
-        sample = qmc.optimal_design(2, 5, bounds=corners, force=True)
+        optimal = qmc.OptimalDesign(k_vars=2, start_design=start_design, force=True)
+        sample = optimal.random(n_samples=5)
+        sample = qmc.scale(sample, bounds=corners)
         out = np.array([[8.610, 4.303], [5.318, 3.498], [7.323, 2.288],
                         [1.135, 2.657], [3.561, 4.938]])
         assert_almost_equal(sample, out, decimal=1)
 
-        sample = qmc.optimal_design(2, 5, bounds=corners, optimization=False)
+        optimal = qmc.OptimalDesign(k_vars=2, start_design=start_design, optimization=False)
+        sample = optimal.random(n_samples=5)
+        sample = qmc.scale(sample, bounds=corners)
         out = np.array([[1.052, 4.218], [2.477, 2.987], [7.616, 4.527],
                         [9.134, 3.393], [4.064, 2.430]])
         assert_almost_equal(sample, out, decimal=1)
 
-        sample = qmc.optimal_design(2, 5, bounds=corners, optimization=False, niter=2)
+        optimal = qmc.OptimalDesign(k_vars=2, start_design=start_design, optimization=False, niter=2)
+        sample = optimal.random(n_samples=5)
+        sample = qmc.scale(sample, bounds=corners)
         print(sample)
         out = np.array([[7.902, 2.166], [4.915, 2.741], [3.797, 3.365],
                         [0.602, 4.896], [9.880, 4.215]])
