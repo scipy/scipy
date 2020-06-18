@@ -2,7 +2,8 @@
 # Released under the scipy license
 
 from numpy.testing import (assert_equal, assert_array_equal, assert_,
-                           assert_almost_equal, assert_array_almost_equal)
+                           assert_almost_equal, assert_array_almost_equal,
+                           assert_allclose)
 from pytest import raises as assert_raises
 import pytest
 from platform import python_implementation
@@ -208,18 +209,44 @@ class Test_vectorization:
         assert_(np.all(~np.isfinite(d[:, :, -s:])))
         assert_(np.all(i[:, :, -s:] == self.kdtree.n))
 
-    def test_single_query_all_neighbors(self):
-        d, i = self.kdtree.query([0, 0, 0], k=None, distance_upper_bound=1.1)
-        assert_(isinstance(d, list))
-        assert_(isinstance(i, list))
+    @pytest.mark.parametrize('r', [0.8, 1.1])
+    def test_single_query_all_neighbors(self, r):
+        np.random.seed(1234)
+        point = np.random.rand(self.kdtree.m)
+        d, i = self.kdtree.query(point, k=None, distance_upper_bound=r)
+        assert isinstance(d, list)
+        assert isinstance(i, list)
+
+        assert_array_equal(np.array(d) <= r, True)  # All within bounds
+        # results are sorted by distance
+        assert all(a <= b for a, b in zip(d, d[1:]))
+        assert_allclose(  # Distances are correct
+            d, minkowski_distance(point, self.kdtree.data[i, :]))
+
+        # Compare to brute force
+        dist = minkowski_distance(point, self.kdtree.data)
+        assert_array_equal(sorted(i), (dist <= r).nonzero()[0])
 
     def test_vectorized_query_all_neighbors(self):
-        d, i = self.kdtree.query(np.zeros((2, 4, 3)), k=None, distance_upper_bound=1.1)
-        assert_equal(np.shape(d), (2, 4))
-        assert_equal(np.shape(i), (2, 4))
+        query_shape = (2, 4)
+        r = 1.1
+        np.random.seed(1234)
+        points = np.random.rand(*query_shape, self.kdtree.m)
+        d, i = self.kdtree.query(points, k=None, distance_upper_bound=r)
+        assert_equal(np.shape(d), query_shape)
+        assert_equal(np.shape(i), query_shape)
 
-        assert_(isinstance(d[0, 0], list))
-        assert_(isinstance(i[0, 0], list))
+        for idx in np.ndindex(query_shape):
+            dist, ind = d[idx], i[idx]
+            assert isinstance(dist, list)
+            assert isinstance(ind, list)
+
+            assert_array_equal(np.array(dist) <= r, True)  # All within bounds
+            # results are sorted by distance
+            assert all(a <= b for a, b in zip(dist, dist[1:]))
+            assert_allclose(  # Distances are correct
+                dist, minkowski_distance(
+                    points[idx], self.kdtree.data[ind]))
 
 
 class Test_vectorization_compiled:
