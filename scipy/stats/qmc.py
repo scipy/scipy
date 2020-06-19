@@ -5,17 +5,22 @@ Define function to generate sample of points in the unit hypercube.
 """
 from abc import ABC, abstractmethod
 import copy
+import math
+from typing import Optional, Iterable
+
 import numpy as np
 from scipy.optimize import brute
 from scipy._lib._util import check_random_state
 from scipy.optimize import basinhopping
+from scipy.stats import norm
 from scipy.stats._sobol import (
-    SobolEngine, NormalQMCEngine, MultivariateNormalQMCEngine
+    initialize_v, _cscramble, _fill_p_cumulative, _draw, _fast_forward,
+    _categorize
 )
 
 __all__ = ['discrepancy', 'Halton', 'OrthogonalLatinHypercube',
-           'LatinHypercube', 'OptimalDesign', 'SobolEngine',
-           'NormalQMCEngine', 'MultivariateNormalQMCEngine']
+           'LatinHypercube', 'OptimalDesign', 'Sobol',
+           'NormalQMC', 'MultivariateNormalQMC']
 
 
 def scale(sample, bounds, reverse=False):
@@ -257,6 +262,39 @@ def _perturb_discrepancy(sample, i1, i2, k, disc, bounds=None):
     return disc_ep
 
 
+def discrepancy_star_L2(sample):
+    """Star L2-discrepancy.
+
+    Parameters
+    ----------
+    sample : array_like (n_samples, k_vars)
+        The sample to compute the discrepancy from.
+
+    Returns
+    -------
+    discrepancy : float
+        Star-L2 discrepancy.
+
+    References
+    ----------
+    [1] T. T. Warnock. Computational investigations of low discrepancy point sets.
+      In S.K. Zaremba (editor), Applications of Number Theory to Numerical
+      Analysis, Academic Press, New York.
+
+    """
+    sample = np.asarray(sample)
+
+    n_samples, dim = sample.shape
+    return np.sqrt(
+        3 ** (-dim) - 2 ** (1 - dim) / n_samples
+        * np.sum(np.prod(1 - sample ** 2, axis=1))
+        + np.sum([
+            np.prod(1 - np.maximum(sample[k, :], sample[j, :]))
+            for k in range(n_samples) for j in range(n_samples)
+        ]) / n_samples ** 2
+    )
+
+
 def primes_from_2_to(n):
     """Prime numbers from 2 to *n*.
 
@@ -494,6 +532,7 @@ class Halton(QMCEngine):
             QMC sample.
         """
         # Generate a sample using a Van der Corput sequence per dimension.
+        # important to have type(bdim) == int for performance reason
         sample = [van_der_corput(n_samples + 1, int(bdim), self.n_fast_forward)
                   for bdim in self.base]
 
@@ -753,3 +792,289 @@ class OptimalDesign(QMCEngine):
                     self.best_doe = doe
 
         return self.best_doe
+
+
+class Sobol(QMCEngine):
+    """Engine for generating (scrambled) Sobol' sequences.
+
+    Sobol' sequences are low-discrepancy, quasi-random numbers. Reference for 1111
+    direction numbers: http://web.maths.unsw.edu.au/~fkuo/sobol/joe-kuo-old.1111.
+
+    References
+    ----------
+    [1] Art B. Owen. Scrambling Sobol and Niederreiter-Xing points. Journal of
+      Complexity, 14(4):466-489, December 1998.
+
+    [2] I. M. Sobol'. The distribution of points in a cube and the accurate
+      evaluation of integrals. Zh. Vychisl. Mat. i Mat. Phys., 7:784-802, 1967.
+
+    """
+
+    MAXDIM = 1111
+    MAXBIT = 30
+
+    def __init__(self, k_vars, scramble=False, seed=None):
+        """Initialize Sobol' engine.
+
+        Parameters
+        ----------
+        k_vars: int
+            Dimensionality of the sequence. Max dimensionality is 1111.
+        scramble: bool, optional
+            If True, use Owen scrambling.
+        seed: int, optional
+            Seed for reproducibility of scrambling.
+
+        """
+        if k_vars > 1111:
+            raise ValueError("Maximum supported dimensionality is 1111.")
+        super().__init__(k_vars=k_vars)
+        self.dim = k_vars
+
+        # v is dim x MAXBIT matrix;
+        self._sv = np.zeros((k_vars, self.MAXBIT), dtype=np.int)
+        initialize_v(self._sv, k_vars)
+
+        if not scramble:
+            self._shift = np.zeros(k_vars, dtype=np.int)
+        else:
+            self._scramble(seed=seed)
+
+        self._quasi = self._shift.copy()
+        self.num_generated = 0
+
+    def _scramble(self, seed=None):
+        # type: (Optional[int]) -> None
+        rs = np.random.RandomState(seed=seed)
+        # Generate shift vector
+        self._shift = np.dot(
+            rs.randint(2, size=(self.dim, self.MAXBIT)),
+            np.array([2**j for j in range(self.MAXBIT)]),
+        )
+        self._quasi = self._shift.copy()
+        # Generate lower triangular matrices (stacked across dimensions)
+        ltm = np.tril(rs.randint(2, size=(self.dim, self.MAXBIT, self.MAXBIT)))
+        _cscramble(self.dim, ltm, self._sv)
+        self.num_generated = 0
+
+    def random(self, n=1):
+        """Draw next point(s) in the Sobol' sequence.
+
+        Parameters
+        ----------
+        n: int, optional
+            Number of points to return. Default is 1.
+
+        Returns
+        -------
+        draws: np.array (n, D)
+            Draws from the Sobol' sequence. Here n is the number of points
+            requested and D is the dimensionality of the sequence.
+
+        """
+        result = np.empty((n, self.dim), dtype=np.float)
+        _draw(n, self.num_generated, self.dim, self._sv, self._quasi, result)
+        self.num_generated += n
+        return result
+
+    def reset(self):
+        """Reset the engine to base state.
+
+        Returns
+        -------
+        engine: Sobol
+            Engine reset to its base state.
+
+        """
+        self._quasi = self._shift.copy()
+        self.num_generated = 0
+        return self
+
+    def fast_forward(self, n):
+        """Fast-forward the sequence by n positions.
+
+        Parameters
+        ----------
+        n: int
+            Number of points to skip in the sequence.
+
+        Returns
+        -------
+        engine: Sobol
+            The fast-forwarded engine.
+
+        """
+        _fast_forward(n, self.num_generated, self.dim, self._sv, self._quasi)
+        self.num_generated += n
+        return self
+
+
+def multinomial_qmc(n, pvals, seed=None):
+    # type: (int, Iterable[float], Optional[int]) -> np.ndarray
+    """Draw low-discreancy quasi-random samples from multinomial distribution.
+
+    Parameters
+    ----------
+    n: int
+        Number of experiments.
+    pvals: Iterable[float]
+        float vector of probabilities of size `p`. Elements must be non-negative
+        and sum to 1.
+    seed: int, optional
+        The seed for the random number generator.
+
+    Returns
+    -------
+    samples: np.ndarray
+        int vector of size `p` summing to `n`.
+
+    """
+    if np.min(pvals) < 0:
+        raise ValueError('Elements of pvals must be non-negative')
+    if not np.isclose(np.sum(pvals), 1):
+        raise ValueError('Elements of pvals must sum to 1')
+    sobol = Sobol(1, scramble=True, seed=seed)
+    draws = sobol.random(n).ravel()
+    p_cumulative = np.empty_like(pvals, dtype=np.float)
+    _fill_p_cumulative(np.array(pvals, dtype=np.float), p_cumulative)
+    result = np.zeros_like(pvals, dtype=np.int)
+    _categorize(draws, p_cumulative, result)
+    return result
+
+
+class NormalQMC(QMCEngine):
+    """Engine for qMC sampling from a multivariate normal `N(0, I_d)`.
+
+    By default, this implementation uses Box-Muller transformed Sobol samples
+    following pg. 123 in [1]. To use the inverse transform instead, set
+    `inv_transform=True`.
+
+    References
+    ----------
+    [1] G. Pages. Numerical Probability: An Introduction with Applications to
+      Finance. Universitext. Springer International Publishing, 2018.
+    """
+
+    def __init__(self, k_vars, seed=None, inv_transform=False) -> None:
+        """Engine for drawing qMC samples from a multivariate normal `N(0, I_dim)`.
+
+        Parameters
+        ----------
+        k_vars: int
+            The dimension of the samples.
+        seed: int, optional
+            The seed with which to seed the random number generator of the
+            underlying SobolEngine.
+        inv_transform: bool
+            If True, use inverse transform instead of Box-Muller.
+        """
+        super().__init__(k_vars=k_vars)
+        self._d = k_vars
+        self._seed = seed
+        self._inv_transform = inv_transform
+        if inv_transform:
+            sobol_dim = k_vars
+        else:
+            # to apply Box-Muller, we need an even number of dimensions
+            sobol_dim = 2 * math.ceil(k_vars / 2)
+        self._sobol_engine = Sobol(k_vars=sobol_dim, scramble=True, seed=seed)
+
+    def random(self, n=1):
+        """Draw n qMC samples from the standard Normal.
+
+        Parameters
+        ----------
+        n: int
+            The number of samples.
+
+        Returns
+        ----------
+           sanmples: np.ndarray
+
+        """
+        # get base samples
+        samples = self._sobol_engine.random(n)
+        if self._inv_transform:
+            # apply inverse transform (values to close to 0/1 result in inf values)
+            return norm.ppf(0.5 + (1 - 1e-10) * (samples - 0.5))
+        else:
+            # apply Box-Muller transform (note: [1] indexes starting from 1)
+            even = np.arange(0, samples.shape[-1], 2)
+            Rs = np.sqrt(-2 * np.log(samples[:, even]))
+            thetas = 2 * math.pi * samples[:, 1 + even]
+            cos = np.cos(thetas)
+            sin = np.sin(thetas)
+            transf_samples = np.stack([Rs * cos, Rs * sin], -1).reshape(n, -1)
+            # make sure we only return the number of dimension requested
+            return transf_samples[:, : self._d]
+
+
+class MultivariateNormalQMC(QMCEngine):
+    r"""Engine for qMC sampling from a multivariate Normal `N(\mu, \Sigma)`.
+
+    By default, this implementation uses Box-Muller transformed Sobol samples
+    following pg. 123 in [1] To use the inverse transform instead, set
+    `inv_transform=True`.
+
+    References
+    ----------
+    [1] G. Pages. Numerical Probability: An Introduction with Applications to
+      Finance. Universitext. Springer International Publishing, 2018.
+
+    """
+
+    def __init__(self, mean, cov, seed=None, inv_transform=False) -> None:
+        r"""Engine for qMC sampling from a multivariate Normal `N(\mu, \Sigma)`.
+
+        Parameters
+        ----------
+        mean: np.ndarray
+            The mean vector.
+        cov: np.ndarray
+            The covariance matrix.
+        seed: int, optional
+            The seed with which to seed the random number generator of the
+            underlying SobolEngine.
+        inv_transform: bool
+            If True, use inverse transform instead of Box-Muller.
+        """
+        # check for square/symmetric cov matrix and mean vector has the same d
+        mean = np.array(mean, copy=False, ndmin=1)
+        cov = np.array(cov, copy=False, ndmin=2)
+        if not cov.shape[0] == cov.shape[1]:
+            raise ValueError("Covariance matrix is not square.")
+        if not mean.shape[0] == cov.shape[0]:
+            raise ValueError("Dimension mismatch between mean and covariance.")
+        if not np.allclose(cov, cov.transpose()):
+            raise ValueError("Covariance matrix is not symmetric.")
+
+        super().__init__(k_vars=mean.shape[0])
+        self._mean = mean
+        self._normal_engine = NormalQMC(
+            k_vars=mean.shape[0], seed=seed, inv_transform=inv_transform
+        )
+        # compute Cholesky decomp; if it fails, do the eigendecomposition
+        try:
+            self._corr_matrix = np.linalg.cholesky(cov).transpose()
+        except np.linalg.LinAlgError:
+            eigval, eigvec = np.linalg.eigh(cov)
+            if not np.all(eigval >= -1.0e-8):
+                raise ValueError("Covariance matrix not PSD.")
+            eigval = np.clip(eigval, 0.0, None)
+            self._corr_matrix = (eigvec * np.sqrt(eigval)).transpose()
+
+    def random(self, n: int = 1) -> np.ndarray:
+        r"""Draw n qMC samples from the multivariate Normal.
+
+        Parameters
+        ----------
+        n: int
+            The number of samples.
+
+        References
+        ----------
+            samples: np.ndarray
+        """
+        base_samples = self._normal_engine.random(n)
+        qmc_samples = base_samples @ self._corr_matrix + self._mean
+        return qmc_samples
