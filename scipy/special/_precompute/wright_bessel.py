@@ -7,6 +7,7 @@ from argparse import ArgumentParser, RawTextHelpFormatter
 import numpy as np
 from scipy.integrate import quad
 from scipy.optimize import minimize_scalar, curve_fit
+from time import time
 
 try:
     import sympy
@@ -159,7 +160,7 @@ def asymptotic_series():
     Paris (2017) uses ZP = (1+a)/a * Z  (ZP = Z of Paris) and
     C_k = C_0 * (-a/(1+a))^k * c_k
     """
-    order = 6
+    order = 7
 
     class g(sympy.Function):
         """Helper function g according to Wright (1935)
@@ -264,9 +265,9 @@ def optimal_epsilon_integral():
                     epsrel=epsrel, limit=100)[0]
 
     # grid of minimal arc length values
-    data_a = np.array([1e-3, 0.1, 0.5, 0.9, 1, 2, 5, 8])
-    data_b = np.array([0, 1, 4, 7, 10])
-    data_x = [1, 1.5, 2, 4, 10, 20, 50, 100, 200, 500]
+    data_a = [1e-3, 0.1, 0.5, 0.9, 1, 2, 4, 5, 6, 8]
+    data_b = [0, 1, 4, 7, 10]
+    data_x = [1, 1.5, 2, 4, 10, 20, 50, 100, 200, 500, 1e3, 5e3, 1e4]
     data_a, data_b, data_x = np.meshgrid(data_a, data_b, data_x)
     data_a, data_b, data_x = (data_a.flatten(), data_b.flatten(),
                               data_x.flatten())
@@ -291,21 +292,23 @@ def optimal_epsilon_integral():
         a = data['a']
         b = data['b']
         x = data['x']
-        return (A0 * b + A1 * np.power(x, A2) * np.power(a, A3)
-                * (np.exp(-A4 * np.sqrt(a)) + A5))
+        return (A0 * b * np.exp(-0.5 * a)
+                + np.exp(A1 + 1 / (1 + a) * np.log(x) - A2 * np.exp(-A3 * a)
+                         + A4 / (1 + np.exp(A5 * a))))
 
-    func_params = list(curve_fit(func, df, df['eps'])[0])
+    func_params = list(curve_fit(func, df, df['eps'], method='trf')[0])
 
     s = "Fit optimal eps for integrand P via minimal arc length\n"
     s += "with parametric function:\n"
-    s += "optimal_eps = A0 * b + A1 * np.power(x, A2) * np.power(a, A3)\n"
-    s += "             * (np.exp(-A4 * np.sqrt(a)) + A5)\n\n"
+    s += "optimal_eps = (A0 * b * exp(-a/2) + exp(A1 + 1 / (1 + a) * log(x)\n"
+    s += "              - A2 * exp(-A3 * a) + A4 / (1 + exp(A5 * a)))\n\n"
     s += "Fitted parameters A0 to A5 are:\n"
-    s += ', '.join(['{:.5E}'.format(x) for x in func_params])
+    s += ', '.join(['{:.5g}'.format(x) for x in func_params])
     return s
 
 
 def main():
+    t0 = time()
     parser = ArgumentParser(description=__doc__,
                             formatter_class=RawTextHelpFormatter)
     parser.add_argument('action', type=int, choices=[1, 2, 3, 4],
@@ -313,7 +316,7 @@ def main():
                              '1 : Series for small a\n'
                              '2 : Series for small a and small b\n'
                              '3 : Asymptotic series for large x\n'
-                             '    This may take some time.\n'
+                             '    This may take some time (>1h).\n'
                              '4 : Fit optimal eps for integral representation.'
                         )
     args = parser.parse_args()
@@ -324,6 +327,7 @@ def main():
               4: lambda: print(optimal_epsilon_integral())
               }
     switch.get(args.action, lambda: print("Invalid input."))()
+    print("\n{:.1f} minutes elapsed.\n".format((time() - t0)/60))
 
 
 if __name__ == '__main__':

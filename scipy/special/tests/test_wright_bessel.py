@@ -42,10 +42,10 @@ def test_wright_bessel_iv(b, x):
     """
     if x != 0:
         v = b - 1
-        wb = wright_bessel(1, v+1, x**2/4.)
+        wb = wright_bessel(1, v + 1, x**2 / 4.)
         # Note: iv(v, x) has precision of less than 1e-12 for some cases
         # e.g v=1-1e-6 and x=1e-06)
-        assert_allclose(np.power(x/2., v) * wb,
+        assert_allclose(np.power(x / 2., v) * wb,
                         sc.iv(v, x),
                         rtol=1e-11, atol=1e-11)
 
@@ -64,7 +64,7 @@ def test_wright_functional(a, b, x):
     Publ. de l’Institut Math`ematique, Beograd,
     Nouvelle S`er. 10 (1970), 113-124.
     """
-    assert_allclose(wright_bessel(a, b-1, x),
+    assert_allclose(wright_bessel(a, b - 1, x),
                     a*x*wright_bessel(a, b + a, x)
-                    + (b-1)*wright_bessel(a, b, x),
+                    + (b - 1) * wright_bessel(a, b, x),
                     rtol=1e-8, atol=1e-8)
