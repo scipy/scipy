@@ -241,6 +241,7 @@ struct HighsOptionsStruct {
   double large_matrix_value;
   double primal_feasibility_tolerance;
   double dual_feasibility_tolerance;
+  double ipm_optimality_tolerance;
   double dual_objective_value_upper_bound;
   int highs_debug_level;
   int simplex_strategy;
@@ -406,6 +407,11 @@ class HighsOptions : public HighsOptionsStruct {
     record_double = new OptionRecordDouble(
         "dual_feasibility_tolerance", "Dual feasibility tolerance", advanced,
         &dual_feasibility_tolerance, 1e-10, 1e-7, HIGHS_CONST_INF);
+    records.push_back(record_double);
+
+    record_double = new OptionRecordDouble(
+        "ipm_optimality_tolerance", "IPM optimality tolerance", advanced,
+        &ipm_optimality_tolerance, 1e-12, 1e-8, HIGHS_CONST_INF);
     records.push_back(record_double);
 
     record_double = new OptionRecordDouble(

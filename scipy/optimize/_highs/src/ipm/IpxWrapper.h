@@ -553,14 +553,22 @@ HighsStatus solveLpIpx(const HighsOptions& options, HighsTimer& timer,
   // Just test feasibility and optimality tolerances for now
   // ToDo Set more parameters
   parameters.ipm_feasibility_tol =
-      unscaled_solution_params.primal_feasibility_tolerance;
-  parameters.ipm_optimality_tol =
-      unscaled_solution_params.dual_feasibility_tolerance;
+      min(unscaled_solution_params.primal_feasibility_tolerance,
+          unscaled_solution_params.dual_feasibility_tolerance);
+
+  parameters.ipm_optimality_tol = options.ipm_optimality_tolerance;
   // Determine the run time allowed for IPX
   parameters.time_limit = options.time_limit - timer.readRunHighsClock();
   parameters.ipm_maxiter = options.ipm_iteration_limit - iteration_counts.ipm;
   // Determine if crossover is to be run or not
   parameters.crossover = options.run_crossover;
+  if (!parameters.crossover) {
+    // If crossover is not run, then set crossover_start to -1 so that
+    // IPX can terminate according to its feasibility and optimality
+    // tolerances
+    parameters.crossover_start = -1;
+  }
+
   // Set the internal IPX parameters
   lps.SetParameters(parameters);
 

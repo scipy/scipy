@@ -64,6 +64,7 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
                    disp=False, maxiter=None,
                    dual_feasibility_tolerance=None,
                    dual_objective_value_upper_bound=None,
+                   ipm_optimality_tolerance=None,
                    message_level=MESSAGE_LEVEL_MINIMAL,
                    primal_feasibility_tolerance=None,
                    simplex_crash_strategy=None,
@@ -131,40 +132,52 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
         to be disabled.
     dual_feasibility_tolerance : double
         Dual feasibility tolerance.  Default is 1e-07.
-        This option is ignored when ``solver='ipm'``.
+        The minimum of this and ``primal_feasibility_tolerance``
+        is used for the feasibility tolerance when ``solver='ipm'``.
     dual_objective_value_upper_bound : double
         Upper bound on objective value for dual simplex:
         algorithm terminates if reached.  Default is the largest possible
         value for a ``double`` on the platform.
         When ``solver='ipm'`` this value is ignored.
+    ipm_optimality_tolerance : double
+        Optimality tolerance for ``solver='ipm'``.  Default is 1e-08.
+        Minimum possible value is 1e-12 and must be smaller than the largest
+        possible value for a ``double`` on the platform.
     message_level : int {0, 1, 2, 3, 4, 5, 6, 7}
         Verbosity level, corresponds to:
 
-            ``0``: No messages
+            ``0``: None
+                All messaging to stdout is supressed.
 
-            ``1``: Verbose messaging
+            ``1``: Verbose
+                Provide only a once-per-iteration report on
+                progress and information about nonzero rows and
+                columns of the model (for simplex method only).
 
-            ``2``: Detailed messaging
+            ``2``: Detailed
+                Provide only technical information about progress and
+                events (for simplex method only).
 
-            ``3``: Verbose and Detailed messaging
+            ``3``: Provide both Verbose and Detailed reports
 
-            ``4``: Minimal messaging
+            ``4``: Minimal
+                Provide only once-per-solve information about progress
+                as well as a once-per-basis-matrix-reinversion report
+                on progress in simplex or a once-per-iteration report
+                on progress in IPX.
 
-            ``5``: Minimal messaging and Verbose messaging
+            ``5``: Provide both Minimal and Verbose reports
 
-            ``6``: Minimal and Detailed messaging.
+            ``6``: Provide both Minimal and Detailed reports
 
-            ``7``: Show all messages
+            ``7``: Provide Verbose, Detailed, and Minimal reports
 
         Default is 4, but note: this option is ignored unless
-        option ``disp`` is ``True``. "Verbose", "Detailed",
-        "Minimal", and "Minimal" are defined as in HiGHS.
-        ``message_level`` behaves like a bitmask, i.e., any
-        combination of levels is possible using the bit-or
-        operator.
+        option ``disp`` is ``True``.
     primal_feasibility_tolerance : double
         Primal feasibility tolerance.  Default is 1e-07.
-        This option is ignored by ``solver='ipm'``.
+        The minimum of this and ``dual_feasibility_tolerance``
+        is used for the feasibility tolerance when ``solver='ipm'``.
     simplex_crash_strategy : int {0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
         Strategy for simplex crash: off / LTSSF / Bixby (0/1/2).
         Default is ``0``.  Corresponds to the following:
@@ -340,6 +353,7 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
         'message_level': message_level*disp,
         'dual_feasibility_tolerance': dual_feasibility_tolerance,
         'dual_objective_value_upper_bound': dual_objective_value_upper_bound,
+        'ipm_optimality_tolerance': ipm_optimality_tolerance,
         'primal_feasibility_tolerance': primal_feasibility_tolerance,
         'simplex_crash_strategy': simplex_crash_strategy,
         'simplex_dual_edge_weight_strategy': simplex_dual_edge_weight_strategy,

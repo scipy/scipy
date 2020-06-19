@@ -96,6 +96,13 @@ int Highs_passLp(void* highs, int numcol, int numrow, int numnz,
 }
 
 int Highs_clearModel(void* highs) { return (int)((Highs*)highs)->clearModel(); }
+
+int Highs_runQuiet(void* highs) {
+  int return_status = (int)((Highs*)highs)->setHighsLogfile(NULL);
+  if (return_status) return return_status;
+  return (int)((Highs*)highs)->setHighsOutput(NULL);
+}
+
 int Highs_setHighsBoolOptionValue(void* highs, const char* option,
                                   const int value) {
   return (int)((Highs*)highs)

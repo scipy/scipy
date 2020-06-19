@@ -159,6 +159,7 @@ cdef apply_options(dict options, Highs & highs):
             'dual_steepest_edge_weight_log_error_threshhold',
             'infinite_bound',
             'infinite_cost',
+            'ipm_optimality_tolerance',
             'large_matrix_value',
             'primal_feasibility_tolerance',
             'simplex_initial_condition_tolerance',
@@ -269,7 +270,10 @@ def highs_wrapper(
                 Undocumented advanced option.
 
             - dual_feasibility_tolerance : double
-                Dual feasibility tolerance
+                Dual feasibility tolerance for simplex.
+                ``min(dual_feasibility_tolerance,
+                primal_feasibility_tolerance)`` will be used for
+                ipm feasibility tolerance.
 
             - dual_objective_value_upper_bound : double
                 Upper bound on objective value for dual simplex:
@@ -295,6 +299,9 @@ def highs_wrapper(
             - ipm_iteration_limit : int
                 Iteration limit for interior-point solver.
 
+            - ipm_optimality_tolerance : double
+                Optimality tolerance for IPM.
+
             - keep_n_rows : int {-1, 0, 1}
                 Undocumented advanced option.
 
@@ -319,10 +326,25 @@ def highs_wrapper(
                 Verbosity level, corresponds to:
 
                     - ``0``: ``ML_NONE``
+                        All messaging to stdout is supressed.
+
                     - ``1``: ``ML_VERBOSE``
+                        Includes a once-per-iteration report on simplex/ipm
+                        progress and information about each nonzero row and
+                        column.
+
                     - ``2``: ``ML_DETAILED``
+                        Includes technical information about progress and
+                        events in applying the simplex method.
+
                     - ``4``: ``ML_MINIMAL``
-                    - ``7``: ``ML_ALWAYS``
+                        Once-per-solve information about progress as well as a
+                        once-per-basis-matrix-reinversion report on progress in
+                        simplex or a once-per-iteration report on progress in IPX.
+
+                ``message_level`` behaves like a bitmask, i.e., any
+                combination of levels is possible using the bit-or
+                operator.
 
             - min_threads : int
                 Minimum number of threads in parallel execution.
@@ -338,6 +360,9 @@ def highs_wrapper(
 
             - primal_feasibility_tolerance : double
                 Primal feasibility tolerance.
+                ``min(dual_feasibility_tolerance,
+                primal_feasibility_tolerance)`` will be used for
+                ipm feasibility tolerance.
 
             - run_as_hsol : bool
                 Undocumented advanced option.

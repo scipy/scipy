@@ -73,6 +73,12 @@ int Highs_clearModel(void* highs  //!< HiGHS object reference
 );
 
 /*
+ * @brief
+ */
+int Highs_runQuiet(void* highs  //!< HiGHS object reference
+);
+
+/*
  * @brief Runs HiGHS
  */
 int Highs_run(void* highs  //!< HiGHS object reference
