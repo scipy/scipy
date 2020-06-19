@@ -102,7 +102,7 @@ class TestQMC(object):
         out = np.array([[1 / 2, 1 / 3], [1 / 4, 2 / 3], [3 / 4, 1 / 9], [1 / 8, 4 / 9], [5 / 8, 7 / 9]])
         assert_almost_equal(sample, out, decimal=1)
 
-        assert engine.n_fast_forward == 5
+        assert engine.num_generated == 5
 
         # with bounds
         corners = np.array([[0, 2], [10, 5]])
