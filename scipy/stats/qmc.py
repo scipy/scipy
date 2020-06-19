@@ -14,7 +14,7 @@ from scipy.optimize import basinhopping
 from scipy.stats import norm
 from scipy.stats._sobol import (
     initialize_v, _cscramble, _fill_p_cumulative, _draw, _fast_forward,
-    _categorize
+    _categorize, initialize_direction_numbers
 )
 
 __all__ = ['discrepancy', 'Halton', 'OrthogonalLatinHypercube',
@@ -851,6 +851,9 @@ class Sobol(QMCEngine):
                 "Maximum supported dimensionality is {}.".format(self.MAXDIM)
             )
         super().__init__(k_vars=k_vars, seed=seed)
+
+        # initialize direction numbers
+        initialize_direction_numbers()
 
         # v is dim x MAXBIT matrix
         self._sv = np.zeros((k_vars, self.MAXBIT), dtype=np.int)

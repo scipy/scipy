@@ -24,7 +24,7 @@ class TestSobol:
         self.draws_scrambled_3d = engine_scrambled_3d.random(10)
 
     def test_raise(self):
-        assert_raises(ValueError, Sobol, 1112)
+        assert_raises(ValueError, Sobol, Sobol.MAXDIM + 1)
 
     def test_Unscrambled1DSobol(self):
         self.setUp()

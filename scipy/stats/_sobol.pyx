@@ -18,12 +18,17 @@ cdef int vinit[21201][18]
 cdef int LARGEST_NUMBER = 2 ** MAXBIT  # largest possible integer
 cdef float RECIPD = 1.0 / LARGEST_NUMBER  # normalization constant
 
+cdef bint is_initialized = False
+
 
 # Load direction numbers (taken from https://web.maths.unsw.edu.au/~fkuo/sobol/)
-# TODO: Lazy loading
-dns = np.load(os.path.join(os.path.dirname(__file__), "_sobol_direction_numbers.npz"))
-poly = dns["poly"]
-vinit = dns["vinit"]
+def initialize_direction_numbers():
+    global is_initialized
+    if not is_initialized:
+        dns = np.load(os.path.join(os.path.dirname(__file__), "_sobol_direction_numbers.npz"))
+        poly = dns["poly"]
+        vinit = dns["vinit"]
+        is_initialized = True
 
 
 @cython.boundscheck(False)
