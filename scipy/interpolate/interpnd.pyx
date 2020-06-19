@@ -133,8 +133,10 @@ class NDInterpolatorBase(object):
 
         Parameters
         ----------
-        xi : ndarray of float, shape (..., ndim)
+        x1, x2, ... xn: array_like of float
             Points where to interpolate data at.
+            x1, x2, ... xn can be array_like of float with broadcastible shape.
+            or x1 can be array_like of float with shape (..., ndim)
 
         """
         xi = _ndim_coords_from_arrays(args, ndim=self.points.shape[1])
