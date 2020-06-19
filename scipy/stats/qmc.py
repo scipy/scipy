@@ -1005,6 +1005,8 @@ class NormalQMC(QMCEngine):
 
         if engine is None:
             self.engine = Sobol(k_vars=engine_dim, scramble=True, seed=seed)
+        else:
+            self.engine = engine
 
     def random(self, n_samples=1):
         """Draw n QMC samples from the standard Normal.
