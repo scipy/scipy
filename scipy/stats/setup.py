@@ -28,6 +28,12 @@ def configuration(parent_package='',top_path=None):
         sources=['mvn.pyf','mvndst.f'],
     )
 
+    # add _sobol module
+    config.add_extension('_sobol',
+        sources=['_sobol.c',],
+    )
+    config.add_data_files('_sobol_direction_numbers.npz')
+
     return config
 
 

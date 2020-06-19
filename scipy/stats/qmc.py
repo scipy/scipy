@@ -6,7 +6,6 @@ Define function to generate sample of points in the unit hypercube.
 from abc import ABC, abstractmethod
 import copy
 import math
-from typing import Optional, Iterable
 
 import numpy as np
 from scipy.optimize import brute
@@ -813,13 +812,14 @@ class OptimalDesign(QMCEngine):
 class Sobol(QMCEngine):
     """Engine for generating (scrambled) Sobol' sequences.
 
-    Sobol' sequences are low-discrepancy, quasi-random numbers. Reference for 1111
-    direction numbers: http://web.maths.unsw.edu.au/~fkuo/sobol/joe-kuo-old.1111.
+    Sobol' sequences are low-discrepancy, quasi-random numbers.
+    Using 21201-dim numbers with search criterion 6 from
+    https://web.maths.unsw.edu.au/~fkuo/sobol/
 
     Parameters
     ----------
     k_vars: int
-        Dimensionality of the sequence. Max dimensionality is 1111.
+        Dimensionality of the sequence. Max dimensionality is 21201.
     scramble: bool, optional
         If True, use Owen scrambling.
     seed : int or `np.random.RandomState`, optional
@@ -835,17 +835,21 @@ class Sobol(QMCEngine):
     [1] Art B. Owen. Scrambling Sobol and Niederreiter-Xing points. Journal of
       Complexity, 14(4):466-489, December 1998.
 
-    [2] I. M. Sobol'. The distribution of points in a cube and the accurate
+    [2] I. M. Sobol. The distribution of points in a cube and the accurate
       evaluation of integrals. Zh. Vychisl. Mat. i Mat. Phys., 7:784-802, 1967.
-
+    
+    [3] S. Joe and F. Y. Kuo. Constructing sobol sequences with better two-dimensional
+      projections. SIAM Journal on Scientific Computing, 30(5):2635–2654, 2008.
     """
 
-    MAXDIM = 1111
+    MAXDIM = 21201
     MAXBIT = 30
 
     def __init__(self, k_vars, scramble=False, seed=None):
-        if k_vars > 1111:
-            raise ValueError("Maximum supported dimensionality is 1111.")
+        if k_vars > self.MAXDIM:
+            raise ValueError(
+                "Maximum supported dimensionality is {}.".format(self.MAXDIM)
+            )
         super().__init__(k_vars=k_vars, seed=seed)
 
         # v is dim x MAXBIT matrix
