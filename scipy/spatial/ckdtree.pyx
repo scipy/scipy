@@ -19,7 +19,7 @@ from libcpp cimport bool
 
 cimport cython
 
-from multiprocessing import cpu_count
+from os import cpu_count
 import threading
 
 cdef extern from "<limits.h>":
@@ -30,15 +30,17 @@ cdef int number_of_processors = cpu_count()
 __all__ = ['cKDTree']
 
 cdef extern from *:
-    int NPY_LIKELY(int)
-    int NPY_UNLIKELY(int)
+    bool NPY_LIKELY(bool)
+    bool NPY_UNLIKELY(bool)
 
 
 # C++ implementations
 # ===================
 
+cdef extern from "<cmath>" namespace "std" nogil:
+    bool isinf(np.float64_t x)
+
 cdef extern from "ckdtree_decl.h":
-    int ckdtree_isinf(np.float64_t x) nogil
 
     struct ckdtreenode:
         np.intp_t split_dim
@@ -1340,9 +1342,9 @@ cdef class cKDTree:
         n_queries = real_r.shape[0]
 
         # Internally, we represent all distances as distance ** p
-        if not ckdtree_isinf(p):
+        if not isinf(p):
             for i in range(n_queries):
-                if not ckdtree_isinf(real_r[i]):
+                if not isinf(real_r[i]):
                     real_r[i] = real_r[i] ** p
 
         if weights is None:

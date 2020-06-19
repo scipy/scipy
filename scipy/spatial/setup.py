@@ -45,7 +45,8 @@ def configuration(parent_package='', top_path=None):
                    'count_neighbors.cxx',
                    'query_ball_point.cxx',
                    'query_ball_tree.cxx',
-                   'sparse_distances.cxx']
+                   'sparse_distances.cxx',
+                   'blas_distance.cxx']
 
     ckdtree_src = [join('ckdtree', 'src', x) for x in ckdtree_src]
 
@@ -63,7 +64,8 @@ def configuration(parent_package='', top_path=None):
     ext = config.add_extension('ckdtree',
                          sources=['ckdtree.cxx'] + ckdtree_src,
                          depends=ckdtree_dep,
-                         include_dirs=inc_dirs + [join('ckdtree', 'src')])
+                         include_dirs=inc_dirs + [join('ckdtree', 'src')],
+                         extra_info=lapack_opt)
     ext._pre_build_hook = set_cxx_flags_hook
 
     # _distance_wrap
