@@ -32,6 +32,85 @@ def _validate_names(typename, field_names, extra_field_names):
 # Note: This code is adapted from CPython:Lib/collections/__init__.py
 def make_tuple_bunch(typename, field_names, extra_field_names=None,
                      module=None):
+    """
+    Create a namedtuple-like class with additional attributes.
+
+    This function creates a subclass of tuple that acts like a namedtuple
+    and that has additional attributes.
+
+    The additional attributes are listed in `extra_field_names`.  The
+    values assigned to these attributes are not part of the tuple.
+
+    The reason this function exists is to allow functions in SciPy
+    that currently return a tuple or a namedtuple to returned objects
+    that have additional attributes, while maintaining backwards
+    compatibility.
+
+    This should only be used to enhance *existing* functions in SciPy.
+    New functions are free to create objects as return values without
+    having to maintain backwards compatibility with an old tuple or
+    namedtuple return value.
+
+    Parameters
+    ----------
+    typename : str
+        The name of the type.
+    field_names : list of str
+        List of names of the values to be stored in the tuple. These names
+        will also be attributes of instances, so the values in the tuple
+        can be accessed by indexing or as attributes.  At least one name
+        is required.  See the Notes for additional restrictions.
+    extra_field_names : list of str, optional
+        List of names of values that will be stored as attributes of the
+        object.  See the notes for additional restrictions.
+
+    Returns
+    -------
+    cls : type
+        The new class.
+
+    Notes
+    -----
+    There are restrictions on the names that may be used in `field_names`
+    and `extra_field_names`:
+
+    * The names must be unique--no duplicates allowed.
+    * The names must be valid Python identifiers, and must not begin with
+      an underscore.
+    * The names must not be Python keywords (e.g. 'def', 'and', etc., are
+      not allowed).
+
+    Examples
+    --------
+    >>> from scipy._lib._bunch import make_tuple_bunch
+
+    Create a class that acts like a namedtuple with length 2 (with field
+    names `x` and `y`) that will also have the attributes `w` and `beta`:
+
+    >>> Result = make_tuple_bunch('Result', ['x', 'y'], ['w', 'beta'])
+
+    `Result` is the new class.  We call it with keyword arguments to create
+    a new instance with given values.
+
+    >>> result1 = Result(x=1, y=2, w=99, beta=0.5)
+    >>> result1
+    Result(x=1, y=2, w=99, beta=0.5)
+
+    `result1` acts like a tuple of length 2:
+
+    >>> len(result1)
+    2
+    >>> result1[:]
+    (1, 2)
+
+    The values assigned when the instance was created are available as
+    attributes:
+
+    >>> result1.y
+    2
+    >>> result1.beta
+    0.5
+    """
     if len(field_names) == 0:
         raise ValueError('field_names must contain at least one name')
 
