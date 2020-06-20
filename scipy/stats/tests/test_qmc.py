@@ -24,9 +24,6 @@ class TestUtils(object):
         scaled_back_space = qmc.scale(scaled_space, bounds=corners, reverse=True)
         assert_allclose(scaled_back_space, space)
 
-    def test_discrepancy_star_L2(self):
-
-        qmc.discrepancy_star_L2
 
     def test_discrepancy(self):
         space_0 = [[0.1, 0.5], [0.2, 0.4], [0.3, 0.3], [0.4, 0.2], [0.5, 0.1]]
@@ -251,6 +248,7 @@ class TestMultinomialQMC:
         assert_array_equal(qmc.multinomial_qmc(100, p, engine=engine, seed=12345),
                            expected)
 
+
 class TestNormalQMC:
     def test_NormalQMC(self):
         # d = 1
@@ -299,7 +297,7 @@ class TestNormalQMC:
         samples_expected = np.array(
             [
                 [1.83169884, -1.40473647, 0.24334828],
-                [0.36596099, 1.2987395, -1.47556275],
+                [0.36596099, 1.2987395, -0.330971],
             ]
         )
         assert_array_almost_equal(samples, samples_expected)
@@ -318,7 +316,7 @@ class TestNormalQMC:
         samples_expected = np.array(
             [
                 [-1.40525266, 1.37652443, -0.8519666],
-                [-0.166497, -2.3153681, -0.15975676],
+                [-0.166497, -2.3153681, 0.840378],
             ]
         )
         assert_array_almost_equal(samples, samples_expected)
@@ -453,7 +451,7 @@ class TestMultivariateNormalQMC:
         samples_expected = np.array(
             [
                 [2.05178452, -6.35744194, 0.67944512],
-                [0.40993262, 2.60517697, -1.69415825],
+                [0.40993262, 2.60517697, -0.43475],
             ]
         )
         assert_array_almost_equal(samples, samples_expected)
@@ -483,7 +481,7 @@ class TestMultivariateNormalQMC:
         samples_expected = np.array(
             [
                 [-1.5740992, 5.61057598, -1.28218525],
-                [-0.18650226, -5.41662685, 0.023199],
+                [-0.18650226, -5.41662685, 1.12366],
             ]
         )
         assert_array_almost_equal(samples, samples_expected)
@@ -567,7 +565,7 @@ class TestMultivariateNormalQMC:
         assert_(np.abs(np.std(samples[:, 2]) - np.sqrt(2)) < 1e-2)
         for i in (0, 1, 2):
             _, pval = shapiro(samples[:, i])
-            assert_(pval > 0.9)
+            assert_(pval > 0.8)
         cov = np.cov(samples.transpose())
         assert_(np.abs(cov[0, 1]) < 1e-2)
         assert_(np.abs(cov[0, 2] - 1) < 1e-2)

@@ -23,7 +23,7 @@ cdef bint is_initialized = False
 
 # Load direction numbers (taken from https://web.maths.unsw.edu.au/~fkuo/sobol/)
 def initialize_direction_numbers():
-    global is_initialized
+    global is_initialized, poly, vinit
     if not is_initialized:
         dns = np.load(os.path.join(os.path.dirname(__file__), "_sobol_direction_numbers.npz"))
         poly = dns["poly"]

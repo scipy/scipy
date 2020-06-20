@@ -7,6 +7,7 @@ from scipy.stats.qmc import Sobol
 from numpy.testing import (assert_, assert_equal, assert_array_almost_equal,
                            assert_array_equal)
 from pytest import raises as assert_raises
+import scipy.stats.qmc as qmc
 
 
 class TestSobol:
@@ -37,18 +38,8 @@ class TestSobol:
 
     def test_Unscrambled3DSobol(self):
         self.setUp()
-        expected_dim3 = [
-            0.5,
-            0.75,
-            0.25,
-            0.625,
-            0.125,
-            0.375,
-            0.875,
-            0.3125,
-            0.8125,
-            0.5625,
-        ]
+        expected_dim3 = [0.5, 0.25, 0.75, 0.625, 0.125, 0.875, 0.375, 0.9375,
+                         0.4375, 0.6875]
         assert_equal(self.draws_unscrambled_3d.shape[0], 10)
         assert_equal(self.draws_unscrambled_3d.shape[1], 3)
         assert_array_equal(self.draws_unscrambled_3d[:, 2], np.array(expected_dim3))
@@ -86,8 +77,8 @@ class TestSobol:
         count2 = Counter(engine.random().flatten().tolist())
         count3 = Counter(engine.random().flatten().tolist())
         assert_equal(count1, Counter({0.5: 1111}))
-        assert_equal(count2, Counter({0.25: 580, 0.75: 531}))
-        assert_equal(count3, Counter({0.25: 531, 0.75: 580}))
+        assert_equal(count2, Counter({0.25: 557, 0.75: 554}))
+        assert_equal(count3, Counter({0.25: 554, 0.75: 557}))
 
     def test_UnscrambledSobolBounds(self):
         engine = Sobol(1111)
@@ -131,18 +122,8 @@ class TestSobol:
 
     def test_Scrambled3DSobol(self):
         self.setUp()
-        expected_dim3 = [
-            0.19711632,
-            0.43653634,
-            0.79965184,
-            0.08670237,
-            0.70811484,
-            0.90994149,
-            0.29499525,
-            0.83833538,
-            0.46057166,
-            0.15769824,
-        ]
+        expected_dim3 = [0.19712, 0.79965, 0.43654, 0.0867, 0.70811, 0.295,
+                         0.90994, 0.31903, 0.94863, 0.04729]
         assert_equal(self.draws_scrambled_3d.shape[0], 10)
         assert_equal(self.draws_scrambled_3d.shape[1], 3)
         assert_array_almost_equal(
@@ -196,3 +177,17 @@ class TestSobol:
         engine = Sobol(0)
         draws = engine.random(5)
         assert_array_equal(np.empty((5, 0)), draws)
+
+    def test_discrepancy(self):
+        engine_sobol = Sobol(10)
+        sample_sobol = engine_sobol.random(100)
+
+        engine_olhs = qmc.OrthogonalLatinHypercube(10)
+        sample_olhs = engine_olhs.random(100)
+
+        assert qmc.discrepancy(sample_sobol) < qmc.discrepancy(sample_olhs)
+
+        engine_halton = qmc.Halton(10)
+        sample_halton = engine_halton.random(100)
+
+        assert qmc.discrepancy(sample_sobol) < qmc.discrepancy(sample_halton)
