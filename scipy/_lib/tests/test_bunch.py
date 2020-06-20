@@ -31,17 +31,29 @@ class TestMakeTupleBunch:
         assert_equal(self.result[0], 1)
         assert_equal(self.result[1], 2)
         assert_equal(self.result[2], 3)
+        assert_equal(self.result[-1], 3)
+        with pytest.raises(IndexError, match='index out of range'):
+            self.result[3]
 
     def test_unpacking(self):
         x0, y0, z0 = self.result
         assert_equal((x0, y0, z0), (1, 2, 3))
+        assert_equal(self.result, (1, 2, 3))
 
     def test_slice(self):
         assert_equal(self.result[1:], (2, 3))
+        assert_equal(self.result[::2], (1, 3))
+        assert_equal(self.result[::-1], (3, 2, 1))
+
+    def test_len(self):
+        assert_equal(len(self.result), 3)
 
     def test_repr(self):
         s = repr(self.result)
         assert_equal(s, 'Result(x=1, y=2, z=3, w=99, beta=0.5)')
+
+    def test_hash(self):
+        assert_equal(hash(self.result), hash((1, 2, 3)))
 
     def test_pickle(self):
         s = pickle.dumps(self.result)
