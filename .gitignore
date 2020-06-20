@@ -238,6 +238,7 @@ scipy/spatial/ckdtree.h
 scipy/spatial/_hausdorff.c
 scipy/spatial/qhull.c
 scipy/spatial/_voronoi.c
+scipy/spatial/transform/rotation.c
 scipy/special/_comb.c
 scipy/special/_ellip_harm_2.c
 scipy/special/_ellip_harm_2.h
