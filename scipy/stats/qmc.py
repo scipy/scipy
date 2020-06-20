@@ -51,8 +51,8 @@ def scale(sample, bounds, reverse=False):
         return (sample - min_) / (max_ - min_)
 
 
-def discrepancy(sample, bounds=None, iterative=False):
-    """Centered discrepancy on a given sample.
+def discrepancy(sample, iterative=False, method='CD'):
+    """Discrepancy on a given sample.
 
     The discrepancy is a uniformity criterion used to assess the space filling
     of a number of samples in a hypercube.
@@ -60,16 +60,26 @@ def discrepancy(sample, bounds=None, iterative=False):
     uniform distribution.
     The lower the value is, the better the coverage of the parameter space is.
 
+    Taking a subspace of the parameter space we count the number of points in
+    the subpace and compare it to the total number of the points of the sample.
+    This value is substracted by the volume of the subspace. This process is
+    done over all subspaces and the highest value is kept.
+
+    Three methods are available:
+
+    * CD: Centered Discrepancy - subspace involves a corner of the hypercube
+    * WD: Wrap-around Discrepancy - subspace can wrap around bounds
+    * MD: Mixture Discrepancy - mix between CD/WD covering more criteria
+    * star: Star L2-discrepancy - like CD BUT variant to rotation
+
     Parameters
     ----------
     sample : array_like (n_samples, k_vars)
         The sample to compute the discrepancy from.
-    bounds : tuple or array_like ([min, k_vars], [max, k_vars])
-        Desired range of transformed data. The transformation applies the bounds
-        on the sample and not the theoretical space, unit cube. Thus min and
-        max values of the sample will coincide with the bounds.
     iterative : bool
         Must be False if not using it for updating the discrepancy.
+    method : str
+        Type of discrepancy, can be ['CD', 'WD', 'MD', 'star'].
 
     Returns
     -------
@@ -78,8 +88,13 @@ def discrepancy(sample, bounds=None, iterative=False):
 
     References
     ----------
-    [1] Fang et al. "Design and modeling for computer experiments",
-      Computer Science and Data Analysis Series, 2006.
+    [1] Fang et al. Design and modeling for computer experiments,
+        Computer Science and Data Analysis Series, 2006.
+    [2] Zhou Y.-D. et al. Mixture discrepancy for quasi-random point sets
+       Journal of Complexity, 29 (3-4) , pp. 283-301, 2013.
+    [3] T. T. Warnock. Computational investigations of low discrepancy point
+        sets, S.K. Zaremba (editor), Applications of Number Theory to Numerical
+        Analysis, Academic Press, New York.
 
     """
     sample = np.asarray(sample)
@@ -89,31 +104,58 @@ def discrepancy(sample, bounds=None, iterative=False):
     if iterative:
         n_samples += 1
 
-    # Sample scaling from bounds to unit hypercube
-    if bounds is not None:
-        min_ = bounds.min(axis=0)
-        max_ = bounds.max(axis=0)
-        sample = (sample - min_) / (max_ - min_)
+    if method == 'CD':
+        abs_ = abs(sample - 0.5)
+        disc1 = np.sum(np.prod(1 + 0.5 * abs_ - 0.5 * abs_ ** 2, axis=1))
 
-    abs_ = abs(sample - 0.5)
-    disc1 = np.sum(np.prod(1 + 0.5 * abs_ - 0.5 * abs_ ** 2, axis=1))
+        prod_arr = 1
+        for i in range(dim):
+            s0 = sample[:, i]
+            prod_arr *= (1 +
+                         0.5 * abs(s0[:, None] - 0.5) + 0.5 * abs(s0 - 0.5) -
+                         0.5 * abs(s0[:, None] - s0))
+        disc2 = prod_arr.sum()
 
-    prod_arr = 1
-    for i in range(dim):
-        s0 = sample[:, i]
-        prod_arr *= (1 +
-                     0.5 * abs(s0[:, None] - 0.5) + 0.5 * abs(s0 - 0.5) -
-                     0.5 * abs(s0[:, None] - s0))
-    disc2 = prod_arr.sum()
+        return ((13.0 / 12.0) ** dim - 2.0 / n_samples * disc1 +
+                1.0 / (n_samples ** 2) * disc2)
+    elif method == 'WD':
+        prod_arr = 1
+        for i in range(dim):
+            s0 = sample[:, i]
+            x_kikj = abs(s0[:, None] - s0)
+            prod_arr *= 3.0 / 2.0 - x_kikj + x_kikj ** 2
 
-    c2 = ((13.0 / 12.0) ** dim - 2.0 / n_samples * disc1 +
-          1.0 / (n_samples ** 2) * disc2)
+        return - (4.0 / 3.0) ** dim + 1.0 / (n_samples ** 2) * prod_arr.sum()
+    elif method == 'MD':
+        abs_ = abs(sample - 0.5)
+        disc1 = np.sum(np.prod(5.0 / 3.0 - 0.25 * abs_ - 0.25 * abs_ ** 2, axis=1))
 
-    return c2
+        prod_arr = 1
+        for i in range(dim):
+            s0 = sample[:, i]
+            prod_arr *= (15.0 / 8.0 -
+                         0.25 * abs(s0[:, None] - 0.5) - 0.25 * abs(s0 - 0.5) -
+                         3.0 / 4.0 * abs(s0[:, None] - s0) +
+                         0.5 * abs(s0[:, None] - s0) ** 2)
+        disc2 = prod_arr.sum()
+
+        return (19.0 / 12.0) ** dim - 2.0 / n_samples * disc1 + 1.0 / (n_samples ** 2) * disc2
+    elif method == 'star':
+        return np.sqrt(
+            3 ** (-dim) - 2 ** (1 - dim) / n_samples
+            * np.sum(np.prod(1 - sample ** 2, axis=1))
+            + np.sum([
+                np.prod(1 - np.maximum(sample[k, :], sample[j, :]))
+                for k in range(n_samples) for j in range(n_samples)
+            ]) / n_samples ** 2
+        )
+    else:
+        raise ValueError('Method {} is not valid. Options are CD, WD, MD, star'
+                         .format(method))
 
 
-def _update_discrepancy(x_new, sample, initial_disc, bounds=None):
-    """Update the discrepancy with a new sample.
+def _update_discrepancy(x_new, sample, initial_disc):
+    """Update the centered discrepancy with a new sample.
 
     Parameters
     ----------
@@ -123,10 +165,6 @@ def _update_discrepancy(x_new, sample, initial_disc, bounds=None):
         The initial sample.
     initial_disc : float
         Centered discrepancy of the `sample`.
-    bounds : tuple or array_like ([min, k_vars], [max, k_vars])
-        Desired range of transformed data. The transformation applies the bounds
-        on the sample and not the theoretical space, unit cube. Thus min and
-        max values of the sample will coincide with the bounds.
 
     Returns
     -------
@@ -136,13 +174,6 @@ def _update_discrepancy(x_new, sample, initial_disc, bounds=None):
     """
     sample = np.asarray(sample)
     x_new = np.asarray(x_new)
-
-    # Sample scaling from bounds to unit hypercube
-    if bounds is not None:
-        min_ = bounds.min(axis=0)
-        max_ = bounds.max(axis=0)
-        sample = (sample - min_) / (max_ - min_)
-        x_new = (x_new - min_) / (max_ - min_)
 
     n_samples = len(sample) + 1
     abs_ = abs(x_new - 0.5)
@@ -157,7 +188,7 @@ def _update_discrepancy(x_new, sample, initial_disc, bounds=None):
     return initial_disc + disc1 + disc2 + disc3
 
 
-def _perturb_discrepancy(sample, i1, i2, k, disc, bounds=None):
+def _perturb_discrepancy(sample, i1, i2, k, disc):
     """Centered discrepancy after and elementary perturbation on a LHS.
 
     An elementary perturbation consists of an exchange of coordinates between
@@ -176,10 +207,6 @@ def _perturb_discrepancy(sample, i1, i2, k, disc, bounds=None):
         The column of the elementary permutation.
     disc : float
         Centered discrepancy of the design before permutation.
-    bounds : tuple or array_like ([min, k_vars], [max, k_vars])
-        Desired range of transformed data. The transformation apply the bounds
-        on the sample and not the theoretical space, unit cube. Thus min and
-        max values of the sample will coincide with the bounds.
 
     Returns
     -------
@@ -195,12 +222,6 @@ def _perturb_discrepancy(sample, i1, i2, k, disc, bounds=None):
     """
     sample = np.asarray(sample)
     n_samples = sample.shape[0]
-
-    # Sample scaling from bounds to unit hypercube
-    if bounds is not None:
-        min_ = bounds.min(axis=0)
-        max_ = bounds.max(axis=0)
-        sample = (sample - min_) / (max_ - min_)
 
     z_ij = sample - 0.5
 
@@ -259,39 +280,6 @@ def _perturb_discrepancy(sample, i1, i2, k, disc, bounds=None):
     disc_ep = (disc + c_p_i1i1 - c_i1i1 + c_p_i2i2 - c_i2i2 + 2 * sum_)
 
     return disc_ep
-
-
-def discrepancy_star_L2(sample):
-    """Star L2-discrepancy.
-
-    Parameters
-    ----------
-    sample : array_like (n_samples, k_vars)
-        The sample to compute the discrepancy from.
-
-    Returns
-    -------
-    discrepancy : float
-        Star-L2 discrepancy.
-
-    References
-    ----------
-    [1] T. T. Warnock. Computational investigations of low discrepancy point sets.
-      In S.K. Zaremba (editor), Applications of Number Theory to Numerical
-      Analysis, Academic Press, New York.
-
-    """
-    sample = np.asarray(sample)
-
-    n_samples, dim = sample.shape
-    return np.sqrt(
-        3 ** (-dim) - 2 ** (1 - dim) / n_samples
-        * np.sum(np.prod(1 - sample ** 2, axis=1))
-        + np.sum([
-            np.prod(1 - np.maximum(sample[k, :], sample[j, :]))
-            for k in range(n_samples) for j in range(n_samples)
-        ]) / n_samples ** 2
-    )
 
 
 def primes_from_2_to(n):

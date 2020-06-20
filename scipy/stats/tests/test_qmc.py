@@ -24,53 +24,55 @@ class TestUtils(object):
         scaled_back_space = qmc.scale(scaled_space, bounds=corners, reverse=True)
         assert_allclose(scaled_back_space, space)
 
-
     def test_discrepancy(self):
-        space_0 = [[0.1, 0.5], [0.2, 0.4], [0.3, 0.3], [0.4, 0.2], [0.5, 0.1]]
-        space_1 = [[1, 3], [2, 6], [3, 2], [4, 5], [5, 1], [6, 4]]
-        space_2 = [[1, 5], [2, 4], [3, 3], [4, 2], [5, 1], [6, 6]]
-
-        corners = np.array([[0.5, 0.5], [6.5, 6.5]])
-
-        assert_allclose(qmc.discrepancy(space_0), 0.1353, atol=1e-4)
+        space_1 = np.array([[1, 3], [2, 6], [3, 2], [4, 5], [5, 1], [6, 4]])
+        space_1 = (2.0 * space_1 - 1.0) / (2.0 * 6.0)
+        space_2 = np.array([[1, 5], [2, 4], [3, 3], [4, 2], [5, 1], [6, 6]])
+        space_2 = (2.0 * space_2 - 1.0) / (2.0 * 6.0)
 
         # From Fang et al. Design and modeling for computer experiments, 2006
-        assert_allclose(qmc.discrepancy(space_1, corners), 0.0081, atol=1e-4)
-        assert_allclose(qmc.discrepancy(space_2, corners), 0.0105, atol=1e-4)
+        assert_allclose(qmc.discrepancy(space_1), 0.0081, atol=1e-4)
+        assert_allclose(qmc.discrepancy(space_2), 0.0105, atol=1e-4)
+
+        # From Zhou Y.-D. et al. Mixture discrepancy for quasi-random point sets
+        # Journal of Complexity, 29 (3-4), pp. 283-301, 2013.
+        sample = np.array([[2, 1, 1, 2, 2, 2],
+                           [1, 2, 2, 2, 2, 2],
+                           [2, 1, 1, 1, 1, 1],
+                           [1, 1, 1, 1, 2, 2],
+                           [1, 2, 2, 2, 1, 1],
+                           [2, 2, 2, 2, 1, 1],
+                           [2, 2, 2, 1, 2, 2]])
+        sample = (2.0 * sample - 1.0) / (2.0 * 2.0)
+
+        assert_allclose(qmc.discrepancy(sample, method='MD'), 2.5000, atol=1e-4)
+        assert_allclose(qmc.discrepancy(sample, method='WD'), 1.3680, atol=1e-4)
+        assert_allclose(qmc.discrepancy(sample, method='CD'), 0.3172, atol=1e-4)
+        assert_allclose(qmc.discrepancy(sample, method='star'), 0.037451, atol=1e-4)
 
     def test_update_discrepancy(self):
-        space_0 = [[0.1, 0.5], [0.2, 0.4], [0.3, 0.3], [0.4, 0.2], [0.5, 0.1]]
-        space_1 = [[1, 3], [2, 6], [3, 2], [4, 5], [5, 1], [6, 4]]
+        space_1 = np.array([[1, 3], [2, 6], [3, 2], [4, 5], [5, 1], [6, 4]])
+        space_1 = (2.0 * space_1 - 1.0) / (2.0 * 6.0)
 
-        # without bounds
-        disc_init = qmc.discrepancy(space_0[:-1], iterative=True)
-        disc_iter = qmc._update_discrepancy(space_0[-1], space_0[:-1],
-                                            disc_init)
-
-        assert_allclose(disc_iter, 0.1353, atol=1e-4)
-
-        # with bounds
-        corners = np.array([[0.5, 0.5], [6.5, 6.5]])
-
-        disc_init = qmc.discrepancy(space_1[:-1], corners, iterative=True)
-        disc_iter = qmc._update_discrepancy(space_1[-1], space_1[:-1],
-                                            disc_init, bounds=corners)
+        disc_init = qmc.discrepancy(space_1[:-1], iterative=True)
+        disc_iter = qmc._update_discrepancy(space_1[-1], space_1[:-1], disc_init)
 
         assert_allclose(disc_iter, 0.0081, atol=1e-4)
 
     def test_perm_discrepancy(self):
         doe_init = np.array([[1, 3], [2, 6], [3, 2], [4, 5], [5, 1], [6, 4]])
-        corners = np.array([[0.5, 0.5], [6.5, 6.5]])
-        disc_init = qmc.discrepancy(doe_init, corners)
+        doe_init = (2.0 * doe_init - 1.0) / (2.0 * 6.0)
+
+        disc_init = qmc.discrepancy(doe_init)
 
         row_1, row_2, col = 5, 2, 1
 
         doe = copy.deepcopy(doe_init)
         doe[row_1, col], doe[row_2, col] = doe[row_2, col], doe[row_1, col]
 
-        disc_valid = qmc.discrepancy(doe, corners)
+        disc_valid = qmc.discrepancy(doe)
         disc_perm = qmc._perturb_discrepancy(doe_init, row_1, row_2, col,
-                                             disc_init, corners)
+                                             disc_init)
 
         assert_allclose(disc_valid, disc_perm)
 
