@@ -27,9 +27,9 @@ def scale(sample, bounds, reverse=False):
 
     Parameters
     ----------
-    sample : array_like (n_samples, k_vars)
+    sample : array_like (n_samples, dim)
         Sample to scale.
-    bounds : tuple or array_like ([min, k_vars], [max, k_vars])
+    bounds : tuple or array_like ([min, dim], [max, dim])
         Desired range of transformed data. The transformation apply the bounds
         on the sample and not the theoretical space, unit cube. Thus min and
         max values of the sample will coincide with the bounds.
@@ -38,8 +38,20 @@ def scale(sample, bounds, reverse=False):
 
     Returns
     -------
-    sample : array_like (n_samples, k_vars)
+    sample : array_like (n_samples, dim)
         Scaled-sample.
+
+    Examples
+    --------
+
+    >>> from scipy.stats import qmc
+    >>> bounds = [[-2, 0],
+    ...           [6, 5]]
+    >>> sample = [[0.5 , 0.5 ],
+    ...           [0.75, 0.25]]
+    >>> qmc.scale(sample, bounds)
+    array([[2.  , 2.5 ],
+           [4.  , 1.25]])
 
     """
     bounds = np.asarray(bounds)
@@ -74,7 +86,7 @@ def discrepancy(sample, iterative=False, method='CD'):
 
     Parameters
     ----------
-    sample : array_like (n_samples, k_vars)
+    sample : array_like (n_samples, dim)
         The sample to compute the discrepancy from.
     iterative : bool
         Must be False if not using it for updating the discrepancy.
@@ -159,9 +171,9 @@ def _update_discrepancy(x_new, sample, initial_disc):
 
     Parameters
     ----------
-    x_new : array_like (1, k_vars)
+    x_new : array_like (1, dim)
         The new sample to add in `sample`.
-    sample : array_like (n_samples, k_vars)
+    sample : array_like (n_samples, dim)
         The initial sample.
     initial_disc : float
         Centered discrepancy of the `sample`.
@@ -197,7 +209,7 @@ def _perturb_discrepancy(sample, i1, i2, k, disc):
 
     Parameters
     ----------
-    sample : array_like (n_samples, k_vars)
+    sample : array_like (n_samples, dim)
         The sample (before permutation) to compute the discrepancy from.
     i1 : int
         The first line of the elementary permutation.
@@ -387,7 +399,7 @@ class QMCEngine(ABC):
 
     Parameters
     ----------
-    k_vars : int
+    dim : int
         Dimension of the parameter space.
     seed : int or `np.random.RandomState`, optional
         If `seed` is not specified the `np.RandomState` singleton is used.
@@ -402,7 +414,7 @@ class QMCEngine(ABC):
     Generate samples from a low discrepancy sequence of Halton.
 
     >>> from scipy.stats import qmc
-    >>> sampler = qmc.Halton(k_vars=2)
+    >>> sampler = qmc.Halton(dim=2)
     >>> sample = sampler.random(n_samples=5)
 
     Compute the quality of the sample using the discrepancy criterion.
@@ -422,8 +434,8 @@ class QMCEngine(ABC):
     """
 
     @abstractmethod
-    def __init__(self, k_vars, seed=None):
-        self.k_vars = k_vars
+    def __init__(self, dim, seed=None):
+        self.dim = dim
         self.rng = check_random_state(seed)
 
     @abstractmethod
@@ -437,7 +449,7 @@ class QMCEngine(ABC):
 
         Returns
         -------
-        sample : array_like (n_samples, k_vars)
+        sample : array_like (n_samples, dim)
             QMC sample.
         """
         pass
@@ -463,7 +475,7 @@ class Halton(QMCEngine):
 
     Parameters
     ----------
-    k_vars : int
+    dim : int
         Dimension of the parameter space.
 
     References
@@ -476,7 +488,7 @@ class Halton(QMCEngine):
     Generate samples from a low discrepancy sequence of Halton.
 
     >>> from scipy.stats import qmc
-    >>> sampler = qmc.Halton(k_vars=2)
+    >>> sampler = qmc.Halton(dim=2)
     >>> sample = sampler.random(n_samples=5)
 
     Compute the quality of the sample using the discrepancy criterion.
@@ -495,9 +507,9 @@ class Halton(QMCEngine):
 
     """
 
-    def __init__(self, k_vars):
-        super().__init__(k_vars=k_vars)
-        self.base = n_primes(k_vars)
+    def __init__(self, dim):
+        super().__init__(dim=dim)
+        self.base = n_primes(dim)
         self.num_generated = 0
 
     def random(self, n_samples=1):
@@ -510,7 +522,7 @@ class Halton(QMCEngine):
 
         Returns
         -------
-        sample : array_like (n_samples, k_vars)
+        sample : array_like (n_samples, dim)
             QMC sample.
 
         """
@@ -551,7 +563,7 @@ class OrthogonalLatinHypercube(QMCEngine):
 
     Parameters
     ----------
-    k_vars : int
+    dim : int
         Dimension of the parameter space.
     seed : int or `np.random.RandomState`, optional
         If `seed` is not specified the `np.RandomState` singleton is used.
@@ -568,8 +580,8 @@ class OrthogonalLatinHypercube(QMCEngine):
 
     """
 
-    def __init__(self, k_vars, seed=None):
-        super().__init__(k_vars=k_vars, seed=seed)
+    def __init__(self, dim, seed=None):
+        super().__init__(dim=dim, seed=seed)
 
     def random(self, n_samples=1):
         """Draw n_samples in the half-open interval [0, 1).
@@ -581,14 +593,14 @@ class OrthogonalLatinHypercube(QMCEngine):
 
         Returns
         -------
-        sample : array_like (n_samples, k_vars)
+        sample : array_like (n_samples, dim)
             OLHS sample.
 
         """
         sample = []
         step = 1.0 / n_samples
 
-        for _ in range(self.k_vars):
+        for _ in range(self.dim):
             # Enforce a unique point per grid
             j = np.arange(n_samples) * step
             temp = j + self.rng.uniform(low=0, high=step, size=n_samples)
@@ -611,7 +623,7 @@ class LatinHypercube(QMCEngine):
 
     Parameters
     ----------
-    k_vars : int
+    dim : int
         Dimension of the parameter space.
     centered : bool
         Center the point within the multi-dimensional grid.
@@ -631,8 +643,8 @@ class LatinHypercube(QMCEngine):
 
     """
 
-    def __init__(self, k_vars, centered=False, seed=None):
-        super().__init__(k_vars=k_vars, seed=seed)
+    def __init__(self, dim, centered=False, seed=None):
+        super().__init__(dim=dim, seed=seed)
         self.centered = centered
 
     def random(self, n_samples=1):
@@ -645,17 +657,17 @@ class LatinHypercube(QMCEngine):
 
         Returns
         -------
-        sample : array_like (n_samples, k_vars)
+        sample : array_like (n_samples, dim)
             LHS sample.
 
         """
         if self.centered:
             r = 0.5
         else:
-            r = self.rng.random_sample((n_samples, self.k_vars))
+            r = self.rng.random_sample((n_samples, self.dim))
 
         q = self.rng.randint(low=1, high=n_samples,
-                             size=(n_samples, self.k_vars))
+                             size=(n_samples, self.dim))
 
         return 1. / n_samples * (q - r)
 
@@ -673,9 +685,9 @@ class OptimalDesign(QMCEngine):
 
     Parameters
     ----------
-    k_vars : int
+    dim : int
         Dimension of the parameter space.
-    start_design : array_like (n_samples, k_vars)
+    start_design : array_like (n_samples, dim)
         Initial design of experiment to optimize.
     niter : int
         Number of iteration to perform.
@@ -701,9 +713,9 @@ class OptimalDesign(QMCEngine):
 
     """
 
-    def __init__(self, k_vars, start_design=None, niter=1, force=False,
+    def __init__(self, dim, start_design=None, niter=1, force=False,
                  optimization=True, seed=None):
-        super().__init__(k_vars=k_vars, seed=seed)
+        super().__init__(dim=dim, seed=seed)
         self.start_design = start_design
         self.niter = niter
         self.force = force
@@ -715,7 +727,7 @@ class OptimalDesign(QMCEngine):
         else:
             self.best_disc = np.inf
 
-        self.olhs = OrthogonalLatinHypercube(self.k_vars, seed=self.rng)
+        self.olhs = OrthogonalLatinHypercube(self.dim, seed=self.rng)
 
     def random(self, n_samples=1):
         """Draw n_samples in the half-open interval [0, 1).
@@ -727,7 +739,7 @@ class OptimalDesign(QMCEngine):
 
         Returns
         -------
-        sample : array_like (n_samples, k_vars)
+        sample : array_like (n_samples, dim)
             Optimal sample.
 
         """
@@ -767,14 +779,14 @@ class OptimalDesign(QMCEngine):
                 return disc
 
             # Total number of possible design
-            complexity = self.k_vars * n_samples ** 2
+            complexity = self.dim * n_samples ** 2
 
             if (complexity > 1e6) or self.force:
-                bounds_optim = ([0, self.k_vars - 1],
+                bounds_optim = ([0, self.dim - 1],
                                 [0, n_samples - 1],
                                 [0, n_samples - 1])
             else:
-                bounds_optim = (slice(0, self.k_vars - 1, 1), slice(0, n_samples - 1, 1),
+                bounds_optim = (slice(0, self.dim - 1, 1), slice(0, n_samples - 1, 1),
                                 slice(0, n_samples - 1, 1))
 
             for _ in range(self.niter):
@@ -806,7 +818,7 @@ class Sobol(QMCEngine):
 
     Parameters
     ----------
-    k_vars: int
+    dim: int
         Dimensionality of the sequence. Max dimensionality is 21201.
     scramble: bool, optional
         If True, use Owen scrambling.
@@ -833,22 +845,22 @@ class Sobol(QMCEngine):
     MAXDIM = 21201
     MAXBIT = 30
 
-    def __init__(self, k_vars, scramble=False, seed=None):
-        if k_vars > self.MAXDIM:
+    def __init__(self, dim, scramble=False, seed=None):
+        if dim > self.MAXDIM:
             raise ValueError(
                 "Maximum supported dimensionality is {}.".format(self.MAXDIM)
             )
-        super().__init__(k_vars=k_vars, seed=seed)
+        super().__init__(dim=dim, seed=seed)
 
         # initialize direction numbers
         initialize_direction_numbers()
 
         # v is dim x MAXBIT matrix
-        self._sv = np.zeros((k_vars, self.MAXBIT), dtype=np.int)
-        initialize_v(self._sv, k_vars)
+        self._sv = np.zeros((dim, self.MAXBIT), dtype=np.int)
+        initialize_v(self._sv, dim)
 
         if not scramble:
-            self._shift = np.zeros(k_vars, dtype=np.int)
+            self._shift = np.zeros(dim, dtype=np.int)
         else:
             self._scramble()
 
@@ -859,13 +871,13 @@ class Sobol(QMCEngine):
         """Scramble the sequence."""
         # Generate shift vector
         self._shift = np.dot(
-            self.rng.randint(2, size=(self.k_vars, self.MAXBIT)),
-            np.array([2 ** j for j in range(self.MAXBIT)]),
+            self.rng.randint(2, size=(self.dim, self.MAXBIT)),
+            2 ** np.arange(self.MAXBIT),
         )
         self._quasi = self._shift.copy()
         # Generate lower triangular matrices (stacked across dimensions)
-        ltm = np.tril(self.rng.randint(2, size=(self.k_vars, self.MAXBIT, self.MAXBIT)))
-        _cscramble(self.k_vars, ltm, self._sv)
+        ltm = np.tril(self.rng.randint(2, size=(self.dim, self.MAXBIT, self.MAXBIT)))
+        _cscramble(self.dim, ltm, self._sv)
         self.num_generated = 0
 
     def random(self, n_samples=1):
@@ -878,12 +890,12 @@ class Sobol(QMCEngine):
 
         Returns
         -------
-        sample : array_like (n_samples, k_vars)
+        sample : array_like (n_samples, dim)
             Sobol' sample.
 
         """
-        sample = np.empty((n_samples, self.k_vars), dtype=np.float)
-        _draw(n_samples, self.num_generated, self.k_vars, self._sv, self._quasi, sample)
+        sample = np.empty((n_samples, self.dim), dtype=np.float)
+        _draw(n_samples, self.num_generated, self.dim, self._sv, self._quasi, sample)
         self.num_generated += n_samples
         return sample
 
@@ -914,7 +926,7 @@ class Sobol(QMCEngine):
             The fast-forwarded engine.
 
         """
-        _fast_forward(n, self.num_generated, self.k_vars, self._sv, self._quasi)
+        _fast_forward(n, self.num_generated, self.dim, self._sv, self._quasi)
         self.num_generated += n
         return self
 
@@ -969,7 +981,7 @@ class NormalQMC(QMCEngine):
 
     Parameters
     ----------
-    k_vars: int
+    dim: int
         The dimension of the samples.
     inv_transform: bool
         If True, use inverse transform instead of Box-Muller.
@@ -989,17 +1001,17 @@ class NormalQMC(QMCEngine):
       Finance. Universitext. Springer International Publishing, 2018.
     """
 
-    def __init__(self, k_vars, inv_transform=False, engine=None, seed=None):
-        super().__init__(k_vars=k_vars, seed=seed)
+    def __init__(self, dim, inv_transform=False, engine=None, seed=None):
+        super().__init__(dim=dim, seed=seed)
         self._inv_transform = inv_transform
         if not inv_transform:
             # to apply Box-Muller, we need an even number of dimensions
-            engine_dim = 2 * math.ceil(k_vars / 2)
+            engine_dim = 2 * math.ceil(dim / 2)
         else:
-            engine_dim = k_vars
+            engine_dim = dim
 
         if engine is None:
-            self.engine = Sobol(k_vars=engine_dim, scramble=True, seed=seed)
+            self.engine = Sobol(dim=engine_dim, scramble=True, seed=seed)
         else:
             self.engine = engine
 
@@ -1013,7 +1025,7 @@ class NormalQMC(QMCEngine):
 
         Returns
         -------
-        sample : array_like (n_samples, k_vars)
+        sample : array_like (n_samples, dim)
             Sample.
 
         """
@@ -1031,7 +1043,7 @@ class NormalQMC(QMCEngine):
             sin = np.sin(thetas)
             transf_samples = np.stack([Rs * cos, Rs * sin], -1).reshape(n_samples, -1)
             # make sure we only return the number of dimension requested
-            return transf_samples[:, : self.k_vars]
+            return transf_samples[:, : self.dim]
 
 
 class MultivariateNormalQMC(QMCEngine):
@@ -1043,9 +1055,9 @@ class MultivariateNormalQMC(QMCEngine):
 
     Parameters
     ----------
-    mean: array_like (k_vars,)
+    mean: array_like (dim,)
         The mean vector.
-    cov: array_like (k_vars, k_vars)
+    cov: array_like (dim, dim)
         The covariance matrix.
     inv_transform: bool
         If True, use inverse transform instead of Box-Muller.
@@ -1070,17 +1082,15 @@ class MultivariateNormalQMC(QMCEngine):
         # check for square/symmetric cov matrix and mean vector has the same d
         mean = np.array(mean, copy=False, ndmin=1)
         cov = np.array(cov, copy=False, ndmin=2)
-        if not cov.shape[0] == cov.shape[1]:
-            raise ValueError("Covariance matrix is not square.")
         if not mean.shape[0] == cov.shape[0]:
             raise ValueError("Dimension mismatch between mean and covariance.")
         if not np.allclose(cov, cov.transpose()):
             raise ValueError("Covariance matrix is not symmetric.")
 
-        super().__init__(k_vars=mean.shape[0])
+        super().__init__(dim=mean.shape[0])
         self._mean = mean
         self._normal_engine = NormalQMC(
-            k_vars=self.k_vars, inv_transform=inv_transform,
+            dim=self.dim, inv_transform=inv_transform,
             engine=engine, seed=seed
         )
         # compute Cholesky decomp; if it fails, do the eigendecomposition
@@ -1103,7 +1113,7 @@ class MultivariateNormalQMC(QMCEngine):
 
         Returns
         -------
-        sample : array_like (n_samples, k_vars)
+        sample : array_like (n_samples, dim)
             Sample.
 
         """

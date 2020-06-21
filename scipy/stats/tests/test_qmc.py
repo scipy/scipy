@@ -104,7 +104,7 @@ class TestQMC(object):
 
     def test_halton(self):
         # without bounds
-        engine = qmc.Halton(k_vars=2)
+        engine = qmc.Halton(dim=2)
         sample = engine.random(n_samples=5)
 
         out = np.array([[1 / 2, 1 / 3], [1 / 4, 2 / 3], [3 / 4, 1 / 9], [1 / 8, 4 / 9], [5 / 8, 7 / 9]])
@@ -120,7 +120,7 @@ class TestQMC(object):
         assert_almost_equal(sample, out, decimal=1)
 
         # continuing
-        engine = qmc.Halton(k_vars=2)
+        engine = qmc.Halton(dim=2)
         engine.fast_forward(2)
         sample = engine.random(n_samples=3)
         sample = qmc.scale(sample, bounds=corners)
@@ -135,14 +135,14 @@ class TestLHS(object):
 
         corners = np.array([[0, 2], [10, 5]])
 
-        lhs = qmc.LatinHypercube(k_vars=2)
+        lhs = qmc.LatinHypercube(dim=2)
         sample = lhs.random(n_samples=5)
         sample = qmc.scale(sample, bounds=corners)
         out = np.array([[5.7, 3.2], [5.5, 3.9], [5.2, 3.6],
                         [5.1, 3.3], [5.8, 4.1]])
         assert_almost_equal(sample, out, decimal=1)
 
-        lhs = qmc.LatinHypercube(k_vars=2, centered=True)
+        lhs = qmc.LatinHypercube(dim=2, centered=True)
         sample = lhs.random(n_samples=5)
         out = np.array([[0.1, 0.5], [0.3, 0.1], [0.7, 0.1],
                         [0.1, 0.1], [0.3, 0.7]])
@@ -153,7 +153,7 @@ class TestLHS(object):
 
         corners = np.array([[0, 2], [10, 5]])
 
-        olhs = qmc.OrthogonalLatinHypercube(k_vars=2)
+        olhs = qmc.OrthogonalLatinHypercube(dim=2)
         sample = olhs.random(n_samples=5)
         sample = qmc.scale(sample, bounds=corners)
         out = np.array([[3.933, 2.670], [7.794, 4.031], [4.520, 2.129],
@@ -175,23 +175,23 @@ class TestLHS(object):
     def test_optimal_design(self):
         seed = 123456
 
-        olhs = qmc.OrthogonalLatinHypercube(k_vars=2, seed=seed)
+        olhs = qmc.OrthogonalLatinHypercube(dim=2, seed=seed)
         sample_ref = olhs.random(n_samples=20)
         disc_ref = qmc.discrepancy(sample_ref)
 
-        optimal_1 = qmc.OptimalDesign(k_vars=2, start_design=sample_ref, seed=seed)
+        optimal_1 = qmc.OptimalDesign(dim=2, start_design=sample_ref, seed=seed)
         sample_1 = optimal_1.random(n_samples=20)
         disc_1 = qmc.discrepancy(sample_1)
 
         assert disc_1 < disc_ref
 
-        optimal_ = qmc.OptimalDesign(k_vars=2, seed=seed)
+        optimal_ = qmc.OptimalDesign(dim=2, seed=seed)
         sample_ = optimal_.random(n_samples=20)
         disc_ = qmc.discrepancy(sample_)
 
         assert disc_ < disc_ref
 
-        optimal_2 = qmc.OptimalDesign(k_vars=2, start_design=sample_ref, niter=2, seed=seed)
+        optimal_2 = qmc.OptimalDesign(dim=2, start_design=sample_ref, niter=2, seed=seed)
         sample_2 = optimal_2.random(n_samples=20)
         disc_2 = qmc.discrepancy(sample_2)
         assert disc_2 < disc_1
@@ -200,13 +200,13 @@ class TestLHS(object):
         sample_1 = optimal_1.random(n_samples=20)
         assert_allclose(sample_1, sample_2)
 
-        optimal_3 = qmc.OptimalDesign(k_vars=2, start_design=sample_ref, force=True)
+        optimal_3 = qmc.OptimalDesign(dim=2, start_design=sample_ref, force=True)
         sample_3 = optimal_3.random(n_samples=20)
         disc_3 = qmc.discrepancy(sample_3)
         assert disc_3 < disc_ref
 
         # no optimization
-        optimal_4 = qmc.OptimalDesign(k_vars=2, start_design=sample_ref,
+        optimal_4 = qmc.OptimalDesign(dim=2, start_design=sample_ref,
                                       optimization=False, niter=100, seed=seed)
         sample_4 = optimal_4.random(n_samples=20)
         disc_4 = qmc.discrepancy(sample_4)
@@ -254,13 +254,13 @@ class TestMultinomialQMC:
 class TestNormalQMC:
     def test_NormalQMC(self):
         # d = 1
-        engine = qmc.NormalQMC(k_vars=1)
+        engine = qmc.NormalQMC(dim=1)
         samples = engine.random()
         assert_equal(samples.shape, (1, 1))
         samples = engine.random(n_samples=5)
         assert_equal(samples.shape, (5, 1))
         # d = 2
-        engine = qmc.NormalQMC(k_vars=2)
+        engine = qmc.NormalQMC(dim=2)
         samples = engine.random()
         assert_equal(samples.shape, (1, 2))
         samples = engine.random(n_samples=5)
@@ -268,33 +268,33 @@ class TestNormalQMC:
 
     def test_NormalQMCInvTransform(self):
         # d = 1
-        engine = qmc.NormalQMC(k_vars=1, inv_transform=True)
+        engine = qmc.NormalQMC(dim=1, inv_transform=True)
         samples = engine.random()
         assert_equal(samples.shape, (1, 1))
         samples = engine.random(n_samples=5)
         assert_equal(samples.shape, (5, 1))
         # d = 2
-        engine = qmc.NormalQMC(k_vars=2, inv_transform=True)
+        engine = qmc.NormalQMC(dim=2, inv_transform=True)
         samples = engine.random()
         assert_equal(samples.shape, (1, 2))
         samples = engine.random(n_samples=5)
         assert_equal(samples.shape, (5, 2))
 
     def test_other_engine(self):
-        engine = qmc.NormalQMC(k_vars=2, engine=qmc.Sobol(k_vars=2, scramble=True), inv_transform=True)
+        engine = qmc.NormalQMC(dim=2, engine=qmc.Sobol(dim=2, scramble=True), inv_transform=True)
         samples = engine.random()
         assert_equal(samples.shape, (1, 2))
 
     def test_NormalQMCSeeded(self):
         # test even dimension
-        engine = qmc.NormalQMC(k_vars=2, seed=12345)
+        engine = qmc.NormalQMC(dim=2, seed=12345)
         samples = engine.random(n_samples=2)
         samples_expected = np.array(
             [[-0.63099602, -1.32950772], [0.29625805, 1.86425618]]
         )
         assert_array_almost_equal(samples, samples_expected)
         # test odd dimension
-        engine = qmc.NormalQMC(k_vars=3, seed=12345)
+        engine = qmc.NormalQMC(dim=3, seed=12345)
         samples = engine.random(n_samples=2)
         samples_expected = np.array(
             [
@@ -306,14 +306,14 @@ class TestNormalQMC:
 
     def test_NormalQMCSeededInvTransform(self):
         # test even dimension
-        engine = qmc.NormalQMC(k_vars=2, seed=12345, inv_transform=True)
+        engine = qmc.NormalQMC(dim=2, seed=12345, inv_transform=True)
         samples = engine.random(n_samples=2)
         samples_expected = np.array(
             [[-0.41622922, 0.46622792], [-0.96063897, -0.75568963]]
         )
         assert_array_almost_equal(samples, samples_expected)
         # test odd dimension
-        engine = qmc.NormalQMC(k_vars=3, seed=12345, inv_transform=True)
+        engine = qmc.NormalQMC(dim=3, seed=12345, inv_transform=True)
         samples = engine.random(n_samples=2)
         samples_expected = np.array(
             [
@@ -324,7 +324,7 @@ class TestNormalQMC:
         assert_array_almost_equal(samples, samples_expected)
 
     def test_NormalQMCShapiro(self):
-        engine = qmc.NormalQMC(k_vars=2, seed=12345)
+        engine = qmc.NormalQMC(dim=2, seed=12345)
         samples = engine.random(n_samples=250)
         assert_(all(np.abs(samples.mean(axis=0)) < 1e-2))
         assert_(all(np.abs(samples.std(axis=0) - 1) < 1e-2))
@@ -337,7 +337,7 @@ class TestNormalQMC:
         assert_(np.abs(cov[0, 1]) < 1e-2)
 
     def test_NormalQMCShapiroInvTransform(self):
-        engine = qmc.NormalQMC(k_vars=2, seed=12345, inv_transform=True)
+        engine = qmc.NormalQMC(dim=2, seed=12345, inv_transform=True)
         samples = engine.random(n_samples=250)
         assert_(all(np.abs(samples.mean(axis=0)) < 1e-2))
         assert_(all(np.abs(samples.std(axis=0) - 1) < 1e-2))
@@ -368,12 +368,6 @@ class TestMultivariateNormalQMC:
         # try with non-symmetric cov and expect an error
         assert_raises(
             ValueError, qmc.MultivariateNormalQMC, [0, 0], [[1, 0], [2, 1]]
-        )
-
-    def test_MultivariateNormalQMCCov(self):
-        # non square covariance matrix
-        assert_raises(
-            ValueError, qmc.MultivariateNormalQMC, [0, 0], [[1], [2, 1]]
         )
 
     def test_MultivariateNormalQMCDim(self):

@@ -389,7 +389,6 @@ Quasi-Monte Carlo
    qmc.NormalQMC
    qmc.MultivariateNormalQMC
    qmc.discrepancy
-   qmc.discrepancy_star_L2
    qmc.scale
 
 
