@@ -459,6 +459,16 @@ cdef class Rotation(object):
     array([[0.        , 0.38268343, 0.        , 0.92387953],
            [0.39190384, 0.36042341, 0.43967974, 0.72331741]])
 
+    In fact it can be converted to numpy.array:
+
+    >>> r_array = np.asarray(r)
+    >>> r_array.shape
+    (3,)
+    >>> r_array[0].as_matrix()
+    array([[ 2.22044605e-16, -1.00000000e+00,  0.00000000e+00],
+           [ 1.00000000e+00,  2.22044605e-16,  0.00000000e+00],
+           [ 0.00000000e+00,  0.00000000e+00,  1.00000000e+00]])
+
     Multiple rotations can be composed using the ``*`` operator:
 
     >>> r1 = R.from_euler('z', 90, degrees=True)
