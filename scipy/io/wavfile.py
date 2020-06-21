@@ -427,9 +427,13 @@ def _read_data_chunk(fid, format_tag, channels, bit_depth, is_big_endian,
     n_samples = size // bytes_per_sample
 
     if format_tag == WAVE_FORMAT.PCM:
-        if 1 <= bit_depth <= 8 or bytes_per_sample in {3, 5, 6, 7}:
-            dtype = 'u1'
+        if 1 <= bit_depth <= 8:
+            dtype = 'u1'  # WAV of 8-bit integer or less are unsigned
+        elif bytes_per_sample in {3, 5, 6, 7}:
+            # No compatible dtype.  Load as raw bytes for reshaping later.
+            dtype = 'V1'
         elif bit_depth <= 64:
+            # Remaining bit depths can map directly to signed numpy dtypes
             dtype = f'{fmt}i{bytes_per_sample}'
         else:
             raise ValueError("Unsupported bit depth: the wav file "
@@ -452,9 +456,10 @@ def _read_data_chunk(fid, format_tag, channels, bit_depth, is_big_endian,
             data = numpy.frombuffer(fid.read(size), dtype=dtype)
 
         if bytes_per_sample in {3, 5, 6, 7}:
+            # Rearrange raw bytes into smallest compatible numpy dtype
             dt = numpy.int32 if bytes_per_sample == 3 else numpy.int64
             a = numpy.zeros((len(data) // bytes_per_sample, dt().itemsize),
-                            dtype=numpy.uint8)
+                            dtype='V1')
             a[:, -bytes_per_sample:] = data.reshape((-1, bytes_per_sample))
             data = a.view(dt).reshape(a.shape[:-1])
     else:
