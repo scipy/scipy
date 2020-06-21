@@ -525,7 +525,7 @@ def read(filename, mmap=False):
     """
     Open a WAV file.
 
-    Return the sample rate (in samples/sec) and data from a WAV file.
+    Return the sample rate (in samples/sec) and data from an LPCM WAV file.
 
     Parameters
     ----------
@@ -556,16 +556,16 @@ def read(filename, mmap=False):
          WAV format            Min          Max       NumPy dtype
     =====================  ===========  ===========  =============
     32-bit floating-point  -1.0         +1.0         float32
-    32-bit PCM             -2147483648  +2147483647  int32
-    24-bit PCM             -2147483648  +2147483392  int32
-    16-bit PCM             -32768       +32767       int16
-    8-bit PCM              0            255          uint8
+    32-bit integer PCM     -2147483648  +2147483647  int32
+    24-bit integer PCM     -2147483648  +2147483392  int32
+    16-bit integer PCM     -32768       +32767       int16
+    8-bit integer PCM      0            255          uint8
     =====================  ===========  ===========  =============
 
-    Integer PCM WAV files can specify arbitrary bit depth, and this function
-    supports reading any depth from 1 to 64 bits.  Data is returned in the
+    WAV files can specify arbitrary bit depth, and this function supports
+    reading any integer PCM depth from 1 to 64 bits.  Data is returned in the
     smallest compatible numpy int type, in left-justified format.  8-bit and
-    lower PCM is unsigned, while 9-bit and higher is signed.
+    lower is unsigned, while 9-bit and higher is signed.
 
     For example, 24-bit data will be stored as int32, with the MSB of the
     24-bit data stored at the MSB of the int32, and typically the least
@@ -578,6 +578,8 @@ def read(filename, mmap=False):
 
     IEEE float PCM in 32- or 64-bit format is supported, with or without mmap.
     Values exceeding [-1, +1] are not clipped.
+
+    Non-linear PCM (mu-law, A-law) is not supported.
 
     References
     ----------
