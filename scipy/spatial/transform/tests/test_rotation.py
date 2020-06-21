@@ -874,8 +874,6 @@ def test_n_rotations():
     r = Rotation.from_matrix(mat)
 
     assert_equal(len(r), 2)
-    assert_equal(len(r[0]), 1)
-    assert_equal(len(r[1]), 1)
     assert_equal(len(r[:-1]), 1)
 
 
@@ -1043,7 +1041,7 @@ def test_slerp():
 
 
 def test_slerp_single_rot():
-    with pytest.raises(ValueError, match="at least 2 rotations"):
+    with pytest.raises(ValueError, match="must be a sequence of rotations"):
         r = Rotation.from_quat([1, 2, 3, 4])
         Slerp([1], r)
 
