@@ -6935,7 +6935,7 @@ class trapz_gen(rv_continuous):
     ----------
     .. [1] Kacker, R.N. and Lawrence, J.F. (2007). Trapezoidal and triangular
        distributions for Type B evaluation of standard uncertainty.
-       Metrologia 44, 117–127. https://doi.org/10.1088/0026-1394/44/2/003
+       Metrologia 44, 117-127. https://doi.org/10.1088/0026-1394/44/2/003
 
 
     """
