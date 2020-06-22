@@ -315,6 +315,10 @@ cdef class Rotation(object):
     To create `Rotation` objects use ``from_...`` methods (see examples below).
     ``Rotation(...)`` is not supposed to be instantiated directly.
 
+    Attributes
+    ----------
+    single
+
     Methods
     -------
     __len__
@@ -521,6 +525,11 @@ cdef class Rotation(object):
                     raise ValueError("Found zero norm quaternions in `quat`.")
         else:
             self._quat = quat.copy() if copy else quat
+
+    @property
+    def single(self):
+        """Whether this instance represents a single rotation."""
+        return self._single
 
     def __len__(self):
         """Number of rotations contained in this object.
