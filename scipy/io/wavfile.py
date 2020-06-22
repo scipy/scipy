@@ -436,14 +436,14 @@ def _read_data_chunk(fid, format_tag, channels, bit_depth, is_big_endian,
             # Remaining bit depths can map directly to signed numpy dtypes
             dtype = f'{fmt}i{bytes_per_sample}'
         else:
-            raise ValueError("Unsupported bit depth: the wav file "
-                             f"has {bit_depth}-bit data.")
+            raise ValueError("Unsupported bit depth: the WAV file "
+                             f"has {bit_depth}-bit integer data.")
     elif format_tag == WAVE_FORMAT.IEEE_FLOAT:
         if bit_depth in {32, 64}:
             dtype = f'{fmt}f{bytes_per_sample}'
         else:
-            raise ValueError("Unsupported bit depth: the wav file "
-                             f"has {bit_depth}-bit data.")
+            raise ValueError("Unsupported bit depth: the WAV file "
+                             f"has {bit_depth}-bit floating-point data.")
     else:
         _raise_bad_format(format_tag)
 
