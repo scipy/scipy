@@ -1781,9 +1781,9 @@ cdef class Rotation(object):
         left_best = max_ind // len(rv)
         right_best = max_ind % len(rv)
 
-        if len(lv) > 1:
+        if not left.single:
             left = left[left_best]
-        if len(rv) > 1:
+        if not right.single:
             right = right[right_best]
 
         # Reduce the rotation using the best indices
@@ -2177,12 +2177,10 @@ class Slerp(object):
 
     """
     def __init__(self, times, rotations):
-        try:
-            n_rotations = len(rotations)
-        except TypeError:
+        if rotations.single:
             raise ValueError("`rotations` must be a sequence of rotations.")
 
-        if n_rotations == 1:
+        if len(rotations) == 1:
                 raise ValueError("`rotations` must contain at least 2 "
                                  "rotations.")
 
