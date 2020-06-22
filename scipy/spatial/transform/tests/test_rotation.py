@@ -1147,7 +1147,7 @@ def test_rotation_within_numpy_array():
     assert_allclose(array[0, 0].as_matrix(), multiple[0].as_matrix())
     assert_allclose(array[0, 1].as_matrix(), multiple[1].as_matrix())
 
-    array = np.array([single, multiple])
+    array = np.array([single, multiple], dtype=object)
     assert_equal(array.shape, (2,))
     assert_equal(array[0], single)
     assert_equal(array[1], multiple)
