@@ -160,7 +160,7 @@ def asymptotic_series():
     Paris (2017) uses ZP = (1+a)/a * Z  (ZP = Z of Paris) and
     C_k = C_0 * (-a/(1+a))^k * c_k
     """
-    order = 7
+    order = 8
 
     class g(sympy.Function):
         """Helper function g according to Wright (1935)
@@ -316,7 +316,7 @@ def main():
                              '1 : Series for small a\n'
                              '2 : Series for small a and small b\n'
                              '3 : Asymptotic series for large x\n'
-                             '    This may take some time (>1h).\n'
+                             '    This may take some time (>4h).\n'
                              '4 : Fit optimal eps for integral representation.'
                         )
     args = parser.parse_args()
