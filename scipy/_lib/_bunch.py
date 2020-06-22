@@ -30,8 +30,8 @@ def _validate_names(typename, field_names, extra_field_names):
 
 
 # Note: This code is adapted from CPython:Lib/collections/__init__.py
-def make_tuple_bunch(typename, field_names, extra_field_names=None,
-                     module=None):
+def _make_tuple_bunch(typename, field_names, extra_field_names=None,
+                      module=None):
     """
     Create a namedtuple-like class with additional attributes.
 
@@ -82,12 +82,12 @@ def make_tuple_bunch(typename, field_names, extra_field_names=None,
 
     Examples
     --------
-    >>> from scipy._lib._bunch import make_tuple_bunch
+    >>> from scipy._lib._bunch import _make_tuple_bunch
 
     Create a class that acts like a namedtuple with length 2 (with field
     names `x` and `y`) that will also have the attributes `w` and `beta`:
 
-    >>> Result = make_tuple_bunch('Result', ['x', 'y'], ['w', 'beta'])
+    >>> Result = _make_tuple_bunch('Result', ['x', 'y'], ['w', 'beta'])
 
     `Result` is the new class.  We call it with keyword arguments to create
     a new instance with given values.
