@@ -105,7 +105,7 @@ def test_5_bit_odd_size_no_pad():
         assert_equal(data[0, 0], 128)  # Midpoint is 128 for <= 8-bit
         assert_equal(data.min(), 0)  # Lowest possible
 
-    del data
+        del data
 
 
 def test_12_bit_even_size():
@@ -127,7 +127,7 @@ def test_12_bit_even_size():
         assert_equal(data[0, 0], 0)  # Midpoint is 0 for >= 9-bit
         assert_equal(data.min(), -0b10000000_00000000)  # Lowest possible
 
-    del data
+        del data
 
 
 def test_24_bit_odd_size_with_pad():
@@ -151,8 +151,6 @@ def test_24_bit_odd_size_with_pad():
                         [+0x4000_0000, +0x3fff_ff00, +0x100],
                         [+0x7fff_ff00, +0x7fff_ff00, +0x200]])
     #                     ^ clipped
-
-    del data
 
 
 def test_20_bit_extra_data():
@@ -184,8 +182,6 @@ def test_20_bit_extra_data():
                         -0x7ffff000 >> 4,  # -1/16
                         ])
 
-    del data
-
 
 def test_36_bit_odd_size():
     # 36-bit, 5 B container, 3 channels, 5 samples, 75 B data chunk + pad
@@ -209,8 +205,6 @@ def test_36_bit_odd_size():
     #              ^ clipped
 
     assert_equal(data, correct)
-
-    del data
 
 
 def test_45_bit_even_size():
@@ -236,8 +230,6 @@ def test_45_bit_even_size():
 
     assert_equal(data, correct)
 
-    del data
-
 
 def test_53_bit_odd_size():
     # 53-bit, 7 B container, 3 channels, 5 samples, 105 B data chunk + pad
@@ -262,8 +254,6 @@ def test_53_bit_odd_size():
 
     assert_equal(data, correct)
 
-    del data
-
 
 def test_64_bit_even_size():
     # 64-bit, 8 B container, 3 channels, 5 samples, 120 B data chunk
@@ -286,7 +276,7 @@ def test_64_bit_even_size():
 
         assert_equal(data, correct)
 
-    del data
+        del data
 
 
 def test_unsupported_mmap():
