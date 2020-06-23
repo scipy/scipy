@@ -171,11 +171,12 @@ def correlate(in1, in2, mode='full', method='auto'):
     that has passed through a noisy channel.
 
     >>> from scipy import signal
+    >>> import matplotlib.pyplot as plt
+
     >>> sig = np.repeat([0., 1., 1., 0., 1., 0., 0., 1.], 128)
     >>> sig_noise = sig + np.random.randn(len(sig))
     >>> corr = signal.correlate(sig_noise, np.ones(128), mode='same') / 128
 
-    >>> import matplotlib.pyplot as plt
     >>> clock = np.arange(64, len(sig), 128)
     >>> fig, (ax_orig, ax_noise, ax_corr) = plt.subplots(3, 1, sharex=True)
     >>> ax_orig.plot(sig)
@@ -189,7 +190,32 @@ def correlate(in1, in2, mode='full', method='auto'):
     >>> ax_corr.set_title('Cross-correlated with rectangular pulse')
     >>> ax_orig.margins(0, 0.1)
     >>> fig.tight_layout()
-    >>> fig.show()
+    >>> plt.show()
+
+    Compute the cross-correlation of a noisy signal with the original signal.
+
+    >>> x = np.arange(128) / 128
+    >>> sig = np.sin(2 * np.pi * x)
+    >>> sig_noise = sig + np.random.randn(len(sig))
+    >>> corr = signal.correlate(sig_noise, sig)
+    >>> lags = signal.correlation_lags(len(sig), len(sig_noise))
+    >>> corr /= np.max(corr)
+
+    >>> fig, (ax_orig, ax_noise, ax_corr) = plt.subplots(3, 1, figsize=(4.8, 4.8))
+    >>> ax_orig.plot(sig)
+    >>> ax_orig.set_title('Original signal')
+    >>> ax_orig.set_xlabel('Sample Number')
+    >>> ax_noise.plot(sig_noise)
+    >>> ax_noise.set_title('Signal with noise')
+    >>> ax_noise.set_xlabel('Sample Number')
+    >>> ax_corr.plot(lags, corr)
+    >>> ax_corr.set_title('Cross-correlated signal')
+    >>> ax_corr.set_xlabel('Lag')
+    >>> ax_orig.margins(0, 0.1)
+    >>> ax_noise.margins(0, 0.1)
+    >>> ax_corr.margins(0, 0.1)
+    >>> fig.tight_layout()
+    >>> plt.show()
     """
     in1 = np.asarray(in1)
     in2 = np.asarray(in2)
@@ -278,13 +304,14 @@ def correlation_lags(in1_len, in2_len, mode='full'):
     Returns
     -------
     lags : array
-        Returns an array containing cross-correlation lag / displacement indices.
+        Returns an array containing cross-correlation lag/displacement indices.
         Indices can be indexed with the np.argmax of the correlation to return
-        the lag / displacement.
+        the lag/displacement.
 
     Notes
     -----
-    Cross-correlation for continuous functions :math:`f` and :math:`g` is defined as:
+    Cross-correlation for continuous functions :math:`f` and :math:`g` is
+    defined as:
 
     .. math ::
 
@@ -294,7 +321,8 @@ def correlation_lags(in1_len, in2_len, mode='full'):
 
     Where :math:`\tau` is defined as the displacement, also known as the lag.
 
-    Cross correlation for discrete functions :math:`f` and :math:`g` is defined as:
+    Cross correlation for discrete functions :math:`f` and :math:`g` is
+    defined as:
 
     .. math ::
         \left ( f\star g \right )\left [ n \right ]
@@ -3225,7 +3253,7 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0),
         # Design a linear-phase low-pass FIR filter
         max_rate = max(up, down)
         f_c = 1. / max_rate  # cutoff of FIR filter (rel. to Nyquist)
-        half_len = 10 * max_rate  # reasonable cutoff for our sinc-like function
+        half_len = 10 * max_rate  # reasonable cutoff for sinc-like function
         h = firwin(2 * half_len + 1, f_c, window=window)
     h *= up
 
