@@ -875,6 +875,27 @@ class KDTree(object):
             The number of pairs. Note that this is internally stored in a numpy
             int, and so may overflow if very large (2e9).
 
+        Examples
+        --------
+        You can count neighbors number between two kd-trees within a distance:
+
+        >>> import numpy as np
+        >>> from scipy.spatial import KDTree
+        >>> np.random.seed(21701)
+        >>> points1 = np.random.random((5, 2))
+        >>> points2 = np.random.random((5, 2))
+        >>> kd_tree1 = KDTree(points1)
+        >>> kd_tree2 = KDTree(points2)
+        >>> kd_tree1.count_neighbors(kd_tree2, 0.2)
+        9
+
+        This number is same as the total pair number calculated by
+        `query_ball_tree`:
+
+        >>> indexes = kd_tree1.query_ball_tree(kd_tree2, r=0.2)
+        >>> sum([len(i) for i in indexes])
+        9
+
         """
         def traverse(node1, rect1, node2, rect2, idx):
             min_r = rect1.min_distance_rectangle(rect2,p)
@@ -944,6 +965,35 @@ class KDTree(object):
         -------
         result : dok_matrix
             Sparse matrix representing the results in "dictionary of keys" format.
+
+        Examples
+        --------
+        You can compute a sparse distance matrix between two kd-trees:
+
+        >>> import numpy as np
+        >>> from scipy.spatial import KDTree
+        >>> np.random.seed(21701)
+        >>> points1 = np.random.random((5, 2))
+        >>> points2 = np.random.random((5, 2))
+        >>> kd_tree1 = KDTree(points1)
+        >>> kd_tree2 = KDTree(points2)
+        >>> sdm = kd_tree1.sparse_distance_matrix(kd_tree2, 0.3)
+        >>> sdm.toarray()
+        array([[0.20220215, 0.14538496, 0.,         0.10257199, 0.        ],
+            [0.13491385, 0.27251306, 0.,         0.18793787, 0.        ],
+            [0.19262396, 0.,         0.,         0.25795122, 0.        ],
+            [0.14859639, 0.07076002, 0.,         0.04065851, 0.        ],
+            [0.17308768, 0.,         0.,         0.24823138, 0.        ]])
+
+        You can check distances above the `max_distance` are zeros:
+
+        >>> from scipy.spatial import distance_matrix
+        >>> distance_matrix(points1, points2)
+        array([[0.20220215, 0.14538496, 0.43588092, 0.10257199, 0.4555495 ],
+            [0.13491385, 0.27251306, 0.65944131, 0.18793787, 0.68184154],
+            [0.19262396, 0.34121593, 0.72176889, 0.25795122, 0.74538858],
+            [0.14859639, 0.07076002, 0.48505773, 0.04065851, 0.50043591],
+            [0.17308768, 0.32837991, 0.72760803, 0.24823138, 0.75017239]])
 
         """
         result = scipy.sparse.dok_matrix((self.n,other.n))
