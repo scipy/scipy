@@ -183,9 +183,9 @@ def _convert_to_type(X, out_type):
     return np.ascontiguousarray(X, dtype=out_type)
 
 
-def _filter_deprecated_kwargs(kwargs, args_blocklist):
+def _filter_deprecated_kwargs(kwargs, names):
     # Filtering out old default keywords
-    for k in args_blocklist:
+    for k in names:
         if k in kwargs:
             del kwargs[k]
             warnings.warn('Got unexpected kwarg %s. This will raise an error'
@@ -2001,29 +2001,29 @@ def pdist(X, metric='euclidean', *args, **kwargs):
             raise ValueError("Output array must be double type.")
         dm = out
 
-    # compute blocklist for deprecated kwargs
+    # compute names for deprecated kwargs
     if(metric in _METRICS['jensenshannon'].aka
        or metric == 'test_jensenshannon' or metric == jensenshannon):
-        kwargs_blocklist = ["p", "w", "V", "VI"]
+        kwargs_names = ["p", "w", "V", "VI"]
 
     elif(metric in _METRICS['minkowski'].aka
          or metric in _METRICS['wminkowski'].aka
          or metric in ['test_minkowski', 'test_wminkowski']
          or metric in [minkowski, wminkowski]):
-        kwargs_blocklist = ["V", "VI"]
+        kwargs_names = ["V", "VI"]
 
     elif(metric in _METRICS['seuclidean'].aka or
          metric == 'test_seuclidean' or metric == seuclidean):
-        kwargs_blocklist = ["p", "w", "VI"]
+        kwargs_names = ["p", "w", "VI"]
 
     elif(metric in _METRICS['mahalanobis'].aka
          or metric == 'test_mahalanobis' or metric == mahalanobis):
-        kwargs_blocklist = ["p", "w", "V"]
+        kwargs_names = ["p", "w", "V"]
 
     else:
-        kwargs_blocklist = ["p", "V", "VI"]
+        kwargs_names = ["p", "V", "VI"]
 
-    _filter_deprecated_kwargs(kwargs, kwargs_blocklist)
+    _filter_deprecated_kwargs(kwargs, kwargs_names)
 
     if callable(metric):
         mstr = getattr(metric, '__name__', 'UnknownCustomMetric')
@@ -2726,22 +2726,22 @@ def cdist(XA, XB, metric='euclidean', *args, **kwargs):
             raise ValueError("Output array must be double type.")
         dm = out
 
-    # compute blocklist for deprecated kwargs
+    # compute names for deprecated kwargs
     if(metric in _METRICS['minkowski'].aka or
        metric in _METRICS['wminkowski'].aka or
        metric in ['test_minkowski', 'test_wminkowski'] or
        metric in [minkowski, wminkowski]):
-        kwargs_blocklist = ["V", "VI"]
+        kwargs_names = ["V", "VI"]
     elif(metric in _METRICS['seuclidean'].aka or
          metric == 'test_seuclidean' or metric == seuclidean):
-        kwargs_blocklist = ["p", "w", "VI"]
+        kwargs_names = ["p", "w", "VI"]
     elif(metric in _METRICS['mahalanobis'].aka or
          metric == 'test_mahalanobis' or metric == mahalanobis):
-        kwargs_blocklist = ["p", "w", "V"]
+        kwargs_names = ["p", "w", "V"]
     else:
-        kwargs_blocklist = ["p", "V", "VI"]
+        kwargs_names = ["p", "V", "VI"]
 
-    _filter_deprecated_kwargs(kwargs, kwargs_blocklist)
+    _filter_deprecated_kwargs(kwargs, kwargs_names)
 
     if callable(metric):
 
