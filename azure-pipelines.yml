@@ -71,10 +71,10 @@ jobs:
   strategy:
     maxParallel: 4
     matrix:
-        Python36-32bit-full:
+        Python36-32bit-fast:
           PYTHON_VERSION: '3.6'
           PYTHON_ARCH: 'x86'
-          TEST_MODE: full
+          TEST_MODE: fast
           BITS: 32
         Python36-64bit-full:
           PYTHON_VERSION: '3.6'
