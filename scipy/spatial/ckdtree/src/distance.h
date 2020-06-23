@@ -54,182 +54,110 @@ typedef BaseMinkowskiDistP2<PlainDist1D> NonOptimizedMinkowskiDistP2;
  */
 
 
-#ifndef CKDTREE_BLAS_DIST
-#define CKDTREE_BLAS_DIST
+template <unsigned int n>
+struct sqeucdist_meta
+{
+    double result;
+    sqeucdist_meta(const double * CKDTREE_RESTRICT u, 
+                   const double * CKDTREE_RESTRICT v)
+    {
+        result = 0.0;
+        #pragma unroll // intel
+        #pragma GCC ivdep // gnu
+        #pragma loop (ivdep) // msvc
+        for (unsigned int i=0; i<n; i++) {
+            double d = u[i] - v[i];
+            result += d*d;
+        }
+    }
+};
 
-double
-sqeuclidean_distance_double_blas(const double * CKDTREE_RESTRICT u, 
-                                 const double * CKDTREE_RESTRICT v, 
-                                 const ckdtree_intp_t n);
+template <>
+struct sqeucdist_meta<1>
+{
+    double result;
+    sqeucdist_meta(const double * CKDTREE_RESTRICT u, 
+                   const double * CKDTREE_RESTRICT v)
+    {
+        const double d = u[0] - v[0];
+        result = d*d;
+    }
+};
 
-#endif
+template <>
+struct sqeucdist_meta<2>
+{
+    double result;
+    sqeucdist_meta(const double * CKDTREE_RESTRICT u, 
+                   const double * CKDTREE_RESTRICT v)
+    {
+        const double d[2] = {u[0] - v[0], u[1] - v[1]};
+        result = d[0] * d[0] + d[1] * d[1];
+    }
+};
 
+template <>
+struct sqeucdist_meta<3>
+{
+    double result;
+    sqeucdist_meta(const double * CKDTREE_RESTRICT u, 
+                   const double * CKDTREE_RESTRICT v)
+    {
+        const double d[3] = {u[0] - v[0], u[1] - v[1], u[2] - v[2]};
+        result = d[0] * d[0] + d[1] * d[1] + d[2] * d[2];
+    }
+};
 
-#ifndef CKDTREE_NO_VECTORS // Vectorized version
+template <>
+struct sqeucdist_meta<4>
+{
+    double result;
+    sqeucdist_meta(const double * CKDTREE_RESTRICT u, 
+                   const double * CKDTREE_RESTRICT v)
+    {
+        const double d[4] = {u[0] - v[0], u[1] - v[1], u[2] - v[2], u[3] - v[3]};
+        result = d[0] * d[0] + d[1] * d[1] + d[2] * d[2] + d[3] * d[3];
+    }
+};
 
-inline static double
+inline static double 
 sqeuclidean_distance_double(const double * CKDTREE_RESTRICT u, 
                             const double * CKDTREE_RESTRICT v, 
                             const ckdtree_intp_t n)
 {
-
-    using vec2d  = double __attribute__ ((vector_size (2*sizeof(double))));
-
-    // manually unrolled loop using GNU vector extensions
     const ckdtree_uintp_t un = static_cast<const ckdtree_uintp_t>(n);
 
     switch(un) {
-        case 0: return 0.;
-        case 1:
-        {
-            double d = u[0] - v[0];
-            return d*d;
-        }
-        case 2:
-        {
-            vec2d _u = {u[0], u[1]};
-            vec2d _v = {v[0], v[1]};
-            vec2d diff = _u - _v;
-            vec2d acc = diff * diff;
-            return acc[0] + acc[1];
-        }
-        case 3:
-        {
-            vec2d _u[2] = {{u[0], u[1]}, {u[2], 0.0}};
-            vec2d _v[2] = {{v[0], v[1]}, {v[2], 0.0}};
-            vec2d diff[2] = {_u[0] - _v[0], _u[1] - _v[1]};
-            vec2d acc = diff[0] * diff[0] + diff[1] * diff[1];
-            return acc[0] + acc[1];
-        }
-        case 4:
-        {
-            vec2d _u[2] = {{u[0], u[1]}, {u[2], u[3]}};
-            vec2d _v[2] = {{v[0], v[1]}, {v[2], v[3]}};
-            vec2d diff[2] = {_u[0] - _v[0], _u[1] - _v[1]};
-            vec2d acc = diff[0] * diff[0] + diff[1] * diff[1];
-            return acc[0] + acc[1];
-        }
-        case 5:
-        {
-            vec2d _u[2] = {{u[0], u[1]}, {u[2], u[3]}};
-            vec2d _v[2] = {{v[0], v[1]}, {v[2], v[3]}};
-            vec2d diff[2] = {_u[0] - _v[0], _u[1] - _v[1]};
-            vec2d acc = diff[0] * diff[0] + diff[1] * diff[1];
-            auto diff4 = u[4] - v[4];
-            return acc[0] + acc[1] + diff4 * diff4;
-        }
-        case 6:
-        {
-            vec2d d2[3];
-            #pragma unroll
-            for (int k = 0; k < 3; ++k) {
-                vec2d _u = { u[2*k], u[2*k + 1] };
-                vec2d _v = { v[2*k], v[2*k + 1] };
-                auto diff = _u - _v;
-                d2[k] = diff * diff;
-            }
-            vec2d acc = d2[0] + d2[1] + d2[2];
-            return acc[0] + acc[1];
-        }
-
-        default: 
-        {
-            if (CKDTREE_LIKELY(n < 64)) {
-                vec2d _u[2] = {{u[0], u[1]}, {u[2], u[3]}};
-                vec2d _v[2] = {{v[0], v[1]}, {v[2], v[3]}};
-                vec2d diff[2] = {_u[0] - _v[0], _u[1] - _v[1]};
-                vec2d acc = diff[0] * diff[0] + diff[1] * diff[1];
-                return acc[0] + acc[1] + sqeuclidean_distance_double(u+4, v+4, n-4);
-            }
-        }
-    }
-    return sqeuclidean_distance_double_blas(u, v, n);
-}
-
-#else // Scalar version when GNU vector extensions are not available
-
-
-
-inline static double
-sqeuclidean_distance_double(const double * CKDTREE_RESTRICT u, 
-                            const double * CKDTREE_RESTRICT v, 
-                            const ckdtree_intp_t n)
-{
-
-   const ckdtree_uintp_t un = static_cast<const ckdtree_uintp_t>(n);
-
-    switch(un) {
-
         case 0: return 0.0;
-        case 1:
-        {
-            const double d = u[0] - v[0];
-            return d*d;
-        }
-        case 2:
-        {
-            const double d0 = u[0] - v[0];
-            const double d1 = u[1] - v[1];
-            return (d0*d0) + (d1*d1);
-        }
-        case 3:
-        {
-            const double diff[3] = {u[0] - v[0],
-                                    u[1] - v[1],
-                                    u[2] - v[2]};
-            return (diff[0] * diff[0] +
-                    diff[1] * diff[1] +
-                    diff[2] * diff[2]);
-        }
-        case 4:
-        {
-            double d2[4];
-            #pragma unroll
-            for (int k = 0; k < 4; ++k) {
-                auto diff = u[k] - v[k];
-                d2[k] = diff * diff;
-            }
-            return (d2[0] + d2[1]) + (d2[2] + d2[3]);
-        }
-        case 5:
-        {
-            double d2[5];
-            #pragma unroll
-            for (int k = 0; k < 5; ++k) {
-                auto diff = u[k] - v[k];
-                d2[k] = diff * diff;
-            }
-            return (d2[0] + d2[1]) + (d2[2] + d2[3]) + d2[4];
-        }
-        case 6:
-        {
-            double d2[6];
-            #pragma unroll
-            for (int k = 0; k < 6; ++k) {
-                auto diff = u[k] - v[k];
-                d2[k] = diff * diff;
-            }
-            return (d2[0] + d2[1]) + (d2[2] + d2[3]) + (d2[4] + d2[5]);
-        }
-    
-        default:
-        {
-            if (CKDTREE_LIKELY(n < 50)) {
-                double d2[4];
-                #pragma unroll
-                for (int k = 0; k < 4; ++k) {
-                    auto diff = u[k] - v[k];
-                    d2[k] = diff * diff;
-                }
-                return (d2[0] + d2[1]) + (d2[2] + d2[3]) 
-                    + sqeuclidean_distance_double(u+4, v+4, n-4);
-            }
-        }
+        case 1: return sqeucdist_meta<1>(u,v).result;
+        case 2: return sqeucdist_meta<2>(u,v).result;
+        case 3: return sqeucdist_meta<3>(u,v).result;
+        case 4: return sqeucdist_meta<4>(u,v).result;
+        case 5: return sqeucdist_meta<5>(u,v).result;
+        case 6: return sqeucdist_meta<6>(u,v).result;
+        case 7: return sqeucdist_meta<7>(u,v).result;
+        case 8: return sqeucdist_meta<8>(u,v).result;
+        case 9: return sqeucdist_meta<9>(u,v).result;
+        case 10: return sqeucdist_meta<10>(u,v).result;
+        case 11: return sqeucdist_meta<11>(u,v).result;
+        case 12: return sqeucdist_meta<12>(u,v).result;
+        case 13: return sqeucdist_meta<13>(u,v).result;
+        case 14: return sqeucdist_meta<14>(u,v).result;
+        case 15: return sqeucdist_meta<15>(u,v).result;
+        case 16: return sqeucdist_meta<16>(u,v).result;
     }
-    return sqeuclidean_distance_double_blas(u, v, n);
+    double s = 0.0;
+    ckdtree_uintp_t i;
+    for (; i + 16 <= n; i += 16) s += sqeucdist_meta<16>(u+i,v+i).result;
+    for (; i + 8 <= n; i += 8) s += sqeucdist_meta<8>(u+i,v+i).result;
+    for (; i + 4 <= n; i += 4) s += sqeucdist_meta<4>(u+i,v+i).result;
+    for (; i + 2 <= n; i += 2) s += sqeucdist_meta<2>(u+i,v+i).result;
+    if (i < n) s += sqeucdist_meta<1>(u+i,v+i).result;
+    return s;
 }
 
-#endif // SCALAR
+
+
 
 
 struct MinkowskiDistP2: NonOptimizedMinkowskiDistP2 {

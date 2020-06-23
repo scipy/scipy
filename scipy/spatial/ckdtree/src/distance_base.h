@@ -9,29 +9,6 @@
 #endif
 
 
-// only enable vector support for gcc>=5.0 and clang>=5.0
-#ifndef CKDTREE_NO_VECTORS
-    #define CKDTREE_NO_VECTORS
-    #if defined(__INTEL_COMPILER)
-        // do nothing. This is necessary because this compiler also sets __GNUC__.
-    #elif defined(__clang__)
-        // AppleClang has their own version numbering
-        #ifdef __apple_build_version__
-            #if (__clang_major__ > 9) || (__clang_major__ == 9 && __clang_minor__ >= 1)
-                #undef CKDTREE_NO_VECTORS
-            #endif
-        #elif __clang_major__ >= 5
-            #undef CKDTREE_NO_VECTORS
-        #endif
-    #endif
-    #if defined(__GNUC__)
-        #if __GNUC__>=5
-            #undef CKDTREE_NO_VECTORS
-        #endif
-    #endif
-#endif
-
-
 #if !defined(__clang__) && defined(__GNUC__) && defined(__GNUC_MINOR__)
     #if __GNUC__ >= 5 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 4)
         // enable auto-vectorizer
