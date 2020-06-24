@@ -84,8 +84,7 @@ def test_wright_functional(a, b, x):
      [1.0000000000000222, 10, 1000, 2446819552249.245, 1e-11],
      [1, 100, 100000, 1.0269334596230763e+22, 1e-11],
      [1.0000000000000222, 100, 100000, 1.0269334595866202e+22, 1e-11],
-     [2, 100, 100000, 5.475089686699177e-153, 1e-11]]
-     )
+     [2, 100, 100000, 5.475089686699177e-153, 1e-11]])
 def test_wright_data_grid_failures(a, b, x, phi, accuracy):
     """Test cases of test_data that do not reach relative accuracy of 1e-11"""
     assert wright_bessel(a, b, x) == pytest.approx(phi, rel=accuracy)

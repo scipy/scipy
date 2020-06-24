@@ -27,8 +27,8 @@ def rgamma_cached(x, dps):
         return mp.rgamma(x)
 
 
-def mp_wright_bessel(a, b, x, dps=50, maxterms=1000):
-    """Compute Wright' generalized Bessel function as Series with mpmath.
+def mp_wright_bessel(a, b, x, dps=50, maxterms=2000):
+    """Compute Wright's generalized Bessel function as Series with mpmath.
     """
     with mp.workdps(dps):
         a, b, x = mp.mpf(a), mp.mpf(b), mp.mpf(x)
