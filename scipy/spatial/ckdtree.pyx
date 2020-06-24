@@ -344,7 +344,6 @@ cdef class cKDTreeNode:
         ckdtreenode           *_node
         np.ndarray            _data
         np.ndarray            _indices
-        readonly object       _subtree_indices
         readonly object       lesser
         readonly object       greater
 
@@ -353,7 +352,6 @@ cdef class cKDTreeNode:
         self.split_dim = self._node.split_dim
         self.children = self._node.children
         self.split = self._node.split
-        self._subtree_indices = None
         if self.split_dim == -1:
             self.lesser = None
             self.greater = None
@@ -381,33 +379,10 @@ cdef class cKDTreeNode:
 
     property indices:
         def __get__(cKDTreeNode self):
-            cdef: 
-                np.intp_t s0, s1, s2
-                np.intp_t *d0
-                np.intp_t *d1
-                np.intp_t *d2
-                np.ndarray i0
-                np.ndarray i2
-                np.ndarray i3
-            if self._subtree_indices is None:
-                if self.split_dim == -1:
-                    start = self._node.start_idx
-                    stop = self._node.end_idx
-                    self._subtree_indices = self._indices[start:stop]
-                else:
-                    i1 = self.lesser.indices
-                    i2 = self.greater.indices
-                    s1 = np.PyArray_DIMS(i1)[0]
-                    d1 = <np.intp_t*> np.PyArray_DATA(i1)
-                    s2 = np.PyArray_DIMS(i2)[0]
-                    d2 = <np.intp_t*> np.PyArray_DATA(i2)
-                    s0 = s1 + s2
-                    i0 = np.PyArray_SimpleNew(1, &s0, np.NPY_INTP)
-                    d0 = <np.intp_t*> np.PyArray_DATA(i0)
-                    copy(d1, d1+s1, d0)
-                    copy(d2, d2+s2, d0+s1)
-                    self._subtree_indices = i0
-            return self._subtree_indices 
+            cdef np.intp_t start, stop
+            start = self._node.start_idx
+            stop = self._node.end_idx
+            return self._indices[start:stop]
 
 
 # Main cKDTree class
