@@ -320,14 +320,11 @@ cdef class cKDTreeNode:
     children : int
         The number of data points sorted to this node.
     data_points : ndarray of float64
-        An array with the data points sorted to this node. This attribute is 
-        created dynamically on the first access and to save memory it should 
-        only be accessed in leafnodes. 
+        An array with the data points sorted to this node.
     indices : ndarray of intp
         An array with the indices of the data points sorted to this node. The
         indices refer to the position in the data set used to construct the
-        kd-tree. This attribute is created dynamically on the first access
-        and to save memory it should only be accessed in leafnodes. 
+        kd-tree.
     lesser : cKDTreeNode or None
         Subnode with the 'lesser' data points. This attribute is None for
         leafnodes.
