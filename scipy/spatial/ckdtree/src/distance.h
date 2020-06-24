@@ -61,15 +61,9 @@ struct sqeucdist_meta
     sqeucdist_meta(const double * CKDTREE_RESTRICT u, 
                    const double * CKDTREE_RESTRICT v)
     {
-        result = 0.0;
-        #pragma unroll // intel
-        #pragma GCC ivdep // gnu
-        #pragma loop (ivdep) // msvc
-        for (unsigned int i=0; i<n; i++) {
-            double d = u[i] - v[i];
-            result += d*d;
-        }
-    }
+        double d = u[0] - v[0];
+        result = d*d + sqeucdist_meta<n-1>(u+1,v+1).result;    
+    };
 };
 
 template <>
@@ -91,8 +85,9 @@ struct sqeucdist_meta<2>
     sqeucdist_meta(const double * CKDTREE_RESTRICT u, 
                    const double * CKDTREE_RESTRICT v)
     {
+                
         const double d[2] = {u[0] - v[0], u[1] - v[1]};
-        result = d[0] * d[0] + d[1] * d[1];
+        result = d[0] * d[0] + d[1] * d[1];                
     }
 };
 
@@ -102,7 +97,7 @@ struct sqeucdist_meta<3>
     double result;
     sqeucdist_meta(const double * CKDTREE_RESTRICT u, 
                    const double * CKDTREE_RESTRICT v)
-    {
+    {   
         const double d[3] = {u[0] - v[0], u[1] - v[1], u[2] - v[2]};
         result = d[0] * d[0] + d[1] * d[1] + d[2] * d[2];
     }
@@ -119,6 +114,58 @@ struct sqeucdist_meta<4>
         result = d[0] * d[0] + d[1] * d[1] + d[2] * d[2] + d[3] * d[3];
     }
 };
+
+
+template <>
+struct sqeucdist_meta<8>
+{
+    double result;
+    sqeucdist_meta(const double * CKDTREE_RESTRICT u, 
+                   const double * CKDTREE_RESTRICT v)
+    {
+        const double r[2] = {
+            sqeucdist_meta<4>(u,v).result,
+            sqeucdist_meta<4>(u+4,v+4).result
+        };
+        result = r[0] + r[1];
+    }
+};
+
+
+template <>
+struct sqeucdist_meta<12>
+{
+    double result;
+    sqeucdist_meta(const double * CKDTREE_RESTRICT u, 
+                   const double * CKDTREE_RESTRICT v)
+    {
+        const double r[3] = {
+            sqeucdist_meta<4>(u,v).result,
+            sqeucdist_meta<4>(u+4,v+4).result,
+            sqeucdist_meta<4>(u+8,v+8).result
+        };
+        result = r[0] + r[1] + r[2];
+    }
+};
+
+
+template <>
+struct sqeucdist_meta<16>
+{
+    double result;
+    sqeucdist_meta(const double * CKDTREE_RESTRICT u, 
+                   const double * CKDTREE_RESTRICT v)
+    {
+        const double r[4] = {
+            sqeucdist_meta<4>(u,v).result,
+            sqeucdist_meta<4>(u+4,v+4).result,
+            sqeucdist_meta<4>(u+8,v+8).result,
+            sqeucdist_meta<4>(u+12,v+12).result
+        };
+        result = r[0] + r[1] + r[2] + r[3];
+    }
+};
+
 
 inline static double 
 sqeuclidean_distance_double(const double * CKDTREE_RESTRICT u, 
