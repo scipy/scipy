@@ -285,6 +285,10 @@ def _validate_mahalanobis_kwargs(X, m, n, **kwargs):
 def _validate_minkowski_kwargs(X, m, n, **kwargs):
     if 'p' not in kwargs:
         kwargs['p'] = 2.
+    else:
+        if kwargs['p'] < 1:
+            raise ValueError("p must be at least 1")
+
     return kwargs
 
 
@@ -508,9 +512,11 @@ def minkowski(u, v, p=2, w=None):
         w = _validate_weights(w)
         if p == 1:
             root_w = w
-        if p == 2:
+        elif p == 2:
             # better precision and speed
             root_w = np.sqrt(w)
+        elif p == np.inf:
+            root_w = (w != 0)
         else:
             root_w = np.power(w, 1/p)
         u_v = root_w * u_v
