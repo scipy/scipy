@@ -812,6 +812,13 @@ class TestDendrogram(object):
         Z = linkage(hierarchy_test_data.ytdist, 'single')
         assert_raises(ValueError, dendrogram, Z, orientation="foo")
 
+    def test_can_take_label_as_array_or_list(self):
+        Z = linkage(hierarchy_test_data.ytdist, 'single')
+        labels = np.array([1, 3, 2, 6, 4, 5])
+        result1 = dendrogram(Z, labels=labels, no_plot=True)
+        result2 = dendrogram(Z, labels=labels.tolist(), no_plot=True)
+        assert result1 == result2
+
     @pytest.mark.skipif(not have_matplotlib, reason="no matplotlib")
     def test_valid_label_size(self):
         link = np.array([
