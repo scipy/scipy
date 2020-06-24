@@ -1,6 +1,5 @@
 #include "distance_base.h"
 
-
 struct PlainDist1D {
     static inline const double side_distance_from_min_max(
         const ckdtree * tree, const double x,
@@ -29,17 +28,18 @@ struct PlainDist1D {
         /* Compute the minimum/maximum distance along dimension k between points in
          * two hyperrectangles.
          */
-        *min = ckdtree_fmax(0., fmax(rect1.mins()[k] - rect2.maxes()[k],
-                              rect2.mins()[k] - rect1.maxes()[k]));
-        *max = ckdtree_fmax(rect1.maxes()[k] - rect2.mins()[k],
-                              rect2.maxes()[k] - rect1.mins()[k]);
+        *min = std::fmax(0., std::fmax(rect1.mins()[k] - rect2.maxes()[k],
+                                       rect2.mins()[k] - rect1.maxes()[k]));
+
+        *max =  std::fmax(rect1.maxes()[k] - rect2.mins()[k],
+                          rect2.maxes()[k] - rect1.mins()[k]);
     }
 
     static inline double
     point_point(const ckdtree * tree,
                const double *x, const double *y,
                  const ckdtree_intp_t k) {
-        return ckdtree_fabs(x[k] - y[k]);
+        return std::fabs(x[k] - y[k]);
     }
 };
 
@@ -52,34 +52,159 @@ typedef BaseMinkowskiDistP2<PlainDist1D> NonOptimizedMinkowskiDistP2;
  * Measuring distances
  * ===================
  */
-inline double
-sqeuclidean_distance_double(const double *u, const double *v, ckdtree_intp_t n)
+
+
+template <unsigned int n>
+struct sqeucdist_meta
 {
-    double s;
-    ckdtree_intp_t i;
-    // manually unrolled loop, might be vectorized
-    double acc[4] = {0., 0., 0., 0.};
-    for (i = 0; i < n/4; i += 4) {
-        double _u[4] = {u[i], u[i + 1], u[i + 2], u[i + 3]};
-        double _v[4] = {v[i], v[i + 1], v[i + 2], v[i + 3]};
-        double diff[4] = {_u[0] - _v[0],
-                               _u[1] - _v[1],
-                               _u[2] - _v[2],
-                               _u[3] - _v[3]};
-        acc[0] += diff[0] * diff[0];
-        acc[1] += diff[1] * diff[1];
-        acc[2] += diff[2] * diff[2];
-        acc[3] += diff[3] * diff[3];
+    double result;
+    sqeucdist_meta(const double * CKDTREE_RESTRICT u, 
+                   const double * CKDTREE_RESTRICT v)
+    {
+        double d = u[0] - v[0];
+        result = d*d + sqeucdist_meta<n-1>(u+1,v+1).result;    
+    };
+};
+
+template <>
+struct sqeucdist_meta<1>
+{
+    double result;
+    sqeucdist_meta(const double * CKDTREE_RESTRICT u, 
+                   const double * CKDTREE_RESTRICT v)
+    {
+        const double d = u[0] - v[0];
+        result = d*d;
     }
-    s = acc[0] + acc[1] + acc[2] + acc[3];
-    if (i < n) {
-        for(; i<n; ++i) {
-            double d = u[i] - v[i];
-            s += d * d;
-        }
+};
+
+template <>
+struct sqeucdist_meta<2>
+{
+    double result;
+    sqeucdist_meta(const double * CKDTREE_RESTRICT u, 
+                   const double * CKDTREE_RESTRICT v)
+    {
+                
+        const double d[2] = {u[0] - v[0], u[1] - v[1]};
+        result = d[0] * d[0] + d[1] * d[1];                
     }
+};
+
+template <>
+struct sqeucdist_meta<3>
+{
+    double result;
+    sqeucdist_meta(const double * CKDTREE_RESTRICT u, 
+                   const double * CKDTREE_RESTRICT v)
+    {   
+        const double d[3] = {u[0] - v[0], u[1] - v[1], u[2] - v[2]};
+        result = d[0] * d[0] + d[1] * d[1] + d[2] * d[2];
+    }
+};
+
+template <>
+struct sqeucdist_meta<4>
+{
+    double result;
+    sqeucdist_meta(const double * CKDTREE_RESTRICT u, 
+                   const double * CKDTREE_RESTRICT v)
+    {
+        const double d[4] = {u[0] - v[0], u[1] - v[1], u[2] - v[2], u[3] - v[3]};
+        result = d[0] * d[0] + d[1] * d[1] + d[2] * d[2] + d[3] * d[3];
+    }
+};
+
+
+template <>
+struct sqeucdist_meta<8>
+{
+    double result;
+    sqeucdist_meta(const double * CKDTREE_RESTRICT u, 
+                   const double * CKDTREE_RESTRICT v)
+    {
+        const double r[2] = {
+            sqeucdist_meta<4>(u,v).result,
+            sqeucdist_meta<4>(u+4,v+4).result
+        };
+        result = r[0] + r[1];
+    }
+};
+
+
+template <>
+struct sqeucdist_meta<12>
+{
+    double result;
+    sqeucdist_meta(const double * CKDTREE_RESTRICT u, 
+                   const double * CKDTREE_RESTRICT v)
+    {
+        const double r[3] = {
+            sqeucdist_meta<4>(u,v).result,
+            sqeucdist_meta<4>(u+4,v+4).result,
+            sqeucdist_meta<4>(u+8,v+8).result
+        };
+        result = r[0] + r[1] + r[2];
+    }
+};
+
+
+template <>
+struct sqeucdist_meta<16>
+{
+    double result;
+    sqeucdist_meta(const double * CKDTREE_RESTRICT u, 
+                   const double * CKDTREE_RESTRICT v)
+    {
+        const double r[4] = {
+            sqeucdist_meta<4>(u,v).result,
+            sqeucdist_meta<4>(u+4,v+4).result,
+            sqeucdist_meta<4>(u+8,v+8).result,
+            sqeucdist_meta<4>(u+12,v+12).result
+        };
+        result = r[0] + r[1] + r[2] + r[3];
+    }
+};
+
+
+inline static double 
+sqeuclidean_distance_double(const double * CKDTREE_RESTRICT u, 
+                            const double * CKDTREE_RESTRICT v, 
+                            const ckdtree_intp_t n)
+{
+    const ckdtree_uintp_t un = static_cast<const ckdtree_uintp_t>(n);
+
+    switch(un) {
+        case 0: return 0.0;
+        case 1: return sqeucdist_meta<1>(u,v).result;
+        case 2: return sqeucdist_meta<2>(u,v).result;
+        case 3: return sqeucdist_meta<3>(u,v).result;
+        case 4: return sqeucdist_meta<4>(u,v).result;
+        case 5: return sqeucdist_meta<5>(u,v).result;
+        case 6: return sqeucdist_meta<6>(u,v).result;
+        case 7: return sqeucdist_meta<7>(u,v).result;
+        case 8: return sqeucdist_meta<8>(u,v).result;
+        case 9: return sqeucdist_meta<9>(u,v).result;
+        case 10: return sqeucdist_meta<10>(u,v).result;
+        case 11: return sqeucdist_meta<11>(u,v).result;
+        case 12: return sqeucdist_meta<12>(u,v).result;
+        case 13: return sqeucdist_meta<13>(u,v).result;
+        case 14: return sqeucdist_meta<14>(u,v).result;
+        case 15: return sqeucdist_meta<15>(u,v).result;
+        case 16: return sqeucdist_meta<16>(u,v).result;
+    }
+    double s = 0.0;
+    ckdtree_uintp_t i;
+    for (; i + 16 <= n; i += 16) s += sqeucdist_meta<16>(u+i,v+i).result;
+    for (; i + 8 <= n; i += 8) s += sqeucdist_meta<8>(u+i,v+i).result;
+    for (; i + 4 <= n; i += 4) s += sqeucdist_meta<4>(u+i,v+i).result;
+    for (; i + 2 <= n; i += 2) s += sqeucdist_meta<2>(u+i,v+i).result;
+    if (i < n) s += sqeucdist_meta<1>(u+i,v+i).result;
     return s;
 }
+
+
+
 
 
 struct MinkowskiDistP2: NonOptimizedMinkowskiDistP2 {
@@ -122,8 +247,8 @@ struct BoxDist1D {
             /* \/     */
             if(max <= 0 || min >= 0) {
                 /* do not pass though 0 */
-                min = ckdtree_fabs(min);
-                max = ckdtree_fabs(max);
+                min = std::fabs(min);
+                max = std::fabs(max);
                 if(min < max) {
                     *realmin = min;
                     *realmax = max;
@@ -132,9 +257,9 @@ struct BoxDist1D {
                     *realmax = min;
                 }
             } else {
-                min = ckdtree_fabs(min);
-                max = ckdtree_fabs(max);
-                *realmax = ckdtree_fmax(max, min);
+                min = std::fabs(min);
+                max = std::fabs(max);
+                *realmax = std::fmax(max, min);
                 *realmin = 0;
             }
             /* done with non-periodic dimension */
@@ -142,8 +267,8 @@ struct BoxDist1D {
         }
         if(max <= 0 || min >= 0) {
             /* do not pass through 0 */
-            min = ckdtree_fabs(min);
-            max = ckdtree_fabs(max);
+            min = std::fabs(min);
+            max = std::fabs(max);
             if(min > max) {
                 double t = min;
                 min = max;
@@ -160,7 +285,7 @@ struct BoxDist1D {
             } else {
                 /* min below, max above */
                 *realmax = half;
-                *realmin = ckdtree_fmin(min, full - max);
+                *realmin = std::fmin(min, full - max);
             }
         } else {
             /* pass though 0 */
@@ -192,7 +317,7 @@ struct BoxDist1D {
     {
         double r1;
         r1 = wrap_distance(x[k] - y[k], tree->raw_boxsize_data[k + tree->m], tree->raw_boxsize_data[k]);
-        r1 = ckdtree_fabs(r1);
+        r1 = std::fabs(r1);
         return r1;
     }
 
@@ -236,8 +361,8 @@ struct BoxDist1D {
         }
 
         /* no */
-        tmax = ckdtree_fabs(tmax);
-        tmin = ckdtree_fabs(tmin);
+        tmax = std::fabs(tmax);
+        tmin = std::fabs(tmin);
 
         /* make tmin the closer edge */
         if(tmin > tmax) { t = tmin; tmin = tmax; tmax = t; }

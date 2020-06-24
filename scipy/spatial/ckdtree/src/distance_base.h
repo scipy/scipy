@@ -1,3 +1,27 @@
+
+
+#if defined(__GNUC__)
+#define CKDTREE_RESTRICT __restrict__
+#elif defined(_MSC_VER)
+#define CKDTREE_RESTRICT __restrict
+#else
+#define CKDTREE_RESTRICT
+#endif
+
+
+#if !defined(__clang__) && defined(__GNUC__) && defined(__GNUC_MINOR__)
+    #if __GNUC__ >= 5 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 4)
+        // enable auto-vectorizer
+        #pragma GCC optimize("tree-vectorize")
+        // float associativity required to vectorize reductions
+        #pragma GCC optimize("unsafe-math-optimizations")
+        // maybe 5% gain, manual unrolling with more accumulators would be better
+        #pragma GCC optimize("unroll-loops")
+    #endif
+#endif
+
+
+
 template <typename Dist1D>
 struct BaseMinkowskiDistPp {
     /* 1-d pieces
@@ -150,8 +174,8 @@ struct BaseMinkowskiDistPinf : public BaseMinkowskiDistPp<Dist1D> {
 
             Dist1D::interval_interval(tree, rect1, rect2, i, &min_, &max_);
 
-            *min = ckdtree_fmax(*min, min_);
-            *max = ckdtree_fmax(*max, max_);
+            *min = std::fmax(*min, min_);
+            *max = std::fmax(*max, max_);
         }
     }
 
@@ -165,7 +189,7 @@ struct BaseMinkowskiDistPinf : public BaseMinkowskiDistPp<Dist1D> {
         double r;
         r = 0;
         for (i=0; i<k; ++i) {
-            r = ckdtree_fmax(r,Dist1D::point_point(tree, x, y, i));
+            r = std::fmax(r,Dist1D::point_point(tree, x, y, i));
             if (r>upperbound)
                 return r;
         }
