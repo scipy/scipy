@@ -623,7 +623,7 @@ cdef inline double wright_bessel_scalar(double a, double b, double x) nogil:
         sf_error.error("wright_bessel", sf_error.OVERFLOW, NULL)
         return nan # or 0
     elif a >= rgamma_zero:
-        # use only first term k=0 of series
+        # Use only first term k=0 of Taylor series.
         return rgamma(b)
     elif x == 0:
         return rgamma(b)
@@ -633,8 +633,8 @@ cdef inline double wright_bessel_scalar(double a, double b, double x) nogil:
         or (a <= 1e-4 and x <= 10) \
         or (a <= 1e-5 and x <= 100) \
         or (a <= 1e-6 and x < exp_inf):
-        # series expansion in 'a' to order=order => precision <~ 1e-13
-        # if beta also small => precision <~ 2e-14
+        # Taylor Series expansion in 'a=0' to order=order => precision <~ 1e-13
+        # If beta is also small => precision <~ 2e-14.
         # max order = 4
         # a <= 1e-5 and x <= 1    : order = 2
         # a <= 1e-4 and x <= 1    : order = 3
@@ -673,7 +673,7 @@ cdef inline double wright_bessel_scalar(double a, double b, double x) nogil:
                 order = int(fmin(6 * log10(x) - 36, 100))
 
         return _wb_large_a(a, b, x, order)
-    elif (pow(a * x, 1 / (1. + a)) >= 15 + b * b / (10 * (1 + a))):
+    elif (pow(a * x, 1 / (1. + a)) >= 14 + b * b / (10 * (1 + a))):
         # asymptotic expansion in Z = (a*x)^(1/(1+a)) up to 8th term 1/Z^8
         # for 1/Z^k, the highest term in b is: b^(2*k) * a0 / (2^k k! (1+a)^k)
         # as a0 is a common factor to all orders, this explains the domain

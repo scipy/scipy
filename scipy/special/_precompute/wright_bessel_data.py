@@ -49,7 +49,8 @@ def main():
     a_range = np.array([eps,
                         1e-4 * (1 - eps), 1e-4, 1e-4 * (1 + eps),
                         1e-3 * (1 - eps), 1e-3, 1e-3 * (1 + eps),
-                        1, 2, 4.999, 5, 10])
+                        1 * (1 - eps), 1, 1 * (1 + eps),
+                        2, 4.999, 5, 10])
     b_range = np.array([0, eps, 1e-10, 1e-5, 0.1, 1, 2, 10, 100])
     x_range = np.array([0, eps, 1 - eps, 1, 1 + eps,
                         1.5,
@@ -61,6 +62,7 @@ def main():
                         1e3, 1e5, 1e10, 1e20])
 
     a_range, b_range, x_range = np.meshgrid(a_range, b_range, x_range)
+
     # filter out some values, especially too large x
     bool_filter = ~((a_range < 5e-3) & (x_range >= exp_inf))
     bool_filter = bool_filter & ~((a_range < 0.2) & (x_range > exp_inf))
@@ -84,6 +86,15 @@ def main():
     bool_filter = bool_filter & ~((a_range < 6.2) & (x_range > 1e18))
     bool_filter = bool_filter & ~((a_range < 6.5) & (x_range > 1e19))
     bool_filter = bool_filter & ~((a_range < 6.9) & (x_range > 1e20))
+
+    # filter out known values that do not meet the required numerical accuracy
+    # see test test_wright_data_grid_failures
+    bool_filter = bool_filter & ~((np.abs(a_range - 1) <= 1e-3)
+                                  & (b_range == 10) & (x_range >= 500))
+    bool_filter = bool_filter & ~((a_range == 1) & (b_range == 100)
+                                  & (x_range >= 100000))
+    bool_filter = bool_filter & ~((a_range >= 1) & (a_range <= 2)
+                                  & (b_range == 100) & (x_range >= 100000))
 
     # and flatten
     a_range = a_range[bool_filter].flatten()
