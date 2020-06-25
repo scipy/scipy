@@ -812,7 +812,7 @@ class TestDendrogram(object):
         Z = linkage(hierarchy_test_data.ytdist, 'single')
         assert_raises(ValueError, dendrogram, Z, orientation="foo")
 
-    def test_can_take_label_as_array_or_list(self):
+    def test_labels_as_array_or_list(self):
         Z = linkage(hierarchy_test_data.ytdist, 'single')
         labels = np.array([1, 3, 2, 6, 4, 5])
         result1 = dendrogram(Z, labels=labels, no_plot=True)
@@ -831,6 +831,12 @@ class TestDendrogram(object):
             dendrogram(link, labels=list(range(100)))
         assert "Dimensions of Z and labels must be consistent."\
                in str(exc_info.value)
+
+        with pytest.raises(
+                ValueError,
+                match="Dimensions of Z and labels must be consistent."):
+            dendrogram(link, labels=[])
+
         plt.close()
 
     @pytest.mark.skipif(not have_matplotlib, reason="no matplotlib")
