@@ -813,6 +813,7 @@ class TestDendrogram(object):
         assert_raises(ValueError, dendrogram, Z, orientation="foo")
 
     def test_labels_as_array_or_list(self):
+        # test for gh-12418
         Z = linkage(hierarchy_test_data.ytdist, 'single')
         labels = np.array([1, 3, 2, 6, 4, 5])
         result1 = dendrogram(Z, labels=labels, no_plot=True)
