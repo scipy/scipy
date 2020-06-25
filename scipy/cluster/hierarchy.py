@@ -3274,7 +3274,7 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
         raise ValueError("orientation must be one of 'top', 'left', "
                          "'bottom', or 'right'")
 
-    if labels and Z.shape[0] + 1 != len(labels):
+    if labels is not None and Z.shape[0] + 1 != len(labels):
         raise ValueError("Dimensions of Z and labels must be consistent.")
 
     is_valid_linkage(Z, throw=True, name='Z')
