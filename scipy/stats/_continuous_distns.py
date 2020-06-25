@@ -3749,7 +3749,7 @@ class geninvgauss_gen(rv_continuous):
                 it.iternext()
 
         if size == ():
-            out = out[()]
+            out = out.item()
         return out
 
     def _rvs_scalar(self, p, b, numsamples, random_state):
