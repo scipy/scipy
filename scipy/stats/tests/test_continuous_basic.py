@@ -188,6 +188,23 @@ def test_cont_basic(distname, arg):
             check_fit_args_fix(distfn, arg, rvs[0:200])
 
 
+@pytest.mark.parametrize('distname,arg', cases_test_cont_basic())
+def test_rvs_scalar(distname, arg):
+    # rvs should return a scalar when given scalar arguments (gh-12428)
+    try:
+        distfn = getattr(stats, distname)
+    except TypeError:
+        distfn = distname
+        distname = 'rv_histogram_instance'
+
+    with npt.suppress_warnings() as sup:
+        sup.filter(category=DeprecationWarning, message=".*frechet_")
+        rvs = distfn.rvs(*arg)
+        assert np.isscalar(distfn.rvs(*arg))
+        assert np.isscalar(distfn.rvs(*arg, size=()))
+        assert np.isscalar(distfn.rvs(*arg, size=None))
+
+
 def test_levy_stable_random_state_property():
     # levy_stable only implements rvs(), so it is skipped in the
     # main loop in test_cont_basic(). Here we apply just the test
@@ -644,3 +661,4 @@ def test_methods_with_lists(method, distname, args):
         npt.assert_allclose(result,
                             [f(*v) for v in zip(x, *shape2, loc, scale)],
                             rtol=1e-15, atol=1e-15)
+

@@ -7686,7 +7686,7 @@ class truncnorm_gen(rv_continuous):
                 it.iternext()
 
         if size == ():
-            out = out[()]
+            out = out.item()
         return out
 
     def _rvs_scalar(self, a, b, numsamples=None, random_state=None):
