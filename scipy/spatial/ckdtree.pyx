@@ -11,7 +11,6 @@ import scipy.sparse
 
 cimport numpy as np
 from numpy.math cimport INFINITY
-np.import_array()
 
 from cpython.mem cimport PyMem_Malloc, PyMem_Realloc, PyMem_Free
 from libcpp.vector cimport vector
