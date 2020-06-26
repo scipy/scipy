@@ -704,6 +704,9 @@ def read(filename, mmap=False, int_form='lj'):
     else:
         fid = open(filename, 'rb')
 
+    if mmap and int_form != 'lj':
+        raise ValueError('mmap must lj')
+
     try:
         file_size, is_big_endian = _read_riff_chunk(fid)
         fmt_chunk_received = False
@@ -746,6 +749,26 @@ def read(filename, mmap=False, int_form='lj'):
                     raise ValueError("No fmt chunk before data")
                 data = _read_data_chunk(fid, format_tag, channels, bit_depth,
                                         is_big_endian, block_align, mmap)
+                if format_tag == WAVE_FORMAT.IEEE_FLOAT:
+                    continue
+                if int_form == 'lj':
+                    pass
+                elif int_form == 'rj':
+                    if bit_depth <= 8:
+                        data = (data - 128).view(numpy.int8)
+                    data = data >> (data.itemsize*8 - bit_depth)
+                elif int_form == 'fp':
+                    if bit_depth <= 8:
+                        data = (data - 128).view(numpy.int8)
+                    data = data >> (data.itemsize*8 - bit_depth)
+                    data = data / (2**(bit_depth - 1))
+                elif int_form == 'fs':
+                    if bit_depth <= 8:
+                        data = (data - 128).view(numpy.int8)
+                    data = data >> (data.itemsize*8 - bit_depth)
+                    data = data / (2**(bit_depth - 1) - 1)
+                else:
+                    raise ValueError('int_form not understood')
             elif chunk_id == b'LIST':
                 # Someday this could be handled properly but for now skip it
                 _skip_unknown_chunk(fid, is_big_endian)
