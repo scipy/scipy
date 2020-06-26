@@ -513,6 +513,21 @@ All functions
    cpteqr
    zpteqr
 
+   spptrf
+   dpptrf
+   cpptrf
+   zpptrf
+
+   spptrs
+   dpptrs
+   cpptrs
+   zpptrs
+
+   sppsv
+   dppsv
+   cppsv
+   zppsv
+
    crot
    zrot
 
