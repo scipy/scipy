@@ -538,7 +538,7 @@ def _handle_pad_byte(fid, size):
         fid.seek(1, 1)
 
 
-def read(filename, mmap=False):
+def read(filename, mmap=False, int_form='lj'):
     """
     Open a WAV file.
 
@@ -553,6 +553,18 @@ def read(filename, mmap=False):
         with some bit depths; see Notes.  Only to be used on real files.
 
         .. versionadded:: 0.12.0
+    int_form : {'lj', 'rj', 'fp', 'fs'}
+        The format of the returned data for integer PCM files.  (Float files
+        are always returned in their native type.)  See Notes for details on
+        each format.
+
+        - 'lj' is the native left-justified integer format of the WAV itself.
+          This is the only form compatible with mmap.
+        - 'rj' is right-justified signed integer format.
+        - 'fp' is float format, normalized with fixed-point convention
+          to [-1.0, +1.0).
+        - 'fs' is float format, normalized with full-scale convention
+          from +1.0 to slightly less than -1.0.
 
     Returns
     -------
@@ -567,21 +579,14 @@ def read(filename, mmap=False):
 
     Notes
     -----
-    Common data types: [1]_
-
-    =====================  ===========  ===========  =============
-         WAV format            Min          Max       NumPy dtype
-    =====================  ===========  ===========  =============
-    32-bit floating-point  -1.0         +1.0         float32
-    32-bit integer PCM     -2147483648  +2147483647  int32
-    24-bit integer PCM     -2147483648  +2147483392  int32
-    16-bit integer PCM     -32768       +32767       int16
-    8-bit integer PCM      0            255          uint8
-    =====================  ===========  ===========  =============
-
     WAV files can specify arbitrary bit depth, and this function supports
-    reading any integer PCM depth from 1 to 64 bits.  Data is returned in the
-    smallest compatible numpy int type, in left-justified format.  8-bit and
+    reading any integer PCM depth from 1 to 64 bits.
+
+    Non-linear PCM (mu-law, A-law) is not supported.
+
+    **Left-justified format**
+
+    Data is returned in the smallest compatible numpy int type.  8-bit and
     lower is unsigned, while 9-bit and higher is signed.
 
     For example, 24-bit data will be stored as int32, with the MSB of the
@@ -596,7 +601,54 @@ def read(filename, mmap=False):
     IEEE float PCM in 32- or 64-bit format is supported, with or without mmap.
     Values exceeding [-1, +1] are not clipped.
 
-    Non-linear PCM (mu-law, A-law) is not supported.
+    Common data types: [1]_
+
+    =====================  ===========  ===========  =============
+         WAV format            Min          Max       NumPy dtype
+    =====================  ===========  ===========  =============
+    32-bit floating-point  -1.0         +1.0         float32
+    32-bit integer PCM     -2147483648  +2147483647  int32
+    24-bit integer PCM     -2147483648  +2147483392  int32
+    16-bit integer PCM     -32768       +32767       int16
+    8-bit integer PCM      0            255          uint8
+    =====================  ===========  ===========  =============
+
+    **Right-justified format**
+
+    Data is returned in the smallest compatible numpy int type, and is always
+    signed.
+
+    For example, 24-bit data will be stored as int32, with the LSB of the
+    24-bit data stored at the LSB of the int32, and the MSB as 0x00 or 0xff,
+    depending on sign.  (If a file actually contains data past its specified
+    bit depth, those bits will be discarded during the shift. [2]_)
+
+    Examples:
+
+    =====================  ===========  ===========  =============
+         WAV format            Min          Max       NumPy dtype
+    =====================  ===========  ===========  =============
+    32-bit integer PCM     -2147483648  +2147483647  int32
+    24-bit integer PCM     -8388608     +8388607     int32
+    16-bit integer PCM     -32768       +32767       int16
+    12-bit integer PCM     -2048        +2047        int16
+    8-bit integer PCM      -128         +127         int8
+    =====================  ===========  ===========  =============
+
+    **Fixed-point format**
+    This converts the integer values to float, dividing by 2**(N-1), which
+    interprets them as fixed-point numbers with the binary point
+    to the right of the MSbit, so it can reach -1.0 but cannot reach +1.0.
+    [3]_ [4]_
+
+    An 8-bit file would reach from -1.0 to 0.992 (127/128), for example.
+
+    **Full-scale format**
+    This converts the integer values to float, dividing by 2**(N-1) - 1, using
+    the convention that full-scale is defined by the highest positive
+    code. [5]_ [6]_
+
+    An 8-bit file would reach from -1.008 (-128/127) to +1.0, for example.
 
     References
     ----------
@@ -606,6 +658,12 @@ def read(filename, mmap=False):
        http://www.tactilemedia.com/info/MCI_Control_Info.html
     .. [2] Adobe Systems Incorporated, "Adobe Audition 3 User Guide", section
        "Audio file formats: 24-bit Packed Int (type 1, 20-bit)", 2007
+    .. [3] https://source.android.com/devices/audio/data_formats
+    .. [4] Universal Serial Bus Device Class Definition for Audio Data Formats,
+       Release 3.0, 2016, Section 2.3.1.6.1 "PCM Format"
+       https://www.usb.org/document-library/usb-audio-devices-rev-30-and-adopters-agreement
+    .. [5] AES17-1998 (r2009)
+    .. [6] IEC 61606-3:2008
 
     Examples
     --------
