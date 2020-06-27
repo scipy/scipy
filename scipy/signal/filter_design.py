@@ -16,6 +16,7 @@ from numpy.polynomial.polynomial import polyvalfromroots
 from scipy import special, optimize, fft as sp_fft
 from scipy.special import comb
 from scipy._lib._util import float_factorial
+from scipy.optimize import root_scalar
 
 
 __all__ = ['findfreqs', 'freqs', 'freqz', 'tf2zpk', 'zpk2tf', 'normalize',
@@ -4138,10 +4139,10 @@ def ellipord(wp, ws, gpass, gstop, analog=False, fs=None):
 
     GSTOP = 10 ** (0.1 * gstop)
     GPASS = 10 ** (0.1 * gpass)
-    arg1 = sqrt((GPASS - 1.0) / (GSTOP - 1.0))
+    arg1_sq = (GPASS - 1.0) / (GSTOP - 1.0)
     arg0 = 1.0 / nat
-    d0 = special.ellipk([arg0 ** 2, 1 - arg0 ** 2])
-    d1 = special.ellipk([arg1 ** 2, 1 - arg1 ** 2])
+    d0 = special.ellipk(arg0 ** 2), special.ellipkm1(arg0 ** 2)
+    d1 = special.ellipk(arg1_sq), special.ellipkm1(arg1_sq)
     ord = int(ceil(d0[0] * d1[1] / (d0[1] * d1[0])))
 
     if not analog:
@@ -4260,27 +4261,72 @@ def cheb2ap(N, rs):
 
 EPSILON = 2e-16
 
-
-def _vratio(u, ineps, mp):
-    [s, c, d, phi] = special.ellipj(u, mp)
-    ret = abs(ineps - s / c)
-    return ret
+# tolerance for the inverse function solvers used in ellipap
+_ELLIP_TOL = 1e-8
 
 
-def _kratio(m, k_ratio):
-    m = float(m)
-    if m < 0:
-        m = 0.0
-    if m > 1:
-        m = 1.0
-    if abs(m) > EPSILON and (abs(m) + EPSILON) < 1:
-        k = special.ellipk([m, 1 - m])
-        r = k[0] / k[1] - k_ratio
-    elif abs(m) > EPSILON:
-        r = -k_ratio
-    else:
-        r = 1e20
-    return abs(r)
+def _f_vratio(u, ineps, mp):
+    """Function to solve in _solve_vratio"""
+    s, c = special.ellipj(u, mp)[0:2]
+    return c * ineps - s
+
+
+def _solve_vratio(ineps, m):
+    """Solve ineps = sn(u, 1 - m)/cn(u, 1 - m) for u
+    Assumes ineps > 0.
+    sc is periodic,  with period ellipk(1-m); returns root in [0, ellipk(1-m)]
+    """
+    # sn(0, 1-m) is 0, and cn(0, 1-m) is 1, while
+    # sn(ellipk(1-m), 1-m) is 1, and cn(ellipk(1-m), 1-m) is 0
+    # thus:
+    #  _f_vratio(lo) = ineps > 0
+    #  _f_vratio(hi) = -1 < 0
+    lo = 0
+    hi = special.ellipkm1(m)
+
+    res = root_scalar(_f_vratio,
+                      args=(ineps, 1 - m),
+                      bracket=[lo, hi],
+                      xtol=_ELLIP_TOL,
+                      rtol=_ELLIP_TOL,
+                      maxiter=1000)
+
+    if not res.converged:
+        errmsg = f"solving for ineps={ineps}, m={m} failed to converge"
+        raise ValueError(errmsg)
+
+    return res.root
+
+
+def _f_kratio(m, krat):
+    """Function to solve in _solve_kratio"""
+    m = np.clip(m, 0, 1)
+    return special.ellipk(m) / special.ellipkm1(m) - krat
+
+
+def _solve_kratio(krat):
+    """Solve for m in krat = ellipk(m) / ellipk(1-m)"""
+    # ellipkm1(0) is inf, so move one step up
+    lo = np.finfo(np.float64).tiny
+    # ellipk(1) is inf, so move one step down
+    hi = np.nextafter(1, -np.inf)
+    klo = _f_kratio(lo, 0)
+    khi = _f_kratio(hi, 0)
+    if not klo <= krat <= khi:
+        errmsg = f"can't solve for krat={krat} outside interval [{klo},{khi}]"
+        raise ValueError(errmsg)
+
+    res = root_scalar(_f_kratio,
+                      args=(krat,),
+                      bracket=[lo, hi],
+                      xtol=_ELLIP_TOL,
+                      rtol=_ELLIP_TOL,
+                      maxiter=1000)
+
+    if not res.converged:
+        raise ValueError(f"solving for krat={krat} failed to converge")
+
+    return res.root
 
 
 def ellipap(N, rp, rs):
@@ -4314,25 +4360,17 @@ def ellipap(N, rp, rs):
         z = []
         return asarray(z), asarray(p), k
 
-    eps = numpy.sqrt(10 ** (0.1 * rp) - 1)
-    ck1 = eps / numpy.sqrt(10 ** (0.1 * rs) - 1)
-    ck1p = numpy.sqrt(1 - ck1 * ck1)
-    if ck1p == 1:
+    eps_sq = 10 ** (0.1 * rp) - 1
+    eps = np.sqrt(eps_sq)
+    ck1_sq = eps_sq / (10 ** (0.1 * rs) - 1)
+    if ck1_sq == 0:
         raise ValueError("Cannot design a filter with given rp and rs"
                          " specifications.")
 
-    val = special.ellipk([ck1 * ck1, ck1p * ck1p])
-    if abs(1 - ck1p * ck1p) < EPSILON:
-        krat = 0
-    else:
-        krat = N * val[0] / val[1]
+    val = special.ellipk(ck1_sq), special.ellipkm1(ck1_sq)
+    krat = N * val[0] / val[1]
 
-    m = optimize.fmin(_kratio, [0.5], args=(krat,), maxfun=250, maxiter=250,
-                      disp=0)
-    if m < 0 or m > 1:
-        m = optimize.fminbound(_kratio, 0, 1, args=(krat,), maxfun=250,
-                               disp=0)
-
+    m = _solve_kratio(krat)
     capk = special.ellipk(m)
 
     j = numpy.arange(1 - N % 2, N, 2)
@@ -4344,8 +4382,7 @@ def ellipap(N, rp, rs):
     z = 1j * z
     z = numpy.concatenate((z, conjugate(z)))
 
-    r = optimize.fmin(_vratio, special.ellipk(m), args=(1. / eps, ck1p * ck1p),
-                      maxfun=250, maxiter=250, disp=0)
+    r = _solve_vratio(1. / eps, ck1_sq)
     v0 = capk * r / (N * val[0])
 
     [sv, cv, dv, phi] = special.ellipj(v0, 1 - m)
@@ -4362,7 +4399,7 @@ def ellipap(N, rp, rs):
 
     k = (numpy.prod(-p, axis=0) / numpy.prod(-z, axis=0)).real
     if N % 2 == 0:
-        k = k / numpy.sqrt((1 + eps * eps))
+        k = k / numpy.sqrt((1 + eps_sq))
 
     return z, p, k
 
