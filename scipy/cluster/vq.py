@@ -64,8 +64,6 @@ human face, more flesh-tone colors would be represented in the
 code book.
 
 """
-from __future__ import division, print_function, absolute_import
-
 import warnings
 import numpy as np
 from collections import deque
@@ -556,12 +554,10 @@ def _kpp(data, k):
 
     for i in range(k):
         if i == 0:
-            init[i, :] = data[np.random.randint(dims)]
+            init[i, :] = data[np.random.randint(data.shape[0])]
 
         else:
-            D2 = np.array([min(
-                            [np.inner(init[j]-x, init[j]-x) for j in range(i)]
-                            ) for x in data])
+            D2 = cdist(init[:i,:], data, metric='sqeuclidean').min(axis=0)
             probs = D2/D2.sum()
             cumprobs = probs.cumsum()
             r = np.random.rand()
@@ -708,8 +704,8 @@ def kmeans2(data, k, iter=10, thresh=1e-5, minit='random',
                          "must be a positive integer." % iter)
     try:
         miss_meth = _valid_miss_meth[missing]
-    except KeyError:
-        raise ValueError("Unknown missing method %r" % (missing,))
+    except KeyError as e:
+        raise ValueError("Unknown missing method %r" % (missing,)) from e
 
     data = _asarray_validated(data, check_finite=check_finite)
     if data.ndim == 1:
@@ -741,8 +737,8 @@ def kmeans2(data, k, iter=10, thresh=1e-5, minit='random',
 
         try:
             init_meth = _valid_init_meth[minit]
-        except KeyError:
-            raise ValueError("Unknown init method %r" % (minit,))
+        except KeyError as e:
+            raise ValueError("Unknown init method %r" % (minit,)) from e
         else:
             code_book = init_meth(data, k)
 

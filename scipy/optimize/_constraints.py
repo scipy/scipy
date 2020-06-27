@@ -1,5 +1,4 @@
 """Constraints definition for minimize."""
-from __future__ import division, print_function, absolute_import
 import numpy as np
 from ._hessian_update_strategy import BFGS
 from ._differentiable_functions import (

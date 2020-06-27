@@ -4,23 +4,15 @@
 #ifndef QHULL_MISC_H_
 #define QHULL_MISC_H_
 
-#if defined(NO_APPEND_FORTRAN)
-#if defined(UPPERCASE_FORTRAN)
-#define F_FUNC(f,F) F
-#else
-#define F_FUNC(f,F) f
-#endif
-#else
-#if defined(UPPERCASE_FORTRAN)
-#define F_FUNC(f,F) F##_
-#else
-#define F_FUNC(f,F) f##_
-#endif
-#endif
+#include "npy_cblas.h"
 
-#define qh_dgetrf F_FUNC(dgetrf,DGETRF)
-#define qh_dgecon F_FUNC(dgecon,DGECON)
-#define qh_dgetrs F_FUNC(dgetrs,DGETRS)
+void BLAS_FUNC(dgetrf)(CBLAS_INT*, CBLAS_INT*, double*, CBLAS_INT*, CBLAS_INT*, CBLAS_INT*);
+void BLAS_FUNC(dgecon)(char*, CBLAS_INT*, double*, CBLAS_INT*, double*, double*, double*, CBLAS_INT*, CBLAS_INT*, size_t);
+void BLAS_FUNC(dgetrs)(char*, CBLAS_INT*, CBLAS_INT*, double*, CBLAS_INT*, CBLAS_INT*, double*, CBLAS_INT*, CBLAS_INT*, size_t);
+
+#define qh_dgetrf(m,n,a,lda,ipiv,info) BLAS_FUNC(dgetrf)(m,n,a,lda,ipiv,info)
+#define qh_dgecon(norm,n,a,lda,anorm,rcond,work,iwork,info) BLAS_FUNC(dgecon)(norm,n,a,lda,anorm,rcond,work,iwork,info,1)
+#define qh_dgetrs(trans,n,nrhs,a,lda,ipiv,b,ldb,info) BLAS_FUNC(dgetrs)(trans,n,nrhs,a,lda,ipiv,b,ldb,info,1)
 
 #define qhull_misc_lib_check() QHULL_LIB_CHECK
 

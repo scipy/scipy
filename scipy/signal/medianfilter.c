@@ -14,8 +14,8 @@ extern char *check_malloc (int);
 
 
 /* The QUICK_SELECT routine is based on Hoare's Quickselect algorithm,
- * with unrolled recursion. 
- * Author: Thouis R. Jones, 2008 
+ * with unrolled recursion.
+ * Author: Thouis R. Jones, 2008
  */
 
 #define ELEM_SWAP(t, a, x, y) {register t temp = (a)[x]; (a)[x] = (a)[y]; (a)[y] = temp;}
@@ -54,7 +54,7 @@ TYPE NAME(TYPE arr[], int n)                                            \
         for (ll = lo+1, hh = hi;; ll++, hh--) {                         \
 	    while (arr[ll] < piv) ll++;					\
 	    while (arr[hh] > piv) hh--;					\
-	    if (hh < ll) break;						\
+	    if (hh <= ll) break;					\
 	    ELEM_SWAP(TYPE, arr, ll, hh);				\
         }                                                               \
         /* move pivot to top of lower partition */                      \

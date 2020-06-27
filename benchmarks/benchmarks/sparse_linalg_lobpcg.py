@@ -1,5 +1,3 @@
-from __future__ import division, absolute_import, print_function
-
 from functools import partial
 
 import numpy as np

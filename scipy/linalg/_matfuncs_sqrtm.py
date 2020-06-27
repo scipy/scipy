@@ -4,8 +4,6 @@ Matrix square root for general matrices and for upper triangular matrices.
 This module exists to avoid cyclic imports.
 
 """
-from __future__ import division, print_function, absolute_import
-
 __all__ = ['sqrtm']
 
 import numpy as np

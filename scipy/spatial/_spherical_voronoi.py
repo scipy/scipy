@@ -20,6 +20,20 @@ from scipy.spatial import cKDTree
 __all__ = ['SphericalVoronoi']
 
 
+def calculate_solid_angles(R):
+    """Calculates the solid angles of plane triangles. Implements the method of
+    Van Oosterom and Strackee [VanOosterom]_ with some modifications. Assumes
+    that input points have unit norm."""
+    # Original method uses a triple product `R1 . (R2 x R3)` for the numerator.
+    # This is equal to the determinant of the matrix [R1 R2 R3], which can be
+    # computed with better stability.
+    numerator = np.linalg.det(R)
+    denominator = 1 + (np.einsum('ij,ij->i', R[:, 0], R[:, 1]) +
+                       np.einsum('ij,ij->i', R[:, 1], R[:, 2]) +
+                       np.einsum('ij,ij->i', R[:, 2], R[:, 0]))
+    return np.abs(2 * np.arctan2(numerator, denominator))
+
+
 class SphericalVoronoi:
     """ Voronoi diagrams on the surface of a sphere.
 
@@ -53,6 +67,14 @@ class SphericalVoronoi:
         the n-th entry is a list consisting of the indices
         of the vertices belonging to the n-th point in points
 
+    Methods
+    ----------
+    calculate_areas
+        Calculates the areas of the Voronoi regions. For 2D point sets, the
+        regions are circular arcs. The sum of the areas is `2 * pi * radius`.
+        For 3D point sets, the regions are spherical polygons. The sum of the
+        areas is `4 * pi * radius**2`.
+
     Raises
     ------
     ValueError
@@ -78,6 +100,10 @@ class SphericalVoronoi:
     .. [Caroli] Caroli et al. Robust and Efficient Delaunay triangulations of
                 points on or close to a sphere. Research Report RR-7004, 2009.
 
+    .. [VanOosterom] Van Oosterom and Strackee. The solid angle of a plane
+                     triangle. IEEE Transactions on Biomedical Engineering,
+                     2, 1983, pp 125--126.
+
     See Also
     --------
     Voronoi : Conventional Voronoi diagrams in N dimensions.
@@ -86,10 +112,8 @@ class SphericalVoronoi:
     --------
     Do some imports and take some points on a cube:
 
-    >>> from matplotlib import colors
-    >>> from mpl_toolkits.mplot3d.art3d import Poly3DCollection
     >>> import matplotlib.pyplot as plt
-    >>> from scipy.spatial import SphericalVoronoi
+    >>> from scipy.spatial import SphericalVoronoi, geometric_slerp
     >>> from mpl_toolkits.mplot3d import proj3d
     >>> # set input data
     >>> points = np.array([[0, 0, 1], [0, 0, -1], [1, 0, 0],
@@ -105,6 +129,7 @@ class SphericalVoronoi:
 
     >>> # sort vertices (optional, helpful for plotting)
     >>> sv.sort_vertices_of_regions()
+    >>> t_vals = np.linspace(0, 1, 2000)
     >>> fig = plt.figure()
     >>> ax = fig.add_subplot(111, projection='3d')
     >>> # plot the unit sphere for reference (optional)
@@ -121,10 +146,21 @@ class SphericalVoronoi:
     ...                    c='g')
     >>> # indicate Voronoi regions (as Euclidean polygons)
     >>> for region in sv.regions:
-    ...    random_color = colors.rgb2hex(np.random.rand(3))
-    ...    polygon = Poly3DCollection([sv.vertices[region]], alpha=1.0)
-    ...    polygon.set_color(random_color)
-    ...    ax.add_collection3d(polygon)
+    ...    n = len(region)
+    ...    for i in range(n):
+    ...        start = sv.vertices[region][i]
+    ...        end = sv.vertices[region][(i + 1) % n]
+    ...        result = geometric_slerp(start, end, t_vals)
+    ...        ax.plot(result[..., 0],
+    ...                result[..., 1],
+    ...                result[..., 2],
+    ...                c='k')
+    >>> ax.azim = 10
+    >>> ax.elev = 40
+    >>> _ = ax.set_xticks([])
+    >>> _ = ax.set_yticks([])
+    >>> _ = ax.set_zticks([])
+    >>> fig.set_size_inches(4, 4)
     >>> plt.show()
 
     """
@@ -138,72 +174,29 @@ class SphericalVoronoi:
                           '(i.e. `radius=1`).',
                           DeprecationWarning)
 
-        self.points = points
-        self.radius = radius
-        self.threshold = threshold
+        self.radius = float(radius)
+        self.points = np.array(points).astype(np.double)
         self._dim = len(points[0])
         if center is None:
             self.center = np.zeros(self._dim)
         else:
-            self.center = np.array(center)
+            self.center = np.array(center, dtype=float)
 
         # test degenerate input
-        self._rank = np.linalg.matrix_rank(self.points - self.center,
-                                           tol=self.threshold * self.radius)
-        if self._rank <= 1:
-            raise ValueError("Rank of input points must be at least 2")
+        self._rank = np.linalg.matrix_rank(self.points - self.points[0],
+                                           tol=threshold * self.radius)
+        if self._rank < self._dim:
+            raise ValueError("Rank of input points must be at least {0}".format(self._dim))
 
-        if cKDTree(self.points).query_pairs(self.threshold * self.radius):
+        if cKDTree(self.points).query_pairs(threshold * self.radius):
             raise ValueError("Duplicate generators present.")
 
         radii = np.linalg.norm(self.points - self.center, axis=1)
         max_discrepancy = np.abs(radii - self.radius).max()
-        if max_discrepancy >= self.threshold * self.radius:
+        if max_discrepancy >= threshold * self.radius:
             raise ValueError("Radius inconsistent with generators.")
-        self.vertices = None
-        self.regions = None
-        self._tri = None
+
         self._calc_vertices_regions()
-
-    def _handle_geodesic_input(self):
-
-        # center the points
-        centered = self.points - self.center
-
-        # calculate an orthogonal transformation using SVD
-        _, _, vh = np.linalg.svd(centered)
-
-        # calculate the north and south poles in this basis
-        poles = [[0, 0, self.radius], [0, 0, -self.radius]] @ vh
-
-        # project points into inverse basis (such that z-components are zero)
-        circle = centered @ vh.T[:, :2]
-
-        # simplicial neighbors are adjacent on the circle
-        angles = np.arctan2(circle[:, 1], circle[:, 0])
-        indices = np.argsort(angles)
-
-        # Voronoi vertices lie halfway between neighboring pairs
-        vertices = centered[indices] + centered[np.roll(indices, 1)]
-        vertices /= np.linalg.norm(vertices, axis=1)[:, np.newaxis]
-        vertices *= self.radius
-
-        # north and south poles are also Voronoi vertices
-        vertices = np.concatenate((vertices, poles))
-
-        # each region contains two vertices from the plane and the north and
-        # south poles
-        invf = np.argsort(indices)
-        invb = np.argsort(np.roll(indices, 1))
-
-        n = len(self.points)
-        regions = np.vstack([invf,            # forward neighbor
-                             [n] * n,         # north pole
-                             invb,            # backward neighbor
-                             [n + 1] * n]).T  # south pole
-
-        self.regions = [list(region) for region in regions]
-        self.vertices = vertices + self.center
 
     def _calc_vertices_regions(self):
         """
@@ -214,29 +207,25 @@ class SphericalVoronoi:
         This algorithm was discussed at PyData London 2015 by
         Tyler Reddy, Ross Hemsley and Nikolai Nowaczyk
         """
-        if self._dim == 3 and self._rank == 2:
-            self._handle_geodesic_input()
-            return
-
         # get Convex Hull
-        self._tri = scipy.spatial.ConvexHull(self.points)
+        conv = scipy.spatial.ConvexHull(self.points)
         # get circumcenters of Convex Hull triangles from facet equations
         # for 3D input circumcenters will have shape: (2N-4, 3)
-        self.vertices = self.radius * self._tri.equations[:, :-1] + self.center
+        self.vertices = self.radius * conv.equations[:, :-1] + self.center
+        self._simplices = conv.simplices
         # calculate regions from triangulation
         # for 3D input simplex_indices will have shape: (2N-4,)
-        simplex_indices = np.arange(self._tri.simplices.shape[0])
+        simplex_indices = np.arange(len(self._simplices))
         # for 3D input tri_indices will have shape: (6N-12,)
         tri_indices = np.column_stack([simplex_indices] * self._dim).ravel()
         # for 3D input point_indices will have shape: (6N-12,)
-        point_indices = self._tri.simplices.ravel()
+        point_indices = self._simplices.ravel()
         # for 3D input indices will have shape: (6N-12,)
         indices = np.argsort(point_indices, kind='mergesort')
         # for 3D input flattened_groups will have shape: (6N-12,)
         flattened_groups = tri_indices[indices].astype(np.intp)
         # intervals will have shape: (N+1,)
         intervals = np.cumsum(np.bincount(point_indices + 1))
-
         # split flattened groups to get nested list of unsorted regions
         groups = [list(flattened_groups[intervals[i]:intervals[i + 1]])
                   for i in range(len(intervals) - 1)]
@@ -259,8 +248,8 @@ class SphericalVoronoi:
         This is done as follows: Recall that the n-th region in regions
         surrounds the n-th generator in points and that the k-th
         Voronoi vertex in vertices is the circumcenter of the k-th triangle
-        in _tri.simplices.  For each region n, we choose the first triangle
-        (=Voronoi vertex) in _tri.simplices and a vertex of that triangle
+        in self._simplices.  For each region n, we choose the first triangle
+        (=Voronoi vertex) in self._simplices and a vertex of that triangle
         not equal to the center n. These determine a unique neighbor of that
         triangle, which is then chosen as the second triangle. The second
         triangle will have a unique vertex not equal to the current vertex or
@@ -272,6 +261,85 @@ class SphericalVoronoi:
         """
         if self._dim != 3:
             raise TypeError("Only supported for three-dimensional point sets")
-        if self._rank == 2:
-            return  # regions are sorted by construction
-        _voronoi.sort_vertices_of_regions(self._tri.simplices, self.regions)
+        _voronoi.sort_vertices_of_regions(self._simplices, self.regions)
+
+    def _calculate_areas_3d(self):
+        self.sort_vertices_of_regions()
+        sizes = [len(region) for region in self.regions]
+        csizes = np.cumsum(sizes)
+        num_regions = csizes[-1]
+
+        # We create a set of triangles consisting of one point and two Voronoi
+        # vertices. The vertices of each triangle are adjacent in the sorted
+        # regions list.
+        point_indices = [i for i, size in enumerate(sizes)
+                         for j in range(size)]
+
+        nbrs1 = np.array([r for region in self.regions for r in region])
+
+        # The calculation of nbrs2 is a vectorized version of:
+        # np.array([r for region in self.regions for r in np.roll(region, 1)])
+        nbrs2 = np.roll(nbrs1, 1)
+        indices = np.roll(csizes, 1)
+        indices[0] = 0
+        nbrs2[indices] = nbrs1[csizes - 1]
+
+        # Normalize points and vertices.
+        pnormalized = (self.points - self.center) / self.radius
+        vnormalized = (self.vertices - self.center) / self.radius
+
+        # Create the complete set of triangles and calculate their solid angles
+        triangles = np.hstack([pnormalized[point_indices],
+                               vnormalized[nbrs1],
+                               vnormalized[nbrs2]
+                               ]).reshape((num_regions, 3, 3))
+        triangle_solid_angles = calculate_solid_angles(triangles)
+
+        # Sum the solid angles of the triangles in each region
+        solid_angles = np.cumsum(triangle_solid_angles)[csizes - 1]
+        solid_angles[1:] -= solid_angles[:-1]
+
+        # Get polygon areas using A = omega * r**2
+        return solid_angles * self.radius**2
+
+    def _calculate_areas_2d(self):
+        # Find start and end points of arcs
+        arcs = self.points[self._simplices] - self.center
+
+        # Calculate the angle subtended by arcs
+        cosine = np.einsum('ij,ij->i', arcs[:, 0], arcs[:, 1])
+        sine = np.abs(np.linalg.det(arcs))
+        theta = np.arctan2(sine, cosine)
+
+        # Get areas using A = r * theta
+        areas = self.radius * theta
+
+        # Correct arcs which go the wrong way (single-hemisphere inputs)
+        signs = np.sign(np.einsum('ij,ij->i', arcs[:, 0],
+                                              self.vertices - self.center))
+        indices = np.where(signs < 0)
+        areas[indices] = 2 * np.pi * self.radius - areas[indices]
+        return areas
+
+    def calculate_areas(self):
+        """Calculates the areas of the Voronoi regions.
+
+        For 2D point sets, the regions are circular arcs. The sum of the areas
+        is `2 * pi * radius`.
+
+        For 3D point sets, the regions are spherical polygons. The sum of the
+        areas is `4 * pi * radius**2`.
+
+        .. versionadded:: 1.5.0
+
+        Returns
+        -------
+        areas : double array of shape (npoints,)
+            The areas of the Voronoi regions.
+        """
+        if self._dim == 2:
+            return self._calculate_areas_2d()
+        elif self._dim == 3:
+            return self._calculate_areas_3d()
+        else:
+            raise TypeError("Only supported for 2D and 3D point sets")

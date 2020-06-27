@@ -1,20 +1,18 @@
 """ Utility functions for sparse matrix module
 """
 
-from __future__ import division, print_function, absolute_import
-
 import sys
 import operator
 import warnings
 import numpy as np
+from scipy._lib._util import prod
 
 __all__ = ['upcast', 'getdtype', 'isscalarlike', 'isintlike',
            'isshape', 'issequence', 'isdense', 'ismatrix', 'get_sum_dtype']
 
-supported_dtypes = ['bool', 'int8', 'uint8', 'short', 'ushort', 'intc',
-                    'uintc', 'l', 'L', 'longlong', 'ulonglong', 'single', 'double',
-                    'longdouble', 'csingle', 'cdouble', 'clongdouble']
-supported_dtypes = [np.typeDict[x] for x in supported_dtypes]
+supported_dtypes = [np.bool_, np.byte, np.ubyte, np.short, np.ushort, np.intc,
+                    np.uintc, np.int_, np.uint, np.longlong, np.ulonglong, np.single, np.double,
+                    np.longdouble, np.csingle, np.cdouble, np.clongdouble]
 
 _upcast_memo = {}
 
@@ -287,18 +285,18 @@ def check_shape(args, current_shape=None):
 
     else:
         # Check the current size only if needed
-        current_size = np.prod(current_shape, dtype=int)
+        current_size = prod(current_shape)
 
         # Check for negatives
         negative_indexes = [i for i, x in enumerate(new_shape) if x < 0]
         if len(negative_indexes) == 0:
-            new_size = np.prod(new_shape, dtype=int)
+            new_size = prod(new_shape)
             if new_size != current_size:
                 raise ValueError('cannot reshape array of size {} into shape {}'
                                  .format(current_size, new_shape))
         elif len(negative_indexes) == 1:
             skip = negative_indexes[0]
-            specified = np.prod(new_shape[0:skip] + new_shape[skip+1:])
+            specified = prod(new_shape[0:skip] + new_shape[skip+1:])
             unspecified, remainder = divmod(current_size, specified)
             if remainder != 0:
                 err_shape = tuple('newshape' if x < 0 else x for x in new_shape)

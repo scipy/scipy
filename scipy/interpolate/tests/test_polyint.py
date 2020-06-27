@@ -1,7 +1,5 @@
-from __future__ import division, print_function, absolute_import
-
 import warnings
-
+import io
 import numpy as np
 
 from numpy.testing import (
@@ -198,14 +196,6 @@ class TestKrogh(object):
                                 np.zeros(len(self.test_xs)))
 
     def test_hermite(self):
-        xs = [0,0,0,1,1,1,2]
-        ys = [self.true_poly(0),
-              self.true_poly.deriv(1)(0),
-              self.true_poly.deriv(2)(0),
-              self.true_poly(1),
-              self.true_poly.deriv(1)(1),
-              self.true_poly.deriv(2)(1),
-              self.true_poly(2)]
         P = KroghInterpolator(self.xs,self.ys)
         assert_almost_equal(self.true_poly(self.test_xs),P(self.test_xs))
 
@@ -362,6 +352,12 @@ class TestBarycentric(object):
         values = barycentric_interpolate(self.xs, self.ys, self.test_xs)
         assert_almost_equal(P(self.test_xs), values)
 
+    def test_int_input(self):
+        x = 1000 * np.arange(1, 11)  # np.prod(x[-1] - x[:-1]) overflows
+        y = np.arange(1, 11)
+        value = barycentric_interpolate(x, y, 1000 * 9.5)
+        assert_almost_equal(value, 9.5)
+
 
 class TestPCHIP(object):
     def _make_random(self, npts=20):
@@ -409,7 +405,6 @@ class TestPCHIP(object):
         # http://nag.com/numeric/cl/nagdoc_cl25/html/e01/e01bec.html
         # suggested in gh-5326 as a smoke test for the way the derivatives
         # are computed (see also gh-3453)
-        from scipy._lib.six import StringIO
         dataStr = '''
           7.99   0.00000E+0
           8.09   0.27643E-4
@@ -421,7 +416,7 @@ class TestPCHIP(object):
          15.00   0.99992E+0
          20.00   0.99999E+0
         '''
-        data = np.loadtxt(StringIO(dataStr))
+        data = np.loadtxt(io.StringIO(dataStr))
         pch = pchip(data[:,0], data[:,1])
 
         resultStr = '''
@@ -437,7 +432,7 @@ class TestPCHIP(object):
           18.7990       1.0000
           20.0000       1.0000
         '''
-        result = np.loadtxt(StringIO(resultStr))
+        result = np.loadtxt(io.StringIO(resultStr))
         assert_allclose(result[:,1], pch(result[:,0]), rtol=0., atol=5e-5)
 
     def test_endslopes(self):

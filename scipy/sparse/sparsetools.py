@@ -19,7 +19,7 @@ del deprecate
 
 try:
     _deprecated()
-except DeprecationWarning as e:
+except DeprecationWarning:
     # don't fail import if DeprecationWarnings raise error -- works around
     # the situation with NumPy's test framework
     pass

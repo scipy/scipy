@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 import os
 import time
 import inspect
@@ -197,7 +195,6 @@ class _BenchOptimizers(Benchmark):
         t0 = time.time()
 
         res = dual_annealing(self.fun,
-                             None,
                              self.bounds)
 
         t1 = time.time()

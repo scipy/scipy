@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 from numpy.linalg import LinAlgError
 from .blas import get_blas_funcs
@@ -148,7 +146,7 @@ def norm(a, ord=None, axis=None, keepdims=False, check_finite=True):
 
         if ord in (None, 2) and (a.ndim == 1):
             # use blas for fast and stable euclidean norm
-            nrm2 = get_blas_funcs('nrm2', dtype=a.dtype)
+            nrm2 = get_blas_funcs('nrm2', dtype=a.dtype, ilp64='preferred')
             return nrm2(a)
 
         if a.ndim == 2 and axis is None and not keepdims:
@@ -168,7 +166,7 @@ def norm(a, ord=None, axis=None, keepdims=False, check_finite=True):
                 elif np.isfortran(a.T):
                     lange_args = '1', a.T
             if lange_args:
-                lange = get_lapack_funcs('lange', dtype=a.dtype)
+                lange = get_lapack_funcs('lange', dtype=a.dtype, ilp64='preferred')
                 return lange(*lange_args)
 
     # Filter out the axis and keepdims arguments if they aren't used so they

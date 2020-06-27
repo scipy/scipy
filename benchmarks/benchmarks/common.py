@@ -1,8 +1,6 @@
 """
 Airspeed Velocity benchmark utilities
 """
-from __future__ import division, absolute_import, print_function
-
 import sys
 import os
 import re
@@ -17,7 +15,7 @@ class Benchmark(object):
     """
     Base class with sensible options
     """
-    goal_time = 0.25
+    pass
 
 
 class LimitedParamBenchmark(Benchmark):

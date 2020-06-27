@@ -1,13 +1,10 @@
 # Last Change: Mon Aug 20 08:00 PM 2007 J
-from __future__ import division, print_function, absolute_import
-
 import re
 import datetime
 from collections import OrderedDict
 
 import numpy as np
 
-from scipy._lib.six import next
 import csv
 import ctypes
 
@@ -42,7 +39,7 @@ r_datameta = re.compile(r'^@[Dd][Aa][Tt][Aa]')
 r_relation = re.compile(r'^@[Rr][Ee][Ll][Aa][Tt][Ii][Oo][Nn]\s*(\S*)')
 r_attribute = re.compile(r'^\s*@[Aa][Tt][Tt][Rr][Ii][Bb][Uu][Tt][Ee]\s*(..*$)')
 
-r_nominal = re.compile('{(.+)}')
+r_nominal = re.compile(r'{(.+)}')
 r_date = re.compile(r"[Dd][Aa][Tt][Ee]\s+[\"']?(.+?)[\"']?$")
 
 # To get attributes name enclosed with ''

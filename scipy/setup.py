@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 def configuration(parent_package='',top_path=None):
     from scipy._build_utils.system_info import get_info, NotFoundError
     lapack_opt = get_info("lapack_opt")

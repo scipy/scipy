@@ -1,8 +1,7 @@
-from __future__ import division, print_function, absolute_import
-
-from multiprocessing import Pool, get_start_method
+from multiprocessing import Pool
 from multiprocessing.pool import Pool as PWL
 import os
+import math
 
 import numpy as np
 from numpy.testing import assert_equal, assert_
@@ -10,7 +9,9 @@ import pytest
 from pytest import raises as assert_raises, deprecated_call
 
 import scipy
-from scipy._lib._util import _aligned_zeros, check_random_state, MapWrapper
+from scipy._lib._util import (_aligned_zeros, check_random_state, MapWrapper,
+                              getfullargspec_no_self, FullArgSpec,
+                              rng_integers)
 
 
 def test__aligned_zeros():
@@ -67,6 +68,22 @@ def test_check_random_state():
         assert_equal(type(rsi), np.random.Generator)
 
 
+def test_getfullargspec_no_self():
+    p = MapWrapper(1)
+    argspec = getfullargspec_no_self(p.__init__)
+    assert_equal(argspec, FullArgSpec(['pool'], None, None, (1,), [], None, {}))
+    argspec = getfullargspec_no_self(p.__call__)
+    assert_equal(argspec, FullArgSpec(['func', 'iterable'], None, None, None, [], None, {}))
+
+    class _rv_generic(object):
+        def _rvs(self, a, b=2, c=3, *args, size=None, **kwargs):
+            return None
+
+    rv_obj = _rv_generic()
+    argspec = getfullargspec_no_self(rv_obj._rvs)
+    assert_equal(argspec, FullArgSpec(['a', 'b', 'c'], 'args', 'kwargs', (2, 3), ['size'], {'size': None}, {}))
+
+
 def test_mapwrapper_serial():
     in_arg = np.arange(10.)
     out_arg = np.sin(in_arg)
@@ -82,9 +99,11 @@ def test_mapwrapper_serial():
         p = MapWrapper(0)
 
 
-@pytest.mark.skipif(get_start_method() != 'fork',
-                    reason=('multiprocessing with spawn method is not'
-                            ' compatible with pytest.'))
+def test_pool():
+    with Pool(2) as p:
+        p.map(math.sin, [1,2,3, 4])
+
+
 def test_mapwrapper_parallel():
     in_arg = np.arange(10.)
     out_arg = np.sin(in_arg)
@@ -170,3 +189,61 @@ def test_numpy_deprecation_functionality():
 
         assert scipy.float64 == np.float64
         assert issubclass(np.float64, scipy.float64)
+
+
+def test_rng_integers():
+    rng = np.random.RandomState()
+
+    # test that numbers are inclusive of high point
+    arr = rng_integers(rng, low=2, high=5, size=100, endpoint=True)
+    assert np.max(arr) == 5
+    assert np.min(arr) == 2
+    assert arr.shape == (100, )
+
+    # test that numbers are inclusive of high point
+    arr = rng_integers(rng, low=5, size=100, endpoint=True)
+    assert np.max(arr) == 5
+    assert np.min(arr) == 0
+    assert arr.shape == (100, )
+
+    # test that numbers are exclusive of high point
+    arr = rng_integers(rng, low=2, high=5, size=100, endpoint=False)
+    assert np.max(arr) == 4
+    assert np.min(arr) == 2
+    assert arr.shape == (100, )
+
+    # test that numbers are exclusive of high point
+    arr = rng_integers(rng, low=5, size=100, endpoint=False)
+    assert np.max(arr) == 4
+    assert np.min(arr) == 0
+    assert arr.shape == (100, )
+
+    # now try with np.random.Generator
+    try:
+        rng = np.random.default_rng()
+    except AttributeError:
+        return
+
+    # test that numbers are inclusive of high point
+    arr = rng_integers(rng, low=2, high=5, size=100, endpoint=True)
+    assert np.max(arr) == 5
+    assert np.min(arr) == 2
+    assert arr.shape == (100, )
+
+    # test that numbers are inclusive of high point
+    arr = rng_integers(rng, low=5, size=100, endpoint=True)
+    assert np.max(arr) == 5
+    assert np.min(arr) == 0
+    assert arr.shape == (100, )
+
+    # test that numbers are exclusive of high point
+    arr = rng_integers(rng, low=2, high=5, size=100, endpoint=False)
+    assert np.max(arr) == 4
+    assert np.min(arr) == 2
+    assert arr.shape == (100, )
+
+    # test that numbers are exclusive of high point
+    arr = rng_integers(rng, low=5, size=100, endpoint=False)
+    assert np.max(arr) == 4
+    assert np.min(arr) == 0
+    assert arr.shape == (100, )

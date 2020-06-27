@@ -6,8 +6,6 @@
 
 # distutils: language = c++
 
-from __future__ import absolute_import
-
 import numpy as np
 import scipy.sparse
 
@@ -15,9 +13,9 @@ cimport numpy as np
 from numpy.math cimport INFINITY
 
 from cpython.mem cimport PyMem_Malloc, PyMem_Realloc, PyMem_Free
-from libc.string cimport memset, memcpy
 from libcpp.vector cimport vector
 from libcpp.algorithm cimport sort
+from libcpp cimport bool
 
 cimport cython
 
@@ -67,7 +65,7 @@ cdef extern from "ckdtree_decl.h":
         np.intp_t size
 
     # External build and query methods in C++.
-    
+
     int build_ckdtree(ckdtree *self,
                          np.intp_t start_idx,
                          np.intp_t end_idx,
@@ -119,20 +117,21 @@ cdef extern from "ckdtree_decl.h":
                            int cumulative) nogil except +
 
     int query_ball_point(const ckdtree *self,
-                            const np.float64_t *x,
-                            const np.float64_t *r,
-                            const np.float64_t p,
-                            const np.float64_t eps,
-                            const np.intp_t n_queries,
-                            vector[np.intp_t] **results,
-                            const int return_length) nogil except +
+                         const np.float64_t *x,
+                         const np.float64_t *r,
+                         const np.float64_t p,
+                         const np.float64_t eps,
+                         const np.intp_t n_queries,
+                         vector[np.intp_t] *results,
+                         const bool return_length,
+                         const bool sort_output) nogil except +
 
     int query_ball_tree(const ckdtree *self,
                            const ckdtree *other,
                            const np.float64_t r,
                            const np.float64_t p,
                            const np.float64_t eps,
-                           vector[np.intp_t] **results) nogil except +
+                           vector[np.intp_t] *results) nogil except +
 
     int sparse_distance_matrix(const ckdtree *self,
                                   const ckdtree *other,
@@ -286,16 +285,10 @@ cdef class ordered_pairs:
         results = set()
         pair = self.buf.data()
         n = <np.intp_t> self.buf.size()
-        if sizeof(long) < sizeof(np.intp_t):
-            # Needed for Python 2.x on Win64
-            for i in range(n):
-                results.add((int(pair.i), int(pair.j)))
-                pair += 1
-        else:
-            # other platforms
-            for i in range(n):
-                results.add((pair.i, pair.j))
-                pair += 1
+        # other platforms
+        for i in range(n):
+            results.add((pair.i, pair.j))
+            pair += 1
         return results
 
 
@@ -511,8 +504,8 @@ cdef class cKDTree:
 
     def __init__(cKDTree self, data, np.intp_t leafsize=16, compact_nodes=True,
             copy_data=False, balanced_tree=True, boxsize=None):
-        
-        cdef: 
+
+        cdef:
             np.float64_t [::1] tmpmaxes, tmpmins
             np.float64_t *ptmpmaxes
             np.float64_t *ptmpmins
@@ -537,7 +530,8 @@ cdef class cKDTree:
             self.boxsize_data = None
         else:
             self.boxsize_data = np.empty(2 * self.m, dtype=np.float64)
-            boxsize = np.float64(np.broadcast_to(boxsize, self.m))
+            boxsize = broadcast_contiguous(boxsize, shape=(self.m,),
+                                           dtype=np.float64)
             self.boxsize_data[:self.m] = boxsize
             self.boxsize_data[self.m:] = 0.5 * boxsize
 
@@ -565,10 +559,10 @@ cdef class cKDTree:
 
         tmpmaxes = np.copy(self.maxes)
         tmpmins = np.copy(self.mins)
-        
+
         ptmpmaxes = &tmpmaxes[0]
         ptmpmins = &tmpmins[0]
-        with nogil: 
+        with nogil:
             build_ckdtree(cself, 0, cself.n, ptmpmaxes, ptmpmins, median, compact)
 
         # set up the tree structure pointers
@@ -742,35 +736,30 @@ cdef class cKDTree:
             np.intp_t n, i, j
             int overflown
             const np.float64_t [:, ::1] xx
+            np.ndarray x_arr = np.ascontiguousarray(x, dtype=np.float64)
+            ckdtree *cself = self.cself
 
-        xshape = np.shape(x)
-
-        if len(xshape) == 0 or xshape[-1] != self.m:
-            raise ValueError("x must consist of vectors of length %d but "
-                             "has shape %s" % (int(self.m), xshape))
-
-        n = <np.intp_t> np.prod(xshape[:-1])
-        xx = np.ascontiguousarray(x, dtype=np.float64).reshape(n, self.m)
+        n = num_points(x_arr, cself.m)
+        xx = x_arr.reshape(n, cself.m)
 
         if p < 1:
             raise ValueError("Only p-norms with 1<=p<=infinity permitted")
-        if len(xshape) == 1:
-            single = True
-        else:
-            single = False
 
-        nearest = False
+        cdef:
+            bool single = (x_arr.ndim == 1)
+            bool nearest = False
+
         if np.isscalar(k):
             if k == 1:
                 nearest = True
             k = np.arange(1, k + 1)
 
-        retshape = xshape[:-1]
+        retshape = np.shape(x_arr)[:-1]
 
         # The C++ function touches all dd and ii entries,
         # setting the missing values.
 
-        cdef: 
+        cdef:
             np.float64_t [:, ::1] dd = np.empty((n,len(k)),dtype=np.float64)
             np.intp_t [:, ::1] ii = np.empty((n,len(k)),dtype=np.intp)
             np.intp_t [::1] kk = np.array(k, dtype=np.intp)
@@ -784,7 +773,7 @@ cdef class cKDTree:
                 const np.float64_t *pxx = &xx[start,0]
                 np.intp_t *pkk = &kk[0]
             with nogil:
-                query_knn(self.cself, pdd, pii,
+                query_knn(cself, pdd, pii,
                     pxx, stop-start, pkk, kk.shape[0], kmax, eps, p, distance_upper_bound)
 
         if (n_jobs == -1):
@@ -833,7 +822,7 @@ cdef class cKDTree:
     # ----------------
 
     def query_ball_point(cKDTree self, object x, object r,
-                         np.float64_t p=2., np.float64_t eps=0, n_jobs=1,
+                         np.float64_t p=2., np.float64_t eps=0, np.intp_t n_jobs=1,
                          return_sorted=None,
                          return_length=False):
         """
@@ -895,32 +884,24 @@ cdef class cKDTree:
         """
 
         cdef:
-            const np.float64_t[::1] vrr
-            const np.float64_t[:, ::1] vxx
             object[::1] vout
             np.intp_t[::1] vlen
-            list tmp
-            np.intp_t i, j, n, m
-            np.intp_t xndim
+            np.ndarray x_arr = np.ascontiguousarray(x, dtype=np.float64)
+            ckdtree *cself = self.cself
+            bool rlen = return_length
+            # compatibility with the old bug not sorting scalar queries.
+            bool sort_output = return_sorted or (
+                return_sorted is None and x_arr.ndim > 1)
 
-        xshape = np.shape(x)
-        if xshape[-1] != self.m:
-            raise ValueError("Searching for a %d-dimensional point in a "
-                             "%d-dimensional KDTree" %
-                                 (int(xshape[-1]), int(self.m)))
+            np.intp_t n = num_points(x_arr, cself.m)
+            tuple retshape = np.shape(x_arr)[:-1]
+            np.ndarray r_arr = broadcast_contiguous(r, shape=retshape,
+                                                    dtype=np.float64)
 
-        vxx = np.ascontiguousarray(x, dtype=np.float64).reshape(-1, self.m)
-        vrr = np.ascontiguousarray(np.broadcast_to(r, xshape[:-1]), dtype=np.float64).reshape(-1)
+            const np.float64_t *vxx = <np.float64_t*>x_arr.data
+            const np.float64_t *vrr = <np.float64_t*>r_arr.data
 
-        retshape = xshape[:-1]
-
-        # scalar query if xndim == 1
-        xndim = len(xshape)
-
-        # allocate an array of std::vector<npy_intp>
-        n = np.prod(retshape)
-
-        if return_length:
+        if rlen:
             result = np.empty(retshape, dtype=np.intp)
             vlen = result.reshape(-1)
         else:
@@ -929,60 +910,34 @@ cdef class cKDTree:
 
         def _thread_func(np.intp_t start, np.intp_t stop):
             cdef:
-                vector[np.intp_t] **vvres
-                np.intp_t i
+                vector[vector[np.intp_t]] vvres
+                np.intp_t i, j, m
                 np.intp_t *cur
-                int rlen
                 const np.float64_t *pvxx
                 const np.float64_t *pvrr
+                list tmp
 
-            rlen = <int> return_length
+            vvres.resize(stop - start)
+            pvxx = vxx + start * cself.m
+            pvrr = vrr + start
 
-            try:
-                vvres = (<vector[np.intp_t] **>
-                    PyMem_Malloc((stop-start) * sizeof(void*)))
-                if vvres == NULL:
-                    raise MemoryError()
+            with nogil:
+                query_ball_point(cself, pvxx,
+                                 pvrr, p, eps, stop - start, vvres.data(),
+                                 rlen, sort_output)
 
-                memset(<void*> vvres, 0, (stop-start) * sizeof(void*))
+            for i in range(stop - start):
+                if rlen:
+                    vlen[start + i] = vvres[i].front()
+                    continue
 
-                for i in range(stop - start):
-                    vvres[i] = new vector[np.intp_t]()
+                m = <np.intp_t> (vvres[i].size())
+                tmp = m * [None]
 
-                pvxx = &vxx[start, 0]
-                pvrr = &vrr[start + 0]
-                
-                with nogil:
-                    query_ball_point(self.cself, pvxx,
-                        pvrr, p, eps, stop - start, vvres, rlen)
-
-                for i in range(stop - start):
-                    if return_length:
-                        vlen[start + i] = vvres[i].front()
-                        continue
-
-                    if return_sorted:
-                        with nogil:
-                            sort(vvres[i].begin(), vvres[i].end())
-                    elif return_sorted is None and xndim > 1:
-                        # compatibility with the old bug not sorting scalar queries.
-                        with nogil:
-                            sort(vvres[i].begin(), vvres[i].end())
-
-                    m = <np.intp_t> (vvres[i].size())
-                    tmp = m * [None]
-
-                    cur = vvres[i].data()
-                    for j in range(m):
-                        tmp[j] = cur[0]
-                        cur += 1
-                    vout[start + i] = tmp
-            finally:
-                if vvres != NULL:
-                    for i in range(stop-start):
-                        if vvres[i] != NULL:
-                            del vvres[i]
-                    PyMem_Free(vvres)
+                cur = vvres[i].data()
+                for j in range(m):
+                    tmp[j] = cur[j]
+                vout[start + i] = tmp
 
         # multithreading logic is similar to cKDTree.query
         if n_jobs == -1:
@@ -990,7 +945,7 @@ cdef class cKDTree:
 
         _run_threads(_thread_func, n, n_jobs)
 
-        if xndim == 1: # scalar query, unpack result.
+        if x_arr.ndim == 1: # scalar query, unpack result.
             result = result[()]
         return result
 
@@ -1003,7 +958,7 @@ cdef class cKDTree:
         """
         query_ball_tree(self, other, r, p=2., eps=0)
 
-        Find all pairs of points whose distance is at most r
+        Find all pairs of points between `self` and `other` whose distance is at most r
 
         Parameters
         ----------
@@ -1027,10 +982,32 @@ cdef class cKDTree:
             For each element ``self.data[i]`` of this tree, ``results[i]`` is a
             list of the indices of its neighbors in ``other.data``.
 
+        Examples
+        --------
+        You can search all pairs of points between two kd-trees within a distance:
+
+        >>> import matplotlib.pyplot as plt
+        >>> import numpy as np
+        >>> from scipy.spatial import cKDTree
+        >>> np.random.seed(21701)
+        >>> points1 = np.random.random((15, 2))
+        >>> points2 = np.random.random((15, 2))
+        >>> plt.figure(figsize=(6, 6))
+        >>> plt.plot(points1[:, 0], points1[:, 1], "xk", markersize=14)
+        >>> plt.plot(points2[:, 0], points2[:, 1], "og", markersize=14)
+        >>> kd_tree1 = cKDTree(points1)
+        >>> kd_tree2 = cKDTree(points2)
+        >>> indexes = kd_tree1.query_ball_tree(kd_tree2, r=0.2)
+        >>> for i in range(len(indexes)):
+        ...     for j in indexes[i]:
+        ...         plt.plot([points1[i, 0], points2[j, 0]],
+        ...             [points1[i, 1], points2[j, 1]], "-r")
+        >>> plt.show()
+
         """
 
         cdef:
-            vector[np.intp_t] **vvres
+            vector[vector[np.intp_t]] vvres
             np.intp_t i, j, n, m
             np.intp_t *cur
             list results
@@ -1043,45 +1020,25 @@ cdef class cKDTree:
 
         n = self.n
 
-        try:
+        # allocate an array of std::vector<npy_intp>
+        vvres.resize(n)
 
-            # allocate an array of std::vector<npy_intp>
-            vvres = (<vector[np.intp_t] **>
-                PyMem_Malloc(n * sizeof(void*)))
-            if vvres == NULL:
-                raise MemoryError()
+        # query in C++
+        with nogil:
+            query_ball_tree(self.cself, other.cself, r, p, eps, vvres.data())
 
-            memset(<void*> vvres, 0, n * sizeof(void*))
-
-            for i in range(n):
-                vvres[i] = new vector[np.intp_t]()
-
-            # query in C++
-            with nogil:
-                query_ball_tree(self.cself, other.cself, r, p, eps, vvres)
-
-            # store the results in a list of lists
-            results = n * [None]
-            for i in range(n):
-                m = <np.intp_t> (vvres[i].size())
-                if NPY_LIKELY(m > 0):
-                    tmp = m * [None]
-                    with nogil:
-                        sort(vvres[i].begin(), vvres[i].end())
-                    cur = vvres[i].data()
-                    for j in range(m):
-                        tmp[j] = cur[0]
-                        cur += 1
-                    results[i] = tmp
-                else:
-                    results[i] = []
-
-        finally:
-            if vvres != NULL:
-                for i in range(n):
-                    if vvres[i] != NULL:
-                        del vvres[i]
-                PyMem_Free(vvres)
+        # store the results in a list of lists
+        results = n * [None]
+        for i in range(n):
+            m = <np.intp_t> (vvres[i].size())
+            if NPY_LIKELY(m > 0):
+                tmp = m * [None]
+                cur = vvres[i].data()
+                for j in range(m):
+                    tmp[j] = cur[j]
+                results[i] = tmp
+            else:
+                results[i] = []
 
         return results
 
@@ -1094,7 +1051,7 @@ cdef class cKDTree:
         """
         query_pairs(self, r, p=2., eps=0)
 
-        Find all pairs of points whose distance is at most r.
+        Find all pairs of points in `self` whose distance is at most r.
 
         Parameters
         ----------
@@ -1119,12 +1076,30 @@ cdef class cKDTree:
             positions are close. If output_type is 'ndarray', an ndarry is
             returned instead of a set.
 
+        Examples
+        --------
+        You can search all pairs of points in a kd-tree within a distance:
+
+        >>> import matplotlib.pyplot as plt
+        >>> import numpy as np
+        >>> from scipy.spatial import cKDTree
+        >>> np.random.seed(21701)
+        >>> points = np.random.random((20, 2))
+        >>> plt.figure(figsize=(6, 6))
+        >>> plt.plot(points[:, 0], points[:, 1], "xk", markersize=14)
+        >>> kd_tree = cKDTree(points)
+        >>> pairs = kd_tree.query_pairs(r=0.2)
+        >>> for (i, j) in pairs:
+        ...     plt.plot([points[i, 0], points[j, 0]],
+        ...             [points[i, 1], points[j, 1]], "-r")
+        >>> plt.show()
+
         """
 
         cdef ordered_pairs results
 
         results = ordered_pairs()
-        
+
         with nogil:
             query_pairs(self.cself, r, p, eps, results.buf)
 
@@ -1155,7 +1130,7 @@ cdef class cKDTree:
             total weight for each KD-Tree node.
 
         """
-        cdef: 
+        cdef:
             np.intp_t num_of_nodes
             np.float64_t [::1] node_weights
             np.float64_t [::1] proper_weights
@@ -1306,6 +1281,27 @@ cdef class cKDTree:
 
         .. [5] https://github.com/scipy/scipy/pull/5647#issuecomment-168474926
 
+        Examples
+        --------
+        You can count neighbors number between two kd-trees within a distance:
+
+        >>> import numpy as np
+        >>> from scipy.spatial import cKDTree
+        >>> np.random.seed(21701)
+        >>> points1 = np.random.random((5, 2))
+        >>> points2 = np.random.random((5, 2))
+        >>> kd_tree1 = cKDTree(points1)
+        >>> kd_tree2 = cKDTree(points2)
+        >>> kd_tree1.count_neighbors(kd_tree2, 0.2)
+        9
+
+        This number is same as the total pair number calculated by
+        `query_ball_tree`:
+
+        >>> indexes = kd_tree1.query_ball_tree(kd_tree2, r=0.2)
+        >>> sum([len(i) for i in indexes])
+        9
+
         """
         cdef:
             int r_ndim
@@ -1366,10 +1362,10 @@ cdef class cKDTree:
             results = np.zeros(n_queries + 1, dtype=np.intp)
 
             iresults = results
-            
+
             prr = &real_r[0]
             pir = &iresults[0]
-            
+
             with nogil:
                 count_neighbors_unweighted(self.cself, other.cself, n_queries,
                             prr, pir, p, cum)
@@ -1391,10 +1387,10 @@ cdef class cKDTree:
 
             results = np.zeros(n_queries + 1, dtype=np.float64)
             fresults = results
-            
+
             prr = &real_r[0]
             pfr = &fresults[0]
-            
+
             with nogil:
                 count_neighbors_weighted(self.cself, other.cself,
                                     w1p, w2p, w1np, w2np,
@@ -1456,6 +1452,36 @@ cdef class cKDTree:
             format. If a dict is returned the keys are (i,j) tuples of indices.
             If output_type is 'ndarray' a record array with fields 'i', 'j',
             and 'v' is returned,
+
+        Examples
+        --------
+        You can compute a sparse distance matrix between two kd-trees:
+
+        >>> import numpy as np
+        >>> from scipy.spatial import cKDTree
+        >>> np.random.seed(21701)
+        >>> points1 = np.random.random((5, 2))
+        >>> points2 = np.random.random((5, 2))
+        >>> kd_tree1 = cKDTree(points1)
+        >>> kd_tree2 = cKDTree(points2)
+        >>> sdm = kd_tree1.sparse_distance_matrix(kd_tree2, 0.3)
+        >>> sdm.toarray()
+        array([[0.20220215, 0.14538496, 0.,         0.10257199, 0.        ],
+            [0.13491385, 0.27251306, 0.,         0.18793787, 0.        ],
+            [0.19262396, 0.,         0.,         0.25795122, 0.        ],
+            [0.14859639, 0.07076002, 0.,         0.04065851, 0.        ],
+            [0.17308768, 0.,         0.,         0.24823138, 0.        ]])
+
+        You can check distances above the `max_distance` are zeros:
+
+        >>> from scipy.spatial import distance_matrix
+        >>> distance_matrix(points1, points2)
+        array([[0.20220215, 0.14538496, 0.43588092, 0.10257199, 0.4555495 ],
+            [0.13491385, 0.27251306, 0.65944131, 0.18793787, 0.68184154],
+            [0.19262396, 0.34121593, 0.72176889, 0.25795122, 0.74538858],
+            [0.14859639, 0.07076002, 0.48505773, 0.04065851, 0.50043591],
+            [0.17308768, 0.32837991, 0.72760803, 0.24823138, 0.75017239]])
+
         """
 
         cdef coo_entries res
@@ -1466,7 +1492,7 @@ cdef class cKDTree:
                              "different dimensionality")
         # do the query
         res = coo_entries()
-        
+
         with nogil:
             sparse_distance_matrix(
                 self.cself, other.cself, p, max_distance, res.buf)
@@ -1524,7 +1550,8 @@ cdef class cKDTree:
         # set up the tree structure pointers
         self._post_init()
 
-def _run_threads(_thread_func, n, n_jobs):
+cdef _run_threads(_thread_func, np.intp_t n, np.intp_t n_jobs):
+    n_jobs = min(n, n_jobs)
     if n_jobs > 1:
         ranges = [(j * n // n_jobs, (j + 1) * n // n_jobs)
                         for j in range(n_jobs)]
@@ -1540,3 +1567,33 @@ def _run_threads(_thread_func, n, n_jobs):
 
     else:
         _thread_func(0, n)
+
+cdef np.intp_t num_points(np.ndarray x, np.intp_t pdim) except -1:
+    """Returns the number of points in ``x``
+
+    Also validates that the last axis represents the components of single point
+    in `pdim` dimensional space
+    """
+    cdef np.intp_t i, n
+
+    if x.ndim == 0 or x.shape[x.ndim - 1] != pdim:
+        raise ValueError("x must consist of vectors of length {} but "
+                         "has shape {}".format(pdim, np.shape(x)))
+    n = 1
+    for i in range(x.ndim - 1):
+        n *= x.shape[i]
+    return n
+
+cdef np.ndarray broadcast_contiguous(object x, tuple shape, object dtype) except +:
+    """Broadcast ``x`` to ``shape`` and make contiguous, possibly by copying"""
+    # Avoid copying if possible
+    try:
+        if x.shape == shape:
+            return np.ascontiguousarray(x, dtype)
+    except AttributeError:
+        pass
+
+    # Assignment will broadcast automatically
+    cdef np.ndarray ret = np.empty(shape, dtype)
+    ret[...] = x
+    return ret

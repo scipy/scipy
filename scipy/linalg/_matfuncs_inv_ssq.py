@@ -2,8 +2,6 @@
 Matrix functions that use Pade approximation with inverse scaling and squaring.
 
 """
-from __future__ import division, print_function, absolute_import
-
 import warnings
 
 import numpy as np

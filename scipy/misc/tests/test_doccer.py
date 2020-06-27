@@ -1,7 +1,5 @@
 ''' Some tests for the documenting decorator and support functions '''
 
-from __future__ import division, print_function, absolute_import
-
 import sys
 import pytest
 from numpy.testing import assert_equal, suppress_warnings

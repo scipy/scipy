@@ -36,8 +36,6 @@ robert.kern@gmail.com
 
 """
 
-from __future__ import division, print_function, absolute_import
-
 import numpy
 from warnings import warn
 from scipy.odr import __odrpack
@@ -398,7 +396,7 @@ class RealData(Data):
         """ Convert covariance matrix(-ices) to weights.
         """
 
-        from numpy.dual import inv
+        from scipy.linalg import inv
 
         if len(cov.shape) == 2:
             return inv(cov)

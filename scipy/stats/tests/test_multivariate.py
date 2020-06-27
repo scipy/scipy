@@ -2,8 +2,6 @@
 Test functions for multivariate normal distributions.
 
 """
-from __future__ import division, print_function, absolute_import
-
 import pickle
 
 from numpy.testing import (assert_allclose, assert_almost_equal,
@@ -1505,8 +1503,8 @@ class TestRandomCorrelation(object):
     def test_reproducibility(self):
         np.random.seed(514)
         eigs = (.5, .8, 1.2, 1.5)
-        x = random_correlation.rvs((.5, .8, 1.2, 1.5))
-        x2 = random_correlation.rvs((.5, .8, 1.2, 1.5), random_state=514)
+        x = random_correlation.rvs(eigs)
+        x2 = random_correlation.rvs(eigs, random_state=514)
         expected = np.array([[1., -0.20387311, 0.18366501, -0.04953711],
                              [-0.20387311, 1., -0.24351129, 0.06703474],
                              [0.18366501, -0.24351129, 1., 0.38530195],

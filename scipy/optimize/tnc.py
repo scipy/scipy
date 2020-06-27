@@ -32,13 +32,9 @@ value of the function, and whose second argument is the gradient of the function
 (as a list of values); or None, to abort the minimization.
 """
 
-from __future__ import division, print_function, absolute_import
-
 from scipy.optimize import moduleTNC
 from .optimize import (MemoizeJac, OptimizeResult, _check_unknown_options,
-                       wrap_function, _prepare_scalar_function)
-from ._differentiable_functions import ScalarFunction, FD_METHODS
-from ._numdiff import approx_derivative
+                       _prepare_scalar_function)
 from ._constraints import old_bound_to_new
 
 from numpy import inf, array, zeros, asfarray
@@ -266,7 +262,7 @@ def fmin_tnc(func, x0, fprime=None, args=(), approx_grad=0,
             'offset': offset,
             'mesg_num': mesg_num,
             'maxCGit': maxCGit,
-            'maxiter': maxfun,
+            'maxfun': maxfun,
             'eta': eta,
             'stepmx': stepmx,
             'accuracy': accuracy,
@@ -286,7 +282,8 @@ def _minimize_tnc(fun, x0, args=(), jac=None, bounds=None,
                   eps=1e-8, scale=None, offset=None, mesg_num=None,
                   maxCGit=-1, maxiter=None, eta=-1, stepmx=0, accuracy=0,
                   minfev=0, ftol=-1, xtol=-1, gtol=-1, rescale=-1, disp=False,
-                  callback=None, finite_diff_rel_step=None, **unknown_options):
+                  callback=None, finite_diff_rel_step=None, maxfun=None,
+                  **unknown_options):
     """
     Minimize a scalar function of one or more variables using a truncated
     Newton (TNC) algorithm.
@@ -311,9 +308,9 @@ def _minimize_tnc(fun, x0, args=(), jac=None, bounds=None,
         iteration. If maxCGit == 0, the direction chosen is
         -gradient if maxCGit < 0, maxCGit is set to
         max(1,min(50,n/2)). Defaults to -1.
-    maxiter : int
-        Maximum number of function evaluation. If None, `maxiter` is
-        set to max(100, 10*len(x0)). Defaults to None.
+    maxiter : int, optional
+        Maximum number of function evaluations. This keyword is deprecated
+        in favor of `maxfun`. Only if `maxfun` is None is this keyword used.
     eta : float
         Severity of the line search. If < 0 or > 1, set to 0.25.
         Defaults to -1.
@@ -350,9 +347,11 @@ def _minimize_tnc(fun, x0, args=(), jac=None, bounds=None,
         possibly adjusted to fit into the bounds. For ``method='3-point'``
         the sign of `h` is ignored. If None (default) then step is selected
         automatically.
+    maxfun : int
+        Maximum number of function evaluations. If None, `maxfun` is
+        set to max(100, 10*len(x0)). Defaults to None.
     """
     _check_unknown_options(unknown_options)
-    maxfun = maxiter
     fmin = minfev
     pgtol = gtol
 
@@ -407,7 +406,10 @@ def _minimize_tnc(fun, x0, args=(), jac=None, bounds=None,
         offset = array([])
 
     if maxfun is None:
-        maxfun = max(100, 10*len(x0))
+        if maxiter is not None:
+            maxfun = maxiter
+        else:
+            maxfun = max(100, 10*len(x0))
 
     rc, nf, nit, x = moduleTNC.minimize(func_and_grad, x0, low, up, scale,
                                         offset, messages, maxCGit, maxfun,

@@ -1,12 +1,10 @@
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 from numpy.testing import assert_allclose
 from pytest import raises as assert_raises
 from scipy.stats import (binned_statistic, binned_statistic_2d,
                          binned_statistic_dd)
+from scipy._lib._util import check_random_state
 
-from scipy._lib.six import u
 from .common_tests import check_named_results
 
 
@@ -14,13 +12,13 @@ class TestBinnedStatistic(object):
 
     @classmethod
     def setup_class(cls):
-        np.random.seed(9865)
-        cls.x = np.random.random(100)
-        cls.y = np.random.random(100)
-        cls.v = np.random.random(100)
-        cls.X = np.random.random((100, 3))
-        cls.w = np.random.random(100)
-        cls.u = np.random.random(100) + 1e6
+        rng = check_random_state(9865)
+        cls.x = rng.uniform(size=100)
+        cls.y = rng.uniform(size=100)
+        cls.v = rng.uniform(size=100)
+        cls.X = rng.uniform(size=(100, 3))
+        cls.w = rng.uniform(size=100)
+        cls.u = rng.uniform(size=100) + 1e6
 
     def test_1d_count(self):
         x = self.x
@@ -46,21 +44,26 @@ class TestBinnedStatistic(object):
         # see issue gh-10126 for more
         x = self.x
         u = self.u
-
         stat1, edges1, bc = binned_statistic(x, u, 'std', bins=10)
         stat2, edges2, bc = binned_statistic(x, u, np.std, bins=10)
 
         assert_allclose(stat1, stat2)
 
-    def test_non_finite_inputs(self):
+    def test_non_finite_inputs_and_int_bins(self):
         # if either `values` or `sample` contain np.inf or np.nan throw
         # see issue gh-9010 for more
         x = self.x
         u = self.u
+        orig = u[0]
         u[0] = np.inf
-        assert_raises(ValueError, binned_statistic, x, u, 'std', bins=10)
+        assert_raises(ValueError, binned_statistic, u, x, 'std', bins=10)
+        # need to test for non-python specific ints, e.g. np.int8, np.int64
+        assert_raises(ValueError, binned_statistic, u, x, 'std',
+                      bins=np.int64(10))
         u[0] = np.nan
-        assert_raises(ValueError, binned_statistic, x, u, 'count', bins=10)
+        assert_raises(ValueError, binned_statistic, u, x, 'count', bins=10)
+        # replace original value, u belongs the class
+        u[0] = orig
 
     def test_1d_result_attributes(self):
         x = self.x
@@ -223,7 +226,7 @@ class TestBinnedStatistic(object):
         y = self.y
         v = self.v
         stat1, binx1, biny1, bc = binned_statistic_2d(
-            x, y, v, u('mean'), bins=5)
+            x, y, v, 'mean', bins=5)
         stat2, binx2, biny2, bc = binned_statistic_2d(x, y, v, np.mean, bins=5)
         assert_allclose(stat1, stat2)
         assert_allclose(binx1, binx2)

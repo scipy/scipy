@@ -31,8 +31,6 @@
 Decorator module, see https://pypi.python.org/pypi/decorator
 for the documentation.
 """
-from __future__ import print_function
-
 import re
 import sys
 import inspect

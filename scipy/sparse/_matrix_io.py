@@ -1,6 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
-import sys
 import numpy as np
 import scipy.sparse
 
@@ -131,7 +128,7 @@ def load_npz(file):
 
         matrix_format = matrix_format.item()
 
-        if sys.version_info[0] >= 3 and not isinstance(matrix_format, str):
+        if not isinstance(matrix_format, str):
             # Play safe with Python 2 vs 3 backward compatibility;
             # files saved with SciPy < 1.0.0 may contain unicode or bytes.
             matrix_format = matrix_format.decode('ascii')

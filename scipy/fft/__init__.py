@@ -71,8 +71,6 @@ Backend control
 
 """
 
-from __future__ import division, print_function, absolute_import
-
 from ._basic import (
     fft, ifft, fft2, ifft2, fftn, ifftn,
     rfft, irfft, rfft2, irfft2, rfftn, irfftn,
@@ -94,10 +92,6 @@ __all__ = [
     'set_backend', 'skip_backend', 'set_global_backend', 'register_backend',
     'get_workers', 'set_workers']
 
-from numpy.dual import register_func
-for k in ['fft', 'ifft', 'fftn', 'ifftn', 'fft2', 'ifft2']:
-    register_func(k, eval(k))
-del k, register_func
 
 from scipy._lib._testutils import PytestTester
 test = PytestTester(__name__)

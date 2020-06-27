@@ -14,10 +14,10 @@ Uses ARPACK: http://www.caam.rice.edu/software/ARPACK/
 # - (s,d,c,z)neupd: single,double,complex,double complex general matrix
 # This wrapper puts the *neupd (general matrix) interfaces in eigs()
 # and the *seupd (symmetric matrix) in eigsh().
-# There is no Hermetian complex/double complex interface.
-# To find eigenvalues of a Hermetian matrix you
+# There is no Hermitian complex/double complex interface.
+# To find eigenvalues of a Hermitian matrix you
 # must use eigs() and not eigsh()
-# It might be desirable to handle the Hermetian case differently
+# It might be desirable to handle the Hermitian case differently
 # and, for example, return real eigenvalues.
 
 # Number of eigenvalues returned and complex eigenvalues
@@ -36,13 +36,13 @@ Uses ARPACK: http://www.caam.rice.edu/software/ARPACK/
 # ARPACK and handle shifted and shift-inverse computations
 # for eigenvalues by providing a shift (sigma) and a solver.
 
-from __future__ import division, print_function, absolute_import
-
 __docformat__ = "restructuredtext en"
 
 __all__ = ['eigs', 'eigsh', 'svds', 'ArpackError', 'ArpackNoConvergence']
 
 from . import _arpack
+arpack_int = _arpack.timing.nbx.dtype
+
 import numpy as np
 import warnings
 from scipy.sparse.linalg.interface import aslinearoperator, LinearOperator
@@ -341,7 +341,7 @@ class _ArpackParams(object):
         ncv = min(ncv, n)
 
         self.v = np.zeros((n, ncv), tp)  # holds Ritz vectors
-        self.iparam = np.zeros(11, "int")
+        self.iparam = np.zeros(11, arpack_int)
 
         # set solver mode and parameters
         ishfts = 1
@@ -530,7 +530,7 @@ class _SymmetricArpackParams(_ArpackParams):
         self.iterate_infodict = _SAUPD_ERRORS[ltr]
         self.extract_infodict = _SEUPD_ERRORS[ltr]
 
-        self.ipntr = np.zeros(11, "int")
+        self.ipntr = np.zeros(11, arpack_int)
 
     def iterate(self):
         self.ido, self.tol, self.resid, self.v, self.iparam, self.ipntr, self.info = \
@@ -710,7 +710,7 @@ class _UnsymmetricArpackParams(_ArpackParams):
         self.iterate_infodict = _NAUPD_ERRORS[ltr]
         self.extract_infodict = _NEUPD_ERRORS[ltr]
 
-        self.ipntr = np.zeros(14, "int")
+        self.ipntr = np.zeros(14, arpack_int)
 
         if self.tp in 'FD':
             # Use _aligned_zeros to work around a f2py bug in Numpy 1.9.1
@@ -908,7 +908,7 @@ class SpLuInv(LinearOperator):
     """
     SpLuInv:
        helper class to repeatedly solve M*x=b
-       using a sparse LU-decopposition of M
+       using a sparse LU-decomposition of M
     """
     def __init__(self, M):
         self.M_lu = splu(M)

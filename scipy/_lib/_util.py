@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 import functools
 import operator
 import sys
@@ -10,6 +8,12 @@ from multiprocessing import Pool
 import inspect
 
 import numpy as np
+
+try:
+    from numpy.random import Generator as Generator
+except ImportError:
+    class Generator():  # type: ignore[no-redef]
+        pass
 
 
 def _valarray(shape, value=np.nan, typecode=None):
@@ -136,6 +140,19 @@ def _prune_array(array):
     return array
 
 
+def prod(iterable):
+    """
+    Product of a sequence of numbers.
+
+    Faster than np.prod for short lists like array shapes, and does
+    not overflow if using Python integers.
+    """
+    product = 1
+    for x in iterable:
+        product *= x
+    return product
+
+
 class DeprecatedImport(object):
     """
     Deprecated import with redirection and warning.
@@ -253,98 +270,76 @@ def _asarray_validated(a, check_finite=True,
     return a
 
 
-# Add a replacement for inspect.getargspec() which is deprecated in Python 3.5
+# Add a replacement for inspect.getfullargspec()/
 # The version below is borrowed from Django,
 # https://github.com/django/django/pull/4846.
 
-# Note an inconsistency between inspect.getargspec(func) and
+# Note an inconsistency between inspect.getfullargspec(func) and
 # inspect.signature(func). If `func` is a bound method, the latter does *not*
 # list `self` as a first argument, while the former *does*.
-# Hence, cook up a common ground replacement: `getargspec_no_self` which
-# mimics `inspect.getargspec` but does not list `self`.
+# Hence, cook up a common ground replacement: `getfullargspec_no_self` which
+# mimics `inspect.getfullargspec` but does not list `self`.
 #
 # This way, the caller code does not need to know whether it uses a legacy
-# .getargspec or a bright and shiny .signature.
+# .getfullargspec or a bright and shiny .signature.
 
-try:
-    # is it Python 3.3 or higher?
-    inspect.signature
+FullArgSpec = namedtuple('FullArgSpec',
+                         ['args', 'varargs', 'varkw', 'defaults',
+                          'kwonlyargs', 'kwonlydefaults', 'annotations'])
 
-    # Apparently, yes. Wrap inspect.signature
+def getfullargspec_no_self(func):
+    """inspect.getfullargspec replacement using inspect.signature.
 
-    ArgSpec = namedtuple('ArgSpec', ['args', 'varargs', 'keywords', 'defaults'])
+    If func is a bound method, do not list the 'self' parameter.
 
-    def getargspec_no_self(func):
-        """inspect.getargspec replacement using inspect.signature.
+    Parameters
+    ----------
+    func : callable
+        A callable to inspect
 
-        inspect.getargspec is deprecated in Python 3. This is a replacement
-        based on the (new in Python 3.3) `inspect.signature`.
+    Returns
+    -------
+    fullargspec : FullArgSpec(args, varargs, varkw, defaults, kwonlyargs,
+                              kwonlydefaults, annotations)
 
-        Parameters
-        ----------
-        func : callable
-            A callable to inspect
+        NOTE: if the first argument of `func` is self, it is *not*, I repeat
+        *not*, included in fullargspec.args.
+        This is done for consistency between inspect.getargspec() under
+        Python 2.x, and inspect.signature() under Python 3.x.
 
-        Returns
-        -------
-        argspec : ArgSpec(args, varargs, varkw, defaults)
-            This is similar to the result of inspect.getargspec(func) under
-            Python 2.x.
-            NOTE: if the first argument of `func` is self, it is *not*, I repeat
-            *not*, included in argspec.args.
-            This is done for consistency between inspect.getargspec() under
-            Python 2.x, and inspect.signature() under Python 3.x.
-        """
-        sig = inspect.signature(func)
-        args = [
-            p.name for p in sig.parameters.values()
-            if p.kind == inspect.Parameter.POSITIONAL_OR_KEYWORD
-        ]
-        varargs = [
-            p.name for p in sig.parameters.values()
-            if p.kind == inspect.Parameter.VAR_POSITIONAL
-        ]
-        varargs = varargs[0] if varargs else None
-        varkw = [
-            p.name for p in sig.parameters.values()
-            if p.kind == inspect.Parameter.VAR_KEYWORD
-        ]
-        varkw = varkw[0] if varkw else None
-        defaults = [
-            p.default for p in sig.parameters.values()
-            if (p.kind == inspect.Parameter.POSITIONAL_OR_KEYWORD and
-               p.default is not p.empty)
-        ] or None
-        return ArgSpec(args, varargs, varkw, defaults)
-
-except AttributeError:
-    # python 2.x
-    def getargspec_no_self(func):
-        """inspect.getargspec replacement for compatibility with Python 3.x.
-
-        inspect.getargspec is deprecated in Python 3. This wraps it and
-        *removes* `self` from the argument list of `func`, if present.
-        This is done for forward compatibility with Python 3.
-
-        Parameters
-        ----------
-        func : callable
-            A callable to inspect
-
-        Returns
-        -------
-        argspec : ArgSpec(args, varargs, varkw, defaults)
-            This is similar to the result of inspect.getargspec(func) under
-            Python 2.x.
-            NOTE: if the first argument of `func` is self, it is *not*, I repeat
-            *not*, included in argspec.args.
-            This is done for consistency between inspect.getargspec() under
-            Python 2.x, and inspect.signature() under Python 3.x.
-        """
-        argspec = inspect.getargspec(func)
-        if argspec.args[0] == 'self':
-            argspec.args.pop(0)
-        return argspec
+    """
+    sig = inspect.signature(func)
+    args = [
+        p.name for p in sig.parameters.values()
+        if p.kind in [inspect.Parameter.POSITIONAL_OR_KEYWORD,
+                      inspect.Parameter.POSITIONAL_ONLY]
+    ]
+    varargs = [
+        p.name for p in sig.parameters.values()
+        if p.kind == inspect.Parameter.VAR_POSITIONAL
+    ]
+    varargs = varargs[0] if varargs else None
+    varkw = [
+        p.name for p in sig.parameters.values()
+        if p.kind == inspect.Parameter.VAR_KEYWORD
+    ]
+    varkw = varkw[0] if varkw else None
+    defaults = tuple(
+        p.default for p in sig.parameters.values()
+        if (p.kind == inspect.Parameter.POSITIONAL_OR_KEYWORD and
+           p.default is not p.empty)
+    ) or None
+    kwonlyargs = [
+        p.name for p in sig.parameters.values()
+        if p.kind == inspect.Parameter.KEYWORD_ONLY
+    ]
+    kwdefaults = {p.name: p.default for p in sig.parameters.values()
+                  if p.kind == inspect.Parameter.KEYWORD_ONLY and
+                  p.default is not p.empty}
+    annotations = {p.name: p.annotation for p in sig.parameters.values()
+                   if p.annotation is not p.empty}
+    return FullArgSpec(args, varargs, varkw, defaults, kwonlyargs,
+                       kwdefaults or None, annotations)
 
 
 class MapWrapper(object):
@@ -421,3 +416,67 @@ class MapWrapper(object):
             # wrong number of arguments
             raise TypeError("The map-like callable must be of the"
                             " form f(func, iterable)")
+
+
+def rng_integers(gen, low, high=None, size=None, dtype='int64',
+                 endpoint=False):
+    """
+    Return random integers from low (inclusive) to high (exclusive), or if
+    endpoint=True, low (inclusive) to high (inclusive). Replaces
+    `RandomState.randint` (with endpoint=False) and
+    `RandomState.random_integers` (with endpoint=True).
+
+    Return random integers from the "discrete uniform" distribution of the
+    specified dtype. If high is None (the default), then results are from
+    0 to low.
+
+    Parameters
+    ----------
+    gen: {None, np.random.RandomState, np.random.Generator}
+        Random number generator. If None, then the np.random.RandomState
+        singleton is used.
+    low: int or array-like of ints
+        Lowest (signed) integers to be drawn from the distribution (unless
+        high=None, in which case this parameter is 0 and this value is used
+        for high).
+    high: int or array-like of ints
+        If provided, one above the largest (signed) integer to be drawn from
+        the distribution (see above for behavior if high=None). If array-like,
+        must contain integer values.
+    size: None
+        Output shape. If the given shape is, e.g., (m, n, k), then m * n * k
+        samples are drawn. Default is None, in which case a single value is
+        returned.
+    dtype: {str, dtype}, optional
+        Desired dtype of the result. All dtypes are determined by their name,
+        i.e., 'int64', 'int', etc, so byteorder is not available and a specific
+        precision may have different C types depending on the platform.
+        The default value is np.int_.
+    endpoint: bool, optional
+        If True, sample from the interval [low, high] instead of the default
+        [low, high) Defaults to False.
+
+    Returns
+    -------
+    out: int or ndarray of ints
+        size-shaped array of random integers from the appropriate distribution,
+        or a single such random int if size not provided.
+    """
+    if isinstance(gen, Generator):
+        return gen.integers(low, high=high, size=size, dtype=dtype,
+                            endpoint=endpoint)
+    else:
+        if gen is None:
+            # default is RandomState singleton used by np.random.
+            gen = np.random.mtrand._rand
+        if endpoint:
+            # inclusive of endpoint
+            # remember that low and high can be arrays, so don't modify in
+            # place
+            if high is None:
+                return gen.randint(low + 1, size=size, dtype=dtype)
+            if high is not None:
+                return gen.randint(low, high=high + 1, size=size, dtype=dtype)
+
+        # exclusive
+        return gen.randint(low, high=high, size=size, dtype=dtype)

@@ -1,7 +1,4 @@
-from __future__ import division, print_function, absolute_import
-
 import os
-import platform
 
 import numpy as np
 from numpy import arccosh, arcsinh, arctanh
@@ -494,8 +491,5 @@ def _test_factory(test, dtype=np.double):
     """Boost test"""
     with suppress_warnings() as sup:
         sup.filter(IntegrationWarning, "The occurrence of roundoff error is detected")
-        olderr = np.seterr(all='ignore')
-        try:
+        with np.errstate(all='ignore'):
             test.check(dtype=dtype)
-        finally:
-            np.seterr(**olderr)

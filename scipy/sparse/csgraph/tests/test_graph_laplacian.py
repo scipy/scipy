@@ -1,8 +1,6 @@
 # Author: Gael Varoquaux <gael.varoquaux@normalesup.org>
 #         Jake Vanderplas <vanderplas@astro.washington.edu>
 # License: BSD
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 from numpy.testing import assert_allclose, assert_array_almost_equal
 from pytest import raises as assert_raises

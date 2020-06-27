@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 import os
 
 import numpy as np
@@ -235,8 +233,8 @@ class TestCloughTocher2DInterpolator(object):
         try:
             assert_allclose(a, b, **kw)
         except AssertionError:
-            print(abs(a - b))
-            print(ip.grad)
+            print("_check_accuracy: abs(a-b):", abs(a - b))
+            print("ip.grad:", ip.grad)
             raise
 
     def test_linear_smoketest(self):

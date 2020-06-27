@@ -1,4 +1,3 @@
-from __future__ import print_function
 import numpy as np
 import itertools
 from numpy.testing import (assert_equal,
@@ -10,12 +9,90 @@ import pytest
 from pytest import raises as assert_raises
 from pytest import warns as assert_warns
 from scipy.spatial import SphericalVoronoi, distance
-from scipy.spatial import _spherical_voronoi as spherical_voronoi
-from scipy.spatial.transform import Rotation
 from scipy.optimize import linear_sum_assignment
+from scipy.constants import golden as phi
+from scipy.special import gamma
 
 
 TOL = 1E-10
+
+
+def _generate_tetrahedron():
+    return np.array([[1, 1, 1], [1, -1, -1], [-1, 1, -1], [-1, -1, 1]])
+
+
+def _generate_cube():
+    return np.array(list(itertools.product([-1, 1.], repeat=3)))
+
+
+def _generate_octahedron():
+    return np.array([[-1, 0, 0], [+1, 0, 0], [0, -1, 0],
+                     [0, +1, 0], [0, 0, -1], [0, 0, +1]])
+
+
+def _generate_dodecahedron():
+
+    x1 = _generate_cube()
+    x2 = np.array([[0, -phi, -1 / phi],
+                   [0, -phi, +1 / phi],
+                   [0, +phi, -1 / phi],
+                   [0, +phi, +1 / phi]])
+    x3 = np.array([[-1 / phi, 0, -phi],
+                   [+1 / phi, 0, -phi],
+                   [-1 / phi, 0, +phi],
+                   [+1 / phi, 0, +phi]])
+    x4 = np.array([[-phi, -1 / phi, 0],
+                   [-phi, +1 / phi, 0],
+                   [+phi, -1 / phi, 0],
+                   [+phi, +1 / phi, 0]])
+    return np.concatenate((x1, x2, x3, x4))
+
+
+def _generate_icosahedron():
+    x = np.array([[0, -1, -phi],
+                  [0, -1, +phi],
+                  [0, +1, -phi],
+                  [0, +1, +phi]])
+    return np.concatenate([np.roll(x, i, axis=1) for i in range(3)])
+
+
+def _generate_polytope(name):
+    polygons = ["triangle", "square", "pentagon", "hexagon", "heptagon",
+                "octagon", "nonagon", "decagon", "undecagon", "dodecagon"]
+    polyhedra = ["tetrahedron", "cube", "octahedron", "dodecahedron",
+                 "icosahedron"]
+    if name not in polygons and name not in polyhedra:
+        raise ValueError("unrecognized polytope")
+
+    if name in polygons:
+        n = polygons.index(name) + 3
+        thetas = np.linspace(0, 2 * np.pi, n, endpoint=False)
+        p = np.vstack([np.cos(thetas), np.sin(thetas)]).T
+    elif name == "tetrahedron":
+        p = _generate_tetrahedron()
+    elif name == "cube":
+        p = _generate_cube()
+    elif name == "octahedron":
+        p = _generate_octahedron()
+    elif name == "dodecahedron":
+        p = _generate_dodecahedron()
+    elif name == "icosahedron":
+        p = _generate_icosahedron()
+
+    return p / np.linalg.norm(p, axis=1, keepdims=True)
+
+
+def _hypersphere_area(dim, radius):
+    # https://en.wikipedia.org/wiki/N-sphere#Closed_forms
+    return 2 * np.pi**(dim / 2) / gamma(dim / 2) * radius**(dim - 1)
+
+
+def _sample_sphere(n, dim, seed=None):
+    # Sample points uniformly at random from the hypersphere
+    rng = np.random.RandomState(seed=seed)
+    points = rng.randn(n, dim)
+    points /= np.linalg.norm(points, axis=1, keepdims=True)
+    return points
 
 
 class TestSphericalVoronoi(object):
@@ -31,27 +108,6 @@ class TestSphericalVoronoi(object):
             [0.73181537, -0.22025898, -0.6449281],
             [0.79979205, 0.54555747, 0.25039913]]
         )
-
-        # Issue #9386
-        self.hemisphere_points = np.array([
-            [0.88610999, -0.42383021, 0.18755541],
-            [0.51980039, -0.72622668, 0.4498915],
-            [0.56540011, -0.81629197, -0.11827989],
-            [0.69659682, -0.69972598, 0.15854467]])
-
-        # Issue #8859
-        phi = np.linspace(0, 2 * np.pi, 10, endpoint=False)    # azimuth angle
-        theta = np.linspace(0.001, np.pi * 0.4, 5)    # polar angle
-        theta = theta[np.newaxis, :].T
-
-        phiv, thetav = np.meshgrid(phi, theta)
-        phiv = np.reshape(phiv, (50, 1))
-        thetav = np.reshape(thetav, (50, 1))
-
-        x = np.cos(phiv) * np.sin(thetav)
-        y = np.sin(phiv) * np.sin(thetav)
-        z = np.cos(thetav)
-        self.hemisphere_points2 = np.concatenate([x, y, z], axis=1)
 
     def test_constructor(self):
         center = np.array([1, 2, 3])
@@ -96,7 +152,7 @@ class TestSphericalVoronoi(object):
 
     def test_old_radius_api_warning(self):
         with assert_warns(DeprecationWarning):
-            sv = SphericalVoronoi(self.points, None)
+            SphericalVoronoi(self.points, None)
 
     def test_sort_vertices_of_regions(self):
         sv = SphericalVoronoi(self.points)
@@ -108,7 +164,7 @@ class TestSphericalVoronoi(object):
         expected = sorted([[0, 6, 5, 2, 3], [2, 3, 10, 11, 8, 7], [0, 6, 4, 1],
                            [4, 8, 7, 5, 6], [9, 11, 10], [2, 7, 5],
                            [1, 4, 8, 11, 9], [0, 3, 10, 9, 1]])
-        expected = list(itertools.chain(*sorted(expected)))
+        expected = list(itertools.chain(*sorted(expected)))  # type: ignore
         sv = SphericalVoronoi(self.points)
         sv.sort_vertices_of_regions()
         actual = list(itertools.chain(*sorted(sv.regions)))
@@ -121,7 +177,7 @@ class TestSphericalVoronoi(object):
                            [0, 0, 0, 1],
                            [0.5, 0.5, 0.5, 0.5]])
         with pytest.raises(TypeError, match="three-dimensional"):
-            sv = spherical_voronoi.SphericalVoronoi(points)
+            sv = SphericalVoronoi(points)
             sv.sort_vertices_of_regions()
 
     def test_num_vertices(self):
@@ -136,7 +192,7 @@ class TestSphericalVoronoi(object):
         assert_equal(actual, expected)
 
     def test_voronoi_circles(self):
-        sv = spherical_voronoi.SphericalVoronoi(self.points)
+        sv = SphericalVoronoi(self.points)
         for vertex in sv.vertices:
             distances = distance.cdist(sv.points, np.array([vertex]))
             closest = np.array(sorted(distances)[0:3])
@@ -148,89 +204,54 @@ class TestSphericalVoronoi(object):
         # related to Issue# 7046
         self.degenerate = np.concatenate((self.points, self.points))
         with assert_raises(ValueError):
-            sv = spherical_voronoi.SphericalVoronoi(self.degenerate)
+            SphericalVoronoi(self.degenerate)
 
     def test_incorrect_radius_handling(self):
         # an exception should be raised if the radius provided
         # cannot possibly match the input generators
         with assert_raises(ValueError):
-            sv = spherical_voronoi.SphericalVoronoi(self.points,
-                                                    radius=0.98)
+            SphericalVoronoi(self.points, radius=0.98)
 
     def test_incorrect_center_handling(self):
         # an exception should be raised if the center provided
         # cannot possibly match the input generators
         with assert_raises(ValueError):
-            sv = spherical_voronoi.SphericalVoronoi(self.points,
-                                                    center=[0.1, 0, 0])
+            SphericalVoronoi(self.points, center=[0.1, 0, 0])
 
-    def test_single_hemisphere_handling(self):
-        # Test solution of Issues #9386, #8859
+    @pytest.mark.parametrize("dim", range(2, 6))
+    @pytest.mark.parametrize("shift", [False, True])
+    def test_single_hemisphere_handling(self, dim, shift):
+        n = 10
+        points = _sample_sphere(n, dim, seed=0)
+        points[:, 0] = np.abs(points[:, 0])
+        center = (np.arange(dim) + 1) * shift
+        sv = SphericalVoronoi(points + center, center=center)
+        dots = np.einsum('ij,ij->i', sv.vertices - center,
+                                     sv.points[sv._simplices[:, 0]] - center)
+        circumradii = np.arccos(np.clip(dots, -1, 1))
+        assert np.max(circumradii) > np.pi / 2
 
-        for points in [self.hemisphere_points, self.hemisphere_points2]:
-            sv = SphericalVoronoi(points)
-            triangles = sv._tri.points[sv._tri.simplices]
-            dots = np.einsum('ij,ij->i', sv.vertices, triangles[:, 0])
-            circumradii = np.arccos(np.clip(dots, -1, 1))
-            assert np.max(circumradii) > np.pi / 2
-
-    def test_rank_deficient(self):
-        # rank-1 input cannot be triangulated
-        points = np.array([[-1, 0, 0], [1, 0, 0]])
+    @pytest.mark.parametrize("n", [1, 2, 10])
+    @pytest.mark.parametrize("dim", range(2, 6))
+    @pytest.mark.parametrize("shift", [False, True])
+    def test_rank_deficient(self, n, dim, shift):
+        center = (np.arange(dim) + 1) * shift
+        points = _sample_sphere(n, dim - 1, seed=0)
+        points = np.hstack([points, np.zeros((n, 1))])
         with pytest.raises(ValueError, match="Rank of input points"):
-            sv = spherical_voronoi.SphericalVoronoi(points)
+            SphericalVoronoi(points + center, center=center)
 
-    @pytest.mark.parametrize("n", [8, 15, 21])
-    @pytest.mark.parametrize("radius", [0.5, 1, 2])
-    @pytest.mark.parametrize("center", [(0, 0, 0), (1, 2, 3)])
-    def test_geodesic_input(self, n, radius, center):
-        U = Rotation.random(random_state=0).as_matrix()
-        thetas = np.linspace(0, 2 * np.pi, n, endpoint=False)
-        points = np.vstack([np.sin(thetas), np.cos(thetas), np.zeros(n)]).T
-        points = radius * points @ U
-        sv = SphericalVoronoi(points + center, radius=radius, center=center)
-
-        # each region must have 4 vertices
-        region_sizes = np.array([len(region) for region in sv.regions])
-        assert (region_sizes == 4).all()
-        regions = np.array(sv.regions)
-
-        # vertices are those between each pair of input points + north and
-        # south poles
-        vertices = sv.vertices - center
-        assert len(vertices) == n + 2
-
-        # verify that north and south poles are orthogonal to geodesic on which
-        # input points lie
-        poles = vertices[n:]
-        assert np.abs(np.dot(points, poles.T)).max() < 1E-10
-
-        for point, region in zip(points, sv.regions):
-            cosine = np.dot(vertices[region], point)
-            sine = np.linalg.norm(np.cross(vertices[region], point), axis=1)
-            arclengths = radius * np.arctan2(sine, cosine)
-            # test arc lengths to poles
-            assert_almost_equal(arclengths[[1, 3]], radius * np.pi / 2)
-            # test arc lengths to forward and backward neighbors
-            assert_almost_equal(arclengths[[0, 2]], radius * np.pi / n)
-
-        regions = sv.regions.copy()
-        sv.sort_vertices_of_regions()
-        assert regions == sv.regions
-
-    @pytest.mark.parametrize("dim", range(2, 7))
+    @pytest.mark.parametrize("dim", range(2, 6))
     def test_higher_dimensions(self, dim):
         n = 100
-        rng = np.random.RandomState(seed=0)
-        points = rng.randn(n, dim)
-        points /= np.linalg.norm(points, axis=1)[:, np.newaxis]
+        points = _sample_sphere(n, dim, seed=0)
         sv = SphericalVoronoi(points)
         assert sv.vertices.shape[1] == dim
         assert len(sv.regions) == n
 
         # verify Euler characteristic
         cell_counts = []
-        simplices = np.sort(sv._tri.simplices)
+        simplices = np.sort(sv._simplices)
         for i in range(1, dim + 1):
             cells = []
             for indices in itertools.combinations(range(dim), i):
@@ -241,7 +262,7 @@ class TestSphericalVoronoi(object):
         actual_euler = sum([(-1)**i * e for i, e in enumerate(cell_counts)])
         assert expected_euler == actual_euler
 
-    @pytest.mark.parametrize("dim", range(2, 7))
+    @pytest.mark.parametrize("dim", range(2, 6))
     def test_cross_polytope_regions(self, dim):
         # The hypercube is the dual of the cross-polytope, so the voronoi
         # vertices of the cross-polytope lie on the points of the hypercube.
@@ -253,21 +274,21 @@ class TestSphericalVoronoi(object):
 
         # generate points of the hypercube
         expected = np.vstack(list(itertools.product([-1, 1], repeat=dim)))
-        expected = expected.astype(np.float) / np.sqrt(dim)
+        expected = expected.astype(np.float64) / np.sqrt(dim)
 
         # test that Voronoi vertices are correctly placed
         dist = distance.cdist(sv.vertices, expected)
         res = linear_sum_assignment(dist)
         assert dist[res].sum() < TOL
 
-    @pytest.mark.parametrize("dim", range(2, 4))
+    @pytest.mark.parametrize("dim", range(2, 6))
     def test_hypercube_regions(self, dim):
         # The cross-polytope is the dual of the hypercube, so the voronoi
         # vertices of the hypercube lie on the points of the cross-polytope.
 
         # generate points of the hypercube
         points = np.vstack(list(itertools.product([-1, 1], repeat=dim)))
-        points = points.astype(np.float) / np.sqrt(dim)
+        points = points.astype(np.float64) / np.sqrt(dim)
         sv = SphericalVoronoi(points)
 
         # generate points of the cross-polytope
@@ -277,3 +298,52 @@ class TestSphericalVoronoi(object):
         dist = distance.cdist(sv.vertices, expected)
         res = linear_sum_assignment(dist)
         assert dist[res].sum() < TOL
+
+    @pytest.mark.parametrize("n", [10, 500])
+    @pytest.mark.parametrize("dim", [2, 3])
+    @pytest.mark.parametrize("radius", [0.5, 1, 2])
+    @pytest.mark.parametrize("shift", [False, True])
+    @pytest.mark.parametrize("single_hemisphere", [False, True])
+    def test_area_reconstitution(self, n, dim, radius, shift,
+                                 single_hemisphere):
+        points = _sample_sphere(n, dim, seed=0)
+
+        # move all points to one side of the sphere for single-hemisphere test
+        if single_hemisphere:
+            points[:, 0] = np.abs(points[:, 0])
+
+        center = (np.arange(dim) + 1) * shift
+        points = radius * points + center
+
+        sv = SphericalVoronoi(points, radius=radius, center=center)
+        areas = sv.calculate_areas()
+        assert_almost_equal(areas.sum(), _hypersphere_area(dim, radius))
+
+    @pytest.mark.parametrize("poly", ["triangle", "dodecagon",
+                                      "tetrahedron", "cube", "octahedron",
+                                      "dodecahedron", "icosahedron"])
+    def test_equal_area_reconstitution(self, poly):
+        points = _generate_polytope(poly)
+        n, dim = points.shape
+        sv = SphericalVoronoi(points)
+        areas = sv.calculate_areas()
+        assert_almost_equal(areas, _hypersphere_area(dim, 1) / n)
+
+    def test_area_unsupported_dimension(self):
+        dim = 4
+        points = np.concatenate((-np.eye(dim), np.eye(dim)))
+        sv = SphericalVoronoi(points)
+        with pytest.raises(TypeError, match="Only supported"):
+            sv.calculate_areas()
+
+    @pytest.mark.parametrize("radius", [1, 1.])
+    @pytest.mark.parametrize("center", [None, (1, 2, 3), (1., 2., 3.)])
+    def test_attribute_types(self, radius, center):
+        points = radius * self.points
+        if center is not None:
+            points += center
+
+        sv = SphericalVoronoi(points, radius=radius, center=center)
+        assert sv.points.dtype is np.dtype(np.float64)
+        assert sv.center.dtype is np.dtype(np.float64)
+        assert isinstance(sv.radius, float)

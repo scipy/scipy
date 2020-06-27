@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 import math
 import warnings
 from collections import namedtuple
@@ -18,6 +16,7 @@ from .stats import find_repeats, _contains_nan
 from .contingency import chi2_contingency
 from . import distributions
 from ._distn_infrastructure import rv_generic
+from ._hypotests import _get_wilcoxon_distr
 
 
 __all__ = ['mvsdist',
@@ -1605,6 +1604,8 @@ def yeojohnson_normplot(x, la, lb, plot=None, N=80):
     return _normplot('yeojohnson', x, la, lb, plot, N)
 
 
+ShapiroResult = namedtuple('ShapiroResult', ('statistic', 'pvalue'))
+
 def shapiro(x):
     """
     Perform the Shapiro-Wilk test for normality.
@@ -1619,7 +1620,7 @@ def shapiro(x):
 
     Returns
     -------
-    W : float
+    statistic : float
         The test statistic.
     p-value : float
         The p-value for the hypothesis test.
@@ -1653,8 +1654,13 @@ def shapiro(x):
     >>> from scipy import stats
     >>> np.random.seed(12345678)
     >>> x = stats.norm.rvs(loc=5, scale=3, size=100)
-    >>> stats.shapiro(x)
-    (0.9772805571556091, 0.08144091814756393)
+    >>> shapiro_test = stats.shapiro(x)
+    >>> shapiro_test
+    ShapiroResult(statistic=0.9772805571556091, pvalue=0.08144091814756393)
+    >>> shapiro_test.statistic
+    0.9772805571556091
+    >>> shapiro_test.pvalue
+    0.08144091814756393
 
     """
     x = np.ravel(x)
@@ -1674,11 +1680,11 @@ def shapiro(x):
     if N > 5000:
         warnings.warn("p-value may not be accurate for N > 5000.")
 
-    return w, pw
+    return ShapiroResult(w, pw)
 
 
 # Values from Stephens, M A, "EDF Statistics for Goodness of Fit and
-#             Some Comparisons", Journal of he American Statistical
+#             Some Comparisons", Journal of the American Statistical
 #             Association, Vol. 69, Issue 347, Sept. 1974, pp 730-737
 _Avals_norm = array([0.576, 0.656, 0.787, 0.918, 1.092])
 _Avals_expon = array([0.922, 1.078, 1.341, 1.606, 1.957])
@@ -1700,7 +1706,7 @@ def anderson(x, dist='norm'):
     """
     Anderson-Darling test for data coming from a particular distribution.
 
-    The Anderson-Darling tests the null hypothesis that a sample is
+    The Anderson-Darling test tests the null hypothesis that a sample is
     drawn from a population that follows a particular distribution.
     For the Anderson-Darling test, the critical values depend on
     which distribution is being tested against.  This function works
@@ -1711,10 +1717,11 @@ def anderson(x, dist='norm'):
     ----------
     x : array_like
         Array of sample data.
-    dist : {'norm','expon','logistic','gumbel','gumbel_l', gumbel_r',
+    dist : {'norm', 'expon', 'logistic', 'gumbel', 'gumbel_l', 'gumbel_r',
         'extreme1'}, optional
-        the type of distribution to test against.  The default is 'norm'
-        and 'extreme1', 'gumbel_l' and 'gumbel' are synonyms.
+        The type of distribution to test against.  The default is 'norm'.
+        The names 'extreme1', 'gumbel_l' and 'gumbel' are synonyms for the
+        same distribution.
 
     Returns
     -------
@@ -2219,6 +2226,27 @@ def bartlett(*args):
            Tests. Proceedings of the Royal Society of London. Series A,
            Mathematical and Physical Sciences, Vol. 160, No.901, pp. 268-282.
 
+    Examples
+    --------
+    Test whether or not the lists `a`, `b` and `c` come from populations
+    with equal variances.
+
+    >>> from scipy.stats import bartlett
+    >>> a = [8.88, 9.12, 9.04, 8.98, 9.00, 9.08, 9.01, 8.85, 9.06, 8.99]
+    >>> b = [8.88, 8.95, 9.29, 9.44, 9.15, 9.58, 8.36, 9.18, 8.67, 9.05]
+    >>> c = [8.95, 9.12, 8.95, 8.85, 9.03, 8.84, 9.07, 8.98, 8.86, 8.98]
+    >>> stat, p = bartlett(a, b, c)
+    >>> p
+    1.1254782518834628e-05
+
+    The very small p-value suggests that the populations do not have equal
+    variances.
+
+    This is not surprising, given that the sample variance of `b` is much
+    larger than that of `a` and `c`:
+
+    >>> [np.var(x, ddof=1) for x in [a, b, c]]
+    [0.007054444444444413, 0.13073888888888888, 0.008890000000000002]
     """
     # Handle empty input and input that is not 1d
     for a in args:
@@ -2294,13 +2322,34 @@ def levene(*args, **kwds):
 
     References
     ----------
-    .. [1]  https://www.itl.nist.gov/div898/handbook/eda/section3/eda35a.htm
-    .. [2]   Levene, H. (1960). In Contributions to Probability and Statistics:
-               Essays in Honor of Harold Hotelling, I. Olkin et al. eds.,
-               Stanford University Press, pp. 278-292.
-    .. [3]  Brown, M. B. and Forsythe, A. B. (1974), Journal of the American
-              Statistical Association, 69, 364-367
+    .. [1] https://www.itl.nist.gov/div898/handbook/eda/section3/eda35a.htm
+    .. [2] Levene, H. (1960). In Contributions to Probability and Statistics:
+           Essays in Honor of Harold Hotelling, I. Olkin et al. eds.,
+           Stanford University Press, pp. 278-292.
+    .. [3] Brown, M. B. and Forsythe, A. B. (1974), Journal of the American
+           Statistical Association, 69, 364-367
 
+    Examples
+    --------
+    Test whether or not the lists `a`, `b` and `c` come from populations
+    with equal variances.
+
+    >>> from scipy.stats import levene
+    >>> a = [8.88, 9.12, 9.04, 8.98, 9.00, 9.08, 9.01, 8.85, 9.06, 8.99]
+    >>> b = [8.88, 8.95, 9.29, 9.44, 9.15, 9.58, 8.36, 9.18, 8.67, 9.05]
+    >>> c = [8.95, 9.12, 8.95, 8.85, 9.03, 8.84, 9.07, 8.98, 8.86, 8.98]
+    >>> stat, p = levene(a, b, c)
+    >>> p
+    0.002431505967249681
+
+    The small p-value suggests that the populations do not have equal
+    variances.
+
+    This is not surprising, given that the sample variance of `b` is much
+    larger than that of `a` and `c`:
+
+    >>> [np.var(x, ddof=1) for x in [a, b, c]]
+    [0.007054444444444413, 0.13073888888888888, 0.008890000000000002]
     """
     # Handle keyword arguments.
     center = 'median'
@@ -2417,7 +2466,7 @@ def binom_test(x, n=None, p=0.5, alternative='two-sided'):
     because the returned p-value is greater than the critical value of 5%.
 
     """
-    x = atleast_1d(x).astype(np.integer)
+    x = atleast_1d(x).astype(np.int_)
     if len(x) == 2:
         n = x[1] + x[0]
         x = x[0]
@@ -2542,6 +2591,27 @@ def fligner(*args, **kwds):
            applications to the outer continental shelf biding data.
            Technometrics, 23(4), 351-361.
 
+    Examples
+    --------
+    Test whether or not the lists `a`, `b` and `c` come from populations
+    with equal variances.
+
+    >>> from scipy.stats import fligner
+    >>> a = [8.88, 9.12, 9.04, 8.98, 9.00, 9.08, 9.01, 8.85, 9.06, 8.99]
+    >>> b = [8.88, 8.95, 9.29, 9.44, 9.15, 9.58, 8.36, 9.18, 8.67, 9.05]
+    >>> c = [8.95, 9.12, 8.95, 8.85, 9.03, 8.84, 9.07, 8.98, 8.86, 8.98]
+    >>> stat, p = fligner(a, b, c)
+    >>> p
+    0.00450826080004775
+
+    The small p-value suggests that the populations do not have equal
+    variances.
+
+    This is not surprising, given that the sample variance of `b` is much
+    larger than that of `a` and `c`:
+
+    >>> [np.var(x, ddof=1) for x in [a, b, c]]
+    [0.007054444444444413, 0.13073888888888888, 0.008890000000000002]
     """
     # Handle empty input
     for a in args:
@@ -2728,7 +2798,7 @@ WilcoxonResult = namedtuple('WilcoxonResult', ('statistic', 'pvalue'))
 
 
 def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
-             alternative="two-sided"):
+             alternative="two-sided", mode='auto'):
     """
     Calculate the Wilcoxon signed-rank test.
 
@@ -2759,10 +2829,12 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
     correction : bool, optional
         If True, apply continuity correction by adjusting the Wilcoxon rank
         statistic by 0.5 towards the mean value when computing the
-        z-statistic.  Default is False.
+        z-statistic if a normal approximation is used.  Default is False.
     alternative : {"two-sided", "greater", "less"}, optional
         The alternative hypothesis to be tested, see Notes. Default is
         "two-sided".
+    mode : {"auto", "exact", "approx"}
+        Method to calculate the p-value, see Notes. Default is "auto".
 
     Returns
     -------
@@ -2771,7 +2843,7 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
         differences above or below zero, whichever is smaller.
         Otherwise the sum of the ranks of the differences above zero.
     pvalue : float
-        The p-value for the test depending on `alternative`.
+        The p-value for the test depending on `alternative` and `mode`.
 
     See Also
     --------
@@ -2789,10 +2861,14 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
     positive against the alternative that it is negative 
     (``alternative == 'less'``), or vice versa (``alternative == 'greater.'``).
 
-    The test uses a normal approximation to derive the p-value (if
-    ``zero_method == 'pratt'``, the approximation is adjusted as in [5]_).
-    A typical rule is to require that n > 20 ([2]_, p. 383). For smaller n,
-    exact tables can be used to find critical values.
+    To derive the p-value, the exact distribution (``mode == 'exact'``)
+    can be used for sample sizes of up to 25. The default ``mode == 'auto'``
+    uses the exact distribution if there are at most 25 observations and no
+    ties, otherwise a normal approximation is used (``mode == 'approx'``).
+
+    The treatment of ties can be controlled by the parameter `zero_method`.
+    If ``zero_method == 'pratt'``, the normal approximation is adjusted as in
+    [5]_. A typical rule is to require that n > 20 ([2]_, p. 383).
 
     References
     ----------
@@ -2822,7 +2898,7 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
     >>> from scipy.stats import wilcoxon
     >>> w, p = wilcoxon(d)
     >>> w, p
-    (24.0, 0.04088813291185591)
+    (24.0, 0.041259765625)
 
     Hence, we would reject the null hypothesis at a confidence level of 5%,
     concluding that there is a difference in height between the groups.
@@ -2831,20 +2907,27 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
 
     >>> w, p = wilcoxon(d, alternative='greater')
     >>> w, p
-    (96.0, 0.020444066455927955)
+    (96.0, 0.0206298828125)
 
     This shows that the null hypothesis that the median is negative can be
     rejected at a confidence level of 5% in favor of the alternative that
-    the median is greater than zero. The p-value based on the approximation
-    is within the range of 0.019 and 0.054 given in [2]_.
+    the median is greater than zero. The p-values above are exact. Using the
+    normal approximation gives very similar values:
+
+    >>> w, p = wilcoxon(d, mode='approx')
+    >>> w, p
+    (24.0, 0.04088813291185591)
+
     Note that the statistic changed to 96 in the one-sided case (the sum
     of ranks of positive differences) whereas it is 24 in the two-sided
     case (the minimum of sum of ranks above and below zero).
 
     """
+    if mode not in ["auto", "approx", "exact"]:
+        raise ValueError("mode must be either 'auto', 'approx' or 'exact'")
 
     if zero_method not in ["wilcox", "pratt", "zsplit"]:
-        raise ValueError("Zero method should be either 'wilcox' "
+        raise ValueError("Zero method must be either 'wilcox' "
                          "or 'pratt' or 'zsplit'")
 
     if alternative not in ["two-sided", "less", "greater"]:
@@ -2863,26 +2946,37 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
             raise ValueError('The samples x and y must have the same length.')
         d = x - y
 
-    if zero_method in ["wilcox", "pratt"]:
-        n_zero = np.sum(d == 0, axis=0)
-        if n_zero == len(d):
-            raise ValueError("zero_method 'wilcox' and 'pratt' do not work if "
-                             "the x - y is zero for all elements.")
+    if mode == "auto":
+        if len(d) <= 25:
+            mode = "exact"
+        else:
+            mode = "approx"
 
-    if zero_method == "wilcox":
-        # Keep all non-zero differences
-        d = compress(np.not_equal(d, 0), d, axis=-1)
+    n_zero = np.sum(d == 0)
+    if n_zero > 0 and mode == "exact":
+        mode = "approx"
+        warnings.warn("Exact p-value calculation does not work if there are "
+                      "ties. Switching to normal approximation.")
+
+    if mode == "approx":
+        if zero_method in ["wilcox", "pratt"]:
+            if n_zero == len(d):
+                raise ValueError("zero_method 'wilcox' and 'pratt' do not "
+                                 "work if x - y is zero for all elements.")
+        if zero_method == "wilcox":
+            # Keep all non-zero differences
+            d = compress(np.not_equal(d, 0), d)
 
     count = len(d)
-    if count < 10:
+    if count < 10 and mode == "approx":
         warnings.warn("Sample size too small for normal approximation.")
 
     r = stats.rankdata(abs(d))
-    r_plus = np.sum((d > 0) * r, axis=0)
-    r_minus = np.sum((d < 0) * r, axis=0)
+    r_plus = np.sum((d > 0) * r)
+    r_minus = np.sum((d < 0) * r)
 
     if zero_method == "zsplit":
-        r_zero = np.sum((d == 0) * r, axis=0)
+        r_zero = np.sum((d == 0) * r)
         r_plus += r_zero / 2.
         r_minus += r_zero / 2.
 
@@ -2897,42 +2991,61 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
         T = min(r_plus, r_minus)
     else:
         T = r_plus
-    mn = count * (count + 1.) * 0.25
-    se = count * (count + 1.) * (2. * count + 1.)
 
-    if zero_method == "pratt":
-        r = r[d != 0]
-        # normal approximation needs to be adjusted, see Cureton (1967)
-        mn -= n_zero * (n_zero + 1.) * 0.25
-        se -= n_zero * (n_zero + 1.) * (2. * n_zero + 1.)
+    if mode == "approx":
+        mn = count * (count + 1.) * 0.25
+        se = count * (count + 1.) * (2. * count + 1.)
 
-    replist, repnum = find_repeats(r)
-    if repnum.size != 0:
-        # Correction for repeated elements.
-        se -= 0.5 * (repnum * (repnum * repnum - 1)).sum()
+        if zero_method == "pratt":
+            r = r[d != 0]
+            # normal approximation needs to be adjusted, see Cureton (1967)
+            mn -= n_zero * (n_zero + 1.) * 0.25
+            se -= n_zero * (n_zero + 1.) * (2. * n_zero + 1.)
 
-    se = sqrt(se / 24)
+        replist, repnum = find_repeats(r)
+        if repnum.size != 0:
+            # Correction for repeated elements.
+            se -= 0.5 * (repnum * (repnum * repnum - 1)).sum()
 
-    # apply continuity correction if applicable
-    d = 0
-    if correction:
+        se = sqrt(se / 24)
+
+        # apply continuity correction if applicable
+        d = 0
+        if correction:
+            if alternative == "two-sided":
+                d = 0.5 * np.sign(T - mn)
+            elif alternative == "less":
+                d = -0.5
+            else:
+                d = 0.5
+
+        # compute statistic and p-value using normal approximation
+        z = (T - mn - d) / se
         if alternative == "two-sided":
-            d = 0.5 * np.sign(T - mn)
-        elif alternative == "less":
-            d = -0.5
+            prob = 2. * distributions.norm.sf(abs(z))
+        elif alternative == "greater":
+            # large T = r_plus indicates x is greater than y; i.e.
+            # accept alternative in that case and return small p-value (sf)
+            prob = distributions.norm.sf(z)
         else:
-            d = 0.5
-
-    # compute statistic and p-value using normal approximation
-    z = (T - mn - d) / se
-    if alternative == "two-sided":
-        prob = 2. * distributions.norm.sf(abs(z))
-    elif alternative == "greater":
-        # large T = r_plus indicates x is greater than y; i.e.
-        # accept alternative in that case and return small p-value (sf)
-        prob = distributions.norm.sf(z)
-    else:
-        prob = distributions.norm.cdf(z)
+            prob = distributions.norm.cdf(z)
+    elif mode == "exact":
+        # get frequencies cnt of the possible positive ranksums r_plus
+        cnt = _get_wilcoxon_distr(count)
+        # note: r_plus is int (ties not allowed), need int for slices below
+        r_plus = int(r_plus)
+        if alternative == "two-sided":
+            if r_plus == (len(cnt) - 1) // 2:
+                # r_plus is the center of the distribution.
+                prob = 1.0
+            else:
+                p_less = np.sum(cnt[:r_plus + 1]) / 2**count
+                p_greater = np.sum(cnt[r_plus:]) / 2**count
+                prob = 2*min(p_greater, p_less)
+        elif alternative == "greater":
+            prob = np.sum(cnt[r_plus:]) / 2**count
+        else:
+            prob = np.sum(cnt[:r_plus + 1]) / 2**count
 
     return WilcoxonResult(T, prob)
 

@@ -1,7 +1,5 @@
 """Sparse DIAgonal format"""
 
-from __future__ import division, print_function, absolute_import
-
 __docformat__ = "restructuredtext en"
 
 __all__ = ['dia_matrix', 'isspmatrix_dia']
@@ -72,6 +70,19 @@ class dia_matrix(_data_matrix):
            [0, 2, 3, 0],
            [0, 0, 3, 4]])
 
+    >>> from scipy.sparse import dia_matrix
+    >>> n = 10
+    >>> ex = np.ones(n)
+    >>> data = np.array([ex, 2 * ex, ex])
+    >>> offsets = np.array([-1, 0, 1])
+    >>> dia_matrix((data, offsets), shape=(n, n)).toarray()
+    array([[2., 1., 0., ..., 0., 0., 0.],
+           [1., 2., 1., ..., 0., 0., 0.],
+           [0., 1., 2., ..., 0., 0., 0.],
+           ...,
+           [0., 0., 0., ..., 2., 1., 0.],
+           [0., 0., 0., ..., 1., 2., 1.],
+           [0., 0., 0., ..., 0., 1., 2.]])
     """
     format = 'dia'
 
@@ -310,7 +321,7 @@ class dia_matrix(_data_matrix):
     def diagonal(self, k=0):
         rows, cols = self.shape
         if k <= -rows or k >= cols:
-            raise ValueError("k exceeds matrix dimensions")
+            return np.empty(0, dtype=self.data.dtype)
         idx, = np.nonzero(self.offsets == k)
         first_col, last_col = max(0, k), min(rows + k, cols)
         if idx.size == 0:

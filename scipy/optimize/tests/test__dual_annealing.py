@@ -16,6 +16,7 @@ import numpy as np
 from numpy.testing import assert_equal, assert_allclose, assert_array_less
 from pytest import raises as assert_raises
 from scipy._lib._util import check_random_state
+from scipy._lib._pep440 import Version
 
 
 class TestDualAnnealing:
@@ -141,6 +142,21 @@ class TestDualAnnealing:
         assert_equal(res1.x, res2.x)
         assert_equal(res1.x, res3.x)
 
+    @pytest.mark.skipif(Version(np.__version__) < Version('1.17'),
+                        reason='Generator not available for numpy, < 1.17')
+    def test_rand_gen(self):
+        # check that np.random.Generator can be used (numpy >= 1.17)
+        # obtain a np.random.Generator object
+        rng = np.random.default_rng(1)
+
+        res1 = dual_annealing(self.func, self.ld_bounds, seed=rng)
+        # seed again
+        rng = np.random.default_rng(1)
+        res2 = dual_annealing(self.func, self.ld_bounds, seed=rng)
+        # If we have reproducible results, x components found has to
+        # be exactly the same, which is not the case with no seeding
+        assert_equal(res1.x, res2.x)
+
     def test_bounds_integrity(self):
         wrong_bounds = [(-5.12, 5.12), (1, 0), (5.12, 5.12)]
         assert_raises(ValueError, dual_annealing, self.func,
@@ -156,6 +172,26 @@ class TestDualAnnealing:
         invalid_bounds = [(-5, 5), (0, np.nan), (-5, 5)]
         assert_raises(ValueError, dual_annealing, self.func,
                       invalid_bounds)
+
+    def test_local_search_option_bounds(self):
+        func = lambda x: np.sum((x-5) * (x-1))
+        bounds = list(zip([-6, -5], [6, 5]))
+        # Test bounds can be passed (see gh-10831)
+        dual_annealing(
+            func,
+            bounds=bounds,
+            local_search_options={"method": "SLSQP", "bounds": bounds})
+
+        with np.testing.suppress_warnings() as sup:
+            sup.record(RuntimeWarning, "Method CG cannot handle ")
+
+            dual_annealing(
+                func,
+                bounds=bounds,
+                local_search_options={"method": "CG", "bounds": bounds})
+
+            # Verify warning happened for Method cannot handle bounds.
+            assert sup.log
 
     def test_max_fun_ls(self):
         ret = dual_annealing(self.func, self.ld_bounds, maxfun=100,

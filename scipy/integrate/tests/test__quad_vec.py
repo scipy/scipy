@@ -1,9 +1,7 @@
-from __future__ import division, print_function, absolute_import
-
 import pytest
 
 import numpy as np
-from numpy.testing import assert_allclose, assert_equal
+from numpy.testing import assert_allclose
 
 from scipy.integrate import quad_vec
 

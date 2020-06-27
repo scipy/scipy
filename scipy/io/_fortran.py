@@ -4,8 +4,6 @@ Module to read / write Fortran unformatted sequential files.
 This is in the spirit of code written by Neil Martinsen-Burrell and Joe Zuntz.
 
 """
-from __future__ import division, print_function, absolute_import
-
 import warnings
 import numpy as np
 

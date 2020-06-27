@@ -18,11 +18,9 @@ References
 """
 # Author: Matt Haberland
 
-from __future__ import print_function, division, absolute_import
 import numpy as np
 import scipy as sp
 import scipy.sparse as sps
-import numbers
 from warnings import warn
 from scipy.linalg import LinAlgError
 from .optimize import OptimizeWarning, OptimizeResult, _check_unknown_options
@@ -31,6 +29,7 @@ has_umfpack = True
 has_cholmod = True
 try:
     from sksparse.cholmod import cholesky as cholmod
+    from sksparse.cholmod import analyze as cholmod_analyze
 except ImportError:
     has_cholmod = False
 try:
@@ -87,7 +86,14 @@ def _get_solver(M, sparse=False, lstsq=False, sym_pos=True,
                 def solve(r, sym_pos=False):
                     return sps.linalg.lsqr(M, r)[0]
             elif cholesky:
-                solve = cholmod(M)
+                try:
+                    # Will raise an exception in the first call,
+                    # or when the matrix changes due to a new problem
+                    _get_solver.cholmod_factor.cholesky_inplace(M)
+                except Exception:
+                    _get_solver.cholmod_factor = cholmod_analyze(M)
+                    _get_solver.cholmod_factor.cholesky_inplace(M)
+                solve = _get_solver.cholmod_factor
             else:
                 if has_umfpack and sym_pos:
                     solve = sps.linalg.factorized(M)
@@ -229,8 +235,8 @@ def _get_delta(A, b, c, x, y, z, tau, kappa, gamma, eta, sparse=False,
                 # Reference [4] Eq. 8.23
                 rhatxs = ((1 - alpha) * gamma * mu -
                           x * z - alpha**2 * d_x * d_z)
-                rhattk = ((1 - alpha) * gamma * mu - 
-                    tau * kappa - 
+                rhattk = ((1 - alpha) * gamma * mu -
+                    tau * kappa -
                     alpha**2 * d_tau * d_kappa)
             else:  # if the correction is for "predictor-corrector"
                 # Reference [4] Eq. 8.13
@@ -702,7 +708,7 @@ def _ip_hsd(A, b, c, c0, alpha0, beta, maxiter, disp, tol, sparse, lstsq,
     if disp:
         _display_iter(rho_p, rho_d, rho_g, "-", rho_mu, obj, header=True)
     if callback is not None:
-        x_o, fun, slack, con, _, _ = _postsolve(x/tau, postsolve_args,
+        x_o, fun, slack, con, _ = _postsolve(x/tau, postsolve_args,
                                                 tol=tol)
         res = OptimizeResult({'x': x_o, 'fun': fun, 'slack': slack,
                               'con': con, 'nit': iteration, 'phase': 1,
@@ -783,7 +789,7 @@ def _ip_hsd(A, b, c, c0, alpha0, beta, maxiter, disp, tol, sparse, lstsq,
         if disp:
             _display_iter(rho_p, rho_d, rho_g, alpha, rho_mu, obj)
         if callback is not None:
-            x_o, fun, slack, con, _, _ = _postsolve(x/tau, postsolve_args,
+            x_o, fun, slack, con, _ = _postsolve(x/tau, postsolve_args,
                                                     tol=tol)
             res = OptimizeResult({'x': x_o, 'fun': fun, 'slack': slack,
                                   'con': con, 'nit': iteration, 'phase': 1,

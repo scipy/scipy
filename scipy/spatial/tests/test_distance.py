@@ -32,12 +32,9 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from __future__ import division, print_function, absolute_import
-
 import os.path
 
 from functools import wraps, partial
-from scipy._lib.six import u
 
 import numpy as np
 import warnings
@@ -54,6 +51,7 @@ from scipy.spatial.distance import (squareform, pdist, cdist, num_obs_y,
                                     _validate_vector, _METRICS_NAMES)
 
 # these were missing: chebyshev cityblock kulsinski
+# jensenshannon, matching and seuclidean are referenced by string name.
 from scipy.spatial.distance import (braycurtis, canberra, chebyshev, cityblock,
                                     correlation, cosine, dice, euclidean,
                                     hamming, jaccard, jensenshannon,
@@ -440,8 +438,8 @@ class TestCdist(object):
         eps = 1e-07
         X1 = eo['cdist-X1']
         X2 = eo['cdist-X2']
-        Y1 = wcdist_no_const(X1, X2, u('euclidean'))
-        Y2 = wcdist_no_const(X1, X2, u('test_euclidean'))
+        Y1 = wcdist_no_const(X1, X2, 'euclidean')
+        Y2 = wcdist_no_const(X1, X2, 'test_euclidean')
         _assert_within_tol(Y1, Y2, eps, verbose > 2)
 
     def test_cdist_minkowski_random_p3d8(self):
@@ -710,7 +708,7 @@ class TestPdist(object):
         eps = 1e-07
         X = eo['pdist-double-inp']
         Y_right = eo['pdist-euclidean']
-        Y_test1 = wpdist_no_const(X, u('euclidean'))
+        Y_test1 = wpdist_no_const(X, 'euclidean')
         _assert_within_tol(Y_test1, Y_right, eps)
 
     def test_pdist_euclidean_random_float32(self):
@@ -770,7 +768,7 @@ class TestPdist(object):
         # Check no error is raise when V has float32 dtype (#11171).
         V = np.var(X, axis=0, ddof=1)
         Y_test2 = pdist(X, 'seuclidean', V=V)
-        _assert_within_tol(Y_test1, Y_right, eps)
+        _assert_within_tol(Y_test2, Y_right, eps)
 
     def test_pdist_seuclidean_random_nonC(self):
         # Test pdist(X, 'test_sqeuclidean') [the non-C implementation]
@@ -1404,7 +1402,6 @@ class TestPdist(object):
         # gives the same behaviour (i.e. same result or same exception).
         # NOTE: The correctness should be checked within each metric tests.
         # NOTE: Extra args should be checked with a dedicated test
-        eps = 1e-07
         for eo_name in self.rnd_eo_names:
             # subsampling input data to speed-up tests
             # NOTE: num samples needs to be > than dimensions for mahalanobis
@@ -1528,7 +1525,7 @@ class TestSomeDistanceFunctions(object):
                 assert_almost_equal(dist1, 3.0)
                 dist1p5 = wminkowski(x, y, p=1.5)
                 assert_almost_equal(dist1p5, (1.0 + 2.0**1.5)**(2. / 3))
-                dist2 = wminkowski(x, y, p=2)
+                wminkowski(x, y, p=2)
 
             # Check that casting input to minimum scalar type doesn't affect result (issue #10262).
             # This could be extended to more test inputs with np.min_scalar_type(np.max(input_matrix)).

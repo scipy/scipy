@@ -17,7 +17,7 @@ subroutine <prefix>gebal(scale,permute,n,a,m,lo,hi,pivscale,info)
     ! lo,hi mark the starting and ending columns of submatrix B.
 
     callstatement { (*f2py_func)((permute?(scale?"B":"P"):(scale?"S":"N")),&n,a,&m,&lo,&hi,pivscale,&info); hi--; lo--; }
-    callprotoargument char*,int*,<ctype>*,int*,int*,int*,<ctypereal>*,int*
+    callprotoargument char*,F_INT*,<ctype>*,F_INT*,F_INT*,F_INT*,<ctypereal>*,F_INT*
     integer intent(in),optional :: permute = 0
     integer intent(in),optional :: scale = 0
     integer intent(hide),depend(a,n) :: m = shape(a,0)
@@ -52,7 +52,7 @@ subroutine <prefix>gehrd(n,lo,hi,a,tau,work,lwork,info)
     !              a]
     !
     callstatement { hi++; lo++; (*f2py_func)(&n,&lo,&hi,a,&n,tau,work,&lwork,&info); }
-    callprotoargument int*,int*,int*,<ctype>*,int*,<ctype>*,<ctype>*,int*,int*
+    callprotoargument F_INT*,F_INT*,F_INT*,<ctype>*,F_INT*,<ctype>*,<ctype>*,F_INT*,F_INT*
     integer intent(hide),depend(a) :: n = shape(a,0)
     <ftype> dimension(n,n),intent(in,out,copy,out=ht,aligned8),check(shape(a,0)==shape(a,1)) :: a
     integer intent(in),optional :: lo = 0
@@ -68,7 +68,7 @@ subroutine <prefix>gehrd_lwork(n,lo,hi,a,tau,work,lwork,info)
     ! LWORK computation for GEHRD
     fortranname <prefix>gehrd
     callstatement { hi++; lo++; (*f2py_func)(&n,&lo,&hi,&a,&n,&tau,&work,&lwork,&info); }
-    callprotoargument int*,int*,int*,<ctype>*,int*,<ctype>*,<ctype>*,int*,int*
+    callprotoargument F_INT*,F_INT*,F_INT*,<ctype>*,F_INT*,<ctype>*,<ctype>*,F_INT*,F_INT*
     integer intent(in) :: n
     <ftype> intent(hide) :: a
     integer intent(in),optional :: lo = 0
@@ -86,8 +86,8 @@ subroutine <prefix>gesv(n,nrhs,a,piv,b,info)
     ! U is upper diagonal triangular, L is unit lower triangular,
     ! piv pivots columns.
 
-    callstatement {int i;(*f2py_func)(&n,&nrhs,a,&n,piv,b,&n,&info);for(i=0;i\<n;--piv[i++]);}
-    callprotoargument int*,int*,<ctype>*,int*,int*,<ctype>*,int*,int*
+    callstatement {F_INT i;(*f2py_func)(&n,&nrhs,a,&n,piv,b,&n,&info);for(i=0;i\<n;--piv[i++]);}
+    callprotoargument F_INT*,F_INT*,<ctype>*,F_INT*,F_INT*,<ctype>*,F_INT*,F_INT*
 
     integer depend(a),intent(hide):: n = shape(a,0)
     integer depend(b),intent(hide):: nrhs = shape(b,1)
@@ -104,8 +104,8 @@ subroutine <prefix2>gesvx(fact,trans,n,nrhs,a,lda,af,ldaf,ipiv,equed,r,c,b,ldb,x
     ! The expert driver of ?GESV with condition number, backward/forward error estimates, and iterative refinement
     ! This part takes care of the data types, single and double reals (sgesvx and dgesvx)
     threadsafe
-    callstatement {int i;(*f2py_func)(fact,trans,&n,&nrhs,a,&lda,af,&ldaf,ipiv,equed,r,c,b,&ldb,x,&ldx,&rcond,ferr,berr,work,iwork,&info);for(i=0;i\<n;--ipiv[i++]);}
-    callprotoargument char*,char*,int*,int*,<ctype2>*,int*,<ctype2>*,int*,int*,char*,<ctype2>*,<ctype2>*,<ctype2>*,int*,<ctype2>*,int*,<ctype2>*,<ctype2>*,<ctype2>*,<ctype2>*,int*,int*
+    callstatement {F_INT i;(*f2py_func)(fact,trans,&n,&nrhs,a,&lda,af,&ldaf,ipiv,equed,r,c,b,&ldb,x,&ldx,&rcond,ferr,berr,work,iwork,&info);for(i=0;i\<n;--ipiv[i++]);}
+    callprotoargument char*,char*,F_INT*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,F_INT*,char*,<ctype2>*,<ctype2>*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,<ctype2>*,<ctype2>*,<ctype2>*,F_INT*,F_INT*
 
     character optional,intent(in):: trans = "N"
     character optional,intent(in):: fact = "E"
@@ -137,8 +137,8 @@ subroutine <prefix2c>gesvx(fact,trans,n,nrhs,a,lda,af,ldaf,ipiv,equed,r,c,b,ldb,
     ! The expert driver of ?GESV with condition number, backward/forward error estimates, and iterative refinement
     ! This part takes care of the data types, complex and double complex (cgesvx and zgesvx)
     threadsafe
-    callstatement {int i;(*f2py_func)(fact,trans,&n,&nrhs,a,&lda,af,&ldaf,ipiv,equed,r,c,b,&ldb,x,&ldx,&rcond,ferr,berr,work,rwork,&info);for(i=0;i\<n;--ipiv[i++]);}
-    callprotoargument char*,char*,int*,int*,<ctype2c>*,int*,<ctype2c>*,int*,int*,char*,<ctype2>*,<ctype2>*,<ctype2c>*,int*,<ctype2c>*,int*,<ctype2>*,<ctype2>*,<ctype2>*,<ctype2c>*,<ctype2>*,int*
+    callstatement {F_INT i;(*f2py_func)(fact,trans,&n,&nrhs,a,&lda,af,&ldaf,ipiv,equed,r,c,b,&ldb,x,&ldx,&rcond,ferr,berr,work,rwork,&info);for(i=0;i\<n;--ipiv[i++]);}
+    callprotoargument char*,char*,F_INT*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,F_INT*,char*,<ctype2>*,<ctype2>*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2>*,<ctype2>*,<ctype2>*,<ctype2c>*,<ctype2>*,F_INT*
 
     character optional,intent(in):: trans = "N"
     character optional,intent(in):: fact = "E"
@@ -169,7 +169,7 @@ subroutine <prefix>gecon(norm,n,a,lda,anorm,rcond,work,irwork,info)
    ! Computes the 1- or inf- norm reciprocal condition number estimate.
     threadsafe
     callstatement (*f2py_func)(norm,&n,a,&lda,&anorm,&rcond,work,irwork,&info)
-    callprotoargument char*,int*,<ctype>*,int*,<ctypereal>*,<ctypereal>*,<ctype>*,<int,int,float,double>*,int*
+    callprotoargument char*,F_INT*,<ctype>*,F_INT*,<ctypereal>*,<ctypereal>*,<ctype>*,<F_INT,F_INT,float,double>*,F_INT*
 
     character optional,intent(in):: norm = '1'
     integer depend(a),intent(hide):: n = shape(a,0)
@@ -188,8 +188,8 @@ subroutine <prefix>getrf(m,n,a,piv,info)
     ! Compute an LU factorization of a  general  M-by-N  matrix  A.
     ! A = P * L * U
     threadsafe
-    callstatement {int i;(*f2py_func)(&m,&n,a,&m,piv,&info);for(i=0,n=MIN(m,n);i\<n;--piv[i++]);}
-    callprotoargument int*,int*,<ctype>*,int*,int*,int*
+    callstatement {F_INT i;(*f2py_func)(&m,&n,a,&m,piv,&info);for(i=0,n=MIN(m,n);i\<n;--piv[i++]);}
+    callprotoargument F_INT*,F_INT*,<ctype>*,F_INT*,F_INT*,F_INT*
 
     integer depend(a),intent(hide):: m = shape(a,0)
     integer depend(a),intent(hide):: n = shape(a,1)
@@ -206,8 +206,8 @@ subroutine <prefix>getrs(n,nrhs,lu,piv,b,info,trans)
     ! Solve A^H * X = B if trans=2
     ! A = P * L * U
     threadsafe
-    callstatement {int i;for(i=0;i\<n;++piv[i++]);(*f2py_func)((trans?(trans==2?"C":"T"):"N"),&n,&nrhs,lu,&n,piv,b,&n,&info);for(i=0;i\<n;--piv[i++]);}
-    callprotoargument char*,int*,int*,<ctype>*,int*,int*,<ctype>*,int*,int*
+    callstatement {F_INT i;for(i=0;i\<n;++piv[i++]);(*f2py_func)((trans?(trans==2?"C":"T"):"N"),&n,&nrhs,lu,&n,piv,b,&n,&info);for(i=0;i\<n;--piv[i++]);}
+    callprotoargument char*,F_INT*,F_INT*,<ctype>*,F_INT*,F_INT*,<ctype>*,F_INT*,F_INT*
 
     integer optional,intent(in),check(trans>=0 && trans <=2) :: trans = 0
 
@@ -226,8 +226,8 @@ subroutine <prefix>getc2(n,a,lda,ipiv,jpiv,info)
     ! Compute an LU factorization of with complete pivoting of a general n-by-n matrix.
     ! A = P * L * U * Q
     threadsafe
-    callstatement {int i;(*f2py_func)(&n,a,&lda,ipiv,jpiv,&info);for(i=0;i\<n;--ipiv[i],--jpiv[i++]);}
-    callprotoargument int*,<ctype>*,int*,int*,int*,int*
+    callstatement {F_INT i;(*f2py_func)(&n,a,&lda,ipiv,jpiv,&info);for(i=0;i\<n;--ipiv[i],--jpiv[i++]);}
+    callprotoargument F_INT*,<ctype>*,F_INT*,F_INT*,F_INT*,F_INT*
 
     integer depend(a),intent(hide):: n = shape(a,0)
     <ftype> dimension(n,n),intent(in,out,copy,out=lu) :: a
@@ -244,8 +244,8 @@ subroutine <prefix>gesc2(n,lu,lda,rhs,ipiv,jpiv,scale)
     ! Solve  A * X = scale * RHS
     ! A = P * L * U * Q
     threadsafe
-    callstatement {int i;for(i=0;i\<n;++ipiv[i],++jpiv[i++]);(*f2py_func)(&n,lu,&lda,rhs,ipiv,jpiv,&scale);for(i=0;i\<n;--ipiv[i],--jpiv[i++]);}
-    callprotoargument int*,<ctype>*,int*,<ctype>*,int*,int*,<ctypereal>*
+    callstatement {F_INT i;for(i=0;i\<n;++ipiv[i],++jpiv[i++]);(*f2py_func)(&n,lu,&lda,rhs,ipiv,jpiv,&scale);for(i=0;i\<n;--ipiv[i],--jpiv[i++]);}
+    callprotoargument F_INT*,<ctype>*,F_INT*,<ctype>*,F_INT*,F_INT*,<ctypereal>*
 
     integer depend(lu),intent(hide):: n = shape(lu,0)
     <ftype> dimension(n,n),intent(in) :: lu
@@ -263,8 +263,8 @@ subroutine <prefix>getri(n,lu,piv,work,lwork,info)
     ! Find A inverse A^-1.
     ! A = P * L * U
 
-    callstatement {int i;for(i=0;i\<n;++piv[i++]);(*f2py_func)(&n,lu,&n,piv,work,&lwork,&info);for(i=0;i\<n;--piv[i++]);}
-    callprotoargument int*,<ctype>*,int*,int*,<ctype>*,int*,int*
+    callstatement {F_INT i;for(i=0;i\<n;++piv[i++]);(*f2py_func)(&n,lu,&n,piv,work,&lwork,&info);for(i=0;i\<n;--piv[i++]);}
+    callprotoargument F_INT*,<ctype>*,F_INT*,F_INT*,<ctype>*,F_INT*,F_INT*
 
     integer depend(lu),intent(hide):: n = shape(lu,0)
     <ftype> dimension(n,n),intent(in,out,copy,out=inv_a) :: lu
@@ -280,7 +280,7 @@ subroutine <prefix>getri_lwork(n,lu,piv,work,lwork,info)
     ! *GETRI LWORK query
     fortranname <prefix>getri
     callstatement (*f2py_func)(&n,&lu,&n,&piv,&work,&lwork,&info)
-    callprotoargument int*,<ctype>*,int*,int*,<ctype>*,int*,int*
+    callprotoargument F_INT*,<ctype>*,F_INT*,F_INT*,<ctype>*,F_INT*,F_INT*
 
     integer intent(in):: n
     <ftype> intent(hide) :: lu
@@ -301,7 +301,7 @@ subroutine <prefix2>gesdd(m,n,minmn,u0,u1,vt0,vt1,a,compute_uv,full_matrices,u,s
     ! transpose(V) - N x N matrix or N x min(M,N) if full_matrices=False
 
     callstatement (*f2py_func)((compute_uv?(full_matrices?"A":"S"):"N"),&m,&n,a,&m,s,u,&u0,vt,&vt0,work,&lwork,iwork,&info)
-    callprotoargument char*,int*,int*,<ctype2>*,int*,<ctype2>*,<ctype2>*,int*,<ctype2>*,int*,<ctype2>*,int*,int*,int*
+    callprotoargument char*,F_INT*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,F_INT*,F_INT*
 
     integer intent(in),optional,check(compute_uv==0||compute_uv==1):: compute_uv = 1
     integer intent(in),optional,check(full_matrices==0||full_matrices==1):: full_matrices = 1
@@ -329,7 +329,7 @@ subroutine <prefix2>gesdd_lwork(m,n,minmn,u0,vt0,a,compute_uv,full_matrices,u,s,
 
     fortranname <prefix2>gesdd
     callstatement (*f2py_func)((compute_uv?(full_matrices?"A":"S"):"N"),&m,&n,&a,&m,&s,&u,&u0,&vt,&vt0,&work,&lwork,&iwork,&info)
-    callprotoargument char*,int*,int*,<ctype2>*,int*,<ctype2>*,<ctype2>*,int*,<ctype2>*,int*,<ctype2>*,int*,int*,int*
+    callprotoargument char*,F_INT*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,F_INT*,F_INT*
 
     integer intent(in),optional,check(compute_uv==0||compute_uv==1):: compute_uv = 1
     integer intent(in),optional,check(full_matrices==0||full_matrices==1):: full_matrices = 1
@@ -360,7 +360,7 @@ subroutine <prefix2c>gesdd(m,n,minmn,u0,u1,vt0,vt1,a,compute_uv,full_matrices,u,
     ! transpose(V) - N x N matrix or N x min(M,N) if full_matrices=False
 
     callstatement (*f2py_func)((compute_uv?(full_matrices?"A":"S"):"N"),&m,&n,a,&m,s,u,&u0,vt,&vt0,work,&lwork,rwork,iwork,&info)
-    callprotoargument char*,int*,int*,<ctype2c>*,int*,<ctype2>*,<ctype2c>*,int*,<ctype2c>*,int*,<ctype2c>*,int*,<ctype2>*,int*,int*
+    callprotoargument char*,F_INT*,F_INT*,<ctype2c>*,F_INT*,<ctype2>*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2>*,F_INT*,F_INT*
 
     integer intent(in),optional,check(compute_uv==0||compute_uv==1):: compute_uv = 1
     integer intent(in),optional,check(full_matrices==0||full_matrices==1):: full_matrices = 1
@@ -389,7 +389,7 @@ subroutine <prefix2c>gesdd_lwork(m,n,minmn,u0,vt0,a,compute_uv,full_matrices,u,s
 
     fortranname <prefix2c>gesdd
     callstatement (*f2py_func)((compute_uv?(full_matrices?"A":"S"):"N"),&m,&n,&a,&m,&s,&u,&u0,&vt,&vt0,&work,&lwork,&rwork,&iwork,&info)
-    callprotoargument char*,int*,int*,<ctype2c>*,int*,<ctype2>*,<ctype2c>*,int*,<ctype2c>*,int*,<ctype2c>*,int*,<ctype2>*,int*,int*
+    callprotoargument char*,F_INT*,F_INT*,<ctype2c>*,F_INT*,<ctype2>*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2>*,F_INT*,F_INT*
 
     integer intent(in),optional,check(compute_uv==0||compute_uv==1):: compute_uv = 1
     integer intent(in),optional,check(full_matrices==0||full_matrices==1):: full_matrices = 1
@@ -421,7 +421,7 @@ subroutine <prefix2>gesvd(m,n,minmn,u0,u1,vt0,vt1,a,compute_uv,full_matrices,u,s
     ! transpose(V) - N x N matrix or N x min(M,N) if full_matrices=False
 
     callstatement (*f2py_func)((compute_uv?(full_matrices?"A":"S"):"N"),(compute_uv?(full_matrices?"A":"S"):"N"),&m,&n,a,&m,s,u,&u0,vt,&vt0,work,&lwork,&info)
-    callprotoargument char*,char*,int*,int*,<ctype2>*,int*,<ctype2>*,<ctype2>*,int*,<ctype2>*,int*,<ctype2>*,int*,int*
+    callprotoargument char*,char*,F_INT*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,F_INT*
 
     integer intent(in),optional,check(compute_uv==0||compute_uv==1):: compute_uv = 1
     integer intent(in),optional,check(full_matrices==0||full_matrices==1):: full_matrices = 1
@@ -447,7 +447,7 @@ subroutine <prefix2>gesvd_lwork(m,n,minmn,u0,vt0,a,compute_uv,full_matrices,u,s,
 
     fortranname <prefix2>gesvd
     callstatement (*f2py_func)((compute_uv?(full_matrices?"A":"S"):"N"),(compute_uv?(full_matrices?"A":"S"):"N"),&m,&n,&a,&m,&s,&u,&u0,&vt,&vt0,&work,&lwork,&info)
-    callprotoargument char*,char*,int*,int*,<ctype2>*,int*,<ctype2>*,<ctype2>*,int*,<ctype2>*,int*,<ctype2>*,int*,int*
+    callprotoargument char*,char*,F_INT*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,F_INT*
 
     integer intent(in),optional,check(compute_uv==0||compute_uv==1):: compute_uv = 1
     integer intent(in),optional,check(full_matrices==0||full_matrices==1):: full_matrices = 1
@@ -477,7 +477,7 @@ subroutine <prefix2c>gesvd(m,n,minmn,u0,u1,vt0,vt1,a,compute_uv,full_matrices,u,
     ! transpose(V) - N x N matrix or N x min(M,N) if full_matrices=False
 
     callstatement (*f2py_func)((compute_uv?(full_matrices?"A":"S"):"N"),(compute_uv?(full_matrices?"A":"S"):"N"),&m,&n,a,&m,s,u,&u0,vt,&vt0,work,&lwork,rwork,&info)
-    callprotoargument char*,char*,int*,int*,<ctype2c>*,int*,<ctype2>*,<ctype2c>*,int*,<ctype2c>*,int*,<ctype2c>*,int*,<ctype2>*,int*
+    callprotoargument char*,char*,F_INT*,F_INT*,<ctype2c>*,F_INT*,<ctype2>*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2>*,F_INT*
 
     integer intent(in),optional,check(compute_uv==0||compute_uv==1):: compute_uv = 1
     integer intent(in),optional,check(full_matrices==0||full_matrices==1):: full_matrices = 1
@@ -504,7 +504,7 @@ subroutine <prefix2c>gesvd_lwork(m,n,minmn,u0,vt0,a,compute_uv,full_matrices,u,s
 
     fortranname <prefix2c>gesvd
     callstatement (*f2py_func)((compute_uv?(full_matrices?"A":"S"):"N"),(compute_uv?(full_matrices?"A":"S"):"N"),&m,&n,&a,&m,&s,&u,&u0,&vt,&vt0,&work,&lwork,&rwork,&info)
-    callprotoargument char*,char*,int*,int*,<ctype2c>*,int*,<ctype2>*,<ctype2c>*,int*,<ctype2c>*,int*,<ctype2c>*,int*,<ctype2>*,int*
+    callprotoargument char*,char*,F_INT*,F_INT*,<ctype2c>*,F_INT*,<ctype2>*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2>*,F_INT*
 
     integer intent(in),optional,check(compute_uv==0||compute_uv==1):: compute_uv = 1
     integer intent(in),optional,check(full_matrices==0||full_matrices==1):: full_matrices = 1
@@ -529,7 +529,7 @@ subroutine <prefix>gels(trans,m,n,nrhs,a,lda,b,ldb,work,lwork,info)
     ! Solve Minimize 2-norm(A * X - B).
 
     callstatement (*f2py_func)(trans,&m,&n,&nrhs,a,&lda,b,&ldb,work,&lwork,&info)
-    callprotoargument char*,int*,int*,int*,<ctype>*,int*,<ctype>*,int*,<ctype>*,int*,int*
+    callprotoargument char*,F_INT*,F_INT*,F_INT*,<ctype>*,F_INT*,<ctype>*,F_INT*,<ctype>*,F_INT*,F_INT*
 
     character optional,intent(in),check(*trans=='N'||*trans==<'T',\0,'C',\2>):: trans = 'N'
     integer intent(hide),depend(a):: m = shape(a,0)
@@ -550,7 +550,7 @@ subroutine <prefix>gels_lwork(trans,m,n,nrhs,a,lda,b,ldb,work,lwork,info)
 
     fortranname <prefix>gels
     callstatement (*f2py_func)(trans,&m,&n,&nrhs,&a,&lda,&b,&ldb,&work,&lwork,&info)
-    callprotoargument char*,int*,int*,int*,<ctype>*,int*,<ctype>*,int*,<ctype>*,int*,int*
+    callprotoargument char*,F_INT*,F_INT*,F_INT*,<ctype>*,F_INT*,<ctype>*,F_INT*,<ctype>*,F_INT*,F_INT*
 
     character optional,intent(in),check(*trans=='N'||*trans==<'T',\0,'C',\2>):: trans = 'N'
     integer intent(in),check(m>=0) :: m
@@ -573,7 +573,7 @@ subroutine <prefix2>gelss(m,n,minmn,maxmn,nrhs,a,b,s,cond,r,work,lwork,info)
     ! Solve Minimize 2-norm(A * X - B).
 
     callstatement (*f2py_func)(&m,&n,&nrhs,a,&m,b,&maxmn,s,&cond,&r,work,&lwork,&info)
-    callprotoargument int*,int*,int*,<ctype2>*,int*,<ctype2>*,int*,<ctype2>*,<ctype2>*,int*,<ctype2>*,int*,int*
+    callprotoargument F_INT*,F_INT*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,F_INT*
 
     integer intent(hide),depend(a):: m = shape(a,0)
     integer intent(hide),depend(a):: n = shape(a,1)
@@ -603,7 +603,7 @@ subroutine <prefix2>gelss_lwork(m,n,maxmn,nrhs,a,b,s,cond,r,work,lwork,info)
    ! Query for optimal lwork size
     fortranname <prefix2>gelss
     callstatement (*f2py_func)(&m,&n,&nrhs,&a,&m,&b,&maxmn,&s,&cond,&r,&work,&lwork,&info)
-    callprotoargument int*,int*,int*,<ctype2>*,int*,<ctype2>*,int*,<ctype2>*,<ctype2>*,int*,<ctype2>*,int*,int*
+    callprotoargument F_INT*,F_INT*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,F_INT*
 
     integer intent(in):: m
     integer intent(in):: n
@@ -628,7 +628,7 @@ subroutine <prefix2c>gelss(m,n,minmn,maxmn,nrhs,a,b,s,cond,r,work,rwork,lwork,in
     ! Solve Minimize 2-norm(A * X - B).
 
     callstatement (*f2py_func)(&m,&n,&nrhs,a,&m,b,&maxmn,s,&cond,&r,work,&lwork,rwork,&info)
-    callprotoargument int*,int*,int*,<ctype2c>*,int*,<ctype2c>*,int*,<ctype2>*,<ctype2>*,int*,<ctype2c>*,int*,<ctype2>*,int*
+    callprotoargument F_INT*,F_INT*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2>*,<ctype2>*,F_INT*,<ctype2c>*,F_INT*,<ctype2>*,F_INT*
 
     integer intent(hide),depend(a):: m = shape(a,0)
     integer intent(hide),depend(a):: n = shape(a,1)
@@ -660,7 +660,7 @@ subroutine <prefix2c>gelss_lwork(m,n,maxmn,nrhs,a,b,s,cond,r,work,rwork,lwork,in
 
     fortranname <prefix2c>gelss
     callstatement (*f2py_func)(&m,&n,&nrhs,&a,&m,&b,&maxmn,&s,&cond,&r,&work,&lwork,&rwork,&info)
-    callprotoargument int*,int*,int*,<ctype2c>*,int*,<ctype2c>*,int*,<ctype2>*,<ctype2>*,int*,<ctype2c>*,int*,<ctype2>*,int*
+    callprotoargument F_INT*,F_INT*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2>*,<ctype2>*,F_INT*,<ctype2c>*,F_INT*,<ctype2>*,F_INT*
 
     integer intent(in):: m
     integer intent(in):: n
@@ -686,7 +686,7 @@ subroutine <prefix2>gelsy(m,n,maxmn,minmn,nrhs,a,b,jptv,cond,r,work,lwork,info)
     ! Solve Minimize 2-norm(A * X - B).
 
     callstatement (*f2py_func)(&m,&n,&nrhs,a,&m,b,&maxmn,jptv,&cond,&r,work,&lwork,&info)
-    callprotoargument int*,int*,int*,<ctype2>*,int*,<ctype2>*,int*,int*,<ctype2>*,int*,<ctype2>*,int*,int*
+    callprotoargument F_INT*,F_INT*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,F_INT*
 
     integer intent(hide),depend(a):: m = shape(a,0)
     integer intent(hide),depend(a):: n = shape(a,1)
@@ -716,7 +716,7 @@ subroutine <prefix2>gelsy_lwork(m,n,maxmn,nrhs,a,b,jptv,cond,r,work,lwork,info)
 
     fortranname <prefix2>gelsy
     callstatement (*f2py_func)(&m,&n,&nrhs,&a,&m,&b,&maxmn,&jptv,&cond,&r,&work,&lwork,&info)
-    callprotoargument int*,int*,int*,<ctype2>*,int*,<ctype2>*,int*,int*,<ctype2>*,int*,<ctype2>*,int*,int*
+    callprotoargument F_INT*,F_INT*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,F_INT*
 
     integer intent(in) :: m
     integer intent(in) :: n
@@ -741,7 +741,7 @@ subroutine <prefix2c>gelsy(m,n,maxmn,minmn,nrhs,a,b,jptv,cond,r,work,lwork,rwork
     ! Solve Minimize 2-norm(A * X - B).
 
     callstatement (*f2py_func)(&m,&n,&nrhs,a,&m,b,&maxmn,jptv,&cond,&r,work,&lwork,rwork,&info)
-    callprotoargument int*,int*,int*,<ctype2c>*,int*,<ctype2c>*,int*,int*,<ctype2>*,int*,<ctype2c>*,int*,<ctype2>*,int*
+    callprotoargument F_INT*,F_INT*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,F_INT*,<ctype2>*,F_INT*,<ctype2c>*,F_INT*,<ctype2>*,F_INT*
 
     integer intent(hide),depend(a):: m = shape(a,0)
     integer intent(hide),depend(a):: n = shape(a,1)
@@ -772,7 +772,7 @@ subroutine <prefix2c>gelsy_lwork(m,n,maxmn,nrhs,a,b,jptv,cond,r,work,lwork,rwork
 
     fortranname <prefix2c>gelsy
     callstatement (*f2py_func)(&m,&n,&nrhs,&a,&m,&b,&maxmn,&jptv,&cond,&r,&work,&lwork,&rwork,&info)
-    callprotoargument int*,int*,int*,<ctype2c>*,int*,<ctype2c>*,int*,int*,<ctype2>*,int*,<ctype2c>*,int*,<ctype2>*,int*
+    callprotoargument F_INT*,F_INT*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,F_INT*,<ctype2>*,F_INT*,<ctype2c>*,F_INT*,<ctype2>*,F_INT*
 
     integer intent(in) :: m
     integer intent(in) :: n
@@ -798,7 +798,7 @@ subroutine <prefix2>gelsd(m,n,minmn,maxmn,nrhs,a,b,s,cond,r,work,lwork,size_iwor
     ! Solve Minimize 2-norm(A * X - B).
 
     callstatement (*f2py_func)(&m,&n,&nrhs,a,&m,b,&maxmn,s,&cond,&r,work,&lwork,iwork,&info)
-    callprotoargument int*,int*,int*,<ctype2>*,int*,<ctype2>*,int*,<ctype2>*,<ctype2>*,int*,<ctype2>*,int*,int*,int*
+    callprotoargument F_INT*,F_INT*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,F_INT*,F_INT*
 
     integer intent(hide),depend(a):: m = shape(a,0)
     integer intent(hide),depend(a):: n = shape(a,1)
@@ -831,7 +831,7 @@ subroutine <prefix2>gelsd_lwork(m,n,maxmn,nrhs,a,b,s,cond,r,work,lwork,iwork,inf
 
     fortranname <prefix2>gelsd
     callstatement (*f2py_func)(&m,&n,&nrhs,&a,&m,&b,&maxmn,&s,&cond,&r,&work,&lwork,&iwork,&info)
-    callprotoargument int*,int*,int*,<ctype2>*,int*,<ctype2>*,int*,<ctype2>*,<ctype2>*,int*,<ctype2>*,int*,int*,int*
+    callprotoargument F_INT*,F_INT*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,F_INT*,F_INT*
 
     integer intent(in) :: m
     integer intent(in) :: n
@@ -858,7 +858,7 @@ subroutine <prefix2c>gelsd(m,n,minmn,maxmn,nrhs,a,b,s,cond,r,work,lwork,size_rwo
     ! Solve Minimize 2-norm(A * X - B).
 
     callstatement (*f2py_func)(&m,&n,&nrhs,a,&m,b,&maxmn,s,&cond,&r,work,&lwork, rwork, iwork,&info)
-    callprotoargument int*,int*,int*,<ctype2c>*,int*,<ctype2c>*,int*,<ctype2>*,<ctype2>*,int*, <ctype2c>*,int*,<ctype2>*,int*,int*
+    callprotoargument F_INT*,F_INT*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2>*,<ctype2>*,F_INT*, <ctype2c>*,F_INT*,<ctype2>*,F_INT*,F_INT*
 
     integer intent(hide),depend(a):: m = shape(a,0)
     integer intent(hide),depend(a):: n = shape(a,1)
@@ -894,7 +894,7 @@ subroutine <prefix2c>gelsd_lwork(m,n,maxmn,nrhs,a,b,s,cond,r,work,lwork,rwork,iw
 
     fortranname <prefix2c>gelsd
     callstatement (*f2py_func)(&m,&n,&nrhs,&a,&m,&b,&maxmn,&s,&cond,&r,&work,&lwork, &rwork, &iwork,&info)
-    callprotoargument int*,int*,int*,<ctype2c>*,int*,<ctype2c>*,int*,<ctype2>*,<ctype2>*,int*, <ctype2c>*,int*,<ctype2>*,int*,int*
+    callprotoargument F_INT*,F_INT*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2>*,<ctype2>*,F_INT*, <ctype2c>*,F_INT*,<ctype2>*,F_INT*,F_INT*
 
     integer intent(in) :: m
     integer intent(in) :: n
@@ -924,7 +924,7 @@ subroutine <prefix2>geqp3(m,n,a,jpvt,tau,work,lwork,info)
 
     threadsafe
     callstatement (*f2py_func)(&m,&n,a,&m,jpvt,tau,work,&lwork,&info)
-    callprotoargument int*,int*,<ctype2>*,int*,int*,<ctype2>*,<ctype2>*,int*,int*
+    callprotoargument F_INT*,F_INT*,<ctype2>*,F_INT*,F_INT*,<ctype2>*,<ctype2>*,F_INT*,F_INT*
     integer intent(hide),depend(a):: m = shape(a,0)
     integer intent(hide),depend(a):: n = shape(a,1)
     <ftype2> dimension(m,n),intent(in,out,copy,out=qr,aligned8) :: a
@@ -943,7 +943,7 @@ subroutine <prefix2c>geqp3(m,n,a,jpvt,tau,work,lwork,rwork,info)
 
     threadsafe
     callstatement (*f2py_func)(&m,&n,a,&m,jpvt,tau,work,&lwork,rwork,&info)
-    callprotoargument int*,int*,<ctype2c>*,int*,int*,<ctype2c>*,<ctype2c>*,int*,<ctype2>*,int*
+    callprotoargument F_INT*,F_INT*,<ctype2c>*,F_INT*,F_INT*,<ctype2c>*,<ctype2c>*,F_INT*,<ctype2>*,F_INT*
 
     integer intent(hide),depend(a):: m = shape(a,0)
     integer intent(hide),depend(a):: n = shape(a,1)
@@ -965,7 +965,7 @@ subroutine <prefix>geqrf(m,n,a,tau,work,lwork,info)
 
     threadsafe
     callstatement (*f2py_func)(&m,&n,a,&m,tau,work,&lwork,&info)
-    callprotoargument int*,int*,<ctype>*,int*,<ctype>*,<ctype>*,int*,int*
+    callprotoargument F_INT*,F_INT*,<ctype>*,F_INT*,<ctype>*,<ctype>*,F_INT*,F_INT*
 
     integer intent(hide),depend(a):: m = shape(a,0)
     integer intent(hide),depend(a):: n = shape(a,1)
@@ -984,17 +984,63 @@ subroutine <prefix>geqrf_lwork(m,n,a,tau,work,lwork,info)
 
     fortranname <prefix>geqrf
     callstatement (*f2py_func)(&m,&n,&a,&m,&tau,&work,&lwork,&info)
-    callprotoargument int*,int*,<ctype>*,int*,<ctype>*,<ctype>*,int*,int*
+    callprotoargument F_INT*,F_INT*,<ctype>*,F_INT*,<ctype>*,<ctype>*,F_INT*,F_INT*
 
     integer intent(in), check(m > 0) :: m
     integer intent(in), check(n > 0) :: n
     <ftype> intent(hide) :: a
     <ftype> intent(hide) :: tau
-    integer intent(hide) :: lwork = -1
     <ftype> intent(out) :: work
+    integer intent(hide) :: lwork = -1
     integer intent(out) :: info
 
 end subroutine <prefix>geqrf_lwork
+
+subroutine <prefix>geqrfp(m,n,a,lda,tau,work,lwork,info)
+    ! qr,tau,work,info = geqrfp(a,lwork=3*n,overwrite_a=0)
+    ! DGEQR2P computes a QR factorization of a real M-by-N matrix A:
+    !
+    !    A = Q * ( R ),
+    !            ( 0 )
+    !
+    ! where:
+    !
+    !    Q is a M-by-M orthogonal matrix;
+    !    R is an upper-triangular N-by-N matrix with nonnegative diagonal
+    !    entries;
+    !    0 is a (M-N)-by-N zero matrix, if M > N.
+
+    callstatement (*f2py_func)(&m,&n,a,&lda,tau,work,&lwork,&info)
+    callprotoargument F_INT*,F_INT*,<ctype>*,F_INT*,<ctype>*,<ctype>*,F_INT*,F_INT*
+
+    integer intent(hide), check(m > 0), depend(a) :: m = shape(a, 0)
+    integer intent(hide), check(n > 0), depend(a) :: n = shape(a, 1)
+    <ftype> intent(in,out,copy,out=qr), dimension(m,n) :: a
+    integer intent(hide), depend(a) :: lda = max(1, shape(a, 0))
+    <ftype> intent(out), depend(m,n), dimension(MIN(m,n)) :: tau
+    <ftype> intent(hide), depend(lwork), dimension(lwork) :: work
+    integer intent(in), check(lwork>=n||lwork==-1) :: lwork = MAX(1, n)
+    integer intent(out) :: info
+
+end subroutine <prefix>geqrfp
+
+subroutine <prefix>geqrfp_lwork(m,n,a,lda,tau,work,lwork,info)
+    ! work, info = geqrfp_lwork(m, n)
+
+    fortranname <prefix>geqrfp
+    callstatement (*f2py_func)(&m,&n,&a,&lda,&tau,&work,&lwork,&info)
+    callprotoargument F_INT*,F_INT*,<ctype>*,F_INT*,<ctype>*,<ctype>*,F_INT*,F_INT*
+
+    integer intent(in), check(m > 0) :: m
+    integer intent(in), check(n > 0) :: n
+    <ftype> intent(hide) :: a
+    integer intent(hide), depend(m) :: lda = m
+    <ftype> intent(hide) :: tau
+    <ftype> intent(out) :: work
+    integer intent(hide) :: lwork = -1
+    integer intent(out) :: info
+
+end subroutine <prefix>geqrfp_lwork
 
 subroutine <prefix>gerqf(m,n,a,tau,work,lwork,info)
    ! rq_a,tau,work,info = gerqf(a,lwork=3*n,overwrite_a=0)
@@ -1003,7 +1049,7 @@ subroutine <prefix>gerqf(m,n,a,tau,work,lwork,info)
 
     threadsafe
     callstatement (*f2py_func)(&m,&n,a,&m,tau,work,&lwork,&info)
-    callprotoargument int*,int*,<ctype>*,int*,<ctype>*,<ctype>*,int*,int*
+    callprotoargument F_INT*,F_INT*,<ctype>*,F_INT*,<ctype>*,<ctype>*,F_INT*,F_INT*
 
     integer intent(hide),depend(a):: m = shape(a,0)
     integer intent(hide),depend(a):: n = shape(a,1)
@@ -1020,7 +1066,7 @@ subroutine <prefix2>geev(compute_vl,compute_vr,n,a,wr,wi,vl,ldvl,vr,ldvr,work,lw
     ! wr,wi,vl,vr,info = geev(a,compute_vl=1,compute_vr=1,lwork=4*n,overwrite_a=0)
 
     callstatement {(*f2py_func)((compute_vl?"V":"N"),(compute_vr?"V":"N"),&n,a,&n,wr,wi,vl,&ldvl,vr,&ldvr,work,&lwork,&info);}
-    callprotoargument char*,char*,int*,<ctype2>*,int*,<ctype2>*,<ctype2>*,<ctype2>*,int*,<ctype2>*,int*,<ctype2>*,int*,int*
+    callprotoargument char*,char*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,<ctype2>*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,F_INT*
 
     integer optional,intent(in):: compute_vl = 1
     check(compute_vl==1||compute_vl==0) compute_vl
@@ -1053,7 +1099,7 @@ subroutine <prefix2>geev_lwork(compute_vl,compute_vr,n,a,wr,wi,vl,ldvl,vr,ldvr,w
 
     fortranname <prefix2>geev
     callstatement {(*f2py_func)((compute_vl?"V":"N"),(compute_vr?"V":"N"),&n,&a,&n,&wr,&wi,&vl,&ldvl,&vr,&ldvr,&work,&lwork,&info);}
-    callprotoargument char*,char*,int*,<ctype2>*,int*,<ctype2>*,<ctype2>*,<ctype2>*,int*,<ctype2>*,int*,<ctype2>*,int*,int*
+    callprotoargument char*,char*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,<ctype2>*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,F_INT*
 
     integer optional,intent(in):: compute_vl = 1
     check(compute_vl==1||compute_vl==0) compute_vl
@@ -1083,7 +1129,7 @@ subroutine <prefix2c>geev(compute_vl,compute_vr,n,a,w,vl,ldvl,vr,ldvr,work,lwork
     ! w,vl,vr,info = geev(a,compute_vl=1,compute_vr=1,lwork=2*n,overwrite_a=0)
 
     callstatement (*f2py_func)((compute_vl?"V":"N"),(compute_vr?"V":"N"),&n,a,&n,w,vl,&ldvl,vr,&ldvr,work,&lwork,rwork,&info)
-    callprotoargument char*,char*,int*,<ctype2c>*,int*,<ctype2c>*,<ctype2c>*,int*,<ctype2c>*,int*,<ctype2c>*,int*,<ctype2>*,int*
+    callprotoargument char*,char*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2>*,F_INT*
 
     integer optional,intent(in):: compute_vl = 1
     check(compute_vl==1||compute_vl==0) compute_vl
@@ -1116,7 +1162,7 @@ subroutine <prefix2c>geev_lwork(compute_vl,compute_vr,n,a,w,vl,ldvl,vr,ldvr,work
 
     fortranname <prefix2c>geev
     callstatement (*f2py_func)((compute_vl?"V":"N"),(compute_vr?"V":"N"),&n,&a,&n,&w,&vl,&ldvl,&vr,&ldvr,&work,&lwork,&rwork,&info)
-    callprotoargument char*,char*,int*,<ctype2c>*,int*,<ctype2c>*,<ctype2c>*,int*,<ctype2c>*,int*,<ctype2c>*,int*,<ctype2>*,int*
+    callprotoargument char*,char*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2>*,F_INT*
 
     integer optional,intent(in):: compute_vl = 1
     check(compute_vl==1||compute_vl==0) compute_vl
@@ -1151,7 +1197,7 @@ subroutine <prefix2>gegv(compute_vl,compute_vr,n,a,b,alphar,alphai,beta,vl,ldvl,
     ! alphar,alphai,beta,vl,vr,info = gegv(a,b,compute_vl=1,compute_vr=1,lwork=8*n,overwrite_a=0,overwrite_b=0)
 
     callstatement (*f2py_func)((compute_vl?"V":"N"),(compute_vr?"V":"N"),&n,a,&n,b,&n,alphar,alphai,beta,vl,&ldvl,vr,&ldvr,work,&lwork,&info)
-    callprotoargument char*,char*,int*,<ctype2>*,int*,<ctype2>*,int*,<ctype2>*,<ctype2>*,<ctype2>*,<ctype2>*,int*,<ctype2>*,int*,<ctype2>*,int*,int*
+    callprotoargument char*,char*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,<ctype2>*,<ctype2>*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,F_INT*
 
     integer optional,intent(in):: compute_vl = 1
     check(compute_vl==1||compute_vl==0) compute_vl
@@ -1192,7 +1238,7 @@ subroutine <prefix2c>gegv(compute_vl,compute_vr,n,a,b,alpha,beta,vl,ldvl,vr,ldvr
     ! alpha,beta,vl,vr,info = gegv(a,b,compute_vl=1,compute_vr=1,lwork=2*n,overwrite_a=0,overwrite_b=0)
 
     callstatement (*f2py_func)((compute_vl?"V":"N"),(compute_vr?"V":"N"),&n,a,&n,b,&n,alpha,beta,vl,&ldvl,vr,&ldvr,work,&lwork,rwork,&info)
-    callprotoargument char*,char*,int*,<ctype2c>*,int*,<ctype2c>*,int*,<ctype2c>*,<ctype2c>*,<ctype2c>*,int*,<ctype2c>*,int*,<ctype2c>*,int*,<ctype2>*,int*
+    callprotoargument char*,char*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,<ctype2c>*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2>*,F_INT*
 
     integer optional,intent(in):: compute_vl = 1
     check(compute_vl==1||compute_vl==0) compute_vl
@@ -1232,7 +1278,7 @@ subroutine <prefix2c>gees(compute_v,sort_t,<prefix2c>select,n,a,nrows,sdim,w,vs,
     !  triangular
 
     callstatement (*f2py_func)((compute_v?"V":"N"),(sort_t?"S":"N"),cb_<prefix2c>select_in_gees__user__routines,&n,a,&nrows,&sdim,w,vs,&ldvs,work,&lwork,rwork,bwork,&info,1,1)
-    callprotoargument char*,char*,int(*)(<ctype2c>*),int*,<ctype2c>*,int*,int*,<ctype2c>*,<ctype2c>*,int*,<ctype2c>*,int*,<ctype2>*,int*,int*,int,int
+    callprotoargument char*,char*,F_INT(*)(<ctype2c>*),F_INT*,<ctype2c>*,F_INT*,F_INT*,<ctype2c>*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2>*,F_INT*,F_INT*,F_INT,F_INT
 
     use gees__user__routines
 
@@ -1262,7 +1308,7 @@ subroutine <prefix2>gees(compute_v,sort_t,<prefix2>select,n,a,nrows,sdim,wr,wi,v
     !  triangular with 1x1 and 2x2 blocks.
 
     callstatement (*f2py_func)((compute_v?"V":"N"),(sort_t?"S":"N"),cb_<prefix2>select_in_gees__user__routines,&n,a,&nrows,&sdim,wr,wi,vs,&ldvs,work,&lwork,bwork,&info,1,1)
-    callprotoargument char*,char*,int(*)(<ctype2>*,<ctype2>*),int*,<ctype2>*,int*,int*,<ctype2>*,<ctype2>*,<ctype2>*,int*,<ctype2>*,int*,int*,int*,int,int
+    callprotoargument char*,char*,F_INT(*)(<ctype2>*,<ctype2>*),F_INT*,<ctype2>*,F_INT*,F_INT*,<ctype2>*,<ctype2>*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,F_INT*,F_INT*,F_INT,F_INT
 
     use gees__user__routines
 
@@ -1293,7 +1339,7 @@ subroutine <prefix2>gges(jobvsl,jobvsr,sort_t,<prefix2>select,n,a,lda,b,ldb,sdim
     ! (A,B) = ( (VSL)*S*(VSR)**T, (VSL)*T*(VSR)**T )
 
     callstatement (*f2py_func)((jobvsl?"V":"N"),(jobvsr?"V":"N"),(sort_t?"S":"N"),cb_<prefix2>select_in_gges__user__routines,&n,a,&lda,b,&ldb,&sdim,alphar,alphai,beta,vsl,&ldvsl,vsr,&ldvsr,work,&lwork,bwork,&info)
-    callprotoargument char*,char*,char*,int(*)(<ctype2>*,<ctype2>*,<ctype2>*),int*,<ctype2>*,int*,<ctype2>*,int*,int*,<ctype2>*,<ctype2>*,<ctype2>*,<ctype2>*,int*,<ctype2>*,int*,<ctype2>*,int*,int*,int*
+    callprotoargument char*,char*,char*,F_INT(*)(<ctype2>*,<ctype2>*,<ctype2>*),F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,F_INT*,<ctype2>*,<ctype2>*,<ctype2>*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,F_INT*,F_INT*
 
     use gges__user__routines
 
@@ -1329,7 +1375,7 @@ subroutine <prefix2c>gges(jobvsl,jobvsr,sort_t,<prefix2c>select,n,a,lda,b,ldb,sd
     ! (A,B) = ( (VSL)*S*(VSR)**T, (VSL)*T*(VSR)**H )
 
     callstatement (*f2py_func)((jobvsl?"V":"N"),(jobvsr?"V":"N"),(sort_t?"S":"N"),cb_<prefix2c>select_in_gges__user__routines,&n,a,&lda,b,&ldb,&sdim,alpha,beta,vsl,&ldvsl,vsr,&ldvsr,work,&lwork,rwork,bwork,&info)
-    callprotoargument char*,char*,char*,int(*)(<ctype2c>*,<ctype2c>*),int*,<ctype2c>*,int*,<ctype2c>*,int*,int*,<ctype2c>*,<ctype2c>*,<ctype2c>*,int*,<ctype2c>*,int*,<ctype2c>*,int*,<ctype2>*,int*,int*
+    callprotoargument char*,char*,char*,F_INT(*)(<ctype2c>*,<ctype2c>*),F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,F_INT*,<ctype2c>*,<ctype2c>*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2>*,F_INT*,F_INT*
 
     use gges__user__routines
 
@@ -1360,7 +1406,7 @@ end subroutine <prefix2c>gges
 subroutine <prefix2>ggev(compute_vl,compute_vr,n,a,b,alphar,alphai,beta,vl,ldvl,vr,ldvr,work,lwork,info)
 
     callstatement {(*f2py_func)((compute_vl?"V":"N"),(compute_vr?"V":"N"),&n,a,&n,b,&n,alphar,alphai,beta,vl,&ldvl,vr,&ldvr,work,&lwork,&info);}
-    callprotoargument char*,char*,int*,<ctype2>*,int*,<ctype2>*,int*,<ctype2>*,<ctype2>*,<ctype2>*,<ctype2>*,int*,<ctype2>*,int*,<ctype2>*,int*,int*
+    callprotoargument char*,char*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,<ctype2>*,<ctype2>*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,F_INT*
 
     integer optional,intent(in):: compute_vl = 1
     check(compute_vl==1||compute_vl==0) compute_vl
@@ -1395,7 +1441,7 @@ end subroutine <prefix2>ggev
 subroutine <prefix2c>ggev(compute_vl,compute_vr,n,a,b,alpha,beta,vl,ldvl,vr,ldvr,work,lwork,rwork,info)
 
     callstatement {(*f2py_func)((compute_vl?"V":"N"),(compute_vr?"V":"N"),&n,a,&n,b,&n,alpha,beta,vl,&ldvl,vr,&ldvr,work,&lwork,rwork,&info);}
-    callprotoargument char*,char*,int*,<ctype2c>*,int*,<ctype2c>*,int*,<ctype2c>*,<ctype2c>*,<ctype2c>*,int*,<ctype2c>*,int*,<ctype2c>*,int*,<ctype2>*,int*
+    callprotoargument char*,char*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,<ctype2c>*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2>*,F_INT*
 
     integer optional,intent(in):: compute_vl = 1
     check(compute_vl==1||compute_vl==0) compute_vl
@@ -1430,7 +1476,7 @@ end subroutine <prefix2>ggev
 subroutine <prefix>geequ(m,n,a,lda,r,c,rowcnd,colcnd,amax,info)
 
     callstatement (*f2py_func)(&m,&n,a,&lda,r,c,&rowcnd,&colcnd,&amax,&info)
-    callprotoargument int*,int*,<ctype>*,int*,<ctypereal>*,<ctypereal>*,<ctypereal>*,<ctypereal>*,<ctypereal>*,int*
+    callprotoargument F_INT*,F_INT*,<ctype>*,F_INT*,<ctypereal>*,<ctypereal>*,<ctypereal>*,<ctypereal>*,<ctypereal>*,F_INT*
 
     integer intent(hide),depend(a) :: m = shape(a,0)
     integer intent(hide),depend(a) :: n = shape(a,1)
@@ -1449,7 +1495,7 @@ end subroutine <prefix>geequ
 subroutine <prefix>geequb(m,n,a,lda,r,c,rowcnd,colcnd,amax,info)
 
     callstatement (*f2py_func)(&m,&n,a,&lda,r,c,&rowcnd,&colcnd,&amax,&info)
-    callprotoargument int*,int*,<ctype>*,int*,<ctypereal>*,<ctypereal>*,<ctypereal>*,<ctypereal>*,<ctypereal>*,int*
+    callprotoargument F_INT*,F_INT*,<ctype>*,F_INT*,<ctypereal>*,<ctypereal>*,<ctypereal>*,<ctypereal>*,<ctypereal>*,F_INT*
 
     integer intent(hide),depend(a) :: m = shape(a,0)
     integer intent(hide),depend(a) :: n = shape(a,1)

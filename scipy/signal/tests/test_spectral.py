@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 from numpy.testing import (assert_, assert_approx_equal,
                            assert_allclose, assert_array_equal, assert_equal,
@@ -1070,7 +1068,7 @@ class TestLombscargle(object):
         t = np.linspace(0, 10, 1000, endpoint=False)
         x = np.sin(4*t)
         f = np.linspace(0, 50, 500, endpoint=False) + 0.1
-        q = lombscargle(t, x, f*2*np.pi)
+        lombscargle(t, x, f*2*np.pi)
 
 
 class TestSTFT(object):

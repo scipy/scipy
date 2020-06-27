@@ -8,8 +8,6 @@ Sparse matrix functions
 #          Jake Vanderplas, August 2012 (Sparse Updates)
 #
 
-from __future__ import division, print_function, absolute_import
-
 __all__ = ['expm', 'inv']
 
 import math
@@ -20,7 +18,6 @@ import scipy.special
 from scipy.linalg.basic import solve, solve_triangular
 
 from scipy.sparse.base import isspmatrix
-from scipy.sparse.construct import eye as speye
 from scipy.sparse.linalg import spsolve
 from scipy.sparse.sputils import is_pydata_spmatrix
 
@@ -717,9 +714,9 @@ def _solve_P_Q(U, V, structure=None):
         raise ValueError('unsupported matrix structure: ' + str(structure))
 
 
-def _sinch(x):
+def _exp_sinch(a, x):
     """
-    Stably evaluate sinch.
+    Stably evaluate exp(a)*sinh(x)/x
 
     Notes
     -----
@@ -741,11 +738,11 @@ def _sinch(x):
     # How small is small? I am using the point where the relative error
     # of the approximation is less than 1e-14.
     # If x is large then directly evaluate sinh(x) / x.
-    x2 = x*x
     if abs(x) < 0.0135:
-        return 1 + (x2/6.)*(1 + (x2/20.)*(1 + (x2/42.)))
+        x2 = x*x
+        return np.exp(a) * (1 + (x2/6.)*(1 + (x2/20.)*(1 + (x2/42.))))
     else:
-        return np.sinh(x) / x
+        return (np.exp(a + x) - np.exp(a - x)) / (2*x)
 
 
 def _eq_10_42(lam_1, lam_2, t_12):
@@ -769,7 +766,7 @@ def _eq_10_42(lam_1, lam_2, t_12):
     # will apparently work around the cancellation.
     a = 0.5 * (lam_1 + lam_2)
     b = 0.5 * (lam_1 - lam_2)
-    return t_12 * np.exp(a) * _sinch(b)
+    return t_12 * _exp_sinch(a, b)
 
 
 def _fragment_2_1(X, T, s):

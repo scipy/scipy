@@ -2,8 +2,6 @@
 ltisys -- a collection of functions to convert linear time invariant systems
 from one representation to another.
 """
-from __future__ import division, print_function, absolute_import
-
 import numpy
 import numpy as np
 from numpy import (r_, eye, atleast_2d, poly, dot,

@@ -10,10 +10,10 @@ Functions
 
 """
 
-from __future__ import division, print_function, absolute_import
+import functools
+from threading import RLock
 
 import numpy as np
-from scipy._lib.six import callable
 from scipy.optimize import _cobyla
 from .optimize import OptimizeResult, _check_unknown_options
 try:
@@ -21,10 +21,20 @@ try:
 except ImportError:
     izip = zip
 
-
 __all__ = ['fmin_cobyla']
 
+# Workarund as _cobyla.minimize is not threadsafe
+# due to an unknown f2py bug and can segfault, 
+# see gh-9658.
+_module_lock = RLock()
+def synchronized(func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        with _module_lock:
+            return func(*args, **kwargs)
+    return wrapper
 
+@synchronized
 def fmin_cobyla(func, x0, cons, args=(), consargs=None, rhobeg=1.0,
                 rhoend=1e-4, maxfun=1000, disp=None, catol=2e-4):
     """
@@ -169,7 +179,7 @@ def fmin_cobyla(func, x0, cons, args=(), consargs=None, rhobeg=1.0,
         print("COBYLA failed to find a solution: %s" % (sol.message,))
     return sol['x']
 
-
+@synchronized
 def _minimize_cobyla(fun, x0, args=(), constraints=(),
                      rhobeg=1.0, tol=1e-4, maxiter=1000,
                      disp=False, catol=2e-4, **unknown_options):

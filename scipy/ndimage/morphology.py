@@ -28,7 +28,6 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from __future__ import division, print_function, absolute_import
 import warnings
 import operator
 
@@ -245,7 +244,11 @@ def _binary_erosion(input, structure, iterations, mask, output,
     else:
         output = bool
     output = _ni_support._get_output(output, input)
-
+    temp_needed = numpy.may_share_memory(input, output)
+    if temp_needed:
+        # input and output arrays cannot share memory
+        temp = output
+        output = _ni_support._get_output(output.dtype, input)
     if iterations == 1:
         _nd_image.binary_erosion(input, structure, mask, output,
                                  border_value, origin, invert, cit, 0)
@@ -266,7 +269,6 @@ def _binary_erosion(input, structure, iterations, mask, output,
             structure = structure.copy()
         _nd_image.binary_erosion2(output, structure, mask, iterations - 1,
                                   origin, invert, coordinate_list)
-        return output
     else:
         tmp_in = numpy.empty_like(input, dtype=bool)
         tmp_out = output
@@ -282,7 +284,10 @@ def _binary_erosion(input, structure, iterations, mask, output,
                 tmp_in, structure, mask, tmp_out,
                 border_value, origin, invert, cit, 0)
             ii += 1
-        return output
+    if temp_needed:
+        temp[...] = output
+        output = temp
+    return output
 
 
 def binary_erosion(input, structure=None, iterations=1, mask=None, output=None,

@@ -1,23 +1,35 @@
-"""
-Benchmarks for Linear Programming
-"""
-from __future__ import division, print_function, absolute_import
+import os
 
-# Import testing parameters
+import numpy as np
+from numpy.testing import suppress_warnings
+
+from .common import Benchmark
+
 try:
     from scipy.optimize import linprog, OptimizeWarning
-    from scipy.linalg import toeplitz
-    from scipy.optimize.tests.test_linprog import lpgen_2d, magic_square
-    from numpy.testing import suppress_warnings
-    from scipy.optimize._remove_redundancy import _remove_redundancy, _remove_redundancy_dense, _remove_redundancy_sparse
-    from scipy.optimize._linprog_util import _presolve, _clean_inputs, _LPProblem
-    from scipy.sparse import csc_matrix, issparse
-    import numpy as np
-    import os
 except ImportError:
     pass
 
-from .common import Benchmark
+try:
+    from scipy.optimize.tests.test_linprog import lpgen_2d, magic_square
+    from scipy.optimize._remove_redundancy import (
+        _remove_redundancy, _remove_redundancy_dense,
+        _remove_redundancy_sparse
+    )
+    from scipy.optimize._linprog_util import _presolve, _clean_inputs, _LPProblem
+except ImportError:
+    pass
+
+try:
+    from scipy.linalg import toeplitz
+except ImportError:
+    pass
+
+try:
+    from scipy.sparse import csc_matrix, csr_matrix, issparse
+except ImportError:
+    pass
+
 
 try:
     # the value of SCIPY_XSLOW is used to control whether slow benchmarks run
@@ -25,12 +37,12 @@ try:
 except ValueError:
     pass
 
-
 methods = [("interior-point", {"sparse": True}),
            ("interior-point", {"sparse": False}),
            ("revised simplex", {})]
 rr_methods = [_remove_redundancy, _remove_redundancy_dense,
               _remove_redundancy_sparse]
+presolve_methods = ['sparse', 'dense']
 
 problems = ['25FV47', '80BAU3B', 'ADLITTLE', 'AFIRO', 'AGG', 'AGG2', 'AGG3',
             'BANDM', 'BEACONFD', 'BLEND', 'BNL1', 'BNL2', 'BORE3D', 'BRANDY',
@@ -48,11 +60,23 @@ problems = ['25FV47', '80BAU3B', 'ADLITTLE', 'AFIRO', 'AGG', 'AGG2', 'AGG3',
 rr_problems = ['AFIRO', 'BLEND', 'FINNIS', 'RECIPE', 'SCSD6', 'VTP-BASE',
                'BORE3D', 'CYCLE', 'DEGEN2', 'DEGEN3', 'ETAMACRO', 'PILOTNOV',
                'QAP8', 'RECIPE', 'SCORPION', 'SHELL', 'SIERRA', 'WOOD1P']
+infeasible_problems = ['bgdbg1', 'bgetam', 'bgindy', 'bgprtr', 'box1',
+                       'ceria3d', 'chemcom', 'cplex1', 'cplex2', 'ex72a',
+                       'ex73a', 'forest6', 'galenet', 'gosh', 'gran',
+                       'itest2', 'itest6', 'klein1', 'klein2', 'klein3',
+                       'mondou2', 'pang', 'pilot4i', 'qual', 'reactor',
+                       'refinery', 'vol1', 'woodinfe']
+
 if not slow:
     problems = ['ADLITTLE', 'AFIRO', 'BLEND', 'BEACONFD', 'GROW7', 'LOTFI',
                 'SC105', 'SCTAP1', 'SHARE2B', 'STOCFOR1']
     rr_problems = ['AFIRO', 'BLEND', 'FINNIS', 'RECIPE', 'SCSD6', 'VTP-BASE',
                    'DEGEN2', 'ETAMACRO', 'RECIPE']
+    infeasible_problems = ['bgdbg1', 'bgprtr', 'box1', 'chemcom', 'cplex2',
+                           'ex72a', 'ex73a', 'forest6', 'galenet', 'itest2',
+                           'itest6', 'klein1', 'refinery', 'woodinfe']
+
+presolve_problems = problems
 
 
 def klee_minty(D):
@@ -205,8 +229,9 @@ class Netlib_RR(Benchmark):
             raise NotImplementedError("Known issues with these benchmarks.")
 
         dir_path = os.path.dirname(os.path.realpath(__file__))
-        data = np.load(dir_path + "/linprog_benchmark_files/" + prob + ".npz",
-                       allow_pickle=True)
+        datafile = os.path.join(dir_path, "linprog_benchmark_files",
+                                prob + ".npz")
+        data = np.load(datafile, allow_pickle=True)
 
         c, A_eq, A_ub, b_ub, b_eq = (data["c"], data["A_eq"], data["A_ub"],
                                      data["b_ub"], data["b_eq"])
@@ -243,3 +268,71 @@ class Netlib_RR(Benchmark):
             return float(self.error1)
         else:
             return float(self.error2)
+
+
+class Netlib_presolve(Benchmark):
+    params = [
+        presolve_methods,
+        presolve_problems
+    ]
+    param_names = ['method', 'problems']
+
+    def setup(self, meth, prob):
+
+        dir_path = os.path.dirname(os.path.realpath(__file__))
+        datafile = os.path.join(dir_path, "linprog_benchmark_files",
+                                prob + ".npz")
+        data = np.load(datafile, allow_pickle=True)
+
+        c, A_eq, A_ub, b_ub, b_eq = (data["c"], data["A_eq"], data["A_ub"],
+                                     data["b_ub"], data["b_eq"])
+        bounds = np.squeeze(data["bounds"])
+        x0 = np.zeros(c.shape)
+
+        if meth == "sparse":
+            A_eq = csr_matrix(A_eq)
+            A_ub = csr_matrix(A_ub)
+
+        lp = _LPProblem(c, A_ub, b_ub, A_eq, b_eq, bounds, x0)
+        self.lp_cleaned = _clean_inputs(lp)
+
+    def time_netlib_presolve(self, meth, prob):
+        _presolve(self.lp_cleaned, rr=False, tol=1e-9)
+
+
+class Netlib_infeasible(Benchmark):
+    params = [
+        methods,
+        infeasible_problems
+    ]
+    param_names = ['method', 'problems']
+
+    def setup(self, meth, prob):
+        dir_path = os.path.dirname(os.path.realpath(__file__))
+        datafile = os.path.join(dir_path, "linprog_benchmark_files",
+                                "infeasible", prob + ".npz")
+        data = np.load(datafile, allow_pickle=True)
+        self.c = data["c"]
+        self.A_eq = data["A_eq"]
+        self.A_ub = data["A_ub"]
+        self.b_ub = data["b_ub"]
+        self.b_eq = data["b_eq"]
+        self.bounds = np.squeeze(data["bounds"])
+        self.status = None
+
+    def time_netlib_infeasible(self, meth, prob):
+        method, options = meth
+        res = linprog(c=self.c,
+                      A_ub=self.A_ub,
+                      b_ub=self.b_ub,
+                      A_eq=self.A_eq,
+                      b_eq=self.b_eq,
+                      bounds=self.bounds,
+                      method=method,
+                      options=options)
+        self.status = res.status
+
+    def track_netlib_infeasible(self, meth, prob):
+        if self.status is None:
+            self.time_netlib_infeasible(meth, prob)
+        return self.status
