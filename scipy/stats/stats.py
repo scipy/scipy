@@ -6733,7 +6733,7 @@ def ks_2samp(data1, data2, alternative='two-sided', mode='auto'):
         # The product n1*n2 is large.  Use Smirnov's asymptoptic formula.
         # Ensure float to avoid overflow in multiplication
         # sorted because the one-sided formula is not symmetric in n1, n2
-        m, n = sorted(np.array([n1, n2], float), reverse=True)
+        m, n = sorted([float(n1), float(n2)], reverse=True)
         en = m * n / (m + n)
         if alternative == 'two-sided':
             prob = distributions.kstwo.sf(d, np.round(en))
