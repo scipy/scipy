@@ -921,7 +921,6 @@ class TestSOSFreqz:
         assert_array_less(dB[w >= 0.6], -99.9)
         assert_allclose(dB[(w >= 0.2) & (w <= 0.5)], 0, atol=3.01)
 
-    @pytest.mark.xfail
     def test_sosfreqz_design_ellip(self):
         N, Wn = ellipord(0.3, 0.1, 3, 60)
         sos = ellip(N, 0.3, 60, Wn, 'high', output='sos')
@@ -937,8 +936,7 @@ class TestSOSFreqz:
         dB = 20*np.log10(np.maximum(np.abs(h), 1e-10))
         w /= np.pi
         assert_allclose(dB[w >= 0.3], 0, atol=.55)
-        # this is not great (147 instead of 150, could be ellip[ord] problem?)
-        assert_array_less(dB[(w > 0) & (w <= 0.25)], -147)
+        assert_array_less(dB[w <= 0.2], -150)
 
     @mpmath_check("0.10")
     def test_sos_freqz_against_mp(self):
@@ -1719,6 +1717,19 @@ class TestEllipord:
 
         assert_equal(N, 5)
         assert_allclose(Wn, 0.2, rtol=1e-15)
+
+    def test_lowpass_1000dB(self):
+        # failed when ellipkm1 wasn't used in ellipord and ellipap
+        wp = 0.2
+        ws = 0.3
+        rp = 3
+        rs = 1000
+        N, Wn = ellipord(wp, ws, rp, rs, False)
+        sos = ellip(N, rp, rs, Wn, 'lp', False, output='sos')
+        w, h = sosfreqz(sos)
+        w /= np.pi
+        assert_array_less(-rp - 0.1, dB(h[w <= wp]))
+        assert_array_less(dB(h[ws <= w]), -rs + 0.1)
 
     def test_highpass(self):
         wp = 0.3
