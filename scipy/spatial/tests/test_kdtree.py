@@ -12,6 +12,8 @@ from scipy.spatial.ckdtree import cKDTreeNode
 from scipy.spatial import minkowski_distance
 
 import itertools
+import gc
+import sys
 
 def distance_box(a, b, p, boxsize):
     diff = a - b
@@ -1485,3 +1487,17 @@ def test_kdtree_complex_data():
 
     with pytest.raises(TypeError, match="complex data"):
         t.query_ball_point(points, r=1)
+
+
+def test_ckdtree_tree_refcount():
+    # Test cKDTreeNode keeps the refcount of its parent cKDTree object above 0
+    points = np.random.rand(100, 2)
+    t = cKDTree(points)
+    root = t.tree
+    # 1 refcount from the variable "t", the other is the argument to getrefcount
+    assert sys.getrefcount(t) > 2
+
+    # May crash if the tree has been freed
+    del t
+    gc.collect()
+    ll = root.lesser.data_points
