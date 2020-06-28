@@ -1,10 +1,8 @@
 # Copyright Anne M. Archibald 2008
 # Released under the scipy license
 import numpy as np
-from heapq import heappush, heappop
-import scipy.sparse
-from .ckdtree import cKDTree, cKDTreeNode
 import warnings
+from .ckdtree import cKDTree, cKDTreeNode
 
 __all__ = ['minkowski_distance_p', 'minkowski_distance',
            'distance_matrix',
@@ -225,25 +223,79 @@ class KDTree(cKDTree):
 
     """
 
-    node = cKDTreeNode
+    class node:
+        @staticmethod
+        def __new__(cls, ckdtree_node=None):
+            """Create either an inner or leaf node, wrapping a cKDTreeNode instance"""
+            if ckdtree_node is None:
+                return super().__new__(cls)
+            elif ckdtree_node.split_dim == -1:
+                return super().__new__(KDTree.leafnode)
+            else:
+                return super().__new__(KDTree.innernode)
 
-    # cKDTree does not have distinct types for inner and leaf nodes
-    # Emulate the old behavior by using a metaclass to overwrite isinstance
-    class _InnerNodeMeta(type):
-        def __instancecheck__(cls, inst):
-            return (isinstance(inst, cKDTreeNode) and
-                    inst.split_dim >= 0)
+        def __init__(self, ckdtree_node=None):
+            if ckdtree_node is None:
+                ckdtree_node = cKDTreeNode()
+            self._node = ckdtree_node
 
-    class innernode(cKDTreeNode, metaclass=_InnerNodeMeta):
-        pass
+        def __lt__(self, other):
+            if not isinstance(other, KDTree.node):
+                return False
+            return self._node._compare(other._node) < 0
 
-    class _LeafNodeMeta(type):
-        def __instancecheck__(cls, inst):
-            return (isinstance(inst, cKDTreeNode) and
-                    inst.split_dim == -1)
+        def __le__(self, other):
+            if not isinstance(other, KDTree.node):
+                return False
+            return self._node._compare(other._node) <= 0
 
-    class leafnode(cKDTreeNode, metaclass=_LeafNodeMeta):
-        pass
+        def __gt__(self, other):
+            if not isinstance(other, KDTree.node):
+                return True
+            return self._node._compare(other._node) > 0
+
+        def __ge__(self, other):
+            if not isinstance(other, KDTree.node):
+                return True
+            return self._node._compare(other._node) >= 0
+
+        def __eq__(self, other):
+            if not isinstance(other, KDTree.node):
+                return False
+            return self._node._compare(other._node) == 0
+
+    class leafnode(node):
+        @property
+        def idx(self):
+            return self._node.indices
+
+        @property
+        def children(self):
+            return self._node.children
+
+    class innernode(node):
+        @property
+        def split_dim(self):
+            return self._node.split_dim
+
+        @property
+        def split(self):
+            return self._node.split
+
+        @property
+        def children(self):
+            return self._node.children
+        @property
+        def less(self):
+            return KDTree.node(self._node.lesser)
+
+        @property
+        def greater(self):
+            return KDTree.node(self._node.greater)
+
+    @property
+    def tree(self):
+        return KDTree.node(super().tree)
 
     def __init__(self, data, leafsize=10):
         data = np.asarray(data)
