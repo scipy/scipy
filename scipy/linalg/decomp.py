@@ -1006,9 +1006,9 @@ def eigvalsh(a, b=None, lower=True, overwrite_a=False,
     """
     return eigh(a, b=b, lower=lower, eigvals_only=True,
                 overwrite_a=overwrite_a, overwrite_b=overwrite_b,
-                turbo=turbo, eigvals=None, type=type,
-                check_finite=check_finite, subset_by_index=eigvals,
-                subset_by_value=None, driver=None)
+                turbo=turbo, type=type, check_finite=check_finite,
+                subset_by_index=eigvals or subset_by_index,
+                subset_by_value=subset_by_value, driver=driver)
 
 
 def eigvals_banded(a_band, lower=False, overwrite_a_band=False,
