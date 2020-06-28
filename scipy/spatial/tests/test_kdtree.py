@@ -1485,6 +1485,7 @@ def test_kdtree_complex_data():
 
 
 def test_kdtree_tree_access():
+    # Test KDTree.tree can be used to traverse the KDTree
     np.random.seed(1234)
     points = np.random.rand(100, 4)
     t = KDTree(points)
@@ -1511,3 +1512,24 @@ def test_kdtree_tree_access():
             assert n.children == n.less.children + n.greater.children
             nodes.append(n.greater)
             nodes.append(n.less)
+
+
+def test_kdtree_attributes():
+    # Test KDTree's attributes are available
+    np.random.seed(1234)
+    points = np.random.rand(100, 4)
+    t = KDTree(points)
+
+    assert isinstance(t.m, int)
+    assert t.n == points.shape[0]
+
+    assert isinstance(t.n, int)
+    assert t.m == points.shape[1]
+
+    assert isinstance(t.leafsize, int)
+    assert t.leafsize == 10
+
+    assert_array_equal(t.maxes, np.amax(points, axis=0))
+    assert_array_equal(t.mins, np.amin(points, axis=0))
+    assert t.data is points
+
