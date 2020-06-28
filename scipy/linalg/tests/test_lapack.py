@@ -2944,9 +2944,10 @@ def test_pptrs_pptri_pptrf_ppsv_ppcon(dtype, lower):
         inds = ([x for y in range(1, n+1) for x in range(y)],
                 [y-1 for y in range(1, n+1) for x in range(y)])
     ap = a[inds]
-    ppsv, pptrf, pptrs, pptri, ppcon = get_lapack_funcs(('ppsv', 'pptrf',
-                                                         'pptrs', 'pptri',
-                                                         'ppcon'), dtype=dtype)
+    ppsv, pptrf, pptrs, pptri, ppcon = get_lapack_funcs(
+        ('ppsv', 'pptrf', 'pptrs', 'pptri', 'ppcon'),
+        dtype=dtype,
+        ilp64="preferred")
 
     ul, info = pptrf(n, ap, lower=lower)
     assert_equal(info, 0)
