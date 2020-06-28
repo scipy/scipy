@@ -672,18 +672,25 @@ def block_diag(mats, format=None, dtype=None):
     data = []
     r_idx = 0
     c_idx = 0
-    for ia, a in enumerate(mats):
-        if issparse(a):
-            a = a.tocsr()
+    for a in mats:
         if isinstance(a, (list, numbers.Number)):
-            a = csr_matrix(a)
+            a = coo_matrix(a)
         nrows, ncols = a.shape
-        for r, c in zip(*a.nonzero()):
-            row.append(r + r_idx)
-            col.append(c + c_idx)
-            data.append(a[r, c])
+        if issparse(a):
+            a = a.tocoo()
+            row.append(a.row + r_idx)
+            col.append(a.col + c_idx)
+            data.append(a.data)
+        else:
+            a_row, a_col = np.divmod(np.arange(nrows*ncols), ncols)
+            row.append(a_row + r_idx)
+            col.append(a_col + c_idx)
+            data.append(a.ravel())
         r_idx = r_idx + nrows
         c_idx = c_idx + ncols
+    row = np.concatenate(row)
+    col = np.concatenate(col)
+    data = np.concatenate(data)
     return coo_matrix((data, (row, col)),
                       shape=(r_idx, c_idx),
                       dtype=dtype).asformat(format)
