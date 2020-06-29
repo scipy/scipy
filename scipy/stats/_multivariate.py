@@ -1356,8 +1356,11 @@ class dirichlet_gen(multi_rv_generic):
     support on the simplex defined by
 
     .. math::
-        \sum_{i=1}^{K} x_i \le 1
+        \sum_{i=1}^{K} x_i = 1
 
+    where 0 < x_i < 1.
+
+    If the quantiles don't lie within the simplex, a ValueError is raised.
 
     The probability density function for `dirichlet` is
 
