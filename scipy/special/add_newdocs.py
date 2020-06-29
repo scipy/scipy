@@ -2967,18 +2967,18 @@ add_newdoc("eval_legendre",
     >>> eval_legendre(1, X)
     array([-1. , -0.5,  0. ,  0.5,  1. ])
 
-    Evaluate Legendre polynomials of order 0 through 5 at x = 0
+    Evaluate Legendre polynomials of order 0 through 4 at x = 0
 
     >>> N = range(0, 5)
     >>> eval_legendre(N, 0)
     array([ 1.   ,  0.   , -0.5  ,  0.   ,  0.375])
 
-    Plot Legendre polynomials of order 0 through 5
+    Plot Legendre polynomials of order 0 through 4
 
-    >>> X = np.linspace(-1, 1)  # Plot over -1 to 1 domain
+    >>> X = np.linspace(-1, 1)
 
     >>> import matplotlib.pyplot as plt
-    >>> for n in range(0, 5):       # Plot each polynomial of order n
+    >>> for n in range(0, 5):
     ...     y = eval_legendre(n, X)
     ...     plt.plot(X, y, label=r'$P_{}(x)$'.format(n))
 
