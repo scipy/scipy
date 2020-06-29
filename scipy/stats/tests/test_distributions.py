@@ -1834,9 +1834,29 @@ class TestExponNorm(object):
         # Test for extreme values against overflows
         assert_almost_equal(stats.exponnorm.pdf(-900, 1), 0.0)
         assert_almost_equal(stats.exponnorm.pdf(+900, 1), 0.0)
-        assert_almost_equal(stats.exponnorm.pdf(1, 0.01), 0.0)
         assert_almost_equal(stats.exponnorm.pdf(-900, 0.01), 0.0)
         assert_almost_equal(stats.exponnorm.pdf(+900, 0.01), 0.0)
+
+    # Expected values for the PDF were computed with mpmath, with
+    # the following function, and with mpmath.mp.dps = 50.
+    #
+    #   def exponnorm_stdpdf(x, K):
+    #       x = mpmath.mpf(x)
+    #       K = mpmath.mpf(K)
+    #       t1 = mpmath.exp(1/(2*K**2) - x/K)
+    #       erfcarg = -(x - 1/K)/mpmath.sqrt(2)
+    #       t2 = mpmath.erfc(erfcarg)
+    #       return t1 * t2 / (2*K)
+    #
+    @pytest.mark.parametrize('x, K, expected',
+                             [(20, 0.01, 6.90010764753618e-88),
+                              (1, 0.01, 0.24438994313247364),
+                              (-1, 0.01, 0.23955149623472075),
+                              (-20, 0.01, 4.6004708690125477e-88),
+                              (10, 1, 7.48518298877006e-05),
+                              (10, 10000, 9.990005048283775e-05)])
+    def test_std_pdf(self, x, K, expected):
+        assert_allclose(stats.exponnorm.pdf(x, K), expected, rtol=1e-12)
 
 
 class TestGenExpon(object):
@@ -2037,6 +2057,7 @@ class TestGumbelL(object):
         y = stats.gumbel_l.sf(x)
         xx = stats.gumbel_l.isf(y)
         assert_allclose(x, xx)
+
 
 class TestLevyStable(object):
 

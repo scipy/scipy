@@ -27,7 +27,7 @@ from ._distn_infrastructure import (get_distribution_names, _kurtosis,
                                     rv_continuous, _skew, valarray,
                                     _get_fixed_fit_value, _check_shape)
 from ._ksstats import kolmogn, kolmognp, kolmogni
-from ._constants import (_XMIN, _EULER, _ZETA3, _XMAX, _LOGXMAX,
+from ._constants import (_XMIN, _EULER, _ZETA3,
                          _SQRT_2_OVER_PI, _LOG_SQRT_2_OVER_PI)
 
 # In numpy 1.12 and above, np.power refuses to raise integers to negative
@@ -1546,9 +1546,9 @@ class expon_gen(rv_continuous):
 expon = expon_gen(a=0.0, name='expon')
 
 
-## Exponentially Modified Normal (exponential distribution
-##  convolved with a Normal).
-## This is called an exponentially modified gaussian on wikipedia
+# Exponentially Modified Normal (exponential distribution
+# convolved with a Normal).
+# This is called an exponentially modified gaussian on wikipedia.
 class exponnorm_gen(rv_continuous):
     r"""An exponentially modified Normal continuous random variable.
 
@@ -1590,19 +1590,12 @@ class exponnorm_gen(rv_continuous):
         return expval + gval
 
     def _pdf(self, x, K):
-        # exponnorm.pdf(x, K) =
-        #     1/(2*K) exp(1/(2 * K**2)) exp(-x / K) * erfc-(x - 1/K) / sqrt(2))
-        invK = 1.0 / K
-        exparg = 0.5 * invK**2 - invK * x
-        # Avoid overflows; setting np.exp(exparg) to the max float works
-        #  all right here
-        expval = _lazywhere(exparg < _LOGXMAX, (exparg,), np.exp, _XMAX)
-        return 0.5 * invK * (expval * sc.erfc(-(x - invK) / np.sqrt(2)))
+        return np.exp(self._logpdf(x, K))
 
     def _logpdf(self, x, K):
         invK = 1.0 / K
-        exparg = 0.5 * invK**2 - invK * x
-        return exparg + np.log(0.5 * invK * sc.erfc(-(x - invK) / np.sqrt(2)))
+        exparg = invK * (0.5 * invK - x)
+        return exparg + _norm_logcdf(x - invK) - np.log(K)
 
     def _cdf(self, x, K):
         invK = 1.0 / K
