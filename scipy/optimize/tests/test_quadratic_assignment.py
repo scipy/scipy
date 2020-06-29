@@ -48,14 +48,14 @@ def test_quadratic_assignment():
 
     # check ofv with seeds
     res = quadratic_assignment(cost_matrix, dist_matrix,
-                               options={'seed': seed})
+                               options={'partial_match': seed})
 
     assert 11156 <= res['score'] < 21000
 
     # check performance when seeds are the global optimum
     seed = np.asarray([np.arange(n), [opt_perm[z] for z in np.arange(n)]]).T
     res = quadratic_assignment(cost_matrix, dist_matrix,
-                               options={'seed': seed})
+                               options={'partial_match': seed})
 
     assert 11156 == res['score']
 
@@ -100,7 +100,7 @@ def test_rand_qap():
 
     # check ofv with 100 random initializations
     res = quadratic_assignment(
-        cost_matrix, dist_matrix, options={'init': "rand", 'n_init': 100}
+        cost_matrix, dist_matrix, options={'init_weight': 0.5, 'init_n': 100}
     )
 
     assert 11156 <= res['score'] < 14500
@@ -114,9 +114,11 @@ def test_quadratic_assignment_input_validation():
     # correct type
 
     with pytest.raises(TypeError):
-        quadratic_assignment(A, B, options={'n_init': 1.5})
+        quadratic_assignment(A, B, options={'init_n': 1.5})
     with pytest.raises(ValueError):
-        quadratic_assignment(A, B, options={'n_init': -1})
+        quadratic_assignment(A, B, options={'init_n': -1})
+    with pytest.raises(ValueError):
+        quadratic_assignment(A, B, options={'init_weight': 2})
     with pytest.raises(ValueError):
         quadratic_assignment(A, B, options={'init': "random"})
     with pytest.raises(TypeError):
@@ -156,29 +158,29 @@ def test_quadratic_assignment_input_validation():
     with pytest.raises(ValueError):
         quadratic_assignment(
             np.identity(3), np.identity(3),
-            options={'seed': _range_matrix(2, 3)}
+            options={'partial_match': _range_matrix(2, 3)}
         )
     # can't have more seed nodes than cost/dist nodes
     with pytest.raises(ValueError):
         quadratic_assignment(np.identity(3), np.identity(3),
-                             options={'seed': _range_matrix(5, 2)})
+                             options={'partial_match': _range_matrix(5, 2)})
     # seeds cannot be negative valued
     with pytest.raises(ValueError):
         quadratic_assignment(
             np.identity(3), np.identity(3),
-            options={'seed': -1 * _range_matrix(2, 2)}
+            options={'partial_match': -1 * _range_matrix(2, 2)}
         )
     # seeds can't have values greater than number of nodes
     with pytest.raises(ValueError):
         quadratic_assignment(
             np.identity(5), np.identity(5),
-            options={'seed': 2 * _range_matrix(4, 2)}
+            options={'partial_match': 2 * _range_matrix(4, 2)}
         )
     # columns of seed matrix must be unique
     with pytest.raises(ValueError):
         quadratic_assignment(
             np.identity(3), np.identity(3),
-            options={'seed': np.ones((2, 2))}
+            options={'partial_match': np.ones((2, 2))}
         )
     # test init matrix not doubly stochastic
     with pytest.raises(ValueError):
