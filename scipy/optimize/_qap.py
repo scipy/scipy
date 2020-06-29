@@ -70,19 +70,17 @@ def quadratic_assignment(
         A dictionary of solver options. All methods accept the following
         options:
 
-            n_init : int, positive (default = 1)
-                Number of random initializations of the starting
-                permutation matrix that the FAQ algorithm will undergo.
-            init : string (default = 'barycenter') or 2d-array
+            init : 2d-array (default = 'barycenter')
                 The algorithm may be sensitive to the initial permutation
                 matrix (or search position) chosen due to the possibility
                 of several local minima within the feasible region.
                 With only 1 initialization, a barycenter init will
                 likely return a more accurate permutation.
 
-                Choosing several random initializations as opposed to
-                the non-informative barycenter will likely result in a
-                more accurate result at the cost of higher runtime.
+                Choosing several random initializations (through
+                `init_weight` and `init_n`) as opposed to the non-informative
+                barycenter will likely result in a more accurate result at
+                the cost of higher runtime.
 
                 The initial position chosen:
 
@@ -91,13 +89,20 @@ def quadratic_assignment(
                 feasible region (where :math:`n` is the number of nodes and
                 :math:`1` is a ``(n, 1)`` array of ones).
 
-                "rand" : some random point near :math:`J`, defined as
-                :math:`(J+K)/2`, where :math:`K` is some random doubly
-                stochastic matrix.
-
                 If an ndarray is passed, it should have the same shape as
                 `cost_matrix` and `dist_matrix`, and its rows and columns
                 must sum to 1 (doubly stochastic).
+            init_weight : float, positive in range [0,1] (Default = None)
+                Allows the user to specify the amount of random perturbation
+                from the starting position of `init`
+                At each initialization, the initial permutation matrix
+                is some random point near :math:`J`, defined as
+                :math:`(\alpha J + (1- \alpha) K`, where :math: `\alpha`
+                is `init_weight` and :math:`K` is some random doubly
+                stochastic matrix.
+            init_n : int, positive (default = 1)
+                Number of random initializations of the starting
+                permutation matrix that the FAQ algorithm will undergo.
             maxiter : int, positive (default = 30)
                 Integer specifying the max number of Franke-Wolfe iterations.
                 FAQ typically converges with modest number of iterations.
@@ -188,9 +193,10 @@ def _quadratic_assignment_faq(
         cost_matrix,
         dist_matrix,
         maximize=False,
-        seed=None,
-        n_init=1,
+        partial_match=None,
         init="barycenter",
+        init_weight=None,
+        init_n=1,
         maxiter=30,
         shuffle_input=True,
         eps=0.05
@@ -199,10 +205,10 @@ def _quadratic_assignment_faq(
     cost_matrix = np.asarray(cost_matrix)
     dist_matrix = np.asarray(dist_matrix)
 
-    if seed is None:
-        seed = np.array([[], []]).T
-    seed = np.asarray(seed)
-    n_init = operator.index(n_init)
+    if partial_match is None:
+        partial_match = np.array([[], []]).T
+    partial_match = np.asarray(partial_match)
+    init_n = operator.index(init_n)
     maxiter = operator.index(maxiter)
 
     # ValueError check
@@ -215,20 +221,22 @@ def _quadratic_assignment_faq(
         msg = "Adjacency matrices must be of equal size"
     elif (cost_matrix < 0).any() or (dist_matrix < 0).any():
         msg = "Adjacency matrix contains negative entries"
-    elif seed.shape[0] > cost_matrix.shape[0]:
+    elif partial_match.shape[0] > cost_matrix.shape[0]:
         msg = "There cannot be more seeds than there are nodes"
-    elif seed.shape[1] != 2:
-        msg = "Seed array entry must have two columns"
-    elif (seed < 0).any():
-        msg = "Seed array contains negative entries"
-    elif (seed >= len(cost_matrix)).any():
-        msg = "Seed array entries must be less than the number of nodes"
-    elif not len(set(seed[:, 0])) == len(seed[:, 0]) or not \
-            len(set(seed[:, 1])) == len(seed[:, 1]):
-        msg = "Seed column entries must be unique"
-    elif isinstance(init, str) and init not in {'barycenter', 'rand'}:
-        msg = "Invalid 'init_method' parameter string"
-    elif n_init <= 0:
+    elif partial_match.shape[1] != 2:
+        msg = "`partial_match` must have two columns"
+    elif (partial_match < 0).any():
+        msg = "`partial_match` contains negative entries"
+    elif (partial_match >= len(cost_matrix)).any():
+        msg = "`partial_match` entries must be less than the number of nodes"
+    elif not len(set(partial_match[:, 0])) == len(partial_match[:, 0]) or not \
+            len(set(partial_match[:, 1])) == len(partial_match[:, 1]):
+        msg = "`partial_match` column entries must be unique"
+    elif isinstance(init, str) and init not in {'barycenter'}:
+        msg = "Invalid 'init' parameter string"
+    elif init_weight is not None and (init_weight < 0 or init_weight > 1):
+        msg = "'init_weight' must be in range [0, 1]"
+    elif init_n <= 0:
         msg = "'n_init' must be a positive integer"
     elif maxiter <= 0:
         msg = "'maxiter' must be a positive integer"
@@ -247,7 +255,7 @@ def _quadratic_assignment_faq(
 
     rng = np.random.RandomState()
     n = cost_matrix.shape[0]  # number of vertices in graphs
-    n_seeds = seed.shape[0]  # number of seeds
+    n_seeds = partial_match.shape[0]  # number of seeds
     n_unseed = n - n_seeds
 
     perm_inds = np.zeros(n)
@@ -257,15 +265,15 @@ def _quadratic_assignment_faq(
         obj_func_scalar = -1
     score = obj_func_scalar * np.inf
 
-    seed_dist_c = np.setdiff1d(range(n), seed[:, 1])
+    seed_dist_c = np.setdiff1d(range(n), partial_match[:, 1])
     if shuffle_input:
         seed_dist_c = rng.permutation(seed_dist_c)
         # shuffle_input to avoid results from inputs that were already matched
 
-    seed_cost_c = np.setdiff1d(range(n), seed[:, 0])
-    permutation_cost = np.concatenate([seed[:, 0],
+    seed_cost_c = np.setdiff1d(range(n), partial_match[:, 0])
+    permutation_cost = np.concatenate([partial_match[:, 0],
                                        seed_cost_c], axis=None).astype(int)
-    permutation_dist = np.concatenate([seed[:, 1],
+    permutation_dist = np.concatenate([partial_match[:, 1],
                                        seed_dist_c], axis=None).astype(int)
     cost_matrix = cost_matrix[np.ix_(permutation_cost, permutation_cost)]
     dist_matrix = dist_matrix[np.ix_(permutation_dist, permutation_dist)]
@@ -280,21 +288,22 @@ def _quadratic_assignment_faq(
     B21 = dist_matrix[n_seeds:, :n_seeds]
     B22 = dist_matrix[n_seeds:, n_seeds:]
 
-    for i in range(n_init):
+    for i in range(init_n):
         # setting initialization matrix
-        if isinstance(init, str) and init == "rand":
+        if isinstance(init, str) and init == 'barycenter':
+            J = np.ones((n_unseed, n_unseed)) / float(n_unseed)
+        else:
+            _check_init_input(init, n_unseed)
+            J = init
+        if init_weight is not None:
             # generate a nxn matrix where each entry is a random number [0, 1]
             K = rng.rand(n_unseed, n_unseed)
-            # perform 10 iterations of Sinkhorn balancing
+            # Sinkhorn balancing
             K = _doubly_stochastic(K)
             # initialize J, a doubly stochastic barycenter
-            J = np.ones((n_unseed, n_unseed)) / float(n_unseed)
-            P = (K + J) / 2
-        elif isinstance(init, str) and init == "barycenter":
-            P = np.ones((n_unseed, n_unseed)) / float(n_unseed)
+            P = J * init_weight + (1 - init_weight) * K
         else:
-            _check_init_input(init, n)
-            P = init
+            P = J
         const_sum = A21 @ B21.T + A12.T @ B12
         grad_P = np.inf  # gradient of P
         n_iter = 0  # number of FW iterations
