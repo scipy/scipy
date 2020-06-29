@@ -293,7 +293,7 @@ def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
         If omitted, identity matrix is assumed.
     lower : bool, optional
         Whether the pertinent array data is taken from the lower or upper
-        triangle of `a`. (Default: lower)
+        triangle of ``a`` and, if applicable, ``b``. (Default: lower)
     eigvals_only : bool, optional
         Whether to calculate only eigenvalues and no eigenvectors.
         (Default: both are calculated)
@@ -905,7 +905,7 @@ def eigvalsh(a, b=None, lower=True, overwrite_a=False,
         If omitted, identity matrix is assumed.
     lower : bool, optional
         Whether the pertinent array data is taken from the lower or upper
-        triangle of `a`. (Default: lower)
+        triangle of ``a`` and, if applicable, ``b``. (Default: lower)
     eigvals_only : bool, optional
         Whether to calculate only eigenvalues and no eigenvectors.
         (Default: both are calculated)
