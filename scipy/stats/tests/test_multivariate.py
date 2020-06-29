@@ -471,8 +471,13 @@ class TestMatrixNormal(object):
         assert_raises(ValueError, matrix_normal, M, V, V)
         assert_raises(ValueError, matrix_normal, M.T, U, V)
 
-        # Singular covariance
         e = np.linalg.LinAlgError
+        # Singular covariance for the rvs method of a non-frozen instance
+        assert_raises(e, matrix_normal.rvs,
+                      M, U, np.ones((num_cols, num_cols)))
+        assert_raises(e, matrix_normal.rvs,
+                      M, np.ones((num_rows, num_rows)), V)
+        # Singular covariance for a frozen instance
         assert_raises(e, matrix_normal, M, U, np.ones((num_cols, num_cols)))
         assert_raises(e, matrix_normal, M, np.ones((num_rows, num_rows)), V)
 
