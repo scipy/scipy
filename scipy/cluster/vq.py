@@ -86,9 +86,10 @@ def whiten(obs, check_finite=True):
     Normalize a group of observations on a per feature basis.
 
     Before running k-means, it is beneficial to rescale each feature
-    dimension of the observation set with whitening. Each feature is
-    divided by its standard deviation across all observations to give
-    it unit variance.
+    dimension of the observation set by its standard deviation (i.e. "whiten"
+    it - as in "white noise" where each frequency has equal power).
+    Each feature is divided by its standard deviation across all observations
+    to give it unit variance.
 
     Parameters
     ----------
