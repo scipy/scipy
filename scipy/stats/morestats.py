@@ -2082,9 +2082,9 @@ def ansari(x, y):
     """
     Perform the Ansari-Bradley test for equal scale parameters.
 
-    The Ansari-Bradley test is a non-parametric test for the equality
-    of the scale parameter of the distributions from which two
-    samples were drawn.
+    The Ansari-Bradley test ([1]_, [2]_) is a non-parametric test
+    for the equality of the scale parameter of the distributions
+    from which two samples were drawn.
 
     Parameters
     ----------
@@ -2111,9 +2111,45 @@ def ansari(x, y):
 
     References
     ----------
-    .. [1] Sprent, Peter and N.C. Smeeton.  Applied nonparametric statistical
-           methods.  3rd ed. Chapman and Hall/CRC. 2001.  Section 5.8.2.
+    .. [1] Ansari, A. R. and Bradley, R. A. (1960) Rank-sum tests for
+           dispersions, Annals of Mathematical Statistics, 31, 1174-1189.
+    .. [2] Sprent, Peter and N.C. Smeeton.  Applied nonparametric
+           statistical methods.  3rd ed. Chapman and Hall/CRC. 2001.
+           Section 5.8.2.
 
+    Examples
+    --------
+    >>> from scipy.stats import ansari
+
+    For these examples, we'll create three random data sets.  The first
+    two, with sizes 35 and 25, are drawn from a normal distribution with
+    mean 0 and standard deviation 2.  The third data set has size 25 and
+    is drawn from a normal distribution with standard deviation 1.25.
+
+    >>> np.random.seed(1234567890)
+    >>> x1 = np.random.normal(loc=0, scale=2, size=35)
+    >>> x2 = np.random.normal(loc=0, scale=2, size=25)
+    >>> x3 = np.random.normal(loc=0, scale=1.25, size=25)
+
+    First we apply `ansari` to `x1` and `x2`.  These samples are drawn
+    from the same distribution, so we expect the Ansari-Bradley test
+    should not lead us to conclude that the scales of the distributions
+    are different.
+
+    >>> ansari(x1, x2)
+    AnsariResult(statistic=511.0, pvalue=0.35506083719834347)
+
+    With a p-value of 0.355, we cannot conclude that there is a
+    significant difference in the scales (as expected).
+
+    Now apply the test to `x1` and `x3`:
+
+    >>> ansari(x1, x3)
+    AnsariResult(statistic=452.0, pvalue=0.006280278681971285)
+
+    With a p-value of 0.00628, the test provides strong evidence that
+    the scales of the distributions from which the samples were drawn
+    are not equal.
     """
     x, y = asarray(x), asarray(y)
     n = len(x)
