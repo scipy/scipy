@@ -25,7 +25,7 @@ def configuration(parent_package='',top_path=None):
 
     # add mvn module
     config.add_extension('mvn',
-        sources=['mvn.pyf','mvndst.f'],
+        sources=['mvn.pyf', 'mvndst.f'],
     )
 
     # add _sobol module

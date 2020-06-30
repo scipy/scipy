@@ -380,16 +380,17 @@ Quasi-Monte Carlo
 .. autosummary::
    :toctree: generated/
 
-   qmc.QMCEngine
-   qmc.Sobol
-   qmc.Halton
-   qmc.OrthogonalLatinHypercube
-   qmc.LatinHypercube
-   qmc.OptimalDesign
-   qmc.NormalQMC
-   qmc.MultivariateNormalQMC
-   qmc.discrepancy
-   qmc.scale
+   QMCEngine
+   Sobol
+   Halton
+   OrthogonalLatinHypercube
+   LatinHypercube
+   OptimalDesign
+   NormalQMC
+   MultivariateNormalQMC
+   discrepancy
+   scale
+   multinomial_qmc
 
 
 Warnings used in :mod:`scipy.stats`
@@ -416,6 +417,7 @@ from .kde import gaussian_kde
 from . import mstats
 from .contingency import chi2_contingency
 from ._multivariate import *
+from .qmc import *
 
 __all__ = [s for s in dir() if not s.startswith("_")]  # Remove dunders.
 

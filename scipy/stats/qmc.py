@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """Quasi-Monte Carlo methods.
 
 Define function to generate sample of points in the unit hypercube.
@@ -17,13 +18,20 @@ from scipy.stats._sobol import (
     _categorize, initialize_direction_numbers
 )
 
-__all__ = ['discrepancy', 'Halton', 'OrthogonalLatinHypercube',
-           'LatinHypercube', 'OptimalDesign', 'Sobol',
-           'NormalQMC', 'MultivariateNormalQMC']
+__all__ = ['scale', 'discrepancy', 'QMCEngine', 'Sobol', 'Halton',
+           'OrthogonalLatinHypercube', 'LatinHypercube', 'OptimalDesign',
+           'multinomial_qmc', 'NormalQMC', 'MultivariateNormalQMC']
 
 
 def scale(sample, bounds, reverse=False):
     """Sample scaling from unit hypercube to bounds range.
+
+    To convert a sample from :math:`[0, 1)` to :math:`[a, b), b>a`, the
+    following transformation is used:
+
+    .. math::
+
+        (b - a) * sample + a
 
     Parameters
     ----------
@@ -66,6 +74,23 @@ def scale(sample, bounds, reverse=False):
 def discrepancy(sample, iterative=False, method='CD'):
     """Discrepancy on a given sample.
 
+    Parameters
+    ----------
+    sample : array_like (n_samples, dim)
+        The sample to compute the discrepancy from.
+    iterative : bool
+        Must be False if not using it for updating the discrepancy.
+    method : str
+        Type of discrepancy, can be ['CD', 'WD', 'MD', 'star'].
+
+    Returns
+    -------
+    discrepancy : float
+        Centered discrepancy.
+
+    Notes
+    -----
+
     The discrepancy is a uniformity criterion used to assess the space filling
     of a number of samples in a hypercube.
     The discrepancy measures how the spread of the points deviates from a
@@ -84,29 +109,44 @@ def discrepancy(sample, iterative=False, method='CD'):
     * MD: Mixture Discrepancy - mix between CD/WD covering more criteria
     * star: Star L2-discrepancy - like CD BUT variant to rotation
 
-    Parameters
-    ----------
-    sample : array_like (n_samples, dim)
-        The sample to compute the discrepancy from.
-    iterative : bool
-        Must be False if not using it for updating the discrepancy.
-    method : str
-        Type of discrepancy, can be ['CD', 'WD', 'MD', 'star'].
-
-    Returns
-    -------
-    discrepancy : float
-        Centered discrepancy.
-
     References
     ----------
-    [1] Fang et al. Design and modeling for computer experiments,
-        Computer Science and Data Analysis Series, 2006.
-    [2] Zhou Y.-D. et al. Mixture discrepancy for quasi-random point sets
+    .. [1] Fang et al. Design and modeling for computer experiments,
+       Computer Science and Data Analysis Series, 2006.
+    .. [2] Zhou Y.-D. et al. Mixture discrepancy for quasi-random point sets
        Journal of Complexity, 29 (3-4) , pp. 283-301, 2013.
-    [3] T. T. Warnock. Computational investigations of low discrepancy point
-        sets, S.K. Zaremba (editor), Applications of Number Theory to Numerical
-        Analysis, Academic Press, New York.
+    .. [3] T. T. Warnock. Computational investigations of low discrepancy point
+       sets, S.K. Zaremba (editor), Applications of Number Theory to Numerical
+       Analysis, Academic Press, New York.
+
+    Examples
+    --------
+    Calculate the quality of the sample using the discrepancy:
+
+    >>> from scipy.stats import qmc
+    >>> space = np.array([[1, 3], [2, 6], [3, 2], [4, 5], [5, 1], [6, 4]])
+    >>> space = (2.0 * space - 1.0) / (2.0 * 6.0)
+    >>> space
+    array([[0.08333333, 0.41666667],
+           [0.25      , 0.91666667],
+           [0.41666667, 0.25      ],
+           [0.58333333, 0.75      ],
+           [0.75      , 0.08333333],
+           [0.91666667, 0.58333333]])
+    >>> qmc.discrepancy(space)
+    0.008142039609053464
+
+    We can also compute iteratively the discrepancy by using `iterative=True`.
+
+    >>> disc_init = qmc.discrepancy(space[:-1], iterative=True)
+    >>> disc_init
+    0.04769081147119336
+
+    Then, a call to `_update_discrepancy` with the new sample will update the
+    discrepancy.
+
+    >>> qmc._update_discrepancy(space[-1], space[:-1], disc_init)
+    0.008142039609053513
 
     """
     sample = np.asarray(sample)
@@ -227,9 +267,9 @@ def _perturb_discrepancy(sample, i1, i2, k, disc):
 
     References
     ----------
-    [1] Jin et al. "An efficient algorithm for constructing optimal design
-        of computer experiments", Journal of Statistical Planning and
-        Inference, 2005.
+    .. [1] Jin et al. "An efficient algorithm for constructing optimal design
+       of computer experiments", Journal of Statistical Planning and
+       Inference, 2005.
 
     """
     sample = np.asarray(sample)
@@ -309,10 +349,10 @@ def primes_from_2_to(n):
 
     References
     ----------
-    [1] `StackOverflow <https://stackoverflow.com/questions/2068372>`_.
+    .. [1] `StackOverflow <https://stackoverflow.com/questions/2068372>`_.
 
     """
-    sieve = np.ones(n // 3 + (n % 6 == 2), dtype=np.bool)
+    sieve = np.ones(n // 3 + (n % 6 == 2), dtype=bool)
     for i in range(1, int(n ** 0.5) // 3 + 1):
         k = 3 * i + 1 | 1
         sieve[k * k // 3::2 * k] = False
@@ -393,43 +433,73 @@ def van_der_corput(n_samples, base=2, start_index=0):
 
 
 class QMCEngine(ABC):
-    """Quasi-Monte Carlo engine sampler.
+    """A generic Quasi-Monte Carlo sampler class meant for subclassing.
 
-    Samples are distributed over the half-open interval [0, 1).
+    QMCEngine is a base class to construct specific Quasi-Monte Carlo sampler.
+    It cannot be used directly as a sampler.
 
     Parameters
     ----------
     dim : int
         Dimension of the parameter space.
-    seed : int or `np.random.RandomState`, optional
-        If `seed` is not specified the `np.RandomState` singleton is used.
-        If `seed` is an int, a new `np.random.RandomState` instance is used,
-        seeded with seed.
-        If `seed` is already a `np.random.RandomState instance`, then that
-        `np.random.RandomState` instance is used.
-        Specify `seed` for repeatable sampling.
+    seed : {None, int, `~np.random.RandomState`, `~np.random.Generator`}, optional
+        This parameter defines the object to use for drawing random variates.
+        If `seed` is `None` the `~np.random.RandomState` singleton is used.
+        If `seed` is an int, a new ``RandomState`` instance is used, seeded
+        with seed.
+        If `seed` is already a ``RandomState`` or ``Generator`` instance,
+        then that object is used.
+        Default is None.
+
+    Notes
+    -----
+
+    By convention samples are distributed over the half-open interval ``[0, 1)``.
+    Instances of the class can access the attributes: ``dim`` for the dimension;
+    and ``rng`` for the random number generator (used for the ``seed``).
+
+    **Subclassing**
+
+    When subclassing `QMCEngine` to create a new sampler,  ``__init__`` and
+    ``random`` has to be redefined.
+
+    * ``__init__(dim, seed=None)``: at least fix the dimension. If the sampler
+      does not take advantage of a ``seed`` (deterministic methods like Halton),
+      this parameter can be omitted.
+    * ``random(n_samples)``: draw ``n_samples`` from the engine.
+
+    Optionally, 2 other methods can be overwritten by subclasses:
+
+    * ``reset``: Reset the engine to it's original state.
+    * ``fast_forward``: It should be used as a way to fast-forward a sequence
+      to a further state. If the sequence is deterministic (like Halton
+      sequence), then ``fast_forward(n)`` is skipping the ``n`` first draw.
 
     Examples
     --------
-    Generate samples from a low discrepancy sequence of Halton.
+    To create a random sampler based on ``np.random.random``, we would do the
+    following:
 
     >>> from scipy.stats import qmc
-    >>> sampler = qmc.Halton(dim=2)
-    >>> sample = sampler.random(n_samples=5)
+    >>> class RandomEngine(qmc.QMCEngine):
+    ...     def __init__(self, dim, seed):
+    ...         super().__init__(dim=dim, seed=seed)
+    ...
+    ...
+    ...     def random(self, n_samples=1):
+    ...         return self.rng.random((n_samples, self.dim))
+    ...
 
-    Compute the quality of the sample using the discrepancy criterion.
+    We subclass `QMCEngine` by defining the sampling strategy we want to use.
+    And we can create an instance to sample from.
 
-    >>> uniformity = qmc.discrepancy(sample)
-
-    If some wants to continue an existing design, extra points can be obtained.
-
-    >>> sampler.fast_forward(5)
-    >>> sample_continued = sampler.random(n_samples=5)
-
-    Finally, samples can be scaled to bounds.
-
-    >>> bounds = np.array([[0, 2], [10, 5]])
-    >>> sample_continued_scaled = qmc.scale(sample_continued, bounds)
+    >>> engine = RandomEngine(2, seed=12345)
+    >>> engine.random(5)
+    array([[0.92961609, 0.31637555],
+           [0.18391881, 0.20456028],
+           [0.56772503, 0.5955447 ],
+           [0.96451452, 0.6531771 ],
+           [0.74890664, 0.65356987]])
 
     """
 
@@ -437,10 +507,11 @@ class QMCEngine(ABC):
     def __init__(self, dim, seed=None):
         self.dim = dim
         self.rng = check_random_state(seed)
+        self.num_generated = 0
 
     @abstractmethod
     def random(self, n_samples=1):
-        """Draw n_samples in the half-open interval [0, 1).
+        """Draw `n_samples` in the half-open interval ``[0, 1)``.
 
         Parameters
         ----------
@@ -452,16 +523,29 @@ class QMCEngine(ABC):
         sample : array_like (n_samples, dim)
             QMC sample.
         """
-        pass
+        #self.num_generated += n_samples
+
+    def reset(self):
+        """Reset the engine to base state.
+
+        Returns
+        -------
+        engine: QMCEngine
+            Engine reset to its base state.
+
+        """
+        self.num_generated = 0
+        return self
 
     def fast_forward(self, n):
-        """Fast-forward the sequence by n positions.
+        """Fast-forward the sequence by `n` positions.
 
         Parameters
         ----------
         n: int
             Number of points to skip in the sequence.
         """
+        self.num_generated += n
         return self
 
 
@@ -480,8 +564,8 @@ class Halton(QMCEngine):
 
     References
     ----------
-    [1] Halton, "On the efficiency of certain quasi-random sequences of points
-      in evaluating multi-dimensional integrals", Numerische Mathematik, 1960.
+    .. [1] Halton, "On the efficiency of certain quasi-random sequences of points
+       in evaluating multi-dimensional integrals", Numerische Mathematik, 1960.
 
     Examples
     --------
@@ -490,30 +574,48 @@ class Halton(QMCEngine):
     >>> from scipy.stats import qmc
     >>> sampler = qmc.Halton(dim=2)
     >>> sample = sampler.random(n_samples=5)
+    >>> sample
+    array([[0.5       , 0.33333333],
+           [0.25      , 0.66666667],
+           [0.75      , 0.11111111],
+           [0.125     , 0.44444444],
+           [0.625     , 0.77777778]])
 
     Compute the quality of the sample using the discrepancy criterion.
 
-    >>> uniformity = qmc.discrepancy(sample)
+    >>> qmc.discrepancy(sample)
+    0.021228780864197327
 
-    If some wants to continue an existing design, extra points can be obtained.
+    If some wants to continue an existing design, extra points can be obtained
+    by calling again `random()`. Alternatively, you can skip some points like:
 
     >>> sampler.fast_forward(5)
     >>> sample_continued = sampler.random(n_samples=5)
+    >>> sample_continued
+    array([[0.8125    , 0.7037037 ],
+           [0.1875    , 0.14814815],
+           [0.6875    , 0.48148148],
+           [0.4375    , 0.81481481],
+           [0.9375    , 0.25925926]])
 
     Finally, samples can be scaled to bounds.
 
-    >>> bounds = np.array([[0, 2], [10, 5]])
-    >>> sample_continued_scaled = qmc.scale(sample_continued, bounds)
+    >>> bounds = [[0, 2], [10, 5]]
+    >>> qmc.scale(sample_continued, bounds)
+    array([[8.125     , 4.11111111],
+           [1.875     , 2.44444444],
+           [6.875     , 3.44444444],
+           [4.375     , 4.44444444],
+           [9.375     , 2.77777778]])
 
     """
 
     def __init__(self, dim):
         super().__init__(dim=dim)
         self.base = n_primes(dim)
-        self.num_generated = 0
 
     def random(self, n_samples=1):
-        """Draw n_samples in the half-open interval [0, 1).
+        """Draw `n_samples` in the half-open interval ``[0, 1)``.
 
         Parameters
         ----------
@@ -534,29 +636,9 @@ class Halton(QMCEngine):
         self.num_generated += n_samples
         return np.array(sample).T[1:]
 
-    def fast_forward(self, n):
-        """Fast-forward the sequence by n positions.
-
-        Parameters
-        ----------
-        n: int
-            Number of points to skip in the sequence.
-
-        Returns
-        -------
-        engine: Halton
-            The fast-forwarded engine.
-
-        """
-        self.num_generated += n
-        return self
-
 
 class OrthogonalLatinHypercube(QMCEngine):
     """Orthogonal array-based Latin hypercube sampling (OA-LHS).
-
-    Samples are uniformly distributed over the half-open interval [low, high)
-    (includes low, but excludes high).
 
     On top of the constraints from the Latin Hypercube, an orthogonal array of
     size n_samples is defined and only one point is allowed per subspace.
@@ -565,18 +647,48 @@ class OrthogonalLatinHypercube(QMCEngine):
     ----------
     dim : int
         Dimension of the parameter space.
-    seed : int or `np.random.RandomState`, optional
-        If `seed` is not specified the `np.RandomState` singleton is used.
-        If `seed` is an int, a new `np.random.RandomState` instance is used,
-        seeded with seed.
-        If `seed` is already a `np.random.RandomState instance`, then that
-        `np.random.RandomState` instance is used.
-        Specify `seed` for repeatable sampling.
+    seed : {None, int, `~np.random.RandomState`, `~np.random.Generator`}, optional
+        This parameter defines the object to use for drawing random variates.
+        If `seed` is `None` the `~np.random.RandomState` singleton is used.
+        If `seed` is an int, a new ``RandomState`` instance is used, seeded
+        with seed.
+        If `seed` is already a ``RandomState`` or ``Generator`` instance,
+        then that object is used.
+        Default is None.
 
     References
     ----------
-    [1] Art B. Owen, "Orthogonal arrays for computer experiments, integration
-    and visualization", Statistica Sinica, 1992.
+    .. [1] Art B. Owen, "Orthogonal arrays for computer experiments, integration
+       and visualization", Statistica Sinica, 1992.
+
+    Examples
+    --------
+    Generate samples from an orthogonal latin hypercube generator.
+
+    >>> from scipy.stats import qmc
+    >>> sampler = qmc.OrthogonalLatinHypercube(dim=2, seed=12345)
+    >>> sample = sampler.random(n_samples=5)
+    >>> sample
+    array([[0.18592322, 0.77846875],
+           [0.64091206, 0.18474763],
+           [0.91354501, 0.80535794],
+           [0.43678376, 0.27478424],
+           [0.26327511, 0.43099467]])
+
+    Compute the quality of the sample using the discrepancy criterion.
+
+    >>> qmc.discrepancy(sample)
+    0.02004864477993462
+
+    Finally, samples can be scaled to bounds.
+
+    >>> bounds = [[0, 2], [10, 5]]
+    >>> qmc.scale(sample, bounds)
+    array([[1.85923219, 4.33540624],
+           [6.40912056, 2.55424289],
+           [9.13545006, 4.41607383],
+           [4.36783762, 2.82435271],
+           [2.63275111, 3.29298401]])
 
     """
 
@@ -584,7 +696,7 @@ class OrthogonalLatinHypercube(QMCEngine):
         super().__init__(dim=dim, seed=seed)
 
     def random(self, n_samples=1):
-        """Draw n_samples in the half-open interval [0, 1).
+        """Draw `n_samples` in the half-open interval ``[0, 1)``.
 
         Parameters
         ----------
@@ -614,12 +726,9 @@ class OrthogonalLatinHypercube(QMCEngine):
 class LatinHypercube(QMCEngine):
     """Latin hypercube sampling (LHS).
 
-    Samples are uniformly distributed over the half-open interval [low, high)
-    (includes low, but excludes high).
-
-    The parameter space is subdivided into an orthogonal grid of n_samples per
-    dimension. Within this multi-dimensional grid, n_samples are selected by
-    ensuring there is only one sample per row and column.
+    The parameter space is subdivided into an orthogonal grid of `n_samples` per
+    dimension `dim`. Within this multi-dimensional grid, `n_samples` are
+    selected by ensuring there is only one sample per row and column.
 
     Parameters
     ----------
@@ -627,19 +736,49 @@ class LatinHypercube(QMCEngine):
         Dimension of the parameter space.
     centered : bool
         Center the point within the multi-dimensional grid.
-    seed : int or `np.random.RandomState`, optional
-        If `seed` is not specified the `np.RandomState` singleton is used.
-        If `seed` is an int, a new `np.random.RandomState` instance is used,
-        seeded with seed.
-        If `seed` is already a `np.random.RandomState instance`, then that
-        `np.random.RandomState` instance is used.
-        Specify `seed` for repeatable sampling.
+    seed : {None, int, `~np.random.RandomState`, `~np.random.Generator`}, optional
+        This parameter defines the object to use for drawing random variates.
+        If `seed` is `None` the `~np.random.RandomState` singleton is used.
+        If `seed` is an int, a new ``RandomState`` instance is used, seeded
+        with seed.
+        If `seed` is already a ``RandomState`` or ``Generator`` instance,
+        then that object is used.
+        Default is None.
 
     References
     ----------
-    [1] Mckay et al., "A Comparison of Three Methods for Selecting Values of
-    Input Variables in the Analysis of Output from a Computer Code",
-    Technometrics, 1979.
+    .. [1] Mckay et al., "A Comparison of Three Methods for Selecting Values of
+       Input Variables in the Analysis of Output from a Computer Code",
+       Technometrics, 1979.
+
+    Examples
+    --------
+    Generate samples from a latin hypercube generator.
+
+    >>> from scipy.stats import qmc
+    >>> sampler = qmc.LatinHypercube(dim=2, seed=12345)
+    >>> sample = sampler.random(n_samples=5)
+    >>> sample
+    array([[0.01407678, 0.53672489],
+           [0.36321624, 0.75908794],
+           [0.28645499, 0.48089106],
+           [0.2070971 , 0.46936458],
+           [0.45021867, 0.66928603]])
+
+    Compute the quality of the sample using the discrepancy criterion.
+
+    >>> qmc.discrepancy(sample)
+    0.1271335273223828
+
+    Finally, samples can be scaled to bounds.
+
+    >>> bounds = [[0, 2], [10, 5]]
+    >>> qmc.scale(sample, bounds)
+    array([[0.14076781, 3.61017467],
+           [3.63216238, 4.27726383],
+           [2.86454994, 3.44267318],
+           [2.07097096, 3.40809374],
+           [4.50218672, 4.00785808]])
 
     """
 
@@ -648,7 +787,7 @@ class LatinHypercube(QMCEngine):
         self.centered = centered
 
     def random(self, n_samples=1):
-        """Draw n_samples in the half-open interval [0, 1).
+        """Draw `n_samples` in the half-open interval ``[0, 1)``.
 
         Parameters
         ----------
@@ -697,19 +836,59 @@ class OptimalDesign(QMCEngine):
     optimization : bool
         Optimal design using global optimization or random generation of
         `niter` samples.
-    seed : int or `np.random.RandomState`, optional
-        If `seed` is not specified the `np.RandomState` singleton is used.
-        If `seed` is an int, a new `np.random.RandomState` instance is used,
-        seeded with seed.
-        If `seed` is already a `np.random.RandomState instance`, then that
-        `np.random.RandomState` instance is used.
-        Specify `seed` for repeatable sampling.
+    seed : {None, int, `~np.random.RandomState`, `~np.random.Generator`}, optional
+        This parameter defines the object to use for drawing random variates.
+        If `seed` is `None` the `~np.random.RandomState` singleton is used.
+        If `seed` is an int, a new ``RandomState`` instance is used, seeded
+        with seed.
+        If `seed` is already a ``RandomState`` or ``Generator`` instance,
+        then that object is used.
+        Default is None.
 
     References
     ----------
-    [1] Damblin et al., "Numerical studies of space filling designs:
-    optimization of Latin Hypercube Samples and subprojection properties",
-    Journal of Simulation, 2013.
+    .. [1] Fang et al. Design and modeling for computer experiments,
+       Computer Science and Data Analysis Series, 2006.
+    .. [2] Damblin et al., "Numerical studies of space filling designs:
+       optimization of Latin Hypercube Samples and subprojection properties",
+       Journal of Simulation, 2013.
+
+    Examples
+    --------
+    Generate samples from an optimal design.
+
+    >>> from scipy.stats import qmc
+    >>> sampler = qmc.OptimalDesign(dim=2, seed=12345)
+    >>> sample = sampler.random(n_samples=5)
+    >>> sample
+    array([[0.64091206, 0.77846875],
+           [0.43678376, 0.18474763],
+           [0.18592322, 0.80535794],
+           [0.91354501, 0.27478424],
+           [0.26327511, 0.43099467]])
+
+    Compute the quality of the sample using the discrepancy criterion.
+
+    >>> qmc.discrepancy(sample)
+    0.019688311022535432
+
+    You can possibly improve the quality of the sample by performing more
+    optimization iterations by using `niter`:
+
+    >>> sampler_2 = qmc.OptimalDesign(dim=2, niter=2, seed=12345)
+    >>> sample_2 = sampler_2.random(n_samples=5)
+    >>> qmc.discrepancy(sample_2)
+    0.019607673478802434
+
+    Finally, samples can be scaled to bounds.
+
+    >>> bounds = [[0, 2], [10, 5]]
+    >>> qmc.scale(sample, bounds)
+    array([[6.40912056, 4.33540624],
+           [4.36783762, 2.55424289],
+           [1.85923219, 4.41607383],
+           [9.13545006, 2.82435271],
+           [2.63275111, 3.29298401]])
 
     """
 
@@ -730,7 +909,7 @@ class OptimalDesign(QMCEngine):
         self.olhs = OrthogonalLatinHypercube(self.dim, seed=self.rng)
 
     def random(self, n_samples=1):
-        """Draw n_samples in the half-open interval [0, 1).
+        """Draw `n_samples` in the half-open interval ``[0, 1)``.
 
         Parameters
         ----------
@@ -822,24 +1001,68 @@ class Sobol(QMCEngine):
         Dimensionality of the sequence. Max dimensionality is 21201.
     scramble: bool, optional
         If True, use Owen scrambling.
-    seed : int or `np.random.RandomState`, optional
-        If `seed` is not specified the `np.RandomState` singleton is used.
-        If `seed` is an int, a new `np.random.RandomState` instance is used,
-        seeded with seed.
-        If `seed` is already a `np.random.RandomState instance`, then that
-        `np.random.RandomState` instance is used.
-        Specify `seed` for repeatable sampling.
+    seed : {None, int, `~np.random.RandomState`, `~np.random.Generator`}, optional
+        This parameter defines the object to use for drawing random variates.
+        If `seed` is `None` the `~np.random.RandomState` singleton is used.
+        If `seed` is an int, a new ``RandomState`` instance is used, seeded
+        with seed.
+        If `seed` is already a ``RandomState`` or ``Generator`` instance,
+        then that object is used.
+        Default is None.
 
     References
     ----------
-    [1] Art B. Owen. Scrambling Sobol and Niederreiter-Xing points. Journal of
-      Complexity, 14(4):466-489, December 1998.
+    .. [1] I. M. Sobol. The distribution of points in a cube and the accurate
+       evaluation of integrals. Zh. Vychisl. Mat. i Mat. Phys., 7:784-802, 1967.
 
-    [2] I. M. Sobol. The distribution of points in a cube and the accurate
-      evaluation of integrals. Zh. Vychisl. Mat. i Mat. Phys., 7:784-802, 1967.
-    
-    [3] S. Joe and F. Y. Kuo. Constructing sobol sequences with better two-dimensional
-      projections. SIAM Journal on Scientific Computing, 30(5):2635–2654, 2008.
+    .. [2] Art B. Owen. Scrambling Sobol and Niederreiter-Xing points.
+       Journal of Complexity, 14(4):466-489, December 1998.
+
+    .. [3] S. Joe and F. Y. Kuo. Constructing sobol sequences with better
+       two-dimensional projections. SIAM Journal on Scientific Computing,
+       30(5):2635–2654, 2008.
+
+    Examples
+    --------
+    Generate samples from a low discrepancy sequence of Sobol'.
+
+    >>> from scipy.stats import qmc
+    >>> sampler = qmc.Sobol(dim=2)
+    >>> sample = sampler.random(n_samples=5)
+    >>> sample
+    array([[0.5  , 0.5  ],
+           [0.75 , 0.25 ],
+           [0.25 , 0.75 ],
+           [0.375, 0.375],
+           [0.875, 0.875]])
+
+    Compute the quality of the sample using the discrepancy criterion.
+
+    >>> qmc.discrepancy(sample)
+    0.02364040798611078
+
+    If some wants to continue an existing design, extra points can be obtained
+    by calling again `random()`. Alternatively, you can skip some points like:
+
+    >>> sampler.fast_forward(5)
+    >>> sample_continued = sampler.random(n_samples=5)
+    >>> sample_continued
+    array([[0.4375, 0.5625],
+           [0.3125, 0.1875],
+           [0.8125, 0.6875],
+           [0.5625, 0.4375],
+           [0.0625, 0.9375]])
+
+    Finally, samples can be scaled to bounds.
+
+    >>> bounds = [[0, 2], [10, 5]]
+    >>> qmc.scale(sample_continued, bounds)
+    array([[4.375 , 3.6875],
+           [3.125 , 2.5625],
+           [8.125 , 4.0625],
+           [5.625 , 3.3125],
+           [0.625 , 4.8125]])
+
     """
 
     MAXDIM = 21201
@@ -856,16 +1079,15 @@ class Sobol(QMCEngine):
         initialize_direction_numbers()
 
         # v is dim x MAXBIT matrix
-        self._sv = np.zeros((dim, self.MAXBIT), dtype=np.int)
+        self._sv = np.zeros((dim, self.MAXBIT), dtype=int)
         initialize_v(self._sv, dim)
 
         if not scramble:
-            self._shift = np.zeros(dim, dtype=np.int)
+            self._shift = np.zeros(dim, dtype=int)
         else:
             self._scramble()
 
         self._quasi = self._shift.copy()
-        self.num_generated = 0
 
     def _scramble(self):
         """Scramble the sequence."""
@@ -894,7 +1116,7 @@ class Sobol(QMCEngine):
             Sobol' sample.
 
         """
-        sample = np.empty((n_samples, self.dim), dtype=np.float)
+        sample = np.empty((n_samples, self.dim), dtype=float)
         _draw(n_samples, self.num_generated, self.dim, self._sv, self._quasi, sample)
         self.num_generated += n_samples
         return sample
@@ -913,7 +1135,7 @@ class Sobol(QMCEngine):
         return self
 
     def fast_forward(self, n):
-        """Fast-forward the sequence by n positions.
+        """Fast-forward the sequence by `n` positions.
 
         Parameters
         ----------
@@ -939,22 +1161,23 @@ def multinomial_qmc(n_samples, pvals, engine=None, seed=None):
     n_samples : int
         Number of experiments.
     pvals: Iterable[float]
-        float vector of probabilities of size `p`. Elements must be non-negative
-        and sum to 1.
+        float vector of probabilities of size ``p``. Elements must be
+        non-negative and sum to 1.
     engine: QMCEngine
         Quasi-Monte Carlo engine sampler. If None, Sobol' is used.
-    seed : int or `np.random.RandomState`, optional
-        If `seed` is not specified the `np.RandomState` singleton is used.
-        If `seed` is an int, a new `np.random.RandomState` instance is used,
-        seeded with seed.
-        If `seed` is already a `np.random.RandomState instance`, then that
-        `np.random.RandomState` instance is used.
-        Specify `seed` for repeatable sampling.
+    seed : {None, int, `~np.random.RandomState`, `~np.random.Generator`}, optional
+        This parameter defines the object to use for drawing random variates.
+        If `seed` is `None` the `~np.random.RandomState` singleton is used.
+        If `seed` is an int, a new ``RandomState`` instance is used, seeded
+        with seed.
+        If `seed` is already a ``RandomState`` or ``Generator`` instance,
+        then that object is used.
+        Default is None.
 
     Returns
     -------
     samples: array_like (pvals,)
-        int vector of size `p` summing to `n_samples`.
+        int vector of size ``p`` summing to ``n_samples``.
 
     """
     if np.min(pvals) < 0:
@@ -965,18 +1188,18 @@ def multinomial_qmc(n_samples, pvals, engine=None, seed=None):
     if engine is None:
         engine = Sobol(1, scramble=True, seed=seed)
     draws = engine.random(n_samples).ravel()
-    p_cumulative = np.empty_like(pvals, dtype=np.float)
-    _fill_p_cumulative(np.array(pvals, dtype=np.float), p_cumulative)
-    sample = np.zeros_like(pvals, dtype=np.int)
+    p_cumulative = np.empty_like(pvals, dtype=float)
+    _fill_p_cumulative(np.array(pvals, dtype=float), p_cumulative)
+    sample = np.zeros_like(pvals, dtype=int)
     _categorize(draws, p_cumulative, sample)
     return sample
 
 
 class NormalQMC(QMCEngine):
-    """Engine for QMC sampling from a multivariate normal `N(0, I_d)`.
+    """Engine for QMC sampling from a multivariate normal :math:`N(0, I_d)`.
 
     By default, this implementation uses Box-Muller transformed Sobol' samples
-    following pg. 123 in [1]. To use the inverse transform instead, set
+    following pg. 123 in [1]_. To use the inverse transform instead, set
     `inv_transform=True`.
 
     Parameters
@@ -987,18 +1210,30 @@ class NormalQMC(QMCEngine):
         If True, use inverse transform instead of Box-Muller.
     engine: QMCEngine
         Quasi-Monte Carlo engine sampler. If None, Sobol' is used.
-    seed : int or `np.random.RandomState`, optional
-        If `seed` is not specified the `np.RandomState` singleton is used.
-        If `seed` is an int, a new `np.random.RandomState` instance is used,
-        seeded with seed.
-        If `seed` is already a `np.random.RandomState instance`, then that
-        `np.random.RandomState` instance is used.
-        Specify `seed` for repeatable sampling.
+    seed : {None, int, `~np.random.RandomState`, `~np.random.Generator`}, optional
+        This parameter defines the object to use for drawing random variates.
+        If `seed` is `None` the `~np.random.RandomState` singleton is used.
+        If `seed` is an int, a new ``RandomState`` instance is used, seeded
+        with seed.
+        If `seed` is already a ``RandomState`` or ``Generator`` instance,
+        then that object is used.
+        Default is None.
 
     References
     ----------
-    [1] G. Pages. Numerical Probability: An Introduction with Applications to
-      Finance. Universitext. Springer International Publishing, 2018.
+    .. [1] G. Pages. Numerical Probability: An Introduction with Applications to
+       Finance. Universitext. Springer International Publishing, 2018.
+
+    Examples
+    --------
+
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.stats import qmc
+    >>> engine = qmc.NormalQMC(2)
+    >>> sample = engine.random(500)
+    >>> plt.scatter(sample[:, 0], sample[:, 1])
+    >>> plt.show()
+
     """
 
     def __init__(self, dim, inv_transform=False, engine=None, seed=None):
@@ -1016,7 +1251,7 @@ class NormalQMC(QMCEngine):
             self.engine = engine
 
     def random(self, n_samples=1):
-        """Draw n QMC samples from the standard Normal.
+        """Draw `n_samples` QMC samples from the standard Normal.
 
         Parameters
         ----------
@@ -1047,10 +1282,11 @@ class NormalQMC(QMCEngine):
 
 
 class MultivariateNormalQMC(QMCEngine):
-    r"""Engine for qMC sampling from a multivariate Normal `N(\mu, \Sigma)`.
 
-    By default, this implementation uses Box-Muller transformed Sobol samples
-    following pg. 123 in [1] To use the inverse transform instead, set
+    r"""Engine for QMC sampling from a multivariate Normal :math:`N(\mu, \Sigma)`.
+
+    By default, this implementation uses Box-Muller transformed Sobol' samples
+    following pg. 123 in [1]_ To use the inverse transform instead, set
     `inv_transform=True`.
 
     Parameters
@@ -1063,21 +1299,31 @@ class MultivariateNormalQMC(QMCEngine):
         If True, use inverse transform instead of Box-Muller.
     engine: QMCEngine
         Quasi-Monte Carlo engine sampler. If None, Sobol' is used.
-    seed : int or `np.random.RandomState`, optional
-        If `seed` is not specified the `np.RandomState` singleton is used.
-        If `seed` is an int, a new `np.random.RandomState` instance is used,
-        seeded with seed.
-        If `seed` is already a `np.random.RandomState instance`, then that
-        `np.random.RandomState` instance is used.
-        Specify `seed` for repeatable sampling.
+    seed : {None, int, `~np.random.RandomState`, `~np.random.Generator`}, optional
+        This parameter defines the object to use for drawing random variates.
+        If `seed` is `None` the `~np.random.RandomState` singleton is used.
+        If `seed` is an int, a new ``RandomState`` instance is used, seeded
+        with seed.
+        If `seed` is already a ``RandomState`` or ``Generator`` instance,
+        then that object is used.
+        Default is None.
 
     References
     ----------
-    [1] G. Pages. Numerical Probability: An Introduction with Applications to
+    .. [1] G. Pages. Numerical Probability: An Introduction with Applications to
       Finance. Universitext. Springer International Publishing, 2018.
 
-    """
+    Examples
+    --------
 
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.stats import qmc
+    >>> engine = qmc.MultivariateNormalQMC(mean=[0, 5], cov=[[1, 0], [0, 1]])
+    >>> sample = engine.random(500)
+    >>> plt.scatter(sample[:, 0], sample[:, 1])
+    >>> plt.show()
+
+    """
     def __init__(self, mean, cov, inv_transform=False, engine=None, seed=None):
         # check for square/symmetric cov matrix and mean vector has the same d
         mean = np.array(mean, copy=False, ndmin=1)
@@ -1104,7 +1350,7 @@ class MultivariateNormalQMC(QMCEngine):
             self._corr_matrix = (eigvec * np.sqrt(eigval)).transpose()
 
     def random(self, n_samples: int = 1) -> np.ndarray:
-        """Draw n QMC samples from the multivariate Normal.
+        """Draw `n_samples` QMC samples from the multivariate Normal.
 
         Parameters
         ----------

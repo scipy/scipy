@@ -50,6 +50,8 @@ class TestUtils(object):
         assert_allclose(qmc.discrepancy(sample, method='CD'), 0.3172, atol=1e-4)
         assert_allclose(qmc.discrepancy(sample, method='star'), 0.037451, atol=1e-4)
 
+        assert_raises(ValueError, qmc.discrepancy, sample, False, 'toto')
+
     def test_update_discrepancy(self):
         space_1 = np.array([[1, 3], [2, 6], [3, 2], [4, 5], [5, 1], [6, 4]])
         space_1 = (2.0 * space_1 - 1.0) / (2.0 * 6.0)
@@ -105,28 +107,28 @@ class TestQMC(object):
     def test_halton(self):
         # without bounds
         engine = qmc.Halton(dim=2)
-        sample = engine.random(n_samples=5)
+        sample = engine.random(n_samples=3)
 
         out = np.array([[1 / 2, 1 / 3], [1 / 4, 2 / 3], [3 / 4, 1 / 9], [1 / 8, 4 / 9], [5 / 8, 7 / 9]])
-        assert_almost_equal(sample, out, decimal=1)
+        assert_almost_equal(sample, out[:3], decimal=1)
 
-        assert engine.num_generated == 5
-
-        # with bounds
-        corners = np.array([[0, 2], [10, 5]])
-        sample = qmc.scale(sample, bounds=corners)
-
-        out = np.array([[5., 3.], [2.5, 4.], [7.5, 2.3], [1.25, 3.3], [6.25, 4.3]])
-        assert_almost_equal(sample, out, decimal=1)
+        assert engine.num_generated == 3
 
         # continuing
+        sample = engine.random(n_samples=2)
+        assert_almost_equal(sample, out[3:], decimal=1)
+
+        # reset
+        engine.reset()
+        sample = engine.random(n_samples=5)
+        assert_almost_equal(sample, out, decimal=1)
+
+        # continuing with fast_forward
         engine = qmc.Halton(dim=2)
         engine.fast_forward(2)
         sample = engine.random(n_samples=3)
-        sample = qmc.scale(sample, bounds=corners)
 
-        out = np.array([[7.5, 2.3], [1.25, 3.3], [6.25, 4.3]])
-        assert_almost_equal(sample, out, decimal=1)
+        assert_almost_equal(sample, out[2:], decimal=1)
 
 
 class TestLHS(object):
