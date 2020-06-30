@@ -1,6 +1,7 @@
-""" Test functions for stats module
-
 """
+Test functions for stats module
+"""
+
 import warnings
 import re
 import sys
@@ -43,13 +44,13 @@ def test_api_regression():
     _assert_hasattr(scipy.stats.distributions, 'f_gen')
 
 
-def check_vonmises_pdf_periodic(k, l, s, x):
-    vm = stats.vonmises(k, loc=l, scale=s)
+def check_vonmises_pdf_periodic(k, L, s, x):
+    vm = stats.vonmises(k, loc=L, scale=s)
     assert_almost_equal(vm.pdf(x), vm.pdf(x % (2*numpy.pi*s)))
 
 
-def check_vonmises_cdf_periodic(k, l, s, x):
-    vm = stats.vonmises(k, loc=l, scale=s)
+def check_vonmises_cdf_periodic(k, L, s, x):
+    vm = stats.vonmises(k, loc=L, scale=s)
     assert_almost_equal(vm.cdf(x) % 1, vm.cdf(x % (2*numpy.pi*s)) % 1)
 
 
@@ -480,7 +481,6 @@ class TestTruncnorm(object):
         x = stats.truncnorm.rvs(low, high, 0, 1, size=10)
         assert_(low < x.min() < x.max() < high)
 
-    # @pytest.mark.xfail(reason="truncnorm rvs is know to fail at extreme tails")
     def test_gh_2477_large_values(self):
         # Check a case that used to fail because of extreme tailness.
         low, high = 100, 101
@@ -515,18 +515,23 @@ class TestTruncnorm(object):
             assert_almost_equal(cdfs, expected_cdfs)
             assert_almost_equal(sfs, expected_sfs)
             assert_almost_equal(pdfs, expected_pdfs)
-            assert_almost_equal(np.log(expected_pdfs[1]/expected_pdfs[2]), low+0.5)
+            assert_almost_equal(np.log(expected_pdfs[1]/expected_pdfs[2]),
+                                low + 0.5)
             pvals = np.array([0, 0.5, 1.0])
             ppfs = stats.truncnorm.ppf(pvals, low, high)
             expected_ppfs = np.array([low, np.sign(low)*3.1984741, high])
             assert_almost_equal(ppfs, expected_ppfs)
 
             if low < 0:
-                assert_almost_equal(stats.truncnorm.sf(xmid, low, high), 0.8475544278436675)
-                assert_almost_equal(stats.truncnorm.cdf(xmid, low, high), 0.1524455721563326)
+                assert_almost_equal(stats.truncnorm.sf(xmid, low, high),
+                                    0.8475544278436675)
+                assert_almost_equal(stats.truncnorm.cdf(xmid, low, high),
+                                    0.1524455721563326)
             else:
-                assert_almost_equal(stats.truncnorm.cdf(xmid, low, high), 0.8475544278436675)
-                assert_almost_equal(stats.truncnorm.sf(xmid, low, high), 0.1524455721563326)
+                assert_almost_equal(stats.truncnorm.cdf(xmid, low, high),
+                                    0.8475544278436675)
+                assert_almost_equal(stats.truncnorm.sf(xmid, low, high),
+                                    0.1524455721563326)
             pdf = stats.truncnorm.pdf(xmid, low, high)
             assert_almost_equal(np.log(pdf/expected_pdfs[2]), (xmid+0.25)/2)
 
@@ -541,11 +546,13 @@ class TestTruncnorm(object):
             expected_sfs = np.array([1.0, 1.0, 0.0, 0.0])
             expected_pdfs = np.array([0, 3.90256074e+01, 2.73349092e-16, 0])
             if low < 0:
-                expected_pdfs = np.array([0, 2.73349092e-16, 3.90256074e+01, 0])
+                expected_pdfs = np.array([0, 2.73349092e-16,
+                                          3.90256074e+01, 0])
             assert_almost_equal(cdfs, expected_cdfs)
             assert_almost_equal(sfs, expected_sfs)
             assert_almost_equal(pdfs, expected_pdfs)
-            assert_almost_equal(np.log(expected_pdfs[1]/expected_pdfs[2]), low+0.5)
+            assert_almost_equal(np.log(expected_pdfs[1]/expected_pdfs[2]),
+                                low + 0.5)
             pvals = np.array([0, 0.5, 1.0])
             ppfs = stats.truncnorm.ppf(pvals, low, high)
             expected_ppfs = np.array([low, np.sign(low)*39.01775731, high])
@@ -554,19 +561,26 @@ class TestTruncnorm(object):
             assert_almost_equal(cdfs, pvals)
 
             if low < 0:
-                assert_almost_equal(stats.truncnorm.sf(xmid, low, high), 0.9999999970389126)
-                assert_almost_equal(stats.truncnorm.cdf(xmid, low, high), 2.961048103554866e-09)
+                assert_almost_equal(stats.truncnorm.sf(xmid, low, high),
+                                    0.9999999970389126)
+                assert_almost_equal(stats.truncnorm.cdf(xmid, low, high),
+                                    2.961048103554866e-09)
             else:
-                assert_almost_equal(stats.truncnorm.cdf(xmid, low, high), 0.9999999970389126)
-                assert_almost_equal(stats.truncnorm.sf(xmid, low, high), 2.961048103554866e-09)
+                assert_almost_equal(stats.truncnorm.cdf(xmid, low, high),
+                                    0.9999999970389126)
+                assert_almost_equal(stats.truncnorm.sf(xmid, low, high),
+                                    2.961048103554866e-09)
             pdf = stats.truncnorm.pdf(xmid, low, high)
             assert_almost_equal(np.log(pdf/expected_pdfs[2]), (xmid+0.25)/2)
 
             xvals = np.linspace(low, high, 11)
             xvals2 = -xvals[::-1]
-            assert_almost_equal(stats.truncnorm.cdf(xvals, low, high), stats.truncnorm.sf(xvals2, -high, -low)[::-1])
-            assert_almost_equal(stats.truncnorm.sf(xvals, low, high), stats.truncnorm.cdf(xvals2, -high, -low)[::-1])
-            assert_almost_equal(stats.truncnorm.pdf(xvals, low, high), stats.truncnorm.pdf(xvals2, -high, -low)[::-1])
+            assert_almost_equal(stats.truncnorm.cdf(xvals, low, high),
+                                stats.truncnorm.sf(xvals2, -high, -low)[::-1])
+            assert_almost_equal(stats.truncnorm.sf(xvals, low, high),
+                                stats.truncnorm.cdf(xvals2, -high, -low)[::-1])
+            assert_almost_equal(stats.truncnorm.pdf(xvals, low, high),
+                                stats.truncnorm.pdf(xvals2, -high, -low)[::-1])
 
     def _test_moments_one_range(self, a, b, expected, decimal_s=7):
         m0, v0, s0, k0 = expected[:4]
@@ -587,20 +601,50 @@ class TestTruncnorm(object):
 
         self._test_moments_one_range(-30, 30, [0, 1, 0.0, 0.0])
         self._test_moments_one_range(-10, 10, [0, 1, 0.0, 0.0])
-        self._test_moments_one_range(-3, 3, [0.0000000000000000, 0.9733369246625415, 0.0000000000000000, -0.1711144363977444])
-        self._test_moments_one_range(-2, 2, [0.0000000000000000, 0.7737413035499232, 0.0000000000000000, -0.6344632828703505])
+        self._test_moments_one_range(-3, 3, [0.0, 0.9733369246625415,
+                                             0.0, -0.1711144363977444])
+        self._test_moments_one_range(-2, 2, [0.0, 0.7737413035499232,
+                                             0.0, -0.6344632828703505])
 
-        self._test_moments_one_range(0, np.inf, [0.7978845608028654, 0.3633802276324186, 0.9952717464311565, 0.8691773036059725])
-        self._test_moments_one_range(-np.inf, 0, [-0.7978845608028654, 0.3633802276324186, -0.9952717464311565, 0.8691773036059725])
+        self._test_moments_one_range(0, np.inf, [0.7978845608028654,
+                                                 0.3633802276324186,
+                                                 0.9952717464311565,
+                                                 0.8691773036059725])
+        self._test_moments_one_range(-np.inf, 0, [-0.7978845608028654,
+                                                  0.3633802276324186,
+                                                  -0.9952717464311565,
+                                                  0.8691773036059725])
 
-        self._test_moments_one_range(-1, 3, [0.2827861107271540, 0.6161417353578292, 0.5393018494027878, -0.2058206513527461])
-        self._test_moments_one_range(-3, 1, [-0.2827861107271540, 0.6161417353578292, -0.5393018494027878, -0.2058206513527461])
+        self._test_moments_one_range(-1, 3, [0.2827861107271540,
+                                             0.6161417353578292,
+                                             0.5393018494027878,
+                                             -0.2058206513527461])
+        self._test_moments_one_range(-3, 1, [-0.2827861107271540,
+                                             0.6161417353578292,
+                                             -0.5393018494027878,
+                                             -0.2058206513527461])
 
-        self._test_moments_one_range(-10, -9, [-9.1084562880124764, 0.0114488058210104, -1.8985607337519652, 5.0733457094223553])
-        self._test_moments_one_range(-20, -19, [-19.0523439459766628, 0.0027250730180314, -1.9838694022629291, 5.8717850028287586])
-        self._test_moments_one_range(-30, -29, [-29.0344012377394698, 0.0011806603928891, -1.9930304534611458, 5.8854062968996566], decimal_s=6)
-        self._test_moments_one_range(-40, -39, [-39.0256074199326264, 0.0006548826719649, -1.9963146354109957, 5.6167758371700494])
-        self._test_moments_one_range(39, 40, [39.0256074199326264, 0.0006548826719649, 1.9963146354109957, 5.6167758371700494])
+        self._test_moments_one_range(-10, -9, [-9.1084562880124764,
+                                               0.0114488058210104,
+                                               -1.8985607337519652,
+                                               5.0733457094223553])
+        self._test_moments_one_range(-20, -19, [-19.0523439459766628,
+                                                0.0027250730180314,
+                                                -1.9838694022629291,
+                                                5.8717850028287586])
+        self._test_moments_one_range(-30, -29, [-29.0344012377394698,
+                                                0.0011806603928891,
+                                                -1.9930304534611458,
+                                                5.8854062968996566],
+                                     decimal_s=6)
+        self._test_moments_one_range(-40, -39, [-39.0256074199326264,
+                                                0.0006548826719649,
+                                                -1.9963146354109957,
+                                                5.6167758371700494])
+        self._test_moments_one_range(39, 40, [39.0256074199326264,
+                                              0.0006548826719649,
+                                              1.9963146354109957,
+                                              5.6167758371700494])
 
     def test_9902_moments(self):
         m, v = stats.truncnorm.stats(0, np.inf, moments='mv')
@@ -628,6 +672,7 @@ class TestTruncnorm(object):
         if hasattr(np.random, "default_rng"):
             stats.truncnorm.rvs(-10, -5, size=5,
                                 random_state=np.random.default_rng())
+
 
 class TestHypergeom(object):
     def setup_method(self):
@@ -1307,12 +1352,18 @@ class TestKSTwo(object):
         ns = [10, 50, 100, 200, 500, 1000]
         ratios = np.array([1.0/4, 1.0/3, 1.0/2, 1, 2, 3])
         expected = np.array([
-            [1.92155292e-08, 5.72933228e-05, 2.15233226e-02, 6.31566589e-01, 9.97685592e-01, 9.99999942e-01],
-            [2.28096224e-09, 1.99142563e-05, 1.42617934e-02, 5.95345542e-01, 9.96177701e-01, 9.99998662e-01],
-            [1.00201886e-09, 1.32673079e-05, 1.24608594e-02, 5.86163220e-01, 9.95866877e-01, 9.99998240e-01],
-            [4.93313022e-10, 9.52658029e-06, 1.12123138e-02, 5.79486872e-01, 9.95661824e-01, 9.99997964e-01],
-            [2.37049293e-10, 6.85002458e-06, 1.01309221e-02, 5.73427224e-01, 9.95491207e-01, 9.99997750e-01],
-            [1.56990874e-10, 5.71738276e-06, 9.59725430e-03, 5.70322692e-01, 9.95409545e-01, 9.99997657e-01]
+            [1.92155292e-08, 5.72933228e-05, 2.15233226e-02, 6.31566589e-01,
+             9.97685592e-01, 9.99999942e-01],
+            [2.28096224e-09, 1.99142563e-05, 1.42617934e-02, 5.95345542e-01,
+             9.96177701e-01, 9.99998662e-01],
+            [1.00201886e-09, 1.32673079e-05, 1.24608594e-02, 5.86163220e-01,
+             9.95866877e-01, 9.99998240e-01],
+            [4.93313022e-10, 9.52658029e-06, 1.12123138e-02, 5.79486872e-01,
+             9.95661824e-01, 9.99997964e-01],
+            [2.37049293e-10, 6.85002458e-06, 1.01309221e-02, 5.73427224e-01,
+             9.95491207e-01, 9.99997750e-01],
+            [1.56990874e-10, 5.71738276e-06, 9.59725430e-03, 5.70322692e-01,
+             9.95409545e-01, 9.99997657e-01]
         ])
         for idx, n in enumerate(ns):
             x = ratios * np.log(2) * np.sqrt(np.pi/2/n)
@@ -2064,19 +2115,20 @@ class TestLevyStable(object):
     def test_fit(self):
         # construct data to have percentiles that match
         # example in McCulloch 1986.
-        x = [-.05413,-.05413,
-               0.,0.,0.,0.,
-               .00533,.00533,.00533,.00533,.00533,
-               .03354,.03354,.03354,.03354,.03354,
-               .05309,.05309,.05309,.05309,.05309]
+        x = [-.05413, -.05413,
+             0., 0., 0., 0.,
+             .00533, .00533, .00533, .00533, .00533,
+             .03354, .03354, .03354, .03354, .03354,
+             .05309, .05309, .05309, .05309, .05309]
         alpha1, beta1, loc1, scale1 = stats.levy_stable._fitstart(x)
         assert_allclose(alpha1, 1.48, rtol=0, atol=0.01)
         assert_almost_equal(beta1, -.22, 2)
         assert_almost_equal(scale1, 0.01717, 4)
-        assert_almost_equal(loc1, 0.00233, 2)  # to 2 dps due to rounding error in McCulloch86
+        # to 2 dps due to rounding error in McCulloch86
+        assert_almost_equal(loc1, 0.00233, 2)
 
         # cover alpha=2 scenario
-        x2 = x + [.05309,.05309,.05309,.05309,.05309]
+        x2 = x + [.05309, .05309, .05309, .05309, .05309]
         alpha2, beta2, loc2, scale2 = stats.levy_stable._fitstart(x2)
         assert_equal(alpha2, 2)
         assert_equal(beta2, -1)
@@ -2100,8 +2152,9 @@ class TestLevyStable(object):
                 1,0 # gamma, delta
                 2 # output file
         """
-        data = np.load(os.path.abspath(os.path.join(os.path.dirname(__file__),
-                                                 'data/stable-pdf-sample-data.npy')))
+        fn = os.path.abspath(os.path.join(os.path.dirname(__file__),
+                                          'data/stable-pdf-sample-data.npy'))
+        data = np.load(fn)
 
         data = np.core.records.fromarrays(data.T, names='x,p,alpha,beta')
 
@@ -2112,31 +2165,51 @@ class TestLevyStable(object):
             # best selects
             ['best', None, 8, None],
 
-            # quadrature is accurate for most alpha except 0.25; perhaps limitation of Nolan stablec?
-            # we reduce size of x to speed up computation as numerical integration slow.
-            ['quadrature', None, 8, lambda r: (r['alpha'] > 0.25) & (npisin(r['x'], [-10,-5,0,5,10]))],
+            # quadrature is accurate for most alpha except 0.25; perhaps
+            # limitation of Nolan stablec?
+            # we reduce size of x to speed up computation as numerical
+            # integration slow.
+            ['quadrature', None, 8,
+             lambda r: ((r['alpha'] > 0.25) &
+                        (npisin(r['x'], [-10, -5, 0, 5, 10])))],
 
             # zolatarev is accurate except at alpha==1, beta != 0
             ['zolotarev', None, 8, lambda r: r['alpha'] != 1],
-            ['zolotarev', None, 8, lambda r: (r['alpha'] == 1) & (r['beta'] == 0)],
-            ['zolotarev', None, 1, lambda r: (r['alpha'] == 1) & (r['beta'] != 0)],
+            ['zolotarev', None, 8,
+             lambda r: (r['alpha'] == 1) & (r['beta'] == 0)],
+            ['zolotarev', None, 1,
+             lambda r: (r['alpha'] == 1) & (r['beta'] != 0)],
 
-            # fft accuracy reduces as alpha decreases, fails at low values of alpha and x=0
+            # fft accuracy reduces as alpha decreases, fails at low values of
+            # alpha and x=0
             ['fft', 0, 4, lambda r: r['alpha'] > 1],
             ['fft', 0, 3, lambda r: (r['alpha'] < 1) & (r['alpha'] > 0.25)],
-            ['fft', 0, 1, lambda r: (r['alpha'] == 0.25) & (r['x'] != 0)],  # not useful here
+            # not useful here
+            ['fft', 0, 1, lambda r: (r['alpha'] == 0.25) & (r['x'] != 0)],
         ]
-        for ix, (default_method, fft_min_points, decimal_places, filter_func) in enumerate(tests):
+        for ix, (default_method, fft_min_points,
+                 decimal_places, filter_func) in enumerate(tests):
             stats.levy_stable.pdf_default_method = default_method
             stats.levy_stable.pdf_fft_min_points_threshold = fft_min_points
-            subdata = data[filter_func(data)] if filter_func is not None else data
+            subdata = (data[filter_func(data)] if filter_func is not None else
+                       data)
             with suppress_warnings() as sup:
-                sup.record(RuntimeWarning, "Density calculation unstable for alpha=1 and beta!=0.*")
-                sup.record(RuntimeWarning, "Density calculations experimental for FFT method.*")
-                p = stats.levy_stable.pdf(subdata['x'], subdata['alpha'], subdata['beta'], scale=1, loc=0)
+                sup.record(RuntimeWarning,
+                           "Density calculation unstable for alpha=1 "
+                           "and beta!=0.*")
+                sup.record(RuntimeWarning,
+                           "Density calculations experimental for FFT "
+                           "method.*")
+                p = stats.levy_stable.pdf(subdata['x'], subdata['alpha'],
+                                          subdata['beta'], scale=1, loc=0)
                 subdata2 = rec_append_fields(subdata, 'calc', p)
-                failures = subdata2[(np.abs(p-subdata['p']) >= 1.5*10.**(-decimal_places)) | np.isnan(p)]
-                assert_almost_equal(p, subdata['p'], decimal_places, "pdf test %s failed with method '%s'\n%s" % (ix, default_method, failures), verbose=False)
+                padiff = np.abs(p-subdata['p'])
+                failures = subdata2[(padiff >= 1.5*10.**(-decimal_places)) |
+                                    np.isnan(p)]
+                assert_almost_equal(p, subdata['p'], decimal_places,
+                                    ("pdf test %s failed with method '%s'\n%s"
+                                     % (ix, default_method, failures)),
+                                    verbose=False)
 
     @pytest.mark.slow
     def test_cdf_nolan_samples(self):
@@ -2155,8 +2228,9 @@ class TestLevyStable(object):
                 1,0 # gamma, delta
                 2 # output file
         """
-        data = np.load(os.path.abspath(os.path.join(os.path.dirname(__file__),
-                                                 'data/stable-cdf-sample-data.npy')))
+        fn = os.path.abspath(os.path.join(os.path.dirname(__file__),
+                                          'data/stable-cdf-sample-data.npy'))
+        data = np.load(fn)
 
         data = np.core.records.fromarrays(data.T, names='x,p,alpha,beta')
 
@@ -2167,22 +2241,31 @@ class TestLevyStable(object):
             # fft accuracy poor, very poor alpha < 1
             ['fft', 0, 2, lambda r: r['alpha'] > 1],
         ]
-        for ix, (default_method, fft_min_points, decimal_places, filter_func) in enumerate(tests):
+        for ix, (default_method, fft_min_points, decimal_places,
+                 filter_func) in enumerate(tests):
             stats.levy_stable.pdf_default_method = default_method
             stats.levy_stable.pdf_fft_min_points_threshold = fft_min_points
-            subdata = data[filter_func(data)] if filter_func is not None else data
+            subdata = (data[filter_func(data)] if filter_func is not None else
+                       data)
             with suppress_warnings() as sup:
                 sup.record(RuntimeWarning, 'FFT method is considered ' +
                            'experimental for cumulative distribution ' +
                            'function evaluations.*')
-                p = stats.levy_stable.cdf(subdata['x'], subdata['alpha'], subdata['beta'], scale=1, loc=0)
+                p = stats.levy_stable.cdf(subdata['x'], subdata['alpha'],
+                                          subdata['beta'], scale=1, loc=0)
                 subdata2 = rec_append_fields(subdata, 'calc', p)
-                failures = subdata2[(np.abs(p-subdata['p']) >= 1.5*10.**(-decimal_places)) | np.isnan(p)]
-                assert_almost_equal(p, subdata['p'], decimal_places, "cdf test %s failed with method '%s'\n%s" % (ix, default_method, failures), verbose=False)
+                padiff = np.abs(p - subdata['p'])
+                failures = subdata2[(padiff >= 1.5*10.**(-decimal_places)) |
+                                    np.isnan(p)]
+                assert_almost_equal(p, subdata['p'], decimal_places,
+                                    ("cdf test %s failed with method '%s'\n%s"
+                                     % (ix, default_method, failures)),
+                                    verbose=False)
 
     def test_pdf_alpha_equals_one_beta_non_zero(self):
-        """ sample points extracted from Tables and Graphs of Stable Probability
-            Density Functions - Donald R Holt - 1973 - p 187.
+        """
+        sample points extracted from Tables and Graphs of Stable Probability
+        Density Functions - Donald R Holt - 1973 - p 187.
         """
         xs = np.array([0, 0, 0, 0,
                        1, 1, 1, 1,
@@ -2202,27 +2285,30 @@ class TestLevyStable(object):
 
         tests = [
             ['quadrature', None, 4],
-            #['fft', 0, 4],
             ['zolotarev', None, 1],
         ]
 
         with np.errstate(all='ignore'), suppress_warnings() as sup:
-            sup.filter(category=RuntimeWarning, message="Density calculation unstable.*")
+            sup.filter(category=RuntimeWarning,
+                       message="Density calculation unstable.*")
             for default_method, fft_min_points, decimal_places in tests:
                 stats.levy_stable.pdf_default_method = default_method
                 stats.levy_stable.pdf_fft_min_points_threshold = fft_min_points
-                #stats.levy_stable.fft_grid_spacing = 0.0001
                 pdf = stats.levy_stable.pdf(xs, 1, betas, scale=1, loc=0)
-                assert_almost_equal(pdf, density, decimal_places, default_method)
+                assert_almost_equal(pdf, density, decimal_places,
+                                    default_method)
 
     def test_stats(self):
         param_sets = [
-            [(1.48,-.22, 0, 1), (0,np.inf,np.NaN,np.NaN)],
-            [(2,.9, 10, 1.5), (10,4.5,0,0)]
+            [(1.48, -.22, 0, 1), (0, np.inf, np.NaN, np.NaN)],
+            [(2, .9, 10, 1.5), (10, 4.5, 0, 0)]
         ]
         for args, exp_stats in param_sets:
-            calc_stats = stats.levy_stable.stats(args[0], args[1], loc=args[2], scale=args[3], moments='mvsk')
+            calc_stats = stats.levy_stable.stats(args[0], args[1],
+                                                 loc=args[2], scale=args[3],
+                                                 moments='mvsk')
             assert_almost_equal(calc_stats, exp_stats)
+
 
 class TestArrayArgument(object):  # test for ticket:992
     def setup_method(self):
@@ -3056,7 +3142,8 @@ class TestErlang(object):
             assert_allclose(result_erlang, result_gamma, rtol=1e-3)
 
     def test_gh_pr_10949_argcheck(self):
-        assert_equal(stats.erlang.pdf(0.5, a=[1, -1]), stats.gamma.pdf(0.5, a=[1, -1]))
+        assert_equal(stats.erlang.pdf(0.5, a=[1, -1]),
+                     stats.gamma.pdf(0.5, a=[1, -1]))
 
 
 class TestRayleigh(object):
@@ -3263,8 +3350,12 @@ class TestTrapz(object):
         a, b, c, d = -3, -1, 2, 3  # => 1/3, 5/6, -3, 6
         p1, p2, loc, scale = (b-a) / (d-a), (c-a) / (d-a), a, d-a
         h = 2 / (d+c-b-a)
-        moment = lambda n: h * ((d**(n+2) - c**(n+2)) / (d-c)
-                                - (b**(n+2) - a**(n+2)) / (b-a)) / (n+1) / (n+2)
+
+        def moment(n):
+            return (h * ((d**(n+2) - c**(n+2)) / (d-c)
+                         - (b**(n+2) - a**(n+2)) / (b-a)) /
+                    (n+1) / (n+2))
+
         mean = moment(1)
         var = moment(2) - mean**2
         entropy = 0.5 * (d-c+b-a) / (d+c-b-a) + np.log(0.5 * (d+c-b-a))
@@ -3367,7 +3458,8 @@ class TestBurr(object):
         c, d = 5.0, 3
         mean, variance = stats.burr(c, d).stats()
         # mean = sc.beta(3 + 1/5, 1. - 1/5) * 3  = 1.4110263...
-        # var =  sc.beta(3 + 2 / 5, 1. - 2 / 5) * 3 - (sc.beta(3 + 1 / 5, 1. - 1 / 5) * 3) ** 2
+        # var =  sc.beta(3 + 2 / 5, 1. - 2 / 5) * 3 -
+        #        (sc.beta(3 + 1 / 5, 1. - 1 / 5) * 3) ** 2
         mean_hc, variance_hc = 1.4110263183925857, 0.22879948026191643
         assert_allclose(mean, mean_hc)
         assert_allclose(variance, variance_hc)
@@ -3631,10 +3723,10 @@ def test_ksone_fit_freeze():
     d = np.array(
         [-0.18879233, 0.15734249, 0.18695107, 0.27908787, -0.248649,
          -0.2171497, 0.12233512, 0.15126419, 0.03119282, 0.4365294,
-          0.08930393, -0.23509903, 0.28231224, -0.09974875, -0.25196048,
-          0.11102028, 0.1427649, 0.10176452, 0.18754054, 0.25826724,
-          0.05988819, 0.0531668, 0.21906056, 0.32106729, 0.2117662,
-          0.10886442, 0.09375789, 0.24583286, -0.22968366, -0.07842391,
+         0.08930393, -0.23509903, 0.28231224, -0.09974875, -0.25196048,
+         0.11102028, 0.1427649, 0.10176452, 0.18754054, 0.25826724,
+         0.05988819, 0.0531668, 0.21906056, 0.32106729, 0.2117662,
+         0.10886442, 0.09375789, 0.24583286, -0.22968366, -0.07842391,
          -0.31195432, -0.21271196, 0.1114243, -0.13293002, 0.01331725,
          -0.04330977, -0.09485776, -0.28434547, 0.22245721, -0.18518199,
          -0.10943985, -0.35243174, 0.06897665, -0.03553363, -0.0701746,
@@ -4448,4 +4540,3 @@ def test_rvs_no_size_warning():
 
     with assert_warns(np.VisibleDeprecationWarning):
         rvs_no_size.rvs()
-
