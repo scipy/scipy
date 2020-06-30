@@ -6123,6 +6123,42 @@ class pareto_gen(rv_continuous):
     def _entropy(self, c):
         return 1 + 1.0/c - np.log(c)
 
+    def fit(self, data, *args, **kwds):
+        data = np.asarray(data)
+
+        floc = kwds.pop('floc', None)
+
+        # borrowed from distn_infrastructure
+        # puts shape into f0
+        if self.shapes:
+            shapes = self.shapes.replace(',', ' ').split()
+            for j, s in enumerate(shapes):
+                key = 'f' + str(j)
+                names = [key, 'f' + s, 'fix_' + s]
+                val = _get_fixed_fit_value(kwds, names)
+                if val is not None:
+                    kwds[key] = val
+
+        shape = kwds.pop('f0', None)
+        fscale = kwds.pop('fscale', None)
+
+        if None not in [shape, floc, fscale]:
+            # This check is for consistency with `rv_continuous.fit`.
+            # Without this check, this function would just return the
+            # parameters that were given.
+            raise RuntimeError("All parameters fixed. There is nothing to "
+                               "optimize.")
+
+        if floc is None:
+            floc = np.min(data)
+        if shape is None:
+            shape = 1/((1/len(data)) * np.sum(np.log(data/floc)))
+        if fscale is None:
+            return super(pareto_gen, self).fit(data, fb=shape,fscale=floc, 
+                                                 *args, **kwds)
+        else:
+            return(shape, floc, fscale)
+
 
 pareto = pareto_gen(a=1.0, name="pareto")
 
