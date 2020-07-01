@@ -50,7 +50,7 @@ def quadratic_assignment(
         A square adjacency matrix.  In this implementation, :math:`B` =
         `dist-matrix` in the objective function above.
 
-    seed : 2d-array, optional, (default = None)
+    partial_match : 2d-array, optional, (default = None)
         Allows the user apply a seed, fixing part of the matching between
         the two adjacency matrices.
         For column 1, each entry is an index of a node in `cost_matrix`.
@@ -97,7 +97,7 @@ def quadratic_assignment(
                 from the starting position of `init`
                 At each initialization, the initial permutation matrix
                 is some random point near :math:`J`, defined as
-                :math:`(\alpha J + (1- \alpha) K`, where :math: `\alpha`
+                :math:`(\alpha J + (1- \alpha) K`, where :math:`\alpha`
                 is `init_weight` and :math:`K` is some random doubly
                 stochastic matrix.
             init_n : int, positive (default = 1)
