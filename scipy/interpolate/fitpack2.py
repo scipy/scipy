@@ -1237,8 +1237,8 @@ class RectBivariateSpline(BivariateSpline):
         Degrees of the bivariate spline. Default is 3.
     s : float, optional
         Positive smoothing factor defined for estimation condition:
-        ``sum((z[i]-s(x[i], y[i]))**2, axis=0) <= s``
-        Default is ``s=0``, which is for interpolation.
+        ``sum((z[i]-f(x[i], y[i]))**2, axis=0) <= s`` where f is a spline
+        function. Default is ``s=0``, which is for interpolation.
 
     See Also
     --------
