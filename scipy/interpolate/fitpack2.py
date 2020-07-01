@@ -120,12 +120,26 @@ class UnivariateSpline(object):
 
     See Also
     --------
+    BivariateSpline :
+        to create a bivariate spline on a plane grid
+    SmoothBivariateSpline :
+        to create a bivariate spline through the given points
+    LSQBivariateSpline :
+        to create a bivariate spline using weighted least-squares fitting
+    RectSphereBivariateSpline :
+        to create a bivariate spline over a rectangular mesh on a sphere
+    SmoothSphereBivariateSpline :
+        to create a smooth bivariate spline in spherical coordinates
+    LSQSphereBivariateSpline :
+        to create a bivariate spline in spherical coordinates using
+        weighted least-squares fitting
+    RectBivariateSpline :
+        to create a bivariate spline over a rectangular mesh.
+    bisplrep : older wrapping of FITPACK
+    bisplev : older wrapping of FITPACK
     InterpolatedUnivariateSpline : Subclass with smoothing forced to 0
-    LSQUnivariateSpline : Subclass in which knots are user-selected instead of
-        being set by smoothing condition
     splrep : An older, non object-oriented wrapping of FITPACK
     splev, sproot, splint, spalde
-    BivariateSpline : A similar class for two-dimensional spline interpolation
 
     Notes
     -----
@@ -588,9 +602,9 @@ class InterpolatedUnivariateSpline(UnivariateSpline):
     UnivariateSpline : Superclass -- allows knots to be selected by a
         smoothing condition
     LSQUnivariateSpline : spline for which knots are user-selected
+    BivariateSpline : A similar class for two-dimensional spline interpolation
     splrep : An older, non object-oriented wrapping of FITPACK
     splev, sproot, splint, spalde
-    BivariateSpline : A similar class for two-dimensional spline interpolation
 
     Notes
     -----
@@ -934,7 +948,7 @@ class BivariateSpline(_BivariateSplineBase):
 
     This class is meant to be subclassed, not instantiated directly.
     To construct these splines, call either `SmoothBivariateSpline` or
-    `LSQBivariateSpline`.
+    `LSQBivariateSpline` or `RectBivariateSpline`.
 
     See Also
     --------
@@ -951,6 +965,8 @@ class BivariateSpline(_BivariateSplineBase):
     LSQSphereBivariateSpline :
         to create a bivariate spline in spherical coordinates using
         weighted least-squares fitting
+    RectBivariateSpline :
+        to create a bivariate spline over a rectangular mesh.
     bisplrep : older wrapping of FITPACK
     bisplev : older wrapping of FITPACK
     """
@@ -1057,10 +1073,23 @@ class SmoothBivariateSpline(BivariateSpline):
 
     See Also
     --------
-    bisplrep : an older wrapping of FITPACK
-    bisplev : an older wrapping of FITPACK
-    UnivariateSpline : a similar class for univariate spline interpolation
-    LSQBivariateSpline : to create a BivariateSpline using weighted least-squares fitting
+    BivariateSpline :
+        to create a bivariate spline on a plane grid
+    UnivariateSpline :
+        a similar class for univariate spline interpolation
+    LSQBivariateSpline :
+        to create a bivariate spline using weighted least-squares fitting
+    RectSphereBivariateSpline :
+        to create a bivariate spline over a rectangular mesh on a sphere
+    SmoothSphereBivariateSpline :
+        to create a smooth bivariate spline in spherical coordinates
+    LSQSphereBivariateSpline :
+        to create a bivariate spline in spherical coordinates using
+        weighted least-squares fitting
+    RectBivariateSpline :
+        to create a bivariate spline over a rectangular mesh.
+    bisplrep : older wrapping of FITPACK
+    bisplev : older wrapping of FITPACK
 
     Notes
     -----
@@ -1127,10 +1156,23 @@ class LSQBivariateSpline(BivariateSpline):
 
     See Also
     --------
-    bisplrep : an older wrapping of FITPACK
-    bisplev : an older wrapping of FITPACK
-    UnivariateSpline : a similar class for univariate spline interpolation
-    SmoothBivariateSpline : create a smoothing BivariateSpline
+    BivariateSpline :
+        to create a bivariate spline on a plane grid
+    UnivariateSpline :
+        a similar class for univariate spline interpolation
+    SmoothBivariateSpline :
+        to create a bivariate spline through the given points
+    RectSphereBivariateSpline :
+        to create a bivariate spline over a rectangular mesh on a sphere
+    SmoothSphereBivariateSpline :
+        to create a smooth bivariate spline in spherical coordinates
+    LSQSphereBivariateSpline :
+        to create a bivariate spline in spherical coordinates using
+        weighted least-squares fitting
+    RectBivariateSpline :
+        to create a bivariate spline over a rectangular mesh.
+    bisplrep : older wrapping of FITPACK
+    bisplev : older wrapping of FITPACK
 
     Notes
     -----
@@ -1190,20 +1232,33 @@ class RectBivariateSpline(BivariateSpline):
     bbox : array_like, optional
         Sequence of length 4 specifying the boundary of the rectangular
         approximation domain.  By default,
-        ``bbox=[min(x,tx),max(x,tx), min(y,ty),max(y,ty)]``.
+        ``bbox=[min(x), max(x), min(y), max(y)]``.
     kx, ky : ints, optional
         Degrees of the bivariate spline. Default is 3.
     s : float, optional
         Positive smoothing factor defined for estimation condition:
-        ``sum((w[i]*(z[i]-s(x[i], y[i])))**2, axis=0) <= s``
+        ``sum((z[i]-s(x[i], y[i]))**2, axis=0) <= s``
         Default is ``s=0``, which is for interpolation.
 
     See Also
     --------
-    SmoothBivariateSpline : a smoothing bivariate spline for scattered data
-    bisplrep : an older wrapping of FITPACK
-    bisplev : an older wrapping of FITPACK
-    UnivariateSpline : a similar class for univariate spline interpolation
+    BivariateSpline :
+        to create a bivariate spline on a plane grid
+    UnivariateSpline :
+        a similar class for univariate spline interpolation
+    SmoothBivariateSpline :
+        to create a bivariate spline through the given points
+    LSQBivariateSpline :
+        to create a bivariate spline using weighted least-squares fitting
+    RectSphereBivariateSpline :
+        to create a bivariate spline over a rectangular mesh on a sphere
+    SmoothSphereBivariateSpline :
+        to create a smooth bivariate spline in spherical coordinates
+    LSQSphereBivariateSpline :
+        to create a bivariate spline in spherical coordinates using
+        weighted least-squares fitting
+    bisplrep : older wrapping of FITPACK
+    bisplev : older wrapping of FITPACK
 
     """
 
@@ -1369,6 +1424,26 @@ class SmoothSphereBivariateSpline(SphereBivariateSpline):
         linear system of equations. `eps` should have a value within the open
         interval ``(0, 1)``, the default is 1e-16.
 
+    See Also
+    --------
+    BivariateSpline :
+        to create a bivariate spline on a plane grid
+    UnivariateSpline :
+        a similar class for univariate spline interpolation
+    SmoothBivariateSpline :
+        to create a bivariate spline through the given points
+    LSQBivariateSpline :
+        to create a bivariate spline using weighted least-squares fitting
+    RectSphereBivariateSpline :
+        to create a bivariate spline over a rectangular mesh on a sphere
+    LSQSphereBivariateSpline :
+        to create a bivariate spline in spherical coordinates using
+        weighted least-squares fitting
+    RectBivariateSpline :
+        to create a bivariate spline over a rectangular mesh.
+    bisplrep : older wrapping of FITPACK
+    bisplev : older wrapping of FITPACK
+
     Notes
     -----
     For more information, see the FITPACK_ site about this function.
@@ -1480,6 +1555,25 @@ class LSQSphereBivariateSpline(SphereBivariateSpline):
         A threshold for determining the effective rank of an over-determined
         linear system of equations. `eps` should have a value within the
         open interval ``(0, 1)``, the default is 1e-16.
+
+    See Also
+    --------
+    BivariateSpline :
+        to create a bivariate spline on a plane grid
+    UnivariateSpline :
+        a similar class for univariate spline interpolation
+    SmoothBivariateSpline :
+        to create a bivariate spline through the given points
+    LSQBivariateSpline :
+        to create a bivariate spline using weighted least-squares fitting
+    RectSphereBivariateSpline :
+        to create a bivariate spline over a rectangular mesh on a sphere
+    SmoothSphereBivariateSpline :
+        to create a smooth bivariate spline in spherical coordinates
+    RectBivariateSpline :
+        to create a bivariate spline over a rectangular mesh.
+    bisplrep : older wrapping of FITPACK
+    bisplev : older wrapping of FITPACK
 
     Notes
     -----
@@ -1653,8 +1747,23 @@ class RectSphereBivariateSpline(SphereBivariateSpline):
 
     See Also
     --------
-    RectBivariateSpline : bivariate spline approximation over a rectangular
-        mesh
+    BivariateSpline :
+        to create a bivariate spline on a plane grid
+    UnivariateSpline :
+        a similar class for univariate spline interpolation
+    SmoothBivariateSpline :
+        to create a bivariate spline through the given points
+    LSQBivariateSpline :
+        to create a bivariate spline using weighted least-squares fitting
+    SmoothSphereBivariateSpline :
+        to create a smooth bivariate spline in spherical coordinates
+    LSQSphereBivariateSpline :
+        to create a bivariate spline in spherical coordinates using
+        weighted least-squares fitting
+    RectBivariateSpline :
+        to create a bivariate spline over a rectangular mesh.
+    bisplrep : older wrapping of FITPACK
+    bisplev : older wrapping of FITPACK
 
     Notes
     -----
