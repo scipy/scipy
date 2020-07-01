@@ -686,8 +686,8 @@ def block_diag(mats, format=None, dtype=None):
             row.append(a_row + r_idx)
             col.append(a_col + c_idx)
             data.append(a.ravel())
-        r_idx = r_idx + nrows
-        c_idx = c_idx + ncols
+        r_idx += nrows
+        c_idx += ncols
     row = np.concatenate(row)
     col = np.concatenate(col)
     data = np.concatenate(data)
