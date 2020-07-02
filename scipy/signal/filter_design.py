@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Filter design.
 """
 import math
@@ -4925,7 +4924,7 @@ def gammatone(freq, ftype, order=None, numtaps=None, fs=None):
     References
     ----------
     .. [1] Slaney, Malcolm, "An Efficient Implementation of the
-        Patterson–Holdsworth Auditory Filter Bank", Apple Computer
+        Patterson-Holdsworth Auditory Filter Bank", Apple Computer
         Technical Report 35, 1993, pp.3-8, 34-39.
 
     Examples
