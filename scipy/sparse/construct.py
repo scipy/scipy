@@ -632,7 +632,8 @@ def block_diag(mats, format=None, dtype=None):
     Parameters
     ----------
     mats : sequence of matrices
-        Input matrices.
+        Input matrices. Can be any combination of lists, numpy.array,
+         numpy.matrix or sparse matrix ("csr', 'coo"...)
     format : str, optional
         The sparse format of the result (e.g., "csr"). If not given, the matrix
         is returned in "coo" format.
@@ -646,38 +647,73 @@ def block_diag(mats, format=None, dtype=None):
 
     Notes
     -----
+    Providing a sequence of equally shaped matrices
+     will provide marginally faster results
 
-    .. versionadded:: 0.11.0
+    .. versionadded:: 0.18.0
 
     See Also
     --------
-    bmat, diags
+    bmat, diags, block_diag
 
     Examples
     --------
     >>> from scipy.sparse import coo_matrix, block_diag
     >>> A = coo_matrix([[1, 2], [3, 4]])
-    >>> B = coo_matrix([[5], [6]])
-    >>> C = coo_matrix([[7]])
+    >>> B = coo_matrix([[5, 6], [7, 8]])
+    >>> C = coo_matrix([[9, 10], [11,12]])
     >>> block_diag((A, B, C)).toarray()
-    array([[1, 2, 0, 0],
-           [3, 4, 0, 0],
-           [0, 0, 5, 0],
-           [0, 0, 6, 0],
-           [0, 0, 0, 7]])
-
+    array([[ 1,  2,  0,  0,  0,  0],
+           [ 3,  4,  0,  0,  0,  0],
+           [ 0,  0,  5,  6,  0,  0],
+           [ 0,  0,  7,  8,  0,  0],
+           [ 0,  0,  0,  0,  9, 10],
+           [ 0,  0,  0,  0, 11, 12]])
     """
-    nmat = len(mats)
-    rows = []
-    for ia, a in enumerate(mats):
-        row = [None]*nmat
-        if issparse(a):
-            row[ia] = a
-        else:
-            row[ia] = coo_matrix(a)
-        rows.append(row)
-    return bmat(rows, format=format, dtype=dtype)
 
+    n = len(mats)
+    mats_ = [None] * n
+    for ia, a in enumerate(mats):
+        if hasattr(a, 'shape'):
+            mats_[ia] = a
+        else:
+            mats_[ia] = coo_matrix(a)
+
+    if any(mat.shape != mats_[-1].shape for mat in mats_) or (
+            any(issparse(mat) for mat in mats_)):
+        data = []
+        col = []
+        row = []
+        origin = np.array([0, 0], dtype=np.int)
+        for mat in mats_:
+            if issparse(mat):
+                data.append(mat.data)
+                row.append(mat.row + origin[0])
+                col.append(mat.col + origin[1])
+
+            else:
+                data.append(mat.ravel())
+                row_, col_ = np.indices(mat.shape)
+                row.append(row_.ravel() + origin[0])
+                col.append(col_.ravel() + origin[1])
+
+            origin += mat.shape
+
+        data = np.hstack(data)
+        col = np.hstack(col)
+        row = np.hstack(row)
+        total_shape = origin
+    else:
+        shape = mats_[0].shape
+        data = np.array(mats_, dtype).ravel()
+        row_, col_ = np.indices(shape)
+        row = (np.tile(row_.ravel(), n) +
+               np.arange(n).repeat(shape[0] * shape[1]) * shape[0]).ravel()
+        col = (np.tile(col_.ravel(), n) +
+               np.arange(n).repeat(shape[0] * shape[1]) * shape[1]).ravel()
+        total_shape = (shape[0] * n, shape[1] * n)
+
+    return coo_matrix((data, (row, col)), shape=total_shape).asformat(format)
 
 def random(m, n, density=0.01, format='coo', dtype=None,
            random_state=None, data_rvs=None):

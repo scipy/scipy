@@ -393,8 +393,8 @@ class TestConstructUtils(object):
 
     def test_block_diag_basic(self):
         """ basic test for block_diag """
-        A = coo_matrix([[1,2],[3,4]])
-        B = coo_matrix([[5],[6]])
+        A = coo_matrix([[1, 2], [3, 4]])
+        B = coo_matrix([[5], [6]])
         C = coo_matrix([[7]])
 
         expected = matrix([[1, 2, 0, 0],
@@ -408,7 +408,7 @@ class TestConstructUtils(object):
     def test_block_diag_scalar_1d_args(self):
         """ block_diag with scalar and 1d arguments """
         # one 1d matrix and a scalar
-        assert_array_equal(construct.block_diag([[2,3], 4]).toarray(),
+        assert_array_equal(construct.block_diag([[2, 3], 4]).toarray(),
                            [[2, 3, 0], [0, 0, 4]])
 
     def test_block_diag_1(self):
@@ -422,6 +422,21 @@ class TestConstructUtils(object):
         # just on scalar
         assert_equal(construct.block_diag([1]).todense(),
                      matrix([[1]]))
+
+    def test_block_diag_equally_shaped(self):
+        """ basic test for equally shaped matrices """
+        A = coo_matrix([[1, 2], [3, 4]])
+        B = [[5, 6], [7, 8]]
+        C = np.array([[9, 10], [11, 12]])
+
+        expected = matrix([[1, 2, 0, 0, 0, 0],
+                           [3, 4, 0, 0, 0, 0],
+                           [0, 0, 5, 6, 0, 0],
+                           [0, 0, 7, 8, 0, 0],
+                           [0, 0, 0, 0, 9, 10],
+                           [0, 0, 0, 0, 11, 12]])
+
+        assert_equal(construct.block_diag((A, B, C)).todense(), expected)
 
     def test_random_sampling(self):
         # Simple sanity checks for sparse random sampling.
