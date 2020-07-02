@@ -160,7 +160,7 @@ static PyObject *
 fitpack_bispev(PyObject *dummy, PyObject *args)
 {
     F_INT nx, ny, kx, ky, mx, my, lwrk, *iwrk, kwrk, ier, lwa, nux, nuy;
-    npy_intp mxy;
+    size_t mxy;
     double *tx, *ty, *c, *x, *y, *z, *wrk, *wa = NULL;
     PyArrayObject *ap_x = NULL, *ap_y = NULL, *ap_z = NULL, *ap_tx = NULL;
     PyArrayObject *ap_ty = NULL, *ap_c = NULL;
@@ -191,7 +191,7 @@ fitpack_bispev(PyObject *dummy, PyObject *args)
     ny = PyArray_DIMS(ap_ty)[0];
     mx = PyArray_DIMS(ap_x)[0];
     my = PyArray_DIMS(ap_y)[0];
-    mxy = mx*my;
+    mxy = (size_t)mx * (size_t)my;
     if (my != 0 && mxy/my != mx) {
         /* Integer overflow */
         PyErr_Format(PyExc_RuntimeError,
