@@ -760,12 +760,19 @@ def _logm_triu(T):
 
     # Construct T0 with the appropriate type,
     # depending on the dtype and the spectrum of T.
-    T_diag = np.diag(T)
+    T_diag = T.diagonal()
     keep_it_real = np.isrealobj(T) and np.min(T_diag) >= 0
     if keep_it_real:
         T0 = T
     else:
         T0 = T.astype(complex)
+
+    # Check if T0 is diagonal, if so return logarithm of the diagonal
+    # Reshape it so that diagonal becomes first columnn
+    T0_diagonal_reshape = T0.reshape(-1)[:-1].reshape(n-1,n+1)
+    is_diagonal = np.allclose(T0_diagonal_reshape[:,1:], 0)
+    if is_diagonal:
+        return np.diag(np.log(T0.diagonal()))
 
     # Define bounds given in Table (2.1).
     theta = (None,
