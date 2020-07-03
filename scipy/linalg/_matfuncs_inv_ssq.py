@@ -768,10 +768,12 @@ def _logm_triu(T):
         T0 = T.astype(complex)
 
     # Check if T0 is diagonal, if so return logarithm of the diagonal
-    # Reshape it so that diagonal becomes first columnn
-    T0_diagonal_reshape = T0.reshape(-1)[:-1].reshape(n-1,n+1)
-    is_diagonal = np.allclose(T0_diagonal_reshape[:,1:], 0)
-    if is_diagonal:
+    # We use ratio between biggest off-diagonal and smallest diagonal element
+    # Reshape it so that diagonal becomes first columnn, then slice it out
+    off_diagonal_view = T0.reshape(-1)[:-1].reshape(n-1, n+1)[:, 1:]
+    min_diag = np.min(np.abs(T0.diagonal()))
+    max_off_diag = np.max(np.abs(off_diagonal_view))
+    if max_off_diag / min_diag < 1e-8:
         return np.diag(np.log(T0.diagonal()))
 
     # Define bounds given in Table (2.1).
