@@ -1928,6 +1928,10 @@ class NdPPoly(object):
     Methods
     -------
     __call__
+    derivative
+    antiderivative
+    integrate
+    integrate_1d
     construct_fast
 
     See also

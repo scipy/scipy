@@ -4670,9 +4670,9 @@ class levy_stable_gen(rv_continuous):
                 data_out[data_mask] = np.array([levy_stable._cdf_single_value_zolotarev(_x, _alpha, _beta)
                             for _x, _alpha, _beta in data_subset]).reshape(len(data_subset), 1)
             else:
-                warnings.warn(u'FFT method is considered experimental for ' +
-                              u'cumulative distribution function ' +
-                              u'evaluations. Use Zolotarev’s method instead).',
+                warnings.warn("FFT method is considered experimental for "
+                              "cumulative distribution function "
+                              "evaluations. Use Zolotarev's method instead.",
                               RuntimeWarning)
                 _alpha, _beta = pair
                 _x = data_subset[:,(0,)]
@@ -6935,7 +6935,7 @@ class trapz_gen(rv_continuous):
     ----------
     .. [1] Kacker, R.N. and Lawrence, J.F. (2007). Trapezoidal and triangular
        distributions for Type B evaluation of standard uncertainty.
-       Metrologia 44, 117–127. https://doi.org/10.1088/0026-1394/44/2/003
+       Metrologia 44, 117-127. https://doi.org/10.1088/0026-1394/44/2/003
 
 
     """

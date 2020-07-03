@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """Functions for FIR filter design."""
+
 from math import ceil, log
 import operator
 import warnings
@@ -1006,7 +1007,7 @@ def firls(numtaps, bands, desired, weight=None, nyq=None, fs=None):
     # Set up the linear matrix equation to be solved, Qa = b
 
     # We can express Q(k,n) = 0.5 Q1(k,n) + 0.5 Q2(k,n)
-    # where Q1(k,n)=q(k−n) and Q2(k,n)=q(k+n), i.e. a Toeplitz plus Hankel.
+    # where Q1(k,n)=q(k-n) and Q2(k,n)=q(k+n), i.e. a Toeplitz plus Hankel.
 
     # We omit the factor of 0.5 above, instead adding it during coefficient
     # calculation.
