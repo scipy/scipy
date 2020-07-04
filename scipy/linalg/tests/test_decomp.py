@@ -2429,7 +2429,7 @@ class TestOrdQZWorkspaceSize(object):
             _ = ordqz(A, B, sort=lambda alpha, beta: alpha < beta,
                       output='real')
 
-        for ddtype in [np.complex, np.complex64]:
+        for ddtype in [np.complex128, np.complex64]:
             A = random((N, N)).astype(ddtype)
             B = random((N, N)).astype(ddtype)
             _ = ordqz(A, B, sort=lambda alpha, beta: alpha < beta,
@@ -2441,7 +2441,7 @@ class TestOrdQZWorkspaceSize(object):
         N = 202
 
         # segfaults if lwork parameter to dtrsen is too small
-        for ddtype in [np.float32, np.float64, np.complex, np.complex64]:
+        for ddtype in [np.float32, np.float64, np.complex128, np.complex64]:
             A = random((N, N)).astype(ddtype)
             B = random((N, N)).astype(ddtype)
             S, T, alpha, beta, U, V = ordqz(A, B, sort='ouc')

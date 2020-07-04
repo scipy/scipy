@@ -253,7 +253,7 @@ def _clean_inputs(lp):
         raise TypeError
 
     try:
-        c = np.array(c, dtype=np.float, copy=True).squeeze()
+        c = np.array(c, dtype=np.float64, copy=True).squeeze()
     except ValueError:
         raise TypeError(
             "Invalid input for linprog: c must be a 1-D array of numerical "

@@ -1923,7 +1923,7 @@ def _cast_to_array_dtype(in1, in2):
 
     Those can be raised when casting complex to real.
     """
-    if numpy.issubdtype(in2.dtype, numpy.float):
+    if numpy.issubdtype(in2.dtype, numpy.float64):
         # dtype to cast to is not complex, so use .real
         in1 = in1.real.astype(in2.dtype)
     else:

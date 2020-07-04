@@ -77,7 +77,7 @@ def test_linear_sum_assignment_input_validation():
                        linear_sum_assignment(matrix(C)))
 
     I = np.identity(3)
-    assert_array_equal(linear_sum_assignment(I.astype(np.bool)),
+    assert_array_equal(linear_sum_assignment(I.astype(np.bool_)),
                        linear_sum_assignment(I))
     assert_raises(ValueError, linear_sum_assignment, I.astype(str))
 

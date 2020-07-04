@@ -567,7 +567,7 @@ def mode(a, axis=0, nan_policy='propagate'):
 
     inds = np.ndindex(a_view.shape[:-1])
     modes = np.empty(a_view.shape[:-1], dtype=a.dtype)
-    counts = np.zeros(a_view.shape[:-1], dtype=np.int)
+    counts = np.zeros(a_view.shape[:-1], dtype=np.int_)
     for ind in inds:
         modes[ind], counts[ind] = _mode1D(a_view[ind])
     newshape = list(a.shape)
@@ -6702,7 +6702,7 @@ def ks_2samp(data1, data2, alternative='two-sided', mode='auto'):
     cdf1 = np.searchsorted(data1, data_all, side='right') / n1
     cdf2 = np.searchsorted(data2, data_all, side='right') / n2
     cddiffs = cdf1 - cdf2
-    minS = -np.min(cddiffs)
+    minS = np.clip(-np.min(cddiffs), 0, 1)  # Ensure sign of minS is not negative.
     maxS = np.max(cddiffs)
     alt2Dvalue = {'less': minS, 'greater': maxS, 'two-sided': max(minS, maxS)}
     d = alt2Dvalue[alternative]
@@ -6715,11 +6715,11 @@ def ks_2samp(data1, data2, alternative='two-sided', mode='auto'):
         mode = 'exact' if max(n1, n2) <= MAX_AUTO_N else 'asymp'
     elif mode == 'exact':
         # If lcm(n1, n2) is too big, switch from exact to asymp
-        if n1g >= np.iinfo(np.int).max / n2g:
+        if n1g >= np.iinfo(np.int_).max / n2g:
             mode = 'asymp'
             warnings.warn(
-                "Exact ks_2samp calculation not possible with samples sizes "
-                "%d and %d. Switching to 'asymp' " % (n1, n2), RuntimeWarning)
+                f"Exact ks_2samp calculation not possible with samples sizes "
+                f"{n1} and {n2}. Switching to 'asymp'.", RuntimeWarning)
 
     if mode == 'exact':
         success, d, prob = _attempt_exact_2kssamp(n1, n2, g, d, alternative)
@@ -6731,13 +6731,16 @@ def ks_2samp(data1, data2, alternative='two-sided', mode='auto'):
 
     if mode == 'asymp':
         # The product n1*n2 is large.  Use Smirnov's asymptoptic formula.
+        # Ensure float to avoid overflow in multiplication
+        # sorted because the one-sided formula is not symmetric in n1, n2
+        m, n = sorted([float(n1), float(n2)], reverse=True)
+        en = m * n / (m + n)
         if alternative == 'two-sided':
-            en = n1 * n2 / (n1 + n2)
             prob = distributions.kstwo.sf(d, np.round(en))
         else:
-            m, n = max(n1, n2), min(n1, n2)
-            z = np.sqrt(m*n/(m+n)) * d
+            z = np.sqrt(en) * d
             # Use Hodges' suggested approximation Eqn 5.3
+            # Requires m to be the larger of (n1, n2)
             expt = -2 * z**2 - 2 * z * (m + 2*n)/np.sqrt(m*n*(m+n))/3.0
             prob = np.exp(expt)
 

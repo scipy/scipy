@@ -238,6 +238,9 @@ class KDTree(object):
     """
     def __init__(self, data, leafsize=10):
         self.data = np.asarray(data)
+        if self.data.dtype.kind == 'c':
+            raise TypeError("KDTree does not work with complex data")
+
         self.n, self.m = np.shape(self.data)
         self.leafsize = int(leafsize)
         if self.leafsize < 1:
@@ -486,6 +489,8 @@ class KDTree(object):
 
         """
         x = np.asarray(x)
+        if x.dtype.kind == 'c':
+            raise TypeError("KDTree does not work with complex data")
         if np.shape(x)[-1] != self.m:
             raise ValueError("x must consist of vectors of length %d but has shape %s" % (self.m, np.shape(x)))
         if p < 1:
@@ -619,6 +624,8 @@ class KDTree(object):
 
         """
         x = np.asarray(x)
+        if x.dtype.kind == 'c':
+            raise TypeError("KDTree does not work with complex data")
         if x.shape[-1] != self.m:
             raise ValueError("Searching for a %d-dimensional point in a "
                              "%d-dimensional KDTree" % (x.shape[-1], self.m))

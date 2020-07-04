@@ -606,7 +606,7 @@ class TestTbtrs(object):
         """Test if invalid values of uplo, trans and diag raise exceptions"""
         # Argument checks occur independently of used datatype.
         # This mean we must not parameterize all available datatypes.
-        tbtrs = get_lapack_funcs('tbtrs', dtype=np.float)
+        tbtrs = get_lapack_funcs('tbtrs', dtype=np.float64)
         ab = rand(4, 2)
         b = rand(2, 4)
         assert_raises(Exception, tbtrs, ab, b, uplo, trans, diag)
