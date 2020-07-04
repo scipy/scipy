@@ -152,6 +152,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
 
     constraints : {Constraint, dict} or List of {Constraint, dict}, optional
         Constraints definition (only for COBYLA, SLSQP and trust-constr).
+
         Constraints for 'trust-constr' are defined as a single object or a
         list of objects specifying constraints to the optimization problem.
         Available constraints are:
