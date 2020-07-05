@@ -1006,8 +1006,8 @@ def eigvalsh(a, b=None, lower=True, overwrite_a=False,
     """
     return eigh(a, b=b, lower=lower, eigvals_only=True,
                 overwrite_a=overwrite_a, overwrite_b=overwrite_b,
-                turbo=turbo, type=type, check_finite=check_finite,
-                subset_by_index=eigvals or subset_by_index,
+                turbo=turbo, eigvals=eigvals, type=type,
+                check_finite=check_finite, subset_by_index=subset_by_index,
                 subset_by_value=subset_by_value, driver=driver)
 
 
