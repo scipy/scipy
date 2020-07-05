@@ -115,7 +115,7 @@ int ellpj(double u, double m, double *sn, double *cn, double *dn, double *ph)
         /* When phi is in the I and III quadrants */
         if(r == 0 || r == 2) {
             t = cosh(du);
-            phi = 0.25*(1.0-m)*(sinh(du)*t-du)/t;
+            phi = 0.25*(1.0-m)*(sinh(du)-du/t);
             /* add Gudermannian term */
             phi += 2.0*atan(exp(du)) - NPY_PI_2;
         }
@@ -123,7 +123,7 @@ int ellpj(double u, double m, double *sn, double *cn, double *dn, double *ph)
         else{
             du = K-du;
             t = cosh(du);
-            phi = 0.25*(1.0-m)*(sinh(du)*t-du)/t;
+            phi = 0.25*(1.0-m)*(sinh(du)-du/t);
             /* add Gudermannian term */
             phi += 2.0*atan(exp(du)) - NPY_PI_2;
             phi = NPY_PI_2-phi;
