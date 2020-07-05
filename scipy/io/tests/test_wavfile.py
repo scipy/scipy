@@ -4,7 +4,8 @@ from io import BytesIO
 
 import numpy as np
 from numpy.testing import (assert_equal, assert_, assert_array_equal,
-                           break_cycles, suppress_warnings, IS_PYPY)
+                           break_cycles, suppress_warnings, IS_PYPY,
+                           assert_allclose)
 import pytest
 from pytest import raises, warns
 
@@ -27,6 +28,12 @@ def test_read_1():
 
         del data
 
+    rate, data = wavfile.read(datafile(filename), mmap=False, int_form='rj')
+
+    assert_equal(rate, 44100)
+    assert data.dtype == np.int32  # actually np.intc on Windows
+    assert_equal(data.shape, (4410,))
+
 
 def test_read_2():
     # 8-bit unsigned PCM
@@ -40,16 +47,33 @@ def test_read_2():
 
         del data
 
+    rate, data = wavfile.read(datafile(filename), mmap=False, int_form='rj')
+
+    assert_equal(rate, 8000)
+    assert_(np.issubdtype(data.dtype, np.int8))  # signed
+    assert_equal(data.shape, (800, 2))
+
+    # from Ocenaudio's statistics
+    assert data.max() == +90
+    assert data.min() == -91
+
+    del data
+
 
 def test_read_3():
     # Little-endian float
-    for mmap in [False, True]:
+    for mmap, int_form in [(False, 'lj'), (False, 'rj'),
+                           (False, 'fp'), (False, 'fs'), (True, 'lj')]:
         filename = 'test-44100Hz-2ch-32bit-float-le.wav'
-        rate, data = wavfile.read(datafile(filename), mmap=mmap)
+        rate, data = wavfile.read(datafile(filename), mmap=mmap,
+                                  int_form=int_form)
 
         assert_equal(rate, 44100)
         assert_(np.issubdtype(data.dtype, np.float32))
         assert_equal(data.shape, (441, 2))
+
+        assert_allclose(data.max(), +0.8, rtol=1e-4)
+        assert_allclose(data.min(), -0.8, rtol=1e-4)
 
         del data
 
@@ -82,6 +106,9 @@ def test_read_5():
                                                 data.dtype.byteorder == '='))
         assert_equal(data.shape, (441, 2))
 
+        assert_allclose(data.max(), +0.8, rtol=1e-4)
+        assert_allclose(data.min(), -0.8, rtol=1e-4)
+
         del data
 
 
@@ -106,6 +133,20 @@ def test_5_bit_odd_size_no_pad():
         assert_equal(data.min(), 0)  # Lowest possible
 
         del data
+
+    rate, data = wavfile.read(datafile(filename), mmap=False, int_form='rj')
+
+    assert_equal(rate, 8000)
+    assert_(np.issubdtype(data.dtype, np.int8))  # signed
+    assert_equal(data.shape, (9, 5))
+
+    # 3 MSBits should be 0b111 or 0b000
+    assert_(np.isin(data & 0b11100000, [0, 0b11100000]).all())
+
+    # Unsigned
+    assert_equal(data.max(), +15)  # Highest possible
+    assert_equal(data[0, 0], 0)  # Midpoint is 0 for rj since signed
+    assert_equal(data.min(), -16)  # Lowest possible
 
 
 def test_12_bit_even_size():
@@ -151,6 +192,41 @@ def test_24_bit_odd_size_with_pad():
                         [+0x4000_0000, +0x3fff_ff00, +0x100],
                         [+0x7fff_ff00, +0x7fff_ff00, +0x200]])
     #                     ^ clipped
+
+    rate, data = wavfile.read(datafile(filename), mmap=False, int_form='rj')
+
+    assert_equal(rate, 8000)
+    assert data.dtype == np.int32  # actually np.intc on Windows
+    assert_equal(data.shape, (5, 3))
+
+    # All MSBytes should be 0x00 or 0xff
+    assert_(np.isin(data & 0xff000000, [0, 0xff000000]).all())
+
+    # Hand-made max/min samples under different conventions:
+    #                      2**(N-1)     2**(N-1)-1     LSB
+    assert_equal(data, [[-0x800000, -0x7fffff, -2],
+                        [-0x400000, -0x3fffff, -1],
+                        [+0x000000, +0x000000, +0],
+                        [+0x400000, +0x3fffff, +1],
+                        [+0x7fffff, +0x7fffff, +2]])
+    #                     ^ clipped
+
+    rate, data = wavfile.read(datafile(filename), mmap=False, int_form='fp')
+
+    assert_equal(rate, 8000)
+    assert_(np.issubdtype(data.dtype, np.float64))
+    assert_equal(data.shape, (5, 3))
+
+    assert_equal(data[:4, 0], [-1, -0.5, 0, 0.5])
+    assert_equal(data[:, 2], np.array([-2, -1, 0, 1, 2]) / (2**23))
+
+    rate, data = wavfile.read(datafile(filename), mmap=False, int_form='fs')
+
+    assert_equal(rate, 8000)
+    assert_(np.issubdtype(data.dtype, np.float64))
+    assert_equal(data.shape, (5, 3))
+
+    assert_equal(data[4, 1], 1)
 
 
 def test_20_bit_extra_data():
