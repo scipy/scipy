@@ -1356,8 +1356,11 @@ class dirichlet_gen(multi_rv_generic):
     support on the simplex defined by
 
     .. math::
-        \sum_{i=1}^{K} x_i \le 1
+        \sum_{i=1}^{K} x_i = 1
 
+    where 0 < x_i < 1.
+
+    If the quantiles don't lie within the simplex, a ValueError is raised.
 
     The probability density function for `dirichlet` is
 
@@ -3032,7 +3035,7 @@ class multinomial_gen(multi_rv_generic):
         pcond = np.any(p < 0, axis=-1)
         pcond |= np.any(p > 1, axis=-1)
 
-        n = np.array(n, dtype=np.int, copy=True)
+        n = np.array(n, dtype=np.int_, copy=True)
 
         # true for bad n
         ncond = n <= 0
@@ -3046,7 +3049,7 @@ class multinomial_gen(multi_rv_generic):
         x_ is an int array; xcond is a boolean array flagging values out of the
         domain.
         """
-        xx = np.asarray(x, dtype=np.int)
+        xx = np.asarray(x, dtype=np.int_)
 
         if xx.ndim == 0:
             raise ValueError("x must be an array.")

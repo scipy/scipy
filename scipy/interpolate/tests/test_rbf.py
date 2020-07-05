@@ -105,12 +105,6 @@ def check_rbf1d_regularity(function, atol):
     rbf = Rbf(x, y, function=function)
     xi = linspace(0, 10, 100)
     yi = rbf(xi)
-    # import matplotlib.pyplot as plt
-    # plt.figure()
-    # plt.plot(x, y, 'o', xi, sin(xi), ':', xi, yi, '-')
-    # plt.plot(x, y, 'o', xi, yi-sin(xi), ':')
-    # plt.title(function)
-    # plt.show()
     msg = "abs-diff: %f" % abs(yi - sin(xi)).max()
     assert_(allclose(yi, sin(xi), atol=atol), msg)
 

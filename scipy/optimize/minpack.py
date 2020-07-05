@@ -6,7 +6,7 @@ from numpy import (atleast_1d, dot, take, triu, shape, eye,
                    transpose, zeros, prod, greater,
                    asarray, inf,
                    finfo, inexact, issubdtype, dtype)
-from scipy.linalg import svd, cholesky, solve_triangular, LinAlgError
+from scipy.linalg import svd, cholesky, solve_triangular, LinAlgError, inv
 from scipy._lib._util import _asarray_validated, _lazywhere
 from scipy._lib._util import getfullargspec_no_self as _getfullargspec
 from .optimize import OptimizeResult, _check_unknown_options, OptimizeWarning
@@ -132,6 +132,21 @@ def fsolve(func, x0, args=(), fprime=None, full_output=0,
     Notes
     -----
     ``fsolve`` is a wrapper around MINPACK's hybrd and hybrj algorithms.
+
+    Examples
+    --------
+    Find a solution to the system of equations:
+    ``x0*cos(x1) = 4,  x1*x0 - x1 = 5``.
+
+    >>> from scipy.optimize import fsolve
+    >>> def func(x):
+    ...     return [x[0] * np.cos(x[1]) - 4,
+    ...             x[1] * x[0] - x[1] - 5]
+    >>> root = fsolve(func, [1, 1])
+    >>> root
+    array([6.50409711, 0.90841421])
+    >>> np.isclose(func(root), [0.0, 0.0])  # func(root) should be almost 0.0.
+    array([ True,  True])
 
     """
     options = {'col_deriv': col_deriv,
@@ -378,6 +393,15 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0,
 
     The solution, `x`, is always a 1-D array, regardless of the shape of `x0`,
     or whether `x0` is a scalar.
+
+    Examples
+    --------
+    >>> from scipy.optimize import leastsq
+    >>> def func(x):
+    ...     return 2*(x-3)**2+1
+    >>> leastsq(func, 0)
+    (array([2.99999999]), 1)
+
     """
     x0 = asarray(x0).flatten()
     n = len(x0)
@@ -438,7 +462,6 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0,
     if full_output:
         cov_x = None
         if info in LEASTSQ_SUCCESS:
-            from numpy.dual import inv
             perm = take(eye(n), retval[1]['ipvt'] - 1, 0)
             r = triu(transpose(retval[1]['fjac'])[:n, :])
             R = dot(r, perm)
@@ -551,12 +574,12 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         If True, `sigma` is used in an absolute sense and the estimated parameter
         covariance `pcov` reflects these absolute values.
 
-        If False, only the relative magnitudes of the `sigma` values matter.
+        If False (default), only the relative magnitudes of the `sigma` values matter.
         The returned parameter covariance matrix `pcov` is based on scaling
         `sigma` by a constant factor. This constant is set by demanding that the
         reduced `chisq` for the optimal parameters `popt` when using the
         *scaled* `sigma` equals unity. In other words, `sigma` is scaled to
-        match the sample variance of the residuals after the fit.
+        match the sample variance of the residuals after the fit. Default is False.
         Mathematically,
         ``pcov(absolute_sigma=False) = pcov(absolute_sigma=True) * chisq(popt)/(M-N)``
     check_finite : bool, optional

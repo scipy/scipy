@@ -38,7 +38,7 @@ from . import morphology
 __all__ = ['label', 'find_objects', 'labeled_comprehension', 'sum', 'mean',
            'variance', 'standard_deviation', 'minimum', 'maximum', 'median',
            'minimum_position', 'maximum_position', 'extrema', 'center_of_mass',
-           'histogram', 'watershed_ift']
+           'histogram', 'watershed_ift', 'sum_labels']
 
 
 def label(input, structure=None, output=None):
@@ -554,7 +554,7 @@ def _stats(input, labels=None, index=None, centered=False):
         if centered:
             sums_c = _sum_centered(labels)
         # make sure all index values are valid
-        idxs = numpy.asanyarray(index, numpy.int).copy()
+        idxs = numpy.asanyarray(index, numpy.int_).copy()
         found = (idxs >= 0) & (idxs < counts.size)
         idxs[~found] = 0
 
@@ -572,6 +572,20 @@ def _stats(input, labels=None, index=None, centered=False):
 
 
 def sum(input, labels=None, index=None):
+    """
+    Calculate the sum of the values of the array.
+
+    Notes
+    -----
+    This is an alias for `ndimage.sum_labels` kept for backwards compatibility
+    reasons, for new code please prefer `sum_labels`.  See the `sum_labels`
+    docstring for more details.
+
+    """
+    return sum_labels(input, labels, index)
+
+
+def sum_labels(input, labels=None, index=None):
     """
     Calculate the sum of the values of the array.
 
@@ -665,7 +679,7 @@ def mean(input, labels=None, index=None):
     """
 
     count, sum = _stats(input, labels, index)
-    return sum / numpy.asanyarray(count).astype(numpy.float)
+    return sum / numpy.asanyarray(count).astype(numpy.float64)
 
 
 def variance(input, labels=None, index=None):
@@ -831,7 +845,7 @@ def _select(input, labels=None, index=None, find_min=False, find_max=False,
         found = (unique_labels[idxs] == index)
     else:
         # labels are an integer type, and there aren't too many
-        idxs = numpy.asanyarray(index, numpy.int).copy()
+        idxs = numpy.asanyarray(index, numpy.int_).copy()
         found = (idxs >= 0) & (idxs <= labels.max())
 
     idxs[~ found] = labels.max() + 1
@@ -864,9 +878,9 @@ def _select(input, labels=None, index=None, find_min=False, find_max=False,
         result += [maxpos[idxs]]
     if find_median:
         locs = numpy.arange(len(labels))
-        lo = numpy.zeros(labels.max() + 2, numpy.int)
+        lo = numpy.zeros(labels.max() + 2, numpy.int_)
         lo[labels[::-1]] = locs[::-1]
-        hi = numpy.zeros(labels.max() + 2, numpy.int)
+        hi = numpy.zeros(labels.max() + 2, numpy.int_)
         hi[labels] = locs
         lo = lo[idxs]
         hi = hi[idxs]
@@ -1203,7 +1217,7 @@ def maximum_position(input, labels=None, index=None):
     --------
     label, minimum, median, maximum_position, extrema, sum, mean, variance,
     standard_deviation
-    
+
     Examples
     --------
     >>> from scipy import ndimage
@@ -1222,14 +1236,14 @@ def maximum_position(input, labels=None, index=None):
     ...                 [0, 1, 2, 3]])
     >>> ndimage.maximum_position(a, lbl, 1)
     (1, 1)
-    
+
     If no index is given, non-zero `labels` are processed:
 
     >>> ndimage.maximum_position(a, lbl)
     (2, 3)
-    
+
     If there are no maxima, the position of the first element is returned:
-    
+
     >>> ndimage.maximum_position(a, lbl, 2)
     (0, 2)
 

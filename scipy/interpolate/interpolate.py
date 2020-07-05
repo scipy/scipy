@@ -12,6 +12,7 @@ from numpy import (array, transpose, searchsorted, atleast_1d, atleast_2d,
 
 import scipy.special as spec
 from scipy.special import comb
+from scipy._lib._util import prod
 
 from . import fitpack
 from . import dfitpack
@@ -21,13 +22,6 @@ from . import _ppoly
 from .fitpack2 import RectBivariateSpline
 from .interpnd import _ndim_coords_from_arrays
 from ._bsplines import make_interp_spline, BSpline
-
-
-def prod(x):
-    """Product of a list of numbers; ~40x faster vs np.prod for Python tuples"""
-    if len(x) == 0:
-        return 1
-    return functools.reduce(operator.mul, x)
 
 
 def lagrange(x, w):
@@ -518,8 +512,14 @@ class interp1d(_Interpolator1D):
                 # to get the correct shape of the output, which we then fill
                 # with nans.
                 # For slinear or zero order spline, we just pass nans through.
-                if np.isnan(self.x).any():
-                    xx = np.linspace(min(self.x), max(self.x), len(self.x))
+                mask = np.isnan(self.x)
+                if mask.any():
+                    sx = self.x[~mask]
+                    if sx.size == 0:
+                        raise ValueError("`x` array is all-nan")
+                    xx = np.linspace(np.nanmin(self.x),
+                                     np.nanmax(self.x),
+                                     len(self.x))
                     rewrite_nan = True
                 if np.isnan(self._y).any():
                     yy = np.ones_like(self._y)
@@ -812,9 +812,11 @@ class _PPolyBase(object):
         if x.ndim != 1:
             raise ValueError("invalid dimensions for x")
         if x.shape[0] != c.shape[1]:
-            raise ValueError("x and c have incompatible sizes")
+            raise ValueError("Shapes of x {} and c {} are incompatible"
+                             .format(x.shape, c.shape))
         if c.shape[2:] != self.c.shape[2:] or c.ndim != self.c.ndim:
-            raise ValueError("c and self.c have incompatible shapes")
+            raise ValueError("Shapes of c {} and self.c {} are incompatible"
+                             .format(c.shape, self.c.shape))
 
         if c.size == 0:
             return
@@ -1809,7 +1811,8 @@ class BPoly(_PPolyBase):
         """
         ya, yb = np.asarray(ya), np.asarray(yb)
         if ya.shape[1:] != yb.shape[1:]:
-            raise ValueError('ya and yb have incompatible dimensions.')
+            raise ValueError('Shapes of ya {} and yb {} are incompatible'
+                             .format(ya.shape, yb.shape))
 
         dta, dtb = ya.dtype, yb.dtype
         if (np.issubdtype(dta, np.complexfloating) or
@@ -1925,6 +1928,10 @@ class NdPPoly(object):
     Methods
     -------
     __call__
+    derivative
+    antiderivative
+    integrate
+    integrate_1d
     construct_fast
 
     See also
@@ -2578,6 +2585,25 @@ def interpn(points, values, xi, method="linear", bounds_error=True,
     -----
 
     .. versionadded:: 0.14
+
+    Examples
+    --------
+    Evaluate a simple example function on the points of a regular 3-D grid:
+
+    >>> from scipy.interpolate import interpn
+    >>> def value_func_3d(x, y, z):
+    ...     return 2 * x + 3 * y - z
+    >>> x = np.linspace(0, 5)
+    >>> y = np.linspace(0, 5)
+    >>> z = np.linspace(0, 5)
+    >>> points = (x, y, z)
+    >>> values = value_func_3d(*np.meshgrid(*points))
+
+    Evaluate the interpolating function at a point
+
+    >>> point = np.array([2.21, 3.12, 1.15])
+    >>> print(interpn(points, values, point))
+    [11.72]
 
     See also
     --------

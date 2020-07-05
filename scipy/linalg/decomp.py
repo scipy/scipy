@@ -75,7 +75,7 @@ def _geneig(a1, b1, left, right, overwrite_a, overwrite_b,
     ggev, = get_lapack_funcs(('ggev',), (a1, b1))
     cvl, cvr = left, right
     res = ggev(a1, b1, lwork=-1)
-    lwork = res[-2][0].real.astype(numpy.int)
+    lwork = res[-2][0].real.astype(numpy.int_)
     if ggev.typecode in 'cz':
         alpha, beta, vl, vr, work, info = ggev(a1, b1, cvl, cvr, lwork,
                                                overwrite_a, overwrite_b)
@@ -521,7 +521,7 @@ def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
                   'syevd': ['lwork', 'liwork'],
                   'syevr': ['lwork', 'liwork'],
                   'heevd': ['lwork', 'liwork', 'lrwork'],
-                  'heevr': ['lwork', 'liwork', 'lrwork'],
+                  'heevr': ['lwork', 'lrwork', 'liwork'],
                   }
 
     if b is None:  # Standard problem
@@ -533,7 +533,7 @@ def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
 
         lw = _compute_lwork(drvlw, **clw_args)
         # Multiple lwork vars
-        if isinstance(drvlw, tuple):
+        if isinstance(lw, tuple):
             lwork_args = dict(zip(lwork_spec[pfx+driver], lw))
         else:
             lwork_args = {'lwork': lw}

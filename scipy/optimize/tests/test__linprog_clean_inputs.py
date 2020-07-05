@@ -143,6 +143,7 @@ def test_type_errors():
 
     assert_raises(ValueError, _clean_inputs, lp._replace(bounds=[[[1, 2]]]))
 
+
 def test_non_finite_errors():
     lp = _LPProblem(
         c=[1, 2],

@@ -1469,3 +1469,19 @@ class Test_sorted_query_ball_point(object):
         idxs_list_False = self.ckdt.query_ball_point(self.x, 1., return_sorted=False)
         for idxs0, idxs1 in zip(idxs_list_False, idxs_list_single):
             assert_array_equal(idxs0, idxs1)
+
+
+def test_kdtree_complex_data():
+    # Test that KDTree rejects complex input points (gh-9108)
+    points = np.random.rand(10, 2).view(complex)
+
+    with pytest.raises(TypeError, match="complex data"):
+        t = KDTree(points)
+
+    t = KDTree(points.real)
+
+    with pytest.raises(TypeError, match="complex data"):
+        t.query(points)
+
+    with pytest.raises(TypeError, match="complex data"):
+        t.query_ball_point(points, r=1)

@@ -4,7 +4,7 @@ import numpy as np
 from numpy import sqrt, cos, sin, arctan, exp, log, pi, Inf
 from numpy.testing import (assert_,
         assert_allclose, assert_array_less, assert_almost_equal)
-from pytest import raises as assert_raises
+import pytest
 
 from scipy.integrate import quad, dblquad, tplquad, nquad
 from scipy._lib._ccallback import LowLevelCallable
@@ -46,7 +46,7 @@ class TestCtypesQuad(object):
         else:
             # This test doesn't work on some Linux platforms (Fedora for
             # example) that put an ld script in libm.so - see gh-5370
-            self.skipTest("Ctypes can't import libm.so")
+            pytest.skip("Ctypes can't import libm.so")
 
         restype = ctypes.c_double
         argtypes = (ctypes.c_double,)
@@ -88,7 +88,7 @@ class TestCtypesQuad(object):
         for j, func in enumerate(all_sigs):
             callback = LowLevelCallable(func)
             if func in legacy_only_sigs:
-                assert_raises(ValueError, quad, callback, 0, pi)
+                pytest.raises(ValueError, quad, callback, 0, pi)
             else:
                 assert_allclose(quad(callback, 0, pi)[0], 2.0)
 
@@ -97,7 +97,7 @@ class TestCtypesQuad(object):
             if func in legacy_sigs:
                 assert_allclose(quad(func, 0, pi)[0], 2.0)
             else:
-                assert_raises(ValueError, quad, func, 0, pi)
+                pytest.raises(ValueError, quad, func, 0, pi)
 
 
 class TestMultivariateCtypesQuad(object):

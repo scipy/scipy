@@ -17,6 +17,7 @@ Convolution
    correlate2d        -- 2-D correlation (more options).
    sepfir2d           -- Convolve with a 2-D separable FIR filter.
    choose_conv_method -- Chooses faster of FFT and direct convolution methods.
+   correlation_lags   -- Determines lag indices for 1D cross-correlation.
 
 B-splines
 =========
@@ -93,6 +94,7 @@ Filter design
    freqz         -- Digital filter frequency response from TF coefficients.
    freqz_zpk     -- Digital filter frequency response from ZPK coefficients.
    sosfreqz      -- Digital filter frequency response for SOS format filter.
+   gammatone     -- FIR and IIR gammatone filter design.
    group_delay   -- Digital filter group delay.
    iirdesign     -- IIR filter design given bands and gains.
    iirfilter     -- IIR filter design given order and critical frequencies.

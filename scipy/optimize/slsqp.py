@@ -169,7 +169,7 @@ def fmin_slsqp(func, x0, eqcons=(), f_eqcons=None, ieqcons=(), f_ieqcons=None,
          6 : Singular matrix C in LSQ subproblem
          7 : Rank-deficient equality constraint subproblem HFTI
          8 : Positive directional derivative for linesearch
-         9 : Iteration limit exceeded
+         9 : Iteration limit reached
 
     Examples
     --------
@@ -239,7 +239,7 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
         automatically.
     """
     _check_unknown_options(unknown_options)
-    iter = maxiter
+    iter = maxiter - 1
     acc = ftol
     epsilon = eps
 
@@ -302,7 +302,7 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
                    6: "Singular matrix C in LSQ subproblem",
                    7: "Rank-deficient equality constraint subproblem HFTI",
                    8: "Positive directional derivative for linesearch",
-                   9: "Iteration limit exceeded"}
+                   9: "Iteration limit reached"}
 
     # Transform x0 into an array.
     x = asfarray(x0).flatten()
@@ -368,8 +368,6 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
     sf = _prepare_scalar_function(func, x, jac=jac, args=args, epsilon=eps,
                                   finite_diff_rel_step=finite_diff_rel_step,
                                   bounds=new_bounds)
-    func = sf.fun
-    fprime = sf.grad
 
     # Initialize the iteration counter and the mode value
     mode = array(0, int)
@@ -401,72 +399,42 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
     if iprint >= 2:
         print("%5s %5s %16s %16s" % ("NIT", "FC", "OBJFUN", "GNORM"))
 
+    # mode is zero on entry, so call objective, constraints and gradients
+    # there should be no func evaluations here because it's cached from
+    # ScalarFunction
+    fx = sf.fun(x)
+    try:
+        fx = float(np.asarray(fx))
+    except (TypeError, ValueError):
+        raise ValueError("Objective function must return a scalar")
+    g = append(sf.grad(x), 0.0)
+    c = _eval_constraint(x, cons)
+    a = _eval_con_normals(x, cons, la, n, m, meq, mieq)
+
     while 1:
-
-        if mode == 0 or mode == 1:  # objective and constraint evaluation required
-
-            # Compute objective function
-            fx = func(x)
-            try:
-                fx = float(np.asarray(fx))
-            except (TypeError, ValueError):
-                raise ValueError("Objective function must return a scalar")
-            # Compute the constraints
-            if cons['eq']:
-                c_eq = concatenate([atleast_1d(con['fun'](x, *con['args']))
-                                    for con in cons['eq']])
-            else:
-                c_eq = zeros(0)
-            if cons['ineq']:
-                c_ieq = concatenate([atleast_1d(con['fun'](x, *con['args']))
-                                     for con in cons['ineq']])
-            else:
-                c_ieq = zeros(0)
-
-            # Now combine c_eq and c_ieq into a single matrix
-            c = concatenate((c_eq, c_ieq))
-
-        if mode == 0 or mode == -1:  # gradient evaluation required
-
-            # Compute the derivatives of the objective function
-            # For some reason SLSQP wants g dimensioned to n+1
-            g = append(fprime(x), 0.0)
-
-            # Compute the normals of the constraints
-            if cons['eq']:
-                a_eq = vstack([con['jac'](x, *con['args'])
-                               for con in cons['eq']])
-            else:  # no equality constraint
-                a_eq = zeros((meq, n))
-
-            if cons['ineq']:
-                a_ieq = vstack([con['jac'](x, *con['args'])
-                                for con in cons['ineq']])
-            else:  # no inequality constraint
-                a_ieq = zeros((mieq, n))
-
-            # Now combine a_eq and a_ieq into a single a matrix
-            if m == 0:  # no constraints
-                a = zeros((la, n))
-            else:
-                a = vstack((a_eq, a_ieq))
-            a = concatenate((a, zeros([la, 1])), 1)
-
         # Call SLSQP
         slsqp(m, meq, x, xl, xu, fx, c, g, a, acc, majiter, mode, w, jw,
               alpha, f0, gs, h1, h2, h3, h4, t, t0, tol,
               iexact, incons, ireset, itermx, line,
               n1, n2, n3)
 
-        # call callback if major iteration has incremented
-        if callback is not None and majiter > majiter_prev:
-            callback(np.copy(x))
+        if mode == 1:  # objective and constraint evaluation required
+            fx = sf.fun(x)
+            c = _eval_constraint(x, cons)
 
-        # Print the status of the current iterate if iprint > 2 and the
-        # major iteration has incremented
-        if iprint >= 2 and majiter > majiter_prev:
-            print("%5i %5i % 16.6E % 16.6E" % (majiter, sf.nfev,
-                                               fx, linalg.norm(g)))
+        if mode == -1:  # gradient evaluation required
+            g = append(sf.grad(x), 0.0)
+            a = _eval_con_normals(x, cons, la, n, m, meq, mieq)
+
+        if majiter > majiter_prev:
+            # call callback if major iteration has incremented
+            if callback is not None:
+                callback(np.copy(x))
+
+            # Print the status of the current iterate if iprint > 2
+            if iprint >= 2:
+                print("%5i %5i % 16.6E % 16.6E" % (majiter, sf.nfev,
+                                                   fx, linalg.norm(g)))
 
         # If exit mode is not -1 or 1, slsqp has completed
         if abs(mode) != 1:
@@ -485,6 +453,49 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
     return OptimizeResult(x=x, fun=fx, jac=g[:-1], nit=int(majiter),
                           nfev=sf.nfev, njev=sf.ngev, status=int(mode),
                           message=exit_modes[int(mode)], success=(mode == 0))
+
+
+def _eval_constraint(x, cons):
+    # Compute constraints
+    if cons['eq']:
+        c_eq = concatenate([atleast_1d(con['fun'](x, *con['args']))
+                            for con in cons['eq']])
+    else:
+        c_eq = zeros(0)
+
+    if cons['ineq']:
+        c_ieq = concatenate([atleast_1d(con['fun'](x, *con['args']))
+                             for con in cons['ineq']])
+    else:
+        c_ieq = zeros(0)
+
+    # Now combine c_eq and c_ieq into a single matrix
+    c = concatenate((c_eq, c_ieq))
+    return c
+
+
+def _eval_con_normals(x, cons, la, n, m, meq, mieq):
+    # Compute the normals of the constraints
+    if cons['eq']:
+        a_eq = vstack([con['jac'](x, *con['args'])
+                       for con in cons['eq']])
+    else:  # no equality constraint
+        a_eq = zeros((meq, n))
+
+    if cons['ineq']:
+        a_ieq = vstack([con['jac'](x, *con['args'])
+                        for con in cons['ineq']])
+    else:  # no inequality constraint
+        a_ieq = zeros((mieq, n))
+
+    # Now combine a_eq and a_ieq into a single a matrix
+    if m == 0:  # no constraints
+        a = zeros((la, n))
+    else:
+        a = vstack((a_eq, a_ieq))
+    a = concatenate((a, zeros([la, 1])), 1)
+
+    return a
 
 
 if __name__ == '__main__':

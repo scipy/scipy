@@ -100,6 +100,16 @@ class csr_matrix(_cs_matrix):
            [0, 0, 3],
            [4, 5, 6]])
 
+    Duplicate entries are summed together:
+
+    >>> row = np.array([0, 1, 2, 0])
+    >>> col = np.array([0, 1, 1, 0])
+    >>> data = np.array([1, 2, 4, 8])
+    >>> csr_matrix((data, (row, col)), shape=(3, 3)).toarray()
+    array([[9, 0, 0],
+           [0, 2, 0],
+           [0, 4, 0]])
+
     As an example of how to construct a CSR matrix incrementally,
     the following snippet builds a term-document matrix from texts:
 

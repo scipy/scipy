@@ -15,7 +15,7 @@ class Benchmark(object):
     """
     Base class with sensible options
     """
-    goal_time = 0.25
+    pass
 
 
 class LimitedParamBenchmark(Benchmark):

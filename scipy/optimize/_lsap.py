@@ -82,7 +82,7 @@ def linear_sum_assignment(cost_matrix, maximize=False):
                          % (cost_matrix.shape,))
 
     if not (np.issubdtype(cost_matrix.dtype, np.number) or
-            cost_matrix.dtype == np.dtype(np.bool)):
+            cost_matrix.dtype == np.dtype(np.bool_)):
         raise ValueError("expected a matrix containing numerical entries, got %s"
                          % (cost_matrix.dtype,))
 
