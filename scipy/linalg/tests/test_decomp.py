@@ -41,6 +41,9 @@ from numpy.random import seed, random
 from scipy.linalg._testutils import assert_no_overwrite
 from scipy.sparse.sputils import bmat, matrix
 
+from scipy._lib._testutils import check_free_memory
+from scipy.linalg.blas import HAS_ILP64
+
 
 def _random_hermitian_matrix(n, posdef=False, dtype=float):
     "Generate random sym/hermitian array of the given size n"
@@ -294,11 +297,8 @@ class TestEig(object):
                    [16, 25, 27, 14, 23],
                    [24, 35, 18, 21, 22]])
 
-        olderr = np.seterr(all='ignore')
-        try:
+        with np.errstate(all='ignore'):
             self._check_gen_eig(A, B)
-        finally:
-            np.seterr(**olderr)
 
     def test_falker(self):
         # Test matrices giving some Nan generalized eigenvalues.
@@ -310,11 +310,8 @@ class TestEig(object):
         A = bmat([[I3, Z], [Z, -K]])
         B = bmat([[Z, I3], [M, D]])
 
-        olderr = np.seterr(all='ignore')
-        try:
+        with np.errstate(all='ignore'):
             self._check_gen_eig(A, B)
-        finally:
-            np.seterr(**olderr)
 
     def test_bad_geneig(self):
         # Ticket #709 (strange return values from DGGEV)
@@ -334,13 +331,10 @@ class TestEig(object):
 
         # With a buggy LAPACK, this can fail for different omega on different
         # machines -- so we need to test several values
-        olderr = np.seterr(all='ignore')
-        try:
+        with np.errstate(all='ignore'):
             for k in range(100):
                 A, B = matrices(omega=k*5./100)
                 self._check_gen_eig(A, B)
-        finally:
-            np.seterr(**olderr)
 
     def test_make_eigvals(self):
         # Step through all paths in _make_eigvals
@@ -1149,6 +1143,16 @@ class TestSVD_GESDD(object):
              [0., 0., 0.16666667, 0.66666667, 0.16666667, 0.],
              [0., 0., 0., 0.16666667, 0.66666667, 0.16666667]])
         svd(b, lapack_driver=self.lapack_driver)
+
+    @pytest.mark.skipif(not HAS_ILP64, reason="64-bit LAPACK required")
+    @pytest.mark.slow
+    def test_large_matrix(self):
+        check_free_memory(free_mb=17000)
+        A = np.zeros([1, 2**31], dtype=np.float32)
+        A[0, -1] = 1
+        u, s, vh = svd(A, full_matrices=False)
+        assert_allclose(s[0], 1.0)
+        assert_allclose(u[0, 0] * vh[0, -1], 1.0)
 
 
 class TestSVD_GESVD(TestSVD_GESDD):
@@ -2276,12 +2280,8 @@ class TestOrdQZ(object):
         cls.B = [B1, B2, B3, B4, A5]
 
     def qz_decomp(self, sort):
-        try:
-            olderr = np.seterr('raise')
+        with np.errstate(all='raise'):
             ret = [ordqz(Ai, Bi, sort=sort) for Ai, Bi in zip(self.A, self.B)]
-        finally:
-            np.seterr(**olderr)
-
         return tuple(ret)
 
     def check(self, A, B, sort, AA, BB, alpha, beta, Q, Z):
@@ -2442,7 +2442,7 @@ class TestOrdQZWorkspaceSize(object):
             _ = ordqz(A, B, sort=lambda alpha, beta: alpha < beta,
                       output='real')
 
-        for ddtype in [np.complex, np.complex64]:
+        for ddtype in [np.complex128, np.complex64]:
             A = random((N, N)).astype(ddtype)
             B = random((N, N)).astype(ddtype)
             _ = ordqz(A, B, sort=lambda alpha, beta: alpha < beta,
@@ -2454,7 +2454,7 @@ class TestOrdQZWorkspaceSize(object):
         N = 202
 
         # segfaults if lwork parameter to dtrsen is too small
-        for ddtype in [np.float32, np.float64, np.complex, np.complex64]:
+        for ddtype in [np.float32, np.float64, np.complex128, np.complex64]:
             A = random((N, N)).astype(ddtype)
             B = random((N, N)).astype(ddtype)
             S, T, alpha, beta, U, V = ordqz(A, B, sort='ouc')

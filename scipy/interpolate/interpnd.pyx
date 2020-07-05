@@ -94,7 +94,8 @@ class NDInterpolatorBase(object):
             self.is_complex = np.issubdtype(self.values.dtype, np.complexfloating)
             if self.is_complex:
                 if need_contiguous:
-                    self.values = np.ascontiguousarray(self.values, dtype=np.complex)
+                    self.values = np.ascontiguousarray(self.values,
+                                                       dtype=np.complex128)
                 self.fill_value = complex(fill_value)
             else:
                 if need_contiguous:
@@ -811,7 +812,7 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
     The gradients of the interpolant are chosen so that the curvature
     of the interpolating surface is approximatively minimized. The
     gradients necessary for this are estimated using the global
-    algorithm described in [Nielson83,Renka84]_.
+    algorithm described in [Nielson83]_ and [Renka84]_.
 
     References
     ----------

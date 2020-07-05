@@ -6,8 +6,8 @@ approximations.
 import numpy as np
 
 try:
-    import mpmath
-    import matplotlib.pyplot as plt
+    import mpmath  # type: ignore[import]
+    import matplotlib.pyplot as plt  # type: ignore[import]
 except ImportError:
     pass
 

@@ -54,11 +54,11 @@ from . import hierarchy_test_data
 # Matplotlib is not a scipy dependency but is optionally used in dendrogram, so
 # check if it's available
 try:
-    import matplotlib
+    import matplotlib  # type: ignore[import]
     # and set the backend to be Agg (no gui)
     matplotlib.use('Agg')
     # before importing pyplot
-    import matplotlib.pyplot as plt
+    import matplotlib.pyplot as plt  # type: ignore[import]
     have_matplotlib = True
 except Exception:
     have_matplotlib = False
@@ -812,6 +812,34 @@ class TestDendrogram(object):
         Z = linkage(hierarchy_test_data.ytdist, 'single')
         assert_raises(ValueError, dendrogram, Z, orientation="foo")
 
+    def test_labels_as_array_or_list(self):
+        # test for gh-12418
+        Z = linkage(hierarchy_test_data.ytdist, 'single')
+        labels = np.array([1, 3, 2, 6, 4, 5])
+        result1 = dendrogram(Z, labels=labels, no_plot=True)
+        result2 = dendrogram(Z, labels=labels.tolist(), no_plot=True)
+        assert result1 == result2
+
+    @pytest.mark.skipif(not have_matplotlib, reason="no matplotlib")
+    def test_valid_label_size(self):
+        link = np.array([
+            [0, 1, 1.0, 4],
+            [2, 3, 1.0, 5],
+            [4, 5, 2.0, 6],
+        ])
+        plt.figure()
+        with pytest.raises(ValueError) as exc_info:
+            dendrogram(link, labels=list(range(100)))
+        assert "Dimensions of Z and labels must be consistent."\
+               in str(exc_info.value)
+
+        with pytest.raises(
+                ValueError,
+                match="Dimensions of Z and labels must be consistent."):
+            dendrogram(link, labels=[])
+
+        plt.close()
+
     @pytest.mark.skipif(not have_matplotlib, reason="no matplotlib")
     def test_dendrogram_plot(self):
         for orientation in ['top', 'bottom', 'left', 'right']:
@@ -820,7 +848,7 @@ class TestDendrogram(object):
     def check_dendrogram_plot(self, orientation):
         # Tests dendrogram plotting.
         Z = linkage(hierarchy_test_data.ytdist, 'single')
-        expected = {'color_list': ['g', 'b', 'b', 'b', 'b'],
+        expected = {'color_list': ['C1', 'C0', 'C0', 'C0', 'C0'],
                     'dcoord': [[0.0, 138.0, 138.0, 0.0],
                                [0.0, 219.0, 219.0, 0.0],
                                [0.0, 255.0, 255.0, 219.0],
@@ -881,7 +909,7 @@ class TestDendrogram(object):
 
         R = dendrogram(Z, 2, 'lastp', show_contracted=True)
         plt.close()
-        assert_equal(R, {'color_list': ['b'],
+        assert_equal(R, {'color_list': ['C0'],
                          'dcoord': [[0.0, 295.0, 295.0, 0.0]],
                          'icoord': [[5.0, 5.0, 15.0, 15.0]],
                          'ivl': ['(2)', '(4)'],
@@ -889,7 +917,7 @@ class TestDendrogram(object):
 
         R = dendrogram(Z, 2, 'mtica', show_contracted=True)
         plt.close()
-        assert_equal(R, {'color_list': ['g', 'b', 'b', 'b'],
+        assert_equal(R, {'color_list': ['C1', 'C0', 'C0', 'C0'],
                          'dcoord': [[0.0, 138.0, 138.0, 0.0],
                                     [0.0, 255.0, 255.0, 0.0],
                                     [0.0, 268.0, 268.0, 255.0],
@@ -1055,4 +1083,3 @@ def test_Heap():
     pair = heap.get_min()
     assert_equal(pair['key'], 1)
     assert_equal(pair['value'], 10)
-

@@ -697,6 +697,36 @@ def readsav(file_name, idict=None, python_dict=False,
         If `idict` was specified, then variables are written to the
         dictionary specified, and the updated dictionary is returned.
 
+    Examples
+    --------
+    >>> from os.path import dirname, join as pjoin
+    >>> import scipy.io as sio
+    >>> from scipy.io import readsav
+
+    Get the filename for an example .sav file from the tests/data directory.
+
+    >>> data_dir = pjoin(dirname(sio.__file__), 'tests', 'data')
+    >>> sav_fname = pjoin(data_dir, 'array_float32_1d.sav')
+
+    Load the .sav file contents.
+
+    >>> sav_data = readsav(sav_fname)
+
+    Get keys of the .sav file contents.
+
+    >>> print(sav_data.keys())
+    dict_keys(['array1d'])
+
+    Access a content with a key.
+
+    >>> print(sav_data['array1d'])
+    [0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0.
+     0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0.
+     0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0.
+     0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0.
+     0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0.
+     0. 0. 0.]
+
     """
 
     # Initialize record and variable holders

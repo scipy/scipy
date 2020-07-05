@@ -456,7 +456,7 @@ class coo_matrix(_data_matrix, _minmax_mixin):
     def diagonal(self, k=0):
         rows, cols = self.shape
         if k <= -rows or k >= cols:
-            raise ValueError("k exceeds matrix dimensions")
+            return np.empty(0, dtype=self.data.dtype)
         diag = np.zeros(min(rows + min(k, 0), cols - max(k, 0)),
                         dtype=self.dtype)
         diag_mask = (self.row + k) == self.col
@@ -567,7 +567,8 @@ class coo_matrix(_data_matrix, _minmax_mixin):
 
     def _add_dense(self, other):
         if other.shape != self.shape:
-            raise ValueError('Incompatible shapes.')
+            raise ValueError('Incompatible shapes ({} and {})'
+                             .format(self.shape, other.shape))
         dtype = upcast_char(self.dtype.char, other.dtype.char)
         result = np.array(other, dtype=dtype, copy=True)
         fortran = int(result.flags.f_contiguous)

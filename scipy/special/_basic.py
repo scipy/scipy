@@ -2328,7 +2328,7 @@ def factorial(n, exact=False):
             n = asarray(n)
             un = np.unique(n).astype(object)
 
-            # Convert to object array of long ints if np.int can't handle size
+            # Convert to object array of long ints if np.int_ can't handle size
             if np.isnan(n).any():
                 dt = float
             elif un[-1] > 20:
@@ -2336,7 +2336,7 @@ def factorial(n, exact=False):
             elif un[-1] > 12:
                 dt = np.int64
             else:
-                dt = np.int
+                dt = np.int_
 
             out = np.empty_like(n, dtype=dt)
 

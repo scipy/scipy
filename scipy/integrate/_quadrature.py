@@ -11,7 +11,7 @@ from scipy.special import roots_legendre
 from scipy.special import gammaln
 
 __all__ = ['fixed_quad', 'quadrature', 'romberg', 'trapz', 'simps', 'romb',
-           'cumtrapz', 'newton_cotes']
+           'cumtrapz', 'newton_cotes', 'AccuracyWarning']
 
 
 # Make See Also linking for our local copy work properly
@@ -393,7 +393,7 @@ def simps(y, x=None, dx=1, axis=-1, even='avg'):
     x : array_like, optional
         If given, the points at which `y` is sampled.
     dx : int, optional
-        Spacing of integration points along axis of `y`. Only used when
+        Spacing of integration points along axis of `x`. Only used when
         `x` is None. Default is 1.
     axis : int, optional
         Axis along which to integrate. Default is the last axis.

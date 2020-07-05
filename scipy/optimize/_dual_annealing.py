@@ -383,11 +383,11 @@ class LocalSearchWrapper(object):
     LS_MAXITER_MIN = 100
     LS_MAXITER_MAX = 1000
 
-    def __init__(self, bounds, func_wrapper, **kwargs):
+    def __init__(self, search_bounds, func_wrapper, **kwargs):
         self.func_wrapper = func_wrapper
         self.kwargs = kwargs
         self.minimizer = minimize
-        bounds_list = list(zip(*bounds))
+        bounds_list = list(zip(*search_bounds))
         self.lower = np.array(bounds_list[0])
         self.upper = np.array(bounds_list[1])
 

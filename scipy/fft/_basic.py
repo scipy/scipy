@@ -318,6 +318,7 @@ def rfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
     irfft : The inverse of `rfft`.
     fft : The 1-D FFT of general (complex) input.
     fftn : The N-D FFT.
+    rfft2 : The 2-D FFT of real input.
     rfftn : The N-D FFT of real input.
 
     Notes
@@ -360,7 +361,7 @@ def rfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
 def irfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
           plan=None):
     """
-    Compute the inverse of the n-point DFT for real input.
+    Computes the inverse of `rfft`.
 
     This function computes the inverse of the 1-D *n*-point
     discrete Fourier Transform of real input computed by `rfft`.
@@ -1138,6 +1139,8 @@ def rfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None, 
 
     See Also
     --------
+    irfft2 : The inverse of the 2-D FFT of real input.
+    rfft : The 1-D FFT of real input.
     rfftn : Compute the N-D discrete Fourier Transform for real
             input.
 
@@ -1154,7 +1157,7 @@ def rfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None, 
 def irfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
            plan=None):
     """
-    Compute the inverse of the N-D FFT of real input.
+    Computes the inverse of `rfftn`
 
     This function computes the inverse of the N-D discrete
     Fourier Transform for real input over any number of axes in an
@@ -1260,7 +1263,7 @@ def irfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
 def irfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None, *,
            plan=None):
     """
-    Compute the 2-D inverse FFT of a real array.
+    Computes the inverse of `rfft2`
 
     Parameters
     ----------
@@ -1293,7 +1296,9 @@ def irfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None,
 
     See Also
     --------
-    irfftn : Compute the inverse of the N-D FFT of real input.
+    rfft2 : The 2-D FFT of real input.
+    irfft : The inverse of the 1-D FFT of real input.
+    irfftn : The inverse of the N-D FFT of real input.
 
     Notes
     -----

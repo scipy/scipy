@@ -754,8 +754,8 @@ class FakeArray2(object):
 class TestOverwrite(object):
     """Check input overwrite behavior of the FFT functions."""
 
-    real_dtypes = [np.float32, np.float64]
-    dtypes = real_dtypes + [np.complex64, np.complex128]
+    real_dtypes = (np.float32, np.float64)
+    dtypes = real_dtypes + (np.complex64, np.complex128)
     fftsizes = [8, 16, 32]
 
     def _check(self, x, routine, fftsize, axis, overwrite_x):

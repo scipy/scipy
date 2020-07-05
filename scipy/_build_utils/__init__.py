@@ -1,5 +1,8 @@
+import os
+
 import numpy as np
 from ._fortran import *
+from .system_info import combine_dict
 
 
 # Don't use the deprecated NumPy C API. Define this to a fixed version instead of
@@ -10,6 +13,10 @@ from ._fortran import *
 #
 numpy_nodepr_api = dict(define_macros=[("NPY_NO_DEPRECATED_API",
                                         "NPY_1_9_API_VERSION")])
+
+
+def uses_blas64():
+    return (os.environ.get("NPY_USE_BLAS_ILP64", "0") != "0")
 
 
 from scipy._lib._testutils import PytestTester

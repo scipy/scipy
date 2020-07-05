@@ -32,9 +32,9 @@ Black dashed line
 
 """
 import numpy as np
-import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt  # type: ignore[import]
 
-import mpmath
+import mpmath  # type: ignore[import]
 
 
 def err_metric(a, b, atol=1e-290):

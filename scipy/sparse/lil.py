@@ -466,7 +466,7 @@ class lil_matrix(spmatrix, IndexMixin):
             idx_dtype = get_index_dtype(maxval=N)
             lengths = np.empty(M, dtype=idx_dtype)
             _csparsetools.lil_get_lengths(self.rows, lengths)
-            nnz = lengths.sum()
+            nnz = lengths.sum(dtype=np.int64)
             idx_dtype = get_index_dtype(maxval=max(N, nnz))
             indptr = np.empty(M + 1, dtype=idx_dtype)
             indptr[0] = 0
