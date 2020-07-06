@@ -2675,8 +2675,10 @@ def test_orth_memory_efficiency():
     n = 10*1000*1000
     try:
         _check_orth(n, np.float64, skip_big=True)
-    except MemoryError:
-        raise AssertionError('memory error perhaps caused by orth regression')
+    except MemoryError as e:
+        raise AssertionError(
+            'memory error perhaps caused by orth regression'
+        ) from e
 
 
 def test_orth():

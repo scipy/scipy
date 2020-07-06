@@ -254,10 +254,10 @@ def _clean_inputs(lp):
 
     try:
         c = np.array(c, dtype=np.float64, copy=True).squeeze()
-    except ValueError:
+    except ValueError as e:
         raise TypeError(
             "Invalid input for linprog: c must be a 1-D array of numerical "
-            "coefficients")
+            "coefficients") from e
     else:
         # If c is a single value, convert it to a 1-D array.
         if c.size == 1:
@@ -276,10 +276,10 @@ def _clean_inputs(lp):
     sparse_lhs = sps.issparse(A_eq) or sps.issparse(A_ub)
     try:
         A_ub = _format_A_constraints(A_ub, n_x, sparse_lhs=sparse_lhs)
-    except ValueError:
+    except ValueError as e:
         raise TypeError(
             "Invalid input for linprog: A_ub must be a 2-D array "
-            "of numerical values")
+            "of numerical values") from e
     else:
         n_ub = A_ub.shape[0]
         if len(A_ub.shape) != 2 or A_ub.shape[1] != n_x:
@@ -295,11 +295,11 @@ def _clean_inputs(lp):
 
     try:
         b_ub = _format_b_constraints(b_ub)
-    except ValueError:
+    except ValueError as e:
         raise TypeError(
             "Invalid input for linprog: b_ub must be a 1-D array of "
             "numerical values, each representing the upper bound of an "
-            "inequality constraint (row) in A_ub")
+            "inequality constraint (row) in A_ub") from e
     else:
         if b_ub.shape != (n_ub,):
             raise ValueError(
@@ -314,10 +314,10 @@ def _clean_inputs(lp):
 
     try:
         A_eq = _format_A_constraints(A_eq, n_x, sparse_lhs=sparse_lhs)
-    except ValueError:
+    except ValueError as e:
         raise TypeError(
             "Invalid input for linprog: A_eq must be a 2-D array "
-            "of numerical values")
+            "of numerical values") from e
     else:
         n_eq = A_eq.shape[0]
         if len(A_eq.shape) != 2 or A_eq.shape[1] != n_x:
@@ -334,11 +334,11 @@ def _clean_inputs(lp):
 
     try:
         b_eq = _format_b_constraints(b_eq)
-    except ValueError:
+    except ValueError as e:
         raise TypeError(
             "Invalid input for linprog: b_eq must be a 1-D array of "
             "numerical values, each representing the upper bound of an "
-            "inequality constraint (row) in A_eq")
+            "inequality constraint (row) in A_eq") from e
     else:
         if b_eq.shape != (n_eq,):
             raise ValueError(
@@ -356,10 +356,10 @@ def _clean_inputs(lp):
     if x0 is not None:
         try:
             x0 = np.array(x0, dtype=float, copy=True).squeeze()
-        except ValueError:
+        except ValueError as e:
             raise TypeError(
                 "Invalid input for linprog: x0 must be a 1-D array of "
-                "numerical coefficients")
+                "numerical coefficients") from e
         if x0.ndim == 0:
             x0 = x0.reshape((-1))
         if len(x0) == 0 or x0.ndim != 1:
@@ -398,11 +398,11 @@ def _clean_inputs(lp):
     except ValueError as e:
         raise ValueError(
             "Invalid input for linprog: unable to interpret bounds, "
-            "check values and dimensions: " + e.args[0])
+            "check values and dimensions: " + e.args[0]) from e
     except TypeError as e:
         raise TypeError(
             "Invalid input for linprog: unable to interpret bounds, "
-            "check values and dimensions: " + e.args[0])
+            "check values and dimensions: " + e.args[0]) from e
 
     # Check bounds options
     bsh = bounds_conv.shape

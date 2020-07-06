@@ -599,10 +599,10 @@ def _process_deriv_spec(deriv):
     if deriv is not None:
         try:
             ords, vals = zip(*deriv)
-        except TypeError:
+        except TypeError as e:
             msg = ("Derivatives, `bc_type`, should be specified as a pair of "
                    "iterables of pairs of (order, value).")
-            raise ValueError(msg)
+            raise ValueError(msg) from e
     else:
         ords, vals = [], []
     return np.atleast_1d(ords, vals)
@@ -730,8 +730,8 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
     else:
         try:
             deriv_l, deriv_r = bc_type
-        except TypeError:
-            raise ValueError("Unknown boundary condition: %s" % bc_type)
+        except TypeError as e:
+            raise ValueError("Unknown boundary condition: %s" % bc_type) from e
 
     y = np.asarray(y)
 

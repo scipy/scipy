@@ -244,7 +244,7 @@ class FortranFormatParser(object):
                     tokens.append(t)
             return self._parse_format(tokens)
         except SyntaxError as e:
-            raise BadFortranFormat(str(e))
+            raise BadFortranFormat(str(e)) from e
 
     def _get_min(self, tokens):
         next = tokens.pop(0)
