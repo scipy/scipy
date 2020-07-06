@@ -551,67 +551,66 @@ def _presolve(lp, rr, tol=1e-9):
     #  * artificial variables have not been added, so matrices are smaller
     #  * bounds have not been converted to constraints yet. (It is better to
     #    do that after presolve because presolve may adjust the simple bounds.)
-    # There are many improvements that can be made, namely:
-    #  * implement remaining checks from [5]
+    # There are still improvements that can be made, namely:
+    #  * remaining checks from [5] may be implemented, although they may prove
+    #    to be too computationally involved
     #  * implement additional efficiency improvements in redundancy removal [2]
+    #  * introcuce a presolve level (instead of just on/off)
 
     def _continue(p_stat):
         """
         Return True if status indicates that problem presolving should continue.
-        The problem must not be solved, must be feasible, bounded and reduced in
-        a previous step.
-        Equivalent to not _presolve_problem_complete() and _presolve_reduced().
+        The problem must not be solved, must be feasible, bounded and there
+        must have been changes in a previous step.
         """
-        return (not p_stat['solved'] and p_stat['feasible'] and p_stat['bounded'] and p_stat['reduced'])
+        return (not p_stat['solved'] and p_stat['feasible'] and p_stat['bounded'] and p_stat['loop'])
 
-    def _reduced(p_stat):
-        """
-        Return True if status indicates that the problem was reduced (modified)
-        in the previous step.
-        """
-        return p_stat['reduced']
-
-    # Presolve processing summary
-    p_org = {'vars': len(lp.c), 'eqs': lp.A_eq.shape[0], 'ineqs': lp.A_ub.shape[0]}
+    # Presolve processing summary: initial situation
+    pps = [len(lp.c), lp.A_eq.shape[0], lp.A_ub.shape[0]]
 
     if sps.issparse(lp.A_eq):
         A_eq = lp.A_eq.tocsr()
         A_ub = lp.A_ub.tocsr()
         lp = lp._replace(A_eq=A_eq, A_ub=A_ub)
 
-    # Presolve status is a dictionary:
-    p_stat = {'solved': False, 'feasible': True, 'bounded': True, 'reduced': True}
+    # Presolve status is a dictionary. Item 'loop' specifies whether the
+    # presolve loop should be (re)entered.
+    p_stat = {'solved': False, 'feasible': True, 'bounded': True, 'loop': True}
 
     # Reversal function list
     revstack = []
 
-    # Initial feasibility check
-    p_stat = _presolve_check_feasibility(lp, p_stat, tol)
+    # Initial feasibility check and solved check
+    p_stat = _presolve_check_problem(lp, p_stat, tol)
 
     # Repeatedly preprocess the problem until no further changes
     while _continue(p_stat):
 
-        # Reduce the problem
-        (lp, revstack, p_stat) = _presolve_reduce_problem(lp, revstack, p_stat, tol)
+        # Preprocess the problem
+        # This process may detect unboundedness (set 'bounded' to False).
+        # If preprocessing changes the problem, 'loop' is set to True.
+        p_stat['loop'] = False
+        (lp, revstack, p_stat) = _presolve_preprocess_problem(lp, revstack, p_stat, tol)
 
-        # If the problem reduced, recheck feasibility
-        if _reduced(p_stat):
-            p_stat = _presolve_check_feasibility(lp, p_stat, tol)
+        # If the problem has changed, recheck feasibility & solved
+        if p_stat['loop']:
+            p_stat = _presolve_check_problem(lp, p_stat, tol)
 
-    p_red = {'vars': len(lp.c), 'eqs': lp.A_eq.shape[0], 'ineqs': lp.A_ub.shape[0]}
+    # Presolve processing summary: final situation
+    pps.extend([len(lp.c), lp.A_eq.shape[0], lp.A_ub.shape[0]])
 
-    # Output: [nvars eliminated neqs eliminated redundant nineqs eliminated]
-    presolve_effect = [p_org["vars"], p_org["vars"] - p_red["vars"],
-                       p_org["eqs"], p_org["eqs"] - p_red["eqs"],
-                       0, p_org["ineqs"],
-                       p_org["ineqs"] - p_red["ineqs"]]
+    # Output: list containing
+    # 0. number of variables
+    # 1. number of variables eliminated
+    # 2. number of equations
+    # 3. number of equations eliminated
+    # 4. number of redundant equations
+    # 5. number of inequalities
+    # 6. number of inequalities eliminated
+    presolve_effect = [pps[0], pps[0] - pps[3], pps[1], pps[1] - pps[4],
+                       0, pps[2], pps[2] - pps[5]]
 
-    # Return the reduced problem with status numeral
-    # 0 : Optimization terminated successfully
-    # 1 : Iteration limit reached
-    # 2 : Problem appears to be infeasible
-    # 3 : Problem appears to be unbounded
-    # 4 : Serious numerical difficulties encountered
+    # Return the preprocessed problem with status numeral
     status = 0
     if not p_stat['bounded']:
         status = 3
@@ -620,7 +619,6 @@ def _presolve(lp, rr, tol=1e-9):
     complete = _presolve_complete(p_stat)
     message = ""
     if complete:
-        # __print_presolve_effect(p_org, p_red, p_red["eqs"] - A_eq.shape[0])
         return (lp, revstack, complete, status, message, presolve_effect)
 
     # If not complete: remove redundant (linearly dependent) rows from
@@ -638,7 +636,7 @@ def _presolve(lp, rr, tol=1e-9):
                 warn(redundancy_warning, OptimizeWarning, stacklevel=1)
             if status != 0:
                 complete = True
-        presolve_effect[4] = p_red["eqs"] - A_eq.shape[0]
+        presolve_effect[4] = pps[4] - A_eq.shape[0]
         return (lp._replace(A_eq=A_eq, b_eq=b_eq),
                 revstack, complete, status, message, presolve_effect)
 
@@ -667,27 +665,15 @@ def _presolve(lp, rr, tol=1e-9):
             status = 4
         if status != 0:
             complete = True
-    # __print_presolve_effect(p_org, p_red, p_red["eqs"] - A_eq.shape[0])
-    presolve_effect[4] = p_red["eqs"] - A_eq.shape[0]
+    presolve_effect[4] = pps[4] - A_eq.shape[0]
     return (lp._replace(A_eq=A_eq, b_eq=b_eq),
             revstack, complete, status, message, presolve_effect)
-
-
-def __print_presolve_effect(p_org, p_red, redundant):
-    """
-    Print effect of _presolve() reduction
-    """
-    print("Presolve: vars removed: {:d}/{:d}, eqs removed: {:d}+{:d}/{:d}, "
-          "ineqs removed: {:d}/{:d}"
-          .format(p_org["vars"] - p_red["vars"], p_org["vars"],
-                  p_org["eqs"] - p_red["eqs"], redundant, p_org["eqs"],
-                  p_org["ineqs"] - p_red["ineqs"], p_org["ineqs"]))
 
 
 def _presolve_complete(p_stat):
     """
     Check if problem is complete. A problem is complete if presolve solved the
-    problem, or it detected it is not feasible or unbounded.
+    problem, or if it detected it is not feasible or unbounded.
 
     Parameters
     ----------
@@ -703,15 +689,15 @@ def _presolve_complete(p_stat):
     return (p_stat['solved'] or not p_stat['feasible'] or not p_stat['bounded'])
 
 
-def _presolve_check_feasibility(lp, p_stat, tol):
+def _presolve_check_problem(lp, p_stat, tol):
     """
-    Carry out feasibility tests.
+    Carry out feasibility tests and check whether the problem is solved.
 
     Parameters
     ----------
     lp : scipy.optimize._linprog_util._LPProblem
         The problem parameters
-    p_stat : dictionary with keys 'solved', 'feasible', 'bounded', 'reduced'
+    p_stat : dictionary with keys 'solved', 'feasible', 'bounded', 'loop'
         Presolve problem status
     tol : float
         Tolerance to be used for checking equality
@@ -724,25 +710,30 @@ def _presolve_check_feasibility(lp, p_stat, tol):
     """
     # Check bounds
     p_stat['feasible'] = _presolve_infeasible_bounds(lp, tol)
-    # print("_presolve_infeasible_bounds(): ", p_stat['feasible'])
 
     # Check constraints implied by equalities
     if not _presolve_complete(p_stat):
         p_stat['feasible'] = _presolve_infeasible_equality_constraints(lp, tol)
-        # print("_presolve_infeasible_equality_constraints(): ", p_stat['feasible'])
 
     # Check constraints implied by inequalities
     if not _presolve_complete(p_stat):
         p_stat['feasible'] = _presolve_infeasible_inequality_constraints(lp, tol)
-        # print("_presolve_infeasible_equality_constraints(): ", p_stat['feasible'])
+
+    # The problem is solved if there are no remaining variables
+    p_stat['solved'] = np.size(lp.c) == 0
 
     # Return status
     return p_stat
 
 
-def _presolve_reduce_problem(lp, revstack, p_stat, tol):
+def _presolve_preprocess_problem(lp, revstack, p_stat, tol):
     """
     Preprocess the problem in order to simplify it.
+    The function will set p_stat['loop'] to True if the problem has been
+    changed (variables have been removed).
+    The function detects if the problem has been solved and may also detect
+    infeasibility or unboundedness. If so, the corresponding status is set
+    and the function exits.
 
     Parameters
     ----------
@@ -751,7 +742,7 @@ def _presolve_reduce_problem(lp, revstack, p_stat, tol):
     revstack : list of functions
         Functions list containing the functions to reverse the presolve
         preprocessing.
-    p_stat : dictionary with keys 'solved', 'feasible', 'bounded', 'reduced'
+    p_stat : dictionary with keys 'solved', 'feasible', 'bounded', 'loop'
         Presolve problem status
     tol : float
         Tolerance to be used for checking equality
@@ -763,13 +754,10 @@ def _presolve_reduce_problem(lp, revstack, p_stat, tol):
     revstack : list of functions
         Functions list containing the functions to reverse the presolve
         preprocessing.
-    p_stat : dictionary with keys 'solved', 'feasible', 'bounded', 'reduced'
+    p_stat : dictionary with keys 'solved', 'feasible', 'bounded', 'loop'
         Presolve problem status
 
     """
-    # Set initial value
-    p_stat['reduced'] = False
-
     # Remove variables which are fixed by bounds
     lp, rev, p_stat = _presolve_remove_fixed_variables(lp, p_stat, tol)
     if rev is not None:
@@ -783,7 +771,7 @@ def _presolve_reduce_problem(lp, revstack, p_stat, tol):
 
     # Remove singleton inequalities in A_ub and merge them into bounds
     if not _presolve_complete(p_stat):
-        lp, rev, p_stat = _presolve_remove_inequalty_row_singletons(lp, p_stat, tol)
+        lp, rev, p_stat = _presolve_remove_inequality_row_singletons(lp, p_stat, tol)
         if rev is not None:
             revstack.append(rev)
 
@@ -846,8 +834,13 @@ def _presolve_infeasible_equality_constraints(lp, tol):
         True if bounds are feasible
 
     """
+    # Handle empty A_eq separately
+    # In this case, feasibility depends on if b_eq == 0 within tolerance
     if np.size(lp.A_eq) == 0:
-        return True
+        if np.size(lp.b_eq) > 0:
+            return np.all(np.abs(lp.b_eq) < tol)
+        else:
+            return True
 
     # Create two matrices G and H the shape of A_eq. G with upper bound
     # values where elements of A_eq are positive, lower bound values
@@ -885,13 +878,7 @@ def _presolve_infeasible_equality_constraints(lp, tol):
         l_eq = np.sum(lp.A_eq * H, 1)
 
     # Check whether b_eq is within this range
-    check = np.all(l_eq - tol <= lp.b_eq) and np.all(lp.b_eq <= u_eq + tol)
-    # if not check:
-    #     print("l_eq=", l_eq)
-    #     print("b_eq=", lp.b_eq)
-    #     print("u_eq=", u_eq)
-    #     print("pass=", np.logical_and(l_eq - tol <= lp.b_eq, lp.b_eq <= u_eq + tol))
-    return check
+    return np.all(l_eq - tol <= lp.b_eq) and np.all(lp.b_eq <= u_eq + tol)
 
 
 def _presolve_infeasible_inequality_constraints(lp, tol):
@@ -915,8 +902,13 @@ def _presolve_infeasible_inequality_constraints(lp, tol):
         Return True if bounds are feasible.
 
     """
+    # Handle empty A_ub separately
+    # In this case, feasibility depends on if 0 <= b_ub
     if np.size(lp.A_ub) == 0:
-        return True
+        if np.size(lp.b_ub) > 0:
+            return np.all(lp.b_ub >= 0)
+        else:
+            return True
 
     # Create a matrix H the shape of A_ub, with upper bound
     # values where elements of A_ub are negative, lower bound values
@@ -953,12 +945,13 @@ def _presolve_remove_fixed_variables(pp, p_stat, tol=1e-9):
     Remove these variable from the problem matrices.
     Return an update problem and a reversal function. If there is nothing to
     revert, this function is None.
+    There is no check if the resulting problem is feasible.
 
     Parameters
     ----------
     lp : scipy.optimize._linprog_util._LPProblem
         The problem parameters
-    p_stat : dictionary with keys 'solved', 'feasible', 'bounded', 'reduced'
+    p_stat : dictionary with keys 'solved', 'feasible', 'bounded', 'loop'
         Presolve problem status
     tol : float
         Tolerance to be used for checking equality
@@ -970,7 +963,7 @@ def _presolve_remove_fixed_variables(pp, p_stat, tol=1e-9):
     revstack : list of functions
         Functions list containing the functions to reverse the presolve
         preprocessing.
-    p_stat : dictionary with keys 'solved', 'feasible', 'bounded', 'reduced'
+    p_stat : dictionary with keys 'solved', 'feasible', 'bounded', 'loop'
         Presolve problem status
 
     """
@@ -995,8 +988,9 @@ def _presolve_remove_fixed_variables(pp, p_stat, tol=1e-9):
     A_eq = pp.A_eq[:, keep_indices]
     b_ub = pp.b_ub - (pp.A_ub[:, fixed_indices]).dot(x_fixed)
     A_ub = pp.A_ub[:, keep_indices]
-    pp = pp._replace(b_eq=b_eq, A_eq=A_eq, b_ub=b_ub, A_ub=A_ub)
-    pp = pp._replace(c=pp.c[keep_indices], bounds=pp.bounds[keep_indices, :])
+    pp = pp._replace(b_eq=b_eq, A_eq=A_eq, b_ub=b_ub, A_ub=A_ub,
+                     c=pp.c[keep_indices], bounds=pp.bounds[keep_indices, :])
+    # x0 can be None, so check before removing elements
     if pp.x0 is not None:
         # pp.x0 = pp.x0[keep_indices]
         pp = pp._replace(x0=pp.x0[keep_indices])
@@ -1012,14 +1006,16 @@ def _presolve_remove_fixed_variables(pp, p_stat, tol=1e-9):
         i = np.flatnonzero(fixed_indices)
         # Number of variables to restore
         N = len(i)
-        index_offset = list(range(N))
+        index_offset = np.arange(N)
         # Create insert indices
-        insert_indices = np.subtract(i, index_offset).flatten()
+        insert_indices = i - index_offset
         x_rev = np.insert(x_mod.astype(float), insert_indices, x_fixed)
         return x_rev
 
+    p_stat['loop'] = True
     if np.size(pp.c) == 0:
         p_stat['solved'] = True
+        p_stat['loop'] = False
 
     return (pp, rev, p_stat)
 
@@ -1028,7 +1024,7 @@ def _presolve_remove_equation_row_singletons(pp, p_stat, tol=1e-9):
     """
     Remove row singletons from A_eq * x = b_eq.
 
-    Return an update problem and a reversal function. If there is nothing to
+    Return an updated problem and a reversal function. If there is nothing to
     revert, this function is None. Update the presolve status if conflicting
     values for the same variable have been detected.
 
@@ -1036,7 +1032,7 @@ def _presolve_remove_equation_row_singletons(pp, p_stat, tol=1e-9):
     ----------
     lp : scipy.optimize._linprog_util._LPProblem
         The problem parameters
-    p_stat : dictionary with keys 'solved', 'feasible', 'bounded', 'reduced'
+    p_stat : dictionary with keys 'solved', 'feasible', 'bounded', 'loop'
         Presolve problem status
     tol : float
         Tolerance to be used for checking equality
@@ -1048,7 +1044,7 @@ def _presolve_remove_equation_row_singletons(pp, p_stat, tol=1e-9):
     revstack : list of functions
         Functions list containing the functions to reverse the presolve
         preprocessing.
-    p_stat : dictionary with keys 'solved', 'feasible', 'bounded', 'reduced'
+    p_stat : dictionary with keys 'solved', 'feasible', 'bounded', 'loop'
         Presolve problem status
 
     """
@@ -1082,13 +1078,13 @@ def _presolve_remove_equation_row_singletons(pp, p_stat, tol=1e-9):
 
     # No fixed variables
     if n_fixed == 0:
-        # mod reduced?
+        #TODO mod loop?
         return (pp, None, p_stat)
 
     # Determine singleton variable values by elimination from each singleton.
     # row. If several rows eliminate the same variable, check whether the
     # resulting values are identical.
-    # b-values of singleton rows
+    # The b-values of singleton rows
     b_sr = pp.b_eq[sing_row_indices]
     # The non-zero A-element at these rows
     A_sr = pp.A_eq[sing_row_indices, :]
@@ -1130,10 +1126,13 @@ def _presolve_remove_equation_row_singletons(pp, p_stat, tol=1e-9):
     keep_row_indices = np.logical_not(sing_row_indices)
     A_eq = A_eq[keep_row_indices, :]
     b_eq = b_eq[keep_row_indices]
+    pp = pp._replace(b_eq=b_eq, A_eq=A_eq)
+    # Make sure A_eq and A_ub have equal number of columns even if they are
+    # empty
     b_ub = pp.b_ub - pp.A_ub[:, fixed_indices].dot(x_fixed)
     A_ub = pp.A_ub[:, keep_indices]
-    pp = pp._replace(b_eq=b_eq, A_eq=A_eq, b_ub=b_ub, A_ub=A_ub)
-    pp = pp._replace(c=pp.c[keep_indices], bounds=pp.bounds[keep_indices, :])
+    pp = pp._replace(b_ub=b_ub, A_ub=A_ub, c=pp.c[keep_indices],
+                     bounds=pp.bounds[keep_indices, :])
     if pp.x0 is not None:
         pp = pp._replace(x0=pp.x0[keep_indices])
 
@@ -1148,19 +1147,20 @@ def _presolve_remove_equation_row_singletons(pp, p_stat, tol=1e-9):
         i = np.flatnonzero(fixed_indices)
         # Number of variables to restore
         N = len(i)
-        index_offset = list(range(N))
+        index_offset = np.arange(N)
         # Create insert indices
-        insert_indices = np.subtract(i, index_offset).flatten()
+        insert_indices = i - index_offset
         x_rev = np.insert(x_mod.astype(float), insert_indices, x_fixed)
         return x_rev
 
-    p_stat['reduced'] = True
+    p_stat['loop'] = True
     if np.size(pp.c) == 0:
         p_stat['solved'] = True
+        p_stat['loop'] = False
     return (pp, rev, p_stat)
 
 
-def _presolve_remove_inequalty_row_singletons(pp, p_stat, tol=1e-9):
+def _presolve_remove_inequality_row_singletons(pp, p_stat, tol=1e-9):
     """
     Remove row singletons from A_ub * x <= b_ub.
 
@@ -1169,20 +1169,23 @@ def _presolve_remove_inequalty_row_singletons(pp, p_stat, tol=1e-9):
     A_ub[i,j] * x[j] <= b_ub[i]. This gives x[j] <= b_ub[i]/A_ub[i,j] if
     A_ub[i,j] > 0 and  x[j] >= b_ub[i]/A_ub[i,j] if A_ub[i,j] < 0.
 
-    Merge this with given bounds and remove the rows in A_ub & b_ub.
-    This may result in bounds narrowing, in creating a fixed variable, and in
-    detecting infeasible bounds.
+    Merge this bound with already given bounds and remove the row in A_ub
+    and b_ub.
+    The result may be:
+    * bounds narrowing: signal that the problem has changed;
+    * a fixed variable: signal that the problem has changed; the next
+      preprocessing loop will remove the fixed variable;
+    * infeasible bounds: signal infeasibility.
 
-    Return an updated problem and a reversal function if variables have been
-    fixed. If there is nothing to revert, this function is None. Return a
-    feasible boolean, which is set to False if conflicting bounds have been
-    detected.
+    Return an updated problem; no variables will be removed so the reversal
+    function is None. Return p_stat['feasible'] = False if conflicting bounds
+    have been detected.
 
     Parameters
     ----------
     lp : scipy.optimize._linprog_util._LPProblem
         The problem parameters
-    p_stat : dictionary with keys 'solved', 'feasible', 'bounded', 'reduced'
+    p_stat : dictionary with keys 'solved', 'feasible', 'bounded', 'loop'
         Presolve problem status
     tol : float
         Tolerance to be used for checking equality
@@ -1194,7 +1197,7 @@ def _presolve_remove_inequalty_row_singletons(pp, p_stat, tol=1e-9):
     revstack : list of functions
         Functions list containing the functions to reverse the presolve
         preprocessing.
-    p_stat : dictionary with keys 'solved', 'feasible', 'bounded', 'reduced'
+    p_stat : dictionary with keys 'solved', 'feasible', 'bounded', 'loop'
         Presolve problem status
 
     """
@@ -1213,11 +1216,8 @@ def _presolve_remove_inequalty_row_singletons(pp, p_stat, tol=1e-9):
         # sing_row_indices is a numpy matrix, need an 1-D-array
         sing_row_indices = np.array(sing_row_indices).flatten()
 
-    # Mask for non-zero elements in singleton rows of A_eq (N_sr x N)
-    A_sr_nonzero = A_ub_nonzero[sing_row_indices, :]
-
     # Loop to go through all singleton variables to adjust bounds
-    # TODO remove loop
+    # TODO try to remove loop
     for i in np.nonzero(sing_row_indices)[0]:
         # Which variable ivolved?
         if is_A_ub_sparse:
@@ -1243,11 +1243,9 @@ def _presolve_remove_inequalty_row_singletons(pp, p_stat, tol=1e-9):
             elif np.abs(val - lbj) < tol:
                 # New fixed variable, new upper bound equals lower bound
                 bnds[j, 1] = val
-                p_stat['reduced'] = True
             elif val < ubj:
                 # Use new upper bound instead of current
                 bnds[j, 1] = val
-                p_stat['reduced'] = True
         else:
             # Merge lower bound with [lbj, ubj]
             if val > ubj + tol:
@@ -1257,11 +1255,9 @@ def _presolve_remove_inequalty_row_singletons(pp, p_stat, tol=1e-9):
             elif np.abs(val - ubj) < tol:
                 # New fixed variable, new lower bound equals upper bound
                 bnds[j, 0] = val
-                p_stat['reduced'] = True
             elif val > lbj:
                 # Use new lower bound instead of current
                 bnds[j, 0] = val
-                p_stat['reduced'] = True
 
     # If there are changes, then save bounds, A_ub and b_ub
     if np.sum(sing_row_indices) > 0:
@@ -1271,8 +1267,9 @@ def _presolve_remove_inequalty_row_singletons(pp, p_stat, tol=1e-9):
         b_ub = pp.b_ub[keep_row_indices]
         # Also include changed bounds, even if nothing changed
         pp = pp._replace(bounds=bnds, A_ub=A_ub, b_ub=b_ub)
-        # Mark problem reduced
-        p_stat['reduced'] = True
+        # Mark problem as changed
+        p_stat['loop'] = True
+        # No need to update 'solved', no variables removed
 
     return (pp, None, p_stat)
 
@@ -1286,7 +1283,7 @@ def _presolve_remove_empty_rows(pp, p_stat, tol=1e-9):
     ----------
     lp : scipy.optimize._linprog_util._LPProblem
         The problem parameters
-    p_stat : dictionary with keys 'solved', 'feasible', 'bounded', 'reduced'
+    p_stat : dictionary with keys 'solved', 'feasible', 'bounded', 'loop'
         Presolve problem status
     tol : float
         Tolerance to be used for checking equality
@@ -1298,7 +1295,7 @@ def _presolve_remove_empty_rows(pp, p_stat, tol=1e-9):
     revstack : list of functions
         Functions list containing the functions to reverse the presolve
         preprocessing.
-    p_stat : dictionary with keys 'solved', 'feasible', 'bounded', 'reduced'
+    p_stat : dictionary with keys 'solved', 'feasible', 'bounded', 'loop'
         Presolve problem status
 
     """
@@ -1319,7 +1316,7 @@ def _presolve_remove_empty_rows(pp, p_stat, tol=1e-9):
             A_eq = pp.A_eq[nonzero_row_indices, :]
             b_eq = pp.b_eq[nonzero_row_indices]
             pp = pp._replace(b_eq=b_eq, A_eq=A_eq)
-            p_stat['reduced'] = True
+            p_stat['loop'] = True
 
     # Inequalities
     if np.size(pp.A_ub) == 0:
@@ -1338,7 +1335,7 @@ def _presolve_remove_empty_rows(pp, p_stat, tol=1e-9):
             A_ub = pp.A_ub[nonzero_row_indices, :]
             b_ub = pp.b_ub[nonzero_row_indices]
             pp = pp._replace(b_ub=b_ub, A_ub=A_ub)
-            p_stat['reduced'] = True
+            p_stat['loop'] = True
 
     return (pp, None, p_stat)
 
@@ -1349,6 +1346,7 @@ def _presolve_remove_empty_columns(pp, p_stat):
     If a variable does not appear in any of the equations and
     inequalities, an optimal choice can be made for it using its bounds
     and the corrsponding value in c.
+    This also holds if both A_eq and A_ub are empty.
     Remove these empty columns and the corresponding variables.
     """
     # Determine indices of zero columns (= indices of fixed variables)
@@ -1397,13 +1395,10 @@ def _presolve_remove_empty_columns(pp, p_stat):
 
     # Modify c, A_ub, A_eq, bounds, x0
     keep_indices = np.logical_not(fixed_indices)
-    if np.size(pp.A_eq) > 0:
-        # Column removal
-        A_eq = pp.A_eq[:, keep_indices]
-        pp = pp._replace(A_eq=A_eq)
-    if np.size(pp.A_ub) > 0:
-        A_ub = pp.A_ub[:, keep_indices]
-        pp = pp._replace(A_ub=A_ub)
+    # Column removal
+    A_eq = pp.A_eq[:, keep_indices]
+    A_ub = pp.A_ub[:, keep_indices]
+    pp = pp._replace(A_eq=A_eq, A_ub=A_ub)
     # pp.c = pp.c[keep_indices]
     # pp.bounds = pp.bounds[keep_indices, :]
     pp = pp._replace(c=pp.c[keep_indices], bounds=pp.bounds[keep_indices, :])
@@ -1422,15 +1417,16 @@ def _presolve_remove_empty_columns(pp, p_stat):
         i = np.flatnonzero(fixed_indices)
         # Number of variables to restore
         N = len(i)
-        index_offset = list(range(N))
+        index_offset = np.arange(N)
         # Create insert indices
-        insert_indices = np.subtract(i, index_offset).flatten()
+        insert_indices = i - index_offset
         x_rev = np.insert(x_mod.astype(float), insert_indices, x_fixed)
         return x_rev
 
-    p_stat['reduced'] = True
+    p_stat['loop'] = True
     if np.size(pp.c) == 0:
         p_stat['solved'] = True
+        p_stat['loop'] = False
     return (pp, rev, p_stat)
 
 
@@ -1699,6 +1695,9 @@ def _get_Abc(lp, c0):
         b_ub = np.concatenate((b_ub, np.zeros(n_bounds)))
         b_ub[m_ub:] = ub_newub
 
+    print('_get_Abc:')
+    print('dim A_ub: ', np.shape(A_ub))
+    print('dim A_eq: ', np.shape(A_eq))
     A1 = vstack((A_ub, A_eq))
     b = np.concatenate((b_ub, b_eq))
     c = np.concatenate((c, np.zeros((A_ub.shape[0],))))
