@@ -2092,7 +2092,7 @@ def get_window(window, Nx, fftbins=True):
     sym = not fftbins
     try:
         beta = float(window)
-    except (TypeError, ValueError):
+    except (TypeError, ValueError) as e:
         args = ()
         if isinstance(window, tuple):
             winstr = window[0]
@@ -2101,17 +2101,17 @@ def get_window(window, Nx, fftbins=True):
         elif isinstance(window, str):
             if window in _needs_param:
                 raise ValueError("The '" + window + "' window needs one or "
-                                 "more parameters -- pass a tuple.")
+                                 "more parameters -- pass a tuple.") from e
             else:
                 winstr = window
         else:
             raise ValueError("%s as window type is not supported." %
-                             str(type(window)))
+                             str(type(window))) from e
 
         try:
             winfunc = _win_equiv[winstr]
-        except KeyError:
-            raise ValueError("Unknown window type.")
+        except KeyError as e:
+            raise ValueError("Unknown window type.") from e
 
         params = (Nx,) + args + (sym,)
     else:

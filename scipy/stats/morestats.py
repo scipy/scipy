@@ -440,8 +440,8 @@ def _parse_dist_kw(dist, enforce_subclass=True):
     elif isinstance(dist, str):
         try:
             dist = getattr(distributions, dist)
-        except AttributeError:
-            raise ValueError("%s is not a valid distribution name" % dist)
+        except AttributeError as e:
+            raise ValueError("%s is not a valid distribution name" % dist) from e
     elif enforce_subclass:
         msg = ("`dist` should be a stats.distributions instance or a string "
                "with the name of such a distribution.")

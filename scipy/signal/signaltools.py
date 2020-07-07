@@ -39,17 +39,17 @@ _boundarydict = {'fill': 0, 'pad': 0, 'wrap': 2, 'circular': 2, 'symm': 1,
 def _valfrommode(mode):
     try:
         return _modedict[mode]
-    except KeyError:
+    except KeyError as e:
         raise ValueError("Acceptable mode flags are 'valid',"
-                         " 'same', or 'full'.")
+                         " 'same', or 'full'.") from e
 
 
 def _bvalfromboundary(boundary):
     try:
         return _boundarydict[boundary] << 2
-    except KeyError:
+    except KeyError as e:
         raise ValueError("Acceptable boundary flags are 'fill', 'circular' "
-                         "(or 'wrap'), and 'symmetric' (or 'symm').")
+                         "(or 'wrap'), and 'symmetric' (or 'symm').") from e
 
 
 def _inputs_swap_needed(mode, shape1, shape2, axes=None):
@@ -228,9 +228,9 @@ def correlate(in1, in2, mode='full', method='auto'):
     # Don't use _valfrommode, since correlate should not accept numeric modes
     try:
         val = _modedict[mode]
-    except KeyError:
+    except KeyError as e:
         raise ValueError("Acceptable mode flags are 'valid',"
-                         " 'same', or 'full'.")
+                         " 'same', or 'full'.") from e
 
     # this either calls fftconvolve or this function with method=='direct'
     if method in ('fft', 'auto'):

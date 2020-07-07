@@ -175,12 +175,12 @@ def diags(diagonals, offsets=0, shape=None, format=None, dtype=None):
             raise ValueError("Offset %d (index %d) out of bounds" % (offset, j))
         try:
             data_arr[j, k:k+length] = diagonal[...,:length]
-        except ValueError:
+        except ValueError as e:
             if len(diagonal) != length and len(diagonal) != 1:
                 raise ValueError(
                     "Diagonal length (index %d: %d at offset %d) does not "
                     "agree with matrix size (%d, %d)." % (
-                    j, len(diagonal), offset, m, n))
+                    j, len(diagonal), offset, m, n)) from e
             raise
 
     return dia_matrix((data_arr, offsets), shape=(m, n)).asformat(format)

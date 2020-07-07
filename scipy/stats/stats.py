@@ -2656,7 +2656,8 @@ def gstd(a, axis=0, ddof=1):
         if np.isinf(a).any():
             raise ValueError(
                 'Infinite value encountered. The geometric standard deviation '
-                'is defined for strictly positive values only.')
+                'is defined for strictly positive values only.'
+            ) from w
         a_nan = np.isnan(a)
         a_nan_any = a_nan.any()
         # exclude NaN's from negativity check, but
@@ -2665,16 +2666,17 @@ def gstd(a, axis=0, ddof=1):
               (not a_nan_any and np.less_equal(a, 0).any())):
             raise ValueError(
                 'Non positive value encountered. The geometric standard '
-                'deviation is defined for strictly positive values only.')
+                'deviation is defined for strictly positive values only.'
+            ) from w
         elif 'Degrees of freedom <= 0 for slice' == str(w):
-            raise ValueError(w)
+            raise ValueError(w) from w
         else:
             #  Remaining warnings don't need to be exceptions.
             return np.exp(np.std(log(a, where=~a_nan), axis=axis, ddof=ddof))
-    except TypeError:
+    except TypeError as e:
         raise ValueError(
             'Invalid array input. The inputs could not be '
-            'safely coerced to any supported types')
+            'safely coerced to any supported types') from e
 
 
 # Private dictionary initialized only once at module level

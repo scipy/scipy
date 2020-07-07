@@ -295,7 +295,7 @@ def _weight_checked(fn, n_args=2, default_axis=None, key=lambda x: x, weight_arg
                 try:
                     _rough_check(result, fn(*args, **kwargs), key=key)
                 except Exception as e:
-                    raise type(e)((e, arrays, weights))
+                    raise type(e)((e, arrays, weights)) from e
 
             # WEIGHTS CHECK 2: ADDL 0-WEIGHTED OBS
             if dud_test:
