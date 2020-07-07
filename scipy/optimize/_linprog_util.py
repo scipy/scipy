@@ -850,19 +850,53 @@ def _presolve_infeasible_equality_constraints(lp, tol):
     G = lp.A_eq.copy()
     H = lp.A_eq.copy()
     if sps.issparse(lp.A_eq):
-        # Iterate elements in A_eq (easiest if A_ub is in COO-format)
-        A_eq = lp.A_eq.tocoo()
-        for i, j, v in zip(A_eq.row, A_eq.col, A_eq.data):
-            if v > 0:
-                G[i, j] = lp.bounds[j, 1]
-                H[i, j] = lp.bounds[j, 0]
-            elif v < 0:
-                G[i, j] = lp.bounds[j, 0]
-                H[i, j] = lp.bounds[j, 1]
+        # Iterate elements in A_eq (easiest if A_eq is in COO-format)
+
+        #TODO: G and H are sparse matrices if A_eq is sparse; setting each
+        # element of G and H is time-consuming.
+        # A_eq = lp.A_eq.tocoo()
+        # for i, j, v in zip(A_eq.row, A_eq.col, A_eq.data):
+        #     if v > 0:
+        #         G[i, j] = lp.bounds[j, 1]
+        #         H[i, j] = lp.bounds[j, 0]
+        #     elif v < 0:
+        #         G[i, j] = lp.bounds[j, 0]
+        #         H[i, j] = lp.bounds[j, 1]
+
+        # Alternative
+        # Get indices and (non-zero) values from A_eq
+        iA, jA, valA = sps.find(lp.A_eq)
+        # Masks for positive and negative
+        pos = valA > 0
+        neg = np.logical_not(pos)
+        # create new sparse matrices G and H
+        G = sps.csr_matrix(lp.A_eq.shape)
+        H = sps.csr_matrix(lp.A_eq.shape)
+        # Get row and column indices of positive values in A_eq
+        iApos = iA[pos]
+        jApos = jA[pos]
+        iAneg = iA[neg]
+        jAneg = jA[neg]
+        # For these locations, set elements in G and H
+        G[iApos, jApos] = lp.bounds[jApos, 1]
+        G[iAneg, jAneg] = lp.bounds[jAneg, 0]
+        H[iApos, jApos] = lp.bounds[jApos, 0]
+        H[iAneg, jAneg] = lp.bounds[jAneg, 1]
+        # # Check identity of G and Galt
+        # if np.allclose(G.A, Galt.A):
+        #     print('Alternative G ok')
+        # else:
+        #     print('Error in calculation alternative G')
+        # if np.allclose(H.A, Halt.A):
+        #     print('Alternative H ok')
+        # else:
+        #     print('Error in calculation alternative H')
+
         # Row sums of element-wise product gives range between which equations
         # can vary.
         u_eq = np.sum(lp.A_eq.multiply(G), 1).flatten()
         l_eq = np.sum(lp.A_eq.multiply(H), 1).flatten()
+
     else:
         pos = lp.A_eq > 0
         neg = lp.A_eq < 0
@@ -1695,9 +1729,6 @@ def _get_Abc(lp, c0):
         b_ub = np.concatenate((b_ub, np.zeros(n_bounds)))
         b_ub[m_ub:] = ub_newub
 
-    print('_get_Abc:')
-    print('dim A_ub: ', np.shape(A_ub))
-    print('dim A_eq: ', np.shape(A_eq))
     A1 = vstack((A_ub, A_eq))
     b = np.concatenate((b_ub, b_eq))
     c = np.concatenate((c, np.zeros((A_ub.shape[0],))))
