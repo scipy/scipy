@@ -864,10 +864,14 @@ def _presolve_infeasible_equality_constraints(lp, tol):
         # For these locations, set elements in G and H
         # Issues a SparseEfficiencyWarning: Changing the sparsity structure of
         # a csr_matrix is expensive. lil_matrix is more efficient.
-        G[iApos, jApos] = lp.bounds[jApos, 1]
-        G[iAneg, jAneg] = lp.bounds[jAneg, 0]
-        H[iApos, jApos] = lp.bounds[jApos, 0]
-        H[iAneg, jAneg] = lp.bounds[jAneg, 1]
+        # G[iApos, jApos] = lp.bounds[jApos, 1]
+        # G[iAneg, jAneg] = lp.bounds[jAneg, 0]
+        # H[iApos, jApos] = lp.bounds[jApos, 0]
+        # H[iAneg, jAneg] = lp.bounds[jAneg, 1]
+        iApn = np.concatenate((iApos, iAneg))
+        jApn = np.concatenate((jApos, jAneg))
+        G[iApn, jApn] = np.concatenate((lp.bounds[jApos, 1], lp.bounds[jAneg, 0]))
+        H[iApn, jApn] = np.concatenate((lp.bounds[jApos, 0], lp.bounds[jAneg, 1]))
         # Row sums of element-wise product gives range between which equations
         # can vary.
         u_eq = np.sum(lp.A_eq.multiply(G), 1).flatten()
@@ -942,8 +946,11 @@ def _presolve_infeasible_inequality_constraints(lp, tol):
         # For these locations, set elements in H
         # Issues a SparseEfficiencyWarning: Changing the sparsity structure of
         # a csr_matrix is expensive. lil_matrix is more efficient.
-        H[iApos, jApos] = lp.bounds[jApos, 0]
-        H[iAneg, jAneg] = lp.bounds[jAneg, 1]
+        # H[iApos, jApos] = lp.bounds[jApos, 0]
+        # H[iAneg, jAneg] = lp.bounds[jAneg, 1]
+        iApn = np.concatenate((iApos, iAneg))
+        jApn = np.concatenate((jApos, jAneg))
+        H[iApn, jApn] = np.concatenate((lp.bounds[jApos, 0], lp.bounds[jAneg, 1]))
         # Row sums of element-wise product gives range between which equations
         # can vary.
         l_ub = np.sum(lp.A_ub.multiply(H), 1).flatten()
