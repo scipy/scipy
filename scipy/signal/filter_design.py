@@ -2177,11 +2177,11 @@ def iirdesign(wp, ws, gpass, gstop, analog=False, ftype='ellip', output='ba',
     """
     try:
         ordfunc = filter_dict[ftype][1]
-    except KeyError:
-        raise ValueError("Invalid IIR filter type: %s" % ftype)
-    except IndexError:
+    except KeyError as e:
+        raise ValueError("Invalid IIR filter type: %s" % ftype) from e
+    except IndexError as e:
         raise ValueError(("%s does not have order selection. Use "
-                          "iirfilter function.") % ftype)
+                          "iirfilter function.") % ftype) from e
 
     _validate_gpass_gstop(gpass, gstop)
 
@@ -2337,13 +2337,13 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
 
     try:
         btype = band_dict[btype]
-    except KeyError:
-        raise ValueError("'%s' is an invalid bandtype for filter." % btype)
+    except KeyError as e:
+        raise ValueError("'%s' is an invalid bandtype for filter." % btype) from e
 
     try:
         typefunc = filter_dict[ftype][0]
-    except KeyError:
-        raise ValueError("'%s' is not a valid basic IIR filter." % ftype)
+    except KeyError as e:
+        raise ValueError("'%s' is not a valid basic IIR filter." % ftype) from e
 
     if output not in ['ba', 'zpk', 'sos']:
         raise ValueError("'%s' is not a valid output form." % output)
@@ -2403,8 +2403,9 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
         try:
             bw = warped[1] - warped[0]
             wo = sqrt(warped[0] * warped[1])
-        except IndexError:
-            raise ValueError('Wn must specify start and stop frequencies for bandpass or bandstop filter')
+        except IndexError as e:
+            raise ValueError('Wn must specify start and stop frequencies for bandpass or bandstop '
+                             'filter') from e
 
         if btype == 'bandpass':
             z, p, k = lp2bp_zpk(z, p, k, wo=wo, bw=bw)
@@ -4936,7 +4937,7 @@ def gammatone(freq, ftype, order=None, numtaps=None, fs=None):
     (array([ 0.00000000e+00,  2.22196719e-07,  1.64942101e-06,  4.99298227e-06,
         1.01993969e-05,  1.63125770e-05,  2.14648940e-05,  2.29947263e-05,
         1.76776931e-05,  2.04980537e-06, -2.72062858e-05, -7.28455299e-05,
-       -1.36651076e-04, -2.19066855e-04, -3.18905076e-04, -4.33156712e-04]), 
+       -1.36651076e-04, -2.19066855e-04, -3.18905076e-04, -4.33156712e-04]),
        [1.0])
 
     IIR Gammatone filter centered at 440 Hz
