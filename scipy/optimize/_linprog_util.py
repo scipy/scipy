@@ -859,15 +859,19 @@ def _presolve_infeasible_equality_constraints(lp, tol):
         iAneg = iA[neg]
         jAneg = jA[neg]
         # Create new sparse matrices G and H
+        # Using dense matrices may be faster but that would ignore the user's
+        # considerations to use a sparse A_eq.
         G = sps.csr_matrix(lp.A_eq.shape)
         H = sps.csr_matrix(lp.A_eq.shape)
         # For these locations, set elements in G and H
-        # Issues a SparseEfficiencyWarning: Changing the sparsity structure of
-        # a csr_matrix is expensive. lil_matrix is more efficient.
-        # G[iApos, jApos] = lp.bounds[jApos, 1]
-        # G[iAneg, jAneg] = lp.bounds[jAneg, 0]
-        # H[iApos, jApos] = lp.bounds[jApos, 0]
-        # H[iAneg, jAneg] = lp.bounds[jAneg, 1]
+        # G[...] = ... and H[...] = ... issue a SparseEfficiencyWarning:
+        # Changing the sparsity structure of a csr_matrix is expensive.
+        # For that reson the more straightforward calls below
+        #  G[iApos, jApos] = lp.bounds[jApos, 1]
+        #  G[iAneg, jAneg] = lp.bounds[jAneg, 0]
+        #  H[iApos, jApos] = lp.bounds[jApos, 0]
+        #  H[iAneg, jAneg] = lp.bounds[jAneg, 1]
+        # have been reduced to two:
         iApn = np.concatenate((iApos, iAneg))
         jApn = np.concatenate((jApos, jAneg))
         G[iApn, jApn] = np.concatenate((lp.bounds[jApos, 1], lp.bounds[jAneg, 0]))
@@ -877,8 +881,8 @@ def _presolve_infeasible_equality_constraints(lp, tol):
         u_eq = np.sum(lp.A_eq.multiply(G), 1).flatten()
         l_eq = np.sum(lp.A_eq.multiply(H), 1).flatten()
     else:
-        G = lp.A_eq.copy()
-        H = lp.A_eq.copy()
+        G = np.zeros(lp.A_eq.shape, dtype=float)  # lp.A_eq.copy()
+        H = np.zeros(lp.A_eq.shape, dtype=float)  # lp.A_eq.copy()
         pos = lp.A_eq > 0
         neg = lp.A_eq < 0
         if pos.any():
@@ -942,30 +946,24 @@ def _presolve_infeasible_inequality_constraints(lp, tol):
         iAneg = iA[neg]
         jAneg = jA[neg]
         # Create new sparse matrix H
+        # Using dense matrices may be faster but that would ignore the user's
+        # considerations to use a sparse A_eq.
         H = sps.csr_matrix(lp.A_ub.shape)
         # For these locations, set elements in H
-        # Issues a SparseEfficiencyWarning: Changing the sparsity structure of
-        # a csr_matrix is expensive. lil_matrix is more efficient.
-        # H[iApos, jApos] = lp.bounds[jApos, 0]
-        # H[iAneg, jAneg] = lp.bounds[jAneg, 1]
+        # H[...] = ... issue a SparseEfficiencyWarning:
+        # Changing the sparsity structure of a csr_matrix is expensive.
+        # For that reason, the more straightforward two calls below
+        #  H[iApos, jApos] = lp.bounds[jApos, 0]
+        #  H[iAneg, jAneg] = lp.bounds[jAneg, 1]
+        # have been reduced to one:
         iApn = np.concatenate((iApos, iAneg))
         jApn = np.concatenate((jApos, jAneg))
         H[iApn, jApn] = np.concatenate((lp.bounds[jApos, 0], lp.bounds[jAneg, 1]))
         # Row sums of element-wise product gives range between which equations
         # can vary.
         l_ub = np.sum(lp.A_ub.multiply(H), 1).flatten()
-        # # Iterate elements in A_ub (easiest if A_ub is in COO-format)
-        # A_ub = lp.A_ub.tocoo()
-        # for i, j, v in zip(A_ub.row, A_ub.col, A_ub.data):
-        #     if v > 0:
-        #         H[i, j] = lp.bounds[j, 0]
-        #     elif v < 0:
-        #         H[i, j] = lp.bounds[j, 1]
-        # # Row sums of element-wise product gives minimum of range between
-        # # which equations can vary.
-        # l_ub = np.sum(lp.A_ub.multiply(H), 1).flatten()
     else:
-        H = lp.A_ub.copy()
+        H = np.zeros(lp.A_ub.shape, dtype=float)  # lp.A_ub.copy()
         H = np.where(lp.A_ub > 0, lp.bounds[:, 0], H)
         H = np.where(lp.A_ub < 0, lp.bounds[:, 1], H)
         # Row sums of element-wise product gives minimum of range between
