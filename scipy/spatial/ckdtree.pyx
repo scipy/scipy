@@ -333,23 +333,27 @@ cdef class cKDTreeNode:
 
     """
     cdef:
-        readonly cKDTree      _parent
         readonly np.intp_t    level
         readonly np.intp_t    split_dim
         readonly np.intp_t    children
+        readonly np.intp_t    start_idx
+        readonly np.intp_t    end_idx
         readonly np.float64_t split
-        ckdtreenode           *_node
+        np.ndarray            _data
+        np.ndarray            _indices
         readonly object       lesser
         readonly object       greater
 
     cdef void _setup(cKDTreeNode self, cKDTree parent, ckdtreenode *node, np.intp_t level):
         cdef cKDTreeNode n1, n2
-        self._parent = parent
         self.level = level
         self.split_dim = node.split_dim
         self.children = node.children
         self.split = node.split
-        self._node = node
+        self.start_idx = node.start_idx
+        self.end_idx = node.end_idx
+        self._data = parent.data
+        self._indices = parent.indices
         if self.split_dim == -1:
             self.lesser = None
             self.greater = None
@@ -365,14 +369,14 @@ cdef class cKDTreeNode:
 
     property data_points:
         def __get__(cKDTreeNode self):
-            return self._parent.data[self.indices,:]
+            return self._data[self.indices,:]
 
     property indices:
         def __get__(cKDTreeNode self):
             cdef np.intp_t start, stop
-            start = self._node.start_idx
-            stop = self._node.end_idx
-            return self._parent.indices[start:stop]
+            start = self.start_idx
+            stop = self.end_idx
+            return self._indices[start:stop]
 
 
 # Main cKDTree class
