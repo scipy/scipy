@@ -847,57 +847,34 @@ def _presolve_infeasible_equality_constraints(lp, tol):
     # where negative, and 0 where 0. H the opposite.
     # Note: treat zero-values in A_eq separately, to avoid final
     # mutiplication of 0 and inf.
-    G = lp.A_eq.copy()
-    H = lp.A_eq.copy()
     if sps.issparse(lp.A_eq):
-        # Iterate elements in A_eq (easiest if A_eq is in COO-format)
-
-        #TODO: G and H are sparse matrices if A_eq is sparse; setting each
-        # element of G and H is time-consuming.
-        # A_eq = lp.A_eq.tocoo()
-        # for i, j, v in zip(A_eq.row, A_eq.col, A_eq.data):
-        #     if v > 0:
-        #         G[i, j] = lp.bounds[j, 1]
-        #         H[i, j] = lp.bounds[j, 0]
-        #     elif v < 0:
-        #         G[i, j] = lp.bounds[j, 0]
-        #         H[i, j] = lp.bounds[j, 1]
-
-        # Alternative
-        # Get indices and (non-zero) values from A_eq
+        # Get row indices, column indices and (non-zero) values from A_eq
         iA, jA, valA = sps.find(lp.A_eq)
-        # Masks for positive and negative
+        # Masks for positive and negative values
         pos = valA > 0
         neg = np.logical_not(pos)
-        # create new sparse matrices G and H
-        G = sps.csr_matrix(lp.A_eq.shape)
-        H = sps.csr_matrix(lp.A_eq.shape)
-        # Get row and column indices of positive values in A_eq
+        # Get row and column indices of positive and negative values in A_eq
         iApos = iA[pos]
         jApos = jA[pos]
         iAneg = iA[neg]
         jAneg = jA[neg]
+        # Create new sparse matrices G and H
+        G = sps.csr_matrix(lp.A_eq.shape)
+        H = sps.csr_matrix(lp.A_eq.shape)
         # For these locations, set elements in G and H
+        # Issues a SparseEfficiencyWarning: Changing the sparsity structure of
+        # a csr_matrix is expensive. lil_matrix is more efficient.
         G[iApos, jApos] = lp.bounds[jApos, 1]
         G[iAneg, jAneg] = lp.bounds[jAneg, 0]
         H[iApos, jApos] = lp.bounds[jApos, 0]
         H[iAneg, jAneg] = lp.bounds[jAneg, 1]
-        # # Check identity of G and Galt
-        # if np.allclose(G.A, Galt.A):
-        #     print('Alternative G ok')
-        # else:
-        #     print('Error in calculation alternative G')
-        # if np.allclose(H.A, Halt.A):
-        #     print('Alternative H ok')
-        # else:
-        #     print('Error in calculation alternative H')
-
         # Row sums of element-wise product gives range between which equations
         # can vary.
         u_eq = np.sum(lp.A_eq.multiply(G), 1).flatten()
         l_eq = np.sum(lp.A_eq.multiply(H), 1).flatten()
-
     else:
+        G = lp.A_eq.copy()
+        H = lp.A_eq.copy()
         pos = lp.A_eq > 0
         neg = lp.A_eq < 0
         if pos.any():
@@ -949,19 +926,39 @@ def _presolve_infeasible_inequality_constraints(lp, tol):
     # where positive, and 0 where 0.
     # Note: treat zero-values in A_ub separately, to avoid final
     # mutiplication of 0 and inf.
-    H = lp.A_ub.copy()
     if sps.issparse(lp.A_ub):
-        # Iterate elements in A_ub (easiest if A_ub is in COO-format)
-        A_ub = lp.A_ub.tocoo()
-        for i, j, v in zip(A_ub.row, A_ub.col, A_ub.data):
-            if v > 0:
-                H[i, j] = lp.bounds[j, 0]
-            elif v < 0:
-                H[i, j] = lp.bounds[j, 1]
-        # Row sums of element-wise product gives minimum of range between
-        # which equations can vary.
+        # Get row indices, column indices and (non-zero) values from A_ub
+        iA, jA, valA = sps.find(lp.A_ub)
+        # Masks for positive and negative values
+        pos = valA > 0
+        neg = np.logical_not(pos)
+        # Get row and column indices of positive and negative values in A_ub
+        iApos = iA[pos]
+        jApos = jA[pos]
+        iAneg = iA[neg]
+        jAneg = jA[neg]
+        # Create new sparse matrix H
+        H = sps.csr_matrix(lp.A_ub.shape)
+        # For these locations, set elements in H
+        # Issues a SparseEfficiencyWarning: Changing the sparsity structure of
+        # a csr_matrix is expensive. lil_matrix is more efficient.
+        H[iApos, jApos] = lp.bounds[jApos, 0]
+        H[iAneg, jAneg] = lp.bounds[jAneg, 1]
+        # Row sums of element-wise product gives range between which equations
+        # can vary.
         l_ub = np.sum(lp.A_ub.multiply(H), 1).flatten()
+        # # Iterate elements in A_ub (easiest if A_ub is in COO-format)
+        # A_ub = lp.A_ub.tocoo()
+        # for i, j, v in zip(A_ub.row, A_ub.col, A_ub.data):
+        #     if v > 0:
+        #         H[i, j] = lp.bounds[j, 0]
+        #     elif v < 0:
+        #         H[i, j] = lp.bounds[j, 1]
+        # # Row sums of element-wise product gives minimum of range between
+        # # which equations can vary.
+        # l_ub = np.sum(lp.A_ub.multiply(H), 1).flatten()
     else:
+        H = lp.A_ub.copy()
         H = np.where(lp.A_ub > 0, lp.bounds[:, 0], H)
         H = np.where(lp.A_ub < 0, lp.bounds[:, 1], H)
         # Row sums of element-wise product gives minimum of range between
