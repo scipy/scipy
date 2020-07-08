@@ -242,27 +242,27 @@ class KDTree(cKDTree):
         def __lt__(self, other):
             if not isinstance(other, KDTree.node):
                 return False
-            return self._node._compare(other._node) < 0
+            return id(self._node) < id(other._node)
 
         def __le__(self, other):
             if not isinstance(other, KDTree.node):
                 return False
-            return self._node._compare(other._node) <= 0
+            return id(self._node) <= id(other._node)
 
         def __gt__(self, other):
             if not isinstance(other, KDTree.node):
                 return True
-            return self._node._compare(other._node) > 0
+            return id(self._node) > id(other._node)
 
         def __ge__(self, other):
             if not isinstance(other, KDTree.node):
                 return True
-            return self._node._compare(other._node) >= 0
+            return id(self._node) >= id(other._node)
 
         def __eq__(self, other):
             if not isinstance(other, KDTree.node):
                 return False
-            return self._node._compare(other._node) == 0
+            return id(self._node) == id(other._node)
 
     class leafnode(node):
         @property
