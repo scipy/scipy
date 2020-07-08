@@ -412,7 +412,7 @@ class KDTree(cKDTree):
 
         d, i = super().query(x, k, eps, p, distance_upper_bound)
         if isinstance(i, int):
-            i = np.int64(i)
+            i = np.intp(i)
         return d, i
 
     def query_ball_point(self, x, r, p=2., eps=0):
@@ -589,8 +589,7 @@ class KDTree(cKDTree):
         Returns
         -------
         result : int or 1-D array of ints
-            The number of pairs. Note that this is internally stored in a numpy
-            int, and so may overflow if very large (2e9).
+            The number of pairs.
 
         Examples
         --------
@@ -616,7 +615,13 @@ class KDTree(cKDTree):
         """
         counts = super().count_neighbors(other, r, p)
         if isinstance(counts, np.ndarray):
-            counts = counts.astype(int)
+            # If there is no overflow, cast to np.int_ for back-compatibility
+            max_int = np.iinfo(np.int_).max
+            can_cast = (counts.dtype.itemsize <= np.int_().itemsize or
+                        other.n <= max_int or
+                        (counts <= max_int).all())
+            if can_cast:
+                counts = counts.astype(np.int_, copy=False)
         return counts
 
     def sparse_distance_matrix(self, other, max_distance, p=2.):
