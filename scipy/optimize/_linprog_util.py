@@ -9,7 +9,6 @@ from .optimize import OptimizeWarning
 from scipy.optimize._remove_redundancy import (
     _remove_redundancy, _remove_redundancy_sparse, _remove_redundancy_dense)
 from collections import namedtuple
-import warnings 
 
 _LPProblem = namedtuple('_LPProblem', 'c A_ub b_ub A_eq b_eq bounds x0')
 _LPProblem.__new__.__defaults__ = (None,) * 6  # make c the only required arg
@@ -862,8 +861,8 @@ def _presolve_infeasible_equality_constraints(lp, tol):
         # Create new sparse matrices G and H
         # Using dense matrices may be faster but that would ignore the user's
         # considerations to use a sparse A_eq.
-        G = sps.csr_matrix(lp.A_eq.shape)
-        H = sps.csr_matrix(lp.A_eq.shape)
+        G = sps.lil_matrix(lp.A_eq.shape)
+        H = sps.lil_matrix(lp.A_eq.shape)
         # For these locations, set elements in G and H
         # G[...] = ... and H[...] = ... issue a SparseEfficiencyWarning:
         # Changing the sparsity structure of a csr_matrix is expensive.
@@ -875,10 +874,8 @@ def _presolve_infeasible_equality_constraints(lp, tol):
         # have been reduced to two:
         iApn = np.concatenate((iApos, iAneg))
         jApn = np.concatenate((jApos, jAneg))
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore')
-            G[iApn, jApn] = np.concatenate((lp.bounds[jApos, 1], lp.bounds[jAneg, 0]))
-            H[iApn, jApn] = np.concatenate((lp.bounds[jApos, 0], lp.bounds[jAneg, 1]))
+        G[iApn, jApn] = np.concatenate((lp.bounds[jApos, 1], lp.bounds[jAneg, 0]))
+        H[iApn, jApn] = np.concatenate((lp.bounds[jApos, 0], lp.bounds[jAneg, 1]))
         # Row sums of element-wise product gives range between which equations
         # can vary.
         u_eq = np.sum(lp.A_eq.multiply(G), 1).flatten()
@@ -951,7 +948,7 @@ def _presolve_infeasible_inequality_constraints(lp, tol):
         # Create new sparse matrix H
         # Using dense matrices may be faster but that would ignore the user's
         # considerations to use a sparse A_eq.
-        H = sps.csr_matrix(lp.A_ub.shape)
+        H = sps.lil_matrix(lp.A_ub.shape)
         # For these locations, set elements in H
         # H[...] = ... issue a SparseEfficiencyWarning:
         # Changing the sparsity structure of a csr_matrix is expensive.
@@ -961,9 +958,7 @@ def _presolve_infeasible_inequality_constraints(lp, tol):
         # have been reduced to one:
         iApn = np.concatenate((iApos, iAneg))
         jApn = np.concatenate((jApos, jAneg))
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore')
-            H[iApn, jApn] = np.concatenate((lp.bounds[jApos, 0], lp.bounds[jAneg, 1]))
+        H[iApn, jApn] = np.concatenate((lp.bounds[jApos, 0], lp.bounds[jAneg, 1]))
         # Row sums of element-wise product gives range between which equations
         # can vary.
         l_ub = np.sum(lp.A_ub.multiply(H), 1).flatten()
