@@ -240,29 +240,19 @@ class KDTree(cKDTree):
             self._node = ckdtree_node
 
         def __lt__(self, other):
-            if not isinstance(other, KDTree.node):
-                return False
-            return id(self._node) < id(other._node)
-
-        def __le__(self, other):
-            if not isinstance(other, KDTree.node):
-                return False
-            return id(self._node) <= id(other._node)
+            return id(self) < id(other)
 
         def __gt__(self, other):
-            if not isinstance(other, KDTree.node):
-                return True
-            return id(self._node) > id(other._node)
+            return id(self) > id(other)
+
+        def __le__(self, other):
+            return id(self) <= id(other)
 
         def __ge__(self, other):
-            if not isinstance(other, KDTree.node):
-                return True
-            return id(self._node) >= id(other._node)
+            return id(self) >= id(other)
 
         def __eq__(self, other):
-            if not isinstance(other, KDTree.node):
-                return False
-            return id(self._node) == id(other._node)
+            return id(self) == id(other)
 
     class leafnode(node):
         @property
@@ -274,6 +264,12 @@ class KDTree(cKDTree):
             return self._node.children
 
     class innernode(node):
+        def __init__(self, ckdtreenode):
+            assert isinstance(ckdtreenode, cKDTreeNode)
+            super().__init__(ckdtreenode)
+            self.less = KDTree.node._create(ckdtreenode.lesser)
+            self.greater = KDTree.node._create(ckdtreenode.greater)
+
         @property
         def split_dim(self):
             return self._node.split_dim
@@ -286,17 +282,12 @@ class KDTree(cKDTree):
         def children(self):
             return self._node.children
 
-        @property
-        def less(self):
-            return KDTree.node._create(self._node.lesser)
-
-        @property
-        def greater(self):
-            return KDTree.node._create(self._node.greater)
-
     @property
     def tree(self):
-        return KDTree.node._create(super().tree)
+        if not hasattr(self, "_tree"):
+            self._tree = KDTree.node._create(super().tree)
+
+        return self._tree
 
     def __init__(self, data, leafsize=10):
         data = np.asarray(data)
