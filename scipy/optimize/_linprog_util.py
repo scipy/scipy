@@ -9,6 +9,7 @@ from .optimize import OptimizeWarning
 from scipy.optimize._remove_redundancy import (
     _remove_redundancy, _remove_redundancy_sparse, _remove_redundancy_dense)
 from collections import namedtuple
+import warnings 
 
 _LPProblem = namedtuple('_LPProblem', 'c A_ub b_ub A_eq b_eq bounds x0')
 _LPProblem.__new__.__defaults__ = (None,) * 6  # make c the only required arg
@@ -874,8 +875,10 @@ def _presolve_infeasible_equality_constraints(lp, tol):
         # have been reduced to two:
         iApn = np.concatenate((iApos, iAneg))
         jApn = np.concatenate((jApos, jAneg))
-        G[iApn, jApn] = np.concatenate((lp.bounds[jApos, 1], lp.bounds[jAneg, 0]))
-        H[iApn, jApn] = np.concatenate((lp.bounds[jApos, 0], lp.bounds[jAneg, 1]))
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')
+            G[iApn, jApn] = np.concatenate((lp.bounds[jApos, 1], lp.bounds[jAneg, 0]))
+            H[iApn, jApn] = np.concatenate((lp.bounds[jApos, 0], lp.bounds[jAneg, 1]))
         # Row sums of element-wise product gives range between which equations
         # can vary.
         u_eq = np.sum(lp.A_eq.multiply(G), 1).flatten()
@@ -958,7 +961,9 @@ def _presolve_infeasible_inequality_constraints(lp, tol):
         # have been reduced to one:
         iApn = np.concatenate((iApos, iAneg))
         jApn = np.concatenate((jApos, jAneg))
-        H[iApn, jApn] = np.concatenate((lp.bounds[jApos, 0], lp.bounds[jAneg, 1]))
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')
+            H[iApn, jApn] = np.concatenate((lp.bounds[jApos, 0], lp.bounds[jAneg, 1]))
         # Row sums of element-wise product gives range between which equations
         # can vary.
         l_ub = np.sum(lp.A_ub.multiply(H), 1).flatten()

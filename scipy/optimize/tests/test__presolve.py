@@ -576,7 +576,17 @@ def test_remove_inequality_singleton_rows():
     assert_(np.allclose(lpp.bounds, np.array([[0, 0], [0, 1], [0, 1], [1, 1], [0, 1]], dtype=float)))
 
     # Problem infeasible
-    print("continue here")
+    # -3 * x[3] <= -6, x[3] >= 2
+    # -1 * x[3] <= 2, x[3] >= -2
+    # 5 * x[0] <= 0, x[0] <= 0
+    status = {'solved': False, 'feasible': True, 'bounded': True, 'loop': False}
+    b_ub = np.array([8, -6, -2, -3, 2, 0], dtype=float)
+    lpp, rev, status = _presolve_remove_inequality_row_singletons(lp._replace(b_ub=b_ub), status, tol)
+    print(lpp.bounds)
+    assert_(not status['solved'])
+    assert_(not status['feasible'])
+    assert_(status['bounded'])
+    assert_(not status['loop'])
 
 def test_remove_empty_rows():
     """
@@ -590,204 +600,318 @@ def test_remove_empty_rows():
         [ 0,  2,  0,  2,  0],
         [ 0,  0,  0,  0,  0],
         [ 5,  0,  0,  0,  0]
-        ])
+        ], dtype=float)
     lp = _LPProblem(
-        c=None,
-        A_ub=None,
-        b_ub=None,
-        b_eq=None,
-        A_eq=None,
-        bounds=None,
+        c=np.zeros((5), dtype=float),  # not relevant
+        A_ub=np.empty((0, 5), dtype=float),
+        b_ub=np.empty((0), dtype=float),
+        A_eq=np.empty((0, 5), dtype=float),
+        b_eq=np.empty((0), dtype=float),
+        bounds=np.empty((0, 2), dtype=float),
         x0=None,
     )
 
-    # (lp, rev, status) = _presolve_remove_empty_rows(lp)
-
-    # Empty equations
-    lpp, rev, status = _presolve_remove_empty_rows(lp, tol)
-    assert_(status == 6)
+    # Empty equations: no action
+    status = {'solved': False, 'feasible': True, 'bounded': True, 'loop': False}
+    lpp, rev, status = _presolve_remove_empty_rows(lp, status, tol)
+    assert_(not status['solved'])  # There is no check on number of variables remaining
+    assert_(status['feasible'])
+    assert_(status['bounded'])
+    assert_(not status['loop'])
     assert_(rev is None)
 
-    # A_eq, b_eq
+    # A_eq has zero rows at index 1 and 4
+    # Corresponding elements in b_eq are not 0, so problem is infeasible
+    status = {'solved': False, 'feasible': True, 'bounded': True, 'loop': False}
     b_eq = np.array([8, 6, -2, -3, 2, 4])
-    lpp, rev, status = _presolve_remove_empty_rows(lp._replace(A_eq=A, b_eq=b_eq), tol)
-    assert_(status == 2)
-    assert_(rev is None)
+    lpp, rev, status = _presolve_remove_empty_rows(lp._replace(A_eq=A, b_eq=b_eq), status, tol)
+    assert_(not status['solved'])
+    assert_(not status['feasible'])
+    assert_(status['bounded'])
+    assert_(not status['loop'])
 
+    # A_eq has zero rows at index 1 and 4
+    # Corresponding elements in b_eq are 0, so rows can be removed
+    status = {'solved': False, 'feasible': True, 'bounded': True, 'loop': False}
     b_eq = np.array([8, 0, -2, -3, 0, 4])
-    lpp, rev, status = _presolve_remove_empty_rows(lp._replace(A_eq=A, b_eq=b_eq), tol)
-    assert_(status == 6)
+    lpp, rev, status = _presolve_remove_empty_rows(lp._replace(A_eq=A, b_eq=b_eq), status, tol)
+    assert_(not status['solved'])
+    assert_(status['feasible'])
+    assert_(status['bounded'])
+    assert_(status['loop'])
+    assert_(np.all(lpp.A_eq.shape == (4, 5)))
     assert_(rev is None)
 
+    # A_eq has zero rows at index 1 and 4
+    # Corresponding elements in b_eq are 0 within tolerance, so rows can be removed
+    status = {'solved': False, 'feasible': True, 'bounded': True, 'loop': False}
     b_eq = np.array([8, 0.5 * tol, -2, -3, -0.9 * tol, 4])
-    lpp, rev, status = _presolve_remove_empty_rows(lp._replace(A_eq=A, b_eq=b_eq), tol)
-    assert_(status == 6)
+    lpp, rev, status = _presolve_remove_empty_rows(lp._replace(A_eq=A, b_eq=b_eq), status, tol)
+    assert_(not status['solved'])
+    assert_(status['feasible'])
+    assert_(status['bounded'])
+    assert_(status['loop'])
+    assert_(np.all(lpp.A_eq.shape == (4, 5)))
     assert_(rev is None)
 
+    # A_eq has zero rows at index 1 and 4
+    # Corresponding elements in b_eq are not 0 within tolerance, so problem is infeasible
+    status = {'solved': False, 'feasible': True, 'bounded': True, 'loop': False}
     b_eq = np.array([8, 1.5 * tol, -2, -3, -0.9 * tol, 4])
-    lpp, rev, status = _presolve_remove_empty_rows(lp._replace(A_eq=A, b_eq=b_eq), tol)
-    assert_(status == 2)
-    assert_(rev is None)
-
-    b_eq = np.array([8, 6, -2, -3, 2, 4])
-    lpp, rev, status = _presolve_remove_empty_rows(lp._replace(A_eq=A, b_eq=b_eq), tol)
-    assert_(status == 2)
-    assert_(rev is None)
+    lpp, rev, status = _presolve_remove_empty_rows(lp._replace(A_eq=A, b_eq=b_eq), status, tol)
+    assert_(not status['solved'])
+    assert_(not status['feasible'])
+    assert_(status['bounded'])
+    assert_(not status['loop'])
 
     # A_ub, b_ub
+    # A_ub has zero rows at index 1 and 4
+    # Corresponding elements in b_ub are positive, so rows can be removed
+    status = {'solved': False, 'feasible': True, 'bounded': True, 'loop': False}
     b_ub = np.array([8, 6, -2, -3, 2, 4])
-    lpp, rev, status = _presolve_remove_empty_rows(lp._replace(A_ub=A, b_ub=b_ub), tol)
-    assert_(status == 2)
+    lpp, rev, status = _presolve_remove_empty_rows(lp._replace(A_ub=A, b_ub=b_ub), status, tol)
+    assert_(not status['solved'])
+    assert_(status['feasible'])
+    assert_(status['bounded'])
+    assert_(status['loop'])
+    assert_(np.all(lpp.A_ub.shape == (4, 5)))
     assert_(rev is None)
 
+    # A_ub has zero rows at index 1 and 4
+    # Corresponding elements in b_ub are 0, so rows can be removed
+    status = {'solved': False, 'feasible': True, 'bounded': True, 'loop': False}
     b_ub = np.array([8, 0, -2, -3, 0, 4])
-    lpp, rev, status = _presolve_remove_empty_rows(lp._replace(A_ub=A, b_ub=b_ub), tol)
-    assert_(status == 6)
+    lpp, rev, status = _presolve_remove_empty_rows(lp._replace(A_ub=A, b_ub=b_ub), status, tol)
+    assert_(not status['solved'])
+    assert_(status['feasible'])
+    assert_(status['bounded'])
+    assert_(status['loop'])
+    assert_(np.all(lpp.A_ub.shape == (4, 5)))
     assert_(rev is None)
 
+    # A_ub has zero rows at index 1 and 4
+    # Corresponding elements in b_ub are 0 within tolerance, so rows can be removed
+    status = {'solved': False, 'feasible': True, 'bounded': True, 'loop': False}
     b_ub = np.array([8, 0.5 * tol, -2, -3, -0.9 * tol, 4])
-    lpp, rev, status = _presolve_remove_empty_rows(lp._replace(A_ub=A, b_ub=b_ub), tol)
-    assert_(status == 6)
+    lpp, rev, status = _presolve_remove_empty_rows(lp._replace(A_ub=A, b_ub=b_ub), status, tol)
+    assert_(not status['solved'])
+    assert_(status['feasible'])
+    assert_(status['bounded'])
+    assert_(status['loop'])
+    assert_(np.all(lpp.A_ub.shape == (4, 5)))
     assert_(rev is None)
 
-    b_ub = np.array([8, 1.5 * tol, -2, -3, -0.9 * tol, 4])
-    lpp, rev, status = _presolve_remove_empty_rows(lp._replace(A_ub=A, b_ub=b_ub), tol)
-    assert_(status == 2)
-    assert_(rev is None)
-
-    b_ub = np.array([8, 6, -2, -3, 2, 4])
-    lpp, rev, status = _presolve_remove_empty_rows(lp._replace(A_ub=A, b_ub=b_ub), tol)
-    assert_(status == 2)
-    assert_(rev is None)
+    # A_ub has zero rows at index 1 and 4
+    # Corresponding elements in b_ub are not >= 0 within tolerance, so problem
+    # is infeasible
+    status = {'solved': False, 'feasible': True, 'bounded': True, 'loop': False}
+    b_ub = np.array([8, -1.5 * tol, -2, -3, -0.9 * tol, 4])
+    lpp, rev, status = _presolve_remove_empty_rows(lp._replace(A_ub=A, b_ub=b_ub), status, tol)
+    assert_(not status['solved'])
+    assert_(not status['feasible'])
+    assert_(status['bounded'])
+    assert_(not status['loop'])
 
 
 def test_remove_empty_columns():
     """
     Test empty column removal procedure.
     """
-    c = np.array([1, -2, 3, -4, 5])
     lp = _LPProblem(
-        c=c,
-        A_ub=None,
-        b_ub=None,
-        A_eq=None,
-        b_eq=None,
-        bounds=np.array([[0, 1], [0, 1], [0, 1], [0, 1], [0, 1]]),
+        c=np.array([1, -2, 3, -4, 5], dtype=float),
+        A_ub=np.empty((0, 5), dtype=float),  # supplied below
+        b_ub=np.empty((0), dtype=float),
+        A_eq=np.empty((0, 5), dtype=float),  # supplied below
+        b_eq=np.empty((0), dtype=float),
+        bounds=np.array([[0, 1], [0, 1], [0, 1], [0, 1], [0, 1]], dtype=float),
         x0=None,
     )
 
-    A = np.array([
+    # One zero column
+    A1 = np.array([
         [ 1,  3,  0,  7,  0],
         [ 1, -1,  0,  0,  0],
         [-2, -2,  0,  8,  0],
         [ 0,  2,  0,  2,  0],
         [ 0,  1,  0, -3,  2],
         [ 5,  0,  0,  0,  0]
-        ])
+        ], dtype=float)
 
+    # Two zero columns
     A2 = np.array([
         [ 3,  3,  0,  0,  7],
         [ 1, -3,  0,  0,  0],
         [-2, -1,  0,  0,  2],
-        ])
+        ], dtype=float)
 
-    # (lp, rev, status) = _presolve_remove_empty_columns(lp)
+    # Empty equations: all variables will be removed and set to lower bound
+    # for positive c and upper bound for negative c
+    status = {'solved': False, 'feasible': True, 'bounded': True, 'loop': False}
+    lpp, rev, status = _presolve_remove_empty_columns(lp, status)
+    assert_(status['solved'])
+    assert_(status['feasible'])
+    assert_(status['bounded'])
+    assert_(not status['loop'])
+    xr = rev(np.array([]))
+    assert_(np.allclose(xr, np.array([0., 1., 0., 1., 0.])))
 
-    # Empty 
-    lpp, rev, status = _presolve_remove_empty_rows(lp)
-    assert_(status == 6)
+    # Empty equations with 0 in c
+    # Value of variable x[4] does not affect minimum, arbitrary set midway interval
+    status = {'solved': False, 'feasible': True, 'bounded': True, 'loop': False}
+    c = np.array([1, -2, 3, -4, 0], dtype=float)
+    lpp, rev, status = _presolve_remove_empty_columns(lp._replace(c=c), status)
+    assert_(status['solved'])
+    assert_(status['feasible'])
+    assert_(status['bounded'])
+    assert_(not status['loop'])
+    xr = rev(np.array([]))
+    assert_(np.allclose(xr, np.array([0., 1., 0., 1., 0.5])))
 
-    # Columns in A_eq only
-    lpp, rev, status = _presolve_remove_empty_columns(lp._replace(A_eq=A))
-    assert_(status == 5)
+    # Zero column in A_eq
+    # x[2] fixed on lower bound
+    status = {'solved': False, 'feasible': True, 'bounded': True, 'loop': False}
+    lpp, rev, status = _presolve_remove_empty_columns(lp._replace(A_eq=A1), status)
+    assert_(not status['solved'])
+    assert_(status['feasible'])
+    assert_(status['bounded'])
+    assert_(status['loop'])
     assert_(np.all(lpp[0] == np.array([1, -2, -4, 5])))
 
-    cr, xr, x0r = rev(lpp[0], np.array([0., 0., 0., 0.]), lpp[6])
-    assert_(np.all(cr == c))
+    xr = rev(np.array([0., 0., 0., 0.]))  # arbitrary values
     assert_(np.allclose(xr, np.array([0., 0., 0., 0., 0.])))
-    assert_(np.all(x0r is None))
 
+    # Zero column in A_eq
+    # x[2] fixed on lower bound
+    status = {'solved': False, 'feasible': True, 'bounded': True, 'loop': False}
     bounds = np.array([[0, 1], [0, 1], [0, np.inf], [0, 1], [0, 1]])
-    lpp, rev, status = _presolve_remove_empty_columns(lp._replace(A_eq=A, bounds=bounds))
-    assert_(status == 5)
+    lpp, rev, status = _presolve_remove_empty_columns(lp._replace(A_eq=A1, bounds=bounds), status)
+    assert_(not status['solved'])
+    assert_(status['feasible'])
+    assert_(status['bounded'])
+    assert_(status['loop'])
     assert_(np.all(lpp[0] == np.array([1, -2, -4, 5])))
 
-    cr, xr, x0r = rev(lpp[0], np.array([0., 0., 0., 0.]), lpp[6])
-    assert_(np.all(cr == c))
+    xr = rev(np.array([0., 0., 0., 0.]))  # arbitrary values
     assert_(np.allclose(xr, np.array([0., 0., 0., 0., 0.])))
-    assert_(np.all(x0r is None))
 
+    # Zero column in A_eq
+    # x[2] lower bound = -inf, so problem unbounded
+    status = {'solved': False, 'feasible': True, 'bounded': True, 'loop': False}
     bounds = np.array([[0, 1], [0, 1], [-np.inf, 1], [0, 1], [0, 1]])
-    lpp, rev, status = _presolve_remove_empty_columns(lp._replace(A_eq=A, bounds=bounds))
-    assert_(status == 3)
+    lpp, rev, status = _presolve_remove_empty_columns(lp._replace(A_eq=A1, bounds=bounds), status)
+    assert_(not status['solved'])
+    assert_(status['feasible'])
+    assert_(not status['bounded'])
+    assert_(not status['loop'])
 
+    # Two zero columns in A_eq
+    # c[2] > 0, x[2] lower bound = 0, OK
+    # c[3] < 0, x[3] upper bound = inf, so unbounded
+    status = {'solved': False, 'feasible': True, 'bounded': True, 'loop': False}
     bounds = np.array([[0, 1], [0, 1], [0, 1], [0, np.inf], [0, 1]])
-    lpp, rev, status = _presolve_remove_empty_columns(lp._replace(A_eq=A2, bounds=bounds))
-    assert_(status == 3)
+    lpp, rev, status = _presolve_remove_empty_columns(lp._replace(A_eq=A2, bounds=bounds), status)
+    assert_(not status['solved'])
+    assert_(status['feasible'])
+    assert_(not status['bounded'])
+    assert_(not status['loop'])
 
+    # Two zero columns in A_eq
+    # c[2] > 0, x[2] lower bound = 0, OK
+    # c[3] < 0, x[3] upper bound = 1, OK
+    status = {'solved': False, 'feasible': True, 'bounded': True, 'loop': False}
     bounds = np.array([[0, 1], [0, 1], [0, 1], [-np.inf, 1], [0, 1]])
-    lpp, rev, status = _presolve_remove_empty_columns(lp._replace(A_eq=A2, bounds=bounds))
-    assert_(status == 5)
+    lpp, rev, status = _presolve_remove_empty_columns(lp._replace(A_eq=A2, bounds=bounds), status)
+    assert_(not status['solved'])
+    assert_(status['feasible'])
+    assert_(status['bounded'])
+    assert_(status['loop'])
     assert_(np.all(lpp[0] == np.array([1, -2, 5])))
 
-    cr, xr, x0r = rev(lpp[0], np.array([0., 0., 0.]), lpp[6])
-    assert_(np.all(cr == c))
+    xr = rev(np.array([0., 0., 0.]))  # arbitrary values
     assert_(np.allclose(xr, np.array([0., 0., 0., 1., 0.])))
-    assert_(np.all(x0r is None))
 
-    # Columns in A_ub only
-    lpp, rev, status = _presolve_remove_empty_columns(lp._replace(A_ub=A))
-    assert_(status == 5)
+    # Columns in A_ub
+    # x[2] fixed on lower bound
+    status = {'solved': False, 'feasible': True, 'bounded': True, 'loop': False}
+    lpp, rev, status = _presolve_remove_empty_columns(lp._replace(A_ub=A1), status)
+    assert_(not status['solved'])
+    assert_(status['feasible'])
+    assert_(status['bounded'])
+    assert_(status['loop'])
     assert_(np.all(lpp[0] == np.array([1, -2, -4, 5])))
 
-    cr, xr, x0r = rev(lpp[0], np.array([0., 0., 0., 0.]), lpp[6])
-    assert_(np.all(cr == c))
+    xr = rev(np.array([0., 0., 0., 0.]))  # arbitrary values
     assert_(np.allclose(xr, np.array([0., 0., 0., 0., 0.])))
-    assert_(np.all(x0r is None))
 
+    # Columns in A_ub
+    # x[2] fixed on lower bound
+    status = {'solved': False, 'feasible': True, 'bounded': True, 'loop': False}
     bounds = np.array([[0, 1], [0, 1], [0, np.inf], [0, 1], [0, 1]])
-    lpp, rev, status = _presolve_remove_empty_columns(lp._replace(A_ub=A, bounds=bounds))
-    assert_(status == 5)
+    lpp, rev, status = _presolve_remove_empty_columns(lp._replace(A_ub=A1, bounds=bounds), status)
+    assert_(not status['solved'])
+    assert_(status['feasible'])
+    assert_(status['bounded'])
+    assert_(status['loop'])
     assert_(np.all(lpp[0] == np.array([1, -2, -4, 5])))
 
-    cr, xr, x0r = rev(lpp[0], np.array([0., 0., 0., 0.]), lpp[6])
-    assert_(np.all(cr == c))
+    xr = rev(np.array([0., 0., 0., 0.]))  # arbitrary values
     assert_(np.allclose(xr, np.array([0., 0., 0., 0., 0.])))
-    assert_(np.all(x0r is None))
 
+    # Zero column in A_ub
+    # x[2] lower bound = -inf, so problem unbounded
+    status = {'solved': False, 'feasible': True, 'bounded': True, 'loop': False}
     bounds = np.array([[0, 1], [0, 1], [-np.inf, 1], [0, 1], [0, 1]])
-    lpp, rev, status = _presolve_remove_empty_columns(lp._replace(A_ub=A, bounds=bounds))
-    assert_(status == 3)
+    lpp, rev, status = _presolve_remove_empty_columns(lp._replace(A_ub=A1, bounds=bounds), status)
+    assert_(not status['solved'])
+    assert_(status['feasible'])
+    assert_(not status['bounded'])
+    assert_(not status['loop'])
 
-    # Columns in A_eq and A_ub
-    lpp, rev, status = _presolve_remove_empty_columns(lp._replace(A_eq=A, A_ub=A2))
-    assert_(status == 5)
+    # Zero columns in A_eq and A_ub
+    status = {'solved': False, 'feasible': True, 'bounded': True, 'loop': False}
+    lpp, rev, status = _presolve_remove_empty_columns(lp._replace(A_eq=A1, A_ub=A2), status)
+    assert_(not status['solved'])
+    assert_(status['feasible'])
+    assert_(status['bounded'])
+    assert_(status['loop'])
     assert_(np.all(lpp[0] == np.array([1, -2, -4, 5])))
 
-    cr, xr, x0r = rev(lpp[0], np.array([0., 0., 0., 0.]), lpp[6])
-    assert_(np.all(cr == c))
+    xr = rev(np.array([0., 0., 0., 0.]))  # arbitrary values
     assert_(np.allclose(xr, np.array([0., 0., 0., 0., 0.])))
-    assert_(np.all(x0r is None))
 
-    lpp, rev, status = _presolve_remove_empty_columns(lp._replace(A_eq=A2, A_ub=A))
-    assert_(status == 5)
+    # Zero columns in A_eq and A_ub
+    # only column 2 occurs in both
+    status = {'solved': False, 'feasible': True, 'bounded': True, 'loop': False}
+    lpp, rev, status = _presolve_remove_empty_columns(lp._replace(A_eq=A2, A_ub=A1), status)
+    assert_(not status['solved'])
+    assert_(status['feasible'])
+    assert_(status['bounded'])
+    assert_(status['loop'])
     assert_(np.all(lpp[0] == np.array([1, -2, -4, 5])))
 
-    cr, xr, x0r = rev(lpp[0], np.array([0., 0., 0., 0.]), lpp[6])
-    assert_(np.all(cr == c))
+    xr = rev(np.array([0., 0., 0., 0.]))  # arbitrary values
     assert_(np.allclose(xr, np.array([0., 0., 0., 0., 0.])))
-    assert_(np.all(x0r is None))
 
+    # Zero columns in A_eq and A_ub
+    # x[2] fixed on lower bound
+    status = {'solved': False, 'feasible': True, 'bounded': True, 'loop': False}
     bounds = np.array([[0, 1], [0, 1], [0, np.inf], [0, 1], [0, 1]])
-    lpp, rev, status = _presolve_remove_empty_columns(lp._replace(A_eq=A, A_ub=A2, bounds=bounds))
-    assert_(status == 5)
+    lpp, rev, status = _presolve_remove_empty_columns(lp._replace(A_eq=A1, A_ub=A2, bounds=bounds), status)
+    assert_(not status['solved'])
+    assert_(status['feasible'])
+    assert_(status['bounded'])
+    assert_(status['loop'])
     assert_(np.all(lpp[0] == np.array([1, -2, -4, 5])))
 
-    cr, xr, x0r = rev(lpp[0], np.array([0., 0., 0., 0.]), lpp[6])
-    assert_(np.all(cr == c))
+    xr = rev(np.array([0., 0., 0., 0.]))  # arbitrary values
     assert_(np.allclose(xr, np.array([0., 0., 0., 0., 0.])))
-    assert_(np.all(x0r is None))
 
+    # Zero columns in A_eq and A_ub
+    # x[2] lower bound = -inf, so problem unbounded
+    status = {'solved': False, 'feasible': True, 'bounded': True, 'loop': False}
     bounds = np.array([[0, 1], [0, 1], [-np.inf, 1], [0, 1], [0, 1]])
-    lpp, rev, status = _presolve_remove_empty_columns(lp._replace(A_eq=A, A_ub=A2, bounds=bounds))
-    assert_(status == 3)
+    lpp, rev, status = _presolve_remove_empty_columns(lp._replace(A_eq=A1, A_ub=A2, bounds=bounds), status)
+    assert_(not status['solved'])
+    assert_(status['feasible'])
+    assert_(not status['bounded'])
+    assert_(not status['loop'])
