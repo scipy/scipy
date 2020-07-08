@@ -241,7 +241,6 @@ def test_remove_fixed_variables():
 
     # Variables 0 and 2 fixed at 1 and 3
     bounds = np.array([[1, 1], [0, 1], [3, 3]], dtype=float)
-    x0 = np.array([3, -2, 1])
     status = {'solved': False, 'feasible': True, 'bounded': True, 'loop': False}
     lpp, rev, status = _presolve_remove_fixed_variables(lp._replace(bounds=bounds), status, tol)
     assert_(not status['solved'])
@@ -467,13 +466,12 @@ def test_remove_equation_singleton_rows():
         A_ub=np.empty((0, 5), dtype=float),
         b_ub=np.empty((0), dtype=float),
         A_eq=np.array([
-            [ 1,  3,  5,  7,  9],
-            [ 0,  0,  0, -3,  0],
-            [-2, -2,  1,  8,  1],
-            [ 0,  2,  0,  2,  0],
-            [ 0,  0,  0, -1,  0],
-            [ 5,  0,  0,  0,  0]
-            ], dtype=float),
+            [1, 3, 5, 7, 9],
+            [0, 0, 0, -3, 0],
+            [-2, -2, 1, 8, 1],
+            [0, 2, 0, 2, 0],
+            [0, 0, 0, -1, 0],
+            [5, 0, 0, 0, 0]], dtype=float),
         b_eq=np.array([8, 6, -2, -3, 2 + 0.5 * tol, 4], dtype=float),
         bounds=np.array([[0, 1], [0, 1], [0, 1], [0, 1], [0, 1]], dtype=float),
         x0=None,
@@ -519,13 +517,12 @@ def test_remove_inequality_singleton_rows():
     lp = _LPProblem(
         c=np.array([1, 2, 3, 4, 5], dtype=float),
         A_ub=np.array([
-            [ 1,  3,  5,  7,  9],
-            [ 0,  0,  0, -3,  0],
-            [-2, -2,  1,  8,  1],
-            [ 0,  2,  0,  2,  0],
-            [ 0,  0,  0, -1,  0],
-            [ 5,  0,  0,  0,  0]
-            ], dtype=float),
+            [1, 3, 5, 7, 9],
+            [0, 0, 0, -3, 0],
+            [-2, -2, 1, 8, 1],
+            [0, 2, 0, 2, 0],
+            [0, 0, 0, -1, 0],
+            [5, 0, 0, 0, 0]], dtype=float),
         b_ub=np.empty((0), dtype=float),  # values supplied below
         A_eq=np.empty((0, 5), dtype=float),
         b_eq=np.empty((0), dtype=float),
@@ -588,19 +585,19 @@ def test_remove_inequality_singleton_rows():
     assert_(status['bounded'])
     assert_(not status['loop'])
 
+
 def test_remove_empty_rows():
     """
     Test empty row removal procedure.
     """
     tol = 1e-2
     A = np.array([
-        [ 1,  3,  5,  7,  9],
-        [ 0,  0,  0,  0,  0],
-        [-2, -2,  1,  8,  1],
-        [ 0,  2,  0,  2,  0],
-        [ 0,  0,  0,  0,  0],
-        [ 5,  0,  0,  0,  0]
-        ], dtype=float)
+        [1, 3, 5, 7, 9],
+        [0, 0, 0, 0, 0],
+        [-2, -2, 1, 8, 1],
+        [0, 2, 0, 2, 0],
+        [0, 0, 0, 0, 0],
+        [5, 0, 0, 0, 0]], dtype=float)
     lp = _LPProblem(
         c=np.zeros((5), dtype=float),  # not relevant
         A_ub=np.empty((0, 5), dtype=float),
@@ -729,20 +726,18 @@ def test_remove_empty_columns():
 
     # One zero column
     A1 = np.array([
-        [ 1,  3,  0,  7,  0],
-        [ 1, -1,  0,  0,  0],
-        [-2, -2,  0,  8,  0],
-        [ 0,  2,  0,  2,  0],
-        [ 0,  1,  0, -3,  2],
-        [ 5,  0,  0,  0,  0]
-        ], dtype=float)
+        [1, 3, 0, 7, 0],
+        [1, -1, 0, 0, 0],
+        [-2, -2, 0, 8, 0],
+        [0, 2, 0, 2, 0],
+        [0, 1, 0, -3, 2],
+        [5, 0, 0, 0, 0]], dtype=float)
 
     # Two zero columns
     A2 = np.array([
-        [ 3,  3,  0,  0,  7],
-        [ 1, -3,  0,  0,  0],
-        [-2, -1,  0,  0,  2],
-        ], dtype=float)
+        [3, 3, 0, 0, 7],
+        [1, -3, 0, 0, 0],
+        [-2, -1, 0, 0, 2]], dtype=float)
 
     # Empty equations: all variables will be removed and set to lower bound
     # for positive c and upper bound for negative c
