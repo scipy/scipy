@@ -336,37 +336,35 @@ cdef class cKDTreeNode:
         readonly np.intp_t    level
         readonly np.intp_t    split_dim
         readonly np.intp_t    children
+        readonly np.intp_t    start_idx
+        readonly np.intp_t    end_idx
         readonly np.float64_t split
-        ckdtreenode           *_node
         np.ndarray            _data
         np.ndarray            _indices
         readonly object       lesser
         readonly object       greater
 
-    cdef void _setup(cKDTreeNode self):
+    cdef void _setup(cKDTreeNode self, cKDTree parent, ckdtreenode *node, np.intp_t level):
         cdef cKDTreeNode n1, n2
-        self.split_dim = self._node.split_dim
-        self.children = self._node.children
-        self.split = self._node.split
+        self.level = level
+        self.split_dim = node.split_dim
+        self.children = node.children
+        self.split = node.split
+        self.start_idx = node.start_idx
+        self.end_idx = node.end_idx
+        self._data = parent.data
+        self._indices = parent.indices
         if self.split_dim == -1:
             self.lesser = None
             self.greater = None
         else:
             # setup lesser branch
             n1 = cKDTreeNode()
-            n1._node = self._node.less
-            n1._data = self._data
-            n1._indices = self._indices
-            n1.level = self.level + 1
-            n1._setup()
+            n1._setup(parent, node=node.less, level=level + 1)
             self.lesser = n1
             # setup greater branch
             n2 = cKDTreeNode()
-            n2._node = self._node.greater
-            n2._data = self._data
-            n2._indices = self._indices
-            n2.level = self.level + 1
-            n2._setup()
+            n2._setup(parent, node=node.greater, level=level + 1)
             self.greater = n2
 
     property data_points:
@@ -376,8 +374,8 @@ cdef class cKDTreeNode:
     property indices:
         def __get__(cKDTreeNode self):
             cdef np.intp_t start, stop
-            start = self._node.start_idx
-            stop = self._node.end_idx
+            start = self.start_idx
+            stop = self.end_idx
             return self._indices[start:stop]
 
 
@@ -506,11 +504,7 @@ cdef class cKDTree:
                 return self._python_tree
             else:
                 n = cKDTreeNode()
-                n._node = cself.ctree
-                n._data = self.data
-                n._indices = self.indices
-                n.level = 0
-                n._setup()
+                n._setup(self, node=cself.ctree, level=0)
                 self._python_tree = n
                 return self._python_tree
 
