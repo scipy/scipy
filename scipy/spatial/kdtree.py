@@ -285,6 +285,7 @@ class KDTree(cKDTree):
         @property
         def children(self):
             return self._node.children
+
         @property
         def less(self):
             return KDTree.node._create(self._node.lesser)
