@@ -433,9 +433,11 @@ class ode(object):
             self._y, self.t = mth(self.f, self.jac or (lambda: None),
                                   self._y, self.t, t,
                                   self.f_params, self.jac_params)
-        except SystemError:
+        except SystemError as e:
             # f2py issue with tuple returns, see ticket 1187.
-            raise ValueError('Function to integrate must not return a tuple.')
+            raise ValueError(
+                'Function to integrate must not return a tuple.'
+            ) from e
 
         return self._y
 

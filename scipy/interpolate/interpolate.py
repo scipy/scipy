@@ -221,8 +221,8 @@ class interp2d(object):
             kx = ky = {'linear': 1,
                        'cubic': 3,
                        'quintic': 5}[kind]
-        except KeyError:
-            raise ValueError("Unsupported interpolation type.")
+        except KeyError as e:
+            raise ValueError("Unsupported interpolation type.") from e
 
         if not rectangular_grid:
             # TODO: surfit is really not meant for interpolation!
@@ -1712,8 +1712,10 @@ class BPoly(_PPolyBase):
         # global poly order is k-1, local orders are <=k and can vary
         try:
             k = max(len(yi[i]) + len(yi[i+1]) for i in range(m))
-        except TypeError:
-            raise ValueError("Using a 1-D array for y? Please .reshape(-1, 1).")
+        except TypeError as e:
+            raise ValueError(
+                "Using a 1-D array for y? Please .reshape(-1, 1)."
+            ) from e
 
         if orders is None:
             orders = [None] * m

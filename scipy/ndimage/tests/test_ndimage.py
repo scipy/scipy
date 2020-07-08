@@ -1812,8 +1812,8 @@ class TestNdimage:
             # fill the part we might read
             a[n-3:, n-3:] = 0
             ndimage.map_coordinates(a, [[n - 1.5], [n - 1.5]], order=1)
-        except MemoryError:
-            raise pytest.skip("Not enough memory available")
+        except MemoryError as e:
+            raise pytest.skip("Not enough memory available") from e
 
     def test_affine_transform01(self):
         data = numpy.array([1])

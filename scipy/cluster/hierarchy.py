@@ -2807,10 +2807,10 @@ def _plot_dendrogram(icoords, dcoords, ivl, p, n, mh, orientation,
             import matplotlib.pylab
         import matplotlib.patches
         import matplotlib.collections
-    except ImportError:
+    except ImportError as e:
         raise ImportError("You must install the matplotlib library to plot "
                           "the dendrogram. Use no_plot=True to calculate the "
-                          "dendrogram without plotting.")
+                          "dendrogram without plotting.") from e
 
     if ax is None:
         ax = matplotlib.pylab.gca()
