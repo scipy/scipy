@@ -225,14 +225,14 @@ class KDTree(cKDTree):
 
     class node:
         @staticmethod
-        def __new__(cls, ckdtree_node=None):
+        def _create(ckdtree_node=None):
             """Create either an inner or leaf node, wrapping a cKDTreeNode instance"""
             if ckdtree_node is None:
-                return super().__new__(cls)
+                return node(ckdtree_node)
             elif ckdtree_node.split_dim == -1:
-                return super().__new__(KDTree.leafnode)
+                return KDTree.leafnode(ckdtree_node)
             else:
-                return super().__new__(KDTree.innernode)
+                return KDTree.innernode(ckdtree_node)
 
         def __init__(self, ckdtree_node=None):
             if ckdtree_node is None:
@@ -287,15 +287,15 @@ class KDTree(cKDTree):
             return self._node.children
         @property
         def less(self):
-            return KDTree.node(self._node.lesser)
+            return KDTree.node._create(self._node.lesser)
 
         @property
         def greater(self):
-            return KDTree.node(self._node.greater)
+            return KDTree.node._create(self._node.greater)
 
     @property
     def tree(self):
-        return KDTree.node(super().tree)
+        return KDTree.node._create(super().tree)
 
     def __init__(self, data, leafsize=10):
         data = np.asarray(data)
