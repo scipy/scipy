@@ -2652,57 +2652,188 @@ template<typename T0> class T_dcst4
 // multi-D infrastructure
 //
 
-template<typename T> std::shared_ptr<T> get_plan(size_t length)
+class PlanCache
   {
-#if POCKETFFT_CACHE_SIZE==0
-  return std::make_shared<T>(length);
-#else
-  constexpr size_t nmax=POCKETFFT_CACHE_SIZE;
-  static std::array<std::shared_ptr<T>, nmax> cache;
-  static std::array<size_t, nmax> last_access{{0}};
-  static size_t access_counter = 0;
-  static std::mutex mut;
-
-  auto find_in_cache = [&]() -> std::shared_ptr<T>
+  struct CacheEntry
     {
-    for (size_t i=0; i<nmax; ++i)
-      if (cache[i] && (cache[i]->length()==length))
-        {
-        // no need to update if this is already the most recent entry
-        if (last_access[i]!=access_counter)
-          {
-          last_access[i] = ++access_counter;
-          // Guard against overflow
-          if (access_counter == 0)
-            last_access.fill(0);
-          }
-        return cache[i];
-        }
-
-    return nullptr;
+    std::shared_ptr<void> plan;
+    size_t length;
+    size_t last_access;
     };
 
-  {
-  std::lock_guard<std::mutex> lock(mut);
-  auto p = find_in_cache();
-  if (p) return p;
-  }
-  auto plan = std::make_shared<T>(length);
-  {
-  std::lock_guard<std::mutex> lock(mut);
-  auto p = find_in_cache();
-  if (p) return p;
+  using constructor_t = std::shared_ptr<void> (*) (size_t length);
 
-  size_t lru = 0;
-  for (size_t i=1; i<nmax; ++i)
-    if (last_access[i] < last_access[lru])
-      lru = i;
+  std::vector<CacheEntry> cache_;
+  std::mutex mut_;
+  constructor_t constructor_;
+  size_t access_counter_;
+  std::atomic<size_t> size_;
 
-  cache[lru] = plan;
-  last_access[lru] = ++access_counter;
+  size_t bump_access_counter()
+    {
+      size_t ret = ++access_counter_;
+      // Guard against overflow
+      if (access_counter_ == 0)
+        {
+        for (auto &entry : cache_)
+          entry.last_access = 0;
+        return 0;
+        }
+      return ret;
+    }
+
+  std::shared_ptr<void> find_in_cache(size_t length)
+    {
+    for (auto &entry : cache_)
+      if (entry.length==length)
+      {
+      // no need to update if this is already the most recent entry
+      if (entry.last_access!=access_counter_)
+          entry.last_access = bump_access_counter();
+      return entry.plan;
+      }
+    return nullptr;
   }
-  return plan;
-#endif
+
+public:
+
+  PlanCache(size_t size, constructor_t constructor):
+    constructor_(constructor),
+    access_counter_(0),
+    size_(size)
+    {
+    cache_.reserve(size);
+    }
+
+  std::shared_ptr<void> lookup(size_t length)
+    {
+    if (size_.load(std::memory_order_relaxed) == 0)  // Avoid taking a lock
+      {
+      return constructor_(length);
+      }
+
+    {
+    std::lock_guard<std::mutex> lock(mut_);
+    auto p = find_in_cache(length);
+    if (p) return p;
+    }
+    auto plan = constructor_(length);
+    {
+    std::lock_guard<std::mutex> lock(mut_);
+    auto p = find_in_cache(length);
+    if (p) return p;
+
+    if (cache_.size() < size_)
+      {
+      cache_.push_back({plan, length, bump_access_counter()});
+      return plan;
+      }
+    else if (size_ == 0) // Size may change while we release the lock above
+      return plan;
+
+    size_t lru = 0;
+    for (size_t i=1; i<cache_.size(); ++i)
+      if (cache_[i].last_access < cache_[lru].last_access)
+        lru = i;
+
+    cache_[lru] = {plan, length, bump_access_counter()};
+    }
+    return plan;
+    }
+
+  void resize(size_t new_max)
+    {
+    std::lock_guard<std::mutex> lock(mut_);
+    if (new_max >= cache_.size())
+      {
+      // reserve first, so in case of bad_alloc we have strong exception safety
+      cache_.reserve(new_max);
+      size_ = new_max;
+      return;
+      }
+
+    size_ = new_max;
+    if (new_max == 0)
+      {
+      clear();
+      return;
+      }
+
+    // Discard only the lru elements
+    std::nth_element(cache_.begin(), cache_.begin() + (new_max - 1), cache_.end(),
+              [](const CacheEntry &lhs, const CacheEntry &rhs)
+                {
+                  return lhs.last_access > rhs.last_access;
+                });
+    cache_.resize(new_max);
+    }
+
+  void clear()
+    {
+    std::lock_guard<std::mutex> lock(mut_);
+    cache_.clear();
+    }
+  };
+
+class CacheManager
+  {
+  // unique_ptr required to avoid reference invalidation
+  std::vector<std::unique_ptr<PlanCache>> caches_;
+  size_t cache_size_ = POCKETFFT_CACHE_SIZE;
+  mutable std::mutex mut_;
+
+  CacheManager() = default;
+
+public:
+
+  static CacheManager &instance()
+    {
+    static CacheManager manager;
+    return manager;
+    }
+
+  template <typename T>
+  PlanCache &new_cache()
+    {
+    auto * cache = new PlanCache(
+        cache_size_,
+        +[](size_t length) -> std::shared_ptr<void>
+        {
+        return std::make_shared<T>(length);
+        });
+    {
+    std::lock_guard<std::mutex> lock(mut_);
+    caches_.push_back(std::unique_ptr<PlanCache>(cache));
+    }
+    return *cache;
+    }
+
+  void clear()
+    {
+    std::lock_guard<std::mutex> lock(mut_);
+    for (auto & cache : caches_)
+      cache->clear();
+    }
+
+  void resize(size_t new_size)
+    {
+    std::lock_guard<std::mutex> lock(mut_);
+    cache_size_ = new_size;
+    for (auto & cache : caches_)
+      cache->resize(new_size);
+    }
+
+  size_t size() const
+    {
+    std::lock_guard<std::mutex> lock(mut_);
+    return cache_size_;
+    }
+  };
+
+template<typename T> std::shared_ptr<T> get_plan(size_t length)
+  {
+  static PlanCache &cache = CacheManager::instance().template new_cache<T>();
+  return std::static_pointer_cast<T>(cache.lookup(length));
   }
 
 class arr_info

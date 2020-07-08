@@ -6,6 +6,7 @@ import contextlib
 
 import numpy as np
 # good_size is exposed (and used) from this import
+from . import pypocketfft
 from .pypocketfft import good_size
 
 _config = threading.local()
@@ -211,3 +212,18 @@ def get_workers():
     4
     """
     return getattr(_config, 'default_workers', 1)
+
+
+def get_plan_cache_size():
+    """Returns the current maximum number of plans that may be cached."""
+    return pypocketfft.get_plan_cache_size()
+
+
+def set_plan_cache_size(new_size):
+    """Sets the maximum number of plans that may be cached."""
+    return pypocketfft.set_plan_cache_size(new_size)
+
+
+def clear_plan_cache():
+    """Clears the transform plan cache, freeing any used memory"""
+    return pypocketfft.clear_plan_cache()
