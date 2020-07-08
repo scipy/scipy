@@ -3616,44 +3616,36 @@ class TestIIRComb(object):
     def test_invalid_input(self):
         # w0 is <= 0 or >= fs / 2
         fs = 1000
-        with pytest.raises(ValueError, match='w0 must be between '):
-            iircomb(-fs, 30, 4, fs=fs)
-            iircomb(0, 35, 5, fs=fs)
-            iircomb(fs / 2, 40, 6, fs=fs)
-            iircomb(fs, 35, 7, fs=fs)
+        for args in [(-fs, 30, 4), (0, 35, 5), (fs / 2, 40, 6), (fs, 35, 7)]:
+            with pytest.raises(ValueError, match='w0 must be between '):
+                iircomb(*args, fs=fs)
 
         # Filter type is not notch or peak
-        with pytest.raises(ValueError, match='ftype must be '):
-            iircomb(0.2, 30, 4, ftype='natch')
-            iircomb(0.5, 35, 5, ftype='comb')
+        for args in [(0.2, 30, 4, 'natch'), (0.5, 35, 5, 'comb')]:
+            with pytest.raises(ValueError, match='ftype must be '):
+                iircomb(*args)
 
         # Order is <= 0 or > 24
-        with pytest.raises(ValueError, match='N must be '):
-            iircomb(440, 30, -50, ftype='notch', fs=16000)
-            iircomb(220, 35, 0, ftype='peak', fs=32000)
-            iircomb(110, 40, 25, ftype='peak', fs=44100)
-            iircomb(55, 35, 50, ftype='notch', fs=48000)
+        for args in [(440, 30, -50), (220, 35, 0), (110, 40, 25), (55, 35, 50)]:
+            with pytest.raises(ValueError, match='N must be '):
+                iircomb(*args, ftype='notch', fs=16000)
 
     # Verify that the filter's frequency response contains a
-    # notch or peak at the cutoff frequency
-    def test_frequency_response(self):
-        ftypes = ['notch', 'peak']
-        for ftype in ftypes:
-            # Create a notching or peaking comb filter at 1000 Hz
-            b, a = iircomb(1000, 30, 10, ftype=ftype, fs=10000)
+    # notch at the cutoff frequency
+    @pytest.mark.parametrize('ftype', ('notch', 'peak'))
+    def test_frequency_response(self, ftype):
+        # Create a notching or peaking comb filter at 1000 Hz
+        b, a = iircomb(1000, 30, 10, ftype=ftype, fs=10000)
 
-            # Compute the frequency response
-            freqs, response = freqz(b, a, 1000, fs=10000)
+        # Compute the frequency response
+        freqs, response = freqz(b, a, 1000, fs=10000)
 
-            # Find the notches/peaks using argrelextrema
-            if ftype == 'notch':
-                comb_points = argrelextrema(abs(response), np.less)
-            elif ftype == 'peak':
-                comb_points = argrelextrema(abs(response), np.greater)
+        # Find the notch using argrelextrema
+        comb_points = argrelextrema(abs(response), np.less)[0]
 
-            # Verify that the first notch/peak sits at 1000 Hz
-            comb1 = comb_points[0]
-            freqs[comb1] == pytest.approx(1000)
+        # Verify that the first notch sits at 1000 Hz
+        comb1 = comb_points[0]
+        assert_allclose(freqs[comb1], 1000)
 
     # All built-in IIR filters are real, so should have perfectly
     # symmetrical poles and zeros. Then ba representation (using
@@ -3666,8 +3658,8 @@ class TestIIRComb(object):
         assert_array_equal(sorted(p), sorted(p.conj()))
         assert_equal(k, np.real(k))
 
-        assert_(issubclass(b.dtype.type, np.floating))
-        assert_(issubclass(a.dtype.type, np.floating))
+        assert issubclass(b.dtype.type, np.floating)
+        assert issubclass(a.dtype.type, np.floating)
 
     # Verify filter coefficients with MATLAB's iircomb function
     def test_ba_output(self):

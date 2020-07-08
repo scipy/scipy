@@ -4912,6 +4912,12 @@ def iircomb(w0, Q, N, ftype='notch', fs=2.0):
     iirnotch
     iirpeak
 
+    Notes
+    -----
+    For implementation details, see [1]_. The TF implementation of the
+    comb filter is numerically stable even at higher orders due to the
+    use of a single repeated pole, which won't suffer from precision loss.
+
     References
     ----------
     .. [1] Sophocles J. Orfanidis, "Introduction To Signal Processing",
