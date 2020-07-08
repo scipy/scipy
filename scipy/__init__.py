@@ -124,11 +124,11 @@ if __SCIPY_SETUP__:
 else:
     try:
         from scipy.__config__ import show as show_config
-    except ImportError:
+    except ImportError as e:
         msg = """Error importing SciPy: you cannot import SciPy while
         being in scipy source directory; please exit the SciPy source
         tree first and relaunch your Python interpreter."""
-        raise ImportError(msg)
+        raise ImportError(msg) from e
 
     from scipy.version import version as __version__
 

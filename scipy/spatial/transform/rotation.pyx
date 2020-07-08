@@ -315,6 +315,10 @@ cdef class Rotation(object):
     To create `Rotation` objects use ``from_...`` methods (see examples below).
     ``Rotation(...)`` is not supposed to be instantiated directly.
 
+    Attributes
+    ----------
+    single
+
     Methods
     -------
     __len__
@@ -459,6 +463,16 @@ cdef class Rotation(object):
     array([[0.        , 0.38268343, 0.        , 0.92387953],
            [0.39190384, 0.36042341, 0.43967974, 0.72331741]])
 
+    In fact it can be converted to numpy.array:
+
+    >>> r_array = np.asarray(r)
+    >>> r_array.shape
+    (3,)
+    >>> r_array[0].as_matrix()
+    array([[ 2.22044605e-16, -1.00000000e+00,  0.00000000e+00],
+           [ 1.00000000e+00,  2.22044605e-16,  0.00000000e+00],
+           [ 0.00000000e+00,  0.00000000e+00,  1.00000000e+00]])
+
     Multiple rotations can be composed using the ``*`` operator:
 
     >>> r1 = R.from_euler('z', 90, degrees=True)
@@ -512,6 +526,11 @@ cdef class Rotation(object):
         else:
             self._quat = quat.copy() if copy else quat
 
+    @property
+    def single(self):
+        """Whether this instance represents a single rotation."""
+        return self._single
+
     def __len__(self):
         """Number of rotations contained in this object.
 
@@ -522,7 +541,13 @@ cdef class Rotation(object):
         length : int
             Number of rotations stored in object.
 
+        Raises
+        ------
+        TypeError if the instance was created as a single rotation.
         """
+        if self._single:
+            raise TypeError("Single rotation has no len().")
+
         return self._quat.shape[0]
 
     @classmethod
@@ -1188,7 +1213,7 @@ cdef class Rotation(object):
         (2, 3)
 
         """
-        cdef Py_ssize_t num_rotations = len(self)
+        cdef Py_ssize_t num_rotations = len(self._quat)
         cdef double angle, scale, angle2
         cdef double[:, :] rotvec = _empty2(num_rotations, 3)
         cdef double[:] quat
@@ -1460,7 +1485,7 @@ cdef class Rotation(object):
             matrix = matrix[None, :, :]
 
         n_vectors = vectors.shape[0]
-        n_rotations = len(self)
+        n_rotations = len(self._quat)
 
         if n_vectors != 1 and n_rotations != 1 and n_vectors != n_rotations:
             raise ValueError("Expected equal numbers of rotations and vectors "
@@ -1544,7 +1569,9 @@ cdef class Rotation(object):
                [ 0.33721128, -0.26362477,  0.26362477,  0.86446082]])
 
         """
-        if not(len(self) == 1 or len(other) == 1 or len(self) == len(other)):
+        len_self = len(self._quat)
+        len_other = len(other._quat)
+        if not(len_self == 1 or len_other == 1 or len_self == len_other):
             raise ValueError("Expected equal number of rotations in both "
                              "or a single rotation in either object, "
                              "got {} rotations in first and {} rotations in "
@@ -1751,13 +1778,19 @@ cdef class Rotation(object):
 
         # Find best indices from scalar components
         max_ind = np.argmax(np.reshape(qs, (len(qs), -1)), axis=1)
-        left_best = max_ind // len(right)
-        right_best = max_ind % len(right)
+        left_best = max_ind // len(rv)
+        right_best = max_ind % len(rv)
+
+        if not left.single:
+            left = left[left_best]
+        if not right.single:
+            right = right[right_best]
 
         # Reduce the rotation using the best indices
-        reduced = left[left_best] * p * right[right_best]
+        reduced = left * p * right
         if self._single:
-            reduced = reduced[0]
+            # Reduce the rotation using the best indices
+            reduced = self.__class__(reduced.as_quat()[0], normalize=False)
             left_best = left_best[0]
             right_best = right_best[0]
 
@@ -1828,6 +1861,10 @@ cdef class Rotation(object):
                 - a stack of rotation(s), if `indexer` is a slice, or and index
                   array.
 
+        Raises
+        ------
+        TypeError if the instance was created as a single rotation.
+
         Examples
         --------
         >>> from scipy.spatial.transform import Rotation as R
@@ -1854,6 +1891,9 @@ cdef class Rotation(object):
                [ 0.57735027,  0.57735027, -0.57735027,  0.        ]])
 
         """
+        if self._single:
+            raise TypeError("Single rotation is not subscriptable.")
+
         return self.__class__(np.asarray(self._quat)[indexer], normalize=False)
 
     @classmethod
@@ -2137,8 +2177,12 @@ class Slerp(object):
 
     """
     def __init__(self, times, rotations):
+        if rotations.single:
+            raise ValueError("`rotations` must be a sequence of rotations.")
+
         if len(rotations) == 1:
-            raise ValueError("`rotations` must contain at least 2 rotations.")
+                raise ValueError("`rotations` must contain at least 2 "
+                                 "rotations.")
 
         times = np.asarray(times)
         if times.ndim != 1:

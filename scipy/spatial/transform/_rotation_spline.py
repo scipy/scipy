@@ -363,6 +363,9 @@ class RotationSpline(object):
     def __init__(self, times, rotations):
         from scipy.interpolate import PPoly
 
+        if rotations.single:
+            raise ValueError("`rotations` must be a sequence of rotations.")
+
         if len(rotations) == 1:
             raise ValueError("`rotations` must contain at least 2 rotations.")
 

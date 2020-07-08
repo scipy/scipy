@@ -508,7 +508,6 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     """
 
     meth = method.lower()
-
     if x0 is not None and meth != "revised simplex":
         warning_message = "x0 is used only when method is 'revised simplex'. "
         warn(warning_message, OptimizeWarning)
@@ -561,10 +560,9 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
             raise ValueError('Unknown solver %s' % method)
 
     # Eliminate artificial variables, re-introduce presolved variables, etc.
-    # need modified bounds here to translate variables appropriately
     disp = solver_options.get('disp', False)
 
-    x, fun, slack, con = _postsolve(x, postsolve_args, complete, tol)
+    x, fun, slack, con = _postsolve(x, postsolve_args, complete)
 
     status, message = _check_result(x, fun, status, slack, con, lp_o.bounds, tol, message)
 

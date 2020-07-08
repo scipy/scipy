@@ -2,9 +2,13 @@ name: macOS tests
 
 on:
   push:
-    branches: [ master ]
+    branches:
+      - master
+      - maintenance/**
   pull_request:
-    branches: [ master ]
+    branches:
+      - master
+      - maintenance/**
 
 
 jobs:
