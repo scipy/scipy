@@ -3616,26 +3616,26 @@ class TestIIRComb(object):
     def test_invalid_input(self):
         # w0 is <= 0 or >= fs / 2
         fs = 1000
-        for args in [(-fs, 30, 4), (0, 35, 5), (fs / 2, 40, 6), (fs, 35, 7)]:
+        for args in [(-fs, 30), (0, 35), (fs / 2, 40), (fs, 35)]:
             with pytest.raises(ValueError, match='w0 must be between '):
                 iircomb(*args, fs=fs)
 
+        # fs is not divisible by w0
+        for args in [(120, 30), (157, 35)]:
+            with pytest.raises(ValueError, match='fs must be divisible '):
+                iircomb(*args, fs=fs)
+
         # Filter type is not notch or peak
-        for args in [(0.2, 30, 4, 'natch'), (0.5, 35, 5, 'comb')]:
+        for args in [(0.2, 30, 'natch'), (0.5, 35, 'comb')]:
             with pytest.raises(ValueError, match='ftype must be '):
                 iircomb(*args)
-
-        # Order is <= 0 or > 24
-        for args in [(440, 30, -50), (220, 35, 0), (110, 40, 25), (55, 35, 50)]:
-            with pytest.raises(ValueError, match='N must be '):
-                iircomb(*args, ftype='notch', fs=16000)
 
     # Verify that the filter's frequency response contains a
     # notch at the cutoff frequency
     @pytest.mark.parametrize('ftype', ('notch', 'peak'))
     def test_frequency_response(self, ftype):
         # Create a notching or peaking comb filter at 1000 Hz
-        b, a = iircomb(1000, 30, 10, ftype=ftype, fs=10000)
+        b, a = iircomb(1000, 30, ftype=ftype, fs=10000)
 
         # Compute the frequency response
         freqs, response = freqz(b, a, 1000, fs=10000)
@@ -3652,7 +3652,7 @@ class TestIIRComb(object):
     # numpy.poly) will be purely real instead of having negligible
     # imaginary parts.
     def test_iir_symmetry(self):
-        b, a = iircomb(440, 30, 4, fs=24000)
+        b, a = iircomb(400, 30, fs=24000)
         z, p, k = tf2zpk(b, a)
         assert_array_equal(sorted(z), sorted(z.conj()))
         assert_array_equal(sorted(p), sorted(p.conj()))
@@ -3663,7 +3663,7 @@ class TestIIRComb(object):
 
     # Verify filter coefficients with MATLAB's iircomb function
     def test_ba_output(self):
-        b_notch, a_notch = iircomb(60, 35, 10, ftype='notch', fs=600)
+        b_notch, a_notch = iircomb(60, 35, ftype='notch', fs=600)
         b_notch2 = [0.957020174408697, 0.0, 0.0, 0.0, 0.0, 0.0,
                     0.0, 0.0, 0.0, 0.0, -0.957020174408697]
         a_notch2 = [1.0, 0.0, 0.0, 0.0, 0.0, 0.0,
@@ -3671,7 +3671,7 @@ class TestIIRComb(object):
         assert_allclose(b_notch, b_notch2)
         assert_allclose(a_notch, a_notch2)
 
-        b_peak, a_peak = iircomb(60, 35, 10, ftype='peak', fs=600)
+        b_peak, a_peak = iircomb(60, 35, ftype='peak', fs=600)
         b_peak2 = [0.0429798255913026, 0.0, 0.0, 0.0, 0.0, 0.0,
                    0.0, 0.0, 0.0, 0.0, -0.0429798255913026]
         a_peak2 = [1.0, 0.0, 0.0, 0.0, 0.0, 0.0,
