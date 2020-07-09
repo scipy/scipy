@@ -2755,7 +2755,7 @@ public:
     size_ = new_max;
     if (new_max == 0)
       {
-      clear();
+      cache_.clear();
       return;
       }
 
