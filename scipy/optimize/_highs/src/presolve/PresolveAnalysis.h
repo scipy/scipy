@@ -277,13 +277,13 @@ class PresolveTimer {
   void reportNumericsRecords() {
     assert((int)presolve_numerics.size() == PRESOLVE_NUMERICS_COUNT);
     if (presolve_numerics.size() < PRESOLVE_NUMERICS_COUNT) return;
-    printf("Presolve numerics analysis for %s\n", model_name.c_str());
+    printf("Presolve numerics analysis for %s:\n\n", model_name.c_str());
     for (int record = 0; record < PRESOLVE_NUMERICS_COUNT; record++)
       reportNumericsRecord(presolve_numerics[record]);
     printf("grep_presolveNumerics:,%s", model_name.c_str());
     for (int record = 0; record < PRESOLVE_NUMERICS_COUNT; record++)
       reportNumericsCsvRecord(presolve_numerics[record]);
-    printf("\n");
+    printf("\n\n");
   }
 
   void updateInfo();

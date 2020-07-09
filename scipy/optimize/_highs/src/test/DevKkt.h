@@ -24,9 +24,9 @@ namespace dev_kkt_check {
 
 struct State {
   State(const int numCol_, const int numRow_, const std::vector<int>& Astart_,
-        const std::vector<int>& Aindex_, const std::vector<double>& Avalue_,
-        const std::vector<int>& ARstart_, const std::vector<int>& ARindex_,
-        const std::vector<double>& ARvalue_,
+        const std::vector<int>& Aend_, const std::vector<int>& Aindex_,
+        const std::vector<double>& Avalue_, const std::vector<int>& ARstart_,
+        const std::vector<int>& ARindex_, const std::vector<double>& ARvalue_,
         const std::vector<double>& colCost_,
         const std::vector<double>& colLower_,
         const std::vector<double>& colUpper_,
@@ -41,6 +41,7 @@ struct State {
       : numCol(numCol_),
         numRow(numRow_),
         Astart(Astart_),
+        Aend(Aend_),
         Aindex(Aindex_),
         Avalue(Avalue_),
         ARstart(ARstart_),
@@ -64,6 +65,7 @@ struct State {
   const int numRow;
 
   const std::vector<int>& Astart;
+  const std::vector<int>& Aend;
   const std::vector<int>& Aindex;
   const std::vector<double>& Avalue;
 

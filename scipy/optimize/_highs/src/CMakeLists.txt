@@ -95,6 +95,7 @@ set(sources
     presolve/Presolve.cpp
     presolve/PresolveComponent.cpp
     presolve/PresolveAnalysis.cpp
+    presolve/PresolveUtils.cpp
     presolve/HPreData.cpp
     simplex/HCrash.cpp
     simplex/HDual.cpp
@@ -113,8 +114,7 @@ set(sources
     simplex/HSimplexReport.cpp
     simplex/HVector.cpp
     test/DevKkt.cpp
-    test/KktCheck.cpp
-    test/KktChStep.cpp
+    test/KktCh2.cpp
     util/HighsSort.cpp
     util/HighsUtils.cpp
     util/stringutil.cpp
@@ -167,11 +167,10 @@ set(headers
     presolve/Presolve.h
     presolve/PresolveComponent.h
     presolve/PresolveAnalysis.h
+    presolve/PresolveUtils.h
     presolve/HPreData.h
     simplex/HVector.h
     test/DevKkt.h
-    test/KktCheck.h
-    test/KktChStep.h
     util/stringutil.h
     util/HighsComponent.h
     util/HighsRandom.h
@@ -384,6 +383,7 @@ target_sources(libhighs PRIVATE
     presolve/Presolve.cpp
     presolve/PresolveComponent.cpp
     presolve/PresolveAnalysis.cpp
+    presolve/PresolveUtils.cpp
     presolve/HPreData.cpp
     simplex/HCrash.cpp
     simplex/HDual.cpp
@@ -400,8 +400,7 @@ target_sources(libhighs PRIVATE
     simplex/HSimplexDebug.cpp
     simplex/HSimplexReport.cpp
     simplex/HVector.cpp
-    test/KktCheck.cpp
-    test/KktChStep.cpp
+    test/KktCh2.cpp
     test/DevKkt.cpp
     util/HighsSort.cpp
     util/HighsUtils.cpp

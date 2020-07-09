@@ -830,7 +830,6 @@ void HCrash::ltssf_iz_da() {
   const int* Astart = &simplex_lp.Astart_[0];
   const int* Aindex = &simplex_lp.Aindex_[0];
   const double* Avalue = &simplex_lp.Avalue_[0];
-  ;
   int numEl = Astart[numCol];
   // const double *primalColLowerImplied = simplex_lp.primalColLowerImplied_;
   // const double *primalColUpperImplied = simplex_lp.primalColUpperImplied_;

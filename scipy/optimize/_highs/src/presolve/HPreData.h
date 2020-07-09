@@ -21,7 +21,7 @@
 #include <vector>
 
 #include "lp_data/HConst.h"
-#include "test/KktChStep.h"
+#include "test/KktCh2.h"
 
 using std::pair;
 using std::stack;
@@ -56,6 +56,8 @@ class HPreData {
   vector<double> rowLower;
   vector<double> rowUpper;
 
+  // during postsolve hold the reduced solution, then at the end of postsolve
+  // they hold the recovered. passed to dev kkt checker.
   vector<double> colValue;
   vector<double> colDual;
   vector<double> rowValue;
@@ -90,13 +92,10 @@ class HPreData {
   vector<double> rowLowerAtEl;
   vector<double> rowUpperAtEl;
 
-  void print(int k);
-  void printAR(int i);
   void makeARCopy();
   void makeACopy();
   double getaij(int i, int j);
   bool isZeroA(int i, int j);
-  void printSolution();
   double getRowValue(int i);
 
   stack<double> postValue;
@@ -105,7 +104,7 @@ class HPreData {
   vector<int> rIndex;
   vector<int> cIndex;
 
-  kkt_check::KktChStep chk;
+  dev_kkt_check::KktChStep chk2;
 
   stack<change> chng;
   stack<pair<int, vector<double>>> oldBounds;  //(j, l, u)

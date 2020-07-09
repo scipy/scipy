@@ -3,6 +3,7 @@
 
 from scipy.optimize import OptimizeWarning
 from warnings import warn
+import numbers
 
 from libc.stdio cimport stdout
 from libcpp.string cimport string
@@ -168,18 +169,24 @@ cdef apply_options(dict options, Highs & highs):
     ]):
         val = options.get(opt, None)
         if val is not None:
-            opt_status = highs.setHighsOptionValueDbl(opt.encode(), val)
-            if opt_status != HighsStatusOK:
+            if not isinstance(val, numbers.Number):
                 warn(_opt_warning(opt.encode(), val), OptimizeWarning)
+            else:
+                opt_status = highs.setHighsOptionValueDbl(opt.encode(), val)
+                if opt_status != HighsStatusOK:
+                    warn(_opt_warning(opt.encode(), val), OptimizeWarning)
 
 
     # Do all the strings
     for opt in set(['solver']):
         val = options.get(opt, None)
         if val is not None:
-            opt_status = highs.setHighsOptionValueStr(opt.encode(), val.encode())
-            if opt_status != HighsStatusOK:
+            if not isinstance(val, str):
                 warn(_opt_warning(opt.encode(), val), OptimizeWarning)
+            else:
+                opt_status = highs.setHighsOptionValueStr(opt.encode(), val.encode())
+                if opt_status != HighsStatusOK:
+                    warn(_opt_warning(opt.encode(), val), OptimizeWarning)
 
 
     # Do all the bool to strings

@@ -513,7 +513,6 @@ HighsStatus writeLpAsMPS(const HighsOptions& options,
       local_col_names, local_row_names, use_free_format);
   if (write_status == HighsStatus::OK && warning_found)
     return HighsStatus::Warning;
-  ;
   return write_status;
 }
 

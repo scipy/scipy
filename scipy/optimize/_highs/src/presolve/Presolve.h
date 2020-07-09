@@ -252,21 +252,21 @@ class Presolve : public HPreData {
   // postsolve
   bool noPostSolve = false;
 
-  void addChange(PresolveRule type, int row, int col);
-  void fillStackRowBounds(int col);
+  void addChange(const PresolveRule type, const int row, const int col);
+  void fillStackRowBounds(const int col);
   void setKKTcheckerData();
 
-  void getBoundOnLByZj(int row, int j, double* lo, double* up, double colLow,
-                       double colUpp);
-  double getRowDualPost(int row, int col);
-  double getColumnDualPost(int col);
-  string getDualsForcingRow(int row, vector<int>& fRjs);
-  void getDualsSingletonRow(int row, int col);
-  void getDualsDoubletonEquation(int row, int col);
+  void getBoundOnLByZj(const int row, const int j, double* lo, double* up,
+                       const double colLow, const double colUpp);
+  double getRowDualPost(const int row, const int col);
+  double getColumnDualPost(const int col);
+  string getDualsForcingRow(const int row, vector<int>& fRjs);
+  void getDualsSingletonRow(const int row, const int col);
+  void getDualsDoubletonEquation(const int row, const int col);
   void recordCounts(const string fileName);
   void trimA();
 
-  void setBasisElement(change c);
+  void setBasisElement(const change c);
 
   // test basis matrix singularity
   //
@@ -285,8 +285,11 @@ class Presolve : public HPreData {
   PresolveStats stats;
   int runPresolvers(const std::vector<Presolver>& order);
 
-  void checkKkt(bool final = false);
-  dev_kkt_check::State initState();
+  void checkKkt(const bool final = false);
+  dev_kkt_check::State initState(const bool intermediate = false);
+
+  void caseTwoSingletonsDoubletonEquation(const int row, const int x,
+                                          const int y);
 };
 
 }  // namespace presolve
