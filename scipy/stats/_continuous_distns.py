@@ -3617,10 +3617,14 @@ class invgauss_gen(rv_continuous):
         return mu, mu**3.0, 3*np.sqrt(mu), 15*mu
 
     def fit(self,  data, *args, **kwds):
+
         floc = kwds.pop('floc', None)
         fscale = kwds.pop('fscale', None)
         f0_s = kwds.pop('f0', None)
 
+        data = np.asarray(data)
+        if not np.isfinite(data).all():
+            raise RuntimeError("The data contains non-finite values.")
         '''
         MLE is not used in 3 condtions:
         - floc is not set
@@ -3630,8 +3634,13 @@ class invgauss_gen(rv_continuous):
         '''
         if floc is None or f0_s is not None or not (floc != 0 or
                                                     np.all(data - floc > 0)):
-            super(invgauss_gen, self).fit(data, fscale=fscale,
-                                          f0=f0_s, floc=floc, *args, **kwds)
+            if fscale is not None:
+                kwds['fscale'] = fscale
+            if floc is not None:
+                kwds['floc'] = floc
+            if f0_s is not None:
+                kwds['f0'] = f0_s
+            return super(invgauss_gen, self).fit(data, *args, **kwds)
         else:
             if floc != 0:
                 data = data - floc
