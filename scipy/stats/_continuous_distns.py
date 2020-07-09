@@ -3616,6 +3616,31 @@ class invgauss_gen(rv_continuous):
     def _stats(self, mu):
         return mu, mu**3.0, 3*np.sqrt(mu), 15*mu
 
+    def fit(self,  data, *args, **kwds):
+        floc = kwds.pop('floc', None)
+        fscale = kwds.pop('fscale', None)
+        f0_s = kwds.pop('f0', None)
+
+        '''
+        MLE is not used in 3 condtions:
+        - floc is not set
+        - floc is set but translation results in negative data
+        - f0 is fixed
+        These three cases fall back on generic optimization.
+        '''
+        if floc is None or f0_s is not None or not (floc != 0 or
+                                                    np.all(data - floc > 0)):
+            super(invgauss_gen, self).fit(data, fscale=fscale,
+                                          f0=f0_s, floc=floc, *args, **kwds)
+        else:
+            if floc != 0:
+                data = data - floc
+            f0 = np.mean(data)
+            if fscale is None:
+                fscale = len(data) / (np.sum(data**(-1) - f0**(-1)))
+            f0_s = f0/fscale
+        return f0_s, floc, fscale
+
 
 invgauss = invgauss_gen(a=0.0, name='invgauss')
 
