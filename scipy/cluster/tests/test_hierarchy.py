@@ -43,7 +43,7 @@ from scipy.cluster.hierarchy import (
     is_isomorphic, single, leaders,
     correspond, is_monotonic, maxdists, maxinconsts, maxRstat,
     is_valid_linkage, is_valid_im, to_tree, leaves_list, dendrogram,
-    set_link_color_palette, cut_tree, optimal_leaf_ordering,
+    set_link_color_palette, cut_tree, optimal_leaf_ordering, _reorder_leaves,
     _order_cluster_tree, _hierarchy, _LINKAGE_METHODS)
 from scipy.spatial.distance import pdist
 from scipy.cluster._hierarchy import Heap
@@ -932,13 +932,14 @@ class TestDendrogram(object):
 
     @pytest.mark.parametrize("order", [
         [0, 1, 2, 3, 4, 5, 6, 7],  # wrong size of the list
-        [0, 1, 2, 3, 8, 5, 6],  # not a permutation
-        [0, 1, 2, 1, 2, 5, 6]  # not a permutation either
+        [0, 1, 2, 3, 8, 5, 6],     # not a permutation
+        [0, 1, 2, 1, 2, 5, 6],     # contains duplicates
+        []  # empty reordering list
         ]) 
     def test_dendrogram_leaves_reorder_simple_mistakes(self, order):
         X = [[0, 0], [0, 1], [0, 4], [2, 4], [6, 3], [7, 3], [8, 3]]
         Z = linkage(X, method='single')
-        assert_raises(ValueError, dendrogram, Z, leaves_order=order, no_plot=True)
+        assert_raises(ValueError, _reorder_leaves, Z, order)
 
     @pytest.mark.parametrize("order", [
         [0, 3, 1, 2, 4, 5, 6],  # results in a crossing
@@ -948,7 +949,19 @@ class TestDendrogram(object):
     def test_dendrogram_leaves_reorder_crossings(self, order):
         X = [[0, 0], [0, 1], [0, 4], [2, 4], [6, 3], [7, 3], [8, 3]]
         Z = linkage(X, method='single')
-        assert_raises(ValueError, dendrogram, Z, leaves_order=order, no_plot=True)
+        assert_raises(ValueError, _reorder_leaves, Z, leaves_order=order)
+
+    @pytest.mark.parametrize("order", [
+        [4, 5, 6, 0, 1, 2, 3],  # no re-ordering
+        [5, 4, 6, 0, 1, 2, 3],  # swap one pair of leaves
+        [5, 4, 6, 1, 0, 3, 2],  # swap one pair of leaves and two small trees
+        [1, 0, 2, 3, 6, 4, 5]
+        ])
+    def test_dendrogram_leaves_reorder_ok(self, order):
+        X = [[0, 0], [0, 1], [0, 4], [2, 4], [6, 3], [7, 3], [8, 3]]
+        Z = linkage(X, method='single')
+        new_Z = _reorder_leaves(Z, order)
+        assert (leaves_list(new_Z) == np.asarray(order, dtype='int32')).all()
 
 
 def calculate_maximum_distances(Z):

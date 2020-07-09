@@ -3003,17 +3003,57 @@ def set_link_color_palette(palette):
     global _link_line_colors
     _link_line_colors = palette
 
+def _is_permutation(l, n):
+    # if list l is a permutation of numbers from 0 to n-1
+    l = np.asarray(l, dtype='int64')
+    if l.shape[0] != n:
+        return False
+    used = [False for i in range(n)]
+    for i in l:
+        if i < 0 or i >= n:
+            return False
+        used[i] = True
+    if False in used:
+        return False
+    return True
+
 
 def _reorder_leaves(Z, leaves_order):
     """"
     Given a tree T, encoded az Z, builds a tree F
     and its encoding new_Z s.t. leaves(F) == leaves_order
-    Variables:
-    ch[i] = children of node (n+i) in T
-    p - array of parents in tree T
-    height[i] is a value of Z[i][3] e.g. cost of creating node (n+i)
-    num_leaves[i] = number of leaves of a subtree rooted in a node i in T
+
+    Parameters
+    ----------
+    Z : ndarray
+        The linkage matrix encoding the hierarchical clustering to
+        render as a dendrogram. See the ``linkage`` function for more
+        information on the format of ``Z``.
+    leaves_order : iterable
+        Iterable of length ``Z.shape[0] + 1``, which specifies the desired
+        order of leaves in a new dendrogram (encoded by Z)
+
+    Returns
+    -------
+    new_Z : the linkage matrix Z, reordered in a way that leaves of the
+            dendrogram, encoded by ``new_Z`` correspond to ``leaves_order``
+
+    Raises
+    ------
+    ValueError
+        If it is not possible to reorder linkage matrix in a desired way
     """
+
+    # Do simple parameter corectness check first
+    if not _is_permutation(leaves_order, Z.shape[0] + 1):
+        raise ValueError("provided leaves order should be a permutation "
+                         "of indices of the original leaves of the dendrogram")
+
+    #  Variables:
+    #  ch[i] = children of node (n+i) in T
+    #  p - array of parents in tree T
+    #  height[i] is a value of Z[i][3] e.g. cost of creating node (n+i)
+    #  num_leaves[i] = number of leaves of a subtree rooted in a node i in T
 
     n = Z.shape[0] + 1
     ch = np.zeros((n - 1, 2), dtype='int32')
@@ -3081,21 +3121,6 @@ def _reorder_leaves(Z, leaves_order):
             _left = _temp[0]
             continue
     return new_Z
-
-
-def _is_permutation(l, n):
-    # if list l is a permutation of numbers from 0 to n-1
-    l = np.asarray(l, dtype='int64')
-    if l.shape[0] != n:
-        return False
-    used = [False for i in range(n)]
-    for i in l:
-        if i < 0 or i >= n:
-            return False
-        used[i] = True
-    if False in used:
-        return False
-    return True
 
 
 def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
@@ -3371,11 +3396,6 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
     """
     Z = np.asarray(Z, order='c')
     if leaves_order is not None:
-        # Do simple parameter corectness check first
-        # TODO= take into account truncation of a tree
-        if not _is_permutation(leaves_order, Z.shape[0] + 1):
-            raise ValueError("provided leaves order should be a permutation "
-                                 "of indices of the original leaves of the dendrogram")
         Z = _reorder_leaves(Z, leaves_order)
 
     if orientation not in ["top", "left", "bottom", "right"]:
