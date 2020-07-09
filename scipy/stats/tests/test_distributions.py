@@ -1382,7 +1382,7 @@ class TestInvgauss(object):
     def test_fit(self, rvs_mu, rvs_loc, rvs_scale):
         data = stats.invgauss.rvs(size=100, mu=rvs_mu,
                                   loc=rvs_loc, scale=rvs_scale)
-        # MLEs are only calculated when floc is fixed.
+        # MLEs are only calculated when `floc` is fixed.
         mu, loc, scale = stats.invgauss.fit(data, floc=rvs_loc)
 
         data = data - rvs_loc
@@ -1399,12 +1399,12 @@ class TestInvgauss(object):
     def test_fit_MLE_comp_optimzer(self, rvs_mu, rvs_loc, rvs_scale):
         data = stats.invgauss.rvs(size=100, mu=rvs_mu,
                                   loc=rvs_loc, scale=rvs_scale)
-        # fitting without floc is default opitmization
+        # fitting without `floc` is default opitmization
         super_fit = super(type(stats.invgauss), stats.invgauss).fit(data)
         invgauss_fit = stats.invgauss.fit(data)
         assert_allclose(super_fit, invgauss_fit, atol=1e-30, rtol=1e-30)
 
-        # fixed floc uses MLE.
+        # fixed `floc` uses MLE.
         mle = stats.invgauss.fit(data, floc=rvs_loc)
         opt = super(type(stats.invgauss), stats.invgauss).fit(data,
                                                               floc=rvs_loc)
@@ -1416,7 +1416,7 @@ class TestInvgauss(object):
         assert ll_mle < ll_opt or np.allclose(ll_mle, ll_opt,
                                               atol=1e-15, rtol=1e-15)
 
-        # fixed floc resulting in any data < 0 uses optimizer
+        # fixed `floc` resulting in any data < 0 uses optimizer
         assert np.any((data - (2*rvs_loc + 3)) < 0)
         super_fit = super(type(stats.invgauss),
                           stats.invgauss).fit(data, floc=(2*rvs_loc + 3))
@@ -1424,7 +1424,7 @@ class TestInvgauss(object):
         invgauss_fit = stats.invgauss.fit(data, floc=(2*rvs_loc + 3))
         assert_allclose(super_fit, invgauss_fit, atol=1e-30, rtol=1e-30)
 
-        # fixed floc that doesn't result in any data < 0 uses MLE
+        # fixed `floc` that doesn't result in any data < 0 uses MLE
         assert np.all((data - (rvs_loc - 1)) > 0)
         super_fit = super(type(stats.invgauss),
                           stats.invgauss).fit(data, floc=rvs_loc - 1)
