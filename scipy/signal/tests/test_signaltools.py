@@ -345,7 +345,6 @@ class _TestConvolve2d(object):
                    [52, 48, 62,  80,  84],
                    [82, 78, 92, 110, 114]])
         assert_array_equal(c, d)
-        [a,  b]  # XXX should trigger A241 instead of E241: not numerical array
 
     def test_invalid_shapes(self):
         # By "invalid," we mean that no one
