@@ -341,10 +341,11 @@ class _TestConvolve2d(object):
         a = [[1, 2, 3], [3, 4, 5]]
         b = [[2, 3, 4], [4, 5, 6]]
         c = convolve2d(a, b, 'full', 'symm')
-        d = array([[34, 30, 44, 62, 66],
-                   [52, 48, 62, 80, 84],
+        d = array([[34, 30, 44,  62,  66],
+                   [52, 48, 62,  80,  84],
                    [82, 78, 92, 110, 114]])
         assert_array_equal(c, d)
+        [a,  b]  # XXX should trigger A241 instead of E241: not numerical array
 
     def test_invalid_shapes(self):
         # By "invalid," we mean that no one

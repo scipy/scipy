@@ -129,7 +129,7 @@ def main(argv):
     parser.add_argument("args", metavar="ARGS", default=[], nargs=REMAINDER,
                         help="Arguments to pass to Nose, Python or shell")
     parser.add_argument("--pep8", action="store_true", default=False,
-                        help="Perform pep8 check with pycodestyle.")
+                        help="Perform pep8 check with flake8.")
     parser.add_argument("--mypy", action="store_true", default=False,
                         help="Run mypy on the codebase")
     parser.add_argument("--doc", action="append", nargs="?",

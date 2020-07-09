@@ -62,10 +62,10 @@ def find_diff(sha):
     return res.stdout
 
 
-def run_pycodestyle(diff):
-    """Run pycodestyle on the given diff."""
+def run_flake8(diff):
+    """Run flake8 on the given diff."""
     res = subprocess.run(
-        ['pycodestyle', '--diff', '--config', CONFIG],
+        ['flake8', '--diff', '--config', CONFIG],
         input=diff,
         stdout=subprocess.PIPE,
         encoding='utf-8',
@@ -73,10 +73,13 @@ def run_pycodestyle(diff):
     return res.returncode, res.stdout
 
 
+run_pycodestyle = run_flake8  # backward compat alias
+
+
 def main():
     branch_point = find_branch_point()
     diff = find_diff(branch_point)
-    rc, errors = run_pycodestyle(diff)
+    rc, errors = run_flake8(diff)
     if errors:
         print(errors)
     sys.exit(rc)
