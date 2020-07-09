@@ -812,7 +812,7 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
     The gradients of the interpolant are chosen so that the curvature
     of the interpolating surface is approximatively minimized. The
     gradients necessary for this are estimated using the global
-    algorithm described in [Nielson83,Renka84]_.
+    algorithm described in [Nielson83]_ and [Renka84]_.
 
     References
     ----------

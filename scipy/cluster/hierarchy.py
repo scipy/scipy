@@ -2807,10 +2807,10 @@ def _plot_dendrogram(icoords, dcoords, ivl, p, n, mh, orientation,
             import matplotlib.pylab
         import matplotlib.patches
         import matplotlib.collections
-    except ImportError:
+    except ImportError as e:
         raise ImportError("You must install the matplotlib library to plot "
                           "the dendrogram. Use no_plot=True to calculate the "
-                          "dendrogram without plotting.")
+                          "dendrogram without plotting.") from e
 
     if ax is None:
         ax = matplotlib.pylab.gca()
@@ -3274,7 +3274,7 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
         raise ValueError("orientation must be one of 'top', 'left', "
                          "'bottom', or 'right'")
 
-    if labels and Z.shape[0] + 1 != len(labels):
+    if labels is not None and Z.shape[0] + 1 != len(labels):
         raise ValueError("Dimensions of Z and labels must be consistent.")
 
     is_valid_linkage(Z, throw=True, name='Z')

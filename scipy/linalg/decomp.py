@@ -612,8 +612,8 @@ def _check_select(select, select_range, max_ev, max_len):
         select = select.lower()
     try:
         select = _conv_dict[select]
-    except KeyError:
-        raise ValueError('invalid argument for select')
+    except KeyError as e:
+        raise ValueError('invalid argument for select') from e
     vl, vu = 0., 1.
     il = iu = 1
     if select != 0:  # (non-all)

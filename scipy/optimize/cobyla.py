@@ -24,7 +24,7 @@ except ImportError:
 __all__ = ['fmin_cobyla']
 
 # Workarund as _cobyla.minimize is not threadsafe
-# due to an unknown f2py bug and can segfault, 
+# due to an unknown f2py bug and can segfault,
 # see gh-9658.
 _module_lock = RLock()
 def synchronized(func):
@@ -150,11 +150,11 @@ def fmin_cobyla(func, x0, cons, args=(), consargs=None, rhobeg=1.0,
           " callable function."
     try:
         len(cons)
-    except TypeError:
+    except TypeError as e:
         if callable(cons):
             cons = [cons]
         else:
-            raise TypeError(err)
+            raise TypeError(err) from e
     else:
         for thisfunc in cons:
             if not callable(thisfunc):
@@ -216,13 +216,13 @@ def _minimize_cobyla(fun, x0, args=(), constraints=(),
         # check type
         try:
             ctype = con['type'].lower()
-        except KeyError:
-            raise KeyError('Constraint %d has no type defined.' % ic)
-        except TypeError:
+        except KeyError as e:
+            raise KeyError('Constraint %d has no type defined.' % ic) from e
+        except TypeError as e:
             raise TypeError('Constraints must be defined using a '
-                            'dictionary.')
-        except AttributeError:
-            raise TypeError("Constraint's type must be a string.")
+                            'dictionary.') from e
+        except AttributeError as e:
+            raise TypeError("Constraint's type must be a string.") from e
         else:
             if ctype != 'ineq':
                 raise ValueError("Constraints of type '%s' not handled by "

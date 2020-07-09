@@ -470,10 +470,17 @@ def configuration(parent_package='', top_path=None):
     lapack_opt = get_info('lapack_opt')
 
     if not lapack_opt:
-        msg = 'No lapack/blas resources found.'
         if sys.platform == "darwin":
-            msg = ('No lapack/blas resources found. '
+            msg = ('No BLAS/LAPACK libraries found. '
                    'Note: Accelerate is no longer supported.')
+        else:
+            msg = 'No BLAS/LAPACK libraries found.'
+        msg += ("\n"
+                "To build Scipy from sources, BLAS & LAPACK libraries "
+                "need to be installed.\n"
+                "See site.cfg.example in the Scipy source directory and\n"
+                "https://docs.scipy.org/doc/scipy/reference/building/index.html "
+                "for details.")
         raise NotFoundError(msg)
 
     config = Configuration(None, parent_package, top_path)

@@ -403,7 +403,7 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, abs_step=None,
         else:
             # user specifies an absolute step
             sign_x0 = (x0 >= 0).astype(float) * 2 - 1
-            h = abs_step * sign_x0
+            h = abs_step
 
             # cannot have a zero step. This might happen if x0 is very large
             # or small. In which case fall back to relative step.
