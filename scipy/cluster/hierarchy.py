@@ -3374,8 +3374,11 @@ def _get_leaves_color_list(R):
                                           R['color_list']):
         for (xi, yi) in zip(link_x, link_y):
             if yi == 0.0:  # if yi is 0.0, the point is a leaf
-                # xi is 5, 15, 25, 35, ...
-                leaves_color_list[(int(xi) - 5) // 10] = link_color
+                # xi of leaves are      5, 15, 25, 35, ... (see `iv_ticks`)
+                # index of leaves are   0,  1,  2,  3, ... as below
+                leaf_index = (int(xi) - 5) // 10
+                # each leaf has a same color of its link.
+                leaves_color_list[leaf_index] = link_color
     return leaves_color_list
 
 
