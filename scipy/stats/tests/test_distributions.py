@@ -1375,6 +1375,74 @@ class TestDLaplace(object):
         assert_allclose((v, k), (4., 3.25))
 
 
+class TestInvgauss(object):
+    @pytest.mark.parametrize("rvs_mu", [1, 2])
+    @pytest.mark.parametrize("rvs_loc", [0, 1, 2])
+    @pytest.mark.parametrize("rvs_scale", [1, 2, 3, 10])
+    def test_fit(self, rvs_mu, rvs_loc, rvs_scale):
+        data = stats.invgauss.rvs(size=100, mu=rvs_mu,
+                                  loc=rvs_loc, scale=rvs_scale)
+        # MLEs are only calculated when floc is fixed.
+        mu, loc, scale = stats.invgauss.fit(data, floc=rvs_loc)
+
+        data = data - rvs_loc
+        mu_temp = np.mean(data)
+        scale_mle = len(data) / (np.sum(data**(-1) - mu_temp**(-1)))
+        mu_mle = mu_temp/scale_mle
+
+        assert_allclose(mu_mle, mu, atol=1e-15, rtol=1e-15)
+        assert_allclose(scale_mle, scale, atol=1e-15, rtol=1e-15)
+
+    @pytest.mark.parametrize("rvs_mu", [1, 2])
+    @pytest.mark.parametrize("rvs_loc", [0, 1, 2])
+    @pytest.mark.parametrize("rvs_scale", [1, 2, 3, 10])
+    def test_fit_MLE_comp_optimzer(self, rvs_mu, rvs_loc, rvs_scale):
+        data = stats.invgauss.rvs(size=100, mu=rvs_mu,
+                                  loc=rvs_loc, scale=rvs_scale)
+        # fitting without floc is default opitmization
+        super_fit = super(type(stats.invgauss), stats.invgauss).fit(data)
+        invgauss_fit = stats.invgauss.fit(data)
+        assert_allclose(super_fit, invgauss_fit, atol=1e-30, rtol=1e-30)
+
+        # fixed floc uses MLE.
+        mle = stats.invgauss.fit(data, floc=rvs_loc)
+        opt = super(type(stats.invgauss), stats.invgauss).fit(data,
+                                                              floc=rvs_loc)
+
+        args = [data, (stats.invgauss._fitstart(data), )]
+        func = stats.invgauss._reduce_func(args, {})[1]
+        ll_mle = func(mle, data)
+        ll_opt = func(opt, data)
+        assert ll_mle < ll_opt or np.allclose(ll_mle, ll_opt,
+                                              atol=1e-15, rtol=1e-15)
+
+        # fixed floc resulting in any data < 0 uses optimizer
+        assert np.any((data - (2*rvs_loc + 3)) < 0)
+        super_fit = super(type(stats.invgauss),
+                          stats.invgauss).fit(data, floc=(2*rvs_loc + 3))
+
+        invgauss_fit = stats.invgauss.fit(data, floc=(2*rvs_loc + 3))
+        assert_allclose(super_fit, invgauss_fit, atol=1e-30, rtol=1e-30)
+
+        # fixed floc that doesn't result in any data < 0 uses MLE
+        assert np.all((data - (rvs_loc - 1)) > 0)
+        super_fit = super(type(stats.invgauss),
+                          stats.invgauss).fit(data, floc=rvs_loc - 1)
+        invgauss_fit = stats.invgauss.fit(data, floc=rvs_loc - 1)
+        ll_mle = func(mle, data)
+        ll_opt = func(opt, data)
+        assert ll_mle < ll_opt or np.allclose(ll_mle, ll_opt,
+                                              atol=1e-15, rtol=1e-15)
+
+    def test_fit_raise_errors(self):
+        # error is raised with non-finite values
+        assert_raises(RuntimeError, stats.invgauss.fit, [np.nan])
+        assert_raises(RuntimeError, stats.invgauss.fit, [np.inf])
+        # an error is raised with all fixed parameters
+        assert_raises(ValueError, stats.invgauss.fit, [1, 2, 3],
+                      floc=1, fscale=2, f0=2)
+
+
 class TestLaplace(object):
     @pytest.mark.parametrize("rvs_loc", [-5, 0, 1, 2])
     @pytest.mark.parametrize("rvs_scale", [1, 2, 3, 10])

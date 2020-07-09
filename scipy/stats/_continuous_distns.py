@@ -3616,7 +3616,7 @@ class invgauss_gen(rv_continuous):
     def _stats(self, mu):
         return mu, mu**3.0, 3*np.sqrt(mu), 15*mu
 
-    def fit(self,  data, *args, **kwds):
+    def fit(self, data, *args, **kwds):
 
         floc = kwds.pop('floc', None)
         fscale = kwds.pop('fscale', None)
@@ -3632,8 +3632,7 @@ class invgauss_gen(rv_continuous):
         - f0 is fixed
         These three cases fall back on generic optimization.
         '''
-        if floc is None or f0_s is not None or not (floc != 0 or
-                                                    np.all(data - floc > 0)):
+        if floc is None or f0_s is not None or np.any(data - floc < 0):
             if fscale is not None:
                 kwds['fscale'] = fscale
             if floc is not None:
