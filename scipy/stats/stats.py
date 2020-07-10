@@ -4716,24 +4716,22 @@ class _ParallelP(object):
     """
     Helper function to calculate parallel p-value.
     """
-    def __init__(self, x, y, compute_distance, random_states):
+    def __init__(self, x, y, random_states):
         self.x = x
         self.y = y
-        self.compute_distance = compute_distance
         self.random_states = random_states
 
     def __call__(self, index):
-        permx = self.random_states[index].permutation(self.x)
-        permy = self.random_states[index].permutation(self.y)
+        order = self.random_states[index].permutation(self.y.shape[0])
+        permy = self.y[order][:, order]
 
         # calculate permuted stats, store in null distribution
-        perm_stat = _mgc_stat(permx, permy, self.compute_distance)[0]
+        perm_stat = _mgc_stat(self.x, permy)[0]
 
         return perm_stat
 
 
-def _perm_test(x, y, stat, compute_distance, reps=1000, workers=-1,
-               random_state=None):
+def _perm_test(x, y, stat, reps=1000, workers=-1, random_state=None):
     r"""
     Helper function that calculates the p-value. See below for uses.
 
@@ -4743,10 +4741,6 @@ def _perm_test(x, y, stat, compute_distance, reps=1000, workers=-1,
         `x` and `y` have shapes `(n, p)` and `(n, q)`.
     stat : float
         The sample test statistic.
-    compute_distance : callable
-        A function that computes the distance or similarity among the samples
-        within each data matrix. Set to `None` if `x` and `y` are already
-        distance.
     reps : int, optional
         The number of replications used to estimate the null when using the
         permutation test. The default is 1000 replications.
@@ -4778,8 +4772,7 @@ def _perm_test(x, y, stat, compute_distance, reps=1000, workers=-1,
 
     # parallelizes with specified workers over number of reps and set seeds
     mapwrapper = MapWrapper(workers)
-    parallelp = _ParallelP(x=x, y=y, compute_distance=compute_distance,
-                           random_states=random_states)
+    parallelp = _ParallelP(x=x, y=y, random_states=random_states)
     null_dist = np.array(list(mapwrapper(parallelp, range(reps))))
 
     # calculate p-value and significant permutation map through list
@@ -4856,6 +4849,7 @@ def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000,
         shapes ``(n, p)`` and ``(m, p)``, this optional will be overriden and
         set to ``True``. Set to ``True`` if ``x`` and ``y`` both have shapes
         ``(n, p)`` and a two sample test is desired. The default is ``False``.
+        Note that this will not run if inputs are distance matrices.
     random_state : int or np.random.RandomState instance, optional
         If already a RandomState instance, use it.
         If seed is an int, return a new RandomState instance seeded with seed.
@@ -4933,7 +4927,6 @@ def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000,
 
     MGC requires at least 5 samples to run with reliable results. It can also
     handle high-dimensional data sets.
-
     In addition, by manipulating the input data matrices, the two-sample
     testing problem can be reduced to the independence testing problem [4]_.
     Given sample data :math:`U` and :math:`V` of sizes :math:`p \times n`
@@ -4943,7 +4936,6 @@ def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000,
     .. math::
 
         X = [U | V] \in \mathcal{R}^{p \times (n + m)}
-
         Y = [0_{1 \times n} | 1_{1 \times m}] \in \mathcal{R}^{(n + m)}
 
     Then, the MGC statistic can be calculated as normal. This methodology can
@@ -5057,16 +5049,23 @@ def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000,
         warnings.warn(msg, RuntimeWarning)
 
     if is_twosamp:
+        if compute_distance is None:
+            raise ValueError("Cannot run if inputs are distance matrices")
         x, y = _two_sample_transform(x, y)
 
+    if compute_distance is not None:
+        # compute distance matrices for x and y
+        x = compute_distance(x)
+        y = compute_distance(y)
+
     # calculate MGC stat
-    stat, stat_dict = _mgc_stat(x, y, compute_distance)
+    stat, stat_dict = _mgc_stat(x, y)
     stat_mgc_map = stat_dict["stat_mgc_map"]
     opt_scale = stat_dict["opt_scale"]
 
     # calculate permutation MGC p-value
-    pvalue, null_dist = _perm_test(x, y, stat, compute_distance, reps=reps,
-                                   workers=workers, random_state=random_state)
+    pvalue, null_dist = _perm_test(x, y, stat, reps=reps, workers=workers,
+                                   random_state=random_state)
 
     # save all stats (other than stat/p-value) in dictionary
     mgc_dict = {"mgc_map": stat_mgc_map,
@@ -5076,7 +5075,7 @@ def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000,
     return MGCResult(stat, pvalue, mgc_dict)
 
 
-def _mgc_stat(x, y, compute_distance):
+def _mgc_stat(distx, disty):
     r"""
     Helper function that calculates the MGC stat. See above for use.
 
@@ -5085,10 +5084,6 @@ def _mgc_stat(x, y, compute_distance):
     x, y : ndarray
         `x` and `y` have shapes `(n, p)` and `(n, q)` or `(n, n)` and `(n, n)`
         if distance matrices.
-    compute_distance : callable
-        A function that computes the distance or similarity among the samples
-        within each data matrix. Set to `None` if `x` and `y` are already
-        distance.
 
     Returns
     -------
@@ -5097,20 +5092,12 @@ def _mgc_stat(x, y, compute_distance):
     stat_dict : dict
         Contains additional useful additional returns containing the following
         keys:
+
             - stat_mgc_map : ndarray
                 MGC-map of the statistics.
             - opt_scale : (float, float)
                 The estimated optimal scale as a `(x, y)` pair.
     """
-    # set distx and disty to x and y when compute_distance = None
-    distx = x
-    disty = y
-
-    if compute_distance is not None:
-        # compute distance matrices for x and y
-        distx = compute_distance(x)
-        disty = compute_distance(y)
-
     # calculate MGC map and optimal scale
     stat_mgc_map = _local_correlations(distx, disty, global_corr='mgc')
 
@@ -5183,7 +5170,6 @@ def _threshold_mgc_map(stat_mgc_map, samp_size):
 def _smooth_mgc_map(sig_connect, stat_mgc_map):
     """
     Finds the smoothed maximal within the significant region R.
-
     If area of R is too small it returns the last local correlation. Otherwise,
     returns the maximum within significant_connected_region.
 
@@ -5240,7 +5226,7 @@ def _two_sample_transform(u, v):
     Parameters
     ----------
     u, v : ndarray
-        `u` and `v` have shapes `(n, p)` and `(m, p)`,
+        `u` and `v` have shapes `(n, p)` and `(m, p)`.
 
     Returns
     -------
