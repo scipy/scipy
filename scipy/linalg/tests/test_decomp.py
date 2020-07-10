@@ -881,6 +881,20 @@ class TestEigh:
         diag2_ = diag(z.T.conj() @ b @ z).real
         assert_allclose(diag2_, ones(diag2_.shape[0]), rtol=0., atol=atol)
 
+    def test_eigvalsh_new_args(self):
+        a = _random_hermitian_matrix(5)
+        w = eigvalsh(a, eigvals=[1, 2])
+        assert_equal(len(w), 2)
+
+        w2 = eigvalsh(a, subset_by_index=[1, 2])
+        assert_equal(len(w2), 2)
+        assert_allclose(w, w2)
+
+        b = np.diag([1, 1.2, 1.3, 1.5, 2])
+        w3 = eigvalsh(b, subset_by_value=[1, 1.4])
+        assert_equal(len(w3), 2)
+        assert_allclose(w3, np.array([1.2, 1.3]))
+
 
 class TestLU(object):
     def setup_method(self):
