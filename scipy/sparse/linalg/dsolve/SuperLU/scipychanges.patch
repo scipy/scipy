@@ -1,0 +1,741 @@
+diff --git a/scipy/sparse/linalg/dsolve/SuperLU/SRC/cpanel_bmod.c b/scipy/sparse/linalg/dsolve/SuperLU/SRC/cpanel_bmod.c
+index fdb9696b6..fc6af454d 100644
+--- a/scipy/sparse/linalg/dsolve/SuperLU/SRC/cpanel_bmod.c
++++ b/scipy/sparse/linalg/dsolve/SuperLU/SRC/cpanel_bmod.c
+@@ -435,6 +435,12 @@ cpanel_bmod (
+ 		    CTRSV( ftcs1, ftcs2, ftcs3, &segsze, &lusup[luptr], 
+ 			   &nsupr, tempv, &incx );
+ #else
++#if SCIPY_FIX
++		    if (nsupr < segsze) {
++			/* Fail early rather than passing in invalid parameters to TRSV. */
++			ABORT("failed to factorize matrix");
++		    }
++#endif
+ 		    ctrsv_( "L", "N", "U", &segsze, &lusup[luptr], 
+ 			   &nsupr, tempv, &incx );
+ #endif
+diff --git a/scipy/sparse/linalg/dsolve/SuperLU/SRC/cpivotL.c b/scipy/sparse/linalg/dsolve/SuperLU/SRC/cpivotL.c
+index 46bf8e930..452c788bc 100644
+--- a/scipy/sparse/linalg/dsolve/SuperLU/SRC/cpivotL.c
++++ b/scipy/sparse/linalg/dsolve/SuperLU/SRC/cpivotL.c
+@@ -135,7 +135,16 @@ if ( jcol == MIN_COL ) {
+     /* Test for singularity */
+     if ( pivmax == 0.0 ) {
+ #if 1
++#if SCIPY_FIX
++	if (pivptr < nsupr) {
++	    *pivrow = lsub_ptr[pivptr];
++	}
++	else {
++	    *pivrow = diagind;
++	}
++#else
+ 	*pivrow = lsub_ptr[pivptr];
++#endif
+ 	perm_r[*pivrow] = jcol;
+ #else
+ 	perm_r[diagind] = jcol;
+diff --git a/scipy/sparse/linalg/dsolve/SuperLU/SRC/csnode_bmod.c b/scipy/sparse/linalg/dsolve/SuperLU/SRC/csnode_bmod.c
+index 1d5c6f489..c49d73ce3 100644
+--- a/scipy/sparse/linalg/dsolve/SuperLU/SRC/csnode_bmod.c
++++ b/scipy/sparse/linalg/dsolve/SuperLU/SRC/csnode_bmod.c
+@@ -105,6 +105,12 @@ csnode_bmod (
+ 	CGEMV( ftcs2, &nrow, &nsupc, &alpha, &lusup[luptr+nsupc], &nsupr, 
+ 		&lusup[ufirst], &incx, &beta, &lusup[ufirst+nsupc], &incy );
+ #else
++#if SCIPY_FIX
++       if (nsupr < nsupc) {
++           /* Fail early rather than passing in invalid parameters to TRSV. */
++           ABORT("failed to factorize matrix");
++       }
++#endif
+ 	ctrsv_( "L", "N", "U", &nsupc, &lusup[luptr], &nsupr, 
+ 	      &lusup[ufirst], &incx );
+ 	cgemv_( "N", &nrow, &nsupc, &alpha, &lusup[luptr+nsupc], &nsupr, 
+diff --git a/scipy/sparse/linalg/dsolve/SuperLU/SRC/dpanel_bmod.c b/scipy/sparse/linalg/dsolve/SuperLU/SRC/dpanel_bmod.c
+index 2d7c01635..0e785a57b 100644
+--- a/scipy/sparse/linalg/dsolve/SuperLU/SRC/dpanel_bmod.c
++++ b/scipy/sparse/linalg/dsolve/SuperLU/SRC/dpanel_bmod.c
+@@ -228,7 +228,7 @@ dpanel_bmod (
+ 		    STRSV( ftcs1, ftcs2, ftcs3, &segsze, &lusup[luptr], 
+ 			   &nsupr, TriTmp, &incx );
+ #else
+-		    dtrsv_( "L", "N", "U", &segsze, &lusup[luptr], 
++ 		    dtrsv_( "L", "N", "U", &segsze, &lusup[luptr], 
+ 			   &nsupr, TriTmp, &incx );
+ #endif
+ #else		
+@@ -407,6 +407,12 @@ dpanel_bmod (
+ 		    STRSV( ftcs1, ftcs2, ftcs3, &segsze, &lusup[luptr], 
+ 			   &nsupr, tempv, &incx );
+ #else
++#if SCIPY_FIX
++		    if (nsupr < segsze) {
++			/* Fail early rather than passing in invalid parameters to TRSV. */
++			ABORT("failed to factorize matrix");
++		    }
++#endif
+ 		    dtrsv_( "L", "N", "U", &segsze, &lusup[luptr], 
+ 			   &nsupr, tempv, &incx );
+ #endif
+diff --git a/scipy/sparse/linalg/dsolve/SuperLU/SRC/dpivotL.c b/scipy/sparse/linalg/dsolve/SuperLU/SRC/dpivotL.c
+index e3fd651c8..2af2c1b00 100644
+--- a/scipy/sparse/linalg/dsolve/SuperLU/SRC/dpivotL.c
++++ b/scipy/sparse/linalg/dsolve/SuperLU/SRC/dpivotL.c
+@@ -134,7 +134,16 @@ if ( jcol == MIN_COL ) {
+     /* Test for singularity */
+     if ( pivmax == 0.0 ) {
+ #if 1
++#if SCIPY_FIX
++	if (pivptr < nsupr) {
++	    *pivrow = lsub_ptr[pivptr];
++	}
++	else {
++	    *pivrow = diagind;
++	}
++#else
+ 	*pivrow = lsub_ptr[pivptr];
++#endif
+ 	perm_r[*pivrow] = jcol;
+ #else
+ 	perm_r[diagind] = jcol;
+diff --git a/scipy/sparse/linalg/dsolve/SuperLU/SRC/dsnode_bmod.c b/scipy/sparse/linalg/dsolve/SuperLU/SRC/dsnode_bmod.c
+index b4a8b8b71..c9b1acd8a 100644
+--- a/scipy/sparse/linalg/dsolve/SuperLU/SRC/dsnode_bmod.c
++++ b/scipy/sparse/linalg/dsolve/SuperLU/SRC/dsnode_bmod.c
+@@ -104,6 +104,12 @@ dsnode_bmod (
+ 	SGEMV( ftcs2, &nrow, &nsupc, &alpha, &lusup[luptr+nsupc], &nsupr, 
+ 		&lusup[ufirst], &incx, &beta, &lusup[ufirst+nsupc], &incy );
+ #else
++#if SCIPY_FIX
++	if (nsupr < nsupc) {
++	    /* Fail early rather than passing in invalid parameters to DTRSV. */
++	    ABORT("failed to factorize matrix");
++	}
++#endif
+ 	dtrsv_( "L", "N", "U", &nsupc, &lusup[luptr], &nsupr, 
+ 	      &lusup[ufirst], &incx );
+ 	dgemv_( "N", &nrow, &nsupc, &alpha, &lusup[luptr+nsupc], &nsupr, 
+diff --git a/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_cpivotL.c b/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_cpivotL.c
+index 4f96de805..3ef000094 100644
+--- a/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_cpivotL.c
++++ b/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_cpivotL.c
+@@ -146,9 +146,13 @@ ilu_cpivotL(
+ 
+     /* Test for singularity */
+     if (pivmax < 0.0) {
++#if SCIPY_FIX
++	ABORT("[0]: matrix is singular");
++#else
+ 	fprintf(stderr, "[0]: jcol=%d, SINGULAR!!!\n", jcol);
+ 	fflush(stderr);
+ 	exit(1);
++#endif
+     }
+     if ( pivmax == 0.0 ) {
+ 	if (diag != EMPTY)
+@@ -161,9 +165,13 @@ ilu_cpivotL(
+ 	    for (icol = jcol; icol < n; icol++)
+ 		if (marker[swap[icol]] <= jcol) break;
+ 	    if (icol >= n) {
++#if SCIPY_FIX
++		ABORT("[1]: matrix is singular");
++#else
+ 		fprintf(stderr, "[1]: jcol=%d, SINGULAR!!!\n", jcol);
+ 		fflush(stderr);
+ 		exit(1);
++#endif
+ 	    }
+ 
+ 	    *pivrow = swap[icol];
+diff --git a/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_dpivotL.c b/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_dpivotL.c
+index 7afc630ab..8aa94b11d 100644
+--- a/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_dpivotL.c
++++ b/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_dpivotL.c
+@@ -144,9 +144,13 @@ ilu_dpivotL(
+ 
+     /* Test for singularity */
+     if (pivmax < 0.0) {
++#if SCIPY_FIX
++	ABORT("[0]: matrix is singular");
++#else
+ 	fprintf(stderr, "[0]: jcol=%d, SINGULAR!!!\n", jcol);
+ 	fflush(stderr);
+ 	exit(1);
++#endif
+     }
+     if ( pivmax == 0.0 ) {
+ 	if (diag != EMPTY)
+@@ -159,9 +163,13 @@ ilu_dpivotL(
+ 	    for (icol = jcol; icol < n; icol++)
+ 		if (marker[swap[icol]] <= jcol) break;
+ 	    if (icol >= n) {
++#if SCIPY_FIX
++		ABORT("[1]: matrix is singular");
++#else
+ 		fprintf(stderr, "[1]: jcol=%d, SINGULAR!!!\n", jcol);
+ 		fflush(stderr);
+ 		exit(1);
++#endif
+ 	    }
+ 
+ 	    *pivrow = swap[icol];
+diff --git a/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_spivotL.c b/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_spivotL.c
+index f0db8dab4..59189d051 100644
+--- a/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_spivotL.c
++++ b/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_spivotL.c
+@@ -144,9 +144,13 @@ ilu_spivotL(
+ 
+     /* Test for singularity */
+     if (pivmax < 0.0) {
++#if SCIPY_FIX
++	ABORT("[0]: matrix is singular");
++#else
+ 	fprintf(stderr, "[0]: jcol=%d, SINGULAR!!!\n", jcol);
+ 	fflush(stderr);
+ 	exit(1);
++#endif
+     }
+     if ( pivmax == 0.0 ) {
+ 	if (diag != EMPTY)
+@@ -159,9 +163,13 @@ ilu_spivotL(
+ 	    for (icol = jcol; icol < n; icol++)
+ 		if (marker[swap[icol]] <= jcol) break;
+ 	    if (icol >= n) {
++#if SCIPY_FIX
++		ABORT("[1]: matrix is singular");
++#else
+ 		fprintf(stderr, "[1]: jcol=%d, SINGULAR!!!\n", jcol);
+ 		fflush(stderr);
+ 		exit(1);
++#endif
+ 	    }
+ 
+ 	    *pivrow = swap[icol];
+diff --git a/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_zpivotL.c b/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_zpivotL.c
+index a558a80c8..3f75fc6ad 100644
+--- a/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_zpivotL.c
++++ b/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_zpivotL.c
+@@ -146,9 +146,13 @@ ilu_zpivotL(
+ 
+     /* Test for singularity */
+     if (pivmax < 0.0) {
++#if SCIPY_FIX
++	ABORT("[0]: matrix is singular");
++#else
+ 	fprintf(stderr, "[0]: jcol=%d, SINGULAR!!!\n", jcol);
+ 	fflush(stderr);
+ 	exit(1);
++#endif
+     }
+     if ( pivmax == 0.0 ) {
+ 	if (diag != EMPTY)
+@@ -161,9 +165,13 @@ ilu_zpivotL(
+ 	    for (icol = jcol; icol < n; icol++)
+ 		if (marker[swap[icol]] <= jcol) break;
+ 	    if (icol >= n) {
++#if SCIPY_FIX
++		ABORT("[1]: matrix is singular");
++#else
+ 		fprintf(stderr, "[1]: jcol=%d, SINGULAR!!!\n", jcol);
+ 		fflush(stderr);
+ 		exit(1);
++#endif
+ 	    }
+ 
+ 	    *pivrow = swap[icol];
+diff --git a/scipy/sparse/linalg/dsolve/SuperLU/SRC/msc_stdint.h b/scipy/sparse/linalg/dsolve/SuperLU/SRC/msc_stdint.h
+new file mode 100644
+index 000000000..d02608a59
+--- /dev/null
++++ b/scipy/sparse/linalg/dsolve/SuperLU/SRC/msc_stdint.h
+@@ -0,0 +1,247 @@
++// ISO C9x  compliant stdint.h for Microsoft Visual Studio
++// Based on ISO/IEC 9899:TC2 Committee draft (May 6, 2005) WG14/N1124 
++// 
++//  Copyright (c) 2006-2008 Alexander Chemeris
++// 
++// Redistribution and use in source and binary forms, with or without
++// modification, are permitted provided that the following conditions are met:
++// 
++//   1. Redistributions of source code must retain the above copyright notice,
++//      this list of conditions and the following disclaimer.
++// 
++//   2. Redistributions in binary form must reproduce the above copyright
++//      notice, this list of conditions and the following disclaimer in the
++//      documentation and/or other materials provided with the distribution.
++// 
++//   3. The name of the author may be used to endorse or promote products
++//      derived from this software without specific prior written permission.
++// 
++// THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR IMPLIED
++// WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
++// MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO
++// EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
++// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
++// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
++// OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, 
++// WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
++// OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
++// ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++// 
++///////////////////////////////////////////////////////////////////////////////
++
++#ifndef _MSC_VER // [
++#error "Use this header only with Microsoft Visual C++ compilers!"
++#endif // _MSC_VER ]
++
++#ifndef _MSC_STDINT_H_ // [
++#define _MSC_STDINT_H_
++
++#if _MSC_VER > 1000
++#pragma once
++#endif
++
++#include <limits.h>
++
++// For Visual Studio 6 in C++ mode and for many Visual Studio versions when
++// compiling for ARM we should wrap <wchar.h> include with 'extern "C++" {}'
++// or compiler give many errors like this:
++//   error C2733: second C linkage of overloaded function 'wmemchr' not allowed
++#ifdef __cplusplus
++extern "C" {
++#endif
++#  include <wchar.h>
++#ifdef __cplusplus
++}
++#endif
++
++// Define _W64 macros to mark types changing their size, like intptr_t.
++#ifndef _W64
++#  if !defined(__midl) && (defined(_X86_) || defined(_M_IX86)) && _MSC_VER >= 1300
++#     define _W64 __w64
++#  else
++#     define _W64
++#  endif
++#endif
++
++
++// 7.18.1 Integer types
++
++// 7.18.1.1 Exact-width integer types
++
++// Visual Studio 6 and Embedded Visual C++ 4 doesn't
++// realize that, e.g. char has the same size as __int8
++// so we give up on __intX for them.
++#if (_MSC_VER < 1300)
++   typedef signed char       int8_t;
++   typedef signed short      int16_t;
++   typedef signed int        int32_t;
++   typedef unsigned char     uint8_t;
++   typedef unsigned short    uint16_t;
++   typedef unsigned int      uint32_t;
++#else
++   typedef signed __int8     int8_t;
++   typedef signed __int16    int16_t;
++   typedef signed __int32    int32_t;
++   typedef unsigned __int8   uint8_t;
++   typedef unsigned __int16  uint16_t;
++   typedef unsigned __int32  uint32_t;
++#endif
++typedef signed __int64       int64_t;
++typedef unsigned __int64     uint64_t;
++
++
++// 7.18.1.2 Minimum-width integer types
++typedef int8_t    int_least8_t;
++typedef int16_t   int_least16_t;
++typedef int32_t   int_least32_t;
++typedef int64_t   int_least64_t;
++typedef uint8_t   uint_least8_t;
++typedef uint16_t  uint_least16_t;
++typedef uint32_t  uint_least32_t;
++typedef uint64_t  uint_least64_t;
++
++// 7.18.1.3 Fastest minimum-width integer types
++typedef int8_t    int_fast8_t;
++typedef int16_t   int_fast16_t;
++typedef int32_t   int_fast32_t;
++typedef int64_t   int_fast64_t;
++typedef uint8_t   uint_fast8_t;
++typedef uint16_t  uint_fast16_t;
++typedef uint32_t  uint_fast32_t;
++typedef uint64_t  uint_fast64_t;
++
++// 7.18.1.4 Integer types capable of holding object pointers
++#ifdef _WIN64 // [
++   typedef signed __int64    intptr_t;
++   typedef unsigned __int64  uintptr_t;
++#else // _WIN64 ][
++   typedef _W64 signed int   intptr_t;
++   typedef _W64 unsigned int uintptr_t;
++#endif // _WIN64 ]
++
++// 7.18.1.5 Greatest-width integer types
++typedef int64_t   intmax_t;
++typedef uint64_t  uintmax_t;
++
++
++// 7.18.2 Limits of specified-width integer types
++
++#if !defined(__cplusplus) || defined(__STDC_LIMIT_MACROS) // [   See footnote 220 at page 257 and footnote 221 at page 259
++
++// 7.18.2.1 Limits of exact-width integer types
++#define INT8_MIN     ((int8_t)_I8_MIN)
++#define INT8_MAX     _I8_MAX
++#define INT16_MIN    ((int16_t)_I16_MIN)
++#define INT16_MAX    _I16_MAX
++#define INT32_MIN    ((int32_t)_I32_MIN)
++#define INT32_MAX    _I32_MAX
++#define INT64_MIN    ((int64_t)_I64_MIN)
++#define INT64_MAX    _I64_MAX
++#define UINT8_MAX    _UI8_MAX
++#define UINT16_MAX   _UI16_MAX
++#define UINT32_MAX   _UI32_MAX
++#define UINT64_MAX   _UI64_MAX
++
++// 7.18.2.2 Limits of minimum-width integer types
++#define INT_LEAST8_MIN    INT8_MIN
++#define INT_LEAST8_MAX    INT8_MAX
++#define INT_LEAST16_MIN   INT16_MIN
++#define INT_LEAST16_MAX   INT16_MAX
++#define INT_LEAST32_MIN   INT32_MIN
++#define INT_LEAST32_MAX   INT32_MAX
++#define INT_LEAST64_MIN   INT64_MIN
++#define INT_LEAST64_MAX   INT64_MAX
++#define UINT_LEAST8_MAX   UINT8_MAX
++#define UINT_LEAST16_MAX  UINT16_MAX
++#define UINT_LEAST32_MAX  UINT32_MAX
++#define UINT_LEAST64_MAX  UINT64_MAX
++
++// 7.18.2.3 Limits of fastest minimum-width integer types
++#define INT_FAST8_MIN    INT8_MIN
++#define INT_FAST8_MAX    INT8_MAX
++#define INT_FAST16_MIN   INT16_MIN
++#define INT_FAST16_MAX   INT16_MAX
++#define INT_FAST32_MIN   INT32_MIN
++#define INT_FAST32_MAX   INT32_MAX
++#define INT_FAST64_MIN   INT64_MIN
++#define INT_FAST64_MAX   INT64_MAX
++#define UINT_FAST8_MAX   UINT8_MAX
++#define UINT_FAST16_MAX  UINT16_MAX
++#define UINT_FAST32_MAX  UINT32_MAX
++#define UINT_FAST64_MAX  UINT64_MAX
++
++// 7.18.2.4 Limits of integer types capable of holding object pointers
++#ifdef _WIN64 // [
++#  define INTPTR_MIN   INT64_MIN
++#  define INTPTR_MAX   INT64_MAX
++#  define UINTPTR_MAX  UINT64_MAX
++#else // _WIN64 ][
++#  define INTPTR_MIN   INT32_MIN
++#  define INTPTR_MAX   INT32_MAX
++#  define UINTPTR_MAX  UINT32_MAX
++#endif // _WIN64 ]
++
++// 7.18.2.5 Limits of greatest-width integer types
++#define INTMAX_MIN   INT64_MIN
++#define INTMAX_MAX   INT64_MAX
++#define UINTMAX_MAX  UINT64_MAX
++
++// 7.18.3 Limits of other integer types
++
++#ifdef _WIN64 // [
++#  define PTRDIFF_MIN  _I64_MIN
++#  define PTRDIFF_MAX  _I64_MAX
++#else  // _WIN64 ][
++#  define PTRDIFF_MIN  _I32_MIN
++#  define PTRDIFF_MAX  _I32_MAX
++#endif  // _WIN64 ]
++
++#define SIG_ATOMIC_MIN  INT_MIN
++#define SIG_ATOMIC_MAX  INT_MAX
++
++#ifndef SIZE_MAX // [
++#  ifdef _WIN64 // [
++#     define SIZE_MAX  _UI64_MAX
++#  else // _WIN64 ][
++#     define SIZE_MAX  _UI32_MAX
++#  endif // _WIN64 ]
++#endif // SIZE_MAX ]
++
++// WCHAR_MIN and WCHAR_MAX are also defined in <wchar.h>
++#ifndef WCHAR_MIN // [
++#  define WCHAR_MIN  0
++#endif  // WCHAR_MIN ]
++#ifndef WCHAR_MAX // [
++#  define WCHAR_MAX  _UI16_MAX
++#endif  // WCHAR_MAX ]
++
++#define WINT_MIN  0
++#define WINT_MAX  _UI16_MAX
++
++#endif // __STDC_LIMIT_MACROS ]
++
++
++// 7.18.4 Limits of other integer types
++
++#if !defined(__cplusplus) || defined(__STDC_CONSTANT_MACROS) // [   See footnote 224 at page 260
++
++// 7.18.4.1 Macros for minimum-width integer constants
++
++#define INT8_C(val)  val##i8
++#define INT16_C(val) val##i16
++#define INT32_C(val) val##i32
++#define INT64_C(val) val##i64
++
++#define UINT8_C(val)  val##ui8
++#define UINT16_C(val) val##ui16
++#define UINT32_C(val) val##ui32
++#define UINT64_C(val) val##ui64
++
++// 7.18.4.2 Macros for greatest-width integer constants
++#define INTMAX_C   INT64_C
++#define UINTMAX_C  UINT64_C
++
++#endif // __STDC_CONSTANT_MACROS ]
++
++
++#endif // _MSC_STDINT_H_ ]
+diff --git a/scipy/sparse/linalg/dsolve/SuperLU/SRC/scipy_slu_config.h b/scipy/sparse/linalg/dsolve/SuperLU/SRC/scipy_slu_config.h
+new file mode 100644
+index 000000000..5afc93b5d
+--- /dev/null
++++ b/scipy/sparse/linalg/dsolve/SuperLU/SRC/scipy_slu_config.h
+@@ -0,0 +1,36 @@
++#ifndef SCIPY_SLU_CONFIG_H
++#define SCIPY_SLU_CONFIG_H
++
++#include <stdlib.h>
++
++/*
++ * Support routines
++ */
++void superlu_python_module_abort(char *msg);
++void *superlu_python_module_malloc(size_t size);
++void superlu_python_module_free(void *ptr);
++
++#define USER_ABORT  superlu_python_module_abort
++#define USER_MALLOC superlu_python_module_malloc
++#define USER_FREE   superlu_python_module_free
++
++#define SCIPY_FIX 1
++
++/*
++ * Fortran configuration
++ */
++#if defined(NO_APPEND_FORTRAN)
++#if defined(UPPERCASE_FORTRAN)
++#define UpCase 1
++#else
++#define NoChange 1
++#endif
++#else
++#if defined(UPPERCASE_FORTRAN)
++#error Uppercase and trailing slash in Fortran names not supported
++#else
++#define Add_ 1
++#endif
++#endif
++
++#endif
+diff --git a/scipy/sparse/linalg/dsolve/SuperLU/SRC/slu_Cnames.h b/scipy/sparse/linalg/dsolve/SuperLU/SRC/slu_Cnames.h
+index 1d73d824e..15d9804d3 100644
+--- a/scipy/sparse/linalg/dsolve/SuperLU/SRC/slu_Cnames.h
++++ b/scipy/sparse/linalg/dsolve/SuperLU/SRC/slu_Cnames.h
+@@ -29,6 +29,7 @@ at the top-level directory.
+ #ifndef __SUPERLU_CNAMES /* allow multiple inclusions */
+ #define __SUPERLU_CNAMES
+ 
++#include "scipy_slu_config.h"
+ 
+ #define ADD_       0
+ #define ADD__      1
+diff --git a/scipy/sparse/linalg/dsolve/SuperLU/SRC/slu_cdefs.h b/scipy/sparse/linalg/dsolve/SuperLU/SRC/slu_cdefs.h
+index b1d7dd884..a14b453f3 100644
+--- a/scipy/sparse/linalg/dsolve/SuperLU/SRC/slu_cdefs.h
++++ b/scipy/sparse/linalg/dsolve/SuperLU/SRC/slu_cdefs.h
+@@ -90,7 +90,11 @@ typedef int int_t; /* default */
+ #include <limits.h>
+ #include <stdio.h>
+ #include <stdlib.h>
++#if defined(_MSC_VER) && !defined(__INTEL_COMPILER)
++#include "msc_stdint.h"
++#else
+ #include <stdint.h>
++#endif
+ #include <string.h>
+ #include "slu_Cnames.h"
+ #include "supermatrix.h"
+diff --git a/scipy/sparse/linalg/dsolve/SuperLU/SRC/slu_ddefs.h b/scipy/sparse/linalg/dsolve/SuperLU/SRC/slu_ddefs.h
+index 07ea5556b..ae925d858 100644
+--- a/scipy/sparse/linalg/dsolve/SuperLU/SRC/slu_ddefs.h
++++ b/scipy/sparse/linalg/dsolve/SuperLU/SRC/slu_ddefs.h
+@@ -90,7 +90,11 @@ typedef int int_t; /* default */
+ #include <limits.h>
+ #include <stdio.h>
+ #include <stdlib.h>
++#if defined(_MSC_VER) && !defined(__INTEL_COMPILER)
++#include "msc_stdint.h"
++#else
+ #include <stdint.h>
++#endif
+ #include <string.h>
+ #include "slu_Cnames.h"
+ #include "supermatrix.h"
+diff --git a/scipy/sparse/linalg/dsolve/SuperLU/SRC/slu_sdefs.h b/scipy/sparse/linalg/dsolve/SuperLU/SRC/slu_sdefs.h
+index ab0637018..074b60bf5 100644
+--- a/scipy/sparse/linalg/dsolve/SuperLU/SRC/slu_sdefs.h
++++ b/scipy/sparse/linalg/dsolve/SuperLU/SRC/slu_sdefs.h
+@@ -90,7 +90,11 @@ typedef int int_t; /* default */
+ #include <limits.h>
+ #include <stdio.h>
+ #include <stdlib.h>
++#if defined(_MSC_VER) && !defined(__INTEL_COMPILER)
++#include "msc_stdint.h"
++#else
+ #include <stdint.h>
++#endif
+ #include <string.h>
+ #include "slu_Cnames.h"
+ #include "supermatrix.h"
+diff --git a/scipy/sparse/linalg/dsolve/SuperLU/SRC/slu_util.h b/scipy/sparse/linalg/dsolve/SuperLU/SRC/slu_util.h
+index 31776294f..d34e4fe5b 100644
+--- a/scipy/sparse/linalg/dsolve/SuperLU/SRC/slu_util.h
++++ b/scipy/sparse/linalg/dsolve/SuperLU/SRC/slu_util.h
+@@ -33,6 +33,8 @@ at the top-level directory.
+ #include "superlu_enum_consts.h"
+ 
+ 
++#include "scipy_slu_config.h"
++
+ /***********************************************************************
+  * Macros
+  ***********************************************************************/
+diff --git a/scipy/sparse/linalg/dsolve/SuperLU/SRC/slu_zdefs.h b/scipy/sparse/linalg/dsolve/SuperLU/SRC/slu_zdefs.h
+index 577c5aa86..e4b1e364d 100644
+--- a/scipy/sparse/linalg/dsolve/SuperLU/SRC/slu_zdefs.h
++++ b/scipy/sparse/linalg/dsolve/SuperLU/SRC/slu_zdefs.h
+@@ -90,7 +90,11 @@ typedef int int_t; /* default */
+ #include <limits.h>
+ #include <stdio.h>
+ #include <stdlib.h>
++#if defined(_MSC_VER) && !defined(__INTEL_COMPILER)
++#include "msc_stdint.h"
++#else
+ #include <stdint.h>
++#endif
+ #include <string.h>
+ #include "slu_Cnames.h"
+ #include "supermatrix.h"
+diff --git a/scipy/sparse/linalg/dsolve/SuperLU/SRC/spanel_bmod.c b/scipy/sparse/linalg/dsolve/SuperLU/SRC/spanel_bmod.c
+index b1e7f91f6..8f18fb80b 100644
+--- a/scipy/sparse/linalg/dsolve/SuperLU/SRC/spanel_bmod.c
++++ b/scipy/sparse/linalg/dsolve/SuperLU/SRC/spanel_bmod.c
+@@ -407,6 +407,12 @@ spanel_bmod (
+ 		    STRSV( ftcs1, ftcs2, ftcs3, &segsze, &lusup[luptr], 
+ 			   &nsupr, tempv, &incx );
+ #else
++#if SCIPY_FIX
++		    if (nsupr < segsze) {
++			/* Fail early rather than passing in invalid parameters to TRSV. */
++			ABORT("failed to factorize matrix");
++		    }
++#endif
+ 		    strsv_( "L", "N", "U", &segsze, &lusup[luptr], 
+ 			   &nsupr, tempv, &incx );
+ #endif
+diff --git a/scipy/sparse/linalg/dsolve/SuperLU/SRC/spivotL.c b/scipy/sparse/linalg/dsolve/SuperLU/SRC/spivotL.c
+index 2c63cabfa..cb91e6583 100644
+--- a/scipy/sparse/linalg/dsolve/SuperLU/SRC/spivotL.c
++++ b/scipy/sparse/linalg/dsolve/SuperLU/SRC/spivotL.c
+@@ -134,7 +134,16 @@ if ( jcol == MIN_COL ) {
+     /* Test for singularity */
+     if ( pivmax == 0.0 ) {
+ #if 1
++#if SCIPY_FIX
++	if (pivptr < nsupr) {
++	    *pivrow = lsub_ptr[pivptr];
++	}
++	else {
++	    *pivrow = diagind;
++	}
++#else
+ 	*pivrow = lsub_ptr[pivptr];
++#endif
+ 	perm_r[*pivrow] = jcol;
+ #else
+ 	perm_r[diagind] = jcol;
+diff --git a/scipy/sparse/linalg/dsolve/SuperLU/SRC/ssnode_bmod.c b/scipy/sparse/linalg/dsolve/SuperLU/SRC/ssnode_bmod.c
+index fd1f9c6fd..d53f04239 100644
+--- a/scipy/sparse/linalg/dsolve/SuperLU/SRC/ssnode_bmod.c
++++ b/scipy/sparse/linalg/dsolve/SuperLU/SRC/ssnode_bmod.c
+@@ -104,6 +104,12 @@ ssnode_bmod (
+ 	SGEMV( ftcs2, &nrow, &nsupc, &alpha, &lusup[luptr+nsupc], &nsupr, 
+ 		&lusup[ufirst], &incx, &beta, &lusup[ufirst+nsupc], &incy );
+ #else
++#if SCIPY_FIX
++       if (nsupr < nsupc) {
++           /* Fail early rather than passing in invalid parameters to TRSV. */
++           ABORT("failed to factorize matrix");
++       }
++#endif
+ 	strsv_( "L", "N", "U", &nsupc, &lusup[luptr], &nsupr, 
+ 	      &lusup[ufirst], &incx );
+ 	sgemv_( "N", &nrow, &nsupc, &alpha, &lusup[luptr+nsupc], &nsupr, 
+diff --git a/scipy/sparse/linalg/dsolve/SuperLU/SRC/zpanel_bmod.c b/scipy/sparse/linalg/dsolve/SuperLU/SRC/zpanel_bmod.c
+index 9e21cab4a..16932b047 100644
+--- a/scipy/sparse/linalg/dsolve/SuperLU/SRC/zpanel_bmod.c
++++ b/scipy/sparse/linalg/dsolve/SuperLU/SRC/zpanel_bmod.c
+@@ -435,6 +435,12 @@ zpanel_bmod (
+ 		    CTRSV( ftcs1, ftcs2, ftcs3, &segsze, &lusup[luptr], 
+ 			   &nsupr, tempv, &incx );
+ #else
++#if SCIPY_FIX
++		    if (nsupr < segsze) {
++			/* Fail early rather than passing in invalid parameters to TRSV. */
++			ABORT("failed to factorize matrix");
++		    }
++#endif
+ 		    ztrsv_( "L", "N", "U", &segsze, &lusup[luptr], 
+ 			   &nsupr, tempv, &incx );
+ #endif
+diff --git a/scipy/sparse/linalg/dsolve/SuperLU/SRC/zpivotL.c b/scipy/sparse/linalg/dsolve/SuperLU/SRC/zpivotL.c
+index 2aa5231d2..46eabf319 100644
+--- a/scipy/sparse/linalg/dsolve/SuperLU/SRC/zpivotL.c
++++ b/scipy/sparse/linalg/dsolve/SuperLU/SRC/zpivotL.c
+@@ -135,7 +135,16 @@ if ( jcol == MIN_COL ) {
+     /* Test for singularity */
+     if ( pivmax == 0.0 ) {
+ #if 1
++#if SCIPY_FIX
++	if (pivptr < nsupr) {
++	    *pivrow = lsub_ptr[pivptr];
++	}
++	else {
++	    *pivrow = diagind;
++	}
++#else
+ 	*pivrow = lsub_ptr[pivptr];
++#endif
+ 	perm_r[*pivrow] = jcol;
+ #else
+ 	perm_r[diagind] = jcol;
+diff --git a/scipy/sparse/linalg/dsolve/SuperLU/SRC/zsnode_bmod.c b/scipy/sparse/linalg/dsolve/SuperLU/SRC/zsnode_bmod.c
+index 403b7ee1a..8d6a25601 100644
+--- a/scipy/sparse/linalg/dsolve/SuperLU/SRC/zsnode_bmod.c
++++ b/scipy/sparse/linalg/dsolve/SuperLU/SRC/zsnode_bmod.c
+@@ -105,6 +105,12 @@ zsnode_bmod (
+ 	CGEMV( ftcs2, &nrow, &nsupc, &alpha, &lusup[luptr+nsupc], &nsupr, 
+ 		&lusup[ufirst], &incx, &beta, &lusup[ufirst+nsupc], &incy );
+ #else
++#if SCIPY_FIX
++       if (nsupr < nsupc) {
++           /* Fail early rather than passing in invalid parameters to TRSV. */
++           ABORT("failed to factorize matrix");
++       }
++#endif
+ 	ztrsv_( "L", "N", "U", &nsupc, &lusup[luptr], &nsupr, 
+ 	      &lusup[ufirst], &incx );
+ 	zgemv_( "N", &nrow, &nsupc, &alpha, &lusup[luptr+nsupc], &nsupr, 
