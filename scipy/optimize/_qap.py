@@ -139,11 +139,12 @@ def quadratic_assignment(
     .. [1] J.T. Vogelstein, J.M. Conroy, V. Lyzinski, L.J. Podrazik,
            S.G. Kratzer, E.T. Harley, D.E. Fishkind, R.J. Vogelstein, and
            C.E. Priebe, "Fast approximate quadratic programming for graph
-           matching," PLOS one, vol. 10, no. 4, p. e0121002, 2015.
+           matching," PLOS one, vol. 10, no. 4, p. e0121002, 2015,
+           https://doi.org/10.1371/journal.pone.0121002
 
     .. [2] D. Fishkind, S. Adali, H. Patsolic, L. Meng, D. Singh, V. Lyzinski,
            C. Priebe, "Seeded graph matching", Pattern Recognit. 87 (2019):
-           203-215.
+           203-215, https://doi.org/10.1016/j.patcog.2018.09.014
 
     Examples
     --------
@@ -244,11 +245,11 @@ def _quadratic_assignment_faq(
         raise ValueError(msg)
 
     # TypeError check
-    if type(shuffle_input) is not bool:
+    if not isinstance(shuffle_input, bool):
         msg = "'shuffle_input' must be a boolean"
     elif eps <= 0 or type(eps) is not float:
         msg = "'eps' must be a positive float"
-    elif type(maximize) is not bool:
+    elif not isinstance(maximize, bool):
         msg = "'maximize' must be a boolean"
     if msg is not None:
         raise TypeError(msg)
