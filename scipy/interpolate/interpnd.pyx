@@ -271,7 +271,7 @@ class LinearNDInterpolator(NDInterpolatorBase):
 
         qhull._get_delaunay_info(&info, self.tri, 1, 0, 0)
 
-        out = np.zeros((xi.shape[0], self.values.shape[1]),
+        out = np.empty((xi.shape[0], self.values.shape[1]),
                        dtype=self.values.dtype)
         nvalues = out.shape[1]
 

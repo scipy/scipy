@@ -567,7 +567,7 @@ def mode(a, axis=0, nan_policy='propagate'):
 
     inds = np.ndindex(a_view.shape[:-1])
     modes = np.empty(a_view.shape[:-1], dtype=a.dtype)
-    counts = np.zeros(a_view.shape[:-1], dtype=np.int_)
+    counts = np.empty(a_view.shape[:-1], dtype=np.int_)
     for ind in inds:
         modes[ind], counts[ind] = _mode1D(a_view[ind])
     newshape = list(a.shape)
@@ -2656,7 +2656,8 @@ def gstd(a, axis=0, ddof=1):
         if np.isinf(a).any():
             raise ValueError(
                 'Infinite value encountered. The geometric standard deviation '
-                'is defined for strictly positive values only.')
+                'is defined for strictly positive values only.'
+            ) from w
         a_nan = np.isnan(a)
         a_nan_any = a_nan.any()
         # exclude NaN's from negativity check, but
@@ -2665,16 +2666,17 @@ def gstd(a, axis=0, ddof=1):
               (not a_nan_any and np.less_equal(a, 0).any())):
             raise ValueError(
                 'Non positive value encountered. The geometric standard '
-                'deviation is defined for strictly positive values only.')
+                'deviation is defined for strictly positive values only.'
+            ) from w
         elif 'Degrees of freedom <= 0 for slice' == str(w):
-            raise ValueError(w)
+            raise ValueError(w) from w
         else:
             #  Remaining warnings don't need to be exceptions.
             return np.exp(np.std(log(a, where=~a_nan), axis=axis, ddof=ddof))
-    except TypeError:
+    except TypeError as e:
         raise ValueError(
             'Invalid array input. The inputs could not be '
-            'safely coerced to any supported types')
+            'safely coerced to any supported types') from e
 
 
 # Private dictionary initialized only once at module level
@@ -6466,8 +6468,8 @@ def _count_paths_outside_method(m, n, g, h):
         The number of paths that go low.
         The calculation may overflow - check for a finite answer.
 
-    Exceptions
-    ----------
+    Raises
+    ------
     FloatingPointError: Raised if the intermediate computation goes outside
     the range of a float.
 

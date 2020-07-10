@@ -103,11 +103,11 @@ def getdtype(dtype, a=None, default=None):
     if dtype is None:
         try:
             newdtype = a.dtype
-        except AttributeError:
+        except AttributeError as e:
             if default is not None:
                 newdtype = np.dtype(default)
             else:
-                raise TypeError("could not interpret data type")
+                raise TypeError("could not interpret data type") from e
     else:
         newdtype = np.dtype(dtype)
         if newdtype == np.object_:

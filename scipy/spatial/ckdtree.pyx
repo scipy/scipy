@@ -336,15 +336,36 @@ cdef class cKDTreeNode:
         readonly np.intp_t    level
         readonly np.intp_t    split_dim
         readonly np.intp_t    children
+        readonly np.intp_t    start_idx
+        readonly np.intp_t    end_idx
         readonly np.float64_t split
-        ckdtreenode           *_node
         np.ndarray            _data
         np.ndarray            _indices
+        readonly object       lesser
+        readonly object       greater
 
-    cdef void _setup(cKDTreeNode self):
-        self.split_dim = self._node.split_dim
-        self.children = self._node.children
-        self.split = self._node.split
+    cdef void _setup(cKDTreeNode self, cKDTree parent, ckdtreenode *node, np.intp_t level):
+        cdef cKDTreeNode n1, n2
+        self.level = level
+        self.split_dim = node.split_dim
+        self.children = node.children
+        self.split = node.split
+        self.start_idx = node.start_idx
+        self.end_idx = node.end_idx
+        self._data = parent.data
+        self._indices = parent.indices
+        if self.split_dim == -1:
+            self.lesser = None
+            self.greater = None
+        else:
+            # setup lesser branch
+            n1 = cKDTreeNode()
+            n1._setup(parent, node=node.less, level=level + 1)
+            self.lesser = n1
+            # setup greater branch
+            n2 = cKDTreeNode()
+            n2._setup(parent, node=node.greater, level=level + 1)
+            self.greater = n2
 
     property data_points:
         def __get__(cKDTreeNode self):
@@ -352,40 +373,10 @@ cdef class cKDTreeNode:
 
     property indices:
         def __get__(cKDTreeNode self):
-            cdef np.intp_t i, start, stop
-            if self.split_dim == -1:
-                start = self._node.start_idx
-                stop = self._node.end_idx
-                return self._indices[start:stop]
-            else:
-                return np.hstack([self.lesser.indices,
-                           self.greater.indices])
-
-    property lesser:
-        def __get__(cKDTreeNode self):
-            if self.split_dim == -1:
-                return None
-            else:
-                n = cKDTreeNode()
-                n._node = self._node.less
-                n._data = self._data
-                n._indices = self._indices
-                n.level = self.level + 1
-                n._setup()
-                return n
-
-    property greater:
-        def __get__(cKDTreeNode self):
-            if self.split_dim == -1:
-                return None
-            else:
-                n = cKDTreeNode()
-                n._node = self._node.greater
-                n._data = self._data
-                n._indices = self._indices
-                n.level = self.level + 1
-                n._setup()
-                return n
+            cdef np.intp_t start, stop
+            start = self.start_idx
+            stop = self.end_idx
+            return self._indices[start:stop]
 
 
 # Main cKDTree class
@@ -470,7 +461,10 @@ cdef class cKDTree:
     mins : ndarray, shape (m,)
         The minimum value in each dimension of the n data points.
     tree : object, class cKDTreeNode
-        This class exposes a Python view of the root node in the cKDTree object.
+        This attribute exposes a Python view of the root node in the cKDTree 
+        object. A full Python view of the kd-tree is created dynamically 
+        on the first access. This attribute allows you to create your own 
+        query functions in Python.
     size : int
         The number of nodes in the tree.
 
@@ -481,7 +475,7 @@ cdef class cKDTree:
     """
     cdef:
         ckdtree * cself
-        readonly cKDTreeNode     tree
+        object                   _python_tree
         readonly np.ndarray      data
         readonly np.ndarray      maxes
         readonly np.ndarray      mins
@@ -491,12 +485,28 @@ cdef class cKDTree:
 
     property n:
         def __get__(self): return self.cself.n
+    
     property m:
         def __get__(self): return self.cself.m
+    
     property leafsize:
         def __get__(self): return self.cself.leafsize
+    
     property size:
         def __get__(self): return self.cself.size
+
+    property tree:
+        # make the tree viewable from Python
+        def __get__(cKDTree self):
+            cdef cKDTreeNode n
+            cdef ckdtree *cself = self.cself
+            if self._python_tree is not None:
+                return self._python_tree
+            else:
+                n = cKDTreeNode()
+                n._setup(self, node=cself.ctree, level=0)
+                self._python_tree = n
+                return self._python_tree
 
     def __cinit__(cKDTree self):
         self.cself = <ckdtree * > PyMem_Malloc(sizeof(ckdtree))
@@ -511,6 +521,8 @@ cdef class cKDTree:
             np.float64_t *ptmpmins
             ckdtree *cself = self.cself
             int compact, median
+
+        self._python_tree = None
 
         data = np.array(data, order='C', copy=copy_data, dtype=np.float64)
 
@@ -593,14 +605,6 @@ cdef class cKDTree:
         cself.size = cself.tree_buffer.size()
 
         self._post_init_traverse(cself.ctree)
-
-        # make the tree viewable from Python
-        self.tree = cKDTreeNode()
-        self.tree._node = cself.ctree
-        self.tree._data = self.data
-        self.tree._indices = self.indices
-        self.tree.level = 0
-        self.tree._setup()
 
     cdef _post_init_traverse(cKDTree self, ckdtreenode *node):
         cself = self.cself
@@ -1541,6 +1545,7 @@ cdef class cKDTree:
         mytree = np.asarray(<char[:tree.size]> <char*> cself.tree_buffer.data())
 
         # set raw pointers
+        self._python_tree = None
         self._pre_init()
 
         # copy the tree data

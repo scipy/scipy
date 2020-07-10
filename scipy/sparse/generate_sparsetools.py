@@ -361,8 +361,8 @@ def main():
 
             try:
                 name, args = line.split(None, 1)
-            except ValueError:
-                raise ValueError("Malformed line: %r" % (line,))
+            except ValueError as e:
+                raise ValueError("Malformed line: %r" % (line,)) from e
 
             args = "".join(args.split())
             if 't' in args or 'T' in args:
