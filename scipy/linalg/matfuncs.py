@@ -137,7 +137,7 @@ def fractional_matrix_power(A, t):
     return scipy.linalg._matfuncs_inv_ssq._fractional_matrix_power(A, t)
 
 
-def logm(A, disp=True):
+def logm(A, disp=True, assume_a='gen'):
     """
     Compute matrix logarithm.
 
@@ -151,6 +151,12 @@ def logm(A, disp=True):
     disp : bool, optional
         Print warning if error in the result is estimated large
         instead of returning estimated error. (Default: True)
+    assume_a : str, optional
+        Make assumptions on the matrix A. Available options:
+            'gen' Generic (no assumptions)
+            'nor' Normal
+            'her' Hermitian
+            'pos' Positive definite
 
     Returns
     -------
@@ -194,7 +200,7 @@ def logm(A, disp=True):
     A = _asarray_square(A)
     # Avoid circular import ... this is OK, right?
     import scipy.linalg._matfuncs_inv_ssq
-    F = scipy.linalg._matfuncs_inv_ssq._logm(A)
+    F = scipy.linalg._matfuncs_inv_ssq._logm(A, assume_a=assume_a)
     F = _maybe_real(A, F)
     errtol = 1000*eps
     #TODO use a better error approximation

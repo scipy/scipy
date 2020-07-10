@@ -9,7 +9,7 @@ import numpy as np
 from scipy.linalg._matfuncs_sqrtm import SqrtmError, _sqrtm_triu
 from scipy.linalg.decomp_schur import schur, rsf2csf
 from scipy.linalg.matfuncs import funm
-from scipy.linalg import svdvals, solve_triangular
+from scipy.linalg import eigh, svdvals, solve_triangular
 from scipy.sparse.linalg.interface import LinearOperator
 from scipy.sparse.linalg import onenormest
 import scipy.special
@@ -767,15 +767,6 @@ def _logm_triu(T):
     else:
         T0 = T.astype(complex)
 
-    # Check if T0 is diagonal, if so return logarithm of the diagonal
-    # We use ratio between biggest off-diagonal and smallest diagonal element
-    # Reshape it so that diagonal becomes first columnn, then slice it out
-    off_diagonal_view = T0.reshape(-1)[:-1].reshape(n-1, n+1)[:, 1:]
-    min_diag = np.min(np.abs(T0.diagonal()))
-    max_off_diag = np.max(np.abs(off_diagonal_view), initial=0.0)
-    if max_off_diag / min_diag < 1e-8:
-        return np.diag(np.log(T0.diagonal()))
-
     # Define bounds given in Table (2.1).
     theta = (None,
             1.59e-5, 2.31e-3, 1.94e-2, 6.21e-2,
@@ -827,10 +818,13 @@ def _logm_triu(T):
 
 
 def _logm_force_nonsingular_triangular_matrix(T, inplace=False):
-    # The input matrix should be upper triangular.
+    # The input matrix should be upper triangular, or vector
     # The eps is ad hoc and is not meant to be machine precision.
     tri_eps = 1e-20
-    abs_diag = np.absolute(np.diag(T))
+    if len(T.shape) == 2:
+        abs_diag = np.absolute(T.diagonal())
+    else:
+        abs_diag = np.absolute(T)
     if np.any(abs_diag == 0):
         exact_singularity_msg = 'The logm input matrix is exactly singular.'
         warnings.warn(exact_singularity_msg, LogmExactlySingularWarning)
@@ -838,15 +832,16 @@ def _logm_force_nonsingular_triangular_matrix(T, inplace=False):
             T = T.copy()
         n = T.shape[0]
         for i in range(n):
-            if not T[i, i]:
-                T[i, i] = tri_eps
+            entry = (i,)*len(T.shape)
+            if not T[entry]:
+                T[entry] = tri_eps
     elif np.any(abs_diag < tri_eps):
         near_singularity_msg = 'The logm input matrix may be nearly singular.'
         warnings.warn(near_singularity_msg, LogmNearlySingularWarning)
     return T
 
 
-def _logm(A):
+def _logm(A, assume_a='gen'):
     """
     Compute the matrix logarithm.
 
@@ -873,7 +868,26 @@ def _logm(A):
 
     keep_it_real = np.isrealobj(A)
     try:
-        if np.array_equal(A, np.triu(A)):
+        if assume_a in {'pos', 'her'}:
+            V, W = eigh(A)
+            if np.min(V) < 0:
+                V = V.astype(complex)
+            V = _logm_force_nonsingular_triangular_matrix(V, inplace=True)
+            V_log = np.diag(np.log(V))
+            WH = np.conjugate(W).T
+            return W.dot(V_log).dot(WH)
+        elif assume_a == 'nor':
+            if keep_it_real:
+                T, Z = schur(A)
+                if not np.array_equal(T, np.triu(T)):
+                    T, Z = rsf2csf(T, Z)
+            else:
+                T, Z = schur(A, output='complex')
+            T = _logm_force_nonsingular_triangular_matrix(T, inplace=True)
+            T_log = np.diag(np.log(T.diagonal()))
+            ZH = np.conjugate(Z).T
+            return Z.dot(T_log).dot(ZH)
+        elif np.array_equal(A, np.triu(A)):
             A = _logm_force_nonsingular_triangular_matrix(A)
             if np.min(np.diag(A)) < 0:
                 A = A.astype(complex)
