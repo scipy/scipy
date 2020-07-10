@@ -5221,8 +5221,8 @@ def gammatone(freq, ftype, order=None, numtaps=None, fs=None):
         g = np.abs(g)
 
         # Create empty filter coefficient lists
-        b = np.zeros(5)
-        a = np.zeros(9)
+        b = np.empty(5)
+        a = np.empty(9)
 
         # Calculate the numerator coefficients
         b[0] = (T ** 4) / g
