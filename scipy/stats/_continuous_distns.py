@@ -3618,6 +3618,9 @@ class invgauss_gen(rv_continuous):
 
     def fit(self, data, *args, **kwds):
 
+        if type(self) == wald_gen:
+            return super(invgauss_gen, self).fit(data, *args, **kwds)
+
         floc = kwds.pop('floc', None)
         fscale = kwds.pop('fscale', None)
         f0_s = kwds.pop('f0', None)
@@ -3627,9 +3630,9 @@ class invgauss_gen(rv_continuous):
             raise RuntimeError("The data contains non-finite values.")
         '''
         MLE is not used in 3 condtions:
-        - floc is not set
-        - floc is set but translation results in negative data
-        - f0 is fixed
+        - `floc` is not set
+        - `floc` is set but translation results in negative data
+        - `f0` is fixed
         These three cases fall back on generic optimization.
         '''
         if floc is None or f0_s is not None or np.any(data - floc < 0):
