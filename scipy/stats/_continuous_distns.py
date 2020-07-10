@@ -6149,15 +6149,18 @@ class pareto_gen(rv_continuous):
             raise RuntimeError("All parameters fixed. There is nothing to "
                                "optimize.")
 
-        if floc is None:
-            floc = np.min(data)
-        if shape is None:
-            shape = 1/((1/len(data)) * np.sum(np.log(data/floc)))
+        if floc is None or np.any(data - floc < 0):
+            if floc is not None:
+                kwds['floc'] = floc
+            return super(pareto_gen, self).fit(data, *args, **kwds)
+        data = data - floc
         if fscale is None:
-            return super(pareto_gen, self).fit(data, fb=shape,fscale=floc, 
-                                                 *args, **kwds)
-        else:
-            return(shape, floc, fscale)
+            fscale = np.min(data)
+        if shape is None:
+            shape = 1/((1/len(data)) * np.sum(np.log(data/fscale)))
+        
+        
+        return(shape, floc, fscale)
 
 
 pareto = pareto_gen(a=1.0, name="pareto")
