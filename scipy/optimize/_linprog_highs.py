@@ -315,7 +315,7 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
     statuses = {
         MODEL_STATUS_NOTSET: (4, 'HiGHS Status Code 0: HighsModelStatusNOTSET'),
         MODEL_STATUS_LOAD_ERROR: (4, 'HiGHS Status Code 1: HighsModelStatusLOAD_ERROR'),
-        MODEL_STATUS_MODEL_ERROR: (4, 'HiGHS Status Code 2: HighsModelStatusMODEL_ERROR'),
+        MODEL_STATUS_MODEL_ERROR: (2, 'HiGHS Status Code 2: HighsModelStatusMODEL_ERROR'),
         MODEL_STATUS_MODEL_EMPTY: (4, 'HiGHS Status Code 3: HighsModelStatusMODEL_EMPTY'),
         MODEL_STATUS_PRESOLVE_ERROR: (4, 'HiGHS Status Code 4: HighsModelStatusPRESOLVE_ERROR'),
         MODEL_STATUS_SOLVE_ERROR: (4, 'HiGHS Status Code 5: HighsModelStatusSOLVE_ERROR'),
@@ -376,6 +376,11 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
 
     res = highs_wrapper(c, A.indptr, A.indices, A.data, lhs, rhs,
                         lb, ub, options)
+
+    # If we get a MODEL_ERROR, match behavior of other linprog implementations
+    # and return infeasible status
+    if res['status'] == MODEL_STATUS_MODEL_ERROR:
+        res['status'] == MODEL_STATUS_PRIMAL_INFEASIBLE
 
     # HiGHS represents constraints as lhs/rhs, so
     # Ax + s = b => Ax = b - s
