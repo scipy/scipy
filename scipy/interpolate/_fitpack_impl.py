@@ -390,13 +390,6 @@ def splrep(x, y, w=None, xb=None, xe=None, k=3, task=0, s=None, t=None,
     msg : str, optional
         A message corresponding to the integer flag, ier.
 
-    Notes
-    -----
-    See splev for evaluation of the spline and its derivatives.
-
-    The user is responsible for assuring that the values of *x* are unique.
-    Otherwise, *splrep* will not return sensible results.
-
     See Also
     --------
     UnivariateSpline, BivariateSpline
@@ -407,6 +400,9 @@ def splrep(x, y, w=None, xb=None, xe=None, k=3, task=0, s=None, t=None,
     -----
     See splev for evaluation of the spline and its derivatives. Uses the
     FORTRAN routine curfit from FITPACK.
+
+    The user is responsible for assuring that the values of *x* are unique.
+    Otherwise, *splrep* will not return sensible results.
 
     If provided, knots `t` must satisfy the Schoenberg-Whitney conditions,
     i.e., there must be a subset of data points ``x[j]`` such that
