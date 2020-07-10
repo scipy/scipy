@@ -54,6 +54,8 @@ drum head anchored at the edge:
    >>> ax.plot_surface(x, y, z, rstride=1, cstride=1, cmap='RdBu_r', vmin=-0.5, vmax=0.5)
    >>> ax.set_xlabel('X')
    >>> ax.set_ylabel('Y')
+   >>> ax.set_xticks(np.arange(-1, 1.1, 0.5))
+   >>> ax.set_yticks(np.arange(-1, 1.1, 0.5))
    >>> ax.set_zlabel('Z')
    >>> plt.show()
 
