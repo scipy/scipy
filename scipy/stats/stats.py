@@ -6468,8 +6468,8 @@ def _count_paths_outside_method(m, n, g, h):
         The number of paths that go low.
         The calculation may overflow - check for a finite answer.
 
-    Exceptions
-    ----------
+    Raises
+    ------
     FloatingPointError: Raised if the intermediate computation goes outside
     the range of a float.
 
