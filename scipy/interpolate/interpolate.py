@@ -3,8 +3,6 @@ __all__ = ['interp1d', 'interp2d', 'lagrange', 'PPoly', 'BPoly', 'NdPPoly',
 
 import itertools
 import warnings
-import functools
-import operator
 
 import numpy as np
 from numpy import (array, transpose, searchsorted, atleast_1d, atleast_2d,
