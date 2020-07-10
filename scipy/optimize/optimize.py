@@ -645,7 +645,7 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
     if initial_simplex is None:
         N = len(x0)
 
-        sim = np.zeros((N + 1, N), dtype=x0.dtype)
+        sim = np.empty((N + 1, N), dtype=x0.dtype)
         sim[0] = x0
         for k in range(N):
             y = np.array(x0, copy=True)
@@ -683,7 +683,7 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
             maxfun = np.inf
 
     one2np1 = list(range(1, N + 1))
-    fsim = np.zeros((N + 1,), float)
+    fsim = np.empty((N + 1,), float)
 
     for k in range(N + 1):
         fsim[k] = func(sim[k])
@@ -3236,8 +3236,8 @@ def brute(func, ranges, args=(), Ns=20, full_output=0, finish=fmin,
     Nshape = shape(Jout)
 
     indx = argmin(Jout.ravel(), axis=-1)
-    Nindx = zeros(N, int)
-    xmin = zeros(N, float)
+    Nindx = np.empty(N, int)
+    xmin = np.empty(N, float)
     for k in range(N - 1, -1, -1):
         thisN = Nshape[k]
         Nindx[k] = indx % Nshape[k]

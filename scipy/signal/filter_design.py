@@ -1101,7 +1101,7 @@ def zpk2tf(z, p, k):
     k = atleast_1d(k)
     if len(z.shape) > 1:
         temp = poly(z[0])
-        b = zeros((z.shape[0], z.shape[1] + 1), temp.dtype.char)
+        b = np.empty((z.shape[0], z.shape[1] + 1), temp.dtype.char)
         if len(k) == 1:
             k = [k[0]] * z.shape[0]
         for i in range(z.shape[0]):
@@ -1864,8 +1864,8 @@ def lp2bp(b, a, wo=1.0, bw=1.0):
     ma = max([N, D])
     Np = N + ma
     Dp = D + ma
-    bprime = numpy.zeros(Np + 1, artype)
-    aprime = numpy.zeros(Dp + 1, artype)
+    bprime = numpy.empty(Np + 1, artype)
+    aprime = numpy.empty(Dp + 1, artype)
     wosq = wo * wo
     for j in range(Np + 1):
         val = 0.0
@@ -1951,8 +1951,8 @@ def lp2bs(b, a, wo=1.0, bw=1.0):
     M = max([N, D])
     Np = M + M
     Dp = M + M
-    bprime = numpy.zeros(Np + 1, artype)
-    aprime = numpy.zeros(Dp + 1, artype)
+    bprime = numpy.empty(Np + 1, artype)
+    aprime = numpy.empty(Dp + 1, artype)
     wosq = wo * wo
     for j in range(Np + 1):
         val = 0.0
@@ -2031,8 +2031,8 @@ def bilinear(b, a, fs=1.0):
     M = max([N, D])
     Np = M
     Dp = M
-    bprime = numpy.zeros(Np + 1, artype)
-    aprime = numpy.zeros(Dp + 1, artype)
+    bprime = numpy.empty(Np + 1, artype)
+    aprime = numpy.empty(Dp + 1, artype)
     for j in range(Np + 1):
         val = 0.0
         for i in range(N + 1):
@@ -3639,7 +3639,7 @@ def buttord(wp, ws, gpass, gstop, analog=False, fs=None):
     elif filter_type == 2:  # high
         WN = passb / W0
     elif filter_type == 3:  # stop
-        WN = numpy.zeros(2, float)
+        WN = numpy.empty(2, float)
         discr = sqrt((passb[1] - passb[0]) ** 2 +
                      4 * W0 ** 2 * passb[0] * passb[1])
         WN[0] = ((passb[1] - passb[0]) + discr) / (2 * W0)
@@ -3948,13 +3948,13 @@ def cheb2ord(wp, ws, gpass, gstop, analog=False, fs=None):
     elif filter_type == 2:
         nat = passb * new_freq
     elif filter_type == 3:
-        nat = numpy.zeros(2, float)
+        nat = numpy.empty(2, float)
         nat[0] = (new_freq / 2.0 * (passb[0] - passb[1]) +
                   sqrt(new_freq ** 2 * (passb[1] - passb[0]) ** 2 / 4.0 +
                        passb[1] * passb[0]))
         nat[1] = passb[1] * passb[0] / nat[0]
     elif filter_type == 4:
-        nat = numpy.zeros(2, float)
+        nat = numpy.empty(2, float)
         nat[0] = (1.0 / (2.0 * new_freq) * (passb[0] - passb[1]) +
                   sqrt((passb[1] - passb[0]) ** 2 / (4.0 * new_freq ** 2) +
                        passb[1] * passb[0]))
@@ -5033,8 +5033,8 @@ def gammatone(freq, ftype, order=None, numtaps=None, fs=None):
         g = np.abs(g)
 
         # Create empty filter coefficient lists
-        b = np.zeros((5))
-        a = np.zeros((9))
+        b = np.empty((5))
+        a = np.empty((9))
 
         # Calculate the numerator coefficients
         b[0] = (T ** 4) / g

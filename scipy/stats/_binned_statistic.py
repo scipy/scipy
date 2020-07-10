@@ -676,8 +676,8 @@ def _bin_edges(sample, bins=None, range=None):
         smin = np.atleast_1d(np.array(sample.min(axis=0), float))
         smax = np.atleast_1d(np.array(sample.max(axis=0), float))
     else:
-        smin = np.zeros(Ndim)
-        smax = np.zeros(Ndim)
+        smin = np.empty(Ndim)
+        smax = np.empty(Ndim)
         for i in builtins.range(Ndim):
             smin[i], smax[i] = range[i]
 

@@ -1863,9 +1863,9 @@ class wishart_gen(multi_rv_generic):
         # gives us a 1-dim vector of determinants
 
         # Retrieve tr(scale^{-1} x)
-        log_det_x = np.zeros(x.shape[-1])
-        scale_inv_x = np.zeros(x.shape)
-        tr_scale_inv_x = np.zeros(x.shape[-1])
+        log_det_x = np.empty(x.shape[-1])
+        scale_inv_x = np.empty(x.shape)
+        tr_scale_inv_x = np.empty(x.shape[-1])
         for i in range(x.shape[-1]):
             _, log_det_x[i] = self._cholesky_logdet(x[:, :, i])
             scale_inv_x[:, :, i] = scipy.linalg.cho_solve((C, True), x[:, :, i])
@@ -2509,13 +2509,13 @@ class invwishart_gen(wishart_gen):
         called directly; use 'logpdf' instead.
 
         """
-        log_det_x = np.zeros(x.shape[-1])
+        log_det_x = np.empty(x.shape[-1])
         x_inv = np.copy(x).T
         if dim > 1:
             _cho_inv_batch(x_inv)  # works in-place
         else:
             x_inv = 1./x_inv
-        tr_scale_x_inv = np.zeros(x.shape[-1])
+        tr_scale_x_inv = np.empty(x.shape[-1])
 
         for i in range(x.shape[-1]):
             C, lower = scipy.linalg.cho_factor(x[:, :, i], lower=True)

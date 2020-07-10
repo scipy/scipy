@@ -603,7 +603,7 @@ class gaussian_kde(object):
 
         if m >= self.n:
             # there are more points than data, so loop over data
-            energy = zeros((self.n, m), dtype=float)
+            energy = np.empty((self.n, m), dtype=float)
             for i in range(self.n):
                 diff = self.dataset[:, i, newaxis] - points
                 tdiff = dot(self.inv_cov, diff)
@@ -612,7 +612,7 @@ class gaussian_kde(object):
                                b=self.weights / self._norm_factor, axis=1)
         else:
             # loop over points
-            result = zeros((m,), dtype=float)
+            result = np.empty((m,), dtype=float)
             for i in range(m):
                 diff = self.dataset - points[:, i, newaxis]
                 tdiff = dot(self.inv_cov, diff)
