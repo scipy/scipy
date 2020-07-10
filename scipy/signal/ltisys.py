@@ -2059,7 +2059,7 @@ def lsim(system, U, T, X0=None, interp=True):
     n_steps = T.size
     if X0 is None:
         X0 = zeros(n_states, sys.A.dtype)
-    xout = zeros((n_steps, n_states), sys.A.dtype)
+    xout = np.empty((n_steps, n_states), sys.A.dtype)
 
     if T[0] == 0:
         xout[0] = X0

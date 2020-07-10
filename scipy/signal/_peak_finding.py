@@ -1168,7 +1168,7 @@ def _filter_ridge_lines(cwt, ridge_lines, window_size=None, min_length=None,
 
     # Filter based on SNR
     row_one = cwt[0, :]
-    noises = np.zeros_like(row_one)
+    noises = np.empty_like(row_one)
     for ind, val in enumerate(row_one):
         window_start = max(ind - hf_window, 0)
         window_end = min(ind + hf_window + odd, num_points)

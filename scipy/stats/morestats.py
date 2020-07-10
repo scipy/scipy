@@ -411,7 +411,7 @@ def _calc_uniform_order_statistic_medians(n):
     >>> plt.plot(x, pdfs[0], x, pdfs[1], x, pdfs[2], x, pdfs[3])
 
     """
-    v = np.zeros(n, dtype=np.float64)
+    v = np.empty(n, dtype=np.float64)
     v[-1] = 0.5**(1.0 / n)
     v[0] = 1 - v[-1]
     i = np.arange(2, n)
@@ -1148,7 +1148,7 @@ def boxcox_normmax(x, brack=(-2.0, 2.0), method='pearsonr'):
         return optimize.brent(_eval_mle, brack=brack, args=(x,))
 
     def _all(x, brack):
-        maxlog = np.zeros(2, dtype=float)
+        maxlog = np.empty(2, dtype=float)
         maxlog[0] = _pearsonr(x, brack)
         maxlog[1] = _mle(x, brack)
         return maxlog
@@ -2293,8 +2293,8 @@ def bartlett(*args):
     k = len(args)
     if k < 2:
         raise ValueError("Must enter at least two input sample vectors.")
-    Ni = zeros(k)
-    ssq = zeros(k, 'd')
+    Ni = np.empty(k)
+    ssq = np.empty(k, 'd')
     for j in range(k):
         Ni[j] = len(args[j])
         ssq[j] = np.var(args[j], ddof=1)
@@ -2406,8 +2406,8 @@ def levene(*args, **kwds):
         if np.asanyarray(args[j]).ndim > 1:
             raise ValueError('Samples must be one-dimensional.')
 
-    Ni = zeros(k)
-    Yci = zeros(k, 'd')
+    Ni = np.empty(k)
+    Yci = np.empty(k, 'd')
 
     if center not in ['mean', 'median', 'trimmed']:
         raise ValueError("Keyword argument <center> must be 'mean', 'median'"
@@ -2433,7 +2433,7 @@ def levene(*args, **kwds):
         Zij[i] = abs(asarray(args[i]) - Yci[i])
 
     # compute Zbari
-    Zbari = zeros(k, 'd')
+    Zbari = np.empty(k, 'd')
     Zbar = 0.0
     for i in range(k):
         Zbari[i] = np.mean(Zij[i], axis=0)
@@ -2801,7 +2801,7 @@ def mood(x, y, axis=0):
     # Generalized to the n-dimensional case by adding the axis argument, and
     # using for loops, since rankdata is not vectorized.  For improving
     # performance consider vectorizing rankdata function.
-    all_ranks = np.zeros_like(xy)
+    all_ranks = np.empty_like(xy)
     for j in range(xy.shape[1]):
         all_ranks[:, j] = stats.rankdata(xy[:, j])
 
