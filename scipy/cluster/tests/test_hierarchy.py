@@ -860,7 +860,9 @@ class TestDendrogram(object):
                                [25.0, 25.0, 42.5, 42.5],
                                [10.0, 10.0, 33.75, 33.75]],
                     'ivl': ['2', '5', '1', '0', '3', '4'],
-                    'leaves': [2, 5, 1, 0, 3, 4]}
+                    'leaves': [2, 5, 1, 0, 3, 4],
+                    'leaves_color_list': ['C1', 'C1', 'C0', 'C0', 'C0', 'C0'],
+                    }
 
         fig = plt.figure()
         ax = fig.add_subplot(221)
@@ -913,7 +915,9 @@ class TestDendrogram(object):
                          'dcoord': [[0.0, 295.0, 295.0, 0.0]],
                          'icoord': [[5.0, 5.0, 15.0, 15.0]],
                          'ivl': ['(2)', '(4)'],
-                         'leaves': [6, 9]})
+                         'leaves': [6, 9],
+                         'leaves_color_list': ['C0', 'C0'],
+                         })
 
         R = dendrogram(Z, 2, 'mtica', show_contracted=True)
         plt.close()
@@ -927,7 +931,9 @@ class TestDendrogram(object):
                                     [25.0, 25.0, 40.0, 40.0],
                                     [10.0, 10.0, 32.5, 32.5]],
                          'ivl': ['2', '5', '1', '0', '(2)'],
-                         'leaves': [2, 5, 1, 0, 7]})
+                         'leaves': [2, 5, 1, 0, 7],
+                         'leaves_color_list': ['C1', 'C1', 'C0', 'C0', 'C0'],
+                         })
 
     def test_dendrogram_colors(self):
         # Tests dendrogram plots with alternate colors

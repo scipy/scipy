@@ -3223,6 +3223,10 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
           ``i``-th leaf node corresponds to an original observation.
           Otherwise, it corresponds to a non-singleton cluster.
 
+        ``'leaves_color_list'``
+          A list of color names. The k'th element represents the color of the
+          k'th leaf.
+
     See Also
     --------
     linkage, set_link_color_palette
@@ -3358,7 +3362,24 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
                          ax=ax,
                          above_threshold_color=above_threshold_color)
 
+    R["leaves_color_list"] = _get_leaves_color_list(R)
+
     return R
+
+
+def _get_leaves_color_list(R):
+    leaves_color_list = [None] * len(R['leaves'])
+    for link_x, link_y, link_color in zip(R['icoord'],
+                                          R['dcoord'],
+                                          R['color_list']):
+        for (xi, yi) in zip(link_x, link_y):
+            if yi == 0.0:  # if yi is 0.0, the point is a leaf
+                # xi of leaves are      5, 15, 25, 35, ... (see `iv_ticks`)
+                # index of leaves are   0,  1,  2,  3, ... as below
+                leaf_index = (int(xi) - 5) // 10
+                # each leaf has a same color of its link.
+                leaves_color_list[leaf_index] = link_color
+    return leaves_color_list
 
 
 def _append_singleton_leaf_node(Z, p, n, level, lvs, ivl, leaf_label_func,
