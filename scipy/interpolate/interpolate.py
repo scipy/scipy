@@ -215,12 +215,14 @@ class interp2d(object):
                 raise ValueError(
                     "Invalid length for input z for non rectangular grid")
 
+        interpolation_types = {'linear': 1, 'cubic': 3, 'quintic': 5}
         try:
-            kx = ky = {'linear': 1,
-                       'cubic': 3,
-                       'quintic': 5}[kind]
+            kx = ky = interpolation_types[kind]
         except KeyError as e:
-            raise ValueError("Unsupported interpolation type.") from e
+            raise ValueError(
+                f"Unsupported interpolation type {repr(kind)}, must be "
+                f"either of {', '.join(map(repr, interpolation_types))}."
+            ) from e
 
         if not rectangular_grid:
             # TODO: surfit is really not meant for interpolation!
