@@ -100,6 +100,6 @@ def set_cxx_flags_clib_hook(build_clib, build_info):
             new_args.append(min_macos_flag)
             new_link_args.append(min_macos_flag)
 
-    dict_append(build_info, extra_compile_args=new_args,
+    dict_append(build_info, extra_compiler_args=new_args,
                 extra_link_args=new_link_args)
 
