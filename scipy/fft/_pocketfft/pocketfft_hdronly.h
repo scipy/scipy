@@ -2844,12 +2844,12 @@ public:
     auto * cache = new PlanCache(
         cache_size_,
         max_memsize_,
-        +[](size_t length)
-        {
-        auto plan = std::make_shared<T>(length);
-        auto memsize = plan->memsize();
-        return PlanCache::PlanInfo{std::move(plan), memsize};
-        });
+        [](size_t length)
+          {
+          auto plan = std::make_shared<T>(length);
+          auto memsize = plan->memsize();
+          return PlanCache::PlanInfo{std::move(plan), memsize};
+          });
     caches_.push_back(std::unique_ptr<PlanCache>(cache));
     return *cache;
     }
