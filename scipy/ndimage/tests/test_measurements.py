@@ -15,9 +15,6 @@ types = [np.int8, np.uint8, np.int16,
          np.float32, np.float64]
 
 
-np.mod(1., 1)  # Silence fmod bug on win-amd64. See #1408 and #1238.
-
-
 class Test_measurements_stats(object):
     """ndimage.measurements._stats() is a utility function used by other functions."""
 
@@ -509,9 +506,19 @@ def test_sum12():
     labels = np.array([[1, 2], [2, 4]], np.int8)
     for type in types:
         input = np.array([[1, 2], [3, 4]], type)
-        output = ndimage.sum(input, labels=labels,
-                                        index=[4, 8, 2])
+        output = ndimage.sum(input, labels=labels, index=[4, 8, 2])
         assert_array_almost_equal(output, [4.0, 0.0, 5.0])
+
+
+def test_sum_labels():
+    labels = np.array([[1, 2], [2, 4]], np.int8)
+    for type in types:
+        input = np.array([[1, 2], [3, 4]], type)
+        output_sum = ndimage.sum(input, labels=labels, index=[4, 8, 2])
+        output_labels = ndimage.sum_labels(input, labels=labels, index=[4, 8, 2])
+
+        assert (output_sum == output_labels).all()
+        assert_array_almost_equal(output_labels, [4.0, 0.0, 5.0])
 
 
 def test_mean01():

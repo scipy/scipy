@@ -188,6 +188,23 @@ def test_cont_basic(distname, arg):
             check_fit_args_fix(distfn, arg, rvs[0:200])
 
 
+@pytest.mark.parametrize('distname,arg', cases_test_cont_basic())
+def test_rvs_scalar(distname, arg):
+    # rvs should return a scalar when given scalar arguments (gh-12428)
+    try:
+        distfn = getattr(stats, distname)
+    except TypeError:
+        distfn = distname
+        distname = 'rv_histogram_instance'
+
+    with npt.suppress_warnings() as sup:
+        sup.filter(category=DeprecationWarning, message=".*frechet_")
+        rvs = distfn.rvs(*arg)
+        assert np.isscalar(distfn.rvs(*arg))
+        assert np.isscalar(distfn.rvs(*arg, size=()))
+        assert np.isscalar(distfn.rvs(*arg, size=None))
+
+
 def test_levy_stable_random_state_property():
     # levy_stable only implements rvs(), so it is skipped in the
     # main loop in test_cont_basic(). Here we apply just the test
@@ -538,11 +555,20 @@ def check_ppf_broadcast(distfn, arg, msg):
 
 
 def check_distribution_rvs(dist, args, alpha, rvs):
+    # dist is either a cdf function or name of a distribution in scipy.stats.
+    # args are the args for scipy.stats.dist(*args)
+    # alpha is a significance level, ~0.01
+    # rvs is array_like of random variables
     # test from scipy.stats.tests
     # this version reuses existing random variables
     D, pval = stats.kstest(rvs, dist, args=args, N=1000)
     if (pval < alpha):
-        D, pval = stats.kstest(dist, '', args=args, N=1000)
+        # The rvs passed in failed the K-S test, which _could_ happen
+        # but is unlikely if alpha is small enough.
+        # Repeat the the test with a new sample of rvs.
+        # Generate 1000 rvs, perform a K-S test that the new sample of rvs
+        # are distributed according to the distribution.
+        D, pval = stats.kstest(dist, dist, args=args, N=1000)
         npt.assert_(pval > alpha, "D = " + str(D) + "; pval = " + str(pval) +
                     "; alpha = " + str(alpha) + "\nargs = " + str(args))
 
@@ -612,3 +638,27 @@ def check_fit_args_fix(distfn, arg, rvs):
             vals5 = distfn.fit(rvs, f2=arg[2])
             npt.assert_(len(vals5) == 2+len(arg))
             npt.assert_(vals5[2] == arg[2])
+
+
+@pytest.mark.parametrize('method', ['pdf', 'logpdf', 'cdf', 'logcdf',
+                                    'sf', 'logsf', 'ppf', 'isf'])
+@pytest.mark.parametrize('distname, args', distcont)
+def test_methods_with_lists(method, distname, args):
+    # Test that the continuous distributions can accept Python lists
+    # as arguments.
+    with npt.suppress_warnings() as sup:
+        sup.filter(category=DeprecationWarning, message=".*frechet_")
+        dist = getattr(stats, distname)
+        f = getattr(dist, method)
+        if distname == 'invweibull' and method.startswith('log'):
+            x = [1.5, 2]
+        else:
+            x = [0.1, 0.2]
+        shape2 = [[a]*2 for a in args]
+        loc = [0, 0.1]
+        scale = [1, 1.01]
+        result = f(x, *shape2, loc=loc, scale=scale)
+        npt.assert_allclose(result,
+                            [f(*v) for v in zip(x, *shape2, loc, scale)],
+                            rtol=1e-15, atol=1e-15)
+

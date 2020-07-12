@@ -337,14 +337,12 @@ class LinprogCommonTests(object):
             linprog(c, A_ub, b_ub, A_eq, b_eq, bounds,
                     method=self.method, options=self.options)
 
-        # Removed [(5, 0), (1, 2), (3, 4)]: these are invalid bounds but should be subject to a check in _presolve, not in _clean_inputs.
-        # The optimization should exit with an 'infeasible problem' error, not with a ValueError
-        # Same for [(1, 2), (np.inf, np.inf), (3, 4)] and [(1, 2), (-np.inf, -np.inf), (3, 4)]
-        for bad_bound in [[(1, 2), (3, 4)],
-                          [(1, 2), (3, 4), (3, 4, 5)],
-                          ]:
-            assert_raises(ValueError, f, [1, 2, 3], bounds=bad_bound)
+        # Test ill-formatted bounds
+        assert_raises(ValueError, f, [1, 2, 3], bounds=[(1, 2), (3, 4)])
+        assert_raises(ValueError, f, [1, 2, 3], bounds=[(1, 2), (3, 4), (3, 4, 5)])
+        assert_raises(ValueError, f, [1, 2, 3], bounds=[(1, -2), (1, 2)])
 
+        # Test other invalid inputs
         assert_raises(ValueError, f, [1, 2], A_ub=[[1, 2]], b_ub=[1, 2])
         assert_raises(ValueError, f, [1, 2], A_ub=[[1]], b_ub=[1])
         assert_raises(ValueError, f, [1, 2], A_eq=[[1, 2]], b_eq=[1, 2])
@@ -358,6 +356,93 @@ class LinprogCommonTests(object):
             # there aren't 3-D sparse matrices
 
         assert_raises(ValueError, f, [1, 2], A_ub=np.zeros((1, 1, 3)), b_eq=1)
+
+    def test_bounds_fixed(self):
+
+        # Test fixed bounds (upper equal to lower)
+        # If presolve option True, test if solution found in presolve (i.e.
+        # number of iterations is 0).
+        do_presolve = self.options.get('presolve', True)
+
+        res = linprog([1], bounds=(1, 1),
+                      method=self.method, options=self.options)
+        _assert_success(res, 1, 1)
+        if do_presolve:
+            assert_equal(res.nit, 0)
+
+        res = linprog([1, 2, 3], bounds=[(5, 5), (-1, -1), (3, 3)],
+                      method=self.method, options=self.options)
+        _assert_success(res, 12, [5, -1, 3])
+        if do_presolve:
+            assert_equal(res.nit, 0)
+
+        res = linprog([1, 1], bounds=[(1, 1), (1, 3)],
+                      method=self.method, options=self.options)
+        _assert_success(res, 2, [1, 1])
+        if do_presolve:
+            assert_equal(res.nit, 0)
+
+        res = linprog([1, 1, 2], A_eq=[[1, 0, 0], [0, 1, 0]], b_eq=[1, 7],
+                      bounds=[(-5, 5), (0, 10), (3.5, 3.5)],
+                      method=self.method, options=self.options)
+        _assert_success(res, 15, [1, 7, 3.5])
+        if do_presolve:
+            assert_equal(res.nit, 0)
+
+    def test_bounds_infeasible(self):
+
+        # Test ill-valued bounds (upper less than lower)
+        # If presolve option True, test if solution found in presolve (i.e.
+        # number of iterations is 0).
+        do_presolve = self.options.get('presolve', True)
+
+        res = linprog([1], bounds=(1, -2), method=self.method, options=self.options)
+        _assert_infeasible(res)
+        if do_presolve:
+            assert_equal(res.nit, 0)
+
+        res = linprog([1], bounds=[(1, -2)], method=self.method, options=self.options)
+        _assert_infeasible(res)
+        if do_presolve:
+            assert_equal(res.nit, 0)
+
+        res = linprog([1, 2, 3], bounds=[(5, 0), (1, 2), (3, 4)], method=self.method, options=self.options)
+        _assert_infeasible(res)
+        if do_presolve:
+            assert_equal(res.nit, 0)
+
+    def test_bounds_infeasible_2(self):
+
+        # Test ill-valued bounds (lower inf, upper -inf)
+        # If presolve option True, test if solution found in presolve (i.e.
+        # number of iterations is 0).
+        # For the simplex method, the cases do not result in an
+        # infeasible status, but in a RuntimeWarning. This is a
+        # consequence of having _presolve() take care of feasibility
+        # checks. See issue gh-11618.
+        do_presolve = self.options.get('presolve', True)
+        simplex_without_presolve = not do_presolve and self.method == 'simplex'
+
+        c = [1, 2, 3]
+        bounds_1 = [(1, 2), (np.inf, np.inf), (3, 4)]
+        bounds_2 = [(1, 2), (-np.inf, -np.inf), (3, 4)]
+
+        if simplex_without_presolve:
+            def g(c, bounds):
+                res = linprog(c, bounds=bounds, method=self.method, options=self.options)
+                return res
+
+            assert_raises(RuntimeWarning, g, c, bounds=bounds_1)
+            assert_raises(RuntimeWarning, g, c, bounds=bounds_2)
+        else:
+            res = linprog(c=c, bounds=bounds_1, method=self.method, options=self.options)
+            _assert_infeasible(res)
+            if do_presolve:
+                assert_equal(res.nit, 0)
+            res = linprog(c=c, bounds=bounds_2, method=self.method, options=self.options)
+            _assert_infeasible(res)
+            if do_presolve:
+                assert_equal(res.nit, 0)
 
     def test_empty_constraint_1(self):
         c = [-1, -2]

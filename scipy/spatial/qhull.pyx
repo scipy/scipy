@@ -704,7 +704,7 @@ cdef class _Qhull:
             point_ndim += 1
 
         numpoints = self._qh.num_points
-        points = np.zeros((numpoints, point_ndim))
+        points = np.empty((numpoints, point_ndim))
 
         with nogil:
             point = self._qh.first_point
@@ -1100,7 +1100,7 @@ def _get_barycentric_transforms(np.ndarray[np.double_t, ndim=2] points,
     ndim = points.shape[1]
     nsimplex = simplices.shape[0]
 
-    T = np.zeros((ndim, ndim), dtype=np.double)
+    T = np.empty((ndim, ndim), dtype=np.double)
     Tinvs = np.zeros((nsimplex, ndim+1, ndim), dtype=np.double)
 
     # Maximum inverse condition number to allow: we want at least three
@@ -2323,11 +2323,13 @@ class ConvexHull(_QhullUser):
 
         .. versionadded:: 1.3.0
     area : float
-        Area of the convex hull.
+        Surface area of the convex hull when input dimension > 2. 
+        When input `points` are 2-dimensional, this is the perimeter of the convex hull.
 
         .. versionadded:: 0.17.0
     volume : float
-        Volume of the convex hull.
+        Volume of the convex hull when input dimension > 2. 
+        When input `points` are 2-dimensional, this is the area of the convex hull. 
 
         .. versionadded:: 0.17.0
 
@@ -2377,15 +2379,15 @@ class ConvexHull(_QhullUser):
     ...                        [0.4, 0.2],
     ...                        [0.3, 0.6]])
 
-    Call ConvexHull with the QG option. QG4 means 
+    Call ConvexHull with the QG option. QG4 means
     compute the portions of the hull not including
-    point 4, indicating the facets that are visible 
+    point 4, indicating the facets that are visible
     from point 4.
 
     >>> hull = ConvexHull(points=generators,
     ...                   qhull_options='QG4')
 
-    The "good" array indicates which facets are 
+    The "good" array indicates which facets are
     visible from point 4.
 
     >>> print(hull.simplices)
@@ -2722,7 +2724,7 @@ class HalfspaceIntersection(_QhullUser):
 
     >>> import matplotlib.pyplot as plt
     >>> fig = plt.figure()
-    >>> ax = fig.add_subplot('111', aspect='equal')
+    >>> ax = fig.add_subplot(1, 1, 1, aspect='equal')
     >>> xlim, ylim = (-1, 3), (-1, 3)
     >>> ax.set_xlim(xlim)
     >>> ax.set_ylim(ylim)

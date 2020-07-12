@@ -423,6 +423,21 @@ class TestConstructUtils(object):
         assert_equal(construct.block_diag([1]).todense(),
                      matrix([[1]]))
 
+    def test_block_diag_sparse_matrices(self):
+        """ block_diag with sparse matrices """
+
+        sparse_col_matrices = [coo_matrix(([[1, 2, 3]]), shape=(1, 3)),
+                               coo_matrix(([[4, 5]]), shape=(1, 2))]
+        block_sparse_cols_matrices = construct.block_diag(sparse_col_matrices)
+        assert_equal(block_sparse_cols_matrices.todense(),
+                     matrix([[1, 2, 3, 0, 0], [0, 0, 0, 4, 5]]))
+
+        sparse_row_matrices = [coo_matrix(([[1], [2], [3]]), shape=(3, 1)),
+                               coo_matrix(([[4], [5]]), shape=(2, 1))]
+        block_sparse_row_matrices = construct.block_diag(sparse_row_matrices)
+        assert_equal(block_sparse_row_matrices.todense(),
+                     matrix([[1, 0], [2, 0], [3, 0], [0, 4], [0, 5]]))
+
     def test_random_sampling(self):
         # Simple sanity checks for sparse random sampling.
         for f in sprand, _sprandn:
@@ -490,4 +505,10 @@ class TestConstructUtils(object):
         # anything that np.dtype can convert to a dtype should be accepted
         # for the dtype
         construct.random(10, 10, dtype='d')
+
+    def test_random_sparse_matrix_returns_correct_number_of_non_zero_elements(self):
+        # A 10 x 10 matrix, with density of 12.65%, should have 13 nonzero elements.
+        # 10 x 10 x 0.1265 = 12.65, which should be rounded up to 13, not 12.
+        sparse_matrix = construct.random(10, 10, density=0.1265)
+        assert_equal(sparse_matrix.count_nonzero(),13)
 

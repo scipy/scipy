@@ -39,7 +39,10 @@ from numpy import (array, diag, ones, full, linalg, argsort, zeros, arange,
 from numpy.random import seed, random
 
 from scipy.linalg._testutils import assert_no_overwrite
-from scipy.sparse.sputils import bmat, matrix
+from scipy.sparse.sputils import matrix
+
+from scipy._lib._testutils import check_free_memory
+from scipy.linalg.blas import HAS_ILP64
 
 
 def _random_hermitian_matrix(n, posdef=False, dtype=float):
@@ -304,8 +307,8 @@ class TestEig(object):
         D = array(([1, -1, 0], [-1, 1, 0], [0, 0, 0]))
         Z = zeros((3, 3))
         I3 = eye(3)
-        A = bmat([[I3, Z], [Z, -K]])
-        B = bmat([[Z, I3], [M, D]])
+        A = np.block([[I3, Z], [Z, -K]])
+        B = np.block([[Z, I3], [M, D]])
 
         with np.errstate(all='ignore'):
             self._check_gen_eig(A, B)
@@ -878,6 +881,20 @@ class TestEigh:
         diag2_ = diag(z.T.conj() @ b @ z).real
         assert_allclose(diag2_, ones(diag2_.shape[0]), rtol=0., atol=atol)
 
+    def test_eigvalsh_new_args(self):
+        a = _random_hermitian_matrix(5)
+        w = eigvalsh(a, eigvals=[1, 2])
+        assert_equal(len(w), 2)
+
+        w2 = eigvalsh(a, subset_by_index=[1, 2])
+        assert_equal(len(w2), 2)
+        assert_allclose(w, w2)
+
+        b = np.diag([1, 1.2, 1.3, 1.5, 2])
+        w3 = eigvalsh(b, subset_by_value=[1, 1.4])
+        assert_equal(len(w3), 2)
+        assert_allclose(w3, np.array([1.2, 1.3]))
+
 
 class TestLU(object):
     def setup_method(self):
@@ -1140,6 +1157,16 @@ class TestSVD_GESDD(object):
              [0., 0., 0.16666667, 0.66666667, 0.16666667, 0.],
              [0., 0., 0., 0.16666667, 0.66666667, 0.16666667]])
         svd(b, lapack_driver=self.lapack_driver)
+
+    @pytest.mark.skipif(not HAS_ILP64, reason="64-bit LAPACK required")
+    @pytest.mark.slow
+    def test_large_matrix(self):
+        check_free_memory(free_mb=17000)
+        A = np.zeros([1, 2**31], dtype=np.float32)
+        A[0, -1] = 1
+        u, s, vh = svd(A, full_matrices=False)
+        assert_allclose(s[0], 1.0)
+        assert_allclose(u[0, 0] * vh[0, -1], 1.0)
 
 
 class TestSVD_GESVD(TestSVD_GESDD):
@@ -2429,7 +2456,7 @@ class TestOrdQZWorkspaceSize(object):
             _ = ordqz(A, B, sort=lambda alpha, beta: alpha < beta,
                       output='real')
 
-        for ddtype in [np.complex, np.complex64]:
+        for ddtype in [np.complex128, np.complex64]:
             A = random((N, N)).astype(ddtype)
             B = random((N, N)).astype(ddtype)
             _ = ordqz(A, B, sort=lambda alpha, beta: alpha < beta,
@@ -2441,7 +2468,7 @@ class TestOrdQZWorkspaceSize(object):
         N = 202
 
         # segfaults if lwork parameter to dtrsen is too small
-        for ddtype in [np.float32, np.float64, np.complex, np.complex64]:
+        for ddtype in [np.float32, np.float64, np.complex128, np.complex64]:
             A = random((N, N)).astype(ddtype)
             B = random((N, N)).astype(ddtype)
             S, T, alpha, beta, U, V = ordqz(A, B, sort='ouc')
@@ -2662,8 +2689,10 @@ def test_orth_memory_efficiency():
     n = 10*1000*1000
     try:
         _check_orth(n, np.float64, skip_big=True)
-    except MemoryError:
-        raise AssertionError('memory error perhaps caused by orth regression')
+    except MemoryError as e:
+        raise AssertionError(
+            'memory error perhaps caused by orth regression'
+        ) from e
 
 
 def test_orth():

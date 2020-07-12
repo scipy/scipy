@@ -1812,8 +1812,8 @@ class TestNdimage:
             # fill the part we might read
             a[n-3:, n-3:] = 0
             ndimage.map_coordinates(a, [[n - 1.5], [n - 1.5]], order=1)
-        except MemoryError:
-            raise pytest.skip("Not enough memory available")
+        except MemoryError as e:
+            raise pytest.skip("Not enough memory available") from e
 
     def test_affine_transform01(self):
         data = numpy.array([1])
@@ -4633,7 +4633,7 @@ class TestNdimage:
         structure = numpy.ones((3, 3), dtype=numpy.bool_)
 
         # Check that type mismatch is properly handled
-        output = numpy.empty_like(array, dtype=numpy.float)
+        output = numpy.empty_like(array, dtype=numpy.float64)
         ndimage.white_tophat(array, structure=structure, output=output)
 
     def test_black_tophat01(self):
@@ -4688,7 +4688,7 @@ class TestNdimage:
         structure = numpy.ones((3, 3), dtype=numpy.bool_)
 
         # Check that type mismatch is properly handled
-        output = numpy.empty_like(array, dtype=numpy.float)
+        output = numpy.empty_like(array, dtype=numpy.float64)
         ndimage.black_tophat(array, structure=structure, output=output)
 
     def test_hit_or_miss01(self):

@@ -100,9 +100,6 @@ for _key in _sci.__all__:
         _fun = _deprecated(_msg.format(_key))(_fun)
     globals()[_key] = _fun
 
-# Allow distributors to run custom init code
-from . import _distributor_init
-
 __all__ += _num.__all__
 __all__ += ['randn', 'rand', 'fft', 'ifft']
 
@@ -127,13 +124,17 @@ if __SCIPY_SETUP__:
 else:
     try:
         from scipy.__config__ import show as show_config
-    except ImportError:
+    except ImportError as e:
         msg = """Error importing SciPy: you cannot import SciPy while
         being in scipy source directory; please exit the SciPy source
         tree first and relaunch your Python interpreter."""
-        raise ImportError(msg)
+        raise ImportError(msg) from e
 
     from scipy.version import version as __version__
+
+    # Allow distributors to run custom init code
+    from . import _distributor_init
+
     from scipy._lib import _pep440
     if _pep440.parse(__numpy_version__) < _pep440.Version('1.14.5'):
         import warnings

@@ -280,7 +280,8 @@ def least_squares(
         always uses the '2-point' scheme. If callable, it is used as
         ``jac(x, *args, **kwargs)`` and should return a good approximation
         (or the exact value) for the Jacobian as an array_like (np.atleast_2d
-        is applied), a sparse matrix or a `scipy.sparse.linalg.LinearOperator`.
+        is applied), a sparse matrix (csr_matrix preferred for performance) or
+        a `scipy.sparse.linalg.LinearOperator`.
     bounds : 2-tuple of array_like, optional
         Lower and upper bounds on independent variables. Defaults to no bounds.
         Each array must match the size of `x0` or be a scalar, in the latter
@@ -836,10 +837,10 @@ def least_squares(
         J0 = jac(x0, *args, **kwargs)
 
         if issparse(J0):
-            J0 = csr_matrix(J0)
+            J0 = J0.tocsr()
 
             def jac_wrapped(x, _=None):
-                return csr_matrix(jac(x, *args, **kwargs))
+                return jac(x, *args, **kwargs).tocsr()
 
         elif isinstance(J0, LinearOperator):
             def jac_wrapped(x, _=None):

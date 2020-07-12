@@ -238,6 +238,9 @@ class KDTree(object):
     """
     def __init__(self, data, leafsize=10):
         self.data = np.asarray(data)
+        if self.data.dtype.kind == 'c':
+            raise TypeError("KDTree does not work with complex data")
+
         self.n, self.m = np.shape(self.data)
         self.leafsize = int(leafsize)
         if self.leafsize < 1:
@@ -486,6 +489,8 @@ class KDTree(object):
 
         """
         x = np.asarray(x)
+        if x.dtype.kind == 'c':
+            raise TypeError("KDTree does not work with complex data")
         if np.shape(x)[-1] != self.m:
             raise ValueError("x must consist of vectors of length %d but has shape %s" % (self.m, np.shape(x)))
         if p < 1:
@@ -619,6 +624,8 @@ class KDTree(object):
 
         """
         x = np.asarray(x)
+        if x.dtype.kind == 'c':
+            raise TypeError("KDTree does not work with complex data")
         if x.shape[-1] != self.m:
             raise ValueError("Searching for a %d-dimensional point in a "
                              "%d-dimensional KDTree" % (x.shape[-1], self.m))
@@ -632,7 +639,8 @@ class KDTree(object):
             return result
 
     def query_ball_tree(self, other, r, p=2., eps=0):
-        """Find all pairs of points whose distance is at most r
+        """
+        Find all pairs of points between `self` and `other` whose distance is at most r
 
         Parameters
         ----------
@@ -654,6 +662,28 @@ class KDTree(object):
         results : list of lists
             For each element ``self.data[i]`` of this tree, ``results[i]`` is a
             list of the indices of its neighbors in ``other.data``.
+
+        Examples
+        --------
+        You can search all pairs of points between two kd-trees within a distance:
+
+        >>> import matplotlib.pyplot as plt
+        >>> import numpy as np
+        >>> from scipy.spatial import KDTree
+        >>> np.random.seed(21701)
+        >>> points1 = np.random.random((15, 2))
+        >>> points2 = np.random.random((15, 2))
+        >>> plt.figure(figsize=(6, 6))
+        >>> plt.plot(points1[:, 0], points1[:, 1], "xk", markersize=14)
+        >>> plt.plot(points2[:, 0], points2[:, 1], "og", markersize=14)
+        >>> kd_tree1 = KDTree(points1)
+        >>> kd_tree2 = KDTree(points2)
+        >>> indexes = kd_tree1.query_ball_tree(kd_tree2, r=0.2)
+        >>> for i in range(len(indexes)):
+        ...     for j in indexes[i]:
+        ...         plt.plot([points1[i, 0], points2[j, 0]],
+        ...             [points1[i, 1], points2[j, 1]], "-r")
+        >>> plt.show()
 
         """
         results = [[] for i in range(self.n)]
@@ -702,7 +732,7 @@ class KDTree(object):
 
     def query_pairs(self, r, p=2., eps=0):
         """
-        Find all pairs of points within a distance.
+        Find all pairs of points in `self` whose distance is at most r.
 
         Parameters
         ----------
@@ -722,6 +752,24 @@ class KDTree(object):
         results : set
             Set of pairs ``(i,j)``, with ``i < j``, for which the corresponding
             positions are close.
+
+        Examples
+        --------
+        You can search all pairs of points in a kd-tree within a distance:
+
+        >>> import matplotlib.pyplot as plt
+        >>> import numpy as np
+        >>> from scipy.spatial import KDTree
+        >>> np.random.seed(21701)
+        >>> points = np.random.random((20, 2))
+        >>> plt.figure(figsize=(6, 6))
+        >>> plt.plot(points[:, 0], points[:, 1], "xk", markersize=14)
+        >>> kd_tree = KDTree(points)
+        >>> pairs = kd_tree.query_pairs(r=0.2)
+        >>> for (i, j) in pairs:
+        ...     plt.plot([points[i, 0], points[j, 0]],
+        ...             [points[i, 1], points[j, 1]], "-r")
+        >>> plt.show()
 
         """
         results = set()
@@ -834,6 +882,27 @@ class KDTree(object):
             The number of pairs. Note that this is internally stored in a numpy
             int, and so may overflow if very large (2e9).
 
+        Examples
+        --------
+        You can count neighbors number between two kd-trees within a distance:
+
+        >>> import numpy as np
+        >>> from scipy.spatial import KDTree
+        >>> np.random.seed(21701)
+        >>> points1 = np.random.random((5, 2))
+        >>> points2 = np.random.random((5, 2))
+        >>> kd_tree1 = KDTree(points1)
+        >>> kd_tree2 = KDTree(points2)
+        >>> kd_tree1.count_neighbors(kd_tree2, 0.2)
+        9
+
+        This number is same as the total pair number calculated by
+        `query_ball_tree`:
+
+        >>> indexes = kd_tree1.query_ball_tree(kd_tree2, r=0.2)
+        >>> sum([len(i) for i in indexes])
+        9
+
         """
         def traverse(node1, rect1, node2, rect2, idx):
             min_r = rect1.min_distance_rectangle(rect2,p)
@@ -903,6 +972,35 @@ class KDTree(object):
         -------
         result : dok_matrix
             Sparse matrix representing the results in "dictionary of keys" format.
+
+        Examples
+        --------
+        You can compute a sparse distance matrix between two kd-trees:
+
+        >>> import numpy as np
+        >>> from scipy.spatial import KDTree
+        >>> np.random.seed(21701)
+        >>> points1 = np.random.random((5, 2))
+        >>> points2 = np.random.random((5, 2))
+        >>> kd_tree1 = KDTree(points1)
+        >>> kd_tree2 = KDTree(points2)
+        >>> sdm = kd_tree1.sparse_distance_matrix(kd_tree2, 0.3)
+        >>> sdm.toarray()
+        array([[0.20220215, 0.14538496, 0.,         0.10257199, 0.        ],
+            [0.13491385, 0.27251306, 0.,         0.18793787, 0.        ],
+            [0.19262396, 0.,         0.,         0.25795122, 0.        ],
+            [0.14859639, 0.07076002, 0.,         0.04065851, 0.        ],
+            [0.17308768, 0.,         0.,         0.24823138, 0.        ]])
+
+        You can check distances above the `max_distance` are zeros:
+
+        >>> from scipy.spatial import distance_matrix
+        >>> distance_matrix(points1, points2)
+        array([[0.20220215, 0.14538496, 0.43588092, 0.10257199, 0.4555495 ],
+            [0.13491385, 0.27251306, 0.65944131, 0.18793787, 0.68184154],
+            [0.19262396, 0.34121593, 0.72176889, 0.25795122, 0.74538858],
+            [0.14859639, 0.07076002, 0.48505773, 0.04065851, 0.50043591],
+            [0.17308768, 0.32837991, 0.72760803, 0.24823138, 0.75017239]])
 
         """
         result = scipy.sparse.dok_matrix((self.n,other.n))

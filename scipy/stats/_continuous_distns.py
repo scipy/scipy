@@ -3749,7 +3749,7 @@ class geninvgauss_gen(rv_continuous):
                 it.iternext()
 
         if size == ():
-            out = out[()]
+            out = out.item()
         return out
 
     def _rvs_scalar(self, p, b, numsamples, random_state):
@@ -4187,8 +4187,54 @@ class laplace_gen(rv_continuous):
     def _entropy(self):
         return np.log(2)+1
 
+    @replace_notes_in_docstring(rv_continuous, notes="""\
+        This function uses explicit formulas for the maximum likelihood
+        estimation of the Laplace distribution parameters, so the keyword
+        arguments `loc`, `scale`, and `optimizer` are ignored.\n\n""")
+    def fit(self, data, *args, **kwds):
+        floc = kwds.pop('floc', None)
+        fscale = kwds.pop('fscale', None)
+
+        _check_fit_input_parameters(data, args,
+                                    kwds, fixed_param=(floc, fscale))
+
+        # MLE for the laplace distribution
+
+        if floc is None:
+            loc = np.median(data)
+        else:
+            loc = floc
+
+        if fscale is None:
+            scale = (np.sum(np.abs(data - loc))) / len(data)
+        else:
+            scale = fscale
+
+        # Source: Statistical Distributions, 3rd Edition. Evans, Hastings,
+        # and Peacock (2000), Page 124
+
+        return loc, scale
+
 
 laplace = laplace_gen(name='laplace')
+
+
+def _check_fit_input_parameters(data, args, kwds, fixed_param):
+    if len(args) > 0:
+        raise TypeError("Too many arguments.")
+
+    _remove_optimizer_parameters(kwds)
+
+    if None not in fixed_param:
+        # This check is for consistency with `rv_continuous.fit`.
+        # Without this check, this function would just return the
+        # parameters that were given.
+        raise RuntimeError("All parameters fixed. There is nothing to "
+                           "optimize.")
+
+    data = np.asarray(data)
+    if not np.isfinite(data).all():
+        raise RuntimeError("The data contains non-finite values.")
 
 
 class levy_gen(rv_continuous):
@@ -4456,7 +4502,8 @@ class levy_stable_gen(rv_continuous):
                                 (np.cos(alpha*xi+(alpha-1)*theta)/np.cos(theta))
             if x0 > zeta:
                 def g(theta):
-                    return V(theta)*np.real(np.complex(x0-zeta)**(alpha/(alpha-1)))
+                    return (V(theta) *
+                            np.real(np.complex128(x0-zeta)**(alpha/(alpha-1))))
 
                 def f(theta):
                     return g(theta) * np.exp(-g(theta))
@@ -4520,7 +4567,8 @@ class levy_stable_gen(rv_continuous):
                 c_1 = 1 if alpha > 1 else .5 - xi/np.pi
 
                 def f(theta):
-                    return np.exp(-V(theta)*np.real(np.complex(x0-zeta)**(alpha/(alpha-1))))
+                    z = np.complex128(x0 - zeta)
+                    return np.exp(-V(theta) * np.real(z**(alpha/(alpha-1))))
 
                 with np.errstate(all="ignore"):
                     # spare calculating integral on null set
@@ -4622,9 +4670,9 @@ class levy_stable_gen(rv_continuous):
                 data_out[data_mask] = np.array([levy_stable._cdf_single_value_zolotarev(_x, _alpha, _beta)
                             for _x, _alpha, _beta in data_subset]).reshape(len(data_subset), 1)
             else:
-                warnings.warn(u'FFT method is considered experimental for ' +
-                              u'cumulative distribution function ' +
-                              u'evaluations. Use Zolotarev’s method instead).',
+                warnings.warn("FFT method is considered experimental for "
+                              "cumulative distribution function "
+                              "evaluations. Use Zolotarev's method instead.",
                               RuntimeWarning)
                 _alpha, _beta = pair
                 _x = data_subset[:,(0,)]
@@ -6887,7 +6935,7 @@ class trapz_gen(rv_continuous):
     ----------
     .. [1] Kacker, R.N. and Lawrence, J.F. (2007). Trapezoidal and triangular
        distributions for Type B evaluation of standard uncertainty.
-       Metrologia 44, 117–127. https://doi.org/10.1088/0026-1394/44/2/003
+       Metrologia 44, 117-127. https://doi.org/10.1088/0026-1394/44/2/003
 
 
     """
@@ -7557,7 +7605,8 @@ class truncnorm_gen(rv_continuous):
             return moments[-1]
 
         return _lazywhere((n >= 0) & (a == a) & (b == b), (n, a, b),
-                          np.vectorize(n_th_moment, otypes=[np.float]), np.nan)
+                          np.vectorize(n_th_moment, otypes=[np.float64]),
+                          np.nan)
 
     def _stats(self, a, b, moments='mv'):
         pA, pB = self._pdf(np.array([a, b]), a, b)
@@ -7637,7 +7686,7 @@ class truncnorm_gen(rv_continuous):
                 it.iternext()
 
         if size == ():
-            out = out[()]
+            out = out.item()
         return out
 
     def _rvs_scalar(self, a, b, numsamples=None, random_state=None):
@@ -8324,7 +8373,7 @@ class crystalball_gen(rv_continuous):
             return A * lhs + rhs
 
         return N * _lazywhere(n + 1 < m, (n, beta, m),
-                              np.vectorize(n_th_moment, otypes=[np.float]),
+                              np.vectorize(n_th_moment, otypes=[np.float64]),
                               np.inf)
 
     def _argcheck(self, beta, m):
