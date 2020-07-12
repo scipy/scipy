@@ -55,7 +55,7 @@ def _check_invalid_option_values(option, option_str, allowed, default):
                        "but only values in {2} are allowed. Using default."
                        .format(option_str, option, allowed))
     if option not in allowed:
-        warn(warning_message, OptimizeWarning)
+        warn(warning_message, OptimizeWarning, stacklevel=3)
         return default
     return option
 
@@ -147,7 +147,7 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
         Verbosity level, corresponds to:
 
             ``0``: None
-                All messaging to stdout is supressed.
+                All messaging is supressed.
 
             ``1``: Verbose
                 Provide only a once-per-iteration report on
@@ -305,7 +305,8 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
     # Catch message_level warnings that HiGHS currently misses:
     message_level = (
         _check_invalid_option_values(message_level, 'message_level',
-                                     {None, 0, 1, 2, 3, 4, 5, 6, 7}, MESSAGE_LEVEL_MINIMAL))
+                                     {None, 0, 1, 2, 3, 4, 5, 6, 7},
+                                     MESSAGE_LEVEL_MINIMAL))
 
     # SIMPLEX_STRATEGY_PRIMAL (4) is experimental -- disallow use!
     simplex_strategy = (
@@ -313,29 +314,69 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
                                      {None, 0, 1, 2, 3}, 1))
 
     statuses = {
-        MODEL_STATUS_NOTSET: (4, 'HiGHS Status Code 0: HighsModelStatusNOTSET'),
-        MODEL_STATUS_LOAD_ERROR: (4, 'HiGHS Status Code 1: HighsModelStatusLOAD_ERROR'),
-        MODEL_STATUS_MODEL_ERROR: (2, 'HiGHS Status Code 2: HighsModelStatusMODEL_ERROR'),
-        MODEL_STATUS_MODEL_EMPTY: (4, 'HiGHS Status Code 3: HighsModelStatusMODEL_EMPTY'),
-        MODEL_STATUS_PRESOLVE_ERROR: (4, 'HiGHS Status Code 4: HighsModelStatusPRESOLVE_ERROR'),
-        MODEL_STATUS_SOLVE_ERROR: (4, 'HiGHS Status Code 5: HighsModelStatusSOLVE_ERROR'),
-        MODEL_STATUS_POSTSOLVE_ERROR: (4, 'HiGHS Status Code 6: HighsModelStatusPOSTSOLVE_ERROR'),
-        MODEL_STATUS_RDOVUB: (4, 'HiGHS Status Code 10: HighsModelStatusREACHED_DUAL_OBJECTIVE_VALUE_UPPER_BOUND'),
-        MODEL_STATUS_PRIMAL_INFEASIBLE: (2, "The problem is infeasible."),
-        MODEL_STATUS_PRIMAL_UNBOUNDED: (3, "The problem is unbounded."),
-        MODEL_STATUS_OPTIMAL: (0, "Optimization terminated successfully."),
-        MODEL_STATUS_REACHED_TIME_LIMIT: (1, "Time limit reached."),
-        MODEL_STATUS_REACHED_ITERATION_LIMIT: (1, "Iteration limit reached."),
+        MODEL_STATUS_NOTSET: (
+            4,
+            'HiGHS Status Code 0: HighsModelStatusNOTSET',
+        ),
+        MODEL_STATUS_LOAD_ERROR: (
+            4,
+            'HiGHS Status Code 1: HighsModelStatusLOAD_ERROR',
+        ),
+        MODEL_STATUS_MODEL_ERROR: (
+            2,
+            'HiGHS Status Code 2: HighsModelStatusMODEL_ERROR',
+        ),
+        MODEL_STATUS_MODEL_EMPTY: (
+            4,
+            'HiGHS Status Code 3: HighsModelStatusMODEL_EMPTY',
+        ),
+        MODEL_STATUS_PRESOLVE_ERROR: (
+            4,
+            'HiGHS Status Code 4: HighsModelStatusPRESOLVE_ERROR',
+        ),
+        MODEL_STATUS_SOLVE_ERROR: (
+            4,
+            'HiGHS Status Code 5: HighsModelStatusSOLVE_ERROR',
+        ),
+        MODEL_STATUS_POSTSOLVE_ERROR: (
+            4,
+            'HiGHS Status Code 6: HighsModelStatusPOSTSOLVE_ERROR',
+        ),
+        MODEL_STATUS_RDOVUB: (
+            4,
+            'HiGHS Status Code 10: '
+            'HighsModelStatusREACHED_DUAL_OBJECTIVE_VALUE_UPPER_BOUND',
+        ),
+        MODEL_STATUS_PRIMAL_INFEASIBLE: (
+            2,
+            "The problem is infeasible.",
+        ),
+        MODEL_STATUS_PRIMAL_UNBOUNDED: (
+            3,
+            "The problem is unbounded.",
+        ),
+        MODEL_STATUS_OPTIMAL: (
+            0,
+            "Optimization terminated successfully.",
+        ),
+        MODEL_STATUS_REACHED_TIME_LIMIT: (
+            1,
+            "Time limit reached.",
+        ),
+        MODEL_STATUS_REACHED_ITERATION_LIMIT: (
+            1,
+            "Iteration limit reached.",
+        ),
     }
 
     c, A_ub, b_ub, A_eq, b_eq, bounds, x0 = lp
 
-    lb, ub = bounds.T.copy()                # separate bounds, copy->C-cntgs
+    lb, ub = bounds.T.copy()  # separate bounds, copy->C-cntgs
     # highs_wrapper solves LHS <= A*x <= RHS, not equality constraints
-    lhs_ub = -np.ones_like(b_ub)*np.inf     # LHS of UB constraints is -inf
-    rhs_ub = b_ub                           # RHS of UB constraints is b_ub
-    lhs_eq = b_eq                           # Equality constaint is inequality
-    rhs_eq = b_eq                           # constraint with LHS=RHS
+    lhs_ub = -np.ones_like(b_ub)*np.inf  # LHS of UB constraints is -inf
+    rhs_ub = b_ub  # RHS of UB constraints is b_ub
+    lhs_eq = b_eq  # Equality constaint is inequality
+    rhs_eq = b_eq  # constraint with LHS=RHS
     lhs = np.concatenate((lhs_ub, lhs_eq))
     rhs = np.concatenate((rhs_ub, rhs_eq))
 
@@ -371,9 +412,6 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
     lb = _replace_inf(lb)
     ub = _replace_inf(ub)
 
-    #from scipy.optimize._highs.mpswriter import mpswriter
-    #mpswriter(b'test.mps', c, A, lhs, rhs, lb, ub, np.array([], dtype=np.int32))
-
     res = highs_wrapper(c, A.indptr, A.indices, A.data, lhs, rhs,
                         lb, ub, options)
 
@@ -385,18 +423,19 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
     # HiGHS represents constraints as lhs/rhs, so
     # Ax + s = b => Ax = b - s
     # and we need to split up s by A_ub and A_eq
-    slack = res.get('slack', None)
-    con = None
-    if slack is not None:
-        con = slack[len(b_ub):]
-        slack = slack[:len(b_ub)]
+    if 'slack' in res:
+        slack = res['slack']
+        con = np.array(slack[len(b_ub):])
+        slack = np.array(slack[:len(b_ub)])
+    else:
+        slack, con = None, None
 
-    sol = {'x': res.get('x', None),
+    sol = {'x': np.array(res['x']) if 'x' in res else None,
            'slack': slack,
            # TODO: Add/test dual info like:
-           # 'lambda': res.get('lambda', None),
-           # 's': res.get('s', None),
-           'fun': res.get('fun', None),
+           # 'lambda': res.get('lambda'),
+           # 's': res.get('s'),
+           'fun': res.get('fun'),
            'con': con,
            'status': statuses[res['status']][0],
            'success': res['status'] == MODEL_STATUS_OPTIMAL,
@@ -404,8 +443,4 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
            'nit': res.get('simplex_nit', 0) or res.get('ipm_nit', 0),
            'crossover_nit': res.get('crossover_nit'),
            }
-    if sol['x'] is not None:
-        sol['x'] = np.array(sol['x'])
-        sol['slack'] = np.array(sol['slack'])
-        sol['con'] = np.array(sol['con'])
     return sol

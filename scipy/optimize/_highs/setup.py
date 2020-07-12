@@ -96,11 +96,11 @@ def configuration(parent_package='', top_path=None):
     highs_sources = _get_sources('src/CMakeLists.txt', 'set(sources\n', ')')
     ext = config.add_extension(
         'highs_wrapper',
-        sources=['pyHiGHS/src/highs_wrapper.cxx'] + highs_sources + ipx_sources,
+        sources=['cython/src/highs_wrapper.cxx'] + highs_sources + ipx_sources,
         include_dirs=[
 
             # highs_wrapper
-            'pyHiGHS/src/',
+            'cython/src/',
             'src/',
             'src/lp_data/',
 
@@ -127,7 +127,7 @@ def configuration(parent_package='', top_path=None):
         sources=[
             # we should be using using highs shared library;
             # next best thing is compiling minimal set of sources
-            'pyHiGHS/src/mpswriter.cxx',
+            'cython/src/mpswriter.cxx',
             'src/util/HighsUtils.cpp',
             'src/io/HighsIO.cpp',
             'src/io/HMPSIO.cpp',
@@ -135,7 +135,7 @@ def configuration(parent_package='', top_path=None):
             'src/util/stringutil.cpp',
         ],
         include_dirs=[
-            'pyHiGHS/src/',
+            'cython/src/',
             'src/',
             'src/io/',
             'src/lp_data/',
@@ -150,9 +150,9 @@ def configuration(parent_package='', top_path=None):
     # Export constants and enums from HiGHS:
     ext = config.add_extension(
         'constants',
-        sources=['pyHiGHS/src/constants.cxx'],
+        sources=['cython/src/constants.cxx'],
         include_dirs=[
-            'pyHiGHS/src/',
+            'cython/src/',
             'src',
             'src/lp_data/',
         ],
