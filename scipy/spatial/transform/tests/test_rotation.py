@@ -874,8 +874,6 @@ def test_n_rotations():
     r = Rotation.from_matrix(mat)
 
     assert_equal(len(r), 2)
-    assert_equal(len(r[0]), 1)
-    assert_equal(len(r[1]), 1)
     assert_equal(len(r[:-1]), 1)
 
 
@@ -1043,7 +1041,7 @@ def test_slerp():
 
 
 def test_slerp_single_rot():
-    with pytest.raises(ValueError, match="at least 2 rotations"):
+    with pytest.raises(ValueError, match="must be a sequence of rotations"):
         r = Rotation.from_quat([1, 2, 3, 4])
         Slerp([1], r)
 
@@ -1126,3 +1124,33 @@ def test_multiplication_stability():
     for q in qs:
         rs *= q * rs
         assert_allclose(np.linalg.norm(rs.as_quat(), axis=1), 1)
+
+
+def test_rotation_within_numpy_array():
+    single = Rotation.random()
+    multiple = Rotation.random(2)
+
+    array = np.array(single)
+    assert_equal(array.shape, ())
+
+    array = np.array(multiple)
+    assert_equal(array.shape, (2,))
+    assert_allclose(array[0].as_matrix(), multiple[0].as_matrix())
+    assert_allclose(array[1].as_matrix(), multiple[1].as_matrix())
+
+    array = np.array([single])
+    assert_equal(array.shape, (1,))
+    assert_equal(array[0], single)
+
+    array = np.array([multiple])
+    assert_equal(array.shape, (1, 2))
+    assert_allclose(array[0, 0].as_matrix(), multiple[0].as_matrix())
+    assert_allclose(array[0, 1].as_matrix(), multiple[1].as_matrix())
+
+    array = np.array([single, multiple], dtype=object)
+    assert_equal(array.shape, (2,))
+    assert_equal(array[0], single)
+    assert_equal(array[1], multiple)
+
+    array = np.array([multiple, multiple, multiple])
+    assert_equal(array.shape, (3, 2))

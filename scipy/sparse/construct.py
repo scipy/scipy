@@ -6,7 +6,7 @@ __docformat__ = "restructuredtext en"
 __all__ = ['spdiags', 'eye', 'identity', 'kron', 'kronsum',
            'hstack', 'vstack', 'bmat', 'rand', 'random', 'diags', 'block_diag']
 
-
+import numbers
 from functools import partial
 import numpy as np
 
@@ -175,12 +175,12 @@ def diags(diagonals, offsets=0, shape=None, format=None, dtype=None):
             raise ValueError("Offset %d (index %d) out of bounds" % (offset, j))
         try:
             data_arr[j, k:k+length] = diagonal[...,:length]
-        except ValueError:
+        except ValueError as e:
             if len(diagonal) != length and len(diagonal) != 1:
                 raise ValueError(
                     "Diagonal length (index %d: %d at offset %d) does not "
                     "agree with matrix size (%d, %d)." % (
-                    j, len(diagonal), offset, m, n))
+                    j, len(diagonal), offset, m, n)) from e
             raise
 
     return dia_matrix((data_arr, offsets), shape=(m, n)).asformat(format)
@@ -667,16 +667,33 @@ def block_diag(mats, format=None, dtype=None):
            [0, 0, 0, 7]])
 
     """
-    nmat = len(mats)
-    rows = []
-    for ia, a in enumerate(mats):
-        row = [None]*nmat
+    row = []
+    col = []
+    data = []
+    r_idx = 0
+    c_idx = 0
+    for a in mats:
+        if isinstance(a, (list, numbers.Number)):
+            a = coo_matrix(a)
+        nrows, ncols = a.shape
         if issparse(a):
-            row[ia] = a
+            a = a.tocoo()
+            row.append(a.row + r_idx)
+            col.append(a.col + c_idx)
+            data.append(a.data)
         else:
-            row[ia] = coo_matrix(a)
-        rows.append(row)
-    return bmat(rows, format=format, dtype=dtype)
+            a_row, a_col = np.divmod(np.arange(nrows*ncols), ncols)
+            row.append(a_row + r_idx)
+            col.append(a_col + c_idx)
+            data.append(a.ravel())
+        r_idx += nrows
+        c_idx += ncols
+    row = np.concatenate(row)
+    col = np.concatenate(col)
+    data = np.concatenate(data)
+    return coo_matrix((data, (row, col)),
+                      shape=(r_idx, c_idx),
+                      dtype=dtype).asformat(format)
 
 
 def random(m, n, density=0.01, format='coo', dtype=None,

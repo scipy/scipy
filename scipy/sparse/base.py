@@ -314,8 +314,8 @@ class spmatrix(object):
         else:
             try:
                 convert_method = getattr(self, 'to' + format)
-            except AttributeError:
-                raise ValueError('Format {} is unknown.'.format(format))
+            except AttributeError as e:
+                raise ValueError('Format {} is unknown.'.format(format)) from e
 
             # Forward the copy kwarg, if it's accepted.
             try:

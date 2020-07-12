@@ -15,9 +15,6 @@ types = [np.int8, np.uint8, np.int16,
          np.float32, np.float64]
 
 
-np.mod(1., 1)  # Silence fmod bug on win-amd64. See #1408 and #1238.
-
-
 class Test_measurements_stats(object):
     """ndimage.measurements._stats() is a utility function used by other functions."""
 

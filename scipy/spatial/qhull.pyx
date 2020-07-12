@@ -704,7 +704,7 @@ cdef class _Qhull:
             point_ndim += 1
 
         numpoints = self._qh.num_points
-        points = np.zeros((numpoints, point_ndim))
+        points = np.empty((numpoints, point_ndim))
 
         with nogil:
             point = self._qh.first_point
@@ -1100,7 +1100,7 @@ def _get_barycentric_transforms(np.ndarray[np.double_t, ndim=2] points,
     ndim = points.shape[1]
     nsimplex = simplices.shape[0]
 
-    T = np.zeros((ndim, ndim), dtype=np.double)
+    T = np.empty((ndim, ndim), dtype=np.double)
     Tinvs = np.zeros((nsimplex, ndim+1, ndim), dtype=np.double)
 
     # Maximum inverse condition number to allow: we want at least three

@@ -211,8 +211,8 @@ class UnivariateSpline(object):
 
         try:
             ext = _extrap_modes[ext]
-        except KeyError:
-            raise ValueError("Unknown extrapolation mode %s." % ext)
+        except KeyError as e:
+            raise ValueError("Unknown extrapolation mode %s." % ext) from e
 
         return x, y, w, bbox, ext
 
@@ -330,8 +330,8 @@ class UnivariateSpline(object):
         else:
             try:
                 ext = _extrap_modes[ext]
-            except KeyError:
-                raise ValueError("Unknown extrapolation mode %s." % ext)
+            except KeyError as e:
+                raise ValueError("Unknown extrapolation mode %s." % ext) from e
         return fitpack.splev(x, self._eval_args, der=nu, ext=ext)
 
     def get_knots(self):

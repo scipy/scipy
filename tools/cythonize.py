@@ -92,7 +92,7 @@ def process_pyx(fromfile, tofile, cwd):
             r = subprocess.call(['cython'] + flags + ["-o", tofile, fromfile], cwd=cwd)
             if r != 0:
                 raise Exception('Cython failed')
-        except OSError:
+        except OSError as e:
             # There are ways of installing Cython that don't result in a cython
             # executable on the path, see gh-2397.
             r = subprocess.call([sys.executable, '-c',
@@ -101,9 +101,9 @@ def process_pyx(fromfile, tofile, cwd):
                                  ["-o", tofile, fromfile],
                                 cwd=cwd)
             if r != 0:
-                raise Exception("Cython either isn't installed or it failed.")
-    except OSError:
-        raise OSError('Cython needs to be installed')
+                raise Exception("Cython either isn't installed or it failed.") from e
+    except OSError as e:
+        raise OSError('Cython needs to be installed') from e
 
 def process_tempita_pyx(fromfile, tofile, cwd):
     try:
@@ -111,9 +111,9 @@ def process_tempita_pyx(fromfile, tofile, cwd):
             from Cython import Tempita as tempita
         except ImportError:
             import tempita
-    except ImportError:
+    except ImportError as e:
         raise Exception('Building SciPy requires Tempita: '
-                        'pip install --user Tempita')
+                        'pip install --user Tempita') from e
     from_filename = tempita.Template.from_filename
     template = from_filename(os.path.join(cwd, fromfile),
                              encoding=sys.getdefaultencoding())

@@ -30,8 +30,8 @@ try:
     from paver.tasks import VERSION as _PVER
     if not _PVER >= '1.0':
         raise RuntimeError("paver version >= 1.0 required (was %s)" % _PVER)
-except ImportError:
-    raise RuntimeError("paver version >= 1.0 required")
+except ImportError as e:
+    raise RuntimeError("paver version >= 1.0 required") from e
 
 import paver
 import paver.doctools

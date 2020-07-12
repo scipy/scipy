@@ -437,15 +437,16 @@ class TestBinnedStatistic(object):
         v = self.v
         w = self.w
 
-        stat1v, edges1v, bc1v = binned_statistic_dd(X, v, np.std, bins=8)
-        stat1w, edges1w, bc1w = binned_statistic_dd(X, w, np.std, bins=8)
-        stat2, edges2, bc2 = binned_statistic_dd(X, [v, w], np.std, bins=8)
-
-        assert_allclose(stat2[0], stat1v)
-        assert_allclose(stat2[1], stat1w)
-        assert_allclose(edges1v, edges2)
-        assert_allclose(edges1w, edges2)
-        assert_allclose(bc1v, bc2)
+        for stat in ["count", "sum", "mean", "std", "min", "max", "median",
+                     np.std]:
+            stat1v, edges1v, bc1v = binned_statistic_dd(X, v, stat, bins=8)
+            stat1w, edges1w, bc1w = binned_statistic_dd(X, w, stat, bins=8)
+            stat2, edges2, bc2 = binned_statistic_dd(X, [v, w], stat, bins=8)
+            assert_allclose(stat2[0], stat1v)
+            assert_allclose(stat2[1], stat1w)
+            assert_allclose(edges1v, edges2)
+            assert_allclose(edges1w, edges2)
+            assert_allclose(bc1v, bc2)
 
     def test_dd_binnumbers_unraveled(self):
         X = self.X

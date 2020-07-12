@@ -583,15 +583,7 @@ def binned_statistic_dd(sample, values, statistic='mean',
             result[vv, a] = flatsum[a] / flatcount[a]
     elif statistic == 'std':
         result.fill(0)
-        flatcount = np.bincount(binnumbers, None)
-        a = flatcount.nonzero()
-        for vv in builtins.range(Vdim):
-            for i in np.unique(binnumbers):
-                # NOTE: take std dev by bin, np.std() is 2-pass and stable
-                binned_data = values[vv, binnumbers == i]
-                # calc std only when binned data is 2 or more for speed up.
-                if len(binned_data) >= 2:
-                    result[vv, i] = np.std(binned_data)
+        _calc_binned_statistic(Vdim, binnumbers, result, values, np.std)
     elif statistic == 'count':
         result.fill(0)
         flatcount = np.bincount(binnumbers, None)
@@ -605,19 +597,13 @@ def binned_statistic_dd(sample, values, statistic='mean',
             result[vv, a] = flatsum
     elif statistic == 'median':
         result.fill(np.nan)
-        for i in np.unique(binnumbers):
-            for vv in builtins.range(Vdim):
-                result[vv, i] = np.median(values[vv, binnumbers == i])
+        _calc_binned_statistic(Vdim, binnumbers, result, values, np.median)
     elif statistic == 'min':
         result.fill(np.nan)
-        for i in np.unique(binnumbers):
-            for vv in builtins.range(Vdim):
-                result[vv, i] = np.min(values[vv, binnumbers == i])
+        _calc_binned_statistic(Vdim, binnumbers, result, values, np.min)
     elif statistic == 'max':
         result.fill(np.nan)
-        for i in np.unique(binnumbers):
-            for vv in builtins.range(Vdim):
-                result[vv, i] = np.max(values[vv, binnumbers == i])
+        _calc_binned_statistic(Vdim, binnumbers, result, values, np.max)
     elif callable(statistic):
         with np.errstate(invalid='ignore'), suppress_warnings() as sup:
             sup.filter(RuntimeWarning)
@@ -626,9 +612,8 @@ def binned_statistic_dd(sample, values, statistic='mean',
             except Exception:
                 null = np.nan
         result.fill(null)
-        for i in np.unique(binnumbers):
-            for vv in builtins.range(Vdim):
-                result[vv, i] = statistic(values[vv, binnumbers == i])
+        _calc_binned_statistic(Vdim, binnumbers, result, values, statistic,
+                               is_callable=True)
 
     # Shape into a proper matrix
     result = result.reshape(np.append(Vdim, nbin))
@@ -650,6 +635,32 @@ def binned_statistic_dd(sample, values, statistic='mean',
     return BinnedStatisticddResult(result, edges, binnumbers)
 
 
+def _calc_binned_statistic(Vdim, bin_numbers, result, values, stat_func,
+                           is_callable=False):
+    unique_bin_numbers = np.unique(bin_numbers)
+    for vv in builtins.range(Vdim):
+        bin_map = _create_binned_data(bin_numbers, unique_bin_numbers, values, vv)
+        for i in unique_bin_numbers:
+            # if the stat_func is callable, all results should be updated
+            # if the stat_func is np.std, calc std only when binned data is 2
+            # or more for speed up.
+            if is_callable or not (stat_func is np.std and len(bin_map[i]) < 2):
+                result[vv, i] = stat_func(bin_map[i])
+
+
+def _create_binned_data(bin_numbers, unique_bin_numbers, values, vv):
+    """ Create hashmap of bin ids to values in bins
+    key: bin number
+    value: list of binned data
+    """
+    bin_map = dict()
+    for i in unique_bin_numbers:
+        bin_map[i] = []
+    for i in builtins.range(len(bin_numbers)):
+        bin_map[bin_numbers[i]].append(values[vv, i])
+    return bin_map
+
+
 def _bin_edges(sample, bins=None, range=None):
     """ Create edge arrays
     """
@@ -665,8 +676,8 @@ def _bin_edges(sample, bins=None, range=None):
         smin = np.atleast_1d(np.array(sample.min(axis=0), float))
         smax = np.atleast_1d(np.array(sample.max(axis=0), float))
     else:
-        smin = np.zeros(Ndim)
-        smax = np.zeros(Ndim)
+        smin = np.empty(Ndim)
+        smax = np.empty(Ndim)
         for i in builtins.range(Ndim):
             smin[i], smax[i] = range[i]
 

@@ -277,8 +277,8 @@ def quad_vec(f, a, b, epsabs=1e-200, epsrel=1e-8, norm='2', cache_size=100e6, li
                        'gk21': _quadrature_gk21,
                        'gk15': _quadrature_gk15,
                        'trapz': _quadrature_trapz}[quadrature]
-    except KeyError:
-        raise ValueError("unknown quadrature {!r}".format(quadrature))
+    except KeyError as e:
+        raise ValueError("unknown quadrature {!r}".format(quadrature)) from e
 
     # Initial interval set
     if points is None:
