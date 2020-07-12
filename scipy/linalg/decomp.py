@@ -370,7 +370,7 @@ def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
 
     Notes
     -----
-    This function does not check the input array for being hermitian/symmetric
+    This function does not check the input array for being Hermitian/symmetric
     in order to allow for representing arrays with only their upper/lower
     triangular parts. Also, note that even though not taken into account,
     finiteness check applies to the whole array and unaffected by "lower"
@@ -723,7 +723,7 @@ def eig_banded(a_band, lower=False, eigvals_only=False, overwrite_a_band=False,
     eigvals_banded : eigenvalues for symmetric/Hermitian band matrices
     eig : eigenvalues and right eigenvectors of general arrays.
     eigh : eigenvalues and right eigenvectors for symmetric/Hermitian arrays
-    eigh_tridiagonal : eigenvalues and right eiegenvectors for
+    eigh_tridiagonal : eigenvalues and right eigenvectors for
         symmetric/Hermitian tridiagonal matrices
 
     Examples
