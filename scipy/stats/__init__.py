@@ -263,6 +263,7 @@ Statistical tests
    brunnermunzel
    combine_pvalues
    jarque_bera
+   pagel
 
 .. autosummary::
    :toctree: generated/

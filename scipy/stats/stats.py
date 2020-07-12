@@ -131,6 +131,7 @@ Inferential Stats
    friedmanchisquare
    brunnermunzel
    combine_pvalues
+   pagel
 
 Statistical Distances
 ---------------------
@@ -185,6 +186,8 @@ from ._stats import (_kendall_dis, _toint64, _weightedrankedtau,
                      _local_correlations)
 from ._rvs_sampling import rvs_ratio_uniforms
 from ._hypotests import epps_singleton_2samp
+from ._pagel import pagel
+
 
 
 __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
@@ -209,7 +212,7 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
            'tiecorrect', 'ranksums', 'kruskal', 'friedmanchisquare',
            'rankdata', 'rvs_ratio_uniforms',
            'combine_pvalues', 'wasserstein_distance', 'energy_distance',
-           'brunnermunzel', 'epps_singleton_2samp']
+           'brunnermunzel', 'epps_singleton_2samp', 'pagel']
 
 
 def _contains_nan(a, nan_policy='propagate'):
