@@ -549,7 +549,10 @@ class Output(object):
     beta : ndarray
         Estimated parameter values, of shape (q,).
     sd_beta : ndarray
-        Standard errors of the estimated parameters, of shape (p,).
+        Standard deviations of the estimated parameters, of shape (p,).
+        This is scaled by the residual variance. In other words,
+        `np.sqrt(np.diag(output.cov_beta * output.res_var)) == output.sd_beta`
+        when `cov_scaled` of ODR is False.
     cov_beta : ndarray
         Covariance matrix of the estimated parameters, of shape (p,p).
     delta : ndarray, optional
@@ -714,9 +717,9 @@ class ODR(object):
         array to hold the integer-valued working data for ODRPACK. When
         restarting, takes the value of self.output.iwork.
     cov_scaled : bool, optional
-        If True, `cov_beta` of `Ouput` is scaled by the residual variance. In
-        other words, `np.sqrt(np.diag(output.cov_beta * output.res_var)) ==
-        output.sd_beta`. The default value is False.
+        If True, `cov_beta` of `Output` is scaled by the residual variance.
+        In other words, `np.sqrt(np.diag(output.cov_beta)) == output.sd_beta`
+        when `cov_scaled` is True. The default value is False.
 
     Attributes
     ----------
