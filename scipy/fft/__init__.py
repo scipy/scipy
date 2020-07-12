@@ -59,6 +59,8 @@ Helper functions
    get_workers - Get the current default number of workers
    get_plan_cache_size - Query the size of the plan caches
    set_plan_cache_size - Set maximum number of transform plans to cache
+   get_plan_cache_max_memsize - Query the maximum size of plan to cache
+   set_plan_cache_max_memsize - Set maximum memory to use in caching a single plan
    clear_plan_cache - Free any cached transform plans
 
 Backend control
@@ -83,8 +85,11 @@ from ._helper import next_fast_len
 from ._backend import (set_backend, skip_backend, set_global_backend,
                        register_backend)
 from numpy.fft import fftfreq, rfftfreq, fftshift, ifftshift
-from ._pocketfft.helper import (set_workers, get_workers, get_plan_cache_size,
-                                set_plan_cache_size, clear_plan_cache)
+from ._pocketfft.helper import (set_workers, get_workers)
+from ._pocketfft.pypocketfft import (
+    get_plan_cache_size, set_plan_cache_size,
+    get_plan_cache_max_memsize, set_plan_cache_max_memsize,
+    clear_plan_cache)
 
 __all__ = [
     'fft', 'ifft', 'fft2','ifft2', 'fftn', 'ifftn',
@@ -95,7 +100,9 @@ __all__ = [
     'dct', 'idct', 'dst', 'idst', 'dctn', 'idctn', 'dstn', 'idstn',
     'set_backend', 'skip_backend', 'set_global_backend', 'register_backend',
     'get_workers', 'set_workers',
-    'get_plan_cache_size', 'set_plan_cache_size', 'clear_plan_cache']
+    'get_plan_cache_size', 'set_plan_cache_size',
+    'get_plan_cache_max_memsize', 'set_plan_cache_max_memsize',
+    'clear_plan_cache']
 
 
 from scipy._lib._testutils import PytestTester

@@ -1428,6 +1428,8 @@ template<bool fwd, typename T> void pass_all(T c[], T0 fct) const
       mem.resize(twsize());
       comp_twiddle();
       }
+
+    size_t memsize() const { return mem.size()*sizeof(cmplx<T0>); }
   };
 
 //
@@ -2237,6 +2239,8 @@ template<typename T> void radbg(size_t ido, size_t ip, size_t l1,
       mem.resize(twsize());
       comp_twiddle();
       }
+
+    size_t memsize() const { return mem.size()*sizeof(T0); }
 };
 
 //
@@ -2340,6 +2344,8 @@ template<typename T0> class fftblue
           c[m] = tmp[m].r;
         }
       }
+
+    size_t memsize() const { return plan.memsize() + mem.size()*sizeof(cmplx<T0>); }
   };
 
 //
@@ -2377,6 +2383,7 @@ template<typename T0> class pocketfft_c
       { packplan ? packplan->exec(c,fct,fwd) : blueplan->exec(c,fct,fwd); }
 
     size_t length() const { return len; }
+    size_t memsize() const { return packplan ? packplan->memsize() : blueplan->memsize(); }
   };
 
 //
@@ -2414,6 +2421,7 @@ template<typename T0> class pocketfft_r
       { packplan ? packplan->exec(c,fct,fwd) : blueplan->exec_r(c,fct,fwd); }
 
     size_t length() const { return len; }
+    size_t memsize() const { return packplan ? packplan->memsize() : blueplan->memsize(); }
   };
 
 
@@ -2450,6 +2458,7 @@ template<typename T0> class T_dct1
       }
 
     size_t length() const { return fftplan.length()/2+1; }
+    size_t memsize() const { return fftplan.memsize(); }
   };
 
 template<typename T0> class T_dst1
@@ -2475,6 +2484,7 @@ template<typename T0> class T_dst1
       }
 
     size_t length() const { return fftplan.length()/2-1; }
+    size_t memsize() const { return fftplan.memsize(); }
   };
 
 template<typename T0> class T_dcst23
@@ -2545,6 +2555,7 @@ template<typename T0> class T_dcst23
       }
 
     size_t length() const { return fftplan.length(); }
+    size_t memsize() const { return fftplan.memsize() + twiddle.size()*sizeof(T0); }
   };
 
 template<typename T0> class T_dcst4
@@ -2645,6 +2656,11 @@ template<typename T0> class T_dcst4
       }
 
     size_t length() const { return N; }
+    size_t memsize() const
+      {
+      auto fftsize = fft ? fft->memsize() : rfft->memsize();
+      return fftsize + C2.size()*sizeof(cmplx<T0>);
+      }
   };
 
 
@@ -2654,20 +2670,31 @@ template<typename T0> class T_dcst4
 
 class PlanCache
   {
+public:
+  struct PlanInfo
+    {
+    std::shared_ptr<void> plan;
+    size_t memsize;
+  };
+
+private:
   struct CacheEntry
     {
     std::shared_ptr<void> plan;
     size_t length;
+    size_t memsize;
     size_t last_access;
     };
 
-  using constructor_t = std::shared_ptr<void> (*) (size_t length);
+  using constructor_t = PlanInfo (*) (size_t length);
 
   std::vector<CacheEntry> cache_;
   std::mutex mut_;
   constructor_t constructor_;
   size_t access_counter_;
-  std::atomic<size_t> size_;
+
+  std::atomic<size_t> size_;  // Number of plans to cache
+  std::atomic<size_t> max_memsize_;  // Max size of an individual plan
 
   size_t bump_access_counter()
     {
@@ -2697,10 +2724,11 @@ class PlanCache
 
 public:
 
-  PlanCache(size_t size, constructor_t constructor):
+  PlanCache(size_t size, size_t max_memsize, constructor_t constructor):
     constructor_(constructor),
     access_counter_(0),
-    size_(size)
+    size_(size),
+    max_memsize_(max_memsize)
     {
     cache_.reserve(size);
     }
@@ -2709,7 +2737,7 @@ public:
     {
     if (size_.load(std::memory_order_relaxed) == 0)  // Avoid taking a lock
       {
-      return constructor_(length);
+      return constructor_(length).plan;
       }
 
     {
@@ -2717,7 +2745,12 @@ public:
     auto p = find_in_cache(length);
     if (p) return p;
     }
-    auto plan = constructor_(length);
+
+    auto plan_info = constructor_(length);
+    // Too big for the cache
+    if (plan_info.memsize > max_memsize_.load(std::memory_order_relaxed))
+      return plan_info.plan;
+
     {
     std::lock_guard<std::mutex> lock(mut_);
     auto p = find_in_cache(length);
@@ -2725,20 +2758,20 @@ public:
 
     if (cache_.size() < size_)
       {
-      cache_.push_back({plan, length, bump_access_counter()});
-      return plan;
+      cache_.push_back({plan_info.plan, length, plan_info.memsize, bump_access_counter()});
+      return std::move(plan_info.plan);
       }
     else if (size_ == 0) // Size may change while we release the lock above
-      return plan;
+      return std::move(plan_info.plan);
 
     size_t lru = 0;
     for (size_t i=1; i<cache_.size(); ++i)
       if (cache_[i].last_access < cache_[lru].last_access)
         lru = i;
 
-    cache_[lru] = {plan, length, bump_access_counter()};
+    cache_[lru] = {plan_info.plan, length, plan_info.memsize, bump_access_counter()};
     }
-    return plan;
+    return std::move(plan_info.plan);
     }
 
   void resize(size_t new_max)
@@ -2760,12 +2793,23 @@ public:
       }
 
     // Discard only the lru elements
-    std::nth_element(cache_.begin(), cache_.begin() + (new_max - 1), cache_.end(),
-              [](const CacheEntry &lhs, const CacheEntry &rhs)
-                {
-                  return lhs.last_access > rhs.last_access;
-                });
+    std::nth_element(
+      cache_.begin(), cache_.begin() + (new_max - 1), cache_.end(),
+      [](const CacheEntry &lhs, const CacheEntry &rhs)
+        {
+        return lhs.last_access > rhs.last_access;
+        });
     cache_.resize(new_max);
+    }
+
+  void set_max_memsize(size_t new_max)
+    {
+    std::lock_guard<std::mutex> lock(mut_);
+    max_memsize_.store(new_max, std::memory_order_relaxed);
+    auto it = std::remove_if(
+      cache_.begin(), cache_.end(),
+      [new_max](const CacheEntry &entry) { return entry.memsize > new_max; });
+    cache_.erase(it, cache_.end());
     }
 
   void clear()
@@ -2780,6 +2824,7 @@ class CacheManager
   // unique_ptr required to avoid reference invalidation
   std::vector<std::unique_ptr<PlanCache>> caches_;
   size_t cache_size_ = POCKETFFT_CACHE_SIZE;
+  size_t max_memsize_ = 2 * 1024 * 1024;  // 2 MB
   mutable std::mutex mut_;
 
   CacheManager() = default;
@@ -2795,16 +2840,17 @@ public:
   template <typename T>
   PlanCache &new_cache()
     {
+    std::lock_guard<std::mutex> lock(mut_);
     auto * cache = new PlanCache(
         cache_size_,
-        +[](size_t length) -> std::shared_ptr<void>
+        max_memsize_,
+        +[](size_t length)
         {
-        return std::make_shared<T>(length);
+        auto plan = std::make_shared<T>(length);
+        auto memsize = plan->memsize();
+        return PlanCache::PlanInfo{std::move(plan), memsize};
         });
-    {
-    std::lock_guard<std::mutex> lock(mut_);
     caches_.push_back(std::unique_ptr<PlanCache>(cache));
-    }
     return *cache;
     }
 
@@ -2827,6 +2873,20 @@ public:
     {
     std::lock_guard<std::mutex> lock(mut_);
     return cache_size_;
+    }
+
+  void set_max_memsize(size_t new_max)
+    {
+    std::lock_guard<std::mutex> lock(mut_);
+    max_memsize_ = new_max;
+    for (auto & cache : caches_)
+      cache->set_max_memsize(new_max);
+    }
+
+  size_t get_max_memsize() const
+    {
+    std::lock_guard<std::mutex> lock(mut_);
+    return max_memsize_;
     }
   };
 
