@@ -542,6 +542,10 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     """
 
     meth = method.lower()
+    methods = {"simplex", "revised simplex", "interior-point",
+               "highs", "highs-simplex", "highs-ipm"}
+    if meth not in methods:
+        raise ValueError(f"Unknown solver '{method}'")
 
     if x0 is not None and meth != "revised simplex":
         warning_message = "x0 is used only when method is 'revised simplex'. "
@@ -557,8 +561,7 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
                                       "callback interface.")
         highs_solvers = {'highs-ipm': 'ipm', 'highs-simplex': 'simplex',
                          'highs': None}
-        if meth not in highs_solvers:
-            raise ValueError('Unknown solver %s' % method)
+
         sol = _linprog_highs(lp, solver=highs_solvers[meth],
                              **solver_options)
         return OptimizeResult(sol)
@@ -600,8 +603,6 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
             x, status, message, iteration = _linprog_rs(
                 c, c0=c0, A=A, b=b, x0=x0, callback=callback,
                 postsolve_args=postsolve_args, **solver_options)
-        else:
-            raise ValueError('Unknown solver %s' % method)
 
     # Eliminate artificial variables, re-introduce presolved variables, etc.
     disp = solver_options.get('disp', False)
