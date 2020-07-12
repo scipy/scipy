@@ -348,19 +348,19 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     This section describes the available solvers that can be selected by the
     'method' parameter.
 
-    `highs-simplex` and
-    `highs-ipm` are interfaces to the
+    `'highs-simplex'` and
+    `'highs-ipm'` are interfaces to the
     HiGHS simplex and interior-point method solvers [13]_, respectively.
-    `highs` chooses between
+    `'highs'` chooses between
     the two automatically. These are the fastest linear
     programming solvers in SciPy, especially for large, sparse problems;
     which of these two is faster is problem-dependent.
-    `interior-point` is the default
+    `'interior-point'` is the default
     as it was the fastest and most robust method before the recent
     addition of the HiGHS solvers.
-    `revised simplex` is more
+    `'revised simplex'` is more
     accurate than interior-point for the problems it solves.
-    `simplex` is the legacy method and is
+    `'simplex'` is the legacy method and is
     included for backwards compatibility and educational purposes.
 
     Method *highs-simplex* is a wrapper of the C++ high performance dual
