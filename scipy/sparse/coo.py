@@ -138,8 +138,8 @@ class coo_matrix(_data_matrix, _minmax_mixin):
             else:
                 try:
                     obj, (row, col) = arg1
-                except (TypeError, ValueError):
-                    raise TypeError('invalid input format')
+                except (TypeError, ValueError) as e:
+                    raise TypeError('invalid input format') from e
 
                 if shape is None:
                     if len(row) == 0 or len(col) == 0:

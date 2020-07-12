@@ -37,7 +37,6 @@ from numpy.core.multiarray import normalize_axis_index
 from . import _ni_support
 from . import _nd_image
 from ._ni_docstrings import docfiller
-from scipy._lib import doccer
 
 
 __all__ = ['spline_filter1d', 'spline_filter', 'geometric_transform',

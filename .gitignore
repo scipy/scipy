@@ -186,6 +186,7 @@ scipy/linalg/cython_blas.pyx
 scipy/linalg/cython_lapack.pxd
 scipy/linalg/cython_lapack.pyx
 scipy/linalg/src/id_dist/src/*_subr_*.f
+scipy/linalg/_matfuncs_sqrtm_triu.c
 scipy/ndimage/src/_ni_label.c
 scipy/ndimage/src/_cytest.c
 scipy/optimize/_bglu_dense.c
@@ -238,6 +239,7 @@ scipy/spatial/ckdtree.h
 scipy/spatial/_hausdorff.c
 scipy/spatial/qhull.c
 scipy/spatial/_voronoi.c
+scipy/spatial/transform/rotation.c
 scipy/special/_comb.c
 scipy/special/_ellip_harm_2.c
 scipy/special/_ellip_harm_2.h

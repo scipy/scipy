@@ -25,8 +25,8 @@ if __name__ == "__main__":
         testmode = sys.argv[1]
         if testmode not in ('fast', 'full'):
             raise IndexError
-    except IndexError:
-        raise ValueError("Usage: validate.py {full|fast} < logfile.")
+    except IndexError as e:
+        raise ValueError("Usage: validate.py {full|fast} < logfile.") from e
 
     # fetch the expected number of tests
     # these numbers are for 10d5dfe8b7

@@ -740,7 +740,8 @@ class rv_generic(object):
             try:
                 self.__doc__ = doccer.docformat(self.__doc__, tempdict)
             except TypeError as e:
-                raise Exception("Unable to construct docstring for distribution \"%s\": %s" % (self.name, repr(e)))
+                raise Exception("Unable to construct docstring for distribution \"%s\": %s" %
+                                (self.name, repr(e))) from e
 
         # correct for empty shapes
         self.__doc__ = self.__doc__.replace('(, ', '(').replace(', )', ')')
@@ -2087,8 +2088,8 @@ class rv_continuous(rv_generic):
             loc = theta[-2]
             scale = theta[-1]
             args = tuple(theta[:-2])
-        except IndexError:
-            raise ValueError("Not enough input arguments.")
+        except IndexError as e:
+            raise ValueError("Not enough input arguments.") from e
         return loc, scale, args
 
     def nnlf(self, theta, x):
@@ -2322,8 +2323,8 @@ class rv_continuous(rv_generic):
                 optimizer = 'fmin'
             try:
                 optimizer = getattr(optimize, optimizer)
-            except AttributeError:
-                raise ValueError("%s is not a valid optimizer" % optimizer)
+            except AttributeError as e:
+                raise ValueError("%s is not a valid optimizer" % optimizer) from e
 
         # by now kwds must be empty, since everybody took what they needed
         if kwds:
