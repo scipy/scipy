@@ -181,7 +181,7 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     :math:`b_{ub}`, :math:`b_{eq}`, :math:`l`, and :math:`u` are vectors; and
     :math:`A_{ub}` and :math:`A_{eq}` are matrices.
 
-    Informally, that's:
+    Alternatively, that's:
 
     minimize::
 
