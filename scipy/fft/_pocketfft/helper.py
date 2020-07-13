@@ -144,7 +144,7 @@ def _fix_shape_1d(x, n, axis):
     return _fix_shape(x, (n,), (axis,))
 
 
-_NORM_MAP = { None: 0, 'backward': 0, 'ortho': 1, 'forward': 2}
+_NORM_MAP = {None: 0, 'backward': 0, 'ortho': 1, 'forward': 2}
 
 
 def _normalization(norm, forward):
