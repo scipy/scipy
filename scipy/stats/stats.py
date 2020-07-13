@@ -189,7 +189,6 @@ from ._hypotests import epps_singleton_2samp
 from ._pagel import pagel
 
 
-
 __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
            'tmin', 'tmax', 'tstd', 'tsem', 'moment', 'variation',
            'skew', 'kurtosis', 'describe', 'skewtest', 'kurtosistest',

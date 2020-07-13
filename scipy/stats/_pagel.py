@@ -232,7 +232,7 @@ def pagel(data, ranked=True, predicted_ranks=None, method='auto', n_s=2000,
 
     >>> from scipy.stats import pagel
     >>> arranged_ranks = ranks[:, ::-1]
-    >>> res = pagel(arranged_ranks)
+    >>> res = pagel(arranged_ranks, method="asymptotic")
     >>> res
     Page_L_Result(statistic=133.5, pvalue=0.0012693433690751756, method='asymptotic')
 
@@ -266,7 +266,8 @@ def pagel(data, ranked=True, predicted_ranks=None, method='auto', n_s=2000,
 
     >>> res = pagel(table,                      # data as originally tabulated
     ...             ranked=False,               # originally, data was not ranked
-    ...             predicted_ranks=[1, 2, 3]   # originally, data was in order of increasing rank
+    ...             predicted_ranks=[1, 2, 3],  # originally, data was in order of increasing rank
+    ...             method="asymptotic"
     ...             )
     >>> res
     Page_L_Result(statistic=133.5, pvalue=0.0012693433690751756, method='asymptotic')
