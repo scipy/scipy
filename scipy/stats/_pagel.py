@@ -213,16 +213,16 @@ def pagel(data, ranked=True, predicted_ranks=None, method='auto', n_s=2000,
     >>> from scipy.stats import rankdata
     >>> ranks = rankdata(table, axis=1)
     >>> ranks
-    [[1.5 3.  1.5]
-     [1.5 1.5 3. ]
-     [1.5 1.5 3. ]
-     [1.  3.  2. ]
-     [1.5 3.  1.5]
-     [1.  2.  3. ]
-     [1.  2.  3. ]
-     [1.  2.5 2.5]
-     [1.  2.  3. ]
-     [1.  2.  3. ]]
+    array([[1.5, 3. , 1.5],
+           [1.5, 1.5, 3. ],
+           [1.5, 1.5, 3. ],
+           [1. , 3. , 2. ],
+           [1.5, 3. , 1.5],
+           [1. , 2. , 3. ],
+           [1. , 2. , 3. ],
+           [1. , 2.5, 2.5],
+           [1. , 2. , 3. ],
+           [1. , 2. , 3. ]])
 
     Because the seminar is hypothesized to have the highest
     ratings and thus the highest ranks, the column corresponding with
@@ -270,34 +270,100 @@ def pagel(data, ranked=True, predicted_ranks=None, method='auto', n_s=2000,
     ...             )
     >>> res
     Page_L_Result(statistic=133.5, pvalue=0.0012693433690751756, method='asymptotic')
-
     """
 
-    data = np.array(data, copy=False)
-    m, n = data.shape
+    # Possible values of the method parameter and the corresponding function
+    # used to evaluate the p value
+    method = method.lower()
+    methods = {"asymptotic": _l_p_asymptotic,
+               "mc": lambda L, m, n: _l_p_mc(L, m, n, n_s),
+               "auto": None}
+    if method not in methods:
+        raise Exception(f"`method` must be in {set(methods)}")
 
-    if not ranked:
-        data = scipy.stats.rankdata(data, axis=1)
+    # ensure NumPy array and rank the data if it's not already ranked
+    if ranked:
+        # We're oging to trust the user on this. Checking that the data is
+        # actually ranked would take as much time as ranking it.
+        ranks = np.array(data, copy=False)
+    else:
+        ranks = scipy.stats.rankdata(data, axis=-1)
 
+    if ranks.ndim != 2:  # TODO: relax this to accept 3d arrays?
+        raise Exception(f"`data` must be a 2d array.")
+    m, n = ranks.shape
+    if m < 2 or n < 3:
+        raise Exception(f"Page's L is only appropriate for data with two "
+                        f"or more rows and three or more columns.")
+
+    # generate predicted ranks if not provided, ensure valid NumPy array
     if predicted_ranks is None:
         predicted_ranks = np.arange(n, 0, -1)
+    else:
+        predicted_ranks = np.array(predicted_ranks, copy=False)
+        if (set(predicted_ranks) != set(range(1, n+1)) or
+                len(predicted_ranks) != n):
+            raise Exception(f"`predicted_rank`s must include each integer "
+                            f"from 1 to {n} (the number of columns in data) "
+                            f"exactly once.")
+
+    if type(ranked) is not bool:
+        raise Exception(f"`ranked` must be boolean.")
+
+    if int(n_s) != n_s:
+        raise Exception(f"`n_s` must be an integer.")
 
     # Calculate the L statistic
-    colsums = np.sum(data, axis=0)
+    L = _l_vectorized(ranks, predicted_ranks)
+
+    # Calculate the p-value
+    if method == "auto":
+        method = _choose_method(ranks)
+    p_fun = methods[method]  # get the function corresponding with the method
+    p = p_fun(L, m, n)
+
+    return Page_L_Result(L, p, method)
+
+
+def _choose_method(ranks):
+    '''Choose method for computing p-value automatically'''
+    m, n = ranks.shape
+    if n > 8 or (m > 12 and n > 3) or m > 20:  # as in [1], [4]
+        method = "asymptotic"
+    else:
+        method = "mc"
+    return method
+
+
+def _l_vectorized(ranks, predicted_ranks):
+    '''Calculate's Page's L statistic for each page of a 3d array'''
+    colsums = ranks.sum(axis=-2, keepdims=True)
     products = predicted_ranks * colsums
-    L = products.sum()
+    Ls = products.sum(axis=-1)
+    Ls = Ls[0] if Ls.size == 1 else Ls.ravel()
+    return Ls
 
-    method = "asymptotic"
 
+def _l_p_asymptotic(L, m, n):
+    '''Calculate the p-value of Page's L from the asymptotic distribution'''
     # Using [1] as a reference, the asymptotic p-value would be calculated as:
     # chi_L = (12*L - 3*m*n*(n+1)**2)**2/(m*n**2*(n**2-1)*(n+1))
     # p = chi2.sf(chi_L, df=1, loc=0, scale=1)/2
     # but this is insentive to the direction of the hypothesized ranking
 
-    # Use [2] page 151
+    # See [2] page 151
     E0 = (m*n*(n+1)**2)/4
     V0 = (m*n**2*(n+1)*(n**2-1))/144
     Lambda = (L-E0)/np.sqrt(V0)
     p = norm.sf(Lambda)
+    return p
 
-    return Page_L_Result(L, p, method)
+
+def _l_p_mc(L, m, n, n_s):
+    '''Calculate the p-value of Page's L from a Monte Carlo distribution'''
+    mc_data = np.random.rand(n_s, m, n)
+    mc_ranks = scipy.stats.rankdata(mc_data, axis=-1)
+    predicted_ranks = np.arange(n, 0, -1)
+    Ls = _l_vectorized(mc_ranks, predicted_ranks)
+    p = 1 - scipy.stats.percentileofscore(Ls, L)/100
+    return p
