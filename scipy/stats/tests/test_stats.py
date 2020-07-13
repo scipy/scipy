@@ -5668,3 +5668,31 @@ class TestMGCStat(object):
                                                                random_state=1)
         assert_approx_equal(stat_dist, 0.163, significant=1)
         assert_approx_equal(pvalue_dist, 0.001, significant=1)
+
+
+class TestPageL(object):
+    def test_input_validation(self):
+        # test data not a 2d array
+        assert_raises(Exception, stats.pagel, None, match="`data` must be a 2d array.")
+        assert_raises(Exception, stats.pagel, [1, 2], match="`data` must be a 2d array.")
+        assert_raises(Exception, stats.pagel, [[[1]]], match="`data` must be a 2d array.")
+
+        # test invalid dimentions
+        assert_raises(Exception, stats.pagel, np.random.rand(1, 3), match="Page's L is only appropriate")
+        assert_raises(Exception, stats.pagel, np.random.rand(2, 2), match="Page's L is only appropriate")
+
+        # predicted ranks must include each integer [1, 2, 3] exactly once
+        assert_raises(Exception, stats.pagel, data = np.random.rand(2, 3),
+                      predicted_ranks = [0, 1, 2], match="`predicted_ranks` must include each integer")
+        assert_raises(Exception, stats.pagel, data = np.random.rand(2, 3),
+                      predicted_ranks = [1.1, 2, 3], match="`predicted_ranks` must include each integer")
+        assert_raises(Exception, stats.pagel, data = np.random.rand(2, 3),
+                      predicted_ranks = [1, 2, 3, 3], match="`predicted_ranks` must include each integer")
+        assert_raises(Exception, stats.pagel, data = np.random.rand(2, 3),
+              predicted_ranks = "invalid", match="`predicted_ranks` must include each integer")
+
+        # various
+        assert_raises(Exception, stats.pagel, [[1, 2, 3], [1, 2, np.nan]], ranked=False, match="`data` contains NaNs")
+        assert_raises(Exception, stats.pagel, np.random.rand(2, 3), method="ekki", match="`method` must be in")
+        assert_raises(Exception, stats.pagel, np.random.rand(2, 3), ranked="ekki", match="`ranked` must be boolean.")
+        assert_raises(Exception, stats.pagel, np.random.rand(2, 3), n_s="ekki", match="`n_s` must be an integer.")

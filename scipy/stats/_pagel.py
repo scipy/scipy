@@ -284,18 +284,20 @@ def pagel(data, ranked=True, predicted_ranks=None, method='auto', n_s=2000,
 
     # ensure NumPy array and rank the data if it's not already ranked
     if ranked:
-        # We're oging to trust the user on this. Checking that the data is
-        # actually ranked would take as much time as ranking it.
+        # We're going to trust the user on this. Checking that the data is
+        # properly ranked could take as much time as ranking it.
         ranks = np.array(data, copy=False)
     else:
+        if np.any(np.isnan(data)):
+            raise Exception("`data` contains NaNs, which cannot be ranked meaningfully")
         ranks = scipy.stats.rankdata(data, axis=-1)
 
     if ranks.ndim != 2:  # TODO: relax this to accept 3d arrays?
         raise Exception(f"`data` must be a 2d array.")
     m, n = ranks.shape
     if m < 2 or n < 3:
-        raise Exception(f"Page's L is only appropriate for data with two "
-                        f"or more rows and three or more columns.")
+        raise Exception("Page's L is only appropriate for data with two "
+                        "or more rows and three or more columns.")
 
     # generate predicted ranks if not provided, ensure valid NumPy array
     if predicted_ranks is None:
@@ -304,15 +306,15 @@ def pagel(data, ranked=True, predicted_ranks=None, method='auto', n_s=2000,
         predicted_ranks = np.array(predicted_ranks, copy=False)
         if (set(predicted_ranks) != set(range(1, n+1)) or
                 len(predicted_ranks) != n):
-            raise Exception(f"`predicted_rank`s must include each integer "
+            raise Exception(f"`predicted_ranks` must include each integer "
                             f"from 1 to {n} (the number of columns in data) "
                             f"exactly once.")
 
     if type(ranked) is not bool:
-        raise Exception(f"`ranked` must be boolean.")
+        raise Exception("`ranked` must be boolean.")
 
     if int(n_s) != n_s:
-        raise Exception(f"`n_s` must be an integer.")
+        raise Exception("`n_s` must be an integer.")
 
     # Calculate the L statistic
     L = _l_vectorized(ranks, predicted_ranks)
