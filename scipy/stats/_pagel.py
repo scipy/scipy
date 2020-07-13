@@ -32,6 +32,18 @@ def pagel(data, ranked=True, predicted_ranks=None, method='auto', n_s=2000,
 
         m_1 > m_2 > m_3 > \cdots > m_n.
 
+    As noted by [4]_, Page's :math:`L` test has greater statistical power than
+    the Friedman test against the alternative that there is a difference in
+    trend, as Friedman's test only considers a difference in the means of the
+    observations without considering their order. Whereas Spearman :math:`\rho`
+    considers the correlation between the ranked observations of two variables
+    (e.g. the airspeed velocity of a swallow vs. the weight of the coconut it
+    carries), Page's :math:`L` is concerned with a trend in an observation
+    (e.g. the airspeed velocity of a swallow) across several distinct
+    treatments (e.g. carrying each of five coconuts of different weight) even
+    as the observation is repeated with multiple subjects (e.g. one European
+    swallow and one African swallow).
+
     Parameters
     ----------
     data : array-like
@@ -88,7 +100,7 @@ def pagel(data, ranked=True, predicted_ranks=None, method='auto', n_s=2000,
 
     See Also
     --------
-    rankdata, friedmanchisquare
+    rankdata, friedmanchisquare, spearmanr
 
     Notes
     -----
@@ -169,6 +181,10 @@ def pagel(data, ranked=True, predicted_ranks=None, method='auto', n_s=2000,
        Statistics Study*, https://www.statext.com/practice/PageTrendTest03.php,
        Accessed July 12, 2020.
 
+    .. [4] "Page's Trend Test", *Wikipedia*, Wikimedia Foundation,
+       https://en.wikipedia.org/wiki/Page%27s_trend_test,
+       Accessed July 12, 2020.
+
     Examples
     --------
     We use the example from [3]_: 10 students are asked to rate three
@@ -181,22 +197,22 @@ def pagel(data, ranked=True, predicted_ranks=None, method='auto', n_s=2000,
     in the following order: tutorial, lecture, seminar.
 
     >>> table = [[3, 4, 3],
-                 [2, 2, 4],
-                 [3, 3, 5],
-                 [1, 3, 2],
-                 [2, 3, 2],
-                 [2, 4, 5],
-                 [1, 2, 4],
-                 [3, 4, 4],
-                 [2, 4, 5],
-                 [1, 3, 4]]
+    ...          [2, 2, 4],
+    ...          [3, 3, 5],
+    ...          [1, 3, 2],
+    ...          [2, 3, 2],
+    ...          [2, 4, 5],
+    ...          [1, 2, 4],
+    ...          [3, 4, 4],
+    ...          [2, 4, 5],
+    ...          [1, 3, 4]]
 
     We rank the data such that high scores correspond with high ranks, settling
     ties with an average rank:
 
     >>> from scipy.stats import rankdata
     >>> ranks = rankdata(table, axis=1)
-    >>> print(ranks)
+    >>> ranks
     [[1.5 3.  1.5]
      [1.5 1.5 3. ]
      [1.5 1.5 3. ]
@@ -217,7 +233,7 @@ def pagel(data, ranked=True, predicted_ranks=None, method='auto', n_s=2000,
     >>> from scipy.stats import pagel
     >>> arranged_ranks = ranks[:, ::-1]
     >>> res = pagel(arranged_ranks)
-    >>> print(res)
+    >>> res
     Page_L_Result(statistic=133.5, pvalue=0.0012693433690751756, method='asymptotic')
 
     The value of the :math:`L` statistic, 133.5, is as expected:
@@ -226,7 +242,7 @@ def pagel(data, ranked=True, predicted_ranks=None, method='auto', n_s=2000,
     >>> m, n = arranged_ranks.shape
     >>> predicted_ranks = np.arange(n, 0, -1)
     >>> L = (predicted_ranks * np.sum(arranged_ranks, axis=0)).sum()
-    >>> print(res.statistic == L)
+    >>> res.statistic == L
     True
 
     The *p*-value is the survival function of the normal distribution evaluated
@@ -237,7 +253,7 @@ def pagel(data, ranked=True, predicted_ranks=None, method='auto', n_s=2000,
     >>> V0 = (m*n**2*(n+1)*(n**2-1))/144
     >>> Lambda = (L-E0)/np.sqrt(V0)
     >>> p = norm.sf(Lambda)
-    >>> print(res.pvalue == p)
+    >>> res.pvalue == p
     True
 
     This value indicates that there is a 0.1269% chance that
@@ -249,10 +265,10 @@ def pagel(data, ranked=True, predicted_ranks=None, method='auto', n_s=2000,
     also provide ``ranked`` and ``predicted_ranks`` arguments:
 
     >>> res = pagel(table,                      # data as originally tabulated
-                    ranked=False,               # originally, data was not ranked
-                    predicted_ranks=[1, 2, 3]   # originally, data was in order of increasing rank
-                    )
-    >>> print(res)
+    ...             ranked=False,               # originally, data was not ranked
+    ...             predicted_ranks=[1, 2, 3]   # originally, data was in order of increasing rank
+    ...             )
+    >>> res
     Page_L_Result(statistic=133.5, pvalue=0.0012693433690751756, method='asymptotic')
 
     """
