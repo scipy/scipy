@@ -200,7 +200,7 @@ def ifft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
         Axis over which to compute the inverse DFT. If not given, the last
         axis is used.
     norm : {"backward", "ortho", "forward"}, optional
-       Normalization mode (see `fft`). Default is "backward".
+        Normalization mode (see `fft`). Default is "backward".
     overwrite_x : bool, optional
         If True, the contents of `x` can be destroyed; the default is False.
         See :func:`fft` for more details.
