@@ -345,7 +345,7 @@ def min_weight_full_bipartite_matching(graph, maximize=False):
     .. [1] Richard Manning Karp:
        An algorithm to Solve the m x n Assignment Problem in Expected Time
        O(mn log n).
-       Networks, 10(2):143–152, 1980.
+       Networks, 10(2):143-152, 1980.
     .. [2] Roy Jonker and Anton Volgenant:
        A Shortest Augmenting Path Algorithm for Dense and Sparse Linear
        Assignment Problems.
