@@ -8,7 +8,7 @@ Page_L_Result = namedtuple('Page_L_Result',
                            ('statistic', 'pvalue', 'method'))
 
 
-def pagel(data, ranked=True, predicted_ranks=None, method='auto', n_s=2000,
+def pagel(data, ranked=True, predicted_ranks=None, method='auto', n_s=3000,
           ties=None):
     r"""
     Compute Page's L, a measure of trend in observations between treatments.
