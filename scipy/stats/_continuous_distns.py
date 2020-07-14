@@ -6139,9 +6139,9 @@ class pareto_gen(rv_continuous):
         fscale = kwds.pop('fscale', None)
 
         _check_fit_input_parameters(data, args,
-                                    kwds, fixed_param=(floc, fscale))
+                                    kwds, fixed_param=(shape, floc, fscale))
 
-        if floc is None or np.any(data - floc < 0):
+        if floc is None or fscale is not None or np.any(data - floc < 0):
             if floc is not None:
                 kwds['floc'] = floc
             if fscale is not None:
@@ -6150,10 +6150,8 @@ class pareto_gen(rv_continuous):
                 kwds['f0'] = shape
             return super(pareto_gen, self).fit(data, *args, **kwds)
 
-        data = data - floc
-
-        if fscale is None:
-            fscale = np.min(data)
+        data = data - floc        
+        fscale = np.min(data)
         if shape is None:
             shape = 1/((1/len(data)) * np.sum(np.log(data/fscale)))
         return(shape, floc, fscale)
