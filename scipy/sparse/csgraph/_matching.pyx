@@ -501,16 +501,16 @@ cdef ITYPE_t[:] _lapjvsp(ITYPE_t[:] first,
     Parameters
     ----------
     first : memoryview of length :math:`|U| + 1`
-        Corresponds to the `indptr` attribute of the graph in CSR format.
+        Corresponds to the ``indptr`` attribute of the graph in CSR format.
     kk : memoryview
-        Corresponds to the `indices` attribute of the graph in CSR format.
-    kk : memoryview
-        Corresponds to the `data` attribute of the graph in CSR format.
+        Corresponds to the ``indices`` attribute of the graph in CSR format.
+    cc : memoryview
+        Corresponds to the ``data`` attribute of the graph in CSR format.
     nr : int
         The number of rows of the graph in CSR format.
     nc : int
         The number of columns of the graph in CSR format. Must be at least as
-        large as `nr`.
+        large as ``nr``.
 
     Returns
     -------
