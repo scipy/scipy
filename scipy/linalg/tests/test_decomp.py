@@ -783,6 +783,9 @@ class TestEigh:
         assert_raises(ValueError, eigh, np.ones([2, 2]), np.ones([2, 1]))
         # Incompatible a, b sizes
         assert_raises(ValueError, eigh, np.ones([3, 3]), np.ones([2, 2]))
+        # Wrong type parameter for generalized problem
+        assert_raises(ValueError, eigh, np.ones([3, 3]), np.ones([3, 3]),
+                      type=4)
         # Both value and index subsets requested
         assert_raises(ValueError, eigh, np.ones([3, 3]), np.ones([3, 3]),
                       subset_by_value=[1, 2], eigvals=[2, 4])
@@ -846,13 +849,19 @@ class TestEigh:
         w, v = eigh(a, driver=driver)
         assert_allclose(a @ v - (v * w), 0., atol=1000*np.spacing(1.), rtol=0.)
 
+    @pytest.mark.parametrize('type', (1, 2, 3))
     @pytest.mark.parametrize('driver', ("gv", "gvd", "gvx"))
-    def test_various_drivers_generalized(self, driver):
+    def test_various_drivers_generalized(self, driver, type):
+        atol = 1000*np.spacing(1.)
         a = _random_hermitian_matrix(20)
         b = _random_hermitian_matrix(20, posdef=True)
-        w, v = eigh(a=a, b=b, driver=driver)
-        assert_allclose(a @ v - w*(b @ v), 0.,
-                        atol=1000*np.spacing(1.), rtol=0.)
+        w, v = eigh(a=a, b=b, driver=driver, type=type)
+        if type == 1:
+            assert_allclose(a @ v - w*(b @ v), 0., atol=atol, rtol=0.)
+        elif type == 2:
+            assert_allclose(a @ b @ v - v * w, 0., atol=atol, rtol=0.)
+        else:
+            assert_allclose(b @ a @ v - v * w, 0., atol=atol, rtol=0.)
 
     # Old eigh tests kept for backwards compatibility
     @pytest.mark.parametrize('eigvals', (None, (2, 4)))
