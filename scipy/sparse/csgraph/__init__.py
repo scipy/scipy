@@ -27,8 +27,7 @@ Contents
    reverse_cuthill_mckee -- compute permutation for reverse Cuthill-McKee ordering
    maximum_flow -- solve the maximum flow problem for a graph
    maximum_bipartite_matching -- compute a maximum matching of a bipartite graph
-   minimum_weight_full_bipartite_matching - compute a minimum weight full
-       matching of a bipartite graph
+   minimum_weight_full_bipartite_matching - compute a minimum weight full matching of a bipartite graph
    structural_rank -- compute the structural rank of a graph
    NegativeCycleError
 
