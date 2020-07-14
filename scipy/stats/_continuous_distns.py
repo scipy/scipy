@@ -4220,10 +4220,6 @@ laplace = laplace_gen(name='laplace')
 
 
 def _check_fit_input_parameters(data, args, kwds, fixed_param):
-    if len(args) > 0:
-        raise TypeError("Too many arguments.")
-
-    _remove_optimizer_parameters(kwds)
 
     if None not in fixed_param:
         # This check is for consistency with `rv_continuous.fit`.
@@ -6142,24 +6138,24 @@ class pareto_gen(rv_continuous):
         shape = kwds.pop('f0', None)
         fscale = kwds.pop('fscale', None)
 
-        if None not in [shape, floc, fscale]:
-            # This check is for consistency with `rv_continuous.fit`.
-            # Without this check, this function would just return the
-            # parameters that were given.
-            raise RuntimeError("All parameters fixed. There is nothing to "
-                               "optimize.")
+        _check_fit_input_parameters(data, args,
+                                    kwds, fixed_param=(floc, fscale))
 
         if floc is None or np.any(data - floc < 0):
             if floc is not None:
                 kwds['floc'] = floc
+            if fscale is not None:
+                kwds['fscale'] = fscale
+            if shape is not None:
+                kwds['f0'] = shape
             return super(pareto_gen, self).fit(data, *args, **kwds)
+
         data = data - floc
+
         if fscale is None:
             fscale = np.min(data)
         if shape is None:
             shape = 1/((1/len(data)) * np.sum(np.log(data/fscale)))
-        
-        
         return(shape, floc, fscale)
 
 
