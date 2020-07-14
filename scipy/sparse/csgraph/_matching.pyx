@@ -287,11 +287,13 @@ def min_weight_full_bipartite_matching(graph, maximize=False):
     Parameters
     ----------
     graph : sparse matrix
-        Input sparse in CSR, CSC, or COO format whose rows represent one
-        partition of the graph and whose columns represent the other partition.
-        An edge between two vertices is indicated by the corresponding entry
-        in the matrix, and the weight of the edge is given by the value of that
-        entry.
+        Biadjacency matrix of the bipartite graph: A sparse matrix in CSR, CSC,
+        or COO format whose rows represent one partition of the graph and whose
+        columns represent the other partition. An edge between two vertices is
+        indicated by the corresponding entry in the matrix, and the weight of
+        the edge is given by the value of that entry. This should not be
+        confused with the full adjacency matrix of the graph, as we only need
+        the submatrix defining the bipartite structure.
 
     maximize : bool (default: False)
         Calculates a maximum weight matching if true.
@@ -366,8 +368,8 @@ def min_weight_full_bipartite_matching(graph, maximize=False):
 
     That is, the first, second, and third rows are matched with the third,
     first, and second column respectively. Note that in this example, the 0
-    does *not* correspond to an edge with weight 0, but rather a pair of
-    vertices not paired by an edge.
+    in the input matrix does *not* correspond to an edge with weight 0, but
+    rather a pair of vertices not paired by an edge.
 
     Note also that in this case, the output matches the result of applying
     :func:`maximum_bipartite_matching`:
