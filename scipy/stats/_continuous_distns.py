@@ -3623,11 +3623,20 @@ class invgauss_gen(rv_continuous):
 
         floc = kwds.pop('floc', None)
         fscale = kwds.pop('fscale', None)
+        # borrowed from distn_infrastructure
+        # puts shape into kwds['f0']
+        if self.shapes:
+            shapes = self.shapes.replace(',', ' ').split()
+            for j, s in enumerate(shapes):
+                key = 'f' + str(j)
+                names = [key, 'f' + s, 'fix_' + s]
+                val = _get_fixed_fit_value(kwds, names)
+                if val is not None:
+                    kwds[key] = val
         f0_s = kwds.pop('f0', None)
 
         data = np.asarray(data)
-        if not np.isfinite(data).all():
-            raise RuntimeError("The data contains non-finite values.")
+        _check_fit_input_parameters(data, args, kwds, (floc, fscale, f0_s))
         '''
         MLE is not used in 3 condtions:
         - `floc` is not set
@@ -4256,11 +4265,6 @@ laplace = laplace_gen(name='laplace')
 
 
 def _check_fit_input_parameters(data, args, kwds, fixed_param):
-    if len(args) > 0:
-        raise TypeError("Too many arguments.")
-
-    _remove_optimizer_parameters(kwds)
-
     if None not in fixed_param:
         # This check is for consistency with `rv_continuous.fit`.
         # Without this check, this function would just return the
