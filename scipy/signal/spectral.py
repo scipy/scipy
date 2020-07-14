@@ -1701,8 +1701,8 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
         youter.pop(axis)
         try:
             outershape = np.broadcast(np.empty(xouter), np.empty(youter)).shape
-        except ValueError:
-            raise ValueError('x and y cannot be broadcast together.')
+        except ValueError as e:
+            raise ValueError('x and y cannot be broadcast together.') from e
 
     if same_data:
         if x.size == 0:

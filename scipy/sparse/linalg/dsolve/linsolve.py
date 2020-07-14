@@ -72,11 +72,11 @@ def _get_umf_family(A):
     try:
         family = _families[(f_type, i_type)]
 
-    except KeyError:
+    except KeyError as e:
         msg = 'only float64 or complex128 matrices with int32 or int64' \
             ' indices are supported! (got: matrix: %s, indices: %s)' \
             % (f_type, i_type)
-        raise ValueError(msg)
+        raise ValueError(msg) from e
 
     # See gh-8278. Considered converting only if
     # A.shape[0]*A.shape[1] > np.iinfo(np.int32).max,

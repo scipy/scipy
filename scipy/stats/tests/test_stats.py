@@ -27,6 +27,7 @@ from scipy.stats._ksstats import kolmogn
 from scipy.special._testutils import FuncData
 from .common_tests import check_named_results
 from scipy.sparse.sputils import matrix
+from scipy.spatial.distance import cdist
 
 """ Numbers in docstrings beginning with 'W' refer to the section numbers
     and headings found in the STATISTICS QUIZ of Leland Wilkinson.  These are
@@ -5513,7 +5514,7 @@ class TestMGCErrorWarnings(object):
         assert_raises(ValueError, stats.multiscale_graphcorr, x, y)
 
     def test_error_wrongdisttype(self):
-        # raises error if compute_distance is not a function
+        # raises error if metric is not a function
         x = np.arange(20)
         compute_distance = 0
         assert_raises(ValueError, stats.multiscale_graphcorr, x, x,
@@ -5632,6 +5633,7 @@ class TestMGCStat(object):
         assert_approx_equal(stat, 1.0, significant=1)
         assert_approx_equal(pvalue, 0.001, significant=1)
 
+    @pytest.mark.slow
     def test_workers(self):
         np.random.seed(12345678)
 
@@ -5652,3 +5654,17 @@ class TestMGCStat(object):
         stat, pvalue, _ = stats.multiscale_graphcorr(x, y, random_state=1)
         assert_approx_equal(stat, 0.97, significant=1)
         assert_approx_equal(pvalue, 0.001, significant=1)
+
+    @pytest.mark.slow
+    def test_dist_perm(self):
+        np.random.seed(12345678)
+        # generate x and y
+        x, y = self._simulations(samps=100, dims=1, sim_type="nonlinear")
+        distx = cdist(x, x, metric="euclidean")
+        disty = cdist(y, y, metric="euclidean")
+
+        stat_dist, pvalue_dist, _ = stats.multiscale_graphcorr(distx, disty,
+                                                               compute_distance=None,
+                                                               random_state=1)
+        assert_approx_equal(stat_dist, 0.163, significant=1)
+        assert_approx_equal(pvalue_dist, 0.001, significant=1)

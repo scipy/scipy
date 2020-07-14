@@ -841,9 +841,9 @@ def remez(numtaps, bands, desired, weight=None, Hz=None, type='bandpass',
     # Convert type
     try:
         tnum = {'bandpass': 1, 'differentiator': 2, 'hilbert': 3}[type]
-    except KeyError:
+    except KeyError as e:
         raise ValueError("Type must be 'bandpass', 'differentiator', "
-                         "or 'hilbert'")
+                         "or 'hilbert'") from e
 
     # Convert weight
     if weight is None:

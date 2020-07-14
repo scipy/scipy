@@ -216,8 +216,8 @@ def _binary_erosion(input, structure, iterations, mask, output,
                     border_value, origin, invert, brute_force):
     try:
         iterations = operator.index(iterations)
-    except TypeError:
-        raise TypeError('iterations parameter should be an integer')
+    except TypeError as e:
+        raise TypeError('iterations parameter should be an integer') from e
 
     input = numpy.asarray(input)
     if numpy.iscomplexobj(input):
@@ -2004,8 +2004,8 @@ def distance_transform_cdt(input, metric='chessboard', return_distances=True,
     else:
         try:
             metric = numpy.asarray(metric)
-        except Exception:
-            raise RuntimeError('invalid metric provided')
+        except Exception as e:
+            raise RuntimeError('invalid metric provided') from e
         for s in metric.shape:
             if s != 3:
                 raise RuntimeError('metric sizes must be equal to 3')
