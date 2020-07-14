@@ -4,7 +4,7 @@ import pytest
 
 from scipy.sparse import csr_matrix, coo_matrix, diags
 from scipy.sparse.csgraph import maximum_bipartite_matching,\
-    minimum_weight_full_bipartite_matching
+    min_weight_full_bipartite_matching
 
 
 def test_maximum_bipartite_matching_raises_on_dense_input():
@@ -148,21 +148,21 @@ def test_matching_large_random_graph_with_one_edge_incident_to_each_vertex():
 
 def test_minimum_weight_matching_empty_graph():
     graph = csr_matrix((0, 0))
-    row_ind, col_ind = minimum_weight_full_bipartite_matching(graph)
+    row_ind, col_ind = min_weight_full_bipartite_matching(graph)
     assert len(row_ind) == 0
     assert len(col_ind) == 0
 
 
 def test_minimum_weight_matching_empty_left_partition():
     graph = csr_matrix((2, 0))
-    row_ind, col_ind = minimum_weight_full_bipartite_matching(graph)
+    row_ind, col_ind = min_weight_full_bipartite_matching(graph)
     assert len(row_ind) == 0
     assert len(col_ind) == 0
 
 
 def test_minimum_weight_matching_empty_right_partition():
     graph = csr_matrix((0, 3))
-    row_ind, col_ind = minimum_weight_full_bipartite_matching(graph)
+    row_ind, col_ind = min_weight_full_bipartite_matching(graph)
     assert len(row_ind) == 0
     assert len(col_ind) == 0
 
@@ -170,25 +170,25 @@ def test_minimum_weight_matching_empty_right_partition():
 def test_minimum_weight_matching_infeasible_square():
     graph = csr_matrix([[1, 1, 1], [1, 0, 0], [1, 0, 0]])
     with pytest.raises(ValueError):
-        minimum_weight_full_bipartite_matching(graph)
+        min_weight_full_bipartite_matching(graph)
 
 
 def test_minimum_weight_matching_infeasible_other_square():
     graph = csr_matrix([[1, 1, 1], [0, 0, 1], [0, 0, 1]])
     with pytest.raises(ValueError):
-        minimum_weight_full_bipartite_matching(graph)
+        min_weight_full_bipartite_matching(graph)
 
 
 def test_minimum_weight_matching_infeasible_rectangular():
     graph = csr_matrix([[1, 0, 0], [2, 0, 0]])
     with pytest.raises(ValueError):
-        minimum_weight_full_bipartite_matching(graph)
+        min_weight_full_bipartite_matching(graph)
 
 
 def test_minimum_weight_matching_infeasible_other_rectangular():
     graph = csr_matrix([[1, 0], [2, 0], [5, 0]])
     with pytest.raises(ValueError):
-        minimum_weight_full_bipartite_matching(graph)
+        min_weight_full_bipartite_matching(graph)
 
 
 def test_minimum_weight_matching_for_various_inputs():
@@ -226,7 +226,7 @@ def test_minimum_weight_matching_for_various_inputs():
             expected_cost = sign * np.array(expected_cost)
 
             row_ind, col_ind =\
-                minimum_weight_full_bipartite_matching(graph,
+                min_weight_full_bipartite_matching(graph,
                                                        maximize=maximize)
             assert_array_equal(row_ind, np.sort(row_ind))
             assert_array_equal(expected_cost,
@@ -234,7 +234,7 @@ def test_minimum_weight_matching_for_various_inputs():
 
             graph = graph.T
             row_ind, col_ind =\
-                minimum_weight_full_bipartite_matching(graph,
+                min_weight_full_bipartite_matching(graph,
                                                        maximize=maximize)
             assert_array_equal(row_ind, np.sort(row_ind))
             assert_array_equal(np.sort(expected_cost),

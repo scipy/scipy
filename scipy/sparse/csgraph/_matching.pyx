@@ -276,9 +276,9 @@ cdef tuple _hopcroft_karp(ITYPE_t[:] indices, ITYPE_t[:] indptr,
     return x, y
 
 
-def minimum_weight_full_bipartite_matching(graph, maximize=False):
+def min_weight_full_bipartite_matching(graph, maximize=False):
     r"""
-    minimum_weight_full_bipartite_matching(graph, maximize=False)
+    min_weight_full_bipartite_matching(graph, maximize=False)
 
     Returns the minimum weight full matching of a bipartite graph.
 
@@ -353,7 +353,7 @@ def minimum_weight_full_bipartite_matching(graph, maximize=False):
     Examples
     --------
     >>> from scipy.sparse import csr_matrix
-    >>> from scipy.sparse.csgraph import minimum_weight_full_bipartite_matching
+    >>> from scipy.sparse.csgraph import min_weight_full_bipartite_matching
 
     Let us first consider an example in which all weights are equal:
 
@@ -361,7 +361,7 @@ def minimum_weight_full_bipartite_matching(graph, maximize=False):
 
     Here, all we get is a perfect matching of the graph:
 
-    >>> print(minimum_weight_full_bipartite_matching(graph)[1])
+    >>> print(min_weight_full_bipartite_matching(graph)[1])
     [2 0 1]
 
     That is, the first, second, and third rows are matched with the third,
@@ -381,7 +381,7 @@ def minimum_weight_full_bipartite_matching(graph, maximize=False):
     preferred:
 
     >>> graph = csr_matrix([[3, 3, 6], [4, 3, 5], [10, 1, 8]])
-    >>> row_ind, col_ind = minimum_weight_full_bipartite_matching(graph)
+    >>> row_ind, col_ind = min_weight_full_bipartite_matching(graph)
     >>> print(col_ind)
     [0 2 1]
 
@@ -395,11 +395,11 @@ def minimum_weight_full_bipartite_matching(graph, maximize=False):
     partitions:
 
     >>> graph = csr_matrix([[0, 1, 1], [0, 2, 3]])
-    >>> row_ind, col_ind = minimum_weight_full_bipartite_matching(graph)
+    >>> row_ind, col_ind = min_weight_full_bipartite_matching(graph)
     >>> print(row_ind, col_ind)
     [0 1] [2 1]
     >>> graph = csr_matrix([[0, 1], [3, 1], [1, 4]])
-    >>> row_ind, col_ind = minimum_weight_full_bipartite_matching(graph)
+    >>> row_ind, col_ind = min_weight_full_bipartite_matching(graph)
     >>> print(row_ind, col_ind)
     [0 2] [1 0]
 
@@ -407,7 +407,7 @@ def minimum_weight_full_bipartite_matching(graph, maximize=False):
     well:
 
     >>> graph = csr_matrix((2, 0))
-    >>> row_ind, col_ind = minimum_weight_full_bipartite_matching(graph)
+    >>> row_ind, col_ind = min_weight_full_bipartite_matching(graph)
     >>> print(row_ind, col_ind)
     [] []
 
@@ -428,7 +428,7 @@ def minimum_weight_full_bipartite_matching(graph, maximize=False):
     >>> row_ind, col_ind = linear_sum_assignment(dense)
     >>> print(dense[row_ind, col_ind].sum())
     18.0
-    >>> row_ind, col_ind = minimum_weight_full_bipartite_matching(sparse)
+    >>> row_ind, col_ind = min_weight_full_bipartite_matching(sparse)
     >>> print(sparse[row_ind, col_ind].sum())
     18.0
 

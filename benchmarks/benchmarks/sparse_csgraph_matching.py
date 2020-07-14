@@ -3,7 +3,7 @@ import scipy.sparse
 
 try:
     from scipy.sparse.csgraph import maximum_bipartite_matching,\
-        minimum_weight_full_bipartite_matching
+        min_weight_full_bipartite_matching
     from scipy.spatial.distance import cdist
 except ImportError:
     pass
@@ -29,7 +29,7 @@ class MaximumBipartiteMatching(Benchmark):
         maximum_bipartite_matching(self.graph)
 
 
-# For benchmarking minimum_weight_full_bipartite_matching, we rely on some of
+# For benchmarking min_weight_full_bipartite_matching, we rely on some of
 # the classes defined in Burkard, Dell'Amico, Martello -- Assignment Problems,
 # 2009, Section 4.10.1.
 def random_uniform(shape):
@@ -61,7 +61,7 @@ def machol_wien(shape):
         np.outer(np.arange(shape[0]//5) + 1, np.arange(shape[1]//5) + 1))
 
 
-class MinimumWeightFullBipartiteMatching(Benchmark):
+class MinWeightFullBipartiteMatching(Benchmark):
 
     sizes = range(100, 401, 100)
     param_names = ['shapes', 'input_type']
@@ -83,4 +83,4 @@ class MinimumWeightFullBipartiteMatching(Benchmark):
         self.graph = input_func(shape)
 
     def time_evaluation(self, *args):
-        minimum_weight_full_bipartite_matching(self.graph)
+        min_weight_full_bipartite_matching(self.graph)
