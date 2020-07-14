@@ -461,7 +461,7 @@ def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
                              "be {}".format(b1.shape, a1.shape))
 
         if type not in [1, 2, 3]:
-            raise ValueError('"type" can only accepts values 1, 2, and 3.')
+            raise ValueError('"type" keyword only accepts 1, 2, and 3.')
 
         cplx = True if iscomplexobj(b1) else (cplx or False)
         drv_args.update({'overwrite_b': overwrite_b, 'itype': type})

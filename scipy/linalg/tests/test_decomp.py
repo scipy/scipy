@@ -852,7 +852,7 @@ class TestEigh:
     @pytest.mark.parametrize('type', (1, 2, 3))
     @pytest.mark.parametrize('driver', ("gv", "gvd", "gvx"))
     def test_various_drivers_generalized(self, driver, type):
-        atol = 1000*np.spacing(1.)
+        atol = np.spacing(5000.)
         a = _random_hermitian_matrix(20)
         b = _random_hermitian_matrix(20, posdef=True)
         w, v = eigh(a=a, b=b, driver=driver, type=type)
