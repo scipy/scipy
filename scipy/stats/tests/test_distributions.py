@@ -913,6 +913,92 @@ class TestPareto(object):
         expected = (scale/x)**b   # 2.25e-18
         assert_allclose(p, expected)
 
+    @pytest.mark.filterwarnings("ignore:invalid value encountered in "
+                                "double_scalars")
+    @pytest.mark.parametrize("rvs_shape", [1, 2])
+    @pytest.mark.parametrize("rvs_loc", [0, 2])
+    @pytest.mark.parametrize("rvs_scale", [1, 5])
+    def test_fit(self, rvs_shape, rvs_loc, rvs_scale):
+        data = stats.pareto.rvs(size=100, b=rvs_shape, scale=rvs_scale,
+                                loc=rvs_loc)
+        # non fixed `floc` does not use MLE.
+        all_free = stats.pareto.fit(data)
+        all_free_opt = super(type(stats.pareto), stats.pareto).fit(data)
+        assert_equal(all_free, all_free_opt)
+
+        # fixed `floc` uses MLE
+        shape_mle, loc_mle, scale_mle = stats.pareto.fit(data, floc=0)
+        assert_equal(scale_mle, data.min())
+        assert_equal(shape_mle, 1/((1/len(data)) *
+                                   np.sum(np.log(data/data.min()))))
+        assert_equal(loc_mle, 0)
+
+        # fixed `fscale` does not use MLE.
+        all_free = stats.pareto.fit(data, floc=1, fscale=2)
+        all_free_opt = super(type(stats.pareto),
+                             stats.pareto).fit(data, floc=1, fscale=2)
+        assert_equal(all_free, all_free_opt)
+
+        # shape can still be fixed with multiple names
+        shape_mle1 = stats.pareto.fit(data, floc=0, f0=1.04)[0]
+        shape_mle2 = stats.pareto.fit(data, floc=0, fix_b=1.04)[0]
+        shape_mle3 = stats.pareto.fit(data, floc=0, fb=1.04)[0]
+        assert shape_mle1 == shape_mle2 == shape_mle3 == 1.04
+
+        # data can be shifted with changes to `loc`
+        data = stats.pareto.rvs(size=100, b=rvs_shape, scale=rvs_scale,
+                                loc=(rvs_loc + 2))
+        shape_mle, loc_mle, scale_mle = stats.pareto.fit(data, floc=2)
+        assert_equal(scale_mle + 2, data.min())
+        assert_equal(shape_mle, 1/((1/len(data - 2)) *
+                                   np.sum(np.log((data
+                                                  - 2)/(data.min() - 2)))))
+        assert_equal(loc_mle, 2)
+
+    @pytest.mark.filterwarnings("ignore:invalid value encountered in "
+                                "double_scalars")
+    @pytest.mark.parametrize("rvs_shape", [1, 2])
+    @pytest.mark.parametrize("rvs_loc", [0, 2])
+    @pytest.mark.parametrize("rvs_scale", [1, 5])
+    def test_fit_MLE_comp_optimzer(self, rvs_shape, rvs_loc, rvs_scale):
+        data = stats.pareto.rvs(size=100, b=rvs_shape, scale=rvs_scale,
+                                loc=rvs_loc)
+        args = [data, (stats.pareto._fitstart(data), )]
+        func = stats.pareto._reduce_func(args, {})[1]
+
+        # fixed `floc` to actual location provides as good or better fit.
+        shape_mle, loc_mle, scale_mle = stats.pareto.fit(data, floc=rvs_loc)
+        shape_opt, loc_opt, scale_opt = super(type(stats.pareto),
+                                              stats.pareto).fit(data,
+                                                                floc=rvs_loc)
+        ll_mle = func((shape_mle, loc_mle, scale_mle), data)
+        ll_opt = func((shape_opt, loc_opt, scale_opt), data)
+        assert ll_mle < ll_opt or np.allclose(ll_mle, ll_opt)
+
+        # fixing `floc` to an arbitrary number, 0, still provides an as good
+        # or better fit.
+        shape_mle, loc_mle, scale_mle = stats.pareto.fit(data, floc=0)
+        shape_opt, loc_opt, scale_opt = super(type(stats.pareto),
+                                              stats.pareto).fit(data, floc=0)
+        ll_mle = func((shape_mle, loc_mle, scale_mle), data)
+        ll_opt = func((shape_opt, loc_opt, scale_opt), data)
+        assert ll_mle < ll_opt or np.allclose(ll_mle, ll_opt)
+
+        # fixed shape still uses MLE and provides an as good or better fit.
+        shape_mle, loc_mle, scale_mle = stats.pareto.fit(data, floc=0, f0=4)
+        shape_opt, loc_opt, scale_opt = super(type(stats.pareto),
+                                              stats.pareto).fit(data,
+                                                                floc=0, f0=4)
+        ll_mle = func((shape_mle, loc_mle, scale_mle), data)
+        ll_opt = func((shape_opt, loc_opt, scale_opt), data)
+        assert ll_mle < ll_opt or np.allclose(ll_mle, ll_opt)
+
+    def test_fit_warnings(self):
+        assert_raises(RuntimeError, stats.pareto.fit, [1, 2, 3], f0=2, floc=1,
+                      fscale=1)
+        assert_raises(RuntimeError, stats.pareto.fit, [np.nan])
+        assert_raises(RuntimeError, stats.pareto.fit, [np.inf])
+
 
 class TestGenpareto(object):
     def test_ab(self):
@@ -1374,17 +1460,6 @@ class TestDLaplace(object):
         assert_equal((m, s), (0., 0.))
         assert_allclose((v, k), (4., 3.25))
 
-class TestPareto(object):
-    @pytest.mark.parametrize("rvs_shape", [1, 2])
-    @pytest.mark.parametrize("rvs_loc", [0, 2])
-    @pytest.mark.parametrize("rvs_scale", [1, 5])
-    def test_fit(self, rvs_shape, rvs_loc, rvs_scale):
-        data = stats.pareto.rvs(size=100, b=rvs_shape, scale=rvs_scale, 
-                                loc=rvs_loc)
-        # non fixed `floc` does not use MLE.
-        all_free = stats.pareto.fit(data)
-        all_free_opt = super(type(stats.pareto), pareto).fit(data)
-        assert_equal(all_free, all_free_opt)
 
 class TestLaplace(object):
     @pytest.mark.parametrize("rvs_loc", [-5, 0, 1, 2])

@@ -6150,7 +6150,7 @@ class pareto_gen(rv_continuous):
                 kwds['f0'] = shape
             return super(pareto_gen, self).fit(data, *args, **kwds)
 
-        data = data - floc        
+        data = data - floc
         fscale = np.min(data)
         if shape is None:
             shape = 1/((1/len(data)) * np.sum(np.log(data/fscale)))
