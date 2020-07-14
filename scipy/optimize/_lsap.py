@@ -36,6 +36,11 @@ def linear_sum_assignment(cost_matrix, maximize=False):
     columns, then not every row needs to be assigned to a column, and vice
     versa.
 
+    The problem is also solved for sparse inputs in
+    :func:`scipy.sparse.csgraph.minimum_weight_full_bipartite_matching` which
+    may perform better if the input is sparse, or for certain classes of
+    problems, such as uniformly distributed costs.
+
     Parameters
     ----------
     cost_matrix : array
