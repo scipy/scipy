@@ -3634,9 +3634,8 @@ class invgauss_gen(rv_continuous):
                 if val is not None:
                     kwds[key] = val
         f0_s = kwds.pop('f0', None)
-
         data = np.asarray(data)
-        _check_fit_input_parameters(data, args, kwds, (floc, fscale, f0_s))
+        _check_fit_input_parameters(data, args, kwds, fixed_param=(floc, fscale, f0_s))
         '''
         MLE is not used in 3 condtions:
         - `floc` is not set

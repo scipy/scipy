@@ -1390,8 +1390,16 @@ class TestInvgauss(object):
         scale_mle = len(data) / (np.sum(data**(-1) - mu_temp**(-1)))
         mu_mle = mu_temp/scale_mle
 
+        # `mu` and `scale` match MLE
         assert_allclose(mu_mle, mu, atol=1e-15, rtol=1e-15)
         assert_allclose(scale_mle, scale, atol=1e-15, rtol=1e-15)
+        assert_equal(loc, rvs_loc)
+
+        # fixed parameters are returned
+        mu, loc, scale = stats.invgauss.fit(data, floc=rvs_loc + 1,
+                                            fscale=rvs_scale + 1)
+        assert_equal(rvs_scale + 1, scale)
+        assert_equal(rvs_loc + 1, loc)
 
         # shape can still be fixed with multiple names
         shape_mle1 = stats.invgauss.fit(data, fmu=1.04)[0]
@@ -1410,6 +1418,12 @@ class TestInvgauss(object):
         mle = stats.invgauss.fit(data)
         assert_allclose(opt, mle, atol=1e-30, rtol=1e-30)
 
+        # fitting with `fmu` is default opitmization
+        opt = super(type(stats.invgauss), stats.invgauss).fit(data, floc=0,
+                                                              fmu=2)
+        mle = stats.invgauss.fit(data, floc=0, fmu=2)
+        assert_allclose(opt, mle, atol=1e-30, rtol=1e-30)
+
         # fixed `floc` uses MLE.
         mle = stats.invgauss.fit(data, floc=rvs_loc)
         opt = super(type(stats.invgauss), stats.invgauss).fit(data,
@@ -1425,7 +1439,7 @@ class TestInvgauss(object):
         # fixed `floc` resulting in any data < 0 uses optimizer
         assert np.any((data - (2*rvs_loc + 3)) < 0)
         opt = super(type(stats.invgauss),
-                          stats.invgauss).fit(data, floc=(2*rvs_loc + 3))
+                    stats.invgauss).fit(data, floc=(2*rvs_loc + 3))
 
         mle = stats.invgauss.fit(data, floc=(2*rvs_loc + 3))
         assert_allclose(opt, mle, atol=1e-30, rtol=1e-30)
@@ -1433,18 +1447,36 @@ class TestInvgauss(object):
         # fixed `floc` that doesn't result in any data < 0 uses MLE
         assert np.all((data - (rvs_loc - 1)) > 0)
         opt = super(type(stats.invgauss),
-                          stats.invgauss).fit(data, floc=rvs_loc - 1)
+                    stats.invgauss).fit(data, floc=rvs_loc - 1)
         mle = stats.invgauss.fit(data, floc=rvs_loc - 1)
         ll_mle = func(mle, data)
         ll_opt = func(opt, data)
         assert ll_mle < ll_opt or np.allclose(ll_mle, ll_opt,
                                               atol=1e-15, rtol=1e-15)
 
+        # fixing `floc` to an arbitrary number, 0, still provides an as good
+        # or better fit.
+        shape_mle, loc_mle, scale_mle = stats.invgauss.fit(data, floc=0)
+        shape_opt, loc_opt, scale_opt = super(type(stats.invgauss),
+                                              stats.invgauss).fit(data, floc=0)
+        ll_mle = func((shape_mle, loc_mle, scale_mle), data)
+        ll_opt = func((shape_opt, loc_opt, scale_opt), data)
+        assert ll_mle < ll_opt or np.allclose(ll_mle, ll_opt)
+
+        # fixing `fscale` to an arbitrary number, 2.06, still provides an
+        # as good or better fit.
+        mle = stats.invgauss.fit(data, floc=rvs_loc, fscale=2.06)
+        opt = super(type(stats.invgauss),
+                    stats.invgauss).fit(data, floc=rvs_loc, fscale=2.06)
+        ll_mle = func(mle, data)
+        ll_opt = func(opt, data)
+        assert ll_mle < ll_opt or np.allclose(ll_mle, ll_opt)
+
     def test_fit_raise_errors(self):
         assert_raises(RuntimeError, stats.invgauss.fit, [np.nan])
         assert_raises(RuntimeError, stats.invgauss.fit, [np.inf])
         assert_raises(RuntimeError, stats.invgauss.fit, [1, 2, 3],
-                      floc=1, fscale=2, f0=2)
+                      floc=1, fscale=2, fmu=2)
 
 
 class TestLaplace(object):
