@@ -5671,9 +5671,9 @@ class TestMGCStat(object):
 
 
 class TestPageL(object):
-    # I cannot find many published L test p-values.
-    # However, there is a table of critical L values corresponding with three
-    # different confidence levels `a` published in Page's original paper.
+    # I cannot find many published L test p-values. However, there is a table
+    # of critical L values corresponding with three different confidence levels
+    # `a` published in Page's original paper (_pagel.py [1]).
     # Therefore, the approach here is to:
     # - find arrays with the listed critical value of L,
     # - check that `pagel` calculates a p-value less than 1-a%
@@ -5700,7 +5700,7 @@ class TestPageL(object):
     # The asymptotic p-value corresponding with m=5, n=10, L=1703 is 0.000974.
     # Page must have been rounded upwards, causing the critical L value listed
     # in the paper to be 1 greater than it should be. For these cases, I've
-    # decremented by one the critical L values listed in the paper.
+    # decremented by one the critical L values listed in the paper
 
     array = np.array
     lt = np.less
@@ -5752,6 +5752,20 @@ class TestPageL(object):
         assert_equal(res1.statistic, res3.statistic)
         assert_equal(res1.statistic, res4.statistic)
         assert_equal(res1.statistic, res5.statistic)
+
+    def test_Ames_assay(self):
+        # test from _pagel.py [2] page 151; data on page 144
+        data = [[101, 117, 111], [91, 90, 107], [103, 133, 121], [136, 140, 144], [190, 161, 201], [146, 120, 116]]
+        data = np.array(data).T
+        predicted_ranks = np.arange(1, 7)
+
+        res = stats.pagel(data, ranked=False, predicted_ranks=predicted_ranks, method="asymptotic")
+        assert_equal(res.statistic, 257)
+        assert_equal(res.pvalue, 0.0035, atol=0.0001)
+
+        res = stats.pagel(data, ranked=False, predicted_ranks=predicted_ranks, method="mc")
+        assert_equal(res.statistic, 257)
+        assert_(res.pvalue < 0.0023)  # MC tends to underestimate low p-values
 
     def test_input_validation(self):
         # test data not a 2d array
