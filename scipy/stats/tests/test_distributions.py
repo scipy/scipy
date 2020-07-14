@@ -1374,6 +1374,17 @@ class TestDLaplace(object):
         assert_equal((m, s), (0., 0.))
         assert_allclose((v, k), (4., 3.25))
 
+class TestPareto(object):
+    @pytest.mark.parametrize("rvs_shape", [1, 2])
+    @pytest.mark.parametrize("rvs_loc", [0, 2])
+    @pytest.mark.parametrize("rvs_scale", [1, 5])
+    def test_fit(self, rvs_shape, rvs_loc, rvs_scale):
+        data = stats.pareto.rvs(size=100, b=rvs_shape, scale=rvs_scale, 
+                                loc=rvs_loc)
+        # non fixed `floc` does not use MLE.
+        all_free = stats.pareto.fit(data)
+        all_free_opt = super(type(stats.pareto), pareto).fit(data)
+        assert_equal(all_free, all_free_opt)
 
 class TestLaplace(object):
     @pytest.mark.parametrize("rvs_loc", [-5, 0, 1, 2])
