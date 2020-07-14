@@ -389,12 +389,6 @@ def _check_init_input(init, n):
 
 def _doubly_stochastic(P, eps=1e-3):
     # cleaner implementation of btaba/sinkhorn_knopp
-    # Title: sinkhorn_knopp Source Code
-    # Author: Tabanpour, B
-    # Date: 2018
-    # Code version:  0.2
-    # Availability: https://pypi.org/project/sinkhorn_knopp/
-    #
 
     max_iter = 1000
     c = 1 / P.sum(axis=0)
