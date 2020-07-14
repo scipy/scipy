@@ -548,8 +548,7 @@ def dijkstra(csgraph, directed=True, indices=None,
         dist_matrix = np.full(N, np.inf, dtype=DTYPE)
         dist_matrix[indices] = 0
     else:
-        dist_matrix = np.zeros((len(indices), N), dtype=DTYPE)
-        dist_matrix.fill(np.inf)
+        dist_matrix = np.full((len(indices), N), np.inf, dtype=DTYPE)
         dist_matrix[np.arange(len(indices)), indices] = 0
 
     #------------------------------

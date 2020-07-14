@@ -1863,9 +1863,9 @@ class wishart_gen(multi_rv_generic):
         # gives us a 1-dim vector of determinants
 
         # Retrieve tr(scale^{-1} x)
-        log_det_x = np.zeros(x.shape[-1])
-        scale_inv_x = np.zeros(x.shape)
-        tr_scale_inv_x = np.zeros(x.shape[-1])
+        log_det_x = np.empty(x.shape[-1])
+        scale_inv_x = np.empty(x.shape)
+        tr_scale_inv_x = np.empty(x.shape[-1])
         for i in range(x.shape[-1]):
             _, log_det_x[i] = self._cholesky_logdet(x[:, :, i])
             scale_inv_x[:, :, i] = scipy.linalg.cho_solve((C, True), x[:, :, i])
@@ -2509,13 +2509,13 @@ class invwishart_gen(wishart_gen):
         called directly; use 'logpdf' instead.
 
         """
-        log_det_x = np.zeros(x.shape[-1])
+        log_det_x = np.empty(x.shape[-1])
         x_inv = np.copy(x).T
         if dim > 1:
             _cho_inv_batch(x_inv)  # works in-place
         else:
             x_inv = 1./x_inv
-        tr_scale_x_inv = np.zeros(x.shape[-1])
+        tr_scale_x_inv = np.empty(x.shape[-1])
 
         for i in range(x.shape[-1]):
             C, lower = scipy.linalg.cho_factor(x[:, :, i], lower=True)
@@ -3322,7 +3322,7 @@ class special_ortho_group_gen(multi_rv_generic):
         Dimension of matrices
 
     Notes
-    ----------
+    -----
     This class is wrapping the random_rot code from the MDP Toolkit,
     https://github.com/mdp-toolkit/mdp-toolkit
 
@@ -3479,7 +3479,7 @@ class ortho_group_gen(multi_rv_generic):
         Dimension of matrices
 
     Notes
-    ----------
+    -----
     This class is closely related to `special_ortho_group`.
 
     Some care is taken to avoid numerical error, as per the paper by Mezzadri.
@@ -3586,7 +3586,7 @@ class random_correlation_gen(multi_rv_generic):
         Eigenvalues of correlation matrix.
 
     Notes
-    ----------
+    -----
 
     Generates a random correlation matrix following a numerically stable
     algorithm spelled out by Davies & Higham. This algorithm uses a single O(N)
@@ -3777,7 +3777,7 @@ class unitary_group_gen(multi_rv_generic):
         Dimension of matrices
 
     Notes
-    ----------
+    -----
     This class is similar to `ortho_group`.
 
     References

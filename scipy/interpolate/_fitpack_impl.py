@@ -301,8 +301,8 @@ def splprep(x, w=None, u=None, ub=None, ue=None, k=3, task=0, s=None, t=None,
         else:
             try:
                 raise _iermess[ier][1](_iermess[ier][0])
-            except KeyError:
-                raise _iermess['unknown'][1](_iermess['unknown'][0])
+            except KeyError as e:
+                raise _iermess['unknown'][1](_iermess['unknown'][0]) from e
     if full_output:
         try:
             return tcku, fp, ier, _iermess[ier][0]
@@ -390,13 +390,6 @@ def splrep(x, y, w=None, xb=None, xe=None, k=3, task=0, s=None, t=None,
     msg : str, optional
         A message corresponding to the integer flag, ier.
 
-    Notes
-    -----
-    See splev for evaluation of the spline and its derivatives.
-
-    The user is responsible for assuring that the values of *x* are unique.
-    Otherwise, *splrep* will not return sensible results.
-
     See Also
     --------
     UnivariateSpline, BivariateSpline
@@ -407,6 +400,9 @@ def splrep(x, y, w=None, xb=None, xe=None, k=3, task=0, s=None, t=None,
     -----
     See splev for evaluation of the spline and its derivatives. Uses the
     FORTRAN routine curfit from FITPACK.
+
+    The user is responsible for assuring that the values of *x* are unique.
+    Otherwise, *splrep* will not return sensible results.
 
     If provided, knots `t` must satisfy the Schoenberg-Whitney conditions,
     i.e., there must be a subset of data points ``x[j]`` such that
@@ -495,9 +491,9 @@ def splrep(x, y, w=None, xb=None, xe=None, k=3, task=0, s=None, t=None,
         t = _curfit_cache['t']
         wrk = _curfit_cache['wrk']
         iwrk = _curfit_cache['iwrk']
-    except KeyError:
+    except KeyError as e:
         raise TypeError("must call with task=1 only after"
-                        " call with task=0,-1")
+                        " call with task=0,-1") from e
     if not per:
         n, c, fp, ier = dfitpack.curfit(task, x, y, w, t, wrk, iwrk,
                                         xb, xe, k, s)
@@ -514,8 +510,8 @@ def splrep(x, y, w=None, xb=None, xe=None, k=3, task=0, s=None, t=None,
         else:
             try:
                 raise _iermess[ier][1](_iermess[ier][0])
-            except KeyError:
-                raise _iermess['unknown'][1](_iermess['unknown'][0])
+            except KeyError as e:
+                raise _iermess['unknown'][1](_iermess['unknown'][0]) from e
     if full_output:
         try:
             return tck, fp, ier, _iermess[ier][0]
@@ -978,8 +974,8 @@ def bisplrep(x, y, z, w=None, xb=None, xe=None, yb=None, ye=None,
         else:
             try:
                 raise _iermess2[ierm][1](_iermess2[ierm][0])
-            except KeyError:
-                raise _iermess2['unknown'][1](_iermess2['unknown'][0])
+            except KeyError as e:
+                raise _iermess2['unknown'][1](_iermess2['unknown'][0]) from e
     if full_output:
         try:
             return tck, fp, ier, _iermess2[ierm][0]
@@ -1223,9 +1219,9 @@ def splder(tck, n=1):
                 # Adjust knots
                 t = t[1:-1]
                 k -= 1
-        except FloatingPointError:
+        except FloatingPointError as e:
             raise ValueError(("The spline has internal repeated knots "
-                              "and is not differentiable %d times") % n)
+                              "and is not differentiable %d times") % n) from e
 
     return t, c, k
 

@@ -39,7 +39,7 @@ from numpy import (array, diag, ones, full, linalg, argsort, zeros, arange,
 from numpy.random import seed, random
 
 from scipy.linalg._testutils import assert_no_overwrite
-from scipy.sparse.sputils import bmat, matrix
+from scipy.sparse.sputils import matrix
 
 from scipy._lib._testutils import check_free_memory
 from scipy.linalg.blas import HAS_ILP64
@@ -307,8 +307,8 @@ class TestEig(object):
         D = array(([1, -1, 0], [-1, 1, 0], [0, 0, 0]))
         Z = zeros((3, 3))
         I3 = eye(3)
-        A = bmat([[I3, Z], [Z, -K]])
-        B = bmat([[Z, I3], [M, D]])
+        A = np.block([[I3, Z], [Z, -K]])
+        B = np.block([[Z, I3], [M, D]])
 
         with np.errstate(all='ignore'):
             self._check_gen_eig(A, B)
@@ -880,6 +880,20 @@ class TestEigh:
         assert_allclose(diag1_, w, rtol=0., atol=atol)
         diag2_ = diag(z.T.conj() @ b @ z).real
         assert_allclose(diag2_, ones(diag2_.shape[0]), rtol=0., atol=atol)
+
+    def test_eigvalsh_new_args(self):
+        a = _random_hermitian_matrix(5)
+        w = eigvalsh(a, eigvals=[1, 2])
+        assert_equal(len(w), 2)
+
+        w2 = eigvalsh(a, subset_by_index=[1, 2])
+        assert_equal(len(w2), 2)
+        assert_allclose(w, w2)
+
+        b = np.diag([1, 1.2, 1.3, 1.5, 2])
+        w3 = eigvalsh(b, subset_by_value=[1, 1.4])
+        assert_equal(len(w3), 2)
+        assert_allclose(w3, np.array([1.2, 1.3]))
 
 
 class TestLU(object):
@@ -2675,8 +2689,10 @@ def test_orth_memory_efficiency():
     n = 10*1000*1000
     try:
         _check_orth(n, np.float64, skip_big=True)
-    except MemoryError:
-        raise AssertionError('memory error perhaps caused by orth regression')
+    except MemoryError as e:
+        raise AssertionError(
+            'memory error perhaps caused by orth regression'
+        ) from e
 
 
 def test_orth():

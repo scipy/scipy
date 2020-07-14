@@ -412,10 +412,10 @@ class MapWrapper(object):
         # only accept one iterable because that's all Pool.map accepts
         try:
             return self._mapfunc(func, iterable)
-        except TypeError:
+        except TypeError as e:
             # wrong number of arguments
             raise TypeError("The map-like callable must be of the"
-                            " form f(func, iterable)")
+                            " form f(func, iterable)") from e
 
 
 def rng_integers(gen, low, high=None, size=None, dtype='int64',

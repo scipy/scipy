@@ -3,8 +3,6 @@ __all__ = ['interp1d', 'interp2d', 'lagrange', 'PPoly', 'BPoly', 'NdPPoly',
 
 import itertools
 import warnings
-import functools
-import operator
 
 import numpy as np
 from numpy import (array, transpose, searchsorted, atleast_1d, atleast_2d,
@@ -217,12 +215,14 @@ class interp2d(object):
                 raise ValueError(
                     "Invalid length for input z for non rectangular grid")
 
+        interpolation_types = {'linear': 1, 'cubic': 3, 'quintic': 5}
         try:
-            kx = ky = {'linear': 1,
-                       'cubic': 3,
-                       'quintic': 5}[kind]
-        except KeyError:
-            raise ValueError("Unsupported interpolation type.")
+            kx = ky = interpolation_types[kind]
+        except KeyError as e:
+            raise ValueError(
+                f"Unsupported interpolation type {repr(kind)}, must be "
+                f"either of {', '.join(map(repr, interpolation_types))}."
+            ) from e
 
         if not rectangular_grid:
             # TODO: surfit is really not meant for interpolation!
@@ -1712,8 +1712,10 @@ class BPoly(_PPolyBase):
         # global poly order is k-1, local orders are <=k and can vary
         try:
             k = max(len(yi[i]) + len(yi[i+1]) for i in range(m))
-        except TypeError:
-            raise ValueError("Using a 1-D array for y? Please .reshape(-1, 1).")
+        except TypeError as e:
+            raise ValueError(
+                "Using a 1-D array for y? Please .reshape(-1, 1)."
+            ) from e
 
         if orders is None:
             orders = [None] * m
