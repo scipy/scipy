@@ -10,6 +10,7 @@ To run it in its simplest form::
 
 """
 import itertools
+import warnings
 import numpy as np
 from numpy.testing import (assert_allclose, assert_equal,
                            assert_, assert_almost_equal,
@@ -2171,8 +2172,37 @@ def test_memoize_jac_with_bfgs(function_with_gradient):
     scalar_function.fun(x0 + 0.2)
     assert function_with_gradient.number_of_calls == 3
 
+
 def test_gh12696():
     # Test that optimize doesn't throw warning gh-12696
     with assert_no_warnings():
         optimize.fminbound(
             lambda x: np.array([x**2]), -np.pi, np.pi, disp=False)
+
+
+@pytest.mark.parametrize('method', ['Powell', 'L-BFGS-B', 'SLSQP',
+                                    'trust-constr'])
+def test_equal_bounds(method):
+    """
+    Tests that minimizers still work if (bounds.lb == bounds.ub).any()
+    gh12502 - Divide by zero in Jacobian numerical differentiation when
+    equality bounds constraints are used
+    """
+    def f(x):
+        return optimize.rosen([x, 2.0])
+
+    best_x = optimize.minimize_scalar(f, method="bounded", bounds=(0, 3.0))
+    x0 = np.array([0.5, 3.0])
+    bounds = [(0.0, 3.0), (2.0, 2.0)]
+
+    with warnings.catch_warnings(record=True):
+        # warning filter is for trust-constr
+        # UserWarning: delta_grad == 0.0.Check if the approximated
+        # function is linear.
+        warnings.simplefilter('ignore', category=UserWarning)
+
+        res = optimize.minimize(
+            optimize.rosen, x0, method=method, bounds=bounds,
+        )
+        assert res.success
+        assert_allclose(res.x, np.r_[best_x.x, 2.0], rtol=3e-6)
