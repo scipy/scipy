@@ -484,9 +484,9 @@ cdef ITYPE_t[:] _lapjvsp(ITYPE_t[:] first,
     """Solves the minimum weight bipartite matching problem using LAPJVsp.
 
     The implementation at hand is a straightforward port of the original Pascal
-    implementation by Anton Volgenant. The code is currently available on [1]_
-    and is licensed under the BSD-3 license, copyright A. Volgenant/Amsterdam
-    School of Economics, University of Amsterdam.
+    implementation by Anton Volgenant. The code is currently available as
+    LAPJVS.P on [1]_ and is licensed under the BSD-3 license, copyright
+    A. Volgenant/Amsterdam School of Economics, University of Amsterdam.
 
     The original code is uncommented, and is easiest to follow by referring to
     [2]_ rather than the code itself. As such, in our Cython port, we strive to
@@ -550,6 +550,7 @@ cdef ITYPE_t[:] _lapjvsp(ITYPE_t[:] first,
     # We skip the initialization entirely in the non-square case and instead
     # fill all of `free` explicitly.
     if nr == nc:
+        # From here, proceed from line 55 in the original Pascal code, LAPJVS.P
         for jp in range(nc):
             v[jp] = INFINITY
         for i in range(nr):
@@ -564,8 +565,8 @@ cdef ITYPE_t[:] _lapjvsp(ITYPE_t[:] first,
                 x[i] = jp
             else:
                 y[jp] = -1
-                # Here, the original Pascal code simply inverts the sign of x;
-                # as that doesn't play too well with zero-indexing, we
+                # Here, the original Pascal code simply inverts the sign of
+                # x[i]; as that doesn't play too well with zero-indexing, we
                 # explicitly keep track of uniqueness instead.
                 xinv[i] = 1
         lp = 0
@@ -586,6 +587,11 @@ cdef ITYPE_t[:] _lapjvsp(ITYPE_t[:] first,
                     tp += 1
                 v[j1] = cc[tp] - min_diff
             else:
+                # The following two lines are swapped in the Pascal code: This
+                # works because of the implicit index correction, where we
+                # initialize lp to 0 as opposed to the -1 that would otherwise
+                # correspond to the 0 initialization in Pascal (as we recall
+                # that all indices are shifted by one).
                 free[lp] = i
                 lp += 1
         for _ in range(2):
@@ -643,7 +649,9 @@ cdef ITYPE_t[:] _lapjvsp(ITYPE_t[:] first,
 
     # In the original Pascal code, the solution for each l is inlined,
     # but to avoid goto statements, and convoluted logic to break out
-    # of nested loops, we extract the body of the loop instead.
+    # of nested loops, we extract the body of the loop instead. The
+    # function thus corresponds to lines 109--154 in the Pascal code,
+    # with lines 155 and 156 seperated into two separate functions below.
     td1 = -1
     for l in range(l0):
         td1 = _lapjvsp_single_l(l, nc, d, ok, free, first, kk, cc, v, lab,
