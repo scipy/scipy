@@ -4233,6 +4233,12 @@ def _check_fit_input_parameters(data, args, kwds, fixed_param):
         raise RuntimeError("The data contains non-finite values.")
 
 
+def _check_unknown_kwds(kwds):
+    _remove_optimizer_parameters(kwds)
+    if kwds:
+       raise TypeError("Unknown arguments: %s." % kwds)
+
+
 class levy_gen(rv_continuous):
     r"""A Levy continuous random variable.
 
@@ -6149,7 +6155,7 @@ class pareto_gen(rv_continuous):
             if shape is not None:
                 kwds['f0'] = shape
             return super(pareto_gen, self).fit(data, *args, **kwds)
-
+        _check_unknown_kwds(kwds)
         data = data - floc
         fscale = np.min(data)
         if shape is None:
