@@ -2457,8 +2457,7 @@ class TestStudentTest(object):
         assert_array_almost_equal(p, self.P1_2)
 
         # check nan policy
-        np.random.seed(7654567)
-        x = stats.norm.rvs(loc=5, scale=10, size=51)
+        x = stats.norm.rvs(loc=5, scale=10, size=51, random_state=7654567)
         x[50] = np.nan
         with np.errstate(invalid="ignore"):
             assert_array_equal(stats.ttest_1samp(x, 5.0), (np.nan, np.nan))
@@ -3025,8 +3024,7 @@ class TestKSOneSample(object):
 
     def test_known_examples(self):
         # the following tests rely on deterministically replicated rvs
-        np.random.seed(987654321)
-        x = stats.norm.rvs(loc=0.2, size=100)
+        x = stats.norm.rvs(loc=0.2, size=100, random_state=987654321)
         self._testOne(x, 'two-sided', 0.12464329735846891, 0.089444888711820769, mode='asymp')
         self._testOne(x, 'less', 0.12464329735846891, 0.040989164077641749)
         self._testOne(x, 'greater', 0.0072115233216310994, 0.98531158590396228)
@@ -3320,11 +3318,11 @@ def test_ttest_rel():
     assert_equal(t.shape, (3, 2))
 
     # check nan policy
-    np.random.seed(12345678)
-    x = stats.norm.rvs(loc=5, scale=10, size=501)
+    rng = np.random.RandomState(12345678)
+    x = stats.norm.rvs(loc=5, scale=10, size=501, random_state=rng)
     x[500] = np.nan
-    y = (stats.norm.rvs(loc=5, scale=10, size=501) +
-         stats.norm.rvs(scale=0.2, size=501))
+    y = (stats.norm.rvs(loc=5, scale=10, size=501, random_state=rng) +
+         stats.norm.rvs(scale=0.2, size=501, random_state=rng))
     y[500] = np.nan
 
     with np.errstate(invalid="ignore"):
@@ -3468,10 +3466,9 @@ def test_ttest_ind():
     assert_equal(t.shape, (3, 2))
 
     # check nan policy
-    np.random.seed(12345678)
-    x = stats.norm.rvs(loc=5, scale=10, size=501)
+    x = stats.norm.rvs(loc=5, scale=10, size=501, random_state=rng)
     x[500] = np.nan
-    y = stats.norm.rvs(loc=5, scale=10, size=500)
+    y = stats.norm.rvs(loc=5, scale=10, size=500, random_state=rng)
 
     with np.errstate(invalid="ignore"):
         assert_array_equal(stats.ttest_ind(x, y), (np.nan, np.nan))

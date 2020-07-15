@@ -128,8 +128,7 @@ class TestShapiro(object):
         assert_almost_equal(shapiro_test.pvalue, 0.52460, decimal=3)
 
         # Verified against R
-        np.random.seed(12345678)
-        x3 = stats.norm.rvs(loc=5, scale=3, size=100)
+        x3 = stats.norm.rvs(loc=5, scale=3, size=100, random_state=12345678)
         w, pw = stats.shapiro(x3)
         shapiro_test = stats.shapiro(x3)
         assert_almost_equal(w, 0.9772805571556091, decimal=6)
@@ -828,8 +827,7 @@ class TestMood(object):
 class TestProbplot(object):
 
     def test_basic(self):
-        np.random.seed(12345)
-        x = stats.norm.rvs(size=20)
+        x = stats.norm.rvs(size=20, random_state=12345)
         osm, osr = stats.probplot(x, fit=False)
         osm_expected = [-1.8241636, -1.38768012, -1.11829229, -0.91222575,
                         -0.73908135, -0.5857176, -0.44506467, -0.31273668,
