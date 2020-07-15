@@ -146,52 +146,52 @@ def test_matching_large_random_graph_with_one_edge_incident_to_each_vertex():
     assert_equal(any(C2.diagonal() == 0), False)
 
 
-def test_minimum_weight_matching_empty_graph():
+def test_min_weight_full_matching_empty_graph():
     graph = csr_matrix((0, 0))
     row_ind, col_ind = min_weight_full_bipartite_matching(graph)
     assert len(row_ind) == 0
     assert len(col_ind) == 0
 
 
-def test_minimum_weight_matching_empty_left_partition():
+def test_min_weight_full_matching_empty_left_partition():
     graph = csr_matrix((2, 0))
     row_ind, col_ind = min_weight_full_bipartite_matching(graph)
     assert len(row_ind) == 0
     assert len(col_ind) == 0
 
 
-def test_minimum_weight_matching_empty_right_partition():
+def test_min_weight_full_matching_empty_right_partition():
     graph = csr_matrix((0, 3))
     row_ind, col_ind = min_weight_full_bipartite_matching(graph)
     assert len(row_ind) == 0
     assert len(col_ind) == 0
 
 
-def test_minimum_weight_matching_infeasible_square():
+def test_min_weight_full_matching_infeasible_square():
     graph = csr_matrix([[1, 1, 1], [1, 0, 0], [1, 0, 0]])
     with pytest.raises(ValueError):
         min_weight_full_bipartite_matching(graph)
 
 
-def test_minimum_weight_matching_infeasible_other_square():
+def test_min_weight_full_matching_infeasible_other_square():
     graph = csr_matrix([[1, 1, 1], [0, 0, 1], [0, 0, 1]])
     with pytest.raises(ValueError):
         min_weight_full_bipartite_matching(graph)
 
 
-def test_minimum_weight_matching_infeasible_rectangular():
+def test_min_weight_full_matching_infeasible_rectangular():
     graph = csr_matrix([[1, 0, 0], [2, 0, 0]])
     with pytest.raises(ValueError):
         min_weight_full_bipartite_matching(graph)
 
 
-def test_minimum_weight_matching_infeasible_other_rectangular():
+def test_min_weight_full_matching_infeasible_other_rectangular():
     graph = csr_matrix([[1, 0], [2, 0], [5, 0]])
     with pytest.raises(ValueError):
         min_weight_full_bipartite_matching(graph)
 
 
-def test_minimum_weight_matching_for_various_inputs():
+def test_min_weight_full_matching_for_various_inputs():
     for sign in [-1, 1]:
         for graph, expected_cost in [
             ([[400, 150, 400],
