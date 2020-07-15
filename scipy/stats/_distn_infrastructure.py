@@ -14,7 +14,7 @@ from itertools import zip_longest
 
 from scipy._lib import doccer
 from ._distr_params import distcont, distdiscrete
-from scipy._lib._util import check_random_state, Generator
+from scipy._lib._util import check_random_state
 from scipy._lib._util import _valarray as valarray
 
 from scipy.special import (comb, chndtr, entr, rel_entr, xlogy, ive)
