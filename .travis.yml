@@ -178,7 +178,7 @@ before_install:
         virtualenv --python=$USE_DEBUG venv
         source venv/bin/activate
     fi
-  - python -V -V
+  - python --version
   - python -c 'import sys; print("Python debug build:", hasattr(sys, "gettotalrefcount"))'
   - |
     travis_retry pip install --upgrade pip setuptools wheel $OTHERSPEC cython pytest pytest-xdist mpmath argparse gmpy2 pybind11
