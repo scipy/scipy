@@ -195,7 +195,7 @@ before_install:
   # Miniforge / conda-forge), so skip arm64 here
   - |
     if [[ "$TRAVIS_CPU_ARCH" != "arm64" ]]; then
-         travis_retry pip install --upgrade pip setuptools wheel $OTHERSPEC cython pytest pytest-xdist mpmath argparse Pillow codecov gmpy2 pybind11
+         travis_retry pip install --upgrade pip setuptools wheel $OTHERSPEC cython pytest pytest-xdist mpmath argparse gmpy2 pybind11
          travis_retry pip install --upgrade $NUMPYSPEC
     fi
   - |
@@ -219,7 +219,11 @@ before_install:
     fi
   - |
     if [ "${TESTMODE}" == "full" ]; then
-        travis_retry pip install pytest-cov coverage matplotlib scikit-umfpack scikit-sparse
+        travis_retry pip install matplotlib scikit-umfpack scikit-sparse
+    fi
+  - |
+    if [ -n "${COVERAGE}" ]; then
+        travis_retry pip install pytest-cov coverage codecov
     fi
   - |
     if [ "${REFGUIDE_CHECK}" == "1" ]; then
