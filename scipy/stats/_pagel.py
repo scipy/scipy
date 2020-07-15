@@ -1,6 +1,9 @@
 from collections import namedtuple
+from itertools import permutations
+from functools import lru_cache
+import os
 import numpy as np
-from ._continuous_distns import chi2, norm
+from ._continuous_distns import norm
 import scipy.stats
 
 
@@ -278,6 +281,7 @@ def pagel(data, ranked=True, predicted_ranks=None, method='auto', n_s=3000,
     method = method.lower()
     methods = {"asymptotic": _l_p_asymptotic,
                "mc": lambda L, m, n: _l_p_mc(L, m, n, n_s),
+               "exact": _l_p_exact,
                "auto": None}
     if method not in methods:
         raise Exception(f"`method` must be in {set(methods)}")
@@ -334,7 +338,7 @@ def _choose_method(ranks):
     if n > 8 or (m > 12 and n > 3) or m > 20:  # as in [1], [4]
         method = "asymptotic"
     else:
-        method = "mc"
+        method = "exact"
     return method
 
 
@@ -370,3 +374,113 @@ def _l_p_mc(L, m, n, n_s):
     Ls = _l_vectorized(mc_ranks, predicted_ranks)
     p = 1 - scipy.stats.percentileofscore(Ls, L)/100
     return p
+
+
+def _l_p_exact(L, m, n):
+    L, n, k = int(L), int(m), int(n)  # different papers use different symbols
+    a, b = (k*(k+1)*(k+2))//6, (k*(k+1)*(2*k+1))//6
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+    datafile = os.path.join(dir_path, "pagel_exact.npy")
+    all_pmfs = np.load(datafile, allow_pickle=True).item()
+    try:
+        pmf = all_pmfs[n][k]
+        return np.sum(pmf[L-a*n:])
+    except KeyError:
+        return _sf(L, k, n)
+
+
+def _counts_l_k_1(k):
+    '''Count frequency of each L value over all possible single rows'''
+    # See [5] Equation (6)
+    ranks = range(1, k+1)
+    rank_perms = np.array(list(permutations(ranks)))  # generate all possible rows
+    Ls = (ranks*rank_perms).sum(axis=1)  # compute Page's L for all rows
+    a, b = (k*(k+1)*(k+2))//6, (k*(k+1)*(2*k+1))//6  # min and max possible L
+    counts = np.histogram(Ls, np.arange(a-0.5, b+1.5))[0]  # count occurences of each L value
+    return counts  # not saving the corresponding L values [a, b], just counts
+
+
+def _generate_row_counts(k_max):
+    '''Generate PMF data for hard-coding'''
+    # The results of this function are copy-pasted into the code
+    all_counts = [list(_counts_l_k_1(k)) for k in range(1, k_max+1)]
+    print(repr(all_counts))
+
+# _generate_row_counts(9)
+
+
+def _get_p_l_k_1(k):
+    '''Generates function to evaluate p(t, k, 1); see [5] Equation 6'''
+    # Data in the following row was generated using _generate_row_counts
+    all_counts = [[1], [1, 1], [1, 2, 0, 2, 1], [1, 3, 1, 4, 2, 2, 2, 4, 1, 3, 1], [1, 4, 3, 6, 7, 6, 4, 10, 6, 10, 6, 10, 6, 10, 4, 6, 7, 6, 3, 4, 1], [1, 5, 6, 9, 16, 12, 14, 24, 20, 21, 23, 28, 24, 34, 20, 32, 42, 29, 29, 42, 32, 20, 34, 24, 28, 23, 21, 20, 24, 14, 12, 16, 9, 6, 5, 1], [1, 6, 10, 14, 29, 26, 35, 46, 55, 54, 74, 70, 84, 90, 78, 90, 129, 106, 123, 134, 147, 98, 168, 130, 175, 144, 168, 144, 184, 144, 168, 144, 175, 130, 168, 98, 147, 134, 123, 106, 129, 90, 78, 90, 84, 70, 74, 54, 55, 46, 35, 26, 29, 14, 10, 6, 1], [1, 7, 15, 22, 47, 54, 70, 94, 129, 124, 178, 183, 237, 238, 276, 264, 379, 349, 380, 400, 517, 394, 542, 492, 640, 557, 666, 595, 776, 684, 786, 718, 922, 745, 917, 781, 982, 826, 950, 844, 1066, 845, 936, 845, 1066, 844, 950, 826, 982, 781, 917, 745, 922, 718, 786, 684, 776, 595, 666, 557, 640, 492, 542, 394, 517, 400, 380, 349, 379, 264, 276, 238, 237, 183, 178, 124, 129, 94, 70, 54, 47, 22, 15, 7, 1], [1, 8, 21, 34, 72, 102, 130, 190, 260, 284, 398, 454, 555, 616, 756, 744, 1022, 1042, 1159, 1282, 1555, 1392, 1719, 1758, 2009, 2032, 2282, 2214, 2676, 2590, 2878, 2928, 3397, 3138, 3647, 3568, 3921, 3866, 4311, 4050, 4852, 4492, 4816, 4784, 5505, 4954, 5638, 5304, 5890, 5486, 6188, 5502, 6436, 5822, 6233, 6024, 6697, 5720, 6672, 6020, 6688, 6020, 6672, 5720, 6697, 6024, 6233, 5822, 6436, 5502, 6188, 5486, 5890, 5304, 5638, 4954, 5505, 4784, 4816, 4492, 4852, 4050, 4311, 3866, 3921, 3568, 3647, 3138, 3397, 2928, 2878, 2590, 2676, 2214, 2282, 2032, 2009, 1758, 1719, 1392, 1555, 1282, 1159, 1042, 1022, 744, 756, 616, 555, 454, 398, 284, 260, 190, 130, 102, 72, 34, 21, 8, 1]]
+    try:
+        counts = all_counts[k-1]
+    except IndexError:
+        counts = _counts_l_k_1(k)
+    ps = np.array(counts)/np.math.factorial(k)  # See [5] Equation (6)
+    a, b = (k*(k+1)*(k+2))//6, (k*(k+1)*(2*k+1))//6  # min L, max L for a row
+
+    def p_l_k_1(l):
+        if l < a or l > b:  # 0 rows have L < a or L > b
+            return 0
+        return ps[l-a]
+
+    return p_l_k_1
+
+
+@lru_cache(maxsize=None)
+def _pmf_recursive(l, k, n, a, b, p_l_k_1):
+    '''Recursive function to evaluate p(l, k, n); see [5] Equation 1'''
+    # If we care about users generating exact p-values on the fly,
+    # this should look up whether p(*, k, n-1) is already tabulated
+    # in pagel_exact.npy
+    if n == 1:
+        p = p_l_k_1(l)
+        return(p)
+    else:
+        p = 0
+        low = max(l-(n-1)*b, a)
+        high = min(l-(n-1)*a, b)
+        for t in range(low, high+1):
+            p1 = _pmf_recursive(l-t, k, n-1, a, b, p_l_k_1)
+            p2 = _pmf_recursive(t, k, 1, a, b, p_l_k_1)
+            p += p1*p2
+        return p
+
+
+def _pmf(l, k, n):
+    '''Probability mass function of Page's L statistic'''
+    a, b = (k*(k+1)*(k+2))//6, (k*(k+1)*(2*k+1))//6
+    p_l_k_1 = _get_p_l_k_1(k)
+    return _pmf_recursive(l, k, n, a, b, p_l_k_1)
+
+
+def _sf(l, k, n):
+    '''Survival function of Page's L statistic'''
+    a, b = (k*(k+1)*(k+2))//6, (k*(k+1)*(2*k+1))//6
+    ps = [_pmf(l, k, n) for l in range(l, n*b + 1)]
+    return np.sum(ps)
+
+
+def _whole_pmf(k, n):
+    '''Return list of all values of Page's L PMF'''
+    a, b = (k*(k+1)*(k+2))//6, (k*(k+1)*(2*k+1))//6
+    ps = [_pmf(l, k, n) for l in range(a*n, n*b + 1)]
+    return ps
+
+
+def _all_pmf():
+    '''Generate all PMFs tabulated in [1]'''
+    data = {}
+    for n in range(2, 13):
+        data[n] = {}
+        for k in range(3, 9):
+            print(n, k)
+            data[n][k] = _whole_pmf(k, n)
+
+    k = 3
+    for n in range(13, 21):
+        data[n] = {}
+        data[n][k] = _whole_pmf(k, n)
+
+    np.save('pagel_exact', data)

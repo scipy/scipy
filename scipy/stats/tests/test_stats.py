@@ -5716,22 +5716,22 @@ class TestPageL(object):
           (15, 8, 2573, 99, gt, 'asymptotic', [array([8, 7, 6, 5, 4, 3, 2, 1]), array([8, 7, 6, 5, 4, 3, 2, 1]), array([8, 7, 6, 5, 4, 3, 2, 1]), array([8, 7, 6, 5, 4, 3, 2, 1]), array([8, 7, 6, 5, 4, 3, 2, 1]), array([8, 7, 6, 5, 4, 3, 2, 1]), array([8, 7, 6, 5, 4, 3, 2, 1]), array([8, 7, 6, 5, 4, 3, 2, 1]), array([8, 7, 6, 5, 4, 3, 2, 1]), array([1, 4, 3, 6, 5, 7, 2, 8]), array([1, 2, 3, 4, 5, 6, 7, 8]), array([1, 2, 3, 4, 5, 6, 7, 8]), array([1, 2, 3, 4, 5, 6, 7, 8]), array([1, 2, 3, 4, 5, 6, 7, 8]), array([1, 2, 3, 4, 5, 6, 7, 8])]),
           (5, 10, 1703, 99.9, lt, 'asymptotic', [array([10,  9,  8,  7,  6,  5,  4,  3,  2,  1]), array([10,  9,  8,  7,  6,  5,  4,  3,  2,  1]), array([10,  9,  8,  7,  6,  5,  4,  3,  2,  1]), array([ 9,  2,  8,  7,  6,  5,  4,  3, 10,  1]), array([ 1,  2,  3,  4,  5,  6,  7,  8,  9, 10])]),
           (5, 10, 1702, 99.9, gt, 'asymptotic', [array([10,  9,  8,  7,  6,  5,  4,  3,  2,  1]), array([10,  9,  8,  7,  6,  5,  4,  3,  2,  1]), array([10,  9,  8,  7,  6,  5,  4,  3,  2,  1]), array([ 9,  2,  7,  8,  6,  5,  4,  3, 10,  1]), array([ 1,  2,  3,  4,  5,  6,  7,  8,  9, 10])]),
-          (3, 6, 244, 95, lt, 'mc', [array([6, 5, 4, 3, 2, 1]), array([6, 5, 4, 3, 2, 1]), array([1, 3, 4, 5, 2, 6])]),
-          (3, 6, 243, 95, gt, 'mc', [array([6, 5, 4, 3, 2, 1]), array([6, 5, 4, 3, 2, 1]), array([1, 4, 2, 5, 3, 6])]),
-          (10, 5, 477, 95, lt, 'mc', [array([5, 4, 3, 2, 1]), array([5, 4, 3, 2, 1]), array([5, 4, 3, 2, 1]), array([5, 4, 3, 2, 1]), array([5, 4, 3, 2, 1]), array([5, 4, 3, 2, 1]), array([4, 1, 3, 2, 5]), array([1, 2, 3, 4, 5]), array([1, 2, 3, 4, 5]), array([1, 2, 3, 4, 5])]),
-          (10, 5, 476, 95, gt, 'mc', [array([5, 4, 3, 2, 1]), array([5, 4, 3, 2, 1]), array([5, 4, 3, 2, 1]), array([5, 4, 3, 2, 1]), array([5, 4, 3, 2, 1]), array([5, 4, 3, 2, 1]), array([4, 1, 2, 3, 5]), array([1, 2, 3, 4, 5]), array([1, 2, 3, 4, 5]), array([1, 2, 3, 4, 5])]),
-          (19, 3, 239, 95, lt, 'mc', [array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([2, 1, 3]), array([1, 2, 3]), array([1, 2, 3]), array([1, 2, 3]), array([1, 2, 3]), array([1, 2, 3]), array([1, 2, 3])]),
-          (19, 3, 238, 95, gt, 'mc', [array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([1, 2, 3]), array([1, 2, 3]), array([1, 2, 3]), array([1, 2, 3]), array([1, 2, 3]), array([1, 2, 3]), array([1, 2, 3])]),
-          (4, 7, 501, 99, lt, 'mc', [array([7, 6, 5, 4, 3, 2, 1]), array([7, 6, 5, 4, 3, 2, 1]), array([6, 5, 7, 4, 3, 2, 1]), array([1, 2, 3, 4, 5, 6, 7])]),
-          (4, 7, 500, 99, gt, 'mc', [array([7, 6, 5, 4, 3, 2, 1]), array([7, 6, 5, 4, 3, 2, 1]), array([5, 6, 7, 4, 3, 2, 1]), array([1, 2, 3, 4, 5, 6, 7])]),
-          (11, 3, 147, 99.9, lt, 'mc', [array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([2, 1, 3]), array([1, 2, 3])]),
-          (11, 3, 146, 99.9, gt, 'mc', [array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([1, 2, 3]), array([1, 2, 3])]),
+          (3, 6, 244, 95, lt, 'exact', [array([6, 5, 4, 3, 2, 1]), array([6, 5, 4, 3, 2, 1]), array([1, 3, 4, 5, 2, 6])]),
+          (3, 6, 243, 95, gt, 'exact', [array([6, 5, 4, 3, 2, 1]), array([6, 5, 4, 3, 2, 1]), array([1, 4, 2, 5, 3, 6])]),
+          (10, 5, 477, 95, lt, 'exact', [array([5, 4, 3, 2, 1]), array([5, 4, 3, 2, 1]), array([5, 4, 3, 2, 1]), array([5, 4, 3, 2, 1]), array([5, 4, 3, 2, 1]), array([5, 4, 3, 2, 1]), array([4, 1, 3, 2, 5]), array([1, 2, 3, 4, 5]), array([1, 2, 3, 4, 5]), array([1, 2, 3, 4, 5])]),
+          (10, 5, 476, 95, gt, 'exact', [array([5, 4, 3, 2, 1]), array([5, 4, 3, 2, 1]), array([5, 4, 3, 2, 1]), array([5, 4, 3, 2, 1]), array([5, 4, 3, 2, 1]), array([5, 4, 3, 2, 1]), array([4, 1, 2, 3, 5]), array([1, 2, 3, 4, 5]), array([1, 2, 3, 4, 5]), array([1, 2, 3, 4, 5])]),
+          (19, 3, 239, 95, lt, 'exact', [array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([2, 1, 3]), array([1, 2, 3]), array([1, 2, 3]), array([1, 2, 3]), array([1, 2, 3]), array([1, 2, 3]), array([1, 2, 3])]),
+          (19, 3, 238, 95, gt, 'exact', [array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([1, 2, 3]), array([1, 2, 3]), array([1, 2, 3]), array([1, 2, 3]), array([1, 2, 3]), array([1, 2, 3]), array([1, 2, 3])]),
+          (4, 7, 501, 99, lt, 'exact', [array([7, 6, 5, 4, 3, 2, 1]), array([7, 6, 5, 4, 3, 2, 1]), array([6, 5, 7, 4, 3, 2, 1]), array([1, 2, 3, 4, 5, 6, 7])]),
+          (4, 7, 500, 99, gt, 'exact', [array([7, 6, 5, 4, 3, 2, 1]), array([7, 6, 5, 4, 3, 2, 1]), array([5, 6, 7, 4, 3, 2, 1]), array([1, 2, 3, 4, 5, 6, 7])]),
+          (11, 3, 147, 99.9, lt, 'exact', [array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([2, 1, 3]), array([1, 2, 3])]),
+          (11, 3, 146, 99.9, gt, 'exact', [array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([1, 2, 3]), array([1, 2, 3])]),
          ]
 
     @pytest.mark.parametrize("m, n, L, a, compare, method, ranks", ts)
     def test_accuracy(self, m, n, L, a, compare, method, ranks):
         np.random.seed(42)
-        res = stats.pagel(ranks, n_s=2000)
+        res = stats.pagel(ranks)
         assert_equal(L, res.statistic)
         assert_(compare(res.pvalue, 1-a/100))
         assert_equal(method, res.method)
@@ -5755,17 +5755,19 @@ class TestPageL(object):
 
     def test_Ames_assay(self):
         # test from _pagel.py [2] page 151; data on page 144
+        np.random.seed(42)
+
         data = [[101, 117, 111], [91, 90, 107], [103, 133, 121], [136, 140, 144], [190, 161, 201], [146, 120, 116]]
         data = np.array(data).T
         predicted_ranks = np.arange(1, 7)
 
         res = stats.pagel(data, ranked=False, predicted_ranks=predicted_ranks, method="asymptotic")
         assert_equal(res.statistic, 257)
-        assert_equal(res.pvalue, 0.0035, atol=0.0001)
+        assert_almost_equal(res.pvalue, 0.0035, decimal=4)
 
-        res = stats.pagel(data, ranked=False, predicted_ranks=predicted_ranks, method="mc")
+        res = stats.pagel(data, ranked=False, predicted_ranks=predicted_ranks, method="exact")
         assert_equal(res.statistic, 257)
-        assert_(res.pvalue < 0.0023)  # MC tends to underestimate low p-values
+        assert_almost_equal(res.pvalue, 0.0023, decimal=4)
 
     def test_input_validation(self):
         # test data not a 2d array
@@ -5778,14 +5780,14 @@ class TestPageL(object):
         assert_raises(Exception, stats.pagel, np.random.rand(2, 2), match="Page's L is only appropriate")
 
         # predicted ranks must include each integer [1, 2, 3] exactly once
-        assert_raises(Exception, stats.pagel, data = np.random.rand(2, 3),
-                      predicted_ranks = [0, 1, 2], match="`predicted_ranks` must include each integer")
-        assert_raises(Exception, stats.pagel, data = np.random.rand(2, 3),
-                      predicted_ranks = [1.1, 2, 3], match="`predicted_ranks` must include each integer")
-        assert_raises(Exception, stats.pagel, data = np.random.rand(2, 3),
-                      predicted_ranks = [1, 2, 3, 3], match="`predicted_ranks` must include each integer")
-        assert_raises(Exception, stats.pagel, data = np.random.rand(2, 3),
-              predicted_ranks = "invalid", match="`predicted_ranks` must include each integer")
+        assert_raises(Exception, stats.pagel, data=np.random.rand(2, 3),
+                      predicted_ranks=[0, 1, 2], match="`predicted_ranks` must include each integer")
+        assert_raises(Exception, stats.pagel, data=np.random.rand(2, 3),
+                      predicted_ranks=[1.1, 2, 3], match="`predicted_ranks` must include each integer")
+        assert_raises(Exception, stats.pagel, data=np.random.rand(2, 3),
+                      predicted_ranks=[1, 2, 3, 3], match="`predicted_ranks` must include each integer")
+        assert_raises(Exception, stats.pagel, data=np.random.rand(2, 3),
+                      predicted_ranks="invalid", match="`predicted_ranks` must include each integer")
 
         # various
         assert_raises(Exception, stats.pagel, [[1, 2, 3], [1, 2, np.nan]], ranked=False, match="`data` contains NaNs")
