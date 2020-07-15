@@ -998,6 +998,7 @@ class TestPareto(object):
                       fscale=1)
         assert_raises(RuntimeError, stats.pareto.fit, [np.nan])
         assert_raises(RuntimeError, stats.pareto.fit, [np.inf])
+        assert_raises(TypeError, stats.pareto.fit, [2, 2, 3], floc=1, extra=2)
 
 
 class TestGenpareto(object):
