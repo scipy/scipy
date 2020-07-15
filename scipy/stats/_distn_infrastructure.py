@@ -14,7 +14,7 @@ from itertools import zip_longest
 
 from scipy._lib import doccer
 from ._distr_params import distcont, distdiscrete
-from scipy._lib._util import check_random_state
+from scipy._lib._util import check_random_state, Generator
 from scipy._lib._util import _valarray as valarray
 
 from scipy.special import (comb, chndtr, entr, rel_entr, xlogy, ive)
@@ -623,9 +623,8 @@ class rv_generic(object):
 
     def __setstate__(self, state):
         ctor_param, r = state
-        self.__init__(**ctor_param)
+        self._ctor_param.update(ctor_param)
         self._random_state = r
-        return self
 
     def _construct_argparser(
             self, meths_to_inspect, locscale_in, locscale_out):
@@ -1622,25 +1621,9 @@ class rv_continuous(rv_generic):
         self.xtol = xtol
         self.moment_type = momtype
         self.shapes = shapes
-        self._construct_argparser(meths_to_inspect=[self._pdf, self._cdf],
-                                  locscale_in='loc=0, scale=1',
-                                  locscale_out='loc, scale')
-
-        # nin correction
-        self._ppfvec = vectorize(self._ppf_single, otypes='d')
-        self._ppfvec.nin = self.numargs + 1
-        self.vecentropy = vectorize(self._entropy, otypes='d')
-        self._cdfvec = vectorize(self._cdf_single, otypes='d')
-        self._cdfvec.nin = self.numargs + 1
-
         self.extradoc = extradoc
-        if momtype == 0:
-            self.generic_moment = vectorize(self._mom0_sc, otypes='d')
-        else:
-            self.generic_moment = vectorize(self._mom1_sc, otypes='d')
-        # Because of the *args argument of _mom0_sc, vectorize cannot count the
-        # number of arguments correctly.
-        self.generic_moment.nin = self.numargs + 1
+
+        self._construct_methods()
 
         if longname is None:
             if name[0] in ['aeiouAEIOU']:
@@ -1659,6 +1642,41 @@ class rv_continuous(rv_generic):
             else:
                 dct = dict(distcont)
                 self._construct_doc(docdict, dct.get(self.name))
+
+    def __getstate__(self):
+        dct = self.__dict__.copy()
+
+        # these methods will be remade in __setstate__
+        # _random_state attribute is taken care of by rv_generic
+        attrs = ["_parse_args", "_parse_args_stats", "_parse_args_rvs",
+                 "_cdfvec", "_ppfvec", "vecentropy", "generic_moment"]
+        [dct.pop(attr, None) for attr in attrs]
+        return dct
+
+    def __setstate__(self, state):
+        dct = state
+        self.__dict__.update(dct)
+        self._construct_methods()
+
+    def _construct_methods(self):
+        self._construct_argparser(meths_to_inspect=[self._pdf, self._cdf],
+                                  locscale_in='loc=0, scale=1',
+                                  locscale_out='loc, scale')
+
+        # nin correction
+        self._ppfvec = vectorize(self._ppf_single, otypes='d')
+        self._ppfvec.nin = self.numargs + 1
+        self.vecentropy = vectorize(self._entropy, otypes='d')
+        self._cdfvec = vectorize(self._cdf_single, otypes='d')
+        self._cdfvec.nin = self.numargs + 1
+
+        if self.moment_type == 0:
+            self.generic_moment = vectorize(self._mom0_sc, otypes='d')
+        else:
+            self.generic_moment = vectorize(self._mom1_sc, otypes='d')
+        # Because of the *args argument of _mom0_sc, vectorize cannot count the
+        # number of arguments correctly.
+        self.generic_moment.nin = self.numargs + 1
 
     def _updated_ctor_param(self):
         """ Return the current version of _ctor_param, possibly updated by user.
@@ -2868,12 +2886,29 @@ class rv_discrete(rv_generic):
         self.b = b
         self.moment_tol = moment_tol
         self.inc = inc
-        self._cdfvec = vectorize(self._cdf_single, otypes='d')
-        self.vecentropy = vectorize(self._entropy)
         self.shapes = shapes
 
         if values is not None:
             raise ValueError("rv_discrete.__init__(..., values != None, ...)")
+        self._construct_methods()
+        self._construct_docstrings(name, longname, extradoc)
+
+    def __getstate__(self):
+        dct = self.__dict__.copy()
+        # these methods will be remade in __setstate__
+        attrs = ["_parse_args", "_parse_args_stats", "_parse_args_rvs",
+                 "_cdfvec", "_ppfvec", "generic_moment"]
+        [dct.pop(attr, None) for attr in attrs]
+        return dct
+
+    def __setstate__(self, state):
+        dct = state
+        self.__dict__.update(dct)
+        self._construct_methods()
+
+    def _construct_methods(self):
+        self._cdfvec = vectorize(self._cdf_single, otypes='d')
+        self.vecentropy = vectorize(self._entropy)
 
         self._construct_argparser(meths_to_inspect=[self._pmf, self._cdf],
                                   locscale_in='loc=0',
@@ -2893,8 +2928,6 @@ class rv_discrete(rv_generic):
 
         # now that self.numargs is defined, we can adjust nin
         self._cdfvec.nin = self.numargs + 1
-
-        self._construct_docstrings(name, longname, extradoc)
 
     def _construct_docstrings(self, name, longname, extradoc):
         if name is None:
@@ -3538,12 +3571,23 @@ class rv_sample(rv_discrete):
         self.qvals = np.cumsum(self.pk, axis=0)
 
         self.shapes = ' '   # bypass inspection
+        self._construct_methods()
+        self._construct_docstrings(name, longname, extradoc)
+
+    def __getstate__(self):
+        dct = self.__dict__.copy()
+
+        # these methods will be remade in __setstate__
+        # __setstate__ is supplied by rv_discrete
+        attrs = ["_parse_args", "_parse_args_stats", "_parse_args_rvs"]
+        [dct.pop(attr, None) for attr in attrs]
+        return dct
+
+    def _construct_methods(self):
         self._construct_argparser(meths_to_inspect=[self._pmf],
                                   locscale_in='loc=0',
                                   # scale=1 for discrete RVs
                                   locscale_out='loc, 1')
-
-        self._construct_docstrings(name, longname, extradoc)
 
     def _get_support(self, *args):
         """Return the support of the (unscaled, unshifted) distribution.

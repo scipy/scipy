@@ -1,3 +1,4 @@
+import pickle
 import numpy as np
 import numpy.testing as npt
 import pytest
@@ -654,3 +655,40 @@ def test_methods_with_lists(method, distname, args):
                         [f(*v) for v in zip(x, *shape2, loc, scale)],
                         rtol=1e-15, atol=1e-15)
 
+
+@pytest.mark.parametrize('distname, args', distcont)
+def test_pickle_frozen(distname, args):
+    # check that you can pickle frozen distributions
+    with npt.suppress_warnings() as sup:
+        sup.filter(category=DeprecationWarning, message=".*frechet_")
+        dist = getattr(stats, distname)
+
+        x = np.array([0.1, 0.2])
+        shape2 = [[a]*2 for a in args]
+
+        # only test one method, this should be enough
+        p = dist.pdf(x, *args, loc=0.3, scale=1.01)
+        frozen_dist = dist(*args, loc=0.3, scale=1.01)
+        pkl = pickle.dumps(frozen_dist)
+        unpkl_frozen_dist = pickle.loads(pkl)
+        npt.assert_allclose(p, unpkl_frozen_dist.pdf(x),
+                            rtol=1e-15, atol=1e-15)
+
+
+def test_pickle_random_state():
+    # check that you can pickle distributions and retain random state
+    # first unfrozen
+    norm_gen = stats.norm
+    norm_gen.random_state = 4323
+    pkl = pickle.dumps(norm_gen)
+    norm_gen2 = pickle.loads(pkl)
+
+    samples = norm_gen.rvs(size=5, scale=2, loc=-1)
+    npt.assert_allclose(norm_gen2.rvs(size=5, scale=2, loc=-1), samples)
+
+    # then unfrozen distribution
+    d = stats.norm(scale=2, loc=-1)
+    pkl = pickle.dumps(d)
+    d2 = pickle.loads(pkl)
+    npt.assert_allclose(d.rvs(size=5),
+                        d2.rvs(size=5))
