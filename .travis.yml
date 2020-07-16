@@ -170,17 +170,6 @@ before_install:
   - df -h
   - ulimit -a
   - set -o pipefail
-  - if [[ "${TRAVIS_CPU_ARCH}" == "arm64" ]]; then
-      wget -q "https://github.com/conda-forge/miniforge/releases/download/4.8.2-1/Miniforge3-4.8.2-1-Linux-aarch64.sh"  -O miniconda.sh;
-      chmod +x miniconda.sh;
-      ./miniconda.sh -b -p $HOME/miniconda3;
-      export PATH=$HOME/miniconda3/bin:$PATH;
-      conda config --set always_yes yes --set auto_update_conda false;
-      conda install pip conda;
-      conda update -n base conda;
-      conda info -a;
-      conda install pytest pytest-xdist $NUMPYSPEC mpmath gmpy2 Cython pybind11;
-    fi
   - mkdir builds
   - cd builds
   - |
@@ -189,15 +178,11 @@ before_install:
         virtualenv --python=$USE_DEBUG venv
         source venv/bin/activate
     fi
-  - python -V -V
+  - python --version
   - python -c 'import sys; print("Python debug build:", hasattr(sys, "gettotalrefcount"))'
-  # arm64 build uses conda (there aren't any arm64 wheels on PyPI, need
-  # Miniforge / conda-forge), so skip arm64 here
   - |
-    if [[ "$TRAVIS_CPU_ARCH" != "arm64" ]]; then
-         travis_retry pip install --upgrade pip setuptools wheel $OTHERSPEC cython pytest pytest-xdist mpmath argparse Pillow codecov gmpy2 pybind11
-         travis_retry pip install --upgrade $NUMPYSPEC
-    fi
+    travis_retry pip install --upgrade pip setuptools wheel $OTHERSPEC cython pytest pytest-xdist mpmath argparse gmpy2 pybind11
+    travis_retry pip install --upgrade $NUMPYSPEC
   - |
     if [ -n "${USE_DEBUG}" ]; then
         # see gh-10676; need to pin pytest version with debug
@@ -219,7 +204,11 @@ before_install:
     fi
   - |
     if [ "${TESTMODE}" == "full" ]; then
-        travis_retry pip install pytest-cov coverage matplotlib scikit-umfpack scikit-sparse
+        travis_retry pip install matplotlib scikit-umfpack scikit-sparse
+    fi
+  - |
+    if [ -n "${COVERAGE}" ]; then
+        travis_retry pip install pytest-cov coverage codecov
     fi
   - |
     if [ "${REFGUIDE_CHECK}" == "1" ]; then
@@ -229,10 +218,7 @@ before_install:
     if [ "${ASV_CHECK}" == "1" ]; then
         travis_retry pip install "asv>=0.4.1"
     fi
-  - |
-    if [ "${TRAVIS_CPU_ARCH}" != "arm64" ]; then
-         pip uninstall -y nose
-    fi
+  - pip uninstall -y nose
   - ccache -s
   - cd ..
 
