@@ -4194,7 +4194,6 @@ class laplace_gen(rv_continuous):
     def fit(self, data, *args, **kwds):
         floc = kwds.pop('floc', None)
         fscale = kwds.pop('fscale', None)
-
         _check_fit_input_parameters(data, args,
                                     kwds, fixed_param=(floc, fscale))
 
@@ -6144,7 +6143,10 @@ class pareto_gen(rv_continuous):
                 kwds['fscale'] = fscale
             if shape is not None:
                 kwds['f0'] = shape
+        if floc is None or fscale is not None:
             return super(pareto_gen, self).fit(data, *args, **kwds)
+        elif np.any(data - floc < 0):
+            raise FitDataError("pareto", lower=0, upper=np.inf)
         _check_unknown_kwds(kwds)
         data = data - floc
         fscale = np.min(data)
