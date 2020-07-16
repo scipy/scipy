@@ -4221,7 +4221,7 @@ laplace = laplace_gen(name='laplace')
 
 def _check_fit_input_parameters(self, data, args, kwds, fixed_param):
 
-    if len(args) > len(self.shapes):
+    if len(args) > (len(self.shapes) if self.shapes else 0):
         raise TypeError("Too many arguments.")
     if None not in fixed_param:
         # This check is for consistency with `rv_continuous.fit`.
