@@ -1002,6 +1002,8 @@ class TestPareto(object):
         assert_raises(RuntimeError, stats.pareto.fit, [np.inf],
                       match="The data contains non-finite values")
         assert_raises(TypeError, stats.pareto.fit, [2, 2, 3], floc=1, extra=2)
+        assert_raises(TypeError, stats.pareto.fit, [1, 2, 3], 1, 4,
+                      match="Too many arguments.")
 
 
 class TestGenpareto(object):
