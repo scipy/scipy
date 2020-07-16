@@ -4218,7 +4218,7 @@ class laplace_gen(rv_continuous):
 laplace = laplace_gen(name='laplace')
 
 
-def _check_fit_input_parameters(data, args, kwds, fixed_param):
+def _check_fit_input_parameters(self, data, args, kwds, fixed_param):
 
     if None not in fixed_param:
         # This check is for consistency with `rv_continuous.fit`.
@@ -6125,26 +6125,16 @@ class pareto_gen(rv_continuous):
         return 1 + 1.0/c - np.log(c)
 
     def fit(self, data, *args, **kwds):
+        kwds_cpy = kwds
         data = np.asarray(data)
 
         floc = kwds.pop('floc', None)
-
-        shape = kwds.get('f0', kwds.get('fix_b', kwds.get('fb', None)))
-
+        shape = kwds.pop('f0', kwds.pop('fix_b', kwds.pop('fb', None)))
         fscale = kwds.pop('fscale', None)
-
-        _check_fit_input_parameters(data, args,
+        _check_fit_input_parameters(self, data, args,
                                     kwds, fixed_param=(shape, floc, fscale))
-
-        if floc is None or fscale is not None or np.any(data - floc < 0):
-            if floc is not None:
-                kwds['floc'] = floc
-            if fscale is not None:
-                kwds['fscale'] = fscale
-            if shape is not None:
-                kwds['f0'] = shape
         if floc is None or fscale is not None:
-            return super(pareto_gen, self).fit(data, *args, **kwds)
+            return super(pareto_gen, self).fit(data, *args, **kwds_cpy)
         elif np.any(data - floc < 0):
             raise FitDataError("pareto", lower=0, upper=np.inf)
         _check_unknown_kwds(kwds)
