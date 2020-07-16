@@ -3466,6 +3466,7 @@ def test_ttest_ind():
     assert_equal(t.shape, (3, 2))
 
     # check nan policy
+    rng = np.random.RandomState(12345678)
     x = stats.norm.rvs(loc=5, scale=10, size=501, random_state=rng)
     x[500] = np.nan
     y = stats.norm.rvs(loc=5, scale=10, size=500, random_state=rng)
