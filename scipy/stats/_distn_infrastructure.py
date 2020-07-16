@@ -618,20 +618,24 @@ class rv_generic(object):
     def random_state(self, seed):
         self._random_state = check_random_state(seed)
 
-    def __getstate__(self):
-        return self._updated_ctor_param(), self._random_state
+    def _attach_argparser_methods(self):
+        """
+        Generates the argument-parsing functions dynamically and attaches
+        them to the instance.
 
-    def __setstate__(self, state):
-        ctor_param, r = state
-        self._ctor_param.update(ctor_param)
-        self._random_state = r
+        Should be called after _construct_argparser, and during unpickling
+        (__setstate__)
+        """
+        ns = {}
+        exec(self._parse_arg_template, ns)
+        # NB: attach to the instance, not class
+        for name in ['_parse_args', '_parse_args_stats', '_parse_args_rvs']:
+            setattr(self, name, types.MethodType(ns[name], self))
 
     def _construct_argparser(
             self, meths_to_inspect, locscale_in, locscale_out):
-        """Construct the parser for the shape arguments.
+        """Construct the parser string for the shape arguments.
 
-        Generates the argument-parsing functions dynamically and attaches
-        them to the instance.
         Is supposed to be called in __init__ of a class for each distribution.
 
         If self.shapes is a non-empty string, interprets it as a
@@ -696,11 +700,9 @@ class rv_generic(object):
                    locscale_in=locscale_in,
                    locscale_out=locscale_out,
                    )
-        ns = {}
-        exec(parse_arg_template % dct, ns)
-        # NB: attach to the instance, not class
-        for name in ['_parse_args', '_parse_args_stats', '_parse_args_rvs']:
-            setattr(self, name, types.MethodType(ns[name], self))
+
+        # this string is used by _attach_argparser_methods
+        self._parse_arg_template = parse_arg_template % dct
 
         self.shapes = ', '.join(shapes) if shapes else None
         if not hasattr(self, 'numargs'):
@@ -1623,7 +1625,10 @@ class rv_continuous(rv_generic):
         self.shapes = shapes
         self.extradoc = extradoc
 
-        self._construct_methods()
+        self._construct_argparser(meths_to_inspect=[self._pdf, self._cdf],
+                                  locscale_in='loc=0, scale=1',
+                                  locscale_out='loc, scale')
+        self._attach_methods()
 
         if longname is None:
             if name[0] in ['aeiouAEIOU']:
@@ -1656,12 +1661,13 @@ class rv_continuous(rv_generic):
     def __setstate__(self, state):
         dct = state
         self.__dict__.update(dct)
-        self._construct_methods()
+        self._attach_methods()
 
-    def _construct_methods(self):
-        self._construct_argparser(meths_to_inspect=[self._pdf, self._cdf],
-                                  locscale_in='loc=0, scale=1',
-                                  locscale_out='loc, scale')
+    def _attach_methods(self):
+        """
+        Attaches dynamically created methods to the rv_continuous instance
+        """
+        self._attach_argparser_methods()
 
         # nin correction
         self._ppfvec = vectorize(self._ppf_single, otypes='d')
@@ -2890,7 +2896,12 @@ class rv_discrete(rv_generic):
 
         if values is not None:
             raise ValueError("rv_discrete.__init__(..., values != None, ...)")
-        self._construct_methods()
+
+        self._construct_argparser(meths_to_inspect=[self._pmf, self._cdf],
+                                  locscale_in='loc=0',
+                                  # scale=1 for discrete RVs
+                                  locscale_out='loc, 1')
+        self._attach_methods()
         self._construct_docstrings(name, longname, extradoc)
 
     def __getstate__(self):
@@ -2902,18 +2913,17 @@ class rv_discrete(rv_generic):
         return dct
 
     def __setstate__(self, state):
-        dct = state
-        self.__dict__.update(dct)
-        self._construct_methods()
+        self.__dict__.update(state)
+        self._attach_methods()
 
-    def _construct_methods(self):
+    def _attach_methods(self):
+        """
+        Attaches dynamically created methods to the rv_discrete instance
+        """
         self._cdfvec = vectorize(self._cdf_single, otypes='d')
         self.vecentropy = vectorize(self._entropy)
 
-        self._construct_argparser(meths_to_inspect=[self._pmf, self._cdf],
-                                  locscale_in='loc=0',
-                                  # scale=1 for discrete RVs
-                                  locscale_out='loc, 1')
+        self._attach_argparser_methods()
 
         # nin correction needs to be after we know numargs
         # correct nin for generic moment vectorization
@@ -3571,7 +3581,14 @@ class rv_sample(rv_discrete):
         self.qvals = np.cumsum(self.pk, axis=0)
 
         self.shapes = ' '   # bypass inspection
-        self._construct_methods()
+
+        self._construct_argparser(meths_to_inspect=[self._pmf],
+                                  locscale_in='loc=0',
+                                  # scale=1 for discrete RVs
+                                  locscale_out='loc, 1')
+
+        self._attach_argparser_methods()
+
         self._construct_docstrings(name, longname, extradoc)
 
     def __getstate__(self):
@@ -3581,13 +3598,12 @@ class rv_sample(rv_discrete):
         # __setstate__ is supplied by rv_discrete
         attrs = ["_parse_args", "_parse_args_stats", "_parse_args_rvs"]
         [dct.pop(attr, None) for attr in attrs]
+
         return dct
 
-    def _construct_methods(self):
-        self._construct_argparser(meths_to_inspect=[self._pmf],
-                                  locscale_in='loc=0',
-                                  # scale=1 for discrete RVs
-                                  locscale_out='loc, 1')
+    def __setstate__(self, state):
+        self.__dict__.update(state)
+        self._attach_argparser_methods()
 
     def _get_support(self, *args):
         """Return the support of the (unscaled, unshifted) distribution.
