@@ -6130,18 +6130,8 @@ class pareto_gen(rv_continuous):
 
         floc = kwds.pop('floc', None)
 
-        # borrowed from distn_infrastructure
-        # puts shape into f0
-        if self.shapes:
-            shapes = self.shapes.replace(',', ' ').split()
-            for j, s in enumerate(shapes):
-                key = 'f' + str(j)
-                names = [key, 'f' + s, 'fix_' + s]
-                val = _get_fixed_fit_value(kwds, names)
-                if val is not None:
-                    kwds[key] = val
+        shape = kwds.get('f0', kwds.get('fix_b', kwds.get('fb', None)))
 
-        shape = kwds.pop('f0', None)
         fscale = kwds.pop('fscale', None)
 
         _check_fit_input_parameters(data, args,
