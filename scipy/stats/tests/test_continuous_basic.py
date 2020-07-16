@@ -108,9 +108,9 @@ def test_cont_basic(distname, arg):
         distfn = distname
         distname = 'rv_histogram_instance'
 
-    np.random.seed(765456)
+    rng = np.random.RandomState(765456)
     sn = 500
-    rvs = distfn.rvs(size=sn, *arg)
+    rvs = distfn.rvs(size=sn, *arg, random_state=rng)
     sm = rvs.mean()
     sv = rvs.var()
     m, v = distfn.stats(*arg)
@@ -185,7 +185,6 @@ def test_cont_basic(distname, arg):
 
     if distname not in skip_fit_fix_test:
         check_fit_args_fix(distfn, arg, rvs[0:200])
-
 
 @pytest.mark.parametrize('distname,arg', cases_test_cont_basic())
 def test_rvs_scalar(distname, arg):
@@ -303,17 +302,18 @@ def test_rvs_gh2069_regression():
     # A typical example of the broken behavior:
     # >>> norm.rvs(loc=np.zeros(5), scale=np.ones(5))
     # array([-2.49613705, -2.49613705, -2.49613705, -2.49613705, -2.49613705])
-    np.random.seed(123)
-    vals = stats.norm.rvs(loc=np.zeros(5), scale=1)
+    rng = np.random.RandomState(123)
+    vals = stats.norm.rvs(loc=np.zeros(5), scale=1, random_state=rng)
     d = np.diff(vals)
     npt.assert_(np.all(d != 0), "All the values are equal, but they shouldn't be!")
-    vals = stats.norm.rvs(loc=0, scale=np.ones(5))
+    vals = stats.norm.rvs(loc=0, scale=np.ones(5), random_state=rng)
     d = np.diff(vals)
     npt.assert_(np.all(d != 0), "All the values are equal, but they shouldn't be!")
-    vals = stats.norm.rvs(loc=np.zeros(5), scale=np.ones(5))
+    vals = stats.norm.rvs(loc=np.zeros(5), scale=np.ones(5), random_state=rng)
     d = np.diff(vals)
     npt.assert_(np.all(d != 0), "All the values are equal, but they shouldn't be!")
-    vals = stats.norm.rvs(loc=np.array([[0], [0]]), scale=np.ones(5))
+    vals = stats.norm.rvs(loc=np.array([[0], [0]]), scale=np.ones(5),
+                          random_state=rng)
     d = np.diff(vals.ravel())
     npt.assert_(np.all(d != 0), "All the values are equal, but they shouldn't be!")
 
