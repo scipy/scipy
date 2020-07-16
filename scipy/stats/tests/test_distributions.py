@@ -934,9 +934,9 @@ class TestPareto(object):
         assert_equal(loc_mle, 0)
 
         # fixed `fscale` does not use MLE.
-        all_free = stats.pareto.fit(data, floc=1, fscale=2)
+        all_free = stats.pareto.fit(data, floc=0, fscale=2)
         all_free_opt = super(type(stats.pareto),
-                             stats.pareto).fit(data, floc=1, fscale=2)
+                             stats.pareto).fit(data, floc=0, fscale=2)
         assert_equal(all_free, all_free_opt)
 
         # shape can still be fixed with multiple names
@@ -995,9 +995,12 @@ class TestPareto(object):
 
     def test_fit_warnings(self):
         assert_raises(RuntimeError, stats.pareto.fit, [1, 2, 3], f0=2, floc=1,
-                      fscale=1)
-        assert_raises(RuntimeError, stats.pareto.fit, [np.nan])
-        assert_raises(RuntimeError, stats.pareto.fit, [np.inf])
+                      fscale=1, match="All parameters fixed. There is nothing "
+                      "to optimize.",)
+        assert_raises(RuntimeError, stats.pareto.fit, [np.nan],
+                      match="The data contains non-finite values")
+        assert_raises(RuntimeError, stats.pareto.fit, [np.inf],
+                      match="The data contains non-finite values")
         assert_raises(TypeError, stats.pareto.fit, [2, 2, 3], floc=1, extra=2)
 
 

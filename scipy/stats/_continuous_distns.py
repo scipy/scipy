@@ -6125,7 +6125,7 @@ class pareto_gen(rv_continuous):
         return 1 + 1.0/c - np.log(c)
 
     def fit(self, data, *args, **kwds):
-        kwds_cpy = kwds
+        kwds_cpy = kwds.copy()
         data = np.asarray(data)
 
         floc = kwds.pop('floc', None)
