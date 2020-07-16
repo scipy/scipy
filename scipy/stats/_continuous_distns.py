@@ -4234,8 +4234,6 @@ def _check_fit_input_parameters(self, data, args, kwds, fixed_param):
 
 def _check_unknown_kwds(kwds):
     _remove_optimizer_parameters(kwds)
-    if kwds:
-        raise TypeError("Unknown arguments: %s." % kwds)
 
 
 class levy_gen(rv_continuous):
