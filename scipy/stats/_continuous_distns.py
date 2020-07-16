@@ -4194,7 +4194,8 @@ class laplace_gen(rv_continuous):
     def fit(self, data, *args, **kwds):
         floc = kwds.pop('floc', None)
         fscale = kwds.pop('fscale', None)
-        _check_fit_input_parameters(data, args,
+        data = np.asarray(data)
+        _check_fit_input_parameters(self, data, args,
                                     kwds, fixed_param=(floc, fscale))
 
         # MLE for the laplace distribution
@@ -4220,6 +4221,8 @@ laplace = laplace_gen(name='laplace')
 
 def _check_fit_input_parameters(self, data, args, kwds, fixed_param):
 
+    if len(args) > len(self.shapes):
+        raise TypeError("Too many arguments.")
     if None not in fixed_param:
         # This check is for consistency with `rv_continuous.fit`.
         # Without this check, this function would just return the
@@ -4227,7 +4230,6 @@ def _check_fit_input_parameters(self, data, args, kwds, fixed_param):
         raise RuntimeError("All parameters fixed. There is nothing to "
                            "optimize.")
 
-    data = np.asarray(data)
     if not np.isfinite(data).all():
         raise RuntimeError("The data contains non-finite values.")
 
