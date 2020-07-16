@@ -48,7 +48,7 @@ from numpydoc.docscrape_sphinx import get_doc_object
 
 if parse_version(sphinx.__version__) >= parse_version('1.5'):
     # Enable specific Sphinx directives
-    from sphinx.directives import SeeAlso, Only
+    from sphinx.directives.other import SeeAlso, Only
     directives.register_directive('seealso', SeeAlso)
     directives.register_directive('only', Only)
 else:
