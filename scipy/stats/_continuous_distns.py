@@ -4218,8 +4218,9 @@ laplace = laplace_gen(name='laplace')
 
 def _check_fit_input_parameters(self, data, args, kwds):
     data = np.asarray(data)
-    floc = kwds.pop('floc', None)
-    fscale = kwds.pop('fscale', None)
+    floc = kwds.get('floc', None)
+    fscale = kwds.get('fscale', None)
+
     # user has many options for fixing the shape, so here we standardize it
     # into 'f' + the number of the shape.
     if self.shapes:
@@ -4227,14 +4228,19 @@ def _check_fit_input_parameters(self, data, args, kwds):
         for j, s in enumerate(shapes):
             key = 'f' + str(j)
             names = [key, 'f' + s, 'fix_' + s]
-            val = _get_fixed_fit_value(kwds, names)	
+            val = _get_fixed_fit_value(kwds, names)
             if val is not None:
                 kwds[key] = val
 
-    # create array of shapes
-    shapes = [kwds.pop('f' + str(x), None) for x in
-              range(0, len(self.shapes) if self.shapes else 0)]
-    _remove_optimizer_parameters(kwds)
+    # create array of shape keys
+    shape_keys = ['f' + str(x) for x in
+                  range(0, len(self.shapes) if self.shapes else 0)]
+    shapes = [kwds.get(x, None) for x in shape_keys]
+    # determine if there are any unknown arguments in kwds
+    keys = [x for x in kwds.keys() if x not in ['loc', 'scale', 'optimizer',
+                                                'floc', 'fscale', *shape_keys]]
+    if keys:
+        raise TypeError("Unknown keyword arguments: %s." % keys)
 
     if len(args) > (len(self.shapes) if self.shapes else 0):
         raise TypeError("Too many positional arguments.")
