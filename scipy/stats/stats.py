@@ -4331,15 +4331,29 @@ def pointbiserialr(x, y):
 KendalltauResult = namedtuple('KendalltauResult', ('correlation', 'pvalue'))
 
 
-def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate', method='auto'):
+def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate',
+               method='auto', version='b'):
     """
     Calculate Kendall's tau, a correlation measure for ordinal data.
 
     Kendall's tau is a measure of the correspondence between two rankings.
     Values close to 1 indicate strong agreement, values close to -1 indicate
-    strong disagreement.  This is the 1945 "tau-b" version of Kendall's
-    tau [2]_, which can account for ties and which reduces to the 1938 "tau-a"
-    version [1]_ in absence of ties.
+    strong disagreement.  This function can be used to calculate either:
+
+        - the 1945 "tau-b" version of Kendall's tau [2]_, which can account
+          for ties and which reduces to the 1938 "tau-a" version [1]_ in the
+          absence of ties, or
+        - the 1953 "tau-c" [6]_ version of the statistic, also known as
+          Stuart's tau-c, which may be more suitable than the tau-b statistic
+          when the two rankings have a different number of distinct values.
+
+    Suppose the first ranking has :math:`r` distinct ranks and the second
+    ranking has :math:`s` distinct ranks. These two lists of :math:`n` rankings
+    can also be viewed as an :math:`r \\times s` contingency table in which
+    element :math:`i, j` is the number of rank pairs with scored :math:`i`
+    on the first scale and :math:`j` on the second scale. From this
+    perspective, the tau-c metric may be more appropriate than tau-b when the
+    contingency table is non-square.
 
     Parameters
     ----------
@@ -4355,6 +4369,7 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate', method='auto'
           * 'propagate': returns nan
           * 'raise': throws an error
           * 'omit': performs the calculations ignoring nan values
+
     method : {'auto', 'asymptotic', 'exact'}, optional
         Defines which method is used to calculate the p-value [5]_.
         The following options are available (default is 'auto'):
@@ -4364,6 +4379,9 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate', method='auto'
           * 'asymptotic': uses a normal approximation valid for large samples
           * 'exact': computes the exact p-value, but can only be used if no ties
             are present
+
+    version : {'b', 'c'}, optional
+        The version of the tau statistic calculated (default 'b').
 
     Returns
     -------
@@ -4381,7 +4399,7 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate', method='auto'
 
     Notes
     -----
-    The definition of Kendall's tau that is used is [2]_::
+    The definition of tau-b is [2]_::
 
       tau = (P - Q) / sqrt((P + Q + T) * (P + Q + U))
 
@@ -4389,6 +4407,14 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate', method='auto'
     pairs, T the number of ties only in `x`, and U the number of ties only in
     `y`.  If a tie occurs for the same pair in both `x` and `y`, it is not
     added to either T or U.
+
+    The definition of tau-c is [6]_::
+
+          tau = 2 (P - Q) / n^2 (m-1) / m
+
+    where P is the number of concordant pairs, Q the number of discordant
+    pairs, n is the total number of observations, and m is the minimum number
+    of unique values in either ranking.
 
     References
     ----------
@@ -4403,6 +4429,9 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate', method='auto'
            pp. 327-336, 1994.
     .. [5] Maurice G. Kendall, "Rank Correlation Methods" (4th Edition),
            Charles Griffin & Co., 1970.
+    .. [6] A. Stuart, "The Estimation and Comparison of Strengths of
+           Association in Contingency Tables", *Biometrika*
+           Vol. 40, No. 1/2, pp. 105-110, 1953.
 
     Examples
     --------
@@ -4416,6 +4445,11 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate', method='auto'
     0.2827454599327748
 
     """
+
+    # TODO: add mstats support for tau-c?
+    # TODO: Accept unranked data?
+    # TODO: Accept contingency table?
+
     x = np.asarray(x).ravel()
     y = np.asarray(y).ravel()
 
@@ -4477,6 +4511,20 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate', method='auto'
     # Note that tot = con + dis + (xtie - ntie) + (ytie - ntie) + ntie
     #               = con + dis + xtie + ytie - ntie
     con_minus_dis = tot - xtie - ytie + ntie - 2 * dis
+
+    # early return for tau-c to avoid appearance of changes to tau-b
+    # this is just for easier review; it can be revisited at the end
+    if version == 'c':
+        r = len(np.unique(x))
+        s = len(np.unique(y))
+        m = min(r, s)
+        tau = 2*con_minus_dis/(size**2*(m-1)/m)
+        # should be the same as tau-b, but I'm checking against a different-looking
+        # version of the calculation. If they are the same, we can simplify
+        pvalue = None
+        return KendalltauResult(tau, pvalue)
+
+    # The rest is tau-b
     tau = con_minus_dis / np.sqrt(tot - xtie) / np.sqrt(tot - ytie)
     # Limit range to fix computational errors
     tau = min(1., max(-1., tau))
@@ -4511,11 +4559,11 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate', method='auto'
             new = [0.0]*(c+1)
             new[0] = 1.0
             new[1] = 1.0
-            for j in range(3,size+1):
+            for j in range(3, size+1):
                 old = new[:]
-                for k in range(1,min(j,c+1)):
+                for k in range(1, min(j, c+1)):
                     new[k] += new[k-1]
-                for k in range(j,c+1):
+                for k in range(j, c+1):
                     new[k] += new[k-1] - old[k-j]
 
             pvalue = 2.0*sum(new)/math.factorial(size) if size < 171 else 0.0
@@ -4528,8 +4576,6 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate', method='auto'
         pvalue = special.erfc(np.abs(con_minus_dis) / np.sqrt(var) / np.sqrt(2))
     else:
         raise ValueError("Unknown method "+str(method)+" specified, please use auto, exact or asymptotic.")
-
-    return KendalltauResult(tau, pvalue)
 
 
 WeightedTauResult = namedtuple('WeightedTauResult', ('correlation', 'pvalue'))
