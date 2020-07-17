@@ -396,7 +396,7 @@ PyObject *gen_output(F_INT n, F_INT m, F_INT np, F_INT nq, F_INT ldwe, F_INT ld2
             ",s:" F_INT_PYFMT ",s:" F_INT_PYFMT ",s:" F_INT_PYFMT ",s:" F_INT_PYFMT
             ",s:" F_INT_PYFMT ",s:" F_INT_PYFMT ",s:" F_INT_PYFMT ",s:" F_INT_PYFMT
             ",s:" F_INT_PYFMT "}"),
-         "delta", delta, "eps", eps, "xplus", xplus, "fn", fn, "sd", sd, "sd",
+         "delta", delta, "eps", eps, "xplus", xplus, "fn", fn, "sd", sd, "vcv",
          vcv, "rvar", rvar, "wss", wss, "wssde", wssde, "wssep", wssep,
          "rcond", rcond, "eta", eta, "olmav", olmav, "tau", tau, "alpha",
          alpha, "actrs", actrs, "pnorm", pnorm, "rnors", rnors, "prers",
