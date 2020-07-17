@@ -1424,13 +1424,17 @@ class SmoothSphereBivariateSpline(SphereBivariateSpline):
 
     def __init__(self, theta, phi, r, w=None, s=0., eps=1E-16):
 
+        theta, phi, r = np.asarray(theta), np.asarray(phi), np.asarray(r)
+
         # input validation
         if not ((0.0 <= theta).all() and (theta <= np.pi).all()):
             raise ValueError('theta should be between [0, pi]')
         if not ((0.0 <= phi).all() and (phi <= 2.0 * np.pi).all()):
             raise ValueError('phi should be between [0, 2pi]')
-        if w is not None and not (w >= 0.0).all():
-            raise ValueError('w should be positive')
+        if w is not None:
+            w = np.asarray(w)
+            if not (w >= 0.0).all():
+                raise ValueError('w should be positive')
         if not s >= 0.0:
             raise ValueError('s should be positive')
         if not 0.0 < eps < 1.0:
@@ -1538,6 +1542,9 @@ class LSQSphereBivariateSpline(SphereBivariateSpline):
 
     def __init__(self, theta, phi, r, tt, tp, w=None, eps=1E-16):
 
+        theta, phi, r = np.asarray(theta), np.asarray(phi), np.asarray(r)
+        tt, tp = np.asarray(tt), np.asarray(tp)
+
         if not ((0.0 <= theta).all() and (theta <= np.pi).all()):
             raise ValueError('theta should be between [0, pi]')
         if not ((0.0 <= phi).all() and (phi <= 2*np.pi).all()):
@@ -1546,8 +1553,10 @@ class LSQSphereBivariateSpline(SphereBivariateSpline):
             raise ValueError('tt should be between (0, pi)')
         if not ((0.0 < tp).all() and (tp < 2*np.pi).all()):
             raise ValueError('tp should be between (0, 2pi)')
-        if w is not None and not (w >= 0.0).all():
-            raise ValueError('w should be positive')
+        if w is not None:
+            w = np.asarray(w)
+            if not (w >= 0.0).all():
+                raise ValueError('w should be positive')
         if not 0.0 < eps < 1.0:
             raise ValueError('eps should be between (0, 1)')
 
@@ -1763,6 +1772,7 @@ class RectSphereBivariateSpline(SphereBivariateSpline):
         ider[1], ider[3] = pole_flat
 
         u, v = np.ravel(u), np.ravel(v)
+        r = np.asarray(r)
 
         if not ((0.0 <= u).all() and (u <= np.pi).all()):
             raise ValueError('u should be between [0, pi]')
