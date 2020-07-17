@@ -6143,8 +6143,8 @@ class pareto_gen(rv_continuous):
         data, fshape, floc, fscale = parameters
         if floc is None:
             raise RuntimeError("`floc` must be fixed to obtain a "
-                               "well defined solution. ")
-        if np.any(data - floc < 0):
+                               "well defined solution.")
+        if np.any(data - floc < (fscale if fscale else 0)):
             raise FitDataError("pareto", lower=0, upper=np.inf)
         data = data - floc
         if fscale is None:
