@@ -625,7 +625,7 @@ class TestTruncnorm(object):
 
     def test_rvs_Generator(self):
         # check that rvs can use a Generator
-        if hasattr(np.random, "default_rng")
+        if hasattr(np.random, "default_rng"):
             stats.truncnorm.rvs(-10, -5, size=5,
                                 random_state=np.random.default_rng())
 
