@@ -27,6 +27,7 @@ import scipy.stats.distributions
 
 from scipy.special import xlogy
 from .test_continuous_basic import distcont
+from scipy.stats._continuous_distns import FitDataError
 
 # python -OO strips docstrings
 DOCSTRINGS_STRIPPED = sys.flags.optimize > 1
@@ -921,23 +922,6 @@ class TestPareto(object):
     def test_fit(self, rvs_shape, rvs_loc, rvs_scale):
         data = stats.pareto.rvs(size=100, b=rvs_shape, scale=rvs_scale,
                                 loc=rvs_loc)
-        # non fixed `floc` does not use MLE.
-        all_free = stats.pareto.fit(data)
-        all_free_opt = super(type(stats.pareto), stats.pareto).fit(data)
-        assert_equal(all_free, all_free_opt)
-
-        # fixed `floc` uses MLE
-        shape_mle, loc_mle, scale_mle = stats.pareto.fit(data, floc=0)
-        assert_equal(scale_mle, data.min())
-        assert_equal(shape_mle, 1/((1/len(data)) *
-                                   np.sum(np.log(data/data.min()))))
-        assert_equal(loc_mle, 0)
-
-        # fixed `fscale` does not use MLE.
-        all_free = stats.pareto.fit(data, floc=0, fscale=2)
-        all_free_opt = super(type(stats.pareto),
-                             stats.pareto).fit(data, floc=0, fscale=2)
-        assert_equal(all_free, all_free_opt)
 
         # shape can still be fixed with multiple names
         shape_mle1 = stats.pareto.fit(data, floc=0, f0=1.04)[0]
@@ -967,30 +951,36 @@ class TestPareto(object):
         func = stats.pareto._reduce_func(args, {})[1]
 
         # fixed `floc` to actual location provides as good or better fit.
-        shape_mle, loc_mle, scale_mle = stats.pareto.fit(data, floc=rvs_loc)
-        shape_opt, loc_opt, scale_opt = super(type(stats.pareto),
-                                              stats.pareto).fit(data,
-                                                                floc=rvs_loc)
-        ll_mle = func((shape_mle, loc_mle, scale_mle), data)
-        ll_opt = func((shape_opt, loc_opt, scale_opt), data)
+        mle = stats.pareto.fit(data, floc=rvs_loc)
+        opt = super(type(stats.pareto), stats.pareto).fit(data, floc=rvs_loc)
+        ll_mle = func(mle, data)
+        ll_opt = func(opt, data)
         assert ll_mle < ll_opt or np.allclose(ll_mle, ll_opt)
 
         # fixing `floc` to an arbitrary number, 0, still provides an as good
         # or better fit.
-        shape_mle, loc_mle, scale_mle = stats.pareto.fit(data, floc=0)
-        shape_opt, loc_opt, scale_opt = super(type(stats.pareto),
-                                              stats.pareto).fit(data, floc=0)
-        ll_mle = func((shape_mle, loc_mle, scale_mle), data)
-        ll_opt = func((shape_opt, loc_opt, scale_opt), data)
+        mle = stats.pareto.fit(data, floc=0)
+        opt = super(type(stats.pareto), stats.pareto).fit(data, floc=0)
+        ll_mle = func(mle, data)
+        ll_opt = func(opt, data)
         assert ll_mle < ll_opt or np.allclose(ll_mle, ll_opt)
 
-        # fixed shape still uses MLE and provides an as good or better fit.
-        shape_mle, loc_mle, scale_mle = stats.pareto.fit(data, floc=0, f0=4)
-        shape_opt, loc_opt, scale_opt = super(type(stats.pareto),
-                                              stats.pareto).fit(data,
-                                                                floc=0, f0=4)
-        ll_mle = func((shape_mle, loc_mle, scale_mle), data)
-        ll_opt = func((shape_opt, loc_opt, scale_opt), data)
+        # fixed shape still uses analytical MLE and provides
+        # an as good or better fit.
+        mle = stats.pareto.fit(data, floc=0, f0=4)
+        opt = super(type(stats.pareto), stats.pareto).fit(data, floc=0, f0=4)
+        ll_mle = func(mle, data)
+        ll_opt = func(opt, data)
+        assert ll_mle < ll_opt or np.allclose(ll_mle, ll_opt)
+
+        # valid fixed fscale still uses analytical MLE and provides
+        # an as good or better fit.
+        mle = stats.pareto.fit(data, floc=0, fscale=rvs_scale/2)
+        opt = super(type(stats.pareto), stats.pareto).fit(data, floc=0,
+                                                          fscale=rvs_scale/2)
+        ll_mle = func(mle, data)
+        ll_opt = func(opt, data)
+        print(mle, opt, ll_mle, ll_opt)
         assert ll_mle < ll_opt or np.allclose(ll_mle, ll_opt)
 
     def test_fit_warnings(self):
@@ -1004,6 +994,12 @@ class TestPareto(object):
         assert_raises(TypeError, stats.pareto.fit, [2, 2, 3], floc=1, extra=2)
         assert_raises(TypeError, stats.pareto.fit, [1, 2, 3], 1, 4,
                       match="Too many arguments.")
+        assert_raises(RuntimeError, stats.pareto.fit, [1, 2, 3],
+                      match="`floc` must be fixed to obtain a "
+                      "well defined solution.")
+        assert_raises(FitDataError, stats.pareto.fit, [1, 2, 3], floc=2)
+        assert_raises(FitDataError, stats.pareto.fit, [5, 2, 3], floc=1,
+                      fscale=3)
 
 
 class TestGenpareto(object):
