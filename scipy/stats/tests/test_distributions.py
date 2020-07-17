@@ -623,6 +623,12 @@ class TestTruncnorm(object):
         assert_(np.all(low <= x.min(axis=0)))
         assert_(np.all(x.max(axis=0) <= high))
 
+    def test_rvs_Generator(self):
+        # check that rvs can use a Generator
+        if hasattr(np.random, "default_rng")
+            stats.truncnorm.rvs(-10, -5, size=5,
+                                random_state=np.random.default_rng())
+
 class TestHypergeom(object):
     def setup_method(self):
         np.random.seed(1234)
