@@ -4192,11 +4192,8 @@ class laplace_gen(rv_continuous):
         estimation of the Laplace distribution parameters, so the keyword
         arguments `loc`, `scale`, and `optimizer` are ignored.\n\n""")
     def fit(self, data, *args, **kwds):
-        floc = kwds.pop('floc', None)
-        fscale = kwds.pop('fscale', None)
-        data = np.asarray(data)
-        _check_fit_input_parameters(self, data, args,
-                                    kwds, fixed_param=(floc, fscale))
+        data, floc, fscale = _check_fit_input_parameters(self, data,
+                                                         args, kwds)
 
         # MLE for the laplace distribution
 
@@ -4219,11 +4216,30 @@ class laplace_gen(rv_continuous):
 laplace = laplace_gen(name='laplace')
 
 
-def _check_fit_input_parameters(self, data, args, kwds, fixed_param):
+def _check_fit_input_parameters(self, data, args, kwds):
+    data = np.asarray(data)
+    floc = kwds.pop('floc', None)
+    fscale = kwds.pop('fscale', None)
+    # user has many options for fixing the shape, so here we standardize it
+    # into 'f' + the number of the shape.
+    if self.shapes:
+        shapes = self.shapes.replace(',', ' ').split()
+        for j, s in enumerate(shapes):
+            key = 'f' + str(j)
+            names = [key, 'f' + s, 'fix_' + s]
+            val = _get_fixed_fit_value(kwds, names)	
+            if val is not None:
+                kwds[key] = val
+
+    # create array of shapes
+    shapes = [kwds.pop('f' + str(x), None) for x in
+              range(0, len(self.shapes) if self.shapes else 0)]
+    _remove_optimizer_parameters(kwds)
 
     if len(args) > (len(self.shapes) if self.shapes else 0):
-        raise TypeError("Too many arguments.")
-    if None not in fixed_param:
+        raise TypeError("Too many positional arguments.")
+
+    if None not in [floc, fscale, *shapes]:
         # This check is for consistency with `rv_continuous.fit`.
         # Without this check, this function would just return the
         # parameters that were given.
@@ -4233,9 +4249,7 @@ def _check_fit_input_parameters(self, data, args, kwds, fixed_param):
     if not np.isfinite(data).all():
         raise RuntimeError("The data contains non-finite values.")
 
-
-def _check_unknown_kwds(kwds):
-    _remove_optimizer_parameters(kwds)
+    return (data, *shapes, floc, fscale)
 
 
 class levy_gen(rv_continuous):
@@ -6125,24 +6139,19 @@ class pareto_gen(rv_continuous):
         return 1 + 1.0/c - np.log(c)
 
     def fit(self, data, *args, **kwds):
-        kwds_cpy = kwds.copy()
-        data = np.asarray(data)
-
-        floc = kwds.pop('floc', None)
-        shape = kwds.pop('f0', kwds.pop('fix_b', kwds.pop('fb', None)))
-        fscale = kwds.pop('fscale', None)
-        _check_fit_input_parameters(self, data, args,
-                                    kwds, fixed_param=(shape, floc, fscale))
-        if floc is None or fscale is not None:
-            return super(pareto_gen, self).fit(data, *args, **kwds_cpy)
-        elif np.any(data - floc < 0):
+        parameters = _check_fit_input_parameters(self, data, args, kwds)
+        data, fshape, floc, fscale = parameters
+        if floc is None:
+            raise RuntimeError("`floc` must be fixed to obtain a "
+                               "well defined solution. ")
+        if np.any(data - floc < 0):
             raise FitDataError("pareto", lower=0, upper=np.inf)
-        _check_unknown_kwds(kwds)
         data = data - floc
-        fscale = np.min(data)
-        if shape is None:
-            shape = 1/((1/len(data)) * np.sum(np.log(data/fscale)))
-        return(shape, floc, fscale)
+        if fscale is None:
+            fscale = np.min(data)
+        if fshape is None:
+            fshape = 1/((1/len(data)) * np.sum(np.log(data/fscale)))
+        return(fshape, floc, fscale)
 
 
 pareto = pareto_gen(a=1.0, name="pareto")
