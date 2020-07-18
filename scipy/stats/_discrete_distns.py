@@ -546,6 +546,7 @@ class nhypergeom_gen(rv_discrete):
     --------
     >>> from scipy.stats import nhypergeom
     >>> import matplotlib.pyplot as plt
+    >>> import numpy as np
 
     Suppose we have a collection of 20 animals, of which 7 are dogs.
     Then if we want to know the probability of finding a given number
@@ -553,7 +554,7 @@ class nhypergeom_gen(rv_discrete):
     aren't dogs (failures), we can initialize a frozen distribution
     and plot the probability mass function:
 
-    >>> [N, K, r] = [20, 7, 12]
+    >>> N, K, r = [20, 7, 12]
     >>> rv = nhypergeom(N, K, r)
     >>> x = np.arange(0, K)
     >>> pmf_dogs = rv.pmf(x)
