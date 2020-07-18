@@ -5251,7 +5251,7 @@ def _two_sample_transform(u, v):
 Ttest_1sampResult = namedtuple('Ttest_1sampResult', ('statistic', 'pvalue'))
 
 
-def ttest_1samp(a, popmean, axis=0, nan_policy='propagate'):
+def ttest_1samp(a, popmean, axis=0, nan_policy='propagate', alternative="two-sided"):
     """
     Calculate the T-test for the mean of ONE group of scores.
 
@@ -5329,26 +5329,37 @@ def ttest_1samp(a, popmean, axis=0, nan_policy='propagate'):
 
     with np.errstate(divide='ignore', invalid='ignore'):
         t = np.divide(d, denom)
-    t, prob = _ttest_finish(df, t)
+    t, prob = _ttest_finish(df, t, alternative)
 
     return Ttest_1sampResult(t, prob)
 
 
-def _ttest_finish(df, t):
+def _ttest_finish(df, t, alternative):
     """Common code between all 3 t-test functions."""
-    prob = distributions.t.sf(np.abs(t), df) * 2  # use np.abs to get upper tail
+    prob = distributions.t.sf(t, df)
+
+    if alternative == "greater":
+        prob = 1 - prob
+    elif alternative == "less":
+        pass
+    elif alternative == "two-sided":
+        prob = 2 * np.minimum(prob, 1-prob)
+    else:
+        raise ValueError(
+            "alternative should be 'less', 'greater' or 'two-sided'")
+
     if t.ndim == 0:
         t = t[()]
 
     return t, prob
 
 
-def _ttest_ind_from_stats(mean1, mean2, denom, df):
+def _ttest_ind_from_stats(mean1, mean2, denom, df, alternative):
 
     d = mean1 - mean2
     with np.errstate(divide='ignore', invalid='ignore'):
         t = np.divide(d, denom)
-    t, prob = _ttest_finish(df, t)
+    t, prob = _ttest_finish(df, t, alternative)
 
     return (t, prob)
 
@@ -5377,7 +5388,7 @@ Ttest_indResult = namedtuple('Ttest_indResult', ('statistic', 'pvalue'))
 
 
 def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
-                         equal_var=True):
+                         equal_var=True, alternative="two-sided"):
     r"""
     T-test for means of two independent samples from descriptive statistics.
 
@@ -5483,7 +5494,7 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
         df, denom = _unequal_var_ttest_denom(std1**2, nobs1,
                                              std2**2, nobs2)
 
-    res = _ttest_ind_from_stats(mean1, mean2, denom, df)
+    res = _ttest_ind_from_stats(mean1, mean2, denom, df, alternative)
     return Ttest_indResult(*res)
 
 
@@ -5529,7 +5540,7 @@ def _ttest_nans(a, b, axis, namedtuple_type):
     return namedtuple_type(t, p)
 
 
-def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate'):
+def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate', alternative="two-sided"):
     """
     Calculate the T-test for the means of *two independent* samples of scores.
 
@@ -5651,7 +5662,7 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate'):
     else:
         df, denom = _unequal_var_ttest_denom(v1, n1, v2, n2)
 
-    res = _ttest_ind_from_stats(np.mean(a, axis), np.mean(b, axis), denom, df)
+    res = _ttest_ind_from_stats(np.mean(a, axis), np.mean(b, axis), denom, df, alternative)
 
     return Ttest_indResult(*res)
 
@@ -5667,7 +5678,7 @@ def _get_len(a, axis, msg):
 Ttest_relResult = namedtuple('Ttest_relResult', ('statistic', 'pvalue'))
 
 
-def ttest_rel(a, b, axis=0, nan_policy='propagate'):
+def ttest_rel(a, b, axis=0, nan_policy='propagate', alternative="two-sided"):
     """
     Calculate the t-test on TWO RELATED samples of scores, a and b.
 
@@ -5762,7 +5773,7 @@ def ttest_rel(a, b, axis=0, nan_policy='propagate'):
 
     with np.errstate(divide='ignore', invalid='ignore'):
         t = np.divide(dm, denom)
-    t, prob = _ttest_finish(df, t)
+    t, prob = _ttest_finish(df, t, alternative)
 
     return Ttest_relResult(t, prob)
 
