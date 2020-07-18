@@ -121,7 +121,7 @@ class UnivariateSpline(object):
     See Also
     --------
     BivariateSpline :
-        base class for bivariate splines.
+        a base class for bivariate splines.
     SmoothBivariateSpline :
         a smooth bivariate spline through the given points
     LSQBivariateSpline :
@@ -131,15 +131,27 @@ class UnivariateSpline(object):
     SmoothSphereBivariateSpline :
         a smooth bivariate spline in spherical coordinates
     LSQSphereBivariateSpline :
-        a bivariate spline in spherical coordinates using
-        weighted least-squares fitting
+        a bivariate spline in spherical coordinates using weighted
+        least-squares fitting
     RectBivariateSpline :
-        a bivariate spline over a rectangular mesh.
-    bisplrep : older wrapping of FITPACK
-    bisplev : older wrapping of FITPACK
-    InterpolatedUnivariateSpline : Subclass with smoothing forced to 0
-    splrep : An older, non object-oriented wrapping of FITPACK
-    splev, sproot, splint, spalde
+        a bivariate spline over a rectangular mesh
+    InterpolatedUnivariateSpline :
+        a interpolating unicariate spline for a given set of data points.
+    bisplrep :
+        a function to find a bivariate B-spline representation of a surface
+    bisplev :
+        a function to evaluate a bivariate B-spline and its derivatives
+    splrep :
+        a function to find the B-spline representation of a 1-D curve
+    splev :
+        a function to evaluate a B-spline or its derivatives
+    sproot :
+        a function to find the roots of a cubic B-spline
+    splint :
+        a function to evaluate the definite integral of a B-spline between two
+        given points
+    spalde :
+        a function to evaluate all derivatives of a B-spline
 
     Notes
     -----
@@ -599,13 +611,25 @@ class InterpolatedUnivariateSpline(UnivariateSpline):
 
     See Also
     --------
-    UnivariateSpline : Superclass -- allows knots to be selected by a
-        smoothing condition
-    LSQUnivariateSpline : spline for which knots are user-selected
-    BivariateSpline :
-        base class for bivariate splines.
-    splrep : An older, non object-oriented wrapping of FITPACK
-    splev, sproot, splint, spalde
+    UnivariateSpline :
+        a smooth univariate spline to fit a given set of data points.
+    LSQUnivariateSpline :
+        a spline for which knots are user-selected
+    SmoothBivariateSpline :
+        a smooth bivariate spline through the given points
+    LSQBivariateSpline :
+        a bivariate spline using weighted least-squares fitting
+    splrep :
+        a function to find the B-spline representation of a 1-D curve
+    splev :
+        a function to evaluate a B-spline or its derivatives
+    sproot :
+        a function to find the roots of a cubic B-spline
+    splint :
+        a function to evaluate the definite integral of a B-spline between two
+        given points
+    spalde :
+        a function to evaluate all derivatives of a B-spline
 
     Notes
     -----
@@ -710,13 +734,21 @@ class LSQUnivariateSpline(UnivariateSpline):
 
     See Also
     --------
-    UnivariateSpline : Superclass -- knots are specified by setting a
-        smoothing condition
-    InterpolatedUnivariateSpline : spline passing through all points
-    splrep : An older, non object-oriented wrapping of FITPACK
-    splev, sproot, splint, spalde
-    BivariateSpline :
-        base class for bivariate splines.
+    UnivariateSpline :
+        a smooth univariate spline to fit a given set of data points.
+    InterpolatedUnivariateSpline :
+        a interpolating unicariate spline for a given set of data points.
+    splrep :
+        a function to find the B-spline representation of a 1-D curve
+    splev :
+        a function to evaluate a B-spline or its derivatives
+    sproot :
+        a function to find the roots of a cubic B-spline
+    splint :
+        a function to evaluate the definite integral of a B-spline between two
+        given points
+    spalde :
+        a function to evaluate all derivatives of a B-spline
 
     Notes
     -----
@@ -797,11 +829,14 @@ class _BivariateSplineBase(object):
 
     See Also
     --------
-    bisplrep, bisplev : an older wrapping of FITPACK
+    bisplrep :
+        a function to find a bivariate B-spline representation of a surface
+    bisplev :
+        a function to evaluate a bivariate B-spline and its derivatives
     BivariateSpline :
-        base class for bivariate splines.
+        a base class for bivariate splines.
     SphereBivariateSpline :
-        implementation of bivariate spline interpolation on a spherical grid
+        a bivariate spline on a spherical grid
     """
 
     def get_residual(self):
@@ -955,7 +990,7 @@ class BivariateSpline(_BivariateSplineBase):
     See Also
     --------
     UnivariateSpline :
-        a similar class for univariate spline interpolation
+        a smooth univariate spline to fit a given set of data points.
     SmoothBivariateSpline :
         a smooth bivariate spline through the given points
     LSQBivariateSpline :
@@ -969,8 +1004,10 @@ class BivariateSpline(_BivariateSplineBase):
         least-squares fitting
     RectBivariateSpline :
         a bivariate spline over a rectangular mesh.
-    bisplrep : older wrapping of FITPACK
-    bisplev : older wrapping of FITPACK
+    bisplrep :
+        a function to find a bivariate B-spline representation of a surface
+    bisplev :
+        a function to evaluate a bivariate B-spline and its derivatives
     """
 
     @classmethod
@@ -1076,9 +1113,9 @@ class SmoothBivariateSpline(BivariateSpline):
     See Also
     --------
     BivariateSpline :
-        base class for bivariate splines.
+        a base class for bivariate splines.
     UnivariateSpline :
-        a similar class for univariate spline interpolation
+        a smooth univariate spline to fit a given set of data points.
     LSQBivariateSpline :
         a bivariate spline using weighted least-squares fitting
     RectSphereBivariateSpline :
@@ -1089,9 +1126,11 @@ class SmoothBivariateSpline(BivariateSpline):
         a bivariate spline in spherical coordinates using weighted
         least-squares fitting
     RectBivariateSpline :
-        a bivariate spline over a rectangular mesh.
-    bisplrep : older wrapping of FITPACK
-    bisplev : older wrapping of FITPACK
+        a bivariate spline over a rectangular mesh
+    bisplrep :
+        a function to find a bivariate B-spline representation of a surface
+    bisplev :
+        a function to evaluate a bivariate B-spline and its derivatives
 
     Notes
     -----
@@ -1159,9 +1198,9 @@ class LSQBivariateSpline(BivariateSpline):
     See Also
     --------
     BivariateSpline :
-        base class for bivariate splines.
+        a base class for bivariate splines.
     UnivariateSpline :
-        a similar class for univariate spline interpolation
+        a smooth univariate spline to fit a given set of data points.
     SmoothBivariateSpline :
         a smooth bivariate spline through the given points
     RectSphereBivariateSpline :
@@ -1173,8 +1212,10 @@ class LSQBivariateSpline(BivariateSpline):
         least-squares fitting
     RectBivariateSpline :
         a bivariate spline over a rectangular mesh.
-    bisplrep : older wrapping of FITPACK
-    bisplev : older wrapping of FITPACK
+    bisplrep :
+        a function to find a bivariate B-spline representation of a surface
+    bisplev :
+        a function to evaluate a bivariate B-spline and its derivatives
 
     Notes
     -----
@@ -1245,9 +1286,9 @@ class RectBivariateSpline(BivariateSpline):
     See Also
     --------
     BivariateSpline :
-        base class for bivariate splines.
+        a base class for bivariate splines.
     UnivariateSpline :
-        a similar class for univariate spline interpolation
+        a smooth univariate spline to fit a given set of data points.
     SmoothBivariateSpline :
         a smooth bivariate spline through the given points
     LSQBivariateSpline :
@@ -1259,8 +1300,10 @@ class RectBivariateSpline(BivariateSpline):
     LSQSphereBivariateSpline :
         a bivariate spline in spherical coordinates using weighted
         least-squares fitting
-    bisplrep : older wrapping of FITPACK
-    bisplev : older wrapping of FITPACK
+    bisplrep :
+        a function to find a bivariate B-spline representation of a surface
+    bisplev :
+        a function to evaluate a bivariate B-spline and its derivatives
 
     """
 
@@ -1329,12 +1372,16 @@ class SphereBivariateSpline(_BivariateSplineBase):
 
     See Also
     --------
-    bisplrep, bisplev : an older wrapping of FITPACK
-    UnivariateSpline : a similar class for univariate spline interpolation
+    bisplrep :
+        a function to find a bivariate B-spline representation of a surface
+    bisplev :
+        a function to evaluate a bivariate B-spline and its derivatives
+    UnivariateSpline :
+        a smooth univariate spline to fit a given set of data points.
     SmoothUnivariateSpline :
-        a smooth bivariate spline through the given points
+        a smooth univariate spline through the given points
     LSQUnivariateSpline :
-        a bivariate spline using weighted least-squares fitting
+        a univariate spline using weighted least-squares fitting
     """
 
     def __call__(self, theta, phi, dtheta=0, dphi=0, grid=True):
@@ -1429,9 +1476,9 @@ class SmoothSphereBivariateSpline(SphereBivariateSpline):
     See Also
     --------
     BivariateSpline :
-        base class for bivariate splines.
+        a base class for bivariate splines.
     UnivariateSpline :
-        a similar class for univariate spline interpolation
+        a smooth univariate spline to fit a given set of data points.
     SmoothBivariateSpline :
         a smooth bivariate spline through the given points
     LSQBivariateSpline :
@@ -1443,8 +1490,10 @@ class SmoothSphereBivariateSpline(SphereBivariateSpline):
         least-squares fitting
     RectBivariateSpline :
         a bivariate spline over a rectangular mesh.
-    bisplrep : older wrapping of FITPACK
-    bisplev : older wrapping of FITPACK
+    bisplrep :
+        a function to find a bivariate B-spline representation of a surface
+    bisplev :
+        a function to evaluate a bivariate B-spline and its derivatives
 
     Notes
     -----
@@ -1561,9 +1610,9 @@ class LSQSphereBivariateSpline(SphereBivariateSpline):
     See Also
     --------
     BivariateSpline :
-        base class for bivariate splines.
+        a base class for bivariate splines.
     UnivariateSpline :
-        a similar class for univariate spline interpolation
+        a smooth univariate spline to fit a given set of data points.
     SmoothBivariateSpline :
         a smooth bivariate spline through the given points
     LSQBivariateSpline :
@@ -1574,8 +1623,10 @@ class LSQSphereBivariateSpline(SphereBivariateSpline):
         a smooth bivariate spline in spherical coordinates
     RectBivariateSpline :
         a bivariate spline over a rectangular mesh.
-    bisplrep : older wrapping of FITPACK
-    bisplev : older wrapping of FITPACK
+    bisplrep :
+        a function to find a bivariate B-spline representation of a surface
+    bisplev :
+        a function to evaluate a bivariate B-spline and its derivatives
 
     Notes
     -----
@@ -1750,9 +1801,9 @@ class RectSphereBivariateSpline(SphereBivariateSpline):
     See Also
     --------
     BivariateSpline :
-        base class for bivariate splines.
+        a base class for bivariate splines.
     UnivariateSpline :
-        a similar class for univariate spline interpolation
+        a smooth univariate spline to fit a given set of data points.
     SmoothBivariateSpline :
         a smooth bivariate spline through the given points
     LSQBivariateSpline :
@@ -1764,8 +1815,10 @@ class RectSphereBivariateSpline(SphereBivariateSpline):
         least-squares fitting
     RectBivariateSpline :
         a bivariate spline over a rectangular mesh.
-    bisplrep : older wrapping of FITPACK
-    bisplev : older wrapping of FITPACK
+    bisplrep :
+        a function to find a bivariate B-spline representation of a surface
+    bisplev :
+        a function to evaluate a bivariate B-spline and its derivatives
 
     Notes
     -----
