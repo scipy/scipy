@@ -138,7 +138,6 @@ warnings.filterwarnings(  # matplotlib<->pyparsing issue
 # TODO: eventually these should be eliminated!
 for key in (
         'invalid escape sequence',  # numpydoc 0.8 has some bad escape chars
-        '\nWARNING. The coefficients',  # interpolate.LSQSphereBivariateSpline
         'The integral is probably divergent',  # stats.mielke example
         'underflow encountered in square',  # signal.filtfilt underflow
         'underflow encountered in multiply',  # scipy.spatial.HalfspaceIntersection
