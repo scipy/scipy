@@ -399,7 +399,9 @@ def _l_p_mc(L, m, n, n_s):
 def _l_p_exact(L, m, n):
     L, n, k = int(L), int(m), int(n)  # different papers use different symbols
     a, b = (k*(k+1)*(k+2))//6, (k*(k+1)*(2*k+1))//6
-    dir_path = os.path.dirname(os.path.realpath(__file__))
+
+#    dir_path = os.path.dirname(os.path.realpath(__file__))
+    dir_path = os.path.abspath(os.path.dirname(__file__))
     datafile = os.path.join(dir_path, "pagel_exact.npy")
     all_pmfs = np.load(datafile, allow_pickle=True).item()
     try:
