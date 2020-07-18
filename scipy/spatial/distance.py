@@ -712,7 +712,8 @@ def correlation(u, v, w=None, centered=True):
     uu = np.average(np.square(u), weights=w)
     vv = np.average(np.square(v), weights=w)
     dist = 1.0 - uv / np.sqrt(uu * vv)
-    return dist
+    # Return absolute value to avoid small negative value due to rounding
+    return np.abs(dist)
 
 
 def cosine(u, v, w=None):
