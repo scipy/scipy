@@ -2883,9 +2883,10 @@ p : array_like
 
 _multinomial_doc_callparams_note = \
 """`n` should be a positive integer. Each element of `p` should be in the
-interval :math:`[0,1]` and the elements should sum to 1. If they do not sum to
-1, the last element of the `p` array is not used and is replaced with the
-remaining probability left over from the earlier elements.
+interval :math:`[0,1]` and the elements should sum to 1. If they sum to less
+than 1, the last element of the `p` array is not used and is replaced with the
+remaining probability left over from the earlier elements. If they sum to
+greater than one, all elements are normalized by the sum.
 """
 
 _multinomial_doc_frozen_callparams = ""
@@ -3029,7 +3030,19 @@ class multinomial_gen(multi_rv_generic):
         flagging values out of the domain.
         """
         p = np.array(p, dtype=np.float64, copy=True)
-        p[..., -1] = 1. - p[..., :-1].sum(axis=-1)
+
+        # Was simply:
+#        p[..., -1] = 1. - p[..., :-1].sum(axis=-1)
+        # but this didn't work for rows that sum > 1. It could even fail when
+        # the row summed to exactly 1. See gh-11860.
+        shape = p.shape
+        p = np.atleast_2d(p)
+        psum = np.sum(p, axis=-1, keepdims=True)  # keep last dim to broadcast
+        i_pgt = (psum > 1)[..., 0]   # eliminate last dim to index
+        i_plt = (psum < 1)[..., 0]
+        p[i_pgt, :] /= psum[i_pgt]  # rows that sum > 1 normalize by division
+        p[i_plt, -1:] += 1 - psum[i_plt]  # rows that sum < 1 replace last element
+        p = p.reshape(shape)
 
         # true for bad p
         pcond = np.any(p < 0, axis=-1)
