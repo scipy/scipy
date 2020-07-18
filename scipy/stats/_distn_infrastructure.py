@@ -623,7 +623,7 @@ class rv_generic(object):
         Generates the argument-parsing functions dynamically and attaches
         them to the instance.
 
-        Should be called after _construct_argparser, and during unpickling
+        Should be called after `_construct_argparser`, and during unpickling
         (__setstate__)
         """
         ns = {}
@@ -636,7 +636,11 @@ class rv_generic(object):
             self, meths_to_inspect, locscale_in, locscale_out):
         """Construct the parser string for the shape arguments.
 
-        Is supposed to be called in __init__ of a class for each distribution.
+        This method should be called in __init__ of a class for each
+        distribution. It creates the `_parse_arg_template` attribute that is
+        then used by `_attach_argparser_methods` to dynamically create and
+        attach the `_parse_args`, `_parse_args_stats`, `_parse_args_rvs`
+        methods to the instance.
 
         If self.shapes is a non-empty string, interprets it as a
         comma-separated list of shape parameters.
@@ -1659,8 +1663,7 @@ class rv_continuous(rv_generic):
         return dct
 
     def __setstate__(self, state):
-        dct = state
-        self.__dict__.update(dct)
+        self.__dict__.update(state)
         self._attach_methods()
 
     def _attach_methods(self):
