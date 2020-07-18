@@ -273,8 +273,8 @@ class interp2d(object):
             raise ValueError("x and y should both be 1-D arrays")
 
         if not assume_sorted:
-            x = np.sort(x)
-            y = np.sort(y)
+            x = np.sort(x, kind="mergesort")
+            y = np.sort(y, kind="mergesort")
 
         if self.bounds_error or self.fill_value is not None:
             out_of_bounds_x = (x < self.x_min) | (x > self.x_max)
@@ -437,7 +437,7 @@ class interp1d(_Interpolator1D):
         y = array(y, copy=self.copy)
 
         if not assume_sorted:
-            ind = np.argsort(x)
+            ind = np.argsort(x, kind="mergesort")
             x = x[ind]
             y = np.take(y, ind, axis=axis)
 
