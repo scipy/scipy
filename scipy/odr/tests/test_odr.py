@@ -1,5 +1,6 @@
 # SciPy imports.
 import tempfile
+import shutil
 import numpy as np
 from numpy import pi
 from numpy.testing import (assert_array_almost_equal,
@@ -506,15 +507,13 @@ class TestODR(object):
 
         p = Model(func)
         data = Data(np.arange(10), 12 * np.arange(10))
-        tmp_error_file = tempfile.NamedTemporaryFile(suffix='.dat')
-        tmp_report_file = tempfile.NamedTemporaryFile(suffix='.dat')
+        tmp_dir = tempfile.mkdtemp()
         try:
-            ODR(data, p, beta0=[0.1, 13], errfile=tmp_error_file.name,
-                rptfile=tmp_report_file.name).run()
-            ODR(data, p, beta0=[0.1, 13], errfile=tmp_error_file.name,
-                rptfile=tmp_report_file.name, overwrite=True).run()
+            ODR(data, p, beta0=[0.1, 13], errfile=tmp_dir+"/error.dat",
+                rptfile=tmp_dir+"/report.dat").run()
+            ODR(data, p, beta0=[0.1, 13], errfile=tmp_dir+"/error.dat",
+                rptfile=tmp_dir+"/report.dat", overwrite=True).run()
         finally:
             # remove output files for clean up
-            tmp_error_file.close()
-            tmp_report_file.close()
+            shutil.rmtree(tmp_dir)
 
