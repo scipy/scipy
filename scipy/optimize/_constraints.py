@@ -298,8 +298,8 @@ def new_bounds_to_old(lb, ub, n):
     if ub.ndim == 0:
         ub = np.resize(ub, n)
 
-    lb = [x if x > -np.inf else None for x in lb]
-    ub = [x if x < np.inf else None for x in ub]
+    lb = [float(x) if x > -np.inf else None for x in lb]
+    ub = [float(x) if x < np.inf else None for x in ub]
 
     return list(zip(lb, ub))
 
@@ -314,8 +314,8 @@ def old_bound_to_new(bounds):
     -np.inf/np.inf.
     """
     lb, ub = zip(*bounds)
-    lb = np.array([x if x is not None else -np.inf for x in lb])
-    ub = np.array([x if x is not None else np.inf for x in ub])
+    lb = np.array([float(x) if x is not None else -np.inf for x in lb])
+    ub = np.array([float(x) if x is not None else np.inf for x in ub])
     return lb, ub
 
 

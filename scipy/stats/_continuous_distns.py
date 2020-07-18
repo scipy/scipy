@@ -3749,7 +3749,7 @@ class geninvgauss_gen(rv_continuous):
                 it.iternext()
 
         if size == ():
-            out = out[()]
+            out = out.item()
         return out
 
     def _rvs_scalar(self, p, b, numsamples, random_state):
@@ -7686,7 +7686,7 @@ class truncnorm_gen(rv_continuous):
                 it.iternext()
 
         if size == ():
-            out = out[()]
+            out = out.item()
         return out
 
     def _rvs_scalar(self, a, b, numsamples=None, random_state=None):
@@ -7697,7 +7697,7 @@ class truncnorm_gen(rv_continuous):
         size1d = tuple(np.atleast_1d(numsamples))
         N = np.prod(size1d)  # number of rvs needed, reshape upon return
         # Calculate some rvs
-        U = random_state.random_sample(N)
+        U = random_state.uniform(low=0, high=1, size=N)
         x = self._ppf(U, a, b)
         rvs = np.reshape(x, size1d)
         return rvs
