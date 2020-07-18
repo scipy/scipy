@@ -618,6 +618,30 @@ class rv_generic(object):
     def random_state(self, seed):
         self._random_state = check_random_state(seed)
 
+    def __setstate__(self, state):
+        try:
+            self.__dict__.update(state)
+            # attaches the dynamically created methods on each instance.
+            # if a subclass overrides rv_generic.__setstate__, or implements
+            # it's own _attach_methods, then it must make sure that
+            # _attach_argparser_methods is called.
+            self._attach_methods()
+        except ValueError:
+            # reconstitute an old pickle scipy<1.6, that contains
+            # (_ctor_param, random_state) as state
+            self._ctor_param = state[0]
+            self._random_state = state[1]
+            self.__init__()
+
+    def _attach_methods(self):
+        """
+        Attaches dynamically created methods to the rv_* instance.
+
+        This method must be overridden by subclasses, and must itself call
+         _attach_argparser_methods
+        """
+        raise NotImplementedError
+
     def _attach_argparser_methods(self):
         """
         Generates the argument-parsing functions dynamically and attaches
@@ -1662,14 +1686,11 @@ class rv_continuous(rv_generic):
         [dct.pop(attr, None) for attr in attrs]
         return dct
 
-    def __setstate__(self, state):
-        self.__dict__.update(state)
-        self._attach_methods()
-
     def _attach_methods(self):
         """
         Attaches dynamically created methods to the rv_continuous instance
         """
+        # _attach_methods is responsible for calling _attach_argparser_methods
         self._attach_argparser_methods()
 
         # nin correction
@@ -1690,7 +1711,7 @@ class rv_continuous(rv_generic):
     def _updated_ctor_param(self):
         """ Return the current version of _ctor_param, possibly updated by user.
 
-            Used by freezing and pickling.
+            Used by freezing.
             Keep this in sync with the signature of __init__.
         """
         dct = self._ctor_param.copy()
@@ -2915,10 +2936,6 @@ class rv_discrete(rv_generic):
         [dct.pop(attr, None) for attr in attrs]
         return dct
 
-    def __setstate__(self, state):
-        self.__dict__.update(state)
-        self._attach_methods()
-
     def _attach_methods(self):
         """
         Attaches dynamically created methods to the rv_discrete instance
@@ -2926,6 +2943,7 @@ class rv_discrete(rv_generic):
         self._cdfvec = vectorize(self._cdf_single, otypes='d')
         self.vecentropy = vectorize(self._entropy)
 
+        # _attach_methods is responsible for calling _attach_argparser_methods
         self._attach_argparser_methods()
 
         # nin correction needs to be after we know numargs
@@ -2975,7 +2993,7 @@ class rv_discrete(rv_generic):
     def _updated_ctor_param(self):
         """ Return the current version of _ctor_param, possibly updated by user.
 
-            Used by freezing and pickling.
+            Used by freezing.
             Keep this in sync with the signature of __init__.
         """
         dct = self._ctor_param.copy()
@@ -3590,22 +3608,24 @@ class rv_sample(rv_discrete):
                                   # scale=1 for discrete RVs
                                   locscale_out='loc, 1')
 
-        self._attach_argparser_methods()
+        self._attach_methods()
 
         self._construct_docstrings(name, longname, extradoc)
 
     def __getstate__(self):
         dct = self.__dict__.copy()
 
-        # these methods will be remade in __setstate__
-        # __setstate__ is supplied by rv_discrete
+        # these methods will be remade in rv_generic.__setstate__,
+        # which calls rv_generic._attach_methods
         attrs = ["_parse_args", "_parse_args_stats", "_parse_args_rvs"]
         [dct.pop(attr, None) for attr in attrs]
 
         return dct
 
-    def __setstate__(self, state):
-        self.__dict__.update(state)
+    def _attach_methods(self):
+        """
+        Attaches dynamically created argparser methods.
+        """
         self._attach_argparser_methods()
 
     def _get_support(self, *args):
