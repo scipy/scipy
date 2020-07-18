@@ -60,8 +60,6 @@ jobs:
       codeCoverageTool: Cobertura
       summaryFileLocation: '$(System.DefaultWorkingDirectory)/**/coverage.xml'
       reportDirectory: '$(System.DefaultWorkingDirectory)/**/htmlcov'
-
-
 - job: Windows
   condition: and(succeeded(), ne(variables['Build.SourceBranch'], 'refs/heads/master'))  # skip for PR merges
   pool:
@@ -78,7 +76,6 @@ jobs:
           PYTHON_ARCH: 'x86'
           TEST_MODE: fast
           BITS: 32
-          CHOCO_CACHE_DIR: $(Pipeline.Workspace)/.choco
         Python36-64bit-full:
           PYTHON_VERSION: '3.6'
           PYTHON_ARCH: 'x64'
@@ -123,34 +120,17 @@ jobs:
           Download-OpenBLAS('1')
       }
     displayName: 'Download / Install OpenBLAS'
-
-  - task: Cache@2
-    inputs:
-      key: choco | $(Agent.OS)
-      path: $(CHOCO_CACHE_DIR)
-      restoreKeys: |
-        choco | $(Agent.OS)
-        choco
-    displayName: 'Cache choco packages'
-
   - powershell: |
-      # store downloads in a cache
-      choco config set --name cacheLocation --value $Env:CHOCO_CACHE_DIR
-      choco config get cacheLocation
-
       # wheels appear to use mingw64 version 6.3.0, but 6.4.0
       # is the closest match available from choco package manager
       choco install -y mingw --forcex86 --force --version=6.4.0
     displayName: 'Install 32-bit mingw for 32-bit builds'
     condition: and(succeeded(), eq(variables['BITS'], 32))
-
   - script: python -m pip install numpy cython==0.29.18 pybind11 pytest pytest-timeout pytest-xdist pytest-env pytest-cov Pillow mpmath
     displayName: 'Install dependencies'
-
   - powershell: |
       python -m pip install matplotlib
     displayName: 'Install matplotlib'
-
   # DLL resolution mechanics were changed in
   # Python 3.8: https://bugs.python.org/issue36085
   # While we normally leave adjustment of _distributor_init.py
@@ -168,7 +148,6 @@ jobs:
       mv scipy-wheels/_distributor_init.py scipy/
     displayName: 'Copy in _distributor_init.py'
     condition: and(succeeded(), eq(variables['PYTHON_VERSION'], '3.8'))
-
   - powershell: |
       If ($(BITS) -eq 32) {
           # 32-bit build requires careful adjustments
@@ -187,19 +166,16 @@ jobs:
           pip install $_.FullName
       }
     displayName: 'Build SciPy'
-
   - powershell: |
       $env:PATH = "C:\\ProgramData\\chocolatey\\lib\\mingw\\tools\\install\\mingw$(BITS)\\bin;" + $env:PATH
       python runtests.py -n --mode=$(TEST_MODE) -- -n 2 -rsx --junitxml=junit/test-results.xml --cov=scipy --cov-report=xml --cov-report=html --durations=10
     displayName: 'Run SciPy Test Suite'
-
   - task: PublishTestResults@2
     condition: succeededOrFailed()
     inputs:
       testResultsFiles: '**/test-*.xml'
       failTaskOnFailedTests: true
       testRunTitle: 'Publish test results for Python $(python.version)'
-
   - task: PublishCodeCoverageResults@1
     inputs:
       codeCoverageTool: Cobertura
