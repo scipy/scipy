@@ -141,7 +141,6 @@ for key in (
         '\nWARNING. The coefficients',  # interpolate.LSQSphereBivariateSpline
         'The integral is probably divergent',  # stats.mielke example
         'underflow encountered in square',  # signal.filtfilt underflow
-        'slepian is deprecated',  # signal.windows.slepian deprecation
         'underflow encountered in multiply',  # scipy.spatial.HalfspaceIntersection
         '`frechet_l` is deprecated',  # stats.frechet_l
         '`frechet_r` is deprecated',  # stats.frechet_r
