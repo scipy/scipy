@@ -712,7 +712,7 @@ class ODR(object):
     iwork : ndarray, optional
         array to hold the integer-valued working data for ODRPACK. When
         restarting, takes the value of self.output.iwork.
-    overwrite : boolean, optional
+    overwrite : bool, optional
         If it is True, output files defined by `errfile` and `rptfile` are
         overwritten. The default is False.
 
