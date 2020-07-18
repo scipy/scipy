@@ -1,5 +1,4 @@
 # SciPy imports.
-import os
 import tempfile
 import numpy as np
 from numpy import pi
@@ -507,17 +506,15 @@ class TestODR(object):
 
         p = Model(func)
         data = Data(np.arange(10), 12 * np.arange(10))
-        fd_error, tmp_error_file = tempfile.mkstemp(suffix='.dat')
-        os.close(fd_error)
-        fd_report, tmp_report_file = tempfile.mkstemp(suffix='.dat')
-        os.close(fd_report)
+        tmp_error_file = tempfile.NamedTemporaryFile(suffix='.dat')
+        tmp_report_file = tempfile.NamedTemporaryFile(suffix='.dat')
         try:
-            ODR(data, p, beta0=[0.1, 13], errfile=tmp_error_file,
-                rptfile=tmp_report_file).run()
-            ODR(data, p, beta0=[0.1, 13], errfile=tmp_error_file,
-                rptfile=tmp_report_file, overwrite=True).run()
+            ODR(data, p, beta0=[0.1, 13], errfile=tmp_error_file.name,
+                rptfile=tmp_report_file.name).run()
+            ODR(data, p, beta0=[0.1, 13], errfile=tmp_error_file.name,
+                rptfile=tmp_report_file.name, overwrite=True).run()
         finally:
             # remove output files for clean up
-            os.remove(tmp_error_file)
-            os.remove(tmp_report_file)
+            tmp_error_file.close()
+            tmp_report_file.close()
 
