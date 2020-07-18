@@ -638,7 +638,8 @@ class rv_generic(object):
         Attaches dynamically created methods to the rv_* instance.
 
         This method must be overridden by subclasses, and must itself call
-         _attach_argparser_methods
+         _attach_argparser_methods. This method is called in __init__ in
+         subclasses, and in __setstate__
         """
         raise NotImplementedError
 
@@ -647,8 +648,8 @@ class rv_generic(object):
         Generates the argument-parsing functions dynamically and attaches
         them to the instance.
 
-        Should be called after `_construct_argparser`, and during unpickling
-        (__setstate__)
+        Should be called from `_attach_methods`, typically in __init__ and
+        during unpickling (__setstate__)
         """
         ns = {}
         exec(self._parse_arg_template, ns)
