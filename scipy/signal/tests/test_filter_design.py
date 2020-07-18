@@ -4,7 +4,7 @@ from distutils.version import LooseVersion
 import numpy as np
 from numpy.testing import (assert_array_almost_equal,
                            assert_array_equal, assert_array_less,
-                           assert_equal, assert_,
+                           assert_equal, assert_, assert_approx_equal,
                            assert_allclose, assert_warns, suppress_warnings)
 import pytest
 from pytest import raises as assert_raises
@@ -14,9 +14,9 @@ from scipy.signal import (BadCoefficients, bessel, besselap, bilinear, buttap,
                           butter, buttord, cheb1ap, cheb1ord, cheb2ap,
                           cheb2ord, cheby1, cheby2, ellip, ellipap, ellipord,
                           firwin, freqs_zpk, freqs, freqz, freqz_zpk,
-                          group_delay, iirfilter, iirnotch, iirpeak, lp2bp,
-                          lp2bs, lp2hp, lp2lp, normalize, sos2tf, sos2zpk,
-                          sosfreqz, tf2sos, tf2zpk, zpk2sos, zpk2tf,
+                          gammatone, group_delay, iirdesign, iirfilter, iirnotch, 
+                          iirpeak, lp2bp, lp2bs, lp2hp, lp2lp, normalize, sos2tf, 
+                          sos2zpk, sosfreqz, tf2sos, tf2zpk, zpk2sos, zpk2tf,
                           bilinear_zpk, lp2lp_zpk, lp2hp_zpk, lp2bp_zpk,
                           lp2bs_zpk)
 from scipy.signal.filter_design import (_cplxreal, _cplxpair, _norm_factor,
@@ -3611,6 +3611,26 @@ class TestIIRPeak(object):
         assert_allclose(abs(hp[2]), 1, rtol=1e-10)
 
 
+class TestIIRDesign(object):
+
+    def test_exceptions(self):
+        with pytest.raises(ValueError, match="the same shape"):
+            iirdesign(0.2, [0.1, 0.3], 1, 40)
+        with pytest.raises(ValueError, match="the same shape"):
+            iirdesign(np.array([[0.3, 0.6], [0.3, 0.6]]),
+                      np.array([[0.4, 0.5], [0.4, 0.5]]), 1, 40)
+        with pytest.raises(ValueError, match="can't be negative"):
+            iirdesign([0.1, 0.3], [-0.1, 0.5], 1, 40)
+        with pytest.raises(ValueError, match="strictly inside stopband"):
+            iirdesign([0.1, 0.4], [0.5, 0.6], 1, 40)
+        with pytest.raises(ValueError, match="strictly inside stopband"):
+            iirdesign([0.5, 0.6], [0.1, 0.4], 1, 40)
+        with pytest.raises(ValueError, match="strictly inside stopband"):
+            iirdesign([0.3, 0.6], [0.4, 0.7], 1, 40)
+        with pytest.raises(ValueError, match="strictly inside stopband"):
+            iirdesign([0.4, 0.7], [0.3, 0.6], 1, 40)
+
+
 class TestIIRFilter(object):
 
     def test_symmetry(self):
@@ -3633,7 +3653,7 @@ class TestIIRFilter(object):
 
     def test_int_inputs(self):
         # Using integer frequency arguments and large N should not produce
-        # np.ints that wraparound to negative numbers
+        # numpy integers that wraparound to negative numbers
         k = iirfilter(24, 100, btype='low', analog=True, ftype='bessel',
                       output='zpk')[2]
         k2 = 9.999999999999989e+47
@@ -3734,3 +3754,90 @@ class TestGroupDelay(object):
             w_out, gd = group_delay((1, 1), w)
             assert_array_almost_equal(w_out, [8])
             assert_array_almost_equal(gd, [0])
+
+
+class TestGammatone(object):
+    # Test erroneus input cases.
+    def test_invalid_input(self):
+        # Cutoff frequency is <= 0 or >= fs / 2.
+        fs = 16000
+        with pytest.raises(ValueError, match='The frequency must be between '):
+            gammatone(-fs, 'iir', fs=fs)
+            gammatone(0, 'fir', fs=fs)
+            gammatone(fs / 2, 'iir', fs=fs)
+            gammatone(fs, 'fir', fs=fs)
+
+        # Filter type is not fir or iir
+        with pytest.raises(ValueError, match='ftype must be '):
+            gammatone(440, ftype='fie', fs=16000)
+            gammatone(220, ftype='it', fs=32000)
+
+        # Order is <= 0 or > 24 for FIR filter.
+        with pytest.raises(ValueError, match='Invalid order: '):
+            gammatone(440, 'fir', fs=16000, order=-50)
+            gammatone(220, 'fir', fs=32000, order=0)
+            gammatone(110, 'fir', fs=44100, order=25)
+            gammatone(55, 'fir', fs=48000, order=50)
+
+    # Verify that the filter's frequency response is approximately
+    # 1 at the cutoff frequency.
+    def test_frequency_response(self):
+        fs = 16000
+        ftypes = ['fir', 'iir']
+        for ftype in ftypes:
+            # Create a gammatone filter centered at 1000 Hz.
+            b, a = gammatone(1000, ftype, fs=fs)
+
+            # Calculate the frequency response.
+            freqs, response = freqz(b, a)
+
+            # Determine peak magnitude of the response
+            # and corresponding frequency.
+            response_max = np.max(np.abs(response))
+            freq_hz = freqs[np.argmax(np.abs(response))] / ((2 * np.pi) / fs)
+
+            # Check that the peak magnitude is 1 and the frequency is 1000 Hz.
+            response_max == pytest.approx(1, rel=1e-2)
+            freq_hz == pytest.approx(1000, rel=1e-2)
+
+    # All built-in IIR filters are real, so should have perfectly
+    # symmetrical poles and zeros. Then ba representation (using
+    # numpy.poly) will be purely real instead of having negligible
+    # imaginary parts.
+    def test_iir_symmetry(self):
+        b, a = gammatone(440, 'iir', fs=24000)
+        z, p, k = tf2zpk(b, a)
+        assert_array_equal(sorted(z), sorted(z.conj()))
+        assert_array_equal(sorted(p), sorted(p.conj()))
+        assert_equal(k, np.real(k))
+
+        assert_(issubclass(b.dtype.type, np.floating))
+        assert_(issubclass(a.dtype.type, np.floating))
+
+    # Verify FIR filter coefficients with the paper's
+    # Mathematica implementation
+    def test_fir_ba_output(self):
+        b, _ = gammatone(15, 'fir', fs=1000)
+        b2 = [0.0, 2.2608075649884e-04,
+              1.5077903981357e-03, 4.2033687753998e-03,
+              8.1508962726503e-03, 1.2890059089154e-02,
+              1.7833890391666e-02, 2.2392613558564e-02,
+              2.6055195863104e-02, 2.8435872863284e-02,
+              2.9293319149544e-02, 2.852976858014e-02,
+              2.6176557156294e-02, 2.2371510270395e-02,
+              1.7332485267759e-02]
+        assert_allclose(b, b2)
+
+    # Verify IIR filter coefficients with the paper's MATLAB implementation
+    def test_iir_ba_output(self):
+        b, a = gammatone(440, 'iir', fs=16000)
+        b2 = [1.31494461367464e-06, -5.03391196645395e-06,
+              7.00649426000897e-06, -4.18951968419854e-06,
+              9.02614910412011e-07]
+        a2 = [1.0, -7.65646235454218,
+              25.7584699322366, -49.7319214483238,
+              60.2667361289181, -46.9399590980486,
+              22.9474798808461, -6.43799381299034,
+              0.793651554625368]
+        assert_allclose(b, b2)
+        assert_allclose(a, a2)

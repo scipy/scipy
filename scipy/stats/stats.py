@@ -567,7 +567,7 @@ def mode(a, axis=0, nan_policy='propagate'):
 
     inds = np.ndindex(a_view.shape[:-1])
     modes = np.empty(a_view.shape[:-1], dtype=a.dtype)
-    counts = np.zeros(a_view.shape[:-1], dtype=np.int)
+    counts = np.empty(a_view.shape[:-1], dtype=np.int_)
     for ind in inds:
         modes[ind], counts[ind] = _mode1D(a_view[ind])
     newshape = list(a.shape)
@@ -2656,7 +2656,8 @@ def gstd(a, axis=0, ddof=1):
         if np.isinf(a).any():
             raise ValueError(
                 'Infinite value encountered. The geometric standard deviation '
-                'is defined for strictly positive values only.')
+                'is defined for strictly positive values only.'
+            ) from w
         a_nan = np.isnan(a)
         a_nan_any = a_nan.any()
         # exclude NaN's from negativity check, but
@@ -2665,16 +2666,17 @@ def gstd(a, axis=0, ddof=1):
               (not a_nan_any and np.less_equal(a, 0).any())):
             raise ValueError(
                 'Non positive value encountered. The geometric standard '
-                'deviation is defined for strictly positive values only.')
+                'deviation is defined for strictly positive values only.'
+            ) from w
         elif 'Degrees of freedom <= 0 for slice' == str(w):
-            raise ValueError(w)
+            raise ValueError(w) from w
         else:
             #  Remaining warnings don't need to be exceptions.
             return np.exp(np.std(log(a, where=~a_nan), axis=axis, ddof=ddof))
-    except TypeError:
+    except TypeError as e:
         raise ValueError(
             'Invalid array input. The inputs could not be '
-            'safely coerced to any supported types')
+            'safely coerced to any supported types') from e
 
 
 # Private dictionary initialized only once at module level
@@ -4714,24 +4716,22 @@ class _ParallelP(object):
     """
     Helper function to calculate parallel p-value.
     """
-    def __init__(self, x, y, compute_distance, random_states):
+    def __init__(self, x, y, random_states):
         self.x = x
         self.y = y
-        self.compute_distance = compute_distance
         self.random_states = random_states
 
     def __call__(self, index):
-        permx = self.random_states[index].permutation(self.x)
-        permy = self.random_states[index].permutation(self.y)
+        order = self.random_states[index].permutation(self.y.shape[0])
+        permy = self.y[order][:, order]
 
         # calculate permuted stats, store in null distribution
-        perm_stat = _mgc_stat(permx, permy, self.compute_distance)[0]
+        perm_stat = _mgc_stat(self.x, permy)[0]
 
         return perm_stat
 
 
-def _perm_test(x, y, stat, compute_distance, reps=1000, workers=-1,
-               random_state=None):
+def _perm_test(x, y, stat, reps=1000, workers=-1, random_state=None):
     r"""
     Helper function that calculates the p-value. See below for uses.
 
@@ -4741,10 +4741,6 @@ def _perm_test(x, y, stat, compute_distance, reps=1000, workers=-1,
         `x` and `y` have shapes `(n, p)` and `(n, q)`.
     stat : float
         The sample test statistic.
-    compute_distance : callable
-        A function that computes the distance or similarity among the samples
-        within each data matrix. Set to `None` if `x` and `y` are already
-        distance.
     reps : int, optional
         The number of replications used to estimate the null when using the
         permutation test. The default is 1000 replications.
@@ -4776,8 +4772,7 @@ def _perm_test(x, y, stat, compute_distance, reps=1000, workers=-1,
 
     # parallelizes with specified workers over number of reps and set seeds
     mapwrapper = MapWrapper(workers)
-    parallelp = _ParallelP(x=x, y=y, compute_distance=compute_distance,
-                           random_states=random_states)
+    parallelp = _ParallelP(x=x, y=y, random_states=random_states)
     null_dist = np.array(list(mapwrapper(parallelp, range(reps))))
 
     # calculate p-value and significant permutation map through list
@@ -4854,6 +4849,7 @@ def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000,
         shapes ``(n, p)`` and ``(m, p)``, this optional will be overriden and
         set to ``True``. Set to ``True`` if ``x`` and ``y`` both have shapes
         ``(n, p)`` and a two sample test is desired. The default is ``False``.
+        Note that this will not run if inputs are distance matrices.
     random_state : int or np.random.RandomState instance, optional
         If already a RandomState instance, use it.
         If seed is an int, return a new RandomState instance seeded with seed.
@@ -4931,7 +4927,6 @@ def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000,
 
     MGC requires at least 5 samples to run with reliable results. It can also
     handle high-dimensional data sets.
-
     In addition, by manipulating the input data matrices, the two-sample
     testing problem can be reduced to the independence testing problem [4]_.
     Given sample data :math:`U` and :math:`V` of sizes :math:`p \times n`
@@ -4941,7 +4936,6 @@ def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000,
     .. math::
 
         X = [U | V] \in \mathcal{R}^{p \times (n + m)}
-
         Y = [0_{1 \times n} | 1_{1 \times m}] \in \mathcal{R}^{(n + m)}
 
     Then, the MGC statistic can be calculated as normal. This methodology can
@@ -5055,16 +5049,23 @@ def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000,
         warnings.warn(msg, RuntimeWarning)
 
     if is_twosamp:
+        if compute_distance is None:
+            raise ValueError("Cannot run if inputs are distance matrices")
         x, y = _two_sample_transform(x, y)
 
+    if compute_distance is not None:
+        # compute distance matrices for x and y
+        x = compute_distance(x)
+        y = compute_distance(y)
+
     # calculate MGC stat
-    stat, stat_dict = _mgc_stat(x, y, compute_distance)
+    stat, stat_dict = _mgc_stat(x, y)
     stat_mgc_map = stat_dict["stat_mgc_map"]
     opt_scale = stat_dict["opt_scale"]
 
     # calculate permutation MGC p-value
-    pvalue, null_dist = _perm_test(x, y, stat, compute_distance, reps=reps,
-                                   workers=workers, random_state=random_state)
+    pvalue, null_dist = _perm_test(x, y, stat, reps=reps, workers=workers,
+                                   random_state=random_state)
 
     # save all stats (other than stat/p-value) in dictionary
     mgc_dict = {"mgc_map": stat_mgc_map,
@@ -5074,7 +5075,7 @@ def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000,
     return MGCResult(stat, pvalue, mgc_dict)
 
 
-def _mgc_stat(x, y, compute_distance):
+def _mgc_stat(distx, disty):
     r"""
     Helper function that calculates the MGC stat. See above for use.
 
@@ -5083,10 +5084,6 @@ def _mgc_stat(x, y, compute_distance):
     x, y : ndarray
         `x` and `y` have shapes `(n, p)` and `(n, q)` or `(n, n)` and `(n, n)`
         if distance matrices.
-    compute_distance : callable
-        A function that computes the distance or similarity among the samples
-        within each data matrix. Set to `None` if `x` and `y` are already
-        distance.
 
     Returns
     -------
@@ -5095,20 +5092,12 @@ def _mgc_stat(x, y, compute_distance):
     stat_dict : dict
         Contains additional useful additional returns containing the following
         keys:
+
             - stat_mgc_map : ndarray
                 MGC-map of the statistics.
             - opt_scale : (float, float)
                 The estimated optimal scale as a `(x, y)` pair.
     """
-    # set distx and disty to x and y when compute_distance = None
-    distx = x
-    disty = y
-
-    if compute_distance is not None:
-        # compute distance matrices for x and y
-        distx = compute_distance(x)
-        disty = compute_distance(y)
-
     # calculate MGC map and optimal scale
     stat_mgc_map = _local_correlations(distx, disty, global_corr='mgc')
 
@@ -5181,7 +5170,6 @@ def _threshold_mgc_map(stat_mgc_map, samp_size):
 def _smooth_mgc_map(sig_connect, stat_mgc_map):
     """
     Finds the smoothed maximal within the significant region R.
-
     If area of R is too small it returns the last local correlation. Otherwise,
     returns the maximum within significant_connected_region.
 
@@ -5238,7 +5226,7 @@ def _two_sample_transform(u, v):
     Parameters
     ----------
     u, v : ndarray
-        `u` and `v` have shapes `(n, p)` and `(m, p)`,
+        `u` and `v` have shapes `(n, p)` and `(m, p)`.
 
     Returns
     -------
@@ -6466,8 +6454,8 @@ def _count_paths_outside_method(m, n, g, h):
         The number of paths that go low.
         The calculation may overflow - check for a finite answer.
 
-    Exceptions
-    ----------
+    Raises
+    ------
     FloatingPointError: Raised if the intermediate computation goes outside
     the range of a float.
 
@@ -6702,7 +6690,7 @@ def ks_2samp(data1, data2, alternative='two-sided', mode='auto'):
     cdf1 = np.searchsorted(data1, data_all, side='right') / n1
     cdf2 = np.searchsorted(data2, data_all, side='right') / n2
     cddiffs = cdf1 - cdf2
-    minS = -np.min(cddiffs)
+    minS = np.clip(-np.min(cddiffs), 0, 1)  # Ensure sign of minS is not negative.
     maxS = np.max(cddiffs)
     alt2Dvalue = {'less': minS, 'greater': maxS, 'two-sided': max(minS, maxS)}
     d = alt2Dvalue[alternative]
@@ -6715,11 +6703,11 @@ def ks_2samp(data1, data2, alternative='two-sided', mode='auto'):
         mode = 'exact' if max(n1, n2) <= MAX_AUTO_N else 'asymp'
     elif mode == 'exact':
         # If lcm(n1, n2) is too big, switch from exact to asymp
-        if n1g >= np.iinfo(np.int).max / n2g:
+        if n1g >= np.iinfo(np.int_).max / n2g:
             mode = 'asymp'
             warnings.warn(
-                "Exact ks_2samp calculation not possible with samples sizes "
-                "%d and %d. Switching to 'asymp' " % (n1, n2), RuntimeWarning)
+                f"Exact ks_2samp calculation not possible with samples sizes "
+                f"{n1} and {n2}. Switching to 'asymp'.", RuntimeWarning)
 
     if mode == 'exact':
         success, d, prob = _attempt_exact_2kssamp(n1, n2, g, d, alternative)
@@ -6731,13 +6719,16 @@ def ks_2samp(data1, data2, alternative='two-sided', mode='auto'):
 
     if mode == 'asymp':
         # The product n1*n2 is large.  Use Smirnov's asymptoptic formula.
+        # Ensure float to avoid overflow in multiplication
+        # sorted because the one-sided formula is not symmetric in n1, n2
+        m, n = sorted([float(n1), float(n2)], reverse=True)
+        en = m * n / (m + n)
         if alternative == 'two-sided':
-            en = n1 * n2 / (n1 + n2)
             prob = distributions.kstwo.sf(d, np.round(en))
         else:
-            m, n = max(n1, n2), min(n1, n2)
-            z = np.sqrt(m*n/(m+n)) * d
+            z = np.sqrt(en) * d
             # Use Hodges' suggested approximation Eqn 5.3
+            # Requires m to be the larger of (n1, n2)
             expt = -2 * z**2 - 2 * z * (m + 2*n)/np.sqrt(m*n*(m+n))/3.0
             prob = np.exp(expt)
 

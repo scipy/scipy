@@ -120,8 +120,8 @@ class OptimizeResult(dict):
     def __getattr__(self, name):
         try:
             return self[name]
-        except KeyError:
-            raise AttributeError(name)
+        except KeyError as e:
+            raise AttributeError(name) from e
 
     __setattr__ = dict.__setitem__
     __delattr__ = dict.__delitem__
@@ -645,7 +645,7 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
     if initial_simplex is None:
         N = len(x0)
 
-        sim = np.zeros((N + 1, N), dtype=x0.dtype)
+        sim = np.empty((N + 1, N), dtype=x0.dtype)
         sim[0] = x0
         for k in range(N):
             y = np.array(x0, copy=True)
@@ -683,7 +683,7 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
             maxfun = np.inf
 
     one2np1 = list(range(1, N + 1))
-    fsim = np.zeros((N + 1,), float)
+    fsim = np.empty((N + 1,), float)
 
     for k in range(N + 1):
         fsim[k] = func(sim[k])
@@ -846,10 +846,10 @@ def approx_fprime(xk, f, epsilon, *args):
     if not np.isscalar(f0):
         try:
             f0 = f0.item()
-        except (ValueError, AttributeError):
+        except (ValueError, AttributeError) as e:
             raise ValueError("The user-provided "
                              "objective function must "
-                             "return a scalar value.")
+                             "return a scalar value.") from e
 
     return approx_derivative(f, xk, method='2-point', abs_step=epsilon,
                              args=args, f0=f0)
@@ -1110,10 +1110,10 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
     if not np.isscalar(old_fval):
         try:
             old_fval = old_fval.item()
-        except (ValueError, AttributeError):
+        except (ValueError, AttributeError) as e:
             raise ValueError("The user-provided "
                              "objective function must "
-                             "return a scalar value.")
+                             "return a scalar value.") from e
 
     k = 0
     N = len(x0)
@@ -1162,16 +1162,15 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
             warnflag = 2
             break
 
-        try:  # this was handled in numeric, let it remaines for more safety
-            rhok = 1.0 / (np.dot(yk, sk))
-        except ZeroDivisionError:
+        rhok_inv = np.dot(yk, sk)
+        # this was handled in numeric, let it remaines for more safety
+        if rhok_inv == 0.:
             rhok = 1000.0
             if disp:
                 print("Divide-by-zero encountered: rhok assumed large")
-        if isinf(rhok):  # this is patch for NumPy
-            rhok = 1000.0
-            if disp:
-                print("Divide-by-zero encountered: rhok assumed large")
+        else:
+            rhok = 1. / rhok_inv
+
         A1 = I - sk[:, np.newaxis] * yk[np.newaxis, :] * rhok
         A2 = I - yk[:, np.newaxis] * sk[np.newaxis, :] * rhok
         Hk = np.dot(A1, np.dot(Hk, A2)) + (rhok * sk[:, np.newaxis] *
@@ -1432,10 +1431,10 @@ def _minimize_cg(fun, x0, args=(), jac=None, callback=None,
     if not np.isscalar(old_fval):
         try:
             old_fval = old_fval.item()
-        except (ValueError, AttributeError):
+        except (ValueError, AttributeError) as e:
             raise ValueError("The user-provided "
                              "objective function must "
-                             "return a scalar value.")
+                             "return a scalar value.") from e
 
     k = 0
     xk = x0
@@ -2578,7 +2577,7 @@ def _line_for_search(x0, alpha, lower_bound, upper_bound):
 
     Parameters
     ----------
-    x0 : np.array. 
+    x0 : np.array.
         The vector representing the current location.
         Note ``np.shape(x0) == (n,)``.
     alpha : np.array.
@@ -2623,7 +2622,7 @@ def _line_for_search(x0, alpha, lower_bound, upper_bound):
     lmin = np.max(lmin_pos + lmin_neg)
     lmax = np.min(lmax_pos + lmax_neg)
 
-    # if x0 is outside the bounds, then it is possible that there is 
+    # if x0 is outside the bounds, then it is possible that there is
     # no way to get back in the bounds for the parameters being updated
     # with the current direction alpha.
     # when this happens, lmax < lmin.
@@ -3237,8 +3236,8 @@ def brute(func, ranges, args=(), Ns=20, full_output=0, finish=fmin,
     Nshape = shape(Jout)
 
     indx = argmin(Jout.ravel(), axis=-1)
-    Nindx = zeros(N, int)
-    xmin = zeros(N, float)
+    Nindx = np.empty(N, int)
+    xmin = np.empty(N, float)
     for k in range(N - 1, -1, -1):
         thisN = Nshape[k]
         Nindx[k] = indx % Nshape[k]

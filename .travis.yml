@@ -26,7 +26,7 @@ env:
 matrix:
   include:
     - python: 3.6
-      if: type = pull_request
+      name: "Lint"
       env:
         - PYFLAKES=1
         - PEP8=1
@@ -39,10 +39,9 @@ matrix:
         - PYFLAKES_NODOCTEST=1 pyflakes scipy benchmarks/benchmarks 2>&1 | grep -E -v 'unable to detect undefined names|assigned to but never used|imported but unused|redefinition of unused|may be undefined, or defined from star imports|syntax error in type comment .ignore.import.' > test.out; cat test.out; test \! -s test.out
         - pycodestyle scipy benchmarks/benchmarks
         - tools/lint_diff.py
-        - |
-          grep -rlIP '[^\x00-\x7F]' scipy | grep '\.pyx\?' | sort > unicode.out; grep -rlI '# -\*- coding: \(utf-8\|latin-1\) -\*-' scipy | grep '\.pyx\?' | sort > coding.out; comm -23 unicode.out coding.out > test_code.out; cat test_code.out;  test \! -s test_code.out
+        - tools/unicode-check.py
     - python: 3.7
-      if: type = pull_request
+      name: "ARM - Test Group 1"
       arch: arm64
       dist: bionic
       env:
@@ -51,8 +50,22 @@ matrix:
         - USE_WHEEL=1
         - PIP_NO_CACHE_DIR=off
         - NUMPYSPEC="numpy"
+        - TEST_GROUP_COUNT=2
+        - TEST_GROUP=1
     - python: 3.7
-      if: type = pull_request
+      name: "ARM - Test Group 2"
+      arch: arm64
+      dist: bionic
+      env:
+        - TESTMODE=fast
+        - COVERAGE=
+        - USE_WHEEL=1
+        - PIP_NO_CACHE_DIR=off
+        - NUMPYSPEC="numpy"
+        - TEST_GROUP_COUNT=2
+        - TEST_GROUP=2
+    - python: 3.7
+      name: "Pre-release Dependencies, Source Dist"
       env:
         - TESTMODE=fast
         - COVERAGE=
@@ -63,7 +76,7 @@ matrix:
         # specify in pyproject.toml (will be older than --pre --upgrade) works
         - USE_SDIST=1
     - python: 3.7
-      if: type = pull_request
+      name: "Coverage, Full test suite"
       env:
         - TESTMODE=full
         - COVERAGE="--coverage --gcov"
@@ -72,7 +85,7 @@ matrix:
     # However travis only specifies regular or development builds of Python
     # so we must install python3.6-dbg using apt.
     - language: generic
-      if: type = pull_request
+      name: "Python 3.7 Debug"
       dist: bionic
       env:
         - USE_DEBUG=python3.7-dbg
@@ -85,14 +98,14 @@ matrix:
             - python3.7-dbg
             - python3.7-dev
     - python: 3.8
-      if: type = pull_request
+      name: "Pre-release Deps, 64-bit BLAS"
       env:
         - TESTMODE=full
         - NUMPYSPEC="--pre --upgrade --timeout=60 -i $PRE_WHEELS numpy"
         - OTHERSPEC="--pre --upgrade --timeout=60"
         - NPY_USE_BLAS_ILP64=1
     - python: 3.6
-      if: type = pull_request
+      name: "Refguide-check, Latest NumPy"
       env:
         - TESTMODE=fast
         - COVERAGE=
@@ -101,14 +114,14 @@ matrix:
         - NUMPYSPEC="--upgrade numpy"
         - ASV_CHECK=1
     - python: 3.6
-      if: type = pull_request
+      name: "Source Distribution"
       env:
         - TESTMODE=fast
         - COVERAGE=
         - NUMPYSPEC="numpy==1.17.4"
         - USE_SDIST=1
     - python: 3.6
-      if: type = pull_request
+      name: "Wheel, Optimised"
       env:
         - TESTMODE=fast
         - COVERAGE=
@@ -119,7 +132,7 @@ matrix:
         # flag. This environment variable starts all Py instances in -OO mode.
         - PYTHONOPTIMIZE=2
     - python: 3.6
-      if: type = pull_request
+      name: "Power PC"
       os: linux
       arch: ppc64le
       env:
@@ -140,6 +153,7 @@ before_install:
     if [ "$TRAVIS_OS_NAME" == "linux" ]; then
       free -m
       export PATH=/usr/lib/ccache:$PATH
+      ccache --zero-stats
     fi
   - |
     if [[ "$NPY_USE_BLAS_ILP64" == "1" ]]; then
@@ -155,6 +169,7 @@ before_install:
   - uname -a
   - df -h
   - ulimit -a
+  - set -o pipefail
   - mkdir builds
   - cd builds
   - |
@@ -163,15 +178,11 @@ before_install:
         virtualenv --python=$USE_DEBUG venv
         source venv/bin/activate
     fi
-  - python -V -V
+  - python --version
   - python -c 'import sys; print("Python debug build:", hasattr(sys, "gettotalrefcount"))'
-  # arm64 build uses conda (there aren't any arm64 wheels on PyPI, need
-  # Miniforge / conda-forge), so skip arm64 here
   - |
-    if [[ "$TRAVIS_CPU_ARCH" != "arm64" ]]; then
-         travis_retry pip install --upgrade pip setuptools wheel $OTHERSPEC cython pytest pytest-xdist mpmath argparse Pillow codecov gmpy2 pybind11
-         travis_retry pip install --upgrade $NUMPYSPEC
-    fi
+    travis_retry pip install --upgrade pip setuptools wheel $OTHERSPEC cython pytest pytest-xdist mpmath argparse gmpy2 pybind11
+    travis_retry pip install --upgrade $NUMPYSPEC
   - |
     if [ -n "${USE_DEBUG}" ]; then
         # see gh-10676; need to pin pytest version with debug
@@ -180,12 +191,24 @@ before_install:
     fi
   - |
     if [ -z "${USE_DEBUG}" -a "${TRAVIS_CPU_ARCH}" == "amd64" -a "${TRAVIS_PYTHON_VERSION}" != "3.8" ]; then
-        travis_retry pip install numba==0.49.1
-        travis_retry pip install --only-binary=:all: sparse
+        if ! expr "$NUMPYSPEC" : ".*--pre.*" > /dev/null; then
+            # Install these only when not using Numpy prerelease
+            travis_retry pip install numba==0.49.1
+            travis_retry pip install --only-binary=:all: sparse
+        fi
+    fi
+  - |
+    if [ -n "${TEST_GROUP_COUNT}" ]; then
+        travis_retry pip install pytest-test-groups
+        export TEST_GROUP_ARGS="--test-group-count=${TEST_GROUP_COUNT} --test-group=${TEST_GROUP} --test-group-random-seed=1234"
     fi
   - |
     if [ "${TESTMODE}" == "full" ]; then
-        travis_retry pip install pytest-cov coverage matplotlib scikit-umfpack scikit-sparse
+        travis_retry pip install matplotlib scikit-umfpack scikit-sparse
+    fi
+  - |
+    if [ -n "${COVERAGE}" ]; then
+        travis_retry pip install pytest-cov coverage codecov
     fi
   - |
     if [ "${REFGUIDE_CHECK}" == "1" ]; then
@@ -195,24 +218,9 @@ before_install:
     if [ "${ASV_CHECK}" == "1" ]; then
         travis_retry pip install "asv>=0.4.1"
     fi
-  - |
-    if [ "${TRAVIS_CPU_ARCH}" != "arm64" ]; then
-         pip uninstall -y nose
-    fi
+  - pip uninstall -y nose
   - ccache -s
   - cd ..
-  - set -o pipefail
-  - if [[ "${TRAVIS_CPU_ARCH}" == "arm64" ]]; then
-      wget -q "https://github.com/conda-forge/miniforge/releases/download/4.8.2-1/Miniforge3-4.8.2-1-Linux-aarch64.sh"  -O miniconda.sh;
-      chmod +x miniconda.sh;
-      ./miniconda.sh -b -p $HOME/miniconda3;
-      export PATH=$HOME/miniconda3/bin:$PATH;
-      conda config --set always_yes yes --set auto_update_conda false;
-      conda install pip conda;
-      conda update -n base conda;
-      conda info -a;
-      conda install pytest pytest-xdist $NUMPYSPEC mpmath gmpy2 Cython pybind11;
-    fi
 
 
 script:
@@ -246,20 +254,33 @@ script:
         USE_WHEEL_BUILD="--no-build"
     fi
   - export SCIPY_AVAILABLE_MEM=3G
-  - python -u runtests.py -g -m $TESTMODE $COVERAGE $USE_WHEEL_BUILD -- -rfEX --durations=10 -n 3 2>&1 | tee runtests.log
-
-  - tools/validate_runtests_log.py $TESTMODE < runtests.log
-  - if [ "${REFGUIDE_CHECK}" == "1" ]; then python runtests.py -g --refguide-check; fi
-  - if [ "${ASV_CHECK}" == "1" ]; then (cd benchmarks && python -masv check -E existing); fi
+  - python -u runtests.py -g -j2 --build-only $USE_WHEEL_BUILD
+  # Only run tests against pull-requests
+  - |
+    if [ "${TRAVIS_PULL_REQUEST}" != "false" ]; then
+      python -u runtests.py -g -j2 -m $TESTMODE $COVERAGE $USE_WHEEL_BUILD -- -rfEX --durations=10 $TEST_GROUP_ARGS 2>&1 | tee runtests.log
+      tools/validate_runtests_log.py $TESTMODE < runtests.log
+    fi
+  - |
+    if [ "${TRAVIS_PULL_REQUEST}" != "false" ] && [ "${REFGUIDE_CHECK}" == "1" ]; then
+      python runtests.py -g --refguide-check
+    fi
+  - |
+    if [ "${TRAVIS_PULL_REQUEST}" != "false" ] && [ "${ASV_CHECK}" == "1" ]; then
+      (cd benchmarks && python -masv check -E existing)
+    fi
   # Check dynamic symbol hiding works on Linux
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then ./tools/check_pyext_symbol_hiding.sh build; fi
+  - |
+    if [ "${TRAVIS_PULL_REQUEST}" != "false" ] && [ "$TRAVIS_OS_NAME" == "linux" ]; then
+      ./tools/check_pyext_symbol_hiding.sh build
+    fi
 
 
 after_script:
   - ccache -s
   # Upload coverage information
   - |
-    if [ -n "${COVERAGE}" ]; then
+    if [ "${TRAVIS_PULL_REQUEST}" != "false" ] && [ -n "${COVERAGE}" ]; then
         RUN_DIR=`echo build/testenv/lib/python*/site-packages`
         # Produce gcov output for codecov to find
         find build -name '*.gcno' -type f -exec gcov -pb {} +

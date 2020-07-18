@@ -1925,7 +1925,7 @@ def _cast_to_array_dtype(in1, in2):
 
     Those can be raised when casting complex to real.
     """
-    if numpy.issubdtype(in2.dtype, numpy.float):
+    if numpy.issubdtype(in2.dtype, numpy.float64):
         # dtype to cast to is not complex, so use .real
         in1 = in1.real.astype(in2.dtype)
     else:
@@ -2059,7 +2059,7 @@ def lsim(system, U, T, X0=None, interp=True):
     n_steps = T.size
     if X0 is None:
         X0 = zeros(n_states, sys.A.dtype)
-    xout = zeros((n_steps, n_states), sys.A.dtype)
+    xout = np.empty((n_steps, n_states), sys.A.dtype)
 
     if T[0] == 0:
         xout[0] = X0
@@ -3360,10 +3360,10 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
             m = np.linalg.solve(transfer_matrix.T, np.dot(np.diag(poles),
                                                           transfer_matrix.T)).T
             gain_matrix = np.linalg.solve(z, np.dot(u0.T, m-A))
-        except np.linalg.LinAlgError:
+        except np.linalg.LinAlgError as e:
             raise ValueError("The poles you've chosen can't be placed. "
                              "Check the controllability matrix and try "
-                             "another set of poles")
+                             "another set of poles") from e
 
     # Beware: Kautsky solves A+BK but the usual form is A-BK
     gain_matrix = -gain_matrix

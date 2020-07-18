@@ -314,8 +314,8 @@ class spmatrix(object):
         else:
             try:
                 convert_method = getattr(self, 'to' + format)
-            except AttributeError:
-                raise ValueError('Format {} is unknown.'.format(format))
+            except AttributeError as e:
+                raise ValueError('Format {} is unknown.'.format(format)) from e
 
             # Forward the copy kwarg, if it's accepted.
             try:
@@ -811,8 +811,25 @@ class spmatrix(object):
                                   shape=(1, m), dtype=self.dtype)
         return row_selector * self
 
+    # The following dunder methods cannot be implemented.
+    #
     # def __array__(self):
-    #    return self.toarray()
+    #     # Sparse matrices rely on NumPy wrapping them in object arrays under
+    #     # the hood to make unary ufuncs work on them. So we cannot raise
+    #     # TypeError here - which would be handy to not give users object
+    #     # arrays they probably don't want (they're looking for `.toarray()`).
+    #     #
+    #     # Conversion with `toarray()` would also break things because of the
+    #     # behavior discussed above, plus we want to avoid densification by
+    #     # accident because that can too easily blow up memory.
+    #
+    # def __array_ufunc__(self):
+    #     # We cannot implement __array_ufunc__ due to mismatching semantics.
+    #     # See gh-7707 and gh-7349 for details.
+    #
+    # def __array_function__(self):
+    #     # We cannot implement __array_function__ due to mismatching semantics.
+    #     # See gh-10362 for details.
 
     def todense(self, order=None, out=None):
         """

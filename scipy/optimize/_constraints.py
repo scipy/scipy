@@ -430,12 +430,14 @@ def old_constraint_to_new(ic, con):
     # check type
     try:
         ctype = con['type'].lower()
-    except KeyError:
-        raise KeyError('Constraint %d has no type defined.' % ic)
-    except TypeError:
-        raise TypeError('Constraints must be a sequence of dictionaries.')
-    except AttributeError:
-        raise TypeError("Constraint's type must be a string.")
+    except KeyError as e:
+        raise KeyError('Constraint %d has no type defined.' % ic) from e
+    except TypeError as e:
+        raise TypeError(
+            'Constraints must be a sequence of dictionaries.'
+        ) from e
+    except AttributeError as e:
+        raise TypeError("Constraint's type must be a string.") from e
     else:
         if ctype not in ['eq', 'ineq']:
             raise ValueError("Unknown constraint type '%s'." % con['type'])

@@ -140,6 +140,19 @@ def _prune_array(array):
     return array
 
 
+def prod(iterable):
+    """
+    Product of a sequence of numbers.
+
+    Faster than np.prod for short lists like array shapes, and does
+    not overflow if using Python integers.
+    """
+    product = 1
+    for x in iterable:
+        product *= x
+    return product
+
+
 class DeprecatedImport(object):
     """
     Deprecated import with redirection and warning.
@@ -399,10 +412,10 @@ class MapWrapper(object):
         # only accept one iterable because that's all Pool.map accepts
         try:
             return self._mapfunc(func, iterable)
-        except TypeError:
+        except TypeError as e:
             # wrong number of arguments
             raise TypeError("The map-like callable must be of the"
-                            " form f(func, iterable)")
+                            " form f(func, iterable)") from e
 
 
 def rng_integers(gen, low, high=None, size=None, dtype='int64',

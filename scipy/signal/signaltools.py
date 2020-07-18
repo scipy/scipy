@@ -9,6 +9,7 @@ from . import sigtools, dlti
 from ._upfirdn import upfirdn, _output_len, _upfirdn_modes
 from scipy import linalg, fft as sp_fft
 from scipy.fft._helper import _init_nd_shape_and_axes
+from scipy._lib._util import prod as _prod
 import numpy as np
 from scipy.special import lambertw
 from .windows import get_window
@@ -19,7 +20,7 @@ from ._sosfilt import _sosfilt
 import warnings
 
 
-__all__ = ['correlate', 'correlate2d',
+__all__ = ['correlate', 'correlation_lags', 'correlate2d',
            'convolve', 'convolve2d', 'fftconvolve', 'oaconvolve',
            'order_filter', 'medfilt', 'medfilt2d', 'wiener', 'lfilter',
            'lfiltic', 'sosfilt', 'deconvolve', 'hilbert', 'hilbert2',
@@ -38,17 +39,17 @@ _boundarydict = {'fill': 0, 'pad': 0, 'wrap': 2, 'circular': 2, 'symm': 1,
 def _valfrommode(mode):
     try:
         return _modedict[mode]
-    except KeyError:
+    except KeyError as e:
         raise ValueError("Acceptable mode flags are 'valid',"
-                         " 'same', or 'full'.")
+                         " 'same', or 'full'.") from e
 
 
 def _bvalfromboundary(boundary):
     try:
         return _boundarydict[boundary] << 2
-    except KeyError:
+    except KeyError as e:
         raise ValueError("Acceptable boundary flags are 'fill', 'circular' "
-                         "(or 'wrap'), and 'symmetric' (or 'symm').")
+                         "(or 'wrap'), and 'symmetric' (or 'symm').") from e
 
 
 def _inputs_swap_needed(mode, shape1, shape2, axes=None):
@@ -135,6 +136,8 @@ def correlate(in1, in2, mode='full', method='auto'):
     See Also
     --------
     choose_conv_method : contains more documentation on `method`.
+    correlation_lags : calculates the lag / displacement indices array for 1D
+        cross-correlation.
 
     Notes
     -----
@@ -168,11 +171,12 @@ def correlate(in1, in2, mode='full', method='auto'):
     that has passed through a noisy channel.
 
     >>> from scipy import signal
+    >>> import matplotlib.pyplot as plt
+
     >>> sig = np.repeat([0., 1., 1., 0., 1., 0., 0., 1.], 128)
     >>> sig_noise = sig + np.random.randn(len(sig))
     >>> corr = signal.correlate(sig_noise, np.ones(128), mode='same') / 128
 
-    >>> import matplotlib.pyplot as plt
     >>> clock = np.arange(64, len(sig), 128)
     >>> fig, (ax_orig, ax_noise, ax_corr) = plt.subplots(3, 1, sharex=True)
     >>> ax_orig.plot(sig)
@@ -186,8 +190,32 @@ def correlate(in1, in2, mode='full', method='auto'):
     >>> ax_corr.set_title('Cross-correlated with rectangular pulse')
     >>> ax_orig.margins(0, 0.1)
     >>> fig.tight_layout()
-    >>> fig.show()
+    >>> plt.show()
 
+    Compute the cross-correlation of a noisy signal with the original signal.
+
+    >>> x = np.arange(128) / 128
+    >>> sig = np.sin(2 * np.pi * x)
+    >>> sig_noise = sig + np.random.randn(len(sig))
+    >>> corr = signal.correlate(sig_noise, sig)
+    >>> lags = signal.correlation_lags(len(sig), len(sig_noise))
+    >>> corr /= np.max(corr)
+
+    >>> fig, (ax_orig, ax_noise, ax_corr) = plt.subplots(3, 1, figsize=(4.8, 4.8))
+    >>> ax_orig.plot(sig)
+    >>> ax_orig.set_title('Original signal')
+    >>> ax_orig.set_xlabel('Sample Number')
+    >>> ax_noise.plot(sig_noise)
+    >>> ax_noise.set_title('Signal with noise')
+    >>> ax_noise.set_xlabel('Sample Number')
+    >>> ax_corr.plot(lags, corr)
+    >>> ax_corr.set_title('Cross-correlated signal')
+    >>> ax_corr.set_xlabel('Lag')
+    >>> ax_orig.margins(0, 0.1)
+    >>> ax_noise.margins(0, 0.1)
+    >>> ax_corr.margins(0, 0.1)
+    >>> fig.tight_layout()
+    >>> plt.show()
     """
     in1 = np.asarray(in1)
     in2 = np.asarray(in2)
@@ -200,9 +228,9 @@ def correlate(in1, in2, mode='full', method='auto'):
     # Don't use _valfrommode, since correlate should not accept numeric modes
     try:
         val = _modedict[mode]
-    except KeyError:
+    except KeyError as e:
         raise ValueError("Acceptable mode flags are 'valid',"
-                         " 'same', or 'full'.")
+                         " 'same', or 'full'.") from e
 
     # this either calls fftconvolve or this function with method=='direct'
     if method in ('fft', 'auto'):
@@ -253,6 +281,102 @@ def correlate(in1, in2, mode='full', method='auto'):
     else:
         raise ValueError("Acceptable method flags are 'auto',"
                          " 'direct', or 'fft'.")
+
+
+def correlation_lags(in1_len, in2_len, mode='full'):
+    r"""
+    Calculates the lag / displacement indices array for 1D cross-correlation.
+
+    Parameters
+    ----------
+    in1_size : int
+        First input size.
+    in2_size : int
+        Second input size.
+    mode : str {'full', 'valid', 'same'}, optional
+        A string indicating the size of the output.
+        See the documentation `correlate` for more information.
+
+    See Also
+    --------
+    correlate : Compute the N-dimensional cross-correlation.
+
+    Returns
+    -------
+    lags : array
+        Returns an array containing cross-correlation lag/displacement indices.
+        Indices can be indexed with the np.argmax of the correlation to return
+        the lag/displacement.
+
+    Notes
+    -----
+    Cross-correlation for continuous functions :math:`f` and :math:`g` is
+    defined as:
+
+    .. math ::
+
+        \left ( f\star g \right )\left ( \tau \right )
+        \triangleq \int_{t_0}^{t_0 +T}
+        \overline{f\left ( t \right )}g\left ( t+\tau \right )dt
+
+    Where :math:`\tau` is defined as the displacement, also known as the lag.
+
+    Cross correlation for discrete functions :math:`f` and :math:`g` is
+    defined as:
+
+    .. math ::
+        \left ( f\star g \right )\left [ n \right ]
+        \triangleq \sum_{-\infty}^{\infty}
+        \overline{f\left [ m \right ]}g\left [ m+n \right ]
+
+    Where :math:`n` is the lag.
+
+    Examples
+    --------
+    Cross-correlation of a signal with its time-delayed self.
+
+    >>> from scipy import signal
+    >>> rng = np.random.RandomState(0)
+    >>> x = rng.standard_normal(1000)
+    >>> y = np.concatenate([rng.standard_normal(100), x])
+    >>> correlation = signal.correlate(x, y, mode="full")
+    >>> lags = signal.correlation_lags(x.size, y.size, mode="full")
+    >>> lag = lags[np.argmax(correlation)]
+    """
+
+    # calculate lag ranges in different modes of operation
+    if mode == "full":
+        # the output is the full discrete linear convolution
+        # of the inputs. (Default)
+        lags = np.arange(-in2_len + 1, in1_len)
+    elif mode == "same":
+        # the output is the same size as `in1`, centered
+        # with respect to the 'full' output.
+        # calculate the full output
+        lags = np.arange(-in2_len + 1, in1_len)
+        # determine the midpoint in the full output
+        mid = lags.size // 2
+        # determine lag_bound to be used with respect
+        # to the midpoint
+        lag_bound = in1_len // 2
+        # calculate lag ranges for even and odd scenarios
+        if in1_len % 2 == 0:
+            lags = lags[(mid-lag_bound):(mid+lag_bound)]
+        else:
+            lags = lags[(mid-lag_bound):(mid+lag_bound)+1]
+    elif mode == "valid":
+        # the output consists only of those elements that do not
+        # rely on the zero-padding. In 'valid' mode, either `in1` or `in2`
+        # must be at least as large as the other in every dimension.
+
+        # the lag_bound will be either negative or positive
+        # this let's us infer how to present the lag range
+        lag_bound = in1_len - in2_len
+        if lag_bound >= 0:
+            lags = np.arange(lag_bound + 1)
+        else:
+            lags = np.arange(lag_bound, 1)
+    return lags
 
 
 def _centered(arr, newshape):
@@ -513,7 +637,6 @@ def fftconvolve(in1, in2, mode="full", axes=None):
     >>> ax_blurred.set_title('Blurred')
     >>> ax_blurred.set_axis_off()
     >>> fig.show()
-
     """
     in1 = np.asarray(in1)
     in2 = np.asarray(in2)
@@ -875,17 +998,6 @@ def _numeric_arrays(arrays, kinds='buifc'):
         if array_.dtype.kind not in kinds:
             return False
     return True
-
-
-def _prod(iterable):
-    """
-    Product of a list of numbers.
-    Faster than np.prod for short lists like array shapes.
-    """
-    product = 1
-    for x in iterable:
-        product *= x
-    return product
 
 
 def _conv_ops(x_shape, h_shape, mode):
@@ -3141,7 +3253,7 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0),
         # Design a linear-phase low-pass FIR filter
         max_rate = max(up, down)
         f_c = 1. / max_rate  # cutoff of FIR filter (rel. to Nyquist)
-        half_len = 10 * max_rate  # reasonable cutoff for our sinc-like function
+        half_len = 10 * max_rate  # reasonable cutoff for sinc-like function
         h = firwin(2 * half_len + 1, f_c, window=window)
     h *= up
 

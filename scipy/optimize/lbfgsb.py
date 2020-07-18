@@ -459,7 +459,7 @@ class LbfgsInvHessProduct(LinearOperator):
         if q.ndim == 2 and q.shape[1] == 1:
             q = q.reshape(-1)
 
-        alpha = np.zeros(n_corrs)
+        alpha = np.empty(n_corrs)
 
         for i in range(n_corrs-1, -1, -1):
             alpha[i] = rho[i] * np.dot(s[i], q)

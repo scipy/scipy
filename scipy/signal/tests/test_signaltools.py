@@ -21,7 +21,7 @@ from scipy.ndimage.filters import correlate1d
 from scipy.optimize import fmin, linear_sum_assignment
 from scipy import signal
 from scipy.signal import (
-    correlate, convolve, convolve2d,
+    correlate, correlation_lags, convolve, convolve2d,
     fftconvolve, oaconvolve, choose_conv_method,
     hilbert, hilbert2, lfilter, lfilter_zi, filtfilt, butter, zpk2tf, zpk2sos,
     invres, invresz, vectorstrength, lfiltic, tf2sos, sosfilt, sosfiltfilt,
@@ -407,6 +407,21 @@ class TestConvolve2d(_TestConvolve2d):
         assert_raises(ValueError, convolve2d, 3, 4)
         assert_raises(ValueError, convolve2d, [3], [4])
         assert_raises(ValueError, convolve2d, [[[3]]], [[[4]]])
+
+    @pytest.mark.slow
+    @pytest.mark.xfail_on_32bit("Can't create large array for test")
+    def test_large_array(self):
+        # Test indexing doesn't overflow an int (gh-10761)
+        n = 2**31 // (1000 * np.int64().itemsize)
+
+        # Create a chequered pattern of 1s and 0s
+        a = np.zeros(1001 * n, dtype=np.int64)
+        a[::2] = 1
+        a = np.lib.stride_tricks.as_strided(a, shape=(n, 1000), strides=(8008, 8))
+
+        count = signal.convolve2d(a, [[1, 1]])
+        fails = np.where(count > 1)
+        assert fails[0].size == 0
 
 
 class TestFFTConvolve(object):
@@ -1918,6 +1933,34 @@ class TestCorrelate(object):
         assert_allclose(correlate(a, b, mode='same'), [17, 32, 23])
         assert_allclose(correlate(a, b, mode='full'), [6, 17, 32, 23, 12])
         assert_allclose(correlate(a, b, mode='valid'), [32])
+
+
+@pytest.mark.parametrize("mode", ["valid", "same", "full"])
+@pytest.mark.parametrize("behind", [True, False])
+@pytest.mark.parametrize("input_size", [100, 101, 1000, 1001, 10000, 10001])
+def test_correlation_lags(mode, behind, input_size):
+    # generate random data
+    rng = np.random.RandomState(0)
+    in1 = rng.standard_normal(input_size)
+    offset = int(input_size/10)
+    # generate offset version of array to correlate with
+    if behind:
+        # y is behind x
+        in2 = np.concatenate([rng.standard_normal(offset), in1])
+        expected = -offset
+    else:
+        # y is ahead of x
+        in2 = in1[offset:]
+        expected = offset
+    # cross correlate, returning lag information
+    correlation = correlate(in1, in2, mode=mode)
+    lags = correlation_lags(in1.size, in2.size, mode=mode)
+    # identify the peak
+    lag_index = np.argmax(correlation)
+    # Check as expected
+    assert_equal(lags[lag_index], expected)
+    # Correlation and lags shape should match
+    assert_equal(lags.shape, correlation.shape)
 
 
 @pytest.mark.parametrize('dt', [np.csingle, np.cdouble, np.clongdouble])

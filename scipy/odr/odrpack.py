@@ -549,7 +549,7 @@ class Output(object):
     beta : ndarray
         Estimated parameter values, of shape (q,).
     sd_beta : ndarray
-        Standard errors of the estimated parameters, of shape (p,).
+        Standard deviations of the estimated parameters, of shape (p,).
     cov_beta : ndarray
         Covariance matrix of the estimated parameters, of shape (p,p).
     delta : ndarray, optional

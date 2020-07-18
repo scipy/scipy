@@ -812,6 +812,14 @@ class TestDendrogram(object):
         Z = linkage(hierarchy_test_data.ytdist, 'single')
         assert_raises(ValueError, dendrogram, Z, orientation="foo")
 
+    def test_labels_as_array_or_list(self):
+        # test for gh-12418
+        Z = linkage(hierarchy_test_data.ytdist, 'single')
+        labels = np.array([1, 3, 2, 6, 4, 5])
+        result1 = dendrogram(Z, labels=labels, no_plot=True)
+        result2 = dendrogram(Z, labels=labels.tolist(), no_plot=True)
+        assert result1 == result2
+
     @pytest.mark.skipif(not have_matplotlib, reason="no matplotlib")
     def test_valid_label_size(self):
         link = np.array([
@@ -824,6 +832,12 @@ class TestDendrogram(object):
             dendrogram(link, labels=list(range(100)))
         assert "Dimensions of Z and labels must be consistent."\
                in str(exc_info.value)
+
+        with pytest.raises(
+                ValueError,
+                match="Dimensions of Z and labels must be consistent."):
+            dendrogram(link, labels=[])
+
         plt.close()
 
     @pytest.mark.skipif(not have_matplotlib, reason="no matplotlib")
@@ -846,7 +860,9 @@ class TestDendrogram(object):
                                [25.0, 25.0, 42.5, 42.5],
                                [10.0, 10.0, 33.75, 33.75]],
                     'ivl': ['2', '5', '1', '0', '3', '4'],
-                    'leaves': [2, 5, 1, 0, 3, 4]}
+                    'leaves': [2, 5, 1, 0, 3, 4],
+                    'leaves_color_list': ['C1', 'C1', 'C0', 'C0', 'C0', 'C0'],
+                    }
 
         fig = plt.figure()
         ax = fig.add_subplot(221)
@@ -899,7 +915,9 @@ class TestDendrogram(object):
                          'dcoord': [[0.0, 295.0, 295.0, 0.0]],
                          'icoord': [[5.0, 5.0, 15.0, 15.0]],
                          'ivl': ['(2)', '(4)'],
-                         'leaves': [6, 9]})
+                         'leaves': [6, 9],
+                         'leaves_color_list': ['C0', 'C0'],
+                         })
 
         R = dendrogram(Z, 2, 'mtica', show_contracted=True)
         plt.close()
@@ -913,7 +931,9 @@ class TestDendrogram(object):
                                     [25.0, 25.0, 40.0, 40.0],
                                     [10.0, 10.0, 32.5, 32.5]],
                          'ivl': ['2', '5', '1', '0', '(2)'],
-                         'leaves': [2, 5, 1, 0, 7]})
+                         'leaves': [2, 5, 1, 0, 7],
+                         'leaves_color_list': ['C1', 'C1', 'C0', 'C0', 'C0'],
+                         })
 
     def test_dendrogram_colors(self):
         # Tests dendrogram plots with alternate colors

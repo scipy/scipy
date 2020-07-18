@@ -500,11 +500,11 @@ def run_mypy(args):
 
     try:
         import mypy.api
-    except ImportError:
+    except ImportError as e:
         raise RuntimeError(
             "Mypy not found. Please install it by running "
             "pip install -r mypy_requirements.txt from the repo root"
-        )
+        ) from e
 
     site_dir = build_project(args)
     config = os.path.join(

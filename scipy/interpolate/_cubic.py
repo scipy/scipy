@@ -825,9 +825,11 @@ class CubicSpline(CubicHermiteSpline):
             else:
                 try:
                     deriv_order, deriv_value = bc
-                except Exception:
-                    raise ValueError("A specified derivative value must be "
-                                     "given in the form (order, value).")
+                except Exception as e:
+                    raise ValueError(
+                        "A specified derivative value must be "
+                        "given in the form (order, value)."
+                    ) from e
 
                 if deriv_order not in [1, 2]:
                     raise ValueError("The specified derivative order must "
