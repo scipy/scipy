@@ -239,6 +239,7 @@ def gauss_spline(x, n):
     array([0.16666667, 0.66666667, 0.16666667])  # may vary
 
     """
+    x = asarray(x)
     signsq = (n + 1) / 12.0
     return 1 / sqrt(2 * pi * signsq) * exp(-x ** 2 / 2 / signsq)
 
