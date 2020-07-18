@@ -499,7 +499,7 @@ fitpack_parcur(PyObject *dummy, PyObject *args)
     if (ap_t == NULL || ap_c == NULL) {
         goto fail;
     }
-    if (iopt == 0|| n > no) {
+    if (iopt != 1|| n > no) {
         Py_XDECREF(ap_wrk);
         ap_wrk = NULL;
         Py_XDECREF(ap_iwrk);
