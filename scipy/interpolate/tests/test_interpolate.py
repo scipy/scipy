@@ -2581,6 +2581,17 @@ class TestRegularGridInterpolator(object):
         RegularGridInterpolator(points, values)
         RegularGridInterpolator(points, values, fill_value=0.)
 
+    def test_ndim_broadcastible_arrays_input(self):
+        shape = (4, 5, 6, 7)
+        ndims = len(shape)
+        x_0 = [np.arange(0, n, dtype=float) for n in shape]
+        pts = np.moveaxis(
+            np.meshgrid(*x_0, indexing='ij'), 0, -1
+        ).reshape(-1, ndims)
+        values = np.sum(pts, axis=1)
+        for itype in (NearestNDInterpolator, LinearNDInterpolator):
+            interp = itype(pts, values)
+
 
 class MyValue(object):
     """
