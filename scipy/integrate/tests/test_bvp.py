@@ -153,8 +153,8 @@ def big_sol(x, n):
 
 
 def big_fun_with_parameters(x, y, p):
-    """
-    big version of sl_fun, with two parameters.
+    """ Big version of sl_fun, with two parameters.
+
     The two differential equations represented by sl_fun are broadcast to the number of rows of y, rotating between the
     parameters p[0] and p[1].
     Here are the differential equations:
@@ -205,9 +205,8 @@ def big_bc_with_parameters_jac(ya, yb, p):
     dbc_dya = np.zeros((n + 2, n))
     dbc_dyb = np.zeros((n + 2, n))
 
-    n_by_2 = int(n / 2)
-    dbc_dya[range(n_by_2), range(0, n, 2)] = 1
-    dbc_dyb[range(n_by_2, n), range(0, n, 2)] = 1
+    dbc_dya[range(n // 2), range(0, n, 2)] = 1
+    dbc_dyb[range(n // 2, n), range(0, n, 2)] = 1
 
     dbc_dp = np.zeros((n + 2, 2))
     dbc_dp[n, 0] = -1
@@ -623,7 +622,7 @@ def test_big_problem_with_parameters():
 
             for isol in range(0, n, 4):
                 assert_allclose(sol_test[isol], big_sol_with_parameters(x_test, [1, 1])[0],
-                            rtol=1e-4, atol=1e-4)
+                                rtol=1e-4, atol=1e-4)
                 assert_allclose(sol_test[isol + 2], big_sol_with_parameters(x_test, [1, 1])[1],
                                 rtol=1e-4, atol=1e-4)
 

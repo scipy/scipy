@@ -143,13 +143,9 @@ def compute_jac_indices(n, m, k):
 def stacked_matmul(a, b):
     """Stacked matrix multiply: out[i,:,:] = np.dot(a[i,:,:], b[i,:,:]).
 
-    In our case, a[i, :, :] and b[i, :, :] are square unless parameters are included in the dependent variables,
-    i.e. if the calling signature for fun in scipy.integrate.solve_bvp is fun(x, y, p) vs. fun(x, y). If parameters
-    are present, then a[] will be a non-square matrix.
-
+    Empirical optimization. Use outer Python loop and BLAS for large
+    matrices, otherwise use a single einsum call.
     """
-    # Empirical optimization. Use outer Python loop and BLAS for large
-    # matrices, otherwise use a single einsum call.
     if a.shape[1] > 50:
         out = np.empty((a.shape[0], a.shape[1], b.shape[2]))
         for i in range(a.shape[0]):
