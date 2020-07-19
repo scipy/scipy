@@ -240,6 +240,7 @@ Luigi F. Cruz for adding time/frequency domain option to scipy.signal.resample.
 Wesley Alves for improvements to scipy.stats.jarque_bera and scipy.stats.shapiro
 Mark Borgerding for contributing linalg.convolution_matrix.
 Shashaank N for contributions to scipy.signal.
+Frank Torres for fixing a bug with solve_bvp for large problems.
 
 Institutions
 ------------
