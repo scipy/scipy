@@ -141,6 +141,7 @@ Multivariate distributions
    ortho_group           -- O(N) group
    unitary_group         -- U(N) group
    random_correlation    -- random correlation matrices
+   multivariate_t        -- Multivariate t-distribution
 
 Discrete distributions
 ======================
