@@ -540,6 +540,10 @@ class nhypergeom_gen(rv_discrete):
     .. math:: f(k; N, K, r) = \frac{{{k+r-1}\choose{k}}{{N-r-k}\choose{K-k}}}
                                    {{N \choose K}}
 
+    for :math:`k \in [0, K]` and the binomian co-efficient is:
+
+    .. math:: \binom{n}{k} \equiv \frac{n!}{k! (n - k)!}.
+
     %(after_notes)s
 
     Examples
@@ -556,7 +560,7 @@ class nhypergeom_gen(rv_discrete):
 
     >>> N, K, r = [20, 7, 12]
     >>> rv = nhypergeom(N, K, r)
-    >>> x = np.arange(0, K)
+    >>> x = np.arange(0, K+2)
     >>> pmf_dogs = rv.pmf(x)
 
     >>> fig = plt.figure()
@@ -579,7 +583,12 @@ class nhypergeom_gen(rv_discrete):
 
     See Also
     --------
-    hypergeom
+    hypergeom, binom, nbinom
+
+    References
+    ----------
+    .. [1] Negative Hypergeometric Distribution on Wikipedia
+           https://en.wikipedia.org/wiki/Negative_hypergeometric_distribution
 
     """
     def _get_support(self, N, K, r):

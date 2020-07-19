@@ -159,13 +159,13 @@ Discrete distributions
    hypergeom         -- Hypergeometric
    logser            -- Logarithmic (Log-Series, Series)
    nbinom            -- Negative Binomial
+   nhypergeom        -- Negative Hypergeometric
    planck            -- Planck (Discrete Exponential)
    poisson           -- Poisson
    randint           -- Discrete Uniform
    skellam           -- Skellam
    zipf              -- Zipf
    yulesimon         -- Yule-Simon
-   nhypergeom        -- Negative Hypergeometric
 
 An overview of statistical functions is given below.
 Several of these functions have a similar version in

@@ -1,4 +1,4 @@
-from scipy.stats import betabinom, hypergeom, bernoulli, boltzmann
+from scipy.stats import betabinom, hypergeom, nhypergeom, bernoulli, boltzmann
 import numpy as np
 from numpy.testing import assert_almost_equal, assert_equal, assert_allclose
 
@@ -27,6 +27,15 @@ def test_hypergeom_logpmf():
     hypergeom_logpmf = hypergeom.logpmf(k, N, K, n)
     bernoulli_logpmf = bernoulli.logpmf(k, K/N)
     assert_almost_equal(hypergeom_logpmf, bernoulli_logpmf, decimal=12)
+
+
+def test_nhypergeom_logpmf():
+    # test with hypergeom
+    N, K, r = 45, 13, 8
+    k = 6
+    NHG = nhypergeom._pmf(k, N, K, r)
+    HG = hypergeom._pmf(k, N, K, k+r-1) * (N - K - (r-1)) / (N - (k+r-1))
+    assert_almost_equal(HG, NHG, decimal=10)
 
 
 def test_boltzmann_upper_bound():
