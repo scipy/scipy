@@ -5276,8 +5276,15 @@ def ttest_1samp(a, popmean, axis=0, nan_policy='propagate', alternative="two-sid
           * 'propagate': returns nan
           * 'raise': throws an error
           * 'omit': performs the calculations ignoring nan values
-    alternative: "two-sided", "less", "greater"
-        The alternative hypothesis to test for.
+    alternative : {'two-sided', 'less', 'greater'}, optional
+        Defines the alternative hypothesis.
+        The following options are available (default is 'two-sided'):
+
+          * 'two-sided'
+          * 'less': one-sided
+          * 'greater': one-sided
+
+        .. versionadded:: 1.6.0
 
     Returns
     -------
@@ -5416,8 +5423,15 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
         that assumes equal population variances [1]_.
         If False, perform Welch's t-test, which does not assume equal
         population variance [2]_.
-    alternative: "two-sided", "less", "greater"
-        The alternative hypothesis to test for.
+    alternative : {'two-sided', 'less', 'greater'}, optional
+        Defines the alternative hypothesis.
+        The following options are available (default is 'two-sided'):
+
+          * 'two-sided'
+          * 'less': one-sided
+          * 'greater': one-sided
+
+        .. versionadded:: 1.6.0
 
     Returns
     -------
@@ -5574,8 +5588,15 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate', alternative=
           * 'propagate': returns nan
           * 'raise': throws an error
           * 'omit': performs the calculations ignoring nan values
-    alternative: "two-sided", "less", "greater"
-        The alternative hypothesis to test for.
+    alternative : {'two-sided', 'less', 'greater'}, optional
+        Defines the alternative hypothesis.
+        The following options are available (default is 'two-sided'):
+
+          * 'two-sided'
+          * 'less': one-sided
+          * 'greater': one-sided
+
+        .. versionadded:: 1.6.0
 
     Returns
     -------
@@ -5705,8 +5726,15 @@ def ttest_rel(a, b, axis=0, nan_policy='propagate', alternative="two-sided"):
           * 'propagate': returns nan
           * 'raise': throws an error
           * 'omit': performs the calculations ignoring nan values
-    alternative: "two-sided", "less", "greater"
-        The alternative hypothesis to test for.
+    alternative : {'two-sided', 'less', 'greater'}, optional
+        Defines the alternative hypothesis.
+        The following options are available (default is 'two-sided'):
+
+          * 'two-sided'
+          * 'less': one-sided
+          * 'greater': one-sided
+
+          .. versionadded:: 1.6.0
 
     Returns
     -------
