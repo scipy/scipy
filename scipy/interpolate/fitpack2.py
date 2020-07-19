@@ -123,20 +123,20 @@ class UnivariateSpline(object):
     BivariateSpline :
         a base class for bivariate splines.
     SmoothBivariateSpline :
-        a smooth bivariate spline through the given points
+        a smoothing bivariate spline through the given points
     LSQBivariateSpline :
         a bivariate spline using weighted least-squares fitting
     RectSphereBivariateSpline :
         a bivariate spline over a rectangular mesh on a sphere
     SmoothSphereBivariateSpline :
-        a smooth bivariate spline in spherical coordinates
+        a smoothing bivariate spline in spherical coordinates
     LSQSphereBivariateSpline :
         a bivariate spline in spherical coordinates using weighted
         least-squares fitting
     RectBivariateSpline :
         a bivariate spline over a rectangular mesh
     InterpolatedUnivariateSpline :
-        a interpolating unicariate spline for a given set of data points.
+        a interpolating univariate spline for a given set of data points.
     bisplrep :
         a function to find a bivariate B-spline representation of a surface
     bisplev :
@@ -616,7 +616,7 @@ class InterpolatedUnivariateSpline(UnivariateSpline):
     LSQUnivariateSpline :
         a spline for which knots are user-selected
     SmoothBivariateSpline :
-        a smooth bivariate spline through the given points
+        a smoothing bivariate spline through the given points
     LSQBivariateSpline :
         a bivariate spline using weighted least-squares fitting
     splrep :
@@ -737,7 +737,7 @@ class LSQUnivariateSpline(UnivariateSpline):
     UnivariateSpline :
         a smooth univariate spline to fit a given set of data points.
     InterpolatedUnivariateSpline :
-        a interpolating unicariate spline for a given set of data points.
+        a interpolating univariate spline for a given set of data points.
     splrep :
         a function to find the B-spline representation of a 1-D curve
     splev :
@@ -992,13 +992,13 @@ class BivariateSpline(_BivariateSplineBase):
     UnivariateSpline :
         a smooth univariate spline to fit a given set of data points.
     SmoothBivariateSpline :
-        a smooth bivariate spline through the given points
+        a smoothing bivariate spline through the given points
     LSQBivariateSpline :
         a bivariate spline using weighted least-squares fitting
     RectSphereBivariateSpline :
         a bivariate spline over a rectangular mesh on a sphere
     SmoothSphereBivariateSpline :
-        a smooth bivariate spline in spherical coordinates
+        a smoothing bivariate spline in spherical coordinates
     LSQSphereBivariateSpline :
         a bivariate spline in spherical coordinates using weighted
         least-squares fitting
@@ -1121,7 +1121,7 @@ class SmoothBivariateSpline(BivariateSpline):
     RectSphereBivariateSpline :
         a bivariate spline over a rectangular mesh on a sphere
     SmoothSphereBivariateSpline :
-        a smooth bivariate spline in spherical coordinates
+        a smoothing bivariate spline in spherical coordinates
     LSQSphereBivariateSpline :
         a bivariate spline in spherical coordinates using weighted
         least-squares fitting
@@ -1202,11 +1202,11 @@ class LSQBivariateSpline(BivariateSpline):
     UnivariateSpline :
         a smooth univariate spline to fit a given set of data points.
     SmoothBivariateSpline :
-        a smooth bivariate spline through the given points
+        a smoothing bivariate spline through the given points
     RectSphereBivariateSpline :
         a bivariate spline over a rectangular mesh on a sphere
     SmoothSphereBivariateSpline :
-        a smooth bivariate spline in spherical coordinates
+        a smoothing bivariate spline in spherical coordinates
     LSQSphereBivariateSpline :
         a bivariate spline in spherical coordinates using weighted
         least-squares fitting
@@ -1290,13 +1290,13 @@ class RectBivariateSpline(BivariateSpline):
     UnivariateSpline :
         a smooth univariate spline to fit a given set of data points.
     SmoothBivariateSpline :
-        a smooth bivariate spline through the given points
+        a smoothing bivariate spline through the given points
     LSQBivariateSpline :
         a bivariate spline using weighted least-squares fitting
     RectSphereBivariateSpline :
         a bivariate spline over a rectangular mesh on a sphere
     SmoothSphereBivariateSpline :
-        a smooth bivariate spline in spherical coordinates
+        a smoothing bivariate spline in spherical coordinates
     LSQSphereBivariateSpline :
         a bivariate spline in spherical coordinates using weighted
         least-squares fitting
@@ -1480,7 +1480,7 @@ class SmoothSphereBivariateSpline(SphereBivariateSpline):
     UnivariateSpline :
         a smooth univariate spline to fit a given set of data points.
     SmoothBivariateSpline :
-        a smooth bivariate spline through the given points
+        a smoothing bivariate spline through the given points
     LSQBivariateSpline :
         a bivariate spline using weighted least-squares fitting
     RectSphereBivariateSpline :
@@ -1585,7 +1585,7 @@ class LSQSphereBivariateSpline(SphereBivariateSpline):
     Weighted least-squares bivariate spline approximation in spherical
     coordinates.
 
-    Determines a smooth bicubic spline according to a given
+    Determines a smoothing bicubic spline according to a given
     set of knots in the `theta` and `phi` directions.
 
     .. versionadded:: 0.11.0
@@ -1614,13 +1614,13 @@ class LSQSphereBivariateSpline(SphereBivariateSpline):
     UnivariateSpline :
         a smooth univariate spline to fit a given set of data points.
     SmoothBivariateSpline :
-        a smooth bivariate spline through the given points
+        a smoothing bivariate spline through the given points
     LSQBivariateSpline :
         a bivariate spline using weighted least-squares fitting
     RectSphereBivariateSpline :
         a bivariate spline over a rectangular mesh on a sphere
     SmoothSphereBivariateSpline :
-        a smooth bivariate spline in spherical coordinates
+        a smoothing bivariate spline in spherical coordinates
     RectBivariateSpline :
         a bivariate spline over a rectangular mesh.
     bisplrep :
@@ -1805,11 +1805,11 @@ class RectSphereBivariateSpline(SphereBivariateSpline):
     UnivariateSpline :
         a smooth univariate spline to fit a given set of data points.
     SmoothBivariateSpline :
-        a smooth bivariate spline through the given points
+        a smoothing bivariate spline through the given points
     LSQBivariateSpline :
         a bivariate spline using weighted least-squares fitting
     SmoothSphereBivariateSpline :
-        a smooth bivariate spline in spherical coordinates
+        a smoothing bivariate spline in spherical coordinates
     LSQSphereBivariateSpline :
         a bivariate spline in spherical coordinates using weighted
         least-squares fitting
