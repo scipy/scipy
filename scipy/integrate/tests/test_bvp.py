@@ -155,8 +155,8 @@ def big_sol(x, n):
 def big_fun_with_parameters(x, y, p):
     """ Big version of sl_fun, with two parameters.
 
-    The two differential equations represented by sl_fun are broadcast to the number of rows of y, rotating between the
-    parameters p[0] and p[1].
+    The two differential equations represented by sl_fun are broadcast to the
+    number of rows of y, rotating between the parameters p[0] and p[1].
     Here are the differential equations:
 
         dy[0]/dt = y[1]
@@ -610,8 +610,8 @@ def test_big_problem_with_parameters():
 
     for fun_jac in [None, big_fun_with_parameters_jac]:
         for bc_jac in [None, big_bc_with_parameters_jac]:
-            sol = solve_bvp(big_fun_with_parameters, big_bc_with_parameters, x, y, p=[0.5, 0.5],
-                            fun_jac=fun_jac, bc_jac=bc_jac)
+            sol = solve_bvp(big_fun_with_parameters, big_bc_with_parameters, x,
+                            y, p=[0.5, 0.5], fun_jac=fun_jac, bc_jac=bc_jac)
 
             assert_equal(sol.status, 0)
             assert_(sol.success)
@@ -621,9 +621,11 @@ def test_big_problem_with_parameters():
             sol_test = sol.sol(x_test)
 
             for isol in range(0, n, 4):
-                assert_allclose(sol_test[isol], big_sol_with_parameters(x_test, [1, 1])[0],
+                assert_allclose(sol_test[isol],
+                                big_sol_with_parameters(x_test, [1, 1])[0],
                                 rtol=1e-4, atol=1e-4)
-                assert_allclose(sol_test[isol + 2], big_sol_with_parameters(x_test, [1, 1])[1],
+                assert_allclose(sol_test[isol + 2],
+                                big_sol_with_parameters(x_test, [1, 1])[1],
                                 rtol=1e-4, atol=1e-4)
 
             f_test = big_fun_with_parameters(x_test, sol_test, [1, 1])
