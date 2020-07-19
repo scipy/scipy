@@ -402,7 +402,7 @@ def _l_p_exact(L, m, n):
 
 #    dir_path = os.path.dirname(os.path.realpath(__file__))
     dir_path = os.path.abspath(os.path.dirname(__file__))
-    datafile = os.path.join(dir_path, "data", "pagel_exact.npy")
+    datafile = os.path.join(dir_path, "data_folder", "pagel_exact.npy")
     all_pmfs = np.load(datafile, allow_pickle=True).item()
     try:
         pmf = all_pmfs[n][k]
