@@ -914,7 +914,7 @@ class TestCorrSpearmanr2(object):
 def test_kendalltau():
     # For the cases without ties, all variants should give the same
     # result.
-    variants = ('taua', 'taub', 'tauc')
+    variants = ('a', 'b', 'c')
 
     # case without ties, con-dis equal zero
     x = [5, 2, 1, 3, 6, 4, 7, 8]
@@ -1036,15 +1036,15 @@ def test_kendalltau():
     x = array([1, 2, 2, 4, 4, 6, 6, 8, 9, 9])
     y = array([1, 2, 4, 4, 4, 4, 8, 8, 8, 10])
     expected = 0.73333333
-    assert_approx_equal(stats.kendalltau(x, y, variant='taua')[0], expected)
+    assert_approx_equal(stats.kendalltau(x, y, variant='a')[0], expected)
     expected = 0.85895569
-    assert_approx_equal(stats.kendalltau(x, y, variant='taub')[0], expected)
+    assert_approx_equal(stats.kendalltau(x, y, variant='b')[0], expected)
     expected = 0.825
-    assert_approx_equal(stats.kendalltau(x, y, variant='tauc')[0], expected)
+    assert_approx_equal(stats.kendalltau(x, y, variant='c')[0], expected)
 
     # check exception in case of ties
     y[2] = y[1]
-    assert_raises(ValueError, stats.kendalltau, x, y, method='exact', variant='taub')
+    assert_raises(ValueError, stats.kendalltau, x, y, method='exact', variant='b')
 
     # check exception in case of invalid method keyword
     assert_raises(ValueError, stats.kendalltau, x, y, method='banana')
@@ -1090,9 +1090,9 @@ def test_kendalltau():
     assert_approx_equal(res[1], expected[1])
 
     # this should result in 1 for taub, but not for others
-    assert_approx_equal(stats.kendalltau([1,1,2], [1,1,2], variant='taua')[0], 0.66666666)
-    assert_approx_equal(stats.kendalltau([1,1,2], [1,1,2], variant='taub')[0], 1.0)
-    assert_approx_equal(stats.kendalltau([1,1,2], [1,1,2], variant='tauc')[0], 0.88888888)
+    assert_approx_equal(stats.kendalltau([1,1,2], [1,1,2], variant='a')[0], 0.66666666)
+    assert_approx_equal(stats.kendalltau([1,1,2], [1,1,2], variant='b')[0], 1.0)
+    assert_approx_equal(stats.kendalltau([1,1,2], [1,1,2], variant='c')[0], 0.88888888)
 
     # test nan_policy
     x = np.arange(10.)

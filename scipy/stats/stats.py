@@ -4332,7 +4332,7 @@ KendalltauResult = namedtuple('KendalltauResult', ('correlation', 'pvalue'))
 
 
 def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate', method='auto',
-               variant='taub'):
+               variant='b'):
     """
     Calculate Kendall's tau, a correlation measure for ordinal data.
 
@@ -4370,9 +4370,9 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate', method='auto'
           * 'exact': computes the exact p-value, but can only be used if no ties
             are present
 
-    variant: {'taua', 'taub', 'tauc'}, optional
+    variant: {'a', 'b', 'c'}, optional
         Defines which variant of Kendall's tau is used. Different variants
-        use different normalizations. Default is 'taub'.
+        use different normalizations. Default is 'b'.
 
     Returns
     -------
@@ -4402,7 +4402,7 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate', method='auto'
     pairs, T the number of ties only in `x`, and U the number of ties only in
     `y`.  If a tie occurs for the same pair in both `x` and `y`, it is not
     added to either T or U. n is the total number of samples and m is the
-    number of unique values in either x or y, for whichever the number is smaller.
+    number of unique values in either x or y, whichever is smaller.
 
     References
     ----------
@@ -4452,12 +4452,12 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate', method='auto'
     elif contains_nan and nan_policy == 'omit':
         x = ma.masked_invalid(x)
         y = ma.masked_invalid(y)
-        if variant == 'taua':
+        if variant == 'a':
             return mstats_basic.kendalltau(x, y, method=method, use_ties=False)
-        elif variant == 'taub':
+        elif variant == 'b':
             return mstats_basic.kendalltau(x, y, method=method, use_ties=True)
         else:
-            raise ValueError("Variants other than 'taua' and 'taub' are not supported for masked arrays")
+            raise ValueError("Variants other than 'a' and 'b' are not supported for masked arrays")
 
     if initial_lexsort is not None:  # deprecate to drop!
         warnings.warn('"initial_lexsort" is gone!')
@@ -4496,15 +4496,15 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate', method='auto'
     # Note that tot = con + dis + (xtie - ntie) + (ytie - ntie) + ntie
     #               = con + dis + xtie + ytie - ntie
     con_minus_dis = tot - xtie - ytie + ntie - 2 * dis
-    if variant == 'taua':
+    if variant == 'a':
         tau = con_minus_dis / tot
-    elif variant == 'taub':
+    elif variant == 'b':
         tau = con_minus_dis / np.sqrt(tot - xtie) / np.sqrt(tot - ytie)
-    elif variant == 'tauc':
+    elif variant == 'c':
         minclasses = min(len(set(x)), len(set(y)))
         tau = 2*con_minus_dis / (size**2 * (minclasses-1)/minclasses)
     else:
-        raise ValueError("Unknown variant of the method chosen: "+str(variant)+". Please use 'taua', 'taub' or 'tauc'.")
+        raise ValueError("Unknown variant of the method chosen: "+str(variant)+". Please use 'a', 'b' or 'c'.")
 
     # Limit range to fix computational errors
     tau = min(1., max(-1., tau))
