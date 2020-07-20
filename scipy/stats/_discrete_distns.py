@@ -637,7 +637,7 @@ class nhypergeom_gen(rv_discrete):
 
         # The skew and kurtosis are mathematically
         # intractable so return np.nan. See [2].
-        g1, g2 = np.nan, np.nan
+        g1, g2 = None, None
         return mu, var, g1, g2
 
 
