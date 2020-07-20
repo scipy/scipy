@@ -253,6 +253,7 @@ class LinearNDInterpolator(NDInterpolatorBase):
     >>> plt.plot(x, y, "ok", label="input point")
     >>> plt.legend()
     >>> plt.colorbar()
+    >>> plt.axis("equal")
     >>> plt.show()
 
     See also
@@ -863,6 +864,7 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
     >>> plt.plot(x, y, "ok", label="input point")
     >>> plt.legend()
     >>> plt.colorbar()
+    >>> plt.axis("equal")
     >>> plt.show()
 
     See also

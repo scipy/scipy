@@ -70,6 +70,7 @@ class NearestNDInterpolator(NDInterpolatorBase):
     >>> plt.plot(x, y, "ok", label="input point")
     >>> plt.legend()
     >>> plt.colorbar()
+    >>> plt.axis("equal")
     >>> plt.show()
 
     See also
