@@ -636,7 +636,7 @@ class nhypergeom_gen(rv_discrete):
         var *= 1 - r / (N-K+1)
 
         # The skew and kurtosis are mathematically
-        # intractable so return np.nan. See [2].
+        # intractable so return `None`. See [2]_.
         g1, g2 = None, None
         return mu, var, g1, g2
 
