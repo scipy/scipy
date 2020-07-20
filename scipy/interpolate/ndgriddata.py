@@ -216,6 +216,15 @@ def griddata(points, values, xi, method='linear', fill_value=np.nan,
     >>> plt.gcf().set_size_inches(6, 6)
     >>> plt.show()
 
+    See also
+    --------
+    LinearNDInterpolator :
+        Piecewise linear interpolant in N dimensions.
+    NearestNDInterpolator :
+        Nearest-neighbor interpolation in N dimensions.
+    CloughTocher2DInterpolator :
+        Piecewise cubic, C1 smooth, curvature-minimizing interpolant in 2D.
+
     """
 
     points = _ndim_coords_from_arrays(points)

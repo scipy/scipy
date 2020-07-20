@@ -259,7 +259,7 @@ class LinearNDInterpolator(NDInterpolatorBase):
     --------
     griddata :
         Interpolate unstructured D-D data.
-    NearestNDInterpolator(x, y) :
+    NearestNDInterpolator :
         Nearest-neighbor interpolation in N dimensions.
     CloughTocher2DInterpolator :
         Piecewise cubic, C1 smooth, curvature-minimizing interpolant in 2D.
@@ -871,7 +871,7 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
         Interpolate unstructured D-D data.
     LinearNDInterpolator :
         Piecewise linear interpolant in N dimensions.
-    NearestNDInterpolator(x, y) :
+    NearestNDInterpolator :
         Nearest-neighbor interpolation in N dimensions.
 
     References
