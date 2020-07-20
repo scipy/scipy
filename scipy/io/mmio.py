@@ -10,8 +10,6 @@
 # References:
 #  http://math.nist.gov/MatrixMarket/
 #
-from __future__ import division, print_function, absolute_import
-
 import os
 import sys
 
@@ -19,7 +17,6 @@ from numpy import (asarray, real, imag, conj, zeros, ndarray, concatenate,
                    ones, can_cast)
 from numpy.compat import asbytes, asstr
 
-from scipy._lib.six import string_types
 from scipy.sparse import coo_matrix, isspmatrix
 
 __all__ = ['mminfo', 'mmread', 'mmwrite', 'MMFile']
@@ -86,7 +83,7 @@ def mmwrite(target, a, comment='', field=None, precision=None, symmetry=None):
     target : str or file-like
         Matrix Market filename (extension .mtx) or open file-like object.
     a : array like
-        Sparse or dense 2D array.
+        Sparse or dense 2-D array.
     comment : str, optional
         Comments to be prepended to the Matrix Market file.
     field : None or str, optional
@@ -102,7 +99,7 @@ def mmwrite(target, a, comment='', field=None, precision=None, symmetry=None):
 
 
 ###############################################################################
-class MMFile (object):
+class MMFile:
     __slots__ = ('_rows',
                  '_cols',
                  '_entries',
@@ -243,19 +240,26 @@ class MMFile (object):
                 format = self.FORMAT_COORDINATE
 
             # skip comments
-            while line.startswith(b'%'):
+            # line.startswith('%')
+            while line and line[0] in ['%', 37]:
                 line = stream.readline()
 
-            line = line.split()
+            # skip empty lines
+            while not line.strip():
+                line = stream.readline()
+
+            split_line = line.split()
             if format == self.FORMAT_ARRAY:
-                if not len(line) == 2:
-                    raise ValueError("Header line not of length 2: " + line)
-                rows, cols = map(int, line)
+                if not len(split_line) == 2:
+                    raise ValueError("Header line not of length 2: " +
+                                     line.decode('ascii'))
+                rows, cols = map(int, split_line)
                 entries = rows * cols
             else:
-                if not len(line) == 3:
-                    raise ValueError("Header line not of length 3: " + line)
-                rows, cols, entries = map(int, line)
+                if not len(split_line) == 3:
+                    raise ValueError("Header line not of length 3: " +
+                                     line.decode('ascii'))
+                rows, cols, entries = map(int, split_line)
 
             return (rows, cols, entries, format, field.lower(),
                     symmetry.lower())
@@ -270,7 +274,7 @@ class MMFile (object):
         """ Return an open file stream for reading based on source.
 
         If source is a file name, open it (after trying to find it with mtx and
-        gzipped mtx extensions).  Otherwise, just return source.
+        gzipped mtx extensions). Otherwise, just return source.
 
         Parameters
         ----------
@@ -287,40 +291,45 @@ class MMFile (object):
             True if the calling function should close this file when done,
             false otherwise.
         """
-        close_it = False
-        if isinstance(filespec, string_types):
-            close_it = True
+        # If 'filespec' is path-like (str, pathlib.Path, os.DirEntry, other class
+        # implementing a '__fspath__' method), try to convert it to str. If this
+        # fails by throwing a 'TypeError', assume it's an open file handle and
+        # return it as-is.
+        try:
+            filespec = os.fspath(filespec)
+        except TypeError:
+            return filespec, False
 
-            # open for reading
-            if mode[0] == 'r':
+        # 'filespec' is definitely a str now
 
-                # determine filename plus extension
-                if not os.path.isfile(filespec):
-                    if os.path.isfile(filespec+'.mtx'):
-                        filespec = filespec + '.mtx'
-                    elif os.path.isfile(filespec+'.mtx.gz'):
-                        filespec = filespec + '.mtx.gz'
-                    elif os.path.isfile(filespec+'.mtx.bz2'):
-                        filespec = filespec + '.mtx.bz2'
-                # open filename
-                if filespec.endswith('.gz'):
-                    import gzip
-                    stream = gzip.open(filespec, mode)
-                elif filespec.endswith('.bz2'):
-                    import bz2
-                    stream = bz2.BZ2File(filespec, 'rb')
-                else:
-                    stream = open(filespec, mode)
+        # open for reading
+        if mode[0] == 'r':
 
-            # open for writing
-            else:
-                if filespec[-4:] != '.mtx':
+            # determine filename plus extension
+            if not os.path.isfile(filespec):
+                if os.path.isfile(filespec+'.mtx'):
                     filespec = filespec + '.mtx'
+                elif os.path.isfile(filespec+'.mtx.gz'):
+                    filespec = filespec + '.mtx.gz'
+                elif os.path.isfile(filespec+'.mtx.bz2'):
+                    filespec = filespec + '.mtx.bz2'
+            # open filename
+            if filespec.endswith('.gz'):
+                import gzip
+                stream = gzip.open(filespec, mode)
+            elif filespec.endswith('.bz2'):
+                import bz2
+                stream = bz2.BZ2File(filespec, 'rb')
+            else:
                 stream = open(filespec, mode)
-        else:
-            stream = filespec
 
-        return stream, close_it
+        # open for writing
+        else:
+            if filespec[-4:] != '.mtx':
+                filespec = filespec + '.mtx'
+            stream = open(filespec, mode)
+
+        return stream, True
 
     # -------------------------------------------------------------------------
     @staticmethod
@@ -431,7 +440,7 @@ class MMFile (object):
         target : str or file-like
             Matrix Market filename (extension .mtx) or open file-like object.
         a : array like
-            Sparse or dense 2D array.
+            Sparse or dense 2-D array.
         comment : str, optional
             Comments to be prepended to the Matrix Market file.
         field : None or str, optional
@@ -495,7 +504,7 @@ class MMFile (object):
         dtype = self.DTYPES_BY_FIELD.get(field, None)
 
         has_symmetry = self.has_symmetry
-        is_integer = field == self.FIELD_INTEGER 
+        is_integer = field == self.FIELD_INTEGER
         is_unsigned_integer = field == self.FIELD_UNSIGNED
         is_complex = field == self.FIELD_COMPLEX
         is_skew = symm == self.SYMMETRY_SKEW_SYMMETRIC
@@ -512,7 +521,8 @@ class MMFile (object):
                     i += 1
             while line:
                 line = stream.readline()
-                if not line or line.startswith(b'%'):
+                # line.startswith('%')
+                if not line or line[0] in ['%', 37] or not line.strip():
                     continue
                 if is_integer:
                     aij = int(line)
@@ -541,8 +551,8 @@ class MMFile (object):
                         if is_skew:
                             a[i, j] = 0
                             if i < rows-1:
-                                i += 1     
-                                
+                                i += 1
+
             if is_skew:
                 if not (i in [0, j] and j == cols - 1):
                     raise ValueError("Parse error, did not read all lines.")
@@ -557,7 +567,8 @@ class MMFile (object):
             k = 0
             while line:
                 line = stream.readline()
-                if not line or line.startswith(b'%'):
+                # line.startswith('%')
+                if not line or line[0] in ['%', 37] or not line.strip():
                     continue
                 l = line.split()
                 i, j = map(int, l[:2])
@@ -604,7 +615,8 @@ class MMFile (object):
 
             entry_number = 0
             for line in stream:
-                if not line or line.startswith(b'%'):
+                # line.startswith('%')
+                if not line or line[0] in ['%', 37] or not line.strip():
                     continue
 
                 if entry_number+1 > entries:
@@ -680,7 +692,7 @@ class MMFile (object):
         else:
             if not isspmatrix(a):
                 raise ValueError('unknown matrix type: %s' % type(a))
-            
+
             rep = 'coordinate'
             rows, cols = a.shape
 
@@ -734,12 +746,12 @@ class MMFile (object):
                     for j in range(cols):
                         for i in range(rows):
                             stream.write(asbytes(template % a[i, j]))
-                            
+
                 elif symmetry == self.SYMMETRY_SKEW_SYMMETRIC:
                     for j in range(cols):
                         for i in range(j + 1, rows):
                             stream.write(asbytes(template % a[i, j]))
-                            
+
                 else:
                     for j in range(cols):
                         for i in range(j, rows):
@@ -803,10 +815,8 @@ def _is_fromfile_compatible(stream):
     Check whether `stream` is compatible with numpy.fromfile.
 
     Passing a gzipped file object to ``fromfile/fromstring`` doesn't work with
-    Python3.
+    Python 3.
     """
-    if sys.version_info[0] < 3:
-        return True
 
     bad_cls = []
     try:

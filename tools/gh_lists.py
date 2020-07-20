@@ -5,14 +5,14 @@ gh_lists.py MILESTONE
 
 Functions for Github API requests.
 """
-from __future__ import print_function, division, absolute_import
-
 import os
 import re
 import sys
 import json
 import collections
 import argparse
+import datetime
+import time
 
 from urllib.request import urlopen, Request, HTTPError
 
@@ -49,9 +49,11 @@ def main():
 
         for issue in items:
             msg = u"* `#{0} <{1}>`__: {2}"
-            title = re.sub(u"\s+", u" ", issue.title.strip())
+            # sanitize whitespace, `, and *
+            title = re.sub(u"\\s+", u" ", issue.title.strip())
+            title = title.replace(u'`', u'\\`').replace(u'*', u'\\*')
             if len(title) > 60:
-                remainder = re.sub(u"\s.*$", u"...", title[60:])
+                remainder = re.sub(u"\\s.*$", u"...", title[60:])
                 if len(remainder) > 20:
                     remainder = title[:80] + u"..."
                 else:
@@ -62,7 +64,7 @@ def main():
 
     msg = u"Issues closed for {0}".format(args.milestone)
     print_list(msg, issues)
-    
+
     msg = u"Pull requests for {0}".format(args.milestone)
     print_list(msg, prs)
 
@@ -161,9 +163,9 @@ class GithubGet(object):
     def get_multipage(self, url):
         data = []
         while url:
-            page_data, info = self.get(url)
+            page_data, info, next_url = self.get(url)
             data += page_data
-            url = info['Next']
+            url = next_url
         return data
 
     def get(self, url):
@@ -185,7 +187,7 @@ class GithubGet(object):
                 req = self.urlopen(url)
                 try:
                     code = req.getcode()
-                    info = dict(req.info())
+                    info = req.info()
                     data = json.loads(req.read().decode('utf-8'))
                 finally:
                     req.close()
@@ -198,11 +200,11 @@ class GithubGet(object):
                 raise RuntimeError()
 
             # Parse reply
-            info['Next'] = None
+            next_url = None
             if 'Link' in info:
                 m = re.search('<([^<>]*)>; rel="next"', info['Link'])
                 if m:
-                    info['Next'] = m.group(1)
+                    next_url = m.group(1)
 
             # Update rate limit info
             if 'X-RateLimit-Remaining' in info:
@@ -218,7 +220,7 @@ class GithubGet(object):
                     raise RuntimeError()
 
             # Done.
-            return data, info
+            return data, info, next_url
 
 
 if __name__ == "__main__":

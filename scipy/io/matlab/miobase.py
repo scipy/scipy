@@ -5,21 +5,11 @@ Base classes for MATLAB file stream reading.
 
 MATLAB is a registered trademark of the Mathworks inc.
 """
-from __future__ import division, print_function, absolute_import
-
-import sys
 import operator
-
-from scipy._lib.six import reduce
+import functools
 
 import numpy as np
-
-if sys.version_info[0] >= 3:
-    byteord = int
-else:
-    byteord = ord
-
-from scipy.misc import doccer
+from scipy._lib import doccer
 
 from . import byteordercodes as boc
 
@@ -63,10 +53,10 @@ matlab_compatible : bool, optional
    struct_as_record=True).''',
      'struct_arg':
          '''struct_as_record : bool, optional
-   Whether to load MATLAB structs as numpy record arrays, or as
-   old-style numpy arrays with dtype=object.  Setting this flag to
-   False replicates the behavior of scipy version 0.7.x (returning
-   numpy object arrays).  The default setting is True, because it
+   Whether to load MATLAB structs as NumPy record arrays, or as
+   old-style NumPy arrays with dtype=object. Setting this flag to
+   False replicates the behavior of SciPy version 0.7.x (returning
+   numpy object arrays). The default setting is True, because it
    allows easier round-trip load and save of MATLAB files.''',
      'matstream_arg':
          '''mat_stream : file-like
@@ -82,8 +72,8 @@ matlab_compatible : bool, optional
    Whether to compress matrices on write. Default is False.''',
      'oned_as':
          '''oned_as : {'row', 'column'}, optional
-   If 'column', write 1-D numpy arrays as column vectors.
-   If 'row', write 1D numpy arrays as row vectors.''',
+   If 'column', write 1-D NumPy arrays as column vectors.
+   If 'row', write 1D NumPy arrays as row vectors.''',
      'unicode_strings':
          '''unicode_strings : bool, optional
    If True, write strings as Unicode, else MATLAB usual encoding.'''}
@@ -95,7 +85,7 @@ docfiller = doccer.filldoc(doc_dict)
  Note on architecture
 ======================
 
-There are three sets of parameters relevant for reading files.  The
+There are three sets of parameters relevant for reading files. The
 first are *file read parameters* - containing options that are common
 for reading the whole file, and therefore every variable within that
 file. At the moment these are:
@@ -122,14 +112,14 @@ With the header, we need ``next_position`` to tell us where the next
 variable in the stream is.
 
 Then, for each element in a matrix, there can be *element read
-parameters*.  An element is, for example, one element in a MATLAB cell
-array.  At the moment these are:
+parameters*. An element is, for example, one element in a MATLAB cell
+array. At the moment, these are:
 
 * mat_dtype
 
-The file-reading object contains the *file read parameters*.  The
+The file-reading object contains the *file read parameters*. The
 *header* is passed around as a data object, or may be read and discarded
-in a single function.  The *element read parameters* - the mat_dtype in
+in a single function. The *element read parameters* - the mat_dtype in
 this instance, is passed into a general post-processing function - see
 ``mio_utils`` for details.
 '''
@@ -167,7 +157,7 @@ def read_dtype(mat_stream, a_dtype):
     mat_stream : file_like object
         MATLAB (tm) mat file stream
     a_dtype : dtype
-        dtype of array to read.  `a_dtype` is assumed to be correct
+        dtype of array to read. `a_dtype` is assumed to be correct
         endianness.
 
     Returns
@@ -233,8 +223,8 @@ def get_matfile_version(fileobj):
     tst_str = fileobj.read(4)
     fileobj.seek(0)
     maj_ind = int(tst_str[2] == b'I'[0])
-    maj_val = byteord(tst_str[maj_ind])
-    min_val = byteord(tst_str[1-maj_ind])
+    maj_val = int(tst_str[maj_ind])
+    min_val = int(tst_str[1 - maj_ind])
     ret = (maj_val, min_val)
     if maj_val in (1, 2):
         return ret
@@ -261,37 +251,37 @@ def matdims(arr, oned_as='column'):
     Notes
     -----
     We had to decide what shape a 1 dimensional array would be by
-    default.  ``np.atleast_2d`` thinks it is a row vector.  The
-    default for a vector in MATLAB (e.g. ``>> 1:12``) is a row vector.
+    default. ``np.atleast_2d`` thinks it is a row vector. The
+    default for a vector in MATLAB (e.g., ``>> 1:12``) is a row vector.
 
     Versions of scipy up to and including 0.11 resulted (accidentally)
-    in 1-D arrays being read as column vectors.  For the moment, we
+    in 1-D arrays being read as column vectors. For the moment, we
     maintain the same tradition here.
 
     Examples
     --------
-    >>> matdims(np.array(1)) # numpy scalar
+    >>> matdims(np.array(1)) # NumPy scalar
     (1, 1)
-    >>> matdims(np.array([1])) # 1d array, 1 element
+    >>> matdims(np.array([1])) # 1-D array, 1 element
     (1, 1)
-    >>> matdims(np.array([1,2])) # 1d array, 2 elements
+    >>> matdims(np.array([1,2])) # 1-D array, 2 elements
     (2, 1)
-    >>> matdims(np.array([[2],[3]])) # 2d array, column vector
+    >>> matdims(np.array([[2],[3]])) # 2-D array, column vector
     (2, 1)
-    >>> matdims(np.array([[2,3]])) # 2d array, row vector
+    >>> matdims(np.array([[2,3]])) # 2-D array, row vector
     (1, 2)
-    >>> matdims(np.array([[[2,3]]])) # 3d array, rowish vector
+    >>> matdims(np.array([[[2,3]]])) # 3-D array, rowish vector
     (1, 1, 2)
-    >>> matdims(np.array([])) # empty 1d array
+    >>> matdims(np.array([])) # empty 1-D array
     (0, 0)
-    >>> matdims(np.array([[]])) # empty 2d
+    >>> matdims(np.array([[]])) # empty 2-D array
     (0, 0)
-    >>> matdims(np.array([[[]]])) # empty 3d
+    >>> matdims(np.array([[[]]])) # empty 3-D array
     (0, 0, 0)
 
     Optional argument flips 1-D shape behavior.
 
-    >>> matdims(np.array([1,2]), 'row') # 1d array, 2 elements
+    >>> matdims(np.array([1,2]), 'row') # 1-D array, 2 elements
     (1, 2)
 
     The argument has to make sense though
@@ -299,13 +289,13 @@ def matdims(arr, oned_as='column'):
     >>> matdims(np.array([1,2]), 'bizarre')
     Traceback (most recent call last):
        ...
-    ValueError: 1D option "bizarre" is strange
+    ValueError: 1-D option "bizarre" is strange
 
     """
     shape = arr.shape
     if shape == ():  # scalar
         return (1,1)
-    if reduce(operator.mul, shape) == 0:  # zero elememts
+    if functools.reduce(operator.mul, shape) == 0:  # zero elememts
         return (0,) * np.max([arr.ndim, 2])
     if len(shape) == 1:  # 1D
         if oned_as == 'column':
@@ -313,7 +303,7 @@ def matdims(arr, oned_as='column'):
         elif oned_as == 'row':
             return (1,) + shape
         else:
-            raise ValueError('1D option "%s" is strange'
+            raise ValueError('1-D option "%s" is strange'
                              % oned_as)
     return shape
 
@@ -350,8 +340,8 @@ class MatFileReader(object):
                  chars_as_strings=True,
                  matlab_compatible=False,
                  struct_as_record=True,
-                 verify_compressed_data_integrity=True
-                 ):
+                 verify_compressed_data_integrity=True,
+                 simplify_cells=False):
         '''
         Initializer for mat file reader
 
@@ -375,6 +365,10 @@ class MatFileReader(object):
             self.chars_as_strings = chars_as_strings
             self.mat_dtype = mat_dtype
         self.verify_compressed_data_integrity = verify_compressed_data_integrity
+        self.simplify_cells = simplify_cells
+        if simplify_cells:
+            self.squeeze_me = True
+            self.struct_as_record = False
 
     def set_matlab_compatible(self):
         ''' Sets options to return arrays as MATLAB loads them '''

@@ -4,7 +4,7 @@ for backward compatibility if someone happens to use it.
 """
 from numpy import deprecate
 
-# This file shouldn't be imported by scipy --- Scipy code should use
+# This file shouldn't be imported by scipy --- SciPy code should use
 # internally scipy.sparse._sparsetools
 
 
@@ -19,9 +19,9 @@ del deprecate
 
 try:
     _deprecated()
-except DeprecationWarning as e:
+except DeprecationWarning:
     # don't fail import if DeprecationWarnings raise error -- works around
-    # the situation with Numpy's test framework
+    # the situation with NumPy's test framework
     pass
 
 from ._sparsetools import *

@@ -1,14 +1,9 @@
-from __future__ import division, print_function, absolute_import
-
-import sys
 import os
 import numpy as np
 import tempfile
 
-import pytest
 from pytest import raises as assert_raises
 from numpy.testing import assert_equal, assert_
-from scipy._lib._version import NumpyVersion
 
 from scipy.sparse import (csc_matrix, csr_matrix, bsr_matrix, dia_matrix,
                           coo_matrix, save_npz, load_npz, dok_matrix)
@@ -53,8 +48,6 @@ def test_save_and_load_one_entry():
     _check_save_and_load(dense_matrix)
 
 
-@pytest.mark.skipif(NumpyVersion(np.__version__) < '1.10.0',
-                    reason='disabling unpickling requires numpy >= 1.10.0')
 def test_malicious_load():
     class Executor(object):
         def __reduce__(self):
@@ -73,7 +66,7 @@ def test_malicious_load():
 
 def test_py23_compatibility():
     # Try loading files saved on Python 2 and Python 3.  They are not
-    # the same, since files saved with Scipy versions < 1.0.0 may
+    # the same, since files saved with SciPy versions < 1.0.0 may
     # contain unicode.
 
     a = load_npz(os.path.join(DATA_DIR, 'csc_py2.npz'))

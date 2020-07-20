@@ -2,12 +2,10 @@
 # Author:  Travis Oliphant  2002-2011 with contributions from
 #          SciPy Developers 2004-2011
 #
-from __future__ import division, print_function, absolute_import
-
+from functools import partial
 from scipy import special
 from scipy.special import entr, logsumexp, betaln, gammaln as gamln
-from scipy._lib._numpy_compat import broadcast_to
-from scipy._lib._util import _lazywhere
+from scipy._lib._util import _lazywhere, rng_integers
 
 from numpy import floor, ceil, log, exp, sqrt, log1p, expm1, tanh, cosh, sinh
 
@@ -39,12 +37,14 @@ class binom_gen(rv_discrete):
     %(example)s
 
     """
-    def _rvs(self, n, p):
-        return self._random_state.binomial(n, p, self._size)
+    def _rvs(self, n, p, size=None, random_state=None):
+        return random_state.binomial(n, p, size)
 
     def _argcheck(self, n, p):
-        self.b = n
         return (n >= 0) & (p >= 0) & (p <= 1)
+
+    def _get_support(self, n, p):
+        return self.a, n
 
     def _logpmf(self, x, n, p):
         k = floor(x)
@@ -113,11 +113,15 @@ class bernoulli_gen(binom_gen):
     %(example)s
 
     """
-    def _rvs(self, p):
-        return binom_gen._rvs(self, 1, p)
+    def _rvs(self, p, size=None, random_state=None):
+        return binom_gen._rvs(self, 1, p, size=size, random_state=random_state)
 
     def _argcheck(self, p):
         return (p >= 0) & (p <= 1)
+
+    def _get_support(self, p):
+        # Overrides binom_gen._get_support!x
+        return self.a, self.b
 
     def _logpmf(self, x, p):
         return binom._logpmf(x, 1, p)
@@ -146,6 +150,87 @@ class bernoulli_gen(binom_gen):
 bernoulli = bernoulli_gen(b=1, name='bernoulli')
 
 
+class betabinom_gen(rv_discrete):
+    r"""A beta-binomial discrete random variable.
+
+    %(before_notes)s
+
+    Notes
+    -----
+    The beta-binomial distribution is a binomial distribution with a
+    probability of success `p` that follows a beta distribution.
+
+    The probability mass function for `betabinom` is:
+
+    .. math::
+
+       f(k) = \binom{n}{k} \frac{B(k + a, n - k + b)}{B(a, b)}
+
+    for ``k`` in ``{0, 1,..., n}``, :math:`n \geq 0`, :math:`a > 0`,
+    :math:`b > 0`, where :math:`B(a, b)` is the beta function.
+
+    `betabinom` takes :math:`n`, :math:`a`, and :math:`b` as shape parameters.
+
+    References
+    ----------
+    .. [1] https://en.wikipedia.org/wiki/Beta-binomial_distribution
+
+    %(after_notes)s
+
+    .. versionadded:: 1.4.0
+
+    See Also
+    --------
+    beta, binom
+
+    %(example)s
+
+    """
+
+    def _rvs(self, n, a, b, size=None, random_state=None):
+        p = random_state.beta(a, b, size)
+        return random_state.binomial(n, p, size)
+
+    def _get_support(self, n, a, b):
+        return 0, n
+
+    def _argcheck(self, n, a, b):
+        return (n >= 0) & (a > 0) & (b > 0)
+
+    def _logpmf(self, x, n, a, b):
+        k = floor(x)
+        combiln = -log(n + 1) - betaln(n - k + 1, k + 1)
+        return combiln + betaln(k + a, n - k + b) - betaln(a, b)
+
+    def _pmf(self, x, n, a, b):
+        return exp(self._logpmf(x, n, a, b))
+
+    def _stats(self, n, a, b, moments='mv'):
+        e_p = a / (a + b)
+        e_q = 1 - e_p
+        mu = n * e_p
+        var = n * (a + b + n) * e_p * e_q / (a + b + 1)
+        g1, g2 = None, None
+        if 's' in moments:
+            g1 = 1.0 / sqrt(var)
+            g1 *= (a + b + 2 * n) * (b - a)
+            g1 /= (a + b + 2) * (a + b)
+        if 'k' in moments:
+            g2 = a + b
+            g2 *= (a + b - 1 + 6 * n)
+            g2 += 3 * a * b * (n - 2)
+            g2 += 6 * n ** 2
+            g2 -= 3 * e_p * b * n * (6 - n)
+            g2 -= 18 * e_p * e_q * n ** 2
+            g2 *= (a + b) ** 2 * (1 + a + b)
+            g2 /= (n * a * b * (a + b + 2) * (a + b + 3) * (a + b + n))
+            g2 -= 3
+        return mu, var, g1, g2
+
+
+betabinom = betabinom_gen(name='betabinom')
+
+
 class nbinom_gen(rv_discrete):
     r"""A negative binomial discrete random variable.
 
@@ -172,8 +257,8 @@ class nbinom_gen(rv_discrete):
     %(example)s
 
     """
-    def _rvs(self, n, p):
-        return self._random_state.negative_binomial(n, p, self._size)
+    def _rvs(self, n, p, size=None, random_state=None):
+        return random_state.negative_binomial(n, p, size)
 
     def _argcheck(self, n, p):
         return (n > 0) & (p >= 0) & (p <= 1)
@@ -233,17 +318,20 @@ class geom_gen(rv_discrete):
 
     %(after_notes)s
 
+    See Also
+    --------
+    planck
+
     %(example)s
 
     """
-    def _rvs(self, p):
-        return self._random_state.geometric(p, size=self._size)
+    def _rvs(self, p, size=None, random_state=None):
+        return random_state.geometric(p, size=size)
 
     def _argcheck(self, p):
         return (p <= 1) & (p >= 0)
 
     def _pmf(self, k, p):
-        # geom.pmf(k) = (1-p)**(k-1)*p
         return np.power(1-p, k-1) * p
 
     def _logpmf(self, k, p):
@@ -261,7 +349,7 @@ class geom_gen(rv_discrete):
         return k*log1p(-p)
 
     def _ppf(self, q, p):
-        vals = ceil(log(1.0-q)/log(1-p))
+        vals = ceil(log1p(-q) / log1p(-p))
         temp = self._cdf(vals-1, p)
         return np.where((temp >= q) & (vals > 0), vals-1, vals)
 
@@ -339,14 +427,15 @@ class hypergeom_gen(rv_discrete):
     >>> R = hypergeom.rvs(M, n, N, size=10)
 
     """
-    def _rvs(self, M, n, N):
-        return self._random_state.hypergeometric(n, M-n, N, size=self._size)
+    def _rvs(self, M, n, N, size=None, random_state=None):
+        return random_state.hypergeometric(n, M-n, N, size=size)
+
+    def _get_support(self, M, n, N):
+        return np.maximum(N-(M-n), 0), np.minimum(n, N)
 
     def _argcheck(self, M, n, N):
         cond = (M > 0) & (n >= 0) & (N >= 0)
         cond &= (n <= M) & (N <= M)
-        self.a = np.maximum(N-(M-n), 0)
-        self.b = np.minimum(n, N)
         return cond
 
     def _logpmf(self, k, M, n, N):
@@ -385,7 +474,6 @@ class hypergeom_gen(rv_discrete):
         return np.sum(entr(vals), axis=0)
 
     def _sf(self, k, M, n, N):
-        """More precise calculation, 1 - cdf doesn't cut it."""
         # This for loop is needed because `k` can be an array. If that's the
         # case, the sf() method makes M, n and N arrays of the same shape. We
         # therefore unpack all inputs args, so we can do the manual
@@ -399,14 +487,27 @@ class hypergeom_gen(rv_discrete):
         return np.asarray(res)
 
     def _logsf(self, k, M, n, N):
-        """
-        More precise calculation than log(sf)
-        """
         res = []
         for quant, tot, good, draw in zip(k, M, n, N):
-            # Integration over probability mass function using logsumexp
-            k2 = np.arange(quant + 1, draw + 1)
-            res.append(logsumexp(self._logpmf(k2, tot, good, draw)))
+            if (quant + 0.5) * (tot + 0.5) < (good - 0.5) * (draw - 0.5):
+                # Less terms to sum if we calculate log(1-cdf)
+                res.append(log1p(-exp(self.logcdf(quant, tot, good, draw))))
+            else:
+                # Integration over probability mass function using logsumexp
+                k2 = np.arange(quant + 1, draw + 1)
+                res.append(logsumexp(self._logpmf(k2, tot, good, draw)))
+        return np.asarray(res)
+
+    def _logcdf(self, k, M, n, N):
+        res = []
+        for quant, tot, good, draw in zip(k, M, n, N):
+            if (quant + 0.5) * (tot + 0.5) > (good - 0.5) * (draw - 0.5):
+                # Less terms to sum if we calculate log(1-sf)
+                res.append(log1p(-exp(self.logsf(quant, tot, good, draw))))
+            else:
+                # Integration over probability mass function using logsumexp
+                k2 = np.arange(0, quant + 1)
+                res.append(logsumexp(self._logpmf(k2, tot, good, draw)))
         return np.asarray(res)
 
 
@@ -436,10 +537,10 @@ class logser_gen(rv_discrete):
     %(example)s
 
     """
-    def _rvs(self, p):
+    def _rvs(self, p, size=None, random_state=None):
         # looks wrong for p>0.5, too few k=1
         # trying to use generic is worse, no k=1 at all
-        return self._random_state.logseries(p, size=self._size)
+        return random_state.logseries(p, size=size)
 
     def _argcheck(self, p):
         return (p > 0) & (p < 1)
@@ -483,6 +584,8 @@ class poisson_gen(rv_discrete):
     for :math:`k \ge 0`.
 
     `poisson` takes :math:`\mu` as shape parameter.
+    When mu = 0 then at quantile k = 0, ``pmf`` method
+    returns `1.0`.
 
     %(after_notes)s
 
@@ -494,8 +597,8 @@ class poisson_gen(rv_discrete):
     def _argcheck(self, mu):
         return mu >= 0
 
-    def _rvs(self, mu):
-        return self._random_state.poisson(mu, self._size)
+    def _rvs(self, mu, size=None, random_state=None):
+        return random_state.poisson(mu, size)
 
     def _logpmf(self, k, mu):
         Pk = special.xlogy(k, mu) - gamln(k + 1) - mu
@@ -544,31 +647,33 @@ class planck_gen(rv_discrete):
 
         f(k) = (1-\exp(-\lambda)) \exp(-\lambda k)
 
-    for :math:`k \lambda \ge 0`.
+    for :math:`k \ge 0` and :math:`\lambda > 0`.
 
-    `planck` takes :math:`\lambda` as shape parameter.
+    `planck` takes :math:`\lambda` as shape parameter. The Planck distribution
+    can be written as a geometric distribution (`geom`) with
+    :math:`p = 1 - \exp(-\lambda)` shifted by `loc = -1`.
 
     %(after_notes)s
+
+    See Also
+    --------
+    geom
 
     %(example)s
 
     """
     def _argcheck(self, lambda_):
-        self.a = np.where(lambda_ > 0, 0, -np.inf)
-        self.b = np.where(lambda_ > 0, np.inf, 0)
-        return lambda_ != 0
+        return lambda_ > 0
 
     def _pmf(self, k, lambda_):
-        # planck.pmf(k) = (1-exp(-lambda_))*exp(-lambda_*k)
-        fact = (1-exp(-lambda_))
-        return fact*exp(-lambda_*k)
+        return -expm1(-lambda_)*exp(-lambda_*k)
 
     def _cdf(self, x, lambda_):
         k = floor(x)
-        return 1-exp(-lambda_*(k+1))
+        return -expm1(-lambda_*(k+1))
 
     def _sf(self, x, lambda_):
-        return np.exp(self._logsf(x, lambda_))
+        return exp(self._logsf(x, lambda_))
 
     def _logsf(self, x, lambda_):
         k = floor(x)
@@ -576,24 +681,28 @@ class planck_gen(rv_discrete):
 
     def _ppf(self, q, lambda_):
         vals = ceil(-1.0/lambda_ * log1p(-q)-1)
-        vals1 = (vals-1).clip(self.a, np.inf)
+        vals1 = (vals-1).clip(*(self._get_support(lambda_)))
         temp = self._cdf(vals1, lambda_)
         return np.where(temp >= q, vals1, vals)
 
+    def _rvs(self, lambda_, size=None, random_state=None):
+        # use relation to geometric distribution for sampling
+        p = -expm1(-lambda_)
+        return random_state.geometric(p, size=size) - 1.0
+
     def _stats(self, lambda_):
-        mu = 1/(exp(lambda_)-1)
+        mu = 1/expm1(lambda_)
         var = exp(-lambda_)/(expm1(-lambda_))**2
         g1 = 2*cosh(lambda_/2.0)
         g2 = 4+2*cosh(lambda_)
         return mu, var, g1, g2
 
     def _entropy(self, lambda_):
-        l = lambda_
-        C = (1-exp(-l))
-        return l*exp(-l)/C - log(C)
+        C = -expm1(-lambda_)
+        return lambda_*exp(-lambda_)/C - log(C)
 
 
-planck = planck_gen(name='planck', longname='A discrete exponential ')
+planck = planck_gen(a=0, name='planck', longname='A discrete exponential ')
 
 
 class boltzmann_gen(rv_discrete):
@@ -619,9 +728,10 @@ class boltzmann_gen(rv_discrete):
 
     """
     def _argcheck(self, lambda_, N):
-        self.a = 0
-        self.b = N - 1
         return (lambda_ > 0) & (N > 0)
+
+    def _get_support(self, lambda_, N):
+        return self.a, N - 1
 
     def _pmf(self, k, lambda_, N):
         # boltzmann.pmf(k) =
@@ -654,7 +764,7 @@ class boltzmann_gen(rv_discrete):
         return mu, var, g1, g2
 
 
-boltzmann = boltzmann_gen(name='boltzmann',
+boltzmann = boltzmann_gen(name='boltzmann', a=0,
                           longname='A truncated discrete exponential ')
 
 
@@ -681,9 +791,10 @@ class randint_gen(rv_discrete):
 
     """
     def _argcheck(self, low, high):
-        self.a = low
-        self.b = high - 1
         return (high > low)
+
+    def _get_support(self, low, high):
+        return low, high-1
 
     def _pmf(self, k, low, high):
         # randint.pmf(k) = 1./(high - low)
@@ -709,16 +820,21 @@ class randint_gen(rv_discrete):
         g2 = -6.0/5.0 * (d*d + 1.0) / (d*d - 1.0)
         return mu, var, g1, g2
 
-    def _rvs(self, low, high):
+    def _rvs(self, low, high, size=None, random_state=None):
         """An array of *size* random integers >= ``low`` and < ``high``."""
-        if self._size is not None:
-            # Numpy's RandomState.randint() doesn't broadcast its arguments.
+        if np.asarray(low).size == 1 and np.asarray(high).size == 1:
+            # no need to vectorize in that case
+            return rng_integers(random_state, low, high, size=size)
+
+        if size is not None:
+            # NumPy's RandomState.randint() doesn't broadcast its arguments.
             # Use `broadcast_to()` to extend the shapes of low and high
-            # up to self._size.  Then we can use the numpy.vectorize'd
+            # up to size.  Then we can use the numpy.vectorize'd
             # randint without needing to pass it a `size` argument.
-            low = broadcast_to(low, self._size)
-            high = broadcast_to(high, self._size)
-        randint = np.vectorize(self._random_state.randint, otypes=[np.int_])
+            low = np.broadcast_to(low, size)
+            high = np.broadcast_to(high, size)
+        randint = np.vectorize(partial(rng_integers, random_state),
+                               otypes=[np.int_])
         return randint(low, high)
 
     def _entropy(self, low, high):
@@ -745,15 +861,16 @@ class zipf_gen(rv_discrete):
 
     for :math:`k \ge 1`.
 
-    `zipf` takes :math:`a` as shape parameter.
+    `zipf` takes :math:`a` as shape parameter. :math:`\zeta` is the
+    Riemann zeta function (`scipy.special.zeta`)
 
     %(after_notes)s
 
     %(example)s
 
     """
-    def _rvs(self, a):
-        return self._random_state.zipf(a, size=self._size)
+    def _rvs(self, a, size=None, random_state=None):
+        return random_state.zipf(a, size=size)
 
     def _argcheck(self, a):
         return a > 1
@@ -786,7 +903,7 @@ class dlaplace_gen(rv_discrete):
 
         f(k) = \tanh(a/2) \exp(-a |k|)
 
-    for :math:`a > 0`.
+    for integers :math:`k` and :math:`a > 0`.
 
     `dlaplace` takes :math:`a` as shape parameter.
 
@@ -822,6 +939,27 @@ class dlaplace_gen(rv_discrete):
     def _entropy(self, a):
         return a / sinh(a) - log(tanh(a/2.0))
 
+    def _rvs(self, a, size=None, random_state=None):
+        # The discrete Laplace is equivalent to the two-sided geometric
+        # distribution with PMF:
+        #   f(k) = (1 - alpha)/(1 + alpha) * alpha^abs(k)
+        #   Reference:
+        #     https://www.sciencedirect.com/science/
+        #     article/abs/pii/S0378375804003519
+        # Furthermore, the two-sided geometric distribution is
+        # equivalent to the difference between two iid geometric 
+        # distributions.
+        #   Reference (page 179):
+        #     https://pdfs.semanticscholar.org/61b3/
+        #     b99f466815808fd0d03f5d2791eea8b541a1.pdf
+        # Thus, we can leverage the following:
+        #   1) alpha = e^-a
+        #   2) probability_of_success = 1 - alpha (Bernoulli trial)
+        probOfSuccess = -np.expm1(-np.asarray(a))
+        x = random_state.geometric(probOfSuccess, size=size)
+        y = random_state.geometric(probOfSuccess, size=size)
+        return x - y
+
 
 dlaplace = dlaplace_gen(a=-np.inf,
                         name='dlaplace', longname='A discrete Laplacian')
@@ -838,8 +976,8 @@ class skellam_gen(rv_discrete):
     uncorrelated Poisson random variables.
 
     Let :math:`k_1` and :math:`k_2` be two Poisson-distributed r.v. with
-    expected values lam1 and lam2. Then, :math:`k_1 - k_2` follows a Skellam
-    distribution with parameters
+    expected values :math:`\lambda_1` and :math:`\lambda_2`. Then,
+    :math:`k_1 - k_2` follows a Skellam distribution with parameters
     :math:`\mu_1 = \lambda_1 - \rho \sqrt{\lambda_1 \lambda_2}` and
     :math:`\mu_2 = \lambda_2 - \rho \sqrt{\lambda_1 \lambda_2}`, where
     :math:`\rho` is the correlation coefficient between :math:`k_1` and
@@ -857,10 +995,10 @@ class skellam_gen(rv_discrete):
     %(example)s
 
     """
-    def _rvs(self, mu1, mu2):
-        n = self._size
-        return (self._random_state.poisson(mu1, n) -
-                self._random_state.poisson(mu2, n))
+    def _rvs(self, mu1, mu2, size=None, random_state=None):
+        n = size
+        return (random_state.poisson(mu1, n) -
+                random_state.poisson(mu2, n))
 
     def _pmf(self, x, mu1, mu2):
         px = np.where(x < 0,
@@ -885,6 +1023,84 @@ class skellam_gen(rv_discrete):
 
 
 skellam = skellam_gen(a=-np.inf, name="skellam", longname='A Skellam')
+
+
+class yulesimon_gen(rv_discrete):
+    r"""A Yule-Simon discrete random variable.
+
+    %(before_notes)s
+
+    Notes
+    -----
+
+    The probability mass function for the `yulesimon` is:
+
+    .. math::
+
+        f(k) =  \alpha B(k, \alpha+1)
+
+    for :math:`k=1,2,3,...`, where :math:`\alpha>0`.
+    Here :math:`B` refers to the `scipy.special.beta` function.
+
+    The sampling of random variates is based on pg 553, Section 6.3 of [1]_.
+    Our notation maps to the referenced logic via :math:`\alpha=a-1`.
+
+    For details see the wikipedia entry [2]_.
+
+    References
+    ----------
+    .. [1] Devroye, Luc. "Non-uniform Random Variate Generation",
+         (1986) Springer, New York.
+
+    .. [2] https://en.wikipedia.org/wiki/Yule-Simon_distribution
+
+    %(after_notes)s
+
+    %(example)s
+
+    """
+    def _rvs(self, alpha, size=None, random_state=None):
+        E1 = random_state.standard_exponential(size)
+        E2 = random_state.standard_exponential(size)
+        ans = ceil(-E1 / log1p(-exp(-E2 / alpha)))
+        return ans
+
+    def _pmf(self, x, alpha):
+        return alpha * special.beta(x, alpha + 1)
+
+    def _argcheck(self, alpha):
+        return (alpha > 0)
+
+    def _logpmf(self, x, alpha):
+        return log(alpha) + special.betaln(x, alpha + 1)
+
+    def _cdf(self, x, alpha):
+        return 1 - x * special.beta(x, alpha + 1)
+
+    def _sf(self, x, alpha):
+        return x * special.beta(x, alpha + 1)
+
+    def _logsf(self, x, alpha):
+        return log(x) + special.betaln(x, alpha + 1)
+
+    def _stats(self, alpha):
+        mu = np.where(alpha <= 1, np.inf, alpha / (alpha - 1))
+        mu2 = np.where(alpha > 2,
+                alpha**2 / ((alpha - 2.0) * (alpha - 1)**2),
+                np.inf)
+        mu2 = np.where(alpha <= 1, np.nan, mu2)
+        g1 = np.where(alpha > 3,
+                sqrt(alpha - 2) * (alpha + 1)**2 / (alpha * (alpha - 3)),
+                np.inf)
+        g1 = np.where(alpha <= 2, np.nan, g1)
+        g2 = np.where(alpha > 4,
+                (alpha + 3) + (alpha**3 - 49 * alpha - 22) / (alpha *
+                        (alpha - 4) * (alpha - 3)), np.inf)
+        g2 = np.where(alpha <= 2, np.nan, g2)
+        return mu, mu2, g1, g2
+
+
+yulesimon = yulesimon_gen(name='yulesimon', a=1)
 
 
 # Collect names of classes and objects in this module.

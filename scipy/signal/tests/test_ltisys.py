@@ -1,21 +1,17 @@
-from __future__ import division, print_function, absolute_import
-
 import warnings
 
 import numpy as np
 from numpy.testing import (assert_almost_equal, assert_equal, assert_allclose,
-                           assert_)
+                           assert_, suppress_warnings)
 from pytest import raises as assert_raises
 
-from scipy._lib._numpy_compat import suppress_warnings
 from scipy.signal import (ss2tf, tf2ss, lsim2, impulse2, step2, lti,
                           dlti, bode, freqresp, lsim, impulse, step,
                           abcd_normalize, place_poles,
                           TransferFunction, StateSpace, ZerosPolesGain)
 from scipy.signal.filter_design import BadCoefficients
 import scipy.linalg as linalg
-
-import scipy._lib.six as six
+from scipy.sparse.sputils import matrix
 
 
 def _assert_poles_close(P1,P2, rtol=1e-8, atol=1e-8):
@@ -211,7 +207,7 @@ class TestPlacePoles(object):
         assert_raises(ValueError, place_poles, A, B, (-2.1,-2.2,-2.3,-2.4),
                       maxiter=-42)
 
-        # should fail as rank(B) is two
+        # should fail as ndim(B) is two
         assert_raises(ValueError, place_poles, A, B, (-2,-2,-2,-2))
 
         #unctrollable system
@@ -331,7 +327,7 @@ class TestSS2TF:
         assert_allclose(num, [[0, 1, 2, 3], [0, 1, 2, 3]], rtol=1e-13)
         assert_allclose(den, [1, 2, 3, 4], rtol=1e-13)
 
-        tf = ([1, [2, 3]], [1, 6])
+        tf = (np.array([1, [2, 3]], dtype=object), [1, 6])
         A, B, C, D = tf2ss(*tf)
         assert_allclose(A, [[-6]], rtol=1e-31)
         assert_allclose(B, [[1]], rtol=1e-31)
@@ -342,7 +338,7 @@ class TestSS2TF:
         assert_allclose(num, [[0, 1], [2, 3]], rtol=1e-13)
         assert_allclose(den, [1, 6], rtol=1e-13)
 
-        tf = ([[1, -3], [1, 2, 3]], [1, 6, 5])
+        tf = (np.array([[1, -3], [1, 2, 3]], dtype=object), [1, 6, 5])
         A, B, C, D = tf2ss(*tf)
         assert_allclose(A, [[-6, -5], [1, 0]], rtol=1e-13)
         assert_allclose(B, [[1], [0]], rtol=1e-13)
@@ -422,9 +418,9 @@ class TestLsim(object):
 
     def test_double_integrator(self):
         # double integrator: y'' = 2u
-        A = np.mat("0. 1.; 0. 0.")
-        B = np.mat("0.; 1.")
-        C = np.mat("2. 0.")
+        A = matrix([[0., 1.], [0., 0.]])
+        B = matrix([[0.], [1.]])
+        C = matrix([[2., 0.]])
         system = self.lti_nowarn(A, B, C, 0.)
         t = np.linspace(0,5)
         u = np.ones_like(t)
@@ -440,9 +436,9 @@ class TestLsim(object):
         #   x2' + x2 = u
         #   y = x1
         # Exact solution with u = 0 is y(t) = t exp(-t)
-        A = np.mat("-1. 1.; 0. -1.")
-        B = np.mat("0.; 1.")
-        C = np.mat("1. 0.")
+        A = matrix([[-1., 1.], [0., -1.]])
+        B = matrix([[0.], [1.]])
+        C = matrix([[1., 0.]])
         system = self.lti_nowarn(A, B, C, 0.)
         t = np.linspace(0,5)
         u = np.zeros_like(t)
@@ -761,10 +757,10 @@ class TestLti(object):
 class TestStateSpace(object):
     def test_initialization(self):
         # Check that all initializations work
-        s = StateSpace(1, 1, 1, 1)
-        s = StateSpace([1], [2], [3], [4])
-        s = StateSpace(np.array([[1, 2], [3, 4]]), np.array([[1], [2]]),
-                       np.array([[1, 0]]), np.array([[0]]))
+        StateSpace(1, 1, 1, 1)
+        StateSpace([1], [2], [3], [4])
+        StateSpace(np.array([[1, 2], [3, 4]]), np.array([[1], [2]]),
+                   np.array([[1, 0]]), np.array([[0]]))
 
     def test_conversion(self):
         # Check the conversion functions
@@ -807,6 +803,7 @@ class TestStateSpace(object):
 
         s_discrete = s1.to_discrete(0.1)
         s2_discrete = s2.to_discrete(0.2)
+        s3_discrete = s2.to_discrete(0.1)
 
         # Impulse response
         t = np.linspace(0, 1, 100)
@@ -814,8 +811,7 @@ class TestStateSpace(object):
         u[0] = 1
 
         # Test multiplication
-        for typ in six.integer_types + (float, complex, np.float32,
-                                        np.complex128, np.array):
+        for typ in (int, float, complex, np.float32, np.complex128, np.array):
             assert_allclose(lsim(typ(2) * s1, U=u, T=t)[1],
                             typ(2) * lsim(s1, U=u, T=t)[1])
 
@@ -887,7 +883,7 @@ class TestStateSpace(object):
         assert_allclose(lsim(s1 + s2, U=u, T=t)[1],
                         lsim(s1, U=u, T=t)[1] + lsim(s2, U=u, T=t)[1])
 
-        # Test substraction
+        # Test subtraction
         assert_allclose(lsim(s1 - 2, U=u, T=t)[1],
                         -2 * u + lsim(s1, U=u, T=t)[1])
 
@@ -903,13 +899,24 @@ class TestStateSpace(object):
         with assert_raises(TypeError):
             BadType() - s1
 
+        s = s_discrete + s3_discrete
+        assert_(s.dt == 0.1)
+
+        s = s_discrete * s3_discrete
+        assert_(s.dt == 0.1)
+
+        s = 3 * s_discrete
+        assert_(s.dt == 0.1)
+
+        s = -s_discrete
+        assert_(s.dt == 0.1)
 
 class TestTransferFunction(object):
     def test_initialization(self):
         # Check that all initializations work
-        s = TransferFunction(1, 1)
-        s = TransferFunction([1], [2])
-        s = TransferFunction(np.array([1]), np.array([2]))
+        TransferFunction(1, 1)
+        TransferFunction([1], [2])
+        TransferFunction(np.array([1]), np.array([2]))
 
     def test_conversion(self):
         # Check the conversion functions
@@ -935,9 +942,9 @@ class TestTransferFunction(object):
 class TestZerosPolesGain(object):
     def test_initialization(self):
         # Check that all initializations work
-        s = ZerosPolesGain(1, 1, 1)
-        s = ZerosPolesGain([1], [2], 1)
-        s = ZerosPolesGain(np.array([1]), np.array([2]), 1)
+        ZerosPolesGain(1, 1, 1)
+        ZerosPolesGain([1], [2], 1)
+        ZerosPolesGain(np.array([1]), np.array([2]), 1)
 
     def test_conversion(self):
         #Check the conversion functions

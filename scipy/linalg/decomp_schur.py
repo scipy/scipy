@@ -1,11 +1,8 @@
 """Schur decomposition functions."""
-from __future__ import division, print_function, absolute_import
-
 import numpy
 from numpy import asarray_chkfinite, single, asarray, array
 from numpy.linalg import norm
 
-from scipy._lib.six import callable
 
 # Local imports.
 from .misc import LinAlgError, _datacopied
@@ -27,7 +24,7 @@ def schur(a, output='real', lwork=None, overwrite_a=False, sort=None,
         A = Z T Z^H
 
     where Z is unitary and T is either upper-triangular, or for real
-    Schur decomposition (output='real'), quasi-upper triangular.  In
+    Schur decomposition (output='real'), quasi-upper triangular. In
     the quasi-triangular form, 2x2 blocks describing complex-valued
     eigenvalue pairs may extrude from the diagonal.
 
@@ -42,7 +39,7 @@ def schur(a, output='real', lwork=None, overwrite_a=False, sort=None,
     overwrite_a : bool, optional
         Whether to overwrite data in a (may improve performance).
     sort : {None, callable, 'lhp', 'rhp', 'iuc', 'ouc'}, optional
-        Specifies whether the upper eigenvalues should be sorted.  A callable
+        Specifies whether the upper eigenvalues should be sorted. A callable
         may be passed that, given a eigenvalue, returns a boolean denoting
         whether the eigenvalue should be sorted to the top-left (True).
         Alternatively, string parameters may be used::
@@ -75,12 +72,12 @@ def schur(a, output='real', lwork=None, overwrite_a=False, sort=None,
         Error raised under three conditions:
 
         1. The algorithm failed due to a failure of the QR algorithm to
-           compute all eigenvalues
+           compute all eigenvalues.
         2. If eigenvalue sorting was requested, the eigenvalues could not be
            reordered due to a failure to separate eigenvalues, usually because
-           of poor conditioning
+           of poor conditioning.
         3. If eigenvalue sorting was requested, roundoff errors caused the
-           leading eigenvalues to no longer satisfy the sorting condition
+           leading eigenvalues to no longer satisfy the sorting condition.
 
     See also
     --------
@@ -108,7 +105,7 @@ def schur(a, output='real', lwork=None, overwrite_a=False, sort=None,
     >>> eigvals(T2)
     array([2.65896708, -0.32948354+0.80225456j, -0.32948354-0.80225456j])
 
-    An arbitrary custom eig-sorting condition, having positive imaginary part, 
+    An arbitrary custom eig-sorting condition, having positive imaginary part,
     which is satisfied by only one eigenvalue
 
     >>> T3, Z3, sdim = schur(A, output='complex', sort=lambda x: x.imag > 0)
@@ -137,7 +134,7 @@ def schur(a, output='real', lwork=None, overwrite_a=False, sort=None,
     if lwork is None or lwork == -1:
         # get optimal work array
         result = gees(lambda x: None, a1, lwork=-1)
-        lwork = result[-2][0].real.astype(numpy.int)
+        lwork = result[-2][0].real.astype(numpy.int_)
 
     if sort is None:
         sort_t = 0
@@ -170,7 +167,7 @@ def schur(a, output='real', lwork=None, overwrite_a=False, sort=None,
     elif info == a1.shape[0] + 2:
         raise LinAlgError('Leading eigenvalues do not satisfy sort condition.')
     elif info > 0:
-        raise LinAlgError("Schur form not found.  Possibly ill-conditioned.")
+        raise LinAlgError("Schur form not found. Possibly ill-conditioned.")
 
     if sort_t == 0:
         return result[0], result[-3]
@@ -214,7 +211,7 @@ def rsf2csf(T, Z, check_finite=True):
     """
     Convert real Schur form to complex Schur form.
 
-    Convert a quasi-diagonal real-valued Schur form to the upper triangular
+    Convert a quasi-diagonal real-valued Schur form to the upper-triangular
     complex-valued Schur form.
 
     Parameters

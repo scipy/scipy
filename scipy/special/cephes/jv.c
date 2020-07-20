@@ -95,13 +95,13 @@ double jv(double n, double x)
     }
 
     if ((x < 0.0) && (y != an)) {
-	mtherr("Jv", DOMAIN);
+	sf_error("Jv", SF_ERROR_DOMAIN, NULL);
 	y = NPY_NAN;
 	goto done;
     }
 
     if (x == 0 && n < 0 && !nint) {
-        mtherr("Jv", OVERFLOW);
+        sf_error("Jv", SF_ERROR_OVERFLOW, NULL);
         return NPY_INFINITY / gamma(n + 1);
     }
 
@@ -209,7 +209,7 @@ double jv(double n, double x)
 	 * Hankel expansion will then work.
 	 */
 	if (n < 0.0) {
-	    mtherr("Jv", TLOSS);
+	    sf_error("Jv", SF_ERROR_LOSS, NULL);
 	    y = NPY_NAN;
 	    goto done;
 	}
@@ -302,7 +302,7 @@ static double recur(double *n, double x, double *newn, int cancel)
 	}
 
 	if (++ctr > maxiter) {
-	    mtherr("jv", UNDERFLOW);
+	    sf_error("jv", SF_ERROR_UNDERFLOW, NULL);
 	    goto done;
 	}
 	if (t < MACHEP)
@@ -448,7 +448,7 @@ static double jvs(double n, double x)
 	    return (0.0);
 	}
 	if (t > MAXLOG) {
-	    mtherr("Jv", OVERFLOW);
+	    sf_error("Jv", SF_ERROR_OVERFLOW, NULL);
 	    return (NPY_INFINITY);
 	}
 	y = sgngam * exp(t);

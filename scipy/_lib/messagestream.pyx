@@ -1,6 +1,6 @@
 cimport cython
 from libc cimport stdio, stdlib
-from cpython cimport PyBytes_FromStringAndSize, PY_VERSION_HEX
+from cpython cimport PyBytes_FromStringAndSize
 
 import os
 import sys
@@ -13,7 +13,7 @@ cdef extern from "messagestream.h":
 @cython.final
 cdef class MessageStream:
     """
-    Capture messages emitted to FILE* streams. Do this by directing them 
+    Capture messages emitted to FILE* streams. Do this by directing them
     to a temporary file, residing in memory (if possible) or on disk.
     """
 
@@ -64,17 +64,14 @@ cdef class MessageStream:
             try:
                 stdio.rewind(self.handle)
                 nread = stdio.fread(buf, 1, pos, self.handle)
-                if nread != pos:
+                if nread != <size_t>pos:
                     raise IOError("failed to read messages from buffer")
 
                 obj = PyBytes_FromStringAndSize(buf, nread)
             finally:
                 stdlib.free(buf)
 
-        if PY_VERSION_HEX >= 0x03000000:
-            return obj.decode('latin1')
-        else:
-            return obj
+        return obj.decode('latin1')
 
     def clear(self):
         stdio.rewind(self.handle)

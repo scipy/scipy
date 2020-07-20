@@ -1,9 +1,7 @@
 # pylint: disable=missing-docstring
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 from numpy import array
-from numpy.testing import (TestCase, assert_equal, run_module_suite,
+from numpy.testing import (assert_equal,
                            assert_allclose, assert_array_equal,
                            assert_almost_equal)
 from pytest import raises
@@ -12,8 +10,8 @@ import scipy.signal.bsplines as bsp
 
 
 class TestBSplines(object):
-    """Test behaviors of bsplines. The values tested against were returned as of
-    scipy 1.1.0 and are included for regression testing purposes"""
+    """Test behaviors of B-splines. The values tested against were returned as of
+    SciPy 1.1.0 and are included for regression testing purposes"""
 
     def test_factorial(self):
         # can't all be zero state
@@ -124,6 +122,12 @@ class TestBSplines(object):
         np.random.seed(12459)
         assert_almost_equal(bsp.gauss_spline(0, 0), 1.381976597885342)
         assert_allclose(bsp.gauss_spline(array([1.]), 1), array([0.04865217]))
+
+    def test_gauss_spline_list(self):
+        # regression test for gh-12152 (accept array_like)
+        knots = [-1.0, 0.0, -1.0]
+        assert_almost_equal(bsp.gauss_spline(knots, 3),
+                            array([0.15418033, 0.6909883, 0.15418033]))
 
     def test_cubic(self):
         np.random.seed(12460)

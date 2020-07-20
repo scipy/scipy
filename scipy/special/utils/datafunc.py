@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 import csv
 
 import numpy as np
@@ -9,9 +7,7 @@ def parse_txt_data(filename):
     f = open(filename)
     try:
         reader = csv.reader(f, delimiter=',')
-        data = []
-        for row in reader:
-            data.append(list(map(float, row)))
+        data = [list(map(float, row)) for row in reader]
         nc = len(data[0])
         for i in data:
             if not nc == len(i):
@@ -48,11 +44,7 @@ def run_test(filename, funcs, args=[0]):
         x = [data[args[i]] for i in nargs]
         return f(*x)
     else:
-        y = []
-        i = 1
-        for f in funcs:
-            y.append(f(data[:, 0]) - data[:, i])
-            i += 1
+        y = [f(data[:, 0]) - data[:, idx + 1] for idx, f in enumerate(funcs)]
 
         return data[:, 0], y
 

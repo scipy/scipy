@@ -602,7 +602,7 @@ Issues closed for 1.0.0
 - `#7733 <https://github.com/scipy/scipy/issues/7733>`__: Inconsistent usage of indices, indptr in ``Delaunay.vertex_neighbor_vertices``
 - `#7747 <https://github.com/scipy/scipy/issues/7747>`__: Numpy changes in np.random.dirichlet cause test failures
 - `#7772 <https://github.com/scipy/scipy/issues/7772>`__: Fix numpy lstsq rcond= parameter
-- `#7776 <https://github.com/scipy/scipy/issues/7776>`__: tests require `nose`
+- `#7776 <https://github.com/scipy/scipy/issues/7776>`__: tests require \`nose\`
 - `#7798 <https://github.com/scipy/scipy/issues/7798>`__: contributor names for 1.0 release notes
 - `#7828 <https://github.com/scipy/scipy/issues/7828>`__: 32-bit Linux test errors on TestCephes
 - `#7893 <https://github.com/scipy/scipy/issues/7893>`__: scipy.spatial.distance.wminkowski behaviour change in 1.0.0b1

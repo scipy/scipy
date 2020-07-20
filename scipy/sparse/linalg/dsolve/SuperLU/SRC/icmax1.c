@@ -63,8 +63,8 @@ int icmax1_slu(int *n, complex *cx, int *incx)
     int ret_val, i__1, i__2;
     float r__1;
     /* Local variables */
-    static float smax;
-    static int i, ix;
+    float smax;
+    int i, ix;
 
 
 #define CX(I) cx[(I)-1]

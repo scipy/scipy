@@ -1,6 +1,4 @@
 """Nearly exact trust-region optimization subproblem."""
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 from scipy.linalg import (norm, get_lapack_funcs, solve_triangular,
                           cho_solve)
@@ -61,7 +59,7 @@ def estimate_smallest_singular_value(U):
 
     Notes
     -----
-    The procedure is based on [1]_ and is done in two steps. First it finds
+    The procedure is based on [1]_ and is done in two steps. First, it finds
     a vector ``e`` with components selected from {+1, -1} such that the
     solution ``w`` from the system ``U.T w = e`` is as large as possible.
     Next it estimate ``U v = w``. The smallest singular value is close
@@ -220,7 +218,7 @@ class IterativeSubproblem(BaseQuadraticSubproblem):
         # When the trust-region shrinks in two consecutive
         # calculations (``tr_radius < previous_tr_radius``)
         # the lower bound ``lambda_lb`` may be reused,
-        # facilitating  the convergence.  To indicate no
+        # facilitating  the convergence. To indicate no
         # previous value is known at first ``previous_tr_radius``
         # is set to -1  and ``lambda_lb`` to None.
         self.previous_tr_radius = -1
@@ -236,7 +234,7 @@ class IterativeSubproblem(BaseQuadraticSubproblem):
         self.k_hard = k_hard
 
         # Get Lapack function for cholesky decomposition.
-        # The implemented Scipy wrapper does not return
+        # The implemented SciPy wrapper does not return
         # the incomplete factorization needed by the method.
         self.cholesky, = get_lapack_funcs(('potrf',), (self.hess,))
 

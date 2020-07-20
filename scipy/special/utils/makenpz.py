@@ -5,8 +5,6 @@ Build a npz containing all data files in the directory.
 
 """
 
-from __future__ import division, print_function, absolute_import
-
 import os
 import numpy as np
 import argparse
@@ -15,7 +13,7 @@ from distutils.util import newer
 
 
 def main():
-    p = argparse.ArgumentParser(usage=__doc__.strip())
+    p = argparse.ArgumentParser(usage=(__doc__ or '').strip())
     p.add_argument('--use-timestamp', action='store_true', default=False,
                    help="don't rewrite npz file if it is newer than sources")
     p.add_argument('dirname')

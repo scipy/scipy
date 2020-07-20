@@ -1,12 +1,12 @@
-from __future__ import division, print_function, absolute_import
-
 from tempfile import mkdtemp, mktemp
 import os
+import io
 import shutil
+import textwrap
 
 import numpy as np
 from numpy import array, transpose, pi
-from numpy.testing import (assert_equal,
+from numpy.testing import (assert_equal, assert_allclose,
                            assert_array_equal, assert_array_almost_equal)
 import pytest
 from pytest import raises as assert_raises
@@ -113,6 +113,24 @@ class TestMMIOArray(object):
         sz = (20, 15)
         a = np.random.random(sz)
         self.check(a, (20, 15, 300, 'array', 'real', 'general'))
+
+    def test_bad_number_of_array_header_fields(self):
+        s = """\
+            %%MatrixMarket matrix array real general
+              3  3 999
+            1.0
+            2.0
+            3.0
+            4.0
+            5.0
+            6.0
+            7.0
+            8.0
+            9.0
+            """
+        text = textwrap.dedent(s).encode('ascii')
+        with pytest.raises(ValueError, match='not of length 2'):
+            scipy.io.mmread(io.BytesIO(text))
 
 
 class TestMMIOSparseCSR(TestMMIOArray):
@@ -300,6 +318,7 @@ _over64bit_integer_sparse_example = '''\
 2  2  19223372036854775808
 '''
 
+
 class TestMMIOReadLargeIntegers(object):
     def setup_method(self):
         self.tmpdir = mkdtemp()
@@ -479,6 +498,24 @@ _symmetric_pattern_example = '''\
     5     4
 '''
 
+# example (without comment lines) from Figure 1 in
+# https://math.nist.gov/MatrixMarket/reports/MMformat.ps
+_empty_lines_example = '''\
+%%MatrixMarket  MATRIX    Coordinate    Real General
+
+   5  5         8
+
+1 1  1.0
+2 2       10.5
+3 3             1.5e-2
+4 4                     -2.8E2
+5 5                              12.
+     1      4      6
+     4      2      250.5
+     4      5      33.32
+
+'''
+
 
 class TestMMIOCoordinate(object):
     def setup_method(self):
@@ -540,6 +577,15 @@ class TestMMIOCoordinate(object):
              [0, 0, 0, 1, 1]]
         self.check_read(_symmetric_pattern_example, a,
                         (5, 5, 7, 'coordinate', 'pattern', 'symmetric'))
+
+    def test_read_empty_lines(self):
+        a = [[1, 0, 0, 6, 0],
+             [0, 10.5, 0, 0, 0],
+             [0, 0, .015, 0, 0],
+             [0, 250.5, 0, -280, 33.32],
+             [0, 0, 0, 0, 12]]
+        self.check_read(_empty_lines_example, a,
+                        (5, 5, 8, 'coordinate', 'real', 'general'))
 
     def test_empty_write_read(self):
         # https://github.com/scipy/scipy/issues/1410 (Trac #883)
@@ -669,5 +715,27 @@ class TestMMIOCoordinate(object):
                 # check for right entries in matrix
                 assert_array_equal(A.row, [n-1])
                 assert_array_equal(A.col, [n-1])
-                assert_array_almost_equal(A.data,
-                    [float('%%.%dg' % precision % value)])
+                assert_allclose(A.data, [float('%%.%dg' % precision % value)])
+
+    def test_bad_number_of_coordinate_header_fields(self):
+        s = """\
+            %%MatrixMarket matrix coordinate real general
+              5  5  8 999
+                1     1   1.000e+00
+                2     2   1.050e+01
+                3     3   1.500e-02
+                1     4   6.000e+00
+                4     2   2.505e+02
+                4     4  -2.800e+02
+                4     5   3.332e+01
+                5     5   1.200e+01
+            """
+        text = textwrap.dedent(s).encode('ascii')
+        with pytest.raises(ValueError, match='not of length 3'):
+            scipy.io.mmread(io.BytesIO(text))
+
+
+def test_gh11389():
+    mmread(io.StringIO("%%MatrixMarket matrix coordinate complex symmetric\n"
+                       " 1 1 1\n"
+                       "1 1 -2.1846000000000e+02  0.0000000000000e+00"))

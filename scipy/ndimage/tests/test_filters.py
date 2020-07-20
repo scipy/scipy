@@ -1,16 +1,13 @@
 ''' Some tests for filters '''
-from __future__ import division, print_function, absolute_import
-
-import sys
 import numpy as np
 
 from numpy.testing import (assert_equal, assert_allclose,
-                           assert_array_equal, assert_almost_equal)
+                           assert_array_equal, assert_almost_equal,
+                           suppress_warnings)
 from pytest import raises as assert_raises
 
 import scipy.ndimage as sndi
-from scipy.ndimage.filters import _gaussian_kernel1d
-
+from scipy.ndimage.filters import _gaussian_kernel1d, rank_filter
 
 def test_ticket_701():
     # Test generic filter sizes
@@ -83,7 +80,6 @@ def test_valid_origins():
     data = np.array([1,2,3,4,5], dtype=np.float64)
     assert_raises(ValueError, sndi.generic_filter, data, func, size=3,
                   origin=2)
-    func2 = lambda x, y: np.mean(x + y)
     assert_raises(ValueError, sndi.generic_filter1d, data, func,
                   filter_size=3, origin=2)
     assert_raises(ValueError, sndi.percentile_filter, data, 0.2, size=3,
@@ -427,3 +423,21 @@ def test_gaussian_filter():
     sigma = 1.0
     with assert_raises(RuntimeError):
         sndi.gaussian_filter(data,sigma)
+
+
+def test_rank_filter_noninteger_rank():
+    # regression test for issue 9388: ValueError for
+    # non integer rank when performing rank_filter
+    arr = np.random.random((10, 20, 30))
+    assert_raises(TypeError, rank_filter, arr, 0.5,
+                  footprint=np.ones((1, 1, 10), dtype=bool))
+
+
+def test_size_footprint_both_set():
+    # test for input validation, expect user warning when
+    # size and footprint is set
+    with suppress_warnings() as sup:
+        sup.filter(UserWarning,
+                   "ignoring size because footprint is set")
+        arr = np.random.random((10, 20, 30))
+        rank_filter(arr, 5, size=2, footprint=np.ones((1, 1, 10), dtype=bool))

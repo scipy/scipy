@@ -1,11 +1,3 @@
-#
-# Created by: Pearu Peterson, March 2002
-#
-""" Test functions for linalg.basic module
-
-"""
-from __future__ import division, print_function, absolute_import
-
 import warnings
 import itertools
 import numpy as np
@@ -16,35 +8,18 @@ from numpy.random import random
 
 from numpy.testing import (assert_equal, assert_almost_equal, assert_,
                            assert_array_almost_equal, assert_allclose,
-                           assert_array_equal)
+                           assert_array_equal, suppress_warnings)
 import pytest
 from pytest import raises as assert_raises
-from scipy._lib._numpy_compat import suppress_warnings
 
 from scipy.linalg import (solve, inv, det, lstsq, pinv, pinv2, pinvh, norm,
                           solve_banded, solveh_banded, solve_triangular,
                           solve_circulant, circulant, LinAlgError, block_diag,
                           matrix_balance, LinAlgWarning)
 
-from scipy.linalg.basic import LstsqLapackError
 from scipy.linalg._testutils import assert_no_overwrite
-
-from scipy._lib._version import NumpyVersion
-
-
-"""
-Bugs:
-1) solve.check_random_sym_complex fails if a is complex
-   and transpose(a) = conjugate(a) (a is Hermitian).
-"""
-__usage__ = """
-Build linalg:
-  python setup_linalg.py build
-Run tests if scipy is installed:
-  python -c 'import scipy;scipy.linalg.test()'
-Run tests if linalg is not installed:
-  python tests/test_basic.py
-"""
+from scipy._lib._testutils import check_free_memory
+from scipy.linalg.blas import HAS_ILP64
 
 REAL_DTYPES = [np.float32, np.float64, np.longdouble]
 COMPLEX_DTYPES = [np.complex64, np.complex128, np.clongdouble]
@@ -611,7 +586,6 @@ class TestSolve(object):
     def test_random_sym_complex(self):
         n = 20
         a = random([n, n])
-        # XXX: with the following addition the accuracy will be very low
         a = a + 1j*random([n, n])
         for i in range(n):
             a[i, i] = abs(20*(.1+a[i, i]))
@@ -750,6 +724,8 @@ class TestSolve(object):
     def test_assume_a_keyword(self):
         assert_raises(ValueError, solve, 1, 1, assume_a='zxcv')
 
+    @pytest.mark.skip(reason="Failure on OS X (gh-7500), "
+                             "crash on Windows (gh-8064)")
     def test_all_type_size_routine_combinations(self):
         sizes = [10, 100]
         assume_as = ['gen', 'sym', 'pos', 'her']
@@ -829,6 +805,26 @@ class TestSolveTriangular(object):
         b = identity(2)
         sol = solve_triangular(A, b, lower=True, trans=1)
         assert_array_almost_equal(sol, [[.5-.5j, -.25-.25j], [0, 0.5]])
+
+        # check other option combinations with complex rhs
+        b = np.diag([1+1j, 1+2j])
+        sol = solve_triangular(A, b, lower=True, trans=0)
+        assert_array_almost_equal(sol, [[1, 0], [-0.5j, 0.5+1j]])
+
+        sol = solve_triangular(A, b, lower=True, trans=1)
+        assert_array_almost_equal(sol, [[1, 0.25-0.75j], [0, 0.5+1j]])
+
+        sol = solve_triangular(A, b, lower=True, trans=2)
+        assert_array_almost_equal(sol, [[1j, -0.75-0.25j], [0, 0.5+1j]])
+
+        sol = solve_triangular(A.T, b, lower=False, trans=0)
+        assert_array_almost_equal(sol, [[1, 0.25-0.75j], [0, 0.5+1j]])
+
+        sol = solve_triangular(A.T, b, lower=False, trans=1)
+        assert_array_almost_equal(sol, [[1, 0], [-0.5j, 0.5+1j]])
+
+        sol = solve_triangular(A.T, b, lower=False, trans=2)
+        assert_array_almost_equal(sol, [[1j, 0], [-0.5, 0.5+1j]])
 
     def test_check_finite(self):
         """
@@ -941,37 +937,26 @@ class TestLstsq(object):
         for dtype in REAL_DTYPES:
             a = np.array([[1, 20], [-30, 4]], dtype=dtype)
             for lapack_driver in TestLstsq.lapack_drivers:
-                    for overwrite in (True, False):
-                        for bt in (((1, 0), (0, 1)), (1, 0),
-                                   ((2, 1), (-30, 4))):
-                            # Store values in case they are overwritten
-                            # later
-                            a1 = a.copy()
-                            b = np.array(bt, dtype=dtype)
-                            b1 = b.copy()
-                            try:
-                                out = lstsq(a1, b1,
-                                            lapack_driver=lapack_driver,
-                                            overwrite_a=overwrite,
-                                            overwrite_b=overwrite)
-                            except LstsqLapackError:
-                                if lapack_driver is None:
-                                    mesg = ('LstsqLapackError raised with '
-                                            'lapack_driver being None.')
-                                    raise AssertionError(mesg)
-                                else:
-                                    # can't proceed, skip to the next iteration
-                                    continue
-
-                            x = out[0]
-                            r = out[2]
-                            assert_(r == 2,
-                                    'expected efficient rank 2, got %s' % r)
-                            assert_allclose(
-                                          dot(a, x), b,
-                                          atol=25 * _eps_cast(a1.dtype),
-                                          rtol=25 * _eps_cast(a1.dtype),
-                                          err_msg="driver: %s" % lapack_driver)
+                for overwrite in (True, False):
+                    for bt in (((1, 0), (0, 1)), (1, 0),
+                               ((2, 1), (-30, 4))):
+                        # Store values in case they are overwritten
+                        # later
+                        a1 = a.copy()
+                        b = np.array(bt, dtype=dtype)
+                        b1 = b.copy()
+                        out = lstsq(a1, b1,
+                                    lapack_driver=lapack_driver,
+                                    overwrite_a=overwrite,
+                                    overwrite_b=overwrite)
+                        x = out[0]
+                        r = out[2]
+                        assert_(r == 2,
+                                'expected efficient rank 2, got %s' % r)
+                        assert_allclose(dot(a, x), b,
+                                        atol=25 * _eps_cast(a1.dtype),
+                                        rtol=25 * _eps_cast(a1.dtype),
+                                        err_msg="driver: %s" % lapack_driver)
 
     def test_simple_overdet(self):
         for dtype in REAL_DTYPES:
@@ -982,19 +967,9 @@ class TestLstsq(object):
                     # Store values in case they are overwritten later
                     a1 = a.copy()
                     b1 = b.copy()
-                    try:
-                        out = lstsq(a1, b1, lapack_driver=lapack_driver,
-                                    overwrite_a=overwrite,
-                                    overwrite_b=overwrite)
-                    except LstsqLapackError:
-                        if lapack_driver is None:
-                            mesg = ('LstsqLapackError raised with '
-                                    'lapack_driver being None.')
-                            raise AssertionError(mesg)
-                        else:
-                            # can't proceed, skip to the next iteration
-                            continue
-
+                    out = lstsq(a1, b1, lapack_driver=lapack_driver,
+                                overwrite_a=overwrite,
+                                overwrite_b=overwrite)
                     x = out[0]
                     if lapack_driver == 'gelsy':
                         residuals = np.sum((b - a.dot(x))**2)
@@ -1021,18 +996,9 @@ class TestLstsq(object):
                     # Store values in case they are overwritten later
                     a1 = a.copy()
                     b1 = b.copy()
-                    try:
-                        out = lstsq(a1, b1, lapack_driver=lapack_driver,
-                                    overwrite_a=overwrite,
-                                    overwrite_b=overwrite)
-                    except LstsqLapackError:
-                        if lapack_driver is None:
-                            mesg = ('LstsqLapackError raised with '
-                                    'lapack_driver being None.')
-                            raise AssertionError(mesg)
-                        else:
-                            # can't proceed, skip to the next iteration
-                            continue
+                    out = lstsq(a1, b1, lapack_driver=lapack_driver,
+                                overwrite_a=overwrite,
+                                overwrite_b=overwrite)
 
                     x = out[0]
                     if lapack_driver == 'gelsy':
@@ -1063,18 +1029,9 @@ class TestLstsq(object):
                     # Store values in case they are overwritten later
                     a1 = a.copy()
                     b1 = b.copy()
-                    try:
-                        out = lstsq(a1, b1, lapack_driver=lapack_driver,
-                                    overwrite_a=overwrite,
-                                    overwrite_b=overwrite)
-                    except LstsqLapackError:
-                        if lapack_driver is None:
-                            mesg = ('LstsqLapackError raised with '
-                                    'lapack_driver being None.')
-                            raise AssertionError(mesg)
-                        else:
-                            # can't proceed, skip to the next iteration
-                            continue
+                    out = lstsq(a1, b1, lapack_driver=lapack_driver,
+                                overwrite_a=overwrite,
+                                overwrite_b=overwrite)
 
                     x = out[0]
                     r = out[2]
@@ -1098,19 +1055,10 @@ class TestLstsq(object):
                             # Store values in case they are overwritten later
                             a1 = a.copy()
                             b1 = b.copy()
-                            try:
-                                out = lstsq(a1, b1,
-                                            lapack_driver=lapack_driver,
-                                            overwrite_a=overwrite,
-                                            overwrite_b=overwrite)
-                            except LstsqLapackError:
-                                if lapack_driver is None:
-                                    mesg = ('LstsqLapackError raised with '
-                                            'lapack_driver being None.')
-                                    raise AssertionError(mesg)
-                                else:
-                                    # can't proceed, skip to the next iteration
-                                    continue
+                            out = lstsq(a1, b1,
+                                        lapack_driver=lapack_driver,
+                                        overwrite_a=overwrite,
+                                        overwrite_b=overwrite)
                             x = out[0]
                             r = out[2]
                             assert_(r == n, 'expected efficient rank %s, '
@@ -1175,20 +1123,10 @@ class TestLstsq(object):
                             # Store values in case they are overwritten later
                             a1 = a.copy()
                             b1 = b.copy()
-                            try:
-                                out = lstsq(a1, b1,
-                                            lapack_driver=lapack_driver,
-                                            overwrite_a=overwrite,
-                                            overwrite_b=overwrite)
-                            except LstsqLapackError:
-                                if lapack_driver is None:
-                                    mesg = ('LstsqLapackError raised with '
-                                            'lapack_driver being None.')
-                                    raise AssertionError(mesg)
-                                else:
-                                    # can't proceed, skip to the next iteration
-                                    continue
-
+                            out = lstsq(a1, b1,
+                                        lapack_driver=lapack_driver,
+                                        overwrite_a=overwrite,
+                                        overwrite_b=overwrite)
                             x = out[0]
                             r = out[2]
                             assert_(r == m, 'expected efficient rank %s, '
@@ -1202,31 +1140,31 @@ class TestLstsq(object):
     def test_random_complex_overdet(self):
         for dtype in COMPLEX_DTYPES:
             for (n, m) in ((20, 15), (200, 2)):
-                    for lapack_driver in TestLstsq.lapack_drivers:
-                        for overwrite in (True, False):
-                            a = np.asarray(random([n, m]) + 1j*random([n, m]),
-                                           dtype=dtype)
-                            for i in range(m):
-                                a[i, i] = 20 * (0.1 + a[i, i])
-                            for i in range(2):
-                                b = np.asarray(random([n, 3]), dtype=dtype)
-                                # Store values in case they are overwritten
-                                # later
-                                a1 = a.copy()
-                                b1 = b.copy()
-                                out = lstsq(a1, b1,
-                                            lapack_driver=lapack_driver,
-                                            overwrite_a=overwrite,
-                                            overwrite_b=overwrite)
-                                x = out[0]
-                                r = out[2]
-                                assert_(r == m, 'expected efficient rank %s, '
-                                        'got %s' % (m, r))
-                                assert_allclose(
-                                          x, direct_lstsq(a, b, cmplx=1),
-                                          rtol=25 * _eps_cast(a1.dtype),
-                                          atol=25 * _eps_cast(a1.dtype),
-                                          err_msg="driver: %s" % lapack_driver)
+                for lapack_driver in TestLstsq.lapack_drivers:
+                    for overwrite in (True, False):
+                        a = np.asarray(random([n, m]) + 1j*random([n, m]),
+                                       dtype=dtype)
+                        for i in range(m):
+                            a[i, i] = 20 * (0.1 + a[i, i])
+                        for i in range(2):
+                            b = np.asarray(random([n, 3]), dtype=dtype)
+                            # Store values in case they are overwritten
+                            # later
+                            a1 = a.copy()
+                            b1 = b.copy()
+                            out = lstsq(a1, b1,
+                                        lapack_driver=lapack_driver,
+                                        overwrite_a=overwrite,
+                                        overwrite_b=overwrite)
+                            x = out[0]
+                            r = out[2]
+                            assert_(r == m, 'expected efficient rank %s, '
+                                    'got %s' % (m, r))
+                            assert_allclose(
+                                      x, direct_lstsq(a, b, cmplx=1),
+                                      rtol=25 * _eps_cast(a1.dtype),
+                                      atol=25 * _eps_cast(a1.dtype),
+                                      err_msg="driver: %s" % lapack_driver)
 
     def test_check_finite(self):
         with suppress_warnings() as sup:
@@ -1249,18 +1187,9 @@ class TestLstsq(object):
             # later
             a1 = a.copy()
             b1 = b.copy()
-            try:
-                out = lstsq(a1, b1, lapack_driver=lapack_driver,
-                            check_finite=check_finite, overwrite_a=overwrite,
-                            overwrite_b=overwrite)
-            except LstsqLapackError:
-                if lapack_driver is None:
-                    raise AssertionError('LstsqLapackError raised with '
-                                         '"lapack_driver" being "None".')
-                else:
-                    # can't proceed,
-                    # skip to the next iteration
-                    continue
+            out = lstsq(a1, b1, lapack_driver=lapack_driver,
+                        check_finite=check_finite, overwrite_a=overwrite,
+                        overwrite_b=overwrite)
             x = out[0]
             r = out[2]
             assert_(r == 2, 'expected efficient rank 2, got %s' % r)
@@ -1333,6 +1262,13 @@ class TestPinv(object):
         a_pinv2 = pinv2(a)
         assert_array_almost_equal(a_pinv, a_pinv2)
 
+    def test_tall_transposed(self):
+        a = random([10, 2])
+        a_pinv = pinv(a)
+        # The result will be transposed internally hence will be a C-layout
+        # instead of the typical LAPACK output with Fortran-layout
+        assert a_pinv.flags['C_CONTIGUOUS']
+
 
 class TestPinvSymmetric(object):
 
@@ -1365,6 +1301,28 @@ class TestPinvSymmetric(object):
         a = np.dot(a, a.T)
         a_pinv = pinvh(a.tolist())
         assert_array_almost_equal(np.dot(a, a_pinv), np.eye(3))
+
+
+def test_pinv_pinv2_comparison():  # As reported in gh-8861
+    I_6 = np.eye(6)
+    Ts = np.diag([-1] * 4 + [-2], k=-1) + np.diag([-2] + [-1] * 4, k=1)
+    T = I_6 + Ts
+    A = 25 * (np.kron(I_6, T) + np.kron(Ts, I_6))
+
+    Ap, Ap2 = pinv(A), pinv2(A)
+
+    tol = 1e-11
+    assert_allclose(A @ Ap @ A - A, A @ Ap2 @ A - A, rtol=0., atol=tol)
+    assert_allclose(Ap @ A @ Ap - Ap, Ap2 @ A @ Ap2 - Ap2, rtol=0., atol=tol)
+
+
+@pytest.mark.parametrize('scale', (1e-20, 1., 1e20))
+@pytest.mark.parametrize('pinv_', (pinv, pinvh, pinv2))
+def test_auto_rcond(scale, pinv_):
+    x = np.array([[1, 0], [0, 1e-10]]) * scale
+    expected = np.diag(1. / np.diag(x))
+    x_inv = pinv_(x)
+    assert_allclose(x_inv, expected)
 
 
 class TestVectorNorms(object):
@@ -1410,13 +1368,21 @@ class TestVectorNorms(object):
         assert_allclose(norm(a, axis=1), [[3.60555128, 4.12310563]] * 2)
         assert_allclose(norm(a, 1, axis=1), [[5.] * 2] * 2)
 
-    @pytest.mark.skipif(NumpyVersion(np.__version__) < '1.10.0', reason="")
     def test_keepdims_kwd(self):
         a = np.array([[[2, 1], [3, 4]]] * 2, 'd')
         b = norm(a, axis=1, keepdims=True)
         assert_allclose(b, [[[3.60555128, 4.12310563]]] * 2)
         assert_(b.shape == (2, 1, 2))
         assert_allclose(norm(a, 1, axis=2, keepdims=True), [[[3.], [7.]]] * 2)
+
+    @pytest.mark.skipif(not HAS_ILP64, reason="64-bit BLAS required")
+    def test_large_vector(self):
+        check_free_memory(free_mb=17000)
+        x = np.zeros([2**31], dtype=np.float64)
+        x[-1] = 1
+        res = norm(x)
+        del x
+        assert_allclose(res, 1.0)
 
 
 class TestMatrixNorms(object):
@@ -1458,7 +1424,6 @@ class TestMatrixNorms(object):
         assert_allclose(b, d)
         assert_(b.shape == c.shape == d.shape)
 
-    @pytest.mark.skipif(NumpyVersion(np.__version__) < '1.10.0', reason="")
     def test_keepdims_kwd(self):
         a = np.arange(120, dtype='d').reshape(2, 3, 4, 5)
         b = norm(a, ord=np.inf, axis=(1, 0), keepdims=True)
@@ -1648,4 +1613,3 @@ class TestMatrix_Balance(object):
             ip[p] = np.arange(A.shape[0])
             assert_allclose(y, np.diag(s)[ip, :])
             assert_allclose(solve(y, A).dot(y), x)
-

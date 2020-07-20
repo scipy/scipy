@@ -3,22 +3,22 @@
 # Author: Jordi Montes <jomsdev@gmail.com>
 # August 28, 2017
 
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 
-from scipy._lib._util import check_random_state
+from scipy._lib._util import check_random_state, rng_integers
+from scipy.sparse import csc_matrix
 
 __all__ = ['clarkson_woodruff_transform']
 
 
 def cwt_matrix(n_rows, n_columns, seed=None):
     r""""
-    Generate a matrix S for the Clarkson-Woodruff sketch.
+    Generate a matrix S which represents a Clarkson-Woodruff transform.
 
     Given the desired size of matrix, the method returns a matrix S of size
-    (n_rows, n_columns) where each column has all the entries set to 0 less one
-    position which has been randomly set to +1 or -1 with equal probability.
+    (n_rows, n_columns) where each column has all the entries set to 0
+    except for one position which has been randomly set to +1 or -1 with
+    equal probability.
 
     Parameters
     ----------
@@ -35,38 +35,34 @@ def cwt_matrix(n_rows, n_columns, seed=None):
 
     Returns
     -------
-    S : (n_rows, n_columns) array_like
+    S : (n_rows, n_columns) csc_matrix
+        The returned matrix has ``n_columns`` nonzero entries.
 
     Notes
     -----
     Given a matrix A, with probability at least 9/10,
-    .. math:: ||SA|| == (1 \pm \epsilon)||A||
-    Where epsilon is related to the size of S
+    .. math:: \|SA\| = (1 \pm \epsilon)\|A\|
+    Where the error epsilon is related to the size of S.
     """
-    S = np.zeros((n_rows, n_columns))
-    nz_positions = np.random.randint(0, n_rows, n_columns)
     rng = check_random_state(seed)
-    values = rng.choice([1, -1], n_columns)
-    for i in range(n_columns):
-        S[nz_positions[i]][i] = values[i]
-
+    rows = rng_integers(rng, 0, n_rows, n_columns)
+    cols = np.arange(n_columns+1)
+    signs = rng.choice([1, -1], n_columns)
+    S = csc_matrix((signs, rows, cols),shape=(n_rows, n_columns))
     return S
 
 
 def clarkson_woodruff_transform(input_matrix, sketch_size, seed=None):
     r""""
-    Find low-rank matrix approximation via the Clarkson-Woodruff Transform.
+    Applies a Clarkson-Woodruff Transform/sketch to the input matrix.
 
     Given an input_matrix ``A`` of size ``(n, d)``, compute a matrix ``A'`` of
-    size (sketch_size, d) which holds:
+    size (sketch_size, d) so that
 
-    .. math:: ||Ax|| = (1 \pm \epsilon)||A'x||
+    .. math:: \|Ax\| \approx \|A'x\|
 
-    with high probability.
-
-    The error is related to the number of rows of the sketch and it is bounded
-
-    .. math:: poly(r(\epsilon^{-1}))
+    with high probability via the Clarkson-Woodruff Transform, otherwise
+    known as the CountSketch matrix.
 
     Parameters
     ----------
@@ -88,34 +84,83 @@ def clarkson_woodruff_transform(input_matrix, sketch_size, seed=None):
 
     Notes
     -----
-    This is an implementation of the Clarkson-Woodruff Transform (CountSketch).
-    ``A'`` can be computed in principle in ``O(nnz(A))`` (with ``nnz`` meaning
-    the number of nonzero entries), however we don't take advantage of sparse
-    matrices in this implementation.
+    To make the statement
+
+    .. math:: \|Ax\| \approx \|A'x\|
+
+    precise, observe the following result which is adapted from the
+    proof of Theorem 14 of [2]_ via Markov's Inequality. If we have
+    a sketch size ``sketch_size=k`` which is at least
+
+    .. math:: k \geq \frac{2}{\epsilon^2\delta}
+
+    Then for any fixed vector ``x``,
+
+    .. math:: \|Ax\| = (1\pm\epsilon)\|A'x\|
+
+    with probability at least one minus delta.
+
+    This implementation takes advantage of sparsity: computing
+    a sketch takes time proportional to ``A.nnz``. Data ``A`` which
+    is in ``scipy.sparse.csc_matrix`` format gives the quickest
+    computation time for sparse input.
+
+    >>> from scipy import linalg
+    >>> from scipy import sparse
+    >>> n_rows, n_columns, density, sketch_n_rows = 15000, 100, 0.01, 200
+    >>> A = sparse.rand(n_rows, n_columns, density=density, format='csc')
+    >>> B = sparse.rand(n_rows, n_columns, density=density, format='csr')
+    >>> C = sparse.rand(n_rows, n_columns, density=density, format='coo')
+    >>> D = np.random.randn(n_rows, n_columns)
+    >>> SA = linalg.clarkson_woodruff_transform(A, sketch_n_rows) # fastest
+    >>> SB = linalg.clarkson_woodruff_transform(B, sketch_n_rows) # fast
+    >>> SC = linalg.clarkson_woodruff_transform(C, sketch_n_rows) # slower
+    >>> SD = linalg.clarkson_woodruff_transform(D, sketch_n_rows) # slowest
+
+    That said, this method does perform well on dense inputs, just slower
+    on a relative scale.
 
     Examples
     --------
     Given a big dense matrix ``A``:
 
     >>> from scipy import linalg
-    >>> n_rows, n_columns, sketch_n_rows = (2000, 100, 100)
-    >>> threshold = 0.1
-    >>> tmp = np.random.normal(0, 0.1, n_rows*n_columns)
-    >>> A = np.reshape(tmp, (n_rows, n_columns))
+    >>> n_rows, n_columns, sketch_n_rows = 15000, 100, 200
+    >>> A = np.random.randn(n_rows, n_columns)
     >>> sketch = linalg.clarkson_woodruff_transform(A, sketch_n_rows)
     >>> sketch.shape
-    (100, 100)
-    >>> normA = linalg.norm(A)
-    >>> norm_sketch = linalg.norm(sketch)
+    (200, 100)
+    >>> norm_A = np.linalg.norm(A)
+    >>> norm_sketch = np.linalg.norm(sketch)
 
-    Now with high probability, the condition ``abs(normA-normSketch) <
-    threshold`` holds.
+    Now with high probability, the true norm ``norm_A`` is close to
+    the sketched norm ``norm_sketch`` in absolute value.
+
+    Similarly, applying our sketch preserves the solution to a linear
+    regression of :math:`\min \|Ax - b\|`.
+
+    >>> from scipy import linalg
+    >>> n_rows, n_columns, sketch_n_rows = 15000, 100, 200
+    >>> A = np.random.randn(n_rows, n_columns)
+    >>> b = np.random.randn(n_rows)
+    >>> x = np.linalg.lstsq(A, b, rcond=None)
+    >>> Ab = np.hstack((A, b.reshape(-1,1)))
+    >>> SAb = linalg.clarkson_woodruff_transform(Ab, sketch_n_rows)
+    >>> SA, Sb = SAb[:,:-1], SAb[:,-1]
+    >>> x_sketched = np.linalg.lstsq(SA, Sb, rcond=None)
+
+    As with the matrix norm example, ``np.linalg.norm(A @ x - b)``
+    is close to ``np.linalg.norm(A @ x_sketched - b)`` with high
+    probability.
 
     References
     ----------
     .. [1] Kenneth L. Clarkson and David P. Woodruff. Low rank approximation and
            regression in input sparsity time. In STOC, 2013.
 
+    .. [2] David P. Woodruff. Sketching as a tool for numerical linear algebra.
+           In Foundations and Trends in Theoretical Computer Science, 2014.
+
     """
     S = cwt_matrix(sketch_size, input_matrix.shape[0], seed)
-    return np.dot(S, input_matrix)
+    return S.dot(input_matrix)

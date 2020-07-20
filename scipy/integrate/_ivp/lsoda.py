@@ -1,6 +1,6 @@
 import numpy as np
 from scipy.integrate import ode
-from .common import validate_tol, warn_extraneous
+from .common import validate_tol, validate_first_step, warn_extraneous
 from .base import OdeSolver, DenseOutput
 
 
@@ -34,10 +34,10 @@ class LSODA(OdeSolver):
         Initial step size. Default is ``None`` which means that the algorithm
         should choose.
     min_step : float, optional
-        Minimum allowed step size. Default is 0.0, i.e. the step size is not
+        Minimum allowed step size. Default is 0.0, i.e., the step size is not
         bounded and determined solely by the solver.
     max_step : float, optional
-        Maximum allowed step size. Default is np.inf, i.e. the step size is not
+        Maximum allowed step size. Default is np.inf, i.e., the step size is not
         bounded and determined solely by the solver.
     rtol, atol : float and array_like, optional
         Relative and absolute tolerances. The solver keeps the local error
@@ -110,8 +110,10 @@ class LSODA(OdeSolver):
 
         if first_step is None:
             first_step = 0  # LSODA value for automatic selection.
-        elif first_step <= 0:
-            raise ValueError("`first_step` must be positive or None.")
+        else:
+            first_step = validate_first_step(first_step, t0, t_bound)
+
+        first_step *= self.direction
 
         if max_step == np.inf:
             max_step = 0  # LSODA value for infinity.
@@ -122,10 +124,6 @@ class LSODA(OdeSolver):
             raise ValueError("`min_step` must be nonnegative.")
 
         rtol, atol = validate_tol(rtol, atol, self.n)
-
-        if jac is None:  # No lambda as PEP8 insists.
-            def jac():
-                return None
 
         solver = ode(self.fun, jac)
         solver.set_integrator('lsoda', rtol=rtol, atol=atol, max_step=max_step,
@@ -148,7 +146,7 @@ class LSODA(OdeSolver):
         itask = integrator.call_args[2]
         integrator.call_args[2] = 5
         solver._y, solver.t = integrator.run(
-            solver.f, solver.jac, solver._y, solver.t,
+            solver.f, solver.jac or (lambda: None), solver._y, solver.t,
             self.t_bound, solver.f_params, solver.jac_params)
         integrator.call_args[2] = itask
 

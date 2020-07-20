@@ -14,11 +14,10 @@ Uses ARPACK: http://www.caam.rice.edu/software/ARPACK/
 # - (s,d,c,z)neupd: single,double,complex,double complex general matrix
 # This wrapper puts the *neupd (general matrix) interfaces in eigs()
 # and the *seupd (symmetric matrix) in eigsh().
-# There is no Hermetian complex/double complex interface.
-# To find eigenvalues of a Hermetian matrix you
-# must use eigs() and not eigsh()
-# It might be desirable to handle the Hermetian case differently
-# and, for example, return real eigenvalues.
+# There is no specialized interface for complex Hermitian matrices.
+# To find eigenvalues of a complex Hermitian matrix you
+# may use eigsh(), but eigsh() will simply call eigs()
+# and return the real part of the eigenvalues thus obtained.
 
 # Number of eigenvalues returned and complex eigenvalues
 # ------------------------------------------------------
@@ -36,20 +35,21 @@ Uses ARPACK: http://www.caam.rice.edu/software/ARPACK/
 # ARPACK and handle shifted and shift-inverse computations
 # for eigenvalues by providing a shift (sigma) and a solver.
 
-from __future__ import division, print_function, absolute_import
-
 __docformat__ = "restructuredtext en"
 
 __all__ = ['eigs', 'eigsh', 'svds', 'ArpackError', 'ArpackNoConvergence']
 
 from . import _arpack
+arpack_int = _arpack.timing.nbx.dtype
+
 import numpy as np
 import warnings
 from scipy.sparse.linalg.interface import aslinearoperator, LinearOperator
 from scipy.sparse import eye, issparse, isspmatrix, isspmatrix_csr
 from scipy.linalg import eig, eigh, lu_factor, lu_solve
-from scipy.sparse.sputils import isdense
+from scipy.sparse.sputils import isdense, is_pydata_spmatrix
 from scipy.sparse.linalg import gmres, splu
+from scipy.sparse.linalg.eigen.lobpcg import lobpcg
 from scipy._lib._util import _aligned_zeros
 from scipy._lib._threadsafety import ReentrancyLock
 
@@ -340,7 +340,7 @@ class _ArpackParams(object):
         ncv = min(ncv, n)
 
         self.v = np.zeros((n, ncv), tp)  # holds Ritz vectors
-        self.iparam = np.zeros(11, "int")
+        self.iparam = np.zeros(11, arpack_int)
 
         # set solver mode and parameters
         ishfts = 1
@@ -529,7 +529,7 @@ class _SymmetricArpackParams(_ArpackParams):
         self.iterate_infodict = _SAUPD_ERRORS[ltr]
         self.extract_infodict = _SEUPD_ERRORS[ltr]
 
-        self.ipntr = np.zeros(11, "int")
+        self.ipntr = np.zeros(11, arpack_int)
 
     def iterate(self):
         self.ido, self.tol, self.resid, self.v, self.iparam, self.ipntr, self.info = \
@@ -709,7 +709,7 @@ class _UnsymmetricArpackParams(_ArpackParams):
         self.iterate_infodict = _NAUPD_ERRORS[ltr]
         self.extract_infodict = _NEUPD_ERRORS[ltr]
 
-        self.ipntr = np.zeros(14, "int")
+        self.ipntr = np.zeros(14, arpack_int)
 
         if self.tp in 'FD':
             # Use _aligned_zeros to work around a f2py bug in Numpy 1.9.1
@@ -852,22 +852,27 @@ class _UnsymmetricArpackParams(_ArpackParams):
                 z = z[:, :nreturned]
             else:
                 # we got one extra eigenvalue (likely a cc pair, but which?)
-                # cut at approx precision for sorting
-                rd = np.round(d, decimals=_ndigits[self.tp])
+                if self.mode in (1, 2):
+                    rd = d
+                elif self.mode in (3, 4):
+                    rd = 1 / (d - self.sigma)
+
                 if self.which in ['LR', 'SR']:
                     ind = np.argsort(rd.real)
                 elif self.which in ['LI', 'SI']:
                     # for LI,SI ARPACK returns largest,smallest
-                    # abs(imaginary) why?
+                    # abs(imaginary) (complex pairs come together)
                     ind = np.argsort(abs(rd.imag))
                 else:
                     ind = np.argsort(abs(rd))
+
                 if self.which in ['LR', 'LM', 'LI']:
-                    d = d[ind[-k:]]
-                    z = z[:, ind[-k:]]
-                if self.which in ['SR', 'SM', 'SI']:
-                    d = d[ind[:k]]
-                    z = z[:, ind[:k]]
+                    ind = ind[-k:][::-1]
+                elif self.which in ['SR', 'SM', 'SI']:
+                    ind = ind[:k]
+
+                d = d[ind]
+                z = z[:, ind]
         else:
             # complex is so much simpler...
             d, z, ierr =\
@@ -902,7 +907,7 @@ class SpLuInv(LinearOperator):
     """
     SpLuInv:
        helper class to repeatedly solve M*x=b
-       using a sparse LU-decopposition of M
+       using a sparse LU-decomposition of M
     """
     def __init__(self, M):
         self.M_lu = splu(M)
@@ -1026,20 +1031,31 @@ class IterOpInv(LinearOperator):
         return self.OP.dtype
 
 
-def get_inv_matvec(M, symmetric=False, tol=0):
+def _fast_spmatrix_to_csc(A, hermitian=False):
+    """Convert sparse matrix to CSC (by transposing, if possible)"""
+    if (isspmatrix_csr(A) and hermitian
+            and not np.issubdtype(A.dtype, np.complexfloating)):
+        return A.T
+    elif is_pydata_spmatrix(A):
+        # No need to convert
+        return A
+    else:
+        return A.tocsc()
+
+
+def get_inv_matvec(M, hermitian=False, tol=0):
     if isdense(M):
         return LuInv(M).matvec
-    elif isspmatrix(M):
-        if isspmatrix_csr(M) and symmetric:
-            M = M.T
+    elif isspmatrix(M) or is_pydata_spmatrix(M):
+        M = _fast_spmatrix_to_csc(M, hermitian=hermitian)
         return SpLuInv(M).matvec
     else:
         return IterInv(M, tol=tol).matvec
 
 
-def get_OPinv_matvec(A, M, sigma, symmetric=False, tol=0):
+def get_OPinv_matvec(A, M, sigma, hermitian=False, tol=0):
     if sigma == 0:
-        return get_inv_matvec(A, symmetric=symmetric, tol=tol)
+        return get_inv_matvec(A, hermitian=hermitian, tol=tol)
 
     if M is None:
         #M is the identity matrix
@@ -1051,27 +1067,25 @@ def get_OPinv_matvec(A, M, sigma, symmetric=False, tol=0):
                 A = A + 0j
             A.flat[::A.shape[1] + 1] -= sigma
             return LuInv(A).matvec
-        elif isspmatrix(A):
+        elif isspmatrix(A) or is_pydata_spmatrix(A):
             A = A - sigma * eye(A.shape[0])
-            if symmetric and isspmatrix_csr(A):
-                A = A.T
-            return SpLuInv(A.tocsc()).matvec
+            A = _fast_spmatrix_to_csc(A, hermitian=hermitian)
+            return SpLuInv(A).matvec
         else:
             return IterOpInv(_aslinearoperator_with_dtype(A),
-                              M, sigma, tol=tol).matvec
+                             M, sigma, tol=tol).matvec
     else:
-        if ((not isdense(A) and not isspmatrix(A)) or
-                (not isdense(M) and not isspmatrix(M))):
+        if ((not isdense(A) and not isspmatrix(A) and not is_pydata_spmatrix(A)) or
+                (not isdense(M) and not isspmatrix(M) and not is_pydata_spmatrix(A))):
             return IterOpInv(_aslinearoperator_with_dtype(A),
-                              _aslinearoperator_with_dtype(M),
-                              sigma, tol=tol).matvec
+                             _aslinearoperator_with_dtype(M),
+                             sigma, tol=tol).matvec
         elif isdense(A) or isdense(M):
             return LuInv(A - sigma * M).matvec
         else:
             OP = A - sigma * M
-            if symmetric and isspmatrix_csr(OP):
-                OP = OP.T
-            return SpLuInv(OP.tocsc()).matvec
+            OP = _fast_spmatrix_to_csc(OP, hermitian=hermitian)
+            return SpLuInv(OP).matvec
 
 
 # ARPACK is not threadsafe or reentrant (SAVE variables), so we need a
@@ -1108,8 +1122,8 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
 
             A * x = w * M * x.
 
-        M must represent a real, symmetric matrix if A is real, and must
-        represent a complex, hermitian matrix if A is complex. For best
+        M must represent a real symmetric matrix if A is real, and must
+        represent a complex Hermitian matrix if A is complex. For best
         results, the data type of M should be the same as that of A.
         Additionally:
 
@@ -1288,7 +1302,7 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
             #general eigenvalue problem
             mode = 2
             if Minv is None:
-                Minv_matvec = get_inv_matvec(M, symmetric=True, tol=tol)
+                Minv_matvec = get_inv_matvec(M, hermitian=True, tol=tol)
             else:
                 Minv = _aslinearoperator_with_dtype(Minv)
                 Minv_matvec = Minv.matvec
@@ -1314,7 +1328,7 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
             raise ValueError("Minv should not be specified when sigma is")
         if OPinv is None:
             Minv_matvec = get_OPinv_matvec(A, M, sigma,
-                                           symmetric=False, tol=tol)
+                                           hermitian=False, tol=tol)
         else:
             OPinv = _aslinearoperator_with_dtype(OPinv)
             Minv_matvec = OPinv.matvec
@@ -1339,7 +1353,7 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
           Minv=None, OPinv=None, mode='normal'):
     """
     Find k eigenvalues and eigenvectors of the real symmetric square matrix
-    or complex hermitian matrix A.
+    or complex Hermitian matrix A.
 
     Solves ``A * x[i] = w[i] * x[i]``, the standard eigenvalue problem for
     w[i] eigenvalues with corresponding eigenvectors x[i].
@@ -1348,11 +1362,15 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
     generalized eigenvalue problem for w[i] eigenvalues
     with corresponding eigenvectors x[i].
 
+    Note that there is no specialized routine for the case when A is a complex
+    Hermitian matrix. In this case, ``eigsh()`` will call ``eigs()`` and return the
+    real parts of the eigenvalues thus obtained.
+
     Parameters
     ----------
     A : ndarray, sparse matrix or LinearOperator
         A square operator representing the operation ``A * x``, where ``A`` is
-        real symmetric or complex hermitian. For buckling mode (see below)
+        real symmetric or complex Hermitian. For buckling mode (see below)
         ``A`` must additionally be positive-definite.
     k : int, optional
         The number of eigenvalues and eigenvectors desired.
@@ -1374,8 +1392,8 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
 
             A @ x = w * M @ x.
 
-        M must represent a real, symmetric matrix if A is real, and must
-        represent a complex, hermitian matrix if A is complex. For best
+        M must represent a real symmetric matrix if A is real, and must
+        represent a complex Hermitian matrix if A is complex. For best
         results, the data type of M should be the same as that of A.
         Additionally:
 
@@ -1418,7 +1436,7 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
         smaller than n; it is recommended that ``ncv > 2*k``.
         Default: ``min(n, max(2*k + 1, 20))``
     which : str ['LM' | 'SM' | 'LA' | 'SA' | 'BE']
-        If A is a complex hermitian matrix, 'BE' is invalid.
+        If A is a complex Hermitian matrix, 'BE' is invalid.
         Which `k` eigenvectors and eigenvalues to find:
 
             'LM' : Largest (in magnitude) eigenvalues.
@@ -1447,21 +1465,26 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
     OPinv : N x N matrix, array, sparse matrix, or LinearOperator
         See notes in sigma, above.
     return_eigenvectors : bool
-        Return eigenvectors (True) in addition to eigenvalues. This value determines
-        the order in which eigenvalues are sorted. The sort order is also dependent on the `which` variable.
+        Return eigenvectors (True) in addition to eigenvalues.
+        This value determines the order in which eigenvalues are sorted.
+        The sort order is also dependent on the `which` variable.
 
             For which = 'LM' or 'SA':
-                If `return_eigenvectors` is True, eigenvalues are sorted by algebraic value.
+                If `return_eigenvectors` is True, eigenvalues are sorted by
+                algebraic value.
 
-                If `return_eigenvectors` is False, eigenvalues are sorted by absolute value.
+                If `return_eigenvectors` is False, eigenvalues are sorted by
+                absolute value.
 
             For which = 'BE' or 'LA':
                 eigenvalues are always sorted by algebraic value.
 
             For which = 'SM':
-                If `return_eigenvectors` is True, eigenvalues are sorted by algebraic value.
+                If `return_eigenvectors` is True, eigenvalues are sorted by
+                algebraic value.
 
-                If `return_eigenvectors` is False, eigenvalues are sorted by decreasing absolute value.
+                If `return_eigenvectors` is False, eigenvalues are sorted by
+                decreasing absolute value.
 
     mode : string ['normal' | 'buckling' | 'cayley']
         Specify strategy to use for shift-invert mode.  This argument applies
@@ -1530,7 +1553,7 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
     (13, 6)
 
     """
-    # complex hermitian matrices should be solved with eigs
+    # complex Hermitian matrices should be solved with eigs
     if np.issubdtype(A.dtype, np.complexfloating):
         if mode != 'normal':
             raise ValueError("mode=%s cannot be used with "
@@ -1603,7 +1626,7 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
             #general eigenvalue problem
             mode = 2
             if Minv is None:
-                Minv_matvec = get_inv_matvec(M, symmetric=True, tol=tol)
+                Minv_matvec = get_inv_matvec(M, hermitian=True, tol=tol)
             else:
                 Minv = _aslinearoperator_with_dtype(Minv)
                 Minv_matvec = Minv.matvec
@@ -1619,7 +1642,7 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
             matvec = None
             if OPinv is None:
                 Minv_matvec = get_OPinv_matvec(A, M, sigma,
-                                               symmetric=True, tol=tol)
+                                               hermitian=True, tol=tol)
             else:
                 OPinv = _aslinearoperator_with_dtype(OPinv)
                 Minv_matvec = OPinv.matvec
@@ -1634,7 +1657,7 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
             mode = 4
             if OPinv is None:
                 Minv_matvec = get_OPinv_matvec(A, M, sigma,
-                                               symmetric=True, tol=tol)
+                                               hermitian=True, tol=tol)
             else:
                 Minv_matvec = _aslinearoperator_with_dtype(OPinv).matvec
             matvec = _aslinearoperator_with_dtype(A).matvec
@@ -1646,7 +1669,7 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
             matvec = _aslinearoperator_with_dtype(A).matvec
             if OPinv is None:
                 Minv_matvec = get_OPinv_matvec(A, M, sigma,
-                                               symmetric=True, tol=tol)
+                                               hermitian=True, tol=tol)
             else:
                 Minv_matvec = _aslinearoperator_with_dtype(OPinv).matvec
             if M is None:
@@ -1702,8 +1725,9 @@ def _herm(x):
 
 
 def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
-         maxiter=None, return_singular_vectors=True):
-    """Compute the largest k singular values/vectors for a sparse matrix.
+         maxiter=None, return_singular_vectors=True,
+         solver='arpack'):
+    """Compute the largest or smallest k singular values/vectors for a sparse matrix. The order of the singular values is not guaranteed.
 
     Parameters
     ----------
@@ -1746,6 +1770,9 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
         - "vh": only return the vh matrix, without computing u (if N <= M).
 
         .. versionadded:: 0.16.0
+    solver : str, optional
+            Eigenvalue solver to use. Should be 'arpack' or 'lobpcg'.
+            Default: 'arpack'
 
     Returns
     -------
@@ -1763,7 +1790,7 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
 
     Notes
     -----
-    This is a naive implementation using ARPACK as an eigensolver
+    This is a naive implementation using ARPACK or LOBPCG as an eigensolver
     on A.H * A or A * A.H, depending on which one is more efficient.
 
     Examples
@@ -1777,7 +1804,14 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     >>> np.sqrt(eigs(A.dot(A.T), k=2)[0]).real
     array([ 5.6059665 ,  2.75193379])
     """
-    if not (isinstance(A, LinearOperator) or isspmatrix(A)):
+    if which == 'LM':
+        largest = True
+    elif which == 'SM':
+        largest = False
+    else:
+        raise ValueError("which must be either 'LM' or 'SM'.")
+
+    if not (isinstance(A, LinearOperator) or isspmatrix(A) or is_pydata_spmatrix(A)):
         A = np.asarray(A)
 
     n, m = A.shape
@@ -1790,92 +1824,90 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
             X_dot = A.matvec
             X_matmat = A.matmat
             XH_dot = A.rmatvec
+            XH_mat = A.rmatmat
         else:
             X_dot = A.rmatvec
+            X_matmat = A.rmatmat
             XH_dot = A.matvec
+            XH_mat = A.matmat
 
             dtype = getattr(A, 'dtype', None)
             if dtype is None:
-                dtype = A.dot(np.zeros([m,1])).dtype
-
-            # A^H * V; works around lack of LinearOperator.adjoint.
-            # XXX This can be slow!
-            def X_matmat(V):
-                out = np.empty((V.shape[1], m), dtype=dtype)
-                for i, col in enumerate(V.T):
-                    out[i, :] = A.rmatvec(col.reshape(-1, 1)).T
-                return out.T
+                dtype = A.dot(np.zeros([m, 1])).dtype
 
     else:
         if n > m:
             X_dot = X_matmat = A.dot
-            XH_dot = _herm(A).dot
+            XH_dot = XH_mat = _herm(A).dot
         else:
-            XH_dot = A.dot
+            XH_dot = XH_mat = A.dot
             X_dot = X_matmat = _herm(A).dot
 
     def matvec_XH_X(x):
         return XH_dot(X_dot(x))
 
+    def matmat_XH_X(x):
+        return XH_mat(X_matmat(x))
+
     XH_X = LinearOperator(matvec=matvec_XH_X, dtype=A.dtype,
+                          matmat=matmat_XH_X,
                           shape=(min(A.shape), min(A.shape)))
 
     # Get a low rank approximation of the implicitly defined gramian matrix.
     # This is not a stable way to approach the problem.
-    eigvals, eigvec = eigsh(XH_X, k=k, tol=tol ** 2, maxiter=maxiter,
-                                  ncv=ncv, which=which, v0=v0)
+    if solver == 'lobpcg':
 
-    # In 'LM' mode try to be clever about small eigenvalues.
-    # Otherwise in 'SM' mode do not try to be clever.
-    if which == 'LM':
-
-        # Gramian matrices have real non-negative eigenvalues.
-        eigvals = np.maximum(eigvals.real, 0)
-
-        # Use the sophisticated detection of small eigenvalues from pinvh.
-        t = eigvec.dtype.char.lower()
-        factor = {'f': 1E3, 'd': 1E6}
-        cond = factor[t] * np.finfo(t).eps
-        cutoff = cond * np.max(eigvals)
-
-        # Get a mask indicating which eigenpairs are not degenerately tiny,
-        # and create the re-ordered array of thresholded singular values.
-        above_cutoff = (eigvals > cutoff)
-        nlarge = above_cutoff.sum()
-        nsmall = k - nlarge
-        slarge = np.sqrt(eigvals[above_cutoff])
-        s = np.zeros_like(eigvals)
-        s[:nlarge] = slarge
-        if not return_singular_vectors:
-            return s
-
-        if n > m:
-            vlarge = eigvec[:, above_cutoff]
-            ularge = X_matmat(vlarge) / slarge if return_singular_vectors != 'vh' else None
-            vhlarge = _herm(vlarge)
+        if k == 1 and v0 is not None:
+            X = np.reshape(v0, (-1, 1))
         else:
-            ularge = eigvec[:, above_cutoff]
-            vhlarge = _herm(X_matmat(ularge) / slarge) if return_singular_vectors != 'u' else None
+            X = np.random.RandomState(52).randn(min(A.shape), k)
 
-        u = _augmented_orthonormal_cols(ularge, nsmall) if ularge is not None else None
-        vh = _augmented_orthonormal_rows(vhlarge, nsmall) if vhlarge is not None else None
+        eigvals, eigvec = lobpcg(XH_X, X, tol=tol ** 2, maxiter=maxiter,
+                                 largest=largest)
 
-    elif which == 'SM':
-
-        s = np.sqrt(eigvals)
-        if not return_singular_vectors:
-            return s
-
-        if n > m:
-            v = eigvec
-            u = X_matmat(v) / s if return_singular_vectors != 'vh' else None
-            vh = _herm(v)
-        else:
-            u = eigvec
-            vh = _herm(X_matmat(u) / s) if return_singular_vectors != 'u' else None
+    elif solver == 'arpack' or solver is None:
+        eigvals, eigvec = eigsh(XH_X, k=k, tol=tol ** 2, maxiter=maxiter,
+                                ncv=ncv, which=which, v0=v0)
 
     else:
+        raise ValueError("solver must be either 'arpack', or 'lobpcg'.")
 
-        raise ValueError("which must be either 'LM' or 'SM'.")
+    # Gramian matrices have real non-negative eigenvalues.
+    eigvals = np.maximum(eigvals.real, 0)
+
+    # Use the sophisticated detection of small eigenvalues from pinvh.
+    t = eigvec.dtype.char.lower()
+    factor = {'f': 1E3, 'd': 1E6}
+    cond = factor[t] * np.finfo(t).eps
+    cutoff = cond * np.max(eigvals)
+
+    # Get a mask indicating which eigenpairs are not degenerately tiny,
+    # and create the re-ordered array of thresholded singular values.
+    above_cutoff = (eigvals > cutoff)
+    nlarge = above_cutoff.sum()
+    nsmall = k - nlarge
+    slarge = np.sqrt(eigvals[above_cutoff])
+    s = np.zeros_like(eigvals)
+    s[:nlarge] = slarge
+    if not return_singular_vectors:
+        return np.sort(s)
+
+    if n > m:
+        vlarge = eigvec[:, above_cutoff]
+        ularge = X_matmat(vlarge) / slarge if return_singular_vectors != 'vh' else None
+        vhlarge = _herm(vlarge)
+    else:
+        ularge = eigvec[:, above_cutoff]
+        vhlarge = _herm(X_matmat(ularge) / slarge) if return_singular_vectors != 'u' else None
+
+    u = _augmented_orthonormal_cols(ularge, nsmall) if ularge is not None else None
+    vh = _augmented_orthonormal_rows(vhlarge, nsmall) if vhlarge is not None else None
+
+    indexes_sorted = np.argsort(s)
+    s = s[indexes_sorted]
+    if u is not None:
+        u = u[:, indexes_sorted]
+    if vh is not None:
+        vh = vh[indexes_sorted]
 
     return u, s, vh

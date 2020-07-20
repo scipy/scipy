@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 from os import path
 import warnings
 
@@ -7,9 +5,7 @@ DATA_PATH = path.join(path.dirname(__file__), 'data')
 
 import numpy as np
 from numpy.testing import (assert_equal, assert_array_equal,
-    assert_)
-from scipy._lib._numpy_compat import suppress_warnings
-
+    assert_, suppress_warnings)
 from scipy.io.idl import readsav
 
 

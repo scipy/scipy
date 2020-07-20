@@ -1,9 +1,6 @@
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 from numpy.testing import assert_equal, \
     assert_array_equal, assert_array_almost_equal, assert_array_less, assert_
-from scipy._lib.six import xrange
 
 from scipy.signal import wavelets
 
@@ -13,12 +10,12 @@ class TestWavelets(object):
         assert_array_equal(wavelets.qmf([1, 1]), [1, -1])
 
     def test_daub(self):
-        for i in xrange(1, 15):
+        for i in range(1, 15):
             assert_equal(len(wavelets.daub(i)), i * 2)
 
     def test_cascade(self):
-        for J in xrange(1, 7):
-            for i in xrange(1, 5):
+        for J in range(1, 7):
+            for i in range(1, 5):
                 lpcoef = wavelets.daub(i)
                 k = len(lpcoef)
                 x, phi, psi = wavelets.cascade(lpcoef, J)
@@ -79,6 +76,29 @@ class TestWavelets(object):
         y = wavelets.morlet(20000, w=7, s=20, complete=False)[5000:15000]
         assert_array_almost_equal(x, y, decimal=2)
 
+    def test_morlet2(self):
+        w = wavelets.morlet2(1.0, 0.5)
+        expected = (np.pi**(-0.25) * np.sqrt(1/0.5)).astype(complex)
+        assert_array_equal(w, expected)
+
+        lengths = [5, 11, 15, 51, 101]
+        for length in lengths:
+            w = wavelets.morlet2(length, 1.0)
+            assert_(len(w) == length)
+            max_loc = np.argmax(w)
+            assert_(max_loc == (length // 2))
+
+        points = 100
+        w = abs(wavelets.morlet2(points, 2.0))
+        half_vec = np.arange(0, points // 2)
+        assert_array_almost_equal(w[half_vec], w[-(half_vec + 1)])
+
+        x = np.array([5.03701224e-09 + 2.46742437e-24j,
+                      1.88279253e+00 + 0.00000000e+00j,
+                      5.03701224e-09 - 2.46742437e-24j])
+        y = wavelets.morlet2(3, s=1/(2*np.pi), w=2)
+        assert_array_almost_equal(x, y)
+
     def test_ricker(self):
         w = wavelets.ricker(1.0, 1)
         expected = 2 / (np.sqrt(3 * 1.0) * (np.pi ** 0.25))
@@ -126,7 +146,7 @@ class TestWavelets(object):
 
         widths = [len_data * 10]
         #Note: this wavelet isn't defined quite right, but is fine for this test
-        flat_wavelet = lambda l, w: np.ones(w) / w
+        flat_wavelet = lambda l, w: np.full(w, 1 / w)
         cwt_dat = wavelets.cwt(test_data, flat_wavelet, widths)
         assert_array_almost_equal(cwt_dat, np.mean(test_data))
 

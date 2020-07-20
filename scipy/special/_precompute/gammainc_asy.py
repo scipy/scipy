@@ -8,13 +8,11 @@ Sources:
     https://dlmf.nist.gov/
 
 """
-from __future__ import division, print_function, absolute_import
-
 import os
 from scipy.special._precompute.utils import lagrange_inversion
 
 try:
-    import mpmath as mp
+    import mpmath as mp  # type: ignore[import]
 except ImportError:
     pass
 
@@ -34,9 +32,7 @@ def compute_a(n):
 def compute_g(n):
     """g_k from DLMF 5.11.3/5.11.5"""
     a = compute_a(2*n)
-    g = []
-    for k in range(n):
-        g.append(mp.sqrt(2)*mp.rf(0.5, k)*a[2*k])
+    g = [mp.sqrt(2)*mp.rf(0.5, k)*a[2*k] for k in range(n)]
     return g
 
 
@@ -54,7 +50,7 @@ def compute_alpha(n):
     """alpha_n from DLMF 8.12.13"""
     coeffs = mp.taylor(eta, 0, n - 1)
     return lagrange_inversion(coeffs)
-    
+
 
 def compute_d(K, N):
     """d_{k, n} from DLMF 8.12.12"""

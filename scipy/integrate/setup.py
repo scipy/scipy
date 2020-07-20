@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 import os
 from os.path import join
 
@@ -9,13 +7,19 @@ from scipy._build_utils import numpy_nodepr_api
 def configuration(parent_package='',top_path=None):
     from numpy.distutils.misc_util import Configuration
     from scipy._build_utils.system_info import get_info
+    from scipy._build_utils import (uses_blas64, blas_ilp64_pre_build_hook,
+                                    combine_dict, get_f2py_int64_options)
+
     config = Configuration('integrate', parent_package, top_path)
 
-    # Get a local copy of lapack_opt_info
-    lapack_opt = dict(get_info('lapack_opt',notfound_action=2))
-    # Pop off the libraries list so it can be combined with
-    # additional required libraries
-    lapack_libs = lapack_opt.pop('libraries', [])
+    if uses_blas64():
+        lapack_opt = get_info('lapack_ilp64_opt', 2)
+        pre_build_hook = blas_ilp64_pre_build_hook(lapack_opt)
+        f2py_options = get_f2py_int64_options()
+    else:
+        lapack_opt = get_info('lapack_opt')
+        pre_build_hook = None
+        f2py_options = None
 
     mach_src = [join('mach','*.f')]
     quadpack_src = [join('quadpack', '*.f')]
@@ -30,66 +34,73 @@ def configuration(parent_package='',top_path=None):
     quadpack_test_src = [join('tests','_test_multivariate.c')]
     odeint_banded_test_src = [join('tests', 'banded5x5.f')]
 
-    config.add_library('mach', sources=mach_src,
-                       config_fc={'noopt':(__file__,1)})
-    config.add_library('quadpack', sources=quadpack_src)
-    config.add_library('lsoda', sources=lsoda_src)
-    config.add_library('vode', sources=vode_src)
-    config.add_library('dop', sources=dop_src)
+    config.add_library('mach', sources=mach_src, config_fc={'noopt': (__file__, 1)},
+                       _pre_build_hook=pre_build_hook)
+    config.add_library('quadpack', sources=quadpack_src, _pre_build_hook=pre_build_hook)
+    config.add_library('lsoda', sources=lsoda_src, _pre_build_hook=pre_build_hook)
+    config.add_library('vode', sources=vode_src, _pre_build_hook=pre_build_hook)
+    config.add_library('dop', sources=dop_src, _pre_build_hook=pre_build_hook)
 
     # Extensions
     # quadpack:
     include_dirs = [join(os.path.dirname(__file__), '..', '_lib', 'src')]
-    if 'include_dirs' in lapack_opt:
-        lapack_opt = dict(lapack_opt)
-        include_dirs.extend(lapack_opt.pop('include_dirs'))
-
+    cfg = combine_dict(lapack_opt,
+                       include_dirs=include_dirs,
+                       libraries=['quadpack', 'mach'])
     config.add_extension('_quadpack',
                          sources=['_quadpackmodule.c'],
-                         libraries=['quadpack', 'mach'] + lapack_libs,
                          depends=(['__quadpack.h']
                                   + quadpack_src + mach_src),
-                         include_dirs=include_dirs,
-                         **lapack_opt)
+                         **cfg)
 
     # odepack/lsoda-odeint
-    odepack_opts = lapack_opt.copy()
-    odepack_opts.update(numpy_nodepr_api)
+    cfg = combine_dict(lapack_opt, numpy_nodepr_api,
+                       libraries=['lsoda', 'mach'])
     config.add_extension('_odepack',
                          sources=['_odepackmodule.c'],
-                         libraries=['lsoda', 'mach'] + lapack_libs,
                          depends=(lsoda_src + mach_src),
-                         **odepack_opts)
+                         **cfg)
 
     # vode
-    config.add_extension('vode',
-                         sources=['vode.pyf'],
-                         libraries=['vode'] + lapack_libs,
-                         depends=vode_src,
-                         **lapack_opt)
+    cfg = combine_dict(lapack_opt,
+                       libraries=['vode'])
+    ext = config.add_extension('vode',
+                               sources=['vode.pyf'],
+                               depends=vode_src,
+                               f2py_options=f2py_options,
+                               **cfg)
+    ext._pre_build_hook = pre_build_hook
 
     # lsoda
-    config.add_extension('lsoda',
-                         sources=['lsoda.pyf'],
-                         libraries=['lsoda', 'mach'] + lapack_libs,
-                         depends=(lsoda_src + mach_src),
-                         **lapack_opt)
+    cfg = combine_dict(lapack_opt,
+                       libraries=['lsoda', 'mach'])
+    ext = config.add_extension('lsoda',
+                               sources=['lsoda.pyf'],
+                               depends=(lsoda_src + mach_src),
+                               f2py_options=f2py_options,
+                               **cfg)
+    ext._pre_build_hook = pre_build_hook
 
     # dop
-    config.add_extension('_dop',
-                         sources=['dop.pyf'],
-                         libraries=['dop'],
-                         depends=dop_src)
+    ext = config.add_extension('_dop',
+                               sources=['dop.pyf'],
+                               libraries=['dop'],
+                               depends=dop_src,
+                               f2py_options=f2py_options)
+    ext._pre_build_hook = pre_build_hook
 
     config.add_extension('_test_multivariate',
                          sources=quadpack_test_src)
 
     # Fortran+f2py extension module for testing odeint.
-    config.add_extension('_test_odeint_banded',
-                         sources=odeint_banded_test_src,
-                         libraries=['lsoda', 'mach'] + lapack_libs,
-                         depends=(lsoda_src + mach_src),
-                         **lapack_opt)
+    cfg = combine_dict(lapack_opt,
+                       libraries=['lsoda', 'mach'])
+    ext = config.add_extension('_test_odeint_banded',
+                               sources=odeint_banded_test_src,
+                               depends=(lsoda_src + mach_src),
+                               f2py_options=f2py_options,
+                               **cfg)
+    ext._pre_build_hook = pre_build_hook
 
     config.add_subpackage('_ivp')
 

@@ -1,6 +1,5 @@
 """Byrd-Omojokun Trust-Region SQP method."""
 
-from __future__ import division, print_function, absolute_import
 from scipy.sparse import eye as speye
 from .projections import projections
 from .qp_subproblem import modified_dogleg, projected_cg, box_intersections
@@ -184,15 +183,15 @@ def equality_constrained_sqp(fun_and_constr, grad_and_jac, lagr_hess,
                                trust_radius)
         # Reduce trust region step, according to reference [3]_, p.696.
         elif reduction_ratio < SUFFICIENT_REDUCTION_RATIO:
-                trust_reduction \
-                    = (1-SUFFICIENT_REDUCTION_RATIO)/(1-reduction_ratio)
-                new_trust_radius = trust_reduction * norm(d)
-                if new_trust_radius >= MAX_TRUST_REDUCTION * trust_radius:
-                    trust_radius *= MAX_TRUST_REDUCTION
-                elif new_trust_radius >= MIN_TRUST_REDUCTION * trust_radius:
-                    trust_radius = new_trust_radius
-                else:
-                    trust_radius *= MIN_TRUST_REDUCTION
+            trust_reduction = ((1-SUFFICIENT_REDUCTION_RATIO) /
+                               (1-reduction_ratio))
+            new_trust_radius = trust_reduction * norm(d)
+            if new_trust_radius >= MAX_TRUST_REDUCTION * trust_radius:
+                trust_radius *= MAX_TRUST_REDUCTION
+            elif new_trust_radius >= MIN_TRUST_REDUCTION * trust_radius:
+                trust_radius = new_trust_radius
+            else:
+                trust_radius *= MIN_TRUST_REDUCTION
 
         # Update iteration
         if reduction_ratio >= SUFFICIENT_REDUCTION_RATIO:

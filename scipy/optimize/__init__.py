@@ -1,6 +1,6 @@
 """
 =====================================================
-Optimization and Root Finding (:mod:`scipy.optimize`)
+Optimization and root finding (:mod:`scipy.optimize`)
 =====================================================
 
 .. currentmodule:: scipy.optimize
@@ -8,8 +8,8 @@ Optimization and Root Finding (:mod:`scipy.optimize`)
 SciPy ``optimize`` provides functions for minimizing (or maximizing)
 objective functions, possibly subject to constraints. It includes
 solvers for nonlinear problems (with support for both local and global
-optimization algorithms), linear programing,  constrained
-and nonlinear least-squares, root finding and curve fitting.
+optimization algorithms), linear programing, constrained
+and nonlinear least-squares, root finding, and curve fitting.
 
 Common functions and objects, shared across different solvers, are:
 
@@ -24,7 +24,7 @@ Common functions and objects, shared across different solvers, are:
 Optimization
 ============
 
-Scalar Functions Optimization
+Scalar functions optimization
 -----------------------------
 
 .. autosummary::
@@ -40,7 +40,7 @@ The `minimize_scalar` function supports the following methods:
    optimize.minimize_scalar-bounded
    optimize.minimize_scalar-golden
 
-Local (Multivariate) Optimization
+Local (multivariate) optimization
 ---------------------------------
 
 .. autosummary::
@@ -95,7 +95,7 @@ quasi-Newton methods implementing this interface are:
    BFGS - Broyden-Fletcher-Goldfarb-Shanno (BFGS) Hessian update strategy.
    SR1 - Symmetric-rank-1 Hessian update strategy.
 
-Global Optimization
+Global optimization
 -------------------
 
 .. autosummary::
@@ -105,11 +105,14 @@ Global Optimization
    brute - Brute force searching optimizer.
    differential_evolution - stochastic minimization using differential evolution.
 
+   shgo - simplicial homology global optimisation
+   dual_annealing - Dual annealing stochastic optimizer.
 
-Least-squares and Curve Fitting
+
+Least-squares and curve fitting
 ===============================
 
-Nonlinear Least-Squares
+Nonlinear least-squares
 -----------------------
 
 .. autosummary::
@@ -117,7 +120,7 @@ Nonlinear Least-Squares
 
    least_squares - Solve a nonlinear least-squares problem with bounds on the variables.
 
-Linear Least-Squares
+Linear least-squares
 --------------------
 
 .. autosummary::
@@ -126,7 +129,7 @@ Linear Least-Squares
    nnls - Linear least-squares problem with non-negativity constraint.
    lsq_linear - Linear least-squares problem with bound constraints.
 
-Curve Fitting
+Curve fitting
 -------------
 
 .. autosummary::
@@ -142,13 +145,28 @@ Scalar functions
 .. autosummary::
    :toctree: generated/
 
-   brentq - quadratic interpolation Brent method
-   brenth - Brent method, modified by Harris with hyperbolic extrapolation
-   ridder - Ridder's method
-   bisect - Bisection method
-   newton - Secant method or Newton's method
-   toms748 - Alefeld, Potra & Shi Algorithm 748
+   root_scalar - Unified interface for nonlinear solvers of scalar functions.
+   brentq - quadratic interpolation Brent method.
+   brenth - Brent method, modified by Harris with hyperbolic extrapolation.
+   ridder - Ridder's method.
+   bisect - Bisection method.
+   newton - Newton's method (also Secant and Halley's methods).
+   toms748 - Alefeld, Potra & Shi Algorithm 748.
    RootResults - The root finding result returned by some root finders.
+
+The `root_scalar` function supports the following methods:
+
+.. toctree::
+
+   optimize.root_scalar-brentq
+   optimize.root_scalar-brenth
+   optimize.root_scalar-bisect
+   optimize.root_scalar-ridder
+   optimize.root_scalar-newton
+   optimize.root_scalar-toms748
+   optimize.root_scalar-secant
+   optimize.root_scalar-halley
+
 
 
 The table below lists situations and appropriate methods, along with
@@ -162,24 +180,27 @@ The derivative-based methods, all built on `newton`, can converge quite quickly
 if the initial value is close to the root.  They can also be applied to
 functions defined on (a subset of) the complex plane.
 
-+-------------+-------------+--------------+---------------+---------------------+-------------+----------------------+
-| Domain of f | Has Bracket | Has `fprime` | Has `fprime2` | Available Functions | Convergence                        |
-+             +             +              +               +                     +-------------+----------------------+
-|             |             |              |               |                     | Guaranteed? |  Rate(s)(*)          |
-+=============+=============+==============+===============+=====================+=============+======================+
-| `R`         | Yes         | N/A          | N/A           | - bisection         | - Yes       | - 1 "Linear"         |
-|             |             |              |               | - brentq            | - Yes       | - >=1, <= 1.62       |
-|             |             |              |               | - brenth            | - Yes       | - >=1, <= 1.62       |
-|             |             |              |               | - ridder            | - Yes       | - 2.0 (1.41)         |
-|             |             |              |               | - toms748           | - Yes       | - 2.7 (1.65)         |
-+-------------+-------------+--------------+---------------+---------------------+-------------+----------------------+
-| `R` or `C`  | No          | No           | No            | newton              | No          | 1.62 (1.62)          |
-+-------------+-------------+--------------+---------------+---------------------+-------------+----------------------+
-| `R` or `C`  | No          | Yes          | No            | newton              | No          | 2.00 (1.41)          |
-+-------------+-------------+--------------+---------------+---------------------+-------------+----------------------+
-| `R` or `C`  | No          | Yes          | Yes           | newton              | No          | 3.00 (1.44)          |
-+-------------+-------------+--------------+---------------+---------------------+-------------+----------------------+
++-------------+----------+----------+-----------+-------------+-------------+----------------+
+| Domain of f | Bracket? |    Derivatives?      | Solvers     |        Convergence           |
++             +          +----------+-----------+             +-------------+----------------+
+|             |          | `fprime` | `fprime2` |             | Guaranteed? |  Rate(s)(*)    |
++=============+==========+==========+===========+=============+=============+================+
+| `R`         | Yes      | N/A      | N/A       | - bisection | - Yes       | - 1 "Linear"   |
+|             |          |          |           | - brentq    | - Yes       | - >=1, <= 1.62 |
+|             |          |          |           | - brenth    | - Yes       | - >=1, <= 1.62 |
+|             |          |          |           | - ridder    | - Yes       | - 2.0 (1.41)   |
+|             |          |          |           | - toms748   | - Yes       | - 2.7 (1.65)   |
++-------------+----------+----------+-----------+-------------+-------------+----------------+
+| `R` or `C`  | No       | No       | No        | secant      | No          | 1.62 (1.62)    |
++-------------+----------+----------+-----------+-------------+-------------+----------------+
+| `R` or `C`  | No       | Yes      | No        | newton      | No          | 2.00 (1.41)    |
++-------------+----------+----------+-----------+-------------+-------------+----------------+
+| `R` or `C`  | No       | Yes      | Yes       | halley      | No          | 3.00 (1.44)    |
++-------------+----------+----------+-----------+-------------+-------------+----------------+
 
+.. seealso::
+
+   `scipy.optimize.cython_optimize` -- Typed Cython versions of zeros functions
 
 Fixed point finding:
 
@@ -211,7 +232,7 @@ The `root` function supports the following methods:
    optimize.root-krylov
    optimize.root-dfsane
 
-Linear Programming
+Linear programming
 ==================
 
 .. autosummary::
@@ -225,6 +246,7 @@ The `linprog` function supports the following methods:
 
    optimize.linprog-simplex
    optimize.linprog-interior-point
+   optimize.linprog-revised_simplex
 
 The simplex method supports callback functions, such as:
 
@@ -243,7 +265,7 @@ Assignment problems:
 Utilities
 =========
 
-Finite-Difference Approximation
+Finite-difference approximation
 -------------------------------
 
 .. autosummary::
@@ -253,7 +275,7 @@ Finite-Difference Approximation
    check_grad - Check the supplied derivative using finite differences.
 
 
-Line Search
+Line search
 -----------
 
 .. autosummary::
@@ -262,7 +284,7 @@ Line Search
    bracket - Bracket a minimum, given two starting points.
    line_search - Return a step that satisfies the strong Wolfe conditions.
 
-Hessian Approximation
+Hessian approximation
 ---------------------
 
 .. autosummary::
@@ -271,7 +293,7 @@ Hessian Approximation
    LbfgsInvHessProduct - Linear operator for L-BFGS approximate inverse Hessian.
    HessianUpdateStrategy - Interface for implementing Hessian update strategies
 
-Benchmark Problems
+Benchmark problems
 ------------------
 
 .. autosummary::
@@ -282,7 +304,7 @@ Benchmark Problems
    rosen_hess - The Hessian matrix of the Rosenbrock function.
    rosen_hess_prod - Product of the Rosenbrock Hessian with a vector.
 
-Legacy Functions
+Legacy functions
 ================
 
 The functions below are not recommended for use in new scripts;
@@ -312,7 +334,6 @@ Constrained multivariate methods:
    fmin_tnc - Truncated Newton code.
    fmin_cobyla - Constrained optimization by linear approximation.
    fmin_slsqp - Minimization using sequential least-squares programming.
-   differential_evolution - stochastic minimization using differential evolution.
 
 Univariate (scalar) minimization methods:
 
@@ -323,7 +344,7 @@ Univariate (scalar) minimization methods:
    brent - 1-D function minimization using Brent method.
    golden - 1-D function minimization using Golden Section method.
 
-Least-Squares
+Least-squares
 -------------
 
 .. autosummary::
@@ -331,7 +352,7 @@ Least-Squares
 
    leastsq - Minimize the sum of squares of M equations in N unknowns.
 
-Root Finding
+Root finding
 ------------
 
 General nonlinear solvers:
@@ -339,7 +360,7 @@ General nonlinear solvers:
 .. autosummary::
    :toctree: generated/
 
-   fsolve - Non-linear multi-variable equation solver.
+   fsolve - Non-linear multivariable equation solver.
    broyden1 - Broyden's first method.
    broyden2 - Broyden's second method.
 
@@ -363,11 +384,10 @@ Simple iteration solvers:
 :mod:`Additional information on the nonlinear solvers <scipy.optimize.nonlin>`
 """
 
-from __future__ import division, print_function, absolute_import
-
 from .optimize import *
 from ._minimize import *
 from ._root import *
+from ._root_scalar import *
 from .minpack import *
 from .zeros import *
 from .lbfgsb import fmin_l_bfgs_b, LbfgsInvHessProduct
@@ -375,16 +395,18 @@ from .tnc import fmin_tnc
 from .cobyla import fmin_cobyla
 from .nonlin import *
 from .slsqp import fmin_slsqp
-from .nnls import nnls
+from ._nnls import nnls
 from ._basinhopping import basinhopping
 from ._linprog import linprog, linprog_verbose_callback
-from ._hungarian import linear_sum_assignment
+from ._lsap import linear_sum_assignment
 from ._differentialevolution import differential_evolution
 from ._lsq import least_squares, lsq_linear
 from ._constraints import (NonlinearConstraint,
                            LinearConstraint,
                            Bounds)
 from ._hessian_update_strategy import HessianUpdateStrategy, BFGS, SR1
+from ._shgo import shgo
+from ._dual_annealing import dual_annealing
 
 __all__ = [s for s in dir() if not s.startswith('_')]
 

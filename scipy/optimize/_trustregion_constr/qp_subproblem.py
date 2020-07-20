@@ -1,6 +1,5 @@
 """Equality-constrained quadratic programming solvers."""
 
-from __future__ import division, print_function, absolute_import
 from scipy.sparse import (linalg, bmat, csc_matrix)
 from math import copysign
 import numpy as np
@@ -21,7 +20,7 @@ __all__ = [
 def eqp_kktfact(H, c, A, b):
     """Solve equality-constrained quadratic programming (EQP) problem.
 
-    Solve ``min 1/2 x.T H x + x.t c``  subject to ``A x + b = 0``
+    Solve ``min 1/2 x.T H x + x.t c`` subject to ``A x + b = 0``
     using direct factorization of the KKT system.
 
     Parameters
@@ -80,9 +79,9 @@ def sphere_intersections(z, d, trust_radius,
     trust_radius : float
         Ball radius.
     entire_line : bool, optional
-        When ``True`` the function returns the intersection between the line
+        When ``True``, the function returns the intersection between the line
         ``x(t) = z + t*d`` (``t`` can assume any value) and the ball
-        ``||x|| <= trust_radius``. When ``False`` returns the intersection
+        ``||x|| <= trust_radius``. When ``False``, the function returns the intersection
         between the segment ``x(t) = z + t*d``, ``0 <= t <= 1``, and the ball.
 
     Returns
@@ -91,7 +90,7 @@ def sphere_intersections(z, d, trust_radius,
         The line/segment ``x(t) = z + t*d`` is inside the ball for
         for ``ta <= t <= tb``.
     intersect : bool
-        When ``True`` there is a intersection between the line/segment
+        When ``True``, there is a intersection between the line/segment
         and the sphere. On the other hand, when ``False``, there is no
         intersection.
     """
@@ -170,9 +169,9 @@ def box_intersections(z, d, lb, ub,
         Upper bounds to each one of the components of ``x``. Used
         to delimit the rectangular box.
     entire_line : bool, optional
-        When ``True`` the function returns the intersection between the line
+        When ``True``, the function returns the intersection between the line
         ``x(t) = z + t*d`` (``t`` can assume any value) and the rectangular
-        box. When ``False`` returns the intersection between the segment
+        box. When ``False``, the function returns the intersection between the segment
         ``x(t) = z + t*d``, ``0 <= t <= 1``, and the rectangular box.
 
     Returns
@@ -181,7 +180,7 @@ def box_intersections(z, d, lb, ub,
         The line/segment ``x(t) = z + t*d`` is inside the box for
         for ``ta <= t <= tb``.
     intersect : bool
-        When ``True`` there is a intersection between the line (or segment)
+        When ``True``, there is a intersection between the line (or segment)
         and the rectangular box. On the other hand, when ``False``, there is no
         intersection.
     """
@@ -240,7 +239,7 @@ def box_sphere_intersections(z, d, lb, ub, trust_radius,
     """Find the intersection between segment (or line) and box/sphere constraints.
 
     Find the intersection between the segment (or line) defined by the
-    parametric  equation ``x(t) = z + t*d``,  the rectangular box
+    parametric  equation ``x(t) = z + t*d``, the rectangular box
     ``lb <= x <= ub`` and the ball ``||x|| <= trust_radius``.
 
     Parameters
@@ -258,12 +257,12 @@ def box_sphere_intersections(z, d, lb, ub, trust_radius,
     trust_radius : float
         Ball radius.
     entire_line : bool, optional
-        When ``True`` the function returns the intersection between the line
+        When ``True``, the function returns the intersection between the line
         ``x(t) = z + t*d`` (``t`` can assume any value) and the constraints.
-        When ``False`` returns the intersection between the segment
+        When ``False``, the function returns the intersection between the segment
         ``x(t) = z + t*d``, ``0 <= t <= 1`` and the constraints.
     extra_info : bool, optional
-        When ``True`` returns ``intersect_sphere`` and ``intersect_box``.
+        When ``True``, the function returns ``intersect_sphere`` and ``intersect_box``.
 
     Returns
     -------
@@ -271,16 +270,16 @@ def box_sphere_intersections(z, d, lb, ub, trust_radius,
         The line/segment ``x(t) = z + t*d`` is inside the rectangular box and
         inside the ball for for ``ta <= t <= tb``.
     intersect : bool
-        When ``True`` there is a intersection between the line (or segment)
+        When ``True``, there is a intersection between the line (or segment)
         and both constraints. On the other hand, when ``False``, there is no
         intersection.
     sphere_info : dict, optional
         Dictionary ``{ta, tb, intersect}`` containing the interval ``[ta, tb]``
-        for which the line intercept the ball. And a boolean value indicating
+        for which the line intercepts the ball. And a boolean value indicating
         whether the sphere is intersected by the line.
     box_info : dict, optional
         Dictionary ``{ta, tb, intersect}`` containing the interval ``[ta, tb]``
-        for which the line intercept the box. And a boolean value indicating
+        for which the line intercepts the box. And a boolean value indicating
         whether the box is intersected by the line.
     """
     ta_b, tb_b, intersect_b = box_intersections(z, d, lb, ub,
@@ -327,7 +326,7 @@ def modified_dogleg(A, Y, b, trust_radius, lb, ub):
         dimension ``(m, n)`` such that ``m < n``.
     Y : LinearOperator (or sparse matrix or ndarray), shape (n, m)
         LinearOperator that apply the projection matrix
-        ``Q = A.T inv(A A.T)`` to the vector.  The obtained vector
+        ``Q = A.T inv(A A.T)`` to the vector. The obtained vector
         ``y = Q x`` being the minimum norm solution of ``A y = x``.
     b : array_like, shape (m,)
         Vector ``b``in the minimization problem.
@@ -337,12 +336,12 @@ def modified_dogleg(A, Y, b, trust_radius, lb, ub):
     lb : array_like, shape (n,)
         Lower bounds to each one of the components of ``x``.
         It is expected that ``lb <= 0``, otherwise the algorithm
-        may fail. If ``lb[i] = -Inf`` the lower
-        bound for the i-th component is just ignored.
+        may fail. If ``lb[i] = -Inf``, the lower
+        bound for the ith component is just ignored.
     ub : array_like, shape (n, )
         Upper bounds to each one of the components of ``x``.
         It is expected that ``ub >= 0``, otherwise the algorithm
-        may fail. If ``ub[i] = Inf`` the upper bound for the i-th
+        may fail. If ``ub[i] = Inf``, the upper bound for the ith
         component is just ignored.
 
     Returns
@@ -352,7 +351,7 @@ def modified_dogleg(A, Y, b, trust_radius, lb, ub):
 
     Notes
     -----
-    Based on implementations described in p.p. 885-886 from [1]_.
+    Based on implementations described in pp. 885-886 from [1]_.
 
     References
     ----------
@@ -370,7 +369,7 @@ def modified_dogleg(A, Y, b, trust_radius, lb, ub):
 
     # Compute gradient vector ``g = A.T b``
     g = A.T.dot(b)
-    # Compute cauchy point
+    # Compute Cauchy point
     # `cauchy_point = g.T g / (g.T A.T A g)``.
     A_g = A.dot(g)
     cauchy_point = -np.dot(g, g) / np.dot(A_g, A_g) * g
@@ -434,7 +433,7 @@ def projected_cg(H, c, Z, Y, b, trust_radius=np.inf,
     b : array_like, shape (m,)
         Right-hand side of the constraint equation.
     trust_radius : float, optional
-        Trust radius to be considered. By default uses ``trust_radius=inf``,
+        Trust radius to be considered. By default, uses ``trust_radius=inf``,
         which means no trust radius at all.
     lb : array_like, shape (n,), optional
         Lower bounds to each one of the components of ``x``.
@@ -448,13 +447,13 @@ def projected_cg(H, c, Z, Y, b, trust_radius=np.inf,
         Tolerance used to interrupt the algorithm.
     max_iter : int, optional
         Maximum algorithm iterations. Where ``max_inter <= n-m``.
-        By default uses ``max_iter = n-m``.
+        By default, uses ``max_iter = n-m``.
     max_infeasible_iter : int, optional
         Maximum infeasible (regarding box constraints) iterations the
         algorithm is allowed to take.
-        By default uses ``max_infeasible_iter = n-m``.
+        By default, uses ``max_infeasible_iter = n-m``.
     return_all : bool, optional
-        When ``true`` return the list of all vectors through the iterations.
+        When ``true``, return the list of all vectors through the iterations.
 
     Returns
     -------
@@ -479,7 +478,7 @@ def projected_cg(H, c, Z, Y, b, trust_radius=np.inf,
 
     In the absence of spherical and box constraints, for sufficient
     iterations, the method returns a truly optimal result.
-    In the presence of those constraints the value returned is only
+    In the presence of those constraints, the value returned is only
     a inexpensive approximation of the optimal value.
 
     References
@@ -553,9 +552,8 @@ def projected_cg(H, c, Z, Y, b, trust_radius=np.inf,
         # Stop criteria - Negative curvature
         if pt_H_p <= 0:
             if np.isinf(trust_radius):
-                    raise ValueError("Negative curvature not "
-                                     "allowed for unrestrited "
-                                     "problems.")
+                raise ValueError("Negative curvature not allowed "
+                                 "for unrestricted problems.")
             else:
                 # Find intersection with constraints
                 _, alpha, intersect = box_sphere_intersections(

@@ -1,7 +1,5 @@
 # This script is used to parse BOOST special function test data into something
 # we can easily import in numpy. It is ugly as hell, but it works.
-from __future__ import division, print_function, absolute_import
-
 import re
 import os
 
@@ -104,7 +102,7 @@ DATA_FILES = [
     #'test_bessel_j.cpp',
     #'test_bessel_k.cpp',
     #'test_bessel_y.cpp',
-    # Those 3 files use arithmetic operations whithin the data, so we can't parse
+    # Those 3 files use arithmetic operations within the data, so we can't parse
     # them naively
     #'test_ellint_1.cpp',
     #'test_ellint_2.cpp',

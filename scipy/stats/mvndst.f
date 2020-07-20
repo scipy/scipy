@@ -87,6 +87,73 @@
       
       END 
 
+
+      SUBROUTINE mvnun_weighted(d, n, lower, upper, means, weights,
+     &                          covar, maxpts, abseps, releps, 
+     &                           value, inform)
+*  Parameters
+*
+*   d       integer, dimensionality of the data
+*   n       integer, the number of data points
+*   lower   double(2), the lower integration limits
+*   upper   double(2), the upper integration limits
+*   means   double(n), the mean of each kernel
+*   weights double(n), the weight of each kernel
+*   covar   double(2,2), the covariance matrix
+*   maxpts  integer, the maximum number of points to evaluate at
+*   abseps  double, absolute error tolerance
+*   releps  double, relative error tolerance
+*   value   double intent(out), integral value
+*   inform  integer intent(out), 
+*               if inform == 0: error < eps
+*               elif inform == 1: error > eps, all maxpts used
+      integer n, d, infin(d), maxpts, inform, tmpinf
+      double precision lower(d), upper(d), releps, abseps,
+     &                 error, value, stdev(d), rho(d*(d-1)/2), 
+     &                 covar(d,d),
+     &                 nlower(d), nupper(d), means(d,n), tmpval,
+     &                 inf, weights(n)
+      integer i, j
+
+      inf = 0d0
+      inf = 1d0 / inf
+
+      do i=1,d
+        stdev(i) = dsqrt(covar(i,i))
+        if (upper(i).eq.inf.and.lower(i).eq.-inf) then
+           infin(i) = -1
+        else if (lower(i).eq.-inf) then
+           infin(i) = 0
+        else if (upper(i).eq.inf) then
+           infin(i) = 1
+        else
+           infin(i) = 2
+        end if
+      end do
+      do i=1,d
+        do j=1,i-1
+          rho(j+(i-2)*(i-1)/2) = covar(i,j)/stdev(i)/stdev(j)
+        end do
+      end do
+      value = 0d0
+
+      inform = 0
+
+      do i=1,n
+        do j=1,d
+          nlower(j) = (lower(j) - means(j,i))/stdev(j)
+          nupper(j) = (upper(j) - means(j,i))/stdev(j)
+        end do
+        call mvndst(d,nlower,nupper,infin,rho,maxpts,abseps,releps,
+     &              error,tmpval,tmpinf)
+        value = value + tmpval * weights(i)
+        if (tmpinf .eq. 1) then
+            inform = 1
+        end if
+      end do
+      
+      END 
+
       SUBROUTINE MVNDST( N, LOWER, UPPER, INFIN, CORREL, MAXPTS,
      &                   ABSEPS, RELEPS, ERROR, VALUE, INFORM )
 *

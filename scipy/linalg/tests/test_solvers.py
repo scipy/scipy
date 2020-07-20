@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 import os
 import numpy as np
 
@@ -11,6 +9,7 @@ from scipy.linalg import solve_sylvester
 from scipy.linalg import solve_continuous_lyapunov, solve_discrete_lyapunov
 from scipy.linalg import solve_continuous_are, solve_discrete_are
 from scipy.linalg import block_diag, solve, LinAlgError
+from scipy.sparse.sputils import matrix
 
 
 def _load_data(name):
@@ -79,11 +78,11 @@ class TestSolveLyapunov(object):
                     0.000+0.j]]),
          np.eye(11)),
         # https://github.com/scipy/scipy/issues/4176
-        (np.matrix([[0, 1], [-1/2, -1]]),
-         (np.matrix([0, 3]).T * np.matrix([0, 3]).T.T)),
+        (matrix([[0, 1], [-1/2, -1]]),
+         (matrix([0, 3]).T @ matrix([0, 3]).T.T)),
         # https://github.com/scipy/scipy/issues/4176
-        (np.matrix([[0, 1], [-1/2, -1]]),
-         (np.array(np.matrix([0, 3]).T * np.matrix([0, 3]).T.T))),
+        (matrix([[0, 1], [-1/2, -1]]),
+         (np.array(matrix([0, 3]).T @ matrix([0, 3]).T.T))),
         ]
 
     def test_continuous_squareness_and_shape(self):
@@ -509,7 +508,7 @@ def test_solve_discrete_are():
     #
     # If the test is failing use "None" for that entry.
     #
-    min_decimal = (12, 14, 13, 14, 13, 16, 18, 14, 15, 13,
+    min_decimal = (12, 14, 13, 14, 13, 16, 18, 14, 14, 13,
                    14, 13, 13, 14, 12, 2, 5, 6, 10)
 
     def _test_factory(case, dec):
@@ -532,7 +531,7 @@ def test_solve_discrete_are():
     A = np.triu(np.ones((3, 3)))
     A[0, 1] = -1
     B = np.array([[1, 1, 0], [0, 0, 1]]).T
-    Q = -2*np.ones_like(A) + np.diag([8, -1, -1.9])
+    Q = np.full_like(A, -2) + np.diag([8, -1, -1.9])
     R = np.diag([-10, 0.1])
     assert_raises(LinAlgError, solve_continuous_are, A, B, Q, R)
 
@@ -684,7 +683,7 @@ def test_are_validate_args():
             assert_raises(ValueError, x, sym, sym, sym, nsym)
 
     def test_singularity():
-        sing = 1e12 * np.ones((3, 3))
+        sing = np.full((3, 3), 1e12)
         sing[2, 2] -= 1
         sq = np.eye(3)
         for x in (solve_continuous_are, solve_discrete_are):
@@ -693,7 +692,7 @@ def test_are_validate_args():
         assert_raises(ValueError, solve_continuous_are, sq, sq, sq, sing)
 
     def test_finiteness():
-        nm = np.ones((2, 2)) * np.nan
+        nm = np.full((2, 2), np.nan)
         sq = np.eye(2)
         for x in (solve_continuous_are, solve_discrete_are):
             assert_raises(ValueError, x, nm, sq, sq, sq)

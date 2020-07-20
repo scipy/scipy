@@ -2,14 +2,11 @@
 Author: Ondrej Certik
 May 2007
 """
-from __future__ import division, print_function, absolute_import
-
 from numpy.testing import assert_
 import pytest
 
-from scipy._lib.six import xrange
 from scipy.optimize import nonlin, root
-from numpy import matrix, diag, dot
+from numpy import diag, dot
 from numpy.linalg import inv
 import numpy as np
 
@@ -28,10 +25,10 @@ MUST_WORK = {'anderson': nonlin.anderson, 'broyden1': nonlin.broyden1,
 
 
 def F(x):
-    x = np.asmatrix(x).T
-    d = matrix(diag([3,2,1.5,1,0.5]))
+    x = np.asarray(x).T
+    d = diag([3,2,1.5,1,0.5])
     c = 0.01
-    f = -d*x - c*float(x.T*x)*x
+    f = -d @ x - c * float(x.T @ x) * x
     return f
 
 
@@ -57,9 +54,9 @@ F2_lucky.KNOWN_BAD = {}
 
 
 def F3(x):
-    A = np.mat('-2 1 0; 1 -2 1; 0 1 -2')
-    b = np.mat('1 2 3')
-    return np.dot(A, x) - b
+    A = np.array([[-2, 1, 0.], [1, -2, 1], [0, 1, -2]])
+    b = np.array([1, 2, 3.])
+    return A @ x - b
 
 
 F3.xin = [1,2,3]
@@ -183,7 +180,7 @@ class TestSecant(object):
         for j, (x, f) in enumerate(zip(self.xs[1:], self.fs[1:])):
             jac.update(x, f)
 
-            for k in xrange(min(npoints, j+1)):
+            for k in range(min(npoints, j+1)):
                 dx = self.xs[j-k+1] - self.xs[j-k]
                 df = self.fs[j-k+1] - self.fs[j-k]
                 assert_(np.allclose(dx, jac.solve(df)))
@@ -309,7 +306,7 @@ class TestJacobianDotSolve(object):
         jac.setup(x0, self._func(x0), self._func)
 
         # check consistency
-        for k in xrange(2*N):
+        for k in range(2*N):
             v = rand(N)
 
             if hasattr(jac, '__array__'):

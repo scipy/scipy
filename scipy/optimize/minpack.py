@@ -1,19 +1,17 @@
-from __future__ import division, print_function, absolute_import
-
-import threading
 import warnings
 from . import _minpack
 
 import numpy as np
 from numpy import (atleast_1d, dot, take, triu, shape, eye,
-                   transpose, zeros, product, greater, array,
-                   all, where, isscalar, asarray, inf, abs,
+                   transpose, zeros, prod, greater,
+                   asarray, inf,
                    finfo, inexact, issubdtype, dtype)
-from scipy.linalg import svd, cholesky, solve_triangular, LinAlgError
+from scipy.linalg import svd, cholesky, solve_triangular, LinAlgError, inv
 from scipy._lib._util import _asarray_validated, _lazywhere
+from scipy._lib._util import getfullargspec_no_self as _getfullargspec
 from .optimize import OptimizeResult, _check_unknown_options, OptimizeWarning
 from ._lsq import least_squares
-from ._lsq.common import make_strictly_feasible
+# from ._lsq.common import make_strictly_feasible
 from ._lsq.least_squares import prepare_bounds
 
 error = _minpack.error
@@ -90,7 +88,7 @@ def fsolve(func, x0, args=(), fprime=None, full_output=0,
         the machine precision.
     factor : float, optional
         A parameter determining the initial step bound
-        (``factor * || diag * x||``).  Should be in the interval
+        (``factor * || diag * x||``). Should be in the interval
         ``(0.1, 100)``.
     diag : sequence, optional
         N positive entries that serve as a scale factors for the
@@ -129,11 +127,26 @@ def fsolve(func, x0, args=(), fprime=None, full_output=0,
     See Also
     --------
     root : Interface to root finding algorithms for multivariate
-    functions. See the 'hybr' `method` in particular.
+           functions. See the ``method=='hybr'`` in particular.
 
     Notes
     -----
     ``fsolve`` is a wrapper around MINPACK's hybrd and hybrj algorithms.
+
+    Examples
+    --------
+    Find a solution to the system of equations:
+    ``x0*cos(x1) = 4,  x1*x0 - x1 = 5``.
+
+    >>> from scipy.optimize import fsolve
+    >>> def func(x):
+    ...     return [x[0] * np.cos(x[1]) - 4,
+    ...             x[1] * x[0] - x[1] - 5]
+    >>> root = fsolve(func, [1, 1])
+    >>> root
+    array([6.50409711, 0.90841421])
+    >>> np.isclose(func(root), [0.0, 0.0])  # func(root) should be almost 0.0.
+    array([ True,  True])
 
     """
     options = {'col_deriv': col_deriv,
@@ -196,7 +209,7 @@ def _root_hybr(func, x0, args=(), jac=None,
         the machine precision.
     factor : float
         A parameter determining the initial step bound
-        (``factor * || diag * x||``).  Should be in the interval
+        (``factor * || diag * x||``). Should be in the interval
         ``(0.1, 100)``.
     diag : sequence
         N positive entries that serve as a scale factors for the
@@ -277,7 +290,7 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0,
     Parameters
     ----------
     func : callable
-        should take at least one (possibly length N vector) argument and
+        Should take at least one (possibly length N vector) argument and
         returns M floating point numbers. It must not return NaNs or
         fitting might fail.
     x0 : ndarray
@@ -300,7 +313,7 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0,
         Orthogonality desired between the function vector and the columns of
         the Jacobian.
     maxfev : int, optional
-        The maximum number of calls to the function. If `Dfun` is provided
+        The maximum number of calls to the function. If `Dfun` is provided,
         then the default `maxfev` is 100*(N+1) where N is the number of elements
         in x0, otherwise the default `maxfev` is 200*(N+1).
     epsfcn : float, optional
@@ -321,14 +334,13 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0,
         The solution (or the result of the last iteration for an unsuccessful
         call).
     cov_x : ndarray
-        Uses the fjac and ipvt optional outputs to construct an
-        estimate of the jacobian around the solution. None if a
-        singular matrix encountered (indicates very flat curvature in
-        some direction).  This matrix must be multiplied by the
-        residual variance to get the covariance of the
-        parameter estimates -- see curve_fit.
+        The inverse of the Hessian. `fjac` and `ipvt` are used to construct an
+        estimate of the Hessian. A value of None indicates a singular matrix,
+        which means the curvature in parameters `x` is numerically flat. To
+        obtain the covariance matrix of the parameters `x`, `cov_x` must be
+        multiplied by the variance of the residuals -- see curve_fit.
     infodict : dict
-        a dictionary of optional outputs with the key s:
+        a dictionary of optional outputs with the keys:
 
         ``nfev``
             The number of function calls
@@ -353,9 +365,14 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0,
     mesg : str
         A string message giving information about the cause of failure.
     ier : int
-        An integer flag.  If it is equal to 1, 2, 3 or 4, the solution was
-        found.  Otherwise, the solution was not found. In either case, the
+        An integer flag. If it is equal to 1, 2, 3 or 4, the solution was
+        found. Otherwise, the solution was not found. In either case, the
         optional output variable 'mesg' gives more information.
+
+    See Also
+    --------
+    least_squares : Newer interface to solve nonlinear least-squares problems
+        with bounds on the variables. See ``method=='lm'`` in particular.
 
     Notes
     -----
@@ -374,8 +391,17 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0,
            min   sum((ydata - f(xdata, params))**2, axis=0)
          params
 
-    The solution, `x`, is always a 1D array, regardless of the shape of `x0`,
+    The solution, `x`, is always a 1-D array, regardless of the shape of `x0`,
     or whether `x0` is a scalar.
+
+    Examples
+    --------
+    >>> from scipy.optimize import leastsq
+    >>> def func(x):
+    ...     return 2*(x-3)**2+1
+    >>> leastsq(func, 0)
+    (array([2.99999999]), 1)
+
     """
     x0 = asarray(x0).flatten()
     n = len(x0)
@@ -383,10 +409,13 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0,
         args = (args,)
     shape, dtype = _check_func('leastsq', 'func', func, x0, args, n)
     m = shape[0]
+
     if n > m:
         raise TypeError('Improper input: N=%s must not exceed M=%s' % (n, m))
+
     if epsfcn is None:
         epsfcn = finfo(dtype).eps
+
     if Dfun is None:
         if maxfev == 0:
             maxfev = 200*(n + 1)
@@ -418,7 +447,7 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0,
               5: ["Number of calls to function has reached "
                   "maxfev = %d." % maxfev, ValueError],
               6: ["ftol=%f is too small, no further reduction "
-                  "in the sum of squares\n  is possible.""" % ftol,
+                  "in the sum of squares\n  is possible." % ftol,
                   ValueError],
               7: ["xtol=%f is too small, no further improvement in "
                   "the approximate\n  solution is possible." % xtol,
@@ -433,7 +462,6 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0,
     if full_output:
         cov_x = None
         if info in LEASTSQ_SUCCESS:
-            from numpy.dual import inv
             perm = take(eye(n), retval[1]['ipvt'] - 1, 0)
             r = triu(transpose(retval[1]['fjac'])[:n, :])
             R = dot(r, perm)
@@ -507,49 +535,51 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
     """
     Use non-linear least squares to fit a function, f, to data.
 
-    Assumes ``ydata = f(xdata, *params) + eps``
+    Assumes ``ydata = f(xdata, *params) + eps``.
 
     Parameters
     ----------
     f : callable
-        The model function, f(x, ...).  It must take the independent
+        The model function, f(x, ...). It must take the independent
         variable as the first argument and the parameters to fit as
         separate remaining arguments.
-    xdata : An M-length sequence or an (k,M)-shaped array for functions with k predictors
+    xdata : array_like or object
         The independent variable where the data is measured.
-    ydata : M-length sequence
-        The dependent data --- nominally f(xdata, ...)
-    p0 : None, scalar, or N-length sequence, optional
-        Initial guess for the parameters.  If None, then the initial
-        values will all be 1 (if the number of parameters for the function
-        can be determined using introspection, otherwise a ValueError
-        is raised).
+        Should usually be an M-length sequence or an (k,M)-shaped array for
+        functions with k predictors, but can actually be any object.
+    ydata : array_like
+        The dependent data, a length M array - nominally ``f(xdata, ...)``.
+    p0 : array_like, optional
+        Initial guess for the parameters (length N). If None, then the
+        initial values will all be 1 (if the number of parameters for the
+        function can be determined using introspection, otherwise a
+        ValueError is raised).
     sigma : None or M-length sequence or MxM array, optional
         Determines the uncertainty in `ydata`. If we define residuals as
         ``r = ydata - f(xdata, *popt)``, then the interpretation of `sigma`
         depends on its number of dimensions:
 
-            - A 1-d `sigma` should contain values of standard deviations of
+            - A 1-D `sigma` should contain values of standard deviations of
               errors in `ydata`. In this case, the optimized function is
               ``chisq = sum((r / sigma) ** 2)``.
 
-            - A 2-d `sigma` should contain the covariance matrix of
+            - A 2-D `sigma` should contain the covariance matrix of
               errors in `ydata`. In this case, the optimized function is
               ``chisq = r.T @ inv(sigma) @ r``.
 
               .. versionadded:: 0.19
 
-        None (default) is equivalent of 1-d `sigma` filled with ones.
+        None (default) is equivalent of 1-D `sigma` filled with ones.
     absolute_sigma : bool, optional
         If True, `sigma` is used in an absolute sense and the estimated parameter
         covariance `pcov` reflects these absolute values.
 
-        If False, only the relative magnitudes of the `sigma` values matter.
+        If False (default), only the relative magnitudes of the `sigma` values matter.
         The returned parameter covariance matrix `pcov` is based on scaling
         `sigma` by a constant factor. This constant is set by demanding that the
         reduced `chisq` for the optimal parameters `popt` when using the
         *scaled* `sigma` equals unity. In other words, `sigma` is scaled to
-        match the sample variance of the residuals after the fit.
+        match the sample variance of the residuals after the fit. Default is False.
         Mathematically,
         ``pcov(absolute_sigma=False) = pcov(absolute_sigma=True) * chisq(popt)/(M-N)``
     check_finite : bool, optional
@@ -561,12 +591,12 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         Lower and upper bounds on parameters. Defaults to no bounds.
         Each element of the tuple must be either an array with the length equal
         to the number of parameters, or a scalar (in which case the bound is
-        taken to be the same for all parameters.) Use ``np.inf`` with an
+        taken to be the same for all parameters). Use ``np.inf`` with an
         appropriate sign to disable bounds on all or some parameters.
 
         .. versionadded:: 0.17
     method : {'lm', 'trf', 'dogbox'}, optional
-        Method to use for optimization.  See `least_squares` for more details.
+        Method to use for optimization. See `least_squares` for more details.
         Default is 'lm' for unconstrained problems and 'trf' if `bounds` are
         provided. The method 'lm' won't work when the number of observations
         is less than the number of variables, use 'trf' or 'dogbox' in this
@@ -590,8 +620,8 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
     -------
     popt : array
         Optimal values for the parameters so that the sum of the squared
-        residuals of ``f(xdata, *popt) - ydata`` is minimized
-    pcov : 2d array
+        residuals of ``f(xdata, *popt) - ydata`` is minimized.
+    pcov : 2-D array
         The estimated covariance of popt. The diagonals provide the variance
         of the parameter estimate. To compute one standard deviation errors
         on the parameters use ``perr = np.sqrt(np.diag(pcov))``.
@@ -633,7 +663,6 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
 
     Examples
     --------
-    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> from scipy.optimize import curve_fit
 
@@ -674,8 +703,8 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
     """
     if p0 is None:
         # determine number of parameters by inspecting the function
-        from scipy._lib._util import getargspec_no_self as _getargspec
-        args, varargs, varkw, defaults = _getargspec(f)
+        sig = _getfullargspec(f)
+        args = sig.args
         if len(args) < 2:
             raise ValueError("Unable to determine number of fit parameters.")
         n = len(args) - 1
@@ -698,35 +727,40 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         raise ValueError("Method 'lm' only works for unconstrained problems. "
                          "Use 'trf' or 'dogbox' instead.")
 
-    # NaNs can not be handled
+    # optimization may produce garbage for float32 inputs, cast them to float64
+
+    # NaNs cannot be handled
     if check_finite:
-        ydata = np.asarray_chkfinite(ydata)
+        ydata = np.asarray_chkfinite(ydata, float)
     else:
-        ydata = np.asarray(ydata)
+        ydata = np.asarray(ydata, float)
 
     if isinstance(xdata, (list, tuple, np.ndarray)):
         # `xdata` is passed straight to the user-defined `f`, so allow
         # non-array_like `xdata`.
         if check_finite:
-            xdata = np.asarray_chkfinite(xdata)
+            xdata = np.asarray_chkfinite(xdata, float)
         else:
-            xdata = np.asarray(xdata)
+            xdata = np.asarray(xdata, float)
+
+    if ydata.size == 0:
+        raise ValueError("`ydata` must not be empty!")
 
     # Determine type of sigma
     if sigma is not None:
         sigma = np.asarray(sigma)
 
-        # if 1-d, sigma are errors, define transform = 1/sigma
+        # if 1-D, sigma are errors, define transform = 1/sigma
         if sigma.shape == (ydata.size, ):
             transform = 1.0 / sigma
-        # if 2-d, sigma is the covariance matrix,
+        # if 2-D, sigma is the covariance matrix,
         # define transform = L such that L L^T = C
         elif sigma.shape == (ydata.size, ydata.size):
             try:
                 # scipy.linalg.cholesky requires lower=True to return L L^T = A
                 transform = cholesky(sigma, lower=True)
-            except LinAlgError:
-                raise ValueError("`sigma` must be positive definite.")
+            except LinAlgError as e:
+                raise ValueError("`sigma` must be positive definite.") from e
         else:
             raise ValueError("`sigma` has incorrect shape.")
     else:
@@ -738,11 +772,18 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
     elif jac is None and method != 'lm':
         jac = '2-point'
 
+    if 'args' in kwargs:
+        # The specification for the model function `f` does not support
+        # additional arguments. Refer to the `curve_fit` docstring for
+        # acceptable call signatures of `f`.
+        raise ValueError("'args' is not a supported keyword argument.")
+
     if method == 'lm':
         # Remove full_output from kwargs, otherwise we're passing it in twice.
         return_full = kwargs.pop('full_output', False)
         res = leastsq(func, p0, Dfun=jac, full_output=1, **kwargs)
         popt, pcov, infodict, errmsg, ier = res
+        ysize = len(infodict['fvec'])
         cost = np.sum(infodict['fvec'] ** 2)
         if ier not in [1, 2, 3, 4]:
             raise RuntimeError("Optimal parameters not found: " + errmsg)
@@ -757,6 +798,7 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         if not res.success:
             raise RuntimeError("Optimal parameters not found: " + res.message)
 
+        ysize = len(res.fun)
         cost = 2 * res.cost  # res.cost is half sum of squares!
         popt = res.x
 
@@ -775,8 +817,8 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         pcov.fill(inf)
         warn_cov = True
     elif not absolute_sigma:
-        if ydata.size > p0.size:
-            s_sq = cost / (ydata.size - p0.size)
+        if ysize > p0.size:
+            s_sq = cost / (ysize - p0.size)
             pcov = pcov * s_sq
         else:
             pcov.fill(inf)
@@ -818,7 +860,7 @@ def check_gradient(fcn, Dfcn, x0, args=(), col_deriv=0):
     fvecp = fvecp.reshape((m,))
     _minpack._chkder(m, n, x, fvec, fjac, ldfjac, xp, fvecp, 2, err)
 
-    good = (product(greater(err, 0.5), axis=0))
+    good = (prod(greater(err, 0.5), axis=0))
 
     return (good, err)
 
@@ -854,7 +896,7 @@ def fixed_point(func, x0, args=(), xtol=1e-8, maxiter=500, method='del2'):
     Find a fixed point of the function.
 
     Given a function of one or more variables and a starting point, find a
-    fixed-point of the function: i.e. where ``func(x0) == x0``.
+    fixed point of the function: i.e., where ``func(x0) == x0``.
 
     Parameters
     ----------
@@ -869,7 +911,7 @@ def fixed_point(func, x0, args=(), xtol=1e-8, maxiter=500, method='del2'):
     maxiter : int, optional
         Maximum number of iterations, defaults to 500.
     method : {"del2", "iteration"}, optional
-        Method of finding the fixed-point, defaults to "del2"
+        Method of finding the fixed-point, defaults to "del2",
         which uses Steffensen's Method with Aitken's ``Del^2``
         convergence acceleration [1]_. The "iteration" method simply iterates
         the function until convergence is detected, without attempting to

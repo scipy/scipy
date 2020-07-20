@@ -3,19 +3,19 @@
 
 #include "Python.h"
 #define NO_IMPORT_ARRAY
-#include "numpy/noprefix.h"
+#include "numpy/ndarrayobject.h"
 
 
 /* defined below */
-void f_medfilt2(float*,float*,intp*,intp*);
-void d_medfilt2(double*,double*,intp*,intp*);
-void b_medfilt2(unsigned char*,unsigned char*,intp*,intp*);
+void f_medfilt2(float*,float*,npy_intp*,npy_intp*);
+void d_medfilt2(double*,double*,npy_intp*,npy_intp*);
+void b_medfilt2(unsigned char*,unsigned char*,npy_intp*,npy_intp*);
 extern char *check_malloc (int);
 
 
 /* The QUICK_SELECT routine is based on Hoare's Quickselect algorithm,
- * with unrolled recursion. 
- * Author: Thouis R. Jones, 2008 
+ * with unrolled recursion.
+ * Author: Thouis R. Jones, 2008
  */
 
 #define ELEM_SWAP(t, a, x, y) {register t temp = (a)[x]; (a)[x] = (a)[y]; (a)[y] = temp;}
@@ -54,7 +54,7 @@ TYPE NAME(TYPE arr[], int n)                                            \
         for (ll = lo+1, hh = hi;; ll++, hh--) {                         \
 	    while (arr[ll] < piv) ll++;					\
 	    while (arr[hh] > piv) hh--;					\
-	    if (hh < ll) break;						\
+	    if (hh <= ll) break;					\
 	    ELEM_SWAP(TYPE, arr, ll, hh);				\
         }                                                               \
         /* move pivot to top of lower partition */                      \
@@ -72,7 +72,7 @@ TYPE NAME(TYPE arr[], int n)                                            \
 
 /* 2-D median filter with zero-padding on edges. */
 #define MEDIAN_FILTER_2D(NAME, TYPE, SELECT)                            \
-void NAME(TYPE* in, TYPE* out, intp* Nwin, intp* Ns)                    \
+void NAME(TYPE* in, TYPE* out, npy_intp* Nwin, npy_intp* Ns)                    \
 {                                                                       \
     int nx, ny, hN[2];                                                  \
     int pre_x, pre_y, pos_x, pos_y;                                     \

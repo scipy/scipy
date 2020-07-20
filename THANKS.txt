@@ -13,7 +13,8 @@ Please add names as needed so that we can keep up with all the contributors.
 
 Kumar Appaiah for Dolph Chebyshev window.
 Nathan Bell for sparsetools, help with scipy.sparse and scipy.splinalg.
-Robert Cimrman for UMFpack wrapper for sparse matrix module.
+Robert Cimrman for UMFpack wrapper for sparse matrix module, and implementing
+    the LOBPCG algorithm.
 David M. Cooke for improvements to system_info, and LBFGSB wrapper.
 Aric Hagberg for ARPACK wrappers, help with splinalg.eigen.
 Chuck Harris for Zeros package in optimize (1d root-finding algorithms).
@@ -80,7 +81,7 @@ Martin Teichmann for improving scipy.special.ellipk & agm accuracy,
     and for linalg.qr_multiply.
 Jeff Armstrong for discrete state-space and linear time-invariant functionality
     in scipy.signal, and sylvester/riccati/lyapunov solvers in scipy.linalg.
-Mark Wiebe for fixing type casting after changes in Numpy.
+Mark Wiebe for fixing type casting after changes in NumPy.
 Andrey Smirnov for improvements to FIR filter design.
 Anthony Scopatz for help with code review and merging.
 Lars Buitinck for improvements to scipy.sparse and various other modules.
@@ -164,8 +165,8 @@ Surhud More for enhancing scipy.optimize.curve_fit to accept covariant errors
 on data.
 Antonio H. Ribeiro for implementing iirnotch, iirpeak functions and
     trust-exact and trust-constr optimization methods.
-Matt Haberland for the interior point linear programming method and
-    SciPy development videos.
+Matt Haberland for improvements to scipy.optimize, scipy.linalg.lapack, and
+    developer documentation.
 Ilhan Polat for bug fixes on Riccati solvers.
 Sebastiano Vigna for code in the stats package related to Kendall's tau.
 John Draper for bug fixes.
@@ -197,6 +198,49 @@ Roy Zywina for contributions to scipy.fftpack.
 Christian H. Meyer for bug fixes in subspace_angles.
 Kai Striega for improvements to the scipy.optimize.linprog simplex method.
 Josua Sassen for improvements to scipy.interpolate.Rbf
+Stiaan Gerber for a bug fix in scipy.optimize.
+Nicolas Hug for the Yeo-Johnson transformation.
+Idan David for improvements to the log survival function and log cumulative
+     distribution function of the hypergeometric distribution.
+Petar Mlinarić for a bug fix in scipy.io.mmio.
+Franz Forstmayr for documentation in scipy.signal
+Vega Theil Carstensen for a bug fix in scipy.optimize.linesearch.
+Jordi Montes for initial contribution of the Clarkson-Woodruff sketch.
+William Conner DiPaolo for improvements to the Clarkson-Woodruff transform.
+Forrest Collman for adding multi-target dijsktra to scipy.sparse.csgraph
+Carlos Ramos Carreño for adding support for relational attributes in loadarff.
+Jason M. Manley for documentation fixes.
+Aidan Dang for block QR wrappers in scipy.linalg.lapack.
+Clement Ng for modifying tests in scipy.stats.
+Fletcher H. Easton for a bug fix in scipy.linalg.interpolative.
+Christian Brueffer for improvements to code readability/style and documentation.
+Sambit Panda for integration of multiscale_graphcorr into scipy.stats.
+Timothy C. Willard for contributions to x-value requirements in scipy.interpolate.
+Andrew Knyazev, the original author of LOBPCG, for advice on and maintenance of
+   sparse.linalg.lobpcg
+Angeline G. Burrell for implementing nan_policy in the circular statistics
+Michael Marien for contributing to scipy.stats.entropy
+Joseph Weston for a bug fix in scipy.optimize.zeros.
+Peyton Murray for a bug fix in scipy.optimize.curve_fit.
+Leo P. Singer for bug fixes in scipy.optimize and scipy.interpolate and
+   contribution of the beta-binomial distribution to scipy.stats.
+Domen Gorjup and Janko Slavič for continuous wavelet transform with complex
+    wavelets fix.
+Søren Fuglede Jørgensen for improvements to scipy.sparse.csgraph
+Grzegorz Mrukwa for a bug fix in rectangular_lsap.cpp
+Milad Sadeghi.DM for adding khatri_rao matrix product to scipy.linalg.matfuncs.py
+Santiago Hernandez for a bug fix in scipy.optimize._differentialevolution.py.
+Dan Kleeman for implementing nan_policy in stats.zscores and winsorize
+James Wright for simple documentation fixes
+Paul van Mulbregt for stats (esp. Kolmogorov-Smirnov) and
+    optimize (toms748 root finder).
+Sam Wallan for scipy.linalg.lapack enhancements
+Richard Weiss for a bug fix in scipy.optimize._differentialevolution.py.
+Luigi F. Cruz for adding time/frequency domain option to scipy.signal.resample.
+Wesley Alves for improvements to scipy.stats.jarque_bera and scipy.stats.shapiro
+Mark Borgerding for contributing linalg.convolution_matrix.
+Shashaank N for contributions to scipy.signal.
+Frank Torres for fixing a bug with solve_bvp for large problems.
 
 Institutions
 ------------

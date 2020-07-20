@@ -35,10 +35,10 @@
 #           library_dirs = /usr/lib,/usr/local/lib
 #
 #   include_dirs
-#       List of directories to add to the header file earch path.
+#       List of directories to add to the header file search path.
 #           include_dirs = /usr/include:/usr/local/include
 #
-#   src_dirs 
+#   src_dirs
 #       List of directories that contain extracted source code for the
 #       dependency. For some dependencies, numpy.distutils will be able to build
 #       them from source if binaries cannot be found. The FORTRAN BLAS and

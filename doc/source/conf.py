@@ -1,14 +1,28 @@
 # -*- coding: utf-8 -*-
-from __future__ import print_function
 import sys, os, re
+import glob
 from datetime import date
+import warnings
+
+import numpy as np
+
+# Currently required to build scipy.fft docs
+os.environ['_SCIPY_BUILDING_DOC'] = 'True'
 
 # Check Sphinx version
 import sphinx
-if sphinx.__version__ < "1.6":
-    raise RuntimeError("Sphinx 1.6 or newer required")
+if sphinx.__version__ < "2.0":
+    raise RuntimeError("Sphinx 2.0 or newer required")
 
-needs_sphinx = '1.6'
+needs_sphinx = '2.0'
+
+# Workaround for sphinx-doc/sphinx#6573
+# ua._Function should not be treated as an attribute
+from sphinx.util import inspect
+import scipy._lib.uarray as ua
+old_isdesc = inspect.isdescriptor
+inspect.isdescriptor = (lambda obj: old_isdesc(obj)
+                        and not isinstance(obj, ua._Function))
 
 # -----------------------------------------------------------------------------
 # General configuration
@@ -20,26 +34,31 @@ needs_sphinx = '1.6'
 sys.path.insert(0, os.path.abspath('../sphinxext'))
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 
-extensions = ['sphinx.ext.autodoc', 'sphinx.ext.mathjax', 'numpydoc',
-              'sphinx.ext.intersphinx', 'sphinx.ext.coverage',
-              'sphinx.ext.autosummary', 'scipyoptdoc', 'doi_role']
+import numpydoc.docscrape as np_docscrape  # noqa:E402
+
+extensions = [
+    'sphinx.ext.autodoc',
+    'sphinx.ext.autosummary',
+    'sphinx.ext.coverage',
+    'sphinx.ext.mathjax',
+    'sphinx.ext.intersphinx',
+    'numpydoc',
+    'scipyoptdoc',
+    'doi_role',
+    'matplotlib.sphinxext.plot_directive',
+]
 
 # Determine if the matplotlib has a recent enough version of the
 # plot_directive.
-try:
-    from matplotlib.sphinxext import plot_directive
-except ImportError:
-    use_matplotlib_plot_directive = False
-else:
-    try:
-        use_matplotlib_plot_directive = (plot_directive.__version__ >= 2)
-    except AttributeError:
-        use_matplotlib_plot_directive = False
-
-if use_matplotlib_plot_directive:
-    extensions.append('matplotlib.sphinxext.plot_directive')
-else:
+from matplotlib.sphinxext import plot_directive
+if plot_directive.__version__ < 2:
     raise RuntimeError("You need a recent enough version of matplotlib")
+# Do some matplotlib config in case users have a matplotlibrc that will break
+# things
+import matplotlib
+matplotlib.use('agg')
+import matplotlib.pyplot as plt
+plt.ioff()
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -60,7 +79,7 @@ import scipy
 version = re.sub(r'\.dev-.*$', r'.dev', scipy.__version__)
 release = scipy.__version__
 
-print("Scipy (VERSION %s)" % (version,))
+print("%s (VERSION %s)" % (project, version))
 
 # There are two options for replacing |today|: either, you set today to some
 # non-false value, then it is used:
@@ -92,6 +111,44 @@ show_authors = False
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = 'sphinx'
 
+# Ensure all our internal links work
+nitpicky = True
+exclude_patterns = [  # glob-style
+
+]
+
+# be strict about warnings in our examples, we should write clean code
+# (exceptions permitted for pedagogical purposes below)
+warnings.resetwarnings()
+warnings.filterwarnings('error')
+# allow these and show them
+warnings.filterwarnings('default', module='sphinx')  # internal warnings
+# global weird ones that can be safely ignored
+for key in (
+        r"'U' mode is deprecated",  # sphinx io
+        r"OpenSSL\.rand is deprecated",  # OpenSSL package in linkcheck
+        r"Using or importing the ABCs from",  # 3.5 importlib._bootstrap
+        ):
+    warnings.filterwarnings(  # deal with other modules having bad imports
+        'ignore', message=".*" + key, category=DeprecationWarning)
+warnings.filterwarnings(  # matplotlib<->pyparsing issue
+    'ignore', message="Exception creating Regex for oneOf.*",
+    category=SyntaxWarning)
+# warnings in examples (mostly) that we allow
+# TODO: eventually these should be eliminated!
+for key in (
+        'invalid escape sequence',  # numpydoc 0.8 has some bad escape chars
+        '\nWARNING. The coefficients',  # interpolate.LSQSphereBivariateSpline
+        'The integral is probably divergent',  # stats.mielke example
+        'underflow encountered in square',  # signal.filtfilt underflow
+        'underflow encountered in multiply',  # scipy.spatial.HalfspaceIntersection
+        'underflow encountered in nextafter',  # tuterial/interpolate.rst
+        # stats.skewnorm, stats.norminvgauss, stats.gaussian_kde,
+        # tutorial/stats.rst (twice):
+        'underflow encountered in exp',
+        ):
+    warnings.filterwarnings(
+        'once', message='.*' + key)
 
 # -----------------------------------------------------------------------------
 # HTML output
@@ -108,7 +165,7 @@ if os.path.isdir(themedir):
             "edit_link": True,
             "sidebar": "right",
             "scipy_org_logo": True,
-            "rootlinks": [("https://scipy.org/", "Scipy.org"),
+            "rootlinks": [("https://scipy.org/", "SciPy.org"),
                           ("https://docs.scipy.org/", "Docs")]
         }
     else:
@@ -130,6 +187,18 @@ else:
         html_style = 'scipy_fallback.css'
         html_logo = '_static/scipyshiny_small.png'
         html_sidebars = {'index': ['indexsidebar.html', 'searchbox.html']}
+
+if 'versionwarning' in tags:
+    # Specific to docs.scipy.org deployment.
+    # See https://github.com/scipy/docs.scipy.org/blob/master/_static/versionwarning.js_t
+    src = ('var script = document.createElement("script");\n'
+           'script.type = "text/javascript";\n'
+           'script.src = "/doc/_static/versionwarning.js";\n'
+           'document.head.appendChild(script);');
+    html_context = {
+        'VERSIONCHECK_JS': src
+    }
+    html_js_files = ['versioncheck.js']
 
 html_title = "%s v%s Reference Guide" % (project, version)
 html_static_path = ['_static']
@@ -157,6 +226,9 @@ latex_documents = [
 #  ('user/index', 'scipy-user.tex', 'SciPy User Guide',
 #   _stdauthor, 'manual'),
 ]
+
+# Not available on many systems:
+latex_use_xindy = False
 
 # The name of an image file (relative to this directory) to place at the top of
 # the title page.
@@ -260,9 +332,10 @@ latex_elements = {
 # Intersphinx configuration
 # -----------------------------------------------------------------------------
 intersphinx_mapping = {
-        'python': ('https://docs.python.org/dev', None),
-        'numpy': ('https://docs.scipy.org/doc/numpy', None),
-        'matplotlib': ('https://matplotlib.org', None),
+    'python': ('https://docs.python.org/dev', None),
+    'numpy': ('https://numpy.org/devdocs', None),
+    'matplotlib': ('https://matplotlib.org', None),
+    'asv': ('https://asv.readthedocs.io/en/stable/', None),
 }
 
 
@@ -275,14 +348,23 @@ phantom_import_file = 'dump.xml'
 
 # Generate plots for example sections
 numpydoc_use_plots = True
+np_docscrape.ClassDoc.extra_public_methods = [  # should match class.rst
+    '__call__', '__mul__', '__getitem__', '__len__',
+]
 
 # -----------------------------------------------------------------------------
 # Autosummary
 # -----------------------------------------------------------------------------
 
-if sphinx.__version__ >= "0.7":
-    import glob
-    autosummary_generate = glob.glob("*.rst")
+autosummary_generate = glob.glob("*.rst")
+
+# -----------------------------------------------------------------------------
+# Autodoc
+# -----------------------------------------------------------------------------
+
+autodoc_default_options = {
+    'inherited-members': None,
+}
 
 # -----------------------------------------------------------------------------
 # Coverage checker
@@ -302,8 +384,9 @@ coverage_ignore_c_items = {}
 
 
 #------------------------------------------------------------------------------
-# Plot
+# Matplotlib plot_directive options
 #------------------------------------------------------------------------------
+
 plot_pre_code = """
 import numpy as np
 np.random.seed(123)
@@ -333,10 +416,6 @@ plot_rcparams = {
     'figure.subplot.wspace': 0.4,
     'text.usetex': False,
 }
-
-if not use_matplotlib_plot_directive:
-    import matplotlib
-    matplotlib.rcParams.update(plot_rcparams)
 
 # -----------------------------------------------------------------------------
 # Source code links
