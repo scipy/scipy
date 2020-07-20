@@ -265,7 +265,7 @@ def check_cmplx_deriv(distfn, arg):
         assert_allclose(deriv(distfn.sf, x, *arg), -pdf, rtol=1e-5)
         assert_allclose(deriv(distfn.logsf, x, *arg), -pdf/sf, rtol=1e-5)
 
-        assert_allclose(deriv(distfn.logpdf, x, *arg), 
+        assert_allclose(deriv(distfn.logpdf, x, *arg),
                         deriv(distfn.pdf, x, *arg) / distfn.pdf(x, *arg),
                         rtol=1e-5)
 
@@ -311,14 +311,10 @@ def check_freezing(distfn, args):
 
 def check_rvs_broadcast(distfunc, distname, allargs, shape, shape_only, otype):
     np.random.seed(123)
-    with suppress_warnings() as sup:
-        # frechet_l and frechet_r are deprecated, so all their
-        # methods generate DeprecationWarnings.
-        sup.filter(category=DeprecationWarning, message=".*frechet_")
-        sample = distfunc.rvs(*allargs)
-        assert_equal(sample.shape, shape, "%s: rvs failed to broadcast" % distname)
-        if not shape_only:
-            rvs = np.vectorize(lambda *allargs: distfunc.rvs(*allargs), otypes=otype)
-            np.random.seed(123)
-            expected = rvs(*allargs)
-            assert_allclose(sample, expected, rtol=1e-15)
+    sample = distfunc.rvs(*allargs)
+    assert_equal(sample.shape, shape, "%s: rvs failed to broadcast" % distname)
+    if not shape_only:
+        rvs = np.vectorize(lambda *allargs: distfunc.rvs(*allargs), otypes=otype)
+        np.random.seed(123)
+        expected = rvs(*allargs)
+        assert_allclose(sample, expected, rtol=1e-15)
