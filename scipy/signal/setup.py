@@ -18,7 +18,7 @@ def configuration(parent_package='', top_path=None):
                          depends=['sigtools.h'],
                          include_dirs=['.'],
                          **numpy_nodepr_api)
-    sigtools._pre_build_hook = set_c_flags_hook
+    # sigtools._pre_build_hook = set_c_flags_hook
 
     config.add_extension(
         '_spectral', sources=['_spectral.c'])
