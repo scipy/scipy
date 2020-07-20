@@ -5793,4 +5793,3 @@ class TestPageL(object):
         assert_raises(Exception, stats.pagel, [[1, 2, 3], [1, 2, np.nan]], ranked=False, match="`data` contains NaNs")
         assert_raises(Exception, stats.pagel, np.random.rand(2, 3), method="ekki", match="`method` must be in")
         assert_raises(Exception, stats.pagel, np.random.rand(2, 3), ranked="ekki", match="`ranked` must be boolean.")
-        assert_raises(Exception, stats.pagel, np.random.rand(2, 3), n_s="ekki", match="`n_s` must be an integer.")
