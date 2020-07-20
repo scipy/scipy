@@ -38,7 +38,7 @@ class binom_gen(rv_discrete):
 
     See Also
     --------
-    hypergeom, binom, nbinom
+    hypergeom, nbinom, nhypergeom
 
     """
     def _rvs(self, n, p, size=None, random_state=None):
@@ -262,7 +262,7 @@ class nbinom_gen(rv_discrete):
 
     See Also
     --------
-    hypergeom, binom, nbinom
+    hypergeom, binom, nhypergeom
 
     """
     def _rvs(self, n, p, size=None, random_state=None):
@@ -436,7 +436,7 @@ class hypergeom_gen(rv_discrete):
 
     See Also
     --------
-    hypergeom, binom, nbinom
+    nhypergeom, binom, nbinom
 
     """
     def _rvs(self, M, n, N, size=None, random_state=None):
