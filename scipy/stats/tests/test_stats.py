@@ -1070,9 +1070,9 @@ def test_kendalltau():
 
     # with only ties in one or both inputs in tau-b or tau-c
     for taux in variants:
-        assert_equal(stats.kendalltau([2,2,2], [2,2,2], variant=taux), (np.nan, np.nan))
-        assert_equal(stats.kendalltau([2,0,2], [2,2,2], variant=taux), (np.nan, np.nan))
-        assert_equal(stats.kendalltau([2,2,2], [2,0,2], variant=taux), (np.nan, np.nan))
+        assert_equal(stats.kendalltau([2, 2, 2], [2, 2, 2], variant=taux), (np.nan, np.nan))
+        assert_equal(stats.kendalltau([2, 0, 2], [2, 2, 2], variant=taux), (np.nan, np.nan))
+        assert_equal(stats.kendalltau([2, 2, 2], [2, 0, 2], variant=taux), (np.nan, np.nan))
 
     # empty arrays provided as input
     assert_equal(stats.kendalltau([], []), (np.nan, np.nan))
@@ -1090,9 +1090,9 @@ def test_kendalltau():
     assert_approx_equal(res[1], expected[1])
 
     # this should result in 1 for taub, but not for others
-    assert_approx_equal(stats.kendalltau([1,1,2], [1,1,2], variant='a')[0], 0.66666666)
-    assert_approx_equal(stats.kendalltau([1,1,2], [1,1,2], variant='b')[0], 1.0)
-    assert_approx_equal(stats.kendalltau([1,1,2], [1,1,2], variant='c')[0], 0.88888888)
+    assert_approx_equal(stats.kendalltau([1, 1, 2], [1, 1, 2], variant='a')[0], 0.66666666)
+    assert_approx_equal(stats.kendalltau([1, 1, 2], [1, 1, 2], variant='b')[0], 1.0)
+    assert_approx_equal(stats.kendalltau([1, 1, 2], [1, 1, 2], variant='c')[0], 0.88888888)
 
     # test nan_policy
     x = np.arange(10.)
