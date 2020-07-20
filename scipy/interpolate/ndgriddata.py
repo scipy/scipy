@@ -66,7 +66,7 @@ class NearestNDInterpolator(NDInterpolatorBase):
     >>> X, Y = np.meshgrid(X, Y)  # 2D grid for interpolation
     >>> interp = NearestNDInterpolator(list(zip(x, y)), z)
     >>> Z = interp(X, Y)
-    >>> plt.pcolormesh(X, Y, Z)
+    >>> plt.pcolormesh(X, Y, Z, shading='auto')
     >>> plt.plot(x, y, "ok", label="input point")
     >>> plt.legend()
     >>> plt.colorbar()

@@ -249,7 +249,7 @@ class LinearNDInterpolator(NDInterpolatorBase):
     >>> X, Y = np.meshgrid(X, Y)  # 2D grid for interpolation
     >>> interp = LinearNDInterpolator(list(zip(x, y)), z)
     >>> Z = interp(X, Y)
-    >>> plt.pcolormesh(X, Y, Z)
+    >>> plt.pcolormesh(X, Y, Z, shading='auto')
     >>> plt.plot(x, y, "ok", label="input point")
     >>> plt.legend()
     >>> plt.colorbar()
@@ -859,7 +859,7 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
     >>> X, Y = np.meshgrid(X, Y)  # 2D grid for interpolation
     >>> interp = CloughTocher2DInterpolator(list(zip(x, y)), z)
     >>> Z = interp(X, Y)
-    >>> plt.pcolormesh(X, Y, Z)
+    >>> plt.pcolormesh(X, Y, Z, shading='auto')
     >>> plt.plot(x, y, "ok", label="input point")
     >>> plt.legend()
     >>> plt.colorbar()
