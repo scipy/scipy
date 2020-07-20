@@ -7141,7 +7141,8 @@ def kruskal(*args, **kwargs):
        The Kruskal-Wallis H statistic, corrected for ties.
     pvalue : float
        The p-value for the test using the assumption that H has a chi
-       square distribution.
+       square distribution. The p-value returned is the survival function of
+       the chi square distribution evaluated at H.
 
     See Also
     --------

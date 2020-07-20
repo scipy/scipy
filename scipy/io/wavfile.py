@@ -8,6 +8,7 @@ Functions
 `write`: Write a NumPy array as a WAV file.
 
 """
+import io
 import sys
 import numpy
 import struct
@@ -419,6 +420,7 @@ def _read_data_chunk(fid, format_tag, channels, bit_depth, is_big_endian,
 
     # Number of bytes per sample (sample container size)
     bytes_per_sample = block_align // channels
+    n_samples = size // bytes_per_sample
     if bit_depth == 8:
         dtype = 'u1'
     else:
@@ -427,12 +429,16 @@ def _read_data_chunk(fid, format_tag, channels, bit_depth, is_big_endian,
         else:
             dtype = f'{fmt}f{bytes_per_sample}'
 
+    start = fid.tell()
     if not mmap:
-        data = numpy.frombuffer(fid.read(size), dtype=dtype)
+        try:
+            data = numpy.fromfile(fid, dtype=dtype, count=n_samples)
+        except io.UnsupportedOperation:  # not a C-like file
+            fid.seek(start, 0)  # just in case it seeked, though it shouldn't
+            data = numpy.frombuffer(fid.read(size), dtype=dtype)
     else:
-        start = fid.tell()
         data = numpy.memmap(fid, dtype=dtype, mode='c', offset=start,
-                            shape=(size//bytes_per_sample,))
+                            shape=(n_samples,))
         fid.seek(start + size)
 
     _handle_pad_byte(fid, size)
@@ -491,7 +497,7 @@ def _handle_pad_byte(fid, size):
 
 def read(filename, mmap=False):
     """
-    Open a WAV file
+    Open a WAV file.
 
     Return the sample rate (in samples/sec) and data from a WAV file.
 
@@ -512,7 +518,9 @@ def read(filename, mmap=False):
     data : numpy array
         Data read from wav file. Data-type is determined from the file;
         see Notes.  Data is 1-D for 1-channel WAV, or 2-D of shape
-        (Nsamples, Nchannels) otherwise.
+        (Nsamples, Nchannels) otherwise. If a file-like input without a
+        C-like file descriptor (e.g., :class:`python:io.BytesIO`) is
+        passed, this will not be writeable.
 
     Notes
     -----

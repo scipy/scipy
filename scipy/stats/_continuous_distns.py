@@ -27,7 +27,7 @@ from ._distn_infrastructure import (get_distribution_names, _kurtosis,
                                     rv_continuous, _skew, valarray,
                                     _get_fixed_fit_value, _check_shape)
 from ._ksstats import kolmogn, kolmognp, kolmogni
-from ._constants import (_XMIN, _EULER, _ZETA3, _XMAX, _LOGXMAX,
+from ._constants import (_XMIN, _EULER, _ZETA3,
                          _SQRT_2_OVER_PI, _LOG_SQRT_2_OVER_PI)
 
 # In numpy 1.12 and above, np.power refuses to raise integers to negative
@@ -1546,9 +1546,9 @@ class expon_gen(rv_continuous):
 expon = expon_gen(a=0.0, name='expon')
 
 
-## Exponentially Modified Normal (exponential distribution
-##  convolved with a Normal).
-## This is called an exponentially modified gaussian on wikipedia
+# Exponentially Modified Normal (exponential distribution
+# convolved with a Normal).
+# This is called an exponentially modified gaussian on wikipedia.
 class exponnorm_gen(rv_continuous):
     r"""An exponentially modified Normal continuous random variable.
 
@@ -1590,19 +1590,12 @@ class exponnorm_gen(rv_continuous):
         return expval + gval
 
     def _pdf(self, x, K):
-        # exponnorm.pdf(x, K) =
-        #     1/(2*K) exp(1/(2 * K**2)) exp(-x / K) * erfc-(x - 1/K) / sqrt(2))
-        invK = 1.0 / K
-        exparg = 0.5 * invK**2 - invK * x
-        # Avoid overflows; setting np.exp(exparg) to the max float works
-        #  all right here
-        expval = _lazywhere(exparg < _LOGXMAX, (exparg,), np.exp, _XMAX)
-        return 0.5 * invK * (expval * sc.erfc(-(x - invK) / np.sqrt(2)))
+        return np.exp(self._logpdf(x, K))
 
     def _logpdf(self, x, K):
         invK = 1.0 / K
-        exparg = 0.5 * invK**2 - invK * x
-        return exparg + np.log(0.5 * invK * sc.erfc(-(x - invK) / np.sqrt(2)))
+        exparg = invK * (0.5 * invK - x)
+        return exparg + _norm_logcdf(x - invK) - np.log(K)
 
     def _cdf(self, x, K):
         invK = 1.0 / K
@@ -2042,7 +2035,7 @@ class weibull_min_gen(rv_continuous):
     """
 
     def _pdf(self, x, c):
-        # frechet_r.pdf(x, c) = c * x**(c-1) * exp(-x**c)
+        # weibull_min.pdf(x, c) = c * x**(c-1) * exp(-x**c)
         return c*pow(x, c-1)*np.exp(-pow(x, c))
 
     def _logpdf(self, x, c):
@@ -2108,7 +2101,7 @@ class weibull_max_gen(rv_continuous):
 
     """
     def _pdf(self, x, c):
-        # frechet_l.pdf(x, c) = c * (-x)**(c-1) * exp(-(-x)**c)
+        # weibull_max.pdf(x, c) = c * (-x)**(c-1) * exp(-(-x)**c)
         return c*pow(-x, c-1)*np.exp(-pow(-x, c))
 
     def _logpdf(self, x, c):
@@ -2139,250 +2132,6 @@ class weibull_max_gen(rv_continuous):
 
 
 weibull_max = weibull_max_gen(b=0.0, name='weibull_max')
-
-# Public methods to be deprecated in frechet_r and frechet_l:
-# ['__call__', 'cdf', 'entropy', 'expect', 'fit', 'fit_loc_scale', 'freeze',
-#  'interval', 'isf', 'logcdf', 'logpdf', 'logsf', 'mean', 'median', 'moment',
-#  'nnlf', 'pdf', 'ppf', 'rvs', 'sf', 'stats', 'std', 'var']
-
-_frechet_r_deprec_msg = """\
-The distribution `frechet_r` is a synonym for `weibull_min`; this historical
-usage is deprecated because of possible confusion with the (quite different)
-Frechet distribution.  To preserve the existing behavior of the program, use
-`scipy.stats.weibull_min`.  For the Frechet distribution (i.e. the Type II
-extreme value distribution), use `scipy.stats.invweibull`."""
-
-
-class frechet_r_gen(weibull_min_gen):
-    """A Frechet right (or Weibull minimum) continuous random variable.
-
-    %(before_notes)s
-
-    See Also
-    --------
-    weibull_min : The same distribution as `frechet_r`.
-
-    Notes
-    -----
-    %(after_notes)s
-
-    %(example)s
-    """
-
-    @np.deprecate(old_name='frechet_r', message=_frechet_r_deprec_msg)
-    def __call__(self, *args, **kwargs):
-        return weibull_min_gen.__call__(self, *args, **kwargs)
-
-    @np.deprecate(old_name='frechet_r', message=_frechet_r_deprec_msg)
-    def cdf(self, *args, **kwargs):
-        return weibull_min_gen.cdf(self, *args, **kwargs)
-
-    @np.deprecate(old_name='frechet_r', message=_frechet_r_deprec_msg)
-    def entropy(self, *args, **kwargs):
-        return weibull_min_gen.entropy(self, *args, **kwargs)
-
-    @np.deprecate(old_name='frechet_r', message=_frechet_r_deprec_msg)
-    def expect(self, *args, **kwargs):
-        return weibull_min_gen.expect(self, *args, **kwargs)
-
-    @np.deprecate(old_name='frechet_r', message=_frechet_r_deprec_msg)
-    def fit(self, *args, **kwargs):
-        return weibull_min_gen.fit(self, *args, **kwargs)
-
-    @np.deprecate(old_name='frechet_r', message=_frechet_r_deprec_msg)
-    def fit_loc_scale(self, *args, **kwargs):
-        return weibull_min_gen.fit_loc_scale(self, *args, **kwargs)
-
-    @np.deprecate(old_name='frechet_r', message=_frechet_r_deprec_msg)
-    def freeze(self, *args, **kwargs):
-        return weibull_min_gen.freeze(self, *args, **kwargs)
-
-    @np.deprecate(old_name='frechet_r', message=_frechet_r_deprec_msg)
-    def interval(self, *args, **kwargs):
-        return weibull_min_gen.interval(self, *args, **kwargs)
-
-    @np.deprecate(old_name='frechet_r', message=_frechet_r_deprec_msg)
-    def isf(self, *args, **kwargs):
-        return weibull_min_gen.isf(self, *args, **kwargs)
-
-    @np.deprecate(old_name='frechet_r', message=_frechet_r_deprec_msg)
-    def logcdf(self, *args, **kwargs):
-        return weibull_min_gen.logcdf(self, *args, **kwargs)
-
-    @np.deprecate(old_name='frechet_r', message=_frechet_r_deprec_msg)
-    def logpdf(self, *args, **kwargs):
-        return weibull_min_gen.logpdf(self, *args, **kwargs)
-
-    @np.deprecate(old_name='frechet_r', message=_frechet_r_deprec_msg)
-    def logsf(self, *args, **kwargs):
-        return weibull_min_gen.logsf(self, *args, **kwargs)
-
-    @np.deprecate(old_name='frechet_r', message=_frechet_r_deprec_msg)
-    def mean(self, *args, **kwargs):
-        return weibull_min_gen.mean(self, *args, **kwargs)
-
-    @np.deprecate(old_name='frechet_r', message=_frechet_r_deprec_msg)
-    def median(self, *args, **kwargs):
-        return weibull_min_gen.median(self, *args, **kwargs)
-
-    @np.deprecate(old_name='frechet_r', message=_frechet_r_deprec_msg)
-    def moment(self, *args, **kwargs):
-        return weibull_min_gen.moment(self, *args, **kwargs)
-
-    @np.deprecate(old_name='frechet_r', message=_frechet_r_deprec_msg)
-    def nnlf(self, *args, **kwargs):
-        return weibull_min_gen.nnlf(self, *args, **kwargs)
-
-    @np.deprecate(old_name='frechet_r', message=_frechet_r_deprec_msg)
-    def pdf(self, *args, **kwargs):
-        return weibull_min_gen.pdf(self, *args, **kwargs)
-
-    @np.deprecate(old_name='frechet_r', message=_frechet_r_deprec_msg)
-    def ppf(self, *args, **kwargs):
-        return weibull_min_gen.ppf(self, *args, **kwargs)
-
-    @np.deprecate(old_name='frechet_r', message=_frechet_r_deprec_msg)
-    def rvs(self, *args, **kwargs):
-        return weibull_min_gen.rvs(self, *args, **kwargs)
-
-    @np.deprecate(old_name='frechet_r', message=_frechet_r_deprec_msg)
-    def sf(self, *args, **kwargs):
-        return weibull_min_gen.sf(self, *args, **kwargs)
-
-    @np.deprecate(old_name='frechet_r', message=_frechet_r_deprec_msg)
-    def stats(self, *args, **kwargs):
-        return weibull_min_gen.stats(self, *args, **kwargs)
-
-    @np.deprecate(old_name='frechet_r', message=_frechet_r_deprec_msg)
-    def std(self, *args, **kwargs):
-        return weibull_min_gen.std(self, *args, **kwargs)
-
-    @np.deprecate(old_name='frechet_r', message=_frechet_r_deprec_msg)
-    def var(self, *args, **kwargs):
-        return weibull_min_gen.var(self, *args, **kwargs)
-
-
-frechet_r = frechet_r_gen(a=0.0, name='frechet_r')
-
-
-_frechet_l_deprec_msg = """\
-The distribution `frechet_l` is a synonym for `weibull_max`; this historical
-usage is deprecated because of possible confusion with the (quite different)
-Frechet distribution.  To preserve the existing behavior of the program, use
-`scipy.stats.weibull_max`.  For the Frechet distribution (i.e. the Type II
-extreme value distribution), use `scipy.stats.invweibull`."""
-
-
-class frechet_l_gen(weibull_max_gen):
-    """A Frechet left (or Weibull maximum) continuous random variable.
-
-    %(before_notes)s
-
-    See Also
-    --------
-    weibull_max : The same distribution as `frechet_l`.
-
-    Notes
-    -----
-    %(after_notes)s
-
-    %(example)s
-    """
-
-    @np.deprecate(old_name='frechet_l', message=_frechet_l_deprec_msg)
-    def __call__(self, *args, **kwargs):
-        return weibull_max_gen.__call__(self, *args, **kwargs)
-
-    @np.deprecate(old_name='frechet_l', message=_frechet_l_deprec_msg)
-    def cdf(self, *args, **kwargs):
-        return weibull_max_gen.cdf(self, *args, **kwargs)
-
-    @np.deprecate(old_name='frechet_l', message=_frechet_l_deprec_msg)
-    def entropy(self, *args, **kwargs):
-        return weibull_max_gen.entropy(self, *args, **kwargs)
-
-    @np.deprecate(old_name='frechet_l', message=_frechet_l_deprec_msg)
-    def expect(self, *args, **kwargs):
-        return weibull_max_gen.expect(self, *args, **kwargs)
-
-    @np.deprecate(old_name='frechet_l', message=_frechet_l_deprec_msg)
-    def fit(self, *args, **kwargs):
-        return weibull_max_gen.fit(self, *args, **kwargs)
-
-    @np.deprecate(old_name='frechet_l', message=_frechet_l_deprec_msg)
-    def fit_loc_scale(self, *args, **kwargs):
-        return weibull_max_gen.fit_loc_scale(self, *args, **kwargs)
-
-    @np.deprecate(old_name='frechet_l', message=_frechet_l_deprec_msg)
-    def freeze(self, *args, **kwargs):
-        return weibull_max_gen.freeze(self, *args, **kwargs)
-
-    @np.deprecate(old_name='frechet_l', message=_frechet_l_deprec_msg)
-    def interval(self, *args, **kwargs):
-        return weibull_max_gen.interval(self, *args, **kwargs)
-
-    @np.deprecate(old_name='frechet_l', message=_frechet_l_deprec_msg)
-    def isf(self, *args, **kwargs):
-        return weibull_max_gen.isf(self, *args, **kwargs)
-
-    @np.deprecate(old_name='frechet_l', message=_frechet_l_deprec_msg)
-    def logcdf(self, *args, **kwargs):
-        return weibull_max_gen.logcdf(self, *args, **kwargs)
-
-    @np.deprecate(old_name='frechet_l', message=_frechet_l_deprec_msg)
-    def logpdf(self, *args, **kwargs):
-        return weibull_max_gen.logpdf(self, *args, **kwargs)
-
-    @np.deprecate(old_name='frechet_l', message=_frechet_l_deprec_msg)
-    def logsf(self, *args, **kwargs):
-        return weibull_max_gen.logsf(self, *args, **kwargs)
-
-    @np.deprecate(old_name='frechet_l', message=_frechet_l_deprec_msg)
-    def mean(self, *args, **kwargs):
-        return weibull_max_gen.mean(self, *args, **kwargs)
-
-    @np.deprecate(old_name='frechet_l', message=_frechet_l_deprec_msg)
-    def median(self, *args, **kwargs):
-        return weibull_max_gen.median(self, *args, **kwargs)
-
-    @np.deprecate(old_name='frechet_l', message=_frechet_l_deprec_msg)
-    def moment(self, *args, **kwargs):
-        return weibull_max_gen.moment(self, *args, **kwargs)
-
-    @np.deprecate(old_name='frechet_l', message=_frechet_l_deprec_msg)
-    def nnlf(self, *args, **kwargs):
-        return weibull_max_gen.nnlf(self, *args, **kwargs)
-
-    @np.deprecate(old_name='frechet_l', message=_frechet_l_deprec_msg)
-    def pdf(self, *args, **kwargs):
-        return weibull_max_gen.pdf(self, *args, **kwargs)
-
-    @np.deprecate(old_name='frechet_l', message=_frechet_l_deprec_msg)
-    def ppf(self, *args, **kwargs):
-        return weibull_max_gen.ppf(self, *args, **kwargs)
-
-    @np.deprecate(old_name='frechet_l', message=_frechet_l_deprec_msg)
-    def rvs(self, *args, **kwargs):
-        return weibull_max_gen.rvs(self, *args, **kwargs)
-
-    @np.deprecate(old_name='frechet_l', message=_frechet_l_deprec_msg)
-    def sf(self, *args, **kwargs):
-        return weibull_max_gen.sf(self, *args, **kwargs)
-
-    @np.deprecate(old_name='frechet_l', message=_frechet_l_deprec_msg)
-    def stats(self, *args, **kwargs):
-        return weibull_max_gen.stats(self, *args, **kwargs)
-
-    @np.deprecate(old_name='frechet_l', message=_frechet_l_deprec_msg)
-    def std(self, *args, **kwargs):
-        return weibull_max_gen.std(self, *args, **kwargs)
-
-    @np.deprecate(old_name='frechet_l', message=_frechet_l_deprec_msg)
-    def var(self, *args, **kwargs):
-        return weibull_max_gen.var(self, *args, **kwargs)
-
-
-frechet_l = frechet_l_gen(b=0.0, name='frechet_l')
 
 
 class genlogistic_gen(rv_continuous):
@@ -2995,9 +2744,13 @@ class gengamma_gen(rv_continuous):
 
     %(before_notes)s
 
+    See Also
+    --------
+    gamma, invgamma, weibull_min
+
     Notes
     -----
-    The probability density function for `gengamma` is:
+    The probability density function for `gengamma` is ([1]_):
 
     .. math::
 
@@ -3010,6 +2763,11 @@ class gengamma_gen(rv_continuous):
 
     %(after_notes)s
 
+    References
+    ----------
+    .. [1] E.W. Stacy, "A Generalization of the Gamma Distribution",
+       Annals of Mathematical Statistics, Vol 33(3), pp. 1187--1192.
+
     %(example)s
 
     """
@@ -3017,7 +2775,6 @@ class gengamma_gen(rv_continuous):
         return (a > 0) & (c != 0)
 
     def _pdf(self, x, a, c):
-        # gengamma.pdf(x, a, c) = abs(c) * x**(c*a-1) * exp(-x**c) / gamma(a)
         return np.exp(self._logpdf(x, a, c))
 
     def _logpdf(self, x, a, c):
@@ -3028,6 +2785,10 @@ class gengamma_gen(rv_continuous):
         val1 = sc.gammainc(a, xc)
         val2 = sc.gammaincc(a, xc)
         return np.where(c > 0, val1, val2)
+
+    def _rvs(self, a, c, size=None, random_state=None):
+        r = random_state.standard_gamma(a, size=size)
+        return r**(1./c)
 
     def _sf(self, x, a, c):
         xc = x**c

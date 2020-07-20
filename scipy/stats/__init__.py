@@ -52,8 +52,6 @@ Continuous distributions
    fisk              -- Fisk
    foldcauchy        -- Folded Cauchy
    foldnorm          -- Folded Normal
-   frechet_r         -- Deprecated. Alias for weibull_min
-   frechet_l         -- Deprecated. Alias for weibull_max
    genlogistic       -- Generalized Logistic
    gennorm           -- Generalized normal
    genpareto         -- Generalized Pareto

@@ -1019,7 +1019,7 @@ cdef class Rotation(object):
         quaternions [1]_. The mapping from quaternions to rotations is
         two-to-one, i.e. quaternions ``q`` and ``-q``, where ``-q`` simply
         reverses the sign of each component, represent the same spatial
-        rotation.
+        rotation. The returned value is in scalar-last (x, y, z, w) format.
 
         Returns
         -------

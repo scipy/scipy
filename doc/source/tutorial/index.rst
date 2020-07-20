@@ -12,7 +12,6 @@ SciPy Tutorial
    :maxdepth: 1
 
    general
-   basic
    special
    integrate
    optimize

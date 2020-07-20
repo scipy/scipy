@@ -106,86 +106,84 @@ def test_cont_basic(distname, arg):
     except TypeError:
         distfn = distname
         distname = 'rv_histogram_instance'
+
     np.random.seed(765456)
     sn = 500
+    rvs = distfn.rvs(size=sn, *arg)
+    sm = rvs.mean()
+    sv = rvs.var()
+    m, v = distfn.stats(*arg)
+
+    check_sample_meanvar_(distfn, arg, m, v, sm, sv, sn, distname + 'sample mean test')
+    check_cdf_ppf(distfn, arg, distname)
+    check_sf_isf(distfn, arg, distname)
+    check_pdf(distfn, arg, distname)
+    check_pdf_logpdf(distfn, arg, distname)
+    check_pdf_logpdf_at_endpoints(distfn, arg, distname)
+    check_cdf_logcdf(distfn, arg, distname)
+    check_sf_logsf(distfn, arg, distname)
+    check_ppf_broadcast(distfn, arg, distname)
+
+    alpha = 0.01
+    if distname == 'rv_histogram_instance':
+        check_distribution_rvs(distfn.cdf, arg, alpha, rvs)
+    elif distname != 'geninvgauss':
+        # skip kstest for geninvgauss since cdf is too slow; see test for
+        # rv generation in TestGenInvGauss in test_distributions.py
+        check_distribution_rvs(distname, arg, alpha, rvs)
+
+    locscale_defaults = (0, 1)
+    meths = [distfn.pdf, distfn.logpdf, distfn.cdf, distfn.logcdf,
+             distfn.logsf]
+    # make sure arguments are within support
+    spec_x = {'weibull_max': -0.5, 'levy_l': -0.5,
+              'pareto': 1.5, 'tukeylambda': 0.3,
+              'rv_histogram_instance': 5.0}
+    x = spec_x.get(distname, 0.5)
+    if distname == 'invweibull':
+        arg = (1,)
+    elif distname == 'ksone':
+        arg = (3,)
+
+    check_named_args(distfn, x, arg, locscale_defaults, meths)
+    check_random_state_property(distfn, arg)
+    check_pickling(distfn, arg)
+    check_freezing(distfn, arg)
+
+    # Entropy
+    if distname not in ['kstwobign', 'kstwo']:
+        check_entropy(distfn, arg, distname)
+
+    if distfn.numargs == 0:
+        check_vecentropy(distfn, arg)
+
+    if (distfn.__class__._entropy != stats.rv_continuous._entropy
+            and distname != 'vonmises'):
+        check_private_entropy(distfn, arg, stats.rv_continuous)
+
     with npt.suppress_warnings() as sup:
-        # frechet_l and frechet_r are deprecated, so all their
-        # methods generate DeprecationWarnings.
-        sup.filter(category=DeprecationWarning, message=".*frechet_")
-        rvs = distfn.rvs(size=sn, *arg)
-        sm = rvs.mean()
-        sv = rvs.var()
-        m, v = distfn.stats(*arg)
+        sup.filter(IntegrationWarning, "The occurrence of roundoff error")
+        sup.filter(IntegrationWarning, "Extremely bad integrand")
+        sup.filter(RuntimeWarning, "invalid value")
+        check_entropy_vect_scale(distfn, arg)
 
-        check_sample_meanvar_(distfn, arg, m, v, sm, sv, sn, distname + 'sample mean test')
-        check_cdf_ppf(distfn, arg, distname)
-        check_sf_isf(distfn, arg, distname)
-        check_pdf(distfn, arg, distname)
-        check_pdf_logpdf(distfn, arg, distname)
-        check_pdf_logpdf_at_endpoints(distfn, arg, distname)
-        check_cdf_logcdf(distfn, arg, distname)
-        check_sf_logsf(distfn, arg, distname)
-        check_ppf_broadcast(distfn, arg, distname)
+    check_retrieving_support(distfn, arg)
+    check_edge_support(distfn, arg)
 
-        alpha = 0.01
-        if distname == 'rv_histogram_instance':
-            check_distribution_rvs(distfn.cdf, arg, alpha, rvs)
-        elif distname != 'geninvgauss':
-            # skip kstest for geninvgauss since cdf is too slow; see test for
-            # rv generation in TestGenInvGauss in test_distributions.py
-            check_distribution_rvs(distname, arg, alpha, rvs)
+    check_meth_dtype(distfn, arg, meths)
+    check_ppf_dtype(distfn, arg)
 
-        locscale_defaults = (0, 1)
-        meths = [distfn.pdf, distfn.logpdf, distfn.cdf, distfn.logcdf,
-                 distfn.logsf]
-        # make sure arguments are within support
-        spec_x = {'frechet_l': -0.5, 'weibull_max': -0.5, 'levy_l': -0.5,
-                  'pareto': 1.5, 'tukeylambda': 0.3,
-                  'rv_histogram_instance': 5.0}
-        x = spec_x.get(distname, 0.5)
-        if distname == 'invweibull':
-            arg = (1,)
-        elif distname == 'ksone':
-            arg = (3,)
-        check_named_args(distfn, x, arg, locscale_defaults, meths)
-        check_random_state_property(distfn, arg)
-        check_pickling(distfn, arg)
-        check_freezing(distfn, arg)
+    if distname not in fails_cmplx:
+        check_cmplx_deriv(distfn, arg)
 
-        # Entropy
-        if distname not in ['kstwobign', 'kstwo']:
-            check_entropy(distfn, arg, distname)
+    if distname != 'truncnorm':
+        check_ppf_private(distfn, arg, distname)
 
-        if distfn.numargs == 0:
-            check_vecentropy(distfn, arg)
+    if distname not in skip_fit_test:
+        check_fit_args(distfn, arg, rvs[0:200])
 
-        if (distfn.__class__._entropy != stats.rv_continuous._entropy
-                and distname != 'vonmises'):
-            check_private_entropy(distfn, arg, stats.rv_continuous)
-
-        with npt.suppress_warnings() as sup:
-            sup.filter(IntegrationWarning, "The occurrence of roundoff error")
-            sup.filter(IntegrationWarning, "Extremely bad integrand")
-            sup.filter(RuntimeWarning, "invalid value")
-            check_entropy_vect_scale(distfn, arg)
-
-        check_retrieving_support(distfn, arg)
-        check_edge_support(distfn, arg)
-
-        check_meth_dtype(distfn, arg, meths)
-        check_ppf_dtype(distfn, arg)
-
-        if distname not in fails_cmplx:
-            check_cmplx_deriv(distfn, arg)
-
-        if distname != 'truncnorm':
-            check_ppf_private(distfn, arg, distname)
-
-        if distname not in skip_fit_test:
-            check_fit_args(distfn, arg, rvs[0:200])
-
-        if distname not in skip_fit_fix_test:
-            check_fit_args_fix(distfn, arg, rvs[0:200])
+    if distname not in skip_fit_fix_test:
+        check_fit_args_fix(distfn, arg, rvs[0:200])
 
 
 @pytest.mark.parametrize('distname,arg', cases_test_cont_basic())
@@ -197,12 +195,9 @@ def test_rvs_scalar(distname, arg):
         distfn = distname
         distname = 'rv_histogram_instance'
 
-    with npt.suppress_warnings() as sup:
-        sup.filter(category=DeprecationWarning, message=".*frechet_")
-        rvs = distfn.rvs(*arg)
-        assert np.isscalar(distfn.rvs(*arg))
-        assert np.isscalar(distfn.rvs(*arg, size=()))
-        assert np.isscalar(distfn.rvs(*arg, size=None))
+    assert np.isscalar(distfn.rvs(*arg))
+    assert np.isscalar(distfn.rvs(*arg, size=()))
+    assert np.isscalar(distfn.rvs(*arg, size=None))
 
 
 def test_levy_stable_random_state_property():
@@ -245,7 +240,6 @@ def test_moments(distname, arg, normalization_ok, higher_ok, is_xfailing):
     with npt.suppress_warnings() as sup:
         sup.filter(IntegrationWarning,
                    "The integral is probably divergent, or slowly convergent.")
-        sup.filter(category=DeprecationWarning, message=".*frechet_")
         if is_xfailing:
             sup.filter(IntegrationWarning)
 
@@ -600,13 +594,13 @@ def check_retrieving_support(distfn, args):
 
 def check_fit_args(distfn, arg, rvs):
     with np.errstate(all='ignore'), npt.suppress_warnings() as sup:
-        sup.filter(category=DeprecationWarning, message=".*frechet_")
         sup.filter(category=RuntimeWarning,
                    message="The shape parameter of the erlang")
         sup.filter(category=RuntimeWarning,
                    message="floating point number truncated")
         vals = distfn.fit(rvs)
         vals2 = distfn.fit(rvs, optimizer='powell')
+
     # Only check the length of the return
     # FIXME: should check the actual results to see if we are 'close'
     #   to what was created --- but what is 'close' enough
@@ -616,7 +610,6 @@ def check_fit_args(distfn, arg, rvs):
 
 def check_fit_args_fix(distfn, arg, rvs):
     with np.errstate(all='ignore'), npt.suppress_warnings() as sup:
-        sup.filter(category=DeprecationWarning, message=".*frechet_")
         sup.filter(category=RuntimeWarning,
                    message="The shape parameter of the erlang")
 
@@ -646,19 +639,18 @@ def check_fit_args_fix(distfn, arg, rvs):
 def test_methods_with_lists(method, distname, args):
     # Test that the continuous distributions can accept Python lists
     # as arguments.
-    with npt.suppress_warnings() as sup:
-        sup.filter(category=DeprecationWarning, message=".*frechet_")
-        dist = getattr(stats, distname)
-        f = getattr(dist, method)
-        if distname == 'invweibull' and method.startswith('log'):
-            x = [1.5, 2]
-        else:
-            x = [0.1, 0.2]
-        shape2 = [[a]*2 for a in args]
-        loc = [0, 0.1]
-        scale = [1, 1.01]
-        result = f(x, *shape2, loc=loc, scale=scale)
-        npt.assert_allclose(result,
-                            [f(*v) for v in zip(x, *shape2, loc, scale)],
-                            rtol=1e-15, atol=1e-15)
+    dist = getattr(stats, distname)
+    f = getattr(dist, method)
+    if distname == 'invweibull' and method.startswith('log'):
+        x = [1.5, 2]
+    else:
+        x = [0.1, 0.2]
+
+    shape2 = [[a]*2 for a in args]
+    loc = [0, 0.1]
+    scale = [1, 1.01]
+    result = f(x, *shape2, loc=loc, scale=scale)
+    npt.assert_allclose(result,
+                        [f(*v) for v in zip(x, *shape2, loc, scale)],
+                        rtol=1e-15, atol=1e-15)
 
