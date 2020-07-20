@@ -602,6 +602,9 @@ class nhypergeom_gen(rv_discrete):
     .. [1] Negative Hypergeometric Distribution on Wikipedia
            https://en.wikipedia.org/wiki/Negative_hypergeometric_distribution
 
+    .. [2] Negative Hypergeometric Distribution from
+           http://www.math.wm.edu/~leemis/chart/UDR/PDFs/Negativehypergeometric.pdf
+
     """
     def _get_support(self, N, K, r):
         return 0, K
@@ -633,7 +636,7 @@ class nhypergeom_gen(rv_discrete):
         var *= 1 - r / (N-K+1)
 
         # The skew and kurtosis are mathematically
-        # intractable so return np.nan
+        # intractable so return np.nan. See [2].
         g1, g2 = np.nan, np.nan
         return mu, var, g1, g2
 
