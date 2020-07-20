@@ -211,7 +211,7 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
            'tiecorrect', 'ranksums', 'kruskal', 'friedmanchisquare',
            'rankdata', 'rvs_ratio_uniforms',
            'combine_pvalues', 'wasserstein_distance', 'energy_distance',
-           'brunnermunzel', 'epps_singleton_2samp', 'pagel']
+           'brunnermunzel', 'epps_singleton_2samp', 'pagel', 'StatsTestResult']
 
 
 def _contains_nan(a, nan_policy='propagate'):
@@ -8061,3 +8061,47 @@ def rankdata(a, method='average', *, axis=None):
 
     # average method
     return .5 * (count[dense] + count[dense - 1] + 1)
+
+
+class _StatsResult(dict):
+    """ Represents a statistics result. """
+    # stolen from OptimizeResult without modification
+    def __getattr__(self, name):
+        try:
+            return self[name]
+        except KeyError as e:
+            raise AttributeError(name) from e
+
+    __setattr__ = dict.__setitem__
+    __delattr__ = dict.__delitem__
+
+    def __repr__(self):
+        if self.keys():
+            m = max(map(len, list(self.keys()))) + 1
+            return '\n'.join([k.rjust(m) + ': ' + repr(v)
+                              for k, v in sorted(self.items())])
+        else:
+            return self.__class__.__name__ + "()"
+
+    def __dir__(self):
+        return list(self.keys())
+
+
+class StatsTestResult(_StatsResult):
+    """ Represents the statistical test result.
+
+    Attributes
+    ----------
+    statistic : float
+        The test statistic.
+    pvalue : float
+        The *p*-value corresponding with the test statistic.
+
+    Notes
+    -----
+    There may be additional attributes not listed above depending of the
+    specific test. Since this class is essentially a subclass of dict
+    with attribute accessors, one can see which attributes are available
+    using the `keys()` method.
+    """
+    pass

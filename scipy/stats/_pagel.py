@@ -7,10 +7,6 @@ from ._continuous_distns import norm
 import scipy.stats
 
 
-Page_L_Result = namedtuple('Page_L_Result',
-                           ('statistic', 'pvalue', 'method'))
-
-
 def pagel(data, ranked=True, predicted_ranks=None, method='auto', n_s=3000,
           ties=None):
     r"""
@@ -94,12 +90,15 @@ def pagel(data, ranked=True, predicted_ranks=None, method='auto', n_s=3000,
 
     Returns
     -------
-    statistic : float
-        Page's :math:`L` test statistic.
-    pvalue : float
-        The associated *p*-value
-    method : {'asymptotic', 'exact', 'mc'}
-        The method used to compute the *p*-value
+    res : StatsTestResult
+        A :class:`scipy.stats.StatsTestResult` consisting of the fields:
+
+            statistic : float
+                Page's :math:`L` test statistic.
+            pvalue : float
+                The associated *p*-value
+            method : {'asymptotic', 'exact', 'mc'}
+                The method used to compute the *p*-value
 
     See Also
     --------
@@ -240,9 +239,11 @@ def pagel(data, ranked=True, predicted_ranks=None, method='auto', n_s=3000,
 
     >>> from scipy.stats import pagel
     >>> arranged_ranks = ranks[:, ::-1]
-    >>> res = pagel(arranged_ranks, method="asymptotic")
+    >>> res = pagel(arranged_ranks, method='asymptotic')
     >>> res
-    Page_L_Result(statistic=133.5, pvalue=0.0012693433690751756, method='asymptotic')
+        method: 'asymptotic'
+        pvalue: 0.0012693433690751756
+     statistic: 133.5
 
     The value of the :math:`L` statistic, 133.5, is as expected:
 
@@ -278,20 +279,25 @@ def pagel(data, ranked=True, predicted_ranks=None, method='auto', n_s=3000,
     ...             method="asymptotic"
     ...             )
     >>> res
-    Page_L_Result(statistic=133.5, pvalue=0.0012693433690751756, method='asymptotic')
+        method: 'asymptotic'
+        pvalue: 0.0012693433690751756
+     statistic: 133.5
 
     As presented in [3]_, the *p*-value was calculated based on the asymptotic
     distribution of the :math:`L` statistic. However, the asymptotic
     distribution is not very accurate, nor conservative, for :math:`m \leq 12`
     and :math:`n \leq 8`. Rather than passing in ``method="asymptotic"``,
-    we should leave ``pagel`` to select the method for us.
+    we can allow ``pagel`` to select the appropriate method.
 
     >>> res = pagel(table, ranked=False, predicted_ranks=[1, 2, 3])
     >>> res
-    Page_L_Result(statistic=133.5, pvalue=0.0018191161948127822, method='exact')
+        method: 'exact'
+        pvalue: 0.0018191161948127822
+     statistic: 133.5
 
     Note that ``pagel`` chose to use ``method='exact'`` based on the dimensions
-    of the table. This exact *p*-value is greater than that given by the
+    of the table and the recommendations in Page's original paper [1]_.
+    This exact *p*-value is greater than that given by the
     asymptotic approach, but we can still reject the null hypothesis in favor
     of our alternative at the 99% confidence level.
     """
@@ -349,7 +355,11 @@ def pagel(data, ranked=True, predicted_ranks=None, method='auto', n_s=3000,
     p_fun = methods[method]  # get the function corresponding with the method
     p = p_fun(L, m, n)
 
-    return Page_L_Result(L, p, method)
+    pagel_result = scipy.stats.StatsTestResult()
+    pagel_result['statistic'] = L
+    pagel_result['pvalue'] = p
+    pagel_result['method'] = method
+    return pagel_result
 
 
 def _choose_method(ranks):

@@ -368,6 +368,16 @@ Univariate and multivariate kernel density estimation
 
    gaussian_kde
 
+
+Result objects used in :mod:`scipy.stats`
+=========================================
+
+.. autosummary::
+   :toctree: generated/
+
+   StatsTestResult
+
+
 Warnings used in :mod:`scipy.stats`
 ===================================
 
