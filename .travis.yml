@@ -131,6 +131,7 @@ matrix:
             - g++-4.8
             - gcc-4.8
       env:
+        # GCC 4.8 is used by manylinux1 wheel builds
         - CC="gcc-4.8"
         - CXX="g++-4.8"
         - TESTMODE=fast
