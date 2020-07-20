@@ -135,7 +135,7 @@ class NDInterpolatorBase(object):
         ----------
         x1, x2, ... xn: array_like of float
             Points where to interpolate data at.
-            x1, x2, ... xn can be array_like of float with broadcastible shape.
+            x1, x2, ... xn can be array_like of float with broadcastable shape.
             or x1 can be array_like of float with shape (..., ndim)
 
         """
