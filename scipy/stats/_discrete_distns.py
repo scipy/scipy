@@ -36,6 +36,10 @@ class binom_gen(rv_discrete):
 
     %(example)s
 
+    See Also
+    --------
+    hypergeom, binom, nbinom
+
     """
     def _rvs(self, n, p, size=None, random_state=None):
         return random_state.binomial(n, p, size)
@@ -256,6 +260,10 @@ class nbinom_gen(rv_discrete):
 
     %(example)s
 
+    See Also
+    --------
+    hypergeom, binom, nbinom
+
     """
     def _rvs(self, n, p, size=None, random_state=None):
         return random_state.negative_binomial(n, p, size)
@@ -426,6 +434,10 @@ class hypergeom_gen(rv_discrete):
 
     >>> R = hypergeom.rvs(M, n, N, size=10)
 
+    See Also
+    --------
+    hypergeom, binom, nbinom
+
     """
     def _rvs(self, M, n, N, size=None, random_state=None):
         return random_state.hypergeometric(n, M-n, N, size=size)
@@ -540,7 +552,7 @@ class nhypergeom_gen(rv_discrete):
     .. math:: f(k; N, K, r) = \frac{{{k+r-1}\choose{k}}{{N-r-k}\choose{K-k}}}
                                    {{N \choose K}}
 
-    for :math:`k \in [0, K]` and the binomian co-efficient is:
+    for :math:`k \in [0, K]` and the binomial co-efficient is:
 
     .. math:: \binom{n}{k} \equiv \frac{n!}{k! (n - k)!}.
 
