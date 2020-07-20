@@ -28,7 +28,7 @@ matrix:
     - python: 3.8
       name: "Lint"
       before_install:
-        - pip install flake8 https://github.com/larsoner/flake8-array-spacing/zipball/master
+        - pip install flake8 flake8-array-spacing
       script:
         # TODO: remove "ignore[import]" filter below when moving to pyflakes==2.1.2 or above
         - flake8 scipy benchmarks/benchmarks
