@@ -68,8 +68,10 @@ class NearestNDInterpolator(NDInterpolatorBase):
 
         Parameters
         ----------
-        xi : ndarray of float, shape (..., ndim)
+        x1, x2, ... xn: array-like of float
             Points where to interpolate data at.
+            x1, x2, ... xn can be array-like of float with broadcastable shape.
+            or x1 can be array-like of float with shape ``(..., ndim)``
 
         """
         xi = _ndim_coords_from_arrays(args, ndim=self.points.shape[1])

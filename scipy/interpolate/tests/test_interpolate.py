@@ -12,7 +12,8 @@ import numpy as np
 from scipy.interpolate import (interp1d, interp2d, lagrange, PPoly, BPoly,
          splrep, splev, splantider, splint, sproot, Akima1DInterpolator,
          RegularGridInterpolator, LinearNDInterpolator, NearestNDInterpolator,
-         RectBivariateSpline, interpn, NdPPoly, BSpline)
+         RectBivariateSpline, interpn, NdPPoly, BSpline,
+         CloughTocher2DInterpolator)
 
 from scipy.special import poch, gamma
 
@@ -2580,6 +2581,37 @@ class TestRegularGridInterpolator(object):
         # xi = [(1, 1, 1)]
         RegularGridInterpolator(points, values)
         RegularGridInterpolator(points, values, fill_value=0.)
+
+    def test_broadcastable_input(self):
+        # input data
+        np.random.seed(0)
+        x = np.random.random(10)
+        y = np.random.random(10)
+        z = np.hypot(x, y)
+
+        # x-y grid for interpolation
+        X = np.linspace(min(x), max(x))
+        Y = np.linspace(min(y), max(y))
+        X, Y = np.meshgrid(X, Y)
+        XY = np.vstack((X.ravel(), Y.ravel())).T
+
+        for interpolator in (NearestNDInterpolator, LinearNDInterpolator,
+                             CloughTocher2DInterpolator):
+            interp = interpolator(list(zip(x, y)), z)
+            # single array input
+            interp_points0 = interp(XY)
+            # tuple input
+            interp_points1 = interp((X, Y))
+            interp_points2 = interp((X, 0.0))
+            # broadcastable input
+            interp_points3 = interp(X, Y)
+            interp_points4 = interp(X, 0.0)
+
+            assert_equal(interp_points0.size ==
+                         interp_points1.size ==
+                         interp_points2.size ==
+                         interp_points3.size ==
+                         interp_points4.size, True)
 
 
 class MyValue(object):
