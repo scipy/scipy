@@ -2595,18 +2595,23 @@ class TestRegularGridInterpolator(object):
         X, Y = np.meshgrid(X, Y)
         XY = np.vstack((X.ravel(), Y.ravel())).T
 
-        for itype in (NearestNDInterpolator, LinearNDInterpolator,
-                      CloughTocher2DInterpolator):
-            interp = itype(list(zip(x, y)), z)
+        for interpolator in (NearestNDInterpolator, LinearNDInterpolator,
+                             CloughTocher2DInterpolator):
+            interp = interpolator(list(zip(x, y)), z)
             # single array input
             interp_points0 = interp(XY)
-            # broadcastable input
+            # tuple input
             interp_points1 = interp((X, Y))
             interp_points2 = interp((X, 0.0))
+            # broadcastable input
+            interp_points3 = interp(X, Y)
+            interp_points4 = interp(X, 0.0)
 
             assert_equal(interp_points0.size ==
                          interp_points1.size ==
-                         interp_points2.size, True)
+                         interp_points2.size ==
+                         interp_points3.size ==
+                         interp_points4.size, True)
 
 
 class MyValue(object):
