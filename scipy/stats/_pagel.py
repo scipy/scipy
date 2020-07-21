@@ -319,8 +319,9 @@ def pagel(data, ranked=True, predicted_ranks=None, method='auto'):
         predicted_ranks = np.arange(n, 0, -1)
     else:
         predicted_ranks = np.array(predicted_ranks, copy=False)
-        if (set(predicted_ranks) != set(range(1, n+1)) or
-                len(predicted_ranks) != n):
+        if (predicted_ranks.ndim < 1 or
+                (set(predicted_ranks) != set(range(1, n+1)) or
+                len(predicted_ranks) != n)):
             raise ValueError(f"`predicted_ranks` must include each integer "
                             f"from 1 to {n} (the number of columns in data) "
                             f"exactly once.")

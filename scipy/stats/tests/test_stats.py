@@ -54,9 +54,9 @@ TINY = array([1e-12,2e-12,3e-12,4e-12,5e-12,6e-12,7e-12,8e-12,9e-12], float)
 ROUND = array([0.5,1.5,2.5,3.5,4.5,5.5,6.5,7.5,8.5], float)
 
 
-def assert_raises_with_match(exception_type, match, function, *args):
-    with assert_raises(exception_type, match):
-        function(*args)
+def assert_raises_with_match(exception_type, match, function, *args, **kwargs):
+    with assert_raises(exception_type, match=match):
+        function(*args, **kwargs)
 
 
 class TestTrimmedStats(object):
