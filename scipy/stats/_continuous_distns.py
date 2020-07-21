@@ -4221,20 +4221,22 @@ def _check_fit_input_parameters(self, data, args, kwds):
     floc = kwds.get('floc', None)
     fscale = kwds.get('fscale', None)
 
+    num_shapes = len(self.shapes) if self.shapes else 0
+    shape_keys = []
+
     # user has many options for fixing the shape, so here we standardize it
     # into 'f' + the number of the shape.
     if self.shapes:
         shapes = self.shapes.replace(',', ' ').split()
         for j, s in enumerate(shapes):
             key = 'f' + str(j)
+            shape_keys.append(key)
             names = [key, 'f' + s, 'fix_' + s]
             val = _get_fixed_fit_value(kwds, names)
             if val is not None:
                 kwds[key] = val
 
     # create array of shape keys
-    shape_keys = ['f' + str(x) for x in
-                  range(0, len(self.shapes) if self.shapes else 0)]
     shapes = [kwds.get(x, None) for x in shape_keys]
     # determine if there are any unknown arguments in kwds
     keys = [x for x in kwds.keys() if x not in ['loc', 'scale', 'optimizer',
@@ -4242,7 +4244,7 @@ def _check_fit_input_parameters(self, data, args, kwds):
     if keys:
         raise TypeError("Unknown keyword arguments: %s." % keys)
 
-    if len(args) > (len(self.shapes) if self.shapes else 0):
+    if len(args) > num_shapes:
         raise TypeError("Too many positional arguments.")
 
     if None not in [floc, fscale, *shapes]:
