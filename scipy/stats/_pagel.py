@@ -411,12 +411,10 @@ def _generate_row_counts(k_max):
     all_counts = [list(_counts_l_k_1(k)) for k in range(1, k_max+1)]
     print(repr(all_counts))
 
-# _generate_row_counts(9)
-
 
 def _get_p_l_k_1(k):
     '''Generates function to evaluate p(t, k, 1); see [5] Equation 6'''
-    # Data in the following row was generated using _generate_row_counts
+    # Data in the following row was generated using _generate_row_counts(9)
     all_counts = [[1], [1, 1], [1, 2, 0, 2, 1], [1, 3, 1, 4, 2, 2, 2, 4, 1, 3, 1], [1, 4, 3, 6, 7, 6, 4, 10, 6, 10, 6, 10, 6, 10, 4, 6, 7, 6, 3, 4, 1], [1, 5, 6, 9, 16, 12, 14, 24, 20, 21, 23, 28, 24, 34, 20, 32, 42, 29, 29, 42, 32, 20, 34, 24, 28, 23, 21, 20, 24, 14, 12, 16, 9, 6, 5, 1], [1, 6, 10, 14, 29, 26, 35, 46, 55, 54, 74, 70, 84, 90, 78, 90, 129, 106, 123, 134, 147, 98, 168, 130, 175, 144, 168, 144, 184, 144, 168, 144, 175, 130, 168, 98, 147, 134, 123, 106, 129, 90, 78, 90, 84, 70, 74, 54, 55, 46, 35, 26, 29, 14, 10, 6, 1], [1, 7, 15, 22, 47, 54, 70, 94, 129, 124, 178, 183, 237, 238, 276, 264, 379, 349, 380, 400, 517, 394, 542, 492, 640, 557, 666, 595, 776, 684, 786, 718, 922, 745, 917, 781, 982, 826, 950, 844, 1066, 845, 936, 845, 1066, 844, 950, 826, 982, 781, 917, 745, 922, 718, 786, 684, 776, 595, 666, 557, 640, 492, 542, 394, 517, 400, 380, 349, 379, 264, 276, 238, 237, 183, 178, 124, 129, 94, 70, 54, 47, 22, 15, 7, 1], [1, 8, 21, 34, 72, 102, 130, 190, 260, 284, 398, 454, 555, 616, 756, 744, 1022, 1042, 1159, 1282, 1555, 1392, 1719, 1758, 2009, 2032, 2282, 2214, 2676, 2590, 2878, 2928, 3397, 3138, 3647, 3568, 3921, 3866, 4311, 4050, 4852, 4492, 4816, 4784, 5505, 4954, 5638, 5304, 5890, 5486, 6188, 5502, 6436, 5822, 6233, 6024, 6697, 5720, 6672, 6020, 6688, 6020, 6672, 5720, 6697, 6024, 6233, 5822, 6436, 5502, 6188, 5486, 5890, 5304, 5638, 4954, 5505, 4784, 4816, 4492, 4852, 4050, 4311, 3866, 3921, 3568, 3647, 3138, 3397, 2928, 2878, 2590, 2676, 2214, 2282, 2032, 2009, 1758, 1719, 1392, 1555, 1282, 1159, 1042, 1022, 744, 756, 616, 555, 454, 398, 284, 260, 190, 130, 102, 72, 34, 21, 8, 1]]
     try:
         counts = all_counts[k-1]
@@ -438,19 +436,22 @@ def _pmf_recursive(l, k, n, a, b, p_l_k_1):
     '''Recursive function to evaluate p(l, k, n); see [5] Equation 1'''
     # If we care about users generating exact p-values on the fly,
     # this should look up whether p(*, k, n-1) is already tabulated
-    # in pagel_exact.npy
+    # in pagel_exact.npy and set p1 = all_pmfs[n-1][k][l-t-a*(n-1)]
+    # Put all these functions in a PageLExact class, too, to avoid
+    # passing around all these parameters.
     if n == 1:
         p = p_l_k_1(l)
         return(p)
-    else:
-        p = 0
-        low = max(l-(n-1)*b, a)
-        high = min(l-(n-1)*a, b)
-        for t in range(low, high+1):
-            p1 = _pmf_recursive(l-t, k, n-1, a, b, p_l_k_1)
-            p2 = _pmf_recursive(t, k, 1, a, b, p_l_k_1)
-            p += p1*p2
-        return p
+
+    p = 0
+    low = max(l-(n-1)*b, a)
+    high = min(l-(n-1)*a, b)
+
+    for t in range(low, high+1):
+        p1 = _pmf_recursive(l-t, k, n-1, a, b, p_l_k_1)
+        p2 = _pmf_recursive(t, k, 1, a, b, p_l_k_1)
+        p += p1*p2
+    return p
 
 
 def _pmf(l, k, n):
