@@ -54,6 +54,11 @@ TINY = array([1e-12,2e-12,3e-12,4e-12,5e-12,6e-12,7e-12,8e-12,9e-12], float)
 ROUND = array([0.5,1.5,2.5,3.5,4.5,5.5,6.5,7.5,8.5], float)
 
 
+def assert_raises_with_match(exception_type, match, function, *args):
+    with assert_raises(exception_type, match):
+        function(*args)
+
+
 class TestTrimmedStats(object):
     # TODO: write these tests to handle missing values properly
     dprec = np.finfo(np.float64).precision
@@ -5771,25 +5776,25 @@ class TestPageL(object):
 
     def test_input_validation(self):
         # test data not a 2d array
-        assert_raises(Exception, stats.pagel, None, match="`data` must be a 2d array.")
-        assert_raises(Exception, stats.pagel, [1, 2], match="`data` must be a 2d array.")
-        assert_raises(Exception, stats.pagel, [[[1]]], match="`data` must be a 2d array.")
+        assert_raises_with_match(ValueError, "`data` must be a 2d array.", stats.pagel, None)
+        assert_raises_with_match(ValueError, "`data` must be a 2d array.", stats.pagel, [1, 2])
+        assert_raises_with_match(ValueError, "`data` must be a 2d array.", stats.pagel, [[[1]]])
 
         # test invalid dimentions
-        assert_raises(Exception, stats.pagel, np.random.rand(1, 3), match="Page's L is only appropriate")
-        assert_raises(Exception, stats.pagel, np.random.rand(2, 2), match="Page's L is only appropriate")
+        assert_raises_with_match(ValueError, "Page's L is only appropriate", stats.pagel, np.random.rand(1, 3))
+        assert_raises_with_match(ValueError, "Page's L is only appropriate", stats.pagel, np.random.rand(2, 2))
 
         # predicted ranks must include each integer [1, 2, 3] exactly once
-        assert_raises(Exception, stats.pagel, data=np.random.rand(2, 3),
-                      predicted_ranks=[0, 1, 2], match="`predicted_ranks` must include each integer")
-        assert_raises(Exception, stats.pagel, data=np.random.rand(2, 3),
-                      predicted_ranks=[1.1, 2, 3], match="`predicted_ranks` must include each integer")
-        assert_raises(Exception, stats.pagel, data=np.random.rand(2, 3),
-                      predicted_ranks=[1, 2, 3, 3], match="`predicted_ranks` must include each integer")
-        assert_raises(Exception, stats.pagel, data=np.random.rand(2, 3),
-                      predicted_ranks="invalid", match="`predicted_ranks` must include each integer")
+        assert_raises_with_match(ValueError, "`predicted_ranks` must include each integer",
+                                 stats.pagel, data=np.random.rand(2, 3), predicted_ranks=[0, 1, 2])
+        assert_raises_with_match(ValueError, "`predicted_ranks` must include each integer",
+                                 stats.pagel, data=np.random.rand(2, 3), predicted_ranks=[1.1, 2, 3])
+        assert_raises_with_match(ValueError, "`predicted_ranks` must include each integer",
+                                 stats.pagel, data=np.random.rand(2, 3), predicted_ranks=[1, 2, 3, 3])
+        assert_raises_with_match(ValueError, "`predicted_ranks` must include each integer",
+                                 stats.pagel, data=np.random.rand(2, 3), predicted_ranks="invalid")
 
         # various
-        assert_raises(Exception, stats.pagel, [[1, 2, 3], [1, 2, np.nan]], ranked=False, match="`data` contains NaNs")
-        assert_raises(Exception, stats.pagel, np.random.rand(2, 3), method="ekki", match="`method` must be in")
-        assert_raises(Exception, stats.pagel, np.random.rand(2, 3), ranked="ekki", match="`ranked` must be boolean.")
+        assert_raises_with_match(ValueError, "`data` contains NaNs", stats.pagel, [[1, 2, 3], [1, 2, np.nan]], ranked=False)
+        assert_raises_with_match(ValueError, "`method` must be in", stats.pagel, np.random.rand(2, 3), method="ekki")
+        assert_raises_with_match(TypeError, "`ranked` must be boolean.", stats.pagel, np.random.rand(2, 3), ranked="ekki")

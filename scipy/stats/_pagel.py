@@ -295,7 +295,7 @@ def pagel(data, ranked=True, predicted_ranks=None, method='auto'):
                "exact": _l_p_exact,
                "auto": None}
     if method not in methods:
-        raise Exception(f"`method` must be in {set(methods)}")
+        raise ValueError(f"`method` must be in {set(methods)}")
 
     # ensure NumPy array and rank the data if it's not already ranked
     if ranked:
@@ -304,14 +304,14 @@ def pagel(data, ranked=True, predicted_ranks=None, method='auto'):
         ranks = np.array(data, copy=False)
     else:
         if np.any(np.isnan(data)):
-            raise Exception("`data` contains NaNs, which cannot be ranked meaningfully")
+            raise ValueError("`data` contains NaNs, which cannot be ranked meaningfully")
         ranks = scipy.stats.rankdata(data, axis=-1)
 
     if ranks.ndim != 2:  # TODO: relax this to accept 3d arrays?
-        raise Exception(f"`data` must be a 2d array.")
+        raise ValueError(f"`data` must be a 2d array.")
     m, n = ranks.shape
     if m < 2 or n < 3:
-        raise Exception("Page's L is only appropriate for data with two "
+        raise ValueError("Page's L is only appropriate for data with two "
                         "or more rows and three or more columns.")
 
     # generate predicted ranks if not provided, ensure valid NumPy array
@@ -321,12 +321,12 @@ def pagel(data, ranked=True, predicted_ranks=None, method='auto'):
         predicted_ranks = np.array(predicted_ranks, copy=False)
         if (set(predicted_ranks) != set(range(1, n+1)) or
                 len(predicted_ranks) != n):
-            raise Exception(f"`predicted_ranks` must include each integer "
+            raise ValueError(f"`predicted_ranks` must include each integer "
                             f"from 1 to {n} (the number of columns in data) "
                             f"exactly once.")
 
     if type(ranked) is not bool:
-        raise Exception("`ranked` must be boolean.")
+        raise TypeError("`ranked` must be boolean.")
 
     # Calculate the L statistic
     L = _l_vectorized(ranks, predicted_ranks)
