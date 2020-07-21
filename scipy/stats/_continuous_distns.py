@@ -6155,6 +6155,10 @@ class pareto_gen(rv_continuous):
         if np.any(data - floc < (fscale if fscale else 0)):
             raise FitDataError("pareto", lower=0, upper=np.inf)
         data = data - floc
+
+        # Source: Evans, Hastings, and Peacock (2000), Statistical
+        # Distributions, 3rd. Ed., John Wiley and Sons. Page 149.
+
         if fscale is None:
             fscale = np.min(data)
         if fshape is None:
