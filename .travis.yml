@@ -121,8 +121,19 @@ matrix:
         - NUMPYSPEC="numpy==1.17.4"
         - USE_SDIST=1
     - python: 3.6
-      name: "Wheel, Optimised"
+      name: "Wheel, Optimised, GCC 4.8"
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - *common_packages
+            - g++-4.8
+            - gcc-4.8
       env:
+        # GCC 4.8 is used by manylinux1 wheel builds
+        - CC="gcc-4.8"
+        - CXX="g++-4.8"
         - TESTMODE=fast
         - COVERAGE=
         - USE_WHEEL=1
@@ -164,12 +175,14 @@ before_install:
       echo "runtime_library_dirs = $target/lib" >> site.cfg
     fi
   - export CCACHE_COMPRESS=1
+  - if [ -n "$CC" ]; then ln -s `which ccache` "/usr/lib/ccache/$CC" || true; fi
+  - if [ -n "$CXX" ]; then ln -s `which ccache` "/usr/lib/ccache/$CXX" || true; fi
   - python --version # just to check
   - export NPY_NUM_BUILD_JOBS=2
   - uname -a
   - df -h
   - ulimit -a
-  - set -o pipefail
+  - set -e -o pipefail
   - mkdir builds
   - cd builds
   - |
@@ -254,7 +267,7 @@ script:
         USE_WHEEL_BUILD="--no-build"
     fi
   - export SCIPY_AVAILABLE_MEM=3G
-  - python -u runtests.py -g -j2 --build-only $USE_WHEEL_BUILD
+  - python -u runtests.py -g -j2 --build-only $COVERAGE $USE_WHEEL_BUILD
   # Only run tests against pull-requests
   - |
     if [ "${TRAVIS_PULL_REQUEST}" != "false" ]; then
