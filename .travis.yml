@@ -267,7 +267,7 @@ script:
         USE_WHEEL_BUILD="--no-build"
     fi
   - export SCIPY_AVAILABLE_MEM=3G
-  - python -u runtests.py -g -j2 --build-only $USE_WHEEL_BUILD
+  - python -u runtests.py -g -j2 --build-only $COVERAGE $USE_WHEEL_BUILD
   # Only run tests against pull-requests
   - |
     if [ "${TRAVIS_PULL_REQUEST}" != "false" ]; then
