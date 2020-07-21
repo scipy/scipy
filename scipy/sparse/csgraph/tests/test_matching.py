@@ -147,59 +147,59 @@ def test_matching_large_random_graph_with_one_edge_incident_to_each_vertex():
 
 
 def test_min_weight_full_matching_empty_graph():
-    graph = csr_matrix((0, 0))
-    row_ind, col_ind = min_weight_full_bipartite_matching(graph)
+    biadjacency_matrix = csr_matrix((0, 0))
+    row_ind, col_ind = min_weight_full_bipartite_matching(biadjacency_matrix)
     assert len(row_ind) == 0
     assert len(col_ind) == 0
 
 
 def test_min_weight_full_matching_empty_left_partition():
-    graph = csr_matrix((2, 0))
-    row_ind, col_ind = min_weight_full_bipartite_matching(graph)
+    biadjacency_matrix = csr_matrix((2, 0))
+    row_ind, col_ind = min_weight_full_bipartite_matching(biadjacency_matrix)
     assert len(row_ind) == 0
     assert len(col_ind) == 0
 
 
 def test_min_weight_full_matching_empty_right_partition():
-    graph = csr_matrix((0, 3))
-    row_ind, col_ind = min_weight_full_bipartite_matching(graph)
+    biadjacency_matrix = csr_matrix((0, 3))
+    row_ind, col_ind = min_weight_full_bipartite_matching(biadjacency_matrix)
     assert len(row_ind) == 0
     assert len(col_ind) == 0
 
 
 def test_min_weight_full_matching_infeasible_square():
-    graph = csr_matrix([[1, 1, 1], [1, 0, 0], [1, 0, 0]])
+    biadjacency_matrix = csr_matrix([[1, 1, 1], [1, 0, 0], [1, 0, 0]])
     with pytest.raises(ValueError):
-        min_weight_full_bipartite_matching(graph)
+        min_weight_full_bipartite_matching(biadjacency_matrix)
 
 
 def test_min_weight_full_matching_infeasible_other_square():
-    graph = csr_matrix([[1, 1, 1], [0, 0, 1], [0, 0, 1]])
+    biadjacency_matrix = csr_matrix([[1, 1, 1], [0, 0, 1], [0, 0, 1]])
     with pytest.raises(ValueError):
-        min_weight_full_bipartite_matching(graph)
+        min_weight_full_bipartite_matching(biadjacency_matrix)
 
 
 def test_min_weight_full_matching_infeasible_rectangular():
-    graph = csr_matrix([[1, 0, 0], [2, 0, 0]])
+    biadjacency_matrix = csr_matrix([[1, 0, 0], [2, 0, 0]])
     with pytest.raises(ValueError):
-        min_weight_full_bipartite_matching(graph)
+        min_weight_full_bipartite_matching(biadjacency_matrix)
 
 
 def test_min_weight_full_matching_infeasible_other_rectangular():
-    graph = csr_matrix([[1, 0], [2, 0], [5, 0]])
+    biadjacency_matrix = csr_matrix([[1, 0], [2, 0], [5, 0]])
     with pytest.raises(ValueError):
-        min_weight_full_bipartite_matching(graph)
+        min_weight_full_bipartite_matching(biadjacency_matrix)
 
 
 def test_explicit_zero_causes_warning():
     with pytest.warns(UserWarning):
-        graph = csr_matrix(((2, 0, 3), (0, 1, 1), (0, 2, 3)))
-        min_weight_full_bipartite_matching(graph)
+        biadjacency_matrix = csr_matrix(((2, 0, 3), (0, 1, 1), (0, 2, 3)))
+        min_weight_full_bipartite_matching(biadjacency_matrix)
 
 
 def test_min_weight_full_matching_for_various_inputs():
     for sign in [-1, 1]:
-        for graph, expected_cost in [
+        for biadjacency_matrix, expected_cost in [
             ([[400, 150, 400],
               [400, 450, 600],
               [300, 225, 300]],
@@ -233,20 +233,22 @@ def test_min_weight_full_matching_for_various_inputs():
         ]:
 
             maximize = sign == -1
-            graph = sign * csr_matrix(graph)
+            biadjacency_matrix = sign * csr_matrix(biadjacency_matrix)
             expected_cost = sign * np.array(expected_cost)
 
             row_ind, col_ind =\
-                min_weight_full_bipartite_matching(graph,
-                                                       maximize=maximize)
+                min_weight_full_bipartite_matching(biadjacency_matrix,
+                                                   maximize=maximize)
             assert_array_equal(row_ind, np.sort(row_ind))
             assert_array_equal(expected_cost,
-                               np.array(graph[row_ind, col_ind])[0])
+                               np.array(
+                                   biadjacency_matrix[row_ind, col_ind])[0])
 
-            graph = graph.T
+            biadjacency_matrix = biadjacency_matrix.T
             row_ind, col_ind =\
-                min_weight_full_bipartite_matching(graph,
-                                                       maximize=maximize)
+                min_weight_full_bipartite_matching(biadjacency_matrix,
+                                                   maximize=maximize)
             assert_array_equal(row_ind, np.sort(row_ind))
             assert_array_equal(np.sort(expected_cost),
-                               np.sort(np.array(graph[row_ind, col_ind])[0]))
+                               np.sort(np.array(
+                                   biadjacency_matrix[row_ind, col_ind])[0]))

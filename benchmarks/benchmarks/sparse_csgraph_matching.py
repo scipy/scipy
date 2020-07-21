@@ -80,7 +80,7 @@ class MinWeightFullBipartiteMatching(Benchmark):
                       'random_two_cost': random_two_cost,
                       'machol_wien': machol_wien}[input_type]
 
-        self.graph = input_func(shape)
+        self.biadjacency_matrix = input_func(shape)
 
     def time_evaluation(self, *args):
-        min_weight_full_bipartite_matching(self.graph)
+        min_weight_full_bipartite_matching(self.biadjacency_matrix)

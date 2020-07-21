@@ -278,9 +278,9 @@ cdef tuple _hopcroft_karp(ITYPE_t[:] indices, ITYPE_t[:] indptr,
     return x, y
 
 
-def min_weight_full_bipartite_matching(graph, maximize=False):
+def min_weight_full_bipartite_matching(biadjacency_matrix, maximize=False):
     r"""
-    min_weight_full_bipartite_matching(graph, maximize=False)
+    min_weight_full_bipartite_matching(biadjacency_matrix, maximize=False)
 
     Returns the minimum weight full matching of a bipartite graph.
 
@@ -288,7 +288,7 @@ def min_weight_full_bipartite_matching(graph, maximize=False):
 
     Parameters
     ----------
-    graph : sparse matrix
+    biadjacency_matrix : sparse matrix
         Biadjacency matrix of the bipartite graph: A sparse matrix in CSR, CSC,
         or COO format whose rows represent one partition of the graph and whose
         columns represent the other partition. An edge between two vertices is
@@ -366,11 +366,11 @@ def min_weight_full_bipartite_matching(graph, maximize=False):
 
     Let us first consider an example in which all weights are equal:
 
-    >>> graph = csr_matrix([[1, 1, 1], [1, 0, 0], [0, 1, 0]])
+    >>> biadjacency_matrix = csr_matrix([[1, 1, 1], [1, 0, 0], [0, 1, 0]])
 
     Here, all we get is a perfect matching of the graph:
 
-    >>> print(min_weight_full_bipartite_matching(graph)[1])
+    >>> print(min_weight_full_bipartite_matching(biadjacency_matrix)[1])
     [2 0 1]
 
     That is, the first, second, and third rows are matched with the third,
@@ -382,41 +382,41 @@ def min_weight_full_bipartite_matching(graph, maximize=False):
     :func:`maximum_bipartite_matching`:
 
     >>> from scipy.sparse.csgraph import maximum_bipartite_matching
-    >>> graph = csr_matrix([[1, 1, 1], [1, 0, 0], [0, 1, 0]])
-    >>> print(maximum_bipartite_matching(graph, perm_type='column'))
+    >>> biadjacency = csr_matrix([[1, 1, 1], [1, 0, 0], [0, 1, 0]])
+    >>> print(maximum_bipartite_matching(biadjacency, perm_type='column'))
     [2 0 1]
 
     When multiple edges are available, the ones with lowest weights are
     preferred:
 
-    >>> graph = csr_matrix([[3, 3, 6], [4, 3, 5], [10, 1, 8]])
-    >>> row_ind, col_ind = min_weight_full_bipartite_matching(graph)
+    >>> biadjacency = csr_matrix([[3, 3, 6], [4, 3, 5], [10, 1, 8]])
+    >>> row_ind, col_ind = min_weight_full_bipartite_matching(biadjacency)
     >>> print(col_ind)
     [0 2 1]
 
     The total weight in this case is :math:`3 + 5 + 1 = 9`:
 
-    >>> print(graph[row_ind, col_ind].sum())
+    >>> print(biadjacency[row_ind, col_ind].sum())
     9
 
     When the matrix is not square, i.e. when the two partitions have different
     cardinalities, the matching is as large as the smaller of the two
     partitions:
 
-    >>> graph = csr_matrix([[0, 1, 1], [0, 2, 3]])
-    >>> row_ind, col_ind = min_weight_full_bipartite_matching(graph)
+    >>> biadjacency = csr_matrix([[0, 1, 1], [0, 2, 3]])
+    >>> row_ind, col_ind = min_weight_full_bipartite_matching(biadjacency)
     >>> print(row_ind, col_ind)
     [0 1] [2 1]
-    >>> graph = csr_matrix([[0, 1], [3, 1], [1, 4]])
-    >>> row_ind, col_ind = min_weight_full_bipartite_matching(graph)
+    >>> biadjacency = csr_matrix([[0, 1], [3, 1], [1, 4]])
+    >>> row_ind, col_ind = min_weight_full_bipartite_matching(biadjacency)
     >>> print(row_ind, col_ind)
     [0 2] [1 0]
 
     When one or both of the partitions are empty, the matching is empty as
     well:
 
-    >>> graph = csr_matrix((2, 0))
-    >>> row_ind, col_ind = min_weight_full_bipartite_matching(graph)
+    >>> biadjacency = csr_matrix((2, 0))
+    >>> row_ind, col_ind = min_weight_full_bipartite_matching(biadjacency)
     >>> print(row_ind, col_ind)
     [] []
 
@@ -442,45 +442,51 @@ def min_weight_full_bipartite_matching(graph, maximize=False):
     28.0
 
     """
-    if not isspmatrix_csr(graph) and not isspmatrix_csc(graph)\
-            and not isspmatrix_coo(graph):
+    if not isspmatrix_csr(biadjacency_matrix)\
+            and not isspmatrix_csc(biadjacency_matrix)\
+            and not isspmatrix_coo(biadjacency_matrix):
         raise TypeError("graph must be in CSC, CSR, or COO format.")
 
-    if not (np.issubdtype(graph.dtype, np.number) or
-            graph.dtype == np.dtype(np.bool_)):
+    if not (np.issubdtype(biadjacency_matrix.dtype, np.number) or
+            biadjacency_matrix.dtype == np.dtype(np.bool_)):
         raise ValueError("expected a matrix containing numerical entries, " +
-                         "got %s" % (graph.dtype,))
+                         "got %s" % (biadjacency_matrix.dtype,))
 
-    graph = graph.astype(np.double)
+    biadjacency_matrix = biadjacency_matrix.astype(np.double)
 
     if maximize:
-        graph = -graph
+        biadjacency_matrix = -biadjacency_matrix
 
     # Change all infinities to zeros, then remove those zeros, but warn the
     # user if any zeros were present in the first place.
-    if not np.all(graph.data):
+    if not np.all(biadjacency_matrix.data):
         warnings.warn('explicit zero weights are removed before matching')
 
-    graph.data[np.isposinf(graph.data)] = 0
-    graph.eliminate_zeros()
+    biadjacency_matrix.data[np.isposinf(biadjacency_matrix.data)] = 0
+    biadjacency_matrix.eliminate_zeros()
 
-    i, j = graph.shape
+    i, j = biadjacency_matrix.shape
 
-    a = np.arange(np.min(graph.shape))
+    a = np.arange(np.min(biadjacency_matrix.shape))
 
     # The algorithm expects more columns than rows in the graph.
     if j < i:
-        graph_t = graph.T
-        if not isspmatrix_csr(graph_t):
-            graph_t = graph_t.tocsr()
-        b = np.asarray(_lapjvsp(graph_t.indptr, graph_t.indices, graph_t.data,
+        biadjacency_matrix_t = biadjacency_matrix.T
+        if not isspmatrix_csr(biadjacency_matrix_t):
+            biadjacency_matrix_t = biadjacency_matrix_t.tocsr()
+        b = np.asarray(_lapjvsp(biadjacency_matrix_t.indptr,
+                                biadjacency_matrix_t.indices,
+                                biadjacency_matrix_t.data,
                                 j, i))
         indices = np.argsort(b)
         return (b[indices], a[indices])
     else:
-        if not isspmatrix_csr(graph):
-            graph = graph.tocsr()
-        b = np.asarray(_lapjvsp(graph.indptr, graph.indices, graph.data, i, j))
+        if not isspmatrix_csr(biadjacency_matrix):
+            biadjacency_matrix = biadjacency_matrix.tocsr()
+        b = np.asarray(_lapjvsp(biadjacency_matrix.indptr,
+                                biadjacency_matrix.indices,
+                                biadjacency_matrix.data,
+                                i, j))
         return (a, b)
 
 
