@@ -950,53 +950,48 @@ class TestPareto(object):
         args = [data, (stats.pareto._fitstart(data), )]
         func = stats.pareto._reduce_func(args, {})[1]
 
+        def _assert_lessthan_loglike(dist, data, func, **kwds):
+            mle = dist.fit(data, **kwds)
+            opt = super(type(dist), dist).fit(data, **kwds)
+            ll_mle = func(mle, data)
+            ll_opt = func(opt, data)
+            assert ll_mle < ll_opt
+
         # fixed `floc` to actual location provides as good or better fit.
-        mle = stats.pareto.fit(data, floc=rvs_loc)
-        opt = super(type(stats.pareto), stats.pareto).fit(data, floc=rvs_loc)
-        ll_mle = func(mle, data)
-        ll_opt = func(opt, data)
-        assert ll_mle < ll_opt or np.allclose(ll_mle, ll_opt)
+        _assert_lessthan_loglike(stats.pareto, data, func, floc=rvs_loc)
 
         # fixing `floc` to an arbitrary number, 0, still provides an as good
         # or better fit.
-        mle = stats.pareto.fit(data, floc=0)
-        opt = super(type(stats.pareto), stats.pareto).fit(data, floc=0)
-        ll_mle = func(mle, data)
-        ll_opt = func(opt, data)
-        assert ll_mle < ll_opt or np.allclose(ll_mle, ll_opt)
+        _assert_lessthan_loglike(stats.pareto, data, func, floc=0)
 
         # fixed shape still uses analytical MLE and provides
         # an as good or better fit.
-        mle = stats.pareto.fit(data, floc=0, f0=4)
-        opt = super(type(stats.pareto), stats.pareto).fit(data, floc=0, f0=4)
-        ll_mle = func(mle, data)
-        ll_opt = func(opt, data)
-        assert ll_mle < ll_opt or np.allclose(ll_mle, ll_opt)
+        _assert_lessthan_loglike(stats.pareto, data, func, floc=0, f0=4)
 
         # valid fixed fscale still uses analytical MLE and provides
         # an as good or better fit.
-        mle = stats.pareto.fit(data, floc=0, fscale=rvs_scale/2)
-        opt = super(type(stats.pareto), stats.pareto).fit(data, floc=0,
-                                                          fscale=rvs_scale/2)
-        ll_mle = func(mle, data)
-        ll_opt = func(opt, data)
-        print(mle, opt, ll_mle, ll_opt)
-        assert ll_mle < ll_opt or np.allclose(ll_mle, ll_opt)
+        _assert_lessthan_loglike(stats.pareto, data, func, floc=0,
+                                 fscale=rvs_scale/2)
 
     def test_fit_warnings(self):
-        assert_raises(RuntimeError, stats.pareto.fit, [1, 2, 3], f0=2, floc=1,
-                      fscale=1, match="All parameters fixed. There is nothing "
-                      "to optimize.",)
-        assert_raises(RuntimeError, stats.pareto.fit, [np.nan],
-                      match="The data contains non-finite values")
-        assert_raises(RuntimeError, stats.pareto.fit, [np.inf],
-                      match="The data contains non-finite values")
-        assert_raises(TypeError, stats.pareto.fit, [2, 2, 3], floc=1, extra=2)
-        assert_raises(TypeError, stats.pareto.fit, [1, 2, 3], 1, 4,
-                      match="Too many arguments.")
-        assert_raises(RuntimeError, stats.pareto.fit, [1, 2, 3],
-                      match="`floc` must be fixed to obtain a "
-                      "well defined solution.")
+        with pytest.raises(RuntimeError,
+                           match="All parameters fixed. There is nothing "
+                           "to optimize."):
+            stats.pareto.fit([1, 2, 3], f0=2, floc=1, fscale=1)
+        with pytest.raises(RuntimeError,
+                           match="The data contains non-finite values"):
+            stats.pareto.fit([np.nan])
+        with pytest.raises(RuntimeError,
+                           match="The data contains non-finite values"):
+            stats.pareto.fit([np.inf])
+        with pytest.raises(TypeError, match="Unknown keyword arguments:"):
+            stats.pareto.fit([2, 2, 3], floc=1, extra=2)
+        with pytest.raises(TypeError, match="Too many positional arguments."):
+            stats.pareto.fit([1, 2, 3], 1, 4)
+        with pytest.raises(RuntimeError,
+                           match="`floc` must be fixed to obtain a "
+                           "well defined solution."):
+            stats.pareto.fit([1, 2, 3])
         assert_raises(FitDataError, stats.pareto.fit, [1, 2, 3], floc=2)
         assert_raises(FitDataError, stats.pareto.fit, [5, 2, 3], floc=1,
                       fscale=3)

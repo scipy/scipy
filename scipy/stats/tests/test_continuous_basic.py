@@ -55,7 +55,7 @@ skip_fit_test = ['exponpow', 'exponweib', 'gausshyper', 'genexpon',
                  'kappa4', 'ksone', 'kstwo', 'kstwobign', 'mielke', 'ncf', 'nct',
                  'powerlognorm', 'powernorm', 'recipinvgauss', 'trapz',
                  'vonmises', 'vonmises_line',
-                 'levy_stable', 'rv_histogram_instance']
+                 'levy_stable', 'rv_histogram_instance', 'pareto']
 
 # skip check_fit_args_fix (test is slow)
 skip_fit_fix_test = ['burr', 'exponpow', 'exponweib',
@@ -63,7 +63,8 @@ skip_fit_fix_test = ['burr', 'exponpow', 'exponweib',
                      'gompertz', 'johnsonsb', 'johnsonsu', 'kappa4',
                      'ksone', 'kstwo', 'kstwobign', 'levy_stable', 'mielke', 'ncf',
                      'ncx2', 'powerlognorm', 'powernorm', 'rdist',
-                     'recipinvgauss', 'trapz', 'vonmises', 'vonmises_line']
+                     'recipinvgauss', 'trapz', 'vonmises', 'vonmises_line',
+                     'pareto']
 
 # These distributions fail the complex derivative test below.
 # Here 'fail' mean produce wrong results and/or raise exceptions, depending
