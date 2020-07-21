@@ -2912,7 +2912,7 @@ def _minimize_powell(func, x0, args=(), callback=None, bounds=None,
         lower_bound, upper_bound = None, None
     else:
         # bounds is standardized in _minimize.py.
-        lower_bound, upper_bound = bounds.lb, bounds.ub
+        lower_bound, upper_bound = np.asarray(bounds.lb), np.asarray(bounds.ub)
         if np.any(lower_bound > x0) or np.any(x0 > upper_bound):
             warnings.warn("Initial guess is not within the specified bounds",
                           OptimizeWarning, 3)
