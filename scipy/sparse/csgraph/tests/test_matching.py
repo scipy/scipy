@@ -191,6 +191,12 @@ def test_min_weight_full_matching_infeasible_other_rectangular():
         min_weight_full_bipartite_matching(graph)
 
 
+def test_explicit_zero_causes_warning():
+    with pytest.warns(UserWarning):
+        graph = csr_matrix(((2, 0, 3), (0, 1, 1), (0, 2, 3)))
+        min_weight_full_bipartite_matching(graph)
+
+
 def test_min_weight_full_matching_for_various_inputs():
     for sign in [-1, 1]:
         for graph, expected_cost in [
@@ -214,6 +220,11 @@ def test_min_weight_full_matching_for_various_inputs():
               [9, 8, 1, 1],
               [9, 7, 4, 10]],
              [10, 1, 4]),
+
+            ([[10, float("inf"), float("inf")],
+              [float("inf"), float("inf"), 1],
+              [float("inf"), 7, float("inf")]],
+             [10, 1, 7]),
 
             ([[10, 0, 0],
               [0, 0, 1],

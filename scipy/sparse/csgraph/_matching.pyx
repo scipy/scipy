@@ -1,3 +1,5 @@
+import warnings
+
 cimport cython
 import numpy as np
 cimport numpy as np
@@ -310,9 +312,9 @@ def min_weight_full_bipartite_matching(graph, maximize=False):
     Notes
     -----
 
-    Let :math:`G = ((U, V), E)` be a weighted bipartite graph with real weights
-    :math:`w : E \to \mathbb{R}`. This function then produces a matching
-    :math:`M \subseteq E` with cardinality
+    Let :math:`G = ((U, V), E)` be a weighted bipartite graph with non-zero
+    weights :math:`w : E \to \mathbb{R} \setminus \{0\}`. This function then
+    produces a matching :math:`M \subseteq E` with cardinality
 
     .. math::
        \lvert M \rvert = \min(\lvert U \rvert, \lvert V \rvert),
@@ -339,6 +341,11 @@ def min_weight_full_bipartite_matching(graph, maximize=False):
     If no full matching exists, this function raises a ``ValueError``. For
     determining the size of the largest matching in the graph, see
     :func:`maximum_bipartite_matching`.
+
+    We require that weights are non-zero only to avoid issues with the handling
+    of explicit zeros when converting between different sparse representations.
+    Zero weights can be handled by adding a constant to all weights, so that
+    the resulting matrix contains no zeros.
 
     References
     ----------
@@ -416,23 +423,23 @@ def min_weight_full_bipartite_matching(graph, maximize=False):
     In general, we will always reach the same sum of weights as if we had used
     :func:`scipy.optimize.linear_sum_assignment` but note that for that one,
     missing edges are represented by a matrix entry of ``float('inf')``. Let us
-    generate a random sparse matrix with integer entries between 0 and 10:
+    generate a random sparse matrix with integer entries between 1 and 10:
 
     >>> import numpy as np
     >>> from scipy.sparse import random
     >>> from scipy.optimize import linear_sum_assignment
     >>> sparse = random(10, 10, random_state=42, density=.5, format='coo') * 10
-    >>> sparse.data = np.floor(sparse.data)
+    >>> sparse.data = np.ceil(sparse.data)
     >>> dense = sparse.toarray()
     >>> dense = np.full(sparse.shape, np.inf)
     >>> dense[sparse.row, sparse.col] = sparse.data
     >>> sparse = sparse.tocsr()
     >>> row_ind, col_ind = linear_sum_assignment(dense)
     >>> print(dense[row_ind, col_ind].sum())
-    18.0
+    28.0
     >>> row_ind, col_ind = min_weight_full_bipartite_matching(sparse)
     >>> print(sparse[row_ind, col_ind].sum())
-    18.0
+    28.0
 
     """
     if not isspmatrix_csr(graph) and not isspmatrix_csc(graph)\
@@ -448,6 +455,14 @@ def min_weight_full_bipartite_matching(graph, maximize=False):
 
     if maximize:
         graph = -graph
+
+    # Change all infinities to zeros, then remove those zeros, but warn the
+    # user if any zeros were present in the first place.
+    if not np.all(graph.data):
+        warnings.warn('explicit zero weights are removed before matching')
+
+    graph.data[np.isposinf(graph.data)] = 0
+    graph.eliminate_zeros()
 
     i, j = graph.shape
 
