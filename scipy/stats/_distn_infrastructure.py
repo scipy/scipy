@@ -13,6 +13,7 @@ import inspect
 from itertools import zip_longest
 
 from scipy._lib import doccer
+from scipy._lib._util import _lazywhere
 from ._distr_params import distcont, distdiscrete
 from scipy._lib._util import check_random_state
 from scipy._lib._util import _valarray as valarray
@@ -560,12 +561,22 @@ def _ncx2_log_pdf(x, df, nc):
     df2 = df/2.0 - 1.0
     xs, ns = np.sqrt(x), np.sqrt(nc)
     res = xlogy(df2/2.0, x/nc) - 0.5*(xs - ns)**2
-    res += np.log(ive(df2, xs*ns) / 2.0)
-    return res
+    corr = ive(df2, xs*ns) / 2.0
+    # Return res + np.log(corr) avoiding np.log(0)
+    return _lazywhere(
+        corr > 0,
+        (res, corr),
+        f=lambda r, c: r + np.log(c),
+        fillvalue=-np.inf)
 
 
 def _ncx2_pdf(x, df, nc):
-    return np.exp(_ncx2_log_pdf(x, df, nc))
+    # Copy of _ncx2_log_pdf avoiding np.log(0) when corr = 0
+    df2 = df/2.0 - 1.0
+    xs, ns = np.sqrt(x), np.sqrt(nc)
+    res = xlogy(df2/2.0, x/nc) - 0.5*(xs - ns)**2
+    corr = ive(df2, xs*ns) / 2.0
+    return np.exp(res) * corr
 
 
 def _ncx2_cdf(x, df, nc):
@@ -2520,7 +2531,7 @@ class rv_continuous(rv_generic):
         --------
 
         To understand the effect of the bounds of integration consider
-        
+
         >>> from scipy.stats import expon
         >>> expon(1).expect(lambda x: 1, lb=0.0, ub=2.0)
         0.6321205588285578
