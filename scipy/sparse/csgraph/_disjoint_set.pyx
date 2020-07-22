@@ -19,6 +19,8 @@ cdef class DisjointSet:
 
     Attributes
     ----------
+    n : int
+        The number of elements in the set.
     nc : int
         The number of components/subsets.
 
@@ -53,11 +55,13 @@ cdef class DisjointSet:
     .. [1] https://en.wikipedia.org/wiki/Disjoint-set_data_structure
     """
     cdef:
+        readonly np.npy_intp n
         readonly np.npy_intp nc
         readonly np.npy_intp[:] _parents
         readonly np.npy_intp[:] _sizes
 
     def __init__(DisjointSet self, np.intp_t n):
+        self.n = n
         self.nc = n
         self._sizes = np.ones(n, dtype=np.intp)
         self._parents = np.arange(n, dtype=np.intp)
@@ -101,8 +105,14 @@ cdef class DisjointSet:
         merged : bool
             `True` if `a` and `b` were in disjoint sets, `False` otherwise.
         """
-        if a < 0 or b < 0:
-            raise ValueError("`a` and `b` must be non-negative")
+        if a < 0:
+            raise ValueError("`a` must be non-negative")
+        if b < 0:
+            raise ValueError("`b` must be non-negative")
+        if a >= self.n:
+            raise ValueError("`a` must not be greater than `n`")
+        if b >= self.n:
+            raise ValueError("`b` must not be greater than `n`")
         a = self.find(a)
         b = self.find(b)
         if a == b:
