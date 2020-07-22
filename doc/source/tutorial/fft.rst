@@ -342,14 +342,14 @@ SciPy uses the following definition of the unnormalized DCT-IV
 
 .. math::
 
-    y[k] = \sum_{n=0}^{N-1} x[n] \cos\left({\pi (2n+1)(2k+1) \over 2N}\right)
+    y[k] = 2 \sum_{n=0}^{N-1} x[n] \cos\left({\pi (2n+1)(2k+1) \over 4N}\right)
     \qquad 0 \le k < N,
 
 or, for ``norm='ortho'``:
 
 .. math::
 
-    y[k] = \sqrt{2\over N}\sum_{n=0}^{N-1} x[n] \cos\left({\pi (2n+1)(2k+1) \over 2N}\right)
+    y[k] = \sqrt{2\over N}\sum_{n=0}^{N-1} x[n] \cos\left({\pi (2n+1)(2k+1) \over 4N}\right)
     \qquad 0 \le k < N
 
 
@@ -505,14 +505,14 @@ SciPy uses the following definition of the unnormalized DST-IV
 
 .. math::
 
-    y[k] = \sum_{n=0}^{N-1} x[n] \sin\left({\pi (2n+1)(2k+1) \over 2N}\right)
+    y[k] = 2 \sum_{n=0}^{N-1} x[n] \sin\left({\pi (2n+1)(2k+1) \over 4N}\right)
     \qquad 0 \le k < N,
 
 or, for ``norm='ortho'``:
 
 .. math::
 
-    y[k] = \sqrt{2\over N}\sum_{n=0}^{N-1} x[n] \sin\left({\pi (2n+1)(2k+1) \over 2N}\right)
+    y[k] = \sqrt{2\over N}\sum_{n=0}^{N-1} x[n] \sin\left({\pi (2n+1)(2k+1) \over 4N}\right)
     \qquad 0 \le k < N,
 
 
