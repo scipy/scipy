@@ -27,18 +27,6 @@ cdef class DisjointSet:
     union
     find
 
-    n = 10
-
-    assert dis.nc == n
-
-    for i in range(n - 1):
-        assert dis.union(i, i + 1)
-        assert dis.nc == n - 1 - i
-
-    parents = [dis.find(i) for i in range(n)]
-    assert_array_equal(0, parents)
-    assert not dis.union(0, n - 1)
-
     Examples
     --------
     >>> from scipy.sparse.csgraph import DisjointSet
