@@ -2441,6 +2441,7 @@ def levene(*args, center='median', proportiontocut=0.05):
     return LeveneResult(W, pval)
 
 
+@np.deprecate(new_name='binomtest')
 def binom_test(x, n=None, p=0.5, alternative='two-sided'):
     """
     Perform a test that the probability of success is p.

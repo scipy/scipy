@@ -619,38 +619,111 @@ class TestLevene(object):
 
 
 class TestBinomP(object):
+    """Tests for stats.binom_test."""
 
     def test_data(self):
-        pval = stats.binom_test(100, 250)
-        assert_almost_equal(pval, 0.0018833009350757682, 11)
-        pval = stats.binom_test(201, 405)
-        assert_almost_equal(pval, 0.92085205962670713, 11)
-        pval = stats.binom_test([682, 243], p=3.0/4)
-        assert_almost_equal(pval, 0.38249155957481695, 11)
+        with suppress_warnings() as sup:
+            sup.filter(DeprecationWarning,
+                       message='.*`binom_test` is deprecated.*')
+            pval = stats.binom_test(100, 250)
+            assert_almost_equal(pval, 0.0018833009350757682, 11)
+            pval = stats.binom_test(201, 405)
+            assert_almost_equal(pval, 0.92085205962670713, 11)
+            pval = stats.binom_test([682, 243], p=3/4)
+            assert_almost_equal(pval, 0.38249155957481695, 11)
 
     def test_bad_len_x(self):
         # Length of x must be 1 or 2.
-        assert_raises(ValueError, stats.binom_test, [1, 2, 3])
+        with suppress_warnings() as sup:
+            sup.filter(DeprecationWarning,
+                       message='.*`binom_test` is deprecated.*')
+            assert_raises(ValueError, stats.binom_test, [1, 2, 3])
 
     def test_bad_n(self):
         # len(x) is 1, but n is invalid.
         # Missing n
-        assert_raises(ValueError, stats.binom_test, [100])
-        # n less than x[0]
-        assert_raises(ValueError, stats.binom_test, [100], n=50)
+        with suppress_warnings() as sup:
+            sup.filter(DeprecationWarning,
+                       message='.*`binom_test` is deprecated.*')
+            assert_raises(ValueError, stats.binom_test, [100])
+            # n less than x[0]
+            assert_raises(ValueError, stats.binom_test, [100], n=50)
 
     def test_bad_p(self):
-        assert_raises(ValueError, stats.binom_test, [50, 50], p=2.0)
+        with suppress_warnings() as sup:
+            sup.filter(DeprecationWarning,
+                       message='.*`binom_test` is deprecated.*')
+            assert_raises(ValueError, stats.binom_test, [50, 50], p=2.0)
 
     def test_alternatives(self):
-        res = stats.binom_test(51, 235, p=1./6, alternative='less')
-        assert_almost_equal(res, 0.982022657605858)
+        with suppress_warnings() as sup:
+            sup.filter(DeprecationWarning,
+                       message='.*`binom_test` is deprecated.*')
 
-        res = stats.binom_test(51, 235, p=1./6, alternative='greater')
-        assert_almost_equal(res, 0.02654424571169085)
+            res = stats.binom_test(51, 235, p=1/6, alternative='less')
+            assert_almost_equal(res, 0.982022657605858)
 
-        res = stats.binom_test(51, 235, p=1./6, alternative='two-sided')
-        assert_almost_equal(res, 0.0437479701823997)
+            res = stats.binom_test(51, 235, p=1/6, alternative='greater')
+            assert_almost_equal(res, 0.02654424571169085)
+
+            res = stats.binom_test(51, 235, p=1/6, alternative='two-sided')
+            assert_almost_equal(res, 0.0437479701823997)
+
+
+class TestBinomTest:
+    """Tests for stats.binomtest."""
+
+    # Expected results here are from R 3.6.2 binom.test
+    @pytest.mark.parametrize('alternative, pval, ci_low, ci_high',
+                             [('less', 0.1488311, 0.0, 0.2772002),
+                              ('greater', 0.9004696, 0.1366613, 1.0),
+                              ('two-sided', 0.2983721, 0.1266556, 0.2918427)])
+    def test_confidence_intervals1(self, alternative, pval, ci_low, ci_high):
+        res = stats.binomtest(20, n=100, p=0.25, alternative=alternative)
+        assert_allclose(res.pvalue, pval, rtol=1e-6)
+        assert_equal(res.proportion_estimate, 0.2)
+        proportion_ci = res.proportion_ci(confidence_level=0.95)
+        assert_allclose(proportion_ci, (ci_low, ci_high), rtol=1e-6)
+
+    # Expected results here are from R 3.6.2 binom.test.
+    @pytest.mark.parametrize('alternative, pval, ci_low, ci_high',
+                             [('less',
+                               0.005656361, 0.0, 0.1872093),
+                              ('greater',
+                               0.9987146, 0.008860761, 1.0),
+                              ('two-sided',
+                               0.01191714, 0.006872485, 0.202706269)])
+    def test_confidence_intervals2(self, alternative, pval, ci_low, ci_high):
+        res = stats.binomtest(3, n=50, p=0.2, alternative=alternative)
+        assert_allclose(res.pvalue, pval, rtol=1e-6)
+        assert_equal(res.proportion_estimate, 0.06)
+        proportion_ci = res.proportion_ci(confidence_level=0.99)
+        assert_allclose(proportion_ci, (ci_low, ci_high), rtol=1e-6)
+
+    # Expected results are from the prop.test function in R 3.6.2.
+    @pytest.mark.parametrize(
+        'alternative, corr, conf, ci_low, ci_high',
+        [['two-sided', True, 0.95, 0.08094782, 0.64632928],
+         ['two-sided', True, 0.99, 0.0586329, 0.7169416],
+         ['two-sided', False, 0.95, 0.1077913, 0.6032219],
+         ['two-sided', False, 0.99, 0.07956632, 0.6799753],
+         ['less', True, 0.95, 0.0, 0.6043476],
+         ['less', True, 0.99, 0.0, 0.6901811],
+         ['less', False, 0.95, 0.0, 0.5583002],
+         ['less', False, 0.99, 0.0, 0.6507187],
+         ['greater', True, 0.95, 0.09644904, 1.0],
+         ['greater', True, 0.99, 0.06659141, 1.0],
+         ['greater', False, 0.95, 0.1268766, 1.0],
+         ['greater', False, 0.99, 0.08974147, 1.0]]
+    )
+    def test_ci_wilson_method(self, alternative, corr, conf, ci_low, ci_high):
+        res = stats.binomtest(3, n=10, p=0.1, alternative=alternative)
+        if corr:
+            method = 'wilsoncc'
+        else:
+            method = 'wilson'
+        ci = res.proportion_ci(confidence_level=conf, method=method)
+        assert_allclose(ci, (ci_low, ci_high), rtol=1e-6)
 
 
 class TestFligner(object):

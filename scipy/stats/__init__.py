@@ -277,6 +277,7 @@ Statistical tests
    anderson
    anderson_ksamp
    binom_test
+   binomtest
    fligner
    median_test
    mood
@@ -389,6 +390,7 @@ interface package rpy.
 from .stats import *
 from .distributions import *
 from .morestats import *
+from ._binomtest import binomtest
 from ._binned_statistic import *
 from .kde import gaussian_kde
 from . import mstats

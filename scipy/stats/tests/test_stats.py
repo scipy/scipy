@@ -4500,11 +4500,16 @@ def test_binomtest():
     0.12044570587262322, 0.88154763174802508, 0.027120993063129286,
     2.6102587134694721e-006]
 
-    for p, res in zip(pp,results):
-        assert_approx_equal(stats.binom_test(x, n, p), res,
-                            significant=12, err_msg='fail forp=%f' % p)
+    with suppress_warnings() as sup:
+        sup.filter(DeprecationWarning,
+                   message='.*`binom_test` is deprecated.*')
 
-    assert_approx_equal(stats.binom_test(50,100,0.1), 5.8320387857343647e-024,
+        for p, res in zip(pp, results):
+            assert_approx_equal(stats.binom_test(x, n, p), res,
+                                significant=12, err_msg='fail forp=%f' % p)
+
+        assert_approx_equal(stats.binom_test(50, 100, 0.1),
+                            5.8320387857343647e-024,
                             significant=12, err_msg='fail forp=%f' % p)
 
 
@@ -4526,20 +4531,32 @@ def test_binomtest2():
      0.753906250,0.343750000,0.109375000,0.021484375,0.001953125]
     ]
 
-    for k in range(1, 11):
-        res1 = [stats.binom_test(v, k, 0.5) for v in range(k + 1)]
-        assert_almost_equal(res1, res2[k-1], decimal=10)
+    with suppress_warnings() as sup:
+        sup.filter(DeprecationWarning,
+                   message='.*`binom_test` is deprecated.*')
+
+        for k in range(1, 11):
+            res1 = [stats.binom_test(v, k, 0.5) for v in range(k + 1)]
+            assert_almost_equal(res1, res2[k-1], decimal=10)
 
 
 def test_binomtest3():
     # test added for issue #2384
     # test when x == n*p and neighbors
-    res3 = [stats.binom_test(v, v*k, 1./k) for v in range(1, 11)
-                                           for k in range(2, 11)]
+    with suppress_warnings() as sup:
+        sup.filter(DeprecationWarning,
+                   message='.*`binom_test` is deprecated.*')
+        res3 = [stats.binom_test(v, v*k, 1./k)
+                for v in range(1, 11) for k in range(2, 11)]
     assert_equal(res3, np.ones(len(res3), int))
 
-    #> bt=c()
-    #> for(i in as.single(1:10)){for(k in as.single(2:10)){bt = c(bt, binom.test(i-1, k*i,(1/k))$p.value); print(c(i+1, k*i,(1/k)))}}
+    # > bt=c()
+    # > for(i in as.single(1:10)) {
+    # +     for(k in as.single(2:10)) {
+    # +         bt = c(bt, binom.test(i-1, k*i,(1/k))$p.value);
+    # +         print(c(i+1, k*i,(1/k)))
+    # +     }
+    # + }
     binom_testm1 = np.array([
          0.5, 0.5555555555555556, 0.578125, 0.5904000000000003,
          0.5981224279835393, 0.603430543396034, 0.607304096221924,
@@ -4573,7 +4590,12 @@ def test_binomtest3():
         ])
 
     # > bt=c()
-    # > for(i in as.single(1:10)){for(k in as.single(2:10)){bt = c(bt, binom.test(i+1, k*i,(1/k))$p.value); print(c(i+1, k*i,(1/k)))}}
+    # > for(i in as.single(1:10)) {
+    # +     for(k in as.single(2:10)) {
+    # +         bt = c(bt, binom.test(i+1, k*i,(1/k))$p.value);
+    # +         print(c(i+1, k*i,(1/k)))
+    # +     }
+    # + }
 
     binom_testp1 = np.array([
          0.5, 0.259259259259259, 0.26171875, 0.26272, 0.2632244513031551,
@@ -4606,10 +4628,13 @@ def test_binomtest3():
          0.736270323773157, 0.737718376096348
         ])
 
-    res4_p1 = [stats.binom_test(v+1, v*k, 1./k) for v in range(1, 11)
-                                                for k in range(2, 11)]
-    res4_m1 = [stats.binom_test(v-1, v*k, 1./k) for v in range(1, 11)
-                                                for k in range(2, 11)]
+    with suppress_warnings() as sup:
+        sup.filter(DeprecationWarning,
+                   message='.*`binom_test` is deprecated.*')
+        res4_p1 = [stats.binom_test(v+1, v*k, 1./k)
+                   for v in range(1, 11) for k in range(2, 11)]
+        res4_m1 = [stats.binom_test(v-1, v*k, 1./k)
+                   for v in range(1, 11) for k in range(2, 11)]
 
     assert_almost_equal(res4_p1, binom_testp1, decimal=13)
     assert_almost_equal(res4_m1, binom_testm1, decimal=13)
