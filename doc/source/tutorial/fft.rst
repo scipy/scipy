@@ -349,8 +349,8 @@ or, for ``norm='ortho'``:
 
 .. math::
 
-    y[k] = \sqrt{2\over N}}\sum_{n=0}^{N-1} x[n] \cos\left({\pi (2n+1)(2k+1) \over 2N}\right)
-    \qquad 0 \le k < N,
+    y[k] = \sqrt{2\over N}\sum_{n=0}^{N-1} x[n] \cos\left({\pi (2n+1)(2k+1) \over 2N}\right)
+    \qquad 0 \le k < N
 
 
 DCT and IDCT
@@ -458,7 +458,7 @@ SciPy provides a DST [Mak]_ with the function :func:`dst` and a corresponding ID
 with the function :func:`idst`.
 
 There are, theoretically, 8 types of the DST for different combinations of
-even/odd boundary conditions and boundary off sets [WPS]_, only the first 4
+even/odd boundary conditions and boundary offsets [WPS]_, only the first 4
 types are implemented in scipy.
 
 Type I DST
@@ -512,7 +512,7 @@ or, for ``norm='ortho'``:
 
 .. math::
 
-    y[k] = \sqrt{2\over N}}\sum_{n=0}^{N-1} x[n] \sin\left({\pi (2n+1)(2k+1) \over 2N}\right)
+    y[k] = \sqrt{2\over N}\sum_{n=0}^{N-1} x[n] \sin\left({\pi (2n+1)(2k+1) \over 2N}\right)
     \qquad 0 \le k < N,
 
 
