@@ -587,8 +587,3 @@ References
 .. [WPC] https://en.wikipedia.org/wiki/Discrete_cosine_transform
 
 .. [WPS] https://en.wikipedia.org/wiki/Discrete_sine_transform
-
-
-.. _FFTW: http://www.fftw.org/
-.. _PyFFTW: https://hgomersall.github.io/pyFFTW/
-.. _pyfftw.interfaces: https://hgomersall.github.io/pyFFTW/pyfftw/interfaces/interfaces.html
