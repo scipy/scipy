@@ -111,14 +111,6 @@ cdef class DisjointSet:
         merged : bool
             `True` if `a` and `b` were in disjoint sets, `False` otherwise.
         """
-        if a < 0:
-            raise ValueError("`a` must be non-negative")
-        if b < 0:
-            raise ValueError("`b` must be non-negative")
-        if a >= self.n:
-            raise ValueError("`a` must not be greater than `n`")
-        if b >= self.n:
-            raise ValueError("`b` must not be greater than `n`")
         a = self.find(a)
         b = self.find(b)
         if a == b:
