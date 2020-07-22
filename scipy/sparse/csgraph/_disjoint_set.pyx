@@ -36,12 +36,18 @@ cdef class DisjointSet:
     Initialize a disjoint set with 4 elements:
 
     >>> dis = DisjointSet(4)
+
+    Merge some subsets:
+
     >>> dis.union(0, 1)
     True
     >>> dis.union(2, 3)
     True
     >>> dis.union(3, 3)
     False
+
+    Find a root element:
+
     >>> dis.find(1)
     0
 
