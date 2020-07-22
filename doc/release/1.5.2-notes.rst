@@ -13,6 +13,7 @@ Authors
 * Peter Bell
 * Tobias Biester +
 * Evgeni Burovski
+* Thomas A Caswell
 * Ralf Gommers
 * Sturla Molden
 * Andrew Nelson
@@ -23,7 +24,7 @@ Authors
 * Atsushi Sakai
 * Pauli Virtanen
 
-A total of 12 people contributed to this release.
+A total of 13 people contributed to this release.
 People with a "+" by their names contributed a patch for the first time.
 This list of names is automatically generated, and may not be fully complete.
 
@@ -47,6 +48,7 @@ Issues closed for 1.5.2
 * `#12487 <https://github.com/scipy/scipy/issues/12487>`__: BUG: optimize: incorrect result from approx_fprime
 * `#12493 <https://github.com/scipy/scipy/issues/12493>`__: CI: GitHub Actions for maintenance branches
 * `#12533 <https://github.com/scipy/scipy/issues/12533>`__: eigh gives incorrect results
+* `#12579 <https://github.com/scipy/scipy/issues/12579>`__: BLD, MAINT: distutils issues in wheels repo
 
 Pull requests for 1.5.2
 -----------------------
@@ -70,3 +72,6 @@ Pull requests for 1.5.2
 * `#12538 <https://github.com/scipy/scipy/pull/12538>`__: BUG:linalg: eigh type parameter handling corrected
 * `#12560 <https://github.com/scipy/scipy/pull/12560>`__: MAINT: truncnorm.rvs compatibility for \`Generator\`
 * `#12562 <https://github.com/scipy/scipy/pull/12562>`__: redo gh-12188: fix segfaults in splprep with fixed knots
+* `#12586 <https://github.com/scipy/scipy/pull/12586>`__: BLD: Add -std=c99 to sigtools to compile with C99
+* `#12590 <https://github.com/scipy/scipy/pull/12590>`__: CI: Add GCC 4.8 entry to travis build matrix
+* `#12591 <https://github.com/scipy/scipy/pull/12591>`__: BLD: fix cython error on master-branch cython
