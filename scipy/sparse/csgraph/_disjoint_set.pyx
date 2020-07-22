@@ -17,17 +17,15 @@ cdef class DisjointSet:
     n : int
         The number of elements in the set.
 
-    Attributes
-    ----------
-    n : int
-        The number of elements in the set.
-    nc : int
-        The number of components/subsets.
+    Notes
+    -----
+    .. versionadded: 1.6.0
 
-    Methods
-    -------
-    union
-    find
+
+    References
+    ----------
+    .. [1] https://en.wikipedia.org/wiki/Disjoint-set_data_structure
+
 
     Examples
     --------
@@ -51,14 +49,17 @@ cdef class DisjointSet:
     >>> dis.find(1)
     0
 
-    Notes
-    -----
-    .. versionadded: 1.6.0
-
-
-    References
+    Attributes
     ----------
-    .. [1] https://en.wikipedia.org/wiki/Disjoint-set_data_structure
+    n : int
+        The number of elements in the set.
+    nc : int
+        The number of components/subsets.
+
+    Methods
+    -------
+    union
+    find
     """
     cdef:
         readonly np.npy_intp n
