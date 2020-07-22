@@ -175,6 +175,7 @@ __all__ = ['connected_components',
            'csgraph_from_masked',
            'csgraph_to_dense',
            'csgraph_to_masked',
+           'DisjointSet',
            'NegativeCycleError']
 
 from ._laplacian import laplacian
@@ -189,6 +190,7 @@ from ._reordering import reverse_cuthill_mckee, structural_rank
 from ._tools import construct_dist_matrix, reconstruct_path,\
     csgraph_from_dense, csgraph_to_dense, csgraph_masked_from_dense,\
     csgraph_from_masked, csgraph_to_masked
+from ._disjoint_set import DisjointSet
 
 from scipy._lib._testutils import PytestTester
 test = PytestTester(__name__)
