@@ -4247,7 +4247,7 @@ def _check_fit_input_parameters(self, data, args, kwds):
                                                 'floc', 'fscale',
                                                 *fshape_keys]]
     if keys:
-        raise TypeError("Unknown keyword arguments: %s." % keys)
+        raise TypeError(f"Unknown keyword arguments: {keys}.")
 
     if len(args) > num_shapes:
         raise TypeError("Too many positional arguments.")
