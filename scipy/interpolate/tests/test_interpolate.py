@@ -2616,8 +2616,8 @@ class TestRegularGridInterpolator(object):
     def test_read_only(self):
         # input data
         np.random.seed(0)
-        x = np.random.random(10)
-        y = np.random.random(10)
+        xy = np.random.random((10, 2))
+        x, y = xy[:, 0], xy[:, 1]
         z = np.hypot(x, y)
         
         # x-y grid for interpolation
@@ -2625,16 +2625,15 @@ class TestRegularGridInterpolator(object):
         Y = np.linspace(min(y), max(y))
         X, Y = np.meshgrid(X, Y)
 
-        x.setflags(write=False)
-        y.setflags(write=False)
+        xy.setflags(write=False)
         z.setflags(write=False)
         X.setflags(write=False)
         Y.setflags(write=False)
 
         for interpolator in (NearestNDInterpolator, LinearNDInterpolator,
                              CloughTocher2DInterpolator):
-            interp = interpolator(list(zip(x, y)), z)
-            interp((X, Y))
+            interp = interpolator(xy, z)
+            interp(X, Y)
 
 
 class MyValue(object):

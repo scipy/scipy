@@ -259,7 +259,7 @@ class LinearNDInterpolator(NDInterpolatorBase):
     def _do_evaluate(self, double[:,::1] xi, double_or_complex dummy):
         cdef const double_or_complex[:,::1] values = self.values
         cdef double_or_complex[:,::1] out
-        cdef double[:,::1] points = self.points
+        cdef const double[:,::1] points = self.points
         cdef int[:,::1] simplices = self.tri.simplices
         cdef double c[NPY_MAXDIMS]
         cdef double_or_complex fill_value
@@ -860,7 +860,7 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
         cdef const double_or_complex[:,::1] values = self.values
         cdef double_or_complex[:,:,:] grad = self.grad
         cdef double_or_complex[:,::1] out
-        cdef double[:,::1] points = self.points
+        cdef const double[:,::1] points = self.points
         cdef int[:,::1] simplices = self.tri.simplices
         cdef double c[NPY_MAXDIMS]
         cdef double_or_complex f[NPY_MAXDIMS+1]
