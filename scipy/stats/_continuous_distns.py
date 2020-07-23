@@ -4226,7 +4226,8 @@ def _check_fit_input_parameters(self, data, args, kwds):
     fscale = kwds.get('fscale', None)
 
     num_shapes = len(self.shapes) if self.shapes else 0
-    shape_keys = []
+    fshape_keys = []
+    fshapes = []
 
     # user has many options for fixing the shape, so here we standardize it
     # into 'f' + the number of the shape.
@@ -4234,24 +4235,24 @@ def _check_fit_input_parameters(self, data, args, kwds):
         shapes = self.shapes.replace(',', ' ').split()
         for j, s in enumerate(shapes):
             key = 'f' + str(j)
-            shape_keys.append(key)
             names = [key, 'f' + s, 'fix_' + s]
             val = _get_fixed_fit_value(kwds, names)
+            fshape_keys.append(key)
+            fshapes.append(val)
             if val is not None:
                 kwds[key] = val
 
-    # create array of shape keys
-    shapes = [kwds.get(x, None) for x in shape_keys]
     # determine if there are any unknown arguments in kwds
     keys = [x for x in kwds.keys() if x not in ['loc', 'scale', 'optimizer',
-                                                'floc', 'fscale', *shape_keys]]
+                                                'floc', 'fscale',
+                                                *fshape_keys]]
     if keys:
         raise TypeError("Unknown keyword arguments: %s." % keys)
 
     if len(args) > num_shapes:
         raise TypeError("Too many positional arguments.")
 
-    if None not in [floc, fscale, *shapes]:
+    if None not in [floc, fscale, *fshapes]:
         # This check is for consistency with `rv_continuous.fit`.
         # Without this check, this function would just return the
         # parameters that were given.
@@ -4261,7 +4262,7 @@ def _check_fit_input_parameters(self, data, args, kwds):
     if not np.isfinite(data).all():
         raise RuntimeError("The data contains non-finite values.")
 
-    return (data, *shapes, floc, fscale)
+    return (data, *fshapes, floc, fscale)
 
 
 class levy_gen(rv_continuous):
