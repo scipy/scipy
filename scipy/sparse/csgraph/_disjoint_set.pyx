@@ -12,15 +12,10 @@ cdef class DisjointSet:
 
     .. versionadded: 1.6.0
 
-    Parameters
-    ----------
-    n_elements : int
-        The number of elements in the set.
-
     Attributes
     ----------
-    n_elements : int
-        The number of elements in the set.
+    n_nodes : int
+        The number of nodes in the set.
     n_components : int
         The number of components/subsets.
 
@@ -35,8 +30,6 @@ cdef class DisjointSet:
     data structure. The *find* method implements the *path compression*
     variant. The *union* method implements the *union by size* variant.
 
-    Element indices are integers in the range `[0, 1, ..., n_elements - 1]`.
-
     References
     ----------
     .. [1] https://en.wikipedia.org/wiki/Disjoint-set_data_structure
@@ -49,7 +42,7 @@ cdef class DisjointSet:
     --------
     >>> from scipy.sparse.csgraph import DisjointSet
 
-    Initialize a disjoint set with 4 elements:
+    Initialize a disjoint set with 4 nodes:
 
     >>> dis = DisjointSet(4)
 
@@ -62,38 +55,43 @@ cdef class DisjointSet:
     >>> dis.union(3, 3)
     False
 
-    Find a root element:
+    Find a root node:
 
     >>> dis.find(1)
     0
 
     """
     cdef:
-        readonly np.npy_intp n_elements
+        readonly np.npy_intp n_nodes
         readonly np.npy_intp n_components
-        readonly np.npy_intp[:] _parents
-        readonly np.npy_intp[:] _sizes
+        readonly dict _sizes
+        readonly dict _parents
 
-    def __init__(DisjointSet self, np.intp_t n_elements):
-        self.n_elements = n_elements
-        self.n_components = n_elements
-        self._sizes = np.ones(n_elements, dtype=np.intp)
-        self._parents = np.arange(n_elements, dtype=np.intp)
+    def __init__(DisjointSet self):
+        self.n_nodes = 0
+        self.n_components = 0
+        self._sizes = {}
+        self._parents = {}
 
     def find(DisjointSet self, np.intp_t x):
-        """Find the root element of `x`.
+        """Find the root node of `x`.
 
         Parameters
         ----------
         x : int
-            Input element.
+            Input node.
 
         Returns
         -------
         root : int
-            Root element of `x`.
+            Root node of `x`.
         """
-        cdef np.npy_intp parent
+        if x not in self._parents:
+            self._sizes[x] = 1
+            self._parents[x] = x
+            self.n_nodes += 1
+            self.n_components += 1
+
         parents = self._parents
         parent = parents[x]
         while parent != parents[parent]:
@@ -111,7 +109,7 @@ cdef class DisjointSet:
         Parameters
         ----------
         a, b : int
-            Element indices to merge.
+            Node indices to merge.
 
         Returns
         -------
