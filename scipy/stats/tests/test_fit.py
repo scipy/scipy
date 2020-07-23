@@ -40,6 +40,7 @@ failing_fits = [
 # Don't run the fit test on these:
 skip_fit = [
     'erlang',  # Subclass of gamma, generates a warning.
+    'pareto',  # requires `floc` to be fixed to get a good fit.
 ]
 
 

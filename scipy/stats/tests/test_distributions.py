@@ -988,7 +988,7 @@ class TestPareto(object):
             stats.pareto.fit([2, 2, 3], floc=1, extra=2)
         with pytest.raises(TypeError, match="Too many positional arguments."):
             stats.pareto.fit([1, 2, 3], 1, 4)
-        with pytest.raises(RuntimeError,
+        with pytest.raises(FitDataError,
                            match="`floc` must be fixed to obtain a "
                            "well defined solution."):
             stats.pareto.fit([1, 2, 3])

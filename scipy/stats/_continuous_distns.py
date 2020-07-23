@@ -517,15 +517,19 @@ arcsine = arcsine_gen(a=0.0, b=1.0, name='arcsine')
 
 class FitDataError(ValueError):
     # This exception is raised by, for example, beta_gen.fit when both floc
-    # and fscale  are fixed and there are values in the data not in the open
-    # interval (floc, floc+fscale).
-    def __init__(self, distr, lower, upper):
-        self.args = (
-            "Invalid values in `data`.  Maximum likelihood "
-            "estimation with {distr!r} requires that {lower!r} < x "
-            "< {upper!r} for each x in `data`.".format(
-                distr=distr, lower=lower, upper=upper),
-        )
+    # and fscale are fixed and there are values in the data not in the open
+    # interval (floc, floc+fscale), or with a custom message.
+    def __init__(self, distr, lower, upper, **kwds):
+        msg = kwds.pop('msg', None)
+        if msg:
+            self.args=(f"{msg}",)
+        else: 
+            self.args = (
+                "Invalid values in `data`.  Maximum likelihood "
+                "estimation with {distr!r} requires that {lower!r} < x "
+                "< {upper!r} for each x in `data`.".format(
+                    distr=distr, lower=lower, upper=upper),
+            )
 
 
 class FitSolverError(RuntimeError):
@@ -6150,7 +6154,8 @@ class pareto_gen(rv_continuous):
         parameters = _check_fit_input_parameters(self, data, args, kwds)
         data, fshape, floc, fscale = parameters
         if floc is None:
-            raise RuntimeError("`floc` must be fixed to obtain a "
+            raise FitDataError(lower=0, distr="pareto", upper=np.inf,
+                               msg="`floc` must be fixed to obtain a "
                                "well defined solution.")
         if np.any(data - floc < (fscale if fscale else 0)):
             raise FitDataError("pareto", lower=0, upper=np.inf)
