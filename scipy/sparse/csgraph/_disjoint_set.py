@@ -41,9 +41,9 @@ class DisjointSet:
     --------
     >>> from scipy.sparse.csgraph import DisjointSet
 
-    Initialize a disjoint set with 4 nodes:
+    Initialize a disjoint set:
 
-    >>> dis = DisjointSet(4)
+    >>> dis = DisjointSet()
 
     Merge some subsets:
 
