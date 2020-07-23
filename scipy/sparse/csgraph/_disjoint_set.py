@@ -89,8 +89,8 @@ class DisjointSet:
             self.n_components += 1
             return x
 
+        # find by "path halving"
         parents = self._parents
-        x = parents[x]
         while x != parents[x]:
             parents[x] = parents[parents[x]]
             x = parents[x]
