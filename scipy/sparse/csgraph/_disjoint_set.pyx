@@ -35,6 +35,8 @@ cdef class DisjointSet:
     data structure. The *find* method implements the *path compression*
     variant. The *union* method implements the *union by size* variant.
 
+    Element indices are integers in the range `[0, 1, ..., n - 1]`.
+
     References
     ----------
     .. [1] https://en.wikipedia.org/wiki/Disjoint-set_data_structure
