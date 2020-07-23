@@ -139,6 +139,10 @@ def configuration(parent_package='',top_path=None):
     config.add_extension('_comb',
                          sources=['_comb.c'])
 
+    # logiv
+    config.add_extension('_logiv',
+                         sources=['_logiv.c'])
+
     # testing for _round.h
     config.add_extension('_test_round',
                          sources=['_test_round.c'],
