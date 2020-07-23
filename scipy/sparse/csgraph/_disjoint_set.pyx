@@ -14,12 +14,12 @@ cdef class DisjointSet:
 
     Parameters
     ----------
-    n : int
+    n_elements : int
         The number of elements in the set.
 
     Attributes
     ----------
-    n : int
+    n_elements : int
         The number of elements in the set.
     n_components : int
         The number of components/subsets.
@@ -35,7 +35,7 @@ cdef class DisjointSet:
     data structure. The *find* method implements the *path compression*
     variant. The *union* method implements the *union by size* variant.
 
-    Element indices are integers in the range `[0, 1, ..., n - 1]`.
+    Element indices are integers in the range `[0, 1, ..., n_elements - 1]`.
 
     References
     ----------
@@ -69,16 +69,16 @@ cdef class DisjointSet:
 
     """
     cdef:
-        readonly np.npy_intp n
+        readonly np.npy_intp n_elements
         readonly np.npy_intp n_components
         readonly np.npy_intp[:] _parents
         readonly np.npy_intp[:] _sizes
 
-    def __init__(DisjointSet self, np.intp_t n):
-        self.n = n
-        self.n_components = n
-        self._sizes = np.ones(n, dtype=np.intp)
-        self._parents = np.arange(n, dtype=np.intp)
+    def __init__(DisjointSet self, np.intp_t n_elements):
+        self.n_elements = n_elements
+        self.n_components = n_elements
+        self._sizes = np.ones(n_elements, dtype=np.intp)
+        self._parents = np.arange(n_elements, dtype=np.intp)
 
     def find(DisjointSet self, np.intp_t x):
         """Find the root element of `x`.
