@@ -2,12 +2,8 @@
 Disjoint set data structure
 """
 
-import numpy as np
-cimport numpy as np
-cimport cython
 
-
-cdef class DisjointSet:
+class DisjointSet:
     """ Disjoint set data structure for incremental connectivity queries.
 
     .. versionadded: 1.6.0
@@ -61,19 +57,13 @@ cdef class DisjointSet:
     0
 
     """
-    cdef:
-        readonly np.npy_intp n_nodes
-        readonly np.npy_intp n_components
-        readonly dict _sizes
-        readonly dict _parents
-
-    def __init__(DisjointSet self):
+    def __init__(self):
         self.n_nodes = 0
         self.n_components = 0
         self._sizes = {}
         self._parents = {}
 
-    def find(DisjointSet self, np.intp_t x):
+    def find(self, x):
         """Find the root node of `x`.
 
         Parameters
@@ -99,7 +89,7 @@ cdef class DisjointSet:
         parents[x] = parent
         return parent
 
-    def union(DisjointSet self, np.intp_t a, np.intp_t b):
+    def union(self, a, b):
         """Merge the subsets of `a` and `b`.
 
         The smaller subset (the child) is merged into the the larger subset
