@@ -861,7 +861,11 @@ class Rotation(object):
                              "num_axes), got {}.".format(angles.shape))
 
         quat = _elementary_quat_compose(seq, angles, intrinsic)
-        return cls(quat[0] if is_single else quat, normalize=False, copy=False)
+
+        if is_single:
+            return cls(quat[0], normalize=False, copy=False)
+        else:
+            return cls(quat, normalize=False, copy=False)
 
     def as_quat(self):
         """Represent as quaternions.
