@@ -2624,16 +2624,16 @@ class TestRegularGridInterpolator(object):
         X = np.linspace(min(x), max(x))
         Y = np.linspace(min(y), max(y))
         X, Y = np.meshgrid(X, Y)
+        XY = np.vstack((X.ravel(), Y.ravel())).T
 
         xy.setflags(write=False)
         z.setflags(write=False)
-        X.setflags(write=False)
-        Y.setflags(write=False)
+        XY.setflags(write=False)
 
         for interpolator in (NearestNDInterpolator, LinearNDInterpolator,
                              CloughTocher2DInterpolator):
             interp = interpolator(xy, z)
-            interp(X, Y)
+            interp(XY)
 
 
 class MyValue(object):
