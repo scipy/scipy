@@ -450,12 +450,13 @@ def _read_data_chunk(fid, format_tag, channels, bit_depth, is_big_endian,
     start = fid.tell()
     if not mmap:
         try:
-            data = numpy.fromfile(fid, dtype=dtype, count=n_samples)
+            count = size if dtype == 'V1' else n_samples
+            data = numpy.fromfile(fid, dtype=dtype, count=count)
         except io.UnsupportedOperation:  # not a C-like file
             fid.seek(start, 0)  # just in case it seeked, though it shouldn't
             data = numpy.frombuffer(fid.read(size), dtype=dtype)
 
-        if bytes_per_sample in {3, 5, 6, 7}:
+        if dtype == 'V1':
             # Rearrange raw bytes into smallest compatible numpy dtype
             dt = numpy.int32 if bytes_per_sample == 3 else numpy.int64
             a = numpy.zeros((len(data) // bytes_per_sample, dt().itemsize),
