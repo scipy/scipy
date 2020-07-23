@@ -35,8 +35,4 @@ def configuration(parent_package='', top_path=None):
          sources=['_tools.c'],
          include_dirs=[numpy.get_include()])
 
-    config.add_extension('_disjoint_set',
-         sources=['_disjoint_set.c'],
-         include_dirs=[numpy.get_include()])
-
     return config
