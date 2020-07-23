@@ -3,6 +3,9 @@ Disjoint set data structure
 """
 
 
+import numpy as np
+
+
 class DisjointSet:
     """ Disjoint set data structure for incremental connectivity queries.
 
@@ -76,6 +79,9 @@ class DisjointSet:
         root : int
             Root node of `x`.
         """
+        if not np.issubdtype(type(x), np.integer):
+            raise TypeError("`x` must be an integer")
+
         if x not in self._parents:
             self._sizes[x] = 1
             self._parents[x] = x
@@ -106,6 +112,11 @@ class DisjointSet:
         merged : bool
             `True` if `a` and `b` were in disjoint sets, `False` otherwise.
         """
+        if not np.issubdtype(type(a), np.integer):
+            raise TypeError("`a` must be an integer")
+        if not np.issubdtype(type(b), np.integer):
+            raise TypeError("`b` must be an integer")
+
         a = self.find(a)
         b = self.find(b)
         if a == b:

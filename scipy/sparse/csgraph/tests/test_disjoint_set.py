@@ -1,3 +1,4 @@
+import pytest
 import numpy as np
 from numpy.testing import assert_array_equal
 from scipy.sparse.csgraph import DisjointSet
@@ -55,3 +56,25 @@ def test_binary_tree():
         roots = [dis.find(i) for i in range(n)]
         expected = np.arange(n) - np.arange(n) % (2 * k)
         assert_array_equal(roots, expected)
+
+
+def test_input_validation():
+    dis = DisjointSet()
+
+    with pytest.raises(TypeError, match="integer"):
+        dis.find(1.0)
+
+    with pytest.raises(TypeError, match="integer"):
+        dis.find("123")
+
+    with pytest.raises(TypeError, match="integer"):
+        dis.union(1, "123")
+
+    with pytest.raises(TypeError, match="integer"):
+        dis.union("123", 1)
+
+    with pytest.raises(TypeError, match="integer"):
+        dis.union(2.0, "123")
+
+    with pytest.raises(TypeError, match="integer"):
+        dis.union("123", 2.0)
