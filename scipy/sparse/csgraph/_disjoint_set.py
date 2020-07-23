@@ -87,6 +87,7 @@ class DisjointSet:
             self._parents[x] = x
             self.n_nodes += 1
             self.n_components += 1
+            return x
 
         parents = self._parents
         parent = parents[x]
@@ -98,9 +99,9 @@ class DisjointSet:
     def union(self, a, b):
         """Merge the subsets of `a` and `b`.
 
-        The smaller subset (the child) is merged into the the larger subset
-        (the parent). If the subsets are of equal size, the parent is
-        determined by subset root with the smallest index.
+        The smaller subset (the child) is merged into the larger subset (the
+        parent). If the subsets are of equal size, the parent is determined by
+        subset root with the smallest index.
 
         Parameters
         ----------
