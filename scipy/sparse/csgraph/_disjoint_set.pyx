@@ -100,17 +100,16 @@ cdef class DisjointSet:
         return parent
 
     def union(DisjointSet self, np.intp_t a, np.intp_t b):
-        """Merge the subsets of `a` and `b`. The smaller subset (the child) is
-        merged into the the larger subset (the parent). If the subsets are of
-        equal size, the parent is determined by subset root with the smallest
-        index.
+        """Merge the subsets of `a` and `b`.
+
+        The smaller subset (the child) is merged into the the larger subset
+        (the parent). If the subsets are of equal size, the parent is
+        determined by subset root with the smallest index.
 
         Parameters
         ----------
-        a : int
-            Input element.
-        b : int
-            Input element.
+        a, b : int
+            Element indices to merge.
 
         Returns
         -------
