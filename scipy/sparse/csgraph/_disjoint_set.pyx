@@ -8,22 +8,40 @@ cimport cython
 
 
 cdef class DisjointSet:
-    """Disjoint set data structure [1]_.
+    """ Disjoint set data structure for incremental connectivity queries.
+
+    .. versionadded: 1.6.0
 
     Parameters
     ----------
     n : int
         The number of elements in the set.
 
+    Attributes
+    ----------
+    n : int
+        The number of elements in the set.
+    nc : int
+        The number of components/subsets.
+
+    Methods
+    -------
+    union
+    find
+
     Notes
     -----
-    .. versionadded: 1.6.0
-
+    This class implements the disjoint set [1]_, also known as the *union-find*
+    data structure. The *find* method implements the *path compression*
+    variant. The *union* method implements the *union by size* variant.
 
     References
     ----------
     .. [1] https://en.wikipedia.org/wiki/Disjoint-set_data_structure
 
+    See Also
+    --------
+    connected_components : Analyze the connected components of a sparse graph.
 
     Examples
     --------
@@ -47,17 +65,6 @@ cdef class DisjointSet:
     >>> dis.find(1)
     0
 
-    Attributes
-    ----------
-    n : int
-        The number of elements in the set.
-    nc : int
-        The number of components/subsets.
-
-    Methods
-    -------
-    union
-    find
     """
     cdef:
         readonly np.npy_intp n

@@ -50,7 +50,7 @@ def test_binary_tree():
 
     for k in 2**np.arange(kmax):
         for i in range(0, n, 2 * k):
-            r1, r2 =  + rng.randint(0, k, size=2)
+            r1, r2 = rng.randint(0, k, size=2)
             assert dis.union(i + r1, i + k + r2)
 
         roots = [dis.find(i) for i in range(n)]
