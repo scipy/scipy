@@ -21,7 +21,7 @@ cdef class DisjointSet:
     ----------
     n : int
         The number of elements in the set.
-    nc : int
+    n_components : int
         The number of components/subsets.
 
     Methods
@@ -68,13 +68,13 @@ cdef class DisjointSet:
     """
     cdef:
         readonly np.npy_intp n
-        readonly np.npy_intp nc
+        readonly np.npy_intp n_components
         readonly np.npy_intp[:] _parents
         readonly np.npy_intp[:] _sizes
 
     def __init__(DisjointSet self, np.intp_t n):
         self.n = n
-        self.nc = n
+        self.n_components = n
         self._sizes = np.ones(n, dtype=np.intp)
         self._parents = np.arange(n, dtype=np.intp)
 
@@ -132,5 +132,5 @@ cdef class DisjointSet:
             parents[b] = a
             sizes[a] += sizes[b]
 
-        self.nc -= 1
+        self.n_components -= 1
         return True

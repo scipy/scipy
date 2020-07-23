@@ -6,11 +6,11 @@ from scipy.sparse.csgraph import DisjointSet
 def test_linear_union_sequence():
     n = 10
     dis = DisjointSet(n)
-    assert dis.nc == n
+    assert dis.n_components == n
 
     for i in range(n - 1):
         assert dis.union(i, i + 1)
-        assert dis.nc == n - 1 - i
+        assert dis.n_components == n - 1 - i
 
     roots = [dis.find(i) for i in range(n)]
     assert_array_equal(0, roots)
@@ -23,7 +23,7 @@ def test_self_unions():
 
     for i in range(n):
         assert not dis.union(i, i)
-    assert dis.nc == n
+    assert dis.n_components == n
 
     roots = [dis.find(i) for i in range(n)]
     assert_array_equal(np.arange(n), roots)
