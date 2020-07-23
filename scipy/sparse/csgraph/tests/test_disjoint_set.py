@@ -4,29 +4,31 @@ from numpy.testing import assert_array_equal
 from scipy.sparse.csgraph import DisjointSet
 
 
-def test_linear_union_sequence():
-    n = 10
+@pytest.mark.parametrize("nodes", [list(range(10)),
+                                   [1, 2, 3, 6, 7, 8, 10, 11]])
+def test_linear_union_sequence(nodes):
     dis = DisjointSet()
 
-    for i in range(n - 1):
-        assert dis.union(i, i + 1)
+    for i in range(len(nodes) - 1):
+        assert dis.union(nodes[i], nodes[i + 1])
         assert dis.n_components == 1
 
-    roots = [dis.find(i) for i in range(n)]
-    assert_array_equal(0, roots)
-    assert not dis.union(0, n - 1)
+    roots = [dis.find(i) for i in nodes]
+    assert_array_equal(nodes[0], roots)
+    assert not dis.union(nodes[0], nodes[-1])
 
 
-def test_self_unions():
-    n = 10
+@pytest.mark.parametrize("nodes", [list(range(10)),
+                                   [1, 2, 3, 6, 7, 8, 10, 11]])
+def test_self_unions(nodes):
     dis = DisjointSet()
 
-    for i in range(n):
+    for i in nodes:
         assert not dis.union(i, i)
-    assert dis.n_components == n
+    assert dis.n_components == len(nodes)
 
-    roots = [dis.find(i) for i in range(n)]
-    assert_array_equal(np.arange(n), roots)
+    roots = [dis.find(i) for i in nodes]
+    assert_array_equal(nodes, roots)
 
 
 def test_equal_size_ordering():
