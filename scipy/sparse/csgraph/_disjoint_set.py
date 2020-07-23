@@ -26,7 +26,7 @@ class DisjointSet:
     Notes
     -----
     This class implements the disjoint set [1]_, also known as the *union-find*
-    data structure. The *find* method implements the *path compression*
+    data structure. The *find* method implements the *path halving*
     variant. The *union* method implements the *union by size* variant.
 
     References
@@ -90,11 +90,11 @@ class DisjointSet:
             return x
 
         parents = self._parents
-        parent = parents[x]
-        while parent != parents[parent]:
-            parent = parents[parent]
-        parents[x] = parent
-        return parent
+        x = parents[x]
+        while x != parents[x]:
+            parents[x] = parents[parents[x]]
+            x = parents[x]
+        return x
 
     def union(self, a, b):
         """Merge the subsets of `a` and `b`.
