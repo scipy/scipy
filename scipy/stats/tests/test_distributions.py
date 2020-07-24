@@ -924,20 +924,21 @@ class TestPareto(object):
                                 loc=rvs_loc)
 
         # shape can still be fixed with multiple names
-        shape_mle1 = stats.pareto.fit(data, floc=0, f0=1.04)[0]
-        shape_mle2 = stats.pareto.fit(data, floc=0, fix_b=1.04)[0]
-        shape_mle3 = stats.pareto.fit(data, floc=0, fb=1.04)[0]
-        assert shape_mle1 == shape_mle2 == shape_mle3 == 1.04
+        shape_mle_analytical1 = stats.pareto.fit(data, floc=0, f0=1.04)[0]
+        shape_mle_analytical2 = stats.pareto.fit(data, floc=0, fix_b=1.04)[0]
+        shape_mle_analytical3 = stats.pareto.fit(data, floc=0, fb=1.04)[0]
+        assert (shape_mle_analytical1 == shape_mle_analytical2 ==
+                shape_mle_analytical3 == 1.04)
 
         # data can be shifted with changes to `loc`
         data = stats.pareto.rvs(size=100, b=rvs_shape, scale=rvs_scale,
                                 loc=(rvs_loc + 2))
-        shape_mle, loc_mle, scale_mle = stats.pareto.fit(data, floc=2)
-        assert_equal(scale_mle + 2, data.min())
-        assert_equal(shape_mle, 1/((1/len(data - 2)) *
-                                   np.sum(np.log((data
-                                                  - 2)/(data.min() - 2)))))
-        assert_equal(loc_mle, 2)
+        shape_mle_a, loc_mle_a, scale_mle_a = stats.pareto.fit(data, floc=2)
+        assert_equal(scale_mle_a + 2, data.min())
+        assert_equal(shape_mle_a, 1/((1/len(data - 2)) *
+                                     np.sum(np.log((data
+                                                    - 2)/(data.min() - 2)))))
+        assert_equal(loc_mle_a, 2)
 
     @pytest.mark.filterwarnings("ignore:invalid value encountered in "
                                 "double_scalars")
@@ -951,11 +952,11 @@ class TestPareto(object):
         func = stats.pareto._reduce_func(args, {})[1]
 
         def _assert_lessthan_loglike(dist, data, func, **kwds):
-            mle = dist.fit(data, **kwds)
-            opt = super(type(dist), dist).fit(data, **kwds)
-            ll_mle = func(mle, data)
-            ll_opt = func(opt, data)
-            assert ll_mle < ll_opt
+            mle_analytical = dist.fit(data, **kwds)
+            numerical_opt = super(type(dist), dist).fit(data, **kwds)
+            ll_mle_analytical = func(mle_analytical, data)
+            ll_numerical_opt = func(numerical_opt, data)
+            assert ll_mle_analytical < ll_numerical_opt
 
         # fixed `floc` to actual location provides as good or better fit.
         _assert_lessthan_loglike(stats.pareto, data, func, floc=rvs_loc)
