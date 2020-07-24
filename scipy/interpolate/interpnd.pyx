@@ -287,10 +287,10 @@ class LinearNDInterpolator(NDInterpolatorBase):
 
     @cython.boundscheck(False)
     @cython.wraparound(False)
-    def _do_evaluate(self, double[:,::1] xi, double_or_complex dummy):
-        cdef double_or_complex[:,::1] values = self.values
+    def _do_evaluate(self, const double[:,::1] xi, double_or_complex dummy):
+        cdef const double_or_complex[:,::1] values = self.values
         cdef double_or_complex[:,::1] out
-        cdef double[:,::1] points = self.points
+        cdef const double[:,::1] points = self.points
         cdef int[:,::1] simplices = self.tri.simplices
         cdef double c[NPY_MAXDIMS]
         cdef double_or_complex fill_value
@@ -522,7 +522,7 @@ cdef int _estimate_gradients_2d_global(qhull.DelaunayInfo_t *d, double *data,
 @cython.boundscheck(False)
 @cython.wraparound(False)
 cpdef estimate_gradients_2d_global(tri, y, int maxiter=400, double tol=1e-6):
-    cdef double[:,::1] data
+    cdef const double[:,::1] data
     cdef double[:,:,::1] grad
     cdef qhull.DelaunayInfo_t info
     cdef int k, ret, nvalues
@@ -918,11 +918,11 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
 
     @cython.boundscheck(False)
     @cython.wraparound(False)
-    def _do_evaluate(self, double[:,::1] xi, double_or_complex dummy):
-        cdef double_or_complex[:,::1] values = self.values
+    def _do_evaluate(self, const double[:,::1] xi, double_or_complex dummy):
+        cdef const double_or_complex[:,::1] values = self.values
         cdef double_or_complex[:,:,:] grad = self.grad
         cdef double_or_complex[:,::1] out
-        cdef double[:,::1] points = self.points
+        cdef const double[:,::1] points = self.points
         cdef int[:,::1] simplices = self.tri.simplices
         cdef double c[NPY_MAXDIMS]
         cdef double_or_complex f[NPY_MAXDIMS+1]

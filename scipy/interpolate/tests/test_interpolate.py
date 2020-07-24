@@ -2613,6 +2613,25 @@ class TestRegularGridInterpolator(object):
                          interp_points3.size ==
                          interp_points4.size, True)
 
+    def test_read_only(self):
+        # input data
+        np.random.seed(0)
+        xy = np.random.random((10, 2))
+        x, y = xy[:, 0], xy[:, 1]
+        z = np.hypot(x, y)
+        
+        # interpolation points
+        XY = np.random.random((50, 2))
+
+        xy.setflags(write=False)
+        z.setflags(write=False)
+        XY.setflags(write=False)
+
+        for interpolator in (NearestNDInterpolator, LinearNDInterpolator,
+                             CloughTocher2DInterpolator):
+            interp = interpolator(xy, z)
+            interp(XY)
+
 
 class MyValue(object):
     """
