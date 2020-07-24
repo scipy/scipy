@@ -44,17 +44,21 @@ class DisjointSet:
 
     Merge some subsets:
 
-    >>> dis.union(0, 1)
+    >>> dis.union(1, 2)
     True
-    >>> dis.union(2, 3)
+    >>> dis.union(3, 'x')
     True
-    >>> dis.union(3, 3)
+    >>> dis.union('x', 'y')
+    True
+    >>> dis.union('y', 'y')
     False
 
-    Find a root node:
+    Find root nodes:
 
-    >>> dis[1]
-    0
+    >>> dis[2]
+    1
+    >>> dis['y']
+    3
 
     """
     def __init__(self):
