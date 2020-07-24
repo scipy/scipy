@@ -41,7 +41,7 @@ def test_linear_union_sequence(n, shuffle):
         assert dis.union(nodes[i], nodes[i + 1])
         assert dis.n_components == 1
 
-    roots = [dis.find(i) for i in nodes]
+    roots = [dis[i] for i in nodes]
     assert all([nodes[0] == r for r in roots])
     assert not dis.union(nodes[0], nodes[-1])
 
@@ -56,7 +56,7 @@ def test_self_unions(n, shuffle):
         assert not dis.union(i, i)
     assert dis.n_components == len(nodes)
 
-    roots = [dis.find(i) for i in nodes]
+    roots = [dis[i] for i in nodes]
     assert nodes == roots
 
 
@@ -68,8 +68,8 @@ def test_equal_size_ordering(n, shuffle):
     for i in range(0, len(nodes), 2):
         a, b = nodes[i], nodes[i + 1]
         assert dis.union(a, b)
-        assert dis.find(a) == a
-        assert dis.find(b) == a
+        assert dis[a] == a
+        assert dis[b] == a
 
 
 @pytest.mark.parametrize("kmax", [5, 10])
@@ -85,7 +85,7 @@ def test_binary_tree(kmax, shuffle):
             r1, r2 = rng.randint(0, k, size=2)
             assert dis.union(nodes[i + r1], nodes[i + k + r2])
 
-        roots = [dis.find(i) for i in nodes]
+        roots = [dis[i] for i in nodes]
         expected_indices = np.arange(n) - np.arange(n) % (2 * k)
         expected = [nodes[i] for i in expected_indices]
         assert roots == expected

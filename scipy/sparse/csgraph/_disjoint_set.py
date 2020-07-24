@@ -53,7 +53,7 @@ class DisjointSet:
 
     Find a root node:
 
-    >>> dis.find(1)
+    >>> dis[1]
     0
 
     """
@@ -64,7 +64,7 @@ class DisjointSet:
         self._parents = {}
         self._indices = {}
 
-    def find(self, x):
+    def __getitem__(self, x):
         """Find the root node of `x`.
 
         Parameters
@@ -109,8 +109,8 @@ class DisjointSet:
         merged : bool
             `True` if `a` and `b` were in disjoint sets, `False` otherwise.
         """
-        a = self.find(a)
-        b = self.find(b)
+        a = self[a]
+        b = self[b]
         if self._indices[a] == self._indices[b]:
             return False
 
