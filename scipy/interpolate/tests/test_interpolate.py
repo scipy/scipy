@@ -2620,8 +2620,8 @@ class TestRegularGridInterpolator(object):
         x, y = xy[:, 0], xy[:, 1]
         z = np.hypot(x, y)
         
-        # x-y grid for interpolation
-        XY = np.linspace((min(x), min(y)),(max(x), max(y)))
+        # interpolation points
+        XY = np.random.random((50, 2))
 
         xy.setflags(write=False)
         z.setflags(write=False)
