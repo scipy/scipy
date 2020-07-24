@@ -256,7 +256,7 @@ class LinearNDInterpolator(NDInterpolatorBase):
 
     @cython.boundscheck(False)
     @cython.wraparound(False)
-    def _do_evaluate(self, double[:,::1] xi, double_or_complex dummy):
+    def _do_evaluate(self, const double[:,::1] xi, double_or_complex dummy):
         cdef const double_or_complex[:,::1] values = self.values
         cdef double_or_complex[:,::1] out
         cdef const double[:,::1] points = self.points
@@ -856,7 +856,7 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
 
     @cython.boundscheck(False)
     @cython.wraparound(False)
-    def _do_evaluate(self, double[:,::1] xi, double_or_complex dummy):
+    def _do_evaluate(self, const double[:,::1] xi, double_or_complex dummy):
         cdef const double_or_complex[:,::1] values = self.values
         cdef double_or_complex[:,:,:] grad = self.grad
         cdef double_or_complex[:,::1] out

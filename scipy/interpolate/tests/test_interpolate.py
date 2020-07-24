@@ -2621,10 +2621,7 @@ class TestRegularGridInterpolator(object):
         z = np.hypot(x, y)
         
         # x-y grid for interpolation
-        X = np.linspace(min(x), max(x))
-        Y = np.linspace(min(y), max(y))
-        X, Y = np.meshgrid(X, Y)
-        XY = np.vstack((X.ravel(), Y.ravel())).T
+        XY = np.linspace((min(x), min(y)),(max(x), max(y)))
 
         xy.setflags(write=False)
         z.setflags(write=False)
