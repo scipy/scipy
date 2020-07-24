@@ -83,6 +83,7 @@ class DisjointSet:
             raise TypeError("`x` must be an integer")
 
         if x not in self._parents:
+            # add node
             self._sizes[x] = 1
             self._parents[x] = x
             self.n_nodes += 1
@@ -100,8 +101,7 @@ class DisjointSet:
         """Merge the subsets of `a` and `b`.
 
         The smaller subset (the child) is merged into the larger subset (the
-        parent). If the subsets are of equal size, the parent is determined by
-        subset root with the smallest index.
+        parent). If the subsets are of equal size, `b` is merged into `a`.
 
         Parameters
         ----------
@@ -123,16 +123,9 @@ class DisjointSet:
         if a == b:
             return False
 
-        if b < a:
+        if self._sizes[a] < self._sizes[b]:
             a, b = b, a
-        sizes = self._sizes
-        parents = self._parents
-        if sizes[a] < sizes[b]:
-            parents[a] = b
-            sizes[b] += sizes[a]
-        else:
-            parents[b] = a
-            sizes[a] += sizes[b]
-
+        self._parents[b] = a
+        self._sizes[a] += self._sizes[b]
         self.n_components -= 1
         return True
