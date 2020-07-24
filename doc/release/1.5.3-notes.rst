@@ -1,0 +1,18 @@
+==========================
+SciPy 1.5.3 Release Notes
+==========================
+
+.. contents::
+
+SciPy 1.5.3 is a bug-fix release with no new features
+compared to 1.5.2.
+
+Authors
+=======
+
+Issues closed for 1.5.3
+-----------------------
+
+Pull requests for 1.5.3
+-----------------------
+
