@@ -519,11 +519,10 @@ class FitDataError(ValueError):
     # This exception is raised by, for example, beta_gen.fit when both floc
     # and fscale are fixed and there are values in the data not in the open
     # interval (floc, floc+fscale), or with a custom message.
-    def __init__(self, distr, lower, upper, **kwds):
-        msg = kwds.pop('msg', None)
+    def __init__(self, distr=None, lower=None, upper=None, msg=None):
         if msg:
-            self.args=(f"{msg}",)
-        else: 
+            self.args = (msg,)
+        else:
             self.args = (
                 "Invalid values in `data`.  Maximum likelihood "
                 "estimation with {distr!r} requires that {lower!r} < x "
@@ -4199,22 +4198,16 @@ class laplace_gen(rv_continuous):
         data, floc, fscale = _check_fit_input_parameters(self, data,
                                                          args, kwds)
 
-        # MLE for the laplace distribution
-
-        if floc is None:
-            loc = np.median(data)
-        else:
-            loc = floc
-
-        if fscale is None:
-            scale = (np.sum(np.abs(data - loc))) / len(data)
-        else:
-            scale = fscale
-
         # Source: Statistical Distributions, 3rd Edition. Evans, Hastings,
         # and Peacock (2000), Page 124
 
-        return loc, scale
+        if floc is None:
+            floc = np.median(data)
+
+        if fscale is None:
+            fscale = (np.sum(np.abs(data - floc))) / len(data)
+
+        return floc, fscale
 
 
 laplace = laplace_gen(name='laplace')
@@ -4231,6 +4224,7 @@ def _check_fit_input_parameters(self, data, args, kwds):
 
     # user has many options for fixing the shape, so here we standardize it
     # into 'f' + the number of the shape.
+    # Adapted from `_reduce_func` in `_distn_infrastructure.py`:
     if self.shapes:
         shapes = self.shapes.replace(',', ' ').split()
         for j, s in enumerate(shapes):
@@ -4243,11 +4237,10 @@ def _check_fit_input_parameters(self, data, args, kwds):
                 kwds[key] = val
 
     # determine if there are any unknown arguments in kwds
-    keys = [x for x in kwds.keys() if x not in ['loc', 'scale', 'optimizer',
-                                                'floc', 'fscale',
-                                                *fshape_keys]]
-    if keys:
-        raise TypeError(f"Unknown keyword arguments: {keys}.")
+    known_keys = {'loc', 'scale', 'optimizer', 'floc', 'fscale', *fshape_keys}
+    unknown_keys = set(kwds.keys()).difference(known_keys)
+    if unknown_keys:
+        raise TypeError(f"Unknown keyword arguments: {unknown_keys}.")
 
     if len(args) > num_shapes:
         raise TypeError("Too many positional arguments.")
@@ -6155,8 +6148,7 @@ class pareto_gen(rv_continuous):
         parameters = _check_fit_input_parameters(self, data, args, kwds)
         data, fshape, floc, fscale = parameters
         if floc is None:
-            raise FitDataError(lower=0, distr="pareto", upper=np.inf,
-                               msg="`floc` must be fixed to obtain a "
+            raise FitDataError(msg="`floc` must be fixed to obtain a "
                                "well defined solution.")
         if np.any(data - floc < (fscale if fscale else 0)):
             raise FitDataError("pareto", lower=0, upper=np.inf)
