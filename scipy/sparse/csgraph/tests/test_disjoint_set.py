@@ -4,9 +4,18 @@ from numpy.testing import assert_array_equal
 from scipy.sparse.csgraph import DisjointSet
 
 
-@pytest.mark.parametrize("nodes", [list(range(10)),
-                                   [1, 2, 3, 6, 7, 8, 10, 11]])
-def test_linear_union_sequence(nodes):
+def get_nodes(n, shuffle):
+    nodes = np.arange(n)
+    if shuffle:
+        rng = np.random.RandomState(seed=0)
+        rng.shuffle(nodes)
+    return nodes
+
+
+@pytest.mark.parametrize("n", [10, 100])
+@pytest.mark.parametrize("shuffle", [False, True])
+def test_linear_union_sequence(n, shuffle):
+    nodes = get_nodes(n, shuffle)
     dis = DisjointSet()
 
     for i in range(len(nodes) - 1):
@@ -18,9 +27,10 @@ def test_linear_union_sequence(nodes):
     assert not dis.union(nodes[0], nodes[-1])
 
 
-@pytest.mark.parametrize("nodes", [list(range(10)),
-                                   [1, 2, 3, 6, 7, 8, 10, 11]])
-def test_self_unions(nodes):
+@pytest.mark.parametrize("n", [10, 100])
+@pytest.mark.parametrize("shuffle", [False, True])
+def test_self_unions(n, shuffle):
+    nodes = get_nodes(n, shuffle)
     dis = DisjointSet()
 
     for i in nodes:
@@ -30,33 +40,34 @@ def test_self_unions(nodes):
     roots = [dis.find(i) for i in nodes]
     assert_array_equal(nodes, roots)
 
-
-def test_equal_size_ordering():
-    n = 20
+@pytest.mark.parametrize("n", [10, 100])
+@pytest.mark.parametrize("shuffle", [False, True])
+def test_equal_size_ordering(n, shuffle):
+    nodes = get_nodes(n, shuffle)
     dis = DisjointSet()
-    rng = np.random.RandomState(seed=0)
-
-    for i in range(0, n, 2):
-        indices = [i, i + 1]
-        rng.shuffle(indices)
-        assert dis.union(indices[0], indices[1])
-        assert dis.find(i) == i
-        assert dis.find(i + 1) == i
+    for i in range(0, len(nodes), 2):
+        a, b = nodes[i], nodes[i + 1]
+        assert dis.union(a, b)
+        assert dis.find(a) == a
+        assert dis.find(b) == a
 
 
-def test_binary_tree():
-    kmax = 10
+@pytest.mark.parametrize("kmax", [5, 10])
+@pytest.mark.parametrize("shuffle", [False, True])
+def test_binary_tree(kmax, shuffle):
     n = 2**kmax
+    nodes = get_nodes(n, shuffle)
     dis = DisjointSet()
     rng = np.random.RandomState(seed=0)
 
     for k in 2**np.arange(kmax):
         for i in range(0, n, 2 * k):
             r1, r2 = rng.randint(0, k, size=2)
-            assert dis.union(i + r1, i + k + r2)
+            assert dis.union(nodes[i + r1], nodes[i + k + r2])
 
-        roots = [dis.find(i) for i in range(n)]
-        expected = np.arange(n) - np.arange(n) % (2 * k)
+        roots = [dis.find(i) for i in nodes]
+        expected_indices = np.arange(n) - np.arange(n) % (2 * k)
+        expected = [nodes[i] for i in expected_indices]
         assert_array_equal(roots, expected)
 
 
