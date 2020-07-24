@@ -228,7 +228,7 @@ class KDTree(cKDTree):
         def _create(ckdtree_node=None):
             """Create either an inner or leaf node, wrapping a cKDTreeNode instance"""
             if ckdtree_node is None:
-                return node(ckdtree_node)
+                return KDTree.node(ckdtree_node)
             elif ckdtree_node.split_dim == -1:
                 return KDTree.leafnode(ckdtree_node)
             else:
