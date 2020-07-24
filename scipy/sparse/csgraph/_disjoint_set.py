@@ -88,7 +88,7 @@ class DisjointSet:
 
         # find by "path halving"
         parents = self._parents
-        while x != parents[x]:
+        while self._indices[x] != self._indices[parents[x]]:
             parents[x] = parents[parents[x]]
             x = parents[x]
         return x
@@ -101,7 +101,7 @@ class DisjointSet:
 
         Parameters
         ----------
-        a, b : immutable
+        a, b : immutable object
             Nodes to merge.
 
         Returns
