@@ -73,12 +73,12 @@ class DisjointSet:
 
         Parameters
         ----------
-        x : immutable object
+        x : hashable object
             Input node.
 
         Returns
         -------
-        root : immutable object
+        root : hashable object
             Root node of `x`.
         """
         if x not in self._parents:
@@ -105,7 +105,7 @@ class DisjointSet:
 
         Parameters
         ----------
-        a, b : immutable object
+        a, b : hashable object
             Nodes to merge.
 
         Returns
