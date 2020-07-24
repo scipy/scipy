@@ -60,18 +60,6 @@ def test_self_unions(n, shuffle):
     assert nodes == roots
 
 
-@pytest.mark.parametrize("n", [10, 100])
-@pytest.mark.parametrize("shuffle", [False, True])
-def test_equal_size_ordering(n, shuffle):
-    nodes = get_nodes(n, shuffle)
-    dis = DisjointSet()
-    for i in range(0, len(nodes), 2):
-        a, b = nodes[i], nodes[i + 1]
-        assert dis.union(a, b)
-        assert dis[a] == a
-        assert dis[b] == a
-
-
 @pytest.mark.parametrize("kmax", [5, 10])
 @pytest.mark.parametrize("shuffle", [False, True])
 def test_binary_tree(kmax, shuffle):

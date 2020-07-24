@@ -97,7 +97,7 @@ class DisjointSet:
         """Merge the subsets of `a` and `b`.
 
         The smaller subset (the child) is merged into the larger subset (the
-        parent). If the subsets are of equal size, `b` is merged into `a`.
+        parent).
 
         Parameters
         ----------
