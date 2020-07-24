@@ -3,9 +3,6 @@ Disjoint set data structure
 """
 
 
-import numpy as np
-
-
 class DisjointSet:
     """ Disjoint set data structure for incremental connectivity queries.
 
@@ -65,27 +62,26 @@ class DisjointSet:
         self.n_components = 0
         self._sizes = {}
         self._parents = {}
+        self._indices = {}
 
     def find(self, x):
         """Find the root node of `x`.
 
         Parameters
         ----------
-        x : int
+        x : immutable object
             Input node.
 
         Returns
         -------
-        root : int
+        root : immutable object
             Root node of `x`.
         """
-        if not np.issubdtype(type(x), np.integer):
-            raise TypeError("`x` must be an integer")
-
         if x not in self._parents:
             # add node
             self._sizes[x] = 1
             self._parents[x] = x
+            self._indices[x] = len(self._indices)
             self.n_nodes += 1
             self.n_components += 1
             return x
@@ -105,22 +101,17 @@ class DisjointSet:
 
         Parameters
         ----------
-        a, b : int
-            Node indices to merge.
+        a, b : immutable
+            Nodes to merge.
 
         Returns
         -------
         merged : bool
             `True` if `a` and `b` were in disjoint sets, `False` otherwise.
         """
-        if not np.issubdtype(type(a), np.integer):
-            raise TypeError("`a` must be an integer")
-        if not np.issubdtype(type(b), np.integer):
-            raise TypeError("`b` must be an integer")
-
         a = self.find(a)
         b = self.find(b)
-        if a == b:
+        if self._indices[a] == self._indices[b]:
             return False
 
         if self._sizes[a] < self._sizes[b]:

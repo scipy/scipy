@@ -1,15 +1,34 @@
 import pytest
 import numpy as np
-from numpy.testing import assert_array_equal
 from scipy.sparse.csgraph import DisjointSet
+import string
+
+
+def generate_random_token():
+    k = len(string.ascii_letters)
+    tokens = list(range(k))
+    tokens += list([float(i) for i in range(k)])
+    tokens += list(string.ascii_letters)
+    tokens += [None for i in range(k)]
+    rng = np.random.RandomState(seed=0)
+
+    while 1:
+        size = rng.randint(1, 3)
+        node = rng.choice(tokens, size)
+        if size == 1:
+            yield node[0]
+        else:
+            yield tuple(node)
 
 
 def get_nodes(n, shuffle):
-    nodes = np.arange(n)
-    if shuffle:
-        rng = np.random.RandomState(seed=0)
-        rng.shuffle(nodes)
-    return nodes
+    nodes = set()
+    for node in generate_random_token():
+        if node not in nodes:
+            nodes.add(node)
+            if len(nodes) >= n:
+                break
+    return list(nodes)
 
 
 @pytest.mark.parametrize("n", [10, 100])
@@ -23,7 +42,7 @@ def test_linear_union_sequence(n, shuffle):
         assert dis.n_components == 1
 
     roots = [dis.find(i) for i in nodes]
-    assert_array_equal(nodes[0], roots)
+    assert all([nodes[0] == r for r in roots])
     assert not dis.union(nodes[0], nodes[-1])
 
 
@@ -38,7 +57,8 @@ def test_self_unions(n, shuffle):
     assert dis.n_components == len(nodes)
 
     roots = [dis.find(i) for i in nodes]
-    assert_array_equal(nodes, roots)
+    assert nodes == roots
+
 
 @pytest.mark.parametrize("n", [10, 100])
 @pytest.mark.parametrize("shuffle", [False, True])
@@ -68,26 +88,4 @@ def test_binary_tree(kmax, shuffle):
         roots = [dis.find(i) for i in nodes]
         expected_indices = np.arange(n) - np.arange(n) % (2 * k)
         expected = [nodes[i] for i in expected_indices]
-        assert_array_equal(roots, expected)
-
-
-def test_input_validation():
-    dis = DisjointSet()
-
-    with pytest.raises(TypeError, match="integer"):
-        dis.find(1.0)
-
-    with pytest.raises(TypeError, match="integer"):
-        dis.find("123")
-
-    with pytest.raises(TypeError, match="integer"):
-        dis.union(1, "123")
-
-    with pytest.raises(TypeError, match="integer"):
-        dis.union("123", 1)
-
-    with pytest.raises(TypeError, match="integer"):
-        dis.union(2.0, "123")
-
-    with pytest.raises(TypeError, match="integer"):
-        dis.union("123", 2.0)
+        assert roots == expected
