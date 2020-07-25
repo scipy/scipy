@@ -525,8 +525,8 @@ class FitDataError(ValueError):
         else:
             self.args = (
                 "Invalid values in `data`.  Maximum likelihood "
-                "estimation with {distr!r} requires that {lower!r} < x "
-                "< {upper!r} for each x in `data`.".format(
+                "estimation with {distr!r} requires that {lower!r} < "
+                "(x - loc)/scale  < {upper!r} for each x in `data`.".format(
                     distr=distr, lower=lower, upper=upper),
             )
 
@@ -4213,20 +4213,20 @@ class laplace_gen(rv_continuous):
 laplace = laplace_gen(name='laplace')
 
 
-def _check_fit_input_parameters(self, data, args, kwds):
+def _check_fit_input_parameters(dist, data, args, kwds):
     data = np.asarray(data)
     floc = kwds.get('floc', None)
     fscale = kwds.get('fscale', None)
 
-    num_shapes = len(self.shapes) if self.shapes else 0
+    num_shapes = len(dist.shapes) if dist.shapes else 0
     fshape_keys = []
     fshapes = []
 
     # user has many options for fixing the shape, so here we standardize it
     # into 'f' + the number of the shape.
     # Adapted from `_reduce_func` in `_distn_infrastructure.py`:
-    if self.shapes:
-        shapes = self.shapes.replace(',', ' ').split()
+    if dist.shapes:
+        shapes = dist.shapes.replace(',', ' ').split()
         for j, s in enumerate(shapes):
             key = 'f' + str(j)
             names = [key, 'f' + s, 'fix_' + s]
@@ -6148,8 +6148,7 @@ class pareto_gen(rv_continuous):
         parameters = _check_fit_input_parameters(self, data, args, kwds)
         data, fshape, floc, fscale = parameters
         if floc is None:
-            raise FitDataError(msg="`floc` must be fixed to obtain a "
-                               "well defined solution.")
+            return super(pareto_gen, self).fit(data, **kwds)
         if np.any(data - floc < (fscale if fscale else 0)):
             raise FitDataError("pareto", lower=0, upper=np.inf)
         data = data - floc
