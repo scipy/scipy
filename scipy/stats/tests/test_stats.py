@@ -912,9 +912,9 @@ class TestCorrSpearmanr2(object):
 
 
 def test_kendalltau():
-    # For the cases without ties, all variants should give the same
+    # For the cases without ties, both variants should give the same
     # result.
-    variants = ('a', 'b', 'c')
+    variants = ('b', 'c')
 
     # case without ties, con-dis equal zero
     x = [5, 2, 1, 3, 6, 4, 7, 8]
@@ -1030,21 +1030,19 @@ def test_kendalltau():
         assert_approx_equal(res[0], expected[0])
         assert_approx_equal(res[1], expected[1])
 
-    # Check a case where all variants are different
+    # Check a case where variants are different
     # Example values found from Kendall (1970).
-    # P-value is always the same for the three variants
+    # P-value is the same for the both variants
     x = array([1, 2, 2, 4, 4, 6, 6, 8, 9, 9])
     y = array([1, 2, 4, 4, 4, 4, 8, 8, 8, 10])
-    expected = 0.73333333
-    assert_approx_equal(stats.kendalltau(x, y, variant='a')[0], expected)
     expected = 0.85895569
     assert_approx_equal(stats.kendalltau(x, y, variant='b')[0], expected)
     expected = 0.825
     assert_approx_equal(stats.kendalltau(x, y, variant='c')[0], expected)
 
-    # check exception in case of ties
+    # check exception in case of ties and method='exact' requested
     y[2] = y[1]
-    assert_raises(ValueError, stats.kendalltau, x, y, method='exact', variant='b')
+    assert_raises(ValueError, stats.kendalltau, x, y, method='exact')
 
     # check exception in case of invalid method keyword
     assert_raises(ValueError, stats.kendalltau, x, y, method='banana')
@@ -1089,8 +1087,7 @@ def test_kendalltau():
     assert_approx_equal(res[0], expected[0])
     assert_approx_equal(res[1], expected[1])
 
-    # this should result in 1 for taub, but not for others
-    assert_approx_equal(stats.kendalltau([1, 1, 2], [1, 1, 2], variant='a')[0], 0.66666666)
+    # this should result in 1 for taub but not tau-c
     assert_approx_equal(stats.kendalltau([1, 1, 2], [1, 1, 2], variant='b')[0], 1.0)
     assert_approx_equal(stats.kendalltau([1, 1, 2], [1, 1, 2], variant='c')[0], 0.88888888)
 
