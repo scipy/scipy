@@ -381,56 +381,118 @@ def _l_p_asymptotic(L, m, n):
 
 def _l_p_exact(L, m, n):
     L, n, k = int(L), int(m), int(n)  # different papers use different symbols
-    a, b = (k*(k+1)*(k+2))//6, (k*(k+1)*(2*k+1))//6
 
-#    dir_path = os.path.dirname(os.path.realpath(__file__))
-    dir_path = os.path.abspath(os.path.dirname(__file__))
-    datafile = os.path.join(dir_path, "data_folder", "pagel_exact.npy")
-    all_pmfs = np.load(datafile, allow_pickle=True).item()
+    _pagel_state.set_k(k)
     try:
-        pmf = all_pmfs[n][k]
-        return np.sum(pmf[L-a*n:])
+        pmf = _pagel_state.all_pmfs[n][k]
+        return np.sum(pmf[L-_pagel_state.a*n:])
     except KeyError:
-        return _sf(L, k, n)
+        print('calculating')
+        return _pagel_state.sf(L, n)
 
 
-def _counts_l_k_1(k):
-    '''Count frequency of each L value over all possible single rows'''
-    # See [5] Equation (6)
-    ranks = range(1, k+1)
-    rank_perms = np.array(list(permutations(ranks)))  # generate all possible rows
-    Ls = (ranks*rank_perms).sum(axis=1)  # compute Page's L for all rows
-    a, b = (k*(k+1)*(k+2))//6, (k*(k+1)*(2*k+1))//6  # min and max possible L
-    counts = np.histogram(Ls, np.arange(a-0.5, b+1.5))[0]  # count occurences of each L value
-    return counts  # not saving the corresponding L values [a, b], just counts
+class _PageL:
+    '''Class to maintain state of Page's L between `pagel` executions'''
+    def __init__(self):
+        self.all_pmfs = None
+        self.all_counts = None
+        self.k = None
+        self.a = None
+        self.b = None
+        self.p_l_k_1 = None
+        dir_path = os.path.abspath(os.path.dirname(__file__))
+        self.all_pmfs_file = os.path.join(dir_path, "data_folder",
+                                          "pagel_pmfs.npy")
+        self.all_counts_file = os.path.join(dir_path, "data_folder",
+                                            "pagel_counts.npy")
+
+    def load_pagel_data(self):
+        '''Loads PageL data from file'''
+        # functions for creating these files are at the end of the class
+        self.all_counts = np.load(self.all_counts_file, allow_pickle=True)
+        self.all_pmfs = np.load(self.all_pmfs_file, allow_pickle=True).item()
+
+    def set_k(self, k):
+        '''Generates function to evaluate p(t, k, 1); see [5] Equation 6'''
+
+        if self.k == k:
+            return
+
+        if self.all_counts is None:
+            self.load_pagel_data()
+
+        self.k = k
+        # min L, max L of a row
+        self.a, self.b = (k*(k+1)*(k+2))//6, (k*(k+1)*(2*k+1))//6
+
+        try:
+            counts = self.all_counts[k-1]
+        except IndexError:
+            counts = self.counts_l_k_1(k)
+
+        # See [5] Equation (6)
+        ps = np.array(counts)/np.math.factorial(k)
+
+        def p_l_k_1(l):
+            if l < self.a or l > self.b:  # 0 rows have L < a or L > b
+                return 0
+            return ps[l-self.a]
+
+        self.p_l_k_1 = p_l_k_1
+
+    def pmf(self, l, n):
+        '''Probability mass function of Page's L statistic'''
+        return _pmf_recursive(l, self.k, n, self.a, self.b, self.p_l_k_1)
+
+    def sf(self, l, n):
+        '''Survival function of Page's L statistic'''
+        ps = [self.pmf(l, n) for l in range(l, n*self.b + 1)]
+        return np.sum(ps)
+
+    def whole_pmf(self, k, n):
+        '''Return list of all values of Page's L PMF'''
+        self.set_k(k)
+        ps = [self.pmf(l, n) for l in range(self.a*n, self.b*n + 1)]
+        return ps
+
+    def all_pmf(self):
+        '''Generate all PMFs tabulated in [1]'''
+        data = {}
+        for n in range(2, 13):
+            data[n] = {}
+            for k in range(3, 9):
+                print(n, k)
+                data[n][k] = self.whole_pmf(k, n)
+
+        k = 3
+        for n in range(13, 21):
+            data[n] = {}
+            data[n][k] = self.whole_pmf(k, n)
+
+        np.save(self.all_pmfs_file, data)
+
+    def generate_row_counts(self, k_max):
+        '''Generate PMF data for hard-coding'''
+        all_counts = [self.counts_l_k_1(k) for k in range(1, k_max+1)]
+        np.save(self.all_counts_file, all_counts)
+
+    def counts_l_k_1(self, k):
+        '''Count frequency of each L value over all possible single rows'''
+        # See [5] Equation (6)
+        ranks = range(1, k+1)
+        # generate all possible rows of length k
+        rank_perms = np.array(list(permutations(ranks)))
+        # compute Page's L for all possible rows
+        Ls = (ranks*rank_perms).sum(axis=1)
+        # min and max possible L for row of length k
+        a, b = (k*(k+1)*(k+2))//6, (k*(k+1)*(2*k+1))//6
+        # count occurences of each L value
+        counts = np.histogram(Ls, np.arange(a-0.5, b+1.5))[0]
+        # not saving the corresponding L values [a, b], just counts
+        return counts
 
 
-def _generate_row_counts(k_max):
-    '''Generate PMF data for hard-coding'''
-    # The results of this function are copy-pasted into the code
-    all_counts = [list(_counts_l_k_1(k)) for k in range(1, k_max+1)]
-    print(repr(all_counts))
-
-
-def _get_p_l_k_1(k):
-    '''Generates function to evaluate p(t, k, 1); see [5] Equation 6'''
-    # Data in the following row was generated using _generate_row_counts(9)
-    all_counts = [[1], [1, 1], [1, 2, 0, 2, 1], [1, 3, 1, 4, 2, 2, 2, 4, 1, 3, 1], [1, 4, 3, 6, 7, 6, 4, 10, 6, 10, 6, 10, 6, 10, 4, 6, 7, 6, 3, 4, 1], [1, 5, 6, 9, 16, 12, 14, 24, 20, 21, 23, 28, 24, 34, 20, 32, 42, 29, 29, 42, 32, 20, 34, 24, 28, 23, 21, 20, 24, 14, 12, 16, 9, 6, 5, 1], [1, 6, 10, 14, 29, 26, 35, 46, 55, 54, 74, 70, 84, 90, 78, 90, 129, 106, 123, 134, 147, 98, 168, 130, 175, 144, 168, 144, 184, 144, 168, 144, 175, 130, 168, 98, 147, 134, 123, 106, 129, 90, 78, 90, 84, 70, 74, 54, 55, 46, 35, 26, 29, 14, 10, 6, 1], [1, 7, 15, 22, 47, 54, 70, 94, 129, 124, 178, 183, 237, 238, 276, 264, 379, 349, 380, 400, 517, 394, 542, 492, 640, 557, 666, 595, 776, 684, 786, 718, 922, 745, 917, 781, 982, 826, 950, 844, 1066, 845, 936, 845, 1066, 844, 950, 826, 982, 781, 917, 745, 922, 718, 786, 684, 776, 595, 666, 557, 640, 492, 542, 394, 517, 400, 380, 349, 379, 264, 276, 238, 237, 183, 178, 124, 129, 94, 70, 54, 47, 22, 15, 7, 1], [1, 8, 21, 34, 72, 102, 130, 190, 260, 284, 398, 454, 555, 616, 756, 744, 1022, 1042, 1159, 1282, 1555, 1392, 1719, 1758, 2009, 2032, 2282, 2214, 2676, 2590, 2878, 2928, 3397, 3138, 3647, 3568, 3921, 3866, 4311, 4050, 4852, 4492, 4816, 4784, 5505, 4954, 5638, 5304, 5890, 5486, 6188, 5502, 6436, 5822, 6233, 6024, 6697, 5720, 6672, 6020, 6688, 6020, 6672, 5720, 6697, 6024, 6233, 5822, 6436, 5502, 6188, 5486, 5890, 5304, 5638, 4954, 5505, 4784, 4816, 4492, 4852, 4050, 4311, 3866, 3921, 3568, 3647, 3138, 3397, 2928, 2878, 2590, 2676, 2214, 2282, 2032, 2009, 1758, 1719, 1392, 1555, 1282, 1159, 1042, 1022, 744, 756, 616, 555, 454, 398, 284, 260, 190, 130, 102, 72, 34, 21, 8, 1]]
-    try:
-        counts = all_counts[k-1]
-    except IndexError:
-        counts = _counts_l_k_1(k)
-    ps = np.array(counts)/np.math.factorial(k)  # See [5] Equation (6)
-    a, b = (k*(k+1)*(k+2))//6, (k*(k+1)*(2*k+1))//6  # min L, max L for a row
-
-    def p_l_k_1(l):
-        if l < a or l > b:  # 0 rows have L < a or L > b
-            return 0
-        return ps[l-a]
-
-    return p_l_k_1
-
-
+# left out of class to ensure that object state does not interfere with caching
 @lru_cache(maxsize=None)
 def _pmf_recursive(l, k, n, a, b, p_l_k_1):
     '''Recursive function to evaluate p(l, k, n); see [5] Equation 1'''
@@ -454,39 +516,6 @@ def _pmf_recursive(l, k, n, a, b, p_l_k_1):
     return p
 
 
-def _pmf(l, k, n):
-    '''Probability mass function of Page's L statistic'''
-    a, b = (k*(k+1)*(k+2))//6, (k*(k+1)*(2*k+1))//6
-    p_l_k_1 = _get_p_l_k_1(k)
-    return _pmf_recursive(l, k, n, a, b, p_l_k_1)
-
-
-def _sf(l, k, n):
-    '''Survival function of Page's L statistic'''
-    a, b = (k*(k+1)*(k+2))//6, (k*(k+1)*(2*k+1))//6
-    ps = [_pmf(l, k, n) for l in range(l, n*b + 1)]
-    return np.sum(ps)
-
-
-def _whole_pmf(k, n):
-    '''Return list of all values of Page's L PMF'''
-    a, b = (k*(k+1)*(k+2))//6, (k*(k+1)*(2*k+1))//6
-    ps = [_pmf(l, k, n) for l in range(a*n, n*b + 1)]
-    return ps
-
-
-def _all_pmf():
-    '''Generate all PMFs tabulated in [1]'''
-    data = {}
-    for n in range(2, 13):
-        data[n] = {}
-        for k in range(3, 9):
-            print(n, k)
-            data[n][k] = _whole_pmf(k, n)
-
-    k = 3
-    for n in range(13, 21):
-        data[n] = {}
-        data[n][k] = _whole_pmf(k, n)
-
-    np.save('pagel_exact', data)
+# Fast to instantiate, and only loads data from file once
+# (on first use of `pagel` with `method='exact')
+_pagel_state = _PageL()
