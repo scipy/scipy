@@ -519,16 +519,13 @@ class FitDataError(ValueError):
     # This exception is raised by, for example, beta_gen.fit when both floc
     # and fscale are fixed and there are values in the data not in the open
     # interval (floc, floc+fscale), or with a custom message.
-    def __init__(self, distr=None, lower=None, upper=None, msg=None):
-        if msg:
-            self.args = (msg,)
-        else:
-            self.args = (
-                "Invalid values in `data`.  Maximum likelihood "
-                "estimation with {distr!r} requires that {lower!r} < "
-                "(x - loc)/scale  < {upper!r} for each x in `data`.".format(
-                    distr=distr, lower=lower, upper=upper),
-            )
+    def __init__(self, distr, lower, upper):
+        self.args = (
+            "Invalid values in `data`.  Maximum likelihood "
+            "estimation with {distr!r} requires that {lower!r} < "
+            "(x - loc)/scale  < {upper!r} for each x in `data`.".format(
+                distr=distr, lower=lower, upper=upper),
+        )
 
 
 class FitSolverError(RuntimeError):
