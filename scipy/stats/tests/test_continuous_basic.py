@@ -55,7 +55,7 @@ skip_fit_test = ['exponpow', 'exponweib', 'gausshyper', 'genexpon',
                  'kappa4', 'ksone', 'kstwo', 'kstwobign', 'mielke', 'ncf', 'nct',
                  'powerlognorm', 'powernorm', 'recipinvgauss', 'trapz',
                  'vonmises', 'vonmises_line',
-                 'levy_stable', 'rv_histogram_instance',]
+                 'levy_stable', 'rv_histogram_instance']
 
 # skip check_fit_args_fix (test is slow)
 skip_fit_fix_test = ['burr', 'exponpow', 'exponweib',
