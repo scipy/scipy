@@ -1,4 +1,3 @@
-from collections import namedtuple
 from itertools import permutations
 from functools import lru_cache
 import os
@@ -304,7 +303,8 @@ def pagel(data, ranked=True, predicted_ranks=None, method='auto'):
         ranks = np.array(data, copy=False)
     else:
         if np.any(np.isnan(data)):
-            raise ValueError("`data` contains NaNs, which cannot be ranked meaningfully")
+            raise ValueError("`data` contains NaNs, which cannot "
+                             "be ranked meaningfully")
         ranks = scipy.stats.rankdata(data, axis=-1)
 
     if ranks.ndim != 2:  # TODO: relax this to accept 3d arrays?
@@ -312,7 +312,7 @@ def pagel(data, ranked=True, predicted_ranks=None, method='auto'):
     m, n = ranks.shape
     if m < 2 or n < 3:
         raise ValueError("Page's L is only appropriate for data with two "
-                        "or more rows and three or more columns.")
+                         "or more rows and three or more columns.")
 
     # generate predicted ranks if not provided, ensure valid NumPy array
     if predicted_ranks is None:
@@ -321,10 +321,10 @@ def pagel(data, ranked=True, predicted_ranks=None, method='auto'):
         predicted_ranks = np.array(predicted_ranks, copy=False)
         if (predicted_ranks.ndim < 1 or
                 (set(predicted_ranks) != set(range(1, n+1)) or
-                len(predicted_ranks) != n)):
+                 len(predicted_ranks) != n)):
             raise ValueError(f"`predicted_ranks` must include each integer "
-                            f"from 1 to {n} (the number of columns in data) "
-                            f"exactly once.")
+                             f"from 1 to {n} (the number of columns in data) "
+                             f"exactly once.")
 
     if type(ranked) is not bool:
         raise TypeError("`ranked` must be boolean.")
@@ -375,11 +375,14 @@ def _l_p_asymptotic(L, m, n):
     E0 = (m*n*(n+1)**2)/4
     V0 = (m*n**2*(n+1)*(n**2-1))/144
     Lambda = (L-E0)/np.sqrt(V0)
+    # This is a one-sided "greater" test - calculate the probability that the
+    # L statistic under H0 would be greater than the observed L statistic
     p = norm.sf(Lambda)
     return p
 
 
 def _l_p_exact(L, m, n):
+    '''Calculate the p-value of Page's L exactly'''
     L, n, k = int(L), int(m), int(n)  # different papers use different symbols
 
     _pagel_state.set_k(k)
@@ -387,13 +390,14 @@ def _l_p_exact(L, m, n):
         pmf = _pagel_state.all_pmfs[n][k]
         return np.sum(pmf[L-_pagel_state.a*n:])
     except KeyError:
-        print('calculating')
         return _pagel_state.sf(L, n)
 
 
 class _PageL:
     '''Class to maintain state of Page's L between `pagel` executions'''
+
     def __init__(self):
+        '''Fast initialization; doesn't load data from file.'''
         self.all_pmfs = None
         self.all_counts = None
         self.k = None
@@ -492,7 +496,7 @@ class _PageL:
         return counts
 
 
-# left out of class to ensure that object state does not interfere with caching
+# for correct caching, function should not rely on object state
 @lru_cache(maxsize=None)
 def _pmf_recursive(l, k, n, a, b, p_l_k_1):
     '''Recursive function to evaluate p(l, k, n); see [5] Equation 1'''
