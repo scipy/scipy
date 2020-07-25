@@ -4238,14 +4238,14 @@ def _check_fit_input_parameters(dist, data, args, kwds):
 
     # determine if there are any unknown arguments in kwds
     known_keys = {'loc', 'scale', 'optimizer', 'floc', 'fscale', *fshape_keys}
-    unknown_keys = set(kwds.keys()).difference(known_keys)
+    unknown_keys = set(kwds).difference(known_keys)
     if unknown_keys:
         raise TypeError(f"Unknown keyword arguments: {unknown_keys}.")
 
     if len(args) > num_shapes:
         raise TypeError("Too many positional arguments.")
 
-    if None not in [floc, fscale, *fshapes]:
+    if None not in {floc, fscale, *fshapes}:
         # This check is for consistency with `rv_continuous.fit`.
         # Without this check, this function would just return the
         # parameters that were given.
