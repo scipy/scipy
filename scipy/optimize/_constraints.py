@@ -8,6 +8,13 @@ from warnings import warn
 from numpy.testing import suppress_warnings
 from scipy.sparse import issparse
 
+
+def _arr_to_scalar(x):
+    # If x is a numpy array, return x.item().  This will
+    # fail if the array has more than one element.
+    return x.item() if isinstance(x, np.ndarray) else x
+
+
 class NonlinearConstraint(object):
     """Nonlinear constraint on the variables.
 
@@ -314,8 +321,14 @@ def old_bound_to_new(bounds):
     -np.inf/np.inf.
     """
     lb, ub = zip(*bounds)
-    lb = np.array([float(x) if x is not None else -np.inf for x in lb])
-    ub = np.array([float(x) if x is not None else np.inf for x in ub])
+
+    # Convert occurrences of None to -inf or inf, and replace occurrences of
+    # any numpy array x with x.item(). Then wrap the results in numpy arrays.
+    lb = np.array([float(_arr_to_scalar(x)) if x is not None else -np.inf
+                   for x in lb])
+    ub = np.array([float(_arr_to_scalar(x)) if x is not None else np.inf
+                   for x in ub])
+
     return lb, ub
 
 
