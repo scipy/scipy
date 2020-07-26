@@ -459,6 +459,19 @@ def test_splev_der_k():
     assert_allclose(splev(x, (t, c, k), k), splev(x, tck2))
 
 
+def test_splprep_segfault():
+    # regression test for gh-3847: splprep segfaults if knots are specified
+    # for task=-1
+    t = np.arange(0, 1.1, 0.1)
+    x = np.sin(2*np.pi*t)
+    y = np.cos(2*np.pi*t)
+    tck, u = interpolate.splprep([x, y], s=0)
+    unew = np.arange(0, 1.01, 0.01)
+
+    uknots = tck[0]  # using the knots from the previous fitting
+    tck, u = interpolate.splprep([x, y], task=-1, t=uknots)  # here is the crash
+
+
 def test_bisplev_integer_overflow():
     np.random.seed(1)
 

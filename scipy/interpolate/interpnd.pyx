@@ -133,8 +133,10 @@ class NDInterpolatorBase(object):
 
         Parameters
         ----------
-        xi : ndarray of float, shape (..., ndim)
+        x1, x2, ... xn: array-like of float
             Points where to interpolate data at.
+            x1, x2, ... xn can be array-like of float with broadcastable shape.
+            or x1 can be array-like of float with shape ``(..., ndim)``
 
         """
         xi = _ndim_coords_from_arrays(args, ndim=self.points.shape[1])
@@ -234,6 +236,37 @@ class LinearNDInterpolator(NDInterpolatorBase):
     with Qhull [1]_, and on each triangle performing linear
     barycentric interpolation.
 
+    Examples
+    --------
+    We can interpolate values on a 2D plane:
+
+    >>> from scipy.interpolate import LinearNDInterpolator
+    >>> import matplotlib.pyplot as plt
+    >>> np.random.seed(0)
+    >>> x = np.random.random(10) - 0.5
+    >>> y = np.random.random(10) - 0.5
+    >>> z = np.hypot(x, y)
+    >>> X = np.linspace(min(x), max(x))
+    >>> Y = np.linspace(min(y), max(y))
+    >>> X, Y = np.meshgrid(X, Y)  # 2D grid for interpolation
+    >>> interp = LinearNDInterpolator(list(zip(x, y)), z)
+    >>> Z = interp(X, Y)
+    >>> plt.pcolormesh(X, Y, Z, shading='auto')
+    >>> plt.plot(x, y, "ok", label="input point")
+    >>> plt.legend()
+    >>> plt.colorbar()
+    >>> plt.axis("equal")
+    >>> plt.show()
+
+    See also
+    --------
+    griddata :
+        Interpolate unstructured D-D data.
+    NearestNDInterpolator :
+        Nearest-neighbor interpolation in N dimensions.
+    CloughTocher2DInterpolator :
+        Piecewise cubic, C1 smooth, curvature-minimizing interpolant in 2D.
+
     References
     ----------
     .. [1] http://www.qhull.org/
@@ -254,10 +287,10 @@ class LinearNDInterpolator(NDInterpolatorBase):
 
     @cython.boundscheck(False)
     @cython.wraparound(False)
-    def _do_evaluate(self, double[:,::1] xi, double_or_complex dummy):
-        cdef double_or_complex[:,::1] values = self.values
+    def _do_evaluate(self, const double[:,::1] xi, double_or_complex dummy):
+        cdef const double_or_complex[:,::1] values = self.values
         cdef double_or_complex[:,::1] out
-        cdef double[:,::1] points = self.points
+        cdef const double[:,::1] points = self.points
         cdef int[:,::1] simplices = self.tri.simplices
         cdef double c[NPY_MAXDIMS]
         cdef double_or_complex fill_value
@@ -489,7 +522,7 @@ cdef int _estimate_gradients_2d_global(qhull.DelaunayInfo_t *d, double *data,
 @cython.boundscheck(False)
 @cython.wraparound(False)
 cpdef estimate_gradients_2d_global(tri, y, int maxiter=400, double tol=1e-6):
-    cdef double[:,::1] data
+    cdef const double[:,::1] data
     cdef double[:,:,::1] grad
     cdef qhull.DelaunayInfo_t info
     cdef int k, ret, nvalues
@@ -814,6 +847,37 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
     gradients necessary for this are estimated using the global
     algorithm described in [Nielson83]_ and [Renka84]_.
 
+    Examples
+    --------
+    We can interpolate values on a 2D plane:
+
+    >>> from scipy.interpolate import CloughTocher2DInterpolator
+    >>> import matplotlib.pyplot as plt
+    >>> np.random.seed(0)
+    >>> x = np.random.random(10) - 0.5
+    >>> y = np.random.random(10) - 0.5
+    >>> z = np.hypot(x, y)
+    >>> X = np.linspace(min(x), max(x))
+    >>> Y = np.linspace(min(y), max(y))
+    >>> X, Y = np.meshgrid(X, Y)  # 2D grid for interpolation
+    >>> interp = CloughTocher2DInterpolator(list(zip(x, y)), z)
+    >>> Z = interp(X, Y)
+    >>> plt.pcolormesh(X, Y, Z, shading='auto')
+    >>> plt.plot(x, y, "ok", label="input point")
+    >>> plt.legend()
+    >>> plt.colorbar()
+    >>> plt.axis("equal")
+    >>> plt.show()
+
+    See also
+    --------
+    griddata :
+        Interpolate unstructured D-D data.
+    LinearNDInterpolator :
+        Piecewise linear interpolant in N dimensions.
+    NearestNDInterpolator :
+        Nearest-neighbor interpolation in N dimensions.
+
     References
     ----------
     .. [1] http://www.qhull.org/
@@ -854,11 +918,11 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
 
     @cython.boundscheck(False)
     @cython.wraparound(False)
-    def _do_evaluate(self, double[:,::1] xi, double_or_complex dummy):
-        cdef double_or_complex[:,::1] values = self.values
+    def _do_evaluate(self, const double[:,::1] xi, double_or_complex dummy):
+        cdef const double_or_complex[:,::1] values = self.values
         cdef double_or_complex[:,:,:] grad = self.grad
         cdef double_or_complex[:,::1] out
-        cdef double[:,::1] points = self.points
+        cdef const double[:,::1] points = self.points
         cdef int[:,::1] simplices = self.tri.simplices
         cdef double c[NPY_MAXDIMS]
         cdef double_or_complex f[NPY_MAXDIMS+1]

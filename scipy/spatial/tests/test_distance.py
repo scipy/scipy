@@ -1573,6 +1573,17 @@ class TestSomeDistanceFunctions(object):
             dist = wcorrelation(x, y)
             assert_almost_equal(dist, 1.0 - np.dot(xm, ym) / (norm(xm) * norm(ym)))
 
+    def test_correlation_positive(self):
+        # Regression test for gh-12320 (negative return value due to rounding
+        x = np.array([0., 0., 0., 0., 0., 0., -2., 0., 0., 0., -2., -2., -2.,
+                      0., -2., 0., -2., 0., 0., -1., -2., 0., 1., 0., 0., -2.,
+                      0., 0., -2., 0., -2., -2., -2., -2., -2., -2., 0.])
+        y = np.array([1., 1., 1., 1., 1., 1., -1., 1., 1., 1., -1., -1., -1.,
+                      1., -1., 1., -1., 1., 1., 0., -1., 1., 2., 1., 1., -1.,
+                      1., 1., -1., 1., -1., -1., -1., -1., -1., -1., 1.])
+        dist = correlation(x, y)
+        assert 0 <= dist <= 10 * np.finfo(np.float64).eps
+
     def test_mahalanobis(self):
         x = np.array([1.0, 2.0, 3.0])
         y = np.array([1.0, 1.0, 5.0])

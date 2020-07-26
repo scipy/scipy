@@ -1,4 +1,7 @@
 # SciPy imports.
+import tempfile
+import shutil
+import os
 import numpy as np
 from numpy import pi
 from numpy.testing import (assert_array_almost_equal,
@@ -471,4 +474,49 @@ class TestODR(object):
         odr_obj = ODR(data, quadratic)
         output = odr_obj.run()
         assert_array_almost_equal(output.beta, [1.0, 2.0, 3.0])
+
+    def test_work_ind(self):
+
+        def func(par, x):
+            b0, b1 = par
+            return b0 + b1 * x
+
+        # generate some data
+        n_data = 4
+        x = np.arange(n_data)
+        y = np.where(x % 2, x + 0.1, x - 0.1)
+        x_err = np.full(n_data, 0.1)
+        y_err = np.full(n_data, 0.1)
+
+        # do the fitting
+        linear_model = Model(func)
+        real_data = RealData(x, y, sx=x_err, sy=y_err)
+        odr_obj = ODR(real_data, linear_model, beta0=[0.4, 0.4])
+        odr_obj.set_job(fit_type=0)
+        out = odr_obj.run()
+
+        sd_ind = out.work_ind['sd']
+        assert_array_almost_equal(out.sd_beta,
+                                  out.work[sd_ind:sd_ind + len(out.sd_beta)])
+
+    def test_output_file_overwrite(self):
+        """
+        Verify fix for gh-1892
+        """
+        def func(b, x):
+            return b[0] + b[1] * x
+
+        p = Model(func)
+        data = Data(np.arange(10), 12 * np.arange(10))
+        tmp_dir = tempfile.mkdtemp()
+        error_file_path = os.path.join(tmp_dir, "error.dat")
+        report_file_path = os.path.join(tmp_dir, "report.dat")
+        try:
+            ODR(data, p, beta0=[0.1, 13], errfile=error_file_path,
+                rptfile=report_file_path).run()
+            ODR(data, p, beta0=[0.1, 13], errfile=error_file_path,
+                rptfile=report_file_path, overwrite=True).run()
+        finally:
+            # remove output files for clean up
+            shutil.rmtree(tmp_dir)
 

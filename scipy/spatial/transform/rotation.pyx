@@ -1010,7 +1010,11 @@ cdef class Rotation(object):
                              "num_axes), got {}.".format(angles.shape))
 
         quat = _elementary_quat_compose(seq.encode(), angles, intrinsic)
-        return cls(quat[0] if is_single else quat, normalize=False, copy=False)
+
+        if is_single:
+            return cls(quat[0], normalize=False, copy=False)
+        else:
+            return cls(quat, normalize=False, copy=False)
 
     def as_quat(self):
         """Represent as quaternions.
@@ -1019,7 +1023,7 @@ cdef class Rotation(object):
         quaternions [1]_. The mapping from quaternions to rotations is
         two-to-one, i.e. quaternions ``q`` and ``-q``, where ``-q`` simply
         reverses the sign of each component, represent the same spatial
-        rotation.
+        rotation. The returned value is in scalar-last (x, y, z, w) format.
 
         Returns
         -------

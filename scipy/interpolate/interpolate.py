@@ -2665,11 +2665,12 @@ def interpn(points, values, xi, method="linear", bounds_error=True,
                          "%d, but this RegularGridInterpolator has "
                          "dimension %d" % (xi.shape[1], len(grid)))
 
-    for i, p in enumerate(xi.T):
-        if bounds_error and not np.logical_and(np.all(grid[i][0] <= p),
-                                               np.all(p <= grid[i][-1])):
-            raise ValueError("One of the requested xi is out of bounds "
-                             "in dimension %d" % i)
+    if bounds_error:
+        for i, p in enumerate(xi.T):
+            if not np.logical_and(np.all(grid[i][0] <= p),
+                                                np.all(p <= grid[i][-1])):
+                raise ValueError("One of the requested xi is out of bounds "
+                                "in dimension %d" % i)
 
     # perform interpolation
     if method == "linear":
