@@ -5348,9 +5348,9 @@ def _ttest_finish(df, t, alternative):
     prob = distributions.t.sf(t, df)
 
     if alternative == "greater":
-        prob = 1 - prob
-    elif alternative == "less":
         pass
+    elif alternative == "less":
+        prob = 1 - prob
     elif alternative == "two-sided":
         prob = 2 * np.minimum(prob, 1-prob)
     else:
