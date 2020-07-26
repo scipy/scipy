@@ -6147,7 +6147,7 @@ class pareto_gen(rv_continuous):
         if floc is None:
             return super(pareto_gen, self).fit(data, **kwds)
         if np.any(data - floc < (fscale if fscale else 0)):
-            raise FitDataError("pareto", lower=0, upper=np.inf)
+            raise FitDataError("pareto", lower=1, upper=np.inf)
         data = data - floc
 
         # Source: Evans, Hastings, and Peacock (2000), Statistical
