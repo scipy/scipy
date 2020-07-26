@@ -518,7 +518,7 @@ arcsine = arcsine_gen(a=0.0, b=1.0, name='arcsine')
 class FitDataError(ValueError):
     # This exception is raised by, for example, beta_gen.fit when both floc
     # and fscale are fixed and there are values in the data not in the open
-    # interval (floc, floc+fscale), or with a custom message.
+    # interval (floc, floc+fscale).
     def __init__(self, distr, lower, upper):
         self.args = (
             "Invalid values in `data`.  Maximum likelihood "
