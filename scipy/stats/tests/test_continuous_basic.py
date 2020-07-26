@@ -63,8 +63,7 @@ skip_fit_fix_test = ['burr', 'exponpow', 'exponweib',
                      'gompertz', 'johnsonsb', 'johnsonsu', 'kappa4',
                      'ksone', 'kstwo', 'kstwobign', 'levy_stable', 'mielke', 'ncf',
                      'ncx2', 'powerlognorm', 'powernorm', 'rdist',
-                     'recipinvgauss', 'trapz', 'vonmises', 'vonmises_line',
-                     ]
+                     'recipinvgauss', 'trapz', 'vonmises', 'vonmises_line']
 
 # These distributions fail the complex derivative test below.
 # Here 'fail' mean produce wrong results and/or raise exceptions, depending
@@ -662,4 +661,3 @@ def test_methods_with_lists(method, distname, args):
         npt.assert_allclose(result,
                             [f(*v) for v in zip(x, *shape2, loc, scale)],
                             rtol=1e-15, atol=1e-15)
-
