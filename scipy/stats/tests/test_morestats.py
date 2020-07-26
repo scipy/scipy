@@ -128,8 +128,7 @@ class TestShapiro(object):
         assert_almost_equal(shapiro_test.pvalue, 0.52460, decimal=3)
 
         # Verified against R
-        np.random.seed(12345678)
-        x3 = stats.norm.rvs(loc=5, scale=3, size=100)
+        x3 = stats.norm.rvs(loc=5, scale=3, size=100, random_state=12345678)
         w, pw = stats.shapiro(x3)
         shapiro_test = stats.shapiro(x3)
         assert_almost_equal(w, 0.9772805571556091, decimal=6)
@@ -828,8 +827,7 @@ class TestMood(object):
 class TestProbplot(object):
 
     def test_basic(self):
-        np.random.seed(12345)
-        x = stats.norm.rvs(size=20)
+        x = stats.norm.rvs(size=20, random_state=12345)
         osm, osr = stats.probplot(x, fit=False)
         osm_expected = [-1.8241636, -1.38768012, -1.11829229, -0.91222575,
                         -0.73908135, -0.5857176, -0.44506467, -0.31273668,
@@ -844,8 +842,7 @@ class TestProbplot(object):
         assert_allclose(res_fit, res_fit_expected)
 
     def test_sparams_keyword(self):
-        np.random.seed(123456)
-        x = stats.norm.rvs(size=100)
+        x = stats.norm.rvs(size=100, random_state=123456)
         # Check that None, () and 0 (loc=0, for normal distribution) all work
         # and give the same results
         osm1, osr1 = stats.probplot(x, sparams=None, fit=False)
@@ -859,8 +856,7 @@ class TestProbplot(object):
         osm, osr = stats.probplot(x, sparams=(), fit=False)
 
     def test_dist_keyword(self):
-        np.random.seed(12345)
-        x = stats.norm.rvs(size=20)
+        x = stats.norm.rvs(size=20, random_state=12345)
         osm1, osr1 = stats.probplot(x, fit=False, dist='t', sparams=(3,))
         osm2, osr2 = stats.probplot(x, fit=False, dist=stats.t, sparams=(3,))
         assert_allclose(osm1, osm2)
@@ -881,10 +877,9 @@ class TestProbplot(object):
 
     @pytest.mark.skipif(not have_matplotlib, reason="no matplotlib")
     def test_plot_kwarg(self):
-        np.random.seed(7654321)
         fig = plt.figure()
         fig.add_subplot(111)
-        x = stats.t.rvs(3, size=100)
+        x = stats.t.rvs(3, size=100, random_state=7654321)
         res1, fitres1 = stats.probplot(x, plot=plt)
         plt.close()
         res2, fitres2 = stats.probplot(x, plot=None)
@@ -1171,8 +1166,7 @@ class TestKstatVar(object):
 
 class TestPpccPlot(object):
     def setup_method(self):
-        np.random.seed(7654321)
-        self.x = stats.loggamma.rvs(5, size=500) + 5
+        self.x = stats.loggamma.rvs(5, size=500, random_state=7654321) + 5
 
     def test_basic(self):
         N = 5
@@ -1231,13 +1225,13 @@ class TestPpccMax(object):
         assert_raises(ValueError, stats.ppcc_max, data, dist="plate_of_shrimp")
 
     def test_ppcc_max_basic(self):
-        np.random.seed(1234567)
-        x = stats.tukeylambda.rvs(-0.7, loc=2, scale=0.5, size=10000) + 1e4
+        x = stats.tukeylambda.rvs(-0.7, loc=2, scale=0.5, size=10000,
+                                  random_state=1234567) + 1e4
         assert_almost_equal(stats.ppcc_max(x), -0.71215366521264145, decimal=7)
 
     def test_dist(self):
-        np.random.seed(1234567)
-        x = stats.tukeylambda.rvs(-0.7, loc=2, scale=0.5, size=10000) + 1e4
+        x = stats.tukeylambda.rvs(-0.7, loc=2, scale=0.5, size=10000,
+                                  random_state=1234567) + 1e4
 
         # Test that we can specify distributions both by name and as objects.
         max1 = stats.ppcc_max(x, dist='tukeylambda')
@@ -1250,8 +1244,8 @@ class TestPpccMax(object):
         assert_almost_equal(max3, -0.71215366521264145, decimal=5)
 
     def test_brack(self):
-        np.random.seed(1234567)
-        x = stats.tukeylambda.rvs(-0.7, loc=2, scale=0.5, size=10000) + 1e4
+        x = stats.tukeylambda.rvs(-0.7, loc=2, scale=0.5, size=10000,
+                                  random_state=1234567) + 1e4
         assert_raises(ValueError, stats.ppcc_max, x, brack=(0.0, 1.0, 0.5))
 
         assert_almost_equal(stats.ppcc_max(x, brack=(0, 1)),
@@ -1264,16 +1258,14 @@ class TestPpccMax(object):
 class TestBoxcox_llf(object):
 
     def test_basic(self):
-        np.random.seed(54321)
-        x = stats.norm.rvs(size=10000, loc=10)
+        x = stats.norm.rvs(size=10000, loc=10, random_state=54321)
         lmbda = 1
         llf = stats.boxcox_llf(lmbda, x)
         llf_expected = -x.size / 2. * np.log(np.sum(x.std()**2))
         assert_allclose(llf, llf_expected)
 
     def test_array_like(self):
-        np.random.seed(54321)
-        x = stats.norm.rvs(size=100, loc=10)
+        x = stats.norm.rvs(size=100, loc=10, random_state=54321)
         lmbda = 1
         llf = stats.boxcox_llf(lmbda, x)
         llf2 = stats.boxcox_llf(lmbda, list(x))
@@ -1283,8 +1275,7 @@ class TestBoxcox_llf(object):
         # Note: boxcox_llf() was already working with 2-D input (sort of), so
         # keep it like that.  boxcox() doesn't work with 2-D input though, due
         # to brent() returning a scalar.
-        np.random.seed(54321)
-        x = stats.norm.rvs(size=100, loc=10)
+        x = stats.norm.rvs(size=100, loc=10, random_state=54321)
         lmbda = 1
         llf = stats.boxcox_llf(lmbda, x)
         llf2 = stats.boxcox_llf(lmbda, np.vstack([x, x]).T)
@@ -1357,8 +1348,7 @@ _boxcox_data = [
 class TestBoxcox(object):
 
     def test_fixed_lmbda(self):
-        np.random.seed(12345)
-        x = stats.loggamma.rvs(5, size=50) + 5
+        x = stats.loggamma.rvs(5, size=50, random_state=12345) + 5
         xt = stats.boxcox(x, lmbda=1)
         assert_allclose(xt, x - 1)
         xt = stats.boxcox(x, lmbda=-1)
@@ -1372,20 +1362,18 @@ class TestBoxcox(object):
         assert_allclose(xt, np.log(x))
 
     def test_lmbda_None(self):
-        np.random.seed(1234567)
         # Start from normal rv's, do inverse transform to check that
         # optimization function gets close to the right answer.
-        np.random.seed(1245)
         lmbda = 2.5
-        x = stats.norm.rvs(loc=10, size=50000)
+        x = stats.norm.rvs(loc=10, size=50000, random_state=1245)
         x_inv = (x * lmbda + 1)**(-lmbda)
         xt, maxlog = stats.boxcox(x_inv)
 
         assert_almost_equal(maxlog, -1 / lmbda, decimal=2)
 
     def test_alpha(self):
-        np.random.seed(1234)
-        x = stats.loggamma.rvs(5, size=50) + 5
+        rng = np.random.RandomState(1234)
+        x = stats.loggamma.rvs(5, size=50, random_state=rng) + 5
 
         # Some regular values for alpha, on a small sample size
         _, _, interval = stats.boxcox(x, alpha=0.75)
@@ -1394,7 +1382,7 @@ class TestBoxcox(object):
         assert_allclose(interval, [1.2138178554857557, 8.209033272375663])
 
         # Try some extreme values, see we don't hit the N=500 limit
-        x = stats.loggamma.rvs(7, size=500) + 15
+        x = stats.loggamma.rvs(7, size=500, random_state=rng) + 15
         _, _, interval = stats.boxcox(x, alpha=0.001)
         assert_allclose(interval, [0.3988867, 11.40553131])
         _, _, interval = stats.boxcox(x, alpha=0.999)
@@ -1423,8 +1411,7 @@ class TestBoxcox(object):
 
 class TestBoxcoxNormmax(object):
     def setup_method(self):
-        np.random.seed(12345)
-        self.x = stats.loggamma.rvs(5, size=50) + 5
+        self.x = stats.loggamma.rvs(5, size=50, random_state=12345) + 5
 
     def test_pearsonr(self):
         maxlog = stats.boxcox_normmax(self.x)
@@ -1445,8 +1432,7 @@ class TestBoxcoxNormmax(object):
 
 class TestBoxcoxNormplot(object):
     def setup_method(self):
-        np.random.seed(7654321)
-        self.x = stats.loggamma.rvs(5, size=500) + 5
+        self.x = stats.loggamma.rvs(5, size=500, random_state=7654321) + 5
 
     def test_basic(self):
         N = 5
@@ -1482,16 +1468,14 @@ class TestBoxcoxNormplot(object):
 class TestYeojohnson_llf(object):
 
     def test_array_like(self):
-        np.random.seed(54321)
-        x = stats.norm.rvs(size=100, loc=0)
+        x = stats.norm.rvs(size=100, loc=0, random_state=54321)
         lmbda = 1
         llf = stats.yeojohnson_llf(lmbda, x)
         llf2 = stats.yeojohnson_llf(lmbda, list(x))
         assert_allclose(llf, llf2, rtol=1e-12)
 
     def test_2d_input(self):
-        np.random.seed(54321)
-        x = stats.norm.rvs(size=100, loc=10)
+        x = stats.norm.rvs(size=100, loc=10, random_state=54321)
         lmbda = 1
         llf = stats.yeojohnson_llf(lmbda, x)
         llf2 = stats.yeojohnson_llf(lmbda, np.vstack([x, x]).T)
@@ -1504,10 +1488,10 @@ class TestYeojohnson_llf(object):
 class TestYeojohnson(object):
 
     def test_fixed_lmbda(self):
-        np.random.seed(12345)
+        rng = np.random.RandomState(12345)
 
         # Test positive input
-        x = stats.loggamma.rvs(5, size=50) + 5
+        x = stats.loggamma.rvs(5, size=50, random_state=rng) + 5
         assert np.all(x > 0)
         xt = stats.yeojohnson(x, lmbda=1)
         assert_allclose(xt, x)
@@ -1519,7 +1503,7 @@ class TestYeojohnson(object):
         assert_allclose(xt, x)
 
         # Test negative input
-        x = stats.loggamma.rvs(5, size=50) - 5
+        x = stats.loggamma.rvs(5, size=50, random_state=rng) - 5
         assert np.all(x < 0)
         xt = stats.yeojohnson(x, lmbda=2)
         assert_allclose(xt, -np.log(-x + 1))
@@ -1529,7 +1513,7 @@ class TestYeojohnson(object):
         assert_allclose(xt, 1 / (-x + 1) - 1)
 
         # test both positive and negative input
-        x = stats.loggamma.rvs(5, size=50) - 2
+        x = stats.loggamma.rvs(5, size=50, random_state=rng) - 2
         assert not np.all(x < 0)
         assert not np.all(x >= 0)
         pos = x >= 0
@@ -1574,8 +1558,8 @@ class TestYeojohnson(object):
 
             return x_inv
 
-        np.random.seed(1234567)
         n_samples = 20000
+        np.random.seed(1234567)
         x = np.random.normal(loc=0, scale=1, size=(n_samples))
 
         x_inv = _inverse_transform(x, lmbda)
@@ -1591,8 +1575,7 @@ class TestYeojohnson(object):
         assert_(stats.yeojohnson([]).shape == (0,))
 
     def test_array_like(self):
-        np.random.seed(54321)
-        x = stats.norm.rvs(size=100, loc=0)
+        x = stats.norm.rvs(size=100, loc=0, random_state=54321)
         xt1, _ = stats.yeojohnson(x)
         xt2, _ = stats.yeojohnson(list(x))
         assert_allclose(xt1, xt2, rtol=1e-12)
@@ -1617,8 +1600,7 @@ class TestYeojohnson(object):
 
 class TestYeojohnsonNormmax(object):
     def setup_method(self):
-        np.random.seed(12345)
-        self.x = stats.loggamma.rvs(5, size=50) + 5
+        self.x = stats.loggamma.rvs(5, size=50, random_state=12345) + 5
 
     def test_mle(self):
         maxlog = stats.yeojohnson_normmax(self.x)
