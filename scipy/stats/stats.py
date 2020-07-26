@@ -5503,7 +5503,7 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
     >>> group1 = np.array([1]*30 + [0]*(150-30))
     >>> group2 = np.array([1]*45 + [0]*(200-45))
     >>> ttest_ind(group1, group2)
-    Ttest_indResult(statistic=-0.5627179589855622, pvalue=0.573989277115258)
+    Ttest_indResult(statistic=-0.5627179589855622, pvalue=0.5739892771152579)
 
     """
     if equal_var:
