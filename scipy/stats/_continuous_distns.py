@@ -6157,7 +6157,7 @@ class pareto_gen(rv_continuous):
             fscale = np.min(data)
         if fshape is None:
             fshape = 1/((1/len(data)) * np.sum(np.log(data/fscale)))
-        return(fshape, floc, fscale)
+        return fshape, floc, fscale
 
 
 pareto = pareto_gen(a=1.0, name="pareto")
