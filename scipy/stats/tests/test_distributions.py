@@ -28,6 +28,7 @@ import scipy.stats.distributions
 
 from scipy.special import xlogy
 from .test_continuous_basic import distcont
+from scipy.stats._continuous_distns import FitDataError
 
 # python -OO strips docstrings
 DOCSTRINGS_STRIPPED = sys.flags.optimize > 1
@@ -963,6 +964,85 @@ class TestPareto(object):
         p = stats.pareto.sf(x, b, loc=0, scale=scale)
         expected = (scale/x)**b   # 2.25e-18
         assert_allclose(p, expected)
+
+    @pytest.mark.filterwarnings("ignore:invalid value encountered in "
+                                "double_scalars")
+    @pytest.mark.parametrize("rvs_shape", [1, 2])
+    @pytest.mark.parametrize("rvs_loc", [0, 2])
+    @pytest.mark.parametrize("rvs_scale", [1, 5])
+    def test_fit(self, rvs_shape, rvs_loc, rvs_scale):
+        data = stats.pareto.rvs(size=100, b=rvs_shape, scale=rvs_scale,
+                                loc=rvs_loc)
+
+        # shape can still be fixed with multiple names
+        shape_mle_analytical1 = stats.pareto.fit(data, floc=0, f0=1.04)[0]
+        shape_mle_analytical2 = stats.pareto.fit(data, floc=0, fix_b=1.04)[0]
+        shape_mle_analytical3 = stats.pareto.fit(data, floc=0, fb=1.04)[0]
+        assert (shape_mle_analytical1 == shape_mle_analytical2 ==
+                shape_mle_analytical3 == 1.04)
+
+        # data can be shifted with changes to `loc`
+        data = stats.pareto.rvs(size=100, b=rvs_shape, scale=rvs_scale,
+                                loc=(rvs_loc + 2))
+        shape_mle_a, loc_mle_a, scale_mle_a = stats.pareto.fit(data, floc=2)
+        assert_equal(scale_mle_a + 2, data.min())
+        assert_equal(shape_mle_a, 1/((1/len(data - 2)) *
+                                     np.sum(np.log((data
+                                                    - 2)/(data.min() - 2)))))
+        assert_equal(loc_mle_a, 2)
+
+    @pytest.mark.filterwarnings("ignore:invalid value encountered in "
+                                "double_scalars")
+    @pytest.mark.parametrize("rvs_shape", [1, 2])
+    @pytest.mark.parametrize("rvs_loc", [0, 2])
+    @pytest.mark.parametrize("rvs_scale", [1, 5])
+    def test_fit_MLE_comp_optimzer(self, rvs_shape, rvs_loc, rvs_scale):
+        data = stats.pareto.rvs(size=100, b=rvs_shape, scale=rvs_scale,
+                                loc=rvs_loc)
+        args = [data, (stats.pareto._fitstart(data), )]
+        func = stats.pareto._reduce_func(args, {})[1]
+
+        def _assert_lessthan_loglike(dist, data, func, **kwds):
+            mle_analytical = dist.fit(data, **kwds)
+            numerical_opt = super(type(dist), dist).fit(data, **kwds)
+            ll_mle_analytical = func(mle_analytical, data)
+            ll_numerical_opt = func(numerical_opt, data)
+            assert ll_mle_analytical < ll_numerical_opt
+
+        # fixed `floc` to actual location provides as good or better fit.
+        _assert_lessthan_loglike(stats.pareto, data, func, floc=rvs_loc)
+
+        # fixing `floc` to an arbitrary number, 0, still provides an as good
+        # or better fit.
+        _assert_lessthan_loglike(stats.pareto, data, func, floc=0)
+
+        # fixed shape still uses analytical MLE and provides
+        # an as good or better fit.
+        _assert_lessthan_loglike(stats.pareto, data, func, floc=0, f0=4)
+
+        # valid fixed fscale still uses analytical MLE and provides
+        # an as good or better fit.
+        _assert_lessthan_loglike(stats.pareto, data, func, floc=0,
+                                 fscale=rvs_scale/2)
+
+    def test_fit_warnings(self):
+        with pytest.raises(RuntimeError,
+                           match="All parameters fixed. There is nothing "
+                           "to optimize."):
+            stats.pareto.fit([1, 2, 3], f0=2, floc=1, fscale=1)
+        with pytest.raises(RuntimeError,
+                           match="The data contains non-finite values"):
+            stats.pareto.fit([np.nan])
+        with pytest.raises(RuntimeError,
+                           match="The data contains non-finite values"):
+            stats.pareto.fit([np.inf])
+        with pytest.raises(TypeError, match="Unknown keyword arguments:"):
+            stats.pareto.fit([2, 2, 3], floc=1, extra=2)
+        with pytest.raises(TypeError, match="Too many positional arguments."):
+            stats.pareto.fit([1, 2, 3], 1, 4)
+        assert_raises(FitDataError, stats.pareto.fit, [1, 2, 3], floc=2)
+        assert_raises(FitDataError, stats.pareto.fit, [5, 2, 3], floc=1,
+                      fscale=3)
 
 
 class TestGenpareto(object):

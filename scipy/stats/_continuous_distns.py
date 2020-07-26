@@ -517,13 +517,13 @@ arcsine = arcsine_gen(a=0.0, b=1.0, name='arcsine')
 
 class FitDataError(ValueError):
     # This exception is raised by, for example, beta_gen.fit when both floc
-    # and fscale  are fixed and there are values in the data not in the open
+    # and fscale are fixed and there are values in the data not in the open
     # interval (floc, floc+fscale).
     def __init__(self, distr, lower, upper):
         self.args = (
             "Invalid values in `data`.  Maximum likelihood "
-            "estimation with {distr!r} requires that {lower!r} < x "
-            "< {upper!r} for each x in `data`.".format(
+            "estimation with {distr!r} requires that {lower!r} < "
+            "(x - loc)/scale  < {upper!r} for each x in `data`.".format(
                 distr=distr, lower=lower, upper=upper),
         )
 
@@ -3953,49 +3953,67 @@ class laplace_gen(rv_continuous):
         estimation of the Laplace distribution parameters, so the keyword
         arguments `loc`, `scale`, and `optimizer` are ignored.\n\n""")
     def fit(self, data, *args, **kwds):
-        floc = kwds.pop('floc', None)
-        fscale = kwds.pop('fscale', None)
-
-        _check_fit_input_parameters(data, args,
-                                    kwds, fixed_param=(floc, fscale))
-
-        # MLE for the laplace distribution
-
-        if floc is None:
-            loc = np.median(data)
-        else:
-            loc = floc
-
-        if fscale is None:
-            scale = (np.sum(np.abs(data - loc))) / len(data)
-        else:
-            scale = fscale
+        data, floc, fscale = _check_fit_input_parameters(self, data,
+                                                         args, kwds)
 
         # Source: Statistical Distributions, 3rd Edition. Evans, Hastings,
         # and Peacock (2000), Page 124
 
-        return loc, scale
+        if floc is None:
+            floc = np.median(data)
+
+        if fscale is None:
+            fscale = (np.sum(np.abs(data - floc))) / len(data)
+
+        return floc, fscale
 
 
 laplace = laplace_gen(name='laplace')
 
 
-def _check_fit_input_parameters(data, args, kwds, fixed_param):
-    if len(args) > 0:
-        raise TypeError("Too many arguments.")
+def _check_fit_input_parameters(dist, data, args, kwds):
+    data = np.asarray(data)
+    floc = kwds.get('floc', None)
+    fscale = kwds.get('fscale', None)
 
-    _remove_optimizer_parameters(kwds)
+    num_shapes = len(dist.shapes) if dist.shapes else 0
+    fshape_keys = []
+    fshapes = []
 
-    if None not in fixed_param:
+    # user has many options for fixing the shape, so here we standardize it
+    # into 'f' + the number of the shape.
+    # Adapted from `_reduce_func` in `_distn_infrastructure.py`:
+    if dist.shapes:
+        shapes = dist.shapes.replace(',', ' ').split()
+        for j, s in enumerate(shapes):
+            key = 'f' + str(j)
+            names = [key, 'f' + s, 'fix_' + s]
+            val = _get_fixed_fit_value(kwds, names)
+            fshape_keys.append(key)
+            fshapes.append(val)
+            if val is not None:
+                kwds[key] = val
+
+    # determine if there are any unknown arguments in kwds
+    known_keys = {'loc', 'scale', 'optimizer', 'floc', 'fscale', *fshape_keys}
+    unknown_keys = set(kwds).difference(known_keys)
+    if unknown_keys:
+        raise TypeError(f"Unknown keyword arguments: {unknown_keys}.")
+
+    if len(args) > num_shapes:
+        raise TypeError("Too many positional arguments.")
+
+    if None not in {floc, fscale, *fshapes}:
         # This check is for consistency with `rv_continuous.fit`.
         # Without this check, this function would just return the
         # parameters that were given.
         raise RuntimeError("All parameters fixed. There is nothing to "
                            "optimize.")
 
-    data = np.asarray(data)
     if not np.isfinite(data).all():
         raise RuntimeError("The data contains non-finite values.")
+
+    return (data, *fshapes, floc, fscale)
 
 
 class levy_gen(rv_continuous):
@@ -5883,6 +5901,24 @@ class pareto_gen(rv_continuous):
 
     def _entropy(self, c):
         return 1 + 1.0/c - np.log(c)
+
+    def fit(self, data, *args, **kwds):
+        parameters = _check_fit_input_parameters(self, data, args, kwds)
+        data, fshape, floc, fscale = parameters
+        if floc is None:
+            return super(pareto_gen, self).fit(data, **kwds)
+        if np.any(data - floc < (fscale if fscale else 0)):
+            raise FitDataError("pareto", lower=1, upper=np.inf)
+        data = data - floc
+
+        # Source: Evans, Hastings, and Peacock (2000), Statistical
+        # Distributions, 3rd. Ed., John Wiley and Sons. Page 149.
+
+        if fscale is None:
+            fscale = np.min(data)
+        if fshape is None:
+            fshape = 1/((1/len(data)) * np.sum(np.log(data/fscale)))
+        return fshape, floc, fscale
 
 
 pareto = pareto_gen(a=1.0, name="pareto")
