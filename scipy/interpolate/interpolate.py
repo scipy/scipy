@@ -340,10 +340,12 @@ class interp1d(_Interpolator1D):
     Parameters
     ----------
     x : (N,) array_like
-        A 1-D array of real values.
+        A 1-D array of real values. These values must be convertible to `float`
+        values.
     y : (...,N,...) array_like
-        A N-D array of real values. The length of `y` along the interpolation
-        axis must be equal to the length of `x`.
+        A N-D array of real values. These values must be convertible to `float`
+        values. The length of `y` along the interpolation axis must be equal
+        to the length of `x`.
     kind : str or int, optional
         Specifies the kind of interpolation as a string
         ('linear', 'nearest', 'zero', 'slinear', 'quadratic', 'cubic',

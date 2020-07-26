@@ -61,7 +61,8 @@ class _Interpolator1D(object):
         Parameters
         ----------
         x : array_like
-            Points to evaluate the interpolant at.
+            Points to evaluate the interpolant at. These values must be
+            convertible to `float` values.
 
         Returns
         -------
