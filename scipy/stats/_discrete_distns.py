@@ -529,15 +529,11 @@ hypergeom = hypergeom_gen(name='hypergeom')
 class nhypergeom_gen(rv_discrete):
     r"""A negative hypergeometric discrete random variable.
 
-    The negative hypergeometric distribution models the probability
-    of :math:`k` successes in a sample of exactly :math:`r` failures
-    taken without replacement where :math:`N` are the total number
-    of elements and :math:`K` are defined to be successes.
-
-    It is equivalent to observing :math:`k` successes in :math:`k+r-1`
-    samples with :math:`k+r`'th sample being a failure. The former
-    can be modelled as a hypergeometric distribution. Refer
-    `hypergeom` distribution for more information.
+    Consider a box containing :math:`N` balls:, :math:`K` red and
+    :math:`N-K` blue. We randomly sample balls from the box, one
+    at a time and *without* replacement, until we have picked :math:`r`
+    blue balls. `nhypergeom` is the distribution of the number of
+    red balls :math:`k` we have picked.
 
     %(before_notes)s
 
@@ -552,9 +548,21 @@ class nhypergeom_gen(rv_discrete):
     .. math:: f(k; N, K, r) = \frac{{{k+r-1}\choose{k}}{{N-r-k}\choose{K-k}}}
                                    {{N \choose K}}
 
-    for :math:`k \in [0, K]` and the binomial co-efficient is:
+    for :math:`k \in [0, K]` and the binomial coefficient is:
 
     .. math:: \binom{n}{k} \equiv \frac{n!}{k! (n - k)!}.
+
+    It is equivalent to observing :math:`k` successes in :math:`k+r-1`
+    samples with :math:`k+r`'th sample being a failure. The former
+    can be modelled as a hypergeometric distribution. The probability
+    of the latter is simply the number of failures remaining
+    :math:`N-K-(r-1)` divided by the size of the remaining population
+    :math:`N-(k+r-1)`. This relationship can be shown as:
+
+    .. math:: NHG(k;N,K,r) = HG(k;N,K,k+r-1)\frac{(N-K-(r-1))}{(N-(k+r-1))}
+
+    where :math:`NHG` is negative hypergeometric distribution and
+    :math:`HG` is the hypergeometric distribution.
 
     %(after_notes)s
 
@@ -593,6 +601,18 @@ class nhypergeom_gen(rv_discrete):
 
     >>> R = nhypergeom.rvs(N, K, r, size=10)
 
+    To verify the relationship between `hypergeom` and `nhypergeom`, use:
+
+    >>> from scipy.stats import hypergeom, nhypergeom
+    >>> HG = hypergeom._pmf
+    >>> NHG = nhypergeom._pmf
+    >>> N, K, r = 45, 13, 8
+    >>> k = 6
+    >>> NHG(k, N, K, r)
+    0.06180776620271643
+    >>> HG(k, N, K, k+r-1) * (N - K - (r-1)) / (N - (k+r-1))
+    0.06180776620271644
+
     See Also
     --------
     hypergeom, binom, nbinom
@@ -610,8 +630,7 @@ class nhypergeom_gen(rv_discrete):
         return 0, K
 
     def _argcheck(self, N, K, r):
-        cond = (N >= 0)
-        cond &= (K >= 0) & (K <= N)
+        cond = (K >= 0) & (K <= N)
         cond &= (r >= 0) & (r <= N-K)
         return cond
 

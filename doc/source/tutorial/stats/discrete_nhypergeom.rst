@@ -10,10 +10,10 @@ Consider a box containing :math:`N` balls: :math:`K` red and :math:`N-K` blue. W
    :nowrap:
 
     \begin{eqnarray*}
-    p\left(k;N,K,r\right) & = & \frac{\left(\begin{array}{c} k+r-1\\ k\end{array}\right)\left(\begin{array}{c} N-r-k\\ K-k\end{array}\right)}{\left(\begin{array}{c} N\\ K\end{array}\right)}\quad 0 \leq k \leq N-K,\\
-    F\left(x;N,K,r\right) & = & \sum_{k=0}^{\left\lfloor x\right\rfloor }p\left(k;N,K,r\right),\\
+    p(k;N,K,r) & = & \frac{\left(\begin{array}{c} k+r-1\\ k\end{array}\right)\left(\begin{array}{c} N-r-k\\ K-k\end{array}\right)}{\left(\begin{array}{c} N\\ K\end{array}\right)}\quad 0 \leq k \leq N-K,\\
+    F(x;N,K,r) & = & \sum_{k=0}^{\left\lfloor x\right\rfloor }p\left(k;N,K,r\right),\\
     \mu & = & \frac{rK}{N-K+1},\\
-    \mu_{2} & = & \frac{rK\left(N+1\right)}{\left(N-K+1\right)\left(N-K+2\right)}\left(1-\frac{r}{N-K+1}\right)
+    \mu_{2} & = & \frac{rK(N+1)}{(N-K+1)(N-K+2)}\left(1-\frac{r}{N-K+1}\right)
     \end{eqnarray*}
 
 for :math:`k \in 0, 1, 2, ..., K`, where the binomial coefficients are defined as,
