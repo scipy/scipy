@@ -139,7 +139,7 @@ def cascade(hk, J=7):
 
     indx1 = np.clip(2 * nn - kk, -1, N + 1)
     indx2 = np.clip(2 * nn - kk + 1, -1, N + 1)
-    m = np.zeros((2, 2, N, N), 'd')
+    m = np.empty((2, 2, N, N), 'd')
     m[0, 0] = np.take(thk, indx1, 0)
     m[0, 1] = np.take(thk, indx2, 0)
     m[1, 0] = np.take(tgk, indx1, 0)
@@ -465,7 +465,7 @@ def cwt(data, wavelet, widths, dtype=None, **kwargs):
         else:
             dtype = np.float64
 
-    output = np.zeros((len(widths), len(data)), dtype=dtype)
+    output = np.empty((len(widths), len(data)), dtype=dtype)
     for ind, width in enumerate(widths):
         N = np.min([10 * width, len(data)])
         # the conditional block below and the window_size

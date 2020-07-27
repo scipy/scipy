@@ -217,7 +217,7 @@ def label(input, structure=None, output=None):
 
     try:
         max_label = _ni_label._label(input, structure, output)
-    except _ni_label.NeedMoreBits:
+    except _ni_label.NeedMoreBits as e:
         # Make another attempt with enough bits, then try to cast to the
         # new type.
         tmp_output = np.empty(input.shape, np.intp if need_64bits else np.int32)
@@ -225,7 +225,9 @@ def label(input, structure=None, output=None):
         output[...] = tmp_output[...]
         if not np.all(output == tmp_output):
             # refuse to return bad results
-            raise RuntimeError("insufficient bit-depth in requested output type")
+            raise RuntimeError(
+                "insufficient bit-depth in requested output type"
+            ) from e
 
     if caller_provided_output:
         # result was written in-place
@@ -388,9 +390,9 @@ def labeled_comprehension(input, labels, index, func, out_dtype, default, pass_p
 
     try:
         input, labels = numpy.broadcast_arrays(input, labels)
-    except ValueError:
+    except ValueError as e:
         raise ValueError("input and labels must have the same shape "
-                            "(excepting dimensions with width 1)")
+                            "(excepting dimensions with width 1)") from e
 
     if index is None:
         if not pass_positions:

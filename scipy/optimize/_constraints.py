@@ -298,8 +298,8 @@ def new_bounds_to_old(lb, ub, n):
     if ub.ndim == 0:
         ub = np.resize(ub, n)
 
-    lb = [x if x > -np.inf else None for x in lb]
-    ub = [x if x < np.inf else None for x in ub]
+    lb = [float(x) if x > -np.inf else None for x in lb]
+    ub = [float(x) if x < np.inf else None for x in ub]
 
     return list(zip(lb, ub))
 
@@ -314,8 +314,8 @@ def old_bound_to_new(bounds):
     -np.inf/np.inf.
     """
     lb, ub = zip(*bounds)
-    lb = np.array([x if x is not None else -np.inf for x in lb])
-    ub = np.array([x if x is not None else np.inf for x in ub])
+    lb = np.array([float(x) if x is not None else -np.inf for x in lb])
+    ub = np.array([float(x) if x is not None else np.inf for x in ub])
     return lb, ub
 
 
@@ -430,12 +430,14 @@ def old_constraint_to_new(ic, con):
     # check type
     try:
         ctype = con['type'].lower()
-    except KeyError:
-        raise KeyError('Constraint %d has no type defined.' % ic)
-    except TypeError:
-        raise TypeError('Constraints must be a sequence of dictionaries.')
-    except AttributeError:
-        raise TypeError("Constraint's type must be a string.")
+    except KeyError as e:
+        raise KeyError('Constraint %d has no type defined.' % ic) from e
+    except TypeError as e:
+        raise TypeError(
+            'Constraints must be a sequence of dictionaries.'
+        ) from e
+    except AttributeError as e:
+        raise TypeError("Constraint's type must be a string.") from e
     else:
         if ctype not in ['eq', 'ineq']:
             raise ValueError("Unknown constraint type '%s'." % con['type'])

@@ -27,6 +27,7 @@ from scipy.stats._ksstats import kolmogn
 from scipy.special._testutils import FuncData
 from .common_tests import check_named_results
 from scipy.sparse.sputils import matrix
+from scipy.spatial.distance import cdist
 
 """ Numbers in docstrings beginning with 'W' refer to the section numbers
     and headings found in the STATISTICS QUIZ of Leland Wilkinson.  These are
@@ -2456,8 +2457,7 @@ class TestStudentTest(object):
         assert_array_almost_equal(p, self.P1_2)
 
         # check nan policy
-        np.random.seed(7654567)
-        x = stats.norm.rvs(loc=5, scale=10, size=51)
+        x = stats.norm.rvs(loc=5, scale=10, size=51, random_state=7654567)
         x[50] = np.nan
         with np.errstate(invalid="ignore"):
             assert_array_equal(stats.ttest_1samp(x, 5.0), (np.nan, np.nan))
@@ -3024,8 +3024,7 @@ class TestKSOneSample(object):
 
     def test_known_examples(self):
         # the following tests rely on deterministically replicated rvs
-        np.random.seed(987654321)
-        x = stats.norm.rvs(loc=0.2, size=100)
+        x = stats.norm.rvs(loc=0.2, size=100, random_state=987654321)
         self._testOne(x, 'two-sided', 0.12464329735846891, 0.089444888711820769, mode='asymp')
         self._testOne(x, 'less', 0.12464329735846891, 0.040989164077641749)
         self._testOne(x, 'greater', 0.0072115233216310994, 0.98531158590396228)
@@ -3263,6 +3262,18 @@ class TestKSTwoSamples(object):
         assert_raises(ValueError, stats.ks_2samp, [1], [])
         assert_raises(ValueError, stats.ks_2samp, [], [])
 
+    def test_gh12218(self):
+        """Ensure gh-12218 is fixed."""
+        # gh-1228 triggered a TypeError calculating sqrt(n1*n2*(n1+n2)).
+        # n1, n2 both large integers, the product exceeded 2^64
+        np.random.seed(12345678)
+        n1 = 2097152  # 2*^21
+        rvs1 = stats.uniform.rvs(size=n1, loc=0., scale=1)
+        rvs2 = rvs1 + 1  # Exact value of rvs2 doesn't matter.
+        stats.ks_2samp(rvs1, rvs2, alternative='greater', mode='asymp')
+        stats.ks_2samp(rvs1, rvs2, alternative='less', mode='asymp')
+        stats.ks_2samp(rvs1, rvs2, alternative='two-sided', mode='asymp')
+
 
 def test_ttest_rel():
     # regression test
@@ -3307,11 +3318,11 @@ def test_ttest_rel():
     assert_equal(t.shape, (3, 2))
 
     # check nan policy
-    np.random.seed(12345678)
-    x = stats.norm.rvs(loc=5, scale=10, size=501)
+    rng = np.random.RandomState(12345678)
+    x = stats.norm.rvs(loc=5, scale=10, size=501, random_state=rng)
     x[500] = np.nan
-    y = (stats.norm.rvs(loc=5, scale=10, size=501) +
-         stats.norm.rvs(scale=0.2, size=501))
+    y = (stats.norm.rvs(loc=5, scale=10, size=501, random_state=rng) +
+         stats.norm.rvs(scale=0.2, size=501, random_state=rng))
     y[500] = np.nan
 
     with np.errstate(invalid="ignore"):
@@ -3455,10 +3466,10 @@ def test_ttest_ind():
     assert_equal(t.shape, (3, 2))
 
     # check nan policy
-    np.random.seed(12345678)
-    x = stats.norm.rvs(loc=5, scale=10, size=501)
+    rng = np.random.RandomState(12345678)
+    x = stats.norm.rvs(loc=5, scale=10, size=501, random_state=rng)
     x[500] = np.nan
-    y = stats.norm.rvs(loc=5, scale=10, size=500)
+    y = stats.norm.rvs(loc=5, scale=10, size=500, random_state=rng)
 
     with np.errstate(invalid="ignore"):
         assert_array_equal(stats.ttest_ind(x, y), (np.nan, np.nan))
@@ -5501,7 +5512,7 @@ class TestMGCErrorWarnings(object):
         assert_raises(ValueError, stats.multiscale_graphcorr, x, y)
 
     def test_error_wrongdisttype(self):
-        # raises error if compute_distance is not a function
+        # raises error if metric is not a function
         x = np.arange(20)
         compute_distance = 0
         assert_raises(ValueError, stats.multiscale_graphcorr, x, x,
@@ -5620,6 +5631,7 @@ class TestMGCStat(object):
         assert_approx_equal(stat, 1.0, significant=1)
         assert_approx_equal(pvalue, 0.001, significant=1)
 
+    @pytest.mark.slow
     def test_workers(self):
         np.random.seed(12345678)
 
@@ -5640,3 +5652,17 @@ class TestMGCStat(object):
         stat, pvalue, _ = stats.multiscale_graphcorr(x, y, random_state=1)
         assert_approx_equal(stat, 0.97, significant=1)
         assert_approx_equal(pvalue, 0.001, significant=1)
+
+    @pytest.mark.slow
+    def test_dist_perm(self):
+        np.random.seed(12345678)
+        # generate x and y
+        x, y = self._simulations(samps=100, dims=1, sim_type="nonlinear")
+        distx = cdist(x, x, metric="euclidean")
+        disty = cdist(y, y, metric="euclidean")
+
+        stat_dist, pvalue_dist, _ = stats.multiscale_graphcorr(distx, disty,
+                                                               compute_distance=None,
+                                                               random_state=1)
+        assert_approx_equal(stat_dist, 0.163, significant=1)
+        assert_approx_equal(pvalue_dist, 0.001, significant=1)

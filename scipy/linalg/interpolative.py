@@ -397,8 +397,8 @@ def _is_real(A):
             return True
         else:
             raise _DTYPE_ERROR
-    except AttributeError:
-        raise _TYPE_ERROR
+    except AttributeError as e:
+        raise _TYPE_ERROR from e
 
 
 def seed(seed=None):

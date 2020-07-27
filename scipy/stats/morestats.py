@@ -411,7 +411,7 @@ def _calc_uniform_order_statistic_medians(n):
     >>> plt.plot(x, pdfs[0], x, pdfs[1], x, pdfs[2], x, pdfs[3])
 
     """
-    v = np.zeros(n, dtype=np.float64)
+    v = np.empty(n, dtype=np.float64)
     v[-1] = 0.5**(1.0 / n)
     v[0] = 1 - v[-1]
     i = np.arange(2, n)
@@ -440,8 +440,8 @@ def _parse_dist_kw(dist, enforce_subclass=True):
     elif isinstance(dist, str):
         try:
             dist = getattr(distributions, dist)
-        except AttributeError:
-            raise ValueError("%s is not a valid distribution name" % dist)
+        except AttributeError as e:
+            raise ValueError("%s is not a valid distribution name" % dist) from e
     elif enforce_subclass:
         msg = ("`dist` should be a stats.distributions instance or a string "
                "with the name of such a distribution.")
@@ -1148,7 +1148,7 @@ def boxcox_normmax(x, brack=(-2.0, 2.0), method='pearsonr'):
         return optimize.brent(_eval_mle, brack=brack, args=(x,))
 
     def _all(x, brack):
-        maxlog = np.zeros(2, dtype=float)
+        maxlog = np.empty(2, dtype=float)
         maxlog[0] = _pearsonr(x, brack)
         maxlog[1] = _mle(x, brack)
         return maxlog
@@ -1717,8 +1717,7 @@ def anderson(x, dist='norm'):
     ----------
     x : array_like
         Array of sample data.
-    dist : {'norm', 'expon', 'logistic', 'gumbel', 'gumbel_l', 'gumbel_r',
-        'extreme1'}, optional
+    dist : {'norm', 'expon', 'logistic', 'gumbel', 'gumbel_l', 'gumbel_r', 'extreme1'}, optional
         The type of distribution to test against.  The default is 'norm'.
         The names 'extreme1', 'gumbel_l' and 'gumbel' are synonyms for the
         same distribution.
@@ -2083,9 +2082,9 @@ def ansari(x, y):
     """
     Perform the Ansari-Bradley test for equal scale parameters.
 
-    The Ansari-Bradley test is a non-parametric test for the equality
-    of the scale parameter of the distributions from which two
-    samples were drawn.
+    The Ansari-Bradley test ([1]_, [2]_) is a non-parametric test
+    for the equality of the scale parameter of the distributions
+    from which two samples were drawn.
 
     Parameters
     ----------
@@ -2112,9 +2111,45 @@ def ansari(x, y):
 
     References
     ----------
-    .. [1] Sprent, Peter and N.C. Smeeton.  Applied nonparametric statistical
-           methods.  3rd ed. Chapman and Hall/CRC. 2001.  Section 5.8.2.
+    .. [1] Ansari, A. R. and Bradley, R. A. (1960) Rank-sum tests for
+           dispersions, Annals of Mathematical Statistics, 31, 1174-1189.
+    .. [2] Sprent, Peter and N.C. Smeeton.  Applied nonparametric
+           statistical methods.  3rd ed. Chapman and Hall/CRC. 2001.
+           Section 5.8.2.
 
+    Examples
+    --------
+    >>> from scipy.stats import ansari
+
+    For these examples, we'll create three random data sets.  The first
+    two, with sizes 35 and 25, are drawn from a normal distribution with
+    mean 0 and standard deviation 2.  The third data set has size 25 and
+    is drawn from a normal distribution with standard deviation 1.25.
+
+    >>> np.random.seed(1234567890)
+    >>> x1 = np.random.normal(loc=0, scale=2, size=35)
+    >>> x2 = np.random.normal(loc=0, scale=2, size=25)
+    >>> x3 = np.random.normal(loc=0, scale=1.25, size=25)
+
+    First we apply `ansari` to `x1` and `x2`.  These samples are drawn
+    from the same distribution, so we expect the Ansari-Bradley test
+    should not lead us to conclude that the scales of the distributions
+    are different.
+
+    >>> ansari(x1, x2)
+    AnsariResult(statistic=511.0, pvalue=0.35506083719834347)
+
+    With a p-value of 0.355, we cannot conclude that there is a
+    significant difference in the scales (as expected).
+
+    Now apply the test to `x1` and `x3`:
+
+    >>> ansari(x1, x3)
+    AnsariResult(statistic=452.0, pvalue=0.006280278681971285)
+
+    With a p-value of 0.00628, the test provides strong evidence that
+    the scales of the distributions from which the samples were drawn
+    are not equal.
     """
     x, y = asarray(x), asarray(y)
     n = len(x)
@@ -2258,8 +2293,8 @@ def bartlett(*args):
     k = len(args)
     if k < 2:
         raise ValueError("Must enter at least two input sample vectors.")
-    Ni = zeros(k)
-    ssq = zeros(k, 'd')
+    Ni = np.empty(k)
+    ssq = np.empty(k, 'd')
     for j in range(k):
         Ni[j] = len(args[j])
         ssq[j] = np.var(args[j], ddof=1)
@@ -2371,8 +2406,8 @@ def levene(*args, **kwds):
         if np.asanyarray(args[j]).ndim > 1:
             raise ValueError('Samples must be one-dimensional.')
 
-    Ni = zeros(k)
-    Yci = zeros(k, 'd')
+    Ni = np.empty(k)
+    Yci = np.empty(k, 'd')
 
     if center not in ['mean', 'median', 'trimmed']:
         raise ValueError("Keyword argument <center> must be 'mean', 'median'"
@@ -2398,7 +2433,7 @@ def levene(*args, **kwds):
         Zij[i] = abs(asarray(args[i]) - Yci[i])
 
     # compute Zbari
-    Zbari = zeros(k, 'd')
+    Zbari = np.empty(k, 'd')
     Zbar = 0.0
     for i in range(k):
         Zbari[i] = np.mean(Zij[i], axis=0)
@@ -2766,7 +2801,7 @@ def mood(x, y, axis=0):
     # Generalized to the n-dimensional case by adding the axis argument, and
     # using for loops, since rankdata is not vectorized.  For improving
     # performance consider vectorizing rankdata function.
-    all_ranks = np.zeros_like(xy)
+    all_ranks = np.empty_like(xy)
     for j in range(xy.shape[1]):
         all_ranks[:, j] = stats.rankdata(xy[:, j])
 

@@ -312,6 +312,12 @@ class TestSLSQP(object):
         # This should not raise an exception
         fmin_slsqp(lambda z: z**2 - 1, [0], bounds=[[0, 1]], iprint=0)
 
+    def test_array_bounds(self):
+        # This should pass (1-element arrays are castable to floats in numpy)
+        bounds = [(-np.inf, np.inf), (np.array([2]), np.array([3]))]
+        x = fmin_slsqp(lambda z: np.sum(z**2 - 1), [2.5, 2.5], bounds=bounds, iprint=0)
+        assert_array_almost_equal(x, [0, 2])
+
     def test_obj_must_return_scalar(self):
         # Regression test for Github Issue #5433
         # If objective function does not return a scalar, raises ValueError

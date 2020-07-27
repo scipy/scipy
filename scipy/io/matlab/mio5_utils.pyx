@@ -912,19 +912,17 @@ cdef class VarReader5:
         # Make n_duplicates and pointer arrays
         cdef:
             int *n_duplicates
-            char **name_ptrs
         n_duplicates = <int *>calloc(n_names, sizeof(int))
-        name_ptrs = <char **>calloc(n_names, sizeof(char *))
         cdef:
+            char *names_ptr = names
             char *n_ptr = names
             int j, dup_no
         for i in range(n_names):
             name = asstr(PyBytes_FromString(n_ptr))
             # Check if this is a duplicate field, rename if so
-            name_ptrs[i] = n_ptr
             dup_no = 0
             for j in range(i):
-                if strcmp(n_ptr, name_ptrs[j]) == 0: # the same
+                if strcmp(n_ptr, names_ptr + j * namelength) == 0: # the same
                     n_duplicates[j] += 1
                     dup_no = n_duplicates[j]
                     break
@@ -933,7 +931,6 @@ cdef class VarReader5:
             field_names.append(name)
             n_ptr += namelength
         free(n_duplicates)
-        free(name_ptrs)
         n_names_ptr[0] = n_names
         return field_names
 

@@ -23,7 +23,8 @@ from ._linprog_ip import _linprog_ip
 from ._linprog_simplex import _linprog_simplex
 from ._linprog_rs import _linprog_rs
 from ._linprog_util import (
-    _parse_linprog, _presolve, _get_Abc, _postprocess, _LPProblem, _autoscale)
+    _parse_linprog, _presolve, _get_Abc, _LPProblem, _autoscale,
+    _postsolve, _check_result, _display_summary)
 from copy import deepcopy
 
 __all__ = ['linprog', 'linprog_verbose_callback', 'linprog_terse_callback']
@@ -516,7 +517,7 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     tol = solver_options.get('tol', 1e-9)
 
     iteration = 0
-    complete = False    # will become True if solved in presolve
+    complete = False  # will become True if solved in presolve
     undo = []
 
     # Keep the original arrays to calculate slack/residuals for original
@@ -533,7 +534,7 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     postsolve_args = (lp_o._replace(bounds=lp.bounds), undo, C, b_scale)
 
     if not complete:
-        A, b, c, c0, x0 = _get_Abc(lp, c0, undo)
+        A, b, c, c0, x0 = _get_Abc(lp, c0)
         if solver_options.pop('autoscale', False):
             A, b, c, x0, C, b_scale = _autoscale(A, b, c, x0)
             postsolve_args = postsolve_args[:-2] + (C, b_scale)
@@ -554,13 +555,14 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
             raise ValueError('Unknown solver %s' % method)
 
     # Eliminate artificial variables, re-introduce presolved variables, etc.
-    # need modified bounds here to translate variables appropriately
     disp = solver_options.get('disp', False)
 
-    x, fun, slack, con, status, message = _postprocess(x, postsolve_args,
-                                                       complete, status,
-                                                       message, tol,
-                                                       iteration, disp)
+    x, fun, slack, con = _postsolve(x, postsolve_args, complete)
+
+    status, message = _check_result(x, fun, status, slack, con, lp_o.bounds, tol, message)
+
+    if disp:
+        _display_summary(message, status, fun, iteration)
 
     sol = {
         'x': x,

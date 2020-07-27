@@ -2,8 +2,6 @@
 SciPy 1.5.0 Release Notes
 ==========================
 
-.. note:: Scipy 1.5.0 is not released yet!
-
 .. contents::
 
 SciPy 1.5.0 is the culmination of 6 months of hard work. It contains
@@ -384,6 +382,7 @@ Authors
 * Kevin Green +
 * Martin Grignard +
 * Maja Gwozdz
+* Sturla Molden
 * gyu-don +
 * Matt Haberland
 * hakeemo +
@@ -507,6 +506,7 @@ Issues closed for 1.5.0
 * `#9212 <https://github.com/scipy/scipy/issues/9212>`__: EIGH very very slow --> suggesting an easy fix
 * `#9553 <https://github.com/scipy/scipy/issues/9553>`__: ndimage routines behave badly when output has memory overlap...
 * `#9632 <https://github.com/scipy/scipy/issues/9632>`__: ndimage.maximum_filter undocumented behaviour using footprint...
+* `#9658 <https://github.com/scipy/scipy/issues/9658>`__: `scipy.optimize.minimize(method='COBYLA')` not threadsafe
 * `#9710 <https://github.com/scipy/scipy/issues/9710>`__: stats.weightedtau([1], [1.0]) SEGFAULTs
 * `#9797 <https://github.com/scipy/scipy/issues/9797>`__: Master Tracker for some Kolmogorov-Smirnov test Issues
 * `#9844 <https://github.com/scipy/scipy/issues/9844>`__: scipy.signal.upfirdn gives different length matrix versus MATLAB...
@@ -650,6 +650,9 @@ Issues closed for 1.5.0
 * `#12173 <https://github.com/scipy/scipy/issues/12173>`__: Large memory usage when indexing sparse matrices with \`np.ix_\`
 * `#12178 <https://github.com/scipy/scipy/issues/12178>`__: BUG: stats: Some discrete distributions don't accept lists of...
 * `#12220 <https://github.com/scipy/scipy/issues/12220>`__: BUG, REL: gh_lists.py compromised scraping
+* `#12239 <https://github.com/scipy/scipy/issues/12239>`__: BUG: median absolute deviation handling of nan 
+* `#12301 <https://github.com/scipy/scipy/issues/12301>`__: integer overflow in scipy.sparse.sputils.check_shape when matrix size > 2^32
+* `#12314 <https://github.com/scipy/scipy/issues/12314>`__: scipy.spatial.transform.Rotation multiplication does not normalize quaternion
 
 Pull requests for 1.5.0
 -----------------------
@@ -1119,6 +1122,15 @@ Pull requests for 1.5.0
 * `#12194 <https://github.com/scipy/scipy/pull/12194>`__: MAINT: Module and example cleanups for doc build
 * `#12202 <https://github.com/scipy/scipy/pull/12202>`__: ENH: tool to DL release wheels from Anaconda
 * `#12210 <https://github.com/scipy/scipy/pull/12210>`__: Remove py.typed marker (at least for the release)
+* `#12217 <https://github.com/scipy/scipy/pull/12217>`__: BUG: stats: Fix handling of edge cases in median_abs_deviation.
 * `#12223 <https://github.com/scipy/scipy/pull/12223>`__: BUG: stats: wilcoxon returned p > 1 for certain inputs.
+* `#12227 <https://github.com/scipy/scipy/pull/12227>`__: BLD: Set macos min version when building rectangular_lsap
 * `#12229 <https://github.com/scipy/scipy/pull/12229>`__: MAINT: tools/gh_lists.py: fix http header case sensitivity issue
+* `#12236 <https://github.com/scipy/scipy/pull/12236>`__: DOC: Fix a couple grammatical mistakes in 1.5.0-notes.rst.
+* `#12276 <https://github.com/scipy/scipy/pull/12276>`__: TST: skip `test_heequb`, it fails intermittently.
+* `#12285 <https://github.com/scipy/scipy/pull/12285>`__: CI: split travis arm64 run into two
+* `#12317 <https://github.com/scipy/scipy/pull/12317>`__: BUG: prevent error accumulation in `Rotation` multiplication
+* `#12318 <https://github.com/scipy/scipy/pull/12318>`__: BUG: sparse: avoid np.prod overflow in check_shape
+* `#12319 <https://github.com/scipy/scipy/pull/12319>`__: BUG: Make cobyla threadsafe
+* `#12335 <https://github.com/scipy/scipy/pull/12335>`__: MAINT: Work around Sphinx bug
 

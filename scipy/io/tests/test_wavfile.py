@@ -1,11 +1,11 @@
 import os
 import sys
-import tempfile
 from io import BytesIO
 
 import numpy as np
 from numpy.testing import (assert_equal, assert_, assert_array_equal,
                            suppress_warnings)
+import pytest
 from pytest import raises, warns
 
 from scipy.io import wavfile
@@ -120,11 +120,10 @@ def test_read_early_eof_with_data():
         with open(datafile(filename), 'rb') as fp:
             with warns(wavfile.WavFileWarning, match='Reached EOF'):
                 rate, data = wavfile.read(fp, mmap=mmap)
-
-                assert_(data.size > 0)
-                assert_equal(rate, 44100)
-
-        del data
+                assert data.size > 0
+                assert rate == 44100
+                # also test writing (gh-12176)
+                data[0] = 0
 
 
 def test_read_early_eof():
@@ -145,38 +144,37 @@ def test_read_incomplete_chunk():
                 wavfile.read(fp, mmap=mmap)
 
 
-def _check_roundtrip(realfile, rate, dtype, channels):
+def _check_roundtrip(realfile, rate, dtype, channels, tmpdir):
     if realfile:
-        fd, tmpfile = tempfile.mkstemp(suffix='.wav')
-        os.close(fd)
+        tmpfile = str(tmpdir.join('temp.wav'))
     else:
         tmpfile = BytesIO()
-    try:
-        data = np.random.rand(100, channels)
-        if channels == 1:
-            data = data[:, 0]
-        if dtype.kind == 'f':
-            # The range of the float type should be in [-1, 1]
-            data = data.astype(dtype)
-        else:
-            data = (data*128).astype(dtype)
+    data = np.random.rand(100, channels)
+    if channels == 1:
+        data = data[:, 0]
+    if dtype.kind == 'f':
+        # The range of the float type should be in [-1, 1]
+        data = data.astype(dtype)
+    else:
+        data = (data*128).astype(dtype)
 
-        wavfile.write(tmpfile, rate, data)
+    wavfile.write(tmpfile, rate, data)
 
-        for mmap in [False, True]:
-            rate2, data2 = wavfile.read(tmpfile, mmap=mmap)
+    for mmap in [False, True]:
+        rate2, data2 = wavfile.read(tmpfile, mmap=mmap)
 
-            assert_equal(rate, rate2)
-            assert_(data2.dtype.byteorder in ('<', '=', '|'), msg=data2.dtype)
-            assert_array_equal(data, data2)
-
-            del data2
-    finally:
+        assert_equal(rate, rate2)
+        assert_(data2.dtype.byteorder in ('<', '=', '|'), msg=data2.dtype)
+        assert_array_equal(data, data2)
+        # also test writing (gh-12176)
         if realfile:
-            os.unlink(tmpfile)
+            data2[0] = 0
+        else:
+            with pytest.raises(ValueError, match='read-only'):
+                data2[0] = 0
 
 
-def test_write_roundtrip():
+def test_write_roundtrip(tmpdir):
     for realfile in (False, True):
         for dtypechar in ('i', 'u', 'f', 'g', 'q'):
             for size in (1, 2, 4, 8):
@@ -203,4 +201,5 @@ def test_write_roundtrip():
                         for channels in (1, 2, 5):
                             dt = np.dtype('%s%s%s' % (endianness, dtypechar,
                                                       size))
-                            _check_roundtrip(realfile, rate, dt, channels)
+                            _check_roundtrip(realfile, rate, dt, channels,
+                                             tmpdir)

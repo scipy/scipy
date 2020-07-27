@@ -21,6 +21,37 @@ def spline_filter(Iin, lmbda=5.0):
 
     Filter an input data set, `Iin`, using a (cubic) smoothing spline of
     fall-off `lmbda`.
+
+    Parameters
+    ----------
+    Iin : array like
+        input data set
+    lmbda : float, optional
+        spline smooghing fall-off value, default is `5.0`.
+
+    Returns
+    -------
+    res : ndarray
+        filterd input data
+
+    Examples
+    --------
+    We can filter an multi dimentional signal (ex: 2D image) using cubic
+    B-spline filter:
+
+    >>> from scipy.signal import spline_filter
+    >>> import matplotlib.pyplot as plt
+    >>> orig_img = np.eye(20)  # create an image
+    >>> orig_img[10, :] = 1.0
+    >>> sp_filter = spline_filter(orig_img, lmbda=0.1)
+    >>> f, ax = plt.subplots(1, 2, sharex=True)
+    >>> for ind, data in enumerate([[orig_img, "original image"],
+    ...                             [sp_filter, "spline filter"]]):
+    ...     ax[ind].imshow(data[0], cmap='gray_r')
+    ...     ax[ind].set_title(data[1])
+    >>> plt.tight_layout()
+    >>> plt.show()
+
     """
     intype = Iin.dtype.char
     hcol = array([1.0, 4.0, 1.0], 'f') / 6.0
@@ -114,9 +145,44 @@ def _bspline_piecefunctions(order):
 def bspline(x, n):
     """B-spline basis function of order n.
 
+    Parameters
+    ----------
+    x : array like
+        a knot vector
+    n : int
+        The order of the spline. Must be non-negative, i.e., n >= 0
+
+    Returns
+    -------
+    res : ndarray
+        B-spline basis function values
+
+    See Also
+    --------
+    cubic : A cubic B-spline.
+    quadratic : A quadratic B-spline.
+
     Notes
     -----
     Uses numpy.piecewise and automatic function-generator.
+
+    Examples
+    --------
+    We can calculate B-Spline basis function of several orders:
+
+    >>> from scipy.signal import bspline, cubic, quadratic
+    >>> bspline(0.0, 1)
+    1
+
+    >>> knots = [-1.0, 0.0, -1.0]
+    >>> bspline(knots, 2)
+    array([0.125, 0.75, 0.125])
+
+    >>> np.array_equal(bspline(knots, 2), quadratic(knots))
+    True
+
+    >>> np.array_equal(bspline(knots, 3), cubic(knots))
+    True
 
     """
     ax = -abs(asarray(x))
@@ -127,12 +193,28 @@ def bspline(x, n):
 
 
 def gauss_spline(x, n):
-    """Gaussian approximation to B-spline basis function of order n.
+    r"""Gaussian approximation to B-spline basis function of order n.
 
     Parameters
     ----------
+    x : array
+        a knot vector
     n : int
-        The order of the spline. Must be nonnegative, i.e., n >= 0
+        The order of the spline. Must be non-negative, i.e., n >= 0
+
+    Returns
+    -------
+    res : ndarray
+        B-spline basis function values approximated by a zero-mean Gaussian
+        function.
+
+    Notes
+    -----
+    The B-spline basis function can be approximated well by a zero-mean
+    Gaussian function with standard-deviation equal to :math:`\sigma=(n+1)/12`
+    for large `n` :
+
+    .. math::  \frac{1}{\sqrt {2\pi\sigma^2}}exp(-\frac{x^2}{2\sigma})
 
     References
     ----------
@@ -141,7 +223,23 @@ def gauss_spline(x, n):
        Sgallari F., Murli A., Paragios N. (eds) Scale Space and Variational
        Methods in Computer Vision. SSVM 2007. Lecture Notes in Computer
        Science, vol 4485. Springer, Berlin, Heidelberg
-   """
+    .. [2] http://folk.uio.no/inf3330/scripting/doc/python/SciPy/tutorial/old/node24.html
+
+    Examples
+    --------
+    We can calculate B-Spline basis functions approximated by a gaussian
+    distribution:
+
+    >>> from scipy.signal import gauss_spline, bspline
+    >>> knots = np.array([-1.0, 0.0, -1.0])
+    >>> gauss_spline(knots, 3)
+    array([0.15418033, 0.6909883, 0.15418033])  # may vary
+
+    >>> bspline(knots, 3)
+    array([0.16666667, 0.66666667, 0.16666667])  # may vary
+
+    """
+    x = asarray(x)
     signsq = (n + 1) / 12.0
     return 1 / sqrt(2 * pi * signsq) * exp(-x ** 2 / 2 / signsq)
 
@@ -150,6 +248,40 @@ def cubic(x):
     """A cubic B-spline.
 
     This is a special case of `bspline`, and equivalent to ``bspline(x, 3)``.
+
+    Parameters
+    ----------
+    x : array like
+        a knot vector
+
+    Returns
+    -------
+    res : ndarray
+        Cubic B-spline basis function values
+
+    See Also
+    --------
+    bspline : B-spline basis function of order n
+    quadratic : A quadratic B-spline.
+
+    Examples
+    --------
+    We can calculate B-Spline basis function of several orders:
+
+    >>> from scipy.signal import bspline, cubic, quadratic
+    >>> bspline(0.0, 1)
+    1
+
+    >>> knots = [-1.0, 0.0, -1.0]
+    >>> bspline(knots, 2)
+    array([0.125, 0.75, 0.125])
+
+    >>> np.array_equal(bspline(knots, 2), quadratic(knots))
+    True
+
+    >>> np.array_equal(bspline(knots, 3), cubic(knots))
+    True
+
     """
     ax = abs(asarray(x))
     res = zeros_like(ax)
@@ -168,6 +300,40 @@ def quadratic(x):
     """A quadratic B-spline.
 
     This is a special case of `bspline`, and equivalent to ``bspline(x, 2)``.
+
+    Parameters
+    ----------
+    x : array like
+        a knot vector
+
+    Returns
+    -------
+    res : ndarray
+        Quadratic B-spline basis function values
+
+    See Also
+    --------
+    bspline : B-spline basis function of order n
+    cubic : A cubic B-spline.
+
+    Examples
+    --------
+    We can calculate B-Spline basis function of several orders:
+
+    >>> from scipy.signal import bspline, cubic, quadratic
+    >>> bspline(0.0, 1)
+    1
+
+    >>> knots = [-1.0, 0.0, -1.0]
+    >>> bspline(knots, 2)
+    array([0.125, 0.75, 0.125])
+
+    >>> np.array_equal(bspline(knots, 2), quadratic(knots))
+    True
+
+    >>> np.array_equal(bspline(knots, 3), cubic(knots))
+    True
+
     """
     ax = abs(asarray(x))
     res = zeros_like(ax)
@@ -285,6 +451,26 @@ def cspline1d(signal, lamb=0.0):
     c : ndarray
         Cubic spline coefficients.
 
+    See Also
+    --------
+    cspline1d_eval : Evaluate a cubic spline at the new set of points.
+
+    Examples
+    --------
+    We can filter a signal to reduce and smooth out high-frequency noise with
+    a cubic spline:
+
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.signal import cspline1d, cspline1d_eval
+    >>> sig = np.repeat([0., 1., 0.], 100)
+    >>> sig += np.random.randn(len(sig))*0.05  # add noise
+    >>> time = np.linspace(0, len(sig))
+    >>> filtered = cspline1d_eval(cspline1d(sig), time)
+    >>> plt.plot(sig, label="signal")
+    >>> plt.plot(time, filtered, label="filtered")
+    >>> plt.legend()
+    >>> plt.show()
+
     """
     if lamb != 0.0:
         return _cubic_smooth_coeff(signal, lamb)
@@ -342,7 +528,7 @@ def qspline1d(signal, lamb=0.0):
 
 
 def cspline1d_eval(cj, newx, dx=1.0, x0=0):
-    """Evaluate a spline at the new set of points.
+    """Evaluate a cubic spline at the new set of points.
 
     `dx` is the old sample-spacing while `x0` was the old origin. In
     other-words the old-sample points (knot-points) for which the `cj`
@@ -351,6 +537,42 @@ def cspline1d_eval(cj, newx, dx=1.0, x0=0):
       oldx = x0 + j*dx  j=0...N-1, with N=len(cj)
 
     Edges are handled using mirror-symmetric boundary conditions.
+
+    Parameters
+    ----------
+    cj : ndarray
+        cublic spline coefficients
+    newx : ndarray
+        New set of points.
+    dx : float, optional
+        Old sample-spacing, the default value is 1.0.
+    x0 : int, optional
+        Old origin, the default value is 0.
+
+    Returns
+    -------
+    res : ndarray
+        Evaluated a cubic spline points.
+
+    See Also
+    --------
+    cspline1d : Compute cubic spline coefficients for rank-1 array.
+
+    Examples
+    --------
+    We can filter a signal to reduce and smooth out high-frequency noise with
+    a cubic spline:
+
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.signal import cspline1d, cspline1d_eval
+    >>> sig = np.repeat([0., 1., 0.], 100)
+    >>> sig += np.random.randn(len(sig))*0.05  # add noise
+    >>> time = np.linspace(0, len(sig))
+    >>> filtered = cspline1d_eval(cspline1d(sig), time)
+    >>> plt.plot(sig, label="signal")
+    >>> plt.plot(time, filtered, label="filtered")
+    >>> plt.legend()
+    >>> plt.show()
 
     """
     newx = (asarray(newx) - x0) / float(dx)
