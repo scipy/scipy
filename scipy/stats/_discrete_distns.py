@@ -634,7 +634,7 @@ class nhypergeom_gen(rv_discrete):
         return cond
 
     def _logpmf(self, k, N, K, r):
-        cond = ( (r == 0) & (k == 0) )
+        cond = ((r == 0) & (k == 0))
         result = (-betaln(k+1, r) + betaln(k+r, 1) -
                   betaln(K-k+1, N-r-K+1) + betaln(N-r-k+1, 1) +
                   betaln(K+1, N-K+1) - betaln(N+1, 1))
