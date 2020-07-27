@@ -520,7 +520,8 @@ def spsolve_triangular(A, b, lower=True, overwrite_A=False, overwrite_b=False,
     Returns
     -------
     x : (M,) or (M, N) ndarray
-        Solution to the system ``A x = b``. Shape of return matches shape of `b`.
+        Solution to the system ``A x = b``. Shape of return matches shape
+        of `b`.
 
     Raises
     ------
