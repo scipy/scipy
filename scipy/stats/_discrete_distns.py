@@ -570,7 +570,6 @@ class nhypergeom_gen(rv_discrete):
     --------
     >>> from scipy.stats import nhypergeom
     >>> import matplotlib.pyplot as plt
-    >>> import numpy as np
 
     Suppose we have a collection of 20 animals, of which 7 are dogs.
     Then if we want to know the probability of finding a given number
