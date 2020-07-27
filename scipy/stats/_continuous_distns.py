@@ -6398,8 +6398,8 @@ class rayleigh_gen(rv_continuous):
         scale based on MLE.
         """
 
-        floc = kwds.pop('floc', None)
-        fscale = kwds.pop('fscale', None)
+        data, floc, fscale = _check_fit_input_parameters(self, data,
+                                                         args, kwds)
 
         def scale_mle(loc, data):
             # Source: Statistical Distributions, 3rd Edition. Evans, Hastings,
@@ -6417,23 +6417,17 @@ class rayleigh_gen(rv_continuous):
         """
 
         if floc is not None:
-            _check_fit_input_parameters(self, data, args, kwds,
-                                        fixed_param=(fscale, floc))
-            # if `floc` is fixed, determine `scale` with MLE
-            data = np.asarray(data)
             return floc, scale_mle(floc, data)
         if fscale is not None:
             # `fscale` is fixed, use standard numerical optimization
             return super(rayleigh_gen,
-                         self).fit(data, fscale=fscale, *args, **kwds)
+                         self).fit(data, *args, **kwds)
         else:
             # both `floc` and `fscale` are free, use custom `_reduce_func`
-            def _reduce_func(x0, ll, *args, **kwds):
+            def _reduce_func(x0, ll, data, *args, **kwds):
 
                 def func(loc, data):
                     return ll([loc, scale_mle(loc, data)], data)
-
-                data = kwds.pop('data')
 
                 def restore(args, vals):
                     return (vals.item(), scale_mle(vals, np.ravel(data)))
@@ -6445,7 +6439,6 @@ class rayleigh_gen(rv_continuous):
 
 
 rayleigh = rayleigh_gen(a=0.0, name="rayleigh")
-
 
 
 class reciprocal_gen(rv_continuous):
