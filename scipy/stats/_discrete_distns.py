@@ -548,7 +548,8 @@ class nhypergeom_gen(rv_discrete):
     .. math:: f(k; N, K, r) = \frac{{{k+r-1}\choose{k}}{{N-r-k}\choose{K-k}}}
                                    {{N \choose K}}
 
-    for :math:`k \in [0, K]` and the binomial coefficient is:
+    for :math:`k \in [0, K]`, :math:`K \in [0, N]`, :math:`r \in [0, N-K]`,
+    and the binomial coefficient is:
 
     .. math:: \binom{n}{k} \equiv \frac{n!}{k! (n - k)!}.
 
@@ -561,8 +562,9 @@ class nhypergeom_gen(rv_discrete):
 
     .. math:: NHG(k;N,K,r) = HG(k;N,K,k+r-1)\frac{(N-K-(r-1))}{(N-(k+r-1))}
 
-    where :math:`NHG` is negative hypergeometric distribution and
-    :math:`HG` is the hypergeometric distribution.
+    where :math:`NHG` is probability mass function (PMF) of the
+    negative hypergeometric distribution and :math:`HG` is the
+    PMF of the hypergeometric distribution.
 
     %(after_notes)s
 
@@ -603,13 +605,11 @@ class nhypergeom_gen(rv_discrete):
     To verify the relationship between `hypergeom` and `nhypergeom`, use:
 
     >>> from scipy.stats import hypergeom, nhypergeom
-    >>> HG = hypergeom._pmf
-    >>> NHG = nhypergeom._pmf
     >>> N, K, r = 45, 13, 8
     >>> k = 6
-    >>> NHG(k, N, K, r)
+    >>> nhypergeom.pmf(k, N, K, r)
     0.06180776620271643
-    >>> HG(k, N, K, k+r-1) * (N - K - (r-1)) / (N - (k+r-1))
+    >>> hypergeom.pmf(k, N, K, k+r-1) * (N - K - (r-1)) / (N - (k+r-1))
     0.06180776620271644
 
     See Also
@@ -634,9 +634,11 @@ class nhypergeom_gen(rv_discrete):
         return cond
 
     def _logpmf(self, k, N, K, r):
+        cond = ( (r == 0) & (k == 0) )
         result = (-betaln(k+1, r) + betaln(k+r, 1) -
                   betaln(K-k+1, N-r-K+1) + betaln(N-r-k+1, 1) +
                   betaln(K+1, N-K+1) - betaln(N+1, 1))
+        result[cond] = 0.0
         return result
 
     def _pmf(self, k, N, K, r):

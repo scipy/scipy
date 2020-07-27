@@ -1,6 +1,6 @@
 from scipy.stats import betabinom, hypergeom, nhypergeom, bernoulli, boltzmann
 import numpy as np
-from numpy.testing import assert_almost_equal, assert_equal, assert_allclose
+from numpy.testing import assert_almost_equal, assert_equal, assert_allclose, suppress_warnings
 
 
 def test_hypergeom_logpmf():
@@ -33,9 +33,28 @@ def test_nhypergeom_logpmf():
     # test with hypergeom
     N, K, r = 45, 13, 8
     k = 6
-    NHG = nhypergeom._pmf(k, N, K, r)
-    HG = hypergeom._pmf(k, N, K, k+r-1) * (N - K - (r-1)) / (N - (k+r-1))
-    assert_almost_equal(HG, NHG, decimal=10)
+    NHG = nhypergeom.pmf(k, N, K, r)
+    HG = hypergeom.pmf(k, N, K, k+r-1) * (N - K - (r-1)) / (N - (k+r-1))
+    assert_allclose(HG, NHG, rtol=10)
+
+    # test pmf and cdf with arbitrary values.
+    N = 8
+    K = 3
+    r = 4
+    support = np.arange(K+1)
+    pmf = nhypergeom.pmf(support, N, K, r)
+    assert_allclose(pmf, [1/14, 3/14, 5/14, 5/14], rtol=1e-13)
+    cdf = nhypergeom.cdf(support, N, K, r)
+    assert_allclose(cdf, [1/14, 4/14, 9/14, 1.0], rtol=1e-13)
+
+    # test with r=0.
+    N = 10
+    K = 3
+    r = 0
+    with suppress_warnings() as sup:
+        sup.filter(RuntimeWarning, "invalid value")
+        pmf = nhypergeom.pmf([[0, 1, 2, 0], [1, 2, 0, 3]], N, K, r)
+        assert_allclose(pmf, [[1, 0, 0, 1], [0, 0, 1, 0]], rtol=1e-13)
 
 
 def test_boltzmann_upper_bound():
