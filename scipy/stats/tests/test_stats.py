@@ -2424,14 +2424,8 @@ class TestStudentTest(object):
     P1_2 = 0.0741799
     T2_0 = 1.732051
     P2_0 = 0.2254033
-    P1_1_l = 0.1127016
-    P1_1_g = 0.8872983
-    P12_l = 0.1439320
-    P12_g = 0.8560679
-    RVS1 = np.linspace(1,100,100)
-    RVS2 = np.linspace(1.01,99.989,100)
-    PR12_l = 0.7907688274431891
-    PR12_g = 0.2092311725568109
+    P1_1_l = P1_1 / 2
+    P1_1_g = 1 - (P1_1 / 2)
 
     def test_onesample(self):
         with suppress_warnings() as sup, np.errstate(invalid="ignore"):
@@ -2477,50 +2471,14 @@ class TestStudentTest(object):
             assert_raises(ValueError, stats.ttest_1samp, x, 5.0,
                           nan_policy='foobar')
 
-    def test_alternative_error(self):
-        alternative = "error"
-        rvs1_2D = np.array([self.RVS1, self.RVS2])
-        rvs2_2D = np.array([self.RVS2, self.RVS1])
-
-        assert_(alternative not in ["two-sided", "greater", "less"])
-        assert_raises(ValueError, stats.ttest_1samp, self.X1, 0, alternative=alternative)
-        assert_raises(ValueError, stats.ttest_ind, self.X1, self.X2, alternative=alternative)
-        assert_raises(ValueError, stats.ttest_ind_from_stats, *_desc_stats(rvs1_2D.T, rvs2_2D.T), alternative=alternative)
-        assert_raises(ValueError, stats.ttest_rel, self.RVS1, self.RVS2, alternative=alternative)
-
     def test_1samp_alternative(self):
+        assert_raises(ValueError, stats.ttest_1samp, self.X1, 0, alternative="error")
+
         t, p = stats.ttest_1samp(self.X1, 1, alternative="less")
         assert_array_almost_equal(p, self.P1_1_l)
 
         t, p = stats.ttest_1samp(self.X1, 1, alternative="greater")
         assert_array_almost_equal(p, self.P1_1_g)
-
-    def test_ind_alternative(self):
-        t, p = stats.ttest_ind(self.X1, self.X2, alternative="less")
-        assert_array_almost_equal(p, self.P12_l)
-
-        t, p = stats.ttest_ind(self.X1, self.X2, alternative="greater")
-        assert_array_almost_equal(p, self.P12_g)
-
-    def test_ind_from_stats_alternative(self):
-        rvs1_2D = np.array([self.RVS1, self.RVS2])
-        rvs2_2D = np.array([self.RVS2, self.RVS1])
-
-        t, p = stats.ttest_ind(rvs1_2D.T, rvs2_2D.T, axis=0, alternative="less")
-        args = _desc_stats(rvs1_2D.T, rvs2_2D.T)
-        assert_array_almost_equal(stats.ttest_ind_from_stats(*args, alternative="less"), [t, p])
-
-        t, p = stats.ttest_ind(rvs1_2D.T, rvs2_2D.T, axis=0, alternative="greater")
-        args = _desc_stats(rvs1_2D.T, rvs2_2D.T)
-        assert_array_almost_equal(stats.ttest_ind_from_stats(*args, alternative="greater"), [t, p])
-
-    def test_rel_alternative(self):
-        t, p = stats.ttest_rel(self.RVS1, self.RVS2, alternative="less")
-        assert_array_almost_equal(p, self.PR12_l)
-
-        t, p = stats.ttest_rel(self.RVS1, self.RVS2, alternative="greater")
-        assert_array_almost_equal(p, self.PR12_g)
-
 
 def test_percentileofscore():
     pcos = stats.percentileofscore
@@ -3371,6 +3329,14 @@ def test_ttest_rel():
     assert_array_almost_equal(np.abs(p), pr)
     assert_equal(t.shape, (3, 2))
 
+    # test alternative parameter
+    assert_raises(ValueError, stats.ttest_rel, rvs1, rvs2, alternative="error")
+
+    t,p = stats.ttest_rel(rvs1, rvs2, axis=0, alternative="less")
+    assert_array_almost_equal([t,p],(tr,1 - pr/2))
+
+    t,p = stats.ttest_rel(rvs1, rvs2, axis=0, alternative="greater")
+    assert_array_almost_equal([t,p],(tr,pr/2))
     # check nan policy
     np.random.seed(12345678)
     x = stats.norm.rvs(loc=5, scale=10, size=501)
@@ -3519,6 +3485,24 @@ def test_ttest_ind():
     assert_array_almost_equal(np.abs(p), pr)
     assert_equal(t.shape, (3, 2))
 
+    # test alternative parameter
+    assert_raises(ValueError, stats.ttest_ind, rvs1, rvs2, alternative="error")
+    assert_raises(ValueError, stats.ttest_ind_from_stats, *_desc_stats(rvs1_2D.T, rvs2_2D.T), alternative="error")
+
+    t, p = stats.ttest_ind(rvs1, rvs2, alternative="less")
+    assert_array_almost_equal([t,p],(tr, 1 - (pr/2)))
+
+    t, p = stats.ttest_ind(rvs1, rvs2, alternative="greater")
+    assert_array_almost_equal([t,p],(tr,pr/2))
+
+    t, p = stats.ttest_ind(rvs1_2D.T, rvs2_2D.T, axis=0, alternative="less")
+    args = _desc_stats(rvs1_2D.T, rvs2_2D.T)
+    assert_array_almost_equal(stats.ttest_ind_from_stats(*args, alternative="less"), [t, p])
+
+    t, p = stats.ttest_ind(rvs1_2D.T, rvs2_2D.T, axis=0, alternative="greater")
+    args = _desc_stats(rvs1_2D.T, rvs2_2D.T)
+    assert_array_almost_equal(stats.ttest_ind_from_stats(*args, alternative="greater"), [t, p])
+
     # check nan policy
     np.random.seed(12345678)
     x = stats.norm.rvs(loc=5, scale=10, size=501)
@@ -3544,7 +3528,6 @@ def test_ttest_ind():
         anan = np.array([[1, np.nan], [-1, 1]])
         assert_equal(stats.ttest_ind(anan, np.zeros((2, 2))),
                      ([0, np.nan], [1, np.nan]))
-
 
 def test_ttest_ind_with_uneq_var():
     # check vs. R
