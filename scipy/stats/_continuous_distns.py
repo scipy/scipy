@@ -3382,21 +3382,8 @@ class invgauss_gen(rv_continuous):
         if type(self) == wald_gen:
             return super(invgauss_gen, self).fit(data, *args, **kwds)
 
-        floc = kwds.pop('floc', None)
-        fscale = kwds.pop('fscale', None)
-        # borrowed from distn_infrastructure
-        # puts shape into kwds['f0']
-        if self.shapes:
-            shapes = self.shapes.replace(',', ' ').split()
-            for j, s in enumerate(shapes):
-                key = 'f' + str(j)
-                names = [key, 'f' + s, 'fix_' + s]
-                val = _get_fixed_fit_value(kwds, names)
-                if val is not None:
-                    kwds[key] = val
-        f0_s = kwds.pop('f0', None)
-        data = np.asarray(data)
-        _check_fit_input_parameters(data, args, kwds, fixed_param=(floc, fscale, f0_s))
+        data, fscale_s, floc, fscale = _check_fit_input_parameters(self, data,
+                                                                   args, kwds)
         '''
         MLE is not used in 3 condtions:
         - `floc` is not set
@@ -3404,22 +3391,16 @@ class invgauss_gen(rv_continuous):
         - `f0` is fixed
         These three cases fall back on generic optimization.
         '''
-        if floc is None or f0_s is not None or np.any(data - floc < 0):
-            if fscale is not None:
-                kwds['fscale'] = fscale
-            if floc is not None:
-                kwds['floc'] = floc
-            if f0_s is not None:
-                kwds['f0'] = f0_s
+        if floc is None or fscale_s is not None or np.any(data - floc < 0):
             return super(invgauss_gen, self).fit(data, *args, **kwds)
         else:
             if floc != 0:
                 data = data - floc
-            f0 = np.mean(data)
+            fshape_n = np.mean(data)
             if fscale is None:
-                fscale = len(data) / (np.sum(data**(-1) - f0**(-1)))
-            f0_s = f0/fscale
-        return f0_s, floc, fscale
+                fscale = len(data) / (np.sum(data**(-1) - fshape_n**(-1)))
+            fscale_s = fshape_n/fscale
+        return fscale_s, floc, fscale
 
 
 invgauss = invgauss_gen(a=0.0, name='invgauss')
