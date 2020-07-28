@@ -85,7 +85,7 @@ def _assert_lessthan_loglike(dist, data, func, **kwds):
     assert ll_mle_analytical < ll_numerical_opt
 
 
-def test_fit_warnings(dist, data, all_fixed, floc_fixedDataError):
+def assert_fit_warnings(dist, data, all_fixed, floc_fixedDataError):
     with pytest.raises(RuntimeError,
                        match="All parameters fixed. There is nothing "
                        "to optimize."):
@@ -1046,7 +1046,7 @@ class TestPareto(object):
                                  fscale=rvs_scale/2)
 
     def test_fit_warnings(self):
-        test_fit_warnings(stats.pareto, [1, 2, 3], {
+        assert_fit_warnings(stats.pareto, [1, 2, 3], {
             'f0': 2., 'floc': 1, 'fscale': 1},
             {'floc': 2})
 
@@ -1605,7 +1605,7 @@ class TestInvgauss(object):
                                  fscale=2.06)
 
     def test_fit_raise_errors(self):
-        test_fit_warnings(stats.invgauss, [1, 2, 3], {
+        assert_fit_warnings(stats.invgauss, [1, 2, 3], {
             'floc': 2, 'fscale': 3, 'fmu': 2},
             {'floc': 3})
 
