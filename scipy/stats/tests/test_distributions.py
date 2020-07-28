@@ -1017,8 +1017,6 @@ class TestPareto(object):
                                      np.sum(np.log((data
                                                     - 2)/(data.min() - 2)))))
         assert_equal(loc_mle_a, 2)
-        
-        
 
     @pytest.mark.filterwarnings("ignore:invalid value encountered in "
                                 "double_scalars")

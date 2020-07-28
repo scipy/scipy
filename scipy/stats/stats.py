@@ -4271,7 +4271,7 @@ def pointbiserialr(x, y):
     Notes
     -----
     `pointbiserialr` uses a t-test with ``n-1`` degrees of freedom.
-    It is equivalent to `pearsonr.`
+    It is equivalent to `pearsonr`.
 
     The value of the point-biserial correlation can be calculated from:
 
