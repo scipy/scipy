@@ -48,7 +48,7 @@ from numpydoc.docscrape_sphinx import get_doc_object
 
 if parse_version(sphinx.__version__) >= parse_version('1.5'):
     # Enable specific Sphinx directives
-    from sphinx.directives import SeeAlso, Only
+    from sphinx.directives.other import SeeAlso, Only
     directives.register_directive('seealso', SeeAlso)
     directives.register_directive('only', Only)
 else:
@@ -143,7 +143,7 @@ REFGUIDE_AUTOSUMMARY_SKIPLIST = [
 for name in ('barthann', 'bartlett', 'blackmanharris', 'blackman', 'bohman',
              'boxcar', 'chebwin', 'cosine', 'exponential', 'flattop',
              'gaussian', 'general_gaussian', 'hamming', 'hann', 'hanning',
-             'kaiser', 'nuttall', 'parzen', 'slepian', 'triang', 'tukey'):
+             'kaiser', 'nuttall', 'parzen', 'triang', 'tukey'):
     REFGUIDE_AUTOSUMMARY_SKIPLIST.append(r'scipy\.signal\.' + name)
 
 HAVE_MATPLOTLIB = False

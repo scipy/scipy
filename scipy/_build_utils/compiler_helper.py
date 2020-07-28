@@ -62,10 +62,39 @@ def get_cxx_std_flag(compiler):
     return None
 
 
+def get_c_std_flag(compiler):
+    """Detects compiler flag to enable C99"""
+    gnu_flag = '-std=c99'
+    flag_by_cc = {
+        'msvc': None,
+        'intelw': '/Qstd=c99',
+        'intelem': '-std=c99'
+    }
+    flag = flag_by_cc.get(compiler.compiler_type, gnu_flag)
+
+    if flag is None:
+        return None
+
+    if has_flag(compiler, flag):
+        return flag
+
+    from numpy.distutils import log
+    log.warn('Could not detect c99 standard flag')
+    return None
+
+
 def try_add_flag(args, compiler, flag, ext=None):
     """Appends flag to the list of arguments if supported by the compiler"""
     if try_compile(compiler, flags=args+[flag], ext=ext):
         args.append(flag)
+
+
+def set_c_flags_hook(build_ext, ext):
+    """Sets basic compiler flags for compiling C99 code"""
+    std_flag = get_c_std_flag(build_ext.compiler)
+    if std_flag is not None:
+        ext.extra_compile_args.append(std_flag)
+
 
 def set_cxx_flags_hook(build_ext, ext):
     """Sets basic compiler flags for compiling C++11 code"""
