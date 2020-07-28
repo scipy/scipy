@@ -346,6 +346,26 @@ def _broadcast_shapes_with_dropped_axis(a, b, axis):
     return shp
 
 
+def _convert_symmetric_p_value(pvalue, root_func, alternative):
+    """
+    Convert a one-sided, symmetric P-value to a one or two-sided p-value. root_func
+    describes the source distribution function ('sf' or 'cdf')
+    """
+    if alternative not in ["two-sided", "greater", "less"]:
+        raise ValueError("alternative should be 'less', 'greater' or 'two-sided'")
+
+    if root_func not in ["sf", "cdf"]:
+        raise ValueError("root_func should be 'sf' or 'cdf'")
+
+    op_type = alternative + "_" + root_func
+    if op_type == "greater_sf" or op_type == "less_cdf":
+        return pvalue
+    elif op_type == "less_sf" or op_type == "greater_cdf":
+        return 1 - pvalue
+    elif alternative == "two-sided":
+        return 2 * np.minimum(pvalue, 1 - pvalue)
+
+
 def gmean(a, axis=0, dtype=None):
     """
     Compute the geometric mean along the specified axis.
@@ -5346,16 +5366,7 @@ def ttest_1samp(a, popmean, axis=0, nan_policy='propagate', alternative="two-sid
 def _ttest_finish(df, t, alternative):
     """Common code between all 3 t-test functions."""
     prob = distributions.t.sf(t, df)
-
-    if alternative == "greater":
-        pass
-    elif alternative == "less":
-        prob = 1 - prob
-    elif alternative == "two-sided":
-        prob = 2 * np.minimum(prob, 1-prob)
-    else:
-        raise ValueError(
-            "alternative should be 'less', 'greater' or 'two-sided'")
+    prob = _convert_symmetric_p_value(prob, "sf", alternative)
 
     if t.ndim == 0:
         t = t[()]
