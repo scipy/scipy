@@ -18,7 +18,7 @@ class DisjointSet:
     Methods
     -------
     union
-    find
+    __getitem__
 
     Notes
     -----
