@@ -37,12 +37,12 @@ def test_linear_union_sequence(n):
     dis = DisjointSet()
 
     for i in range(len(nodes) - 1):
-        assert dis.union(nodes[i], nodes[i + 1])
+        assert dis.merge(nodes[i], nodes[i + 1])
         assert dis.n_components == 1
 
     roots = [dis[i] for i in nodes]
     assert all([nodes[0] == r for r in roots])
-    assert not dis.union(nodes[0], nodes[-1])
+    assert not dis.merge(nodes[0], nodes[-1])
 
 
 @pytest.mark.parametrize("n", [10, 100])
@@ -51,7 +51,7 @@ def test_self_unions(n):
     dis = DisjointSet()
 
     for i in nodes:
-        assert not dis.union(i, i)
+        assert not dis.merge(i, i)
     assert dis.n_components == len(nodes)
 
     roots = [dis[i] for i in nodes]
@@ -68,7 +68,7 @@ def test_binary_tree(kmax):
     for k in 2**np.arange(kmax):
         for i in range(0, n, 2 * k):
             r1, r2 = rng.randint(0, k, size=2)
-            assert dis.union(nodes[i + r1], nodes[i + k + r2])
+            assert dis.merge(nodes[i + r1], nodes[i + k + r2])
 
         roots = [dis[i] for i in nodes]
         expected_indices = np.arange(n) - np.arange(n) % (2 * k)

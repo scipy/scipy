@@ -17,14 +17,15 @@ class DisjointSet:
 
     Methods
     -------
-    union
+    merge
     __getitem__
 
     Notes
     -----
     This class implements the disjoint set [1]_, also known as the *union-find*
-    data structure. The *find* method implements the *path halving*
-    variant. The *union* method implements the *union by size* variant.
+    or *merge-find* data structure. The *find* operation (implemented in
+    `__getitem__`)* implements the *path halving* variant. The *merge* method
+    implements the *merge by size* variant.
 
     References
     ----------
@@ -44,13 +45,13 @@ class DisjointSet:
 
     Merge some subsets:
 
-    >>> disjoint_set.union(1, 2)
+    >>> disjoint_set.merge(1, 2)
     True
-    >>> disjoint_set.union(3, 'x')
+    >>> disjoint_set.merge(3, 'x')
     True
-    >>> disjoint_set.union('x', 'y')
+    >>> disjoint_set.merge('x', 'y')
     True
-    >>> disjoint_set.union('y', 'y')
+    >>> disjoint_set.merge('y', 'y')
     False
 
     Find root nodes:
@@ -97,7 +98,7 @@ class DisjointSet:
             x = parents[x]
         return x
 
-    def union(self, a, b):
+    def merge(self, a, b):
         """Merge the subsets of `a` and `b`.
 
         The smaller subset (the child) is merged into the larger subset (the
