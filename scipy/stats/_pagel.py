@@ -1,6 +1,4 @@
 from itertools import permutations
-from functools import lru_cache
-import os
 import numpy as np
 from ._continuous_distns import norm
 import scipy.stats
@@ -256,11 +254,14 @@ def pagel(data, ranked=True, predicted_ranks=None, method='auto'):
     the null hypothesis in favor of our alternative at a 99% confidence level.
 
     Note that the we can also pass in the data as originally tabulated if we
-    also provide ``ranked`` and ``predicted_ranks`` arguments:
+    provide ``ranked`` and ``predicted_ranks`` arguments. We pass
+    ``ranked=False`` because the originally tabulated data is raw, not ranked,
+    and we pass ``predicted_ranks=[1, 2, 3]``, the ranks we predict for
+    each column of the original table.
 
     >>> res = pagel(table,                      # data as originally tabulated
-    ...             ranked=False,               # originally, data was not ranked
-    ...             predicted_ranks=[1, 2, 3],  # originally, data was in order of increasing rank
+    ...             ranked=False,               # original table is not ranked
+    ...             predicted_ranks=[1, 2, 3],  # we predict increasing rank
     ...             method="asymptotic"
     ...             )
     >>> res
@@ -383,143 +384,78 @@ def _l_p_asymptotic(L, m, n):
 
 def _l_p_exact(L, m, n):
     '''Calculate the p-value of Page's L exactly'''
-    L, n, k = int(L), int(m), int(n)  # different papers use different symbols
-
+    # [1] uses m, n; [5] uses n, k.
+    # Switch convention here because exact calculation code references [5].
+    L, n, k = int(L), int(m), int(n)
     _pagel_state.set_k(k)
-    try:
-        pmf = _pagel_state.all_pmfs[n][k]
-        return np.sum(pmf[L-_pagel_state.a*n:])
-    except KeyError:
-        return _pagel_state.sf(L, n)
+    return _pagel_state.sf(L, n)
 
 
-class _PageL:
+class PageL:
     '''Class to maintain state of Page's L between `pagel` executions'''
 
     def __init__(self):
-        '''Fast initialization; doesn't load data from file.'''
-        self.all_pmfs = None
-        self.all_counts = None
-        self.k = None
-        self.a = None
-        self.b = None
-        self.p_l_k_1 = None
-        dir_path = os.path.abspath(os.path.dirname(__file__))
-        self.all_pmfs_file = os.path.join(dir_path, "data_folder",
-                                          "pagel_pmfs.npy")
-        self.all_counts_file = os.path.join(dir_path, "data_folder",
-                                            "pagel_counts.npy")
-
-    def load_pagel_data(self):
-        '''Loads PageL data from file'''
-        # functions for creating these files are at the end of the class
-        self.all_counts = np.load(self.all_counts_file, allow_pickle=True)
-        self.all_pmfs = np.load(self.all_pmfs_file, allow_pickle=True).item()
+        '''Lightweight initialization'''
+        self.all_pmfs = {}
 
     def set_k(self, k):
-        '''Generates function to evaluate p(t, k, 1); see [5] Equation 6'''
-
-        if self.k == k:
-            return
-
-        if self.all_counts is None:
-            self.load_pagel_data()
-
+        '''Calculate lower and upper limits of L for single row'''
         self.k = k
-        # min L, max L of a row
+        # See [5] top of page 52
         self.a, self.b = (k*(k+1)*(k+2))//6, (k*(k+1)*(2*k+1))//6
-
-        try:
-            counts = self.all_counts[k-1]
-        except IndexError:
-            counts = self.counts_l_k_1(k)
-
-        # See [5] Equation (6)
-        ps = np.array(counts)/np.math.factorial(k)
-
-        def p_l_k_1(l):
-            if l < self.a or l > self.b:  # 0 rows have L < a or L > b
-                return 0
-            return ps[l-self.a]
-
-        self.p_l_k_1 = p_l_k_1
-
-    def pmf(self, l, n):
-        '''Probability mass function of Page's L statistic'''
-        return _pmf_recursive(l, self.k, n, self.a, self.b, self.p_l_k_1)
 
     def sf(self, l, n):
         '''Survival function of Page's L statistic'''
         ps = [self.pmf(l, n) for l in range(l, n*self.b + 1)]
         return np.sum(ps)
 
-    def whole_pmf(self, k, n):
-        '''Return list of all values of Page's L PMF'''
-        self.set_k(k)
-        ps = [self.pmf(l, n) for l in range(self.a*n, self.b*n + 1)]
-        return ps
+    def p_l_k_1(self):
+        '''Relative frequency of each L value over all possible single rows'''
 
-    def all_pmf(self):
-        '''Generate all PMFs tabulated in [1]'''
-        data = {}
-        for n in range(2, 13):
-            data[n] = {}
-            for k in range(3, 9):
-                print(n, k)
-                data[n][k] = self.whole_pmf(k, n)
-
-        k = 3
-        for n in range(13, 21):
-            data[n] = {}
-            data[n][k] = self.whole_pmf(k, n)
-
-        np.save(self.all_pmfs_file, data)
-
-    def generate_row_counts(self, k_max):
-        '''Generate PMF data for hard-coding'''
-        all_counts = [self.counts_l_k_1(k) for k in range(1, k_max+1)]
-        np.save(self.all_counts_file, all_counts)
-
-    def counts_l_k_1(self, k):
-        '''Count frequency of each L value over all possible single rows'''
         # See [5] Equation (6)
-        ranks = range(1, k+1)
+        ranks = range(1, self.k+1)
         # generate all possible rows of length k
         rank_perms = np.array(list(permutations(ranks)))
         # compute Page's L for all possible rows
         Ls = (ranks*rank_perms).sum(axis=1)
-        # min and max possible L for row of length k
-        a, b = (k*(k+1)*(k+2))//6, (k*(k+1)*(2*k+1))//6
         # count occurences of each L value
-        counts = np.histogram(Ls, np.arange(a-0.5, b+1.5))[0]
-        # not saving the corresponding L values [a, b], just counts
-        return counts
+        counts = np.histogram(Ls, np.arange(self.a-0.5, self.b+1.5))[0]
+        # factorial(k) is number of possible permutations
+        return counts/np.math.factorial(self.k)
+
+    def pmf(self, l, n):
+        '''Recursive function to evaluate p(l, k, n); see [5] Equation 1'''
+
+        if n not in self.all_pmfs:
+            self.all_pmfs[n] = {}
+        if self.k not in self.all_pmfs[n]:
+            self.all_pmfs[n][self.k] = {}
+
+        # Cache results to avoid repeating calculation. Initially this was
+        # written with lru_cache, but this seems faster? Also, we could add
+        # an option to save this for future lookup.
+        if l in self.all_pmfs[n][self.k]:
+            return self.all_pmfs[n][self.k][l]
+
+        if n == 1:
+            ps = self.p_l_k_1()  # [5] Equation 6
+            ls = range(self.a, self.b+1)
+            # not fast, but we'll only be here once
+            self.all_pmfs[n][self.k] = {l: p for l, p in zip(ls, ps)}
+            return self.all_pmfs[n][self.k][l]
+
+        p = 0
+        low = max(l-(n-1)*self.b, self.a)  # [5] Equation 2
+        high = min(l-(n-1)*self.a, self.b)
+
+        # [5] Equation 1
+        for t in range(low, high+1):
+            p1 = self.pmf(l-t, n-1)
+            p2 = self.pmf(t, 1)
+            p += p1*p2
+        self.all_pmfs[n][self.k][l] = p
+        return p
 
 
-# for correct caching, function should not rely on object state
-@lru_cache(maxsize=None)
-def _pmf_recursive(l, k, n, a, b, p_l_k_1):
-    '''Recursive function to evaluate p(l, k, n); see [5] Equation 1'''
-    # If we care about users generating exact p-values on the fly,
-    # this should look up whether p(*, k, n-1) is already tabulated
-    # in pagel_exact.npy and set p1 = all_pmfs[n-1][k][l-t-a*(n-1)]
-    # Put all these functions in a PageLExact class, too, to avoid
-    # passing around all these parameters.
-    if n == 1:
-        p = p_l_k_1(l)
-        return(p)
-
-    p = 0
-    low = max(l-(n-1)*b, a)
-    high = min(l-(n-1)*a, b)
-
-    for t in range(low, high+1):
-        p1 = _pmf_recursive(l-t, k, n-1, a, b, p_l_k_1)
-        p2 = _pmf_recursive(t, k, 1, a, b, p_l_k_1)
-        p += p1*p2
-    return p
-
-
-# Fast to instantiate, and only loads data from file once
-# (on first use of `pagel` with `method='exact')
-_pagel_state = _PageL()
+# Maintain state for faster repeat calls to pagel w/ method='exact'
+_pagel_state = PageL()
