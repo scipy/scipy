@@ -3382,7 +3382,7 @@ class invgauss_gen(rv_continuous):
         if type(self) == wald_gen:
             return super(invgauss_gen, self).fit(data, *args, **kwds)
 
-        data, fscale_s, floc, fscale = _check_fit_input_parameters(self, data,
+        data, fshape_s, floc, fscale = _check_fit_input_parameters(self, data,
                                                                    args, kwds)
         '''
         MLE is not used in 3 condtions:
@@ -3391,16 +3391,18 @@ class invgauss_gen(rv_continuous):
         - `f0` is fixed
         These three cases fall back on generic optimization.
         '''
-        if floc is None or fscale_s is not None or np.any(data - floc < 0):
+        if floc is None or fshape_s is not None:
             return super(invgauss_gen, self).fit(data, *args, **kwds)
+        elif np.any(data - floc < 0):
+            raise FitDataError("invgauss", lower=1, upper=np.inf)
         else:
             if floc != 0:
                 data = data - floc
             fshape_n = np.mean(data)
             if fscale is None:
                 fscale = len(data) / (np.sum(data**(-1) - fshape_n**(-1)))
-            fscale_s = fshape_n/fscale
-        return fscale_s, floc, fscale
+            fshape_s = fshape_n/fscale
+        return fshape_s, floc, fscale
 
 
 invgauss = invgauss_gen(a=0.0, name='invgauss')
