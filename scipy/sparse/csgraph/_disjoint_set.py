@@ -40,24 +40,24 @@ class DisjointSet:
 
     Initialize a disjoint set:
 
-    >>> dis = DisjointSet()
+    >>> disjoint_set = DisjointSet()
 
     Merge some subsets:
 
-    >>> dis.union(1, 2)
+    >>> disjoint_set.union(1, 2)
     True
-    >>> dis.union(3, 'x')
+    >>> disjoint_set.union(3, 'x')
     True
-    >>> dis.union('x', 'y')
+    >>> disjoint_set.union('x', 'y')
     True
-    >>> dis.union('y', 'y')
+    >>> disjoint_set.union('y', 'y')
     False
 
     Find root nodes:
 
-    >>> dis[2]
+    >>> disjoint_set[2]
     1
-    >>> dis['y']
+    >>> disjoint_set['y']
     3
 
     """
