@@ -629,16 +629,17 @@ class nhypergeom_gen(rv_discrete):
         return 0, K
 
     def _argcheck(self, N, K, r):
-        cond = (K >= 0) & (K <= N)
-        cond &= (r >= 0) & (r <= N-K)
+        cond = (K >= 0) & (K <= N) & (r >= 0) & (r <= N-K)
         return cond
 
     def _logpmf(self, k, N, K, r):
         cond = ((r == 0) & (k == 0))
-        result = (-betaln(k+1, r) + betaln(k+r, 1) -
-                  betaln(K-k+1, N-r-K+1) + betaln(N-r-k+1, 1) +
-                  betaln(K+1, N-K+1) - betaln(N+1, 1))
-        result[cond] = 0.0
+        result = _lazywhere(~cond, (k, N, K, r),
+                            lambda k, N, K, r:
+                                (-betaln(k+1, r) + betaln(k+r, 1) -
+                                 betaln(K-k+1, N-r-K+1) + betaln(N-r-k+1, 1) +
+                                 betaln(K+1, N-K+1) - betaln(N+1, 1)),
+                            fillvalue=0.0)
         return result
 
     def _pmf(self, k, N, K, r):
@@ -652,8 +653,7 @@ class nhypergeom_gen(rv_discrete):
         N, K, r = 1.*N, 1.*K, 1.*r
         mu = r*K / (N-K+1)
 
-        var = r*(N+1)*K / ((N-K+1)*(N-K+2))
-        var *= 1 - r / (N-K+1)
+        var = r*(N+1)*K / ((N-K+1)*(N-K+2)) * (1 - r / (N-K+1))
 
         # The skew and kurtosis are mathematically
         # intractable so return `None`. See [2]_.
