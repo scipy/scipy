@@ -297,23 +297,28 @@ def pagel(data, ranked=True, predicted_ranks=None, method='auto'):
     if method not in methods:
         raise ValueError(f"`method` must be in {set(methods)}")
 
-    # ensure NumPy array and rank the data if it's not already ranked
-    if ranked:
-        # We're going to trust the user on this. Checking that the data is
-        # properly ranked could take as much time as ranking it.
-        ranks = np.array(data, copy=False)
-    else:
-        if np.any(np.isnan(data)):
-            raise ValueError("`data` contains NaNs, which cannot "
-                             "be ranked meaningfully")
-        ranks = scipy.stats.rankdata(data, axis=-1)
-
+    ranks = np.array(data, copy=False)
     if ranks.ndim != 2:  # TODO: relax this to accept 3d arrays?
         raise ValueError(f"`data` must be a 2d array.")
+
     m, n = ranks.shape
     if m < 2 or n < 3:
         raise ValueError("Page's L is only appropriate for data with two "
                          "or more rows and three or more columns.")
+
+    # ensure NumPy array and rank the data if it's not already ranked
+    if ranked:
+        # Only a basic check on whether data is ranked. Checking that the data
+        # is properly ranked could take as much time as ranking it.
+        if not (ranks.min() >= 1 and ranks.max() <= ranks.shape[1]):
+            raise ValueError("`data` is not properly ranked. Rank the data or "
+                             "pass `ranked=False`.")
+    else:
+        ranks = scipy.stats.rankdata(data, axis=-1)
+        # If there are NaNs in data that is already ranked, it's caught above
+        if np.any(np.isnan(data)):
+            raise ValueError("`data` contains NaNs, which cannot be ranked "
+                             "meaningfully")
 
     # generate predicted ranks if not provided, ensure valid NumPy array
     if predicted_ranks is None:

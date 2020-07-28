@@ -5786,15 +5786,20 @@ class TestPageL(object):
 
         # predicted ranks must include each integer [1, 2, 3] exactly once
         assert_raises_with_match(ValueError, "`predicted_ranks` must include each integer",
-                                 stats.pagel, data=np.random.rand(2, 3), predicted_ranks=[0, 1, 2])
+                                 stats.pagel, data=[[1, 2, 3], [1, 2, 3]], predicted_ranks=[0, 1, 2])
         assert_raises_with_match(ValueError, "`predicted_ranks` must include each integer",
-                                 stats.pagel, data=np.random.rand(2, 3), predicted_ranks=[1.1, 2, 3])
+                                 stats.pagel, data=[[1, 2, 3], [1, 2, 3]], predicted_ranks=[1.1, 2, 3])
         assert_raises_with_match(ValueError, "`predicted_ranks` must include each integer",
-                                 stats.pagel, data=np.random.rand(2, 3), predicted_ranks=[1, 2, 3, 3])
+                                 stats.pagel, data=[[1, 2, 3], [1, 2, 3]], predicted_ranks=[1, 2, 3, 3])
         assert_raises_with_match(ValueError, "`predicted_ranks` must include each integer",
-                                 stats.pagel, data=np.random.rand(2, 3), predicted_ranks="invalid")
+                                 stats.pagel, data=[[1, 2, 3], [1, 2, 3]], predicted_ranks="invalid")
+
+        # test improperly ranked data
+        assert_raises_with_match(ValueError, "`data` is not properly ranked", stats.pagel, [[0, 2, 3], [1, 2, 3]])
+        assert_raises_with_match(ValueError, "`data` is not properly ranked", stats.pagel, [[1, 2, 3], [1, 2, 4]])
+        assert_raises_with_match(ValueError, "`data` is not properly ranked", stats.pagel, [[1, 2, 3], [1, 2, np.nan]])
 
         # various
         assert_raises_with_match(ValueError, "`data` contains NaNs", stats.pagel, [[1, 2, 3], [1, 2, np.nan]], ranked=False)
-        assert_raises_with_match(ValueError, "`method` must be in", stats.pagel, np.random.rand(2, 3), method="ekki")
-        assert_raises_with_match(TypeError, "`ranked` must be boolean.", stats.pagel, np.random.rand(2, 3), ranked="ekki")
+        assert_raises_with_match(ValueError, "`method` must be in", stats.pagel, data=[[1, 2, 3], [1, 2, 3]], method="ekki")
+        assert_raises_with_match(TypeError, "`ranked` must be boolean.", stats.pagel, data=[[1, 2, 3], [1, 2, 3]], ranked="ekki")
