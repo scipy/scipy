@@ -111,7 +111,7 @@ class DisjointSet:
         Returns
         -------
         merged : bool
-            `True` if `a` and `b` were in disjoint sets, `False` otherwise.
+            True if `a` and `b` were in disjoint sets, False otherwise.
         """
         a = self[a]
         b = self[b]
