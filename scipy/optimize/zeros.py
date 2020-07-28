@@ -352,8 +352,16 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
                     full_output, (p, funcalls, itr + 1, _ECONVERGED))
             p0, q0 = p1, q1
             p1 = p
-            q1 = func(p1, *args)
-            funcalls += 1
+            while True:
+                q1 = func(p1, *args)
+                funcalls += 1
+                if np.isfinite(q1):
+                    break
+                else:
+                    # We stepped outside the domain of the function,
+                    # we try a point closer to the previous one
+                    # TODO: Should we increase the iteration count?
+                    p1 = (p0 + p1) / 2
 
     if disp:
         msg = ("Failed to converge after %d iterations, value is %s."
