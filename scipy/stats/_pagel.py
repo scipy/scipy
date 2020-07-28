@@ -306,6 +306,10 @@ def pagel(data, ranked=True, predicted_ranks=None, method='auto'):
         raise ValueError("Page's L is only appropriate for data with two "
                          "or more rows and three or more columns.")
 
+    if np.any(np.isnan(data)):
+        raise ValueError("`data` contains NaNs, which cannot be ranked "
+                         "meaningfully")
+
     # ensure NumPy array and rank the data if it's not already ranked
     if ranked:
         # Only a basic check on whether data is ranked. Checking that the data
@@ -315,10 +319,6 @@ def pagel(data, ranked=True, predicted_ranks=None, method='auto'):
                              "pass `ranked=False`.")
     else:
         ranks = scipy.stats.rankdata(data, axis=-1)
-        # If there are NaNs in data that is already ranked, it's caught above
-        if np.any(np.isnan(data)):
-            raise ValueError("`data` contains NaNs, which cannot be ranked "
-                             "meaningfully")
 
     # generate predicted ranks if not provided, ensure valid NumPy array
     if predicted_ranks is None:

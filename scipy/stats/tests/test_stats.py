@@ -5797,7 +5797,6 @@ class TestPageL(object):
         # test improperly ranked data
         assert_raises_with_match(ValueError, "`data` is not properly ranked", stats.pagel, [[0, 2, 3], [1, 2, 3]])
         assert_raises_with_match(ValueError, "`data` is not properly ranked", stats.pagel, [[1, 2, 3], [1, 2, 4]])
-        assert_raises_with_match(ValueError, "`data` is not properly ranked", stats.pagel, [[1, 2, 3], [1, 2, np.nan]])
 
         # various
         assert_raises_with_match(ValueError, "`data` contains NaNs", stats.pagel, [[1, 2, 3], [1, 2, np.nan]], ranked=False)
