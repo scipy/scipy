@@ -21,7 +21,7 @@ def generate_random_token():
             yield tuple(node)
 
 
-def get_nodes(n, shuffle):
+def get_nodes(n):
     nodes = set()
     for node in generate_random_token():
         if node not in nodes:
@@ -32,9 +32,8 @@ def get_nodes(n, shuffle):
 
 
 @pytest.mark.parametrize("n", [10, 100])
-@pytest.mark.parametrize("shuffle", [False, True])
-def test_linear_union_sequence(n, shuffle):
-    nodes = get_nodes(n, shuffle)
+def test_linear_union_sequence(n):
+    nodes = get_nodes(n)
     dis = DisjointSet()
 
     for i in range(len(nodes) - 1):
@@ -47,9 +46,8 @@ def test_linear_union_sequence(n, shuffle):
 
 
 @pytest.mark.parametrize("n", [10, 100])
-@pytest.mark.parametrize("shuffle", [False, True])
-def test_self_unions(n, shuffle):
-    nodes = get_nodes(n, shuffle)
+def test_self_unions(n):
+    nodes = get_nodes(n)
     dis = DisjointSet()
 
     for i in nodes:
@@ -61,10 +59,9 @@ def test_self_unions(n, shuffle):
 
 
 @pytest.mark.parametrize("kmax", [5, 10])
-@pytest.mark.parametrize("shuffle", [False, True])
-def test_binary_tree(kmax, shuffle):
+def test_binary_tree(kmax):
     n = 2**kmax
-    nodes = get_nodes(n, shuffle)
+    nodes = get_nodes(n)
     dis = DisjointSet()
     rng = np.random.RandomState(seed=0)
 
