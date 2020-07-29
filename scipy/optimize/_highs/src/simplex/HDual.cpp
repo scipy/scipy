@@ -51,13 +51,9 @@ HighsStatus HDual::solve() {
   HighsSimplexInfo& simplex_info = workHMO.simplex_info_;
   HighsSimplexLpStatus& simplex_lp_status = workHMO.simplex_lp_status_;
   workHMO.scaled_model_status_ = HighsModelStatus::NOTSET;
-  bool simplex_info_ok =
-      simplexInfoOk(workHMO.lp_, workHMO.simplex_lp_, simplex_info);
-  if (!simplex_info_ok) {
-    HighsLogMessage(workHMO.options_.logfile, HighsMessageType::ERROR,
-                    "HPrimalDual::solve has error in simplex information");
+  if (debugSimplexInfoBasisConsistent(workHMO) ==
+      HighsDebugStatus::LOGICAL_ERROR)
     return HighsStatus::Error;
-  }
   // Assumes that the LP has a positive number of rows, since
   // unconstrained LPs should be solved in solveLpSimplex
   bool positive_num_row = workHMO.simplex_lp_.numRow_ > 0;

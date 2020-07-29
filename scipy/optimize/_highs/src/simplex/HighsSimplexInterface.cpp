@@ -1214,12 +1214,6 @@ HighsStatus HighsSimplexInterface::basisSolve(const vector<double>& rhs,
   return HighsStatus::OK;
 }
 
-#ifdef HiGHSDEV
-void HighsSimplexInterface::change_update_method(int updateMethod) {
-  highs_model_object.factor_.change(updateMethod);
-}
-#endif
-
 // Utilities to convert model basic/nonbasic status to/from SCIP-like status
 int HighsSimplexInterface::convertBaseStatToHighsBasis(const int* cstat,
                                                        const int* rstat) {

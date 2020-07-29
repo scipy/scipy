@@ -19,6 +19,8 @@
 #include <vector>
 
 #include "HConfig.h"
+#include "io/HighsIO.h"
+#include "lp_data/HConst.h"
 #include "lp_data/HighsAnalysis.h"
 
 using std::max;
@@ -103,22 +105,13 @@ class HFactor {
              const int* Aindex,     //!< Row indices of constraint matrix
              const double* Avalue,  //!< Row values of constraint matrix
              int* baseIndex,        //!< Indices of basic variables
+             int highs_debug_level = HIGHS_DEBUG_LEVEL_MIN,
+             FILE* logfile = NULL, FILE* output = NULL,
+             int message_level = ML_NONE,
              const bool use_original_HFactor_logic = true,
              int updateMethod =
                  UPDATE_METHOD_FT  //!< Default update method is Forrest Tomlin
   );
-
-#ifdef HiGHSDEV
-  /**
-   * @brief Change the update method
-   *
-   * Only called in HighsSimplexInterface::change_update_method, which
-   * is only called in HTester.cpp Should only be compiled when
-   * HiGHSDEV=on
-   */
-  void change(int updateMethod  //!< New update method
-  );
-#endif
 
   /**
    * @brief Form \f$PBQ=LU\f$ for basis matrix \f$B\f$ or report degree of rank
@@ -153,20 +146,6 @@ class HFactor {
               int* hint     //!< Reinversion status
   );
 
-#ifdef HiGHSDEV
-  /**
-   * @brief Data used for reporting in HTester.cpp. Should only be
-   * compiled when HiGHSDEV=on
-   */
-  int BtotalX;
-
-  /**
-   * @brief Data used for reporting in HTester.cpp. Should only be
-   * compiled when HiGHSDEV=on
-   */
-  int FtotalX;
-#endif
-
   /**
    * @brief Wall clock time for INVERT
    */
@@ -195,27 +174,24 @@ class HFactor {
   vector<int> noPvC;
 
   /**
-   * @brief Gets noPvR when HFactor.h cannot be included
+   * @brief Gets baseIndex since it is private
    */
-  vector<int>& getNoPvR() { return noPvR; }
+  const int* getBaseIndex() const { return baseIndex; }
 
   /**
-   * @brief Gets noPvC when HFactor.h cannot be included
+   * @brief Gets Astart since it is private
    */
-  const int* getNoPvC() const { return &noPvC[0]; }
+  const int* getAstart() const { return Astart; }
 
-  // TODO Understand why handling noPvC and noPvR in what seem to be
-  // different ways ends up equivalent.
-  //  vector<int>& getNoPvC() {return noPvC;}
-
-#ifdef HiGHSDEV
   /**
-   * @brief Checks \f$B^{-1}\mathbf{a}_i=\mathbf{e}_i\f$ for each column \f$i\f$
-   *
-   * Should only be compiled when HiGHSDEV=on
+   * @brief Gets Aindex since it is private
    */
-  void checkInvert();
-#endif
+  const int* getAindex() const { return Aindex; }
+
+  /**
+   * @brief Gets Avalue since it is private
+   */
+  const double* getAvalue() const { return Avalue; }
 
   // Properties of data held in HFactor.h. To "have" them means that
   // they are assigned.
@@ -245,6 +221,10 @@ class HFactor {
   int* baseIndex;
   int updateMethod;
   bool use_original_HFactor_logic;
+  int highs_debug_level;
+  FILE* logfile;
+  FILE* output;
+  int message_level;
 
   // Working buffer
   int nwork;
@@ -329,7 +309,7 @@ class HFactor {
   //    void buildKernel();
   int buildKernel();
   void buildHandleRankDeficiency();
-  void buildRpRankDeficiency();
+  void buildReportRankDeficiency();
   void buildMarkSingC();
   void buildFinish();
 
@@ -351,11 +331,11 @@ class HFactor {
   void ftranAPF(HVector& vector) const;
   void btranAPF(HVector& vector) const;
 
-  void updateCFT(HVector* aq, HVector* ep, int* iRow);  //, int* hint);
-  void updateFT(HVector* aq, HVector* ep, int iRow);    //, int* hint);
+  void updateCFT(HVector* aq, HVector* ep, int* iRow);
+  void updateFT(HVector* aq, HVector* ep, int iRow);
   void updatePF(HVector* aq, int iRow, int* hint);
   void updateMPF(HVector* aq, HVector* ep, int iRow, int* hint);
-  void updateAPF(HVector* aq, HVector* ep, int iRow);  //, int* hint);
+  void updateAPF(HVector* aq, HVector* ep, int iRow);
 
   /**
    * Local in-line functions

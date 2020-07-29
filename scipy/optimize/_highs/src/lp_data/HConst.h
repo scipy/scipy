@@ -40,8 +40,8 @@ enum class HighsDebugStatus {
   OK,
   SMALL_ERROR,
   LARGE_ERROR,
+  WARNING,
   LOGICAL_ERROR,
-  WARNING
 };
 
 enum HighsPrintMessageLevel {

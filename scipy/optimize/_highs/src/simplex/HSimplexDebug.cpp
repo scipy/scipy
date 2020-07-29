@@ -14,6 +14,9 @@
 
 #include "simplex/HSimplexDebug.h"
 
+#include <string>
+
+#include "lp_data/HighsSolutionDebug.h"
 #include "simplex/HDualRow.h"
 #include "simplex/HSimplex.h"
 #include "simplex/SimplexTimer.h"
@@ -917,5 +920,401 @@ HighsDebugStatus debugDualChuzcWorkDataAndGroup(
         highs_model_object, workDelta, workTheta, "Heap-derived", alt_workCount,
         sorted_workData, alt_workGroup);
   }
+  return return_status;
+}
+
+HighsDebugStatus debugSimplexBasicSolution(
+    const string message, const HighsModelObject& highs_model_object) {
+  // Non-trivially expensive analysis of a simplex basic solution, starting from
+  // solution_params
+  if (highs_model_object.options_.highs_debug_level < HIGHS_DEBUG_LEVEL_CHEAP)
+    return HighsDebugStatus::NOT_CHECKED;
+
+  HighsDebugStatus return_status = HighsDebugStatus::NOT_CHECKED;
+
+  const HighsLp& lp = highs_model_object.lp_;
+  const HighsLp& simplex_lp = highs_model_object.simplex_lp_;
+  const HighsScale& scale = highs_model_object.scale_;
+  const HighsSimplexInfo& simplex_info = highs_model_object.simplex_info_;
+  const SimplexBasis& simplex_basis = highs_model_object.simplex_basis_;
+
+  return_status = debugSimplexInfoBasisConsistent(highs_model_object);
+  if (return_status == HighsDebugStatus::LOGICAL_ERROR) return return_status;
+
+  // Determine a HiGHS basis from the simplex basis. Only basic/nonbasic is
+  // needed
+  HighsBasis basis;
+  basis.col_status.resize(lp.numCol_);
+  basis.row_status.resize(lp.numRow_);
+  // Now scatter the indices of basic variables
+  for (int iVar = 0; iVar < lp.numCol_ + lp.numRow_; iVar++) {
+    if (iVar < lp.numCol_) {
+      int iCol = iVar;
+      if (simplex_basis.nonbasicFlag_[iVar] == NONBASIC_FLAG_TRUE) {
+        basis.col_status[iCol] = HighsBasisStatus::NONBASIC;
+      } else {
+        basis.col_status[iCol] = HighsBasisStatus::BASIC;
+      }
+    } else {
+      int iRow = iVar - lp.numCol_;
+      if (simplex_basis.nonbasicFlag_[iVar] == NONBASIC_FLAG_TRUE) {
+        basis.row_status[iRow] = HighsBasisStatus::NONBASIC;
+      } else {
+        basis.row_status[iRow] = HighsBasisStatus::BASIC;
+      }
+    }
+  }
+  basis.valid_ = true;
+  // Possibly scaled model
+  // Determine a HiGHS solution simplex solution
+  HighsSolution solution;
+  solution.col_value.resize(lp.numCol_);
+  solution.col_dual.resize(lp.numCol_);
+  solution.row_value.resize(lp.numRow_);
+  solution.row_dual.resize(lp.numRow_);
+
+  for (int iVar = 0; iVar < lp.numCol_ + lp.numRow_; iVar++) {
+    if (iVar < lp.numCol_) {
+      int iCol = iVar;
+      solution.col_value[iCol] = simplex_info.workValue_[iVar];
+      solution.col_dual[iCol] =
+          (int)simplex_lp.sense_ * simplex_info.workDual_[iVar];
+    } else {
+      int iRow = iVar - lp.numCol_;
+      solution.row_value[iRow] = -simplex_info.workValue_[iVar];
+      solution.row_dual[iRow] =
+          (int)simplex_lp.sense_ * simplex_info.workDual_[iVar];
+    }
+  }
+  // Now insert the basic values
+  for (int ix = 0; ix < lp.numRow_; ix++) {
+    int iVar = simplex_basis.basicIndex_[ix];
+    if (iVar < lp.numCol_) {
+      solution.col_value[iVar] = simplex_info.baseValue_[ix];
+      solution.col_dual[iVar] = 0;
+    } else {
+      int iRow = iVar - lp.numCol_;
+      solution.row_value[iRow] = -simplex_info.baseValue_[ix];
+      solution.row_dual[iRow] = 0;
+    }
+  }
+
+  const std::string message_scaled = message + " - scaled";
+  return_status = debugWorseStatus(
+      debugHighsBasicSolution(message_scaled, highs_model_object.options_,
+                              simplex_lp, basis, solution,
+                              highs_model_object.scaled_solution_params_,
+                              highs_model_object.scaled_model_status_),
+      return_status);
+
+  if (!highs_model_object.scale_.is_scaled_) return return_status;
+
+  // Doesn't work if simplex LP has permuted columns
+  assert(!highs_model_object.simplex_lp_status_.is_permuted);
+  for (int iCol = 0; iCol < lp.numCol_; iCol++) {
+    solution.col_value[iCol] *= scale.col_[iCol];
+    solution.col_dual[iCol] /= (scale.col_[iCol] / scale.cost_);
+  }
+  for (int iRow = 0; iRow < simplex_lp.numRow_; iRow++) {
+    solution.row_value[iRow] /= scale.row_[iRow];
+    solution.row_dual[iRow] *= (scale.row_[iRow] * scale.cost_);
+  }
+  // Cannot assume unscaled solution params or unscaled model status are known
+  const std::string message_unscaled = message + " - unscaled";
+  return_status = debugWorseStatus(
+      debugHighsBasicSolution(message_unscaled, highs_model_object.options_, lp,
+                              basis, solution),
+      return_status);
+
+  // Scaled model
+  return return_status;
+}
+
+HighsDebugStatus debugSimplexInfoBasisConsistent(
+    const HighsModelObject& highs_model_object) {
+  // Trivially cheap check of dimensions and sizes
+  if (highs_model_object.options_.highs_debug_level < HIGHS_DEBUG_LEVEL_CHEAP)
+    return HighsDebugStatus::NOT_CHECKED;
+
+  const HighsOptions& options = highs_model_object.options_;
+  const HighsLp& lp = highs_model_object.lp_;
+  const HighsLp& simplex_lp = highs_model_object.simplex_lp_;
+  const HighsSimplexInfo& simplex_info = highs_model_object.simplex_info_;
+  const SimplexBasis& simplex_basis = highs_model_object.simplex_basis_;
+
+  int numCol = lp.numCol_;
+  int numRow = lp.numRow_;
+  int numTot = numCol + numRow;
+  HighsDebugStatus return_status = HighsDebugStatus::OK;
+  bool dimension_ok =
+      numCol == simplex_lp.numCol_ && numRow == simplex_lp.numRow_;
+  assert(dimension_ok);
+  if (!dimension_ok) {
+    HighsPrintMessage(
+        options.output, options.message_level, ML_ALWAYS,
+        "LP-SimplexLP dimension incompatibility (%d, %d) != (%d, %d)\n", numCol,
+        simplex_lp.numCol_, numRow, simplex_lp.numRow_);
+    return_status = HighsDebugStatus::LOGICAL_ERROR;
+  }
+  //  if (!simplex_info.initialised) {printf("SimplexInfo not initialised)\n");
+  //  return true;}
+  int workCost_size = simplex_info.workCost_.size();
+  assert(workCost_size == numTot);
+  if (workCost_size != numTot) {
+    HighsPrintMessage(options.output, options.message_level, ML_ALWAYS,
+                      "workCost size is %d, not %d\n", workCost_size, numTot);
+    return_status = HighsDebugStatus::LOGICAL_ERROR;
+  }
+  int workDual_size = simplex_info.workDual_.size();
+  assert(workDual_size == numTot);
+  if (workDual_size != numTot) {
+    HighsPrintMessage(options.output, options.message_level, ML_ALWAYS,
+                      "workDual size is %d, not %d\n", workDual_size, numTot);
+    return_status = HighsDebugStatus::LOGICAL_ERROR;
+  }
+  int workShift_size = simplex_info.workShift_.size();
+  assert(workShift_size == numTot);
+  if (workShift_size != numTot) {
+    HighsPrintMessage(options.output, options.message_level, ML_ALWAYS,
+                      "workShift size is %d, not %d\n", workShift_size, numTot);
+    return_status = HighsDebugStatus::LOGICAL_ERROR;
+  }
+  int workLower_size = simplex_info.workLower_.size();
+  assert(workLower_size == numTot);
+  if (workLower_size != numTot) {
+    HighsPrintMessage(options.output, options.message_level, ML_ALWAYS,
+                      "workLower size is %d, not %d\n", workLower_size, numTot);
+    return_status = HighsDebugStatus::LOGICAL_ERROR;
+  }
+  int workUpper_size = simplex_info.workUpper_.size();
+  assert(workUpper_size == numTot);
+  if (workUpper_size != numTot) {
+    HighsPrintMessage(options.output, options.message_level, ML_ALWAYS,
+                      "workUpper size is %d, not %d\n", workUpper_size, numTot);
+    return_status = HighsDebugStatus::LOGICAL_ERROR;
+  }
+  int workRange_size = simplex_info.workRange_.size();
+  assert(workRange_size == numTot);
+  if (workRange_size != numTot) {
+    HighsPrintMessage(options.output, options.message_level, ML_ALWAYS,
+                      "workRange size is %d, not %d\n", workRange_size, numTot);
+    return_status = HighsDebugStatus::LOGICAL_ERROR;
+  }
+  int workValue_size = simplex_info.workValue_.size();
+  assert(workValue_size == numTot);
+  if (workValue_size != numTot) {
+    HighsPrintMessage(options.output, options.message_level, ML_ALWAYS,
+                      "workValue size is %d, not %d\n", workValue_size, numTot);
+    return_status = HighsDebugStatus::LOGICAL_ERROR;
+  }
+  int nonbasicFlag_size = simplex_basis.nonbasicFlag_.size();
+  assert(nonbasicFlag_size == numTot);
+  if (nonbasicFlag_size != numTot) {
+    HighsPrintMessage(options.output, options.message_level, ML_ALWAYS,
+                      "nonbasicFlag size is %d, not %d\n", nonbasicFlag_size,
+                      numTot);
+    return_status = HighsDebugStatus::LOGICAL_ERROR;
+  }
+  int nonbasicMove_size = simplex_basis.nonbasicMove_.size();
+  assert(nonbasicMove_size == numTot);
+  if (nonbasicMove_size != numTot) {
+    HighsPrintMessage(options.output, options.message_level, ML_ALWAYS,
+                      "nonbasicMove size is %d, not %d\n", nonbasicMove_size,
+                      numTot);
+    return_status = HighsDebugStatus::LOGICAL_ERROR;
+  }
+  int basicIndex_size = simplex_basis.basicIndex_.size();
+  assert(basicIndex_size == numRow);
+  if (basicIndex_size != numRow) {
+    HighsPrintMessage(options.output, options.message_level, ML_ALWAYS,
+                      "basicIndex size is %d, not %d\n", basicIndex_size,
+                      numRow);
+    return_status = HighsDebugStatus::LOGICAL_ERROR;
+  }
+  return return_status;
+}
+
+HighsDebugStatus debugSimplexHighsSolutionDifferences(
+    const HighsModelObject& highs_model_object) {
+  // Nontrivially expensive check of dimensions and sizes
+  if (highs_model_object.options_.highs_debug_level < HIGHS_DEBUG_LEVEL_CHEAP)
+    return HighsDebugStatus::NOT_CHECKED;
+
+  const HighsOptions& options = highs_model_object.options_;
+  const HighsSolution& solution = highs_model_object.solution_;
+  const HighsLp& simplex_lp = highs_model_object.simplex_lp_;
+  const HighsSimplexInfo& simplex_info = highs_model_object.simplex_info_;
+  const SimplexBasis& simplex_basis = highs_model_object.simplex_basis_;
+  const HighsScale& scale = highs_model_object.scale_;
+
+  HighsDebugStatus return_status = HighsDebugStatus::NOT_CHECKED;
+
+  // Go through the columns, finding the differences in nonbasic column values
+  // and duals
+  double max_nonbasic_col_value_difference = 0;
+  double max_nonbasic_col_dual_difference = 0;
+  for (int iCol = 0; iCol < simplex_lp.numCol_; iCol++) {
+    int iVar = iCol;
+    if (simplex_basis.nonbasicFlag_[iVar] == NONBASIC_FLAG_TRUE) {
+      // Consider this nonbasic column
+      double local_col_value = simplex_info.workValue_[iVar] * scale.col_[iCol];
+      double local_col_dual = (int)simplex_lp.sense_ *
+                              simplex_info.workDual_[iVar] /
+                              (scale.col_[iCol] / scale.cost_);
+      double value_difference =
+          fabs(local_col_value - solution.col_value[iCol]);
+      double dual_difference = fabs(local_col_dual - solution.col_dual[iCol]);
+      max_nonbasic_col_value_difference =
+          std::max(value_difference, max_nonbasic_col_value_difference);
+      max_nonbasic_col_dual_difference =
+          std::max(dual_difference, max_nonbasic_col_dual_difference);
+    }
+  }
+  // Go through the rows, finding the differences in nonbasic and
+  // basic row values and duals, as well as differences in basic
+  // column values and duals
+  double max_nonbasic_row_value_difference = 0;
+  double max_nonbasic_row_dual_difference = 0;
+  double max_basic_col_value_difference = 0;
+  double max_basic_col_dual_difference = 0;
+  double max_basic_row_value_difference = 0;
+  double max_basic_row_dual_difference = 0;
+
+  for (int ix = 0; ix < simplex_lp.numRow_; ix++) {
+    int iRow = ix;
+    int iVar = simplex_lp.numCol_ + iRow;
+    if (simplex_basis.nonbasicFlag_[iVar] == NONBASIC_FLAG_TRUE) {
+      // Consider this nonbasic row
+      double local_row_value =
+          -simplex_info.workValue_[iVar] / scale.row_[iRow];
+      double local_row_dual = (int)simplex_lp.sense_ *
+                              simplex_info.workDual_[iVar] *
+                              (scale.row_[iRow] * scale.cost_);
+      double value_difference =
+          fabs(local_row_value - solution.row_value[iRow]);
+      double dual_difference = fabs(local_row_dual - solution.row_dual[iRow]);
+      max_nonbasic_row_value_difference =
+          std::max(value_difference, max_nonbasic_row_value_difference);
+      max_nonbasic_row_dual_difference =
+          std::max(dual_difference, max_nonbasic_row_dual_difference);
+    }
+    // Consider the basic variable associated with this row index
+    iVar = simplex_basis.basicIndex_[ix];
+    if (iVar < simplex_lp.numCol_) {
+      // Consider this basic column
+      int iCol = iVar;
+      double local_col_value = simplex_info.baseValue_[ix] * scale.col_[iCol];
+      double local_col_dual = 0;
+      double value_difference =
+          fabs(local_col_value - solution.col_value[iCol]);
+      double dual_difference = fabs(local_col_dual - solution.col_dual[iCol]);
+      max_basic_col_value_difference =
+          std::max(value_difference, max_basic_col_value_difference);
+      max_basic_col_dual_difference =
+          std::max(dual_difference, max_basic_col_dual_difference);
+    } else {
+      // Consider this basic row
+      iRow = iVar - simplex_lp.numCol_;
+      double local_row_value = -simplex_info.baseValue_[ix] / scale.row_[iRow];
+      double local_row_dual = 0;
+      double value_difference =
+          fabs(local_row_value - solution.row_value[iRow]);
+      double dual_difference = fabs(local_row_dual - solution.row_dual[iRow]);
+      max_basic_row_value_difference =
+          std::max(value_difference, max_basic_row_value_difference);
+      max_basic_row_dual_difference =
+          std::max(dual_difference, max_basic_row_dual_difference);
+    }
+  }
+
+  HighsPrintMessage(options.output, options.message_level, ML_ALWAYS,
+                    "\nHiGHS-simplex solution differences\n");
+  std::string value_adjective;
+  int report_level;
+  return_status = HighsDebugStatus::OK;
+  if (max_nonbasic_col_value_difference > 0) {
+    value_adjective = "Excessive";
+    report_level = ML_ALWAYS;
+    return_status = debugWorseStatus(HighsDebugStatus::WARNING, return_status);
+    HighsPrintMessage(
+        options.output, options.message_level, report_level,
+        "HighsSimplexD: %-9s Nonbasic column value difference: %9.4g\n",
+        value_adjective.c_str(), max_nonbasic_col_value_difference);
+  }
+  if (max_nonbasic_row_value_difference > 0) {
+    value_adjective = "Excessive";
+    report_level = ML_ALWAYS;
+    return_status = debugWorseStatus(HighsDebugStatus::WARNING, return_status);
+    HighsPrintMessage(
+        options.output, options.message_level, report_level,
+        "HighsSimplexD: %-9s Nonbasic row    value difference: %9.4g\n",
+        value_adjective.c_str(), max_nonbasic_row_value_difference);
+  }
+
+  return_status = debugWorseStatus(
+      debugAssessSolutionNormDifference(options, "Basic   column value",
+                                        max_basic_col_value_difference),
+      return_status);
+  return_status = debugWorseStatus(
+      debugAssessSolutionNormDifference(options, "Basic      row value",
+                                        max_basic_row_value_difference),
+      return_status);
+  return_status = debugWorseStatus(
+      debugAssessSolutionNormDifference(options, "Nonbasic column dual",
+                                        max_nonbasic_col_dual_difference),
+      return_status);
+  return_status = debugWorseStatus(
+      debugAssessSolutionNormDifference(options, "Nonbasic    row dual",
+                                        max_nonbasic_row_dual_difference),
+      return_status);
+
+  if (max_basic_col_dual_difference > 0) {
+    value_adjective = "Excessive";
+    report_level = ML_ALWAYS;
+    return_status = debugWorseStatus(HighsDebugStatus::WARNING, return_status);
+    HighsPrintMessage(
+        options.output, options.message_level, report_level,
+        "HighsSimplexD: %-9s Basic    column dual difference: %9.4g\n",
+        value_adjective.c_str(), max_basic_col_dual_difference);
+  }
+  if (max_basic_row_dual_difference > 0) {
+    value_adjective = "Excessive";
+    report_level = ML_ALWAYS;
+    return_status = debugWorseStatus(HighsDebugStatus::WARNING, return_status);
+    HighsPrintMessage(
+        options.output, options.message_level, report_level,
+        "HighsSimplexD: %-9s Basic    row     dual difference: %9.4g\n",
+        value_adjective.c_str(), max_basic_row_dual_difference);
+  }
+
+  return return_status;
+}
+
+HighsDebugStatus debugAssessSolutionNormDifference(const HighsOptions& options,
+                                                   const std::string type,
+                                                   const double difference) {
+  const double small_difference = 1e-12;
+  const double large_difference = 1e-8;
+  const double excessive_difference = 1e-4;
+  HighsDebugStatus return_status = HighsDebugStatus::OK;
+  if (difference <= small_difference) return return_status;
+  std::string value_adjective;
+  int report_level;
+
+  if (difference > excessive_difference) {
+    value_adjective = "Excessive";
+    report_level = ML_ALWAYS;
+    return_status = HighsDebugStatus::WARNING;
+  } else if (difference > large_difference) {
+    value_adjective = "Large";
+    report_level = ML_DETAILED;
+    return_status = HighsDebugStatus::WARNING;
+  } else {
+    value_adjective = "OK";
+    report_level = ML_VERBOSE;
+  }
+  HighsPrintMessage(options.output, options.message_level, report_level,
+                    "HighsSimplexD: %-9s %s difference: %9.4g\n",
+                    value_adjective.c_str(), type.c_str(), difference);
   return return_status;
 }

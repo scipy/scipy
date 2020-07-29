@@ -19,15 +19,11 @@
 #include <stdexcept>
 
 #include "lp_data/HConst.h"
+//#include "io/HighsIO.h"
 #include "simplex/FactorTimer.h"
+#include "simplex/HFactorDebug.h"
 #include "simplex/HVector.h"
 #include "util/HighsTimer.h"
-
-#ifdef HiGHSDEV
-#ifdef OPENMP
-#include "omp.h"
-#endif
-#endif
 
 using std::copy;
 using std::fill_n;
@@ -159,7 +155,9 @@ void solveHyper(const int Hsize, const int* Hlookup, const int* HpivotIndex,
 
 void HFactor::setup(int numCol_, int numRow_, const int* Astart_,
                     const int* Aindex_, const double* Avalue_, int* baseIndex_,
-                    const bool use_original_HFactor_logic_, int updateMethod_) {
+                    int highs_debug_level_, FILE* logfile_, FILE* output_,
+                    int message_level_, const bool use_original_HFactor_logic_,
+                    int updateMethod_) {
   // Copy Problem size and (pointer to) coefficient matrix
   numRow = numRow_;
   numCol = numCol_;
@@ -167,9 +165,13 @@ void HFactor::setup(int numCol_, int numRow_, const int* Astart_,
   Aindex = Aindex_;
   Avalue = Avalue_;
   baseIndex = baseIndex_;
+  use_original_HFactor_logic = use_original_HFactor_logic_;
   updateMethod = updateMethod_;
 
-  use_original_HFactor_logic = use_original_HFactor_logic_;
+  highs_debug_level = highs_debug_level_;
+  logfile = logfile_;
+  output = output_;
+  message_level = message_level_;
 
   // Allocate for working buffer
   iwork.reserve(numRow * 2);
@@ -254,33 +256,29 @@ void HFactor::setup(int numCol_, int numRow_, const int* Astart_,
   PFvalue.reserve(BlimitX * 4);
 }
 
-#ifdef HiGHSDEV
-void HFactor::change(int updateMethod_) { updateMethod = updateMethod_; }
-#endif
-
 int HFactor::build(HighsTimerClock* factor_timer_clock_pointer) {
   FactorTimer factor_timer;
   factor_timer.start(FactorInvert, factor_timer_clock_pointer);
   build_syntheticTick = 0;
   factor_timer.start(FactorInvertSimple, factor_timer_clock_pointer);
   // Build the L, U factor
-  // printf("Before buildSimple(): Model has %d basic indices: ", numRow);
-  // for (int i=0; i<numRow; i++){printf(" %d", baseIndex[i]);} printf("\n");
   buildSimple();
   factor_timer.stop(FactorInvertSimple, factor_timer_clock_pointer);
   factor_timer.start(FactorInvertKernel, factor_timer_clock_pointer);
   rankDeficiency = buildKernel();
   factor_timer.stop(FactorInvertKernel, factor_timer_clock_pointer);
-  if (rankDeficiency > 0) {
+  if (rankDeficiency) {
     factor_timer.start(FactorInvertDeficient, factor_timer_clock_pointer);
-    printf("buildKernel() returns rankDeficiency = %d\n", rankDeficiency);
+    HighsLogMessage(logfile, HighsMessageType::WARNING,
+                    "Rank deficiency of %d identified in basis matrix",
+                    rankDeficiency);
     // Singular matrix B: reorder the basic variables so that the
     // singular columns are in the position corresponding to the
     // logical which replaces them
     buildHandleRankDeficiency();
-    buildRpRankDeficiency();
+    // 29.06.20: buildMarkSingC() previously commented out
+    //    buildMarkSingC();
     factor_timer.stop(FactorInvertDeficient, factor_timer_clock_pointer);
-    //      buildMarkSingC();
   }
   // Complete INVERT
   factor_timer.start(FactorInvertFinish, factor_timer_clock_pointer);
@@ -289,14 +287,10 @@ int HFactor::build(HighsTimerClock* factor_timer_clock_pointer) {
   // Record the number of entries in the INVERT
   invert_num_el = Lstart[numRow] + Ulastp[numRow - 1] + numRow;
 
-  if (rankDeficiency) {
-    kernel_dim -= rankDeficiency;
-    printf(
-        "Rank deficiency %1d: basis_matrix (%d el); INVERT (%d el); kernel (%d "
-        "dim; %d el): nwork = %d\n",
-        rankDeficiency, basis_matrix_num_el, invert_num_el, kernel_dim,
-        kernel_num_el, nwork);
-  }
+  kernel_dim -= rankDeficiency;
+  debugLogRankDeficiency(highs_debug_level, output, message_level,
+                         rankDeficiency, basis_matrix_num_el, invert_num_el,
+                         kernel_dim, kernel_num_el, nwork);
   factor_timer.stop(FactorInvert, factor_timer_clock_pointer);
   return rankDeficiency;
 }
@@ -322,63 +316,15 @@ void HFactor::btran(HVector& vector, double historical_density,
 void HFactor::update(HVector* aq, HVector* ep, int* iRow, int* hint) {
   // Special case
   if (aq->next) {
-    updateCFT(aq, ep, iRow);  //, hint);
+    updateCFT(aq, ep, iRow);
     return;
   }
 
-  if (updateMethod == UPDATE_METHOD_FT) updateFT(aq, ep, *iRow);  //, hint);
+  if (updateMethod == UPDATE_METHOD_FT) updateFT(aq, ep, *iRow);
   if (updateMethod == UPDATE_METHOD_PF) updatePF(aq, *iRow, hint);
   if (updateMethod == UPDATE_METHOD_MPF) updateMPF(aq, ep, *iRow, hint);
-  if (updateMethod == UPDATE_METHOD_APF) updateAPF(aq, ep, *iRow);  //, hint);
+  if (updateMethod == UPDATE_METHOD_APF) updateAPF(aq, ep, *iRow);
 }
-
-#ifdef HiGHSDEV
-void HFactor::checkInvert() {
-  HVector column;
-  column.setup(numRow);
-  double columnDensity = 0;
-  double invertEr0 = 0;
-  double tlInvertEr0 = 0;
-  bool rpR = numRow < 20;
-  for (int iRow = 0; iRow < numRow; iRow++) {
-    int iCol = baseIndex[iRow];
-    column.clear();
-    column.packFlag = true;
-    if (iCol < numCol) {
-      for (int k = Astart[iCol]; k < Astart[iCol + 1]; k++) {
-        int index = Aindex[k];
-        column.array[index] = Avalue[k];
-        column.index[column.count++] = index;
-      }
-    } else {
-      int index = iCol - numCol;
-      column.array[index] = 1.0;
-      column.index[column.count++] = index;
-    }
-    ftran(column, columnDensity);
-    if (rpR) printf("Checking Basic column %2d as %2d\n", iRow, iCol);
-    for (int lc_iRow = 0; lc_iRow < numRow; lc_iRow++) {
-      double value = column.array[lc_iRow];
-      double ckValue;
-      if (lc_iRow == iRow) {
-        ckValue = 1;
-      } else {
-        ckValue = 0;
-      }
-      double lcEr = fabs(value - ckValue);
-      invertEr0 += lcEr * lcEr;
-      if (rpR && lcEr > 1e-12)
-        printf("   Row: %2d has value %11.4g: error = %11.4g\n", lc_iRow, value,
-               lcEr);
-    }
-  }
-  invertEr0 = sqrt(invertEr0);
-  if (invertEr0 > tlInvertEr0)
-    printf("Checking INVERT: ||B^{-1}B-I||_F = %g\n", invertEr0);
-  else
-    printf("Checking INVERT: ||B^{-1}B-I||_F = %g\n", invertEr0);
-}
-#endif
 
 void HFactor::buildSimple() {
   /**
@@ -417,8 +363,10 @@ void HFactor::buildSimple() {
       if (MRcountb4[lc_iRow] >= 0) {
         iRow = lc_iRow;
       } else {
-        printf("STRANGE: Found a logical column with pivot already in row %d\n",
-               lc_iRow);
+        HighsLogMessage(
+            logfile, HighsMessageType::ERROR,
+            "INVERT Error: Found a logical column with pivot already in row %d",
+            lc_iRow);
         MRcountb4[lc_iRow]++;
         Bindex[BcountX] = lc_iRow;
         Bvalue[BcountX++] = 1.0;
@@ -435,8 +383,10 @@ void HFactor::buildSimple() {
         iRow = lc_iRow;
       } else {
         if (unit_col)
-          printf("STRANGE: Found a second unit column with pivot in row %d\n",
-                 lc_iRow);
+          HighsLogMessage(
+              logfile, HighsMessageType::ERROR,
+              "INVERT Error: Found a second unit column with pivot in row %d",
+              lc_iRow);
         for (int k = start; k < start + count; k++) {
           MRcountb4[Aindex[k]]++;
           Bindex[BcountX] = Aindex[k];
@@ -458,9 +408,6 @@ void HFactor::buildSimple() {
     }
     Bstart[iCol + 1] = BcountX;
   }
-#ifdef HiGHSDEV
-  BtotalX = numRow - nwork + BcountX;
-#endif
   // Record the number of elements in the basis matrix
   basis_matrix_num_el = numRow - nwork + BcountX;
 
@@ -905,19 +852,9 @@ int HFactor::buildKernel() {
 }
 
 void HFactor::buildHandleRankDeficiency() {
-  bool rp = true;
-  if (rp) rp = numRow < 123;
-  if (rp) {
-    printf("buildRankDeficiency1:");
-    printf("\nIndex  ");
-    for (int i = 0; i < numRow; i++) printf(" %2d", i);
-    printf("\nPerm   ");
-    for (int i = 0; i < numRow; i++) printf(" %2d", permute[i]);
-    printf("\nIwork  ");
-    for (int i = 0; i < numRow; i++) printf(" %2d", iwork[i]);
-    printf("\nBaseI  ");
-    for (int i = 0; i < numRow; i++) printf(" %2d", baseIndex[i]);
-  }
+  debugReportRankDeficiency(0, highs_debug_level, output, message_level, numRow,
+                            permute, iwork, baseIndex, rankDeficiency, noPvR,
+                            noPvC);
   // iwork can now be used as workspace: use it to accumulate the new
   // baseIndex. iwork is set to -1 and baseIndex is permuted into it.
   // Indices of iwork corresponding to missing indices in permute
@@ -951,130 +888,53 @@ void HFactor::buildHandleRankDeficiency() {
     }
   }
   assert(lc_rankDeficiency == rankDeficiency);
-  rp = true;
-  if (rp) rp = rankDeficiency < 100;
-  if (rp) {
-    printf("\nbuildRankDeficiency2:");
-    printf("\nIndex  ");
-    for (int i = 0; i < rankDeficiency; i++) printf(" %2d", i);
-    printf("\nnoPvR  ");
-    for (int i = 0; i < rankDeficiency; i++) printf(" %2d", noPvR[i]);
-    printf("\nnoPvC  ");
-    for (int i = 0; i < rankDeficiency; i++) printf(" %2d", noPvC[i]);
-    if (numRow < 123) {
-      printf("\nIndex  ");
-      for (int i = 0; i < numRow; i++) printf(" %2d", i);
-      printf("\nIwork  ");
-      for (int i = 0; i < numRow; i++) printf(" %2d", iwork[i]);
-    }
-    printf("\n");
-  }
+  debugReportRankDeficiency(1, highs_debug_level, output, message_level, numRow,
+                            permute, iwork, baseIndex, rankDeficiency, noPvR,
+                            noPvC);
   for (int k = 0; k < rankDeficiency; k++) {
     int iRow = noPvR[k];
     int iCol = noPvC[k];
     if (permute[iCol] != -1)
-      printf("ERROR: permute[iCol] = %d != -1\n", permute[iCol]);
+      HighsLogMessage(logfile, HighsMessageType::ERROR,
+                      "ERROR: permute[iCol] = %d != -1", permute[iCol]);
     permute[iCol] = iRow;
     Lstart.push_back(Lindex.size());
     UpivotIndex.push_back(iRow);
     UpivotValue.push_back(1);
     Ustart.push_back(Uindex.size());
   }
-  if (rp) rp = numRow < 123;
-  if (rp) {
-    printf("\nbuildRankDeficiency3:");
-    printf("\nIndex  ");
-    for (int i = 0; i < numRow; i++) printf(" %2d", i);
-    printf("\nPerm   ");
-    for (int i = 0; i < numRow; i++) printf(" %2d", permute[i]);
-    printf("\n");
-  }
-}
-
-void HFactor::buildRpRankDeficiency() {
-  // Singular matrix B: Report the active submatrix following detection of rank
-  // deficiency
-  if (rankDeficiency > 10) return;
-  double* ASM;
-  ASM = (double*)malloc(sizeof(double) * rankDeficiency * rankDeficiency);
-  for (int i = 0; i < rankDeficiency; i++) {
-    for (int j = 0; j < rankDeficiency; j++) {
-      ASM[i + j * rankDeficiency] = 0;
-    }
-  }
-  for (int j = 0; j < rankDeficiency; j++) {
-    int ASMcol = noPvC[j];
-    int start = MCstart[ASMcol];
-    int end = start + MCcountA[ASMcol];
-    for (int en = start; en < end; en++) {
-      int ASMrow = MCindex[en];
-      int i = -iwork[ASMrow] - 1;
-      if (i < 0 || i >= rankDeficiency) {
-        printf("STRANGE: 0 > i = %d || %d = i >= rankDeficiency = %d\n", i, i,
-               rankDeficiency);
-      } else {
-        if (noPvR[i] != ASMrow) {
-          printf("STRANGE: %d = noPvR[i] != ASMrow = %d\n", noPvR[i], ASMrow);
-        }
-        printf("Setting ASM(%2d, %2d) = %11.4g\n", i, j, MCvalue[en]);
-        ASM[i + j * rankDeficiency] = MCvalue[en];
-      }
-    }
-  }
-  printf("\nASM:                    ");
-  for (int j = 0; j < rankDeficiency; j++) printf(" %11d", j);
-  printf("\n                        ");
-  for (int j = 0; j < rankDeficiency; j++) printf(" %11d", noPvC[j]);
-  printf("\n                        ");
-  for (int j = 0; j < rankDeficiency; j++) printf("------------");
-  printf("\n");
-  for (int i = 0; i < rankDeficiency; i++) {
-    printf("%11d %11d|", i, noPvR[i]);
-    for (int j = 0; j < rankDeficiency; j++) {
-      printf(" %11.4g", ASM[i + j * rankDeficiency]);
-    }
-    printf("\n");
-  }
-  free(ASM);
+  debugReportRankDeficiency(2, highs_debug_level, output, message_level, numRow,
+                            permute, iwork, baseIndex, rankDeficiency, noPvR,
+                            noPvC);
+  debugReportRankDeficientASM(highs_debug_level, output, message_level, numRow,
+                              MCstart, MCcountA, MCindex, MCvalue, iwork,
+                              rankDeficiency, noPvC, noPvR);
 }
 
 void HFactor::buildMarkSingC() {
   // Singular matrix B: reorder the basic variables so that the
   // singular columns are in the position corresponding to the
   // logical which replaces them
-  bool rp = true;
-  if (rp) rp = numRow < 123;
-  if (rp) {
-    printf("\nMarkSingC1");
-    printf("\nIndex  ");
-    for (int i = 0; i < numRow; i++) printf(" %2d", i);
-    printf("\niwork  ");
-    for (int i = 0; i < numRow; i++) printf(" %2d", iwork[i]);
-    printf("\nBaseI  ");
-    for (int i = 0; i < numRow; i++) printf(" %2d", baseIndex[i]);
-  }
+  debugReportMarkSingC(0, highs_debug_level, output, message_level, numRow,
+                       iwork, baseIndex);
 
   for (int k = 0; k < rankDeficiency; k++) {
     int ASMrow = noPvR[k];
     int ASMcol = noPvC[k];
     int i = -iwork[ASMrow] - 1;
     if (i < 0 || i >= rankDeficiency) {
-      printf("STRANGE: 0 > i = %d || %d = i >= rankDeficiency = %d\n", i, i,
-             rankDeficiency);
+      HighsLogMessage(logfile, HighsMessageType::ERROR,
+                      "0 > i = %d || %d = i >= rankDeficiency = %d", i, i,
+                      rankDeficiency);
     } else {
-      iwork[ASMrow] = -(ASMcol + 1);  // Store negation of 1+ASMcol so that
-                                      // removing column 0 can be identified!
+      // Store negation of 1+ASMcol so that removing column 0 can be
+      // identified!
+      iwork[ASMrow] = -(ASMcol + 1);
     }
   }
   for (int i = 0; i < numRow; i++) baseIndex[i] = iwork[i];
-  if (rp) {
-    printf("\nMarkSingC2");
-    printf("\nIndex  ");
-    for (int i = 0; i < numRow; i++) printf(" %2d", i);
-    printf("\nNwBaseI");
-    for (int i = 0; i < numRow; i++) printf(" %2d", baseIndex[i]);
-    printf("\n");
-  }
+  debugReportMarkSingC(1, highs_debug_level, output, message_level, numRow,
+                       iwork, baseIndex);
 }
 
 void HFactor::buildFinish() {
@@ -1158,9 +1018,6 @@ void HFactor::buildFinish() {
   iwork.assign(baseIndex, baseIndex + numRow);
   for (int i = 0; i < numRow; i++) baseIndex[permute[i]] = iwork[i];
 
-#ifdef HiGHSDEV
-  FtotalX = LcountX + UcountX + numRow;
-#endif
   build_syntheticTick += numRow * 80 + (LcountX + UcountX) * 60;
 }
 
@@ -1824,9 +1681,6 @@ void HFactor::updateCFT(HVector* aq, HVector* ep, int* iRow
       }
     }
     PFpivotIndex.push_back(iRow[cp]);
-#ifdef HiGHSDEV
-    FtotalX += PFindex.size() - PFstart.back() + 1;
-#endif
     UtotalX += PFindex.size() - PFstart.back();
     PFstart.push_back(PFindex.size());
 
@@ -1840,9 +1694,6 @@ void HFactor::updateCFT(HVector* aq, HVector* ep, int* iRow
     // 1. Delete pivotal row from U
     int cIndex = iRow[cp];
     int cLogic = pLogic[cp];
-#ifdef HiGHSDEV
-    FtotalX -= URlastp[cLogic] - URstart[cLogic];
-#endif
     UtotalX -= URlastp[cLogic] - URstart[cLogic];
     for (int k = URstart[cLogic]; k < URlastp[cLogic]; k++) {
       // Find the pivotal position
@@ -1857,9 +1708,6 @@ void HFactor::updateCFT(HVector* aq, HVector* ep, int* iRow
     }
 
     // 2. Delete pivotal column from UR
-#ifdef HiGHSDEV
-    FtotalX -= Ulastp[cLogic] - Ustart[cLogic];
-#endif
     UtotalX -= Ulastp[cLogic] - Ustart[cLogic];
     for (int k = Ustart[cLogic]; k < Ulastp[cLogic]; k++) {
       // Find the pivotal position
@@ -1877,9 +1725,6 @@ void HFactor::updateCFT(HVector* aq, HVector* ep, int* iRow
     // 3. Insert the (stored) partial FTRAN to the row matrix
     int UstartX = Tstart[cp];
     int UendX = Tstart[cp + 1];
-#ifdef HiGHSDEV
-    FtotalX += UendX - UstartX + 1;
-#endif
     UtotalX += UendX - UstartX;
     // Store column as UR elements
     for (int k = UstartX; k < UendX; k++) {
@@ -1954,9 +1799,6 @@ void HFactor::updateFT(HVector* aq, HVector* ep, int iRow
   UpivotIndex[pLogic] = -1;
 
   // Delete pivotal row from U
-#ifdef HiGHSDEV
-  FtotalX -= URlastp[pLogic] - URstart[pLogic];
-#endif
   for (int k = URstart[pLogic]; k < URlastp[pLogic]; k++) {
     // Find the pivotal position
     int iLogic = UpivotLookup[URindex[k]];
@@ -1970,9 +1812,6 @@ void HFactor::updateFT(HVector* aq, HVector* ep, int iRow
   }
 
   // Delete pivotal column from UR
-#ifdef HiGHSDEV
-  FtotalX -= Ulastp[pLogic] - Ustart[pLogic];
-#endif
   for (int k = Ustart[pLogic]; k < Ulastp[pLogic]; k++) {
     // Find the pivotal position
     int iLogic = UpivotLookup[Uindex[k]];
@@ -1997,9 +1836,6 @@ void HFactor::updateFT(HVector* aq, HVector* ep, int iRow
   int UstartX = Ustart.back();
   int UendX = Ulastp.back();
   UtotalX += UendX - UstartX + 1;
-#ifdef HiGHSDEV
-  FtotalX += UendX - UstartX + 1;
-#endif
 
   // Store column as UR elements
   for (int k = UstartX; k < UendX; k++) {
@@ -2056,9 +1892,6 @@ void HFactor::updateFT(HVector* aq, HVector* ep, int iRow
     }
   }
   UtotalX += PFindex.size() - PFstart.back();
-#ifdef HiGHSDEV
-  FtotalX += PFindex.size() - PFstart.back() + 1;
-#endif
 
   // Store R matrix pivot
   PFpivotIndex.push_back(iRow);
@@ -2097,16 +1930,9 @@ void HFactor::updatePF(HVector* aq, int iRow, int* hint) {
   // Check refactor
   UtotalX += aq->packCount;
   if (UtotalX > UmeritX) *hint = 1;
-#ifdef HiGHSDEV
-  FtotalX += aq->packCount;
-#endif
 }
 
 void HFactor::updateMPF(HVector* aq, HVector* ep, int iRow, int* hint) {
-#ifdef HiGHSDEV
-  int PFcountX0 = PFindex.size();
-#endif
-
   // Store elements
   for (int i = 0; i < aq->packCount; i++) {
     PFindex.push_back(aq->packIndex[i]);
@@ -2134,19 +1960,12 @@ void HFactor::updateMPF(HVector* aq, HVector* ep, int iRow, int* hint) {
 
   // Refactor or not
   UtotalX += aq->packCount + ep->packCount;
-#ifdef HiGHSDEV
-  FtotalX += PFindex.size() - PFcountX0;
-#endif
   if (UtotalX > UmeritX) *hint = 1;
 }
 
 void HFactor::updateAPF(HVector* aq, HVector* ep, int iRow
                         //, int* hint
 ) {
-#ifdef HiGHSDEV
-  int PFcountX0 = PFindex.size();
-#endif
-
   // Store elements
   for (int i = 0; i < aq->packCount; i++) {
     PFindex.push_back(aq->packIndex[i]);
@@ -2170,9 +1989,6 @@ void HFactor::updateAPF(HVector* aq, HVector* ep, int iRow
     PFvalue.push_back(ep->packValue[i]);
   }
   PFstart.push_back(PFindex.size());
-#ifdef HiGHSDEV
-  FtotalX += PFindex.size() - PFcountX0;
-#endif
 
   // Store pivot
   PFpivotValue.push_back(aq->array[iRow]);

@@ -189,11 +189,6 @@ class HighsSimplexInterface {
                          int* solution_num_nz, int* solution_nz_indices,
                          bool transpose = false);
 
-#ifdef HiGHSDEV
-  // Changes the update method, but only used in HTester.cpp
-  void change_update_method(int updateMethod);
-#endif
-
   /**
    * @brief Convert a SCIP baseStat for columns and rows to HiGHS basis
    * Postive  return value k implies invalid basis status for column k-1

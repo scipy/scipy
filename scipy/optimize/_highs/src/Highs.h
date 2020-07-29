@@ -20,6 +20,7 @@
 #include "lp_data/HighsLp.h"
 #include "lp_data/HighsModelObject.h"
 #include "lp_data/HighsOptions.h"
+#include "lp_data/HighsSolutionDebug.h"
 #include "lp_data/HighsStatus.h"
 #include "presolve/PresolveComponent.h"
 #include "util/HighsTimer.h"
@@ -189,6 +190,16 @@ class Highs {
    * @brief Returns the current model status
    */
   const HighsModelStatus& getModelStatus(const bool scaled_model = false) const;
+
+  /**
+   * @brief Returns the objective function value (if known)
+   */
+  double getObjectiveValue() { return info_.objective_function_value; }
+
+  /**
+   * @brief Returns the simplex iteration count (if known)
+   */
+  int getSimplexIterationCount() { return info_.simplex_iteration_count; }
 
   // todo: getRangingInformation(..)
 

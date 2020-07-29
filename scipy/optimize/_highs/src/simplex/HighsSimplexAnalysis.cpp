@@ -34,7 +34,7 @@ void HighsSimplexAnalysis::setup(const HighsLp& lp, const HighsOptions& options,
   //
   AnIterIt0 = simplex_iteration_count_;
   AnIterCostlyDseFq = 0;
-  AnIterPrevRpNumCostlyDseIt = 0;
+  AnIterNumCostlyDseIt = 0;
   // Copy messaging parameter from options
   messaging(options.logfile, options.output, options.message_level);
   // Initialise the densities
@@ -180,7 +180,6 @@ void HighsSimplexAnalysis::setup(const HighsLp& lp, const HighsOptions& options,
   num_row_price_with_switch = 0;
   int last_dual_edge_weight_mode = (int)DualEdgeWeightMode::STEEPEST_EDGE;
   for (int k = 0; k <= last_dual_edge_weight_mode; k++) AnIterNumEdWtIt[k] = 0;
-  AnIterNumCostlyDseIt = 0;
   AnIterTraceNumRec = 0;
   AnIterTraceIterDl = 1;
   AnIterTraceRec* lcAnIter = &AnIterTrace[0];
