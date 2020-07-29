@@ -71,7 +71,7 @@ class DisjointSet:
         self._indices = collections.OrderedDict()
 
     def __iter__(self):
-        """Returns a iterator of the nodes in the disjoint set.
+        """Returns an iterator of the nodes in the disjoint set.
 
         Nodes in the disjoint set consist of all inputs to the `__getitem__`,
         `merge`, and `connected` methods. Elements are ordered by insertion
