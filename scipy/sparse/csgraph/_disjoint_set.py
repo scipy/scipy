@@ -1,6 +1,7 @@
 """
 Disjoint set data structure
 """
+import collections
 
 
 class DisjointSet:
@@ -67,7 +68,16 @@ class DisjointSet:
         self.n_components = 0
         self._sizes = {}
         self._parents = {}
-        self._indices = {}
+        self._indices = collections.OrderedDict()
+
+    def __iter__(self):
+        """Returns a iterator of the nodes in the disjoint set.
+
+        Nodes in the disjoint set consist of all inputs to the `__getitem__`,
+        `merge`, and `connected` methods. Elements are ordered by insertion
+        order.
+        """
+        return iter(self._indices)
 
     def __getitem__(self, x):
         """Find the root node of `x`.
@@ -102,7 +112,8 @@ class DisjointSet:
         """Merge the subsets of `x` and `y`.
 
         The smaller subset (the child) is merged into the larger subset (the
-        parent).
+        parent). If neither `x` nor `y` has been previously seen, `x` is
+        inserted into the disjoint set before `y`.
 
         Parameters
         ----------
@@ -128,6 +139,9 @@ class DisjointSet:
 
     def connected(self, x, y):
         """Test whether `x` and `y` are in the same component/set.
+
+        If neither `x` nor `y` has been previously seen, `x` is
+        inserted into the disjoint set before `y`.
 
         Parameters
         ----------
