@@ -37,7 +37,9 @@ def test_linear_union_sequence(n):
     dis = DisjointSet()
 
     for i in range(len(nodes) - 1):
+        assert not dis.connected(nodes[i], nodes[i + 1])
         assert dis.merge(nodes[i], nodes[i + 1])
+        assert dis.connected(nodes[i], nodes[i + 1])
         assert dis.n_components == 1
 
     roots = [dis[i] for i in nodes]
@@ -50,11 +52,13 @@ def test_self_unions(n):
     nodes = get_nodes(n)
     dis = DisjointSet()
 
-    for i in nodes:
-        assert not dis.merge(i, i)
+    for x in nodes:
+        assert dis.connected(x, x)
+        assert not dis.merge(x, x)
+        assert dis.connected(x, x)
     assert dis.n_components == len(nodes)
 
-    roots = [dis[i] for i in nodes]
+    roots = [dis[x] for x in nodes]
     assert nodes == roots
 
 
@@ -68,7 +72,10 @@ def test_binary_tree(kmax):
     for k in 2**np.arange(kmax):
         for i in range(0, n, 2 * k):
             r1, r2 = rng.randint(0, k, size=2)
-            assert dis.merge(nodes[i + r1], nodes[i + k + r2])
+            a, b = nodes[i + r1], nodes[i + k + r2]
+            assert not dis.connected(a, b)
+            assert dis.merge(a, b)
+            assert dis.connected(a, b)
 
         roots = [dis[i] for i in nodes]
         expected_indices = np.arange(n) - np.arange(n) % (2 * k)

@@ -125,3 +125,20 @@ class DisjointSet:
         self._sizes[x] += self._sizes[y]
         self.n_components -= 1
         return True
+
+    def connected(self, x, y):
+        """Test whether `x` and `y` are in the same component/set.
+
+        Parameters
+        ----------
+        x, y : hashable object
+            Nodes to test.
+
+        Returns
+        -------
+        result : bool
+            True if `x` and `y` are in the same set, False otherwise.
+        """
+        x = self[x]
+        y = self[y]
+        return self._indices[x] == self._indices[y]
