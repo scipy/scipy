@@ -653,4 +653,4 @@ def test_methods_with_lists(method, distname, args):
     result = f(x, *shape2, loc=loc, scale=scale)
     npt.assert_allclose(result,
                         [f(*v) for v in zip(x, *shape2, loc, scale)],
-                        rtol=1e-15, atol=1e-15)
+                        rtol=1e-14, atol=5e-14)

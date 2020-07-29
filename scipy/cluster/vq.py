@@ -471,7 +471,7 @@ def _kpoints(data, k):
     k : int
         Number of samples to generate.
 
-   Returns
+    Returns
     -------
     x : ndarray
         A 'k' by 'N' containing the initial centroids
