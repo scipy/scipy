@@ -329,7 +329,9 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
         funcalls += 1
         if abs(q1) < abs(q0):
             p0, p1, q0, q1 = p1, p0, q1, q0
-        for itr in range(maxiter):
+
+        itr = 0
+        while itr < maxiter - 1:
             if q1 == q0:
                 if p1 != p0:
                     msg = "Tolerance of %s reached." % (p1 - p0)
@@ -352,15 +354,15 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
                     full_output, (p, funcalls, itr + 1, _ECONVERGED))
             p0, q0 = p1, q1
             p1 = p
-            while True:
+            while itr < maxiter:
                 q1 = func(p1, *args)
                 funcalls += 1
+                itr += 1
                 if np.isfinite(q1):
                     break
                 else:
                     # We stepped outside the domain of the function,
                     # we try a point closer to the previous one
-                    # TODO: Should we increase the iteration count?
                     p1 = (p0 + p1) / 2
 
     if disp:
