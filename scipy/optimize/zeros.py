@@ -10,7 +10,7 @@ _xtol = 2e-12
 _rtol = 4 * np.finfo(float).eps
 
 __all__ = ['newton', 'bisect', 'ridder', 'brentq', 'brenth', 'toms748',
-           'RootResults']
+           'RootResults', 'OutOfDomainWarning']
 
 # Must agree with CONVERGED, SIGNERR, CONVERR, ...  in zeros.h
 _ECONVERGED = 0
@@ -28,6 +28,10 @@ INPROGRESS = 'No error'
 
 flag_map = {_ECONVERGED: CONVERGED, _ESIGNERR: SIGNERR, _ECONVERR: CONVERR,
             _EVALUEERR: VALUEERR, _EINPROGRESS: INPROGRESS}
+
+
+class OutOfDomainWarning(UserWarning):
+    """Iterative method stepped out of function domain."""
 
 
 class RootResults(object):
@@ -363,6 +367,11 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
                 else:
                     # We stepped outside the domain of the function,
                     # we try a point closer to the previous one
+                    warnings.warn(
+                        "Iteration resulted in non finite or NaN, "
+                        "trying to get closer to previous region",
+                        OutOfDomainWarning,
+                    )
                     p1 = (p0 + p1) / 2
 
     if disp:
