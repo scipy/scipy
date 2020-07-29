@@ -13,6 +13,7 @@ from numpy import finfo, power, nan, isclose
 
 
 from scipy.optimize import zeros, newton, root_scalar
+from scipy.optimize.zeros import OutOfDomainWarning
 
 from scipy._lib._util import getfullargspec_no_self as _getfullargspec
 
@@ -753,3 +754,28 @@ def test_gh9551_raise_error_if_disp_true():
         zeros.newton(f, 1.0, f_p)
     root = zeros.newton(f, complex(10.0, 10.0), f_p)
     assert_allclose(root, complex(0.0, 1.0))
+
+
+def test_newton_backtracks_if_out_of_domain():
+    """Test that newton does not get stuck if one function evaluation returns NaN"""
+    # See https://github.com/scipy/scipy/issues/12625
+
+    def f(x):
+        return np.log(x)
+
+    assert_warns(RuntimeWarning, zeros.newton, f, 15.0, disp=False, avoid_out_of_domain=False)
+    with pytest.raises(
+            RuntimeError,
+            match=r'^Failed to converge after \d+ iterations, value is nan.$'):
+        with pytest.warns(
+                RuntimeWarning,
+                match=r'invalid value encountered in log'):
+            zeros.newton(f, 15.0, avoid_out_of_domain=False)
+
+    with pytest.warns(
+            RuntimeWarning,
+            match=r'invalid value encountered in log'):
+        assert_warns(OutOfDomainWarning, zeros.newton, f, 15.0)
+        root = zeros.newton(f, 15.0)
+
+    assert_allclose(root, 1.0)
