@@ -61,14 +61,18 @@ class _Interpolator1D(object):
         Parameters
         ----------
         x : array_like
-            Points to evaluate the interpolant at. These values must be
-            convertible to `float` values.
+            Points to evaluate the interpolant at.
 
         Returns
         -------
         y : array_like
             Interpolated values. Shape is determined by replacing
             the interpolation axis in the original array with the shape of x.
+
+        Notes
+        -----
+        Input values `x` must be convertible to `float` values like `int` 
+        or `float`.
 
         """
         x, x_shape = self._prepare_x(x)
