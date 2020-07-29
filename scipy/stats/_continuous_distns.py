@@ -5962,7 +5962,9 @@ class pearson3_gen(rv_continuous):
     .. math::
 
             \beta = \frac{2}{skew  stddev}
+
             \alpha = (stddev \beta)^2
+
             \zeta = loc - \frac{\alpha}{\beta}
 
     :math:`\Gamma` is the gamma function (`scipy.special.gamma`).
