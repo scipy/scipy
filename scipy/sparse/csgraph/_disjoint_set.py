@@ -112,7 +112,10 @@ class DisjointSet:
         """Merge the subsets of `x` and `y`.
 
         The smaller subset (the child) is merged into the larger subset (the
-        parent). If neither `x` nor `y` has been previously seen, `x` is
+        parent). If the subsets are of equal size, the root node which was
+        first inserted into the disjoint set is selected as the parent.
+
+        If neither `x` nor `y` has been previously seen, `x` is
         inserted into the disjoint set before `y`.
 
         Parameters
@@ -130,7 +133,8 @@ class DisjointSet:
         if self._indices[x] == self._indices[y]:
             return False
 
-        if self._sizes[x] < self._sizes[y]:
+        sizes = self._sizes
+        if (sizes[x], self._indices[y]) < (sizes[y], self._indices[x]):
             x, y = y, x
         self._parents[y] = x
         self._sizes[x] += self._sizes[y]

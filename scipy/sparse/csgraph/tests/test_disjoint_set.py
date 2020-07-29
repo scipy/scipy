@@ -64,6 +64,30 @@ def test_self_unions(n):
     assert nodes == roots
 
 
+@pytest.mark.parametrize("order", ["ab", "ba"])
+@pytest.mark.parametrize("n", [10, 100])
+def test_equal_size_ordering(n, order):
+    nodes = get_nodes(n)
+    dis = DisjointSet()
+    for x in nodes:
+        dis[x]
+
+    rng = np.random.RandomState(seed=0)
+    indices = np.arange(n)
+    rng.shuffle(indices)
+
+    for i in range(0, len(indices), 2):
+        a, b = nodes[indices[i]], nodes[indices[i + 1]]
+        if order == "ab":
+            assert dis.merge(a, b)
+        else:
+            assert dis.merge(b, a)
+
+        expected = nodes[min(indices[i], indices[i + 1])]
+        assert dis[a] == expected
+        assert dis[b] == expected
+
+
 @pytest.mark.parametrize("kmax", [5, 10])
 def test_binary_tree(kmax):
     n = 2**kmax
