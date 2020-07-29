@@ -2403,6 +2403,11 @@ class TestMoments(object):
     def test_kurtosis_array_scalar(self):
         assert_equal(type(stats.kurtosis([1,2,3])), float)
 
+    def test_kurtosis_array_scalar_omits_nan(self):
+        k = stats.kurtosis([1, 5, 4, 6, np.nan], fisher=False, nan_policy="omit")
+        assert_allclose(k, 2)
+        assert isinstance(k, float)
+
     def test_kurtosis_propagate_nan(self):
         # Check that the shape of the result is the same for inputs
         # with and without nans, cf gh-5817
