@@ -6423,20 +6423,17 @@ class rayleigh_gen(rv_continuous):
             return super(rayleigh_gen,
                          self).fit(data, *args, **kwds)
         else:
-            # account for user provided guesses
-            loc, scale = self._fitstart(data)
-            loc = kwds.pop('loc', loc)
-            scale = kwds.pop('scale', scale)
+            def optimizer(ll, x0, args, disp):
+                # wrap LL to for optimization over 1 parameter
+                def func(loc, data):
+                    return ll([loc, scale_mle(loc, data)], data)
 
-            x0, ll, restore, args = self._reduce_func((loc, scale), kwds)
+                loc = optimize.fmin(func, x0[0], args=args, disp=disp)
 
-            # wrap LL to optimize over `loc`
-            def func(loc, data):
-                return ll([loc, scale_mle(loc, data)], data)
-
-            loc = optimize.fmin(func, x0[0], args=(data,), disp=0)
-
-            return loc[0], scale_mle(loc, data)
+                return loc[0], scale_mle(loc, data)
+            _ = kwds.pop('optimizer', None)
+            return super(type(rayleigh), rayleigh).fit(data, *args, **kwds,
+                                                       optimizer=optimizer)
 
 
 rayleigh = rayleigh_gen(a=0.0, name="rayleigh")
