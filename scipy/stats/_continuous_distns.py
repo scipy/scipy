@@ -6423,19 +6423,20 @@ class rayleigh_gen(rv_continuous):
             return super(rayleigh_gen,
                          self).fit(data, *args, **kwds)
         else:
-            # both `floc` and `fscale` are free, use custom `_reduce_func`
-            def _reduce_func(x0, ll, data, *args, **kwds):
+            # account for user provided guesses
+            loc, scale = self._fitstart(data)
+            loc = kwds.pop('loc', loc)
+            scale = kwds.pop('scale', scale)
 
-                def func(loc, data):
-                    return ll([loc, scale_mle(loc, data)], data)
+            x0, ll, restore, args = self._reduce_func((loc, scale), kwds)
 
-                def restore(args, vals):
-                    return (vals.item(), scale_mle(vals, np.ravel(data)))
+            # wrap LL to optimize over `loc`
+            def func(loc, data):
+                return ll([loc, scale_mle(loc, data)], data)
 
-                return x0[0], func, restore
-            return super(rayleigh_gen,
-                         self).fit(data, _reduce_func=_reduce_func,
-                                   *args, **kwds)
+            loc = optimize.fmin(func, x0[0], args=(data,), disp=0)
+
+            return loc[0], scale_mle(loc, data)
 
 
 rayleigh = rayleigh_gen(a=0.0, name="rayleigh")
