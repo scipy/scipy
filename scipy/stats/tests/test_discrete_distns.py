@@ -31,31 +31,31 @@ def test_hypergeom_logpmf():
 
 def test_nhypergeom_pmf():
     # test with hypergeom
-    N, K, r = 45, 13, 8
+    M, n, r = 45, 13, 8
     k = 6
-    NHG = nhypergeom.pmf(k, N, K, r)
-    HG = hypergeom.pmf(k, N, K, k+r-1) * (N - K - (r-1)) / (N - (k+r-1))
+    NHG = nhypergeom.pmf(k, M, n, r)
+    HG = hypergeom.pmf(k, M, n, k+r-1) * (M - n - (r-1)) / (M - (k+r-1))
     assert_allclose(HG, NHG, rtol=1e-10)
 
 
 def test_nhypergeom_pmfcdf():
     # test pmf and cdf with arbitrary values.
-    N = 8
-    K = 3
+    M = 8
+    n = 3
     r = 4
-    support = np.arange(K+1)
-    pmf = nhypergeom.pmf(support, N, K, r)
-    cdf = nhypergeom.cdf(support, N, K, r)
+    support = np.arange(n+1)
+    pmf = nhypergeom.pmf(support, M, n, r)
+    cdf = nhypergeom.cdf(support, M, n, r)
     assert_allclose(pmf, [1/14, 3/14, 5/14, 5/14], rtol=1e-13)
     assert_allclose(cdf, [1/14, 4/14, 9/14, 1.0], rtol=1e-13)
 
 
 def test_nhypergeom_r0():
     # test with `r = 0`.
-    N = 10
-    K = 3
+    M = 10
+    n = 3
     r = 0
-    pmf = nhypergeom.pmf([[0, 1, 2, 0], [1, 2, 0, 3]], N, K, r)
+    pmf = nhypergeom.pmf([[0, 1, 2, 0], [1, 2, 0, 3]], M, n, r)
     assert_allclose(pmf, [[1, 0, 0, 1], [0, 0, 1, 0]], rtol=1e-13)
 
 

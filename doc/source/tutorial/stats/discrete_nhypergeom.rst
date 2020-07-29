@@ -4,19 +4,19 @@
 Negative Hypergeometric Distribution
 ====================================
 
-Consider a box containing :math:`N` balls: :math:`K` red and :math:`N-K` blue. We randomly sample balls from the box, one at a time and *without* replacement, until we have picked :math:`r` blue balls. `nhypergeom` is the distribution of the number of red balls :math:`k` we have picked.
+Consider a box containing :math:`M` balls: :math:`n` red and :math:`M-n` blue. We randomly sample balls from the box, one at a time and *without* replacement, until we have picked :math:`r` blue balls. `nhypergeom` is the distribution of the number of red balls :math:`k` we have picked.
 
 .. math::
    :nowrap:
 
     \begin{eqnarray*}
-    p(k;N,K,r) & = & \frac{\left(\begin{array}{c} k+r-1\\ k\end{array}\right)\left(\begin{array}{c} N-r-k\\ K-k\end{array}\right)}{\left(\begin{array}{c} N\\ K\end{array}\right)}\quad 0 \leq k \leq N-K,\\
-    F(x;N,K,r) & = & \sum_{k=0}^{\left\lfloor x\right\rfloor }p\left(k;N,K,r\right),\\
-    \mu & = & \frac{rK}{N-K+1},\\
-    \mu_{2} & = & \frac{rK(N+1)}{(N-K+1)(N-K+2)}\left(1-\frac{r}{N-K+1}\right)
+    p(k;M,n,r) & = & \frac{\left(\begin{array}{c} k+r-1\\ k\end{array}\right)\left(\begin{array}{c} M-r-k\\ n-k\end{array}\right)}{\left(\begin{array}{c} M\\ n\end{array}\right)}\quad 0 \leq k \leq M-n,\\
+    F(x;M,n,r) & = & \sum_{k=0}^{\left\lfloor x\right\rfloor }p\left(k;M,n,r\right),\\
+    \mu & = & \frac{rn}{M-n+1},\\
+    \mu_{2} & = & \frac{rn(M+1)}{(M-n+1)(M-n+2)}\left(1-\frac{r}{M-n+1}\right)
     \end{eqnarray*}
 
-for :math:`k \in 0, 1, 2, ..., K`, where the binomial coefficients are defined as,
+for :math:`k \in 0, 1, 2, ..., n`, where the binomial coefficients are defined as,
 
 .. math::
    :nowrap:

@@ -529,8 +529,8 @@ hypergeom = hypergeom_gen(name='hypergeom')
 class nhypergeom_gen(rv_discrete):
     r"""A negative hypergeometric discrete random variable.
 
-    Consider a box containing :math:`N` balls:, :math:`K` red and
-    :math:`N-K` blue. We randomly sample balls from the box, one
+    Consider a box containing :math:`M` balls:, :math:`n` red and
+    :math:`M-n` blue. We randomly sample balls from the box, one
     at a time and *without* replacement, until we have picked :math:`r`
     blue balls. `nhypergeom` is the distribution of the number of
     red balls :math:`k` we have picked.
@@ -539,16 +539,16 @@ class nhypergeom_gen(rv_discrete):
 
     Notes
     -----
-    The symbols used to denote the shape parameters (`N`, `K`, and `r`) are not
+    The symbols used to denote the shape parameters (`M`, `n`, and `r`) are not
     universally accepted. See the Examples for a clarification of the
     definitions used here.
 
     The probability mass function is defined as,
 
-    .. math:: f(k; N, K, r) = \frac{{{k+r-1}\choose{k}}{{N-r-k}\choose{K-k}}}
-                                   {{N \choose K}}
+    .. math:: f(k; M, n, r) = \frac{{{k+r-1}\choose{k}}{{M-r-k}\choose{n-k}}}
+                                   {{M \choose n}}
 
-    for :math:`k \in [0, K]`, :math:`K \in [0, N]`, :math:`r \in [0, N-K]`,
+    for :math:`k \in [0, n]`, :math:`n \in [0, M]`, :math:`r \in [0, M-n]`,
     and the binomial coefficient is:
 
     .. math:: \binom{n}{k} \equiv \frac{n!}{k! (n - k)!}.
@@ -557,10 +557,10 @@ class nhypergeom_gen(rv_discrete):
     samples with :math:`k+r`'th sample being a failure. The former
     can be modelled as a hypergeometric distribution. The probability
     of the latter is simply the number of failures remaining
-    :math:`N-K-(r-1)` divided by the size of the remaining population
-    :math:`N-(k+r-1)`. This relationship can be shown as:
+    :math:`M-n-(r-1)` divided by the size of the remaining population
+    :math:`M-(k+r-1)`. This relationship can be shown as:
 
-    .. math:: NHG(k;N,K,r) = HG(k;N,K,k+r-1)\frac{(N-K-(r-1))}{(N-(k+r-1))}
+    .. math:: NHG(k;M,n,r) = HG(k;M,n,k+r-1)\frac{(M-n-(r-1))}{(M-(k+r-1))}
 
     where :math:`NHG` is probability mass function (PMF) of the
     negative hypergeometric distribution and :math:`HG` is the
@@ -579,9 +579,9 @@ class nhypergeom_gen(rv_discrete):
     aren't dogs (failures), we can initialize a frozen distribution
     and plot the probability mass function:
 
-    >>> N, K, r = [20, 7, 12]
-    >>> rv = nhypergeom(N, K, r)
-    >>> x = np.arange(0, K+2)
+    >>> M, n, r = [20, 7, 12]
+    >>> rv = nhypergeom(M, n, r)
+    >>> x = np.arange(0, n+2)
     >>> pmf_dogs = rv.pmf(x)
 
     >>> fig = plt.figure()
@@ -596,20 +596,20 @@ class nhypergeom_gen(rv_discrete):
     methods directly.  To for example obtain the probability mass
     function, use:
 
-    >>> prb = nhypergeom.pmf(x, N, K, r)
+    >>> prb = nhypergeom.pmf(x, M, n, r)
 
     And to generate random numbers:
 
-    >>> R = nhypergeom.rvs(N, K, r, size=10)
+    >>> R = nhypergeom.rvs(M, n, r, size=10)
 
     To verify the relationship between `hypergeom` and `nhypergeom`, use:
 
     >>> from scipy.stats import hypergeom, nhypergeom
-    >>> N, K, r = 45, 13, 8
+    >>> M, n, r = 45, 13, 8
     >>> k = 6
-    >>> nhypergeom.pmf(k, N, K, r)
+    >>> nhypergeom.pmf(k, M, n, r)
     0.06180776620271643
-    >>> hypergeom.pmf(k, N, K, k+r-1) * (N - K - (r-1)) / (N - (k+r-1))
+    >>> hypergeom.pmf(k, M, n, k+r-1) * (M - n - (r-1)) / (M - (k+r-1))
     0.06180776620271644
 
     See Also
@@ -625,35 +625,35 @@ class nhypergeom_gen(rv_discrete):
            http://www.math.wm.edu/~leemis/chart/UDR/PDFs/Negativehypergeometric.pdf
 
     """
-    def _get_support(self, N, K, r):
-        return 0, K
+    def _get_support(self, M, n, r):
+        return 0, n
 
-    def _argcheck(self, N, K, r):
-        cond = (K >= 0) & (K <= N) & (r >= 0) & (r <= N-K)
+    def _argcheck(self, M, n, r):
+        cond = (n >= 0) & (n <= M) & (r >= 0) & (r <= M-n)
         return cond
 
-    def _logpmf(self, k, N, K, r):
+    def _logpmf(self, k, M, n, r):
         cond = ((r == 0) & (k == 0))
-        result = _lazywhere(~cond, (k, N, K, r),
-                            lambda k, N, K, r:
+        result = _lazywhere(~cond, (k, M, n, r),
+                            lambda k, M, n, r:
                                 (-betaln(k+1, r) + betaln(k+r, 1) -
-                                 betaln(K-k+1, N-r-K+1) + betaln(N-r-k+1, 1) +
-                                 betaln(K+1, N-K+1) - betaln(N+1, 1)),
+                                 betaln(n-k+1, M-r-n+1) + betaln(M-r-k+1, 1) +
+                                 betaln(n+1, M-n+1) - betaln(M+1, 1)),
                             fillvalue=0.0)
         return result
 
-    def _pmf(self, k, N, K, r):
+    def _pmf(self, k, M, n, r):
         # same as the following but numerically more precise
-        # return comb(k+r-1, k) * comb(N-r-k, K-k) / comb(N, K)
-        return exp(self._logpmf(k, N, K, r))
+        # return comb(k+r-1, k) * comb(M-r-k, n-k) / comb(M, n)
+        return exp(self._logpmf(k, M, n, r))
 
-    def _stats(self, N, K, r):
+    def _stats(self, M, n, r):
         # Promote the datatype to at least float
-        # mu = rK / (N-K+1)
-        N, K, r = 1.*N, 1.*K, 1.*r
-        mu = r*K / (N-K+1)
+        # mu = rn / (M-n+1)
+        M, n, r = 1.*M, 1.*n, 1.*r
+        mu = r*n / (M-n+1)
 
-        var = r*(N+1)*K / ((N-K+1)*(N-K+2)) * (1 - r / (N-K+1))
+        var = r*(M+1)*n / ((M-n+1)*(M-n+2)) * (1 - r / (M-n+1))
 
         # The skew and kurtosis are mathematically
         # intractable so return `None`. See [2]_.
