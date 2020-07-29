@@ -62,6 +62,17 @@ class DisjointSet:
     >>> disjoint_set['b']
     3
 
+    Test connectivity:
+
+    >>> disjoint_set.connected(1, 2)
+    True
+    >>> disjoint_set.connected(1, 'b')
+    False
+
+    List elements in disjoint set:
+
+    >>> list(disjoint_set)
+    [1, 2, 3, 'a', 'b']
     """
     def __init__(self):
         self.n_nodes = 0
@@ -81,6 +92,9 @@ class DisjointSet:
 
     def __getitem__(self, x):
         """Find the root node of `x`.
+
+        The node is added to the disjoint set if not already present, in which
+        case the node is its own root.
 
         Parameters
         ----------
@@ -115,8 +129,9 @@ class DisjointSet:
         parent). If the subsets are of equal size, the root node which was
         first inserted into the disjoint set is selected as the parent.
 
-        If neither `x` nor `y` has been previously seen, `x` is
-        inserted into the disjoint set before `y`.
+        Nodes which are not already present are added to the disjoint set. If        
+        neither node is present, `x` is inserted into the disjoint set before
+        `y`.
 
         Parameters
         ----------
