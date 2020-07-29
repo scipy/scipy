@@ -2366,6 +2366,13 @@ class TestMoments(object):
             s = stats.skew(a, axis=1, nan_policy="propagate")
         np.testing.assert_allclose(s, [0, np.nan], atol=1e-15)
 
+    def test_skew_omit_nan(self):
+        # Test that skew returns a scalar when nan_policy is omit
+        # https://github.com/scipy/scipy/issues/12548
+        s = stats.skew([1, 5, 4, 6, np.nan], nan_policy='omit')
+        np.testing.assert_allclose(s, -0.68724319)
+        assert isinstance(s, float)
+
     def test_kurtosis(self):
         # Scalar test case
         y = stats.kurtosis(self.scalar_testcase)

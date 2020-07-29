@@ -2300,7 +2300,9 @@ def skew(a, axis=0, bias=True):
             m3 = np.extract(can_correct, m3)
             nval = ma.sqrt((n-1.0)*n)/(n-2.0)*m3/m2**1.5
             np.place(vals, can_correct, nval)
-    return vals
+    # Add 0 to ensure a scalar result is returned
+    # https://github.com/scipy/scipy/issues/12548
+    return vals + 0
 
 
 def kurtosis(a, axis=0, fisher=True, bias=True):
@@ -2355,10 +2357,13 @@ def kurtosis(a, axis=0, fisher=True, bias=True):
             m4 = np.extract(can_correct, m4)
             nval = 1.0/(n-2)/(n-3)*((n*n-1.0)*m4/m2**2.0-3*(n-1)**2.0)
             np.place(vals, can_correct, nval+3.0)
+
+    # Add 0 to ensure a scalar result is returned
+    # https://github.com/scipy/scipy/issues/12548
     if fisher:
         return vals - 3
     else:
-        return vals
+        return vals + 0
 
 
 DescribeResult = namedtuple('DescribeResult', ('nobs', 'minmax', 'mean',
