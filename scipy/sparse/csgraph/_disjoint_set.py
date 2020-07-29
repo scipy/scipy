@@ -47,18 +47,18 @@ class DisjointSet:
 
     >>> disjoint_set.merge(1, 2)
     True
-    >>> disjoint_set.merge(3, 'x')
+    >>> disjoint_set.merge(3, 'a')
     True
-    >>> disjoint_set.merge('x', 'y')
+    >>> disjoint_set.merge('a', 'b')
     True
-    >>> disjoint_set.merge('y', 'y')
+    >>> disjoint_set.merge('b', 'b')
     False
 
     Find root nodes:
 
     >>> disjoint_set[2]
     1
-    >>> disjoint_set['y']
+    >>> disjoint_set['b']
     3
 
     """
@@ -98,30 +98,30 @@ class DisjointSet:
             x = parents[x]
         return x
 
-    def merge(self, a, b):
-        """Merge the subsets of `a` and `b`.
+    def merge(self, x, y):
+        """Merge the subsets of `x` and `y`.
 
         The smaller subset (the child) is merged into the larger subset (the
         parent).
 
         Parameters
         ----------
-        a, b : hashable object
+        x, y : hashable object
             Nodes to merge.
 
         Returns
         -------
         merged : bool
-            True if `a` and `b` were in disjoint sets, False otherwise.
+            True if `x` and `y` were in disjoint sets, False otherwise.
         """
-        a = self[a]
-        b = self[b]
-        if self._indices[a] == self._indices[b]:
+        x = self[x]
+        y = self[y]
+        if self._indices[x] == self._indices[y]:
             return False
 
-        if self._sizes[a] < self._sizes[b]:
-            a, b = b, a
-        self._parents[b] = a
-        self._sizes[a] += self._sizes[b]
+        if self._sizes[x] < self._sizes[y]:
+            x, y = y, x
+        self._parents[y] = x
+        self._sizes[x] += self._sizes[y]
         self.n_components -= 1
         return True
