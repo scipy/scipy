@@ -97,7 +97,7 @@ def _results_select(full_output, r):
 
 def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
            fprime2=None, x1=None, rtol=0.0,
-           full_output=False, disp=True):
+           full_output=False, disp=True, avoid_out_of_domain=True):
     """
     Find a zero of a real or complex function using the Newton-Raphson
     (or secant or Halley's) method.
@@ -158,6 +158,11 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
         Ignored if `x0` is not scalar.
         *Note: this has little to do with displaying, however,
         the `disp` keyword cannot be renamed for backwards compatibility.*
+    avoid_out_of_domain : bool, optional
+        If True, try to backtrack to previously known point if the
+        algorithm steps out of the domain of the function. Otherwise,
+        iteration will likely fail to converge and raise a RuntimeError.
+        Default to True.
 
     Returns
     -------
@@ -362,7 +367,7 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
                 q1 = func(p1, *args)
                 funcalls += 1
                 itr += 1
-                if np.isfinite(q1):
+                if not avoid_out_of_domain or np.isfinite(q1):
                     break
                 else:
                     # We stepped outside the domain of the function,
