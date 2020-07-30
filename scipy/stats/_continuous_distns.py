@@ -6023,12 +6023,10 @@ class pearson3_gen(rv_continuous):
         return np.ones(np.shape(skew), dtype=bool)
 
     def _stats(self, skew):
-        _, _, _, _, _, beta, alpha, zeta = (
-            self._preprocess([1], skew))
-        m = zeta + alpha / beta
-        v = alpha / (beta**2)
-        s = 2.0 / (alpha**0.5) * np.sign(beta)
-        k = 6.0 / alpha
+        m = 0
+        v = 1
+        s = skew
+        k = 1.5*skew**2
         return m, v, s, k
 
     def _pdf(self, x, skew):
