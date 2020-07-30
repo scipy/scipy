@@ -3555,7 +3555,7 @@ def _dendrogram_calculate_info(Z, p, truncate_mode,
         nb = 1
         db = 0.0
 
-    if count_sort == 'ascending' or count_sort is True:
+    if count_sort == 'ascending' or count_sort == True:
         # If a has a count greater than b, it and its descendents should
         # be drawn to the right. Otherwise, to the left.
         if na > nb:
@@ -3576,7 +3576,7 @@ def _dendrogram_calculate_info(Z, p, truncate_mode,
         else:
             ua = ab
             ub = aa
-    elif distance_sort == 'ascending' or distance_sort:
+    elif distance_sort == 'ascending' or distance_sort == True:
         # If a has a distance greater than b, it and its descendents should
         # be drawn to the right. Otherwise, to the left.
         if da > db:
