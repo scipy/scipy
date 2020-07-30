@@ -126,7 +126,7 @@ jobs:
       choco install -y mingw --forcex86 --force --version=6.4.0
     displayName: 'Install 32-bit mingw for 32-bit builds'
     condition: and(succeeded(), eq(variables['BITS'], 32))
-  - script: python -m pip install numpy cython==0.29.18 pybind11 pytest pytest-timeout pytest-xdist pytest-env pytest-cov Pillow mpmath
+  - script: python -m pip install numpy cython==0.29.18 pybind11 pytest==5.4.3 pytest-timeout pytest-xdist pytest-env pytest-cov Pillow mpmath
     displayName: 'Install dependencies'
   - powershell: |
       python -m pip install matplotlib
