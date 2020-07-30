@@ -5953,22 +5953,23 @@ class pearson3_gen(rv_continuous):
 
     .. math::
 
-        f(x, skew) = \frac{|\beta|}{\Gamma(\alpha)}
-                     (\beta (x - \zeta))^{\alpha - 1}
-                     \exp(-\beta (x - \zeta))
+        f(x, \kappa) = \frac{|\beta|}{\Gamma(\alpha)}
+                       (\beta (x - \zeta))^{\alpha - 1}
+                       \exp(-\beta (x - \zeta))
 
     where:
 
     .. math::
 
-            \beta = \frac{2}{skew  stddev}
+            \beta = \frac{2}{\kappa}
 
-            \alpha = (stddev \beta)^2
+            \alpha = \beta^2 = \frac{4}{\kappa**2}
 
-            \zeta = loc - \frac{\alpha}{\beta}
+            \zeta = -\frac{\alpha}{\beta} = -\beta
 
     :math:`\Gamma` is the gamma function (`scipy.special.gamma`).
-    `pearson3` takes ``skew`` as a shape parameter for :math:`skew`.
+    Pass the skew :math:`\kappa` into `pearson3` as the shape parameter
+    ``skew``.
 
     %(after_notes)s
 
