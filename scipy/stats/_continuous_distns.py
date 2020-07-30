@@ -5963,7 +5963,7 @@ class pearson3_gen(rv_continuous):
 
             \beta = \frac{2}{\kappa}
 
-            \alpha = \beta^2 = \frac{4}{\kappa**2}
+            \alpha = \beta^2 = \frac{4}{\kappa^2}
 
             \zeta = -\frac{\alpha}{\beta} = -\beta
 
@@ -6057,22 +6057,23 @@ class pearson3_gen(rv_continuous):
         return ans
 
     def _cdf(self, x, skew):
-        ans, x, transx, mask, invmask, beta, alpha, zeta = (
+        ans, x, transx, mask, invmask, _, alpha, _ = (
             self._preprocess(x, skew))
 
         ans[mask] = _norm_cdf(x[mask])
-        invmask1 = np.logical_and(invmask, skew > 0)
-        transx1 = beta[invmask1] * (x[invmask1] - zeta[invmask1])
-        ans[invmask1] = gamma._cdf(transx1, alpha[invmask1])
+
+        invmask1a = np.logical_and(invmask, skew > 0)
+        invmask1b = skew[invmask] > 0
+        ans[invmask1a] = gamma._cdf(transx[invmask1b], alpha[invmask1b])
 
         # The gamma._cdf approach wasn't working with negative skew.
         # Note that multiplying the skew by -1 reflects about x=0.
         # So instead of evaluating the CDF with negative skew at x,
         # evaluate the SF with positive skew at -x.
-        invmask2 = np.logical_and(invmask, skew < 0)
-        transx2 = -beta[invmask2] * (-x[invmask2] + zeta[invmask2])
-        # gamma._sf produces NaNs when transx2 < 0, so use gamma.sf
-        ans[invmask2] = gamma.sf(transx2, alpha[invmask2])
+        invmask2a = np.logical_and(invmask, skew < 0)
+        invmask2b = skew[invmask] < 0
+        # gamma._sf produces NaNs when transx < 0, so use gamma.sf
+        ans[invmask2a] = gamma.sf(transx[invmask2b], alpha[invmask2b])
 
         return ans
 
