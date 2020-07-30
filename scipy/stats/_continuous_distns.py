@@ -6430,16 +6430,31 @@ class rayleigh_gen(rv_continuous):
 
             x0, ll, restore, args = self._reduce_func((loc, scale), kwds)
 
+            opt = _fit_determine_opt(kwds.pop('optimizer', optimize.fmin))
+
             # wrap LL to optimize over `loc`
             def func(loc, data):
                 return ll([loc, scale_mle(loc, data)], data)
 
-            loc = optimize.fmin(func, x0[0], args=(data,), disp=0)
+            loc = opt(func, x0[0], args=(data,), disp=0)
 
             return loc[0], scale_mle(loc, data)
 
 
 rayleigh = rayleigh_gen(a=0.0, name="rayleigh")
+
+
+def _fit_determine_opt(optimizer):
+    if not callable(optimizer) and isinstance(optimizer, str):
+        if not optimizer.startswith('fmin_'):
+            optimizer = "fmin_"+optimizer
+        if optimizer == 'fmin_':
+            optimizer = 'fmin'
+        try:
+            optimizer = getattr(optimize, optimizer)
+        except AttributeError as e:
+            raise ValueError("%s is not a valid optimizer" % optimizer) from e
+    return optimizer
 
 
 class reciprocal_gen(rv_continuous):
