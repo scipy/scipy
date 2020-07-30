@@ -141,7 +141,8 @@ def configuration(parent_package='',top_path=None):
 
     # logiv
     config.add_extension('_logiv',
-                         sources=['_logiv.c'])
+                         sources=['_logiv.c'],
+                         define_macros=define_macros)
 
     # testing for _round.h
     config.add_extension('_test_round',
