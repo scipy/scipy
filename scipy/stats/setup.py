@@ -27,7 +27,9 @@ def configuration(parent_package='',top_path=None):
     config.add_extension('mvn',
         sources=['mvn.pyf','mvndst.f'],
     )
-
+        
+    # What do I add here to build Rectangle?
+    
     return config
 
 
