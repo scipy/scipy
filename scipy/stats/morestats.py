@@ -2312,7 +2312,7 @@ def bartlett(*args):
 LeveneResult = namedtuple('LeveneResult', ('statistic', 'pvalue'))
 
 
-def levene(*args, **kwds):
+def levene(*args, center='median', proportiontocut=0.05):
     """
     Perform Levene test for equal variances.
 
@@ -2386,17 +2386,8 @@ def levene(*args, **kwds):
     >>> [np.var(x, ddof=1) for x in [a, b, c]]
     [0.007054444444444413, 0.13073888888888888, 0.008890000000000002]
     """
-    # Handle keyword arguments.
-    center = 'median'
-    proportiontocut = 0.05
-    for kw, value in kwds.items():
-        if kw not in ['center', 'proportiontocut']:
-            raise TypeError("levene() got an unexpected keyword "
-                            "argument '%s'" % kw)
-        if kw == 'center':
-            center = value
-        else:
-            proportiontocut = value
+    if center not in ['mean', 'median', 'trimmed']:
+        raise ValueError("center must be 'mean', 'median' or 'trimmed'.")
 
     k = len(args)
     if k < 2:
@@ -2408,10 +2399,6 @@ def levene(*args, **kwds):
 
     Ni = np.empty(k)
     Yci = np.empty(k, 'd')
-
-    if center not in ['mean', 'median', 'trimmed']:
-        raise ValueError("Keyword argument <center> must be 'mean', 'median'"
-                         " or 'trimmed'.")
 
     if center == 'median':
         func = lambda x: np.median(x, axis=0)
@@ -2561,7 +2548,7 @@ def _apply_func(x, g, func):
 FlignerResult = namedtuple('FlignerResult', ('statistic', 'pvalue'))
 
 
-def fligner(*args, **kwds):
+def fligner(*args, center='median', proportiontocut=0.05):
     """
     Perform Fligner-Killeen test for equality of variance.
 
@@ -2648,30 +2635,17 @@ def fligner(*args, **kwds):
     >>> [np.var(x, ddof=1) for x in [a, b, c]]
     [0.007054444444444413, 0.13073888888888888, 0.008890000000000002]
     """
+    if center not in ['mean', 'median', 'trimmed']:
+        raise ValueError("center must be 'mean', 'median' or 'trimmed'.")
+
     # Handle empty input
     for a in args:
         if np.asanyarray(a).size == 0:
             return FlignerResult(np.nan, np.nan)
 
-    # Handle keyword arguments.
-    center = 'median'
-    proportiontocut = 0.05
-    for kw, value in kwds.items():
-        if kw not in ['center', 'proportiontocut']:
-            raise TypeError("fligner() got an unexpected keyword "
-                            "argument '%s'" % kw)
-        if kw == 'center':
-            center = value
-        else:
-            proportiontocut = value
-
     k = len(args)
     if k < 2:
         raise ValueError("Must enter at least two input sample vectors.")
-
-    if center not in ['mean', 'median', 'trimmed']:
-        raise ValueError("Keyword argument <center> must be 'mean', 'median'"
-                        " or 'trimmed'.")
 
     if center == 'median':
         func = lambda x: np.median(x, axis=0)
@@ -3085,7 +3059,8 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
     return WilcoxonResult(T, prob)
 
 
-def median_test(*args, **kwds):
+def median_test(*args, ties='below', correction=True, lambda_=1,
+                nan_policy='propagate'):
     """
     Perform a Mood's median test.
 
@@ -3224,16 +3199,6 @@ def median_test(*args, **kwds):
     choice of `ties`.
 
     """
-    ties = kwds.pop('ties', 'below')
-    correction = kwds.pop('correction', True)
-    lambda_ = kwds.pop('lambda_', None)
-    nan_policy = kwds.pop('nan_policy', 'propagate')
-
-    if len(kwds) > 0:
-        bad_kwd = kwds.keys()[0]
-        raise TypeError("median_test() got an unexpected keyword "
-                        "argument %r" % bad_kwd)
-
     if len(args) < 2:
         raise ValueError('median_test requires two or more samples.')
 
