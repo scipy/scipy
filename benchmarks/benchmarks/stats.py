@@ -174,3 +174,24 @@ class BinnedStatisticDD(Benchmark):
         stats.binned_statistic_dd(
             [self.inp[0], self.inp[1]], self.inp[2], statistic=statistic,
             binned_statistic_result=self.ret)
+
+
+class ContinuousFitAnalyticalMLEOverride(Benchmark):
+    pretty_name = "Fit Methods Overriden with Analytical MLEs"
+    param_names = ['distribution name']
+    params = ["pareto", "laplace"]
+
+    distributions = {"pareto": {"self": stats.pareto, "shapes": {"b": 2},
+                                "fixed_param": {"floc": 0}},
+                     "laplace": {"self": stats.laplace, "shapes": {},
+                                 "fixed_param": {}}
+                     }
+
+    def setup(self, dist_name):
+        self.distn = self.distributions[dist_name]["self"]
+        self.shapes = self.distributions[dist_name]["shapes"]
+        self.fixed_param = self.distributions[dist_name]["fixed_param"]
+        self.data = self.distn.rvs(size=10000, **self.shapes)
+
+    def time_fit(self, distn):
+        self.distn.fit(self.data, **self.fixed_param)
