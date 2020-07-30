@@ -6024,8 +6024,8 @@ class pearson3_gen(rv_continuous):
         return np.ones(np.shape(skew), dtype=bool)
 
     def _stats(self, skew):
-        m = 0
-        v = 1
+        m = 0.0
+        v = 1.0
         s = skew
         k = 1.5*skew**2
         return m, v, s, k
