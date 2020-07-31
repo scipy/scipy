@@ -2302,7 +2302,7 @@ def skew(a, axis=0, bias=True):
             np.place(vals, can_correct, nval)
     # Add 0 to ensure a scalar result is returned
     # https://github.com/scipy/scipy/issues/12548
-    return vals + 0
+    return vals.data + 0
 
 
 def kurtosis(a, axis=0, fisher=True, bias=True):
@@ -2360,6 +2360,7 @@ def kurtosis(a, axis=0, fisher=True, bias=True):
 
     # Add 0 to ensure a scalar result is returned
     # https://github.com/scipy/scipy/issues/12548
+    vals = vals.data
     if fisher:
         return vals - 3
     else:
