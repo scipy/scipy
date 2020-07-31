@@ -149,60 +149,47 @@ def _get_wilcoxon_distr(n):
 
 
 def _ct_to_lists(table):
+    """Convert contingency table to equivalent lists of rankings"""
     table = np.array(table, copy=False, dtype=int)
-    r, s = table.shape
     n = table.sum()
     x = np.zeros(n, dtype=int)
     y = np.zeros(n, dtype=int)
     k = 0
     for i, row in enumerate(table):
         for j, val in enumerate(row):
-            x[k:k+val] = r-i
-            y[k:k+val] = s-j
+            x[k:k+val] = i + 1
+            y[k:k+val] = j + 1
             k += val
     return x, y
 
 
 def _lists_to_ct(x, y):
+    """Convert lists of rankings to contingency table"""
     n = len(x)
     z = np.zeros((n,), dtype='i4, i4')
     z['f0'], z['f1'] = x, y
     z_unique, z_count = np.unique(z, return_counts=True)
     r, s = np.max(x), np.max(y)
     table = np.zeros((r, s), dtype=int)
-    table[r-z_unique['f0'], s-z_unique['f1']] = z_count
+    table[z_unique['f0']-1, z_unique['f1']-1] = z_count
     return table
 
 
-def _ri(A, i):
-    return A[i, :].sum()
-
-
-def _Sigma_ri_2(A):
-    return (A.sum(axis=1)**2).sum()
-
-
-def _cj(A, j):
-    return A[:, j].sum()
-
-
-def _Sigma_cj_2(A):
-    return (A.sum(axis=0)**2).sum()
-
-
-def _N(A):
-    return A.sum()
-
-
 def _Aij(A, i, j):
+    """Sum of upper-left and lower right blocks of contingency table"""
+    # See [2] bottom of page 309
     return A[:i, :j].sum() + A[i+1:, j+1:].sum()
 
 
 def _Dij(A, i, j):
+    """Sum of lower-left and upper-right blocks of contingency table"""
+    # See [2] bottom of page 309
     return A[i+1:, :j].sum() + A[:i, j+1:].sum()
 
 
 def _P(A):
+    """Twice the number of concordant pairs, excluding ties."""
+    # See [2] bottom of page 309
     m, n = A.shape
     count = 0
     for i in range(m):
@@ -212,6 +199,8 @@ def _P(A):
 
 
 def _Q(A):
+    """Twice the number of discordant pairs, excluding ties."""
+    # See [2] bottom of page 309
     m, n = A.shape
     count = 0
     for i in range(m):
@@ -221,6 +210,8 @@ def _Q(A):
 
 
 def _a_ij_Aij_Dij2(A):
+    """A term that appears in the ASE of Kendall's tau and Somers' D"""
+    # See [2] section 4: Modified ASEs to test the null hypothesis...
     m, n = A.shape
     count = 0
     for i in range(m):
@@ -230,53 +221,54 @@ def _a_ij_Aij_Dij2(A):
 
 
 def _tau_b(A):
-    NA = _N(A)
-    NA2 = NA**2
+    """Calculate Kendall's tau-b and p-value from contingency table"""
+    # See [2] 2.2 and 4.2
+    NA = A.sum()
     PA = _P(A)
     QA = _Q(A)
-    Sri2 = _Sigma_ri_2(A)
-    Scj2 = _Sigma_cj_2(A)
-    denominator = (NA2 - Sri2)*(NA2 - Scj2)
+    Sri2 = (A.sum(axis=1)**2).sum()
+    Scj2 = (A.sum(axis=0)**2).sum()
+    denominator = (NA**2 - Sri2)*(NA**2 - Scj2)
+
     tau = (PA-QA)/(denominator)**0.5
 
-    term1 = _a_ij_Aij_Dij2(A)
-    numerator = 4*(term1 - (PA - QA)**2 / NA)
+    numerator = 4*(_a_ij_Aij_Dij2(A) - (PA - QA)**2 / NA)
     s02_tau_b = numerator/denominator
 
-    if tau >= 0:
-        p = norm.sf(tau/s02_tau_b**0.5)
-    else:
-        p = norm.cdf(tau/s02_tau_b**0.5)
+    Z = tau/s02_tau_b**0.5
+    p = 2*norm.sf(abs(Z))  # 2-sided p-value
 
     return tau, p
 
 
 def _tau_c(A):
+    """Calculate Kendall's tau-b and p-value from contingency table"""
+    # See [2] 2.3 and 4.3
     m = min(A.shape)
-    n = _N(A)
+    n = A.sum()
     PA = _P(A)
     QA = _Q(A)
     tau = m*(PA-QA)/(n**2*(m-1))
 
     Z = (PA - QA)/(4*(_a_ij_Aij_Dij2(A) - (PA-QA)**2/n))**0.5
-    if tau >= 0:
-        p = norm.sf(Z)
-    else:
-        p = norm.cdf(Z)
+    p = 2*norm.sf(abs(Z))  # 2-sided p-value
 
     return tau, p
 
 
 def _somers_d(A):
-    NA = _N(A)
+    """Calculate Somers' D and p-value from contingency table"""
+    # See [3] page 1740
+    NA = A.sum()
     NA2 = NA**2
     PA = _P(A)
     QA = _Q(A)
-    Sri2 = _Sigma_ri_2(A)
+    Sri2 = (A.sum(axis=1)**2).sum()
     d = (PA-QA)/(NA2 - Sri2)
 
     Z = (PA - QA)/(4*(_a_ij_Aij_Dij2(A) - (PA-QA)**2/NA))**0.5
-    p = 2*norm.sf(abs(Z))
+    p = 2*norm.sf(abs(Z))  # 2-sided p-value
+
     return d, p
 
 
@@ -284,8 +276,8 @@ class SomersDResult:
     """
     A placeholder until we figure out how new stats results should be returned
     """
-    def __init__(self, statistic, pvalue):
-        self.statistic, self.pvalue = statistic, pvalue
+    def __init__(self, statistic, pvalue, table):
+        self.statistic, self.pvalue, self.table, = statistic, pvalue, table
 
 
 def somersd(x, y=None):
@@ -294,7 +286,7 @@ def somersd(x, y=None):
 
     Like Kendall's :math:`\tau`, Somers' :math:`D` is a measure of the
     correspondence between two rankings. Both statistics consider the
-    difference between the number of concordant and discordant pairs in
+    difference between the number of concordant and discordant pairs in two
     rankings :math:`X` and :math:`Y`, and both are normalized such that values
     close  to 1 indicate strong agreement and values close to -1 indicate
     strong disagreement. They differ in how they are normalized. To show the
@@ -302,37 +294,45 @@ def somersd(x, y=None):
     :math:`\tau_a`:
 
     .. math::
-        D(X, Y) = \frac{\tau_a(X, Y)}{\tau_a(X, X)}
-
-    Note that Somers' :math:`D` is asymmetric: in general,
-    :math:`D(X, Y) \neq D(Y, X)`.
+        D(Y|X) = \frac{\tau_a(X, Y)}{\tau_a(X, X)}
 
     Suppose the first ranking :math:`X` has :math:`r` distinct ranks and the
     second ranking :math:`Y` has :math:`s` distinct ranks. These two lists of
     :math:`n` rankings can also be viewed as an :math:`r \\times s` contingency
-    table in which element :math:`i, j` is the number of rank pairs with scored
-    :math:`i` on the first scale and :math:`j` on the second scale.
-    Accordingly, `somersd` allows the input data to be supplied either as a
-    single 2D contingency table instead of form two separate 1D rankings.
+    table in which element :math:`i, j` is the number of rank pairs with rank
+    :math:`i` in ranking :math:`X` and rank :math:`j` in ranking :math:`Y`.
+    Accordingly, `somersd` also allows the input data to be supplied as a
+    single, 2D contingency table instead of as two separate, 1D rankings.
+
+    Note that the definition of Somers' :math:`D` is asymmetric: in general,
+    :math:`D(Y|X) \neq D(X|Y)`. ``somersd(x, y)`` calculates Somers'
+    :math:`D(Y|X)`: the "row" variable :math:`X` is treated as an independent
+    variable, and the "column" variable :math:`Y` is dependent. For Somers'
+    :math:`D(X|Y)`, swap the input lists or transpose the input table.
 
     Parameters
     ----------
     x: array_like
-        1D array of rankings.
+        1D array of rankings, treated as the (row) independent variable.
+        Alternatively, a 2D contingency table.
     y: array_like
         If `x` is a 1D array of rankings, `y` is a 1D array of rankings of the
-        same length. If `x` is 2D, `y` is ignored.
+        same length, treated as the (column) dependent variable.
+        If `x` is 2D, `y` is ignored.
 
     Returns
     -------
-    correlation : float
-       The Somers' :math:`D` statistic.
-    pvalue : float
-       The two-sided p-value for a hypothesis test whose null hypothesis is
-       an absence of association, :math:`D=0`.
-    table : 2D array
-       The contingency table formed from rankings `x` and `y` (or the
-       provided contingency table, if `x` is a 2D array)
+    res : SomersDResult
+        A `SomersDResult` object with the following fields:
+
+            correlation : float
+               The Somers' :math:`D` statistic.
+            pvalue : float
+               The two-sided p-value for a hypothesis test whose null
+               hypothesis is an absence of association, :math:`D=0`.
+            table : 2D array
+               The contingency table formed from rankings `x` and `y` (or the
+               provided contingency table, if `x` is a 2D array)
 
     See Also
     --------
@@ -343,24 +343,82 @@ def somersd(x, y=None):
 
     Notes
     -----
-    This function follows the contingency table approach of [1]_ rather than
-    relying on  `scipy.stats.kendalltau`.
+    This function follows the contingency table approach of [2]_ and
+    [3]_ rather than relying on `scipy.stats.kendalltau`, and *p*-values
+    are computed based on an asymptotic approximation. Theoretically,
+    the *p*-values corresponding with hypothesis tests based on :math:'tau'
+    and :math:'D' should be identical, but the *p*-values returned by
+    `scipy.stats.kendalltau` are based on a different approximation.
+
+    Contingency tables are formatted according to the convention used by
+    SAS and R: the first ranking supplied (``x``) is the "row" variable, and
+    the second ranking supplied (``y``) is the "column" variable. This is
+    opposite the convention of Somers' original paper [1]_.
 
     References
     ----------
-    .. [1] Morton B. Brown and Jacqueline K. Benedetti, "Sampling Behavior of
-           Tests for Correlation in Two-Way Contingency Tables", Journal of the
-           American Statistical Association Vol. 72, No. 358, pp. 309, 1938.
+    .. [1] Robert H. Somers, "A New Asymmetric Measure of Association for
+           Ordinal Variables", *American Sociological Review*, Vol. 27, No. 6,
+           pp. 799--811, 1962.
+
+    .. [2] Morton B. Brown and Jacqueline K. Benedetti, "Sampling Behavior of
+           Tests for Correlation in Two-Way Contingency Tables", *Journal of the
+           American Statistical Association* Vol. 72, No. 358, pp. 309--315,
+           1977.
+
+    .. [3] SAS Institute, Inc., "The FREQ Procedure (Book Excerpt)",
+           *SAS/STAT 9.2 User's Guide, Second Edition*, SAS Publishing, 2009.
+
+    .. [4] Laerd Statistics, "Somers' d using SPSS Statistics", *SPSS
+           Statistics Tutorials and Statistical Guides*,
+           https://statistics.laerd.com/spss-tutorials/somers-d-using-spss-statistics.php,
+           Accessed July 31, 2020.
 
     Examples
     --------
->>> from scipy import stats
->>> table = [[3, 5, 2], [1, 7, 6]]
->>> res = stats.somersd(table)
+    We calculate Somers' D for the example given in [4]_, in which a hotel
+    chain owner seeks to determine the association between hotel room
+    cleanliness and customer satisfaction. The independent variable, hotel
+    room cleanliness, is ranked on an ordinal scale: "below average (1)",
+    "average (2)", or "above average (3)". The dependent variable, customer
+    satisfaction, is ranked on a second scale: "very dissatisfied (1)",
+    "moderately dissatisfied (2)", "neither dissatisfied nor satisfied (3)",
+    "moderately satisfied (4)", or "very satisfied (5)". 189 customers
+    respond to the survey, and the results are cast into a contingency table
+    with the hotel room cleanliness as the "row" variable and customer
+    satisfaction as the "column" variable.
+
+    +-----+-----+-----+-----+-----+-----+
+    |     | (1) | (2) | (3) | (4) | (5) |
+    +=====+=====+=====+=====+=====+=====+
+    | (1) | 27  | 25  | 14  | 7   | 0   |
+    +-----+-----+-----+-----+-----+-----+
+    | (2) | 7   | 14  | 18  | 35  | 12  |
+    +-----+-----+-----+-----+-----+-----+
+    | (3) | 1   | 3   | 2   | 7   | 17  |
+    +-----+-----+-----+-----+-----+-----+
+
+    For example, 27 customers assigned their room a cleanliness ranking of
+    "below average (1)" and a corresponding satisfaction of "very
+    dissatisfied (1)". We perform the analysis as follows.
+
+>>> from scipy.stats import somersd
+>>> table = [[27, 25, 14, 7, 0], [7, 14, 18, 35, 12], [1, 3, 2, 7, 17]]
+>>> res = somersd(table)
 >>> res.statistic
-    0.34285714285714286
+    0.6032766111513396
 >>> res.pvalue
-    0.09289194088370532
+    1.0007091191074533e-27
+
+    The value of the Somers' D statistic is approximately 0.6, indicating
+    a positive correlation between room cleanliness and customer satisfaction
+    in the sample.
+    The *p*-value is very small, indicating a very small probability of
+    observing such an extreme value of the statistic under the null
+    hypothesis that the statistic of the entire population (from which
+    our sample of 189 customers is drawn) is zero. This supports the
+    alternative hypothesis that the true value of Somers' D for the population
+    is nonzero.
     """
     x, y = np.array(x), np.array(y)
     if x.ndim == 1:
@@ -370,4 +428,4 @@ def somersd(x, y=None):
     else:
         raise ValueError("x must be either a 1D or 2D array")
     d, p = _somers_d(table)
-    return SomersDResult(d, p)
+    return SomersDResult(d, p, table)
