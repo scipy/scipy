@@ -3273,7 +3273,7 @@ class TestRayleigh(object):
         loc, scale = stats.rayleigh.fit(data, floc=rvs_loc)
         assert_equal(loc, rvs_loc)
         assert_equal(scale, scale_expect)
-        # when `fscale` is fixed, superclass fit method is used to determine `loc`. 
+        # when `fscale` is fixed, superclass fit is used to determine `loc`.
         loc, scale = stats.rayleigh.fit(data, fscale=.6)
         assert_equal(scale, .6)
 
@@ -3290,21 +3290,11 @@ class TestRayleigh(object):
         # less than or equal to that of the numerically optimized estimate
         data = stats.rayleigh.rvs(size=250, loc=rvs_loc, scale=rvs_scale)
 
-        loc_scale_super = super(type(stats.rayleigh), stats.rayleigh).fit(data)
-        loc, scale = stats.rayleigh.fit(data)
         # obtain objective function with same method as `rv_continuous.fit`
         args = [data, (stats.rayleigh._fitstart(data), )]
         func = stats.rayleigh._reduce_func(args, {})[1]
-        _assert_lessthan_loglike(stats.rayleigh, data, func)
-        ll__result_override = func((loc, scale), data)
-        ll_result_super = func(loc_scale_super, data)
-        assert ll__result_override < ll_result_super
 
-        # An error is raised if both parameters are fixed
-        assert_raises(RuntimeError, stats.rayleigh.fit, data, floc=rvs_scale,
-                      fscale=rvs_scale)
-        # an error is raised for extra positional arguments
-        assert_raises(TypeError, stats.rayleigh.fit, data, 2)
+        _assert_lessthan_loglike(stats.rayleigh, data, func)
 
     def test_fit_warnings(self):
         assert_fit_warnings(stats.rayleigh, [1, 2, 3], {
