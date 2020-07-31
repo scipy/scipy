@@ -6392,10 +6392,11 @@ class rayleigh_gen(rv_continuous):
             Maximum likelihood estimate for the scale, provided loc.
 
         Notes:
-        If `floc` is fixed, the maximum likelihood scale may be calculated
-        without numerical optimization. Otherwise, numerical optimization
-        from `.rv_continuous` will be  conducted to determine `loc` and its
-        scale based on MLE.
+        If `floc` is provided, the maximum likelihood scale may be calculated
+        without numerical optimization. If `fscale` is provided, it falls back
+        on `.rv_continuous`'s fit method. Otherwise, numerical optimization
+        over the location is used in conjuction with the maximum likelihood
+        estimation equation of the scale.
         """
 
         data, floc, fscale = _check_fit_input_parameters(self, data,
@@ -6406,37 +6407,41 @@ class rayleigh_gen(rv_continuous):
             # and Peacock (2000), Page 175
             return (np.sum((data - loc) ** 2) / (2 * len(data))) ** .5
 
-        """
-        if `floc` is not fixed, provide a `_reduce_func` for `.rv_continuous`
-        to use. '_reduce_func' returns:
-            - the parameter to optimize from `x0`, loc
-            - `func` to minimize, and
-            - `get_tuple` to obtain the dependent parameter, as
-               numerical optimization over `func` only indicates
-               the independent parameter's solution.
-        """
-
         if floc is not None:
-            return floc, scale_mle(floc, data)
+            # `loc` is fixed, analytically determine `scale`.
+            if np.any(data - floc <= 0):
+                raise FitDataError("rayleigh", lower=1, upper=np.inf)
+            else:
+                return floc, scale_mle(floc, data)
         if fscale is not None:
-            # `fscale` is fixed, use standard numerical optimization
+            # `scale` is fixed, but we cannot analytically determine `loc`, so
+            # we use the superclass fit method.
             return super(rayleigh_gen,
                          self).fit(data, *args, **kwds)
         else:
+            # neither are fixed by user, use the analytical MLE for `scale` as
+            # a function of `loc` in numerical optimization of `loc`, injecting
+            # corresponding analytical optimum for `scale`.
+
             # account for user provided guesses
-            loc, scale = self._fitstart(data)
+            loc, scale = self._fitstart(data)  # rv_continuous provided guesses
             loc = kwds.pop('loc', loc)
             scale = kwds.pop('scale', scale)
 
-            x0, ll, restore, args = self._reduce_func((loc, scale), kwds)
+            # the second argument rv_continuous._reduce_func returns is the
+            # log-likelihood function. Its inputs are the initial guesses for
+            # `loc` and `scale`, but these are not modified in the scenario
+            # where neither `floc` or `fscale` is provided in kwds.
+            _, ll, _, _ = self._reduce_func((loc, scale), kwds)
 
-            opt = _fit_determine_opt(kwds.pop('optimizer', optimize.fmin))
+            optimizer = _fit_determine_opt(kwds.pop('optimizer',
+                                                    optimize.fmin))
 
             # wrap LL to optimize over `loc`
             def func(loc, data):
                 return ll([loc, scale_mle(loc, data)], data)
 
-            loc = opt(func, x0[0], args=(data,), disp=0)
+            loc = optimizer(func, loc, args=(data,), disp=0)
 
             return loc[0], scale_mle(loc, data)
 
