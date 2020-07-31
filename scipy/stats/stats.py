@@ -1173,7 +1173,7 @@ def skew(a, axis=0, bias=True, nan_policy='propagate'):
 
     Returns
     -------
-    skewness : ndarray
+    skewness : float or ndarray
         The skewness of values along an axis, returning 0 where all values are
         equal.
 
@@ -1279,7 +1279,7 @@ def kurtosis(a, axis=0, fisher=True, bias=True, nan_policy='propagate'):
 
     Returns
     -------
-    kurtosis : array
+    kurtosis : float or ndarray
         The kurtosis of values along an axis. If all values are equal,
         return -3 for Fisher's definition and 0 for Pearson's definition.
 
