@@ -25,7 +25,8 @@ from ._tukeylambda_stats import (tukeylambda_variance as _tlvar,
 from ._distn_infrastructure import (get_distribution_names, _kurtosis,
                                     _ncx2_cdf, _ncx2_log_pdf, _ncx2_pdf,
                                     rv_continuous, _skew, valarray,
-                                    _get_fixed_fit_value, _check_shape)
+                                    _get_fixed_fit_value, _check_shape,
+                                    _fit_determine_optimizer)
 from ._ksstats import kolmogn, kolmognp, kolmogni
 from ._constants import (_XMIN, _EULER, _ZETA3,
                          _SQRT_2_OVER_PI, _LOG_SQRT_2_OVER_PI)
@@ -6434,8 +6435,8 @@ class rayleigh_gen(rv_continuous):
             # where neither `floc` or `fscale` is provided in kwds.
             _, ll, _, _ = self._reduce_func((loc, scale), kwds)
 
-            optimizer = _fit_determine_opt(kwds.pop('optimizer',
-                                                    optimize.fmin))
+            optimizer = _fit_determine_optimizer(kwds.pop('optimizer',
+                                                          optimize.fmin))
 
             # wrap LL to optimize over `loc`
             def func(loc, data):
@@ -6447,19 +6448,6 @@ class rayleigh_gen(rv_continuous):
 
 
 rayleigh = rayleigh_gen(a=0.0, name="rayleigh")
-
-
-def _fit_determine_opt(optimizer):
-    if not callable(optimizer) and isinstance(optimizer, str):
-        if not optimizer.startswith('fmin_'):
-            optimizer = "fmin_"+optimizer
-        if optimizer == 'fmin_':
-            optimizer = 'fmin'
-        try:
-            optimizer = getattr(optimize, optimizer)
-        except AttributeError as e:
-            raise ValueError("%s is not a valid optimizer" % optimizer) from e
-    return optimizer
 
 
 class reciprocal_gen(rv_continuous):

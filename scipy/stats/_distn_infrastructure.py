@@ -412,6 +412,19 @@ def _kurtosis(data):
     return m4 / m2**2 - 3
 
 
+def _fit_determine_optimizer(optimizer):
+    if not callable(optimizer) and isinstance(optimizer, str):
+        if not optimizer.startswith('fmin_'):
+            optimizer = "fmin_"+optimizer
+        if optimizer == 'fmin_':
+            optimizer = 'fmin'
+        try:
+            optimizer = getattr(optimize, optimizer)
+        except AttributeError as e:
+            raise ValueError("%s is not a valid optimizer" % optimizer) from e
+    return optimizer
+
+
 # Frozen RV class
 class rv_frozen(object):
 
@@ -2375,16 +2388,7 @@ class rv_continuous(rv_generic):
         x0, func, restore, args = self._reduce_func(args, kwds)
         optimizer = kwds.pop('optimizer', optimize.fmin)
         # convert string to function in scipy.optimize
-        if not callable(optimizer) and isinstance(optimizer, str):
-            if not optimizer.startswith('fmin_'):
-                optimizer = "fmin_"+optimizer
-            if optimizer == 'fmin_':
-                optimizer = 'fmin'
-            try:
-                optimizer = getattr(optimize, optimizer)
-            except AttributeError as e:
-                raise ValueError("%s is not a valid optimizer" % optimizer) from e
-
+        optimizer = _fit_determine_optimizer(optimizer)
         # by now kwds must be empty, since everybody took what they needed
         if kwds:
             raise TypeError("Unknown arguments: %s." % kwds)
