@@ -981,7 +981,7 @@ def boxcox(x, lmbda=None, alpha=None):
     -----
     The Box-Cox transform is given by::
 
-        y = (x**lmbda - 1) / lmbda,  for lmbda > 0
+        y = (x**lmbda - 1) / lmbda,  for lmbda != 0
             log(x),                  for lmbda = 0
 
     `boxcox` requires the input data to be positive.  Sometimes a Box-Cox
