@@ -4337,19 +4337,19 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate',
     Calculate Kendall's tau, a correlation measure for ordinal data.
 
     Kendall's tau is a measure of the correspondence between two rankings.
-    Values close to 1 indicate strong agreement, and values close to -1 indicate
-    strong disagreement. This implements two variants of Kendall's tau: tau-b
-    (the default) and tau-c (also known as Stuart's tau-c). These differ only
-    in how they are normalized to lie within the range -1 to 1; the
-    hypothesis tests (their p-values) are identical. Kendall's original tau-a
-    is not implemented separately because both tau-b and tau-c reduce to tau-a
-    in the absence of ties.
+    Values close to 1 indicate strong agreement, and values close to -1
+    indicate strong disagreement. This implements two variants of Kendall's
+    tau: tau-b (the default) and tau-c (also known as Stuart's tau-c). These
+    differ only in how they are normalized to lie within the range -1 to 1;
+    the hypothesis tests (their p-values) are identical. Kendall's original
+    tau-a is not implemented separately because both tau-b and tau-c reduce
+    to tau-a in the absence of ties.
 
     Parameters
     ----------
     x, y : array_like
-        Arrays of rankings, of the same shape. If arrays are not 1-D, they will
-        be flattened to 1-D.
+        Arrays of rankings, of the same shape. If arrays are not 1-D, they
+        will be flattened to 1-D.
     initial_lexsort : bool, optional
         Unused (deprecated).
     nan_policy : {'propagate', 'raise', 'omit'}, optional
@@ -4364,8 +4364,8 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate',
         Defines which method is used to calculate the p-value [5]_.
         The following options are available (default is 'auto'):
 
-          * 'auto': selects the appropriate method based on a trade-off between
-            speed and accuracy
+          * 'auto': selects the appropriate method based on a trade-off
+            between speed and accuracy
           * 'asymptotic': uses a normal approximation valid for large samples
           * 'exact': computes the exact p-value, but is only available when
             no ties are present
@@ -4431,10 +4431,11 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate',
     y = np.asarray(y).ravel()
 
     if x.size != y.size:
-        raise ValueError("All inputs to `kendalltau` must be of the same size, "
-                         "found x-size %s and y-size %s" % (x.size, y.size))
+        raise ValueError("All inputs to `kendalltau` must be of the same "
+                         f"size, found x-size {x.size} and y-size {y.size}")
     elif not x.size or not y.size:
-        return KendalltauResult(np.nan, np.nan)  # Return NaN if arrays are empty
+        # Return NaN if arrays are empty
+        return KendalltauResult(np.nan, np.nan)
 
     # check both x and y
     cnx, npx = _contains_nan(x, nan_policy)
@@ -4509,13 +4510,15 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate',
         raise ValueError("Ties found, exact method cannot be used.")
 
     if method == 'auto':
-        if (xtie == 0 and ytie == 0) and (size <= 33 or min(dis, tot-dis) <= 1):
+        if (xtie == 0 and ytie == 0) and (size <= 33 or
+                                          min(dis, tot-dis) <= 1):
             method = 'exact'
         else:
             method = 'asymptotic'
 
     if xtie == 0 and ytie == 0 and method == 'exact':
-        # Exact p-value, see p. 68 of Maurice G. Kendall, "Rank Correlation Methods" (4th Edition), Charles Griffin & Co., 1970.
+        # Exact p-value, see p. 68 of Maurice G. Kendall, "Rank Correlation
+        # Methods" (4th Edition), Charles Griffin & Co., 1970.
         c = min(dis, tot-dis)
         if size <= 0:
             raise ValueError
@@ -4535,23 +4538,25 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate',
             new = [0.0]*(c+1)
             new[0] = 1.0
             new[1] = 1.0
-            for j in range(3,size+1):
+            for j in range(3, size+1):
                 old = new[:]
-                for k in range(1,min(j,c+1)):
+                for k in range(1, min(j, c+1)):
                     new[k] += new[k-1]
-                for k in range(j,c+1):
+                for k in range(j, c+1):
                     new[k] += new[k-1] - old[k-j]
 
             pvalue = 2.0*sum(new)/math.factorial(size) if size < 171 else 0.0
 
     elif method == 'asymptotic':
         # con_minus_dis is approx normally distributed with this variance [3]_
-        var = (size * (size - 1) * (2.*size + 5) - x1 - y1) / 18. + (
-            2. * xtie * ytie) / (size * (size - 1)) + x0 * y0 / (9. *
-            size * (size - 1) * (size - 2))
-        pvalue = special.erfc(np.abs(con_minus_dis) / np.sqrt(var) / np.sqrt(2))
+        m = size * (size - 1.)
+        var = ((m * (2*size + 5) - x1 - y1) / 18 +
+               (2 * xtie * ytie) / m + x0 * y0 / (9 * m * (size - 2)))
+        pvalue = (special.erfc(np.abs(con_minus_dis) /
+                  np.sqrt(var) / np.sqrt(2)))
     else:
-        raise ValueError("Unknown method "+str(method)+" specified, please use auto, exact or asymptotic.")
+        raise ValueError(f"Unknown method {method} specified.  Use 'auto', "
+                         "'exact' or 'asymptotic'.")
 
     return KendalltauResult(tau, pvalue)
 
