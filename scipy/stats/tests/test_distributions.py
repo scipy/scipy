@@ -3273,7 +3273,7 @@ class TestRayleigh(object):
         loc, scale = stats.rayleigh.fit(data, floc=rvs_loc)
         assert_equal(loc, rvs_loc)
         assert_equal(scale, scale_expect)
-        # when `fscale` is fixed, superclass fit method is used.
+        # when `fscale` is fixed, superclass fit method is used to determine `loc`. 
         loc, scale = stats.rayleigh.fit(data, fscale=.6)
         assert_equal(scale, .6)
 
