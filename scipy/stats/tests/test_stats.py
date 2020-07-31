@@ -1091,8 +1091,10 @@ def test_kendalltau():
     assert_approx_equal(res[1], expected[1])
 
     # this should result in 1 for taub but not tau-c
-    assert_approx_equal(stats.kendalltau([1, 1, 2], [1, 1, 2], variant='b')[0], 1.0)
-    assert_approx_equal(stats.kendalltau([1, 1, 2], [1, 1, 2], variant='c')[0], 0.88888888)
+    assert_approx_equal(stats.kendalltau([1, 1, 2], [1, 1, 2], variant='b')[0],
+                        1.0)
+    assert_approx_equal(stats.kendalltau([1, 1, 2], [1, 1, 2], variant='c')[0],
+                        0.88888888)
 
     # test nan_policy
     x = np.arange(10.)
