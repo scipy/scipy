@@ -4503,7 +4503,8 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate', method='auto'
     # Limit range to fix computational errors
     tau = min(1., max(-1., tau))
 
-    # The p-value calculation is the same for all variants since the p-value depends only on con_minus_dis
+    # The p-value calculation is the same for all variants since the p-value
+    # depends only on con_minus_dis.
     if method == 'exact' and (xtie != 0 or ytie != 0):
         raise ValueError("Ties found, exact method cannot be used.")
 
