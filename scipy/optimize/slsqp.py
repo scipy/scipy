@@ -22,7 +22,7 @@ from numpy import (zeros, array, linalg, append, asfarray, concatenate, finfo,
 from .optimize import (OptimizeResult, _check_unknown_options,
                        _prepare_scalar_function)
 from ._numdiff import approx_derivative
-from ._constraints import old_bound_to_new
+from ._constraints import old_bound_to_new, _arr_to_scalar
 
 
 __docformat__ = "restructuredtext en"
@@ -346,7 +346,8 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
         xl.fill(np.nan)
         xu.fill(np.nan)
     else:
-        bnds = array(bounds, float)
+        bnds = array([(_arr_to_scalar(l), _arr_to_scalar(u))
+                      for (l, u) in bounds], float)
         if bnds.shape[0] != n:
             raise IndexError('SLSQP Error: the length of bounds is not '
                              'compatible with that of x0.')
