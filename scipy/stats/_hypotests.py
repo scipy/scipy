@@ -1,7 +1,7 @@
 from collections import namedtuple
 import numpy as np
 import warnings
-from ._continuous_distns import chi2
+from ._continuous_distns import chi2, norm
 from . import _wilcoxon_data
 
 
@@ -146,3 +146,228 @@ def _get_wilcoxon_distr(n):
                          "statistic is not implemented for n={}".format(n))
 
     return np.array(cnt, dtype=int)
+
+
+def _ct_to_lists(table):
+    table = np.array(table, copy=False, dtype=int)
+    r, s = table.shape
+    n = table.sum()
+    x = np.zeros(n, dtype=int)
+    y = np.zeros(n, dtype=int)
+    k = 0
+    for i, row in enumerate(table):
+        for j, val in enumerate(row):
+            x[k:k+val] = r-i
+            y[k:k+val] = s-j
+            k += val
+    return x, y
+
+
+def _lists_to_ct(x, y):
+    n = len(x)
+    z = np.zeros((n,), dtype='i4, i4')
+    z['f0'], z['f1'] = x, y
+    z_unique, z_count = np.unique(z, return_counts=True)
+    r, s = np.max(x), np.max(y)
+    table = np.zeros((r, s), dtype=int)
+    table[r-z_unique['f0'], s-z_unique['f1']] = z_count
+    return table
+
+
+def _ri(A, i):
+    return A[i, :].sum()
+
+
+def _Sigma_ri_2(A):
+    return (A.sum(axis=1)**2).sum()
+
+
+def _cj(A, j):
+    return A[:, j].sum()
+
+
+def _Sigma_cj_2(A):
+    return (A.sum(axis=0)**2).sum()
+
+
+def _N(A):
+    return A.sum()
+
+
+def _Aij(A, i, j):
+    return A[:i, :j].sum() + A[i+1:, j+1:].sum()
+
+
+def _Dij(A, i, j):
+    return A[i+1:, :j].sum() + A[:i, j+1:].sum()
+
+
+def _P(A):
+    m, n = A.shape
+    count = 0
+    for i in range(m):
+        for j in range(n):
+            count += A[i, j]*_Aij(A, i, j)
+    return count
+
+
+def _Q(A):
+    m, n = A.shape
+    count = 0
+    for i in range(m):
+        for j in range(n):
+            count += A[i, j]*_Dij(A, i, j)
+    return count
+
+
+def _a_ij_Aij_Dij2(A):
+    m, n = A.shape
+    count = 0
+    for i in range(m):
+        for j in range(n):
+            count += A[i, j]*(_Aij(A, i, j) - _Dij(A, i, j))**2
+    return count
+
+
+def _tau_b(A):
+    NA = _N(A)
+    NA2 = NA**2
+    PA = _P(A)
+    QA = _Q(A)
+    Sri2 = _Sigma_ri_2(A)
+    Scj2 = _Sigma_cj_2(A)
+    denominator = (NA2 - Sri2)*(NA2 - Scj2)
+    tau = (PA-QA)/(denominator)**0.5
+
+    term1 = _a_ij_Aij_Dij2(A)
+    numerator = 4*(term1 - (PA - QA)**2 / NA)
+    s02_tau_b = numerator/denominator
+
+    if tau >= 0:
+        p = norm.sf(tau/s02_tau_b**0.5)
+    else:
+        p = norm.cdf(tau/s02_tau_b**0.5)
+
+    return tau, p
+
+
+def _tau_c(A):
+    m = min(A.shape)
+    n = _N(A)
+    PA = _P(A)
+    QA = _Q(A)
+    tau = m*(PA-QA)/(n**2*(m-1))
+
+    Z = (PA - QA)/(4*(_a_ij_Aij_Dij2(A) - (PA-QA)**2/n))**0.5
+    if tau >= 0:
+        p = norm.sf(Z)
+    else:
+        p = norm.cdf(Z)
+
+    return tau, p
+
+
+def _somers_d(A):
+    NA = _N(A)
+    NA2 = NA**2
+    PA = _P(A)
+    QA = _Q(A)
+    Sri2 = _Sigma_ri_2(A)
+    d = (PA-QA)/(NA2 - Sri2)
+
+    Z = (PA - QA)/(4*(_a_ij_Aij_Dij2(A) - (PA-QA)**2/NA))**0.5
+    p = 2*norm.sf(abs(Z))
+    return d, p
+
+
+class SomersDResult:
+    """
+    A placeholder until we figure out how new stats results should be returned
+    """
+    def __init__(self, statistic, pvalue):
+        self.statistic, self.pvalue = statistic, pvalue
+
+
+def somersd(x, y=None):
+    """
+    Calculates Somers' D, an asymmetric measure of ordinal association
+
+    Like Kendall's :math:`\tau`, Somers' :math:`D` is a measure of the
+    correspondence between two rankings. Both statistics consider the
+    difference between the number of concordant and discordant pairs in
+    rankings :math:`X` and :math:`Y`, and both are normalized such that values
+    close  to 1 indicate strong agreement and values close to -1 indicate
+    strong disagreement. They differ in how they are normalized. To show the
+    relationship, Somers' :math:`D` can be defined in terms of Kendall's
+    :math:`\tau_a`:
+
+    .. math::
+        D(X, Y) = \frac{\tau_a(X, Y)}{\tau_a(X, X)}
+
+    Note that Somers' :math:`D` is asymmetric: in general,
+    :math:`D(X, Y) \neq D(Y, X)`.
+
+    Suppose the first ranking :math:`X` has :math:`r` distinct ranks and the
+    second ranking :math:`Y` has :math:`s` distinct ranks. These two lists of
+    :math:`n` rankings can also be viewed as an :math:`r \\times s` contingency
+    table in which element :math:`i, j` is the number of rank pairs with scored
+    :math:`i` on the first scale and :math:`j` on the second scale.
+    Accordingly, `somersd` allows the input data to be supplied either as a
+    single 2D contingency table instead of form two separate 1D rankings.
+
+    Parameters
+    ----------
+    x: array_like
+        1D array of rankings.
+    y: array_like
+        If `x` is a 1D array of rankings, `y` is a 1D array of rankings of the
+        same length. If `x` is 2D, `y` is ignored.
+
+    Returns
+    -------
+    correlation : float
+       The Somers' :math:`D` statistic.
+    pvalue : float
+       The two-sided p-value for a hypothesis test whose null hypothesis is
+       an absence of association, :math:`D=0`.
+    table : 2D array
+       The contingency table formed from rankings `x` and `y` (or the
+       provided contingency table, if `x` is a 2D array)
+
+    See Also
+    --------
+    kendalltau : Calculates Kendall’s tau, another correlation measure.
+    weightedtau : Computes a weighted version of Kendall's tau.
+    spearmanr : Calculates a Spearman rank-order correlation coefficient.
+    pearsonr : Calculates a Pearson correlation coefficient.
+
+    Notes
+    -----
+    This function follows the contingency table approach of [1]_ rather than
+    relying on  `scipy.stats.kendalltau`.
+
+    References
+    ----------
+    .. [1] Morton B. Brown and Jacqueline K. Benedetti, "Sampling Behavior of
+           Tests for Correlation in Two-Way Contingency Tables", Journal of the
+           American Statistical Association Vol. 72, No. 358, pp. 309, 1938.
+
+    Examples
+    --------
+>>> from scipy import stats
+>>> table = [[3, 5, 2], [1, 7, 6]]
+>>> res = stats.somersd(table)
+>>> res.statistic
+    0.34285714285714286
+>>> res.pvalue
+    0.09289194088370532
+    """
+    x, y = np.array(x), np.array(y)
+    if x.ndim == 1:
+        table = _lists_to_ct(x, y)
+    elif x.ndim == 2:
+        table = x
+    else:
+        raise ValueError("x must be either a 1D or 2D array")
+    d, p = _somers_d(table)
+    return SomersDResult(d, p)
