@@ -4340,7 +4340,7 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate', method='auto'
     Values close to 1 indicate strong agreement, and values close to -1 indicate
     strong disagreement. This implements two variants of Kendall's tau: tau-b
     (the default) and tau-c (also known as Stuart's tau-c). These differ only
-    in how they are normalized to lie withing the range -1 to 1; the
+    in how they are normalized to lie within the range -1 to 1; the
     hypothesis tests (their p-values) are identical. Kendall's original tau-a
     is not implemented separately because both tau-b and tau-c reduce to tau-a
     in the absence of ties.
