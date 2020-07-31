@@ -77,6 +77,32 @@ def test_vonmises_numerical():
     assert_almost_equal(vm.cdf(0), 0.5)
 
 
+def _assert_lessthan_loglike(dist, data, func, **kwds):
+    mle_analytical = dist.fit(data, **kwds)
+    numerical_opt = super(type(dist), dist).fit(data, **kwds)
+    ll_mle_analytical = func(mle_analytical, data)
+    ll_numerical_opt = func(numerical_opt, data)
+    assert ll_mle_analytical < ll_numerical_opt
+
+
+def assert_fit_warnings(dist, data, all_fixed, floc_fixedDataError):
+    with pytest.raises(RuntimeError,
+                       match="All parameters fixed. There is nothing "
+                       "to optimize."):
+        dist.fit(data, **all_fixed)
+    with pytest.raises(RuntimeError,
+                       match="The data contains non-finite values"):
+        dist.fit([np.nan])
+    with pytest.raises(RuntimeError,
+                       match="The data contains non-finite values"):
+        dist.fit([np.inf])
+    with pytest.raises(TypeError, match="Unknown keyword arguments:"):
+        dist.fit(data, extra_keyword=2)
+    with pytest.raises(TypeError, match="Too many positional arguments."):
+        dist.fit(data, *[1]*(1 if not dist.shapes else len(dist.shapes) + 1))
+    assert_raises(FitDataError, dist.fit, data, **floc_fixedDataError)
+
+
 @pytest.mark.parametrize('dist',
                          ['alpha', 'betaprime',
                           'fatiguelife', 'invgamma', 'invgauss', 'invweibull',
@@ -3236,47 +3262,53 @@ class TestRayleigh(object):
         y = stats.rayleigh.logsf(50)
         assert_allclose(y, -1250)
 
-    @pytest.mark.parametrize("floc", [-1, 0, 1, 2, 3])
-    @pytest.mark.parametrize("fscale", [.5, 1, 2, 3, 4])
-    def test_fit(self, floc, fscale):
-        data = stats.rayleigh.rvs(size=250, loc=floc, scale=fscale)
+    @pytest.mark.parametrize("rvs_loc,rvs_scale", [np.random.rand(2)])
+    def test_fit(self, rvs_loc, rvs_scale):
+        data = stats.rayleigh.rvs(size=250, loc=rvs_loc, scale=rvs_scale)
 
         def scale_mle(data, floc):
             return (np.sum((data - floc) ** 2) / (2 * len(data))) ** .5
-
-        scale_expect = scale_mle(data, floc)
-        # when `floc` is provided, direct MLE equation is used
-        loc, scale = stats.rayleigh.fit(data, floc=floc)
-        assert_equal(loc, floc)
+        # when `floc` is provided, `scale` is found with an analytical formula
+        scale_expect = scale_mle(data, rvs_loc)
+        loc, scale = stats.rayleigh.fit(data, floc=rvs_loc)
+        assert_equal(loc, rvs_loc)
         assert_equal(scale, scale_expect)
-        # when `fscale` is fixed, standard numerical optimization is used.
+        # when `fscale` is fixed, superclass fit method is used.
         loc, scale = stats.rayleigh.fit(data, fscale=.6)
         assert_equal(scale, .6)
 
-        # with both parameters free, one dimentional optimization is done
+        # with both parameters free, one dimensional optimization is done
         # over a new function that takes into account the dependent relation
         # of `scale` to `loc`.
         loc, scale = stats.rayleigh.fit(data)
         # test that `scale` is defined by its relation to `loc`
         assert_equal(scale, scale_mle(data, loc))
 
+    @pytest.mark.parametrize("rvs_loc,rvs_scale", [np.random.rand(2)])
+    def test_fit_comparison_super_method(self, rvs_loc, rvs_scale):
         # test that the objective function result of the analytical MLEs is
         # less than or equal to that of the numerically optimized estimate
-        loc_scale_opt = super(type(stats.rayleigh), stats.rayleigh).fit(data)
+        data = stats.rayleigh.rvs(size=250, loc=rvs_loc, scale=rvs_scale)
 
+        loc_scale_super = super(type(stats.rayleigh), stats.rayleigh).fit(data)
+        loc, scale = stats.rayleigh.fit(data)
         # obtain objective function with same method as `rv_continuous.fit`
         args = [data, (stats.rayleigh._fitstart(data), )]
         func = stats.rayleigh._reduce_func(args, {})[1]
-
-        ll_mle = func((loc, scale), data)
-        ll_opt = func(loc_scale_opt, data)
-        assert ll_mle < ll_opt or np.allclose(ll_opt, ll_mle)
+        _assert_lessthan_loglike(stats.rayleigh, data, func)
+        ll__result_override = func((loc, scale), data)
+        ll_result_super = func(loc_scale_super, data)
+        assert ll__result_override < ll_result_super
 
         # An error is raised if both parameters are fixed
-        assert_raises(RuntimeError, stats.rayleigh.fit, data, floc=floc,
-                      fscale=fscale)
+        assert_raises(RuntimeError, stats.rayleigh.fit, data, floc=rvs_scale,
+                      fscale=rvs_scale)
         # an error is raised for extra positional arguments
         assert_raises(TypeError, stats.rayleigh.fit, data, 2)
+
+    def test_fit_warnings(self):
+        assert_fit_warnings(stats.rayleigh, [1, 2, 3], {
+            'floc': 2, 'fscale': 2}, {'floc': 2})
 
 
 class TestExponWeib(object):
