@@ -177,21 +177,41 @@ class BinnedStatisticDD(Benchmark):
 
 
 class ContinuousFitAnalyticalMLEOverride(Benchmark):
-    pretty_name = "Fit Methods Overriden with Analytical MLEs"
-    param_names = ['distribution name']
-    params = ["pareto", "laplace"]
+    pretty_name = "Fit Methods Overridden with Analytical MLEs"
+    param_names =  ["distribution", "loc_fixed", "scale_fixed", "shape1_fixed" ]
+    dists = ["pareto", "laplace"]
+    shape1, shape2, loc, scale = [[True, False]] * 4
 
-    distributions = {"pareto": {"self": stats.pareto, "shapes": {"b": 2},
-                                "fixed_param": {"floc": 0}},
-                     "laplace": {"self": stats.laplace, "shapes": {},
-                                 "fixed_param": {}}
+    params = [dists,  loc, scale, shape1]
+
+    distributions = {"pareto": {"self": stats.pareto, "floc": 0, "fscale": 2,
+                                "shape1_fixed": 2, "fixed_shapes":{"b": 2}},
+                     "laplace": {"self": stats.laplace, "floc": 0, "fscale": 2}
                      }
 
-    def setup(self, dist_name):
+    def setup(self, dist_name, loc_fixed, scale_fixed, shape1_fixed):
         self.distn = self.distributions[dist_name]["self"]
-        self.shapes = self.distributions[dist_name]["shapes"]
-        self.fixed_param = self.distributions[dist_name]["fixed_param"]
-        self.data = self.distn.rvs(size=10000, **self.shapes)
+        self.shapes = {}
+        self.fixed = {}
+        # add fixed `loc` and `scale`
+        if loc_fixed:
+            self.fixed['floc'] = self.distributions[dist_name]["floc"]
+        if scale_fixed:
+            self.fixed['fscale'] = self.distributions[dist_name]['fscale']
 
-    def time_fit(self, distn):
-        self.distn.fit(self.data, **self.fixed_param)
+        if not self.distn.shapes:
+            if shape1_fixed is not False:
+                # only run this bench in the case that all shapes are false
+                raise NotImplementedError("has no shapes")
+        else:
+            self.shapes = self.distributions[dist_name]['fixed_shapes']
+            if shape1_fixed:
+                self.fixed['f0'] = self.distributions[dist_name]['shape1_fixed']
+
+        self.data = self.distn.rvs(size=10000, **self.shapes, loc=10, scale=3)
+        if loc_fixed and scale_fixed and (shape1_fixed if self.distn.shapes else True):
+            # all parameters were fixed.
+            raise NotImplementedError("all param fix")
+
+    def time_fit(self, dist_name, shape1_fixed, loc_fixed, scale_fixed):
+        self.distn.fit(self.data, **self.fixed)
