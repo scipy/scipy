@@ -4399,7 +4399,7 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate', method='auto'
     pairs, T the number of ties only in `x`, and U the number of ties only in
     `y`.  If a tie occurs for the same pair in both `x` and `y`, it is not
     added to either T or U. n is the total number of samples, and m is the
-    number of unique values in either x or y, whichever is smaller.
+    number of unique values in either `x` or `y`, whichever is smaller.
 
     References
     ----------
