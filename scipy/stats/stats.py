@@ -4497,8 +4497,8 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate', method='auto'
         minclasses = min(len(set(x)), len(set(y)))
         tau = 2*con_minus_dis / (size**2 * (minclasses-1)/minclasses)
     else:
-         raise ValueError(f"Unknown variant of the method chosen: {variant}. "
-                          "variant must be 'b' or 'c'.")
+        raise ValueError(f"Unknown variant of the method chosen: {variant}. "
+                         "variant must be 'b' or 'c'.")
 
     # Limit range to fix computational errors
     tau = min(1., max(-1., tau))
