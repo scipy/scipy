@@ -4331,8 +4331,8 @@ def pointbiserialr(x, y):
 KendalltauResult = namedtuple('KendalltauResult', ('correlation', 'pvalue'))
 
 
-def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate', method='auto',
-               variant='b'):
+def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate',
+               method='auto', variant='b'):
     """
     Calculate Kendall's tau, a correlation measure for ordinal data.
 
