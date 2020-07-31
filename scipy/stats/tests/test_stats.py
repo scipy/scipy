@@ -1068,9 +1068,12 @@ def test_kendalltau():
 
     # with only ties in one or both inputs in tau-b or tau-c
     for taux in variants:
-        assert_equal(stats.kendalltau([2, 2, 2], [2, 2, 2], variant=taux), (np.nan, np.nan))
-        assert_equal(stats.kendalltau([2, 0, 2], [2, 2, 2], variant=taux), (np.nan, np.nan))
-        assert_equal(stats.kendalltau([2, 2, 2], [2, 0, 2], variant=taux), (np.nan, np.nan))
+        assert_equal(stats.kendalltau([2, 2, 2], [2, 2, 2], variant=taux),
+                     (np.nan, np.nan))
+        assert_equal(stats.kendalltau([2, 0, 2], [2, 2, 2], variant=taux),
+                     (np.nan, np.nan))
+        assert_equal(stats.kendalltau([2, 2, 2], [2, 0, 2], variant=taux),
+                     (np.nan, np.nan))
 
     # empty arrays provided as input
     assert_equal(stats.kendalltau([], []), (np.nan, np.nan))
