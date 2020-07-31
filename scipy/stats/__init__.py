@@ -233,6 +233,7 @@ Correlation functions
    pointbiserialr
    kendalltau
    weightedtau
+   somersd
    linregress
    siegelslopes
    theilslopes
