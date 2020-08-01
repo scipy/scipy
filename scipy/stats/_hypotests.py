@@ -281,7 +281,7 @@ class SomersDResult:
 
 
 def somersd(x, y=None):
-    """
+    r"""
     Calculates Somers' D, an asymmetric measure of ordinal association
 
     Like Kendall's :math:`\tau`, Somers' :math:`D` is a measure of the
@@ -298,7 +298,7 @@ def somersd(x, y=None):
 
     Suppose the first ranking :math:`X` has :math:`r` distinct ranks and the
     second ranking :math:`Y` has :math:`s` distinct ranks. These two lists of
-    :math:`n` rankings can also be viewed as an :math:`r \\times s` contingency
+    :math:`n` rankings can also be viewed as an :math:`r \times s` contingency
     table in which element :math:`i, j` is the number of rank pairs with rank
     :math:`i` in ranking :math:`X` and rank :math:`j` in ranking :math:`Y`.
     Accordingly, `somersd` also allows the input data to be supplied as a
@@ -402,12 +402,12 @@ def somersd(x, y=None):
     "below average (1)" and a corresponding satisfaction of "very
     dissatisfied (1)". We perform the analysis as follows.
 
->>> from scipy.stats import somersd
->>> table = [[27, 25, 14, 7, 0], [7, 14, 18, 35, 12], [1, 3, 2, 7, 17]]
->>> res = somersd(table)
->>> res.statistic
+    >>> from scipy.stats import somersd
+    >>> table = [[27, 25, 14, 7, 0], [7, 14, 18, 35, 12], [1, 3, 2, 7, 17]]
+    >>> res = somersd(table)
+    >>> res.statistic
     0.6032766111513396
->>> res.pvalue
+    >>> res.pvalue
     1.0007091191074533e-27
 
     The value of the Somers' D statistic is approximately 0.6, indicating
