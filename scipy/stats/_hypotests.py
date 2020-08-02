@@ -344,11 +344,19 @@ def somersd(x, y=None):
     Notes
     -----
     This function follows the contingency table approach of [2]_ and
-    [3]_ rather than relying on `scipy.stats.kendalltau`, and *p*-values
-    are computed based on an asymptotic approximation. Theoretically,
-    the *p*-values corresponding with hypothesis tests based on :math:'tau'
-    and :math:'D' should be identical, but the *p*-values returned by
-    `scipy.stats.kendalltau` are based on a different approximation.
+    [3]_. *p*-values are computed based on an asymptotic approximation of
+    the test statistic distribution under the null hypothesis :math:`D=0`.
+
+    Theoretically, hypothesis tests based on Kendall's :math:`tau` and Somers'
+    :math:`D` should be identical.
+    However, the *p*-values returned by `kendalltau` are based
+    on the null hypothesis of *independence* between :math:`X` and :math:`Y`
+    (i.e. the population from which pairs in :math:`X` and :math:`Y` are
+    sampled contains equal numbers of all possible pairs), which is more
+    specific than the null hypothesis :math:`D=0` used here. If the null
+    hypothesis of independence is desired, it is acceptable to use the
+    *p*-value returned by `kendalltau` with the statistic returned by
+    `somersd` and vice versa. For more information, see [2]_.
 
     Contingency tables are formatted according to the convention used by
     SAS and R: the first ranking supplied (``x``) is the "row" variable, and
@@ -362,9 +370,9 @@ def somersd(x, y=None):
            pp. 799--811, 1962.
 
     .. [2] Morton B. Brown and Jacqueline K. Benedetti, "Sampling Behavior of
-           Tests for Correlation in Two-Way Contingency Tables", *Journal of the
-           American Statistical Association* Vol. 72, No. 358, pp. 309--315,
-           1977.
+           Tests for Correlation in Two-Way Contingency Tables", *Journal of
+           the American Statistical Association* Vol. 72, No. 358, pp.
+           309--315, 1977.
 
     .. [3] SAS Institute, Inc., "The FREQ Procedure (Book Excerpt)",
            *SAS/STAT 9.2 User's Guide, Second Edition*, SAS Publishing, 2009.
