@@ -334,7 +334,6 @@ class interp1d(_Interpolator1D):
     ``y = f(x)``. This class returns a function whose call method uses
     interpolation to find the value of new points.
 
-    
     Parameters
     ----------
     x : (N,) array_like
