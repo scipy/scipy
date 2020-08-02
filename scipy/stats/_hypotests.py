@@ -3,7 +3,7 @@ import numpy as np
 import warnings
 from ._continuous_distns import chi2, norm
 from . import _wilcoxon_data
-
+from scipy.stats import rankdata
 
 Epps_Singleton_2sampResult = namedtuple('Epps_Singleton_2sampResult',
                                         ('statistic', 'pvalue'))
@@ -165,11 +165,13 @@ def _ct_to_lists(table):
 
 def _lists_to_ct(x, y):
     """Convert lists of rankings to contingency table"""
+    x = rankdata(x, method='dense')
+    y = rankdata(y, method='dense')
     n = len(x)
     z = np.zeros((n,), dtype='i4, i4')
     z['f0'], z['f1'] = x, y
     z_unique, z_count = np.unique(z, return_counts=True)
-    r, s = np.max(x), np.max(y)
+    r, s = np.max(x), np.max(y)  # due to rankdata, number of unique elements
     table = np.zeros((r, s), dtype=int)
     table[z_unique['f0']-1, z_unique['f1']-1] = z_count
     return table
@@ -223,6 +225,11 @@ def _a_ij_Aij_Dij2(A):
 def _tau_b(A):
     """Calculate Kendall's tau-b and p-value from contingency table"""
     # See [2] 2.2 and 4.2
+
+    # contingency table must be truly 2D
+    if A.shape[0] == 1 or A.shape[1] == 1:
+        return np.nan, np.nan
+
     NA = A.sum()
     PA = _P(A)
     QA = _Q(A)
@@ -234,7 +241,8 @@ def _tau_b(A):
 
     numerator = 4*(_a_ij_Aij_Dij2(A) - (PA - QA)**2 / NA)
     s02_tau_b = numerator/denominator
-
+    if s02_tau_b == 0:  # Avoid divide by zero
+        return tau, 0
     Z = tau/s02_tau_b**0.5
     p = 2*norm.sf(abs(Z))  # 2-sided p-value
 
@@ -244,13 +252,20 @@ def _tau_b(A):
 def _tau_c(A):
     """Calculate Kendall's tau-b and p-value from contingency table"""
     # See [2] 2.3 and 4.3
+
+    # contingency table must be truly 2D
+    if A.shape[0] == 1 or A.shape[1] == 1:
+        return np.nan, np.nan
+
     m = min(A.shape)
     n = A.sum()
     PA = _P(A)
     QA = _Q(A)
     tau = m*(PA-QA)/(n**2*(m-1))
-
-    Z = (PA - QA)/(4*(_a_ij_Aij_Dij2(A) - (PA-QA)**2/n))**0.5
+    S = _a_ij_Aij_Dij2(A) - (PA-QA)**2/n
+    if S == 0:  # Avoid divide by zero
+        return tau, 0
+    Z = (PA - QA)/(4*(S))**0.5
     p = 2*norm.sf(abs(Z))  # 2-sided p-value
 
     return tau, p
@@ -259,14 +274,23 @@ def _tau_c(A):
 def _somers_d(A):
     """Calculate Somers' D and p-value from contingency table"""
     # See [3] page 1740
+
+    # contingency table must be truly 2D
+    if A.shape[0] == 1 or A.shape[1] == 1:
+        return np.nan, np.nan
+
     NA = A.sum()
     NA2 = NA**2
     PA = _P(A)
     QA = _Q(A)
     Sri2 = (A.sum(axis=1)**2).sum()
-    d = (PA-QA)/(NA2 - Sri2)
 
-    Z = (PA - QA)/(4*(_a_ij_Aij_Dij2(A) - (PA-QA)**2/NA))**0.5
+    d = (PA - QA)/(NA2 - Sri2)
+
+    S = _a_ij_Aij_Dij2(A) - (PA-QA)**2/NA
+    if S == 0:  # Avoid divide by zero
+        return d, 0
+    Z = (PA - QA)/(4*(S))**0.5
     p = 2*norm.sf(abs(Z))  # 2-sided p-value
 
     return d, p
