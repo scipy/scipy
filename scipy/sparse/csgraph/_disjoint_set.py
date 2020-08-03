@@ -88,7 +88,7 @@ class DisjointSet:
         `merge`, and `connected` methods. Elements are ordered by insertion
         order.
         """
-        return iter(self._indices)
+        return iter(self._indices.copy())
 
     def __getitem__(self, x):
         """Find the root node of `x`.
