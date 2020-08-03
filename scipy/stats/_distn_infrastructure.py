@@ -3470,7 +3470,6 @@ class rv_discrete(rv_generic):
         # might be problems(?) with correct self.a, self.b at this stage maybe
         # not anymore, seems to work now with _pmf
 
-        self._argcheck(*args)  # (re)generate scalar self.a and self.b
         _a, _b = self._get_support(*args)
         if lb is None:
             lb = _a
