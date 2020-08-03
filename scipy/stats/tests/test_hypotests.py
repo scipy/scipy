@@ -115,6 +115,53 @@ class TestSomersD(object):
         y = np.arange(20.)
         assert_raises(ValueError, stats.somersd, x, y)
 
+    def test_asymmetry(self):
+        # test that somersd is asymmetric w.r.t. input order and that
+        # convention is as described: first input is row variable & independent
+        # data is from Wikipedia:
+        # https://en.wikipedia.org/wiki/Somers%27_D
+        # but currently that example contradicts itself - it says X is
+        # independent yet take D_XY
+
+        x = [1, 1, 1, 2, 2, 2, 2, 2, 3, 3, 1, 2,
+             2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3]
+        y = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2,
+             2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2]
+        # Cross-check with result from SAS FREQ:
+        d_cr = 0.2727
+        d_rc = 0.3429
+        p = 0.0929  # same p-value for either direction
+        res = stats.somersd(x, y)
+        assert_allclose(res.statistic, d_cr, atol=1e-4)
+        assert_allclose(res.pvalue, p, atol=1e-4)
+        assert_equal(res.table.shape, (3, 2))
+        res = stats.somersd(y, x)
+        assert_allclose(res.statistic, d_rc, atol=1e-4)
+        assert_allclose(res.pvalue, p, atol=1e-4)
+        assert_equal(res.table.shape, (2, 3))
+
+    def test_somers_original(self):
+        # test against Somers' original paper [1]
+
+        # Table 5A
+        # Somers' convention was column IV
+        table = np.array([[8, 2], [6, 5], [3, 4], [1, 3], [2, 3]])
+        # Our convention (and that of SAS FREQ) is row IV
+        table = table.T
+        dyx = 129/340
+        assert_equal(stats.somersd(table).statistic, dyx)
+
+        # table 7A - d_yx = 1
+        table = np.array([[25, 0], [85, 0], [0, 30]])
+        dxy, dyx = 3300/5425, 3300/3300
+        assert_equal(stats.somersd(table).statistic, dxy)
+        assert_equal(stats.somersd(table.T).statistic, dyx)
+
+        # table 7B - d_yx < 0
+        table = np.array([[25, 0], [0, 30], [85, 0]])
+        dyx = 1800/3300
+        assert_equal(stats.somersd(table.T).statistic, dyx)
+
     def test_contingency_table_with_zero_rows_cols(self):
         # test that zero rows/cols in contingency table don't affect result
 
