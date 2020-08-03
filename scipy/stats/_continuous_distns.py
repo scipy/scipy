@@ -4256,7 +4256,7 @@ class levy_stable_gen(rv_continuous):
 
     @staticmethod
     def _pdf_single_value_best(x, alpha, beta):
-        if alpha != 1. or (alpha == 1. and beta == 0.):
+        if alpha == 1.:
             return levy_stable_gen._pdf_single_value_zolotarev(x, alpha, beta)
         else:
             return levy_stable_gen._pdf_single_value_cf_integrate(x, alpha, beta)
