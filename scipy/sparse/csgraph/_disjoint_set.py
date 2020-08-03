@@ -21,7 +21,6 @@ class DisjointSet:
     add
     merge
     connected
-    __iter__
     __getitem__
 
     Notes
