@@ -31,5 +31,5 @@ def test_lambda_to_nu():
 
 
 def test_nu_to_lambda():
-    assert_equal(sc.lambda2nu([sc.speed_of_light, 1]), [1, sc.speed_of_light])
+    assert_equal(sc.nu2lambda([sc.speed_of_light, 1]), [1, sc.speed_of_light])
 
