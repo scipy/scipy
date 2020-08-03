@@ -90,6 +90,9 @@ class DisjointSet:
         """
         return iter(self._indices.copy())
 
+    def __contains__(self, x):
+        return x in self._indices
+
     def __getitem__(self, x):
         """Find the root node of `x`.
 

@@ -110,13 +110,23 @@ def test_binary_tree(kmax):
         assert roots == expected
 
 
-@pytest.mark.parametrize("n", [10, 100])
-def test_iterator(n):
-    nodes = get_nodes(n)
+def test_iterator():
+    nodes = get_nodes(n=10)
     dis = DisjointSet()
-
     for x in nodes:
         dis[x]
 
     for x in dis:
         dis.connected(x, "dummy")
+
+
+def test_conatins():
+    nodes = get_nodes(n=100)
+    dis = DisjointSet()
+    for x in nodes:
+        dis[x]
+
+    for x in nodes:
+        assert x in dis
+
+    assert "dummy" not in dis

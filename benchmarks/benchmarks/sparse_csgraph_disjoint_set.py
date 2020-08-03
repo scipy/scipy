@@ -19,9 +19,18 @@ class Bench(Benchmark):
         self.nodes = np.unique(self.edges)
         self.disjoint_set = DisjointSet()
 
-    def time_merge_find(self, n):
+        self.initialized = DisjointSet()
+        for a, b in self.edges:
+            self.initialized.merge(a, b)
+
+    def time_merge(self, n):
         dis = self.disjoint_set
         for a, b in self.edges:
             dis.merge(a, b)
 
+    def time_find(self, n):
+        dis = self.initialized
         return [dis[i] for i in self.nodes]
+
+    def time_contains(self, n):
+        return self.nodes[0] in self.initialized
