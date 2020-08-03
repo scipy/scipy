@@ -17,11 +17,11 @@ class Bench(Benchmark):
         rng = np.random.RandomState(seed=0)
         self.edges = rng.randint(0, 10 * n, (n, 2))
         self.nodes = np.unique(self.edges)
-        self.disjoint_set = DisjointSet()
+        self.disjoint_set = DisjointSet(self.nodes)
 
-        self.initialized = DisjointSet()
+        self.premerged = DisjointSet(self.nodes)
         for a, b in self.edges:
-            self.initialized.merge(a, b)
+            self.premerged.merge(a, b)
 
     def time_merge(self, n):
         dis = self.disjoint_set
@@ -29,8 +29,8 @@ class Bench(Benchmark):
             dis.merge(a, b)
 
     def time_find(self, n):
-        dis = self.initialized
+        dis = self.premerged
         return [dis[i] for i in self.nodes]
 
     def time_contains(self, n):
-        return self.nodes[0] in self.initialized
+        return self.nodes[0] in self.premerged

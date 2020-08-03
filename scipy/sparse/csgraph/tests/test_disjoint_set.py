@@ -1,4 +1,5 @@
 import pytest
+from pytest import raises as assert_raises
 import numpy as np
 from scipy.sparse.csgraph import DisjointSet
 import string
@@ -34,13 +35,14 @@ def get_nodes(n):
 @pytest.mark.parametrize("n", [10, 100])
 def test_linear_union_sequence(n):
     nodes = get_nodes(n)
-    dis = DisjointSet()
+    dis = DisjointSet(nodes)
+    assert dis.n_components == n
 
-    for i in range(len(nodes) - 1):
+    for i in range(n - 1):
         assert not dis.connected(nodes[i], nodes[i + 1])
         assert dis.merge(nodes[i], nodes[i + 1])
         assert dis.connected(nodes[i], nodes[i + 1])
-        assert dis.n_components == 1
+        assert dis.n_components == n - 1 - i
 
     assert nodes == list(dis)
     roots = [dis[i] for i in nodes]
@@ -51,7 +53,7 @@ def test_linear_union_sequence(n):
 @pytest.mark.parametrize("n", [10, 100])
 def test_self_unions(n):
     nodes = get_nodes(n)
-    dis = DisjointSet()
+    dis = DisjointSet(nodes)
 
     for x in nodes:
         assert dis.connected(x, x)
@@ -68,9 +70,7 @@ def test_self_unions(n):
 @pytest.mark.parametrize("n", [10, 100])
 def test_equal_size_ordering(n, order):
     nodes = get_nodes(n)
-    dis = DisjointSet()
-    for x in nodes:
-        dis[x]
+    dis = DisjointSet(nodes)
 
     rng = np.random.RandomState(seed=0)
     indices = np.arange(n)
@@ -92,7 +92,7 @@ def test_equal_size_ordering(n, order):
 def test_binary_tree(kmax):
     n = 2**kmax
     nodes = get_nodes(n)
-    dis = DisjointSet()
+    dis = DisjointSet(nodes)
     rng = np.random.RandomState(seed=0)
 
     for k in 2**np.arange(kmax):
@@ -110,22 +110,23 @@ def test_binary_tree(kmax):
         assert roots == expected
 
 
-def test_iterator():
+def test_node_not_present():
     nodes = get_nodes(n=10)
-    dis = DisjointSet()
-    for x in nodes:
-        dis[x]
+    dis = DisjointSet(nodes)
 
-    for x in dis:
-        dis.connected(x, "dummy")
+    with assert_raises(KeyError):
+        dis["dummy"]
+
+    with assert_raises(KeyError):
+        dis.merge(nodes[0], "dummy")
+
+    with assert_raises(KeyError):
+        dis.connected(nodes[0], "dummy")
 
 
-def test_conatins():
-    nodes = get_nodes(n=100)
-    dis = DisjointSet()
-    for x in nodes:
-        dis[x]
-
+def test_contains():
+    nodes = get_nodes(n=10)
+    dis = DisjointSet(nodes)
     for x in nodes:
         assert x in dis
 
