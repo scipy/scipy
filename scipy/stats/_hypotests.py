@@ -3,7 +3,7 @@ import numpy as np
 import warnings
 from ._continuous_distns import chi2, norm
 from . import _wilcoxon_data
-from scipy.stats import rankdata
+import scipy.stats
 
 Epps_Singleton_2sampResult = namedtuple('Epps_Singleton_2sampResult',
                                         ('statistic', 'pvalue'))
@@ -165,8 +165,10 @@ def _ct_to_lists(table):
 
 def _lists_to_ct(x, y):
     """Convert lists of rankings to contingency table"""
-    x = rankdata(x, method='dense')
-    y = rankdata(y, method='dense')
+    if x.size == 0 or y.size == 0:
+        return np.array([[]])
+    x = scipy.stats.rankdata(x, method='dense')
+    y = scipy.stats.rankdata(y, method='dense')
     n = len(x)
     z = np.zeros((n,), dtype='i4, i4')
     z['f0'], z['f1'] = x, y
@@ -302,6 +304,9 @@ class SomersDResult:
     """
     def __init__(self, statistic, pvalue, table):
         self.statistic, self.pvalue, self.table, = statistic, pvalue, table
+
+    def __repr__(self):
+        return f"SomersD={self.statistic}, pvalue={self.pvalue}"
 
 
 def somersd(x, y=None):
@@ -454,8 +459,19 @@ def somersd(x, y=None):
     """
     x, y = np.array(x), np.array(y)
     if x.ndim == 1:
+        if x.size != y.size:
+            raise ValueError("Rankings must be of equal length.")
         table = _lists_to_ct(x, y)
     elif x.ndim == 2:
+        if np.any(x < 0):
+            raise ValueError("All elements of the contingency table must be "
+                             "non-negative.")
+        if np.any(x != x.astype(int)):
+            raise ValueError("All elements of the contingency table must be "
+                             "integer.")
+        if x.nonzero()[0].size < 2:
+            raise ValueError("At least two elements of the contingency table "
+                             "must be nonzero.")
         table = x
     else:
         raise ValueError("x must be either a 1D or 2D array")
