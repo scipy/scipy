@@ -18,7 +18,10 @@ class DisjointSet:
 
     Methods
     -------
+    add
     merge
+    connected
+    __iter__
     __getitem__
 
     Notes
