@@ -115,7 +115,9 @@ def wrap_mangling_directive(base_directive):
 
             for arg in list(args):
                 if arg not in impl_args and arg not in ('fun', 'x0', 'args', 'tol',
-                                                        'callback', 'method', 'options'):
+                                                        'callback', 'method', 'options',
+                                                        'A_eq', 'b_eq', 'A_ub', 'b_ub',
+                                                        'bounds'):
                     remove_arg(arg)
 
             # XXX deprecation that we should fix someday using Signature (?)
