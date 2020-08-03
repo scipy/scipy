@@ -3485,6 +3485,10 @@ class rv_discrete(rv_generic):
         else:
             invfac = 1.0
 
+        if isinstance(self, rv_sample):
+            res = self._expect(fun, lb, ub)
+            return res / invfac
+
         # iterate over the support, starting from the median
         x0 = self.ppf(0.5, *args)
         res = _expect(fun, lb, ub, x0, self.inc, maxcount, tolerance, chunksize)
@@ -3686,6 +3690,12 @@ class rv_sample(rv_discrete):
     def generic_moment(self, n):
         n = asarray(n)
         return np.sum(self.xk**n[np.newaxis, ...] * self.pk, axis=0)
+
+    def _expect(self, fun, lb, ub, *args, **kwds):
+        # ignore all args, just do a brute force summation
+        supp = self.xk[(lb <= self.xk) & (self.xk <= ub)]
+        vals = fun(supp)
+        return np.sum(vals)
 
 
 def _check_shape(argshape, size):
