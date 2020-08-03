@@ -3333,10 +3333,13 @@ def test_ttest_rel():
     assert_raises(ValueError, stats.ttest_rel, rvs1, rvs2, alternative="error")
 
     t,p = stats.ttest_rel(rvs1, rvs2, axis=0, alternative="less")
-    assert_array_almost_equal([t,p],(tr,1 - pr/2))
+    assert_array_almost_equal(np.abs(p), 1 - pr/2)
+    assert_array_almost_equal(np.abs(t), tr)
 
     t,p = stats.ttest_rel(rvs1, rvs2, axis=0, alternative="greater")
-    assert_array_almost_equal([t,p],(tr,pr/2))
+    assert_array_almost_equal(np.abs(p), pr/2)
+    assert_array_almost_equal(np.abs(t), tr)
+
     # check nan policy
     np.random.seed(12345678)
     x = stats.norm.rvs(loc=5, scale=10, size=501)
@@ -3490,11 +3493,14 @@ def test_ttest_ind():
     assert_raises(ValueError, stats.ttest_ind_from_stats, *_desc_stats(rvs1_2D.T, rvs2_2D.T), alternative="error")
 
     t, p = stats.ttest_ind(rvs1, rvs2, alternative="less")
-    assert_array_almost_equal([t,p],(tr, 1 - (pr/2)))
+    assert_array_almost_equal(np.abs(p), 1 - (pr/2))
+    assert_array_almost_equal(np.abs(t), tr)
 
     t, p = stats.ttest_ind(rvs1, rvs2, alternative="greater")
-    assert_array_almost_equal([t,p],(tr,pr/2))
+    assert_array_almost_equal(np.abs(p), pr/2)
+    assert_array_almost_equal(np.abs(t), tr)
 
+    # Below makes sure ttest_ind_from_stats p-val functions identically to ttest_ind
     t, p = stats.ttest_ind(rvs1_2D.T, rvs2_2D.T, axis=0, alternative="less")
     args = _desc_stats(rvs1_2D.T, rvs2_2D.T)
     assert_array_almost_equal(stats.ttest_ind_from_stats(*args, alternative="less"), [t, p])
