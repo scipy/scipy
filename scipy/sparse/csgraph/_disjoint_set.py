@@ -11,10 +11,10 @@ class DisjointSet:
 
     Attributes
     ----------
-    n_nodes : int
-        The number of nodes in the set.
-    n_components : int
-        The number of components/subsets.
+    n_elements : int
+        The number of elements in the set.
+    n_subsets : int
+        The number of subsets.
 
     Methods
     -------
@@ -55,7 +55,7 @@ class DisjointSet:
     >>> disjoint_set.merge('b', 'b')
     False
 
-    Find root nodes:
+    Find root elements:
 
     >>> disjoint_set[2]
     1
@@ -74,18 +74,18 @@ class DisjointSet:
     >>> list(disjoint_set)
     [1, 2, 3, 'a', 'b']
     """
-    def __init__(self, nodes=None):
-        self.n_nodes = 0
-        self.n_components = 0
+    def __init__(self, elements=None):
+        self.n_elements = 0
+        self.n_subsets = 0
         self._sizes = {}
         self._parents = {}
         self._indices = collections.OrderedDict()
-        if nodes is not None:
-            for x in nodes:
+        if elements is not None:
+            for x in elements:
                 self.add(x)
 
     def __iter__(self):
-        """Returns an iterator of the nodes in the disjoint set.
+        """Returns an iterator of the elements in the disjoint set.
 
         Elements are ordered by insertion order.
         """
@@ -95,17 +95,17 @@ class DisjointSet:
         return x in self._indices
 
     def __getitem__(self, x):
-        """Find the root node of `x`.
+        """Find the root element of `x`.
 
         Parameters
         ----------
         x : hashable object
-            Input node.
+            Input element.
 
         Returns
         -------
         root : hashable object
-            Root node of `x`.
+            Root element of `x`.
         """
         if x not in self._indices:
             raise KeyError(x)
@@ -118,24 +118,24 @@ class DisjointSet:
         return x
 
     def add(self, x):
-        """Add node `x` to disjoint set"""
+        """Add element `x` to disjoint set"""
         self._sizes[x] = 1
         self._parents[x] = x
         self._indices[x] = len(self._indices)
-        self.n_nodes += 1
-        self.n_components += 1
+        self.n_elements += 1
+        self.n_subsets += 1
 
     def merge(self, x, y):
         """Merge the subsets of `x` and `y`.
 
         The smaller subset (the child) is merged into the larger subset (the
-        parent). If the subsets are of equal size, the root node which was
+        parent). If the subsets are of equal size, the root element which was
         first inserted into the disjoint set is selected as the parent.
 
         Parameters
         ----------
         x, y : hashable object
-            Nodes to merge.
+            Elements to merge.
 
         Returns
         -------
@@ -152,16 +152,16 @@ class DisjointSet:
             x, y = y, x
         self._parents[y] = x
         self._sizes[x] += self._sizes[y]
-        self.n_components -= 1
+        self.n_subsets -= 1
         return True
 
     def connected(self, x, y):
-        """Test whether `x` and `y` are in the same component/set.
+        """Test whether `x` and `y` are in the same subset.
 
         Parameters
         ----------
         x, y : hashable object
-            Nodes to test.
+            Elements to test.
 
         Returns
         -------

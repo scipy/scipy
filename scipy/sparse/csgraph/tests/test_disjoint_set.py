@@ -36,13 +36,13 @@ def get_nodes(n):
 def test_linear_union_sequence(n):
     nodes = get_nodes(n)
     dis = DisjointSet(nodes)
-    assert dis.n_components == n
+    assert dis.n_subsets == n
 
     for i in range(n - 1):
         assert not dis.connected(nodes[i], nodes[i + 1])
         assert dis.merge(nodes[i], nodes[i + 1])
         assert dis.connected(nodes[i], nodes[i + 1])
-        assert dis.n_components == n - 1 - i
+        assert dis.n_subsets == n - 1 - i
 
     assert nodes == list(dis)
     roots = [dis[i] for i in nodes]
@@ -59,7 +59,7 @@ def test_self_unions(n):
         assert dis.connected(x, x)
         assert not dis.merge(x, x)
         assert dis.connected(x, x)
-    assert dis.n_components == len(nodes)
+    assert dis.n_subsets == len(nodes)
 
     assert nodes == list(dis)
     roots = [dis[x] for x in nodes]
