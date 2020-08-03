@@ -149,18 +149,18 @@ class TestSomersD(object):
         # Our convention (and that of SAS FREQ) is row IV
         table = table.T
         dyx = 129/340
-        assert_equal(stats.somersd(table).statistic, dyx)
+        assert_allclose(stats.somersd(table).statistic, dyx)
 
         # table 7A - d_yx = 1
         table = np.array([[25, 0], [85, 0], [0, 30]])
         dxy, dyx = 3300/5425, 3300/3300
-        assert_equal(stats.somersd(table).statistic, dxy)
-        assert_equal(stats.somersd(table.T).statistic, dyx)
+        assert_allclose(stats.somersd(table).statistic, dxy)
+        assert_allclose(stats.somersd(table.T).statistic, dyx)
 
         # table 7B - d_yx < 0
         table = np.array([[25, 0], [0, 30], [85, 0]])
-        dyx = 1800/3300
-        assert_equal(stats.somersd(table.T).statistic, dyx)
+        dyx = -1800/3300
+        assert_allclose(stats.somersd(table.T).statistic, dyx)
 
     def test_contingency_table_with_zero_rows_cols(self):
         # test that zero rows/cols in contingency table don't affect result
@@ -183,15 +183,15 @@ class TestSomersD(object):
         res4 = stats.somersd(s4)
 
         # Cross-check with result from SAS FREQ:
-        assert_equal(res.statistic, -0.1169811320754717)
-        assert_equal(res.statistic, res2.statistic)
-        assert_equal(res.statistic, res3.statistic)
-        assert_equal(res.statistic, res4.statistic)
+        assert_allclose(res.statistic, -0.1169811320754717)
+        assert_allclose(res.statistic, res2.statistic)
+        assert_allclose(res.statistic, res3.statistic)
+        assert_allclose(res.statistic, res4.statistic)
 
-        assert_equal(res.pvalue, 0.15637644818814952)
-        assert_equal(res.pvalue, res2.pvalue)
-        assert_equal(res.pvalue, res3.pvalue)
-        assert_equal(res.pvalue, res4.pvalue)
+        assert_allclose(res.pvalue, 0.15637644818814952)
+        assert_allclose(res.pvalue, res2.pvalue)
+        assert_allclose(res.pvalue, res3.pvalue)
+        assert_allclose(res.pvalue, res4.pvalue)
 
     def test_invalid_contingency_tables(self):
         N = 100

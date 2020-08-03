@@ -365,7 +365,7 @@ def somersd(x, y=None):
 
     See Also
     --------
-    kendalltau : Calculates Kendall’s tau, another correlation measure.
+    kendalltau : Calculates Kendall's tau, another correlation measure.
     weightedtau : Computes a weighted version of Kendall's tau.
     spearmanr : Calculates a Spearman rank-order correlation coefficient.
     pearsonr : Calculates a Pearson correlation coefficient.
