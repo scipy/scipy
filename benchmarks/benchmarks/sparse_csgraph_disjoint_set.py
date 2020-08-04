@@ -48,11 +48,11 @@ class Bench(Benchmark):
         return [dis[i] for i in self.nodes]
 
     def time_contains(self, n):
-        # Test for presence
         assert self.nodes[0] in self.pre_merged
         assert self.nodes[n // 2] in self.pre_merged
         assert self.nodes[-1] in self.pre_merged
 
+    def time_absence(self, n):
         # Test for absense
         assert None not in self.pre_merged
         assert "dummy" not in self.pre_merged
