@@ -179,13 +179,13 @@ import scipy.special as special
 from scipy import linalg
 from . import distributions
 from . import mstats_basic
+from ._discrete_distns import binom
 from ._stats_mstats_common import (_find_repeats, linregress, theilslopes,
                                    siegelslopes)
 from ._stats import (_kendall_dis, _toint64, _weightedrankedtau,
                      _local_correlations)
 from ._rvs_sampling import rvs_ratio_uniforms
 from ._hypotests import epps_singleton_2samp
-
 
 __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
            'tmin', 'tmax', 'tstd', 'tsem', 'moment', 'variation',
@@ -207,6 +207,7 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
            'kstest', 'ks_1samp', 'ks_2samp',
            'chisquare', 'power_divergence', 'mannwhitneyu',
            'tiecorrect', 'ranksums', 'kruskal', 'friedmanchisquare',
+           'confint_onesided',
            'rankdata', 'rvs_ratio_uniforms',
            'combine_pvalues', 'wasserstein_distance', 'energy_distance',
            'brunnermunzel', 'epps_singleton_2samp']
@@ -7467,6 +7468,152 @@ def brunnermunzel(x, y, alternative="two-sided", distribution="t",
             "alternative should be 'less', 'greater' or 'two-sided'")
 
     return BrunnerMunzelResult(wbfn, p)
+
+
+def _confint_lowerbound(n_samples, quantile, confidence):
+    """
+    Computes the lower bound for a one-sided confidence interval
+    for a given
+    - quantile (0<q<1)
+    - confidence level (0<C<1)
+    - number of samples N.
+
+    Used by the public function confint()
+    """
+
+    # Confidence and quantile must be between 0 and 100
+    if confidence >= 1 or confidence <= 0:
+        raise ValueError("Invalid confidence: "+repr(confidence)+". Provide a real number strictly between 0 and 1.")
+    if quantile >= 1 or quantile <= 0:
+        raise ValueError("Invalid quantile: "+repr(quantile)+". Provide a real number strictly between 0 and 1.")
+
+    # compute all probabilities from the binomiale distribution for the quantile of interest
+    bd = binom(n_samples, quantile)
+    ppm = [np.maximum(1-x, 0.0) for x in np.cumsum([bd.pmf(k) for k in range(n_samples)])]
+
+    # search the index defining the lower-bound
+    if ppm[0] < confidence:
+        return np.nan
+    else:
+        for k in range(n_samples):
+            # search for first index reaching below the desired confidence
+            if ppm[k] < confidence:
+                # lower-bound is the previous index
+                return k-1
+
+
+def confint_onesided(x, quantile, confidence, type='one-sided', verbose=False):
+    """
+    Computes non-parametric confidence intervals for any quantile
+    from a set of (assumed iid) samples.
+
+    TODO: finish the descriptions
+    This function computes a confidence interval for the given
+    quantile, with the given confidence level.
+    both UB and LB computed.
+    computes simple two-sided CI too
+    None is returned if there are not enough samples for the desired CI.
+
+    Parameters
+    ----------
+    x : array_like or integer
+        Array of samples, should be one-dimensional.
+        If integer, taken as the number of samples available
+    quantile : float
+        The quantile for which we want to compute the confidence interval.
+        Must be strictly between 0 and 1.
+    confidence : float
+        The desired confidence level of the confidence interval.
+        Must be strictly between 0 and 1.
+    type : {'one-sided', 'two-sided'}, optional
+        Defines the type of confidence interval computed.
+        The following options are available (default is 'one-sided'):
+
+          * 'one-sided': computes the best possible one-sided confidence
+          intervals (both lower and upper bounds) for the given quantile.
+          * 'two-sided': computes a two-sided confidence interval by
+          combinaison of two one-sided intervals.
+          E.g., a 90% two-sided interval is computed by combining
+          two 95% one-sided intervals
+    verbose : bool, optional
+        Enable verbose outputs, default is False
+
+    Returns
+    -------
+    TODO
+    statistic : float
+        The Brunner-Munzer W statistic.
+    pvalue : float
+        p-value assuming an t distribution. One-sided or
+        two-sided, depending on the choice of `alternative` and `distribution`.
+
+    See Also
+    --------
+    any related function?
+
+    Notes
+    -----
+    Two-sided confidence intervals are not guaranteed to be optimal;
+    i.e., there may exist a tighter interval that may contain the quantile
+    of interest with probability larger than the confidence level.
+    These intervals may be found by exhaustive search, which we do not do
+    for efficiency reason.
+
+    References
+    ----------
+    .. [1] TODO
+
+    Examples
+    --------
+    >>> from scipy.stats import confint_onesided
+    >>> x = np.arange(1, 10)
+    >>> confint_onesided(x, 0.5, 0.95)
+    (1, 7)
+    >>> confint_onesided(x, 0.5, 0.95, type='two-sided')
+    (1, 8)
+    """
+
+    todo = ''
+    todo += '# ---------------------------------------------------------------- \n'
+    todo += '# TODO ThompsonCI \n'
+    todo += '# ---------------------------------------------------------------- \n'
+    todo += '- write the doctring\n'
+    todo += '- check input types\n'
+    todo += '- clean-up\n'
+    todo += '- input being vector or numb. of samples\n'
+    todo += '# ---------------------------------------------------------------- \n'
+    if verbose:
+        print('%s' % todo)
+
+    ##
+    # Checking the inputs
+    ##
+
+    # x (either number of samples or data vector)
+    n_samples = len(x)
+
+    # Handling the CI_side
+    # if not (CI_side == 'lower' or CI_side == 'upper'):
+    #     raise ValueError("Invalid CI_side: "+repr(CI_side)+". Valid 'CI_side' values: 'lower' or 'upper'")
+
+    # Handling the type of confint (one- or two-sided)
+    if not (type == 'one-sided' or type == 'two-sided'):
+        raise ValueError("Invalid type: "+repr(type)+". Valid 'type' values: 'one-sided' or 'two-sided'")
+    if type == 'two-sided':
+        conf_working = (1+confidence)/2
+    else:
+        # type == 'one-sided'
+        conf_working = confidence
+
+    # Compute the lower bound
+    LB = _confint_lowerbound(n_samples, quantile, conf_working)
+
+    # Compute the upper bound
+    # -> deduced from the lower bound of (1-quantile)
+    lb = _confint_lowerbound(n_samples, 1-quantile, conf_working)
+    UB = ((n_samples-1) - lb)   # First index is 0 (not 1), hence the -1
+
+    return LB, UB
 
 
 def combine_pvalues(pvalues, method='fisher', weights=None):

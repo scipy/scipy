@@ -5700,3 +5700,19 @@ class TestMGCStat(object):
                                                                random_state=1)
         assert_approx_equal(stat_dist, 0.163, significant=1)
         assert_approx_equal(pvalue_dist, 0.001, significant=1)
+
+class TestConfInt(object):
+    """ Test the computation of non-parametric
+    confidence intervals for quantiles
+    """
+    # def test_onesided(self):
+    #     assert_(True)
+
+    def test_onesided(self):
+        LB, UB = stats.confint_onesided(X, 0.5, 0.9)
+        assert_(LB, 1)
+        assert_(UB, 7)
+    def test_twosided(self):
+        LB, UB = stats.confint_onesided(X, 0.5, 0.9, type='two-sided')
+        assert_(LB, 1)
+        assert_(UB, 8)
