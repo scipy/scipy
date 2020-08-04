@@ -300,6 +300,7 @@ cdef class Rotation(object):
     - Quaternions
     - Rotation Matrices
     - Rotation Vectors
+    - Modified Rodrigues Parameters
     - Euler Angles
 
     The following operations on rotations are supported:
@@ -325,10 +326,12 @@ cdef class Rotation(object):
     from_quat
     from_matrix
     from_rotvec
+    from_mrp
     from_euler
     as_quat
     as_matrix
     as_rotvec
+    as_mrp
     as_euler
     apply
     __mul__
@@ -1016,6 +1019,106 @@ cdef class Rotation(object):
         else:
             return cls(quat, normalize=False, copy=False)
 
+    @classmethod
+    @cython.boundscheck(False)
+    @cython.wraparound(False)
+    def from_mrp(cls, mrp):
+        """Initialize from Modified Rodrigues Parameters (MRPs).
+
+        MRPs are a 3 dimensional vector co-directional to the axis of rotation and whose
+        magnitude is equal to ``tan(theta / 4)``, where ``theta`` is the angle of rotation
+        (in radians) [1]_.
+
+        MRPs have a singuarity at 360 degrees which can be avoided by ensuring the angle of
+        rotation does not exceed 180 degrees, i.e. switching the direction of the rotation when
+        it is past 180 degrees.
+
+        Parameters
+        ----------
+        mrp : array_like, shape (N, 3) or (3,)
+            A single vector or a stack of vectors, where `mrp[i]` gives
+            the ith set of MRPs.
+
+        Returns
+        -------
+        rotation : `Rotation` instance
+            Object containing the rotations represented by input MRPs.
+
+        References
+        ----------
+        .. [1] Shuster, M. D. "A Survery of Attitude Representations",
+               The Journal of Astronautical Sciences, Vol. 41, No.4, 1993,
+               pp. 475-476
+
+        Notes
+        -----
+
+        .. versionadded:: 1.6.0
+
+        Examples
+        --------
+        >>> from scipy.spatial.transform import Rotation as R
+
+        Initialize a single rotation:
+
+        >>> r = R.from_mrp([0, 0, 1])
+        >>> r.as_euler('xyz', degrees=True)
+        array([0.        , 0.        , 180.      ])
+        >>> r.as_euler('xyz').shape
+        (3,)
+
+        Initialize multiple rotations in one object:
+
+        >>> r = R.from_mrp([
+        ... [0, 0, 1],
+        ... [1, 0, 0]])
+        >>> r.as_euler('xyz', degrees=True)
+        array([[0.        , 0.        , 180.      ],
+               [180.0     , 0.        , 0.        ]])
+        >>> r.as_euler('xyz').shape
+        (2, 3)
+
+        It is also possible to have a stack of a single rotation:
+
+        >>> r = R.from_mrp([[0, 0, np.pi/2]])
+        >>> r.as_euler('xyz').shape
+        (1, 3)
+
+        """
+        is_single = False
+        mrp = np.asarray(mrp, dtype=float)
+
+        if mrp.ndim not in [1, 2] or mrp.shape[len(mrp.shape) - 1] != 3:
+            raise ValueError("Expected `mrp` to have shape (3,) "
+                             "or (N, 3), got {}".format(mrp.shape))
+
+        # If a single vector is given, convert it to a 2D 1 x 3 matrix but
+        # set self._single to True so that we can return appropriate objects
+        # in the `as_...` methods
+        cdef double[:, :] cmrp
+        if mrp.shape == (3,):
+            cmrp = mrp[None, :]
+            is_single = True
+        else:
+            cmrp = mrp
+
+        cdef Py_ssize_t num_rotations = cmrp.shape[0]
+        cdef double[:, :] quat = _empty2(num_rotations, 4)
+        cdef double mrp_squared_plus_1
+
+        for ind in range(num_rotations):
+            mrp_squared_plus_1 = 1 + _dot3(cmrp[ind, :], cmrp[ind, :])
+
+            quat[ind, 0] = 2 * cmrp[ind, 0] / mrp_squared_plus_1
+            quat[ind, 1] = 2 * cmrp[ind, 1] / mrp_squared_plus_1
+            quat[ind, 2] = 2 * cmrp[ind, 2] / mrp_squared_plus_1
+            quat[ind, 3] = (2 - mrp_squared_plus_1) / mrp_squared_plus_1
+
+        if is_single:
+            return cls(quat[0], normalize=False, copy=False)
+        else:
+            return cls(quat, normalize=False, copy=False)
+
     def as_quat(self):
         """Represent as quaternions.
 
@@ -1356,6 +1459,83 @@ cdef class Rotation(object):
             angles = np.rad2deg(angles)
 
         return angles[0] if self._single else angles
+
+    def as_mrp(self):
+        """Represent as Modified Rodrigues Parameters (MRPs).
+
+        MRPs are a 3 dimensional vector co-directional to the axis of rotation and whose
+        magnitude is equal to ``tan(theta / 4)``, where ``theta`` is the angle of rotation
+        (in radians) [1]_.
+
+        MRPs have a singuarity at 360 degrees which can be avoided by ensuring the angle of
+        rotation does not exceed 180 degrees, i.e. switching the direction of the rotation when
+        it is past 180 degrees. This function will always return MRPs corresponding to a rotation
+        of less than or equal to 180 degrees.
+
+        Returns
+        -------
+        mrps : ndarray, shape (3,) or (N, 3)
+            Shape depends on shape of inputs used for initialization.
+
+        References
+        ----------
+        .. [1] Shuster, M. D. "A Survery of Attitude Representations",
+               The Journal of Astronautical Sciences, Vol. 41, No.4, 1993,
+               pp. 475-476
+
+        Examples
+        --------
+        >>> from scipy.spatial.transform import Rotation as R
+
+        Represent a single rotation:
+
+        >>> r = R.from_rotvec([0, 0, np.pi])
+        >>> r.as_mrp()
+        array([0.        , 0.        , 1.         ])
+        >>> r.as_mrp().shape
+        (3,)
+
+        Represent a stack with a single rotation:
+
+        >>> r = R.from_euler('xyz', [[180, 0, 0]], degrees=True)
+        >>> r.as_mrp()
+        array([[1.       , 0.        , 0.         ]])
+        >>> r.as_mrp().shape
+        (1, 3)
+
+        Represent multiple rotations:
+
+        >>> r = R.from_rotvec([[np.pi/2, 0, 0], [0, 0, np.pi/2]])
+        >>> r.as_mrp()
+        array([[0.41421356, 0.        , 0.        ],
+               [0.        , 0.        , 0.41421356]])
+        >>> r.as_mrp().shape
+        (2, 3)
+
+        Notes
+        -----
+
+        .. versionadded:: 1.6.0
+        """
+        cdef Py_ssize_t num_rotations = len(self._quat)
+        cdef double[:, :] mrps = _empty2(num_rotations, 3)
+        cdef int sign
+        cdef double denominator
+
+        for ind in range(num_rotations):
+
+            # Ensure we are calculating the set of MRPs that correspond
+            # to a rotation of <= 180
+            sign = -1 if self._quat[ind, 3] < 0 else 1
+
+            denominator = 1 + sign * self._quat[ind, 3]
+            for i in range(3):
+                mrps[ind, i] = sign * self._quat[ind, i] / denominator
+
+        if self._single:
+            return np.asarray(mrps[0])
+        else:
+            return np.asarray(mrps)
 
     def apply(self, vectors, inverse=False):
         """Apply this rotation to a set of vectors.
