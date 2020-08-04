@@ -33,4 +33,12 @@ class Bench(Benchmark):
         return [dis[i] for i in self.nodes]
 
     def time_contains(self, n):
-        return self.nodes[0] in self.premerged
+        # Test for presence
+        assert self.nodes[0] in self.premerged
+        assert self.nodes[n // 2] in self.premerged
+        assert self.nodes[-1] in self.premerged
+
+        # Test for absense
+        assert None not in self.premerged
+        assert "dummy" not in self.premerged
+        assert (1, 2, 3) not in self.premerged
