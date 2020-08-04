@@ -15,35 +15,35 @@ def generate_random_token():
 
     while 1:
         size = rng.randint(1, 3)
-        node = rng.choice(tokens, size)
+        element = rng.choice(tokens, size)
         if size == 1:
-            yield node[0]
+            yield element[0]
         else:
-            yield tuple(node)
+            yield tuple(element)
 
 
-def get_nodes(n):
-    nodes = set()
-    for node in generate_random_token():
-        if node not in nodes:
-            nodes.add(node)
-            if len(nodes) >= n:
+def get_elements(n):
+    elements = set()
+    for element in generate_random_token():
+        if element not in elements:
+            elements.add(element)
+            if len(elements) >= n:
                 break
-    return list(nodes)
+    return list(elements)
 
 
 @pytest.mark.parametrize("n", [10, 100])
 def test_init(n):
-    nodes = get_nodes(n)
-    dis = DisjointSet(nodes)
+    elements = get_elements(n)
+    dis = DisjointSet(elements)
     assert dis.n_subsets == n
-    assert list(dis) == nodes
+    assert list(dis) == elements
 
 
 @pytest.mark.parametrize("n", [10, 100])
 def test_len(n):
-    nodes = get_nodes(n)
-    dis = DisjointSet(nodes)
+    elements = get_elements(n)
+    dis = DisjointSet(elements)
     assert len(dis) == n
 
     dis.add("dummy")
@@ -52,9 +52,9 @@ def test_len(n):
 
 @pytest.mark.parametrize("n", [10, 100])
 def test_contains(n):
-    nodes = get_nodes(n)
-    dis = DisjointSet(nodes)
-    for x in nodes:
+    elements = get_elements(n)
+    dis = DisjointSet(elements)
+    for x in elements:
         assert x in dis
 
     assert "dummy" not in dis
@@ -62,82 +62,82 @@ def test_contains(n):
 
 @pytest.mark.parametrize("n", [10, 100])
 def test_add(n):
-    nodes = get_nodes(n)
-    dis1 = DisjointSet(nodes)
+    elements = get_elements(n)
+    dis1 = DisjointSet(elements)
 
     dis2 = DisjointSet()
-    for i, x in enumerate(nodes):
+    for i, x in enumerate(elements):
         dis2.add(x)
         assert len(dis2) == i + 1
 
     assert list(dis1) == list(dis2)
 
 
-def test_node_not_present():
-    nodes = get_nodes(n=10)
-    dis = DisjointSet(nodes)
+def test_element_not_present():
+    elements = get_elements(n=10)
+    dis = DisjointSet(elements)
 
     with assert_raises(KeyError):
         dis["dummy"]
 
     with assert_raises(KeyError):
-        dis.merge(nodes[0], "dummy")
+        dis.merge(elements[0], "dummy")
 
     with assert_raises(KeyError):
-        dis.connected(nodes[0], "dummy")
+        dis.connected(elements[0], "dummy")
 
 
 @pytest.mark.parametrize("n", [10, 100])
 def test_linear_union_sequence(n):
-    nodes = get_nodes(n)
-    dis = DisjointSet(nodes)
+    elements = get_elements(n)
+    dis = DisjointSet(elements)
 
     for i in range(n - 1):
-        assert not dis.connected(nodes[i], nodes[i + 1])
-        assert dis.merge(nodes[i], nodes[i + 1])
-        assert dis.connected(nodes[i], nodes[i + 1])
+        assert not dis.connected(elements[i], elements[i + 1])
+        assert dis.merge(elements[i], elements[i + 1])
+        assert dis.connected(elements[i], elements[i + 1])
         assert dis.n_subsets == n - 1 - i
 
-    assert nodes == list(dis)
-    roots = [dis[i] for i in nodes]
-    assert all([nodes[0] == r for r in roots])
-    assert not dis.merge(nodes[0], nodes[-1])
+    assert elements == list(dis)
+    roots = [dis[i] for i in elements]
+    assert all([elements[0] == r for r in roots])
+    assert not dis.merge(elements[0], elements[-1])
 
 
 @pytest.mark.parametrize("n", [10, 100])
 def test_self_unions(n):
-    nodes = get_nodes(n)
-    dis = DisjointSet(nodes)
+    elements = get_elements(n)
+    dis = DisjointSet(elements)
 
-    for x in nodes:
+    for x in elements:
         assert dis.connected(x, x)
         assert not dis.merge(x, x)
         assert dis.connected(x, x)
-    assert dis.n_subsets == len(nodes)
+    assert dis.n_subsets == len(elements)
 
-    assert nodes == list(dis)
-    roots = [dis[x] for x in nodes]
-    assert nodes == roots
+    assert elements == list(dis)
+    roots = [dis[x] for x in elements]
+    assert elements == roots
 
 
 @pytest.mark.parametrize("order", ["ab", "ba"])
 @pytest.mark.parametrize("n", [10, 100])
 def test_equal_size_ordering(n, order):
-    nodes = get_nodes(n)
-    dis = DisjointSet(nodes)
+    elements = get_elements(n)
+    dis = DisjointSet(elements)
 
     rng = np.random.RandomState(seed=0)
     indices = np.arange(n)
     rng.shuffle(indices)
 
     for i in range(0, len(indices), 2):
-        a, b = nodes[indices[i]], nodes[indices[i + 1]]
+        a, b = elements[indices[i]], elements[indices[i + 1]]
         if order == "ab":
             assert dis.merge(a, b)
         else:
             assert dis.merge(b, a)
 
-        expected = nodes[min(indices[i], indices[i + 1])]
+        expected = elements[min(indices[i], indices[i + 1])]
         assert dis[a] == expected
         assert dis[b] == expected
 
@@ -145,20 +145,20 @@ def test_equal_size_ordering(n, order):
 @pytest.mark.parametrize("kmax", [5, 10])
 def test_binary_tree(kmax):
     n = 2**kmax
-    nodes = get_nodes(n)
-    dis = DisjointSet(nodes)
+    elements = get_elements(n)
+    dis = DisjointSet(elements)
     rng = np.random.RandomState(seed=0)
 
     for k in 2**np.arange(kmax):
         for i in range(0, n, 2 * k):
             r1, r2 = rng.randint(0, k, size=2)
-            a, b = nodes[i + r1], nodes[i + k + r2]
+            a, b = elements[i + r1], elements[i + k + r2]
             assert not dis.connected(a, b)
             assert dis.merge(a, b)
             assert dis.connected(a, b)
 
-        assert nodes == list(dis)
-        roots = [dis[i] for i in nodes]
+        assert elements == list(dis)
+        roots = [dis[i] for i in elements]
         expected_indices = np.arange(n) - np.arange(n) % (2 * k)
-        expected = [nodes[i] for i in expected_indices]
+        expected = [elements[i] for i in expected_indices]
         assert roots == expected
