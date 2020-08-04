@@ -178,40 +178,60 @@ class BinnedStatisticDD(Benchmark):
 
 class ContinuousFitAnalyticalMLEOverride(Benchmark):
     pretty_name = "Fit Methods Overridden with Analytical MLEs"
-    param_names =  ["distribution", "loc_fixed", "scale_fixed", "shape1_fixed" ]
-    dists = ["pareto", "laplace"]
-    shape1, shape2, loc, scale = [[True, False]] * 4
+    param_names = ["distribution", "loc_fixed", "scale_fixed",
+                   "shape1_fixed", "shape2_fixed", "shape3_fixed"]
+    dists = ["pareto", "laplace", "beta", "ncf"]
+    shape1, shape2, shape3, loc, scale = [[True, False]] * 5
 
-    params = [dists,  loc, scale, shape1]
+    params = [dists, loc, scale, shape1, shape2, shape3]
 
     distributions = {"pareto": {"self": stats.pareto, "floc": 0, "fscale": 2,
-                                "shape1_fixed": 2, "fixed_shapes":{"b": 2}},
-                     "laplace": {"self": stats.laplace, "floc": 0, "fscale": 2}
+                                "shape1_fixed": 2, "fixed_shapes": {"b": 2},
+                                "loc": 2, "scale": 3},
+                     "laplace": {"self": stats.laplace, "floc": 0,
+                                 "fscale": 2, "loc": 2, "scale": 3},
+                     "beta": {"self": stats.beta, "floc": 1,
+                              "fscale": 2, "loc": 1, "scale": 2,
+                              "fixed_shapes": {"b": 2.31, "a": 0.627},
+                              "shape1_fixed": 2.31, "shape2_fixed": .6},
+                     "ncf": {"self": stats.ncf, "floc": 0, "fscale": 2,
+                             "shape1_fixed": 2, "shape2_fixed": 3,
+                             "shape3_fixed": 2, "loc": 2, "scale": 3,
+                             "fixed_shapes": {"dfn": 1, "dfd": 2, "nc": 3}}
                      }
 
-    def setup(self, dist_name, loc_fixed, scale_fixed, shape1_fixed):
+    def setup(self, dist_name, loc_fixed, scale_fixed, shape1_fixed,
+              shape2_fixed, shape3_fixed):
         self.distn = self.distributions[dist_name]["self"]
-        self.shapes = {}
+
         self.fixed = {}
+        self.dict = self.distributions[dist_name]
+        self.shapes = self.dict.get('fixed_shapes', {})
         # add fixed `loc` and `scale`
+        all_parameters = [loc_fixed, scale_fixed, shape1_fixed, shape2_fixed,
+                          shape3_fixed]
+        nparam = (len(self.distn.shapes.replace(',', ' ').split())
+                  if self.distn.shapes else 0) + 2
+        relevant_parameters = all_parameters[:nparam]
+        relevant_shapes = relevant_parameters[2:]
+        nonrelevant_parameters = all_parameters[nparam:]
+
+        if True in nonrelevant_parameters or False not in relevant_parameters:
+            raise NotImplementedError("skip non-relevant case")
+
         if loc_fixed:
-            self.fixed['floc'] = self.distributions[dist_name]["floc"]
+            self.fixed['floc'] = self.dict["floc"]
         if scale_fixed:
-            self.fixed['fscale'] = self.distributions[dist_name]['fscale']
+            self.fixed['fscale'] = self.dict['fscale']
 
-        if not self.distn.shapes:
-            if shape1_fixed is not False:
-                # only run this bench in the case that all shapes are false
-                raise NotImplementedError("has no shapes")
-        else:
-            self.shapes = self.distributions[dist_name]['fixed_shapes']
-            if shape1_fixed:
-                self.fixed['f0'] = self.distributions[dist_name]['shape1_fixed']
+        for i, boolean in enumerate(relevant_shapes):
+            if boolean:
+                self.fixed[f"f{i}"] = self.dict[f"shape{i + 1}_fixed"]
 
-        self.data = self.distn.rvs(size=10000, **self.shapes, loc=10, scale=3)
-        if loc_fixed and scale_fixed and (shape1_fixed if self.distn.shapes else True):
-            # all parameters were fixed.
-            raise NotImplementedError("all param fix")
+        self.data = self.distn.rvs(size=100, **self.shapes,
+                                   loc=self.dict['loc'],
+                                   scale=self.dict['scale'])
 
-    def time_fit(self, dist_name, shape1_fixed, loc_fixed, scale_fixed):
+    def time_fit(self, dist_name, loc_fixed, scale_fixed, shape1_fixed,
+                 shape2_fixed, shape3_fixed):
         self.distn.fit(self.data, **self.fixed)
