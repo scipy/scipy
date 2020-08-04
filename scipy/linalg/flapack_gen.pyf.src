@@ -16,8 +16,10 @@ subroutine <prefix>gebal(scale,permute,n,a,m,lo,hi,pivscale,info)
     ! where D = diag(d), T1,T2 are upper triangular matrices.
     ! lo,hi mark the starting and ending columns of submatrix B.
 
+    threadsafe
     callstatement { (*f2py_func)((permute?(scale?"B":"P"):(scale?"S":"N")),&n,a,&m,&lo,&hi,pivscale,&info); hi--; lo--; }
     callprotoargument char*,F_INT*,<ctype>*,F_INT*,F_INT*,F_INT*,<ctypereal>*,F_INT*
+
     integer intent(in),optional :: permute = 0
     integer intent(in),optional :: scale = 0
     integer intent(hide),depend(a,n) :: m = shape(a,0)
@@ -51,8 +53,11 @@ subroutine <prefix>gehrd(n,lo,hi,a,tau,work,lwork,info)
     !    v2v3v4h h h
     !              a]
     !
+
+    threadsafe
     callstatement { hi++; lo++; (*f2py_func)(&n,&lo,&hi,a,&n,tau,work,&lwork,&info); }
     callprotoargument F_INT*,F_INT*,F_INT*,<ctype>*,F_INT*,<ctype>*,<ctype>*,F_INT*,F_INT*
+
     integer intent(hide),depend(a) :: n = shape(a,0)
     <ftype> dimension(n,n),intent(in,out,copy,out=ht,aligned8),check(shape(a,0)==shape(a,1)) :: a
     integer intent(in),optional :: lo = 0
@@ -66,9 +71,12 @@ end subroutine <prefix>gehrd
 
 subroutine <prefix>gehrd_lwork(n,lo,hi,a,tau,work,lwork,info)
     ! LWORK computation for GEHRD
+
+    threadsafe
     fortranname <prefix>gehrd
     callstatement { hi++; lo++; (*f2py_func)(&n,&lo,&hi,&a,&n,&tau,&work,&lwork,&info); }
     callprotoargument F_INT*,F_INT*,F_INT*,<ctype>*,F_INT*,<ctype>*,<ctype>*,F_INT*,F_INT*
+
     integer intent(in) :: n
     <ftype> intent(hide) :: a
     integer intent(in),optional :: lo = 0
@@ -86,6 +94,7 @@ subroutine <prefix>gesv(n,nrhs,a,piv,b,info)
     ! U is upper diagonal triangular, L is unit lower triangular,
     ! piv pivots columns.
 
+    threadsafe
     callstatement {F_INT i;(*f2py_func)(&n,&nrhs,a,&n,piv,b,&n,&info);for(i=0;i\<n;--piv[i++]);}
     callprotoargument F_INT*,F_INT*,<ctype>*,F_INT*,F_INT*,<ctype>*,F_INT*,F_INT*
 
@@ -103,6 +112,7 @@ subroutine <prefix2>gesvx(fact,trans,n,nrhs,a,lda,af,ldaf,ipiv,equed,r,c,b,ldb,x
     ! Solve A * X = B using LU decomposition
     ! The expert driver of ?GESV with condition number, backward/forward error estimates, and iterative refinement
     ! This part takes care of the data types, single and double reals (sgesvx and dgesvx)
+
     threadsafe
     callstatement {F_INT i;(*f2py_func)(fact,trans,&n,&nrhs,a,&lda,af,&ldaf,ipiv,equed,r,c,b,&ldb,x,&ldx,&rcond,ferr,berr,work,iwork,&info);for(i=0;i\<n;--ipiv[i++]);}
     callprotoargument char*,char*,F_INT*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,F_INT*,char*,<ctype2>*,<ctype2>*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,<ctype2>*,<ctype2>*,<ctype2>*,F_INT*,F_INT*
@@ -136,6 +146,7 @@ subroutine <prefix2c>gesvx(fact,trans,n,nrhs,a,lda,af,ldaf,ipiv,equed,r,c,b,ldb,
     ! Solve A * X = B using LU decomposition
     ! The expert driver of ?GESV with condition number, backward/forward error estimates, and iterative refinement
     ! This part takes care of the data types, complex and double complex (cgesvx and zgesvx)
+
     threadsafe
     callstatement {F_INT i;(*f2py_func)(fact,trans,&n,&nrhs,a,&lda,af,&ldaf,ipiv,equed,r,c,b,&ldb,x,&ldx,&rcond,ferr,berr,work,rwork,&info);for(i=0;i\<n;--ipiv[i++]);}
     callprotoargument char*,char*,F_INT*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,F_INT*,char*,<ctype2>*,<ctype2>*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2>*,<ctype2>*,<ctype2>*,<ctype2c>*,<ctype2>*,F_INT*
@@ -167,6 +178,7 @@ end subroutine <prefix2c>gesvx
 
 subroutine <prefix>gecon(norm,n,a,lda,anorm,rcond,work,irwork,info)
    ! Computes the 1- or inf- norm reciprocal condition number estimate.
+
     threadsafe
     callstatement (*f2py_func)(norm,&n,a,&lda,&anorm,&rcond,work,irwork,&info)
     callprotoargument char*,F_INT*,<ctype>*,F_INT*,<ctypereal>*,<ctypereal>*,<ctype>*,<F_INT,F_INT,float,double>*,F_INT*
@@ -187,6 +199,7 @@ subroutine <prefix>getrf(m,n,a,piv,info)
     ! lu,piv,info = getrf(a,overwrite_a=0)
     ! Compute an LU factorization of a  general  M-by-N  matrix  A.
     ! A = P * L * U
+
     threadsafe
     callstatement {F_INT i;(*f2py_func)(&m,&n,a,&m,piv,&info);for(i=0,n=MIN(m,n);i\<n;--piv[i++]);}
     callprotoargument F_INT*,F_INT*,<ctype>*,F_INT*,F_INT*,F_INT*
@@ -205,6 +218,7 @@ subroutine <prefix>getrs(n,nrhs,lu,piv,b,info,trans)
     ! Solve A^T * X = B if trans=1
     ! Solve A^H * X = B if trans=2
     ! A = P * L * U
+
     threadsafe
     callstatement {F_INT i;for(i=0;i\<n;++piv[i++]);(*f2py_func)((trans?(trans==2?"C":"T"):"N"),&n,&nrhs,lu,&n,piv,b,&n,&info);for(i=0;i\<n;--piv[i++]);}
     callprotoargument char*,F_INT*,F_INT*,<ctype>*,F_INT*,F_INT*,<ctype>*,F_INT*,F_INT*
@@ -225,6 +239,7 @@ subroutine <prefix>getc2(n,a,lda,ipiv,jpiv,info)
     ! lu,ipiv,jpiv,info = getc2(a,overwrite_a=0)
     ! Compute an LU factorization of with complete pivoting of a general n-by-n matrix.
     ! A = P * L * U * Q
+
     threadsafe
     callstatement {F_INT i;(*f2py_func)(&n,a,&lda,ipiv,jpiv,&info);for(i=0;i\<n;--ipiv[i],--jpiv[i++]);}
     callprotoargument F_INT*,<ctype>*,F_INT*,F_INT*,F_INT*,F_INT*
@@ -243,6 +258,7 @@ subroutine <prefix>gesc2(n,lu,lda,rhs,ipiv,jpiv,scale)
     ! x,scale = gesc2(lu,rhs,ipiv,jpiv,overwrite_rhs=0)
     ! Solve  A * X = scale * RHS
     ! A = P * L * U * Q
+
     threadsafe
     callstatement {F_INT i;for(i=0;i\<n;++ipiv[i],++jpiv[i++]);(*f2py_func)(&n,lu,&lda,rhs,ipiv,jpiv,&scale);for(i=0;i\<n;--ipiv[i],--jpiv[i++]);}
     callprotoargument F_INT*,<ctype>*,F_INT*,<ctype>*,F_INT*,F_INT*,<ctypereal>*
@@ -263,6 +279,7 @@ subroutine <prefix>getri(n,lu,piv,work,lwork,info)
     ! Find A inverse A^-1.
     ! A = P * L * U
 
+    threadsafe
     callstatement {F_INT i;for(i=0;i\<n;++piv[i++]);(*f2py_func)(&n,lu,&n,piv,work,&lwork,&info);for(i=0;i\<n;--piv[i++]);}
     callprotoargument F_INT*,<ctype>*,F_INT*,F_INT*,<ctype>*,F_INT*,F_INT*
 
@@ -300,6 +317,7 @@ subroutine <prefix2>gesdd(m,n,minmn,u0,u1,vt0,vt1,a,compute_uv,full_matrices,u,s
     !               singular values
     ! transpose(V) - N x N matrix or N x min(M,N) if full_matrices=False
 
+    threadsafe
     callstatement (*f2py_func)((compute_uv?(full_matrices?"A":"S"):"N"),&m,&n,a,&m,s,u,&u0,vt,&vt0,work,&lwork,iwork,&info)
     callprotoargument char*,F_INT*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,F_INT*,F_INT*
 
@@ -327,6 +345,7 @@ end subroutine <prefix2>gesdd
 subroutine <prefix2>gesdd_lwork(m,n,minmn,u0,vt0,a,compute_uv,full_matrices,u,s,vt,work,lwork,iwork,info)
     ! LWORK computation for (S/D)GESDD
 
+    threadsafe
     fortranname <prefix2>gesdd
     callstatement (*f2py_func)((compute_uv?(full_matrices?"A":"S"):"N"),&m,&n,&a,&m,&s,&u,&u0,&vt,&vt0,&work,&lwork,&iwork,&info)
     callprotoargument char*,F_INT*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,F_INT*,F_INT*
@@ -359,6 +378,7 @@ subroutine <prefix2c>gesdd(m,n,minmn,u0,u1,vt0,vt1,a,compute_uv,full_matrices,u,
     !               singular values
     ! transpose(V) - N x N matrix or N x min(M,N) if full_matrices=False
 
+    threadsafe
     callstatement (*f2py_func)((compute_uv?(full_matrices?"A":"S"):"N"),&m,&n,a,&m,s,u,&u0,vt,&vt0,work,&lwork,rwork,iwork,&info)
     callprotoargument char*,F_INT*,F_INT*,<ctype2c>*,F_INT*,<ctype2>*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2>*,F_INT*,F_INT*
 
@@ -387,6 +407,7 @@ end subroutine <prefix2c>gesdd
 subroutine <prefix2c>gesdd_lwork(m,n,minmn,u0,vt0,a,compute_uv,full_matrices,u,s,vt,work,rwork,lwork,iwork,info)
     ! (C/Z)GESDD call with LWORK=-1 -- copypaste of above gesdd with dummy arrays
 
+    threadsafe
     fortranname <prefix2c>gesdd
     callstatement (*f2py_func)((compute_uv?(full_matrices?"A":"S"):"N"),&m,&n,&a,&m,&s,&u,&u0,&vt,&vt0,&work,&lwork,&rwork,&iwork,&info)
     callprotoargument char*,F_INT*,F_INT*,<ctype2c>*,F_INT*,<ctype2>*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2>*,F_INT*,F_INT*
@@ -420,6 +441,7 @@ subroutine <prefix2>gesvd(m,n,minmn,u0,u1,vt0,vt1,a,compute_uv,full_matrices,u,s
     !               singular values
     ! transpose(V) - N x N matrix or N x min(M,N) if full_matrices=False
 
+    threadsafe
     callstatement (*f2py_func)((compute_uv?(full_matrices?"A":"S"):"N"),(compute_uv?(full_matrices?"A":"S"):"N"),&m,&n,a,&m,s,u,&u0,vt,&vt0,work,&lwork,&info)
     callprotoargument char*,char*,F_INT*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,F_INT*
 
@@ -445,6 +467,7 @@ end subroutine <prefix2>gesvd
 subroutine <prefix2>gesvd_lwork(m,n,minmn,u0,vt0,a,compute_uv,full_matrices,u,s,vt,work,lwork,info)
     ! LWORK computation for (S/D)GESVD
 
+    threadsafe
     fortranname <prefix2>gesvd
     callstatement (*f2py_func)((compute_uv?(full_matrices?"A":"S"):"N"),(compute_uv?(full_matrices?"A":"S"):"N"),&m,&n,&a,&m,&s,&u,&u0,&vt,&vt0,&work,&lwork,&info)
     callprotoargument char*,char*,F_INT*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,F_INT*
@@ -476,6 +499,7 @@ subroutine <prefix2c>gesvd(m,n,minmn,u0,u1,vt0,vt1,a,compute_uv,full_matrices,u,
     !               singular values
     ! transpose(V) - N x N matrix or N x min(M,N) if full_matrices=False
 
+    threadsafe
     callstatement (*f2py_func)((compute_uv?(full_matrices?"A":"S"):"N"),(compute_uv?(full_matrices?"A":"S"):"N"),&m,&n,a,&m,s,u,&u0,vt,&vt0,work,&lwork,rwork,&info)
     callprotoargument char*,char*,F_INT*,F_INT*,<ctype2c>*,F_INT*,<ctype2>*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2>*,F_INT*
 
@@ -502,6 +526,7 @@ end subroutine <prefix2c>gesvd
 subroutine <prefix2c>gesvd_lwork(m,n,minmn,u0,vt0,a,compute_uv,full_matrices,u,s,vt,work,rwork,lwork,info)
     ! (C/Z)GESVD call with LWORK=-1 -- copypaste of above gesvd with dummy arrays
 
+    threadsafe
     fortranname <prefix2c>gesvd
     callstatement (*f2py_func)((compute_uv?(full_matrices?"A":"S"):"N"),(compute_uv?(full_matrices?"A":"S"):"N"),&m,&n,&a,&m,&s,&u,&u0,&vt,&vt0,&work,&lwork,&rwork,&info)
     callprotoargument char*,char*,F_INT*,F_INT*,<ctype2c>*,F_INT*,<ctype2>*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2>*,F_INT*
@@ -528,6 +553,7 @@ subroutine <prefix>gels(trans,m,n,nrhs,a,lda,b,ldb,work,lwork,info)
     ! lqr,x,info = gels(a,b,lwork=..,overwrite_a=False,overwrite_b=False)
     ! Solve Minimize 2-norm(A * X - B).
 
+    threadsafe
     callstatement (*f2py_func)(trans,&m,&n,&nrhs,a,&lda,b,&ldb,work,&lwork,&info)
     callprotoargument char*,F_INT*,F_INT*,F_INT*,<ctype>*,F_INT*,<ctype>*,F_INT*,<ctype>*,F_INT*,F_INT*
 
@@ -548,6 +574,7 @@ end subroutine <prefix>gels
 subroutine <prefix>gels_lwork(trans,m,n,nrhs,a,lda,b,ldb,work,lwork,info)
     ! ?GELS LWORK Query for optimal block size
 
+    threadsafe
     fortranname <prefix>gels
     callstatement (*f2py_func)(trans,&m,&n,&nrhs,&a,&lda,&b,&ldb,&work,&lwork,&info)
     callprotoargument char*,F_INT*,F_INT*,F_INT*,<ctype>*,F_INT*,<ctype>*,F_INT*,<ctype>*,F_INT*,F_INT*
@@ -572,6 +599,7 @@ subroutine <prefix2>gelss(m,n,minmn,maxmn,nrhs,a,b,s,cond,r,work,lwork,info)
     ! v,x,s,rank,work,info = gelss(a,b,cond=-1.0,overwrite_a=0,overwrite_b=0)
     ! Solve Minimize 2-norm(A * X - B).
 
+    threadsafe
     callstatement (*f2py_func)(&m,&n,&nrhs,a,&m,b,&maxmn,s,&cond,&r,work,&lwork,&info)
     callprotoargument F_INT*,F_INT*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,F_INT*
 
@@ -601,6 +629,8 @@ end subroutine <prefix2>gelss
 subroutine <prefix2>gelss_lwork(m,n,maxmn,nrhs,a,b,s,cond,r,work,lwork,info)
    ! work,info = gelss_lwork(m,n,nrhs,cond=-1.0)
    ! Query for optimal lwork size
+
+    threadsafe
     fortranname <prefix2>gelss
     callstatement (*f2py_func)(&m,&n,&nrhs,&a,&m,&b,&maxmn,&s,&cond,&r,&work,&lwork,&info)
     callprotoargument F_INT*,F_INT*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,F_INT*
@@ -627,6 +657,7 @@ subroutine <prefix2c>gelss(m,n,minmn,maxmn,nrhs,a,b,s,cond,r,work,rwork,lwork,in
     ! v,x,s,rank,work,info = gelss(a,b,cond=-1.0,overwrite_a=0,overwrite_b=0)
     ! Solve Minimize 2-norm(A * X - B).
 
+    threadsafe
     callstatement (*f2py_func)(&m,&n,&nrhs,a,&m,b,&maxmn,s,&cond,&r,work,&lwork,rwork,&info)
     callprotoargument F_INT*,F_INT*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2>*,<ctype2>*,F_INT*,<ctype2c>*,F_INT*,<ctype2>*,F_INT*
 
@@ -658,6 +689,7 @@ subroutine <prefix2c>gelss_lwork(m,n,maxmn,nrhs,a,b,s,cond,r,work,rwork,lwork,in
     ! work,info = gelss_lwork(m,n,nrhs,cond=-1.0)
     ! Query for optimal lwork size
 
+    threadsafe
     fortranname <prefix2c>gelss
     callstatement (*f2py_func)(&m,&n,&nrhs,&a,&m,&b,&maxmn,&s,&cond,&r,&work,&lwork,&rwork,&info)
     callprotoargument F_INT*,F_INT*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2>*,<ctype2>*,F_INT*,<ctype2c>*,F_INT*,<ctype2>*,F_INT*
@@ -685,6 +717,7 @@ subroutine <prefix2>gelsy(m,n,maxmn,minmn,nrhs,a,b,jptv,cond,r,work,lwork,info)
     ! v,x,j,rank,info = dgelsy(a,b,jptv,cond,lwork,overwrite_a=True,overwrite_b=True)
     ! Solve Minimize 2-norm(A * X - B).
 
+    threadsafe
     callstatement (*f2py_func)(&m,&n,&nrhs,a,&m,b,&maxmn,jptv,&cond,&r,work,&lwork,&info)
     callprotoargument F_INT*,F_INT*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,F_INT*
 
@@ -714,6 +747,7 @@ subroutine <prefix2>gelsy_lwork(m,n,maxmn,nrhs,a,b,jptv,cond,r,work,lwork,info)
     ! work,info = dgelsy_lwork(m,n,nrhs,cond)
     ! Query for optimal lwork size
 
+    threadsafe
     fortranname <prefix2>gelsy
     callstatement (*f2py_func)(&m,&n,&nrhs,&a,&m,&b,&maxmn,&jptv,&cond,&r,&work,&lwork,&info)
     callprotoargument F_INT*,F_INT*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,F_INT*
@@ -740,6 +774,7 @@ subroutine <prefix2c>gelsy(m,n,maxmn,minmn,nrhs,a,b,jptv,cond,r,work,lwork,rwork
     ! v,x,j,rank,info = zgelsy(a,b,jptv,cond,lwork,overwrite_a=True,overwrite_b=True)
     ! Solve Minimize 2-norm(A * X - B).
 
+    threadsafe
     callstatement (*f2py_func)(&m,&n,&nrhs,a,&m,b,&maxmn,jptv,&cond,&r,work,&lwork,rwork,&info)
     callprotoargument F_INT*,F_INT*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,F_INT*,<ctype2>*,F_INT*,<ctype2c>*,F_INT*,<ctype2>*,F_INT*
 
@@ -770,6 +805,7 @@ subroutine <prefix2c>gelsy_lwork(m,n,maxmn,nrhs,a,b,jptv,cond,r,work,lwork,rwork
     ! work,info = zgelsy_lwork(m,n,nrhs,cond)
     ! Query for optimal lwork size
 
+    threadsafe
     fortranname <prefix2c>gelsy
     callstatement (*f2py_func)(&m,&n,&nrhs,&a,&m,&b,&maxmn,&jptv,&cond,&r,&work,&lwork,&rwork,&info)
     callprotoargument F_INT*,F_INT*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,F_INT*,<ctype2>*,F_INT*,<ctype2c>*,F_INT*,<ctype2>*,F_INT*
@@ -797,6 +833,7 @@ subroutine <prefix2>gelsd(m,n,minmn,maxmn,nrhs,a,b,s,cond,r,work,lwork,size_iwor
     ! x,s,rank,info = dgelsd(a,b,lwork,size_iwork,cond=-1.0,overwrite_a=True,overwrite_b=True)
     ! Solve Minimize 2-norm(A * X - B).
 
+    threadsafe
     callstatement (*f2py_func)(&m,&n,&nrhs,a,&m,b,&maxmn,s,&cond,&r,work,&lwork,iwork,&info)
     callprotoargument F_INT*,F_INT*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,F_INT*,F_INT*
 
@@ -829,6 +866,7 @@ subroutine <prefix2>gelsd_lwork(m,n,maxmn,nrhs,a,b,s,cond,r,work,lwork,iwork,inf
    ! work,iwork,info = dgelsd_lwork(m,n,nrhs,cond=-1.0)
    ! Query for optimal lwork size
 
+    threadsafe
     fortranname <prefix2>gelsd
     callstatement (*f2py_func)(&m,&n,&nrhs,&a,&m,&b,&maxmn,&s,&cond,&r,&work,&lwork,&iwork,&info)
     callprotoargument F_INT*,F_INT*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,F_INT*,F_INT*
@@ -857,6 +895,7 @@ subroutine <prefix2c>gelsd(m,n,minmn,maxmn,nrhs,a,b,s,cond,r,work,lwork,size_rwo
     ! x,s,rank,info = zgelsd(a,b,lwork,size_rwork,size_iwork,cond=-1.0,overwrite_a=True,overwrite_b=True)
     ! Solve Minimize 2-norm(A * X - B).
 
+    threadsafe
     callstatement (*f2py_func)(&m,&n,&nrhs,a,&m,b,&maxmn,s,&cond,&r,work,&lwork, rwork, iwork,&info)
     callprotoargument F_INT*,F_INT*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2>*,<ctype2>*,F_INT*, <ctype2c>*,F_INT*,<ctype2>*,F_INT*,F_INT*
 
@@ -892,6 +931,7 @@ subroutine <prefix2c>gelsd_lwork(m,n,maxmn,nrhs,a,b,s,cond,r,work,lwork,rwork,iw
     ! work,rwork,iwork,info = zgelsd_lwork(m,n,nrhs,lwork=-1.0,cond=-1.0)
     ! Query for optimal lwork size
 
+    threadsafe
     fortranname <prefix2c>gelsd
     callstatement (*f2py_func)(&m,&n,&nrhs,&a,&m,&b,&maxmn,&s,&cond,&r,&work,&lwork, &rwork, &iwork,&info)
     callprotoargument F_INT*,F_INT*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2>*,<ctype2>*,F_INT*, <ctype2c>*,F_INT*,<ctype2>*,F_INT*,F_INT*
@@ -925,6 +965,7 @@ subroutine <prefix2>geqp3(m,n,a,jpvt,tau,work,lwork,info)
     threadsafe
     callstatement (*f2py_func)(&m,&n,a,&m,jpvt,tau,work,&lwork,&info)
     callprotoargument F_INT*,F_INT*,<ctype2>*,F_INT*,F_INT*,<ctype2>*,<ctype2>*,F_INT*,F_INT*
+
     integer intent(hide),depend(a):: m = shape(a,0)
     integer intent(hide),depend(a):: n = shape(a,1)
     <ftype2> dimension(m,n),intent(in,out,copy,out=qr,aligned8) :: a
@@ -982,6 +1023,7 @@ subroutine <prefix>geqrf_lwork(m,n,a,tau,work,lwork,info)
     ! work, info = geqrf_lwork(m, n)
     ! Calculate the optimal size of the ?geqrf work array.
 
+    threadsafe
     fortranname <prefix>geqrf
     callstatement (*f2py_func)(&m,&n,&a,&m,&tau,&work,&lwork,&info)
     callprotoargument F_INT*,F_INT*,<ctype>*,F_INT*,<ctype>*,<ctype>*,F_INT*,F_INT*
@@ -1010,6 +1052,7 @@ subroutine <prefix>geqrfp(m,n,a,lda,tau,work,lwork,info)
     !    entries;
     !    0 is a (M-N)-by-N zero matrix, if M > N.
 
+    threadsafe
     callstatement (*f2py_func)(&m,&n,a,&lda,tau,work,&lwork,&info)
     callprotoargument F_INT*,F_INT*,<ctype>*,F_INT*,<ctype>*,<ctype>*,F_INT*,F_INT*
 
@@ -1027,6 +1070,7 @@ end subroutine <prefix>geqrfp
 subroutine <prefix>geqrfp_lwork(m,n,a,lda,tau,work,lwork,info)
     ! work, info = geqrfp_lwork(m, n)
 
+    threadsafe
     fortranname <prefix>geqrfp
     callstatement (*f2py_func)(&m,&n,&a,&lda,&tau,&work,&lwork,&info)
     callprotoargument F_INT*,F_INT*,<ctype>*,F_INT*,<ctype>*,<ctype>*,F_INT*,F_INT*
@@ -1065,6 +1109,7 @@ end subroutine <prefix>gerqf
 subroutine <prefix2>geev(compute_vl,compute_vr,n,a,wr,wi,vl,ldvl,vr,ldvr,work,lwork,info)
     ! wr,wi,vl,vr,info = geev(a,compute_vl=1,compute_vr=1,lwork=4*n,overwrite_a=0)
 
+    threadsafe
     callstatement {(*f2py_func)((compute_vl?"V":"N"),(compute_vr?"V":"N"),&n,a,&n,wr,wi,vl,&ldvl,vr,&ldvr,work,&lwork,&info);}
     callprotoargument char*,char*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,<ctype2>*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,F_INT*
 
@@ -1097,6 +1142,7 @@ end subroutine <prefix2>geev
 subroutine <prefix2>geev_lwork(compute_vl,compute_vr,n,a,wr,wi,vl,ldvl,vr,ldvr,work,lwork,info)
     ! LWORK=-1 call for (S/D)GEEV --- keep in sync with above (S/D)GEEV definition
 
+    threadsafe
     fortranname <prefix2>geev
     callstatement {(*f2py_func)((compute_vl?"V":"N"),(compute_vr?"V":"N"),&n,&a,&n,&wr,&wi,&vl,&ldvl,&vr,&ldvr,&work,&lwork,&info);}
     callprotoargument char*,char*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,<ctype2>*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,F_INT*
@@ -1128,6 +1174,7 @@ end subroutine <prefix2>geev_lwork
 subroutine <prefix2c>geev(compute_vl,compute_vr,n,a,w,vl,ldvl,vr,ldvr,work,lwork,rwork,info)
     ! w,vl,vr,info = geev(a,compute_vl=1,compute_vr=1,lwork=2*n,overwrite_a=0)
 
+    threadsafe
     callstatement (*f2py_func)((compute_vl?"V":"N"),(compute_vr?"V":"N"),&n,a,&n,w,vl,&ldvl,vr,&ldvr,work,&lwork,rwork,&info)
     callprotoargument char*,char*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2>*,F_INT*
 
@@ -1160,6 +1207,7 @@ end subroutine <prefix2c>geev
 subroutine <prefix2c>geev_lwork(compute_vl,compute_vr,n,a,w,vl,ldvl,vr,ldvr,work,lwork,rwork,info)
     ! LWORK=-1 call for (C/Z)GEEV --- keep in sync with above (C/Z)GEEV definition
 
+    threadsafe
     fortranname <prefix2c>geev
     callstatement (*f2py_func)((compute_vl?"V":"N"),(compute_vr?"V":"N"),&n,&a,&n,&w,&vl,&ldvl,&vr,&ldvr,&work,&lwork,&rwork,&info)
     callprotoargument char*,char*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2>*,F_INT*
@@ -1196,6 +1244,7 @@ subroutine <prefix2>gegv(compute_vl,compute_vr,n,a,b,alphar,alphai,beta,vl,ldvl,
     !
     ! alphar,alphai,beta,vl,vr,info = gegv(a,b,compute_vl=1,compute_vr=1,lwork=8*n,overwrite_a=0,overwrite_b=0)
 
+    threadsafe
     callstatement (*f2py_func)((compute_vl?"V":"N"),(compute_vr?"V":"N"),&n,a,&n,b,&n,alphar,alphai,beta,vl,&ldvl,vr,&ldvr,work,&lwork,&info)
     callprotoargument char*,char*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,<ctype2>*,<ctype2>*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,F_INT*
 
@@ -1237,6 +1286,7 @@ subroutine <prefix2c>gegv(compute_vl,compute_vr,n,a,b,alpha,beta,vl,ldvl,vr,ldvr
     !
     ! alpha,beta,vl,vr,info = gegv(a,b,compute_vl=1,compute_vr=1,lwork=2*n,overwrite_a=0,overwrite_b=0)
 
+    threadsafe
     callstatement (*f2py_func)((compute_vl?"V":"N"),(compute_vr?"V":"N"),&n,a,&n,b,&n,alpha,beta,vl,&ldvl,vr,&ldvr,work,&lwork,rwork,&info)
     callprotoargument char*,char*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,<ctype2c>*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2>*,F_INT*
 
@@ -1277,6 +1327,7 @@ subroutine <prefix2c>gees(compute_v,sort_t,<prefix2c>select,n,a,nrows,sdim,w,vs,
     !  A = Z * T * Z^H  -- a complex matrix is in Schur form if it is upper
     !  triangular
 
+    threadsafe
     callstatement (*f2py_func)((compute_v?"V":"N"),(sort_t?"S":"N"),cb_<prefix2c>select_in_gees__user__routines,&n,a,&nrows,&sdim,w,vs,&ldvs,work,&lwork,rwork,bwork,&info,1,1)
     callprotoargument char*,char*,F_INT(*)(<ctype2c>*),F_INT*,<ctype2c>*,F_INT*,F_INT*,<ctype2c>*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2>*,F_INT*,F_INT*,F_INT,F_INT
 
@@ -1307,6 +1358,7 @@ subroutine <prefix2>gees(compute_v,sort_t,<prefix2>select,n,a,nrows,sdim,wr,wi,v
     !  A = Z * T * Z^H  -- a real matrix is in Schur form if it is upper quasi-
     !  triangular with 1x1 and 2x2 blocks.
 
+    threadsafe
     callstatement (*f2py_func)((compute_v?"V":"N"),(sort_t?"S":"N"),cb_<prefix2>select_in_gees__user__routines,&n,a,&nrows,&sdim,wr,wi,vs,&ldvs,work,&lwork,bwork,&info,1,1)
     callprotoargument char*,char*,F_INT(*)(<ctype2>*,<ctype2>*),F_INT*,<ctype2>*,F_INT*,F_INT*,<ctype2>*,<ctype2>*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,F_INT*,F_INT*,F_INT,F_INT
 
@@ -1338,6 +1390,7 @@ subroutine <prefix2>gges(jobvsl,jobvsr,sort_t,<prefix2>select,n,a,lda,b,ldb,sdim
     ! and VSR).
     ! (A,B) = ( (VSL)*S*(VSR)**T, (VSL)*T*(VSR)**T )
 
+    threadsafe
     callstatement (*f2py_func)((jobvsl?"V":"N"),(jobvsr?"V":"N"),(sort_t?"S":"N"),cb_<prefix2>select_in_gges__user__routines,&n,a,&lda,b,&ldb,&sdim,alphar,alphai,beta,vsl,&ldvsl,vsr,&ldvsr,work,&lwork,bwork,&info)
     callprotoargument char*,char*,char*,F_INT(*)(<ctype2>*,<ctype2>*,<ctype2>*),F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,F_INT*,<ctype2>*,<ctype2>*,<ctype2>*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,F_INT*,F_INT*
 
@@ -1374,6 +1427,7 @@ subroutine <prefix2c>gges(jobvsl,jobvsr,sort_t,<prefix2c>select,n,a,lda,b,ldb,sd
     ! and VSR).
     ! (A,B) = ( (VSL)*S*(VSR)**T, (VSL)*T*(VSR)**H )
 
+    threadsafe
     callstatement (*f2py_func)((jobvsl?"V":"N"),(jobvsr?"V":"N"),(sort_t?"S":"N"),cb_<prefix2c>select_in_gges__user__routines,&n,a,&lda,b,&ldb,&sdim,alpha,beta,vsl,&ldvsl,vsr,&ldvsr,work,&lwork,rwork,bwork,&info)
     callprotoargument char*,char*,char*,F_INT(*)(<ctype2c>*,<ctype2c>*),F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,F_INT*,<ctype2c>*,<ctype2c>*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2>*,F_INT*,F_INT*
 
@@ -1405,6 +1459,7 @@ end subroutine <prefix2c>gges
 
 subroutine <prefix2>ggev(compute_vl,compute_vr,n,a,b,alphar,alphai,beta,vl,ldvl,vr,ldvr,work,lwork,info)
 
+    threadsafe
     callstatement {(*f2py_func)((compute_vl?"V":"N"),(compute_vr?"V":"N"),&n,a,&n,b,&n,alphar,alphai,beta,vl,&ldvl,vr,&ldvr,work,&lwork,&info);}
     callprotoargument char*,char*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,<ctype2>*,<ctype2>*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,F_INT*
 
@@ -1440,6 +1495,7 @@ end subroutine <prefix2>ggev
 
 subroutine <prefix2c>ggev(compute_vl,compute_vr,n,a,b,alpha,beta,vl,ldvl,vr,ldvr,work,lwork,rwork,info)
 
+    threadsafe
     callstatement {(*f2py_func)((compute_vl?"V":"N"),(compute_vr?"V":"N"),&n,a,&n,b,&n,alpha,beta,vl,&ldvl,vr,&ldvr,work,&lwork,rwork,&info);}
     callprotoargument char*,char*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,<ctype2c>*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2>*,F_INT*
 
@@ -1475,6 +1531,7 @@ end subroutine <prefix2>ggev
 
 subroutine <prefix>geequ(m,n,a,lda,r,c,rowcnd,colcnd,amax,info)
 
+    threadsafe
     callstatement (*f2py_func)(&m,&n,a,&lda,r,c,&rowcnd,&colcnd,&amax,&info)
     callprotoargument F_INT*,F_INT*,<ctype>*,F_INT*,<ctypereal>*,<ctypereal>*,<ctypereal>*,<ctypereal>*,<ctypereal>*,F_INT*
 
@@ -1494,6 +1551,7 @@ end subroutine <prefix>geequ
 
 subroutine <prefix>geequb(m,n,a,lda,r,c,rowcnd,colcnd,amax,info)
 
+    threadsafe
     callstatement (*f2py_func)(&m,&n,a,&lda,r,c,&rowcnd,&colcnd,&amax,&info)
     callprotoargument F_INT*,F_INT*,<ctype>*,F_INT*,<ctypereal>*,<ctypereal>*,<ctypereal>*,<ctypereal>*,<ctypereal>*,F_INT*
 
