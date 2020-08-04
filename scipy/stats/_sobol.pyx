@@ -4,16 +4,33 @@ cimport cython
 cimport numpy as cnp
 
 import os
-import math
 import numpy as np
-from scipy.stats import norm
 
-cdef int MAXDIM = 21201  # max number of dimensions
-cdef int MAXDEG = 18  # max polynomial degree
-cdef int MAXBIT = 30  # max number of bits
+# Parameters are linked to the direction numbers list.
+# See `initialize_direction_numbers` for more details.
+# Declared using DEF to be known at compilation time for ``poly`` et ``vinit``
+DEF MAXDIM = 21201  # max number of dimensions
+DEF MAXDEG = 18  # max polynomial degree
+DEF MAXBIT = 30  # max number of bits
 
-cdef int poly[21201]
-cdef int vinit[21201][18]
+
+# Needed to be accessed with python
+cdef extern from *:
+    """
+    int MAXDIM_DEFINE = 21201;
+    int MAXDEG_DEFINE = 18;
+    int MAXBIT_DEFINE = 30;
+    """
+    int MAXDIM_DEFINE  # max number of dimensions
+    int MAXDEG_DEFINE  # max polynomial degree
+    int MAXBIT_DEFINE  # max number of bits
+
+_MAXDIM = MAXDIM_DEFINE
+_MAXDEG = MAXDEG_DEFINE
+_MAXBIT = MAXBIT_DEFINE
+
+cdef int poly[MAXDIM]
+cdef int vinit[MAXDIM][MAXDEG]
 
 cdef int LARGEST_NUMBER = 2 ** MAXBIT  # largest possible integer
 cdef float RECIPD = 1.0 / LARGEST_NUMBER  # normalization constant
@@ -21,8 +38,17 @@ cdef float RECIPD = 1.0 / LARGEST_NUMBER  # normalization constant
 cdef bint is_initialized = False
 
 
-# Load direction numbers (taken from https://web.maths.unsw.edu.au/~fkuo/sobol/)
 def initialize_direction_numbers():
+    """Load direction numbers.
+
+    Direction numbers obtained using the search criterion D(6)
+    up to the dimension 21201. This is the recommended choice by the authors.
+
+    Original data can be found at https://web.maths.unsw.edu.au/~fkuo/sobol/.
+    The c-code generated from putting the numbers in as literals is obscenely
+    large/inefficient. It was thus packaged and save as an .npz data file.
+
+    """
     global is_initialized, poly, vinit
     if not is_initialized:
         dns = np.load(os.path.join(os.path.dirname(__file__), "_sobol_direction_numbers.npz"))
@@ -48,26 +74,26 @@ cdef int low_0_bit(const int x) nogil:
     """Get the position of the right-most 0 bit for an integer.
 
     Examples:
-        >>> low_0_bit(0)
-        1
-        >>> low_0_bit(1)
-        2
-        >>> low_0_bit(2)
-        1
-        >>> low_0_bit(5)
-        2
-        >>> low_0_bit(7)
-        4
+    >>> low_0_bit(0)
+    1
+    >>> low_0_bit(1)
+    2
+    >>> low_0_bit(2)
+    1
+    >>> low_0_bit(5)
+    2
+    >>> low_0_bit(7)
+    4
 
     Parameters
     ----------
-        x: int
-            An integer.
+    x: int
+        An integer.
 
     Returns
     -------
-        position: int
-            Position of the right-most 0 bit.
+    position: int
+        Position of the right-most 0 bit.
 
     """
     cdef int z = x
@@ -85,35 +111,35 @@ cdef int low_0_bit(const int x) nogil:
 cdef int ibits(const int x, const int pos, const int length) nogil:
     """Extract a sequence of bits from the bit representation of an integer.
 
-    Extract the sequence from position `pos` (inclusive) to `pos + length`
+    Extract the sequence from position `pos` (inclusive) to ``pos + length``
     (not inclusive), leftwise.
 
     Examples:
-        >>> ibits(1, 0, 1)
-        1
-        >>> ibits(1, 1, 1)
-        0
-        >>> ibits(2, 0, 1)
-        0
-        >>> ibits(2, 0, 2)
-        2
-        >>> ibits(25, 1, 5)
-        12
+    >>> ibits(1, 0, 1)
+    1
+    >>> ibits(1, 1, 1)
+    0
+    >>> ibits(2, 0, 1)
+    0
+    >>> ibits(2, 0, 2)
+    2
+    >>> ibits(25, 1, 5)
+    12
 
 
     Parameters
     ----------
-        x: int
-            Integer to convert to bit representation.
-        pos: int
-            Starting position of sequence in bit representation of integer.
-        length: int
-            Length of sequence (number of bits).
+    x: int
+        Integer to convert to bit representation.
+    pos: int
+        Starting position of sequence in bit representation of integer.
+    length: int
+        Length of sequence (number of bits).
 
     Returns
     -------
-        ibits: int
-            Integer value corresponding to bit sequence.
+    ibits: int
+        Integer value corresponding to bit sequence.
 
     """
     return (x >> pos) & ((1 << length) - 1)
@@ -162,14 +188,12 @@ cpdef void initialize_v(cnp.int_t[:, :] v, const int dim):
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cpdef void _draw(
-    const int n,
-    const int num_gen,
-    const int dim,
-    cnp.int_t[:, :] sv,
-    cnp.int_t[:] quasi,
-    cnp.float_t[:, :] result,
-) nogil:
+cpdef void _draw(const int n,
+                 const int num_gen,
+                 const int dim,
+                 cnp.int_t[:, :] sv,
+                 cnp.int_t[:] quasi,
+                 cnp.float_t[:, :] result) nogil:
     cdef int i, j, l, qtmp
     cdef int num_gen_loc = num_gen
     for i in range(n):
@@ -183,13 +207,11 @@ cpdef void _draw(
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cpdef void _fast_forward(
-    const int n,
-    const int num_gen,
-    const int dim,
-    cnp.int_t[:, :] sv,
-    cnp.int_t[:] quasi,
-) nogil:
+cpdef void _fast_forward(const int n,
+                         const int num_gen,
+                         const int dim,
+                         cnp.int_t[:, :] sv,
+                         cnp.int_t[:] quasi) nogil:
     cdef int i, j, l
     cdef int num_gen_loc = num_gen
     for i in range(n):
@@ -214,11 +236,9 @@ cdef int cdot_pow2(cnp.int_t[:] a) nogil:
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cpdef void _cscramble(
-    const int dim,
-    cnp.int_t[:, :, :] ltm,
-    cnp.int_t[:, :] sv,
-) nogil:
+cpdef void _cscramble(const int dim,
+                      cnp.int_t[:, :, :] ltm,
+                      cnp.int_t[:, :] sv) nogil:
     cdef int d, i, j, k, l, lsm, lsmdp, p, t1, t2, vdj
 
     # Set diagonals of maxbit x maxbit arrays to 1
@@ -244,10 +264,8 @@ cpdef void _cscramble(
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cpdef void _fill_p_cumulative(
-    cnp.float_t[:] p,
-    cnp.float_t[:] p_cumulative,
-) nogil:
+cpdef void _fill_p_cumulative(cnp.float_t[:] p,
+                              cnp.float_t[:] p_cumulative) nogil:
     cdef int i
     cdef int len_p = p.shape[0]
     cdef float tot = 0
@@ -260,11 +278,9 @@ cpdef void _fill_p_cumulative(
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cpdef void _categorize(
-    cnp.float_t[:] draws,
-    cnp.float_t[:] p_cumulative,
-    cnp.int_t[:] result,
-) nogil:
+cpdef void _categorize(cnp.float_t[:] draws,
+                       cnp.float_t[:] p_cumulative,
+                       cnp.int_t[:] result) nogil:
     cdef int i
     cdef int n_p = p_cumulative.shape[0]
     for i in range(draws.shape[0]):
@@ -274,11 +290,9 @@ cpdef void _categorize(
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef int _find_index(
-    cnp.float_t[:] p_cumulative,
-    const int size,
-    const float value,
-) nogil:
+cdef int _find_index(cnp.float_t[:] p_cumulative,
+                     const int size,
+                     const float value) nogil:
     cdef int l = 0
     cdef int r = size - 1
     cdef int m
