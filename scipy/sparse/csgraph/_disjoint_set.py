@@ -11,8 +11,6 @@ class DisjointSet:
 
     Attributes
     ----------
-    n_elements : int
-        The number of elements in the set.
     n_subsets : int
         The number of subsets.
 
@@ -77,7 +75,6 @@ class DisjointSet:
     [1, 2, 3, 'a', 'b']
     """
     def __init__(self, elements=None):
-        self.n_elements = 0
         self.n_subsets = 0
         self._sizes = {}
         self._parents = {}
@@ -92,6 +89,9 @@ class DisjointSet:
         Elements are ordered by insertion order.
         """
         return iter(self._indices)
+
+    def __len__(self):
+        return len(self._indices)
 
     def __contains__(self, x):
         return x in self._indices
@@ -124,7 +124,6 @@ class DisjointSet:
         self._sizes[x] = 1
         self._parents[x] = x
         self._indices[x] = len(self._indices)
-        self.n_elements += 1
         self.n_subsets += 1
 
     def merge(self, x, y):

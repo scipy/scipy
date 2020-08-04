@@ -33,10 +33,64 @@ def get_nodes(n):
 
 
 @pytest.mark.parametrize("n", [10, 100])
-def test_linear_union_sequence(n):
+def test_init(n):
     nodes = get_nodes(n)
     dis = DisjointSet(nodes)
     assert dis.n_subsets == n
+    assert list(dis) == nodes
+
+
+@pytest.mark.parametrize("n", [10, 100])
+def test_len(n):
+    nodes = get_nodes(n)
+    dis = DisjointSet(nodes)
+    assert len(dis) == n
+
+    dis.add("dummy")
+    assert len(dis) == n + 1
+
+
+@pytest.mark.parametrize("n", [10, 100])
+def test_contains(n):
+    nodes = get_nodes(n)
+    dis = DisjointSet(nodes)
+    for x in nodes:
+        assert x in dis
+
+    assert "dummy" not in dis
+
+
+@pytest.mark.parametrize("n", [10, 100])
+def test_add(n):
+    nodes = get_nodes(n)
+    dis1 = DisjointSet(nodes)
+
+    dis2 = DisjointSet()
+    for i, x in enumerate(nodes):
+        dis2.add(x)
+        assert len(dis2) == i + 1
+
+    assert list(dis1) == list(dis2)
+
+
+def test_node_not_present():
+    nodes = get_nodes(n=10)
+    dis = DisjointSet(nodes)
+
+    with assert_raises(KeyError):
+        dis["dummy"]
+
+    with assert_raises(KeyError):
+        dis.merge(nodes[0], "dummy")
+
+    with assert_raises(KeyError):
+        dis.connected(nodes[0], "dummy")
+
+
+@pytest.mark.parametrize("n", [10, 100])
+def test_linear_union_sequence(n):
+    nodes = get_nodes(n)
+    dis = DisjointSet(nodes)
 
     for i in range(n - 1):
         assert not dis.connected(nodes[i], nodes[i + 1])
@@ -108,26 +162,3 @@ def test_binary_tree(kmax):
         expected_indices = np.arange(n) - np.arange(n) % (2 * k)
         expected = [nodes[i] for i in expected_indices]
         assert roots == expected
-
-
-def test_node_not_present():
-    nodes = get_nodes(n=10)
-    dis = DisjointSet(nodes)
-
-    with assert_raises(KeyError):
-        dis["dummy"]
-
-    with assert_raises(KeyError):
-        dis.merge(nodes[0], "dummy")
-
-    with assert_raises(KeyError):
-        dis.connected(nodes[0], "dummy")
-
-
-def test_contains():
-    nodes = get_nodes(n=10)
-    dis = DisjointSet(nodes)
-    for x in nodes:
-        assert x in dis
-
-    assert "dummy" not in dis
