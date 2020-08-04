@@ -5,9 +5,9 @@ validating scipy.special functions.
 convert.py
 ----------
 
-This script parse the BOOST data and write the data into a CVS text file. For
-each data file, a subdirectory is created, as one boost data file (.ipp) can
-have several test sets.
+This script parses the BOOST data and writes the data into a CVS text file.
+For each data file, a subdirectory is created, as one boost data file (.ipp)
+can have several test sets.
 
 From the root of this repo
 ```
