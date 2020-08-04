@@ -348,7 +348,7 @@ def _broadcast_shapes_with_dropped_axis(a, b, axis):
 
 def _convert_symmetric_p_value(pvalue, root_func, alternative):
     """
-    Convert a one-sided, symmetric P-value to a one or two-sided p-value. root_func
+    Convert a one-sided p-value from a symmetric distribution to a one or two-sided p-value.
     describes the source distribution function ('sf' or 'cdf')
     """
     if alternative not in ["two-sided", "greater", "less"]:
