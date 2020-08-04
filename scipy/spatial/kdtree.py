@@ -451,7 +451,7 @@ class KDTree(cKDTree):
         >>> x, y = np.mgrid[0:5, 0:5]
         >>> points = np.c_[x.ravel(), y.ravel()]
         >>> tree = spatial.KDTree(points)
-        >>> tree.query_ball_point([2, 0], 1)
+        >>> sorted(tree.query_ball_point([2, 0], 1))
         [5, 10, 11, 15]
 
         Query multiple points and plot the results:
