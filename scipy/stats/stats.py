@@ -349,18 +349,16 @@ def _broadcast_shapes_with_dropped_axis(a, b, axis):
 def _convert_symmetric_p_value(pvalue, root_func, alternative):
     """
     Convert a one-sided p-value from a symmetric distribution to a one or two-sided p-value.
-    describes the source distribution function ('sf' or 'cdf')
     """
-    if alternative not in ["two-sided", "greater", "less"]:
+    if alternative not in {"two-sided", "greater", "less"}:
         raise ValueError("alternative should be 'less', 'greater' or 'two-sided'")
 
-    if root_func not in ["sf", "cdf"]:
+    if root_func not in {"sf", "cdf"}:
         raise ValueError("root_func should be 'sf' or 'cdf'")
 
-    op_type = alternative + "_" + root_func
-    if op_type == "greater_sf" or op_type == "less_cdf":
+    if (alternative, root_func) in {("greater", "sf"), ("less", "cdf")}:
         return pvalue
-    elif op_type == "less_sf" or op_type == "greater_cdf":
+    elif (alternative, root_func) in {("greater", "cdf"), ("less", "sf")}:
         return 1 - pvalue
     elif alternative == "two-sided":
         return 2 * np.minimum(pvalue, 1 - pvalue)
