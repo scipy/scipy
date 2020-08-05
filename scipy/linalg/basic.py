@@ -68,13 +68,13 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
         Square input data
     b : (N, NRHS) array_like
         Input data for the right hand side.
-    sym_pos : bool, optional
-        Assume `a` is symmetric and positive definite. This key is deprecated
-        and assume_a = 'pos' keyword is recommended instead. The functionality
-        is the same. It will be removed in the future.
     lower : bool, optional
         If True, only the data contained in the lower triangle of `a`. Default
         is to use upper triangle. (ignored for ``'gen'``)
+    assume_a : str, optional
+        Valid entries are explained above.
+    transposed: bool, optional
+        If True, ``a^T x = b`` for real matrices and ``a^H x = b``
     overwrite_a : bool, optional
         Allow overwriting data in `a` (may enhance performance).
         Default is False.
@@ -85,11 +85,10 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
         Whether to check that the input matrices contain only finite numbers.
         Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
-    assume_a : str, optional
-        Valid entries are explained above.
-    transposed: bool, optional
-        If True, ``a^T x = b`` for real matrices, raises `NotImplementedError`
-        for complex matrices (only for True).
+    sym_pos : bool, optional
+        Assume `a` is symmetric and positive definite. This key is deprecated
+        and assume_a = 'pos' keyword is recommended instead. The functionality
+        is the same. It will be removed in the future.
 
     Returns
     -------
@@ -104,8 +103,6 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
         If the matrix is singular.
     LinAlgWarning
         If an ill-conditioned input a is detected.
-    NotImplementedError
-        If transposed is True and input a is a complex matrix.
 
     Examples
     --------
