@@ -8,6 +8,10 @@ except ImportError:
     pass
 
 from .common import Benchmark
+try:    
+    from scipy.stats._distr_params import distcont
+except ImportError:
+    pass
 
 class Anderson_KSamp(Benchmark):
     def setup(self, *args):
@@ -177,60 +181,47 @@ class BinnedStatisticDD(Benchmark):
 
 
 class ContinuousFitAnalyticalMLEOverride(Benchmark):
-    pretty_name = "Fit Methods Overridden with Analytical MLEs"
+    # list of distributions to time
+    dists = ["pareto", "laplace", "beta", "ncf"]
+    # add custom values for rvs and fit, if desired, for any distribution:
+    # key should match name in dists and value should be list of loc, scale,
+    # and shapes
+    custom_input = {"beta": [1, 1, 1, 1]}
+    fnames = ['floc', 'fscale', 'f0', 'f1', 'f2']
+    fixed = {}
+
     param_names = ["distribution", "loc_fixed", "scale_fixed",
                    "shape1_fixed", "shape2_fixed", "shape3_fixed"]
-    dists = ["pareto", "laplace", "beta", "ncf"]
-    shape1, shape2, shape3, loc, scale = [[True, False]] * 5
-
-    params = [dists, loc, scale, shape1, shape2, shape3]
-
-    distributions = {"pareto": {"self": stats.pareto, "floc": 0, "fscale": 2,
-                                "shape1_fixed": 2, "fixed_shapes": {"b": 2},
-                                "loc": 2, "scale": 3},
-                     "laplace": {"self": stats.laplace, "floc": 0,
-                                 "fscale": 2, "loc": 2, "scale": 3},
-                     "beta": {"self": stats.beta, "floc": 1,
-                              "fscale": 2, "loc": 1, "scale": 2,
-                              "fixed_shapes": {"b": 2.31, "a": 0.627},
-                              "shape1_fixed": 2.31, "shape2_fixed": .6},
-                     "ncf": {"self": stats.ncf, "floc": 0, "fscale": 2,
-                             "shape1_fixed": 2, "shape2_fixed": 3,
-                             "shape3_fixed": 2, "loc": 2, "scale": 3,
-                             "fixed_shapes": {"dfn": 1, "dfd": 2, "nc": 3}}
-                     }
+    params = [dists, * [[True, False]] * 5]
 
     def setup(self, dist_name, loc_fixed, scale_fixed, shape1_fixed,
               shape2_fixed, shape3_fixed):
-        self.distn = self.distributions[dist_name]["self"]
+        exec("self.distn= stats." + dist_name)
 
-        self.fixed = {}
-        self.dict = self.distributions[dist_name]
-        self.shapes = self.dict.get('fixed_shapes', {})
-        # add fixed `loc` and `scale`
-        all_parameters = [loc_fixed, scale_fixed, shape1_fixed, shape2_fixed,
-                          shape3_fixed]
         nparam = (len(self.distn.shapes.replace(',', ' ').split())
                   if self.distn.shapes else 0) + 2
+        all_parameters = [loc_fixed, scale_fixed, shape1_fixed, shape2_fixed,
+                          shape3_fixed]
         relevant_parameters = all_parameters[:nparam]
-        relevant_shapes = relevant_parameters[2:]
         nonrelevant_parameters = all_parameters[nparam:]
 
+        # skip if all parameters are fixed or if non relevant parameters are
+        # not all false
         if True in nonrelevant_parameters or False not in relevant_parameters:
             raise NotImplementedError("skip non-relevant case")
 
-        if loc_fixed:
-            self.fixed['floc'] = self.dict["floc"]
-        if scale_fixed:
-            self.fixed['fscale'] = self.dict['fscale']
+        # use custom input or default loc, scale, and shape.
+        # default shapes are from `_distr_params.py`
+        default_shapes = [i for i in distcont if i[0] == dist_name][0][1]
+        param_value = self.custom_input.get(dist_name, [.834, 4.342,
+                                                        *default_shapes])
 
-        for i, boolean in enumerate(relevant_shapes):
-            if boolean:
-                self.fixed[f"f{i}"] = self.dict[f"shape{i + 1}_fixed"]
-
-        self.data = self.distn.rvs(size=100, **self.shapes,
-                                   loc=self.dict['loc'],
-                                   scale=self.dict['scale'])
+        # add fixed values if fixed in relevant_parameters to self.fixed
+        # with keys from self.fnames and values from parameter_values
+        self.fixed = {key: value for i, (key, value)
+                      in enumerate(zip(self.fnames, param_value))
+                      if relevant_parameters[i]}
+        self.data = self.distn.rvs(*param_value, size=10000)
 
     def time_fit(self, dist_name, loc_fixed, scale_fixed, shape1_fixed,
                  shape2_fixed, shape3_fixed):
