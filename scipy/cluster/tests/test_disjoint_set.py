@@ -1,7 +1,7 @@
 import pytest
 from pytest import raises as assert_raises
 import numpy as np
-from scipy.cluster import DisjointSet
+from scipy.cluster.hierarchy import DisjointSet
 import string
 
 

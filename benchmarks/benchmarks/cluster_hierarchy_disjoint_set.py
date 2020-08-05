@@ -1,7 +1,7 @@
 import numpy as np
 
 try:
-    from scipy.cluster import DisjointSet
+    from scipy.cluster.hierarchy import DisjointSet
 except ImportError:
     pass
 

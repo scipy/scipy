@@ -23,7 +23,6 @@ to generate flat clusters, and visualizing clusters with dendrograms.
 __all__ = ['vq', 'hierarchy', 'DisjointSet']
 
 from . import vq, hierarchy
-from scipy._lib._disjoint_set import DisjointSet
 
 from scipy._lib._testutils import PytestTester
 test = PytestTester(__name__)
