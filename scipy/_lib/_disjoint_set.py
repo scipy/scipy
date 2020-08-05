@@ -78,6 +78,7 @@ class DisjointSet:
         self.n_subsets = 0
         self._sizes = {}
         self._parents = {}
+        # _indices tracks the element insertion order
         self._indices = collections.OrderedDict()
         if elements is not None:
             for x in elements:
