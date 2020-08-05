@@ -1,7 +1,7 @@
 import numpy as np
 
 try:
-    from scipy.sparse.csgraph import DisjointSet
+    from scipy.cluster import DisjointSet
 except ImportError:
     pass
 

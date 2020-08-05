@@ -1,7 +1,7 @@
 import pytest
 from pytest import raises as assert_raises
 import numpy as np
-from scipy.sparse.csgraph import DisjointSet
+from scipy.cluster import DisjointSet
 import string
 
 
