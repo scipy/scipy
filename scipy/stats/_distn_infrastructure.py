@@ -3425,12 +3425,12 @@ class rv_discrete(rv_generic):
             Default is 0.
         lb, ub : int, optional
             Lower and upper bound for the summation, default is set to the
-            support of the distribution, inclusive (``ul <= k <= ub``).
+            support of the distribution, inclusive (``lb <= k <= ub``).
         conditional : bool, optional
             If true then the expectation is corrected by the conditional
             probability of the summation interval. The return value is the
             expectation of the function, `func`, conditional on being in
-            the given interval (k such that ``ul <= k <= ub``).
+            the given interval (k such that ``lb <= k <= ub``).
             Default is False.
         maxcount : int, optional
             Maximal number of terms to evaluate (to avoid an endless loop for
