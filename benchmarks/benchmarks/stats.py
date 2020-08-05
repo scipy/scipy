@@ -8,10 +8,16 @@ except ImportError:
     pass
 
 from .common import Benchmark
-try:    
+try:
     from scipy.stats._distr_params import distcont
 except ImportError:
     pass
+
+try:
+    from itertools import compress
+except ImportError:
+    pass
+
 
 class Anderson_KSamp(Benchmark):
     def setup(self, *args):
@@ -189,6 +195,7 @@ class ContinuousFitAnalyticalMLEOverride(Benchmark):
     custom_input = {"beta": [1, 1, 1, 1]}
     fnames = ['floc', 'fscale', 'f0', 'f1', 'f2']
     fixed = {}
+    distcont = dict(distcont)
 
     param_names = ["distribution", "loc_fixed", "scale_fixed",
                    "shape1_fixed", "shape2_fixed", "shape3_fixed"]
@@ -196,10 +203,16 @@ class ContinuousFitAnalyticalMLEOverride(Benchmark):
 
     def setup(self, dist_name, loc_fixed, scale_fixed, shape1_fixed,
               shape2_fixed, shape3_fixed):
-        exec("self.distn= stats." + dist_name)
+        self.distn = eval("stats." + dist_name)
 
-        nparam = (len(self.distn.shapes.replace(',', ' ').split())
-                  if self.distn.shapes else 0) + 2
+        # default `loc` and `scale` are .834 and 4.342, and shapes are from
+        # `_distr_params.py`
+        default_shapes = self.distcont[dist_name]
+        param_values = self.custom_input.get(dist_name, [.834, 4.342,
+                                                         *default_shapes])
+        # separate relevant and non-relevant parameters for this distribution
+        # based on the number of shapes
+        nparam = len(param_values)
         all_parameters = [loc_fixed, scale_fixed, shape1_fixed, shape2_fixed,
                           shape3_fixed]
         relevant_parameters = all_parameters[:nparam]
@@ -210,18 +223,11 @@ class ContinuousFitAnalyticalMLEOverride(Benchmark):
         if True in nonrelevant_parameters or False not in relevant_parameters:
             raise NotImplementedError("skip non-relevant case")
 
-        # use custom input or default loc, scale, and shape.
-        # default shapes are from `_distr_params.py`
-        default_shapes = [i for i in distcont if i[0] == dist_name][0][1]
-        param_value = self.custom_input.get(dist_name, [.834, 4.342,
-                                                        *default_shapes])
-
         # add fixed values if fixed in relevant_parameters to self.fixed
         # with keys from self.fnames and values from parameter_values
-        self.fixed = {key: value for i, (key, value)
-                      in enumerate(zip(self.fnames, param_value))
-                      if relevant_parameters[i]}
-        self.data = self.distn.rvs(*param_value, size=10000)
+        self.fixed = dict(zip(compress(self.fnames, relevant_parameters),
+                          compress(param_values, relevant_parameters)))
+        self.data = self.distn.rvs(*param_values, size=10000)
 
     def time_fit(self, dist_name, loc_fixed, scale_fixed, shape1_fixed,
                  shape2_fixed, shape3_fixed):
