@@ -201,6 +201,7 @@ Summary statistics
    entropy
    median_absolute_deviation
    median_abs_deviation
+   confint_quantile
 
 Frequency statistics
 ====================
