@@ -174,7 +174,7 @@ from numpy import array, asarray, ma
 from scipy.spatial.distance import cdist
 from scipy.ndimage import measurements
 from scipy._lib._util import (_lazywhere, check_random_state, MapWrapper,
-                              rng_integers)
+                              rng_integers, float_factorial)
 import scipy.special as special
 from scipy import linalg
 from . import distributions
@@ -4502,9 +4502,9 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate', method='auto'
         elif size == 2:
             pvalue = 1.0
         elif c == 0:
-            pvalue = 2.0/math.factorial(size) if size < 171 else 0.0
+            pvalue = 2.0/float_factorial(size)
         elif c == 1:
-            pvalue = 2.0/math.factorial(size-1) if (size-1) < 171 else 0.0
+            pvalue = 2.0/float_factorial(size-1)
         elif 2*c == tot:
             pvalue = 1.0
         else:
@@ -4518,7 +4518,7 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate', method='auto'
                 for k in range(j,c+1):
                     new[k] += new[k-1] - old[k-j]
 
-            pvalue = 2.0*sum(new)/math.factorial(size) if size < 171 else 0.0
+            pvalue = 2.0*sum(new)/float_factorial(size)
 
     elif method == 'asymptotic':
         # con_minus_dis is approx normally distributed with this variance [3]_
