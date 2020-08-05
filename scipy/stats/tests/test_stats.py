@@ -5705,14 +5705,13 @@ class TestConfInt(object):
     """ Test the computation of non-parametric
     confidence intervals for quantiles
     """
-    # def test_onesided(self):
-    #     assert_(True)
 
-    def test_onesided(self):
-        LB, UB = stats.confint_onesided(X, 0.5, 0.9)
-        assert_(LB, 1)
-        assert_(UB, 7)
-    def test_twosided(self):
-        LB, UB = stats.confint_onesided(X, 0.5, 0.9, type='two-sided')
-        assert_(LB, 1)
-        assert_(UB, 8)
+    def test_wrap_onesided(self):
+        LB, UB = stats.confint_quantile(X, 0.5, 0.9)
+        assert_equal(LB, 2)
+        assert_equal(UB, 6)
+
+    def test_wrap_twosided(self):
+        LB, UB = stats.confint_quantile(X, 0.5, 0.9, type='two-sided')
+        assert_equal(LB, 1)
+        assert_equal(UB, 7)
