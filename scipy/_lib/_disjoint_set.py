@@ -32,10 +32,6 @@ class DisjointSet:
     ----------
     .. [1] https://en.wikipedia.org/wiki/Disjoint-set_data_structure
 
-    See Also
-    --------
-    connected_components : Analyze the connected components of a sparse graph.
-
     Examples
     --------
     >>> from scipy.sparse.csgraph import DisjointSet
