@@ -25,23 +25,22 @@ def generate_random_token():
 def get_elements(n):
     elements = set()
     for element in generate_random_token():
-        if element not in elements:
-            elements.add(element)
-            if len(elements) >= n:
-                break
+        elements.add(element)
+        if len(elements) >= n:
+            break
     return list(elements)
 
 
-@pytest.mark.parametrize("n", [10, 100])
-def test_init(n):
+def test_init():
+    n = 10
     elements = get_elements(n)
     dis = DisjointSet(elements)
     assert dis.n_subsets == n
     assert list(dis) == elements
 
 
-@pytest.mark.parametrize("n", [10, 100])
-def test_len(n):
+def test_len():
+    n = 10
     elements = get_elements(n)
     dis = DisjointSet(elements)
     assert len(dis) == n
