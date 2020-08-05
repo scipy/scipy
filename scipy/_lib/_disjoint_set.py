@@ -34,7 +34,7 @@ class DisjointSet:
 
     Examples
     --------
-    >>> from scipy.sparse.csgraph import DisjointSet
+    >>> from scipy.cluster.hierarchy import DisjointSet
 
     Initialize a disjoint set:
 
