@@ -28,7 +28,6 @@ Contents
    maximum_flow -- solve the maximum flow problem for a graph
    maximum_bipartite_matching -- compute a maximum matching of a bipartite graph
    structural_rank -- compute the structural rank of a graph
-   DisjointSet -- data structure for incremental connectivity queries
    NegativeCycleError
 
 .. autosummary::
@@ -176,7 +175,6 @@ __all__ = ['connected_components',
            'csgraph_from_masked',
            'csgraph_to_dense',
            'csgraph_to_masked',
-           'DisjointSet',
            'NegativeCycleError']
 
 from ._laplacian import laplacian
