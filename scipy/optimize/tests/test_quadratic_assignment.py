@@ -100,7 +100,7 @@ def test_rand_qap():
 
     # check ofv with 100 random initializations
     res = quadratic_assignment(
-        cost_matrix, dist_matrix, options={'init_weight': 0.5, 'init_n': 100}
+        cost_matrix, dist_matrix, options={'init_weight': 0.5, 'init_k': 100}
     )
 
     assert 11156 <= res['score'] < 14500
@@ -114,13 +114,13 @@ def test_quadratic_assignment_input_validation():
     # correct type
 
     with pytest.raises(TypeError):
-        quadratic_assignment(A, B, options={'init_n': 1.5})
+        quadratic_assignment(A, B, options={'init_k': 1.5})
     with pytest.raises(ValueError):
-        quadratic_assignment(A, B, options={'init_n': -1})
+        quadratic_assignment(A, B, options={'init_k': -1})
     with pytest.raises(ValueError):
         quadratic_assignment(A, B, options={'init_weight': 2})
     with pytest.raises(ValueError):
-        quadratic_assignment(A, B, options={'init': "random"})
+        quadratic_assignment(A, B, options={'init_J': "random"})
     with pytest.raises(TypeError):
         quadratic_assignment(A, B, options={'maxiter': 1.5})
     with pytest.raises(ValueError):
@@ -185,7 +185,7 @@ def test_quadratic_assignment_input_validation():
     # test init matrix not doubly stochastic
     with pytest.raises(ValueError):
         quadratic_assignment(
-            np.identity(3), np.identity(3), options={'init': np.ones((3, 3))}
+            np.identity(3), np.identity(3), options={'init_J': np.ones((3, 3))}
         )
 
 

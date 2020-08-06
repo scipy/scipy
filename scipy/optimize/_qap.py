@@ -13,26 +13,24 @@ def quadratic_assignment(
     Solve the quadratic assignment problem.
 
     This function solves the Quadratic Assignment Problem (QAP) and the
-    Graph Matching Problem through an implementation of the Fast
-    Approximate QAP Algorithm (FAQ) (these two problems are the same up
-    to a sign change) [1]_.
+    Graph Matching Problem (GMP) using the Fast Approximate QAP Algorithm
+    (FAQ) [1]_.
 
-    Quadratic Assignment solves problems of the following form:
+    Quadratic assignment solves problems of the following form:
 
     .. math::
 
-        \min_P & \ {\ \text{trace}(APB^T P^T)}\\
+        \min_P & \ {\ \text{trace}(A^T P B P^T)}\\
         \mbox{s.t. } & {P \ \epsilon \ \mathcal{P}}\\
 
     where :math:`\mathcal{P}` is the set of all permutation matrices,
     and :math:`A` and :math:`B` are adjacency matrices.
 
-    This algorithm can be thought of as finding an alignment of the
-    vertices of two graphs which minimizes the number of induced edge
+    Graph matching tries to *maximize* the same objective function.
+    This algorithm can be thought of as finding the alignment of the
+    nodes of two graphs that minimizes the number of induced edge
     disagreements, or, in the case of weighted graphs, the sum of squared
-    differences of edge weight disagreements. The option to add seeds
-    (known vertex correspondence between some nodes) is also available
-    [2]_.
+    differences of edge weight disagreements.
 
     Note that the quadratic assignment problem is NP-hard, is not
     known to be solvable in polynomial time, and is computationally
@@ -43,96 +41,99 @@ def quadratic_assignment(
     Parameters
     ----------
     cost_matrix : 2d-array, square, non-negative
-        A square adjacency matrix. In this implementation, :math:`A` =
-        `cost-matrix` in the objective function above.
+        The square adjacency matrix :math:`A` in the objective function above.
 
     dist_matrix : 2d-array, square, non-negative
-        A square adjacency matrix.  In this implementation, :math:`B` =
-        `dist-matrix` in the objective function above.
+        The square adjacency matrix :math:`B` in the objective function above.
 
-    partial_match : 2d-array, optional, (default = None)
-        Allows the user apply a seed, fixing part of the matching between
-        the two adjacency matrices.
-        For column 1, each entry is an index of a node in `cost_matrix`.
-        For column 2, each entry is an index of a node in `dist_matrix`.
-        The elements of ``seed[:, 0]`` and ``seed[:, 1]`` are vertices
-        which are known to be matched, that is, ``seed[i, 0]`` is matched to
-        vertex ``seed[i, 1]``. Array shape ``(m , 2)`` where ``m <= number of
-        nodes``.
+    partial_match : 2d-array of integers, optional, (default = None)
+        Allows the user to fix part of the matching between the two adjacency
+        matrices. In the literature, a partial match is also known as a
+        "seed" [2]_.
+
+        Each row of `partial_match` specifies the indices of a pair of
+        corresponding nodes, that is, vertex ``partial_match[i, 0]`` is
+        matched to vertex ``partial_match[i, 1]``. Accordingly,
+        ``partial_match`` is an array of size ``(m , 2)``, where ``m`` is
+        less than the number of nodes.
 
     maximize : bool (default = False)
-        Gives users the option to solve the Graph Matching Problem (GMP)
-        rather than QAP. This is accomplished through trivial negation
+        Setting `maximize` to ``True`` solves the Graph Matching Problem (GMP)
+        rather than the QAP. This is accomplished through trivial negation
         of the objective function.
 
-
     options : dict, optional
-        A dictionary of solver options. All methods accept the following
-        options:
+        A dictionary of solver options.
 
-            init : 2d-array (default = 'barycenter')
-                The algorithm may be sensitive to the initial permutation
-                matrix (or search position) chosen due to the possibility
-                of several local minima within the feasible region.
-                With only 1 initialization, a barycenter init will
-                likely return a more accurate permutation.
+            init_J : 2d-array or "barycenter" (default = "barycenter")
+                The initial (guess) permutation matrix or search "position"
+                :math:`J`.
 
-                Choosing several random initializations (through
-                `init_weight` and `init_n`) as opposed to the non-informative
-                barycenter will likely result in a more accurate result at
-                the cost of higher runtime.
+                :math:`J` need not be a proper permutation matrix;
+                however, it must have the same shape as `cost_matrix` and
+                `dist_matrix`, and it must be doubly stochastic: each of its
+                rows and columns must sum to 1.
 
-                The initial position chosen:
+                If unspecified or ``"barycenter"``, the non-informative "flat
+                doubly stochastic matrix" :math:`1*1^T/n`, where :math:`n`
+                is the number of nodes and :math:`1` is a :math:`n \times 1`
+                array of ones, is used. This is the "barycenter" of the
+                search space of doubly-stochastic matrices.
+            init_weight : float in range [0, 1] (default = 1)
+                Allows the user to specify the weight of the provided
+                search position :math:`J` relative to random perturbations
+                :math:`K`.
 
-                "barycenter" : the non-informative "flat doubly stochastic
-                matrix," :math:`J=1*1^T /n` , i.e the barycenter of the
-                feasible region (where :math:`n` is the number of nodes and
-                :math:`1` is a ``(n, 1)`` array of ones).
-
-                If an ndarray is passed, it should have the same shape as
-                `cost_matrix` and `dist_matrix`, and its rows and columns
-                must sum to 1 (doubly stochastic).
-            init_weight : float, positive in range [0,1] (Default = None)
-                Allows the user to specify the amount of random perturbation
-                from the starting position of `init`
-                At each initialization, the initial permutation matrix
-                is some random point near :math:`J`, defined as
-                :math:`(\alpha J + (1- \alpha) K`, where :math:`\alpha`
-                is `init_weight` and :math:`K` is some random doubly
-                stochastic matrix.
-            init_n : int, positive (default = 1)
-                Number of random initializations of the starting
-                permutation matrix that the FAQ algorithm will undergo.
+                The algorithm will be repeated :math:`k` times
+                from randomized initial search positions
+                :math:`P_0 = (\alpha J + (1- \alpha) K`, where
+                :math:`J` is given by option `init_J`,
+                :math:`\alpha` is given by option `init_weight`,
+                :math:`k` is given by option `init_k`, and
+                :math:`K` is a random doubly stochastic matrix.
+            init_k : int, positive (default = 1)
+                The number of randomized initial search positions :math:`P_0`
+                from which the FAQ algorithm will proceed.
             maxiter : int, positive (default = 30)
-                Integer specifying the max number of Franke-Wolfe iterations.
-                FAQ typically converges with modest number of iterations.
+                Integer specifying the max number of Franke-Wolfe iterations
+                per initial search position. FAQ typically converges within a
+                modest number of iterations.
             shuffle_input : bool (default = True)
                 To avoid artificially high or low matching due to inherent
                 sorting of input adjacency matrices, gives users the option
-                to shuffle the nodes of `cost_matrix`. Results are then
-                unshuffled so that returned `col_ind` matches the node order
-                of inputs.
+                to shuffle the nodes. Results are then unshuffled so that the
+                returned results correspond with the node order of inputs.
             eps : float (default = 0.05)
-                A positive, threshold stopping criteria such that Franke-
-                Wolfe continues to iterate while Frobenius norm of
-                :math:`(P_{i}-P_{i+1}) > eps`, where :math:`i` is the
-                iteration number.
+                A threshold for the stopping criterion. Franke-Wolfe
+                iteration terminates when the change in search position between
+                iterations is sufficiently small, that is, when the Frobenius
+                norm of :math:`(P_{i}-P_{i+1}) \leq eps`, where :math:`i` is
+                the iteration number.
 
     Returns
     -------
     res : OptimizeResult
-        A :class:`scipy.optimize.OptimizeResult` consisting of the fields:
+        A :class:`scipy.optimize.OptimizeResult` containing the following
+        fields.
 
             col_ind : 1-D array
-                An array of column indices corresponding to the optimal
-                permutation (with the fixed seeds given) of the
-                nodes of `dist_matrix`, to best minimize the objective
-                function.
+                An array of column indices corresponding with the best
+                permutation of the nodes of `dist_matrix` found.
             score : float
-                The optimal value of the objective function.
+                The corresponding value of the objective function.
             nit : int
                 The total number of Franke-Wolfe iterations performed during
                 optimization.
+
+    Notes
+    -----
+    The algorithm may be sensitive to the initial permutation matrix (or
+    search "position") due to the possibility of several local minima
+    within the feasible region. A barycenter initialization is more likely to
+    result in a better solution than a single random initialization. However,
+    use of several randomized initializations  (through `init_weight` and
+    `init_k`) will likely result in a better solution at the cost of higher
+    runtime.
 
     References
     ----------
@@ -148,39 +149,47 @@ def quadratic_assignment(
 
     Examples
     --------
-
+    >>> import numpy as np
+    >>> from scipy.optimize import quadratic_assignment
     >>> cost = np.array([[0, 80, 150, 170], [80, 0, 130, 100],
     ...         [150, 130, 0, 120], [170, 100, 120, 0]])
     >>> dist = np.array([[0, 5, 2, 7], [0, 0, 3, 8],
     ...         [0, 0, 0, 3], [0, 0, 0, 0]])
-    >>> from scipy.optimize import quadratic_assignment
     >>> res = quadratic_assignment(cost, dist)
     >>> print(res)
      col_ind: array([0, 3, 2, 1])
          nit: 9
        score: 3260
 
-    To demonstrate explicitly how the `score` value
-    :math:`f(P) = trace(A^T PBP^T )` is calculated, one may construct the
-    permutation matrix, and perform the necessary algebra.
+    The see the relationship between the returned ``col_ind`` and ``score``,
+    use ``col_ind`` to form the best permutation matrix found, then evaluate
+    the objective function :math:`f(P) = trace(A^T P B P^T )`.
 
     >>> n = cost.shape[0]
-    >>> P = np.zeros((n, n))
-    >>> P[np.arange(n), res['col_ind']] = 1
+    >>> perm = res['col_ind']
+    >>> P = np.eye(n)[perm]
     >>> score = int(np.trace(cost.T @ P @ dist @ P.T))
     >>> print(score)
     3260
 
-    As you can see, the value here matches res['score'] reported above.
-    Alternatively, to avoid constructing the permutation matrix, one can also
-    perform the following calculation.
+    Alternatively, to avoid constructing the permutation matrix explicitly,
+    directly permute the rows and columns of the distance matrix.
 
-    >>> score = np.trace(cost.T @ dist[np.ix_(res['col_ind'], res['col_ind'])])
+    >>> score = np.trace(cost.T @ dist[np.ix_(perm, perm)])
     >>> print(score)
     3260
 
-    Here, we are simply permuting the distance matrix.
+    For this small problem, ``quadratic_assignment`` happens to have found the
+    globally optimal solution.
 
+    >>> from itertools import permutations
+    >>> perm_opt, score_opt = None, np.inf
+    >>> for perm in permutations([0, 1, 2, 3]):
+    >>>     score = int(np.trace(cost.T @ dist[np.ix_(perm, perm)])
+    >>>     if score < score_opt:
+    >>>         score_opt, perm_opt = score, perm
+    >>> print( list(perm_opt) == res['col_ind'].tolist())
+    True
     """
 
     if options is None:
@@ -195,9 +204,9 @@ def _quadratic_assignment_faq(
         dist_matrix,
         maximize=False,
         partial_match=None,
-        init="barycenter",
-        init_weight=None,
-        init_n=1,
+        init_J="barycenter",
+        init_weight=1,
+        init_k=1,
         maxiter=30,
         shuffle_input=True,
         eps=0.05
@@ -209,7 +218,7 @@ def _quadratic_assignment_faq(
     if partial_match is None:
         partial_match = np.array([[], []]).T
     partial_match = np.asarray(partial_match)
-    init_n = operator.index(init_n)
+    init_k = operator.index(init_k)
     maxiter = operator.index(maxiter)
 
     # ValueError check
@@ -233,11 +242,11 @@ def _quadratic_assignment_faq(
     elif not len(set(partial_match[:, 0])) == len(partial_match[:, 0]) or not \
             len(set(partial_match[:, 1])) == len(partial_match[:, 1]):
         msg = "`partial_match` column entries must be unique"
-    elif isinstance(init, str) and init not in {'barycenter'}:
-        msg = "Invalid 'init' parameter string"
+    elif isinstance(init_J, str) and init_J not in {'barycenter'}:
+        msg = "Invalid 'init_J' parameter string"
     elif init_weight is not None and (init_weight < 0 or init_weight > 1):
         msg = "'init_weight' must be in range [0, 1]"
-    elif init_n <= 0:
+    elif init_k <= 0:
         msg = "'n_init' must be a positive integer"
     elif maxiter <= 0:
         msg = "'maxiter' must be a positive integer"
@@ -289,13 +298,14 @@ def _quadratic_assignment_faq(
     B21 = dist_matrix[n_seeds:, :n_seeds]
     B22 = dist_matrix[n_seeds:, n_seeds:]
 
-    for i in range(init_n):
+    total_iter = 0
+    for i in range(init_k):
         # setting initialization matrix
-        if isinstance(init, str) and init == 'barycenter':
+        if isinstance(init_J, str) and init_J == 'barycenter':
             J = np.ones((n_unseed, n_unseed)) / float(n_unseed)
         else:
-            _check_init_input(init, n_unseed)
-            J = init
+            _check_init_input(init_J, n_unseed)
+            J = init_J
         if init_weight is not None:
             # generate a nxn matrix where each entry is a random number [0, 1]
             K = rng.rand(n_unseed, n_unseed)
@@ -338,6 +348,7 @@ def _quadratic_assignment_faq(
             grad_P = np.linalg.norm(P - P_i1)
             P = P_i1
             n_iter += 1
+            total_iter += 1
         # end of FW optimization loop
 
         row, col = linear_sum_assignment(
@@ -370,19 +381,19 @@ def _quadratic_assignment_faq(
         np.transpose(cost_matrix) @ dist_matrix[np.ix_(perm_inds, perm_inds)]
     )
 
-    res = {"col_ind": perm_inds, "score": score, "nit": n_iter}
+    res = {"col_ind": perm_inds, "score": score, "nit": total_iter}
 
     return OptimizeResult(res)
 
 
-def _check_init_input(init, n):
-    row_sum = np.round(np.sum(init, axis=0), decimals=2)
-    col_sum = np.round(np.sum(init, axis=1), decimals=2)
+def _check_init_input(init_J, n):
+    row_sum = np.round(np.sum(init_J, axis=0), decimals=2)
+    col_sum = np.round(np.sum(init_J, axis=1), decimals=2)
     msg = None
-    if init.shape != (n, n):
-        msg = "`init` matrix must have same shape as A and B"
-    elif (row_sum != 1.).any() or (col_sum != 1.).any() or (init < 0).any():
-        msg = "`init` matrix must be doubly stochastic"
+    if init_J.shape != (n, n):
+        msg = "`init_J` matrix must have same shape as A and B"
+    elif (row_sum != 1.).any() or (col_sum != 1.).any() or (init_J < 0).any():
+        msg = "`init_J` matrix must be doubly stochastic"
     if msg is not None:
         raise ValueError(msg)
 
