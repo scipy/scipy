@@ -20,6 +20,7 @@ subroutine <prefix>gemv(m,n,alpha,a,x,beta,y,offx,incx,offy,incy,trans,rows,cols
   ! y = gemv(alpha,a,x,beta=0,y=0,offx=0,incx=1,offy=0,incy=0,trans=0)
   ! Calculate y <- alpha * op(A) * x + beta * y
 
+  threadsafe
   callstatement (*f2py_func)((trans?(trans==2?"C":"T"):"N"),&m,&n,&alpha,a,&m, &
        x+offx,&incx,&beta,y+offy,&incy)
   callprotoargument char*,F_INT*,F_INT*,<ctype>*,<ctype>*,F_INT*,<ctype>*,F_INT*,<ctype>*, &
@@ -64,6 +65,7 @@ subroutine <prefix>gbmv(m,n,kl,ku,alpha,a,lda,x,incx,offx,beta,y,incy,offy,trans
   ! where alpha and beta are scalars, x and y are vectors and A is an
   ! m by n band matrix, with kl sub-diagonals and ku super-diagonals.
 
+  threadsafe
   callstatement (*f2py_func)((trans?(trans==2?"C":"T"):"N"),&m,&n,&kl,&ku,&alpha,a,&lda,x+offx,&incx,&beta,y+offy,&incy)
   callprotoargument char*,F_INT*,F_INT*,F_INT*,F_INT*,<ctype>*,<ctype>*,F_INT*,<ctype>*,F_INT*,<ctype>*,<ctype>*,F_INT*
 
@@ -106,6 +108,7 @@ subroutine <prefix><s,s,h,h>bmv(n,k,alpha,a,lda,x,incx,offx,beta,y,incy,offy,low
   ! where alpha and beta are scalars, x and y are n element vectors and
   ! A is an n by n symmetric band matrix, with k super-diagonals.
 
+  threadsafe
   callstatement (*f2py_func)((lower?"L":"U"),&n,&k,&alpha,a,&lda,x+offx,&incx,&beta,y+offy,&incy)
   callprotoargument char*,F_INT*,F_INT*,<ctype>*,<ctype>*,F_INT*,<ctype>*,F_INT*,<ctype>*,<ctype>*,F_INT*
 
@@ -142,6 +145,7 @@ subroutine <prefix6><s,s,s,s,h,h>pmv(n,alpha,ap,x,incx,offx,beta,y,incy,offy,low
   !
   ! Calculate y <- alpha * A * x + beta * y, A is symmmetric in packed form.
 
+  threadsafe
   callstatement (*f2py_func)((lower?"L":"U"),&n,&alpha,ap,x+offx,&incx,&beta,y+offy,&incy)
   callprotoargument char*,F_INT*,<ctype6>*,<ctype6>*,<ctype6>*,F_INT*,<ctype6>*,<ctype6>*,F_INT*
 
@@ -176,6 +180,7 @@ subroutine <prefix><symv,\0,hemv,\2>(n,alpha,a,x,beta,y,offx,incx,offy,incy,lowe
   !
   ! Calculate y <- alpha * A * x + beta * y, A is symmmetric/hermitian
 
+  threadsafe
   callstatement (*f2py_func)((lower?"L":"U"),&n,&alpha,a,&n,x+offx,&incx,&beta, &
        y+offy,&incy)
   callprotoargument char*,F_INT*,<ctype>*,<ctype>*,F_INT*,<ctype>*,F_INT*,<ctype>*, &
@@ -214,6 +219,7 @@ subroutine <prefix6>ger<,,u,u,c,c>(m,n,alpha,x,incx,y,incy,a,lda)
   ! Calculate a <- alpha*x*y^H + a
   !
 
+  threadsafe
   integer intent(hide),depend(x) :: m = len(x)
   integer intent(hide),depend(y) :: n = len(y)
 
@@ -235,6 +241,8 @@ subroutine <prefix6><sy,\0,\0,\0, he,\4>r(alpha,x,lower,incx,offx,n,a)
   ! Calculate a <- alpha*x*x^T + a
   ! Calculate a <- alpha*x*x^H + a
   !
+
+    threadsafe
     callstatement (*f2py_func)((lower?"L":"U"),&n,&alpha,x+offx,&incx,a,&n)
     callprotoargument char*, F_INT*, <ctype6>*, <ctype6>*, F_INT*, <ctype6>*, F_INT*
 
@@ -263,6 +271,7 @@ subroutine <prefix><sy, \0, he, \2>r2(alpha,x,y,lower,incx,offx,incy,offy,n,a)
   ! Calculate a <- alpha*x*y^T + alpha*y*x^T + a
   ! Calculate a <- alpha*x*y^H + alpha*y*x^H + a
   !
+    threadsafe
     callstatement (*f2py_func)((lower?"L":"U"),&n,&alpha,x+offx,&incx,y+offy,&incy,a,&n)
     callprotoargument char*, F_INT*, <ctype>*, <ctype>*, F_INT*, <ctype>*, F_INT*, <ctype>*, F_INT*
 
@@ -294,6 +303,7 @@ subroutine <prefix6><s,s,s,s,h,h>pr(n,alpha,x,incx,offx,ap,lower)
   ! where alpha is a scalar, x is an n element vector and A is an n x n
   ! symmetric/hermitian matrix, supplied in packed form.
 
+    threadsafe
     callstatement (*f2py_func)((lower?"L":"U"),&n,&alpha,x+offx,&incx,ap)
     callprotoargument char*,F_INT*,<ctype6creal>*,<ctype6>*,F_INT*,<ctype6>*
 
@@ -321,6 +331,8 @@ subroutine <prefix><s,s,h,h>pr2(n,alpha,x,incx,offx,y,incy,offy,ap,lower)
   !
   ! where alpha is a scalar, x and y are n element vectors and A is an
   ! n by n symmetric/hermitian matrix, supplied in packed form.
+
+    threadsafe
     callstatement (*f2py_func)((lower?"L":"U"),&n,&alpha,x+offx,&incx,y+offy,&incy,ap)
     callprotoargument char*,F_INT*,<ctype>*,<ctype>*,F_INT*,<ctype>*,F_INT*,<ctype>*
 
@@ -358,6 +370,7 @@ subroutine <prefix>tbsv(n,k,a,lda,x,incx,offx,lower,trans,diag)
   ! No test for singularity or near-singularity is included in this
   ! routine. Such tests must be performed before calling this routine.
 
+  threadsafe
   callstatement (*f2py_func)((lower?"L":"U"),(trans?(trans==2?"C":"T"):"N"),(diag?"U":"N"),&n,&k,a,&lda,x+offx,&incx)
   callprotoargument char*,char*,char*,F_INT*,F_INT*,<ctype>*,F_INT*,<ctype>*,F_INT*
 
@@ -391,6 +404,7 @@ subroutine <prefix>tpsv(n,ap,x,incx,offx,lower,trans,diag)
   ! No test for singularity or near-singularity is included in this
   ! routine. Such tests must be performed before calling this routine.
 
+  threadsafe
   callstatement (*f2py_func)((lower?"L":"U"),(trans?(trans==2?"C":"T"):"N"),(diag?"U":"N"),&n,ap,x+offx,&incx)
   callprotoargument char*,char*,char*,F_INT*,<ctype>*,<ctype>*,F_INT*
 
@@ -417,6 +431,7 @@ subroutine <prefix>trmv(n,a,x,offx,incx,lower,trans,diag)
   ! x <- op(A) * x, A is triangular
   !
 
+  threadsafe
   callstatement (*f2py_func)((lower?"L":"U"), (trans?(trans==2?"C":"T"):"N"), &
        (diag?"U":"N"),&n,a,&n,x+offx,&incx)
   callprotoargument char*,char*,char*,F_INT*,<ctype>*,F_INT*,<ctype>*,F_INT*
@@ -450,6 +465,7 @@ subroutine <prefix>trsv(n,a,lda,x,incx,offx,lower,trans,diag)
   ! No test for singularity or near-singularity is included in this
   ! routine. Such tests must be performed before calling this routine.
 
+  threadsafe
   callstatement (*f2py_func)((lower?"L":"U"),(trans?(trans==2?"C":"T"):"N"),(diag?"U":"N"),&n,a,&lda,x+offx,&incx)
   callprotoargument char*,char*,char*,F_INT*,<ctype>*,F_INT*,<ctype>*,F_INT*
 
@@ -479,6 +495,7 @@ subroutine <prefix>tbmv(n,k,a,lda,x,incx,offx,lower,trans,diag)
   ! where xout and x are an n element vector and  A is an n by n unit, or non-unit,
   ! upper or lower triangular band matrix, with ( k + 1 ) diagonals.
 
+  threadsafe
   callstatement (*f2py_func)((lower?"L":"U"),(trans?(trans==2?"C":"T"):"N"),(diag?"U":"N"),&n,&k,a,&lda,x+offx,&incx)
   callprotoargument char*,char*,char*,F_INT*,F_INT*,<ctype>*,F_INT*,<ctype>*,F_INT*
 
@@ -509,6 +526,7 @@ subroutine <prefix>tpmv(n,ap,x,incx,offx,lower,trans,diag)
   ! where x is n element vectors and A is an n by n unit, or
   ! non-unit, upper or lower triangular matrix, supplied in packed form.
 
+  threadsafe
   callstatement (*f2py_func)((lower?"L":"U"),(trans?(trans==2?"C":"T"):"N"),(diag?"U":"N"),&n,ap,x+offx,&incx)
   callprotoargument char*,char*,char*,F_INT*,<ctype>*,<ctype>*,F_INT*
 
