@@ -2556,7 +2556,17 @@ class gamma_gen(rv_continuous):
 
     When :math:`a` is an integer, `gamma` reduces to the Erlang
     distribution, and when :math:`a=1` to the exponential distribution.
+    
+    Gamma distributions are sometimes parameterized with two variables,
+    with a probability density function of:
 
+    .. math::
+
+        f(x, \alpha, \beta) = \frac{\beta^\alpha}{\Gamma(\alpha)} x^{\alpha - 1} e^{-\beta x }
+
+    Note that this parameterization is equivalent to the above, with 
+    `scale = 1 / beta`.
+    
     %(after_notes)s
 
     %(example)s
