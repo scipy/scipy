@@ -2,6 +2,7 @@
 !
 
 subroutine <prefix>ptsv(n, nrhs, d, e, b, info)
+    threadsafe
     callstatement (*f2py_func)(&n, &nrhs, d, e, b, &n, &info);
     callprotoargument F_INT*, F_INT*, <ctypereal>*, <ctype>*, <ctype>*, F_INT*, F_INT*
     integer intent(hide), depend(d) :: n = len(d)
@@ -21,6 +22,7 @@ subroutine <prefix>pttrf(n, d, e, info)
     ! definite tridiagonal matrix A.  The factorization may also be regarded
     ! as ! having the form A = U**T*D*U.
 
+    threadsafe
     callstatement (*f2py_func)(&n, d, e, &info)
     callprotoargument F_INT*, <ctypereal>*, <ctype>*, F_INT*
 
@@ -44,6 +46,7 @@ subroutine <prefix2>pttrs(n, nrhs, d, e, b, ldb, info)
     ! matrix whose subdiagonal is specified in the vector E, and X and B
     ! are N by NRHS matrices.
 
+    threadsafe
     callstatement (*f2py_func)(&n, &nrhs, d, e, b, &ldb, &info)
     callprotoargument F_INT*, F_INT*, <ctype2>*, <ctype2>*, <ctype2>*, F_INT*, F_INT*
 
@@ -70,6 +73,7 @@ subroutine <prefix2c>pttrs(lower, n, nrhs, d, e, b, ldb, info)
     ! matrix whose subdiagonal is specified in the vector E, and X and B
     ! are N by NRHS matrices.
 
+    threadsafe
     callstatement (*f2py_func)((lower?"L":"U"), &n, &nrhs, d, e, b, &ldb, &info)
     callprotoargument char*, F_INT*, F_INT*, <ctype2>*, <ctype2c>*, <ctype2c>*, F_INT*, F_INT*
 
@@ -102,8 +106,11 @@ subroutine <prefix>pteqr(compute_z, n, d, e, z, ldz, work, info)
     ! tridiagonal form, however, may preclude the possibility of obtaining
     ! high relative accuracy in the small eigenvalues of the original
     ! matrix, if these eigenvalues range over many orders of magnitude.)
+
+    threadsafe
     callstatement (*f2py_func)((compute_z?(compute_z==2?"I":"V"):"N"), &n, d, e, z, &ldz, work, &info)
     callprotoargument char*, F_INT*, <ctypereal>*, <ctypereal>*, <ctype>*, F_INT*, <ctypereal>*, F_INT*
+
     integer intent(in, optional), check((compute_z>=0) && (compute_z<=2)) :: compute_z = 0
     integer intent(hide), depend(d) :: n = len(d)
     <ftypereal> intent(in,out,copy), dimension(n) :: d
@@ -120,10 +127,12 @@ subroutine <prefix2>ptsvx(fact, n, nrhs, d, e, df, ef, b, ldb, x, ldx, rcond, fe
     ! DPTSVX uses the factorization A = L*D*L**T to compute the solution
     ! to a real system of linear equations A*X = B, where A is an N-by-N
     ! symmetric positive definite tridiagonal matrix and X and B are
-    !N-by-NRHS matrices.
+    ! N-by-NRHS matrices.
     !
     ! Error bounds on the solution and a condition estimate are also
     ! provided.
+
+    threadsafe
     callstatement (*f2py_func)(fact, &n, &nrhs, d, e, df, ef, b, &ldb, x, &ldx, &rcond, ferr, berr, work, &info)
     callprotoargument char*, F_INT*, F_INT*, <ctype2>*, <ctype2>*, <ctype2>*, <ctype2>*, <ctype2>*, F_INT*, <ctype2>*, F_INT*,  <ctype2>*, <ctype2>*, <ctype2>*, <ctype2>*, F_INT*
 
@@ -151,10 +160,12 @@ subroutine <prefix2c>ptsvx(fact, n, nrhs, d, e, df, ef, b, ldb, x, ldx, rcond, f
     ! DPTSVX uses the factorization A = L*D*L**T to compute the solution
     ! to a real system of linear equations A*X = B, where A is an N-by-N
     ! symmetric positive definite tridiagonal matrix and X and B are
-    !N-by-NRHS matrices.
+    ! N-by-NRHS matrices.
     !
     ! Error bounds on the solution and a condition estimate are also
     ! provided.
+
+    threadsafe
     callstatement (*f2py_func)(fact, &n, &nrhs, d, e, df, ef, b, &ldb, x, &ldx, &rcond, ferr, berr, work, rwork, &info)
     callprotoargument char*, F_INT*, F_INT*, <ctype2>*, <ctype2c>*, <ctype2>*, <ctype2c>*, <ctype2c>*, F_INT*, <ctype2c>*, F_INT*,  <ctype2>*, <ctype2>*, <ctype2>*, <ctype2c>*, <ctype2>*, F_INT*
 
