@@ -14,6 +14,7 @@ subroutine <prefix2>gejsv(joba,jobu,jobv,jobr,jobt,jobp,m,n,a,lda,sva,u,ldu,v,ld
     ! the right singular vectors of [A], respectively. The matrices [U] and [V]
     ! are computed and stored in the arrays U and V, respectively. The diagonal
     ! of [SIGMA] is computed and stored in the array SVA.
+    threadsafe
     callstatement {F_INT i;(*f2py_func)(&"CEFGAR"[joba],&"UFWN"[jobu],&"VJWN"[jobv],(jobr?"R":"N"),(jobt?"T":"N"),(jobp?"P":"N"),&m,&n,a,&lda,sva,u,&ldu,v,&ldv,work,&lwork,iwork,&info);for(i=0;i\<7;i++){workout[i] = work[i];}for(i=0;i\<3;i++){iworkout[i] = iwork[i];}}
     callprotoargument char*,char*,char*,char*,char*,char*,F_INT*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,F_INT*,F_INT*
 
@@ -43,7 +44,7 @@ subroutine <prefix2>gejsv(joba,jobu,jobv,jobr,jobt,jobp,m,n,a,lda,sva,u,ldu,v,ld
 end subroutine <prefix2>gejsv
 
 subroutine <prefix2>tgsen(ijob,wantq,wantz,select,n,a,lda,b,ldb,alphar,alphai,beta,q,ldq,z,ldz,m,pl,pr,dif,work,lwork,iwork,liwork,info)
-
+    threadsafe
     callstatement (*f2py_func)(&ijob,&wantq,&wantz,select,&n,a,&lda,b,&ldb,alphar,alphai,beta,q,&ldq,z,&ldz,&m,&pl,&pr,dif,work,&lwork,iwork,&liwork,&info)
     callprotoargument F_INT*,F_INT*,F_INT*,F_INT*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,<ctype2>*,<ctype2>*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,F_INT*,<ctype2>*,<ctype2>*,<ctype2>*,<ctype2>*,F_INT*,F_INT*,F_INT*,F_INT*
 
@@ -76,6 +77,7 @@ subroutine <prefix2>tgsen(ijob,wantq,wantz,select,n,a,lda,b,ldb,alphar,alphai,be
 end subroutine <prefix2>tgsen
 
 subroutine <prefix2c>tgsen(ijob,wantq,wantz,select,n,a,lda,b,ldb,alpha,beta,q,ldq,z,ldz,m,pl,pr,dif,work,lwork,iwork,liwork,info)
+    threadsafe
     callstatement (*f2py_func)(&ijob,&wantq,&wantz,select,&n,a,&lda,b,&ldb,alpha,beta,q,&ldq,z,&ldz,&m,&pl,&pr,dif,work,&lwork,iwork,&liwork,&info)
     callprotoargument F_INT*,F_INT*,F_INT*,F_INT*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,<ctype2c>*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,F_INT*,<ctype2>*,<ctype2>*,<ctype2>*,<ctype2c>*,F_INT*,F_INT*,F_INT*,F_INT*
 
@@ -111,7 +113,7 @@ subroutine <prefix2>pbtrf(lower,n,kd,ab,ldab,info)
     ! A = U^T * U, C = U if lower = 0
     ! A = L * L^T, C = L if lower = 1
     ! C is triangular matrix of the corresponding Cholesky decomposition.
-
+    threadsafe
     callstatement (*f2py_func)((lower?"L":"U"),&n,&kd,ab,&ldab,&info);
     callprotoargument char*,F_INT*,F_INT*,<ctype2>*,F_INT*,F_INT*
 
@@ -131,7 +133,7 @@ subroutine <prefix2c>pbtrf(lower,n,kd,ab,ldab,info)
     ! A = U^H * U, C = U if lower = 0
     ! A = L * L^H, C = L if lower = 1
     ! C is triangular matrix of the corresponding Cholesky decomposition.
-
+    threadsafe
     callstatement (*f2py_func)((lower?"L":"U"),&n,&kd,ab,&ldab,&info);
     callprotoargument char*,F_INT*,F_INT*,<ctype2c>*,F_INT*,F_INT*
 
@@ -146,7 +148,6 @@ subroutine <prefix2c>pbtrf(lower,n,kd,ab,ldab,info)
 end subroutine <prefix2c>pbtrf
 
 subroutine <prefix2>pbtrs(lower, n, kd, nrhs, ab, ldab, b, ldb, info)
-
     ! Solve a system of linear equations A*X = B with a symmetric
     ! positive definite band matrix A using the Cholesky factorization.
     ! AB is the triangular factur U or L from the Cholesky factorization
@@ -154,6 +155,7 @@ subroutine <prefix2>pbtrs(lower, n, kd, nrhs, ab, ldab, b, ldb, info)
     ! A = U^T * U, AB = U if lower = 0
     ! A = L * L^T, AB = L if lower = 1
 
+    threadsafe
     callstatement (*f2py_func)((lower?"L":"U"),&n,&kd,&nrhs,ab,&ldab,b,&ldb,&info);
     callprotoargument char*,F_INT*,F_INT*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,F_INT*
 
@@ -178,6 +180,7 @@ subroutine <prefix2c>pbtrs(lower, n, kd, nrhs, ab, ldab, b, ldb, info)
     ! A = U^T * U, AB = U if lower = 0
     ! A = L * L^T, AB = L if lower = 1
 
+    threadsafe
     callstatement (*f2py_func)((lower?"L":"U"),&n,&kd,&nrhs,ab,&ldab,b,&ldb,&info);
     callprotoargument char*,F_INT*,F_INT*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,F_INT*
 
@@ -199,6 +202,7 @@ subroutine <prefix>trtrs(lower, trans, unitdiag, n, nrhs, a, lda, b, ldb, info)
     ! Solve a system of linear equations A*X = B with a triangular
     ! matrix A.
 
+    threadsafe
     callstatement (*f2py_func)((lower?"L":"U"),(trans?(trans==2?"C":"T"):"N"),(unitdiag?"U":"N"),&n,&nrhs,a,&lda,b,&ldb,&info);
     callprotoargument char*,char*,char*,F_INT*,F_INT*,<ctype>*,F_INT*,<ctype>*,F_INT*,F_INT*
 
@@ -228,6 +232,7 @@ subroutine <prefix>tbtrs(uplo,trans,diag,n,kd,nrhs,ab,ldab,b,ldb,info)
     !   * B is an N-by NRHS matrix.
     ! A check is made to verify that A is nonsingular.
 
+    threadsafe
     callstatement (*f2py_func)(uplo,trans,diag,&n,&kd,&nrhs,ab,&ldab,b,&ldb,&info)
     callprotoargument char*,char*,char*,F_INT*,F_INT*,F_INT*,<ctype>*,F_INT*,<ctype>*,F_INT*,F_INT*
 
@@ -262,6 +267,7 @@ subroutine <prefix2>pbsv(lower,n,kd,nrhs,ab,ldab,b,ldb,info)
     !  subdiagonals as A.  The factored form of A is then used to solve the
     !  system of equations A * X = B.
 
+    threadsafe
     callstatement (*f2py_func)((lower?"L":"U"),&n,&kd,&nrhs,ab,&ldab,b,&ldb,&info);
     callprotoargument char*,F_INT*,F_INT*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,F_INT*
 
@@ -292,6 +298,7 @@ subroutine <prefix2c>pbsv(lower,n,kd,nrhs,ab,ldab,b,ldb,info)
     !  subdiagonals as A.  The factored form of A is then used to solve the
     !  system of equations A * X = B.
 
+    threadsafe
     callstatement (*f2py_func)((lower?"L":"U"),&n,&kd,&nrhs,ab,&ldab,b,&ldb,&info);
     callprotoargument char*,F_INT*,F_INT*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,F_INT*
 
@@ -329,6 +336,7 @@ subroutine <prefix2>orcsd(compute_u1,compute_u2,compute_v1t,compute_v2t,trans,si
     !  min(p, m - q) - r, min(m - p, q) - r, and min(m - p, m - q) - r
     !  respectively.
 
+    threadsafe
     callstatement (*f2py_func)((compute_u1?"Y":"N"),(compute_u2?"Y":"N"),(compute_v1t?"Y":"N"),(compute_v2t?"Y":"N"),(trans?"T":"N"),(signs?"O":"D"),&m,&p,&q,x11,&ldx11,x12,&ldx12,x21,&ldx21,x22,&ldx22,theta,u1,&ldu1,u2,&ldu2,v1t,&ldv1t,v2t,&ldv2t,work,&lwork,iwork,&info)
     callprotoargument char*,char*,char*,char*,char*,char*,F_INT*,F_INT*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,F_INT*,F_INT*
 
@@ -378,6 +386,7 @@ end subroutine <prefix2>orcsd
 subroutine <prefix2>orcsd_lwork(m,p,q,x11,ldx11,x12,ldx12,x21,ldx21,x22,ldx22,theta,u1,ldu1,u2,ldu2,v1t,ldv1t,v2t,ldv2t,work,lwork,iwork,info,mmp,mmq)
     ! LWORK computation for (S/D)ORCSD
 
+    threadsafe
     fortranname <prefix2>orcsd
     callstatement (*f2py_func)("Y","Y","Y","Y","N","D",&m,&p,&q,&x11,&ldx11,&x12,&ldx12,&x21,&ldx21,&x22,&ldx22,&theta,&u1,&ldu1,&u2,&ldu2,&v1t,&ldv1t,&v2t,&ldv2t,&work,&lwork,&iwork,&info)
     callprotoargument char*,char*,char*,char*,char*,char*,F_INT*,F_INT*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,F_INT*,F_INT*
@@ -434,7 +443,7 @@ subroutine <prefix2c>uncsd(compute_u1,compute_u2,compute_v1t,compute_v2t,trans,s
     !  min(p, m - q) - r, min(m - p, q) - r, and min(m - p, m - q) - r
     !  respectively.
     
-
+    threadsafe
     callstatement (*f2py_func)((compute_u1?"Y":"N"),(compute_u2?"Y":"N"),(compute_v1t?"Y":"N"),(compute_v2t?"Y":"N"),(trans?"T":"N"),(signs?"O":"D"),&m,&p,&q,x11,&ldx11,x12,&ldx12,x21,&ldx21,x22,&ldx22,theta,u1,&ldu1,u2,&ldu2,v1t,&ldv1t,v2t,&ldv2t,work,&lwork,rwork,&lrwork,iwork,&info)
     callprotoargument char*,char*,char*,char*,char*,char*,F_INT*,F_INT*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2>*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2>*,F_INT*,F_INT*,F_INT*
 
@@ -486,6 +495,7 @@ end subroutine <prefix2c>uncsd
 subroutine <prefix2c>uncsd_lwork(m,p,q,x11,ldx11,x12,ldx12,x21,ldx21,x22,ldx22,theta,u1,ldu1,u2,ldu2,v1t,ldv1t,v2t,ldv2t,work,lwork,rwork,lrwork,iwork,info,mmp,mmq)
     ! LWORK computation for (C/Z)UNCSD
 
+    threadsafe
     fortranname <prefix2c>uncsd
     callstatement (*f2py_func)("Y","Y","Y","Y","N","D",&m,&p,&q,&x11,&ldx11,&x12,&ldx12,&x21,&ldx21,&x22,&ldx22,&theta,&u1,&ldu1,&u2,&ldu2,&v1t,&ldv1t,&v2t,&ldv2t,&work,&lwork,&rwork,&lrwork,&iwork,&info)
     callprotoargument char*,char*,char*,char*,char*,char*,F_INT*,F_INT*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2>*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2>*,F_INT*,F_INT*,F_INT*
@@ -529,8 +539,11 @@ subroutine <prefix2>orghr(n,lo,hi,a,tau,work,lwork,info)
     ! Compute orthogonal matrix Q for Hessenberg reduction from the matrix
     ! that was computed by gehrd
     !
+
+    threadsafe
     callstatement { hi++; lo++; (*f2py_func)(&n,&lo,&hi,a,&n,tau,work,&lwork,&info); }
     callprotoargument F_INT*,F_INT*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,<ctype2>*,F_INT*,F_INT*
+
     integer intent(hide),depend(a) :: n = shape(a,0)
     <ftype2> dimension(n,n),intent(in,out,copy,out=ht,aligned8),check(shape(a,0)==shape(a,1)) :: a
     integer intent(in),optional :: lo = 0
@@ -544,6 +557,7 @@ end subroutine <prefix2>orghr
 
 subroutine <prefix2>orghr_lwork(n,lo,hi,a,tau,work,lwork,info)
     ! LWORK computation ofr orghr
+    threadsafe
     fortranname <prefix2>orghr
     callstatement { hi++; lo++; (*f2py_func)(&n,&lo,&hi,&a,&n,&tau,&work,&lwork,&info); }
     callprotoargument F_INT*,F_INT*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,<ctype2>*,F_INT*,F_INT*
@@ -563,6 +577,8 @@ subroutine <prefix2c>unghr(n,lo,hi,a,tau,work,lwork,info)
     ! Compute orthogonal matrix Q for Hessenberg reduction from the matrix
     ! that was computed by gehrd
     !
+
+    threadsafe
     callstatement { hi++; lo++; (*f2py_func)(&n,&lo,&hi,a,&n,tau,work,&lwork,&info); }
     callprotoargument F_INT*,F_INT*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,<ctype2c>*,F_INT*,F_INT*
     integer intent(hide),depend(a) :: n = shape(a,0)
@@ -578,6 +594,7 @@ end subroutine <prefix2c>unghr
 
 subroutine <prefix2c>unghr_lwork(n,lo,hi,a,tau,work,lwork,info)
     ! LWORK computation for orghr
+    threadsafe
     fortranname <prefix2c>unghr
     callstatement { hi++; lo++; (*f2py_func)(&n,&lo,&hi,&a,&n,&tau,&work,&lwork,&info); }
     callprotoargument F_INT*,F_INT*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,<ctype2c>*,F_INT*,F_INT*
@@ -695,6 +712,7 @@ subroutine <prefix>geqrt(m,n,nb,a,lda,t,ldt,work,info)
     ! using the compact WY representation for Q. T stores the upper triangular
     ! block reflectors.
 
+    threadsafe
     callstatement (*f2py_func)(&m,&n,&nb,a,&lda,t,&ldt,work,&info)
     callprotoargument F_INT*,F_INT*,F_INT*,<ctype>*,F_INT*,<ctype>*,F_INT*,<ctype>*,F_INT*
 
@@ -718,6 +736,7 @@ subroutine <prefix>gemqrt(side,trans,m,n,k,nb,v,ldv,t,ldt,c,ldc,work,info)
     ! reflectors in matrix T. C may be multiplied by Q, its transpose (for real
     ! matrices), or its adjoint (for complex matrices) from the left or right.
 
+    threadsafe
     callstatement (*f2py_func)(side,trans,&m,&n,&k,&nb,v,&ldv,t,&ldt,c,&ldc,work,&info)
     callprotoargument char*,char*,F_INT*,F_INT*,F_INT*,F_INT*,<ctype>*,F_INT*,<ctype>*,F_INT*,<ctype>*,F_INT*,<ctype>*,F_INT*
 
@@ -747,6 +766,7 @@ subroutine <prefix>tpqrt(m,n,l,nb,a,lda,b,ldb,t,ldt,work,info)
     ! trapezoidal part of matrix B. T stores the upper triangular block
     ! reflectors.
 
+    threadsafe
     callstatement (*f2py_func)(&m,&n,&l,&nb,a,&lda,b,&ldb,t,&ldt,work,&info)
     callprotoargument F_INT*,F_INT*,F_INT*,F_INT*,<ctype>*,F_INT*,<ctype>*,F_INT*,<ctype>*,F_INT*,<ctype>*,F_INT*
 
@@ -775,6 +795,7 @@ subroutine <prefix>tpmqrt(side,trans,m,n,k,l,nb,v,ldv,t,ldt,a,lda,b,ldb,work,inf
     ! multiplied by Q, its transpose (for real matrices), or its adjoint (for
     ! complex matrices) from the left or right.
 
+    threadsafe
     callstatement (*f2py_func)(side,trans,&m,&n,&k,&l,&nb,v,&ldv,t,&ldt,a,&lda,b,&ldb,work,&info)
     callprotoargument char*,char*,F_INT*,F_INT*,F_INT*,F_INT*,F_INT*,<ctype>*,F_INT*,<ctype>*,F_INT*,<ctype>*,F_INT*,<ctype>*,F_INT*,<ctype>*,F_INT*
 
@@ -814,6 +835,8 @@ subroutine <prefix><or,or,un,un>mrz(side,trans,m,n,k,l,a,lda,nt,tau,c,ldc,work,l
     ! as returned by ?TZRZF. Q is of order M if SIDE = 'L' and of order N
     ! if SIDE = 'R'.
     !
+
+    threadsafe
     callstatement (*f2py_func)(side,trans,&m,&n,&k,&l,a,&lda,tau,c,&ldc,work,&lwork,&info)
     callprotoargument char*,char*,F_INT*,F_INT*,F_INT*,F_INT*,<ctype>*,F_INT*,<ctype>*,<ctype>*,F_INT*,<ctype>*,F_INT*,F_INT*
 
@@ -851,6 +874,7 @@ subroutine <prefix><or,or,un,un>mrz_lwork(side,trans,m,n,k,l,a,lda,tau,c,ldc,wor
     ! as returned by ?TZRZF. Q is of order M if SIDE = 'L' and of order N
     ! if SIDE = 'R'.
     !
+    threadsafe
     fortranname <prefix><or,or,un,un>mrz
     callstatement (*f2py_func)(side,trans,&m,&n,&k,&l,&a,&lda,&tau,&c,&ldc,&work,&lwork,&info)
     callprotoargument char*,char*,F_INT*,F_INT*,F_INT*,F_INT*,<ctype>*,F_INT*,<ctype>*,<ctype>*,F_INT*,<ctype>*,F_INT*,F_INT*
@@ -925,6 +949,7 @@ subroutine <prefix>trtri(n,c,info,lower,unitdiag)
     ! C is non-unit triangular matrix if unitdiag = 0
     ! C is unit triangular matrix if unitdiag = 1
 
+    threadsafe
     callstatement (*f2py_func)((lower?"L":"U"),(unitdiag?"U":"N"),&n,c,&n,&info)
     callprotoargument char*,char*,F_INT*,<ctype>*,F_INT*,F_INT*
 
@@ -961,6 +986,7 @@ subroutine <prefix>trsyl(trana, tranb, isgn, m, n, a, lda, b, ldb, c, ldc, scale
     !      1: A and B have common or very close eigenvalues; perturbed values
     !         were used to solve the equation
 
+    threadsafe
     callstatement (*f2py_func)(trana,tranb,&isgn,&m,&n,a,&lda,b,&ldb,c,&ldc,&scale,&info)
     callprotoargument char*,char*,F_INT*,F_INT*,F_INT*,<ctype>*,F_INT*,<ctype>*,F_INT*,<ctype>*,F_INT*,<ctypereal>*,F_INT*
 
@@ -992,6 +1018,7 @@ end subroutine <prefix>trsyl
 subroutine <prefix2c>hbevd(ab,compute_v,lower,n,ldab,kd,w,z,ldz,work,lwork,rwork,lrwork,iwork,liwork,info)
     ! in :Band:zubevd.f
 
+    threadsafe
     callstatement (*f2py_func)((compute_v?"V":"N"),(lower?"L":"U"),&n,&kd,ab,&ldab,w,z,&ldz,work,&lwork,rwork,&lrwork,iwork,&liwork,&info)
     callprotoargument char*,char*,F_INT*,F_INT*,<ctype2c>*,F_INT*,<ctype2>*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2>*,F_INT*,F_INT*,F_INT*,F_INT*
 
@@ -1032,6 +1059,7 @@ end subroutine <prefix2c>hbevd
 
 subroutine <prefix2c>hbevx(ab,ldab,compute_v,range,lower,n,kd,q,ldq,vl,vu,il,iu,abstol,w,z,m,mmax,ldz,work,rwork,iwork,ifail,info) ! in :Band:dsbevx.f
 
+    threadsafe
     callstatement (*f2py_func)((compute_v?"V":"N"),(range>0?(range==1?"V":"I"):"A"),(lower?"L":"U"),&n,&kd,ab,&ldab,q,&ldq,&vl,&vu,&il,&iu,&abstol,&m,w,z,&ldz,work,rwork,iwork,ifail,&info)
     callprotoargument char*,char*,char*,F_INT*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2>*,<ctype2>*,F_INT*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,<ctype2c>*,F_INT*,<ctype2c>*,<ctype2>*,F_INT*,F_INT*,F_INT*
 
@@ -1122,6 +1150,7 @@ subroutine <prefix>gglse(m,n,p,a,lda,b,ldb,c,d,x,work,lwork,info)
     !
     !    B = (0 R)*Q,   A = Z*T*Q.
 
+    threadsafe
     callstatement (*f2py_func)(&m,&n,&p,a,&lda,b,&ldb,c,d,x,work,&lwork,&info)
     callprotoargument F_INT*,F_INT*,F_INT*,<ctype>*,F_INT*,<ctype>*,F_INT*,<ctype>*,<ctype>*,<ctype>*,<ctype>*,F_INT*,F_INT*
 
@@ -1149,6 +1178,7 @@ subroutine <prefix>gglse_lwork(m,n,p,a,lda,b,ldb,c,d,x,work,lwork,info)
     !
     ! lwork routine for ?gglse
     !
+    threadsafe
     fortranname <prefix>gglse
     callstatement (*f2py_func)(&m,&n,&p,&a,&lda,&b,&ldb,&c,&d,&x,&work,&lwork,&info)
     callprotoargument F_INT*,F_INT*,F_INT*,<ctype>*,F_INT*,<ctype>*,F_INT*,<ctype>*,<ctype>*,<ctype>*,<ctype>*,F_INT*,F_INT*
@@ -1175,8 +1205,8 @@ subroutine <prefix2>sbev(ab,compute_v,lower,n,ldab,kd,w,z,ldz,work,info)
     ! principally <s,d>sbevd does the same, and are recommended for use.
     ! (see man dsbevd)
 
+    threadsafe
     callstatement (*f2py_func)((compute_v?"V":"N"),(lower?"L":"U"),&n,&kd,ab,&ldab,w,z,&ldz,work,&info)
-
     callprotoargument char*,char*,F_INT*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,<ctype2>*,F_INT*,<ctype2>*,F_INT*
 
     ! Remark: if ab is fortran contigous on input
@@ -1204,6 +1234,7 @@ end subroutine <prefix2>sbev
 
 subroutine <prefix2>sbevd(ab,compute_v,lower,n,ldab,kd,w,z,ldz,work,lwork,iwork,liwork,info)
     ! in :Band:dsbevd.f
+    threadsafe
     callstatement (*f2py_func)((compute_v?"V":"N"),(lower?"L":"U"),&n,&kd,ab,&ldab,w,z,&ldz,work,&lwork,iwork,&liwork,&info)
     callprotoargument char*,char*,F_INT*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,F_INT*,F_INT*,F_INT*
 
@@ -1236,7 +1267,7 @@ subroutine <prefix2>sbevd(ab,compute_v,lower,n,ldab,kd,w,z,ldz,work,lwork,iwork,
 end subroutine <prefix2>sbevd
 
 subroutine <prefix2>sbevx(ab,ldab,compute_v,range,lower,n,kd,q,ldq,vl,vu,il,iu,abstol,w,z,m,mmax,ldz,work,iwork,ifail,info) ! in :Band:dsbevx.f
-
+    threadsafe
     callstatement (*f2py_func)((compute_v?"V":"N"),(range>0?(range==1?"V":"I"):"A"),(lower?"L":"U"),&n,&kd,ab,&ldab,q,&ldq,&vl,&vu,&il,&iu,&abstol,&m,w,z,&ldz,work,iwork,ifail,&info)
     callprotoargument char*,char*,char*,F_INT*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,<ctype2>*,F_INT*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,<ctype2>*,F_INT*,<ctype2>*, F_INT*,F_INT*,F_INT*
 
@@ -1313,7 +1344,7 @@ end subroutine <prefix2>sbevx
 subroutine <prefix2>stebz(d,e,range,vl,vu,il,iu,tol,order,n,work,iwork,m,nsplit,w,iblock,isplit,info)
     ! computes all or selected eigenvalues of a real, symmetric tridiagonal
     ! matrix.
-
+    threadsafe
     callstatement (*f2py_func)((range>0?(range==1?"V":"I"):"A"),order,&n,&vl,&vu,&il,&iu,&tol,d,e,&m,&nsplit,w,iblock,isplit,work,iwork,&info)
     callprotoargument char*,char*,F_INT*,<ctype2>*,<ctype2>*,F_INT*,F_INT*,<ctype2>*,<ctype2>*,<ctype2>*,F_INT*,F_INT*,<ctype2>*,F_INT*,F_INT*,<ctype2>*,F_INT*,F_INT*
 
@@ -1340,7 +1371,7 @@ end subroutine <prefix2>stebz
 
 subroutine <prefix2>sterf(d,e,n,info)
     ! computes all eigenvalues of a real, symmetric tridiagonal matrix.
-
+    threadsafe
     callstatement (*f2py_func)(&n,d,e,&info)
     callprotoargument F_INT*,<ctype2>*,<ctype2>*,F_INT*
 
@@ -1354,7 +1385,7 @@ end subroutine <prefix2>sterf
 subroutine <prefix2>stein(d,e,w,iblock,isplit,m,n,z,ldz,work,iwork,ifail,info)
     ! computes eigenvectors corresponding to eigenvalues of a real, symmetric
     ! tridiagonal matrix.
-
+    threadsafe
     callstatement (*f2py_func)(&n,d,e,&m,w,iblock,isplit,z,&ldz,work,iwork,ifail,&info)
     callprotoargument F_INT*,<ctype2>*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,F_INT*,F_INT*
 
@@ -1376,7 +1407,7 @@ end subroutine <prefix2>stein
 
 subroutine <prefix2>stemr(d,e,range,vl,vu,il,iu,compute_v,n,m,w,z,ldz,nzc,isuppz,tryrac,work,lwork,iwork,liwork,info)
     ! computes all eigenvalues of a real, symmetric tridiagonal matrix.
-
+    threadsafe
     callstatement (*f2py_func)((compute_v?"V":"N"),(range>0?(range==1?"V":"I"):"A"),&n,d,e,&vl,&vu,&il,&iu,&m,w,z,&ldz,&nzc,isuppz,&tryrac,work,&lwork,iwork,&liwork,&info)
     callprotoargument char*,char*,F_INT*,<ctype2>*,<ctype2>*,<ctype2>*,<ctype2>*,F_INT*,F_INT*,F_INT*,<ctype2>*,<ctype2>*,F_INT*,F_INT*,F_INT*,F_INT*,<ctype2>*,F_INT*,F_INT*,F_INT*,F_INT*
 
@@ -1406,7 +1437,7 @@ end subroutine <prefix2>stemr
 
 subroutine <prefix2>stemr_lwork(d,e,range,vl,vu,il,iu,compute_v,n,m,w,z,ldz,nzc,isuppz,tryrac,work,lwork,iwork,liwork,info)
     ! LWORK=-1, LIWORK=-1 call for STEMR
-
+    threadsafe
     fortranname <prefix2c>stemr
     callstatement (*f2py_func)((compute_v?"V":"N"),(range>0?(range==1?"V":"I"):"A"),&n,d,e,&vl,&vu,&il,&iu,&m,w,z,&ldz,&nzc,isuppz,&tryrac,&work,&lwork,&iwork,&liwork,&info)
     callprotoargument char*,char*,F_INT*,<ctype2>*,<ctype2>*,<ctype2>*,<ctype2>*,F_INT*,F_INT*,F_INT*,<ctype2>*,<ctype2>*,F_INT*,F_INT*,F_INT*,F_INT*,<ctype2>*,F_INT*,F_INT*,F_INT*,F_INT*
@@ -1437,7 +1468,7 @@ end subroutine <prefix2>stemr_lwork
 subroutine <prefix2>stev(d,e,compute_v,n,z,ldz,work,info)
     ! computes all eigenvalues, and, optionally eigvectors of a real,
     ! symmetric tridiagonal matrix.
-
+    threadsafe
     callstatement (*f2py_func)((compute_v?"V":"N"),&n,d,e,z,&ldz,work,&info)
     callprotoargument char*,F_INT*,<ctype2>*,<ctype2>*,<ctype2>*,F_INT*,<ctype2>*,F_INT*
 
@@ -1461,7 +1492,7 @@ subroutine <prefix><s,s,h,h>frk(transr,uplo,trans,n,k,nt,ka,alpha,a,lda,beta,c)
     ! where alpha and beta are real scalars, C is an n--by--n Sym/Hermitian
     ! matrix and A is an n--by--k matrix in the first case and a k--by--n
     ! matrix in the second case.
-
+    threadsafe
     callstatement (*f2py_func)(transr,uplo,trans,&n,&k,&alpha,a,&lda,&beta,c)
     callprotoargument char*,char*,char*,F_INT*,F_INT*,<ctypereal>*,<ctype>*,F_INT*,<ctypereal>*,<ctype>*
 
@@ -1485,7 +1516,7 @@ subroutine <prefix>tpttf(transr,uplo,n,nt,ap,arf,info)
     ! copies a triangular matrix from the standard packed format (TP) to the
     ! rectangular full packed format (TF).
     !
-
+    threadsafe
     callstatement (*f2py_func)(transr,uplo,&n,ap,arf,&info)
     callprotoargument char*,char*,F_INT*,<ctype>*,<ctype>*,F_INT*
 
@@ -1504,7 +1535,7 @@ subroutine <prefix>tpttr(uplo,n,nt,ap,a,lda,info)
     ! TPTTR copies a triangular matrix from the standard packed format (TP)
     ! to the standard full format (TR).
     !
-
+    threadsafe
     callstatement (*f2py_func)(uplo,&n,ap,a,&lda,&info)
     callprotoargument char*,F_INT*,<ctype>*,<ctype>*,F_INT*,F_INT*
 
@@ -1523,7 +1554,7 @@ subroutine <prefix>tfttp(transr,uplo,n,nt,ap,arf,info)
     ! copies a triangular matrix from the standard packed format (TP) to the
     ! rectangular full packed format (TF).
     !
-
+    threadsafe
     callstatement (*f2py_func)(transr,uplo,&n,arf,ap,&info)
     callprotoargument char*,char*,F_INT*,<ctype>*,<ctype>*,F_INT*
 
@@ -1542,6 +1573,7 @@ subroutine <prefix>tfttr(transr,uplo,n,nt,arf,a,lda,info)
     ! TFTTR copies a triangular matrix from the rectangular full packed
     ! format (TF) to the standard full format (TR).
     !
+    threadsafe
     callstatement (*f2py_func)(transr,uplo,&n,arf,a,&lda,&info)
     callprotoargument char*,char*,F_INT*,<ctype>*,<ctype>*,F_INT*,F_INT*
 
@@ -1561,6 +1593,7 @@ subroutine <prefix>trttf(transr,uplo,n,a,lda,arf,info)
     ! TRTTF copies a triangular matrix A from standard full format (TR)
     ! to rectangular full packed format (TF).
     !
+    threadsafe
     callstatement (*f2py_func)(transr,uplo,&n,a,&lda,arf,&info)
     callprotoargument char*,char*,F_INT*,<ctype>*,F_INT*,<ctype>*,F_INT*
 
@@ -1579,6 +1612,7 @@ subroutine <prefix>trttp(uplo,n,a,lda,ap,info)
     ! TRTTP copies a triangular matrix from the standard full format (TR) to
     ! the standard packed format (TP).
     !
+    threadsafe
     callstatement (*f2py_func)(uplo,&n,a,&lda,ap,&info)
     callprotoargument char*,F_INT*,<ctype>*,F_INT*,<ctype>*,F_INT*
 
@@ -1606,7 +1640,7 @@ subroutine <prefix>tfsm(transr,side,uplo,trans,diag,m,n,nt,alpha,a,b,ldb)
     !
     ! A is in Rectangular Full Packed (RFP) Format. The matrix X is overwritten on B.
     !
-
+    threadsafe
     callstatement (*f2py_func)(transr,side,uplo,trans,diag,&m,&n,&alpha,a,b,&ldb)
     callprotoargument char*,char*,char*,char*,char*,F_INT*,F_INT*,<ctype>*,<ctype>*,<ctype>*,F_INT*
 
@@ -1635,6 +1669,7 @@ subroutine <prefix>pftrf(transr,uplo,n,nt,a,info)
     ! where U is an upper triangular matrix and L is lower triangular.
     ! This is the block version of the algorithm, calling Level 3 BLAS.
     !
+    threadsafe
     callstatement (*f2py_func)(transr,uplo,&n,a,&info)
     callprotoargument char*,char*,F_INT*,<ctype>*,F_INT*
 
@@ -1653,7 +1688,7 @@ subroutine <prefix>pftri(transr,uplo,n,nt,a,info)
     ! matrix A using the Cholesky factorization A = U**H*U or A = L*L**H
     ! computed by ?PFTRF.
     !
-
+    threadsafe
     callstatement (*f2py_func)(transr,uplo,&n,a,&info)
     callprotoargument char*,char*,F_INT*,<ctype>*,F_INT*
 
@@ -1672,6 +1707,7 @@ subroutine <prefix>pftrs(transr,uplo,n,nhrs,nt,a,b,ldb,info)
     ! positive definite matrix A using the Cholesky factorization
     ! A = U**H*U or A = L*L**H computed by ?PFTRF.
     !
+    threadsafe
     callstatement (*f2py_func)(transr,uplo,&n,&nhrs,a,b,&ldb,&info)
     callprotoargument char*,char*,F_INT*,F_INT*,<ctype>*,<ctype>*,F_INT*,F_INT*
 
@@ -1698,6 +1734,7 @@ subroutine <prefix>tzrzf(m,n,a,lda,tau,work,lwork,info)
     ! where Z is an N-by-N unitary matrix and R is an M-by-M upper
     ! triangular matrix.
     !
+    threadsafe
     callstatement (*f2py_func)(&m,&n,a,&lda,tau,work,&lwork,&info)
     callprotoargument F_INT*,F_INT*,<ctype>*,F_INT*,<ctype>*,<ctype>*,F_INT*,F_INT*
 
@@ -1714,6 +1751,7 @@ end subroutine<prefix>tzrzf
 
 subroutine <prefix>tzrzf_lwork(m,n,a,lda,tau,work,lwork,info)
     ! lwork computation for tzrzf
+    threadsafe
     fortranname <prefix>tzrzf
     callstatement (*f2py_func)(&m,&n,&a,&lda,&tau,&work,&lwork,&info)
     callprotoargument F_INT*,F_INT*,<ctype>*,F_INT*,<ctype>*,<ctype>*,F_INT*,F_INT*
@@ -1732,7 +1770,7 @@ end subroutine<prefix>tzrzf_lwork
 subroutine <prefix2>lasd4( n, i, d, z, delta, rho, sigma, work, info )
 	! sigma, delta, work, info = lasd4(d,z,i,rho=1.0)
    	! Computes i-th square root of eigenvalue of rank one augmented diagonal matrix. Needed by SVD update procedure
-
+    threadsafe
 	callstatement { i++; (*f2py_func)( &n, &i, d, z, delta, &rho, &sigma, work, &info); }
     callprotoargument F_INT*, F_INT*, <ctype2>*, <ctype2>*, <ctype2>*, <ctype2>*, <ctype2>*, <ctype2>*, F_INT*
 
@@ -1757,7 +1795,7 @@ subroutine <prefix>lauum(n,c,info,lower)
     ! U^T * U, C = U if lower = 0
     ! L * L^T, C = L if lower = 1
     ! C is triangular matrix of the corresponding Cholesky decomposition.
-
+    threadsafe
     callstatement (*f2py_func)((lower?"L":"U"),&n,c,&n,&info)
     callprotoargument char*,F_INT*,<ctype>*,F_INT*,F_INT*
 
@@ -1775,7 +1813,7 @@ subroutine <prefix>laswp(n,a,nrows,k1,k2,piv,off,inc,m,npiv)
     ! Perform row interchanges on the matrix A for each of row k1 through k2
     !
     ! piv pivots rows.
-
+    threadsafe
     callstatement {F_INT i;m=len(piv);for(i=0;i<m;++piv[i++]);++k1;++k2; (*f2py_func)(&n,a,&nrows,&k1,&k2,piv+off,&inc); for(i=0;i<m;--piv[i++]);}
     callprotoargument F_INT*,<ctype>*,F_INT*,F_INT*,F_INT*,F_INT*,F_INT*
 
@@ -1824,11 +1862,13 @@ end subroutine <prefix>laswp
 !          emax  = largest exponent before overflow
 !          rmax  = overflow threshold  - (base**emax)*(1-eps)
 function dlamch(cmach)
+    threadsafe
     character :: cmach
     double precision intent(out):: dlamch
 end function dlamch
 
 function slamch(cmach)
+    threadsafe
     character :: cmach
     real intent(out):: slamch
 end function slamch
@@ -1836,6 +1876,7 @@ end function slamch
 function <prefix2>lange(norm,m,n,a,lda,work) result(n2)
     ! the one norm, or the Frobenius norm, or the  infinity norm, or the
     ! element of largest absolute value of a real matrix A.
+    threadsafe
     <ftype2> <prefix2>lange, n2
     callstatement (*f2py_func)(&<prefix2>lange,norm,&m,&n,a,&lda,work)
     callprotoargument <ctype2>*,char*,F_INT*,F_INT*,<ctype2>*,F_INT*,<ctype2>*
@@ -1851,6 +1892,7 @@ end function <prefix2>lange
 function <prefix2c>lange(norm,m,n,a,lda,work) result(n2)
     ! the one norm, or the Frobenius norm, or the  infinity norm, or the
     ! element of largest absolute value of a complex matrix A.
+    threadsafe
     <ftype2> <prefix2c>lange, n2
     callstatement (*f2py_func)(&<prefix2c>lange,norm,&m,&n,a,&lda,work)
     callprotoargument <ctype2>*,char*,F_INT*,F_INT*,<ctype2c>*,F_INT*,<ctype2>*
@@ -1864,6 +1906,7 @@ function <prefix2c>lange(norm,m,n,a,lda,work) result(n2)
 end function <prefix2c>lange
 
 subroutine <prefix>larfg(n, alpha, x, incx, tau, lx)
+    threadsafe
     integer intent(in), check(n>=1) :: n
     <ftype> intent(in,out) :: alpha
     <ftype> intent(in,copy,out), dimension(lx) :: x
@@ -1873,6 +1916,8 @@ subroutine <prefix>larfg(n, alpha, x, incx, tau, lx)
 end subroutine <prefix>larfg
 
 subroutine <prefix>larf(side,m,n,v,incv,tau,c,ldc,work,lwork)
+    threadsafe
+
     character intent(in), check(side[0]=='L'||side[0]=='R') :: side = 'L'
     integer intent(in,hide), depend(c) :: m = shape(c,0)
     integer intent(in,hide), depend(c) :: n = shape(c,1)
@@ -1887,6 +1932,8 @@ subroutine <prefix>larf(side,m,n,v,incv,tau,c,ldc,work,lwork)
 end subroutine <prefix>larf
 
 subroutine <prefix>lartg(f,g,cs,sn,r)
+    threadsafe
+
     <ftype> intent(in) :: f
     <ftype> intent(in) :: g
     <real,double precision,\0,\1> intent(out) :: cs
@@ -1895,8 +1942,10 @@ subroutine <prefix>lartg(f,g,cs,sn,r)
 end subroutine <prefix>lartg
 
 subroutine <prefix2c>rot(n,x,offx,incx,y,offy,incy,c,s,lx,ly)
+    threadsafe
     callstatement (*f2py_func)(&n,x+offx,&incx,y+offy,&incy,&c,&s)
     callprotoargument F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<float,double>*,<ctype2c>*
+
     <ftype2c> dimension(lx),intent(in,out,copy) :: x
     <ftype2c> dimension(ly),intent(in,out,copy) :: y
     integer intent(hide),depend(x) :: lx = len(x)
@@ -1913,6 +1962,7 @@ subroutine <prefix2c>rot(n,x,offx,incx,y,offy,incy,c,s,lx,ly)
 end subroutine <prefix2c>rot
 
 subroutine ilaver(major, minor, patch)
+    threadsafe
     integer intent(out) :: major
     integer intent(out) :: minor
     integer intent(out) :: patch
