@@ -1327,7 +1327,6 @@ subroutine <prefix2c>gees(compute_v,sort_t,<prefix2c>select,n,a,nrows,sdim,w,vs,
     !  A = Z * T * Z^H  -- a complex matrix is in Schur form if it is upper
     !  triangular
 
-    threadsafe
     callstatement (*f2py_func)((compute_v?"V":"N"),(sort_t?"S":"N"),cb_<prefix2c>select_in_gees__user__routines,&n,a,&nrows,&sdim,w,vs,&ldvs,work,&lwork,rwork,bwork,&info,1,1)
     callprotoargument char*,char*,F_INT(*)(<ctype2c>*),F_INT*,<ctype2c>*,F_INT*,F_INT*,<ctype2c>*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2>*,F_INT*,F_INT*,F_INT,F_INT
 
@@ -1358,7 +1357,6 @@ subroutine <prefix2>gees(compute_v,sort_t,<prefix2>select,n,a,nrows,sdim,wr,wi,v
     !  A = Z * T * Z^H  -- a real matrix is in Schur form if it is upper quasi-
     !  triangular with 1x1 and 2x2 blocks.
 
-    threadsafe
     callstatement (*f2py_func)((compute_v?"V":"N"),(sort_t?"S":"N"),cb_<prefix2>select_in_gees__user__routines,&n,a,&nrows,&sdim,wr,wi,vs,&ldvs,work,&lwork,bwork,&info,1,1)
     callprotoargument char*,char*,F_INT(*)(<ctype2>*,<ctype2>*),F_INT*,<ctype2>*,F_INT*,F_INT*,<ctype2>*,<ctype2>*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,F_INT*,F_INT*,F_INT,F_INT
 
