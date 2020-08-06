@@ -1386,6 +1386,58 @@ class TestSystematic(object):
                             [Arg(0, 1e14, inclusive_a=False), Arg(0, 1e14)],
                             rtol=1e-10)
 
+    def test_logiv(self):
+        # small values both real and integer
+        small_values_real = np.arange(-2, 5, 0.74)
+        small_values_int = np.arange(-1, 5)
+
+        # values near the threshold for asym.
+        threshold = np.array([49, 49.87, 50.1, 50.78, 51])
+
+        # large values
+        large_values = np.array([123, 785.2, 967.2, 1300])
+
+        # all values
+        values = np.sort(np.concatenate((
+            small_values_real,
+            small_values_int,
+            threshold,
+            large_values)))
+
+        PREC = 3e-14
+        tests = 0
+        for v, z in itertools.product(values, repeat=2):
+            # These values are not supported by log_iv or iv.
+            if z <= 0 and abs(v) >= 50:
+                continue
+
+            # mpm freezes on these values
+            if v < -20 and 0 < z < 1:
+                continue
+
+            value = mpmath.besseli(v, z)
+            res = mpmath.log(value)
+            test = sc.logiv(v, z)
+
+            if abs(res.imag) >= PREC:
+                assert_(np.isnan(test))
+                continue
+
+            # ignore small imaginary parts
+            assert_(res.imag < PREC)
+            ans = float(res.real)
+
+            if v <= 50 and mpmath.isfinite(res):
+                # value might mismatch from overflow
+                ans = np.log(float(value.real))
+
+            assert_allclose(ans, test, rtol=PREC)
+            tests += 1
+
+        # Verify many points were actually tested.
+        assert_(tests >= 140)
+
+
     def test_j0(self):
         # The Bessel function at large arguments is j0(x) ~ cos(x + phi)/sqrt(x)
         # and at large arguments the phase of the cosine loses precision.
