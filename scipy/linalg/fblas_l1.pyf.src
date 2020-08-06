@@ -81,6 +81,7 @@ subroutine <prefix>rotg(a,b,c,s)
   !   parameters r and z, as these can easily be computed from the
   !   returned parameters.
   !
+  threadsafe
   callprotoargument <ctype>*,<ctype>*,<ctype>*,<ctype>*
 
   <ftype> intent(in) :: a, b
@@ -102,6 +103,7 @@ subroutine <prefix2>rotmg(d1,d2,x1,y1,param)
   !    [0]     [sqrt(d2) y1]
   !
 
+  threadsafe
   callstatement (*f2py_func)(&d1,&d2,&x1,&y1,param)
   callprotoargument <ctype2>*,<ctype2>*,<ctype2>*,<ctype2>*,<ctype2>*
 
@@ -124,6 +126,7 @@ subroutine <tchar>rot(n,x,offx,incx,y,offy,incy,c,s)
   ! where c*c + s*conjg(s) = 1.0.
   !
 
+  threadsafe
   callstatement (*f2py_func)(&n,x+offx,&incx,y+offy,&incy,&c,&s)
   callprotoargument F_INT*,<ctype>*,F_INT*,<ctype>*,F_INT*,<ctypereal>*,<ctypereal>*
 
@@ -155,6 +158,7 @@ subroutine <prefix2>rotm(n,x,offx,incx,y,offy,incy,param)
   ! where H is a modified Givens transformation matrix whose values are stored
   ! in the param(2) through param(5) array.
 
+  threadsafe
   callstatement (*f2py_func)(&n,x+offx,&incx,y+offy,&incy,param)
   callprotoargument F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*
 
@@ -177,6 +181,7 @@ end subroutine <prefix2>rotm
 subroutine <prefix>swap(n,x,offx,incx,y,offy,incy)
   ! Swap two arrays: x <-> y
 
+  threadsafe
   callstatement (*f2py_func)(&n,x+offx,&incx,y+offy,&incy)
   callprotoargument F_INT*,<ctype>*,F_INT*,<ctype>*,F_INT*
 
@@ -198,6 +203,7 @@ end subroutine <prefix>swap
 subroutine <prefix>scal(n,a,x,offx,incx)
   ! Computes the product of a vector by a scalar: y = a*x
 
+  threadsafe
   callstatement (*f2py_func)(&n,&a,x+offx,&incx)
   callprotoargument F_INT*,<ctype>*,<ctype>*,F_INT*
 
@@ -217,6 +223,7 @@ subroutine <tchar2c>scal(n,a,x,offx,incx)
   ! vector by a real constant
   ! y = a*x
 
+  threadsafe
   callstatement (*f2py_func)(&n,&a,x+offx,&incx)
   callprotoargument F_INT*,<float,double>*,<complex_float, complex_double>*,F_INT*
 
@@ -234,6 +241,7 @@ end subroutine <tchar2c>scal
 subroutine <prefix>copy(n,x,offx,incx,y,offy,incy)
   ! Copy y <- x
 
+  threadsafe
   callstatement (*f2py_func)(&n,x+offx,&incx,y+offy,&incy)
   callprotoargument F_INT*,<ctype>*,F_INT*,<ctype>*,F_INT*
 
@@ -256,6 +264,7 @@ end subroutine <prefix>copy
 subroutine <prefix>axpy(n,a,x,offx,incx,y,offy,incy)
   ! Calculate z = a*x+y, where a is scalar.
 
+  threadsafe
   callstatement (*f2py_func)(&n,&a,x+offx,&incx,y+offy,&incy)
   callprotoargument F_INT*,<ctype>*,<ctype>*,F_INT*,<ctype>*,F_INT*
 
@@ -280,7 +289,7 @@ function sdot(n,x,offx,incx,y,offy,incy) result (xy)
   ! Computes a vector-vector dot product.
 
   fortranname sdot
-
+  threadsafe
   callstatement (*f2py_func)(&sdot,&n,x+offx,&incx,y+offy,&incy)
   callprotoargument float*,F_INT*,float*,F_INT*,float*,F_INT*
 
@@ -304,6 +313,7 @@ end function sdot
 function ddot(n,x,offx,incx,y,offy,incy) result (xy)
   ! Computes a vector-vector dot product.
 
+  threadsafe
   callstatement (*f2py_func)(&ddot,&n,x+offx,&incx,y+offy,&incy)
   callprotoargument double*,F_INT*,double*,F_INT*,double*,F_INT*
 
@@ -327,9 +337,10 @@ end function ddot
 function <prefix2c>dotu(n,x,offx,incx,y,offy,incy) result(xy)
 
   <ftype2c> :: <prefix2c>dotu, xy
+  callstatement (*f2py_func)(&<prefix2c>dotu,&n,x+offx,&incx,y+offy,&incy)
   fortranname w<prefix2c>dotu
 
-  callstatement (*f2py_func)(&<prefix2c>dotu,&n,x+offx,&incx,y+offy,&incy)
+  threadsafe
   callprotoargument <ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*
 
   <ftype2c> dimension(*),intent(in) :: x
@@ -356,6 +367,7 @@ function <prefix2c>dotc(n,x,offx,incx,y,offy,incy) result(xy)
   <ftype2c> :: <prefix2c>dotc, xy
   fortranname w<prefix2c>dotc
 
+  threadsafe
   callstatement (*f2py_func)(&<prefix2c>dotc,&n,x+offx,&incx,y+offy,&incy)
   callprotoargument <ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*
 
@@ -381,6 +393,7 @@ function <prefix3>nrm2(n,x,offx,incx) result(n2)
 
   <ftypereal3> <prefix3>nrm2, n2
 
+  threadsafe
   callstatement (*f2py_func)(&<prefix3>nrm2, &n,x+offx,&incx)
   callprotoargument <ctypereal3>*,F_INT*,<ctype3>*,F_INT*
 
@@ -401,6 +414,7 @@ function <prefix4>nrm2(n,x,offx,incx) result(n2)
 
   <ftypereal4> <prefix4>nrm2, n2
 
+  threadsafe
   callstatement (*f2py_func)(&<prefix4>nrm2, &n,x+offx,&incx)
   callprotoargument <ctypereal4>*,F_INT*,<ctype4>*,F_INT*
 
@@ -420,6 +434,7 @@ end function <prefix4>nrm2
 function <prefix3>asum(n,x,offx,incx) result (s)
   ! Computes the sum of magnitudes of the vector elements
 
+  threadsafe
   callstatement (*f2py_func)(&<prefix3>asum,&n,x+offx,&incx)
   callprotoargument <ctypereal3>*,F_INT*,<ctype3>*,F_INT*
 
@@ -437,6 +452,7 @@ end function <prefix3>asum
 function <prefix4>asum(n,x,offx,incx) result (s)
   ! Computes the sum of magnitudes of the vector elements
 
+  threadsafe
   callstatement (*f2py_func)(&<prefix4>asum,&n,x+offx,&incx)
   callprotoargument <ctypereal4>*,F_INT*,<ctype4>*,F_INT*
 
@@ -454,6 +470,7 @@ end function <prefix4>asum
 function i<prefix>amax(n,x,offx,incx) result(k)
   ! Finds the index of the element with maximum absolute value.
 
+  threadsafe
   callstatement i<prefix>amax_return_value = (*f2py_func)(&n,x+offx,&incx) - 1
   callprotoargument F_INT*,<ctype>*,F_INT*
 
