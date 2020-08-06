@@ -29,7 +29,7 @@ def sinkhorn(a):
     Raises
     ------
     LinAlgError
-        Raised if decomposition fails
+        Raised if normal form calculation fails
 
     Notes
     -----
