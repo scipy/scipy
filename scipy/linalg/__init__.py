@@ -96,7 +96,7 @@ Decompositions
    hessenberg - Hessenberg form of a matrix
    cdf2rdf - Complex diagonal form to real diagonal block form
    cossin - Cosine sine decomposition of a unitary or orthogonal matrix
-   sinkhorn - Sinkhorn decomposition of a matrix
+   sinkhorn - Sinkhorn normal form of a matrix
 
 .. seealso::
 
