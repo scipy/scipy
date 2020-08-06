@@ -9,6 +9,7 @@ subroutine <prefix2>syev(compute_v,lower,n,w,a,lda,work,lwork,info)
     ! Performance tip:
     !   If compute_v=0 then set also overwrite_a=1.
 
+    threadsafe
     callstatement (*f2py_func)((compute_v?"V":"N"),(lower?"L":"U"),&n,a,&lda,w,work,&lwork,&info)
     callprotoargument char*,char*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,<ctype2>*,F_INT*,F_INT*
 
@@ -35,7 +36,7 @@ subroutine <prefix2>syev_lwork(lower,n,w,a,lda,work,lwork,info)
     ! LWORK routines for syev
 
     fortranname <prefix2>syev
-
+    threadsafe
     callstatement (*f2py_func)("N",(lower?"L":"U"),&n,&a,&lda,&w,&work,&lwork,&info)
     callprotoargument char*,char*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,<ctype2>*,F_INT*,F_INT*
     
@@ -60,6 +61,7 @@ subroutine <prefix2c>heev(compute_v,lower,n,w,a,lda,work,lwork,rwork,info)
     ! Warning:
     !   If compute_v=0 and overwrite_a=1, the contents of a is destroyed.
 
+    threadsafe
     callstatement (*f2py_func)((compute_v?"V":"N"),(lower?"L":"U"),&n,a,&lda,w,work,&lwork,rwork,&info)
     callprotoargument char*,char*,F_INT*,<ctype2c>*,F_INT*,<ctype2>*,<ctype2c>*,F_INT*,<ctype2>*,F_INT*
 
@@ -85,6 +87,7 @@ end subroutine <prefix2c>heev
 subroutine <prefix2c>heev_lwork(lower,n,w,a,lda,work,lwork,rwork,info)
     ! LWORK routines for heev
 
+    threadsafe
     fortranname <prefix2c>heev
     callstatement (*f2py_func)("N",(lower?"L":"U"),&n,&a,&lda,&w,&work,&lwork,&rwork,&info)
     callprotoargument char*,char*,F_INT*,<ctype2c>*,F_INT*,<ctype2>*,<ctype2c>*,F_INT*,<ctype2>*,F_INT*
@@ -111,6 +114,7 @@ subroutine <prefix2>syevd(compute_v,lower,n,w,a,lda,work,lwork,iwork,liwork,info
     ! Performance tip:
     !   If compute_v=0 then set also overwrite_a=1.
 
+    threadsafe
     callstatement (*f2py_func)((compute_v?"V":"N"),(lower?"L":"U"),&n,a,&lda,w,work,&lwork,iwork,&liwork,&info)
     callprotoargument char*,char*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,<ctype2>*,F_INT*,F_INT*,F_INT*,F_INT*
 
@@ -137,6 +141,7 @@ end subroutine <prefix2>syevd
 subroutine <prefix2>syevd_lwork(compute_v,lower,n,w,a,lda,work,lwork,iwork,liwork,info)
     ! LWORK routines for syevd
 
+    threadsafe
     fortranname <prefix2>syevd
 
     callstatement (*f2py_func)((compute_v?"V":"N"),(lower?"L":"U"),&n,&a,&lda,&w,&work,&lwork,&iwork,&liwork,&info)
@@ -166,6 +171,7 @@ subroutine <prefix2c>heevd(compute_v,lower,n,w,a,lda,work,lwork,iwork,liwork,rwo
     ! Warning:
     !   If compute_v=0 and overwrite_a=1, the contents of a is destroyed.
 
+    threadsafe
     callstatement (*f2py_func)((compute_v?"V":"N"),(lower?"L":"U"),&n,a,&lda,w,work,&lwork,rwork,&lrwork,iwork,&liwork,&info)
     callprotoargument char*,char*,F_INT*,<ctype2c>*,F_INT*,<ctype2>*,<ctype2c>*,F_INT*,<ctype2>*,F_INT*,F_INT*,F_INT*,F_INT*
 
@@ -194,7 +200,8 @@ end subroutine <prefix2c>heevd
 
 subroutine <prefix2c>heevd_lwork(compute_v,lower,n,w,a,lda,work,lwork,iwork,liwork,rwork,lrwork,info)
     ! LWORK routines for heevd
-    
+
+    threadsafe
     fortranname <prefix2c>heevd
     
     callstatement (*f2py_func)((compute_v?"V":"N"),(lower?"L":"U"),&n,&a,&lda,&w,&work,&lwork,&rwork,&lrwork,&iwork,&liwork,&info)
@@ -224,6 +231,7 @@ end subroutine <prefix2c>heevd_lwork
      ! A = L * D * L^T if lower = 1
      ! A = U * D * U^T if lower = 0
 
+     threadsafe
      callstatement (*f2py_func)((lower?"L":"U"),&n,a,&lda,ipiv,&info)
      callprotoargument char*,F_INT*,<ctype>*,F_INT*,F_INT*,F_INT*
 
@@ -244,6 +252,7 @@ end subroutine <prefix2c>heevd_lwork
     ! A = U^T * A * U or L^T * A * L, if itype == 2 or 3, respectively
     ! B must contain the factorized U and L from potrf
 
+     threadsafe
      callstatement (*f2py_func)(&itype,(lower?"L":"U"),&n,a,&lda,b,&ldb,&info)
      callprotoargument F_INT*,char*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,F_INT*
 
@@ -265,6 +274,7 @@ end subroutine <prefix2c>heevd_lwork
      ! A = U * D * U^T if lower = 0
      ! This is similar to ?SYTF2 but uses BLAS3 blocked calls
 
+     threadsafe
      callstatement (*f2py_func)((lower?"L":"U"),&n,a,&lda,ipiv,work,&lwork,&info)
      callprotoargument char*,F_INT*,<ctype>*,F_INT*,F_INT*,<ctype>*,F_INT*,F_INT*
 
@@ -305,7 +315,7 @@ end subroutine <prefix2c>heevd_lwork
    subroutine <prefix>sysv(n,nrhs,a,lda,ipiv,b,ldb,work,lwork,info,lower)
 
    ! Solve A * X = B for symmetric A matrix
-
+     threadsafe
      callstatement (*f2py_func)((lower?"L":"U"),&n,&nrhs,a,&lda,ipiv,b,&ldb,work,&lwork,&info)
      callprotoargument char*,F_INT*,F_INT*,<ctype>*,F_INT*,F_INT*,<ctype>*,F_INT*,<ctype>*,F_INT*,F_INT*
 
@@ -327,6 +337,7 @@ end subroutine <prefix2c>heevd_lwork
 
    ! lwork computation for ?SYSV
 
+     threadsafe
      fortranname <prefix>sysv
      callstatement (*f2py_func)((lower?"L":"U"),&n,&nrhs,&a,&lda,&ipiv,&b,&ldb,&work,&lwork,&info)
      callprotoargument char*,F_INT*,F_INT*,<ctype>*,F_INT*,F_INT*,<ctype>*,F_INT*,<ctype>*,F_INT*,F_INT*
@@ -383,6 +394,7 @@ end subroutine <prefix2c>heevd_lwork
 
    ! lwork computation for ?SYSVX
 
+     threadsafe
      fortranname <prefix>sysvx
      callstatement (*f2py_func)((factored?"F":"N"),(lower?"L":"U"),&n,&nrhs,&a,&lda,&af,&ldaf,&ipiv,&b,&ldb,&x,&ldx,&rcond,&ferr,&berr,&work,&lwork,&irwork,&info)
      callprotoargument char*,char*,F_INT*,F_INT*,<ctype>*,F_INT*,<ctype>*,F_INT*,F_INT*,<ctype>*,F_INT*,<ctype>*,F_INT*,<ctypereal>*,<ctypereal>*,<ctypereal>*,<ctype>*,F_INT*,<F_INT,F_INT,float,double>*,F_INT*
@@ -421,6 +433,7 @@ end subroutine <prefix2c>heevd_lwork
   !   An estimate is obtained for norm(inv(A)), and the reciprocal of the
   !   condition number is computed as RCOND = 1 / (ANORM * norm(inv(A)))
 
+    threadsafe
     callstatement (*f2py_func)((lower?"L":"U"),&n,a,&lda,ipiv,&anorm,&rcond,work,iwork,&info)
     callprotoargument char*,F_INT*,<ctype2>*,F_INT*,F_INT*,<ctype2>*,<ctype2>*,<ctype2>*,F_INT*,F_INT*
 
@@ -446,6 +459,7 @@ end subroutine <prefix2c>heevd_lwork
   !   An estimate is obtained for norm(inv(A)), and the reciprocal of the
   !   condition number is computed as RCOND = 1 / (ANORM * norm(inv(A)))
 
+    threadsafe
     callstatement (*f2py_func)((lower?"L":"U"),&n,a,&lda,ipiv,&anorm,&rcond,work,&info)
     callprotoargument char*,F_INT*,<ctypecomplex>*,F_INT*,F_INT*,<ctypereal>*,<ctypereal>*,<ctypecomplex>*,F_INT*
 
@@ -464,7 +478,7 @@ end subroutine <prefix2c>heevd_lwork
   subroutine <prefix>syconv(lower,way,n,a,lda,ipiv,e,info)
   ! ?SYCONV converts A given by ???TRF into L and D and vice-versa.
   ! Get Non-diag elements of D (returned in workspace) and apply or reverse permutation done in TRF.
-
+    threadsafe
     callstatement (*f2py_func)((lower?"L":"U"),(way?"R":"C"),&n,a,&lda,ipiv,e,&info)
     callprotoargument char*,char*,F_INT*,<ctype>*,F_INT*,F_INT*,<ctype>*,F_INT*
 
@@ -486,7 +500,7 @@ end subroutine <prefix2c>heevd_lwork
     ! A = inv(U^H) * A * inv(U), if itype == 1
     ! A = U^H * A * U or L^H * A * L, if itype == 2 or 3, respectively
     ! B must contain the factorized U and L from potrf
-
+     threadsafe
      callstatement (*f2py_func)(&itype,(lower?"L":"U"),&n,a,&lda,b,&ldb,&info)
      callprotoargument F_INT*,char*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,F_INT*
 
@@ -508,6 +522,7 @@ end subroutine <prefix2c>heevd_lwork
      ! A = U * D * U^T if lower = 0
      ! This is similar to ?HETF2 but uses BLAS3 blocked calls
 
+     threadsafe
      callstatement (*f2py_func)((lower?"L":"U"),&n,a,&lda,ipiv,work,&lwork,&info)
      callprotoargument char*,F_INT*,<ctype2c>*,F_INT*,F_INT*,<ctype2c>*,F_INT*,F_INT*
 
@@ -526,6 +541,7 @@ end subroutine <prefix2c>heevd_lwork
    subroutine <prefix2c>hetrf_lwork(lower,n,a,lda,ipiv,work,lwork,info)
      ! lwork computation for ?HETRF
 
+     threadsafe
      fortranname <prefix2c>hetrf
 
      callstatement (*f2py_func)((lower?"L":"U"),&n,&a,&lda,&ipiv,&work,&lwork,&info)
@@ -573,6 +589,7 @@ end subroutine <prefix2c>heevd_lwork
 
    ! lwork computation for C/ZHESV
 
+     threadsafe
      fortranname <prefix2c>hesv
      callstatement (*f2py_func)((lower?"L":"U"),&n,&nrhs,&a,&lda,&ipiv,&b,&ldb,&work,&lwork,&info)
      callprotoargument char*,F_INT*,F_INT*,<ctype2c>*,F_INT*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,F_INT*
@@ -628,6 +645,8 @@ end subroutine <prefix2c>hesvx
 
 subroutine <prefix2c>hesvx_lwork(n,nrhs,a,lda,af,ldaf,ipiv,b,ldb,x,ldx,rcond,ferr,berr,work,lwork,rwork,info,factored,lower)
     ! lwork computation for ?HESVX
+
+    threadsafe
     fortranname <prefix2c>hesvx
     callstatement (*f2py_func)((factored?"F":"N"),(lower?"L":"U"),&n,&nrhs,&a,&lda,&af,&ldaf,&ipiv,&b,&ldb,&x,&ldx,&rcond,&ferr,&berr,&work,&lwork,&rwork,&info)
     callprotoargument char*,char*,F_INT*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2>*,<ctype2>*,<ctype2>*,<ctype2c>*,F_INT*,<ctype2>*,F_INT*
@@ -662,6 +681,7 @@ subroutine <prefix2>sytrd(lower,n,a,lda,d,e,tau,work,lwork,info)
     ! tridiagonal form T by an orthogonal similarity transformation:
     ! Q**T * A * Q = T.
 
+    threadsafe
     callstatement (*f2py_func)((lower?"L":"U"),&n,a,&lda,d,e,tau,work,&lwork,&info);
     callprotoargument char*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,<ctype2>*,<ctype2>*,<ctype2>*,F_INT*,F_INT*
 
@@ -681,6 +701,8 @@ end subroutine <prefix2>sytrd
 
 subroutine <prefix2>sytrd_lwork(lower,n,a,lda,d,e,tau,work,lwork,info)
     ! lwork computation for sytrd
+
+    threadsafe
     fortranname <prefix2>sytrd
     callstatement (*f2py_func)((lower?"L":"U"),&n,&a,&lda,&d,&e,&tau,&work,&lwork,&info);
     callprotoargument char*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,<ctype2>*,<ctype2>*,<ctype2>*,F_INT*,F_INT*
@@ -704,6 +726,7 @@ subroutine <prefix2c>hetrd(lower,n,a,lda,d,e,tau,work,lwork,info)
     ! tridiagonal form T by an orthogonal similarity transformation:
     ! Q**H * A * Q = T.
 
+    threadsafe
     callstatement (*f2py_func)((lower?"L":"U"),&n,a,&lda,d,e,tau,work,&lwork,&info);
     callprotoargument char*,F_INT*,<ctype2c>*,F_INT*,<ctype2>*,<ctype2>*,<ctype2c>*,<ctype2c>*,F_INT*,F_INT*
 
@@ -723,6 +746,7 @@ end subroutine <prefix2c>hetrd
 
 subroutine <prefix2c>hetrd_lwork(lower,n,a,lda,d,e,tau,work,lwork,info)
     ! lwork computation for hetrd
+    threadsafe
     fortranname <prefix2c>hetrd
     callstatement (*f2py_func)((lower?"L":"U"),&n,&a,&lda,&d,&e,&tau,&work,&lwork,&info);
     callprotoargument char*,F_INT*,<ctype2c>*,F_INT*,<ctype2>*,<ctype2>*,<ctype2c>*,<ctype2c>*,F_INT*,F_INT*
@@ -750,6 +774,7 @@ subroutine <prefix2>syevr(compute_v,range,lower,n,a,lda,vl,vu,il,iu,abstol,w,z,m
     ! if jobz = 'V' and range = 'V', z is (nxn) since returned number of eigs is unknown beforehand
     ! if jobz = 'V' and range = 'I', z is (nx(iu-il+1))
 
+    threadsafe
     callstatement (*f2py_func)((compute_v?"V":"N"),range,(lower?"L":"U"),&n,a,&lda,&vl,&vu,&il,&iu,&abstol,&m,w,z,&ldz,isuppz,work,&lwork,iwork,&liwork,&info)
     callprotoargument char*,char*,char*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,<ctype2>*,F_INT*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,<ctype2>*,F_INT*,F_INT*,<ctype2>*,F_INT*,F_INT*,F_INT*,F_INT*
 
@@ -782,6 +807,7 @@ end subroutine <prefix2>syevr
 
 subroutine <prefix2>syevr_lwork(lower,n,a,lda,vl,vu,il,iu,abstol,m,w,z,ldz,isuppz,work,lwork,iwork,liwork,info)
     ! LWORK routines for (s/d)syevr
+    threadsafe
     fortranname <prefix2>syevr
     callstatement (*f2py_func)("N","A",(lower?"L":"U"),&n,&a,&lda,&vl,&vu,&il,&iu,&abstol,&m,&w,&z,&ldz,&isuppz,&work,&lwork,&iwork,&liwork,&info)
     callprotoargument char*,char*,char*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,<ctype2>*,F_INT*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,<ctype2>*,F_INT*,F_INT*,<ctype2>*,F_INT*,F_INT*,F_INT*,F_INT*
@@ -819,7 +845,7 @@ subroutine <prefix2c>heevr(compute_v,range,lower,n,a,lda,vl,vu,il,iu,abstol,w,z,
     ! if jobz = 'V' and range = 'A', z is (nxn)
     ! if jobz = 'V' and range = 'V', z is (nxn) since returned number of eigs is unknown beforehand
     ! if jobz = 'V' and range = 'I', z is (nx(iu-il+1))
-
+    threadsafe
     callstatement (*f2py_func)((compute_v?"V":"N"),range,(lower?"L":"U"),&n,a,&lda,&vl,&vu,&il,&iu,&abstol,&m,w,z,&ldz,isuppz,work,&lwork,rwork,&lrwork,iwork,&liwork,&info)
     callprotoargument char*,char*,char*,F_INT*,<ctype2c>*,F_INT*,<ctype2>*,<ctype2>*,F_INT*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,<ctype2c>*,F_INT*,F_INT*,<ctype2c>*,F_INT*,<ctype2>*,F_INT*,F_INT*,F_INT*,F_INT*
 
@@ -861,6 +887,7 @@ end subroutine <prefix2c>heevr
 
 subroutine <prefix2c>heevr_lwork(n,lower,a,lda,vl,vu,il,iu,abstol,m,w,z,ldz,isuppz,work,lwork,rwork,lrwork,iwork,liwork,info)
     ! LWORK routines for (c/z)heevr
+    threadsafe
     fortranname <prefix2c>heevr
     callstatement (*f2py_func)("N","A",(lower?"L":"U"),&n,&a,&lda,&vl,&vu,&il,&iu,&abstol,&m,&w,&z,&ldz,&isuppz,&work,&lwork,&rwork,&lrwork,&iwork,&liwork,&info)
     callprotoargument char*,char*,char*,F_INT*,<ctype2c>*,F_INT*,<ctype2>*,<ctype2>*,F_INT*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,<ctype2c>*,F_INT*,F_INT*,<ctype2c>*,F_INT*,<ctype2>*,F_INT*,F_INT*,F_INT*,F_INT*
@@ -898,6 +925,7 @@ subroutine <prefix2>syevx(compute_v,range,lower,n,a,lda,vl,vu,il,iu,abstol,w,z,m
     ! selected by specifying either a range of values or a range of indices
     ! for the desired eigenvalues.
 
+    threadsafe
     callstatement (*f2py_func)((compute_v?"V":"N"),range,(lower?"L":"U"),&n,a,&lda,&vl,&vu,&il,&iu,&abstol,&m,w,z,&ldz,work,&lwork,iwork,ifail,&info)
     callprotoargument char*,char*,char*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,<ctype2>*,F_INT*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,F_INT*,F_INT*,F_INT*
     
@@ -929,6 +957,7 @@ end subroutine <prefix2>syevx
 subroutine <prefix2>syevx_lwork(lower,n,a,lda,vl,vu,il,iu,abstol,m,w,z,ldz,work,lwork,iwork,ifail,info)
     ! LWORK routines for (d/s)syevx
 
+    threadsafe
     fortranname <prefix2>syevx
     callstatement (*f2py_func)("N","A",(lower?"L":"U"),&n,&a,&lda,&vl,&vu,&il,&iu,&abstol,&m,&w,&z,&ldz,&work,&lwork,&iwork,&ifail,&info)
     callprotoargument char*,char*,char*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,<ctype2>*,F_INT*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,F_INT*,F_INT*,F_INT*
@@ -962,6 +991,7 @@ subroutine <prefix2c>heevx(compute_v,range,lower,n,a,lda,vl,vu,il,iu,abstol,m,w,
     ! be selected by specifying either a range of values or a range of
     ! indices for the desired eigenvalues.
 
+    threadsafe
     callstatement (*f2py_func)((compute_v?"V":"N"),range,(lower?"L":"U"),&n,a,&lda,&vl,&vu,&il,&iu,&abstol,&m,w,z,&ldz,work,&lwork,&rwork,iwork,ifail,&info)
     callprotoargument char*,char*,char*,F_INT*,<ctype2c>*,F_INT*,<ctype2>*,<ctype2>*,F_INT*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2>*,F_INT*,F_INT*,F_INT*
     
@@ -994,6 +1024,7 @@ end subroutine <prefix2c>heevx
 subroutine <prefix2c>heevx_lwork(lower,n,a,lda,vl,vu,il,iu,abstol,m,w,z,ldz,work,lwork,rwork,iwork,ifail,info)
     ! LWORK routines for (c/z)heevx
 
+    threadsafe
     fortranname <prefix2c>heevx
     callstatement (*f2py_func)("N","A",(lower?"L":"U"),&n,&a,&lda,&vl,&vu,&il,&iu,&abstol,&m,&w,&z,&ldz,&work,&lwork,&rwork,&iwork,&ifail,&info)
     callprotoargument char*,char*,char*,F_INT*,<ctype2c>*,F_INT*,<ctype2>*,<ctype2>*,F_INT*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2>*,F_INT*,F_INT*,F_INT*
@@ -1029,6 +1060,7 @@ subroutine <prefix2>sygv(itype,jobz,uplo,n,lda,ldb,w,a,b,work,lwork,info)
     ! if jobz = 'N' there are no eigvecs returned
     ! if jobz = 'V' 'a' contains eigvecs
 
+    threadsafe
     callstatement (*f2py_func)(&itype,jobz,uplo,&n,a,&lda,b,&ldb,w,work,&lwork,&info)
     callprotoargument F_INT*,char*,char*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,<ctype2>*,F_INT*,F_INT*
     !                itype,jobz ,uplo , n  ,    a    ,lda ,    b    , ldb,   w     , work   ,lwork, info
@@ -1053,6 +1085,7 @@ end subroutine <prefix2>sygv
 subroutine <prefix2>sygv_lwork(itype,jobz,uplo,n,a,lda,b,ldb,w,work,lwork,info)
     ! LWORK routine for (S,D)SYGV
 
+    threadsafe
     fortranname <prefix2>sygv
     callstatement (*f2py_func)(&itype,jobz,uplo,&n,&a,&lda,&b,&ldb,&w,&work,&lwork,&info)
     callprotoargument F_INT*,char*,char*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,<ctype2>*,F_INT*,F_INT*
@@ -1082,6 +1115,7 @@ subroutine <prefix2c>hegv(itype,jobz,uplo,n,lda,ldb,w,a,b,work,lwork,rwork,info)
     ! if jobz = 'N' there are no eigvecs returned
     ! if jobz = 'V' 'a' contains eigvecs
 
+    threadsafe
     callstatement (*f2py_func)(&itype,jobz,uplo,&n,a,&lda,b,&ldb,w,work,&lwork,rwork,&info)
     callprotoargument F_INT*,char*,char*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2>*,<ctype2c>*,F_INT*,<ctype2>*,F_INT*
     !                itype,jobz ,uplo , n  ,    a     ,lda ,    b     , ldb,   w     , work     ,lwork,rwork   ,info
@@ -1107,6 +1141,7 @@ end subroutine <prefix2c>hegv
 subroutine <prefix2c>hegv_lwork(itype,jobz,uplo,n,a,lda,b,ldb,w,work,lwork,rwork,info)
     ! LWORK Query routine for (c/z)hegv
 
+    threadsafe
     fortranname <prefix2c>hegv
     callstatement (*f2py_func)(&itype,jobz,uplo,&n,&a,&lda,&b,&ldb,&w,&work,&lwork,&rwork,&info)
     callprotoargument F_INT*,char*,char*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2>*,<ctype2c>*,F_INT*,<ctype2>*,F_INT*
@@ -1136,7 +1171,7 @@ end subroutine <prefix2c>hegv_lwork
 subroutine <prefix2>sygvd(itype,jobz,uplo,n,lda,ldb,w,a,b,work,lwork,iwork,liwork,info)
 
     ! No call to ILAENV is performed. Hence no need for (d/s)sygvd_lwork. Default sizes are optimal.
-
+    threadsafe
     callstatement (*f2py_func)(&itype,jobz,uplo,&n,a,&lda,b,&ldb,w,work,&lwork,iwork,&liwork,&info)
     callprotoargument F_INT*,char*,char*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,<ctype2>*,F_INT*,F_INT*,F_INT*,F_INT*
 
@@ -1162,7 +1197,7 @@ end subroutine <prefix2>sygvd
 subroutine <prefix2c>hegvd(itype,jobz,uplo,n,lda,ldb,w,a,b,work,lwork,rwork,lrwork,iwork,liwork,info)
 
     ! No call to ILAENV is performed. Hence no need for (c/z)hegvd_lwork. Default sizes are optimal.
-
+    threadsafe
     callstatement (*f2py_func)(&itype,jobz,uplo,&n,a,&lda,b,&ldb,w,work,&lwork,rwork,&lrwork,iwork,&liwork,&info)
     callprotoargument F_INT*,char*,char*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2>*,<ctype2c>*,F_INT*,<ctype2>*,F_INT*,F_INT*,F_INT*,F_INT*
 
@@ -1198,6 +1233,7 @@ subroutine <prefix2>sygvx(itype,jobz,range,uplo,n,a,lda,b,ldb,vl,vu,il,iu,abstol
     ! Eigenvalues and eigenvectors can be selected by specifying either a
     ! range of values or a range of indices for the desired eigenvalues.
 
+    threadsafe
     callstatement (*f2py_func)(&itype,jobz,range,uplo,&n,a,&lda,b,&ldb,&vl,&vu,&il,&iu,&abstol,&m,w,z,&ldz,work,&lwork,iwork,ifail,&info)
     callprotoargument F_INT*,char*,char*,char*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,<ctype2>*,F_INT*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,F_INT*,F_INT*,F_INT*
     
@@ -1231,6 +1267,7 @@ end subroutine <prefix2>sygvx
 
 subroutine <prefix2>sygvx_lwork(itype,uplo,n,a,lda,b,ldb,vl,vu,il,iu,abstol,m,w,z,ldz,work,lwork,iwork,ifail,info)
     ! LWORK Query routine for (s/d)sygvx
+    threadsafe
     fortranname <prefix2>sygvx
     callstatement (*f2py_func)(&itype,"N","A",uplo,&n,&a,&lda,&b,&ldb,&vl,&vu,&il,&iu,&abstol,&m,&w,&z,&ldz,&work,&lwork,&iwork,&ifail,&info)
     callprotoargument F_INT*,char*,char*,char*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,<ctype2>*,F_INT*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,F_INT*,F_INT*,F_INT*
@@ -1268,6 +1305,7 @@ subroutine <prefix2c>hegvx(itype,jobz,range,uplo,n,a,lda,b,ldb,vl,vu,il,iu,absto
     ! B are assumed to be Hermitian and B is also positive definite.
     ! Eigenvalues and eigenvectors can be selected by specifying either a
     ! range of values or a range of indices for the desired eigenvalues.
+    threadsafe
     callstatement (*f2py_func)(&itype,jobz,range,uplo,&n,a,&lda,b,&ldb,&vl,&vu,&il,&iu,&abstol,&m,w,z,&ldz,work,&lwork,rwork,iwork,ifail,&info)
     callprotoargument F_INT*,char*,char*,char*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2>*,<ctype2>*,F_INT*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2>*,F_INT*,F_INT*,F_INT*
     
@@ -1302,6 +1340,7 @@ end subroutine <prefix2c>hegvx
 
 subroutine <prefix2c>hegvx_lwork(itype,uplo,n,a,lda,b,ldb,vl,vu,il,iu,abstol,m,w,z,ldz,work,lwork,rwork,iwork,ifail,info)
     ! LWORK Query routine for (c/z)hegvx
+    threadsafe
     fortranname <prefix2c>hegvx
     callstatement (*f2py_func)(&itype,"N","A",uplo,&n,&a,&lda,&b,&ldb,&vl,&vu,&il,&iu,&abstol,&m,&w,&z,&ldz,&work,&lwork,&rwork,&iwork,&ifail,&info)
     callprotoargument F_INT*,char*,char*,char*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2>*,<ctype2>*,F_INT*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2>*,F_INT*,F_INT*,F_INT*
@@ -1335,6 +1374,7 @@ end subroutine <prefix2c>hegvx_lwork
 
 subroutine <prefix>syequb(lower,n,a,lda,s,scond,amax,work,info)
 
+    threadsafe
     callstatement (*f2py_func)((lower?"L":"U"),&n,a,&lda,s,&scond,&amax,work,&info)
     callprotoargument char*,F_INT*,<ctype>*,F_INT*,<ctypereal>*,<ctypereal>*,<ctypereal>*,<ctype>*,F_INT*
 
@@ -1354,6 +1394,7 @@ end subroutine <prefix>syequb
 
 subroutine <prefix2c>heequb(lower,n,a,lda,s,scond,amax,work,info)
 
+    threadsafe
     callstatement (*f2py_func)((lower?"L":"U"),&n,a,&lda,s,&scond,&amax,work,&info)
     callprotoargument char*,F_INT*,<ctype2c>*,F_INT*,<ctype2>*,<ctype2>*,<ctype2>*,<ctype2c>*,F_INT*
 
