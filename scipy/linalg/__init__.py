@@ -96,6 +96,7 @@ Decompositions
    hessenberg - Hessenberg form of a matrix
    cdf2rdf - Complex diagonal form to real diagonal block form
    cossin - Cosine sine decomposition of a unitary or orthogonal matrix
+   sinkhorn - Sinkhorn decomposition of a matrix
 
 .. seealso::
 
@@ -211,6 +212,7 @@ from ._procrustes import *
 from ._decomp_update import *
 from ._sketches import *
 from ._decomp_cossin import *
+from ._decomp_sinkhorn import *
 
 __all__ = [s for s in dir() if not s.startswith('_')]
 
