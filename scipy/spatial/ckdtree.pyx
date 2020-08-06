@@ -785,31 +785,8 @@ cdef class cKDTree:
 
         _run_threads(_thread_func, n, n_jobs)
 
-        # massage the output in conformabity to the documented behavior
-
-        if sizeof(long) < sizeof(np.intp_t):
-            # ... e.g. Windows 64
-            overflown = False
-            for i in range(n):
-                for j in range(len(k)):
-                    if ii[i,j] > <np.intp_t>LONG_MAX:
-                        # C long overlow, return array of dtype=np.int_p
-                        overflown = True
-                        break
-                if overflown:
-                    break
-
-            if overflown:
-                ddret = np.reshape(dd,retshape+(len(k),))
-                iiret = np.reshape(ii,retshape+(len(k),))
-            else:
-                ddret = np.reshape(dd,retshape+(len(k),))
-                iiret = np.reshape(ii,retshape+(len(k),)).astype(int)
-
-        else:
-            # ... most other platforms
-            ddret = np.reshape(dd,retshape+(len(k),))
-            iiret = np.reshape(ii,retshape+(len(k),))
+        ddret = np.reshape(dd, retshape + (len(k),))
+        iiret = np.reshape(ii, retshape + (len(k),))
 
         if nearest:
             ddret = ddret[..., 0]
