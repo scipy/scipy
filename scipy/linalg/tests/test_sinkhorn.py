@@ -34,7 +34,7 @@ def test_inf_nan(value):
 @pytest.mark.parametrize("seed", range(4))
 def test_row_columns_sums(seed):
     n = 10
-    rng = np.random.RandomState(seed=0)
+    rng = np.random.RandomState(seed=seed)
     A = rng.uniform(0, 10, (n, n))
     D1, S, D2 = sinkhorn(A)
 
