@@ -1429,14 +1429,13 @@ class TestSystematic(object):
 
             if v <= 50 and mpmath.isfinite(res):
                 # value might mismatch from overflow
-                ans = np.log(float(value.real))
+                ans = np.log(complex(value))
 
             assert_allclose(ans, test, rtol=PREC)
             tests += 1
 
         # Verify many points were actually tested.
-        assert_(tests >= 140)
-
+        assert_(tests >= 530)
 
     def test_j0(self):
         # The Bessel function at large arguments is j0(x) ~ cos(x + phi)/sqrt(x)

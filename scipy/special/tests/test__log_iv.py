@@ -1,16 +1,16 @@
 import numpy as np
 from numpy.testing import assert_equal, assert_allclose
 from scipy.special import iv, logiv, logive
-from scipy.special._logiv import log_iv_asym
+from scipy.special._log_iv import _log_iv_asym
 
 
 def assert_iv(v, z, expected_iv):
     # Underlying asymptotic implementation
-    assert_allclose(log_iv_asym(v, z), expected_iv, rtol=1e-10)
+    assert_allclose(_log_iv_asym(v, z), expected_iv, rtol=1e-10)
 
-    # Wrapper which chooses between log(iv) and log_iv_asym
-    assert_allclose(logiv(v, z), expected_iv, rtol=1e-12)
-    assert_allclose(logive(v, z), expected_iv - abs(z), 1e-12)
+    # Wrapper which chooses between log(iv()) and log_iv_asym()
+    assert_allclose(logiv(v, z), expected_iv, rtol=3e-14)
+    assert_allclose(logive(v, z), expected_iv - abs(z), 3e-14)
 
 class TestLogIv(object):
     def test_int(self):

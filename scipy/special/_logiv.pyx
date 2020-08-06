@@ -1,6 +1,12 @@
+import cython
+
 from libc.math cimport sqrt, log, log1p, M_PI
 
-def log_iv_asym(v, z):
+
+@cython.wraparound(False)
+@cython.boundscheck(False)
+@cython.cdivision(True)
+cdef inline double log_iv_asym(double v, double z) nogil:
     r"""Asymptotic expansion for I_{v}(z)
     for real $z > 0$ and $v\to +\infty$.
     Based off DLMF 10.41
@@ -19,12 +25,14 @@ def log_iv_asym(v, z):
         double inv_p = sqrt(1.0 + x*x)
         # DLMF 10.41.7
         double eta = inv_p + log(x) - log1p(inv_p)
+        # e^(vn) / ((2piv)^(1/2)*p^(-1/2))
+        double log_res = v*eta - log(2.0 * M_PI * v * inv_p) / 2
 
-    # e^(vn) / ((2piv)^(1/2)*p^(-1/2))
-    log_res = v*eta - log(2.0 * M_PI * v * inv_p)/2
+        double p, p2, p4, p6, p8, p10
+        double pv, pv2, pv3, pv4, pv5
 
     # large-v asymptotic correction, DLMF 10.41.10
-    p = 1.0/ inv_p
+    p = 1.0 / inv_p
     p2 = p * p
     p4 = p2 * p2
     p6 = p4 * p2

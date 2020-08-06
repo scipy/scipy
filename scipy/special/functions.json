@@ -15,6 +15,11 @@
             "ellip_harmonic_unsafe": "ddddddd->d"
         }
     },
+    "_log_iv_asym": {
+        "_logiv.pxd": {
+            "log_iv_asym": "dd->d"
+        }
+    },
     "_igam_fac": {
         "cephes.h": {
             "igam_fac": "dd->d"

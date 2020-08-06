@@ -657,8 +657,7 @@ from ._spherical_bessel import (
     spherical_kn
 )
 
-from . import log_iv
-from .log_iv import (
+from ._log_iv import (
     logiv,
     logive
 )
