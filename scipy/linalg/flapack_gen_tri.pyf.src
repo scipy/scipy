@@ -2,8 +2,10 @@
 !
 
 subroutine <prefix>gtsv(n, nrhs, dl, d, du, b, info)
+    threadsafe
     callstatement (*f2py_func)(&n, &nrhs, dl, d, du, b, &n, &info);
     callprotoargument F_INT*, F_INT*, <ctype>*, <ctype>*, <ctype>*, <ctype>*, F_INT*, F_INT*
+
     integer intent(hide), depend(d) :: n = len(d)
     integer intent(hide), depend(b) :: nrhs = shape(b, 1)
     <ftype> dimension(n-1), intent(in,out,copy,out=du2), depend(d,n) :: dl
@@ -26,6 +28,7 @@ subroutine <prefix>gttrf(n, dl, d, du, du2, ipiv, info)
     ! where L is a product of permutation and unit lower bidiagonal
     ! matrices and U is upper triangular with nonzeros in only the main
     ! diagonal and first two superdiagonals.
+    threadsafe
     callstatement (*f2py_func)(&n, dl, d, du, du2, ipiv, &info)
     callprotoargument F_INT*, <ctype>*, <ctype>*, <ctype>*, <ctype>*, F_INT*, F_INT*
 
@@ -73,7 +76,8 @@ subroutine <prefix2>gtsvx(fact,trans,n,nrhs,dl,d,du,dlf,df,duf,du2,ipiv,b,ldb,x,
     ! matrices.
     !
     ! Error bounds on the solution and a condition estimate are also
-    !provided.
+    ! provided.
+    threadsafe
     callstatement (*f2py_func)(fact,trans,&n,&nrhs,dl,d,du,dlf,df,duf,du2,ipiv,b,&ldb,x,&ldx,&rcond,ferr,berr,work,iwork,&info);
     callprotoargument char*,char*,F_INT*,F_INT*,<ctype2>*,<ctype2>*,<ctype2>*,<ctype2>*,<ctype2>*,<ctype2>*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,<ctype2>*,<ctype2>*,<ctype2>*,F_INT*,F_INT*
 
@@ -110,7 +114,8 @@ subroutine <prefix2c>gtsvx(fact,trans,n,nrhs,dl,d,du,dlf,df,duf,du2,ipiv,b,ldb,x
     ! matrices.
     !
     ! Error bounds on the solution and a condition estimate are also
-    !provided.
+    ! provided.
+    threadsafe
     callstatement (*f2py_func)(fact,trans,&n,&nrhs,dl,d,du,dlf,df,duf,du2,ipiv,b,&ldb,x,&ldx,&rcond,ferr,berr,work,rwork,&info);
     callprotoargument char*,char*,F_INT*,F_INT*,<ctype2c>*,<ctype2c>*,<ctype2c>*,<ctype2c>*,<ctype2c>*,<ctype2c>*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2>*,<ctype2>*,<ctype2>*,<ctype2c>*,<ctype2>*,F_INT*
 
