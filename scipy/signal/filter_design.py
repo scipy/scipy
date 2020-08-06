@@ -15,7 +15,8 @@ from numpy.polynomial.polynomial import polyval as npp_polyval
 from numpy.polynomial.polynomial import polyvalfromroots
 
 from scipy import special, optimize, fft as sp_fft
-from scipy.special import comb, factorial
+from scipy.special import comb
+from scipy._lib._util import float_factorial
 
 
 __all__ = ['findfreqs', 'freqs', 'freqz', 'tf2zpk', 'zpk2tf', 'normalize',
@@ -4385,7 +4386,7 @@ def _bessel_poly(n, reverse=False):
     out = []
     for k in range(n + 1):
         num = _falling_factorial(2*n - k, n)
-        den = 2**(n - k) * factorial(k, exact=True)
+        den = 2**(n - k) * float_factorial(k)
         out.append(num // den)
 
     if reverse:
@@ -4999,7 +5000,7 @@ def gammatone(freq, ftype, order=None, numtaps=None, fs=None):
 
         # Scale the FIR filter so the frequency response is 1 at cutoff
         scale_factor = 2 * (2 * np.pi * bw) ** (order)
-        scale_factor /= np.math.factorial(order - 1)
+        scale_factor /= float_factorial(order - 1)
         scale_factor /= fs
         b *= scale_factor
         a = [1.0]
