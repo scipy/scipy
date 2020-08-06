@@ -61,10 +61,10 @@ def sinkhorn(a):
     c = np.ones(N)
     S = A.copy()
 
-    eps = np.finfo(a.dtype).eps * N
+    rtol = np.finfo(a.dtype).eps * N
     for it in range(10000):
-        prow = np.allclose(np.sum(S, axis=1), 1, atol=0, rtol=eps)
-        pcol = np.allclose(np.sum(S, axis=0), 1, atol=0, rtol=eps)
+        prow = np.allclose(np.sum(S, axis=1), 1, atol=0, rtol=rtol)
+        pcol = np.allclose(np.sum(S, axis=0), 1, atol=0, rtol=rtol)
         if prow and pcol:
             D1 = np.diag(1 / r)
             D2 = np.diag(1 / c)
