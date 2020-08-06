@@ -38,7 +38,7 @@ def sinkhorn(a):
     Examples
     --------
     >>> from scipy import linalg
-    >>> a = np.random.uniform(0, 1)
+    >>> a = np.random.uniform(size=(5, 5))
 
     >>> D1, S, D2 = linalg.sinkhorn(a)
     >>> np.allclose(a, D1 @ S @ D2)
