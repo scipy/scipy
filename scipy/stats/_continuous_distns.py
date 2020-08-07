@@ -2565,7 +2565,7 @@ class gamma_gen(rv_continuous):
         f(x, \alpha, \beta) = \frac{\beta^\alpha x^{\alpha - 1} e^{-\beta x }}{\Gamma(\alpha)}
 
     Note that this parameterization is equivalent to the above, with 
-    :math:`scale = 1 / beta`.
+    ``scale = 1 / beta``.
     
     %(after_notes)s
 
