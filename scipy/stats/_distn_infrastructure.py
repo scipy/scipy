@@ -3425,12 +3425,12 @@ class rv_discrete(rv_generic):
             Default is 0.
         lb, ub : int, optional
             Lower and upper bound for the summation, default is set to the
-            support of the distribution, inclusive (``ul <= k <= ub``).
+            support of the distribution, inclusive (``lb <= k <= ub``).
         conditional : bool, optional
             If true then the expectation is corrected by the conditional
             probability of the summation interval. The return value is the
             expectation of the function, `func`, conditional on being in
-            the given interval (k such that ``ul <= k <= ub``).
+            the given interval (k such that ``lb <= k <= ub``).
             Default is False.
         maxcount : int, optional
             Maximal number of terms to evaluate (to avoid an endless loop for
@@ -3470,7 +3470,6 @@ class rv_discrete(rv_generic):
         # might be problems(?) with correct self.a, self.b at this stage maybe
         # not anymore, seems to work now with _pmf
 
-        self._argcheck(*args)  # (re)generate scalar self.a and self.b
         _a, _b = self._get_support(*args)
         if lb is None:
             lb = _a
@@ -3484,6 +3483,10 @@ class rv_discrete(rv_generic):
             invfac = self.sf(lb-1, *args) - self.sf(ub, *args)
         else:
             invfac = 1.0
+
+        if isinstance(self, rv_sample):
+            res = self._expect(fun, lb, ub)
+            return res / invfac
 
         # iterate over the support, starting from the median
         x0 = self.ppf(0.5, *args)
@@ -3686,6 +3689,12 @@ class rv_sample(rv_discrete):
     def generic_moment(self, n):
         n = asarray(n)
         return np.sum(self.xk**n[np.newaxis, ...] * self.pk, axis=0)
+
+    def _expect(self, fun, lb, ub, *args, **kwds):
+        # ignore all args, just do a brute force summation
+        supp = self.xk[(lb <= self.xk) & (self.xk <= ub)]
+        vals = fun(supp)
+        return np.sum(vals)
 
 
 def _check_shape(argshape, size):
