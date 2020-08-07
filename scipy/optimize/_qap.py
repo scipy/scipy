@@ -122,8 +122,9 @@ def quadratic_assignment(
             score : float
                 The corresponding value of the objective function.
             nit : int
-                The total number of Franke-Wolfe iterations performed during
-                optimization.
+                The number of Franke-Wolfe iterations performed during
+                the initialization resulting in the permutation
+                returned.
 
     Notes
     -----
@@ -348,7 +349,6 @@ def _quadratic_assignment_faq(
             grad_P = np.linalg.norm(P - P_i1)
             P = P_i1
             n_iter += 1
-            total_iter += 1
         # end of FW optimization loop
 
         row, col = linear_sum_assignment(
@@ -367,6 +367,7 @@ def _quadratic_assignment_faq(
             score = score_new
             perm_inds = np.zeros(n, dtype=int)
             perm_inds[permutation_cost] = permutation_dist[perm_inds_new]
+            total_iter = n_iter
 
     permutation_cost_inv = np.argsort(permutation_cost)
     cost_matrix = cost_matrix[
