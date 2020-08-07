@@ -22,10 +22,9 @@ from . import _stats
 from ._rvs_sampling import rvs_ratio_uniforms
 from ._tukeylambda_stats import (tukeylambda_variance as _tlvar,
                                  tukeylambda_kurtosis as _tlkurt)
-from ._distn_infrastructure import (get_distribution_names, _kurtosis,
-                                    _ncx2_cdf, _ncx2_log_pdf, _ncx2_pdf,
-                                    rv_continuous, _skew, valarray,
-                                    _get_fixed_fit_value, _check_shape)
+from ._distn_infrastructure import (
+    get_distribution_names, _kurtosis, _ncx2_cdf, _ncx2_log_pdf, _ncx2_pdf,
+    rv_continuous, _skew, _get_fixed_fit_value, _check_shape)
 from ._ksstats import kolmogn, kolmognp, kolmogni
 from ._constants import (_XMIN, _EULER, _ZETA3,
                          _SQRT_2_OVER_PI, _LOG_SQRT_2_OVER_PI)
@@ -5859,23 +5858,23 @@ class pareto_gen(rv_continuous):
         if 'm' in moments:
             mask = b > 1
             bt = np.extract(mask, b)
-            mu = valarray(np.shape(b), value=np.inf)
+            mu = np.full(np.shape(b), fill_value=np.inf)
             np.place(mu, mask, bt / (bt-1.0))
         if 'v' in moments:
             mask = b > 2
             bt = np.extract(mask, b)
-            mu2 = valarray(np.shape(b), value=np.inf)
+            mu2 = np.full(np.shape(b), fill_value=np.inf)
             np.place(mu2, mask, bt / (bt-2.0) / (bt-1.0)**2)
         if 's' in moments:
             mask = b > 3
             bt = np.extract(mask, b)
-            g1 = valarray(np.shape(b), value=np.nan)
+            g1 = np.full(np.shape(b), fill_value=np.nan)
             vals = 2 * (bt + 1.0) * np.sqrt(bt - 2.0) / ((bt - 3.0) * np.sqrt(bt))
             np.place(g1, mask, vals)
         if 'k' in moments:
             mask = b > 4
             bt = np.extract(mask, b)
-            g2 = valarray(np.shape(b), value=np.nan)
+            g2 = np.full(np.shape(b), fill_value=np.nan)
             vals = (6.0*np.polyval([1.0, 1.0, -6, -2], bt) /
                     np.polyval([1.0, -7.0, 12.0, 0.0], bt))
             np.place(g2, mask, vals)
