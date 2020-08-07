@@ -7481,6 +7481,8 @@ def _confint_lowerbound(n, quantile, confidence):
     or `None` if there are not enough samples to derive one.
 
     Used by the public function confint_quantile().
+
+    .. versionadded:: 1.6.0
     """
     # compute all probabilities from the binomiale distribution for the quantile of interest
     bd = binom(n, quantile)
@@ -7497,22 +7499,50 @@ def _confint_lowerbound(n, quantile, confidence):
                 return k-1
 
 
-def confint_quantile(x, quantile, confidence, type='one-sided', verbose=False):
-    """Computes non-parametric confidence intervals for any quantile
-    from a set of (assumed iid) samples.
+def confint_quantile(x, quantile, confidence, type='one-sided'):
+    r"""Computes non-parametric confidence intervals for any quantile
+    from a set of i.i.d. samples.
 
-    TODO: finish the descriptions
-    This function computes a confidence interval for the given
-    quantile, with the given confidence level.
-    both UB and LB computed.
-    computes simple two-sided CI too
-    None is returned if there are not enough samples for the desired CI.
+    This function implements a non-parametric approach to compute
+    confidence intervals for quantiles. The approach is attributed to Thompson [1]_
+    and later proven to be applicable to any set of i.i.d. samples [2]_.
+    The computation is based on the observation that the probability of a quantile
+    :math:`q` to be larger than any sample :math:`x_m (1\leq m \leq N)`
+    can be computed as
+
+    .. math::
+
+        \mathbb{P}(x_m \leq q) = 1 - \sum_{k=0}^{m-1} \binom{N}{k} q^k(1-q)^{N-k}
+
+    Furthermore, these probabilities are symmetric, which allows to compute both
+    upper and lower bounds from the same computation:
+
+    .. math::
+
+        \mathbb{P}(x_m \leq q) = \mathbb{P}(x_{N-m+1} \geq 1-q).
+
+    The function computes confidence intervals for a given quantile and
+    confidence level, based on `x` which is either a set of samples
+    (one-dimensional array_like) or the number of samples available.
+    The confidence intervals are valid if and only if the samples are i.i.d.
+
+    Both one-sided and two-sided confidence intervals can be obtained
+    (default is one-sided). The function returns two values: either the bounds for the two one-sided
+    confidence intervals, or the lower and upper bounds of a two-sided confidence interval.
+    The return values are either the indexes of the bounds (if `x` is an integer) or
+    sample values (if `x` is the set of samples).
+    `None` is returned when there are not enough samples to compute
+    the desired confidence interval.
+
+    There is no uniqueness of the two-sided confidence interval (see Notes below).
+    Without further assumption on the samples (eg, the nature of the underlying distribution),
+    the one-sided intervals are optimally tight.
 
     Parameters
     ----------
     x : array_like or int
         Array of samples, should be one-dimensional.
-        If integer, taken as the number of samples available
+        If integer, taken as the number of samples available (strictly positive)
     quantile : float
         The quantile for which we want to compute the confidence interval.
         Must be strictly between 0 and 1.
@@ -7524,34 +7554,43 @@ def confint_quantile(x, quantile, confidence, type='one-sided', verbose=False):
         Default is 'one-sided'.
 
           * 'one-sided' : computes the best possible one-sided confidence intervals (both lower and upper bounds) for the given quantile.
-          * 'two-sided' : computes a two-sided confidence interval by combinaison of two one-sided intervals. E.g., a 90% two-sided interval is computed by combining two 95% one-sided intervals
+          * 'two-sided' : computes a two-sided confidence interval by combination of two one-sided intervals. E.g., a 90% two-sided interval is computed by combining two 95% one-sided intervals
     verbose : bool, optional
         Enable verbose outputs, default is False
 
     Returns
     -------
-    TODO
-    statistic : float
-        The Brunner-Munzer W statistic.
-    pvalue : float
-        p-value assuming an t distribution. One-sided or
-        two-sided, depending on the choice of `alternative` and `distribution`.
+    LB : float or int
+        value or index of the lower bound of
 
-    # See Also
-    # --------
-    # any related function?
+          * the right-open one-sided confidence interval (default, `type`='one-sided'),
+          * a two-sided confidence interval (if `type`='two-sided')
+    UB : float or int
+        value or index of the upper bound of
+
+          * the right-open one-sided confidence interval (default, `type`='one-sided')
+          * a two-sided confidence interval (if `type`='two-sided')
 
     Notes
     -----
-    Two-sided confidence intervals are not guaranteed to be optimal;
-    i.e., there may exist a tighter interval that may contain the quantile
+    Two-sided confidence intervals are not guaranteed to be optimal.
+    I.e., there may exist a tighter interval that may contain the quantile
     of interest with probability larger than the confidence level.
-    These intervals may be found by exhaustive search, which we do not do
-    for efficiency reason.
+    These intervals may be found by exhaustive search,
+    which we do not do for efficiency reason.
 
     References
     ----------
-    .. [1] TODO
+    .. [1] W. R. Thompson, “On Confidence Ranges for the Median and
+       Other Expectation Distributions for Populations of Unknown
+       Distribution Form,” The Annals of Mathematical Statistics,
+       vol. 7, no. 3, pp. 122–128, 1936,
+       Accessed: Sep. 18, 2019. [Online].
+       Available: https://www.jstor.org/stable/2957563.
+    .. [2] H. A. David and H. N. Nagaraja, “Order Statistics in
+       Nonparametric Inference,” in Order Statistics,
+       John Wiley & Sons, Ltd, 2005, pp. 159–170.
+
 
     Examples
     --------
@@ -7570,32 +7609,27 @@ def confint_quantile(x, quantile, confidence, type='one-sided', verbose=False):
     themselves. The returned values are then the indexes of the upper and lower
     bounds for the confidence intervals.
 
-    >>> N = 10
-    ... confint_quantile(N, 0.5, 0.95)
-    (2, 7)
-    """
+    >>> N = 20
+    ... confint_quantile(N, 0.75, 0.90)
+    (11, 17)
 
-    todo = ''
-    todo += '# ---------------------------------------------------------------- \n'
-    todo += '# TODO ThompsonCI \n'
-    todo += '# ---------------------------------------------------------------- \n'
-    todo += '- write the doctring\n'
-    todo += '- update the examples\n'
-    todo += '# ---------------------------------------------------------------- \n'
-    if verbose:
-        print('%s' % todo)
+
+    .. versionadded:: 1.6.0
+    """
 
     ##
     # Checking the inputs
     #
     # x can be either an integer or a one-dimentional array-like
-    if isinstance(x,int):
+    if isinstance(x, int):
+        if x < 1:
+            raise ValueError("Invalid parameter: "+repr(x)+", `x` must be either a strictly positive integer or one-dimensional array-like.")
         n = x
         return_index = True  # The function will returns the confint indexes
     else:
         x = np.asarray(x)
         if x.ndim != 1:
-            raise ValueError("Invalid parameter: "+repr(x)+", `x` must be either an integer or one-dimensional array-like.")
+            raise ValueError("Invalid parameter: "+repr(x)+", `x` must be either a strictly positive integer or one-dimensional array-like.")
         x = np.sort(x, axis=0)
         n = x.shape[0]
         return_index = False  # The function will returns the confint as values of x

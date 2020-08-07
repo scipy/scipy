@@ -5705,13 +5705,18 @@ class TestConfInt(object):
     """ Test the computation of non-parametric
     confidence intervals for quantiles
     """
+    X = array([2,8,3,6,4,1,5,9,7], float)
+    def test_index_equal_value(self):
+        assert_equal(stats.confint_quantile(X, 0.5, 0.9), (3.0, 7.0))
+        assert_equal(stats.confint_quantile(X.shape[0], 0.5, 0.9), (2, 6))
 
-    def test_wrap_onesided(self):
-        LB, UB = stats.confint_quantile(X, 0.5, 0.9)
-        assert_equal(LB, 2)
-        assert_equal(UB, 6)
+    def test_twosided(self):
+        assert_equal(stats.confint_quantile(X.shape[0], 0.5, 0.9, type='two-sided'), (1, 7))
 
-    def test_wrap_twosided(self):
-        LB, UB = stats.confint_quantile(X, 0.5, 0.9, type='two-sided')
-        assert_equal(LB, 1)
-        assert_equal(UB, 7)
+    def test_values(self):
+        N, q, c = 100, 0.75, 0.95
+        assert_equal(stats.confint_quantile(N, q, c), (67, 82))
+        N, q, c = 10, 0.75, 0.95
+        assert_equal(stats.confint_quantile(N, q, c), (4, None))
+        N, q, c = 20, 0.175, 0.95
+        assert_equal(stats.confint_quantile(N, q, c), (0, 6))
