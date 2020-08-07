@@ -7581,15 +7581,15 @@ def confint_quantile(x, quantile, confidence, type='one-sided'):
 
     References
     ----------
-    .. [1] W. R. Thompson, “On Confidence Ranges for the Median and
+    .. [1] W. R. Thompson, "On Confidence Ranges for the Median and
        Other Expectation Distributions for Populations of Unknown
-       Distribution Form,” The Annals of Mathematical Statistics,
-       vol. 7, no. 3, pp. 122–128, 1936,
+       Distribution Form," The Annals of Mathematical Statistics,
+       vol. 7, no. 3, pp. 122-128, 1936,
        Accessed: Sep. 18, 2019. [Online].
        Available: https://www.jstor.org/stable/2957563.
-    .. [2] H. A. David and H. N. Nagaraja, “Order Statistics in
-       Nonparametric Inference,” in Order Statistics,
-       John Wiley & Sons, Ltd, 2005, pp. 159–170.
+    .. [2] H. A. David and H. N. Nagaraja, "Order Statistics in
+       Nonparametric Inference" in Order Statistics,
+       John Wiley & Sons, Ltd, 2005, pp. 159-170.
 
 
     Examples
@@ -7598,19 +7598,19 @@ def confint_quantile(x, quantile, confidence, type='one-sided'):
     >>> from scipy.stats import confint_quantile
     >>> x = np.arange(1, 10)
     >>> confint_quantile(x, 0.5, 0.95)
-    (2, 6)
+    (2, 8)
 
     To compute a two-sided interval instead, use the `type` parameter.
 
-    >>> confint_quantile(x, 0.5, 0.95, type='two-sided')
-    (1, 7)
+    >>> confint_quantile(x, 0.5, 0.99, type='two-sided')
+    (1, 9)
 
     You can also pass the number of samples as argument (instead of the samples)
     themselves. The returned values are then the indexes of the upper and lower
     bounds for the confidence intervals.
 
     >>> N = 20
-    ... confint_quantile(N, 0.75, 0.90)
+    >>> confint_quantile(N, 0.75, 0.90)
     (11, 17)
 
 
