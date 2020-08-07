@@ -69,6 +69,11 @@ class _Interpolator1D(object):
             Interpolated values. Shape is determined by replacing
             the interpolation axis in the original array with the shape of x.
 
+        Notes
+        -----
+        Input values `x` must be convertible to `float` values like `int` 
+        or `float`.
+
         """
         x, x_shape = self._prepare_x(x)
         y = self._evaluate(x)

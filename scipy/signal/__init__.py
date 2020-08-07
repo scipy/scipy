@@ -159,6 +159,7 @@ Matlab-style IIR filter design
    bessel -- Bessel (no order selection available -- try butterod)
    iirnotch      -- Design second-order IIR notch digital filter.
    iirpeak       -- Design second-order IIR peak (resonant) digital filter.
+   iircomb       -- Design IIR comb filter.
 
 Continuous-time linear systems
 ==============================
