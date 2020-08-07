@@ -6420,9 +6420,9 @@ class rayleigh_gen(rv_continuous):
             return super(rayleigh_gen,
                          self).fit(data, *args, **kwds)
         else:
-            # neither are fixed by user, use the analytical MLE for `scale` as
-            # a function of `loc` in numerical optimization of `loc`, injecting
-            # corresponding analytical optimum for `scale`.
+            # `floc` and `fscale` are not fixed. Use the analytical MLE for
+            # `scale` as a function of `loc` in numerical optimization of
+            # `loc`, injecting corresponding analytical optimum for `scale`.
 
             # account for user provided guesses
             loc, scale = self._fitstart(data)  # rv_continuous provided guesses
