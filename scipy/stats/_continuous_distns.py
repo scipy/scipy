@@ -2547,7 +2547,7 @@ class gamma_gen(rv_continuous):
 
     .. math::
 
-        f(x, a) = \frac{x^{a-1} \exp(-x)}{\Gamma(a)}
+        f(x, a) = \frac{x^{a-1} e^{-x}}{\Gamma(a)}
 
     for :math:`x \ge 0`, :math:`a > 0`. Here :math:`\Gamma(a)` refers to the
     gamma function.
@@ -2556,7 +2556,17 @@ class gamma_gen(rv_continuous):
 
     When :math:`a` is an integer, `gamma` reduces to the Erlang
     distribution, and when :math:`a=1` to the exponential distribution.
+    
+    Gamma distributions are sometimes parameterized with two variables,
+    with a probability density function of:
 
+    .. math::
+
+        f(x, \alpha, \beta) = \frac{\beta^\alpha x^{\alpha - 1} e^{-\beta x }}{\Gamma(\alpha)}
+
+    Note that this parameterization is equivalent to the above, with 
+    ``scale = 1 / beta``.
+    
     %(after_notes)s
 
     %(example)s
