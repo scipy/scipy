@@ -1051,7 +1051,7 @@ class rv_generic(object):
         args = tuple(map(asarray, args))
         cond = self._argcheck(*args) & (scale > 0) & (loc == loc)
         output = []
-        default = np.full(shape(cond), self.badvalue)
+        default = np.full(shape(cond), fill_value=self.badvalue)
 
         # Use only entries that are valid in calculation
         if np.any(cond):
