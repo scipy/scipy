@@ -7563,13 +7563,13 @@ def confint_quantile(x, quantile, confidence, type='one-sided'):
     LB : float or int
         value or index of the lower bound of
 
-          * the right-open one-sided confidence interval (default, `type`='one-sided'),
-          * a two-sided confidence interval (if `type`='two-sided')
+        * the right-open one-sided confidence interval (default, ``type=one-sided``),
+        * a two-sided confidence interval (if ``type=two-sided``)
     UB : float or int
         value or index of the upper bound of
 
-          * the right-open one-sided confidence interval (default, `type`='one-sided')
-          * a two-sided confidence interval (if `type`='two-sided')
+        * the left-open one-sided confidence interval (default, ``type=one-sided``),
+        * a two-sided confidence interval (if ``type=two-sided``)
 
     Notes
     -----
