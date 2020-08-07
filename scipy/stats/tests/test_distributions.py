@@ -3289,6 +3289,9 @@ class TestErlang(object):
 
 
 class TestRayleigh(object):
+    def setup_method(self):
+        np.random.seed(1234)
+
     # gh-6227
     def test_logpdf(self):
         y = stats.rayleigh.logpdf(50)
