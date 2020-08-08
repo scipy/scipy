@@ -3400,19 +3400,22 @@ class invgauss_gen(rv_continuous):
         data, fshape_s, floc, fscale = _check_fit_input_parameters(self, data,
                                                                    args, kwds)
         '''
-        MLE is not used in 3 condtions:
+        Source: Statistical Distributions, 3rd Edition. Evans, Hastings,
+        and Peacock (2000), Page 121. Their shape parameter is equivilent to
+        SciPy's with the conversion `fshape_s = fshape / scale`.
+
+        MLE formulas are not used in 3 condtions:
         - `floc` is not set
         - `floc` is set but translation results in negative data
         - `f0` is fixed
-        These three cases fall back on generic optimization.
+        These three cases fall back on the superclass fit method.
         '''
         if floc is None or fshape_s is not None:
             return super(invgauss_gen, self).fit(data, *args, **kwds)
         elif np.any(data - floc < 0):
             raise FitDataError("invgauss", lower=1, upper=np.inf)
         else:
-            if floc != 0:
-                data = data - floc
+            data = data - floc
             fshape_n = np.mean(data)
             if fscale is None:
                 fscale = len(data) / (np.sum(data**(-1) - fshape_n**(-1)))
