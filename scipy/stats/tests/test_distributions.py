@@ -88,7 +88,7 @@ def _assert_lessthan_loglike(dist, data, func, **kwds):
 def assert_fit_warnings(dist):
     param = ['floc', 'fscale']
     if dist.shapes:
-        nshapes = len(dist.shapes.replace(" ", "").split(","))
+        nshapes = len(dist.shapes.split(","))
         param += ['f0', 'f1', 'f2'][:nshapes]
     all_fixed = dict(zip(param, np.arange(len(param))))
     data = [1, 2, 3]
