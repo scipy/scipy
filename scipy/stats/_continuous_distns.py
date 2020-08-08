@@ -6426,8 +6426,7 @@ class rayleigh_gen(rv_continuous):
 
             # account for user provided guesses
             loc, scale = self._fitstart(data)  # rv_continuous provided guesses
-            loc = kwds.pop('loc', loc)
-            scale = kwds.pop('scale', scale)
+            loc = kwds.pop('loc', loc)  # only `loc` user guesses are relevant
 
             # the second argument rv_continuous._reduce_func returns is the
             # log-likelihood function. Its inputs are the initial guesses for
@@ -6438,7 +6437,7 @@ class rayleigh_gen(rv_continuous):
             optimizer = _fit_determine_optimizer(kwds.pop('optimizer',
                                                           optimize.fmin))
 
-            # wrap LL to optimize over `loc`
+            # wrap log-likelihood function to optimize only over `loc`
             def func(loc, data):
                 return ll([loc, scale_mle(loc, data)], data)
 

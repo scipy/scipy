@@ -85,7 +85,13 @@ def _assert_lessthan_loglike(dist, data, func, **kwds):
     assert ll_mle_analytical < ll_numerical_opt
 
 
-def assert_fit_warnings(dist, data, all_fixed, floc_fixedDataError):
+def assert_fit_warnings(dist):
+    param = ['floc', 'fscale']
+    if dist.shapes:
+        nshapes = len(dist.shapes.replace(" ", "").split(","))
+        param += ['f0', 'f1', 'f2'][:nshapes]
+    all_fixed = dict(zip(param, np.arange(len(param))))
+    data = [1, 2, 3]
     with pytest.raises(RuntimeError,
                        match="All parameters fixed. There is nothing "
                        "to optimize."):
@@ -99,8 +105,7 @@ def assert_fit_warnings(dist, data, all_fixed, floc_fixedDataError):
     with pytest.raises(TypeError, match="Unknown keyword arguments:"):
         dist.fit(data, extra_keyword=2)
     with pytest.raises(TypeError, match="Too many positional arguments."):
-        dist.fit(data, *[1]*(1 if not dist.shapes else len(dist.shapes) + 1))
-    assert_raises(FitDataError, dist.fit, data, **floc_fixedDataError)
+        dist.fit(data, *[1]*(len(param) - 1))
 
 
 @pytest.mark.parametrize('dist',
@@ -1052,21 +1057,10 @@ class TestPareto(object):
                                  fscale=rvs_scale/2)
 
     def test_fit_warnings(self):
-        with pytest.raises(RuntimeError,
-                           match="All parameters fixed. There is nothing "
-                           "to optimize."):
-            stats.pareto.fit([1, 2, 3], f0=2, floc=1, fscale=1)
-        with pytest.raises(RuntimeError,
-                           match="The data contains non-finite values"):
-            stats.pareto.fit([np.nan])
-        with pytest.raises(RuntimeError,
-                           match="The data contains non-finite values"):
-            stats.pareto.fit([np.inf])
-        with pytest.raises(TypeError, match="Unknown keyword arguments:"):
-            stats.pareto.fit([2, 2, 3], floc=1, extra=2)
-        with pytest.raises(TypeError, match="Too many positional arguments."):
-            stats.pareto.fit([1, 2, 3], 1, 4)
+        assert_fit_warnings(stats.pareto)
+        # `floc` that causes invalid negative data
         assert_raises(FitDataError, stats.pareto.fit, [1, 2, 3], floc=2)
+        # `floc` and `fscale` combination causes invalid data > `fscale`
         assert_raises(FitDataError, stats.pareto.fit, [5, 2, 3], floc=1,
                       fscale=3)
 
@@ -3338,8 +3332,7 @@ class TestRayleigh(object):
         _assert_lessthan_loglike(stats.rayleigh, data, func)
 
     def test_fit_warnings(self):
-        assert_fit_warnings(stats.rayleigh, [1, 2, 3], {
-            'floc': 2, 'fscale': 2}, {'floc': 2})
+        assert_fit_warnings(stats.rayleigh)
 
 
 class TestExponWeib(object):
