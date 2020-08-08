@@ -2,20 +2,25 @@ import numpy as np
 from . import linear_sum_assignment, OptimizeResult
 
 
-def umeyama_eigendecomposition(A, B, maximize=False):
+def umeyama_eigendecomposition(AG, AH, maximize=False):
     """Finds an approximate solution to QAP using Umeyama's method."""
     # 'Correct' non-hermitian matrices
-    if (A != A.T).any() or (B != B.T).any():
-        A = (A + A.T) / 2 + 1j * (A - A.T) / 2
-        B = (B + B.T) / 2 + 1j * (B - B.T) / 2
+    if (AG != AG.T).any() or (AH != AH.T).any():
+        EG = (AG + AG.T) / 2 + 1j * (AG - AG.T) / 2
+        EH = (AH + AH.T) / 2 + 1j * (AH - AH.T) / 2
 
-    va = np.linalg.eigh(A)[1]
-    vb = np.linalg.eigh(B)[1]
-    W = np.abs(vb) @ np.abs(va).T
+        WG = np.linalg.eigh(EG)[1][:, ::-1]
+        WH = np.linalg.eigh(EH)[1][:, ::-1]
+        W = np.abs(WH) @ np.abs(WG).T
+    else:
+        UG = np.linalg.eigh(AG)[1][:, ::-1]
+        UH = np.linalg.eigh(AH)[1][:, ::-1]
+        W = np.abs(UH) @ np.abs(UG).T
+
     _, col_ind = linear_sum_assignment(W, maximize=maximize)
 
-    # faster version of `float(np.trace(A @ B[col_ind][:, col_ind].T))`
-    score = float(np.real(np.sum(A * B[col_ind][:, col_ind])))
+    # faster version of `float(np.trace(AG @ AH[col_ind][:, col_ind].T))`
+    score = float(np.real(np.sum(AG * AH[col_ind][:, col_ind])))
     return OptimizeResult({"col_ind": col_ind, "score": score})
 
 
