@@ -102,9 +102,9 @@ def quadratic_assignment(A, B, maximize=False):
     A = np.asarray(A)
     B = np.asarray(B)
 
-    if A.ndim != 2:
+    if A.ndim != 2 or A.shape[0] != A.shape[1]:
         raise ValueError("``A`` must be a square matrix")
-    if B.ndim != 2:
+    if B.ndim != 2 or B.shape[0] != B.shape[1]:
         raise ValueError("``B`` must be a square matrix")
     if A.shape != B.shape:
         raise ValueError("``A`` and ``B`` must be of equal size")
