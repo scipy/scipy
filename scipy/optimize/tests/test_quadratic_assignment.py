@@ -83,3 +83,11 @@ class TestQAP():
     def test_negative_B(self):
         with pytest.raises(ValueError, match="contains negative entries"):
             quadratic_assignment(self.AG, -self.AH)
+
+    def test_imaginary_A(self):
+        with pytest.raises(ValueError, match="contains complex entries"):
+            quadratic_assignment(self.AG + 1j, self.AH)
+
+    def test_imaginary_B(self):
+        with pytest.raises(ValueError, match="contains complex entries"):
+            quadratic_assignment(self.AG, self.AH + 1j)

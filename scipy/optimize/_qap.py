@@ -117,5 +117,9 @@ def quadratic_assignment(A, B, maximize=False):
         raise ValueError("``A`` contains negative entries")
     if (B < 0).any():
         raise ValueError("``B`` contains negative entries")
+    if np.any(np.iscomplex(A)):
+        raise ValueError("``A`` contains complex entries")
+    if np.any(np.iscomplex(B)):
+        raise ValueError("``B`` contains complex entries")
 
     return umeyama_eigendecomposition(A, B, maximize)
