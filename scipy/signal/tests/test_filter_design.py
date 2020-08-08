@@ -10,14 +10,14 @@ import pytest
 from pytest import raises as assert_raises
 
 from numpy import array, spacing, sin, pi, sort, sqrt
-from scipy.signal import (BadCoefficients, bessel, besselap, bilinear, buttap,
-                          butter, buttord, cheb1ap, cheb1ord, cheb2ap,
+from scipy.signal import (argrelextrema, BadCoefficients, bessel, besselap, bilinear,
+                          buttap, butter, buttord, cheb1ap, cheb1ord, cheb2ap,
                           cheb2ord, cheby1, cheby2, ellip, ellipap, ellipord,
                           firwin, freqs_zpk, freqs, freqz, freqz_zpk,
-                          gammatone, group_delay, iirdesign, iirfilter, iirnotch, 
-                          iirpeak, lp2bp, lp2bs, lp2hp, lp2lp, normalize, sos2tf, 
-                          sos2zpk, sosfreqz, tf2sos, tf2zpk, zpk2sos, zpk2tf,
-                          bilinear_zpk, lp2lp_zpk, lp2hp_zpk, lp2bp_zpk,
+                          gammatone, group_delay, iircomb, iirdesign, iirfilter, 
+                          iirnotch, iirpeak, lp2bp, lp2bs, lp2hp, lp2lp, normalize, 
+                          sos2tf, sos2zpk, sosfreqz, tf2sos, tf2zpk, zpk2sos, 
+                          zpk2tf, bilinear_zpk, lp2lp_zpk, lp2hp_zpk, lp2bp_zpk,
                           lp2bs_zpk)
 from scipy.signal.filter_design import (_cplxreal, _cplxpair, _norm_factor,
                                         _bessel_poly, _bessel_zeros)
@@ -3609,6 +3609,75 @@ class TestIIRPeak(object):
         # hp[2] correspond to the frequency that should be retained and
         # the frequency response should be very close to 1
         assert_allclose(abs(hp[2]), 1, rtol=1e-10)
+
+
+class TestIIRComb(object):
+    # Test erroneus input cases
+    def test_invalid_input(self):
+        # w0 is <= 0 or >= fs / 2
+        fs = 1000
+        for args in [(-fs, 30), (0, 35), (fs / 2, 40), (fs, 35)]:
+            with pytest.raises(ValueError, match='w0 must be between '):
+                iircomb(*args, fs=fs)
+
+        # fs is not divisible by w0
+        for args in [(120, 30), (157, 35)]:
+            with pytest.raises(ValueError, match='fs must be divisible '):
+                iircomb(*args, fs=fs)
+
+        # Filter type is not notch or peak
+        for args in [(0.2, 30, 'natch'), (0.5, 35, 'comb')]:
+            with pytest.raises(ValueError, match='ftype must be '):
+                iircomb(*args)
+
+    # Verify that the filter's frequency response contains a
+    # notch at the cutoff frequency
+    @pytest.mark.parametrize('ftype', ('notch', 'peak'))
+    def test_frequency_response(self, ftype):
+        # Create a notching or peaking comb filter at 1000 Hz
+        b, a = iircomb(1000, 30, ftype=ftype, fs=10000)
+
+        # Compute the frequency response
+        freqs, response = freqz(b, a, 1000, fs=10000)
+
+        # Find the notch using argrelextrema
+        comb_points = argrelextrema(abs(response), np.less)[0]
+
+        # Verify that the first notch sits at 1000 Hz
+        comb1 = comb_points[0]
+        assert_allclose(freqs[comb1], 1000)
+
+    # All built-in IIR filters are real, so should have perfectly
+    # symmetrical poles and zeros. Then ba representation (using
+    # numpy.poly) will be purely real instead of having negligible
+    # imaginary parts.
+    def test_iir_symmetry(self):
+        b, a = iircomb(400, 30, fs=24000)
+        z, p, k = tf2zpk(b, a)
+        assert_array_equal(sorted(z), sorted(z.conj()))
+        assert_array_equal(sorted(p), sorted(p.conj()))
+        assert_equal(k, np.real(k))
+
+        assert issubclass(b.dtype.type, np.floating)
+        assert issubclass(a.dtype.type, np.floating)
+
+    # Verify filter coefficients with MATLAB's iircomb function
+    def test_ba_output(self):
+        b_notch, a_notch = iircomb(60, 35, ftype='notch', fs=600)
+        b_notch2 = [0.957020174408697, 0.0, 0.0, 0.0, 0.0, 0.0,
+                    0.0, 0.0, 0.0, 0.0, -0.957020174408697]
+        a_notch2 = [1.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+                    0.0, 0.0, 0.0, 0.0, -0.914040348817395]
+        assert_allclose(b_notch, b_notch2)
+        assert_allclose(a_notch, a_notch2)
+
+        b_peak, a_peak = iircomb(60, 35, ftype='peak', fs=600)
+        b_peak2 = [0.0429798255913026, 0.0, 0.0, 0.0, 0.0, 0.0,
+                   0.0, 0.0, 0.0, 0.0, -0.0429798255913026]
+        a_peak2 = [1.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+                   0.0, 0.0, 0.0, 0.0, 0.914040348817395]
+        assert_allclose(b_peak, b_peak2)
+        assert_allclose(a_peak, a_peak2)
 
 
 class TestIIRDesign(object):

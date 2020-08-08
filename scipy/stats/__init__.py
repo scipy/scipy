@@ -157,6 +157,7 @@ Discrete distributions
    hypergeom         -- Hypergeometric
    logser            -- Logarithmic (Log-Series, Series)
    nbinom            -- Negative Binomial
+   nhypergeom        -- Negative Hypergeometric
    planck            -- Planck (Discrete Exponential)
    poisson           -- Poisson
    randint           -- Discrete Uniform

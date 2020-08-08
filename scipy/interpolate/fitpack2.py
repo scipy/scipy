@@ -1639,8 +1639,11 @@ class LSQSphereBivariateSpline(SphereBivariateSpline):
     Suppose we have global data on a coarse grid (the input data does not
     have to be on a grid):
 
-    >>> theta = np.linspace(0., np.pi, 7)
-    >>> phi = np.linspace(0., 2*np.pi, 9)
+    >>> from scipy.interpolate import LSQSphereBivariateSpline
+    >>> import matplotlib.pyplot as plt
+
+    >>> theta = np.linspace(0, np.pi, num=7)
+    >>> phi = np.linspace(0, 2*np.pi, num=9)
     >>> data = np.empty((theta.shape[0], phi.shape[0]))
     >>> data[:,0], data[0,:], data[-1,:] = 0., 0., 0.
     >>> data[1:-1,1], data[1:-1,-1] = 1., 1.
@@ -1659,7 +1662,6 @@ class LSQSphereBivariateSpline(SphereBivariateSpline):
     >>> knotst[-1] -= .0001
     >>> knotsp[0] += .0001
     >>> knotsp[-1] -= .0001
-    >>> from scipy.interpolate import LSQSphereBivariateSpline
     >>> lut = LSQSphereBivariateSpline(lats.ravel(), lons.ravel(),
     ...                                data.T.ravel(), knotst, knotsp)
 
@@ -1672,10 +1674,8 @@ class LSQSphereBivariateSpline(SphereBivariateSpline):
 
     >>> fine_lats = np.linspace(0., np.pi, 70)
     >>> fine_lons = np.linspace(0., 2*np.pi, 90)
-
     >>> data_lsq = lut(fine_lats, fine_lons)
 
-    >>> import matplotlib.pyplot as plt
     >>> fig = plt.figure()
     >>> ax1 = fig.add_subplot(131)
     >>> ax1.imshow(data, interpolation='nearest')
@@ -1715,11 +1715,7 @@ class LSQSphereBivariateSpline(SphereBivariateSpline):
         tt_[-4:], tp_[-4:] = np.pi, 2. * np.pi
         tt_, tp_, c, fp, ier = dfitpack.spherfit_lsq(theta, phi, r, tt_, tp_,
                                                      w=w, eps=eps)
-        if ier < -2:
-            deficiency = 6 + (nt_ - 8) * (np_ - 7) + ier
-            message = _spherefit_messages.get(-3) % (deficiency, -ier)
-            warnings.warn(message, stacklevel=2)
-        elif ier not in [0, -1, -2]:
+        if ier > 0:
             message = _spherefit_messages.get(ier, 'ier=%s' % (ier))
             raise ValueError(message)
 
