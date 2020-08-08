@@ -4021,7 +4021,7 @@ def _check_fit_input_parameters(dist, data, args, kwds):
     floc = kwds.get('floc', None)
     fscale = kwds.get('fscale', None)
 
-    num_shapes = len(dist.shapes) if dist.shapes else 0
+    num_shapes = len(dist.shapes.split(",")) if dist.shapes else 0
     fshape_keys = []
     fshapes = []
 

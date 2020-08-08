@@ -85,7 +85,13 @@ def _assert_lessthan_loglike(dist, data, func, **kwds):
     assert ll_mle_analytical < ll_numerical_opt
 
 
-def assert_fit_warnings(dist, data, all_fixed, floc_fixedDataError):
+def assert_fit_warnings(dist):
+    param = ['floc', 'fscale']
+    if dist.shapes:
+        nshapes = len(dist.shapes.split(","))
+        param += ['f0', 'f1', 'f2'][:nshapes]
+    all_fixed = dict(zip(param, np.arange(len(param))))
+    data = [1, 2, 3]
     with pytest.raises(RuntimeError,
                        match="All parameters fixed. There is nothing "
                        "to optimize."):
@@ -99,9 +105,7 @@ def assert_fit_warnings(dist, data, all_fixed, floc_fixedDataError):
     with pytest.raises(TypeError, match="Unknown keyword arguments:"):
         dist.fit(data, extra_keyword=2)
     with pytest.raises(TypeError, match="Too many positional arguments."):
-        dist.fit(data, *[1]*(0 if not dist.shapes else len(dist.shapes) + 1))
-    assert_raises(FitDataError, dist.fit, data, **floc_fixedDataError)
-
+        dist.fit(data, *[1]*(len(param) - 1))
 
 
 @pytest.mark.parametrize('dist',
@@ -1074,14 +1078,13 @@ class TestPareto(object):
                                  fscale=rvs_scale/2)
 
     def test_fit_warnings(self):
-        assert_fit_warnings(stats.pareto, [1, 2, 3], {
-            'f0': 2., 'floc': 1, 'fscale': 1},
-            {'floc': 2})
-
-        # every x in data must be greater than a fixed `fscale`.
+        assert_fit_warnings(stats.pareto)
+        assert_fit_warnings(stats.pareto)
+        # `floc` that causes invalid negative data
+        assert_raises(FitDataError, stats.pareto.fit, [1, 2, 3], floc=2)
+        # `floc` and `fscale` combination causes invalid data > `fscale`
         assert_raises(FitDataError, stats.pareto.fit, [5, 2, 3], floc=1,
                       fscale=3)
-
 
 
 class TestGenpareto(object):
@@ -1552,9 +1555,11 @@ class TestDLaplace(object):
 
 
 class TestInvgauss(object):
-    @pytest.mark.parametrize("rvs_mu", [1, 2])
-    @pytest.mark.parametrize("rvs_loc", [0, 1, 2])
-    @pytest.mark.parametrize("rvs_scale", [1, 2, 3, 10])
+    def setup_method(self):
+        np.random.seed(1234)
+
+    @pytest.mark.parametrize("rvs_mu,rvs_loc,rvs_scale",
+                             [(2, 0, 1), (np.random.rand(3)*10)])
     def test_fit(self, rvs_mu, rvs_loc, rvs_scale):
         data = stats.invgauss.rvs(size=100, mu=rvs_mu,
                                   loc=rvs_loc, scale=rvs_scale)
@@ -1584,58 +1589,48 @@ class TestInvgauss(object):
         shape_mle3 = stats.invgauss.fit(data, f0=1.04)[0]
         assert shape_mle1 == shape_mle2 == shape_mle3 == 1.04
 
-    @pytest.mark.parametrize("rvs_mu", [1, 2])
-    @pytest.mark.parametrize("rvs_loc", [0, 1, 2])
-    @pytest.mark.parametrize("rvs_scale", [1, 2, 3, 10])
+    @pytest.mark.parametrize("rvs_mu,rvs_loc,rvs_scale",
+                             [(2, 0, 1), (np.random.rand(3)*10)])
     def test_fit_MLE_comp_optimzer(self, rvs_mu, rvs_loc, rvs_scale):
         data = stats.invgauss.rvs(size=100, mu=rvs_mu,
                                   loc=rvs_loc, scale=rvs_scale)
-        # fitting without `floc` is default numerical opitmization
-        opt_num = super(type(stats.invgauss), stats.invgauss).fit(data)
-        mle_ana = stats.invgauss.fit(data)
-        assert_allclose(opt_num, mle_ana, atol=1e-30, rtol=1e-30)
+        # fitting without `floc` uses superclass fit method
+        super_fit = super(type(stats.invgauss), stats.invgauss).fit(data)
+        invgauss_fit = stats.invgauss.fit(data)
+        assert_equal(super_fit, invgauss_fit)
 
-        # fitting with `fmu` is default numerical opitmization
-        opt_num = super(type(stats.invgauss), stats.invgauss).fit(data, floc=0,
-                                                                  fmu=2)
-        mle_ana = stats.invgauss.fit(data, floc=0, fmu=2)
-        assert_allclose(opt_num, mle_ana, atol=1e-30, rtol=1e-30)
+        # fitting with `fmu` is uses superclass fit method
+        super_fit = super(type(stats.invgauss), stats.invgauss).fit(data,
+                                                                    floc=0,
+                                                                    fmu=2)
+        invgauss_fit = stats.invgauss.fit(data, floc=0, fmu=2)
+        assert_equal(super_fit, invgauss_fit)
 
-        # fixed `floc` uses analytical MLE.
-        mle_ana = stats.invgauss.fit(data, floc=rvs_loc)
-        opt_num = super(type(stats.invgauss), stats.invgauss).fit(data,
-                                                                  floc=rvs_loc)
-
+        # obtain log-likelihood objective function to compare results
         args = [data, (stats.invgauss._fitstart(data), )]
         func = stats.invgauss._reduce_func(args, {})[1]
-        ll_mle = func(mle_ana, data)
-        ll_opt = func(opt_num, data)
-        assert ll_mle < ll_opt or np.allclose(ll_mle, ll_opt,
-                                              atol=1e-15, rtol=1e-15)
 
-        # fixed `floc` that doesn't result in any data < 0 uses analytical MLE
+        # fixed `floc` uses analytical formula for MLE
+        _assert_lessthan_loglike(stats.invgauss, data, func, floc=rvs_loc)
+
+        # fixed `floc` not resulting in invalid data < 0 uses analytical MLE
         assert np.all((data - (rvs_loc - 1)) > 0)
-        opt_num = super(type(stats.invgauss),
-                        stats.invgauss).fit(data, floc=rvs_loc - 1)
-        mle_ana = stats.invgauss.fit(data, floc=rvs_loc - 1)
-        ll_mle = func(mle_ana, data)
-        ll_opt = func(opt_num, data)
-        assert ll_mle < ll_opt or np.allclose(ll_mle, ll_opt,
-                                              atol=1e-15, rtol=1e-15)
+        _assert_lessthan_loglike(stats.invgauss, data, func, floc=rvs_loc - 1)
 
-        # fixing `floc` to an arbitrary number, 0, still provides an as good
+        # fixed `floc` to an arbitrary number, 0, still provides an as good
         # or better fit.
         _assert_lessthan_loglike(stats.invgauss, data, func, floc=0)
 
-        # fixing `fscale` to an arbitrary number, 2.06, still provides an
+        # fixed `fscale` to an arbitrary number still provides an
         # as good or better fit.
         _assert_lessthan_loglike(stats.invgauss, data, func, floc=rvs_loc,
-                                 fscale=2.06)
+                                 fscale=np.random.rand(1)[0])
 
     def test_fit_raise_errors(self):
-        assert_fit_warnings(stats.invgauss, [1, 2, 3], {
-            'floc': 2, 'fscale': 3, 'fmu': 2},
-            {'floc': 3})
+        assert_fit_warnings(stats.invgauss)
+        # FitDataError is raised when negative invalid data
+        with pytest.raises(FitDataError):
+            stats.invgauss.fit([1, 2, 3], floc=2)
 
 
 class TestLaplace(object):
