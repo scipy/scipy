@@ -3,7 +3,7 @@ import numpy as np
 from numpy.testing import assert_array_equal
 from scipy.optimize import quadratic_assignment
 
-'''
+
 @pytest.mark.parametrize("n", [10, 100])
 @pytest.mark.parametrize("directed", [False, True])
 def test_weighted_graph_isomorphism(n, directed):
@@ -17,22 +17,22 @@ def test_weighted_graph_isomorphism(n, directed):
 
     result = quadratic_assignment(A, B, maximize=True)
     assert_array_equal(result.col_ind, P)
-'''
+
 
 def test_directed_weighted_graph_matching():
     # Example in section IVB of Umeyama:
     # "An eigendecomposition approach to weighted graph matching"
-    A = np.array([[0, 3, 4, 2],
+    AG = np.array([[0, 3, 4, 2],
                   [0, 0, 1, 2],
                   [1, 0, 0, 1],
                   [0, 0, 1, 0]])
 
-    B = np.array([[0, 4, 2, 4],
+    AH = np.array([[0, 4, 2, 4],
                   [0, 0, 1, 0],
                   [0, 2, 0, 2],
                   [0, 1, 2, 0]])
 
-    result = quadratic_assignment(A, B, maximize=True)
+    result = quadratic_assignment(AG, AH, maximize=True)
     assert_array_equal(result.col_ind, [0, 2, 3, 1])
 
 
