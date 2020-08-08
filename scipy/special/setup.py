@@ -133,7 +133,7 @@ def configuration(parent_package='',top_path=None):
     cfg = combine_dict(lapack_opt, include_dirs=inc_dirs)
     cfg.setdefault('libraries', []).extend(["sf_error"])
     config.add_extension('_ellip_harm_2',
-                         sources=['_ellip_harm_2.c',],
+                         sources=['_ellip_harm_2.c'],
                          depends=sf_error_src + sf_error_hdr,
                          **cfg)
 
