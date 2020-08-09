@@ -442,28 +442,13 @@ class TestCdist(object):
         Y2 = wcdist_no_const(X1, X2, 'test_euclidean')
         _assert_within_tol(Y1, Y2, eps, verbose > 2)
 
-    def test_cdist_minkowski_random_p3d8(self):
+    @pytest.mark.parametrize("p", [1.0, 1.23, 2.0, 3.8, 4.6, np.inf])
+    def test_cdist_minkowski_random(self, p):
         eps = 1e-07
         X1 = eo['cdist-X1']
         X2 = eo['cdist-X2']
-        Y1 = wcdist_no_const(X1, X2, 'minkowski', p=3.8)
-        Y2 = wcdist_no_const(X1, X2, 'test_minkowski', p=3.8)
-        _assert_within_tol(Y1, Y2, eps, verbose > 2)
-
-    def test_cdist_minkowski_random_p4d6(self):
-        eps = 1e-07
-        X1 = eo['cdist-X1']
-        X2 = eo['cdist-X2']
-        Y1 = wcdist_no_const(X1, X2, 'minkowski', p=4.6)
-        Y2 = wcdist_no_const(X1, X2, 'test_minkowski', p=4.6)
-        _assert_within_tol(Y1, Y2, eps, verbose > 2)
-
-    def test_cdist_minkowski_random_p1d23(self):
-        eps = 1e-07
-        X1 = eo['cdist-X1']
-        X2 = eo['cdist-X2']
-        Y1 = wcdist_no_const(X1, X2, 'minkowski', p=1.23)
-        Y2 = wcdist_no_const(X1, X2, 'test_minkowski', p=1.23)
+        Y1 = wcdist_no_const(X1, X2, 'minkowski', p=p)
+        Y2 = wcdist_no_const(X1, X2, 'test_minkowski', p=p)
         _assert_within_tol(Y1, Y2, eps, verbose > 2)
 
     def test_cdist_cosine_random(self):
@@ -948,6 +933,14 @@ class TestPdist(object):
         Y_right = eo['pdist-correlation-iris']
         Y_test2 = wpdist(X, 'test_correlation')
         _assert_within_tol(Y_test2, Y_right, eps)
+
+    @pytest.mark.parametrize("p", [1.0, 2.0, 3.2, np.inf])
+    def test_pdist_minkowski_random_p(self, p):
+        eps = 1e-05
+        X = eo['pdist-double-inp']
+        Y1 = wpdist_no_const(X, 'minkowski', p=p)
+        Y2 = wpdist_no_const(X, 'test_minkowski', p=p)
+        _assert_within_tol(Y1, Y2, eps)
 
     def test_pdist_minkowski_random(self):
         eps = 1e-05
