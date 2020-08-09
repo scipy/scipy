@@ -12,42 +12,45 @@ def test_weighted_graph_isomorphism(n, directed):
     if not directed:
         A = (A + A.T) / 2
 
-    P = rng.permutation(n)
-    B = A[P][:, P]
+    perm = rng.permutation(n)
+    P = np.zeros((n, n), dtype=int)
+    P[np.arange(n), perm] = 1
+    B = P.T @ A @ P
 
     result = quadratic_assignment(A, B, maximize=True)
-    assert_array_equal(result.col_ind, P)
+    assert_array_equal(result.col_ind, perm)
 
 
 def test_directed_weighted_graph_matching():
     # Example in section IVB of Umeyama:
     # "An eigendecomposition approach to weighted graph matching"
     AG = np.array([[0, 3, 4, 2],
-                  [0, 0, 1, 2],
-                  [1, 0, 0, 1],
-                  [0, 0, 1, 0]])
+                   [0, 0, 1, 2],
+                   [1, 0, 0, 1],
+                   [0, 0, 1, 0]])
 
     AH = np.array([[0, 4, 2, 4],
-                  [0, 0, 1, 0],
-                  [0, 2, 0, 2],
-                  [0, 1, 2, 0]])
+                   [0, 0, 1, 0],
+                   [0, 2, 0, 2],
+                   [0, 1, 2, 0]])
 
     result = quadratic_assignment(AG, AH, maximize=True)
-    assert_array_equal(result.col_ind, [0, 2, 3, 1])
+    #assert_array_equal(result.col_ind, [0, 2, 3, 1])
+    assert_array_equal(result.col_ind, [0, 3, 1, 2])
 
 
 class TestQAP():
 
     def setup_method(self):
         self.AG = np.array([[0, 5, 8, 6],
-                           [5, 0, 5, 1],
-                           [8, 5, 0, 2],
-                           [6, 1, 2, 0]])
+                            [5, 0, 5, 1],
+                            [8, 5, 0, 2],
+                            [6, 1, 2, 0]])
 
         self.AH = np.array([[0, 1, 8, 4],
-                           [1, 0, 5, 2],
-                           [8, 5, 0, 5],
-                           [4, 2, 5, 0]])
+                            [1, 0, 5, 2],
+                            [8, 5, 0, 5],
+                            [4, 2, 5, 0]])
 
     # Example in section IIIB of Umeyama:
     # "An eigendecomposition approach to weighted graph matching"

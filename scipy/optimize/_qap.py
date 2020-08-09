@@ -17,7 +17,9 @@ def umeyama_eigendecomposition(AG, AH, maximize=False):
         UH = np.linalg.eigh(AH)[1][:, ::-1]
         W = np.abs(UH) @ np.abs(UG).T
 
-    _, col_ind = linear_sum_assignment(W, maximize=maximize)
+    # Here we transpose the cost matrix is transposed since Umeyama uses a
+    # different convention from that in most of the literature
+    _, col_ind = linear_sum_assignment(W.T, maximize=maximize)
 
     # faster version of `float(np.trace(AG @ AH[col_ind][:, col_ind].T))`
     score = float(np.real(np.sum(AG * AH[col_ind][:, col_ind])))
@@ -89,12 +91,12 @@ def quadratic_assignment(A, B, maximize=False):
      col_ind: array([3, 2, 1, 0])
        score: 200.0
 
-    The `score` value, :math:`trace(APB^T P^T)`, can be calculated by forming
+    The `score` value, :math:`trace(A^T P B P^T)`, can be calculated by forming
     the permutation matrix:
     >>> n = len(A)
     >>> P = np.zeros((n, n), dtype=int)
     >>> P[np.arange(n), res.col_ind] = 1
-    >>> score = np.trace(A @ P @ B.T @ P.T)
+    >>> score = np.trace(A.T @ P @ B @ P.T)
     >>> print(score)
     200.0
 
