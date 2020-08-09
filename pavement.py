@@ -206,8 +206,9 @@ def release(options):
 def compute_md5(idirs):
     released = paver.path.path(idirs).listdir()
     checksums = []
-    for f in sorted(released):
-        m = md5(open(f, 'rb').read())
+    for fn in sorted(released):
+        with open(fn, 'rb') as f:
+            m = md5(f.read())
         checksums.append('%s  %s' % (m.hexdigest(), os.path.basename(f)))
 
     return checksums
@@ -217,8 +218,9 @@ def compute_sha256(idirs):
     # to verify the binaries instead of signing all binaries
     released = paver.path.path(idirs).listdir()
     checksums = []
-    for f in sorted(released):
-        m = sha256(open(f, 'rb').read())
+    for fn in sorted(released):
+        with open(fn, 'rb') as f:
+            m = sha256(f.read())
         checksums.append('%s  %s' % (m.hexdigest(), os.path.basename(f)))
 
     return checksums
@@ -267,9 +269,8 @@ def write_log_task(filename='Changelog'):
             stdout=subprocess.PIPE)
 
     out = st.communicate()[0].decode()
-    a = open(filename, 'w')
-    a.writelines(out)
-    a.close()
+    with open(filename, 'w') as a:
+        a.writelines(out)
 
 @task
 @cmdopts([('gpg_key=', 'g', 'GPG key to use for signing')])

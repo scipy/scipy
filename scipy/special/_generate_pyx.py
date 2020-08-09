@@ -460,7 +460,7 @@ def generate_fused_type(codes):
         Valid inputs to CY_TYPES (i.e. f, d, g, ...).
 
     """
-    cytypes = map(lambda x: CY_TYPES[x], codes)
+    cytypes = [CY_TYPES[x] for x in codes]
     name = codes + "_number_t"
     declaration = ["ctypedef fused " + name + ":"]
     for cytype in cytypes:

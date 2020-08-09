@@ -44,14 +44,14 @@ def _check_action(fun, args, action):
 def test_geterr():
     err = sc.geterr()
     for key, value in err.items():
-        assert_(key in _sf_error_code_map.keys())
+        assert_(key in _sf_error_code_map)
         assert_(value in _sf_error_actions)
 
 
 def test_seterr():
     entry_err = sc.geterr()
     try:
-        for category in _sf_error_code_map.keys():
+        for category, error_code in _sf_error_code_map.items():
             for action in _sf_error_actions:
                 geterr_olderr = sc.geterr()
                 seterr_olderr = sc.seterr(**{category: action})
@@ -61,9 +61,7 @@ def test_seterr():
                 geterr_olderr.pop(category)
                 newerr.pop(category)
                 assert_(geterr_olderr == newerr)
-                _check_action(_sf_error_test_function,
-                              (_sf_error_code_map[category],),
-                               action)
+                _check_action(_sf_error_test_function, (error_code,), action)
     finally:
         sc.seterr(**entry_err)
 
@@ -93,13 +91,11 @@ def test_errstate_cpp_basic():
 
 
 def test_errstate():
-    for category in _sf_error_code_map.keys():
+    for category, error_code in _sf_error_code_map.items():
         for action in _sf_error_actions:
             olderr = sc.geterr()
             with sc.errstate(**{category: action}):
-                _check_action(_sf_error_test_function,
-                              (_sf_error_code_map[category],),
-                              action)
+                _check_action(_sf_error_test_function, (error_code,), action)
             assert_equal(olderr, sc.geterr())
 
 
