@@ -35,7 +35,9 @@ def test_directed_weighted_graph_matching():
                    [0, 1, 2, 0]])
 
     result = quadratic_assignment(AG, AH, maximize=True)
-    #assert_array_equal(result.col_ind, [0, 2, 3, 1])
+    # Note that this result is using a different convention to Umeyama's.
+    # In the original convention the result is the transpose of the
+    # permutation: [0, 2, 3, 1]
     assert_array_equal(result.col_ind, [0, 3, 1, 2])
 
 
