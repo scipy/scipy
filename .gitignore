@@ -142,6 +142,9 @@ scipy/fftpack/src/dst.c
 scipy/integrate/_dopmodule.c
 scipy/integrate/lsodamodule.c
 scipy/integrate/vodemodule.c
+scipy/integrate/_dop-f2pywrappers.f
+scipy/integrate/lsoda-f2pywrappers.f
+scipy/integrate/vode-f2pywrappers.f
 scipy/interpolate/_ppoly.c
 scipy/interpolate/_bspl.c
 scipy/interpolate/interpnd.c
