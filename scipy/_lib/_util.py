@@ -16,18 +16,6 @@ except ImportError:
         pass
 
 
-def _valarray(shape, value=np.nan, typecode=None):
-    """Return an array of all values.
-    """
-
-    out = np.ones(shape, dtype=bool) * value
-    if typecode is not None:
-        out = out.astype(typecode)
-    if not isinstance(out, np.ndarray):
-        out = np.asarray(out)
-    return out
-
-
 def _lazywhere(cond, arrays, f, fillvalue=None, f2=None):
     """
     np.where(cond, x, fillvalue) always evaluates x even where cond is False.
@@ -58,7 +46,7 @@ def _lazywhere(cond, arrays, f, fillvalue=None, f2=None):
     arrays = np.broadcast_arrays(*arrays)
     temp = tuple(np.extract(cond, arr) for arr in arrays)
     tcode = np.mintypecode([a.dtype.char for a in arrays])
-    out = _valarray(np.shape(arrays[0]), value=fillvalue, typecode=tcode)
+    out = np.full(np.shape(arrays[0]), fill_value=fillvalue, dtype=tcode)
     np.place(out, cond, f(*temp))
     if f2 is not None:
         temp = tuple(np.extract(~cond, arr) for arr in arrays)
@@ -96,7 +84,7 @@ def _lazyselect(condlist, choicelist, arrays, default=0):
     """
     arrays = np.broadcast_arrays(*arrays)
     tcode = np.mintypecode([a.dtype.char for a in arrays])
-    out = _valarray(np.shape(arrays[0]), value=default, typecode=tcode)
+    out = np.full(np.shape(arrays[0]), fill_value=default, dtype=tcode)
     for index in range(len(condlist)):
         func, cond = choicelist[index], condlist[index]
         if np.all(cond is False):
