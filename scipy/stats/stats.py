@@ -7471,7 +7471,8 @@ def brunnermunzel(x, y, alternative="two-sided", distribution="t",
 
 
 def _confint_lowerbound(n, quantile, confidence):
-    """Computes the lower bound for a one-sided confidence interval
+    r"""
+    Compute the lower bound for a one-sided confidence interval
     for a given
     - quantile (0<`quantile`<1)
     - confidence level (0<`confidence`<1)
@@ -7484,24 +7485,30 @@ def _confint_lowerbound(n, quantile, confidence):
 
     .. versionadded:: 1.6.0
     """
-    # compute all probabilities from the binomiale distribution for the quantile of interest
+    # compute all probabilities from the binomial distribution for the quantile of interest
     bd = binom(n, quantile)
-    ppm = [np.maximum(1-x, 0.0) for x in np.cumsum([bd.pmf(k) for k in range(n)])]
+    lb = bd.isf(confidence) - 1
 
-    # search the index defining the lower-bound
-    if ppm[0] < confidence:
+    if lb < 0:
         return None
     else:
-        for k in range(n):
-            # search for first index reaching below the desired confidence
-            if ppm[k] < confidence:
-                # lower-bound is the previous index
-                return k-1
+        return int(lb)
+
+    # ppm = [np.maximum(1-x, 0.0) for x in np.cumsum([bd.pmf(k) for k in range(n)])]
+    #
+    # # search the index defining the lower-bound
+    # if ppm[0] < confidence:
+    #     return None
+    # else:
+    #     for k in range(n):
+    #         # search for first index reaching below the desired confidence
+    #         if ppm[k] < confidence:
+    #             # lower-bound is the previous index
+    #             return k-1
 
 
 def confint_quantile(x, quantile, confidence, type='one-sided'):
-    r"""Computes non-parametric confidence intervals for any quantile
-    from a set of i.i.d. samples.
+    r"""Compute non-parametric confidence intervals for any quantile.
 
     This function implements a non-parametric approach to compute
     confidence intervals for quantiles. The approach is attributed to Thompson [1]_
@@ -7577,7 +7584,7 @@ def confint_quantile(x, quantile, confidence, type='one-sided'):
     I.e., there may exist a tighter interval that may contain the quantile
     of interest with probability larger than the confidence level.
     These intervals may be found by exhaustive search,
-    which we do not do for efficiency reason.
+    which we do not do for efficiency reasons.
 
     References
     ----------
@@ -7594,9 +7601,8 @@ def confint_quantile(x, quantile, confidence, type='one-sided'):
 
     Examples
     --------
-    >>> import numpy as np
     >>> from scipy.stats import confint_quantile
-    >>> x = np.arange(1, 10)
+    >>> x = [2, 8, 3, 6, 4, 1, 5, 9, 7]
     >>> confint_quantile(x, 0.5, 0.95)
     (2, 8)
 
@@ -7620,7 +7626,7 @@ def confint_quantile(x, quantile, confidence, type='one-sided'):
     ##
     # Checking the inputs
     #
-    # x can be either an integer or a one-dimentional array-like
+    # x can be either an integer or a one-dimensional array-like
     if isinstance(x, int):
         if x < 1:
             raise ValueError("Invalid parameter: "+repr(x)+", `x` must be either a strictly positive integer or one-dimensional array-like.")
