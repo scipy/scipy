@@ -1973,7 +1973,7 @@ def _minimize_scalar_bounded(func, bounds, args=(),
             step = '       golden'
 
         si = np.sign(rat) + (rat == 0)
-        x = xf + si * np.max([np.abs(rat), tol1])
+        x = xf + si * np.maximum(np.abs(rat), tol1)
         fu = func(x, *args)
         num += 1
         fmin_data = (num, x, fu)
