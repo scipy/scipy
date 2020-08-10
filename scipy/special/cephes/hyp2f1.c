@@ -256,7 +256,7 @@ double a, b, c, x;
 
   hypdon:
     if (err > ETHRESH) {
-	mtherr("hyp2f1", PLOSS);
+	sf_error("hyp2f1", SF_ERROR_LOSS, NULL);
 	/*      printf( "Estimated err = %.2e\n", err ); */
     }
     return (y);
@@ -270,7 +270,7 @@ double a, b, c, x;
 
     /* The alarm exit */
   hypdiv:
-    mtherr("hyp2f1", OVERFLOW);
+    sf_error("hyp2f1", SF_ERROR_OVERFLOW, NULL);
     return NPY_INFINITY;
 }
 
@@ -395,7 +395,7 @@ double *loss;
 		p *= (b + t + d1) / (t + 1.0 + e);
 		t += 1.0;
 		if (t > MAX_ITERATIONS) {	/* should never happen */
-		    mtherr("hyp2f1", TOOMANY);
+		    sf_error("hyp2f1", SF_ERROR_SLOW, NULL);
 		    *loss = 1.0;
 		    return NPY_NAN;
 		}
@@ -555,7 +555,7 @@ static double hyp2f1ra(double a, double b, double c, double x,
 
     if (fabs(da) > MAX_ITERATIONS) {
         /* Too expensive to compute this value, so give up */
-        mtherr("hyp2f1", TLOSS);
+        sf_error("hyp2f1", SF_ERROR_NO_RESULT, NULL);
         *loss = 1.0;
         return NPY_NAN;
     }

@@ -1,8 +1,7 @@
 """Precompute series coefficients for log-Gamma."""
-from __future__ import division, print_function, absolute_import
 
 try:
-    import mpmath
+    import mpmath  # type: ignore[import]
 except ImportError:
     pass
 
@@ -42,4 +41,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-    

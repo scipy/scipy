@@ -13,16 +13,16 @@ It's an action that we do not take lightly. When reviewing enforcement
 measures, the Code of Conduct Committee will keep the following values and
 guidelines in mind:
 
-* Act in a personal manner rather than impersonal.  The Committee can engage
+* Act in a personal manner rather than impersonal. The Committee can engage
   the parties to understand the situation, while respecting the privacy and any
-  necessary confidentiality of reporters.  However, sometimes it is necessary
+  necessary confidentiality of reporters. However, sometimes, it is necessary
   to communicate with one or more individuals directly: the Committee's goal is
   to improve the health of our community rather than only produce a formal
   decision.
 
 * Emphasize empathy for individuals rather than judging behavior, avoiding
   binary labels of "good" and "bad/evil". Overt, clear-cut aggression and
-  harassment exists and we will be address that firmly.  But many scenarios
+  harassment exists and we will be address that firmly. But many scenarios
   that can prove challenging to resolve are those where normal disagreements
   devolve into unhelpful or harmful behavior from multiple parties.
   Understanding the full context and finding a path that re-engages all is
@@ -30,15 +30,15 @@ guidelines in mind:
 
 * We understand that email is a difficult medium and can be isolating.
   Receiving criticism over email, without personal contact, can be
-  particularly painful.  This makes it especially important to keep an
-  atmosphere of open-minded respect of the views of others.  It also means
+  particularly painful. This makes it especially important to keep an
+  atmosphere of open-minded respect of the views of others. It also means
   that we must be transparent in our actions, and that we will do everything
   in our power to make sure that all our members are treated fairly and with
   sympathy.
 
 * Discrimination can be subtle and it can be unconscious. It can show itself
-  as unfairness and hostility in otherwise ordinary interactions.  We know
-  that this does occur, and we will take care to look out for it.  We would
+  as unfairness and hostility in otherwise ordinary interactions. We know
+  that this does occur, and we will take care to look out for it. We would
   very much like to hear from you if you feel you have been treated unfairly,
   and we will use these procedures to make sure that your complaint is heard
   and addressed.
@@ -54,11 +54,11 @@ guidelines in mind:
 * Individuals come from different cultural backgrounds and native languages.
   Try to identify any honest misunderstandings caused by a non-native speaker
   and help them understand the issue and what they can change to avoid causing
-  offence.  Complex discussion in a foreign language can be very intimidating,
+  offense. Complex discussion in a foreign language can be very intimidating,
   and we want to grow our diversity also across nationalities and cultures.
 
-*Mediation*: voluntary, informal mediation is a tool at our disposal.  In
-contexts such as when two or more parties have all escalated to the point of
+*Mediation*: voluntary, informal mediation is a tool at our disposal. In
+contexts, such as when two or more parties have all escalated to the point of
 inappropriate behavior (something sadly common in human conflict), it may be
 useful to facilitate a mediation process. This is only an example: the
 Committee can consider mediation in any case, mindful that the process is meant
@@ -75,9 +75,9 @@ Committee suggests mediation, it should:
 * Establish a timeline for mediation to complete, ideally within two weeks.
 
 The mediator will engage with all the parties and seek a resolution that is
-satisfactory to all.  Upon completion, the mediator will provide a report
+satisfactory to all. Upon completion, the mediator will provide a report
 (vetted by all parties to the process) to the Committee, with recommendations
-on further steps.  The Committee will then evaluate these results (whether
+on further steps. The Committee will then evaluate these results (whether
 satisfactory resolution was achieved or not) and decide on any additional
 action deemed necessary.
 
@@ -87,15 +87,15 @@ How the committee will respond to reports
 
 When the committee (or a committee member) receives a report, they will first
 determine whether the report is about a clear and severe breach (as defined
-below).  If so, immediate action needs to be taken in addition to the regular
-report handling process.
+below). If so, immediate action needs to be taken in addition to the regular
+report-handling process.
 
 Clear and severe breach actions
 +++++++++++++++++++++++++++++++
 
 We know that it is painfully common for internet communication to start at or
-devolve into obvious and flagrant abuse.  We will deal quickly with clear and
-severe breaches like personal threats, violent, sexist or racist language.
+devolve into obvious and flagrant abuse. We will deal quickly with clear and
+severe breaches like personal threats, violent, sexist, or racist language.
 
 When a member of the Code of Conduct committee becomes aware of a clear and
 severe breach, they will do the following:
@@ -105,7 +105,7 @@ severe breach, they will do the following:
   originator has been disconnected.
 * In every case, the moderator should make a reasonable effort to contact the
   originator, and tell them specifically how their language or actions
-  qualify as a "clear and severe breach".  The moderator should also say
+  qualify as a "clear and severe breach". The moderator should also say
   that, if the originator believes this is unfair or they want to be
   reconnected to SciPy, they have the right to ask for a review, as below, by
   the Code of Conduct Committee.
@@ -117,7 +117,7 @@ severe breach, they will do the following:
 Report handling
 +++++++++++++++
 
-When a report is sent to the committee they will immediately reply to the
+When a report is sent to the committee, they will immediately reply to the
 reporter to confirm receipt. This reply must be sent within 72 hours, and the
 group should strive to respond much quicker than that.
 
@@ -136,23 +136,23 @@ ability:
   physical safety.
 
 This information will be collected in writing, and whenever possible the
-group's deliberations will be recorded and retained (i.e. chat transcripts,
+group's deliberations will be recorded and retained (i.e., chat transcripts,
 email discussions, recorded conference calls, summaries of voice conversations,
-etc).
+etc.).
 
 It is important to retain an archive of all activities of this committee to
 ensure consistency in behavior and provide institutional memory for the
-project.  To assist in this, the default channel of discussion for this
+project. To assist in this, the default channel of discussion for this
 committee will be a private mailing list accessible to current and future
 members of the committee as well as members of the Steering Council upon
 justified request. If the Committee finds the need to use off-list
-communications (e.g. phone calls for early/rapid response), it should in all
-cases summarize these back to the list so there's a good record of the process.
+communications (e.g., phone calls for early/rapid response), it should, in all
+cases, summarize these back to the list so there's a good record of the process.
 
 The Code of Conduct Committee should aim to have a resolution agreed upon within
 two weeks. In the event that a resolution can't be determined in that time, the
 committee will respond to the reporter(s) with an update and projected timeline
-for resolution.
+for the resolution.
 
 
 .. _CoC_resolutions:
@@ -167,7 +167,7 @@ the Steering Council for resolution.
 
 Possible responses may include:
 
-* Taking no further action
+* Taking no further action:
 
   - if we determine no violations have occurred.
   - if the matter has been resolved publicly while the committee was considering responses.
@@ -187,10 +187,10 @@ Possible responses may include:
   reached by other means. The group may choose to publish this message
   elsewhere for documentation purposes.
 * A request for a public or private apology, assuming the reporter agrees to
-  this idea: they may at their discretion refuse further contact with the
+  this idea: they may, at their discretion, refuse further contact with the
   violator. The chair will deliver this request. The committee may, if it
   chooses, attach "strings" to this request: for example, the group may ask a
-  violator to apologize in order to retain one’s membership on a mailing list.
+  violator to apologize, in order to retain one’s membership on a mailing list.
 * A "mutually agreed upon hiatus" where the committee asks the individual to
   temporarily refrain from community participation. If the individual chooses
   not to take a temporary break voluntarily, the committee may issue a
@@ -213,7 +213,7 @@ be made by the chair of the Code of Conduct Committee or the SciPy Steering
 Council.
 
 
-Conflicts of Interest
+Conflicts of interest
 ~~~~~~~~~~~~~~~~~~~~~
 
 In the event of any conflict of interest, a committee member must immediately

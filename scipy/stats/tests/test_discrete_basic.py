@@ -1,8 +1,5 @@
-from __future__ import division, print_function, absolute_import
-
 import numpy.testing as npt
 import numpy as np
-from scipy._lib.six import xrange
 import pytest
 
 from scipy import stats
@@ -11,7 +8,7 @@ from .common_tests import (check_normalization, check_moment, check_mean_expect,
                            check_kurt_expect, check_entropy,
                            check_private_entropy, check_edge_support,
                            check_named_args, check_random_state_property,
-                           check_pickling, check_rvs_broadcast)
+                           check_pickling, check_rvs_broadcast, check_freezing)
 from scipy.stats._distr_params import distdiscrete
 
 vals = ([1, 2, 3, 4], [0.1, 0.2, 0.3, 0.4])
@@ -58,6 +55,7 @@ def test_discrete_basic(distname, arg, first_case):
             check_scale_docstring(distfn)
         check_random_state_property(distfn, arg)
         check_pickling(distfn, arg)
+        check_freezing(distfn, arg)
 
         # Entropy
         check_entropy(distfn, arg, distname)
@@ -100,7 +98,7 @@ def test_rvs_broadcast(dist, shape_args):
     # implementation detail of the distribution, not a requirement.  If
     # the implementation the rvs() method of a distribution changes, this
     # test might also have to be changed.
-    shape_only = dist in ['skellam', 'yulesimon']
+    shape_only = dist in ['betabinom', 'skellam', 'yulesimon', 'dlaplace']
 
     try:
         distfunc = getattr(stats, dist)
@@ -115,13 +113,30 @@ def test_rvs_broadcast(dist, shape_args):
     for k in range(nargs):
         shp = (k + 3,) + (1,)*(k + 1)
         param_val = shape_args[k]
-        allargs.append(param_val*np.ones(shp, dtype=np.array(param_val).dtype))
+        allargs.append(np.full(shp, param_val))
         bshape.insert(0, shp[0])
     allargs.append(loc)
     bshape.append(loc.size)
     # bshape holds the expected shape when loc, scale, and the shape
     # parameters are all broadcast together.
     check_rvs_broadcast(distfunc, dist, allargs, bshape, shape_only, [np.int_])
+
+
+@pytest.mark.parametrize('dist,args', distdiscrete)
+def test_ppf_with_loc(dist, args):
+    try:
+        distfn = getattr(stats, dist)
+    except TypeError:
+        distfn = dist
+    #check with a negative, no and positive relocation.
+    np.random.seed(1942349)
+    re_locs = [np.random.randint(-10, -1), 0, np.random.randint(1, 10)]
+    _a, _b = distfn.support(*args)
+    for loc in re_locs:
+        npt.assert_array_equal(
+            [_a-1+loc, _b+loc],
+            [distfn.ppf(0.0, *args, loc=loc), distfn.ppf(1.0, *args, loc=loc)]
+            )
 
 
 def check_cdf_ppf(distfn, arg, supp, msg):
@@ -132,7 +147,8 @@ def check_cdf_ppf(distfn, arg, supp, msg):
                            supp, msg + '-roundtrip')
 
     if not hasattr(distfn, 'xk'):
-        supp1 = supp[supp < distfn.b]
+        _a, _b = distfn.support(*arg)
+        supp1 = supp[supp < _b]
         npt.assert_array_equal(distfn.ppf(distfn.cdf(supp1, *arg) + 1e-8, *arg),
                                supp1 + distfn.inc, msg + ' ppf-cdf-next')
         # -1e-8 could cause an error if pmf < 1e-8
@@ -195,8 +211,10 @@ def check_discrete_chisquare(distfn, arg, rvs, alpha, msg):
 
     # construct intervals with minimum mass `wsupp`.
     # intervals are left-half-open as in a cdf difference
-    lo = int(max(distfn.a, -1000))
-    distsupport = xrange(lo, int(min(distfn.b, 1000)) + 1)
+    _a, _b = distfn.support(*arg)
+    lo = int(max(_a, -1000))
+    high = int(min(_b, 1000)) + 1
+    distsupport = range(lo, high)
     last = 0
     distsupp = [lo]
     distmass = []
@@ -208,15 +226,15 @@ def check_discrete_chisquare(distfn, arg, rvs, alpha, msg):
             last = current
             if current > (1 - wsupp):
                 break
-    if distsupp[-1] < distfn.b:
-        distsupp.append(distfn.b)
+    if distsupp[-1] < _b:
+        distsupp.append(_b)
         distmass.append(1 - last)
     distsupp = np.array(distsupp)
     distmass = np.array(distmass)
 
     # convert intervals to right-half-open as required by histogram
     histsupp = distsupp + 1e-8
-    histsupp[0] = distfn.a
+    histsupp[0] = _a
 
     # find sample frequencies and perform chisquare test
     freq, hsupp = np.histogram(rvs, histsupp)
@@ -232,3 +250,24 @@ def check_scale_docstring(distfn):
         # Docstrings can be stripped if interpreter is run with -OO
         npt.assert_('scale' not in distfn.__doc__)
 
+
+@pytest.mark.parametrize('method', ['pmf', 'logpmf', 'cdf', 'logcdf',
+                                    'sf', 'logsf', 'ppf', 'isf'])
+@pytest.mark.parametrize('distname, args', distdiscrete)
+def test_methods_with_lists(method, distname, args):
+    # Test that the discrete distributions can accept Python lists
+    # as arguments.
+    try:
+        dist = getattr(stats, distname)
+    except TypeError:
+        return
+    if method in ['ppf', 'isf']:
+        z = [0.1, 0.2]
+    else:
+        z = [0, 1]
+    p2 = [[p]*2 for p in args]
+    loc = [0, 1]
+    result = dist.pmf(z, *p2, loc=loc)
+    npt.assert_allclose(result,
+                        [dist.pmf(*v) for v in zip(z, *p2, loc)],
+                        rtol=1e-15, atol=1e-15)

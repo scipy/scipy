@@ -9,13 +9,15 @@ Convolution
 .. autosummary::
    :toctree: generated/
 
-   convolve           -- N-dimensional convolution.
-   correlate          -- N-dimensional correlation.
-   fftconvolve        -- N-dimensional convolution using the FFT.
-   convolve2d         -- 2-dimensional convolution (more options).
-   correlate2d        -- 2-dimensional correlation (more options).
+   convolve           -- N-D convolution.
+   correlate          -- N-D correlation.
+   fftconvolve        -- N-D convolution using the FFT.
+   oaconvolve         -- N-D convolution using the overlap-add method.
+   convolve2d         -- 2-D convolution (more options).
+   correlate2d        -- 2-D correlation (more options).
    sepfir2d           -- Convolve with a 2-D separable FIR filter.
    choose_conv_method -- Chooses faster of FFT and direct convolution methods.
+   correlation_lags   -- Determines lag indices for 1D cross-correlation.
 
 B-splines
 =========
@@ -41,23 +43,23 @@ Filtering
 .. autosummary::
    :toctree: generated/
 
-   order_filter  -- N-dimensional order filter.
-   medfilt       -- N-dimensional median filter.
-   medfilt2d     -- 2-dimensional median filter (faster).
-   wiener        -- N-dimensional wiener filter.
+   order_filter  -- N-D order filter.
+   medfilt       -- N-D median filter.
+   medfilt2d     -- 2-D median filter (faster).
+   wiener        -- N-D Wiener filter.
 
    symiirorder1  -- 2nd-order IIR filter (cascade of first-order systems).
    symiirorder2  -- 4th-order IIR filter (cascade of second-order systems).
-   lfilter       -- 1-dimensional FIR and IIR digital linear filtering.
+   lfilter       -- 1-D FIR and IIR digital linear filtering.
    lfiltic       -- Construct initial conditions for `lfilter`.
    lfilter_zi    -- Compute an initial state zi for the lfilter function that
                  -- corresponds to the steady state of the step response.
    filtfilt      -- A forward-backward filter.
    savgol_filter -- Filter a signal using the Savitzky-Golay filter.
 
-   deconvolve    -- 1-d deconvolution using lfilter.
+   deconvolve    -- 1-D deconvolution using lfilter.
 
-   sosfilt       -- 1-dimensional IIR digital linear filtering using
+   sosfilt       -- 1-D IIR digital linear filtering using
                  -- a second-order sections filter representation.
    sosfilt_zi    -- Compute an initial state zi for the sosfilt function that
                  -- corresponds to the steady state of the step response.
@@ -92,6 +94,7 @@ Filter design
    freqz         -- Digital filter frequency response from TF coefficients.
    freqz_zpk     -- Digital filter frequency response from ZPK coefficients.
    sosfreqz      -- Digital filter frequency response for SOS format filter.
+   gammatone     -- FIR and IIR gammatone filter design.
    group_delay   -- Digital filter group delay.
    iirdesign     -- IIR filter design given bands and gains.
    iirfilter     -- IIR filter design given order and critical frequencies.
@@ -112,7 +115,7 @@ Filter design
    residuez      -- Partial fraction expansion of b(z) / a(z).
    invres        -- Inverse partial fraction expansion for analog filter.
    invresz       -- Inverse partial fraction expansion for digital filter.
-   BadCoefficients  -- Warning on badly conditioned filter coefficients
+   BadCoefficients  -- Warning on badly conditioned filter coefficients.
 
 Lower-level filter design functions:
 
@@ -156,8 +159,9 @@ Matlab-style IIR filter design
    bessel -- Bessel (no order selection available -- try butterod)
    iirnotch      -- Design second-order IIR notch digital filter.
    iirpeak       -- Design second-order IIR peak (resonant) digital filter.
+   iircomb       -- Design IIR comb filter.
 
-Continuous-Time Linear Systems
+Continuous-time linear systems
 ==============================
 
 .. autosummary::
@@ -167,16 +171,16 @@ Continuous-Time Linear Systems
    StateSpace       -- Linear time invariant system in state space form.
    TransferFunction -- Linear time invariant system in transfer function form.
    ZerosPolesGain   -- Linear time invariant system in zeros, poles, gain form.
-   lsim             -- continuous-time simulation of output to linear system.
-   lsim2            -- like lsim, but `scipy.integrate.odeint` is used.
-   impulse          -- impulse response of linear, time-invariant (LTI) system.
-   impulse2         -- like impulse, but `scipy.integrate.odeint` is used.
-   step             -- step response of continous-time LTI system.
-   step2            -- like step, but `scipy.integrate.odeint` is used.
-   freqresp         -- frequency response of a continuous-time LTI system.
+   lsim             -- Continuous-time simulation of output to linear system.
+   lsim2            -- Like lsim, but `scipy.integrate.odeint` is used.
+   impulse          -- Impulse response of linear, time-invariant (LTI) system.
+   impulse2         -- Like impulse, but `scipy.integrate.odeint` is used.
+   step             -- Step response of continuous-time LTI system.
+   step2            -- Like step, but `scipy.integrate.odeint` is used.
+   freqresp         -- Frequency response of a continuous-time LTI system.
    bode             -- Bode magnitude and phase data (continuous-time LTI).
 
-Discrete-Time Linear Systems
+Discrete-time linear systems
 ============================
 
 .. autosummary::
@@ -186,30 +190,30 @@ Discrete-Time Linear Systems
    StateSpace       -- Linear time invariant system in state space form.
    TransferFunction -- Linear time invariant system in transfer function form.
    ZerosPolesGain   -- Linear time invariant system in zeros, poles, gain form.
-   dlsim            -- simulation of output to a discrete-time linear system.
-   dimpulse         -- impulse response of a discrete-time LTI system.
-   dstep            -- step response of a discrete-time LTI system.
-   dfreqresp        -- frequency response of a discrete-time LTI system.
+   dlsim            -- Simulation of output to a discrete-time linear system.
+   dimpulse         -- Impulse response of a discrete-time LTI system.
+   dstep            -- Step response of a discrete-time LTI system.
+   dfreqresp        -- Frequency response of a discrete-time LTI system.
    dbode            -- Bode magnitude and phase data (discrete-time LTI).
 
-LTI Representations
+LTI representations
 ===================
 
 .. autosummary::
    :toctree: generated/
 
-   tf2zpk        -- transfer function to zero-pole-gain.
-   tf2sos        -- transfer function to second-order sections.
-   tf2ss         -- transfer function to state-space.
-   zpk2tf        -- zero-pole-gain to transfer function.
-   zpk2sos       -- zero-pole-gain to second-order sections.
-   zpk2ss        -- zero-pole-gain to state-space.
-   ss2tf         -- state-pace to transfer function.
-   ss2zpk        -- state-space to pole-zero-gain.
-   sos2zpk       -- second-order sections to zero-pole-gain.
-   sos2tf        -- second-order sections to transfer function.
-   cont2discrete -- continuous-time to discrete-time LTI conversion.
-   place_poles   -- pole placement.
+   tf2zpk        -- Transfer function to zero-pole-gain.
+   tf2sos        -- Transfer function to second-order sections.
+   tf2ss         -- Transfer function to state-space.
+   zpk2tf        -- Zero-pole-gain to transfer function.
+   zpk2sos       -- Zero-pole-gain to second-order sections.
+   zpk2ss        -- Zero-pole-gain to state-space.
+   ss2tf         -- State-pace to transfer function.
+   ss2zpk        -- State-space to pole-zero-gain.
+   sos2zpk       -- Second-order sections to zero-pole-gain.
+   sos2tf        -- Second-order sections to transfer function.
+   cont2discrete -- Continuous-time to discrete-time LTI conversion.
+   place_poles   -- Pole placement.
 
 Waveforms
 =========
@@ -218,12 +222,12 @@ Waveforms
    :toctree: generated/
 
    chirp        -- Frequency swept cosine signal, with several freq functions.
-   gausspulse   -- Gaussian modulated sinusoid
-   max_len_seq  -- Maximum length sequence
-   sawtooth     -- Periodic sawtooth
-   square       -- Square wave
-   sweep_poly   -- Frequency swept cosine signal; freq is arbitrary polynomial
-   unit_impulse -- Discrete unit impulse
+   gausspulse   -- Gaussian modulated sinusoid.
+   max_len_seq  -- Maximum length sequence.
+   sawtooth     -- Periodic sawtooth.
+   square       -- Square wave.
+   sweep_poly   -- Frequency swept cosine signal; freq is arbitrary polynomial.
+   unit_impulse -- Discrete unit impulse.
 
 Window functions
 ================
@@ -244,12 +248,13 @@ Wavelets
 .. autosummary::
    :toctree: generated/
 
-   cascade  -- compute scaling function and wavelet from coefficients
-   daub     -- return low-pass
-   morlet   -- Complex Morlet wavelet.
-   qmf      -- return quadrature mirror filter from low-pass
-   ricker   -- return ricker wavelet
-   cwt      -- perform continuous wavelet transform
+   cascade      -- Compute scaling function and wavelet from coefficients.
+   daub         -- Return low-pass.
+   morlet       -- Complex Morlet wavelet.
+   qmf          -- Return quadrature mirror filter from low-pass.
+   ricker       -- Return ricker wavelet.
+   morlet2      -- Return Morlet wavelet, compatible with cwt.
+   cwt          -- Perform continuous wavelet transform.
 
 Peak finding
 ============
@@ -257,35 +262,33 @@ Peak finding
 .. autosummary::
    :toctree: generated/
 
-   argrelmin        -- Calculate the relative minima of data
-   argrelmax        -- Calculate the relative maxima of data
-   argrelextrema    -- Calculate the relative extrema of data
+   argrelmin        -- Calculate the relative minima of data.
+   argrelmax        -- Calculate the relative maxima of data.
+   argrelextrema    -- Calculate the relative extrema of data.
    find_peaks       -- Find a subset of peaks inside a signal.
    find_peaks_cwt   -- Find peaks in a 1-D array with wavelet transformation.
    peak_prominences -- Calculate the prominence of each peak in a signal.
    peak_widths      -- Calculate the width of each peak in a signal.
 
-Spectral Analysis
+Spectral analysis
 =================
 
 .. autosummary::
    :toctree: generated/
 
-   periodogram    -- Compute a (modified) periodogram
-   welch          -- Compute a periodogram using Welch's method
-   csd            -- Compute the cross spectral density, using Welch's method
-   coherence      -- Compute the magnitude squared coherence, using Welch's method
-   spectrogram    -- Compute the spectrogram
-   lombscargle    -- Computes the Lomb-Scargle periodogram
-   vectorstrength -- Computes the vector strength
-   stft           -- Compute the Short Time Fourier Transform
-   istft          -- Compute the Inverse Short Time Fourier Transform
-   check_COLA     -- Check the COLA constraint for iSTFT reconstruction
-   check_NOLA     -- Check the NOLA constraint for iSTFT reconstruction
+   periodogram    -- Compute a (modified) periodogram.
+   welch          -- Compute a periodogram using Welch's method.
+   csd            -- Compute the cross spectral density, using Welch's method.
+   coherence      -- Compute the magnitude squared coherence, using Welch's method.
+   spectrogram    -- Compute the spectrogram.
+   lombscargle    -- Computes the Lomb-Scargle periodogram.
+   vectorstrength -- Computes the vector strength.
+   stft           -- Compute the Short Time Fourier Transform.
+   istft          -- Compute the Inverse Short Time Fourier Transform.
+   check_COLA     -- Check the COLA constraint for iSTFT reconstruction.
+   check_NOLA     -- Check the NOLA constraint for iSTFT reconstruction.
 
 """
-from __future__ import division, print_function, absolute_import
-
 from . import sigtools, windows
 from .waveforms import *
 from ._max_len_seq import max_len_seq
@@ -312,7 +315,7 @@ from .windows import get_window  # keep this one in signal namespace
 deprecated_windows = ('boxcar', 'triang', 'parzen', 'bohman', 'blackman',
                       'nuttall', 'blackmanharris', 'flattop', 'bartlett',
                       'barthann', 'hamming', 'kaiser', 'gaussian',
-                      'general_gaussian', 'chebwin', 'slepian', 'cosine',
+                      'general_gaussian', 'chebwin', 'cosine',
                       'hann', 'exponential', 'tukey')
 
 # backward compatibility imports for actually deprecated windows not
@@ -332,7 +335,7 @@ def deco(name):
     if hasattr(f, '__qualname__'):
         wrapped.__qualname__ = f.__qualname__
 
-    if f.__doc__ is not None:
+    if f.__doc__:
         lines = f.__doc__.splitlines()
         for li, line in enumerate(lines):
             if line.strip() == 'Parameters':

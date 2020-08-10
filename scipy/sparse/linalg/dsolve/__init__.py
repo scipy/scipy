@@ -51,8 +51,6 @@ Example session::
 
 """
 
-from __future__ import division, print_function, absolute_import
-
 #import umfpack
 #__doc__ = '\n\n'.join( (__doc__,  umfpack.__doc__) )
 #del umfpack

@@ -14,7 +14,6 @@ static struct PyMethodDef minpack_module_methods[] = {
 {NULL,		NULL, 0, NULL}
 };
 
-#if PY_VERSION_HEX >= 0x03000000
 static struct PyModuleDef moduledef = {
     PyModuleDef_HEAD_INIT,
     "_minpack",
@@ -45,19 +44,3 @@ PyObject *PyInit__minpack(void)
 
     return m;
 }
-#else
-PyMODINIT_FUNC init_minpack(void) {
-  PyObject *m, *d, *s;
-  m = Py_InitModule("_minpack", minpack_module_methods);
-  import_array();
-  d = PyModule_GetDict(m);
-
-  s = PyString_FromString(" 1.10 ");
-  PyDict_SetItemString(d, "__version__", s);
-  Py_DECREF(s);
-  minpack_error = PyErr_NewException ("minpack.error", NULL, NULL);
-  PyDict_SetItemString(d, "error", minpack_error);
-  if (PyErr_Occurred())
-    Py_FatalError("can't initialize module minpack");
-}
-#endif        

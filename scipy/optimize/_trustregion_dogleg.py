@@ -1,6 +1,4 @@
 """Dog-leg trust-region optimization."""
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 import scipy.linalg
 from ._trustregion import (_minimize_trust_region, BaseQuadraticSubproblem)

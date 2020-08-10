@@ -3,8 +3,6 @@ Routines for evaluating and manipulating B-splines.
 
 """
 
-from __future__ import absolute_import
-
 import numpy as np
 cimport numpy as cnp
 

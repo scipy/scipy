@@ -34,10 +34,10 @@ class LSODA(OdeSolver):
         Initial step size. Default is ``None`` which means that the algorithm
         should choose.
     min_step : float, optional
-        Minimum allowed step size. Default is 0.0, i.e. the step size is not
+        Minimum allowed step size. Default is 0.0, i.e., the step size is not
         bounded and determined solely by the solver.
     max_step : float, optional
-        Maximum allowed step size. Default is np.inf, i.e. the step size is not
+        Maximum allowed step size. Default is np.inf, i.e., the step size is not
         bounded and determined solely by the solver.
     rtol, atol : float and array_like, optional
         Relative and absolute tolerances. The solver keeps the local error
@@ -125,10 +125,6 @@ class LSODA(OdeSolver):
 
         rtol, atol = validate_tol(rtol, atol, self.n)
 
-        if jac is None:  # No lambda as PEP8 insists.
-            def jac():
-                return None
-
         solver = ode(self.fun, jac)
         solver.set_integrator('lsoda', rtol=rtol, atol=atol, max_step=max_step,
                               min_step=min_step, first_step=first_step,
@@ -150,7 +146,7 @@ class LSODA(OdeSolver):
         itask = integrator.call_args[2]
         integrator.call_args[2] = 5
         solver._y, solver.t = integrator.run(
-            solver.f, solver.jac, solver._y, solver.t,
+            solver.f, solver.jac or (lambda: None), solver._y, solver.t,
             self.t_bound, solver.f_params, solver.jac_params)
         integrator.call_args[2] = itask
 

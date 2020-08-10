@@ -1,10 +1,7 @@
-from __future__ import division, print_function, absolute_import
-
 import os
-
-from distutils.version import LooseVersion
-
 import functools
+import operator
+from distutils.version import LooseVersion
 
 import numpy as np
 from numpy.testing import assert_
@@ -174,6 +171,9 @@ class FuncData(object):
 
     def check(self, data=None, dtype=None, dtypes=None):
         """Check the special function against the data."""
+        __tracebackhide__ = operator.methodcaller(
+            'errisinstance', AssertionError
+        )
 
         if self.knownfailure:
             pytest.xfail(reason=self.knownfailure)
@@ -255,8 +255,7 @@ class FuncData(object):
             nan_x = np.isnan(x)
             nan_y = np.isnan(y)
 
-            olderr = np.seterr(all='ignore')
-            try:
+            with np.errstate(all='ignore'):
                 abs_y = np.absolute(y)
                 abs_y[~np.isfinite(abs_y)] = 0
                 diff = np.absolute(x - y)
@@ -264,8 +263,6 @@ class FuncData(object):
 
                 rdiff = diff / np.absolute(y)
                 rdiff[~np.isfinite(rdiff)] = 0
-            finally:
-                np.seterr(**olderr)
 
             tol_mask = (diff <= atol + rtol*abs_y)
             pinf_mask = (pinf_x == pinf_y)
@@ -292,8 +289,8 @@ class FuncData(object):
             if np.any(bad_j):
                 # Some bad results: inform what, where, and how bad
                 msg = [""]
-                msg.append("Max |adiff|: %g" % diff.max())
-                msg.append("Max |rdiff|: %g" % rdiff.max())
+                msg.append("Max |adiff|: %g" % diff[bad_j].max())
+                msg.append("Max |rdiff|: %g" % rdiff[bad_j].max())
                 msg.append("Bad results (%d out of %d) for the following points (in output %d):"
                            % (np.sum(bad_j), point_count, output_num,))
                 for j in np.nonzero(bad_j)[0]:

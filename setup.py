@@ -27,8 +27,8 @@ import sysconfig
 from distutils.version import LooseVersion
 
 
-if sys.version_info[:2] < (3, 5):
-    raise RuntimeError("Python version >= 3.5 required.")
+if sys.version_info[:2] < (3, 6):
+    raise RuntimeError("Python version >= 3.6 required.")
 
 import builtins
 
@@ -41,9 +41,9 @@ License :: OSI Approved :: BSD License
 Programming Language :: C
 Programming Language :: Python
 Programming Language :: Python :: 3
-Programming Language :: Python :: 3.5
 Programming Language :: Python :: 3.6
 Programming Language :: Python :: 3.7
+Programming Language :: Python :: 3.8
 Topic :: Software Development
 Topic :: Scientific/Engineering
 Operating System :: Microsoft :: Windows
@@ -54,7 +54,7 @@ Operating System :: MacOS
 """
 
 MAJOR = 1
-MINOR = 3
+MINOR = 6
 MICRO = 0
 ISRELEASED = False
 VERSION = '%d.%d.%d' % (MAJOR, MINOR, MICRO)
@@ -108,9 +108,9 @@ def get_version_info():
     elif os.path.exists('scipy/version.py'):
         # must be a source distribution, use existing version file
         # load it as a separate module to not load scipy/__init__.py
-        import imp
-        version = imp.load_source('scipy.version', 'scipy/version.py')
-        GIT_REVISION = version.git_revision
+        import runpy
+        ns = runpy.run_path('scipy/version.py')
+        GIT_REVISION = ns['git_revision']
     else:
         GIT_REVISION = "Unknown"
 
@@ -183,12 +183,40 @@ def check_submodules():
             raise ValueError('Submodule not clean: %s' % line)
 
 
+class concat_license_files():
+    """Merge LICENSE.txt and LICENSES_bundled.txt for sdist creation
+
+    Done this way to keep LICENSE.txt in repo as exact BSD 3-clause (see
+    NumPy gh-13447).  This makes GitHub state correctly how SciPy is licensed.
+    """
+    def __init__(self):
+        self.f1 = 'LICENSE.txt'
+        self.f2 = 'LICENSES_bundled.txt'
+
+    def __enter__(self):
+        """Concatenate files and remove LICENSES_bundled.txt"""
+        with open(self.f1, 'r') as f1:
+            self.bsd_text = f1.read()
+
+        with open(self.f1, 'a') as f1:
+            with open(self.f2, 'r') as f2:
+                self.bundled_text = f2.read()
+                f1.write('\n\n')
+                f1.write(self.bundled_text)
+
+    def __exit__(self, exception_type, exception_value, traceback):
+        """Restore content of both files"""
+        with open(self.f1, 'w') as f:
+            f.write(self.bsd_text)
+
+
 from distutils.command.sdist import sdist
 class sdist_checked(sdist):
     """ check submodules on sdist to prevent incomplete tarballs """
     def run(self):
         check_submodules()
-        sdist.run(self)
+        with concat_license_files():
+            sdist.run(self)
 
 
 def get_build_ext_override():
@@ -198,6 +226,16 @@ def get_build_ext_override():
     from numpy.distutils.command.build_ext import build_ext as old_build_ext
 
     class build_ext(old_build_ext):
+        def finalize_options(self):
+            super().finalize_options()
+
+            # Disable distutils parallel build, due to race conditions
+            # in numpy.distutils (Numpy issue gh-15957)
+            if self.parallel:
+                print("NOTE: -j build option not supportd. Set NPY_NUM_BUILD_JOBS=4 "
+                      "for parallel build.")
+            self.parallel = None
+
         def build_extension(self, ext):
             # When compiling with GNU compilers, use a version script to
             # hide symbols during linking.
@@ -211,6 +249,10 @@ def get_build_ext_override():
                     # line below fixes gh-8680
                     ext.extra_link_args = [arg for arg in ext.extra_link_args if not "version-script" in arg]
                     ext.extra_link_args.append('-Wl,--version-script=' + script_fn)
+
+            # Allow late configuration
+            hooks = getattr(ext, '_pre_build_hook', ())
+            _run_pre_build_hooks(hooks, (self, ext))
 
             old_build_ext.build_extension(self, ext)
 
@@ -232,11 +274,43 @@ def get_build_ext_override():
                     cc = sysconfig.get_config_var("CC")
                     if not cc:
                         cc = ""
-                    compiler_name = os.path.basename(cc)
+                    compiler_name = os.path.basename(cc.split(" ")[0])
                     is_gcc = "gcc" in compiler_name or "g++" in compiler_name
             return is_gcc and sysconfig.get_config_var('GNULD') == 'yes'
 
     return build_ext
+
+
+def get_build_clib_override():
+    """
+    Custom build_clib command to tweak library building.
+    """
+    from numpy.distutils.command.build_clib import build_clib as old_build_clib
+
+    class build_clib(old_build_clib):
+        def finalize_options(self):
+            super().finalize_options()
+
+            # Disable parallelization (see build_ext above)
+            self.parallel = None
+
+        def build_a_library(self, build_info, lib_name, libraries):
+            # Allow late configuration
+            hooks = build_info.get('_pre_build_hook', ())
+            _run_pre_build_hooks(hooks, (self, build_info))
+            old_build_clib.build_a_library(self, build_info, lib_name, libraries)
+
+    return build_clib
+
+
+def _run_pre_build_hooks(hooks, args):
+    """Call a sequence of pre-build hooks, if any"""
+    if hooks is None:
+        hooks = ()
+    elif not hasattr(hooks, '__iter__'):
+        hooks = (hooks,)
+    for hook in hooks:
+        hook(*args)
 
 
 def generate_cython():
@@ -396,10 +470,17 @@ def configuration(parent_package='', top_path=None):
     lapack_opt = get_info('lapack_opt')
 
     if not lapack_opt:
-        msg = 'No lapack/blas resources found.'
         if sys.platform == "darwin":
-            msg = ('No lapack/blas resources found. '
+            msg = ('No BLAS/LAPACK libraries found. '
                    'Note: Accelerate is no longer supported.')
+        else:
+            msg = 'No BLAS/LAPACK libraries found.'
+        msg += ("\n"
+                "To build Scipy from sources, BLAS & LAPACK libraries "
+                "need to be installed.\n"
+                "See site.cfg.example in the Scipy source directory and\n"
+                "https://docs.scipy.org/doc/scipy/reference/building/index.html "
+                "for details.")
         raise NotFoundError(msg)
 
     config = Configuration(None, parent_package, top_path)
@@ -431,13 +512,16 @@ def setup_package():
     try:
         import numpy
     except ImportError:  # We do not have numpy installed
-        build_requires = ['numpy>=1.13.3']
+        build_requires = ['numpy>=1.14.5']
     else:
         # If we're building a wheel, assume there already exist numpy wheels
         # for this platform, so it is safe to add numpy to build requirements.
         # See gh-5184.
-        build_requires = (['numpy>=1.13.3'] if 'bdist_wheel' in sys.argv[1:]
+        build_requires = (['numpy>=1.14.5'] if 'bdist_wheel' in sys.argv[1:]
                           else [])
+
+    install_requires = build_requires
+    setup_requires = build_requires + ['pybind11>=2.4.3']
 
     metadata = dict(
         name='scipy',
@@ -457,9 +541,9 @@ def setup_package():
         classifiers=[_f for _f in CLASSIFIERS.split('\n') if _f],
         platforms=["Windows", "Linux", "Solaris", "Mac OS-X", "Unix"],
         test_suite='nose.collector',
-        setup_requires=build_requires,
-        install_requires=build_requires,
-        python_requires='>=3.5',
+        setup_requires=setup_requires,
+        install_requires=install_requires,
+        python_requires='>=3.6',
     )
 
     if "--force" in sys.argv:
@@ -482,6 +566,7 @@ def setup_package():
 
         # Customize extension building
         cmdclass['build_ext'] = get_build_ext_override()
+        cmdclass['build_clib'] = get_build_clib_override()
 
         cwd = os.path.abspath(os.path.dirname(__file__))
         if not os.path.exists(os.path.join(cwd, 'PKG-INFO')):

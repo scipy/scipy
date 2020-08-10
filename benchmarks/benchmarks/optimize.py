@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 import os
 import time
 import inspect
@@ -14,6 +12,7 @@ try:
     from scipy.optimize.optimize import rosen, rosen_der, rosen_hess
     from scipy.optimize import (leastsq, basinhopping, differential_evolution,
                                 dual_annealing, OptimizeResult)
+    from scipy.optimize._minimize import MINIMIZE_METHODS
 except ImportError:
     pass
 
@@ -125,12 +124,12 @@ class _BenchOptimizers(Benchmark):
     # for basinhopping
     def accept_test(self, x_new=None, *args, **kwargs):
         """
-        Does the new candidate vector lie inbetween the bounds?
+        Does the new candidate vector lie in between the bounds?
 
         Returns
         -------
         accept_test : bool
-            The candidate vector lies inbetween the bounds
+            The candidate vector lies in between the bounds
         """
         if not hasattr(self.function, "xmin"):
             return True
@@ -196,7 +195,6 @@ class _BenchOptimizers(Benchmark):
         t0 = time.time()
 
         res = dual_annealing(self.fun,
-                             None,
                              self.bounds)
 
         t1 = time.time()
@@ -225,14 +223,12 @@ class _BenchOptimizers(Benchmark):
         kwargs = self.minimizer_kwargs
 
         if methods is None:
-            methods = ["COBYLA", 'Powell', 'nelder-mead',
-                       'L-BFGS-B', 'BFGS', 'CG', 'TNC', 'SLSQP',
-                       "Newton-CG", 'dogleg', 'trust-ncg', 'trust-exact',
-                       'trust-krylov']
+            methods = MINIMIZE_METHODS
 
-        # L-BFGS-B, BFGS can use gradients, but examine performance when
-        # numerical differentiation is used.
-        fonly_methods = ["COBYLA", 'Powell', 'nelder-mead', 'L-BFGS-B', 'BFGS']
+        # L-BFGS-B, BFGS, trust-constr can use gradients, but examine
+        # performance when numerical differentiation is used.
+        fonly_methods = ["COBYLA", 'Powell', 'nelder-mead', 'L-BFGS-B', 'BFGS',
+                         'trust-constr']
         for method in fonly_methods:
             if method not in methods:
                 continue
@@ -242,7 +238,8 @@ class _BenchOptimizers(Benchmark):
             t1 = time.time()
             self.add_result(res, t1-t0, method)
 
-        gradient_methods = ['L-BFGS-B', 'BFGS', 'CG', 'TNC', 'SLSQP']
+        gradient_methods = ['L-BFGS-B', 'BFGS', 'CG', 'TNC', 'SLSQP',
+                            'trust-constr']
         if self.der is not None:
             for method in gradient_methods:
                 if method not in methods:
@@ -254,7 +251,7 @@ class _BenchOptimizers(Benchmark):
                 self.add_result(res, t1-t0, method)
 
         hessian_methods = ["Newton-CG", 'dogleg', 'trust-ncg',
-                           'trust-exact', 'trust-krylov']
+                           'trust-exact', 'trust-krylov', 'trust-constr']
         if self.hess is not None:
             for method in hessian_methods:
                 if method not in methods:
@@ -276,7 +273,7 @@ class BenchSmoothUnbounded(Benchmark):
         ["COBYLA", 'Powell', 'nelder-mead',
          'L-BFGS-B', 'BFGS', 'CG', 'TNC', 'SLSQP',
          "Newton-CG", 'dogleg', 'trust-ncg', 'trust-exact',
-         'trust-krylov'],
+         'trust-krylov', 'trust-constr'],
         ["mean_nfev", "mean_time"]
     ]
     param_names = ["test function", "solver", "result type"]
