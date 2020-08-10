@@ -2476,9 +2476,11 @@ class TestStudentTest(object):
 
         t, p = stats.ttest_1samp(self.X1, 1, alternative="less")
         assert_array_almost_equal(p, self.P1_1_l)
+        assert_array_almost_equal(t, self.T1_1)
 
         t, p = stats.ttest_1samp(self.X1, 1, alternative="greater")
         assert_array_almost_equal(p, self.P1_1_g)
+        assert_array_almost_equal(t, self.T1_1)
 
 def test_percentileofscore():
     pcos = stats.percentileofscore
@@ -3333,12 +3335,12 @@ def test_ttest_rel():
     assert_raises(ValueError, stats.ttest_rel, rvs1, rvs2, alternative="error")
 
     t,p = stats.ttest_rel(rvs1, rvs2, axis=0, alternative="less")
-    assert_array_almost_equal(np.abs(p), 1 - pr/2)
-    assert_array_almost_equal(np.abs(t), tr)
+    assert_array_almost_equal(p, 1 - pr/2)
+    assert_array_almost_equal(t, tr)
 
     t,p = stats.ttest_rel(rvs1, rvs2, axis=0, alternative="greater")
-    assert_array_almost_equal(np.abs(p), pr/2)
-    assert_array_almost_equal(np.abs(t), tr)
+    assert_array_almost_equal(p, pr/2)
+    assert_array_almost_equal(t, tr)
 
     # check nan policy
     np.random.seed(12345678)
@@ -3493,12 +3495,12 @@ def test_ttest_ind():
     assert_raises(ValueError, stats.ttest_ind_from_stats, *_desc_stats(rvs1_2D.T, rvs2_2D.T), alternative="error")
 
     t, p = stats.ttest_ind(rvs1, rvs2, alternative="less")
-    assert_array_almost_equal(np.abs(p), 1 - (pr/2))
-    assert_array_almost_equal(np.abs(t), tr)
+    assert_array_almost_equal(p, 1 - (pr/2))
+    assert_array_almost_equal(t, tr)
 
     t, p = stats.ttest_ind(rvs1, rvs2, alternative="greater")
-    assert_array_almost_equal(np.abs(p), pr/2)
-    assert_array_almost_equal(np.abs(t), tr)
+    assert_array_almost_equal(p, pr/2)
+    assert_array_almost_equal(t, tr)
 
     # Below makes sure ttest_ind_from_stats p-val functions identically to ttest_ind
     t, p = stats.ttest_ind(rvs1_2D.T, rvs2_2D.T, axis=0, alternative="less")
