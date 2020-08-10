@@ -17,6 +17,8 @@
 *.tmp
 *.vim
 tags
+.vscode/
+.venv/
 
 # Compiled source #
 ###################
