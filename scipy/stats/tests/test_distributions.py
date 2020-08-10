@@ -1079,7 +1079,6 @@ class TestPareto(object):
 
     def test_fit_warnings(self):
         assert_fit_warnings(stats.pareto)
-        assert_fit_warnings(stats.pareto)
         # `floc` that causes invalid negative data
         assert_raises(FitDataError, stats.pareto.fit, [1, 2, 3], floc=2)
         # `floc` and `fscale` combination causes invalid data > `fscale`
@@ -1594,15 +1593,15 @@ class TestInvgauss(object):
     def test_fit_MLE_comp_optimzer(self, rvs_mu, rvs_loc, rvs_scale):
         data = stats.invgauss.rvs(size=100, mu=rvs_mu,
                                   loc=rvs_loc, scale=rvs_scale)
+
+        super_fit = super(type(stats.invgauss), stats.invgauss).fit
         # fitting without `floc` uses superclass fit method
-        super_fit = super(type(stats.invgauss), stats.invgauss).fit(data)
+        super_fitted = super_fit(data)
         invgauss_fit = stats.invgauss.fit(data)
         assert_equal(super_fit, invgauss_fit)
 
         # fitting with `fmu` is uses superclass fit method
-        super_fit = super(type(stats.invgauss), stats.invgauss).fit(data,
-                                                                    floc=0,
-                                                                    fmu=2)
+        super_fitted = super_fit(data, loc=0, fmu=2)
         invgauss_fit = stats.invgauss.fit(data, floc=0, fmu=2)
         assert_equal(super_fit, invgauss_fit)
 
