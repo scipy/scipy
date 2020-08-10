@@ -518,6 +518,23 @@ class TestHalfgennorm(object):
         assert_almost_equal(pdf1, 2*pdf2)
 
 
+class TestLaplaceasymmetric(object):
+    def test_laplace(self):
+        # test against Laplace (special case for kappa=1)
+        points = np.array([1, 2, 3])
+        pdf1 = stats.laplace_asymmetric.pdf(points, 1)
+        pdf2 = stats.laplace.pdf(points)
+        assert_almost_equal(pdf1, pdf2)
+
+    def test_asymmetric_laplace(self):
+        # test assymetric Laplace
+        points = np.array([1, 2, 3])
+        kappa = 2
+        kapinv = 1/kappa
+        pdf1 = stats.laplace_asymmetric.pdf(points, kappa)
+        pdf2 = stats.laplace_asymmetric.pdf(points*(kappa**2), kapinv)
+        assert_almost_equal(pdf1, pdf2)
+
 class TestTruncnorm(object):
     def setup_method(self):
         np.random.seed(1234)
