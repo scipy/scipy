@@ -1598,12 +1598,12 @@ class TestInvgauss(object):
         # fitting without `floc` uses superclass fit method
         super_fitted = super_fit(data)
         invgauss_fit = stats.invgauss.fit(data)
-        assert_equal(super_fit, invgauss_fit)
+        assert_equal(super_fitted, invgauss_fit)
 
         # fitting with `fmu` is uses superclass fit method
-        super_fitted = super_fit(data, loc=0, fmu=2)
+        super_fitted = super_fit(data, floc=0, fmu=2)
         invgauss_fit = stats.invgauss.fit(data, floc=0, fmu=2)
-        assert_equal(super_fit, invgauss_fit)
+        assert_equal(super_fitted, invgauss_fit)
 
         # obtain log-likelihood objective function to compare results
         args = [data, (stats.invgauss._fitstart(data), )]
