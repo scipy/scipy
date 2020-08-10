@@ -346,19 +346,19 @@ def _broadcast_shapes_with_dropped_axis(a, b, axis):
     return shp
 
 
-def _convert_symmetric_p_value(pvalue, root_func, alternative):
+def _convert_symmetric_p_value(pvalue, root_tail, alternative):
     """
     Convert a one-sided p-value from a symmetric distribution to a one or two-sided p-value.
     """
     if alternative not in {"two-sided", "greater", "less"}:
         raise ValueError("alternative should be 'less', 'greater' or 'two-sided'")
 
-    if root_func not in {"sf", "cdf"}:
-        raise ValueError("root_func should be 'sf' or 'cdf'")
+    if root_tail not in {"greater", "less"}:
+        raise ValueError("root_func should be 'less' or 'greater'")
 
-    if (alternative, root_func) in {("greater", "sf"), ("less", "cdf")}:
+    if (alternative, root_tail) in {("greater", "greater"), ("less", "less")}:
         return pvalue
-    elif (alternative, root_func) in {("greater", "cdf"), ("less", "sf")}:
+    elif (alternative, root_tail) in {("greater", "less"), ("less", "greater")}:
         return 1 - pvalue
     elif alternative == "two-sided":
         return 2 * np.minimum(pvalue, 1 - pvalue)
@@ -5285,8 +5285,8 @@ def ttest_1samp(a, popmean, axis=0, nan_policy='propagate', alternative="two-sid
         Expected value in null hypothesis. If array_like, then it must have the
         same shape as `a` excluding the axis dimension.
     axis : int or None, optional
-        Axis along which to compute test. If None, compute over the whole
-        array `a`.
+        Axis along which to compute test; default is 0. If None, compute over
+        the whole array `a`.
     nan_policy : {'propagate', 'raise', 'omit'}, optional
         Defines how to handle when input contains nan.
         The following options are available (default is 'propagate'):
@@ -5364,7 +5364,7 @@ def ttest_1samp(a, popmean, axis=0, nan_policy='propagate', alternative="two-sid
 def _ttest_finish(df, t, alternative):
     """Common code between all 3 t-test functions."""
     prob = distributions.t.sf(t, df)
-    prob = _convert_symmetric_p_value(prob, "sf", alternative)
+    prob = _convert_symmetric_p_value(prob, "greater", alternative)
 
     if t.ndim == 0:
         t = t[()]
