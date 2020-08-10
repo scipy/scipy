@@ -3,7 +3,7 @@
 .. _quickstart-ubuntu:
 
 =======================================================
-Development environment quickstart guide (Ubuntu 16.04)
+Development environment quickstart guide (Ubuntu)
 =======================================================
 
 This quickstart guide will cover:
@@ -14,9 +14,9 @@ This quickstart guide will cover:
 * performing an in-place build of SciPy; and
 * creating a virtual environment that adds this development version of SciPy to the Python path
 
-in Ubuntu 16.04. *Users running Windows can follow these
+in Ubuntu. (Tested on 16.04, 18.04, and 20.04). *Users running Windows can follow these
 instructions after setting up* `Windows Subsystem for Linux`_ *or an Amazon EC2
-instance with Ubuntu 16.04 LTS. However, the instructions for setting up a
+instance with Ubuntu 20.04. However, the instructions for setting up a
 development environment with Docker may be more reliable.*
 
 .. note::
@@ -30,11 +30,9 @@ development environment with Docker may be more reliable.*
 Building SciPy
 --------------
 
-*Consider watching the companion videos* `Anaconda SciPy Dev: Part I (macOS)`_ and `Anaconda SciPy Dev: Part II (macOS)`_ *before starting. Although these videos are intended for macOS users, some of the procedures are the same or very similar to those described here.*
-
 #. Download, install, and test the latest release of the `Anaconda Distribution of Python`_. In addition to the latest version of Python 3, the Anaconda distribution includes dozens of the most popular Python packages for scientific computing, the Spyder integrated development environment (IDE), the ``conda`` package manager, and tools for managing virtual environments.
 
-   `In a terminal, navigate <https://help.ubuntu.com/community/UsingTheTerminal>`_ to the location in which you'd like to install Anaconda. You can download the file using the terminal command ``curl -O URL_OF_FILE``, where ``URL_OF_FILE`` is to be replaced with the URL of the Anaconda installer ``.sh`` file found at the Anaconda Distribution website. Run the installer by entering ``bash file.sh``, where ``file.sh`` is again to be replaced with the full name of the downloaded file. This starts the installation process. From there, simply follow the prompts, including the "Next Steps" at the end after the installer finishes.
+   `In a terminal, navigate <https://help.ubuntu.com/community/UsingTheTerminal>`_ to the location in which you'd like to install Anaconda. You can download the file using the terminal command ``curl -O URL_OF_FILE``, where ``URL_OF_FILE`` is to be replaced with the URL of the Anaconda installer ``.sh`` file found at the Anaconda Distribution website. Run the installer by entering ``bash file.sh``, where ``file.sh`` is again to be replaced with the full name of the downloaded file. This starts the installation process. From there, simply follow the prompts, including the "Next Steps" at the end after the installer finishes. You might also need to restart your terminal window or enter ``source ~/.bashrc`` for all the changes to take effect.
 
 #. (Optional) In a terminal window, enter ``conda list``. |br| This shows a list of all the Python packages that came with the Anaconda distribution of Python. Note the latest released version of SciPy is among them; this is not the development version you are going to build and will be able to modify.
 
@@ -50,11 +48,15 @@ Building SciPy
 
 #. (Optional) Enter ``conda list`` again. Note that the new virtual environment has no packages installed. If you were to open a Python interpreter now, you wouldn't be able to import ``numpy``, ``scipy``, etc...
 
-#. Enter ``conda install cython numpy pytest spyder pybind11``. |br| Note that we're only installing SciPy's build dependencies (and Spyder so we can use the IDE), but not SciPy itself.
+#. Enter ``conda install python=3.8 numpy pybind11 cython pytest gfortran_linux-64 gxx_linux-64 sphinx git``. |br| Note that we're installing SciPy's build dependencies and some other software, but not SciPy itself.
 
-#. `Rename the file`_ ``anaconda3/envs/scipydev/lib/libgfortran.so`` to ``anaconda3/envs/scipydev/lib/libgfortran.so_backup``, where ``anaconda3`` is to be replaced with the full path of your Anaconda installation. *Note: This file provides an incorrect Fortran shared library; renaming it forces the system to find the right one for SciPy. Other libraries, however, might rely on this version, so we suggest that you only use this environment for SciPy development.*
+    * ``numpy pybind11 cython pytest`` are four packages that Scipy depends on.
 
-#. Install git. An easy way to do this is to enter the command ``sudo apt install git`` in the terminal and follow the prompts. We'll use this software to download and manage the SciPy source code.
+    * ``gfortran_linux-64 gxx_linux-64`` are compilers used to build SciPy's Fortran, C, and C++ source code.
+
+    * ``sphinx`` renders docstrings (documentation strings) in SciPy files as HTML.
+
+    * ``git`` is a version control system used to download and manage the SciPy source code.
 
 #. Browse to the `SciPy repository on GitHub <https://github.com/scipy/scipy>`_ and `create your own fork <https://help.github.com/en/articles/fork-a-repo>`_. You'll need to create a GitHub account if you don't already have one.
 
@@ -69,12 +71,6 @@ Building SciPy
 #. In the terminal, navigate into the ``scipy`` root directory (e.g. ``cd scipy``).
 
 #. (Optional) Check your present working directory by entering ``pwd`` at the terminal. You should be in the root ``..../scipy`` directory, not in a directory ending ``..../scipy/scipy``.
-
-#. Install `Homebrew on Linux`_. Enter into the terminal |br| ``sh -c "$(curl -fsSL https://raw.githubusercontent.com/Linuxbrew/install/master/install.sh)"`` |br| or follow the installation instructions listed on the `Homebrew on Linux`_ website. Homebrew requires additional packages to be installed, and lists the required commands in the terminal window. Copy and paste these commands into the terminal to complete the Homebrew setup. If no additional commands are given, they may be found `here <https://docs.brew.sh/Homebrew-on-Linux>`_.
-
-   Homebrew is a package manager that will help you download ``gcc``, the software we will use to compile C, C++, and Fortran code included in SciPy.
-
-#. Use Homebrew to install ``gcc`` by entering the command ``brew install gcc``.
 
 #. Do an in-place build: enter ``python3 setup.py build_ext --inplace``. |br| This will compile the C, C++, and Fortran code that comes with SciPy. We installed ``python3`` with Anaconda. ``setup.py`` is a script in the root directory of SciPy, which is why you have to be in the SciPy root directory to call it. ``build_ext`` is a command defined in ``setup.py``, and ``--inplace`` is an option we'll use to ensure that the compiling happens in the SciPy directory you already have rather than the default location for Python packages. By building in-place, you avoid having to re-build SciPy before you can test changes to the Python code.
 
