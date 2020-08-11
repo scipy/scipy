@@ -149,7 +149,7 @@ function accessible from Python:
    like a regular Python function, calls the C++ function
    ``hello_world``, which prints ``Hello World!`` to the console.
 
-Example 3
+Example 2
 ---------
 
 C++ extensions frequently need to share arrays with NumPy. This is typically
@@ -202,7 +202,33 @@ basic syntax.
        >>> x
        array([0., 1., 2., 3., 4., 5., 6., 7., 8., 9.])
 
+Exercise 3
+----------
 
+Try following this `Cython tutorial`_ to see how to wrap a C++ class within a
+namespace. You can work the ``.h``, ``.cpp``, ``.pxd``, and ``.pyx`` files into
+the SciPy build system just as in this tutorial. There are few particularly
+important things to note:
+
+* Instead of ``from Rectangle cimport Rectangle`` in ``Rectangle.pyx``, you
+  need a relative import ``from .Rectangle cimport Rectangle``.
+
+* ``cdef extern from "Rectangle.cpp": pass`` in the ``.pxd`` is essentially
+  equivalent to adding ``Rectangle.cpp`` as one of the sources in ``setup.py``.
+
+* As stated in the tutorial, common practice is to create an instance of
+  the C++ class in your wrapper class, e.g. ``cdef Rectangle c_rect``. For this
+  to work, your class needs to have a no-argument constructor. If the C++ code
+  you are wrapping doesn't have one, it's usually easy to add, e.g.
+  ``Rectangle::Rectangle () {}``.
+
+When you're done, try using the class from Python:
+
+::
+
+    from scipy.stats.rect import PyRectangle
+    r = PyRectangle(1, 2, 3, 4)
+    r.get_area()
 
 
 Example
