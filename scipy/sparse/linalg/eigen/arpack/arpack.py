@@ -1871,15 +1871,13 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     else:
         raise ValueError("solver must be either 'arpack', or 'lobpcg'.")
 
-    # compute the right singular vectors of X and update the left ones accordingly
     u = X_matmat(eigvec)
-    u, s, vh = svd(u, full_matrices=False)
-    vh = np.dot(vh, _herm(eigvec))
-    s = s[::-1]
     if not return_singular_vectors:
-        return s
-    u = u[:, ::-1]
-    vh = vh[::-1]
+        s = svd(u, compute_uv=False)
+        return s[::-1]
+
+    # compute the right singular vectors of X and update the left ones accordingly
+    u, s, vh = svd(u, full_matrices=False)
     return_u = (return_singular_vectors == 'u')
     return_vh = (return_singular_vectors == 'vh')
     if not transpose:
@@ -1887,10 +1885,14 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
             u = None
         if return_u:
             vh = None
+        else:
+           vh = vh @ _herm(eigvec)
         return u, s, vh
     else:
         if return_u:
-            return _herm(vh), s, None
+            u = eigvec @ _herm(vh)
+            return u, s, None
         if return_vh:
             return None, s, _herm(u)
-        return _herm(vh), s, _herm(u)
+        u, vh = eigvec @ _herm(vh), _herm(u)
+        return u, s, vh

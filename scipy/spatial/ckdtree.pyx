@@ -733,7 +733,7 @@ cdef class cKDTree:
         cdef:
             np.intp_t n, i, j
             int overflown
-            const np.float64_t [:, ::1] xx
+            np.float64_t [:, ::1] xx
 
         xshape = np.shape(x)
 
@@ -887,8 +887,8 @@ cdef class cKDTree:
         """
 
         cdef:
-            const np.float64_t[::1] vrr
-            const np.float64_t[:, ::1] vxx
+            np.float64_t[::1] vrr
+            np.float64_t[:, ::1] vxx
             object[::1] vout
             np.intp_t[::1] vlen
             list tmp
