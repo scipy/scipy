@@ -149,6 +149,62 @@ function accessible from Python:
    like a regular Python function, calls the C++ function
    ``hello_world``, which prints ``Hello World!`` to the console.
 
+Example 3
+---------
+
+C++ extensions frequently need to share arrays with NumPy. This is typically
+done using `memoryviews`_. Let's modify `hello_world` just to see the
+basic syntax.
+
+#. Modify the function signature in ``cpp_declaration.h``,
+   ``cpp_implementation.cpp``, and ``cy_declaration.pxd``:
+
+   ::
+
+       int hello_world(double *x, int n);
+
+   Now the C++ function will accept a pointer to the first element of the
+   array and an integer that contains the length of the array.
+
+#. Modify the C++ function implementation in ``cpp_implementation.cpp``.
+
+   ::
+
+       int hello_world(double *x, int n) {
+           for (int i = 0; i < n; i++){
+               x[i] = double(i);
+           }
+           return 0;
+       }
+
+
+   We loop over the array, assigning to each element its index as a ``double``.
+
+#. Modify the Cython implementation in ``cy_implementation.pyx``.
+
+   ::
+
+       def cy_hello_world(double[::1] x):
+           hello_world(&x[0], x.shape[0])
+
+   The Cython function accepts a NumPy array as a memoryview. Into the C++
+   function, we pass the memory address (``&``) to the zeroth (``[0]``)
+   element of the memoryview as well as the length of the array.
+
+#. At a Python prompt, import the function and invoke it.
+
+   ::
+
+       >>> import numpy as np
+       >>> from scipy.stats.cy_implementation import cy_hello_world
+       >>> x = np.zeros(10)
+       >>> cy_hello_world(x)
+       >>> x
+       array([0., 1., 2., 3., 4., 5., 6., 7., 8., 9.])
+
+
+
+
 Example
 -------
 
@@ -161,6 +217,7 @@ What is the simplest example in SciPy that would complement this guide?
 .. _preprocessor directives: https://www.learncpp.com/cpp-tutorial/introduction-to-the-preprocessor/
 .. _extension module: https://cython.readthedocs.io/en/latest/src/userguide/source_files_and_compilation.html
 .. _Cython tutorial: https://cython.readthedocs.io/en/latest/src/userguide/wrapping_CPlusPlus.html
+.. _memoryviews: https://cython.readthedocs.io/en/latest/src/userguide/numpy_tutorial.html#efficient-indexing-with-memoryviews
 
 .. |pxd| replace:: ``pxd``
 .. _pxd: https://cython.readthedocs.io/en/latest/src/tutorial/pxd_files.html
