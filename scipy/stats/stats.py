@@ -7560,8 +7560,7 @@ def confint_quantile(x, quantile, confidence, type='one-sided'):
         Defines the type of confidence interval computed.
         Default is 'one-sided'.
 
-          * 'one-sided' : computes the best possible one-sided confidence
-        intervals (both lower and upper bounds) for the given quantile.
+          * 'one-sided' : computes the best possible one-sided confidence intervals (both lower and upper bounds) for the given quantile.
           * 'two-sided' : computes a two-sided confidence interval by combination of two one-sided intervals. E.g., a 90% two-sided interval is computed by combining two 95% one-sided intervals
     verbose : bool, optional
         Enable verbose outputs, default is False
