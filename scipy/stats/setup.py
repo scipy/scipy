@@ -28,12 +28,6 @@ def configuration(parent_package='',top_path=None):
         sources=['mvn.pyf','mvndst.f'],
     )
 
-    # Build rectangle demo
-    config.add_data_files('Rectangle.pxd')
-    config.add_extension(
-        'rect', sources=['rect.cxx',
-                         'Rectangle.cpp'])
-
     return config
 
 
