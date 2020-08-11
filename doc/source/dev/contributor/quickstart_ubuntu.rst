@@ -50,13 +50,15 @@ Building SciPy
 
 #. Enter ``conda install python=3.8 numpy pybind11 cython pytest gfortran_linux-64 gxx_linux-64 sphinx git``. |br| Note that we're installing SciPy's build dependencies and some other software, but not SciPy itself.
 
-    * ``numpy pybind11 cython pytest`` are four packages that Scipy depends on.
+   * ``numpy pybind11 cython pytest`` are four packages that Scipy depends on.
 
-    * ``gfortran_linux-64 gxx_linux-64`` are compilers used to build SciPy's Fortran, C, and C++ source code.
+   * ``gfortran_linux-64 gxx_linux-64`` are compilers used to build SciPy's Fortran, C, and C++ source code.
 
-    * ``sphinx`` renders docstrings (documentation strings) in SciPy files as HTML.
+   * ``sphinx`` and ``matplotlib`` are required to render the SciPy documentation.
 
-    * ``git`` is a version control system used to download and manage the SciPy source code.
+   * ``mypy`` is a static type checker for Python. Consider using it.
+
+   * ``git`` is a version control system used to download and manage the SciPy source code.
 
 #. Browse to the `SciPy repository on GitHub <https://github.com/scipy/scipy>`_ and `create your own fork <https://help.github.com/en/articles/fork-a-repo>`_. You'll need to create a GitHub account if you don't already have one.
 
@@ -85,7 +87,7 @@ Building SciPy
 
    If you have successfully imported a development version of SciPy, the word ``dev`` will appear in the output, e.g.::
 
-      1.5.0.dev0+be97f1a
+      1.6.0.dev0+be97f1a
 
 
 .. _Anaconda SciPy Dev\: Part I (macOS): https://youtu.be/1rPOSNd0ULI
