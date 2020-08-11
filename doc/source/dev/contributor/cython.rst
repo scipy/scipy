@@ -2,8 +2,8 @@
 
 .. _adding-cython:
 
-Adding Cython to SciPy
-======================
+Cythonizing Python Code
+=======================
 
 As written on the `Cython website`_:
 

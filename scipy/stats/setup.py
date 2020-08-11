@@ -28,6 +28,12 @@ def configuration(parent_package='',top_path=None):
         sources=['mvn.pyf','mvndst.f'],
     )
 
+    # Build hello world demo
+    config.add_data_files('cy_declaration.pxd')
+    config.add_extension(
+        'cy_implementation', sources=['cy_implementation.cxx',
+                                      'cpp_implementation.cpp'])
+
     return config
 
 
