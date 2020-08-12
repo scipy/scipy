@@ -6,7 +6,6 @@ from numpy.testing import (assert_equal, assert_array_equal, assert_,
                            assert_allclose)
 from pytest import raises as assert_raises
 import pytest
-from platform import python_implementation
 import numpy as np
 from scipy.spatial import KDTree, Rectangle, distance_matrix, cKDTree
 from scipy.spatial.ckdtree import cKDTreeNode
@@ -1142,8 +1141,6 @@ def simulate_periodic_box(kdtree, data, k, boxsize, p):
     return result['dd'][:, :k], result['ii'][:, :k]
 
 
-@pytest.mark.skipif(python_implementation() == 'PyPy',
-                    reason="Fails on PyPy CI runs. See #9507")
 def test_ckdtree_memuse():
     # unit test adaptation of gh-5630
 
