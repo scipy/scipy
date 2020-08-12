@@ -109,24 +109,25 @@ class TestQMC(object):
         engine = qmc.Halton(dim=2)
         sample = engine.random(n_samples=3)
 
-        out = np.array([[1 / 2, 1 / 3], [1 / 4, 2 / 3], [3 / 4, 1 / 9], [1 / 8, 4 / 9], [5 / 8, 7 / 9]])
+        out = np.array([[0, 0], [1 / 2, 1 / 3], [1 / 4, 2 / 3], [3 / 4, 1 / 9],
+                        [1 / 8, 4 / 9], [5 / 8, 7 / 9]])
         assert_almost_equal(sample, out[:3], decimal=1)
 
         assert engine.num_generated == 3
 
         # continuing
-        sample = engine.random(n_samples=2)
+        sample = engine.random(n_samples=3)
         assert_almost_equal(sample, out[3:], decimal=1)
 
         # reset
         engine.reset()
-        sample = engine.random(n_samples=5)
+        sample = engine.random(n_samples=6)
         assert_almost_equal(sample, out, decimal=1)
 
         # continuing with fast_forward
         engine = qmc.Halton(dim=2)
         engine.fast_forward(2)
-        sample = engine.random(n_samples=3)
+        sample = engine.random(n_samples=4)
 
         assert_almost_equal(sample, out[2:], decimal=1)
 

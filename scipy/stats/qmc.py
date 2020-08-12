@@ -566,16 +566,16 @@ class Halton(QMCEngine):
     >>> sampler = qmc.Halton(dim=2)
     >>> sample = sampler.random(n_samples=5)
     >>> sample
-    array([[0.5       , 0.33333333],
+    array([[0.        , 0.        ],
+           [0.5       , 0.33333333],
            [0.25      , 0.66666667],
            [0.75      , 0.11111111],
-           [0.125     , 0.44444444],
-           [0.625     , 0.77777778]])
+           [0.125     , 0.44444444]])
 
     Compute the quality of the sample using the discrepancy criterion.
 
     >>> qmc.discrepancy(sample)
-    0.021228780864197327
+    0.088893711419753
 
     If some wants to continue an existing design, extra points can be obtained
     by calling again `random()`. Alternatively, you can skip some points like:
@@ -583,21 +583,21 @@ class Halton(QMCEngine):
     >>> sampler.fast_forward(5)
     >>> sample_continued = sampler.random(n_samples=5)
     >>> sample_continued
-    array([[0.8125    , 0.7037037 ],
+    array([[0.3125    , 0.37037037],
+           [0.8125    , 0.7037037 ],
            [0.1875    , 0.14814815],
            [0.6875    , 0.48148148],
-           [0.4375    , 0.81481481],
-           [0.9375    , 0.25925926]])
+           [0.4375    , 0.81481481]])
 
     Finally, samples can be scaled to bounds.
 
     >>> bounds = [[0, 2], [10, 5]]
     >>> qmc.scale(sample_continued, bounds)
-    array([[8.125     , 4.11111111],
+    array([[3.125     , 3.11111111],
+           [8.125     , 4.11111111],
            [1.875     , 2.44444444],
            [6.875     , 3.44444444],
-           [4.375     , 4.44444444],
-           [9.375     , 2.77777778]])
+           [4.375     , 4.44444444]])
 
     """
 
@@ -620,12 +620,12 @@ class Halton(QMCEngine):
 
         """
         # Generate a sample using a Van der Corput sequence per dimension.
-        # important to have type(bdim) == int for performance reason
-        sample = [van_der_corput(n_samples + 1, int(bdim), self.num_generated)
+        # important to have ``type(bdim) == int`` for performance reason
+        sample = [van_der_corput(n_samples, int(bdim), self.num_generated)
                   for bdim in self.base]
 
         self.num_generated += n_samples
-        return np.array(sample).T[1:]
+        return np.array(sample).T
 
 
 class OrthogonalLatinHypercube(QMCEngine):
@@ -1305,6 +1305,7 @@ class MultivariateNormalQMC(QMCEngine):
     >>> plt.show()
 
     """
+
     def __init__(self, mean, cov, inv_transform=False, engine=None, seed=None):
         # check for square/symmetric cov matrix and mean vector has the same d
         mean = np.array(mean, copy=False, ndmin=1)
