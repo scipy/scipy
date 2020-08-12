@@ -13,6 +13,7 @@ from .misc import LinAlgError, _datacopied, LinAlgWarning
 from .decomp import _asarray_validated
 from . import decomp, decomp_svd
 from ._solve_toeplitz import levinson
+from ._linsolve import get_lapack_flavor
 
 __all__ = ['solve', 'solve_triangular', 'solveh_banded', 'solve_banded',
            'solve_toeplitz', 'solve_circulant', 'inv', 'det', 'lstsq',
@@ -37,8 +38,34 @@ def _solve_check(n, info, lamch=None, rcond=None):
              LinAlgWarning, stacklevel=3)
 
 
+def _validate_input_arrays(a, b):
+    """
+    All LAPACK funcs work with Fortran memory layout, but most use cases have
+    C layout since NumPy's defaults. Hence if the data is contiguous in memory
+    we work with transposed C arrays and if not we make a copy. Similarly,
+    if the dtype is not exactly a member of lapack_t, we have to make a copy
+    due to LAPACK specs.
+
+    This provides further surgery options as opposed to letting f2py do the
+    memory handling and array copies.
+    """
+    info = get_lapack_flavor(a.dtype.char, b.dtype.char)
+    # Backwards compatibility, if dtype is not known try "d"
+    if info < 0:
+        prefix = 'd'
+        info = 1
+    else:
+        prefix = 'sdcz'[info]
+
+    # If not contiguous or not the right type, pay the price with a copy
+    a = np.array(a, dtype='fdFD'[info], copy=not a.flags.forc, order='K')
+    b = np.array(b, dtype='fdFD'[info], copy=not a.flags.forc, order='K')
+
+    return a, b
+
+
 def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
-          overwrite_b=False, debug=None, check_finite=True, assume_a='gen',
+          overwrite_b=False, check_finite=True, assume_a='gen',
           transposed=False):
     """
     Solves the linear equation set ``a * x = b`` for the unknown ``x``
@@ -158,6 +185,11 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
         else:
             b1 = b1[:, None]
         b_is_1D = True
+
+    # Validate as contiguous/LAPACK-typed
+    a2, b2 = _validate_input_arrays(a1, b1)
+
+
 
     # Backwards compatibility - old keyword.
     if sym_pos:

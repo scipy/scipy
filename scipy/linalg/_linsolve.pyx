@@ -1,14 +1,61 @@
+"""
+Polyalgorithm functions for scipy.linalg.solve()
+
+Solving linear system equations are central to the numerical linear algebra
+routines. And thus, any performance benefit introduced by the solver directly
+impacts upstream code elsewhere. The established convention to solve systems
+with unknown structure is to perform gradually more expensive checks and branch
+off to the structured solvers if possible, finally fallback to generic solvers
+if no structure is found. This type of "if-this-use-that" algorithms are called
+polyalgorithms. Many numerical algebra tools already use this type of branching
+(matlab's backslash operator possibly being the most well-known). It might be
+counter-intuitive to waste time on such checks at first, however, it has to be
+noted that linear solvers often have O(n**3) complexity. Many checks we
+perform are of O(n**2) hence the worst case, "no structure after all checks",
+doesn't suffer a huge delay, in turn if structure is found, significant speed
+benefits are obtained.
+
+Here, Cythonized versions of these checks and branching logic is provided;
+since we use BLAS/LAPACK backend, the arrays have to be prepared strictly to
+have only single/double precision dtypes and Fortran-contiguous (column-major)
+memory layout to be used in LAPACK calls. Thus the entrance of the solve(A, b)
+regularizes the inputs and make copies if not possible. If the datatype is
+matched, C-contiguous arrays are transposed and used without any copies.
+
+Next, we start checking the bandwidth of the arrays looping over rows/columns.
+If a particular form is detected, then checks stop and relevant solver is used.
+If no triangular form is discovered then symmetry/hermitian properties are
+checked. If further obvious properties are satisfied (diagonal entries of a
+sign-definite matrix should have the same sign and be nonzero) then Cholesky
+factorization is tested. Depending on the result relevant solvers are used.
+It should be noted that even though Cholesky factorization is comparable to
+other solvers in time-complexity, it often fails very quickly in practice and
+the worst-case scenarios hardly ever encountered and in fact require special
+matrix constructions.
+
+If no structure is detected, standard generic linsolve routines are used.
+"""
+
 cimport cython
 from libc.stdlib cimport abs
+cimport numpy as cnp
+
+ctypedef fused valid_type_t:
+    cnp.float32
+    cnp.float64
+    cnp.complex
+
 
 ctypedef fused lapack_t:
     float
     double
     float complex
     double complex
+
 ctypedef fused lapack_cz_t:
     float complex
     double complex
+
 ctypedef fused lapack_sd_t:
     float
     double
@@ -16,6 +63,68 @@ ctypedef fused lapack_sd_t:
 ctypedef (int, int) (*f_tri_ptr)(lapack_t[:, ::1])
 ctypedef (bint, bint) (*f_sym_ptr)(lapack_t[:, ::1])
 ctypedef int (*f_posdiag_ptr)(lapack_t[:, ::1])
+
+# The numpy facilities for type casting checks are too slow for small-sized
+# arrays and eats away the time-budget for the checkups. Here we provide a
+# precomputed version of the numpy.can_cast() table.
+
+# output of np.typecodes['All']
+cdef str casting_key = '?bhilqpBHILQPefdgFDGSUVOMm'
+
+#                          f  d  F  D
+casting_table = np.array([[1, 1, 1, 1],  # ?
+                          [1, 1, 1, 1],  # b
+                          [1, 1, 1, 1],  # h
+                          [0, 1, 0, 1],  # i
+                          [0, 1, 0, 1],  # l
+                          [0, 1, 0, 1],  # q
+                          [0, 1, 0, 1],  # p
+                          [1, 1, 1, 1],  # B
+                          [1, 1, 1, 1],  # H
+                          [0, 1, 0, 1],  # I
+                          [0, 1, 0, 1],  # L
+                          [0, 1, 0, 1],  # Q
+                          [0, 1, 0, 1],  # P
+                          [1, 1, 1, 1],  # e
+                          [1, 1, 1, 1],  # f
+                          [0, 1, 0, 1],  # d
+                          [0, 1, 0, 1],  # g
+                          [0, 0, 1, 1],  # F
+                          [0, 0, 0, 1],  # D
+                          [0, 0, 0, 1],  # G
+                          [0, 0, 0, 0],  # S
+                          [0, 0, 0, 0],  # U
+                          [0, 0, 0, 0],  # V
+                          [0, 0, 0, 0],  # O
+                          [0, 0, 0, 0],  # M
+                          [0, 0, 0, 0]], # m
+                         dtype=bool)
+
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+@cython.nonecheck(False)
+cpdef inline int get_lapack_flavor(
+    str a,
+    str b,
+    str K = casting_key,
+    const cnp.npy_bool[:, ::1]C = casting_table
+    ):
+    """
+    Given dtype characters, this function finds the smallest LAPACK compatible
+    dtype index (counted for "s", "d", "c", "z"). If not found, returns -1.
+    """
+    cdef size_t ind
+    cdef size_t rowa = K.find(a)
+    cdef size_t rowb = K.find(b)
+    if rowa == -1 or rowb == -1:
+        raise TypeError('Unknown data type for linalg.solve()')
+
+    for ind in range(4):
+        if C[rowa, ind] and C[rowb, ind]:
+            return ind
+
+    return -1
 
 
 @cython.boundscheck(False)
@@ -125,7 +234,7 @@ cdef inline int _is_posdef_diag_c(lapack_t[:, ::1]A) nogil:
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cpdef (int, int) _check_for_structure(lapack_t[:, ::1]A):
+cpdef (int, int) _check_for_structure_c(lapack_t[:, ::1]A):
     """
     Returns (family, member) structure information given a square C-contiguous
     array.
@@ -197,7 +306,7 @@ cpdef (int, int) _check_for_structure(lapack_t[:, ::1]A):
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef int _check_cholesky_success(lapack_t[:, ::1]A):
+cdef int _check_cholesky_success_c(lapack_t[:, ::1]a):
     """
     When solving a hermitian linear system, attempting
     to factorize a square matrix often fails quite quickly
@@ -232,19 +341,7 @@ cdef int _check_cholesky_success(lapack_t[:, ::1]A):
     return info
 
 
-@cython.boundscheck(False)
-@cython.wraparound(False)
-cdef (lapack_t, lapack_t) _validate_input_arrays(lapack_t[:, :]A,
-                                                 lapack_t[:, :]B):
-    """
-    All LAPACK funcs work with Fortran memory layout, but most use cases have
-    C layout since NumPy's defaults. Hence if the data is contiguous in memory
-    we work with transposed C arrays and if not we make a copy. Similarly,
-    if the dtype is not exactly a member of lapack_t, we have to make a copy
-    due to LAPACK specs.
 
-    This provides further surgery options as opposed to letting f2py do the
-    memory handling and array copies.
-    """
+
 
 
