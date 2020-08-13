@@ -597,19 +597,19 @@ def insert(x, tck, m=1, per=0):
     >>> y = np.sin(x)
     >>> tck = splrep(x, y)
     >>> tck[0]
-    [ 0.  0.  0.  0.  5. 10. 10. 10. 10.]
+    array([ 0.,  0.,  0.,  0.,  5., 10., 10., 10., 10.])
 
     A knot is inserted:
 
     >>> tck_inserted = insert(3, tck)
     >>> tck_inserted[0]
-    [ 0.  0.  0.  0.  3.  5. 10. 10. 10. 10.]
+    array([ 0.,  0.,  0.,  0.,  3.,  5., 10., 10., 10., 10.])
 
     Some knots are inserted:
 
     >>> tck_inserted2 = insert(8, tck, m=3)
     >>> tck_inserted2[0]
-    [ 0.  0.  0.  0.  5.  8.  8.  8. 10. 10. 10. 10.]
+    array([ 0.,  0.,  0.,  0.,  5.,  8.,  8.,  8., 10., 10., 10., 10.])
 
     """
     if isinstance(tck, BSpline):
