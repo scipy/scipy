@@ -1061,19 +1061,20 @@ class TestPareto(object):
         args = [data, (stats.pareto._fitstart(data), )]
         func = stats.pareto._reduce_func(args, {})[1]
 
-        # fixed `floc` to actual location provides as good or better fit.
+        # fixed `floc` to actual location provides a better fit than the
+        # super method
         _assert_lessthan_loglike(stats.pareto, data, func, floc=rvs_loc)
 
-        # fixing `floc` to an arbitrary number, 0, still provides an as good
-        # or better fit.
+        # fixing `floc` to an arbitrary number, 0, still provides a better
+        # fit than the super method
         _assert_lessthan_loglike(stats.pareto, data, func, floc=0)
 
-        # fixed shape still uses analytical MLE and provides
-        # an as good or better fit.
+        # fixed shape still uses MLE formula and provides a better fit than
+        # the super method
         _assert_lessthan_loglike(stats.pareto, data, func, floc=0, f0=4)
 
-        # valid fixed fscale still uses analytical MLE and provides
-        # an as good or better fit.
+        # valid fixed fscale still uses MLE formulas and provides a better
+        # fit than the super method
         _assert_lessthan_loglike(stats.pareto, data, func, floc=0,
                                  fscale=rvs_scale/2)
 
@@ -1081,7 +1082,7 @@ class TestPareto(object):
         assert_fit_warnings(stats.pareto)
         # `floc` that causes invalid negative data
         assert_raises(FitDataError, stats.pareto.fit, [1, 2, 3], floc=2)
-        # `floc` and `fscale` combination causes invalid data > `fscale`
+        # `floc` and `fscale` combination causes invalid data
         assert_raises(FitDataError, stats.pareto.fit, [5, 2, 3], floc=1,
                       fscale=3)
 
@@ -1562,7 +1563,7 @@ class TestInvgauss(object):
     def test_fit(self, rvs_mu, rvs_loc, rvs_scale):
         data = stats.invgauss.rvs(size=100, mu=rvs_mu,
                                   loc=rvs_loc, scale=rvs_scale)
-        # Analytical MLEs are only calculated when `floc` is fixed.
+        # Analytical MLEs are calculated with formula when `floc` is fixed
         mu, loc, scale = stats.invgauss.fit(data, floc=rvs_loc)
 
         data = data - rvs_loc
@@ -1570,7 +1571,7 @@ class TestInvgauss(object):
         scale_mle = len(data) / (np.sum(data**(-1) - mu_temp**(-1)))
         mu_mle = mu_temp/scale_mle
 
-        # `mu` and `scale` match analytical MLE
+        # `mu` and `scale` match analytical formula
         assert_allclose(mu_mle, mu, atol=1e-15, rtol=1e-15)
         assert_allclose(scale_mle, scale, atol=1e-15, rtol=1e-15)
         assert_equal(loc, rvs_loc)
@@ -1609,19 +1610,21 @@ class TestInvgauss(object):
         args = [data, (stats.invgauss._fitstart(data), )]
         func = stats.invgauss._reduce_func(args, {})[1]
 
-        # fixed `floc` uses analytical formula for MLE
+        # fixed `floc` uses analytical formula and provides better fit than
+        # super method
         _assert_lessthan_loglike(stats.invgauss, data, func, floc=rvs_loc)
 
-        # fixed `floc` not resulting in invalid data < 0 uses analytical MLE
+        # fixed `floc` not resulting in invalid data < 0 uses analytical
+        # formulas and provides a better fit than the super method
         assert np.all((data - (rvs_loc - 1)) > 0)
         _assert_lessthan_loglike(stats.invgauss, data, func, floc=rvs_loc - 1)
 
-        # fixed `floc` to an arbitrary number, 0, still provides an as good
-        # or better fit.
+        # fixed `floc` to an arbitrary number, 0, still provides a better fit
+        # than the super method
         _assert_lessthan_loglike(stats.invgauss, data, func, floc=0)
 
-        # fixed `fscale` to an arbitrary number still provides an
-        # as good or better fit.
+        # fixed `fscale` to an arbitrary number still provides a better fit
+        # than the super method
         _assert_lessthan_loglike(stats.invgauss, data, func, floc=rvs_loc,
                                  fscale=np.random.rand(1)[0])
 
@@ -1640,16 +1643,16 @@ class TestLaplace(object):
         # for a variety of `loc` and `scale`.
         data = stats.laplace.rvs(size=100, loc=rvs_loc, scale=rvs_scale)
 
-        # MLE estimates are given by
+        # MLE estimates are given by these forumlas
         loc_mle = np.median(data)
         scale_mle = np.sum(np.abs(data - loc_mle)) / len(data)
 
-        # standard outputs should match MLE
+        # standard outputs should match analytical MLE formulas
         loc, scale = stats.laplace.fit(data)
         assert_allclose(loc, loc_mle, atol=1e-15, rtol=1e-15)
         assert_allclose(scale, scale_mle, atol=1e-15, rtol=1e-15)
 
-        # fixed parameter should use MLE for other
+        # fixed parameter should use analytical formula for other
         loc, scale = stats.laplace.fit(data, floc=loc_mle)
         assert_allclose(scale, scale_mle, atol=1e-15, rtol=1e-15)
         loc, scale = stats.laplace.fit(data, fscale=scale_mle)
