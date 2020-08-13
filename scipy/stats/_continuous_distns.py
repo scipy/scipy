@@ -3405,16 +3405,16 @@ class invgauss_gen(rv_continuous):
         SciPy's with the conversion `fshape_s = fshape / scale`.
 
         MLE formulas are not used in 3 condtions:
-        - `floc` is not fixed
-        - `f0` is fixed
+        - `loc` is not fixed
+        - `mu` is fixed
         These cases fall back on the superclass fit method.
-        - `floc` is set but translation results in negative data raises
+        - `loc` is fixed but translation results in negative data raises
           a `FitDataError`.
         '''
         if floc is None or fshape_s is not None:
             return super(invgauss_gen, self).fit(data, *args, **kwds)
         elif np.any(data - floc < 0):
-            raise FitDataError("invgauss", lower=1, upper=np.inf)
+            raise FitDataError("invgauss", lower=0, upper=np.inf)
         else:
             data = data - floc
             fshape_n = np.mean(data)
