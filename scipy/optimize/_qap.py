@@ -1,6 +1,7 @@
 import numpy as np
 import operator
 from . import linear_sum_assignment, minimize_scalar, OptimizeResult
+from scipy._lib._util import check_random_state
 
 
 def quadratic_assignment(
@@ -52,15 +53,15 @@ def quadratic_assignment(
         "seed" [2]_.
 
         Each row of `partial_match` specifies the indices of a pair of
-        corresponding nodes, that is, vertex ``partial_match[i, 0]`` is
-        matched to vertex ``partial_match[i, 1]``. Accordingly,
+        corresponding nodes, that is, node ``partial_match[i, 0]`` is
+        matched to node ``partial_match[i, 1]``. Accordingly,
         ``partial_match`` is an array of size ``(m , 2)``, where ``m`` is
         less than the number of nodes.
 
     maximize : bool (default = False)
         Setting `maximize` to ``True`` solves the Graph Matching Problem (GMP)
-        rather than the QAP. This is accomplished through trivial negation
-        of the objective function.
+        rather than the Quadratic Assingnment Problem (QAP). This is
+        accomplished through trivial negation of the objective function.
 
     options : dict, optional
         A dictionary of solver options.
@@ -109,6 +110,14 @@ def quadratic_assignment(
                 iterations is sufficiently small, that is, when the Frobenius
                 norm of :math:`(P_{i}-P_{i+1}) \leq eps`, where :math:`i` is
                 the iteration number.
+            seed : {None, int, `~np.random.RandomState`, `~np.random.Generator`}
+                This parameter defines the object to use for drawing random variates.
+                If `seed` is `None` the `~np.random.RandomState` singleton is used.
+                If `seed` is an int, a new ``RandomState`` instance is used, seeded
+                with seed.
+                If `seed` is already a ``RandomState`` or ``Generator`` instance,
+                then that object is used.
+                Default is None.
 
     Returns
     -------
@@ -189,7 +198,7 @@ def quadratic_assignment(
     >>>     score = int(np.trace(cost.T @ dist[np.ix_(perm, perm)])
     >>>     if score < score_opt:
     >>>         score_opt, perm_opt = score, perm
-    >>> print( list(perm_opt) == res['col_ind'].tolist())
+    >>> print(list(perm_opt) == res['col_ind'].tolist())
     True
     """
 
@@ -210,15 +219,16 @@ def _quadratic_assignment_faq(
         init_k=1,
         maxiter=30,
         shuffle_input=True,
-        eps=0.05
+        eps=0.05,
+        seed=None
 ):
 
-    cost_matrix = np.asarray(cost_matrix)
-    dist_matrix = np.asarray(dist_matrix)
+    cost_matrix = np.atleast_2d(cost_matrix)
+    dist_matrix = np.atleast_2d(dist_matrix)
 
     if partial_match is None:
         partial_match = np.array([[], []]).T
-    partial_match = np.asarray(partial_match)
+    partial_match = np.atleast_2d(partial_match)
     init_k = operator.index(init_k)
     maxiter = operator.index(maxiter)
 
@@ -239,32 +249,32 @@ def _quadratic_assignment_faq(
     elif (partial_match < 0).any():
         msg = "`partial_match` contains negative entries"
     elif (partial_match >= len(cost_matrix)).any():
-        msg = "`partial_match` entries must be less than the number of nodes"
+        msg = "`partial_match` entries must be less than number of nodes"
     elif not len(set(partial_match[:, 0])) == len(partial_match[:, 0]) or not \
             len(set(partial_match[:, 1])) == len(partial_match[:, 1]):
         msg = "`partial_match` column entries must be unique"
     elif isinstance(init_J, str) and init_J not in {'barycenter'}:
         msg = "Invalid 'init_J' parameter string"
     elif init_weight is not None and (init_weight < 0 or init_weight > 1):
-        msg = "'init_weight' must be in range [0, 1]"
+        msg = "'init_weight' must be strictly between zero and one"
     elif init_k <= 0:
-        msg = "'n_init' must be a positive integer"
+        msg = "'init_k' must be a positive integer"
     elif maxiter <= 0:
         msg = "'maxiter' must be a positive integer"
+    elif eps <= 0:
+        msg = "'eps' must be a positive float"
     if msg is not None:
         raise ValueError(msg)
 
     # TypeError check
     if not isinstance(shuffle_input, bool):
         msg = "'shuffle_input' must be a boolean"
-    elif eps <= 0 or type(eps) is not float:
-        msg = "'eps' must be a positive float"
     elif not isinstance(maximize, bool):
         msg = "'maximize' must be a boolean"
     if msg is not None:
         raise TypeError(msg)
 
-    rng = np.random.RandomState()
+    rng = check_random_state(seed)
     n = cost_matrix.shape[0]  # number of vertices in graphs
     n_seeds = partial_match.shape[0]  # number of seeds
     n_unseed = n - n_seeds
