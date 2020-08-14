@@ -1420,6 +1420,16 @@ class TestNdimage:
                 a = fft.ifft(a, shape[0], 0)
                 assert_almost_equal(ndimage.sum(a.real), 1.0, decimal=dec)
 
+    def test_fourier_ellipsoid_1d_complex(self):
+        # expected result of 1d ellipsoid is the same as for fourier_uniform
+        for shape in [(32, ), (31, )]:
+            for type_, dec in zip([numpy.complex64, numpy.complex128],
+                                  [5, 14]):
+                x = numpy.ones(shape, dtype=type_)
+                a = ndimage.fourier_ellipsoid(x, 5, -1, 0)
+                b = ndimage.fourier_uniform(x, 5, -1, 0)
+                assert_array_almost_equal(a, b, decimal=dec)
+
     def test_spline01(self):
         for type_ in self.types:
             data = numpy.ones([], type_)
