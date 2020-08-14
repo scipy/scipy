@@ -107,83 +107,109 @@ def test_rand_qap():
 
 
 def test_quadratic_assignment_input_validation():
-    A = np.identity(2)
-    B = A
-
-    # Type Error Checks: making sure single value parameters are of
-    # correct type
-
-    with pytest.raises(TypeError):
-        quadratic_assignment(A, B, options={'init_k': 1.5})
-    with pytest.raises(ValueError):
-        quadratic_assignment(A, B, options={'init_k': -1})
-    with pytest.raises(ValueError):
-        quadratic_assignment(A, B, options={'init_weight': 2})
-    with pytest.raises(ValueError):
-        quadratic_assignment(A, B, options={'init_J': "random"})
-    with pytest.raises(TypeError):
-        quadratic_assignment(A, B, options={'maxiter': 1.5})
-    with pytest.raises(ValueError):
-        quadratic_assignment(A, B, options={'maxiter': -1})
-    with pytest.raises(TypeError):
-        quadratic_assignment(A, B, options={'shuffle_input': "hey"})
-    with pytest.raises(TypeError):
-        quadratic_assignment(A, B, options={'eps': -1})
-    with pytest.raises(TypeError):
-        quadratic_assignment(A, B, maximize="hey")
+    # test that non square matrices return error
+    with pytest.raises(ValueError, match="'cost_matrix' must be square"):
+        quadratic_assignment(
+            np.random.random((3, 4)),
+            np.random.random((3, 3)),
+        )
+    with pytest.raises(ValueError, match="'dist_matrix' must be square"):
+        quadratic_assignment(
+            np.random.random((3, 3)),
+            np.random.random((3, 4)),
+        )
     # test that cost and dist matrices of different sizes return error
-    with pytest.raises(ValueError):
+    with pytest.raises(
+            ValueError, match="Adjacency matrices must be of equal size"):
         quadratic_assignment(
             np.random.random((3, 3)),
             np.random.random((4, 4)),
         )
     # test that cost/dist matrices must be nonnegative
-    with pytest.raises(ValueError):
+    with pytest.raises(
+            ValueError, match="Adjacency matrix contains negative entries"):
         quadratic_assignment(
             -1 * np.random.random((3, 3)),
             np.random.random((3, 3))
         )
-    # test that non square matrices return error
-    with pytest.raises(ValueError):
-        quadratic_assignment(
-            np.random.random((3, 4)),
-            np.random.random((3, 3)),
-        )
-    with pytest.raises(ValueError):
-        quadratic_assignment(
-            np.random.random((3, 3)),
-            np.random.random((3, 4)),
-        )
+    # can't have more seed nodes than cost/dist nodes
+    with pytest.raises(
+            ValueError,
+            match="There cannot be more seeds than there are nodes"):
+        quadratic_assignment(np.identity(3), np.identity(3),
+                             options={'partial_match': _range_matrix(5, 2)})
     # test for only two seed columns
-    with pytest.raises(ValueError):
+    with pytest.raises(
+            ValueError, match="`partial_match` must have two columns"):
         quadratic_assignment(
             np.identity(3), np.identity(3),
             options={'partial_match': _range_matrix(2, 3)}
         )
-    # can't have more seed nodes than cost/dist nodes
-    with pytest.raises(ValueError):
-        quadratic_assignment(np.identity(3), np.identity(3),
-                             options={'partial_match': _range_matrix(5, 2)})
+
     # seeds cannot be negative valued
-    with pytest.raises(ValueError):
+    with pytest.raises(
+            ValueError, match="`partial_match` contains negative entries"):
         quadratic_assignment(
             np.identity(3), np.identity(3),
             options={'partial_match': -1 * _range_matrix(2, 2)}
         )
     # seeds can't have values greater than number of nodes
-    with pytest.raises(ValueError):
+    with pytest.raises(
+            ValueError,
+            match="`partial_match` entries must be less than number of nodes"):
         quadratic_assignment(
             np.identity(5), np.identity(5),
             options={'partial_match': 2 * _range_matrix(4, 2)}
         )
     # columns of seed matrix must be unique
-    with pytest.raises(ValueError):
+    with pytest.raises(
+            ValueError,
+            match="`partial_match` column entries must be unique"):
         quadratic_assignment(
             np.identity(3), np.identity(3),
             options={'partial_match': np.ones((2, 2))}
         )
-    # test init matrix not doubly stochastic
-    with pytest.raises(ValueError):
+    A = np.identity(2)
+    B = A
+
+    # ValueError Checks: making sure single value parameters are of
+    # correct value
+    with pytest.raises(ValueError, match="Invalid 'init_J' parameter string"):
+        quadratic_assignment(A, B, options={'init_J': "random"})
+    with pytest.raises(
+            ValueError,
+            match="'init_weight' must be strictly between zero and one"):
+        quadratic_assignment(A, B, options={'init_weight': 2})
+    with pytest.raises(
+            ValueError, match="'init_k' must be a positive integer"):
+        quadratic_assignment(A, B, options={'init_k': -1})
+    with pytest.raises(
+            ValueError, match="'maxiter' must be a positive integer"):
+        quadratic_assignment(A, B, options={'maxiter': -1})
+    with pytest.raises(ValueError, match="'eps' must be a positive float"):
+        quadratic_assignment(A, B, options={'eps': -1})
+
+    # TypeError Checks: making sure single value parameters are of
+    # correct type
+    with pytest.raises(TypeError, match="'shuffle_input' must be a boolean"):
+        quadratic_assignment(A, B, options={'shuffle_input': "hey"})
+    with pytest.raises(TypeError, match="'maximize' must be a boolean"):
+        quadratic_assignment(A, B, maximize="hey")
+
+    with pytest.raises(TypeError):
+        quadratic_assignment(A, B, options={'init_k': 1.5})
+    with pytest.raises(TypeError):
+        quadratic_assignment(A, B, options={'maxiter': 1.5})
+
+    # test init matrix input
+    with pytest.raises(
+            ValueError,
+            match="`init_J` matrix must have same shape as A and B"):
+        quadratic_assignment(
+            np.identity(4), np.identity(4), options={'init_J': np.ones((3, 3))}
+        )
+    with pytest.raises(
+            ValueError, match="`init_J` matrix must be doubly stochastic"):
         quadratic_assignment(
             np.identity(3), np.identity(3), options={'init_J': np.ones((3, 3))}
         )
