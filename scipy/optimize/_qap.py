@@ -110,13 +110,15 @@ def quadratic_assignment(
                 iterations is sufficiently small, that is, when the Frobenius
                 norm of :math:`(P_{i}-P_{i+1}) \leq eps`, where :math:`i` is
                 the iteration number.
-            seed : {None, int, `~np.random.RandomState`, `~np.random.Generator`}
-                This parameter defines the object to use for drawing random variates.
-                If `seed` is `None` the `~np.random.RandomState` singleton is used.
-                If `seed` is an int, a new ``RandomState`` instance is used, seeded
-                with seed.
-                If `seed` is already a ``RandomState`` or ``Generator`` instance,
-                then that object is used.
+            seed : {None, int, `~np.random.RandomState`,`~np.random.Generator`}
+                This parameter defines the object to use for drawing random
+                variates.
+                If `seed` is `None` the `~np.random.RandomState` singleton is
+                used.
+                If `seed` is an int, a new ``RandomState`` instance is used,
+                seeded with seed.
+                If `seed` is already a ``RandomState`` or ``Generator``
+                instance, then that object is used.
                 Default is None.
 
     Returns
