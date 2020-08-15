@@ -1,7 +1,6 @@
 #2D matrices used for linear transformation in linear algebra 
 
 import numpy as np
-import math 
 
 
 def scaling(scaling_factor):
@@ -9,32 +8,35 @@ def scaling(scaling_factor):
 
 def rotation(angle):
 	arr = np.empty([2, 2])
-
-	arr[0][0] = math.cos(angle)
-	arr[0][1] = -math.sin(angle)
-	arr[1][0] = math.sin(angle)
-	arr[1][1] = math.cos(angle)
+	c = np.cos(angle)
+	s = np.sin(angle)
+	arr[0][0] = c
+	arr[0][1] = -s
+	arr[1][0] = s
+	arr[1][1] = c
 
 	return arr #This returns a rotation matrix
 
 	
 def projection(angle):
 	arr = np.empty([2, 2])
-
-	arr[0][0] = math.cos(angle)*math.cos(angle)
-	arr[0][1] = math.sin(angle)*math.cos(angle)
-	arr[1][0] = math.sin(angle)*math.cos(angle)
-	arr[1][1] = math.sin(angle)*math.sin(angle)
+	c = np.cos(angle)
+	s = np.sin(angle)
+	arr[0][0] = c*c
+	arr[0][1] = c*s
+	arr[1][0] = c*s
+	arr[1][1] = s*s
 
 	return arr #This returns a rotation matrix
 
 
 def reflection(angle):
 	arr = np.empty([2, 2])
-
-	arr[0][0] = (2*math.cos(angle)) -1
-	arr[0][1] = 2*math.sin(angle)*math.cos(angle)
-	arr[1][0] = 2*math.sin(angle)*math.cos(angle)
-	arr[1][1] = (2*math.sin(angle)) -1
+	c = np.cos(angle)
+	s = np.sin(angle)
+	arr[0][0] = (2*c) -1
+	arr[0][1] = 2*s*c
+	arr[1][0] = 2*s*c
+	arr[1][1] = (2*s) -1
 
 	return arr #This returns a reflection matrix
