@@ -3753,6 +3753,26 @@ def test_ttest_1samp_new():
     t, p = stats.ttest_1samp([0, 0, 0], 1)
     assert_equal((np.abs(t), p), (np.inf, 0))
 
+    # test alternative parameter
+    # Convert from two-sided p-values to one sided using T result data.
+    def convert(t, p, alt):
+        if (t < 0 and alt == "less") or (t > 0 and alt == "greater"):
+            return p / 2
+        return 1 - (p / 2)
+    converter = np.vectorize(convert)
+    tr, pr = stats.ttest_1samp(rvn1[:, :, :], 1)
+
+    t, p = stats.ttest_1samp(rvn1[:, :, :], 1, alternative="greater")
+    pc = converter(tr, pr, "greater")
+    assert_array_almost_equal(p, pc)
+    assert_array_almost_equal(t, tr)
+
+    t, p = stats.ttest_1samp(rvn1[:, :, :], 1, alternative="less")
+    pc = converter(tr, pr, "less")
+    assert_array_almost_equal(p, pc)
+    assert_array_almost_equal(t, tr)
+
+
     with np.errstate(all='ignore'):
         assert_equal(stats.ttest_1samp([0, 0, 0], 0), (np.nan, np.nan))
 
