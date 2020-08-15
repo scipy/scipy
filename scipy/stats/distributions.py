@@ -12,6 +12,7 @@ from . import _continuous_distns
 from . import _discrete_distns
 
 from ._continuous_distns import *
+from ._levy_stable_distn import levy_stable
 from ._discrete_distns import *
 
 # For backwards compatibility e.g. pymc expects distributions.__all__.
@@ -19,4 +20,5 @@ __all__ = ['entropy', 'rv_discrete', 'rv_continuous', 'rv_histogram']
 
 # Add only the distribution names, not the *_gen names.
 __all__ += _continuous_distns._distn_names
+__all__ += ['levy_stable']
 __all__ += _discrete_distns._distn_names
