@@ -874,17 +874,23 @@ def uniform_filter1d(input, size, axis=-1, output=None,
     array([4, 3, 4, 1, 4, 6, 6, 3])
     """
     input = numpy.asarray(input)
-    if numpy.iscomplexobj(input):
-        raise TypeError('Complex type not supported')
     axis = normalize_axis_index(axis, input.ndim)
     if size < 1:
         raise RuntimeError('incorrect filter size')
-    output = _ni_support._get_output(output, input)
+    complex_output = input.dtype.kind == 'c'
+    output = _ni_support._get_output(output, input,
+                                     complex_output=complex_output)
     if (size // 2 + origin < 0) or (size // 2 + origin >= size):
         raise ValueError('invalid origin')
     mode = _ni_support._extend_mode_to_code(mode)
-    _nd_image.uniform_filter1d(input, size, axis, output, mode, cval,
-                               origin)
+    if not complex_output:
+        _nd_image.uniform_filter1d(input, size, axis, output, mode, cval,
+                                   origin)
+    else:
+        _nd_image.uniform_filter1d(input.real, size, axis, output.real, mode,
+                                   cval, origin)
+        _nd_image.uniform_filter1d(input.imag, size, axis, output.imag, mode,
+                                   cval, origin)
     return output
 
 
@@ -933,7 +939,8 @@ def uniform_filter(input, size=3, output=None, mode="reflect",
     >>> plt.show()
     """
     input = numpy.asarray(input)
-    output = _ni_support._get_output(output, input)
+    output = _ni_support._get_output(output, input,
+                                     complex_output=input.dtype.kind == 'c')
     sizes = _ni_support._normalize_sequence(size, input.ndim)
     origins = _ni_support._normalize_sequence(origin, input.ndim)
     modes = _ni_support._normalize_sequence(mode, input.ndim)

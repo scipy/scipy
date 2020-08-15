@@ -808,6 +808,13 @@ class TestNdimageFilters:
         output = ndimage.uniform_filter1d(array, size, origin=-1)
         assert_array_almost_equal([3, 5, 6], output)
 
+    def test_uniform01_complex(self):
+        array = numpy.array([2 + 1j, 4 + 2j, 6 + 3j], dtype=numpy.complex128)
+        size = 2
+        output = ndimage.uniform_filter1d(array, size, origin=-1)
+        assert_array_almost_equal([3, 5, 6], output.real)
+        assert_array_almost_equal([1.5, 2.5, 3], output.imag)
+
     def test_uniform02(self):
         array = numpy.array([1, 2, 3])
         filter_shape = [0]
@@ -841,6 +848,17 @@ class TestNdimageFilters:
         output = ndimage.uniform_filter(
             array, filter_shape, output=dtype_output)
         assert_array_almost_equal([[4, 6, 10], [10, 12, 16]], output)
+        assert_equal(output.dtype.type, dtype_output)
+
+    @pytest.mark.parametrize('dtype_array', complex_types)
+    @pytest.mark.parametrize('dtype_output', complex_types)
+    def test_uniform06_complex(self, dtype_array, dtype_output):
+        filter_shape = [2, 2]
+        array = numpy.array([[4, 8 + 5j, 12],
+                             [16, 20, 24]], dtype_array)
+        output = ndimage.uniform_filter(
+            array, filter_shape, output=dtype_output)
+        assert_array_almost_equal([[4, 6, 10], [10, 12, 16]], output.real)
         assert_equal(output.dtype.type, dtype_output)
 
     def test_minimum_filter01(self):
