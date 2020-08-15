@@ -338,15 +338,12 @@ def generate_cython():
 
 def parse_setuppy_commands():
     """Check the commands and respond appropriately.  Disable broken commands.
-
-    Return a boolean value for whether or not to run the build or not (avoid
-    parsing Cython and template files if False).
     """
     args = sys.argv[1:]
 
     if not args:
         # User forgot to give an argument probably, let setuptools handle that.
-        return True
+        return
 
     info_commands = ['--help-commands', '--name', '--version', '-V',
                      '--fullname', '--author', '--author-email',
@@ -357,7 +354,7 @@ def parse_setuppy_commands():
 
     for command in info_commands:
         if command in args:
-            return False
+            return
 
     # Note that 'alias', 'saveopts' and 'setopt' commands also seem to work
     # fine as they are, but are usually used together with one of the commands
@@ -370,20 +367,6 @@ def parse_setuppy_commands():
     for command in good_commands:
         if command in args:
             return True
-
-    # The following commands are supported, but we need to show more
-    # useful messages to the user
-    if 'install' in args:
-        print(textwrap.dedent("""
-            Note: if you need reliable uninstall behavior, then install
-            with pip instead of using `setup.py install`:
-
-              - `pip install .`       (from a git repo or downloaded source
-                                       release)
-              - `pip install scipy`   (last SciPy release on PyPI)
-
-            """))
-        return True
 
     if '--help' in args or '-h' in sys.argv[1]:
         print(textwrap.dedent("""
@@ -401,7 +384,7 @@ def parse_setuppy_commands():
             Setuptools commands help
             ------------------------
             """))
-        return False
+        return
 
 
     # The following commands aren't supported.  They can only be executed when
@@ -423,6 +406,14 @@ def parse_setuppy_commands():
             """,
         upload_docs="`setup.py upload_docs` is not supported",
         easy_install="`setup.py easy_install` is not supported",
+        install="""
+            `setup.py install` is not supported, use one of the following instead:
+
+              - `pip install .`       (from a git repo or downloaded source
+                                       release)
+              - `pip install scipy`   (last SciPy release on PyPI)
+
+            """,
         clean="""
             `setup.py clean` is not supported, use one of the following instead:
 
@@ -454,14 +445,12 @@ def parse_setuppy_commands():
     other_commands = ['egg_info', 'install_egg_info', 'rotate']
     for command in other_commands:
         if command in args:
-            return False
+            return
 
     # If we got here, we didn't detect what setup.py command was given
     warnings.warn("Unrecognized setuptools command ('{}'), proceeding with "
                   "generating Cython sources and expanding templates".format(
                   ' '.join(sys.argv[1:])))
-    return True
-
 
 def configuration(parent_package='', top_path=None):
     from scipy._build_utils.system_info import get_info, NotFoundError
@@ -505,24 +494,6 @@ def setup_package():
     if HAVE_SPHINX:
         cmdclass['build_sphinx'] = ScipyBuildDoc
 
-    # Figure out whether to add ``*_requires = ['numpy']``.
-    # We don't want to do that unconditionally, because we risk updating
-    # an installed numpy which fails too often.  Just if it's not installed, we
-    # may give it a try.  See gh-3379.
-    try:
-        import numpy
-    except ImportError:  # We do not have numpy installed
-        build_requires = ['numpy>=1.14.5']
-    else:
-        # If we're building a wheel, assume there already exist numpy wheels
-        # for this platform, so it is safe to add numpy to build requirements.
-        # See gh-5184.
-        build_requires = (['numpy>=1.14.5'] if 'bdist_wheel' in sys.argv[1:]
-                          else [])
-
-    install_requires = build_requires
-    setup_requires = build_requires + ['pybind11>=2.4.3']
-
     metadata = dict(
         name='scipy',
         maintainer="SciPy Developers",
@@ -541,8 +512,9 @@ def setup_package():
         classifiers=[_f for _f in CLASSIFIERS.split('\n') if _f],
         platforms=["Windows", "Linux", "Solaris", "Mac OS-X", "Unix"],
         test_suite='nose.collector',
-        setup_requires=setup_requires,
-        install_requires=install_requires,
+        install_requires=[
+            'numpy>=1.14.5',
+        ],
         python_requires='>=3.6',
     )
 
@@ -551,7 +523,7 @@ def setup_package():
         sys.argv.remove('--force')
     else:
         # Raise errors for unsupported commands, improve help output, etc.
-        run_build = parse_setuppy_commands()
+        parse_setuppy_commands()
 
     # Disable OSX Accelerate, it has too old LAPACK
     os.environ['ACCELERATE'] = 'None'
@@ -561,27 +533,19 @@ def setup_package():
     # higher up in this file.
     from setuptools import setup
 
-    if run_build:
-        from numpy.distutils.core import setup
+    from numpy.distutils.core import setup
 
-        # Customize extension building
-        cmdclass['build_ext'] = get_build_ext_override()
-        cmdclass['build_clib'] = get_build_clib_override()
+    # Customize extension building
+    cmdclass['build_ext'] = get_build_ext_override()
+    cmdclass['build_clib'] = get_build_clib_override()
 
-        cwd = os.path.abspath(os.path.dirname(__file__))
-        if not os.path.exists(os.path.join(cwd, 'PKG-INFO')):
-            # Generate Cython sources, unless building from source release
-            generate_cython()
+    cwd = os.path.abspath(os.path.dirname(__file__))
+    if not os.path.exists(os.path.join(cwd, 'PKG-INFO')):
+        # Generate Cython sources, unless building from source release
+        generate_cython()
 
-        metadata['configuration'] = configuration
-    else:
-        # Don't import numpy here - non-build actions are required to succeed
-        # without NumPy for example when pip is used to install Scipy when
-        # NumPy is not yet present in the system.
-
-        # Version number is added to metadata inside configuration() if build
-        # is run.
-        metadata['version'] = get_version_info()[0]
+    metadata['configuration'] = configuration
+    metadata['version'] = get_version_info()[0]
 
     setup(**metadata)
 
