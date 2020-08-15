@@ -2,7 +2,6 @@
 
 import numpy as np
 
-
 def scaling(scaling_factor):
 	return(scaling_factor*(np.identity(2))) #This returns a scaling matrix
 
