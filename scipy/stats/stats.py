@@ -7552,10 +7552,11 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
         statistic = -2 * np.sum(np.log1p(-pvalues))
         pval = distributions.chi2.sf(statistic, 2 * len(pvalues))
     elif method == 'mudholkar_george':
+        normalizing_factor = np.sqrt(3/len(pvalues))/np.pi
         statistic = -np.sum(np.log(pvalues)) + np.sum(np.log1p(-pvalues))
         nu = 5 * len(pvalues) + 4
         approx_factor = np.sqrt(nu / (nu - 2))
-        pval = distributions.t.sf(statistic * approx_factor, nu)
+        pval = distributions.t.sf(statistic * normalizing_factor * approx_factor, nu)
     elif method == 'tippett':
         statistic = np.min(pvalues)
         pval = distributions.beta.sf(statistic, 1, len(pvalues))
