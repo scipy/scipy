@@ -1033,13 +1033,6 @@ class TestPareto(object):
         args = [data, (stats.pareto._fitstart(data), )]
         func = stats.pareto._reduce_func(args, {})[1]
 
-        def _assert_lessthan_loglike(dist, data, func, **kwds):
-            mle_analytical = dist.fit(data, **kwds)
-            numerical_opt = super(type(dist), dist).fit(data, **kwds)
-            ll_mle_analytical = func(mle_analytical, data)
-            ll_numerical_opt = func(numerical_opt, data)
-            assert ll_mle_analytical < ll_numerical_opt
-
         # fixed `floc` to actual location provides as good or better fit.
         _assert_lessthan_loglike(stats.pareto, data, func, floc=rvs_loc)
 
