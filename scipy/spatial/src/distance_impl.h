@@ -31,6 +31,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+#include "_c99compat.h"
 
 
 static NPY_INLINE void
@@ -425,6 +426,78 @@ compute_mean_vector(double *res, const double *X, npy_intp num_rows, const npy_i
 }
 #endif
 
+#define DEFINE_CDIST(name, type) \
+    static int cdist_ ## name ## _ ## type(const type *XA, const type *XB, \
+                                           double *dm,                     \
+                                           const npy_intp num_rowsA,       \
+                                           const npy_intp num_rowsB,       \
+                                           const npy_intp num_cols)        \
+    {                                                                      \
+        Py_ssize_t i, j;                                                   \
+        for (i = 0; i < num_rowsA; ++i) {                                  \
+            const type *u = XA + num_cols * i;                             \
+            for (j = 0; j < num_rowsB; ++j, ++dm) {                        \
+                const type *v = XB + num_cols * j;                         \
+                *dm = name ## _distance_ ## type(u, v, num_cols);          \
+            }                                                              \
+        }                                                                  \
+        return 0;\
+    }
+
+DEFINE_CDIST(bray_curtis, double)
+DEFINE_CDIST(canberra, double)
+DEFINE_CDIST(chebyshev, double)
+DEFINE_CDIST(city_block, double)
+DEFINE_CDIST(euclidean, double)
+DEFINE_CDIST(jaccard, double)
+DEFINE_CDIST(jensenshannon, double)
+DEFINE_CDIST(sqeuclidean, double)
+
+DEFINE_CDIST(dice, char)
+DEFINE_CDIST(jaccard, char)
+DEFINE_CDIST(kulsinski, char)
+DEFINE_CDIST(rogerstanimoto, char)
+DEFINE_CDIST(russellrao, char)
+DEFINE_CDIST(sokalmichener, char)
+DEFINE_CDIST(sokalsneath, char)
+DEFINE_CDIST(yule, char)
+
+
+#define DEFINE_PDIST(name, type) \
+    static int pdist_ ## name ## _ ## type(const type *X, double *dm,       \
+                                           const npy_intp num_rows,         \
+                                           const npy_intp num_cols)         \
+    {                                                                       \
+        Py_ssize_t i, j;                                                    \
+        double *it = dm;                                                    \
+        for (i = 0; i < num_rows; ++i) {                                    \
+            const type *u = X + num_cols * i;                               \
+            for (j = i + 1; j < num_rows; ++j, it++) {                      \
+                const type *v = X + num_cols * j;                           \
+                *it = name ## _distance_ ## type(u, v, num_cols);           \
+            }                                                               \
+        }                                                                   \
+        return 0; \
+    }
+
+DEFINE_PDIST(bray_curtis, double)
+DEFINE_PDIST(canberra, double)
+DEFINE_PDIST(chebyshev, double)
+DEFINE_PDIST(city_block, double)
+DEFINE_PDIST(euclidean, double)
+DEFINE_PDIST(jaccard, double)
+DEFINE_PDIST(jensenshannon, double)
+DEFINE_PDIST(sqeuclidean, double)
+
+DEFINE_PDIST(dice, char)
+DEFINE_PDIST(jaccard, char)
+DEFINE_PDIST(kulsinski, char)
+DEFINE_PDIST(rogerstanimoto, char)
+DEFINE_PDIST(russellrao, char)
+DEFINE_PDIST(sokalmichener, char)
+DEFINE_PDIST(sokalsneath, char)
+DEFINE_PDIST(yule, char)
+
 static NPY_INLINE int
 pdist_mahalanobis(const double *X, double *dm, const npy_intp num_rows,
                   const npy_intp num_cols, const double *covinv)
@@ -499,6 +572,15 @@ pdist_minkowski(const double *X, double *dm, npy_intp num_rows,
                 const npy_intp num_cols, const double p)
 {
     npy_intp i, j;
+    if (p == 1.0) {
+        return pdist_city_block_double(X, dm, num_rows, num_cols);
+    }
+    if (p == 2.0) {
+        return pdist_euclidean_double(X, dm, num_rows, num_cols);
+    }
+    if (sc_isinf(p)) {
+        return pdist_chebyshev_double(X, dm, num_rows, num_cols);
+    }
 
     for (i = 0; i < num_rows; ++i) {
         const double *u = X + (num_cols * i);
@@ -693,6 +775,15 @@ cdist_minkowski(const double *XA, const double *XB, double *dm,
                 const npy_intp num_cols, const double p)
 {
     npy_intp i, j;
+    if (p == 1.0) {
+        return cdist_city_block_double(XA, XB, dm, num_rowsA, num_rowsB, num_cols);
+    }
+    if (p == 2.0) {
+        return cdist_euclidean_double(XA, XB, dm, num_rowsA, num_rowsB, num_cols);
+    }
+    if (sc_isinf(p)) {
+        return cdist_chebyshev_double(XA, XB, dm, num_rowsA, num_rowsB, num_cols);
+    }
 
     for (i = 0; i < num_rowsA; ++i) {
         const double *u = XA + (num_cols * i);
@@ -757,75 +848,3 @@ cdist_hamming_char(const char *XA, const char *XB, double *dm,
     }
     return 0;
 }
-
-#define DEFINE_CDIST(name, type) \
-    static int cdist_ ## name ## _ ## type(const type *XA, const type *XB, \
-                                           double *dm,                     \
-                                           const npy_intp num_rowsA,       \
-                                           const npy_intp num_rowsB,       \
-                                           const npy_intp num_cols)        \
-    {                                                                      \
-        Py_ssize_t i, j;                                                   \
-        for (i = 0; i < num_rowsA; ++i) {                                  \
-            const type *u = XA + num_cols * i;                             \
-            for (j = 0; j < num_rowsB; ++j, ++dm) {                        \
-                const type *v = XB + num_cols * j;                         \
-                *dm = name ## _distance_ ## type(u, v, num_cols);          \
-            }                                                              \
-        }                                                                  \
-        return 0;\
-    }
-
-DEFINE_CDIST(bray_curtis, double)
-DEFINE_CDIST(canberra, double)
-DEFINE_CDIST(chebyshev, double)
-DEFINE_CDIST(city_block, double)
-DEFINE_CDIST(euclidean, double)
-DEFINE_CDIST(jaccard, double)
-DEFINE_CDIST(jensenshannon, double)
-DEFINE_CDIST(sqeuclidean, double)
-
-DEFINE_CDIST(dice, char)
-DEFINE_CDIST(jaccard, char)
-DEFINE_CDIST(kulsinski, char)
-DEFINE_CDIST(rogerstanimoto, char)
-DEFINE_CDIST(russellrao, char)
-DEFINE_CDIST(sokalmichener, char)
-DEFINE_CDIST(sokalsneath, char)
-DEFINE_CDIST(yule, char)
-
-
-#define DEFINE_PDIST(name, type) \
-    static int pdist_ ## name ## _ ## type(const type *X, double *dm,       \
-                                           const npy_intp num_rows,         \
-                                           const npy_intp num_cols)         \
-    {                                                                       \
-        Py_ssize_t i, j;                                                    \
-        double *it = dm;                                                    \
-        for (i = 0; i < num_rows; ++i) {                                    \
-            const type *u = X + num_cols * i;                               \
-            for (j = i + 1; j < num_rows; ++j, it++) {                      \
-                const type *v = X + num_cols * j;                           \
-                *it = name ## _distance_ ## type(u, v, num_cols);           \
-            }                                                               \
-        }                                                                   \
-        return 0; \
-    }
-
-DEFINE_PDIST(bray_curtis, double)
-DEFINE_PDIST(canberra, double)
-DEFINE_PDIST(chebyshev, double)
-DEFINE_PDIST(city_block, double)
-DEFINE_PDIST(euclidean, double)
-DEFINE_PDIST(jaccard, double)
-DEFINE_PDIST(jensenshannon, double)
-DEFINE_PDIST(sqeuclidean, double)
-
-DEFINE_PDIST(dice, char)
-DEFINE_PDIST(jaccard, char)
-DEFINE_PDIST(kulsinski, char)
-DEFINE_PDIST(rogerstanimoto, char)
-DEFINE_PDIST(russellrao, char)
-DEFINE_PDIST(sokalmichener, char)
-DEFINE_PDIST(sokalsneath, char)
-DEFINE_PDIST(yule, char)

@@ -407,9 +407,9 @@ class LocalSearchWrapper(object):
         # Run local search from the given x location where energy value is e
         x_tmp = np.copy(x)
         mres = self.minimizer(self.func_wrapper.fun, x, **self.kwargs)
-        if 'njev' in mres.keys():
+        if 'njev' in mres:
             self.func_wrapper.ngev += mres.njev
-        if 'nhev' in mres.keys():
+        if 'nhev' in mres:
             self.func_wrapper.nhev += mres.nhev
         # Check if is valid value
         is_finite = np.all(np.isfinite(mres.x)) and np.isfinite(mres.fun)

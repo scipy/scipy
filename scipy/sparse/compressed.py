@@ -1046,7 +1046,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
     def eliminate_zeros(self):
         """Remove zero entries from the matrix
 
-        This is an *in place* operation
+        This is an *in place* operation.
         """
         M, N = self._swap(self.shape)
         _sparsetools.csr_eliminate_zeros(M, N, self.indptr, self.indices,
@@ -1085,7 +1085,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
     def sum_duplicates(self):
         """Eliminate duplicate matrix entries by adding them together
 
-        The is an *in place* operation
+        This is an *in place* operation.
         """
         if self.has_canonical_format:
             return

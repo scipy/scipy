@@ -34,6 +34,7 @@ import warnings
 import numpy
 from numpy.core.multiarray import normalize_axis_index
 
+from scipy import special
 from . import _ni_support
 from . import _nd_image
 from ._ni_docstrings import docfiller
@@ -730,8 +731,7 @@ def rotate(input, angle, axes=(1, 0), reshape=True, output=None, order=3,
 
     axes.sort()
 
-    angle_rad = numpy.deg2rad(angle)
-    c, s = numpy.cos(angle_rad), numpy.sin(angle_rad)
+    c, s = special.cosdg(angle), special.sindg(angle)
 
     rot_matrix = numpy.array([[c, s],
                               [-s, c]])
