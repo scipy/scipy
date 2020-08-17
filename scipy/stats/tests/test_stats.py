@@ -3334,11 +3334,11 @@ def test_ttest_rel():
     # test alternative parameter
     assert_raises(ValueError, stats.ttest_rel, rvs1, rvs2, alternative="error")
 
-    t,p = stats.ttest_rel(rvs1, rvs2, axis=0, alternative="less")
+    t, p = stats.ttest_rel(rvs1, rvs2, axis=0, alternative="less")
     assert_array_almost_equal(p, 1 - pr/2)
     assert_array_almost_equal(t, tr)
 
-    t,p = stats.ttest_rel(rvs1, rvs2, axis=0, alternative="greater")
+    t, p = stats.ttest_rel(rvs1, rvs2, axis=0, alternative="greater")
     assert_array_almost_equal(p, pr/2)
     assert_array_almost_equal(t, tr)
 
@@ -3771,7 +3771,6 @@ def test_ttest_1samp_new():
     pc = converter(tr, pr, "less")
     assert_array_almost_equal(p, pc)
     assert_array_almost_equal(t, tr)
-
 
     with np.errstate(all='ignore'):
         assert_equal(stats.ttest_1samp([0, 0, 0], 0), (np.nan, np.nan))
