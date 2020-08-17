@@ -7485,26 +7485,18 @@ def _confint_lowerbound(n, quantile, confidence):
 
     .. versionadded:: 1.6.0
     """
+
     # compute all probabilities from the binomial distribution for the quantile of interest
     bd = binom(n, quantile)
+
+    # the lower bound is the last index before the invert survival function value for
+    # the target confidence level
     lb = bd.isf(confidence) - 1
 
-    if lb < 0:
+    if lb < 0:  # isf returns -1 if there are no matching index
         return None
     else:
         return int(lb)
-
-    # ppm = [np.maximum(1-x, 0.0) for x in np.cumsum([bd.pmf(k) for k in range(n)])]
-    #
-    # # search the index defining the lower-bound
-    # if ppm[0] < confidence:
-    #     return None
-    # else:
-    #     for k in range(n):
-    #         # search for first index reaching below the desired confidence
-    #         if ppm[k] < confidence:
-    #             # lower-bound is the previous index
-    #             return k-1
 
 
 def confint_quantile(x, quantile, confidence, type='one-sided'):
@@ -7562,8 +7554,6 @@ def confint_quantile(x, quantile, confidence, type='one-sided'):
 
           * 'one-sided' : computes the best possible one-sided confidence intervals (both lower and upper bounds) for the given quantile.
           * 'two-sided' : computes a two-sided confidence interval by combination of two one-sided intervals. E.g., a 90% two-sided interval is computed by combining two 95% one-sided intervals
-    verbose : bool, optional
-        Enable verbose outputs, default is False
 
     Returns
     -------
@@ -7574,7 +7564,7 @@ def confint_quantile(x, quantile, confidence, type='one-sided'):
         * a two-sided confidence interval (if ``type=two-sided``)
 
         `None` is returned when there are not enough samples to compute
-        the confidence interval
+        the confidence interval with the desired level of confidence.
     UB : float or int  or None
         value or index of the upper bound of
 
@@ -7582,7 +7572,7 @@ def confint_quantile(x, quantile, confidence, type='one-sided'):
         * a two-sided confidence interval (if ``type=two-sided``)
 
         `None` is returned when there are not enough samples to compute
-        the confidence interval
+        the confidence interval with the desired level of confidence.
 
     Notes
     -----
