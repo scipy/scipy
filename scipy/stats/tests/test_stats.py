@@ -5027,7 +5027,7 @@ class TestCombinePvalues(object):
     def test_tippett(self):
         Z, p = stats.combine_pvalues([.01, .2, .3], method='tippett')
         assert_approx_equal(p, 0.970299, significant=4)
-        
+
     def test_mudholkar_george(self):
         Z, p = stats.combine_pvalues([.1, .1, .1], method='mudholkar_george')
         assert_approx_equal(p, 0.019462, significant=4)
