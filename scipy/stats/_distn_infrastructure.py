@@ -16,7 +16,6 @@ from scipy._lib import doccer
 from scipy._lib._util import _lazywhere
 from ._distr_params import distcont, distdiscrete
 from scipy._lib._util import check_random_state
-from scipy._lib._util import _valarray as valarray
 
 from scipy.special import (comb, chndtr, entr, rel_entr, xlogy, ive)
 
@@ -1093,7 +1092,7 @@ class rv_generic(object):
         args = tuple(map(asarray, args))
         cond = self._argcheck(*args) & (scale > 0) & (loc == loc)
         output = []
-        default = valarray(shape(cond), self.badvalue)
+        default = np.full(shape(cond), fill_value=self.badvalue)
 
         # Use only entries that are valid in calculation
         if np.any(cond):
@@ -2079,7 +2078,7 @@ class rv_continuous(rv_generic):
         cond2 = cond0 & (q == 0)
         cond3 = cond0 & (q == 1)
         cond = cond0 & cond1
-        output = valarray(shape(cond), value=self.badvalue)
+        output = np.full(shape(cond), fill_value=self.badvalue)
 
         lower_bound = _a * scale + loc
         upper_bound = _b * scale + loc
@@ -2125,7 +2124,7 @@ class rv_continuous(rv_generic):
         cond2 = cond0 & (q == 1)
         cond3 = cond0 & (q == 0)
         cond = cond0 & cond1
-        output = valarray(shape(cond), value=self.badvalue)
+        output = np.full(shape(cond), fill_value=self.badvalue)
 
         lower_bound = _a * scale + loc
         upper_bound = _b * scale + loc
@@ -3339,7 +3338,7 @@ class rv_discrete(rv_generic):
         cond1 = (q > 0) & (q < 1)
         cond2 = (q == 1) & cond0
         cond = cond0 & cond1
-        output = valarray(shape(cond), value=self.badvalue, typecode='d')
+        output = np.full(shape(cond), fill_value=self.badvalue, dtype='d')
         # output type 'd' to handle nin and inf
         place(output, (q == 0)*(cond == cond), _a-1 + loc)
         place(output, cond2, _b + loc)
@@ -3382,7 +3381,7 @@ class rv_discrete(rv_generic):
         cond = cond0 & cond1
 
         # same problem as with ppf; copied from ppf and changed
-        output = valarray(shape(cond), value=self.badvalue, typecode='d')
+        output = np.full(shape(cond), fill_value=self.badvalue, dtype='d')
         # output type 'd' to handle nin and inf
         place(output, (q == 0)*(cond == cond), _b)
         place(output, cond2, _a-1)

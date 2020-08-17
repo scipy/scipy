@@ -675,6 +675,20 @@ class TestTruncnorm(object):
                                 random_state=np.random.default_rng())
 
 
+class TestGenLogistic:
+
+    # Expected values computed with mpmath with 50 digits of precision.
+    @pytest.mark.parametrize('x, expected', [(-1000, -1499.5945348918917),
+                                             (-125, -187.09453489189184),
+                                             (0, -1.3274028432916989),
+                                             (100, -99.59453489189184),
+                                             (1000, -999.5945348918918)])
+    def test_logpdf(self, x, expected):
+        c = 1.5
+        logp = stats.genlogistic.logpdf(x, c)
+        assert_allclose(logp, expected, rtol=1e-13)
+
+
 class TestHypergeom(object):
     def setup_method(self):
         np.random.seed(1234)
@@ -854,6 +868,20 @@ class TestLogistic(object):
         desired = 34.53957599234088
         assert_allclose(stats.logistic.ppf(1 - p), desired)
         assert_allclose(stats.logistic.isf(p), desired)
+
+    def test_logpdf_basic(self):
+        logp = stats.logistic.logpdf([-15, 0, 10])
+        # Expected values computed with mpmath with 50 digits of precision.
+        expected = [-15.000000611804547,
+                    -1.3862943611198906,
+                    -10.000090797798434]
+        assert_allclose(logp, expected, rtol=1e-13)
+
+    def test_logpdf_extreme_values(self):
+        logp = stats.logistic.logpdf([800, -800])
+        # For such large arguments, logpdf(x) = -abs(x) when computed
+        # with 64 bit floating point.
+        assert_equal(logp, [-800, -800])
 
 
 class TestLogser(object):

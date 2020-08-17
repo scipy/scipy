@@ -1170,6 +1170,112 @@ subroutine <prefix>gglse_lwork(m,n,p,a,lda,b,ldb,c,d,x,work,lwork,info)
 
 end subroutine <prefix>gglse_lwork
 
+subroutine <prefix>ppcon(lower,n,ap,anorm,rcond,work,irwork,info,L)
+    ! ?PPCON estimates the reciprocal of the condition number (in the
+    ! 1-norm) of a symmetric/Hermitian positive definite packed matrix using
+    ! the Cholesky factorization A = U**T*U or A = L*L**T computed by
+    ! DPPTRF.
+    !
+    ! An estimate is obtained for norm(inv(A)), and the reciprocal of the
+    ! condition number is computed as RCOND = 1 / (ANORM * norm(inv(A))).
+    threadsafe
+    callstatement (*f2py_func)((lower?"L":"U"),&n,ap,&anorm,&rcond,work,irwork,&info)
+    callprotoargument char*,F_INT*,<ctype>*,<ctypereal>*,<ctypereal>*,<ctype>*,<F_INT,F_INT,float,double>*,F_INT*
+ 
+    integer optional,intent(in),check(lower==0||lower==1) :: lower = 0
+    integer intent(in),check(n>=0) :: n
+    <ftype> dimension(L),intent(in) :: ap
+    integer intent(hide),depend(ap,n),check(L>=(n*(n+1)/2)) :: L = len(ap)
+    <ftypereal> intent(in):: anorm
+    <ftypereal> intent(out):: rcond
+    <ftype> depend(n),dimension(<3*n,3*n,2*n,2*n>),intent(hide,cache):: work
+    <integer,integer,real, double precision> dimension(n), intent(hide,cache),depend(n) :: irwork
+    integer intent(out):: info
+ 
+end subroutine <prefix>ppcon
+
+subroutine <prefix>ppsv(lower,n,nrhs,ap,b,ldb,info,L)
+    ! DPPSV computes the solution to a real system of linear equations
+    !    A * X = B,
+    ! where A is an N-by-N symmetric positive definite matrix stored in
+    ! packed format and X and B are N-by-NRHS matrices.
+    !
+    ! The Cholesky decomposition is used to factor A as
+    !    A = U**T* U,  if UPLO = 'U', or
+    !    A = L * L**T,  if UPLO = 'L',
+    ! where U is an upper triangular matrix and L is a lower triangular
+    ! matrix.  The factored form of A is then used to solve the system of
+    ! equations A * X = B.
+    threadsafe
+    callstatement (*f2py_func)((lower?"L":"U"),&n,&nrhs,ap,b,&ldb,&info)
+    callprotoargument char*,F_INT*,F_INT*,<ctype>*,<ctype>*,F_INT*,F_INT*
+    
+    integer optional,intent(in),check(lower==0||lower==1) :: lower = 0
+    integer intent(in),check(n>=0) :: n
+    integer intent(hide),depend(b) :: ldb = max(1, shape(b,0))
+    integer intent(hide),depend(b) :: nrhs = shape(b,1)
+    <ftype> dimension(L),intent(in) :: ap
+    integer intent(hide),depend(ap,n),check(L>=(n*(n+1)/2)) :: L = len(ap)
+    <ftype> dimension(ldb,nrhs),intent(in,out,copy,out=x) :: b
+    integer intent(out) :: info
+
+end subroutine <prefix>ppsv
+
+subroutine <prefix>pptrf(lower,n,ap,info,L)
+    ! ?PPTRF computes the Cholesky factorization of a symmetric/hermitian
+    ! positive definite matrix A stored in packed format.
+    ! 
+    ! The factorization has the form
+    !    A = U**T * U,  if UPLO = 'U', or
+    !    A = L  * L**T,  if UPLO = 'L',
+    ! where U is an upper triangular matrix and L is lower triangular.
+    threadsafe
+    callstatement (*f2py_func)((lower?"L":"U"),&n,ap,&info)
+    callprotoargument char*,F_INT*,<ctype>*,F_INT*
+    
+    integer optional,intent(in),check(lower==0||lower==1) :: lower = 0
+    integer intent(in),check(n>=0) :: n
+    <ftype> dimension(L),intent(in,out,copy,out=ul) :: ap
+    integer intent(hide),depend(ap,n),check(L>=(n*(n+1)/2)) :: L = len(ap)
+    integer intent(out) :: info
+
+end subroutine<prefix>pptrf
+
+subroutine <prefix>pptri(lower,n,ap,info,L)
+    ! ?PPTRI computes the inverse of a symmetric/Hermitian positive definite
+    ! matrix A using the Cholesky factorization A = U**T*U or A = L*L**T
+    ! computed by ?PPTRF.
+    threadsafe
+    callstatement (*f2py_func)((lower?"L":"U"),&n,ap,&info)
+    callprotoargument char*,F_INT*,<ctype>*,F_INT*
+    
+    integer optional,intent(in),check(lower==0||lower==1) :: lower = 0
+    integer intent(in),check(n>=0) :: n
+    <ftype> dimension(L),intent(in,out,copy,out=uli) :: ap
+    integer intent(hide),depend(ap,n),check(L>=(n*(n+1)/2)) :: L = len(ap)
+    integer intent(out) :: info
+
+end subroutine<prefix>pptri
+
+subroutine <prefix>pptrs(lower,n,nrhs,ap,b,ldb,info,L)
+    ! DPPTRS solves a system of linear equations A*X = B with a symmetric
+    ! positive definite matrix A in packed storage using the Cholesky
+    ! factorization A = U**T*U or A = L*L**T computed by DPPTRF.
+    threadsafe
+    callstatement (*f2py_func)((lower?"L":"U"),&n,&nrhs,ap,b,&ldb,&info)
+    callprotoargument char*,F_INT*,F_INT*,<ctype>*,<ctype>*,F_INT*,F_INT*
+    
+    integer optional,intent(in),check(lower==0||lower==1) :: lower = 0
+    integer intent(in),check(n>=0) :: n
+    integer intent(hide),depend(b) :: ldb = max(1, shape(b,0))
+    integer intent(hide),depend(b) :: nrhs = shape(b,1)
+    <ftype> dimension(L),intent(in) :: ap
+    integer intent(hide),depend(ap,n),check(L>=(n*(n+1)/2)) :: L = len(ap)
+    <ftype> dimension(ldb,nrhs),intent(in,out,copy,out=x) :: b
+    integer intent(out) :: info
+
+end subroutine <prefix>pptrs
+
 subroutine <prefix2>sbev(ab,compute_v,lower,n,ldab,kd,w,z,ldz,work,info)
     ! in :Band:dsbev.f
     ! principally <s,d>sbevd does the same, and are recommended for use.
