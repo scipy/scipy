@@ -356,7 +356,7 @@ def cvm_test(rvs, cdf, args=()):
     return cvm_testResult(w, p)
 
   
-  def _get_wilcoxon_distr(n):
+def _get_wilcoxon_distr(n):
     """
     Distribution of counts of the Wilcoxon ranksum statistic r_plus (sum of
     ranks of positive differences).
