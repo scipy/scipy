@@ -285,8 +285,7 @@ def splrep(x, y, w=None, xb=None, xe=None, k=3, task=0, s=None, t=None,
     >>> plt.plot(x, y, 'o', x2, y2)
     >>> plt.show()
 
-    Further examples are given
-    :ref:`in the tutorial <tutorial-interpolate_splXXX>`.
+    Further example is given :ref:`in the tutorial <tutorial-interpolate_splXXX>`.
 
     """
     res = _impl.splrep(x, y, w, xb, xe, k, task, s, t, full_output, per, quiet)
