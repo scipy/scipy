@@ -29,6 +29,7 @@ import scipy.stats.distributions
 from scipy.special import xlogy
 from .test_continuous_basic import distcont
 from scipy.stats._continuous_distns import FitDataError
+from scipy.optimize import root
 
 # python -OO strips docstrings
 DOCSTRINGS_STRIPPED = sys.flags.optimize > 1
@@ -896,6 +897,44 @@ class TestLogser(object):
         assert_allclose(m, 1.000000005)
 
 
+class TestGumbel_r(object):
+    def setup_method(self):
+        np.random.seed(1234)
+
+    @pytest.mark.parametrize("loc_rvs,scale_rvs", [np.random.rand(2)])
+    def test_fit(self, loc_rvs, scale_rvs):
+        data = stats.gumbel_r.rvs(size=100, loc=loc_rvs, scale=scale_rvs)
+
+        # test that result of fit method is the same as optimization
+        def func(vals, data):
+            a, b = vals
+            ndata = len(data)
+            x1 = data.mean() - ((np.sum(data * np.exp(- data / b))) /
+                                np.sum(np.exp(- data / b))) - b
+            x2 = - b * np.log(np.sum(np.exp(-data / b)) / ndata) - a
+            return x1, x2
+
+        expected_solution = root(func, stats.gumbel_r._fitstart(data), args=(
+            data,)).x
+        fit_method = stats.gumbel_r.fit(data)
+
+        # other than computational variances, the fit method and the solution
+        # to this system of equations are equal
+        assert_allclose(fit_method, expected_solution, atol=1e-30)
+
+    @pytest.mark.parametrize("loc_rvs,scale_rvs", [np.random.rand(2)])
+    def test_fit_comp_optimizer(self, loc_rvs, scale_rvs):
+        data = stats.gumbel_r.rvs(size=100, loc=loc_rvs, scale=scale_rvs)
+
+        # obtain objective function to compare results of the fit methods
+        args = [data, (stats.gumbel_r._fitstart(data),)]
+        func = stats.gumbel_r._reduce_func(args, {})[1]
+
+        # test that gumbel_r fit method is better than super method
+        _assert_lessthan_loglike(stats.gumbel_r, data, func)
+
+
+
 class TestPareto(object):
     def test_stats(self):
         # Check the stats() method with some simple values. Also check
@@ -1002,13 +1041,6 @@ class TestPareto(object):
         args = [data, (stats.pareto._fitstart(data), )]
         func = stats.pareto._reduce_func(args, {})[1]
 
-        def _assert_lessthan_loglike(dist, data, func, **kwds):
-            mle_analytical = dist.fit(data, **kwds)
-            numerical_opt = super(type(dist), dist).fit(data, **kwds)
-            ll_mle_analytical = func(mle_analytical, data)
-            ll_numerical_opt = func(numerical_opt, data)
-            assert ll_mle_analytical < ll_numerical_opt
-
         # fixed `floc` to actual location provides as good or better fit.
         _assert_lessthan_loglike(stats.pareto, data, func, floc=rvs_loc)
 
@@ -1043,6 +1075,14 @@ class TestPareto(object):
         assert_raises(FitDataError, stats.pareto.fit, [1, 2, 3], floc=2)
         assert_raises(FitDataError, stats.pareto.fit, [5, 2, 3], floc=1,
                       fscale=3)
+
+
+def _assert_lessthan_loglike(dist, data, func, **kwds):
+    mle_analytical = dist.fit(data, **kwds)
+    numerical_opt = super(type(dist), dist).fit(data, **kwds)
+    ll_mle_analytical = func(mle_analytical, data)
+    ll_numerical_opt = func(numerical_opt, data)
+    assert ll_mle_analytical < ll_numerical_opt
 
 
 class TestGenpareto(object):
