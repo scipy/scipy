@@ -1,4 +1,3 @@
-from __future__ import division, print_function, absolute_import
 import numpy as np
 from .base import OdeSolver, DenseOutput
 from .common import (validate_max_step, validate_tol, select_initial_step,
@@ -29,7 +28,7 @@ def rk_step(fun, t, y, f, h, A, B, C, K):
     y : ndarray, shape (n,)
         Current state.
     f : ndarray, shape (n,)
-        Current value of the derivative, i.e. ``fun(x, y)``.
+        Current value of the derivative, i.e., ``fun(x, y)``.
     h : float
         Step to use.
     A : ndarray, shape (n_stages, n_stages)
@@ -212,11 +211,11 @@ class RK23(RungeKutta):
         Initial step size. Default is ``None`` which means that the algorithm
         should choose.
     max_step : float, optional
-        Maximum allowed step size. Default is np.inf, i.e. the step size is not
+        Maximum allowed step size. Default is np.inf, i.e., the step size is not
         bounded and determined solely by the solver.
     rtol, atol : float and array_like, optional
         Relative and absolute tolerances. The solver keeps the local error
-        estimates less than ``atol + rtol * abs(y)``. Here `rtol` controls a
+        estimates less than ``atol + rtol * abs(y)``. Here, `rtol` controls a
         relative accuracy (number of correct digits). But if a component of `y`
         is approximately below `atol`, the error only needs to fall within
         the same `atol` threshold, and the number of correct digits is not
@@ -291,7 +290,7 @@ class RK45(RungeKutta):
         Here ``t`` is a scalar, and there are two options for the ndarray ``y``:
         It can either have shape (n,); then ``fun`` must return array_like with
         shape (n,). Alternatively it can have shape (n, k); then ``fun``
-        must return an array_like with shape (n, k), i.e. each column
+        must return an array_like with shape (n, k), i.e., each column
         corresponds to a single column in ``y``. The choice between the two
         options is determined by `vectorized` argument (see below).
     t0 : float
@@ -305,7 +304,7 @@ class RK45(RungeKutta):
         Initial step size. Default is ``None`` which means that the algorithm
         should choose.
     max_step : float, optional
-        Maximum allowed step size. Default is np.inf, i.e. the step size is not
+        Maximum allowed step size. Default is np.inf, i.e., the step size is not
         bounded and determined solely by the solver.
     rtol, atol : float and array_like, optional
         Relative and absolute tolerances. The solver keeps the local error
@@ -396,7 +395,7 @@ class DOP853(RungeKutta):
     ----------
     fun : callable
         Right-hand side of the system. The calling signature is ``fun(t, y)``.
-        Here ``t`` is a scalar, and there are two options for the ndarray ``y``:
+        Here, ``t`` is a scalar, and there are two options for the ndarray ``y``:
         It can either have shape (n,); then ``fun`` must return array_like with
         shape (n,). Alternatively it can have shape (n, k); then ``fun``
         must return an array_like with shape (n, k), i.e. each column
@@ -496,9 +495,10 @@ class DOP853(RungeKutta):
     def _estimate_error_norm(self, K, h, scale):
         err5 = np.dot(K.T, self.E5) / scale
         err3 = np.dot(K.T, self.E3) / scale
-
-        err5_norm_2 = np.sum(err5**2)
-        err3_norm_2 = np.sum(err3**2)
+        err5_norm_2 = np.linalg.norm(err5)**2
+        err3_norm_2 = np.linalg.norm(err3)**2
+        if err5_norm_2 == 0 and err3_norm_2 == 0:
+            return 0.0
         denom = err5_norm_2 + 0.01 * err3_norm_2
         return np.abs(h) * err5_norm_2 / np.sqrt(denom * len(scale))
 

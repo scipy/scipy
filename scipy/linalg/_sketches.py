@@ -3,11 +3,9 @@
 # Author: Jordi Montes <jomsdev@gmail.com>
 # August 28, 2017
 
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 
-from scipy._lib._util import check_random_state
+from scipy._lib._util import check_random_state, rng_integers
 from scipy.sparse import csc_matrix
 
 __all__ = ['clarkson_woodruff_transform']
@@ -28,7 +26,7 @@ def cwt_matrix(n_rows, n_columns, seed=None):
         Number of rows of S
     n_columns: int
         Number of columns of S
-    seed : None or int or `numpy.random.mtrand.RandomState` instance, optional
+    seed : None or int or `numpy.random.RandomState` instance, optional
         This parameter defines the ``RandomState`` object to use for drawing
         random variates.
         If None (or ``np.random``), the global ``np.random`` state is used.
@@ -47,7 +45,7 @@ def cwt_matrix(n_rows, n_columns, seed=None):
     Where the error epsilon is related to the size of S.
     """
     rng = check_random_state(seed)
-    rows = rng.randint(0, n_rows, n_columns)
+    rows = rng_integers(rng, 0, n_rows, n_columns)
     cols = np.arange(n_columns+1)
     signs = rng.choice([1, -1], n_columns)
     S = csc_matrix((signs, rows, cols),shape=(n_rows, n_columns))
@@ -72,7 +70,7 @@ def clarkson_woodruff_transform(input_matrix, sketch_size, seed=None):
         Input matrix, of shape ``(n, d)``.
     sketch_size: int
         Number of rows for the sketch.
-    seed : None or int or `numpy.random.mtrand.RandomState` instance, optional
+    seed : None or int or `numpy.random.RandomState` instance, optional
         This parameter defines the ``RandomState`` object to use for drawing
         random variates.
         If None (or ``np.random``), the global ``np.random`` state is used.

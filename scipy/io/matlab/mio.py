@@ -3,9 +3,7 @@ Module for reading and writing matlab (TM) .mat files
 """
 # Authors: Travis Oliphant, Matthew Brett
 
-from __future__ import division, print_function, absolute_import
 from contextlib import contextmanager
-from scipy._lib.six import string_types
 
 from .miobase import get_matfile_version, docfiller
 from .mio4 import MatFile4Reader, MatFile4Writer
@@ -17,9 +15,11 @@ __all__ = ['mat_reader_factory', 'loadmat', 'savemat', 'whosmat']
 @contextmanager
 def _open_file_context(file_like, appendmat, mode='rb'):
     f, opened = _open_file(file_like, appendmat, mode)
-    yield f
-    if opened:
-        f.close()
+    try:
+        yield f
+    finally:
+        if opened:
+            f.close()
 
 
 def _open_file(file_like, appendmat, mode='rb'):
@@ -37,14 +37,16 @@ def _open_file(file_like, appendmat, mode='rb'):
 
     try:
         return open(file_like, mode), True
-    except IOError:
+    except IOError as e:
         # Probably "not found"
-        if isinstance(file_like, string_types):
+        if isinstance(file_like, str):
             if appendmat and not file_like.endswith('.mat'):
                 file_like += '.mat'
             return open(file_like, mode), True
         else:
-            raise IOError('Reader needs file name or open file-like object')
+            raise IOError(
+                'Reader needs file name or open file-like object'
+            ) from e
 
 
 @docfiller
@@ -111,10 +113,10 @@ def loadmat(file_name, mdict=None, appendmat=True, **kwargs):
        squeeze_me=False, chars_as_strings=False, mat_dtype=True,
        struct_as_record=True).
     struct_as_record : bool, optional
-       Whether to load MATLAB structs as numpy record arrays, or as
-       old-style numpy arrays with dtype=object.  Setting this flag to
+       Whether to load MATLAB structs as NumPy record arrays, or as
+       old-style NumPy arrays with dtype=object. Setting this flag to
        False replicates the behavior of scipy version 0.7.x (returning
-       numpy object arrays).  The default setting is True, because it
+       NumPy object arrays). The default setting is True, because it
        allows easier round-trip load and save of MATLAB files.
     verify_compressed_data_integrity : bool, optional
         Whether the length of compressed sequences in the MATLAB file
@@ -123,11 +125,17 @@ def loadmat(file_name, mdict=None, appendmat=True, **kwargs):
         compressed sequences in MATLAB files generally indicate that the
         files have experienced some sort of corruption.
     variable_names : None or sequence
-        If None (the default) - read all variables in file. Otherwise
+        If None (the default) - read all variables in file. Otherwise,
         `variable_names` should be a sequence of strings, giving names of the
-        MATLAB variables to read from the file.  The reader will skip any
+        MATLAB variables to read from the file. The reader will skip any
         variable with a name not in this sequence, possibly saving some read
         processing.
+    simplify_cells : False, optional
+        If True, return a simplified dict structure (which is useful if the mat
+        file contains cell arrays). Note that this only affects the structure
+        of the result and not its contents (which is identical for both output
+        structures). If True, this automatically sets `struct_as_record` to
+        False and `squeeze_me` to True, which is required to simplify cells.
 
     Returns
     -------
@@ -139,8 +147,8 @@ def loadmat(file_name, mdict=None, appendmat=True, **kwargs):
     -----
     v4 (Level 1.0), v6 and v7 to 7.2 matfiles are supported.
 
-    You will need an HDF5 python library to read MATLAB 7.3 format mat
-    files.  Because scipy does not supply one, we do not implement the
+    You will need an HDF5 Python library to read MATLAB 7.3 format mat
+    files. Because SciPy does not supply one, we do not implement the
     HDF5 / 7.3 interface here.
 
     Examples
@@ -258,10 +266,21 @@ def savemat(file_name, mdict,
         True - maximum field name length in a structure is 63 characters
         which works for MATLAB 7.6+.
     do_compression : bool, optional
-        Whether or not to compress matrices on write.  Default is False.
+        Whether or not to compress matrices on write. Default is False.
     oned_as : {'row', 'column'}, optional
-        If 'column', write 1-D numpy arrays as column vectors.
-        If 'row', write 1-D numpy arrays as row vectors.
+        If 'column', write 1-D NumPy arrays as column vectors.
+        If 'row', write 1-D NumPy arrays as row vectors.
+
+    Examples
+    --------
+    >>> from scipy.io import savemat
+    >>> a = np.arange(20)
+    >>> mdic = {"a": a, "label": "experiment"}
+    >>> mdic
+    {'a': array([ 0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15, 16,
+        17, 18, 19]),
+    'label': 'experiment'}
+    >>> savemat("matlab_matrix.mat", mdic)
     """
     with _open_file_context(file_name, appendmat, 'wb') as file_stream:
         if format == '4':
@@ -305,7 +324,7 @@ def whosmat(file_name, appendmat=True, **kwargs):
     v4 (Level 1.0), v6 and v7 to 7.2 matfiles are supported.
 
     You will need an HDF5 python library to read matlab 7.3 format mat
-    files.  Because scipy does not supply one, we do not implement the
+    files. Because SciPy does not supply one, we do not implement the
     HDF5 / 7.3 interface here.
 
     .. versionadded:: 0.12.0

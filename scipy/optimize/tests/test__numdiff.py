@@ -1,5 +1,3 @@
-from __future__ import division
-
 import math
 from itertools import product
 
@@ -199,6 +197,20 @@ class TestApproxDerivativesDense(object):
         assert_allclose(jac_diff_3, jac_true, rtol=1e-9)
         assert_allclose(jac_diff_4, jac_true, rtol=1e-12)
 
+    def test_scalar_scalar_abs_step(self):
+        # can approx_derivative use abs_step?
+        x0 = 1.0
+        jac_diff_2 = approx_derivative(self.fun_scalar_scalar, x0,
+                                       method='2-point', abs_step=1.49e-8)
+        jac_diff_3 = approx_derivative(self.fun_scalar_scalar, x0,
+                                       abs_step=1.49e-8)
+        jac_diff_4 = approx_derivative(self.fun_scalar_scalar, x0,
+                                       method='cs', abs_step=1.49e-8)
+        jac_true = self.jac_scalar_scalar(x0)
+        assert_allclose(jac_diff_2, jac_true, rtol=1e-6)
+        assert_allclose(jac_diff_3, jac_true, rtol=1e-9)
+        assert_allclose(jac_diff_4, jac_true, rtol=1e-12)
+
     def test_scalar_vector(self):
         x0 = 0.5
         jac_diff_2 = approx_derivative(self.fun_scalar_vector, x0,
@@ -221,6 +233,20 @@ class TestApproxDerivativesDense(object):
         jac_true = self.jac_vector_scalar(x0)
         assert_allclose(jac_diff_2, jac_true, rtol=1e-6)
         assert_allclose(jac_diff_3, jac_true, rtol=1e-7)
+        assert_allclose(jac_diff_4, jac_true, rtol=1e-12)
+
+    def test_vector_scalar_abs_step(self):
+        # can approx_derivative use abs_step?
+        x0 = np.array([100.0, -0.5])
+        jac_diff_2 = approx_derivative(self.fun_vector_scalar, x0,
+                                       method='2-point', abs_step=1.49e-8)
+        jac_diff_3 = approx_derivative(self.fun_vector_scalar, x0,
+                                       abs_step=1.49e-8, rel_step=np.inf)
+        jac_diff_4 = approx_derivative(self.fun_vector_scalar, x0,
+                                       method='cs', abs_step=1.49e-8)
+        jac_true = self.jac_vector_scalar(x0)
+        assert_allclose(jac_diff_2, jac_true, rtol=1e-6)
+        assert_allclose(jac_diff_3, jac_true, rtol=3e-9)
         assert_allclose(jac_diff_4, jac_true, rtol=1e-12)
 
     def test_vector_vector(self):
@@ -596,3 +622,56 @@ class TestApproxDerivativeLinearOperator(object):
         assert_raises(ValueError, approx_derivative,
                       self.fun_vector_vector, x0,
                       method='2-point', bounds=(1, np.inf))
+
+
+def test_absolute_step():
+    # test for gh12487
+    # if an absolute step is specified for 2-point differences make sure that
+    # the side corresponds to the step. i.e. if step is positive then forward
+    # differences should be used, if step is negative then backwards
+    # differences should be used.
+
+    # function has double discontinuity at x = [-1, -1]
+    # first component is \/, second component is /\
+    def f(x):
+        return -np.abs(x[0] + 1) + np.abs(x[1] + 1)
+
+    # check that the forward difference is used
+    grad = approx_derivative(f, [-1, -1], method='2-point', abs_step=1e-8)
+    assert_allclose(grad, [-1.0, 1.0])
+
+    # check that the backwards difference is used
+    grad = approx_derivative(f, [-1, -1], method='2-point', abs_step=-1e-8)
+    assert_allclose(grad, [1.0, -1.0])
+
+    # check that the forwards difference is used with a step for both
+    # parameters
+    grad = approx_derivative(
+        f, [-1, -1], method='2-point', abs_step=[1e-8, 1e-8]
+    )
+    assert_allclose(grad, [-1.0, 1.0])
+
+    # check that we can mix forward/backwards steps.
+    grad = approx_derivative(
+        f, [-1, -1], method='2-point', abs_step=[1e-8, -1e-8]
+     )
+    assert_allclose(grad, [-1.0, -1.0])
+    grad = approx_derivative(
+        f, [-1, -1], method='2-point', abs_step=[-1e-8, 1e-8]
+    )
+    assert_allclose(grad, [1.0, 1.0])
+
+    # the forward step should reverse to a backwards step if it runs into a
+    # bound
+    # This is kind of tested in TestAdjustSchemeToBounds, but only for a lower level
+    # function.
+    grad = approx_derivative(
+        f, [-1, -1], method='2-point', abs_step=1e-8,
+        bounds=(-np.inf, -1)
+    )
+    assert_allclose(grad, [1.0, -1.0])
+
+    grad = approx_derivative(
+        f, [-1, -1], method='2-point', abs_step=-1e-8, bounds=(-1, np.inf)
+    )
+    assert_allclose(grad, [-1.0, 1.0])

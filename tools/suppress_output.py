@@ -12,8 +12,6 @@ When the command exits with any other return code, print all output
 produced by the command and exit with the same return code.
 
 """
-from __future__ import division, absolute_import, print_function
-
 import sys
 import os
 import re
@@ -88,10 +86,7 @@ def main():
 
         if ret != 0:
             log.seek(0)
-            if sys.version_info[0] >= 3:
-                shutil.copyfileobj(log, sys.stdout.buffer)
-            else:
-                shutil.copyfileobj(log, sys.stdout)
+            shutil.copyfileobj(log, sys.stdout.buffer)
 
     sys.exit(ret)
 
@@ -187,8 +182,8 @@ def test_suppress_long_ok(tmpdir):
                                            'sys.exit(0)')
     assert returncode == 0
     assert out == b''
-    assert re.match(b'^    \.\.\. in progress \([0-9 sminh]* elapsed\)\n'
-                    b'    \.\.\. ok \([0-9 sminh]* elapsed\)\n$', err,
+    assert re.match(rb'^    \.\.\. in progress \([0-9 sminh]* elapsed\)\n'
+                    rb'    \.\.\. ok \([0-9 sminh]* elapsed\)\n$', err,
                     re.S)
 
 
@@ -202,8 +197,8 @@ def test_suppress_long_failed(tmpdir):
                                            'sys.exit(1)')
     assert returncode == 1
     assert out == b'OUTERR'
-    assert re.match(b'^    \.\.\. in progress \([0-9 sminh]* elapsed\)\n'
-                    b'    \.\.\. failed \([0-9 sminh]* elapsed, exit code 1\)\n$', err,
+    assert re.match(rb'^    \.\.\. in progress \([0-9 sminh]* elapsed\)\n'
+                    rb'    \.\.\. failed \([0-9 sminh]* elapsed, exit code 1\)\n$', err,
                     re.S)
 
 

@@ -1,4 +1,3 @@
-from __future__ import division, print_function, absolute_import
 from collections import namedtuple
 import numpy as np
 import warnings
@@ -6,6 +5,7 @@ from . import distributions
 from ._continuous_distns import chi2
 from scipy.special import gamma, kv, gammaln
 from scipy._lib.six import string_types
+from . import _wilcoxon_data
 
 
 Epps_Singleton_2sampResult = namedtuple('Epps_Singleton_2sampResult',
@@ -354,3 +354,19 @@ def cvm_test(rvs, cdf, args=()):
         p = max(0, 1. - _cdf_cvm(w, n))
 
     return cvm_testResult(w, p)
+
+  
+  def _get_wilcoxon_distr(n):
+    """
+    Distribution of counts of the Wilcoxon ranksum statistic r_plus (sum of
+    ranks of positive differences).
+    Returns an array with the counts/frequencies of all the possible ranks
+    r = 0, ..., n*(n+1)/2
+    """
+    cnt = _wilcoxon_data.COUNTS.get(n)
+
+    if cnt is None:
+        raise ValueError("The exact distribution of the Wilcoxon test "
+                         "statistic is not implemented for n={}".format(n))
+
+    return np.array(cnt, dtype=int)

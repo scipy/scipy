@@ -1,7 +1,6 @@
 import numpy as np
 from numpy.linalg import lstsq
 from numpy.testing import assert_allclose, assert_equal, assert_
-from pytest import raises as assert_raises
 
 from scipy.sparse import rand
 from scipy.sparse.linalg import aslinearoperator
@@ -66,6 +65,14 @@ class BaseMixin(object):
             res = lsq_linear(A, b, (lb, ub), method=self.method,
                              lsq_solver=lsq_solver)
             assert_allclose(res.x, np.array([0.005236663400791, -4]))
+
+    def test_np_matrix(self):
+        # gh-10711
+        with np.testing.suppress_warnings() as sup:
+            sup.filter(PendingDeprecationWarning)
+            A = np.matrix([[20, -4, 0, 2, 3], [10, -2, 1, 0, -1]])
+        k = np.array([20, 15])
+        s_t = lsq_linear(A, k)
 
     def test_dense_rank_deficient(self):
         A = np.array([[-0.307, -0.184]])

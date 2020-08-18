@@ -1,6 +1,5 @@
 ''' Contexts for *with* statement providing temporary directories
 '''
-from __future__ import division, print_function, absolute_import
 import os
 from contextlib import contextmanager
 from shutil import rmtree

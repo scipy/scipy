@@ -1,7 +1,5 @@
 # Created by John Travers, Robert Hetland, 2007
 """ Test functions for rbf module """
-from __future__ import division, print_function, absolute_import
-
 
 import numpy as np
 from numpy.testing import (assert_, assert_array_almost_equal,
@@ -54,7 +52,7 @@ def test_rbf_interpolation():
 
 
 def check_2drbf1d_interpolation(function):
-    # Check that the 2-dim Rbf function interpolates through the nodes (1D)
+    # Check that the 2-D Rbf function interpolates through the nodes (1D)
     x = linspace(0, 10, 9)
     y0 = sin(x)
     y1 = cos(x)
@@ -66,7 +64,7 @@ def check_2drbf1d_interpolation(function):
 
 
 def check_2drbf2d_interpolation(function):
-    # Check that the 2-dim Rbf function interpolates through the nodes (2D).
+    # Check that the 2-D Rbf function interpolates through the nodes (2D).
     x = random.rand(50, ) * 4 - 2
     y = random.rand(50, ) * 4 - 2
     z0 = x * exp(-x ** 2 - 1j * y ** 2)
@@ -79,7 +77,7 @@ def check_2drbf2d_interpolation(function):
 
 
 def check_2drbf3d_interpolation(function):
-    # Check that the 2-dim Rbf function interpolates through the nodes (3D).
+    # Check that the 2-D Rbf function interpolates through the nodes (3D).
     x = random.rand(50, ) * 4 - 2
     y = random.rand(50, ) * 4 - 2
     z = random.rand(50, ) * 4 - 2
@@ -107,12 +105,6 @@ def check_rbf1d_regularity(function, atol):
     rbf = Rbf(x, y, function=function)
     xi = linspace(0, 10, 100)
     yi = rbf(xi)
-    # import matplotlib.pyplot as plt
-    # plt.figure()
-    # plt.plot(x, y, 'o', xi, sin(xi), ':', xi, yi, '-')
-    # plt.plot(x, y, 'o', xi, yi-sin(xi), ':')
-    # plt.title(function)
-    # plt.show()
     msg = "abs-diff: %f" % abs(yi - sin(xi)).max()
     assert_(allclose(yi, sin(xi), atol=atol), msg)
 
@@ -132,7 +124,7 @@ def test_rbf_regularity():
 
 
 def check_2drbf1d_regularity(function, atol):
-    # Check that the 2-dim Rbf function approximates a smooth function well away
+    # Check that the 2-D Rbf function approximates a smooth function well away
     # from the nodes.
     x = linspace(0, 10, 9)
     y0 = sin(x)
@@ -160,10 +152,10 @@ def test_2drbf_regularity():
 
 
 def check_rbf1d_stability(function):
-    # Check that the Rbf function with default epsilon is not subject 
-    # to overshoot.  Regression for issue #4523.
+    # Check that the Rbf function with default epsilon is not subject
+    # to overshoot. Regression for issue #4523.
     #
-    # Generate some data (fixed random seed hence deterministic) 
+    # Generate some data (fixed random seed hence deterministic)
     np.random.seed(1234)
     x = np.linspace(0, 10, 50)
     z = x + 4.0 * np.random.randn(len(x))
@@ -216,7 +208,7 @@ def test_two_arg_function_is_callable():
 def test_rbf_epsilon_none():
     x = linspace(0, 10, 9)
     y = sin(x)
-    rbf = Rbf(x, y, epsilon=None)
+    Rbf(x, y, epsilon=None)
 
 
 def test_rbf_epsilon_none_collinear():

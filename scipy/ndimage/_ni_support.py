@@ -28,11 +28,8 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from __future__ import division, print_function, absolute_import
-
+from collections.abc import Iterable
 import numpy
-
-from scipy._lib.six import string_types
 
 
 def _extend_mode_to_code(mode):
@@ -57,8 +54,8 @@ def _normalize_sequence(input, rank):
     rank by duplicating the input. If input is a sequence,
     check if its length is equal to the length of array.
     """
-    is_str = isinstance(input, string_types)
-    if hasattr(input, '__iter__') and not is_str:
+    is_str = isinstance(input, str)
+    if not is_str and isinstance(input, Iterable):
         normalized = list(input)
         if len(normalized) != rank:
             err = "sequence argument must have length equal to input rank"
@@ -76,17 +73,9 @@ def _get_output(output, input, shape=None):
     elif isinstance(output, (type, numpy.dtype)):
         # Classes (like `np.float32`) and dtypes are interpreted as dtype
         output = numpy.zeros(shape, dtype=output)
-    elif isinstance(output, string_types):
+    elif isinstance(output, str):
         output = numpy.typeDict[output]
         output = numpy.zeros(shape, dtype=output)
     elif output.shape != shape:
         raise RuntimeError("output shape not correct")
     return output
-
-
-def _check_axis(axis, rank):
-    if axis < 0:
-        axis += rank
-    if axis < 0 or axis >= rank:
-        raise ValueError('invalid axis')
-    return axis

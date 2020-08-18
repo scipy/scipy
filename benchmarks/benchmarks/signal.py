@@ -1,5 +1,3 @@
-from __future__ import division, absolute_import, print_function
-
 from itertools import product
 
 import numpy as np

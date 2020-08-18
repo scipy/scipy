@@ -17,7 +17,6 @@
 #include <numpy/ndarrayobject.h>
 
 #include "_superluobject.h"
-#include "numpy/npy_3kcompat.h"
 
 
 /*
@@ -308,8 +307,6 @@ static PyMethodDef SuperLU_Methods[] = {
     {NULL, NULL}
 };
 
-#if PY_VERSION_HEX >= 0x03000000
-
 static struct PyModuleDef moduledef = {
     PyModuleDef_HEAD_INIT,
     "_superlu",
@@ -348,31 +345,3 @@ PyObject *PyInit__superlu(void)
 
     return m;
 }
-
-#else
-
-PyMODINIT_FUNC init_superlu(void)
-{
-    PyObject *m, *d;
-
-    import_array();
-
-    SuperLUType.ob_type = &PyType_Type;
-    if (PyType_Ready(&SuperLUType) < 0) {
-	return;
-    }
-
-    SuperLUGlobalType.ob_type = &PyType_Type;
-    if (PyType_Ready(&SuperLUGlobalType) < 0) {
-	return;
-    }
-
-    m = Py_InitModule("_superlu", SuperLU_Methods);
-    d = PyModule_GetDict(m);
-
-    Py_INCREF(&PyArrayFlags_Type);
-    PyDict_SetItemString(d, "SuperLU",
-			 (PyObject *) & SuperLUType);
-}
-
-#endif

@@ -1,5 +1,3 @@
-from __future__ import division, absolute_import, print_function
-
 import queue
 import threading
 import multiprocessing
@@ -39,50 +37,64 @@ class TestFFT1D(object):
 
     def test_fft(self):
         x = random(30) + 1j*random(30)
-        assert_array_almost_equal(fft1(x), fft.fft(x))
-        assert_array_almost_equal(fft1(x) / np.sqrt(30),
+        expect = fft1(x)
+        assert_array_almost_equal(expect, fft.fft(x))
+        assert_array_almost_equal(expect, fft.fft(x, norm="backward"))
+        assert_array_almost_equal(expect / np.sqrt(30),
                                   fft.fft(x, norm="ortho"))
+        assert_array_almost_equal(expect / 30, fft.fft(x, norm="forward"))
 
     def test_ifft(self):
         x = random(30) + 1j*random(30)
         assert_array_almost_equal(x, fft.ifft(fft.fft(x)))
-        assert_array_almost_equal(
-            x, fft.ifft(fft.fft(x, norm="ortho"), norm="ortho"))
+        for norm in ["backward", "ortho", "forward"]:
+            assert_array_almost_equal(
+                x, fft.ifft(fft.fft(x, norm=norm), norm=norm))
 
     def test_fft2(self):
         x = random((30, 20)) + 1j*random((30, 20))
-        assert_array_almost_equal(fft.fft(fft.fft(x, axis=1), axis=0),
-                                  fft.fft2(x))
-        assert_array_almost_equal(fft.fft2(x) / np.sqrt(30 * 20),
+        expect = fft.fft(fft.fft(x, axis=1), axis=0)
+        assert_array_almost_equal(expect, fft.fft2(x))
+        assert_array_almost_equal(expect, fft.fft2(x, norm="backward"))
+        assert_array_almost_equal(expect / np.sqrt(30 * 20),
                                   fft.fft2(x, norm="ortho"))
+        assert_array_almost_equal(expect / (30 * 20),
+                                  fft.fft2(x, norm="forward"))
 
     def test_ifft2(self):
         x = random((30, 20)) + 1j*random((30, 20))
-        assert_array_almost_equal(fft.ifft(fft.ifft(x, axis=1), axis=0),
-                                  fft.ifft2(x))
-        assert_array_almost_equal(fft.ifft2(x) * np.sqrt(30 * 20),
+        expect = fft.ifft(fft.ifft(x, axis=1), axis=0)
+        assert_array_almost_equal(expect, fft.ifft2(x))
+        assert_array_almost_equal(expect, fft.ifft2(x, norm="backward"))
+        assert_array_almost_equal(expect * np.sqrt(30 * 20),
                                   fft.ifft2(x, norm="ortho"))
+        assert_array_almost_equal(expect * (30 * 20),
+                                  fft.ifft2(x, norm="forward"))
 
     def test_fftn(self):
         x = random((30, 20, 10)) + 1j*random((30, 20, 10))
-        assert_array_almost_equal(
-            fft.fft(fft.fft(fft.fft(x, axis=2), axis=1), axis=0),
-            fft.fftn(x))
-        assert_array_almost_equal(fft.fftn(x) / np.sqrt(30 * 20 * 10),
+        expect = fft.fft(fft.fft(fft.fft(x, axis=2), axis=1), axis=0)
+        assert_array_almost_equal(expect, fft.fftn(x))
+        assert_array_almost_equal(expect, fft.fftn(x, norm="backward"))
+        assert_array_almost_equal(expect / np.sqrt(30 * 20 * 10),
                                   fft.fftn(x, norm="ortho"))
+        assert_array_almost_equal(expect / (30 * 20 * 10),
+                                  fft.fftn(x, norm="forward"))
 
     def test_ifftn(self):
         x = random((30, 20, 10)) + 1j*random((30, 20, 10))
-        assert_array_almost_equal(
-            fft.ifft(fft.ifft(fft.ifft(x, axis=2), axis=1), axis=0),
-            fft.ifftn(x))
+        expect = fft.ifft(fft.ifft(fft.ifft(x, axis=2), axis=1), axis=0)
+        assert_array_almost_equal(expect, fft.ifftn(x))
+        assert_array_almost_equal(expect, fft.ifftn(x, norm="backward"))
         assert_array_almost_equal(fft.ifftn(x) * np.sqrt(30 * 20 * 10),
                                   fft.ifftn(x, norm="ortho"))
+        assert_array_almost_equal(expect * (30 * 20 * 10),
+                                  fft.ifftn(x, norm="forward"))
 
     def test_rfft(self):
-        x = random(30)
+        x = random(29)
         for n in [x.size, 2*x.size]:
-            for norm in [None, 'ortho']:
+            for norm in [None, "backward", "ortho", "forward"]:
                 assert_array_almost_equal(
                     fft.fft(x, n=n, norm=norm)[:(n//2 + 1)],
                     fft.rfft(x, n=n, norm=norm))
@@ -92,73 +104,98 @@ class TestFFT1D(object):
     def test_irfft(self):
         x = random(30)
         assert_array_almost_equal(x, fft.irfft(fft.rfft(x)))
-        assert_array_almost_equal(
-            x, fft.irfft(fft.rfft(x, norm="ortho"), norm="ortho"))
+        for norm in ["backward", "ortho", "forward"]:
+            assert_array_almost_equal(
+                x, fft.irfft(fft.rfft(x, norm=norm), norm=norm))
 
     def test_rfft2(self):
         x = random((30, 20))
-        assert_array_almost_equal(fft.fft2(x)[:, :11], fft.rfft2(x))
-        assert_array_almost_equal(fft.rfft2(x) / np.sqrt(30 * 20),
+        expect = fft.fft2(x)[:, :11]
+        assert_array_almost_equal(expect, fft.rfft2(x))
+        assert_array_almost_equal(expect, fft.rfft2(x, norm="backward"))
+        assert_array_almost_equal(expect / np.sqrt(30 * 20),
                                   fft.rfft2(x, norm="ortho"))
+        assert_array_almost_equal(expect / (30 * 20),
+                                  fft.rfft2(x, norm="forward"))
 
     def test_irfft2(self):
         x = random((30, 20))
         assert_array_almost_equal(x, fft.irfft2(fft.rfft2(x)))
-        assert_array_almost_equal(
-            x, fft.irfft2(fft.rfft2(x, norm="ortho"), norm="ortho"))
+        for norm in ["backward", "ortho", "forward"]:
+            assert_array_almost_equal(
+                x, fft.irfft2(fft.rfft2(x, norm=norm), norm=norm))
 
     def test_rfftn(self):
         x = random((30, 20, 10))
-        assert_array_almost_equal(fft.fftn(x)[:, :, :6], fft.rfftn(x))
-        assert_array_almost_equal(fft.rfftn(x) / np.sqrt(30 * 20 * 10),
+        expect = fft.fftn(x)[:, :, :6]
+        assert_array_almost_equal(expect, fft.rfftn(x))
+        assert_array_almost_equal(expect, fft.rfftn(x, norm="backward"))
+        assert_array_almost_equal(expect / np.sqrt(30 * 20 * 10),
                                   fft.rfftn(x, norm="ortho"))
+        assert_array_almost_equal(expect / (30 * 20 * 10),
+                                  fft.rfftn(x, norm="forward"))
 
     def test_irfftn(self):
         x = random((30, 20, 10))
         assert_array_almost_equal(x, fft.irfftn(fft.rfftn(x)))
-        assert_array_almost_equal(
-            x, fft.irfftn(fft.rfftn(x, norm="ortho"), norm="ortho"))
+        for norm in ["backward", "ortho", "forward"]:
+            assert_array_almost_equal(
+                x, fft.irfftn(fft.rfftn(x, norm=norm), norm=norm))
 
     def test_hfft(self):
         x = random(14) + 1j*random(14)
         x_herm = np.concatenate((random(1), x, random(1)))
         x = np.concatenate((x_herm, x[::-1].conj()))
-        assert_array_almost_equal(fft.fft(x), fft.hfft(x_herm))
-        assert_array_almost_equal(fft.hfft(x_herm) / np.sqrt(30),
+        expect = fft.fft(x)
+        assert_array_almost_equal(expect, fft.hfft(x_herm))
+        assert_array_almost_equal(expect, fft.hfft(x_herm, norm="backward"))
+        assert_array_almost_equal(expect / np.sqrt(30),
                                   fft.hfft(x_herm, norm="ortho"))
+        assert_array_almost_equal(expect / 30,
+                                  fft.hfft(x_herm, norm="forward"))
 
     def test_ihfft(self):
         x = random(14) + 1j*random(14)
         x_herm = np.concatenate((random(1), x, random(1)))
         x = np.concatenate((x_herm, x[::-1].conj()))
         assert_array_almost_equal(x_herm, fft.ihfft(fft.hfft(x_herm)))
-        assert_array_almost_equal(
-            x_herm, fft.ihfft(fft.hfft(x_herm, norm="ortho"),
-                                 norm="ortho"))
+        for norm in ["backward", "ortho", "forward"]:
+            assert_array_almost_equal(
+                x_herm, fft.ihfft(fft.hfft(x_herm, norm=norm), norm=norm))
 
     def test_hfft2(self):
         x = random((30, 20))
         assert_array_almost_equal(x, fft.hfft2(fft.ihfft2(x)))
-        assert_array_almost_equal(
-            x, fft.hfft2(fft.ihfft2(x, norm="ortho"), norm="ortho"))
+        for norm in ["backward", "ortho", "forward"]:
+            assert_array_almost_equal(
+                x, fft.hfft2(fft.ihfft2(x, norm=norm), norm=norm))
 
     def test_ihfft2(self):
         x = random((30, 20))
-        assert_array_almost_equal(fft.ifft2(x)[:, :11], fft.ihfft2(x))
-        assert_array_almost_equal(fft.ihfft2(x) * np.sqrt(30 * 20),
+        expect = fft.ifft2(x)[:, :11]
+        assert_array_almost_equal(expect, fft.ihfft2(x))
+        assert_array_almost_equal(expect, fft.ihfft2(x, norm="backward"))
+        assert_array_almost_equal(expect * np.sqrt(30 * 20),
                                   fft.ihfft2(x, norm="ortho"))
+        assert_array_almost_equal(expect * (30 * 20),
+                                  fft.ihfft2(x, norm="forward"))
 
     def test_hfftn(self):
         x = random((30, 20, 10))
         assert_array_almost_equal(x, fft.hfftn(fft.ihfftn(x)))
-        assert_array_almost_equal(
-            x, fft.hfftn(fft.ihfftn(x, norm="ortho"), norm="ortho"))
+        for norm in ["backward", "ortho", "forward"]:
+            assert_array_almost_equal(
+                x, fft.hfftn(fft.ihfftn(x, norm=norm), norm=norm))
 
     def test_ihfftn(self):
         x = random((30, 20, 10))
-        assert_array_almost_equal(fft.ifftn(x)[:, :, :6], fft.ihfftn(x))
-        assert_array_almost_equal(fft.ihfftn(x) * np.sqrt(30 * 20 * 10),
+        expect = fft.ifftn(x)[:, :, :6]
+        assert_array_almost_equal(expect, fft.ihfftn(x))
+        assert_array_almost_equal(expect, fft.ihfftn(x, norm="backward"))
+        assert_array_almost_equal(expect * np.sqrt(30 * 20 * 10),
                                   fft.ihfftn(x, norm="ortho"))
+        assert_array_almost_equal(expect * (30 * 20 * 10),
+                                  fft.ihfftn(x, norm="forward"))
 
     @pytest.mark.parametrize("op", [fft.fftn, fft.ifftn,
                                     fft.rfftn, fft.irfftn,
@@ -202,7 +239,7 @@ class TestFFT1D(object):
                       ]
         for forw, back in func_pairs:
             for n in [x.size, 2*x.size]:
-                for norm in [None, 'ortho']:
+                for norm in ['backward', 'ortho', 'forward']:
                     tmp = forw(x, n=n, norm=norm)
                     tmp = back(tmp, n=n, norm=norm)
                     assert_array_almost_equal(x_norm,
@@ -306,6 +343,7 @@ class TestFFTThreadSafe(object):
 @pytest.mark.parametrize("func", [fft.fft, fft.ifft, fft.rfft, fft.irfft])
 def test_multiprocess(func):
     # Test that fft still works after fork (gh-10422)
+
     with multiprocessing.Pool(2) as p:
         res = p.map(func, [np.ones(100) for _ in range(4)])
 

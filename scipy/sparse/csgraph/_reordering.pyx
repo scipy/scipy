@@ -2,8 +2,6 @@
 # Original Source: QuTiP: Quantum Toolbox in Python (qutip.org)
 # License: New BSD, (C) 2014
 
-from __future__ import absolute_import
-
 import numpy as np
 cimport numpy as np
 from warnings import warn

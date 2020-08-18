@@ -1,10 +1,8 @@
-from __future__ import division, print_function, absolute_import
-
 import pytest
 
 import numpy as np
 from numpy.testing import assert_equal, assert_array_almost_equal
-from numpy.testing import assert_allclose
+from numpy.testing import assert_allclose, assert_array_less
 from scipy.spatial.transform import Rotation, Slerp
 from scipy.stats import special_ortho_group
 from itertools import permutations
@@ -315,6 +313,99 @@ def test_rotvec_calc_pipeline():
         [-3e-4, 3.5e-4, 7.5e-5]
         ])
     assert_allclose(Rotation.from_rotvec(rotvec).as_rotvec(), rotvec)
+
+
+def test_from_1d_single_mrp():
+    mrp = [0, 0, 1.0]
+    expected_quat = np.array([0, 0, 1, 0])
+    result = Rotation.from_mrp(mrp)
+    assert_array_almost_equal(result.as_quat(), expected_quat)
+
+
+def test_from_2d_single_mrp():
+    mrp = [[0, 0, 1.0]]
+    expected_quat = np.array([[0, 0, 1, 0]])
+    result = Rotation.from_mrp(mrp)
+    assert_array_almost_equal(result.as_quat(), expected_quat)
+
+
+def test_from_generic_mrp():
+    mrp = np.array([
+        [1, 2, 2],
+        [1, -1, 0.5],
+        [0, 0, 0]])
+    expected_quat = np.array([
+        [0.2, 0.4, 0.4, -0.8],
+        [0.61538462, -0.61538462, 0.30769231, -0.38461538],
+        [0, 0, 0, 1]])
+    assert_array_almost_equal(Rotation.from_mrp(mrp).as_quat(), expected_quat)
+
+
+def test_malformed_1d_from_mrp():
+    with pytest.raises(ValueError, match='Expected `mrp` to have shape'):
+        Rotation.from_mrp([1, 2])
+
+
+def test_malformed_2d_from_mrp():
+    with pytest.raises(ValueError, match='Expected `mrp` to have shape'):
+        Rotation.from_mrp([
+            [1, 2, 3, 4],
+            [5, 6, 7, 8]
+            ])
+
+
+def test_as_generic_mrp():
+    quat = np.array([
+        [1, 2, -1, 0.5],
+        [1, -1, 1, 0.0003],
+        [0, 0, 0, 1]])
+    quat /= np.linalg.norm(quat, axis=1)[:, None]
+
+    expected_mrp = np.array([
+        [0.33333333, 0.66666667, -0.33333333],
+        [0.57725028, -0.57725028, 0.57725028],
+        [0, 0, 0]])
+    assert_array_almost_equal(Rotation.from_quat(quat).as_mrp(), expected_mrp)
+
+def test_past_180_degree_rotation():
+    # ensure that a > 180 degree rotation is returned as a <180 rotation in MRPs
+    # in this case 270 should be returned as -90
+    expected_mrp = np.array([-np.tan(np.pi/2/4), 0.0, 0])
+    assert_array_almost_equal(Rotation.from_euler('xyz', [270, 0, 0], degrees=True).as_mrp(), expected_mrp)
+
+
+def test_as_mrp_single_1d_input():
+    quat = np.array([1, 2, -3, 2])
+    expected_mrp = np.array([0.16018862, 0.32037724, -0.48056586])
+
+    actual_mrp = Rotation.from_quat(quat).as_mrp()
+
+    assert_equal(actual_mrp.shape, (3,))
+    assert_allclose(actual_mrp, expected_mrp)
+
+
+def test_as_mrp_single_2d_input():
+    quat = np.array([[1, 2, -3, 2]])
+    expected_mrp = np.array([[0.16018862, 0.32037724, -0.48056586]])
+
+    actual_mrp = Rotation.from_quat(quat).as_mrp()
+
+    assert_equal(actual_mrp.shape, (1, 3))
+    assert_allclose(actual_mrp, expected_mrp)
+
+
+def test_mrp_calc_pipeline():
+    actual_mrp = np.array([
+        [0, 0, 0],
+        [1, -1, 2],
+        [0.41421356, 0, 0],
+        [0.1, 0.2, 0.1]])
+    expected_mrp = np.array([
+        [0, 0, 0],
+        [-0.16666667, 0.16666667, -0.33333333],
+        [0.41421356, 0, 0],
+        [0.1, 0.2, 0.1]])
+    assert_allclose(Rotation.from_mrp(actual_mrp).as_mrp(), expected_mrp)
 
 
 def test_from_euler_single_rotation():
@@ -637,14 +728,22 @@ def test_single_identity_magnitude():
 def test_identity_invariance():
     n = 10
     p = Rotation.random(n)
-    result = p * Rotation.identity(n) * p.inv()
+
+    result = p * Rotation.identity(n)
+    assert_array_almost_equal(p.as_quat(), result.as_quat())
+
+    result = result * p.inv()
     assert_array_almost_equal(result.magnitude(), np.zeros(n))
 
 
 def test_single_identity_invariance():
     n = 10
     p = Rotation.random(n)
-    result = p * Rotation.identity() * p.inv()
+
+    result = p * Rotation.identity()
+    assert_array_almost_equal(p.as_quat(), result.as_quat())
+
+    result = result * p.inv()
     assert_array_almost_equal(result.magnitude(), np.zeros(n))
 
 
@@ -848,9 +947,9 @@ def test_getitem():
     ])
     r = Rotation.from_matrix(mat)
 
-    assert_allclose(r[0].as_matrix(), mat[0])
-    assert_allclose(r[1].as_matrix(), mat[1])
-    assert_allclose(r[:-1].as_matrix(), np.expand_dims(mat[0], axis=0))
+    assert_allclose(r[0].as_matrix(), mat[0], atol=1e-15)
+    assert_allclose(r[1].as_matrix(), mat[1], atol=1e-15)
+    assert_allclose(r[:-1].as_matrix(), np.expand_dims(mat[0], axis=0), atol=1e-15)
 
 
 def test_n_rotations():
@@ -868,55 +967,56 @@ def test_n_rotations():
     r = Rotation.from_matrix(mat)
 
     assert_equal(len(r), 2)
-    assert_equal(len(r[0]), 1)
-    assert_equal(len(r[1]), 1)
     assert_equal(len(r[:-1]), 1)
 
 
-def test_quat_ownership():
-    # Ensure that users cannot accidentally corrupt object
-    quat = np.array([
-        [1, 0, 0, 0],
-        [0, 1, 0, 0],
-        [0, 0, 1, 0]
-    ])
-    r = Rotation.from_quat(quat)
-    s = r[0:2]
-
-    r._quat[0] = np.array([0, -1, 0, 0])
-    assert_allclose(s._quat[0], np.array([1, 0, 0, 0]))
-
-
-def test_match_vectors_no_rotation():
+def test_align_vectors_no_rotation():
     x = np.array([[1, 2, 3], [4, 5, 6]])
     y = x.copy()
 
-    r, p = Rotation.match_vectors(x, y)
+    r, rmsd = Rotation.align_vectors(x, y)
     assert_array_almost_equal(r.as_matrix(), np.eye(3))
+    assert_allclose(rmsd, 0, atol=1e-6)
 
 
-def test_match_vectors_no_noise():
+def test_align_vectors_no_noise():
     np.random.seed(0)
     c = Rotation.from_quat(np.random.normal(size=4))
     b = np.random.normal(size=(5, 3))
     a = c.apply(b)
 
-    est, cov = Rotation.match_vectors(a, b)
+    est, rmsd = Rotation.align_vectors(a, b)
     assert_allclose(c.as_quat(), est.as_quat())
+    assert_allclose(rmsd, 0, atol=1e-7)
 
 
-def test_match_vectors_improper_rotation():
+def test_align_vectors_improper_rotation():
     # Tests correct logic for issue #10444
     x = np.array([[0.89299824, -0.44372674, 0.0752378],
                   [0.60221789, -0.47564102, -0.6411702]])
     y = np.array([[0.02386536, -0.82176463, 0.5693271],
                   [-0.27654929, -0.95191427, -0.1318321]])
 
-    est, cov = Rotation.match_vectors(x, y)
+    est, rmsd = Rotation.align_vectors(x, y)
     assert_allclose(x, est.apply(y), atol=1e-6)
+    assert_allclose(rmsd, 0, atol=1e-7)
 
 
-def test_match_vectors_noise():
+def test_align_vectors_scaled_weights():
+    rng = np.random.RandomState(0)
+    c = Rotation.random(random_state=rng)
+    b = rng.normal(size=(5, 3))
+    a = c.apply(b)
+
+    est1, rmsd1, cov1 = Rotation.align_vectors(a, b, np.ones(5), True)
+    est2, rmsd2, cov2 = Rotation.align_vectors(a, b, 2 * np.ones(5), True)
+
+    assert_allclose(est1.as_matrix(), est2.as_matrix())
+    assert_allclose(np.sqrt(2) * rmsd1, rmsd2)
+    assert_allclose(cov1, cov2)
+
+
+def test_align_vectors_noise():
     np.random.seed(0)
     n_vectors = 100
     rot = Rotation.from_euler('xyz', np.random.normal(size=3))
@@ -937,7 +1037,8 @@ def test_match_vectors_noise():
     # rotations to each vector.
     noisy_result = noise.apply(result)
 
-    est, cov = Rotation.match_vectors(noisy_result, vectors)
+    est, rmsd, cov = Rotation.align_vectors(noisy_result, vectors,
+                                            return_sensitivity=True)
 
     # Use rotation compositions to find out closeness
     error_vector = (rot * est.inv()).as_rotvec()
@@ -950,6 +1051,34 @@ def test_match_vectors_noise():
     assert_allclose(cov[0, 0], 0, atol=tolerance)
     assert_allclose(cov[1, 1], 0, atol=tolerance)
     assert_allclose(cov[2, 2], 0, atol=tolerance)
+
+    assert_allclose(rmsd, np.sum((noisy_result - est.apply(vectors))**2)**0.5)
+
+
+def test_align_vectors_single_vector():
+    with pytest.warns(UserWarning, match="Optimal rotation is not"):
+        r_estimate, rmsd = Rotation.align_vectors([[1, -1, 1]], [[1, 1, -1]])
+        assert_allclose(rmsd, 0, atol=1e-16)
+
+
+def test_align_vectors_invalid_input():
+    with pytest.raises(ValueError, match="Expected input `a` to have shape"):
+        Rotation.align_vectors([1, 2, 3], [[1, 2, 3]])
+
+    with pytest.raises(ValueError, match="Expected input `b` to have shape"):
+        Rotation.align_vectors([[1, 2, 3]], [1, 2, 3])
+
+    with pytest.raises(ValueError, match="Expected inputs `a` and `b` "
+                                         "to have same shapes"):
+        Rotation.align_vectors([[1, 2, 3],[4, 5, 6]], [[1, 2, 3]])
+
+    with pytest.raises(ValueError,
+                       match="Expected `weights` to be 1 dimensional"):
+        Rotation.align_vectors([[1, 2, 3]], [[1, 2, 3]], weights=[[1]])
+
+    with pytest.raises(ValueError,
+                       match="Expected `weights` to have number of values"):
+        Rotation.align_vectors([[1, 2, 3]], [[1, 2, 3]], weights=[1, 2])
 
 
 def test_random_rotation_shape():
@@ -1005,7 +1134,7 @@ def test_slerp():
 
 
 def test_slerp_single_rot():
-    with pytest.raises(ValueError, match="at least 2 rotations"):
+    with pytest.raises(ValueError, match="must be a sequence of rotations"):
         r = Rotation.from_quat([1, 2, 3, 4])
         Slerp([1], r)
 
@@ -1080,3 +1209,41 @@ def test_slerp_call_scalar_time():
     delta = r_interpolated * r_interpolated_expected.inv()
 
     assert_allclose(delta.magnitude(), 0, atol=1e-16)
+
+
+def test_multiplication_stability():
+    qs = Rotation.random(50, random_state=0)
+    rs = Rotation.random(1000, random_state=1)
+    for q in qs:
+        rs *= q * rs
+        assert_allclose(np.linalg.norm(rs.as_quat(), axis=1), 1)
+
+
+def test_rotation_within_numpy_array():
+    single = Rotation.random()
+    multiple = Rotation.random(2)
+
+    array = np.array(single)
+    assert_equal(array.shape, ())
+
+    array = np.array(multiple)
+    assert_equal(array.shape, (2,))
+    assert_allclose(array[0].as_matrix(), multiple[0].as_matrix())
+    assert_allclose(array[1].as_matrix(), multiple[1].as_matrix())
+
+    array = np.array([single])
+    assert_equal(array.shape, (1,))
+    assert_equal(array[0], single)
+
+    array = np.array([multiple])
+    assert_equal(array.shape, (1, 2))
+    assert_allclose(array[0, 0].as_matrix(), multiple[0].as_matrix())
+    assert_allclose(array[0, 1].as_matrix(), multiple[1].as_matrix())
+
+    array = np.array([single, multiple], dtype=object)
+    assert_equal(array.shape, (2,))
+    assert_equal(array[0], single)
+    assert_equal(array[1], multiple)
+
+    array = np.array([multiple, multiple, multiple])
+    assert_equal(array.shape, (3, 2))

@@ -1,31 +1,53 @@
-
 #ifndef CKDTREE_PARTIAL_SORT
 #define CKDTREE_PARTIAL_SORT
 
-/* Splitting routines for a balanced kd-tree
- * Code originally written by Jake Vanderplas for scikit-learn
+/* Adapted version of the code originally
+ * written by @jiefangxuanyan for scikit-learn.
  *
  */
 
-inline void
-index_swap(ckdtree_intp_t *arr, intptr_t i1, intptr_t i2)
-{
-    /* swap the values at index i1 and i2 of arr */
-    ckdtree_intp_t tmp = arr[i1];
-    arr[i1] = arr[i2];
-    arr[i2] = tmp;
-}
+#include "ckdtree_decl.h"
+#include <algorithm>
 
-static void
-partition_node_indices(const double *data,
+struct IndexComparator {
+
+    const double *data;
+    ckdtree_intp_t split_dim;
+    ckdtree_intp_t n_dims;
+
+    IndexComparator(const double *data,
+                    ckdtree_intp_t split_dim,
+                    ckdtree_intp_t n_dims) :
+                                            data(data),
+                                            split_dim(split_dim),
+                                            n_dims(n_dims) {};
+
+    inline bool operator()(ckdtree_intp_t a, ckdtree_intp_t b) {
+        const double point_a = data[a * n_dims + split_dim];
+        const double point_b = data[b * n_dims + split_dim];
+
+        if CKDTREE_UNLIKELY (point_a == point_b) {
+            return a < b;
+        } else {
+            return point_a < point_b;
+        }
+    }
+};
+
+/*
+ * Partition points in the node into two groups.
+ *
+ */
+
+static int
+partition_node_indices(const double   *data,
                        ckdtree_intp_t *node_indices,
                        ckdtree_intp_t split_dim,
                        ckdtree_intp_t split_index,
-                       ckdtree_intp_t n_features,
-                       ckdtree_intp_t n_points)
-{
-    /* Partition points in the node into two equal-sized groups
-     * Upon return, the values in node_indices will be rearranged such that
+                       ckdtree_intp_t n_dims,
+                       ckdtree_intp_t n_points) {
+
+    /* Upon return, the values in node_indices will be rearranged such that
      * (assuming numpy-style indexing):
      *
      *   data[node_indices[0:split_index], split_dim]
@@ -36,13 +58,14 @@ partition_node_indices(const double *data,
      *   data[node_indices[split_index], split_dim]
      *     <= data[node_indices[split_index:n_points], split_dim]
      *
-     * The algorithm is essentially a partial in-place quicksort around a
-     * set pivot.
+     * This is eassentially a wrapper around the standard C++ function
+     * ``std::nth_element``.
+     *
      *
      * Parameters
      * ----------
      * data : double pointer
-     *    Pointer to a 2D array of the training data, of shape [N, n_features].
+     *    Pointer to a 2D array of the training data, of shape [N, n_dims].
      *    N must be greater than any of the values in node_indices.
      * node_indices : int pointer
      *    Pointer to a 1D array of length n_points.  This lists the indices of
@@ -61,28 +84,14 @@ partition_node_indices(const double *data,
      *    modified as noted above.
      */
 
-    ckdtree_intp_t left, right, midindex, i;
-    double d1, d2;
-    left = 0;
-    right = n_points - 1;
-    for(;;) {
-        midindex = left;
-        for (i=left; i<right; ++i) {
-            d1 = data[node_indices[i] * n_features + split_dim];
-            d2 = data[node_indices[right] * n_features + split_dim];
-            if (d1 < d2) {
-                index_swap(node_indices, i, midindex);
-                ++midindex;
-            }
-        }
-        index_swap(node_indices, midindex, right);
-        if (midindex == split_index)
-            break;
-        else if (midindex < split_index)
-            left = midindex + 1;
-        else
-            right = midindex - 1;
-    }
+    IndexComparator index_comparator(data, split_dim, n_dims);
+
+    std::nth_element(node_indices,
+                     node_indices + split_index,
+                     node_indices + n_points,
+                     index_comparator);
+
+    return 0;
 }
 
 #endif

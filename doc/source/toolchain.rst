@@ -42,12 +42,10 @@ Building SciPy
 Python Versions
 ^^^^^^^^^^^^^^^
 
-SciPy is compatible with several versions of Python, and some
-specific decisions are still under consideration, especially
-with regard to future changes.
-Python 2.7 support was dropped for SciPy
-releases numbered 1.3 and above but is still available in Release 1.2.x,
-which is a long-term support release. [1]_, [2]_.
+SciPy is compatible with several versions of Python.  When dropping support for
+older Python versions, SciPy takes guidance from NEP 29 [10]_.  Python 2.7
+support was dropped for SciPy releases numbered 1.3 and above but is still
+available in release 1.2.x, which is a long-term support release [1]_, [2]_.
 
 ================  =======================================================================
  Date             Pythons supported
@@ -72,9 +70,10 @@ The table shows the NumPy versions suitable for each major Python version
  Python             Minimum NumPy version       Maximum NumPy version
 =================  ========================    ===========================
 2.7 (SciPy 1.2)      1.8.2                      1.16.x
-3.5                  1.13.3                     >= 1.16.x
-3.6                  1.13.3                     >= 1.16.x
-3.7                  1.14.5                     >= 1.16.x
+3.5 (SciPy 1.4)      1.13.3                     1.18.x
+3.6                  1.14.5                     >= 1.18.x
+3.7                  1.14.5                     >= 1.18.x
+3.8                  1.17.3                     >= 1.18.x
 =================  ========================    ===========================
 
 
@@ -94,6 +93,7 @@ CPython               MS Visual C++    C Standard
 3.3, 3.4                10.0           C90 & some of C99
 3.5, 3.6                14.0           C90 & most of C99
 3.7                     15.7           C90 & most of C99
+3.8                     15.7           C90 & most of C99
 ===================   ==============   ===================
 
 
@@ -105,24 +105,25 @@ C and C++ language standards for SciPy are generally guidelines
 rather than official decisions. This is particularly true of
 attempting to predict adoption timelines for newer standards.
 
-================  ===========================================
+================  =======================================================================
  Date              C Standard
-================  ===========================================
+================  =======================================================================
  <= 2018           C90
  2019              C90 for old code, may consider C99 for new
  2020              C99
- ?                 C11
+ 2020              C11
+ ?                 C14 some C++14 features can be used, typically limited by MSVC support
  ?                 C17, C18
-================  ===========================================
+================  =======================================================================
 
-The use of MSVisual Studio 9.0 (which doesn't have support C99)
+The use of MS Visual Studio 9.0 (which doesn't have support C99)
 to build Python2.7 has meant that C code in SciPy has had to conform
 to the earlier C90 standard for the language and standard library.
 With the dropping of Python2.7 for SciPy 1.3.x, the C90 restriction is no
-longer imposed by compilers.
-Even though C99 has been a standard for 20 years, experience has shown that
-not all features are supported equally well across all platforms.
-The expectation is that C99 code will become acceptable in 2020.
+longer imposed by compilers. For GCC version < 5, an explicit ``-std=c99``
+may have to be added by the user if C99 features are used in SciPy code.
+*Note: even though C99 has been a standard for 20 years, experience has shown
+that not all features are supported equally well across all platforms.*
 
 C18 is a bug fix for C11, so C11 may be skipped entirely.
 
@@ -173,7 +174,8 @@ SciPy always requires a recent Cython compiler.
 ======== ============ ===============
  Tool    Tool Version  SciPy version
 ======== ============ ===============
-Cython     >= 0.29.13  1.2.1
+Cython     >= 0.29.13  1.4.1
+Cython     >= 0.29.18  1.5.0
 ======== ============ ===============
 
 
@@ -260,7 +262,7 @@ A Recent version of:
 =============  ========  =============================================
  Tool          Version    URL
 =============  ========  =============================================
-setuptools     Recent     https://https://pypi.org/project/setuptools/
+setuptools     Recent     https://pypi.org/project/setuptools/
 wheel          Recent     https://pythonwheels.com
 multibuild     Recent     https://github.com/matthew-brett/multibuild
 =============  ========  =============================================
@@ -280,3 +282,4 @@ References
 .. [7] https://pythondev.readthedocs.io/windows.html#python-and-visual-studio-version-matrix
 .. [8] https://en.wikipedia.org/wiki/Microsoft_Visual_C%2B%2B#Internal_version_numbering
 .. [9] https://wiki.python.org/moin/WindowsCompilers
+.. [10] https://numpy.org/neps/nep-0029-deprecation_policy.html

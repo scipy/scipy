@@ -1,10 +1,10 @@
-from __future__ import division, print_function, absolute_import
 import numpy as np
 import pytest
 from scipy.linalg import block_diag
 from scipy.sparse import csc_matrix
 from numpy.testing import (TestCase, assert_array_almost_equal,
-                           assert_array_less, assert_allclose, assert_)
+                           assert_array_less, assert_,
+                           suppress_warnings)
 from pytest import raises
 from scipy.optimize import (NonlinearConstraint,
                             LinearConstraint,
@@ -12,7 +12,6 @@ from scipy.optimize import (NonlinearConstraint,
                             minimize,
                             BFGS,
                             SR1)
-from scipy._lib._numpy_compat import suppress_warnings
 
 
 class Maratos:
@@ -530,10 +529,10 @@ class TestTrustRegionConstr(TestCase):
         result1 = minimize(prob.fun, prob.x0,
                            method='L-BFGS-B',
                            jac='2-point')
-        with pytest.warns(UserWarning):
-            result2 = minimize(prob.fun, prob.x0,
-                               method='L-BFGS-B',
-                               jac='3-point')
+
+        result2 = minimize(prob.fun, prob.x0,
+                           method='L-BFGS-B',
+                           jac='3-point')
         assert_array_almost_equal(result.x, prob.x_opt, decimal=5)
         assert_array_almost_equal(result1.x, prob.x_opt, decimal=5)
         assert_array_almost_equal(result2.x, prob.x_opt, decimal=5)
@@ -666,3 +665,14 @@ class TestEmptyConstraint(TestCase):
         )
 
         assert_array_almost_equal(abs(result.x), np.array([1, 0]), decimal=4)
+
+
+def test_bug_11886():
+    def opt(x):
+        return x[0]**2+x[1]**2
+
+    with np.testing.suppress_warnings() as sup:
+        sup.filter(PendingDeprecationWarning)
+        A = np.matrix(np.diag([1, 1]))
+    lin_cons = LinearConstraint(A, -1, np.inf)
+    minimize(opt, 2*[1], constraints = lin_cons)  # just checking that there are no errors

@@ -1,6 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
-import pytest
 from numpy.testing import assert_equal, assert_almost_equal
 
 from scipy.misc import face, ascent, electrocardiogram

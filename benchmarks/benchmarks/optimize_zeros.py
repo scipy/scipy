@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 from math import sqrt, exp, cos, sin
 import numpy as np
 
