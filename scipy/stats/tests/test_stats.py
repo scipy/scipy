@@ -900,6 +900,22 @@ class TestCorrSpearmanr2(object):
             0.0007835762419683435])
         assert_raises(ValueError, stats.spearmanr, x, y, axis=2)
 
+    def test_alternative(self):
+        x1 = [1, 2, 3, 4, 5]
+        x2 = [5, 6, 7, 8, 7]
+        expected = (0.82078268166812329, 0.088587005313543798)
+
+        assert_raises(ValueError, stats.spearmanr, X, X,
+                      alternative='error')
+
+        res = stats.spearmanr(x1, x2, alternative="less")
+        assert_approx_equal(res[0], expected[0])
+        assert_approx_equal(res[1], 1 - (expected[1] / 2))
+
+        res = stats.spearmanr(x1, x2, alternative="greater")
+        assert_approx_equal(res[0], expected[0])
+        assert_approx_equal(res[1], expected[1] / 2)
+
 
 #    W.II.E.  Tabulate X against X, using BIG as a case weight.  The values
 #    should appear on the diagonal and the total should be 899999955.
