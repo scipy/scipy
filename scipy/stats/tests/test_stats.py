@@ -2472,7 +2472,8 @@ class TestStudentTest(object):
                           nan_policy='foobar')
 
     def test_1samp_alternative(self):
-        assert_raises(ValueError, stats.ttest_1samp, self.X1, 0, alternative="error")
+        assert_raises(ValueError, stats.ttest_1samp, self.X1, 0,
+                      alternative="error")
 
         t, p = stats.ttest_1samp(self.X1, 1, alternative="less")
         assert_array_almost_equal(p, self.P1_1_l)
@@ -3326,7 +3327,8 @@ def test_ttest_rel():
     assert_array_almost_equal(np.abs(p), pr)
     assert_equal(t.shape, (2, 3))
 
-    t,p = stats.ttest_rel(np.rollaxis(rvs1_3D,2), np.rollaxis(rvs2_3D,2), axis=2)
+    t,p = stats.ttest_rel(np.rollaxis(rvs1_3D,2), np.rollaxis(rvs2_3D,2),
+                          axis=2)
     assert_array_almost_equal(np.abs(t), tr)
     assert_array_almost_equal(np.abs(p), pr)
     assert_equal(t.shape, (3, 2))
@@ -3485,14 +3487,16 @@ def test_ttest_ind():
     assert_array_almost_equal(np.abs(p), pr)
     assert_equal(t.shape, (2, 3))
 
-    t,p = stats.ttest_ind(np.rollaxis(rvs1_3D,2), np.rollaxis(rvs2_3D,2), axis=2)
+    t,p = stats.ttest_ind(np.rollaxis(rvs1_3D,2), np.rollaxis(rvs2_3D,2),
+                          axis=2)
     assert_array_almost_equal(np.abs(t), np.abs(tr))
     assert_array_almost_equal(np.abs(p), pr)
     assert_equal(t.shape, (3, 2))
 
     # test alternative parameter
     assert_raises(ValueError, stats.ttest_ind, rvs1, rvs2, alternative="error")
-    assert_raises(ValueError, stats.ttest_ind_from_stats, *_desc_stats(rvs1_2D.T, rvs2_2D.T), alternative="error")
+    assert_raises(ValueError, stats.ttest_ind_from_stats,
+                  *_desc_stats(rvs1_2D.T, rvs2_2D.T), alternative="error")
 
     t, p = stats.ttest_ind(rvs1, rvs2, alternative="less")
     assert_array_almost_equal(p, 1 - (pr/2))
@@ -3502,14 +3506,17 @@ def test_ttest_ind():
     assert_array_almost_equal(p, pr/2)
     assert_array_almost_equal(t, tr)
 
-    # Below makes sure ttest_ind_from_stats p-val functions identically to ttest_ind
+    # Below makes sure ttest_ind_from_stats p-val functions identically to
+    # ttest_ind
     t, p = stats.ttest_ind(rvs1_2D.T, rvs2_2D.T, axis=0, alternative="less")
     args = _desc_stats(rvs1_2D.T, rvs2_2D.T)
-    assert_array_almost_equal(stats.ttest_ind_from_stats(*args, alternative="less"), [t, p])
+    assert_array_almost_equal(
+        stats.ttest_ind_from_stats(*args, alternative="less"), [t, p])
 
     t, p = stats.ttest_ind(rvs1_2D.T, rvs2_2D.T, axis=0, alternative="greater")
     args = _desc_stats(rvs1_2D.T, rvs2_2D.T)
-    assert_array_almost_equal(stats.ttest_ind_from_stats(*args, alternative="greater"), [t, p])
+    assert_array_almost_equal(
+        stats.ttest_ind_from_stats(*args, alternative="greater"), [t, p])
 
     # check nan policy
     np.random.seed(12345678)
@@ -3661,7 +3668,8 @@ def test_ttest_ind_nan_2nd_arg():
     # x = c(NA, 2.0, 3.0, 4.0)
     # y = c(1.0, 2.0, 1.0, 2.0)
     # t.test(x, y, var.equal=TRUE)
-    assert_allclose(r2, (-2.5354627641855498, 0.052181400457057901), atol=1e-15)
+    assert_allclose(r2, (-2.5354627641855498, 0.052181400457057901),
+                    atol=1e-15)
 
 
 def test_ttest_ind_empty_1d_returns_nan():

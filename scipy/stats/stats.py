@@ -348,17 +348,21 @@ def _broadcast_shapes_with_dropped_axis(a, b, axis):
 
 def _convert_symmetric_p_value(pvalue, root_tail, alternative):
     """
-    Convert a one-sided p-value from a symmetric distribution to a one or two-sided p-value.
+    Convert a one-sided p-value from a symmetric distribution to a one or
+    two-sided p-value.
     """
     if alternative not in {"two-sided", "greater", "less"}:
-        raise ValueError("alternative should be 'less', 'greater' or 'two-sided'")
+        raise ValueError("alternative should be "
+                         "'less', 'greater' or 'two-sided'")
 
     if root_tail not in {"greater", "less"}:
         raise ValueError("root_func should be 'less' or 'greater'")
 
-    if (alternative, root_tail) in {("greater", "greater"), ("less", "less")}:
+    if (alternative, root_tail) in {("greater", "greater"),
+                                    ("less", "less")}:
         return pvalue
-    elif (alternative, root_tail) in {("greater", "less"), ("less", "greater")}:
+    elif (alternative, root_tail) in {("greater", "less"),
+                                      ("less", "greater")}:
         return 1 - pvalue
     elif alternative == "two-sided":
         return 2 * np.minimum(pvalue, 1 - pvalue)
@@ -5269,7 +5273,8 @@ def _two_sample_transform(u, v):
 Ttest_1sampResult = namedtuple('Ttest_1sampResult', ('statistic', 'pvalue'))
 
 
-def ttest_1samp(a, popmean, axis=0, nan_policy='propagate', alternative="two-sided"):
+def ttest_1samp(a, popmean, axis=0, nan_policy='propagate',
+                alternative="two-sided"):
     """
     Calculate the T-test for the mean of ONE group of scores.
 
@@ -5330,13 +5335,15 @@ def ttest_1samp(a, popmean, axis=0, nan_policy='propagate', alternative="two-sid
     Examples using axis and non-scalar dimension for population mean.
 
     >>> stats.ttest_1samp(rvs,[5.0,0.0])
-    (array([-0.68014479,  4.11038784]), array([  4.99613833e-01,   1.49986458e-04]))
+    (array([-0.68014479,  4.11038784]), array([  4.99613833e-01,
+    1.49986458e-04]))
     >>> stats.ttest_1samp(rvs.T,[5.0,0.0],axis=1)
-    (array([-0.68014479,  4.11038784]), array([  4.99613833e-01,   1.49986458e-04]))
+    (array([-0.68014479,  4.11038784]), array([  4.99613833e-01,
+    1.49986458e-04]))
     >>> stats.ttest_1samp(rvs,[[5.0],[0.0]])
     (array([[-0.68014479, -0.04323899],
-           [ 2.77025808,  4.11038784]]), array([[  4.99613833e-01,   9.65686743e-01],
-           [  7.89094663e-03,   1.49986458e-04]]))
+           [ 2.77025808,  4.11038784]]), array([[  4.99613833e-01,
+           9.65686743e-01], [  7.89094663e-03,   1.49986458e-04]]))
 
     """
     a, axis = _chk_asarray(a, axis)
@@ -5567,7 +5574,8 @@ def _ttest_nans(a, b, axis, namedtuple_type):
     return namedtuple_type(t, p)
 
 
-def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate', alternative="two-sided"):
+def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
+              alternative="two-sided"):
     """
     Calculate the T-test for the means of *two independent* samples of scores.
 
@@ -5698,7 +5706,8 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate', alternative=
     else:
         df, denom = _unequal_var_ttest_denom(v1, n1, v2, n2)
 
-    res = _ttest_ind_from_stats(np.mean(a, axis), np.mean(b, axis), denom, df, alternative)
+    res = _ttest_ind_from_stats(np.mean(a, axis), np.mean(b, axis), denom, df,
+                                alternative)
 
     return Ttest_indResult(*res)
 
