@@ -4071,7 +4071,7 @@ class SpearmanRConstantInputWarning(RuntimeWarning):
 SpearmanrResult = namedtuple('SpearmanrResult', ('correlation', 'pvalue'))
 
 
-def spearmanr(a, b=None, axis=0, nan_policy='propagate'):
+def spearmanr(a, b=None, axis=0, nan_policy='propagate', alternative='two-sided'):
     """
     Calculate a Spearman correlation coefficient with associated p-value.
 
@@ -4109,6 +4109,15 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate'):
           * 'propagate': returns nan
           * 'raise': throws an error
           * 'omit': performs the calculations ignoring nan values
+    alternative : {'two-sided', 'less', 'greater'}, optional
+        Defines the alternative hypothesis.
+        The following options are available (default is 'two-sided'):
+
+          * 'two-sided'
+          * 'less': one-sided
+          * 'greater': one-sided
+
+        .. versionadded:: 1.6.0
 
     Returns
     -------
@@ -4118,8 +4127,9 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate'):
         length equal to total number of variables (columns or rows) in ``a``
         and ``b`` combined.
     pvalue : float
-        The two-sided p-value for a hypothesis test whose null hypothesis is
-        that two sets of data are uncorrelated, has same dimension as rho.
+        The p-value for a hypothesis test whose alternative hypothesis is
+        defined by the ``alternative`` parameter and who's null hypotheisis
+        is that two sets of data are uncorrelated, has same dimension as rho.
 
     References
     ----------
@@ -4226,7 +4236,8 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate'):
         # errors before taking the square root
         t = rs * np.sqrt((dof/((rs+1.0)*(1.0-rs))).clip(0))
 
-    prob = 2 * distributions.t.sf(np.abs(t), dof)
+    prob = _convert_symmetric_p_value(distributions.t.sf(t, dof), 'greater',
+                                      alternative)
 
     # For backwards compatibility, return scalars when comparing 2 columns
     if rs.shape == (2, 2):
