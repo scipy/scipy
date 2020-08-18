@@ -4,7 +4,6 @@ import warnings
 from . import distributions
 from ._continuous_distns import chi2
 from scipy.special import gamma, kv, gammaln
-from scipy._lib.six import string_types
 from . import _wilcoxon_data
 
 
@@ -328,7 +327,7 @@ def cvm_test(rvs, cdf, args=()):
     >>> stats.cvm_test(y, cdf, args=(2,))
 
     """
-    if isinstance(cdf, string_types):
+    if isinstance(cdf, str):
         cdf = getattr(distributions, cdf).cdf
 
     vals = np.sort(np.asarray(rvs))
