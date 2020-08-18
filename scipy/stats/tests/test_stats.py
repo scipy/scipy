@@ -1225,8 +1225,9 @@ def test_segfault_issue_9710():
     # The code below also caused SEGFAULT
     stats.weightedtau([np.nan], [52])
 
+
 def test_kendall_tau_large():
-    n = 172.
+    n = 172
     x = np.arange(n)
     y = np.arange(n)
     _, pval = stats.kendalltau(x, y, method='exact')
@@ -1236,6 +1237,13 @@ def test_kendall_tau_large():
     assert_equal(pval, 0.0)
     y[-3], y[-4] = y[-4], y[-3]
     _, pval = stats.kendalltau(x, y, method='exact')
+    assert_equal(pval, 0.0)
+
+    # Test omit policy
+    x = np.arange(n + 1).astype(float)
+    y = np.arange(n + 1).astype(float)
+    y[-1] = np.nan
+    _, pval = stats.kendalltau(x, y, method='exact', nan_policy='omit')
     assert_equal(pval, 0.0)
 
 
