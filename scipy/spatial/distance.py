@@ -1784,7 +1784,7 @@ def pdist(X, metric='euclidean', *args, **kwargs):
         each :math:`i` and :math:`j` (where :math:`i<j<m`),where m is the number
         of original observations. The metric ``dist(u=X[i], v=X[j])``
         is computed and stored in entry 
-        ``m * i + j - (i + 2) * (i + 1) // 2``.
+        ``m * i + j - ((i + 2) * (i + 1)) // 2``.
 
     See Also
     --------
