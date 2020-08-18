@@ -358,7 +358,7 @@ spline.
 .. _tutorial-interpolate_2d_spline:
 
 2-D spline representation: Procedural (:func:`bisplrep`)
------------------------------------------------------------------
+--------------------------------------------------------------------
 
 For (smooth) spline-fitting to a 2-D surface, the function
 :func:`bisplrep` is available. This function takes as required inputs
