@@ -2962,6 +2962,37 @@ class gumbel_r_gen(rv_continuous):
         # https://en.wikipedia.org/wiki/Gumbel_distribution
         return _EULER + 1.
 
+    def fit(self, data, *args, **kwds):
+        data, floc, fscale = _check_fit_input_parameters(self, data,
+                                                         args, kwds)
+
+        # if user has provided `floc` or `fscale`, fall back on super fit
+        # method. This scenario is not suitable for solving a system of
+        # equations
+        if floc is not None or fscale is not None:
+            return super(gumbel_r_gen, self).fit(data, *args, **kwds)
+
+        # rv_continuous provided guesses
+        loc, scale = self._fitstart(data)
+        # account for user provided guesses
+        loc = kwds.pop('loc', loc)
+        scale = kwds.pop('scale', scale)
+
+        # By the method of maximum likelihood, the estimators `a` and `b` of
+        # the location and scale are the roots of the simultaneous
+        # equations described in `func`. Source: Statistical Distributions,
+        # 3rd Edition. Evans, Hastings, and Peacock (2000), Page 101
+
+        def func(vals, data):
+            a, b = vals
+            ndata = len(data)
+            x1 = data.mean() - ((np.sum(data * np.exp(- data / b))) /
+                                np.sum(np.exp(- data / b))) - b
+            x2 = - b * np.log(np.sum(np.exp(-data / b)) / ndata) - a
+            return x1, x2
+
+        return tuple(optimize.root(func, (loc, scale), args=(data,)).x)
+
 
 gumbel_r = gumbel_r_gen(name='gumbel_r')
 
