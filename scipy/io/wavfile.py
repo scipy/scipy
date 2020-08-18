@@ -1,4 +1,5 @@
 """
+
 Module to read / write wav files using NumPy arrays
 
 Functions
@@ -304,7 +305,7 @@ class WAVE_FORMAT(IntEnum):
     DEVELOPMENT = 0xFFFF
 
 
-KNOWN_WAVE_FORMATS = {WAVE_FORMAT.PCM, WAVE_FORMAT.IEEE_FLOAT}
+KNOWN_WAVE_FORMATS = {WAVE_FORMAT.PCM, WAVE_FORMAT.IEEE_FLOAT, WAVE_FORMAT.MULAW }
 
 
 def _read_fmt_chunk(fid, is_big_endian):
@@ -383,6 +384,32 @@ def _read_fmt_chunk(fid, is_big_endian):
     return (size, format_tag, channels, fs, bytes_per_second, block_align,
             bit_depth)
 
+# Source: https://github.com/coderByNeed/BOB404/blob/master/audio/compressions.py
+## :D G.711 µ LAw
+# :D MULAW decoding from 8bit integer to 16bit integer
+def uLaw_d(i8bit):
+    i8bit &= 0xff # marginalising data larger than byte
+    i8bit ^= 0xff #flipping back bytes
+    sign = False
+    
+    if i8bit&0x80==0x80: # if it is signed negative 1000 0000
+        sign = True # bool option since sign is not really used
+        i8bit &= 0x7f # removing the sign of value
+    
+    
+    pos = ( (i8bit&0xf0) >> 4 )+5 # grabing initial value for mantisa
+    
+    # generating decoded data
+    decoded = i8bit&0xf # grabing 1st nibble from 8 bit integer
+    decoded <<= pos-4   # shifting by position -4 aka generating mantisa for 16 bit integer
+    decoded |= 1 << ( pos-5 ) # OR gate for specific bit
+    decoded |= 1<<pos   # OR gate for another specific bit
+    decoded -= 0x21 # removing the 10 0001 from value to generate exact value
+    
+    if not sign:
+        return decoded  # if positive number will be returned as is
+    else:
+        return -decoded # if negative the number will be returned inverted
 
 def _read_data_chunk(fid, format_tag, channels, bit_depth, is_big_endian,
                      block_align, mmap=False):
@@ -424,7 +451,7 @@ def _read_data_chunk(fid, format_tag, channels, bit_depth, is_big_endian,
     if bit_depth == 8:
         dtype = 'u1'
     else:
-        if format_tag == WAVE_FORMAT.PCM:
+        if format_tag == WAVE_FORMAT.PCM or format_tag == WAVE_FORMAT.MULAW:
             dtype = f'{fmt}i{bytes_per_sample}'
         else:
             dtype = f'{fmt}f{bytes_per_sample}'
@@ -440,6 +467,9 @@ def _read_data_chunk(fid, format_tag, channels, bit_depth, is_big_endian,
         data = numpy.memmap(fid, dtype=dtype, mode='c', offset=start,
                             shape=(n_samples,))
         fid.seek(start + size)
+
+    if format_tag == WAVE_FORMAT.MULAW:
+        data = numpy.array(list(map(uLaw_d, data)))
 
     _handle_pad_byte(fid, size)
 
