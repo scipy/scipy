@@ -1152,169 +1152,185 @@ class TestNdimage:
                 footprint=footprint, extra_arguments=(cf,),
                 extra_keywords={'total': cf.sum()})
 
-    def test_extend01(self):
+    @pytest.mark.parametrize(
+        'mode, expected_value',
+        [('nearest', [1, 1, 2]),
+         ('wrap', [3, 1, 2]),
+         ('reflect', [1, 1, 2]),
+         ('mirror', [2, 1, 2]),
+         ('constant', [0, 1, 2])]
+    )
+    def test_extend01(self, mode, expected_value):
         array = numpy.array([1, 2, 3])
         weights = numpy.array([1, 0])
-        expected_values = [[1, 1, 2],
-                           [3, 1, 2],
-                           [1, 1, 2],
-                           [2, 1, 2],
-                           [0, 1, 2]]
-        for mode, expected_value in zip(self.modes, expected_values):
-            output = ndimage.correlate1d(array, weights, 0,
-                                         mode=mode, cval=0)
-            assert_array_equal(output, expected_value)
+        output = ndimage.correlate1d(array, weights, 0, mode=mode, cval=0)
+        assert_array_equal(output, expected_value)
 
-    def test_extend02(self):
+    @pytest.mark.parametrize(
+        'mode, expected_value',
+        [('nearest', [1, 1, 1]),
+         ('wrap', [3, 1, 2]),
+         ('reflect', [3, 3, 2]),
+         ('mirror', [1, 2, 3]),
+         ('constant', [0, 0, 0])]
+    )
+    def test_extend02(self, mode, expected_value):
         array = numpy.array([1, 2, 3])
         weights = numpy.array([1, 0, 0, 0, 0, 0, 0, 0])
-        expected_values = [[1, 1, 1],
-                           [3, 1, 2],
-                           [3, 3, 2],
-                           [1, 2, 3],
-                           [0, 0, 0]]
-        for mode, expected_value in zip(self.modes, expected_values):
-            output = ndimage.correlate1d(array, weights, 0,
-                                         mode=mode, cval=0)
-            assert_array_equal(output, expected_value)
+        output = ndimage.correlate1d(array, weights, 0, mode=mode, cval=0)
+        assert_array_equal(output, expected_value)
 
-    def test_extend03(self):
+    @pytest.mark.parametrize(
+        'mode, expected_value',
+        [('nearest', [2, 3, 3]),
+         ('wrap', [2, 3, 1]),
+         ('reflect', [2, 3, 3]),
+         ('mirror', [2, 3, 2]),
+         ('constant', [2, 3, 0])]
+    )
+    def test_extend03(self, mode, expected_value):
         array = numpy.array([1, 2, 3])
         weights = numpy.array([0, 0, 1])
-        expected_values = [[2, 3, 3],
-                           [2, 3, 1],
-                           [2, 3, 3],
-                           [2, 3, 2],
-                           [2, 3, 0]]
-        for mode, expected_value in zip(self.modes, expected_values):
-            output = ndimage.correlate1d(array, weights, 0,
-                                         mode=mode, cval=0)
-            assert_array_equal(output, expected_value)
+        output = ndimage.correlate1d(array, weights, 0, mode=mode, cval=0)
+        assert_array_equal(output, expected_value)
 
-    def test_extend04(self):
+    @pytest.mark.parametrize(
+        'mode, expected_value',
+        [('nearest', [3, 3, 3]),
+         ('wrap', [2, 3, 1]),
+         ('reflect', [2, 1, 1]),
+         ('mirror', [1, 2, 3]),
+         ('constant', [0, 0, 0])]
+    )
+    def test_extend04(self, mode, expected_value):
         array = numpy.array([1, 2, 3])
         weights = numpy.array([0, 0, 0, 0, 0, 0, 0, 0, 1])
-        expected_values = [[3, 3, 3],
-                           [2, 3, 1],
-                           [2, 1, 1],
-                           [1, 2, 3],
-                           [0, 0, 0]]
-        for mode, expected_value in zip(self.modes, expected_values):
-            output = ndimage.correlate1d(array, weights, 0,
-                                         mode=mode, cval=0)
-            assert_array_equal(output, expected_value)
+        output = ndimage.correlate1d(array, weights, 0, mode=mode, cval=0)
+        assert_array_equal(output, expected_value)
 
-    def test_extend05(self):
+    @pytest.mark.parametrize(
+        'mode, expected_value',
+        [('nearest', [[1, 1, 2], [1, 1, 2], [4, 4, 5]]),
+         ('wrap', [[9, 7, 8], [3, 1, 2], [6, 4, 5]]),
+         ('reflect', [[1, 1, 2], [1, 1, 2], [4, 4, 5]]),
+         ('mirror', [[5, 4, 5], [2, 1, 2], [5, 4, 5]]),
+         ('constant', [[0, 0, 0], [0, 1, 2], [0, 4, 5]])]
+    )
+    def test_extend05(self, mode, expected_value):
         array = numpy.array([[1, 2, 3],
                              [4, 5, 6],
                              [7, 8, 9]])
         weights = numpy.array([[1, 0], [0, 0]])
-        expected_values = [[[1, 1, 2], [1, 1, 2], [4, 4, 5]],
-                           [[9, 7, 8], [3, 1, 2], [6, 4, 5]],
-                           [[1, 1, 2], [1, 1, 2], [4, 4, 5]],
-                           [[5, 4, 5], [2, 1, 2], [5, 4, 5]],
-                           [[0, 0, 0], [0, 1, 2], [0, 4, 5]]]
-        for mode, expected_value in zip(self.modes, expected_values):
-            output = ndimage.correlate(array, weights,
-                                       mode=mode, cval=0)
-            assert_array_equal(output, expected_value)
+        output = ndimage.correlate(array, weights, mode=mode, cval=0)
+        assert_array_equal(output, expected_value)
 
-    def test_extend06(self):
+    @pytest.mark.parametrize(
+        'mode, expected_value',
+        [('nearest', [[5, 6, 6], [8, 9, 9], [8, 9, 9]]),
+         ('wrap', [[5, 6, 4], [8, 9, 7], [2, 3, 1]]),
+         ('reflect', [[5, 6, 6], [8, 9, 9], [8, 9, 9]]),
+         ('mirror', [[5, 6, 5], [8, 9, 8], [5, 6, 5]]),
+         ('constant', [[5, 6, 0], [8, 9, 0], [0, 0, 0]])]
+    )
+    def test_extend06(self, mode, expected_value):
         array = numpy.array([[1, 2, 3],
                              [4, 5, 6],
                              [7, 8, 9]])
         weights = numpy.array([[0, 0, 0], [0, 0, 0], [0, 0, 1]])
-        expected_values = [[[5, 6, 6], [8, 9, 9], [8, 9, 9]],
-                           [[5, 6, 4], [8, 9, 7], [2, 3, 1]],
-                           [[5, 6, 6], [8, 9, 9], [8, 9, 9]],
-                           [[5, 6, 5], [8, 9, 8], [5, 6, 5]],
-                           [[5, 6, 0], [8, 9, 0], [0, 0, 0]]]
-        for mode, expected_value in zip(self.modes, expected_values):
-            output = ndimage.correlate(array, weights,
-                                       mode=mode, cval=0)
-            assert_array_equal(output, expected_value)
+        output = ndimage.correlate(array, weights, mode=mode, cval=0)
+        assert_array_equal(output, expected_value)
 
-    def test_extend07(self):
+    @pytest.mark.parametrize(
+        'mode, expected_value',
+        [('nearest', [3, 3, 3]),
+         ('wrap', [2, 3, 1]),
+         ('reflect', [2, 1, 1]),
+         ('mirror', [1, 2, 3]),
+         ('constant', [0, 0, 0])]
+    )
+    def test_extend07(self, mode, expected_value):
         array = numpy.array([1, 2, 3])
         weights = numpy.array([0, 0, 0, 0, 0, 0, 0, 0, 1])
-        expected_values = [[3, 3, 3],
-                           [2, 3, 1],
-                           [2, 1, 1],
-                           [1, 2, 3],
-                           [0, 0, 0]]
-        for mode, expected_value in zip(self.modes, expected_values):
-            output = ndimage.correlate(array, weights, mode=mode, cval=0)
-            assert_array_equal(output, expected_value)
+        output = ndimage.correlate(array, weights, mode=mode, cval=0)
+        assert_array_equal(output, expected_value)
 
-    def test_extend08(self):
+    @pytest.mark.parametrize(
+        'mode, expected_value',
+        [('nearest', [[3], [3], [3]]),
+         ('wrap', [[2], [3], [1]]),
+         ('reflect', [[2], [1], [1]]),
+         ('mirror', [[1], [2], [3]]),
+         ('constant', [[0], [0], [0]])]
+    )
+    def test_extend08(self, mode, expected_value):
         array = numpy.array([[1], [2], [3]])
         weights = numpy.array([[0], [0], [0], [0], [0], [0], [0], [0], [1]])
-        expected_values = [[[3], [3], [3]],
-                           [[2], [3], [1]],
-                           [[2], [1], [1]],
-                           [[1], [2], [3]],
-                           [[0], [0], [0]]]
-        for mode, expected_value in zip(self.modes, expected_values):
-            output = ndimage.correlate(array, weights, mode=mode, cval=0)
-            assert_array_equal(output, expected_value)
+        output = ndimage.correlate(array, weights, mode=mode, cval=0)
+        assert_array_equal(output, expected_value)
 
-    def test_extend09(self):
+    @pytest.mark.parametrize(
+        'mode, expected_value',
+        [('nearest', [3, 3, 3]),
+         ('wrap', [2, 3, 1]),
+         ('reflect', [2, 1, 1]),
+         ('mirror', [1, 2, 3]),
+         ('constant', [0, 0, 0])]
+    )
+    def test_extend09(self, mode, expected_value):
         array = numpy.array([1, 2, 3])
         weights = numpy.array([0, 0, 0, 0, 0, 0, 0, 0, 1])
-        expected_values = [[3, 3, 3],
-                           [2, 3, 1],
-                           [2, 1, 1],
-                           [1, 2, 3],
-                           [0, 0, 0]]
-        for mode, expected_value in zip(self.modes, expected_values):
-            output = ndimage.correlate(array, weights,
-                                       mode=mode, cval=0)
-            assert_array_equal(output, expected_value)
+        output = ndimage.correlate(array, weights, mode=mode, cval=0)
+        assert_array_equal(output, expected_value)
 
-    def test_extend10(self):
+    @pytest.mark.parametrize(
+        'mode, expected_value',
+        [('nearest', [[3], [3], [3]]),
+         ('wrap', [[2], [3], [1]]),
+         ('reflect', [[2], [1], [1]]),
+         ('mirror', [[1], [2], [3]]),
+         ('constant', [[0], [0], [0]])]
+    )
+    def test_extend10(self, mode, expected_value):
         array = numpy.array([[1], [2], [3]])
         weights = numpy.array([[0], [0], [0], [0], [0], [0], [0], [0], [1]])
-        expected_values = [[[3], [3], [3]],
-                           [[2], [3], [1]],
-                           [[2], [1], [1]],
-                           [[1], [2], [3]],
-                           [[0], [0], [0]]]
-        for mode, expected_value in zip(self.modes, expected_values):
-            output = ndimage.correlate(array, weights,
-                                       mode=mode, cval=0)
-            assert_array_equal(output, expected_value)
+        output = ndimage.correlate(array, weights, mode=mode, cval=0)
+        assert_array_equal(output, expected_value)
 
-    def test_boundaries(self):
+    @pytest.mark.parametrize(
+        'mode, expected_value',
+        [('nearest', [1.5, 2.5, 3.5, 4, 4, 4, 4]),
+         ('wrap', [1.5, 2.5, 3.5, 1.5, 2.5, 3.5, 1.5]),
+         # ('reflect', TODO),
+         ('mirror', [1.5, 2.5, 3.5, 3.5, 2.5, 1.5, 1.5]),
+         ('constant', [1.5, 2.5, 3.5, -1, -1, -1, -1])]
+    )
+    def test_boundaries(self, mode, expected_value):
         def shift(x):
             return (x[0] + 0.5,)
 
         data = numpy.array([1, 2, 3, 4.])
-        expected = {'constant': [1.5, 2.5, 3.5, -1, -1, -1, -1],
-                    'wrap': [1.5, 2.5, 3.5, 1.5, 2.5, 3.5, 1.5],
-                    'mirror': [1.5, 2.5, 3.5, 3.5, 2.5, 1.5, 1.5],
-                    'nearest': [1.5, 2.5, 3.5, 4, 4, 4, 4]}
+        assert_array_equal(
+            expected_value,
+            ndimage.geometric_transform(data, shift, cval=-1, mode=mode,
+                                        output_shape=(7,), order=1))
 
-        for mode in expected:
-            assert_array_equal(
-                expected[mode],
-                ndimage.geometric_transform(data, shift, cval=-1, mode=mode,
-                                            output_shape=(7,), order=1))
-
-    def test_boundaries2(self):
+    @pytest.mark.parametrize(
+        'mode, expected_value',
+        [('nearest', [1, 1, 2, 3]),
+         ('wrap', [3, 1, 2, 3]),
+         # ('reflect', TODO),
+         ('mirror', [2, 1, 2, 3]),
+         ('constant', [-1, 1, 2, 3])]
+    )
+    def test_boundaries2(self, mode, expected_value):
         def shift(x):
             return (x[0] - 0.9,)
 
         data = numpy.array([1, 2, 3, 4])
-        expected = {'constant': [-1, 1, 2, 3],
-                    'wrap': [3, 1, 2, 3],
-                    'mirror': [2, 1, 2, 3],
-                    'nearest': [1, 1, 2, 3]}
-
-        for mode in expected:
-            assert_array_equal(
-                expected[mode],
-                ndimage.geometric_transform(data, shift, cval=-1, mode=mode,
-                                            output_shape=(4,)))
+        assert_array_equal(
+            expected_value,
+            ndimage.geometric_transform(data, shift, cval=-1, mode=mode,
+                                        output_shape=(4,)))
 
     def test_fourier_gaussian_real01(self):
         for shape in [(32, 16), (31, 15)]:
