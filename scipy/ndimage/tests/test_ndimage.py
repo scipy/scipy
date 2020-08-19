@@ -1430,259 +1430,278 @@ class TestNdimage:
                 b = ndimage.fourier_uniform(x, 5, -1, 0)
                 assert_array_almost_equal(a, b, decimal=dec)
 
-    def test_spline01(self):
+    @pytest.mark.parametrize('order', range(2, 6))
+    def test_spline01(self, order):
         for type_ in self.types:
             data = numpy.ones([], type_)
-            for order in range(2, 6):
-                out = ndimage.spline_filter(data, order=order)
-                assert_array_almost_equal(out, 1)
+            out = ndimage.spline_filter(data, order=order)
+            assert_array_almost_equal(out, 1)
 
-    def test_spline02(self):
+    @pytest.mark.parametrize('order', range(2, 6))
+    def test_spline02(self, order):
         for type_ in self.types:
             data = numpy.array([1], type_)
-            for order in range(2, 6):
-                out = ndimage.spline_filter(data, order=order)
-                assert_array_almost_equal(out, [1])
+            out = ndimage.spline_filter(data, order=order)
+            assert_array_almost_equal(out, [1])
 
-    def test_spline03(self):
+    @pytest.mark.parametrize('order', range(2, 6))
+    def test_spline03(self, order):
         for type_ in self.types:
             data = numpy.ones([], type_)
-            for order in range(2, 6):
-                out = ndimage.spline_filter(data, order,
-                                            output=type_)
-                assert_array_almost_equal(out, 1)
+            out = ndimage.spline_filter(data, order,
+                                        output=type_)
+            assert_array_almost_equal(out, 1)
 
-    def test_spline04(self):
+    @pytest.mark.parametrize('order', range(2, 6))
+    def test_spline04(self, order):
         for type_ in self.types:
             data = numpy.ones([4], type_)
-            for order in range(2, 6):
-                out = ndimage.spline_filter(data, order)
-                assert_array_almost_equal(out, [1, 1, 1, 1])
+            out = ndimage.spline_filter(data, order)
+            assert_array_almost_equal(out, [1, 1, 1, 1])
 
-    def test_spline05(self):
+    @pytest.mark.parametrize('order', range(2, 6))
+    def test_spline05(self, order):
         for type_ in self.types:
             data = numpy.ones([4, 4], type_)
-            for order in range(2, 6):
-                out = ndimage.spline_filter(data, order=order)
-                assert_array_almost_equal(out, [[1, 1, 1, 1],
-                                                [1, 1, 1, 1],
-                                                [1, 1, 1, 1],
-                                                [1, 1, 1, 1]])
+            out = ndimage.spline_filter(data, order=order)
+            assert_array_almost_equal(out, [[1, 1, 1, 1],
+                                            [1, 1, 1, 1],
+                                            [1, 1, 1, 1],
+                                            [1, 1, 1, 1]])
 
-    def test_geometric_transform01(self):
+    @pytest.mark.parametrize('order', range(0, 6))
+    def test_geometric_transform01(self, order):
         data = numpy.array([1])
 
         def mapping(x):
             return x
-        for order in range(0, 6):
-            out = ndimage.geometric_transform(data, mapping, data.shape,
-                                              order=order)
-            assert_array_almost_equal(out, [1])
 
-    def test_geometric_transform02(self):
+        out = ndimage.geometric_transform(data, mapping, data.shape,
+                                          order=order)
+        assert_array_almost_equal(out, [1])
+
+    @pytest.mark.parametrize('order', range(0, 6))
+    def test_geometric_transform02(self, order):
         data = numpy.ones([4])
 
         def mapping(x):
             return x
-        for order in range(0, 6):
-            out = ndimage.geometric_transform(data, mapping, data.shape,
-                                              order=order)
-            assert_array_almost_equal(out, [1, 1, 1, 1])
 
-    def test_geometric_transform03(self):
+        out = ndimage.geometric_transform(data, mapping, data.shape,
+                                          order=order)
+        assert_array_almost_equal(out, [1, 1, 1, 1])
+
+    @pytest.mark.parametrize('order', range(0, 6))
+    def test_geometric_transform03(self, order):
         data = numpy.ones([4])
 
         def mapping(x):
             return (x[0] - 1,)
-        for order in range(0, 6):
-            out = ndimage.geometric_transform(data, mapping, data.shape,
-                                              order=order)
-            assert_array_almost_equal(out, [0, 1, 1, 1])
 
-    def test_geometric_transform04(self):
+        out = ndimage.geometric_transform(data, mapping, data.shape,
+                                          order=order)
+        assert_array_almost_equal(out, [0, 1, 1, 1])
+
+    @pytest.mark.parametrize('order', range(0, 6))
+    def test_geometric_transform04(self, order):
         data = numpy.array([4, 1, 3, 2])
 
         def mapping(x):
             return (x[0] - 1,)
-        for order in range(0, 6):
-            out = ndimage.geometric_transform(data, mapping, data.shape,
-                                              order=order)
-            assert_array_almost_equal(out, [0, 4, 1, 3])
 
-    def test_geometric_transform05(self):
+        out = ndimage.geometric_transform(data, mapping, data.shape,
+                                          order=order)
+        assert_array_almost_equal(out, [0, 4, 1, 3])
+
+    @pytest.mark.parametrize('order', range(0, 6))
+    def test_geometric_transform05(self, order):
         data = numpy.array([[1, 1, 1, 1],
                             [1, 1, 1, 1],
                             [1, 1, 1, 1]])
 
         def mapping(x):
             return (x[0], x[1] - 1)
-        for order in range(0, 6):
-            out = ndimage.geometric_transform(data, mapping, data.shape,
-                                              order=order)
-            assert_array_almost_equal(out, [[0, 1, 1, 1],
-                                            [0, 1, 1, 1],
-                                            [0, 1, 1, 1]])
 
-    def test_geometric_transform06(self):
+        out = ndimage.geometric_transform(data, mapping, data.shape,
+                                          order=order)
+        assert_array_almost_equal(out, [[0, 1, 1, 1],
+                                        [0, 1, 1, 1],
+                                        [0, 1, 1, 1]])
+
+    @pytest.mark.parametrize('order', range(0, 6))
+    def test_geometric_transform06(self, order):
         data = numpy.array([[4, 1, 3, 2],
                             [7, 6, 8, 5],
                             [3, 5, 3, 6]])
 
         def mapping(x):
             return (x[0], x[1] - 1)
-        for order in range(0, 6):
-            out = ndimage.geometric_transform(data, mapping, data.shape,
-                                              order=order)
-            assert_array_almost_equal(out, [[0, 4, 1, 3],
-                                            [0, 7, 6, 8],
-                                            [0, 3, 5, 3]])
 
-    def test_geometric_transform07(self):
+        out = ndimage.geometric_transform(data, mapping, data.shape,
+                                          order=order)
+        assert_array_almost_equal(out, [[0, 4, 1, 3],
+                                        [0, 7, 6, 8],
+                                        [0, 3, 5, 3]])
+
+    @pytest.mark.parametrize('order', range(0, 6))
+    def test_geometric_transform07(self, order):
         data = numpy.array([[4, 1, 3, 2],
                             [7, 6, 8, 5],
                             [3, 5, 3, 6]])
 
         def mapping(x):
             return (x[0] - 1, x[1])
-        for order in range(0, 6):
-            out = ndimage.geometric_transform(data, mapping, data.shape,
-                                              order=order)
-            assert_array_almost_equal(out, [[0, 0, 0, 0],
-                                            [4, 1, 3, 2],
-                                            [7, 6, 8, 5]])
 
-    def test_geometric_transform08(self):
+        out = ndimage.geometric_transform(data, mapping, data.shape,
+                                          order=order)
+        assert_array_almost_equal(out, [[0, 0, 0, 0],
+                                        [4, 1, 3, 2],
+                                        [7, 6, 8, 5]])
+
+    @pytest.mark.parametrize('order', range(0, 6))
+    def test_geometric_transform08(self, order):
         data = numpy.array([[4, 1, 3, 2],
                             [7, 6, 8, 5],
                             [3, 5, 3, 6]])
 
         def mapping(x):
             return (x[0] - 1, x[1] - 1)
-        for order in range(0, 6):
-            out = ndimage.geometric_transform(data, mapping, data.shape,
-                                              order=order)
-            assert_array_almost_equal(out, [[0, 0, 0, 0],
-                                            [0, 4, 1, 3],
-                                            [0, 7, 6, 8]])
 
-    def test_geometric_transform10(self):
+        out = ndimage.geometric_transform(data, mapping, data.shape,
+                                          order=order)
+        assert_array_almost_equal(out, [[0, 0, 0, 0],
+                                        [0, 4, 1, 3],
+                                        [0, 7, 6, 8]])
+
+    @pytest.mark.parametrize('order', range(0, 6))
+    def test_geometric_transform10(self, order):
         data = numpy.array([[4, 1, 3, 2],
                             [7, 6, 8, 5],
                             [3, 5, 3, 6]])
 
         def mapping(x):
             return (x[0] - 1, x[1] - 1)
-        for order in range(0, 6):
-            if (order > 1):
-                filtered = ndimage.spline_filter(data, order=order)
-            else:
-                filtered = data
-            out = ndimage.geometric_transform(filtered, mapping, data.shape,
-                                              order=order, prefilter=False)
-            assert_array_almost_equal(out, [[0, 0, 0, 0],
-                                            [0, 4, 1, 3],
-                                            [0, 7, 6, 8]])
 
-    def test_geometric_transform13(self):
+        if (order > 1):
+            filtered = ndimage.spline_filter(data, order=order)
+        else:
+            filtered = data
+        out = ndimage.geometric_transform(filtered, mapping, data.shape,
+                                          order=order, prefilter=False)
+        assert_array_almost_equal(out, [[0, 0, 0, 0],
+                                        [0, 4, 1, 3],
+                                        [0, 7, 6, 8]])
+
+    @pytest.mark.parametrize('order', range(0, 6))
+    def test_geometric_transform13(self, order):
         data = numpy.ones([2], numpy.float64)
 
         def mapping(x):
             return (x[0] // 2,)
-        for order in range(0, 6):
-            out = ndimage.geometric_transform(data, mapping, [4], order=order)
-            assert_array_almost_equal(out, [1, 1, 1, 1])
 
-    def test_geometric_transform14(self):
+        out = ndimage.geometric_transform(data, mapping, [4], order=order)
+        assert_array_almost_equal(out, [1, 1, 1, 1])
+
+    @pytest.mark.parametrize('order', range(0, 6))
+    def test_geometric_transform14(self, order):
         data = [1, 5, 2, 6, 3, 7, 4, 4]
 
         def mapping(x):
             return (2 * x[0],)
-        for order in range(0, 6):
-            out = ndimage.geometric_transform(data, mapping, [4], order=order)
-            assert_array_almost_equal(out, [1, 2, 3, 4])
 
-    def test_geometric_transform15(self):
+        out = ndimage.geometric_transform(data, mapping, [4], order=order)
+        assert_array_almost_equal(out, [1, 2, 3, 4])
+
+    @pytest.mark.parametrize('order', range(0, 6))
+    def test_geometric_transform15(self, order):
         data = [1, 2, 3, 4]
 
         def mapping(x):
             return (x[0] / 2,)
-        for order in range(0, 6):
-            out = ndimage.geometric_transform(data, mapping, [8], order=order)
-            assert_array_almost_equal(out[::2], [1, 2, 3, 4])
 
-    def test_geometric_transform16(self):
+        out = ndimage.geometric_transform(data, mapping, [8], order=order)
+        assert_array_almost_equal(out[::2], [1, 2, 3, 4])
+
+    @pytest.mark.parametrize('order', range(0, 6))
+    def test_geometric_transform16(self, order):
         data = [[1, 2, 3, 4],
                 [5, 6, 7, 8],
                 [9.0, 10, 11, 12]]
 
         def mapping(x):
             return (x[0], x[1] * 2)
-        for order in range(0, 6):
-            out = ndimage.geometric_transform(data, mapping, (3, 2),
-                                              order=order)
-            assert_array_almost_equal(out, [[1, 3], [5, 7], [9, 11]])
 
-    def test_geometric_transform17(self):
+        out = ndimage.geometric_transform(data, mapping, (3, 2),
+                                          order=order)
+        assert_array_almost_equal(out, [[1, 3], [5, 7], [9, 11]])
+
+    @pytest.mark.parametrize('order', range(0, 6))
+    def test_geometric_transform17(self, order):
         data = [[1, 2, 3, 4],
                 [5, 6, 7, 8],
                 [9, 10, 11, 12]]
 
         def mapping(x):
             return (x[0] * 2, x[1])
-        for order in range(0, 6):
-            out = ndimage.geometric_transform(data, mapping, (1, 4),
-                                              order=order)
-            assert_array_almost_equal(out, [[1, 2, 3, 4]])
 
-    def test_geometric_transform18(self):
+        out = ndimage.geometric_transform(data, mapping, (1, 4),
+                                          order=order)
+        assert_array_almost_equal(out, [[1, 2, 3, 4]])
+
+    @pytest.mark.parametrize('order', range(0, 6))
+    def test_geometric_transform18(self, order):
         data = [[1, 2, 3, 4],
                 [5, 6, 7, 8],
                 [9, 10, 11, 12]]
 
         def mapping(x):
             return (x[0] * 2, x[1] * 2)
-        for order in range(0, 6):
-            out = ndimage.geometric_transform(data, mapping, (1, 2),
-                                              order=order)
-            assert_array_almost_equal(out, [[1, 3]])
 
-    def test_geometric_transform19(self):
+        out = ndimage.geometric_transform(data, mapping, (1, 2),
+                                          order=order)
+        assert_array_almost_equal(out, [[1, 3]])
+
+    @pytest.mark.parametrize('order', range(0, 6))
+    def test_geometric_transform19(self, order):
         data = [[1, 2, 3, 4],
                 [5, 6, 7, 8],
                 [9, 10, 11, 12]]
 
         def mapping(x):
             return (x[0], x[1] / 2)
-        for order in range(0, 6):
-            out = ndimage.geometric_transform(data, mapping, (3, 8),
-                                              order=order)
-            assert_array_almost_equal(out[..., ::2], data)
 
-    def test_geometric_transform20(self):
+        out = ndimage.geometric_transform(data, mapping, (3, 8),
+                                          order=order)
+        assert_array_almost_equal(out[..., ::2], data)
+
+    @pytest.mark.parametrize('order', range(0, 6))
+    def test_geometric_transform20(self, order):
         data = [[1, 2, 3, 4],
                 [5, 6, 7, 8],
                 [9, 10, 11, 12]]
 
         def mapping(x):
             return (x[0] / 2, x[1])
-        for order in range(0, 6):
-            out = ndimage.geometric_transform(data, mapping, (6, 4),
-                                              order=order)
-            assert_array_almost_equal(out[::2, ...], data)
 
-    def test_geometric_transform21(self):
+        out = ndimage.geometric_transform(data, mapping, (6, 4),
+                                          order=order)
+        assert_array_almost_equal(out[::2, ...], data)
+
+    @pytest.mark.parametrize('order', range(0, 6))
+    def test_geometric_transform21(self, order):
         data = [[1, 2, 3, 4],
                 [5, 6, 7, 8],
                 [9, 10, 11, 12]]
 
         def mapping(x):
             return (x[0] / 2, x[1] / 2)
-        for order in range(0, 6):
-            out = ndimage.geometric_transform(data, mapping, (6, 8),
-                                              order=order)
-            assert_array_almost_equal(out[::2, ::2], data)
 
-    def test_geometric_transform22(self):
+        out = ndimage.geometric_transform(data, mapping, (6, 8),
+                                          order=order)
+        assert_array_almost_equal(out[::2, ::2], data)
+
+    @pytest.mark.parametrize('order', range(0, 6))
+    def test_geometric_transform22(self, order):
         data = numpy.array([[1, 2, 3, 4],
                             [5, 6, 7, 8],
                             [9, 10, 11, 12]], numpy.float64)
@@ -1692,37 +1711,39 @@ class TestNdimage:
 
         def mapping2(x):
             return (x[0] * 2, x[1] * 2)
-        for order in range(0, 6):
-            out = ndimage.geometric_transform(data, mapping1,
-                                              (6, 8), order=order)
-            out = ndimage.geometric_transform(out, mapping2,
-                                              (3, 4), order=order)
-            assert_array_almost_equal(out, data)
 
-    def test_geometric_transform23(self):
+        out = ndimage.geometric_transform(data, mapping1,
+                                          (6, 8), order=order)
+        out = ndimage.geometric_transform(out, mapping2,
+                                          (3, 4), order=order)
+        assert_array_almost_equal(out, data)
+
+    @pytest.mark.parametrize('order', range(0, 6))
+    def test_geometric_transform23(self, order):
         data = [[1, 2, 3, 4],
                 [5, 6, 7, 8],
                 [9, 10, 11, 12]]
 
         def mapping(x):
             return (1, x[0] * 2)
-        for order in range(0, 6):
-            out = ndimage.geometric_transform(data, mapping, (2,), order=order)
-            out = out.astype(numpy.int32)
-            assert_array_almost_equal(out, [5, 7])
 
-    def test_geometric_transform24(self):
+        out = ndimage.geometric_transform(data, mapping, (2,), order=order)
+        out = out.astype(numpy.int32)
+        assert_array_almost_equal(out, [5, 7])
+
+    @pytest.mark.parametrize('order', range(0, 6))
+    def test_geometric_transform24(self, order):
         data = [[1, 2, 3, 4],
                 [5, 6, 7, 8],
                 [9, 10, 11, 12]]
 
         def mapping(x, a, b):
             return (a, x[0] * b)
-        for order in range(0, 6):
-            out = ndimage.geometric_transform(
-                data, mapping, (2,), order=order, extra_arguments=(1,),
-                extra_keywords={'b': 2})
-            assert_array_almost_equal(out, [5, 7])
+
+        out = ndimage.geometric_transform(
+            data, mapping, (2,), order=order, extra_arguments=(1,),
+            extra_keywords={'b': 2})
+        assert_array_almost_equal(out, [5, 7])
 
     def test_geometric_transform_endianness_with_output_parameter(self):
         # geometric transform given output ndarray or dtype with
@@ -1745,32 +1766,35 @@ class TestNdimage:
 
         def mapping(x):
             return x
+
         out = ndimage.geometric_transform(data, mapping, output='f')
         assert_(out.dtype is numpy.dtype('f'))
         assert_array_almost_equal(out, [1])
 
-    def test_map_coordinates01(self):
+    @pytest.mark.parametrize('order', range(0, 6))
+    def test_map_coordinates01(self, order):
         data = numpy.array([[4, 1, 3, 2],
                             [7, 6, 8, 5],
                             [3, 5, 3, 6]])
         idx = numpy.indices(data.shape)
         idx -= 1
-        for order in range(0, 6):
-            out = ndimage.map_coordinates(data, idx, order=order)
-            assert_array_almost_equal(out, [[0, 0, 0, 0],
-                                            [0, 4, 1, 3],
-                                            [0, 7, 6, 8]])
 
-    def test_map_coordinates02(self):
+        out = ndimage.map_coordinates(data, idx, order=order)
+        assert_array_almost_equal(out, [[0, 0, 0, 0],
+                                        [0, 4, 1, 3],
+                                        [0, 7, 6, 8]])
+
+    @pytest.mark.parametrize('order', range(0, 6))
+    def test_map_coordinates02(self, order):
         data = numpy.array([[4, 1, 3, 2],
                             [7, 6, 8, 5],
                             [3, 5, 3, 6]])
         idx = numpy.indices(data.shape, numpy.float64)
         idx -= 0.5
-        for order in range(0, 6):
-            out1 = ndimage.shift(data, 0.5, order=order)
-            out2 = ndimage.map_coordinates(data, idx, order=order)
-            assert_array_almost_equal(out1, out2)
+
+        out1 = ndimage.shift(data, 0.5, order=order)
+        out2 = ndimage.map_coordinates(data, idx, order=order)
+        assert_array_almost_equal(out1, out2)
 
     def test_map_coordinates03(self):
         data = numpy.array([[4, 1, 3, 2],
@@ -1820,260 +1844,262 @@ class TestNdimage:
             n = 30000
             a = numpy.empty(n**2, dtype=numpy.float32).reshape(n, n)
             # fill the part we might read
-            a[n-3:, n-3:] = 0
+            a[n - 3:, n - 3:] = 0
             ndimage.map_coordinates(a, [[n - 1.5], [n - 1.5]], order=1)
         except MemoryError as e:
             raise pytest.skip("Not enough memory available") from e
 
-    def test_affine_transform01(self):
+    @pytest.mark.parametrize('order', range(0, 6))
+    def test_affine_transform01(self, order):
         data = numpy.array([1])
-        for order in range(0, 6):
-            out = ndimage.affine_transform(data, [[1]], order=order)
-            assert_array_almost_equal(out, [1])
+        out = ndimage.affine_transform(data, [[1]], order=order)
+        assert_array_almost_equal(out, [1])
 
-    def test_affine_transform02(self):
+    @pytest.mark.parametrize('order', range(0, 6))
+    def test_affine_transform02(self, order):
         data = numpy.ones([4])
-        for order in range(0, 6):
-            out = ndimage.affine_transform(data, [[1]], order=order)
-            assert_array_almost_equal(out, [1, 1, 1, 1])
+        out = ndimage.affine_transform(data, [[1]], order=order)
+        assert_array_almost_equal(out, [1, 1, 1, 1])
 
-    def test_affine_transform03(self):
+    @pytest.mark.parametrize('order', range(0, 6))
+    def test_affine_transform03(self, order):
         data = numpy.ones([4])
-        for order in range(0, 6):
-            out = ndimage.affine_transform(data, [[1]], -1, order=order)
-            assert_array_almost_equal(out, [0, 1, 1, 1])
+        out = ndimage.affine_transform(data, [[1]], -1, order=order)
+        assert_array_almost_equal(out, [0, 1, 1, 1])
 
-    def test_affine_transform04(self):
+    @pytest.mark.parametrize('order', range(0, 6))
+    def test_affine_transform04(self, order):
         data = numpy.array([4, 1, 3, 2])
-        for order in range(0, 6):
-            out = ndimage.affine_transform(data, [[1]], -1, order=order)
-            assert_array_almost_equal(out, [0, 4, 1, 3])
+        out = ndimage.affine_transform(data, [[1]], -1, order=order)
+        assert_array_almost_equal(out, [0, 4, 1, 3])
 
-    def test_affine_transform05(self):
+    @pytest.mark.parametrize('order', range(0, 6))
+    def test_affine_transform05(self, order):
         data = numpy.array([[1, 1, 1, 1],
                             [1, 1, 1, 1],
                             [1, 1, 1, 1]])
-        for order in range(0, 6):
-            out = ndimage.affine_transform(data, [[1, 0], [0, 1]],
-                                           [0, -1], order=order)
-            assert_array_almost_equal(out, [[0, 1, 1, 1],
-                                            [0, 1, 1, 1],
-                                            [0, 1, 1, 1]])
+        out = ndimage.affine_transform(data, [[1, 0], [0, 1]],
+                                       [0, -1], order=order)
+        assert_array_almost_equal(out, [[0, 1, 1, 1],
+                                        [0, 1, 1, 1],
+                                        [0, 1, 1, 1]])
 
-    def test_affine_transform06(self):
+    @pytest.mark.parametrize('order', range(0, 6))
+    def test_affine_transform06(self, order):
         data = numpy.array([[4, 1, 3, 2],
                             [7, 6, 8, 5],
                             [3, 5, 3, 6]])
-        for order in range(0, 6):
-            out = ndimage.affine_transform(data, [[1, 0], [0, 1]],
-                                           [0, -1], order=order)
-            assert_array_almost_equal(out, [[0, 4, 1, 3],
-                                            [0, 7, 6, 8],
-                                            [0, 3, 5, 3]])
+        out = ndimage.affine_transform(data, [[1, 0], [0, 1]],
+                                       [0, -1], order=order)
+        assert_array_almost_equal(out, [[0, 4, 1, 3],
+                                        [0, 7, 6, 8],
+                                        [0, 3, 5, 3]])
 
-    def test_affine_transform07(self):
+    @pytest.mark.parametrize('order', range(0, 6))
+    def test_affine_transform07(self, order):
         data = numpy.array([[4, 1, 3, 2],
                             [7, 6, 8, 5],
                             [3, 5, 3, 6]])
-        for order in range(0, 6):
-            out = ndimage.affine_transform(data, [[1, 0], [0, 1]],
-                                           [-1, 0], order=order)
-            assert_array_almost_equal(out, [[0, 0, 0, 0],
-                                            [4, 1, 3, 2],
-                                            [7, 6, 8, 5]])
+        out = ndimage.affine_transform(data, [[1, 0], [0, 1]],
+                                       [-1, 0], order=order)
+        assert_array_almost_equal(out, [[0, 0, 0, 0],
+                                        [4, 1, 3, 2],
+                                        [7, 6, 8, 5]])
 
-    def test_affine_transform08(self):
+    @pytest.mark.parametrize('order', range(0, 6))
+    def test_affine_transform08(self, order):
         data = numpy.array([[4, 1, 3, 2],
                             [7, 6, 8, 5],
                             [3, 5, 3, 6]])
-        for order in range(0, 6):
-            out = ndimage.affine_transform(data, [[1, 0], [0, 1]],
-                                           [-1, -1], order=order)
-            assert_array_almost_equal(out, [[0, 0, 0, 0],
-                                            [0, 4, 1, 3],
-                                            [0, 7, 6, 8]])
+        out = ndimage.affine_transform(data, [[1, 0], [0, 1]],
+                                       [-1, -1], order=order)
+        assert_array_almost_equal(out, [[0, 0, 0, 0],
+                                        [0, 4, 1, 3],
+                                        [0, 7, 6, 8]])
 
-    def test_affine_transform09(self):
+    @pytest.mark.parametrize('order', range(0, 6))
+    def test_affine_transform09(self, order):
         data = numpy.array([[4, 1, 3, 2],
                             [7, 6, 8, 5],
                             [3, 5, 3, 6]])
-        for order in range(0, 6):
-            if (order > 1):
-                filtered = ndimage.spline_filter(data, order=order)
-            else:
-                filtered = data
-            out = ndimage.affine_transform(filtered, [[1, 0], [0, 1]],
-                                           [-1, -1], order=order,
-                                           prefilter=False)
-            assert_array_almost_equal(out, [[0, 0, 0, 0],
-                                            [0, 4, 1, 3],
-                                            [0, 7, 6, 8]])
+        if (order > 1):
+            filtered = ndimage.spline_filter(data, order=order)
+        else:
+            filtered = data
+        out = ndimage.affine_transform(filtered, [[1, 0], [0, 1]],
+                                       [-1, -1], order=order,
+                                       prefilter=False)
+        assert_array_almost_equal(out, [[0, 0, 0, 0],
+                                        [0, 4, 1, 3],
+                                        [0, 7, 6, 8]])
 
-    def test_affine_transform10(self):
+    @pytest.mark.parametrize('order', range(0, 6))
+    def test_affine_transform10(self, order):
         data = numpy.ones([2], numpy.float64)
-        for order in range(0, 6):
-            out = ndimage.affine_transform(data, [[0.5]], output_shape=(4,),
-                                           order=order)
-            assert_array_almost_equal(out, [1, 1, 1, 0])
+        out = ndimage.affine_transform(data, [[0.5]], output_shape=(4,),
+                                       order=order)
+        assert_array_almost_equal(out, [1, 1, 1, 0])
 
-    def test_affine_transform11(self):
+    @pytest.mark.parametrize('order', range(0, 6))
+    def test_affine_transform11(self, order):
         data = [1, 5, 2, 6, 3, 7, 4, 4]
-        for order in range(0, 6):
-            out = ndimage.affine_transform(data, [[2]], 0, (4,), order=order)
-            assert_array_almost_equal(out, [1, 2, 3, 4])
+        out = ndimage.affine_transform(data, [[2]], 0, (4,), order=order)
+        assert_array_almost_equal(out, [1, 2, 3, 4])
 
-    def test_affine_transform12(self):
+    @pytest.mark.parametrize('order', range(0, 6))
+    def test_affine_transform12(self, order):
         data = [1, 2, 3, 4]
-        for order in range(0, 6):
-            out = ndimage.affine_transform(data, [[0.5]], 0, (8,), order=order)
-            assert_array_almost_equal(out[::2], [1, 2, 3, 4])
+        out = ndimage.affine_transform(data, [[0.5]], 0, (8,), order=order)
+        assert_array_almost_equal(out[::2], [1, 2, 3, 4])
 
-    def test_affine_transform13(self):
+    @pytest.mark.parametrize('order', range(0, 6))
+    def test_affine_transform13(self, order):
         data = [[1, 2, 3, 4],
                 [5, 6, 7, 8],
                 [9.0, 10, 11, 12]]
-        for order in range(0, 6):
-            out = ndimage.affine_transform(data, [[1, 0], [0, 2]], 0, (3, 2),
-                                           order=order)
-            assert_array_almost_equal(out, [[1, 3], [5, 7], [9, 11]])
+        out = ndimage.affine_transform(data, [[1, 0], [0, 2]], 0, (3, 2),
+                                       order=order)
+        assert_array_almost_equal(out, [[1, 3], [5, 7], [9, 11]])
 
-    def test_affine_transform14(self):
+    @pytest.mark.parametrize('order', range(0, 6))
+    def test_affine_transform14(self, order):
         data = [[1, 2, 3, 4],
                 [5, 6, 7, 8],
                 [9, 10, 11, 12]]
-        for order in range(0, 6):
-            out = ndimage.affine_transform(data, [[2, 0], [0, 1]], 0, (1, 4),
-                                           order=order)
-            assert_array_almost_equal(out, [[1, 2, 3, 4]])
+        out = ndimage.affine_transform(data, [[2, 0], [0, 1]], 0, (1, 4),
+                                       order=order)
+        assert_array_almost_equal(out, [[1, 2, 3, 4]])
 
-    def test_affine_transform15(self):
+    @pytest.mark.parametrize('order', range(0, 6))
+    def test_affine_transform15(self, order):
         data = [[1, 2, 3, 4],
                 [5, 6, 7, 8],
                 [9, 10, 11, 12]]
-        for order in range(0, 6):
-            out = ndimage.affine_transform(data, [[2, 0], [0, 2]], 0, (1, 2),
-                                           order=order)
-            assert_array_almost_equal(out, [[1, 3]])
+        out = ndimage.affine_transform(data, [[2, 0], [0, 2]], 0, (1, 2),
+                                       order=order)
+        assert_array_almost_equal(out, [[1, 3]])
 
-    def test_affine_transform16(self):
+    @pytest.mark.parametrize('order', range(0, 6))
+    def test_affine_transform16(self, order):
         data = [[1, 2, 3, 4],
                 [5, 6, 7, 8],
                 [9, 10, 11, 12]]
-        for order in range(0, 6):
-            out = ndimage.affine_transform(data, [[1, 0.0], [0, 0.5]], 0,
-                                           (3, 8), order=order)
-            assert_array_almost_equal(out[..., ::2], data)
+        out = ndimage.affine_transform(data, [[1, 0.0], [0, 0.5]], 0,
+                                       (3, 8), order=order)
+        assert_array_almost_equal(out[..., ::2], data)
 
-    def test_affine_transform17(self):
+    @pytest.mark.parametrize('order', range(0, 6))
+    def test_affine_transform17(self, order):
         data = [[1, 2, 3, 4],
                 [5, 6, 7, 8],
                 [9, 10, 11, 12]]
-        for order in range(0, 6):
-            out = ndimage.affine_transform(data, [[0.5, 0], [0, 1]], 0,
-                                           (6, 4), order=order)
-            assert_array_almost_equal(out[::2, ...], data)
+        out = ndimage.affine_transform(data, [[0.5, 0], [0, 1]], 0,
+                                       (6, 4), order=order)
+        assert_array_almost_equal(out[::2, ...], data)
 
-    def test_affine_transform18(self):
+    @pytest.mark.parametrize('order', range(0, 6))
+    def test_affine_transform18(self, order):
         data = [[1, 2, 3, 4],
                 [5, 6, 7, 8],
                 [9, 10, 11, 12]]
-        for order in range(0, 6):
-            out = ndimage.affine_transform(data, [[0.5, 0], [0, 0.5]], 0,
-                                           (6, 8), order=order)
-            assert_array_almost_equal(out[::2, ::2], data)
+        out = ndimage.affine_transform(data, [[0.5, 0], [0, 0.5]], 0,
+                                       (6, 8), order=order)
+        assert_array_almost_equal(out[::2, ::2], data)
 
-    def test_affine_transform19(self):
+    @pytest.mark.parametrize('order', range(0, 6))
+    def test_affine_transform19(self, order):
         data = numpy.array([[1, 2, 3, 4],
                             [5, 6, 7, 8],
                             [9, 10, 11, 12]], numpy.float64)
-        for order in range(0, 6):
-            out = ndimage.affine_transform(data, [[0.5, 0], [0, 0.5]], 0,
-                                           (6, 8), order=order)
-            out = ndimage.affine_transform(out, [[2.0, 0], [0, 2.0]], 0,
-                                           (3, 4), order=order)
-            assert_array_almost_equal(out, data)
+        out = ndimage.affine_transform(data, [[0.5, 0], [0, 0.5]], 0,
+                                       (6, 8), order=order)
+        out = ndimage.affine_transform(out, [[2.0, 0], [0, 2.0]], 0,
+                                       (3, 4), order=order)
+        assert_array_almost_equal(out, data)
 
-    def test_affine_transform20(self):
+    @pytest.mark.parametrize('order', range(0, 6))
+    def test_affine_transform20(self, order):
         data = [[1, 2, 3, 4],
                 [5, 6, 7, 8],
                 [9, 10, 11, 12]]
-        for order in range(0, 6):
-            out = ndimage.affine_transform(data, [[0], [2]], 0, (2,),
-                                           order=order)
-            assert_array_almost_equal(out, [1, 3])
+        out = ndimage.affine_transform(data, [[0], [2]], 0, (2,),
+                                       order=order)
+        assert_array_almost_equal(out, [1, 3])
 
-    def test_affine_transform21(self):
+    @pytest.mark.parametrize('order', range(0, 6))
+    def test_affine_transform21(self, order):
         data = [[1, 2, 3, 4],
                 [5, 6, 7, 8],
                 [9, 10, 11, 12]]
-        for order in range(0, 6):
-            out = ndimage.affine_transform(data, [[2], [0]], 0, (2,),
-                                           order=order)
-            assert_array_almost_equal(out, [1, 9])
+        out = ndimage.affine_transform(data, [[2], [0]], 0, (2,),
+                                       order=order)
+        assert_array_almost_equal(out, [1, 9])
 
-    def test_affine_transform22(self):
+    @pytest.mark.parametrize('order', range(0, 6))
+    def test_affine_transform22(self, order):
         # shift and offset interaction; see issue #1547
         data = numpy.array([4, 1, 3, 2])
-        for order in range(0, 6):
-            out = ndimage.affine_transform(data, [[2]], [-1], (3,),
-                                           order=order)
-            assert_array_almost_equal(out, [0, 1, 2])
+        out = ndimage.affine_transform(data, [[2]], [-1], (3,),
+                                       order=order)
+        assert_array_almost_equal(out, [0, 1, 2])
 
-    def test_affine_transform23(self):
+    @pytest.mark.parametrize('order', range(0, 6))
+    def test_affine_transform23(self, order):
         # shift and offset interaction; see issue #1547
         data = numpy.array([4, 1, 3, 2])
-        for order in range(0, 6):
-            out = ndimage.affine_transform(data, [[0.5]], [-1], (8,),
-                                           order=order)
-            assert_array_almost_equal(out[::2], [0, 4, 1, 3])
+        out = ndimage.affine_transform(data, [[0.5]], [-1], (8,),
+                                       order=order)
+        assert_array_almost_equal(out[::2], [0, 4, 1, 3])
 
-    def test_affine_transform24(self):
+    @pytest.mark.parametrize('order', range(0, 6))
+    def test_affine_transform24(self, order):
         # consistency between diagonal and non-diagonal case; see issue #1547
         data = numpy.array([4, 1, 3, 2])
-        for order in range(0, 6):
-            with suppress_warnings() as sup:
-                sup.filter(UserWarning,
-                           "The behavior of affine_transform with a 1-D array .* has changed")
-                out1 = ndimage.affine_transform(data, [2], -1, order=order)
-            out2 = ndimage.affine_transform(data, [[2]], -1, order=order)
-            assert_array_almost_equal(out1, out2)
+        with suppress_warnings() as sup:
+            sup.filter(UserWarning,
+                       "The behavior of affine_transform with a 1-D array .* "
+                       "has changed")
+            out1 = ndimage.affine_transform(data, [2], -1, order=order)
+        out2 = ndimage.affine_transform(data, [[2]], -1, order=order)
+        assert_array_almost_equal(out1, out2)
 
-    def test_affine_transform25(self):
+    @pytest.mark.parametrize('order', range(0, 6))
+    def test_affine_transform25(self, order):
         # consistency between diagonal and non-diagonal case; see issue #1547
         data = numpy.array([4, 1, 3, 2])
-        for order in range(0, 6):
-            with suppress_warnings() as sup:
-                sup.filter(UserWarning,
-                           "The behavior of affine_transform with a 1-D array .* has changed")
-                out1 = ndimage.affine_transform(data, [0.5], -1, order=order)
-            out2 = ndimage.affine_transform(data, [[0.5]], -1, order=order)
-            assert_array_almost_equal(out1, out2)
+        with suppress_warnings() as sup:
+            sup.filter(UserWarning,
+                       "The behavior of affine_transform with a 1-D array .* "
+                       "has changed")
+            out1 = ndimage.affine_transform(data, [0.5], -1, order=order)
+        out2 = ndimage.affine_transform(data, [[0.5]], -1, order=order)
+        assert_array_almost_equal(out1, out2)
 
-    def test_affine_transform26(self):
+    @pytest.mark.parametrize('order', range(0, 6))
+    def test_affine_transform26(self, order):
         # test homogeneous coordinates
         data = numpy.array([[4, 1, 3, 2],
                             [7, 6, 8, 5],
                             [3, 5, 3, 6]])
-        for order in range(0, 6):
-            if (order > 1):
-                filtered = ndimage.spline_filter(data, order=order)
-            else:
-                filtered = data
-            tform_original = numpy.eye(2)
-            offset_original = -numpy.ones((2, 1))
-            tform_h1 = numpy.hstack((tform_original, offset_original))
-            tform_h2 = numpy.vstack((tform_h1, [[0, 0, 1]]))
-            out1 = ndimage.affine_transform(filtered, tform_original,
-                                            offset_original.ravel(),
-                                            order=order, prefilter=False)
-            out2 = ndimage.affine_transform(filtered, tform_h1, order=order,
-                                            prefilter=False)
-            out3 = ndimage.affine_transform(filtered, tform_h2, order=order,
-                                            prefilter=False)
-            for out in [out1, out2, out3]:
-                assert_array_almost_equal(out, [[0, 0, 0, 0],
-                                                [0, 4, 1, 3],
-                                                [0, 7, 6, 8]])
+        if (order > 1):
+            filtered = ndimage.spline_filter(data, order=order)
+        else:
+            filtered = data
+        tform_original = numpy.eye(2)
+        offset_original = -numpy.ones((2, 1))
+        tform_h1 = numpy.hstack((tform_original, offset_original))
+        tform_h2 = numpy.vstack((tform_h1, [[0, 0, 1]]))
+        out1 = ndimage.affine_transform(filtered, tform_original,
+                                        offset_original.ravel(),
+                                        order=order, prefilter=False)
+        out2 = ndimage.affine_transform(filtered, tform_h1, order=order,
+                                        prefilter=False)
+        out3 = ndimage.affine_transform(filtered, tform_h2, order=order,
+                                        prefilter=False)
+        for out in [out1, out2, out3]:
+            assert_array_almost_equal(out, [[0, 0, 0, 0],
+                                            [0, 4, 1, 3],
+                                            [0, 7, 6, 8]])
 
     def test_affine_transform27(self):
         # test valid homogeneous transformation matrix
@@ -2093,7 +2119,8 @@ class TestNdimage:
                     data.dtype, data.dtype.newbyteorder()]:
             with suppress_warnings() as sup:
                 sup.filter(UserWarning,
-                           "The behavior of affine_transform with a 1-D array .* has changed")
+                           "The behavior of affine_transform with a 1-D array "
+                           ".* has changed")
                 returned = ndimage.affine_transform(data, [1, 1], output=out)
             result = out if returned is None else returned
             assert_array_almost_equal(result, [[1, 1], [1, 1]])
@@ -2115,95 +2142,95 @@ class TestNdimage:
         assert_(out.dtype is numpy.dtype('f'))
         assert_array_almost_equal(out, [1])
 
-    def test_shift01(self):
+    @pytest.mark.parametrize('order', range(0, 6))
+    def test_shift01(self, order):
         data = numpy.array([1])
-        for order in range(0, 6):
-            out = ndimage.shift(data, [1], order=order)
-            assert_array_almost_equal(out, [0])
+        out = ndimage.shift(data, [1], order=order)
+        assert_array_almost_equal(out, [0])
 
-    def test_shift02(self):
+    @pytest.mark.parametrize('order', range(0, 6))
+    def test_shift02(self, order):
         data = numpy.ones([4])
-        for order in range(0, 6):
-            out = ndimage.shift(data, [1], order=order)
-            assert_array_almost_equal(out, [0, 1, 1, 1])
+        out = ndimage.shift(data, [1], order=order)
+        assert_array_almost_equal(out, [0, 1, 1, 1])
 
-    def test_shift03(self):
+    @pytest.mark.parametrize('order', range(0, 6))
+    def test_shift03(self, order):
         data = numpy.ones([4])
-        for order in range(0, 6):
-            out = ndimage.shift(data, -1, order=order)
-            assert_array_almost_equal(out, [1, 1, 1, 0])
+        out = ndimage.shift(data, -1, order=order)
+        assert_array_almost_equal(out, [1, 1, 1, 0])
 
-    def test_shift04(self):
+    @pytest.mark.parametrize('order', range(0, 6))
+    def test_shift04(self, order):
         data = numpy.array([4, 1, 3, 2])
-        for order in range(0, 6):
-            out = ndimage.shift(data, 1, order=order)
-            assert_array_almost_equal(out, [0, 4, 1, 3])
+        out = ndimage.shift(data, 1, order=order)
+        assert_array_almost_equal(out, [0, 4, 1, 3])
 
-    def test_shift05(self):
+    @pytest.mark.parametrize('order', range(0, 6))
+    def test_shift05(self, order):
         data = numpy.array([[1, 1, 1, 1],
                             [1, 1, 1, 1],
                             [1, 1, 1, 1]])
-        for order in range(0, 6):
-            out = ndimage.shift(data, [0, 1], order=order)
-            assert_array_almost_equal(out, [[0, 1, 1, 1],
-                                            [0, 1, 1, 1],
-                                            [0, 1, 1, 1]])
+        out = ndimage.shift(data, [0, 1], order=order)
+        assert_array_almost_equal(out, [[0, 1, 1, 1],
+                                        [0, 1, 1, 1],
+                                        [0, 1, 1, 1]])
 
-    def test_shift06(self):
+    @pytest.mark.parametrize('order', range(0, 6))
+    def test_shift06(self, order):
         data = numpy.array([[4, 1, 3, 2],
                             [7, 6, 8, 5],
                             [3, 5, 3, 6]])
-        for order in range(0, 6):
-            out = ndimage.shift(data, [0, 1], order=order)
-            assert_array_almost_equal(out, [[0, 4, 1, 3],
-                                            [0, 7, 6, 8],
-                                            [0, 3, 5, 3]])
+        out = ndimage.shift(data, [0, 1], order=order)
+        assert_array_almost_equal(out, [[0, 4, 1, 3],
+                                        [0, 7, 6, 8],
+                                        [0, 3, 5, 3]])
 
-    def test_shift07(self):
+    @pytest.mark.parametrize('order', range(0, 6))
+    def test_shift07(self, order):
         data = numpy.array([[4, 1, 3, 2],
                             [7, 6, 8, 5],
                             [3, 5, 3, 6]])
-        for order in range(0, 6):
-            out = ndimage.shift(data, [1, 0], order=order)
-            assert_array_almost_equal(out, [[0, 0, 0, 0],
-                                            [4, 1, 3, 2],
-                                            [7, 6, 8, 5]])
+        out = ndimage.shift(data, [1, 0], order=order)
+        assert_array_almost_equal(out, [[0, 0, 0, 0],
+                                        [4, 1, 3, 2],
+                                        [7, 6, 8, 5]])
 
-    def test_shift08(self):
+    @pytest.mark.parametrize('order', range(0, 6))
+    def test_shift08(self, order):
         data = numpy.array([[4, 1, 3, 2],
                             [7, 6, 8, 5],
                             [3, 5, 3, 6]])
-        for order in range(0, 6):
-            out = ndimage.shift(data, [1, 1], order=order)
-            assert_array_almost_equal(out, [[0, 0, 0, 0],
-                                            [0, 4, 1, 3],
-                                            [0, 7, 6, 8]])
+        out = ndimage.shift(data, [1, 1], order=order)
+        assert_array_almost_equal(out, [[0, 0, 0, 0],
+                                        [0, 4, 1, 3],
+                                        [0, 7, 6, 8]])
 
-    def test_shift09(self):
+    @pytest.mark.parametrize('order', range(0, 6))
+    def test_shift09(self, order):
         data = numpy.array([[4, 1, 3, 2],
                             [7, 6, 8, 5],
                             [3, 5, 3, 6]])
-        for order in range(0, 6):
-            if (order > 1):
-                filtered = ndimage.spline_filter(data, order=order)
-            else:
-                filtered = data
-            out = ndimage.shift(filtered, [1, 1], order=order, prefilter=False)
-            assert_array_almost_equal(out, [[0, 0, 0, 0],
-                                            [0, 4, 1, 3],
-                                            [0, 7, 6, 8]])
+        if (order > 1):
+            filtered = ndimage.spline_filter(data, order=order)
+        else:
+            filtered = data
+        out = ndimage.shift(filtered, [1, 1], order=order, prefilter=False)
+        assert_array_almost_equal(out, [[0, 0, 0, 0],
+                                        [0, 4, 1, 3],
+                                        [0, 7, 6, 8]])
 
-    def test_zoom1(self):
-        for order in range(0, 6):
-            for z in [2, [2, 2]]:
-                arr = numpy.array(list(range(25))).reshape((5, 5)).astype(float)
-                arr = ndimage.zoom(arr, z, order=order)
-                assert_equal(arr.shape, (10, 10))
-                assert_(numpy.all(arr[-1, :] != 0))
-                assert_(numpy.all(arr[-1, :] >= (20 - eps)))
-                assert_(numpy.all(arr[0, :] <= (5 + eps)))
-                assert_(numpy.all(arr >= (0 - eps)))
-                assert_(numpy.all(arr <= (24 + eps)))
+    @pytest.mark.parametrize('order', range(0, 6))
+    def test_zoom1(self, order):
+        for z in [2, [2, 2]]:
+            arr = numpy.array(list(range(25))).reshape((5, 5)).astype(float)
+            arr = ndimage.zoom(arr, z, order=order)
+            assert_equal(arr.shape, (10, 10))
+            assert_(numpy.all(arr[-1, :] != 0))
+            assert_(numpy.all(arr[-1, :] >= (20 - eps)))
+            assert_(numpy.all(arr[0, :] <= (5 + eps)))
+            assert_(numpy.all(arr >= (0 - eps)))
+            assert_(numpy.all(arr <= (24 + eps)))
 
     def test_zoom2(self):
         arr = numpy.arange(12).reshape((3, 4))
@@ -2218,17 +2245,18 @@ class TestNdimage:
         assert_array_almost_equal(out1, numpy.array([[1, 2], [1, 2]]))
         assert_array_almost_equal(out2, numpy.array([[1, 1, 2, 2]]))
 
-    def test_zoom_affine01(self):
+    @pytest.mark.parametrize('order', range(0, 6))
+    def test_zoom_affine01(self, order):
         data = [[1, 2, 3, 4],
                 [5, 6, 7, 8],
                 [9, 10, 11, 12]]
-        for order in range(0, 6):
-            with suppress_warnings() as sup:
-                sup.filter(UserWarning,
-                           "The behavior of affine_transform with a 1-D array .* has changed")
-                out = ndimage.affine_transform(data, [0.5, 0.5], 0,
-                                               (6, 8), order=order)
-            assert_array_almost_equal(out[::2, ::2], data)
+        with suppress_warnings() as sup:
+            sup.filter(UserWarning,
+                       "The behavior of affine_transform with a 1-D array .* "
+                       "has changed")
+            out = ndimage.affine_transform(data, [0.5, 0.5], 0,
+                                           (6, 8), order=order)
+        assert_array_almost_equal(out[::2, ::2], data)
 
     def test_zoom_infinity(self):
         # Ticket #1419 regression test
@@ -2250,15 +2278,16 @@ class TestNdimage:
         out = ndimage.zoom(arr, zoom)
         assert_array_equal(out.shape, (4, 15, 29))
 
-    def test_rotate01(self):
+    @pytest.mark.parametrize('order', range(0, 6))
+    def test_rotate01(self, order):
         data = numpy.array([[0, 0, 0, 0],
                             [0, 1, 1, 0],
                             [0, 0, 0, 0]], dtype=numpy.float64)
-        for order in range(0, 6):
-            out = ndimage.rotate(data, 0)
-            assert_array_almost_equal(out, data)
+        out = ndimage.rotate(data, 0)
+        assert_array_almost_equal(out, data)
 
-    def test_rotate02(self):
+    @pytest.mark.parametrize('order', range(0, 6))
+    def test_rotate02(self, order):
         data = numpy.array([[0, 0, 0, 0],
                             [0, 1, 0, 0],
                             [0, 0, 0, 0]], dtype=numpy.float64)
@@ -2266,11 +2295,11 @@ class TestNdimage:
                                [0, 0, 0],
                                [0, 1, 0],
                                [0, 0, 0]], dtype=numpy.float64)
-        for order in range(0, 6):
-            out = ndimage.rotate(data, 90)
-            assert_array_almost_equal(out, expected)
+        out = ndimage.rotate(data, 90)
+        assert_array_almost_equal(out, expected)
 
-    def test_rotate03(self):
+    @pytest.mark.parametrize('order', range(0, 6))
+    def test_rotate03(self, order):
         data = numpy.array([[0, 0, 0, 0, 0],
                             [0, 1, 1, 0, 0],
                             [0, 0, 0, 0, 0]], dtype=numpy.float64)
@@ -2279,56 +2308,52 @@ class TestNdimage:
                                [0, 1, 0],
                                [0, 1, 0],
                                [0, 0, 0]], dtype=numpy.float64)
-        for order in range(0, 6):
-            out = ndimage.rotate(data, 90)
-            assert_array_almost_equal(out, expected)
+        out = ndimage.rotate(data, 90)
+        assert_array_almost_equal(out, expected)
 
-    def test_rotate04(self):
+    @pytest.mark.parametrize('order', range(0, 6))
+    def test_rotate04(self, order):
         data = numpy.array([[0, 0, 0, 0, 0],
                             [0, 1, 1, 0, 0],
                             [0, 0, 0, 0, 0]], dtype=numpy.float64)
         expected = numpy.array([[0, 0, 0, 0, 0],
                                 [0, 0, 1, 0, 0],
                                 [0, 0, 1, 0, 0]], dtype=numpy.float64)
-        for order in range(0, 6):
-            out = ndimage.rotate(data, 90, reshape=False)
-            assert_array_almost_equal(out, expected)
+        out = ndimage.rotate(data, 90, reshape=False)
+        assert_array_almost_equal(out, expected)
 
-    def test_rotate05(self):
+    @pytest.mark.parametrize('order', range(0, 6))
+    def test_rotate05(self, order):
         data = numpy.empty((4, 3, 3))
         for i in range(3):
             data[:, :, i] = numpy.array([[0, 0, 0],
                                          [0, 1, 0],
                                          [0, 1, 0],
                                          [0, 0, 0]], dtype=numpy.float64)
-
         expected = numpy.array([[0, 0, 0, 0],
                                 [0, 1, 1, 0],
                                 [0, 0, 0, 0]], dtype=numpy.float64)
+        out = ndimage.rotate(data, 90)
+        for i in range(3):
+            assert_array_almost_equal(out[:, :, i], expected)
 
-        for order in range(0, 6):
-            out = ndimage.rotate(data, 90)
-            for i in range(3):
-                assert_array_almost_equal(out[:, :, i], expected)
-
-    def test_rotate06(self):
+    @pytest.mark.parametrize('order', range(0, 6))
+    def test_rotate06(self, order):
         data = numpy.empty((3, 4, 3))
         for i in range(3):
             data[:, :, i] = numpy.array([[0, 0, 0, 0],
                                          [0, 1, 1, 0],
                                          [0, 0, 0, 0]], dtype=numpy.float64)
-
         expected = numpy.array([[0, 0, 0],
                                 [0, 1, 0],
                                 [0, 1, 0],
                                 [0, 0, 0]], dtype=numpy.float64)
+        out = ndimage.rotate(data, 90)
+        for i in range(3):
+            assert_array_almost_equal(out[:, :, i], expected)
 
-        for order in range(0, 6):
-            out = ndimage.rotate(data, 90)
-            for i in range(3):
-                assert_array_almost_equal(out[:, :, i], expected)
-
-    def test_rotate07(self):
+    @pytest.mark.parametrize('order', range(0, 6))
+    def test_rotate07(self, order):
         data = numpy.array([[[0, 0, 0, 0, 0],
                              [0, 1, 1, 0, 0],
                              [0, 0, 0, 0, 0]]] * 2, dtype=numpy.float64)
@@ -2339,12 +2364,11 @@ class TestNdimage:
                                  [0, 0, 0],
                                  [0, 0, 0]]] * 2, dtype=numpy.float64)
         expected = expected.transpose([2, 1, 0])
+        out = ndimage.rotate(data, 90, axes=(0, 1))
+        assert_array_almost_equal(out, expected)
 
-        for order in range(0, 6):
-            out = ndimage.rotate(data, 90, axes=(0, 1))
-            assert_array_almost_equal(out, expected)
-
-    def test_rotate08(self):
+    @pytest.mark.parametrize('order', range(0, 6))
+    def test_rotate08(self, order):
         data = numpy.array([[[0, 0, 0, 0, 0],
                              [0, 1, 1, 0, 0],
                              [0, 0, 0, 0, 0]]] * 2, dtype=numpy.float64)
@@ -2353,9 +2377,8 @@ class TestNdimage:
                                  [0, 0, 1, 0, 0],
                                  [0, 0, 0, 0, 0]]] * 2, dtype=numpy.float64)
         expected = expected.transpose()
-        for order in range(0, 6):
-            out = ndimage.rotate(data, 90, axes=(0, 1), reshape=False)
-            assert_array_almost_equal(out, expected)
+        out = ndimage.rotate(data, 90, axes=(0, 1), reshape=False)
+        assert_array_almost_equal(out, expected)
 
     def test_rotate09(self):
         data = numpy.array([[0, 0, 0, 0, 0],
