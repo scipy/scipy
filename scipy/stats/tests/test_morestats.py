@@ -1638,6 +1638,17 @@ class TestCircFuncs(object):
         S2 = stats.circstd(x, high=360)
         assert_allclose(S2, S1, rtol=1e-4)
 
+    @pytest.mark.parametrize("test_func, numpy_func",
+                             [(stats.circmean, np.mean),
+                              (stats.circvar, np.var),
+                              (stats.circstd, np.std)])
+    def test_circfuncs_close(self, test_func, numpy_func):
+        # circfuncs should handle very similar inputs (gh-12740)
+        x = np.array([0.12675364631578953] * 10 + [0.12675365920187928] * 100)
+        circstat = test_func(x)
+        normal = numpy_func(x)
+        assert_allclose(circstat, normal, atol=1e-8)
+
     def test_circmean_axis(self):
         x = np.array([[355, 5, 2, 359, 10, 350],
                       [351, 7, 4, 352, 9, 349],

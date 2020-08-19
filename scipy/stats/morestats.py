@@ -3415,8 +3415,9 @@ def circvar(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
         sin_mean = sin_samp.sum(axis=axis) / nsum
         cos_mean = cos_samp.sum(axis=axis) / nsum
     R = hypot(sin_mean, cos_mean)
+    R = np.minimum(R, 1)  # hypot can go slightly above 1 due to rounding errors
 
-    return ((high - low)/2.0/pi)**2 * 2 * log(1/R)
+    return ((high - low)/2.0/pi)**2 * -2 * log(R)
 
 
 def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
@@ -3469,5 +3470,6 @@ def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
         sin_mean = sin_samp.sum(axis=axis) / nsum
         cos_mean = cos_samp.sum(axis=axis) / nsum
     R = hypot(sin_mean, cos_mean)
+    R = np.minimum(R, 1)  # hypot can go slightly above 1 due to rounding errors
 
     return ((high - low)/2.0/pi) * sqrt(-2*log(R))
