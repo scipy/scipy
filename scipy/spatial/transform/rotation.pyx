@@ -878,14 +878,21 @@ cdef class Rotation(object):
         Parameters
         ----------
         seq : string
-            Specifies sequence of axes for rotations. Up to 3 characters
+            Specifies the order of the sequence of
+            rotations to be performed. Up to 3 characters
             belonging to the set {'X', 'Y', 'Z'} for intrinsic rotations, or
             {'x', 'y', 'z'} for extrinsic rotations. Extrinsic and intrinsic
             rotations cannot be mixed in one function call.
         angles : float or array_like, shape (N,) or (N, [1 or 2 or 3])
+            where the number of rows, N, indicates the number of rotation 
+            sets and the columns, ([1, 2 or 3]), provide rotations angles about the 
+            z, y and x axes respectively for each set.
+            
             Euler angles specified in radians (`degrees` is False) or degrees
             (`degrees` is True).
-            For a single character `seq`, `angles` can be:
+            
+            For rotation about a single axis, a single character `seq`
+            indcates the axis, and `angles` can be:
 
             - a single value
             - array_like with shape (N,), where each `angle[i]`
@@ -893,7 +900,8 @@ cdef class Rotation(object):
             - array_like with shape (N, 1), where each `angle[i, 0]`
               corresponds to a single rotation
 
-            For 2- and 3-character wide `seq`, `angles` can be:
+            For rotations about 2 or 3 axes, specify a 2- or 3-character 
+            wide `seq`, `angles` can be:
 
             - array_like with shape (W,) where `W` is the width of
               `seq`, which corresponds to a single rotation with `W` axes
@@ -937,13 +945,18 @@ cdef class Rotation(object):
         >>> r.as_quat().shape
         (1, 4)
 
-        Initialize a stack with a single rotation with an axis sequence:
-
+        Initialize a stack with a single rotation sequence for
+            90 degrees about the z axis, 
+            45 degrees about the y axis, 
+            30 degrees about the x axis, 
+        specifying the order of rotations to be applied with an axis sequence:
+        
         >>> r = R.from_euler('zyx', [[90, 45, 30]], degrees=True)
         >>> r.as_quat().shape
         (1, 4)
 
-        Initialize multiple elementary rotations in one object:
+        Initialize multiple elementary rotations about a single 
+        axis in one object:
 
         >>> r = R.from_euler('x', [90, 45, 30], degrees=True)
         >>> r.as_quat().shape
