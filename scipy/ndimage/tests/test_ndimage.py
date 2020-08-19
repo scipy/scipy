@@ -896,8 +896,8 @@ class TestNdimageFilters:
 
     def test_maximum_filter09(self):
         array = numpy.array([[3, 2, 5, 1, 4],
-                                [7, 6, 9, 3, 5],
-                                [5, 8, 3, 7, 1]])
+                             [7, 6, 9, 3, 5],
+                             [5, 8, 3, 7, 1]])
         footprint = [[1, 0, 1], [1, 1, 0]]
         output = ndimage.maximum_filter(array, footprint=footprint,
                                         origin=[-1, 0])
@@ -1849,8 +1849,12 @@ class TestNdimageInterpolation:
         expected = numpy.array([[0, 0], [0, 1]])
         idx = numpy.indices(data.shape)
         idx -= 1
-        for out in [data.dtype, data.dtype.newbyteorder(), numpy.empty_like(expected),
-                    numpy.empty_like(expected).astype(expected.dtype.newbyteorder())]:
+        for out in [
+            data.dtype,
+            data.dtype.newbyteorder(),
+            numpy.empty_like(expected),
+            numpy.empty_like(expected).astype(expected.dtype.newbyteorder())
+        ]:
             returned = ndimage.map_coordinates(data, idx, output=out)
             result = out if returned is None else returned
             assert_array_almost_equal(result, expected)
@@ -4844,14 +4848,15 @@ class TestDilateFix:
         result = ndimage.grey_dilation(self.array, size=3)
         assert_array_almost_equal(result, self.dilated3x3)
 
+
 class TestBinaryOpeningClosing:
 
     def setup_method(self):
-        a = numpy.zeros((5,5), dtype=bool)
+        a = numpy.zeros((5, 5), dtype=bool)
         a[1:4, 1:4] = True
-        a[4,4] = True
+        a[4, 4] = True
         self.array = a
-        self.sq3x3 = numpy.ones((3,3))
+        self.sq3x3 = numpy.ones((3, 3))
         self.opened_old = ndimage.binary_opening(self.array, self.sq3x3,
                                                  1, None, 0)
         self.closed_old = ndimage.binary_closing(self.array, self.sq3x3,
