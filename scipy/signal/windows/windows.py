@@ -1971,7 +1971,7 @@ def get_window(window, Nx, fftbins=True):
     - `~scipy.signal.windows.general_gaussian` (needs power, width)
     - `~scipy.signal.windows.dpss` (needs normalized half-bandwidth)
     - `~scipy.signal.windows.chebwin` (needs attenuation)
-    - `~scipy.signal.windows.exponential` (needs decay scale)
+    - `~scipy.signal.windows.exponential` (needs center, decay scale)
     - `~scipy.signal.windows.tukey` (needs taper fraction)
 
     If the window requires no parameters, then `window` can be a string.
@@ -1995,6 +1995,9 @@ def get_window(window, Nx, fftbins=True):
     >>> signal.get_window(('kaiser', 4.0), 9)
     array([ 0.08848053,  0.29425961,  0.56437221,  0.82160913,  0.97885093,
             0.97885093,  0.82160913,  0.56437221,  0.29425961])
+    >>> signal.get_window(('exponential', None, 1.), 9)
+    array([ 0.011109  ,  0.03019738,  0.082085  ,  0.22313016,  0.60653066,
+            0.60653066,  0.22313016,  0.082085  ,  0.03019738])
     >>> signal.get_window(4.0, 9)
     array([ 0.08848053,  0.29425961,  0.56437221,  0.82160913,  0.97885093,
             0.97885093,  0.82160913,  0.56437221,  0.29425961])
