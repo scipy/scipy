@@ -2283,7 +2283,7 @@ class TestNdimage:
         data = numpy.array([[0, 0, 0, 0],
                             [0, 1, 1, 0],
                             [0, 0, 0, 0]], dtype=numpy.float64)
-        out = ndimage.rotate(data, 0)
+        out = ndimage.rotate(data, 0, order=order)
         assert_array_almost_equal(out, data)
 
     @pytest.mark.parametrize('order', range(0, 6))
@@ -2295,7 +2295,7 @@ class TestNdimage:
                                [0, 0, 0],
                                [0, 1, 0],
                                [0, 0, 0]], dtype=numpy.float64)
-        out = ndimage.rotate(data, 90)
+        out = ndimage.rotate(data, 90, order=order)
         assert_array_almost_equal(out, expected)
 
     @pytest.mark.parametrize('order', range(0, 6))
@@ -2308,7 +2308,7 @@ class TestNdimage:
                                [0, 1, 0],
                                [0, 1, 0],
                                [0, 0, 0]], dtype=numpy.float64)
-        out = ndimage.rotate(data, 90)
+        out = ndimage.rotate(data, 90, order=order)
         assert_array_almost_equal(out, expected)
 
     @pytest.mark.parametrize('order', range(0, 6))
@@ -2319,7 +2319,7 @@ class TestNdimage:
         expected = numpy.array([[0, 0, 0, 0, 0],
                                 [0, 0, 1, 0, 0],
                                 [0, 0, 1, 0, 0]], dtype=numpy.float64)
-        out = ndimage.rotate(data, 90, reshape=False)
+        out = ndimage.rotate(data, 90, reshape=False, order=order)
         assert_array_almost_equal(out, expected)
 
     @pytest.mark.parametrize('order', range(0, 6))
@@ -2333,7 +2333,7 @@ class TestNdimage:
         expected = numpy.array([[0, 0, 0, 0],
                                 [0, 1, 1, 0],
                                 [0, 0, 0, 0]], dtype=numpy.float64)
-        out = ndimage.rotate(data, 90)
+        out = ndimage.rotate(data, 90, order=order)
         for i in range(3):
             assert_array_almost_equal(out[:, :, i], expected)
 
@@ -2348,7 +2348,7 @@ class TestNdimage:
                                 [0, 1, 0],
                                 [0, 1, 0],
                                 [0, 0, 0]], dtype=numpy.float64)
-        out = ndimage.rotate(data, 90)
+        out = ndimage.rotate(data, 90, order=order)
         for i in range(3):
             assert_array_almost_equal(out[:, :, i], expected)
 
@@ -2364,7 +2364,7 @@ class TestNdimage:
                                  [0, 0, 0],
                                  [0, 0, 0]]] * 2, dtype=numpy.float64)
         expected = expected.transpose([2, 1, 0])
-        out = ndimage.rotate(data, 90, axes=(0, 1))
+        out = ndimage.rotate(data, 90, axes=(0, 1), order=order)
         assert_array_almost_equal(out, expected)
 
     @pytest.mark.parametrize('order', range(0, 6))
@@ -2377,7 +2377,7 @@ class TestNdimage:
                                  [0, 0, 1, 0, 0],
                                  [0, 0, 0, 0, 0]]] * 2, dtype=numpy.float64)
         expected = expected.transpose()
-        out = ndimage.rotate(data, 90, axes=(0, 1), reshape=False)
+        out = ndimage.rotate(data, 90, axes=(0, 1), reshape=False, order=order)
         assert_array_almost_equal(out, expected)
 
     def test_rotate09(self):
