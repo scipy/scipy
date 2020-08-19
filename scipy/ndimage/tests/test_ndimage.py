@@ -416,7 +416,6 @@ class TestNdimageFilters:
     @pytest.mark.parametrize('dtype_output', types)
     def test_correlate25(self, dtype_array, dtype_output):
         weights = numpy.array([1, 2, 1])
-        weights = numpy.array([1, 2, 1])
         tcor = [[4, 8, 12], [5, 10, 15]]
         tcov = [[7, 14, 21], [8, 16, 24]]
         array = numpy.array([[1, 2, 3],
