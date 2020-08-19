@@ -273,8 +273,9 @@ def splrep(x, y, w=None, xb=None, xe=None, k=3, task=0, s=None, t=None,
 
     Examples
     --------
-    You can interpolate 1-D points with a B-spline curve:
-    Further examples are given :ref:`in the tutorial <tutorial-interpolate_splXXX>`.
+    You can interpolate 1-D points with a B-spline curve.
+    Further examples are given in
+    :ref:`in the tutorial <tutorial-interpolate_splXXX>`.
 
     >>> import matplotlib.pyplot as plt
     >>> from scipy.interpolate import splev, splrep
