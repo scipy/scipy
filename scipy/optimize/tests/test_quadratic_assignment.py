@@ -70,6 +70,13 @@ def test_quadratic_assignment():
 
     assert iter >= res['nit']
 
+    # check with specified init_J
+    K = np.ones((n, n)) / float(n)
+    K = _doubly_stochastic(K)
+    res = quadratic_assignment(cost_matrix, dist_matrix,
+                               options={'init_J': K})
+    assert 11156 <= res['score'] < 21000
+
 
 @pytest.mark.slow
 def test_rand_qap():
