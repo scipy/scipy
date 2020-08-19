@@ -110,7 +110,7 @@ def quadratic_assignment(
                 iterations is sufficiently small, that is, when the Frobenius
                 norm of :math:`(P_{i}-P_{i+1}) \leq eps`, where :math:`i` is
                 the iteration number.
-            seed : {None, int, `~np.random.RandomState`,`~np.random.Generator`}
+            seed : {None,int, `~np.random.RandomState`, `~np.random.Generator`}
                 This parameter defines the object to use for drawing random
                 variates.
                 If `seed` is `None` the `~np.random.RandomState` singleton is
@@ -217,7 +217,7 @@ def _quadratic_assignment_faq(
         maximize=False,
         partial_match=None,
         init_J="barycenter",
-        init_weight=1,
+        init_weight=None,
         init_k=1,
         maxiter=30,
         shuffle_input=True,
@@ -311,14 +311,15 @@ def _quadratic_assignment_faq(
     B21 = dist_matrix[n_seeds:, :n_seeds]
     B22 = dist_matrix[n_seeds:, n_seeds:]
 
+    # setting initialization matrix
+    if isinstance(init_J, str) and init_J == 'barycenter':
+        J = np.ones((n_unseed, n_unseed)) / float(n_unseed)
+    else:
+        _check_init_input(init_J, n_unseed)
+        J = init_J
+
     total_iter = 0
     for i in range(init_k):
-        # setting initialization matrix
-        if isinstance(init_J, str) and init_J == 'barycenter':
-            J = np.ones((n_unseed, n_unseed)) / float(n_unseed)
-        else:
-            _check_init_input(init_J, n_unseed)
-            J = init_J
         if init_weight is not None:
             # generate a nxn matrix where each entry is a random number [0, 1]
             K = rng.rand(n_unseed, n_unseed)
@@ -400,12 +401,15 @@ def _quadratic_assignment_faq(
 
 
 def _check_init_input(init_J, n):
-    row_sum = np.round(np.sum(init_J, axis=0), decimals=2)
-    col_sum = np.round(np.sum(init_J, axis=1), decimals=2)
+    row_sum = np.sum(init_J, axis=0)
+    col_sum = np.sum(init_J, axis=1)
+    tol = 1e-3
     msg = None
     if init_J.shape != (n, n):
         msg = "`init_J` matrix must have same shape as A and B"
-    elif (row_sum != 1.).any() or (col_sum != 1.).any() or (init_J < 0).any():
+    elif (~np.isclose(row_sum, np.ones(n), atol=tol)).any() or \
+            (~np.isclose(col_sum, np.ones(n), atol=tol)).any() or \
+            (init_J < 0).any():
         msg = "`init_J` matrix must be doubly stochastic"
     if msg is not None:
         raise ValueError(msg)
