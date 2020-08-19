@@ -450,7 +450,7 @@ class TestNdimageFilters:
         assert_equal(input.shape, output.shape)
 
     def test_gauss03(self):
-        # single precision data"
+        # single precision data
         input = numpy.arange(100 * 100).astype(numpy.float32)
         input.shape = (100, 100)
         output = ndimage.gaussian_filter(input, [1.0, 1.0])
@@ -1091,7 +1091,6 @@ class TestNdimageFilters:
 
     @pytest.mark.parametrize('dtype', types)
     def test_rank15(self, dtype):
-        "rank filter 15"
         expected = [[2, 3, 1, 4, 1],
                     [5, 3, 7, 1, 1],
                     [5, 5, 3, 3, 3]]
@@ -1298,8 +1297,8 @@ class TestNdimageFilters:
 
 class TestNdimageFourier:
 
-    @pytest.mark.parametrize("shape", [(32, 16), (31, 15)])
-    @pytest.mark.parametrize("dtype, dec",
+    @pytest.mark.parametrize('shape', [(32, 16), (31, 15)])
+    @pytest.mark.parametrize('dtype, dec',
                              [(numpy.float32, 6), (numpy.float64, 14)])
     def test_fourier_gaussian_real01(self, shape, dtype, dec):
         a = numpy.zeros(shape, dtype)
@@ -1311,8 +1310,8 @@ class TestNdimageFourier:
         a = fft.irfft(a, shape[0], 0)
         assert_almost_equal(ndimage.sum(a), 1, decimal=dec)
 
-    @pytest.mark.parametrize("shape", [(32, 16), (31, 15)])
-    @pytest.mark.parametrize("dtype, dec",
+    @pytest.mark.parametrize('shape', [(32, 16), (31, 15)])
+    @pytest.mark.parametrize('dtype, dec',
                              [(numpy.complex64, 6), (numpy.complex128, 14)])
     def test_fourier_gaussian_complex01(self, shape, dtype, dec):
         a = numpy.zeros(shape, dtype)
@@ -1324,8 +1323,8 @@ class TestNdimageFourier:
         a = fft.ifft(a, shape[0], 0)
         assert_almost_equal(ndimage.sum(a.real), 1.0, decimal=dec)
 
-    @pytest.mark.parametrize("shape", [(32, 16), (31, 15)])
-    @pytest.mark.parametrize("dtype, dec",
+    @pytest.mark.parametrize('shape', [(32, 16), (31, 15)])
+    @pytest.mark.parametrize('dtype, dec',
                              [(numpy.float32, 6), (numpy.float64, 14)])
     def test_fourier_uniform_real01(self, shape, dtype, dec):
         a = numpy.zeros(shape, dtype)
@@ -1337,8 +1336,8 @@ class TestNdimageFourier:
         a = fft.irfft(a, shape[0], 0)
         assert_almost_equal(ndimage.sum(a), 1.0, decimal=dec)
 
-    @pytest.mark.parametrize("shape", [(32, 16), (31, 15)])
-    @pytest.mark.parametrize("dtype, dec",
+    @pytest.mark.parametrize('shape', [(32, 16), (31, 15)])
+    @pytest.mark.parametrize('dtype, dec',
                              [(numpy.complex64, 6), (numpy.complex128, 14)])
     def test_fourier_uniform_complex01(self, shape, dtype, dec):
         a = numpy.zeros(shape, dtype)
@@ -1350,8 +1349,8 @@ class TestNdimageFourier:
         a = fft.ifft(a, shape[0], 0)
         assert_almost_equal(ndimage.sum(a.real), 1.0, decimal=dec)
 
-    @pytest.mark.parametrize("shape", [(32, 16), (31, 15)])
-    @pytest.mark.parametrize("dtype, dec",
+    @pytest.mark.parametrize('shape', [(32, 16), (31, 15)])
+    @pytest.mark.parametrize('dtype, dec',
                              [(numpy.float32, 4), (numpy.float64, 11)])
     def test_fourier_shift_real01(self, shape, dtype, dec):
         expected = numpy.arange(shape[0] * shape[1], dtype=dtype)
@@ -1366,8 +1365,8 @@ class TestNdimageFourier:
         assert_array_almost_equal(a.imag, numpy.zeros(shape),
                                   decimal=dec)
 
-    @pytest.mark.parametrize("shape", [(32, 16), (31, 15)])
-    @pytest.mark.parametrize("dtype, dec",
+    @pytest.mark.parametrize('shape', [(32, 16), (31, 15)])
+    @pytest.mark.parametrize('dtype, dec',
                              [(numpy.complex64, 6), (numpy.complex128, 11)])
     def test_fourier_shift_complex01(self, shape, dtype, dec):
         expected = numpy.arange(shape[0] * shape[1], dtype=dtype)
@@ -1382,8 +1381,8 @@ class TestNdimageFourier:
         assert_array_almost_equal(a.imag, numpy.zeros(shape),
                                   decimal=dec)
 
-    @pytest.mark.parametrize("shape", [(32, 16), (31, 15)])
-    @pytest.mark.parametrize("dtype, dec",
+    @pytest.mark.parametrize('shape', [(32, 16), (31, 15)])
+    @pytest.mark.parametrize('dtype, dec',
                              [(numpy.float32, 5), (numpy.float64, 14)])
     def test_fourier_ellipsoid_real01(self, shape, dtype, dec):
         a = numpy.zeros(shape, dtype)
@@ -1396,8 +1395,8 @@ class TestNdimageFourier:
         a = fft.irfft(a, shape[0], 0)
         assert_almost_equal(ndimage.sum(a), 1.0, decimal=dec)
 
-    @pytest.mark.parametrize("shape", [(32, 16), (31, 15)])
-    @pytest.mark.parametrize("dtype, dec",
+    @pytest.mark.parametrize('shape', [(32, 16), (31, 15)])
+    @pytest.mark.parametrize('dtype, dec',
                              [(numpy.complex64, 5), (numpy.complex128, 14)])
     def test_fourier_ellipsoid_complex01(self, shape, dtype, dec):
         a = numpy.zeros(shape, dtype)
@@ -1864,7 +1863,8 @@ class TestNdimageInterpolation:
         assert_array_almost_equal(out, [[1]])
 
     @pytest.mark.skipif('win32' in sys.platform or numpy.intp(0).itemsize < 8,
-                        reason="do not run on 32 bit or windows (no sparse memory)")
+                        reason='do not run on 32 bit or windows '
+                               '(no sparse memory)')
     def test_map_coordinates_large_data(self):
         # check crash on large data
         try:
@@ -1874,7 +1874,7 @@ class TestNdimageInterpolation:
             a[n - 3:, n - 3:] = 0
             ndimage.map_coordinates(a, [[n - 1.5], [n - 1.5]], order=1)
         except MemoryError as e:
-            raise pytest.skip("Not enough memory available") from e
+            raise pytest.skip('Not enough memory available') from e
 
     @pytest.mark.parametrize('order', range(0, 6))
     def test_affine_transform01(self, order):
@@ -2084,8 +2084,8 @@ class TestNdimageInterpolation:
         data = numpy.array([4, 1, 3, 2])
         with suppress_warnings() as sup:
             sup.filter(UserWarning,
-                       "The behavior of affine_transform with a 1-D array .* "
-                       "has changed")
+                       'The behavior of affine_transform with a 1-D array .* '
+                       'has changed')
             out1 = ndimage.affine_transform(data, [2], -1, order=order)
         out2 = ndimage.affine_transform(data, [[2]], -1, order=order)
         assert_array_almost_equal(out1, out2)
@@ -2096,8 +2096,8 @@ class TestNdimageInterpolation:
         data = numpy.array([4, 1, 3, 2])
         with suppress_warnings() as sup:
             sup.filter(UserWarning,
-                       "The behavior of affine_transform with a 1-D array .* "
-                       "has changed")
+                       'The behavior of affine_transform with a 1-D array .* '
+                       'has changed')
             out1 = ndimage.affine_transform(data, [0.5], -1, order=order)
         out2 = ndimage.affine_transform(data, [[0.5]], -1, order=order)
         assert_array_almost_equal(out1, out2)
@@ -2146,8 +2146,8 @@ class TestNdimageInterpolation:
                     data.dtype, data.dtype.newbyteorder()]:
             with suppress_warnings() as sup:
                 sup.filter(UserWarning,
-                           "The behavior of affine_transform with a 1-D array "
-                           ".* has changed")
+                           'The behavior of affine_transform with a 1-D array '
+                           '.* has changed')
                 returned = ndimage.affine_transform(data, [1, 1], output=out)
             result = out if returned is None else returned
             assert_array_almost_equal(result, [[1, 1], [1, 1]])
@@ -2279,8 +2279,8 @@ class TestNdimageInterpolation:
                 [9, 10, 11, 12]]
         with suppress_warnings() as sup:
             sup.filter(UserWarning,
-                       "The behavior of affine_transform with a 1-D array .* "
-                       "has changed")
+                       'The behavior of affine_transform with a 1-D array .* '
+                       'has changed')
             out = ndimage.affine_transform(data, [0.5, 0.5], 0,
                                            (6, 8), order=order)
         assert_array_almost_equal(out[::2, ::2], data)
@@ -2288,7 +2288,7 @@ class TestNdimageInterpolation:
     def test_zoom_infinity(self):
         # Ticket #1419 regression test
         dim = 8
-        ndimage.zoom(numpy.zeros((dim, dim)), 1./dim, mode='nearest')
+        ndimage.zoom(numpy.zeros((dim, dim)), 1. / dim, mode='nearest')
 
     def test_zoom_zoomfactor_one(self):
         # Ticket #1122 regression test
@@ -4261,13 +4261,13 @@ class TestNdimageMorphology:
                   [1, 1, 1],
                   [0, 1, 0]]
         expected = numpy.array([[0, 1, 0, 0, 0, 0, 0, 0],
-                               [0, 0, 0, 0, 0, 0, 0, 0],
-                               [0, 0, 0, 0, 0, 0, 0, 0],
-                               [0, 0, 0, 0, 1, 1, 0, 0],
-                               [0, 0, 1, 1, 1, 0, 0, 0],
-                               [0, 1, 1, 0, 1, 1, 0, 0],
-                               [0, 0, 0, 0, 0, 0, 0, 0],
-                               [0, 0, 0, 0, 0, 0, 0, 0]], bool)
+                                [0, 0, 0, 0, 0, 0, 0, 0],
+                                [0, 0, 0, 0, 0, 0, 0, 0],
+                                [0, 0, 0, 0, 1, 1, 0, 0],
+                                [0, 0, 1, 1, 1, 0, 0, 0],
+                                [0, 1, 1, 0, 1, 1, 0, 0],
+                                [0, 0, 0, 0, 0, 0, 0, 0],
+                                [0, 0, 0, 0, 0, 0, 0, 0]], bool)
         mask = numpy.array([[0, 1, 0, 0, 0, 0, 0, 0],
                             [0, 0, 0, 0, 0, 0, 0, 0],
                             [0, 0, 0, 0, 0, 0, 1, 0],
