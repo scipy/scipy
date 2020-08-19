@@ -46,6 +46,10 @@ def test_quadratic_assignment():
     assert 11156 <= res['score'] < 21000
     assert res['score'] == _score(cost_matrix, dist_matrix, res['col_ind'])
 
+    # check with barycenter initialization, maximizing
+    res = quadratic_assignment(cost_matrix, dist_matrix, maximize=True)
+    assert 75000 <= res['score'] < 85000
+    assert res['score'] == _score(cost_matrix, dist_matrix, res['col_ind'])
     # check ofv with seeds
     res = quadratic_assignment(cost_matrix, dist_matrix,
                                options={'partial_match': seed})
@@ -208,10 +212,14 @@ def test_quadratic_assignment_input_validation():
         quadratic_assignment(
             np.identity(4), np.identity(4), options={'init_J': np.ones((3, 3))}
         )
+
+    K = np.random.rand(3, 3)
+    K = _doubly_stochastic(K, eps=1e-1)
+    # matrix that isn't quite doubly stochastic
     with pytest.raises(
             ValueError, match="`init_J` matrix must be doubly stochastic"):
         quadratic_assignment(
-            np.identity(3), np.identity(3), options={'init_J': np.ones((3, 3))}
+            np.identity(3), np.identity(3), options={'init_J': K}
         )
 
 
@@ -227,3 +235,24 @@ def _score(A, B, col):
     B = np.asarray(B)
     col = np.asarray(col)
     return np.trace(np.transpose(A) @ B[np.ix_(col, col)])
+
+
+def _doubly_stochastic(P, eps=1e-3):
+    # cleaner implementation of btaba/sinkhorn_knopp
+
+    max_iter = 1000
+    c = 1 / P.sum(axis=0)
+    r = 1 / (P @ c)
+    P_eps = P
+
+    for it in range(max_iter):
+        if ((np.abs(P_eps.sum(axis=1) - 1) < eps).all() and
+                (np.abs(P_eps.sum(axis=0) - 1) < eps).all()):
+            # All column/row sums ~= 1 within threshold
+            break
+
+        c = 1 / (r @ P)
+        r = 1 / (P @ c)
+        P_eps = r[:, None] * P * c
+
+    return P_eps
