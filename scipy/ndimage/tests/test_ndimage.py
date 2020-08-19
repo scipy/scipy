@@ -57,7 +57,7 @@ def sumsq(a, b):
     return math.sqrt(((a - b)**2).sum())
 
 
-class TestNdimage:
+class TestNdimageFilters:
 
     def test_correlate01(self):
         array = numpy.array([1, 2])
@@ -1296,41 +1296,8 @@ class TestNdimage:
         output = ndimage.correlate(array, weights, mode=mode, cval=0)
         assert_array_equal(output, expected_value)
 
-    @pytest.mark.parametrize(
-        'mode, expected_value',
-        [('nearest', [1.5, 2.5, 3.5, 4, 4, 4, 4]),
-         ('wrap', [1.5, 2.5, 3.5, 1.5, 2.5, 3.5, 1.5]),
-         # ('reflect', TODO),
-         ('mirror', [1.5, 2.5, 3.5, 3.5, 2.5, 1.5, 1.5]),
-         ('constant', [1.5, 2.5, 3.5, -1, -1, -1, -1])]
-    )
-    def test_boundaries(self, mode, expected_value):
-        def shift(x):
-            return (x[0] + 0.5,)
 
-        data = numpy.array([1, 2, 3, 4.])
-        assert_array_equal(
-            expected_value,
-            ndimage.geometric_transform(data, shift, cval=-1, mode=mode,
-                                        output_shape=(7,), order=1))
-
-    @pytest.mark.parametrize(
-        'mode, expected_value',
-        [('nearest', [1, 1, 2, 3]),
-         ('wrap', [3, 1, 2, 3]),
-         # ('reflect', TODO),
-         ('mirror', [2, 1, 2, 3]),
-         ('constant', [-1, 1, 2, 3])]
-    )
-    def test_boundaries2(self, mode, expected_value):
-        def shift(x):
-            return (x[0] - 0.9,)
-
-        data = numpy.array([1, 2, 3, 4])
-        assert_array_equal(
-            expected_value,
-            ndimage.geometric_transform(data, shift, cval=-1, mode=mode,
-                                        output_shape=(4,)))
+class TestNdimageFourier:
 
     def test_fourier_gaussian_real01(self):
         for shape in [(32, 16), (31, 15)]:
@@ -1445,6 +1412,45 @@ class TestNdimage:
                 a = ndimage.fourier_ellipsoid(x, 5, -1, 0)
                 b = ndimage.fourier_uniform(x, 5, -1, 0)
                 assert_array_almost_equal(a, b, decimal=dec)
+
+
+class TestNdimageInterpolation:
+
+    @pytest.mark.parametrize(
+        'mode, expected_value',
+        [('nearest', [1.5, 2.5, 3.5, 4, 4, 4, 4]),
+         ('wrap', [1.5, 2.5, 3.5, 1.5, 2.5, 3.5, 1.5]),
+         # ('reflect', TODO),
+         ('mirror', [1.5, 2.5, 3.5, 3.5, 2.5, 1.5, 1.5]),
+         ('constant', [1.5, 2.5, 3.5, -1, -1, -1, -1])]
+    )
+    def test_boundaries(self, mode, expected_value):
+        def shift(x):
+            return (x[0] + 0.5,)
+
+        data = numpy.array([1, 2, 3, 4.])
+        assert_array_equal(
+            expected_value,
+            ndimage.geometric_transform(data, shift, cval=-1, mode=mode,
+                                        output_shape=(7,), order=1))
+
+    @pytest.mark.parametrize(
+        'mode, expected_value',
+        [('nearest', [1, 1, 2, 3]),
+         ('wrap', [3, 1, 2, 3]),
+         # ('reflect', TODO),
+         ('mirror', [2, 1, 2, 3]),
+         ('constant', [-1, 1, 2, 3])]
+    )
+    def test_boundaries2(self, mode, expected_value):
+        def shift(x):
+            return (x[0] - 0.9,)
+
+        data = numpy.array([1, 2, 3, 4])
+        assert_array_equal(
+            expected_value,
+            ndimage.geometric_transform(data, shift, cval=-1, mode=mode,
+                                        output_shape=(4,)))
 
     @pytest.mark.parametrize('order', range(2, 6))
     @pytest.mark.parametrize('dtype', types)
@@ -2430,6 +2436,9 @@ class TestNdimage:
         b = ndimage.rotate(ndimage.rotate(a, 180), -180)
         assert_equal(a, b)
 
+
+class TestNdimageMeasurements:
+
     def test_watershed_ift01(self):
         data = numpy.array([[0, 0, 0, 0, 0, 0, 0],
                             [0, 1, 1, 1, 1, 1, 0],
@@ -2626,6 +2635,9 @@ class TestNdimage:
                     [-1, -1, -1, -1, -1, -1, -1],
                     [-1, -1, -1, -1, -1, -1, -1]]
         assert_array_almost_equal(out, expected)
+
+
+class TestNdimageMorphology:
 
     @pytest.mark.parametrize('dtype', types)
     def test_distance_transform_bf01(self, dtype):
