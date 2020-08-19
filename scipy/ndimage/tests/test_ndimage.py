@@ -43,24 +43,21 @@ import scipy.ndimage as ndimage
 
 eps = 1e-12
 
+# list of numarray data types
+integer_types = [
+    numpy.int8, numpy.uint8, numpy.int16, numpy.uint16,
+    numpy.int32, numpy.uint32, numpy.int64, numpy.uint64]
+
+float_types = [numpy.float32, numpy.float64]
+
+types = integer_types + float_types
+
 
 def sumsq(a, b):
     return math.sqrt(((a - b)**2).sum())
 
 
 class TestNdimage:
-    def setup_method(self):
-        # list of numarray data types
-        self.integer_types = [
-            numpy.int8, numpy.uint8, numpy.int16, numpy.uint16,
-            numpy.int32, numpy.uint32, numpy.int64, numpy.uint64]
-
-        self.float_types = [numpy.float32, numpy.float64]
-
-        self.types = self.integer_types + self.float_types
-
-        # list of boundary modes:
-        self.modes = ['nearest', 'wrap', 'reflect', 'mirror', 'constant']
 
     def test_correlate01(self):
         array = numpy.array([1, 2])
@@ -229,67 +226,64 @@ class TestNdimage:
         output = ndimage.convolve(array, kernel)
         assert_array_almost_equal([[6, 8, 9], [9, 11, 12]], output)
 
-    def test_correlate13(self):
+    @pytest.mark.parametrize('dtype_array', types)
+    @pytest.mark.parametrize('dtype_kernel', types)
+    def test_correlate13(self, dtype_array, dtype_kernel):
         kernel = numpy.array([[1, 0],
                               [0, 1]])
-        for type1 in self.types:
-            array = numpy.array([[1, 2, 3],
-                                 [4, 5, 6]], type1)
-            for type2 in self.types:
-                output = ndimage.correlate(array, kernel, output=type2)
-                assert_array_almost_equal([[2, 3, 5], [5, 6, 8]], output)
-                assert_equal(output.dtype.type, type2)
+        array = numpy.array([[1, 2, 3],
+                             [4, 5, 6]], dtype_array)
+        output = ndimage.correlate(array, kernel, output=dtype_kernel)
+        assert_array_almost_equal([[2, 3, 5], [5, 6, 8]], output)
+        assert_equal(output.dtype.type, dtype_kernel)
 
-                output = ndimage.convolve(array, kernel,
-                                          output=type2)
-                assert_array_almost_equal([[6, 8, 9], [9, 11, 12]], output)
-                assert_equal(output.dtype.type, type2)
+        output = ndimage.convolve(array, kernel,
+                                  output=dtype_kernel)
+        assert_array_almost_equal([[6, 8, 9], [9, 11, 12]], output)
+        assert_equal(output.dtype.type, dtype_kernel)
 
-    def test_correlate14(self):
+    @pytest.mark.parametrize('dtype_array', types)
+    @pytest.mark.parametrize('dtype_output', types)
+    def test_correlate14(self, dtype_array, dtype_output):
         kernel = numpy.array([[1, 0],
                               [0, 1]])
-        for type1 in self.types:
-            array = numpy.array([[1, 2, 3],
-                                 [4, 5, 6]], type1)
-            for type2 in self.types:
-                output = numpy.zeros(array.shape, type2)
-                ndimage.correlate(array, kernel,
-                                  output=output)
-                assert_array_almost_equal([[2, 3, 5], [5, 6, 8]], output)
-                assert_equal(output.dtype.type, type2)
+        array = numpy.array([[1, 2, 3],
+                             [4, 5, 6]], dtype_array)
+        output = numpy.zeros(array.shape, dtype_output)
+        ndimage.correlate(array, kernel, output=output)
+        assert_array_almost_equal([[2, 3, 5], [5, 6, 8]], output)
+        assert_equal(output.dtype.type, dtype_output)
 
-                ndimage.convolve(array, kernel, output=output)
-                assert_array_almost_equal([[6, 8, 9], [9, 11, 12]], output)
-                assert_equal(output.dtype.type, type2)
+        ndimage.convolve(array, kernel, output=output)
+        assert_array_almost_equal([[6, 8, 9], [9, 11, 12]], output)
+        assert_equal(output.dtype.type, dtype_output)
 
-    def test_correlate15(self):
+    @pytest.mark.parametrize('dtype_array', types)
+    def test_correlate15(self, dtype_array):
         kernel = numpy.array([[1, 0],
                               [0, 1]])
-        for type1 in self.types:
-            array = numpy.array([[1, 2, 3],
-                                 [4, 5, 6]], type1)
-            output = ndimage.correlate(array, kernel,
-                                       output=numpy.float32)
-            assert_array_almost_equal([[2, 3, 5], [5, 6, 8]], output)
-            assert_equal(output.dtype.type, numpy.float32)
+        array = numpy.array([[1, 2, 3],
+                             [4, 5, 6]], dtype_array)
+        output = ndimage.correlate(array, kernel, output=numpy.float32)
+        assert_array_almost_equal([[2, 3, 5], [5, 6, 8]], output)
+        assert_equal(output.dtype.type, numpy.float32)
 
-            output = ndimage.convolve(array, kernel,
-                                      output=numpy.float32)
-            assert_array_almost_equal([[6, 8, 9], [9, 11, 12]], output)
-            assert_equal(output.dtype.type, numpy.float32)
+        output = ndimage.convolve(array, kernel, output=numpy.float32)
+        assert_array_almost_equal([[6, 8, 9], [9, 11, 12]], output)
+        assert_equal(output.dtype.type, numpy.float32)
 
-    def test_correlate16(self):
+    @pytest.mark.parametrize('dtype_array', types)
+    def test_correlate16(self, dtype_array):
         kernel = numpy.array([[0.5, 0],
                               [0, 0.5]])
-        for type1 in self.types:
-            array = numpy.array([[1, 2, 3], [4, 5, 6]], type1)
-            output = ndimage.correlate(array, kernel, output=numpy.float32)
-            assert_array_almost_equal([[1, 1.5, 2.5], [2.5, 3, 4]], output)
-            assert_equal(output.dtype.type, numpy.float32)
+        array = numpy.array([[1, 2, 3], [4, 5, 6]], dtype_array)
+        output = ndimage.correlate(array, kernel, output=numpy.float32)
+        assert_array_almost_equal([[1, 1.5, 2.5], [2.5, 3, 4]], output)
+        assert_equal(output.dtype.type, numpy.float32)
 
-            output = ndimage.convolve(array, kernel, output=numpy.float32)
-            assert_array_almost_equal([[3, 4, 4.5], [4.5, 5.5, 6]], output)
-            assert_equal(output.dtype.type, numpy.float32)
+        output = ndimage.convolve(array, kernel, output=numpy.float32)
+        assert_array_almost_equal([[3, 4, 4.5], [4.5, 5.5, 6]], output)
+        assert_equal(output.dtype.type, numpy.float32)
 
     def test_correlate17(self):
         array = numpy.array([1, 2, 3])
@@ -305,23 +299,23 @@ class TestNdimage:
         output = ndimage.convolve1d(array, kernel, origin=-1)
         assert_array_almost_equal(tcov, output)
 
-    def test_correlate18(self):
+    @pytest.mark.parametrize('dtype_array', types)
+    def test_correlate18(self, dtype_array):
         kernel = numpy.array([[1, 0],
                               [0, 1]])
-        for type1 in self.types:
-            array = numpy.array([[1, 2, 3],
-                                 [4, 5, 6]], type1)
-            output = ndimage.correlate(array, kernel,
-                                       output=numpy.float32,
-                                       mode='nearest', origin=-1)
-            assert_array_almost_equal([[6, 8, 9], [9, 11, 12]], output)
-            assert_equal(output.dtype.type, numpy.float32)
+        array = numpy.array([[1, 2, 3],
+                             [4, 5, 6]], dtype_array)
+        output = ndimage.correlate(array, kernel,
+                                   output=numpy.float32,
+                                   mode='nearest', origin=-1)
+        assert_array_almost_equal([[6, 8, 9], [9, 11, 12]], output)
+        assert_equal(output.dtype.type, numpy.float32)
 
-            output = ndimage.convolve(array, kernel,
-                                      output=numpy.float32,
-                                      mode='nearest', origin=-1)
-            assert_array_almost_equal([[2, 3, 5], [5, 6, 8]], output)
-            assert_equal(output.dtype.type, numpy.float32)
+        output = ndimage.convolve(array, kernel,
+                                  output=numpy.float32,
+                                  mode='nearest', origin=-1)
+        assert_array_almost_equal([[2, 3, 5], [5, 6, 8]], output)
+        assert_equal(output.dtype.type, numpy.float32)
 
     def test_correlate_mode_sequence(self):
         kernel = numpy.ones((2, 2))
@@ -331,38 +325,36 @@ class TestNdimage:
         with assert_raises(RuntimeError):
             ndimage.convolve(array, kernel, mode=['nearest', 'reflect'])
 
-    def test_correlate19(self):
+    @pytest.mark.parametrize('dtype_array', types)
+    def test_correlate19(self, dtype_array):
         kernel = numpy.array([[1, 0],
                               [0, 1]])
-        for type1 in self.types:
-            array = numpy.array([[1, 2, 3],
-                                 [4, 5, 6]], type1)
-            output = ndimage.correlate(array, kernel,
-                                       output=numpy.float32,
-                                       mode='nearest', origin=[-1, 0])
-            assert_array_almost_equal([[5, 6, 8], [8, 9, 11]], output)
-            assert_equal(output.dtype.type, numpy.float32)
+        array = numpy.array([[1, 2, 3],
+                             [4, 5, 6]], dtype_array)
+        output = ndimage.correlate(array, kernel,
+                                   output=numpy.float32,
+                                   mode='nearest', origin=[-1, 0])
+        assert_array_almost_equal([[5, 6, 8], [8, 9, 11]], output)
+        assert_equal(output.dtype.type, numpy.float32)
 
-            output = ndimage.convolve(array, kernel,
-                                      output=numpy.float32,
-                                      mode='nearest', origin=[-1, 0])
-            assert_array_almost_equal([[3, 5, 6], [6, 8, 9]], output)
-            assert_equal(output.dtype.type, numpy.float32)
+        output = ndimage.convolve(array, kernel,
+                                  output=numpy.float32,
+                                  mode='nearest', origin=[-1, 0])
+        assert_array_almost_equal([[3, 5, 6], [6, 8, 9]], output)
+        assert_equal(output.dtype.type, numpy.float32)
 
-    def test_correlate20(self):
+    @pytest.mark.parametrize('dtype_array', types)
+    @pytest.mark.parametrize('dtype_output', types)
+    def test_correlate20(self, dtype_array, dtype_output):
         weights = numpy.array([1, 2, 1])
         expected = [[5, 10, 15], [7, 14, 21]]
-        for type1 in self.types:
-            array = numpy.array([[1, 2, 3],
-                                 [2, 4, 6]], type1)
-            for type2 in self.types:
-                output = numpy.zeros((2, 3), type2)
-                ndimage.correlate1d(array, weights, axis=0,
-                                    output=output)
-                assert_array_almost_equal(output, expected)
-                ndimage.convolve1d(array, weights, axis=0,
-                                   output=output)
-                assert_array_almost_equal(output, expected)
+        array = numpy.array([[1, 2, 3],
+                             [2, 4, 6]], dtype_array)
+        output = numpy.zeros((2, 3), dtype_output)
+        ndimage.correlate1d(array, weights, axis=0, output=output)
+        assert_array_almost_equal(output, expected)
+        ndimage.convolve1d(array, weights, axis=0, output=output)
+        assert_array_almost_equal(output, expected)
 
     def test_correlate21(self):
         array = numpy.array([[1, 2, 3],
@@ -374,67 +366,68 @@ class TestNdimage:
         output = ndimage.convolve1d(array, weights, axis=0)
         assert_array_almost_equal(output, expected)
 
-    def test_correlate22(self):
+    @pytest.mark.parametrize('dtype_array', types)
+    @pytest.mark.parametrize('dtype_output', types)
+    def test_correlate22(self, dtype_array, dtype_output):
         weights = numpy.array([1, 2, 1])
         expected = [[6, 12, 18], [6, 12, 18]]
-        for type1 in self.types:
-            array = numpy.array([[1, 2, 3],
-                                 [2, 4, 6]], type1)
-            for type2 in self.types:
-                output = numpy.zeros((2, 3), type2)
-                ndimage.correlate1d(array, weights, axis=0,
-                                    mode='wrap', output=output)
-                assert_array_almost_equal(output, expected)
-                ndimage.convolve1d(array, weights, axis=0,
-                                   mode='wrap', output=output)
-                assert_array_almost_equal(output, expected)
+        array = numpy.array([[1, 2, 3],
+                             [2, 4, 6]], dtype_array)
+        output = numpy.zeros((2, 3), dtype_output)
+        ndimage.correlate1d(array, weights, axis=0,
+                            mode='wrap', output=output)
+        assert_array_almost_equal(output, expected)
+        ndimage.convolve1d(array, weights, axis=0,
+                           mode='wrap', output=output)
+        assert_array_almost_equal(output, expected)
 
-    def test_correlate23(self):
+    @pytest.mark.parametrize('dtype_array', types)
+    @pytest.mark.parametrize('dtype_output', types)
+    def test_correlate23(self, dtype_array, dtype_output):
         weights = numpy.array([1, 2, 1])
         expected = [[5, 10, 15], [7, 14, 21]]
-        for type1 in self.types:
-            array = numpy.array([[1, 2, 3],
-                                 [2, 4, 6]], type1)
-            for type2 in self.types:
-                output = numpy.zeros((2, 3), type2)
-                ndimage.correlate1d(array, weights, axis=0,
-                                    mode='nearest', output=output)
-                assert_array_almost_equal(output, expected)
-                ndimage.convolve1d(array, weights, axis=0,
-                                   mode='nearest', output=output)
-                assert_array_almost_equal(output, expected)
+        array = numpy.array([[1, 2, 3],
+                             [2, 4, 6]], dtype_array)
+        output = numpy.zeros((2, 3), dtype_output)
+        ndimage.correlate1d(array, weights, axis=0,
+                            mode='nearest', output=output)
+        assert_array_almost_equal(output, expected)
+        ndimage.convolve1d(array, weights, axis=0,
+                           mode='nearest', output=output)
+        assert_array_almost_equal(output, expected)
 
-    def test_correlate24(self):
+    @pytest.mark.parametrize('dtype_array', types)
+    @pytest.mark.parametrize('dtype_output', types)
+    def test_correlate24(self, dtype_array, dtype_output):
         weights = numpy.array([1, 2, 1])
         tcor = [[7, 14, 21], [8, 16, 24]]
         tcov = [[4, 8, 12], [5, 10, 15]]
-        for type1 in self.types:
-            array = numpy.array([[1, 2, 3],
-                                 [2, 4, 6]], type1)
-            for type2 in self.types:
-                output = numpy.zeros((2, 3), type2)
-                ndimage.correlate1d(array, weights, axis=0,
-                                    mode='nearest', output=output, origin=-1)
-                assert_array_almost_equal(output, tcor)
-                ndimage.convolve1d(array, weights, axis=0,
-                                   mode='nearest', output=output, origin=-1)
-                assert_array_almost_equal(output, tcov)
+        array = numpy.array([[1, 2, 3],
+                             [2, 4, 6]], dtype_array)
+        output = numpy.zeros((2, 3), dtype_output)
+        ndimage.correlate1d(array, weights, axis=0,
+                            mode='nearest', output=output, origin=-1)
+        assert_array_almost_equal(output, tcor)
+        ndimage.convolve1d(array, weights, axis=0,
+                           mode='nearest', output=output, origin=-1)
+        assert_array_almost_equal(output, tcov)
 
-    def test_correlate25(self):
+    @pytest.mark.parametrize('dtype_array', types)
+    @pytest.mark.parametrize('dtype_output', types)
+    def test_correlate25(self, dtype_array, dtype_output):
+        weights = numpy.array([1, 2, 1])
         weights = numpy.array([1, 2, 1])
         tcor = [[4, 8, 12], [5, 10, 15]]
         tcov = [[7, 14, 21], [8, 16, 24]]
-        for type1 in self.types:
-            array = numpy.array([[1, 2, 3],
-                                 [2, 4, 6]], type1)
-            for type2 in self.types:
-                output = numpy.zeros((2, 3), type2)
-                ndimage.correlate1d(array, weights, axis=0,
-                                    mode='nearest', output=output, origin=1)
-                assert_array_almost_equal(output, tcor)
-                ndimage.convolve1d(array, weights, axis=0,
-                                   mode='nearest', output=output, origin=1)
-                assert_array_almost_equal(output, tcov)
+        array = numpy.array([[1, 2, 3],
+                             [2, 4, 6]], dtype_array)
+        output = numpy.zeros((2, 3), dtype_output)
+        ndimage.correlate1d(array, weights, axis=0,
+                            mode='nearest', output=output, origin=1)
+        assert_array_almost_equal(output, tcor)
+        ndimage.convolve1d(array, weights, axis=0,
+                           mode='nearest', output=output, origin=1)
+        assert_array_almost_equal(output, tcov)
 
     def test_correlate26(self):
         # test fix for gh-11661 (mirror extension of a length 1 signal)
@@ -506,130 +499,135 @@ class TestNdimage:
         ndimage.gaussian_filter(input, 1.0, output=input)
         assert_array_almost_equal(output1, input)
 
-    def test_prewitt01(self):
-        for type_ in self.types:
-            array = numpy.array([[3, 2, 5, 1, 4],
-                                 [5, 8, 3, 7, 1],
-                                 [5, 6, 9, 3, 5]], type_)
-            t = ndimage.correlate1d(array, [-1.0, 0.0, 1.0], 0)
-            t = ndimage.correlate1d(t, [1.0, 1.0, 1.0], 1)
-            output = ndimage.prewitt(array, 0)
-            assert_array_almost_equal(t, output)
+    @pytest.mark.parametrize('dtype', types)
+    def test_prewitt01(self, dtype):
+        array = numpy.array([[3, 2, 5, 1, 4],
+                             [5, 8, 3, 7, 1],
+                             [5, 6, 9, 3, 5]], dtype)
+        t = ndimage.correlate1d(array, [-1.0, 0.0, 1.0], 0)
+        t = ndimage.correlate1d(t, [1.0, 1.0, 1.0], 1)
+        output = ndimage.prewitt(array, 0)
+        assert_array_almost_equal(t, output)
 
-    def test_prewitt02(self):
-        for type_ in self.types:
-            array = numpy.array([[3, 2, 5, 1, 4],
-                                 [5, 8, 3, 7, 1],
-                                 [5, 6, 9, 3, 5]], type_)
-            t = ndimage.correlate1d(array, [-1.0, 0.0, 1.0], 0)
-            t = ndimage.correlate1d(t, [1.0, 1.0, 1.0], 1)
-            output = numpy.zeros(array.shape, type_)
-            ndimage.prewitt(array, 0, output)
-            assert_array_almost_equal(t, output)
+    @pytest.mark.parametrize('dtype', types)
+    def test_prewitt02(self, dtype):
+        array = numpy.array([[3, 2, 5, 1, 4],
+                             [5, 8, 3, 7, 1],
+                             [5, 6, 9, 3, 5]], dtype)
+        t = ndimage.correlate1d(array, [-1.0, 0.0, 1.0], 0)
+        t = ndimage.correlate1d(t, [1.0, 1.0, 1.0], 1)
+        output = numpy.zeros(array.shape, dtype)
+        ndimage.prewitt(array, 0, output)
+        assert_array_almost_equal(t, output)
 
-    def test_prewitt03(self):
-        for type_ in self.types:
-            array = numpy.array([[3, 2, 5, 1, 4],
-                                 [5, 8, 3, 7, 1],
-                                 [5, 6, 9, 3, 5]], type_)
-            t = ndimage.correlate1d(array, [-1.0, 0.0, 1.0], 1)
-            t = ndimage.correlate1d(t, [1.0, 1.0, 1.0], 0)
-            output = ndimage.prewitt(array, 1)
-            assert_array_almost_equal(t, output)
+    @pytest.mark.parametrize('dtype', types)
+    def test_prewitt03(self, dtype):
+        array = numpy.array([[3, 2, 5, 1, 4],
+                             [5, 8, 3, 7, 1],
+                             [5, 6, 9, 3, 5]], dtype)
+        t = ndimage.correlate1d(array, [-1.0, 0.0, 1.0], 1)
+        t = ndimage.correlate1d(t, [1.0, 1.0, 1.0], 0)
+        output = ndimage.prewitt(array, 1)
+        assert_array_almost_equal(t, output)
 
-    def test_prewitt04(self):
-        for type_ in self.types:
-            array = numpy.array([[3, 2, 5, 1, 4],
-                                 [5, 8, 3, 7, 1],
-                                 [5, 6, 9, 3, 5]], type_)
-            t = ndimage.prewitt(array, -1)
-            output = ndimage.prewitt(array, 1)
-            assert_array_almost_equal(t, output)
+    @pytest.mark.parametrize('dtype', types)
+    def test_prewitt04(self, dtype):
+        array = numpy.array([[3, 2, 5, 1, 4],
+                             [5, 8, 3, 7, 1],
+                             [5, 6, 9, 3, 5]], dtype)
+        t = ndimage.prewitt(array, -1)
+        output = ndimage.prewitt(array, 1)
+        assert_array_almost_equal(t, output)
 
-    def test_sobel01(self):
-        for type_ in self.types:
-            array = numpy.array([[3, 2, 5, 1, 4],
-                                 [5, 8, 3, 7, 1],
-                                 [5, 6, 9, 3, 5]], type_)
-            t = ndimage.correlate1d(array, [-1.0, 0.0, 1.0], 0)
-            t = ndimage.correlate1d(t, [1.0, 2.0, 1.0], 1)
-            output = ndimage.sobel(array, 0)
-            assert_array_almost_equal(t, output)
+    @pytest.mark.parametrize('dtype', types)
+    def test_sobel01(sel, dtype):
+        array = numpy.array([[3, 2, 5, 1, 4],
+                             [5, 8, 3, 7, 1],
+                             [5, 6, 9, 3, 5]], dtype)
+        t = ndimage.correlate1d(array, [-1.0, 0.0, 1.0], 0)
+        t = ndimage.correlate1d(t, [1.0, 2.0, 1.0], 1)
+        output = ndimage.sobel(array, 0)
+        assert_array_almost_equal(t, output)
 
-    def test_sobel02(self):
-        for type_ in self.types:
-            array = numpy.array([[3, 2, 5, 1, 4],
-                                 [5, 8, 3, 7, 1],
-                                 [5, 6, 9, 3, 5]], type_)
-            t = ndimage.correlate1d(array, [-1.0, 0.0, 1.0], 0)
-            t = ndimage.correlate1d(t, [1.0, 2.0, 1.0], 1)
-            output = numpy.zeros(array.shape, type_)
-            ndimage.sobel(array, 0, output)
-            assert_array_almost_equal(t, output)
+    @pytest.mark.parametrize('dtype', types)
+    def test_sobel02(self, dtype):
+        array = numpy.array([[3, 2, 5, 1, 4],
+                             [5, 8, 3, 7, 1],
+                             [5, 6, 9, 3, 5]], dtype)
+        t = ndimage.correlate1d(array, [-1.0, 0.0, 1.0], 0)
+        t = ndimage.correlate1d(t, [1.0, 2.0, 1.0], 1)
+        output = numpy.zeros(array.shape, dtype)
+        ndimage.sobel(array, 0, output)
+        assert_array_almost_equal(t, output)
 
-    def test_sobel03(self):
-        for type_ in self.types:
-            array = numpy.array([[3, 2, 5, 1, 4],
-                                 [5, 8, 3, 7, 1],
-                                 [5, 6, 9, 3, 5]], type_)
-            t = ndimage.correlate1d(array, [-1.0, 0.0, 1.0], 1)
-            t = ndimage.correlate1d(t, [1.0, 2.0, 1.0], 0)
-            output = numpy.zeros(array.shape, type_)
-            output = ndimage.sobel(array, 1)
-            assert_array_almost_equal(t, output)
+    @pytest.mark.parametrize('dtype', types)
+    def test_sobel03(self, dtype):
+        array = numpy.array([[3, 2, 5, 1, 4],
+                             [5, 8, 3, 7, 1],
+                             [5, 6, 9, 3, 5]], dtype)
+        t = ndimage.correlate1d(array, [-1.0, 0.0, 1.0], 1)
+        t = ndimage.correlate1d(t, [1.0, 2.0, 1.0], 0)
+        output = numpy.zeros(array.shape, dtype)
+        output = ndimage.sobel(array, 1)
+        assert_array_almost_equal(t, output)
 
-    def test_sobel04(self):
-        for type_ in self.types:
-            array = numpy.array([[3, 2, 5, 1, 4],
-                                 [5, 8, 3, 7, 1],
-                                 [5, 6, 9, 3, 5]], type_)
-            t = ndimage.sobel(array, -1)
-            output = ndimage.sobel(array, 1)
-            assert_array_almost_equal(t, output)
+    @pytest.mark.parametrize('dtype', types)
+    def test_sobel04(self, dtype):
+        array = numpy.array([[3, 2, 5, 1, 4],
+                             [5, 8, 3, 7, 1],
+                             [5, 6, 9, 3, 5]], dtype)
+        t = ndimage.sobel(array, -1)
+        output = ndimage.sobel(array, 1)
+        assert_array_almost_equal(t, output)
 
-    def test_laplace01(self):
-        for type_ in [numpy.int32, numpy.float32, numpy.float64]:
-            array = numpy.array([[3, 2, 5, 1, 4],
-                                 [5, 8, 3, 7, 1],
-                                 [5, 6, 9, 3, 5]], type_) * 100
-            tmp1 = ndimage.correlate1d(array, [1, -2, 1], 0)
-            tmp2 = ndimage.correlate1d(array, [1, -2, 1], 1)
-            output = ndimage.laplace(array)
-            assert_array_almost_equal(tmp1 + tmp2, output)
+    @pytest.mark.parametrize('dtype',
+                             [numpy.int32, numpy.float32, numpy.float64])
+    def test_laplace01(self, dtype):
+        array = numpy.array([[3, 2, 5, 1, 4],
+                             [5, 8, 3, 7, 1],
+                             [5, 6, 9, 3, 5]], dtype) * 100
+        tmp1 = ndimage.correlate1d(array, [1, -2, 1], 0)
+        tmp2 = ndimage.correlate1d(array, [1, -2, 1], 1)
+        output = ndimage.laplace(array)
+        assert_array_almost_equal(tmp1 + tmp2, output)
 
-    def test_laplace02(self):
-        for type_ in [numpy.int32, numpy.float32, numpy.float64]:
-            array = numpy.array([[3, 2, 5, 1, 4],
-                                 [5, 8, 3, 7, 1],
-                                 [5, 6, 9, 3, 5]], type_) * 100
-            tmp1 = ndimage.correlate1d(array, [1, -2, 1], 0)
-            tmp2 = ndimage.correlate1d(array, [1, -2, 1], 1)
-            output = numpy.zeros(array.shape, type_)
-            ndimage.laplace(array, output=output)
-            assert_array_almost_equal(tmp1 + tmp2, output)
+    @pytest.mark.parametrize('dtype',
+                             [numpy.int32, numpy.float32, numpy.float64])
+    def test_laplace02(self, dtype):
+        array = numpy.array([[3, 2, 5, 1, 4],
+                             [5, 8, 3, 7, 1],
+                             [5, 6, 9, 3, 5]], dtype) * 100
+        tmp1 = ndimage.correlate1d(array, [1, -2, 1], 0)
+        tmp2 = ndimage.correlate1d(array, [1, -2, 1], 1)
+        output = numpy.zeros(array.shape, dtype)
+        ndimage.laplace(array, output=output)
+        assert_array_almost_equal(tmp1 + tmp2, output)
 
-    def test_gaussian_laplace01(self):
-        for type_ in [numpy.int32, numpy.float32, numpy.float64]:
-            array = numpy.array([[3, 2, 5, 1, 4],
-                                 [5, 8, 3, 7, 1],
-                                 [5, 6, 9, 3, 5]], type_) * 100
-            tmp1 = ndimage.gaussian_filter(array, 1.0, [2, 0])
-            tmp2 = ndimage.gaussian_filter(array, 1.0, [0, 2])
-            output = ndimage.gaussian_laplace(array, 1.0)
-            assert_array_almost_equal(tmp1 + tmp2, output)
+    @pytest.mark.parametrize('dtype',
+                             [numpy.int32, numpy.float32, numpy.float64])
+    def test_gaussian_laplace01(self, dtype):
+        array = numpy.array([[3, 2, 5, 1, 4],
+                             [5, 8, 3, 7, 1],
+                             [5, 6, 9, 3, 5]], dtype) * 100
+        tmp1 = ndimage.gaussian_filter(array, 1.0, [2, 0])
+        tmp2 = ndimage.gaussian_filter(array, 1.0, [0, 2])
+        output = ndimage.gaussian_laplace(array, 1.0)
+        assert_array_almost_equal(tmp1 + tmp2, output)
 
-    def test_gaussian_laplace02(self):
-        for type_ in [numpy.int32, numpy.float32, numpy.float64]:
-            array = numpy.array([[3, 2, 5, 1, 4],
-                                 [5, 8, 3, 7, 1],
-                                 [5, 6, 9, 3, 5]], type_) * 100
-            tmp1 = ndimage.gaussian_filter(array, 1.0, [2, 0])
-            tmp2 = ndimage.gaussian_filter(array, 1.0, [0, 2])
-            output = numpy.zeros(array.shape, type_)
-            ndimage.gaussian_laplace(array, 1.0, output)
-            assert_array_almost_equal(tmp1 + tmp2, output)
+    @pytest.mark.parametrize('dtype',
+                             [numpy.int32, numpy.float32, numpy.float64])
+    def test_gaussian_laplace02(self, dtype):
+        array = numpy.array([[3, 2, 5, 1, 4],
+                             [5, 8, 3, 7, 1],
+                             [5, 6, 9, 3, 5]], dtype) * 100
+        tmp1 = ndimage.gaussian_filter(array, 1.0, [2, 0])
+        tmp2 = ndimage.gaussian_filter(array, 1.0, [0, 2])
+        output = numpy.zeros(array.shape, dtype)
+        ndimage.gaussian_laplace(array, 1.0, output)
+        assert_array_almost_equal(tmp1 + tmp2, output)
 
-    def test_generic_laplace01(self):
+    @pytest.mark.parametrize('dtype', types)
+    def test_generic_laplace01(self, dtype):
         def derivative2(input, axis, output, mode, cval, a, b):
             sigma = [a, b / 2.0]
             input = numpy.asarray(input)
@@ -637,41 +635,42 @@ class TestNdimage:
             order[axis] = 2
             return ndimage.gaussian_filter(input, sigma, order,
                                            output, mode, cval)
-        for type_ in self.types:
-            array = numpy.array([[3, 2, 5, 1, 4],
-                                 [5, 8, 3, 7, 1],
-                                 [5, 6, 9, 3, 5]], type_)
-            output = numpy.zeros(array.shape, type_)
-            tmp = ndimage.generic_laplace(array, derivative2,
-                                          extra_arguments=(1.0,),
-                                          extra_keywords={'b': 2.0})
-            ndimage.gaussian_laplace(array, 1.0, output)
-            assert_array_almost_equal(tmp, output)
+        array = numpy.array([[3, 2, 5, 1, 4],
+                             [5, 8, 3, 7, 1],
+                             [5, 6, 9, 3, 5]], dtype)
+        output = numpy.zeros(array.shape, dtype)
+        tmp = ndimage.generic_laplace(array, derivative2,
+                                      extra_arguments=(1.0,),
+                                      extra_keywords={'b': 2.0})
+        ndimage.gaussian_laplace(array, 1.0, output)
+        assert_array_almost_equal(tmp, output)
 
-    def test_gaussian_gradient_magnitude01(self):
-        for type_ in [numpy.int32, numpy.float32, numpy.float64]:
-            array = numpy.array([[3, 2, 5, 1, 4],
-                                 [5, 8, 3, 7, 1],
-                                 [5, 6, 9, 3, 5]], type_) * 100
-            tmp1 = ndimage.gaussian_filter(array, 1.0, [1, 0])
-            tmp2 = ndimage.gaussian_filter(array, 1.0, [0, 1])
-            output = ndimage.gaussian_gradient_magnitude(array, 1.0)
-            expected = tmp1 * tmp1 + tmp2 * tmp2
-            expected = numpy.sqrt(expected).astype(type_)
-            assert_array_almost_equal(expected, output)
+    @pytest.mark.parametrize('dtype',
+                             [numpy.int32, numpy.float32, numpy.float64])
+    def test_gaussian_gradient_magnitude01(self, dtype):
+        array = numpy.array([[3, 2, 5, 1, 4],
+                             [5, 8, 3, 7, 1],
+                             [5, 6, 9, 3, 5]], dtype) * 100
+        tmp1 = ndimage.gaussian_filter(array, 1.0, [1, 0])
+        tmp2 = ndimage.gaussian_filter(array, 1.0, [0, 1])
+        output = ndimage.gaussian_gradient_magnitude(array, 1.0)
+        expected = tmp1 * tmp1 + tmp2 * tmp2
+        expected = numpy.sqrt(expected).astype(dtype)
+        assert_array_almost_equal(expected, output)
 
-    def test_gaussian_gradient_magnitude02(self):
-        for type_ in [numpy.int32, numpy.float32, numpy.float64]:
-            array = numpy.array([[3, 2, 5, 1, 4],
-                                 [5, 8, 3, 7, 1],
-                                 [5, 6, 9, 3, 5]], type_) * 100
-            tmp1 = ndimage.gaussian_filter(array, 1.0, [1, 0])
-            tmp2 = ndimage.gaussian_filter(array, 1.0, [0, 1])
-            output = numpy.zeros(array.shape, type_)
-            ndimage.gaussian_gradient_magnitude(array, 1.0, output)
-            expected = tmp1 * tmp1 + tmp2 * tmp2
-            expected = numpy.sqrt(expected).astype(type_)
-            assert_array_almost_equal(expected, output)
+    @pytest.mark.parametrize('dtype',
+                             [numpy.int32, numpy.float32, numpy.float64])
+    def test_gaussian_gradient_magnitude02(self, dtype):
+        array = numpy.array([[3, 2, 5, 1, 4],
+                             [5, 8, 3, 7, 1],
+                             [5, 6, 9, 3, 5]], dtype) * 100
+        tmp1 = ndimage.gaussian_filter(array, 1.0, [1, 0])
+        tmp2 = ndimage.gaussian_filter(array, 1.0, [0, 1])
+        output = numpy.zeros(array.shape, dtype)
+        ndimage.gaussian_gradient_magnitude(array, 1.0, output)
+        expected = tmp1 * tmp1 + tmp2 * tmp2
+        expected = numpy.sqrt(expected).astype(dtype)
+        assert_array_almost_equal(expected, output)
 
     def test_generic_gradient_magnitude01(self):
         array = numpy.array([[3, 2, 5, 1, 4],
@@ -721,16 +720,16 @@ class TestNdimage:
         output = ndimage.uniform_filter(array, filter_shape)
         assert_array_almost_equal([], output)
 
-    def test_uniform06(self):
+    @pytest.mark.parametrize('dtype_array', types)
+    @pytest.mark.parametrize('dtype_output', types)
+    def test_uniform06(self, dtype_array, dtype_output):
         filter_shape = [2, 2]
-        for type1 in self.types:
-            array = numpy.array([[4, 8, 12],
-                                 [16, 20, 24]], type1)
-            for type2 in self.types:
-                output = ndimage.uniform_filter(
-                    array, filter_shape, output=type2)
-                assert_array_almost_equal([[4, 6, 10], [10, 12, 16]], output)
-                assert_equal(output.dtype.type, type2)
+        array = numpy.array([[4, 8, 12],
+                             [16, 20, 24]], dtype_array)
+        output = ndimage.uniform_filter(
+            array, filter_shape, output=dtype_output)
+        assert_array_almost_equal([[4, 6, 10], [10, 12, 16]], output)
+        assert_equal(output.dtype.type, dtype_output)
 
     def test_minimum_filter01(self):
         array = numpy.array([1, 2, 3, 4, 5])
@@ -1008,19 +1007,19 @@ class TestNdimage:
         with assert_raises(RuntimeError):
             ndimage.median_filter(array, size=(2, 3), mode=['reflect']*2)
 
-    def test_rank09(self):
+    @pytest.mark.parametrize('dtype', types)
+    def test_rank09(self, dtype):
         expected = [[3, 3, 2, 4, 4],
                     [3, 5, 2, 5, 1],
                     [5, 5, 8, 3, 5]]
         footprint = [[1, 0, 1], [0, 1, 0]]
-        for type_ in self.types:
-            array = numpy.array([[3, 2, 5, 1, 4],
-                                 [5, 8, 3, 7, 1],
-                                 [5, 6, 9, 3, 5]], type_)
-            output = ndimage.rank_filter(array, 1, footprint=footprint)
-            assert_array_almost_equal(expected, output)
-            output = ndimage.percentile_filter(array, 35, footprint=footprint)
-            assert_array_almost_equal(expected, output)
+        array = numpy.array([[3, 2, 5, 1, 4],
+                             [5, 8, 3, 7, 1],
+                             [5, 6, 9, 3, 5]], dtype)
+        output = ndimage.rank_filter(array, 1, footprint=footprint)
+        assert_array_almost_equal(expected, output)
+        output = ndimage.percentile_filter(array, 35, footprint=footprint)
+        assert_array_almost_equal(expected, output)
 
     def test_rank10(self):
         array = numpy.array([[3, 2, 5, 1, 4],
@@ -1048,64 +1047,65 @@ class TestNdimage:
         output = ndimage.percentile_filter(array, 100.0, footprint=footprint)
         assert_array_almost_equal(expected, output)
 
-    def test_rank12(self):
+    @pytest.mark.parametrize('dtype', types)
+    def test_rank12(self, dtype):
         expected = [[3, 3, 2, 4, 4],
                     [3, 5, 2, 5, 1],
                     [5, 5, 8, 3, 5]]
         footprint = [[1, 0, 1], [0, 1, 0]]
-        for type_ in self.types:
-            array = numpy.array([[3, 2, 5, 1, 4],
-                                 [5, 8, 3, 7, 1],
-                                 [5, 6, 9, 3, 5]], type_)
-            output = ndimage.rank_filter(array, 1, footprint=footprint)
-            assert_array_almost_equal(expected, output)
-            output = ndimage.percentile_filter(array, 50.0,
-                                               footprint=footprint)
-            assert_array_almost_equal(expected, output)
-            output = ndimage.median_filter(array, footprint=footprint)
-            assert_array_almost_equal(expected, output)
+        array = numpy.array([[3, 2, 5, 1, 4],
+                             [5, 8, 3, 7, 1],
+                             [5, 6, 9, 3, 5]], dtype)
+        output = ndimage.rank_filter(array, 1, footprint=footprint)
+        assert_array_almost_equal(expected, output)
+        output = ndimage.percentile_filter(array, 50.0,
+                                           footprint=footprint)
+        assert_array_almost_equal(expected, output)
+        output = ndimage.median_filter(array, footprint=footprint)
+        assert_array_almost_equal(expected, output)
 
-    def test_rank13(self):
+    @pytest.mark.parametrize('dtype', types)
+    def test_rank13(self, dtype):
         expected = [[5, 2, 5, 1, 1],
                     [5, 8, 3, 5, 5],
                     [6, 6, 5, 5, 5]]
         footprint = [[1, 0, 1], [0, 1, 0]]
-        for type_ in self.types:
-            array = numpy.array([[3, 2, 5, 1, 4],
-                                 [5, 8, 3, 7, 1],
-                                 [5, 6, 9, 3, 5]], type_)
-            output = ndimage.rank_filter(array, 1, footprint=footprint,
-                                         origin=-1)
-            assert_array_almost_equal(expected, output)
+        array = numpy.array([[3, 2, 5, 1, 4],
+                             [5, 8, 3, 7, 1],
+                             [5, 6, 9, 3, 5]], dtype)
+        output = ndimage.rank_filter(array, 1, footprint=footprint,
+                                     origin=-1)
+        assert_array_almost_equal(expected, output)
 
-    def test_rank14(self):
+    @pytest.mark.parametrize('dtype', types)
+    def test_rank14(self, dtype):
         expected = [[3, 5, 2, 5, 1],
                     [5, 5, 8, 3, 5],
                     [5, 6, 6, 5, 5]]
         footprint = [[1, 0, 1], [0, 1, 0]]
-        for type_ in self.types:
-            array = numpy.array([[3, 2, 5, 1, 4],
-                                 [5, 8, 3, 7, 1],
-                                 [5, 6, 9, 3, 5]], type_)
-            output = ndimage.rank_filter(array, 1, footprint=footprint,
-                                         origin=[-1, 0])
-            assert_array_almost_equal(expected, output)
+        array = numpy.array([[3, 2, 5, 1, 4],
+                             [5, 8, 3, 7, 1],
+                             [5, 6, 9, 3, 5]], dtype)
+        output = ndimage.rank_filter(array, 1, footprint=footprint,
+                                     origin=[-1, 0])
+        assert_array_almost_equal(expected, output)
 
-    def test_rank15(self):
+    @pytest.mark.parametrize('dtype', types)
+    def test_rank15(self, dtype):
         "rank filter 15"
         expected = [[2, 3, 1, 4, 1],
                     [5, 3, 7, 1, 1],
                     [5, 5, 3, 3, 3]]
         footprint = [[1, 0, 1], [0, 1, 0]]
-        for type_ in self.types:
-            array = numpy.array([[3, 2, 5, 1, 4],
-                                 [5, 8, 3, 7, 1],
-                                 [5, 6, 9, 3, 5]], type_)
-            output = ndimage.rank_filter(array, 0, footprint=footprint,
-                                         origin=[-1, 0])
-            assert_array_almost_equal(expected, output)
+        array = numpy.array([[3, 2, 5, 1, 4],
+                             [5, 8, 3, 7, 1],
+                             [5, 6, 9, 3, 5]], dtype)
+        output = ndimage.rank_filter(array, 0, footprint=footprint,
+                                     origin=[-1, 0])
+        assert_array_almost_equal(expected, output)
 
-    def test_generic_filter1d01(self):
+    @pytest.mark.parametrize('dtype', types)
+    def test_generic_filter1d01(self, dtype):
         weights = numpy.array([1.1, 2.2, 3.3])
 
         def _filter_func(input, output, fltr, total):
@@ -1114,17 +1114,17 @@ class TestNdimage:
                 output[ii] = input[ii] * fltr[0]
                 output[ii] += input[ii + 1] * fltr[1]
                 output[ii] += input[ii + 2] * fltr[2]
-        for type_ in self.types:
-            a = numpy.arange(12, dtype=type_)
-            a.shape = (3, 4)
-            r1 = ndimage.correlate1d(a, weights / weights.sum(), 0, origin=-1)
-            r2 = ndimage.generic_filter1d(
-                a, _filter_func, 3, axis=0, origin=-1,
-                extra_arguments=(weights,),
-                extra_keywords={'total': weights.sum()})
-            assert_array_almost_equal(r1, r2)
+        a = numpy.arange(12, dtype=dtype)
+        a.shape = (3, 4)
+        r1 = ndimage.correlate1d(a, weights / weights.sum(), 0, origin=-1)
+        r2 = ndimage.generic_filter1d(
+            a, _filter_func, 3, axis=0, origin=-1,
+            extra_arguments=(weights,),
+            extra_keywords={'total': weights.sum()})
+        assert_array_almost_equal(r1, r2)
 
-    def test_generic_filter01(self):
+    @pytest.mark.parametrize('dtype', types)
+    def test_generic_filter01(self, dtype):
         filter_ = numpy.array([[1.0, 2.0], [3.0, 4.0]])
         footprint = numpy.array([[1, 0], [0, 1]])
         cf = numpy.array([1., 4.])
@@ -1132,18 +1132,18 @@ class TestNdimage:
         def _filter_func(buffer, weights, total=1.0):
             weights = cf / total
             return (buffer * weights).sum()
-        for type_ in self.types:
-            a = numpy.arange(12, dtype=type_)
-            a.shape = (3, 4)
-            r1 = ndimage.correlate(a, filter_ * footprint)
-            if type_ in self.float_types:
-                r1 /= 5
-            else:
-                r1 //= 5
-            r2 = ndimage.generic_filter(
-                a, _filter_func, footprint=footprint, extra_arguments=(cf,),
-                extra_keywords={'total': cf.sum()})
-            assert_array_almost_equal(r1, r2)
+
+        a = numpy.arange(12, dtype=dtype)
+        a.shape = (3, 4)
+        r1 = ndimage.correlate(a, filter_ * footprint)
+        if dtype in float_types:
+            r1 /= 5
+        else:
+            r1 //= 5
+        r2 = ndimage.generic_filter(
+            a, _filter_func, footprint=footprint, extra_arguments=(cf,),
+            extra_keywords={'total': cf.sum()})
+        assert_array_almost_equal(r1, r2)
 
         # generic_filter doesn't allow mode sequence
         with assert_raises(RuntimeError):
@@ -1447,43 +1447,42 @@ class TestNdimage:
                 assert_array_almost_equal(a, b, decimal=dec)
 
     @pytest.mark.parametrize('order', range(2, 6))
-    def test_spline01(self, order):
-        for type_ in self.types:
-            data = numpy.ones([], type_)
-            out = ndimage.spline_filter(data, order=order)
-            assert_array_almost_equal(out, 1)
+    @pytest.mark.parametrize('dtype', types)
+    def test_spline01(self, dtype, order):
+        data = numpy.ones([], dtype)
+        out = ndimage.spline_filter(data, order=order)
+        assert_array_almost_equal(out, 1)
 
     @pytest.mark.parametrize('order', range(2, 6))
-    def test_spline02(self, order):
-        for type_ in self.types:
-            data = numpy.array([1], type_)
-            out = ndimage.spline_filter(data, order=order)
-            assert_array_almost_equal(out, [1])
+    @pytest.mark.parametrize('dtype', types)
+    def test_spline02(self, dtype, order):
+        data = numpy.array([1], dtype)
+        out = ndimage.spline_filter(data, order=order)
+        assert_array_almost_equal(out, [1])
 
     @pytest.mark.parametrize('order', range(2, 6))
-    def test_spline03(self, order):
-        for type_ in self.types:
-            data = numpy.ones([], type_)
-            out = ndimage.spline_filter(data, order,
-                                        output=type_)
-            assert_array_almost_equal(out, 1)
+    @pytest.mark.parametrize('dtype', types)
+    def test_spline03(self, dtype, order):
+        data = numpy.ones([], dtype)
+        out = ndimage.spline_filter(data, order, output=dtype)
+        assert_array_almost_equal(out, 1)
 
     @pytest.mark.parametrize('order', range(2, 6))
-    def test_spline04(self, order):
-        for type_ in self.types:
-            data = numpy.ones([4], type_)
-            out = ndimage.spline_filter(data, order)
-            assert_array_almost_equal(out, [1, 1, 1, 1])
+    @pytest.mark.parametrize('dtype', types)
+    def test_spline04(self, dtype, order):
+        data = numpy.ones([4], dtype)
+        out = ndimage.spline_filter(data, order)
+        assert_array_almost_equal(out, [1, 1, 1, 1])
 
     @pytest.mark.parametrize('order', range(2, 6))
-    def test_spline05(self, order):
-        for type_ in self.types:
-            data = numpy.ones([4, 4], type_)
-            out = ndimage.spline_filter(data, order=order)
-            assert_array_almost_equal(out, [[1, 1, 1, 1],
-                                            [1, 1, 1, 1],
-                                            [1, 1, 1, 1],
-                                            [1, 1, 1, 1]])
+    @pytest.mark.parametrize('dtype', types)
+    def test_spline05(self, dtype, order):
+        data = numpy.ones([4, 4], dtype)
+        out = ndimage.spline_filter(data, order=order)
+        assert_array_almost_equal(out, [[1, 1, 1, 1],
+                                        [1, 1, 1, 1],
+                                        [1, 1, 1, 1],
+                                        [1, 1, 1, 1]])
 
     @pytest.mark.parametrize('order', range(0, 6))
     def test_geometric_transform01(self, order):
@@ -2628,18 +2627,18 @@ class TestNdimage:
                     [-1, -1, -1, -1, -1, -1, -1]]
         assert_array_almost_equal(out, expected)
 
-    def test_distance_transform_bf01(self):
+    @pytest.mark.parametrize('dtype', types)
+    def test_distance_transform_bf01(self, dtype):
         # brute force (bf) distance transform
-        for type_ in self.types:
-            data = numpy.array([[0, 0, 0, 0, 0, 0, 0, 0, 0],
-                                [0, 0, 0, 0, 0, 0, 0, 0, 0],
-                                [0, 0, 0, 1, 1, 1, 0, 0, 0],
-                                [0, 0, 1, 1, 1, 1, 1, 0, 0],
-                                [0, 0, 1, 1, 1, 1, 1, 0, 0],
-                                [0, 0, 1, 1, 1, 1, 1, 0, 0],
-                                [0, 0, 0, 1, 1, 1, 0, 0, 0],
-                                [0, 0, 0, 0, 0, 0, 0, 0, 0],
-                                [0, 0, 0, 0, 0, 0, 0, 0, 0]], type_)
+        data = numpy.array([[0, 0, 0, 0, 0, 0, 0, 0, 0],
+                            [0, 0, 0, 0, 0, 0, 0, 0, 0],
+                            [0, 0, 0, 1, 1, 1, 0, 0, 0],
+                            [0, 0, 1, 1, 1, 1, 1, 0, 0],
+                            [0, 0, 1, 1, 1, 1, 1, 0, 0],
+                            [0, 0, 1, 1, 1, 1, 1, 0, 0],
+                            [0, 0, 0, 1, 1, 1, 0, 0, 0],
+                            [0, 0, 0, 0, 0, 0, 0, 0, 0],
+                            [0, 0, 0, 0, 0, 0, 0, 0, 0]], dtype)
         out, ft = ndimage.distance_transform_bf(data, 'euclidean',
                                                 return_indices=True)
         expected = [[0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -2673,17 +2672,17 @@ class TestNdimage:
                      [0, 1, 2, 3, 4, 5, 6, 7, 8]]]
         assert_array_almost_equal(ft, expected)
 
-    def test_distance_transform_bf02(self):
-        for type_ in self.types:
-            data = numpy.array([[0, 0, 0, 0, 0, 0, 0, 0, 0],
-                                [0, 0, 0, 0, 0, 0, 0, 0, 0],
-                                [0, 0, 0, 1, 1, 1, 0, 0, 0],
-                                [0, 0, 1, 1, 1, 1, 1, 0, 0],
-                                [0, 0, 1, 1, 1, 1, 1, 0, 0],
-                                [0, 0, 1, 1, 1, 1, 1, 0, 0],
-                                [0, 0, 0, 1, 1, 1, 0, 0, 0],
-                                [0, 0, 0, 0, 0, 0, 0, 0, 0],
-                                [0, 0, 0, 0, 0, 0, 0, 0, 0]], type_)
+    @pytest.mark.parametrize('dtype', types)
+    def test_distance_transform_bf02(self, dtype):
+        data = numpy.array([[0, 0, 0, 0, 0, 0, 0, 0, 0],
+                            [0, 0, 0, 0, 0, 0, 0, 0, 0],
+                            [0, 0, 0, 1, 1, 1, 0, 0, 0],
+                            [0, 0, 1, 1, 1, 1, 1, 0, 0],
+                            [0, 0, 1, 1, 1, 1, 1, 0, 0],
+                            [0, 0, 1, 1, 1, 1, 1, 0, 0],
+                            [0, 0, 0, 1, 1, 1, 0, 0, 0],
+                            [0, 0, 0, 0, 0, 0, 0, 0, 0],
+                            [0, 0, 0, 0, 0, 0, 0, 0, 0]], dtype)
         out, ft = ndimage.distance_transform_bf(data, 'cityblock',
                                                 return_indices=True)
 
@@ -2718,17 +2717,17 @@ class TestNdimage:
                      [0, 1, 2, 3, 4, 5, 6, 7, 8]]]
         assert_array_almost_equal(expected, ft)
 
-    def test_distance_transform_bf03(self):
-        for type_ in self.types:
-            data = numpy.array([[0, 0, 0, 0, 0, 0, 0, 0, 0],
-                                [0, 0, 0, 0, 0, 0, 0, 0, 0],
-                                [0, 0, 0, 1, 1, 1, 0, 0, 0],
-                                [0, 0, 1, 1, 1, 1, 1, 0, 0],
-                                [0, 0, 1, 1, 1, 1, 1, 0, 0],
-                                [0, 0, 1, 1, 1, 1, 1, 0, 0],
-                                [0, 0, 0, 1, 1, 1, 0, 0, 0],
-                                [0, 0, 0, 0, 0, 0, 0, 0, 0],
-                                [0, 0, 0, 0, 0, 0, 0, 0, 0]], type_)
+    @pytest.mark.parametrize('dtype', types)
+    def test_distance_transform_bf03(self, dtype):
+        data = numpy.array([[0, 0, 0, 0, 0, 0, 0, 0, 0],
+                            [0, 0, 0, 0, 0, 0, 0, 0, 0],
+                            [0, 0, 0, 1, 1, 1, 0, 0, 0],
+                            [0, 0, 1, 1, 1, 1, 1, 0, 0],
+                            [0, 0, 1, 1, 1, 1, 1, 0, 0],
+                            [0, 0, 1, 1, 1, 1, 1, 0, 0],
+                            [0, 0, 0, 1, 1, 1, 0, 0, 0],
+                            [0, 0, 0, 0, 0, 0, 0, 0, 0],
+                            [0, 0, 0, 0, 0, 0, 0, 0, 0]], dtype)
         out, ft = ndimage.distance_transform_bf(data, 'chessboard',
                                                 return_indices=True)
 
@@ -2763,17 +2762,17 @@ class TestNdimage:
                      [0, 1, 2, 3, 4, 5, 6, 7, 8]]]
         assert_array_almost_equal(ft, expected)
 
-    def test_distance_transform_bf04(self):
-        for type_ in self.types:
-            data = numpy.array([[0, 0, 0, 0, 0, 0, 0, 0, 0],
-                                [0, 0, 0, 0, 0, 0, 0, 0, 0],
-                                [0, 0, 0, 1, 1, 1, 0, 0, 0],
-                                [0, 0, 1, 1, 1, 1, 1, 0, 0],
-                                [0, 0, 1, 1, 1, 1, 1, 0, 0],
-                                [0, 0, 1, 1, 1, 1, 1, 0, 0],
-                                [0, 0, 0, 1, 1, 1, 0, 0, 0],
-                                [0, 0, 0, 0, 0, 0, 0, 0, 0],
-                                [0, 0, 0, 0, 0, 0, 0, 0, 0]], type_)
+    @pytest.mark.parametrize('dtype', types)
+    def test_distance_transform_bf04(self, dtype):
+        data = numpy.array([[0, 0, 0, 0, 0, 0, 0, 0, 0],
+                            [0, 0, 0, 0, 0, 0, 0, 0, 0],
+                            [0, 0, 0, 1, 1, 1, 0, 0, 0],
+                            [0, 0, 1, 1, 1, 1, 1, 0, 0],
+                            [0, 0, 1, 1, 1, 1, 1, 0, 0],
+                            [0, 0, 1, 1, 1, 1, 1, 0, 0],
+                            [0, 0, 0, 1, 1, 1, 0, 0, 0],
+                            [0, 0, 0, 0, 0, 0, 0, 0, 0],
+                            [0, 0, 0, 0, 0, 0, 0, 0, 0]], dtype)
         tdt, tft = ndimage.distance_transform_bf(data, return_indices=1)
         dts = []
         fts = []
@@ -2812,17 +2811,17 @@ class TestNdimage:
         for ft in fts:
             assert_array_almost_equal(tft, ft)
 
-    def test_distance_transform_bf05(self):
-        for type_ in self.types:
-            data = numpy.array([[0, 0, 0, 0, 0, 0, 0, 0, 0],
-                                [0, 0, 0, 0, 0, 0, 0, 0, 0],
-                                [0, 0, 0, 1, 1, 1, 0, 0, 0],
-                                [0, 0, 1, 1, 1, 1, 1, 0, 0],
-                                [0, 0, 1, 1, 1, 1, 1, 0, 0],
-                                [0, 0, 1, 1, 1, 1, 1, 0, 0],
-                                [0, 0, 0, 1, 1, 1, 0, 0, 0],
-                                [0, 0, 0, 0, 0, 0, 0, 0, 0],
-                                [0, 0, 0, 0, 0, 0, 0, 0, 0]], type_)
+    @pytest.mark.parametrize('dtype', types)
+    def test_distance_transform_bf05(self, dtype):
+        data = numpy.array([[0, 0, 0, 0, 0, 0, 0, 0, 0],
+                            [0, 0, 0, 0, 0, 0, 0, 0, 0],
+                            [0, 0, 0, 1, 1, 1, 0, 0, 0],
+                            [0, 0, 1, 1, 1, 1, 1, 0, 0],
+                            [0, 0, 1, 1, 1, 1, 1, 0, 0],
+                            [0, 0, 1, 1, 1, 1, 1, 0, 0],
+                            [0, 0, 0, 1, 1, 1, 0, 0, 0],
+                            [0, 0, 0, 0, 0, 0, 0, 0, 0],
+                            [0, 0, 0, 0, 0, 0, 0, 0, 0]], dtype)
         out, ft = ndimage.distance_transform_bf(
             data, 'euclidean', return_indices=True, sampling=[2, 2])
         expected = [[0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -2856,17 +2855,17 @@ class TestNdimage:
                      [0, 1, 2, 3, 4, 5, 6, 7, 8]]]
         assert_array_almost_equal(ft, expected)
 
-    def test_distance_transform_bf06(self):
-        for type_ in self.types:
-            data = numpy.array([[0, 0, 0, 0, 0, 0, 0, 0, 0],
-                                [0, 0, 0, 0, 0, 0, 0, 0, 0],
-                                [0, 0, 0, 1, 1, 1, 0, 0, 0],
-                                [0, 0, 1, 1, 1, 1, 1, 0, 0],
-                                [0, 0, 1, 1, 1, 1, 1, 0, 0],
-                                [0, 0, 1, 1, 1, 1, 1, 0, 0],
-                                [0, 0, 0, 1, 1, 1, 0, 0, 0],
-                                [0, 0, 0, 0, 0, 0, 0, 0, 0],
-                                [0, 0, 0, 0, 0, 0, 0, 0, 0]], type_)
+    @pytest.mark.parametrize('dtype', types)
+    def test_distance_transform_bf06(self, dtype):
+        data = numpy.array([[0, 0, 0, 0, 0, 0, 0, 0, 0],
+                            [0, 0, 0, 0, 0, 0, 0, 0, 0],
+                            [0, 0, 0, 1, 1, 1, 0, 0, 0],
+                            [0, 0, 1, 1, 1, 1, 1, 0, 0],
+                            [0, 0, 1, 1, 1, 1, 1, 0, 0],
+                            [0, 0, 1, 1, 1, 1, 1, 0, 0],
+                            [0, 0, 0, 1, 1, 1, 0, 0, 0],
+                            [0, 0, 0, 0, 0, 0, 0, 0, 0],
+                            [0, 0, 0, 0, 0, 0, 0, 0, 0]], dtype)
         out, ft = ndimage.distance_transform_bf(
             data, 'euclidean', return_indices=True, sampling=[2, 1])
         expected = [[0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -2900,18 +2899,18 @@ class TestNdimage:
                      [0, 1, 2, 3, 4, 5, 6, 7, 8]]]
         assert_array_almost_equal(ft, expected)
 
-    def test_distance_transform_cdt01(self):
+    @pytest.mark.parametrize('dtype', types)
+    def test_distance_transform_cdt01(self, dtype):
         # chamfer type distance (cdt) transform
-        for type_ in self.types:
-            data = numpy.array([[0, 0, 0, 0, 0, 0, 0, 0, 0],
-                                [0, 0, 0, 0, 0, 0, 0, 0, 0],
-                                [0, 0, 0, 1, 1, 1, 0, 0, 0],
-                                [0, 0, 1, 1, 1, 1, 1, 0, 0],
-                                [0, 0, 1, 1, 1, 1, 1, 0, 0],
-                                [0, 0, 1, 1, 1, 1, 1, 0, 0],
-                                [0, 0, 0, 1, 1, 1, 0, 0, 0],
-                                [0, 0, 0, 0, 0, 0, 0, 0, 0],
-                                [0, 0, 0, 0, 0, 0, 0, 0, 0]], type_)
+        data = numpy.array([[0, 0, 0, 0, 0, 0, 0, 0, 0],
+                            [0, 0, 0, 0, 0, 0, 0, 0, 0],
+                            [0, 0, 0, 1, 1, 1, 0, 0, 0],
+                            [0, 0, 1, 1, 1, 1, 1, 0, 0],
+                            [0, 0, 1, 1, 1, 1, 1, 0, 0],
+                            [0, 0, 1, 1, 1, 1, 1, 0, 0],
+                            [0, 0, 0, 1, 1, 1, 0, 0, 0],
+                            [0, 0, 0, 0, 0, 0, 0, 0, 0],
+                            [0, 0, 0, 0, 0, 0, 0, 0, 0]], dtype)
         out, ft = ndimage.distance_transform_cdt(
             data, 'cityblock', return_indices=True)
         bf = ndimage.distance_transform_bf(data, 'cityblock')
@@ -2937,17 +2936,17 @@ class TestNdimage:
                      [0, 1, 2, 3, 4, 5, 6, 7, 8]]]
         assert_array_almost_equal(ft, expected)
 
-    def test_distance_transform_cdt02(self):
-        for type_ in self.types:
-            data = numpy.array([[0, 0, 0, 0, 0, 0, 0, 0, 0],
-                                [0, 0, 0, 0, 0, 0, 0, 0, 0],
-                                [0, 0, 0, 1, 1, 1, 0, 0, 0],
-                                [0, 0, 1, 1, 1, 1, 1, 0, 0],
-                                [0, 0, 1, 1, 1, 1, 1, 0, 0],
-                                [0, 0, 1, 1, 1, 1, 1, 0, 0],
-                                [0, 0, 0, 1, 1, 1, 0, 0, 0],
-                                [0, 0, 0, 0, 0, 0, 0, 0, 0],
-                                [0, 0, 0, 0, 0, 0, 0, 0, 0]], type_)
+    @pytest.mark.parametrize('dtype', types)
+    def test_distance_transform_cdt02(self, dtype):
+        data = numpy.array([[0, 0, 0, 0, 0, 0, 0, 0, 0],
+                            [0, 0, 0, 0, 0, 0, 0, 0, 0],
+                            [0, 0, 0, 1, 1, 1, 0, 0, 0],
+                            [0, 0, 1, 1, 1, 1, 1, 0, 0],
+                            [0, 0, 1, 1, 1, 1, 1, 0, 0],
+                            [0, 0, 1, 1, 1, 1, 1, 0, 0],
+                            [0, 0, 0, 1, 1, 1, 0, 0, 0],
+                            [0, 0, 0, 0, 0, 0, 0, 0, 0],
+                            [0, 0, 0, 0, 0, 0, 0, 0, 0]], dtype)
         out, ft = ndimage.distance_transform_cdt(data, 'chessboard',
                                                  return_indices=True)
         bf = ndimage.distance_transform_bf(data, 'chessboard')
@@ -2973,17 +2972,17 @@ class TestNdimage:
                      [0, 1, 2, 3, 4, 5, 6, 7, 8]]]
         assert_array_almost_equal(ft, expected)
 
-    def test_distance_transform_cdt03(self):
-        for type_ in self.types:
-            data = numpy.array([[0, 0, 0, 0, 0, 0, 0, 0, 0],
-                                [0, 0, 0, 0, 0, 0, 0, 0, 0],
-                                [0, 0, 0, 1, 1, 1, 0, 0, 0],
-                                [0, 0, 1, 1, 1, 1, 1, 0, 0],
-                                [0, 0, 1, 1, 1, 1, 1, 0, 0],
-                                [0, 0, 1, 1, 1, 1, 1, 0, 0],
-                                [0, 0, 0, 1, 1, 1, 0, 0, 0],
-                                [0, 0, 0, 0, 0, 0, 0, 0, 0],
-                                [0, 0, 0, 0, 0, 0, 0, 0, 0]], type_)
+    @pytest.mark.parametrize('dtype', types)
+    def test_distance_transform_cdt03(self, dtype):
+        data = numpy.array([[0, 0, 0, 0, 0, 0, 0, 0, 0],
+                            [0, 0, 0, 0, 0, 0, 0, 0, 0],
+                            [0, 0, 0, 1, 1, 1, 0, 0, 0],
+                            [0, 0, 1, 1, 1, 1, 1, 0, 0],
+                            [0, 0, 1, 1, 1, 1, 1, 0, 0],
+                            [0, 0, 1, 1, 1, 1, 1, 0, 0],
+                            [0, 0, 0, 1, 1, 1, 0, 0, 0],
+                            [0, 0, 0, 0, 0, 0, 0, 0, 0],
+                            [0, 0, 0, 0, 0, 0, 0, 0, 0]], dtype)
         tdt, tft = ndimage.distance_transform_cdt(data, return_indices=True)
         dts = []
         fts = []
@@ -3022,108 +3021,108 @@ class TestNdimage:
         for ft in fts:
             assert_array_almost_equal(tft, ft)
 
-    def test_distance_transform_edt01(self):
+    @pytest.mark.parametrize('dtype', types)
+    def test_distance_transform_edt01(self, dtype):
         # euclidean distance transform (edt)
-        for type_ in self.types:
-            data = numpy.array([[0, 0, 0, 0, 0, 0, 0, 0, 0],
-                                [0, 0, 0, 0, 0, 0, 0, 0, 0],
-                                [0, 0, 0, 1, 1, 1, 0, 0, 0],
-                                [0, 0, 1, 1, 1, 1, 1, 0, 0],
-                                [0, 0, 1, 1, 1, 1, 1, 0, 0],
-                                [0, 0, 1, 1, 1, 1, 1, 0, 0],
-                                [0, 0, 0, 1, 1, 1, 0, 0, 0],
-                                [0, 0, 0, 0, 0, 0, 0, 0, 0],
-                                [0, 0, 0, 0, 0, 0, 0, 0, 0]], type_)
-            out, ft = ndimage.distance_transform_edt(data, return_indices=True)
-            bf = ndimage.distance_transform_bf(data, 'euclidean')
-            assert_array_almost_equal(bf, out)
+        data = numpy.array([[0, 0, 0, 0, 0, 0, 0, 0, 0],
+                            [0, 0, 0, 0, 0, 0, 0, 0, 0],
+                            [0, 0, 0, 1, 1, 1, 0, 0, 0],
+                            [0, 0, 1, 1, 1, 1, 1, 0, 0],
+                            [0, 0, 1, 1, 1, 1, 1, 0, 0],
+                            [0, 0, 1, 1, 1, 1, 1, 0, 0],
+                            [0, 0, 0, 1, 1, 1, 0, 0, 0],
+                            [0, 0, 0, 0, 0, 0, 0, 0, 0],
+                            [0, 0, 0, 0, 0, 0, 0, 0, 0]], dtype)
+        out, ft = ndimage.distance_transform_edt(data, return_indices=True)
+        bf = ndimage.distance_transform_bf(data, 'euclidean')
+        assert_array_almost_equal(bf, out)
 
-            dt = ft - numpy.indices(ft.shape[1:], dtype=ft.dtype)
-            dt = dt.astype(numpy.float64)
-            numpy.multiply(dt, dt, dt)
-            dt = numpy.add.reduce(dt, axis=0)
-            numpy.sqrt(dt, dt)
+        dt = ft - numpy.indices(ft.shape[1:], dtype=ft.dtype)
+        dt = dt.astype(numpy.float64)
+        numpy.multiply(dt, dt, dt)
+        dt = numpy.add.reduce(dt, axis=0)
+        numpy.sqrt(dt, dt)
 
-            assert_array_almost_equal(bf, dt)
+        assert_array_almost_equal(bf, dt)
 
-    def test_distance_transform_edt02(self):
-        for type_ in self.types:
-            data = numpy.array([[0, 0, 0, 0, 0, 0, 0, 0, 0],
-                                [0, 0, 0, 0, 0, 0, 0, 0, 0],
-                                [0, 0, 0, 1, 1, 1, 0, 0, 0],
-                                [0, 0, 1, 1, 1, 1, 1, 0, 0],
-                                [0, 0, 1, 1, 1, 1, 1, 0, 0],
-                                [0, 0, 1, 1, 1, 1, 1, 0, 0],
-                                [0, 0, 0, 1, 1, 1, 0, 0, 0],
-                                [0, 0, 0, 0, 0, 0, 0, 0, 0],
-                                [0, 0, 0, 0, 0, 0, 0, 0, 0]], type_)
-            tdt, tft = ndimage.distance_transform_edt(data, return_indices=True)
-            dts = []
-            fts = []
-            dt = numpy.zeros(data.shape, dtype=numpy.float64)
-            ndimage.distance_transform_edt(data, distances=dt)
-            dts.append(dt)
-            ft = ndimage.distance_transform_edt(
-                data, return_distances=0, return_indices=True)
-            fts.append(ft)
-            ft = numpy.indices(data.shape, dtype=numpy.int32)
-            ndimage.distance_transform_edt(
-                data, return_distances=False, return_indices=True, indices=ft)
-            fts.append(ft)
-            dt, ft = ndimage.distance_transform_edt(
-                data, return_indices=True)
-            dts.append(dt)
-            fts.append(ft)
-            dt = numpy.zeros(data.shape, dtype=numpy.float64)
-            ft = ndimage.distance_transform_edt(
-                data, distances=dt, return_indices=True)
-            dts.append(dt)
-            fts.append(ft)
-            ft = numpy.indices(data.shape, dtype=numpy.int32)
-            dt = ndimage.distance_transform_edt(
-                data, return_indices=True, indices=ft)
-            dts.append(dt)
-            fts.append(ft)
-            dt = numpy.zeros(data.shape, dtype=numpy.float64)
-            ft = numpy.indices(data.shape, dtype=numpy.int32)
-            ndimage.distance_transform_edt(
-                data, distances=dt, return_indices=True, indices=ft)
-            dts.append(dt)
-            fts.append(ft)
-            for dt in dts:
-                assert_array_almost_equal(tdt, dt)
-            for ft in fts:
-                assert_array_almost_equal(tft, ft)
+    @pytest.mark.parametrize('dtype', types)
+    def test_distance_transform_edt02(self, dtype):
+        data = numpy.array([[0, 0, 0, 0, 0, 0, 0, 0, 0],
+                            [0, 0, 0, 0, 0, 0, 0, 0, 0],
+                            [0, 0, 0, 1, 1, 1, 0, 0, 0],
+                            [0, 0, 1, 1, 1, 1, 1, 0, 0],
+                            [0, 0, 1, 1, 1, 1, 1, 0, 0],
+                            [0, 0, 1, 1, 1, 1, 1, 0, 0],
+                            [0, 0, 0, 1, 1, 1, 0, 0, 0],
+                            [0, 0, 0, 0, 0, 0, 0, 0, 0],
+                            [0, 0, 0, 0, 0, 0, 0, 0, 0]], dtype)
+        tdt, tft = ndimage.distance_transform_edt(data, return_indices=True)
+        dts = []
+        fts = []
+        dt = numpy.zeros(data.shape, dtype=numpy.float64)
+        ndimage.distance_transform_edt(data, distances=dt)
+        dts.append(dt)
+        ft = ndimage.distance_transform_edt(
+            data, return_distances=0, return_indices=True)
+        fts.append(ft)
+        ft = numpy.indices(data.shape, dtype=numpy.int32)
+        ndimage.distance_transform_edt(
+            data, return_distances=False, return_indices=True, indices=ft)
+        fts.append(ft)
+        dt, ft = ndimage.distance_transform_edt(
+            data, return_indices=True)
+        dts.append(dt)
+        fts.append(ft)
+        dt = numpy.zeros(data.shape, dtype=numpy.float64)
+        ft = ndimage.distance_transform_edt(
+            data, distances=dt, return_indices=True)
+        dts.append(dt)
+        fts.append(ft)
+        ft = numpy.indices(data.shape, dtype=numpy.int32)
+        dt = ndimage.distance_transform_edt(
+            data, return_indices=True, indices=ft)
+        dts.append(dt)
+        fts.append(ft)
+        dt = numpy.zeros(data.shape, dtype=numpy.float64)
+        ft = numpy.indices(data.shape, dtype=numpy.int32)
+        ndimage.distance_transform_edt(
+            data, distances=dt, return_indices=True, indices=ft)
+        dts.append(dt)
+        fts.append(ft)
+        for dt in dts:
+            assert_array_almost_equal(tdt, dt)
+        for ft in fts:
+            assert_array_almost_equal(tft, ft)
 
-    def test_distance_transform_edt03(self):
-        for type_ in self.types:
-            data = numpy.array([[0, 0, 0, 0, 0, 0, 0, 0, 0],
-                                [0, 0, 0, 0, 0, 0, 0, 0, 0],
-                                [0, 0, 0, 1, 1, 1, 0, 0, 0],
-                                [0, 0, 1, 1, 1, 1, 1, 0, 0],
-                                [0, 0, 1, 1, 1, 1, 1, 0, 0],
-                                [0, 0, 1, 1, 1, 1, 1, 0, 0],
-                                [0, 0, 0, 1, 1, 1, 0, 0, 0],
-                                [0, 0, 0, 0, 0, 0, 0, 0, 0],
-                                [0, 0, 0, 0, 0, 0, 0, 0, 0]], type_)
-            ref = ndimage.distance_transform_bf(data, 'euclidean', sampling=[2, 2])
-            out = ndimage.distance_transform_edt(data, sampling=[2, 2])
-            assert_array_almost_equal(ref, out)
+    @pytest.mark.parametrize('dtype', types)
+    def test_distance_transform_edt03(self, dtype):
+        data = numpy.array([[0, 0, 0, 0, 0, 0, 0, 0, 0],
+                            [0, 0, 0, 0, 0, 0, 0, 0, 0],
+                            [0, 0, 0, 1, 1, 1, 0, 0, 0],
+                            [0, 0, 1, 1, 1, 1, 1, 0, 0],
+                            [0, 0, 1, 1, 1, 1, 1, 0, 0],
+                            [0, 0, 1, 1, 1, 1, 1, 0, 0],
+                            [0, 0, 0, 1, 1, 1, 0, 0, 0],
+                            [0, 0, 0, 0, 0, 0, 0, 0, 0],
+                            [0, 0, 0, 0, 0, 0, 0, 0, 0]], dtype)
+        ref = ndimage.distance_transform_bf(data, 'euclidean', sampling=[2, 2])
+        out = ndimage.distance_transform_edt(data, sampling=[2, 2])
+        assert_array_almost_equal(ref, out)
 
-    def test_distance_transform_edt4(self):
-        for type_ in self.types:
-            data = numpy.array([[0, 0, 0, 0, 0, 0, 0, 0, 0],
-                                [0, 0, 0, 0, 0, 0, 0, 0, 0],
-                                [0, 0, 0, 1, 1, 1, 0, 0, 0],
-                                [0, 0, 1, 1, 1, 1, 1, 0, 0],
-                                [0, 0, 1, 1, 1, 1, 1, 0, 0],
-                                [0, 0, 1, 1, 1, 1, 1, 0, 0],
-                                [0, 0, 0, 1, 1, 1, 0, 0, 0],
-                                [0, 0, 0, 0, 0, 0, 0, 0, 0],
-                                [0, 0, 0, 0, 0, 0, 0, 0, 0]], type_)
-            ref = ndimage.distance_transform_bf(data, 'euclidean', sampling=[2, 1])
-            out = ndimage.distance_transform_edt(data, sampling=[2, 1])
-            assert_array_almost_equal(ref, out)
+    @pytest.mark.parametrize('dtype', types)
+    def test_distance_transform_edt4(self, dtype):
+        data = numpy.array([[0, 0, 0, 0, 0, 0, 0, 0, 0],
+                            [0, 0, 0, 0, 0, 0, 0, 0, 0],
+                            [0, 0, 0, 1, 1, 1, 0, 0, 0],
+                            [0, 0, 1, 1, 1, 1, 1, 0, 0],
+                            [0, 0, 1, 1, 1, 1, 1, 0, 0],
+                            [0, 0, 1, 1, 1, 1, 1, 0, 0],
+                            [0, 0, 0, 1, 1, 1, 0, 0, 0],
+                            [0, 0, 0, 0, 0, 0, 0, 0, 0],
+                            [0, 0, 0, 0, 0, 0, 0, 0, 0]], dtype)
+        ref = ndimage.distance_transform_bf(data, 'euclidean', sampling=[2, 1])
+        out = ndimage.distance_transform_edt(data, sampling=[2, 1])
+        assert_array_almost_equal(ref, out)
 
     def test_distance_transform_edt5(self):
         # Ticket #954 regression test
@@ -3185,152 +3184,150 @@ class TestNdimage:
         assert_array_almost_equal(out[0], expected)
         assert_equal(out[1], [2, 2])
 
-    def test_binary_erosion01(self):
-        for type_ in self.types:
-            data = numpy.ones([], type_)
-            out = ndimage.binary_erosion(data)
-            assert_array_almost_equal(out, 1)
+    @pytest.mark.parametrize('dtype', types)
+    def test_binary_erosion01(self, dtype):
+        data = numpy.ones([], dtype)
+        out = ndimage.binary_erosion(data)
+        assert_array_almost_equal(out, 1)
 
-    def test_binary_erosion02(self):
-        for type_ in self.types:
-            data = numpy.ones([], type_)
-            out = ndimage.binary_erosion(data, border_value=1)
-            assert_array_almost_equal(out, 1)
+    @pytest.mark.parametrize('dtype', types)
+    def test_binary_erosion02(self, dtype):
+        data = numpy.ones([], dtype)
+        out = ndimage.binary_erosion(data, border_value=1)
+        assert_array_almost_equal(out, 1)
 
-    def test_binary_erosion03(self):
-        for type_ in self.types:
-            data = numpy.ones([1], type_)
-            out = ndimage.binary_erosion(data)
-            assert_array_almost_equal(out, [0])
+    @pytest.mark.parametrize('dtype', types)
+    def test_binary_erosion03(self, dtype):
+        data = numpy.ones([1], dtype)
+        out = ndimage.binary_erosion(data)
+        assert_array_almost_equal(out, [0])
 
-    def test_binary_erosion04(self):
-        for type_ in self.types:
-            data = numpy.ones([1], type_)
-            out = ndimage.binary_erosion(data, border_value=1)
-            assert_array_almost_equal(out, [1])
+    @pytest.mark.parametrize('dtype', types)
+    def test_binary_erosion04(self, dtype):
+        data = numpy.ones([1], dtype)
+        out = ndimage.binary_erosion(data, border_value=1)
+        assert_array_almost_equal(out, [1])
 
-    def test_binary_erosion05(self):
-        for type_ in self.types:
-            data = numpy.ones([3], type_)
-            out = ndimage.binary_erosion(data)
-            assert_array_almost_equal(out, [0, 1, 0])
+    @pytest.mark.parametrize('dtype', types)
+    def test_binary_erosion05(self, dtype):
+        data = numpy.ones([3], dtype)
+        out = ndimage.binary_erosion(data)
+        assert_array_almost_equal(out, [0, 1, 0])
 
-    def test_binary_erosion06(self):
-        for type_ in self.types:
-            data = numpy.ones([3], type_)
-            out = ndimage.binary_erosion(data, border_value=1)
-            assert_array_almost_equal(out, [1, 1, 1])
+    @pytest.mark.parametrize('dtype', types)
+    def test_binary_erosion06(self, dtype):
+        data = numpy.ones([3], dtype)
+        out = ndimage.binary_erosion(data, border_value=1)
+        assert_array_almost_equal(out, [1, 1, 1])
 
-    def test_binary_erosion07(self):
-        for type_ in self.types:
-            data = numpy.ones([5], type_)
-            out = ndimage.binary_erosion(data)
-            assert_array_almost_equal(out, [0, 1, 1, 1, 0])
+    @pytest.mark.parametrize('dtype', types)
+    def test_binary_erosion07(self, dtype):
+        data = numpy.ones([5], dtype)
+        out = ndimage.binary_erosion(data)
+        assert_array_almost_equal(out, [0, 1, 1, 1, 0])
 
-    def test_binary_erosion08(self):
-        for type_ in self.types:
-            data = numpy.ones([5], type_)
-            out = ndimage.binary_erosion(data, border_value=1)
-            assert_array_almost_equal(out, [1, 1, 1, 1, 1])
+    @pytest.mark.parametrize('dtype', types)
+    def test_binary_erosion08(self, dtype):
+        data = numpy.ones([5], dtype)
+        out = ndimage.binary_erosion(data, border_value=1)
+        assert_array_almost_equal(out, [1, 1, 1, 1, 1])
 
-    def test_binary_erosion09(self):
-        for type_ in self.types:
-            data = numpy.ones([5], type_)
-            data[2] = 0
-            out = ndimage.binary_erosion(data)
-            assert_array_almost_equal(out, [0, 0, 0, 0, 0])
+    @pytest.mark.parametrize('dtype', types)
+    def test_binary_erosion09(self, dtype):
+        data = numpy.ones([5], dtype)
+        data[2] = 0
+        out = ndimage.binary_erosion(data)
+        assert_array_almost_equal(out, [0, 0, 0, 0, 0])
 
-    def test_binary_erosion10(self):
-        for type_ in self.types:
-            data = numpy.ones([5], type_)
-            data[2] = 0
-            out = ndimage.binary_erosion(data, border_value=1)
-            assert_array_almost_equal(out, [1, 0, 0, 0, 1])
+    @pytest.mark.parametrize('dtype', types)
+    def test_binary_erosion10(self, dtype):
+        data = numpy.ones([5], dtype)
+        data[2] = 0
+        out = ndimage.binary_erosion(data, border_value=1)
+        assert_array_almost_equal(out, [1, 0, 0, 0, 1])
 
-    def test_binary_erosion11(self):
-        for type_ in self.types:
-            data = numpy.ones([5], type_)
-            data[2] = 0
-            struct = [1, 0, 1]
-            out = ndimage.binary_erosion(data, struct, border_value=1)
-            assert_array_almost_equal(out, [1, 0, 1, 0, 1])
+    @pytest.mark.parametrize('dtype', types)
+    def test_binary_erosion11(self, dtype):
+        data = numpy.ones([5], dtype)
+        data[2] = 0
+        struct = [1, 0, 1]
+        out = ndimage.binary_erosion(data, struct, border_value=1)
+        assert_array_almost_equal(out, [1, 0, 1, 0, 1])
 
-    def test_binary_erosion12(self):
-        for type_ in self.types:
-            data = numpy.ones([5], type_)
-            data[2] = 0
-            struct = [1, 0, 1]
-            out = ndimage.binary_erosion(data, struct, border_value=1,
-                                         origin=-1)
-            assert_array_almost_equal(out, [0, 1, 0, 1, 1])
+    @pytest.mark.parametrize('dtype', types)
+    def test_binary_erosion12(self, dtype):
+        data = numpy.ones([5], dtype)
+        data[2] = 0
+        struct = [1, 0, 1]
+        out = ndimage.binary_erosion(data, struct, border_value=1, origin=-1)
+        assert_array_almost_equal(out, [0, 1, 0, 1, 1])
 
-    def test_binary_erosion13(self):
-        for type_ in self.types:
-            data = numpy.ones([5], type_)
-            data[2] = 0
-            struct = [1, 0, 1]
-            out = ndimage.binary_erosion(data, struct, border_value=1,
-                                         origin=1)
-            assert_array_almost_equal(out, [1, 1, 0, 1, 0])
+    @pytest.mark.parametrize('dtype', types)
+    def test_binary_erosion13(self, dtype):
+        data = numpy.ones([5], dtype)
+        data[2] = 0
+        struct = [1, 0, 1]
+        out = ndimage.binary_erosion(data, struct, border_value=1, origin=1)
+        assert_array_almost_equal(out, [1, 1, 0, 1, 0])
 
-    def test_binary_erosion14(self):
-        for type_ in self.types:
-            data = numpy.ones([5], type_)
-            data[2] = 0
-            struct = [1, 1]
-            out = ndimage.binary_erosion(data, struct, border_value=1)
-            assert_array_almost_equal(out, [1, 1, 0, 0, 1])
+    @pytest.mark.parametrize('dtype', types)
+    def test_binary_erosion14(self, dtype):
+        data = numpy.ones([5], dtype)
+        data[2] = 0
+        struct = [1, 1]
+        out = ndimage.binary_erosion(data, struct, border_value=1)
+        assert_array_almost_equal(out, [1, 1, 0, 0, 1])
 
-    def test_binary_erosion15(self):
-        for type_ in self.types:
-            data = numpy.ones([5], type_)
-            data[2] = 0
-            struct = [1, 1]
-            out = ndimage.binary_erosion(data, struct, border_value=1,
-                                         origin=-1)
-            assert_array_almost_equal(out, [1, 0, 0, 1, 1])
+    @pytest.mark.parametrize('dtype', types)
+    def test_binary_erosion15(self, dtype):
+        data = numpy.ones([5], dtype)
+        data[2] = 0
+        struct = [1, 1]
+        out = ndimage.binary_erosion(data, struct, border_value=1, origin=-1)
+        assert_array_almost_equal(out, [1, 0, 0, 1, 1])
 
-    def test_binary_erosion16(self):
-        for type_ in self.types:
-            data = numpy.ones([1, 1], type_)
-            out = ndimage.binary_erosion(data, border_value=1)
-            assert_array_almost_equal(out, [[1]])
+    @pytest.mark.parametrize('dtype', types)
+    def test_binary_erosion16(self, dtype):
+        data = numpy.ones([1, 1], dtype)
+        out = ndimage.binary_erosion(data, border_value=1)
+        assert_array_almost_equal(out, [[1]])
 
-    def test_binary_erosion17(self):
-        for type_ in self.types:
-            data = numpy.ones([1, 1], type_)
-            out = ndimage.binary_erosion(data)
-            assert_array_almost_equal(out, [[0]])
+    @pytest.mark.parametrize('dtype', types)
+    def test_binary_erosion17(self, dtype):
+        data = numpy.ones([1, 1], dtype)
+        out = ndimage.binary_erosion(data)
+        assert_array_almost_equal(out, [[0]])
 
-    def test_binary_erosion18(self):
-        for type_ in self.types:
-            data = numpy.ones([1, 3], type_)
-            out = ndimage.binary_erosion(data)
-            assert_array_almost_equal(out, [[0, 0, 0]])
+    @pytest.mark.parametrize('dtype', types)
+    def test_binary_erosion18(self, dtype):
+        data = numpy.ones([1, 3], dtype)
+        out = ndimage.binary_erosion(data)
+        assert_array_almost_equal(out, [[0, 0, 0]])
 
-    def test_binary_erosion19(self):
-        for type_ in self.types:
-            data = numpy.ones([1, 3], type_)
-            out = ndimage.binary_erosion(data, border_value=1)
-            assert_array_almost_equal(out, [[1, 1, 1]])
+    @pytest.mark.parametrize('dtype', types)
+    def test_binary_erosion19(self, dtype):
+        data = numpy.ones([1, 3], dtype)
+        out = ndimage.binary_erosion(data, border_value=1)
+        assert_array_almost_equal(out, [[1, 1, 1]])
 
-    def test_binary_erosion20(self):
-        for type_ in self.types:
-            data = numpy.ones([3, 3], type_)
-            out = ndimage.binary_erosion(data)
-            assert_array_almost_equal(out, [[0, 0, 0],
-                                            [0, 1, 0],
-                                            [0, 0, 0]])
+    @pytest.mark.parametrize('dtype', types)
+    def test_binary_erosion20(self, dtype):
+        data = numpy.ones([3, 3], dtype)
+        out = ndimage.binary_erosion(data)
+        assert_array_almost_equal(out, [[0, 0, 0],
+                                        [0, 1, 0],
+                                        [0, 0, 0]])
 
-    def test_binary_erosion21(self):
-        for type_ in self.types:
-            data = numpy.ones([3, 3], type_)
-            out = ndimage.binary_erosion(data, border_value=1)
-            assert_array_almost_equal(out, [[1, 1, 1],
-                                            [1, 1, 1],
-                                            [1, 1, 1]])
+    @pytest.mark.parametrize('dtype', types)
+    def test_binary_erosion21(self, dtype):
+        data = numpy.ones([3, 3], dtype)
+        out = ndimage.binary_erosion(data, border_value=1)
+        assert_array_almost_equal(out, [[1, 1, 1],
+                                        [1, 1, 1],
+                                        [1, 1, 1]])
 
-    def test_binary_erosion22(self):
+    @pytest.mark.parametrize('dtype', types)
+    def test_binary_erosion22(self, dtype):
         expected = [[0, 0, 0, 0, 0, 0, 0, 0],
                     [0, 0, 0, 0, 0, 0, 0, 0],
                     [0, 0, 0, 0, 0, 0, 0, 0],
@@ -3339,19 +3336,19 @@ class TestNdimage:
                     [0, 0, 1, 0, 0, 1, 0, 0],
                     [0, 0, 0, 0, 0, 0, 0, 0],
                     [0, 0, 0, 0, 0, 0, 0, 0]]
-        for type_ in self.types:
-            data = numpy.array([[0, 0, 0, 0, 0, 0, 0, 0],
-                                [0, 1, 0, 0, 0, 0, 0, 0],
-                                [0, 0, 0, 0, 0, 1, 1, 1],
-                                [0, 0, 1, 1, 1, 1, 1, 1],
-                                [0, 0, 1, 1, 1, 1, 0, 0],
-                                [0, 1, 1, 1, 1, 1, 1, 0],
-                                [0, 1, 1, 0, 0, 1, 1, 0],
-                                [0, 0, 0, 0, 0, 0, 0, 0]], type_)
-            out = ndimage.binary_erosion(data, border_value=1)
-            assert_array_almost_equal(out, expected)
+        data = numpy.array([[0, 0, 0, 0, 0, 0, 0, 0],
+                            [0, 1, 0, 0, 0, 0, 0, 0],
+                            [0, 0, 0, 0, 0, 1, 1, 1],
+                            [0, 0, 1, 1, 1, 1, 1, 1],
+                            [0, 0, 1, 1, 1, 1, 0, 0],
+                            [0, 1, 1, 1, 1, 1, 1, 0],
+                            [0, 1, 1, 0, 0, 1, 1, 0],
+                            [0, 0, 0, 0, 0, 0, 0, 0]], dtype)
+        out = ndimage.binary_erosion(data, border_value=1)
+        assert_array_almost_equal(out, expected)
 
-    def test_binary_erosion23(self):
+    @pytest.mark.parametrize('dtype', types)
+    def test_binary_erosion23(self, dtype):
         struct = ndimage.generate_binary_structure(2, 2)
         expected = [[0, 0, 0, 0, 0, 0, 0, 0],
                     [0, 0, 0, 0, 0, 0, 0, 0],
@@ -3361,19 +3358,19 @@ class TestNdimage:
                     [0, 0, 0, 0, 0, 0, 0, 0],
                     [0, 0, 0, 0, 0, 0, 0, 0],
                     [0, 0, 0, 0, 0, 0, 0, 0]]
-        for type_ in self.types:
-            data = numpy.array([[0, 0, 0, 0, 0, 0, 0, 0],
-                                [0, 1, 0, 0, 0, 0, 0, 0],
-                                [0, 0, 0, 0, 0, 1, 1, 1],
-                                [0, 0, 1, 1, 1, 1, 1, 1],
-                                [0, 0, 1, 1, 1, 1, 0, 0],
-                                [0, 1, 1, 1, 1, 1, 1, 0],
-                                [0, 1, 1, 0, 0, 1, 1, 0],
-                                [0, 0, 0, 0, 0, 0, 0, 0]], type_)
-            out = ndimage.binary_erosion(data, struct, border_value=1)
-            assert_array_almost_equal(out, expected)
+        data = numpy.array([[0, 0, 0, 0, 0, 0, 0, 0],
+                            [0, 1, 0, 0, 0, 0, 0, 0],
+                            [0, 0, 0, 0, 0, 1, 1, 1],
+                            [0, 0, 1, 1, 1, 1, 1, 1],
+                            [0, 0, 1, 1, 1, 1, 0, 0],
+                            [0, 1, 1, 1, 1, 1, 1, 0],
+                            [0, 1, 1, 0, 0, 1, 1, 0],
+                            [0, 0, 0, 0, 0, 0, 0, 0]], dtype)
+        out = ndimage.binary_erosion(data, struct, border_value=1)
+        assert_array_almost_equal(out, expected)
 
-    def test_binary_erosion24(self):
+    @pytest.mark.parametrize('dtype', types)
+    def test_binary_erosion24(self, dtype):
         struct = [[0, 1],
                   [1, 1]]
         expected = [[0, 0, 0, 0, 0, 0, 0, 0],
@@ -3384,19 +3381,19 @@ class TestNdimage:
                     [0, 0, 1, 1, 1, 1, 0, 0],
                     [0, 0, 1, 0, 0, 0, 1, 0],
                     [0, 0, 0, 0, 0, 0, 0, 0]]
-        for type_ in self.types:
-            data = numpy.array([[0, 0, 0, 0, 0, 0, 0, 0],
-                                [0, 1, 0, 0, 0, 0, 0, 0],
-                                [0, 0, 0, 0, 0, 1, 1, 1],
-                                [0, 0, 1, 1, 1, 1, 1, 1],
-                                [0, 0, 1, 1, 1, 1, 0, 0],
-                                [0, 1, 1, 1, 1, 1, 1, 0],
-                                [0, 1, 1, 0, 0, 1, 1, 0],
-                                [0, 0, 0, 0, 0, 0, 0, 0]], type_)
-            out = ndimage.binary_erosion(data, struct, border_value=1)
-            assert_array_almost_equal(out, expected)
+        data = numpy.array([[0, 0, 0, 0, 0, 0, 0, 0],
+                            [0, 1, 0, 0, 0, 0, 0, 0],
+                            [0, 0, 0, 0, 0, 1, 1, 1],
+                            [0, 0, 1, 1, 1, 1, 1, 1],
+                            [0, 0, 1, 1, 1, 1, 0, 0],
+                            [0, 1, 1, 1, 1, 1, 1, 0],
+                            [0, 1, 1, 0, 0, 1, 1, 0],
+                            [0, 0, 0, 0, 0, 0, 0, 0]], dtype)
+        out = ndimage.binary_erosion(data, struct, border_value=1)
+        assert_array_almost_equal(out, expected)
 
-    def test_binary_erosion25(self):
+    @pytest.mark.parametrize('dtype', types)
+    def test_binary_erosion25(self, dtype):
         struct = [[0, 1, 0],
                   [1, 0, 1],
                   [0, 1, 0]]
@@ -3408,19 +3405,19 @@ class TestNdimage:
                     [0, 0, 1, 0, 0, 1, 0, 0],
                     [0, 0, 0, 0, 0, 0, 0, 0],
                     [0, 0, 0, 0, 0, 0, 0, 0]]
-        for type_ in self.types:
-            data = numpy.array([[0, 0, 0, 0, 0, 0, 0, 0],
-                                [0, 1, 0, 0, 0, 0, 0, 0],
-                                [0, 0, 0, 0, 0, 1, 1, 1],
-                                [0, 0, 1, 1, 1, 0, 1, 1],
-                                [0, 0, 1, 0, 1, 1, 0, 0],
-                                [0, 1, 0, 1, 1, 1, 1, 0],
-                                [0, 1, 1, 0, 0, 1, 1, 0],
-                                [0, 0, 0, 0, 0, 0, 0, 0]], type_)
-            out = ndimage.binary_erosion(data, struct, border_value=1)
-            assert_array_almost_equal(out, expected)
+        data = numpy.array([[0, 0, 0, 0, 0, 0, 0, 0],
+                            [0, 1, 0, 0, 0, 0, 0, 0],
+                            [0, 0, 0, 0, 0, 1, 1, 1],
+                            [0, 0, 1, 1, 1, 0, 1, 1],
+                            [0, 0, 1, 0, 1, 1, 0, 0],
+                            [0, 1, 0, 1, 1, 1, 1, 0],
+                            [0, 1, 1, 0, 0, 1, 1, 0],
+                            [0, 0, 0, 0, 0, 0, 0, 0]], dtype)
+        out = ndimage.binary_erosion(data, struct, border_value=1)
+        assert_array_almost_equal(out, expected)
 
-    def test_binary_erosion26(self):
+    @pytest.mark.parametrize('dtype', types)
+    def test_binary_erosion26(self, dtype):
         struct = [[0, 1, 0],
                   [1, 0, 1],
                   [0, 1, 0]]
@@ -3432,18 +3429,17 @@ class TestNdimage:
                     [0, 0, 0, 0, 0, 0, 0, 0],
                     [0, 0, 0, 0, 0, 0, 0, 0],
                     [0, 0, 0, 0, 0, 0, 0, 1]]
-        for type_ in self.types:
-            data = numpy.array([[0, 0, 0, 0, 0, 0, 0, 0],
-                                [0, 1, 0, 0, 0, 0, 0, 0],
-                                [0, 0, 0, 0, 0, 1, 1, 1],
-                                [0, 0, 1, 1, 1, 0, 1, 1],
-                                [0, 0, 1, 0, 1, 1, 0, 0],
-                                [0, 1, 0, 1, 1, 1, 1, 0],
-                                [0, 1, 1, 0, 0, 1, 1, 0],
-                                [0, 0, 0, 0, 0, 0, 0, 0]], type_)
-            out = ndimage.binary_erosion(data, struct, border_value=1,
-                                         origin=(-1, -1))
-            assert_array_almost_equal(out, expected)
+        data = numpy.array([[0, 0, 0, 0, 0, 0, 0, 0],
+                            [0, 1, 0, 0, 0, 0, 0, 0],
+                            [0, 0, 0, 0, 0, 1, 1, 1],
+                            [0, 0, 1, 1, 1, 0, 1, 1],
+                            [0, 0, 1, 0, 1, 1, 0, 0],
+                            [0, 1, 0, 1, 1, 1, 1, 0],
+                            [0, 1, 1, 0, 0, 1, 1, 0],
+                            [0, 0, 0, 0, 0, 0, 0, 0]], dtype)
+        out = ndimage.binary_erosion(data, struct, border_value=1,
+                                     origin=(-1, -1))
+        assert_array_almost_equal(out, expected)
 
     def test_binary_erosion27(self):
         struct = [[0, 1, 0],
@@ -3781,157 +3777,158 @@ class TestNdimage:
                                iterations=iterations, output=out)
         assert_array_almost_equal(out, expected)
 
-    def test_binary_dilation01(self):
-        for type_ in self.types:
-            data = numpy.ones([], type_)
-            out = ndimage.binary_dilation(data)
-            assert_array_almost_equal(out, 1)
+    @pytest.mark.parametrize('dtype', types)
+    def test_binary_dilation01(self, dtype):
+        data = numpy.ones([], dtype)
+        out = ndimage.binary_dilation(data)
+        assert_array_almost_equal(out, 1)
 
-    def test_binary_dilation02(self):
-        for type_ in self.types:
-            data = numpy.zeros([], type_)
-            out = ndimage.binary_dilation(data)
-            assert_array_almost_equal(out, 0)
+    @pytest.mark.parametrize('dtype', types)
+    def test_binary_dilation02(self, dtype):
+        data = numpy.zeros([], dtype)
+        out = ndimage.binary_dilation(data)
+        assert_array_almost_equal(out, 0)
 
-    def test_binary_dilation03(self):
-        for type_ in self.types:
-            data = numpy.ones([1], type_)
-            out = ndimage.binary_dilation(data)
-            assert_array_almost_equal(out, [1])
+    @pytest.mark.parametrize('dtype', types)
+    def test_binary_dilation03(self, dtype):
+        data = numpy.ones([1], dtype)
+        out = ndimage.binary_dilation(data)
+        assert_array_almost_equal(out, [1])
 
-    def test_binary_dilation04(self):
-        for type_ in self.types:
-            data = numpy.zeros([1], type_)
-            out = ndimage.binary_dilation(data)
-            assert_array_almost_equal(out, [0])
+    @pytest.mark.parametrize('dtype', types)
+    def test_binary_dilation04(self, dtype):
+        data = numpy.zeros([1], dtype)
+        out = ndimage.binary_dilation(data)
+        assert_array_almost_equal(out, [0])
 
-    def test_binary_dilation05(self):
-        for type_ in self.types:
-            data = numpy.ones([3], type_)
-            out = ndimage.binary_dilation(data)
-            assert_array_almost_equal(out, [1, 1, 1])
+    @pytest.mark.parametrize('dtype', types)
+    def test_binary_dilation05(self, dtype):
+        data = numpy.ones([3], dtype)
+        out = ndimage.binary_dilation(data)
+        assert_array_almost_equal(out, [1, 1, 1])
 
-    def test_binary_dilation06(self):
-        for type_ in self.types:
-            data = numpy.zeros([3], type_)
-            out = ndimage.binary_dilation(data)
-            assert_array_almost_equal(out, [0, 0, 0])
+    @pytest.mark.parametrize('dtype', types)
+    def test_binary_dilation06(self, dtype):
+        data = numpy.zeros([3], dtype)
+        out = ndimage.binary_dilation(data)
+        assert_array_almost_equal(out, [0, 0, 0])
 
-    def test_binary_dilation07(self):
-        for type_ in self.types:
-            data = numpy.zeros([3], type_)
-            data[1] = 1
-            out = ndimage.binary_dilation(data)
-            assert_array_almost_equal(out, [1, 1, 1])
+    @pytest.mark.parametrize('dtype', types)
+    def test_binary_dilation07(self, dtype):
+        data = numpy.zeros([3], dtype)
+        data[1] = 1
+        out = ndimage.binary_dilation(data)
+        assert_array_almost_equal(out, [1, 1, 1])
 
-    def test_binary_dilation08(self):
-        for type_ in self.types:
-            data = numpy.zeros([5], type_)
-            data[1] = 1
-            data[3] = 1
-            out = ndimage.binary_dilation(data)
-            assert_array_almost_equal(out, [1, 1, 1, 1, 1])
+    @pytest.mark.parametrize('dtype', types)
+    def test_binary_dilation08(self, dtype):
+        data = numpy.zeros([5], dtype)
+        data[1] = 1
+        data[3] = 1
+        out = ndimage.binary_dilation(data)
+        assert_array_almost_equal(out, [1, 1, 1, 1, 1])
 
-    def test_binary_dilation09(self):
-        for type_ in self.types:
-            data = numpy.zeros([5], type_)
-            data[1] = 1
-            out = ndimage.binary_dilation(data)
-            assert_array_almost_equal(out, [1, 1, 1, 0, 0])
+    @pytest.mark.parametrize('dtype', types)
+    def test_binary_dilation09(self, dtype):
+        data = numpy.zeros([5], dtype)
+        data[1] = 1
+        out = ndimage.binary_dilation(data)
+        assert_array_almost_equal(out, [1, 1, 1, 0, 0])
 
-    def test_binary_dilation10(self):
-        for type_ in self.types:
-            data = numpy.zeros([5], type_)
-            data[1] = 1
-            out = ndimage.binary_dilation(data, origin=-1)
-            assert_array_almost_equal(out, [0, 1, 1, 1, 0])
+    @pytest.mark.parametrize('dtype', types)
+    def test_binary_dilation10(self, dtype):
+        data = numpy.zeros([5], dtype)
+        data[1] = 1
+        out = ndimage.binary_dilation(data, origin=-1)
+        assert_array_almost_equal(out, [0, 1, 1, 1, 0])
 
-    def test_binary_dilation11(self):
-        for type_ in self.types:
-            data = numpy.zeros([5], type_)
-            data[1] = 1
-            out = ndimage.binary_dilation(data, origin=1)
-            assert_array_almost_equal(out, [1, 1, 0, 0, 0])
+    @pytest.mark.parametrize('dtype', types)
+    def test_binary_dilation11(self, dtype):
+        data = numpy.zeros([5], dtype)
+        data[1] = 1
+        out = ndimage.binary_dilation(data, origin=1)
+        assert_array_almost_equal(out, [1, 1, 0, 0, 0])
 
-    def test_binary_dilation12(self):
-        for type_ in self.types:
-            data = numpy.zeros([5], type_)
-            data[1] = 1
-            struct = [1, 0, 1]
-            out = ndimage.binary_dilation(data, struct)
-            assert_array_almost_equal(out, [1, 0, 1, 0, 0])
+    @pytest.mark.parametrize('dtype', types)
+    def test_binary_dilation12(self, dtype):
+        data = numpy.zeros([5], dtype)
+        data[1] = 1
+        struct = [1, 0, 1]
+        out = ndimage.binary_dilation(data, struct)
+        assert_array_almost_equal(out, [1, 0, 1, 0, 0])
 
-    def test_binary_dilation13(self):
-        for type_ in self.types:
-            data = numpy.zeros([5], type_)
-            data[1] = 1
-            struct = [1, 0, 1]
-            out = ndimage.binary_dilation(data, struct, border_value=1)
-            assert_array_almost_equal(out, [1, 0, 1, 0, 1])
+    @pytest.mark.parametrize('dtype', types)
+    def test_binary_dilation13(self, dtype):
+        data = numpy.zeros([5], dtype)
+        data[1] = 1
+        struct = [1, 0, 1]
+        out = ndimage.binary_dilation(data, struct, border_value=1)
+        assert_array_almost_equal(out, [1, 0, 1, 0, 1])
 
-    def test_binary_dilation14(self):
-        for type_ in self.types:
-            data = numpy.zeros([5], type_)
-            data[1] = 1
-            struct = [1, 0, 1]
-            out = ndimage.binary_dilation(data, struct, origin=-1)
-            assert_array_almost_equal(out, [0, 1, 0, 1, 0])
+    @pytest.mark.parametrize('dtype', types)
+    def test_binary_dilation14(self, dtype):
+        data = numpy.zeros([5], dtype)
+        data[1] = 1
+        struct = [1, 0, 1]
+        out = ndimage.binary_dilation(data, struct, origin=-1)
+        assert_array_almost_equal(out, [0, 1, 0, 1, 0])
 
-    def test_binary_dilation15(self):
-        for type_ in self.types:
-            data = numpy.zeros([5], type_)
-            data[1] = 1
-            struct = [1, 0, 1]
-            out = ndimage.binary_dilation(data, struct,
-                                          origin=-1, border_value=1)
-            assert_array_almost_equal(out, [1, 1, 0, 1, 0])
+    @pytest.mark.parametrize('dtype', types)
+    def test_binary_dilation15(self, dtype):
+        data = numpy.zeros([5], dtype)
+        data[1] = 1
+        struct = [1, 0, 1]
+        out = ndimage.binary_dilation(data, struct,
+                                      origin=-1, border_value=1)
+        assert_array_almost_equal(out, [1, 1, 0, 1, 0])
 
-    def test_binary_dilation16(self):
-        for type_ in self.types:
-            data = numpy.ones([1, 1], type_)
-            out = ndimage.binary_dilation(data)
-            assert_array_almost_equal(out, [[1]])
+    @pytest.mark.parametrize('dtype', types)
+    def test_binary_dilation16(self, dtype):
+        data = numpy.ones([1, 1], dtype)
+        out = ndimage.binary_dilation(data)
+        assert_array_almost_equal(out, [[1]])
 
-    def test_binary_dilation17(self):
-        for type_ in self.types:
-            data = numpy.zeros([1, 1], type_)
-            out = ndimage.binary_dilation(data)
-            assert_array_almost_equal(out, [[0]])
+    @pytest.mark.parametrize('dtype', types)
+    def test_binary_dilation17(self, dtype):
+        data = numpy.zeros([1, 1], dtype)
+        out = ndimage.binary_dilation(data)
+        assert_array_almost_equal(out, [[0]])
 
-    def test_binary_dilation18(self):
-        for type_ in self.types:
-            data = numpy.ones([1, 3], type_)
-            out = ndimage.binary_dilation(data)
-            assert_array_almost_equal(out, [[1, 1, 1]])
+    @pytest.mark.parametrize('dtype', types)
+    def test_binary_dilation18(self, dtype):
+        data = numpy.ones([1, 3], dtype)
+        out = ndimage.binary_dilation(data)
+        assert_array_almost_equal(out, [[1, 1, 1]])
 
-    def test_binary_dilation19(self):
-        for type_ in self.types:
-            data = numpy.ones([3, 3], type_)
-            out = ndimage.binary_dilation(data)
-            assert_array_almost_equal(out, [[1, 1, 1],
-                                            [1, 1, 1],
-                                            [1, 1, 1]])
+    @pytest.mark.parametrize('dtype', types)
+    def test_binary_dilation19(self, dtype):
+        data = numpy.ones([3, 3], dtype)
+        out = ndimage.binary_dilation(data)
+        assert_array_almost_equal(out, [[1, 1, 1],
+                                        [1, 1, 1],
+                                        [1, 1, 1]])
 
-    def test_binary_dilation20(self):
-        for type_ in self.types:
-            data = numpy.zeros([3, 3], type_)
-            data[1, 1] = 1
-            out = ndimage.binary_dilation(data)
-            assert_array_almost_equal(out, [[0, 1, 0],
-                                            [1, 1, 1],
-                                            [0, 1, 0]])
+    @pytest.mark.parametrize('dtype', types)
+    def test_binary_dilation20(self, dtype):
+        data = numpy.zeros([3, 3], dtype)
+        data[1, 1] = 1
+        out = ndimage.binary_dilation(data)
+        assert_array_almost_equal(out, [[0, 1, 0],
+                                        [1, 1, 1],
+                                        [0, 1, 0]])
 
-    def test_binary_dilation21(self):
+    @pytest.mark.parametrize('dtype', types)
+    def test_binary_dilation21(self, dtype):
         struct = ndimage.generate_binary_structure(2, 2)
-        for type_ in self.types:
-            data = numpy.zeros([3, 3], type_)
-            data[1, 1] = 1
-            out = ndimage.binary_dilation(data, struct)
-            assert_array_almost_equal(out, [[1, 1, 1],
-                                            [1, 1, 1],
-                                            [1, 1, 1]])
+        data = numpy.zeros([3, 3], dtype)
+        data[1, 1] = 1
+        out = ndimage.binary_dilation(data, struct)
+        assert_array_almost_equal(out, [[1, 1, 1],
+                                        [1, 1, 1],
+                                        [1, 1, 1]])
 
-    def test_binary_dilation22(self):
+    @pytest.mark.parametrize('dtype', types)
+    def test_binary_dilation22(self, dtype):
         expected = [[0, 1, 0, 0, 0, 0, 0, 0],
                     [1, 1, 1, 0, 0, 0, 0, 0],
                     [0, 1, 0, 0, 0, 1, 0, 0],
@@ -3940,20 +3937,19 @@ class TestNdimage:
                     [0, 1, 1, 1, 1, 1, 1, 0],
                     [0, 0, 1, 0, 0, 1, 0, 0],
                     [0, 0, 0, 0, 0, 0, 0, 0]]
+        data = numpy.array([[0, 0, 0, 0, 0, 0, 0, 0],
+                            [0, 1, 0, 0, 0, 0, 0, 0],
+                            [0, 0, 0, 0, 0, 0, 0, 0],
+                            [0, 0, 0, 0, 0, 1, 0, 0],
+                            [0, 0, 0, 1, 1, 0, 0, 0],
+                            [0, 0, 1, 0, 0, 1, 0, 0],
+                            [0, 0, 0, 0, 0, 0, 0, 0],
+                            [0, 0, 0, 0, 0, 0, 0, 0]], dtype)
+        out = ndimage.binary_dilation(data)
+        assert_array_almost_equal(out, expected)
 
-        for type_ in self.types:
-            data = numpy.array([[0, 0, 0, 0, 0, 0, 0, 0],
-                                [0, 1, 0, 0, 0, 0, 0, 0],
-                                [0, 0, 0, 0, 0, 0, 0, 0],
-                                [0, 0, 0, 0, 0, 1, 0, 0],
-                                [0, 0, 0, 1, 1, 0, 0, 0],
-                                [0, 0, 1, 0, 0, 1, 0, 0],
-                                [0, 0, 0, 0, 0, 0, 0, 0],
-                                [0, 0, 0, 0, 0, 0, 0, 0]], type_)
-            out = ndimage.binary_dilation(data)
-            assert_array_almost_equal(out, expected)
-
-    def test_binary_dilation23(self):
+    @pytest.mark.parametrize('dtype', types)
+    def test_binary_dilation23(self, dtype):
         expected = [[1, 1, 1, 1, 1, 1, 1, 1],
                     [1, 1, 1, 0, 0, 0, 0, 1],
                     [1, 1, 0, 0, 0, 1, 0, 1],
@@ -3962,20 +3958,19 @@ class TestNdimage:
                     [1, 1, 1, 1, 1, 1, 1, 1],
                     [1, 0, 1, 0, 0, 1, 0, 1],
                     [1, 1, 1, 1, 1, 1, 1, 1]]
+        data = numpy.array([[0, 0, 0, 0, 0, 0, 0, 0],
+                            [0, 1, 0, 0, 0, 0, 0, 0],
+                            [0, 0, 0, 0, 0, 0, 0, 0],
+                            [0, 0, 0, 0, 0, 1, 0, 0],
+                            [0, 0, 0, 1, 1, 0, 0, 0],
+                            [0, 0, 1, 0, 0, 1, 0, 0],
+                            [0, 0, 0, 0, 0, 0, 0, 0],
+                            [0, 0, 0, 0, 0, 0, 0, 0]], dtype)
+        out = ndimage.binary_dilation(data, border_value=1)
+        assert_array_almost_equal(out, expected)
 
-        for type_ in self.types:
-            data = numpy.array([[0, 0, 0, 0, 0, 0, 0, 0],
-                                [0, 1, 0, 0, 0, 0, 0, 0],
-                                [0, 0, 0, 0, 0, 0, 0, 0],
-                                [0, 0, 0, 0, 0, 1, 0, 0],
-                                [0, 0, 0, 1, 1, 0, 0, 0],
-                                [0, 0, 1, 0, 0, 1, 0, 0],
-                                [0, 0, 0, 0, 0, 0, 0, 0],
-                                [0, 0, 0, 0, 0, 0, 0, 0]], type_)
-            out = ndimage.binary_dilation(data, border_value=1)
-            assert_array_almost_equal(out, expected)
-
-    def test_binary_dilation24(self):
+    @pytest.mark.parametrize('dtype', types)
+    def test_binary_dilation24(self, dtype):
         expected = [[1, 1, 0, 0, 0, 0, 0, 0],
                     [1, 0, 0, 0, 1, 0, 0, 0],
                     [0, 0, 1, 1, 1, 1, 0, 0],
@@ -3984,20 +3979,19 @@ class TestNdimage:
                     [0, 1, 0, 0, 1, 0, 0, 0],
                     [0, 0, 0, 0, 0, 0, 0, 0],
                     [0, 0, 0, 0, 0, 0, 0, 0]]
+        data = numpy.array([[0, 0, 0, 0, 0, 0, 0, 0],
+                            [0, 1, 0, 0, 0, 0, 0, 0],
+                            [0, 0, 0, 0, 0, 0, 0, 0],
+                            [0, 0, 0, 0, 0, 1, 0, 0],
+                            [0, 0, 0, 1, 1, 0, 0, 0],
+                            [0, 0, 1, 0, 0, 1, 0, 0],
+                            [0, 0, 0, 0, 0, 0, 0, 0],
+                            [0, 0, 0, 0, 0, 0, 0, 0]], dtype)
+        out = ndimage.binary_dilation(data, origin=(1, 1))
+        assert_array_almost_equal(out, expected)
 
-        for type_ in self.types:
-            data = numpy.array([[0, 0, 0, 0, 0, 0, 0, 0],
-                                [0, 1, 0, 0, 0, 0, 0, 0],
-                                [0, 0, 0, 0, 0, 0, 0, 0],
-                                [0, 0, 0, 0, 0, 1, 0, 0],
-                                [0, 0, 0, 1, 1, 0, 0, 0],
-                                [0, 0, 1, 0, 0, 1, 0, 0],
-                                [0, 0, 0, 0, 0, 0, 0, 0],
-                                [0, 0, 0, 0, 0, 0, 0, 0]], type_)
-            out = ndimage.binary_dilation(data, origin=(1, 1))
-            assert_array_almost_equal(out, expected)
-
-    def test_binary_dilation25(self):
+    @pytest.mark.parametrize('dtype', types)
+    def test_binary_dilation25(self, dtype):
         expected = [[1, 1, 0, 0, 0, 0, 1, 1],
                     [1, 0, 0, 0, 1, 0, 1, 1],
                     [0, 0, 1, 1, 1, 1, 1, 1],
@@ -4006,20 +4000,19 @@ class TestNdimage:
                     [0, 1, 0, 0, 1, 0, 1, 1],
                     [1, 1, 1, 1, 1, 1, 1, 1],
                     [1, 1, 1, 1, 1, 1, 1, 1]]
+        data = numpy.array([[0, 0, 0, 0, 0, 0, 0, 0],
+                            [0, 1, 0, 0, 0, 0, 0, 0],
+                            [0, 0, 0, 0, 0, 0, 0, 0],
+                            [0, 0, 0, 0, 0, 1, 0, 0],
+                            [0, 0, 0, 1, 1, 0, 0, 0],
+                            [0, 0, 1, 0, 0, 1, 0, 0],
+                            [0, 0, 0, 0, 0, 0, 0, 0],
+                            [0, 0, 0, 0, 0, 0, 0, 0]], dtype)
+        out = ndimage.binary_dilation(data, origin=(1, 1), border_value=1)
+        assert_array_almost_equal(out, expected)
 
-        for type_ in self.types:
-            data = numpy.array([[0, 0, 0, 0, 0, 0, 0, 0],
-                                [0, 1, 0, 0, 0, 0, 0, 0],
-                                [0, 0, 0, 0, 0, 0, 0, 0],
-                                [0, 0, 0, 0, 0, 1, 0, 0],
-                                [0, 0, 0, 1, 1, 0, 0, 0],
-                                [0, 0, 1, 0, 0, 1, 0, 0],
-                                [0, 0, 0, 0, 0, 0, 0, 0],
-                                [0, 0, 0, 0, 0, 0, 0, 0]], type_)
-            out = ndimage.binary_dilation(data, origin=(1, 1), border_value=1)
-            assert_array_almost_equal(out, expected)
-
-    def test_binary_dilation26(self):
+    @pytest.mark.parametrize('dtype', types)
+    def test_binary_dilation26(self, dtype):
         struct = ndimage.generate_binary_structure(2, 2)
         expected = [[1, 1, 1, 0, 0, 0, 0, 0],
                     [1, 1, 1, 0, 0, 0, 0, 0],
@@ -4029,20 +4022,19 @@ class TestNdimage:
                     [0, 1, 1, 1, 1, 1, 1, 0],
                     [0, 1, 1, 1, 1, 1, 1, 0],
                     [0, 0, 0, 0, 0, 0, 0, 0]]
+        data = numpy.array([[0, 0, 0, 0, 0, 0, 0, 0],
+                            [0, 1, 0, 0, 0, 0, 0, 0],
+                            [0, 0, 0, 0, 0, 0, 0, 0],
+                            [0, 0, 0, 0, 0, 1, 0, 0],
+                            [0, 0, 0, 1, 1, 0, 0, 0],
+                            [0, 0, 1, 0, 0, 1, 0, 0],
+                            [0, 0, 0, 0, 0, 0, 0, 0],
+                            [0, 0, 0, 0, 0, 0, 0, 0]], dtype)
+        out = ndimage.binary_dilation(data, struct)
+        assert_array_almost_equal(out, expected)
 
-        for type_ in self.types:
-            data = numpy.array([[0, 0, 0, 0, 0, 0, 0, 0],
-                                [0, 1, 0, 0, 0, 0, 0, 0],
-                                [0, 0, 0, 0, 0, 0, 0, 0],
-                                [0, 0, 0, 0, 0, 1, 0, 0],
-                                [0, 0, 0, 1, 1, 0, 0, 0],
-                                [0, 0, 1, 0, 0, 1, 0, 0],
-                                [0, 0, 0, 0, 0, 0, 0, 0],
-                                [0, 0, 0, 0, 0, 0, 0, 0]], type_)
-            out = ndimage.binary_dilation(data, struct)
-            assert_array_almost_equal(out, expected)
-
-    def test_binary_dilation27(self):
+    @pytest.mark.parametrize('dtype', types)
+    def test_binary_dilation27(self, dtype):
         struct = [[0, 1],
                   [1, 1]]
         expected = [[0, 1, 0, 0, 0, 0, 0, 0],
@@ -4053,32 +4045,29 @@ class TestNdimage:
                     [0, 1, 1, 0, 1, 1, 0, 0],
                     [0, 0, 0, 0, 0, 0, 0, 0],
                     [0, 0, 0, 0, 0, 0, 0, 0]]
+        data = numpy.array([[0, 0, 0, 0, 0, 0, 0, 0],
+                            [0, 1, 0, 0, 0, 0, 0, 0],
+                            [0, 0, 0, 0, 0, 0, 0, 0],
+                            [0, 0, 0, 0, 0, 1, 0, 0],
+                            [0, 0, 0, 1, 1, 0, 0, 0],
+                            [0, 0, 1, 0, 0, 1, 0, 0],
+                            [0, 0, 0, 0, 0, 0, 0, 0],
+                            [0, 0, 0, 0, 0, 0, 0, 0]], dtype)
+        out = ndimage.binary_dilation(data, struct)
+        assert_array_almost_equal(out, expected)
 
-        for type_ in self.types:
-            data = numpy.array([[0, 0, 0, 0, 0, 0, 0, 0],
-                                [0, 1, 0, 0, 0, 0, 0, 0],
-                                [0, 0, 0, 0, 0, 0, 0, 0],
-                                [0, 0, 0, 0, 0, 1, 0, 0],
-                                [0, 0, 0, 1, 1, 0, 0, 0],
-                                [0, 0, 1, 0, 0, 1, 0, 0],
-                                [0, 0, 0, 0, 0, 0, 0, 0],
-                                [0, 0, 0, 0, 0, 0, 0, 0]], type_)
-            out = ndimage.binary_dilation(data, struct)
-            assert_array_almost_equal(out, expected)
-
-    def test_binary_dilation28(self):
+    @pytest.mark.parametrize('dtype', types)
+    def test_binary_dilation28(self, dtype):
         expected = [[1, 1, 1, 1],
                     [1, 0, 0, 1],
                     [1, 0, 0, 1],
                     [1, 1, 1, 1]]
-
-        for type_ in self.types:
-            data = numpy.array([[0, 0, 0, 0],
-                                [0, 0, 0, 0],
-                                [0, 0, 0, 0],
-                                [0, 0, 0, 0]], type_)
-            out = ndimage.binary_dilation(data, border_value=1)
-            assert_array_almost_equal(out, expected)
+        data = numpy.array([[0, 0, 0, 0],
+                            [0, 0, 0, 0],
+                            [0, 0, 0, 0],
+                            [0, 0, 0, 0]], dtype)
+        out = ndimage.binary_dilation(data, border_value=1)
+        assert_array_almost_equal(out, expected)
 
     def test_binary_dilation29(self):
         struct = [[0, 1],
@@ -4208,7 +4197,8 @@ class TestNdimage:
                                       mask=mask, border_value=1)
         assert_array_almost_equal(out, expected)
 
-    def test_binary_dilation35(self):
+    @pytest.mark.parametrize('dtype', types)
+    def test_binary_dilation35(self, dtype):
         tmp = [[1, 1, 0, 0, 0, 0, 1, 1],
                [1, 0, 0, 0, 1, 0, 1, 1],
                [0, 0, 1, 1, 1, 1, 1, 1],
@@ -4236,18 +4226,17 @@ class TestNdimage:
         expected = numpy.logical_and(tmp, mask)
         tmp = numpy.logical_and(data, numpy.logical_not(mask))
         expected = numpy.logical_or(expected, tmp)
-        for type_ in self.types:
-            data = numpy.array([[0, 0, 0, 0, 0, 0, 0, 0],
-                                [0, 1, 0, 0, 0, 0, 0, 0],
-                                [0, 0, 0, 0, 0, 0, 0, 0],
-                                [0, 0, 0, 0, 0, 1, 0, 0],
-                                [0, 0, 0, 1, 1, 0, 0, 0],
-                                [0, 0, 1, 0, 0, 1, 0, 0],
-                                [0, 0, 0, 0, 0, 0, 0, 0],
-                                [0, 0, 0, 0, 0, 0, 0, 0]], type_)
-            out = ndimage.binary_dilation(data, mask=mask,
-                                          origin=(1, 1), border_value=1)
-            assert_array_almost_equal(out, expected)
+        data = numpy.array([[0, 0, 0, 0, 0, 0, 0, 0],
+                            [0, 1, 0, 0, 0, 0, 0, 0],
+                            [0, 0, 0, 0, 0, 0, 0, 0],
+                            [0, 0, 0, 0, 0, 1, 0, 0],
+                            [0, 0, 0, 1, 1, 0, 0, 0],
+                            [0, 0, 1, 0, 0, 1, 0, 0],
+                            [0, 0, 0, 0, 0, 0, 0, 0],
+                            [0, 0, 0, 0, 0, 0, 0, 0]], dtype)
+        out = ndimage.binary_dilation(data, mask=mask,
+                                      origin=(1, 1), border_value=1)
+        assert_array_almost_equal(out, expected)
 
     def test_binary_propagation01(self):
         struct = [[0, 1, 0],
@@ -4307,7 +4296,8 @@ class TestNdimage:
                                          mask=mask, border_value=1)
         assert_array_almost_equal(out, expected)
 
-    def test_binary_opening01(self):
+    @pytest.mark.parametrize('dtype', types)
+    def test_binary_opening01(self, dtype):
         expected = [[0, 1, 0, 0, 0, 0, 0, 0],
                     [1, 1, 1, 0, 0, 0, 0, 0],
                     [0, 1, 0, 0, 0, 1, 0, 0],
@@ -4316,19 +4306,19 @@ class TestNdimage:
                     [0, 1, 1, 1, 1, 1, 1, 0],
                     [0, 0, 1, 0, 0, 1, 0, 0],
                     [0, 0, 0, 0, 0, 0, 0, 0]]
-        for type_ in self.types:
-            data = numpy.array([[0, 1, 0, 0, 0, 0, 0, 0],
-                                [1, 1, 1, 0, 0, 0, 0, 0],
-                                [0, 1, 0, 0, 0, 1, 0, 0],
-                                [0, 0, 0, 1, 1, 1, 1, 0],
-                                [0, 0, 1, 1, 0, 1, 0, 0],
-                                [0, 1, 1, 1, 1, 1, 1, 0],
-                                [0, 0, 1, 0, 0, 1, 0, 0],
-                                [0, 0, 0, 0, 0, 0, 0, 0]], type_)
-            out = ndimage.binary_opening(data)
-            assert_array_almost_equal(out, expected)
+        data = numpy.array([[0, 1, 0, 0, 0, 0, 0, 0],
+                            [1, 1, 1, 0, 0, 0, 0, 0],
+                            [0, 1, 0, 0, 0, 1, 0, 0],
+                            [0, 0, 0, 1, 1, 1, 1, 0],
+                            [0, 0, 1, 1, 0, 1, 0, 0],
+                            [0, 1, 1, 1, 1, 1, 1, 0],
+                            [0, 0, 1, 0, 0, 1, 0, 0],
+                            [0, 0, 0, 0, 0, 0, 0, 0]], dtype)
+        out = ndimage.binary_opening(data)
+        assert_array_almost_equal(out, expected)
 
-    def test_binary_opening02(self):
+    @pytest.mark.parametrize('dtype', types)
+    def test_binary_opening02(self, dtype):
         struct = ndimage.generate_binary_structure(2, 2)
         expected = [[1, 1, 1, 0, 0, 0, 0, 0],
                     [1, 1, 1, 0, 0, 0, 0, 0],
@@ -4338,19 +4328,19 @@ class TestNdimage:
                     [0, 1, 1, 1, 0, 0, 0, 0],
                     [0, 1, 1, 1, 0, 0, 0, 0],
                     [0, 0, 0, 0, 0, 0, 0, 0]]
-        for type_ in self.types:
-            data = numpy.array([[1, 1, 1, 0, 0, 0, 0, 0],
-                                [1, 1, 1, 0, 0, 0, 0, 0],
-                                [1, 1, 1, 1, 1, 1, 1, 0],
-                                [0, 0, 1, 1, 1, 1, 1, 0],
-                                [0, 1, 1, 1, 0, 1, 1, 0],
-                                [0, 1, 1, 1, 1, 1, 1, 0],
-                                [0, 1, 1, 1, 1, 1, 1, 0],
-                                [0, 0, 0, 0, 0, 0, 0, 0]], type_)
-            out = ndimage.binary_opening(data, struct)
-            assert_array_almost_equal(out, expected)
+        data = numpy.array([[1, 1, 1, 0, 0, 0, 0, 0],
+                            [1, 1, 1, 0, 0, 0, 0, 0],
+                            [1, 1, 1, 1, 1, 1, 1, 0],
+                            [0, 0, 1, 1, 1, 1, 1, 0],
+                            [0, 1, 1, 1, 0, 1, 1, 0],
+                            [0, 1, 1, 1, 1, 1, 1, 0],
+                            [0, 1, 1, 1, 1, 1, 1, 0],
+                            [0, 0, 0, 0, 0, 0, 0, 0]], dtype)
+        out = ndimage.binary_opening(data, struct)
+        assert_array_almost_equal(out, expected)
 
-    def test_binary_closing01(self):
+    @pytest.mark.parametrize('dtype', types)
+    def test_binary_closing01(self, dtype):
         expected = [[0, 0, 0, 0, 0, 0, 0, 0],
                     [0, 1, 1, 0, 0, 0, 0, 0],
                     [0, 1, 1, 1, 0, 1, 0, 0],
@@ -4359,19 +4349,19 @@ class TestNdimage:
                     [0, 1, 1, 1, 1, 1, 1, 0],
                     [0, 0, 1, 0, 0, 1, 0, 0],
                     [0, 0, 0, 0, 0, 0, 0, 0]]
-        for type_ in self.types:
-            data = numpy.array([[0, 1, 0, 0, 0, 0, 0, 0],
-                                [1, 1, 1, 0, 0, 0, 0, 0],
-                                [0, 1, 0, 0, 0, 1, 0, 0],
-                                [0, 0, 0, 1, 1, 1, 1, 0],
-                                [0, 0, 1, 1, 0, 1, 0, 0],
-                                [0, 1, 1, 1, 1, 1, 1, 0],
-                                [0, 0, 1, 0, 0, 1, 0, 0],
-                                [0, 0, 0, 0, 0, 0, 0, 0]], type_)
-            out = ndimage.binary_closing(data)
-            assert_array_almost_equal(out, expected)
+        data = numpy.array([[0, 1, 0, 0, 0, 0, 0, 0],
+                            [1, 1, 1, 0, 0, 0, 0, 0],
+                            [0, 1, 0, 0, 0, 1, 0, 0],
+                            [0, 0, 0, 1, 1, 1, 1, 0],
+                            [0, 0, 1, 1, 0, 1, 0, 0],
+                            [0, 1, 1, 1, 1, 1, 1, 0],
+                            [0, 0, 1, 0, 0, 1, 0, 0],
+                            [0, 0, 0, 0, 0, 0, 0, 0]], dtype)
+        out = ndimage.binary_closing(data)
+        assert_array_almost_equal(out, expected)
 
-    def test_binary_closing02(self):
+    @pytest.mark.parametrize('dtype', types)
+    def test_binary_closing02(self, dtype):
         struct = ndimage.generate_binary_structure(2, 2)
         expected = [[0, 0, 0, 0, 0, 0, 0, 0],
                     [0, 1, 1, 0, 0, 0, 0, 0],
@@ -4381,17 +4371,16 @@ class TestNdimage:
                     [0, 1, 1, 1, 1, 1, 1, 0],
                     [0, 1, 1, 1, 1, 1, 1, 0],
                     [0, 0, 0, 0, 0, 0, 0, 0]]
-        for type_ in self.types:
-            data = numpy.array([[1, 1, 1, 0, 0, 0, 0, 0],
-                                [1, 1, 1, 0, 0, 0, 0, 0],
-                                [1, 1, 1, 1, 1, 1, 1, 0],
-                                [0, 0, 1, 1, 1, 1, 1, 0],
-                                [0, 1, 1, 1, 0, 1, 1, 0],
-                                [0, 1, 1, 1, 1, 1, 1, 0],
-                                [0, 1, 1, 1, 1, 1, 1, 0],
-                                [0, 0, 0, 0, 0, 0, 0, 0]], type_)
-            out = ndimage.binary_closing(data, struct)
-            assert_array_almost_equal(out, expected)
+        data = numpy.array([[1, 1, 1, 0, 0, 0, 0, 0],
+                            [1, 1, 1, 0, 0, 0, 0, 0],
+                            [1, 1, 1, 1, 1, 1, 1, 0],
+                            [0, 0, 1, 1, 1, 1, 1, 0],
+                            [0, 1, 1, 1, 0, 1, 1, 0],
+                            [0, 1, 1, 1, 1, 1, 1, 0],
+                            [0, 1, 1, 1, 1, 1, 1, 0],
+                            [0, 0, 0, 0, 0, 0, 0, 0]], dtype)
+        out = ndimage.binary_closing(data, struct)
+        assert_array_almost_equal(out, expected)
 
     def test_binary_fill_holes01(self):
         expected = numpy.array([[0, 0, 0, 0, 0, 0, 0, 0],
@@ -4745,7 +4734,8 @@ class TestNdimage:
         output = numpy.empty_like(array, dtype=numpy.float64)
         ndimage.black_tophat(array, structure=structure, output=output)
 
-    def test_hit_or_miss01(self):
+    @pytest.mark.parametrize('dtype', types)
+    def test_hit_or_miss01(self, dtype):
         struct = [[0, 1, 0],
                   [1, 1, 1],
                   [0, 1, 0]]
@@ -4757,20 +4747,20 @@ class TestNdimage:
                     [0, 0, 0, 0, 0],
                     [0, 0, 0, 0, 0],
                     [0, 0, 0, 0, 0]]
-        for type_ in self.types:
-            data = numpy.array([[0, 1, 0, 0, 0],
-                                [1, 1, 1, 0, 0],
-                                [0, 1, 0, 1, 1],
-                                [0, 0, 1, 1, 1],
-                                [0, 1, 1, 1, 0],
-                                [0, 1, 1, 1, 1],
-                                [0, 1, 1, 1, 1],
-                                [0, 0, 0, 0, 0]], type_)
-            out = numpy.zeros(data.shape, bool)
-            ndimage.binary_hit_or_miss(data, struct, output=out)
-            assert_array_almost_equal(expected, out)
+        data = numpy.array([[0, 1, 0, 0, 0],
+                            [1, 1, 1, 0, 0],
+                            [0, 1, 0, 1, 1],
+                            [0, 0, 1, 1, 1],
+                            [0, 1, 1, 1, 0],
+                            [0, 1, 1, 1, 1],
+                            [0, 1, 1, 1, 1],
+                            [0, 0, 0, 0, 0]], dtype)
+        out = numpy.zeros(data.shape, bool)
+        ndimage.binary_hit_or_miss(data, struct, output=out)
+        assert_array_almost_equal(expected, out)
 
-    def test_hit_or_miss02(self):
+    @pytest.mark.parametrize('dtype', types)
+    def test_hit_or_miss02(self, dtype):
         struct = [[0, 1, 0],
                   [1, 1, 1],
                   [0, 1, 0]]
@@ -4778,15 +4768,15 @@ class TestNdimage:
                     [0, 1, 0, 0, 0, 0, 0, 0],
                     [0, 0, 0, 0, 0, 0, 0, 0],
                     [0, 0, 0, 0, 0, 0, 0, 0]]
-        for type_ in self.types:
-            data = numpy.array([[0, 1, 0, 0, 1, 1, 1, 0],
-                                [1, 1, 1, 0, 0, 1, 0, 0],
-                                [0, 1, 0, 1, 1, 1, 1, 0],
-                                [0, 0, 0, 0, 0, 0, 0, 0]], type_)
-            out = ndimage.binary_hit_or_miss(data, struct)
-            assert_array_almost_equal(expected, out)
+        data = numpy.array([[0, 1, 0, 0, 1, 1, 1, 0],
+                            [1, 1, 1, 0, 0, 1, 0, 0],
+                            [0, 1, 0, 1, 1, 1, 1, 0],
+                            [0, 0, 0, 0, 0, 0, 0, 0]], dtype)
+        out = ndimage.binary_hit_or_miss(data, struct)
+        assert_array_almost_equal(expected, out)
 
-    def test_hit_or_miss03(self):
+    @pytest.mark.parametrize('dtype', types)
+    def test_hit_or_miss03(self, dtype):
         struct1 = [[0, 0, 0],
                    [1, 1, 1],
                    [0, 0, 0]]
@@ -4801,17 +4791,16 @@ class TestNdimage:
                     [0, 0, 0, 0, 0, 0, 0, 0],
                     [0, 0, 1, 0, 0, 0, 0, 0],
                     [0, 0, 0, 0, 0, 0, 0, 0]]
-        for type_ in self.types:
-            data = numpy.array([[0, 1, 0, 0, 1, 1, 1, 0],
-                                [1, 1, 1, 0, 0, 0, 0, 0],
-                                [0, 1, 0, 1, 1, 1, 1, 0],
-                                [0, 0, 1, 1, 1, 1, 1, 0],
-                                [0, 1, 1, 1, 0, 1, 1, 0],
-                                [0, 0, 0, 0, 1, 1, 1, 0],
-                                [0, 1, 1, 1, 1, 1, 1, 0],
-                                [0, 0, 0, 0, 0, 0, 0, 0]], type_)
-            out = ndimage.binary_hit_or_miss(data, struct1, struct2)
-            assert_array_almost_equal(expected, out)
+        data = numpy.array([[0, 1, 0, 0, 1, 1, 1, 0],
+                            [1, 1, 1, 0, 0, 0, 0, 0],
+                            [0, 1, 0, 1, 1, 1, 1, 0],
+                            [0, 0, 1, 1, 1, 1, 1, 0],
+                            [0, 1, 1, 1, 0, 1, 1, 0],
+                            [0, 0, 0, 0, 1, 1, 1, 0],
+                            [0, 1, 1, 1, 1, 1, 1, 0],
+                            [0, 0, 0, 0, 0, 0, 0, 0]], dtype)
+        out = ndimage.binary_hit_or_miss(data, struct1, struct2)
+        assert_array_almost_equal(expected, out)
 
 
 class TestDilateFix:
