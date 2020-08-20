@@ -886,13 +886,11 @@ cdef class Rotation(object):
         angles : float or array_like, shape (N,) or (N, [1 or 2 or 3])
             where the number of rows, N, indicates the number of rotation 
             sets and the columns, ([1, 2 or 3]), provide rotations angles about the 
-            z, y and x axes respectively for each set.
-            
-            Euler angles specified in radians (`degrees` is False) or degrees
-            (`degrees` is True).
+            z, y and x axes respectively for each set. Euler angles are specified in 
+            radians (`degrees` is False) or degrees (`degrees` is True).
             
             For rotation about a single axis, a single character `seq`
-            indcates the axis, and `angles` can be:
+            indicates the axis, and `angles` can be:
 
             - a single value
             - array_like with shape (N,), where each `angle[i]`
