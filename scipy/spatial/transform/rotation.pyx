@@ -909,7 +909,7 @@ cdef class Rotation(object):
         degrees : bool, optional
             If True, then the given angles are assumed to be in degrees.
             Default is False.
-
+            
         Returns
         -------
         rotation : `Rotation` instance
