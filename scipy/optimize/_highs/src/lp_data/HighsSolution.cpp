@@ -20,6 +20,7 @@
 #include "lp_data/HighsInfo.h"
 #include "lp_data/HighsModelUtils.h"
 #include "lp_data/HighsOptions.h"
+#include "lp_data/HighsSolutionDebug.h"
 #include "util/HighsUtils.h"
 
 #ifdef IPX_ON
@@ -28,240 +29,9 @@
 #include "ipm/ipx/src/lp_solver.h"
 #endif
 
-// Calls analyseHighsBasicSolution to analyse the HiGHS basic solution
-// of the unscaled LP in a HighsModelObject instance, after computing
-// the unscaled infeasibilities locally
-HighsStatus analyseHighsBasicSolution(
-    FILE* logfile, const HighsModelObject& highs_model_object,
-    const string message) {
-  HighsSolutionParams get_unscaled_solution_params =
-      highs_model_object.unscaled_solution_params_;
-  HighsPrimalDualErrors primal_dual_errors;
-  double primal_objective_value;
-  double dual_objective_value;
-  getPrimalDualInfeasibilitiesAndErrorsFromHighsBasicSolution(
-      highs_model_object.lp_, highs_model_object.basis_,
-      highs_model_object.solution_, get_unscaled_solution_params,
-      primal_dual_errors, primal_objective_value, dual_objective_value);
-
-  return analyseHighsBasicSolution(
-      logfile, highs_model_object.lp_, highs_model_object.basis_,
-      highs_model_object.solution_, highs_model_object.iteration_counts_,
-      highs_model_object.unscaled_model_status_, get_unscaled_solution_params,
-      message);
-  return HighsStatus::OK;
-}
-
-// Calls analyseHighsBasicSolution to analyse the HiGHS basic solution
-// of the unscaled LP in a HighsModelObject instance, assuming that
-// the unscaled infeasibilities are known
-HighsStatus analyseHighsBasicSolution(
-    FILE* logfile, const HighsModelObject& highs_model_object,
-    const HighsSolutionParams& unscaled_solution_params, const string message) {
-  return analyseHighsBasicSolution(
-      logfile, highs_model_object.lp_, highs_model_object.basis_,
-      highs_model_object.solution_, highs_model_object.iteration_counts_,
-      highs_model_object.unscaled_model_status_, unscaled_solution_params,
-      message);
-}
-
-// Calls analyseHighsBasicSolution, adding report_level
-HighsStatus analyseHighsBasicSolution(
-    FILE* logfile, const HighsLp& lp, const HighsBasis& basis,
-    const HighsSolution& solution, const HighsIterationCounts& iteration_counts,
-    const HighsModelStatus model_status,
-    const HighsSolutionParams& solution_params, const string message) {
-  // Analyse and report on the (unscaled) HiGHS basic solution. Acts
-  // as a check that the unscaled model status and unscaled solution
-  // parameters have been set correctly.
-  //
-  // NB Doesn't change anything in highs_model_object!
-  int report_level = -1;
-#ifdef HiGHSDEV
-  report_level = 1;
-#endif
-  return analyseHighsBasicSolution(logfile, lp, basis, solution,
-                                   iteration_counts, model_status,
-                                   solution_params, message, report_level);
-}
-
-// Analyse the HiGHS basic solution of the given LP. Currently only
-// used with the unscaled LP, but would work just as well with a
-// scaled LP. The primal and dual feasibility tolerances are passed in
-// via solution_params, which returns the int and double data obtained
-// about the solution. The overall model status is returned in the
-// argument.
-HighsStatus analyseHighsBasicSolution(
-    FILE* logfile, const HighsLp& lp, const HighsBasis& basis,
-    const HighsSolution& solution, const HighsIterationCounts& iteration_counts,
-    const HighsModelStatus model_status,
-    const HighsSolutionParams& solution_params, const string message,
-    const int report_level) {
-  HighsLogMessage(logfile, HighsMessageType::INFO,
-                  "HiGHS basic solution: Analysis - %s", message.c_str());
-
-  if (model_status != HighsModelStatus::OPTIMAL) {
-    HighsLogMessage(logfile, HighsMessageType::INFO,
-                    "HiGHS basic solution: %sStatus: %s",
-                    iterationsToString(iteration_counts).c_str(),
-                    utilHighsModelStatusToString(model_status).c_str());
-    return HighsStatus::OK;
-  }
-
-  HighsSolutionParams check_solution_params = solution_params;
-
-  HighsPrimalDualErrors primal_dual_errors;
-  double primal_objective_value;
-  double dual_objective_value;
-
-  getPrimalDualInfeasibilitiesAndErrorsFromHighsBasicSolution(
-      lp, basis, solution, check_solution_params, primal_dual_errors,
-      primal_objective_value, dual_objective_value, report_level);
-
-  int& num_primal_infeasibilities =
-      check_solution_params.num_primal_infeasibilities;
-  double& max_primal_infeasibility =
-      check_solution_params.max_primal_infeasibility;
-  double& sum_primal_infeasibilities =
-      check_solution_params.sum_primal_infeasibilities;
-  int& num_dual_infeasibilities =
-      check_solution_params.num_dual_infeasibilities;
-  double& max_dual_infeasibility = check_solution_params.max_dual_infeasibility;
-  double& sum_dual_infeasibilities =
-      check_solution_params.sum_dual_infeasibilities;
-
-  int& num_nonzero_basic_duals = primal_dual_errors.num_nonzero_basic_duals;
-  int& num_large_nonzero_basic_duals =
-      primal_dual_errors.num_large_nonzero_basic_duals;
-  double& max_nonzero_basic_dual = primal_dual_errors.max_nonzero_basic_dual;
-  double& sum_nonzero_basic_duals = primal_dual_errors.sum_nonzero_basic_duals;
-
-  int& num_off_bound_nonbasic = primal_dual_errors.num_off_bound_nonbasic;
-  double& max_off_bound_nonbasic = primal_dual_errors.max_off_bound_nonbasic;
-  double& sum_off_bound_nonbasic = primal_dual_errors.sum_off_bound_nonbasic;
-
-  int& num_primal_residual = primal_dual_errors.num_primal_residual;
-  double& max_primal_residual = primal_dual_errors.max_primal_residual;
-  double& sum_primal_residual = primal_dual_errors.sum_primal_residual;
-
-  int& num_dual_residual = primal_dual_errors.num_dual_residual;
-  double& max_dual_residual = primal_dual_errors.max_dual_residual;
-  double& sum_dual_residual = primal_dual_errors.sum_dual_residual;
-
-  bool equal_solution_params =
-      equalSolutionParams(solution_params, check_solution_params);
-  if (!equal_solution_params) {
-    HighsLogMessage(logfile, HighsMessageType::ERROR,
-                    "Unequal SolutionParams in analyseHighsBasicSolution");
-    assert(equal_solution_params);
-    return HighsStatus::Error;
-  }
-
-  bool primal_feasible = num_primal_infeasibilities == 0;
-  //  primal_feasible = primal_feasible &&
-  //    max_primal_residual < primal_feasibility_tolerance;
-  bool dual_feasible = num_dual_infeasibilities == 0;
-  //  dual_feasible = dual_feasible &&
-  //    max_dual_residual < dual_feasibility_tolerance;
-  // Determine the model status
-  HighsModelStatus check_model_status;
-  if (primal_feasible && dual_feasible) {
-    check_model_status = HighsModelStatus::OPTIMAL;
-  } else {
-    check_model_status = HighsModelStatus::NOTSET;
-  }
-  if (check_model_status != model_status) {
-    HighsLogMessage(logfile, HighsMessageType::WARNING,
-                    "Check model status (%s) <> model status (%s)",
-                    utilHighsModelStatusToString(check_model_status).c_str(),
-                    utilHighsModelStatusToString(model_status).c_str());
-  }
-  if (num_nonzero_basic_duals) {
-    HighsLogMessage(logfile, HighsMessageType::WARNING,
-                    "HiGHS basic solution: %d (%d large) nonzero basic duals; "
-                    "max = %g; sum = %g",
-                    num_nonzero_basic_duals, num_large_nonzero_basic_duals,
-                    max_nonzero_basic_dual, sum_nonzero_basic_duals);
-  }
-  if (num_off_bound_nonbasic) {
-    HighsLogMessage(logfile, HighsMessageType::WARNING,
-                    "Off-bound num/max/sum           %6d/%11.4g/%11.4g",
-                    num_off_bound_nonbasic, max_off_bound_nonbasic,
-                    sum_off_bound_nonbasic);
-  }
-  if (report_level > 0) {
-    HighsLogMessage(
-        logfile, HighsMessageType::INFO,
-        "Primal    num/max/sum residuals %6d/%11.4g/%11.4g: num/max/sum "
-        "infeasibilities %6d/%11.4g/%11.4g",
-        num_primal_residual, max_primal_residual, sum_primal_residual,
-        num_primal_infeasibilities, max_primal_infeasibility,
-        sum_primal_infeasibilities);
-    HighsLogMessage(
-        logfile, HighsMessageType::INFO,
-        "Dual      num/max/sum residuals %6d/%11.4g/%11.4g: num/max/sum "
-        "infeasibilities %6d/%11.4g/%11.4g",
-        num_dual_residual, max_dual_residual, sum_dual_residual,
-        num_dual_infeasibilities, max_dual_infeasibility,
-        sum_dual_infeasibilities);
-    double relative_objective_difference =
-        fabs(primal_objective_value - dual_objective_value) /
-        std::max(std::max(1.0, fabs(primal_objective_value)),
-                 fabs(dual_objective_value));
-    HighsLogMessage(logfile, HighsMessageType::INFO,
-                    "Relative objective difference = %.4g",
-                    relative_objective_difference);
-  }
-  HighsLogMessage(logfile, HighsMessageType::INFO,
-                  "HiGHS basic solution: %sObjective = %.15g",
-                  iterationsToString(iteration_counts).c_str(),
-                  primal_objective_value);
-  HighsLogMessage(logfile, HighsMessageType::INFO,
-                  "Infeasibilities: Pr %d(Max %.4g, Sum %.4g); Du %d(Max %.4g, "
-                  "Sum %.4g); Status: %s",
-                  solution_params.num_primal_infeasibilities,
-                  solution_params.max_primal_infeasibility,
-                  solution_params.sum_primal_infeasibilities,
-                  solution_params.num_dual_infeasibilities,
-                  solution_params.max_dual_infeasibility,
-                  solution_params.sum_dual_infeasibilities,
-                  utilHighsModelStatusToString(model_status).c_str());
-
-#ifdef HiGHSDEV
-
-  printf(
-      "grep_AnBsSol,%s,%s,%.15g,%s,%d,%d,%g,%g,%d,%g,%g,%d,%g,%g,%d,%"
-      "g,%g,%d,%g,%g,%d,%g,%g\n",
-      lp.model_name_.c_str(), message.c_str(), primal_objective_value,
-      utilHighsModelStatusToString(model_status).c_str(),
-      num_nonzero_basic_duals, num_large_nonzero_basic_duals,
-      max_nonzero_basic_dual, sum_nonzero_basic_duals, num_off_bound_nonbasic,
-      max_off_bound_nonbasic, sum_off_bound_nonbasic, num_primal_residual,
-      max_primal_residual, sum_primal_residual, num_primal_infeasibilities,
-      max_primal_infeasibility, sum_primal_infeasibilities, num_dual_residual,
-      max_dual_residual, sum_dual_residual, num_dual_infeasibilities,
-      max_dual_infeasibility, sum_dual_infeasibilities);
-#endif
-  return HighsStatus::OK;
-}
-
-void getPrimalDualInfeasibilitiesFromHighsBasicSolution(
-    const HighsLp& lp, const HighsBasis& basis, const HighsSolution& solution,
-    HighsSolutionParams& solution_params) {
-  HighsPrimalDualErrors primal_dual_errors;
-  double primal_objective_value;
-  double dual_objective_value;
-  const int report_level = -1;
-  getPrimalDualInfeasibilitiesAndErrorsFromHighsBasicSolution(
-      lp, basis, solution, solution_params, primal_dual_errors,
-      primal_objective_value, dual_objective_value, report_level);
-}
-
-void getPrimalDualInfeasibilitiesAndErrorsFromHighsBasicSolution(
-    const HighsLp& lp, const HighsBasis& basis, const HighsSolution& solution,
-    HighsSolutionParams& solution_params,
-    HighsPrimalDualErrors& primal_dual_errors, double& primal_objective_value,
-    double& dual_objective_value, const int report_level) {
+void getPrimalDualInfeasibilities(const HighsLp& lp, const HighsBasis& basis,
+                                  const HighsSolution& solution,
+                                  HighsSolutionParams& solution_params) {
   double primal_feasibility_tolerance =
       solution_params.primal_feasibility_tolerance;
   double dual_feasibility_tolerance =
@@ -283,322 +53,69 @@ void getPrimalDualInfeasibilitiesAndErrorsFromHighsBasicSolution(
   max_dual_infeasibility = 0;
   sum_dual_infeasibilities = 0;
 
-  vector<double> primal_activities;
-  vector<double> dual_activities;
-  primal_activities.assign(lp.numRow_, 0);
-  dual_activities.resize(lp.numCol_);
-  int num_non_basic_var = 0;
-  int num_basic_var = 0;
-
-  int& num_nonzero_basic_duals = primal_dual_errors.num_nonzero_basic_duals;
-  int& num_large_nonzero_basic_duals =
-      primal_dual_errors.num_large_nonzero_basic_duals;
-  double& max_nonzero_basic_dual = primal_dual_errors.max_nonzero_basic_dual;
-  double& sum_nonzero_basic_duals = primal_dual_errors.sum_nonzero_basic_duals;
-
-  int& num_off_bound_nonbasic = primal_dual_errors.num_off_bound_nonbasic;
-  double& max_off_bound_nonbasic = primal_dual_errors.max_off_bound_nonbasic;
-  double& sum_off_bound_nonbasic = primal_dual_errors.sum_off_bound_nonbasic;
-
-  int& num_primal_residual = primal_dual_errors.num_primal_residual;
-  double& max_primal_residual = primal_dual_errors.max_primal_residual;
-  double& sum_primal_residual = primal_dual_errors.sum_primal_residual;
-
-  int& num_dual_residual = primal_dual_errors.num_dual_residual;
-  double& max_dual_residual = primal_dual_errors.max_dual_residual;
-  double& sum_dual_residual = primal_dual_errors.sum_dual_residual;
-
-  num_nonzero_basic_duals = 0;
-  num_large_nonzero_basic_duals = 0;
-  max_nonzero_basic_dual = 0;
-  sum_nonzero_basic_duals = 0;
-
-  num_off_bound_nonbasic = 0;
-  max_off_bound_nonbasic = 0;
-  sum_off_bound_nonbasic = 0;
-  num_primal_residual = 0;
-  max_primal_residual = 0;
-  sum_primal_residual = 0;
-  num_dual_residual = 0;
-  max_dual_residual = 0;
-  sum_dual_residual = 0;
-
-  // Initialise the objective value calculations. Done using
-  // HighsSolution so offset is vanilla
-  primal_objective_value = lp.offset_;
-  dual_objective_value = lp.offset_;
-
-  bool header_written = false;
-  double off_bound_nonbasic;
   double primal_infeasibility;
   double dual_infeasibility;
-  for (int iCol = 0; iCol < lp.numCol_; iCol++) {
-    double lower = lp.colLower_[iCol];
-    double upper = lp.colUpper_[iCol];
-    double value = solution.col_value[iCol];
-    double dual = solution.col_dual[iCol];
-    HighsBasisStatus status = basis.col_status[iCol];
-    primal_objective_value += lp.colCost_[iCol] * value;
-    if (status != HighsBasisStatus::BASIC) dual_objective_value += value * dual;
+  double lower;
+  double upper;
+  double value;
+  double dual;
+  HighsBasisStatus status;
+  for (int iVar = 0; iVar < lp.numCol_ + lp.numRow_; iVar++) {
+    if (iVar < lp.numCol_) {
+      int iCol = iVar;
+      lower = lp.colLower_[iCol];
+      upper = lp.colUpper_[iCol];
+      value = solution.col_value[iCol];
+      dual = solution.col_dual[iCol];
+      status = basis.col_status[iCol];
+    } else {
+      int iRow = iVar - lp.numCol_;
+      lower = lp.rowLower_[iRow];
+      upper = lp.rowUpper_[iRow];
+      value = solution.row_value[iRow];
+      dual = -solution.row_dual[iRow];
+      status = basis.row_status[iRow];
+    }
     // Flip dual according to lp.sense_
     dual *= (int)lp.sense_;
-    bool report = false;
-    bool query = analyseVarBasicSolution(
-        report, primal_feasibility_tolerance, dual_feasibility_tolerance,
-        status, lower, upper, value, dual, num_non_basic_var, num_basic_var,
-        off_bound_nonbasic, primal_infeasibility, dual_infeasibility);
-    if (off_bound_nonbasic > 0) num_off_bound_nonbasic++;
-    max_off_bound_nonbasic =
-        std::max(off_bound_nonbasic, max_off_bound_nonbasic);
-    sum_off_bound_nonbasic += off_bound_nonbasic;
+
+    double primal_residual = std::max(lower - value, value - upper);
+    primal_infeasibility = std::max(primal_residual, 0.);
     if (primal_infeasibility > primal_feasibility_tolerance)
       num_primal_infeasibilities++;
     max_primal_infeasibility =
         std::max(primal_infeasibility, max_primal_infeasibility);
     sum_primal_infeasibilities += primal_infeasibility;
-    if (status == HighsBasisStatus::BASIC) {
-      double abs_basic_dual = dual_infeasibility;
-      if (abs_basic_dual > 0) {
-        num_nonzero_basic_duals++;
-        if (abs_basic_dual > dual_feasibility_tolerance)
-          num_large_nonzero_basic_duals++;
-        max_nonzero_basic_dual =
-            std::max(abs_basic_dual, max_nonzero_basic_dual);
-        sum_nonzero_basic_duals += abs_basic_dual;
-      }
-    } else {
-      if (dual_infeasibility > dual_feasibility_tolerance)
-        num_dual_infeasibilities++;
-      max_dual_infeasibility =
-          std::max(dual_infeasibility, max_dual_infeasibility);
-      sum_dual_infeasibilities += dual_infeasibility;
-    }
-    report = report_level == 3 || (report_level == 2 && query);
-    if (report) {
-      if (!header_written) {
-        printf(
-            "\nColumns\nIndex NonBs Mv [          LB,           UB]       "
-            "Primal         Dual    PrimalIfs      DualIfs\n");
-        header_written = true;
-      }
-      printf("%5d %5d [%12g, %12g] %12g %12g", iCol, (int)status, lower, upper,
-             value, dual);
-      printf(" %12g %12g", primal_infeasibility, dual_infeasibility);
-      analyseVarBasicSolution(
-          report, primal_feasibility_tolerance, dual_feasibility_tolerance,
-          status, lower, upper, value, dual, num_non_basic_var, num_basic_var,
-          off_bound_nonbasic, primal_infeasibility, dual_infeasibility);
-      printf("\n");
-    }
-    dual_activities[iCol] = lp.colCost_[iCol];
-    for (int el = lp.Astart_[iCol]; el < lp.Astart_[iCol + 1]; el++) {
-      int iRow = lp.Aindex_[el];
-      double Avalue = lp.Avalue_[el];
-      primal_activities[iRow] += value * Avalue;
-      dual_activities[iCol] += solution.row_dual[iRow] * Avalue;
-    }
-  }
-  bool report = report_level >= 2;
-  header_written = false;
-  for (int iRow = 0; iRow < lp.numRow_; iRow++) {
-    double primal_residual =
-        fabs(primal_activities[iRow] - solution.row_value[iRow]);
-    if (primal_residual > primal_feasibility_tolerance) {
-      if (report) {
-        if (!header_written) {
-          printf(
-              "\nRow primal residuals\nIndex     Activity     Solution     "
-              "Residual\n");
-          header_written = true;
-        }
-        printf("%5d %12g %12g %12g\n", iRow, primal_activities[iRow],
-               solution.row_value[iRow], primal_residual);
-      }
-      num_primal_residual++;
-    }
-    max_primal_residual = std::max(primal_residual, max_primal_residual);
-    sum_primal_residual += primal_residual;
-  }
-  header_written = false;
-  for (int iCol = 0; iCol < lp.numCol_; iCol++) {
-    double dual_residual =
-        fabs(dual_activities[iCol] - solution.col_dual[iCol]);
-    if (dual_residual > dual_feasibility_tolerance) {
-      if (report) {
-        if (!header_written) {
-          printf(
-              "\nRow dual residuals\nIndex     Activity     Solution     "
-              "Residual\n");
-          header_written = true;
-        }
-        printf("%5d %12g %12g %12g\n", iCol, dual_activities[iCol],
-               solution.col_dual[iCol], dual_residual);
-      }
-      num_dual_residual++;
-    }
-    max_dual_residual = std::max(dual_residual, max_dual_residual);
-    sum_dual_residual += dual_residual;
-  }
-  header_written = false;
-  for (int iRow = 0; iRow < lp.numRow_; iRow++) {
-    double lower = lp.rowLower_[iRow];
-    double upper = lp.rowUpper_[iRow];
-    double value = solution.row_value[iRow];
-    double dual = -solution.row_dual[iRow];
-    HighsBasisStatus status = basis.row_status[iRow];
-    if (status != HighsBasisStatus::BASIC) dual_objective_value += value * dual;
-    // Flip dual according to lp.sense_
-    dual *= (int)lp.sense_;
-    bool report = false;
-    bool query = analyseVarBasicSolution(
-        report, primal_feasibility_tolerance, dual_feasibility_tolerance,
-        status, lower, upper, value, dual, num_non_basic_var, num_basic_var,
-        off_bound_nonbasic, primal_infeasibility, dual_infeasibility);
-    if (off_bound_nonbasic > 0) num_off_bound_nonbasic++;
-    max_off_bound_nonbasic =
-        std::max(off_bound_nonbasic, max_off_bound_nonbasic);
-    sum_off_bound_nonbasic += off_bound_nonbasic;
-    if (primal_infeasibility > primal_feasibility_tolerance)
-      num_primal_infeasibilities++;
-    max_primal_infeasibility =
-        std::max(primal_infeasibility, max_primal_infeasibility);
-    sum_primal_infeasibilities += primal_infeasibility;
-    if (status == HighsBasisStatus::BASIC) {
-      double abs_basic_dual = dual_infeasibility;
-      if (abs_basic_dual > 0) {
-        num_nonzero_basic_duals++;
-        if (abs_basic_dual > dual_feasibility_tolerance)
-          num_large_nonzero_basic_duals++;
-        max_nonzero_basic_dual =
-            std::max(abs_basic_dual, max_nonzero_basic_dual);
-        sum_nonzero_basic_duals += abs_basic_dual;
-      }
-    } else {
-      if (dual_infeasibility > dual_feasibility_tolerance)
-        num_dual_infeasibilities++;
-      max_dual_infeasibility =
-          std::max(dual_infeasibility, max_dual_infeasibility);
-      sum_dual_infeasibilities += dual_infeasibility;
-    }
-    report = report_level == 3 || (report_level == 2 && query);
-    if (report) {
-      if (!header_written) {
-        printf(
-            "Rows\nIndex NonBs Mv [          LB,           UB]       Primal    "
-            "     Dual    PrimalIfs      DualIfs\n");
-        header_written = true;
-      }
-      printf("%5d %5d [%12g, %12g] %12g %12g", iRow, (int)status, lower, upper,
-             value, dual);
-      printf(" %12g %12g", primal_infeasibility, dual_infeasibility);
-      analyseVarBasicSolution(
-          report, primal_feasibility_tolerance, dual_feasibility_tolerance,
-          status, lower, upper, value, dual, num_non_basic_var, num_basic_var,
-          off_bound_nonbasic, primal_infeasibility, dual_infeasibility);
-      printf("\n");
-    }
-  }
-}
 
-bool analyseVarBasicSolution(bool report,
-                             const double primal_feasibility_tolerance,
-                             const double dual_feasibility_tolerance,
-                             const HighsBasisStatus status, const double lower,
-                             const double upper, const double value,
-                             const double dual, int& num_non_basic_var,
-                             int& num_basic_var, double& off_bound_nonbasic,
-                             double& primal_infeasibility,
-                             double& dual_infeasibility) {
-  double middle = (lower + upper) * 0.5;
-
-  bool query = false;
-  bool count = !report;
-  off_bound_nonbasic = 0;
-  double primal_residual = std::max(lower - value, value - upper);
-  primal_infeasibility = std::max(primal_residual, 0.);
-  // ToDo Strange: nonbasic_flag seems to be inverted???
-  if (status == HighsBasisStatus::BASIC) {
-    // Basic variable: look for primal infeasibility
-    if (count) num_basic_var++;
-    if (primal_infeasibility > primal_feasibility_tolerance) {
-      // Outside a bound
-      if (value < lower) {
-        query = true;
-        if (report)
-          printf(": Basic below lower bound by %12g", primal_residual);
-      } else {
-        query = true;
-        if (report)
-          printf(": Basic above upper bound by %12g", primal_residual);
-      }
-    }
-    dual_infeasibility = fabs(dual);
-    if (dual_infeasibility > dual_feasibility_tolerance) {
-      query = true;
-      if (report) printf(": Dual infeasibility of %12g", dual_infeasibility);
-    }
-  } else {
-    // Nonbasic variable: look for primal and dual infeasibility
-    if (count) num_non_basic_var++;
-
-    if (primal_infeasibility > primal_feasibility_tolerance) {
-      // Outside a bound
-      dual_infeasibility = 0;
-      if (value < lower) {
-        query = true;
-        if (report)
-          printf(": Nonbasic below lower bound by %12g", primal_residual);
-      } else {
-        query = true;
-        if (report)
-          printf(": Nonbasic above upper bound by %12g", primal_residual);
-      }
-    } else if (primal_residual >= -primal_feasibility_tolerance) {
-      // At a bound: check for dual feasibility
-      if (lower < upper) {
-        // Non-fixed variable
-        if (value < middle) {
-          // At lower
-          dual_infeasibility = std::max(-dual, 0.);
-          if (dual_infeasibility > dual_feasibility_tolerance) {
-            // Dual infeasiblility
-            query = true;
-            if (report)
-              printf(": Dual infeasibility of %12g", dual_infeasibility);
+    if (status != HighsBasisStatus::BASIC) {
+      // Nonbasic variable: look for dual infeasibility
+      if (primal_residual >= -primal_feasibility_tolerance) {
+        // At a bound
+        double middle = (lower + upper) * 0.5;
+        if (lower < upper) {
+          // Non-fixed variable
+          if (value < middle) {
+            // At lower
+            dual_infeasibility = std::max(-dual, 0.);
+          } else {
+            // At Upper
+            dual_infeasibility = std::max(dual, 0.);
           }
         } else {
-          // At Upper
-          dual_infeasibility = std::max(dual, 0.);
-          if (dual_infeasibility > dual_feasibility_tolerance) {
-            // Dual infeasiblility
-            query = true;
-            if (report)
-              printf(": Dual infeasibility of %12g", dual_infeasibility);
-          }
+          // Fixed variable
+          dual_infeasibility = 0;
         }
       } else {
-        // Fixed variable
-        dual_infeasibility = 0;
+        // Between bounds (or free)
+        dual_infeasibility = fabs(dual);
       }
-    } else {
-      // Between bounds (or free)
-      if (highs_isInfinity(-lower) && highs_isInfinity(upper)) {
-        // Free
-        if (report) printf(": Nonbasic free");
-      } else {
-        query = true;
-        if (report) printf(": Nonbasic off bound by %12g", -primal_residual);
-        off_bound_nonbasic = -primal_residual;
-      }
-      dual_infeasibility = fabs(dual);
-      if (dual_infeasibility > dual_feasibility_tolerance) {
-        query = true;
-        if (report) printf(": Dual infeasibility of %12g", dual_infeasibility);
-      }
+      if (dual_infeasibility > dual_feasibility_tolerance)
+        num_dual_infeasibilities++;
+      max_dual_infeasibility =
+          std::max(dual_infeasibility, max_dual_infeasibility);
+      sum_dual_infeasibilities += dual_infeasibility;
     }
   }
-  query = false;
-  return query;
 }
 
 #ifdef HiGHSDEV
@@ -1222,138 +739,6 @@ void invalidateSolutionInfeasibilityParams(
   solution_params.num_dual_infeasibilities = -1;
   solution_params.sum_dual_infeasibilities = 0;
   solution_params.max_dual_infeasibility = 0;
-}
-
-bool equalSolutionParams(const HighsSolutionParams& solution_params0,
-                         const HighsSolutionParams& solution_params1) {
-  bool equal = true;
-  if (!equalSolutionObjectiveParams(solution_params0, solution_params1))
-    equal = false;
-  if (!equalSolutionStatusParams(solution_params0, solution_params1))
-    equal = false;
-  if (!equalSolutionInfeasibilityParams(solution_params0, solution_params1))
-    equal = false;
-  return equal;
-}
-
-bool equalSolutionObjectiveParams(const HighsSolutionParams& solution_params0,
-                                  const HighsSolutionParams& solution_params1) {
-  bool equal = true;
-  double delta =
-      highs_relative_difference(solution_params0.objective_function_value,
-                                solution_params1.objective_function_value);
-  if (solution_params0.objective_function_value !=
-      solution_params1.objective_function_value) {
-#ifdef HiGHSDEV
-    printf(
-        "Solution params: objective_function_value %g != %g Difference = %g\n",
-        solution_params0.objective_function_value,
-        solution_params1.objective_function_value, delta);
-#endif
-    if (delta > 1e-12) equal = false;
-  }
-  return equal;
-}
-
-bool equalSolutionStatusParams(const HighsSolutionParams& solution_params0,
-                               const HighsSolutionParams& solution_params1) {
-  bool equal = true;
-  if (solution_params0.primal_status != solution_params1.primal_status) {
-#ifdef HiGHSDEV
-    printf("Solution params: primal_status %d != %d\n",
-           solution_params0.primal_status, solution_params1.primal_status);
-#endif
-    equal = false;
-  }
-  if (solution_params0.dual_status != solution_params1.dual_status) {
-#ifdef HiGHSDEV
-    printf("Solution params: dual_status %d != %d\n",
-           solution_params0.dual_status, solution_params1.dual_status);
-#endif
-    equal = false;
-  }
-  return equal;
-}
-
-bool equalSolutionInfeasibilityParams(
-    const HighsSolutionParams& solution_params0,
-    const HighsSolutionParams& solution_params1) {
-  double delta;
-  bool equal = true;
-  if (solution_params0.num_primal_infeasibilities !=
-      solution_params1.num_primal_infeasibilities) {
-#ifdef HiGHSDEV
-    printf("Solution params: num_primal_infeasibilities %d != %d\n",
-           solution_params0.num_primal_infeasibilities,
-           solution_params1.num_primal_infeasibilities);
-#endif
-    equal = false;
-  }
-
-  delta =
-      highs_relative_difference(solution_params0.sum_primal_infeasibilities,
-                                solution_params1.sum_primal_infeasibilities);
-  if (solution_params0.sum_primal_infeasibilities !=
-      solution_params1.sum_primal_infeasibilities) {
-#ifdef HiGHSDEV
-    printf(
-        "Solution params: sum_primal_infeasibilities %g != %g Difference = "
-        "%g\n",
-        solution_params0.sum_primal_infeasibilities,
-        solution_params1.sum_primal_infeasibilities, delta);
-#endif
-    if (delta > 1e-12) equal = false;
-  }
-
-  delta = highs_relative_difference(solution_params0.max_primal_infeasibility,
-                                    solution_params1.max_primal_infeasibility);
-  if (solution_params0.max_primal_infeasibility !=
-      solution_params1.max_primal_infeasibility) {
-#ifdef HiGHSDEV
-    printf(
-        "Solution params: max_primal_infeasibility %g != %g Difference = %g\n",
-        solution_params0.max_primal_infeasibility,
-        solution_params1.max_primal_infeasibility, delta);
-#endif
-    if (delta > 1e-12) equal = false;
-  }
-
-  if (solution_params0.num_dual_infeasibilities !=
-      solution_params1.num_dual_infeasibilities) {
-#ifdef HiGHSDEV
-    printf("Solution params: num_dual_infeasibilities %d != %d\n",
-           solution_params0.num_dual_infeasibilities,
-           solution_params1.num_dual_infeasibilities);
-#endif
-    equal = false;
-  }
-
-  delta = highs_relative_difference(solution_params0.sum_dual_infeasibilities,
-                                    solution_params1.sum_dual_infeasibilities);
-  if (solution_params0.sum_dual_infeasibilities !=
-      solution_params1.sum_dual_infeasibilities) {
-#ifdef HiGHSDEV
-    printf(
-        "Solution params: sum_dual_infeasibilities %g != %g Difference = %g\n",
-        solution_params0.sum_dual_infeasibilities,
-        solution_params1.sum_dual_infeasibilities, delta);
-#endif
-    if (delta > 1e-12) equal = false;
-  }
-
-  delta = highs_relative_difference(solution_params0.max_dual_infeasibility,
-                                    solution_params1.max_dual_infeasibility);
-  if (solution_params0.max_dual_infeasibility !=
-      solution_params1.max_dual_infeasibility) {
-#ifdef HiGHSDEV
-    printf("Solution params: max_dual_infeasibility %g != %g Difference = %g\n",
-           solution_params0.max_dual_infeasibility,
-           solution_params1.max_dual_infeasibility, delta);
-#endif
-    if (delta > 1e-12) equal = false;
-  }
-
-  return equal;
 }
 
 void copySolutionObjectiveParams(

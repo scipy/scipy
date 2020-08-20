@@ -251,8 +251,6 @@ class HighsSimplexAnalysis {
   const double AnIterFracNumTot_ItBfSw = 0.1;         //!<
   const double AnIterFracNumCostlyDseItbfSw = 0.05;   //!<
   double AnIterCostlyDseMeasure;
-  int AnIterPrevRpNumCostlyDseIt;  //!< Number of costly DSE iterations when
-                                   //!< previously reported
 
   const double accept_weight_threshhold = 0.25;
   const double weight_error_threshhold = 4.0;

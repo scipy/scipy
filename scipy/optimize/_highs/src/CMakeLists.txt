@@ -82,11 +82,13 @@ set(sources
     io/HMpsFF.cpp
     io/LoadOptions.cpp
     lp_data/Highs.cpp
+    lp_data/HighsDebug.cpp
     lp_data/HighsInfo.cpp
     lp_data/HighsLp.cpp
     lp_data/HighsLpUtils.cpp
     lp_data/HighsModelUtils.cpp
     lp_data/HighsSolution.cpp
+    lp_data/HighsSolutionDebug.cpp
     lp_data/HighsSolve.cpp
     lp_data/HighsStatus.cpp
     lp_data/HighsOptions.cpp
@@ -103,6 +105,7 @@ set(sources
     simplex/HDualRow.cpp
     simplex/HDualMulti.cpp
     simplex/HFactor.cpp
+    simplex/HFactorDebug.cpp
     simplex/HighsSimplexAnalysis.cpp
     simplex/HighsSimplexInterface.cpp
     simplex/HMatrix.cpp
@@ -135,6 +138,7 @@ set(headers
     io/LoadOptions.h
     lp_data/HConst.h
     lp_data/HighsAnalysis.h
+    lp_data/HighsDebug.h
     lp_data/HighsInfo.h
     lp_data/HighsLp.h
     lp_data/HighsLpUtils.h
@@ -143,6 +147,7 @@ set(headers
     lp_data/HighsModelObjectUtils.h
     lp_data/HighsOptions.h
     lp_data/HighsSolution.h
+    lp_data/HighsSolutionDebug.h
     lp_data/HighsSolve.h
     lp_data/HighsStatus.h
     mip/HighsMipSolver.h
@@ -154,6 +159,7 @@ set(headers
     simplex/HDualRow.h
     simplex/HDualRHS.h
     simplex/HFactor.h
+    simplex/HFactorDebug.h
     simplex/HighsSimplexAnalysis.h
     simplex/HighsSimplexInterface.h
     simplex/HMatrix.h
@@ -161,7 +167,6 @@ set(headers
     simplex/HQPrimal.h
 #    simplex/HRanging.h
     simplex/HSimplex.h
-    simplex/HSimplexDebug.h
     simplex/HSimplexReport.h
     simplex/SimplexConst.h
     presolve/Presolve.h
@@ -171,6 +176,7 @@ set(headers
     presolve/HPreData.h
     simplex/HVector.h
     test/DevKkt.h
+    test/KktCh2.h
     util/stringutil.h
     util/HighsComponent.h
     util/HighsRandom.h

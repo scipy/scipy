@@ -20,9 +20,11 @@
 #include "lp_data/HighsLp.h"
 #include "lp_data/HighsModelObject.h"
 #include "lp_data/HighsOptions.h"
+#include "lp_data/HighsSolutionDebug.h"
 #include "lp_data/HighsStatus.h"
 #include "presolve/PresolveComponent.h"
 #include "util/HighsTimer.h"
+#include "util/HighsUtils.h"
 
 /**
  * @brief Class to set parameters and run HiGHS
@@ -189,6 +191,16 @@ class Highs {
    * @brief Returns the current model status
    */
   const HighsModelStatus& getModelStatus(const bool scaled_model = false) const;
+
+  /**
+   * @brief Returns the objective function value (if known)
+   */
+  double getObjectiveValue() { return info_.objective_function_value; }
+
+  /**
+   * @brief Returns the simplex iteration count (if known)
+   */
+  int getSimplexIterationCount() { return info_.simplex_iteration_count; }
 
   // todo: getRangingInformation(..)
 
@@ -761,7 +773,7 @@ class Highs {
 
   bool haveHmo(const string method_name);
 
-  bool updateHighsSolutionBasis();
+  void updateHighsSolutionBasis();
   bool getHighsModelStatusAndInfo(const int solved_hmo);
 
   HighsStatus reset();
@@ -772,7 +784,8 @@ class Highs {
   void clearInfo();
 
   void underDevelopmentLogMessage(const string method_name);
-  void beforeReturnFromRun(HighsStatus& return_status);
+  HighsStatus returnFromRun(const HighsStatus return_status);
+  HighsStatus returnFromHighs(const HighsStatus return_status);
 
   friend class HighsMipSolver;
 };

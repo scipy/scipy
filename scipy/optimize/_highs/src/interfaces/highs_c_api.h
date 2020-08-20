@@ -234,6 +234,24 @@ int Highs_getModelStatus(
 );
 
 /**
+ * @brief Returns the objective function value (if known)
+ */
+double Highs_getObjectiveValue(void* highs  //!< HiGHS object reference,
+);
+
+/**
+ * @brief Returns the simplex iteration count (if known)
+ */
+int Highs_getIterationCount(void* highs  //!< HiGHS object reference,
+);
+
+/**
+ * @brief Returns the simplex iteration count (if known)
+ */
+int Highs_getSimplexIterationCount(void* highs  //!< HiGHS object reference,
+);
+
+/**
  * @brief Gets the basic variables in the order corresponding to
  * calls to getBasisInverseRow, getBasisInverseCol, getBasisSolve,
  * getBasisTransposeSolve, getReducedRow and getReducedColumn. As

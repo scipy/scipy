@@ -757,36 +757,3 @@ void reportOption(FILE* file, const OptionRecordString& option,
     }
   }
 }
-
-// Set values of options so that HiGHS runs as Hsol
-void setHsolOptions(HighsOptions& options) {
-  // Set command line options to their hsol values
-  options.presolve = OPTION_OFF;
-  options.solver = SOLVER_OPTION_SIMPLEX;
-  options.parallel = OPTION_OFF;
-  options.time_limit = HIGHS_CONST_INF;
-
-  options.simplex_iteration_limit = HIGHS_CONST_I_INF;
-  options.mps_parser_type_free = false;
-  options.keep_n_rows = KEEP_N_ROWS_KEEP_ROWS;
-  options.infinite_cost = HIGHS_CONST_INF;
-  options.infinite_bound = HIGHS_CONST_INF;
-  options.small_matrix_value = 0;
-  options.large_matrix_value = HIGHS_CONST_INF;
-  options.allowed_simplex_matrix_scale_factor = HIGHS_CONST_I_INF;
-  options.allowed_simplex_cost_scale_factor = 0;
-  options.primal_feasibility_tolerance = 1e-7;
-  options.dual_feasibility_tolerance = 1e-7;
-  options.dual_objective_value_upper_bound = HIGHS_CONST_INF;
-  options.simplex_strategy = SIMPLEX_STRATEGY_DUAL_PLAIN;
-  options.simplex_dualise_strategy = OPTION_OFF;
-  options.simplex_permute_strategy = OPTION_OFF;
-  options.simplex_scale_strategy = SIMPLEX_SCALE_STRATEGY_HSOL;
-  options.simplex_crash_strategy = SIMPLEX_CRASH_STRATEGY_OFF;
-  options.simplex_dual_edge_weight_strategy =
-      SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_STEEPEST_EDGE;
-  options.simplex_primal_edge_weight_strategy =
-      SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_DANTZIG;
-  options.simplex_price_strategy = SIMPLEX_PRICE_STRATEGY_ROW;
-  options.less_infeasible_DSE_check = false;
-}

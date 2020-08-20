@@ -171,8 +171,9 @@ HighsStatus solveLp(HighsModelObject& model, const string message) {
 #ifdef HIGHSDEV
   // Shouldn't have to check validity of the LP since this is done when it is
   // loaded or modified
-  //  bool normalise = true;
   call_status = assessLp(model.lp_, options_);
+  // If any errors have been found or normalisation carried out,
+  // call_status will be ERROR or WARNING, so only valid return is OK.
   assert(call_status == HighsStatus::OK);
   return_status = interpretCallStatus(call_status, return_status, "assessLp");
   if (return_status == HighsStatus::Error) return return_status;
@@ -202,7 +203,7 @@ HighsStatus solveLp(HighsModelObject& model, const string message) {
           interpretCallStatus(call_status, return_status, "solveLpSimplex");
       if (return_status == HighsStatus::Error) return return_status;
 
-      if (!isSolutionConsistent(model.lp_, model.solution_)) {
+      if (!isSolutionRightSize(model.lp_, model.solution_)) {
         HighsLogMessage(options.logfile, HighsMessageType::ERROR,
                         "Inconsistent solution returned from solver");
         return HighsStatus::Error;
@@ -224,19 +225,14 @@ HighsStatus solveLp(HighsModelObject& model, const string message) {
         interpretCallStatus(call_status, return_status, "solveLpSimplex");
     if (return_status == HighsStatus::Error) return return_status;
 
-    if (!isSolutionConsistent(model.lp_, model.solution_)) {
+    if (!isSolutionRightSize(model.lp_, model.solution_)) {
       HighsLogMessage(options.logfile, HighsMessageType::ERROR,
                       "Inconsistent solution returned from solver");
       return HighsStatus::Error;
     }
   }
-  if (model.basis_.valid_) {
-    call_status = analyseHighsBasicSolution(
-        options.logfile, model.lp_, model.basis_, model.solution_,
-        model.iteration_counts_, model.unscaled_model_status_,
-        model.unscaled_solution_params_, message);
-    return_status = interpretCallStatus(call_status, return_status,
-                                        "analyseHighsBasicSolution");
-  }
+  // Possibly analyse the HiGHS basic solution
+  debugHighsBasicSolution(message, model);
+
   return return_status;
 }

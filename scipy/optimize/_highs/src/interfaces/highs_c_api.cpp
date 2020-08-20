@@ -206,6 +206,18 @@ int Highs_getModelStatus(void* highs, const int scaled_model) {
   return (int)((Highs*)highs)->getModelStatus(scaled_model);
 }
 
+double Highs_getObjectiveValue(void* highs) {
+  return ((Highs*)highs)->getObjectiveValue();
+}
+
+int Highs_getIterationCount(void* highs) {
+  return Highs_getSimplexIterationCount(highs);
+}
+
+int Highs_getSimplexIterationCount(void* highs) {
+  return (int)((Highs*)highs)->getSimplexIterationCount();
+}
+
 int Highs_getBasicVariables(void* highs, int* basic_variables) {
   return (int)((Highs*)highs)->getBasicVariables(basic_variables);
 }

@@ -44,6 +44,8 @@ struct PresolveComponentData : public HighsComponentData {
     clearBasisUtil(reduced_basis_);
     clearBasisUtil(recovered_basis_);
   }
+
+  virtual ~PresolveComponentData() {}
 };
 
 // HighsComponentInfo is a placeholder for details we want to query from outside
@@ -73,6 +75,8 @@ struct PresolveComponentOptions : public HighsComponentOptions {
 
   double time_limit = -1;
   bool dev = false;
+
+  virtual ~PresolveComponentOptions() {}
 };
 
 class PresolveComponent : public HighsComponent {
@@ -98,6 +102,8 @@ class PresolveComponent : public HighsComponent {
 
   HighsPresolveStatus presolve_status_ = HighsPresolveStatus::NotPresolved;
   HighsPostsolveStatus postsolve_status_ = HighsPostsolveStatus::NotPresolved;
+
+  virtual ~PresolveComponent() {}
 };
 
 namespace presolve {

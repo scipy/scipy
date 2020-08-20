@@ -63,7 +63,7 @@ HighsStatus HPrimal::solve() {
   // initParallel();
 
   // ToDo primal simplex version
-  // initialise_cost(workHMO, 1); //  model->initCost(1);
+  // initialiseCost(workHMO, 1); //  model->initCost(1);
   assert(simplex_lp_status.has_fresh_invert);
   if (!simplex_lp_status.has_fresh_invert) {
     printf(
@@ -123,9 +123,8 @@ HighsStatus HPrimal::solve() {
     //
     // ToDo Write primal simplex equivalent
     /*
-    bool ok = ok_to_solve(workHMO, 1, solvePhase);
-    if (!ok) {printf("NOT OK TO SOLVE???\n"); cout << flush;}
-    assert(ok);
+  if (debugOkForSolve(workHMO, solvePhase) == HighsDebugStatus::LOGICAL_ERROR)
+    return HighsStatus::Error;
     */
 #ifdef HiGHSDEV
     //  reportSimplexLpStatus(simplex_lp_status, "Before HPrimal major solving
@@ -173,10 +172,9 @@ HighsStatus HPrimal::solve() {
     if (bailout()) return HighsStatus::Warning;
   }
   /*
-  // ToDo Adapt ok_to_solve to be used by primal
-  bool ok = ok_to_solve(workHMO, 1, solvePhase);// model->OKtoSolve(1,
-  solvePhase); if (!ok) {printf("NOT OK After Solve???\n"); cout << flush;}
-  assert(ok);
+  // ToDo Adapt debugOkForSolve to be used by primal
+  if (debugOkForSolve(workHMO, solvePhase) == HighsDebugStatus::LOGICAL_ERROR)
+    return HighsStatus::Error;
   */
   return HighsStatus::OK;
 }
@@ -336,9 +334,9 @@ void HPrimal::primalRebuild() {
   }
   if (reInvert) {
     analysis->simplexTimerStart(InvertClock);
-    int rankDeficiency = computeFactor(workHMO);
+    int rank_deficiency = computeFactor(workHMO);
     analysis->simplexTimerStop(InvertClock);
-    if (rankDeficiency) {
+    if (rank_deficiency) {
       throw runtime_error("Primal reInvert: singular-basis-matrix");
     }
     simplex_info.update_count = 0;

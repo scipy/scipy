@@ -10,8 +10,10 @@ from libcpp.string cimport string
 from libcpp.memory cimport unique_ptr
 from libcpp.map cimport map as cppmap
 
-from HConst cimport (
+from HighsIO cimport (
     ML_NONE,
+)
+from HConst cimport (
     PrimalDualStatusSTATUS_FEASIBLE_POINT,
     HighsOptionTypeBOOL,
     HighsOptionTypeINT,

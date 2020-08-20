@@ -4,7 +4,6 @@ setup.py for HiGHS scipy interface
 Some CMake files are used to create source lists for compilation
 '''
 
-import sys
 import pathlib
 from datetime import datetime
 
@@ -57,7 +56,6 @@ def configuration(parent_package='', top_path=None):
     # We provide an empty HConfig.h file and do the defs and undefs
     # here:
     TODAY_DATE = datetime.today().strftime('%Y-%m-%d')
-    # ('OPENMP', None), ?
     DEFINE_MACROS = [
         ('CMAKE_BUILD_TYPE', '"Release"'),
         ('HiGHSRELEASE', None),
@@ -68,6 +66,7 @@ def configuration(parent_package='', top_path=None):
         ('HIGHS_VERSION_MINOR', HIGHS_VERSION_MINOR),
         ('HIGHS_VERSION_PATCH', HIGHS_VERSION_PATCH),
         ('HIGHS_DIR', '"' + HIGHS_DIR + '"'),
+        # ('NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION', None),
     ]
     UNDEF_MACROS = [
         'OPENMP',  # unconditionally disable openmp
@@ -97,12 +96,12 @@ def configuration(parent_package='', top_path=None):
     highs_sources = _get_sources('src/CMakeLists.txt', 'set(sources\n', ')')
     ext = config.add_extension(
         'highs_wrapper',
-        sources=(['pyHiGHS/src/highs_wrapper.cxx'] +
-                 highs_sources + ipx_sources),
+        sources=['cython/src/highs_wrapper.cxx'] +
+                 highs_sources + ipx_sources,
         include_dirs=[
 
             # highs_wrapper
-            'pyHiGHS/src/',
+            'cython/src/',
             'src/',
             'src/lp_data/',
 
@@ -129,7 +128,7 @@ def configuration(parent_package='', top_path=None):
         sources=[
             # we should be using using highs shared library;
             # next best thing is compiling minimal set of sources
-            'pyHiGHS/src/mpswriter.cxx',
+            'cython/src/mpswriter.cxx',
             'src/util/HighsUtils.cpp',
             'src/io/HighsIO.cpp',
             'src/io/HMPSIO.cpp',
@@ -137,7 +136,7 @@ def configuration(parent_package='', top_path=None):
             'src/util/stringutil.cpp',
         ],
         include_dirs=[
-            'pyHiGHS/src/',
+            'cython/src/',
             'src/',
             'src/io/',
             'src/lp_data/',
@@ -152,10 +151,11 @@ def configuration(parent_package='', top_path=None):
     # Export constants and enums from HiGHS:
     ext = config.add_extension(
         'constants',
-        sources=['pyHiGHS/src/constants.cxx'],
+        sources=['cython/src/constants.cxx'],
         include_dirs=[
-            'pyHiGHS/src/',
-            'src',
+            'cython/src/',
+            'src/',
+            'src/io/',
             'src/lp_data/',
         ],
         language='c++',
