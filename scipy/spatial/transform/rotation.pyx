@@ -888,7 +888,6 @@ cdef class Rotation(object):
             sets and the columns, ([1, 2 or 3]), provide rotations angles about the 
             z, y and x axes respectively for each set. Euler angles are specified in 
             radians (`degrees` is False) or degrees (`degrees` is True).
-            
             For rotation about a single axis, a single character `seq`
             indicates the axis, and `angles` can be:
 
