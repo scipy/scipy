@@ -46,7 +46,8 @@ def configuration(parent_package='', top_path=None):
     config = Configuration('_highs', parent_package, top_path)
 
     # HiGHS info
-    _major_dot_minor = _get_version('CMakeLists.txt', 'project(HIGHS VERSION', 'LANGUAGES CXX C')
+    _major_dot_minor = _get_version('CMakeLists.txt',
+                                    'project(HIGHS VERSION', 'LANGUAGES CXX C')
     HIGHS_VERSION_MAJOR, HIGHS_VERSION_MINOR = _major_dot_minor.split('.')
     HIGHS_VERSION_PATCH = _get_version('CMakeLists.txt', 'HIGHS_VERSION_PATCH')
     GITHASH = 'n/a'
@@ -96,7 +97,8 @@ def configuration(parent_package='', top_path=None):
     highs_sources = _get_sources('src/CMakeLists.txt', 'set(sources\n', ')')
     ext = config.add_extension(
         'highs_wrapper',
-        sources=['pyHiGHS/src/highs_wrapper.cxx'] + highs_sources + ipx_sources,
+        sources=(['pyHiGHS/src/highs_wrapper.cxx'] +
+                 highs_sources + ipx_sources),
         include_dirs=[
 
             # highs_wrapper

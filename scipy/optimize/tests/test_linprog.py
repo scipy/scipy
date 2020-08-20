@@ -812,7 +812,8 @@ class LinprogCommonTests(object):
         _assert_unbounded(res)
         if not self.method.lower().startswith("highs"):
             assert_equal(res.x[-1], np.inf)
-            assert_equal(res.message[:36], "The problem is (trivially) unbounded")
+            assert_equal(res.message[:36],
+                         "The problem is (trivially) unbounded")
 
     def test_unbounded_no_nontrivial_constraints_2(self):
         """
@@ -831,7 +832,8 @@ class LinprogCommonTests(object):
         _assert_unbounded(res)
         if not self.method.lower().startswith("highs"):
             assert_equal(res.x[-1], -np.inf)
-            assert_equal(res.message[:36], "The problem is (trivially) unbounded")
+            assert_equal(res.message[:36],
+                         "The problem is (trivially) unbounded")
 
     def test_cyclic_recovery(self):
         # Test linprogs recovery from cycling using the Klee-Minty problem

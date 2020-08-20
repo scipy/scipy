@@ -214,12 +214,13 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         the corresponding element of ``b_eq``.
     bounds : sequence, optional
         A sequence of ``(min, max)`` pairs for each element in ``x``, defining
-        the minimum and maximum values of that decision variable. Use ``None`` to
-        indicate that there is no bound. By default, bounds are ``(0, None)``
-        (all decision variables are non-negative).
+        the minimum and maximum values of that decision variable. Use ``None``
+        to indicate that there is no bound. By default, bounds are
+        ``(0, None)`` (all decision variables are non-negative).
         If a single tuple ``(min, max)`` is provided, then ``min`` and
         ``max`` will serve as bounds for all decision variables.
-    method : {'highs-simplex', 'highs-ipm', 'highs', 'interior-point', 'revised simplex', 'simplex'}, optional
+    method : {'highs-simplex', 'highs-ipm', 'highs', 'interior-point',
+    'revised simplex', 'simplex'}, optional
         The algorithm used to solve the standard form problem.
         :ref:`'highs-simplex' <optimize.linprog-highs-simplex>`,
         :ref:`'highs-ipm' <optimize.linprog-highs-ipm>`,
@@ -366,8 +367,8 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     Method *highs-simplex* is a wrapper of the C++ high performance dual
     revised simplex implementation (HSOL) [13]_, [14]_. Method *highs-ipm*
     is a wrapper of a C++ implementation of an **i**\ nterior-\ **p**\ oint
-    **m**\ ethod [13]_; it features a crossover routine, so it is as accurate as
-    a simplex solver. Method *highs* chooses between the two automatically.
+    **m**\ ethod [13]_; it features a crossover routine, so it is as accurate
+    as a simplex solver. Method *highs* chooses between the two automatically.
     For new code involving `linprog`, we recommend explicitly choosing one of
     these three method values.
 

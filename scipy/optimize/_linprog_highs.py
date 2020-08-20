@@ -36,7 +36,8 @@ from ._highs.constants import (
     MODEL_STATUS_PRIMAL_INFEASIBLE,
     MODEL_STATUS_PRIMAL_UNBOUNDED,
     MODEL_STATUS_OPTIMAL,
-    MODEL_STATUS_REACHED_DUAL_OBJECTIVE_VALUE_UPPER_BOUND as MODEL_STATUS_RDOVUB,
+    MODEL_STATUS_REACHED_DUAL_OBJECTIVE_VALUE_UPPER_BOUND
+    as MODEL_STATUS_RDOVUB,
     MODEL_STATUS_REACHED_TIME_LIMIT,
     MODEL_STATUS_REACHED_ITERATION_LIMIT,
 )
@@ -305,7 +306,8 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
     # Catch message_level warnings that HiGHS currently misses:
     message_level = (
         _check_invalid_option_values(message_level, 'message_level',
-                                     {None, 0, 1, 2, 3, 4, 5, 6, 7}, MESSAGE_LEVEL_MINIMAL))
+                                     {None, 0, 1, 2, 3, 4, 5, 6, 7},
+                                     MESSAGE_LEVEL_MINIMAL))
 
     # SIMPLEX_STRATEGY_PRIMAL (4) is experimental -- disallow use!
     simplex_strategy = (
@@ -370,9 +372,6 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
     lhs = _replace_inf(lhs)
     lb = _replace_inf(lb)
     ub = _replace_inf(ub)
-
-    #from scipy.optimize._highs.mpswriter import mpswriter
-    #mpswriter(b'test.mps', c, A, lhs, rhs, lb, ub, np.array([], dtype=np.int32))
 
     res = highs_wrapper(c, A.indptr, A.indices, A.data, lhs, rhs,
                         lb, ub, options)
