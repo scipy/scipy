@@ -148,7 +148,7 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
         Verbosity level, corresponds to:
 
             ``0``: None
-                All messaging is supressed.
+                All messaging is suppressed.
 
             ``1``: Verbose
                 Provide only a once-per-iteration report on
@@ -399,7 +399,7 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
         'primal_feasibility_tolerance': primal_feasibility_tolerance,
         'simplex_crash_strategy': simplex_crash_strategy,
         'simplex_dual_edge_weight_strategy': simplex_dual_edge_weight_strategy,
-        'simplex_primal_edge_weight_strategy': \
+        'simplex_primal_edge_weight_strategy':
             simplex_primal_edge_weight_strategy,
         'simplex_strategy': simplex_strategy,
         'simplex_update_limit': simplex_update_limit,
