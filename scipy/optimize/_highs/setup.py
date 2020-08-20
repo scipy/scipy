@@ -55,7 +55,6 @@ def configuration(parent_package='', top_path=None):
     # We provide an empty HConfig.h file and do the defs and undefs
     # here:
     TODAY_DATE = datetime.today().strftime('%Y-%m-%d')
-    # ('OPENMP', None), ?
     DEFINE_MACROS = [
         ('CMAKE_BUILD_TYPE', '"Release"'),
         ('HiGHSRELEASE', None),
@@ -66,7 +65,7 @@ def configuration(parent_package='', top_path=None):
         ('HIGHS_VERSION_MINOR', HIGHS_VERSION_MINOR),
         ('HIGHS_VERSION_PATCH', HIGHS_VERSION_PATCH),
         ('HIGHS_DIR', '"' + HIGHS_DIR + '"'),
-        ('NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION', None),
+        # ('NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION', None),
     ]
     UNDEF_MACROS = [
         'OPENMP',  # unconditionally disable openmp
