@@ -96,8 +96,8 @@ def configuration(parent_package='', top_path=None):
     highs_sources = _get_sources('src/CMakeLists.txt', 'set(sources\n', ')')
     ext = config.add_extension(
         'highs_wrapper',
-        sources=['cython/src/highs_wrapper.cxx'] +
-                 highs_sources + ipx_sources,
+        sources=(['cython/src/highs_wrapper.cxx'] +
+                 highs_sources + ipx_sources),
         include_dirs=[
 
             # highs_wrapper
