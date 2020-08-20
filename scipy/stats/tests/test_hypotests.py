@@ -6,6 +6,7 @@ from numpy.testing import (assert_, assert_equal, assert_almost_equal,
 
 from pytest import raises as assert_raises
 from scipy.stats._hypotests import epps_singleton_2samp, cvm_test, _cdf_cvm
+from scipy.stats import distributions
 from .common_tests import check_named_results
 
 
@@ -66,6 +67,9 @@ class TestEppsSingleton(object):
 
 
 class TestCvm(object):
+    # the expected values of the cdfs are taken from Table 1 in
+    # Csorgo / Faraway: The Exact and Asymptotic Distribution of
+    # Cramer-von Mises Statistics, 1996.
     def test_cdf_4(self):
         assert_array_almost_equal(
                 _cdf_cvm([0.02983, 0.04111, 0.12331, 0.94251], 4),
@@ -139,3 +143,11 @@ class TestCvm(object):
         w, p = cvm_test([1, 2, 5, 1.4, 0.14, 11, 13, 0.9, 7.5], "expon")
         assert_almost_equal(w, 0.8421854, decimal=6)
         assert_almost_equal(p, 0.004433406, decimal=6)
+
+    def test_callable_cdf(self):
+        assert_equal(cvm_test(np.arange(5), distributions.expon.cdf),
+                     cvm_test(np.arange(5), "expon"))
+
+        args = (1.4, 0.7)
+        assert_equal(cvm_test(np.arange(5), distributions.beta.cdf, args),
+                     cvm_test(np.arange(5), "beta", args))

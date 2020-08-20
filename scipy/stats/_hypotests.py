@@ -204,10 +204,12 @@ def _cdf_cvm_inf(x):
     x = np.asarray(x)
 
     def term(x, k):
+        # this expression can be found in [2], second line of (1.3)
         u = np.exp(gammaln(k + 0.5) - gammaln(k+1)) / (np.pi**1.5 * np.sqrt(x))
         y = 4*k + 1
-        b = kv(0.25, y**2 / (16*x))
-        return u * np.sqrt(y) * np.exp(-y**2 / (16*x)) * b
+        q = y**2 / (16*x)
+        b = kv(0.25, q)
+        return u * np.sqrt(y) * np.exp(-q) * b
 
     tot = np.zeros_like(x, dtype='float')
     cond = np.ones_like(x, dtype='bool')
@@ -230,7 +232,8 @@ def _cdf_cvm(x, n=None):
     1.2 for the asymptotic cdf.
 
     The function is not expected to be accurate for large values of x, say
-    x > 4, when the cdf is very close to 1.
+    x > 2, when the cdf is very close to 1 and it might return values > 1
+    in that case, e.g. _cdf_cvm(2.0, 12) = 1.0000027556716846.
     """
     x = np.asarray(x)
     if n is None:
@@ -254,21 +257,23 @@ def cvm_test(rvs, cdf, args=()):
     Perform the Cramer-von Mises test for goodness of fit.
 
     This performs a test of the goodness of fit of a cumulative distribution
-    function F compared to the empirical distribution function F_n of
-    observed random variates X_1, ..., X_n that are assumed to be independent
-    and identically distributed ([1]_). The null hypothesis is that the X_i
-    have cumulative distribution F.
+    function (cdf) :math:`F` compared to the empirical distribution function
+    :math:`F_n` of observed random variates :math:`X_1, ..., X_n` that are
+    assumed to be independent and identically distributed ([1]_).
+    The null hypothesis is that the :math:`X_i` have cumulative distribution
+    :math:`F`.
 
     Parameters
     ----------
     rvs : array_like
-        The observed values of the random variables, it should be a 1-D array.
+        A 1-D array of observed values of the random variables X_i.
     cdf : str or callable
-        If a string, it should be the name of a distribution in `scipy.stats`.
-        If a callable, that callable is used to calculate the cdf.
-        ``cdf(x, *args) -> float``, it should be a cdf.
+        The cumulative distribution function F to test the observations
+        against. If a string, it should be the name of a distribution in
+        `scipy.stats`. If a callable, that callable is used to calculate the
+        cdf: ``cdf(x, *args) -> float``.
     args : tuple, optional
-        Distribution parameters. These are assumed to be known, see Notes.
+        Distribution parameters. These are assumed to be known; see Notes.
 
     Returns
     -------
@@ -310,6 +315,10 @@ def cvm_test(rvs, cdf, args=()):
     >>> w, p
     (0.06342154705518796, 0.792680516270629)
 
+    The p-value 0.79 exceeds our chosen significance level, so we do not
+    reject the null hypothesis that the observed sample is drawn from the
+    standard normal distribution.
+
     We can also use `args` to check whether the data is drawn from a
     shifted normal distribution, assuming a shift of 2 when the
     true shift is 2.1. In that case, the null hypothesis is rejected
@@ -323,8 +332,9 @@ def cvm_test(rvs, cdf, args=()):
     Using a callable argument for cdf, this is equivalent to the
     following:
 
-    >>> cdf = stats.norm.cdf
-    >>> stats.cvm_test(y, cdf, args=(2,))
+    >>> w, p = stats.cvm_test(y, stats.norm.cdf, args=(2,))
+    >>> w, p
+    (0.4798693195559657, 0.044782228803623814)
 
     """
     if isinstance(cdf, str):
@@ -343,18 +353,12 @@ def cvm_test(rvs, cdf, args=()):
     u = (2*np.arange(1, n+1) - 1)/(2*n)
     w = 1/(12*n) + np.sum((u - cdfvals)**2)
 
-    if w > 4 and n >= 12:
-        warnings.warn('The p-value is smaller than 1e-6 but approximation '
-                      'is not expected to be accurate. The p-value is '
-                      'floored at 1e-6.')
-        p = 1e-6
-    else:
-        # avoid small negative values that can occur in the approximation
-        p = max(0, 1. - _cdf_cvm(w, n))
+    # avoid small negative values that can occur due to the approximation
+    p = max(0, 1. - _cdf_cvm(w, n))
 
     return cvm_testResult(w, p)
 
-  
+
 def _get_wilcoxon_distr(n):
     """
     Distribution of counts of the Wilcoxon ranksum statistic r_plus (sum of
