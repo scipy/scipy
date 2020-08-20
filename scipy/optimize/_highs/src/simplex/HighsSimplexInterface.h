@@ -44,61 +44,17 @@ class HighsSimplexInterface {
                       int XnumNZ, const int* XAstart, const int* XAindex,
                       const double* XAvalue);
 
-  HighsStatus deleteCols(int from_col, int to_col);
+  HighsStatus deleteCols(HighsIndexCollection& index_collection);
 
-  HighsStatus deleteCols(int num_set_entries, const int* col_set);
-
-  HighsStatus deleteCols(int* col_mask);
-
-  HighsStatus deleteColsGeneral(bool interval, int from_col, int to_col,
-                                bool set, int num_set_entries,
-                                const int* col_set, bool mask, int* col_mask);
-
-  HighsStatus getCols(const int from_col, const int to_col, int& num_col,
-                      double* col_cost, double* col_lower, double* col_upper,
-                      int& num_nz, int* col_matrix_start, int* col_matrix_index,
-                      double* col_matrix_value);
-
-  HighsStatus getCols(const int num_set_entries, const int* col_set,
+  HighsStatus getCols(const HighsIndexCollection& index_collection,
                       int& num_col, double* col_cost, double* col_lower,
                       double* col_upper, int& num_nz, int* col_matrix_start,
                       int* col_matrix_index, double* col_matrix_value);
 
-  HighsStatus getCols(const int* col_mask, int& num_col, double* col_cost,
-                      double* col_lower, double* col_upper, int& num_nz,
-                      int* col_matrix_start, int* col_matrix_index,
-                      double* col_matrix_value);
-
-  HighsStatus getColsGeneral(const bool interval, const int from_col,
-                             const int to_col, const bool set,
-                             const int num_set_entries, const int* col_set,
-                             const bool mask, const int* col_mask, int& num_col,
-                             double* col_cost, double* col_lower,
-                             double* col_upper, int& num_nz,
-                             int* col_matrix_start, int* col_matrix_index,
-                             double* col_matrix_value);
-
-  HighsStatus getRows(const int from_row, const int to_row, int& num_row,
-                      double* row_lower, double* row_upper, int& num_nz,
-                      int* row_matrix_start, int* row_matrix_index,
-                      double* row_matrix_value);
-
-  HighsStatus getRows(const int num_set_entries, const int* row_set,
+  HighsStatus getRows(const HighsIndexCollection& index_collection,
                       int& num_row, double* row_lower, double* row_upper,
                       int& num_nz, int* row_matrix_start, int* row_matrix_index,
                       double* row_matrix_value);
-
-  HighsStatus getRows(const int* row_mask, int& num_row, double* row_lower,
-                      double* row_upper, int& num_nz, int* row_matrix_start,
-                      int* row_matrix_index, double* row_matrix_value);
-
-  HighsStatus getRowsGeneral(const bool interval, const int from_row,
-                             const int to_row, const bool set,
-                             const int num_set_entries, const int* row_set,
-                             const bool mask, const int* row_mask, int& num_row,
-                             double* row_lower, double* row_upper, int& num_nz,
-                             int* row_matrix_start, int* row_matrix_index,
-                             double* row_matrix_value);
 
   HighsStatus getCoefficient(const int Xrow, const int Xcol, double& value);
 
@@ -110,80 +66,24 @@ class HighsSimplexInterface {
                       const int* XARstart, const int* XARindex,
                       const double* XARvalue);
 
-  HighsStatus deleteRows(int from_row, int to_row);
-
-  HighsStatus deleteRows(int num_set_entries, const int* row_set);
-
-  HighsStatus deleteRows(int* row_mask);
-
-  HighsStatus deleteRowsGeneral(bool interval, int from_row, int to_row,
-                                bool set, int num_set_entries,
-                                const int* row_set, bool mask, int* row_mask);
+  HighsStatus deleteRows(HighsIndexCollection& index_collection);
 
   HighsStatus changeCoefficient(const int Xrow, const int Xcol,
                                 const double XnewValue);
 
   // Utilities to get/change costs and bounds
-  // Change the objective sense
   HighsStatus changeObjectiveSense(const ObjSense Xsense);
 
-  // Change the costs for an interval of columns
-  HighsStatus changeCosts(int from_col, int to_col, const double* usr_col_cost);
-
-  // Change the costs from an ordered set of indices
-  HighsStatus changeCosts(int num_set_entries, const int* col_set,
+  HighsStatus changeCosts(HighsIndexCollection& index_collection,
                           const double* usr_col_cost);
 
-  // Change the costs with a mask
-  HighsStatus changeCosts(const int* col_mask, const double* usr_col_cost);
-
-  HighsStatus changeCostsGeneral(bool interval, int from_col, int to_col,
-                                 bool set, int num_set_entries,
-                                 const int* col_set, bool mask,
-                                 const int* col_mask,
-                                 const double* usr_col_cost);
-
-  // Change the bounds for an interval of columns
-  HighsStatus changeColBounds(int from_col, int to_col,
+  HighsStatus changeColBounds(HighsIndexCollection& index_collection,
                               const double* usr_col_lower,
                               const double* usr_col_upper);
 
-  // Change the bounds from an ordered set of indices
-  HighsStatus changeColBounds(int num_set_entries, const int* col_set,
-                              const double* usr_col_lower,
-                              const double* usr_col_upper);
-
-  // Change the bounds with a mask
-  HighsStatus changeColBounds(const int* col_mask, const double* usr_col_lower,
-                              const double* usr_col_upper);
-
-  HighsStatus changeColBoundsGeneral(bool interval, int from_col, int to_col,
-                                     bool set, int num_set_entries,
-                                     const int* col_set, bool mask,
-                                     const int* col_mask,
-                                     const double* usr_col_lower,
-                                     const double* usr_col_upper);
-
-  // Change the bounds for an interval of rows
-  HighsStatus changeRowBounds(int from_row, int to_row,
+  HighsStatus changeRowBounds(HighsIndexCollection& index_collection,
                               const double* usr_row_lower,
                               const double* usr_row_upper);
-
-  // Change the bounds from an ordered set of indices
-  HighsStatus changeRowBounds(int num_set_entries, const int* row_set,
-                              const double* usr_row_lower,
-                              const double* usr_row_upper);
-
-  // Change the bounds with a mask
-  HighsStatus changeRowBounds(const int* row_mask, const double* usr_row_lower,
-                              const double* usr_row_upper);
-
-  HighsStatus changeRowBoundsGeneral(bool interval, int from_row, int to_row,
-                                     bool set, int num_set_entries,
-                                     const int* row_set, bool mask,
-                                     const int* row_mask,
-                                     const double* usr_row_lower,
-                                     const double* usr_row_upper);
 
   HighsStatus basisSolve(const vector<double>& rhs, double* solution,
                          int* solution_num_nz, int* solution_nz_indices,

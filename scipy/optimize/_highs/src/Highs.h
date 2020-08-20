@@ -24,6 +24,7 @@
 #include "lp_data/HighsStatus.h"
 #include "presolve/PresolveComponent.h"
 #include "util/HighsTimer.h"
+#include "util/HighsUtils.h"
 
 /**
  * @brief Class to set parameters and run HiGHS
@@ -772,7 +773,7 @@ class Highs {
 
   bool haveHmo(const string method_name);
 
-  bool updateHighsSolutionBasis();
+  void updateHighsSolutionBasis();
   bool getHighsModelStatusAndInfo(const int solved_hmo);
 
   HighsStatus reset();
@@ -783,7 +784,8 @@ class Highs {
   void clearInfo();
 
   void underDevelopmentLogMessage(const string method_name);
-  void beforeReturnFromRun(HighsStatus& return_status);
+  HighsStatus returnFromRun(const HighsStatus return_status);
+  HighsStatus returnFromHighs(const HighsStatus return_status);
 
   friend class HighsMipSolver;
 };

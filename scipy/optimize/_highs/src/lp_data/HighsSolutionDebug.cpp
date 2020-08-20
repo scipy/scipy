@@ -17,6 +17,7 @@
 
 #include <vector>
 
+#include "lp_data/HighsDebug.h"
 #include "lp_data/HighsModelUtils.h"
 #include "util/HighsUtils.h"
 
@@ -26,6 +27,57 @@ const double excessive_relative_solution_param_error =
 
 const double large_residual_error = 1e-12;
 const double excessive_residual_error = sqrt(large_residual_error);
+
+HighsDebugStatus debugBasisConsistent(const HighsOptions& options,
+                                      const HighsLp lp,
+                                      const HighsBasis& basis) {
+  // Cheap analysis of a HiGHS basis, checking vector sizes, numbers
+  // of basic/nonbasic variables
+  if (options.highs_debug_level < HIGHS_DEBUG_LEVEL_CHEAP)
+    return HighsDebugStatus::NOT_CHECKED;
+  HighsDebugStatus return_status = HighsDebugStatus::OK;
+  if (!basis.valid_) return return_status;
+  bool consistent = isBasisConsistent(lp, basis);
+  if (!consistent) {
+    HighsLogMessage(options.logfile, HighsMessageType::ERROR,
+                    "HiGHS basis inconsistency");
+    assert(consistent);
+    return_status = HighsDebugStatus::LOGICAL_ERROR;
+  }
+  return return_status;
+}
+
+HighsDebugStatus debugBasisRightSize(const HighsOptions& options,
+                                     const HighsLp lp,
+                                     const HighsBasis& basis) {
+  if (options.highs_debug_level < HIGHS_DEBUG_LEVEL_CHEAP)
+    return HighsDebugStatus::NOT_CHECKED;
+  HighsDebugStatus return_status = HighsDebugStatus::OK;
+  bool right_size = isBasisRightSize(lp, basis);
+  if (!right_size) {
+    HighsLogMessage(options.logfile, HighsMessageType::ERROR,
+                    "HiGHS basis size error");
+    assert(right_size);
+    return_status = HighsDebugStatus::LOGICAL_ERROR;
+  }
+  return return_status;
+}
+
+HighsDebugStatus debugSolutionRightSize(const HighsOptions& options,
+                                        const HighsLp lp,
+                                        const HighsSolution& solution) {
+  if (options.highs_debug_level < HIGHS_DEBUG_LEVEL_CHEAP)
+    return HighsDebugStatus::NOT_CHECKED;
+  HighsDebugStatus return_status = HighsDebugStatus::OK;
+  bool right_size = isSolutionRightSize(lp, solution);
+  if (!right_size) {
+    HighsLogMessage(options.logfile, HighsMessageType::ERROR,
+                    "HiGHS solution size error");
+    assert(right_size);
+    return_status = HighsDebugStatus::LOGICAL_ERROR;
+  }
+  return return_status;
+}
 
 HighsDebugStatus debugHighsBasicSolution(
     const string message, const HighsModelObject& highs_model_object) {
@@ -76,12 +128,9 @@ HighsDebugStatus debugHighsBasicSolution(const string message,
     return HighsDebugStatus::NOT_CHECKED;
 
   // Check that there is a solution and valid basis to use
-  const bool have_solution = isSolutionConsistent(lp, solution);
-  const bool have_basis = isBasisConsistent(lp, basis) && basis.valid_;
-  assert(have_solution);
-  assert(have_basis);
-  if (!have_solution) return HighsDebugStatus::LOGICAL_ERROR;
-  if (!have_basis) return HighsDebugStatus::LOGICAL_ERROR;
+  if (debugHaveBasisAndSolutionData(lp, basis, solution) !=
+      HighsDebugStatus::OK)
+    return HighsDebugStatus::LOGICAL_ERROR;
 
   // Extract the solution_params from options
   HighsSolutionParams solution_params;
@@ -118,14 +167,19 @@ HighsDebugStatus debugHighsBasicSolution(
   // solution_params
   if (options.highs_debug_level < HIGHS_DEBUG_LEVEL_CHEAP)
     return HighsDebugStatus::NOT_CHECKED;
+  // No basis to test if model status corresponds to warning or error
+  if (highsStatusFromHighsModelStatus(model_status) != HighsStatus::OK)
+    return HighsDebugStatus::OK;
+
+  // No basis to test if model status is primal infeasible or unbounded
+  if (model_status == HighsModelStatus::PRIMAL_INFEASIBLE ||
+      model_status == HighsModelStatus::PRIMAL_UNBOUNDED)
+    return HighsDebugStatus::OK;
 
   // Check that there is a solution and valid basis to use
-  const bool have_solution = isSolutionConsistent(lp, solution);
-  const bool have_basis = isBasisConsistent(lp, basis) && basis.valid_;
-  assert(have_solution);
-  assert(have_basis);
-  if (!have_solution) return HighsDebugStatus::LOGICAL_ERROR;
-  if (!have_basis) return HighsDebugStatus::LOGICAL_ERROR;
+  if (debugHaveBasisAndSolutionData(lp, basis, solution) !=
+      HighsDebugStatus::OK)
+    return HighsDebugStatus::LOGICAL_ERROR;
 
   HighsSolutionParams check_solution_params;
   double check_primal_objective_value;
@@ -153,6 +207,18 @@ HighsDebugStatus debugHighsBasicSolution(
       debugAnalysePrimalDualErrors(options, primal_dual_errors), return_status);
 
   return return_status;
+}
+
+// Methods below are not called externally
+
+HighsDebugStatus debugHaveBasisAndSolutionData(const HighsLp& lp,
+                                               const HighsBasis& basis,
+                                               const HighsSolution& solution) {
+  if (!isSolutionRightSize(lp, solution))
+    return HighsDebugStatus::LOGICAL_ERROR;
+  if (!isBasisRightSize(lp, basis) && basis.valid_)
+    return HighsDebugStatus::LOGICAL_ERROR;
+  return HighsDebugStatus::OK;
 }
 
 void debugHighsBasicSolutionPrimalDualInfeasibilitiesAndErrors(
@@ -549,7 +615,7 @@ HighsDebugStatus debugAnalysePrimalDualErrors(
   if (primal_dual_errors.max_primal_residual > excessive_residual_error) {
     value_adjective = "Excessive";
     report_level = ML_ALWAYS;
-    return_status = HighsDebugStatus::WARNING;
+    return_status = HighsDebugStatus::ERROR;
   } else if (primal_dual_errors.max_primal_residual > large_residual_error) {
     value_adjective = "Large";
     report_level = ML_DETAILED;
@@ -571,7 +637,7 @@ HighsDebugStatus debugAnalysePrimalDualErrors(
   if (primal_dual_errors.max_dual_residual > excessive_residual_error) {
     value_adjective = "Excessive";
     report_level = ML_ALWAYS;
-    return_status = HighsDebugStatus::WARNING;
+    return_status = HighsDebugStatus::ERROR;
   } else if (primal_dual_errors.max_dual_residual > large_residual_error) {
     value_adjective = "Large";
     report_level = ML_DETAILED;
@@ -691,7 +757,7 @@ HighsDebugStatus debugCompareSolutionParamValue(const string name,
   if (delta > excessive_relative_solution_param_error) {
     value_adjective = "Excessive";
     report_level = ML_ALWAYS;
-    return_status = HighsDebugStatus::WARNING;
+    return_status = HighsDebugStatus::ERROR;
   } else if (delta > large_relative_solution_param_error) {
     value_adjective = "Large";
     report_level = ML_DETAILED;
@@ -714,11 +780,6 @@ HighsDebugStatus debugCompareSolutionParamInteger(const string name,
                     "SolutionPar:  difference of %d for %s\n", v1 - v0,
                     name.c_str());
   return HighsDebugStatus::LOGICAL_ERROR;
-}
-
-HighsDebugStatus debugWorseStatus(HighsDebugStatus status0,
-                                  HighsDebugStatus status1) {
-  return static_cast<HighsDebugStatus>(std::max((int)status0, (int)status1));
 }
 
 void debugReportHighsBasicSolution(const string message,

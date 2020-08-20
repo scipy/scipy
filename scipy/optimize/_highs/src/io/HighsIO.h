@@ -14,7 +14,7 @@
 #ifndef HIGHS_IO_H
 #define HIGHS_IO_H
 
-#include "lp_data/HighsLp.h"
+#include <iostream>
 
 class HighsOptions;
 
@@ -23,6 +23,16 @@ class HighsOptions;
  */
 enum class HighsMessageType { INFO, WARNING, ERROR };
 const char* const HighsMessageTypeTag[] = {"INFO", "WARNING", "ERROR"};
+
+enum HighsPrintMessageLevel {
+  ML_MIN = 0,
+  ML_NONE = ML_MIN,
+  ML_VERBOSE = 1,
+  ML_DETAILED = 2,
+  ML_MINIMAL = 4,
+  ML_ALWAYS = ML_VERBOSE | ML_DETAILED | ML_MINIMAL,
+  ML_MAX = ML_ALWAYS
+};
 
 /**
  * @brief Used to direct printed output to FILE* output, according

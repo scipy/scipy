@@ -4,7 +4,6 @@ setup.py for HiGHS scipy interface
 Some CMake files are used to create source lists for compilation
 '''
 
-import sys
 import pathlib
 from datetime import datetime
 
@@ -67,6 +66,7 @@ def configuration(parent_package='', top_path=None):
         ('HIGHS_VERSION_MINOR', HIGHS_VERSION_MINOR),
         ('HIGHS_VERSION_PATCH', HIGHS_VERSION_PATCH),
         ('HIGHS_DIR', '"' + HIGHS_DIR + '"'),
+        ('NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION', None),
     ]
     UNDEF_MACROS = [
         'OPENMP',  # unconditionally disable openmp
@@ -153,7 +153,8 @@ def configuration(parent_package='', top_path=None):
         sources=['cython/src/constants.cxx'],
         include_dirs=[
             'cython/src/',
-            'src',
+            'src/',
+            'src/io/',
             'src/lp_data/',
         ],
         language='c++',

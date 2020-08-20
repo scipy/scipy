@@ -51,7 +51,7 @@ HighsStatus HDual::solve() {
   HighsSimplexInfo& simplex_info = workHMO.simplex_info_;
   HighsSimplexLpStatus& simplex_lp_status = workHMO.simplex_lp_status_;
   workHMO.scaled_model_status_ = HighsModelStatus::NOTSET;
-  if (debugSimplexInfoBasisConsistent(workHMO) ==
+  if (debugSimplexInfoBasisRightSize(workHMO) ==
       HighsDebugStatus::LOGICAL_ERROR)
     return HighsStatus::Error;
   // Assumes that the LP has a positive number of rows, since
@@ -97,7 +97,7 @@ HighsStatus HDual::solve() {
     }
   }
 
-  initialise_cost(workHMO, 1);
+  initialiseCost(workHMO, 1);
   assert(simplex_lp_status.has_fresh_invert);
   if (!simplex_lp_status.has_fresh_invert) {
     printf(
@@ -189,15 +189,11 @@ HighsStatus HDual::solve() {
   // Level 1 also checks that the basis is OK and that the necessary
   // data in work* is populated.
   //
-  bool ok = ok_to_solve(workHMO, 1, solvePhase);
-  if (!ok) {
-    printf("NOT OK TO SOLVE???\n");
-    cout << flush;
-  }
-  assert(ok);
+  if (debugOkForSolve(workHMO, solvePhase) == HighsDebugStatus::LOGICAL_ERROR)
+    return HighsStatus::Error;
 #ifdef HiGHSDEV
-  // reportSimplexLpStatus(simplex_lp_status, "Before HDual major solving
-  // loop");
+    // reportSimplexLpStatus(simplex_lp_status, "Before HDual major solving
+    // loop");
 #endif
   //
   // The major solving loop
@@ -310,11 +306,8 @@ HighsStatus HDual::solve() {
           (iteration_counts.simplex - it0);
     }
   }
-  ok = ok_to_solve(workHMO, 1, solvePhase);
-#ifdef HiGHSDEV
-  if (!ok) printf("NOT OK After Solve???\n");
-#endif
-  assert(ok);
+  if (debugOkForSolve(workHMO, solvePhase) == HighsDebugStatus::LOGICAL_ERROR)
+    return HighsStatus::Error;
   computePrimalObjectiveValue(workHMO);
   return HighsStatus::OK;
 }
@@ -500,8 +493,8 @@ void HDual::solvePhase1() {
   HighsPrintMessage(workHMO.options_.output, workHMO.options_.message_level,
                     ML_DETAILED, "dual-phase-1-start\n");
   // Switch to dual phase 1 bounds
-  initialise_bound(workHMO, 1);
-  initialise_value(workHMO);
+  initialiseBound(workHMO, 1);
+  initialiseValueAndNonbasicMove(workHMO);
   // Main solving structure
   analysis->simplexTimerStart(IterateClock);
   for (;;) {
@@ -603,8 +596,8 @@ void HDual::solvePhase1() {
     // prevented to avoid cleanup-perturbation loops when optimal in
     // phase 1
     simplex_info.allow_cost_perturbation = true;
-    initialise_bound(workHMO);
-    initialise_value(workHMO);
+    initialiseBound(workHMO);
+    initialiseValueAndNonbasicMove(workHMO);
   }
   return;
 }
@@ -754,10 +747,10 @@ void HDual::rebuild() {
     analysis->simplexTimerStart(InvertClock);
 
     // Call computeFactor to perform INVERT
-    int rankDeficiency = computeFactor(workHMO);
+    int rank_deficiency = computeFactor(workHMO);
     analysis->simplexTimerStop(InvertClock);
 
-    if (rankDeficiency)
+    if (rank_deficiency)
       throw runtime_error("Dual reInvert: singular-basis-matrix");
     // Gather the edge weights according to the
     // permutation of baseIndex after INVERT
@@ -861,11 +854,11 @@ void HDual::cleanup() {
                     ML_DETAILED, "dual-cleanup-shift\n");
   HighsSimplexInfo& simplex_info = workHMO.simplex_info_;
   // Remove perturbation and don't permit further perturbation
-  initialise_cost(workHMO);
+  initialiseCost(workHMO);
   simplex_info.allow_cost_perturbation = false;
-  // No solvePhase term in initialise_bound is surely an omission -
+  // No solvePhase term in initialiseBound is surely an omission -
   // when cleanup called in phase 1
-  initialise_bound(workHMO, solvePhase);
+  initialiseBound(workHMO, solvePhase);
   // Possibly take a copy of the original duals before recomputing them
   vector<double> original_workDual;
   if (workHMO.options_.highs_debug_level > HIGHS_DEBUG_LEVEL_CHEAP)
@@ -1929,7 +1922,7 @@ void HDual::exitPhase1ResetDuals() {
       HighsPrintMessage(workHMO.options_.output, workHMO.options_.message_level,
                         ML_DETAILED,
                         "Re-perturbing costs when optimal in phase 1\n");
-      initialise_cost(workHMO, 1);
+      initialiseCost(workHMO, 1);
       analysis->simplexTimerStart(ComputeDualClock);
       computeDual(workHMO);
       analysis->simplexTimerStop(ComputeDualClock);

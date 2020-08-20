@@ -19,53 +19,53 @@
 #include "lp_data/HConst.h"
 
 void maxheapsort(int* heap_v, int n) {
-  build_maxheap(heap_v, n);
-  max_heapsort(heap_v, n);
+  buildMaxheap(heap_v, n);
+  maxHeapsort(heap_v, n);
 }
 
 void maxheapsort(int* heap_v, int* heap_i, int n) {
-  build_maxheap(heap_v, heap_i, n);
-  max_heapsort(heap_v, heap_i, n);
+  buildMaxheap(heap_v, heap_i, n);
+  maxHeapsort(heap_v, heap_i, n);
 }
 
 void maxheapsort(double* heap_v, int* heap_i, int n) {
-  build_maxheap(heap_v, heap_i, n);
-  max_heapsort(heap_v, heap_i, n);
+  buildMaxheap(heap_v, heap_i, n);
+  maxHeapsort(heap_v, heap_i, n);
 }
 
-void build_maxheap(int* heap_v, int n) {
+void buildMaxheap(int* heap_v, int n) {
   int i;
   for (i = n / 2; i >= 1; i--) {
-    max_heapify(heap_v, i, n);
+    maxHeapify(heap_v, i, n);
   }
 }
 
-void build_maxheap(int* heap_v, int* heap_i, int n) {
+void buildMaxheap(int* heap_v, int* heap_i, int n) {
   int i;
   for (i = n / 2; i >= 1; i--) {
-    max_heapify(heap_v, heap_i, i, n);
+    maxHeapify(heap_v, heap_i, i, n);
   }
 }
 
-void build_maxheap(double* heap_v, int* heap_i, int n) {
+void buildMaxheap(double* heap_v, int* heap_i, int n) {
   int i;
   for (i = n / 2; i >= 1; i--) {
-    max_heapify(heap_v, heap_i, i, n);
+    maxHeapify(heap_v, heap_i, i, n);
   }
 }
 
-void max_heapsort(int* heap_v, int n) {
+void maxHeapsort(int* heap_v, int n) {
   int temp_v;
   int i;
   for (i = n; i >= 2; i--) {
     temp_v = heap_v[i];
     heap_v[i] = heap_v[1];
     heap_v[1] = temp_v;
-    max_heapify(heap_v, 1, i - 1);
+    maxHeapify(heap_v, 1, i - 1);
   }
 }
 
-void max_heapsort(int* heap_v, int* heap_i, int n) {
+void maxHeapsort(int* heap_v, int* heap_i, int n) {
   int temp_v;
   int i, temp_i;
   for (i = n; i >= 2; i--) {
@@ -75,11 +75,11 @@ void max_heapsort(int* heap_v, int* heap_i, int n) {
     temp_i = heap_i[i];
     heap_i[i] = heap_i[1];
     heap_i[1] = temp_i;
-    max_heapify(heap_v, heap_i, 1, i - 1);
+    maxHeapify(heap_v, heap_i, 1, i - 1);
   }
 }
 
-void max_heapsort(double* heap_v, int* heap_i, int n) {
+void maxHeapsort(double* heap_v, int* heap_i, int n) {
   double temp_v;
   int i, temp_i;
   for (i = n; i >= 2; i--) {
@@ -89,11 +89,11 @@ void max_heapsort(double* heap_v, int* heap_i, int n) {
     temp_i = heap_i[i];
     heap_i[i] = heap_i[1];
     heap_i[1] = temp_i;
-    max_heapify(heap_v, heap_i, 1, i - 1);
+    maxHeapify(heap_v, heap_i, 1, i - 1);
   }
 }
 
-void max_heapify(int* heap_v, int i, int n) {
+void maxHeapify(int* heap_v, int i, int n) {
   int temp_v;
   int j;
   temp_v = heap_v[i];
@@ -111,7 +111,7 @@ void max_heapify(int* heap_v, int i, int n) {
   return;
 }
 
-void max_heapify(int* heap_v, int* heap_i, int i, int n) {
+void maxHeapify(int* heap_v, int* heap_i, int i, int n) {
   int temp_v;
   int j, temp_i;
   temp_v = heap_v[i];
@@ -132,7 +132,7 @@ void max_heapify(int* heap_v, int* heap_i, int i, int n) {
   return;
 }
 
-void max_heapify(double* heap_v, int* heap_i, int i, int n) {
+void maxHeapify(double* heap_v, int* heap_i, int i, int n) {
   double temp_v;
   int j, temp_i;
   temp_v = heap_v[i];
@@ -153,9 +153,9 @@ void max_heapify(double* heap_v, int* heap_i, int i, int n) {
   return;
 }
 
-bool increasing_set_ok(const int* set, const int set_num_entries,
-                       const int set_entry_lower, const int set_entry_upper,
-                       bool strict) {
+bool increasingSetOk(const int* set, const int set_num_entries,
+                     const int set_entry_lower, const int set_entry_upper,
+                     bool strict) {
   if (set_num_entries < 0) return false;
   if (set == NULL) return false;
   bool check_bounds = set_entry_lower <= set_entry_upper;
@@ -182,9 +182,9 @@ bool increasing_set_ok(const int* set, const int set_num_entries,
   return true;
 }
 
-bool increasing_set_ok(const double* set, const int set_num_entries,
-                       const double set_entry_lower,
-                       const double set_entry_upper, bool strict) {
+bool increasingSetOk(const double* set, const int set_num_entries,
+                     const double set_entry_lower, const double set_entry_upper,
+                     bool strict) {
   if (set_num_entries < 0) return false;
   if (set == NULL) return false;
   bool check_bounds = set_entry_lower <= set_entry_upper;
@@ -217,10 +217,9 @@ bool increasing_set_ok(const double* set, const int set_num_entries,
   return true;
 }
 
-void sortSetData(const int num_entries, const int* set, const double* data0,
-                 const double* data1, const double* data2, int* sorted_set,
-                 double* sorted_data0, double* sorted_data1,
-                 double* sorted_data2) {
+void sortSetData(const int num_entries, int* set, const double* data0,
+                 const double* data1, const double* data2, double* sorted_data0,
+                 double* sorted_data1, double* sorted_data2) {
   std::vector<int> sort_set_vec(1 + num_entries);
   std::vector<int> perm_vec(1 + num_entries);
 
@@ -233,7 +232,7 @@ void sortSetData(const int num_entries, const int* set, const double* data0,
   }
   maxheapsort(sort_set, perm, num_entries);
   for (int ix = 0; ix < num_entries; ix++) {
-    sorted_set[ix] = set[perm[1 + ix]];
+    set[ix] = sort_set[1 + ix];
     if (data0 != NULL) sorted_data0[ix] = data0[perm[1 + ix]];
     if (data1 != NULL) sorted_data1[ix] = data1[perm[1 + ix]];
     if (data2 != NULL) sorted_data2[ix] = data2[perm[1 + ix]];

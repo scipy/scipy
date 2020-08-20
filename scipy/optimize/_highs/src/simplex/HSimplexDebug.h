@@ -20,6 +20,22 @@
 #include "lp_data/HighsOptions.h"
 #include "simplex/SimplexConst.h"
 
+HighsDebugStatus debugSimplexLp(const HighsModelObject& highs_model_object);
+
+HighsDebugStatus debugSimplexBasisCorrect(
+    const HighsModelObject& highs_model_object);
+
+HighsDebugStatus debugBasisConsistent(const HighsOptions& options,
+                                      const HighsLp& simplex_lp,
+                                      const SimplexBasis& simplex_basis);
+
+HighsDebugStatus debugBasisRightSize(const HighsOptions& options,
+                                     const HighsLp& simplex_lp,
+                                     const SimplexBasis& simplex_basis);
+
+HighsDebugStatus debugSimplexInfoBasisRightSize(
+    const HighsModelObject& highs_model_object);
+
 HighsDebugStatus debugComputePrimal(const HighsModelObject& highs_model_object,
                                     const std::vector<double>& primal_rhs);
 
@@ -68,13 +84,29 @@ HighsDebugStatus debugDualChuzcWorkDataAndGroup(
 HighsDebugStatus debugSimplexBasicSolution(
     const string message, const HighsModelObject& highs_model_object);
 
-HighsDebugStatus debugSimplexInfoBasisConsistent(
-    const HighsModelObject& highs_model_object);
-
 HighsDebugStatus debugSimplexHighsSolutionDifferences(
     const HighsModelObject& highs_model_object);
 
 HighsDebugStatus debugAssessSolutionNormDifference(const HighsOptions& options,
                                                    const std::string type,
                                                    const double difference);
+
+HighsDebugStatus debugNonbasicFlagConsistent(const HighsOptions& options,
+                                             const HighsLp& simplex_lp,
+                                             const SimplexBasis& simplex_basis);
+
+HighsDebugStatus debugOkForSolve(const HighsModelObject& highs_model_object,
+                                 const int phase);
+
+// Methods below are not called externally
+
+bool debugWorkArraysOk(const HighsModelObject& highs_model_object,
+                       const int phase);
+
+bool debugOneNonbasicMoveVsWorkArraysOk(
+    const HighsModelObject& highs_model_object, const int var);
+
+bool debugAllNonbasicMoveVsWorkArraysOk(
+    const HighsModelObject& highs_model_object);
+
 #endif  // SIMPLEX_HSIMPLEXDEBUG_H_

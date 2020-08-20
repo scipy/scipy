@@ -14,7 +14,7 @@
 #ifndef LP_DATA_HIGHS_OPTIONS_H_
 #define LP_DATA_HIGHS_OPTIONS_H_
 
-#include <cstring>  // For strrchr
+#include <cstring>  // For strlen
 #include <vector>
 
 #include "io/HighsIO.h"
@@ -261,7 +261,6 @@ struct HighsOptionsStruct {
 
   // Advanced options
   bool run_crossover;
-  bool run_as_hsol;
   bool mps_parser_type_free;
   int keep_n_rows;
   int allowed_simplex_matrix_scale_factor;
@@ -537,10 +536,6 @@ class HighsOptions : public HighsOptionsStruct {
                                        advanced, &run_crossover, true);
     records.push_back(record_bool);
 
-    record_bool = new OptionRecordBool(
-        "run_as_hsol", "Run HiGHS simplex solver as if it were hsol", advanced,
-        &run_as_hsol, false);
-    records.push_back(record_bool);
     record_bool = new OptionRecordBool("mps_parser_type_free",
                                        "Use the free format MPS file reader",
                                        advanced, &mps_parser_type_free, true);
@@ -654,7 +649,5 @@ class HighsOptions : public HighsOptionsStruct {
  public:
   std::vector<OptionRecord*> records;
 };
-
-void setHsolOptions(HighsOptions& options);
 
 #endif

@@ -82,6 +82,7 @@ set(sources
     io/HMpsFF.cpp
     io/LoadOptions.cpp
     lp_data/Highs.cpp
+    lp_data/HighsDebug.cpp
     lp_data/HighsInfo.cpp
     lp_data/HighsLp.cpp
     lp_data/HighsLpUtils.cpp
@@ -137,6 +138,7 @@ set(headers
     io/LoadOptions.h
     lp_data/HConst.h
     lp_data/HighsAnalysis.h
+    lp_data/HighsDebug.h
     lp_data/HighsInfo.h
     lp_data/HighsLp.h
     lp_data/HighsLpUtils.h
@@ -211,7 +213,7 @@ endif()
 if(${BUILD_SHARED_LIBS})
     # put version information into shared library file
     set_target_properties(libhighs PROPERTIES
-        VERSION
+        VERSION 
         ${HIGHS_VERSION_MAJOR}.${HIGHS_VERSION_MINOR}.${HIGHS_VERSION_PATCH}
         SOVERSION ${HIGHS_VERSION_MAJOR}.${HIGHS_VERSION_MINOR})
 else()
@@ -274,7 +276,7 @@ if (OSI_FOUND)
 
     if(${BUILD_SHARED_LIBS})
         set_target_properties(OsiHighs PROPERTIES
-           VERSION
+           VERSION 
            ${HIGHS_VERSION_MAJOR}.${HIGHS_VERSION_MINOR}.${HIGHS_VERSION_PATCH}
            SOVERSION ${HIGHS_VERSION_MAJOR}.${HIGHS_VERSION_MINOR})
     else()
@@ -324,7 +326,7 @@ else()
             INCLUDES DESTINATION include)
 
     # Add library targets to the build-tree export set
-    export(TARGETS libhighs
+    export(TARGETS libhighs 
     FILE "${HIGHS_BINARY_DIR}/highs-targets.cmake")
 endif()
 
@@ -349,21 +351,21 @@ configure_file(${HIGHS_SOURCE_DIR}/highs.pc.in
 # Install the targets of the highs export group, the config file so that other
 # cmake-projects can link easily against highs, and the pkg-config flie so that
 # other projects can easily build against highs
-install(EXPORT highs-targets FILE highs-targets.cmake DESTINATION
+install(EXPORT highs-targets FILE highs-targets.cmake DESTINATION 
     lib/cmake/highs)
-install(FILES "${HIGHS_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/highs-config.cmake"
+install(FILES "${HIGHS_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/highs-config.cmake" 
     DESTINATION lib/cmake/highs)
-install(FILES "${HIGHS_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/highs.pc"
+install(FILES "${HIGHS_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/highs.pc" 
     DESTINATION lib/pkg-config)
 
-else()
+else() 
 
 # FAST_BUILD is set to on.
 # At the moment used only for gradually updating the CMake targets build and install / export.
 # Define library in modern CMake using target_*()
 # No interfaces (apart from c); No ipx; New (short) ctest instances.
 add_library(libhighs)
-target_sources(libhighs PRIVATE
+target_sources(libhighs PRIVATE 
     ../external/filereaderlp/reader.cpp
     io/Filereader.cpp
     io/FilereaderLp.cpp
@@ -411,7 +413,7 @@ target_sources(libhighs PRIVATE
     util/stringutil.cpp
     interfaces/highs_c_api.cpp)
 
-target_include_directories(libhighs PUBLIC . ipm/ io/ lp_data/ mip/ simplex/
+target_include_directories(libhighs PUBLIC . ipm/ io/ lp_data/ mip/ simplex/ 
                            presolve/ util/ test/ interfaces/ ../external/)
 target_include_directories(libhighs PUBLIC ${HIGHS_BINARY_DIR})
 

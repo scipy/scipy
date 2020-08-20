@@ -39,19 +39,11 @@ enum class HighsDebugStatus {
   NOT_CHECKED = -1,
   OK,
   SMALL_ERROR,
-  LARGE_ERROR,
   WARNING,
+  LARGE_ERROR,
+  ERROR,
+  EXCESSIVE_ERROR,
   LOGICAL_ERROR,
-};
-
-enum HighsPrintMessageLevel {
-  ML_MIN = 0,
-  ML_NONE = ML_MIN,
-  ML_VERBOSE = 1,
-  ML_DETAILED = 2,
-  ML_MINIMAL = 4,
-  ML_ALWAYS = ML_VERBOSE | ML_DETAILED | ML_MINIMAL,
-  ML_MAX = ML_ALWAYS
 };
 
 enum class HighsOptionType { BOOL = 0, INT, DOUBLE, STRING };

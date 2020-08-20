@@ -14,10 +14,24 @@
 #ifndef UTIL_HIGHSUTILS_H_
 #define UTIL_HIGHSUTILS_H_
 
+#include <cassert>
 #include <string>
 #include <vector>
 
 #include "HConfig.h"
+#include "lp_data/HighsOptions.h"
+
+struct HighsIndexCollection {
+  int dimension_ = -1;
+  bool is_interval_ = false;
+  int from_ = -1;
+  int to_ = -2;
+  bool is_set_ = false;
+  int set_num_entries_ = -1;
+  int* set_ = NULL;
+  bool is_mask_ = false;
+  int* mask_ = NULL;
+};
 
 #ifdef HiGHSDEV
 struct HighsValueDistribution {
@@ -62,6 +76,24 @@ const double awful_regression_error = 2.0;
 const double bad_regression_error = 0.2;
 const double fair_regression_error = 0.02;
 
+bool assessIndexCollection(const HighsOptions& options,
+                           const HighsIndexCollection& index_collection);
+
+bool limitsForIndexCollection(const HighsOptions& options,
+                              const HighsIndexCollection& index_collection,
+                              int& from_k, int& to_k);
+
+void updateIndexCollectionOutInIndex(
+    const HighsIndexCollection& index_collection, int& out_from_ix,
+    int& out_to_ix, int& in_from_ix, int& in_to_ix, int& current_set_entry);
+
+int dataSizeOfIndexCollection(const HighsIndexCollection& index_collection);
+
+bool intUserDataNotNull(FILE* logfile, const int* user_data,
+                        const std::string name);
+bool doubleUserDataNotNull(FILE* logfile, const double* user_data,
+                           const std::string name);
+
 double getNorm2(const std::vector<double> values);
 
 /**
@@ -73,6 +105,7 @@ bool highs_isInfinity(double val  //!< Value being tested against +Infinity
  * @brief Returns the relative difference of two doubles
  */
 double highsRelativeDifference(const double v0, const double v1);
+
 #ifdef HiGHSDEV
 /**
  * @brief Analyse the values of a vector, assessing how many are in

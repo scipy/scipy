@@ -265,13 +265,13 @@ int HFactor::build(HighsTimerClock* factor_timer_clock_pointer) {
   buildSimple();
   factor_timer.stop(FactorInvertSimple, factor_timer_clock_pointer);
   factor_timer.start(FactorInvertKernel, factor_timer_clock_pointer);
-  rankDeficiency = buildKernel();
+  rank_deficiency = buildKernel();
   factor_timer.stop(FactorInvertKernel, factor_timer_clock_pointer);
-  if (rankDeficiency) {
+  if (rank_deficiency) {
     factor_timer.start(FactorInvertDeficient, factor_timer_clock_pointer);
     HighsLogMessage(logfile, HighsMessageType::WARNING,
                     "Rank deficiency of %d identified in basis matrix",
-                    rankDeficiency);
+                    rank_deficiency);
     // Singular matrix B: reorder the basic variables so that the
     // singular columns are in the position corresponding to the
     // logical which replaces them
@@ -287,12 +287,12 @@ int HFactor::build(HighsTimerClock* factor_timer_clock_pointer) {
   // Record the number of entries in the INVERT
   invert_num_el = Lstart[numRow] + Ulastp[numRow - 1] + numRow;
 
-  kernel_dim -= rankDeficiency;
+  kernel_dim -= rank_deficiency;
   debugLogRankDeficiency(highs_debug_level, output, message_level,
-                         rankDeficiency, basis_matrix_num_el, invert_num_el,
+                         rank_deficiency, basis_matrix_num_el, invert_num_el,
                          kernel_dim, kernel_num_el, nwork);
   factor_timer.stop(FactorInvert, factor_timer_clock_pointer);
-  return rankDeficiency;
+  return rank_deficiency;
 }
 
 void HFactor::ftran(HVector& vector, double historical_density,
@@ -687,8 +687,8 @@ int HFactor::buildKernel() {
 
     // 1.4. If we found nothing: tell singular
     if (!foundPivot) {
-      rankDeficiency = nwork + 1;
-      return rankDeficiency;
+      rank_deficiency = nwork + 1;
+      return rank_deficiency;
     }
 
     /**
@@ -847,13 +847,13 @@ int HFactor::buildKernel() {
   }
   build_syntheticTick +=
       fake_search * 20 + fake_fill * 160 + fake_eliminate * 80;
-  rankDeficiency = 0;
-  return rankDeficiency;
+  rank_deficiency = 0;
+  return rank_deficiency;
 }
 
 void HFactor::buildHandleRankDeficiency() {
   debugReportRankDeficiency(0, highs_debug_level, output, message_level, numRow,
-                            permute, iwork, baseIndex, rankDeficiency, noPvR,
+                            permute, iwork, baseIndex, rank_deficiency, noPvR,
                             noPvC);
   // iwork can now be used as workspace: use it to accumulate the new
   // baseIndex. iwork is set to -1 and baseIndex is permuted into it.
@@ -862,36 +862,36 @@ void HFactor::buildHandleRankDeficiency() {
   // will replace singular columns. Once baseIndex[i] is read, it can
   // be used to pack up the entries in baseIndex which are not
   // permuted anywhere - and so will be singular columns.
-  noPvR.resize(rankDeficiency);
-  noPvC.resize(rankDeficiency);
-  int lc_rankDeficiency = 0;
+  noPvR.resize(rank_deficiency);
+  noPvC.resize(rank_deficiency);
+  int lc_rank_deficiency = 0;
   for (int i = 0; i < numRow; i++) iwork[i] = -1;
   for (int i = 0; i < numRow; i++) {
     int perm_i = permute[i];
     if (perm_i >= 0) {
       iwork[perm_i] = baseIndex[i];
     } else {
-      noPvC[lc_rankDeficiency] = i;
-      lc_rankDeficiency++;
+      noPvC[lc_rank_deficiency] = i;
+      lc_rank_deficiency++;
     }
   }
-  assert(lc_rankDeficiency == rankDeficiency);
-  lc_rankDeficiency = 0;
+  assert(lc_rank_deficiency == rank_deficiency);
+  lc_rank_deficiency = 0;
   for (int i = 0; i < numRow; i++) {
     if (iwork[i] < 0) {
       // Record the rows with no pivots in noPvR and indicate them
       // within iwork by storing the negation of one more than their
       // rank deficiency counter [since we can't have -0].
-      noPvR[lc_rankDeficiency] = i;
-      iwork[i] = -(lc_rankDeficiency + 1);
-      lc_rankDeficiency++;
+      noPvR[lc_rank_deficiency] = i;
+      iwork[i] = -(lc_rank_deficiency + 1);
+      lc_rank_deficiency++;
     }
   }
-  assert(lc_rankDeficiency == rankDeficiency);
+  assert(lc_rank_deficiency == rank_deficiency);
   debugReportRankDeficiency(1, highs_debug_level, output, message_level, numRow,
-                            permute, iwork, baseIndex, rankDeficiency, noPvR,
+                            permute, iwork, baseIndex, rank_deficiency, noPvR,
                             noPvC);
-  for (int k = 0; k < rankDeficiency; k++) {
+  for (int k = 0; k < rank_deficiency; k++) {
     int iRow = noPvR[k];
     int iCol = noPvC[k];
     if (permute[iCol] != -1)
@@ -904,11 +904,11 @@ void HFactor::buildHandleRankDeficiency() {
     Ustart.push_back(Uindex.size());
   }
   debugReportRankDeficiency(2, highs_debug_level, output, message_level, numRow,
-                            permute, iwork, baseIndex, rankDeficiency, noPvR,
+                            permute, iwork, baseIndex, rank_deficiency, noPvR,
                             noPvC);
   debugReportRankDeficientASM(highs_debug_level, output, message_level, numRow,
                               MCstart, MCcountA, MCindex, MCvalue, iwork,
-                              rankDeficiency, noPvC, noPvR);
+                              rank_deficiency, noPvC, noPvR);
 }
 
 void HFactor::buildMarkSingC() {
@@ -918,14 +918,14 @@ void HFactor::buildMarkSingC() {
   debugReportMarkSingC(0, highs_debug_level, output, message_level, numRow,
                        iwork, baseIndex);
 
-  for (int k = 0; k < rankDeficiency; k++) {
+  for (int k = 0; k < rank_deficiency; k++) {
     int ASMrow = noPvR[k];
     int ASMcol = noPvC[k];
     int i = -iwork[ASMrow] - 1;
-    if (i < 0 || i >= rankDeficiency) {
+    if (i < 0 || i >= rank_deficiency) {
       HighsLogMessage(logfile, HighsMessageType::ERROR,
-                      "0 > i = %d || %d = i >= rankDeficiency = %d", i, i,
-                      rankDeficiency);
+                      "0 > i = %d || %d = i >= rank_deficiency = %d", i, i,
+                      rank_deficiency);
     } else {
       // Store negation of 1+ASMcol so that removing column 0 can be
       // identified!

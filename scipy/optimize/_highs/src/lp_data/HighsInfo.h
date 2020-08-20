@@ -15,8 +15,8 @@
 #define LP_DATA_HIGHS_INFO_H_
 
 #include <cstring>  // For strchr
+#include <vector>
 
-#include "io/HighsIO.h"
 #include "lp_data/HConst.h"
 #include "lp_data/HighsStatus.h"
 

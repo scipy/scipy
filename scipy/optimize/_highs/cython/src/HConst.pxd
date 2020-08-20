@@ -9,15 +9,6 @@ cdef extern from "HConst.h" nogil:
     double HIGHS_CONST_ZERO
     int HIGHS_THREAD_LIMIT
 
-    cdef enum HighsPrintMessageLevel:
-        ML_MIN = 0
-        ML_NONE = ML_MIN
-        ML_VERBOSE = 1
-        ML_DETAILED = 2
-        ML_MINIMAL = 4
-        ML_ALWAYS = ML_VERBOSE | ML_DETAILED | ML_MINIMAL
-        ML_MAX = ML_ALWAYS
-
     cdef enum HighsBasisStatus:
         LOWER "HighsBasisStatus::LOWER" = 0, # (slack) variable is at its lower bound [including fixed variables]
         BASIC "HighsBasisStatus::BASIC" # (slack) variable is basic

@@ -117,7 +117,7 @@ class HFactor {
    * @brief Form \f$PBQ=LU\f$ for basis matrix \f$B\f$ or report degree of rank
    * deficiency.
    *
-   * @return 0 if successful, otherwise rankDeficiency>0
+   * @return 0 if successful, otherwise rank_deficiency>0
    *
    */
   int build(HighsTimerClock* factor_timer_clock_pointer = NULL);
@@ -161,7 +161,7 @@ class HFactor {
   /**
    * @brief Degree of rank deficiency in \f$B\f$
    */
-  int rankDeficiency;
+  int rank_deficiency;
 
   /**
    * @brief Rows not pivoted on
