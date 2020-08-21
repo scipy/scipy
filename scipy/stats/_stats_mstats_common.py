@@ -3,7 +3,7 @@ from collections import namedtuple
 import numpy as np
 
 from . import distributions
-
+from scipy.stats.stats import _convert_symmetric_p_value
 
 __all__ = ['_find_repeats', 'linregress', 'theilslopes', 'siegelslopes']
 
@@ -12,7 +12,7 @@ LinregressResult = namedtuple('LinregressResult', ('slope', 'intercept',
                                                    'stderr'))
 
 
-def linregress(x, y=None):
+def linregress(x, y=None, alternative='two-sided'):
     """
     Calculate a linear least-squares regression for two sets of measurements.
 
@@ -25,6 +25,15 @@ def linregress(x, y=None):
         are then found by splitting the array along the length-2 dimension.  In
         the case where ``y=None`` and `x` is a 2x2 array, ``linregress(x)`` is
         equivalent to ``linregress(x[0], x[1])``.
+    alternative : {'two-sided', 'less', 'greater'}, optional
+        Defines the alternative hypothesis.
+        The following options are available (default is 'two-sided'):
+
+          * 'two-sided'
+          * 'less': one-sided
+          * 'greater': one-sided
+
+        .. versionadded:: 1.6.0
 
     Returns
     -------
@@ -138,7 +147,15 @@ def linregress(x, y=None):
         sterrest = 0.0
     else:
         t = r * np.sqrt(df / ((1.0 - r + TINY)*(1.0 + r + TINY)))
-        prob = 2 * distributions.t.sf(np.abs(t), df)
+
+        if alternative == 'less':
+            prob = distributions.t.cdf(t, df)
+        elif alternative == 'greater':
+            prob = distributions.t.sf(t, df)
+        else:
+            # alternative == 'less'
+            prob = 2 * distributions.t.sf(np.abs(t), df)
+
         sterrest = np.sqrt((1 - r**2) * ssym / ssxm / df)
 
     return LinregressResult(slope, intercept, r, prob, sterrest)
