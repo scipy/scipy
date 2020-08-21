@@ -5318,13 +5318,18 @@ def ttest_1samp(a, popmean, axis=0, nan_policy='propagate',
     >>> result.pvalue
     array([  4.99613833e-01, 1.49986458e-04])
 
-    >>> stats.ttest_1samp(rvs.T,[5.0,0.0],axis=1)
-    (array([-0.68014479,  4.11038784]), array([  4.99613833e-01,
-    1.49986458e-04]))
-    >>> stats.ttest_1samp(rvs,[[5.0],[0.0]])
-    (array([[-0.68014479, -0.04323899],
-           [ 2.77025808,  4.11038784]]), array([[  4.99613833e-01,
-           9.65686743e-01], [  7.89094663e-03,   1.49986458e-04]]))
+    >>> result = stats.ttest_1samp(rvs.T,[5.0,0.0],axis=1)
+    >>> result.statistic
+    array([-0.68014479,  4.11038784])
+    >>> result.pvalue
+    array([  4.99613833e-01, 1.49986458e-04])
+
+    >>> result = stats.ttest_1samp(rvs,[[5.0],[0.0]])
+    >>> result.statistic
+    array([[-0.68014479, -0.04323899], [ 2.77025808,  4.11038784]])
+    >>> result.pvalue
+    array([[  4.99613833e-01, 9.65686743e-01], [  7.89094663e-03,
+    1.49986458e-04]]))
 
     """
     a, axis = _chk_asarray(a, axis)
