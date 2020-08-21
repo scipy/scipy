@@ -3328,7 +3328,7 @@ def test_ttest_rel():
     assert_equal(t.shape, (2, 3))
 
     t, p = stats.ttest_rel(np.rollaxis(rvs1_3D, 2), np.rollaxis(rvs2_3D, 2),
-                          axis=2)
+                           axis=2)
     assert_array_almost_equal(np.abs(t), tr)
     assert_array_almost_equal(np.abs(p), pr)
     assert_equal(t.shape, (3, 2))
@@ -3488,7 +3488,7 @@ def test_ttest_ind():
     assert_equal(t.shape, (2, 3))
 
     t, p = stats.ttest_ind(np.rollaxis(rvs1_3D, 2), np.rollaxis(rvs2_3D, 2),
-                          axis=2)
+                           axis=2)
     assert_array_almost_equal(np.abs(t), np.abs(tr))
     assert_array_almost_equal(np.abs(p), pr)
     assert_equal(t.shape, (3, 2))
@@ -3543,6 +3543,7 @@ def test_ttest_ind():
         anan = np.array([[1, np.nan], [-1, 1]])
         assert_equal(stats.ttest_ind(anan, np.zeros((2, 2))),
                      ([0, np.nan], [1, np.nan]))
+
 
 def test_ttest_ind_with_uneq_var():
     # check vs. R
