@@ -346,28 +346,6 @@ def _broadcast_shapes_with_dropped_axis(a, b, axis):
     return shp
 
 
-def _convert_symmetric_p_value(pvalue, root_tail, alternative):
-    """
-    Convert a one-sided p-value from a symmetric distribution to a one or
-    two-sided p-value.
-    """
-    if alternative not in {"two-sided", "greater", "less"}:
-        raise ValueError("alternative should be "
-                         "'less', 'greater' or 'two-sided'")
-
-    if root_tail not in {"greater", "less"}:
-        raise ValueError("root_func should be 'less' or 'greater'")
-
-    if (alternative, root_tail) in {("greater", "greater"),
-                                    ("less", "less")}:
-        return pvalue
-    elif (alternative, root_tail) in {("greater", "less"),
-                                      ("less", "greater")}:
-        return 1 - pvalue
-    elif alternative == "two-sided":
-        return 2 * np.minimum(pvalue, 1 - pvalue)
-
-
 def gmean(a, axis=0, dtype=None):
     """
     Compute the geometric mean along the specified axis.
@@ -5334,9 +5312,12 @@ def ttest_1samp(a, popmean, axis=0, nan_policy='propagate',
 
     Examples using axis and non-scalar dimension for population mean.
 
-    >>> stats.ttest_1samp(rvs,[5.0,0.0])
-    (array([-0.68014479,  4.11038784]), array([  4.99613833e-01,
-    1.49986458e-04]))
+    >>> result = stats.ttest_1samp(rvs,[5.0,0.0])
+    >>> result.statistic
+    array([-0.68014479,  4.11038784]),
+    >>> result.pvalue
+    array([  4.99613833e-01, 1.49986458e-04])
+
     >>> stats.ttest_1samp(rvs.T,[5.0,0.0],axis=1)
     (array([-0.68014479,  4.11038784]), array([  4.99613833e-01,
     1.49986458e-04]))
@@ -5370,8 +5351,15 @@ def ttest_1samp(a, popmean, axis=0, nan_policy='propagate',
 
 def _ttest_finish(df, t, alternative):
     """Common code between all 3 t-test functions."""
-    prob = distributions.t.sf(t, df)
-    prob = _convert_symmetric_p_value(prob, "greater", alternative)
+    if alternative == 'less':
+        prob = distributions.t.cdf(t, df)
+    elif alternative == 'greater':
+        prob = distributions.t.sf(t, df)
+    elif alternative == 'two-sided':
+        prob = 2 * distributions.t.sf(np.abs(t), df)
+    else:
+        raise ValueError("alternative should be "
+                         "'less', 'greater' or 'two-sided'")
 
     if t.ndim == 0:
         t = t[()]
