@@ -2418,8 +2418,8 @@ class TestStudentTest(object):
     X2 = np.array([0, 1, 2])
     T1_0 = 0
     P1_0 = 1
-    T1_1 = -1.732051
-    P1_1 = 0.2254033
+    T1_1 = -1.7320508075
+    P1_1 = 0.22540333075
     T1_2 = -3.464102
     P1_2 = 0.0741799
     T2_0 = 1.732051
@@ -2476,12 +2476,12 @@ class TestStudentTest(object):
                       alternative="error")
 
         t, p = stats.ttest_1samp(self.X1, 1, alternative="less")
-        assert_array_almost_equal(p, self.P1_1_l)
-        assert_array_almost_equal(t, self.T1_1)
+        assert_allclose(p, self.P1_1_l)
+        assert_allclose(t, self.T1_1)
 
         t, p = stats.ttest_1samp(self.X1, 1, alternative="greater")
-        assert_array_almost_equal(p, self.P1_1_g)
-        assert_array_almost_equal(t, self.T1_1)
+        assert_allclose(p, self.P1_1_g)
+        assert_allclose(t, self.T1_1)
 
 def test_percentileofscore():
     pcos = stats.percentileofscore
@@ -3337,12 +3337,12 @@ def test_ttest_rel():
     assert_raises(ValueError, stats.ttest_rel, rvs1, rvs2, alternative="error")
 
     t, p = stats.ttest_rel(rvs1, rvs2, axis=0, alternative="less")
-    assert_array_almost_equal(p, 1 - pr/2)
-    assert_array_almost_equal(t, tr)
+    assert_allclose(p, 1 - pr/2)
+    assert_allclose(t, tr)
 
     t, p = stats.ttest_rel(rvs1, rvs2, axis=0, alternative="greater")
-    assert_array_almost_equal(p, pr/2)
-    assert_array_almost_equal(t, tr)
+    assert_allclose(p, pr/2)
+    assert_allclose(t, tr)
 
     # check nan policy
     np.random.seed(12345678)
@@ -3499,12 +3499,12 @@ def test_ttest_ind():
                   *_desc_stats(rvs1_2D.T, rvs2_2D.T), alternative="error")
 
     t, p = stats.ttest_ind(rvs1, rvs2, alternative="less")
-    assert_array_almost_equal(p, 1 - (pr/2))
-    assert_array_almost_equal(t, tr)
+    assert_allclose(p, 1 - (pr/2))
+    assert_allclose(t, tr)
 
     t, p = stats.ttest_ind(rvs1, rvs2, alternative="greater")
-    assert_array_almost_equal(p, pr/2)
-    assert_array_almost_equal(t, tr)
+    assert_allclose(p, pr/2)
+    assert_allclose(t, tr)
 
     # Below makes sure ttest_ind_from_stats p-val functions identically to
     # ttest_ind
@@ -3773,13 +3773,13 @@ def test_ttest_1samp_new():
 
     t, p = stats.ttest_1samp(rvn1[:, :, :], 1, alternative="greater")
     pc = converter(tr, pr, "greater")
-    assert_array_almost_equal(p, pc)
-    assert_array_almost_equal(t, tr)
+    assert_allclose(p, pc)
+    assert_allclose(t, tr)
 
     t, p = stats.ttest_1samp(rvn1[:, :, :], 1, alternative="less")
     pc = converter(tr, pr, "less")
-    assert_array_almost_equal(p, pc)
-    assert_array_almost_equal(t, tr)
+    assert_allclose(p, pc)
+    assert_allclose(t, tr)
 
     with np.errstate(all='ignore'):
         assert_equal(stats.ttest_1samp([0, 0, 0], 0), (np.nan, np.nan))
