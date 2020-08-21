@@ -7,8 +7,6 @@ Laplacian of a compressed-sparse graph
 #          Jake Vanderplas <vanderplas@astro.washington.edu>
 # License: BSD
 
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 from scipy.sparse import isspmatrix
 
@@ -35,7 +33,7 @@ def laplacian(csgraph, normed=False, return_diag=False, use_out_degree=False):
     Returns
     -------
     lap : ndarray or sparse matrix
-        The N x N laplacian matrix of csgraph. It will be a numpy array (dense)
+        The N x N laplacian matrix of csgraph. It will be a NumPy array (dense)
         if the input was dense, or a sparse matrix otherwise.
     diag : ndarray, optional
         The length-N diagonal of the Laplacian matrix.
@@ -46,7 +44,7 @@ def laplacian(csgraph, normed=False, return_diag=False, use_out_degree=False):
     -----
     The Laplacian matrix of a graph is sometimes referred to as the
     "Kirchoff matrix" or the "admittance matrix", and is useful in many
-    parts of spectral graph theory.  In particular, the eigen-decomposition
+    parts of spectral graph theory. In particular, the eigen-decomposition
     of the laplacian matrix can give insight into many properties of the graph.
 
     Examples

@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 import sys
 from scipy._lib._testutils import _parse_size, _get_mem_available
 import pytest

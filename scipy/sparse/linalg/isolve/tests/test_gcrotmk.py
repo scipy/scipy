@@ -2,10 +2,8 @@
 """Tests for the linalg.isolve.gcrotmk module
 """
 
-from __future__ import division, print_function, absolute_import
-
-from numpy.testing import assert_, assert_allclose, assert_equal
-from scipy._lib._numpy_compat import suppress_warnings
+from numpy.testing import (assert_, assert_allclose, assert_equal,
+                           suppress_warnings)
 
 import numpy as np
 from numpy import zeros, array, allclose

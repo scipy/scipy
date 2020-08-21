@@ -1,5 +1,5 @@
 r"""
-Compressed Sparse Graph Routines (:mod:`scipy.sparse.csgraph`)
+Compressed sparse graph routines (:mod:`scipy.sparse.csgraph`)
 ==============================================================
 
 .. currentmodule:: scipy.sparse.csgraph
@@ -43,21 +43,21 @@ Contents
 
 Graph Representations
 ---------------------
-This module uses graphs which are stored in a matrix format.  A
+This module uses graphs which are stored in a matrix format. A
 graph with N nodes can be represented by an (N x N) adjacency matrix G.
 If there is a connection from node i to node j, then G[i, j] = w, where
-w is the weight of the connection.  For nodes i and j which are
+w is the weight of the connection. For nodes i and j which are
 not connected, the value depends on the representation:
 
 - for dense array representations, non-edges are represented by
   G[i, j] = 0, infinity, or NaN.
 
 - for dense masked representations (of type np.ma.MaskedArray), non-edges
-  are represented by masked values.  This can be useful when graphs with
+  are represented by masked values. This can be useful when graphs with
   zero-weight edges are desired.
 
 - for sparse array representations, non-edges are represented by
-  non-entries in the matrix.  This sort of sparse representation also
+  non-entries in the matrix. This sort of sparse representation also
   allows for edges with zero weights.
 
 As a concrete example, imagine that you would like to represent the following
@@ -83,7 +83,7 @@ keeping in mind that an undirected graph is represented by a symmetric matrix::
     >>> from scipy.sparse import csr_matrix
     >>> G_sparse = csr_matrix(G_dense)
 
-This becomes more difficult when zero edges are significant.  For example,
+This becomes more difficult when zero edges are significant. For example,
 consider the situation when we slightly modify the above graph::
 
              G2
@@ -95,9 +95,9 @@ consider the situation when we slightly modify the above graph::
         (2)       (1)
 
 This is identical to the previous graph, except nodes 0 and 2 are connected
-by an edge of zero weight.  In this case, the dense representation above
+by an edge of zero weight. In this case, the dense representation above
 leads to ambiguities: how can non-edges be represented if zero is a meaningful
-value?  In this case, either a masked or sparse representation must be used
+value? In this case, either a masked or sparse representation must be used
 to eliminate the ambiguity::
 
     >>> G2_data = np.array([[np.inf, 2,      0     ],
@@ -112,13 +112,13 @@ to eliminate the ambiguity::
 
 Here we have used a utility routine from the csgraph submodule in order to
 convert the dense representation to a sparse representation which can be
-understood by the algorithms in submodule.  By viewing the data array, we
+understood by the algorithms in submodule. By viewing the data array, we
 can see that the zero values are explicitly encoded in the graph.
 
-Directed vs. Undirected
+Directed vs. undirected
 ^^^^^^^^^^^^^^^^^^^^^^^
-Matrices may represent either directed or undirected graphs.  This is
-specified throughout the csgraph module by a boolean keyword.  Graphs are
+Matrices may represent either directed or undirected graphs. This is
+specified throughout the csgraph module by a boolean keyword. Graphs are
 assumed to be directed by default. In a directed graph, traversal from node
 i to node j can be accomplished over the edge G[i, j], but not the edge
 G[j, i].  Consider the following dense graph::
@@ -142,15 +142,13 @@ So for the same graph, when ``directed=False`` we get the graph::
     (0)--1--(1)--2--(2)
 
 Note that a symmetric matrix will represent an undirected graph, regardless
-of whether the 'directed' keyword is set to True or False.  In this case,
+of whether the 'directed' keyword is set to True or False. In this case,
 using ``directed=True`` generally leads to more efficient computation.
 
 The routines in this module accept as input either scipy.sparse representations
 (csr, csc, or lil format), masked representations, or dense representations
 with non-edges indicated by zeros, infinities, and NaN entries.
 """
-
-from __future__ import division, print_function, absolute_import
 
 __docformat__ = "restructuredtext en"
 

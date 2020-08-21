@@ -246,17 +246,18 @@ void bsr_transpose(const I n_brow,
 
 
 template <class I, class T>
-void bsr_matmat_pass2(const I n_brow,  const I n_bcol,
-                      const I R,       const I C,       const I N,
-                      const I Ap[],    const I Aj[],    const T Ax[],
-                      const I Bp[],    const I Bj[],    const T Bx[],
-                            I Cp[],          I Cj[],          T Cx[])
+void bsr_matmat(const I maxnnz,
+                const I n_brow,  const I n_bcol,
+                const I R,       const I C,       const I N,
+                const I Ap[],    const I Aj[],    const T Ax[],
+                const I Bp[],    const I Bj[],    const T Bx[],
+                      I Cp[],          I Cj[],          T Cx[])
 {
     assert(R > 0 && C > 0 && N > 0);
 
     if( R == 1 && N == 1 && C == 1 ){
         // Use CSR for 1x1 blocksize
-        csr_matmat_pass2(n_brow, n_bcol, Ap, Aj, Ax, Bp, Bj, Bx, Cp, Cj, Cx);
+        csr_matmat(n_brow, n_bcol, Ap, Aj, Ax, Bp, Bj, Bx, Cp, Cj, Cx);
         return;
     }
 
@@ -264,7 +265,7 @@ void bsr_matmat_pass2(const I n_brow,  const I n_bcol,
     const npy_intp RN = (npy_intp)R*N;
     const npy_intp NC = (npy_intp)N*C;
 
-    std::fill( Cx, Cx + RC * Cp[n_brow], 0 ); //clear output array
+    std::fill( Cx, Cx + RC * maxnnz, 0 ); //clear output array
 
     std::vector<I>  next(n_bcol,-1);
     std::vector<T*> mats(n_bcol);
@@ -308,6 +309,7 @@ void bsr_matmat_pass2(const I n_brow,  const I n_bcol,
             next[temp] = -1; //clear arrays
         }
 
+        Cp[i+1] = nnz;
     }
 }
 

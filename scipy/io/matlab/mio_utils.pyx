@@ -2,8 +2,6 @@
 ''' Utilities for generic processing of return arrays from read
 '''
 
-from __future__ import absolute_import
-
 import numpy as np
 cimport numpy as cnp
 

@@ -13,7 +13,7 @@ class Complex:
         self.perm_cycle = 0
 
         # Every cell is stored in a list of its generation,
-        # ex. the initial cell is stored in self.H[0]
+        # e.g., the initial cell is stored in self.H[0]
         # 1st get new cells are stored in self.H[1] etc.
         # When a cell is subgenerated it is removed from this list
 
@@ -50,7 +50,7 @@ class Complex:
 
     def n_cube(self, dim, symmetry=False, printout=False):
         """
-        Generate the simplicial triangulation of the n dimensional hypercube
+        Generate the simplicial triangulation of the N-D hypercube
         containing 2**n vertices
         """
         origin = list(np.zeros(dim, dtype=int))
@@ -100,7 +100,7 @@ class Complex:
             xi2_t = tuple(xi2)
             # Append to cell
             self.C0.add_vertex(self.V[xi2_t])
-            # Connect neighbours and vice versa
+            # Connect neighbors and vice versa
             # Parent point
             self.V[xi2_t].connect(self.V[xi_t])
 
@@ -123,7 +123,7 @@ class Complex:
         xi2_t = tuple(xi2)
         # Append to cell
         self.C0.add_vertex(self.V[xi2_t])
-        # Connect neighbours and vice versa
+        # Connect neighbors and vice versa
         # Parent point
         self.V[xi2_t].connect(self.V[xi_t])
 
@@ -177,7 +177,7 @@ class Complex:
     def graph_map(self):
         """ Make a list of size 2**n + 1 where an entry is a vertex
         incidence, each list element contains a list of indexes
-        corresponding to that entries neighbours"""
+        corresponding to that entries neighbors"""
 
         self.graph = [[v2.index for v2 in v.nn] for v in self.C0()]
 
@@ -364,12 +364,12 @@ class Complex:
     # Plots
     def plot_complex(self):
         """
-             Here C is the LIST of simplexes S in the
-             2 or 3 dimensional complex
+             Here, C is the LIST of simplexes S in the
+             2- or 3-D complex
 
-             To plot a single simplex S in a set C, use ex. [C[0]]
+             To plot a single simplex S in a set C, use e.g., [C[0]]
         """
-        from matplotlib import pyplot
+        from matplotlib import pyplot  # type: ignore[import]
         if self.dim == 2:
             pyplot.figure()
             for C in self.H:
@@ -482,7 +482,7 @@ class VertexGroup(object):
     def homology_group_differential(self):
         """
         Returns the difference between the current homology group of the
-        cell and it's parent group
+        cell and its parent group
         """
         if self.hg_d is None:
             self.hgd = self.hg_n - self.p_hgr
@@ -592,7 +592,7 @@ class Vertex:
             v.check_min = True
 
     def minimiser(self):
-        """Check whether this vertex is strictly less than all its neighbours"""
+        """Check whether this vertex is strictly less than all its neighbors"""
         if self.check_min:
             self._min = all(self.f < v.f for v in self.nn)
             self.check_min = False

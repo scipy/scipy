@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 __docformat__ = "restructuredtext en"
 
 __all__ = []
@@ -73,7 +71,8 @@ def make_system(A, M, x0, b):
     b = asanyarray(b)
 
     if not (b.shape == (N,1) or b.shape == (N,)):
-        raise ValueError('A and b have incompatible dimensions')
+        raise ValueError('shapes of A {} and b {} are incompatible'
+                         .format(A.shape, b.shape))
 
     if b.dtype.char not in 'fdFD':
         b = b.astype('d')  # upcast non-FP types to double
@@ -97,7 +96,8 @@ def make_system(A, M, x0, b):
     else:
         x = array(x0, dtype=xtype)
         if not (x.shape == (N,1) or x.shape == (N,)):
-            raise ValueError('A and x have incompatible dimensions')
+            raise ValueError('shapes of A {} and x0 {} are incompatible'
+                            .format(A.shape, x.shape))
         x = x.ravel()
 
     # process preconditioner

@@ -23,7 +23,7 @@
 # SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 """
-TNC: A python interface to the TNC non-linear optimizer
+TNC: A Python interface to the TNC non-linear optimizer
 
 TNC is a non-linear optimizer. To use it, you must provide a function to
 minimize. The function must take one argument: the list of coordinates where to
@@ -32,10 +32,11 @@ value of the function, and whose second argument is the gradient of the function
 (as a list of values); or None, to abort the minimization.
 """
 
-from __future__ import division, print_function, absolute_import
+from scipy.optimize import moduleTNC
+from .optimize import (MemoizeJac, OptimizeResult, _check_unknown_options,
+                       _prepare_scalar_function)
+from ._constraints import old_bound_to_new
 
-from scipy.optimize import moduleTNC, approx_fprime
-from .optimize import MemoizeJac, OptimizeResult, _check_unknown_options
 from numpy import inf, array, zeros, asfarray
 
 __all__ = ['fmin_tnc']
@@ -126,56 +127,56 @@ def fmin_tnc(func, x0, fprime=None, args=(), approx_grad=0,
         Used if approx_grad is True. The stepsize in a finite
         difference approximation for fprime.
     scale : array_like, optional
-        Scaling factors to apply to each variable.  If None, the
+        Scaling factors to apply to each variable. If None, the
         factors are up-low for interval bounded variables and
-        1+|x| for the others.  Defaults to None.
+        1+|x| for the others. Defaults to None.
     offset : array_like, optional
-        Value to subtract from each variable.  If None, the
+        Value to subtract from each variable. If None, the
         offsets are (up+low)/2 for interval bounded variables
         and x for the others.
     messages : int, optional
         Bit mask used to select messages display during
-        minimization values defined in the MSGS dict.  Defaults to
+        minimization values defined in the MSGS dict. Defaults to
         MGS_ALL.
     disp : int, optional
-        Integer interface to messages.  0 = no message, 5 = all messages
+        Integer interface to messages. 0 = no message, 5 = all messages
     maxCGit : int, optional
         Maximum number of hessian*vector evaluations per main
-        iteration.  If maxCGit == 0, the direction chosen is
+        iteration. If maxCGit == 0, the direction chosen is
         -gradient if maxCGit < 0, maxCGit is set to
-        max(1,min(50,n/2)).  Defaults to -1.
+        max(1,min(50,n/2)). Defaults to -1.
     maxfun : int, optional
-        Maximum number of function evaluation.  if None, maxfun is
-        set to max(100, 10*len(x0)).  Defaults to None.
+        Maximum number of function evaluation. If None, maxfun is
+        set to max(100, 10*len(x0)). Defaults to None.
     eta : float, optional
-        Severity of the line search. if < 0 or > 1, set to 0.25.
+        Severity of the line search. If < 0 or > 1, set to 0.25.
         Defaults to -1.
     stepmx : float, optional
-        Maximum step for the line search.  May be increased during
-        call.  If too small, it will be set to 10.0.  Defaults to 0.
+        Maximum step for the line search. May be increased during
+        call. If too small, it will be set to 10.0. Defaults to 0.
     accuracy : float, optional
-        Relative precision for finite difference calculations.  If
+        Relative precision for finite difference calculations. If
         <= machine_precision, set to sqrt(machine_precision).
         Defaults to 0.
     fmin : float, optional
-        Minimum function value estimate.  Defaults to 0.
+        Minimum function value estimate. Defaults to 0.
     ftol : float, optional
         Precision goal for the value of f in the stopping criterion.
         If ftol < 0.0, ftol is set to 0.0 defaults to -1.
     xtol : float, optional
         Precision goal for the value of x in the stopping
-        criterion (after applying x scaling factors).  If xtol <
-        0.0, xtol is set to sqrt(machine_precision).  Defaults to
+        criterion (after applying x scaling factors). If xtol <
+        0.0, xtol is set to sqrt(machine_precision). Defaults to
         -1.
     pgtol : float, optional
         Precision goal for the value of the projected gradient in
         the stopping criterion (after applying x scaling factors).
         If pgtol < 0.0, pgtol is set to 1e-2 * sqrt(accuracy).
-        Setting it to 0.0 is not recommended.  Defaults to -1.
+        Setting it to 0.0 is not recommended. Defaults to -1.
     rescale : float, optional
         Scaling factor (in log10) used to trigger f value
-        rescaling.  If 0, rescale at each iteration.  If a large
-        value, never rescale.  If < 0, rescale is set to 1.3.
+        rescaling. If 0, rescale at each iteration. If a large
+        value, never rescale. If < 0, rescale is set to 1.3.
     callback : callable, optional
         Called after each iteration, as callback(xk), where xk is the
         current parameter vector.
@@ -200,8 +201,8 @@ def fmin_tnc(func, x0, fprime=None, args=(), approx_grad=0,
     Newton Conjugate-Gradient. This method differs from
     scipy.optimize.fmin_ncg in that
 
-    1. It wraps a C implementation of the algorithm
-    2. It allows each variable to be given an upper and lower bound.
+    1. it wraps a C implementation of the algorithm
+    2. it allows each variable to be given an upper and lower bound.
 
     The algorithm incorporates the bound constraints by determining
     the descent direction as in an unconstrained truncated Newton,
@@ -261,7 +262,7 @@ def fmin_tnc(func, x0, fprime=None, args=(), approx_grad=0,
             'offset': offset,
             'mesg_num': mesg_num,
             'maxCGit': maxCGit,
-            'maxiter': maxfun,
+            'maxfun': maxfun,
             'eta': eta,
             'stepmx': stepmx,
             'accuracy': accuracy,
@@ -281,67 +282,76 @@ def _minimize_tnc(fun, x0, args=(), jac=None, bounds=None,
                   eps=1e-8, scale=None, offset=None, mesg_num=None,
                   maxCGit=-1, maxiter=None, eta=-1, stepmx=0, accuracy=0,
                   minfev=0, ftol=-1, xtol=-1, gtol=-1, rescale=-1, disp=False,
-                  callback=None, **unknown_options):
+                  callback=None, finite_diff_rel_step=None, maxfun=None,
+                  **unknown_options):
     """
     Minimize a scalar function of one or more variables using a truncated
     Newton (TNC) algorithm.
 
     Options
     -------
-    eps : float
-        Step size used for numerical approximation of the jacobian.
+    eps : float or ndarray
+        If `jac is None` the absolute step size used for numerical
+        approximation of the jacobian via forward differences.
     scale : list of floats
-        Scaling factors to apply to each variable.  If None, the
+        Scaling factors to apply to each variable. If None, the
         factors are up-low for interval bounded variables and
-        1+|x] fo the others.  Defaults to None
+        1+|x] fo the others. Defaults to None.
     offset : float
-        Value to subtract from each variable.  If None, the
+        Value to subtract from each variable. If None, the
         offsets are (up+low)/2 for interval bounded variables
         and x for the others.
     disp : bool
        Set to True to print convergence messages.
     maxCGit : int
         Maximum number of hessian*vector evaluations per main
-        iteration.  If maxCGit == 0, the direction chosen is
+        iteration. If maxCGit == 0, the direction chosen is
         -gradient if maxCGit < 0, maxCGit is set to
-        max(1,min(50,n/2)).  Defaults to -1.
-    maxiter : int
-        Maximum number of function evaluation.  if None, `maxiter` is
-        set to max(100, 10*len(x0)).  Defaults to None.
+        max(1,min(50,n/2)). Defaults to -1.
+    maxiter : int, optional
+        Maximum number of function evaluations. This keyword is deprecated
+        in favor of `maxfun`. Only if `maxfun` is None is this keyword used.
     eta : float
-        Severity of the line search. if < 0 or > 1, set to 0.25.
+        Severity of the line search. If < 0 or > 1, set to 0.25.
         Defaults to -1.
     stepmx : float
-        Maximum step for the line search.  May be increased during
-        call.  If too small, it will be set to 10.0.  Defaults to 0.
+        Maximum step for the line search. May be increased during
+        call. If too small, it will be set to 10.0. Defaults to 0.
     accuracy : float
-        Relative precision for finite difference calculations.  If
+        Relative precision for finite difference calculations. If
         <= machine_precision, set to sqrt(machine_precision).
         Defaults to 0.
     minfev : float
-        Minimum function value estimate.  Defaults to 0.
+        Minimum function value estimate. Defaults to 0.
     ftol : float
         Precision goal for the value of f in the stopping criterion.
         If ftol < 0.0, ftol is set to 0.0 defaults to -1.
     xtol : float
         Precision goal for the value of x in the stopping
-        criterion (after applying x scaling factors).  If xtol <
-        0.0, xtol is set to sqrt(machine_precision).  Defaults to
+        criterion (after applying x scaling factors). If xtol <
+        0.0, xtol is set to sqrt(machine_precision). Defaults to
         -1.
     gtol : float
         Precision goal for the value of the projected gradient in
         the stopping criterion (after applying x scaling factors).
         If gtol < 0.0, gtol is set to 1e-2 * sqrt(accuracy).
-        Setting it to 0.0 is not recommended.  Defaults to -1.
+        Setting it to 0.0 is not recommended. Defaults to -1.
     rescale : float
         Scaling factor (in log10) used to trigger f value
         rescaling.  If 0, rescale at each iteration.  If a large
         value, never rescale.  If < 0, rescale is set to 1.3.
-
+    finite_diff_rel_step : None or array_like, optional
+        If `jac in ['2-point', '3-point', 'cs']` the relative step size to
+        use for numerical approximation of the jacobian. The absolute step
+        size is computed as ``h = rel_step * sign(x0) * max(1, abs(x0))``,
+        possibly adjusted to fit into the bounds. For ``method='3-point'``
+        the sign of `h` is ignored. If None (default) then step is selected
+        automatically.
+    maxfun : int
+        Maximum number of function evaluations. If None, `maxfun` is
+        set to max(100, 10*len(x0)). Defaults to None.
     """
     _check_unknown_options(unknown_options)
-    epsilon = eps
-    maxfun = maxiter
     fmin = minfev
     pgtol = gtol
 
@@ -352,6 +362,7 @@ def _minimize_tnc(fun, x0, args=(), jac=None, bounds=None,
         bounds = [(None,None)] * n
     if len(bounds) != n:
         raise ValueError('length of x0 != length of bounds')
+    new_bounds = old_bound_to_new(bounds)
 
     if mesg_num is not None:
         messages = {0:MSG_NONE, 1:MSG_ITER, 2:MSG_INFO, 3:MSG_VERS,
@@ -361,16 +372,10 @@ def _minimize_tnc(fun, x0, args=(), jac=None, bounds=None,
     else:
         messages = MSG_NONE
 
-    if jac is None:
-        def func_and_grad(x):
-            f = fun(x, *args)
-            g = approx_fprime(x, fun, epsilon, *args)
-            return f, g
-    else:
-        def func_and_grad(x):
-            f = fun(x, *args)
-            g = jac(x, *args)
-            return f, g
+    sf = _prepare_scalar_function(fun, x0, jac=jac, args=args, epsilon=eps,
+                                  finite_diff_rel_step=finite_diff_rel_step,
+                                  bounds=new_bounds)
+    func_and_grad = sf.fun_and_grad
 
     """
     low, up   : the bounds (lists of floats)
@@ -401,7 +406,10 @@ def _minimize_tnc(fun, x0, args=(), jac=None, bounds=None,
         offset = array([])
 
     if maxfun is None:
-        maxfun = max(100, 10*len(x0))
+        if maxiter is not None:
+            maxfun = maxiter
+        else:
+            maxfun = max(100, 10*len(x0))
 
     rc, nf, nit, x = moduleTNC.minimize(func_and_grad, x0, low, up, scale,
                                         offset, messages, maxCGit, maxfun,
@@ -410,8 +418,9 @@ def _minimize_tnc(fun, x0, args=(), jac=None, bounds=None,
 
     funv, jacv = func_and_grad(x)
 
-    return OptimizeResult(x=x, fun=funv, jac=jacv, nfev=nf, nit=nit, status=rc,
-                          message=RCSTRINGS[rc], success=(-1 < rc < 3))
+    return OptimizeResult(x=x, fun=funv, jac=jacv, nfev=sf.nfev,
+                          nit=nit, status=rc, message=RCSTRINGS[rc],
+                          success=(-1 < rc < 3))
 
 
 if __name__ == '__main__':

@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 import warnings
 
 import numpy as np
@@ -8,7 +6,6 @@ from numpy import asarray_chkfinite
 from .misc import LinAlgError, _datacopied, LinAlgWarning
 from .lapack import get_lapack_funcs
 
-from scipy._lib.six import callable
 
 __all__ = ['qz', 'ordqz']
 
@@ -118,7 +115,7 @@ def _qz(A, B, output='real', lwork=None, sort=None, overwrite_a=False,
     if lwork is None or lwork == -1:
         # get optimal work array size
         result = gges(lambda x: None, a1, b1, lwork=-1)
-        lwork = result[-2][0].real.astype(np.int)
+        lwork = result[-2][0].real.astype(np.int_)
 
     sfunction = lambda x: None
     result = gges(sfunction, a1, b1, lwork=lwork, overwrite_a=overwrite_a,
@@ -158,7 +155,7 @@ def qz(A, B, output='real', lwork=None, sort=None, overwrite_a=False,
     where AA, BB is in generalized Schur form if BB is upper-triangular
     with non-negative diagonal and AA is upper-triangular, or for real QZ
     decomposition (``output='real'``) block upper triangular with 1x1
-    and 2x2 blocks.  In this case, the 1x1 blocks correspond to real
+    and 2x2 blocks. In this case, the 1x1 blocks correspond to real
     generalized eigenvalues and 2x2 blocks are 'standardized' by making
     the corresponding elements of BB have the form::
 
@@ -166,30 +163,30 @@ def qz(A, B, output='real', lwork=None, sort=None, overwrite_a=False,
         [ 0 b ]
 
     and the pair of corresponding 2x2 blocks in AA and BB will have a complex
-    conjugate pair of generalized eigenvalues.  If (``output='complex'``) or
+    conjugate pair of generalized eigenvalues. If (``output='complex'``) or
     A and B are complex matrices, Z' denotes the conjugate-transpose of Z.
     Q and Z are unitary matrices.
 
     Parameters
     ----------
     A : (N, N) array_like
-        2d array to decompose
+        2-D array to decompose
     B : (N, N) array_like
-        2d array to decompose
+        2-D array to decompose
     output : {'real', 'complex'}, optional
         Construct the real or complex QZ decomposition for real matrices.
         Default is 'real'.
     lwork : int, optional
-        Work array size.  If None or -1, it is automatically computed.
+        Work array size. If None or -1, it is automatically computed.
     sort : {None, callable, 'lhp', 'rhp', 'iuc', 'ouc'}, optional
         NOTE: THIS INPUT IS DISABLED FOR NOW. Use ordqz instead.
 
-        Specifies whether the upper eigenvalues should be sorted.  A callable
+        Specifies whether the upper eigenvalues should be sorted. A callable
         may be passed that, given a eigenvalue, returns a boolean denoting
         whether the eigenvalue should be sorted to the top-left (True). For
         real matrix pairs, the sort function takes three real arguments
         (alphar, alphai, beta). The eigenvalue
-        ``x = (alphar + alphai*1j)/beta``.  For complex matrix pairs or
+        ``x = (alphar + alphai*1j)/beta``. For complex matrix pairs or
         output='complex', the sort function takes two complex arguments
         (alpha, beta). The eigenvalue ``x = (alpha/beta)``.  Alternatively,
         string parameters may be used:
@@ -274,9 +271,9 @@ def ordqz(A, B, sort='lhp', output='real', overwrite_a=False,
     Parameters
     ----------
     A : (N, N) array_like
-        2d array to decompose
+        2-D array to decompose
     B : (N, N) array_like
-        2d array to decompose
+        2-D array to decompose
     sort : {callable, 'lhp', 'rhp', 'iuc', 'ouc'}, optional
         Specifies whether the upper eigenvalues should be sorted. A
         callable may be passed that, given an ordered pair ``(alpha,
@@ -285,7 +282,7 @@ def ordqz(A, B, sort='lhp', output='real', overwrite_a=False,
         sorted to the top-left (True). For the real matrix pairs
         ``beta`` is real while ``alpha`` can be complex, and for
         complex matrix pairs both ``alpha`` and ``beta`` can be
-        complex. The callable must be able to accept a numpy
+        complex. The callable must be able to accept a NumPy
         array. Alternatively, string parameters may be used:
 
             - 'lhp'   Left-hand plane (x.real < 0.0)
@@ -294,10 +291,10 @@ def ordqz(A, B, sort='lhp', output='real', overwrite_a=False,
             - 'ouc'   Outside the unit circle (x*x.conjugate() > 1.0)
 
         With the predefined sorting functions, an infinite eigenvalue
-        (i.e. ``alpha != 0`` and ``beta = 0``) is considered to lie in
+        (i.e., ``alpha != 0`` and ``beta = 0``) is considered to lie in
         neither the left-hand nor the right-hand plane, but it is
         considered to lie outside the unit circle. For the eigenvalue
-        ``(alpha, beta) = (0, 0)`` the predefined sorting functions
+        ``(alpha, beta) = (0, 0)``, the predefined sorting functions
         all return `False`.
     output : str {'real','complex'}, optional
         Construct the real or complex QZ decomposition for real matrices.
@@ -333,8 +330,8 @@ def ordqz(A, B, sort='lhp', output='real', overwrite_a=False,
     ``BETA(j),j=1,...,N`` are the diagonals of the complex Schur form (S,T)
     that would result if the 2-by-2 diagonal blocks of the real generalized
     Schur form of (A,B) were further reduced to triangular form using complex
-    unitary transformations. If ALPHAI(j) is zero, then the j-th eigenvalue is
-    real; if positive, then the ``j``-th and ``(j+1)``-st eigenvalues are a
+    unitary transformations. If ALPHAI(j) is zero, then the jth eigenvalue is
+    real; if positive, then the ``j``th and ``(j+1)``st eigenvalues are a
     complex conjugate pair, with ``ALPHAI(j+1)`` negative.
 
     See also
@@ -347,9 +344,9 @@ def ordqz(A, B, sort='lhp', output='real', overwrite_a=False,
     >>> A = np.array([[2, 5, 8, 7], [5, 2, 2, 8], [7, 5, 6, 6], [5, 4, 4, 8]])
     >>> B = np.array([[0, 6, 0, 0], [5, 0, 2, 1], [5, 2, 6, 6], [4, 7, 7, 7]])
     >>> AA, BB, alpha, beta, Q, Z = ordqz(A, B, sort='lhp')
-    
+
     Since we have sorted for left half plane eigenvalues, negatives come first
-    
+
     >>> (alpha/beta).real < 0
     array([ True,  True, False, False], dtype=bool)
 
@@ -372,7 +369,7 @@ def ordqz(A, B, sort='lhp', output='real', overwrite_a=False,
 
     if lwork is None or lwork == -1:
         result = tgsen(select, AA, BB, Q, Z, lwork=-1)
-        lwork = result[-3][0].real.astype(np.int)
+        lwork = result[-3][0].real.astype(np.int_)
         # looks like wrong value passed to ZTGSYL if not
         lwork += 1
 

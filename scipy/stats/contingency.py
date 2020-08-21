@@ -2,15 +2,12 @@
 """
 
 
-from __future__ import division, print_function, absolute_import
-
 from functools import reduce
 import numpy as np
 from .stats import power_divergence
-import math
 
 
-__all__ = ["chi2_contingency"]
+__all__ = ['margins', 'expected_freq', 'chi2_contingency']
 
 
 def margins(a):
@@ -31,7 +28,6 @@ def margins(a):
 
     Examples
     --------
-    >>> from scipy.stats.contingency import margins
     >>> a = np.arange(12).reshape(2, 6)
     >>> a
     array([[ 0,  1,  2,  3,  4,  5],
@@ -134,7 +130,7 @@ def chi2_contingency(observed, correction=True, lambda_=None):
         If True, *and* the degrees of freedom is 1, apply Yates' correction
         for continuity.  The effect of the correction is to adjust each
         observed value by 0.5 towards the corresponding expected value.
-    lambda_ : float or str, optional
+    lambda_ : float or str, optional.
         By default, the statistic computed in this test is Pearson's
         chi-squared statistic [2]_.  `lambda_` allows a statistic from the
         Cressie-Read power divergence family [3]_ to be used instead.  See
@@ -275,7 +271,6 @@ def chi2_contingency(observed, correction=True, lambda_=None):
                                    lambda_=lambda_)
 
     return chi2, p, dof, expected
-
 
 def association(n_obs, n_rows, n_cols, chi2_stat, stat="cramer"):
     """Calculates degree of association between variables

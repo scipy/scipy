@@ -2,7 +2,37 @@
 #include "Python.h"
 #include "numpy/arrayobject.h"
 
-#include "numpy/npy_3kcompat.h"
+#ifdef HAVE_BLAS_ILP64
+
+#define F_INT npy_int64
+#define F_INT_NPY NPY_INT64
+
+#if NPY_BITSOF_SHORT == 64
+#define F_INT_PYFMT   "h"
+#define F_INT_FMT "%h"
+#elif NPY_BITSOF_INT == 64
+#define F_INT_PYFMT   "i"
+#define F_INT_FMT "%d"
+#elif NPY_BITSOF_LONG == 64
+#define F_INT_PYFMT   "l"
+#define F_INT_FMT "%ld"
+#elif NPY_BITSOF_LONGLONG == 64
+#define F_INT_PYFMT   "L"
+#define F_INT_FMT "%lld"
+#else
+#error No compatible 64-bit integer size. \
+       Please contact NumPy maintainers and give detailed information about your \
+       compiler and platform, or set NPY_USE_BLAS64_=0
+#endif
+
+#else
+
+#define F_INT int
+#define F_INT_NPY NPY_INT
+#define F_INT_FMT NPY_INT_FMT
+#define F_INT_PYFMT   "i"
+
+#endif
 
 #if defined(NO_APPEND_FORTRAN)
 #if defined(UPPERCASE_FORTRAN)
@@ -40,14 +70,14 @@ static ODR_info odr_global;
 static PyObject *odr_error=NULL;
 static PyObject *odr_stop=NULL;
 
-void fcn_callback(int *n, int *m, int *np, int *nq, int *ldn, int *ldm,
-		  int *ldnp, double *beta, double *xplusd, int *ifixb,
-		  int *ifixx, int *ldfix, int *ideval, double *f,
-		  double *fjacb, double *fjacd, int *istop);
+void fcn_callback(F_INT *n, F_INT *m, F_INT *np, F_INT *nq, F_INT *ldn, F_INT *ldm,
+		  F_INT *ldnp, double *beta, double *xplusd, F_INT *ifixb,
+		  F_INT *ifixx, F_INT *ldfix, F_INT *ideval, double *f,
+		  double *fjacb, double *fjacd, F_INT *istop);
 
-PyObject *gen_output(int n, int m, int np, int nq, int ldwe, int ld2we,
+PyObject *gen_output(F_INT n, F_INT m, F_INT np, F_INT nq, F_INT ldwe, F_INT ld2we,
 		     PyArrayObject *beta, PyArrayObject *work, PyArrayObject *iwork,
-		     int isodr, int info, int full_output);
+		     F_INT isodr, F_INT info, int full_output);
 
 PyObject *odr(PyObject *self, PyObject *args, PyObject *kwds);
 

@@ -28,23 +28,21 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from __future__ import division, print_function, absolute_import
-
 import math
 import sys
-import platform
 
 import numpy
 from numpy import fft
 from numpy.testing import (assert_, assert_equal, assert_array_equal,
-                           assert_array_almost_equal, assert_almost_equal)
+                           assert_array_almost_equal, assert_almost_equal,
+                           suppress_warnings)
 import pytest
 from pytest import raises as assert_raises
-from scipy._lib._numpy_compat import suppress_warnings
 import scipy.ndimage as ndimage
 
 
 eps = 1e-12
+
 
 def sumsq(a, b):
     return math.sqrt(((a - b)**2).sum())
@@ -80,6 +78,14 @@ class TestNdimage:
 
         output = ndimage.convolve1d(array, weights)
         assert_array_almost_equal(output, expected)
+
+    def test_correlate01_overlap(self):
+        array = numpy.arange(256).reshape(16, 16)
+        weights = numpy.array([2])
+        expected = 2 * array
+
+        ndimage.correlate1d(array, weights, output=array)
+        assert_array_almost_equal(array, expected)
 
     def test_correlate02(self):
         array = numpy.array([1, 2, 3])
@@ -317,6 +323,14 @@ class TestNdimage:
             assert_array_almost_equal([[2, 3, 5], [5, 6, 8]], output)
             assert_equal(output.dtype.type, numpy.float32)
 
+    def test_correlate_mode_sequence(self):
+        kernel = numpy.ones((2, 2))
+        array = numpy.ones((3, 3), float)
+        with assert_raises(RuntimeError):
+            ndimage.correlate(array, kernel, mode=['nearest', 'reflect'])
+        with assert_raises(RuntimeError):
+            ndimage.convolve(array, kernel, mode=['nearest', 'reflect'])
+
     def test_correlate19(self):
         kernel = numpy.array([[1, 0],
                               [0, 1]])
@@ -422,6 +436,14 @@ class TestNdimage:
                                    mode='nearest', output=output, origin=1)
                 assert_array_almost_equal(output, tcov)
 
+    def test_correlate26(self):
+        # test fix for gh-11661 (mirror extension of a length 1 signal)
+        y = ndimage.convolve1d(numpy.ones(1), numpy.ones(5), mode='mirror')
+        assert_array_equal(y, numpy.array(5.))
+
+        y = ndimage.correlate1d(numpy.ones(1), numpy.ones(5), mode='mirror')
+        assert_array_equal(y, numpy.array(5.))
+
     def test_gauss01(self):
         input = numpy.array([[1, 2, 3],
                              [2, 4, 6]], numpy.float32)
@@ -476,6 +498,13 @@ class TestNdimage:
         output1 = ndimage.gaussian_filter(input, [1.0, 1.0], output=otype)
         output2 = ndimage.gaussian_filter(input, 1.0, output=otype)
         assert_array_almost_equal(output1, output2)
+
+    def test_gauss_memory_overlap(self):
+        input = numpy.arange(100 * 100).astype(numpy.float32)
+        input.shape = (100, 100)
+        output1 = ndimage.gaussian_filter(input, 1.0)
+        ndimage.gaussian_filter(input, 1.0, output=input)
+        assert_array_almost_equal(output1, input)
 
     def test_prewitt01(self):
         for type_ in self.types:
@@ -737,6 +766,16 @@ class TestNdimage:
                                    [2, 2, 1, 1, 1],
                                    [5, 3, 3, 1, 1]], output)
 
+    def test_minimum_filter05_overlap(self):
+        array = numpy.array([[3, 2, 5, 1, 4],
+                             [7, 6, 9, 3, 5],
+                             [5, 8, 3, 7, 1]])
+        filter_shape = numpy.array([2, 3])
+        ndimage.minimum_filter(array, filter_shape, output=array)
+        assert_array_almost_equal([[2, 2, 1, 1, 1],
+                                   [2, 2, 1, 1, 1],
+                                   [5, 3, 3, 1, 1]], array)
+
     def test_minimum_filter06(self):
         array = numpy.array([[3, 2, 5, 1, 4],
                              [7, 6, 9, 3, 5],
@@ -746,6 +785,10 @@ class TestNdimage:
         assert_array_almost_equal([[2, 2, 1, 1, 1],
                                    [2, 2, 1, 1, 1],
                                    [5, 3, 3, 1, 1]], output)
+        # separable footprint should allow mode sequence
+        output2 = ndimage.minimum_filter(array, footprint=footprint,
+                                         mode=['reflect', 'reflect'])
+        assert_array_almost_equal(output2, output)
 
     def test_minimum_filter07(self):
         array = numpy.array([[3, 2, 5, 1, 4],
@@ -756,6 +799,9 @@ class TestNdimage:
         assert_array_almost_equal([[2, 2, 1, 1, 1],
                                    [2, 3, 1, 3, 1],
                                    [5, 5, 3, 3, 1]], output)
+        with assert_raises(RuntimeError):
+            ndimage.minimum_filter(array, footprint=footprint,
+                                   mode=['reflect', 'constant'])
 
     def test_minimum_filter08(self):
         array = numpy.array([[3, 2, 5, 1, 4],
@@ -821,6 +867,10 @@ class TestNdimage:
         assert_array_almost_equal([[3, 5, 5, 5, 4],
                                    [7, 9, 9, 9, 5],
                                    [8, 9, 9, 9, 7]], output)
+        # separable footprint should allow mode sequence
+        output2 = ndimage.maximum_filter(array, footprint=footprint,
+                                         mode=['reflect', 'reflect'])
+        assert_array_almost_equal(output2, output)
 
     def test_maximum_filter07(self):
         array = numpy.array([[3, 2, 5, 1, 4],
@@ -831,6 +881,10 @@ class TestNdimage:
         assert_array_almost_equal([[3, 5, 5, 5, 4],
                                    [7, 7, 9, 9, 5],
                                    [7, 9, 8, 9, 7]], output)
+        # non-separable footprint should not allow mode sequence
+        with assert_raises(RuntimeError):
+            ndimage.maximum_filter(array, footprint=footprint,
+                                   mode=['reflect', 'reflect'])
 
     def test_maximum_filter08(self):
         array = numpy.array([[3, 2, 5, 1, 4],
@@ -906,6 +960,21 @@ class TestNdimage:
         output = ndimage.percentile_filter(array, 17, size=(2, 3))
         assert_array_almost_equal(expected, output)
 
+    def test_rank06_overlap(self):
+        array = numpy.array([[3, 2, 5, 1, 4],
+                             [5, 8, 3, 7, 1],
+                             [5, 6, 9, 3, 5]])
+        array_copy = array.copy()
+        expected = [[2, 2, 1, 1, 1],
+                    [3, 3, 2, 1, 1],
+                    [5, 5, 3, 3, 1]]
+        ndimage.rank_filter(array, 1, size=[2, 3], output=array)
+        assert_array_almost_equal(expected, array)
+
+        ndimage.percentile_filter(array_copy, 17, size=(2, 3),
+                                  output=array_copy)
+        assert_array_almost_equal(expected, array_copy)
+
     def test_rank07(self):
         array = numpy.array([[3, 2, 5, 1, 4],
                              [5, 8, 3, 7, 1],
@@ -929,6 +998,15 @@ class TestNdimage:
         assert_array_almost_equal(expected, output)
         output = ndimage.median_filter(array, size=(2, 3))
         assert_array_almost_equal(expected, output)
+
+        # non-separable: does not allow mode sequence
+        with assert_raises(RuntimeError):
+            ndimage.percentile_filter(array, 50.0, size=(2, 3),
+                                      mode=['reflect', 'constant'])
+        with assert_raises(RuntimeError):
+            ndimage.rank_filter(array, 3, size=(2, 3), mode=['reflect']*2)
+        with assert_raises(RuntimeError):
+            ndimage.median_filter(array, size=(2, 3), mode=['reflect']*2)
 
     def test_rank09(self):
         expected = [[3, 3, 2, 4, 4],
@@ -1066,6 +1144,13 @@ class TestNdimage:
                 a, _filter_func, footprint=footprint, extra_arguments=(cf,),
                 extra_keywords={'total': cf.sum()})
             assert_array_almost_equal(r1, r2)
+
+        # generic_filter doesn't allow mode sequence
+        with assert_raises(RuntimeError):
+            r2 = ndimage.generic_filter(
+                a, _filter_func, mode=['reflect', 'reflect'],
+                footprint=footprint, extra_arguments=(cf,),
+                extra_keywords={'total': cf.sum()})
 
     def test_extend01(self):
         array = numpy.array([1, 2, 3])
@@ -1334,6 +1419,16 @@ class TestNdimage:
                 a = fft.ifft(a, shape[1], 1)
                 a = fft.ifft(a, shape[0], 0)
                 assert_almost_equal(ndimage.sum(a.real), 1.0, decimal=dec)
+
+    def test_fourier_ellipsoid_1d_complex(self):
+        # expected result of 1d ellipsoid is the same as for fourier_uniform
+        for shape in [(32, ), (31, )]:
+            for type_, dec in zip([numpy.complex64, numpy.complex128],
+                                  [5, 14]):
+                x = numpy.ones(shape, dtype=type_)
+                a = ndimage.fourier_ellipsoid(x, 5, -1, 0)
+                b = ndimage.fourier_uniform(x, 5, -1, 0)
+                assert_array_almost_equal(a, b, decimal=dec)
 
     def test_spline01(self):
         for type_ in self.types:
@@ -1727,8 +1822,8 @@ class TestNdimage:
             # fill the part we might read
             a[n-3:, n-3:] = 0
             ndimage.map_coordinates(a, [[n - 1.5], [n - 1.5]], order=1)
-        except MemoryError:
-            raise pytest.skip("Not enough memory available")
+        except MemoryError as e:
+            raise pytest.skip("Not enough memory available") from e
 
     def test_affine_transform01(self):
         data = numpy.array([1])
@@ -1938,7 +2033,7 @@ class TestNdimage:
         for order in range(0, 6):
             with suppress_warnings() as sup:
                 sup.filter(UserWarning,
-                           "The behaviour of affine_transform with a one-dimensional array .* has changed")
+                           "The behavior of affine_transform with a 1-D array .* has changed")
                 out1 = ndimage.affine_transform(data, [2], -1, order=order)
             out2 = ndimage.affine_transform(data, [[2]], -1, order=order)
             assert_array_almost_equal(out1, out2)
@@ -1949,7 +2044,7 @@ class TestNdimage:
         for order in range(0, 6):
             with suppress_warnings() as sup:
                 sup.filter(UserWarning,
-                           "The behaviour of affine_transform with a one-dimensional array .* has changed")
+                           "The behavior of affine_transform with a 1-D array .* has changed")
                 out1 = ndimage.affine_transform(data, [0.5], -1, order=order)
             out2 = ndimage.affine_transform(data, [[0.5]], -1, order=order)
             assert_array_almost_equal(out1, out2)
@@ -1998,7 +2093,7 @@ class TestNdimage:
                     data.dtype, data.dtype.newbyteorder()]:
             with suppress_warnings() as sup:
                 sup.filter(UserWarning,
-                           "The behaviour of affine_transform with a one-dimensional array .* has changed")
+                           "The behavior of affine_transform with a 1-D array .* has changed")
                 returned = ndimage.affine_transform(data, [1, 1], output=out)
             result = out if returned is None else returned
             assert_array_almost_equal(result, [[1, 1], [1, 1]])
@@ -2130,7 +2225,7 @@ class TestNdimage:
         for order in range(0, 6):
             with suppress_warnings() as sup:
                 sup.filter(UserWarning,
-                           "The behaviour of affine_transform with a one-dimensional array .* has changed")
+                           "The behavior of affine_transform with a 1-D array .* has changed")
                 out = ndimage.affine_transform(data, [0.5, 0.5], 0,
                                                (6, 8), order=order)
             assert_array_almost_equal(out[::2, ::2], data)
@@ -2291,6 +2386,11 @@ class TestNdimage:
 
         out = ndimage.rotate(data, angle=12, reshape=False)
         assert_array_almost_equal(out, expected)
+
+    def test_rotate_exact_180(self):
+        a = numpy.tile(numpy.arange(5), (5, 1))
+        b = ndimage.rotate(ndimage.rotate(a, 180), -180)
+        assert_equal(a, b)
 
     def test_watershed_ift01(self):
         data = numpy.array([[0, 0, 0, 0, 0, 0, 0],
@@ -3396,6 +3496,11 @@ class TestNdimage:
                                iterations=3, output=out)
         assert_array_almost_equal(out, expected)
 
+        # test with output memory overlap
+        ndimage.binary_erosion(data, struct, border_value=1,
+                               iterations=3, output=data)
+        assert_array_almost_equal(data, expected)
+
     def test_binary_erosion31(self):
         struct = [[0, 1, 0],
                   [1, 1, 1],
@@ -3587,7 +3692,7 @@ class TestNdimage:
                            [1, 0, 1]], dtype=bool)
         iterations = 2.0
         with assert_raises(TypeError):
-            out = ndimage.binary_erosion(data, iterations=iterations)
+            _ = ndimage.binary_erosion(data, iterations=iterations)
 
     def test_binary_erosion39(self):
         iterations = numpy.int32(3)
@@ -4313,6 +4418,16 @@ class TestNdimage:
                                    [2, 3, 1, 3, 1],
                                    [5, 5, 3, 3, 1]], output)
 
+    def test_grey_erosion01_overlap(self):
+        array = numpy.array([[3, 2, 5, 1, 4],
+                             [7, 6, 9, 3, 5],
+                             [5, 8, 3, 7, 1]])
+        footprint = [[1, 0, 1], [1, 1, 0]]
+        ndimage.grey_erosion(array, footprint=footprint, output=array)
+        assert_array_almost_equal([[2, 2, 1, 1, 1],
+                                   [2, 3, 1, 3, 1],
+                                   [5, 5, 3, 3, 1]], array)
+
     def test_grey_erosion02(self):
         array = numpy.array([[3, 2, 5, 1, 4],
                              [7, 6, 9, 3, 5],
@@ -4533,7 +4648,7 @@ class TestNdimage:
         structure = numpy.ones((3, 3), dtype=numpy.bool_)
 
         # Check that type mismatch is properly handled
-        output = numpy.empty_like(array, dtype=numpy.float)
+        output = numpy.empty_like(array, dtype=numpy.float64)
         ndimage.white_tophat(array, structure=structure, output=output)
 
     def test_black_tophat01(self):
@@ -4588,7 +4703,7 @@ class TestNdimage:
         structure = numpy.ones((3, 3), dtype=numpy.bool_)
 
         # Check that type mismatch is properly handled
-        output = numpy.empty_like(array, dtype=numpy.float)
+        output = numpy.empty_like(array, dtype=numpy.float64)
         ndimage.black_tophat(array, structure=structure, output=output)
 
     def test_hit_or_miss01(self):

@@ -576,7 +576,7 @@ static void ikv_temme(double v, double x, double *Iv_p, double *Kv_p)
 	if (reflect && (kind & need_i)) {
 	    double z = (u + n % 2);
 
-	    Iv = sin(NPY_PI * z) == 0 ? Iv : NPY_INFINITY;
+	    Iv = sin((double)NPY_PI * z) == 0 ? Iv : NPY_INFINITY;
 	    if (Iv == NPY_INFINITY || Iv == -NPY_INFINITY) {
 		sf_error("ikv_temme", SF_ERROR_OVERFLOW, NULL);
 	    }

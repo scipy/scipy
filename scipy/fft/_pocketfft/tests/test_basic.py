@@ -1,17 +1,16 @@
 # Created by Pearu Peterson, September 2002
 
-from __future__ import division, print_function, absolute_import
-
 from numpy.testing import (assert_, assert_equal, assert_array_almost_equal,
                            assert_array_almost_equal_nulp, assert_array_less,
                            assert_allclose)
 import pytest
 from pytest import raises as assert_raises
 from scipy.fft._pocketfft import (ifft, fft, fftn, ifftn,
-                                  rfft, irfft, rfftn, irfftn, fft2)
+                                  rfft, irfft, rfftn, irfftn, fft2,
+                                  hfft, ihfft, hfftn, ihfftn)
 
 from numpy import (arange, add, array, asarray, zeros, dot, exp, pi,
-                   swapaxes, double, cdouble)
+                   swapaxes, cdouble)
 import numpy as np
 import numpy.fft
 from numpy.random import rand
@@ -45,6 +44,10 @@ def _assert_close_in_norm(x, y, rtol, size, rdt):
 def random(size):
     return rand(*size)
 
+def swap_byteorder(arr):
+    """Returns the same array with swapped byteorder"""
+    dtype = arr.dtype.newbyteorder('S')
+    return arr.astype(dtype)
 
 def get_mat(n):
     data = arange(n)
@@ -335,17 +338,17 @@ class _TestRFFTBase(object):
         def __getattr__(self, item):
             try:
                 return getattr(self.data, item)
-            except AttributeError:
+            except AttributeError as e:
                 raise AttributeError(("'MockSeries' object "
                                       "has no attribute '{attr}'".
-                                      format(attr=item)))
+                                      format(attr=item))) from e
 
     def test_non_ndarray_with_dtype(self):
         x = np.array([1., 2., 3., 4., 5.])
         xs = _TestRFFTBase.MockSeries(x)
 
         expected = [1, 2, 3, 4, 5]
-        out = rfft(xs)
+        rfft(xs)
 
         # Data should not have been overwritten
         assert_equal(x, expected)
@@ -850,7 +853,7 @@ class TestRfftn(object):
     def test_no_axes(self, func):
         with assert_raises(ValueError,
                            match="at least 1 axis must be transformed"):
-            y = func([], axes=[])
+            func([], axes=[])
 
     def test_complex_input(self):
         with assert_raises(TypeError, match="x must be a real sequence"):
@@ -999,5 +1002,21 @@ class TestOverwrite(object):
 def test_invalid_norm(func):
     x = np.arange(10, dtype=float)
     with assert_raises(ValueError,
-                       match='Invalid norm value o, should be None or "ortho"'):
+                       match='Invalid norm value \'o\', should be'
+                             ' "backward", "ortho" or "forward"'):
         func(x, norm='o')
+
+
+@pytest.mark.parametrize('func', [fft, ifft, fftn, ifftn,
+                                   irfft, irfftn, hfft, hfftn])
+def test_swapped_byte_order_complex(func):
+    rng = np.random.RandomState(1234)
+    x = rng.rand(10) + 1j * rng.rand(10)
+    assert_allclose(func(swap_byteorder(x)), func(x))
+
+
+@pytest.mark.parametrize('func', [ihfft, ihfftn, rfft, rfftn])
+def test_swapped_byte_order_real(func):
+    rng = np.random.RandomState(1234)
+    x = rng.rand(10)
+    assert_allclose(func(swap_byteorder(x)), func(x))

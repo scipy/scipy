@@ -90,11 +90,16 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 namespace pocketfft {
 
 namespace detail {
+using std::size_t;
+using std::ptrdiff_t;
 
-using namespace std;
+// Always use std:: for <cmath> functions
+template <typename T> T cos(T) = delete;
+template <typename T> T sin(T) = delete;
+template <typename T> T sqrt(T) = delete;
 
-using shape_t = vector<size_t>;
-using stride_t = vector<ptrdiff_t>;
+using shape_t = std::vector<size_t>;
+using stride_t = std::vector<ptrdiff_t>;
 
 constexpr bool FORWARD  = true,
                BACKWARD = false;
@@ -105,8 +110,13 @@ constexpr bool FORWARD  = true,
 #if defined(__INTEL_COMPILER)
 // do nothing. This is necessary because this compiler also sets __GNUC__.
 #elif defined(__clang__)
-#if __clang__>=5
-#undef POCKETFFT_NO_VECTORS
+// AppleClang has their own version numbering
+#ifdef __apple_build_version__
+#  if (__clang_major__ > 9) || (__clang_major__ == 9 && __clang_minor__ >= 1)
+#     undef POCKETFFT_NO_VECTORS
+#  endif
+#elif __clang_major__ >= 5
+#  undef POCKETFFT_NO_VECTORS
 #endif
 #elif defined(__GNUC__)
 #if __GNUC__>=5
@@ -146,7 +156,7 @@ template<typename T> class arr
       {
       if (num==0) return nullptr;
       void *res = malloc(num*sizeof(T));
-      if (!res) throw bad_alloc();
+      if (!res) throw std::bad_alloc();
       return reinterpret_cast<T *>(res);
       }
     static void dealloc(T *ptr)
@@ -156,7 +166,7 @@ template<typename T> class arr
       {
       if (num==0) return nullptr;
       void *res = aligned_alloc(64,num*sizeof(T));
-      if (!res) throw bad_alloc();
+      if (!res) throw std::bad_alloc();
       return reinterpret_cast<T *>(res);
       }
     static void dealloc(T *ptr)
@@ -166,7 +176,7 @@ template<typename T> class arr
       {
       if (num==0) return nullptr;
       void *ptr = malloc(num*sizeof(T)+64);
-      if (!ptr) throw bad_alloc();
+      if (!ptr) throw std::bad_alloc();
       T *res = reinterpret_cast<T *>
         ((reinterpret_cast<size_t>(ptr) & ~(size_t(63))) + 64);
       (reinterpret_cast<void**>(res))[-1] = ptr;
@@ -207,8 +217,6 @@ template<typename T> struct cmplx {
   cmplx(T r_, T i_) : r(r_), i(i_) {}
   void Set(T r_, T i_) { r=r_; i=i_; }
   void Set(T r_) { r=r_; i=T(0); }
-  void Split(T &r_, T &i_) const { r_=r; i_=i; }
-  void SplitConj(T &r_, T &i_) const { r_=r; i_=-i; }
   cmplx &operator+= (const cmplx &other)
     { r+=other.r; i+=other.i; return *this; }
   template<typename T2>cmplx &operator*= (T2 other)
@@ -266,305 +274,78 @@ template<bool fwd, typename T> void ROTX90(cmplx<T> &a)
 //
 // twiddle factor section
 //
-
-/** Approximate sin(pi*a) within the range [-0.25, 0.25] */
-inline float sinpi0(float a)
-  {
-  // adapted from https://stackoverflow.com/questions/42792939/
-  float s = a * a;
-  float r =      -5.957031250000000000e-01f;
-  r = fma (r, s,  2.550399541854858398e+00f);
-  r = fma (r, s, -5.167724132537841797e+00f);
-  r = (a * s) * r;
-  return fma (a, 3.141592741012573242e+00f, r);
-  }
-
-/** Approximate sin(pi*a) within the range [-0.25, 0.25] */
-inline double sinpi0(double a)
-  {
-  // adapted from https://stackoverflow.com/questions/42792939/
-  double s = a * a;
-  double r =      4.6151442520157035e-4;
-  r = fma (r, s, -7.3700183130883555e-3);
-  r = fma (r, s,  8.2145868949323936e-2);
-  r = fma (r, s, -5.9926452893214921e-1);
-  r = fma (r, s,  2.5501640398732688e+0);
-  r = fma (r, s, -5.1677127800499516e+0);
-  s = s * a;
-  r = r * s;
-  return fma (a, 3.1415926535897931e+0, r);
-  }
-
-/** Approximate cos(pi*x)-1 for x in [-0.25,0.25] */
-inline float cosm1pi0(float a)
-  {
-  // adapted from https://stackoverflow.com/questions/42792939/
-  float s = a * a;
-  float r =        2.313842773437500000e-01f;
-  r = fmaf (r, s, -1.335021972656250000e+00f);
-  r = fmaf (r, s,  4.058703899383544922e+00f);
-  r = fmaf (r, s, -4.934802055358886719e+00f);
-  return r*s;
-  }
-
-/** Approximate cos(pi*x)-1 for x in [-0.25,0.25] */
-inline double cosm1pi0(double a)
-  {
-  // adapted from https://stackoverflow.com/questions/42792939/
-  double s = a * a;
-  double r =     -1.0369917389758117e-4;
-  r = fma (r, s,  1.9294935641298806e-3);
-  r = fma (r, s, -2.5806887942825395e-2);
-  r = fma (r, s,  2.3533063028328211e-1);
-  r = fma (r, s, -1.3352627688538006e+0);
-  r = fma (r, s,  4.0587121264167623e+0);
-  r = fma (r, s, -4.9348022005446790e+0);
-  return r*s;
-  }
-
-template <typename T> void sincosm1pi0(T a_, T *POCKETFFT_RESTRICT res)
-  {
-  if (sizeof(T)>sizeof(double)) // don't have the code for long double
-    {
-    constexpr T pi = T(3.141592653589793238462643383279502884197L);
-    auto s = sin(pi*a_);
-    res[1] = s;
-    res[0] = (s*s)/(-sqrt((1-s)*(1+s))-1);
-    return;
-    }
-  res[0] = T(cosm1pi0(double(a_)));
-  res[1] = T(sinpi0(double(a_)));
-  }
-
-template <typename T> T sinpi(T a)
-  {
-  // reduce argument to primary approximation interval (-0.25, 0.25)
-  auto r = nearbyint (a + a); // must use IEEE-754 "to nearest" rounding
-  auto i = (int64_t)r;
-  auto t = fma (T(-0.5), r, a);
-
-  switch (i%4)
-    {
-    case 0:
-      return sinpi0(t);
-    case 1: case -3:
-      return cosm1pi0(t) + T(1.);
-    case 2: case -2:
-      return T(0.) - sinpi0(t);
-    case 3: case -1:
-      return T(-1.) - cosm1pi0(t);
-    }
-  throw runtime_error("cannot happen");
-  }
-
-template <typename T> T cospi(T a)
-  {
-  // reduce argument to primary approximation interval (-0.25, 0.25)
-  auto r = nearbyint (a + a); // must use IEEE-754 "to nearest" rounding
-  auto i = (int64_t)r;
-  auto t = fma (T(-0.5), r, a);
-
-  switch (i%4)
-    {
-    case 0:
-      return cosm1pi0(t) + T(1.);
-    case 1: case -3:
-      return T(0.) - sinpi0(t);
-    case 2: case -2:
-      return T(-1.) - cosm1pi0(t);
-    case 3: case -1:
-      return sinpi0(t);
-    }
-  throw runtime_error("cannot happen");
-  }
-
-inline long double cospi(long double a)
-  {
-  constexpr auto pi = 3.141592653589793238462643383279502884197L;
-  return sizeof(long double) > sizeof(double) ? cos(a * pi) :
-    static_cast<long double>(cospi(static_cast<double>(a)));
-  }
-
-inline long double sinpi(long double a)
-  {
-  constexpr auto pi = 3.141592653589793238462643383279502884197L;
-  return sizeof(long double) > sizeof(double) ? sin(a * pi) :
-    static_cast<long double>(sinpi(static_cast<double>(a)));
-  }
-
-template <typename T> void sincospi(T a, T *POCKETFFT_RESTRICT res)
-  {
-  // reduce argument to primary approximation interval (-0.25, 0.25)
-  auto r = nearbyint (a + a); // must use IEEE-754 "to nearest" rounding
-  auto i = (int64_t)r;
-  auto t = fma (T(-0.5), r, a);
-
-  auto c=cosm1pi0(t)+T(1.);
-  auto s=sinpi0(t);
-
-  // map results according to quadrant
-  if (i & 2)
-    {
-    s = T(0.)-s;
-    c = T(0.)-c;
-    }
-  if (i & 1)
-    {
-    swap(s, c);
-    c = T(0.)-c;
-    }
-  res[0]=c;
-  res[1]=s;
-  }
-
-inline void sincospi(long double a, long double *POCKETFFT_RESTRICT res)
-  {
-  if (sizeof(long double) > sizeof(double))
-    {
-    constexpr auto pi = 3.141592653589793238462643383279502884197L;
-    res[0] = cos(pi * a);
-    res[1] = sin(pi * a);
-    }
-  else
-    {
-    double sincos[2];
-    sincospi(static_cast<double>(a), sincos);
-    res[0] = static_cast<long double>(sincos[0]);
-    res[1] = static_cast<long double>(sincos[1]);
-    }
-  }
-
 template<typename T> class sincos_2pibyn
   {
   private:
-    using Thigh = typename conditional<(sizeof(T)>sizeof(double)), T, double>::type;
-    arr<T> data;
+    using Thigh = typename std::conditional<(sizeof(T)>sizeof(double)), T, double>::type;
+    size_t N, mask, shift;
+    arr<cmplx<Thigh>> v1, v2;
 
-    POCKETFFT_NOINLINE void calc_first_octant(size_t den,
-      T * POCKETFFT_RESTRICT res)
+    static cmplx<Thigh> calc(size_t x, size_t n, Thigh ang)
       {
-      size_t n = (den+4)>>3;
-      if (n==0) return;
-      res[0]=1.; res[1]=0.;
-      if (n==1) return;
-      size_t l1 = size_t(sqrt(n));
-      arr<Thigh> tmp(2*l1);
-      for (size_t i=1; i<l1; ++i)
+      x<<=3;
+      if (x<4*n) // first half
         {
-        sincosm1pi0(Thigh(2*i)/Thigh(den),&tmp[2*i]);
-        res[2*i  ] = T(tmp[2*i]+1);
-        res[2*i+1] = T(tmp[2*i+1]);
-        }
-      size_t start=l1;
-      while(start<n)
-        {
-        Thigh cs[2];
-        sincosm1pi0((Thigh(2*start))/Thigh(den),cs);
-        res[2*start] = T(cs[0]+1);
-        res[2*start+1] = T(cs[1]);
-        size_t end = l1;
-        if (start+end>n) end = n-start;
-        for (size_t i=1; i<end; ++i)
+        if (x<2*n) // first quadrant
           {
-          Thigh csx[2]={tmp[2*i], tmp[2*i+1]};
-          res[2*(start+i)] = T(((cs[0]*csx[0] - cs[1]*csx[1] + cs[0]) + csx[0]) + 1);
-          res[2*(start+i)+1] = T((cs[0]*csx[1] + cs[1]*csx[0]) + cs[1] + csx[1]);
+          if (x<n) return cmplx<Thigh>(std::cos(Thigh(x)*ang), std::sin(Thigh(x)*ang));
+          return cmplx<Thigh>(std::sin(Thigh(2*n-x)*ang), std::cos(Thigh(2*n-x)*ang));
           }
-        start += l1;
-        }
-      }
-
-    void calc_first_quadrant(size_t n, T * POCKETFFT_RESTRICT res)
-      {
-      T * POCKETFFT_RESTRICT p = res+n;
-      calc_first_octant(n<<1, p);
-      size_t ndone=(n+2)>>2;
-      size_t i=0, idx1=0, idx2=2*ndone-2;
-      for (; i+1<ndone; i+=2, idx1+=2, idx2-=2)
-        {
-        res[idx1] = p[2*i  ]; res[idx1+1] = p[2*i+1];
-        res[idx2] = p[2*i+3]; res[idx2+1] = p[2*i+2];
-        }
-      if (i!=ndone)
-        { res[idx1] = p[2*i]; res[idx1+1] = p[2*i+1]; }
-      }
-
-    void calc_first_half(size_t n, T * POCKETFFT_RESTRICT res)
-      {
-      int ndone=int(n+1)>>1;
-      T * p = res+n-1;
-      calc_first_octant(n<<2, p);
-      int i4=0, in=int(n), i=0;
-      for (; i4<=in-i4; ++i, i4+=4) // octant 0
-        { res[2*i] = p[2*i4]; res[2*i+1] = p[2*i4+1]; }
-      for (; i4-in <= 0; ++i, i4+=4) // octant 1
-        { auto xm = in-i4; res[2*i] = p[2*xm+1]; res[2*i+1] = p[2*xm]; }
-      for (; i4<=3*in-i4; ++i, i4+=4) // octant 2
-        { auto xm = i4-in; res[2*i] = -p[2*xm+1]; res[2*i+1] = p[2*xm]; }
-      for (; i<ndone; ++i, i4+=4) // octant 3
-        { auto xm = 2*in-i4; res[2*i] = -p[2*xm]; res[2*i+1] = p[2*xm+1]; }
-      }
-
-    void fill_first_quadrant(size_t n, T * POCKETFFT_RESTRICT res)
-      {
-      constexpr T hsqt2 = T(0.707106781186547524400844362104849L);
-      size_t quart = n>>2;
-      if ((n&7)==0)
-        res[quart] = res[quart+1] = hsqt2;
-      for (size_t i=2, j=2*quart-2; i<quart; i+=2, j-=2)
-        { res[j] = res[i+1]; res[j+1] = res[i]; }
-      }
-
-    POCKETFFT_NOINLINE void fill_first_half(size_t n, T * POCKETFFT_RESTRICT res)
-      {
-      size_t half = n>>1;
-      if ((n&3)==0)
-        for (size_t i=0; i<half; i+=2)
-          { res[i+half] = -res[i+1]; res[i+half+1] = res[i]; }
-      else
-        for (size_t i=2, j=2*half-2; i<half; i+=2, j-=2)
-          { res[j] = -res[i]; res[j+1] = res[i+1]; }
-      }
-
-    void fill_second_half(size_t n, T * POCKETFFT_RESTRICT res)
-      {
-      if ((n&1)==0)
-        for (size_t i=0; i<n; ++i)
-          res[i+n] = -res[i];
-      else
-        for (size_t i=2, j=2*n-2; i<n; i+=2, j-=2)
-          { res[j] = res[i]; res[j+1] = -res[i+1]; }
-      }
-
-    POCKETFFT_NOINLINE void sincos_2pibyn_half(size_t n, T * POCKETFFT_RESTRICT res)
-      {
-      if ((n&3)==0)
-        {
-        calc_first_octant(n, res);
-        fill_first_quadrant(n, res);
-        fill_first_half(n, res);
-        }
-      else if ((n&1)==0)
-        {
-        calc_first_quadrant(n, res);
-        fill_first_half(n, res);
+        else // second quadrant
+          {
+          x-=2*n;
+          if (x<n) return cmplx<Thigh>(-std::sin(Thigh(x)*ang), std::cos(Thigh(x)*ang));
+          return cmplx<Thigh>(-std::cos(Thigh(2*n-x)*ang), std::sin(Thigh(2*n-x)*ang));
+          }
         }
       else
-        calc_first_half(n, res);
+        {
+        x=8*n-x;
+        if (x<2*n) // third quadrant
+          {
+          if (x<n) return cmplx<Thigh>(std::cos(Thigh(x)*ang), -std::sin(Thigh(x)*ang));
+          return cmplx<Thigh>(std::sin(Thigh(2*n-x)*ang), -std::cos(Thigh(2*n-x)*ang));
+          }
+        else // fourth quadrant
+          {
+          x-=2*n;
+          if (x<n) return cmplx<Thigh>(-std::sin(Thigh(x)*ang), -std::cos(Thigh(x)*ang));
+          return cmplx<Thigh>(-std::cos(Thigh(2*n-x)*ang), -std::sin(Thigh(2*n-x)*ang));
+          }
+        }
       }
 
   public:
-    POCKETFFT_NOINLINE sincos_2pibyn(size_t n, bool half)
-      : data(2*n)
+    POCKETFFT_NOINLINE sincos_2pibyn(size_t n)
+      : N(n)
       {
-      sincos_2pibyn_half(n, data.data());
-      if (!half) fill_second_half(n, data.data());
+      constexpr auto pi = 3.141592653589793238462643383279502884197L;
+      Thigh ang = Thigh(0.25L*pi/n);
+      size_t nval = (n+2)/2;
+      shift = 1;
+      while((size_t(1)<<shift)*(size_t(1)<<shift) < nval) ++shift;
+      mask = (size_t(1)<<shift)-1;
+      v1.resize(mask+1);
+      v1[0].Set(Thigh(1), Thigh(0));
+      for (size_t i=1; i<v1.size(); ++i)
+        v1[i]=calc(i,n,ang);
+      v2.resize((nval+mask)/(mask+1));
+      v2[0].Set(Thigh(1), Thigh(0));
+      for (size_t i=1; i<v2.size(); ++i)
+        v2[i]=calc(i*(mask+1),n,ang);
       }
 
-    T operator[](size_t idx) const { return data[idx]; }
-    const T *rdata() const { return data; }
-    const cmplx<T> *cdata() const
-      { return reinterpret_cast<const cmplx<T> *>(data.data()); }
+    cmplx<T> operator[](size_t idx) const
+      {
+      if (2*idx<=N)
+        {
+        auto x1=v1[idx&mask], x2=v2[idx>>shift];
+        return cmplx<T>(T(x1.r*x2.r-x1.i*x2.i), T(x1.r*x2.i+x1.i*x2.r));
+        }
+      idx = N-idx;
+      auto x1=v1[idx&mask], x2=v2[idx>>shift];
+      return cmplx<T>(T(x1.r*x2.r-x1.i*x2.i), -T(x1.r*x2.i+x1.i*x2.r));
+      }
   };
 
 struct util // hack to avoid duplicate symbols
@@ -666,11 +447,11 @@ struct util // hack to avoid duplicate symbols
     const stride_t &stride_in, const stride_t &stride_out, bool inplace)
     {
     auto ndim = shape.size();
-    if (ndim<1) throw runtime_error("ndim must be >= 1");
+    if (ndim<1) throw std::runtime_error("ndim must be >= 1");
     if ((stride_in.size()!=ndim) || (stride_out.size()!=ndim))
-      throw runtime_error("stride dimension mismatch");
+      throw std::runtime_error("stride dimension mismatch");
     if (inplace && (stride_in!=stride_out))
-      throw runtime_error("stride mismatch");
+      throw std::runtime_error("stride mismatch");
     }
 
   static POCKETFFT_NOINLINE void sanity_check(const shape_t &shape,
@@ -682,8 +463,8 @@ struct util // hack to avoid duplicate symbols
     shape_t tmp(ndim,0);
     for (auto ax : axes)
       {
-      if (ax>=ndim) throw invalid_argument("bad axis number");
-      if (++tmp[ax]>1) throw invalid_argument("axis specified repeatedly");
+      if (ax>=ndim) throw std::invalid_argument("bad axis number");
+      if (++tmp[ax]>1) throw std::invalid_argument("axis specified repeatedly");
       }
     }
 
@@ -692,7 +473,7 @@ struct util // hack to avoid duplicate symbols
     size_t axis)
     {
     sanity_check(shape, stride_in, stride_out, inplace);
-    if (axis>=shape.size()) throw invalid_argument("bad axis number");
+    if (axis>=shape.size()) throw std::invalid_argument("bad axis number");
     }
 
 #ifdef POCKETFFT_NO_MULTITHREADING
@@ -709,8 +490,8 @@ struct util // hack to avoid duplicate symbols
     if (shape[axis] < 1000)
       parallel /= 4;
     size_t max_threads = nthreads == 0 ?
-      thread::hardware_concurrency() : nthreads;
-    return max(size_t(1), min(parallel, max_threads));
+      std::thread::hardware_concurrency() : nthreads;
+    return std::max(size_t(1), std::min(parallel, max_threads));
     }
 #endif
   };
@@ -719,9 +500,8 @@ namespace threading {
 
 #ifdef POCKETFFT_NO_MULTITHREADING
 
-constexpr size_t thread_id = 0;
-constexpr size_t num_threads = 1;
-constexpr size_t max_threads = 1;
+constexpr inline size_t thread_id() { return 0; }
+constexpr inline size_t num_threads() { return 1; }
 
 template <typename Func>
 void thread_map(size_t /* nthreads */, Func f)
@@ -729,16 +509,24 @@ void thread_map(size_t /* nthreads */, Func f)
 
 #else
 
-thread_local size_t thread_id = 0;
-thread_local size_t num_threads = 1;
-static const size_t max_threads = max(1u, thread::hardware_concurrency());
+inline size_t &thread_id()
+  {
+  static thread_local size_t thread_id_=0;
+  return thread_id_;
+  }
+inline size_t &num_threads()
+  {
+  static thread_local size_t num_threads_=1;
+  return num_threads_;
+  }
+static const size_t max_threads = std::max(1u, std::thread::hardware_concurrency());
 
 class latch
   {
-    atomic<size_t> num_left_;
-    mutex mut_;
-    condition_variable completed_;
-    using lock_t = unique_lock<mutex>;
+    std::atomic<size_t> num_left_;
+    std::mutex mut_;
+    std::condition_variable completed_;
+    using lock_t = std::unique_lock<std::mutex>;
 
   public:
     latch(size_t n): num_left_(n) {}
@@ -761,11 +549,11 @@ class latch
 
 template <typename T> class concurrent_queue
   {
-    queue<T> q_;
-    mutex mut_;
-    condition_variable item_added_;
+    std::queue<T> q_;
+    std::mutex mut_;
+    std::condition_variable item_added_;
     bool shutdown_;
-    using lock_t = unique_lock<mutex>;
+    using lock_t = std::unique_lock<std::mutex>;
 
   public:
     concurrent_queue(): shutdown_(false) {}
@@ -775,7 +563,7 @@ template <typename T> class concurrent_queue
       {
       lock_t lock(mut_);
       if (shutdown_)
-        throw runtime_error("Item added to queue after shutdown");
+        throw std::runtime_error("Item added to queue after shutdown");
       q_.push(move(val));
       }
       item_added_.notify_one();
@@ -807,12 +595,12 @@ template <typename T> class concurrent_queue
 
 class thread_pool
   {
-    concurrent_queue<function<void()>> work_queue_;
-    vector<thread> threads_;
+    concurrent_queue<std::function<void()>> work_queue_;
+    std::vector<std::thread> threads_;
 
     void worker_main()
       {
-      function<void()> work;
+      std::function<void()> work;
       while (work_queue_.pop(work))
         work();
       }
@@ -822,7 +610,7 @@ class thread_pool
       size_t nthreads = threads_.size();
       for (size_t i=0; i<nthreads; ++i)
         {
-        try { threads_[i] = thread([this]{ worker_main(); }); }
+        try { threads_[i] = std::thread([this]{ worker_main(); }); }
         catch (...)
           {
           shutdown();
@@ -840,7 +628,7 @@ class thread_pool
 
     ~thread_pool() { shutdown(); }
 
-    void submit(function<void()> work)
+    void submit(std::function<void()> work)
       {
       work_queue_.push(move(work));
       }
@@ -864,8 +652,8 @@ thread_pool & get_pool()
   {
   static thread_pool pool;
 #ifdef POCKETFFT_PTHREADS
-  static once_flag f;
-  call_once(f,
+  static std::once_flag f;
+  std::call_once(f,
     []{
     pthread_atfork(
       +[]{ get_pool().shutdown(); },  // prepare
@@ -890,26 +678,26 @@ void thread_map(size_t nthreads, Func f)
 
   auto & pool = get_pool();
   latch counter(nthreads);
-  exception_ptr ex;
-  mutex ex_mut;
+  std::exception_ptr ex;
+  std::mutex ex_mut;
   for (size_t i=0; i<nthreads; ++i)
     {
     pool.submit(
       [&f, &counter, &ex, &ex_mut, i, nthreads] {
-      thread_id = i;
-      num_threads = nthreads;
+      thread_id() = i;
+      num_threads() = nthreads;
       try { f(); }
       catch (...)
         {
-        lock_guard<mutex> lock(ex_mut);
-        ex = current_exception();
+        std::lock_guard<std::mutex> lock(ex_mut);
+        ex = std::current_exception();
         }
       counter.count_down();
       });
     }
   counter.wait();
   if (ex)
-    rethrow_exception(ex);
+    std::rethrow_exception(ex);
   }
 
 #endif
@@ -931,7 +719,7 @@ template<typename T0> class cfftp
 
     size_t length;
     arr<cmplx<T0>> mem;
-    vector<fctdata> fact;
+    std::vector<fctdata> fact;
 
     void add_factor(size_t factor)
       { fact.push_back({factor, nullptr, nullptr}); }
@@ -940,12 +728,10 @@ template<bool fwd, typename T> void pass2 (size_t ido, size_t l1,
   const T * POCKETFFT_RESTRICT cc, T * POCKETFFT_RESTRICT ch,
   const cmplx<T0> * POCKETFFT_RESTRICT wa) const
   {
-  constexpr size_t cdim=2;
-
   auto CH = [ch,ido,l1](size_t a, size_t b, size_t c) -> T&
     { return ch[a+ido*(b+l1*c)]; };
-  auto CC = [cc,ido,cdim](size_t a, size_t b, size_t c) -> const T&
-    { return cc[a+ido*(b+cdim*c)]; };
+  auto CC = [cc,ido](size_t a, size_t b, size_t c) -> const T&
+    { return cc[a+ido*(b+2*c)]; };
   auto WA = [wa, ido](size_t x, size_t i)
     { return wa[i-1+x*(ido-1)]; };
 
@@ -989,14 +775,13 @@ template<bool fwd, typename T> void pass3 (size_t ido, size_t l1,
   const T * POCKETFFT_RESTRICT cc, T * POCKETFFT_RESTRICT ch,
   const cmplx<T0> * POCKETFFT_RESTRICT wa) const
   {
-  constexpr size_t cdim=3;
   constexpr T0 tw1r=-0.5,
                tw1i= (fwd ? -1: 1) * T0(0.8660254037844386467637231707529362L);
 
   auto CH = [ch,ido,l1](size_t a, size_t b, size_t c) -> T&
     { return ch[a+ido*(b+l1*c)]; };
-  auto CC = [cc,ido,cdim](size_t a, size_t b, size_t c) -> const T&
-    { return cc[a+ido*(b+cdim*c)]; };
+  auto CC = [cc,ido](size_t a, size_t b, size_t c) -> const T&
+    { return cc[a+ido*(b+3*c)]; };
   auto WA = [wa, ido](size_t x, size_t i)
     { return wa[i-1+x*(ido-1)]; };
 
@@ -1029,12 +814,10 @@ template<bool fwd, typename T> void pass4 (size_t ido, size_t l1,
   const T * POCKETFFT_RESTRICT cc, T * POCKETFFT_RESTRICT ch,
   const cmplx<T0> * POCKETFFT_RESTRICT wa) const
   {
-  constexpr size_t cdim=4;
-
   auto CH = [ch,ido,l1](size_t a, size_t b, size_t c) -> T&
     { return ch[a+ido*(b+l1*c)]; };
-  auto CC = [cc,ido,cdim](size_t a, size_t b, size_t c) -> const T&
-    { return cc[a+ido*(b+cdim*c)]; };
+  auto CC = [cc,ido](size_t a, size_t b, size_t c) -> const T&
+    { return cc[a+ido*(b+4*c)]; };
   auto WA = [wa, ido](size_t x, size_t i)
     { return wa[i-1+x*(ido-1)]; };
 
@@ -1105,7 +888,6 @@ template<bool fwd, typename T> void pass5 (size_t ido, size_t l1,
   const T * POCKETFFT_RESTRICT cc, T * POCKETFFT_RESTRICT ch,
   const cmplx<T0> * POCKETFFT_RESTRICT wa) const
   {
-  constexpr size_t cdim=5;
   constexpr T0 tw1r= T0(0.3090169943749474241022934171828191L),
                tw1i= (fwd ? -1: 1) * T0(0.9510565162951535721164393333793821L),
                tw2r= T0(-0.8090169943749474241022934171828191L),
@@ -1113,8 +895,8 @@ template<bool fwd, typename T> void pass5 (size_t ido, size_t l1,
 
   auto CH = [ch,ido,l1](size_t a, size_t b, size_t c) -> T&
     { return ch[a+ido*(b+l1*c)]; };
-  auto CC = [cc,ido,cdim](size_t a, size_t b, size_t c) -> const T&
-    { return cc[a+ido*(b+cdim*c)]; };
+  auto CC = [cc,ido](size_t a, size_t b, size_t c) -> const T&
+    { return cc[a+ido*(b+5*c)]; };
   auto WA = [wa, ido](size_t x, size_t i)
     { return wa[i-1+x*(ido-1)]; };
 
@@ -1177,7 +959,6 @@ template<bool fwd, typename T> void pass7(size_t ido, size_t l1,
   const T * POCKETFFT_RESTRICT cc, T * POCKETFFT_RESTRICT ch,
   const cmplx<T0> * POCKETFFT_RESTRICT wa) const
   {
-  constexpr size_t cdim=7;
   constexpr T0 tw1r= T0(0.6234898018587335305250048840042398L),
                tw1i= (fwd ? -1 : 1) * T0(0.7818314824680298087084445266740578L),
                tw2r= T0(-0.2225209339563144042889025644967948L),
@@ -1187,8 +968,8 @@ template<bool fwd, typename T> void pass7(size_t ido, size_t l1,
 
   auto CH = [ch,ido,l1](size_t a, size_t b, size_t c) -> T&
     { return ch[a+ido*(b+l1*c)]; };
-  auto CC = [cc,ido,cdim](size_t a, size_t b, size_t c) -> const T&
-    { return cc[a+ido*(b+cdim*c)]; };
+  auto CC = [cc,ido](size_t a, size_t b, size_t c) -> const T&
+    { return cc[a+ido*(b+7*c)]; };
   auto WA = [wa, ido](size_t x, size_t i)
     { return wa[i-1+x*(ido-1)]; };
 
@@ -1245,12 +1026,10 @@ template<bool fwd, typename T> void pass8 (size_t ido, size_t l1,
   const T * POCKETFFT_RESTRICT cc, T * POCKETFFT_RESTRICT ch,
   const cmplx<T0> * POCKETFFT_RESTRICT wa) const
   {
-  constexpr size_t cdim=8;
-
   auto CH = [ch,ido,l1](size_t a, size_t b, size_t c) -> T&
     { return ch[a+ido*(b+l1*c)]; };
-  auto CC = [cc,ido,cdim](size_t a, size_t b, size_t c) -> const T&
-    { return cc[a+ido*(b+cdim*c)]; };
+  auto CC = [cc,ido](size_t a, size_t b, size_t c) -> const T&
+    { return cc[a+ido*(b+8*c)]; };
   auto WA = [wa, ido](size_t x, size_t i)
     { return wa[i-1+x*(ido-1)]; };
 
@@ -1360,7 +1139,6 @@ template<bool fwd, typename T> void pass11 (size_t ido, size_t l1,
   const T * POCKETFFT_RESTRICT cc, T * POCKETFFT_RESTRICT ch,
   const cmplx<T0> * POCKETFFT_RESTRICT wa) const
   {
-  constexpr size_t cdim=11;
   constexpr T0 tw1r= T0(0.8412535328311811688618116489193677L),
                tw1i= (fwd ? -1 : 1) * T0(0.5406408174555975821076359543186917L),
                tw2r= T0(0.4154150130018864255292741492296232L),
@@ -1374,8 +1152,8 @@ template<bool fwd, typename T> void pass11 (size_t ido, size_t l1,
 
   auto CH = [ch,ido,l1](size_t a, size_t b, size_t c) -> T&
     { return ch[a+ido*(b+l1*c)]; };
-  auto CC = [cc,ido,cdim](size_t a, size_t b, size_t c) -> const T&
-    { return cc[a+ido*(b+cdim*c)]; };
+  auto CC = [cc,ido](size_t a, size_t b, size_t c) -> const T&
+    { return cc[a+ido*(b+11*c)]; };
   auto WA = [wa, ido](size_t x, size_t i)
     { return wa[i-1+x*(ido-1)]; };
 
@@ -1555,9 +1333,9 @@ template<bool fwd, typename T> void pass_all(T c[], T0 fct) const
     else
       {
       passg<fwd>(ido, ip, l1, p1, p2, fact[k1].tw, fact[k1].tws);
-      swap(p1,p2);
+      std::swap(p1,p2);
       }
-    swap(p1,p2);
+    std::swap(p1,p2);
     l1=l2;
     }
   if (p1!=c)
@@ -1591,7 +1369,7 @@ template<bool fwd, typename T> void pass_all(T c[], T0 fct) const
         len>>=1;
         // factor 2 should be at the front of the factor list
         add_factor(2);
-        swap(fact[0].fct, fact.back().fct);
+        std::swap(fact[0].fct, fact.back().fct);
         }
       for (size_t divisor=3; divisor*divisor<=len; divisor+=2)
         while ((len%divisor)==0)
@@ -1618,8 +1396,7 @@ template<bool fwd, typename T> void pass_all(T c[], T0 fct) const
 
     void comp_twiddle()
       {
-      sincos_2pibyn<T0> twid(length, false);
-      auto twiddle = twid.cdata();
+      sincos_2pibyn<T0> twiddle(length);
       size_t l1=1;
       size_t memofs=0;
       for (size_t k=0; k<fact.size(); ++k)
@@ -1645,7 +1422,7 @@ template<bool fwd, typename T> void pass_all(T c[], T0 fct) const
     POCKETFFT_NOINLINE cfftp(size_t length_)
       : length(length_)
       {
-      if (length==0) throw runtime_error("zero-length FFT requested");
+      if (length==0) throw std::runtime_error("zero-length FFT requested");
       if (length==1) return;
       factorize();
       mem.resize(twsize());
@@ -1668,7 +1445,7 @@ template<typename T0> class rfftp
 
     size_t length;
     arr<T0> mem;
-    vector<fctdata> fact;
+    std::vector<fctdata> fact;
 
     void add_factor(size_t factor)
       { fact.push_back({factor, nullptr, nullptr}); }
@@ -1682,13 +1459,11 @@ template<typename T> void radf2 (size_t ido, size_t l1,
   const T * POCKETFFT_RESTRICT cc, T * POCKETFFT_RESTRICT ch,
   const T0 * POCKETFFT_RESTRICT wa) const
   {
-  constexpr size_t cdim=2;
-
   auto WA = [wa,ido](size_t x, size_t i) { return wa[i+x*(ido-1)]; };
   auto CC = [cc,ido,l1](size_t a, size_t b, size_t c) -> const T&
     { return cc[a+ido*(b+l1*c)]; };
-  auto CH = [ch,ido,cdim](size_t a, size_t b, size_t c) -> T&
-    { return ch[a+ido*(b+cdim*c)]; };
+  auto CH = [ch,ido](size_t a, size_t b, size_t c) -> T&
+    { return ch[a+ido*(b+2*c)]; };
 
   for (size_t k=0; k<l1; k++)
     PM (CH(0,0,k),CH(ido-1,1,k),CC(0,k,0),CC(0,k,1));
@@ -1721,14 +1496,13 @@ template<typename T> void radf3(size_t ido, size_t l1,
   const T * POCKETFFT_RESTRICT cc, T * POCKETFFT_RESTRICT ch,
   const T0 * POCKETFFT_RESTRICT wa) const
   {
-  constexpr size_t cdim=3;
   constexpr T0 taur=-0.5, taui=T0(0.8660254037844386467637231707529362L);
 
   auto WA = [wa,ido](size_t x, size_t i) { return wa[i+x*(ido-1)]; };
   auto CC = [cc,ido,l1](size_t a, size_t b, size_t c) -> const T&
     { return cc[a+ido*(b+l1*c)]; };
-  auto CH = [ch,ido,cdim](size_t a, size_t b, size_t c) -> T&
-    { return ch[a+ido*(b+cdim*c)]; };
+  auto CH = [ch,ido](size_t a, size_t b, size_t c) -> T&
+    { return ch[a+ido*(b+3*c)]; };
 
   for (size_t k=0; k<l1; k++)
     {
@@ -1761,14 +1535,13 @@ template<typename T> void radf4(size_t ido, size_t l1,
   const T * POCKETFFT_RESTRICT cc, T * POCKETFFT_RESTRICT ch,
   const T0 * POCKETFFT_RESTRICT wa) const
   {
-  constexpr size_t cdim=4;
   constexpr T0 hsqt2=T0(0.707106781186547524400844362104849L);
 
   auto WA = [wa,ido](size_t x, size_t i) { return wa[i+x*(ido-1)]; };
   auto CC = [cc,ido,l1](size_t a, size_t b, size_t c) -> const T&
     { return cc[a+ido*(b+l1*c)]; };
-  auto CH = [ch,ido,cdim](size_t a, size_t b, size_t c) -> T&
-    { return ch[a+ido*(b+cdim*c)]; };
+  auto CH = [ch,ido](size_t a, size_t b, size_t c) -> T&
+    { return ch[a+ido*(b+4*c)]; };
 
   for (size_t k=0; k<l1; k++)
     {
@@ -1809,7 +1582,6 @@ template<typename T> void radf5(size_t ido, size_t l1,
   const T * POCKETFFT_RESTRICT cc, T * POCKETFFT_RESTRICT ch,
   const T0 * POCKETFFT_RESTRICT wa) const
   {
-  constexpr size_t cdim=5;
   constexpr T0 tr11= T0(0.3090169943749474241022934171828191L),
                ti11= T0(0.9510565162951535721164393333793821L),
                tr12= T0(-0.8090169943749474241022934171828191L),
@@ -1818,8 +1590,8 @@ template<typename T> void radf5(size_t ido, size_t l1,
   auto WA = [wa,ido](size_t x, size_t i) { return wa[i+x*(ido-1)]; };
   auto CC = [cc,ido,l1](size_t a, size_t b, size_t c) -> const T&
     { return cc[a+ido*(b+l1*c)]; };
-  auto CH = [ch,ido,cdim](size_t a, size_t b, size_t c) -> T&
-    { return ch[a+ido*(b+cdim*c)]; };
+  auto CH = [ch,ido](size_t a, size_t b, size_t c) -> T&
+    { return ch[a+ido*(b+5*c)]; };
 
   for (size_t k=0; k<l1; k++)
     {
@@ -2008,11 +1780,9 @@ template<typename T> void radb2(size_t ido, size_t l1,
   const T * POCKETFFT_RESTRICT cc, T * POCKETFFT_RESTRICT ch,
   const T0 * POCKETFFT_RESTRICT wa) const
   {
-  constexpr size_t cdim=2;
-
   auto WA = [wa,ido](size_t x, size_t i) { return wa[i+x*(ido-1)]; };
-  auto CC = [cc,ido,cdim](size_t a, size_t b, size_t c) -> const T&
-    { return cc[a+ido*(b+cdim*c)]; };
+  auto CC = [cc,ido](size_t a, size_t b, size_t c) -> const T&
+    { return cc[a+ido*(b+2*c)]; };
   auto CH = [ch,ido,l1](size_t a, size_t b, size_t c) -> T&
     { return ch[a+ido*(b+l1*c)]; };
 
@@ -2040,12 +1810,11 @@ template<typename T> void radb3(size_t ido, size_t l1,
   const T * POCKETFFT_RESTRICT cc, T * POCKETFFT_RESTRICT ch,
   const T0 * POCKETFFT_RESTRICT wa) const
   {
-  constexpr size_t cdim=3;
   constexpr T0 taur=-0.5, taui=T0(0.8660254037844386467637231707529362L);
 
   auto WA = [wa,ido](size_t x, size_t i) { return wa[i+x*(ido-1)]; };
-  auto CC = [cc,ido,cdim](size_t a, size_t b, size_t c) -> const T&
-    { return cc[a+ido*(b+cdim*c)]; };
+  auto CC = [cc,ido](size_t a, size_t b, size_t c) -> const T&
+    { return cc[a+ido*(b+3*c)]; };
   auto CH = [ch,ido,l1](size_t a, size_t b, size_t c) -> T&
     { return ch[a+ido*(b+l1*c)]; };
 
@@ -2081,12 +1850,11 @@ template<typename T> void radb4(size_t ido, size_t l1,
   const T * POCKETFFT_RESTRICT cc, T * POCKETFFT_RESTRICT ch,
   const T0 * POCKETFFT_RESTRICT wa) const
   {
-  constexpr size_t cdim=4;
   constexpr T0 sqrt2=T0(1.414213562373095048801688724209698L);
 
   auto WA = [wa,ido](size_t x, size_t i) { return wa[i+x*(ido-1)]; };
-  auto CC = [cc,ido,cdim](size_t a, size_t b, size_t c) -> const T&
-    { return cc[a+ido*(b+cdim*c)]; };
+  auto CC = [cc,ido](size_t a, size_t b, size_t c) -> const T&
+    { return cc[a+ido*(b+4*c)]; };
   auto CH = [ch,ido,l1](size_t a, size_t b, size_t c) -> T&
     { return ch[a+ido*(b+l1*c)]; };
 
@@ -2134,15 +1902,14 @@ template<typename T> void radb5(size_t ido, size_t l1,
   const T * POCKETFFT_RESTRICT cc, T * POCKETFFT_RESTRICT ch,
   const T0 * POCKETFFT_RESTRICT wa) const
   {
-  constexpr size_t cdim=5;
   constexpr T0 tr11= T0(0.3090169943749474241022934171828191L),
                ti11= T0(0.9510565162951535721164393333793821L),
                tr12= T0(-0.8090169943749474241022934171828191L),
                ti12= T0(0.5877852522924731291687059546390728L);
 
   auto WA = [wa,ido](size_t x, size_t i) { return wa[i+x*(ido-1)]; };
-  auto CC = [cc,ido,cdim](size_t a, size_t b, size_t c) -> const T&
-    { return cc[a+ido*(b+cdim*c)]; };
+  auto CC = [cc,ido](size_t a, size_t b, size_t c) -> const T&
+    { return cc[a+ido*(b+5*c)]; };
   auto CH = [ch,ido,l1](size_t a, size_t b, size_t c) -> T&
     { return ch[a+ido*(b+l1*c)]; };
 
@@ -2365,8 +2132,8 @@ template<typename T> void radbg(size_t ido, size_t ip, size_t l1,
           else if(ip==5)
             radf5(ido, l1, p1, p2, fact[k].tw);
           else
-            { radfg(ido, ip, l1, p1, p2, fact[k].tw, fact[k].tws); swap (p1,p2); }
-          swap (p1,p2);
+            { radfg(ido, ip, l1, p1, p2, fact[k].tw, fact[k].tws); std::swap (p1,p2); }
+          std::swap (p1,p2);
           }
       else
         for(size_t k=0, l1=1; k<nf; k++)
@@ -2383,7 +2150,7 @@ template<typename T> void radbg(size_t ido, size_t ip, size_t l1,
             radb5(ido, l1, p1, p2, fact[k].tw);
           else
             radbg(ido, ip, l1, p1, p2, fact[k].tw, fact[k].tws);
-          swap (p1,p2);
+          std::swap (p1,p2);
           l1*=ip;
           }
 
@@ -2401,7 +2168,7 @@ template<typename T> void radbg(size_t ido, size_t ip, size_t l1,
         len>>=1;
         // factor 2 should be at the front of the factor list
         add_factor(2);
-        swap(fact[0].fct, fact.back().fct);
+        std::swap(fact[0].fct, fact.back().fct);
         }
       for (size_t divisor=3; divisor*divisor<=len; divisor+=2)
         while ((len%divisor)==0)
@@ -2427,7 +2194,7 @@ template<typename T> void radbg(size_t ido, size_t ip, size_t l1,
 
     void comp_twiddle()
       {
-      sincos_2pibyn<T0> twid(length, true);
+      sincos_2pibyn<T0> twid(length);
       size_t l1=1;
       T0 *ptr=mem.data();
       for (size_t k=0; k<fact.size(); ++k)
@@ -2439,8 +2206,8 @@ template<typename T> void radbg(size_t ido, size_t ip, size_t l1,
           for (size_t j=1; j<ip; ++j)
             for (size_t i=1; i<=(ido-1)/2; ++i)
               {
-              fact[k].tw[(j-1)*(ido-1)+2*i-2] = twid[2*j*l1*i];
-              fact[k].tw[(j-1)*(ido-1)+2*i-1] = twid[2*j*l1*i+1];
+              fact[k].tw[(j-1)*(ido-1)+2*i-2] = twid[j*l1*i].r;
+              fact[k].tw[(j-1)*(ido-1)+2*i-1] = twid[j*l1*i].i;
               }
           }
         if (ip>5) // special factors required by *g functions
@@ -2450,10 +2217,10 @@ template<typename T> void radbg(size_t ido, size_t ip, size_t l1,
           fact[k].tws[1] = 0.;
           for (size_t i=2, ic=2*ip-2; i<=ic; i+=2, ic-=2)
             {
-            fact[k].tws[i  ] = twid[i*(length/ip)];
-            fact[k].tws[i+1] = twid[i*(length/ip)+1];
-            fact[k].tws[ic]   = twid[i*(length/ip)];
-            fact[k].tws[ic+1] = -twid[i*(length/ip)+1];
+            fact[k].tws[i  ] = twid[i/2*(length/ip)].r;
+            fact[k].tws[i+1] = twid[i/2*(length/ip)].i;
+            fact[k].tws[ic]   = twid[i/2*(length/ip)].r;
+            fact[k].tws[ic+1] = -twid[i/2*(length/ip)].i;
             }
           }
         l1*=ip;
@@ -2464,7 +2231,7 @@ template<typename T> void radbg(size_t ido, size_t ip, size_t l1,
     POCKETFFT_NOINLINE rfftp(size_t length_)
       : length(length_)
       {
-      if (length==0) throw runtime_error("zero-length FFT requested");
+      if (length==0) throw std::runtime_error("zero-length FFT requested");
       if (length==1) return;
       factorize();
       mem.resize(twsize());
@@ -2498,8 +2265,14 @@ template<typename T0> class fftblue
       plan.exec (akf.data(),1.,true);
 
       /* do the convolution */
-      for (size_t m=0; m<n2; ++m)
+      akf[0] = akf[0].template special_mul<!fwd>(bkf[0]);
+      for (size_t m=1; m<(n2+1)/2; ++m)
+        {
         akf[m] = akf[m].template special_mul<!fwd>(bkf[m]);
+        akf[n2-m] = akf[n2-m].template special_mul<!fwd>(bkf[m]);
+        }
+      if ((n2&1)==0)
+        akf[n2/2] = akf[n2/2].template special_mul<!fwd>(bkf[n2/2]);
 
       /* inverse FFT */
       plan.exec (akf.data(),1.,false);
@@ -2511,12 +2284,11 @@ template<typename T0> class fftblue
 
   public:
     POCKETFFT_NOINLINE fftblue(size_t length)
-      : n(length), n2(util::good_size_cmplx(n*2-1)), plan(n2), mem(n+n2),
+      : n(length), n2(util::good_size_cmplx(n*2-1)), plan(n2), mem(n+n2/2+1),
         bk(mem.data()), bkf(mem.data()+n)
       {
       /* initialize b_k */
-      sincos_2pibyn<T0> tmp_(2*n, false);
-      auto tmp = tmp_.cdata();
+      sincos_2pibyn<T0> tmp(2*n);
       bk[0].Set(1, 0);
 
       size_t coeff=0;
@@ -2528,13 +2300,16 @@ template<typename T0> class fftblue
         }
 
       /* initialize the zero-padded, Fourier transformed b_k. Add normalisation. */
+      arr<cmplx<T0>> tbkf(n2);
       T0 xn2 = T0(1)/T0(n2);
-      bkf[0] = bk[0]*xn2;
+      tbkf[0] = bk[0]*xn2;
       for (size_t m=1; m<n; ++m)
-        bkf[m] = bkf[n2-m] = bk[m]*xn2;
+        tbkf[m] = tbkf[n2-m] = bk[m]*xn2;
       for (size_t m=n;m<=(n2-n);++m)
-        bkf[m].Set(0.,0.);
-      plan.exec(bkf,1.,true);
+        tbkf[m].Set(0.,0.);
+      plan.exec(tbkf.data(),1.,true);
+      for (size_t i=0; i<n2/2+1; ++i)
+        bkf[i] = tbkf[i];
       }
 
     template<typename T> void exec(cmplx<T> c[], T0 fct, bool fwd) const
@@ -2574,28 +2349,28 @@ template<typename T0> class fftblue
 template<typename T0> class pocketfft_c
   {
   private:
-    unique_ptr<cfftp<T0>> packplan;
-    unique_ptr<fftblue<T0>> blueplan;
+    std::unique_ptr<cfftp<T0>> packplan;
+    std::unique_ptr<fftblue<T0>> blueplan;
     size_t len;
 
   public:
     POCKETFFT_NOINLINE pocketfft_c(size_t length)
       : len(length)
       {
-      if (length==0) throw runtime_error("zero-length FFT requested");
+      if (length==0) throw std::runtime_error("zero-length FFT requested");
       size_t tmp = (length<50) ? 0 : util::largest_prime_factor(length);
       if (tmp*tmp <= length)
         {
-        packplan=unique_ptr<cfftp<T0>>(new cfftp<T0>(length));
+        packplan=std::unique_ptr<cfftp<T0>>(new cfftp<T0>(length));
         return;
         }
       double comp1 = util::cost_guess(length);
       double comp2 = 2*util::cost_guess(util::good_size_cmplx(2*length-1));
       comp2*=1.5; /* fudge factor that appears to give good overall performance */
       if (comp2<comp1) // use Bluestein
-        blueplan=unique_ptr<fftblue<T0>>(new fftblue<T0>(length));
+        blueplan=std::unique_ptr<fftblue<T0>>(new fftblue<T0>(length));
       else
-        packplan=unique_ptr<cfftp<T0>>(new cfftp<T0>(length));
+        packplan=std::unique_ptr<cfftp<T0>>(new cfftp<T0>(length));
       }
 
     template<typename T> POCKETFFT_NOINLINE void exec(cmplx<T> c[], T0 fct, bool fwd) const
@@ -2611,28 +2386,28 @@ template<typename T0> class pocketfft_c
 template<typename T0> class pocketfft_r
   {
   private:
-    unique_ptr<rfftp<T0>> packplan;
-    unique_ptr<fftblue<T0>> blueplan;
+    std::unique_ptr<rfftp<T0>> packplan;
+    std::unique_ptr<fftblue<T0>> blueplan;
     size_t len;
 
   public:
     POCKETFFT_NOINLINE pocketfft_r(size_t length)
       : len(length)
       {
-      if (length==0) throw runtime_error("zero-length FFT requested");
+      if (length==0) throw std::runtime_error("zero-length FFT requested");
       size_t tmp = (length<50) ? 0 : util::largest_prime_factor(length);
       if (tmp*tmp <= length)
         {
-        packplan=unique_ptr<rfftp<T0>>(new rfftp<T0>(length));
+        packplan=std::unique_ptr<rfftp<T0>>(new rfftp<T0>(length));
         return;
         }
       double comp1 = 0.5*util::cost_guess(length);
       double comp2 = 2*util::cost_guess(util::good_size_cmplx(2*length-1));
       comp2*=1.5; /* fudge factor that appears to give good overall performance */
       if (comp2<comp1) // use Bluestein
-        blueplan=unique_ptr<fftblue<T0>>(new fftblue<T0>(length));
+        blueplan=std::unique_ptr<fftblue<T0>>(new fftblue<T0>(length));
       else
-        packplan=unique_ptr<rfftp<T0>>(new rfftp<T0>(length));
+        packplan=std::unique_ptr<rfftp<T0>>(new rfftp<T0>(length));
       }
 
     template<typename T> POCKETFFT_NOINLINE void exec(T c[], T0 fct, bool fwd) const
@@ -2706,15 +2481,15 @@ template<typename T0> class T_dcst23
   {
   private:
     pocketfft_r<T0> fftplan;
-    vector<T0> twiddle;
+    std::vector<T0> twiddle;
 
   public:
     POCKETFFT_NOINLINE T_dcst23(size_t length)
       : fftplan(length), twiddle(length)
       {
-      const auto oo2n = T0(0.5)/T0(length);
+      sincos_2pibyn<T0> tw(4*length);
       for (size_t i=0; i<length; ++i)
-        twiddle[i] = cospi(oo2n*T0(i+1));
+        twiddle[i] = tw[i+1].r;
       }
 
     template<typename T> POCKETFFT_NOINLINE void exec(T c[], T0 fct, bool ortho,
@@ -2743,7 +2518,7 @@ template<typename T0> class T_dcst23
           c[NS2] *= twiddle[NS2-1];
         if (!cosine)
           for (size_t k=0, kc=N-1; k<kc; ++k, --kc)
-            swap(c[k], c[kc]);
+            std::swap(c[k], c[kc]);
         if (ortho) c[0]*=sqrt2*T0(0.5);
         }
       else
@@ -2751,7 +2526,7 @@ template<typename T0> class T_dcst23
         if (ortho) c[0]*=sqrt2;
         if (!cosine)
           for (size_t k=0, kc=N-1; k<NS2; ++k, --kc)
-            swap(c[k], c[kc]);
+            std::swap(c[k], c[kc]);
         for (size_t k=1, kc=N-1; k<NS2; ++k, --kc)
           {
           T t1=c[k]+c[kc], t2=c[k]-c[kc];
@@ -2776,8 +2551,8 @@ template<typename T0> class T_dcst4
   {
   private:
     size_t N;
-    unique_ptr<pocketfft_c<T0>> fft;
-    unique_ptr<pocketfft_r<T0>> rfft;
+    std::unique_ptr<pocketfft_c<T0>> fft;
+    std::unique_ptr<pocketfft_r<T0>> rfft;
     arr<cmplx<T0>> C2;
 
   public:
@@ -2787,24 +2562,21 @@ template<typename T0> class T_dcst4
         rfft((N&1)? new pocketfft_r<T0>(N) : nullptr),
         C2((N&1) ? 0 : N/2)
       {
-      const auto oon = -T0(1.)/T0(N);
       if ((N&1)==0)
+        {
+        sincos_2pibyn<T0> tw(16*N);
         for (size_t i=0; i<N/2; ++i)
-          {
-          T0 sincos[2];
-          sincospi(oon*(T0(i)+T0(0.125)), sincos);
-          C2[i].Set(sincos[0], sincos[1]);
-          }
+          C2[i] = conj(tw[8*i+1]);
+        }
       }
 
     template<typename T> POCKETFFT_NOINLINE void exec(T c[], T0 fct,
       bool /*ortho*/, int /*type*/, bool cosine) const
       {
-      constexpr T0 sqrt2=T0(1.414213562373095048801688724209698L);
       size_t n2 = N/2;
       if (!cosine)
         for (size_t k=0, kc=N-1; k<n2; ++k, --kc)
-          swap(c[k], c[kc]);
+          std::swap(c[k], c[kc]);
       if (N&1)
         {
         // The following code is derived from the FFTW3 function apply_re11()
@@ -2827,7 +2599,11 @@ template<typename T0> class T_dcst4
         }
         rfft->exec(y.data(), fct, true);
         {
-        auto SGN = [sqrt2](size_t i) {return (i&2) ? -sqrt2 : sqrt2;};
+        auto SGN = [](size_t i)
+           {
+           constexpr T0 sqrt2=T0(1.414213562373095048801688724209698L);
+           return (i&2) ? -sqrt2 : sqrt2;
+           };
         c[n2] = y[0]*SGN(n2+1);
         size_t i=0, i1=1, k=1;
         for (; k<n2; ++i, ++i1, k+=2)
@@ -2876,18 +2652,18 @@ template<typename T0> class T_dcst4
 // multi-D infrastructure
 //
 
-template<typename T> shared_ptr<T> get_plan(size_t length)
+template<typename T> std::shared_ptr<T> get_plan(size_t length)
   {
 #if POCKETFFT_CACHE_SIZE==0
-  return make_shared<T>(length);
+  return std::make_shared<T>(length);
 #else
   constexpr size_t nmax=POCKETFFT_CACHE_SIZE;
-  static array<shared_ptr<T>, nmax> cache;
-  static array<size_t, nmax> last_access{{0}};
+  static std::array<std::shared_ptr<T>, nmax> cache;
+  static std::array<size_t, nmax> last_access{{0}};
   static size_t access_counter = 0;
-  static mutex mut;
+  static std::mutex mut;
 
-  auto find_in_cache = [&]() -> shared_ptr<T>
+  auto find_in_cache = [&]() -> std::shared_ptr<T>
     {
     for (size_t i=0; i<nmax; ++i)
       if (cache[i] && (cache[i]->length()==length))
@@ -2907,13 +2683,13 @@ template<typename T> shared_ptr<T> get_plan(size_t length)
     };
 
   {
-  lock_guard<mutex> lock(mut);
+  std::lock_guard<std::mutex> lock(mut);
   auto p = find_in_cache();
   if (p) return p;
   }
-  auto plan = make_shared<T>(length);
+  auto plan = std::make_shared<T>(length);
   {
-  lock_guard<mutex> lock(mut);
+  std::lock_guard<std::mutex> lock(mut);
   auto p = find_in_cache();
   if (p) return p;
 
@@ -2999,11 +2775,11 @@ template<size_t N> class multi_iter
         str_i(iarr.stride(idim_)), p_oi(0), str_o(oarr.stride(idim_)),
         idim(idim_), rem(iarr.size()/iarr.shape(idim))
       {
-      auto nshares = threading::num_threads;
+      auto nshares = threading::num_threads();
       if (nshares==1) return;
-      if (nshares==0) throw runtime_error("can't run with zero threads");
-      auto myshare = threading::thread_id;
-      if (myshare>=nshares) throw runtime_error("impossible share requested");
+      if (nshares==0) throw std::runtime_error("can't run with zero threads");
+      auto myshare = threading::thread_id();
+      if (myshare>=nshares) throw std::runtime_error("impossible share requested");
       size_t nbase = rem/nshares;
       size_t additional = rem%nshares;
       size_t lo = myshare*nbase + ((myshare<additional) ? myshare : additional);
@@ -3025,7 +2801,7 @@ template<size_t N> class multi_iter
       }
     void advance(size_t n)
       {
-      if (rem<n) throw runtime_error("underrun");
+      if (rem<n) throw std::runtime_error("underrun");
       for (size_t i=0; i<n; ++i)
         {
         p_i[i] = p_ii;
@@ -3078,8 +2854,8 @@ class rev_iter
   private:
     shape_t pos;
     const arr_info &arr;
-    vector<char> rev_axis;
-    vector<char> rev_jump;
+    std::vector<char> rev_axis;
+    std::vector<char> rev_jump;
     size_t last_axis, last_size;
     shape_t shp;
     ptrdiff_t p, rp;
@@ -3237,7 +3013,7 @@ POCKETFFT_NOINLINE void general_nd(const cndarr<T> &in, ndarr<T> &out,
   const shape_t &axes, T0 fct, size_t nthreads, const Exec & exec,
   const bool allow_inplace=true)
   {
-  shared_ptr<Tplan> plan;
+  std::shared_ptr<Tplan> plan;
 
   for (size_t iax=0; iax<axes.size(); ++iax)
     {
@@ -3426,11 +3202,17 @@ template<typename T> POCKETFFT_NOINLINE void general_c2r(
           if (forward)
             for (; i<len-1; i+=2, ++ii)
               for (size_t j=0; j<vlen; ++j)
-                in[it.iofs(j,ii)].SplitConj(tdatav[i][j], tdatav[i+1][j]);
+                {
+                tdatav[i  ][j] =  in[it.iofs(j,ii)].r;
+                tdatav[i+1][j] = -in[it.iofs(j,ii)].i;
+                }
           else
             for (; i<len-1; i+=2, ++ii)
               for (size_t j=0; j<vlen; ++j)
-                in[it.iofs(j,ii)].Split(tdatav[i][j], tdatav[i+1][j]);
+                {
+                tdatav[i  ][j] = in[it.iofs(j,ii)].r;
+                tdatav[i+1][j] = in[it.iofs(j,ii)].i;
+                }
           if (i<len)
             for (size_t j=0; j<vlen; ++j)
               tdatav[i][j] = in[it.iofs(j,ii)].r;
@@ -3448,10 +3230,16 @@ template<typename T> POCKETFFT_NOINLINE void general_c2r(
         size_t i=1, ii=1;
         if (forward)
           for (; i<len-1; i+=2, ++ii)
-            in[it.iofs(ii)].SplitConj(tdata[i], tdata[i+1]);
+            {
+            tdata[i  ] =  in[it.iofs(ii)].r;
+            tdata[i+1] = -in[it.iofs(ii)].i;
+            }
         else
           for (; i<len-1; i+=2, ++ii)
-            in[it.iofs(ii)].Split(tdata[i], tdata[i+1]);
+            {
+            tdata[i  ] = in[it.iofs(ii)].r;
+            tdata[i+1] = in[it.iofs(ii)].i;
+            }
         if (i<len)
           tdata[i] = in[it.iofs(ii)].r;
         }
@@ -3483,7 +3271,7 @@ struct ExecR2R
 
 template<typename T> void c2c(const shape_t &shape, const stride_t &stride_in,
   const stride_t &stride_out, const shape_t &axes, bool forward,
-  const complex<T> *data_in, complex<T> *data_out, T fct,
+  const std::complex<T> *data_in, std::complex<T> *data_out, T fct,
   size_t nthreads=1)
   {
   if (util::prod(shape)==0) return;
@@ -3497,7 +3285,7 @@ template<typename T> void dct(const shape_t &shape,
   const stride_t &stride_in, const stride_t &stride_out, const shape_t &axes,
   int type, const T *data_in, T *data_out, T fct, bool ortho, size_t nthreads=1)
   {
-  if ((type<1) || (type>4)) throw invalid_argument("invalid DCT type");
+  if ((type<1) || (type>4)) throw std::invalid_argument("invalid DCT type");
   if (util::prod(shape)==0) return;
   util::sanity_check(shape, stride_in, stride_out, data_in==data_out, axes);
   cndarr<T> ain(data_in, shape, stride_in);
@@ -3515,7 +3303,7 @@ template<typename T> void dst(const shape_t &shape,
   const stride_t &stride_in, const stride_t &stride_out, const shape_t &axes,
   int type, const T *data_in, T *data_out, T fct, bool ortho, size_t nthreads=1)
   {
-  if ((type<1) || (type>4)) throw invalid_argument("invalid DST type");
+  if ((type<1) || (type>4)) throw std::invalid_argument("invalid DST type");
   if (util::prod(shape)==0) return;
   util::sanity_check(shape, stride_in, stride_out, data_in==data_out, axes);
   cndarr<T> ain(data_in, shape, stride_in);
@@ -3531,7 +3319,7 @@ template<typename T> void dst(const shape_t &shape,
 
 template<typename T> void r2c(const shape_t &shape_in,
   const stride_t &stride_in, const stride_t &stride_out, size_t axis,
-  bool forward, const T *data_in, complex<T> *data_out, T fct,
+  bool forward, const T *data_in, std::complex<T> *data_out, T fct,
   size_t nthreads=1)
   {
   if (util::prod(shape_in)==0) return;
@@ -3545,7 +3333,7 @@ template<typename T> void r2c(const shape_t &shape_in,
 
 template<typename T> void r2c(const shape_t &shape_in,
   const stride_t &stride_in, const stride_t &stride_out, const shape_t &axes,
-  bool forward, const T *data_in, complex<T> *data_out, T fct,
+  bool forward, const T *data_in, std::complex<T> *data_out, T fct,
   size_t nthreads=1)
   {
   if (util::prod(shape_in)==0) return;
@@ -3563,7 +3351,7 @@ template<typename T> void r2c(const shape_t &shape_in,
 
 template<typename T> void c2r(const shape_t &shape_out,
   const stride_t &stride_in, const stride_t &stride_out, size_t axis,
-  bool forward, const complex<T> *data_in, T *data_out, T fct,
+  bool forward, const std::complex<T> *data_in, T *data_out, T fct,
   size_t nthreads=1)
   {
   if (util::prod(shape_out)==0) return;
@@ -3577,7 +3365,7 @@ template<typename T> void c2r(const shape_t &shape_out,
 
 template<typename T> void c2r(const shape_t &shape_out,
   const stride_t &stride_in, const stride_t &stride_out, const shape_t &axes,
-  bool forward, const complex<T> *data_in, T *data_out, T fct,
+  bool forward, const std::complex<T> *data_in, T *data_out, T fct,
   size_t nthreads=1)
   {
   if (util::prod(shape_out)==0) return;
@@ -3593,7 +3381,7 @@ template<typename T> void c2r(const shape_t &shape_out,
   for (int i=int(shape_in.size())-2; i>=0; --i)
     stride_inter[size_t(i)] =
       stride_inter[size_t(i+1)]*ptrdiff_t(shape_in[size_t(i+1)]);
-  arr<complex<T>> tmp(nval);
+  arr<std::complex<T>> tmp(nval);
   auto newaxes = shape_t({axes.begin(), --axes.end()});
   c2c(shape_in, stride_in, stride_inter, newaxes, forward, data_in, tmp.data(),
     T(1), nthreads);
@@ -3626,6 +3414,36 @@ template<typename T> void r2r_separable_hartley(const shape_t &shape,
     false);
   }
 
+template<typename T> void r2r_genuine_hartley(const shape_t &shape,
+  const stride_t &stride_in, const stride_t &stride_out, const shape_t &axes,
+  const T *data_in, T *data_out, T fct, size_t nthreads=1)
+  {
+  if (util::prod(shape)==0) return;
+  if (axes.size()==1)
+    return r2r_separable_hartley(shape, stride_in, stride_out, axes, data_in,
+      data_out, fct, nthreads);
+  util::sanity_check(shape, stride_in, stride_out, data_in==data_out, axes);
+  shape_t tshp(shape);
+  tshp[axes.back()] = tshp[axes.back()]/2+1;
+  arr<std::complex<T>> tdata(util::prod(tshp));
+  stride_t tstride(shape.size());
+  tstride.back()=sizeof(std::complex<T>);
+  for (size_t i=tstride.size()-1; i>0; --i)
+    tstride[i-1]=tstride[i]*ptrdiff_t(tshp[i]);
+  r2c(shape, stride_in, tstride, axes, true, data_in, tdata.data(), fct, nthreads);
+  cndarr<cmplx<T>> atmp(tdata.data(), tshp, tstride);
+  ndarr<T> aout(data_out, shape, stride_out);
+  simple_iter iin(atmp);
+  rev_iter iout(aout, axes);
+  while(iin.remaining()>0)
+    {
+    auto v = atmp[iin.ofs()];
+    aout[iout.ofs()] = v.r+v.i;
+    aout[iout.rev_ofs()] = v.r-v.i;
+    iin.advance(); iout.advance();
+    }
+  }
+
 } // namespace detail
 
 using detail::FORWARD;
@@ -3637,6 +3455,7 @@ using detail::c2r;
 using detail::r2c;
 using detail::r2r_fftpack;
 using detail::r2r_separable_hartley;
+using detail::r2r_genuine_hartley;
 using detail::dct;
 using detail::dst;
 

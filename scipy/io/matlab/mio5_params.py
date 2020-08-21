@@ -4,8 +4,6 @@ See also mio5_utils.pyx where these same constants arise as c enums.
 
 If you make changes in this file, don't forget to change mio5_utils.pyx
 '''
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 
 from .miobase import convert_dtypes
@@ -31,7 +29,7 @@ mxSTRUCT_CLASS = 2
 # The March 2008 edition of "Matlab 7 MAT-File Format" says that
 # mxOBJECT_CLASS = 3, whereas matrix.h says that mxLOGICAL = 3.
 # Matlab 2008a appears to save logicals as type 9, so we assume that
-# the document is correct.  See type 18, below.
+# the document is correct. See type 18, below.
 mxOBJECT_CLASS = 3
 mxCHAR_CLASS = 4
 mxSPARSE_CLASS = 5

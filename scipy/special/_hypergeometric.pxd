@@ -1,5 +1,7 @@
 from libc.math cimport fabs, exp, floor, M_PI
 
+import cython
+
 from . cimport sf_error
 from ._cephes cimport expm1, poch
 
@@ -16,7 +18,11 @@ DEF EPS = 2.220446049250313e-16
 DEF ACCEPTABLE_RTOL = 1e-7
 
 
+@cython.cdivision(True)
 cdef inline double hyperu(double a, double b, double x) nogil:
+    if npy_isnan(a) or npy_isnan(b) or npy_isnan(x):
+        return NPY_NAN
+
     if x < 0.0:
         sf_error.error("hyperu", sf_error.DOMAIN, NULL)
         return NPY_NAN
@@ -33,10 +39,15 @@ cdef inline double hyperu(double a, double b, double x) nogil:
     return hypU_wrap(a, b, x)
 
 
+@cython.cdivision(True)
 cdef inline double hyp1f1(double a, double b, double x) nogil:
     if npy_isnan(a) or npy_isnan(b) or npy_isnan(x):
         return NPY_NAN
     if b <= 0 and b == floor(b):
+        # There is potentially a pole.
+        if b <= a < 0 and a == floor(a):
+            # The Pochammer symbol (a)_n cancels the pole.
+            return hyp1f1_series_track_convergence(a, b, x)
         return NPY_INFINITY
     elif a == 0 or x == 0:
         return 1
@@ -69,6 +80,7 @@ cdef inline double hyp1f1(double a, double b, double x) nogil:
     return hyp1f1_wrap(a, b, x)
 
 
+@cython.cdivision(True)
 cdef inline double hyp1f1_series_track_convergence(
     double a,
     double b,
@@ -78,11 +90,22 @@ cdef inline double hyp1f1_series_track_convergence(
     # prohibitive number of terms to converge. This function computes
     # the series while monitoring those conditions.
     cdef int k
+    cdef double apk, bpk
     cdef double term = 1
     cdef double result = 1
     cdef double abssum = result
     for k in range(1000):
-        term *= (a + k) * x / (b + k) / (k + 1)
+        apk = a + k
+        bpk = b + k
+        if bpk != 0:
+            term *= apk * x / bpk / (k + 1)
+        elif apk == 0:
+            # The Pochammer symbol in the denominator has become zero,
+            # but we still have the continuation formula DLMF 13.2.5.
+            term = 0
+        else:
+            # We hit a pole
+            return NPY_NAN
         abssum += fabs(term)
         result += term
         if fabs(term) <= EPS * fabs(result):
@@ -97,6 +120,7 @@ cdef inline double hyp1f1_series_track_convergence(
     return NPY_NAN
 
 
+@cython.cdivision(True)
 cdef inline double hyp1f1_series(double a, double b, double x) nogil:
     cdef int k
     cdef double term = 1

@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
-from __future__ import division, print_function, absolute_import
-
 import sys
 
 from decimal import Decimal
 from itertools import product
+from math import gcd
 import warnings
 
 import pytest
@@ -12,16 +11,17 @@ from pytest import raises as assert_raises
 from numpy.testing import (
     assert_equal,
     assert_almost_equal, assert_array_equal, assert_array_almost_equal,
-    assert_allclose, assert_, assert_warns, assert_array_less)
-from scipy._lib._numpy_compat import suppress_warnings
+    assert_allclose, assert_, assert_warns, assert_array_less,
+    suppress_warnings)
 from numpy import array, arange
 import numpy as np
 
+from scipy.fft import fft
 from scipy.ndimage.filters import correlate1d
 from scipy.optimize import fmin, linear_sum_assignment
 from scipy import signal
 from scipy.signal import (
-    correlate, convolve, convolve2d,
+    correlate, correlation_lags, convolve, convolve2d,
     fftconvolve, oaconvolve, choose_conv_method,
     hilbert, hilbert2, lfilter, lfilter_zi, filtfilt, butter, zpk2tf, zpk2sos,
     invres, invresz, vectorstrength, lfiltic, tf2sos, sosfilt, sosfiltfilt,
@@ -31,12 +31,6 @@ from scipy.signal.windows import hann
 from scipy.signal.signaltools import (_filtfilt_gust, _compute_factors,
                                       _group_poles)
 from scipy.signal._upfirdn import _upfirdn_modes
-
-
-if sys.version_info >= (3, 5):
-    from math import gcd
-else:
-    from fractions import gcd
 
 
 class _TestConvolve(object):
@@ -413,6 +407,21 @@ class TestConvolve2d(_TestConvolve2d):
         assert_raises(ValueError, convolve2d, 3, 4)
         assert_raises(ValueError, convolve2d, [3], [4])
         assert_raises(ValueError, convolve2d, [[[3]]], [[[4]]])
+
+    @pytest.mark.slow
+    @pytest.mark.xfail_on_32bit("Can't create large array for test")
+    def test_large_array(self):
+        # Test indexing doesn't overflow an int (gh-10761)
+        n = 2**31 // (1000 * np.int64().itemsize)
+
+        # Create a chequered pattern of 1s and 0s
+        a = np.zeros(1001 * n, dtype=np.int64)
+        a[::2] = 1
+        a = np.lib.stride_tricks.as_strided(a, shape=(n, 1000), strides=(8008, 8))
+
+        count = signal.convolve2d(a, [[1, 1]])
+        fails = np.where(count > 1)
+        assert fails[0].size == 0
 
 
 class TestFFTConvolve(object):
@@ -809,7 +818,7 @@ class TestOAConvolve(object):
         assert_array_almost_equal(out, expected)
 
     @pytest.mark.parametrize('shape_a_0, shape_b_0',
-                             gen_oa_shapes([50, 47, 6, 4]))
+                             gen_oa_shapes([50, 47, 6, 4, 1]))
     @pytest.mark.parametrize('is_complex', [True, False])
     @pytest.mark.parametrize('mode', ['full', 'valid', 'same'])
     def test_1d_noaxes(self, shape_a_0, shape_b_0,
@@ -1039,7 +1048,8 @@ class TestMedFilt(object):
 
     def test_none(self):
         # Ticket #1124. Ensure this does not segfault.
-        signal.medfilt(None)
+        with pytest.warns(UserWarning):
+            signal.medfilt(None)
         # Expand on this test to avoid a regression with possible contiguous
         # numpy arrays that have odd strides. The stride value below gets
         # us into wrong memory if used (but it does not need to be used)
@@ -1057,8 +1067,9 @@ class TestMedFilt(object):
         else:
             n = 10
         # Shouldn't segfault:
-        for j in range(n):
-            signal.medfilt(x)
+        with pytest.warns(UserWarning):
+            for j in range(n):
+                signal.medfilt(x)
         if hasattr(sys, 'getrefcount'):
             assert_(sys.getrefcount(a) < n)
         assert_equal(x, [a, a])
@@ -1122,6 +1133,16 @@ class TestResample(object):
         assert_allclose(
             signal.resample(y, num, axis=1, window=window),
             signal.resample(y_complex, num, axis=1, window=window).real,
+            atol=1e-9)
+
+    def test_input_domain(self):
+        # Test if both input domain modes produce the same results.
+        tsig = np.arange(256) + 0j
+        fsig = fft(tsig)
+        num = 256
+        assert_allclose(
+            signal.resample(fsig, num, domain='freq'),
+            signal.resample(tsig, num, domain='time'),
             atol=1e-9)
 
     @pytest.mark.parametrize('nx', (1, 2, 3, 5, 8))
@@ -1914,6 +1935,34 @@ class TestCorrelate(object):
         assert_allclose(correlate(a, b, mode='valid'), [32])
 
 
+@pytest.mark.parametrize("mode", ["valid", "same", "full"])
+@pytest.mark.parametrize("behind", [True, False])
+@pytest.mark.parametrize("input_size", [100, 101, 1000, 1001, 10000, 10001])
+def test_correlation_lags(mode, behind, input_size):
+    # generate random data
+    rng = np.random.RandomState(0)
+    in1 = rng.standard_normal(input_size)
+    offset = int(input_size/10)
+    # generate offset version of array to correlate with
+    if behind:
+        # y is behind x
+        in2 = np.concatenate([rng.standard_normal(offset), in1])
+        expected = -offset
+    else:
+        # y is ahead of x
+        in2 = in1[offset:]
+        expected = offset
+    # cross correlate, returning lag information
+    correlation = correlate(in1, in2, mode=mode)
+    lags = correlation_lags(in1.size, in2.size, mode=mode)
+    # identify the peak
+    lag_index = np.argmax(correlation)
+    # Check as expected
+    assert_equal(lags[lag_index], expected)
+    # Correlation and lags shape should match
+    assert_equal(lags.shape, correlation.shape)
+
+
 @pytest.mark.parametrize('dt', [np.csingle, np.cdouble, np.clongdouble])
 class TestCorrelateComplex(object):
     # The decimal precision to be used for comparing results.
@@ -2082,7 +2131,7 @@ class TestFiltFilt(object):
     def test_basic(self):
         zpk = tf2zpk([1, 2, 3], [1, 2, 3])
         out = self.filtfilt(zpk, np.arange(12))
-        assert_allclose(out, arange(12), atol=1e-11)
+        assert_allclose(out, arange(12), atol=5.28e-11)
 
     def test_sine(self):
         rate = 2000
@@ -2234,7 +2283,7 @@ def check_filtfilt_gust(b, a, shape, axis, irlen=None):
     yg, zg1, zg2 = _filtfilt_gust(b, a, x, axis=axis, irlen=irlen)
 
     # filtfilt_gust_opt is an independent implementation that gives the
-    # expected result, but it only handles 1-d arrays, so use some looping
+    # expected result, but it only handles 1-D arrays, so use some looping
     # and reshaping shenanigans to create the expected output arrays.
     xx = np.swapaxes(x, axis, -1)
     out_shape = xx.shape[:-1]
@@ -3081,7 +3130,7 @@ def test_nonnumeric_dtypes(func):
     with pytest.raises(NotImplementedError,
                        match='input type .* not supported'):
         func(*args, x=['foo'])
-    with pytest.raises(ValueError, match='must be at least 1D'):
+    with pytest.raises(ValueError, match='must be at least 1-D'):
         func(*args, x=1.)
 
 
