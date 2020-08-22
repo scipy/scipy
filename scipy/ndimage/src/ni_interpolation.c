@@ -438,21 +438,11 @@ NI_GeometricTransform(PyArrayObject *input, int (*map)(npy_intp*, double*,
                     edge_offsets[hh] = data_offsets[hh];
                     for(ll = 0; ll <= order; ll++) {
                         npy_intp idx = start + ll;
-                        npy_intp len = idimensions[hh];
-                        if (len <= 1) {
-                            idx = 0;
-                        } else {
-                            npy_intp s2 = 2 * len - 2;
-                            if (idx < 0) {
-                                idx = s2 * (-idx / s2) + idx;
-                                idx = idx <= 1 - len ? idx + s2 : -idx;
-                            } else if (idx >= len) {
-                                idx -= s2 * (idx / s2);
-                                if (idx >= len)
-                                    idx = s2 - idx;
-                            }
-                        }
-                        /* calculate and store the offests at this edge: */
+
+                        // get current position based on mirror extension
+                        idx = (npy_intp)map_coordinate(idx, idimensions[hh], NI_EXTEND_MIRROR);
+
+                        /* calculate and store the offsets at this edge: */
                         edge_offsets[hh][ll] = istrides[hh] * (idx - start);
                     }
                 } else {
