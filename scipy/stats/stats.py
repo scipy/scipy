@@ -346,6 +346,18 @@ def _broadcast_shapes_with_dropped_axis(a, b, axis):
     return shp
 
 
+def _evaluate_distribution_p(distribution, alternative, statistic, *args):
+    if alternative == 'less':
+        return distribution.cdf(statistic, *args)
+    elif alternative == 'greater':
+        return distribution.sf(statistic, *args)
+    elif alternative == 'two-sided':
+        return 2 * distribution.sf(np.abs(statistic), *args)
+    else:
+        raise ValueError("alternative should be "
+                         "'less', 'greater' or 'two-sided'")
+
+
 def gmean(a, axis=0, dtype=None):
     """
     Compute the geometric mean along the specified axis.
@@ -5328,8 +5340,9 @@ def ttest_1samp(a, popmean, axis=0, nan_policy='propagate',
     >>> result.statistic
     array([[-0.68014479, -0.04323899], [ 2.77025808,  4.11038784]])
     >>> result.pvalue
-    array([[  4.99613833e-01, 9.65686743e-01], [  7.89094663e-03,
-    1.49986458e-04]]))
+    array([[4.99613833e-01, 9.65686743e-01],
+           [7.89094663e-03, 1.49986458e-04]])
+
 
     """
     a, axis = _chk_asarray(a, axis)
@@ -5366,6 +5379,7 @@ def _ttest_finish(df, t, alternative):
         raise ValueError("alternative should be "
                          "'less', 'greater' or 'two-sided'")
 
+    prob = _evaluate_distribution_p(distributions.t, alternative, t, df)
     if t.ndim == 0:
         t = t[()]
 
@@ -5512,7 +5526,7 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
     >>> group1 = np.array([1]*30 + [0]*(150-30))
     >>> group2 = np.array([1]*45 + [0]*(200-45))
     >>> ttest_ind(group1, group2)
-    Ttest_indResult(statistic=-0.5627179589855622, pvalue=0.5739892771152579)
+    Ttest_indResult(statistic=-0.5627179589855622, pvalue=0.573989277115258)
 
     """
     if equal_var:

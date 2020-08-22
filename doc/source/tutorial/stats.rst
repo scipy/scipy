@@ -872,7 +872,7 @@ Test with sample with different means:
 
     >>> rvs3 = stats.norm.rvs(loc=8, scale=10, size=500)
     >>> stats.ttest_ind(rvs1, rvs3)
-    Ttest_indResult(statistic=-4.533414290175026, pvalue=6.507128186505895e-06)
+    Ttest_indResult(statistic=-4.533414290175026, pvalue=6.507128186389019e-06)
 
 Kolmogorov-Smirnov test for two samples ks_2samp
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
