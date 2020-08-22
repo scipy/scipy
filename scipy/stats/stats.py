@@ -346,18 +346,6 @@ def _broadcast_shapes_with_dropped_axis(a, b, axis):
     return shp
 
 
-def _evaluate_distribution_p(distribution, alternative, statistic, *args):
-    if alternative == 'less':
-        return distribution.cdf(statistic, *args)
-    elif alternative == 'greater':
-        return distribution.sf(statistic, *args)
-    elif alternative == 'two-sided':
-        return 2 * distribution.sf(np.abs(statistic), *args)
-    else:
-        raise ValueError("alternative should be "
-                         "'less', 'greater' or 'two-sided'")
-
-
 def gmean(a, axis=0, dtype=None):
     """
     Compute the geometric mean along the specified axis.
@@ -5379,7 +5367,6 @@ def _ttest_finish(df, t, alternative):
         raise ValueError("alternative should be "
                          "'less', 'greater' or 'two-sided'")
 
-    prob = _evaluate_distribution_p(distributions.t, alternative, t, df)
     if t.ndim == 0:
         t = t[()]
 
