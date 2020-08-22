@@ -20,11 +20,7 @@ from ._highs.highs_wrapper import highs_wrapper
 from ._highs.constants import (
     CONST_I_INF,
     CONST_INF,
-    MESSAGE_LEVEL_NONE,
-    MESSAGE_LEVEL_VERBOSE,
-    MESSAGE_LEVEL_DETAILED,
     MESSAGE_LEVEL_MINIMAL,
-    MESSAGE_LEVEL_ALWAYS,
 
     MODEL_STATUS_NOTSET,
     MODEL_STATUS_LOAD_ERROR,
@@ -66,7 +62,6 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
                    dual_feasibility_tolerance=None,
                    dual_objective_value_upper_bound=None,
                    ipm_optimality_tolerance=None,
-                   message_level=MESSAGE_LEVEL_MINIMAL,
                    primal_feasibility_tolerance=None,
                    simplex_crash_strategy=None,
                    simplex_dual_edge_weight_strategy=None,
@@ -144,37 +139,6 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
         Optimality tolerance for ``solver='ipm'``.  Default is 1e-08.
         Minimum possible value is 1e-12 and must be smaller than the largest
         possible value for a ``double`` on the platform.
-    message_level : int {0, 1, 2, 3, 4, 5, 6, 7}
-        Verbosity level, corresponds to:
-
-            ``0``: None
-                All messaging is suppressed.
-
-            ``1``: Verbose
-                Provide only a once-per-iteration report on
-                progress and information about nonzero rows and
-                columns of the model (for simplex method only).
-
-            ``2``: Detailed
-                Provide only technical information about progress and
-                events (for simplex method only).
-
-            ``3``: Provide both Verbose and Detailed reports
-
-            ``4``: Minimal
-                Provide only once-per-solve information about progress
-                as well as a once-per-basis-matrix-reinversion report
-                on progress in simplex or a once-per-iteration report
-                on progress in IPX.
-
-            ``5``: Provide both Minimal and Verbose reports
-
-            ``6``: Provide both Minimal and Detailed reports
-
-            ``7``: Provide Verbose, Detailed, and Minimal reports
-
-        Default is 4, but note: this option is ignored unless
-        option ``disp`` is ``True``.
     primal_feasibility_tolerance : double
         Primal feasibility tolerance.  Default is 1e-07.
         The minimum of this and ``dual_feasibility_tolerance``
@@ -248,8 +212,13 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
         ``SIMPLEX_STRATEGY_*`` are defined as in HiGHS.
 
     simplex_update_limit : int
-        Limit on the number of simplex UPDATE operations.  Default
-        is ``5000``.
+        Limit on the number of updates made to the representation of the
+        basis matrix inverse (i.e. basis matrix factorization) before a
+        new representation is formed from scratch.
+        If needed for efficiency or numerical stability, a new
+        representation of the inverse may be formed before this limit is
+        reached. Default is ``5000``.
+
     unknown_options : dict
         Optional arguments not used by this particular solver. If
         ``unknown_options`` is non-empty, a warning is issued listing all
@@ -302,12 +271,6 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
     """
 
     _check_unknown_options(unknown_options)
-
-    # Catch message_level warnings that HiGHS currently misses:
-    message_level = (
-        _check_invalid_option_values(message_level, 'message_level',
-                                     {None, 0, 1, 2, 3, 4, 5, 6, 7},
-                                     MESSAGE_LEVEL_MINIMAL))
 
     # SIMPLEX_STRATEGY_PRIMAL (4) is experimental -- disallow use!
     simplex_strategy = (
@@ -392,7 +355,7 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
         'sense': 1,  # minimization
         'solver': solver,
         'time_limit': time_limit,
-        'message_level': message_level*disp,
+        'message_level': MESSAGE_LEVEL_MINIMAL * disp,
         'dual_feasibility_tolerance': dual_feasibility_tolerance,
         'dual_objective_value_upper_bound': dual_objective_value_upper_bound,
         'ipm_optimality_tolerance': ipm_optimality_tolerance,
