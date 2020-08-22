@@ -1506,7 +1506,7 @@ class KrylovJacobian(Jacobian):
     A solution can be obtained as follows.
 
     >>> from scipy import optimize
-    >>> sol = optimize.newton_krylov(fun, [0, 0]))
+    >>> sol = optimize.newton_krylov(fun, [0, 0])
     >>> sol
     array([0.66731771, 0.66536458])
 
