@@ -258,7 +258,7 @@ NI_GeometricTransform(PyArrayObject *input, int (*map)(npy_intp*, double*,
     NI_Iterator io, ic;
     npy_double *matrix = matrix_ar ? (npy_double*)PyArray_DATA(matrix_ar) : NULL;
     npy_double *shift = shift_ar ? (npy_double*)PyArray_DATA(shift_ar) : NULL;
-    int irank = 0, orank;
+    int irank = 0, orank, spline_mode;
     NPY_BEGIN_THREADS_DEF;
 
     NPY_BEGIN_THREADS;
@@ -357,6 +357,19 @@ NI_GeometricTransform(PyArrayObject *input, int (*map)(npy_intp*, double*,
         }
     }
 
+    if (mode == NI_EXTEND_NEAREST) {
+        // No analytical spline condition implemented. Reflect gives
+		// lower error than using mirror or wrap.
+        spline_mode = NI_EXTEND_REFLECT;
+    } else if ((mode == NI_EXTEND_MIRROR) || (mode == NI_EXTEND_REFLECT)
+               || (mode == NI_EXTEND_WRAP_GRID)) {
+        // exact analytic boundary conditions exist for these modes.
+        spline_mode = mode;
+    } else {
+        // Use mirror spline boundary condition
+        spline_mode = NI_EXTEND_MIRROR;
+    }
+
     size = PyArray_SIZE(output);
     for(kk = 0; kk < size; kk++) {
         double t = 0.0;
@@ -436,11 +449,10 @@ NI_GeometricTransform(PyArrayObject *input, int (*map)(npy_intp*, double*,
                     /* implement border mapping, if outside border: */
                     edge = 1;
                     edge_offsets[hh] = data_offsets[hh];
+
                     for(ll = 0; ll <= order; ll++) {
                         npy_intp idx = start + ll;
-
-                        // get current position based on mirror extension
-                        idx = (npy_intp)map_coordinate(idx, idimensions[hh], NI_EXTEND_MIRROR);
+                        idx = (npy_intp)map_coordinate(idx, idimensions[hh], spline_mode);
 
                         /* calculate and store the offsets at this edge: */
                         edge_offsets[hh][ll] = istrides[hh] * (idx - start);
