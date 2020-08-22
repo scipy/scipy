@@ -72,6 +72,14 @@ map_coordinate(double in, npy_intp len, int mode)
                 in += sz * ((npy_intp)(-in / sz) + 1);
             }
             break;
+        case NI_EXTEND_WRAP_GRID:
+            if (len <= 1) {
+                in = 0;
+            } else {
+                // in = len - 1 + fmod(in + 1, len);
+                in += len * ((npy_intp)((-1 - in) / len) + 1);
+            }
+            break;
         case NI_EXTEND_NEAREST:
             in = 0;
             break;
@@ -107,6 +115,13 @@ map_coordinate(double in, npy_intp len, int mode)
             } else {
                 npy_intp sz = len - 1;
                 in -= sz * (npy_intp)(in / sz);
+            }
+            break;
+        case NI_EXTEND_WRAP_GRID:
+            if (len <= 1) {
+                in = 0;
+            } else {
+                in -= len * (npy_intp)(in / len);
             }
             break;
         case NI_EXTEND_NEAREST:
