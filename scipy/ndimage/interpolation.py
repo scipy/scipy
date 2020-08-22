@@ -285,11 +285,12 @@ def geometric_transform(input, mapping, output_shape=None,
         output_shape = input.shape
     if input.ndim < 1 or len(output_shape) < 1:
         raise RuntimeError('input and output rank must be > 0')
-    mode = _ni_support._extend_mode_to_code(mode)
     if prefilter and order > 1:
-        filtered = spline_filter(input, order, output=numpy.float64)
+        filtered = spline_filter(input, order, output=numpy.float64,
+                                 mode=mode)
     else:
         filtered = input
+    mode = _ni_support._extend_mode_to_code(mode)
     output = _ni_support._get_output(output, input, shape=output_shape)
     _nd_image.geometric_transform(filtered, mapping, None, None, None, output,
                                   order, mode, cval, extra_arguments,
@@ -373,13 +374,14 @@ def map_coordinates(input, coordinates, output=None, order=3,
         raise RuntimeError('input and output rank must be > 0')
     if coordinates.shape[0] != input.ndim:
         raise RuntimeError('invalid shape for coordinate array')
-    mode = _ni_support._extend_mode_to_code(mode)
     if prefilter and order > 1:
-        filtered = spline_filter(input, order, output=numpy.float64)
+        filtered = spline_filter(input, order, output=numpy.float64,
+                                 mode=mode)
     else:
         filtered = input
     output = _ni_support._get_output(output, input,
                                      shape=output_shape)
+    mode = _ni_support._extend_mode_to_code(mode)
     _nd_image.geometric_transform(filtered, None, coordinates, None, None,
                                   output, order, mode, cval, None, None)
     return output
@@ -473,11 +475,12 @@ def affine_transform(input, matrix, offset=0.0, output_shape=None,
         output_shape = input.shape
     if input.ndim < 1 or len(output_shape) < 1:
         raise RuntimeError('input and output rank must be > 0')
-    mode = _ni_support._extend_mode_to_code(mode)
     if prefilter and order > 1:
-        filtered = spline_filter(input, order, output=numpy.float64)
+        filtered = spline_filter(input, order, output=numpy.float64,
+                                 mode=mode)
     else:
         filtered = input
+    mode = _ni_support._extend_mode_to_code(mode)
     output = _ni_support._get_output(output, input,
                                      shape=output_shape)
     matrix = numpy.asarray(matrix, dtype=numpy.float64)
@@ -558,11 +561,12 @@ def shift(input, shift, output=None, order=3, mode='constant', cval=0.0,
         raise TypeError('Complex type not supported')
     if input.ndim < 1:
         raise RuntimeError('input and output rank must be > 0')
-    mode = _ni_support._extend_mode_to_code(mode)
     if prefilter and order > 1:
-        filtered = spline_filter(input, order, output=numpy.float64)
+        filtered = spline_filter(input, order, output=numpy.float64,
+                                 mode=mode)
     else:
         filtered = input
+    mode = _ni_support._extend_mode_to_code(mode)
     output = _ni_support._get_output(output, input)
     shift = _ni_support._normalize_sequence(shift, input.ndim)
     shift = [-ii for ii in shift]
@@ -627,11 +631,12 @@ def zoom(input, zoom, output=None, order=3, mode='constant', cval=0.0,
         raise TypeError('Complex type not supported')
     if input.ndim < 1:
         raise RuntimeError('input and output rank must be > 0')
-    mode = _ni_support._extend_mode_to_code(mode)
     if prefilter and order > 1:
-        filtered = spline_filter(input, order, output=numpy.float64)
+        filtered = spline_filter(input, order, output=numpy.float64,
+                                 mode=mode)
     else:
         filtered = input
+    mode = _ni_support._extend_mode_to_code(mode)
     zoom = _ni_support._normalize_sequence(zoom, input.ndim)
     output_shape = tuple(
             [int(round(ii * jj)) for ii, jj in zip(input.shape, zoom)])
