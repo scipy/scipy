@@ -298,7 +298,7 @@ apply_filter(double *coefficients, const npy_intp len, const double *poles,
             causal = &_init_causal_mirror;
             anticausal = &_init_anticausal_mirror;
             break;
-        case NI_EXTEND_WRAP_GRID:
+        case NI_EXTEND_GRID_WRAP:
             causal = &_init_causal_wrap;
             anticausal = &_init_anticausal_wrap;
             break;

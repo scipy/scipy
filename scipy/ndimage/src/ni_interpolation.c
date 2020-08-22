@@ -72,7 +72,7 @@ map_coordinate(double in, npy_intp len, int mode)
                 in += sz * ((npy_intp)(-in / sz) + 1);
             }
             break;
-        case NI_EXTEND_WRAP_GRID:
+        case NI_EXTEND_GRID_WRAP:
             if (len <= 1) {
                 in = 0;
             } else {
@@ -117,7 +117,7 @@ map_coordinate(double in, npy_intp len, int mode)
                 in -= sz * (npy_intp)(in / sz);
             }
             break;
-        case NI_EXTEND_WRAP_GRID:
+        case NI_EXTEND_GRID_WRAP:
             if (len <= 1) {
                 in = 0;
             } else {
@@ -362,7 +362,7 @@ NI_GeometricTransform(PyArrayObject *input, int (*map)(npy_intp*, double*,
 		// lower error than using mirror or wrap.
         spline_mode = NI_EXTEND_REFLECT;
     } else if ((mode == NI_EXTEND_MIRROR) || (mode == NI_EXTEND_REFLECT)
-               || (mode == NI_EXTEND_WRAP_GRID)) {
+               || (mode == NI_EXTEND_GRID_WRAP)) {
         // exact analytic boundary conditions exist for these modes.
         spline_mode = mode;
     } else {

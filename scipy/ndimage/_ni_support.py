@@ -39,12 +39,14 @@ def _extend_mode_to_code(mode):
         return 0
     elif mode == 'wrap':
         return 1
-    elif mode == 'reflect':
+    elif mode in ['reflect', 'grid-mirror']:
         return 2
     elif mode == 'mirror':
         return 3
     elif mode == 'constant':
         return 4
+    elif mode == 'grid-wrap':
+        return 5
     else:
         raise RuntimeError('boundary mode not supported')
 
