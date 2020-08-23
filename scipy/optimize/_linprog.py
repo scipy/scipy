@@ -554,6 +554,7 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
 
     lp = _LPProblem(c, A_ub, b_ub, A_eq, b_eq, bounds, x0)
     lp, solver_options = _parse_linprog(lp, options)
+    tol = solver_options.get('tol', 1e-9)
 
     # Give unmodified problem to HiGHS
     if meth.startswith('highs'):
@@ -565,9 +566,11 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
 
         sol = _linprog_highs(lp, solver=highs_solvers[meth],
                              **solver_options)
+        sol['status'], sol['message'] = (
+            _check_result(sol['x'], sol['fun'], sol['status'], sol['slack'],
+                          sol['con'], lp.bounds, tol, sol['message']))
+        sol['success'] = sol['status'] == 0
         return OptimizeResult(sol)
-
-    tol = solver_options.get('tol', 1e-9)
 
     iteration = 0
     complete = False  # will become True if solved in presolve
