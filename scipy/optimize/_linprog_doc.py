@@ -257,12 +257,12 @@ def _linprog_highs_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     Notes
     -----
 
-    Method :ref:`'highs-simplex' <optimize.linprog-highs-simplex> is a wrapper
+    Method :ref:`'highs-simplex' <optimize.linprog-highs-simplex>` is a wrapper
     of the C++ high performance dual revised simplex implementation (HSOL)
     [1]_, [2]_. Method :ref:`'highs-ipm' <optimize.linprog-highs-ipm>`
     is a wrapper of a C++ implementation of an **i**\ nterior-\ **p**\ oint
     **m**\ ethod [1]_; it features a crossover routine, so it is as accurate
-    as a simplex solver. Method :ref:`'highs' <optimize.linprog-highs> chooses
+    as a simplex solver. Method :ref:`'highs' <optimize.linprog-highs>` chooses
     between the two automatically. For new code involving `linprog`, we
     recommend explicitly choosing one of these three method values instead of
     :ref:`'interior-point' <optimize.linprog-interior-point>` (default),
