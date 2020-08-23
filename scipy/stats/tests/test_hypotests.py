@@ -1,8 +1,8 @@
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from numpy.testing import (assert_, assert_equal, assert_almost_equal,
-                           assert_array_almost_equal, assert_allclose)
+from numpy.testing import (assert_, assert_equal, assert_allclose,
+                           assert_almost_equal)  # avoid new uses
 
 from pytest import raises as assert_raises
 from scipy.stats._hypotests import epps_singleton_2samp, cvm_test, _cdf_cvm
@@ -16,8 +16,10 @@ class TestEppsSingleton(object):
         # Epps & Singleton. Note: values do not match exactly, the
         # value of the interquartile range varies depending on how
         # quantiles are computed
-        x = np.array([-0.35, 2.55, 1.73, 0.73, 0.35, 2.69, 0.46, -0.94, -0.37, 12.07])
-        y = np.array([-1.15, -0.15, 2.48, 3.25, 3.71, 4.29, 5.00, 7.74, 8.38, 8.60])
+        x = np.array([-0.35, 2.55, 1.73, 0.73, 0.35,
+                      2.69, 0.46, -0.94, -0.37, 12.07])
+        y = np.array([-1.15, -0.15, 2.48, 3.25, 3.71,
+                      4.29, 5.00, 7.74, 8.38, 8.60])
         w, p = epps_singleton_2samp(x, y)
         assert_almost_equal(w, 15.14, decimal=1)
         assert_almost_equal(p, 0.00442, decimal=3)
@@ -71,28 +73,28 @@ class TestCvm(object):
     # Csorgo / Faraway: The Exact and Asymptotic Distribution of
     # Cramer-von Mises Statistics, 1996.
     def test_cdf_4(self):
-        assert_array_almost_equal(
+        assert_allclose(
                 _cdf_cvm([0.02983, 0.04111, 0.12331, 0.94251], 4),
                 [0.01, 0.05, 0.5, 0.999],
-                decimal=4)
+                atol=1e-4)
 
     def test_cdf_10(self):
-        assert_array_almost_equal(
+        assert_allclose(
                 _cdf_cvm([0.02657, 0.03830, 0.12068, 0.56643], 10),
                 [0.01, 0.05, 0.5, 0.975],
-                decimal=4)
+                atol=1e-4)
 
     def test_cdf_1000(self):
-        assert_array_almost_equal(
+        assert_allclose(
                 _cdf_cvm([0.02481, 0.03658, 0.11889, 1.16120], 1000),
                 [0.01, 0.05, 0.5, 0.999],
-                decimal=4)
+                atol=1e-4)
 
     def test_cdf_inf(self):
-        assert_array_almost_equal(
+        assert_allclose(
                 _cdf_cvm([0.02480, 0.03656, 0.11888, 1.16204]),
                 [0.01, 0.05, 0.5, 0.999],
-                decimal=4)
+                atol=1e-4)
 
     def test_cdf_support(self):
         # cdf has support on [1/(12*n), n/3]
@@ -101,10 +103,10 @@ class TestCvm(object):
 
     def test_cdf_large_n(self):
         # test that asymptotic cdf and cdf for large samples are close
-        assert_array_almost_equal(
+        assert_allclose(
                 _cdf_cvm([0.02480, 0.03656, 0.11888, 1.16204, 100], 10000),
                 _cdf_cvm([0.02480, 0.03656, 0.11888, 1.16204, 100]),
-                decimal=4)
+                atol=1e-4)
 
     def test_large_x(self):
         # for large values of x and n, the series used to compute the cdf
@@ -114,6 +116,14 @@ class TestCvm(object):
         # note: cdf = 1 for x >= 1000/3 and n = 1000
         assert_(0.99999 < _cdf_cvm(333.3, 1000) < 1.0)
         assert_(0.99999 < _cdf_cvm(333.3) < 1.0)
+
+    def test_low_p(self):
+        # _cdf_cvm can return values larger than 1. In that case, we just
+        # return a p-value of zero.
+        n = 12
+        w, p = cvm_test(np.ones(n)*0.8, 'norm')
+        assert_(_cdf_cvm(w, n) > 1.0)
+        assert_equal(p, 0)
 
     def test_invalid_input(self):
         x = np.arange(10).reshape((2, 5))
@@ -130,19 +140,19 @@ class TestCvm(object):
         # compared against R package goftest, version 1.1.1
         # goftest::cvm.test(c(-1.7, 2, 0, 1.3, 4, 0.1, 0.6), "pnorm")
         w, p = cvm_test([-1.7, 2, 0, 1.3, 4, 0.1, 0.6], "norm")
-        assert_almost_equal(w, 0.288156, decimal=6)
-        assert_almost_equal(p, 0.1453465, decimal=6)
+        assert_allclose(w, 0.288156, atol=1e-6)
+        assert_allclose(p, 0.1453465, atol=1e-6)
 
         # goftest::cvm.test(c(-1.7, 2, 0, 1.3, 4, 0.1, 0.6),
         #                   "pnorm", mean = 3, sd = 1.5)
         w, p = cvm_test([-1.7, 2, 0, 1.3, 4, 0.1, 0.6], "norm", (3, 1.5))
-        assert_almost_equal(w, 0.9426685, decimal=6)
-        assert_almost_equal(p, 0.002026417, decimal=6)
+        assert_allclose(w, 0.9426685, atol=1e-6)
+        assert_allclose(p, 0.002026417, atol=1e-6)
 
         # goftest::cvm.test(c(1, 2, 5, 1.4, 0.14, 11, 13, 0.9, 7.5), "pexp")
         w, p = cvm_test([1, 2, 5, 1.4, 0.14, 11, 13, 0.9, 7.5], "expon")
-        assert_almost_equal(w, 0.8421854, decimal=6)
-        assert_almost_equal(p, 0.004433406, decimal=6)
+        assert_allclose(w, 0.8421854, atol=1e-6)
+        assert_allclose(p, 0.004433406, atol=1e-6)
 
     def test_callable_cdf(self):
         assert_equal(cvm_test(np.arange(5), distributions.expon.cdf),
