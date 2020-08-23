@@ -8,7 +8,7 @@ Created on Sat Aug 22 19:49:17 2020
 
 def _linprog_highs_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
                        bounds=None, method='highs', callback=None,
-                       options=None, x0=None):
+                       options=None):
     r"""
     Linear programming: minimize a linear objective function subject to linear
     equality and inequality constraints using one of the HiGHS solvers.
@@ -65,7 +65,7 @@ def _linprog_highs_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         If a single tuple ``(min, max)`` is provided, then ``min`` and
         ``max`` will serve as bounds for all decision variables.
     method : {'highs-simplex', 'highs-ipm', 'highs', 'interior-point',
-    'revised simplex', 'simplex'}, optional
+              'revised simplex', 'simplex'}, optional
         The algorithm used to solve the standard form problem.
         :ref:`'highs-simplex' <optimize.linprog-highs-simplex>`,
         :ref:`'highs-ipm' <optimize.linprog-highs-ipm>`,
@@ -254,11 +254,11 @@ def _linprog_highs_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     Notes
     -----
 
-    Method *highs-simplex* is a wrapper of the C++ high performance dual
-    revised simplex implementation (HSOL) [13]_, [14]_. Method *highs-ipm*
+    Method `highs-simplex` is a wrapper of the C++ high performance dual
+    revised simplex implementation (HSOL) [1]_, [2]_. Method `highs-ipm`
     is a wrapper of a C++ implementation of an **i**\ nterior-\ **p**\ oint
-    **m**\ ethod [13]_; it features a crossover routine, so it is as accurate
-    as a simplex solver. Method *highs* chooses between the two automatically.
+    **m**\ ethod [1]_; it features a crossover routine, so it is as accurate
+    as a simplex solver. Method `highs` chooses between the two automatically.
     For new code involving `linprog`, we recommend explicitly choosing one of
     these three method values.
 
