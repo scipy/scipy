@@ -23,7 +23,7 @@ from ._linprog_ip import _linprog_ip
 from ._linprog_simplex import _linprog_simplex
 from ._linprog_rs import _linprog_rs
 from ._linprog_highs import _linprog_highs
-from ._linprog_doc import _linprog_highs_doc, _linprog_ip_doc
+from ._linprog_doc import _linprog_highs_doc, _linprog_ip_doc, _linprog_rs_doc
 from ._linprog_util import (
     _parse_linprog, _presolve, _get_Abc, _LPProblem, _autoscale,
     _postsolve, _check_result, _display_summary)
