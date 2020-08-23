@@ -57,3 +57,13 @@ class TestInverseErrorFunction:
     )
     def test_domain_bounds(self, f, x, y):
         assert_equal(f(x), y)
+
+    def test_erfinv_asympt(self):
+        # regression test for gh-12758: erfinv(x) loses precision at small x
+        # This test checks erfinv against the Taylor expansion:
+        # erf(x) = 2/\sqrt{\pi} (x - x^3 / 3 + O(x^5)),    x\to 0 
+        # where we only retain the linear term.
+        x = np.array([1e-20, 1e-15, 1e-14, 1e-10, 1e-8, 0.9e-7, 1.1e-7, 1e-6])
+        assert_allclose(sc.erfinv(x),
+                        np.sqrt(np.pi)/2 * x,
+                        rtol=1e-10)
