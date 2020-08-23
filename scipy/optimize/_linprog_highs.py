@@ -71,8 +71,9 @@ def _convert_to_highs_enum(option, option_str, choices):
     except (KeyError, AttributeError):
         sig = inspect.signature(_linprog_highs)
         default_str = sig.parameters[option_str].default
-        warn("Option {option_str} is {option}, but only values in "
-             "{set(choices.keys())} are allowed. Using default: {default_str}",
+        warn(f"Option {option_str} is {option}, but only values in "
+             f"{set(choices.keys())} are allowed. Using default: "
+             f"{default_str}.",
              OptimizeWarning, stacklevel=3)
         return choices[default_str]
 
