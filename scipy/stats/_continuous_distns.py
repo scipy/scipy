@@ -2991,7 +2991,13 @@ class gumbel_r_gen(rv_continuous):
             x2 = - b * np.log(np.sum(np.exp(-data / b)) / ndata) - a
             return x1, x2
 
-        return tuple(optimize.root(func, (loc, scale), args=(data,)).x)
+        # some data cause invalid operations during optimization
+        with warnings.catch_warnings(record=True):
+            soln = optimize.root(func, (loc, scale), args=(data,))
+            if soln.success:
+                return tuple(soln.x)
+            else:
+                return super(gumbel_r_gen, self).fit(data, *args, **kwds)
 
 
 gumbel_r = gumbel_r_gen(name='gumbel_r')
