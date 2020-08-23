@@ -4067,6 +4067,9 @@ class levy_gen(rv_continuous):
         # Equivalent to 2*norm.sf(np.sqrt(1/x))
         return sc.erfc(np.sqrt(0.5 / x))
 
+    def _sf(self, x):
+        return sc.erf(np.sqrt(0.5 / x))
+
     def _ppf(self, q):
         # Equivalent to 1.0/(norm.isf(q/2)**2) or 0.5/(erfcinv(q)**2)
         val = -sc.ndtri(q/2)

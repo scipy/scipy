@@ -3935,6 +3935,18 @@ def test_levy_cdf_ppf():
     assert_allclose(xx, x, rtol=1e-13)
 
 
+def test_levy_sf():
+    # Large values, far into the tail of the distribution.
+    x = np.array([1e15, 1e25, 1e35, 1e50])
+    # Expected values were calculated with mpmath.
+    expected = np.array([2.5231325220201597e-08,
+                         2.52313252202016e-13,
+                         2.52313252202016e-18,
+                         7.978845608028653e-26])
+    y = stats.levy.sf(x)
+    assert_allclose(y, expected, rtol=1e-14)
+
+
 def test_hypergeom_interval_1802():
     # these two had endless loops
     assert_equal(stats.hypergeom.interval(.95, 187601, 43192, 757),
