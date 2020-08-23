@@ -5050,6 +5050,9 @@ class levy_gen(rv_continuous):
         val = -sc.ndtri(q/2)
         return 1.0 / (val * val)
 
+    def _isf(self, p):
+        return 1/(2*sc.erfinv(p)**2)
+
     def _stats(self):
         return np.inf, np.inf, np.nan, np.nan
 
