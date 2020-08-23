@@ -8401,7 +8401,7 @@ class rv_histogram(rv_continuous):
     >>> hist_dist = scipy.stats.rv_histogram(hist)
     
     As for continuous distribution, the fit method can be used
-    >>> # hist_dist = scipy.stats.rv_histogram( *scipy.stats.rv_histogram.fit(hist) )
+    >>> # hist_dist = scipy.stats.rv_histogram( *scipy.stats.rv_histogram.fit(data) )
     
     Behaves like an ordinary scipy rv_continuous distribution
 
@@ -8510,7 +8510,11 @@ class rv_histogram(rv_continuous):
         Fit the histogram of the data. Just call and return the value of the
         function numpy.histogram, and takes the same arguments.
         """
-        return np.histogram( data , **kwds )
+        bins = kwds.get("bins")
+        if bins is None:
+            bins = 100
+            kwds["bins"] = bins
+        return (np.histogram( data , **kwds ),bins)
     
 
 # Collect names of classes and objects in this module.
