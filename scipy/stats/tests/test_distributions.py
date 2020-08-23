@@ -3960,6 +3960,14 @@ def test_levy_l_sf():
     assert_allclose(y, expected, rtol=1e-13)
 
 
+def test_levy_l_isf():
+    # Test roundtrip sf(isf(p)), including a small input value.
+    p = np.array([3.0e-15, 0.25, 0.99])
+    x = stats.levy_l.isf(p)
+    q = stats.levy_l.sf(x)
+    assert_allclose(q, p, rtol=5e-14)
+
+
 def test_hypergeom_interval_1802():
     # these two had endless loops
     assert_equal(stats.hypergeom.interval(.95, 187601, 43192, 757),
