@@ -67,3 +67,9 @@ class TestInverseErrorFunction:
         assert_allclose(sc.erfinv(x),
                         np.sqrt(np.pi)/2 * x,
                         rtol=1e-10)
+
+        # also test the roundtrip consistency
+        assert_allclose(sc.erf(sc.erfinv(x)),
+                        x,
+                        rtol=1e-10)
+
