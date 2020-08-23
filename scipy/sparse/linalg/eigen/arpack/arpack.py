@@ -1687,34 +1687,6 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
         return params.extract(return_eigenvectors)
 
 
-def _augmented_orthonormal_cols(x, k):
-    # extract the shape of the x array
-    n, m = x.shape
-    # create the expanded array and copy x into it
-    y = np.empty((n, m+k), dtype=x.dtype)
-    y[:, :m] = x
-    # do some modified gram schmidt to add k random orthonormal vectors
-    for i in range(k):
-        # sample a random initial vector
-        v = np.random.randn(n)
-        if np.iscomplexobj(x):
-            v = v + 1j*np.random.randn(n)
-        # subtract projections onto the existing unit length vectors
-        for j in range(m+i):
-            u = y[:, j]
-            v -= (np.dot(v, u.conj()) / np.dot(u, u.conj())) * u
-        # normalize v
-        v /= np.sqrt(np.dot(v, v.conj()))
-        # add v into the output array
-        y[:, m+i] = v
-    # return the expanded array
-    return y
-
-
-def _augmented_orthonormal_rows(x, k):
-    return _augmented_orthonormal_cols(x.T, k).T
-
-
 def _herm(x):
     return x.T.conj()
 
@@ -1878,6 +1850,9 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
 
     # compute the right singular vectors of X and update the left ones accordingly
     u, s, vh = svd(u, full_matrices=False)
+    u = u[:, ::-1]
+    s = s[::-1]
+    vh = vh[::-1]
     return_u = (return_singular_vectors == 'u')
     return_vh = (return_singular_vectors == 'vh')
     if not transpose:
@@ -1886,7 +1861,7 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
         if return_u:
             vh = None
         else:
-           vh = vh @ _herm(eigvec)
+            vh = vh @ _herm(eigvec)
         return u, s, vh
     else:
         if return_u:
