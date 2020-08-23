@@ -64,12 +64,18 @@ class TestInverseErrorFunction:
         # erf(x) = 2/\sqrt{\pi} (x - x^3 / 3 + O(x^5)),    x\to 0 
         # where we only retain the linear term.
         x = np.array([1e-20, 1e-15, 1e-14, 1e-10, 1e-8, 0.9e-7, 1.1e-7, 1e-6])
-        assert_allclose(sc.erfinv(x),
-                        np.sqrt(np.pi)/2 * x,
+        expected = np.array([8.86226925452758e-21,
+                             8.862269254527581e-16,
+                             8.86226925452758e-15,
+                             8.862269254527581e-11,
+                             8.86226925452758e-09,
+                             7.97604232907484e-08,
+                             9.74849617998037e-08,
+                             8.8622692545299e-07])
+        assert_allclose(sc.erfinv(x), expected,
                         rtol=1e-10)
 
         # also test the roundtrip consistency
         assert_allclose(sc.erf(sc.erfinv(x)),
                         x,
                         rtol=1e-10)
-
