@@ -13,7 +13,7 @@ References
 
 """
 
-from collections import defaultdict
+import inspect
 import numpy as np
 from .optimize import _check_unknown_options, OptimizeWarning
 from warnings import warn
@@ -63,20 +63,18 @@ def _replace_inf(x):
     return x
 
 
-def _convert_to_highs_enum(option, option_str, choices, default):
-    # None indicates that we want the default value:
-    if option is None:
-        return default
+def _convert_to_highs_enum(option, option_str, choices):
     # If option is in the choices we can look it up, if not use
-    # the default value and warn:
+    # the default value taken from function signature and warn:
     try:
         return choices[option.lower()]
     except (KeyError, AttributeError):
-        warn("Option {0} is {1}, but only values in {2} are allowed."
-             " Using default: {3}".format(
-                 option_str, option, set(choices.keys()), default),
+        sig = inspect.signature(_linprog_highs)
+        default_str = sig.parameters[option_str].default
+        warn("Option {option_str} is {option}, but only values in "
+             "{set(choices.keys())} are allowed. Using default: {default_str}",
              OptimizeWarning, stacklevel=3)
-        return default
+        return choices[default_str]
 
 
 def _linprog_highs(lp, solver, time_limit=None, presolve=True,
@@ -85,10 +83,10 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
                    dual_objective_value_upper_bound=None,
                    ipm_optimality_tolerance=None,
                    primal_feasibility_tolerance=None,
-                   simplex_crash_strategy=None,
-                   simplex_dual_edge_weight_strategy=None,
-                   simplex_primal_edge_weight_strategy=None,
-                   simplex_strategy=None,
+                   simplex_crash_strategy='off',
+                   simplex_dual_edge_weight_strategy='devex',
+                   simplex_primal_edge_weight_strategy='devex',
+                   simplex_strategy='choose',
                    simplex_update_limit=None,
                    **unknown_options):
     r"""
@@ -262,16 +260,14 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
         'simplex_strategy',
         choices={'choose': HIGHS_SIMPLEX_STRATEGY_CHOOSE,
                  'dual': HIGHS_SIMPLEX_STRATEGY_DUAL,
-                 'primal': HIGHS_SIMPLEX_STRATEGY_PRIMAL},
-        default=HIGHS_SIMPLEX_STRATEGY_CHOOSE)
+                 'primal': HIGHS_SIMPLEX_STRATEGY_PRIMAL})
 
     simplex_crash_strategy = _convert_to_highs_enum(
         simplex_crash_strategy,
         'simplex_crash_strategy',
         choices={'off': HIGHS_SIMPLEX_CRASH_STRATEGY_OFF,
                  'bixby': HIGHS_SIMPLEX_CRASH_STRATEGY_BIXBY,
-                 'ltsf': HIGHS_SIMPLEX_CRASH_STRATEGY_LTSF},
-        default=HIGHS_SIMPLEX_CRASH_STRATEGY_OFF)
+                 'ltsf': HIGHS_SIMPLEX_CRASH_STRATEGY_LTSF})
 
     simplex_dual_edge_weight_strategy = _convert_to_highs_enum(
         simplex_dual_edge_weight_strategy,
@@ -279,15 +275,13 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
         choices={'dantzig': HIGHS_SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_DANTZIG,
                  'devex': HIGHS_SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_DEVEX,
                  'steepest':
-                 HIGHS_SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_STEEPEST_EDGE},
-        default=HIGHS_SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_DEVEX)
+                 HIGHS_SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_STEEPEST_EDGE})
 
     simplex_primal_edge_weight_strategy = _convert_to_highs_enum(
         simplex_primal_edge_weight_strategy,
         'simplex_primal_edge_weight_strategy',
         choices={'dantzig': HIGHS_SIMPLEX_PRIMAL_EDGE_WEIGHT_STRATEGY_DANTZIG,
-                 'devex': HIGHS_SIMPLEX_PRIMAL_EDGE_WEIGHT_STRATEGY_DEVEX},
-        default=HIGHS_SIMPLEX_PRIMAL_EDGE_WEIGHT_STRATEGY_DEVEX)
+                 'devex': HIGHS_SIMPLEX_PRIMAL_EDGE_WEIGHT_STRATEGY_DEVEX})
 
     statuses = {
         MODEL_STATUS_NOTSET: (
@@ -388,6 +382,10 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
     lhs = _replace_inf(lhs)
     lb = _replace_inf(lb)
     ub = _replace_inf(ub)
+
+    # from ._highs.mpswriter import mpswriter
+    # mpswriter(b'bug.mps', c, A, lhs, rhs, lb, ub, np.empty(0, dtype=np.int32), True)
+    # assert False
 
     res = highs_wrapper(c, A.indptr, A.indices, A.data, lhs, rhs,
                         lb, ub, options)
