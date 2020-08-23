@@ -75,140 +75,136 @@ def _linprog_highs_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         ``(0, None)`` (all decision variables are non-negative).
         If a single tuple ``(min, max)`` is provided, then ``min`` and
         ``max`` will serve as bounds for all decision variables.
-    method : {'highs-simplex', 'highs-ipm', 'highs'}, 'interior-point',
-    'revised simplex', 'simplex'}, optional
+    method : str
 
-        The algorithm used to solve the standard form problem.
+        This is the method-specific documentation for 'highs'.
         :ref:`'highs-simplex' <optimize.linprog-highs-simplex>`,
         :ref:`'highs-ipm' <optimize.linprog-highs-ipm>`,
-        :ref:`'highs' <optimize.linprog-highs>`,
         :ref:`'interior-point' <optimize.linprog-interior-point>` (default),
         :ref:`'revised simplex' <optimize.linprog-revised_simplex>`, and
         :ref:`'simplex' <optimize.linprog-simplex>` (legacy)
-        are supported.
+        are also available.
 
-    options : dict, optional
-        A dictionary of solver options. All methods accept the following
-        options:
+    Options
+    -------
+    maxiter : int
+        The maximum number of iterations to perform in either phase.
+        For ``solver='ipm'``, this does not include the number of
+        crossover iterations.  Default is the largest possible value
+        for an ``int`` on the platform.
+    disp : bool (default: ``False``)
+        Set to ``True`` if indicators of optimization status are to be
+        printed to the console during optimization.
+    presolve : bool (default: ``True``)
+        Presolve attempts to identify trivial infeasibilities,
+        identify trivial unboundedness, and simplify the problem before
+        sending it to the main solver. It is generally recommended
+        to keep the default setting ``True``; set to ``False`` if
+        presolve is to be disabled.
+    time_limit : float
+        The maximum time in seconds allotted to solve the problem;
+        default is the largest possible value for a ``double`` on the
+        platform.
+    dual_feasibility_tolerance : double (default: 1e-07)
+        Dual feasibility tolerance.
+        The minimum of this and ``primal_feasibility_tolerance``
+        is used for the feasibility tolerance when ``solver='ipm'``.
+    dual_objective_value_upper_bound : double
+        Upper bound on objective value for dual simplex:
+        algorithm terminates if reached.  Default is the largest
+        possible value for a ``double`` on the platform.
+        When ``solver='ipm'`` this value is ignored.
+    ipm_optimality_tolerance : double
+        Optimality tolerance for ``solver='ipm'``.  Default is 1e-08.
+        Minimum possible value is 1e-12 and must be smaller than the
+        largest possible value for a ``double`` on the platform.
+    primal_feasibility_tolerance : double (default: 1e-07)
+        Primal feasibility tolerance.
+        The minimum of this and ``dual_feasibility_tolerance``
+        is used for the feasibility tolerance when ``solver='ipm'``.
+    simplex_crash_strategy : int {0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
+        Strategy for simplex crash: off / LTSSF / Bixby (0/1/2).
+        Default is ``0``.  Corresponds to the following:
 
-        maxiter : int
-            The maximum number of iterations to perform in either phase.
-            For ``solver='ipm'``, this does not include the number of
-            crossover iterations.  Default is the largest possible value
-            for an ``int`` on the platform.
-        disp : bool (default: ``False``)
-            Set to ``True`` if indicators of optimization status are to be
-            printed to the console during optimization.
-        presolve : bool (default: ``True``)
-            Presolve attempts to identify trivial infeasibilities,
-            identify trivial unboundedness, and simplify the problem before
-            sending it to the main solver. It is generally recommended
-            to keep the default setting ``True``; set to ``False`` if
-            presolve is to be disabled.
-        time_limit : float
-            The maximum time in seconds allotted to solve the problem;
-            default is the largest possible value for a ``double`` on the
-            platform.
-        dual_feasibility_tolerance : double (default: 1e-07)
-            Dual feasibility tolerance.
-            The minimum of this and ``primal_feasibility_tolerance``
-            is used for the feasibility tolerance when ``solver='ipm'``.
-        dual_objective_value_upper_bound : double
-            Upper bound on objective value for dual simplex:
-            algorithm terminates if reached.  Default is the largest
-            possible value for a ``double`` on the platform.
-            When ``solver='ipm'`` this value is ignored.
-        ipm_optimality_tolerance : double
-            Optimality tolerance for ``solver='ipm'``.  Default is 1e-08.
-            Minimum possible value is 1e-12 and must be smaller than the
-            largest possible value for a ``double`` on the platform.
-        primal_feasibility_tolerance : double (default: 1e-07)
-            Primal feasibility tolerance.
-            The minimum of this and ``dual_feasibility_tolerance``
-            is used for the feasibility tolerance when ``solver='ipm'``.
-        simplex_crash_strategy : int {0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
-            Strategy for simplex crash: off / LTSSF / Bixby (0/1/2).
-            Default is ``0``.  Corresponds to the following:
+        ``0``: `SIMPLEX_CRASH_STRATEGY_OFF`
 
-            ``0``: `SIMPLEX_CRASH_STRATEGY_OFF`
+        ``1``: `SIMPLEX_CRASH_STRATEGY_LTSSF_K`
 
-            ``1``: `SIMPLEX_CRASH_STRATEGY_LTSSF_K`
+        ``2``: `SIMPLEX_CRASH_STRATEGY_BIXBY`
 
-            ``2``: `SIMPLEX_CRASH_STRATEGY_BIXBY`
+        ``3``: `SIMPLEX_CRASH_STRATEGY_LTSSF_PRI`
 
-            ``3``: `SIMPLEX_CRASH_STRATEGY_LTSSF_PRI`
+        ``4``: `SIMPLEX_CRASH_STRATEGY_LTSF_K`
 
-            ``4``: `SIMPLEX_CRASH_STRATEGY_LTSF_K`
+        ``5``: `SIMPLEX_CRASH_STRATEGY_LTSF_PRI`
 
-            ``5``: `SIMPLEX_CRASH_STRATEGY_LTSF_PRI`
+        ``6``: `SIMPLEX_CRASH_STRATEGY_LTSF`
 
-            ``6``: `SIMPLEX_CRASH_STRATEGY_LTSF`
+        ``7``: `SIMPLEX_CRASH_STRATEGY_BIXBY_NO_NONZERO_COL_COSTS`
 
-            ``7``: `SIMPLEX_CRASH_STRATEGY_BIXBY_NO_NONZERO_COL_COSTS`
+        ``8``: `SIMPLEX_CRASH_STRATEGY_BASIC`
 
-            ``8``: `SIMPLEX_CRASH_STRATEGY_BASIC`
+        ``9``: `SIMPLE_CRASH_STRATEGY_TEST_SING`
 
-            ``9``: `SIMPLE_CRASH_STRATEGY_TEST_SING`
+    ``SIMPLEX_CRASH_STRATEGY_*`` are defined as in HiGHS.
 
-        ``SIMPLEX_CRASH_STRATEGY_*`` are defined as in HiGHS.
+    simplex_dual_edge_weight_strategy : int {0, 1, 2, 3, 4}
+        Strategy for simplex dual edge weights:
+        Dantzig / Devex / Steepest Edge.  Default is ``2``.
+        Corresponds to the following:
 
-        simplex_dual_edge_weight_strategy : int {0, 1, 2, 3, 4}
-            Strategy for simplex dual edge weights:
-            Dantzig / Devex / Steepest Edge.  Default is ``2``.
-            Corresponds to the following:
+        ``0``: `SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_DANTZIG`
 
-            ``0``: `SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_DANTZIG`
+        ``1``: `SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_DEVEX`
 
-            ``1``: `SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_DEVEX`
+        ``2``: `SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_STEEPEST_EDGE_TO_DEVEX_SWITCH`
 
-            ``2``: `SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_STEEPEST_EDGE_TO_DEVEX_SWITCH`
+        ``3``: `SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_STEEPEST_EDGE`
 
-            ``3``: `SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_STEEPEST_EDGE`
+        ``4``: `SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_STEEPEST_EDGE_UNIT_INITIAL`
 
-            ``4``: `SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_STEEPEST_EDGE_UNIT_INITIAL`
+        ``SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_*`` are defined as in
+        HiGHS.
 
-            ``SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_*`` are defined as in
-            HiGHS.
+    simplex_primal_edge_weight_strategy : int {0, 1}
+        Strategy for simplex primal edge weights:
+        Dantzig / Devex.  Default is ``0``.
+        Corresponds to the following:
 
-        simplex_primal_edge_weight_strategy : int {0, 1}
-            Strategy for simplex primal edge weights:
-            Dantzig / Devex.  Default is ``0``.
-            Corresponds to the following:
+        ``0``: `SIMPLEX_PRIMAL_EDGE_WEIGHT_STRATEGY_DANTZIG`
 
-            ``0``: `SIMPLEX_PRIMAL_EDGE_WEIGHT_STRATEGY_DANTZIG`
+        ``1``: `SIMPLEX_PRIMAL_EDGE_WEIGHT_STRATEGY_DEVEX`
 
-            ``1``: `SIMPLEX_PRIMAL_EDGE_WEIGHT_STRATEGY_DEVEX`
+        ``SIMPLEX_PRIMAL_EDGE_WEIGHT_STRATEGY_*`` are defined as in
+        HiGHS.
 
-            ``SIMPLEX_PRIMAL_EDGE_WEIGHT_STRATEGY_*`` are defined as in
-            HiGHS.
+    simplex_strategy : int {0, 1, 2, 3}
+        Strategy for simplex solver. Default: ``1``.
+        Corresponds to the following:
 
-        simplex_strategy : int {0, 1, 2, 3}
-            Strategy for simplex solver. Default: ``1``.
-            Corresponds to the following:
+        ``0``: `SIMPLEX_STRATEGY_MIN`
 
-            ``0``: `SIMPLEX_STRATEGY_MIN`
+        ``1``: `SIMPLEX_STRATEGY_DUAL`
 
-            ``1``: `SIMPLEX_STRATEGY_DUAL`
+        ``2``: `SIMPLEX_STRATEGY_DUAL_TASKS`
 
-            ``2``: `SIMPLEX_STRATEGY_DUAL_TASKS`
+        ``3``: `SIMPLEX_STRATEGY_DUAL_MULTI`
 
-            ``3``: `SIMPLEX_STRATEGY_DUAL_MULTI`
+        ``SIMPLEX_STRATEGY_*`` are defined as in HiGHS.
 
-            ``SIMPLEX_STRATEGY_*`` are defined as in HiGHS.
+    simplex_update_limit : int (default: ``5000``)
+        Limit on the number of updates made to the representation of
+        the basis matrix inverse (e.g. LU factorization)
+        before a new representation is formed from scratch.
+        If needed for efficiency or numerical stability, a new
+        representation of the inverse may be formed before this limit
+        is reached. See [2]_  Secture 2.4 for more information about
+        updating the representation of the basis matrix inverse.
 
-        simplex_update_limit : int (default: ``5000``)
-            Limit on the number of updates made to the representation of
-            the basis matrix inverse (e.g. LU factorization)
-            before a new representation is formed from scratch.
-            If needed for efficiency or numerical stability, a new
-            representation of the inverse may be formed before this limit
-            is reached. See [2]_  Secture 2.4 for more information about
-            updating the representation of the basis matrix inverse.
-
-        unknown_options : dict
-            Optional arguments not used by this particular solver. If
-            ``unknown_options`` is non-empty, a warning is issued listing
-            all unused options.
+    unknown_options : dict
+        Optional arguments not used by this particular solver. If
+        ``unknown_options`` is non-empty, a warning is issued listing
+        all unused options.
 
     Returns
     -------
@@ -259,9 +255,9 @@ def _linprog_highs_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
 
     Method :ref:`'highs-simplex' <optimize.linprog-highs-simplex>` is a wrapper
     of the C++ high performance dual revised simplex implementation (HSOL)
-    [1]_, [2]_. Method :ref:`'highs-ipm' <optimize.linprog-highs-ipm>`
+    [13]_, [14]_. Method :ref:`'highs-ipm' <optimize.linprog-highs-ipm>`
     is a wrapper of a C++ implementation of an **i**\ nterior-\ **p**\ oint
-    **m**\ ethod [1]_; it features a crossover routine, so it is as accurate
+    **m**\ ethod [13]_; it features a crossover routine, so it is as accurate
     as a simplex solver. Method :ref:`'highs' <optimize.linprog-highs>` chooses
     between the two automatically. For new code involving `linprog`, we
     recommend explicitly choosing one of these three method values instead of
@@ -271,12 +267,336 @@ def _linprog_highs_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
 
     References
     ----------
-    .. [1] Huangfu, Q., Galabova, I., Feldmeier, M., and Hall, J. A. J.
+    .. [13] Huangfu, Q., Galabova, I., Feldmeier, M., and Hall, J. A. J.
            "HiGHS - high performance software for linear optimization."
            Accessed 4/16/2020 at https://www.maths.ed.ac.uk/hall/HiGHS/#guide
-    .. [2] Huangfu, Q. and Hall, J. A. J. "Parallelizing the dual revised
+    .. [14] Huangfu, Q. and Hall, J. A. J. "Parallelizing the dual revised
            simplex method." Mathematical Programming Computation, 10 (1),
            119-142, 2018. DOI: 10.1007/s12532-017-0130-5
 
+    """
+    pass
+
+
+def _linprog_ip_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
+                    bounds=None, method='interior-point', callback=None,
+                    maxiter=1000, disp=False, presolve=True, autoscale=False,
+                    rr=True, tol=1e-8, alpha0=.99995, beta=0.1, sparse=False,
+                    lstsq=False, sym_pos=True, cholesky=True, pc=True,
+                    ip=False, permc_spec='MMD_AT_PLUS_A', **unknown_options):
+    r"""
+    Linear programming: minimize a linear objective function subject to linear
+    equality and inequality constraints using the interior-point method of
+    [4]_.
+
+    Linear programming solves problems of the following form:
+
+    .. math::
+
+        \min_x \ & c^T x \\
+        \mbox{such that} \ & A_{ub} x \leq b_{ub},\\
+        & A_{eq} x = b_{eq},\\
+        & l \leq x \leq u ,
+
+    where :math:`x` is a vector of decision variables; :math:`c`,
+    :math:`b_{ub}`, :math:`b_{eq}`, :math:`l`, and :math:`u` are vectors; and
+    :math:`A_{ub}` and :math:`A_{eq}` are matrices.
+
+    Alternatively, that's:
+
+    minimize::
+
+        c @ x
+
+    such that::
+
+        A_ub @ x <= b_ub
+        A_eq @ x == b_eq
+        lb <= x <= ub
+
+    Note that by default ``lb = 0`` and ``ub = None`` unless specified with
+    ``bounds``.
+
+    Parameters
+    ----------
+    c : 1-D array
+        The coefficients of the linear objective function to be minimized.
+    A_ub : 2-D array, optional
+        The inequality constraint matrix. Each row of ``A_ub`` specifies the
+        coefficients of a linear inequality constraint on ``x``.
+    b_ub : 1-D array, optional
+        The inequality constraint vector. Each element represents an
+        upper bound on the corresponding value of ``A_ub @ x``.
+    A_eq : 2-D array, optional
+        The equality constraint matrix. Each row of ``A_eq`` specifies the
+        coefficients of a linear equality constraint on ``x``.
+    b_eq : 1-D array, optional
+        The equality constraint vector. Each element of ``A_eq @ x`` must equal
+        the corresponding element of ``b_eq``.
+    bounds : sequence, optional
+        A sequence of ``(min, max)`` pairs for each element in ``x``, defining
+        the minimum and maximum values of that decision variable. Use ``None``
+        to indicate that there is no bound. By default, bounds are
+        ``(0, None)`` (all decision variables are non-negative).
+        If a single tuple ``(min, max)`` is provided, then ``min`` and
+        ``max`` will serve as bounds for all decision variables.
+    method : str
+        This is the method-specific documentation for 'highs'.
+        :ref:`'highs-simplex' <optimize.linprog-highs-simplex>`,
+        :ref:`'highs-ipm' <optimize.linprog-highs-ipm>`,
+        :ref:`'interior-point' <optimize.linprog-interior-point>` (default),
+        :ref:`'revised simplex' <optimize.linprog-revised_simplex>`, and
+        :ref:`'simplex' <optimize.linprog-simplex>` (legacy)
+        are also available.
+    callback : callable, optional
+        Callback function to be executed once per iteration.
+
+    Options
+    -------
+    maxiter : int (default: 1000)
+        The maximum number of iterations of the algorithm.
+    disp : bool (default: False)
+        Set to ``True`` if indicators of optimization status are to be printed
+        to the console each iteration.
+    presolve : bool (default: True)
+        Presolve attempts to identify trivial infeasibilities,
+        identify trivial unboundedness, and simplify the problem before
+        sending it to the main solver. It is generally recommended
+        to keep the default setting ``True``; set to ``False`` if
+        presolve is to be disabled.
+    autoscale : bool (default: False)
+        Set to ``True`` to automatically perform equilibration.
+        Consider using this option if the numerical values in the
+        constraints are separated by several orders of magnitude.
+    rr : bool (default: True)
+        Set to ``False`` to disable automatic redundancy removal.
+    tol : float (default: 1e-8)
+        Termination tolerance to be used for all termination criteria;
+        see [4]_ Section 4.5.
+    alpha0 : float (default: 0.99995)
+        The maximal step size for Mehrota's predictor-corrector search
+        direction; see :math:`\beta_{3}` of [4]_ Table 8.1.
+    beta : float (default: 0.1)
+        The desired reduction of the path parameter :math:`\mu` (see [6]_)
+        when Mehrota's predictor-corrector is not in use (uncommon).
+    sparse : bool (default: False)
+        Set to ``True`` if the problem is to be treated as sparse after
+        presolve. If either ``A_eq`` or ``A_ub`` is a sparse matrix,
+        this option will automatically be set ``True``, and the problem
+        will be treated as sparse even during presolve. If your constraint
+        matrices contain mostly zeros and the problem is not very small (less
+        than about 100 constraints or variables), consider setting ``True``
+        or providing ``A_eq`` and ``A_ub`` as sparse matrices.
+    lstsq : bool (default: ``False``)
+        Set to ``True`` if the problem is expected to be very poorly
+        conditioned. This should always be left ``False`` unless severe
+        numerical difficulties are encountered. Leave this at the default
+        unless you receive a warning message suggesting otherwise.
+    sym_pos : bool (default: True)
+        Leave ``True`` if the problem is expected to yield a well conditioned
+        symmetric positive definite normal equation matrix
+        (almost always). Leave this at the default unless you receive
+        a warning message suggesting otherwise.
+    cholesky : bool (default: True)
+        Set to ``True`` if the normal equations are to be solved by explicit
+        Cholesky decomposition followed by explicit forward/backward
+        substitution. This is typically faster for problems
+        that are numerically well-behaved.
+    pc : bool (default: True)
+        Leave ``True`` if the predictor-corrector method of Mehrota is to be
+        used. This is almost always (if not always) beneficial.
+    ip : bool (default: False)
+        Set to ``True`` if the improved initial point suggestion due to [4]_
+        Section 4.3 is desired. Whether this is beneficial or not
+        depends on the problem.
+    permc_spec : str (default: 'MMD_AT_PLUS_A')
+        (Has effect only with ``sparse = True``, ``lstsq = False``, ``sym_pos =
+        True``, and no SuiteSparse.)
+        A matrix is factorized in each iteration of the algorithm.
+        This option specifies how to permute the columns of the matrix for
+        sparsity preservation. Acceptable values are:
+
+        - ``NATURAL``: natural ordering.
+        - ``MMD_ATA``: minimum degree ordering on the structure of A^T A.
+        - ``MMD_AT_PLUS_A``: minimum degree ordering on the structure of A^T+A.
+        - ``COLAMD``: approximate minimum degree column ordering.
+
+        This option can impact the convergence of the
+        interior point algorithm; test different values to determine which
+        performs best for your problem. For more information, refer to
+        ``scipy.sparse.linalg.splu``.
+    unknown_options : dict
+        Optional arguments not used by this particular solver. If
+        `unknown_options` is non-empty a warning is issued listing all
+        unused options.
+
+    Returns
+    -------
+    res : OptimizeResult
+        A :class:`scipy.optimize.OptimizeResult` consisting of the fields:
+
+        x : 1-D array
+            The values of the decision variables that minimizes the
+            objective function while satisfying the constraints.
+        fun : float
+            The optimal value of the objective function ``c @ x``.
+        slack : 1-D array
+            The (nominally positive) values of the slack variables,
+            ``b_ub - A_ub @ x``.
+        con : 1-D array
+            The (nominally zero) residuals of the equality constraints,
+            ``b_eq - A_eq @ x``.
+        success : bool
+            ``True`` when the algorithm succeeds in finding an optimal
+            solution.
+        status : int
+            An integer representing the exit status of the algorithm.
+
+            ``0`` : Optimization terminated successfully.
+
+            ``1`` : Iteration limit reached.
+
+            ``2`` : Problem appears to be infeasible.
+
+            ``3`` : Problem appears to be unbounded.
+
+            ``4`` : Numerical difficulties encountered.
+
+        nit : int
+            The total number of iterations performed in all phases.
+        message : str
+            A string descriptor of the exit status of the algorithm.
+
+    Notes
+    -----
+    This method implements the algorithm outlined in [4]_ with ideas from [8]_
+    and a structure inspired by the simpler methods of [6]_.
+
+    The primal-dual path following method begins with initial 'guesses' of
+    the primal and dual variables of the standard form problem and iteratively
+    attempts to solve the (nonlinear) Karush-Kuhn-Tucker conditions for the
+    problem with a gradually reduced logarithmic barrier term added to the
+    objective. This particular implementation uses a homogeneous self-dual
+    formulation, which provides certificates of infeasibility or unboundedness
+    where applicable.
+
+    The default initial point for the primal and dual variables is that
+    defined in [4]_ Section 4.4 Equation 8.22. Optionally (by setting initial
+    point option ``ip=True``), an alternate (potentially improved) starting
+    point can be calculated according to the additional recommendations of
+    [4]_ Section 4.4.
+
+    A search direction is calculated using the predictor-corrector method
+    (single correction) proposed by Mehrota and detailed in [4]_ Section 4.1.
+    (A potential improvement would be to implement the method of multiple
+    corrections described in [4]_ Section 4.2.) In practice, this is
+    accomplished by solving the normal equations, [4]_ Section 5.1 Equations
+    8.31 and 8.32, derived from the Newton equations [4]_ Section 5 Equations
+    8.25 (compare to [4]_ Section 4 Equations 8.6-8.8). The advantage of
+    solving the normal equations rather than 8.25 directly is that the
+    matrices involved are symmetric positive definite, so Cholesky
+    decomposition can be used rather than the more expensive LU factorization.
+
+    With default options, the solver used to perform the factorization depends
+    on third-party software availability and the conditioning of the problem.
+
+    For dense problems, solvers are tried in the following order:
+
+    1. ``scipy.linalg.cho_factor``
+
+    2. ``scipy.linalg.solve`` with option ``sym_pos=True``
+
+    3. ``scipy.linalg.solve`` with option ``sym_pos=False``
+
+    4. ``scipy.linalg.lstsq``
+
+    For sparse problems:
+
+    1. ``sksparse.cholmod.cholesky`` (if scikit-sparse and SuiteSparse are
+       installed)
+
+    2. ``scipy.sparse.linalg.factorized`` (if scikit-umfpack and SuiteSparse
+       are installed)
+
+    3. ``scipy.sparse.linalg.splu`` (which uses SuperLU distributed with SciPy)
+
+    4. ``scipy.sparse.linalg.lsqr``
+
+    If the solver fails for any reason, successively more robust (but slower)
+    solvers are attempted in the order indicated. Attempting, failing, and
+    re-starting factorization can be time consuming, so if the problem is
+    numerically challenging, options can be set to  bypass solvers that are
+    failing. Setting ``cholesky=False`` skips to solver 2,
+    ``sym_pos=False`` skips to solver 3, and ``lstsq=True`` skips
+    to solver 4 for both sparse and dense problems.
+
+    Potential improvements for combatting issues associated with dense
+    columns in otherwise sparse problems are outlined in [4]_ Section 5.3 and
+    [10]_ Section 4.1-4.2; the latter also discusses the alleviation of
+    accuracy issues associated with the substitution approach to free
+    variables.
+
+    After calculating the search direction, the maximum possible step size
+    that does not activate the non-negativity constraints is calculated, and
+    the smaller of this step size and unity is applied (as in [4]_ Section
+    4.1.) [4]_ Section 4.3 suggests improvements for choosing the step size.
+
+    The new point is tested according to the termination conditions of [4]_
+    Section 4.5. The same tolerance, which can be set using the ``tol`` option,
+    is used for all checks. (A potential improvement would be to expose
+    the different tolerances to be set independently.) If optimality,
+    unboundedness, or infeasibility is detected, the solve procedure
+    terminates; otherwise it repeats.
+
+    Whereas the top level ``linprog`` module expects a problem of form:
+
+    Minimize::
+
+        c @ x
+
+    Subject to::
+
+        A_ub @ x <= b_ub
+        A_eq @ x == b_eq
+         lb <= x <= ub
+
+    where ``lb = 0`` and ``ub = None`` unless set in ``bounds``. The problem
+    is automatically converted to the form:
+
+    Minimize::
+
+        c @ x
+
+    Subject to::
+
+        A @ x == b
+            x >= 0
+
+    for solution. That is, the original problem contains equality, upper-bound
+    and variable constraints whereas the method specific solver requires
+    equality constraints and variable non-negativity. ``linprog`` converts the
+    original problem to standard form by converting the simple bounds to upper
+    bound constraints, introducing non-negative slack variables for inequality
+    constraints, and expressing unbounded variables as the difference between
+    two non-negative variables. The problem is converted back to the original
+    form before results are reported.
+
+    References
+    ----------
+    .. [4] Andersen, Erling D., and Knud D. Andersen. "The MOSEK interior point
+           optimizer for linear programming: an implementation of the
+           homogeneous algorithm." High performance optimization. Springer US,
+           2000. 197-232.
+    .. [6] Freund, Robert M. "Primal-Dual Interior-Point Methods for Linear
+           Programming based on Newton's Method." Unpublished Course Notes,
+           March 2004. Available 2/25/2017 at
+           https://ocw.mit.edu/courses/sloan-school-of-management/15-084j-nonlinear-programming-spring-2004/lecture-notes/lec14_int_pt_mthd.pdf
+    .. [8] Andersen, Erling D., and Knud D. Andersen. "Presolving in linear
+           programming." Mathematical Programming 71.2 (1995): 221-245.
+    .. [9] Bertsimas, Dimitris, and J. Tsitsiklis. "Introduction to linear
+           programming." Athena Scientific 1 (1997): 997.
+    .. [10] Andersen, Erling D., et al. Implementation of interior point
+            methods for large scale linear programming. HEC/Universite de
+            Geneve, 1996.
     """
     pass

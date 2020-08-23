@@ -23,7 +23,7 @@ from ._linprog_ip import _linprog_ip
 from ._linprog_simplex import _linprog_simplex
 from ._linprog_rs import _linprog_rs
 from ._linprog_highs import _linprog_highs
-from ._linprog_doc import _linprog_highs_doc
+from ._linprog_doc import _linprog_highs_doc, _linprog_ip_doc
 from ._linprog_util import (
     _parse_linprog, _presolve, _get_Abc, _LPProblem, _autoscale,
     _postsolve, _check_result, _display_summary)
@@ -235,32 +235,32 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         iteration of the algorithm. The callback function must accept a single
         `scipy.optimize.OptimizeResult` consisting of the following fields:
 
-            x : 1-D array
-                The current solution vector.
-            fun : float
-                The current value of the objective function ``c @ x``.
-            success : bool
-                ``True`` when the algorithm has completed successfully.
-            slack : 1-D array
-                The (nominally positive) values of the slack,
-                ``b_ub - A_ub @ x``.
-            con : 1-D array
-                The (nominally zero) residuals of the equality constraints,
-                ``b_eq - A_eq @ x``.
-            phase : int
-                The phase of the algorithm being executed.
-            status : int
-                An integer representing the status of the algorithm.
+        x : 1-D array
+            The current solution vector.
+        fun : float
+            The current value of the objective function ``c @ x``.
+        success : bool
+            ``True`` when the algorithm has completed successfully.
+        slack : 1-D array
+            The (nominally positive) values of the slack,
+            ``b_ub - A_ub @ x``.
+        con : 1-D array
+            The (nominally zero) residuals of the equality constraints,
+            ``b_eq - A_eq @ x``.
+        phase : int
+            The phase of the algorithm being executed.
+        status : int
+            An integer representing the status of the algorithm.
 
-                ``0`` : Optimization proceeding nominally.
+            ``0`` : Optimization proceeding nominally.
 
-                ``1`` : Iteration limit reached.
+            ``1`` : Iteration limit reached.
 
-                ``2`` : Problem appears to be infeasible.
+            ``2`` : Problem appears to be infeasible.
 
-                ``3`` : Problem appears to be unbounded.
+            ``3`` : Problem appears to be unbounded.
 
-                ``4`` : Numerical difficulties encountered.
+            ``4`` : Numerical difficulties encountered.
 
             nit : int
                 The current iteration number.
@@ -273,26 +273,26 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         A dictionary of solver options. All methods accept the following
         options:
 
-            maxiter : int
-                Maximum number of iterations to perform.
-                Default: see method-specific documentation.
-            disp : bool
-                Set to ``True`` to print convergence messages.
-                Default: ``False``.
-            presolve : bool
-                Set to ``False`` to disable automatic presolve.
-                Default: ``True``.
+        maxiter : int
+            Maximum number of iterations to perform.
+            Default: see method-specific documentation.
+        disp : bool
+            Set to ``True`` to print convergence messages.
+            Default: ``False``.
+        presolve : bool
+            Set to ``False`` to disable automatic presolve.
+            Default: ``True``.
 
         All methods except the HiGHS solvers also accept:
 
-            autoscale : bool
-                Set to ``True`` to automatically perform equilibration.
-                Consider using this option if the numerical values in the
-                constraints are separated by several orders of magnitude.
-                Default: ``False``.
-            rr : bool
-                Set to ``False`` to disable automatic redundancy removal.
-                Default: ``True``.
+        autoscale : bool
+            Set to ``True`` to automatically perform equilibration.
+            Consider using this option if the numerical values in the
+            constraints are separated by several orders of magnitude.
+            Default: ``False``.
+        rr : bool
+            Set to ``False`` to disable automatic redundancy removal.
+            Default: ``True``.
 
         For method-specific options, see
         :func:`show_options('linprog') <show_options>`.
@@ -309,37 +309,37 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     res : OptimizeResult
         A :class:`scipy.optimize.OptimizeResult` consisting of the fields:
 
-            x : 1-D array
-                The values of the decision variables that minimizes the
-                objective function while satisfying the constraints.
-            fun : float
-                The optimal value of the objective function ``c @ x``.
-            slack : 1-D array
-                The (nominally positive) values of the slack variables,
-                ``b_ub - A_ub @ x``.
-            con : 1-D array
-                The (nominally zero) residuals of the equality constraints,
-                ``b_eq - A_eq @ x``.
-            success : bool
-                ``True`` when the algorithm succeeds in finding an optimal
-                solution.
-            status : int
-                An integer representing the exit status of the algorithm.
+        x : 1-D array
+            The values of the decision variables that minimizes the
+            objective function while satisfying the constraints.
+        fun : float
+            The optimal value of the objective function ``c @ x``.
+        slack : 1-D array
+            The (nominally positive) values of the slack variables,
+            ``b_ub - A_ub @ x``.
+        con : 1-D array
+            The (nominally zero) residuals of the equality constraints,
+            ``b_eq - A_eq @ x``.
+        success : bool
+            ``True`` when the algorithm succeeds in finding an optimal
+            solution.
+        status : int
+            An integer representing the exit status of the algorithm.
 
-                ``0`` : Optimization terminated successfully.
+            ``0`` : Optimization terminated successfully.
 
-                ``1`` : Iteration limit reached.
+            ``1`` : Iteration limit reached.
 
-                ``2`` : Problem appears to be infeasible.
+            ``2`` : Problem appears to be infeasible.
 
-                ``3`` : Problem appears to be unbounded.
+            ``3`` : Problem appears to be unbounded.
 
-                ``4`` : Numerical difficulties encountered.
+            ``4`` : Numerical difficulties encountered.
 
-            nit : int
-                The total number of iterations performed in all phases.
-            message : str
-                A string descriptor of the exit status of the algorithm.
+        nit : int
+            The total number of iterations performed in all phases.
+        message : str
+            A string descriptor of the exit status of the algorithm.
 
     See Also
     --------
