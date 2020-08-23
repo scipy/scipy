@@ -273,3 +273,4 @@ def _linprog_highs_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
            119-142, 2018. DOI: 10.1007/s12532-017-0130-5
 
     """
+    pass
