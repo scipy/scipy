@@ -179,6 +179,7 @@ Continuous-time linear systems
    step2            -- Like step, but `scipy.integrate.odeint` is used.
    freqresp         -- Frequency response of a continuous-time LTI system.
    bode             -- Bode magnitude and phase data (continuous-time LTI).
+   tfest            -- Data based transfer function estimation.
 
 Discrete-time linear systems
 ============================
