@@ -27,6 +27,7 @@ import warnings
 from scipy.linalg import qr as s_qr
 from scipy import integrate, interpolate, linalg
 from scipy.interpolate import interp1d
+from scipy.optimize import curve_fit
 from .filter_design import (tf2zpk, zpk2tf, normalize, freqs, freqz, freqs_zpk,
                             freqz_zpk)
 from .lti_conversion import (tf2ss, abcd_normalize, ss2tf, zpk2ss, ss2zpk,
@@ -41,7 +42,7 @@ import copy
 __all__ = ['lti', 'dlti', 'TransferFunction', 'ZerosPolesGain', 'StateSpace',
            'lsim', 'lsim2', 'impulse', 'impulse2', 'step', 'step2', 'bode',
            'freqresp', 'place_poles', 'dlsim', 'dstep', 'dimpulse',
-           'dfreqresp', 'dbode']
+           'dfreqresp', 'dbode', 'tfest']
 
 
 class LinearTimeInvariant:
@@ -3861,3 +3862,64 @@ def dbode(system, w=None, n=100):
     phase = numpy.rad2deg(numpy.unwrap(numpy.angle(y)))
 
     return w / dt, mag, phase
+
+
+def tfest(T,U,y,nzeros,npoles):
+    """
+    Estimate transfer function based on input data.
+
+    Parameters
+    ----------
+    T : 1D ndarray, list
+        Input time points.
+    U : 1D ndarray, list
+        Data for the transfer function input signal.
+    y : 1D ndarray, list
+        Transfer function response to input signal U.
+    nzeros : int
+        Number of zeros to be computed in the transfer function.
+    npoles : int
+        Number of poles to be computed in the transfer function.
+
+    Returns
+    -------
+    tf : instance of `TransferFunction`
+        Transfer function of the estimated system.
+
+    Examples
+    --------
+    Estimating a trasnfer function using a simulated step response with added noise.
+
+    >>> from scipy.optimize import curve_fit
+    >>> from scipy.signal import lsim, TransferFunction, tfest
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+
+    >>> num = [1]
+    >>> den = [1, 2]
+    >>> lenght = 200
+
+    >>> T = np.linspace(0,10,lenght)
+    >>> U = np.array([0 if val<1 else 1 for val in T])
+    >>> _,y_sim,_ = lsim(TransferFunction(num, den),U,T)
+
+    >>> y_noise = y_sim + 0.1*np.random.rand(lenght) - 0.05
+
+    >>> tf = tfest(T,U,y_noise,1,2)
+    >>> _,y_sim2,_ = lsim(tf,U,T)
+
+    >>> fig = plt.figure(figsize = (14,10))
+    >>> plt.plot(T,U)
+    >>> plt.plot(T,y_noise)
+    >>> plt.plot(T,y_sim2);
+    >>> plt.show()
+    >>> print(tf)
+
+    """    
+    size_args = nzeros + npoles
+    def func(U,*args):
+        _,y_sim,_ = lsim(TransferFunction(args[:nzeros], args[nzeros:]),U,T)
+        return y_sim
+    arguments,_ = curve_fit(func,U,y,p0=np.ones(size_args))
+    tf = TransferFunction(arguments[:nzeros],arguments[nzeros:])
+    return tf
