@@ -3948,6 +3948,26 @@ def test_levy_sf():
     assert_allclose(y, expected, rtol=1e-14)
 
 
+def test_levy_l_sf():
+    # Test levy_l.sf for small arguments.
+    x = np.array([-0.016, -0.01, -0.005, -0.0015])
+    # Expected values were calculated with mpmath.
+    expected = np.array([2.6644463892359302e-15,
+                         1.523970604832107e-23,
+                         2.0884875837625492e-45,
+                         5.302850374626878e-147])
+    y = stats.levy_l.sf(x)
+    assert_allclose(y, expected, rtol=1e-13)
+
+
+def test_levy_l_isf():
+    # Test roundtrip sf(isf(p)), including a small input value.
+    p = np.array([3.0e-15, 0.25, 0.99])
+    x = stats.levy_l.isf(p)
+    q = stats.levy_l.sf(x)
+    assert_allclose(q, p, rtol=5e-14)
+
+
 def test_hypergeom_interval_1802():
     # these two had endless loops
     assert_equal(stats.hypergeom.interval(.95, 187601, 43192, 757),
