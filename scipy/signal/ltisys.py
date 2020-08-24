@@ -3886,6 +3886,10 @@ def tfest(T,U,y,nzeros,npoles):
     tf : instance of `TransferFunction`
         Transfer function of the estimated system.
 
+    Notes
+    -----
+    .. versionadded:: 1.6.0
+
     Examples
     --------
     Estimating a trasnfer function using a simulated step response with added noise.
