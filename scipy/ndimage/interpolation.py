@@ -375,6 +375,13 @@ def map_coordinates(input, coordinates, output=None, order=3,
     if coordinates.shape[0] != input.ndim:
         raise RuntimeError('invalid shape for coordinate array')
     if prefilter and order > 1:
+        if mode in ['nearest', 'grid-constant']:
+            npad = 12
+            if mode == 'grid-constant':
+	            input = numpy.pad(input, npad, mode='constant', constant_values=cval)
+            elif mode == 'nearest':
+                input = numpy.pad(input, npad, mode='edge')
+            coordinates = coordinates + npad
         filtered = spline_filter(input, order, output=numpy.float64,
                                  mode=mode)
     else:
