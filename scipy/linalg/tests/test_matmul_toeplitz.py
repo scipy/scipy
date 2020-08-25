@@ -1,13 +1,12 @@
 """Test functions for linalg.matmul_toeplitz function
 """
-from __future__ import division, print_function, absolute_import
 
 import numpy as np
 from scipy.linalg import toeplitz, matmul_toeplitz
 
-import pytest
 from pytest import raises as assert_raises
 from numpy.testing import assert_allclose
+
 
 class TestMatmulToeplitz:
 
@@ -102,4 +101,4 @@ class TestMatmulToeplitz:
         else:
             actual = matmul_toeplitz((c, r), b, check_finite)
         desired = toeplitz(c, r) @ b
-        assert_allclose(actual, desired, rtol = self.tolerance)
+        assert_allclose(actual, desired, rtol=self.tolerance)

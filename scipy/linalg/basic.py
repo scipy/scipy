@@ -666,7 +666,6 @@ def solve_toeplitz(c_or_cr, b, check_finite=True):
     # developer might consider implementing other O(N^2) Toeplitz solvers,
     # such as GKO (https://www.jstor.org/stable/2153371) or Bareiss.
 
-
     r, c, b, dtype, b_shape = _validate_args_for_toeplitz_ops(
         c_or_cr, b, check_finite, keep_b_shape=True)
 
@@ -1631,7 +1630,6 @@ def _validate_args_for_toeplitz_ops(c_or_cr, b, check_finite, keep_b_shape):
 
     Returns
     -------
-
     r : array
         1d array corresponding to the first row of the Toeplitz matrix.
     c: array
@@ -1722,12 +1720,43 @@ def matmul_toeplitz(c_or_cr, b, check_finite=False, workers=None):
     The Toeplitz matrix is embedded in a circulant matrix and the FFT is used
     to efficiently calculate the matrix-matrix product.
 
+    Because the computation is based on the FFT, integer inputs will
+    result in floating point outputs.  This is unlike NumPy's `matmul`,
+    which preserves the data type of the input.
+
     This is partly based on the implementation that can be found in [1]_,
     licensed under the MIT license. More information about the method can be
     found in reference [2]_. References [3]_ and [4]_ have more reference
     implementations in Python.
 
-    .. versionadded:: 1.5.0
+    .. versionadded:: 1.6.0
+
+    References
+    ----------
+    .. [1] : Jacob R Gardner, Geoff Pleiss, David Bindel, Kilian
+    Q Weinberger, Andrew Gordon Wilson, "GPyTorch: Blackbox Matrix-Matrix
+    Gaussian Process Inference with GPU Acceleration" with contributions
+    from Max Balandat and Ruihan Wu. Available online:
+    https://github.com/cornellius-gp/gpytorch
+
+    .. [2] : J. Demmel, P. Koev, and X. Li, "A Brief Survey of Direct Linear
+    Solvers". In Z. Bai, J. Demmel, J. Dongarra, A. Ruhe, and H. van der
+    Vorst, editors. Templates for the Solution of Algebraic Eigenvalue
+    Problems: A Practical Guide. SIAM, Philadelphia, 2000. Available online:
+    http://www.netlib.org/utk/people/JackDongarra/etemplates/node384.html
+
+    .. [3] : R. Scheibler, E. Bezzam, I. Dokmanic, Pyroomacoustics: A Python
+    package for audio room simulations and array processing algorithms,
+    Proc. IEEE ICASSP, Calgary, CA, 2018.
+    https://github.com/LCAV/pyroomacoustics/blob/pypi-release/pyroomacoustics
+    /adaptive/util.py
+
+    .. [4] : Marano S, Edwards B, Ferrari G and Fah D (2017), "Fitting
+    Earthquake Spectra: Colored Noise and Incomplete Data", Bulletin of
+    the Seismological Society of America., January, 2017. Vol. 107(1),
+    pp. 276-291. Implementation available online at:
+    http://mercalli.ethz.ch/~marra/publications/2017_fitting_earthquake_spect
+    ra_colored_noise_and_incomplete_data/ToeplitzOperations.py
 
     Examples
     --------
@@ -1768,33 +1797,6 @@ def matmul_toeplitz(c_or_cr, b, check_finite=False, workers=None):
     >>> matmul_toeplitz([1] + [0]*(n-1), np.ones(n))
     array([1., 1., 1., ..., 1., 1., 1.])
 
-    References
-    ----------
-    .. [1] : Jacob R Gardner, Geoff Pleiss, David Bindel, Kilian
-    Q Weinberger, Andrew Gordon Wilson, "GPyTorch: Blackbox Matrix-Matrix
-    Gaussian Process Inference with GPU Acceleration" with contributions
-    from Max Balandat and Ruihan Wu. Available online:
-    https://github.com/cornellius-gp/gpytorch
-
-    .. [2] : J. Demmel, P. Koev, and X. Li, "A Brief Survey of Direct Linear
-    Solvers". In Z. Bai, J. Demmel, J. Dongarra, A. Ruhe, and H. van der
-    Vorst, editors. Templates for the Solution of Algebraic Eigenvalue
-    Problems: A Practical Guide. SIAM, Philadelphia, 2000. Available online:
-    http://www.netlib.org/utk/people/JackDongarra/etemplates/node384.html
-
-    .. [3] : R. Scheibler, E. Bezzam, I. Dokmanic, Pyroomacoustics: A Python
-    package for audio room simulations and array processing algorithms,
-    Proc. IEEE ICASSP, Calgary, CA, 2018.
-    https://github.com/LCAV/pyroomacoustics/blob/pypi-release/pyroomacoustics
-    /adaptive/util.py
-
-    .. [4] : Marano S, Edwards B, Ferrari G and Fah D (2017), "Fitting
-    Earthquake Spectra: Colored Noise and Incomplete Data", Bulletin of
-    the Seismological Society of America., January, 2017. Vol. 107(1),
-    pp. 276-291. Implementation available online at:
-    http://mercalli.ethz.ch/~marra/publications/2017_fitting_earthquake_spect
-    ra_colored_noise_and_incomplete_data/ToeplitzOperations.py
-
     """
 
     from ..fft import fft, ifft, rfft, irfft
@@ -1815,6 +1817,7 @@ def matmul_toeplitz(c_or_cr, b, check_finite=False, workers=None):
         fft_mat = rfft(embedded_col, axis=0, workers=workers).reshape(-1, 1)
         fft_b = rfft(b, n=2*n-1, axis=0, workers=workers)
 
-        mat_times_b = irfft(fft_mat*fft_b, axis=0, workers=workers, n=2*n-1)[:n, :]
+        mat_times_b = irfft(fft_mat*fft_b, axis=0,
+            workers=workers, n=2*n-1)[:n, :]
 
     return mat_times_b.reshape(*b_shape)
