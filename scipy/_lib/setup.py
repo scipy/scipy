@@ -41,6 +41,14 @@ def configuration(parent_package='',top_path=None):
                          depends=depends,
                          include_dirs=[include_dir])
 
+    config.add_extension("_test_deprecation_call",
+                         sources=["_test_deprecation_call.c"],
+                         include_dirs=[include_dir])
+
+    config.add_extension("_test_deprecation_def",
+                         sources=["_test_deprecation_def.c"],
+                         include_dirs=[include_dir])
+
     config.add_subpackage('_uarray')
 
     return config

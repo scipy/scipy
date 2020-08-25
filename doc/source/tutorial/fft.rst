@@ -18,14 +18,6 @@ known to Gauss (1805) and was brought to light in its current form by Cooley
 and Tukey [CT65]_. Press et al. [NR07]_ provide an accessible introduction to
 Fourier analysis and its applications.
 
-.. note::
-
-   PyFFTW_ provides a way to replace a number of functions in `scipy.fft`
-   with its own functions, which are usually significantly faster, via
-   pyfftw.interfaces_. Because PyFFTW_ relies on the GPL-licensed FFTW_ it
-   cannot be included in SciPy. Users for whom the speed of FFT routines is
-   critical should consider installing PyFFTW_.
-
 
 Fast Fourier transforms
 -----------------------
@@ -272,7 +264,7 @@ Discrete Cosine Transforms
 
 SciPy provides a DCT with the function :func:`dct` and a corresponding IDCT
 with the function :func:`idct`. There are 8 types of the DCT [WPC]_, [Mak]_;
-however, only the first 3 types are implemented in scipy. "The" DCT generally
+however, only the first 4 types are implemented in scipy. "The" DCT generally
 refers to DCT type 2, and "the" Inverse DCT generally refers to DCT type 3. In
 addition, the DCT coefficients can be normalized differently (for most types,
 scipy provides ``None`` and ``ortho``). Two parameters of the dct/idct
@@ -340,6 +332,25 @@ or, for ``norm='ortho'``:
 
     y[k] = {x_0\over\sqrt{N}} + {2\over\sqrt{N}} \sum_{n=1}^{N-1} x[n]
     \cos\left({\pi n(2k+1) \over 2N}\right) \qquad 0 \le k < N.
+
+
+Type IV DCT
+___________
+
+SciPy uses the following definition of the unnormalized DCT-IV
+(``norm=None``):
+
+.. math::
+
+    y[k] = 2 \sum_{n=0}^{N-1} x[n] \cos\left({\pi (2n+1)(2k+1) \over 4N}\right)
+    \qquad 0 \le k < N,
+
+or, for ``norm='ortho'``:
+
+.. math::
+
+    y[k] = \sqrt{2\over N}\sum_{n=0}^{N-1} x[n] \cos\left({\pi (2n+1)(2k+1) \over 4N}\right)
+    \qquad 0 \le k < N
 
 
 DCT and IDCT
@@ -447,7 +458,7 @@ SciPy provides a DST [Mak]_ with the function :func:`dst` and a corresponding ID
 with the function :func:`idst`.
 
 There are, theoretically, 8 types of the DST for different combinations of
-even/odd boundary conditions and boundary off sets [WPS]_, only the first 3
+even/odd boundary conditions and boundary offsets [WPS]_, only the first 4
 types are implemented in scipy.
 
 Type I DST
@@ -485,6 +496,24 @@ the following definition of the unnormalized DST-III (``norm=None``):
 
     y[k] = (-1)^k x[N-1] + 2 \sum_{n=0}^{N-2} x[n] \sin \left( {\pi
     (n+1)(k+1/2)} \over N \right), \qquad 0 \le k < N.
+
+Type IV DST
+___________
+
+SciPy uses the following definition of the unnormalized DST-IV
+(``norm=None``):
+
+.. math::
+
+    y[k] = 2 \sum_{n=0}^{N-1} x[n] \sin\left({\pi (2n+1)(2k+1) \over 4N}\right)
+    \qquad 0 \le k < N,
+
+or, for ``norm='ortho'``:
+
+.. math::
+
+    y[k] = \sqrt{2\over N}\sum_{n=0}^{N-1} x[n] \sin\left({\pi (2n+1)(2k+1) \over 4N}\right)
+    \qquad 0 \le k < N,
 
 
 DST and IDST
@@ -558,8 +587,3 @@ References
 .. [WPC] https://en.wikipedia.org/wiki/Discrete_cosine_transform
 
 .. [WPS] https://en.wikipedia.org/wiki/Discrete_sine_transform
-
-
-.. _FFTW: http://www.fftw.org/
-.. _PyFFTW: https://hgomersall.github.io/pyFFTW/
-.. _pyfftw.interfaces: https://hgomersall.github.io/pyFFTW/pyfftw/interfaces/interfaces.html

@@ -183,9 +183,9 @@ def _convert_to_type(X, out_type):
     return np.ascontiguousarray(X, dtype=out_type)
 
 
-def _filter_deprecated_kwargs(kwargs, args_blacklist):
+def _filter_deprecated_kwargs(kwargs, args_blocklist):
     # Filtering out old default keywords
-    for k in args_blacklist:
+    for k in args_blocklist:
         if k in kwargs:
             del kwargs[k]
             warnings.warn('Got unexpected kwarg %s. This will raise an error'
@@ -285,6 +285,10 @@ def _validate_mahalanobis_kwargs(X, m, n, **kwargs):
 def _validate_minkowski_kwargs(X, m, n, **kwargs):
     if 'p' not in kwargs:
         kwargs['p'] = 2.
+    else:
+        if kwargs['p'] < 1:
+            raise ValueError("p must be at least 1")
+
     return kwargs
 
 
@@ -508,9 +512,11 @@ def minkowski(u, v, p=2, w=None):
         w = _validate_weights(w)
         if p == 1:
             root_w = w
-        if p == 2:
+        elif p == 2:
             # better precision and speed
             root_w = np.sqrt(w)
+        elif p == np.inf:
+            root_w = (w != 0)
         else:
             root_w = np.power(w, 1/p)
         u_v = root_w * u_v
@@ -712,7 +718,8 @@ def correlation(u, v, w=None, centered=True):
     uu = np.average(np.square(u), weights=w)
     vv = np.average(np.square(v), weights=w)
     dist = 1.0 - uv / np.sqrt(uu * vv)
-    return dist
+    # Return absolute value to avoid small negative value due to rounding
+    return np.abs(dist)
 
 
 def cosine(u, v, w=None):
@@ -1096,8 +1103,7 @@ def chebyshev(u, v, w=None):
     v : (N,) array_like
         Input vector.
     w : (N,) array_like, optional
-        The weights for each value in `u` and `v`. Default is None,
-        which gives each value a weight of 1.0
+        Unused, as 'max' is a weightless operation. Here for API consistency.
 
     Returns
     -------
@@ -1216,8 +1222,7 @@ def canberra(u, v, w=None):
     v = _validate_vector(v, dtype=np.float64)
     if w is not None:
         w = _validate_weights(w)
-    olderr = np.seterr(invalid='ignore')
-    try:
+    with np.errstate(invalid='ignore'):
         abs_uv = abs(u - v)
         abs_u = abs(u)
         abs_v = abs(v)
@@ -1225,8 +1230,6 @@ def canberra(u, v, w=None):
         if w is not None:
             d = w * d
         d = np.nansum(d)
-    finally:
-        np.seterr(**olderr)
     return d
 
 
@@ -2005,29 +2008,29 @@ def pdist(X, metric='euclidean', *args, **kwargs):
             raise ValueError("Output array must be double type.")
         dm = out
 
-    # compute blacklist for deprecated kwargs
+    # compute blocklist for deprecated kwargs
     if(metric in _METRICS['jensenshannon'].aka
        or metric == 'test_jensenshannon' or metric == jensenshannon):
-        kwargs_blacklist = ["p", "w", "V", "VI"]
+        kwargs_blocklist = ["p", "w", "V", "VI"]
 
     elif(metric in _METRICS['minkowski'].aka
          or metric in _METRICS['wminkowski'].aka
          or metric in ['test_minkowski', 'test_wminkowski']
          or metric in [minkowski, wminkowski]):
-        kwargs_blacklist = ["V", "VI"]
+        kwargs_blocklist = ["V", "VI"]
 
     elif(metric in _METRICS['seuclidean'].aka or
          metric == 'test_seuclidean' or metric == seuclidean):
-        kwargs_blacklist = ["p", "w", "VI"]
+        kwargs_blocklist = ["p", "w", "VI"]
 
     elif(metric in _METRICS['mahalanobis'].aka
          or metric == 'test_mahalanobis' or metric == mahalanobis):
-        kwargs_blacklist = ["p", "w", "V"]
+        kwargs_blocklist = ["p", "w", "V"]
 
     else:
-        kwargs_blacklist = ["p", "V", "VI"]
+        kwargs_blocklist = ["p", "V", "VI"]
 
-    _filter_deprecated_kwargs(kwargs, kwargs_blacklist)
+    _filter_deprecated_kwargs(kwargs, kwargs_blocklist)
 
     if callable(metric):
         mstr = getattr(metric, '__name__', 'UnknownCustomMetric')
@@ -2117,23 +2120,23 @@ def squareform(X, force="no", checks=True):
 
     Notes
     -----
-    1. v = squareform(X)
+    1. ``v = squareform(X)``
 
-       Given a square d-by-d symmetric distance matrix X,
-       ``v = squareform(X)`` returns a ``d * (d-1) / 2`` (or
-       :math:`{n \\choose 2}`) sized vector v.
+       Given a square n-by-n symmetric distance matrix ``X``,
+       ``v = squareform(X)`` returns a ``n * (n-1) / 2``
+       (i.e. binomial coefficient n choose 2) sized vector `v`
+       where :math:`v[{n \\choose 2} - {n-i \\choose 2} + (j-i-1)]`
+       is the distance between distinct points ``i`` and ``j``.
+       If ``X`` is non-square or asymmetric, an error is raised.
 
-      :math:`v[{n \\choose 2}-{n-i \\choose 2} + (j-i-1)]` is the distance
-      between points i and j. If X is non-square or asymmetric, an error
-      is returned.
+    2. ``X = squareform(v)``
 
-    2. X = squareform(v)
-
-      Given a ``d*(d-1)/2`` sized v for some integer ``d >= 2`` encoding
-      distances as described, ``X = squareform(v)`` returns a d by d distance
-      matrix X.  The ``X[i, j]`` and ``X[j, i]`` values are set to
-      :math:`v[{n \\choose 2}-{n-i \\choose 2} + (j-i-1)]` and all
-      diagonal elements are zero.
+       Given a ``n * (n-1) / 2`` sized vector ``v``
+       for some integer ``n >= 1`` encoding distances as described,
+       ``X = squareform(v)`` returns a n-by-n distance matrix ``X``.
+       The ``X[i, j]`` and ``X[j, i]`` values are set to
+       :math:`v[{n \\choose 2} - {n-i \\choose 2} + (j-i-1)]`
+       and all diagonal elements are zero.
 
     In SciPy 0.19.0, ``squareform`` stopped casting all input types to
     float64, and started returning arrays of the same dtype as the input.
@@ -2730,22 +2733,22 @@ def cdist(XA, XB, metric='euclidean', *args, **kwargs):
             raise ValueError("Output array must be double type.")
         dm = out
 
-    # compute blacklist for deprecated kwargs
+    # compute blocklist for deprecated kwargs
     if(metric in _METRICS['minkowski'].aka or
        metric in _METRICS['wminkowski'].aka or
        metric in ['test_minkowski', 'test_wminkowski'] or
        metric in [minkowski, wminkowski]):
-        kwargs_blacklist = ["V", "VI"]
+        kwargs_blocklist = ["V", "VI"]
     elif(metric in _METRICS['seuclidean'].aka or
          metric == 'test_seuclidean' or metric == seuclidean):
-        kwargs_blacklist = ["p", "w", "VI"]
+        kwargs_blocklist = ["p", "w", "VI"]
     elif(metric in _METRICS['mahalanobis'].aka or
          metric == 'test_mahalanobis' or metric == mahalanobis):
-        kwargs_blacklist = ["p", "w", "V"]
+        kwargs_blocklist = ["p", "w", "V"]
     else:
-        kwargs_blacklist = ["p", "V", "VI"]
+        kwargs_blocklist = ["p", "V", "VI"]
 
-    _filter_deprecated_kwargs(kwargs, kwargs_blacklist)
+    _filter_deprecated_kwargs(kwargs, kwargs_blocklist)
 
     if callable(metric):
 

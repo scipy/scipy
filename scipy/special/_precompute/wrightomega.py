@@ -1,7 +1,7 @@
 import numpy as np
 
 try:
-    import mpmath
+    import mpmath  # type: ignore[import]
 except ImportError:
     pass
 

@@ -915,31 +915,43 @@ Special matrices
 SciPy and NumPy provide several functions for creating special matrices
 that are frequently used in engineering and science.
 
-====================  =========================  =========================================================
-Type                  Function                   Description
-====================  =========================  =========================================================
-block diagonal        `scipy.linalg.block_diag`  Create a block diagonal matrix from the provided arrays.
---------------------  -------------------------  ---------------------------------------------------------
-circulant             `scipy.linalg.circulant`   Construct a circulant matrix.
---------------------  -------------------------  ---------------------------------------------------------
-companion             `scipy.linalg.companion`   Create a companion matrix.
---------------------  -------------------------  ---------------------------------------------------------
-Hadamard              `scipy.linalg.hadamard`    Construct an Hadamard matrix.
---------------------  -------------------------  ---------------------------------------------------------
-Hankel                `scipy.linalg.hankel`      Construct a Hankel matrix.
---------------------  -------------------------  ---------------------------------------------------------
-Hilbert               `scipy.linalg.hilbert`     Construct a Hilbert matrix.
---------------------  -------------------------  ---------------------------------------------------------
-Inverse Hilbert       `scipy.linalg.invhilbert`  Construct the inverse of a Hilbert matrix.
---------------------  -------------------------  ---------------------------------------------------------
-Leslie                `scipy.linalg.leslie`      Create a Leslie matrix.
---------------------  -------------------------  ---------------------------------------------------------
-Pascal                `scipy.linalg.pascal`      Create a Pascal matrix.
---------------------  -------------------------  ---------------------------------------------------------
-Toeplitz              `scipy.linalg.toeplitz`    Construct a Toeplitz matrix.
---------------------  -------------------------  ---------------------------------------------------------
-Van der Monde         `numpy.vander`             Generate a Van der Monde matrix.
-====================  =========================  =========================================================
+====================  =================================  =========================================================
+Type                  Function                           Description
+====================  =================================  =========================================================
+block diagonal        `scipy.linalg.block_diag`          Create a block diagonal matrix from the provided arrays.
+--------------------  ---------------------------------  ---------------------------------------------------------
+circulant             `scipy.linalg.circulant`           Create a circulant matrix.
+--------------------  ---------------------------------  ---------------------------------------------------------
+companion             `scipy.linalg.companion`           Create a companion matrix.
+--------------------  ---------------------------------  ---------------------------------------------------------
+convolution           `scipy.linalg.convolution_matrix`  Create a convolution matrix.
+--------------------  ---------------------------------  ---------------------------------------------------------
+Discrete Fourier      `scipy.linalg.dft`                 Create a discrete Fourier transform matrix.
+--------------------  ---------------------------------  ---------------------------------------------------------
+Fiedler               `scipy.linalg.fiedler`             Create a symmetric Fiedler matrix.
+--------------------  ---------------------------------  ---------------------------------------------------------
+Fiedler Companion     `scipy.linalg.fiedler_companion`   Create a Fiedler companion matrix.
+--------------------  ---------------------------------  ---------------------------------------------------------
+Hadamard              `scipy.linalg.hadamard`            Create an Hadamard matrix.
+--------------------  ---------------------------------  ---------------------------------------------------------
+Hankel                `scipy.linalg.hankel`              Create a Hankel matrix.
+--------------------  ---------------------------------  ---------------------------------------------------------
+Helmert               `scipy.linalg.helmert`             Create a Helmert matrix.
+--------------------  ---------------------------------  ---------------------------------------------------------
+Hilbert               `scipy.linalg.hilbert`             Create a Hilbert matrix.
+--------------------  ---------------------------------  ---------------------------------------------------------
+Inverse Hilbert       `scipy.linalg.invhilbert`          Create the inverse of a Hilbert matrix.
+--------------------  ---------------------------------  ---------------------------------------------------------
+Leslie                `scipy.linalg.leslie`              Create a Leslie matrix.
+--------------------  ---------------------------------  ---------------------------------------------------------
+Pascal                `scipy.linalg.pascal`              Create a Pascal matrix.
+--------------------  ---------------------------------  ---------------------------------------------------------
+Inverse Pascal        `scipy.linalg.invpascal`           Create the inverse of a Pascal matrix.
+--------------------  ---------------------------------  ---------------------------------------------------------
+Toeplitz              `scipy.linalg.toeplitz`            Create a Toeplitz matrix.
+--------------------  ---------------------------------  ---------------------------------------------------------
+Van der Monde         `numpy.vander`                     Create a Van der Monde matrix.
+====================  =================================  =========================================================
 
 
 For examples of the use of these functions, see their respective docstrings.

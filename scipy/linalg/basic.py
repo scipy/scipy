@@ -127,7 +127,7 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
     despite the apparent size mismatch. This is compatible with the
     numpy.dot() behavior and the returned result is still 1-D array.
 
-    The generic, symmetric, hermitian and positive definite solutions are
+    The generic, symmetric, Hermitian and positive definite solutions are
     obtained via calling ?GESV, ?SYSV, ?HESV, and ?POSV routines of
     LAPACK respectively.
     """
@@ -335,7 +335,8 @@ def solve_triangular(a, b, trans=0, lower=False, unit_diagonal=False,
     if len(a1.shape) != 2 or a1.shape[0] != a1.shape[1]:
         raise ValueError('expected square matrix')
     if a1.shape[0] != b1.shape[0]:
-        raise ValueError('incompatible dimensions')
+        raise ValueError('shapes of a {} and b {} are incompatible'
+                         .format(a1.shape, b1.shape))
     overwrite_b = overwrite_b or _datacopied(b1, b)
     if debug:
         print('solve:overwrite_b=', overwrite_b)
@@ -665,12 +666,15 @@ def solve_toeplitz(c_or_cr, b, check_finite=True):
     # developer might consider implementing other O(N^2) Toeplitz solvers,
     # such as GKO (https://www.jstor.org/stable/2153371) or Bareiss.
 
+
     r, c, b, dtype, b_shape = _validate_args_for_toeplitz_ops(
         c_or_cr, b, check_finite, keep_b_shape=True)
 
     # Form a 1-D array of values to be used in the matrix, containing a
     # reversed copy of r[1:], followed by c.
     vals = np.concatenate((r[-1:0:-1], c))
+    if b is None:
+        raise ValueError('illegal value, `b` is a required argument')
 
     if b.ndim == 1:
         x, _ = levinson(vals, np.ascontiguousarray(b))
@@ -844,7 +848,8 @@ def solve_circulant(c, b, singular='raise', tol=None,
     b = np.atleast_1d(b)
     nb = _get_axis_len("b", b, baxis)
     if nc != nb:
-        raise ValueError('Incompatible c and b axis lengths')
+        raise ValueError('Shapes of c {} and b {} are incompatible'
+                         .format(c.shape, b.shape))
 
     fc = np.fft.fft(np.rollaxis(c, caxis, c.ndim), axis=-1)
     abs_fc = np.abs(fc)
@@ -1282,7 +1287,9 @@ def pinv(a, cond=None, rcond=None, return_rank=False, check_finite=True):
 
     """
     a = _asarray_validated(a, check_finite=check_finite)
-    b = np.identity(a.shape[0], dtype=a.dtype)
+    # If a is sufficiently tall it is cheaper to compute using the transpose
+    trans = a.shape[0] / a.shape[1] >= 1.1
+    b = np.eye(a.shape[1] if trans else a.shape[0], dtype=a.dtype)
 
     if rcond is not None:
         cond = rcond
@@ -1290,12 +1297,13 @@ def pinv(a, cond=None, rcond=None, return_rank=False, check_finite=True):
     if cond is None:
         cond = max(a.shape) * np.spacing(a.real.dtype.type(1))
 
-    x, resids, rank, s = lstsq(a, b, cond=cond, check_finite=False)
+    x, resids, rank, s = lstsq(a.T if trans else a, b,
+                               cond=cond, check_finite=False)
 
     if return_rank:
-        return x, rank
+        return (x.T if trans else x), rank
     else:
-        return x
+        return x.T if trans else x
 
 
 def pinv2(a, cond=None, rcond=None, return_rank=False, check_finite=True):

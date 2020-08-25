@@ -216,8 +216,8 @@ def _binary_erosion(input, structure, iterations, mask, output,
                     border_value, origin, invert, brute_force):
     try:
         iterations = operator.index(iterations)
-    except TypeError:
-        raise TypeError('iterations parameter should be an integer')
+    except TypeError as e:
+        raise TypeError('iterations parameter should be an integer') from e
 
     input = numpy.asarray(input)
     if numpy.iscomplexobj(input):
@@ -244,7 +244,11 @@ def _binary_erosion(input, structure, iterations, mask, output,
     else:
         output = bool
     output = _ni_support._get_output(output, input)
-
+    temp_needed = numpy.may_share_memory(input, output)
+    if temp_needed:
+        # input and output arrays cannot share memory
+        temp = output
+        output = _ni_support._get_output(output.dtype, input)
     if iterations == 1:
         _nd_image.binary_erosion(input, structure, mask, output,
                                  border_value, origin, invert, cit, 0)
@@ -265,7 +269,6 @@ def _binary_erosion(input, structure, iterations, mask, output,
             structure = structure.copy()
         _nd_image.binary_erosion2(output, structure, mask, iterations - 1,
                                   origin, invert, coordinate_list)
-        return output
     else:
         tmp_in = numpy.empty_like(input, dtype=bool)
         tmp_out = output
@@ -281,7 +284,10 @@ def _binary_erosion(input, structure, iterations, mask, output,
                 tmp_in, structure, mask, tmp_out,
                 border_value, origin, invert, cit, 0)
             ii += 1
-        return output
+    if temp_needed:
+        temp[...] = output
+        output = temp
+    return output
 
 
 def binary_erosion(input, structure=None, iterations=1, mask=None, output=None,
@@ -1998,8 +2004,8 @@ def distance_transform_cdt(input, metric='chessboard', return_distances=True,
     else:
         try:
             metric = numpy.asarray(metric)
-        except Exception:
-            raise RuntimeError('invalid metric provided')
+        except Exception as e:
+            raise RuntimeError('invalid metric provided') from e
         for s in metric.shape:
             if s != 3:
                 raise RuntimeError('metric sizes must be equal to 3')
