@@ -292,6 +292,7 @@ apply_filter(double *coefficients, const npy_intp len, const double *poles,
     //Note: This switch statement should match the settings used for
 	//      the spline_mode variable in NI_GeometricTransform
     switch(mode) {
+        case NI_EXTEND_GRID_CONSTANT:
         case NI_EXTEND_CONSTANT:
         case NI_EXTEND_MIRROR:
         case NI_EXTEND_WRAP:

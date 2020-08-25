@@ -268,6 +268,7 @@ NI_GeometricTransform(PyArrayObject *input, int (*map)(npy_intp*, double*,
 {
     char *po, *pi, *pc = NULL;
     npy_intp **edge_offsets = NULL, **data_offsets = NULL, filter_size;
+    int *edge_grid_const = NULL;
     npy_intp ftmp[NPY_MAXDIMS], *fcoordinates = NULL, *foffsets = NULL;
     npy_intp cstride = 0, kk, hh, ll, jj;
     npy_intp size;
@@ -307,6 +308,16 @@ NI_GeometricTransform(PyArrayObject *input, int (*map)(npy_intp*, double*,
         PyErr_NoMemory();
         goto exit;
     }
+
+    // boolean indicating if the current point in the filter footprint is
+    // outside the bounds
+    edge_grid_const = malloc((order + 1) * sizeof(int*));
+    if (NPY_UNLIKELY(!edge_grid_const)) {
+        NPY_END_THREADS;
+        PyErr_NoMemory();
+        goto exit;
+    }
+
     for(jj = 0; jj < irank; jj++)
         data_offsets[jj] = NULL;
     for(jj = 0; jj < irank; jj++) {
@@ -382,6 +393,12 @@ NI_GeometricTransform(PyArrayObject *input, int (*map)(npy_intp*, double*,
         double t = 0.0;
         int constant = 0, edge = 0;
         npy_intp offset = 0;
+        if (mode == NI_EXTEND_GRID_CONSTANT) {
+            // reset edge flags for each location in the filter footprint
+            for(ll = 0; ll <= order; ll++) {
+                edge_grid_const[ll] = 0;
+            }
+        }
         if (map) {
             NPY_END_THREADS;
             /* call mappint functions: */
@@ -438,11 +455,18 @@ NI_GeometricTransform(PyArrayObject *input, int (*map)(npy_intp*, double*,
                 goto exit;
             }
         }
+
         /* iterate over axes: */
         for(hh = 0; hh < irank; hh++) {
-            /* if the input coordinate is outside the borders, map it: */
-            double cc = map_coordinate(icoor[hh], idimensions[hh], mode);
-            if (cc > -1.0) {
+            double cc = 0.0;
+            if (mode == NI_EXTEND_GRID_CONSTANT) {
+                // no coordinate mapping in this case
+                cc = icoor[hh];
+            } else {
+                /* if the input coordinate is outside the borders, map it: */
+                cc = map_coordinate(icoor[hh], idimensions[hh], mode);
+            }
+            if (cc > -1.0 || mode == NI_EXTEND_GRID_CONSTANT) {
                 /* find the filter location along this axis: */
                 npy_intp start;
                 if (order & 1) {
@@ -452,21 +476,33 @@ NI_GeometricTransform(PyArrayObject *input, int (*map)(npy_intp*, double*,
                 }
                 /* get the offset to the start of the filter: */
                 offset += istrides[hh] * start;
-                if (start < 0 || start + order >= idimensions[hh]) {
-                    /* implement border mapping, if outside border: */
-                    edge = 1;
-                    edge_offsets[hh] = data_offsets[hh];
+                npy_intp idx = 0;
 
+                if (mode == NI_EXTEND_GRID_CONSTANT) {
+                    // Determine locations in the filter footprint that are
+                    // outside the range.
                     for(ll = 0; ll <= order; ll++) {
-                        npy_intp idx = start + ll;
-                        idx = (npy_intp)map_coordinate(idx, idimensions[hh], spline_mode);
-
-                        /* calculate and store the offsets at this edge: */
-                        edge_offsets[hh][ll] = istrides[hh] * (idx - start);
+                        idx = start + ll;
+                        edge_grid_const[ll] = (idx < 0 || idx >= idimensions[hh]);
                     }
                 } else {
-                    /* we are not at the border, use precalculated offsets: */
-                    edge_offsets[hh] = NULL;
+
+                    if (start < 0 || start + order >= idimensions[hh]) {
+                        /* implement border mapping, if outside border: */
+                        edge = 1;
+                        edge_offsets[hh] = data_offsets[hh];
+
+                        for(ll = 0; ll <= order; ll++) {
+                            idx = start + ll;
+                            idx = (npy_intp)map_coordinate(idx, idimensions[hh], spline_mode);
+
+                            /* calculate and store the offsets at this edge: */
+                            edge_offsets[hh][ll] = istrides[hh] * (idx - start);
+                        }
+                    } else {
+                        /* we are not at the border, use precalculated offsets: */
+                        edge_offsets[hh] = NULL;
+                    }
                 }
                 get_spline_interpolation_weights(cc, order, splvals[hh]);
             } else {
@@ -484,49 +520,54 @@ NI_GeometricTransform(PyArrayObject *input, int (*map)(npy_intp*, double*,
                 double coeff = 0.0;
                 npy_intp idx = 0;
 
-                if (NPY_UNLIKELY(edge)) {
-                    for(ll = 0; ll < irank; ll++) {
-                        if (edge_offsets[ll])
-                            idx += edge_offsets[ll][ff[ll]];
-                        else
-                            idx += ff[ll] * istrides[ll];
-                    }
+                if (NPY_UNLIKELY(mode == NI_EXTEND_GRID_CONSTANT && edge_grid_const[hh]))
+                {
+                    coeff = cval;
                 } else {
-                    idx = foffsets[hh];
-                }
-                idx += offset;
-                switch (type_num) {
-                    CASE_INTERP_COEFF(NPY_BOOL, npy_bool,
-                                      coeff, pi, idx);
-                    CASE_INTERP_COEFF(NPY_UBYTE, npy_ubyte,
-                                      coeff, pi, idx);
-                    CASE_INTERP_COEFF(NPY_USHORT, npy_ushort,
-                                      coeff, pi, idx);
-                    CASE_INTERP_COEFF(NPY_UINT, npy_uint,
-                                      coeff, pi, idx);
-                    CASE_INTERP_COEFF(NPY_ULONG, npy_ulong,
-                                      coeff, pi, idx);
-                    CASE_INTERP_COEFF(NPY_ULONGLONG, npy_ulonglong,
-                                      coeff, pi, idx);
-                    CASE_INTERP_COEFF(NPY_BYTE, npy_byte,
-                                      coeff, pi, idx);
-                    CASE_INTERP_COEFF(NPY_SHORT, npy_short,
-                                      coeff, pi, idx);
-                    CASE_INTERP_COEFF(NPY_INT, npy_int,
-                                      coeff, pi, idx);
-                    CASE_INTERP_COEFF(NPY_LONG, npy_long,
-                                      coeff, pi, idx);
-                    CASE_INTERP_COEFF(NPY_LONGLONG, npy_longlong,
-                                      coeff, pi, idx);
-                    CASE_INTERP_COEFF(NPY_FLOAT, npy_float,
-                                      coeff, pi, idx);
-                    CASE_INTERP_COEFF(NPY_DOUBLE, npy_double,
-                                      coeff, pi, idx);
-                default:
-                    NPY_END_THREADS;
-                    PyErr_SetString(PyExc_RuntimeError,
-                                    "data type not supported");
-                    goto exit;
+                    if (NPY_UNLIKELY(edge)) {
+                        for(ll = 0; ll < irank; ll++) {
+                            if (edge_offsets[ll])
+                                idx += edge_offsets[ll][ff[ll]];
+                            else
+                                idx += ff[ll] * istrides[ll];
+                        }
+                    } else {
+                        idx = foffsets[hh];
+                    }
+                    idx += offset;
+                    switch (type_num) {
+                        CASE_INTERP_COEFF(NPY_BOOL, npy_bool,
+                                          coeff, pi, idx);
+                        CASE_INTERP_COEFF(NPY_UBYTE, npy_ubyte,
+                                          coeff, pi, idx);
+                        CASE_INTERP_COEFF(NPY_USHORT, npy_ushort,
+                                          coeff, pi, idx);
+                        CASE_INTERP_COEFF(NPY_UINT, npy_uint,
+                                          coeff, pi, idx);
+                        CASE_INTERP_COEFF(NPY_ULONG, npy_ulong,
+                                          coeff, pi, idx);
+                        CASE_INTERP_COEFF(NPY_ULONGLONG, npy_ulonglong,
+                                          coeff, pi, idx);
+                        CASE_INTERP_COEFF(NPY_BYTE, npy_byte,
+                                          coeff, pi, idx);
+                        CASE_INTERP_COEFF(NPY_SHORT, npy_short,
+                                          coeff, pi, idx);
+                        CASE_INTERP_COEFF(NPY_INT, npy_int,
+                                          coeff, pi, idx);
+                        CASE_INTERP_COEFF(NPY_LONG, npy_long,
+                                          coeff, pi, idx);
+                        CASE_INTERP_COEFF(NPY_LONGLONG, npy_longlong,
+                                          coeff, pi, idx);
+                        CASE_INTERP_COEFF(NPY_FLOAT, npy_float,
+                                          coeff, pi, idx);
+                        CASE_INTERP_COEFF(NPY_DOUBLE, npy_double,
+                                          coeff, pi, idx);
+                    default:
+                        NPY_END_THREADS;
+                        PyErr_SetString(PyExc_RuntimeError,
+                                        "data type not supported");
+                        goto exit;
+                    }
                 }
                 /* calculate the interpolated value: */
                 for(ll = 0; ll < irank; ll++)
@@ -568,6 +609,7 @@ NI_GeometricTransform(PyArrayObject *input, int (*map)(npy_intp*, double*,
  exit:
     NPY_END_THREADS;
     free(edge_offsets);
+    free(edge_grid_const);
     if (data_offsets) {
         for(jj = 0; jj < irank; jj++)
             free(data_offsets[jj]);
