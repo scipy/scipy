@@ -135,7 +135,7 @@ class TestInterp1D(object):
         # are given to the constructor.
 
         # These should all work.
-        for kind in ('nearest', 'zero', 'linear', 'slinear', 'quadratic',
+        for kind in ('nearest', 'nearest-up', 'zero', 'linear', 'slinear', 'quadratic',
                      'cubic', 'previous', 'next'):
             interp1d(self.x10, self.y10, kind=kind)
             interp1d(self.x10, self.y10, kind=kind, fill_value="extrapolate")
@@ -318,6 +318,25 @@ class TestInterp1D(object):
                         [0, 0, 9, 9], rtol=1e-14)
 
         opts = dict(kind='nearest',
+                    fill_value='extrapolate',
+                    bounds_error=True)
+        assert_raises(ValueError, interp1d, self.x10, self.y10, **opts)
+
+    def test_nearest_up(self):
+        # Check the actual implementation of nearest-neighbour interpolation.
+        interp10 = interp1d(self.x10, self.y10, kind='nearest-up')
+        assert_array_almost_equal(interp10(self.x10), self.y10)
+        assert_array_almost_equal(interp10(1.2), np.array(1.))
+        assert_array_almost_equal(interp10([2.4, 5.6, 6.0]),
+                                np.array([2., 6., 6.]),)
+
+        # test fill_value="extrapolate"
+        extrapolator = interp1d(self.x10, self.y10, kind='nearest-up',
+                                fill_value='extrapolate')
+        assert_allclose(extrapolator([-1., 0, 9, 11]),
+                        [0, 0, 9, 9], rtol=1e-14)
+
+        opts = dict(kind='nearest-up',
                     fill_value='extrapolate',
                     bounds_error=True)
         assert_raises(ValueError, interp1d, self.x10, self.y10, **opts)
