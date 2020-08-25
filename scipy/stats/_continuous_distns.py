@@ -2992,7 +2992,8 @@ class gumbel_r_gen(rv_continuous):
             return x1, x2
 
         # some data cause invalid operations during optimization
-        with warnings.catch_warnings(record=True):
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')
             soln = optimize.root(func, (loc, scale), args=(data,))
             if soln.success:
                 return tuple(soln.x)
