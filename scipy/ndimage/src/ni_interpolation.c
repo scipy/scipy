@@ -242,6 +242,24 @@ case NPY_##_TYPE:                                    \
     *(_type *)_po = (_type)_t;                       \
     break
 
+int _get_spline_boundary_mode(int mode)
+{
+    int spline_mode;
+    if (mode == NI_EXTEND_NEAREST) {
+        // No analytical spline condition implemented. Reflect gives
+        // lower error than using mirror or wrap.
+        spline_mode = NI_EXTEND_REFLECT;
+    } else if ((mode == NI_EXTEND_MIRROR) || (mode == NI_EXTEND_REFLECT)
+               || (mode == NI_EXTEND_GRID_WRAP)) {
+        // exact analytic boundary conditions exist for these modes.
+        spline_mode = mode;
+    } else {
+        // Use mirror spline boundary condition
+        spline_mode = NI_EXTEND_MIRROR;
+    }
+    return spline_mode;
+}
+
 int
 NI_GeometricTransform(PyArrayObject *input, int (*map)(npy_intp*, double*,
                 int, int, void*), void* map_data, PyArrayObject* matrix_ar,
@@ -357,19 +375,8 @@ NI_GeometricTransform(PyArrayObject *input, int (*map)(npy_intp*, double*,
         }
     }
 
-    if (mode == NI_EXTEND_NEAREST) {
-        // No analytical spline condition implemented. Reflect gives
-		// lower error than using mirror or wrap.
-        spline_mode = NI_EXTEND_REFLECT;
-    } else if ((mode == NI_EXTEND_MIRROR) || (mode == NI_EXTEND_REFLECT)
-               || (mode == NI_EXTEND_GRID_WRAP)) {
-        // exact analytic boundary conditions exist for these modes.
-        spline_mode = mode;
-    } else {
-        // Use mirror spline boundary condition
-        spline_mode = NI_EXTEND_MIRROR;
-    }
 
+    spline_mode = _get_spline_boundary_mode(mode);
     size = PyArray_SIZE(output);
     for(kk = 0; kk < size; kk++) {
         double t = 0.0;
@@ -653,7 +660,8 @@ int NI_ZoomShift(PyArrayObject *input, PyArrayObject* zoom_ar,
         }
     }
 
-    /* precalculate offsets, and offsets at the edge: */
+    int spline_mode = _get_spline_boundary_mode(mode);
+
     for(jj = 0; jj < rank; jj++) {
         double shift = 0.0, zoom = 0.0;
         if (shifts)
@@ -686,20 +694,7 @@ int NI_ZoomShift(PyArrayObject *input, PyArrayObject* zoom_ar,
                     }
                     for(hh = 0; hh <= order; hh++) {
                         npy_intp idx = start + hh;
-                        npy_intp len = idimensions[jj];
-                        if (len <= 1) {
-                            idx = 0;
-                        } else {
-                            npy_intp s2 = 2 * len - 2;
-                            if (idx < 0) {
-                                idx = s2 * (npy_intp)(-idx / s2) + idx;
-                                idx = idx <= 1 - len ? idx + s2 : -idx;
-                            } else if (idx >= len) {
-                                idx -= s2 * (npy_intp)(idx / s2);
-                                if (idx >= len)
-                                    idx = s2 - idx;
-                            }
-                        }
+                        idx = (npy_intp)map_coordinate(idx, idimensions[jj], spline_mode);
                         edge_offsets[jj][kk][hh] = istrides[jj] * (idx - start);
                     }
                 }
