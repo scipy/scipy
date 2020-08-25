@@ -902,27 +902,6 @@ class TestGumbel_r(object):
         np.random.seed(1234)
 
     @pytest.mark.parametrize("loc_rvs,scale_rvs", [np.random.rand(2)])
-    def test_fit(self, loc_rvs, scale_rvs):
-        data = stats.gumbel_r.rvs(size=100, loc=loc_rvs, scale=scale_rvs)
-
-        # test that result of fit method is the same as optimization
-        def func(vals, data):
-            a, b = vals
-            ndata = len(data)
-            x1 = data.mean() - ((np.sum(data * np.exp(- data / b))) /
-                                np.sum(np.exp(- data / b))) - b
-            x2 = - b * np.log(np.sum(np.exp(-data / b)) / ndata) - a
-            return x1, x2
-
-        expected_solution = root(func, stats.gumbel_r._fitstart(data), args=(
-            data,)).x
-        fit_method = stats.gumbel_r.fit(data)
-
-        # other than computational variances, the fit method and the solution
-        # to this system of equations are equal
-        assert_allclose(fit_method, expected_solution, atol=1e-30)
-
-    @pytest.mark.parametrize("loc_rvs,scale_rvs", [np.random.rand(2)])
     def test_fit_comp_optimizer(self, loc_rvs, scale_rvs):
         data = stats.gumbel_r.rvs(size=100, loc=loc_rvs, scale=scale_rvs)
 
@@ -932,7 +911,6 @@ class TestGumbel_r(object):
 
         # test that gumbel_r fit method is better than super method
         _assert_lessthan_loglike(stats.gumbel_r, data, func)
-
 
 
 class TestPareto(object):
