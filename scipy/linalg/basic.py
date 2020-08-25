@@ -1606,7 +1606,8 @@ def matrix_balance(A, permute=True, scale=True, separate=False,
     return B, np.diag(scaling)[iperm, :]
 
 
-def _validate_args_for_toeplitz_ops(c_or_cr, b, check_finite, keep_b_shape):
+def _validate_args_for_toeplitz_ops(c_or_cr, b, check_finite, keep_b_shape,
+    enforce_square=True):
     """Validate arguments and format inputs for toeplitz functions
 
     Parameters
@@ -1627,6 +1628,8 @@ def _validate_args_for_toeplitz_ops(c_or_cr, b, check_finite, keep_b_shape):
     keep_b_shape: bool
         Whether to convert a (M,) dimensional b into a (M, 1) dimensional
         matrix.
+    enforce_square: bool, optional
+        If True (default), this verifies that the Toeplitz matrix is square.
 
     Returns
     -------
@@ -1659,7 +1662,8 @@ def _validate_args_for_toeplitz_ops(c_or_cr, b, check_finite, keep_b_shape):
     b = _asarray_validated(b, check_finite=check_finite)
     b_shape = b.shape
 
-    if r.shape[0] != c.shape[0] or b.shape[0] != c.shape[0]:
+    is_not_square = r.shape[0] != c.shape[0]
+    if (enforce_square and is_not_square) or b.shape[0] != r.shape[0]:
         raise ValueError('Incompatible dimensions.')
 
     is_cmplx = np.iscomplexobj(r) or np.iscomplexobj(c) or np.iscomplexobj(b)
@@ -1674,7 +1678,7 @@ def _validate_args_for_toeplitz_ops(c_or_cr, b, check_finite, keep_b_shape):
     return r, c, b, dtype, b_shape
 
 
-def matmul_toeplitz(c_or_cr, b, check_finite=False, workers=None):
+def matmul_toeplitz(c_or_cr, x, check_finite=False, workers=None):
     """Efficient Toeplitz Matrix-Matrix Multiplication using FFT
 
     This function returns the matrix multiplication between a Toeplitz
@@ -1693,7 +1697,7 @@ def matmul_toeplitz(c_or_cr, b, check_finite=False, workers=None):
         real, the Toeplitz matrix is Hermitian. r[0] is ignored; the first row
         of the Toeplitz matrix is ``[c[0], r[1:]]``. Whatever the actual shape
         of ``r``, it will be converted to a 1-D array.
-    b : (M,) or (M, K) array_like
+    x : (M,) or (M, K) array_like
         Matrix with which to multiply.
     check_finite : bool, optional
         Whether to check that the input matrices contain only finite numbers.
@@ -1706,9 +1710,9 @@ def matmul_toeplitz(c_or_cr, b, check_finite=False, workers=None):
 
     Returns
     -------
-    T @ b : (M,) or (M, K) ndarray
-        The result of the matrix multiplication ``T @ b``. Shape of return
-        matches shape of `b`.
+    T @ x : (M,) or (M, K) ndarray
+        The result of the matrix multiplication ``T @ x``. Shape of return
+        matches shape of `x`.
 
     See Also
     --------
@@ -1760,10 +1764,10 @@ def matmul_toeplitz(c_or_cr, b, check_finite=False, workers=None):
 
     Examples
     --------
-    Multiply the Toeplitz matrix T with matrix b::
+    Multiply the Toeplitz matrix T with matrix x::
 
             [ 1 -1 -2 -3]       [1 10]
-        T = [ 3  1 -1 -2]   b = [2 11]
+        T = [ 3  1 -1 -2]   x = [2 11]
             [ 6  3  1 -1]       [2 11]
             [10  6  3  1]       [5 19]
 
@@ -1772,19 +1776,19 @@ def matmul_toeplitz(c_or_cr, b, check_finite=False, workers=None):
 
     >>> c = np.array([1, 3, 6, 10])    # First column of T
     >>> r = np.array([1, -1, -2, -3])  # First row of T
-    >>> b = np.array([[1, 10], [2, 11], [2, 11], [5, 19]])
+    >>> x = np.array([[1, 10], [2, 11], [2, 11], [5, 19]])
 
     >>> from scipy.linalg import toeplitz, matmul_toeplitz
-    >>> matmul_toeplitz((c, r), b)
+    >>> matmul_toeplitz((c, r), x)
     array([[-20., -80.],
            [ -7.,  -8.],
            [  9.,  85.],
            [ 33., 218.]])
 
     Check the result by creating the full Toeplitz matrix and
-    multiplying it by ``b``.
+    multiplying it by ``x``.
 
-    >>> toeplitz(c, r) @ b
+    >>> toeplitz(c, r) @ x
     array([[-20, -80],
            [ -7,  -8],
            [  9,  85],
@@ -1801,23 +1805,29 @@ def matmul_toeplitz(c_or_cr, b, check_finite=False, workers=None):
 
     from ..fft import fft, ifft, rfft, irfft
 
-    r, c, b, dtype, b_shape = _validate_args_for_toeplitz_ops(
-        c_or_cr, b, check_finite, keep_b_shape=False)
-    n, m = b.shape
+    r, c, x, dtype, x_shape = _validate_args_for_toeplitz_ops(
+        c_or_cr, x, check_finite, keep_b_shape=False, enforce_square=False)
+    n, m = x.shape
+
+    T_nrows = len(c)
+    T_ncols = len(r)
+    p = T_nrows + T_ncols - 1  # equivalent to len(embedded_col)
 
     embedded_col = np.concatenate((c, r[-1:0:-1]))
 
-    if np.iscomplexobj(embedded_col) or np.iscomplexobj(b):
+    if np.iscomplexobj(embedded_col) or np.iscomplexobj(x):
         fft_mat = fft(embedded_col, axis=0, workers=workers).reshape(-1, 1)
-        fft_b = fft(b, n=2*n-1, axis=0, workers=workers)
+        fft_x = fft(x, n=p, axis=0, workers=workers)
 
-        mat_times_b = ifft(fft_mat*fft_b, axis=0, workers=workers)[:n, :]
+        mat_times_x = ifft(fft_mat*fft_x, axis=0,
+            workers=workers)[:T_nrows, :]
     else:
         # Real inputs; using rfft is faster
         fft_mat = rfft(embedded_col, axis=0, workers=workers).reshape(-1, 1)
-        fft_b = rfft(b, n=2*n-1, axis=0, workers=workers)
+        fft_x = rfft(x, n=p, axis=0, workers=workers)
 
-        mat_times_b = irfft(fft_mat*fft_b, axis=0,
-            workers=workers, n=2*n-1)[:n, :]
+        mat_times_x = irfft(fft_mat*fft_x, axis=0,
+            workers=workers, n=p)[:T_nrows, :]
 
-    return mat_times_b.reshape(*b_shape)
+    return_shape = (T_nrows,) if len(x_shape) == 1 else (T_nrows, m)
+    return mat_times_x.reshape(*return_shape)
