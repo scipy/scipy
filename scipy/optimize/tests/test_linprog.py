@@ -432,8 +432,13 @@ class LinprogCommonTests(object):
                 res = linprog(c, bounds=bounds, method=self.method, options=self.options)
                 return res
 
-            assert_raises(RuntimeWarning, g, c, bounds=bounds_1)
-            assert_raises(RuntimeWarning, g, c, bounds=bounds_2)
+            with pytest.warns(RuntimeWarning):
+                with pytest.raises(IndexError):
+                    g(c, bounds=bounds_1)
+
+            with pytest.warns(RuntimeWarning):
+                with pytest.raises(IndexError):
+                    g(c, bounds=bounds_2)
         else:
             res = linprog(c=c, bounds=bounds_1, method=self.method, options=self.options)
             _assert_infeasible(res)
