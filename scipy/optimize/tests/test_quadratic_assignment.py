@@ -45,7 +45,8 @@ def test_quadratic_assignment():
     assert_equal(res.score, _score(cost_matrix, dist_matrix, res.col_ind))
 
     # check with barycenter initialization, maximizing
-    res = quadratic_assignment(cost_matrix, dist_matrix, maximize=True)
+    res = quadratic_assignment(cost_matrix, dist_matrix,
+                               options={'maximize': True})
     assert_(75000 <= res.score < 85000)
     assert_equal(res.score, _score(cost_matrix, dist_matrix, res.col_ind))
 
@@ -96,13 +97,13 @@ def test_accuracy_1():
                   [0, 2, 0, 2],
                   [0, 1, 2, 0]])
 
-    res = quadratic_assignment(A, B, maximize=False,
-                               options={"init_weight": 0, "rng": 0})
+    res = quadratic_assignment(A, B, options={"init_weight": 0, "rng": 0,
+                                              "maximize": False})
     assert_equal(res.score, 10)
     assert_equal(res.col_ind, np.array([1, 2, 3, 0]))
 
-    res = quadratic_assignment(A, B, maximize=True,
-                               options={"init_weight": 0, "rng": 0})
+    res = quadratic_assignment(A, B, options={"init_weight": 0, "rng": 0,
+                                              "maximize": True})
     assert_equal(res.score, 40)
     assert_equal(res.col_ind, np.array([0, 3, 1, 2]))
 
@@ -123,13 +124,13 @@ def test_accuracy_2():
                   [8, 5, 0, 5],
                   [4, 2, 5, 0]])
 
-    res = quadratic_assignment(A, B, maximize=False,
-                               options={"init_weight": 0, "rng": 0})
+    res = quadratic_assignment(A, B, options={"init_weight": 0, "rng": 0,
+                                              "maximize": False})
     assert_equal(res.score, 178)  # Global optimum is 176
     assert_equal(res.col_ind, np.array([1, 0, 3, 2]))
 
-    res = quadratic_assignment(A, B, maximize=True,
-                               options={"init_weight": 0, "rng": 0})
+    res = quadratic_assignment(A, B, options={"init_weight": 0, "rng": 0,
+                                              "maximize": True})
     assert_equal(res.score, 286)
     assert_equal(res.col_ind, np.array([2, 3, 0, 1]))
 
@@ -260,7 +261,7 @@ def test_quadratic_assignment_input_validation():
     with pytest.raises(TypeError, match="'shuffle_input' must be a boolean"):
         quadratic_assignment(A, B, options={'shuffle_input': "hey"})
     with pytest.raises(TypeError, match="'maximize' must be a boolean"):
-        quadratic_assignment(A, B, maximize="hey")
+        quadratic_assignment(A, B, options={'maximize': "hey"})
 
     with pytest.raises(TypeError):
         quadratic_assignment(A, B, options={'init_k': 1.5})
