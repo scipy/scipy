@@ -135,8 +135,8 @@ class TestInterp1D(object):
         # are given to the constructor.
 
         # These should all work.
-        for kind in ('nearest', 'nearest-up', 'zero', 'linear', 'slinear', 'quadratic',
-                     'cubic', 'previous', 'next'):
+        for kind in ('nearest', 'nearest-up', 'zero', 'linear', 'slinear',
+                     'quadratic', 'cubic', 'previous', 'next'):
             interp1d(self.x10, self.y10, kind=kind)
             interp1d(self.x10, self.y10, kind=kind, fill_value="extrapolate")
         interp1d(self.x10, self.y10, kind='linear', fill_value=(-1, 1))
