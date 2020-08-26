@@ -1,4 +1,5 @@
 """
+
 Module to read / write wav files using NumPy arrays
 
 Functions
@@ -304,7 +305,7 @@ class WAVE_FORMAT(IntEnum):
     DEVELOPMENT = 0xFFFF
 
 
-KNOWN_WAVE_FORMATS = {WAVE_FORMAT.PCM, WAVE_FORMAT.IEEE_FLOAT}
+KNOWN_WAVE_FORMATS = {WAVE_FORMAT.PCM, WAVE_FORMAT.IEEE_FLOAT, WAVE_FORMAT.MULAW }
 
 
 def _read_fmt_chunk(fid, is_big_endian):
@@ -383,6 +384,45 @@ def _read_fmt_chunk(fid, is_big_endian):
     return (size, format_tag, channels, fs, bytes_per_second, block_align,
             bit_depth)
 
+_mulaw_pcm_table = [
+        -32124,-31100,-30076,-29052,-28028,-27004,-25980,-24956,
+        -23932,-22908,-21884,-20860,-19836,-18812,-17788,-16764,
+        -15996,-15484,-14972,-14460,-13948,-13436,-12924,-12412,
+        -11900,-11388,-10876,-10364, -9852, -9340, -8828, -8316,
+        -7932, -7676, -7420, -7164, -6908, -6652, -6396, -6140,
+        -5884, -5628, -5372, -5116, -4860, -4604, -4348, -4092,
+        -3900, -3772, -3644, -3516, -3388, -3260, -3132, -3004,
+        -2876, -2748, -2620, -2492, -2364, -2236, -2108, -1980,
+        -1884, -1820, -1756, -1692, -1628, -1564, -1500, -1436,
+        -1372, -1308, -1244, -1180, -1116, -1052,  -988,  -924,
+        -876,  -844,  -812,  -780,  -748,  -716,  -684,  -652,
+        -620,  -588,  -556,  -524,  -492,  -460,  -428,  -396,
+        -372,  -356,  -340,  -324,  -308,  -292,  -276,  -260,
+        -244,  -228,  -212,  -196,  -180,  -164,  -148,  -132,
+        -120,  -112,  -104,   -96,   -88,   -80,   -72,   -64,
+        -56,   -48,   -40,   -32,   -24,   -16,    -8,     -1,
+        32124, 31100, 30076, 29052, 28028, 27004, 25980, 24956,
+        23932, 22908, 21884, 20860, 19836, 18812, 17788, 16764,
+        15996, 15484, 14972, 14460, 13948, 13436, 12924, 12412,
+        11900, 11388, 10876, 10364,  9852,  9340,  8828,  8316,
+        7932,  7676,  7420,  7164,  6908,  6652,  6396,  6140,
+        5884,  5628,  5372,  5116,  4860,  4604,  4348,  4092,
+        3900,  3772,  3644,  3516,  3388,  3260,  3132,  3004,
+        2876,  2748,  2620,  2492,  2364,  2236,  2108,  1980,
+        1884,  1820,  1756,  1692,  1628,  1564,  1500,  1436,
+        1372,  1308,  1244,  1180,  1116,  1052,   988,   924,
+        876,   844,   812,   780,   748,   716,   684,   652,
+        620,   588,   556,   524,   492,   460,   428,   396,
+        372,   356,   340,   324,   308,   292,   276,   260,
+        244,   228,   212,   196,   180,   164,   148,   132,
+        120,   112,   104,    96,    88,    80,    72,    64,
+        56,    48,    40,    32,    24,    16,     8,     0
+    ]
+
+def uLaw_d(i8bit):
+    i8bit &= 0xff
+    return _mulaw_pcm_table[i8bit]
+
 
 def _read_data_chunk(fid, format_tag, channels, bit_depth, is_big_endian,
                      block_align, mmap=False):
@@ -424,7 +464,7 @@ def _read_data_chunk(fid, format_tag, channels, bit_depth, is_big_endian,
     if bit_depth == 8:
         dtype = 'u1'
     else:
-        if format_tag == WAVE_FORMAT.PCM:
+        if format_tag == WAVE_FORMAT.PCM or format_tag == WAVE_FORMAT.MULAW:
             dtype = f'{fmt}i{bytes_per_sample}'
         else:
             dtype = f'{fmt}f{bytes_per_sample}'
@@ -440,6 +480,9 @@ def _read_data_chunk(fid, format_tag, channels, bit_depth, is_big_endian,
         data = numpy.memmap(fid, dtype=dtype, mode='c', offset=start,
                             shape=(n_samples,))
         fid.seek(start + size)
+
+    if format_tag == WAVE_FORMAT.MULAW:
+        data = numpy.array(list(map(uLaw_d, data)))
 
     _handle_pad_byte(fid, size)
 
