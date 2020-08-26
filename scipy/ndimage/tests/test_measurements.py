@@ -331,6 +331,32 @@ def test_label_structuring_elements():
             r += 1
 
 
+def test_ticket_742():
+    def SE(img, thresh=.7, size=4):
+        mask = img > thresh
+        rank = len(mask.shape)
+        la, co = ndimage.label(mask,
+                               ndimage.generate_binary_structure(rank, rank))
+        _ = ndimage.find_objects(la)
+
+    if np.dtype(np.intp) != np.dtype('i'):
+        shape = (3, 1240, 1240)
+        a = np.random.rand(np.prod(shape)).reshape(shape)
+        # shouldn't crash
+        SE(a)
+
+
+def test_gh_issue_3025():
+    """Github issue #3025 - improper merging of labels"""
+    d = np.zeros((60, 320))
+    d[:,:257] = 1
+    d[:,260:] = 1
+    d[36,257] = 1
+    d[35,258] = 1
+    d[35,259] = 1
+    assert ndimage.label(d, np.ones((3, 3)))[1] == 1
+
+
 def test_label_default_dtype():
     test_array = np.random.rand(10, 10)
     label, no_features = ndimage.label(test_array > 0.5)

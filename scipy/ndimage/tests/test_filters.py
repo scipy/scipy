@@ -1687,7 +1687,8 @@ def test_size_footprint_both_set():
         sup.filter(UserWarning,
                    "ignoring size because footprint is set")
         arr = numpy.random.random((10, 20, 30))
-        rank_filter(arr, 5, size=2, footprint=numpy.ones((1, 1, 10), dtype=bool))
+        rank_filter(arr, 5, size=2, footprint=numpy.ones((1, 1, 10),
+                    dtype=bool))
 
 
 def test_byte_order_median():

@@ -1039,3 +1039,9 @@ class TestNdimageInterpolation:
         a = numpy.tile(numpy.arange(5), (5, 1))
         b = ndimage.rotate(ndimage.rotate(a, 180), -180)
         assert_equal(a, b)
+
+
+def test_zoom_output_shape():
+    """Ticket #643"""
+    x = numpy.arange(12).reshape((3, 4))
+    ndimage.zoom(x, 2, output=numpy.zeros((6, 8)))
