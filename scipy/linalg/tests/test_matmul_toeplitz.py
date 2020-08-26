@@ -88,8 +88,10 @@ class TestMatmulToeplitz:
 
         n = 100
         c = self.rng.normal(size=(n, 1)) + self.rng.normal(size=(n, 1))*1j
-        r = self.rng.normal(size=(n//2, 1)) + self.rng.normal(size=(n//2, 1))*1j
-        x = self.rng.normal(size=(n//2, 3)) + self.rng.normal(size=(n//2, 3))*1j
+        r = self.rng.normal(size=(n//2, 1)) +\
+            self.rng.normal(size=(n//2, 1))*1j
+        x = self.rng.normal(size=(n//2, 3)) +\
+            self.rng.normal(size=(n//2, 3))*1j
         self.do(x, c, r, False)
 
     def test_exceptions(self):
