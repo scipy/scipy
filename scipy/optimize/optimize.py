@@ -3366,6 +3366,12 @@ def show_options(solver=None, method=None, disp=True):
 
     - :ref:`simplex         <optimize.linprog-simplex>`
     - :ref:`interior-point  <optimize.linprog-interior-point>`
+    - :ref:`revised-simplex <optimize.linprog-revised_simplex>`
+
+    `scipy.optimize.quadratic_assignment`
+
+    - :ref:`faq             <optimize.qap-faq>`
+    - :ref:`2opt            <optimize.qap-2opt>`
 
     Examples
     --------
@@ -3427,6 +3433,11 @@ def show_options(solver=None, method=None, disp=True):
         'linprog': (
             ('simplex', 'scipy.optimize._linprog._linprog_simplex'),
             ('interior-point', 'scipy.optimize._linprog._linprog_ip'),
+            ('revised simplex', 'scipy.optimize._linprog._linprog_rs'),
+        ),
+        'quadratic_assignment': (
+            ('faq', 'scipy.optimize._qap._quadratic_assignment_faq'),
+            ('2opt', 'scipy.optimize._qap._quadratic_assignment_2opt'),
         ),
         'minimize_scalar': (
             ('brent', 'scipy.optimize.optimize._minimize_scalar_brent'),

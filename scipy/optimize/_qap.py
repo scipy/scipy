@@ -44,7 +44,7 @@ def quadratic_assignment(A, B, method="faq", options=None):
     B : 2d-array, square, non-negative
         The square adjacency matrix :math:`B` in the objective function above.
 
-    method :  str in {'faq', '2opt'}
+    method :  str in {'faq', '2opt'} (default: 'faq')
         The algorithm used to solve the problem.
         :ref:`'faq' <optimize.qap-faq>` (default) and
         :ref:`'2opt' <optimize.qap-2opt>` are available.
@@ -58,8 +58,8 @@ def quadratic_assignment(A, B, method="faq", options=None):
             known as a "seed" [2]_.
 
             Each row of `partial_match` specifies the indices of a pair of
-            corresponding nodes, that is, node ``partial_match[i, 0]`` is
-            matched to node ``partial_match[i, 1]``. Accordingly,
+            corresponding nodes, that is, node ``partial_match[i, 0]` of `A` is
+            matched to node ``partial_match[i, 1]`` of `B`. Accordingly,
             ``partial_match`` is an array of size ``(m , 2)``, where ``m`` is
             less than the number of nodes.
 
@@ -78,6 +78,9 @@ def quadratic_assignment(A, B, method="faq", options=None):
             instance, then that object is used.
             Default is None.
 
+        For method-specific options, see
+        :func:`show_options('quadratic_assignment') <show_options>`.
+
     Returns
     -------
     res : OptimizeResult
@@ -90,9 +93,7 @@ def quadratic_assignment(A, B, method="faq", options=None):
         score : float
             The corresponding value of the objective function.
         nit : int
-            The number of Franke-Wolfe iterations performed during
-            the initialization resulting in the permutation
-            returned.
+            The number of iterations performed during optimization.
 
     Notes
     -----
@@ -122,11 +123,11 @@ def quadratic_assignment(A, B, method="faq", options=None):
     --------
     >>> import numpy as np
     >>> from scipy.optimize import quadratic_assignment
-    >>> cost = np.array([[0, 80, 150, 170], [80, 0, 130, 100],
-    ...         [150, 130, 0, 120], [170, 100, 120, 0]])
-    >>> dist = np.array([[0, 5, 2, 7], [0, 0, 3, 8],
-    ...         [0, 0, 0, 3], [0, 0, 0, 0]])
-    >>> res = quadratic_assignment(cost, dist)
+    >>> A = np.array([[0, 80, 150, 170], [80, 0, 130, 100],
+    ...              [150, 130, 0, 120], [170, 100, 120, 0]])
+    >>> B = np.array([[0, 5, 2, 7], [0, 0, 3, 8],
+    ...              [0, 0, 0, 3], [0, 0, 0, 0]])
+    >>> res = quadratic_assignment(A, B)
     >>> print(res)
      col_ind: array([0, 3, 2, 1])
          nit: 9
@@ -136,17 +137,17 @@ def quadratic_assignment(A, B, method="faq", options=None):
     use ``col_ind`` to form the best permutation matrix found, then evaluate
     the objective function :math:`f(P) = trace(A^T P B P^T )`.
 
-    >>> n = cost.shape[0]
+    >>> n = A.shape[0]
     >>> perm = res['col_ind']
     >>> P = np.eye(n)[perm]
-    >>> score = int(np.trace(cost.T @ P @ dist @ P.T))
+    >>> score = int(np.trace(A.T @ P @ B @ P.T))
     >>> print(score)
     3260
 
     Alternatively, to avoid constructing the permutation matrix explicitly,
     directly permute the rows and columns of the distance matrix.
 
-    >>> score = np.trace(cost.T @ dist[np.ix_(perm, perm)])
+    >>> score = np.trace(A.T @ B[perm][:, perm])
     >>> print(score)
     3260
 
@@ -156,7 +157,7 @@ def quadratic_assignment(A, B, method="faq", options=None):
     >>> from itertools import permutations
     >>> perm_opt, score_opt = None, np.inf
     >>> for perm in permutations([0, 1, 2, 3]):
-    ...     score = int(np.trace(cost.T @ dist[np.ix_(perm, perm)]))
+    ...     score = int(np.trace(A.T @ B[perm][:, perm]))
     ...     if score < score_opt:
     ...         score_opt, perm_opt = score, perm
     >>> print(np.equal(perm_opt, res['col_ind']))
@@ -185,9 +186,11 @@ def _common_input_validation(A, B, partial_match, maximize):
 
     msg = None
     if A.shape[0] != A.shape[1]:
-        msg = "'A' must be square"
+        msg = "`A` must be square"
     elif B.shape[0] != B.shape[1]:
-        msg = "'B' must be square"
+        msg = "`B` must be square"
+    elif A.ndim != 2 or B.ndim != 2:
+        msg = "`A` and `B` must have exactly two dimensions"
     elif A.shape != B.shape:
         msg = "Adjacency matrices must be of equal size"
     elif (A < 0).any() or (B < 0).any():
@@ -196,6 +199,8 @@ def _common_input_validation(A, B, partial_match, maximize):
         msg = "There cannot be more seeds than there are nodes"
     elif partial_match.shape[1] != 2:
         msg = "`partial_match` must have two columns"
+    elif partial_match.ndim != 2:
+        msg = "`partial_match` must have exactly two dimensions"
     elif (partial_match < 0).any():
         msg = "`partial_match` contains negative entries"
     elif (partial_match >= len(A)).any():
@@ -259,7 +264,10 @@ def _quadratic_assignment_faq(A, B,
     B : 2d-array, square, non-negative
         The square adjacency matrix :math:`B` in the objective function above.
 
-    method :  str in {'faq', '2opt'}
+    method :  str in {'faq', '2opt'} (default: 'faq')
+        The algorithm used to solve the problem. This is the method-specific
+        documentation for 'faq'.
+        :ref:`'2opt' <optimize.qap-2opt>` is also available.
 
     Options
     -------
@@ -270,8 +278,8 @@ def _quadratic_assignment_faq(A, B,
         "seed".
 
         Each row of `partial_match` specifies the indices of a pair of
-        corresponding nodes, that is, node ``partial_match[i, 0]`` is
-        matched to node ``partial_match[i, 1]``. Accordingly,
+        corresponding nodes, that is, node ``partial_match[i, 0]` of `A` is
+        matched to node ``partial_match[i, 1]`` of `B`. Accordingly,
         ``partial_match`` is an array of size ``(m , 2)``, where ``m`` is
         less than the number of nodes.
 
@@ -605,17 +613,22 @@ def _quadratic_assignment_2opt(A, B, maximize=False, partial_match=None,
     B : 2d-array, square, non-negative
         The square adjacency matrix :math:`B` in the objective function above.
 
+    method :  str in {'faq', '2opt'} (default: 'faq')
+        The algorithm used to solve the problem. This is the method-specific
+        documentation for '2opt'.
+        :ref:`'2opt' <optimize.qap-faq>` is also available.
+
     Options
     -------
 
     partial_match : 2d-array of integers, optional, (default = None)
         Allows the user to fix part of the matching between the two adjacency
         matrices. In the literature, a partial match is also known as a
-        "seed" [2]_.
+        "seed".
 
         Each row of `partial_match` specifies the indices of a pair of
-        corresponding nodes, that is, node ``partial_match[i, 0]`` is
-        matched to node ``partial_match[i, 1]``. Accordingly,
+        corresponding nodes, that is, node ``partial_match[i, 0]` of `A` is
+        matched to node ``partial_match[i, 1]`` of `B`. Accordingly,
         ``partial_match`` is an array of size ``(m , 2)``, where ``m`` is
         less than the number of nodes.
 
@@ -646,7 +659,7 @@ def _quadratic_assignment_2opt(A, B, maximize=False, partial_match=None,
         score : float
             The corresponding value of the objective function.
         nit : int
-            The number of iterations
+            The number of iterations performed during optimization.
 
     Notes
     -----

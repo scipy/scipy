@@ -229,15 +229,22 @@ class TestQAPOnce():
     # these don't need to be repeated for each method
     def test_input_validation(self):
         # test that non square matrices return error
-        with pytest.raises(ValueError, match="'A' must be square"):
+        with pytest.raises(ValueError, match="`A` must be square"):
             quadratic_assignment(
                 np.random.random((3, 4)),
                 np.random.random((3, 3)),
             )
-        with pytest.raises(ValueError, match="'B' must be square"):
+        with pytest.raises(ValueError, match="`B` must be square"):
             quadratic_assignment(
                 np.random.random((3, 3)),
                 np.random.random((3, 4)),
+            )
+        # test that cost and dist matrices have no more than two dimensions
+        with pytest.raises(
+                ValueError, match="`A` and `B` must have exactly two"):
+            quadratic_assignment(
+                np.random.random((3, 3, 3)),
+                np.random.random((3, 3, 3)),
             )
         # test that cost and dist matrices of different sizes return error
         with pytest.raises(
@@ -266,6 +273,13 @@ class TestQAPOnce():
             quadratic_assignment(
                 np.identity(3), np.identity(3),
                 options={'partial_match': _range_matrix(2, 3)}
+            )
+        # test that seed has no more than two dimensions
+        with pytest.raises(
+                ValueError, match="`partial_match` must have exactly two"):
+            quadratic_assignment(
+                np.identity(3), np.identity(3),
+                options={'partial_match': np.random.rand(3, 2, 2)}
             )
         # seeds cannot be negative valued
         with pytest.raises(
