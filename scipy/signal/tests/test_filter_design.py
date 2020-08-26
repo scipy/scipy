@@ -3831,7 +3831,8 @@ class TestGammatone(object):
         # Cutoff frequency is <= 0 or >= fs / 2.
         fs = 16000
         for args in [(-fs, 'iir'), (0, 'fir'), (fs / 2, 'iir'), (fs, 'fir')]:
-            with pytest.raises(ValueError, match='The frequency must be between '):
+            with pytest.raises(ValueError, match='The frequency must be '
+                               'between '):
                 gammatone(*args, fs=fs)
 
         # Filter type is not fir or iir
