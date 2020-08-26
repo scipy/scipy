@@ -7,12 +7,7 @@ from scipy._lib._util import check_random_state
 import itertools
 
 
-def quadratic_assignment(
-    cost_matrix,
-    dist_matrix,
-    method="faq",
-    options=None
-):
+def quadratic_assignment(A, B, method="faq", options=None):
     r"""
     Solve the quadratic assignment problem.
 
@@ -43,10 +38,10 @@ def quadratic_assignment(
 
     Parameters
     ----------
-    cost_matrix : 2d-array, square, non-negative
+    A : 2d-array, square, non-negative
         The square adjacency matrix :math:`A` in the objective function above.
 
-    dist_matrix : 2d-array, square, non-negative
+    B : 2d-array, square, non-negative
         The square adjacency matrix :math:`B` in the objective function above.
 
     method :  str in {'faq', '2opt'}
@@ -91,7 +86,7 @@ def quadratic_assignment(
 
         col_ind : 1-D array
             An array of column indices corresponding with the best
-            permutation of the nodes of `dist_matrix` found.
+            permutation of the nodes of `B` found.
         score : float
             The corresponding value of the objective function.
         nit : int
@@ -176,35 +171,34 @@ def quadratic_assignment(
                "2opt": _quadratic_assignment_2opt}
     if method not in methods:
         raise ValueError(f"method {method} must be in {methods}.")
-    res = methods[method](cost_matrix, dist_matrix, **options)
+    res = methods[method](A, B, **options)
     return res
 
 
-def _common_input_validation(cost_matrix, dist_matrix, partial_match,
-                             maximize):
-    cost_matrix = np.atleast_2d(cost_matrix)
-    dist_matrix = np.atleast_2d(dist_matrix)
+def _common_input_validation(A, B, partial_match, maximize):
+    A = np.atleast_2d(A)
+    B = np.atleast_2d(B)
 
     if partial_match is None:
         partial_match = np.array([[], []]).T
     partial_match = np.atleast_2d(partial_match)
 
     msg = None
-    if cost_matrix.shape[0] != cost_matrix.shape[1]:
-        msg = "'cost_matrix' must be square"
-    elif dist_matrix.shape[0] != dist_matrix.shape[1]:
-        msg = "'dist_matrix' must be square"
-    elif cost_matrix.shape != dist_matrix.shape:
+    if A.shape[0] != A.shape[1]:
+        msg = "'A' must be square"
+    elif B.shape[0] != B.shape[1]:
+        msg = "'B' must be square"
+    elif A.shape != B.shape:
         msg = "Adjacency matrices must be of equal size"
-    elif (cost_matrix < 0).any() or (dist_matrix < 0).any():
+    elif (A < 0).any() or (B < 0).any():
         msg = "Adjacency matrix contains negative entries"
-    elif partial_match.shape[0] > cost_matrix.shape[0]:
+    elif partial_match.shape[0] > A.shape[0]:
         msg = "There cannot be more seeds than there are nodes"
     elif partial_match.shape[1] != 2:
         msg = "`partial_match` must have two columns"
     elif (partial_match < 0).any():
         msg = "`partial_match` contains negative entries"
-    elif (partial_match >= len(cost_matrix)).any():
+    elif (partial_match >= len(A)).any():
         msg = "`partial_match` entries must be less than number of nodes"
     elif not len(set(partial_match[:, 0])) == len(partial_match[:, 0]) or not \
             len(set(partial_match[:, 1])) == len(partial_match[:, 1]):
@@ -219,24 +213,15 @@ def _common_input_validation(cost_matrix, dist_matrix, partial_match,
     if msg is not None:
         raise TypeError(msg)
 
-    return cost_matrix, dist_matrix, partial_match
+    return A, B, partial_match
 
 
-def _quadratic_assignment_faq(
-        cost_matrix,
-        dist_matrix,
-        maximize=False,
-        partial_match=None,
-        init_J="barycenter",
-        init_weight=None,
-        init_k=1,
-        maxiter=30,
-        shuffle_input=True,
-        eps=0.05,
-        rng=None,
-        **unknown_options
-):
-
+def _quadratic_assignment_faq(A, B,
+                              maximize=False, partial_match=None, rng=None,
+                              init_J="barycenter", init_weight=None, init_k=1,
+                              maxiter=30, shuffle_input=True, eps=0.05,
+                              **unknown_options
+                              ):
     r"""
     Solve the quadratic assignment problem (approximately).
 
@@ -268,10 +253,10 @@ def _quadratic_assignment_faq(
 
     Parameters
     ----------
-    cost_matrix : 2d-array, square, non-negative
+    A : 2d-array, square, non-negative
         The square adjacency matrix :math:`A` in the objective function above.
 
-    dist_matrix : 2d-array, square, non-negative
+    B : 2d-array, square, non-negative
         The square adjacency matrix :math:`B` in the objective function above.
 
     method :  str in {'faq', '2opt'}
@@ -300,8 +285,8 @@ def _quadratic_assignment_faq(
         :math:`J`.
 
         :math:`J` need not be a proper permutation matrix;
-        however, it must have the same shape as `cost_matrix` and
-        `dist_matrix`, and it must be doubly stochastic: each of its
+        however, it must have the same shape as `A` and
+        `B`, and it must be doubly stochastic: each of its
         rows and columns must sum to 1.
 
         If unspecified or ``"barycenter"``, the non-informative "flat
@@ -360,7 +345,7 @@ def _quadratic_assignment_faq(
 
         col_ind : 1-D array
             An array of column indices corresponding with the best
-            permutation of the nodes of `dist_matrix` found.
+            permutation of the nodes of `B` found.
         score : float
             The corresponding value of the objective function.
         nit : int
@@ -399,8 +384,8 @@ def _quadratic_assignment_faq(
     maxiter = operator.index(maxiter)
 
     # ValueError check
-    cost_matrix, dist_matrix, partial_match = _common_input_validation(
-            cost_matrix, dist_matrix, partial_match, maximize)
+    A, B, partial_match = _common_input_validation(
+            A, B, partial_match, maximize)
 
     msg = None
     if isinstance(init_J, str) and init_J not in {'barycenter'}:
@@ -423,7 +408,7 @@ def _quadratic_assignment_faq(
         raise TypeError(msg)
 
     rng = check_random_state(rng)
-    n = cost_matrix.shape[0]  # number of vertices in graphs
+    n = A.shape[0]  # number of vertices in graphs
     n_seeds = partial_match.shape[0]  # number of seeds
     n_unseed = n - n_seeds
 
@@ -444,18 +429,18 @@ def _quadratic_assignment_faq(
                                        seed_cost_c], axis=None).astype(int)
     permutation_dist = np.concatenate([partial_match[:, 1],
                                        seed_dist_c], axis=None).astype(int)
-    cost_matrix = cost_matrix[np.ix_(permutation_cost, permutation_cost)]
-    dist_matrix = dist_matrix[np.ix_(permutation_dist, permutation_dist)]
+    A = A[np.ix_(permutation_cost, permutation_cost)]
+    B = B[np.ix_(permutation_dist, permutation_dist)]
 
     # definitions according to Seeded Graph Matching [2].
-    A11 = cost_matrix[:n_seeds, :n_seeds]
-    A12 = cost_matrix[:n_seeds, n_seeds:]
-    A21 = cost_matrix[n_seeds:, :n_seeds]
-    A22 = cost_matrix[n_seeds:, n_seeds:]
-    B11 = dist_matrix[:n_seeds, :n_seeds]
-    B12 = dist_matrix[:n_seeds, n_seeds:]
-    B21 = dist_matrix[n_seeds:, :n_seeds]
-    B22 = dist_matrix[n_seeds:, n_seeds:]
+    A11 = A[:n_seeds, :n_seeds]
+    A12 = A[:n_seeds, n_seeds:]
+    A21 = A[n_seeds:, :n_seeds]
+    A22 = A[n_seeds:, n_seeds:]
+    B11 = B[:n_seeds, :n_seeds]
+    B12 = B[:n_seeds, n_seeds:]
+    B21 = B[n_seeds:, :n_seeds]
+    B22 = B[n_seeds:, n_seeds:]
 
     # setting initialization matrix
     if isinstance(init_J, str) and init_J == 'barycenter':
@@ -518,8 +503,8 @@ def _quadratic_assignment_faq(
         ).astype(int)
 
         score_new = np.trace(
-            np.transpose(cost_matrix)
-            @ dist_matrix[np.ix_(perm_inds_new, perm_inds_new)]
+            np.transpose(A)
+            @ B[np.ix_(perm_inds_new, perm_inds_new)]
         )  # computing objective function value
 
         if obj_func_scalar * score_new < obj_func_scalar * score:  # minimizing
@@ -529,16 +514,16 @@ def _quadratic_assignment_faq(
             total_iter = n_iter
 
     permutation_cost_inv = np.argsort(permutation_cost)
-    cost_matrix = cost_matrix[
+    A = A[
         np.ix_(permutation_cost_inv, permutation_cost_inv)
     ]
     permutation_dist_inv = np.argsort(permutation_dist)
-    dist_matrix = dist_matrix[
+    B = B[
         np.ix_(permutation_dist_inv, permutation_dist_inv)
     ]
 
     score = np.trace(
-        np.transpose(cost_matrix) @ dist_matrix[np.ix_(perm_inds, perm_inds)]
+        np.transpose(A) @ B[np.ix_(perm_inds, perm_inds)]
     )
 
     res = {"col_ind": perm_inds, "score": score, "nit": total_iter}
@@ -582,9 +567,8 @@ def _doubly_stochastic(P, eps=1e-3):
     return P_eps
 
 
-def _quadratic_assignment_2opt(cost_matrix, dist_matrix, maximize=False,
-                               partial_match=None, rng=None,
-                               **unknown_options):
+def _quadratic_assignment_2opt(A, B, maximize=False, partial_match=None,
+                               rng=None, **unknown_options):
     r"""
     Solve the quadratic assignment problem (approximately).
 
@@ -615,10 +599,10 @@ def _quadratic_assignment_2opt(cost_matrix, dist_matrix, maximize=False,
 
     Parameters
     ----------
-    cost_matrix : 2d-array, square, non-negative
+    A : 2d-array, square, non-negative
         The square adjacency matrix :math:`A` in the objective function above.
 
-    dist_matrix : 2d-array, square, non-negative
+    B : 2d-array, square, non-negative
         The square adjacency matrix :math:`B` in the objective function above.
 
     Options
@@ -658,7 +642,7 @@ def _quadratic_assignment_2opt(cost_matrix, dist_matrix, maximize=False,
 
         col_ind : 1-D array
             An array of column indices corresponding with the best
-            permutation of the nodes of `dist_matrix` found.
+            permutation of the nodes of `B` found.
         score : float
             The corresponding value of the objective function.
         nit : int
@@ -666,7 +650,7 @@ def _quadratic_assignment_2opt(cost_matrix, dist_matrix, maximize=False,
 
     Notes
     -----
-    The is a greedy algorithm that works similarly to bubble sort: beginning
+    This is a greedy algorithm that works similarly to bubble sort: beginning
     with an initial permutation, it iteratively swaps pairs of indices to
     improve the objective function until no such improvements are possible.
 
@@ -677,15 +661,15 @@ def _quadratic_assignment_2opt(cost_matrix, dist_matrix, maximize=False,
     """
 
     def calc_score(A, B, perm):
-        # equivalent for optimization per [1]; avoids matmul
+        # equivalent for optimization per FAQ paper [1]; avoids matmul
         k = np.argsort(perm)
         return -((A[:, k] - B[perm, :])**2).sum()
 
     rng = check_random_state(rng)
-    cost_matrix, dist_matrix, partial_match = _common_input_validation(
-            cost_matrix, dist_matrix, partial_match, maximize)
+    A, B, partial_match = _common_input_validation(
+            A, B, partial_match, maximize)
 
-    N = len(cost_matrix)
+    N = len(A)
 
     if partial_match.size:
         r, c = partial_match.T
@@ -700,7 +684,7 @@ def _quadratic_assignment_2opt(cost_matrix, dist_matrix, maximize=False,
     else:
         perm = rng.permutation(np.arange(N))
 
-    best_score = calc_score(cost_matrix, dist_matrix, perm)
+    best_score = calc_score(A, B, perm)
 
     better = operator.gt if maximize else operator.lt
     n_iter = 0
@@ -710,7 +694,7 @@ def _quadratic_assignment_2opt(cost_matrix, dist_matrix, maximize=False,
         for i, j in itertools.combinations_with_replacement(range(N), 2):
             n_iter += 1
             perm[i], perm[j] = perm[j], perm[i]
-            score = calc_score(cost_matrix, dist_matrix, perm)
+            score = calc_score(A, B, perm)
             if better(score, best_score):
                 best_score = score
                 break
@@ -719,7 +703,7 @@ def _quadratic_assignment_2opt(cost_matrix, dist_matrix, maximize=False,
         else:  # no swaps made
             done = True
 
-    best_score = np.trace(cost_matrix@dist_matrix[np.ix_(perm, perm)].T)
+    best_score = np.trace(A @ B[np.ix_(perm, perm)].T)
     res = {"col_ind": perm, "score": best_score, "nit": n_iter}
 
     return OptimizeResult(res)

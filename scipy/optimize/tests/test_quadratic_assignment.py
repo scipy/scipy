@@ -48,12 +48,14 @@ class QAPCommonTests(object):
     """
     Base class for `quadratic_assignment` tests.
     """
+    def setup_method(self):
+        np.random.rand(0)
 
+    # Test global optima of problem from Umeyama IVB
+    # https://pcl.sitehost.iu.edu/rgoldsto/papers/weighted%20graph%20match2.pdf
+    # Graph matching maximum is in the paper
+    # QAP minimum determined by brute force
     def test_accuracy_1(self):
-        # Test global optima of problem from Umeyama IVB
-        # https://pcl.sitehost.iu.edu/rgoldsto/papers/weighted%20graph%20match2.pdf
-        # Graph matching maximum is in the paper
-        # QAP minimum determined by brute force
 
         A = np.array([[0, 3, 4, 2],
                       [0, 0, 1, 2],
@@ -77,11 +79,11 @@ class QAPCommonTests(object):
         assert_equal(res.score, 40)
         assert_equal(res.col_ind, np.array([0, 3, 1, 2]))
 
+    # Test global optima of problem from Umeyama IIIB
+    # https://pcl.sitehost.iu.edu/rgoldsto/papers/weighted%20graph%20match2.pdf
+    # Graph matching maximum is in the paper
+    # QAP minimum determined by brute force
     def test_accuracy_2(self):
-        # Test global optima of problem from Umeyama IIIB
-        # https://pcl.sitehost.iu.edu/rgoldsto/papers/weighted%20graph%20match2.pdf
-        # Graph matching maximum is in the paper
-        # QAP minimum determined by brute force
 
         A = np.array([[0, 5, 8, 6],
                       [5, 0, 5, 1],
@@ -221,15 +223,18 @@ class Test2opt(QAPCommonTests):
 
 
 class TestQAPOnce():
+    def setup_method(self):
+        np.random.rand(0)
+
     # these don't need to be repeated for each method
     def test_input_validation(self):
         # test that non square matrices return error
-        with pytest.raises(ValueError, match="'cost_matrix' must be square"):
+        with pytest.raises(ValueError, match="'A' must be square"):
             quadratic_assignment(
                 np.random.random((3, 4)),
                 np.random.random((3, 3)),
             )
-        with pytest.raises(ValueError, match="'dist_matrix' must be square"):
+        with pytest.raises(ValueError, match="'B' must be square"):
             quadratic_assignment(
                 np.random.random((3, 3)),
                 np.random.random((3, 4)),
@@ -245,7 +250,7 @@ class TestQAPOnce():
         with pytest.raises(
                 ValueError, match="Adjacency matrix contains negative"):
             quadratic_assignment(
-                -1 * np.random.random((3, 3)),
+                -np.random.random((3, 3)),
                 np.random.random((3, 3))
             )
         # can't have more seed nodes than cost/dist nodes
