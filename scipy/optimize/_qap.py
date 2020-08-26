@@ -197,9 +197,9 @@ def quadratic_assignment(
     >>> from itertools import permutations
     >>> perm_opt, score_opt = None, np.inf
     >>> for perm in permutations([0, 1, 2, 3]):
-    >>>     score = int(np.trace(cost.T @ dist[np.ix_(perm, perm)])
-    >>>     if score < score_opt:
-    >>>         score_opt, perm_opt = score, perm
+    ...     score = int(np.trace(cost.T @ dist[np.ix_(perm, perm)]))
+    ...     if score < score_opt:
+    ...         score_opt, perm_opt = score, perm
     >>> print(list(perm_opt) == res['col_ind'].tolist())
     True
     """
