@@ -1,7 +1,7 @@
 import pytest
 import numpy as np
 from scipy.optimize import quadratic_assignment
-from numpy.testing import assert_equal
+from numpy.testing import assert_equal, assert_
 
 
 def test_quadratic_assignment():
@@ -38,47 +38,46 @@ def test_quadratic_assignment():
     n = 12
 
     opt_perm = np.array([7, 5, 1, 3, 10, 4, 8, 6, 9, 11, 2, 12]) - [1] * n
-    seed_cost = [4, 8, 10]
-    seed = np.asarray([seed_cost, [opt_perm[z] for z in seed_cost]]).T
-    np.random.seed(0)
-    res = quadratic_assignment(cost_matrix, dist_matrix)
 
     # check ofv with barycenter initialization
-    assert 11156 <= res['score'] < 21000
-    assert res['score'] == _score(cost_matrix, dist_matrix, res['col_ind'])
+    res = quadratic_assignment(cost_matrix, dist_matrix)
+    assert_(11156 <= res.score < 21000)
+    assert_equal(res.score, _score(cost_matrix, dist_matrix, res.col_ind))
 
     # check with barycenter initialization, maximizing
     res = quadratic_assignment(cost_matrix, dist_matrix, maximize=True)
-    assert 75000 <= res['score'] < 85000
-    assert res['score'] == _score(cost_matrix, dist_matrix, res['col_ind'])
-    # check ofv with seeds
+    assert_(75000 <= res.score < 85000)
+    assert_equal(res.score, _score(cost_matrix, dist_matrix, res.col_ind))
+
+    # check ofv with partial match
+    seed_cost = np.array([4, 8, 10])
+    seed = np.asarray([seed_cost, opt_perm[seed_cost]]).T
     res = quadratic_assignment(cost_matrix, dist_matrix,
                                options={'partial_match': seed})
-    assert 11156 <= res['score'] < 21000
+    assert_(11156 <= res.score < 21000)
 
-    # check performance when seeds are the global optimum
+    # check performance when partial match is the global optimum
     seed = np.asarray([np.arange(n), [opt_perm[z] for z in np.arange(n)]]).T
     res = quadratic_assignment(cost_matrix, dist_matrix,
                                options={'partial_match': seed})
-    assert 11156 == res['score']
+    assert_equal(res.score, 11156)
 
     # check that max_iter is obeying with low input value
-    iter = 5
     res = quadratic_assignment(cost_matrix, dist_matrix,
-                               options={'maxiter': iter})
-    assert iter >= res['nit']
+                               options={'maxiter': 5})
+    assert_equal(res.nit, 5)
 
     # test with no shuffle
     res = quadratic_assignment(cost_matrix, dist_matrix,
                                options={'shuffle_input': False})
-    assert 11156 <= res['score'] < 21000
+    assert_(11156 <= res.score < 21000)
 
     # check with specified init_J
     K = np.ones((n, n)) / float(n)
     K = _doubly_stochastic(K)
     res = quadratic_assignment(cost_matrix, dist_matrix,
                                options={'init_J': K})
-    assert 11156 <= res['score'] < 21000
+    assert_(11156 <= res.score < 21000)
 
 
 def test_accuracy_1():
@@ -96,6 +95,7 @@ def test_accuracy_1():
                   [0, 0, 1, 0],
                   [0, 2, 0, 2],
                   [0, 1, 2, 0]])
+
     res = quadratic_assignment(A, B, maximize=False,
                                options={"init_weight": 0, "rng": 0})
     assert_equal(res.score, 10)
@@ -122,9 +122,10 @@ def test_accuracy_2():
                   [1, 0, 5, 2],
                   [8, 5, 0, 5],
                   [4, 2, 5, 0]])
+
     res = quadratic_assignment(A, B, maximize=False,
                                options={"init_weight": 0, "rng": 0})
-    assert_equal(res.score, 178)
+    assert_equal(res.score, 178)  # Global optimum is 176
     assert_equal(res.col_ind, np.array([1, 0, 3, 2]))
 
     res = quadratic_assignment(A, B, maximize=True,
@@ -169,7 +170,7 @@ def test_rand_qap():
         cost_matrix, dist_matrix, options={'init_weight': 0.5, 'init_k': 100}
     )
 
-    assert 11156 <= res['score'] < 14500
+    assert_(11156 <= res.score < 14500)
 
 
 def test_quadratic_assignment_input_validation():
@@ -211,7 +212,6 @@ def test_quadratic_assignment_input_validation():
             np.identity(3), np.identity(3),
             options={'partial_match': _range_matrix(2, 3)}
         )
-
     # seeds cannot be negative valued
     with pytest.raises(
             ValueError, match="`partial_match` contains negative entries"):
