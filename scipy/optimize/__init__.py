@@ -262,7 +262,7 @@ Assignment problems
    :toctree: generated/
 
    linear_sum_assignment -- Solves the linear-sum assignment problem.
-   quadratic_assignment -- Solves the Quadratic Assignment Problem and the Graph Matching Problem.
+   quadratic_assignment -- Approximates solution to the quadratic assignment problem and the graph matching problem.
 
 Utilities
 =========

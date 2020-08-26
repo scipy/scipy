@@ -80,7 +80,7 @@ def quadratic_assignment(
                 is the number of nodes and :math:`1` is a :math:`n \times 1`
                 array of ones, is used. This is the "barycenter" of the
                 search space of doubly-stochastic matrices.
-            init_weight : float in range [0, 1] (default = 1)
+            init_weight : float in range [0, 1]
                 Allows the user to specify the weight of the provided
                 search position :math:`J` relative to random perturbations
                 :math:`K`.
@@ -92,6 +92,8 @@ def quadratic_assignment(
                 :math:`\alpha` is given by option `init_weight`,
                 :math:`k` is given by option `init_k`, and
                 :math:`K` is a random doubly stochastic matrix.
+
+                Default is 1 if `init_k` is 1, 0 otherwise.
             init_k : int, positive (default = 1)
                 The number of randomized initial search positions :math:`P_0`
                 from which the FAQ algorithm will proceed.
@@ -110,14 +112,14 @@ def quadratic_assignment(
                 iterations is sufficiently small, that is, when the Frobenius
                 norm of :math:`(P_{i}-P_{i+1}) \leq eps`, where :math:`i` is
                 the iteration number.
-            seed : {None,int, `~np.random.RandomState`, `~np.random.Generator`}
+            rng : {None, int, `~np.random.RandomState`, `~np.random.Generator`}
                 This parameter defines the object to use for drawing random
                 variates.
-                If `seed` is `None` the `~np.random.RandomState` singleton is
+                If `rng` is ``None`` the `~np.random.RandomState` singleton is
                 used.
-                If `seed` is an int, a new ``RandomState`` instance is used,
-                seeded with seed.
-                If `seed` is already a ``RandomState`` or ``Generator``
+                If `rng` is an int, a new ``RandomState`` instance is used,
+                seeded with `rng`.
+                If `rng` is already a ``RandomState`` or ``Generator``
                 instance, then that object is used.
                 Default is None.
 
@@ -197,9 +199,9 @@ def quadratic_assignment(
     >>> from itertools import permutations
     >>> perm_opt, score_opt = None, np.inf
     >>> for perm in permutations([0, 1, 2, 3]):
-    >>>     score = int(np.trace(cost.T @ dist[np.ix_(perm, perm)])
-    >>>     if score < score_opt:
-    >>>         score_opt, perm_opt = score, perm
+    ...     score = int(np.trace(cost.T @ dist[np.ix_(perm, perm)]))
+    ...     if score < score_opt:
+    ...         score_opt, perm_opt = score, perm
     >>> print(list(perm_opt) == res['col_ind'].tolist())
     True
     """
@@ -222,7 +224,7 @@ def _quadratic_assignment_faq(
         maxiter=30,
         shuffle_input=True,
         eps=0.05,
-        seed=None
+        rng=None
 ):
 
     cost_matrix = np.atleast_2d(cost_matrix)
@@ -232,6 +234,8 @@ def _quadratic_assignment_faq(
         partial_match = np.array([[], []]).T
     partial_match = np.atleast_2d(partial_match)
     init_k = operator.index(init_k)
+    if init_k > 1 and init_weight is None:
+        init_weight = 0
     maxiter = operator.index(maxiter)
 
     # ValueError check
@@ -276,7 +280,7 @@ def _quadratic_assignment_faq(
     if msg is not None:
         raise TypeError(msg)
 
-    rng = check_random_state(seed)
+    rng = check_random_state(rng)
     n = cost_matrix.shape[0]  # number of vertices in graphs
     n_seeds = partial_match.shape[0]  # number of seeds
     n_unseed = n - n_seeds

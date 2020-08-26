@@ -1,6 +1,7 @@
 import pytest
 import numpy as np
 from scipy.optimize import quadratic_assignment
+from numpy.testing import assert_equal
 
 
 def test_quadratic_assignment():
@@ -53,22 +54,24 @@ def test_quadratic_assignment():
     # check ofv with seeds
     res = quadratic_assignment(cost_matrix, dist_matrix,
                                options={'partial_match': seed})
-
     assert 11156 <= res['score'] < 21000
 
     # check performance when seeds are the global optimum
     seed = np.asarray([np.arange(n), [opt_perm[z] for z in np.arange(n)]]).T
     res = quadratic_assignment(cost_matrix, dist_matrix,
                                options={'partial_match': seed})
-
     assert 11156 == res['score']
 
     # check that max_iter is obeying with low input value
     iter = 5
     res = quadratic_assignment(cost_matrix, dist_matrix,
                                options={'maxiter': iter})
-
     assert iter >= res['nit']
+
+    # test with no shuffle
+    res = quadratic_assignment(cost_matrix, dist_matrix,
+                               options={'shuffle_input': False})
+    assert 11156 <= res['score'] < 21000
 
     # check with specified init_J
     K = np.ones((n, n)) / float(n)
@@ -76,6 +79,58 @@ def test_quadratic_assignment():
     res = quadratic_assignment(cost_matrix, dist_matrix,
                                options={'init_J': K})
     assert 11156 <= res['score'] < 21000
+
+
+def test_accuracy_1():
+    # Test global optima of problem from Umeyama IVB
+    # https://pcl.sitehost.iu.edu/rgoldsto/papers/weighted%20graph%20match2.pdf
+    # Graph matching maximum is in the paper
+    # QAP minimum determined by brute force
+
+    A = np.array([[0, 3, 4, 2],
+                  [0, 0, 1, 2],
+                  [1, 0, 0, 1],
+                  [0, 0, 1, 0]])
+
+    B = np.array([[0, 4, 2, 4],
+                  [0, 0, 1, 0],
+                  [0, 2, 0, 2],
+                  [0, 1, 2, 0]])
+    res = quadratic_assignment(A, B, maximize=False,
+                               options={"init_weight": 0, "rng": 0})
+    assert_equal(res.score, 10)
+    assert_equal(res.col_ind, np.array([1, 2, 3, 0]))
+
+    res = quadratic_assignment(A, B, maximize=True,
+                               options={"init_weight": 0, "rng": 0})
+    assert_equal(res.score, 40)
+    assert_equal(res.col_ind, np.array([0, 3, 1, 2]))
+
+
+def test_accuracy_2():
+    # Test global optima of problem from Umeyama IIIB
+    # https://pcl.sitehost.iu.edu/rgoldsto/papers/weighted%20graph%20match2.pdf
+    # Graph matching maximum is in the paper
+    # QAP minimum determined by brute force
+
+    A = np.array([[0, 5, 8, 6],
+                  [5, 0, 5, 1],
+                  [8, 5, 0, 2],
+                  [6, 1, 2, 0]])
+
+    B = np.array([[0, 1, 8, 4],
+                  [1, 0, 5, 2],
+                  [8, 5, 0, 5],
+                  [4, 2, 5, 0]])
+    res = quadratic_assignment(A, B, maximize=False,
+                               options={"init_weight": 0, "rng": 0})
+    assert_equal(res.score, 178)
+    assert_equal(res.col_ind, np.array([1, 0, 3, 2]))
+
+    res = quadratic_assignment(A, B, maximize=True,
+                               options={"init_weight": 0, "rng": 0})
+    assert_equal(res.score, 286)
+    assert_equal(res.col_ind, np.array([2, 3, 0, 1]))
 
 
 @pytest.mark.slow
