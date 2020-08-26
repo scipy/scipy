@@ -264,6 +264,13 @@ Assignment problems
    linear_sum_assignment -- Solves the linear-sum assignment problem.
    quadratic_assignment -- Approximates solution to the quadratic assignment problem and the graph matching problem.
 
+The `quadratic_assignment` function supports the following methods:
+
+.. toctree::
+
+   optimize.qap-faq
+   optimize.qap-2opt
+
 Utilities
 =========
 

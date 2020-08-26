@@ -101,12 +101,12 @@ def quadratic_assignment(
 
     Notes
     -----
-    The default ``'method': "faq"`` uses the Fast Approximate QAP algorithm
-    [1]_; it is typically offers the best combination of speed and accuracy.
-    ``'method': "2-opt"`` can be computationally expensive, but it can be
-    a useful alternative, or it can be used to refine the solution
+    The default method :ref:`'faq' <optimize.qap-faq>` uses the Fast
+    Approximate QAP algorithm [1]_; it is typically offers the best
+    combination of speed and accuracy.
+    Method :ref:`'2opt' <optimize.qap-2opt>` can be computationally expensive,
+    but may be a useful alternative, or it can be used to refine the solution
     returned by another method.
-
 
     References
     ----------
@@ -119,6 +119,7 @@ def quadratic_assignment(
     .. [2] D. Fishkind, S. Adali, H. Patsolic, L. Meng, D. Singh, V. Lyzinski,
            C. Priebe, "Seeded graph matching", Pattern Recognit. 87 (2019):
            203-215, https://doi.org/10.1016/j.patcog.2018.09.014
+
     .. [3] "2-opt," Wikipedia.
            https://en.wikipedia.org/wiki/2-opt
 
