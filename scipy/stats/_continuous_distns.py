@@ -3419,8 +3419,8 @@ class invgauss_gen(rv_continuous):
             data = data - floc
             fshape_n = np.mean(data)
             if fscale is None:
-                fscale = len(data) / (np.sum(data**(-1) - fshape_n**(-1)))
-            fshape_s = fshape_n/fscale
+                fscale = len(data) / (np.sum(data ** -1 - fshape_n ** -1))
+            fshape_s = fshape_n / fscale
         return fshape_s, floc, fscale
 
 

@@ -1643,7 +1643,7 @@ class TestLaplace(object):
         # for a variety of `loc` and `scale`.
         data = stats.laplace.rvs(size=100, loc=rvs_loc, scale=rvs_scale)
 
-        # MLE estimates are given by these forumlas
+        # MLE estimates are given by
         loc_mle = np.median(data)
         scale_mle = np.sum(np.abs(data - loc_mle)) / len(data)
 
@@ -1666,12 +1666,12 @@ class TestLaplace(object):
         # fixed loc to non median, scale should match
         # scale calculation with modified loc
         loc, scale = stats.laplace.fit(data, floc=loc)
-        assert scale_mle == scale
+        assert_equal(scale_mle, scale)
 
         # fixed scale created with non median loc,
         # loc output should still be the data median.
         loc, scale = stats.laplace.fit(data, fscale=scale_mle)
-        assert loc_mle == loc
+        assert_equal(loc_mle, loc)
 
         # error raised when both `floc` and `fscale` are fixed
         assert_raises(RuntimeError, stats.laplace.fit, data, floc=loc_mle,
