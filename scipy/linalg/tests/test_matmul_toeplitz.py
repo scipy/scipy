@@ -12,7 +12,7 @@ class TestMatmulToeplitz:
 
     def setup_method(self):
         self.rng = np.random.RandomState(42)
-        self.tolerance = 1e-10
+        self.tolerance = 1.5e-13
 
     def test_real(self):
         cases = []
@@ -119,4 +119,5 @@ class TestMatmulToeplitz:
         else:
             actual = matmul_toeplitz((c, r), x, check_finite)
         desired = toeplitz(c, r) @ x
-        assert_allclose(actual, desired, rtol=self.tolerance, atol=0)
+        assert_allclose(actual, desired,
+            rtol=self.tolerance, atol=self.tolerance)

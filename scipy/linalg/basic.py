@@ -1646,6 +1646,7 @@ def _validate_args_for_toeplitz_ops(c_or_cr, b, check_finite, keep_b_shape,
         otherwise, it is ``np.float``.
     b_shape: tuple
         Shape of ``b`` after passing it through ``_asarray_validated``.
+
     """
 
     if isinstance(c_or_cr, tuple):
