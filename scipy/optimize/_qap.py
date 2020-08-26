@@ -193,8 +193,8 @@ def quadratic_assignment(
     >>> print(score)
     3260
 
-    For this small problem, ``quadratic_assignment`` happens to have found the
-    globally optimal solution.
+    Although not guaranteed in general, ``quadratic_assignment`` happens to
+    have found the globally optimal solution.
 
     >>> from itertools import permutations
     >>> perm_opt, score_opt = None, np.inf
@@ -202,7 +202,7 @@ def quadratic_assignment(
     ...     score = int(np.trace(cost.T @ dist[np.ix_(perm, perm)]))
     ...     if score < score_opt:
     ...         score_opt, perm_opt = score, perm
-    >>> print(list(perm_opt) == res['col_ind'].tolist())
+    >>> print(np.equal(perm_opt, res['col_ind']))
     True
     """
 
