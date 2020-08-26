@@ -89,15 +89,15 @@ def quadratic_assignment(
         A :class:`scipy.optimize.OptimizeResult` containing the following
         fields.
 
-            col_ind : 1-D array
-                An array of column indices corresponding with the best
-                permutation of the nodes of `dist_matrix` found.
-            score : float
-                The corresponding value of the objective function.
-            nit : int
-                The number of Franke-Wolfe iterations performed during
-                the initialization resulting in the permutation
-                returned.
+        col_ind : 1-D array
+            An array of column indices corresponding with the best
+            permutation of the nodes of `dist_matrix` found.
+        score : float
+            The corresponding value of the objective function.
+        nit : int
+            The number of Franke-Wolfe iterations performed during
+            the initialization resulting in the permutation
+            returned.
 
     Notes
     -----
@@ -180,7 +180,8 @@ def quadratic_assignment(
     return res
 
 
-def _common_input_validation(cost_matrix, dist_matrix, partial_match):
+def _common_input_validation(cost_matrix, dist_matrix, partial_match,
+                             maximize):
     cost_matrix = np.atleast_2d(cost_matrix)
     dist_matrix = np.atleast_2d(dist_matrix)
 
@@ -208,7 +209,17 @@ def _common_input_validation(cost_matrix, dist_matrix, partial_match):
     elif not len(set(partial_match[:, 0])) == len(partial_match[:, 0]) or not \
             len(set(partial_match[:, 1])) == len(partial_match[:, 1]):
         msg = "`partial_match` column entries must be unique"
-    return cost_matrix, dist_matrix, partial_match, msg
+
+    if msg is not None:
+        raise ValueError(msg)
+
+    if not isinstance(maximize, bool):
+        msg = "'maximize' must be a boolean"
+
+    if msg is not None:
+        raise TypeError(msg)
+
+    return cost_matrix, dist_matrix, partial_match
 
 
 def _quadratic_assignment_faq(
@@ -265,14 +276,13 @@ def _quadratic_assignment_faq(
 
     method :  str in {'faq', '2opt'}
 
-
     Options
-    ----------
+    -------
 
     partial_match : 2d-array of integers, optional, (default = None)
         Allows the user to fix part of the matching between the two adjacency
         matrices. In the literature, a partial match is also known as a
-        "seed" [2]_.
+        "seed".
 
         Each row of `partial_match` specifies the indices of a pair of
         corresponding nodes, that is, node ``partial_match[i, 0]`` is
@@ -348,15 +358,15 @@ def _quadratic_assignment_faq(
         A :class:`scipy.optimize.OptimizeResult` containing the following
         fields.
 
-            col_ind : 1-D array
-                An array of column indices corresponding with the best
-                permutation of the nodes of `dist_matrix` found.
-            score : float
-                The corresponding value of the objective function.
-            nit : int
-                The number of Franke-Wolfe iterations performed during
-                the initialization resulting in the permutation
-                returned.
+        col_ind : 1-D array
+            An array of column indices corresponding with the best
+            permutation of the nodes of `dist_matrix` found.
+        score : float
+            The corresponding value of the objective function.
+        nit : int
+            The number of Franke-Wolfe iterations performed during
+            the initialization resulting in the permutation
+            returned.
 
     Notes
     -----
@@ -389,12 +399,11 @@ def _quadratic_assignment_faq(
     maxiter = operator.index(maxiter)
 
     # ValueError check
-    cost_matrix, dist_matrix, partial_match, msg = _common_input_validation(
-            cost_matrix, dist_matrix, partial_match)
+    cost_matrix, dist_matrix, partial_match = _common_input_validation(
+            cost_matrix, dist_matrix, partial_match, maximize)
 
-    if msg:
-        pass
-    elif isinstance(init_J, str) and init_J not in {'barycenter'}:
+    msg = None
+    if isinstance(init_J, str) and init_J not in {'barycenter'}:
         msg = "Invalid 'init_J' parameter string"
     elif init_weight is not None and (init_weight < 0 or init_weight > 1):
         msg = "'init_weight' must be strictly between zero and one"
@@ -410,8 +419,6 @@ def _quadratic_assignment_faq(
     # TypeError check
     if not isinstance(shuffle_input, bool):
         msg = "'shuffle_input' must be a boolean"
-    elif not isinstance(maximize, bool):
-        msg = "'maximize' must be a boolean"
     if msg is not None:
         raise TypeError(msg)
 
@@ -615,7 +622,7 @@ def _quadratic_assignment_2opt(cost_matrix, dist_matrix, maximize=False,
         The square adjacency matrix :math:`B` in the objective function above.
 
     Options
-    ----------
+    -------
 
     partial_match : 2d-array of integers, optional, (default = None)
         Allows the user to fix part of the matching between the two adjacency
@@ -649,13 +656,13 @@ def _quadratic_assignment_2opt(cost_matrix, dist_matrix, maximize=False,
         A :class:`scipy.optimize.OptimizeResult` containing the following
         fields.
 
-            col_ind : 1-D array
-                An array of column indices corresponding with the best
-                permutation of the nodes of `dist_matrix` found.
-            score : float
-                The corresponding value of the objective function.
-            nit : int
-                The number of iterations
+        col_ind : 1-D array
+            An array of column indices corresponding with the best
+            permutation of the nodes of `dist_matrix` found.
+        score : float
+            The corresponding value of the objective function.
+        nit : int
+            The number of iterations
 
     Notes
     -----
@@ -670,13 +677,13 @@ def _quadratic_assignment_2opt(cost_matrix, dist_matrix, maximize=False,
     """
 
     def calc_score(A, B, perm):
-        # equivalent for optimization; avoids matmul
+        # equivalent for optimization per [1]; avoids matmul
         k = np.argsort(perm)
         return -((A[:, k] - B[perm, :])**2).sum()
 
     rng = check_random_state(rng)
-    cost_matrix, dist_matrix, partial_match, msg = _common_input_validation(
-            cost_matrix, dist_matrix, partial_match)
+    cost_matrix, dist_matrix, partial_match = _common_input_validation(
+            cost_matrix, dist_matrix, partial_match, maximize)
 
     N = len(cost_matrix)
 
@@ -698,7 +705,7 @@ def _quadratic_assignment_2opt(cost_matrix, dist_matrix, maximize=False,
     better = operator.gt if maximize else operator.lt
     n_iter = 0
     done = False
-    while done:
+    while not done:
         # equivalent to nested for loops i in range(N), j in range(i, N)
         for i, j in itertools.combinations_with_replacement(range(N), 2):
             n_iter += 1
