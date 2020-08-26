@@ -22,7 +22,9 @@ def quadratic_assignment(A, B, method="faq", options=None):
         \mbox{s.t. } & {P \ \epsilon \ \mathcal{P}}\\
 
     where :math:`\mathcal{P}` is the set of all permutation matrices,
-    and :math:`A` and :math:`B` are adjacency matrices.
+    and :math:`A` and :math:`B` are square matrices. For the default
+    algorithm :ref:`'faq' <optimize.qap-faq>`, all elements of
+    :math:`A` and :math:`B` must be non-negative.
 
     Graph matching tries to *maximize* the same objective function.
     This algorithm can be thought of as finding the alignment of the
@@ -38,11 +40,15 @@ def quadratic_assignment(A, B, method="faq", options=None):
 
     Parameters
     ----------
-    A : 2d-array, square, non-negative
-        The square adjacency matrix :math:`A` in the objective function above.
+    A : 2d-array, square
+        The square matrix :math:`A` in the objective function above.
+        Elements must be non-negative for method
+        :ref:`'faq' <optimize.qap-faq>`.
 
-    B : 2d-array, square, non-negative
-        The square adjacency matrix :math:`B` in the objective function above.
+    B : 2d-array, square
+        The square matrix :math:`B` in the objective function above.
+        Elements must be non-negative for method
+        :ref:`'faq' <optimize.qap-faq>`.
 
     method :  str in {'faq', '2opt'} (default: 'faq')
         The algorithm used to solve the problem.
@@ -54,7 +60,7 @@ def quadratic_assignment(A, B, method="faq", options=None):
 
         partial_match : 2d-array of integers, optional, (default = None)
             Allows the user to fix part of the matching between the two
-            adjacency matrices. In the literature, a partial match is also
+            matrices. In the literature, a partial match is also
             known as a "seed" [2]_.
 
             Each row of `partial_match` specifies the indices of a pair of
@@ -157,6 +163,7 @@ def quadratic_assignment(A, B, method="faq", options=None):
     >>> from itertools import permutations
     >>> perm_opt, score_opt = None, np.inf
     >>> for perm in permutations([0, 1, 2, 3]):
+    ...     perm = np.array(perm)
     ...     score = int(np.trace(A.T @ B[perm][:, perm]))
     ...     if score < score_opt:
     ...         score_opt, perm_opt = score, perm
@@ -176,6 +183,11 @@ def quadratic_assignment(A, B, method="faq", options=None):
     return res
 
 
+def _calc_score(A, B, perm):
+    # equivalent to objective function but avoids matmul
+    return np.sum(A * B[perm][:, perm])
+
+
 def _common_input_validation(A, B, partial_match, maximize):
     A = np.atleast_2d(A)
     B = np.atleast_2d(B)
@@ -192,9 +204,7 @@ def _common_input_validation(A, B, partial_match, maximize):
     elif A.ndim != 2 or B.ndim != 2:
         msg = "`A` and `B` must have exactly two dimensions"
     elif A.shape != B.shape:
-        msg = "Adjacency matrices must be of equal size"
-    elif (A < 0).any() or (B < 0).any():
-        msg = "Adjacency matrix contains negative entries"
+        msg = "`A` and `B` matrices must be of equal size"
     elif partial_match.shape[0] > A.shape[0]:
         msg = "There cannot be more seeds than there are nodes"
     elif partial_match.shape[1] != 2:
@@ -211,12 +221,6 @@ def _common_input_validation(A, B, partial_match, maximize):
 
     if msg is not None:
         raise ValueError(msg)
-
-    if not isinstance(maximize, bool):
-        msg = "'maximize' must be a boolean"
-
-    if msg is not None:
-        raise TypeError(msg)
 
     return A, B, partial_match
 
@@ -242,7 +246,7 @@ def _quadratic_assignment_faq(A, B,
         \mbox{s.t. } & {P \ \epsilon \ \mathcal{P}}\\
 
     where :math:`\mathcal{P}` is the set of all permutation matrices,
-    and :math:`A` and :math:`B` are adjacency matrices.
+    and :math:`A` and :math:`B` are square matrices with non-negative elements.
 
     Graph matching tries to *maximize* the same objective function.
     This algorithm can be thought of as finding the alignment of the
@@ -259,10 +263,10 @@ def _quadratic_assignment_faq(A, B,
     Parameters
     ----------
     A : 2d-array, square, non-negative
-        The square adjacency matrix :math:`A` in the objective function above.
+        The square matrix :math:`A` in the objective function above.
 
     B : 2d-array, square, non-negative
-        The square adjacency matrix :math:`B` in the objective function above.
+        The square matrix :math:`B` in the objective function above.
 
     method :  str in {'faq', '2opt'} (default: 'faq')
         The algorithm used to solve the problem. This is the method-specific
@@ -273,12 +277,12 @@ def _quadratic_assignment_faq(A, B,
     -------
 
     partial_match : 2d-array of integers, optional, (default = None)
-        Allows the user to fix part of the matching between the two adjacency
+        Allows the user to fix part of the matching between the two
         matrices. In the literature, a partial match is also known as a
         "seed".
 
         Each row of `partial_match` specifies the indices of a pair of
-        corresponding nodes, that is, node ``partial_match[i, 0]` of `A` is
+        corresponding nodes, that is, node ``partial_match[i, 0]`` of `A` is
         matched to node ``partial_match[i, 1]`` of `B`. Accordingly,
         ``partial_match`` is an array of size ``(m , 2)``, where ``m`` is
         less than the number of nodes.
@@ -325,7 +329,7 @@ def _quadratic_assignment_faq(A, B,
         modest number of iterations.
     shuffle_input : bool (default = True)
         To avoid artificially high or low matching due to inherent
-        sorting of input adjacency matrices, gives users the option
+        sorting of input matrices, gives users the option
         to shuffle the nodes. Results are then unshuffled so that the
         returned results correspond with the node order of inputs.
     eps : float (default = 0.05)
@@ -396,7 +400,9 @@ def _quadratic_assignment_faq(A, B,
             A, B, partial_match, maximize)
 
     msg = None
-    if isinstance(init_J, str) and init_J not in {'barycenter'}:
+    if (A < 0).any() or (B < 0).any():
+        msg = "`A` and `B` matrices must contain only non-negative elements."
+    elif isinstance(init_J, str) and init_J not in {'barycenter'}:
         msg = "Invalid 'init_J' parameter string"
     elif init_weight is not None and (init_weight < 0 or init_weight > 1):
         msg = "'init_weight' must be strictly between zero and one"
@@ -408,12 +414,6 @@ def _quadratic_assignment_faq(A, B,
         msg = "'eps' must be a positive float"
     if msg is not None:
         raise ValueError(msg)
-
-    # TypeError check
-    if not isinstance(shuffle_input, bool):
-        msg = "'shuffle_input' must be a boolean"
-    if msg is not None:
-        raise TypeError(msg)
 
     rng = check_random_state(rng)
     n = A.shape[0]  # number of vertices in graphs
@@ -482,38 +482,29 @@ def _quadratic_assignment_faq(A, B,
             Q[rows, cols] = 1  # initialize search direction matrix Q
 
             def f(x):  # computing the original optimization function
+                xP1xQ = x * P + (1 - x) * Q
                 return obj_func_scalar * (
                     np.trace(A11.T @ B11)
-                    + np.trace(np.transpose(x * P + (1 - x) * Q) @ A21 @ B21.T)
-                    + np.trace(np.transpose(x * P + (1 - x) * Q) @ A12.T @ B12)
-                    + np.trace(
-                        A22.T
-                        @ (x * P + (1 - x) * Q)
-                        @ B22
-                        @ np.transpose(x * P + (1 - x) * Q)
-                    )
+                    + np.trace(xP1xQ.T @ A21 @ B21.T)
+                    + np.trace(xP1xQ.T @ A12.T @ B12)
+                    + np.trace(A22.T @ xP1xQ @ B22 @ xP1xQ.T)
                 )
 
-            alpha = minimize_scalar(
-                f, bounds=(0, 1), method="bounded"
-            ).x  # computing the step size
+            # computing the step size
+            alpha = minimize_scalar(f, bounds=(0, 1), method="bounded").x
             P_i1 = alpha * P + (1 - alpha) * Q  # Update P
             grad_P = np.linalg.norm(P - P_i1)
             P = P_i1
             n_iter += 1
         # end of FW optimization loop
 
-        row, col = linear_sum_assignment(
-            -P
-        )  # Project onto the set of permutation matrices
+        # Project onto the set of permutation matrices
+        row, col = linear_sum_assignment(-P)
         perm_inds_new = np.concatenate(
             (np.arange(n_seeds), np.array([x + n_seeds for x in col]))
         ).astype(int)
 
-        score_new = np.trace(
-            np.transpose(A)
-            @ B[np.ix_(perm_inds_new, perm_inds_new)]
-        )  # computing objective function value
+        score_new = _calc_score(A, B, perm_inds_new)
 
         if obj_func_scalar * score_new < obj_func_scalar * score:  # minimizing
             score = score_new
@@ -530,9 +521,7 @@ def _quadratic_assignment_faq(A, B,
         np.ix_(permutation_dist_inv, permutation_dist_inv)
     ]
 
-    score = np.trace(
-        np.transpose(A) @ B[np.ix_(perm_inds, perm_inds)]
-    )
+    score = _calc_score(A, B, perm_inds)
 
     res = {"col_ind": perm_inds, "score": score, "nit": total_iter}
 
@@ -546,9 +535,9 @@ def _check_init_input(init_J, n):
     msg = None
     if init_J.shape != (n, n):
         msg = "`init_J` matrix must have same shape as A and B"
-    elif (~np.isclose(row_sum, np.ones(n), atol=tol)).any() or \
-            (~np.isclose(col_sum, np.ones(n), atol=tol)).any() or \
-            (init_J < 0).any():
+    elif ((~np.isclose(row_sum, np.ones(n), atol=tol)).any() or
+          (~np.isclose(col_sum, np.ones(n), atol=tol)).any() or
+          (init_J < 0).any()):
         msg = "`init_J` matrix must be doubly stochastic"
     if msg is not None:
         raise ValueError(msg)
@@ -591,7 +580,7 @@ def _quadratic_assignment_2opt(A, B, maximize=False, partial_match=None,
         \mbox{s.t. } & {P \ \epsilon \ \mathcal{P}}\\
 
     where :math:`\mathcal{P}` is the set of all permutation matrices,
-    and :math:`A` and :math:`B` are adjacency matrices.
+    and :math:`A` and :math:`B` are square matrices.
 
     Graph matching tries to *maximize* the same objective function.
     This algorithm can be thought of as finding the alignment of the
@@ -608,10 +597,10 @@ def _quadratic_assignment_2opt(A, B, maximize=False, partial_match=None,
     Parameters
     ----------
     A : 2d-array, square, non-negative
-        The square adjacency matrix :math:`A` in the objective function above.
+        The square matrix :math:`A` in the objective function above.
 
     B : 2d-array, square, non-negative
-        The square adjacency matrix :math:`B` in the objective function above.
+        The square matrix :math:`B` in the objective function above.
 
     method :  str in {'faq', '2opt'} (default: 'faq')
         The algorithm used to solve the problem. This is the method-specific
@@ -622,7 +611,7 @@ def _quadratic_assignment_2opt(A, B, maximize=False, partial_match=None,
     -------
 
     partial_match : 2d-array of integers, optional, (default = None)
-        Allows the user to fix part of the matching between the two adjacency
+        Allows the user to fix part of the matching between the two
         matrices. In the literature, a partial match is also known as a
         "seed".
 
@@ -673,11 +662,6 @@ def _quadratic_assignment_2opt(A, B, maximize=False, partial_match=None,
            https://en.wikipedia.org/wiki/2-opt
     """
 
-    def calc_score(A, B, perm):
-        # equivalent for optimization per FAQ paper [1]; avoids matmul
-        k = np.argsort(perm)
-        return -((A[:, k] - B[perm, :])**2).sum()
-
     rng = check_random_state(rng)
     A, B, partial_match = _common_input_validation(
             A, B, partial_match, maximize)
@@ -685,6 +669,7 @@ def _quadratic_assignment_2opt(A, B, maximize=False, partial_match=None,
     N = len(A)
 
     if partial_match.size:
+        # use seed for initial permutation, but randomly permute the rest
         r, c = partial_match.T
         fixed_rows = np.zeros(N, dtype=bool)
         fixed_cols = np.zeros(N, dtype=bool)
@@ -697,7 +682,7 @@ def _quadratic_assignment_2opt(A, B, maximize=False, partial_match=None,
     else:
         perm = rng.permutation(np.arange(N))
 
-    best_score = calc_score(A, B, perm)
+    best_score = _calc_score(A, B, perm)
 
     better = operator.gt if maximize else operator.lt
     n_iter = 0
@@ -707,7 +692,7 @@ def _quadratic_assignment_2opt(A, B, maximize=False, partial_match=None,
         for i, j in itertools.combinations_with_replacement(range(N), 2):
             n_iter += 1
             perm[i], perm[j] = perm[j], perm[i]
-            score = calc_score(A, B, perm)
+            score = _calc_score(A, B, perm)
             if better(score, best_score):
                 best_score = score
                 break
@@ -716,7 +701,6 @@ def _quadratic_assignment_2opt(A, B, maximize=False, partial_match=None,
         else:  # no swaps made
             done = True
 
-    best_score = np.trace(A @ B[np.ix_(perm, perm)].T)
     res = {"col_ind": perm, "score": best_score, "nit": n_iter}
 
     return OptimizeResult(res)

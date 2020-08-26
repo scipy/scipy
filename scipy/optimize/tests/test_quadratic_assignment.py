@@ -1,6 +1,7 @@
 import pytest
 import numpy as np
 from scipy.optimize import quadratic_assignment
+from scipy.optimize._qap import _calc_score as _score
 from numpy.testing import assert_equal, assert_
 
 
@@ -37,7 +38,8 @@ def chr12c():
         [46, 79, 54, 68, 5, 0, 56, 15, 39, 70, 0, 18],
         [95, 36, 63, 85, 76, 34, 37, 80, 33, 86, 18, 0],
     ]
-    n = 12
+    A, B = np.array(A), np.array(B)
+    n = A.shape[0]
 
     opt_perm = np.array([7, 5, 1, 3, 10, 4, 8, 6, 9, 11, 2, 12]) - [1] * n
 
@@ -56,16 +58,16 @@ class QAPCommonTests(object):
     # Graph matching maximum is in the paper
     # QAP minimum determined by brute force
     def test_accuracy_1(self):
+        # besides testing accuracy, check that A and B can be lists
+        A = [[0, 3, 4, 2],
+             [0, 0, 1, 2],
+             [1, 0, 0, 1],
+             [0, 0, 1, 0]]
 
-        A = np.array([[0, 3, 4, 2],
-                      [0, 0, 1, 2],
-                      [1, 0, 0, 1],
-                      [0, 0, 1, 0]])
-
-        B = np.array([[0, 4, 2, 4],
-                      [0, 0, 1, 0],
-                      [0, 2, 0, 2],
-                      [0, 1, 2, 0]])
+        B = [[0, 4, 2, 4],
+             [0, 0, 1, 0],
+             [0, 2, 0, 2],
+             [0, 1, 2, 0]]
 
         res = quadratic_assignment(A, B, method=self.method,
                                    options={"init_weight": 0, "rng": 0,
@@ -124,7 +126,7 @@ class QAPCommonTests(object):
         # basic maximization
         res = quadratic_assignment(A, B, method=self.method,
                                    options={'maximize': True})
-        assert_(75000 <= res.score < 85000)
+        assert_(74000 <= res.score < 85000)
         assert_equal(res.score, _score(A, B, res.col_ind))
 
         # check ofv with partial match
@@ -173,6 +175,13 @@ class TestFAQ(QAPCommonTests):
 
         # method is implicitly faq
 
+        # test that cost/dist matrices must be nonnegative
+        with pytest.raises(
+                ValueError, match="`A` and `B` matrices must contain only"):
+            quadratic_assignment(
+                -np.random.random((3, 3)),
+                np.random.random((3, 3))
+            )
         # ValueError Checks: making sure single value parameters are of
         # correct value
         with pytest.raises(ValueError, match="Invalid 'init_J' parameter"):
@@ -192,8 +201,6 @@ class TestFAQ(QAPCommonTests):
 
         # TypeError Checks: making sure single value parameters are of
         # correct type
-        with pytest.raises(TypeError, match="'shuffle_input' must be a bool"):
-            quadratic_assignment(A, B, options={'shuffle_input': "hey"})
         with pytest.raises(TypeError):
             quadratic_assignment(A, B, options={'init_k': 1.5})
         with pytest.raises(TypeError):
@@ -209,7 +216,7 @@ class TestFAQ(QAPCommonTests):
             )
 
         K = np.random.rand(3, 3)
-        K = _doubly_stochastic(K, eps=1e-1)
+        K = _doubly_stochastic(K, eps=1)
         # matrix that isn't quite doubly stochastic
         with pytest.raises(
                 ValueError, match="`init_J` matrix must be doubly stochastic"):
@@ -248,17 +255,11 @@ class TestQAPOnce():
             )
         # test that cost and dist matrices of different sizes return error
         with pytest.raises(
-                ValueError, match="Adjacency matrices must be of equal size"):
+                ValueError,
+                match="`A` and `B` matrices must be of equal size"):
             quadratic_assignment(
                 np.random.random((3, 3)),
                 np.random.random((4, 4)),
-            )
-        # test that cost/dist matrices must be nonnegative
-        with pytest.raises(
-                ValueError, match="Adjacency matrix contains negative"):
-            quadratic_assignment(
-                -np.random.random((3, 3)),
-                np.random.random((3, 3))
             )
         # can't have more seed nodes than cost/dist nodes
         _rm = _range_matrix
@@ -305,11 +306,6 @@ class TestQAPOnce():
                 options={'partial_match': np.ones((2, 2))}
             )
 
-        with pytest.raises(TypeError, match="'maximize' must be a boolean"):
-            quadratic_assignment(np.random.random((3, 3)),
-                                 np.random.random((3, 3)),
-                                 options={'maximize': "hey"})
-
 
 @pytest.mark.slow
 def test_rand_qap():
@@ -328,13 +324,6 @@ def _range_matrix(a, b):
     for i in range(b):
         mat[:, i] = np.arange(a)
     return mat
-
-
-def _score(A, B, col):
-    A = np.asarray(A)
-    B = np.asarray(B)
-    col = np.asarray(col)
-    return np.trace(np.transpose(A) @ B[np.ix_(col, col)])
 
 
 def _doubly_stochastic(P, eps=1e-3):
