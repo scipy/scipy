@@ -264,7 +264,8 @@ int
 NI_GeometricTransform(PyArrayObject *input, int (*map)(npy_intp*, double*,
                 int, int, void*), void* map_data, PyArrayObject* matrix_ar,
                 PyArrayObject* shift_ar, PyArrayObject *coordinates,
-                PyArrayObject *output, int order, int mode, double cval)
+                PyArrayObject *output, int order, int mode, double cval,
+                int nprepad)
 {
     char *po, *pi, *pc = NULL;
     npy_intp **edge_offsets = NULL, **data_offsets = NULL, filter_size;
@@ -461,10 +462,10 @@ NI_GeometricTransform(PyArrayObject *input, int (*map)(npy_intp*, double*,
             double cc = 0.0;
             if (mode == NI_EXTEND_GRID_CONSTANT) {
                 // no coordinate mapping in this case
-                cc = icoor[hh];
+                cc = icoor[hh] + nprepad;
             } else {
                 /* if the input coordinate is outside the borders, map it: */
-                cc = map_coordinate(icoor[hh], idimensions[hh], mode);
+                cc = map_coordinate(icoor[hh] + nprepad, idimensions[hh], mode);
             }
             if (cc > -1.0 || mode == NI_EXTEND_GRID_CONSTANT) {
                 /* find the filter location along this axis: */
