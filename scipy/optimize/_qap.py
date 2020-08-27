@@ -178,19 +178,22 @@ def quadratic_assignment(A, B, method="faq", options=None):
     >>> B = np.array([[0, 1, 8, 4], [1, 0, 5, 2],
     ...              [8, 5, 0, 5], [4, 2, 5, 0]])
     >>> res = quadratic_assignment(A, B)
-    >>> print(res.score)
+    >>> print(res)
      col_ind: array([1, 0, 3, 2])
          nit: 13
        score: 178
 
     If accuracy is important, consider using  :ref:`'2opt' <optimize.qap-2opt>`
     to refine the solution.
+
     >>> guess = np.array([np.arange(A.shape[0], res.col_ind]).T
     >>> res = quadratic_assignment(A, B, method="2opt",
-    ...                            options = {partial_guess': guess})
+    ...                            options = {'partial_guess': guess})
+    >>> print(res)
      col_ind: array([1, 2, 3, 0])
          nit: 17
        score: 176
+
     """
 
     if options is None:
@@ -485,7 +488,9 @@ def _quadratic_assignment_faq(A, B,
     for i in range(init_k):
         if init_weight is not None:
             # generate a nxn matrix where each entry is a random number [0, 1]
-            K = rng.random((n_unseed, n_unseed))
+            # would use rand, but Generators don't have it
+            # would use random, but old mtrand.RandomStates don't have it
+            K = rng.uniform(size=(n_unseed, n_unseed))
             # Sinkhorn balancing
             K = _doubly_stochastic(K)
             # initialize J, a doubly stochastic barycenter
@@ -702,7 +707,8 @@ def _quadratic_assignment_2opt(A, B, maximize=False, partial_match=None,
 
     msg = None
     if partial_guess.shape[0] > A.shape[0]:
-        msg = "`partial_guess` can have only as many entries as there are nodes"
+        msg = ("`partial_guess` can have only as "
+               "many entries as there are nodes")
     elif partial_guess.shape[1] != 2:
         msg = "`partial_guess` must have two columns"
     elif partial_guess.ndim != 2:

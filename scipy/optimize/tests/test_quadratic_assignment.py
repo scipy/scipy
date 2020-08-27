@@ -51,7 +51,7 @@ class QAPCommonTests(object):
     Base class for `quadratic_assignment` tests.
     """
     def setup_method(self):
-        np.random.rand(0)
+        np.random.seed(0)
 
     # Test global optima of problem from Umeyama IVB
     # https://pcl.sitehost.iu.edu/rgoldsto/papers/weighted%20graph%20match2.pdf
@@ -151,6 +151,7 @@ class QAPCommonTests(object):
 
     def test_unknown_options(self):
         A, B, opt_perm = chr12c()
+
         def f():
             quadratic_assignment(A, B, method=self.method,
                                  options={"ekki-ekki": True})
@@ -242,6 +243,22 @@ class TestFAQ(QAPCommonTests):
 class Test2opt(QAPCommonTests):
     method = "2opt"
 
+    def test_deterministic(self):
+        # np.random.seed(0) executes before every method
+        n = 20
+
+        A = np.random.rand(n, n)
+        B = np.random.rand(n, n)
+        res1 = quadratic_assignment(A, B, method=self.method)
+
+        np.random.seed(0)
+
+        A = np.random.rand(n, n)
+        B = np.random.rand(n, n)
+        res2 = quadratic_assignment(A, B, method=self.method)
+
+        assert_equal(res1.nit, res2.nit)
+
     def test_partial_guess(self):
         n = 5
         A = np.random.rand(n, n)
@@ -311,7 +328,7 @@ class Test2opt(QAPCommonTests):
 
 class TestQAPOnce():
     def setup_method(self):
-        np.random.rand(0)
+        np.random.seed(0)
 
     # these don't need to be repeated for each method
     def test_common_input_validation(self):
