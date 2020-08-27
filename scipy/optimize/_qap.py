@@ -167,7 +167,7 @@ def quadratic_assignment(A, B, method="faq", options=None):
     ...     score = int(np.trace(A.T @ B[perm][:, perm]))
     ...     if score < score_opt:
     ...         score_opt, perm_opt = score, perm
-    >>> print(np.equal(perm_opt, res['col_ind']))
+    >>> print(np.array_equal(perm_opt, res['col_ind']))
     True
 
     Here is an example for which the default method,
@@ -186,7 +186,7 @@ def quadratic_assignment(A, B, method="faq", options=None):
     If accuracy is important, consider using  :ref:`'2opt' <optimize.qap-2opt>`
     to refine the solution.
 
-    >>> guess = np.array([np.arange(A.shape[0], res.col_ind]).T
+    >>> guess = np.array([np.arange(A.shape[0]), res.col_ind]).T
     >>> res = quadratic_assignment(A, B, method="2opt",
     ...                            options = {'partial_guess': guess})
     >>> print(res)
