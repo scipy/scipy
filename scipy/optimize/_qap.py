@@ -425,7 +425,7 @@ def _quadratic_assignment_faq(A, B,
     obj_func_scalar = 1
     if maximize:
         obj_func_scalar = -1
-    score = obj_func_scalar * np.inf
+    best_score = obj_func_scalar * np.inf
 
     seed_dist_c = np.setdiff1d(range(n), partial_match[:, 1])
     if shuffle_input:
@@ -437,6 +437,7 @@ def _quadratic_assignment_faq(A, B,
                                        seed_cost_c], axis=None).astype(int)
     permutation_dist = np.concatenate([partial_match[:, 1],
                                        seed_dist_c], axis=None).astype(int)
+    A_orig, B_orig = A, B
     A = A[np.ix_(permutation_cost, permutation_cost)]
     B = B[np.ix_(permutation_dist, permutation_dist)]
 
@@ -483,11 +484,16 @@ def _quadratic_assignment_faq(A, B,
 
             def f(x):  # computing the original optimization function
                 xP1xQ = x * P + (1 - x) * Q
+                # Sums below are np.trace(A11.T @ B11)
+                # + np.trace(xP1xQ.T @ A21 @ B21.T)
+                # + np.trace(xP1xQ.T @ A12.T @ B12)
+                # + np.trace(A22.T @ xP1xQ @ B22 @ xP1xQ.T)
+                # This is more efficient, but can we do even better?
                 return obj_func_scalar * (
-                    np.trace(A11.T @ B11)
-                    + np.trace(xP1xQ.T @ A21 @ B21.T)
-                    + np.trace(xP1xQ.T @ A12.T @ B12)
-                    + np.trace(A22.T @ xP1xQ @ B22 @ xP1xQ.T)
+                    (A11 * B11).sum()
+                    + (xP1xQ.T @ A21 * B21).sum()
+                    + (xP1xQ.T @ A12.T * B12.T).sum()
+                    + ((xP1xQ.T @ A22) * (B22 @ xP1xQ.T)).sum()
                 )
 
             # computing the step size
@@ -500,30 +506,19 @@ def _quadratic_assignment_faq(A, B,
 
         # Project onto the set of permutation matrices
         row, col = linear_sum_assignment(-P)
-        perm_inds_new = np.concatenate(
-            (np.arange(n_seeds), np.array([x + n_seeds for x in col]))
-        ).astype(int)
+        perm_inds_new = np.concatenate((np.arange(n_seeds), col + n_seeds))
 
-        score_new = _calc_score(A, B, perm_inds_new)
+        score = _calc_score(A, B, perm_inds_new)
 
-        if obj_func_scalar * score_new < obj_func_scalar * score:  # minimizing
-            score = score_new
+        # minimizing
+        if obj_func_scalar * score < obj_func_scalar * best_score:
+            best_score = score
             perm_inds = np.zeros(n, dtype=int)
             perm_inds[permutation_cost] = permutation_dist[perm_inds_new]
             total_iter = n_iter
 
-    permutation_cost_inv = np.argsort(permutation_cost)
-    A = A[
-        np.ix_(permutation_cost_inv, permutation_cost_inv)
-    ]
-    permutation_dist_inv = np.argsort(permutation_dist)
-    B = B[
-        np.ix_(permutation_dist_inv, permutation_dist_inv)
-    ]
-
-    score = _calc_score(A, B, perm_inds)
-
-    res = {"col_ind": perm_inds, "score": score, "nit": total_iter}
+    best_score = _calc_score(A_orig, B_orig, perm_inds)
+    res = {"col_ind": perm_inds, "score": best_score, "nit": total_iter}
 
     return OptimizeResult(res)
 
@@ -662,6 +657,7 @@ def _quadratic_assignment_2opt(A, B, maximize=False, partial_match=None,
            https://en.wikipedia.org/wiki/2-opt
     """
 
+    _check_unknown_options(unknown_options)
     rng = check_random_state(rng)
     A, B, partial_match = _common_input_validation(
             A, B, partial_match, maximize)

@@ -98,8 +98,7 @@ class QAPCommonTests(object):
                       [4, 2, 5, 0]])
 
         res = quadratic_assignment(A, B, method=self.method,
-                                   options={"init_weight": 0, "rng": 0,
-                                            "maximize": False})
+                                   options={"rng": 0, "maximize": False})
         if self.method == 'faq':
             # Global optimum is 176, but FAQ gets 178
             assert_equal(res.score, 178)
@@ -109,8 +108,7 @@ class QAPCommonTests(object):
             assert_equal(res.col_ind, np.array([1, 2, 3, 0]))
 
         res = quadratic_assignment(A, B, method=self.method,
-                                   options={"init_weight": 0, "rng": 0,
-                                            "maximize": True})
+                                   options={"rng": 0, "maximize": True})
         assert_equal(res.score, 286)
         assert_equal(res.col_ind, np.array([2, 3, 0, 1]))
 
@@ -119,13 +117,14 @@ class QAPCommonTests(object):
         A, B, opt_perm = chr12c()
 
         # basic minimization
-        res = quadratic_assignment(A, B, method=self.method)
+        res = quadratic_assignment(A, B, method=self.method,
+                                   options={"rng": 0})
         assert_(11156 <= res.score < 21000)
         assert_equal(res.score, _score(A, B, res.col_ind))
 
         # basic maximization
         res = quadratic_assignment(A, B, method=self.method,
-                                   options={'maximize': True})
+                                   options={"rng": 0, 'maximize': True})
         assert_(74000 <= res.score < 85000)
         assert_equal(res.score, _score(A, B, res.col_ind))
 
