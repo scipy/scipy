@@ -65,211 +65,269 @@ def _pdf_single_value_cf_integrate(x, alpha, beta, epsabs=EPSABS, **kwds):
     return (int1 + int2) / np.pi
 
 
-def _pdf_single_value_piecewise(x, alpha, beta, epsabs=EPSABS, **kwds):
+def _nolan_round_difficult_input(x0, alpha, beta, zeta):
+    """Round difficult input values for Nolan's method in [NO]."""
+    # following Nolan's STABLE,
+    #   "1. When 0 < |alpha-1| < 0.005, the program has numerical problems
+    #   evaluating the pdf and cdf.  The current version of the program sets
+    #   alpha=1 in these cases. This approximation is not bad in the S0
+    #   parameterization."
+    if abs(alpha - 1) < 0.005:
+        alpha = 1
+
+    #   "2. When alpha=1 and |beta| < 0.005, the program has numerical
+    #   problems.  The current version sets beta=0."
+    # We seem to have addressed this through re-expression of g(theta) here
+
+    #   "8. When |x0-beta*tan(pi*alpha/2)| is small, the
+    #   computations of the density and cumulative have numerical problems.
+    #   The program works around this by setting
+    #   z = beta*tan(pi*alpha/2) when
+    #   |z-beta*tan(pi*alpha/2)| < tol(5)*alpha**(1/alpha).
+    #   (The bound on the right is ad hoc, to get reasonable behavior
+    #   when alpha is small)."
+    # where tol(5) = 0.5e-2 by default.
+    #
+    # We seem to have partially addressed this through re-expression of
+    # g(theta) here, but it still needs to be used in some extreme cases.
+    # Perhaps tol(5) = 0.5e-2 could be reduced for our implementation.
+    if abs(x0 - zeta) < 0.5e-2 * alpha ** (1 / alpha):
+        x0 = zeta
+
+    return x0, alpha, beta
+
+
+def _nolan_g(alpha, beta, x0, xi, zeta):
+    """Special function from Nolan's method in [NO]."""
+    if alpha != 1:
+        # g gets called many times in QUADPACK, so we avoid recomputation here
+        # this significantly improves performance of the PDF/CDF integration
+        zeta_prefactor = (zeta ** 2 + 1) ** (-1 / (2 * (alpha - 1)))
+        alpha_exp = alpha / (alpha - 1)
+        alpha_xi = np.arctan(-zeta)
+        zeta_offset = x0 - zeta
+
+        def g(theta):
+            if theta == -xi:
+                return 0 if alpha < 1 else np.inf
+            elif theta == np.pi / 2:
+                return np.inf if alpha < 1 else 0
+
+            cos_theta = np.cos(theta)
+            return (zeta_prefactor
+                    * (cos_theta / np.sin(alpha_xi + alpha * theta)
+                       * zeta_offset) ** alpha_exp
+                    * np.cos(alpha_xi + (alpha - 1) * theta)
+                    / cos_theta)
+    else:
+        # g gets called many times in QUADPACK, so we avoid recomputation here
+        # this significantly improves performance of the PDF/CDF integration
+        two_beta_div_pi = 2.0 * beta / np.pi
+        pi_div_two_beta = 1 / two_beta_div_pi
+        x0_div_term = x0 / two_beta_div_pi
+
+        def g(theta):
+            if theta == -xi:
+                return 0
+            elif theta == np.pi / 2:
+                return np.inf
+
+            return ((1 + theta * two_beta_div_pi)
+                    * np.exp((pi_div_two_beta + theta) * np.tan(theta) -
+                             x0_div_term)
+                    / np.cos(theta))
+    return g
+
+
+def _nolan_c1(alpha, xi):
+    """Special function from Nolan's method in [NO]."""
+    if alpha != 1:
+        return 0.5 - xi / np.pi if alpha < 1 else 1
+    else:
+        return 0
+
+
+def _nolan_c2(alpha, beta, x0, zeta):
+    """Special function from Nolan's method in [NO]."""
+    if alpha != 1:
+        return alpha / np.pi / np.abs(alpha - 1) / (x0 - zeta)
+    else:
+        return 1.0 / np.abs(beta) / 2.0
+
+
+def _nolan_c3(alpha):
+    """Special function from Nolan's method in [NO]."""
+    if alpha != 1:
+        return np.sign(1 - alpha) / np.pi
+    else:
+        return 1 / np.pi
+
+
+def _pdf_single_value_piecewise(x, alpha, beta):
     """Calculate pdf using Nolan's methods as detailed in [NO].
     """
     zeta = -beta * np.tan(np.pi * alpha / 2.0)
-    if alpha == 2.:
-        return _norm_pdf(x/np.sqrt(2)) / np.sqrt(2)
+    xi = np.arctan(-zeta) / alpha if alpha != 1 else np.pi / 2
 
-    elif alpha != 1:
-        x0 = x + zeta  # convert to S_0 parameterization
-        xi = np.arctan(-zeta) / alpha
+    # convert to S_0 parameterization
+    x0 = x + zeta if alpha != 1 else x
 
-        if x0 > zeta:
+    x0, alpha, beta = _nolan_round_difficult_input(x0, alpha, beta, zeta)
 
-            def V(theta):
-                return (
-                    np.cos(alpha * xi) ** (1 / (alpha - 1))
-                    * (np.cos(theta) / np.sin(alpha * (xi + theta)))
-                    ** (alpha / (alpha - 1))
-                    * (
-                        np.cos(alpha * xi + (alpha - 1) * theta)
-                        / np.cos(theta)
-                    )
-                )
-
-            def g(theta):
-                return V(theta) * np.real(
-                    np.complex128(x0 - zeta) ** (alpha / (alpha - 1))
-                )
-
-            def f(theta):
-                g_1 = g(theta)
-                # as x*exp(-x) -> 0 as x -> inf
-                return 0 if g_1 == np.inf else g_1 * np.exp(-g_1)
-
-            # spare calculating integral on null set
-            # use isclose as macos has fp differences
-            if np.isclose(-xi, np.pi / 2, rtol=1e-014, atol=1e-014):
-                return 0.0
-
-            with np.errstate(all="ignore"):
-                intg_max = optimize.minimize_scalar(
-                    lambda theta: -f(theta), bounds=[-xi, np.pi / 2],
-                    method='brent',
-                    options=dict(xtol=epsabs)
-                )
-                intg_kwargs = {"epsabs": epsabs}
-                # windows quadpack less forgiving with points out of bounds
-                if (
-                    intg_max.success
-                    and not np.isnan(intg_max.fun)
-                    and intg_max.x > -xi
-                    and intg_max.x < np.pi / 2
-                ):
-                    intg_kwargs["points"] = [intg_max.x]
-                intg = integrate.quad(f, -xi, np.pi / 2, **intg_kwargs)[0]
-                return alpha * intg / np.pi / np.abs(alpha - 1) / (x0 - zeta)
-        elif x0 == zeta:
-            return (
+    # handle Nolan's initial case logic
+    if alpha == 1 and beta == 0.0:
+        return 1 / (1 + x ** 2) / np.pi
+    elif x0 == zeta:
+        return (
                 sc.gamma(1 + 1 / alpha)
                 * np.cos(xi)
                 / np.pi
                 / ((1 + zeta ** 2) ** (1 / alpha / 2))
+        )
+    elif x0 < zeta:
+        return _pdf_single_value_piecewise(-x, alpha, -beta)
+
+    # following Nolan, we may now assume
+    #   x0 > zeta when alpha != 1
+    #   beta != 0 when alpha == 1
+
+    c2 = _nolan_c2(alpha, beta, x0, zeta)
+    g = _nolan_g(alpha, beta, x0, xi, zeta)
+
+    # spare calculating integral on null set
+    # use isclose as macos has fp differences
+    if np.isclose(-xi, np.pi / 2, rtol=1e-014, atol=1e-014):
+        return 0.0
+
+    def integrand(theta):
+        # limit any numerical issues leading to g_1 < 0 near theta limits
+        g_1 = max(g(theta), 0)
+        return g_1 * np.exp(-g_1)
+
+    with np.errstate(all="ignore"):
+        peak = optimize.bisect(lambda t: g(t) - 1, -xi, np.pi / 2)
+
+        # this integrand can be very peaked, so we need to force
+        # QUADPACK to evaluate the function inside its support
+        #
+        # g(theta) > 300 log(10) or g(theta) < 1e-300 will make
+        #   g(theta) * exp(-g(theta)) ~ 1e-300
+        # (note doubles 1e-324 and smaller are exactly equal to 0.0)
+        exponent_upper_limit = 300 * np.log(10)
+        exponent_lower_limit = 1e-300
+
+        # since g is monotonic, we know the direction of increase/decrease
+        if g(-xi) > exponent_upper_limit > g(peak):
+            left_support = optimize.bisect(
+                lambda t: g(t) - exponent_upper_limit, -xi, peak
+            )
+            right_support = optimize.bisect(
+                lambda t: g(t) - exponent_lower_limit, peak, np.pi / 2
+            )
+        elif g(np.pi / 2) > exponent_upper_limit > g(peak):
+            left_support = optimize.bisect(
+                lambda t: g(t) - exponent_lower_limit, -xi, peak
+            )
+            right_support = optimize.bisect(
+                lambda t: g(t) - exponent_upper_limit, peak, np.pi / 2
             )
         else:
-            return _pdf_single_value_piecewise(-x, alpha, -beta)
-    else:
-        # since location zero, no need to reposition x for S_0 parameterization
-        xi = np.pi / 2
-        if beta != 0:
+            # fall back to full integration bounds
+            # in case of numerical difficulties
+            left_support = -xi
+            right_support = np.pi / 2
 
-            def V(theta):
-                expr_1 = np.pi / 2 + beta * theta
-                return (
-                    2.0
-                    * expr_1
-                    * np.exp(expr_1 * np.tan(theta) / beta)
-                    / np.cos(theta)
-                    / np.pi
-                )
+        # lastly, we add additional samples at
+        #   ~exp(-100), ~exp(-10), ~exp(-5), ~exp(-1)
+        # to improve QUADPACK's detection of rapidly descending tail behavior
+        # (this choice is fairly ad hoc)
+        tail_points = [
+            optimize.bisect(lambda t: g(t) - exp_height,
+                            -xi, np.pi / 2)
+            for exp_height in [100, 10, 5]
+            # exp_height = 1 is handled by peak
+        ]
+        intg_points = [left_support, peak, right_support] + tail_points
+        intg = integrate.quad(integrand, left_support, right_support,
+                              points=intg_points, limit=100,
+                              epsabs=EPSABS)[0]
 
-            def g(theta):
-                return np.exp(-np.pi * x / 2.0 / beta) * V(theta)
-
-            def f(theta):
-                g_1 = g(theta)
-                # as x*exp(-x) -> 0 as x -> inf
-                return 0 if g_1 == np.inf else g_1 * np.exp(-g_1)
-
-            with np.errstate(all="ignore"):
-                peaks = [
-                    optimize.ridder(
-                        lambda t2: g(t2) - 1, -np.pi / 2, np.pi / 2,
-                        xtol=epsabs
-                    ),
-                    optimize.brentq(
-                        lambda t2: g(t2) - 1, -np.pi / 2, np.pi / 2,
-                        xtol=epsabs
-                    )
-                ]
-
-                pidx = np.abs(np.array([g(p) - 1 for p in peaks])).argmin()
-
-                peak = peaks[pidx]
-
-                # find better upper bound as
-                # quadpack adaptive quadrature
-                # unable to handle long zero tails.
-                # TODO: better approach?
-                upper_interval = np.pi / 2 - peak
-                upper_bound = np.pi / 2
-                delta_sign = 1
-                test_point = peak
-                for i in range(20):
-                    delta = upper_interval / 2.0 ** i
-                    test_point = test_point + delta_sign * delta
-                    if np.isclose(f(test_point), 0, rtol=1e-013, atol=1e-013):
-                        upper_bound = test_point
-                        delta_sign = -1
-                    else:
-                        delta_sign = 1
-
-                with warnings.catch_warnings():
-                    warnings.filterwarnings('ignore', category=integrate.IntegrationWarning)
-                    intg = (
-                        integrate.quad(f, -np.pi / 2, peak, epsabs=epsabs)[0]
-                        + integrate.quad(f, peak, upper_bound, epsabs=epsabs)[0]
-                    )
-
-                return intg / np.abs(beta) / 2.0
-        else:
-            return 1 / (1 + x ** 2) / np.pi
+    return c2 * intg
 
 
 def _cdf_single_value_piecewise(x, alpha, beta, epsabs=EPSABS, **kwds):
     """Calculate cdf using Nolan's methods as detailed in [NO].
     """
     zeta = -beta * np.tan(np.pi * alpha / 2.0)
-    if alpha != 1:
-        x0 = x + zeta  # convert to S_0 parameterization
-        xi = np.arctan(-zeta) / alpha
+    xi = np.arctan(-zeta) / alpha if alpha != 1 else np.pi / 2
 
-        if x0 > zeta:
-            c_1 = 1 if alpha > 1 else 0.5 - xi / np.pi
+    # convert to S_0 parameterization
+    x0 = x + zeta if alpha != 1 else x
 
-            def V(theta):
-                return (
-                    np.cos(alpha * xi) ** (1 / (alpha - 1))
-                    * (np.cos(theta) / np.sin(alpha * (xi + theta)))
-                    ** (alpha / (alpha - 1))
-                    * (
-                        np.cos(alpha * xi + (alpha - 1) * theta)
-                        / np.cos(theta)
-                    )
-                )
+    x0, alpha, beta = _nolan_round_difficult_input(x0, alpha, beta, zeta)
 
-            def f(theta):
-                z = np.complex128(x0 - zeta)
-                return np.exp(-V(theta) * np.real(z ** (alpha / (alpha - 1))))
-
-            with np.errstate(all="ignore"):
-                # spare calculating integral on null set
-                # use isclose as macos has fp differences
-                if np.isclose(-xi, np.pi / 2, rtol=1e-014, atol=1e-014):
-                    intg = 0
-                else:
-                    intg = integrate.quad(f, -xi, np.pi / 2, epsabs=epsabs)[0]
-                return c_1 + np.sign(1 - alpha) * intg / np.pi
-        elif x0 == zeta:
-            return 0.5 - xi / np.pi
-        else:
-            return 1 - _cdf_single_value_piecewise(-x, alpha, -beta)
-
-    else:
-        # since location zero, no need to reposition x for S_0
-        # parameterization
-        xi = np.pi / 2
-        if beta > 0:
-
-            def V(theta):
-                expr_1 = np.pi / 2 + beta * theta
-                return (
-                    2.0
-                    * expr_1
-                    * np.exp(expr_1 * np.tan(theta) / beta)
-                    / np.cos(theta)
-                    / np.pi
-                )
-
-            with np.errstate(all="ignore"):
-                expr_1 = np.exp(-np.pi * x / beta / 2.0)
-                int_1 = integrate.quad(
-                    lambda theta: np.exp(-expr_1 * V(theta)),
-                    -np.pi / 2,
-                    np.pi / 2,
-                    epsabs=epsabs
-                )[0]
-                return int_1 / np.pi
-        elif beta == 0:
+    # handle Nolan's initial case logic
+    if alpha == 1:
+        if beta == 0:
             return 0.5 + np.arctan(x) / np.pi
-        else:
+        elif beta < 0:
             # NOTE: Nolan's paper has a typo here!
             # He states F(x) = 1 - F(x, alpha, -beta), but this is clearly
             # incorrect since F(-infty) would be 1.0 in this case
             # Indeed, the alpha != 1, x0 < zeta case is correct here.
-            return 1 - _cdf_single_value_piecewise(-x, 1, -beta)
+            return 1 - _cdf_single_value_piecewise(-x, alpha, -beta)
+    elif x0 == zeta:
+        return 0.5 - xi / np.pi
+    elif x0 < zeta:
+        return 1 - _cdf_single_value_piecewise(-x, alpha, -beta)
+
+    # following Nolan, we may now assume
+    #   x0 > zeta when alpha != 1
+    #   beta > 0 when alpha == 1
+
+    c1 = _nolan_c1(alpha, xi)
+    c3 = _nolan_c3(alpha)
+    g = _nolan_g(alpha, beta, x0, xi, zeta)
+
+    # spare calculating integral on null set
+    # use isclose as macos has fp differences
+    if np.isclose(-xi, np.pi / 2, rtol=1e-014, atol=1e-014):
+        return c1
+
+    def integrand(theta):
+        # limit any numerical issues leading to g_1 < 0 near theta limits
+        g_1 = max(g(theta), 0)
+        return np.exp(-g_1)
+
+    with np.errstate(all="ignore"):
+        # this integrand can have very small tails, so we need to force
+        # QUADPACK to evaluate the function inside its support
+        #
+        # g(theta) > 300 log(10) will make
+        #   exp(-g(theta)) ~ 1e-300
+        # (note doubles 1e-324 and smaller are exactly equal to 0.0)
+        exponent_upper_limit = 300 * np.log(10)
+        support_end = optimize.bisect(
+            lambda t: g(t) - exponent_upper_limit, -xi, np.pi / 2
+        )
+
+        # lastly, we add additional samples at
+        #   ~exp(-100), ~exp(-10), ~exp(-5), ~exp(-1)
+        # to improve QUADPACK's detection of rapidly descending tail behavior
+        # (this choice is fairly ad hoc)
+        tail_points = [
+            optimize.bisect(lambda t: g(t) - exp_height,
+                            -xi, np.pi / 2)
+            for exp_height in [100, 10, 5, 1]
+        ]
+        intg_points = [support_end] + tail_points
+
+        intg = integrate.quad(integrand, min(-xi, support_end),
+                              max(np.pi / 2, support_end),
+                              points=intg_points, limit=100,
+                              epsabs=EPSABS)[0]
+
+    return c1 + c3 * intg
 
 
 class levy_stable_gen(rv_continuous):
