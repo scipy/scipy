@@ -1739,29 +1739,29 @@ def matmul_toeplitz(c_or_cr, x, check_finite=False, workers=None):
     References
     ----------
     .. [1] : Jacob R Gardner, Geoff Pleiss, David Bindel, Kilian
-    Q Weinberger, Andrew Gordon Wilson, "GPyTorch: Blackbox Matrix-Matrix
-    Gaussian Process Inference with GPU Acceleration" with contributions
-    from Max Balandat and Ruihan Wu. Available online:
-    https://github.com/cornellius-gp/gpytorch
+       Q Weinberger, Andrew Gordon Wilson, "GPyTorch: Blackbox Matrix-Matrix
+       Gaussian Process Inference with GPU Acceleration" with contributions
+       from Max Balandat and Ruihan Wu. Available online:
+       https://github.com/cornellius-gp/gpytorch
 
     .. [2] : J. Demmel, P. Koev, and X. Li, "A Brief Survey of Direct Linear
-    Solvers". In Z. Bai, J. Demmel, J. Dongarra, A. Ruhe, and H. van der
-    Vorst, editors. Templates for the Solution of Algebraic Eigenvalue
-    Problems: A Practical Guide. SIAM, Philadelphia, 2000. Available online:
-    http://www.netlib.org/utk/people/JackDongarra/etemplates/node384.html
+       Solvers". In Z. Bai, J. Demmel, J. Dongarra, A. Ruhe, and H. van der
+       Vorst, editors. Templates for the Solution of Algebraic Eigenvalue
+       Problems: A Practical Guide. SIAM, Philadelphia, 2000. Available at:
+       http://www.netlib.org/utk/people/JackDongarra/etemplates/node384.html
 
     .. [3] : R. Scheibler, E. Bezzam, I. Dokmanic, Pyroomacoustics: A Python
-    package for audio room simulations and array processing algorithms,
-    Proc. IEEE ICASSP, Calgary, CA, 2018.
-    https://github.com/LCAV/pyroomacoustics/blob/pypi-release/pyroomacoustics
-    /adaptive/util.py
+       package for audio room simulations and array processing algorithms,
+       Proc. IEEE ICASSP, Calgary, CA, 2018.
+       https://github.com/LCAV/pyroomacoustics/blob/pypi-release/
+       pyroomacoustics/adaptive/util.py
 
     .. [4] : Marano S, Edwards B, Ferrari G and Fah D (2017), "Fitting
-    Earthquake Spectra: Colored Noise and Incomplete Data", Bulletin of
-    the Seismological Society of America., January, 2017. Vol. 107(1),
-    pp. 276-291. Implementation available online at:
-    http://mercalli.ethz.ch/~marra/publications/2017_fitting_earthquake_spect
-    ra_colored_noise_and_incomplete_data/ToeplitzOperations.py
+       Earthquake Spectra: Colored Noise and Incomplete Data", Bulletin of
+       the Seismological Society of America., January, 2017. Vol. 107(1),
+       pp. 276-291. Implementation available online at:
+       http://mercalli.ethz.ch/~marra/publications/2017_fitting_earthquake_
+       spectra_colored_noise_and_incomplete_data/ToeplitzOperations.py
 
     Examples
     --------
