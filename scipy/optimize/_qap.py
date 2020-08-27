@@ -64,8 +64,8 @@ def quadratic_assignment(A, B, method="faq", options=None):
             known as a "seed" [2]_.
 
             Each row of `partial_match` specifies the indices of a pair of
-            corresponding nodes, that is, node ``partial_match[i, 0]` of `A` is
-            matched to node ``partial_match[i, 1]`` of `B`. Accordingly,
+            corresponding nodes, that is, node ``partial_match[i, 0]`` of `A`
+            is matched to node ``partial_match[i, 1]`` of `B`. Accordingly,
             ``partial_match`` is an array of size ``(m , 2)``, where ``m`` is
             less than the number of nodes.
 
@@ -96,7 +96,7 @@ def quadratic_assignment(A, B, method="faq", options=None):
         col_ind : 1-D array
             An array of column indices corresponding with the best
             permutation of the nodes of `B` found.
-        score : float
+        fun : float
             The corresponding value of the objective function.
         nit : int
             The number of iterations performed during optimization.
@@ -137,36 +137,36 @@ def quadratic_assignment(A, B, method="faq", options=None):
     >>> print(res)
      col_ind: array([0, 3, 2, 1])
          nit: 9
-       score: 3260
+         fun: 3260
 
-    The see the relationship between the returned ``col_ind`` and ``score``,
+    The see the relationship between the returned ``col_ind`` and ``fun``,
     use ``col_ind`` to form the best permutation matrix found, then evaluate
     the objective function :math:`f(P) = trace(A^T P B P^T )`.
 
     >>> n = A.shape[0]
     >>> perm = res['col_ind']
-    >>> P = np.eye(n)[perm]
-    >>> score = int(np.trace(A.T @ P @ B @ P.T))
-    >>> print(score)
+    >>> P = np.eye(n, dtype=int)[perm]
+    >>> fun = np.trace(A.T @ P @ B @ P.T)
+    >>> print(fun)
     3260
 
     Alternatively, to avoid constructing the permutation matrix explicitly,
     directly permute the rows and columns of the distance matrix.
 
-    >>> score = np.trace(A.T @ B[perm][:, perm])
-    >>> print(score)
+    >>> fun = np.trace(A.T @ B[perm][:, perm])
+    >>> print(fun)
     3260
 
     Although not guaranteed in general, ``quadratic_assignment`` happens to
     have found the globally optimal solution.
 
     >>> from itertools import permutations
-    >>> perm_opt, score_opt = None, np.inf
+    >>> perm_opt, fun_opt = None, np.inf
     >>> for perm in permutations([0, 1, 2, 3]):
     ...     perm = np.array(perm)
-    ...     score = int(np.trace(A.T @ B[perm][:, perm]))
-    ...     if score < score_opt:
-    ...         score_opt, perm_opt = score, perm
+    ...     fun = np.trace(A.T @ B[perm][:, perm])
+    ...     if fun < fun_opt:
+    ...         fun_opt, perm_opt = fun, perm
     >>> print(np.array_equal(perm_opt, res['col_ind']))
     True
 
@@ -181,7 +181,7 @@ def quadratic_assignment(A, B, method="faq", options=None):
     >>> print(res)
      col_ind: array([1, 0, 3, 2])
          nit: 13
-       score: 178
+         fun: 178
 
     If accuracy is important, consider using  :ref:`'2opt' <optimize.qap-2opt>`
     to refine the solution.
@@ -192,7 +192,7 @@ def quadratic_assignment(A, B, method="faq", options=None):
     >>> print(res)
      col_ind: array([1, 2, 3, 0])
          nit: 17
-       score: 176
+         fun: 176
 
     """
 
@@ -253,7 +253,7 @@ def _common_input_validation(A, B, partial_match):
 def _quadratic_assignment_faq(A, B,
                               maximize=False, partial_match=None, rng=None,
                               init_J="barycenter", init_weight=None, init_k=1,
-                              maxiter=30, shuffle_input=True, eps=0.05,
+                              maxiter=30, shuffle_input=True, tol=0.05,
                               **unknown_options
                               ):
     r"""
@@ -369,11 +369,11 @@ def _quadratic_assignment_faq(A, B,
         sorting of input matrices, gives users the option
         to shuffle the nodes. Results are then unshuffled so that the
         returned results correspond with the node order of inputs.
-    eps : float (default = 0.05)
+    tol : float (default = 0.05)
         A threshold for the stopping criterion. Franke-Wolfe
         iteration terminates when the change in search position between
         iterations is sufficiently small, that is, when the Frobenius
-        norm of :math:`(P_{i}-P_{i+1}) \leq eps`, where :math:`i` is
+        norm of :math:`(P_{i}-P_{i+1}) \leq tol`, where :math:`i` is
         the iteration number.
 
     Returns
@@ -385,7 +385,7 @@ def _quadratic_assignment_faq(A, B,
         col_ind : 1-D array
             An array of column indices corresponding with the best
             permutation of the nodes of `B` found.
-        score : float
+        fun : float
             The corresponding value of the objective function.
         nit : int
             The number of Franke-Wolfe iterations performed during
@@ -436,8 +436,8 @@ def _quadratic_assignment_faq(A, B,
         msg = "'init_k' must be a positive integer"
     elif maxiter <= 0:
         msg = "'maxiter' must be a positive integer"
-    elif eps <= 0:
-        msg = "'eps' must be a positive float"
+    elif tol <= 0:
+        msg = "'tol' must be a positive float"
     if msg is not None:
         raise ValueError(msg)
 
@@ -446,7 +446,7 @@ def _quadratic_assignment_faq(A, B,
     n_seeds = partial_match.shape[0]  # number of seeds
     n_unseed = n - n_seeds
 
-    perm_inds = np.zeros(n)
+    best_perm = np.zeros(n)
 
     obj_func_scalar = 1
     if maximize:
@@ -459,13 +459,12 @@ def _quadratic_assignment_faq(A, B,
         # shuffle_input to avoid results from inputs that were already matched
 
     seed_cost_c = np.setdiff1d(range(n), partial_match[:, 0])
-    permutation_cost = np.concatenate([partial_match[:, 0],
-                                       seed_cost_c], axis=None).astype(int)
-    permutation_dist = np.concatenate([partial_match[:, 1],
-                                       seed_dist_c], axis=None).astype(int)
-    A_orig, B_orig = A, B
-    A = A[np.ix_(permutation_cost, permutation_cost)]
-    B = B[np.ix_(permutation_dist, permutation_dist)]
+    perm_A = np.concatenate([partial_match[:, 0],
+                             seed_cost_c], axis=None).astype(int)
+    perm_B = np.concatenate([partial_match[:, 1],
+                             seed_dist_c], axis=None).astype(int)
+    A = A[np.ix_(perm_A, perm_A)]
+    B = B[np.ix_(perm_B, perm_B)]
 
     # definitions according to Seeded Graph Matching [2].
     A11 = A[:n_seeds, :n_seeds]
@@ -502,7 +501,7 @@ def _quadratic_assignment_faq(A, B,
         n_iter = 0  # number of FW iterations
 
         # OPTIMIZATION WHILE LOOP BEGINS
-        while grad_P > eps and n_iter < maxiter:
+        while grad_P > tol and n_iter < maxiter:
             # computing the gradient of f(P) = -tr(APB^tP^t)
             delta_f = (const_sum + A22 @ P @ B22.T + A22.T @ P @ B22)
             # run hungarian algorithm on gradient(f(P))
@@ -534,18 +533,18 @@ def _quadratic_assignment_faq(A, B,
 
         # Project onto the set of permutation matrices
         row, col = linear_sum_assignment(-P)
-        perm_inds_new = np.concatenate((np.arange(n_seeds), col + n_seeds))
+        perm = np.concatenate((np.arange(n_seeds), col + n_seeds))
 
-        score = _calc_score(A, B, perm_inds_new)
+        score = _calc_score(A, B, perm)
 
         # minimizing
         if obj_func_scalar * score < obj_func_scalar * best_score:
             best_score = score
-            perm_inds = np.zeros(n, dtype=int)
-            perm_inds[permutation_cost] = permutation_dist[perm_inds_new]
+            best_perm = np.zeros(n, dtype=int)
+            best_perm[perm_A] = perm_B[perm]
             total_iter = n_iter
 
-    res = {"col_ind": perm_inds, "score": best_score, "nit": total_iter}
+    res = {"col_ind": best_perm, "fun": best_score, "nit": total_iter}
 
     return OptimizeResult(res)
 
@@ -565,7 +564,7 @@ def _check_init_input(init_J, n):
         raise ValueError(msg)
 
 
-def _doubly_stochastic(P, eps=1e-3):
+def _doubly_stochastic(P, tol=1e-3):
     # cleaner implementation of btaba/sinkhorn_knopp
 
     max_iter = 1000
@@ -574,8 +573,8 @@ def _doubly_stochastic(P, eps=1e-3):
     P_eps = P
 
     for it in range(max_iter):
-        if ((np.abs(P_eps.sum(axis=1) - 1) < eps).all() and
-                (np.abs(P_eps.sum(axis=0) - 1) < eps).all()):
+        if ((np.abs(P_eps.sum(axis=1) - 1) < tol).all() and
+                (np.abs(P_eps.sum(axis=0) - 1) < tol).all()):
             # All column/row sums ~= 1 within threshold
             break
 
@@ -680,7 +679,7 @@ def _quadratic_assignment_2opt(A, B, maximize=False, partial_match=None,
         col_ind : 1-D array
             An array of column indices corresponding with the best
             permutation of the nodes of `B` found.
-        score : float
+        fun : float
             The corresponding value of the objective function.
         nit : int
             The number of iterations performed during optimization.
@@ -775,6 +774,6 @@ def _quadratic_assignment_2opt(A, B, maximize=False, partial_match=None,
         else:  # no swaps made
             done = True
 
-    res = {"col_ind": perm, "score": best_score, "nit": n_iter}
+    res = {"col_ind": perm, "fun": best_score, "nit": n_iter}
 
     return OptimizeResult(res)

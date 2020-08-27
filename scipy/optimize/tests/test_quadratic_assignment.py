@@ -71,7 +71,7 @@ class QAPCommonTests(object):
 
         res = quadratic_assignment(A, B, method=self.method,
                                    options={"rng": 0, "maximize": False})
-        assert_equal(res.score, 10)
+        assert_equal(res.fun, 10)
         assert_equal(res.col_ind, np.array([1, 2, 3, 0]))
 
         res = quadratic_assignment(A, B, method=self.method,
@@ -79,10 +79,10 @@ class QAPCommonTests(object):
 
         if self.method == 'faq':
             # Global optimum is 40, but FAQ gets 37
-            assert_equal(res.score, 37)
+            assert_equal(res.fun, 37)
             assert_equal(res.col_ind, np.array([0, 2, 3, 1]))
         else:
-            assert_equal(res.score, 40)
+            assert_equal(res.fun, 40)
             assert_equal(res.col_ind, np.array([0, 3, 1, 2]))
 
         res = quadratic_assignment(A, B, method=self.method,
@@ -108,15 +108,15 @@ class QAPCommonTests(object):
                                    options={"rng": 0, "maximize": False})
         if self.method == 'faq':
             # Global optimum is 176, but FAQ gets 178
-            assert_equal(res.score, 178)
+            assert_equal(res.fun, 178)
             assert_equal(res.col_ind, np.array([1, 0, 3, 2]))
         else:
-            assert_equal(res.score, 176)
+            assert_equal(res.fun, 176)
             assert_equal(res.col_ind, np.array([1, 2, 3, 0]))
 
         res = quadratic_assignment(A, B, method=self.method,
                                    options={"rng": 0, "maximize": True})
-        assert_equal(res.score, 286)
+        assert_equal(res.fun, 286)
         assert_equal(res.col_ind, np.array([2, 3, 0, 1]))
 
     def test_accuracy_3(self):
@@ -126,28 +126,28 @@ class QAPCommonTests(object):
         # basic minimization
         res = quadratic_assignment(A, B, method=self.method,
                                    options={"rng": 0})
-        assert_(11156 <= res.score < 21000)
-        assert_equal(res.score, _score(A, B, res.col_ind))
+        assert_(11156 <= res.fun < 21000)
+        assert_equal(res.fun, _score(A, B, res.col_ind))
 
         # basic maximization
         res = quadratic_assignment(A, B, method=self.method,
                                    options={"rng": 0, 'maximize': True})
-        assert_(74000 <= res.score < 85000)
-        assert_equal(res.score, _score(A, B, res.col_ind))
+        assert_(74000 <= res.fun < 85000)
+        assert_equal(res.fun, _score(A, B, res.col_ind))
 
         # check ofv with strictly partial match
         seed_cost = np.array([4, 8, 10])
         seed = np.asarray([seed_cost, opt_perm[seed_cost]]).T
         res = quadratic_assignment(A, B, method=self.method,
                                    options={'partial_match': seed})
-        assert_(11156 <= res.score < 21000)
+        assert_(11156 <= res.fun < 21000)
         assert_equal(res.col_ind[seed_cost], opt_perm[seed_cost])
 
         # check performance when partial match is the global optimum
         seed = np.asarray([np.arange(len(A)), opt_perm]).T
         res = quadratic_assignment(A, B, method=self.method,
                                    options={'partial_match': seed})
-        assert_equal(res.score, 11156)
+        assert_equal(res.fun, 11156)
 
     def test_unknown_options(self):
         A, B, opt_perm = chr12c()
@@ -174,14 +174,14 @@ class TestFAQ(QAPCommonTests):
         # test with no shuffle
         res = quadratic_assignment(A, B,
                                    options={'shuffle_input': False})
-        assert_(11156 <= res.score < 21000)
+        assert_(11156 <= res.fun < 21000)
 
         # check with specified init_J
         K = np.ones((n, n)) / float(n)
         K = _doubly_stochastic(K)
         res = quadratic_assignment(A, B,
                                    options={'init_J': K})
-        assert_(11156 <= res.score < 21000)
+        assert_(11156 <= res.fun < 21000)
 
     def test_specific_input_validation(self):
 
@@ -211,8 +211,8 @@ class TestFAQ(QAPCommonTests):
         with pytest.raises(
                 ValueError, match="'maxiter' must be a positive integer"):
             quadratic_assignment(A, B, options={'maxiter': -1})
-        with pytest.raises(ValueError, match="'eps' must be a positive float"):
-            quadratic_assignment(A, B, options={'eps': -1})
+        with pytest.raises(ValueError, match="'tol' must be a positive float"):
+            quadratic_assignment(A, B, options={'tol': -1})
 
         # TypeError Checks: making sure single value parameters are of
         # correct type
@@ -231,7 +231,7 @@ class TestFAQ(QAPCommonTests):
             )
 
         K = np.random.rand(3, 3)
-        K = _doubly_stochastic(K, eps=1)
+        K = _doubly_stochastic(K, tol=1)
         # matrix that isn't quite doubly stochastic
         with pytest.raises(
                 ValueError, match="`init_J` matrix must be doubly stochastic"):
@@ -413,7 +413,7 @@ def test_rand_qap():
         A, B, options={'init_weight': 0.5, 'init_k': 100}
     )
 
-    assert_(11156 <= res.score < 14500)
+    assert_(11156 <= res.fun < 14500)
 
 
 def _range_matrix(a, b):
@@ -423,7 +423,7 @@ def _range_matrix(a, b):
     return mat
 
 
-def _doubly_stochastic(P, eps=1e-3):
+def _doubly_stochastic(P, tol=1e-3):
     # cleaner implementation of btaba/sinkhorn_knopp
 
     max_iter = 1000
@@ -432,8 +432,8 @@ def _doubly_stochastic(P, eps=1e-3):
     P_eps = P
 
     for it in range(max_iter):
-        if ((np.abs(P_eps.sum(axis=1) - 1) < eps).all() and
-                (np.abs(P_eps.sum(axis=0) - 1) < eps).all()):
+        if ((np.abs(P_eps.sum(axis=1) - 1) < tol).all() and
+                (np.abs(P_eps.sum(axis=0) - 1) < tol).all()):
             # All column/row sums ~= 1 within threshold
             break
 
