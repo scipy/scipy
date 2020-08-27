@@ -378,7 +378,8 @@ def map_coordinates(input, coordinates, output=None, order=3,
         if mode in ['nearest', 'grid-constant']:
             npad = 12
             if mode == 'grid-constant':
-	            input = numpy.pad(input, npad, mode='constant', constant_values=cval)
+                input = numpy.pad(input, npad, mode='constant',
+                                  constant_values=cval)
             elif mode == 'nearest':
                 input = numpy.pad(input, npad, mode='edge')
             coordinates = coordinates + npad
