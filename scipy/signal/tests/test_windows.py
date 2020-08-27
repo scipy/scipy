@@ -98,8 +98,11 @@ class TestTaylor(object):
     def test_simple(self):
         assert_allclose(windows.taylor(1, 2, -15), 1.0)
         assert_allclose(windows.taylor(5, 2, -15),
-                            np.array([0.75803341, 0.90757699, 1.0,
-                                    0.90757699, 0.75803341]))
+                        np.array([0.75803341, 0.90757699, 1.0,
+                                  0.90757699, 0.75803341]))
+        assert_allclose(windows.taylor(6, 2, -15),
+                        np.array([0.7504082, 0.86624416, 0.98208011,
+                                  0.98208011, 0.86624416, 0.7504082]))
 
 class TestBohman(object):
 
