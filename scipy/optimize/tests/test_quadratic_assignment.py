@@ -206,9 +206,6 @@ class TestFAQ(QAPCommonTests):
                 match="'init_weight' must be strictly between zero and one"):
             quadratic_assignment(A, B, options={'init_weight': 2})
         with pytest.raises(
-                ValueError, match="'init_k' must be a positive integer"):
-            quadratic_assignment(A, B, options={'init_k': -1})
-        with pytest.raises(
                 ValueError, match="'maxiter' must be a positive integer"):
             quadratic_assignment(A, B, options={'maxiter': -1})
         with pytest.raises(ValueError, match="'tol' must be a positive float"):
@@ -216,8 +213,6 @@ class TestFAQ(QAPCommonTests):
 
         # TypeError Checks: making sure single value parameters are of
         # correct type
-        with pytest.raises(TypeError):
-            quadratic_assignment(A, B, options={'init_k': 1.5})
         with pytest.raises(TypeError):
             quadratic_assignment(A, B, options={'maxiter': 1.5})
 
@@ -402,18 +397,6 @@ class TestQAPOnce():
                 np.identity(3), np.identity(3),
                 options={'partial_match': np.ones((2, 2))}
             )
-
-
-@pytest.mark.slow
-def test_rand_qap():
-    A, B, opt_perm = chr12c()
-
-    # check ofv with 100 random initializations
-    res = quadratic_assignment(
-        A, B, options={'init_weight': 0.5, 'init_k': 100}
-    )
-
-    assert_(11156 <= res.fun < 14500)
 
 
 def _range_matrix(a, b):

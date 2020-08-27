@@ -252,7 +252,7 @@ def _common_input_validation(A, B, partial_match):
 
 def _quadratic_assignment_faq(A, B,
                               maximize=False, partial_match=None, rng=None,
-                              init_J="barycenter", init_weight=None, init_k=1,
+                              init_J="barycenter", init_weight=1,
                               maxiter=30, shuffle_input=True, tol=0.05,
                               **unknown_options
                               ):
@@ -343,27 +343,19 @@ def _quadratic_assignment_faq(A, B,
         array of ones, is used. This is the "barycenter" of the
         search space of doubly-stochastic matrices.
 
-    init_weight : float in range [0, 1]
+    init_weight : float in range [0, 1] (default = 1)
         Allows the user to specify the weight of the provided
         search position :math:`J` relative to random perturbations
         :math:`K`.
 
-        The algorithm will be repeated :math:`k` times
-        from randomized initial search positions
-        :math:`P_0 = (\alpha J + (1- \alpha) K`, where
+        The algorithm will start from the randomized initial search
+        position :math:`P_0 = (\alpha J + (1- \alpha) K`, where
         :math:`J` is given by option `init_J`,
         :math:`\alpha` is given by option `init_weight`,
-        :math:`k` is given by option `init_k`, and
         :math:`K` is a random doubly stochastic matrix.
 
-        Default is 1 if `init_k` is 1, 0 otherwise.
-    init_k : int, positive (default = 1)
-        The number of randomized initial search positions :math:`P_0`
-        from which the FAQ algorithm will proceed.
     maxiter : int, positive (default = 30)
-        Integer specifying the max number of Franke-Wolfe iterations
-        per initial search position. FAQ typically converges within a
-        modest number of iterations.
+        Integer specifying the max number of Franke-Wolfe iterations performed.
     shuffle_input : bool (default = True)
         To avoid artificially high or low matching due to inherent
         sorting of input matrices, gives users the option
@@ -398,9 +390,40 @@ def _quadratic_assignment_faq(A, B,
     search "position") due to the possibility of several local minima
     within the feasible region. A barycenter initialization is more likely to
     result in a better solution than a single random initialization. However,
-    use of several randomized initializations  (through `init_weight` and
-    `init_k`) will likely result in a better solution at the cost of higher
-    runtime.
+    ``quadratic_assignment`` calling several times with different random
+    initializations may result in a better optimum at the cost of longer
+    total execution time.
+
+    Examples
+    --------
+    As mentioned above, a barycenter initialization often results in a better
+    solution than a single random initialization.
+
+    >>> np.random.seed(0)
+    >>> n = 15
+    >>> A = np.random.rand(n, n)
+    >>> B = np.random.rand(n, n)
+    >>> res = quadratic_assignment(A, B)  # FAQ is default method
+    >>> print(res.fun)
+    46.871483385480545 # may vary
+
+    >>> options = {"init_weight": 0}  # use 100% random initialization
+    >>> res = quadratic_assignment(A, B, options=options)
+    >>> print(res.fun)
+    46.91558492779956 # may vary
+
+    However, consider running from several random initializations and keeping
+    the best result.
+    >>> res = min([quadratic_assignment(A, B, options=options)
+    ...            for i in range(30)], key=lambda x: x.fun)
+    >>> print(res.fun)
+    46.50791824173632 # may vary
+
+    The '2-opt' method can be used to further refine the results.
+    >>> options = {"partial_guess": np.array([np.arange(n), res.col_ind]).T}
+    >>> res = quadratic_assignment(A, B, method="2opt", options=options)
+    >>> print(res.fun)
+    46.47160735721583 # may vary
 
     References
     ----------
@@ -417,9 +440,6 @@ def _quadratic_assignment_faq(A, B,
 
     _check_unknown_options(unknown_options)
 
-    init_k = operator.index(init_k)
-    if init_k > 1 and init_weight is None:
-        init_weight = 0
     maxiter = operator.index(maxiter)
 
     # ValueError check
@@ -432,8 +452,6 @@ def _quadratic_assignment_faq(A, B,
         msg = "Invalid 'init_J' parameter string"
     elif init_weight is not None and (init_weight < 0 or init_weight > 1):
         msg = "'init_weight' must be strictly between zero and one"
-    elif init_k <= 0:
-        msg = "'init_k' must be a positive integer"
     elif maxiter <= 0:
         msg = "'maxiter' must be a positive integer"
     elif tol <= 0:
@@ -446,12 +464,9 @@ def _quadratic_assignment_faq(A, B,
     n_seeds = partial_match.shape[0]  # number of seeds
     n_unseed = n - n_seeds
 
-    best_perm = np.zeros(n)
-
     obj_func_scalar = 1
     if maximize:
         obj_func_scalar = -1
-    best_score = obj_func_scalar * np.inf
 
     seed_dist_c = np.setdiff1d(range(n), partial_match[:, 1])
     if shuffle_input:
@@ -463,6 +478,7 @@ def _quadratic_assignment_faq(A, B,
                              seed_cost_c], axis=None).astype(int)
     perm_B = np.concatenate([partial_match[:, 1],
                              seed_dist_c], axis=None).astype(int)
+
     A = A[np.ix_(perm_A, perm_A)]
     B = B[np.ix_(perm_B, perm_B)]
 
@@ -483,68 +499,61 @@ def _quadratic_assignment_faq(A, B,
         _check_init_input(init_J, n_unseed)
         J = init_J
 
-    total_iter = 0
-    for i in range(init_k):
-        if init_weight is not None:
-            # generate a nxn matrix where each entry is a random number [0, 1]
-            # would use rand, but Generators don't have it
-            # would use random, but old mtrand.RandomStates don't have it
-            K = rng.uniform(size=(n_unseed, n_unseed))
-            # Sinkhorn balancing
-            K = _doubly_stochastic(K)
-            # initialize J, a doubly stochastic barycenter
-            P = J * init_weight + (1 - init_weight) * K
-        else:
-            P = J
-        const_sum = A21 @ B21.T + A12.T @ B12
-        grad_P = np.inf  # gradient of P
-        n_iter = 0  # number of FW iterations
+    if init_weight is not None:
+        # generate a nxn matrix where each entry is a random number [0, 1]
+        # would use rand, but Generators don't have it
+        # would use random, but old mtrand.RandomStates don't have it
+        K = rng.uniform(size=(n_unseed, n_unseed))
+        # Sinkhorn balancing
+        K = _doubly_stochastic(K)
+        # initialize J, a doubly stochastic barycenter
+        P = J * init_weight + (1 - init_weight) * K
+    else:
+        P = J
+    const_sum = A21 @ B21.T + A12.T @ B12
+    grad_P = np.inf  # gradient of P
+    n_iter = 0  # number of FW iterations
 
-        # OPTIMIZATION WHILE LOOP BEGINS
-        while grad_P > tol and n_iter < maxiter:
-            # computing the gradient of f(P) = -tr(APB^tP^t)
-            delta_f = (const_sum + A22 @ P @ B22.T + A22.T @ P @ B22)
-            # run hungarian algorithm on gradient(f(P))
-            rows, cols = linear_sum_assignment(obj_func_scalar * delta_f)
-            Q = np.zeros((n_unseed, n_unseed))
-            Q[rows, cols] = 1  # initialize search direction matrix Q
+    # OPTIMIZATION WHILE LOOP BEGINS
+    while grad_P > tol and n_iter < maxiter:
+        # computing the gradient of f(P) = -tr(APB^tP^t)
+        delta_f = (const_sum + A22 @ P @ B22.T + A22.T @ P @ B22)
+        # run hungarian algorithm on gradient(f(P))
+        rows, cols = linear_sum_assignment(obj_func_scalar * delta_f)
+        Q = np.zeros((n_unseed, n_unseed))
+        Q[rows, cols] = 1  # initialize search direction matrix Q
 
-            def f(x):  # computing the original optimization function
-                xP1xQ = x * P + (1 - x) * Q
-                # Sums below are np.trace(A11.T @ B11)
-                # + np.trace(xP1xQ.T @ A21 @ B21.T)
-                # + np.trace(xP1xQ.T @ A12.T @ B12)
-                # + np.trace(A22.T @ xP1xQ @ B22 @ xP1xQ.T)
-                # This is more efficient, but can we do even better?
-                return obj_func_scalar * (
-                    (A11 * B11).sum()
-                    + (xP1xQ.T @ A21 * B21).sum()
-                    + (xP1xQ.T @ A12.T * B12.T).sum()
-                    + ((xP1xQ.T @ A22) * (B22 @ xP1xQ.T)).sum()
-                )
+        def f(x):  # computing the original optimization function
+            xP1xQ = x * P + (1 - x) * Q
+            # Sums below are np.trace(A11.T @ B11)
+            # + np.trace(xP1xQ.T @ A21 @ B21.T)
+            # + np.trace(xP1xQ.T @ A12.T @ B12)
+            # + np.trace(A22.T @ xP1xQ @ B22 @ xP1xQ.T)
+            # This is more efficient, but can we do even better?
+            return obj_func_scalar * (
+                (A11 * B11).sum()
+                + (xP1xQ.T @ A21 * B21).sum()
+                + (xP1xQ.T @ A12.T * B12.T).sum()
+                + ((xP1xQ.T @ A22) * (B22 @ xP1xQ.T)).sum()
+            )
 
-            # computing the step size
-            alpha = minimize_scalar(f, bounds=(0, 1), method="bounded").x
-            P_i1 = alpha * P + (1 - alpha) * Q  # Update P
-            grad_P = np.linalg.norm(P - P_i1)
-            P = P_i1
-            n_iter += 1
-        # end of FW optimization loop
+        # computing the step size
+        alpha = minimize_scalar(f, bounds=(0, 1), method="bounded").x
+        P_i1 = alpha * P + (1 - alpha) * Q  # Update P
+        grad_P = np.linalg.norm(P - P_i1)
+        P = P_i1
+        n_iter += 1
+    # end of FW optimization loop
 
-        # Project onto the set of permutation matrices
-        row, col = linear_sum_assignment(-P)
-        perm = np.concatenate((np.arange(n_seeds), col + n_seeds))
+    # Project onto the set of permutation matrices
+    row, col = linear_sum_assignment(-P)
+    perm = np.concatenate((np.arange(n_seeds), col + n_seeds))
+    score = _calc_score(A, B, perm)
 
-        score = _calc_score(A, B, perm)
+    unshuffled_perm = np.zeros(n, dtype=int)
+    unshuffled_perm[perm_A] = perm_B[perm]
 
-        # minimizing
-        if obj_func_scalar * score < obj_func_scalar * best_score:
-            best_score = score
-            best_perm = np.zeros(n, dtype=int)
-            best_perm[perm_A] = perm_B[perm]
-            total_iter = n_iter
-
-    res = {"col_ind": best_perm, "fun": best_score, "nit": total_iter}
+    res = {"col_ind": unshuffled_perm, "fun": score, "nit": n_iter}
 
     return OptimizeResult(res)
 
