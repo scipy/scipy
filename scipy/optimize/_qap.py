@@ -349,18 +349,20 @@ def _quadratic_assignment_faq(A, B,
         :math:`K`.
 
         The algorithm will start from the randomized initial search
-        position :math:`P_0 = (\alpha J + (1- \alpha) K`, where
+        position :math:`P_0 = (\alpha J + (1 - \alpha) K`, where
         :math:`J` is given by option `init_J`,
         :math:`\alpha` is given by option `init_weight`,
         :math:`K` is a random doubly stochastic matrix.
 
     maxiter : int, positive (default = 30)
         Integer specifying the max number of Franke-Wolfe iterations performed.
+
     shuffle_input : bool (default = True)
         To avoid artificially high or low matching due to inherent
         sorting of input matrices, gives users the option
         to shuffle the nodes. Results are then unshuffled so that the
         returned results correspond with the node order of inputs.
+
     tol : float (default = 0.05)
         A threshold for the stopping criterion. Franke-Wolfe
         iteration terminates when the change in search position between
@@ -448,7 +450,7 @@ def _quadratic_assignment_faq(A, B,
         msg = "`A` and `B` matrices must contain only non-negative elements."
     elif isinstance(init_J, str) and init_J not in {'barycenter'}:
         msg = "Invalid 'init_J' parameter string"
-    elif init_weight is not None and (init_weight < 0 or init_weight > 1):
+    elif init_weight < 0 or init_weight > 1:
         msg = "'init_weight' must be strictly between zero and one"
     elif maxiter <= 0:
         msg = "'maxiter' must be a positive integer"
@@ -497,7 +499,7 @@ def _quadratic_assignment_faq(A, B,
         _check_init_input(init_J, n_unseed)
         J = init_J
 
-    if init_weight is not None:
+    if init_weight != 1:
         # generate a nxn matrix where each entry is a random number [0, 1]
         # would use rand, but Generators don't have it
         # would use random, but old mtrand.RandomStates don't have it
