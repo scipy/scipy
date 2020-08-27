@@ -380,9 +380,7 @@ def _quadratic_assignment_faq(A, B,
         fun : float
             The corresponding value of the objective function.
         nit : int
-            The number of Franke-Wolfe iterations performed during
-            the initialization resulting in the permutation
-            returned.
+            The number of Franke-Wolfe iterations performed.
 
     Notes
     -----
