@@ -468,29 +468,20 @@ def _quadratic_assignment_faq(A, B,
     if maximize:
         obj_func_scalar = -1
 
-    seed_dist_c = np.setdiff1d(range(n), partial_match[:, 1])
+    nonseed_B = np.setdiff1d(range(n), partial_match[:, 1])
     if shuffle_input:
-        seed_dist_c = rng.permutation(seed_dist_c)
+        nonseed_B = rng.permutation(nonseed_B)
         # shuffle_input to avoid results from inputs that were already matched
 
-    seed_cost_c = np.setdiff1d(range(n), partial_match[:, 0])
+    nonseed_A = np.setdiff1d(range(n), partial_match[:, 0])
     perm_A = np.concatenate([partial_match[:, 0],
-                             seed_cost_c], axis=None).astype(int)
+                             nonseed_A], axis=None).astype(int)
     perm_B = np.concatenate([partial_match[:, 1],
-                             seed_dist_c], axis=None).astype(int)
-
-    A = A[np.ix_(perm_A, perm_A)]
-    B = B[np.ix_(perm_B, perm_B)]
+                             nonseed_B], axis=None).astype(int)
 
     # definitions according to Seeded Graph Matching [2].
-    A11 = A[:n_seeds, :n_seeds]
-    A12 = A[:n_seeds, n_seeds:]
-    A21 = A[n_seeds:, :n_seeds]
-    A22 = A[n_seeds:, n_seeds:]
-    B11 = B[:n_seeds, :n_seeds]
-    B12 = B[:n_seeds, n_seeds:]
-    B21 = B[n_seeds:, :n_seeds]
-    B22 = B[n_seeds:, n_seeds:]
+    A11, A12, A21, A22 = _split_matrix(A[perm_A][:, perm_A], n_seeds)
+    B11, B12, B21, B22 = _split_matrix(B[perm_B][:, perm_B], n_seeds)
 
     # setting initialization matrix
     if isinstance(init_J, str) and init_J == 'barycenter':
@@ -511,15 +502,13 @@ def _quadratic_assignment_faq(A, B,
     else:
         P = J
     const_sum = A21 @ B21.T + A12.T @ B12
-    grad_P = np.inf  # gradient of P
-    n_iter = 0  # number of FW iterations
 
     # OPTIMIZATION WHILE LOOP BEGINS
-    while grad_P > tol and n_iter < maxiter:
+    for n_iter in range(maxiter):   
         # computing the gradient of f(P) = -tr(APB^tP^t)
-        delta_f = (const_sum + A22 @ P @ B22.T + A22.T @ P @ B22)
+        grad_fp = (const_sum + A22 @ P @ B22.T + A22.T @ P @ B22)
         # run hungarian algorithm on gradient(f(P))
-        rows, cols = linear_sum_assignment(obj_func_scalar * delta_f)
+        rows, cols = linear_sum_assignment(obj_func_scalar * grad_fp)
         Q = np.zeros((n_unseed, n_unseed))
         Q[rows, cols] = 1  # initialize search direction matrix Q
 
@@ -540,20 +529,21 @@ def _quadratic_assignment_faq(A, B,
         # computing the step size
         alpha = minimize_scalar(f, bounds=(0, 1), method="bounded").x
         P_i1 = alpha * P + (1 - alpha) * Q  # Update P
-        grad_P = np.linalg.norm(P - P_i1)
+        if np.linalg.norm(P - P_i1) < tol:
+            break
         P = P_i1
-        n_iter += 1
     # end of FW optimization loop
 
     # Project onto the set of permutation matrices
     row, col = linear_sum_assignment(-P)
     perm = np.concatenate((np.arange(n_seeds), col + n_seeds))
-    score = _calc_score(A, B, perm)
-
+    
     unshuffled_perm = np.zeros(n, dtype=int)
     unshuffled_perm[perm_A] = perm_B[perm]
 
-    res = {"col_ind": unshuffled_perm, "fun": score, "nit": n_iter}
+    score = _calc_score(A, B, unshuffled_perm)
+
+    res = {"col_ind": unshuffled_perm, "fun": score, "nit": n_iter+1}
 
     return OptimizeResult(res)
 
@@ -572,6 +562,10 @@ def _check_init_input(init_J, n):
     if msg is not None:
         raise ValueError(msg)
 
+def _split_matrix(X, n):
+        # definitions according to Seeded Graph Matching [2].
+        upper, lower = X[:n], X[n:]
+        return upper[:, :n], upper[:, n:], lower[:, :n], lower[:, n:]
 
 def _doubly_stochastic(P, tol=1e-3):
     # cleaner implementation of btaba/sinkhorn_knopp
