@@ -1,8 +1,8 @@
 import pytest
 import numpy as np
-from scipy.optimize import quadratic_assignment
+from scipy.optimize import quadratic_assignment, OptimizeWarning
 from scipy.optimize._qap import _calc_score as _score
-from numpy.testing import assert_equal, assert_
+from numpy.testing import assert_equal, assert_, assert_warns
 
 
 ################
@@ -70,16 +70,23 @@ class QAPCommonTests(object):
              [0, 1, 2, 0]]
 
         res = quadratic_assignment(A, B, method=self.method,
-                                   options={"init_weight": 0, "rng": 0,
-                                            "maximize": False})
+                                   options={"rng": 0, "maximize": False})
         assert_equal(res.score, 10)
         assert_equal(res.col_ind, np.array([1, 2, 3, 0]))
 
         res = quadratic_assignment(A, B, method=self.method,
-                                   options={"init_weight": 0, "rng": 0,
-                                            "maximize": True})
-        assert_equal(res.score, 40)
-        assert_equal(res.col_ind, np.array([0, 3, 1, 2]))
+                                   options={"rng": 0, "maximize": True})
+
+        if self.method == 'faq':
+            # Global optimum is 40, but FAQ gets 37
+            assert_equal(res.score, 37)
+            assert_equal(res.col_ind, np.array([0, 2, 3, 1]))
+        else:
+            assert_equal(res.score, 40)
+            assert_equal(res.col_ind, np.array([0, 3, 1, 2]))
+
+        res = quadratic_assignment(A, B, method=self.method,
+                                   options={"rng": 0, "maximize": True})
 
     # Test global optima of problem from Umeyama IIIB
     # https://pcl.sitehost.iu.edu/rgoldsto/papers/weighted%20graph%20match2.pdf
@@ -128,18 +135,26 @@ class QAPCommonTests(object):
         assert_(74000 <= res.score < 85000)
         assert_equal(res.score, _score(A, B, res.col_ind))
 
-        # check ofv with partial match
+        # check ofv with strictly partial match
         seed_cost = np.array([4, 8, 10])
         seed = np.asarray([seed_cost, opt_perm[seed_cost]]).T
         res = quadratic_assignment(A, B, method=self.method,
                                    options={'partial_match': seed})
         assert_(11156 <= res.score < 21000)
+        assert_equal(res.col_ind[seed_cost], opt_perm[seed_cost])
 
         # check performance when partial match is the global optimum
         seed = np.asarray([np.arange(len(A)), opt_perm]).T
         res = quadratic_assignment(A, B, method=self.method,
                                    options={'partial_match': seed})
         assert_equal(res.score, 11156)
+
+    def test_unknown_options(self):
+        A, B, opt_perm = chr12c()
+        def f():
+            quadratic_assignment(A, B, method=self.method,
+                                 options={"ekki-ekki": True})
+        assert_warns(OptimizeWarning, f)
 
 
 class TestFAQ(QAPCommonTests):
@@ -227,13 +242,79 @@ class TestFAQ(QAPCommonTests):
 class Test2opt(QAPCommonTests):
     method = "2opt"
 
+    def test_partial_guess(self):
+        n = 5
+        A = np.random.rand(n, n)
+        B = np.random.rand(n, n)
+
+        res1 = quadratic_assignment(A, B, method=self.method,
+                                    options={'rng': 0})
+        guess = np.array([np.arange(5), res1.col_ind]).T
+        res2 = quadratic_assignment(A, B, method=self.method,
+                                    options={'rng': 0, 'partial_guess': guess})
+        fix = [2, 4]
+        match = np.array([np.arange(5)[fix], res1.col_ind[fix]]).T
+        res3 = quadratic_assignment(A, B, method=self.method,
+                                    options={'rng': 0, 'partial_guess': guess,
+                                             'partial_match': match})
+        assert_(res1.nit != n*(n+1)/2)
+        assert_equal(res2.nit, n*(n+1)/2)      # tests each swap exactly once
+        assert_equal(res3.nit, (n-2)*(n-1)/2)  # tests free swaps exactly once
+
+    def test_specific_input_validation(self):
+        # can't have more seed nodes than cost/dist nodes
+        _rm = _range_matrix
+        with pytest.raises(
+                ValueError,
+                match="`partial_guess` can have only as many entries as"):
+            quadratic_assignment(np.identity(3), np.identity(3),
+                                 method=self.method,
+                                 options={'partial_guess': _rm(5, 2)})
+        # test for only two seed columns
+        with pytest.raises(
+                ValueError, match="`partial_guess` must have two columns"):
+            quadratic_assignment(
+                np.identity(3), np.identity(3), method=self.method,
+                options={'partial_guess': _range_matrix(2, 3)}
+            )
+        # test that seed has no more than two dimensions
+        with pytest.raises(
+                ValueError, match="`partial_guess` must have exactly two"):
+            quadratic_assignment(
+                np.identity(3), np.identity(3), method=self.method,
+                options={'partial_guess': np.random.rand(3, 2, 2)}
+            )
+        # seeds cannot be negative valued
+        with pytest.raises(
+                ValueError, match="`partial_guess` must contain only pos"):
+            quadratic_assignment(
+                np.identity(3), np.identity(3), method=self.method,
+                options={'partial_guess': -1 * _range_matrix(2, 2)}
+            )
+        # seeds can't have values greater than number of nodes
+        with pytest.raises(
+                ValueError,
+                match="`partial_guess` entries must be less than number"):
+            quadratic_assignment(
+                np.identity(5), np.identity(5), method=self.method,
+                options={'partial_guess': 2 * _range_matrix(4, 2)}
+            )
+        # columns of seed matrix must be unique
+        with pytest.raises(
+                ValueError,
+                match="`partial_guess` column entries must be unique"):
+            quadratic_assignment(
+                np.identity(3), np.identity(3), method=self.method,
+                options={'partial_guess': np.ones((2, 2))}
+            )
+
 
 class TestQAPOnce():
     def setup_method(self):
         np.random.rand(0)
 
     # these don't need to be repeated for each method
-    def test_input_validation(self):
+    def test_common_input_validation(self):
         # test that non square matrices return error
         with pytest.raises(ValueError, match="`A` must be square"):
             quadratic_assignment(
@@ -264,7 +345,7 @@ class TestQAPOnce():
         _rm = _range_matrix
         with pytest.raises(
                 ValueError,
-                match="There cannot be more seeds than there are nodes"):
+                match="`partial_match` can have only as many seeds as"):
             quadratic_assignment(np.identity(3), np.identity(3),
                                  options={'partial_match': _rm(5, 2)})
         # test for only two seed columns
@@ -283,7 +364,7 @@ class TestQAPOnce():
             )
         # seeds cannot be negative valued
         with pytest.raises(
-                ValueError, match="`partial_match` contains negative entries"):
+                ValueError, match="`partial_match` must contain only pos"):
             quadratic_assignment(
                 np.identity(3), np.identity(3),
                 options={'partial_match': -1 * _range_matrix(2, 2)}

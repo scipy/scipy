@@ -169,6 +169,28 @@ def quadratic_assignment(A, B, method="faq", options=None):
     ...         score_opt, perm_opt = score, perm
     >>> print(np.equal(perm_opt, res['col_ind']))
     True
+
+    Here is an example for which the default method,
+    :ref:`'faq' <optimize.qap-faq>`, does not find the global optimum.
+
+    >>> A = np.array([[0, 5, 8, 6], [5, 0, 5, 1],
+    ...              [8, 5, 0, 2], [6, 1, 2, 0]])
+    >>> B = np.array([[0, 1, 8, 4], [1, 0, 5, 2],
+    ...              [8, 5, 0, 5], [4, 2, 5, 0]])
+    >>> res = quadratic_assignment(A, B)
+    >>> print(res.score)
+     col_ind: array([1, 0, 3, 2])
+         nit: 13
+       score: 178
+
+    If accuracy is important, consider using  :ref:`'2opt' <optimize.qap-2opt>`
+    to refine the solution.
+    >>> guess = np.array([np.arange(A.shape[0], res.col_ind]).T
+    >>> res = quadratic_assignment(A, B, method="2opt",
+    ...                            options = {partial_guess': guess})
+     col_ind: array([1, 2, 3, 0])
+         nit: 17
+       score: 176
     """
 
     if options is None:
@@ -188,13 +210,13 @@ def _calc_score(A, B, perm):
     return np.sum(A * B[perm][:, perm])
 
 
-def _common_input_validation(A, B, partial_match, maximize):
+def _common_input_validation(A, B, partial_match):
     A = np.atleast_2d(A)
     B = np.atleast_2d(B)
 
     if partial_match is None:
         partial_match = np.array([[], []]).T
-    partial_match = np.atleast_2d(partial_match)
+    partial_match = np.atleast_2d(partial_match).astype(int)
 
     msg = None
     if A.shape[0] != A.shape[1]:
@@ -206,13 +228,13 @@ def _common_input_validation(A, B, partial_match, maximize):
     elif A.shape != B.shape:
         msg = "`A` and `B` matrices must be of equal size"
     elif partial_match.shape[0] > A.shape[0]:
-        msg = "There cannot be more seeds than there are nodes"
+        msg = "`partial_match` can have only as many seeds as there are nodes"
     elif partial_match.shape[1] != 2:
         msg = "`partial_match` must have two columns"
     elif partial_match.ndim != 2:
         msg = "`partial_match` must have exactly two dimensions"
     elif (partial_match < 0).any():
-        msg = "`partial_match` contains negative entries"
+        msg = "`partial_match` must contain only positive indices"
     elif (partial_match >= len(A)).any():
         msg = "`partial_match` entries must be less than number of nodes"
     elif not len(set(partial_match[:, 0])) == len(partial_match[:, 0]) or not \
@@ -276,6 +298,22 @@ def _quadratic_assignment_faq(A, B,
     Options
     -------
 
+    maximize : bool (default = False)
+        Setting `maximize` to ``True`` solves the Graph Matching Problem (GMP)
+        rather than the Quadratic Assingnment Problem (QAP). This is
+        accomplished through trivial negation of the objective function.
+
+    rng : {None, int, `~np.random.RandomState`, `~np.random.Generator`}
+        This parameter defines the object to use for drawing random
+        variates.
+        If `rng` is ``None`` the `~np.random.RandomState` singleton is
+        used.
+        If `rng` is an int, a new ``RandomState`` instance is used,
+        seeded with `rng`.
+        If `rng` is already a ``RandomState`` or ``Generator``
+        instance, then that object is used.
+        Default is None.
+
     partial_match : 2d-array of integers, optional, (default = None)
         Allows the user to fix part of the matching between the two
         matrices. In the literature, a partial match is also known as a
@@ -286,11 +324,6 @@ def _quadratic_assignment_faq(A, B,
         matched to node ``partial_match[i, 1]`` of `B`. Accordingly,
         ``partial_match`` is an array of size ``(m , 2)``, where ``m`` is
         less than the number of nodes.
-
-    maximize : bool (default = False)
-        Setting `maximize` to ``True`` solves the Graph Matching Problem (GMP)
-        rather than the Quadratic Assingnment Problem (QAP). This is
-        accomplished through trivial negation of the objective function.
 
     init_J : 2d-array or "barycenter" (default = "barycenter")
         The initial (guess) permutation matrix or search "position"
@@ -306,6 +339,7 @@ def _quadratic_assignment_faq(A, B,
         is the number of nodes and :math:`1` is a :math:`n \times 1`
         array of ones, is used. This is the "barycenter" of the
         search space of doubly-stochastic matrices.
+
     init_weight : float in range [0, 1]
         Allows the user to specify the weight of the provided
         search position :math:`J` relative to random perturbations
@@ -338,16 +372,6 @@ def _quadratic_assignment_faq(A, B,
         iterations is sufficiently small, that is, when the Frobenius
         norm of :math:`(P_{i}-P_{i+1}) \leq eps`, where :math:`i` is
         the iteration number.
-    rng : {None, int, `~np.random.RandomState`, `~np.random.Generator`}
-        This parameter defines the object to use for drawing random
-        variates.
-        If `rng` is ``None`` the `~np.random.RandomState` singleton is
-        used.
-        If `rng` is an int, a new ``RandomState`` instance is used,
-        seeded with `rng`.
-        If `rng` is already a ``RandomState`` or ``Generator``
-        instance, then that object is used.
-        Default is None.
 
     Returns
     -------
@@ -396,8 +420,7 @@ def _quadratic_assignment_faq(A, B,
     maxiter = operator.index(maxiter)
 
     # ValueError check
-    A, B, partial_match = _common_input_validation(
-            A, B, partial_match, maximize)
+    A, B, partial_match = _common_input_validation(A, B, partial_match)
 
     msg = None
     if (A < 0).any() or (B < 0).any():
@@ -517,7 +540,6 @@ def _quadratic_assignment_faq(A, B,
             perm_inds[permutation_cost] = permutation_dist[perm_inds_new]
             total_iter = n_iter
 
-    best_score = _calc_score(A_orig, B_orig, perm_inds)
     res = {"col_ind": perm_inds, "score": best_score, "nit": total_iter}
 
     return OptimizeResult(res)
@@ -560,7 +582,8 @@ def _doubly_stochastic(P, eps=1e-3):
 
 
 def _quadratic_assignment_2opt(A, B, maximize=False, partial_match=None,
-                               rng=None, **unknown_options):
+                               rng=None, partial_guess=None,
+                               **unknown_options):
     r"""
     Solve the quadratic assignment problem (approximately).
 
@@ -605,17 +628,6 @@ def _quadratic_assignment_2opt(A, B, maximize=False, partial_match=None,
     Options
     -------
 
-    partial_match : 2d-array of integers, optional, (default = None)
-        Allows the user to fix part of the matching between the two
-        matrices. In the literature, a partial match is also known as a
-        "seed".
-
-        Each row of `partial_match` specifies the indices of a pair of
-        corresponding nodes, that is, node ``partial_match[i, 0]` of `A` is
-        matched to node ``partial_match[i, 1]`` of `B`. Accordingly,
-        ``partial_match`` is an array of size ``(m , 2)``, where ``m`` is
-        less than the number of nodes.
-
     maximize : bool (default = False)
         Setting `maximize` to ``True`` solves the Graph Matching Problem (GMP)
         rather than the Quadratic Assingnment Problem (QAP).
@@ -630,6 +642,29 @@ def _quadratic_assignment_2opt(A, B, maximize=False, partial_match=None,
         If `rng` is already a ``RandomState`` or ``Generator``
         instance, then that object is used.
         Default is None.
+
+    partial_match : 2d-array of integers, optional, (default = None)
+        Allows the user to fix part of the matching between the two
+        matrices. In the literature, a partial match is also known as a
+        "seed".
+
+        Each row of `partial_match` specifies the indices of a pair of
+        corresponding nodes, that is, node ``partial_match[i, 0]`` of `A` is
+        matched to node ``partial_match[i, 1]`` of `B`. Accordingly,
+        ``partial_match`` is an array of size ``(m , 2)``, where ``m`` is
+        less than the number of nodes.
+
+    partial_guess : 2d-array of integers, optional, (default = None)
+        Allows the user to provide a guess for the matching between the two
+        matrices. Unlike `partial_match`, `partial_guess` does not fix the
+        indices; they are still free to be optimized.
+
+        Each row of `partial_guess` specifies the indices of a pair of
+        corresponding nodes, that is, node ``partial_guess[i, 0]` of `A` is
+        matched to node ``partial_guess[i, 1]`` of `B`. Accordingly,
+        ``partial_guess`` is an array of size ``(m , 2)``, where ``m`` is
+        less than or equal to the number of nodes.
+
 
     Returns
     -------
@@ -659,33 +694,70 @@ def _quadratic_assignment_2opt(A, B, maximize=False, partial_match=None,
 
     _check_unknown_options(unknown_options)
     rng = check_random_state(rng)
-    A, B, partial_match = _common_input_validation(
-            A, B, partial_match, maximize)
+    A, B, partial_match = _common_input_validation(A, B, partial_match)
+
+    if partial_guess is None:
+        partial_guess = np.array([[], []]).T
+    partial_guess = np.atleast_2d(partial_guess).astype(int)
+
+    msg = None
+    if partial_guess.shape[0] > A.shape[0]:
+        msg = "`partial_guess` can have only as many entries as there are nodes"
+    elif partial_guess.shape[1] != 2:
+        msg = "`partial_guess` must have two columns"
+    elif partial_guess.ndim != 2:
+        msg = "`partial_guess` must have exactly two dimensions"
+    elif (partial_guess < 0).any():
+        msg = "`partial_guess` must contain only positive indices"
+    elif (partial_guess >= len(A)).any():
+        msg = "`partial_guess` entries must be less than number of nodes"
+    elif (not len(set(partial_guess[:, 0])) == len(partial_guess[:, 0])
+          or not len(set(partial_guess[:, 1])) == len(partial_guess[:, 1])):
+        msg = "`partial_guess` column entries must be unique"
+    if msg is not None:
+        raise ValueError(msg)
 
     N = len(A)
 
-    if partial_match.size:
-        # use seed for initial permutation, but randomly permute the rest
-        r, c = partial_match.T
+    fixed_rows = None
+    if partial_match.size or partial_guess.size:
+        # use partial_match and partial_guess for initial permutation,
+        # but randomly permute the rest.
+        guess_rows = np.zeros(N, dtype=bool)
+        guess_cols = np.zeros(N, dtype=bool)
         fixed_rows = np.zeros(N, dtype=bool)
         fixed_cols = np.zeros(N, dtype=bool)
-        fixed_rows[r] = True
-        fixed_cols[c] = True
-
         perm = np.zeros(N, dtype=int)
-        perm[fixed_rows] = c
-        perm[~fixed_rows] = rng.permutation(np.arange(N)[~fixed_cols])
+
+        rg, cg = partial_guess.T
+        guess_rows[rg] = True
+        guess_cols[cg] = True
+        perm[guess_rows] = cg
+
+        # match overrides guess
+        rf, cf = partial_match.T
+        fixed_rows[rf] = True
+        fixed_cols[cf] = True
+        perm[fixed_rows] = cf
+
+        random_rows = ~fixed_rows & ~guess_rows
+        random_cols = ~fixed_cols & ~guess_cols
+        perm[random_rows] = rng.permutation(np.arange(N)[random_cols])
     else:
         perm = rng.permutation(np.arange(N))
 
     best_score = _calc_score(A, B, perm)
+
+    i_free = np.arange(N)
+    if fixed_rows is not None:
+        i_free = i_free[~fixed_rows]
 
     better = operator.gt if maximize else operator.lt
     n_iter = 0
     done = False
     while not done:
         # equivalent to nested for loops i in range(N), j in range(i, N)
-        for i, j in itertools.combinations_with_replacement(range(N), 2):
+        for i, j in itertools.combinations_with_replacement(i_free, 2):
             n_iter += 1
             perm[i], perm[j] = perm[j], perm[i]
             score = _calc_score(A, B, perm)
