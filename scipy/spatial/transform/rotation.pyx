@@ -943,9 +943,9 @@ cdef class Rotation(object):
         (1, 4)
 
         Initialize a stack with a single rotation sequence for
-        - 90 degrees about the z axis, 
-        - 45 degrees about the y axis, 
-        - 30 degrees about the x axis, 
+        90 degrees about the z axis, 
+        5 degrees about the y axis, 
+        30 degrees about the x axis, 
         specifying the order of rotations to be applied with an axis sequence:
         
         >>> r = R.from_euler('zyx', [[90, 45, 30]], degrees=True)
