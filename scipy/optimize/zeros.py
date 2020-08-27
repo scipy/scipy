@@ -96,7 +96,7 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
            full_output=False, disp=True):
     """
     Find a zero of a real or complex function using the Newton-Raphson
-    (or secant or Halley's) method.
+    (or secant or extended Newton [1]_ or Halley's) method.
 
     Find a zero of the function `func` given a nearby starting point `x0`.
     The Newton-Raphson method is used if the derivative `fprime` of `func`
@@ -137,7 +137,8 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
         is used.
     x1 : float, optional
         Another estimate of the zero that should be somewhere near the
-        actual zero. Used if `fprime` is not provided.
+        actual zero. Used with Secant method if `fprime` is not provided.
+	Otherwise, it is used with extended Newton method.
     rtol : float, optional
         Tolerance (relative) for termination.
     full_output : bool, optional
@@ -201,6 +202,11 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
     * The size of the initial guesses, `x0`, is larger than O(100) elements.
       Otherwise, a naive loop may perform as well or better than a vector.
 
+    References
+    ----------
+    .. [1] A. Aggarwal and S. Pant. "Beyond Newton: A New Root-Finding Fixed-Point Iteration for Nonlinear Equations," Algorithms 2020, 13, 78.
+       <https://doi.org/10.3390/a13040078>
+
     Examples
     --------
     >>> from scipy import optimize
@@ -221,6 +227,12 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
     Only ``fprime`` is provided, use the Newton-Raphson method:
 
     >>> root = optimize.newton(f, 1.5, fprime=lambda x: 3 * x**2)
+    >>> root
+    1.0
+
+    ``fprime`` and ``x1`` are provided, use the extended Newton method [1]_:
+
+    >>> root = optimize.newton(f, 1.5, x1 = 2., fprime=lambda x: 3 * x**2)
     >>> root
     1.0
 
@@ -268,13 +280,16 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
         raise ValueError("maxiter must be greater than 0")
     if np.size(x0) > 1:
         return _array_newton(func, x0, fprime, args, tol, maxiter, fprime2,
-                             full_output)
+                             full_output, x1)
 
     # Convert to float (don't use float(x0); this works also for complex x0)
     p0 = 1.0 * x0
     funcalls = 0
     if fprime is not None:
         # Newton-Raphson method
+        if x1 is not None:  # for extended Newton method, evaluate fx1 upfront (only required once)
+            fx1 = func(x1*1.0, *args)
+            funcalls += 1
         for itr in range(maxiter):
             # first evaluate fval
             fval = func(p0, *args)
@@ -296,6 +311,7 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
                 return _results_select(
                     full_output, (p0, funcalls, itr + 1, _ECONVERR))
             newton_step = fval / fder
+
             if fprime2:
                 fder2 = fprime2(p0, *args)
                 funcalls += 1
@@ -308,6 +324,11 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
                 adj = newton_step * fder2 / fder / 2
                 if np.abs(adj) < 1:
                     newton_step /= 1.0 - adj
+            elif x1 is not None:
+                # Extended Newton's method
+                sec_step = (p0-x1)*fx1/(fval-fx1)
+                newton_step *= (p0-x1)/(newton_step-sec_step)  # no extra function calls required
+
             p = p0 - newton_step
             if np.isclose(p, p0, rtol=rtol, atol=tol):
                 return _results_select(
@@ -363,7 +384,7 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
     return _results_select(full_output, (p, funcalls, itr + 1, _ECONVERR))
 
 
-def _array_newton(func, x0, fprime, args, tol, maxiter, fprime2, full_output):
+def _array_newton(func, x0, fprime, args, tol, maxiter, fprime2, full_output, x1=None):
     """
     A vectorized version of Newton, Halley, and secant methods for arrays.
 
@@ -378,6 +399,8 @@ def _array_newton(func, x0, fprime, args, tol, maxiter, fprime2, full_output):
     nz_der = np.ones_like(failures)
     if fprime is not None:
         # Newton-Raphson method
+        if x1 is not None:
+            fx1 = np.asarray(func(x1, *args))
         for iteration in range(maxiter):
             # first evaluate fval
             fval = np.asarray(func(p, *args))
@@ -395,6 +418,10 @@ def _array_newton(func, x0, fprime, args, tol, maxiter, fprime2, full_output):
             if fprime2 is not None:
                 fder2 = np.asarray(fprime2(p, *args))
                 dp = dp / (1.0 - 0.5 * dp * fder2[nz_der] / fder[nz_der])
+            elif x1 is not None:
+                # Extended Newton's method
+                sec_step = (p[nz_der]-x1[nz_der])*fx1[nz_der]/(fval[nz_der]-fx1[nz_der])
+                dp = dp*(p[nz_der]-x1[nz_der])/(dp-sec_step)
             # only update nonzero derivatives
             p = np.asarray(p, dtype=np.result_type(p, dp, np.float64))
             p[nz_der] -= dp
@@ -444,7 +471,7 @@ def _array_newton(func, x0, fprime, args, tol, maxiter, fprime2, full_output):
                 )
                 warnings.warn(
                     'RMS of {:g} reached'.format(rms), RuntimeWarning)
-        # Newton or Halley warnings
+        # Newton or Halley or extended-Newton warnings
         else:
             all_or_some = 'all' if zero_der.all() else 'some'
             msg = '{:s} derivatives were zero'.format(all_or_some)

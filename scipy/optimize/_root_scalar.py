@@ -78,6 +78,7 @@ def root_scalar(f, args=(), method=None, bracket=None,
             - 'ridder'    :ref:`(see here) <optimize.root_scalar-ridder>`
             - 'toms748'    :ref:`(see here) <optimize.root_scalar-toms748>`
             - 'newton'    :ref:`(see here) <optimize.root_scalar-newton>`
+            - 'exnewton'    :ref:`(see here) <optimize.root_scalar-exnewton>`
             - 'secant'    :ref:`(see here) <optimize.root_scalar-secant>`
             - 'halley'    :ref:`(see here) <optimize.root_scalar-halley>`
 
@@ -135,6 +136,12 @@ def root_scalar(f, args=(), method=None, bracket=None,
     select one of the derivative-based methods.
     If no method is judged applicable, it will raise an Exception.
 
+    Method :ref:`exnewton<optimize.root_scalar-exnewton>` uses the first derivative and an additional starting point to improve upon the traditional `newton` method, it is known as the "extended-Newton" method [1]_.
+
+    References
+    ----------
+    .. [1] A. Aggarwal and S. Pant. "Beyond Newton: A New Root-Finding Fixed-Point Iteration for Nonlinear Equations," Algorithms 2020, 13, 78.
+       <https://doi.org/10.3390/a13040078>
 
     Examples
     --------
@@ -160,6 +167,14 @@ def root_scalar(f, args=(), method=None, bracket=None,
     >>> sol.root, sol.iterations, sol.function_calls
     (1.0, 11, 22)
 
+    The :ref:`exnewton<optimize.root_scalar-exnewton>` method uses the first derivative
+    and takes as input two points `x0` and `x1`.
+    `x1` is an optional argument. If not supplied, a perturbation of `x0` is used (:math:`x1=x0+\epsilon`).
+
+    >>> sol = optimize.root_scalar(f, x0=0.2, x1=0., fprime=fprime, method='exnewton')
+    >>> sol.root, sol.iterations, sol.function_calls
+    (1.0, 9, 19)
+
     The function can provide the value and derivative(s) in a single call.
 
     >>> def f_p_pp(x):
@@ -168,6 +183,10 @@ def root_scalar(f, args=(), method=None, bracket=None,
     >>> sol = optimize.root_scalar(f_p_pp, x0=0.2, fprime=True, method='newton')
     >>> sol.root, sol.iterations, sol.function_calls
     (1.0, 11, 11)
+
+    >>> sol = optimize.root_scalar(f_p_pp, x0=0.2, fprime=True, method='exnewton')
+    >>> sol.root, sol.iterations, sol.function_calls
+    (0.9999999999999999, 7, 15)
 
     >>> sol = optimize.root_scalar(f_p_pp, x0=0.2, fprime=True, fprime2=True, method='halley')
     >>> sol.root, sol.iterations, sol.function_calls
@@ -231,7 +250,7 @@ def root_scalar(f, args=(), method=None, bracket=None,
                          'nor starting point provided.')
 
     meth = method.lower()
-    map2underlying = {'halley': 'newton', 'secant': 'newton'}
+    map2underlying = {'halley': 'newton', 'secant': 'newton', 'exnewton': 'newton'}
 
     try:
         methodc = getattr(optzeros, map2underlying.get(meth, meth))
@@ -262,6 +281,20 @@ def root_scalar(f, args=(), method=None, bracket=None,
             kwargs['tol'] = kwargs.pop('xtol')
         r, sol = methodc(f, x0, args=args, fprime=fprime, fprime2=None,
                          **kwargs)
+    elif meth in ['exnewton']:
+        if x0 is None:
+            raise ValueError('x0 must not be None for %s' % method)
+        if not fprime:
+            raise ValueError('fprime must be specified for %s' % method)
+        if 'xtol' in kwargs:
+            kwargs['tol'] = kwargs.pop('xtol')
+        if x1 is None:
+            dx = np.finfo(float).eps**0.33
+            x1 = x0 * (1 + dx) + np.where(x0 >= 0, dx, -dx)
+        elif x1 == x0:
+            raise ValueError("x1 and x0 must be different")
+        r, sol = methodc(f, x0, args=args, fprime=fprime, fprime2=None,
+                         x1=x1, **kwargs)
     elif meth in ['halley']:
         if x0 is None:
             raise ValueError('x0 must not be None for %s' % method)
@@ -378,6 +411,34 @@ def _root_scalar_newton_doc():
     x0 : float, required
         Initial guess.
     fprime : bool or callable, optional
+        If `fprime` is a boolean and is True, `f` is assumed to return the
+        value of derivative along with the objective function.
+        `fprime` can also be a callable returning the derivative of `f`. In
+        this case, it must accept the same arguments as `f`.
+    options: dict, optional
+        Specifies any method-specific options not covered above.
+
+    """
+    pass
+
+
+def _root_scalar_exnewton_doc():
+    r"""
+    Options
+    -------
+    args : tuple, optional
+        Extra arguments passed to the objective function and its derivative.
+    xtol : float, optional
+        Tolerance (absolute) for termination.
+    rtol : float, optional
+        Tolerance (relative) for termination.
+    maxiter : int, optional
+        Maximum number of iterations.
+    x0 : float, required
+        Initial guess.
+    x1 : float, optional
+        A second guess. If not provided, a perturbation of `x0` is used.
+    fprime : bool or callable, required
         If `fprime` is a boolean and is True, `f` is assumed to return the
         value of derivative along with the objective function.
         `fprime` can also be a callable returning the derivative of `f`. In

@@ -150,7 +150,7 @@ Scalar functions
    brenth - Brent method, modified by Harris with hyperbolic extrapolation.
    ridder - Ridder's method.
    bisect - Bisection method.
-   newton - Newton's method (also Secant and Halley's methods).
+   newton - Newton's method (also Secant, extended-Newton, and Halley's methods).
    toms748 - Alefeld, Potra & Shi Algorithm 748.
    RootResults - The root finding result returned by some root finders.
 
@@ -163,6 +163,7 @@ The `root_scalar` function supports the following methods:
    optimize.root_scalar-bisect
    optimize.root_scalar-ridder
    optimize.root_scalar-newton
+   optimize.root_scalar-exnewton
    optimize.root_scalar-toms748
    optimize.root_scalar-secant
    optimize.root_scalar-halley
@@ -194,6 +195,8 @@ functions defined on (a subset of) the complex plane.
 | `R` or `C`  | No       | No       | No        | secant      | No          | 1.62 (1.62)    |
 +-------------+----------+----------+-----------+-------------+-------------+----------------+
 | `R` or `C`  | No       | Yes      | No        | newton      | No          | 2.00 (1.41)    |
++-------------+----------+----------+-----------+-------------+-------------+----------------+
+| `R` or `C`  | No       | Yes      | No        | exnewton    | No	    | >2.00 (1.41)   |
 +-------------+----------+----------+-----------+-------------+-------------+----------------+
 | `R` or `C`  | No       | Yes      | Yes       | halley      | No          | 3.00 (1.44)    |
 +-------------+----------+----------+-----------+-------------+-------------+----------------+

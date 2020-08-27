@@ -3254,6 +3254,7 @@ def show_options(solver=None, method=None, disp=True):
             ('toms748', 'scipy.optimize._root_scalar._root_scalar_toms748_doc'),
             ('secant', 'scipy.optimize._root_scalar._root_scalar_secant_doc'),
             ('newton', 'scipy.optimize._root_scalar._root_scalar_newton_doc'),
+            ('exnewton', 'scipy.optimize._root_scalar._root_scalar_exnewton_doc'),
             ('halley', 'scipy.optimize._root_scalar._root_scalar_halley_doc'),
         ),
         'linprog': (
