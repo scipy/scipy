@@ -13,7 +13,7 @@ __all__ = ['boxcar', 'triang', 'parzen', 'bohman', 'blackman', 'nuttall',
            'blackmanharris', 'flattop', 'bartlett', 'hanning', 'barthann',
            'hamming', 'kaiser', 'gaussian', 'general_gaussian', 'chebwin',
            'slepian', 'cosine', 'hann', 'exponential', 'tukey', 'taylor',
-            'dpss', 'get_window']
+           'dpss', 'get_window']
 
 
 def _len_guards(M):
@@ -1652,12 +1652,13 @@ def exponential(M, center=None, tau=1., sym=True):
 
     return _truncate(w, needs_trunc)
 
-def taylor(N, nbar=4, level=-30):
+
+def taylor(M, nbar=4, level=-30, sym=True):
     """
     Return the Taylor window.
 
-    The Taylor window allows for a selectable sidelobe suppression with a 
-    minimum broadening. This window is commonly used in radar processing [1].
+    The Taylor window allows for a selectable sidelobe suppression with a
+    minimum broadening. This window is commonly used in radar processing [1]_.
 
     Parameters
     ----------
@@ -1681,33 +1682,38 @@ def taylor(N, nbar=4, level=-30):
 
     References
     -----
-    .. [1] W. Carrara, R. Goodman, and R. Majewski "Spotlight Synthetic 
+    .. [1] W. Carrara, R. Goodman, and R. Majewski "Spotlight Synthetic
                Aperture Radar: Signal Processing Algorithms" Pages 512-513,
                July 1995.
     """
+    if _len_guards(M):
+        return np.ones(M)
+    M, needs_trunc = _extend(M, sym)
+
     B = 10**(-level / 20)
     A = np.log(B + np.sqrt(B**2 - 1)) / np.pi
     s2 = nbar**2 / (A**2 + (nbar - 0.5)**2)
-    ma = np.arange(1,nbar)
-    
-    def calc_Fm(m):
-        numer = (-1)**(m+1) * np.prod(1 - m**2/s2/(A**2 + (ma - 0.5)**2))
-        denom = 2 * np.prod([1 - m**2/j**2 for j in ma if j != m])
-        return numer/denom
+    ma = np.arange(1, nbar)
 
-    calc_Fm_vec = np.vectorize(calc_Fm)
-    Fm = calc_Fm_vec(ma)
-    
+    Fm = np.empty(nbar-1)
+    signs = np.where(ma % 2, 1, -1)
+    m2 = ma*ma
+    for mi, m in enumerate(ma):
+        numer = signs[mi] * np.prod(1 - m2[mi]/s2/(A**2 + (ma - 0.5)**2))
+        denom = 2 * np.prod(1 - m2[mi]/m2[:mi]) * np.prod(1 - m2[mi]/m2[mi+1:])
+        Fm[mi] = numer / denom
+
     def W(n):
-        return 2*np.dot(Fm, np.cos(2*np.pi*ma*(n - N/2 + 1/2)/N)) + 1
+        return 1 + 2*np.dot(Fm, np.cos(
+            2*np.pi*ma[:, np.newaxis]*(n-M/2.+0.5)/M))
 
-    W_vec = np.vectorize(W)
-    w = W_vec(range(N))
-    
+    w = W(np.arange(M))
+
     # normalize (Note that this is not described in the original text [1])
-    scale = 1.0 / W((N - 1) / 2)
+    scale = 1.0 / W((M - 1) / 2)
     w *= scale
-    return w
+
+    return _truncate(w, needs_trunc)
 
 
 def dpss(M, NW, Kmax=None, sym=True, norm=None, return_ratios=False):
