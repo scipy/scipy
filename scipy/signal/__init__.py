@@ -241,7 +241,7 @@ obtain these windows by name:
    :toctree: generated/
 
    get_window -- Return a window of a given length and type.
-   
+
 Wavelets
 ========
 
