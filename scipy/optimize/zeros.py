@@ -138,7 +138,7 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
     x1 : float, optional
         Another estimate of the zero that should be somewhere near the
         actual zero. Used with Secant method if `fprime` is not provided.
-	Otherwise, it is used with extended Newton method.
+        Otherwise, it is used with extended Newton method.
     rtol : float, optional
         Tolerance (relative) for termination.
     full_output : bool, optional
