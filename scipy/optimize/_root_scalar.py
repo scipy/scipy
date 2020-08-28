@@ -136,11 +136,15 @@ def root_scalar(f, args=(), method=None, bracket=None,
     select one of the derivative-based methods.
     If no method is judged applicable, it will raise an Exception.
 
-    Method :ref:`exnewton<optimize.root_scalar-exnewton>` uses the first derivative and an additional starting point to improve upon the traditional `newton` method, it is known as the "extended-Newton" method [1]_.
+    Method :ref:`exnewton<optimize.root_scalar-exnewton>` uses the 
+    first derivative and an additional starting point to improve 
+    upon the traditional `newton` method, 
+    it is known as the "extended-Newton" method [1]_.
 
     References
     ----------
-    .. [1] A. Aggarwal and S. Pant. "Beyond Newton: A New Root-Finding Fixed-Point Iteration for Nonlinear Equations," Algorithms 2020, 13, 78.
+    .. [1] A. Aggarwal and S. Pant. "Beyond Newton: A New Root-Finding 
+    Fixed-Point Iteration for Nonlinear Equations," Algorithms 2020, 13, 78.
        <https://doi.org/10.3390/a13040078>
 
     Examples
