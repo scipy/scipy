@@ -490,6 +490,7 @@ def _quadratic_assignment_faq(A, B,
         _check_init_input(init_J, n_unseed)
         J = init_J
 
+# [2] Algorithm 1 Step 1 - choose initialization
     if init_weight != 1:
         # generate a nxn matrix where each entry is a random number [0, 1]
         # would use rand, but Generators don't have it
@@ -503,11 +504,11 @@ def _quadratic_assignment_faq(A, B,
         P = J
     const_sum = A21 @ B21.T + A12.T @ B12
 
-    # OPTIMIZATION WHILE LOOP BEGINS
+    # [2] Algorithm 1 Step 2 - loop while stopping criteria not met
     for n_iter in range(maxiter):
-        # computing the gradient of f(P) = -tr(APB^tP^t)
+        # [2] Algorithm 1 Step 3 - compute the gradient of f(P) = -tr(APB^tP^t)
         grad_fp = (const_sum + A22 @ P @ B22.T + A22.T @ P @ B22)
-        # run hungarian algorithm on gradient(f(P))
+        # [2] Algorithm 1 Step 4 - get direction Q by solving Eq. 8
         rows, cols = linear_sum_assignment(obj_func_scalar * grad_fp)
         Q = np.zeros((n_unseed, n_unseed))
         Q[rows, cols] = 1  # initialize search direction matrix Q
@@ -526,16 +527,17 @@ def _quadratic_assignment_faq(A, B,
                 + ((xP1xQ.T @ A22) * (B22 @ xP1xQ.T)).sum()
             )
 
-        # computing the step size
+        # [2] Algorithm 1 Step 5 - compute the step size
         alpha = minimize_scalar(f, bounds=(0, 1), method="bounded").x
-        P_i1 = alpha * P + (1 - alpha) * Q  # Update P
+        # [2] Algorithm 1 Step 6 - Update P
+        P_i1 = alpha * P + (1 - alpha) * Q
         if np.linalg.norm(P - P_i1) < tol:
             break
         P = P_i1
-    # end of FW optimization loop
+    # [2] Algorithm 1 Step 7 - end main loop
 
-    # Project onto the set of permutation matrices
-    row, col = linear_sum_assignment(-P)
+    # [2] Algorithm 1 Step 8 - project onto the set of permutation matrices
+    _, col = linear_sum_assignment(-P)
     perm = np.concatenate((np.arange(n_seeds), col + n_seeds))
 
     unshuffled_perm = np.zeros(n, dtype=int)
@@ -570,7 +572,10 @@ def _split_matrix(X, n):
 
 
 def _doubly_stochastic(P, tol=1e-3):
-    # cleaner implementation of btaba/sinkhorn_knopp
+    # Adapted from @btaba implementation
+    # https://github.com/btaba/sinkhorn_knopp
+    # of Sinkhorn-Knopp algorithm
+    # https://projecteuclid.org/euclid.pjm/1102992505
 
     max_iter = 1000
     c = 1 / P.sum(axis=0)
