@@ -8,10 +8,10 @@ from scipy import interpolate
 import scipy.special as sc
 from scipy._lib._util import _lazywhere
 from ._distn_infrastructure import rv_continuous
-from ._continuous_distns import uniform, expon
+from ._continuous_distns import uniform, expon, _norm_pdf
 from ._fft_char_fn import pdf_from_cf_with_fft
 
-EPSABS = 1e-12
+EPSABS = 1.2e-14
 
 
 def Phi(alpha, t):
@@ -29,12 +29,11 @@ def _cf(t, alpha, beta):
     )
 
 
-def _pdf_single_value_cf_integrate(x, alpha, beta):
-    """To improve DNI accuracy follow suggestions by @ragibson PR9523. Convert
-    characteristic function in to real valued integral using Euler's formula,
-    then exploit cosine symmetry to change limits to [0, inf). Finally use
-    cosine addition formula to split into two parts that can be handled by
-    weighted quad pack. See comments in PR 9523 by @ragibson.
+def _pdf_single_value_cf_integrate(x, alpha, beta, epsabs=EPSABS, **kwds):
+    """To improve DNI accuracy convert characteristic function in to real
+    valued integral using Euler's formula, then exploit cosine symmetry to
+    change limits to [0, inf). Finally use cosine addition formula to split
+    into two parts that can be handled by weighted quad pack.
     """
 
     def integrand1(t):
@@ -51,22 +50,29 @@ def _pdf_single_value_cf_integrate(x, alpha, beta):
             np.sin(beta * (t ** alpha) * Phi(alpha, t))
         )
 
-    int1, err1 = integrate.quad(
-        integrand1, 0, np.inf, weight="cos", wvar=x, limit=1000, epsabs=EPSABS
-    )
+    with warnings.catch_warnings():
+        warnings.filterwarnings('ignore', category=integrate.IntegrationWarning)
+        warnings.filterwarnings('ignore', category=np.ComplexWarning)
+        warnings.filterwarnings('ignore', message="invalid value encountered in double_scalars")
+        int1, err1 = integrate.quad(
+            integrand1, 0, np.inf, weight="cos", wvar=x, limit=1000, epsabs=epsabs
+        )
 
-    int2, err2 = integrate.quad(
-        integrand2, 0, np.inf, weight="sin", wvar=x, limit=1000, epsabs=EPSABS
-    )
+        int2, err2 = integrate.quad(
+            integrand2, 0, np.inf, weight="sin", wvar=x, limit=1000, epsabs=epsabs
+        )
 
     return (int1 + int2) / np.pi
 
 
-def _pdf_single_value_piecewise(x, alpha, beta):
+def _pdf_single_value_piecewise(x, alpha, beta, epsabs=EPSABS, **kwds):
     """Calculate pdf using Nolan's methods as detailed in [NO].
     """
     zeta = -beta * np.tan(np.pi * alpha / 2.0)
-    if alpha != 1:
+    if alpha == 2.:
+        return _norm_pdf(x/np.sqrt(2)) / np.sqrt(2)
+
+    elif alpha != 1:
         x0 = x + zeta  # convert to S_0 parameterization
         xi = np.arctan(-zeta) / alpha
 
@@ -100,9 +106,11 @@ def _pdf_single_value_piecewise(x, alpha, beta):
 
             with np.errstate(all="ignore"):
                 intg_max = optimize.minimize_scalar(
-                    lambda theta: -f(theta), bounds=[-xi, np.pi / 2]
+                    lambda theta: -f(theta), bounds=[-xi, np.pi / 2],
+                    method='brent',
+                    options=dict(xtol=epsabs)
                 )
-                intg_kwargs = {"epsabs": EPSABS}
+                intg_kwargs = {"epsabs": epsabs}
                 # windows quadpack less forgiving with points out of bounds
                 if (
                     intg_max.success
@@ -146,9 +154,20 @@ def _pdf_single_value_piecewise(x, alpha, beta):
                 return 0 if g_1 == np.inf else g_1 * np.exp(-g_1)
 
             with np.errstate(all="ignore"):
-                peak = optimize.ridder(
-                    lambda t2: g(t2) - 1, -np.pi / 2, np.pi / 2
-                )
+                peaks = [
+                    optimize.ridder(
+                        lambda t2: g(t2) - 1, -np.pi / 2, np.pi / 2,
+                        xtol=epsabs
+                    ),
+                    optimize.brentq(
+                        lambda t2: g(t2) - 1, -np.pi / 2, np.pi / 2,
+                        xtol=epsabs
+                    )
+                ]
+
+                pidx = np.abs(np.array([g(p) - 1 for p in peaks])).argmin()
+
+                peak = peaks[pidx]
 
                 # find better upper bound as
                 # quadpack adaptive quadrature
@@ -167,17 +186,19 @@ def _pdf_single_value_piecewise(x, alpha, beta):
                     else:
                         delta_sign = 1
 
-                intg = (
-                    integrate.quad(f, -np.pi / 2, peak, epsabs=EPSABS)[0]
-                    + integrate.quad(f, peak, upper_bound, epsabs=EPSABS)[0]
-                )
+                with warnings.catch_warnings():
+                    warnings.filterwarnings('ignore', category=integrate.IntegrationWarning)
+                    intg = (
+                        integrate.quad(f, -np.pi / 2, peak, epsabs=epsabs)[0]
+                        + integrate.quad(f, peak, upper_bound, epsabs=epsabs)[0]
+                    )
 
                 return intg / np.abs(beta) / 2.0
         else:
             return 1 / (1 + x ** 2) / np.pi
 
 
-def _cdf_single_value_piecewise(x, alpha, beta):
+def _cdf_single_value_piecewise(x, alpha, beta, epsabs=EPSABS, **kwds):
     """Calculate cdf using Nolan's methods as detailed in [NO].
     """
     zeta = -beta * np.tan(np.pi * alpha / 2.0)
@@ -209,7 +230,7 @@ def _cdf_single_value_piecewise(x, alpha, beta):
                 if np.isclose(-xi, np.pi / 2, rtol=1e-014, atol=1e-014):
                     intg = 0
                 else:
-                    intg = integrate.quad(f, -xi, np.pi / 2, epsabs=EPSABS)[0]
+                    intg = integrate.quad(f, -xi, np.pi / 2, epsabs=epsabs)[0]
                 return c_1 + np.sign(1 - alpha) * intg / np.pi
         elif x0 == zeta:
             return 0.5 - xi / np.pi
@@ -238,12 +259,16 @@ def _cdf_single_value_piecewise(x, alpha, beta):
                     lambda theta: np.exp(-expr_1 * V(theta)),
                     -np.pi / 2,
                     np.pi / 2,
-                    epsabs=EPSABS
+                    epsabs=epsabs
                 )[0]
                 return int_1 / np.pi
         elif beta == 0:
             return 0.5 + np.arctan(x) / np.pi
         else:
+            # NOTE: Nolan's paper has a typo here!
+            # He states F(x) = 1 - F(x, alpha, -beta), but this is clearly
+            # incorrect since F(-infty) would be 1.0 in this case
+            # Indeed, the alpha != 1, x0 < zeta case is correct here.
             return 1 - _cdf_single_value_piecewise(-x, 1, -beta)
 
 
@@ -291,6 +316,9 @@ class levy_stable_gen(rv_continuous):
     The default method is 'piecewise' which uses Nolan's piecewise method. The
     default method can be changed by setting ``levy_stable.pdf_default_method``
     to either 'piecewise', 'dni' or 'fft-simpson'.
+
+    To improve accuracy of piecewise and direct numerical integration one
+    can specify ``levy_stable.epsabs`` (defaults to 1.2e-14).
 
     To increase accuracy of FFT calculation one can specify
     ``levy_stable.pdf_fft_grid_spacing`` (defaults to 0.001) and
@@ -427,6 +455,10 @@ class levy_stable_gen(rv_continuous):
         ):
             pdf_single_value_method = None
 
+        pdf_single_value_kwds = {
+            "epsabs": getattr(self, "epsabs", EPSABS)
+        }
+
         fft_grid_spacing = getattr(self, "pdf_fft_grid_spacing", 0.001)
         fft_n_points_two_power = getattr(
             self, "pdf_fft_n_points_two_power", None
@@ -444,7 +476,7 @@ class levy_stable_gen(rv_continuous):
             if pdf_single_value_method is not None:
                 data_out[data_mask] = np.array(
                     [
-                        pdf_single_value_method(_x, _alpha, _beta)
+                        pdf_single_value_method(_x, _alpha, _beta, **pdf_single_value_kwds)
                         for _x, _alpha, _beta in data_subset
                     ]
                 ).reshape(len(data_subset), 1)
@@ -456,6 +488,11 @@ class levy_stable_gen(rv_continuous):
                 )
                 _alpha, _beta = pair
                 _x = data_subset[:, (0,)]
+
+                if _alpha < 1.:
+                    raise RuntimeError(
+                        "FFT method does not work well for alpha less than 1."
+                    )
 
                 # need enough points to "cover" _x for interpolation
                 if fft_grid_spacing is None and fft_n_points_two_power is None:
@@ -474,6 +511,16 @@ class levy_stable_gen(rv_continuous):
                     if fft_n_points_two_power is None
                     else int(fft_n_points_two_power)
                 )
+
+                # for some parameters, the range of x can be quite
+                # large, let's choose an arbitrary cut off (8GB) to save on
+                # computer memory.
+                MAX_Q = 30
+                if q > MAX_Q:
+                    raise RuntimeError(
+                        "fft_n_points_two_power has a maximum "
+                        + f"value of {MAX_Q}"
+                    )
 
                 density_x, density = pdf_from_cf_with_fft(
                     lambda t: _cf(t, _alpha, _beta),
@@ -505,6 +552,10 @@ class levy_stable_gen(rv_continuous):
         elif cdf_default_method_name == "fft-simpson":
             cdf_single_value_method = None
 
+        cdf_single_value_kwds = {
+            "epsabs": getattr(self, "epsabs", EPSABS)
+        }
+
         fft_grid_spacing = getattr(self, "pdf_fft_grid_spacing", 0.001)
         fft_n_points_two_power = getattr(
             self, "pdf_fft_n_points_two_power", None
@@ -522,7 +573,7 @@ class levy_stable_gen(rv_continuous):
             if cdf_single_value_method is not None:
                 data_out[data_mask] = np.array(
                     [
-                        cdf_single_value_method(_x, _alpha, _beta)
+                        cdf_single_value_method(_x, _alpha, _beta, **cdf_single_value_kwds)
                         for _x, _alpha, _beta in data_subset
                     ]
                 ).reshape(len(data_subset), 1)

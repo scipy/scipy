@@ -2300,36 +2300,57 @@ class TestLevyStable(object):
                                           'data/stable-pdf-sample-data.npy'))
         data = np.load(fn)
 
-        data = np.core.records.fromarrays(data.T, names='x,p,alpha,beta')
+        data = np.core.records.fromarrays(data.T, names='x,p,alpha,beta,pct')
 
         # support numpy 1.8.2 for travis
         npisin = np.isin if hasattr(np, "isin") else np.in1d
 
-        tests = [
-            # dni is accurate for most alpha except 0.25; perhaps limitation of
-            # Nolan stablec? we reduce size of x to speed up computation as
-            # numerical integration slow.
-            ['dni', 8, lambda r: (r['alpha'] > 0.25) & (npisin(r['x'], 
-                                                           [-10,-5,0,5,10]))],
+        # fmt: off
+        tests = [  # noqa
+            # TODO: reduce range of pct to speed up computation as
+            # numerical integration slow, eg [.01, .05, .5, .95, .99]
+            ['dni', 1e-7, lambda r: ~(
+                ((r['beta'] == 0) & (r['pct'] == 0.5))
+                | ((r['beta'] >= 0.9) & (r['alpha'] >= 1.6) & (r['pct'] == 0.5))
+                | ((r['alpha'] <= 0.4) & npisin(r['pct'], [.01, .99]))
+                | ((r['alpha'] <= 0.3) & npisin(r['pct'], [.05, .95]))
+                | ((r['alpha'] <= 0.2) & npisin(r['pct'], [.1, .9]))
+                | ((r['alpha'] == 0.1) & npisin(r['pct'], [.25, .75]) & npisin(np.abs(r['beta']), [.5, .6, .7]))
+                | ((r['alpha'] == 0.1) & npisin(r['pct'], [.5]) & npisin(np.abs(r['beta']), [.1]))
+                | ((r['alpha'] == 0.1) & (r['beta'] == -0.3) & (r['pct'] == 0.65))
+                | ((r['alpha'] == 0.1) & (r['beta'] == 0.4) & (r['pct'] == 0.35))
+                | ((r['alpha'] == 0.2) & (r['beta'] == 0.5) & (r['pct'] == 0.25))
+                | ((r['alpha'] == 0.2) & (r['beta'] == -0.3) & (r['pct'] == 0.65))
+                | ((r['alpha'] == 0.2) & (r['beta'] == 0.3) & (r['pct'] == 0.35))
+                | ((r['alpha'] == 1.) & npisin(r['pct'], [.5]) & npisin(np.abs(r['beta']), [.1, .2, .3, .4]))
+                | ((r['alpha'] == 1.) & npisin(r['pct'], [.35, .65]) & npisin(np.abs(r['beta']), [.8, .9, 1.]))
+                | ((r['alpha'] >= 1.1))  # various points ok but too sparse to list
+            )],
 
             # piecewise for most inputs
-            ['piecewise', 8, None],
+            ['piecewise', 1e-8, lambda r: ~(
+                ((r['beta'] == 0) & (r['pct'] == 0.5))
+                | ((r['alpha'] == 1) & npisin(r['beta'], [-.7, -.6, -.5, -.4, -.3, -.2, -.1, .1, .2]) & npisin(r['pct'], [.01, .99]))
+                | ((r['alpha'] == 1) & npisin(r['beta'], [-.6, -.4, -.2]) & npisin(r['pct'], [.05]))
+                | ((r['alpha'] == 0.1) & (r['beta'] == 0.9) & (r['pct'] == 0.1))
+                | ((r['alpha'] == 0.1) & (r['beta'] == -0.9) & (r['pct'] == 0.9))
+                | ((r['alpha'] == 1.) & (r['beta'] == -0.2) & (r['pct'] == 0.1))
+            )],
 
             # fft accuracy reduces as alpha decreases
-            ['fft-simpson', 8, lambda r: r['alpha'] > 1],
-            ['fft-simpson', 5, 
-             lambda r: (r['alpha'] < 1) & (r['alpha'] > 0.5)],  # not great
-            ['fft-simpson', 2, 
-             lambda r: (r['alpha'] <= 0.5) & (r['x'] != 0)],  # terrible
+            ['fft-simpson', 1e-5, lambda r: r['alpha'] >= 1.9],
+            ['fft-simpson', 1e-6, lambda r: (r['alpha'] > 1) & (r['alpha'] < 1.9)],
+            # ['fft-simpson', 1e-4, lambda r: r['alpha'] == 0.9],
+            # ['fft-simpson', 1e-3, lambda r: r['alpha'] == 0.8],
+            # ['fft-simpson', 1e-2, lambda r: r['alpha'] == 0.7],
+            # ['fft-simpson', 1e-1, lambda r: r['alpha'] == 0.6],
         ]
-        for ix, (default_method, decimal_places,
+        # fmt: on
+        for ix, (default_method, rtol,
                  filter_func) in enumerate(tests):
             stats.levy_stable.pdf_default_method = default_method
             subdata = data[filter_func(data)
                            ] if filter_func is not None else data
-            subdata = subdata[
-                subdata['p'] <= 1
-            ]  # we remove some spurious results from Nolan's stablec
             with suppress_warnings() as sup:
                 sup.record(
                     RuntimeWarning,
@@ -2342,17 +2363,25 @@ class TestLevyStable(object):
                     scale=1,
                     loc=0
                 )
-                subdata2 = rec_append_fields(subdata, 'calc', p)
+                with np.errstate(over="ignore"):
+                    subdata2 = rec_append_fields(subdata,
+                        ['calc', 'abserr', 'relerr'],
+                        [
+                            p,
+                            np.abs(p - subdata['p']),
+                            np.abs(p - subdata['p'])/np.abs(subdata['p'])
+                        ]
+                    )
                 failures = subdata2[
-                  (np.abs(p - subdata['p']) >= 1.5 * 10.**(-decimal_places)) |
+                  (subdata2['relerr'] >= rtol) |
                   np.isnan(p)
                 ]
-                assert_almost_equal(
+                assert_allclose(
                     p,
                     subdata['p'],
-                    decimal_places,
-                    "pdf test %s failed with method '%s'\n%s" %
-                    (ix, default_method, failures),
+                    rtol,
+                    err_msg="pdf test %s failed with method '%s'\n%s\n%s" %
+                    (ix, default_method, failures.dtype.names, failures),
                     verbose=False
                 )
 
