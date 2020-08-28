@@ -4,8 +4,6 @@ See also mio5_utils.pyx where these same constants arise as c enums.
 
 If you make changes in this file, don't forget to change mio5_utils.pyx
 '''
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 
 from .miobase import convert_dtypes
@@ -31,7 +29,7 @@ mxSTRUCT_CLASS = 2
 # The March 2008 edition of "Matlab 7 MAT-File Format" says that
 # mxOBJECT_CLASS = 3, whereas matrix.h says that mxLOGICAL = 3.
 # Matlab 2008a appears to save logicals as type 9, so we assume that
-# the document is correct.  See type 18, below.
+# the document is correct. See type 18, below.
 mxOBJECT_CLASS = 3
 mxCHAR_CLASS = 4
 mxSPARSE_CLASS = 5
@@ -50,7 +48,7 @@ mxUINT64_CLASS = 15
 mxFUNCTION_CLASS = 16
 # Not doing anything with these at the moment.
 mxOPAQUE_CLASS = 17  # This appears to be a function workspace
-# Thread 'saveing/loading symbol table of annymous functions', octave-maintainers, April-May 2007
+# Thread 'saving/loading symbol table of annymous functions', octave-maintainers, April-May 2007
 # https://lists.gnu.org/archive/html/octave-maintainers/2007-04/msg00031.html
 # https://lists.gnu.org/archive/html/octave-maintainers/2007-05/msg00032.html
 # (Was/Deprecated: https://www-old.cae.wisc.edu/pipermail/octave-maintainers/2007-May/002824.html)

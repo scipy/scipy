@@ -50,7 +50,7 @@
  * 
  *  The minimizer is a global minimizer (modulo floating point).
  * 
- *  The algorithm is the Moré-Sorensen-Method as decribed as Algorithm 5.2 in [Gould1999]_.
+ *  The algorithm is the Moré-Sorensen-Method as described as Algorithm 5.2 in [Gould1999]_.
  *
  *  **Convergence**
  *  
@@ -175,7 +175,7 @@
  *  :type obj: trlib_flt_t, output
  *  :param iter_newton: number of Newton iterations
  *  :type iter_newton: trlib_int_t, output
- *  :param sub_fail: status code of subroutine if failure occured in subroutines called
+ *  :param sub_fail: status code of subroutine if failure occurred in subroutines called
  *  :type sub_fail: trlib_int_t, output
  *
  *  :returns: status
@@ -262,7 +262,7 @@ trlib_int_t trlib_tri_factor_min(
  *  :type timing: trlib_int_t, input/output
  *  :param norm_sol: norm of solution fector
  *  :type norm_sol: trlib_flt_t, output
- *  :param sub_fail: status code of subroutine if failure occured in subroutines called
+ *  :param sub_fail: status code of subroutine if failure occurred in subroutines called
  *  :type sub_fail: trlib_int_t, output
  *
  *  :returns: status
@@ -345,7 +345,7 @@ trlib_int_t trlib_tri_factor_regularized_umin(
  *  :type timing: trlib_int_t, input/output
  *  :param norm_sol: norm of solution fector
  *  :type norm_sol: trlib_flt_t, output
- *  :param sub_fail: status code of subroutine if failure occured in subroutines called
+ *  :param sub_fail: status code of subroutine if failure occurred in subroutines called
  *  :type sub_fail: trlib_int_t, output
  *
  *  :returns: status

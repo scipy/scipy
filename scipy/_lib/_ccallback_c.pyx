@@ -1,5 +1,3 @@
-from __future__ import absolute_import
-
 from cpython.pycapsule cimport (
     PyCapsule_CheckExact, PyCapsule_New, PyCapsule_SetContext, PyCapsule_GetName, PyCapsule_GetPointer,
     PyCapsule_GetContext
@@ -157,7 +155,7 @@ cdef double test_thunk_cython(double a, int *error_flag, void *data) nogil excep
         with gil:
             try:
                 return float((<object>callback.py_function)(a))
-            except:
+            except:  # noqa: E722
                 error_flag[0] = 1
                 raise
 

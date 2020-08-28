@@ -169,7 +169,7 @@ double fdtrc(double a, double b, double x)
     double w;
 
     if ((a <= 0.0) || (b <= 0.0) || (x < 0.0)) {
-        mtherr("fdtrc", DOMAIN);
+        sf_error("fdtrc", SF_ERROR_DOMAIN, NULL);
         return NPY_NAN;
     }
     w = b / (b + a * x);
@@ -182,7 +182,7 @@ double fdtr(double a, double b, double x)
     double w;
 
     if ((a <= 0.0) || (b <= 0.0) || (x < 0.0)) {
-        mtherr("fdtr", DOMAIN);
+        sf_error("fdtr", SF_ERROR_DOMAIN, NULL);
         return NPY_NAN;
     }
     w = a * x;
@@ -196,7 +196,7 @@ double fdtri(double a, double b, double y)
     double w, x;
 
     if ((a <= 0.0) || (b <= 0.0) || (y <= 0.0) || (y > 1.0)) {
-        mtherr("fdtri", DOMAIN);
+        sf_error("fdtri", SF_ERROR_DOMAIN, NULL);
         return NPY_NAN;
     }
     y = 1.0 - y;

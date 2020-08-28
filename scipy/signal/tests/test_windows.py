@@ -1,14 +1,14 @@
-from __future__ import division, print_function, absolute_import
+import pickle
 
 import numpy as np
 from numpy import array
 from numpy.testing import (assert_array_almost_equal, assert_array_equal,
                            assert_allclose,
-                           assert_equal, assert_, assert_array_less)
+                           assert_equal, assert_, assert_array_less,
+                           suppress_warnings)
 from pytest import raises as assert_raises
 
-from scipy._lib._numpy_compat import suppress_warnings
-from scipy import fftpack
+from scipy.fft import fft
 from scipy.signal import windows, get_window, resample, hann as dep_hann
 
 
@@ -30,7 +30,6 @@ window_funcs = [
     ('gaussian', (0.5,)),
     ('general_gaussian', (1.5, 2)),
     ('chebwin', (1,)),
-    ('slepian', (2,)),
     ('cosine', ()),
     ('hann', ()),
     ('exponential', ()),
@@ -295,6 +294,27 @@ class TestGaussian(object):
                          0.8007374029168081])
 
 
+class TestGeneralCosine(object):
+
+    def test_basic(self):
+        assert_allclose(windows.general_cosine(5, [0.5, 0.3, 0.2]),
+                        [0.4, 0.3, 1, 0.3, 0.4])
+        assert_allclose(windows.general_cosine(4, [0.5, 0.3, 0.2], sym=False),
+                        [0.4, 0.3, 1, 0.3])
+
+class TestGeneralHamming(object):
+
+    def test_basic(self):
+        assert_allclose(windows.general_hamming(5, 0.7),
+                        [0.4, 0.7, 1.0, 0.7, 0.4])
+        assert_allclose(windows.general_hamming(5, 0.75, sym=False),
+                        [0.5, 0.6727457514, 0.9522542486,
+                         0.9522542486, 0.6727457514])
+        assert_allclose(windows.general_hamming(6, 0.75, sym=True),
+                        [0.5, 0.6727457514, 0.9522542486,
+                        0.9522542486, 0.6727457514, 0.5])
+
+
 class TestHamming(object):
 
     def test_basic(self):
@@ -550,8 +570,8 @@ class TestGetWindow(object):
         sig = np.arange(128)
 
         win = windows.get_window(('kaiser', 8.0), osfactor // 2)
-        assert_raises(ValueError, resample,
-                      (sig, len(sig) * osfactor), {'window': win})
+        with assert_raises(ValueError, match='must have the same length'):
+            resample(sig, len(sig) * osfactor, window=win)
 
 
 def test_windowfunc_basics():
@@ -559,7 +579,7 @@ def test_windowfunc_basics():
         window = getattr(windows, window_name)
         with suppress_warnings() as sup:
             sup.filter(UserWarning, "This window is not suitable")
-            if window_name == 'slepian':
+            if window_name in ('hanning',):
                 sup.filter(DeprecationWarning)
             # Check symmetry for odd and even lengths
             w1 = window(8, *params, sym=True)
@@ -601,9 +621,9 @@ def test_windowfunc_basics():
             assert_array_less(window(9, *params, sym=False), 1.01)
 
             # Check that DFT-even spectrum is purely real for odd and even
-            assert_allclose(fftpack.fft(window(10, *params, sym=False)).imag,
+            assert_allclose(fft(window(10, *params, sym=False)).imag,
                             0, atol=1e-14)
-            assert_allclose(fftpack.fft(window(11, *params, sym=False)).imag,
+            assert_allclose(fft(window(11, *params, sym=False)).imag,
                             0, atol=1e-14)
 
 
@@ -611,7 +631,7 @@ def test_needs_params():
     for winstr in ['kaiser', 'ksr', 'gaussian', 'gauss', 'gss',
                    'general gaussian', 'general_gaussian',
                    'general gauss', 'general_gauss', 'ggs',
-                   'slepian', 'optimal', 'slep', 'dss', 'dpss',
+                   'dss', 'dpss',
                    'chebwin', 'cheb', 'exponential', 'poisson', 'tukey',
                    'tuk', 'dpss']:
         assert_raises(ValueError, get_window, winstr, 7)
@@ -621,3 +641,8 @@ def test_deprecation():
     if dep_hann.__doc__ is not None:  # can be None with `-OO` mode
         assert_('signal.hann is deprecated' in dep_hann.__doc__)
         assert_('deprecated' not in windows.hann.__doc__)
+
+
+def test_deprecated_pickleable():
+    dep_hann2 = pickle.loads(pickle.dumps(dep_hann))
+    assert_(dep_hann2 is dep_hann)

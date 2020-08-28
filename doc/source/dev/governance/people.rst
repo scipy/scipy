@@ -1,3 +1,5 @@
+:orphan:
+
 .. _governance-people:
 
 Current steering council and institutional partners
@@ -15,17 +17,20 @@ Steering Council
 * Anne Archibald
 * Andrew Nelson
 * Charles Harris
+* Christoph Baumgarten
 * CJ Carey
-* Denis Laxalde
 * Eric Larson
 * Eric Moore
 * Eric Quintero
 * Evgeni Burovski
+* Ilhan Polat
 * Jaime Fernández del Río
 * Josef Perktold
 * Josh Wilson
+* Matt Haberland
 * Matthew Brett
 * Nikolay Mayorov
+* Paul van Mulbregt
 * Pauli Virtanen
 * Ralf Gommers (Chair)
 * Tyler Reddy
@@ -35,7 +40,7 @@ Steering Council
 Release Manager
 ---------------
 
-Ralf Gommers is the release manager for the 1.0 release
+Tyler Reddy is the current release manager
 
 
 Institutional Partners

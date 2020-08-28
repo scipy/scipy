@@ -1,48 +1,85 @@
-from __future__ import division, print_function, absolute_import
-
-from numpy import sqrt, inner, finfo, zeros
+from numpy import sqrt, inner, zeros, inf, finfo
 from numpy.linalg import norm
 
 from .utils import make_system
-from .iterative import set_docstring
 
 __all__ = ['minres']
 
 
-header = \
-"""Use MINimum RESidual iteration to solve Ax=b
-
-MINRES minimizes norm(A*x - b) for a real symmetric matrix A.  Unlike
-the Conjugate Gradient method, A can be indefinite or singular.
-
-If shift != 0 then the method solves (A - shift*I)x = b
-"""
-
-Ainfo = "The real symmetric N-by-N matrix of the linear system"
-
-footer = \
-"""
-Notes
------
-THIS FUNCTION IS EXPERIMENTAL AND SUBJECT TO CHANGE!
-
-References
-----------
-Solution of sparse indefinite systems of linear equations,
-    C. C. Paige and M. A. Saunders (1975),
-    SIAM J. Numer. Anal. 12(4), pp. 617-629.
-    https://web.stanford.edu/group/SOL/software/minres/
-
-This file is a translation of the following MATLAB implementation:
-    https://web.stanford.edu/group/SOL/software/minres/minres-matlab.zip
-"""
-
-
-@set_docstring(header,
-               Ainfo,
-               footer)
 def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None,
            M=None, callback=None, show=False, check=False):
+    """
+    Use MINimum RESidual iteration to solve Ax=b
+
+    MINRES minimizes norm(A*x - b) for a real symmetric matrix A.  Unlike
+    the Conjugate Gradient method, A can be indefinite or singular.
+
+    If shift != 0 then the method solves (A - shift*I)x = b
+
+    Parameters
+    ----------
+    A : {sparse matrix, dense matrix, LinearOperator}
+        The real symmetric N-by-N matrix of the linear system
+        Alternatively, ``A`` can be a linear operator which can
+        produce ``Ax`` using, e.g.,
+        ``scipy.sparse.linalg.LinearOperator``.
+    b : {array, matrix}
+        Right hand side of the linear system. Has shape (N,) or (N,1).
+
+    Returns
+    -------
+    x : {array, matrix}
+        The converged solution.
+    info : integer
+        Provides convergence information:
+            0  : successful exit
+            >0 : convergence to tolerance not achieved, number of iterations
+            <0 : illegal input or breakdown
+
+    Other Parameters
+    ----------------
+    x0  : {array, matrix}
+        Starting guess for the solution.
+    tol : float
+        Tolerance to achieve. The algorithm terminates when the relative
+        residual is below `tol`.
+    maxiter : integer
+        Maximum number of iterations.  Iteration will stop after maxiter
+        steps even if the specified tolerance has not been achieved.
+    M : {sparse matrix, dense matrix, LinearOperator}
+        Preconditioner for A.  The preconditioner should approximate the
+        inverse of A.  Effective preconditioning dramatically improves the
+        rate of convergence, which implies that fewer iterations are needed
+        to reach a given error tolerance.
+    callback : function
+        User-supplied function to call after each iteration.  It is called
+        as callback(xk), where xk is the current solution vector.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.sparse import csc_matrix
+    >>> from scipy.sparse.linalg import minres
+    >>> A = csc_matrix([[3, 2, 0], [1, -1, 0], [0, 5, 1]], dtype=float)
+    >>> A = A + A.T
+    >>> b = np.array([2, 4, -1], dtype=float)
+    >>> x, exitCode = minres(A, b)
+    >>> print(exitCode)            # 0 indicates successful convergence
+    0
+    >>> np.allclose(A.dot(x), b)
+    True
+
+    References
+    ----------
+    Solution of sparse indefinite systems of linear equations,
+        C. C. Paige and M. A. Saunders (1975),
+        SIAM J. Numer. Anal. 12(4), pp. 617-629.
+        https://web.stanford.edu/group/SOL/software/minres/
+
+    This file is a translation of the following MATLAB implementation:
+        https://web.stanford.edu/group/SOL/software/minres/minres-matlab.zip
+
+    """
     A, M, x, b, postprocess = make_system(A, M, x0, b)
 
     matvec = A.matvec
@@ -57,7 +94,7 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None,
         maxiter = 5 * n
 
     msg = [' beta2 = 0.  If M = I, b and x are eigenvectors    ',   # -1
-            ' beta1 = 0.  The exact solution is  x = 0          ',   # 0
+            ' beta1 = 0.  The exact solution is x0          ',   # 0
             ' A solution to Ax = b was found, given rtol        ',   # 1
             ' A least-squares solution was found, given rtol    ',   # 2
             ' Reasonable accuracy achieved, given eps           ',   # 3
@@ -85,18 +122,14 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None,
 
     eps = finfo(xtype).eps
 
-    x = zeros(n, dtype=xtype)
-
     # Set up y and v for the first Lanczos vector v1.
     # y  =  beta1 P' v1,  where  P = C**(-1).
     # v is really P' v1.
 
-    y = b
-    r1 = b
+    r1 = b - A*x
+    y = psolve(r1)
 
-    y = psolve(b)
-
-    beta1 = inner(b,y)
+    beta1 = inner(r1, y)
 
     if beta1 < 0:
         raise ValueError('indefinite preconditioner')
@@ -137,7 +170,8 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None,
     rhs1 = beta1
     rhs2 = 0
     tnorm2 = 0
-    ynorm2 = 0
+    gmax = 0
+    gmin = finfo(xtype).max
     cs = -1
     sn = 0
     w = zeros(n, dtype=xtype)
@@ -176,9 +210,6 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None,
         if itn == 1:
             if beta/beta1 <= 10*eps:
                 istop = -1  # Terminate later
-            # tnorm2 = alfa**2 ??
-            gmax = abs(alfa)
-            gmin = gmax
 
         # Apply previous rotation Qk-1 to get
         #   [deltak epslnk+1] = [cs  sn][dbark    0   ]
@@ -214,14 +245,13 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None,
         gmax = max(gmax, gamma)
         gmin = min(gmin, gamma)
         z = rhs1 / gamma
-        ynorm2 = z**2 + ynorm2
         rhs1 = rhs2 - delta*z
         rhs2 = - epsln*z
 
         # Estimate various norms and test for convergence.
 
         Anorm = sqrt(tnorm2)
-        ynorm = sqrt(ynorm2)
+        ynorm = norm(x)
         epsa = Anorm * eps
         epsx = Anorm * ynorm * eps
         epsr = Anorm * ynorm * tol
@@ -232,8 +262,14 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None,
 
         qrnorm = phibar
         rnorm = qrnorm
-        test1 = rnorm / (Anorm*ynorm)    # ||r||  / (||A|| ||x||)
-        test2 = root / Anorm            # ||Ar|| / (||A|| ||r||)
+        if ynorm == 0 or Anorm == 0:
+            test1 = inf
+        else:
+            test1 = rnorm / (Anorm*ynorm)    # ||r||  / (||A|| ||x||)
+        if Anorm == 0:
+            test2 = inf
+        else:
+            test2 = root / Anorm            # ||Ar|| / (||A|| ||r||)
 
         # Estimate  cond(A).
         # In this version we look at the diagonals of  R  in the
@@ -258,7 +294,7 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None,
                 istop = 6
             if Acond >= 0.1/eps:
                 istop = 4
-            if epsx >= beta:
+            if epsx >= beta1:
                 istop = 3
             # if rnorm <= epsx   : istop = 2
             # if rnorm <= epsr   : istop = 1
@@ -320,8 +356,7 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None,
 
 
 if __name__ == '__main__':
-    from scipy import ones, arange
-    from scipy.linalg import norm
+    from numpy import arange
     from scipy.sparse import spdiags
 
     n = 10
@@ -335,6 +370,6 @@ if __name__ == '__main__':
     A = spdiags([arange(1,n+1,dtype=float)], [0], n, n, format='csr')
     M = spdiags([1.0/arange(1,n+1,dtype=float)], [0], n, n, format='csr')
     A.psolve = M.matvec
-    b = 0*ones(A.shape[0])
+    b = zeros(A.shape[0])
     x = minres(A,b,tol=1e-12,maxiter=None,callback=cb)
     # x = cg(A,b,x0=b,tol=1e-12,maxiter=None,callback=cb)[0]

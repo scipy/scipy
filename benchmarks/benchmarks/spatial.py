@@ -1,5 +1,3 @@
-from __future__ import division, absolute_import, print_function
-
 import numpy as np
 
 try:
@@ -22,7 +20,17 @@ try:
 except ImportError:
     pass
 
-from .common import Benchmark
+try:
+    from scipy.spatial import geometric_slerp
+except ImportError:
+    pass
+
+try:
+    from scipy.spatial.transform import Rotation
+except ImportError:
+    pass
+
+from .common import Benchmark, LimitedParamBenchmark
 
 
 class Build(Benchmark):
@@ -55,16 +63,75 @@ class Build(Benchmark):
         else:
             self.cls(self.data)
 
+
+class PresortedDataSetup(Benchmark):
+    params = [
+        [(3, 10 ** 4, 1000), (8, 10 ** 4, 1000), (16, 10 ** 4, 1000)],
+        [True, False],
+        ['random', 'sorted'],
+        [0.5]
+    ]
+    param_names = ['(m, n, r)', 'balanced', 'order', 'radius']
+
+    def setup(self, mnr, balanced, order, radius):
+        m, n, r = mnr
+
+        np.random.seed(1234)
+        self.data = {
+            'random': np.random.uniform(size=(n, m)),
+            'sorted': np.repeat(np.arange(n, 0, -1)[:, np.newaxis],
+                                m,
+                                axis=1) / n
+        }
+
+        self.queries = np.random.uniform(size=(r, m))
+        self.T = cKDTree(self.data.get(order), balanced_tree=balanced)
+
+
+class BuildUnbalanced(PresortedDataSetup):
+    params = PresortedDataSetup.params[:-1]
+    param_names = PresortedDataSetup.param_names[:-1]
+
+    def setup(self, *args):
+        super().setup(*args, None)
+
+    def time_build(self, mnr, balanced, order):
+        cKDTree(self.data.get(order), balanced_tree=balanced)
+
+
+class QueryUnbalanced(PresortedDataSetup):
+    params = PresortedDataSetup.params[:-1]
+    param_names = PresortedDataSetup.param_names[:-1]
+
+    def setup(self, *args):
+        super().setup(*args, None)
+
+    def time_query(self, mnr, balanced, order):
+        self.T.query(self.queries)
+
+
+class RadiusUnbalanced(PresortedDataSetup):
+    params = PresortedDataSetup.params[:]
+    params[0] = [(3, 1000, 30), (8, 1000, 30), (16, 1000, 30)]
+
+    def time_query_pairs(self, mnr, balanced, order, radius):
+        self.T.query_pairs(radius)
+
+    def time_query_ball_point(self, mnr, balanced, order, radius):
+        self.T.query_ball_point(self.queries, radius)
+
+
 LEAF_SIZES = [8, 128]
 BOX_SIZES = [None, 0.0, 1.0]
 
-class Query(Benchmark):
+class Query(LimitedParamBenchmark):
     params = [
         [(3,10000,1000), (8,10000,1000), (16,10000,1000)],
         [1, 2, np.inf],
         BOX_SIZES, LEAF_SIZES,
     ]
     param_names = ['(m, n, r)', 'p', 'boxsize', 'leafsize']
+    num_param_combinations = 21
 
     @staticmethod
     def do_setup(self, mnr, p, boxsize, leafsize):
@@ -78,6 +145,7 @@ class Query(Benchmark):
         self.T = cKDTree(self.data, leafsize=leafsize, boxsize=boxsize)
 
     def setup(self, mnr, p, boxsize, leafsize):
+        LimitedParamBenchmark.setup(self, mnr, p, boxsize, leafsize)
         Query.do_setup(self, mnr, p, boxsize, leafsize)
 
     def time_query(self, mnr, p, boxsize, leafsize):
@@ -87,8 +155,11 @@ class Query(Benchmark):
         """
         self.T.query(self.queries, p=p)
 
+    # Retain old benchmark results (remove this if changing the benchmark)
+    time_query.version = "327bc0627d5387347e9cdcf4c52a550c813bb80a859eeb0f3e5bfe6650a8a1db"
 
-class Radius(Benchmark):
+
+class Radius(LimitedParamBenchmark):
     params = [
         [(3,10000,1000)],
         [1, 2, np.inf],
@@ -96,24 +167,45 @@ class Radius(Benchmark):
         BOX_SIZES, LEAF_SIZES,
     ]
     param_names = ['(m, n, r)', 'p', 'probe radius', 'boxsize', 'leafsize']
+    num_param_combinations = 7
 
     def __init__(self):
         self.time_query_pairs.__func__.params = list(self.params)
         self.time_query_pairs.__func__.params[0] = [(3,1000,30),
                                                     (8,1000,30),
                                                     (16,1000,30)]
+        self.time_query_ball_point.__func__.setup = self.setup_query_ball_point
+        self.time_query_ball_point_nosort.__func__.setup = self.setup_query_ball_point
+        self.time_query_pairs.__func__.setup = self.setup_query_pairs
 
-    def setup(self, mnr, p, probe_radius, boxsize, leafsize):
+    def setup(self, *args):
+        pass
+
+    def setup_query_ball_point(self, mnr, p, probe_radius, boxsize, leafsize):
+        LimitedParamBenchmark.setup(self, mnr, p, probe_radius, boxsize, leafsize,
+                                    param_seed=3)
+        Query.do_setup(self, mnr, p, boxsize, leafsize)
+
+    def setup_query_pairs(self, mnr, p, probe_radius, boxsize, leafsize):
+        # query_pairs is fast enough so we can run all parameter combinations
         Query.do_setup(self, mnr, p, boxsize, leafsize)
 
     def time_query_ball_point(self, mnr, p, probe_radius, boxsize, leafsize):
         self.T.query_ball_point(self.queries, probe_radius, p=p)
 
+    def time_query_ball_point_nosort(self, mnr, p, probe_radius, boxsize, leafsize):
+        self.T.query_ball_point(self.queries, probe_radius, p=p,
+                                return_sorted=False)
+
     def time_query_pairs(self, mnr, p, probe_radius, boxsize, leafsize):
         self.T.query_pairs(probe_radius, p=p)
 
+    # Retain old benchmark results (remove this if changing the benchmark)
+    time_query_ball_point.version = "e0c2074b35db7e5fca01a43b0fba8ab33a15ed73d8573871ea6feb57b3df4168"
+    time_query_pairs.version = "cf669f7d619e81e4a09b28bb3fceaefbdd316d30faf01524ab33d41661a53f56"
 
-class Neighbors(Benchmark):
+
+class Neighbors(LimitedParamBenchmark):
     params = [
         [(3,1000,1000),
          (8,1000,1000),
@@ -124,8 +216,11 @@ class Neighbors(Benchmark):
         ['cKDTree', 'cKDTree_weighted'],
     ]
     param_names = ['(m, n1, n2)', 'p', 'probe radius', 'boxsize', 'leafsize', 'cls']
+    num_param_combinations = 17
 
     def setup(self, mn1n2, p, probe_radius, boxsize, leafsize, cls):
+        LimitedParamBenchmark.setup(self, mn1n2, p, probe_radius, boxsize, leafsize, cls)
+
         m, n1, n2 = mn1n2
 
         self.data1 = np.random.uniform(size=(n1, m))
@@ -151,6 +246,11 @@ class Neighbors(Benchmark):
         else:
             self.T1.count_neighbors(self.T2, probe_radius, weights=(self.w1, self.w2), p=p)
 
+    # Retain old benchmark results (remove this if changing the benchmark)
+    time_sparse_distance_matrix.version = "9aa921dce6da78394ab29d949be27953484613dcf9c9632c01ae3973d4b29596"
+    time_count_neighbors.version = "830287f1cf51fa6ba21854a60b03b2a6c70b2f2485c3cdcfb19a360e0a7e2ca2"
+
+
 class CNeighbors(Benchmark):
     params = [
         [
@@ -169,7 +269,7 @@ class CNeighbors(Benchmark):
         data2 = np.random.uniform(size=(n2, m))
         self.w1 = np.ones(len(data1))
         self.w2 = np.ones(len(data2))
- 
+
         self.T1d = cKDTree(data1, leafsize=1)
         self.T2d = cKDTree(data2, leafsize=1)
         self.T1s = cKDTree(data1, leafsize=8)
@@ -191,12 +291,12 @@ class CNeighbors(Benchmark):
         self.T1s.count_neighbors(self.T2s, self.r)
 
 def generate_spherical_points(num_points):
-        # generate uniform points on sphere (see:
-        # http://stackoverflow.com/a/23785326/2942522)
-        np.random.seed(123)
-        points = np.random.normal(size=(num_points, 3))
-        points /= np.linalg.norm(points, axis=1)[:, np.newaxis]
-        return points
+    # generate uniform points on sphere
+    # see: https://stackoverflow.com/a/23785326
+    np.random.seed(123)
+    points = np.random.normal(size=(num_points, 3))
+    points /= np.linalg.norm(points, axis=1)[:, np.newaxis]
+    return points
 
 class SphericalVor(Benchmark):
     params = [10, 100, 1000, 5000, 10000]
@@ -226,23 +326,54 @@ class SphericalVorSort(Benchmark):
         """
         self.sv.sort_vertices_of_regions()
 
-class Cdist(Benchmark):
+
+class SphericalVorAreas(Benchmark):
+    params = [10, 100, 1000, 5000, 10000]
+    param_names = ['num_points']
+
+    def setup(self, num_points):
+        self.points = generate_spherical_points(num_points)
+        self.sv = SphericalVoronoi(self.points, radius=1,
+                                   center=np.zeros(3))
+
+    def time_spherical_polygon_area_calculation(self, num_points):
+        """Time the area calculation in the Spherical Voronoi code."""
+        self.sv.calculate_areas()
+
+
+class Xdist(Benchmark):
     params = ([10, 100, 1000], ['euclidean', 'minkowski', 'cityblock',
     'seuclidean', 'sqeuclidean', 'cosine', 'correlation', 'hamming', 'jaccard',
-    'chebyshev', 'canberra', 'braycurtis', 'mahalanobis', 'yule', 'dice',
-    'kulsinski', 'rogerstanimoto', 'russellrao', 'sokalmichener',
-    'sokalsneath', 'wminkowski'])
+    'jensenshannon', 'chebyshev', 'canberra', 'braycurtis', 'mahalanobis',
+    'yule', 'dice', 'kulsinski', 'rogerstanimoto', 'russellrao',
+    'sokalmichener', 'sokalsneath', 'wminkowski', 'minkowski-P3'])
     param_names = ['num_points', 'metric']
 
     def setup(self, num_points, metric):
         np.random.seed(123)
         self.points = np.random.random_sample((num_points, 3))
+        self.metric = metric
+        if metric == 'minkowski-P3':
+            # p=2 is just the euclidean metric, try another p value as well
+            self.kwargs = {'p': 3.0}
+            self.metric = 'minkowski'
+        elif metric == 'wminkowski':
+            # use an equal weight vector since weights are required
+            self.kwargs = {'w': np.ones(3)}
+        else:
+            self.kwargs = {}
 
     def time_cdist(self, num_points, metric):
         """Time scipy.spatial.distance.cdist over a range of input data
         sizes and metrics.
         """
-        distance.cdist(self.points, self.points, metric)
+        distance.cdist(self.points, self.points, self.metric, **self.kwargs)
+
+    def time_pdist(self, num_points, metric):
+        """Time scipy.spatial.distance.pdist over a range of input data
+        sizes and metrics.
+        """
+        distance.pdist(self.points, self.metric, **self.kwargs)
 
 
 class ConvexHullBench(Benchmark):
@@ -286,3 +417,48 @@ class Hausdorff(Benchmark):
         # time directed_hausdorff code in 3 D
         distance.directed_hausdorff(self.points1, self.points2)
 
+class GeometricSlerpBench(Benchmark):
+    params = [10, 1000, 10000]
+    param_names = ['num_points']
+
+    def setup(self, num_points):
+        points = generate_spherical_points(50)
+        # any two points from the random spherical points
+        # will suffice for the interpolation bounds:
+        self.start = points[0]
+        self.end = points[-1]
+        self.t = np.linspace(0, 1, num_points)
+
+    def time_geometric_slerp_3d(self, num_points):
+        # time geometric_slerp() for 3D interpolation
+        geometric_slerp(start=self.start,
+                        end=self.end,
+                        t=self.t)
+
+class RotationBench(Benchmark):
+    params = [1, 10, 1000, 10000]
+    param_names = ['num_rotations']
+
+    def setup(self, num_rotations):
+        np.random.seed(1234)
+        self.rotations = Rotation.random(num_rotations)
+
+    def time_matrix_conversion(self, num_rotations):
+        '''Time converting rotation from and to matrices'''
+        Rotation.from_matrix(self.rotations.as_matrix())
+
+    def time_euler_conversion(self, num_rotations):
+        '''Time converting rotation from and to euler angles'''
+        Rotation.from_euler("XYZ", self.rotations.as_euler("XYZ"))
+
+    def time_rotvec_conversion(self, num_rotations):
+        '''Time converting rotation from and to rotation vectors'''
+        Rotation.from_rotvec(self.rotations.as_rotvec())
+
+    def time_mrp_conversion(self, num_rotations):
+        '''Time converting rotation from and to Modified Rodrigues Parameters'''
+        Rotation.from_mrp(self.rotations.as_mrp())
+
+    def time_mul_inv(self, num_rotations):
+        '''Time multiplication and inverse of rotations'''
+        self.rotations * self.rotations.inv()

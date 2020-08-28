@@ -10,10 +10,7 @@ cache:
 
 environment:
   global:
-      MINGW_32: C:\mingw-w64\i686-6.3.0-posix-dwarf-rt_v5-rev1\mingw32\bin
       MINGW_64: C:\mingw-w64\x86_64-6.3.0-posix-seh-rt_v5-rev1\mingw64\bin
-      OPENBLAS_32: https://3f23b170c54c2533c070-1c8a9b3114517dc5fe17b7c3f8c63a43.ssl.cf2.rackcdn.com/openblas-5f998ef_gcc7_1_0_win32.zip
-      OPENBLAS_64: https://3f23b170c54c2533c070-1c8a9b3114517dc5fe17b7c3f8c63a43.ssl.cf2.rackcdn.com/openblas-5f998ef_gcc7_1_0_win64.zip
       NUMPY_HEAD: https://github.com/numpy/numpy.git
       NUMPY_BRANCH: master
       APPVEYOR_SAVE_CACHE_ON_ERROR: true
@@ -21,48 +18,9 @@ environment:
       TEST_TIMEOUT: 1000
 
   matrix:
-    - PYTHON: C:\Python36
-      PYTHON_VERSION: 3.6
-      PYTHON_ARCH: 32
-      TEST_MODE: fast
-
-    - PYTHON: C:\Python27-x64
-      PYTHON_VERSION: 2.7
+    - PYTHON: C:\Python37-x64
+      PYTHON_VERSION: 3.7
       PYTHON_ARCH: 64
-      TEST_MODE: fast
-
-    - PYTHON: C:\Python34-x64
-      PYTHON_VERSION: 3.4
-      PYTHON_ARCH: 64
-      TEST_MODE: fast
-
-    - PYTHON: C:\Python36-x64
-      PYTHON_VERSION: 3.6
-      PYTHON_ARCH: 64
-      TEST_MODE: full
-
-    - PYTHON: C:\Python27
-      PYTHON_VERSION: 2.7
-      PYTHON_ARCH: 32
-      SKIP_NOTAG: true
-      TEST_MODE: full
-
-    - PYTHON: C:\Python34
-      PYTHON_VERSION: 3.4
-      PYTHON_ARCH: 32
-      SKIP_NOTAG: true
-      TEST_MODE: full
-
-    - PYTHON: C:\Python35-x64
-      PYTHON_VERSION: 3.5
-      PYTHON_ARCH: 64
-      SKIP_NOTAG: true
-      TEST_MODE: full
-
-    - PYTHON: C:\Python35
-      PYTHON_VERSION: 3.5
-      PYTHON_ARCH: 32
-      SKIP_NOTAG: true
       TEST_MODE: full
 
 init:
@@ -105,28 +63,9 @@ install:
   - ps: |
       $PYTHON_ARCH = $env:PYTHON_ARCH
       $PYTHON = $env:PYTHON
-      If ($PYTHON_ARCH -eq 32) {
-          $OPENBLAS = $env:OPENBLAS_32
-      } Else {
-          $OPENBLAS = $env:OPENBLAS_64
-      }
-      $clnt = new-object System.Net.WebClient
-      $file = "$(New-TemporaryFile).zip"
-      $tmpdir = New-TemporaryFile | %{ rm $_; mkdir $_ }
+
+      $lib = python tools/openblas_support.py
       $destination = "$PYTHON\lib\openblas.a"
-
-      echo $file
-      echo $tmpdir
-      echo $OPENBLAS
-
-      $clnt.DownloadFile($OPENBLAS,$file)
-      Get-FileHash $file | Format-List
-
-      Expand-Archive $file $tmpdir      
-
-      rm $tmpdir\$PYTHON_ARCH\lib\*.dll.a
-      $lib = ls $tmpdir\$PYTHON_ARCH\lib\*.a | ForEach { ls $_ } | Select-Object -first 1
-      echo $lib
 
       cp $lib $destination
       ls $destination
@@ -137,29 +76,14 @@ install:
   # Install the scipy test dependencies.
   - '%CMD_IN_ENV% pip install -U --timeout 5 --retries 2 -r tools/ci/appveyor/requirements.txt'
 
-  # Replace numpy distutils with a version that can build with msvc + mingw-gfortran
-  - ps: |
-      $NumpyDir = $((python -c 'import os; import numpy; print(os.path.dirname(numpy.__file__))') | Out-String).Trim()
-      rm -r -Force "$NumpyDir\distutils"
-      $tmpdir = New-TemporaryFile | %{ rm $_; mkdir $_ }
-
-      echo $env:NUMPY_HEAD
-      echo $env:NUMPY_BRANCH
-      git clone -q --depth=1 -b $env:NUMPY_BRANCH $env:NUMPY_HEAD $tmpdir
-      mv $tmpdir\numpy\distutils $NumpyDir
-
 build_script:
   - ps: |
       $PYTHON_ARCH = $env:PYTHON_ARCH
-      If ($PYTHON_ARCH -eq 32) {
-          $MINGW = $env:MINGW_32 
-      } Else {
-          $MINGW = $env:MINGW_64
-      }
+      $MINGW = $env:MINGW_64
       $env:Path += ";$MINGW"
       $env:NPY_NUM_BUILD_JOBS = "4"
       mkdir dist
-      pip wheel -v -v -v --wheel-dir=dist .
+      pip wheel --no-build-isolation -v -v -v --wheel-dir=dist .
 
       ls dist -r | Foreach-Object {
           appveyor PushArtifact $_.FullName

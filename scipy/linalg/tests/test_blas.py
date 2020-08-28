@@ -1,8 +1,6 @@
 #
 # Created by: Pearu Peterson, April 2002
 #
-from __future__ import division, print_function, absolute_import
-
 
 __usage__ = """
 Build linalg:
@@ -12,7 +10,7 @@ Run tests if scipy is installed:
 """
 
 import math
-
+import pytest
 import numpy as np
 from numpy.testing import (assert_equal, assert_almost_equal, assert_,
                            assert_array_almost_equal, assert_allclose)
@@ -23,8 +21,7 @@ from numpy import float32, float64, complex64, complex128, arange, triu, \
                   nonzero
 
 from numpy.random import rand, seed
-from scipy.linalg import _fblas as fblas, get_blas_funcs, toeplitz, solve, \
-                                          solve_triangular
+from scipy.linalg import _fblas as fblas, get_blas_funcs, toeplitz, solve
 
 try:
     from scipy.linalg import _cblas as cblas
@@ -946,6 +943,7 @@ class TestBLAS3Syr2k(object):
 
 class TestSyHe(object):
     """Quick and simple tests for (zc)-symm, syrk, syr2k."""
+
     def setup_method(self):
         self.sigma_y = np.array([[0., -1.j],
                                  [1.j, 0.]])
@@ -985,11 +983,30 @@ class TestSyHe(object):
 
 class TestTRMM(object):
     """Quick and simple tests for dtrmm."""
+
     def setup_method(self):
         self.a = np.array([[1., 2., ],
                            [-2., 1.]])
         self.b = np.array([[3., 4., -1.],
                            [5., 6., -2.]])
+
+        self.a2 = np.array([[1, 1, 2, 3],
+                            [0, 1, 4, 5],
+                            [0, 0, 1, 6],
+                            [0, 0, 0, 1]], order="f")
+        self.b2 = np.array([[1, 4], [2, 5], [3, 6], [7, 8], [9, 10]],
+                           order="f")
+
+    @pytest.mark.parametrize("dtype_", DTYPES)
+    def test_side(self, dtype_):
+        trmm = get_blas_funcs("trmm", dtype=dtype_)
+        # Provide large A array that works for side=1 but not 0 (see gh-10841)
+        assert_raises(Exception, trmm, 1.0, self.a2, self.b2)
+        res = trmm(1.0, self.a2.astype(dtype_), self.b2.astype(dtype_),
+                   side=1)
+        k = self.b2.shape[1]
+        assert_allclose(res, self.b2 @ self.a2[:k, :k], rtol=0.,
+                        atol=100*np.finfo(dtype_).eps)
 
     def test_ab(self):
         f = getattr(fblas, 'dtrmm', None)

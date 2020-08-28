@@ -1,10 +1,8 @@
 """Boundary value problem solver."""
-from __future__ import division, print_function, absolute_import
-
 from warnings import warn
 
 import numpy as np
-from numpy.linalg import norm, pinv
+from numpy.linalg import pinv
 
 from scipy.sparse import coo_matrix, csc_matrix
 from scipy.sparse.linalg import splu
@@ -145,12 +143,11 @@ def compute_jac_indices(n, m, k):
 def stacked_matmul(a, b):
     """Stacked matrix multiply: out[i,:,:] = np.dot(a[i,:,:], b[i,:,:]).
 
-    In our case a[i, :, :] and b[i, :, :] are always square.
+    Empirical optimization. Use outer Python loop and BLAS for large
+    matrices, otherwise use a single einsum call.
     """
-    # Empirical optimization. Use outer Python loop and BLAS for large
-    # matrices, otherwise use a single einsum call.
     if a.shape[1] > 50:
-        out = np.empty_like(a)
+        out = np.empty((a.shape[0], a.shape[1], b.shape[2]))
         for i in range(a.shape[0]):
             out[i] = np.dot(a[i], b[i])
         return out
@@ -347,7 +344,7 @@ def prepare_sys(n, m, k, fun, bc, fun_jac, bc_jac, x, h):
     return col_fun, sys_jac
 
 
-def solve_newton(n, m, h, col_fun, bc, jac, y, p, B, bvp_tol):
+def solve_newton(n, m, h, col_fun, bc, jac, y, p, B, bvp_tol, bc_tol):
     """Solve the nonlinear collocation system by a Newton method.
 
     This is a simple Newton method with a backtracking line search. As
@@ -389,6 +386,8 @@ def solve_newton(n, m, h, col_fun, bc, jac, y, p, B, bvp_tol):
         singular term. If None, the singular term is assumed to be absent.
     bvp_tol : float
         Tolerance to which we want to solve a BVP.
+    bc_tol : float
+        Tolerance to which we want to satisfy the boundary conditions.
 
     Returns
     -------
@@ -408,26 +407,20 @@ def solve_newton(n, m, h, col_fun, bc, jac, y, p, B, bvp_tol):
     # We know that the solution residuals at the middle points of the mesh
     # are connected with collocation residuals  r_middle = 1.5 * col_res / h.
     # As our BVP solver tries to decrease relative residuals below a certain
-    # tolerance it seems reasonable to terminated Newton iterations by
+    # tolerance, it seems reasonable to terminated Newton iterations by
     # comparison of r_middle / (1 + np.abs(f_middle)) with a certain threshold,
     # which we choose to be 1.5 orders lower than the BVP tolerance. We rewrite
     # the condition as col_res < tol_r * (1 + np.abs(f_middle)), then tol_r
     # should be computed as follows:
     tol_r = 2/3 * h * 5e-2 * bvp_tol
 
-    # We also need to control residuals of the boundary conditions. But it
-    # seems that they become very small eventually as the solver progresses,
-    # i. e. the tolerance for BC are not very important. We set it 1.5 orders
-    # lower than the BVP tolerance as well.
-    tol_bc = 5e-2 * bvp_tol
-
     # Maximum allowed number of Jacobian evaluation and factorization, in
-    # other words the maximum number of full Newton iterations. A small value
+    # other words, the maximum number of full Newton iterations. A small value
     # is recommended in the literature.
     max_njev = 4
 
     # Maximum number of iterations, considering that some of them can be
-    # performed with the fixed Jacobian. In theory such iterations are cheap,
+    # performed with the fixed Jacobian. In theory, such iterations are cheap,
     # but it's not that simple in Python.
     max_iter = 8
 
@@ -491,7 +484,7 @@ def solve_newton(n, m, h, col_fun, bc, jac, y, p, B, bvp_tol):
             break
 
         if (np.all(np.abs(col_res) < tol_r * (1 + np.abs(f_middle))) and
-                np.all(bc_res < tol_bc)):
+                np.all(np.abs(bc_res) < bc_tol)):
             break
 
         # If the full step was taken, then we are going to continue with
@@ -507,13 +500,15 @@ def solve_newton(n, m, h, col_fun, bc, jac, y, p, B, bvp_tol):
 
 
 def print_iteration_header():
-    print("{:^15}{:^15}{:^15}{:^15}".format(
-        "Iteration", "Max residual", "Total nodes", "Nodes added"))
+    print("{:^15}{:^15}{:^15}{:^15}{:^15}".format(
+        "Iteration", "Max residual", "Max BC residual", "Total nodes",
+        "Nodes added"))
 
 
-def print_iteration_progress(iteration, residual, total_nodes, nodes_added):
-    print("{:^15}{:^15.2e}{:^15}{:^15}".format(
-        iteration, residual, total_nodes, nodes_added))
+def print_iteration_progress(iteration, residual, bc_residual, total_nodes,
+                             nodes_added):
+    print("{:^15}{:^15.2e}{:^15.2e}{:^15}{:^15}".format(
+        iteration, residual, bc_residual, total_nodes, nodes_added))
 
 
 class BVPResult(OptimizeResult):
@@ -523,7 +518,8 @@ class BVPResult(OptimizeResult):
 TERMINATION_MESSAGES = {
     0: "The algorithm converged to the desired accuracy.",
     1: "The maximum number of mesh nodes is exceeded.",
-    2: "A singular Jacobian encountered when solving the collocation system."
+    2: "A singular Jacobian encountered when solving the collocation system.",
+    3: "The solver was unable to satisfy boundary conditions tolerance on iteration 10."
 }
 
 
@@ -531,7 +527,7 @@ def estimate_rms_residuals(fun, sol, x, h, p, r_middle, f_middle):
     """Estimate rms values of collocation residuals using Lobatto quadrature.
 
     The residuals are defined as the difference between the derivatives of
-    our solution and rhs of the ODE system. We use relative residuals, i.e.
+    our solution and rhs of the ODE system. We use relative residuals, i.e.,
     normalized by 1 + np.abs(f). RMS values are computed as sqrt from the
     normalized integrals of the squared relative residuals over each interval.
     Integrals are estimated using 5-point Lobatto quadrature [1]_, we use the
@@ -607,7 +603,7 @@ def modify_mesh(x, insert_1, insert_2):
     """Insert nodes into a mesh.
 
     Nodes removal logic is not established, its impact on the solver is
-    presumably negligible. So only insertion is done in this function.
+    presumably negligible. So, only insertion is done in this function.
 
     Parameters
     ----------
@@ -629,7 +625,7 @@ def modify_mesh(x, insert_1, insert_2):
     `insert_1` and `insert_2` should not have common values.
     """
     # Because np.insert implementation apparently varies with a version of
-    # numpy, we use a simple and reliable approach with sorting.
+    # NumPy, we use a simple and reliable approach with sorting.
     return np.sort(np.hstack((
         x,
         0.5 * (x[insert_1] + x[insert_1 + 1]),
@@ -712,8 +708,8 @@ def wrap_functions(fun, bc, fun_jac, bc_jac, k, a, S, D, dtype):
 
 
 def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
-              tol=1e-3, max_nodes=1000, verbose=0):
-    """Solve a boundary-value problem for a system of ODEs.
+              tol=1e-3, max_nodes=1000, verbose=0, bc_tol=None):
+    """Solve a boundary value problem for a system of ODEs.
 
     This function numerically solves a first order system of ODEs subject to
     two-point boundary conditions::
@@ -721,19 +717,19 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
         dy / dx = f(x, y, p) + S * y / (x - a), a <= x <= b
         bc(y(a), y(b), p) = 0
 
-    Here x is a 1-dimensional independent variable, y(x) is a n-dimensional
-    vector-valued function and p is a k-dimensional vector of unknown
+    Here x is a 1-D independent variable, y(x) is an N-D
+    vector-valued function and p is a k-D vector of unknown
     parameters which is to be found along with y(x). For the problem to be
-    determined there must be n + k boundary conditions, i.e. bc must be
-    (n + k)-dimensional function.
+    determined, there must be n + k boundary conditions, i.e., bc must be an
+    (n + k)-D function.
 
-    The last singular term in the right-hand side of the system is optional.
+    The last singular term on the right-hand side of the system is optional.
     It is defined by an n-by-n matrix S, such that the solution must satisfy
     S y(a) = 0. This condition will be forced during iterations, so it must not
     contradict boundary conditions. See [2]_ for the explanation how this term
     is handled when solving BVPs numerically.
 
-    Problems in a complex domain can be solved as well. In this case y and p
+    Problems in a complex domain can be solved as well. In this case, y and p
     are considered to be complex, and f and bc are assumed to be complex-valued
     functions, but x stays real. Note that f and bc must be complex
     differentiable (satisfy Cauchy-Riemann equations [4]_), otherwise you
@@ -760,7 +756,7 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
         Initial mesh. Must be a strictly increasing sequence of real numbers
         with ``x[0]=a`` and ``x[-1]=b``.
     y : array_like, shape (n, m)
-        Initial guess for the function values at the mesh nodes, i-th column
+        Initial guess for the function values at the mesh nodes, ith column
         corresponds to ``x[i]``. For problems in a complex domain pass `y`
         with a complex data type (even if the initial guess is purely real).
     p : array_like with shape (k,) or None, optional
@@ -775,37 +771,37 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
         parameters are present. The return must contain 1 or 2 elements in the
         following order:
 
-            * df_dy : array_like with shape (n, n, m) where an element
+            * df_dy : array_like with shape (n, n, m), where an element
               (i, j, q) equals to d f_i(x_q, y_q, p) / d (y_q)_j.
-            * df_dp : array_like with shape (n, k, m) where an element
+            * df_dp : array_like with shape (n, k, m), where an element
               (i, j, q) equals to d f_i(x_q, y_q, p) / d p_j.
 
         Here q numbers nodes at which x and y are defined, whereas i and j
         number vector components. If the problem is solved without unknown
-        parameters df_dp should not be returned.
+        parameters, df_dp should not be returned.
 
         If `fun_jac` is None (default), the derivatives will be estimated
         by the forward finite differences.
     bc_jac : callable or None, optional
-        Function computing derivatives of bc with respect to ya, yb and p.
+        Function computing derivatives of bc with respect to ya, yb, and p.
         The calling signature is ``bc_jac(ya, yb)``, or ``bc_jac(ya, yb, p)``
         if parameters are present. The return must contain 2 or 3 elements in
         the following order:
 
-            * dbc_dya : array_like with shape (n, n) where an element (i, j)
+            * dbc_dya : array_like with shape (n, n), where an element (i, j)
               equals to d bc_i(ya, yb, p) / d ya_j.
-            * dbc_dyb : array_like with shape (n, n) where an element (i, j)
+            * dbc_dyb : array_like with shape (n, n), where an element (i, j)
               equals to d bc_i(ya, yb, p) / d yb_j.
-            * dbc_dp : array_like with shape (n, k) where an element (i, j)
+            * dbc_dp : array_like with shape (n, k), where an element (i, j)
               equals to d bc_i(ya, yb, p) / d p_j.
 
-        If the problem is solved without unknown parameters dbc_dp should not
+        If the problem is solved without unknown parameters, dbc_dp should not
         be returned.
 
         If `bc_jac` is None (default), the derivatives will be estimated by
         the forward finite differences.
     tol : float, optional
-        Desired tolerance of the solution. If we define ``r = y' - f(x, y)``
+        Desired tolerance of the solution. If we define ``r = y' - f(x, y)``,
         where y is the found solution, then the solver tries to achieve on each
         mesh interval ``norm(r / (1 + abs(f)) < tol``, where ``norm`` is
         estimated in a root mean squared sense (using a numerical quadrature
@@ -819,6 +815,11 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
             * 0 (default) : work silently.
             * 1 : display a termination report.
             * 2 : display progress during iterations.
+    bc_tol : float, optional
+        Desired absolute tolerance for the boundary condition residuals: `bc`
+        value should satisfy ``abs(bc) < bc_tol`` component-wise.
+        Equals to `tol` by default. Up to 10 iterations are allowed to achieve this
+        tolerance.
 
     Returns
     -------
@@ -855,13 +856,13 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
 
     Notes
     -----
-    This function implements a 4-th order collocation algorithm with the
+    This function implements a 4th order collocation algorithm with the
     control of residuals similar to [1]_. A collocation system is solved
     by a damped Newton method with an affine-invariant criterion function as
     described in [3]_.
 
     Note that in [1]_  integral residuals are defined without normalization
-    by interval lengths. So their definition is different by a multiplier of
+    by interval lengths. So, their definition is different by a multiplier of
     h**0.5 (h is an interval length) from the definition used here.
 
     .. versionadded:: 0.18.0
@@ -881,14 +882,14 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
 
     Examples
     --------
-    In the first example we solve Bratu's problem::
+    In the first example, we solve Bratu's problem::
 
         y'' + k * exp(y) = 0
         y(0) = y(1) = 0
 
     for k = 1.
 
-    We rewrite the equation as a first order system and implement its
+    We rewrite the equation as a first-order system and implement its
     right-hand side evaluation::
 
         y1' = y2
@@ -906,7 +907,7 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
 
     >>> x = np.linspace(0, 1, 5)
 
-    This problem is known to have two solutions. To obtain both of them we
+    This problem is known to have two solutions. To obtain both of them, we
     use two different initial guesses for y. We denote them by subscripts
     a and b.
 
@@ -937,7 +938,7 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
     We see that the two solutions have similar shape, but differ in scale
     significantly.
 
-    In the second example we solve a simple Sturm-Liouville problem::
+    In the second example, we solve a simple Sturm-Liouville problem::
 
         y'' + k**2 * y = 0
         y(0) = y(1) = 0
@@ -948,7 +949,7 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
 
         y'(0) = k
 
-    Again we rewrite our equation as a first order system and implement its
+    Again, we rewrite our equation as a first-order system and implement its
     right-hand side evaluation::
 
         y1' = y2
@@ -967,7 +968,7 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
     ...     k = p[0]
     ...     return np.array([ya[0], yb[0], ya[1] - k])
 
-    Setup the initial mesh and guess for y. We aim to find the solution for
+    Set up the initial mesh and guess for y. We aim to find the solution for
     k = 2 * pi, to achieve that we set values of y to approximately follow
     sin(2 * pi * x):
 
@@ -985,7 +986,7 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
     >>> sol.p[0]
     6.28329460046
 
-    And finally plot the solution to see the anticipated sinusoid:
+    And, finally, plot the solution to see the anticipated sinusoid:
 
     >>> x_plot = np.linspace(0, 1, 100)
     >>> y_plot = sol.sol(x_plot)[0]
@@ -1049,6 +1050,12 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
         B = None
         D = None
 
+    if bc_tol is None:
+        bc_tol = tol
+
+    # Maximum number of iterations
+    max_iteration = 10
+
     fun_wrapped, bc_wrapped, fun_jac_wrapped, bc_jac_wrapped = wrap_functions(
         fun, bc, fun_jac, bc_jac, k, a, S, D, dtype)
 
@@ -1073,11 +1080,14 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
         col_fun, jac_sys = prepare_sys(n, m, k, fun_wrapped, bc_wrapped,
                                        fun_jac_wrapped, bc_jac_wrapped, x, h)
         y, p, singular = solve_newton(n, m, h, col_fun, bc_wrapped, jac_sys,
-                                      y, p, B, tol)
+                                      y, p, B, tol, bc_tol)
         iteration += 1
 
         col_res, y_middle, f, f_middle = collocation_fun(fun_wrapped, y,
                                                          p, x, h)
+        bc_res = bc_wrapped(y[:, 0], y[:, -1], p)
+        max_bc_res = np.max(abs(bc_res))
+
         # This relation is not trivial, but can be verified.
         r_middle = 1.5 * col_res / h
         sol = create_spline(y, f, x, h)
@@ -1097,34 +1107,48 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
             status = 1
             if verbose == 2:
                 nodes_added = "({})".format(nodes_added)
-                print_iteration_progress(iteration, max_rms_res, m,
-                                         nodes_added)
+                print_iteration_progress(iteration, max_rms_res, max_bc_res,
+                                         m, nodes_added)
             break
 
         if verbose == 2:
-            print_iteration_progress(iteration, max_rms_res, m, nodes_added)
+            print_iteration_progress(iteration, max_rms_res, max_bc_res, m,
+                                     nodes_added)
 
         if nodes_added > 0:
             x = modify_mesh(x, insert_1, insert_2)
             h = np.diff(x)
             y = sol(x)
-        else:
+        elif max_bc_res <= bc_tol:
             status = 0
+            break
+        elif iteration >= max_iteration:
+            status = 3
             break
 
     if verbose > 0:
         if status == 0:
-            print("Solved in {} iterations, number of nodes {}, "
-                  "maximum relative residual {:.2e}."
-                  .format(iteration, x.shape[0], max_rms_res))
+            print("Solved in {} iterations, number of nodes {}. \n"
+                  "Maximum relative residual: {:.2e} \n"
+                  "Maximum boundary residual: {:.2e}"
+                  .format(iteration, x.shape[0], max_rms_res, max_bc_res))
         elif status == 1:
-            print("Number of nodes is exceeded after iteration {}, "
-                  "maximum relative residual {:.2e}."
-                  .format(iteration, max_rms_res))
+            print("Number of nodes is exceeded after iteration {}. \n"
+                  "Maximum relative residual: {:.2e} \n"
+                  "Maximum boundary residual: {:.2e}"
+                  .format(iteration, max_rms_res, max_bc_res))
         elif status == 2:
             print("Singular Jacobian encountered when solving the collocation "
-                  "system on iteration {}, maximum relative residual {:.2e}."
-                  .format(iteration, max_rms_res))
+                  "system on iteration {}. \n"
+                  "Maximum relative residual: {:.2e} \n"
+                  "Maximum boundary residual: {:.2e}"
+                  .format(iteration, max_rms_res, max_bc_res))
+        elif status == 3:
+            print("The solver was unable to satisfy boundary conditions "
+                  "tolerance on iteration {}. \n"
+                  "Maximum relative residual: {:.2e} \n"
+                  "Maximum boundary residual: {:.2e}"
+                  .format(iteration, max_rms_res, max_bc_res))
 
     if p.size == 0:
         p = None

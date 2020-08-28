@@ -22,7 +22,7 @@ Sparse matrix classes
    csr_matrix - Compressed Sparse Row matrix
    dia_matrix - Sparse matrix with DIAgonal storage
    dok_matrix - Dictionary Of Keys based sparse matrix
-   lil_matrix - Row-based linked list sparse matrix
+   lil_matrix - Row-based list of lists sparse matrix
    spmatrix - Sparse matrix base class
 
 Functions
@@ -82,7 +82,6 @@ Submodules
 ----------
 
 .. autosummary::
-   :toctree: generated/
 
    csgraph - Compressed sparse graph routines
    linalg - sparse linear algebra routines
@@ -119,7 +118,7 @@ functions directly on these matrices because NumPy may not properly convert
 them for computations, leading to unexpected (and incorrect) results. If you
 do want to apply a NumPy function to these matrices, first check if SciPy has
 its own implementation for the given sparse matrix class, or **convert the
-sparse matrix to a NumPy array** (e.g. using the `toarray()` method of the
+sparse matrix to a NumPy array** (e.g., using the `toarray()` method of the
 class) first before applying the method.
 
 To perform manipulations such as multiplication or inversion, first
@@ -210,20 +209,20 @@ Duplicate (i,j) entries are summed when converting to CSR or CSC.
 
 This is useful for constructing finite-element stiffness and mass matrices.
 
-Further Details
+Further details
 ---------------
 
-CSR column indices are not necessarily sorted.  Likewise for CSC row
-indices.  Use the .sorted_indices() and .sort_indices() methods when
-sorted indices are required (e.g. when passing data to other libraries).
+CSR column indices are not necessarily sorted. Likewise for CSC row
+indices. Use the .sorted_indices() and .sort_indices() methods when
+sorted indices are required (e.g., when passing data to other libraries).
 
 """
-
-from __future__ import division, print_function, absolute_import
 
 # Original code by Travis Oliphant.
 # Modified and extended by Ed Schofield, Robert Cimrman,
 # Nathan Bell, and Jake Vanderplas.
+
+import warnings as _warnings
 
 from .base import *
 from .csr import *
@@ -237,7 +236,13 @@ from .construct import *
 from .extract import *
 from ._matrix_io import *
 
+# For backward compatibility with v0.19.
+from . import csgraph
+
 __all__ = [s for s in dir() if not s.startswith('_')]
+
+# Filter PendingDeprecationWarning for np.matrix introduced with numpy 1.15
+_warnings.filterwarnings('ignore', message='the matrix subclass is not the recommended way')
 
 from scipy._lib._testutils import PytestTester
 test = PytestTester(__name__)

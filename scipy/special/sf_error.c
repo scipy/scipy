@@ -31,7 +31,7 @@ static volatile sf_action_t sf_error_actions[] = {
     SF_ERROR_IGNORE, /* SF_ERROR_DOMAIN */
     SF_ERROR_IGNORE, /* SF_ERROR_ARG */
     SF_ERROR_IGNORE, /* SF_ERROR_OTHER */
-    SF_ERROR_IGNORE  /* SF_ERRROR__LAST */
+    SF_ERROR_IGNORE  /* SF_ERROR__LAST */
 };
 
 extern int wrap_PyUFunc_getfperr(void);

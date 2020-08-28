@@ -1,32 +1,31 @@
-from __future__ import division, print_function, absolute_import
-
 import itertools
 
 from numpy.testing import (assert_, assert_equal, assert_almost_equal,
         assert_array_almost_equal, assert_array_equal,
-        assert_allclose)
+        assert_allclose, assert_warns)
 from pytest import raises as assert_raises
+import pytest
 
 from numpy import mgrid, pi, sin, ogrid, poly1d, linspace
 import numpy as np
 
-from scipy._lib.six import xrange
-from scipy._lib._numpy_compat import _assert_warns, suppress_warnings
-
 from scipy.interpolate import (interp1d, interp2d, lagrange, PPoly, BPoly,
          splrep, splev, splantider, splint, sproot, Akima1DInterpolator,
          RegularGridInterpolator, LinearNDInterpolator, NearestNDInterpolator,
-         RectBivariateSpline, interpn, NdPPoly, BSpline)
+         RectBivariateSpline, interpn, NdPPoly, BSpline,
+         CloughTocher2DInterpolator)
 
 from scipy.special import poch, gamma
 
 from scipy.interpolate import _ppoly
 
-from scipy._lib._gcutils import assert_deallocated
+from scipy._lib._gcutils import assert_deallocated, IS_PYPY
 
 from scipy.integrate import nquad
 
 from scipy.special import binom
+
+from scipy.sparse.sputils import matrix
 
 
 class TestInterp2D(object):
@@ -136,7 +135,8 @@ class TestInterp1D(object):
         # are given to the constructor.
 
         # These should all work.
-        for kind in ('nearest', 'zero', 'linear', 'slinear', 'quadratic', 'cubic'):
+        for kind in ('nearest', 'zero', 'linear', 'slinear', 'quadratic',
+                     'cubic', 'previous', 'next'):
             interp1d(self.x10, self.y10, kind=kind)
             interp1d(self.x10, self.y10, kind=kind, fill_value="extrapolate")
         interp1d(self.x10, self.y10, kind='linear', fill_value=(-1, 1))
@@ -322,6 +322,44 @@ class TestInterp1D(object):
                     bounds_error=True)
         assert_raises(ValueError, interp1d, self.x10, self.y10, **opts)
 
+    def test_previous(self):
+        # Check the actual implementation of previous interpolation.
+        interp10 = interp1d(self.x10, self.y10, kind='previous')
+        assert_array_almost_equal(interp10(self.x10), self.y10)
+        assert_array_almost_equal(interp10(1.2), np.array(1.))
+        assert_array_almost_equal(interp10([2.4, 5.6, 6.0]),
+                                  np.array([2., 5., 6.]),)
+
+        # test fill_value="extrapolate"
+        extrapolator = interp1d(self.x10, self.y10, kind='previous',
+                                fill_value='extrapolate')
+        assert_allclose(extrapolator([-1., 0, 9, 11]),
+                        [0, 0, 9, 9], rtol=1e-14)
+
+        opts = dict(kind='previous',
+                    fill_value='extrapolate',
+                    bounds_error=True)
+        assert_raises(ValueError, interp1d, self.x10, self.y10, **opts)
+
+    def test_next(self):
+        # Check the actual implementation of next interpolation.
+        interp10 = interp1d(self.x10, self.y10, kind='next')
+        assert_array_almost_equal(interp10(self.x10), self.y10)
+        assert_array_almost_equal(interp10(1.2), np.array(2.))
+        assert_array_almost_equal(interp10([2.4, 5.6, 6.0]),
+                                  np.array([3., 6., 6.]),)
+
+        # test fill_value="extrapolate"
+        extrapolator = interp1d(self.x10, self.y10, kind='next',
+                                fill_value='extrapolate')
+        assert_allclose(extrapolator([-1., 0, 9, 11]),
+                        [0, 0, 9, 9], rtol=1e-14)
+
+        opts = dict(kind='next',
+                    fill_value='extrapolate',
+                    bounds_error=True)
+        assert_raises(ValueError, interp1d, self.x10, self.y10, **opts)
+
     def test_zero(self):
         # Check the actual implementation of zero-order spline interpolation.
         interp10 = interp1d(self.x10, self.y10, kind='zero')
@@ -359,7 +397,7 @@ class TestInterp1D(object):
         assert_array_almost_equal(yi, np.r_[np.nan, y[:-1]])
 
     def test_bounds(self):
-        for kind in ('linear', 'cubic', 'nearest',
+        for kind in ('linear', 'cubic', 'nearest', 'previous', 'next',
                      'slinear', 'zero', 'quadratic'):
             self._bounds_check(kind)
             self._bounds_check_int_nan_fill(kind)
@@ -528,7 +566,7 @@ class TestInterp1D(object):
     def test_fill_value(self):
         # test that two-element fill value works
         for kind in ('linear', 'nearest', 'cubic', 'slinear', 'quadratic',
-                     'zero'):
+                     'zero', 'previous', 'next'):
             self._check_fill_value(kind)
 
     def test_fill_value_writeable(self):
@@ -571,7 +609,7 @@ class TestInterp1D(object):
                                             [[4., 5.], [14., 15.]]]))
 
     def _nd_check_shape(self, kind='linear'):
-        # Check large ndim output shape
+        # Check large N-D output shape
         a = [4, 5, 6, 7]
         y = np.arange(np.prod(a)).reshape(*a)
         for n, s in enumerate(a):
@@ -586,7 +624,7 @@ class TestInterp1D(object):
 
     def test_nd(self):
         for kind in ('linear', 'cubic', 'slinear', 'quadratic', 'nearest',
-                     'zero'):
+                     'zero', 'previous', 'next'):
             self._nd_check_interp(kind)
             self._nd_check_shape(kind)
 
@@ -608,24 +646,26 @@ class TestInterp1D(object):
 
     def test_complex(self):
         for kind in ('linear', 'nearest', 'cubic', 'slinear', 'quadratic',
-                     'zero'):
+                     'zero', 'previous', 'next'):
             self._check_complex(np.complex64, kind)
             self._check_complex(np.complex128, kind)
 
+    @pytest.mark.skipif(IS_PYPY, reason="Test not meaningful on PyPy")
     def test_circular_refs(self):
         # Test interp1d can be automatically garbage collected
         x = np.linspace(0, 1)
         y = np.linspace(0, 1)
         # Confirm interp can be released from memory after use
         with assert_deallocated(interp1d, x, y) as interp:
-            new_y = interp([0.1, 0.2])
+            interp([0.1, 0.2])
             del interp
 
     def test_overflow_nearest(self):
         # Test that the x range doesn't overflow when given integers as input
-        x = np.array([0, 50, 127], dtype=np.int8)
-        ii = interp1d(x, x, kind='nearest')
-        assert_array_almost_equal(ii(x), x)
+        for kind in ('nearest', 'previous', 'next'):
+            x = np.array([0, 50, 127], dtype=np.int8)
+            ii = interp1d(x, x, kind=kind)
+            assert_array_almost_equal(ii(x), x)
 
     def test_local_nans(self):
         # check that for local interpolation kinds (slinear, zero) a single nan
@@ -655,6 +695,27 @@ class TestInterp1D(object):
                 out, outn = ir(x), irn(x)
                 assert_(np.isnan(outn).all())
                 assert_equal(out.shape, outn.shape)
+
+    def test_all_nans(self):
+        # regression test for gh-11637: interp1d core dumps with all-nan `x`
+        x = np.ones(10) * np.nan
+        y = np.arange(10)
+        with assert_raises(ValueError):
+            interp1d(x, y, kind='cubic')
+
+    def test_read_only(self):
+        x = np.arange(0, 10)
+        y = np.exp(-x / 3.0)
+        xnew = np.arange(0, 9, 0.1)
+        # Check both read-only and not read-only:
+        for xnew_writeable in (True, False):
+            xnew.flags.writeable = xnew_writeable
+            x.flags.writeable = False
+            for kind in ('linear', 'nearest', 'zero', 'slinear', 'quadratic',
+                         'cubic'):
+                f = interp1d(x, y, kind=kind)
+                vals = f(xnew)
+                assert_(np.isfinite(vals).all())
 
 
 class TestLagrange(object):
@@ -736,14 +797,9 @@ class TestAkima1DInterpolator(object):
         x = np.arange(0., 11.)
         y = np.array([0., 2., 1., 3., 2., 6., 5.5, 5.5, 2.7, 5.1, 3.])
         ak = Akima1DInterpolator(x, y)
-        try:
+        match = "Extending a 1-D Akima interpolator is not yet implemented"
+        with pytest.raises(NotImplementedError, match=match):
             ak.extend(None, None)
-        except NotImplementedError as e:
-            if str(e) != ("Extending a 1D Akima interpolator is not "
-                          "yet implemented"):
-                raise
-        except:
-            raise
 
 
 class TestPPolyCommon(object):
@@ -755,7 +811,7 @@ class TestPPolyCommon(object):
         assert_raises(ValueError, BPoly, c, x)
 
     def test_ctor_c(self):
-        # wrong shape: `c` must be at least 2-dimensional
+        # wrong shape: `c` must be at least 2D
         with assert_raises(ValueError):
             PPoly([1, 2], [0, 1])
 
@@ -843,9 +899,7 @@ class TestPPolyCommon(object):
             assert_equal(np.shape(p(0.5)), ())
             assert_equal(np.shape(p(np.array(0.5))), ())
 
-            # can't use dtype=object (with any numpy; what fails is
-            # constructing the object array here for old numpy)
-            assert_raises(ValueError, p, np.array([[0.1, 0.2], [0.4]]))
+            assert_raises(ValueError, p, np.array([[0.1, 0.2], [0.4]], dtype=object))
 
     def test_complex_coef(self):
         np.random.seed(12345)
@@ -865,7 +919,7 @@ class TestPPolyCommon(object):
         c_s = c.shape
         xp = np.random.random((1, 2))
         for axis in (0, 1, 2, 3):
-            k, m = c.shape[axis], c.shape[axis+1]
+            m = c.shape[axis+1]
             x = np.sort(np.random.rand(m+1))
             for cls in (PPoly, BPoly):
                 p = cls(c, x, axis=axis)
@@ -954,6 +1008,18 @@ class TestPPoly(object):
 
         assert_allclose(p(1.3, 1), 2 * 0.3 + 2)
         assert_allclose(p(-0.3, 1), 8 * (0.7 - 0.5) + 5)
+
+    def test_read_only(self):
+        c = np.array([[1, 4], [2, 5], [3, 6]])
+        x = np.array([0, 0.5, 1])
+        xnew = np.array([0, 0.1, 0.2])
+        PPoly(c, x, extrapolate='periodic')
+
+        for writeable in (True, False):
+            x.flags.writeable = writeable
+            f = PPoly(c, x)
+            vals = f(xnew)
+            assert_(np.isfinite(vals).all())
 
     def test_descending(self):
         def binom_matrix(power):
@@ -1216,6 +1282,18 @@ class TestPPoly(object):
         assert_allclose(ig, ipp(b) - ipp(a))
 
         assert_(np.isnan(pp.integrate(a, b, extrapolate=False)).all())
+
+    def test_integrate_readonly(self):
+        x = np.array([1, 2, 4])
+        c = np.array([[0., 0.], [-1., -1.], [2., -0.], [1., 2.]])
+
+        for writeable in (True, False):
+            x.flags.writeable = writeable
+
+            P = PPoly(c, x)
+            vals = P.integrate(1, 4)
+
+            assert_(np.isfinite(vals).all())
 
     def test_integrate_periodic(self):
         x = np.array([1, 2, 4])
@@ -1718,6 +1796,18 @@ class TestPolyConversions(object):
         assert_allclose(bp(xp), pp(xp))
         assert_allclose(bp(xp), bp1(xp))
 
+    def test_broken_conversions(self):
+        # regression test for gh-10597: from_power_basis only accepts PPoly etc.
+        x = [0, 1, 3]
+        c = [[3, 3], [1, 1], [4, 2]]
+        pp = PPoly(c, x)
+        with assert_raises(TypeError):
+            PPoly.from_bernstein_basis(pp)
+
+        bp = BPoly(c, x)
+        with assert_raises(TypeError):
+            BPoly.from_power_basis(bp)
+
 
 class TestBPolyFromDerivatives(object):
     def test_make_poly_1(self):
@@ -1817,7 +1907,7 @@ class TestBPolyFromDerivatives(object):
         m, k = 5, 12
         xi, yi = self._make_random_mk(m, k)
 
-        pp = BPoly.from_derivatives(xi, yi, orders=2*k-1)   # this is still ok
+        BPoly.from_derivatives(xi, yi, orders=2*k-1)   # this is still ok
         assert_raises(ValueError, BPoly.from_derivatives,   # but this is not
                 **dict(xi=xi, yi=yi, orders=2*k))
 
@@ -2076,7 +2166,7 @@ class TestNdPPoly(object):
         y = np.linspace(0, 1, 17+1)**2
         z = np.linspace(0, 1, 18+1)**3
 
-        # Check 1D integration
+        # Check 1-D integration
         p = NdPPoly(c, (x, y, z))
 
         u = np.random.rand(200)
@@ -2129,7 +2219,7 @@ def _ppoly_eval_2(coeffs, breaks, xnew, fill=np.nan):
     pp = coeffs
     diff = xx - breaks.take(indxs)
     V = np.vander(diff, N=K)
-    values = np.array([np.dot(V[k, :], pp[:, indxs[k]]) for k in xrange(len(xx))])
+    values = np.array([np.dot(V[k, :], pp[:, indxs[k]]) for k in range(len(xx))])
     res[mask] = values
     res.shape = saveshape
     return res
@@ -2149,7 +2239,7 @@ def _dpow(x, y, n):
 
 def _ppoly2d_eval(c, xs, xnew, ynew, nu=None):
     """
-    Straightforward evaluation of 2D piecewise polynomial
+    Straightforward evaluation of 2-D piecewise polynomial
     """
     if nu is None:
         nu = (0, 0)
@@ -2185,7 +2275,7 @@ def _ppoly2d_eval(c, xs, xnew, ynew, nu=None):
 
 def _ppoly3d_eval(c, xs, xnew, ynew, znew, nu=None):
     """
-    Straightforward evaluation of 3D piecewise polynomial
+    Straightforward evaluation of 3-D piecewise polynomial
     """
     if nu is None:
         nu = (0, 0, 0)
@@ -2225,7 +2315,7 @@ def _ppoly3d_eval(c, xs, xnew, ynew, znew, nu=None):
 
 def _ppoly4d_eval(c, xs, xnew, ynew, znew, unew, nu=None):
     """
-    Straightforward evaluation of 4D piecewise polynomial
+    Straightforward evaluation of 4-D piecewise polynomial
     """
     if nu is None:
         nu = (0, 0, 0, 0)
@@ -2270,7 +2360,7 @@ def _ppoly4d_eval(c, xs, xnew, ynew, znew, unew, nu=None):
 
 class TestRegularGridInterpolator(object):
     def _get_sample_4d(self):
-        # create a 4d grid of 3 points in each dimension
+        # create a 4-D grid of 3 points in each dimension
         points = [(0., .5, 1.)] * 4
         values = np.asarray([0., .5, 1.])
         values0 = values[:, np.newaxis, np.newaxis, np.newaxis]
@@ -2281,7 +2371,7 @@ class TestRegularGridInterpolator(object):
         return points, values
 
     def _get_sample_4d_2(self):
-        # create another 4d grid of 3 points in each dimension
+        # create another 4-D grid of 3 points in each dimension
         points = [(0., .5, 1.)] * 2 + [(0., 5., 10.)] * 2
         values = np.asarray([0., .5, 1.])
         values0 = values[:, np.newaxis, np.newaxis, np.newaxis]
@@ -2368,7 +2458,7 @@ class TestRegularGridInterpolator(object):
         assert_array_almost_equal(interp(sample), wanted)
 
     def test_valid_create(self):
-        # create a 2d grid of 3 points in each dimension
+        # create a 2-D grid of 3 points in each dimension
         points = [(0., .5, 1.), (0., 1., .5)]
         values = np.asarray([0., .5, 1.])
         values0 = values[:, np.newaxis]
@@ -2488,9 +2578,59 @@ class TestRegularGridInterpolator(object):
         # from #3703; test that interpolator object construction succeeds
         values = np.ones((10, 20, 30), dtype='>f4')
         points = [np.arange(n) for n in values.shape]
-        xi = [(1, 1, 1)]
-        interpolator = RegularGridInterpolator(points, values)
-        interpolator = RegularGridInterpolator(points, values, fill_value=0.)
+        # xi = [(1, 1, 1)]
+        RegularGridInterpolator(points, values)
+        RegularGridInterpolator(points, values, fill_value=0.)
+
+    def test_broadcastable_input(self):
+        # input data
+        np.random.seed(0)
+        x = np.random.random(10)
+        y = np.random.random(10)
+        z = np.hypot(x, y)
+
+        # x-y grid for interpolation
+        X = np.linspace(min(x), max(x))
+        Y = np.linspace(min(y), max(y))
+        X, Y = np.meshgrid(X, Y)
+        XY = np.vstack((X.ravel(), Y.ravel())).T
+
+        for interpolator in (NearestNDInterpolator, LinearNDInterpolator,
+                             CloughTocher2DInterpolator):
+            interp = interpolator(list(zip(x, y)), z)
+            # single array input
+            interp_points0 = interp(XY)
+            # tuple input
+            interp_points1 = interp((X, Y))
+            interp_points2 = interp((X, 0.0))
+            # broadcastable input
+            interp_points3 = interp(X, Y)
+            interp_points4 = interp(X, 0.0)
+
+            assert_equal(interp_points0.size ==
+                         interp_points1.size ==
+                         interp_points2.size ==
+                         interp_points3.size ==
+                         interp_points4.size, True)
+
+    def test_read_only(self):
+        # input data
+        np.random.seed(0)
+        xy = np.random.random((10, 2))
+        x, y = xy[:, 0], xy[:, 1]
+        z = np.hypot(x, y)
+        
+        # interpolation points
+        XY = np.random.random((50, 2))
+
+        xy.setflags(write=False)
+        z.setflags(write=False)
+        XY.setflags(write=False)
+
+        for interpolator in (NearestNDInterpolator, LinearNDInterpolator,
+                             CloughTocher2DInterpolator):
+            interp = interpolator(xy, z)
+            interp(XY)
 
 
 class MyValue(object):
@@ -2573,7 +2713,7 @@ class TestInterpN(object):
         return points, values
 
     def test_linear_4d(self):
-        # create a 4d grid of 3 points in each dimension
+        # create a 4-D grid of 3 points in each dimension
         points, values = self._sample_4d_data()
         interp_rg = RegularGridInterpolator(points, values)
         sample = np.asarray([[0.1, 0.1, 10., 9.]])
@@ -2581,7 +2721,7 @@ class TestInterpN(object):
         assert_array_almost_equal(interp_rg(sample), wanted)
 
     def test_4d_linear_outofbounds(self):
-        # create a 4d grid of 3 points in each dimension
+        # create a 4-D grid of 3 points in each dimension
         points, values = self._sample_4d_data()
         sample = np.asarray([[0.1, -0.1, 10.1, 9.]])
         wanted = 999.99
@@ -2590,7 +2730,7 @@ class TestInterpN(object):
         assert_array_almost_equal(actual, wanted)
 
     def test_nearest_4d(self):
-        # create a 4d grid of 3 points in each dimension
+        # create a 4-D grid of 3 points in each dimension
         points, values = self._sample_4d_data()
         interp_rg = RegularGridInterpolator(points, values, method="nearest")
         sample = np.asarray([[0.1, 0.1, 10., 9.]])
@@ -2598,7 +2738,7 @@ class TestInterpN(object):
         assert_array_almost_equal(interp_rg(sample), wanted)
 
     def test_4d_nearest_outofbounds(self):
-        # create a 4d grid of 3 points in each dimension
+        # create a 4-D grid of 3 points in each dimension
         points, values = self._sample_4d_data()
         sample = np.asarray([[0.1, -0.1, 10.1, 9.]])
         wanted = 999.99
@@ -2607,7 +2747,7 @@ class TestInterpN(object):
         assert_array_almost_equal(actual, wanted)
 
     def test_xi_1d(self):
-        # verify that 1D xi works as expected
+        # verify that 1-D xi works as expected
         points, values = self._sample_4d_data()
         sample = np.asarray([0.1, 0.1, 10., 9.])
         v1 = interpn(points, values, sample, bounds_error=False)
@@ -2690,8 +2830,8 @@ class TestInterpN(object):
             assert_allclose(v1, v2)
 
         # Complex-valued data not supported by spline2fd
-        _assert_warns(np.ComplexWarning, interpn, points, values,
-                      sample, method='splinef2d')
+        assert_warns(np.ComplexWarning, interpn, points, values,
+                     sample, method='splinef2d')
 
     def test_duck_typed_values(self):
         x = np.linspace(0, 2, 5)
@@ -2708,12 +2848,11 @@ class TestInterpN(object):
         x = np.linspace(0, 2, 5)
         y = np.linspace(0, 1, 7)
 
-        values = np.matrix(np.random.rand(5, 7))
+        values = matrix(np.random.rand(5, 7))
 
         sample = np.random.rand(3, 7, 2)
 
         for method in ('nearest', 'linear', 'splinef2d'):
             v1 = interpn((x, y), values, sample, method=method)
             v2 = interpn((x, y), np.asarray(values), sample, method=method)
-            assert_allclose(v1, np.asmatrix(v2))
-
+            assert_allclose(v1, v2)

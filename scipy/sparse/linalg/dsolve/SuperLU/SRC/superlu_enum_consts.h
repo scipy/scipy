@@ -14,6 +14,7 @@ at the top-level directory.
  * -- SuperLU routine (version 4.1) --
  * Lawrence Berkeley National Lab, Univ. of California Berkeley, 
  * October 1, 2010
+ * January 28, 2018
  *
  */
 
@@ -25,13 +26,14 @@ at the top-level directory.
  ***********************************************************************/
 typedef enum {NO, YES}                                          yes_no_t;
 typedef enum {DOFACT, SamePattern, SamePattern_SameRowPerm, FACTORED} fact_t;
-typedef enum {NOROWPERM, LargeDiag, MY_PERMR}                   rowperm_t;
+typedef enum {NOROWPERM, LargeDiag_MC64, LargeDiag_AWPM, MY_PERMR} rowperm_t;
 typedef enum {NATURAL, MMD_ATA, MMD_AT_PLUS_A, COLAMD,
 	      METIS_AT_PLUS_A, PARMETIS, ZOLTAN, MY_PERMC}      colperm_t;
 typedef enum {NOTRANS, TRANS, CONJ}                             trans_t;
 typedef enum {NOEQUIL, ROW, COL, BOTH}                          DiagScale_t;
 typedef enum {NOREFINE, SLU_SINGLE=1, SLU_DOUBLE, SLU_EXTRA}    IterRefine_t;
-typedef enum {LUSUP, UCOL, LSUB, USUB, LLVL, ULVL}              MemType;
+//typedef enum {LUSUP, UCOL, LSUB, USUB, LLVL, ULVL, NO_MEMTYPE}  MemType;
+typedef enum {USUB, LSUB, UCOL, LUSUP, LLVL, ULVL, NO_MEMTYPE}  MemType;
 typedef enum {HEAD, TAIL}                                       stack_end_t;
 typedef enum {SYSTEM, USER}                                     LU_space_t;
 typedef enum {ONE_NORM, TWO_NORM, INF_NORM}			norm_t;
@@ -67,7 +69,13 @@ typedef enum {
     DIST,    /* distribute matrix. */
     FACT,    /* perform LU factorization */
     COMM,    /* communication for factorization */
+    COMM_DIAG, /* Bcast diagonal block to process column */
+    COMM_RIGHT, /* communicate L panel */
+    COMM_DOWN, /* communicate U panel */
     SOL_COMM,/* communication for solve */
+    SOL_GEMM,/* gemm for solve */
+    SOL_TRSM,/* trsm for solve */
+    SOL_TOT,	/* LU-solve time*/
     RCOND,   /* estimate reciprocal condition number */
     SOLVE,   /* forward and back solves */
     REFINE,  /* perform iterative refinement */
@@ -76,6 +84,5 @@ typedef enum {
     FERR,    /* estimate error bounds after iterative refinement */
     NPHASES  /* total number of phases */
 } PhaseType;
-
 
 #endif /* __SUPERLU_ENUM_CONSTS */

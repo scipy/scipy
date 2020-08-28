@@ -1,6 +1,4 @@
 """SVD decomposition functions."""
-from __future__ import division, print_function, absolute_import
-
 import numpy
 from numpy import zeros, r_, diag, dot, arccos, arcsin, where, clip
 
@@ -8,9 +6,8 @@ from numpy import zeros, r_, diag, dot, arccos, arcsin, where, clip
 from .misc import LinAlgError, _datacopied
 from .lapack import get_lapack_funcs, _compute_lwork
 from .decomp import _asarray_validated
-from scipy._lib.six import string_types
 
-__all__ = ['svd', 'svdvals', 'diagsvd', 'orth', 'subspace_angles']
+__all__ = ['svd', 'svdvals', 'diagsvd', 'orth', 'subspace_angles', 'null_space']
 
 
 def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
@@ -112,13 +109,13 @@ def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
     m, n = a1.shape
     overwrite_a = overwrite_a or (_datacopied(a1, a))
 
-    if not isinstance(lapack_driver, string_types):
+    if not isinstance(lapack_driver, str):
         raise TypeError('lapack_driver must be a string')
     if lapack_driver not in ('gesdd', 'gesvd'):
         raise ValueError('lapack_driver must be "gesdd" or "gesvd", not "%s"'
                          % (lapack_driver,))
     funcs = (lapack_driver, lapack_driver + '_lwork')
-    gesXd, gesXd_lwork = get_lapack_funcs(funcs, (a1,))
+    gesXd, gesXd_lwork = get_lapack_funcs(funcs, (a1,), ilp64='preferred')
 
     # compute optimal lwork
     lwork = _compute_lwork(gesXd_lwork, a1.shape[0], a1.shape[1],
@@ -131,7 +128,7 @@ def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
     if info > 0:
         raise LinAlgError("SVD did not converge")
     if info < 0:
-        raise ValueError('illegal value in %d-th argument of internal gesdd'
+        raise ValueError('illegal value in %dth argument of internal gesdd'
                          % -info)
     if compute_uv:
         return u, s, v
@@ -194,7 +191,7 @@ def svdvals(a, overwrite_a=False, check_finite=True):
 
     We can verify the maximum singular value of `m` by computing the maximum
     length of `m.dot(u)` over all the unit vectors `u` in the (x,y) plane.
-    We approximate "all" the unit vectors with a large sample.  Because
+    We approximate "all" the unit vectors with a large sample. Because
     of linearity, we only need the unit vectors with angles in [0, pi].
 
     >>> t = np.linspace(0, np.pi, 2000)
@@ -202,7 +199,7 @@ def svdvals(a, overwrite_a=False, check_finite=True):
     >>> np.linalg.norm(m.dot(u), axis=0).max()
     4.2809152422538475
 
-    `p` is a projection matrix with rank 1.  With exact arithmetic,
+    `p` is a projection matrix with rank 1. With exact arithmetic,
     its singular values would be [1, 0, 0, 0].
 
     >>> v = np.array([0.1, 0.3, 0.9, 0.3])
@@ -211,7 +208,7 @@ def svdvals(a, overwrite_a=False, check_finite=True):
     array([  1.00000000e+00,   2.02021698e-17,   1.56692500e-17,
              8.15115104e-34])
 
-    The singular values of an orthogonal matrix are all 1.  Here we
+    The singular values of an orthogonal matrix are all 1. Here, we
     create a random orthogonal matrix by using the `rvs()` method of
     `scipy.stats.ortho_group`.
 
@@ -250,6 +247,25 @@ def diagsvd(s, M, N):
     S : (M, N) ndarray
         The S-matrix in the singular value decomposition
 
+    See Also
+    --------
+    svd : Singular value decomposition of a matrix
+    svdvals : Compute singular values of a matrix.
+
+    Examples
+    --------
+    >>> from scipy.linalg import diagsvd
+    >>> vals = np.array([1, 2, 3])  # The array representing the computed svd
+    >>> diagsvd(vals, 3, 4)
+    array([[1, 0, 0, 0],
+           [0, 2, 0, 0],
+           [0, 0, 3, 0]])
+    >>> diagsvd(vals, 4, 3)
+    array([[1, 0, 0],
+           [0, 2, 0],
+           [0, 0, 3],
+           [0, 0, 0]])
+
     """
     part = diag(s)
     typ = part.dtype.char
@@ -264,7 +280,7 @@ def diagsvd(s, M, N):
 
 # Orthonormal decomposition
 
-def orth(A):
+def orth(A, rcond=None):
     """
     Construct an orthonormal basis for the range of A using SVD
 
@@ -272,24 +288,103 @@ def orth(A):
     ----------
     A : (M, N) array_like
         Input array
+    rcond : float, optional
+        Relative condition number. Singular values ``s`` smaller than
+        ``rcond * max(s)`` are considered zero.
+        Default: floating point eps * max(M,N).
 
     Returns
     -------
     Q : (M, K) ndarray
         Orthonormal basis for the range of A.
-        K = effective rank of A, as determined by automatic cutoff
+        K = effective rank of A, as determined by rcond
 
     See also
     --------
     svd : Singular value decomposition of a matrix
+    null_space : Matrix null space
+
+    Examples
+    --------
+    >>> from scipy.linalg import orth
+    >>> A = np.array([[2, 0, 0], [0, 5, 0]])  # rank 2 array
+    >>> orth(A)
+    array([[0., 1.],
+           [1., 0.]])
+    >>> orth(A.T)
+    array([[0., 1.],
+           [1., 0.],
+           [0., 0.]])
 
     """
     u, s, vh = svd(A, full_matrices=False)
-    M, N = A.shape
-    eps = numpy.finfo(float).eps
-    tol = max(M, N) * numpy.amax(s) * eps
+    M, N = u.shape[0], vh.shape[1]
+    if rcond is None:
+        rcond = numpy.finfo(s.dtype).eps * max(M, N)
+    tol = numpy.amax(s) * rcond
     num = numpy.sum(s > tol, dtype=int)
     Q = u[:, :num]
+    return Q
+
+
+def null_space(A, rcond=None):
+    """
+    Construct an orthonormal basis for the null space of A using SVD
+
+    Parameters
+    ----------
+    A : (M, N) array_like
+        Input array
+    rcond : float, optional
+        Relative condition number. Singular values ``s`` smaller than
+        ``rcond * max(s)`` are considered zero.
+        Default: floating point eps * max(M,N).
+
+    Returns
+    -------
+    Z : (N, K) ndarray
+        Orthonormal basis for the null space of A.
+        K = dimension of effective null space, as determined by rcond
+
+    See also
+    --------
+    svd : Singular value decomposition of a matrix
+    orth : Matrix range
+
+    Examples
+    --------
+    1-D null space:
+
+    >>> from scipy.linalg import null_space
+    >>> A = np.array([[1, 1], [1, 1]])
+    >>> ns = null_space(A)
+    >>> ns * np.sign(ns[0,0])  # Remove the sign ambiguity of the vector
+    array([[ 0.70710678],
+           [-0.70710678]])
+
+    2-D null space:
+
+    >>> B = np.random.rand(3, 5)
+    >>> Z = null_space(B)
+    >>> Z.shape
+    (5, 2)
+    >>> np.allclose(B.dot(Z), 0)
+    True
+
+    The basis vectors are orthonormal (up to rounding error):
+
+    >>> Z.T.dot(Z)
+    array([[  1.00000000e+00,   6.92087741e-17],
+           [  6.92087741e-17,   1.00000000e+00]])
+
+    """
+    u, s, vh = svd(A, full_matrices=True)
+    M, N = u.shape[0], vh.shape[1]
+    if rcond is None:
+        rcond = numpy.finfo(s.dtype).eps * max(M, N)
+    tol = numpy.amax(s) * rcond
+    num = numpy.sum(s > tol, dtype=int)
+    Q = vh[num:,:].T.conj()
     return Q
 
 
@@ -307,7 +402,8 @@ def subspace_angles(A, B):
     Returns
     -------
     angles : ndarray, shape (min(N, K),)
-        The subspace angles between the column spaces of `A` and `B`.
+        The subspace angles between the column spaces of `A` and `B` in
+        descending order.
 
     See Also
     --------
@@ -330,7 +426,7 @@ def subspace_angles(A, B):
 
     Examples
     --------
-    A Hadamard matrix, which has orthogonal columns, so we expect that
+    An Hadamard matrix, which has orthogonal columns, so we expect that
     the suspace angle to be :math:`\frac{\pi}{2}`:
 
     >>> from scipy.linalg import hadamard, subspace_angles
@@ -373,15 +469,15 @@ def subspace_angles(A, B):
     del B
 
     # 2. Compute SVD for cosine
-    QA_T_QB = dot(QA.T, QB)
-    sigma = svdvals(QA_T_QB)
+    QA_H_QB = dot(QA.T.conj(), QB)
+    sigma = svdvals(QA_H_QB)
 
     # 3. Compute matrix B
     if QA.shape[1] >= QB.shape[1]:
-        B = QB - dot(QA, QA_T_QB)
+        B = QB - dot(QA, QA_H_QB)
     else:
-        B = QA - dot(QB, QA_T_QB.T)
-    del QA, QB, QA_T_QB
+        B = QA - dot(QB, QA_H_QB.T.conj())
+    del QA, QB, QA_H_QB
 
     # 4. Compute SVD for sine
     mask = sigma ** 2 >= 0.5
@@ -391,5 +487,7 @@ def subspace_angles(A, B):
         mu_arcsin = 0.
 
     # 5. Compute the principal angles
-    theta = where(mask, mu_arcsin, arccos(clip(sigma, -1., 1.)))
+    # with reverse ordering of sigma because smallest sigma belongs to largest
+    # angle theta
+    theta = where(mask, mu_arcsin, arccos(clip(sigma[::-1], -1., 1.)))
     return theta

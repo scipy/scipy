@@ -4,7 +4,8 @@
 Left-skewed Lévy Distribution
 ==============================
 
-Special case of Lévy-stable distribution with :math:`\alpha=\frac{1}{2}` and :math:`\beta=-1` the support is :math:`x<0` . In standard form
+Special case of Lévy-stable distribution with :math:`\alpha=\frac{1}{2}` and
+:math:`\beta=-1`. The support is :math:`x\leq0` . In standard form
 
 .. math::
    :nowrap:

@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 from os.path import join
 
 
@@ -31,6 +29,7 @@ def configuration(parent_package='',top_path=None):
     )
 
     return config
+
 
 if __name__ == '__main__':
     from numpy.distutils.core import setup

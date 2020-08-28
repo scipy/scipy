@@ -217,11 +217,7 @@ static void ccallback__err_invalid_signature(ccallback_signature_t *signatures,
         PyObject *str;
         int ret;
 
-#if PY_VERSION_HEX >= 0x03000000
         str = PyUnicode_FromString(sig->signature);
-#else
-        str = PyString_FromString(sig->signature);
-#endif
         if (str == NULL) {
             goto fail;
         }
@@ -233,32 +229,9 @@ static void ccallback__err_invalid_signature(ccallback_signature_t *signatures,
         }
     }
 
-#if PY_VERSION_HEX >= 0x03000000
     PyErr_Format(PyExc_ValueError,
                  "Invalid scipy.LowLevelCallable signature \"%s\". Expected one of: %R",
                  capsule_signature, sig_list);
-#else
-    {
-        PyObject *sig_list_repr;
-        char *sig_list_repr_str;
-
-        sig_list_repr = PyObject_Repr(sig_list);
-        if (sig_list_repr == NULL) {
-            goto fail;
-        }
-
-        sig_list_repr_str = PyString_AsString(sig_list_repr);
-        if (sig_list_repr_str == NULL) {
-            Py_DECREF(sig_list_repr);
-            goto fail;
-        }
-
-        PyErr_Format(PyExc_ValueError,
-                     "Invalid scipy.LowLevelCallable signature \"%s\". Expected one of: %s",
-                     capsule_signature, sig_list_repr_str);
-        Py_DECREF(sig_list_repr);
-    }
-#endif
 
 fail:
     Py_XDECREF(sig_list);
@@ -329,15 +302,6 @@ static int ccallback_prepare(ccallback_t *callback, ccallback_signature_t *signa
     if (PyCallable_Check(callback_obj)) {
         /* Python callable */
         callback->py_function = callback_obj;
-        Py_INCREF(callback->py_function);
-        callback->c_function = NULL;
-        callback->user_data = NULL;
-        callback->signature = NULL;
-    }
-    else if (PyObject_TypeCheck(callback_obj, lowlevelcallable_type) &&
-             PyCallable_Check(PyTuple_GET_ITEM(callback_obj, 0))) {
-        /* Python callable in LowLevelCallable */
-        callback->py_function = PyTuple_GET_ITEM(callback_obj, 0);
         Py_INCREF(callback->py_function);
         callback->c_function = NULL;
         callback->user_data = NULL;

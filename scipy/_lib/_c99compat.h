@@ -1,6 +1,6 @@
 /*
     C99 compatibility for SciPy
-    
+
     The Rules:
       - Every function definition must have compiler guard so that it is not defined twice.
       - This file should only affect compilers that do not support C99 natively.
@@ -9,7 +9,7 @@
 #ifndef SCIPY_C99_COMPAT
     #define SCIPY_C99_COMPAT
     #include <float.h>
-    
+
     #if defined(_MSC_VER) && _MSC_VER <= 1600
             /* MSVC 2008 and MSVC 2010 */
             #ifndef isnan
@@ -117,7 +117,7 @@
     #endif
 
     #if (__STDC_VERSION__ < 199901L)
-        /* Hopefully fail in less cases */
+        /* Hopefully fail in fewer cases */
 
         /* For compilers which aren't MSVC and haven't defined isnan */
         #ifndef isnan

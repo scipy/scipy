@@ -64,7 +64,7 @@
 #define BIG  1.44115188075855872E+17
 extern double MACHEP, MAXLOG;
 
-double expn_large_n(int, double);
+static double expn_large_n(int, double);
 
 
 double expn(int n, double x)
@@ -75,12 +75,12 @@ double expn(int n, double x)
     int i, k;
     static double big = BIG;
 
-    if (n < 0)
-	goto domerr;
-
-    if (x < 0) {
-      domerr: mtherr("expn", DOMAIN);
-	return (NPY_INFINITY);
+    if (npy_isnan(x)) {
+	return NPY_NAN;
+    }
+    else if (n < 0 || x < 0) {
+	sf_error("expn", SF_ERROR_DOMAIN, NULL);
+	return NPY_NAN;
     }
 
     if (x > MAXLOG) {
@@ -89,7 +89,7 @@ double expn(int n, double x)
 
     if (x == 0.0) {
 	if (n < 2) {
-	    mtherr("expn", SING);
+	    sf_error("expn", SF_ERROR_SINGULAR, NULL);
 	    return (NPY_INFINITY);
 	}
 	else {
@@ -191,7 +191,7 @@ double expn(int n, double x)
 
 
 /* Asymptotic expansion for large n, DLMF 8.20(ii) */
-double expn_large_n(int n, double x)
+static double expn_large_n(int n, double x)
 {
     int k;
     double p = n;
@@ -203,7 +203,7 @@ double expn_large_n(int n, double x)
 
     expfac = exp(-lambda*p)/(lambda + 1)/p;
     if (expfac == 0) {
-	mtherr("expn", UNDERFLOW);
+	sf_error("expn", SF_ERROR_UNDERFLOW, NULL);
 	return 0;
     }
 

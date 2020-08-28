@@ -1,7 +1,4 @@
-from __future__ import division, print_function, absolute_import
-
 import scipy.sparse.linalg as la
-import scipy.sparse as sp
 import scipy.io as io
 import numpy as np
 import sys
@@ -27,6 +24,8 @@ def matvec(v):
     count[0] += 1
     sys.stderr.write('%d\r' % count[0])
     return Am*v
+
+
 A = la.LinearOperator(matvec=matvec, shape=Am.shape, dtype=Am.dtype)
 
 M = 100
