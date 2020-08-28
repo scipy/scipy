@@ -169,7 +169,7 @@ def root_scalar(f, args=(), method=None, bracket=None,
 
     The :ref:`exnewton<optimize.root_scalar-exnewton>` method uses the first derivative
     and takes as input two points `x0` and `x1`.
-    `x1` is an optional argument. If not supplied, a perturbation of `x0` is used (:math:`x1=x0+\epsilon`).
+    `x1` is an optional argument. If not supplied, a perturbation of `x0` is used.
 
     >>> sol = optimize.root_scalar(f, x0=0.2, x1=0., fprime=fprime, method='exnewton')
     >>> sol.root, sol.iterations, sol.function_calls
