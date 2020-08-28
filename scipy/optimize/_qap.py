@@ -271,7 +271,7 @@ def _quadratic_assignment_faq(A, B,
         \mbox{s.t. } & {P \ \epsilon \ \mathcal{P}}\\
 
     where :math:`\mathcal{P}` is the set of all permutation matrices,
-    and :math:`A` and :math:`B` are square matrices with non-negative elements.
+    and :math:`A` and :math:`B` are square matrices.
 
     Graph matching tries to *maximize* the same objective function.
     This algorithm can be thought of as finding the alignment of the
@@ -446,9 +446,7 @@ def _quadratic_assignment_faq(A, B,
     A, B, partial_match = _common_input_validation(A, B, partial_match)
 
     msg = None
-    if (A < 0).any() or (B < 0).any():
-        msg = "`A` and `B` matrices must contain only non-negative elements."
-    elif isinstance(init_J, str) and init_J not in {'barycenter'}:
+    if isinstance(init_J, str) and init_J not in {'barycenter'}:
         msg = "Invalid 'init_J' parameter string"
     elif init_weight < 0 or init_weight > 1:
         msg = "'init_weight' must be strictly between zero and one"
@@ -505,7 +503,7 @@ def _quadratic_assignment_faq(A, B,
     const_sum = A21 @ B21.T + A12.T @ B12
 
     # [1] Algorithm 1 Step 2 - loop while stopping criteria not met
-    for n_iter in range(maxiter):
+    for n_iter in range(1, maxiter+1):
         # [1] Algorithm 1 Step 3 - compute the gradient of f(P) = -tr(APB^tP^t)
         grad_fp = (const_sum + A22 @ P @ B22.T + A22.T @ P @ B22)
         # [1] Algorithm 1 Step 4 - get direction Q by solving Eq. 8
@@ -532,6 +530,7 @@ def _quadratic_assignment_faq(A, B,
         # [1] Algorithm 1 Step 6 - Update P
         P_i1 = alpha * P + (1 - alpha) * Q
         if np.linalg.norm(P - P_i1) < tol:
+            P = P_i1
             break
         P = P_i1
     # [1] Algorithm 1 Step 7 - end main loop
@@ -545,7 +544,7 @@ def _quadratic_assignment_faq(A, B,
 
     score = _calc_score(A, B, unshuffled_perm)
 
-    res = {"col_ind": unshuffled_perm, "fun": score, "nit": n_iter+1}
+    res = {"col_ind": unshuffled_perm, "fun": score, "nit": n_iter}
 
     return OptimizeResult(res)
 
