@@ -1759,9 +1759,7 @@ def matmul_toeplitz(c_or_cr, x, check_finite=False, workers=None):
     .. [4] : Marano S, Edwards B, Ferrari G and Fah D (2017), "Fitting
        Earthquake Spectra: Colored Noise and Incomplete Data", Bulletin of
        the Seismological Society of America., January, 2017. Vol. 107(1),
-       pp. 276-291. Implementation available online at:
-       http://mercalli.ethz.ch/~marra/publications/2017_fitting_earthquake_
-       spectra_colored_noise_and_incomplete_data/ToeplitzOperations.py
+       pp. 276-291.
 
     Examples
     --------
