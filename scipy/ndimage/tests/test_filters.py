@@ -1256,11 +1256,12 @@ class TestNdimageFilters:
         output = ndimage.correlate(array, weights, mode=mode, cval=0)
         assert_array_equal(output, expected_value)
 
+
 def test_ticket_701():
     # Test generic filter sizes
-    arr = numpy.arange(4).reshape((2,2))
+    arr = numpy.arange(4).reshape((2, 2))
     func = lambda x: numpy.min(x)
-    res = ndimage.generic_filter(arr, func, size=(1,1))
+    res = ndimage.generic_filter(arr, func, size=(1, 1))
     # The following raises an error unless ticket 701 is fixed
     res2 = ndimage.generic_filter(arr, func, size=1)
     assert_equal(res, res2)
@@ -1324,7 +1325,7 @@ def test_orders_gauss():
 def test_valid_origins():
     """Regression test for #1311."""
     func = lambda x: numpy.mean(x)
-    data = numpy.array([1,2,3,4,5], dtype=numpy.float64)
+    data = numpy.array([1, 2, 3, 4, 5], dtype=numpy.float64)
     assert_raises(ValueError, ndimage.generic_filter, data, func, size=3,
                   origin=2)
     assert_raises(ValueError, ndimage.generic_filter1d, data, func,
@@ -1367,8 +1368,8 @@ def test_multiple_modes():
     # Test that the filters with multiple mode cababilities for different
     # dimensions give the same result as applying a single mode.
     arr = numpy.array([[1., 0., 0.],
-                    [1., 1., 0.],
-                    [0., 0., 0.]])
+                       [1., 1., 0.],
+                       [0., 0., 0.]])
 
     mode1 = 'reflect'
     mode2 = ['reflect', 'reflect']
@@ -1398,8 +1399,8 @@ def test_multiple_modes_sequentially():
     # dimensions give the same result as applying the filters with
     # different modes sequentially
     arr = numpy.array([[1., 0., 0.],
-                    [1., 1., 0.],
-                    [0., 0., 0.]])
+                       [1., 1., 0.],
+                       [0., 0., 0.]])
 
     modes = ['reflect', 'wrap']
 
@@ -1414,12 +1415,14 @@ def test_multiple_modes_sequentially():
                  ndimage.uniform_filter(arr, 5, mode=modes))
 
     expected = ndimage.maximum_filter1d(arr, size=5, axis=0, mode=modes[0])
-    expected = ndimage.maximum_filter1d(expected, size=5, axis=1, mode=modes[1])
+    expected = ndimage.maximum_filter1d(expected, size=5, axis=1,
+                                        mode=modes[1])
     assert_equal(expected,
                  ndimage.maximum_filter(arr, size=5, mode=modes))
 
     expected = ndimage.minimum_filter1d(arr, size=5, axis=0, mode=modes[0])
-    expected = ndimage.minimum_filter1d(expected, size=5, axis=1, mode=modes[1])
+    expected = ndimage.minimum_filter1d(expected, size=5, axis=1,
+                                        mode=modes[1])
     assert_equal(expected,
                  ndimage.minimum_filter(arr, size=5, mode=modes))
 
@@ -1427,12 +1430,12 @@ def test_multiple_modes_sequentially():
 def test_multiple_modes_prewitt():
     # Test prewitt filter for multiple extrapolation modes
     arr = numpy.array([[1., 0., 0.],
-                    [1., 1., 0.],
-                    [0., 0., 0.]])
+                       [1., 1., 0.],
+                       [0., 0., 0.]])
 
     expected = numpy.array([[1., -3., 2.],
-                         [1., -2., 1.],
-                         [1., -1., 0.]])
+                            [1., -2., 1.],
+                            [1., -1., 0.]])
 
     modes = ['reflect', 'wrap']
 
@@ -1443,12 +1446,12 @@ def test_multiple_modes_prewitt():
 def test_multiple_modes_sobel():
     # Test sobel filter for multiple extrapolation modes
     arr = numpy.array([[1., 0., 0.],
-                    [1., 1., 0.],
-                    [0., 0., 0.]])
+                       [1., 1., 0.],
+                       [0., 0., 0.]])
 
     expected = numpy.array([[1., -4., 3.],
-                         [2., -3., 1.],
-                         [1., -1., 0.]])
+                            [2., -3., 1.],
+                            [1., -1., 0.]])
 
     modes = ['reflect', 'wrap']
 
@@ -1459,12 +1462,12 @@ def test_multiple_modes_sobel():
 def test_multiple_modes_laplace():
     # Test laplace filter for multiple extrapolation modes
     arr = numpy.array([[1., 0., 0.],
-                    [1., 1., 0.],
-                    [0., 0., 0.]])
+                       [1., 1., 0.],
+                       [0., 0., 0.]])
 
     expected = numpy.array([[-2., 2., 1.],
-                         [-2., -3., 2.],
-                         [1., 1., 0.]])
+                            [-2., -3., 2.],
+                            [1., 1., 0.]])
 
     modes = ['reflect', 'wrap']
 
@@ -1475,12 +1478,12 @@ def test_multiple_modes_laplace():
 def test_multiple_modes_gaussian_laplace():
     # Test gaussian_laplace filter for multiple extrapolation modes
     arr = numpy.array([[1., 0., 0.],
-                    [1., 1., 0.],
-                    [0., 0., 0.]])
+                       [1., 1., 0.],
+                       [0., 0., 0.]])
 
     expected = numpy.array([[-0.28438687, 0.01559809, 0.19773499],
-                         [-0.36630503, -0.20069774, 0.07483620],
-                         [0.15849176, 0.18495566, 0.21934094]])
+                            [-0.36630503, -0.20069774, 0.07483620],
+                            [0.15849176, 0.18495566, 0.21934094]])
 
     modes = ['reflect', 'wrap']
 
@@ -1492,12 +1495,12 @@ def test_multiple_modes_gaussian_gradient_magnitude():
     # Test gaussian_gradient_magnitude filter for multiple
     # extrapolation modes
     arr = numpy.array([[1., 0., 0.],
-                    [1., 1., 0.],
-                    [0., 0., 0.]])
+                       [1., 1., 0.],
+                       [0., 0., 0.]])
 
     expected = numpy.array([[0.04928965, 0.09745625, 0.06405368],
-                         [0.23056905, 0.14025305, 0.04550846],
-                         [0.19894369, 0.14950060, 0.06796850]])
+                            [0.23056905, 0.14025305, 0.04550846],
+                            [0.19894369, 0.14950060, 0.06796850]])
 
     modes = ['reflect', 'wrap']
 
@@ -1509,12 +1512,12 @@ def test_multiple_modes_gaussian_gradient_magnitude():
 def test_multiple_modes_uniform():
     # Test uniform filter for multiple extrapolation modes
     arr = numpy.array([[1., 0., 0.],
-                    [1., 1., 0.],
-                    [0., 0., 0.]])
+                       [1., 1., 0.],
+                       [0., 0., 0.]])
 
     expected = numpy.array([[0.32, 0.40, 0.48],
-                         [0.20, 0.28, 0.32],
-                         [0.28, 0.32, 0.40]])
+                            [0.20, 0.28, 0.32],
+                            [0.28, 0.32, 0.40]])
 
     modes = ['reflect', 'wrap']
 
@@ -1566,7 +1569,8 @@ def test_gaussian_truncate():
 class TestThreading(object):
     def check_func_thread(self, n, fun, args, out):
         from threading import Thread
-        thrds = [Thread(target=fun, args=args, kwargs={'output': out[x]}) for x in range(n)]
+        thrds = [Thread(target=fun, args=args, kwargs={'output': out[x]})
+                 for x in range(n)]
         [t.start() for t in thrds]
         [t.join() for t in thrds]
 
@@ -1578,8 +1582,9 @@ class TestThreading(object):
         d = numpy.random.randn(5000)
         os = numpy.empty((4, d.size))
         ot = numpy.empty_like(os)
-        self.check_func_serial(4, ndimage.correlate1d, (d, numpy.arange(5)), os)
-        self.check_func_thread(4, ndimage.correlate1d, (d, numpy.arange(5)), ot)
+        k = numpy.arange(5)
+        self.check_func_serial(4, ndimage.correlate1d, (d, k), os)
+        self.check_func_thread(4, ndimage.correlate1d, (d, k), ot)
         assert_array_equal(os, ot)
 
     def test_correlate(self):
@@ -1631,7 +1636,7 @@ def test_minmaximum_filter1d():
     assert_equal([0, 0, 0, 1, 2, 3, 4, 5, 6, 7], out)
     out = ndimage.maximum_filter1d(in_, 5, mode='reflect')
     assert_equal([2, 3, 4, 5, 6, 7, 8, 9, 9, 9], out)
-    #Test constant
+    # Test constant
     out = ndimage.minimum_filter1d(in_, 5, mode='constant', cval=-1)
     assert_equal([-1, -1, 0, 1, 2, 3, 4, 5, -1, -1], out)
     out = ndimage.maximum_filter1d(in_, 5, mode='constant', cval=10)
@@ -1663,13 +1668,14 @@ def test_footprint_all_zeros():
     with assert_raises(ValueError):
         ndimage.maximum_filter(arr, footprint=kernel)
 
+
 def test_gaussian_filter():
     # Test gaussian filter with numpy.float16
     # gh-8207
-    data = numpy.array([1],dtype = numpy.float16)
+    data = numpy.array([1], dtype=numpy.float16)
     sigma = 1.0
     with assert_raises(RuntimeError):
-        ndimage.gaussian_filter(data,sigma)
+        ndimage.gaussian_filter(data, sigma)
 
 
 def test_rank_filter_noninteger_rank():
