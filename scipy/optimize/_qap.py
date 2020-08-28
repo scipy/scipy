@@ -136,8 +136,8 @@ def quadratic_assignment(A, B, method="faq", options=None):
     >>> res = quadratic_assignment(A, B)
     >>> print(res)
      col_ind: array([0, 3, 2, 1])
-         nit: 9
          fun: 3260
+         nit: 9
 
     The see the relationship between the returned ``col_ind`` and ``fun``,
     use ``col_ind`` to form the best permutation matrix found, then evaluate
@@ -180,8 +180,8 @@ def quadratic_assignment(A, B, method="faq", options=None):
     >>> res = quadratic_assignment(A, B)
     >>> print(res)
      col_ind: array([1, 0, 3, 2])
-         nit: 13
          fun: 178
+         nit: 13
 
     If accuracy is important, consider using  :ref:`'2opt' <optimize.qap-2opt>`
     to refine the solution.
@@ -191,8 +191,8 @@ def quadratic_assignment(A, B, method="faq", options=None):
     ...                            options = {'partial_guess': guess})
     >>> print(res)
      col_ind: array([1, 2, 3, 0])
-         nit: 17
          fun: 176
+         nit: 17
 
     """
 
@@ -504,7 +504,7 @@ def _quadratic_assignment_faq(A, B,
     const_sum = A21 @ B21.T + A12.T @ B12
 
     # OPTIMIZATION WHILE LOOP BEGINS
-    for n_iter in range(maxiter):   
+    for n_iter in range(maxiter):
         # computing the gradient of f(P) = -tr(APB^tP^t)
         grad_fp = (const_sum + A22 @ P @ B22.T + A22.T @ P @ B22)
         # run hungarian algorithm on gradient(f(P))
@@ -537,7 +537,7 @@ def _quadratic_assignment_faq(A, B,
     # Project onto the set of permutation matrices
     row, col = linear_sum_assignment(-P)
     perm = np.concatenate((np.arange(n_seeds), col + n_seeds))
-    
+
     unshuffled_perm = np.zeros(n, dtype=int)
     unshuffled_perm[perm_A] = perm_B[perm]
 
@@ -562,10 +562,12 @@ def _check_init_input(init_J, n):
     if msg is not None:
         raise ValueError(msg)
 
+
 def _split_matrix(X, n):
-        # definitions according to Seeded Graph Matching [2].
-        upper, lower = X[:n], X[n:]
-        return upper[:, :n], upper[:, n:], lower[:, :n], lower[:, n:]
+    # definitions according to Seeded Graph Matching [2].
+    upper, lower = X[:n], X[n:]
+    return upper[:, :n], upper[:, n:], lower[:, :n], lower[:, n:]
+
 
 def _doubly_stochastic(P, tol=1e-3):
     # cleaner implementation of btaba/sinkhorn_knopp
