@@ -190,13 +190,6 @@ class TestFAQ(QAPCommonTests):
 
         # method is implicitly faq
 
-        # test that cost/dist matrices must be nonnegative
-        with pytest.raises(
-                ValueError, match="`A` and `B` matrices must contain only"):
-            quadratic_assignment(
-                -np.random.random((3, 3)),
-                np.random.random((3, 3))
-            )
         # ValueError Checks: making sure single value parameters are of
         # correct value
         with pytest.raises(ValueError, match="Invalid 'init_J' parameter"):
@@ -225,8 +218,9 @@ class TestFAQ(QAPCommonTests):
                 options={'init_J': np.ones((3, 3))}
             )
 
-        K = np.random.rand(3, 3)
-        K = _doubly_stochastic(K, tol=1)
+        K = [[0.4, 0.2, 0.3],
+             [0.3, 0.6, 0.2],
+             [0.2, 0.2, 0.7]]
         # matrix that isn't quite doubly stochastic
         with pytest.raises(
                 ValueError, match="`init_J` matrix must be doubly stochastic"):

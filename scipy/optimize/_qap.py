@@ -22,9 +22,7 @@ def quadratic_assignment(A, B, method="faq", options=None):
         \mbox{s.t. } & {P \ \epsilon \ \mathcal{P}}\\
 
     where :math:`\mathcal{P}` is the set of all permutation matrices,
-    and :math:`A` and :math:`B` are square matrices. For the default
-    algorithm :ref:`'faq' <optimize.qap-faq>`, all elements of
-    :math:`A` and :math:`B` must be non-negative.
+    and :math:`A` and :math:`B` are square matrices.
 
     Graph matching tries to *maximize* the same objective function.
     This algorithm can be thought of as finding the alignment of the
@@ -42,13 +40,9 @@ def quadratic_assignment(A, B, method="faq", options=None):
     ----------
     A : 2d-array, square
         The square matrix :math:`A` in the objective function above.
-        Elements must be non-negative for method
-        :ref:`'faq' <optimize.qap-faq>`.
 
     B : 2d-array, square
         The square matrix :math:`B` in the objective function above.
-        Elements must be non-negative for method
-        :ref:`'faq' <optimize.qap-faq>`.
 
     method :  str in {'faq', '2opt'} (default: 'faq')
         The algorithm used to solve the problem.
@@ -271,7 +265,7 @@ def _quadratic_assignment_faq(A, B,
         \mbox{s.t. } & {P \ \epsilon \ \mathcal{P}}\\
 
     where :math:`\mathcal{P}` is the set of all permutation matrices,
-    and :math:`A` and :math:`B` are square matrices with non-negative elements.
+    and :math:`A` and :math:`B` are square matrices.
 
     Graph matching tries to *maximize* the same objective function.
     This algorithm can be thought of as finding the alignment of the
@@ -287,10 +281,10 @@ def _quadratic_assignment_faq(A, B,
 
     Parameters
     ----------
-    A : 2d-array, square, non-negative
+    A : 2d-array, square
         The square matrix :math:`A` in the objective function above.
 
-    B : 2d-array, square, non-negative
+    B : 2d-array, square
         The square matrix :math:`B` in the objective function above.
 
     method :  str in {'faq', '2opt'} (default: 'faq')
@@ -446,9 +440,7 @@ def _quadratic_assignment_faq(A, B,
     A, B, partial_match = _common_input_validation(A, B, partial_match)
 
     msg = None
-    if (A < 0).any() or (B < 0).any():
-        msg = "`A` and `B` matrices must contain only non-negative elements."
-    elif isinstance(init_J, str) and init_J not in {'barycenter'}:
+    if isinstance(init_J, str) and init_J not in {'barycenter'}:
         msg = "Invalid 'init_J' parameter string"
     elif init_weight < 0 or init_weight > 1:
         msg = "'init_weight' must be strictly between zero and one"
@@ -487,8 +479,8 @@ def _quadratic_assignment_faq(A, B,
     if isinstance(init_J, str) and init_J == 'barycenter':
         J = np.ones((n_unseed, n_unseed)) / float(n_unseed)
     else:
-        _check_init_input(init_J, n_unseed)
-        J = init_J
+        J = np.atleast_2d(init_J)
+        _check_init_input(J, n_unseed)
 
 # [1] Algorithm 1 Step 1 - choose initialization
     if init_weight != 1:
@@ -505,7 +497,7 @@ def _quadratic_assignment_faq(A, B,
     const_sum = A21 @ B21.T + A12.T @ B12
 
     # [1] Algorithm 1 Step 2 - loop while stopping criteria not met
-    for n_iter in range(maxiter):
+    for n_iter in range(1, maxiter+1):
         # [1] Algorithm 1 Step 3 - compute the gradient of f(P) = -tr(APB^tP^t)
         grad_fp = (const_sum + A22 @ P @ B22.T + A22.T @ P @ B22)
         # [1] Algorithm 1 Step 4 - get direction Q by solving Eq. 8
@@ -532,6 +524,7 @@ def _quadratic_assignment_faq(A, B,
         # [1] Algorithm 1 Step 6 - Update P
         P_i1 = alpha * P + (1 - alpha) * Q
         if np.linalg.norm(P - P_i1) < tol:
+            P = P_i1
             break
         P = P_i1
     # [1] Algorithm 1 Step 7 - end main loop
@@ -545,7 +538,7 @@ def _quadratic_assignment_faq(A, B,
 
     score = _calc_score(A, B, unshuffled_perm)
 
-    res = {"col_ind": unshuffled_perm, "fun": score, "nit": n_iter+1}
+    res = {"col_ind": unshuffled_perm, "fun": score, "nit": n_iter}
 
     return OptimizeResult(res)
 
@@ -628,10 +621,10 @@ def _quadratic_assignment_2opt(A, B, maximize=False, partial_match=None,
 
     Parameters
     ----------
-    A : 2d-array, square, non-negative
+    A : 2d-array, square
         The square matrix :math:`A` in the objective function above.
 
-    B : 2d-array, square, non-negative
+    B : 2d-array, square
         The square matrix :math:`B` in the objective function above.
 
     method :  str in {'faq', '2opt'} (default: 'faq')
