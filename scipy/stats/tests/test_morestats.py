@@ -277,6 +277,16 @@ class TestAnderson(object):
         assert_array_less(A1, crit1[-2:])
         assert_(A2 > crit2[-1])
 
+    def test_weibull_min(self):
+        x1 = np.array([225, 171, 198, 189, 135, 162, 135, 117, 162])
+        x2 = np.array([74, 57, 48, 29, 502, 12, 70, 21, 29, 386,
+                       59, 27, 153, 26, 326])
+        A1, crit1, sig1 = stats.anderson(x1, 'weibull_min')
+        A2, crit2, sig2 = stats.anderson(x2, 'weibull_min')
+
+        assert_(A1 < crit1[0])
+        assert_(A2 > crit2[0])
+
 
 class TestAndersonKSamp(object):
     def test_example1a(self):
