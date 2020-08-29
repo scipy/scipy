@@ -218,8 +218,9 @@ class TestFAQ(QAPCommonTests):
                 options={'init_J': np.ones((3, 3))}
             )
 
-        K = np.random.rand(3, 3)
-        K = _doubly_stochastic(K, tol=1.5)
+        K = [[0.4, 0.2, 0.3],
+             [0.3, 0.6, 0.2],
+             [0.2, 0.2, 0.7]]
         # matrix that isn't quite doubly stochastic
         with pytest.raises(
                 ValueError, match="`init_J` matrix must be doubly stochastic"):
