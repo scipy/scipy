@@ -505,22 +505,29 @@ def _quadratic_assignment_faq(A, B,
         Q = np.zeros((n_unseed, n_unseed))
         Q[rows, cols] = 1  # initialize search direction matrix Q
 
-        def f(x):  # computing the original optimization function
-            xP1xQ = x * P + (1 - x) * Q
-            # Sums below are np.trace(A11.T @ B11)
-            # + np.trace(xP1xQ.T @ A21 @ B21.T)
-            # + np.trace(xP1xQ.T @ A12.T @ B12)
-            # + np.trace(A22.T @ xP1xQ @ B22 @ xP1xQ.T)
-            # This is more efficient, but can we do even better?
-            return obj_func_scalar * (
-                (A11 * B11).sum()
-                + (xP1xQ.T @ A21 * B21).sum()
-                + (xP1xQ.T @ A12.T * B12.T).sum()
-                + ((xP1xQ.T @ A22) * (B22 @ xP1xQ.T)).sum()
-            )
 
         # [1] Algorithm 1 Step 5 - compute the step size
-        alpha = minimize_scalar(f, bounds=(0, 1), method="bounded").x
+        # Noting that e.g. trace(Ax) = trace(A)*x, expand and re-collect
+        # terms as ax**2 + bx + c. c does not affect location of minimum
+        # and can be ignored. Also, note that trace(A@B) = (A.T*B).sum();
+        # apply where possible for efficiency.
+        R = P - Q
+        b21 = ((R.T @ A21) * B21).sum()
+        b12 = ((R.T @ A12.T) * B12.T).sum()
+        AR22 = A22.T @ R
+        BR22 = B22 @ R.T
+        b22a = (AR22.T * (B22 @ Q.T)).sum()
+        b22b = ((A22.T @ Q).T * BR22).sum()
+        a = (AR22.T * BR22).sum()
+        b = b21 + b12 + b22a + b22b
+        # critical point of ax^2 + bx + c is at x = -d/(2*e)
+        # if a * obj_func_scalar > 0, it is a minimum
+        # if minimum is not in [0, 1], only endpoints need to be considered
+        if a*obj_func_scalar > 0 and 0 <= -b/(2*a) <= 1:
+            alpha = -b/(2*a)
+        else:
+            alpha = np.argmin([0, (b + a)*obj_func_scalar])
+
         # [1] Algorithm 1 Step 6 - Update P
         P_i1 = alpha * P + (1 - alpha) * Q
         if np.linalg.norm(P - P_i1) < tol:
