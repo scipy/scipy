@@ -580,8 +580,8 @@ def wminkowski(u, v, p, w):
 
     """
     warnings.warn(
-        message="scipy.distance.wminkowski is deprecated and will be removed in"
-                " SciPy 1.8.0, use scipy.distance.minkowski instead.",
+        message="scipy.distance.wminkowski is deprecated and will be removed "
+                "in SciPy 1.8.0, use scipy.distance.minkowski instead.",
         category=DeprecationWarning)
     w = _validate_weights(w)
     return minkowski(u, v, p=p, w=w**p)

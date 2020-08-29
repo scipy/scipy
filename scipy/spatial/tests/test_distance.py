@@ -580,7 +580,8 @@ class TestCdist(object):
         X2 = eo['cdist-X2']
         out_r, out_c = X1.shape[0], X2.shape[0]
         with suppress_warnings() as sup:
-            sup.filter(DeprecationWarning, message="'wminkowski' metric is deprecated")
+            sup.filter(DeprecationWarning,
+                       message="'wminkowski' metric is deprecated")
             for metric in _METRICS_NAMES:
                 kwargs = dict()
                 if metric in ['minkowski', 'wminkowski']:
@@ -596,15 +597,20 @@ class TestCdist(object):
                 assert_(Y2 is out1)
                 # test for incorrect shape
                 out2 = np.empty((out_r-1, out_c+1), dtype=np.double)
-                assert_raises(ValueError, cdist, X1, X2, metric, out=out2, **kwargs)
+                assert_raises(ValueError,
+                              cdist, X1, X2, metric, out=out2, **kwargs)
                 # test for C-contiguous order
-                out3 = np.empty((2 * out_r, 2 * out_c), dtype=np.double)[::2, ::2]
+                out3 = np.empty(
+                    (2 * out_r, 2 * out_c), dtype=np.double)[::2, ::2]
                 out4 = np.empty((out_r, out_c), dtype=np.double, order='F')
-                assert_raises(ValueError, cdist, X1, X2, metric, out=out3, **kwargs)
-                assert_raises(ValueError, cdist, X1, X2, metric, out=out4, **kwargs)
+                assert_raises(ValueError,
+                              cdist, X1, X2, metric, out=out3, **kwargs)
+                assert_raises(ValueError,
+                              cdist, X1, X2, metric, out=out4, **kwargs)
                 # test for incorrect dtype
                 out5 = np.empty((out_r, out_c), dtype=np.int64)
-                assert_raises(ValueError, cdist, X1, X2, metric, out=out5, **kwargs)
+                assert_raises(ValueError,
+                              cdist, X1, X2, metric, out=out5, **kwargs)
 
     def test_striding(self):
         # test that striding is handled correct with calls to
@@ -1491,7 +1497,8 @@ class TestPdist(object):
         assert_(X_copy.flags.c_contiguous)
 
         with suppress_warnings() as sup:
-            sup.filter(DeprecationWarning, message="'wminkowski' metric is deprecated")
+            sup.filter(DeprecationWarning,
+                       message="'wminkowski' metric is deprecated")
             for metric in _METRICS_NAMES:
                 kwargs = dict()
                 if metric in ['minkowski', 'wminkowski']:
@@ -1526,15 +1533,18 @@ class TestSomeDistanceFunctions(object):
             assert_almost_equal(dist1p5, (1.0 + 2.0**1.5)**(2. / 3))
             wminkowski(x, y, p=2)
 
-        # Check that casting input to minimum scalar type doesn't affect result (issue #10262).
-        # This could be extended to more test inputs with np.min_scalar_type(np.max(input_matrix)).
+        # Check that casting input to minimum scalar type doesn't affect result
+        # (issue #10262). This could be extended to more test inputs with
+        # np.min_scalar_type(np.max(input_matrix)).
         a = np.array([352, 916])
         b = np.array([350, 660])
-        assert_equal(minkowski(a, b), minkowski(a.astype('uint16'), b.astype('uint16')))
+        assert_equal(minkowski(a, b),
+                     minkowski(a.astype('uint16'), b.astype('uint16')))
 
     def test_old_wminkowski(self):
         with suppress_warnings() as wrn:
-            wrn.filter(DeprecationWarning, message=".*wminkowski is deprecated")
+            wrn.filter(DeprecationWarning,
+                       message=".*wminkowski is deprecated")
             w = np.array([1.0, 2.0, 0.5])
             for x, y in self.cases:
                 dist1 = old_wminkowski(x, y, p=1, w=w)
@@ -2041,7 +2051,8 @@ def test_Xdist_deprecated_args():
         with suppress_warnings() as w:
             log = w.record(message=warn_msg_args)
             w.filter(message=warn_msg_kwargs)
-            w.filter(DeprecationWarning, message="'wminkowski' metric is deprecated")
+            w.filter(DeprecationWarning,
+                     message="'wminkowski' metric is deprecated")
             cdist(X1, X1, metric, 2., **kwargs)
             pdist(X1, metric, 2., **kwargs)
             assert_(len(log) == 2)
@@ -2061,7 +2072,8 @@ def test_Xdist_deprecated_args():
 
         with suppress_warnings() as w:
             log = w.record(message=warn_msg_kwargs)
-            w.filter(DeprecationWarning, message="'wminkowski' metric is deprecated")
+            w.filter(DeprecationWarning,
+                     message="'wminkowski' metric is deprecated")
             cdist(X1, X1, metric, **kwargs)
             pdist(X1, metric, **kwargs)
             assert_(len(log) == 2)
@@ -2072,7 +2084,8 @@ def test_Xdist_non_negative_weights():
     w = np.ones(X.shape[1])
     w[::5] = -w[::5]
     with suppress_warnings() as sup:
-        sup.filter(DeprecationWarning, message="'wminkowski' metric is deprecated")
+        sup.filter(DeprecationWarning,
+                   message="'wminkowski' metric is deprecated")
         for metric in _METRICS_NAMES:
             if metric in ['seuclidean', 'mahalanobis', 'jensenshannon']:
                 continue
