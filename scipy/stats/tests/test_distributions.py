@@ -4808,6 +4808,28 @@ class TestArgus(object):
         assert_almost_equal(stats.argus(3.5).mean(), x.mean(), decimal=3)
         assert_almost_equal(stats.argus(3.5).std(), x.std(), decimal=3)
 
+    # Expected values were computed with mpmath.
+    @pytest.mark.parametrize('chi, expected_mean',
+                             [(1, 0.6187026683551835),
+                              (10, 0.984805536783744),
+                              (40, 0.9990617659702923),
+                              (60, 0.9995831885165300),
+                              (99, 0.9998469348663028)])
+    def test_mean(self, chi, expected_mean):
+        m = stats.argus.mean(chi, scale=1)
+        assert_allclose(m, expected_mean, rtol=1e-13)
+
+    # Expected values were computed with mpmath.
+    @pytest.mark.parametrize('chi, expected_var, rtol',
+                             [(1, 0.05215651254197807, 1e-13),
+                              (10, 0.00015805472008165595, 1e-11),
+                              (40, 5.877763210262901e-07, 1e-8),
+                              (60, 1.1590179389611416e-07, 1e-8),
+                              (99, 1.5623277006064666e-08, 1e-8)])
+    def test_var(self, chi, expected_var, rtol):
+        v = stats.argus.var(chi, scale=1)
+        assert_allclose(v, expected_var, rtol=rtol)
+
 
 def test_rvs_no_size_warning():
     class rvs_no_size_gen(stats.rv_continuous):

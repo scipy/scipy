@@ -8395,7 +8395,7 @@ class argus_gen(rv_continuous):
     def _stats(self, chi):
         chi2 = chi**2
         phi = _argus_phi(chi)
-        m = np.sqrt(np.pi/8) * chi * np.exp(-chi2/4) * sc.iv(1, chi2/4) / phi
+        m = np.sqrt(np.pi/8) * chi * sc.ive(1, chi2/4) / phi
         v = (1 - 3 / chi2 + chi * _norm_pdf(chi) / phi) - m**2
         return m, v, None, None
 
