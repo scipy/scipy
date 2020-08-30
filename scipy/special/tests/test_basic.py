@@ -1602,8 +1602,7 @@ class TestErf(object):
         y = np.random.pareto(0.02, n) * (2*np.random.randint(0, 2, n) - 1)
         z = x + 1j*y
 
-        old_errors = np.seterr(all='ignore')
-        try:
+        with np.errstate(all='ignore'):
             w = other_func(z)
             w_real = other_func(x).real
 
@@ -1618,8 +1617,6 @@ class TestErf(object):
             # test both real and complex variants
             assert_func_equal(func, w, z, rtol=rtol, atol=atol)
             assert_func_equal(func, w_real, x, rtol=rtol, atol=atol)
-        finally:
-            np.seterr(**old_errors)
 
     def test_erfc_consistent(self):
         self._check_variant_func(
@@ -1700,12 +1697,9 @@ class TestEuler(object):
                 correct[2*k] = -float(mathworld[k])
             else:
                 correct[2*k] = float(mathworld[k])
-        olderr = np.seterr(all='ignore')
-        try:
+        with np.errstate(all='ignore'):
             err = nan_to_num((eu24-correct)/correct)
             errmax = max(err)
-        finally:
-            np.seterr(**olderr)
         assert_almost_equal(errmax, 0.0, 14)
 
 
@@ -1830,10 +1824,12 @@ class TestFactorialFunctions(object):
 
     def test_mixed_nan_inputs(self):
         x = np.array([np.nan, 1, 2, 3, np.nan])
-        result = special.factorial(x, exact=True)
-        assert_equal(np.array([np.nan, 1, 2, 6, np.nan]), result)
-        result = special.factorial(x, exact=False)
-        assert_equal(np.array([np.nan, 1, 2, 6, np.nan]), result)
+        with suppress_warnings() as sup:
+            sup.filter(DeprecationWarning, "Using factorial\\(\\) with floats is deprecated")
+            result = special.factorial(x, exact=True)
+            assert_equal(np.array([np.nan, 1, 2, 6, np.nan]), result)
+            result = special.factorial(x, exact=False)
+            assert_equal(np.array([np.nan, 1, 2, 6, np.nan]), result)
 
 
 class TestFresnel(object):
@@ -2541,11 +2537,8 @@ class TestBessel(object):
         self.check_cephes_vs_amos(special.yv, special.yn, rtol=1e-11, atol=1e-305, skip=skipper)
 
     def test_iv_cephes_vs_amos(self):
-        olderr = np.seterr(all='ignore')
-        try:
+        with np.errstate(all='ignore'):
             self.check_cephes_vs_amos(special.iv, special.iv, rtol=5e-9, atol=1e-305)
-        finally:
-            np.seterr(**olderr)
 
     @pytest.mark.slow
     def test_iv_cephes_vs_amos_mass_test(self):
@@ -2557,8 +2550,7 @@ class TestBessel(object):
         imsk = (np.random.randint(8, size=N) == 0)
         v[imsk] = v[imsk].astype(int)
 
-        old_err = np.seterr(all='ignore')
-        try:
+        with np.errstate(all='ignore'):
             c1 = special.iv(v, x)
             c2 = special.iv(v, x+0j)
 
@@ -2570,8 +2562,6 @@ class TestBessel(object):
 
             dc = abs(c1/c2 - 1)
             dc[np.isnan(dc)] = 0
-        finally:
-            np.seterr(**old_err)
 
         k = np.argmax(dc)
 
@@ -2911,11 +2901,8 @@ class TestLegendreFunctions(object):
 
         # XXX: this is outside the domain of the current implementation,
         #      so ensure it returns a NaN rather than a wrong answer.
-        olderr = np.seterr(all='ignore')
-        try:
+        with np.errstate(all='ignore'):
             lp = special.lpmv(-1,-1,.001)
-        finally:
-            np.seterr(**olderr)
         assert_(lp != 0 or np.isnan(lp))
 
     def test_lqmn(self):

@@ -21,7 +21,7 @@
         }
     },
     "_lambertw": {
-        "lambertw.pxd": {
+        "_lambertw.pxd": {
             "lambertw_scalar": "Dld->D"
         }
     },

@@ -352,7 +352,7 @@ int NI_FourierFilter(PyArrayObject *input, PyArrayObject* parameter_array,
             switch (PyArray_NDIM(input)) {
             case 1:
                 tmp = params[0][ii.coordinates[0]];
-                tmp = tmp > 0.0 ? sin(tmp) / (tmp) : 1.0;
+                tmp = tmp != 0 ? sin(tmp) / (tmp) : 1.0;
                 break;
             case 2:
                 tmp = 0.0;

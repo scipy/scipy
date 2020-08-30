@@ -90,3 +90,10 @@ Some things to consider:
   benchmark results when the benchmark did not previously have a
   manual ``version`` attribute, the automatically computed default
   values can be found in ``results/benchmark.json``.
+
+- Benchmark attributes such as ``params`` and ``param_names`` must be
+  the same regardless of whether some features are available, or
+  e.g. SCIPY_XSLOW=1 is set.
+
+  Instead, benchmarks that should not be run can be skipped by raising
+  ``NotImplementedError`` in ``setup()``.

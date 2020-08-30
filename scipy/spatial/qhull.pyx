@@ -208,13 +208,14 @@ from libc.stdlib cimport qsort
 #------------------------------------------------------------------------------
 
 cdef extern from "qhull_misc.h":
+    ctypedef int CBLAS_INT   # actual type defined in the header file
     void qhull_misc_lib_check()
-    void qh_dgetrf(int *m, int *n, double *a, int *lda, int *ipiv,
-                   int *info) nogil
-    void qh_dgetrs(char *trans, int *n, int *nrhs, double *a, int *lda,
-                   int *ipiv, double *b, int *ldb, int *info) nogil
-    void qh_dgecon(char *norm, int *n, double *a, int *lda, double *anorm,
-                   double *rcond, double *work, int *iwork, int *info) nogil
+    void qh_dgetrf(CBLAS_INT *m, CBLAS_INT *n, double *a, CBLAS_INT *lda, CBLAS_INT *ipiv,
+                   CBLAS_INT *info) nogil
+    void qh_dgetrs(char *trans, CBLAS_INT *n, CBLAS_INT *nrhs, double *a, CBLAS_INT *lda,
+                   CBLAS_INT *ipiv, double *b, CBLAS_INT *ldb, CBLAS_INT *info) nogil
+    void qh_dgecon(char *norm, CBLAS_INT *n, double *a, CBLAS_INT *lda, double *anorm,
+                   double *rcond, double *work, CBLAS_INT *iwork, CBLAS_INT *info) nogil
 
 
 #------------------------------------------------------------------------------
@@ -600,6 +601,7 @@ cdef class _Qhull:
 
         ncoplanar = 0
         coplanar = np.zeros((10, 3), dtype=np.intc)
+        coplanar_shape = coplanar.shape
 
         # Retrieve facet information
         with nogil:
@@ -651,7 +653,7 @@ cdef class _Qhull:
                         point = <pointT*>facet.coplanarset.e[i].p
                         vertex = qh_nearvertex(self._qh, facet, point, &dist)
 
-                        if ncoplanar >= coplanar.shape[0]:
+                        if ncoplanar >= coplanar_shape[0]:
                             with gil:
                                 tmp = coplanar
                                 coplanar = None
@@ -702,7 +704,7 @@ cdef class _Qhull:
             point_ndim += 1
 
         numpoints = self._qh.num_points
-        points = np.zeros((numpoints, point_ndim))
+        points = np.empty((numpoints, point_ndim))
 
         with nogil:
             point = self._qh.first_point
@@ -1076,9 +1078,10 @@ def _get_barycentric_transforms(np.ndarray[np.double_t, ndim=2] points,
     cdef np.ndarray[np.double_t, ndim=2] T
     cdef np.ndarray[np.double_t, ndim=3] Tinvs
     cdef int isimplex
-    cdef int i, j, n, nrhs, lda, ldb
-    cdef int info = 0
-    cdef int ipiv[NPY_MAXDIMS+1]
+    cdef int i, j
+    cdef CBLAS_INT n, nrhs, lda, ldb
+    cdef CBLAS_INT info = 0
+    cdef CBLAS_INT ipiv[NPY_MAXDIMS+1]
     cdef int ndim, nsimplex
     cdef double centroid[NPY_MAXDIMS]
     cdef double c[NPY_MAXDIMS+1]
@@ -1088,7 +1091,7 @@ def _get_barycentric_transforms(np.ndarray[np.double_t, ndim=2] points,
     cdef double rcond_limit
 
     cdef double work[4*NPY_MAXDIMS]
-    cdef int iwork[NPY_MAXDIMS]
+    cdef CBLAS_INT iwork[NPY_MAXDIMS]
 
     cdef double x1, x2, x3
     cdef double y1, y2, y3
@@ -1097,7 +1100,7 @@ def _get_barycentric_transforms(np.ndarray[np.double_t, ndim=2] points,
     ndim = points.shape[1]
     nsimplex = simplices.shape[0]
 
-    T = np.zeros((ndim, ndim), dtype=np.double)
+    T = np.empty((ndim, ndim), dtype=np.double)
     Tinvs = np.zeros((nsimplex, ndim+1, ndim), dtype=np.double)
 
     # Maximum inverse condition number to allow: we want at least three
@@ -2076,6 +2079,7 @@ class Delaunay(_QhullUser):
         xi_shape = xi.shape
         xi = xi.reshape(-1, xi.shape[-1])
         x = np.ascontiguousarray(xi.astype(np.double))
+        x_shape = x.shape
 
         start = 0
 
@@ -2090,7 +2094,7 @@ class Delaunay(_QhullUser):
 
         if bruteforce:
             with nogil:
-                for k in range(x.shape[0]):
+                for k in range(x_shape[0]):
                     isimplex = _find_simplex_bruteforce(
                         &info, c,
                         <double*>x.data + info.ndim*k,
@@ -2098,7 +2102,7 @@ class Delaunay(_QhullUser):
                     out_[k] = isimplex
         else:
             with nogil:
-                for k in range(x.shape[0]):
+                for k in range(x_shape[0]):
                     isimplex = _find_simplex(&info, c,
                                              <double*>x.data + info.ndim*k,
                                              &start, eps, eps_broad)
@@ -2127,6 +2131,7 @@ class Delaunay(_QhullUser):
         xi_shape = xi.shape
         xi = xi.reshape(-1, xi.shape[-1])
         x = np.ascontiguousarray(xi.astype(np.double))
+        x_shape = x.shape
 
         _get_delaunay_info(&info, self, 0, 0, 0)
 
@@ -2134,7 +2139,7 @@ class Delaunay(_QhullUser):
         out_ = out
 
         with nogil:
-            for i in range(x.shape[0]):
+            for i in range(x_shape[0]):
                 for j in range(info.nsimplex):
                     _lift_point(&info, (<double*>x.data) + info.ndim*i, z)
                     out_[i,j] = _distplane(&info, j, z)
@@ -2318,11 +2323,13 @@ class ConvexHull(_QhullUser):
 
         .. versionadded:: 1.3.0
     area : float
-        Area of the convex hull.
+        Surface area of the convex hull when input dimension > 2. 
+        When input `points` are 2-dimensional, this is the perimeter of the convex hull.
 
         .. versionadded:: 0.17.0
     volume : float
-        Volume of the convex hull.
+        Volume of the convex hull when input dimension > 2. 
+        When input `points` are 2-dimensional, this is the area of the convex hull. 
 
         .. versionadded:: 0.17.0
 
@@ -2372,15 +2379,15 @@ class ConvexHull(_QhullUser):
     ...                        [0.4, 0.2],
     ...                        [0.3, 0.6]])
 
-    Call ConvexHull with the QG option. QG4 means 
+    Call ConvexHull with the QG option. QG4 means
     compute the portions of the hull not including
-    point 4, indicating the facets that are visible 
+    point 4, indicating the facets that are visible
     from point 4.
 
     >>> hull = ConvexHull(points=generators,
     ...                   qhull_options='QG4')
 
-    The "good" array indicates which facets are 
+    The "good" array indicates which facets are
     visible from point 4.
 
     >>> print(hull.simplices)
@@ -2717,7 +2724,7 @@ class HalfspaceIntersection(_QhullUser):
 
     >>> import matplotlib.pyplot as plt
     >>> fig = plt.figure()
-    >>> ax = fig.add_subplot('111', aspect='equal')
+    >>> ax = fig.add_subplot(1, 1, 1, aspect='equal')
     >>> xlim, ylim = (-1, 3), (-1, 3)
     >>> ax.set_xlim(xlim)
     >>> ax.set_ylim(ylim)
@@ -2764,7 +2771,7 @@ class HalfspaceIntersection(_QhullUser):
     >>> c[-1] = -1
     >>> A = np.hstack((halfspaces[:, :-1], norm_vector))
     >>> b = - halfspaces[:, -1:]
-    >>> res = linprog(c, A_ub=A, b_ub=b)
+    >>> res = linprog(c, A_ub=A, b_ub=b, bounds=(None, None))
     >>> x = res.x[:-1]
     >>> y = res.x[-1]
     >>> circle = Circle(x, radius=y, alpha=0.3)

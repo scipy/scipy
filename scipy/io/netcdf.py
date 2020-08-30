@@ -34,11 +34,11 @@ which has a similar API.
 __all__ = ['netcdf_file', 'netcdf_variable']
 
 
-import sys
 import warnings
 import weakref
 from operator import mul
 from collections import OrderedDict
+from platform import python_implementation
 
 import mmap as mm
 
@@ -49,7 +49,7 @@ from numpy import little_endian as LITTLE_ENDIAN
 from functools import reduce
 
 
-IS_PYPY = ('__pypy__' in sys.modules)
+IS_PYPY = python_implementation() == 'PyPy'
 
 ABSENT = b'\x00\x00\x00\x00\x00\x00\x00\x00'
 ZERO = b'\x00\x00\x00\x00'
@@ -141,7 +141,7 @@ class netcdf_file(object):
     NetCDF files are a self-describing binary data format. The file contains
     metadata that describes the dimensions and variables in the file. More
     details about NetCDF files can be found `here
-    <https://www.unidata.ucar.edu/software/netcdf/docs/user_guide.html>`__. There
+    <https://www.unidata.ucar.edu/software/netcdf/guide_toc.html>`__. There
     are three main sections to a NetCDF data structure:
 
     1. Dimensions
@@ -409,7 +409,7 @@ class netcdf_file(object):
     def _write(self):
         self.fp.seek(0)
         self.fp.write(b'CDF')
-        self.fp.write(array(self.version_byte, '>b').tostring())
+        self.fp.write(array(self.version_byte, '>b').tobytes())
 
         # Write headers and data.
         self._write_numrecs()
@@ -519,7 +519,7 @@ class netcdf_file(object):
 
         # Write data.
         if not var.isrec:
-            self.fp.write(var.data.tostring())
+            self.fp.write(var.data.tobytes())
             count = var.data.size * var.data.itemsize
             self._write_var_padding(var, var._vsize - count)
         else:  # record variable
@@ -541,7 +541,7 @@ class netcdf_file(object):
                 if not rec.shape and (rec.dtype.byteorder == '<' or
                         (rec.dtype.byteorder == '=' and LITTLE_ENDIAN)):
                     rec = rec.byteswap()
-                self.fp.write(rec.tostring())
+                self.fp.write(rec.tobytes())
                 # Padding
                 count = rec.size * rec.itemsize
                 self._write_var_padding(var, var._vsize - count)
@@ -591,7 +591,7 @@ class netcdf_file(object):
         if not values.shape and (values.dtype.byteorder == '<' or
                 (values.dtype.byteorder == '=' and LITTLE_ENDIAN)):
             values = values.byteswap()
-        self.fp.write(values.tostring())
+        self.fp.write(values.tobytes())
         count = values.size * values.itemsize
         self.fp.write(b'\x00' * (-count % 4))  # pad
 
@@ -652,7 +652,7 @@ class netcdf_file(object):
         for var in range(count):
             (name, dimensions, shape, attributes,
              typecode, size, dtype_, begin_, vsize) = self._read_var()
-            # https://www.unidata.ucar.edu/software/netcdf/docs/user_guide.html
+            # https://www.unidata.ucar.edu/software/netcdf/guide_toc.html
             # Note that vsize is the product of the dimension lengths
             # (omitting the record dimension) and the number of bytes
             # per value (determined from the type), increased to the
@@ -776,7 +776,7 @@ class netcdf_file(object):
             self._pack_int64(begin)
 
     def _pack_int(self, value):
-        self.fp.write(array(value, '>i').tostring())
+        self.fp.write(array(value, '>i').tobytes())
     _pack_int32 = _pack_int
 
     def _unpack_int(self):
@@ -784,7 +784,7 @@ class netcdf_file(object):
     _unpack_int32 = _unpack_int
 
     def _pack_int64(self, value):
-        self.fp.write(array(value, '>q').tostring())
+        self.fp.write(array(value, '>q').tobytes())
 
     def _unpack_int64(self):
         return frombuffer(self.fp.read(8), '>q')[0]
@@ -1030,7 +1030,7 @@ class netcdf_variable(object):
         """
         if '_FillValue' in self._attributes:
             fill_value = np.array(self._attributes['_FillValue'],
-                                  dtype=self.data.dtype).tostring()
+                                  dtype=self.data.dtype).tobytes()
             if len(fill_value) == self.itemsize():
                 return fill_value
             else:

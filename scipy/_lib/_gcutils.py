@@ -11,14 +11,14 @@ Module for testing automatic garbage collection of objects
 """
 import weakref
 import gc
-import sys
 
 from contextlib import contextmanager
+from platform import python_implementation
 
 __all__ = ['set_gc_state', 'gc_state', 'assert_deallocated']
 
 
-IS_PYPY = '__pypy__' in sys.modules
+IS_PYPY = python_implementation() == 'PyPy'
 
 
 class ReferenceError(AssertionError):

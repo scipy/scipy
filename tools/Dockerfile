@@ -28,9 +28,20 @@
 
 FROM ubuntu:bionic
 
-RUN apt-get update
-
-RUN apt-get install -y python3.7 python3.7-dev python3-pip git build-essential vim libatlas-base-dev gfortran liblapack-dev curl libgmp-dev libmpfr-dev libsuitesparse-dev libmpc-dev
+RUN apt-get update && apt-get install -y \
+	python3.7 \
+	python3.7-dev \
+	python3-pip git \
+	build-essential \
+	vim \
+	libatlas-base-dev \
+	gfortran \
+	liblapack-dev \
+	curl \
+	libgmp-dev \
+	libmpfr-dev \
+	libsuitesparse-dev \
+	libmpc-dev
 
 # setup pips, pip3.6 and pip3.7
 RUN curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py && python3.7 get-pip.py && python3.6 get-pip.py && rm get-pip.py

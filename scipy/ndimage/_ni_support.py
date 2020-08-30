@@ -79,11 +79,3 @@ def _get_output(output, input, shape=None):
     elif output.shape != shape:
         raise RuntimeError("output shape not correct")
     return output
-
-
-def _check_axis(axis, rank):
-    if axis < 0:
-        axis += rank
-    if axis < 0 or axis >= rank:
-        raise ValueError('invalid axis')
-    return axis

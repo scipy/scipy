@@ -8,7 +8,7 @@ from numpy.testing import assert_allclose
 
 try:
     import sparse
-except ImportError:
+except Exception:
     sparse = None
 
 pytestmark = pytest.mark.skipif(sparse is None,
@@ -72,7 +72,7 @@ def test_lsmr(matrices):
     A_dense, A_sparse, b = matrices
     res0 = splin.lsmr(A_dense, b)
     res = splin.lsmr(A_sparse, b)
-    assert_allclose(res[0], res0[0], atol=1e-5)
+    assert_allclose(res[0], res0[0], atol=1.8e-5)
 
 
 def test_lsqr(matrices):

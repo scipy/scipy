@@ -274,7 +274,7 @@ def ss2tf(A, B, C, D, input=0):
 
     num_states = A.shape[0]
     type_test = A[:, 0] + B[:, 0] + C[0, :] + D
-    num = numpy.zeros((nout, num_states + 1), type_test.dtype)
+    num = numpy.empty((nout, num_states + 1), type_test.dtype)
     for k in range(nout):
         Ck = atleast_2d(C[k, :])
         num[k] = poly(A - dot(B, Ck)) + (D[k] - 1) * den

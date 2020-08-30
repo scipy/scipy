@@ -3,7 +3,7 @@ Here we perform some symbolic computations required for the N-D
 interpolation routines in `interpnd.pyx`.
 
 """
-from sympy import symbols, binomial, Matrix
+from sympy import symbols, binomial, Matrix  # type: ignore[import]
 
 
 def _estimate_gradients_2d_global():
