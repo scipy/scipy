@@ -6,14 +6,11 @@ from numpy.core.umath import (sqrt, exp, greater, less, cos, add, sin,
 # From splinemodule.c
 from .spline import cspline2d, sepfir2d
 
-from scipy.special import comb, gamma
+from scipy.special import comb
+from scipy._lib._util import float_factorial
 
 __all__ = ['spline_filter', 'bspline', 'gauss_spline', 'cubic', 'quadratic',
            'cspline1d', 'qspline1d', 'cspline1d_eval', 'qspline1d_eval']
-
-
-def factorial(n):
-    return gamma(n + 1)
 
 
 def spline_filter(Iin, lmbda=5.0):
@@ -118,7 +115,7 @@ def _bspline_piecefunctions(order):
     #  in the general expression derived from the central difference
     #  operator (because they involve fewer terms).
 
-    fval = factorial(order)
+    fval = float_factorial(order)
 
     def piecefuncgen(num):
         Mk = order // 2 - num

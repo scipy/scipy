@@ -273,6 +273,9 @@ def splrep(x, y, w=None, xb=None, xe=None, k=3, task=0, s=None, t=None,
 
     Examples
     --------
+    You can interpolate 1-D points with a B-spline curve.
+    Further examples are given in
+    :ref:`in the tutorial <tutorial-interpolate_splXXX>`.
 
     >>> import matplotlib.pyplot as plt
     >>> from scipy.interpolate import splev, splrep
@@ -348,6 +351,10 @@ def splev(x, tck, der=0, ext=0):
     .. [3] P. Dierckx, "Curve and surface fitting with splines", Monographs
         on Numerical Analysis, Oxford University Press, 1993.
 
+    Examples
+    --------
+    Examples are given :ref:`in the tutorial <tutorial-interpolate_splXXX>`.
+
     """
     if isinstance(tck, BSpline):
         if tck.c.ndim > 1:
@@ -412,6 +419,10 @@ def splint(a, b, tck, full_output=0):
     .. [2] P. Dierckx, "Curve and surface fitting with splines", Monographs
         on Numerical Analysis, Oxford University Press, 1993.
 
+    Examples
+    --------
+    Examples are given :ref:`in the tutorial <tutorial-interpolate_splXXX>`.
+
     """
     if isinstance(tck, BSpline):
         if tck.c.ndim > 1:
@@ -472,6 +483,10 @@ def sproot(tck, mest=10):
     .. [3] P. Dierckx, "Curve and surface fitting with splines", Monographs
         on Numerical Analysis, Oxford University Press, 1993.
 
+    Examples
+    --------
+    Examples are given :ref:`in the tutorial <tutorial-interpolate_splXXX>`.
+
     """
     if isinstance(tck, BSpline):
         if tck.c.ndim > 1:
@@ -525,6 +540,10 @@ def spalde(x, tck):
        applics 10 (1972) 134-149.
     .. [3] P. Dierckx : Curve and surface fitting with splines, Monographs on
        Numerical Analysis, Oxford University Press, 1993.
+
+    Examples
+    --------
+    Examples are given :ref:`in the tutorial <tutorial-interpolate_splXXX>`.
 
     """
     if isinstance(tck, BSpline):
@@ -580,6 +599,29 @@ def insert(x, tck, m=1, per=0):
         Computer Aided Design, 12, p.199-201, 1980.
     .. [2] P. Dierckx, "Curve and surface fitting with splines, Monographs on
         Numerical Analysis", Oxford University Press, 1993.
+
+    Examples
+    --------
+    You can insert knots into a B-spline.
+
+    >>> from scipy.interpolate import splrep, insert
+    >>> x = np.linspace(0, 10, 5)
+    >>> y = np.sin(x)
+    >>> tck = splrep(x, y)
+    >>> tck[0]
+    array([ 0.,  0.,  0.,  0.,  5., 10., 10., 10., 10.])
+
+    A knot is inserted:
+
+    >>> tck_inserted = insert(3, tck)
+    >>> tck_inserted[0]
+    array([ 0.,  0.,  0.,  0.,  3.,  5., 10., 10., 10., 10.])
+
+    Some knots are inserted:
+
+    >>> tck_inserted2 = insert(8, tck, m=3)
+    >>> tck_inserted2[0]
+    array([ 0.,  0.,  0.,  0.,  5.,  8.,  8.,  8., 10., 10., 10., 10.])
 
     """
     if isinstance(tck, BSpline):

@@ -10,11 +10,10 @@ Sparse matrix functions
 
 __all__ = ['expm', 'inv']
 
-import math
-
 import numpy as np
 
 import scipy.special
+from scipy._lib._util import float_factorial
 from scipy.linalg.basic import solve, solve_triangular
 
 from scipy.sparse.base import isspmatrix
@@ -841,7 +840,7 @@ def _ell(A, m):
     # The c_i are explained in (2.2) and (2.6) of the 2005 expm paper.
     # They are coefficients of terms of a generating function series expansion.
     choose_2m_m = scipy.special.comb(2*m, m, exact=True)
-    abs_c_recip = float(choose_2m_m * math.factorial(2*m + 1))
+    abs_c_recip = float(choose_2m_m) * float_factorial(2*m + 1)
 
     # This is explained after Eq. (1.2) of the 2009 expm paper.
     # It is the "unit roundoff" of IEEE double precision arithmetic.

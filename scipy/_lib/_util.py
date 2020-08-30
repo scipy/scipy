@@ -6,6 +6,7 @@ import numbers
 from collections import namedtuple
 from multiprocessing import Pool
 import inspect
+import math
 
 import numpy as np
 
@@ -142,6 +143,14 @@ def prod(iterable):
     for x in iterable:
         product *= x
     return product
+
+
+def float_factorial(n: int) -> float:
+    """Compute the factorial and return as a float
+
+    Returns infinity when result is too large for a double
+    """
+    return float(math.factorial(n)) if n < 171 else np.inf
 
 
 class DeprecatedImport(object):

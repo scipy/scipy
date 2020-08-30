@@ -2,7 +2,7 @@ import pytest
 
 import numpy as np
 from numpy.testing import assert_equal, assert_array_almost_equal
-from numpy.testing import assert_allclose
+from numpy.testing import assert_allclose, assert_array_less
 from scipy.spatial.transform import Rotation, Slerp
 from scipy.stats import special_ortho_group
 from itertools import permutations
@@ -313,6 +313,99 @@ def test_rotvec_calc_pipeline():
         [-3e-4, 3.5e-4, 7.5e-5]
         ])
     assert_allclose(Rotation.from_rotvec(rotvec).as_rotvec(), rotvec)
+
+
+def test_from_1d_single_mrp():
+    mrp = [0, 0, 1.0]
+    expected_quat = np.array([0, 0, 1, 0])
+    result = Rotation.from_mrp(mrp)
+    assert_array_almost_equal(result.as_quat(), expected_quat)
+
+
+def test_from_2d_single_mrp():
+    mrp = [[0, 0, 1.0]]
+    expected_quat = np.array([[0, 0, 1, 0]])
+    result = Rotation.from_mrp(mrp)
+    assert_array_almost_equal(result.as_quat(), expected_quat)
+
+
+def test_from_generic_mrp():
+    mrp = np.array([
+        [1, 2, 2],
+        [1, -1, 0.5],
+        [0, 0, 0]])
+    expected_quat = np.array([
+        [0.2, 0.4, 0.4, -0.8],
+        [0.61538462, -0.61538462, 0.30769231, -0.38461538],
+        [0, 0, 0, 1]])
+    assert_array_almost_equal(Rotation.from_mrp(mrp).as_quat(), expected_quat)
+
+
+def test_malformed_1d_from_mrp():
+    with pytest.raises(ValueError, match='Expected `mrp` to have shape'):
+        Rotation.from_mrp([1, 2])
+
+
+def test_malformed_2d_from_mrp():
+    with pytest.raises(ValueError, match='Expected `mrp` to have shape'):
+        Rotation.from_mrp([
+            [1, 2, 3, 4],
+            [5, 6, 7, 8]
+            ])
+
+
+def test_as_generic_mrp():
+    quat = np.array([
+        [1, 2, -1, 0.5],
+        [1, -1, 1, 0.0003],
+        [0, 0, 0, 1]])
+    quat /= np.linalg.norm(quat, axis=1)[:, None]
+
+    expected_mrp = np.array([
+        [0.33333333, 0.66666667, -0.33333333],
+        [0.57725028, -0.57725028, 0.57725028],
+        [0, 0, 0]])
+    assert_array_almost_equal(Rotation.from_quat(quat).as_mrp(), expected_mrp)
+
+def test_past_180_degree_rotation():
+    # ensure that a > 180 degree rotation is returned as a <180 rotation in MRPs
+    # in this case 270 should be returned as -90
+    expected_mrp = np.array([-np.tan(np.pi/2/4), 0.0, 0])
+    assert_array_almost_equal(Rotation.from_euler('xyz', [270, 0, 0], degrees=True).as_mrp(), expected_mrp)
+
+
+def test_as_mrp_single_1d_input():
+    quat = np.array([1, 2, -3, 2])
+    expected_mrp = np.array([0.16018862, 0.32037724, -0.48056586])
+
+    actual_mrp = Rotation.from_quat(quat).as_mrp()
+
+    assert_equal(actual_mrp.shape, (3,))
+    assert_allclose(actual_mrp, expected_mrp)
+
+
+def test_as_mrp_single_2d_input():
+    quat = np.array([[1, 2, -3, 2]])
+    expected_mrp = np.array([[0.16018862, 0.32037724, -0.48056586]])
+
+    actual_mrp = Rotation.from_quat(quat).as_mrp()
+
+    assert_equal(actual_mrp.shape, (1, 3))
+    assert_allclose(actual_mrp, expected_mrp)
+
+
+def test_mrp_calc_pipeline():
+    actual_mrp = np.array([
+        [0, 0, 0],
+        [1, -1, 2],
+        [0.41421356, 0, 0],
+        [0.1, 0.2, 0.1]])
+    expected_mrp = np.array([
+        [0, 0, 0],
+        [-0.16666667, 0.16666667, -0.33333333],
+        [0.41421356, 0, 0],
+        [0.1, 0.2, 0.1]])
+    assert_allclose(Rotation.from_mrp(actual_mrp).as_mrp(), expected_mrp)
 
 
 def test_from_euler_single_rotation():
