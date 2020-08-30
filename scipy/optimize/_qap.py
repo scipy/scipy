@@ -466,10 +466,8 @@ def _quadratic_assignment_faq(A, B,
         # shuffle_input to avoid results from inputs that were already matched
 
     nonseed_A = np.setdiff1d(range(n), partial_match[:, 0])
-    perm_A = np.concatenate([partial_match[:, 0],
-                             nonseed_A], axis=None).astype(int)
-    perm_B = np.concatenate([partial_match[:, 1],
-                             nonseed_B], axis=None).astype(int)
+    perm_A = np.concatenate([partial_match[:, 0], nonseed_A])
+    perm_B = np.concatenate([partial_match[:, 1], nonseed_B])
 
     # definitions according to Seeded Graph Matching [2].
     A11, A12, A21, A22 = _split_matrix(A[perm_A][:, perm_A], n_seeds)
@@ -501,10 +499,8 @@ def _quadratic_assignment_faq(A, B,
         # [1] Algorithm 1 Line 3 - compute the gradient of f(P) = -tr(APB^tP^t)
         grad_fp = (const_sum + A22 @ P @ B22.T + A22.T @ P @ B22)
         # [1] Algorithm 1 Line 4 - get direction Q by solving Eq. 8
-        rows, cols = linear_sum_assignment(obj_func_scalar * grad_fp)
-        Q = np.zeros((n_unseed, n_unseed))
-        Q[rows, cols] = 1  # initialize search direction matrix Q
-
+        _, cols = linear_sum_assignment(grad_fp, maximize=maximize)
+        Q = np.eye(n_unseed)[cols]
 
         # [1] Algorithm 1 Line 5 - compute the step size
         # Noting that e.g. trace(Ax) = trace(A)*x, expand and re-collect
