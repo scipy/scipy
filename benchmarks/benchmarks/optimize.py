@@ -18,7 +18,7 @@ except ImportError:
 
 from . import test_functions as funcs
 from . import go_benchmark_functions as gbf
-from .common import Benchmark
+from .common import Benchmark, is_xslow
 from .lsq_problems import extract_lsq_problems
 
 
@@ -420,21 +420,6 @@ class BenchLeastSquares(Benchmark):
             raise NotImplementedError
 
 
-try:
-    # the value of SCIPY_XSLOW is used to control how many repeats of each
-    # function
-    slow = int(os.environ.get('SCIPY_XSLOW', 0))
-except ValueError:
-    pass
-
-
-_func_names = os.environ.get('SCIPY_GLOBAL_BENCH', [])
-if _func_names:
-    if not slow:
-        slow = 100
-    _func_names = [x.strip() for x in _func_names.split(',')]
-
-
 class BenchGlobal(Benchmark):
     """
     Benchmark the global optimizers using the go_benchmark_functions
@@ -449,15 +434,13 @@ class BenchGlobal(Benchmark):
             not item[0].startswith('Problem'))
     ])
 
-    if _func_names:
-        _filtered_funcs = OrderedDict()
-        for name in _func_names:
-            if name in _functions:
-                _filtered_funcs[name] = _functions.get(name)
-        _functions = _filtered_funcs
-
-    if not slow:
-        _functions = {'AMGM': None}
+    if not is_xslow():
+        _enabled_functions = ['AMGM']
+    elif 'SCIPY_GLOBAL_BENCH' in os.environ:
+        _enabled_functions = [x.strip() for x in
+                              os.environ['SCIPY_GLOBAL_BENCH'].split(',')]
+    else:
+        _enabled_functions = list(_functions.keys())
 
     params = [
         list(_functions.keys()),
@@ -467,25 +450,36 @@ class BenchGlobal(Benchmark):
     param_names = ["test function", "result type", "solver"]
 
     def __init__(self):
-        self.enabled = bool(slow)
-        self.numtrials = slow
+        self.enabled = is_xslow()
+        try:
+            self.numtrials = int(os.environ['SCIPY_GLOBAL_BENCH_NUMTRIALS'])
+        except (KeyError, ValueError):
+            self.numtrials = 100
 
         self.dump_fn = os.path.join(os.path.dirname(__file__), '..', 'global-bench-results.json')
         self.results = {}
 
     def setup(self, name, ret_value, solver):
         if not self.enabled:
-            print("BenchGlobal.track_all not enabled --- export SCIPY_XSLOW=slow to enable,\n"
-                  "'slow' iterations of each benchmark will be run.\n"
+            print("BenchGlobal.track_all not enabled --- export SCIPY_XSLOW=1 to enable.\n"
+                  "Set also e.g. SCIPY_GLOBAL_BENCH_NUMTRIALS=10 to specify how many iterations\n"
+                  "of each benchmark will be run (default 100).\n"
                   "Note that it can take several hours to run; intermediate output\n"
                   "can be found under benchmarks/global-bench-results.json\n"
                   "You can specify functions to benchmark via SCIPY_GLOBAL_BENCH=AMGM,Adjiman,...")
             raise NotImplementedError()
+
+        if name not in self._enabled_functions:
+            raise NotImplementedError("skipped")
+
         # load json backing file
         with open(self.dump_fn, 'r') as f:
             self.results = json.load(f)
 
     def teardown(self, name, ret_value, solver):
+        if not self.enabled:
+            return
+
         with open(self.dump_fn, 'w') as f:
             json.dump(self.results, f, indent=2, sort_keys=True)
 

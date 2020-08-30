@@ -16,7 +16,6 @@ from scipy._lib import doccer
 from scipy._lib._util import _lazywhere
 from ._distr_params import distcont, distdiscrete
 from scipy._lib._util import check_random_state
-from scipy._lib._util import _valarray as valarray
 
 from scipy.special import (comb, chndtr, entr, rel_entr, xlogy, ive)
 
@@ -1093,7 +1092,7 @@ class rv_generic(object):
         args = tuple(map(asarray, args))
         cond = self._argcheck(*args) & (scale > 0) & (loc == loc)
         output = []
-        default = valarray(shape(cond), self.badvalue)
+        default = np.full(shape(cond), fill_value=self.badvalue)
 
         # Use only entries that are valid in calculation
         if np.any(cond):
@@ -2079,7 +2078,7 @@ class rv_continuous(rv_generic):
         cond2 = cond0 & (q == 0)
         cond3 = cond0 & (q == 1)
         cond = cond0 & cond1
-        output = valarray(shape(cond), value=self.badvalue)
+        output = np.full(shape(cond), fill_value=self.badvalue)
 
         lower_bound = _a * scale + loc
         upper_bound = _b * scale + loc
@@ -2125,7 +2124,7 @@ class rv_continuous(rv_generic):
         cond2 = cond0 & (q == 1)
         cond3 = cond0 & (q == 0)
         cond = cond0 & cond1
-        output = valarray(shape(cond), value=self.badvalue)
+        output = np.full(shape(cond), fill_value=self.badvalue)
 
         lower_bound = _a * scale + loc
         upper_bound = _b * scale + loc
@@ -3339,7 +3338,7 @@ class rv_discrete(rv_generic):
         cond1 = (q > 0) & (q < 1)
         cond2 = (q == 1) & cond0
         cond = cond0 & cond1
-        output = valarray(shape(cond), value=self.badvalue, typecode='d')
+        output = np.full(shape(cond), fill_value=self.badvalue, dtype='d')
         # output type 'd' to handle nin and inf
         place(output, (q == 0)*(cond == cond), _a-1 + loc)
         place(output, cond2, _b + loc)
@@ -3382,7 +3381,7 @@ class rv_discrete(rv_generic):
         cond = cond0 & cond1
 
         # same problem as with ppf; copied from ppf and changed
-        output = valarray(shape(cond), value=self.badvalue, typecode='d')
+        output = np.full(shape(cond), fill_value=self.badvalue, dtype='d')
         # output type 'd' to handle nin and inf
         place(output, (q == 0)*(cond == cond), _b)
         place(output, cond2, _a-1)
@@ -3425,12 +3424,12 @@ class rv_discrete(rv_generic):
             Default is 0.
         lb, ub : int, optional
             Lower and upper bound for the summation, default is set to the
-            support of the distribution, inclusive (``ul <= k <= ub``).
+            support of the distribution, inclusive (``lb <= k <= ub``).
         conditional : bool, optional
             If true then the expectation is corrected by the conditional
             probability of the summation interval. The return value is the
             expectation of the function, `func`, conditional on being in
-            the given interval (k such that ``ul <= k <= ub``).
+            the given interval (k such that ``lb <= k <= ub``).
             Default is False.
         maxcount : int, optional
             Maximal number of terms to evaluate (to avoid an endless loop for
@@ -3470,7 +3469,6 @@ class rv_discrete(rv_generic):
         # might be problems(?) with correct self.a, self.b at this stage maybe
         # not anymore, seems to work now with _pmf
 
-        self._argcheck(*args)  # (re)generate scalar self.a and self.b
         _a, _b = self._get_support(*args)
         if lb is None:
             lb = _a
@@ -3484,6 +3482,10 @@ class rv_discrete(rv_generic):
             invfac = self.sf(lb-1, *args) - self.sf(ub, *args)
         else:
             invfac = 1.0
+
+        if isinstance(self, rv_sample):
+            res = self._expect(fun, lb, ub)
+            return res / invfac
 
         # iterate over the support, starting from the median
         x0 = self.ppf(0.5, *args)
@@ -3686,6 +3688,12 @@ class rv_sample(rv_discrete):
     def generic_moment(self, n):
         n = asarray(n)
         return np.sum(self.xk**n[np.newaxis, ...] * self.pk, axis=0)
+
+    def _expect(self, fun, lb, ub, *args, **kwds):
+        # ignore all args, just do a brute force summation
+        supp = self.xk[(lb <= self.xk) & (self.xk <= ub)]
+        vals = fun(supp)
+        return np.sum(vals)
 
 
 def _check_shape(argshape, size):

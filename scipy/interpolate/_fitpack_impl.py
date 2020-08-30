@@ -883,6 +883,10 @@ def bisplrep(x, y, z, w=None, xb=None, xe=None, yb=None, ye=None,
     .. [3] Dierckx P.:Curve and surface fitting with splines, Monographs on
        Numerical Analysis, Oxford University Press, 1993.
 
+    Examples
+    --------
+    Examples are given :ref:`in the tutorial <tutorial-interpolate_2d_spline>`.
+
     """
     x, y, z = map(ravel, [x, y, z])  # ensure 1-d arrays.
     m = len(x)
@@ -1031,6 +1035,10 @@ def bisplev(x, y, tck, dx=0, dy=0):
        report tw50, Dept. Computer Science,K.U.Leuven, 1980.
     .. [3] Dierckx P. : Curve and surface fitting with splines,
        Monographs on Numerical Analysis, Oxford University Press, 1993.
+
+    Examples
+    --------
+    Examples are given :ref:`in the tutorial <tutorial-interpolate_2d_spline>`.
 
     """
     tx, ty, c, kx, ky = tck

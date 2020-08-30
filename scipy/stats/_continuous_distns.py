@@ -22,10 +22,9 @@ from . import _stats
 from ._rvs_sampling import rvs_ratio_uniforms
 from ._tukeylambda_stats import (tukeylambda_variance as _tlvar,
                                  tukeylambda_kurtosis as _tlkurt)
-from ._distn_infrastructure import (get_distribution_names, _kurtosis,
-                                    _ncx2_cdf, _ncx2_log_pdf, _ncx2_pdf,
-                                    rv_continuous, _skew, valarray,
-                                    _get_fixed_fit_value, _check_shape)
+from ._distn_infrastructure import (
+    get_distribution_names, _kurtosis, _ncx2_cdf, _ncx2_log_pdf, _ncx2_pdf,
+    rv_continuous, _skew, _get_fixed_fit_value, _check_shape)
 from ._ksstats import kolmogn, kolmognp, kolmogni
 from ._constants import (_XMIN, _EULER, _ZETA3,
                          _SQRT_2_OVER_PI, _LOG_SQRT_2_OVER_PI)
@@ -2162,7 +2161,12 @@ class genlogistic_gen(rv_continuous):
         return np.exp(self._logpdf(x, c))
 
     def _logpdf(self, x, c):
-        return np.log(c) - x - (c+1.0)*sc.log1p(np.exp(-x))
+        # Two mathematically equivalent expressions for log(pdf(x, c)):
+        #     log(pdf(x, c)) = log(c) - x - (c + 1)*log(1 + exp(-x))
+        #                    = log(c) + c*x - (c + 1)*log(1 + exp(x))
+        mult = -(c - 1) * (x < 0) - 1
+        absx = np.abs(x)
+        return np.log(c) + mult*absx - (c+1) * sc.log1p(np.exp(-absx))
 
     def _cdf(self, x, c):
         Cx = (1+np.exp(-x))**(-c)
@@ -2547,7 +2551,7 @@ class gamma_gen(rv_continuous):
 
     .. math::
 
-        f(x, a) = \frac{x^{a-1} \exp(-x)}{\Gamma(a)}
+        f(x, a) = \frac{x^{a-1} e^{-x}}{\Gamma(a)}
 
     for :math:`x \ge 0`, :math:`a > 0`. Here :math:`\Gamma(a)` refers to the
     gamma function.
@@ -2556,7 +2560,17 @@ class gamma_gen(rv_continuous):
 
     When :math:`a` is an integer, `gamma` reduces to the Erlang
     distribution, and when :math:`a=1` to the exponential distribution.
+    
+    Gamma distributions are sometimes parameterized with two variables,
+    with a probability density function of:
 
+    .. math::
+
+        f(x, \alpha, \beta) = \frac{\beta^\alpha x^{\alpha - 1} e^{-\beta x }}{\Gamma(\alpha)}
+
+    Note that this parameterization is equivalent to the above, with 
+    ``scale = 1 / beta``.
+    
     %(after_notes)s
 
     %(example)s
@@ -3417,6 +3431,37 @@ class invgauss_gen(rv_continuous):
     def _stats(self, mu):
         return mu, mu**3.0, 3*np.sqrt(mu), 15*mu
 
+    def fit(self, data, *args, **kwds):
+
+        if type(self) == wald_gen:
+            return super(invgauss_gen, self).fit(data, *args, **kwds)
+
+        data, fshape_s, floc, fscale = _check_fit_input_parameters(self, data,
+                                                                   args, kwds)
+        '''
+        Source: Statistical Distributions, 3rd Edition. Evans, Hastings,
+        and Peacock (2000), Page 121. Their shape parameter is equivilent to
+        SciPy's with the conversion `fshape_s = fshape / scale`.
+
+        MLE formulas are not used in 3 condtions:
+        - `loc` is not fixed
+        - `mu` is fixed
+        These cases fall back on the superclass fit method.
+        - `loc` is fixed but translation results in negative data raises
+          a `FitDataError`.
+        '''
+        if floc is None or fshape_s is not None:
+            return super(invgauss_gen, self).fit(data, *args, **kwds)
+        elif np.any(data - floc < 0):
+            raise FitDataError("invgauss", lower=0, upper=np.inf)
+        else:
+            data = data - floc
+            fshape_n = np.mean(data)
+            if fscale is None:
+                fscale = len(data) / (np.sum(data ** -1 - fshape_n ** -1))
+            fshape_s = fshape_n / fscale
+        return fshape_s, floc, fscale
+
 
 invgauss = invgauss_gen(a=0.0, name='invgauss')
 
@@ -4016,7 +4061,7 @@ def _check_fit_input_parameters(dist, data, args, kwds):
     floc = kwds.get('floc', None)
     fscale = kwds.get('fscale', None)
 
-    num_shapes = len(dist.shapes) if dist.shapes else 0
+    num_shapes = len(dist.shapes.split(",")) if dist.shapes else 0
     fshape_keys = []
     fshapes = []
 
@@ -4093,6 +4138,9 @@ class levy_gen(rv_continuous):
         # Equivalent to 2*norm.sf(np.sqrt(1/x))
         return sc.erfc(np.sqrt(0.5 / x))
 
+    def _sf(self, x):
+        return sc.erf(np.sqrt(0.5 / x))
+
     def _ppf(self, q):
         # Equivalent to 1.0/(norm.isf(q/2)**2) or 0.5/(erfcinv(q)**2)
         val = -sc.ndtri(q/2)
@@ -4142,9 +4190,16 @@ class levy_l_gen(rv_continuous):
         ax = abs(x)
         return 2 * _norm_cdf(1 / np.sqrt(ax)) - 1
 
+    def _sf(self, x):
+        ax = abs(x)
+        return 2 * _norm_sf(1 / np.sqrt(ax))
+
     def _ppf(self, q):
         val = _norm_ppf((q + 1.0) / 2)
         return -1.0 / (val * val)
+
+    def _isf(self, p):
+        return -1/_norm_isf(p/2)**2
 
     def _stats(self):
         return np.inf, np.inf, np.nan, np.nan
@@ -4663,7 +4718,8 @@ class logistic_gen(rv_continuous):
         return np.exp(self._logpdf(x))
 
     def _logpdf(self, x):
-        return -x - 2. * sc.log1p(np.exp(-x))
+        y = -np.abs(x)
+        return y - 2. * sc.log1p(np.exp(y))
 
     def _cdf(self, x):
         return sc.expit(x)
@@ -5917,23 +5973,23 @@ class pareto_gen(rv_continuous):
         if 'm' in moments:
             mask = b > 1
             bt = np.extract(mask, b)
-            mu = valarray(np.shape(b), value=np.inf)
+            mu = np.full(np.shape(b), fill_value=np.inf)
             np.place(mu, mask, bt / (bt-1.0))
         if 'v' in moments:
             mask = b > 2
             bt = np.extract(mask, b)
-            mu2 = valarray(np.shape(b), value=np.inf)
+            mu2 = np.full(np.shape(b), fill_value=np.inf)
             np.place(mu2, mask, bt / (bt-2.0) / (bt-1.0)**2)
         if 's' in moments:
             mask = b > 3
             bt = np.extract(mask, b)
-            g1 = valarray(np.shape(b), value=np.nan)
+            g1 = np.full(np.shape(b), fill_value=np.nan)
             vals = 2 * (bt + 1.0) * np.sqrt(bt - 2.0) / ((bt - 3.0) * np.sqrt(bt))
             np.place(g1, mask, vals)
         if 'k' in moments:
             mask = b > 4
             bt = np.extract(mask, b)
-            g2 = valarray(np.shape(b), value=np.nan)
+            g2 = np.full(np.shape(b), fill_value=np.nan)
             vals = (6.0*np.polyval([1.0, 1.0, -6, -2], bt) /
                     np.polyval([1.0, -7.0, 12.0, 0.0], bt))
             np.place(g2, mask, vals)
@@ -8379,7 +8435,7 @@ class argus_gen(rv_continuous):
     def _stats(self, chi):
         chi2 = chi**2
         phi = _argus_phi(chi)
-        m = np.sqrt(np.pi/8) * chi * np.exp(-chi2/4) * sc.iv(1, chi2/4) / phi
+        m = np.sqrt(np.pi/8) * chi * sc.ive(1, chi2/4) / phi
         v = (1 - 3 / chi2 + chi * _norm_pdf(chi) / phi) - m**2
         return m, v, None, None
 

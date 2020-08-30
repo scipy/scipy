@@ -137,7 +137,7 @@ def sol_complex(t):
 
 def compute_error(y, y_true, rtol, atol):
     e = (y - y_true) / (atol + rtol * np.abs(y_true))
-    return np.sqrt(np.sum(np.real(e * e.conj()), axis=0) / e.shape[0])
+    return np.linalg.norm(e, axis=0) / np.sqrt(e.shape[0])
 
 
 def test_integration():
@@ -230,26 +230,26 @@ def test_integration_complex():
         assert_equal(res.status, 0)
 
         if method == 'DOP853':
-            assert_(res.nfev < 35)
+            assert res.nfev < 35
         else:
-            assert_(res.nfev < 25)
+            assert res.nfev < 25
 
         if method == 'BDF':
             assert_equal(res.njev, 1)
-            assert_(res.nlu < 6)
+            assert res.nlu < 6
         else:
-            assert_equal(res.njev, 0)
-            assert_equal(res.nlu, 0)
+            assert res.njev == 0
+            assert res.nlu == 0
 
         y_true = sol_complex(res.t)
         e = compute_error(res.y, y_true, rtol, atol)
-        assert_(np.all(e < 5))
+        assert np.all(e < 5)
 
         yc_true = sol_complex(tc)
         yc = res.sol(tc)
         e = compute_error(yc, yc_true, rtol, atol)
 
-        assert_(np.all(e < 5))
+        assert np.all(e < 5)
 
 
 def test_integration_sparse_difference():

@@ -334,9 +334,6 @@ class interp1d(_Interpolator1D):
     ``y = f(x)``. This class returns a function whose call method uses
     interpolation to find the value of new points.
 
-    Note that calling `interp1d` with NaNs present in input values results in
-    undefined behaviour.
-
     Parameters
     ----------
     x : (N,) array_like
@@ -399,6 +396,15 @@ class interp1d(_Interpolator1D):
         Spline interpolation/smoothing based on FITPACK.
     UnivariateSpline : An object-oriented wrapper of the FITPACK routines.
     interp2d : 2-D interpolation
+
+    Notes
+    -----
+    Calling `interp1d` with NaNs present in input values results in
+    undefined behaviour.
+
+    Input values `x` and `y` must be convertible to `float` values like 
+    `int` or `float`.
+
 
     Examples
     --------

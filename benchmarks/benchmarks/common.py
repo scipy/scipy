@@ -18,6 +18,13 @@ class Benchmark(object):
     pass
 
 
+def is_xslow():
+    try:
+        return int(os.environ.get('SCIPY_XSLOW', '0'))
+    except ValueError:
+        return False
+
+
 class LimitedParamBenchmark(Benchmark):
     """
     Limits parameter combinations to `max_number` choices, chosen
@@ -27,10 +34,7 @@ class LimitedParamBenchmark(Benchmark):
     num_param_combinations = 0
 
     def setup(self, *args, **kwargs):
-        try:
-            slow = int(os.environ.get('SCIPY_XSLOW', '0'))
-        except ValueError:
-            slow = False
+        slow = is_xslow()
 
         if slow:
             # no need to skip
