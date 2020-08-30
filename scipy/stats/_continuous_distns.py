@@ -2985,13 +2985,14 @@ class gumbel_r_gen(rv_continuous):
 
         def func(vals, data):
             a, b = vals
-            ndata = len(data)
-            x1 = data.mean() - ((np.sum(data * np.exp(- data / b))) /
-                                np.sum(np.exp(- data / b))) - b
-            x2 = - b * np.log(np.sum(np.exp(-data / b)) / ndata) - a
+            n = len(data)
+            exp_x_b = np.exp(- data / b)
+            sum_exp_x_b = np.sum(exp_x_b)
+            x1 = data.mean() - (np.dot(data, exp_x_b) / sum_exp_x_b) - b
+            x2 = - b * np.log(sum_exp_x_b / n) - a
             return x1, x2
 
-        # some data cause invalid operations during optimization
+        # some data with scale approaching zero cause invalid operations
         with warnings.catch_warnings():
             warnings.filterwarnings(action='ignore',
                                     category=RuntimeWarning)
