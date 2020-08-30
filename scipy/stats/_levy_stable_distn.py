@@ -51,29 +51,48 @@ def _pdf_single_value_cf_integrate(x, alpha, beta, epsabs=EPSABS, **kwds):
         )
 
     with warnings.catch_warnings():
-        warnings.filterwarnings('ignore', category=integrate.IntegrationWarning)
-        warnings.filterwarnings('ignore', category=np.ComplexWarning)
-        warnings.filterwarnings('ignore', message="invalid value encountered in double_scalars")
+        warnings.filterwarnings(
+            "ignore", category=integrate.IntegrationWarning
+        )
+        warnings.filterwarnings("ignore", category=np.ComplexWarning)
+        warnings.filterwarnings(
+            "ignore", message="invalid value encountered in double_scalars"
+        )
         int1, err1 = integrate.quad(
-            integrand1, 0, np.inf, weight="cos", wvar=x, limit=1000, epsabs=epsabs
+            integrand1,
+            0,
+            np.inf,
+            weight="cos",
+            wvar=x,
+            limit=1000,
+            epsabs=epsabs,
         )
 
         int2, err2 = integrate.quad(
-            integrand2, 0, np.inf, weight="sin", wvar=x, limit=1000, epsabs=epsabs
+            integrand2,
+            0,
+            np.inf,
+            weight="sin",
+            wvar=x,
+            limit=1000,
+            epsabs=epsabs,
         )
 
     return (int1 + int2) / np.pi
 
 
-def _nolan_round_difficult_input(x0, alpha, beta, zeta):
+def _nolan_round_difficult_input(x0, alpha, beta, zeta, **kwds):
     """Round difficult input values for Nolan's method in [NO]."""
+    x_tol_near_zeta = kwds.get("piecewise_x_tol_near_zeta", 0.005)
+    alpha_tol_near_one = kwds.get("piecewise_alpha_tol_near_one", 0.005)
+
     # following Nolan's STABLE,
     #   "1. When 0 < |alpha-1| < 0.005, the program has numerical problems
     #   evaluating the pdf and cdf.  The current version of the program sets
     #   alpha=1 in these cases. This approximation is not bad in the S0
     #   parameterization."
-    if abs(alpha - 1) < 0.005:
-        alpha = 1
+    if np.abs(alpha - 1) < alpha_tol_near_one:
+        alpha = 1.0
 
     #   "2. When alpha=1 and |beta| < 0.005, the program has numerical
     #   problems.  The current version sets beta=0."
@@ -91,7 +110,7 @@ def _nolan_round_difficult_input(x0, alpha, beta, zeta):
     # We seem to have partially addressed this through re-expression of
     # g(theta) here, but it still needs to be used in some extreme cases.
     # Perhaps tol(5) = 0.5e-2 could be reduced for our implementation.
-    if abs(x0 - zeta) < 0.5e-2 * alpha ** (1 / alpha):
+    if np.abs(x0 - zeta) < x_tol_near_zeta * alpha ** (1 / alpha):
         x0 = zeta
 
     return x0, alpha, beta
@@ -114,11 +133,14 @@ def _nolan_g(alpha, beta, x0, xi, zeta):
                 return np.inf if alpha < 1 else 0
 
             cos_theta = np.cos(theta)
-            return (zeta_prefactor
-                    * (cos_theta / np.sin(alpha_xi + alpha * theta)
-                       * zeta_offset) ** alpha_exp
-                    * np.cos(alpha_xi + (alpha - 1) * theta)
-                    / cos_theta)
+            return (
+                zeta_prefactor
+                * (cos_theta / np.sin(alpha_xi + alpha * theta) * zeta_offset)
+                ** alpha_exp
+                * np.cos(alpha_xi + (alpha - 1) * theta)
+                / cos_theta
+            )
+
     else:
         # g gets called many times in QUADPACK, so we avoid recomputation here
         # this significantly improves performance of the PDF/CDF integration
@@ -132,10 +154,14 @@ def _nolan_g(alpha, beta, x0, xi, zeta):
             elif theta == np.pi / 2:
                 return np.inf
 
-            return ((1 + theta * two_beta_div_pi)
-                    * np.exp((pi_div_two_beta + theta) * np.tan(theta) -
-                             x0_div_term)
-                    / np.cos(theta))
+            return (
+                (1 + theta * two_beta_div_pi)
+                * np.exp(
+                    (pi_div_two_beta + theta) * np.tan(theta) - x0_div_term
+                )
+                / np.cos(theta)
+            )
+
     return g
 
 
@@ -163,29 +189,52 @@ def _nolan_c3(alpha):
         return 1 / np.pi
 
 
-def _pdf_single_value_piecewise(x, alpha, beta):
+def _pdf_single_value_piecewise(x, alpha, beta, **kwds):
     """Calculate pdf using Nolan's methods as detailed in [NO].
     """
+    epsabs = kwds.get("epsabs", EPSABS)
+
     zeta = -beta * np.tan(np.pi * alpha / 2.0)
     xi = np.arctan(-zeta) / alpha if alpha != 1 else np.pi / 2
 
     # convert to S_0 parameterization
     x0 = x + zeta if alpha != 1 else x
 
-    x0, alpha, beta = _nolan_round_difficult_input(x0, alpha, beta, zeta)
+    x0, alpha, beta = _nolan_round_difficult_input(
+        x0, alpha, beta, zeta, **kwds
+    )
 
-    # handle Nolan's initial case logic
-    if alpha == 1 and beta == 0.0:
+    # handle Nolan's initial case logic with
+    # some other known distribution pdfs / analytical cases
+    # TODO: add more where possible with test coverage,
+    # eg https://en.wikipedia.org/wiki/Stable_distribution#Other_analytic_cases
+    if alpha == 2.0:
+        # normal
+        return _norm_pdf(x / np.sqrt(2)) / np.sqrt(2)
+    elif alpha == 0.5 and beta == 1.0:
+        # levy
+        # since S(1/2, 1, γ, δ; <x>) == S(1/2, 1, γ, δ+γ; <x0>).
+        _x = x0 + 1
+        return 1 / np.sqrt(2 * np.pi * _x) / _x * np.exp(-1 / (2 * _x))
+    elif alpha == 0.5 and beta == 0.0 and x0 != 0:
+        # analytical solution [HO]
+        S, C = sc.fresnel([1 / np.sqrt(2 * np.pi * np.abs(x0))])
+        arg = 1 / (4 * np.abs(x0))
+        return (
+            np.sin(arg) * (0.5 - S[0]) + np.cos(arg) * (0.5 - C[0])
+        ) / np.sqrt(2 * np.pi * np.abs(x0) ** 3)
+    elif alpha == 1.0 and beta == 0.0:
+        # cauchy
         return 1 / (1 + x ** 2) / np.pi
     elif x0 == zeta:
         return (
-                sc.gamma(1 + 1 / alpha)
-                * np.cos(xi)
-                / np.pi
-                / ((1 + zeta ** 2) ** (1 / alpha / 2))
+            sc.gamma(1 + 1 / alpha)
+            * np.cos(xi)
+            / np.pi
+            / ((1 + zeta ** 2) ** (1 / alpha / 2))
         )
     elif x0 < zeta:
-        return _pdf_single_value_piecewise(-x, alpha, -beta)
+        return _pdf_single_value_piecewise(-x, alpha, -beta, **kwds)
 
     # following Nolan, we may now assume
     #   x0 > zeta when alpha != 1
@@ -242,29 +291,113 @@ def _pdf_single_value_piecewise(x, alpha, beta):
         # to improve QUADPACK's detection of rapidly descending tail behavior
         # (this choice is fairly ad hoc)
         tail_points = [
-            optimize.bisect(lambda t: g(t) - exp_height,
-                            -xi, np.pi / 2)
+            optimize.bisect(lambda t: g(t) - exp_height, -xi, np.pi / 2)
             for exp_height in [100, 10, 5]
             # exp_height = 1 is handled by peak
         ]
         intg_points = [left_support, peak, right_support] + tail_points
-        intg = integrate.quad(integrand, left_support, right_support,
-                              points=intg_points, limit=100,
-                              epsabs=EPSABS)[0]
+        intg = integrate.quad(
+            integrand,
+            left_support,
+            right_support,
+            points=intg_points,
+            limit=100,
+            epsabs=epsabs,
+        )[0]
 
     return c2 * intg
 
 
-def _cdf_single_value_piecewise(x, alpha, beta, epsabs=EPSABS, **kwds):
+def _cdf_single_value_piecewise(x, alpha, beta, **kwds):
     """Calculate cdf using Nolan's methods as detailed in [NO].
     """
+    epsabs = kwds.get("epsabs", EPSABS)
+
+    zeta = -beta * np.tan(np.pi * alpha / 2.0)
+    if alpha != 1:
+        x0 = x + zeta  # convert to S_0 parameterization
+        xi = np.arctan(-zeta) / alpha
+
+        if x0 > zeta:
+            c_1 = 1 if alpha > 1 else 0.5 - xi / np.pi
+
+            def V(theta):
+                return (
+                    np.cos(alpha * xi) ** (1 / (alpha - 1))
+                    * (np.cos(theta) / np.sin(alpha * (xi + theta)))
+                    ** (alpha / (alpha - 1))
+                    * (
+                        np.cos(alpha * xi + (alpha - 1) * theta)
+                        / np.cos(theta)
+                    )
+                )
+
+            def f(theta):
+                z = np.complex128(x0 - zeta)
+                return np.exp(-V(theta) * np.real(z ** (alpha / (alpha - 1))))
+
+            with np.errstate(all="ignore"):
+                # spare calculating integral on null set
+                # use isclose as macos has fp differences
+                if np.isclose(-xi, np.pi / 2, rtol=1e-014, atol=1e-014):
+                    intg = 0
+                else:
+                    intg = integrate.quad(f, -xi, np.pi / 2, epsabs=epsabs)[0]
+                return c_1 + np.sign(1 - alpha) * intg / np.pi
+        elif x0 == zeta:
+            return 0.5 - xi / np.pi
+        else:
+            return 1 - _cdf_single_value_piecewise(-x, alpha, -beta, **kwds)
+
+    else:
+        # since location zero, no need to reposition x for S_0
+        # parameterization
+        xi = np.pi / 2
+        if beta > 0:
+
+            def V(theta):
+                expr_1 = np.pi / 2 + beta * theta
+                return (
+                    2.0
+                    * expr_1
+                    * np.exp(expr_1 * np.tan(theta) / beta)
+                    / np.cos(theta)
+                    / np.pi
+                )
+
+            with np.errstate(all="ignore"):
+                expr_1 = np.exp(-np.pi * x / beta / 2.0)
+                int_1 = integrate.quad(
+                    lambda theta: np.exp(-expr_1 * V(theta)),
+                    -np.pi / 2,
+                    np.pi / 2,
+                    epsabs=epsabs,
+                )[0]
+                return int_1 / np.pi
+        elif beta == 0:
+            return 0.5 + np.arctan(x) / np.pi
+        else:
+            # NOTE: Nolan's paper has a typo here!
+            # He states F(x) = 1 - F(x, alpha, -beta), but this is clearly
+            # incorrect since F(-infty) would be 1.0 in this case
+            # Indeed, the alpha != 1, x0 < zeta case is correct here.
+            return 1 - _cdf_single_value_piecewise(-x, 1, -beta, **kwds)
+
+
+def _cdf_single_value_piecewise_ragibson(x, alpha, beta, **kwds):
+    """Calculate cdf using Nolan's methods as detailed in [NO].
+    """
+    epsabs = kwds.get("epsabs", EPSABS)
+
     zeta = -beta * np.tan(np.pi * alpha / 2.0)
     xi = np.arctan(-zeta) / alpha if alpha != 1 else np.pi / 2
 
     # convert to S_0 parameterization
     x0 = x + zeta if alpha != 1 else x
 
-    x0, alpha, beta = _nolan_round_difficult_input(x0, alpha, beta, zeta)
+    x0, alpha, beta = _nolan_round_difficult_input(
+        x0, alpha, beta, zeta, **kwds
+    )
 
     # handle Nolan's initial case logic
     if alpha == 1:
@@ -275,11 +408,11 @@ def _cdf_single_value_piecewise(x, alpha, beta, epsabs=EPSABS, **kwds):
             # He states F(x) = 1 - F(x, alpha, -beta), but this is clearly
             # incorrect since F(-infty) would be 1.0 in this case
             # Indeed, the alpha != 1, x0 < zeta case is correct here.
-            return 1 - _cdf_single_value_piecewise(-x, alpha, -beta)
+            return 1 - _cdf_single_value_piecewise(-x, alpha, -beta, **kwds)
     elif x0 == zeta:
         return 0.5 - xi / np.pi
     elif x0 < zeta:
-        return 1 - _cdf_single_value_piecewise(-x, alpha, -beta)
+        return 1 - _cdf_single_value_piecewise(-x, alpha, -beta, **kwds)
 
     # following Nolan, we may now assume
     #   x0 > zeta when alpha != 1
@@ -316,16 +449,19 @@ def _cdf_single_value_piecewise(x, alpha, beta, epsabs=EPSABS, **kwds):
         # to improve QUADPACK's detection of rapidly descending tail behavior
         # (this choice is fairly ad hoc)
         tail_points = [
-            optimize.bisect(lambda t: g(t) - exp_height,
-                            -xi, np.pi / 2)
+            optimize.bisect(lambda t: g(t) - exp_height, -xi, np.pi / 2)
             for exp_height in [100, 10, 5, 1]
         ]
         intg_points = [support_end] + tail_points
 
-        intg = integrate.quad(integrand, min(-xi, support_end),
-                              max(np.pi / 2, support_end),
-                              points=intg_points, limit=100,
-                              epsabs=EPSABS)[0]
+        intg = integrate.quad(
+            integrand,
+            min(-xi, support_end),
+            max(np.pi / 2, support_end),
+            points=intg_points,
+            limit=100,
+            epsabs=epsabs,
+        )[0]
 
     return c1 + c3 * intg
 
@@ -376,7 +512,13 @@ class levy_stable_gen(rv_continuous):
     to either 'piecewise', 'dni' or 'fft-simpson'.
 
     To improve accuracy of piecewise and direct numerical integration one
-    can specify ``levy_stable.epsabs`` (defaults to 1.2e-14).
+    can specify ``levy_stable.epsabs`` (defaults to 1.2e-14). One can also
+    specify ``levy_stable.piecewise_x_tol_near_zeta`` (defaults to 0.005)
+    for how close x is to zeta before it is considered the same as x [NO]. The
+    exact check is abs(x0 - zeta) < piecewise_x_tol_near_zeta*alpha**(1/alpha).
+    One can also specify ``levy_stable.piecewise_alpha_tol_near_one`` (defaults
+    to 0.005) for how close alpha is to 1 before being considered equal to
+    1.
 
     To increase accuracy of FFT calculation one can specify
     ``levy_stable.pdf_fft_grid_spacing`` (defaults to 0.001) and
@@ -428,6 +570,8 @@ class levy_stable_gen(rv_continuous):
         to compute densities of stable distribution.
     .. [NO] Nolan, J., 1997. Numerical Calculation of Stable Densities and
         distributions Functions.
+    .. [HO] Hopcraft, K. I., Jakeman, E., Tanner, R. M. J., 1999. Lévy random
+        walks with fluctuating step number and multiscale behavior.
 
     %(example)s
 
@@ -514,7 +658,13 @@ class levy_stable_gen(rv_continuous):
             pdf_single_value_method = None
 
         pdf_single_value_kwds = {
-            "epsabs": getattr(self, "epsabs", EPSABS)
+            "epsabs": getattr(self, "epsabs", EPSABS),
+            "piecewise_x_tol_near_zeta": getattr(
+                self, "piecewise_x_tol_near_zeta", 0.005
+            ),
+            "piecewise_alpha_tol_near_one": getattr(
+                self, "piecewise_alpha_tol_near_one", 0.005
+            ),
         }
 
         fft_grid_spacing = getattr(self, "pdf_fft_grid_spacing", 0.001)
@@ -534,7 +684,9 @@ class levy_stable_gen(rv_continuous):
             if pdf_single_value_method is not None:
                 data_out[data_mask] = np.array(
                     [
-                        pdf_single_value_method(_x, _alpha, _beta, **pdf_single_value_kwds)
+                        pdf_single_value_method(
+                            _x, _alpha, _beta, **pdf_single_value_kwds
+                        )
                         for _x, _alpha, _beta in data_subset
                     ]
                 ).reshape(len(data_subset), 1)
@@ -547,7 +699,7 @@ class levy_stable_gen(rv_continuous):
                 _alpha, _beta = pair
                 _x = data_subset[:, (0,)]
 
-                if _alpha < 1.:
+                if _alpha < 1.0:
                     raise RuntimeError(
                         "FFT method does not work well for alpha less than 1."
                     )
@@ -611,7 +763,13 @@ class levy_stable_gen(rv_continuous):
             cdf_single_value_method = None
 
         cdf_single_value_kwds = {
-            "epsabs": getattr(self, "epsabs", EPSABS)
+            "epsabs": getattr(self, "epsabs", EPSABS),
+            "piecewise_x_tol_near_zeta": getattr(
+                self, "piecewise_x_tol_near_zeta", 0.005
+            ),
+            "piecewise_alpha_tol_near_one": getattr(
+                self, "piecewise_alpha_tol_near_one", 0.005
+            ),
         }
 
         fft_grid_spacing = getattr(self, "pdf_fft_grid_spacing", 0.001)
@@ -631,7 +789,9 @@ class levy_stable_gen(rv_continuous):
             if cdf_single_value_method is not None:
                 data_out[data_mask] = np.array(
                     [
-                        cdf_single_value_method(_x, _alpha, _beta, **cdf_single_value_kwds)
+                        cdf_single_value_method(
+                            _x, _alpha, _beta, **cdf_single_value_kwds
+                        )
                         for _x, _alpha, _beta in data_subset
                     ]
                 ).reshape(len(data_subset), 1)

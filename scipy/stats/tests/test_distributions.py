@@ -2286,7 +2286,16 @@ class TestLevyStable(object):
 
             There's a known limitation of Nolan's executable for alpha < 0.2.
 
-            Repeat following with beta = -1, -.5, 0, .5 and 1
+            The data table loaded below is generated from Nolan's stablec
+            with the following parameter space:
+
+                alpha = 0.1, 0.2, ..., 2.0
+                beta = -1.0, -0.9, ..., 1.0
+                p = 0.01, 0.05, 0.1, 0.25, 0.35, 0.5,
+                    and the equivalent for the right tail
+
+            Typically inputs for stablec:
+
                 stablec.exe <<
                 1 # pdf
                 1 # Nolan S equivalent to S0 in scipy
@@ -2327,19 +2336,29 @@ class TestLevyStable(object):
                 | ((r['alpha'] >= 1.1))  # various points ok but too sparse to list
             )],
 
-            # piecewise for most inputs
+            # # piecewise generally good accuracy
             ['piecewise', 1e-8, lambda r: ~(
-                ((r['beta'] == 0) & (r['pct'] == 0.5))
-                | ((r['alpha'] == 1) & npisin(r['beta'], [-.7, -.6, -.5, -.4, -.3, -.2, -.1, .1, .2]) & npisin(r['pct'], [.01, .99]))
-                | ((r['alpha'] == 1) & npisin(r['beta'], [-.6, -.4, -.2]) & npisin(r['pct'], [.05]))
-                | ((r['alpha'] == 0.1) & (r['beta'] == 0.9) & (r['pct'] == 0.1))
-                | ((r['alpha'] == 0.1) & (r['beta'] == -0.9) & (r['pct'] == 0.9))
-                | ((r['alpha'] == 1.) & (r['beta'] == -0.2) & (r['pct'] == 0.1))
+                ((r['alpha'] == 0.1) & (r['beta'] == -0.5) & (r['pct'] == 0.75))
+                | ((r['alpha'] == 0.1) & (r['beta'] == 0.5) & (r['pct'] == 0.25))
+                | ((r['alpha'] == 0.1) & (r['beta'] == -0.3) & (r['pct'] == 0.65))
+                | ((r['alpha'] == 0.1) & (r['beta'] == 0.3) & (r['pct'] == 0.35))
+                | ((r['alpha'] == 0.1) & (r['beta'] == -0.8) & (r['pct'] == 0.9))
+                | ((r['alpha'] == 0.1) & (r['beta'] == 0.8) & (r['pct'] == 0.1))
+            )],
+            # for some points close to alpha slighty reduced accuracy
+            ['piecewise', 1e-7, lambda r: (
+                ((r['alpha'] == 0.1) & (r['beta'] == -0.5) & (r['pct'] == 0.75))
+                | ((r['alpha'] == 0.1) & (r['beta'] == 0.5) & (r['pct'] == 0.25))
+                | ((r['alpha'] == 0.1) & (r['beta'] == -0.3) & (r['pct'] == 0.65))
+                | ((r['alpha'] == 0.1) & (r['beta'] == 0.3) & (r['pct'] == 0.35))
+                | ((r['alpha'] == 0.1) & (r['beta'] == -0.8) & (r['pct'] == 0.9))
+                | ((r['alpha'] == 0.1) & (r['beta'] == 0.8) & (r['pct'] == 0.1))
             )],
 
             # fft accuracy reduces as alpha decreases
             ['fft-simpson', 1e-5, lambda r: r['alpha'] >= 1.9],
             ['fft-simpson', 1e-6, lambda r: (r['alpha'] > 1) & (r['alpha'] < 1.9)],
+            # fft relative errors for alpha < 1, will raise if enabled
             # ['fft-simpson', 1e-4, lambda r: r['alpha'] == 0.9],
             # ['fft-simpson', 1e-3, lambda r: r['alpha'] == 0.8],
             # ['fft-simpson', 1e-2, lambda r: r['alpha'] == 0.7],
@@ -2392,7 +2411,25 @@ class TestLevyStable(object):
 
             There's a known limitation of Nolan's executable for alpha < 0.2.
 
-            Repeat following with beta = -1, -.5, 0, .5 and 1
+            The data table loaded below is generated from Nolan's stablec
+            with the following parameter space:
+
+                alpha = 0.1, 0.2, ..., 2.0
+                beta = -1.0, -0.9, ..., 1.0
+                p = 0.01, 0.05, 0.1, 0.25, 0.35, 0.5,
+                    and the equivalent for the right tail
+
+            Ideally, Nolan's output for CDF values should match the percentile
+            from where they have been sampled from. Even more so as we extract
+            percentile x positions from stablec too. However, we note at places
+            Nolan's stablec will produce absolute errors in order of 1e-5. We
+            compare against his calculations here. In future, once we less
+            reliant on Nolan's paper we might switch to comparing directly at
+            percentiles (those x values being produced from some alternative
+            means).
+
+            Typically inputs for stablec:
+
                 stablec.exe <<
                 2 # cdf
                 1 # Nolan S equivalent to S0 in scipy
@@ -2411,16 +2448,32 @@ class TestLevyStable(object):
             )
         )
 
-        data = np.core.records.fromarrays(data.T, names='x,p,alpha,beta')
+        data = np.core.records.fromarrays(data.T, names='x,p,alpha,beta,pct')
 
         tests = [
-            # piecewise is accurate for all values
-            ['piecewise', 8, None],
+            # piecewise is accurate for most values
+            ['piecewise', 1e-7, lambda r: ~(
+                ((r['alpha'] == 1.) & np.isin(r['beta'], [-0.3, -0.2, -0.1]) & (r['pct'] == 0.01))
+                | ((r['alpha'] == 1.) & np.isin(r['beta'], [0.1, 0.2, 0.3]) & (r['pct'] == 0.99))
+                | ((r['alpha'] == 0.5) & (r['beta'] == -0.3) & (r['pct'] == 0.1))
+            )],
+            # for some points slighty reduced accuracy
+            ['piecewise', 1e-6, lambda r: (
+                ((r['alpha'] == 0.5) & (r['beta'] == -0.3) & (r['pct'] == 0.1))
+            )],
+            # 6 problematic points of varying degrees
+            ['piecewise', 1e-1, lambda r: (
+                ((r['alpha'] == 1.) & np.isin(r['beta'], [-0.3, -0.2, -0.1]) & (r['pct'] == 0.01))
+                | ((r['alpha'] == 1.) & np.isin(r['beta'], [0.1, 0.2, 0.3]) & (r['pct'] == 0.99))
+            )],
 
             # fft accuracy poor, very poor alpha < 1
-            ['fft-simpson', 4, lambda r: r['alpha'] > 1],
+            ['fft-simpson', 1e-5, lambda r: r['alpha'] > 1.7],
+            ['fft-simpson', 1e-4, lambda r: (r['alpha'] > 1.5) & (r['alpha'] <= 1.7)],
+            ['fft-simpson', 1e-3, lambda r: (r['alpha'] > 1.3) & (r['alpha'] <= 1.5)],
+            ['fft-simpson', 1e-2, lambda r: (r['alpha'] > 1.0) & (r['alpha'] <= 1.3)],
         ]
-        for ix, (default_method, decimal_places,
+        for ix, (default_method, rtol,
                  filter_func) in enumerate(tests):
             stats.levy_stable.cdf_default_method = default_method
             subdata = data[filter_func(data)
@@ -2438,17 +2491,25 @@ class TestLevyStable(object):
                     scale=1,
                     loc=0
                 )
-                subdata2 = rec_append_fields(subdata, 'calc', p)
+                with np.errstate(over="ignore"):
+                    subdata2 = rec_append_fields(subdata,
+                        ['calc', 'abserr', 'relerr'],
+                        [
+                            p,
+                            np.abs(p - subdata['p']),
+                            np.abs(p - subdata['p'])/np.abs(subdata['p'])
+                        ]
+                    )
                 failures = subdata2[
-                  (np.abs(p - subdata['p']) >= 1.5 * 10.**(-decimal_places)) |
+                  (subdata2['relerr'] >= rtol) |
                   np.isnan(p)
                 ]
                 assert_almost_equal(
                     p,
                     subdata['p'],
-                    decimal_places,
-                    "cdf test %s failed with method '%s'\n%s" %
-                    (ix, default_method, failures),
+                    rtol,
+                    "cdf test %s failed with method '%s'\n%s\n%s" %
+                    (ix, default_method, failures.dtype.names, failures),
                     verbose=False
                 )
 
