@@ -725,7 +725,7 @@ Interpolation functions
 
 This section describes various interpolation functions that are based
 on B-spline theory. A good introduction to B-splines can be found
-in [1]_.
+in [1]_ with detailed algorithms for image interpolation given in [5]_.
 
 Spline pre-filters
 ^^^^^^^^^^^^^^^^^^
@@ -770,7 +770,26 @@ described in :ref:`ndimage-filter-functions` for the multidimensional
 filter functions. Therefore, these functions all support a *mode*
 parameter that determines how the boundaries are handled, and a *cval*
 parameter that gives a constant value in case that the 'constant' mode
-is used.
+is used. The behavior of all modes, including at non-integer locations is
+illustrated below. Note that the modes `reflect` (aka `grid-mirror`) and
+`grid-wrap` involve symmetry or repetition about a point that is half way
+between image samples (dashed vertical lines). On the contray, modes `mirror`
+and `wrap` treat the image as if it's extent ends exactly at the first and last
+sample point rather than 0.5 samples past it.
+
+.. plot:: tutorial/examples/plot_boundary_modes.py
+   :include-source: False
+
+The coordinates of image samples fall on integer sampling locations
+in the range from 0 to ``shape[i] - 1`` along each axis, ``i``. The figure
+below illustrates the interpolation of a point at location ``(3.7, 3.3)``
+within an image of shape ``(7, 7)``. For an interpolation of order ``n``,
+``n + 1`` samples are involved along each axis. The filled circles
+illustrate the sampling locations involved in the interpolation of the value at
+the location of the red x.
+
+.. plot:: tutorial/examples/plot_interp_grid.py
+   :include-source: False
 
 - The :func:`geometric_transform` function applies an arbitrary
   geometric transform to the input. The given *mapping* function is
@@ -1952,3 +1971,7 @@ References
 .. [4] P. Felkel, R. Wegenkittl, and M. Bruckschwaiger,
        "Implementation and Complexity of the Watershed-from-Markers Algorithm
        Computed as a Minimal Cost Forest.", Eurographics 2001, pp. C:26-35.
+
+.. [5] T. Briand and P. Monasse, "Theory and Practice of Image B-Spline
+       Interpolation", Image Processing On Line, 8, pp. 99–141, 2018.
+       https://doi.org/10.5201/ipol.2018.221
