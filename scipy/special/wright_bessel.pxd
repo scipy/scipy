@@ -24,13 +24,13 @@
 # [2] P. K. Dunn, G. K. Smyth (2005), Series evaluation of Tweedie exponential
 #     dispersion model densities. Statistics and Computing 15 (2005): 267-280.
 # [3] E. M. Wright (1935), The asymptotic expansion of the generalized Bessel
-#     function. Proc. London Math. Soc. (2) 38, pp. 257–270.
+#     function. Proc. London Math. Soc. (2) 38, pp. 257-270.
 #     https://doi.org/10.1112/plms/s2-38.1.257
 # [4] R. B. Paris (2017), The asymptotics of the generalised Bessel function,
 #     Mathematica Aeterna, Vol. 7, 2017, no. 4, 381 - 406,
 #     https://arxiv.org/abs/1711.03006
 # [5] Y. F. Luchko (2008), Algorithms for Evaluation of the Wright Function for
-#     the Real Arguments’ Values, Fractional Calculus and Applied Analysis 11(1)
+#     the Real Arguments' Values, Fractional Calculus and Applied Analysis 11(1)
 #     http://sci-gems.math.bas.bg/jspui/bitstream/10525/1298/1/fcaa-vol11-num1-2008-57p-75p.pdf
 
 import cython

@@ -72,8 +72,8 @@ def series_small_a_small_b():
     Be aware of cancellation of poles in b=0 of digamma(b)/Gamma(b) and
     polygamma functions.
 
-    digamma(b)/Gamma(b) = −1 − 2*M_EG*b + O(b^2)
-    digamma(b)^2/Gamma(b) = 1/b + 3*M_EG + b*(−5/12*PI^2+7/2*M_EG^2) + O(b^2)
+    digamma(b)/Gamma(b) = -1 - 2*M_EG*b + O(b^2)
+    digamma(b)^2/Gamma(b) = 1/b + 3*M_EG + b*(-5/12*PI^2+7/2*M_EG^2) + O(b^2)
     polygamma(1, b)/Gamma(b) = 1/b + M_EG + b*(1/12*PI^2 + 1/2*M_EG^2) + O(b^2)
     and so on.
     """

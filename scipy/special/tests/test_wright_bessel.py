@@ -37,7 +37,7 @@ def test_wright_bessel_zero(a, b):
 def test_wright_bessel_iv(b, x):
     """Test relation of wright_bessel and modified bessel function iv.
 
-    iv(z) = (1/2*⁢z)**v *⁢ Phi⁡(1, v+1; 1/4⁢*z**2).
+    iv(z) = (1/2*z)**v * Phi(1, v+1; 1/4*z**2).
     See https://dlmf.nist.gov/10.46.E2
     """
     if x != 0:
@@ -61,7 +61,7 @@ def test_wright_functional(a, b, x):
     Note that d/dx Phi(a, b, x) = Phi(a, b-1, x)
     See Eq. (22) of
     B. Stankovic, On the Function of E. M. Wright,
-    Publ. de l’Institut Math`ematique, Beograd,
+    Publ. de l' Institut Mathematique, Beograd,
     Nouvelle S`er. 10 (1970), 113-124.
     """
     assert_allclose(wright_bessel(a, b - 1, x),
