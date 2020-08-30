@@ -21,7 +21,8 @@ class TestNdimageInterpolation:
          ('grid-wrap', [1.5, 2.5, 3.5, 2.5, 1.5, 2.5, 3.5]),
          ('mirror', [1.5, 2.5, 3.5, 3.5, 2.5, 1.5, 1.5]),
          ('reflect', [1.5, 2.5, 3.5, 4, 3.5, 2.5, 1.5]),
-         ('constant', [1.5, 2.5, 3.5, -1, -1, -1, -1])]
+         ('constant', [1.5, 2.5, 3.5, -1, -1, -1, -1]),
+         ('grid-constant', [1.5, 2.5, 3.5, 1.5, -1, -1, -1])]
     )
     def test_boundaries(self, mode, expected_value):
         def shift(x):
@@ -40,7 +41,8 @@ class TestNdimageInterpolation:
          ('grid-wrap', [4, 1, 2, 3]),
          ('mirror', [2, 1, 2, 3]),
          ('reflect', [1, 1, 2, 3]),
-         ('constant', [-1, 1, 2, 3])]
+         ('constant', [-1, 1, 2, 3]),
+         ('grid-constant', [-1, 1, 2, 3])]
     )
     def test_boundaries2(self, mode, expected_value):
         def shift(x):
@@ -53,7 +55,8 @@ class TestNdimageInterpolation:
                                         output_shape=(4,)))
 
     @pytest.mark.parametrize('mode', ['mirror', 'reflect', 'grid-mirror',
-                                      'grid-wrap'])
+                                      'grid-wrap', 'grid-constant',
+                                      'nearest'])
     @pytest.mark.parametrize('order', range(6))
     def test_boundary_spline_accuracy(self, mode, order):
         """Tests based on examples from gh-2640"""
@@ -62,12 +65,14 @@ class TestNdimageInterpolation:
         y = ndimage.map_coordinates(data, [x], order=order, mode=mode)
 
         # compute expected value using explicit padding via numpy.pad
-        npad = 100
+        npad = 50
         pad_mode = {
             'mirror': 'reflect',
             'reflect': 'symmetric',
             'grid-mirror': 'symmetric',
             'grid-wrap': 'wrap',
+            'nearest': 'edge',
+            'grid-constant': 'constant',
         }.get(mode)
         padded = numpy.pad(data, npad, mode=pad_mode)
         expected = ndimage.map_coordinates(padded, [npad + x], order=order,
@@ -75,8 +80,10 @@ class TestNdimageInterpolation:
 
         if mode in ['reflect', 'grid-mirror'] and order > 1:
             numpy.testing.assert_allclose(y, expected, rtol=1e-4, atol=1e-13)
+        elif mode in ['grid-constant'] and order > 1:
+            numpy.testing.assert_allclose(y, expected, rtol=1e-5, atol=1e-7)
         else:
-            numpy.testing.assert_allclose(y, expected, atol=1e-13)
+            numpy.testing.assert_allclose(y, expected, rtol=1e-6, atol=1e-13)
 
     @pytest.mark.parametrize('order', range(2, 6))
     @pytest.mark.parametrize('dtype', types)
@@ -982,7 +989,8 @@ class TestNdimageInterpolation:
 
     @pytest.mark.parametrize('zoom', [(1, 1), (8, 2), (8, 8)])
     @pytest.mark.parametrize('mode', ['nearest', 'constant', 'wrap', 'reflect',
-                                      'mirror', 'grid-wrap', 'grid-mirror'])
+                                      'mirror', 'grid-wrap', 'grid-mirror',
+                                      'grid-constant'])
     def test_zoom_by_int_order0(self, zoom, mode):
         # order 0 zoom should be the same as replication via numpy.kron
         x = numpy.array([[0, 1],
