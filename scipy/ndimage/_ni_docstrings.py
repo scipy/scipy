@@ -84,6 +84,11 @@ _mode_interp_constant_doc = (
         the same constant value, defined by the `cval` parameter. No
         interpolation is performed beyond the edges of the input.
 
+    'grid-constant' (`k k k k | a b c d | k k k k`)
+        The input is extended by filling all values beyond the edge with
+        the same constant value, defined by the `cval` parameter. Interpolation
+        occurs for samples outside the input's extent  as well.
+
     'nearest' (`a a a a | a b c d | d d d d`)
         The input is extended by replicating the last pixel.
 

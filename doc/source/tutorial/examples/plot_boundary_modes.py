@@ -6,8 +6,9 @@ from scipy import ndimage
 img = np.array([-2, -1, 0, 1, 2], float)
 x = np.linspace(-2, 6, num=1000)
 
-modes = ['constant', 'nearest', 'reflect', 'mirror', 'wrap', 'grid-wrap']
-fig, axes = plt.subplots(len(modes), 3, figsize=(10, 8), sharex=True,
+modes = ['constant', 'grid-constant', 'nearest', 'reflect', 'mirror', 'wrap',
+         'grid-wrap']
+fig, axes = plt.subplots(len(modes), 3, figsize=(11, 8), sharex=True,
                          sharey=True)
 
 
