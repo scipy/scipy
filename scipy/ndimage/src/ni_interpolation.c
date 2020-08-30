@@ -375,7 +375,6 @@ NI_GeometricTransform(PyArrayObject *input, int (*map)(npy_intp*, double*,
         }
     }
 
-
     spline_mode = _get_spline_boundary_mode(mode);
     size = PyArray_SIZE(output);
     for(kk = 0; kk < size; kk++) {
