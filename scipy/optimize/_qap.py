@@ -1,6 +1,6 @@
 import numpy as np
 import operator
-from . import (linear_sum_assignment, minimize_scalar, OptimizeResult)
+from . import (linear_sum_assignment, OptimizeResult)
 from .optimize import _check_unknown_options
 
 from scipy._lib._util import check_random_state
@@ -28,7 +28,7 @@ def quadratic_assignment(A, B, method="faq", options=None):
     This algorithm can be thought of as finding the alignment of the
     nodes of two graphs that minimizes the number of induced edge
     disagreements, or, in the case of weighted graphs, the sum of squared
-    differences of edge weight disagreements.
+    edge weight differences.
 
     Note that the quadratic assignment problem is NP-hard, is not
     known to be solvable in polynomial time, and is computationally
@@ -61,7 +61,7 @@ def quadratic_assignment(A, B, method="faq", options=None):
             corresponding nodes, that is, node ``partial_match[i, 0]`` of `A`
             is matched to node ``partial_match[i, 1]`` of `B`. Accordingly,
             ``partial_match`` is an array of size ``(m , 2)``, where ``m`` is
-            less than the number of nodes.
+            not greater than the number of nodes.
 
         maximize : bool (default = False)
             Setting `maximize` to ``True`` solves the Graph Matching Problem
@@ -234,8 +234,8 @@ def _common_input_validation(A, B, partial_match):
         msg = "`partial_match` must contain only positive indices"
     elif (partial_match >= len(A)).any():
         msg = "`partial_match` entries must be less than number of nodes"
-    elif not len(set(partial_match[:, 0])) == len(partial_match[:, 0]) or not \
-            len(set(partial_match[:, 1])) == len(partial_match[:, 1]):
+    elif (not len(set(partial_match[:, 0])) == len(partial_match[:, 0]) or
+          not len(set(partial_match[:, 1])) == len(partial_match[:, 1])):
         msg = "`partial_match` column entries must be unique"
 
     if msg is not None:
@@ -247,7 +247,7 @@ def _common_input_validation(A, B, partial_match):
 def _quadratic_assignment_faq(A, B,
                               maximize=False, partial_match=None, rng=None,
                               init_J="barycenter", init_weight=1,
-                              maxiter=30, shuffle_input=True, tol=0.05,
+                              shuffle_input=True, maxiter=30, tol=0.05,
                               **unknown_options
                               ):
     r"""
@@ -271,7 +271,7 @@ def _quadratic_assignment_faq(A, B,
     This algorithm can be thought of as finding the alignment of the
     nodes of two graphs that minimizes the number of induced edge
     disagreements, or, in the case of weighted graphs, the sum of squared
-    differences of edge weight disagreements.
+    edge weight differences.
 
     Note that the quadratic assignment problem is NP-hard, is not
     known to be solvable in polynomial time, and is computationally
@@ -320,7 +320,7 @@ def _quadratic_assignment_faq(A, B,
         corresponding nodes, that is, node ``partial_match[i, 0]`` of `A` is
         matched to node ``partial_match[i, 1]`` of `B`. Accordingly,
         ``partial_match`` is an array of size ``(m , 2)``, where ``m`` is
-        less than the number of nodes.
+        not greater than the number of nodes.
 
     init_J : 2d-array or "barycenter" (default = "barycenter")
         The initial (guess) permutation matrix or search "position"
@@ -348,14 +348,14 @@ def _quadratic_assignment_faq(A, B,
         :math:`\alpha` is given by option `init_weight`,
         :math:`K` is a random doubly stochastic matrix.
 
-    maxiter : int, positive (default = 30)
-        Integer specifying the max number of Franke-Wolfe iterations performed.
-
     shuffle_input : bool (default = True)
         To avoid artificially high or low matching due to inherent
         sorting of input matrices, gives users the option
         to shuffle the nodes. Results are then unshuffled so that the
         returned results correspond with the node order of inputs.
+
+    maxiter : int, positive (default = 30)
+        Integer specifying the max number of Franke-Wolfe iterations performed.
 
     tol : float (default = 0.05)
         A threshold for the stopping criterion. Franke-Wolfe
@@ -482,7 +482,7 @@ def _quadratic_assignment_faq(A, B,
         J = np.atleast_2d(init_J)
         _check_init_input(J, n_unseed)
 
-# [1] Algorithm 1 Step 1 - choose initialization
+# [1] Algorithm 1 Line 1 - choose initialization
     if init_weight != 1:
         # generate a nxn matrix where each entry is a random number [0, 1]
         # would use rand, but Generators don't have it
@@ -496,17 +496,17 @@ def _quadratic_assignment_faq(A, B,
         P = J
     const_sum = A21 @ B21.T + A12.T @ B12
 
-    # [1] Algorithm 1 Step 2 - loop while stopping criteria not met
+    # [1] Algorithm 1 Line 2 - loop while stopping criteria not met
     for n_iter in range(1, maxiter+1):
-        # [1] Algorithm 1 Step 3 - compute the gradient of f(P) = -tr(APB^tP^t)
+        # [1] Algorithm 1 Line 3 - compute the gradient of f(P) = -tr(APB^tP^t)
         grad_fp = (const_sum + A22 @ P @ B22.T + A22.T @ P @ B22)
-        # [1] Algorithm 1 Step 4 - get direction Q by solving Eq. 8
+        # [1] Algorithm 1 Line 4 - get direction Q by solving Eq. 8
         rows, cols = linear_sum_assignment(obj_func_scalar * grad_fp)
         Q = np.zeros((n_unseed, n_unseed))
         Q[rows, cols] = 1  # initialize search direction matrix Q
 
 
-        # [1] Algorithm 1 Step 5 - compute the step size
+        # [1] Algorithm 1 Line 5 - compute the step size
         # Noting that e.g. trace(Ax) = trace(A)*x, expand and re-collect
         # terms as ax**2 + bx + c. c does not affect location of minimum
         # and can be ignored. Also, note that trace(A@B) = (A.T*B).sum();
@@ -528,15 +528,15 @@ def _quadratic_assignment_faq(A, B,
         else:
             alpha = np.argmin([0, (b + a)*obj_func_scalar])
 
-        # [1] Algorithm 1 Step 6 - Update P
+        # [1] Algorithm 1 Line 6 - Update P
         P_i1 = alpha * P + (1 - alpha) * Q
         if np.linalg.norm(P - P_i1) < tol:
             P = P_i1
             break
         P = P_i1
-    # [1] Algorithm 1 Step 7 - end main loop
+    # [1] Algorithm 1 Line 7 - end main loop
 
-    # [1] Algorithm 1 Step 8 - project onto the set of permutation matrices
+    # [1] Algorithm 1 Line 8 - project onto the set of permutation matrices
     _, col = linear_sum_assignment(-P)
     perm = np.concatenate((np.arange(n_seeds), col + n_seeds))
 
@@ -557,8 +557,8 @@ def _check_init_input(init_J, n):
     msg = None
     if init_J.shape != (n, n):
         msg = "`init_J` matrix must have same shape as A and B"
-    elif ((~np.isclose(row_sum, np.ones(n), atol=tol)).any() or
-          (~np.isclose(col_sum, np.ones(n), atol=tol)).any() or
+    elif ((~np.isclose(row_sum, 1, atol=tol)).any() or
+          (~np.isclose(col_sum, 1, atol=tol)).any() or
           (init_J < 0).any()):
         msg = "`init_J` matrix must be doubly stochastic"
     if msg is not None:
@@ -618,7 +618,7 @@ def _quadratic_assignment_2opt(A, B, maximize=False, partial_match=None,
     This algorithm can be thought of as finding the alignment of the
     nodes of two graphs that minimizes the number of induced edge
     disagreements, or, in the case of weighted graphs, the sum of squared
-    differences of edge weight disagreements.
+    edge weight differences.
 
     Note that the quadratic assignment problem is NP-hard, is not
     known to be solvable in polynomial time, and is computationally
@@ -666,7 +666,7 @@ def _quadratic_assignment_2opt(A, B, maximize=False, partial_match=None,
         corresponding nodes, that is, node ``partial_match[i, 0]`` of `A` is
         matched to node ``partial_match[i, 1]`` of `B`. Accordingly,
         ``partial_match`` is an array of size ``(m , 2)``, where ``m`` is
-        less than the number of nodes.
+        not greater than the number of nodes.
 
     partial_guess : 2d-array of integers, optional, (default = None)
         Allows the user to provide a guess for the matching between the two
@@ -674,7 +674,7 @@ def _quadratic_assignment_2opt(A, B, maximize=False, partial_match=None,
         indices; they are still free to be optimized.
 
         Each row of `partial_guess` specifies the indices of a pair of
-        corresponding nodes, that is, node ``partial_guess[i, 0]` of `A` is
+        corresponding nodes, that is, node ``partial_guess[i, 0]`` of `A` is
         matched to node ``partial_guess[i, 1]`` of `B`. Accordingly,
         ``partial_guess`` is an array of size ``(m , 2)``, where ``m`` is
         less than or equal to the number of nodes.
@@ -726,8 +726,8 @@ def _quadratic_assignment_2opt(A, B, maximize=False, partial_match=None,
         msg = "`partial_guess` must contain only positive indices"
     elif (partial_guess >= len(A)).any():
         msg = "`partial_guess` entries must be less than number of nodes"
-    elif (not len(set(partial_guess[:, 0])) == len(partial_guess[:, 0])
-          or not len(set(partial_guess[:, 1])) == len(partial_guess[:, 1])):
+    elif (not len(set(partial_guess[:, 0])) == len(partial_guess[:, 0]) or
+          not len(set(partial_guess[:, 1])) == len(partial_guess[:, 1])):
         msg = "`partial_guess` column entries must be unique"
     if msg is not None:
         raise ValueError(msg)
