@@ -64,7 +64,7 @@ def spline_filter1d(input, order=3, axis=-1, output=numpy.float64,
     output : ndarray or dtype, optional
         The array in which to place the output, or the dtype of the returned
         array. Default is ``numpy.float64``.
-    %(mode_mirror)s
+    %(mode_interp_mirror)s
 
     Returns
     -------
@@ -199,7 +199,7 @@ def geometric_transform(input, mapping, output_shape=None,
     order : int, optional
         The order of the spline interpolation, default is 3.
         The order has to be in the range 0-5.
-    %(mode_constant)s
+    %(mode_interp_constant)s
     %(cval)s
     %(prefilter)s
     extra_arguments : tuple, optional
@@ -323,7 +323,7 @@ def map_coordinates(input, coordinates, output=None, order=3,
     order : int, optional
         The order of the spline interpolation, default is 3.
         The order has to be in the range 0-5.
-    %(mode_constant)s
+    %(mode_interp_constant)s
     %(cval)s
     %(prefilter)s
 
@@ -436,7 +436,7 @@ def affine_transform(input, matrix, offset=0.0, output_shape=None,
     order : int, optional
         The order of the spline interpolation, default is 3.
         The order has to be in the range 0-5.
-    %(mode_constant)s
+    %(mode_interp_constant)s
     %(cval)s
     %(prefilter)s
 
@@ -544,7 +544,7 @@ def shift(input, shift, output=None, order=3, mode='constant', cval=0.0,
     order : int, optional
         The order of the spline interpolation, default is 3.
         The order has to be in the range 0-5.
-    %(mode_constant)s
+    %(mode_interp_constant)s
     %(cval)s
     %(prefilter)s
 
@@ -595,7 +595,7 @@ def zoom(input, zoom, output=None, order=3, mode='constant', cval=0.0,
     order : int, optional
         The order of the spline interpolation, default is 3.
         The order has to be in the range 0-5.
-    %(mode_constant)s
+    %(mode_interp_constant)s
     %(cval)s
     %(prefilter)s
 
@@ -679,7 +679,7 @@ def rotate(input, angle, axes=(1, 0), reshape=True, output=None, order=3,
     order : int, optional
         The order of the spline interpolation, default is 3.
         The order has to be in the range 0-5.
-    %(mode_constant)s
+    %(mode_interp_constant)s
     %(cval)s
     %(prefilter)s
 
