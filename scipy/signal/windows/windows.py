@@ -1636,6 +1636,10 @@ def taylor(M, nbar=4, level=-30, sym=True):
         Number of nearly constant level sidelobes adjacent to the mainlobe
     level : float
         Desired peak sidelobe level in decibels (db) relative to the mainlobe
+    sym : bool, optional
+        When True (default), generates a symmetric window, for use in filter
+        design.
+        When False, generates a periodic window, for use in spectral analysis.
 
     Returns
     -------
