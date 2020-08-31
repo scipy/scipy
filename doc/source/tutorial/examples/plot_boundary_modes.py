@@ -35,7 +35,7 @@ for mode, (ax0, ax1, ax2) in zip(modes, axes):
             ax.plot([sz - 0.5, sz - 0.5], [-2.5, 2.5], 'k--')
         elif mode in ['wrap', 'mirror']:
             ax.plot([0, 0], [-2.5, 2.5], 'k--')
-            ax.plot([sz - 1, sz -1], [-2.5, 2.5], 'k--')
+            ax.plot([sz - 1, sz - 1], [-2.5, 2.5], 'k--')
 
     if mode != 'constant':
         for xx in range(int(x[0]), int(x[-1] + 1)):

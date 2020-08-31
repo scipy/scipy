@@ -11,12 +11,14 @@ n_cells = 7  # grid will be size (n_cells, n_cells)
 # desired interpolation coordinate (xi, yi)
 xi, yi = 3.3, 3.7
 
+
 def get_start(cc, order):
     if order % 1 == 0:
         start = math.floor(cc) - order // 2
     else:
         start = math.floor(cc + 0.5) - order // 2
     return start
+
 
 for ax, order in zip(axes, orders):
     # draw open circles at the locations of pixel centers
