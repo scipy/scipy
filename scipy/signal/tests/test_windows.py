@@ -120,7 +120,7 @@ class TestTaylor(object):
         """
         M_win = 1024
         N_fft = 131072
-        w = windows.taylor(M_win, nbar=4, level=-35)
+        w = windows.taylor(M_win, nbar=4, level=-35, sym=False)
         f = fft(w, N_fft)
         spec = 20 * np.log10(np.abs(f / np.amax(f)))
 
