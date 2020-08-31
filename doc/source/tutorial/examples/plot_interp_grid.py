@@ -2,6 +2,7 @@ import math
 
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib import ticker
 
 
 fig, axes = plt.subplots(1, 2, figsize=(11, 5))
@@ -49,7 +50,12 @@ for ax, order in zip(axes, orders):
     # set limits and ticks for 0, 0 voxel at upper left
     ax.axis('square')
     ax.set_xticks(np.arange(n_cells + 1))
-    ax.set_yticklabels(np.arange(n_cells, -1, -1))
+    ax.xaxis.tick_top()
+    ax.xaxis.set_label_position('top')
+    yticks = ticker.FixedLocator(-np.arange(n_cells, -1, -1))
+    ax.yaxis.set_major_locator(yticks)
+    yticklabels = ticker.FixedFormatter(np.arange(n_cells, -1, -1))
+    ax.yaxis.set_major_formatter(yticklabels)
     ax.set_ylim([-n_cells + 0.5, 0.5])
     ax.set_xlim([-0.5, n_cells - 0.5])
 
