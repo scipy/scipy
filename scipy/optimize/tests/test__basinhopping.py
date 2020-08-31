@@ -16,17 +16,28 @@ from scipy._lib._pep440 import Version
 
 
 def func1d(x):
+    """
+    1D test function of parabola + sinusoidal variation, with minimum around
+    f(x) = -1.0 at x = -0.195
+    """
     f = cos(14.5 * x - 0.3) + (x + 0.2) * x
     df = np.array(-14.5 * sin(14.5 * x - 0.3) + 2. * x + 0.2)
     return f, df
 
 
 def func2d_nograd(x):
+    """
+    2D test function of paraboloid with sinusoidal variation, with minimum
+    around f(x) = -1.0 at x = (-0.195, -0.1)
+    """
     f = cos(14.5 * x[0] - 0.3) + (x[1] + 0.2) * x[1] + (x[0] + 0.2) * x[0]
     return f
 
 
 def func2d(x):
+    """
+    Same as func2d_nograd
+    """
     f = cos(14.5 * x[0] - 0.3) + (x[1] + 0.2) * x[1] + (x[0] + 0.2) * x[0]
     df = np.zeros(2)
     df[0] = -14.5 * sin(14.5 * x[0] - 0.3) + 2. * x[0] + 0.2
@@ -35,6 +46,9 @@ def func2d(x):
 
 
 def func2d_easyderiv(x):
+    """
+    Paraboloid with minimum of f(x) = -6 at (2, -1)
+    """
     f = 2.0*x[0]**2 + 2.0*x[0]*x[1] + 2.0*x[1]**2 - 6.0*x[0]
     df = np.zeros(2)
     df[0] = 4.0*x[0] + 2.0*x[1] - 6.0

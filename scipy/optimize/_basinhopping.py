@@ -64,11 +64,11 @@ class BasinHoppingRunner(object):
 
         self.nstep = 0
 
-        # initialize return object
+        # Initialize return object
         self.res = scipy.optimize.OptimizeResult()
         self.res.minimization_failures = 0
 
-        # do initial minimization
+        # Do initial minimization
         minres = minimizer(self.x)
         if not minres.success:
             self.res.minimization_failures += 1
@@ -79,9 +79,10 @@ class BasinHoppingRunner(object):
         if self.disp:
             print("basinhopping step %d: f %g" % (self.nstep, self.energy))
 
-        # initialize storage class
+        # Initialize storage class
         self.storage = Storage(minres)
 
+        # Counters to keep track of global totals
         if hasattr(minres, "nfev"):
             self.res.nfev = minres.nfev
         if hasattr(minres, "njev"):
