@@ -2040,7 +2040,7 @@ def get_window(window, Nx, fftbins=True):
     - `~scipy.signal.windows.chebwin` (needs attenuation)
     - `~scipy.signal.windows.exponential` (needs center, decay scale)
     - `~scipy.signal.windows.tukey` (needs taper fraction)
-    - `~scipy.signal.windows.taylor` (number of constant sidelobes, needs sidelobe level)
+    - `~scipy.signal.windows.taylor` (needs number of constant sidelobes, sidelobe level)
 
     If the window requires no parameters, then `window` can be a string.
 
