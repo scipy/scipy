@@ -71,7 +71,7 @@ install:
       ls $destination
 
   # Upgrade to the latest pip.
-  - '%CMD_IN_ENV% python -m pip install -U pip setuptools wheel'
+  - '%CMD_IN_ENV% python -m pip install -U pip "setuptools<50.0" wheel'
 
   # Install the scipy test dependencies.
   - '%CMD_IN_ENV% pip install -U --timeout 5 --retries 2 -r tools/ci/appveyor/requirements.txt'
