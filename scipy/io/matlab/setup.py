@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 
 def configuration(parent_package='io',top_path=None):
     from numpy.distutils.misc_util import Configuration
@@ -9,6 +7,7 @@ def configuration(parent_package='io',top_path=None):
     config.add_extension('mio5_utils', sources=['mio5_utils.c'])
     config.add_data_dir('tests')
     return config
+
 
 if __name__ == '__main__':
     from numpy.distutils.core import setup

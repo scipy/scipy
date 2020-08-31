@@ -1,45 +1,17 @@
 """Test how the ufuncs in special handle nan inputs.
 
 """
-from __future__ import division, print_function, absolute_import
+from typing import Callable, Dict
 
 import numpy as np
-from numpy.testing import assert_array_equal
+from numpy.testing import assert_array_equal, assert_, suppress_warnings
 import pytest
-
 import scipy.special as sc
-from scipy._lib._numpy_compat import suppress_warnings
 
 
-KNOWNFAILURES = {
-    sc.bdtrc: 'get 1.0',
-    sc.chdtri: 'code hangs',
-    sc.entr: 'get -inf',
-    sc.expn: 'get inf',
-    sc.gammainccinv: 'code hangs',
-    sc.gammaincinv: 'code hangs',
-    sc.gammasgn: 'get 1.0',
-    sc.hankel1: 'segfault',
-    sc.hankel1e: 'segfault',
-    sc.hankel2: 'segfault',
-    sc.hankel2e: 'segfault',
-    sc.ive: 'segfault',
-    sc.jv: 'segfault',
-    sc.jve: 'segfault',
-    sc.kl_div: 'get inf',
-    sc.kv: 'segfault',
-    sc.kve: 'segfault',
-    sc.pbdv: 'hangs on Win32',
-    sc.pbvv: 'crashes on Win32',
-    sc.rel_entr: 'get inf',
-    sc.yv: 'segfault',
-    sc.yve: 'segfault'
-}
+KNOWNFAILURES: Dict[str, Callable] = {}
 
-
-POSTPROCESSING = {
-    sc.hyp2f0: lambda x, y: x  # Second argument is an error estimate
-}
+POSTPROCESSING: Dict[str, Callable] = {}
 
 
 def _get_ufuncs():
@@ -59,6 +31,7 @@ def _get_ufuncs():
             ufunc_names.append(name)
     return ufuncs, ufunc_names
 
+
 UFUNCS, UFUNC_NAMES = _get_ufuncs()
 
 
@@ -70,7 +43,9 @@ def test_nan_inputs(func):
         sup.filter(RuntimeWarning,
                    "floating point number truncated to an integer")
         try:
-            res = func(*args)
+            with suppress_warnings() as sup:
+                sup.filter(DeprecationWarning)
+                res = func(*args)
         except TypeError:
             # One of the arguments doesn't take real inputs
             return
@@ -79,3 +54,11 @@ def test_nan_inputs(func):
 
     msg = "got {} instead of nan".format(res)
     assert_array_equal(np.isnan(res), True, err_msg=msg)
+
+
+def test_legacy_cast():
+    with suppress_warnings() as sup:
+        sup.filter(RuntimeWarning,
+                   "floating point number truncated to an integer")
+        res = sc.bdtrc(np.nan, 1, 0.5)
+        assert_(np.isnan(res))

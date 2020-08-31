@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 import os
 
 from numpy.distutils.core import setup
@@ -17,10 +15,14 @@ def configuration(parent_package='', top_path=None):
                     os.path.join(os.path.dirname(__file__), '..', '_lib', 'src')]
 
     config.add_extension("_nd_image",
-        sources=["src/nd_image.c","src/ni_filters.c",
-                 "src/ni_fourier.c","src/ni_interpolation.c",
+        sources=["src/nd_image.c",
+                 "src/ni_filters.c",
+                 "src/ni_fourier.c",
+                 "src/ni_interpolation.c",
                  "src/ni_measure.c",
-                 "src/ni_morphology.c","src/ni_support.c"],
+                 "src/ni_morphology.c",
+                 "src/ni_splines.c",
+                 "src/ni_support.c"],
         include_dirs=include_dirs,
         **numpy_nodepr_api)
 
@@ -34,21 +36,13 @@ def configuration(parent_package='', top_path=None):
                          include_dirs=[get_include()],
                          **numpy_nodepr_api)
 
-    _define_macros = [("OLDAPI", 1)]
-    if 'define_macros' in numpy_nodepr_api:
-        _define_macros.extend(numpy_nodepr_api['define_macros'])
-
-    config.add_extension("_ctest_oldapi",
-                         sources=["src/_ctest.c"],
-                         include_dirs=[get_include()],
-                         define_macros=_define_macros)
-
     config.add_extension("_cytest",
                          sources=["src/_cytest.c"])
 
     config.add_data_dir('tests')
 
     return config
+
 
 if __name__ == '__main__':
     setup(**configuration(top_path='').todict())

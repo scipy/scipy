@@ -60,7 +60,7 @@ Major documentation improvements
 SciPy documentation is greatly improved; you can view a HTML reference
 manual `online <https://docs.scipy.org/>`__ or download it as a PDF
 file. The new reference guide was built using the popular `Sphinx tool
-<http://sphinx.pocoo.org/>`__.
+<http://www.sphinx-doc.org>`__.
 
 This release also includes an updated tutorial, which hadn't been
 available since SciPy was ported to NumPy in 2005.  Though not
@@ -100,7 +100,7 @@ Building SciPy
 ==============
 
 Support for NumScons has been added. NumScons is a tentative new build
-system for NumPy/SciPy, using `SCons <http://www.scons.org/>`__ at its
+system for NumPy/SciPy, using `SCons <https://www.scons.org/>`__ at its
 core.
 
 SCons is a next-generation build system, intended to replace the

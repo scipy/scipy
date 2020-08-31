@@ -8,6 +8,7 @@ All rights reserved.
 The source code is distributed under BSD license, see the file License.txt
 at the top-level directory.
 */
+
 /*! @file superlu_timer.c
  * \brief Returns the time used
  *
@@ -22,6 +23,7 @@ at the top-level directory.
  * </pre>
  */
 
+#undef USE_TIMES
 
 #ifdef SUN 
 /*
@@ -46,7 +48,7 @@ double SuperLU_timer_()
     return ((double)t)/CLOCKS_PER_SEC;
 }
 
-#else
+#elif defined( USE_TIMES )
 
 #ifndef NO_TIMER
 #include <sys/types.h>
@@ -55,17 +57,17 @@ double SuperLU_timer_()
 #include <unistd.h>
 #endif
 
+#ifndef CLK_TCK
+#define CLK_TCK 60
+#endif
 /*! \brief Timer function
  */ 
-
 double SuperLU_timer_()
 {
 #ifdef NO_TIMER
     /* no sys/times.h on WIN32 */
     double tmp;
     tmp = 0.0;
-    /* return (double)(tmp) / CLK_TCK;*/
-    return 0.0;
 #else
     struct tms use;
     double tmp;
@@ -74,8 +76,25 @@ double SuperLU_timer_()
     times ( &use );
     tmp = use.tms_utime;
     tmp += use.tms_stime;
-    return (double)(tmp) / clocks_per_sec;
 #endif
+    /*return (double)(tmp) / CLK_TCK;*/
+    return (double)(tmp) / clocks_per_sec;
+}
+
+#else
+
+#include <sys/time.h>
+#include <stdlib.h>
+
+/*! \brief Timer function
+ */ 
+double SuperLU_timer_()
+{
+    struct timeval tp;
+    double tmp;
+    gettimeofday(&tp, NULL);
+    tmp = tp.tv_sec + tp.tv_usec/1000000.0;
+    return (tmp);
 }
 
 #endif

@@ -29,9 +29,6 @@
  * Extension of the function definition for x < 1 is implemented.
  * Zero is returned for x > log2(NPY_INFINITY).
  *
- * An overflow error may occur for large negative x, due to the
- * Gamma function in the reflection formula.
- *
  * ACCURACY:
  *
  * Tabulated values have full machine accuracy.
@@ -42,7 +39,7 @@
  *
  *
  */
-
+
 /*
  * Cephes Math Library Release 2.1:  January, 1989
  * Copyright 1984, 1987, 1989 by Stephen L. Moshier
@@ -50,13 +47,14 @@
  */
 
 #include "mconf.h"
+#include "lanczos.h"
 
 /* Riemann zeta(x) - 1
  * for integer arguments between 0 and 30.
  */
-static double azetac[] = {
+static const double azetac[] = {
     -1.50000000000000000000E0,
-    1.70141183460469231730E38,	/* infinity. */
+    0.0,  /* Not used; zetac(1.0) is infinity. */
     6.44934066848226436472E-1,
     2.02056903159594285400E-1,
     8.23232337111381915160E-2,
@@ -161,87 +159,187 @@ static double S[5] = {
     7.43853965136767874343E4,
 };
 
+static double TAYLOR0[10] = {
+    -1.0000000009110164892,
+    -1.0000000057646759799,
+    -9.9999983138417361078e-1,
+    -1.0000013011460139596,
+    -1.000001940896320456,
+    -9.9987929950057116496e-1,
+    -1.000785194477042408,
+    -1.0031782279542924256,
+    -9.1893853320467274178e-1,
+    -1.5,
+};
+
 #define MAXL2 127
+#define SQRT_2_PI 0.79788456080286535587989
+
+extern double MACHEP;
+
+static double zeta_reflection(double);
+static double zetac_smallneg(double);
+static double zetac_positive(double);
+
 
 /*
  * Riemann zeta function, minus one
  */
-extern double MACHEP;
+double zetac(double x)
+{
+    if (npy_isnan(x)) {
+	return x;
+    }
+    else if (x == -NPY_INFINITY) {
+	return NPY_NAN;
+    }
+    else if (x < 0.0 && x > -0.01) {
+	return zetac_smallneg(x);
+    }
+    else if (x < 0.0) {
+	return zeta_reflection(-x) - 1;
+    }
+    else {
+	return zetac_positive(x);
+    }
+}
 
-double zetac(x)
-double x;
+
+/*
+ * Riemann zeta function
+ */
+double riemann_zeta(double x)
+{
+  if (npy_isnan(x)) {
+    return x;
+  }
+  else if (x == -NPY_INFINITY) {
+    return NPY_NAN;
+  }
+  else if (x < 0.0 && x > -0.01) {
+    return 1 + zetac_smallneg(x);
+  }
+  else if (x < 0.0) {
+    return zeta_reflection(-x);
+  }
+  else {
+    return 1 + zetac_positive(x);
+  }
+}
+
+
+/*
+ * Compute zetac for positive arguments
+ */
+static NPY_INLINE double zetac_positive(double x)
 {
     int i;
     double a, b, s, w;
 
-    if (x < 0.0) {
-	if (x < -30.8148) {
-	    mtherr("zetac", OVERFLOW);
-	    return (0.0);
-	}
-	s = 1.0 - x;
-	w = zetac(s);
-	b = sin(0.5 * NPY_PI * x) * pow(2.0 * NPY_PI,
-				    x) * Gamma(s) * (1.0 + w) / NPY_PI;
-	return (b - 1.0);
+    if (x == 1.0) {
+        return NPY_INFINITY;
     }
 
-    if (x >= MAXL2)
-	return (0.0);		/* because first term is 2**-x */
+    if (x >= MAXL2) {
+	/* because first term is 2**-x */
+        return 0.0;
+    }
 
     /* Tabulated values for integer argument */
     w = floor(x);
     if (w == x) {
-	i = x;
-	if (i < 31) {
+        i = x;
+        if (i < 31) {
 #ifdef UNK
-	    return (azetac[i]);
+            return (azetac[i]);
 #else
-	    return (*(double *) &azetac[4 * i]);
+            return (*(double *) &azetac[4 * i]);
 #endif
-	}
+        }
     }
-
 
     if (x < 1.0) {
-	w = 1.0 - x;
-	a = polevl(x, R, 5) / (w * p1evl(x, S, 5));
-	return (a);
-    }
-
-    if (x == 1.0) {
-	mtherr("zetac", SING);
-	return (NPY_INFINITY);
+        w = 1.0 - x;
+        a = polevl(x, R, 5) / (w * p1evl(x, S, 5));
+        return a;
     }
 
     if (x <= 10.0) {
-	b = pow(2.0, x) * (x - 1.0);
-	w = 1.0 / x;
-	s = (x * polevl(w, P, 8)) / (b * p1evl(w, Q, 8));
-	return (s);
+        b = pow(2.0, x) * (x - 1.0);
+        w = 1.0 / x;
+        s = (x * polevl(w, P, 8)) / (b * p1evl(w, Q, 8));
+        return s;
     }
 
     if (x <= 50.0) {
-	b = pow(2.0, -x);
-	w = polevl(x, A, 10) / p1evl(x, B, 10);
-	w = exp(w) + b;
-	return (w);
+        b = pow(2.0, -x);
+        w = polevl(x, A, 10) / p1evl(x, B, 10);
+        w = exp(w) + b;
+        return w;
     }
 
-
     /* Basic sum of inverse powers */
-
-
     s = 0.0;
     a = 1.0;
     do {
-	a += 2.0;
-	b = pow(a, -x);
-	s += b;
+        a += 2.0;
+        b = pow(a, -x);
+        s += b;
     }
     while (b / s > MACHEP);
 
     b = pow(2.0, -x);
     s = (s + b) / (1.0 - b);
-    return (s);
+    return s;
+}
+
+
+/*
+ * Compute zetac for small negative x. We can't use the reflection
+ * formula because to double precision 1 - x = 1 and zetac(1) = inf.
+ */
+static NPY_INLINE double zetac_smallneg(double x)
+{
+    return polevl(x, TAYLOR0, 9);
+}
+
+
+/*
+ * Compute zetac using the reflection formula (see DLMF 25.4.2) plus
+ * the Lanczos approximation for Gamma to avoid overflow.
+ */
+static NPY_INLINE double zeta_reflection(double x)
+{
+    double base, large_term, small_term, hx, x_shift;
+
+    hx = x / 2;
+    if (hx == floor(hx)) {
+	/* Hit a zero of the sine factor */
+	return 0;
+    }
+
+    /* Reduce the argument to sine */
+    x_shift = fmod(x, 4);
+    small_term = -SQRT_2_PI * sin(0.5 * NPY_PI * x_shift);
+    small_term *= lanczos_sum_expg_scaled(x + 1) * zeta(x + 1, 1);
+
+    /* Group large terms together to prevent overflow */
+    base = (x + lanczos_g + 0.5) / (2 * NPY_PI * NPY_E);
+    large_term = pow(base, x + 0.5);
+    if (npy_isfinite(large_term)) {
+      return large_term * small_term;
+    }
+    /*
+     * We overflowed, but we might be able to stave off overflow by
+     * factoring in the small term earlier. To do this we compute
+     *
+     * (sqrt(large_term) * small_term) * sqrt(large_term)
+     *
+     * Since we only call this method for negative x bounded away from
+     * zero, the small term can only be as small sine on that region;
+     * i.e. about machine epsilon. This means that if the above still
+     * overflows, then there was truly no avoiding it.
+     */
+    large_term = pow(base, 0.5 * x + 0.25);
+    return (large_term * small_term) * large_term;
 }

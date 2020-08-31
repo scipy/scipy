@@ -1,6 +1,4 @@
 # cython: boundscheck=False, wraparound=False, cdivision=True
-from __future__ import absolute_import
-
 import numpy as np
 cimport numpy as np
 from libc.math cimport sqrt
@@ -502,7 +500,7 @@ def inconsistent(double[:, :] Z, double[:, :] R, int n, int d):
     Z : ndarray
         The linkage matrix.
     R : ndarray
-        A (n - 1) x 5 matrix to store the result. The inconsistency statistics
+        A (n - 1) x 4 matrix to store the result. The inconsistency statistics
         `R[i]` are calculated over `d` levels below cluster i. `R[i, 0]` is the
         mean of distances. `R[i, 1]` is the standard deviation of distances.
         `R[i, 2]` is the number of clusters included. `R[i, 3]` is the

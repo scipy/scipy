@@ -83,12 +83,11 @@ DEFINE_WRAP_CDIST(canberra, double)
 DEFINE_WRAP_CDIST(chebyshev, double)
 DEFINE_WRAP_CDIST(city_block, double)
 DEFINE_WRAP_CDIST(euclidean, double)
-DEFINE_WRAP_CDIST(hamming, double)
 DEFINE_WRAP_CDIST(jaccard, double)
+DEFINE_WRAP_CDIST(jensenshannon, double)
 DEFINE_WRAP_CDIST(sqeuclidean, double)
 
 DEFINE_WRAP_CDIST(dice, char)
-DEFINE_WRAP_CDIST(hamming, char)
 DEFINE_WRAP_CDIST(jaccard, char)
 DEFINE_WRAP_CDIST(kulsinski, char)
 DEFINE_WRAP_CDIST(rogerstanimoto, char)
@@ -96,6 +95,67 @@ DEFINE_WRAP_CDIST(russellrao, char)
 DEFINE_WRAP_CDIST(sokalmichener, char)
 DEFINE_WRAP_CDIST(sokalsneath, char)
 DEFINE_WRAP_CDIST(yule, char)
+
+static PyObject *cdist_hamming_double_wrap(
+                            PyObject *self, PyObject *args, PyObject *kwargs) 
+{
+  PyArrayObject *XA_, *XB_, *dm_, *w_;
+  int mA, mB, n;
+  double *dm;
+  const double *XA, *XB, *w;
+  static char *kwlist[] = {"XA", "XB", "dm", "w", NULL};
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, 
+            "O!O!O!O!:cdist_hamming_double_wrap", kwlist,
+            &PyArray_Type, &XA_, &PyArray_Type, &XB_, 
+            &PyArray_Type, &dm_,
+            &PyArray_Type, &w_)) {
+    return 0;
+  }
+  else {
+    NPY_BEGIN_ALLOW_THREADS;
+    XA = (const double*)XA_->data;
+    XB = (const double*)XB_->data;
+    w = (const double*)w_->data;
+    dm = (double*)dm_->data;
+    mA = XA_->dimensions[0];
+    mB = XB_->dimensions[0];
+    n = XA_->dimensions[1];
+    cdist_hamming_double(XA, XB, dm, mA, mB, n, w);
+    NPY_END_ALLOW_THREADS;
+  }
+  return Py_BuildValue("d", 0.0);
+}
+
+static PyObject *cdist_hamming_char_wrap(
+                            PyObject *self, PyObject *args, PyObject *kwargs) 
+{
+  PyArrayObject *XA_, *XB_, *dm_, *w_;
+  int mA, mB, n;
+  double *dm;
+  const char *XA, *XB;
+  const double *w;
+  static char *kwlist[] = {"XA", "XB", "dm", "w", NULL};
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, 
+            "O!O!O!O!:cdist_hamming_char_wrap", kwlist,
+            &PyArray_Type, &XA_, &PyArray_Type, &XB_, 
+            &PyArray_Type, &dm_,
+            &PyArray_Type, &w_)) {
+    return 0;
+  }
+  else {
+    NPY_BEGIN_ALLOW_THREADS;
+    XA = (const char*)XA_->data;
+    XB = (const char*)XB_->data;
+    w = (const double*)w_->data;
+    dm = (double*)dm_->data;
+    mA = XA_->dimensions[0];
+    mB = XB_->dimensions[0];
+    n = XA_->dimensions[1];
+    cdist_hamming_char(XA, XB, dm, mA, mB, n, w);
+    NPY_END_ALLOW_THREADS;
+  }
+  return Py_BuildValue("d", 0.0);
+}
 
 static PyObject *cdist_cosine_double_wrap(PyObject *self, PyObject *args, 
                                                PyObject *kwargs) {
@@ -133,7 +193,7 @@ static PyObject *cdist_mahalanobis_double_wrap(PyObject *self, PyObject *args,
                                                PyObject *kwargs) {
   PyArrayObject *XA_, *XB_, *covinv_, *dm_;
   int mA, mB, n, status;
-  double *dm, *dimbuf;
+  double *dm;
   const double *XA, *XB;
   const double *covinv;
   static char *kwlist[] = {"XA", "XB", "dm", "VI", NULL};
@@ -286,19 +346,77 @@ DEFINE_WRAP_PDIST(canberra, double)
 DEFINE_WRAP_PDIST(chebyshev, double)
 DEFINE_WRAP_PDIST(city_block, double)
 DEFINE_WRAP_PDIST(euclidean, double)
-DEFINE_WRAP_PDIST(hamming, double)
 DEFINE_WRAP_PDIST(jaccard, double)
+DEFINE_WRAP_PDIST(jensenshannon, double)
 DEFINE_WRAP_PDIST(sqeuclidean, double)
 
 DEFINE_WRAP_PDIST(dice, char)
 DEFINE_WRAP_PDIST(kulsinski, char)
-DEFINE_WRAP_PDIST(hamming, char)
 DEFINE_WRAP_PDIST(jaccard, char)
 DEFINE_WRAP_PDIST(rogerstanimoto, char)
 DEFINE_WRAP_PDIST(russellrao, char)
 DEFINE_WRAP_PDIST(sokalmichener, char)
 DEFINE_WRAP_PDIST(sokalsneath, char)
 DEFINE_WRAP_PDIST(yule, char)
+
+static PyObject *pdist_hamming_double_wrap(
+                            PyObject *self, PyObject *args, PyObject *kwargs) 
+{
+  PyArrayObject *X_, *dm_, *w_;
+  int m, n;
+  double *dm;
+  const double *X, *w;
+  static char *kwlist[] = {"X", "dm", "w", NULL};
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, 
+            "O!O!O!:pdist_hamming_double_wrap", kwlist,
+            &PyArray_Type, &X_,
+            &PyArray_Type, &dm_,
+            &PyArray_Type, &w_)) {
+    return 0;
+  }
+  else {
+    NPY_BEGIN_ALLOW_THREADS;
+    X = (const double*)X_->data;
+    dm = (double*)dm_->data;
+    w = (const double*)w_->data;
+    m = X_->dimensions[0];
+    n = X_->dimensions[1];
+
+    pdist_hamming_double(X, dm, m, n, w);
+    NPY_END_ALLOW_THREADS;
+  }
+  return Py_BuildValue("d", 0.0);
+}
+
+static PyObject *pdist_hamming_char_wrap(
+                            PyObject *self, PyObject *args, PyObject *kwargs) 
+{
+  PyArrayObject *X_, *dm_, *w_;
+  int m, n;
+  const char *X;
+  const double *w;
+  double *dm;
+  static char *kwlist[] = {"X", "dm", "w", NULL};
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, 
+            "O!O!O!:pdist_hamming_char_wrap", kwlist,
+            &PyArray_Type, &X_,
+            &PyArray_Type, &dm_,
+            &PyArray_Type, &w_)) {
+    return 0;
+  }
+  else {
+    NPY_BEGIN_ALLOW_THREADS;
+    X = (const char*)X_->data;
+    dm = (double*)dm_->data;
+    w = (const double*)w_->data;
+    m = X_->dimensions[0];
+    n = X_->dimensions[1];
+
+    pdist_hamming_char(X, dm, m, n, w);
+    NPY_END_ALLOW_THREADS;
+  }
+  return Py_BuildValue("d", 0.0);
+}
 
 static PyObject *pdist_cosine_double_wrap(PyObject *self, PyObject *args, 
                                           PyObject *kwargs) 
@@ -334,7 +452,7 @@ static PyObject *pdist_mahalanobis_double_wrap(PyObject *self, PyObject *args,
                                                PyObject *kwargs) {
   PyArrayObject *X_, *covinv_, *dm_;
   int m, n, status;
-  double *dimbuf, *dm;
+  double *dm;
   const double *X;
   const double *covinv;
   static char *kwlist[] = {"X", "dm", "VI", NULL};
@@ -498,58 +616,153 @@ static PyObject *to_vector_from_squareform_wrap(PyObject *self, PyObject *args)
 
 
 static PyMethodDef _distanceWrapMethods[] = {
-  {"cdist_braycurtis_double_wrap", cdist_bray_curtis_double_wrap, METH_VARARGS},
-  {"cdist_canberra_double_wrap", cdist_canberra_double_wrap, METH_VARARGS},
-  {"cdist_chebyshev_double_wrap", cdist_chebyshev_double_wrap, METH_VARARGS},
-  {"cdist_cityblock_double_wrap", cdist_city_block_double_wrap, METH_VARARGS},
-  {"cdist_cosine_double_wrap", cdist_cosine_double_wrap, METH_VARARGS | METH_KEYWORDS},
-  {"cdist_dice_bool_wrap", cdist_dice_char_wrap, METH_VARARGS},
-  {"cdist_euclidean_double_wrap", cdist_euclidean_double_wrap, METH_VARARGS},
-  {"cdist_sqeuclidean_double_wrap", cdist_sqeuclidean_double_wrap, METH_VARARGS},
-  {"cdist_hamming_double_wrap", cdist_hamming_double_wrap, METH_VARARGS},
-  {"cdist_hamming_bool_wrap", cdist_hamming_char_wrap, METH_VARARGS},
-  {"cdist_jaccard_double_wrap", cdist_jaccard_double_wrap, METH_VARARGS},
-  {"cdist_jaccard_bool_wrap", cdist_jaccard_char_wrap, METH_VARARGS},
-  {"cdist_kulsinski_bool_wrap", cdist_kulsinski_char_wrap, METH_VARARGS},
-  {"cdist_mahalanobis_double_wrap", cdist_mahalanobis_double_wrap, METH_VARARGS | METH_KEYWORDS},
-  {"cdist_minkowski_double_wrap", cdist_minkowski_double_wrap, METH_VARARGS | METH_KEYWORDS},
-  {"cdist_wminkowski_double_wrap", cdist_weighted_minkowski_double_wrap, METH_VARARGS | METH_KEYWORDS},
-  {"cdist_rogerstanimoto_bool_wrap", cdist_rogerstanimoto_char_wrap, METH_VARARGS},
-  {"cdist_russellrao_bool_wrap", cdist_russellrao_char_wrap, METH_VARARGS},
-  {"cdist_seuclidean_double_wrap", cdist_seuclidean_double_wrap, METH_VARARGS | METH_KEYWORDS},
-  {"cdist_sokalmichener_bool_wrap", cdist_sokalmichener_char_wrap, METH_VARARGS},
-  {"cdist_sokalsneath_bool_wrap", cdist_sokalsneath_char_wrap, METH_VARARGS},
-  {"cdist_yule_bool_wrap", cdist_yule_char_wrap, METH_VARARGS},
-  {"pdist_braycurtis_double_wrap", pdist_bray_curtis_double_wrap, METH_VARARGS},
-  {"pdist_canberra_double_wrap", pdist_canberra_double_wrap, METH_VARARGS},
-  {"pdist_chebyshev_double_wrap", pdist_chebyshev_double_wrap, METH_VARARGS},
-  {"pdist_cityblock_double_wrap", pdist_city_block_double_wrap, METH_VARARGS},
-  {"pdist_cosine_double_wrap", pdist_cosine_double_wrap, METH_VARARGS | METH_KEYWORDS},
-  {"pdist_dice_bool_wrap", pdist_dice_char_wrap, METH_VARARGS},
-  {"pdist_euclidean_double_wrap", pdist_euclidean_double_wrap, METH_VARARGS},
-  {"pdist_sqeuclidean_double_wrap", pdist_sqeuclidean_double_wrap, METH_VARARGS},
-  {"pdist_hamming_double_wrap", pdist_hamming_double_wrap, METH_VARARGS},
-  {"pdist_hamming_bool_wrap", pdist_hamming_char_wrap, METH_VARARGS},
-  {"pdist_jaccard_double_wrap", pdist_jaccard_double_wrap, METH_VARARGS},
-  {"pdist_jaccard_bool_wrap", pdist_jaccard_char_wrap, METH_VARARGS},
-  {"pdist_kulsinski_bool_wrap", pdist_kulsinski_char_wrap, METH_VARARGS},
-  {"pdist_mahalanobis_double_wrap", pdist_mahalanobis_double_wrap, METH_VARARGS | METH_KEYWORDS},
-  {"pdist_minkowski_double_wrap", pdist_minkowski_double_wrap, METH_VARARGS | METH_KEYWORDS},
-  {"pdist_wminkowski_double_wrap", pdist_weighted_minkowski_double_wrap, METH_VARARGS | METH_KEYWORDS},
-  {"pdist_rogerstanimoto_bool_wrap", pdist_rogerstanimoto_char_wrap, METH_VARARGS},
-  {"pdist_russellrao_bool_wrap", pdist_russellrao_char_wrap, METH_VARARGS},
-  {"pdist_seuclidean_double_wrap", pdist_seuclidean_double_wrap, METH_VARARGS | METH_KEYWORDS},
-  {"pdist_sokalmichener_bool_wrap", pdist_sokalmichener_char_wrap, METH_VARARGS},
-  {"pdist_sokalsneath_bool_wrap", pdist_sokalsneath_char_wrap, METH_VARARGS},
-  {"pdist_yule_bool_wrap", pdist_yule_char_wrap, METH_VARARGS},
+  {"cdist_braycurtis_double_wrap",
+   cdist_bray_curtis_double_wrap,
+   METH_VARARGS},
+  {"cdist_canberra_double_wrap",
+   cdist_canberra_double_wrap,
+   METH_VARARGS},
+  {"cdist_chebyshev_double_wrap",
+   cdist_chebyshev_double_wrap,
+   METH_VARARGS},
+  {"cdist_cityblock_double_wrap",
+   cdist_city_block_double_wrap,
+   METH_VARARGS},
+  {"cdist_cosine_double_wrap",
+   (PyCFunction) cdist_cosine_double_wrap,
+   METH_VARARGS | METH_KEYWORDS},
+  {"cdist_dice_bool_wrap",
+   cdist_dice_char_wrap,
+   METH_VARARGS},
+  {"cdist_euclidean_double_wrap",
+   cdist_euclidean_double_wrap,
+   METH_VARARGS},
+  {"cdist_sqeuclidean_double_wrap",
+   cdist_sqeuclidean_double_wrap,
+   METH_VARARGS},
+  {"cdist_hamming_double_wrap",
+   (PyCFunction) cdist_hamming_double_wrap,
+   METH_VARARGS | METH_KEYWORDS},
+  {"cdist_hamming_bool_wrap",
+   (PyCFunction) cdist_hamming_char_wrap,
+   METH_VARARGS | METH_KEYWORDS},
+  {"cdist_jaccard_double_wrap",
+   cdist_jaccard_double_wrap,
+   METH_VARARGS},
+  {"cdist_jaccard_bool_wrap",
+   cdist_jaccard_char_wrap,
+   METH_VARARGS},
+  {"cdist_jensenshannon_double_wrap",
+   cdist_jensenshannon_double_wrap,
+   METH_VARARGS},
+  {"cdist_kulsinski_bool_wrap",
+   cdist_kulsinski_char_wrap,
+   METH_VARARGS},
+  {"cdist_mahalanobis_double_wrap",
+   (PyCFunction) cdist_mahalanobis_double_wrap,
+   METH_VARARGS | METH_KEYWORDS},
+  {"cdist_minkowski_double_wrap",
+   (PyCFunction) cdist_minkowski_double_wrap,
+   METH_VARARGS | METH_KEYWORDS},
+  {"cdist_wminkowski_double_wrap",
+   (PyCFunction) cdist_weighted_minkowski_double_wrap,
+   METH_VARARGS | METH_KEYWORDS},
+  {"cdist_rogerstanimoto_bool_wrap",
+   cdist_rogerstanimoto_char_wrap,
+   METH_VARARGS},
+  {"cdist_russellrao_bool_wrap",
+   cdist_russellrao_char_wrap,
+   METH_VARARGS},
+  {"cdist_seuclidean_double_wrap",
+   (PyCFunction) cdist_seuclidean_double_wrap,
+   METH_VARARGS | METH_KEYWORDS},
+  {"cdist_sokalmichener_bool_wrap",
+   cdist_sokalmichener_char_wrap,
+   METH_VARARGS},
+  {"cdist_sokalsneath_bool_wrap",
+   cdist_sokalsneath_char_wrap,
+   METH_VARARGS},
+  {"cdist_yule_bool_wrap",
+   cdist_yule_char_wrap,
+   METH_VARARGS},
+  {"pdist_braycurtis_double_wrap",
+   pdist_bray_curtis_double_wrap,
+   METH_VARARGS},
+  {"pdist_canberra_double_wrap",
+   pdist_canberra_double_wrap,
+   METH_VARARGS},
+  {"pdist_chebyshev_double_wrap",
+   pdist_chebyshev_double_wrap,
+   METH_VARARGS},
+  {"pdist_cityblock_double_wrap",
+   pdist_city_block_double_wrap,
+   METH_VARARGS},
+  {"pdist_cosine_double_wrap",
+   (PyCFunction) pdist_cosine_double_wrap,
+   METH_VARARGS | METH_KEYWORDS},
+  {"pdist_dice_bool_wrap",
+   pdist_dice_char_wrap,
+   METH_VARARGS},
+  {"pdist_euclidean_double_wrap",
+   pdist_euclidean_double_wrap,
+   METH_VARARGS},
+  {"pdist_sqeuclidean_double_wrap",
+   pdist_sqeuclidean_double_wrap,
+   METH_VARARGS},
+  {"pdist_hamming_double_wrap",
+   (PyCFunction) pdist_hamming_double_wrap,
+   METH_VARARGS | METH_KEYWORDS},
+  {"pdist_hamming_bool_wrap",
+   (PyCFunction) pdist_hamming_char_wrap,
+   METH_VARARGS | METH_KEYWORDS},
+  {"pdist_jaccard_double_wrap",
+   pdist_jaccard_double_wrap,
+   METH_VARARGS},
+  {"pdist_jaccard_bool_wrap",
+   pdist_jaccard_char_wrap,
+   METH_VARARGS},
+  {"pdist_jensenshannon_double_wrap",
+   pdist_jensenshannon_double_wrap,
+   METH_VARARGS},
+  {"pdist_kulsinski_bool_wrap",
+   pdist_kulsinski_char_wrap,
+   METH_VARARGS},
+  {"pdist_mahalanobis_double_wrap",
+   (PyCFunction) pdist_mahalanobis_double_wrap,
+   METH_VARARGS | METH_KEYWORDS},
+  {"pdist_minkowski_double_wrap",
+   (PyCFunction) pdist_minkowski_double_wrap,
+   METH_VARARGS | METH_KEYWORDS},
+  {"pdist_wminkowski_double_wrap",
+   (PyCFunction) pdist_weighted_minkowski_double_wrap,
+   METH_VARARGS | METH_KEYWORDS},
+  {"pdist_rogerstanimoto_bool_wrap",
+   pdist_rogerstanimoto_char_wrap,
+   METH_VARARGS},
+  {"pdist_russellrao_bool_wrap",
+   pdist_russellrao_char_wrap,
+   METH_VARARGS},
+  {"pdist_seuclidean_double_wrap",
+   (PyCFunction) pdist_seuclidean_double_wrap,
+   METH_VARARGS | METH_KEYWORDS},
+  {"pdist_sokalmichener_bool_wrap",
+   pdist_sokalmichener_char_wrap,
+   METH_VARARGS},
+  {"pdist_sokalsneath_bool_wrap",
+   pdist_sokalsneath_char_wrap,
+   METH_VARARGS},
+  {"pdist_yule_bool_wrap",
+   pdist_yule_char_wrap,
+   METH_VARARGS},
   {"to_squareform_from_vector_wrap",
-   to_squareform_from_vector_wrap, METH_VARARGS},
+   to_squareform_from_vector_wrap,
+   METH_VARARGS},
   {"to_vector_from_squareform_wrap",
-   to_vector_from_squareform_wrap, METH_VARARGS},
+   to_vector_from_squareform_wrap,
+   METH_VARARGS},
   {NULL, NULL}     /* Sentinel - marks the end of this structure */
 };
 
-#if PY_VERSION_HEX >= 0x03000000
 static struct PyModuleDef moduledef = {
     PyModuleDef_HEAD_INIT,
     "_distance_wrap",
@@ -571,10 +784,3 @@ PyObject *PyInit__distance_wrap(void)
 
     return m;
 }
-#else
-PyMODINIT_FUNC init_distance_wrap(void)
-{
-  (void) Py_InitModule("_distance_wrap", _distanceWrapMethods);
-  import_array();  /* Must be present for NumPy.  Called first after above line.*/
-}
-#endif

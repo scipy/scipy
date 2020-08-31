@@ -3,7 +3,7 @@
  */
 
 static NPY_INLINE void
-_deBoor_D(double *t, double x, int k, int ell, int m, double *result) {
+_deBoor_D(const double *t, double x, int k, int ell, int m, double *result) {
     /*
      * On completion the result array stores
      * the k+1 non-zero values of beta^(m)_i,k(x):  for i=ell, ell-1, ell-2, ell-k.

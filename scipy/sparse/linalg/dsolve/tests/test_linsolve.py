@@ -1,14 +1,13 @@
-from __future__ import division, print_function, absolute_import
-
+import sys
 import threading
 
 import numpy as np
-from numpy import array, finfo, arange, eye, all, unique, ones, dot, matrix
+from numpy import array, finfo, arange, eye, all, unique, ones, dot
 import numpy.random as random
 from numpy.testing import (
         assert_array_almost_equal, assert_almost_equal,
         assert_equal, assert_array_equal, assert_, assert_allclose,
-        assert_warns)
+        assert_warns, suppress_warnings)
 import pytest
 from pytest import raises as assert_raises
 
@@ -19,8 +18,9 @@ from scipy.sparse import (spdiags, SparseEfficiencyWarning, csc_matrix,
 from scipy.sparse.linalg import SuperLU
 from scipy.sparse.linalg.dsolve import (spsolve, use_solver, splu, spilu,
         MatrixRankWarning, _superlu, spsolve_triangular, factorized)
+import scipy.sparse
 
-from scipy._lib._numpy_compat import suppress_warnings
+from scipy._lib._testutils import check_free_memory
 
 
 sup_sparse_efficiency = suppress_warnings()
@@ -39,6 +39,19 @@ def toarray(a):
         return a.toarray()
     else:
         return a
+
+
+def setup_bug_8278():
+    N = 2 ** 6
+    h = 1/N
+    Ah1D = scipy.sparse.diags([-1, 2, -1], [-1, 0, 1],
+                              shape=(N-1, N-1))/(h**2)
+    eyeN = scipy.sparse.eye(N - 1)
+    A = (scipy.sparse.kron(eyeN, scipy.sparse.kron(eyeN, Ah1D))
+         + scipy.sparse.kron(eyeN, scipy.sparse.kron(Ah1D, eyeN))
+         + scipy.sparse.kron(Ah1D, scipy.sparse.kron(eyeN, eyeN)))
+    b = np.random.rand((N-1)**3)
+    return A, b
 
 
 class TestFactorized(object):
@@ -65,7 +78,7 @@ class TestFactorized(object):
 
     def test_singular_without_umfpack(self):
         use_solver(useUmfpack=False)
-        with assert_raises(RuntimeError, message="Factor is exactly singular"):
+        with assert_raises(RuntimeError, match="Factor is exactly singular"):
             self._check_singular()
 
     @pytest.mark.skipif(not has_umfpack, reason="umfpack not available")
@@ -87,7 +100,7 @@ class TestFactorized(object):
     def test_cannot_factorize_nonsquare_matrix_without_umfpack(self):
         use_solver(useUmfpack=False)
         msg = "can only factor square matrices"
-        with assert_raises(ValueError, message=msg):
+        with assert_raises(ValueError, match=msg):
             factorized(self.A[:, :4])
 
     @pytest.mark.skipif(not has_umfpack, reason="umfpack not available")
@@ -103,12 +116,12 @@ class TestFactorized(object):
         B = random.rand(4, 3)
         BB = random.rand(self.n, 3, 9)
 
-        with assert_raises(ValueError, message="is of incompatible size"):
+        with assert_raises(ValueError, match="is of incompatible size"):
             solve(b)
-        with assert_raises(ValueError, message="is of incompatible size"):
+        with assert_raises(ValueError, match="is of incompatible size"):
             solve(B)
         with assert_raises(ValueError,
-                           message="object too deep for desired array"):
+                           match="object too deep for desired array"):
             solve(BB)
 
     @pytest.mark.skipif(not has_umfpack, reason="umfpack not available")
@@ -122,9 +135,9 @@ class TestFactorized(object):
         # does not raise
         solve(b)
         msg = "object too deep for desired array"
-        with assert_raises(ValueError, message=msg):
+        with assert_raises(ValueError, match=msg):
             solve(B)
-        with assert_raises(ValueError, message=msg):
+        with assert_raises(ValueError, match=msg):
             solve(BB)
 
     def test_call_with_cast_to_complex_without_umfpack(self):
@@ -132,7 +145,7 @@ class TestFactorized(object):
         solve = factorized(self.A)
         b = random.rand(4)
         for t in [np.complex64, np.complex128]:
-            with assert_raises(TypeError, message="Cannot cast array data"):
+            with assert_raises(TypeError, match="Cannot cast array data"):
                 solve(b.astype(t))
 
     @pytest.mark.skipif(not has_umfpack, reason="umfpack not available")
@@ -155,7 +168,7 @@ class TestFactorized(object):
         # should raise when incorrectly assuming indices are sorted
         use_solver(useUmfpack=True, assumeSortedIndices=True)
         with assert_raises(RuntimeError,
-                           message="UMFPACK_ERROR_invalid_matrix"):
+                           match="UMFPACK_ERROR_invalid_matrix"):
             factorized(A)
 
         # should sort indices and succeed when not assuming indices are sorted
@@ -164,7 +177,17 @@ class TestFactorized(object):
 
         assert_equal(A.has_sorted_indices, 0)
         assert_array_almost_equal(factorized(A)(b), expected)
-        assert_equal(A.has_sorted_indices, 1)
+
+    @pytest.mark.slow
+    @pytest.mark.skipif(not has_umfpack, reason="umfpack not available")
+    def test_bug_8278(self):
+        check_free_memory(8000)
+        use_solver(useUmfpack=True)
+        A, b = setup_bug_8278()
+        A = A.tocsc()
+        f = factorized(A)
+        x = f(b)
+        assert_array_almost_equal(A @ x, b)
 
 
 class TestLinsolve(object):
@@ -214,9 +237,9 @@ class TestLinsolve(object):
                 assert_(norm(b - Asp*x) < 10 * cond_A * eps)
 
     def test_bvector_smoketest(self):
-        Adense = matrix([[0., 1., 1.],
-                         [1., 0., 1.],
-                         [0., 0., 1.]])
+        Adense = array([[0., 1., 1.],
+                        [1., 0., 1.],
+                        [0., 0., 1.]])
         As = csc_matrix(Adense)
         random.seed(1234)
         x = random.randn(3)
@@ -226,9 +249,9 @@ class TestLinsolve(object):
         assert_array_almost_equal(x, x2)
 
     def test_bmatrix_smoketest(self):
-        Adense = matrix([[0., 1., 1.],
-                         [1., 0., 1.],
-                         [0., 0., 1.]])
+        Adense = array([[0., 1., 1.],
+                        [1., 0., 1.],
+                        [0., 0., 1.]])
         As = csc_matrix(Adense)
         random.seed(1234)
         x = random.randn(3, 4)
@@ -401,6 +424,15 @@ class TestLinsolve(object):
         x = spsolve(A_complex, b_complex)
         assert_(np.issubdtype(x.dtype, np.complexfloating))
 
+    @pytest.mark.slow
+    @pytest.mark.skipif(not has_umfpack, reason="umfpack not available")
+    def test_bug_8278(self):
+        check_free_memory(8000)
+        use_solver(useUmfpack=True)
+        A, b = setup_bug_8278()
+        x = spsolve(A, b)
+        assert_array_almost_equal(A @ x, b)
+
 
 class TestSplu(object):
     def setup_method(self):
@@ -546,6 +578,32 @@ class TestSplu(object):
         lu = splu(a_)
         assert_array_equal(lu.perm_r, lu.perm_c)
 
+    @pytest.mark.parametrize("splu_fun, rtol", [(splu, 1e-7), (spilu, 1e-1)])
+    def test_natural_permc(self, splu_fun, rtol):
+        # Test that the "NATURAL" permc_spec does not permute the matrix
+        np.random.seed(42)
+        n = 500
+        p = 0.01
+        A = scipy.sparse.random(n, n, p)
+        x = np.random.rand(n)
+        # Make A diagonal dominant to make sure it is not singular
+        A += (n+1)*scipy.sparse.identity(n)
+        A_ = csc_matrix(A)
+        b = A_ @ x
+
+        # without permc_spec, permutation is not identity
+        lu = splu_fun(A_)
+        assert_(np.any(lu.perm_c != np.arange(n)))
+
+        # with permc_spec="NATURAL", permutation is identity
+        lu = splu_fun(A_, permc_spec="NATURAL")
+        assert_array_equal(lu.perm_c, np.arange(n))
+
+        # Also, lu decomposition is valid
+        x2 = lu.solve(b)
+        assert_allclose(x, x2, rtol=rtol)
+
+    @pytest.mark.skipif(not hasattr(sys, 'getrefcount'), reason="no sys.getrefcount")
     def test_lu_refcount(self):
         # Test that we are keeping track of the reference count with splu.
         n = 30
@@ -557,7 +615,6 @@ class TestSplu(object):
         lu = splu(a_)
 
         # And now test that we don't have a refcount bug
-        import sys
         rc = sys.getrefcount(lu)
         for attr in ('perm_r', 'perm_c'):
             perm = getattr(lu, attr)
@@ -635,6 +692,7 @@ class TestSplu(object):
         check(np.complex64, True)
         check(np.complex128, True)
 
+    @pytest.mark.slow
     @sup_sparse_efficiency
     def test_threads_parallel(self):
         oks = []
@@ -645,7 +703,7 @@ class TestSplu(object):
                 self._internal_test_splu_smoketest()
                 self._internal_test_spilu_smoketest()
                 oks.append(True)
-            except:
+            except Exception:
                 pass
 
         threads = [threading.Thread(target=worker)
@@ -688,6 +746,7 @@ class TestSpsolveTriangular(object):
             x = spsolve_triangular(matrix_type(A), b, lower=True)
             assert_array_almost_equal(A.dot(x), b)
 
+    @pytest.mark.slow
     @sup_sparse_efficiency
     def test_random(self):
         def random_triangle_matrix(n, lower=True):
@@ -712,4 +771,7 @@ class TestSpsolveTriangular(object):
                               np.random.randint(-9, 9, (n, m)) * 1j):
                         x = spsolve_triangular(A, b, lower=lower)
                         assert_array_almost_equal(A.dot(x), b)
-
+                        x = spsolve_triangular(A, b, lower=lower,
+                                               unit_diagonal=True)
+                        A.setdiag(1)
+                        assert_array_almost_equal(A.dot(x), b)

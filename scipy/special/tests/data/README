@@ -1,8 +1,8 @@
 This directory contains numerical data for testing special functions.
-The data is in version control as text files, but it is distributed as
-compressed NPZ files which are also checked in.
+The data is in version control as text files.
 
-To rebuild the npz files, use ../../utils/makenpz.py on the directories.
+The data is automatically packed into npz files by setup.py.
+The npz files should not be checked in version control.
 
 The data in gsl is computed using the GNU scientific library, the data
 in local is computed using mpmath, and the data in boost is a copy of

@@ -1,19 +1,16 @@
 """The suite of window functions."""
 
-from __future__ import division, print_function, absolute_import
-
 import operator
 import warnings
 
 import numpy as np
-from scipy import fftpack, linalg, special
-from scipy._lib.six import string_types
+from scipy import linalg, special, fft as sp_fft
 
 __all__ = ['boxcar', 'triang', 'parzen', 'bohman', 'blackman', 'nuttall',
            'blackmanharris', 'flattop', 'bartlett', 'hanning', 'barthann',
-           'hamming', 'kaiser', 'gaussian', 'general_gaussian', 'chebwin',
-           'slepian', 'cosine', 'hann', 'exponential', 'tukey', 'taylor',
-           'dpss', 'get_window']
+           'hamming', 'kaiser', 'gaussian', 'general_cosine','general_gaussian',
+           'general_hamming', 'chebwin', 'cosine', 'hann',
+           'exponential', 'tukey', 'taylor', 'dpss', 'get_window']
 
 
 def _len_guards(M):
@@ -39,7 +36,7 @@ def _truncate(w, needed):
         return w
 
 
-def _cos_win(M, a, sym=True):
+def general_cosine(M, a, sym=True):
     r"""
     Generic weighted sum of cosine terms window
 
@@ -86,11 +83,11 @@ def _cos_win(M, a, sym=True):
     Figure 42 by plotting the window and its frequency response, and confirm
     the sidelobe level in red:
 
-    >>> from scipy import signal
-    >>> from scipy.fftpack import fft, fftshift
+    >>> from scipy.signal.windows import general_cosine
+    >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
-    >>> window = signal._cos_win(1000, HFT90D, sym=False)
+    >>> window = general_cosine(1000, HFT90D, sym=False)
     >>> plt.plot(window)
     >>> plt.title("HFT90D window")
     >>> plt.ylabel("Amplitude")
@@ -99,14 +96,15 @@ def _cos_win(M, a, sym=True):
     >>> plt.figure()
     >>> A = fft(window, 10000) / (len(window)/2.0)
     >>> freq = np.linspace(-0.5, 0.5, len(A))
-    >>> response = 20 * np.log10(np.abs(fftshift(A / abs(A).max())))
+    >>> response = np.abs(fftshift(A / abs(A).max()))
+    >>> response = 20 * np.log10(np.maximum(response, 1e-10))
     >>> plt.plot(freq, response)
     >>> plt.axis([-50/1000, 50/1000, -140, 0])
     >>> plt.title("Frequency response of the HFT90D window")
     >>> plt.ylabel("Normalized magnitude [dB]")
     >>> plt.xlabel("Normalized frequency [cycles per sample]")
     >>> plt.axhline(-90.2, color='red')
-
+    >>> plt.show()
     """
     if _len_guards(M):
         return np.ones(M)
@@ -144,7 +142,7 @@ def boxcar(M, sym=True):
     Plot the window and its frequency response:
 
     >>> from scipy import signal
-    >>> from scipy.fftpack import fft, fftshift
+    >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
     >>> window = signal.boxcar(51)
@@ -201,7 +199,7 @@ def triang(M, sym=True):
     Plot the window and its frequency response:
 
     >>> from scipy import signal
-    >>> from scipy.fftpack import fft, fftshift
+    >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
     >>> window = signal.triang(51)
@@ -213,7 +211,8 @@ def triang(M, sym=True):
     >>> plt.figure()
     >>> A = fft(window, 2048) / (len(window)/2.0)
     >>> freq = np.linspace(-0.5, 0.5, len(A))
-    >>> response = 20 * np.log10(np.abs(fftshift(A / abs(A).max())))
+    >>> response = np.abs(fftshift(A / abs(A).max()))
+    >>> response = 20 * np.log10(np.maximum(response, 1e-10))
     >>> plt.plot(freq, response)
     >>> plt.axis([-0.5, 0.5, -120, 0])
     >>> plt.title("Frequency response of the triangular window")
@@ -265,7 +264,7 @@ def parzen(M, sym=True):
     Plot the window and its frequency response:
 
     >>> from scipy import signal
-    >>> from scipy.fftpack import fft, fftshift
+    >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
     >>> window = signal.parzen(51)
@@ -324,7 +323,7 @@ def bohman(M, sym=True):
     Plot the window and its frequency response:
 
     >>> from scipy import signal
-    >>> from scipy.fftpack import fft, fftshift
+    >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
     >>> window = signal.bohman(51)
@@ -415,7 +414,7 @@ def blackman(M, sym=True):
     Plot the window and its frequency response:
 
     >>> from scipy import signal
-    >>> from scipy.fftpack import fft, fftshift
+    >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
     >>> window = signal.blackman(51)
@@ -427,7 +426,8 @@ def blackman(M, sym=True):
     >>> plt.figure()
     >>> A = fft(window, 2048) / (len(window)/2.0)
     >>> freq = np.linspace(-0.5, 0.5, len(A))
-    >>> response = 20 * np.log10(np.abs(fftshift(A / abs(A).max())))
+    >>> response = np.abs(fftshift(A / abs(A).max()))
+    >>> response = 20 * np.log10(np.maximum(response, 1e-10))
     >>> plt.plot(freq, response)
     >>> plt.axis([-0.5, 0.5, -120, 0])
     >>> plt.title("Frequency response of the Blackman window")
@@ -436,13 +436,7 @@ def blackman(M, sym=True):
 
     """
     # Docstring adapted from NumPy's blackman function
-    if _len_guards(M):
-        return np.ones(M)
-    M, needs_trunc = _extend(M, sym)
-
-    w = _cos_win(M, [0.42, 0.50, 0.08])
-
-    return _truncate(w, needs_trunc)
+    return general_cosine(M, [0.42, 0.50, 0.08], sym)
 
 
 def nuttall(M, sym=True):
@@ -481,7 +475,7 @@ def nuttall(M, sym=True):
     Plot the window and its frequency response:
 
     >>> from scipy import signal
-    >>> from scipy.fftpack import fft, fftshift
+    >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
     >>> window = signal.nuttall(51)
@@ -501,13 +495,7 @@ def nuttall(M, sym=True):
     >>> plt.xlabel("Normalized frequency [cycles per sample]")
 
     """
-    if _len_guards(M):
-        return np.ones(M)
-    M, needs_trunc = _extend(M, sym)
-
-    w = _cos_win(M, [0.3635819, 0.4891775, 0.1365995, 0.0106411])
-
-    return _truncate(w, needs_trunc)
+    return general_cosine(M, [0.3635819, 0.4891775, 0.1365995, 0.0106411], sym)
 
 
 def blackmanharris(M, sym=True):
@@ -534,7 +522,7 @@ def blackmanharris(M, sym=True):
     Plot the window and its frequency response:
 
     >>> from scipy import signal
-    >>> from scipy.fftpack import fft, fftshift
+    >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
     >>> window = signal.blackmanharris(51)
@@ -554,13 +542,7 @@ def blackmanharris(M, sym=True):
     >>> plt.xlabel("Normalized frequency [cycles per sample]")
 
     """
-    if _len_guards(M):
-        return np.ones(M)
-    M, needs_trunc = _extend(M, sym)
-
-    w = _cos_win(M, [0.35875, 0.48829, 0.14128, 0.01168])
-
-    return _truncate(w, needs_trunc)
+    return general_cosine(M, [0.35875, 0.48829, 0.14128, 0.01168], sym)
 
 
 def flattop(M, sym=True):
@@ -601,7 +583,7 @@ def flattop(M, sym=True):
     Plot the window and its frequency response:
 
     >>> from scipy import signal
-    >>> from scipy.fftpack import fft, fftshift
+    >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
     >>> window = signal.flattop(51)
@@ -621,14 +603,8 @@ def flattop(M, sym=True):
     >>> plt.xlabel("Normalized frequency [cycles per sample]")
 
     """
-    if _len_guards(M):
-        return np.ones(M)
-    M, needs_trunc = _extend(M, sym)
-
     a = [0.21557895, 0.41663158, 0.277263158, 0.083578947, 0.006947368]
-    w = _cos_win(M, a)
-
-    return _truncate(w, needs_trunc)
+    return general_cosine(M, a, sym)
 
 
 def bartlett(M, sym=True):
@@ -688,7 +664,7 @@ def bartlett(M, sym=True):
     .. [3] A.V. Oppenheim and R.W. Schafer, "Discrete-Time Signal
            Processing", Prentice-Hall, 1999, pp. 468-471.
     .. [4] Wikipedia, "Window function",
-           http://en.wikipedia.org/wiki/Window_function
+           https://en.wikipedia.org/wiki/Window_function
     .. [5] W.H. Press,  B.P. Flannery, S.A. Teukolsky, and W.T. Vetterling,
            "Numerical Recipes", Cambridge University Press, 1986, page 429.
 
@@ -697,7 +673,7 @@ def bartlett(M, sym=True):
     Plot the window and its frequency response:
 
     >>> from scipy import signal
-    >>> from scipy.fftpack import fft, fftshift
+    >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
     >>> window = signal.bartlett(51)
@@ -777,7 +753,7 @@ def hann(M, sym=True):
     .. [2] E.R. Kanasewich, "Time Sequence Analysis in Geophysics",
            The University of Alberta Press, 1975, pp. 106-108.
     .. [3] Wikipedia, "Window function",
-           http://en.wikipedia.org/wiki/Window_function
+           https://en.wikipedia.org/wiki/Window_function
     .. [4] W.H. Press,  B.P. Flannery, S.A. Teukolsky, and W.T. Vetterling,
            "Numerical Recipes", Cambridge University Press, 1986, page 425.
 
@@ -786,7 +762,7 @@ def hann(M, sym=True):
     Plot the window and its frequency response:
 
     >>> from scipy import signal
-    >>> from scipy.fftpack import fft, fftshift
+    >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
     >>> window = signal.hann(51)
@@ -798,7 +774,8 @@ def hann(M, sym=True):
     >>> plt.figure()
     >>> A = fft(window, 2048) / (len(window)/2.0)
     >>> freq = np.linspace(-0.5, 0.5, len(A))
-    >>> response = 20 * np.log10(np.abs(fftshift(A / abs(A).max())))
+    >>> response = np.abs(fftshift(A / abs(A).max()))
+    >>> response = 20 * np.log10(np.maximum(response, 1e-10))
     >>> plt.plot(freq, response)
     >>> plt.axis([-0.5, 0.5, -120, 0])
     >>> plt.title("Frequency response of the Hann window")
@@ -807,16 +784,12 @@ def hann(M, sym=True):
 
     """
     # Docstring adapted from NumPy's hanning function
-    if _len_guards(M):
-        return np.ones(M)
-    M, needs_trunc = _extend(M, sym)
-
-    w = _cos_win(M, [0.5, 0.5])
-
-    return _truncate(w, needs_trunc)
+    return general_hamming(M, 0.5, sym)
 
 
-hanning = hann
+@np.deprecate(new_name='scipy.signal.windows.hann')
+def hanning(*args, **kwargs):
+    return hann(*args, **kwargs)
 
 
 def tukey(M, alpha=0.5, sym=True):
@@ -849,14 +822,14 @@ def tukey(M, alpha=0.5, sym=True):
            Analysis with the Discrete Fourier Transform". Proceedings of the
            IEEE 66 (1): 51-83. :doi:`10.1109/PROC.1978.10837`
     .. [2] Wikipedia, "Window function",
-           http://en.wikipedia.org/wiki/Window_function#Tukey_window
+           https://en.wikipedia.org/wiki/Window_function#Tukey_window
 
     Examples
     --------
     Plot the window and its frequency response:
 
     >>> from scipy import signal
-    >>> from scipy.fftpack import fft, fftshift
+    >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
     >>> window = signal.tukey(51)
@@ -926,7 +899,7 @@ def barthann(M, sym=True):
     Plot the window and its frequency response:
 
     >>> from scipy import signal
-    >>> from scipy.fftpack import fft, fftshift
+    >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
     >>> window = signal.barthann(51)
@@ -955,6 +928,93 @@ def barthann(M, sym=True):
     w = 0.62 - 0.48 * fac + 0.38 * np.cos(2 * np.pi * fac)
 
     return _truncate(w, needs_trunc)
+
+
+def general_hamming(M, alpha, sym=True):
+    r"""Return a generalized Hamming window.
+
+    The generalized Hamming window is constructed by multiplying a rectangular
+    window by one period of a cosine function [1]_.
+
+    Parameters
+    ----------
+    M : int
+        Number of points in the output window. If zero or less, an empty
+        array is returned.
+    alpha : float
+        The window coefficient, :math:`\alpha`
+    sym : bool, optional
+        When True (default), generates a symmetric window, for use in filter
+        design.
+        When False, generates a periodic window, for use in spectral analysis.
+
+    Returns
+    -------
+    w : ndarray
+        The window, with the maximum value normalized to 1 (though the value 1
+        does not appear if `M` is even and `sym` is True).
+
+    Notes
+    -----
+    The generalized Hamming window is defined as
+
+    .. math:: w(n) = \alpha - \left(1 - \alpha\right) \cos\left(\frac{2\pi{n}}{M-1}\right)
+              \qquad 0 \leq n \leq M-1
+
+    Both the common Hamming window and Hann window are special cases of the
+    generalized Hamming window with :math:`\alpha` = 0.54 and :math:`\alpha` =
+    0.5, respectively [2]_.
+
+    See Also
+    --------
+    hamming, hann
+
+    Examples
+    --------
+    The Sentinel-1A/B Instrument Processing Facility uses generalized Hamming
+    windows in the processing of spaceborne Synthetic Aperture Radar (SAR)
+    data [3]_. The facility uses various values for the :math:`\alpha`
+    parameter based on operating mode of the SAR instrument. Some common
+    :math:`\alpha` values include 0.75, 0.7 and 0.52 [4]_. As an example, we
+    plot these different windows.
+
+    >>> from scipy.signal.windows import general_hamming
+    >>> from scipy.fft import fft, fftshift
+    >>> import matplotlib.pyplot as plt
+
+    >>> fig1, spatial_plot = plt.subplots()
+    >>> spatial_plot.set_title("Generalized Hamming Windows")
+    >>> spatial_plot.set_ylabel("Amplitude")
+    >>> spatial_plot.set_xlabel("Sample")
+
+    >>> fig2, freq_plot = plt.subplots()
+    >>> freq_plot.set_title("Frequency Responses")
+    >>> freq_plot.set_ylabel("Normalized magnitude [dB]")
+    >>> freq_plot.set_xlabel("Normalized frequency [cycles per sample]")
+
+    >>> for alpha in [0.75, 0.7, 0.52]:
+    ...     window = general_hamming(41, alpha)
+    ...     spatial_plot.plot(window, label="{:.2f}".format(alpha))
+    ...     A = fft(window, 2048) / (len(window)/2.0)
+    ...     freq = np.linspace(-0.5, 0.5, len(A))
+    ...     response = 20 * np.log10(np.abs(fftshift(A / abs(A).max())))
+    ...     freq_plot.plot(freq, response, label="{:.2f}".format(alpha))
+    >>> freq_plot.legend(loc="upper right")
+    >>> spatial_plot.legend(loc="upper right")
+
+    References
+    ----------
+    .. [1] DSPRelated, "Generalized Hamming Window Family",
+           https://www.dsprelated.com/freebooks/sasp/Generalized_Hamming_Window_Family.html
+    .. [2] Wikipedia, "Window function",
+           https://en.wikipedia.org/wiki/Window_function
+    .. [3] Riccardo Piantanida ESA, "Sentinel-1 Level 1 Detailed Algorithm
+           Definition",
+           https://sentinel.esa.int/documents/247904/1877131/Sentinel-1-Level-1-Detailed-Algorithm-Definition
+    .. [4] Matthieu Bourbigot ESA, "Sentinel-1 Product Definition",
+           https://sentinel.esa.int/documents/247904/1877131/Sentinel-1-Product-Definition
+    """
+    return general_cosine(M, [alpha, 1. - alpha], sym)
 
 
 def hamming(M, sym=True):
@@ -1002,7 +1062,7 @@ def hamming(M, sym=True):
     .. [2] E.R. Kanasewich, "Time Sequence Analysis in Geophysics", The
            University of Alberta Press, 1975, pp. 109-110.
     .. [3] Wikipedia, "Window function",
-           http://en.wikipedia.org/wiki/Window_function
+           https://en.wikipedia.org/wiki/Window_function
     .. [4] W.H. Press,  B.P. Flannery, S.A. Teukolsky, and W.T. Vetterling,
            "Numerical Recipes", Cambridge University Press, 1986, page 425.
 
@@ -1011,7 +1071,7 @@ def hamming(M, sym=True):
     Plot the window and its frequency response:
 
     >>> from scipy import signal
-    >>> from scipy.fftpack import fft, fftshift
+    >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
     >>> window = signal.hamming(51)
@@ -1032,13 +1092,7 @@ def hamming(M, sym=True):
 
     """
     # Docstring adapted from NumPy's hamming function
-    if _len_guards(M):
-        return np.ones(M)
-    M, needs_trunc = _extend(M, sym)
-
-    w = _cos_win(M, [0.54, 0.46])
-
-    return _truncate(w, needs_trunc)
+    return general_hamming(M, 0.54, sym)
 
 
 def kaiser(M, beta, sym=True):
@@ -1116,7 +1170,7 @@ def kaiser(M, beta, sym=True):
     .. [2] E.R. Kanasewich, "Time Sequence Analysis in Geophysics", The
            University of Alberta Press, 1975, pp. 177-178.
     .. [3] Wikipedia, "Window function",
-           http://en.wikipedia.org/wiki/Window_function
+           https://en.wikipedia.org/wiki/Window_function
     .. [4] F. J. Harris, "On the use of windows for harmonic analysis with the
            discrete Fourier transform," Proceedings of the IEEE, vol. 66,
            no. 1, pp. 51-83, Jan. 1978. :doi:`10.1109/PROC.1978.10837`.
@@ -1126,7 +1180,7 @@ def kaiser(M, beta, sym=True):
     Plot the window and its frequency response:
 
     >>> from scipy import signal
-    >>> from scipy.fftpack import fft, fftshift
+    >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
     >>> window = signal.kaiser(51, beta=14)
@@ -1191,7 +1245,7 @@ def gaussian(M, std, sym=True):
     Plot the window and its frequency response:
 
     >>> from scipy import signal
-    >>> from scipy.fftpack import fft, fftshift
+    >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
     >>> window = signal.gaussian(51, std=7)
@@ -1261,7 +1315,7 @@ def general_gaussian(M, p, sig, sym=True):
     Plot the window and its frequency response:
 
     >>> from scipy import signal
-    >>> from scipy.fftpack import fft, fftshift
+    >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
     >>> window = signal.general_gaussian(51, p=1.5, sig=7)
@@ -1277,7 +1331,7 @@ def general_gaussian(M, p, sig, sym=True):
     >>> plt.plot(freq, response)
     >>> plt.axis([-0.5, 0.5, -120, 0])
     >>> plt.title(r"Freq. resp. of the gen. Gaussian "
-    ...           "window (p=1.5, $\sigma$=7)")
+    ...           r"window (p=1.5, $\sigma$=7)")
     >>> plt.ylabel("Normalized magnitude [dB]")
     >>> plt.xlabel("Normalized frequency [cycles per sample]")
 
@@ -1358,7 +1412,7 @@ def chebwin(M, at, sym=True):
     Plot the window and its frequency response:
 
     >>> from scipy import signal
-    >>> from scipy.fftpack import fft, fftshift
+    >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
     >>> window = signal.chebwin(51, at=100)
@@ -1399,111 +1453,24 @@ def chebwin(M, at, sym=True):
     # from scipy.special. Using the expansion in scipy.special leads to errors.
     p = np.zeros(x.shape)
     p[x > 1] = np.cosh(order * np.arccosh(x[x > 1]))
-    p[x < -1] = (1 - 2 * (order % 2)) * np.cosh(order * np.arccosh(-x[x < -1]))
+    p[x < -1] = (2 * (M % 2) - 1) * np.cosh(order * np.arccosh(-x[x < -1]))
     p[np.abs(x) <= 1] = np.cos(order * np.arccos(x[np.abs(x) <= 1]))
 
     # Appropriate IDFT and filling up
     # depending on even/odd M
     if M % 2:
-        w = np.real(fftpack.fft(p))
+        w = np.real(sp_fft.fft(p))
         n = (M + 1) // 2
         w = w[:n]
         w = np.concatenate((w[n - 1:0:-1], w))
     else:
         p = p * np.exp(1.j * np.pi / M * np.r_[0:M])
-        w = np.real(fftpack.fft(p))
+        w = np.real(sp_fft.fft(p))
         n = M // 2 + 1
         w = np.concatenate((w[n - 1:0:-1], w[1:n]))
     w = w / max(w)
 
     return _truncate(w, needs_trunc)
-
-
-def slepian(M, width, sym=True):
-    """Return a digital Slepian (DPSS) window.
-
-    Used to maximize the energy concentration in the main lobe.  Also called
-    the digital prolate spheroidal sequence (DPSS).
-
-    .. note:: Deprecated in SciPy 1.1.
-              `slepian` will be removed in a future version of SciPy, it is
-              replaced by `dpss`, which uses the standard definition of a
-              digital Slepian window.
-
-    Parameters
-    ----------
-    M : int
-        Number of points in the output window. If zero or less, an empty
-        array is returned.
-    width : float
-        Bandwidth
-    sym : bool, optional
-        When True (default), generates a symmetric window, for use in filter
-        design.
-        When False, generates a periodic window, for use in spectral analysis.
-
-    Returns
-    -------
-    w : ndarray
-        The window, with the maximum value always normalized to 1
-
-    See Also
-    --------
-    dpss
-
-    References
-    ----------
-    .. [1] D. Slepian & H. O. Pollak: "Prolate spheroidal wave functions,
-           Fourier analysis and uncertainty-I," Bell Syst. Tech. J., vol.40,
-           pp.43-63, 1961. https://archive.org/details/bstj40-1-43
-    .. [2] H. J. Landau & H. O. Pollak: "Prolate spheroidal wave functions,
-           Fourier analysis and uncertainty-II," Bell Syst. Tech. J. , vol.40,
-           pp.65-83, 1961. https://archive.org/details/bstj40-1-65
-
-    Examples
-    --------
-    Plot the window and its frequency response:
-
-    >>> from scipy import signal
-    >>> from scipy.fftpack import fft, fftshift
-    >>> import matplotlib.pyplot as plt
-
-    >>> window = signal.slepian(51, width=0.3)
-    >>> plt.plot(window)
-    >>> plt.title("Slepian (DPSS) window (BW=0.3)")
-    >>> plt.ylabel("Amplitude")
-    >>> plt.xlabel("Sample")
-
-    >>> plt.figure()
-    >>> A = fft(window, 2048) / (len(window)/2.0)
-    >>> freq = np.linspace(-0.5, 0.5, len(A))
-    >>> response = 20 * np.log10(np.abs(fftshift(A / abs(A).max())))
-    >>> plt.plot(freq, response)
-    >>> plt.axis([-0.5, 0.5, -120, 0])
-    >>> plt.title("Frequency response of the Slepian window (BW=0.3)")
-    >>> plt.ylabel("Normalized magnitude [dB]")
-    >>> plt.xlabel("Normalized frequency [cycles per sample]")
-
-    """
-    warnings.warn('slepian is deprecated and will be removed in a future '
-                  'version, use dpss instead', DeprecationWarning)
-    if _len_guards(M):
-        return np.ones(M)
-    M, needs_trunc = _extend(M, sym)
-
-    # our width is the full bandwidth
-    width = width / 2
-    # to match the old version
-    width = width / 2
-    m = np.arange(M, dtype='d')
-    H = np.zeros((2, M))
-    H[0, 1:] = m[1:] * (M - m[1:]) / 2
-    H[1, :] = ((M - 1 - 2 * m) / 2)**2 * np.cos(2 * np.pi * width)
-
-    _, win = linalg.eig_banded(H, select='i', select_range=(M-1, M-1))
-    win = win.ravel() / win.max()
-
-    return _truncate(win, needs_trunc)
 
 
 def cosine(M, sym=True):
@@ -1535,7 +1502,7 @@ def cosine(M, sym=True):
     Plot the window and its frequency response:
 
     >>> from scipy import signal
-    >>> from scipy.fftpack import fft, fftshift
+    >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
     >>> window = signal.cosine(51)
@@ -1608,7 +1575,7 @@ def exponential(M, center=None, tau=1., sym=True):
     Plot the symmetric window and its frequency response:
 
     >>> from scipy import signal
-    >>> from scipy.fftpack import fft, fftshift
+    >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
     >>> M = 51
@@ -1723,7 +1690,7 @@ def dpss(M, NW, Kmax=None, sym=True, norm=None, return_ratios=False):
     """
     Compute the Discrete Prolate Spheroidal Sequences (DPSS).
 
-    DPSS (or Slepian sequencies) are often used in multitaper power spectral
+    DPSS (or Slepian sequences) are often used in multitaper power spectral
     density estimation (see [1]_). The first window in the sequence can be
     used to maximize the energy concentration in the main lobe, and is also
     called the Slepian window.
@@ -1838,7 +1805,7 @@ def dpss(M, NW, Kmax=None, sym=True, norm=None, return_ratios=False):
     >>> fig.tight_layout()
     >>> plt.show()
 
-    Using a standard :math:`l_$\\infty$`` norm would produce two unity values
+    Using a standard :math:`l_{\\infty}` norm would produce two unity values
     for even `M`, but only one unity value for odd `M`. This produces uneven
     window power that can be counteracted by the approximate correction
     ``M**2/float(M**2+NW)``, which can be selected by using
@@ -1916,7 +1883,7 @@ def dpss(M, NW, Kmax=None, sym=True, norm=None, return_ratios=False):
     # sequences, or discrete prolate spheroidal sequences (DPSS). Only the
     # first K, K = 2NW/dt orders of DPSS will exhibit good spectral
     # concentration
-    # [see http://en.wikipedia.org/wiki/Spectral_concentration_problem]
+    # [see https://en.wikipedia.org/wiki/Spectral_concentration_problem]
 
     # Here we set up an alternative symmetric tri-diagonal eigenvalue
     # problem such that
@@ -1966,7 +1933,7 @@ def dpss(M, NW, Kmax=None, sym=True, norm=None, return_ratios=False):
             if norm == 'approximate':
                 correction = M**2 / float(M**2 + NW)
             else:
-                s = np.fft.rfft(windows[0])
+                s = sp_fft.rfft(windows[0])
                 shift = -(1 - 1./M) * np.arange(1, M//2 + 1)
                 s[1:] *= 2 * np.exp(-1j * np.pi * shift)
                 correction = M / s.real.sum()
@@ -1982,9 +1949,9 @@ def dpss(M, NW, Kmax=None, sym=True, norm=None, return_ratios=False):
 def _fftautocorr(x):
     """Compute the autocorrelation of a real array and crop the result."""
     N = x.shape[-1]
-    use_N = fftpack.next_fast_len(2*N-1)
-    x_fft = np.fft.rfft(x, use_N, axis=-1)
-    cxy = np.fft.irfft(x_fft * x_fft.conj(), n=use_N)[:, :N]
+    use_N = sp_fft.next_fast_len(2*N-1)
+    x_fft = sp_fft.rfft(x, use_N, axis=-1)
+    cxy = sp_fft.irfft(x_fft * x_fft.conj(), n=use_N)[:, :N]
     # Or equivalently (but in most cases slower):
     # cxy = np.array([np.convolve(xx, yy[::-1], mode='full')
     #                 for xx, yy in zip(x, x)])[:, N-1:2*N-1]
@@ -2011,7 +1978,6 @@ _win_equiv_raw = {
     ('kaiser', 'ksr'): (kaiser, True),
     ('nuttall', 'nutl', 'nut'): (nuttall, False),
     ('parzen', 'parz', 'par'): (parzen, False),
-    ('slepian', 'slep', 'optimal', 'dpss', 'dss'): (slepian, True),
     ('taylor', 'taylorwin'): (taylor, False),
     ('triangle', 'triang', 'tri'): (triang, False),
     ('tukey', 'tuk'): (tukey, True),
@@ -2032,7 +1998,7 @@ for k, v in _win_equiv_raw.items():
 
 def get_window(window, Nx, fftbins=True):
     """
-    Return a window.
+    Return a window of a given length and type.
 
     Parameters
     ----------
@@ -2043,7 +2009,7 @@ def get_window(window, Nx, fftbins=True):
     fftbins : bool, optional
         If True (default), create a "periodic" window, ready to use with
         `ifftshift` and be multiplied by the result of an FFT (see also
-        `fftpack.fftfreq`).
+        :func:`~scipy.fft.fftfreq`).
         If False, create a "symmetric" window, for use in filter design.
 
     Returns
@@ -2055,14 +2021,26 @@ def get_window(window, Nx, fftbins=True):
     -----
     Window types:
 
-        `boxcar`, `triang`, `blackman`, `hamming`, `hann`, `bartlett`,
-        `flattop`, `parzen`, `bohman`, `blackmanharris`, `nuttall`,
-        `barthann`, `kaiser` (needs beta), `gaussian` (needs standard
-        deviation), `general_gaussian` (needs power, width), `slepian`
-        (needs width),  `dpss` (needs normalized half-bandwidth),
-        `chebwin` (needs attenuation), `exponential`
-        (needs decay scale), `tukey` (needs taper fraction),
-        `taylor` (number of constant sidelobes, needs sidelobe level)
+    - `~scipy.signal.windows.boxcar`
+    - `~scipy.signal.windows.triang`
+    - `~scipy.signal.windows.blackman`
+    - `~scipy.signal.windows.hamming`
+    - `~scipy.signal.windows.hann`
+    - `~scipy.signal.windows.bartlett`
+    - `~scipy.signal.windows.flattop`
+    - `~scipy.signal.windows.parzen`
+    - `~scipy.signal.windows.bohman`
+    - `~scipy.signal.windows.blackmanharris`
+    - `~scipy.signal.windows.nuttall`
+    - `~scipy.signal.windows.barthann`
+    - `~scipy.signal.windows.kaiser` (needs beta)
+    - `~scipy.signal.windows.gaussian` (needs standard deviation)
+    - `~scipy.signal.windows.general_gaussian` (needs power, width)
+    - `~scipy.signal.windows.dpss` (needs normalized half-bandwidth)
+    - `~scipy.signal.windows.chebwin` (needs attenuation)
+    - `~scipy.signal.windows.exponential` (needs center, decay scale)
+    - `~scipy.signal.windows.tukey` (needs taper fraction)
+    - `~scipy.signal.windows.taylor` (number of constant sidelobes, needs sidelobe level)
 
     If the window requires no parameters, then `window` can be a string.
 
@@ -2071,7 +2049,7 @@ def get_window(window, Nx, fftbins=True):
     arguments the needed parameters.
 
     If `window` is a floating point number, it is interpreted as the beta
-    parameter of the `kaiser` window.
+    parameter of the `~scipy.signal.windows.kaiser` window.
 
     Each of the window types listed above is also the name of
     a function that can be called directly to create a window of
@@ -2085,6 +2063,9 @@ def get_window(window, Nx, fftbins=True):
     >>> signal.get_window(('kaiser', 4.0), 9)
     array([ 0.08848053,  0.29425961,  0.56437221,  0.82160913,  0.97885093,
             0.97885093,  0.82160913,  0.56437221,  0.29425961])
+    >>> signal.get_window(('exponential', None, 1.), 9)
+    array([ 0.011109  ,  0.03019738,  0.082085  ,  0.22313016,  0.60653066,
+            0.60653066,  0.22313016,  0.082085  ,  0.03019738])
     >>> signal.get_window(4.0, 9)
     array([ 0.08848053,  0.29425961,  0.56437221,  0.82160913,  0.97885093,
             0.97885093,  0.82160913,  0.56437221,  0.29425961])
@@ -2093,26 +2074,26 @@ def get_window(window, Nx, fftbins=True):
     sym = not fftbins
     try:
         beta = float(window)
-    except (TypeError, ValueError):
+    except (TypeError, ValueError) as e:
         args = ()
         if isinstance(window, tuple):
             winstr = window[0]
             if len(window) > 1:
                 args = window[1:]
-        elif isinstance(window, string_types):
+        elif isinstance(window, str):
             if window in _needs_param:
                 raise ValueError("The '" + window + "' window needs one or "
-                                 "more parameters -- pass a tuple.")
+                                 "more parameters -- pass a tuple.") from e
             else:
                 winstr = window
         else:
             raise ValueError("%s as window type is not supported." %
-                             str(type(window)))
+                             str(type(window))) from e
 
         try:
             winfunc = _win_equiv[winstr]
-        except KeyError:
-            raise ValueError("Unknown window type.")
+        except KeyError as e:
+            raise ValueError("Unknown window type.") from e
 
         params = (Nx,) + args + (sym,)
     else:

@@ -1,14 +1,14 @@
 """ Test for assert_deallocated context manager and gc utilities
 """
-from __future__ import division, print_function, absolute_import
-
 import gc
 
-from scipy._lib._gcutils import set_gc_state, gc_state, assert_deallocated, ReferenceError
+from scipy._lib._gcutils import (set_gc_state, gc_state, assert_deallocated,
+                                 ReferenceError, IS_PYPY)
 
 from numpy.testing import assert_equal
 
 import pytest
+
 
 def test_set_gc_state():
     gc_status = gc.isenabled()
@@ -47,6 +47,7 @@ def test_gc_state():
             gc.enable()
 
 
+@pytest.mark.skipif(IS_PYPY, reason="Test not meaningful on PyPy")
 def test_assert_deallocated():
     # Ordinary use
     class C(object):
@@ -64,15 +65,21 @@ def test_assert_deallocated():
             assert_equal(gc.isenabled(), gc_current)
 
 
+@pytest.mark.skipif(IS_PYPY, reason="Test not meaningful on PyPy")
 def test_assert_deallocated_nodel():
     class C(object):
         pass
     with pytest.raises(ReferenceError):
         # Need to delete after using if in with-block context
+        # Note: assert_deallocated(C) needs to be assigned for the test
+        # to function correctly.  It is assigned to c, but c itself is
+        # not referenced in the body of the with, it is only there for
+        # the refcount.
         with assert_deallocated(C) as c:
             pass
 
 
+@pytest.mark.skipif(IS_PYPY, reason="Test not meaningful on PyPy")
 def test_assert_deallocated_circular():
     class C(object):
         def __init__(self):
@@ -83,6 +90,7 @@ def test_assert_deallocated_circular():
             del c
 
 
+@pytest.mark.skipif(IS_PYPY, reason="Test not meaningful on PyPy")
 def test_assert_deallocated_circular2():
     class C(object):
         def __init__(self):

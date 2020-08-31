@@ -179,7 +179,7 @@ double ellie(double phi, double m)
  * use the first form, accounting for the smallness of phi.
  * 
  * The algorithm used is described in Carlson, B. C. Numerical computation of
- * real or complex elliptic integrals. (1994) http://arxiv.org/abs/math/9409227
+ * real or complex elliptic integrals. (1994) https://arxiv.org/abs/math/9409227
  * Most variable names reflect Carlson's usage.
  *
  * In this routine, we assume m < 0 and  0 > phi > pi/2.

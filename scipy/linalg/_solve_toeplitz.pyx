@@ -1,8 +1,6 @@
 # Author: Robert T. McGibbon, December 2014
 #
 # cython: boundscheck=False, wraparound=False, cdivision=True
-from __future__ import absolute_import
-
 from numpy import zeros, asarray, complex128, float64
 from numpy.linalg import LinAlgError
 from numpy cimport complex128_t, float64_t

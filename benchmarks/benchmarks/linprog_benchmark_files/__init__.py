@@ -1,6 +1,4 @@
 # -*- coding: utf-8 -*-
-from __future__ import division, print_function, absolute_import
-
 """
 ==============================================================================
 `` --  Problems for testing linear programming routines

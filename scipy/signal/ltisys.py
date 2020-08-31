@@ -2,8 +2,6 @@
 ltisys -- a collection of classes and functions for modeling linear
 time invariant systems.
 """
-from __future__ import division, print_function, absolute_import
-
 #
 # Author: Travis Oliphant 2001
 #
@@ -29,7 +27,6 @@ import warnings
 from scipy.linalg import qr as s_qr
 from scipy import integrate, interpolate, linalg
 from scipy.interpolate import interp1d
-from scipy._lib.six import xrange
 from .filter_design import (tf2zpk, zpk2tf, normalize, freqs, freqz, freqs_zpk,
                             freqz_zpk)
 from .lti_conversion import (tf2ss, abcd_normalize, ss2tf, zpk2ss, ss2zpk,
@@ -194,8 +191,8 @@ class lti(LinearTimeInvariant):
 
     >>> signal.lti([3, 4], [1, 2])
     TransferFunctionContinuous(
-    array([ 3.,  4.]),
-    array([ 1.,  2.]),
+    array([3., 4.]),
+    array([1., 2.]),
     dt: None
     )
 
@@ -371,8 +368,8 @@ class dlti(LinearTimeInvariant):
 
     >>> signal.dlti([3, 4], [1, 2], dt=0.1)
     TransferFunctionDiscrete(
-    array([ 3.,  4.]),
-    array([ 1.,  2.]),
+    array([3., 4.]),
+    array([1., 2.]),
     dt: 0.1
     )
 
@@ -538,19 +535,19 @@ class TransferFunction(LinearTimeInvariant):
 
     >>> signal.TransferFunction(num, den)
     TransferFunctionContinuous(
-    array([ 1.,  3.,  3.]),
-    array([ 1.,  2.,  1.]),
+    array([1., 3., 3.]),
+    array([1., 2., 1.]),
     dt: None
     )
 
-    Contruct the transfer function with a sampling time of 0.1 seconds:
+    Construct the transfer function with a sampling time of 0.1 seconds:
 
     .. math:: H(z) = \frac{z^2 + 3z + 3}{z^2 + 2z + 1}
 
     >>> signal.TransferFunction(num, den, dt=0.1)
     TransferFunctionDiscrete(
-    array([ 1.,  3.,  3.]),
-    array([ 1.,  2.,  1.]),
+    array([1., 3., 3.]),
+    array([1., 2., 1.]),
     dt: 0.1
     )
 
@@ -1268,10 +1265,10 @@ class StateSpace(LinearTimeInvariant):
 
     >>> sys.to_discrete(0.1)
     StateSpaceDiscrete(
-    array([[ 1. ,  0.1],
-           [ 0. ,  1. ]]),
-    array([[ 0.005],
-           [ 0.1  ]]),
+    array([[1. , 0.1],
+           [0. , 1. ]]),
+    array([[0.005],
+           [0.1  ]]),
     array([[1, 0]]),
     array([[0]]),
     dt: 0.1
@@ -1282,16 +1279,21 @@ class StateSpace(LinearTimeInvariant):
 
     >>> signal.StateSpace(a, b, c, d, dt=0.1)
     StateSpaceDiscrete(
-    array([[ 1. ,  0.1],
-           [ 0. ,  1. ]]),
-    array([[ 0.005],
-           [ 0.1  ]]),
+    array([[1. , 0.1],
+           [0. , 1. ]]),
+    array([[0.005],
+           [0.1  ]]),
     array([[1, 0]]),
     array([[0]]),
     dt: 0.1
     )
 
     """
+
+    # Override NumPy binary operations and ufuncs
+    __array_priority__ = 100.0
+    __array_ufunc__ = None
+
     def __new__(cls, *system, **kwargs):
         """Create new StateSpace object and settle inheritance."""
         # Handle object conversion if input is an instance of `lti`
@@ -1336,6 +1338,175 @@ class StateSpace(LinearTimeInvariant):
             repr(self.D),
             repr(self.dt),
             )
+
+    def _check_binop_other(self, other):
+        return isinstance(other, (StateSpace, np.ndarray, float, complex,
+                                  np.number, int))
+
+    def __mul__(self, other):
+        """
+        Post-multiply another system or a scalar
+
+        Handles multiplication of systems in the sense of a frequency domain
+        multiplication. That means, given two systems E1(s) and E2(s), their
+        multiplication, H(s) = E1(s) * E2(s), means that applying H(s) to U(s)
+        is equivalent to first applying E2(s), and then E1(s).
+
+        Notes
+        -----
+        For SISO systems the order of system application does not matter.
+        However, for MIMO systems, where the two systems are matrices, the
+        order above ensures standard Matrix multiplication rules apply.
+        """
+        if not self._check_binop_other(other):
+            return NotImplemented
+
+        if isinstance(other, StateSpace):
+            # Disallow mix of discrete and continuous systems.
+            if type(other) is not type(self):
+                return NotImplemented
+
+            if self.dt != other.dt:
+                raise TypeError('Cannot multiply systems with different `dt`.')
+
+            n1 = self.A.shape[0]
+            n2 = other.A.shape[0]
+
+            # Interconnection of systems
+            # x1' = A1 x1 + B1 u1
+            # y1  = C1 x1 + D1 u1
+            # x2' = A2 x2 + B2 y1
+            # y2  = C2 x2 + D2 y1
+            #
+            # Plugging in with u1 = y2 yields
+            # [x1']   [A1 B1*C2 ] [x1]   [B1*D2]
+            # [x2'] = [0  A2    ] [x2] + [B2   ] u2
+            #                    [x1]
+            #  y2   = [C1 D1*C2] [x2] + D1*D2 u2
+            a = np.vstack((np.hstack((self.A, np.dot(self.B, other.C))),
+                           np.hstack((zeros((n2, n1)), other.A))))
+            b = np.vstack((np.dot(self.B, other.D), other.B))
+            c = np.hstack((self.C, np.dot(self.D, other.C)))
+            d = np.dot(self.D, other.D)
+        else:
+            # Assume that other is a scalar / matrix
+            # For post multiplication the input gets scaled
+            a = self.A
+            b = np.dot(self.B, other)
+            c = self.C
+            d = np.dot(self.D, other)
+
+        common_dtype = np.find_common_type((a.dtype, b.dtype, c.dtype, d.dtype), ())
+        return StateSpace(np.asarray(a, dtype=common_dtype),
+                          np.asarray(b, dtype=common_dtype),
+                          np.asarray(c, dtype=common_dtype),
+                          np.asarray(d, dtype=common_dtype),
+                          **self._dt_dict)
+
+    def __rmul__(self, other):
+        """Pre-multiply a scalar or matrix (but not StateSpace)"""
+        if not self._check_binop_other(other) or isinstance(other, StateSpace):
+            return NotImplemented
+
+        # For pre-multiplication only the output gets scaled
+        a = self.A
+        b = self.B
+        c = np.dot(other, self.C)
+        d = np.dot(other, self.D)
+
+        common_dtype = np.find_common_type((a.dtype, b.dtype, c.dtype, d.dtype), ())
+        return StateSpace(np.asarray(a, dtype=common_dtype),
+                          np.asarray(b, dtype=common_dtype),
+                          np.asarray(c, dtype=common_dtype),
+                          np.asarray(d, dtype=common_dtype),
+                          **self._dt_dict)
+
+    def __neg__(self):
+        """Negate the system (equivalent to pre-multiplying by -1)."""
+        return StateSpace(self.A, self.B, -self.C, -self.D, **self._dt_dict)
+
+    def __add__(self, other):
+        """
+        Adds two systems in the sense of frequency domain addition.
+        """
+        if not self._check_binop_other(other):
+            return NotImplemented
+
+        if isinstance(other, StateSpace):
+            # Disallow mix of discrete and continuous systems.
+            if type(other) is not type(self):
+                raise TypeError('Cannot add {} and {}'.format(type(self),
+                                                              type(other)))
+
+            if self.dt != other.dt:
+                raise TypeError('Cannot add systems with different `dt`.')
+            # Interconnection of systems
+            # x1' = A1 x1 + B1 u
+            # y1  = C1 x1 + D1 u
+            # x2' = A2 x2 + B2 u
+            # y2  = C2 x2 + D2 u
+            # y   = y1 + y2
+            #
+            # Plugging in yields
+            # [x1']   [A1 0 ] [x1]   [B1]
+            # [x2'] = [0  A2] [x2] + [B2] u
+            #                 [x1]
+            #  y    = [C1 C2] [x2] + [D1 + D2] u
+            a = linalg.block_diag(self.A, other.A)
+            b = np.vstack((self.B, other.B))
+            c = np.hstack((self.C, other.C))
+            d = self.D + other.D
+        else:
+            other = np.atleast_2d(other)
+            if self.D.shape == other.shape:
+                # A scalar/matrix is really just a static system (A=0, B=0, C=0)
+                a = self.A
+                b = self.B
+                c = self.C
+                d = self.D + other
+            else:
+                raise ValueError("Cannot add systems with incompatible "
+                                 "dimensions ({} and {})"
+                                 .format(self.D.shape, other.shape))
+
+        common_dtype = np.find_common_type((a.dtype, b.dtype, c.dtype, d.dtype), ())
+        return StateSpace(np.asarray(a, dtype=common_dtype),
+                          np.asarray(b, dtype=common_dtype),
+                          np.asarray(c, dtype=common_dtype),
+                          np.asarray(d, dtype=common_dtype),
+                          **self._dt_dict)
+
+    def __sub__(self, other):
+        if not self._check_binop_other(other):
+            return NotImplemented
+
+        return self.__add__(-other)
+
+    def __radd__(self, other):
+        if not self._check_binop_other(other):
+            return NotImplemented
+
+        return self.__add__(other)
+
+    def __rsub__(self, other):
+        if not self._check_binop_other(other):
+            return NotImplemented
+
+        return (-self).__add__(other)
+
+    def __truediv__(self, other):
+        """
+        Divide by a scalar
+        """
+        # Division by non-StateSpace scalars
+        if not self._check_binop_other(other) or isinstance(other, StateSpace):
+            return NotImplemented
+
+        if isinstance(other, np.ndarray) and other.ndim > 0:
+            # It's ambiguous what this means, so disallow it
+            raise ValueError("Cannot divide StateSpace by non-scalar numpy arrays")
+
+        return self.__mul__(1/other)
 
     @property
     def A(self):
@@ -1625,6 +1796,72 @@ def lsim2(system, U=None, T=None, X0=None, **kwargs):
     numerator and denominator should be specified in descending exponent
     order (e.g. ``s^2 + 3s + 5`` would be represented as ``[1, 3, 5]``).
 
+    See Also
+    --------
+    lsim
+
+    Examples
+    --------
+    We'll use `lsim2` to simulate an analog Bessel filter applied to
+    a signal.
+
+    >>> from scipy.signal import bessel, lsim2
+    >>> import matplotlib.pyplot as plt
+
+    Create a low-pass Bessel filter with a cutoff of 12 Hz.
+
+    >>> b, a = bessel(N=5, Wn=2*np.pi*12, btype='lowpass', analog=True)
+
+    Generate data to which the filter is applied.
+
+    >>> t = np.linspace(0, 1.25, 500, endpoint=False)
+
+    The input signal is the sum of three sinusoidal curves, with
+    frequencies 4 Hz, 40 Hz, and 80 Hz.  The filter should mostly
+    eliminate the 40 Hz and 80 Hz components, leaving just the 4 Hz signal.
+
+    >>> u = (np.cos(2*np.pi*4*t) + 0.6*np.sin(2*np.pi*40*t) +
+    ...      0.5*np.cos(2*np.pi*80*t))
+
+    Simulate the filter with `lsim2`.
+
+    >>> tout, yout, xout = lsim2((b, a), U=u, T=t)
+
+    Plot the result.
+
+    >>> plt.plot(t, u, 'r', alpha=0.5, linewidth=1, label='input')
+    >>> plt.plot(tout, yout, 'k', linewidth=1.5, label='output')
+    >>> plt.legend(loc='best', shadow=True, framealpha=1)
+    >>> plt.grid(alpha=0.3)
+    >>> plt.xlabel('t')
+    >>> plt.show()
+
+    In a second example, we simulate a double integrator ``y'' = u``, with
+    a constant input ``u = 1``.  We'll use the state space representation
+    of the integrator.
+
+    >>> from scipy.signal import lti
+    >>> A = np.array([[0, 1], [0, 0]])
+    >>> B = np.array([[0], [1]])
+    >>> C = np.array([[1, 0]])
+    >>> D = 0
+    >>> system = lti(A, B, C, D)
+
+    `t` and `u` define the time and input signal for the system to
+    be simulated.
+
+    >>> t = np.linspace(0, 5, num=50)
+    >>> u = np.ones_like(t)
+
+    Compute the simulation, and then plot `y`.  As expected, the plot shows
+    the curve ``y = 0.5*t**2``.
+
+    >>> tout, y, x = lsim2(system, u, t)
+    >>> plt.plot(t, y)
+    >>> plt.grid(alpha=0.3)
+    >>> plt.xlabel('t')
+    >>> plt.show()
+
     """
     if isinstance(system, lti):
         sys = system._as_ss()
@@ -1688,7 +1925,7 @@ def _cast_to_array_dtype(in1, in2):
 
     Those can be raised when casting complex to real.
     """
-    if numpy.issubdtype(in2.dtype, numpy.float):
+    if numpy.issubdtype(in2.dtype, numpy.float64):
         # dtype to cast to is not complex, so use .real
         in1 = in1.real.astype(in2.dtype)
     else:
@@ -1743,15 +1980,66 @@ def lsim(system, U, T, X0=None, interp=True):
 
     Examples
     --------
-    Simulate a double integrator y'' = u, with a constant input u = 1
+    We'll use `lsim` to simulate an analog Bessel filter applied to
+    a signal.
 
-    >>> from scipy import signal
-    >>> system = signal.lti([[0., 1.], [0., 0.]], [[0.], [1.]], [[1., 0.]], 0.)
-    >>> t = np.linspace(0, 5)
-    >>> u = np.ones_like(t)
-    >>> tout, y, x = signal.lsim(system, u, t)
+    >>> from scipy.signal import bessel, lsim
     >>> import matplotlib.pyplot as plt
+
+    Create a low-pass Bessel filter with a cutoff of 12 Hz.
+
+    >>> b, a = bessel(N=5, Wn=2*np.pi*12, btype='lowpass', analog=True)
+
+    Generate data to which the filter is applied.
+
+    >>> t = np.linspace(0, 1.25, 500, endpoint=False)
+
+    The input signal is the sum of three sinusoidal curves, with
+    frequencies 4 Hz, 40 Hz, and 80 Hz.  The filter should mostly
+    eliminate the 40 Hz and 80 Hz components, leaving just the 4 Hz signal.
+
+    >>> u = (np.cos(2*np.pi*4*t) + 0.6*np.sin(2*np.pi*40*t) +
+    ...      0.5*np.cos(2*np.pi*80*t))
+
+    Simulate the filter with `lsim`.
+
+    >>> tout, yout, xout = lsim((b, a), U=u, T=t)
+
+    Plot the result.
+
+    >>> plt.plot(t, u, 'r', alpha=0.5, linewidth=1, label='input')
+    >>> plt.plot(tout, yout, 'k', linewidth=1.5, label='output')
+    >>> plt.legend(loc='best', shadow=True, framealpha=1)
+    >>> plt.grid(alpha=0.3)
+    >>> plt.xlabel('t')
+    >>> plt.show()
+
+    In a second example, we simulate a double integrator ``y'' = u``, with
+    a constant input ``u = 1``.  We'll use the state space representation
+    of the integrator.
+
+    >>> from scipy.signal import lti
+    >>> A = np.array([[0.0, 1.0], [0.0, 0.0]])
+    >>> B = np.array([[0.0], [1.0]])
+    >>> C = np.array([[1.0, 0.0]])
+    >>> D = 0.0
+    >>> system = lti(A, B, C, D)
+
+    `t` and `u` define the time and input signal for the system to
+    be simulated.
+
+    >>> t = np.linspace(0, 5, num=50)
+    >>> u = np.ones_like(t)
+
+    Compute the simulation, and then plot `y`.  As expected, the plot shows
+    the curve ``y = 0.5*t**2``.
+
+    >>> tout, y, x = lsim(system, u, t)
     >>> plt.plot(t, y)
+    >>> plt.grid(alpha=0.3)
+    >>> plt.xlabel('t')
+    >>> plt.show()
+
     """
     if isinstance(system, lti):
         sys = system._as_ss()
@@ -1771,7 +2059,7 @@ def lsim(system, U, T, X0=None, interp=True):
     n_steps = T.size
     if X0 is None:
         X0 = zeros(n_states, sys.A.dtype)
-    xout = zeros((n_steps, n_states), sys.A.dtype)
+    xout = np.empty((n_steps, n_states), sys.A.dtype)
 
     if T[0] == 0:
         xout[0] = X0
@@ -1801,7 +2089,7 @@ def lsim(system, U, T, X0=None, interp=True):
         # Zero input: just use matrix exponential
         # take transpose because state is a row vector
         expAT_dt = linalg.expm(transpose(A) * dt)
-        for i in xrange(1, n_steps):
+        for i in range(1, n_steps):
             xout[i] = dot(xout[i-1], expAT_dt)
         yout = squeeze(dot(xout, transpose(C)))
         return T, squeeze(yout), squeeze(xout)
@@ -1833,7 +2121,7 @@ def lsim(system, U, T, X0=None, interp=True):
         expMT = linalg.expm(transpose(M))
         Ad = expMT[:n_states, :n_states]
         Bd = expMT[n_states:, :n_states]
-        for i in xrange(1, n_steps):
+        for i in range(1, n_steps):
             xout[i] = dot(xout[i-1], Ad) + dot(U[i-1], Bd)
     else:
         # Linear interpolation between steps
@@ -1855,7 +2143,7 @@ def lsim(system, U, T, X0=None, interp=True):
         Ad = expMT[:n_states, :n_states]
         Bd1 = expMT[n_states+n_inputs:, :n_states]
         Bd0 = expMT[n_states:n_states + n_inputs, :n_states] - Bd1
-        for i in xrange(1, n_steps):
+        for i in range(1, n_steps):
             xout[i] = (dot(xout[i-1], Ad) + dot(U[i-1], Bd0) + dot(U[i], Bd1))
 
     yout = (squeeze(dot(xout, transpose(C))) + squeeze(dot(U, transpose(D))))
@@ -1930,6 +2218,17 @@ def impulse(system, X0=None, T=None, N=None):
     numerator and denominator should be specified in descending exponent
     order (e.g. ``s^2 + 3s + 5`` would be represented as ``[1, 3, 5]``).
 
+    Examples
+    --------
+    Compute the impulse response of a second order system with a repeated
+    root: ``x''(t) + 2*x'(t) + x(t) = u(t)``
+
+    >>> from scipy import signal
+    >>> system = ([1.0], [1.0, 2.0, 1.0])
+    >>> t, y = signal.impulse(system)
+    >>> import matplotlib.pyplot as plt
+    >>> plt.plot(t, y)
+
     """
     if isinstance(system, lti):
         sys = system._as_ss()
@@ -1993,7 +2292,7 @@ def impulse2(system, X0=None, T=None, N=None, **kwargs):
 
     See Also
     --------
-    impulse, lsim2, integrate.odeint
+    impulse, lsim2, scipy.integrate.odeint
 
     Notes
     -----
@@ -2008,7 +2307,8 @@ def impulse2(system, X0=None, T=None, N=None, **kwargs):
 
     Examples
     --------
-    Second order system with a repeated root: x''(t) + 2*x(t) + x(t) = u(t)
+    Compute the impulse response of a second order system with a repeated
+    root: ``x''(t) + 2*x'(t) + x(t) = u(t)``
 
     >>> from scipy import signal
     >>> system = ([1.0], [1.0, 2.0, 1.0])
@@ -2081,6 +2381,18 @@ def step(system, X0=None, T=None, N=None):
     numerator and denominator should be specified in descending exponent
     order (e.g. ``s^2 + 3s + 5`` would be represented as ``[1, 3, 5]``).
 
+    Examples
+    --------
+    >>> from scipy import signal
+    >>> import matplotlib.pyplot as plt
+    >>> lti = signal.lti([1.0], [1.0, 1.0])
+    >>> t, y = signal.step(lti)
+    >>> plt.plot(t, y)
+    >>> plt.xlabel('Time [s]')
+    >>> plt.ylabel('Amplitude')
+    >>> plt.title('Step response for 1. Order Lowpass')
+    >>> plt.grid()
+
     """
     if isinstance(system, lti):
         sys = system._as_ss()
@@ -2149,6 +2461,19 @@ def step2(system, X0=None, T=None, N=None, **kwargs):
     order (e.g. ``s^2 + 3s + 5`` would be represented as ``[1, 3, 5]``).
 
     .. versionadded:: 0.8.0
+
+    Examples
+    --------
+    >>> from scipy import signal
+    >>> import matplotlib.pyplot as plt
+    >>> lti = signal.lti([1.0], [1.0, 1.0])
+    >>> t, y = signal.step2(lti)
+    >>> plt.plot(t, y)
+    >>> plt.xlabel('Time [s]')
+    >>> plt.ylabel('Amplitude')
+    >>> plt.title('Step response for 1. Order Lowpass')
+    >>> plt.grid()
+
     """
     if isinstance(system, lti):
         sys = system._as_ss()
@@ -2318,7 +2643,7 @@ def freqresp(system, w=None, n=10000):
 
 
 # This class will be used by place_poles to return its results
-# see http://code.activestate.com/recipes/52308/
+# see https://code.activestate.com/recipes/52308/
 class Bunch:
     def __init__(self, **kwds):
         self.__dict__.update(kwds)
@@ -2400,7 +2725,7 @@ def _KNV0(B, ker_pole, transfer_matrix, j, poles):
     Algorithm "KNV0" Kautsky et Al. Robust pole
     assignment in linear state feedback, Int journal of Control
     1985, vol 41 p 1129->1155
-    http://la.epfl.ch/files/content/sites/la/files/
+    https://la.epfl.ch/files/content/sites/la/files/
         users/105941/public/KautskyNicholsDooren
 
     """
@@ -2562,7 +2887,7 @@ def _YT_loop(ker_pole, transfer_matrix, poles, B, maxiter, rtol):
     """
     Algorithm "YT" Tits, Yang. Globally Convergent
     Algorithms for Robust Pole Assignment by State Feedback
-    http://drum.lib.umd.edu/handle/1903/5598
+    https://hdl.handle.net/1903/5598
     The poles P have to be sorted accordingly to section 6.2 page 20
 
     """
@@ -2800,7 +3125,7 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
     when ``abs(det(X))`` is used as a robustness indicator.
 
     [2]_ is available as a technical report on the following URL:
-    http://drum.lib.umd.edu/handle/1903/5598
+    https://hdl.handle.net/1903/5598
 
     References
     ----------
@@ -2808,7 +3133,7 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
            in linear state feedback", International Journal of Control, Vol. 41
            pp. 1129-1155, 1985.
     .. [2] A.L. Tits and Y. Yang, "Globally convergent algorithms for robust
-           pole assignment by state feedback, IEEE Transactions on Automatic
+           pole assignment by state feedback", IEEE Transactions on Automatic
            Control, Vol. 41, pp. 1432-1452, 1996.
 
     Examples
@@ -2940,7 +3265,7 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
         cur_rtol = np.nan
         nb_iter = np.nan
     else:
-        # step A (p1144 KNV) and begining of step F: decompose
+        # step A (p1144 KNV) and beginning of step F: decompose
         # dot(U1.T, A-P[i]*I).T and build our set of transfer_matrix vectors
         # in the same loop
         ker_pole = []
@@ -3035,10 +3360,10 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
             m = np.linalg.solve(transfer_matrix.T, np.dot(np.diag(poles),
                                                           transfer_matrix.T)).T
             gain_matrix = np.linalg.solve(z, np.dot(u0.T, m-A))
-        except np.linalg.LinAlgError:
+        except np.linalg.LinAlgError as e:
             raise ValueError("The poles you've chosen can't be placed. "
                              "Check the controllability matrix and try "
-                             "another set of poles")
+                             "another set of poles") from e
 
     # Beware: Kautsky solves A+BK but the usual form is A-BK
     gain_matrix = -gain_matrix
@@ -3201,13 +3526,25 @@ def dimpulse(system, x0=None, t=None, n=None):
     -------
     tout : ndarray
         Time values for the output, as a 1-D array.
-    yout : ndarray
+    yout : tuple of ndarray
         Impulse response of system.  Each element of the tuple represents
         the output of the system based on an impulse in each input.
 
     See Also
     --------
     impulse, dstep, dlsim, cont2discrete
+
+    Examples
+    --------
+    >>> from scipy import signal
+    >>> import matplotlib.pyplot as plt
+
+    >>> butter = signal.dlti(*signal.butter(3, 0.5))
+    >>> t, y = signal.dimpulse(butter, n=25)
+    >>> plt.step(t, np.squeeze(y))
+    >>> plt.grid()
+    >>> plt.xlabel('n [samples]')
+    >>> plt.ylabel('Amplitude')
 
     """
     # Convert system to dlti-StateSpace
@@ -3275,7 +3612,7 @@ def dstep(system, x0=None, t=None, n=None):
     -------
     tout : ndarray
         Output time points, as a 1-D array.
-    yout : ndarray
+    yout : tuple of ndarray
         Step response of system.  Each element of the tuple represents
         the output of the system based on a step response to each input.
 
@@ -3283,6 +3620,17 @@ def dstep(system, x0=None, t=None, n=None):
     --------
     step, dimpulse, dlsim, cont2discrete
 
+    Examples
+    --------
+    >>> from scipy import signal
+    >>> import matplotlib.pyplot as plt
+
+    >>> butter = signal.dlti(*signal.butter(3, 0.5))
+    >>> t, y = signal.dstep(butter, n=25)
+    >>> plt.step(t, np.squeeze(y))
+    >>> plt.grid()
+    >>> plt.xlabel('n [samples]')
+    >>> plt.ylabel('Amplitude')
     """
     # Convert system to dlti-StateSpace
     if isinstance(system, dlti):
@@ -3490,5 +3838,5 @@ def dbode(system, w=None, n=100):
 
     mag = 20.0 * numpy.log10(abs(y))
     phase = numpy.rad2deg(numpy.unwrap(numpy.angle(y)))
-    
+
     return w / dt, mag, phase

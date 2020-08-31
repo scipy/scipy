@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 from numpy.linalg import LinAlgError
 from .blas import get_blas_funcs
@@ -16,7 +14,7 @@ class LinAlgWarning(RuntimeWarning):
     pass
 
 
-def norm(a, ord=None, axis=None, keepdims=False):
+def norm(a, ord=None, axis=None, keepdims=False, check_finite=True):
     """
     Matrix or vector norm.
 
@@ -27,9 +25,9 @@ def norm(a, ord=None, axis=None, keepdims=False):
     Parameters
     ----------
     a : (M,) or (M, N) array_like
-        Input array.  If `axis` is None, `a` must be 1-D or 2-D.
+        Input array. If `axis` is None, `a` must be 1D or 2D.
     ord : {non-zero int, inf, -inf, 'fro'}, optional
-        Order of the norm (see table under ``Notes``). inf means numpy's
+        Order of the norm (see table under ``Notes``). inf means NumPy's
         `inf` object
     axis : {int, 2-tuple of ints, None}, optional
         If `axis` is an integer, it specifies the axis of `a` along which to
@@ -41,6 +39,10 @@ def norm(a, ord=None, axis=None, keepdims=False):
         If this is set to True, the axes which are normed over are left in the
         result as dimensions with size one.  With this option the result will
         broadcast correctly against the original `a`.
+    check_finite : bool, optional
+        Whether to check that the input matrix contains only finite numbers.
+        Disabling may give a performance gain, but may result in problems
+        (crashes, non-termination) if the inputs do contain infinities or NaNs.
 
     Returns
     -------
@@ -134,14 +136,17 @@ def norm(a, ord=None, axis=None, keepdims=False):
 
     """
     # Differs from numpy only in non-finite handling and the use of blas.
-    a = np.asarray_chkfinite(a)
+    if check_finite:
+        a = np.asarray_chkfinite(a)
+    else:
+        a = np.asarray(a)
 
     # Only use optimized norms if axis and keepdims are not specified.
     if a.dtype.char in 'fdFD' and axis is None and not keepdims:
 
         if ord in (None, 2) and (a.ndim == 1):
             # use blas for fast and stable euclidean norm
-            nrm2 = get_blas_funcs('nrm2', dtype=a.dtype)
+            nrm2 = get_blas_funcs('nrm2', dtype=a.dtype, ilp64='preferred')
             return nrm2(a)
 
         if a.ndim == 2 and axis is None and not keepdims:
@@ -161,7 +166,7 @@ def norm(a, ord=None, axis=None, keepdims=False):
                 elif np.isfortran(a.T):
                     lange_args = '1', a.T
             if lange_args:
-                lange = get_lapack_funcs('lange', dtype=a.dtype)
+                lange = get_lapack_funcs('lange', dtype=a.dtype, ilp64='preferred')
                 return lange(*lange_args)
 
     # Filter out the axis and keepdims arguments if they aren't used so they

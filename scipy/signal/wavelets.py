@@ -1,12 +1,9 @@
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
-from numpy.dual import eig
+from scipy.linalg import eig
 from scipy.special import comb
-from scipy import linspace, pi, exp
 from scipy.signal import convolve
 
-__all__ = ['daub', 'qmf', 'cascade', 'morlet', 'ricker', 'cwt']
+__all__ = ['daub', 'qmf', 'cascade', 'morlet', 'ricker', 'morlet2', 'cwt']
 
 
 def daub(p):
@@ -142,7 +139,7 @@ def cascade(hk, J=7):
 
     indx1 = np.clip(2 * nn - kk, -1, N + 1)
     indx2 = np.clip(2 * nn - kk + 1, -1, N + 1)
-    m = np.zeros((2, 2, N, N), 'd')
+    m = np.empty((2, 2, N, N), 'd')
     m[0, 0] = np.take(thk, indx1, 0)
     m[0, 1] = np.take(thk, indx2, 0)
     m[1, 0] = np.take(tgk, indx1, 0)
@@ -220,6 +217,7 @@ def morlet(M, w=5.0, s=1.0, complete=True):
 
     See Also
     --------
+    morlet2 : Implementation of Morlet wavelet, compatible with `cwt`.
     scipy.signal.gausspulse
 
     Notes
@@ -245,18 +243,18 @@ def morlet(M, w=5.0, s=1.0, complete=True):
 
     The fundamental frequency of this wavelet in Hz is given
     by ``f = 2*s*w*r / M`` where `r` is the sampling rate.
-    
+
     Note: This function was created before `cwt` and is not compatible
     with it.
 
     """
-    x = linspace(-s * 2 * pi, s * 2 * pi, M)
-    output = exp(1j * w * x)
+    x = np.linspace(-s * 2 * np.pi, s * 2 * np.pi, M)
+    output = np.exp(1j * w * x)
 
     if complete:
-        output -= exp(-0.5 * (w**2))
+        output -= np.exp(-0.5 * (w**2))
 
-    output *= exp(-0.5 * (x**2)) * pi**(-0.25)
+    output *= np.exp(-0.5 * (x**2)) * np.pi**(-0.25)
 
     return output
 
@@ -267,9 +265,9 @@ def ricker(points, a):
 
     It models the function:
 
-        ``A (1 - x^2/a^2) exp(-x^2/2 a^2)``,
+        ``A * (1 - (x/a)**2) * exp(-0.5*(x/a)**2)``,
 
-    where ``A = 2/sqrt(3a)pi^1/4``.
+    where ``A = 2/(sqrt(3*a)*(pi**0.25))``.
 
     Parameters
     ----------
@@ -308,14 +306,95 @@ def ricker(points, a):
     return total
 
 
-def cwt(data, wavelet, widths):
+def morlet2(M, s, w=5):
+    """
+    Complex Morlet wavelet, designed to work with `cwt`.
+
+    Returns the complete version of morlet wavelet, normalised
+    according to `s`::
+
+        exp(1j*w*x/s) * exp(-0.5*(x/s)**2) * pi**(-0.25) * sqrt(1/s)
+
+    Parameters
+    ----------
+    M : int
+        Length of the wavelet.
+    s : float
+        Width parameter of the wavelet.
+    w : float, optional
+        Omega0. Default is 5
+
+    Returns
+    -------
+    morlet : (M,) ndarray
+
+    See Also
+    --------
+    morlet : Implementation of Morlet wavelet, incompatible with `cwt`
+
+    Notes
+    -----
+
+    .. versionadded:: 1.4.0
+
+    This function was designed to work with `cwt`. Because `morlet2`
+    returns an array of complex numbers, the `dtype` argument of `cwt`
+    should be set to `complex128` for best results.
+
+    Note the difference in implementation with `morlet`.
+    The fundamental frequency of this wavelet in Hz is given by::
+
+        f = w*fs / (2*s*np.pi)
+
+    where ``fs`` is the sampling rate and `s` is the wavelet width parameter.
+    Similarly we can get the wavelet width parameter at ``f``::
+
+        s = w*fs / (2*f*np.pi)
+
+    Examples
+    --------
+    >>> from scipy import signal
+    >>> import matplotlib.pyplot as plt
+
+    >>> M = 100
+    >>> s = 4.0
+    >>> w = 2.0
+    >>> wavelet = signal.morlet2(M, s, w)
+    >>> plt.plot(abs(wavelet))
+    >>> plt.show()
+
+    This example shows basic use of `morlet2` with `cwt` in time-frequency
+    analysis:
+
+    >>> from scipy import signal
+    >>> import matplotlib.pyplot as plt
+    >>> t, dt = np.linspace(0, 1, 200, retstep=True)
+    >>> fs = 1/dt
+    >>> w = 6.
+    >>> sig = np.cos(2*np.pi*(50 + 10*t)*t) + np.sin(40*np.pi*t)
+    >>> freq = np.linspace(1, fs/2, 100)
+    >>> widths = w*fs / (2*freq*np.pi)
+    >>> cwtm = signal.cwt(sig, signal.morlet2, widths, w=w)
+    >>> plt.pcolormesh(t, freq, np.abs(cwtm), cmap='viridis', shading='gouraud')
+    >>> plt.show()
+
+    """
+    x = np.arange(0, M) - (M - 1.0) / 2
+    x = x / s
+    wavelet = np.exp(1j * w * x) * np.exp(-0.5 * x**2) * np.pi**(-0.25)
+    output = np.sqrt(1/s) * wavelet
+    return output
+
+
+def cwt(data, wavelet, widths, dtype=None, **kwargs):
     """
     Continuous wavelet transform.
 
     Performs a continuous wavelet transform on `data`,
     using the `wavelet` function. A CWT performs a convolution
     with `data` using the `wavelet` function, which is characterized
-    by a width parameter and length parameter.
+    by a width parameter and length parameter. The `wavelet` function
+    is allowed to be complex.
 
     Parameters
     ----------
@@ -330,6 +409,16 @@ def cwt(data, wavelet, widths):
         satisfies these requirements.
     widths : (M,) sequence
         Widths to use for transform.
+    dtype : data-type, optional
+        The desired data type of output. Defaults to ``float64`` if the
+        output of `wavelet` is real and ``complex128`` if it is complex.
+
+        .. versionadded:: 1.4.0
+
+    kwargs
+        Keyword arguments passed to wavelet function.
+
+        .. versionadded:: 1.4.0
 
     Returns
     -------
@@ -338,11 +427,22 @@ def cwt(data, wavelet, widths):
 
     Notes
     -----
+
+    .. versionadded:: 1.4.0
+
+    For non-symmetric, complex-valued wavelets, the input signal is convolved
+    with the time-reversed complex-conjugate of the wavelet data [1].
+
     ::
 
         length = min(10 * width[ii], len(data))
-        cwt[ii,:] = signal.convolve(data, wavelet(length,
-                                    width[ii]), mode='same')
+        cwt[ii,:] = signal.convolve(data, np.conj(wavelet(length, width[ii],
+                                        **kwargs))[::-1], mode='same')
+
+    References
+    ----------
+    .. [1] S. Mallat, "A Wavelet Tour of Signal Processing (3rd Edition)",
+        Academic Press, 2009.
 
     Examples
     --------
@@ -352,14 +452,30 @@ def cwt(data, wavelet, widths):
     >>> sig  = np.cos(2 * np.pi * 7 * t) + signal.gausspulse(t - 0.4, fc=2)
     >>> widths = np.arange(1, 31)
     >>> cwtmatr = signal.cwt(sig, signal.ricker, widths)
-    >>> plt.imshow(cwtmatr, extent=[-1, 1, 31, 1], cmap='PRGn', aspect='auto',
+    >>> plt.imshow(cwtmatr, extent=[-1, 1, 1, 31], cmap='PRGn', aspect='auto',
     ...            vmax=abs(cwtmatr).max(), vmin=-abs(cwtmatr).max())
     >>> plt.show()
-
     """
-    output = np.zeros([len(widths), len(data)])
+    if wavelet == ricker:
+        window_size = kwargs.pop('window_size', None)
+    # Determine output type
+    if dtype is None:
+        if np.asarray(wavelet(1, widths[0], **kwargs)).dtype.char in 'FDG':
+            dtype = np.complex128
+        else:
+            dtype = np.float64
+
+    output = np.empty((len(widths), len(data)), dtype=dtype)
     for ind, width in enumerate(widths):
-        wavelet_data = wavelet(min(10 * width, len(data)), width)
-        output[ind, :] = convolve(data, wavelet_data,
-                                  mode='same')
+        N = np.min([10 * width, len(data)])
+        # the conditional block below and the window_size
+        # kwarg pop above may be removed eventually; these
+        # are shims for 32-bit arch + NumPy <= 1.14.5 to
+        # address gh-11095
+        if wavelet == ricker and window_size is None:
+            ceil = np.ceil(N)
+            if ceil != N:
+                N = int(N)
+        wavelet_data = np.conj(wavelet(N, width, **kwargs)[::-1])
+        output[ind] = convolve(data, wavelet_data, mode='same')
     return output

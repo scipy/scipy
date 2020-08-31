@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 import itertools
 from numpy.testing import assert_array_almost_equal, assert_allclose, assert_
 from numpy import (array, eye, zeros, empty_like, empty, tril_indices_from,
@@ -94,7 +92,7 @@ def test_permutations():
 
 def test_ldl_type_size_combinations():
     seed(1234)
-    sizes = [100, 1000]
+    sizes = [30, 750]
     real_dtypes = [float32, float64]
     complex_dtypes = [complex64, complex128]
 
