@@ -113,8 +113,8 @@ def discrepancy(sample, iterative=False, method='CD'):
     .. [2] Zhou Y.-D. et al. Mixture discrepancy for quasi-random point sets
        Journal of Complexity, 29 (3-4) , pp. 283-301, 2013.
     .. [3] T. T. Warnock. Computational investigations of low discrepancy point
-       sets, S.K. Zaremba (editor), Applications of Number Theory to Numerical
-       Analysis, Academic Press, New York.
+       sets, Applications of Number Theory to Numerical
+       Analysis, Academic Press, pp. 319-343, 1972.
 
     Examples
     --------
@@ -983,6 +983,11 @@ class Sobol(QMCEngine):
     Using 21201-dim numbers with search criterion 6 from
     https://web.maths.unsw.edu.au/~fkuo/sobol/
 
+    .. warning::
+
+       Sobol' sequence has good properties only when the number of samples
+       is equal to :math:`2^n`, with ``n`` an integer.
+
     Parameters
     ----------
     dim: int
@@ -1009,6 +1014,9 @@ class Sobol(QMCEngine):
        two-dimensional projections. SIAM Journal on Scientific Computing,
        30(5):2635-2654, 2008.
 
+    .. [4] Art B. Owen. On dropping the first Sobol' point. arXiv 2008.08051,
+       2020.
+
     Examples
     --------
     Generate samples from a low discrepancy sequence of Sobol'.
@@ -1017,16 +1025,16 @@ class Sobol(QMCEngine):
     >>> sampler = qmc.Sobol(dim=2)
     >>> sample = sampler.random(n_samples=5)
     >>> sample
-    array([[0.5  , 0.5  ],
+    array([[0.   , 0.   ],
+           [0.5  , 0.5  ],
            [0.75 , 0.25 ],
            [0.25 , 0.75 ],
-           [0.375, 0.375],
-           [0.875, 0.875]])
+           [0.375, 0.375]])
 
     Compute the quality of the sample using the discrepancy criterion.
 
     >>> qmc.discrepancy(sample)
-    0.02364040798611078
+    0.05225857204861106
 
     If some wants to continue an existing design, extra points can be obtained
     by calling again `random()`. Alternatively, you can skip some points like:
@@ -1035,9 +1043,9 @@ class Sobol(QMCEngine):
     >>> sample_continued = sampler.random(n_samples=5)
     >>> sample_continued
     array([[0.4375, 0.5625],
-           [0.3125, 0.1875],
+           [0.9375, 0.0625],
            [0.8125, 0.6875],
-           [0.5625, 0.4375],
+           [0.3125, 0.1875],
            [0.0625, 0.9375]])
 
     Finally, samples can be scaled to bounds.
@@ -1045,9 +1053,9 @@ class Sobol(QMCEngine):
     >>> bounds = [[0, 2], [10, 5]]
     >>> qmc.scale(sample_continued, bounds)
     array([[4.375 , 3.6875],
-           [3.125 , 2.5625],
+           [9.375 , 2.1875],
            [8.125 , 4.0625],
-           [5.625 , 3.3125],
+           [3.125 , 2.5625],
            [0.625 , 4.8125]])
 
     """
@@ -1075,6 +1083,7 @@ class Sobol(QMCEngine):
             self._scramble()
 
         self._quasi = self._shift.copy()
+        self._first_point = (self._quasi / 2 ** self.MAXBIT).reshape(1, -1)
 
     def _scramble(self):
         """Scramble the sequence."""
@@ -1104,7 +1113,15 @@ class Sobol(QMCEngine):
 
         """
         sample = np.empty((n_samples, self.dim), dtype=float)
-        _draw(n_samples, self.num_generated, self.dim, self._sv, self._quasi, sample)
+
+        if self.num_generated == 0 and n_samples == 1:
+            sample = self._first_point
+        elif self.num_generated == 0:
+            _draw(n_samples, self.num_generated, self.dim, self._sv, self._quasi, sample)
+            sample = np.concatenate([self._first_point, sample])[:n_samples]
+        else:
+            _draw(n_samples, self.num_generated - 1, self.dim, self._sv, self._quasi, sample)
+
         self.num_generated += n_samples
         return sample
 
@@ -1135,7 +1152,10 @@ class Sobol(QMCEngine):
             The fast-forwarded engine.
 
         """
-        _fast_forward(n, self.num_generated, self.dim, self._sv, self._quasi)
+        if self.num_generated == 0:
+            _fast_forward(n - 1, self.num_generated, self.dim, self._sv, self._quasi)
+        else:
+            _fast_forward(n, self.num_generated - 1, self.dim, self._sv, self._quasi)
         self.num_generated += n
         return self
 

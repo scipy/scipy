@@ -30,7 +30,7 @@ class TestSobol:
     def test_Unscrambled1DSobol(self):
         self.setUp()
         expected = [
-            0.5, 0.75, 0.25, 0.375, 0.875, 0.625, 0.125, 0.1875, 0.6875, 0.9375,
+            0, 0.5, 0.75, 0.25, 0.375, 0.875, 0.625, 0.125, 0.1875, 0.6875
         ]
         assert_equal(self.draws_unscrambled_1d.shape[0], 10)
         assert_equal(self.draws_unscrambled_1d.shape[1], 1)
@@ -38,8 +38,8 @@ class TestSobol:
 
     def test_Unscrambled3DSobol(self):
         self.setUp()
-        expected_dim3 = [0.5, 0.25, 0.75, 0.625, 0.125, 0.875, 0.375, 0.9375,
-                         0.4375, 0.6875]
+        expected_dim3 = [0, 0.5, 0.25, 0.75, 0.625, 0.125, 0.875, 0.375, 0.9375,
+                         0.4375]
         assert_equal(self.draws_unscrambled_3d.shape[0], 10)
         assert_equal(self.draws_unscrambled_3d.shape[1], 3)
         assert_array_equal(self.draws_unscrambled_3d[:, 2], np.array(expected_dim3))
@@ -76,9 +76,9 @@ class TestSobol:
         count1 = Counter(engine.random().flatten().tolist())
         count2 = Counter(engine.random().flatten().tolist())
         count3 = Counter(engine.random().flatten().tolist())
-        assert_equal(count1, Counter({0.5: 1111}))
-        assert_equal(count2, Counter({0.25: 557, 0.75: 554}))
-        assert_equal(count3, Counter({0.25: 554, 0.75: 557}))
+        assert_equal(count1, Counter({0.0: 1111}))
+        assert_equal(count2, Counter({0.5: 1111}))
+        assert_equal(count3, Counter({0.25: 557, 0.75: 554}))
 
     def test_UnscrambledSobolBounds(self):
         engine = Sobol(1111)
@@ -102,6 +102,7 @@ class TestSobol:
     def test_Scrambled1DSobol(self):
         self.setUp()
         expected = [
+            0.590297,
             0.46784395,
             0.03562005,
             0.91319746,
@@ -110,8 +111,7 @@ class TestSobol:
             0.25856809,
             0.63636296,
             0.69455189,
-            0.316758,
-            0.18673652,
+            0.316758
         ]
         print(self.draws_scrambled_1d.flatten())
         assert_equal(self.draws_scrambled_1d.shape[0], 10)
@@ -122,8 +122,8 @@ class TestSobol:
 
     def test_Scrambled3DSobol(self):
         self.setUp()
-        expected_dim3 = [0.19712, 0.79965, 0.43654, 0.0867, 0.70811, 0.295,
-                         0.90994, 0.31903, 0.94863, 0.04729]
+        expected_dim3 = [0.56645, 0.19712, 0.79965, 0.43654, 0.0867, 0.70811,
+                         0.295, 0.90994, 0.31903, 0.94863]
         assert_equal(self.draws_scrambled_3d.shape[0], 10)
         assert_equal(self.draws_scrambled_3d.shape[1], 3)
         assert_array_almost_equal(

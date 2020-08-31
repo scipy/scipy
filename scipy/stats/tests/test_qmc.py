@@ -228,7 +228,7 @@ class TestMultinomialQMC:
 
     def test_MultinomialBasicDraw(self):
         p = np.array([0.12, 0.26, 0.05, 0.35, 0.22])
-        expected = np.array([12, 25, 6, 34, 23])
+        expected = np.array([12, 25, 6, 35, 22])
         assert_array_equal(qmc.multinomial_qmc(100, p, seed=12345), expected)
 
     def test_MultinomialDistribution(self):
@@ -248,7 +248,7 @@ class TestMultinomialQMC:
     def test_other_engine(self):
         # same as test_MultinomialBasicDraw with different engine
         p = np.array([0.12, 0.26, 0.05, 0.35, 0.22])
-        expected = np.array([12, 25, 6, 34, 23])
+        expected = np.array([12, 25, 6, 35, 22])
         engine = qmc.Sobol(1, scramble=True, seed=12345)
         assert_array_equal(qmc.multinomial_qmc(100, p, engine=engine, seed=12345),
                            expected)
@@ -293,7 +293,7 @@ class TestNormalQMC:
         engine = qmc.NormalQMC(dim=2, seed=12345)
         samples = engine.random(n_samples=2)
         samples_expected = np.array(
-            [[-0.63099602, -1.32950772], [0.29625805, 1.86425618]]
+            [[-0.943472,  0.405116], [-0.63099602, -1.32950772]]
         )
         assert_array_almost_equal(samples, samples_expected)
         # test odd dimension
@@ -301,8 +301,8 @@ class TestNormalQMC:
         samples = engine.random(n_samples=2)
         samples_expected = np.array(
             [
+                [-0.943472, 0.405116, 0.268828],
                 [1.83169884, -1.40473647, 0.24334828],
-                [0.36596099, 1.2987395, -0.330971],
             ]
         )
         assert_array_almost_equal(samples, samples_expected)
@@ -312,7 +312,7 @@ class TestNormalQMC:
         engine = qmc.NormalQMC(dim=2, seed=12345, inv_transform=True)
         samples = engine.random(n_samples=2)
         samples_expected = np.array(
-            [[-0.41622922, 0.46622792], [-0.96063897, -0.75568963]]
+            [[ 0.228309, -0.162516], [-0.41622922, 0.46622792]]
         )
         assert_array_almost_equal(samples, samples_expected)
         # test odd dimension
@@ -320,15 +320,15 @@ class TestNormalQMC:
         samples = engine.random(n_samples=2)
         samples_expected = np.array(
             [
+                [0.228309, -0.162516, 0.167352],
                 [-1.40525266, 1.37652443, -0.8519666],
-                [-0.166497, -2.3153681, 0.840378],
             ]
         )
         assert_array_almost_equal(samples, samples_expected)
 
     def test_NormalQMCShapiro(self):
         engine = qmc.NormalQMC(dim=2, seed=12345)
-        samples = engine.random(n_samples=250)
+        samples = engine.random(n_samples=350)
         assert_(all(np.abs(samples.mean(axis=0)) < 1e-2))
         assert_(all(np.abs(samples.std(axis=0) - 1) < 1e-2))
         # perform Shapiro-Wilk test for normality
@@ -341,7 +341,7 @@ class TestNormalQMC:
 
     def test_NormalQMCShapiroInvTransform(self):
         engine = qmc.NormalQMC(dim=2, seed=12345, inv_transform=True)
-        samples = engine.random(n_samples=250)
+        samples = engine.random(n_samples=350)
         assert_(all(np.abs(samples.mean(axis=0)) < 1e-2))
         assert_(all(np.abs(samples.std(axis=0) - 1) < 1e-2))
         # perform Shapiro-Wilk test for normality
@@ -437,7 +437,7 @@ class TestMultivariateNormalQMC:
         engine = qmc.MultivariateNormalQMC(np.array([0, 0]), A, seed=12345)
         samples = engine.random(n_samples=2)
         samples_expected = np.array(
-            [[-0.67595995, -2.27437872], [0.317369, 2.66203577]]
+            [[-1.010703, -0.324223], [-0.67595995, -2.27437872]]
         )
         assert_array_almost_equal(samples, samples_expected)
 
@@ -449,8 +449,8 @@ class TestMultivariateNormalQMC:
         samples = engine.random(n_samples=2)
         samples_expected = np.array(
             [
+                [-1.056834, 2.493251, 0.114556],
                 [2.05178452, -6.35744194, 0.67944512],
-                [0.40993262, 2.60517697, -0.43475],
             ]
         )
         assert_array_almost_equal(samples, samples_expected)
@@ -465,7 +465,7 @@ class TestMultivariateNormalQMC:
         )
         samples = engine.random(n_samples=2)
         samples_expected = np.array(
-            [[-0.44588916, 0.22657776], [-1.02909281, -1.83193033]]
+            [[ 0.244578, -0.004441], [-0.44588916, 0.22657776]]
         )
         assert_array_almost_equal(samples, samples_expected)
 
@@ -479,8 +479,8 @@ class TestMultivariateNormalQMC:
         samples = engine.random(n_samples=2)
         samples_expected = np.array(
             [
+                [0.255741, -0.761559, 0.234236],
                 [-1.5740992, 5.61057598, -1.28218525],
-                [-0.18650226, -5.41662685, 1.12366],
             ]
         )
         assert_array_almost_equal(samples, samples_expected)
@@ -490,7 +490,7 @@ class TestMultivariateNormalQMC:
         engine = qmc.MultivariateNormalQMC(
             mean=[0, 0], cov=[[1, 0], [0, 1]], seed=12345
         )
-        samples = engine.random(n_samples=250)
+        samples = engine.random(n_samples=1000)
         assert_(all(np.abs(samples.mean(axis=0)) < 1e-2))
         assert_(all(np.abs(samples.std(axis=0) - 1) < 1e-2))
         # perform Shapiro-Wilk test for normality
@@ -505,7 +505,7 @@ class TestMultivariateNormalQMC:
         engine = qmc.MultivariateNormalQMC(
             mean=[1.0, 2.0], cov=[[1.5, 0.5], [0.5, 1.5]], seed=12345
         )
-        samples = engine.random(n_samples=250)
+        samples = engine.random(n_samples=1000)
         assert_(all(np.abs(samples.mean(axis=0) - [1, 2]) < 1e-2))
         assert_(all(np.abs(samples.std(axis=0) - np.sqrt(1.5)) < 1e-2))
         # perform Shapiro-Wilk test for normality
@@ -521,7 +521,7 @@ class TestMultivariateNormalQMC:
         engine = qmc.MultivariateNormalQMC(
             mean=[0, 0], cov=[[1, 0], [0, 1]], seed=12345, inv_transform=True
         )
-        samples = engine.random(n_samples=250)
+        samples = engine.random(n_samples=1000)
         assert_(all(np.abs(samples.mean(axis=0)) < 1e-2))
         assert_(all(np.abs(samples.std(axis=0) - 1) < 1e-2))
         # perform Shapiro-Wilk test for normality
@@ -539,7 +539,7 @@ class TestMultivariateNormalQMC:
             seed=12345,
             inv_transform=True,
         )
-        samples = engine.random(n_samples=250)
+        samples = engine.random(n_samples=1000)
         assert_(all(np.abs(samples.mean(axis=0) - [1, 2]) < 1e-2))
         assert_(all(np.abs(samples.std(axis=0) - np.sqrt(1.5)) < 1e-2))
         # perform Shapiro-Wilk test for normality
