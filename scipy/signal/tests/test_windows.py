@@ -115,12 +115,9 @@ class TestTaylor(object):
 
         References
         -----
-        .. [1] Doerry, Armin. (2017). Catalog of Window Taper Functions for
-                Sidelobe Control. https://www.researchgate.net/profile/
-                Armin_Doerry/publication/
-                316281181_Catalog_of_Window_Taper_Functions_for_Sidelobe_Control/
-                links/58f92cb2a6fdccb121c9d54d/
-                Catalog-of-Window-Taper-Functions-for-Sidelobe-Control.pdf
+        .. [1] Armin Doerry, "Catalog of Window Taper Functions for
+                Sidelobe Control", 2017.
+                https://www.researchgate.net/profile/Armin_Doerry/publication/316281181_Catalog_of_Window_Taper_Functions_for_Sidelobe_Control/links/58f92cb2a6fdccb121c9d54d/ Catalog-of-Window-Taper-Functions-for-Sidelobe-Control.pdf
         """
         M_win = 1024
         N_fft = 131072
