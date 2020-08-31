@@ -93,9 +93,10 @@ class TestBlackmanHarris(object):
                         [6.0e-05, 0.055645, 0.520575, 1.0, 0.520575, 0.055645,
                          6.0e-05])
 
+
 class TestTaylor(object):
-    
-    def test_simple(self):
+
+    def test_basic(self):
         assert_allclose(windows.taylor(1, 2, -15), 1.0)
         assert_allclose(windows.taylor(5, 2, -15),
                         np.array([0.75803341, 0.90757699, 1.0,
@@ -103,6 +104,42 @@ class TestTaylor(object):
         assert_allclose(windows.taylor(6, 2, -15),
                         np.array([0.7504082, 0.86624416, 0.98208011,
                                   0.98208011, 0.86624416, 0.7504082]))
+
+    def test_correctness(self):
+        """This tests ensures the correctness of the implemented Taylor Windowing
+        function. A Taylor Window of 1024 points is created, its FFT is taken, and the
+        Peak Sidelobe Level (PSLL) and 3dB and 18dB bandwidth are found and checked.
+
+        A publication from Sandia National Laboratories was used as reference for the
+        correctness values [1]_.
+
+        References
+        -----
+        .. [1] Doerry, Armin. (2017). Catalog of Window Taper Functions for
+                Sidelobe Control. https://www.researchgate.net/profile/
+                Armin_Doerry/publication/
+                316281181_Catalog_of_Window_Taper_Functions_for_Sidelobe_Control/
+                links/58f92cb2a6fdccb121c9d54d/
+                Catalog-of-Window-Taper-Functions-for-Sidelobe-Control.pdf
+        """
+        M_win = 1024
+        N_fft = 131072
+        w = windows.taylor(M_win, nbar=4, level=-35)
+        f = fftpack.fft(w, N_fft)
+        spec = 20 * np.log10(np.abs(f / np.amax(f)))
+
+        first_zero = np.argmax(np.diff(spec) > 0)
+
+        PSLL = np.amax(spec[first_zero:-first_zero])
+
+        BW_3dB = 2*np.argmax(spec <= -3.0102999566398121) / N_fft * M_win
+        # BW_6dB = 2*np.argmax(spec <= -6.0205999132796242) / N_fft * M_win
+        BW_18dB = 2*np.argmax(spec <= -18.061799739838872) / N_fft * M_win
+
+        assert_allclose(PSLL, -35.1672)
+        assert_allclose(BW_3dB, 1.1822)
+        assert_allclose(BW_18dB, 2.6112)
+
 
 class TestBohman(object):
 
