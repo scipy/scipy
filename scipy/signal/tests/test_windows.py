@@ -105,7 +105,7 @@ class TestTaylor(object):
                                   0.98208011, 0.86624416, 0.7504082]))
 
     def test_correctness(self):
-        """This tests ensures the correctness of the implemented Taylor Windowing
+        """This test ensures the correctness of the implemented Taylor Windowing
         function. A Taylor Window of 1024 points is created, its FFT is taken, and the
         Peak Sidelobe Level (PSLL) and 3dB and 18dB bandwidth are found and checked.
 
