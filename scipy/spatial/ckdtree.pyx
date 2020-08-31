@@ -385,8 +385,10 @@ cdef np.intp_t get_num_workers(workers: object, kwargs: dict) except -1:
     """Handle the workers argument, translating the old n_jobs name"""
     if workers is None:
         if 'n_jobs' in kwargs:
-            warnings.warn('The n_jobs argument has been renamed "workers"',
-                          DeprecationWarning)
+            warnings.warn(
+                'The n_jobs argument has been renamed "workers". '
+                'The old name "n_jobs" will stop working in SciPy 1.8.0.',
+                DeprecationWarning)
             workers = kwargs.pop('n_jobs')
         else:
             workers = 1
@@ -690,7 +692,10 @@ cdef class cKDTree:
         workers : int, optional
             Number of workers to use for parallel processing. If -1 is given
             all CPU threads are used. Default: 1.
-            Note: This argument was renamed from "n_jobs" in SciPy version 1.6.0
+
+            .. versionchanged:: 1.6.0
+               The "n_jobs" argument was renamed "workers". The old name
+               "n_jobs" is deprecated and will stop working in SciPy 1.8.0.
 
         Returns
         -------
@@ -853,7 +858,11 @@ cdef class cKDTree:
         workers : int, optional
             Number of jobs to schedule for parallel processing. If -1 is given
             all processors are used. Default: 1.
-            Note: This argument was renamed from "n_jobs" in SciPy version 1.6.0
+
+            .. versionchanged:: 1.6.0
+               The "n_jobs" argument was renamed "workers". The old name
+               "n_jobs" is deprecated and will stop working in SciPy 1.8.0.
+
         return_sorted : bool, optional
             Sorts returned indicies if True and does not sort them if False. If
             None, does not sort single point queries, but does sort
