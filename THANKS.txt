@@ -234,8 +234,6 @@ James Wright for simple documentation fixes
 Sam Wallan for scipy.linalg.lapack enhancements
 Richard Weiss for a bug fix in scipy.optimize._differentialevolution.py.
 Luigi F. Cruz for adding time/frequency domain option to scipy.signal.resample.
-Yili Hong, Mika Straka, Hamel Ajay Kothari and Maxi Marufo for adding Poisson
-    Binomial distribution in scipy.stats
 
 Institutions
 ------------
