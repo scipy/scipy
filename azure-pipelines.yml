@@ -99,7 +99,8 @@ jobs:
       versionSpec: $(PYTHON_VERSION)
       addToPath: true
       architecture: $(PYTHON_ARCH)
-  - script: python -m pip install --upgrade pip setuptools wheel
+  - script: |
+      python -m pip install --upgrade pip "setuptools<50.0" wheel
     displayName: 'Install tools'
   - powershell: |
       $pyversion = python -c "import sys; print(sys.version.split()[0])"
