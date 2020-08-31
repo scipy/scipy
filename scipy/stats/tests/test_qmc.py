@@ -21,7 +21,8 @@ class TestUtils(object):
 
         assert_allclose(scaled_space, out)
 
-        scaled_back_space = qmc.scale(scaled_space, bounds=corners, reverse=True)
+        scaled_back_space = qmc.scale(scaled_space, bounds=corners,
+                                      reverse=True)
         assert_allclose(scaled_back_space, space)
 
     def test_discrepancy(self):
@@ -34,8 +35,8 @@ class TestUtils(object):
         assert_allclose(qmc.discrepancy(space_1), 0.0081, atol=1e-4)
         assert_allclose(qmc.discrepancy(space_2), 0.0105, atol=1e-4)
 
-        # From Zhou Y.-D. et al. Mixture discrepancy for quasi-random point sets
-        # Journal of Complexity, 29 (3-4), pp. 283-301, 2013.
+        # From Zhou Y.-D. et al. Mixture discrepancy for quasi-random point
+        # sets. Journal of Complexity, 29 (3-4), pp. 283-301, 2013.
         sample = np.array([[2, 1, 1, 2, 2, 2],
                            [1, 2, 2, 2, 2, 2],
                            [2, 1, 1, 1, 1, 1],
@@ -45,10 +46,14 @@ class TestUtils(object):
                            [2, 2, 2, 1, 2, 2]])
         sample = (2.0 * sample - 1.0) / (2.0 * 2.0)
 
-        assert_allclose(qmc.discrepancy(sample, method='MD'), 2.5000, atol=1e-4)
-        assert_allclose(qmc.discrepancy(sample, method='WD'), 1.3680, atol=1e-4)
-        assert_allclose(qmc.discrepancy(sample, method='CD'), 0.3172, atol=1e-4)
-        assert_allclose(qmc.discrepancy(sample, method='star'), 0.037451, atol=1e-4)
+        assert_allclose(qmc.discrepancy(sample, method='MD'), 2.5000,
+                        atol=1e-4)
+        assert_allclose(qmc.discrepancy(sample, method='WD'), 1.3680,
+                        atol=1e-4)
+        assert_allclose(qmc.discrepancy(sample, method='CD'), 0.3172,
+                        atol=1e-4)
+        assert_allclose(qmc.discrepancy(sample, method='star'), 0.037451,
+                        atol=1e-4)
 
         assert_raises(ValueError, qmc.discrepancy, sample, False, 'toto')
 
@@ -57,7 +62,8 @@ class TestUtils(object):
         space_1 = (2.0 * space_1 - 1.0) / (2.0 * 6.0)
 
         disc_init = qmc.discrepancy(space_1[:-1], iterative=True)
-        disc_iter = qmc._update_discrepancy(space_1[-1], space_1[:-1], disc_init)
+        disc_iter = qmc._update_discrepancy(space_1[-1], space_1[:-1],
+                                            disc_init)
 
         assert_allclose(disc_iter, 0.0081, atol=1e-4)
 
@@ -182,7 +188,8 @@ class TestLHS(object):
         sample_ref = olhs.random(n_samples=20)
         disc_ref = qmc.discrepancy(sample_ref)
 
-        optimal_1 = qmc.OptimalDesign(dim=2, start_design=sample_ref, seed=seed)
+        optimal_1 = qmc.OptimalDesign(dim=2, start_design=sample_ref,
+                                      seed=seed)
         sample_1 = optimal_1.random(n_samples=20)
         disc_1 = qmc.discrepancy(sample_1)
 
@@ -194,7 +201,8 @@ class TestLHS(object):
 
         assert disc_ < disc_ref
 
-        optimal_2 = qmc.OptimalDesign(dim=2, start_design=sample_ref, niter=2, seed=seed)
+        optimal_2 = qmc.OptimalDesign(dim=2, start_design=sample_ref, niter=2,
+                                      seed=seed)
         sample_2 = optimal_2.random(n_samples=20)
         disc_2 = qmc.discrepancy(sample_2)
         assert disc_2 < disc_1
@@ -250,7 +258,8 @@ class TestMultinomialQMC:
         p = np.array([0.12, 0.26, 0.05, 0.35, 0.22])
         expected = np.array([12, 25, 6, 35, 22])
         engine = qmc.Sobol(1, scramble=True, seed=12345)
-        assert_array_equal(qmc.multinomial_qmc(100, p, engine=engine, seed=12345),
+        assert_array_equal(qmc.multinomial_qmc(100, p, engine=engine,
+                                               seed=12345),
                            expected)
 
 
@@ -284,7 +293,8 @@ class TestNormalQMC:
         assert_equal(samples.shape, (5, 2))
 
     def test_other_engine(self):
-        engine = qmc.NormalQMC(dim=2, engine=qmc.Sobol(dim=2, scramble=True), inv_transform=True)
+        engine = qmc.NormalQMC(dim=2, engine=qmc.Sobol(dim=2, scramble=True),
+                               inv_transform=True)
         samples = engine.random()
         assert_equal(samples.shape, (1, 2))
 
@@ -293,7 +303,7 @@ class TestNormalQMC:
         engine = qmc.NormalQMC(dim=2, seed=12345)
         samples = engine.random(n_samples=2)
         samples_expected = np.array(
-            [[-0.943472,  0.405116], [-0.63099602, -1.32950772]]
+            [[-0.943472, 0.405116], [-0.63099602, -1.32950772]]
         )
         assert_array_almost_equal(samples, samples_expected)
         # test odd dimension
@@ -312,7 +322,7 @@ class TestNormalQMC:
         engine = qmc.NormalQMC(dim=2, seed=12345, inv_transform=True)
         samples = engine.random(n_samples=2)
         samples_expected = np.array(
-            [[ 0.228309, -0.162516], [-0.41622922, 0.46622792]]
+            [[0.228309, -0.162516], [-0.41622922, 0.46622792]]
         )
         assert_array_almost_equal(samples, samples_expected)
         # test odd dimension
@@ -465,7 +475,7 @@ class TestMultivariateNormalQMC:
         )
         samples = engine.random(n_samples=2)
         samples_expected = np.array(
-            [[ 0.244578, -0.004441], [-0.44588916, 0.22657776]]
+            [[0.244578, -0.004441], [-0.44588916, 0.22657776]]
         )
         assert_array_almost_equal(samples, samples_expected)
 

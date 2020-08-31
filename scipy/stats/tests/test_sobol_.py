@@ -34,17 +34,20 @@ class TestSobol:
         ]
         assert_equal(self.draws_unscrambled_1d.shape[0], 10)
         assert_equal(self.draws_unscrambled_1d.shape[1], 1)
-        assert_array_equal(self.draws_unscrambled_1d.flatten(), np.array(expected))
+        assert_array_equal(self.draws_unscrambled_1d.flatten(),
+                           np.array(expected))
 
     def test_Unscrambled3DSobol(self):
         self.setUp()
-        expected_dim3 = [0, 0.5, 0.25, 0.75, 0.625, 0.125, 0.875, 0.375, 0.9375,
-                         0.4375]
+        expected_dim3 = [0, 0.5, 0.25, 0.75, 0.625, 0.125, 0.875, 0.375,
+                         0.9375, 0.4375]
         assert_equal(self.draws_unscrambled_3d.shape[0], 10)
         assert_equal(self.draws_unscrambled_3d.shape[1], 3)
-        assert_array_equal(self.draws_unscrambled_3d[:, 2], np.array(expected_dim3))
+        assert_array_equal(self.draws_unscrambled_3d[:, 2],
+                           np.array(expected_dim3))
         assert_array_equal(
-            self.draws_unscrambled_3d[:, 0], self.draws_unscrambled_1d.flatten()
+            self.draws_unscrambled_3d[:, 0],
+            self.draws_unscrambled_1d.flatten()
         )
 
     def test_Unscrambled3DAsyncSobol(self):
@@ -144,7 +147,8 @@ class TestSobol:
 
     def test_ScrambledFastForwardAndResetSobol(self):
         self.setUp()
-        engine_scrambled_3d = Sobol(3, scramble=True, seed=12345).fast_forward(5)
+        engine_scrambled_3d = Sobol(3, scramble=True,
+                                    seed=12345).fast_forward(5)
         draws = engine_scrambled_3d.random(5)
         assert_array_equal(self.draws_scrambled_3d[5:10], draws)
 

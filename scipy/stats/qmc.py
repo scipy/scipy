@@ -95,13 +95,14 @@ def discrepancy(sample, iterative=False, method='CD'):
     The lower the value is, the better the coverage of the parameter space is.
 
     Taking a subspace of the parameter space we count the number of points in
-    the subpace and compare it to the total number of the points of the sample.
-    This value is substracted by the volume of the subspace. This process is
-    done over all subspaces and the highest value is kept.
+    the subpace and compare it to the total number of the points of the
+    sample. This value is substracted by the volume of the subspace. This
+    process is done over all subspaces and the highest value is kept.
 
     Four methods are available:
 
-    * ``CD``: Centered Discrepancy - subspace involves a corner of the hypercube
+    * ``CD``: Centered Discrepancy - subspace involves a corner of the
+      hypercube
     * ``WD``: Wrap-around Discrepancy - subspace can wrap around bounds
     * ``MD``: Mixture Discrepancy - mix between CD/WD covering more criteria
     * ``star``: Star L2-discrepancy - like CD BUT variant to rotation
@@ -134,7 +135,8 @@ def discrepancy(sample, iterative=False, method='CD'):
     >>> qmc.discrepancy(space)
     0.008142039609053464
 
-    We can also compute iteratively the discrepancy by using ``iterative=True``.
+    We can also compute iteratively the discrepancy by using
+    ``iterative=True``.
 
     >>> disc_init = qmc.discrepancy(space[:-1], iterative=True)
     >>> disc_init
@@ -172,7 +174,8 @@ def discrepancy(sample, iterative=False, method='CD'):
         return - (4.0 / 3.0) ** dim + 1.0 / (n_samples ** 2) * prod_arr.sum()
     elif method == 'MD':
         abs_ = abs(sample - 0.5)
-        disc1 = np.sum(np.prod(5.0 / 3.0 - 0.25 * abs_ - 0.25 * abs_ ** 2, axis=1))
+        disc1 = np.sum(np.prod(5.0 / 3.0 - 0.25 * abs_ - 0.25 * abs_ ** 2,
+                               axis=1))
 
         prod_arr = 1
         for i in range(dim):
@@ -183,7 +186,11 @@ def discrepancy(sample, iterative=False, method='CD'):
                          0.5 * abs(s0[:, None] - s0) ** 2)
         disc2 = prod_arr.sum()
 
-        return (19.0 / 12.0) ** dim - 2.0 / n_samples * disc1 + 1.0 / (n_samples ** 2) * disc2
+        disc = (19.0 / 12.0) ** dim
+        disc1 = 2.0 / n_samples * disc1
+        disc2 = 1.0 / (n_samples ** 2) * disc2
+
+        return disc - disc1 + disc2
     elif method == 'star':
         return np.sqrt(
             3 ** (-dim) - 2 ** (1 - dim) / n_samples
@@ -445,9 +452,10 @@ class QMCEngine(ABC):
     Notes
     -----
 
-    By convention samples are distributed over the half-open interval ``[0, 1)``.
-    Instances of the class can access the attributes: ``dim`` for the dimension;
-    and ``rng`` for the random number generator (used for the ``seed``).
+    By convention samples are distributed over the half-open interval
+    ``[0, 1)``. Instances of the class can access the attributes: ``dim`` for
+    the dimension; and ``rng`` for the random number generator (used for the
+    ``seed``).
 
     **Subclassing**
 
@@ -455,8 +463,8 @@ class QMCEngine(ABC):
     ``random`` has to be redefined.
 
     * ``__init__(dim, seed=None)``: at least fix the dimension. If the sampler
-      does not take advantage of a ``seed`` (deterministic methods like Halton),
-      this parameter can be omitted.
+      does not take advantage of a ``seed`` (deterministic methods like
+      Halton), this parameter can be omitted.
     * ``random(n_samples)``: draw ``n_samples`` from the engine.
 
     Optionally, 2 other methods can be overwritten by subclasses:
@@ -555,8 +563,9 @@ class Halton(QMCEngine):
 
     References
     ----------
-    .. [1] Halton, "On the efficiency of certain quasi-random sequences of points
-       in evaluating multi-dimensional integrals", Numerische Mathematik, 1960.
+    .. [1] Halton, "On the efficiency of certain quasi-random sequences of
+       points in evaluating multi-dimensional integrals", Numerische
+       Mathematik, 1960.
 
     Examples
     --------
@@ -648,8 +657,8 @@ class OrthogonalLatinHypercube(QMCEngine):
 
     References
     ----------
-    .. [1] Art B. Owen, "Orthogonal arrays for computer experiments, integration
-       and visualization", Statistica Sinica, 1992.
+    .. [1] Art B. Owen, "Orthogonal arrays for computer experiments,
+       integration and visualization", Statistica Sinica, 1992.
 
     Examples
     --------
@@ -716,8 +725,8 @@ class OrthogonalLatinHypercube(QMCEngine):
 class LatinHypercube(QMCEngine):
     """Latin hypercube sampling (LHS).
 
-    The parameter space is subdivided into an orthogonal grid of `n_samples` per
-    dimension `dim`. Within this multi-dimensional grid, `n_samples` are
+    The parameter space is subdivided into an orthogonal grid of `n_samples`
+    per dimension `dim`. Within this multi-dimensional grid, `n_samples` are
     selected by ensuring there is only one sample per row and column.
 
     Parameters
@@ -736,8 +745,8 @@ class LatinHypercube(QMCEngine):
 
     References
     ----------
-    .. [1] Mckay et al., "A Comparison of Three Methods for Selecting Values of
-       Input Variables in the Analysis of Output from a Computer Code",
+    .. [1] Mckay et al., "A Comparison of Three Methods for Selecting Values
+       of Input Variables in the Analysis of Output from a Computer Code",
        Technometrics, 1979.
 
     Examples
@@ -808,8 +817,8 @@ class OptimalDesign(QMCEngine):
     the one with lowest centered discrepancy is return. This option is faster.
 
     Centered discrepancy based design show better space filling robustness
-    toward 2D and 3D subprojections. Distance based design better space filling
-    but less robust to subprojections.
+    toward 2D and 3D subprojections. Distance based design better space
+    filling but less robust to subprojections.
 
     Parameters
     ----------
@@ -934,7 +943,8 @@ class OptimalDesign(QMCEngine):
                 # Perturb the DoE
                 doe = self.best_doe.copy()
                 col, row_1, row_2 = np.round(x).astype(int)
-                doe[row_1, col], doe[row_2, col] = doe[row_2, col], doe[row_1, col]
+                doe[row_1, col] = doe[row_2, col]
+                doe[row_2, col] = doe[row_1, col]
 
                 disc = _perturb_discrepancy(self.best_doe, row_1, row_2, col,
                                             self.best_disc)
@@ -953,7 +963,8 @@ class OptimalDesign(QMCEngine):
                                 [0, n_samples - 1],
                                 [0, n_samples - 1])
             else:
-                bounds_optim = (slice(0, self.dim - 1, 1), slice(0, n_samples - 1, 1),
+                bounds_optim = (slice(0, self.dim - 1, 1),
+                                slice(0, n_samples - 1, 1),
                                 slice(0, n_samples - 1, 1))
 
             for _ in range(self.niter):
@@ -1005,7 +1016,8 @@ class Sobol(QMCEngine):
     References
     ----------
     .. [1] I. M. Sobol. The distribution of points in a cube and the accurate
-       evaluation of integrals. Zh. Vychisl. Mat. i Mat. Phys., 7:784-802, 1967.
+       evaluation of integrals. Zh. Vychisl. Mat. i Mat. Phys., 7:784-802,
+       1967.
 
     .. [2] Art B. Owen. Scrambling Sobol and Niederreiter-Xing points.
        Journal of Complexity, 14(4):466-489, December 1998.
@@ -1094,7 +1106,9 @@ class Sobol(QMCEngine):
         )
         self._quasi = self._shift.copy()
         # Generate lower triangular matrices (stacked across dimensions)
-        ltm = np.tril(self.rng.randint(2, size=(self.dim, self.MAXBIT, self.MAXBIT)))
+        ltm = np.tril(self.rng.randint(2, size=(self.dim,
+                                                self.MAXBIT,
+                                                self.MAXBIT)))
         _cscramble(self.dim, ltm, self._sv)
         self.num_generated = 0
 
@@ -1117,10 +1131,12 @@ class Sobol(QMCEngine):
         if self.num_generated == 0 and n_samples == 1:
             sample = self._first_point
         elif self.num_generated == 0:
-            _draw(n_samples, self.num_generated, self.dim, self._sv, self._quasi, sample)
+            _draw(n_samples, self.num_generated, self.dim, self._sv,
+                  self._quasi, sample)
             sample = np.concatenate([self._first_point, sample])[:n_samples]
         else:
-            _draw(n_samples, self.num_generated - 1, self.dim, self._sv, self._quasi, sample)
+            _draw(n_samples, self.num_generated - 1, self.dim, self._sv,
+                  self._quasi, sample)
 
         self.num_generated += n_samples
         return sample
@@ -1153,9 +1169,11 @@ class Sobol(QMCEngine):
 
         """
         if self.num_generated == 0:
-            _fast_forward(n - 1, self.num_generated, self.dim, self._sv, self._quasi)
+            _fast_forward(n - 1, self.num_generated, self.dim,
+                          self._sv, self._quasi)
         else:
-            _fast_forward(n, self.num_generated - 1, self.dim, self._sv, self._quasi)
+            _fast_forward(n, self.num_generated - 1, self.dim,
+                          self._sv, self._quasi)
         self.num_generated += n
         return self
 
@@ -1226,8 +1244,8 @@ class NormalQMC(QMCEngine):
 
     References
     ----------
-    .. [1] G. Pages. Numerical Probability: An Introduction with Applications to
-       Finance. Universitext. Springer International Publishing, 2018.
+    .. [1] G. Pages. Numerical Probability: An Introduction with Applications
+       to Finance. Universitext. Springer International Publishing, 2018.
 
     Examples
     --------
@@ -1271,7 +1289,8 @@ class NormalQMC(QMCEngine):
         # get base samples
         samples = self.engine.random(n_samples)
         if self._inv_transform:
-            # apply inverse transform (values to close to 0/1 result in inf values)
+            # apply inverse transform
+            # (values to close to 0/1 result in inf values)
             return norm.ppf(0.5 + (1 - 1e-10) * (samples - 0.5))
         else:
             # apply Box-Muller transform (note: [1] indexes starting from 1)
@@ -1280,13 +1299,14 @@ class NormalQMC(QMCEngine):
             thetas = 2 * math.pi * samples[:, 1 + even]
             cos = np.cos(thetas)
             sin = np.sin(thetas)
-            transf_samples = np.stack([Rs * cos, Rs * sin], -1).reshape(n_samples, -1)
+            transf_samples = np.stack([Rs * cos, Rs * sin],
+                                      -1).reshape(n_samples, -1)
             # make sure we only return the number of dimension requested
             return transf_samples[:, : self.dim]
 
 
 class MultivariateNormalQMC(QMCEngine):
-    r"""Engine for QMC sampling from a multivariate Normal :math:`N(\mu, \Sigma)`.
+    r"""QMC sampling from a multivariate Normal :math:`N(\mu, \Sigma)`.
 
     By default, this implementation uses Box-Muller transformed Sobol' samples
     following pg. 123 in [1]_ To use the inverse transform instead, set
@@ -1312,8 +1332,8 @@ class MultivariateNormalQMC(QMCEngine):
 
     References
     ----------
-    .. [1] G. Pages. Numerical Probability: An Introduction with Applications to
-      Finance. Universitext. Springer International Publishing, 2018.
+    .. [1] G. Pages. Numerical Probability: An Introduction with Applications
+       to Finance. Universitext. Springer International Publishing, 2018.
 
     Examples
     --------
@@ -1341,7 +1361,7 @@ class MultivariateNormalQMC(QMCEngine):
             dim=self.dim, inv_transform=inv_transform,
             engine=engine, seed=seed
         )
-        # compute Cholesky decomp; if it fails, do the eigendecomposition
+        # compute Cholesky decomp; if it fails, do the eigen decomposition
         try:
             self._corr_matrix = np.linalg.cholesky(cov).transpose()
         except np.linalg.LinAlgError:
