@@ -121,7 +121,7 @@ class TestTaylor(object):
         M_win = 1024
         N_fft = 131072
         w = windows.taylor(M_win, nbar=4, level=-35)
-        f = fftpack.fft(w, N_fft)
+        f = fft(w, N_fft)
         spec = 20 * np.log10(np.abs(f / np.amax(f)))
 
         first_zero = np.argmax(np.diff(spec) > 0)
