@@ -168,6 +168,7 @@ jobs:
           refreshenv
       }
       $env:PATH = "C:\\ProgramData\\chocolatey\\lib\\mingw\\tools\\install\\mingw$(BITS)\\bin;" + $env:PATH
+      $env:SETUPTOOLS_USE_DISTUTILS = "stdlib"
 
       mkdir dist
       pip wheel --no-build-isolation -v -v -v --wheel-dir=dist .
@@ -177,6 +178,7 @@ jobs:
     displayName: 'Build SciPy'
   - powershell: |
       $env:PATH = "C:\\ProgramData\\chocolatey\\lib\\mingw\\tools\\install\\mingw$(BITS)\\bin;" + $env:PATH
+      $env:SETUPTOOLS_USE_DISTUTILS = "stdlib"
       python runtests.py -n --mode=$(TEST_MODE) -- -n 2 -rsx --junitxml=junit/test-results.xml --cov=scipy --cov-report=xml --cov-report=html --durations=10
     displayName: 'Run SciPy Test Suite'
   - task: PublishTestResults@2

@@ -16,6 +16,7 @@ environment:
       APPVEYOR_SAVE_CACHE_ON_ERROR: true
       APPVEYOR_SKIP_FINALIZE_ON_EXIT: true
       TEST_TIMEOUT: 1000
+      SETUPTOOLS_USE_DISTUTILS: "stdlib"
 
   matrix:
     - PYTHON: C:\Python37-x64
