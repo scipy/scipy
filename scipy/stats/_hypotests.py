@@ -134,7 +134,10 @@ def epps_singleton_2samp(x, y, t=(0.4, 0.8)):
     return Epps_Singleton_2sampResult(w, p)
 
 
-cvm_testResult = namedtuple('cvm_testResult', ('statistic', 'pvalue'))
+class CramerVonMisesResult:
+    def __init__(self, statistic, pvalue):
+        self.statistic = statistic
+        self.pvalue = pvalue
 
 
 def _psi1_mod(x):
@@ -252,7 +255,7 @@ def _cdf_cvm(x, n=None):
     return y
 
 
-def cvm_test(rvs, cdf, args=()):
+def cramervonmises(rvs, cdf, args=()):
     """
     Perform the Cramer-von Mises test for goodness of fit.
 
@@ -277,10 +280,11 @@ def cvm_test(rvs, cdf, args=()):
 
     Returns
     -------
-    statistic : float
-        Cramer-von Mises statistic.
-    pvalue :  float
-        The p-value.
+    res : object with attributes
+        statistic : float
+            Cramer-von Mises statistic.
+        pvalue :  float
+            The p-value.
 
     See Also
     --------
@@ -312,8 +316,8 @@ def cvm_test(rvs, cdf, args=()):
     >>> from scipy import stats
     >>> np.random.seed(626)
     >>> x = stats.norm.rvs(size=500)
-    >>> w, p = stats.cvm_test(x, 'norm')
-    >>> w, p
+    >>> res = stats.cramervonmises(x, 'norm')
+    >>> res.statistic, res.pvalue
     (0.06342154705518796, 0.792680516270629)
 
     The p-value 0.79 exceeds our chosen significance level, so we do not
@@ -324,8 +328,8 @@ def cvm_test(rvs, cdf, args=()):
     consistent with being drawn from a normal distribution with a mean of 2.
 
     >>> y = x + 2.1
-    >>> w, p = stats.cvm_test(y, 'norm', args=(2,))
-    >>> w, p
+    >>> res = stats.cramervonmises(y, 'norm', args=(2,))
+    >>> res.statistic, res.pvalue
     (0.4798693195559657, 0.044782228803623814)
 
     Here we have used the `args` keyword to specify the mean (``loc``)
@@ -334,8 +338,8 @@ def cvm_test(rvs, cdf, args=()):
     mean 2.1, then pass its ``cdf`` method as an argument.
 
     >>> frozen_dist = stats.norm(loc=2)
-    >>> w, p = stats.cvm_test(y, frozen_dist.cdf)
-    >>> w, p
+    >>> res = stats.cramervonmises(y, frozen_dist.cdf)
+    >>> res.statistic, res.pvalue
     (0.4798693195559657, 0.044782228803623814)
 
     In either case, we would reject the null hypothesis that the observed
@@ -363,7 +367,7 @@ def cvm_test(rvs, cdf, args=()):
     # avoid small negative values that can occur due to the approximation
     p = max(0, 1. - _cdf_cvm(w, n))
 
-    return cvm_testResult(w, p)
+    return CramerVonMisesResult(statistic=w, pvalue=p)
 
 
 def _get_wilcoxon_distr(n):

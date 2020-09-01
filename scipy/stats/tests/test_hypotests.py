@@ -5,7 +5,8 @@ from numpy.testing import (assert_, assert_equal, assert_allclose,
                            assert_almost_equal)  # avoid new uses
 
 from pytest import raises as assert_raises
-from scipy.stats._hypotests import epps_singleton_2samp, cvm_test, _cdf_cvm
+from scipy.stats._hypotests import (epps_singleton_2samp, cramervonmises,
+                                    _cdf_cvm)
 from scipy.stats import distributions
 from .common_tests import check_named_results
 
@@ -121,43 +122,40 @@ class TestCvm(object):
         # _cdf_cvm can return values larger than 1. In that case, we just
         # return a p-value of zero.
         n = 12
-        w, p = cvm_test(np.ones(n)*0.8, 'norm')
-        assert_(_cdf_cvm(w, n) > 1.0)
-        assert_equal(p, 0)
+        res = cramervonmises(np.ones(n)*0.8, 'norm')
+        assert_(_cdf_cvm(res.statistic, n) > 1.0)
+        assert_equal(res.pvalue, 0)
 
     def test_invalid_input(self):
         x = np.arange(10).reshape((2, 5))
-        assert_raises(ValueError, cvm_test, x, "norm")
-        assert_raises(ValueError, cvm_test, [1.5], "norm")
-        assert_raises(ValueError, cvm_test, (), "norm")
-
-    def test_named_attributes(self):
-        attributes = ('statistic', 'pvalue')
-        res = cvm_test(np.arange(5), "expon")
-        check_named_results(res, attributes)
+        assert_raises(ValueError, cramervonmises, x, "norm")
+        assert_raises(ValueError, cramervonmises, [1.5], "norm")
+        assert_raises(ValueError, cramervonmises, (), "norm")
 
     def test_values_R(self):
         # compared against R package goftest, version 1.1.1
         # goftest::cvm.test(c(-1.7, 2, 0, 1.3, 4, 0.1, 0.6), "pnorm")
-        w, p = cvm_test([-1.7, 2, 0, 1.3, 4, 0.1, 0.6], "norm")
-        assert_allclose(w, 0.288156, atol=1e-6)
-        assert_allclose(p, 0.1453465, atol=1e-6)
+        res = cramervonmises([-1.7, 2, 0, 1.3, 4, 0.1, 0.6], "norm")
+        assert_allclose(res.statistic, 0.288156, atol=1e-6)
+        assert_allclose(res.pvalue, 0.1453465, atol=1e-6)
 
         # goftest::cvm.test(c(-1.7, 2, 0, 1.3, 4, 0.1, 0.6),
         #                   "pnorm", mean = 3, sd = 1.5)
-        w, p = cvm_test([-1.7, 2, 0, 1.3, 4, 0.1, 0.6], "norm", (3, 1.5))
-        assert_allclose(w, 0.9426685, atol=1e-6)
-        assert_allclose(p, 0.002026417, atol=1e-6)
+        res = cramervonmises([-1.7, 2, 0, 1.3, 4, 0.1, 0.6], "norm", (3, 1.5))
+        assert_allclose(res.statistic, 0.9426685, atol=1e-6)
+        assert_allclose(res.pvalue, 0.002026417, atol=1e-6)
 
         # goftest::cvm.test(c(1, 2, 5, 1.4, 0.14, 11, 13, 0.9, 7.5), "pexp")
-        w, p = cvm_test([1, 2, 5, 1.4, 0.14, 11, 13, 0.9, 7.5], "expon")
-        assert_allclose(w, 0.8421854, atol=1e-6)
-        assert_allclose(p, 0.004433406, atol=1e-6)
+        res = cramervonmises([1, 2, 5, 1.4, 0.14, 11, 13, 0.9, 7.5], "expon")
+        assert_allclose(res.statistic, 0.8421854, atol=1e-6)
+        assert_allclose(res.pvalue, 0.004433406, atol=1e-6)
 
     def test_callable_cdf(self):
-        assert_equal(cvm_test(np.arange(5), distributions.expon.cdf),
-                     cvm_test(np.arange(5), "expon"))
+        x, args = np.arange(5), (1.4, 0.7)
+        r1 = cramervonmises(x, distributions.expon.cdf)
+        r2 = cramervonmises(x, "expon")
+        assert_equal((r1.statistic, r1.pvalue), (r2.statistic, r2.pvalue))
 
-        args = (1.4, 0.7)
-        assert_equal(cvm_test(np.arange(5), distributions.beta.cdf, args),
-                     cvm_test(np.arange(5), "beta", args))
+        r1 = cramervonmises(x, distributions.beta.cdf, args)
+        r2 = cramervonmises(x, "beta", args)
+        assert_equal((r1.statistic, r1.pvalue), (r2.statistic, r2.pvalue))
