@@ -4236,8 +4236,15 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate', alternative='two-sided'
         # errors before taking the square root
         t = rs * np.sqrt((dof/((rs+1.0)*(1.0-rs))).clip(0))
 
-    prob = _convert_symmetric_p_value(distributions.t.sf(t, dof), 'greater',
-                                      alternative)
+    if alternative == 'less':
+        prob = distributions.t.cdf(t, dof)
+    elif alternative == 'greater':
+        prob = distributions.t.sf(t, dof)
+    elif alternative == 'two-sided':
+        prob = 2 * distributions.t.sf(np.abs(t), dof)
+    else:
+        raise ValueError("alternative should be "
+                         "'less', 'greater' or 'two-sided'")
 
     # For backwards compatibility, return scalars when comparing 2 columns
     if rs.shape == (2, 2):

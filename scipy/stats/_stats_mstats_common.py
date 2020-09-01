@@ -3,7 +3,6 @@ from collections import namedtuple
 import numpy as np
 
 from . import distributions
-from scipy.stats.stats import _convert_symmetric_p_value
 
 __all__ = ['_find_repeats', 'linregress', 'theilslopes', 'siegelslopes']
 
@@ -152,9 +151,11 @@ def linregress(x, y=None, alternative='two-sided'):
             prob = distributions.t.cdf(t, df)
         elif alternative == 'greater':
             prob = distributions.t.sf(t, df)
-        else:
-            # alternative == 'less'
+        elif alternative == 'two-sided':
             prob = 2 * distributions.t.sf(np.abs(t), df)
+        else:
+            raise ValueError("alternative should be "
+                             "'less', 'greater' or 'two-sided'")
 
         sterrest = np.sqrt((1 - r**2) * ssym / ssxm / df)
 
