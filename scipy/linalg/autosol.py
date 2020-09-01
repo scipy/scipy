@@ -1,13 +1,12 @@
-# Author : Rondall E. Jones, August 2020
-
 from math import sqrt
 import numpy as np
 from numpy import atleast_1d, atleast_2d
-import scipy.linalg.decomp_svd
+# import scipy.linalg.decomp_svd
 from scipy.linalg.decomp import _asarray_validated
-from scipy.linalg.misc import LinAlgError, _datacopied, LinAlgWarning
+# from scipy.linalg.misc import LinAlgError, _datacopied, LinAlgWarning
+from scipy.linalg.misc import LinAlgError
 
-__all__ = ['autosolve', 'autosolve_nonneg']
+# Author : Rondall E. Jones, August 2020
 
 
 def two_norm(x):
@@ -40,17 +39,17 @@ def compute_mov_sums(g, w, m):
         for j in range(i, i + w):
             s += g[j]
         sums[i] = s
-        return sums
+    return sums  # beware indentation
 
 
 def splita(mg, g):
-    """ Determines a usable rank based on large rise in Picard Vector g"""
+    """ Determines a usable rank based on large rise in Picard Vector"""
     # initialize
     sensitivity = g[0]
     small = sensitivity
     local = sensitivity
     urank = 1
-    for i in range(1, mg):  # start with 2nd row; (i=1; i<mg; i++)
+    for i in range(1, mg):  # start with 2nd row
         sensitivity = g[i]
         if sensitivity > 15.0 * small and sensitivity > local:
             break
@@ -71,13 +70,15 @@ def splitb(mg, g):
     w = min(int((mg + 3) / 4), 6)
     sums = compute_mov_sums(gg, w, mg)
     ilow = np.where(sums == min(sums))[0][0]
-    # estimate a nominal value that should see a big rise later
+    # estimate a value that should see a big rise later
     sum = 0.0
     for i in range(0, ilow):
         sum += abs(gg[i])
     gnom = sum / float(ilow + 1)
-    # see if the moving average ever gets much larger
-    bad = 10.0 * gnom
+    bad = gnom
+    if sums[ilow] > gnom * 0.000001:
+        bad = 15.0 * sums[ilow]
+    # look for unexpected rise
     ibad = 0
     for i in range(ilow + 1, mg - w + 1):
         if sums[i] > bad:
@@ -224,11 +225,13 @@ def autosolve(A, b):
     m = A.shape[0]
     n = A.shape[1]
     mn = min(m, n)
-    if b.shape[0]!= m: raise LinAlgError('Inconsistent array sizes.')
+    if b.shape[0] != m:
+        raise LinAlgError("Inconsistent array sizes.")
+    z = np.zeros(n)
     if np.count_nonzero(A) == 0:
-        return 0.0, 0, 0.0, 0.0
+        return z, 0, 0.0, 0.0
     if np.count_nonzero(b) == 0:
-        return 0.0, 0, 0.0, 0.0
+        return z, 0, 0.0, 0.0
 
     U, S, Vt = np.linalg.svd(A, full_matrices=False)
     beta = np.transpose(U) @ b
@@ -247,7 +250,7 @@ def autosolve(A, b):
         g[i] = sense
         k = i + 1
     if k <= 0:
-        return np.zeros(n)  # zero system
+        return np.zeros(n)  # zero system; not currently possible
     # two-stage search for break in Picard Condition Vector
     ura = splita(k, g)
     ur = splitb(ura, g)
@@ -257,7 +260,7 @@ def autosolve(A, b):
         sigma = 0.0
         lambdah = 0.0
     else:
-        # from urb, determine sigma, then lambda, then solution
+        # from ur, determine sigma, then lambda, then solution
         Utb = np.transpose(U) @ b
         sigma = rms(Utb[ur:mn])
         lambdah = discrep(A, b, U, S, Vt, ur, sigma)
@@ -266,45 +269,41 @@ def autosolve(A, b):
 
 
 def autosolve_nonneg(A, b):
-    """ Computes a nonnegative solution of A*x = b, for A of any shape.
+    """ Computes a nonnegative solution of A*x = b.
 
     Autosolve_nonneg uses autosolve, above, and iteratively zeroes
     variables that violates the nonnegativity constraint.
-    
+
     Parameters
     ----------
-    A : (M, N) array_like "Coefficient" matrix of float.
-    b : (M) 1-D array_like Ordinate or "dependent variable" values of float.
+    Exactly as autosolve above
 
     Returns
     -------
-    x : (N) ndarray of float.
-        The solution, as explained above.
-        To return only this solution, call x = autosolve(A,b)[0]
+    Exactly as autosolve above
     """
     A = atleast_2d(_asarray_validated(A, check_finite=True))
     b = atleast_1d(_asarray_validated(b, check_finite=True))
     m = A.shape[0]
     n = A.shape[1]
-    mn = min(m, n)
-    if b.shape[0]!= m: raise LinAlgError('Inconsistent array sizes.')
-    x = np.zeros(n)
+    if b.shape[0] != m:
+        raise LinAlgError("Inconsistent array sizes.")
+    z = np.zeros(n)
     if np.count_nonzero(A) == 0:
-        return 0.0, 0, 0.0, 0.0
+        return z, 0, 0.0, 0.0
     if np.count_nonzero(b) == 0:
-        return 0.0, 0, 0.0, 0.0
-        
-    x, ur, sigma, lambdah = autosolve(A, b)
+        return z, 0, 0.0, 0.0
+
+    xt, ur, sigma, lambdah = autosolve(A, b)
     # see if unconstrained solution is already non-negative
-    if min(x) >= 0.0:
-        return x
+    if min(xt) >= 0.0:
+        return xt
     # the approach here is to actually delete columns, for SVD speed,
     # rather than just zero out columns and thereby complicate the SVD.
     C = A
     cols = [0] * n  # list of active column numbers
     for i in range(1, n):
         cols[i] = i
-    xt = x
     nn = n
     for i in range(1, nn):
         # choose a column to zero
@@ -324,13 +323,83 @@ def autosolve_nonneg(A, b):
         ms = len(S)
         ps = np.zeros(ms)
         for i in range(0, ms):
-            ps[i] = 1.0 / (S[i] + lambdah ** 2 / S[i]) \
-                if S[i] > 0.0 else 0.0
+            ps[i] = 1.0 / (S[i] + lambdah ** 2 / S[i]) if S[i] > 0.0 else 0.0
         xt = np.transpose(Vt) @ (np.diag(ps) @ (np.transpose(U) @ b))
 
     # rebuild full solution vector
-    if xt[0] < 0.0: xt[0]=0.0 #degenerate case 
-    xn = np.zeros(n)
+    if xt[0] < 0.0:
+        xt[0] = 0.0  # degenerate case
+    x = np.zeros(n)
     for j in range(0, nn):
-        xn[int(cols[j])] = xt[j]
-    return xn
+        x[int(cols[j])] = xt[j]
+    return x, ur, sigma, lambdah
+
+
+def autosolve_rising(A, b):
+    """ Computes a rising (non-descending) solution of A*x = b.
+
+    autosolve_rising uses autosolve, above, and iteratively zeroes
+    columns of A that represent now-redundant variables.
+
+    Parameters
+    ----------
+    Exactly as autosolve above
+
+    Returns
+    -------
+    Exactly as autosolve above
+    """
+    A = atleast_2d(_asarray_validated(A, check_finite=True))
+    b = atleast_1d(_asarray_validated(b, check_finite=True))
+    m = A.shape[0]
+    n = A.shape[1]
+    if b.shape[0] != m:
+        raise LinAlgError("Inconsistent array sizes.")
+    z = np.zeros(n)
+    if np.count_nonzero(A) == 0:
+        return z, 0, 0.0, 0.0
+    if np.count_nonzero(b) == 0:
+        return z, 0, 0.0, 0.0
+
+    C = A  # working copy
+    xt, ur, sigma, lambdah = autosolve(C, b)
+    count = [1] * n
+    nn = n
+    for loop in range(0, n + 1):
+        p = -1
+        big = 0.0
+        for j in range(0, nn - 1):
+            if xt[j + 1] >= xt[j]:
+                continue
+            dif = xt[j] - xt[j + 1]
+            if p < 0 or dif > big:
+                p = j
+                big = dif
+        if p < 0:
+            break
+
+        # delete redundant column
+        for i in range(0, m):
+            C[i, p] += C[i, p + 1]
+        C = np.delete(C, p + 1, 1)
+        count[p] += count[p + 1]
+        count.pop(p + 1)
+        nn = C.shape[1]
+
+        # re-solve slimmer system
+        U, S, Vt = np.linalg.svd(C, full_matrices=False)
+        ms = len(S)
+        ps = np.zeros(ms)
+        for i in range(0, ms):
+            ps[i] = 1.0 / (S[i] + lambdah ** 2 / S[i]) if S[i] > 0.0 else 0.0
+        xt = np.transpose(Vt) @ (np.diag(ps) @ (np.transpose(U) @ b))
+
+    if nn == n:
+        return xt  # if did nothing
+    x = np.zeros(n)
+    i = 0
+    for j in range(0, nn):
+        for k in range(0, count[j]):
+            x[i] = xt[j]
+            i += 1
+    return x, ur, sigma, lambdah
