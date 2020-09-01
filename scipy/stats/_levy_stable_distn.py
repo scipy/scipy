@@ -11,7 +11,10 @@ from ._distn_infrastructure import rv_continuous
 from ._continuous_distns import uniform, expon, _norm_pdf
 from ._fft_char_fn import pdf_from_cf_with_fft
 
-EPSABS = 1.2e-14
+# default numerical integration tolerance
+# used for epsrel in piecewise and both epsrel and epsabs in dni
+# (epsabs needed in dni since weighted quad requires epsabs > 0)
+_QUAD_EPS = 1.2e-14
 
 
 def Phi(alpha, t):
@@ -29,12 +32,13 @@ def _cf(t, alpha, beta):
     )
 
 
-def _pdf_single_value_cf_integrate(x, alpha, beta, epsabs=EPSABS, **kwds):
+def _pdf_single_value_cf_integrate(x, alpha, beta, **kwds):
     """To improve DNI accuracy convert characteristic function in to real
     valued integral using Euler's formula, then exploit cosine symmetry to
     change limits to [0, inf). Finally use cosine addition formula to split
     into two parts that can be handled by weighted quad pack.
     """
+    quad_eps = kwds.get("quad_eps", _QUAD_EPS)
 
     def integrand1(t):
         if t == 0:
@@ -65,7 +69,8 @@ def _pdf_single_value_cf_integrate(x, alpha, beta, epsabs=EPSABS, **kwds):
             weight="cos",
             wvar=x,
             limit=1000,
-            epsabs=epsabs,
+            epsabs=quad_eps,
+            epsrel=quad_eps
         )
 
         int2, err2 = integrate.quad(
@@ -75,7 +80,8 @@ def _pdf_single_value_cf_integrate(x, alpha, beta, epsabs=EPSABS, **kwds):
             weight="sin",
             wvar=x,
             limit=1000,
-            epsabs=epsabs,
+            epsabs=quad_eps,
+            epsrel=quad_eps
         )
 
     return (int1 + int2) / np.pi
@@ -192,7 +198,7 @@ def _nolan_c3(alpha):
 def _pdf_single_value_piecewise(x, alpha, beta, **kwds):
     """Calculate pdf using Nolan's methods as detailed in [NO].
     """
-    epsabs = kwds.get("epsabs", EPSABS)
+    quad_eps = kwds.get("quad_eps", _QUAD_EPS)
 
     zeta = -beta * np.tan(np.pi * alpha / 2.0)
     xi = np.arctan(-zeta) / alpha if alpha != 1 else np.pi / 2
@@ -302,7 +308,8 @@ def _pdf_single_value_piecewise(x, alpha, beta, **kwds):
             right_support,
             points=intg_points,
             limit=100,
-            epsabs=epsabs,
+            epsrel=quad_eps,
+            epsabs=0
         )[0]
 
     return c2 * intg
@@ -311,7 +318,7 @@ def _pdf_single_value_piecewise(x, alpha, beta, **kwds):
 def _cdf_single_value_piecewise(x, alpha, beta, **kwds):
     """Calculate cdf using Nolan's methods as detailed in [NO].
     """
-    epsabs = kwds.get("epsabs", EPSABS)
+    quad_eps = kwds.get("quad_eps", _QUAD_EPS)
 
     zeta = -beta * np.tan(np.pi * alpha / 2.0)
     if alpha != 1:
@@ -342,7 +349,8 @@ def _cdf_single_value_piecewise(x, alpha, beta, **kwds):
                 if np.isclose(-xi, np.pi / 2, rtol=1e-014, atol=1e-014):
                     intg = 0
                 else:
-                    intg = integrate.quad(f, -xi, np.pi / 2, epsabs=epsabs)[0]
+                    intg = integrate.quad(f, -xi, np.pi / 2, epsrel=quad_eps,
+                                          epsabs=0)[0]
                 return c_1 + np.sign(1 - alpha) * intg / np.pi
         elif x0 == zeta:
             return 0.5 - xi / np.pi
@@ -371,7 +379,8 @@ def _cdf_single_value_piecewise(x, alpha, beta, **kwds):
                     lambda theta: np.exp(-expr_1 * V(theta)),
                     -np.pi / 2,
                     np.pi / 2,
-                    epsabs=epsabs,
+                    epsrel=quad_eps,
+                    epsabs=0
                 )[0]
                 return int_1 / np.pi
         elif beta == 0:
@@ -387,7 +396,7 @@ def _cdf_single_value_piecewise(x, alpha, beta, **kwds):
 def _cdf_single_value_piecewise_ragibson(x, alpha, beta, **kwds):
     """Calculate cdf using Nolan's methods as detailed in [NO].
     """
-    epsabs = kwds.get("epsabs", EPSABS)
+    quad_eps = kwds.get("quad_eps", _QUAD_EPS)
 
     zeta = -beta * np.tan(np.pi * alpha / 2.0)
     xi = np.arctan(-zeta) / alpha if alpha != 1 else np.pi / 2
@@ -408,11 +417,11 @@ def _cdf_single_value_piecewise_ragibson(x, alpha, beta, **kwds):
             # He states F(x) = 1 - F(x, alpha, -beta), but this is clearly
             # incorrect since F(-infty) would be 1.0 in this case
             # Indeed, the alpha != 1, x0 < zeta case is correct here.
-            return 1 - _cdf_single_value_piecewise(-x, alpha, -beta, **kwds)
+            return 1 - _cdf_single_value_piecewise_ragibson(-x, alpha, -beta, **kwds)
     elif x0 == zeta:
         return 0.5 - xi / np.pi
     elif x0 < zeta:
-        return 1 - _cdf_single_value_piecewise(-x, alpha, -beta, **kwds)
+        return 1 - _cdf_single_value_piecewise_ragibson(-x, alpha, -beta, **kwds)
 
     # following Nolan, we may now assume
     #   x0 > zeta when alpha != 1
@@ -433,34 +442,35 @@ def _cdf_single_value_piecewise_ragibson(x, alpha, beta, **kwds):
         return np.exp(-g_1)
 
     with np.errstate(all="ignore"):
-        # this integrand can have very small tails, so we need to force
+        left_support = -xi
+        right_support = np.pi / 2
+
+        # this integrand can drop very quickly, so we need to force
         # QUADPACK to evaluate the function inside its support
         #
         # g(theta) > 300 log(10) will make
         #   exp(-g(theta)) ~ 1e-300
         # (note doubles 1e-324 and smaller are exactly equal to 0.0)
         exponent_upper_limit = 300 * np.log(10)
-        support_end = optimize.bisect(
-            lambda t: g(t) - exponent_upper_limit, -xi, np.pi / 2
-        )
 
-        # lastly, we add additional samples at
-        #   ~exp(-100), ~exp(-10), ~exp(-5), ~exp(-1)
-        # to improve QUADPACK's detection of rapidly descending tail behavior
-        # (this choice is fairly ad hoc)
-        tail_points = [
-            optimize.bisect(lambda t: g(t) - exp_height, -xi, np.pi / 2)
-            for exp_height in [100, 10, 5, 1]
-        ]
-        intg_points = [support_end] + tail_points
+        # since g is monotonic, we know the direction of increase/decrease
+        if g(-xi) > g(np.pi / 2):
+            left_support = optimize.bisect(
+                lambda t: g(t) - exponent_upper_limit, -xi, np.pi / 2
+            )
+        elif g(np.pi / 2) > g(-xi):
+            right_support = optimize.bisect(
+                lambda t: g(t) - exponent_upper_limit, -xi, np.pi / 2
+            )
 
         intg = integrate.quad(
             integrand,
-            min(-xi, support_end),
-            max(np.pi / 2, support_end),
-            points=intg_points,
+            left_support,
+            right_support,
+            points=[left_support, right_support],
             limit=100,
-            epsabs=epsabs,
+            epsrel=quad_eps,
+            epsabs=0
         )[0]
 
     return c1 + c3 * intg
@@ -511,14 +521,16 @@ class levy_stable_gen(rv_continuous):
     default method can be changed by setting ``levy_stable.pdf_default_method``
     to either 'piecewise', 'dni' or 'fft-simpson'.
 
-    To improve accuracy of piecewise and direct numerical integration one
-    can specify ``levy_stable.epsabs`` (defaults to 1.2e-14). One can also
-    specify ``levy_stable.piecewise_x_tol_near_zeta`` (defaults to 0.005)
-    for how close x is to zeta before it is considered the same as x [NO]. The
-    exact check is abs(x0 - zeta) < piecewise_x_tol_near_zeta*alpha**(1/alpha).
-    One can also specify ``levy_stable.piecewise_alpha_tol_near_one`` (defaults
-    to 0.005) for how close alpha is to 1 before being considered equal to
-    1.
+    To improve performance of piecewise and direct numerical integration one
+    can specify ``levy_stable.quad_eps`` (defaults to 1.2e-14). This is used
+    as the absolute and relative quadrature tolerances for direct numerical
+    integration and the relative quadrature tolerance for the piecewise method.
+    One can also specify ``levy_stable.piecewise_x_tol_near_zeta`` (defaults to
+    0.005) for how close x is to zeta before it is considered the same as x
+    [NO]. The exact check is
+    ``abs(x0 - zeta) < piecewise_x_tol_near_zeta*alpha**(1/alpha)``. One can
+    also specify ``levy_stable.piecewise_alpha_tol_near_one`` (defaults to
+    0.005) for how close alpha is to 1 before being considered equal to 1.
 
     To increase accuracy of FFT calculation one can specify
     ``levy_stable.pdf_fft_grid_spacing`` (defaults to 0.001) and
@@ -658,13 +670,13 @@ class levy_stable_gen(rv_continuous):
             pdf_single_value_method = None
 
         pdf_single_value_kwds = {
-            "epsabs": getattr(self, "epsabs", EPSABS),
+            "quad_eps": getattr(self, "quad_eps", _QUAD_EPS),
             "piecewise_x_tol_near_zeta": getattr(
                 self, "piecewise_x_tol_near_zeta", 0.005
             ),
             "piecewise_alpha_tol_near_one": getattr(
                 self, "piecewise_alpha_tol_near_one", 0.005
-            ),
+            )
         }
 
         fft_grid_spacing = getattr(self, "pdf_fft_grid_spacing", 0.001)
@@ -758,18 +770,18 @@ class levy_stable_gen(rv_continuous):
             self, "cdf_default_method", "piecewise"
         )
         if cdf_default_method_name == "piecewise":
-            cdf_single_value_method = _cdf_single_value_piecewise
+            cdf_single_value_method = _cdf_single_value_piecewise_ragibson
         elif cdf_default_method_name == "fft-simpson":
             cdf_single_value_method = None
 
         cdf_single_value_kwds = {
-            "epsabs": getattr(self, "epsabs", EPSABS),
+            "quad_eps": getattr(self, "quad_eps", _QUAD_EPS),
             "piecewise_x_tol_near_zeta": getattr(
                 self, "piecewise_x_tol_near_zeta", 0.005
             ),
             "piecewise_alpha_tol_near_one": getattr(
                 self, "piecewise_alpha_tol_near_one", 0.005
-            ),
+            )
         }
 
         fft_grid_spacing = getattr(self, "pdf_fft_grid_spacing", 0.001)
