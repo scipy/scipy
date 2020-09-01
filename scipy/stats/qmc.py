@@ -943,8 +943,8 @@ class OptimalDesign(QMCEngine):
                 # Perturb the DoE
                 doe = self.best_doe.copy()
                 col, row_1, row_2 = np.round(x).astype(int)
-                doe[row_1, col] = doe[row_2, col]
-                doe[row_2, col] = doe[row_1, col]
+                doe[row_1, col], doe[row_2, col] = doe[row_2, col],\
+                    doe[row_1, col]
 
                 disc = _perturb_discrepancy(self.best_doe, row_1, row_2, col,
                                             self.best_disc)
@@ -1035,40 +1035,42 @@ class Sobol(QMCEngine):
 
     >>> from scipy.stats import qmc
     >>> sampler = qmc.Sobol(dim=2)
-    >>> sample = sampler.random(n_samples=5)
+    >>> sample = sampler.random(n_samples=8)
     >>> sample
     array([[0.   , 0.   ],
            [0.5  , 0.5  ],
            [0.75 , 0.25 ],
            [0.25 , 0.75 ],
-           [0.375, 0.375]])
+           [0.375, 0.375],
+           [0.875, 0.875],
+           [0.625, 0.125],
+           [0.125, 0.625]])
 
     Compute the quality of the sample using the discrepancy criterion.
 
     >>> qmc.discrepancy(sample)
-    0.05225857204861106
+    0.013882107204860938
 
     If some wants to continue an existing design, extra points can be obtained
     by calling again `random()`. Alternatively, you can skip some points like:
 
-    >>> sampler.fast_forward(5)
-    >>> sample_continued = sampler.random(n_samples=5)
+    >>> sampler.reset()
+    >>> sampler.fast_forward(4)
+    >>> sample_continued = sampler.random(n_samples=4)
     >>> sample_continued
-    array([[0.4375, 0.5625],
-           [0.9375, 0.0625],
-           [0.8125, 0.6875],
-           [0.3125, 0.1875],
-           [0.0625, 0.9375]])
+    array([[0.375, 0.375],
+           [0.875, 0.875],
+           [0.625, 0.125],
+           [0.125, 0.625]])
 
     Finally, samples can be scaled to bounds.
 
     >>> bounds = [[0, 2], [10, 5]]
     >>> qmc.scale(sample_continued, bounds)
-    array([[4.375 , 3.6875],
-           [9.375 , 2.1875],
-           [8.125 , 4.0625],
-           [3.125 , 2.5625],
-           [0.625 , 4.8125]])
+    array([[3.75 , 3.125],
+           [8.75 , 4.625],
+           [6.25 , 2.375],
+           [1.25 , 3.875]])
 
     """
 
@@ -1128,12 +1130,14 @@ class Sobol(QMCEngine):
         """
         sample = np.empty((n_samples, self.dim), dtype=float)
 
-        if self.num_generated == 0 and n_samples == 1:
-            sample = self._first_point
-        elif self.num_generated == 0:
-            _draw(n_samples, self.num_generated, self.dim, self._sv,
-                  self._quasi, sample)
-            sample = np.concatenate([self._first_point, sample])[:n_samples]
+        if self.num_generated == 0:
+            if n_samples == 1:
+                sample = self._first_point
+            else:
+                _draw(n_samples, self.num_generated, self.dim, self._sv,
+                      self._quasi, sample)
+                sample = np.concatenate([self._first_point,
+                                         sample])[:n_samples]
         else:
             _draw(n_samples, self.num_generated - 1, self.dim, self._sv,
                   self._quasi, sample)

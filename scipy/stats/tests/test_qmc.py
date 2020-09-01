@@ -211,7 +211,8 @@ class TestLHS(object):
         sample_1 = optimal_1.random(n_samples=20)
         assert_allclose(sample_1, sample_2)
 
-        optimal_3 = qmc.OptimalDesign(dim=2, start_design=sample_ref, force=True)
+        optimal_3 = qmc.OptimalDesign(dim=2, start_design=sample_ref,
+                                      force=True)
         sample_3 = optimal_3.random(n_samples=20)
         disc_3 = qmc.discrepancy(sample_3)
         assert disc_3 < disc_ref
@@ -338,7 +339,7 @@ class TestNormalQMC:
 
     def test_NormalQMCShapiro(self):
         engine = qmc.NormalQMC(dim=2, seed=12345)
-        samples = engine.random(n_samples=350)
+        samples = engine.random(n_samples=256)
         assert_(all(np.abs(samples.mean(axis=0)) < 1e-2))
         assert_(all(np.abs(samples.std(axis=0) - 1) < 1e-2))
         # perform Shapiro-Wilk test for normality
@@ -351,7 +352,7 @@ class TestNormalQMC:
 
     def test_NormalQMCShapiroInvTransform(self):
         engine = qmc.NormalQMC(dim=2, seed=12345, inv_transform=True)
-        samples = engine.random(n_samples=350)
+        samples = engine.random(n_samples=256)
         assert_(all(np.abs(samples.mean(axis=0)) < 1e-2))
         assert_(all(np.abs(samples.std(axis=0) - 1) < 1e-2))
         # perform Shapiro-Wilk test for normality
@@ -500,7 +501,7 @@ class TestMultivariateNormalQMC:
         engine = qmc.MultivariateNormalQMC(
             mean=[0, 0], cov=[[1, 0], [0, 1]], seed=12345
         )
-        samples = engine.random(n_samples=1000)
+        samples = engine.random(n_samples=256)
         assert_(all(np.abs(samples.mean(axis=0)) < 1e-2))
         assert_(all(np.abs(samples.std(axis=0) - 1) < 1e-2))
         # perform Shapiro-Wilk test for normality
@@ -515,7 +516,7 @@ class TestMultivariateNormalQMC:
         engine = qmc.MultivariateNormalQMC(
             mean=[1.0, 2.0], cov=[[1.5, 0.5], [0.5, 1.5]], seed=12345
         )
-        samples = engine.random(n_samples=1000)
+        samples = engine.random(n_samples=256)
         assert_(all(np.abs(samples.mean(axis=0) - [1, 2]) < 1e-2))
         assert_(all(np.abs(samples.std(axis=0) - np.sqrt(1.5)) < 1e-2))
         # perform Shapiro-Wilk test for normality
@@ -531,7 +532,7 @@ class TestMultivariateNormalQMC:
         engine = qmc.MultivariateNormalQMC(
             mean=[0, 0], cov=[[1, 0], [0, 1]], seed=12345, inv_transform=True
         )
-        samples = engine.random(n_samples=1000)
+        samples = engine.random(n_samples=256)
         assert_(all(np.abs(samples.mean(axis=0)) < 1e-2))
         assert_(all(np.abs(samples.std(axis=0) - 1) < 1e-2))
         # perform Shapiro-Wilk test for normality
@@ -549,7 +550,7 @@ class TestMultivariateNormalQMC:
             seed=12345,
             inv_transform=True,
         )
-        samples = engine.random(n_samples=1000)
+        samples = engine.random(n_samples=256)
         assert_(all(np.abs(samples.mean(axis=0) - [1, 2]) < 1e-2))
         assert_(all(np.abs(samples.std(axis=0) - np.sqrt(1.5)) < 1e-2))
         # perform Shapiro-Wilk test for normality
@@ -567,7 +568,7 @@ class TestMultivariateNormalQMC:
             cov=[[1.0, 0.0, 1.0], [0.0, 1.0, 1.0], [1.0, 1.0, 2.0]],
             seed=12345,
         )
-        samples = engine.random(n_samples=2000)
+        samples = engine.random(n_samples=512)
         assert_(all(np.abs(samples.mean(axis=0)) < 1e-2))
         assert_(np.abs(np.std(samples[:, 0]) - 1) < 1e-2)
         assert_(np.abs(np.std(samples[:, 1]) - 1) < 1e-2)
