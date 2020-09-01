@@ -115,8 +115,8 @@ class TestTaylor(object):
         References
         -----
         .. [1] Armin Doerry, "Catalog of Window Taper Functions for
-                Sidelobe Control", 2017.
-                https://www.researchgate.net/profile/Armin_Doerry/publication/316281181_Catalog_of_Window_Taper_Functions_for_Sidelobe_Control/links/58f92cb2a6fdccb121c9d54d/Catalog-of-Window-Taper-Functions-for-Sidelobe-Control.pdf
+               Sidelobe Control", 2017.
+               https://www.researchgate.net/profile/Armin_Doerry/publication/316281181_Catalog_of_Window_Taper_Functions_for_Sidelobe_Control/links/58f92cb2a6fdccb121c9d54d/Catalog-of-Window-Taper-Functions-for-Sidelobe-Control.pdf
         """
         M_win = 1024
         N_fft = 131072
@@ -129,7 +129,6 @@ class TestTaylor(object):
         PSLL = np.amax(spec[first_zero:-first_zero])
 
         BW_3dB = 2*np.argmax(spec <= -3.0102999566398121) / N_fft * M_win
-        # BW_6dB = 2*np.argmax(spec <= -6.0205999132796242) / N_fft * M_win
         BW_18dB = 2*np.argmax(spec <= -18.061799739838872) / N_fft * M_win
 
         assert_allclose(PSLL, -35.1672)

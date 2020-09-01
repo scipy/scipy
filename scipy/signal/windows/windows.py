@@ -1633,9 +1633,9 @@ def taylor(M, nbar=4, level=-30, sym=True):
         Number of points in the output window. If zero or less, an
         empty array is returned.
     nbar : int
-        Number of nearly constant level sidelobes adjacent to the mainlobe
+        Number of nearly constant level sidelobes adjacent to the mainlobe.
     level : float
-        Desired peak sidelobe level in decibels (db) relative to the mainlobe
+        Desired peak sidelobe level in decibels (db) relative to the mainlobe.
     sym : bool, optional
         When True (default), generates a symmetric window, for use in filter
         design.
@@ -1652,13 +1652,13 @@ def taylor(M, nbar=4, level=-30, sym=True):
     kaiser, bartlett, blackman, hamming, hanning
 
     References
-    -----
+    ----------
     .. [1] W. Carrara, R. Goodman, and R. Majewski, "Spotlight Synthetic
-            Aperture Radar: Signal Processing Algorithms" Pages 512-513,
-            July 1995.
+           Aperture Radar: Signal Processing Algorithms" Pages 512-513,
+           July 1995.
     .. [2] Armin Doerry, "Catalog of Window Taper Functions for
-            Sidelobe Control", 2017.
-            https://www.researchgate.net/profile/Armin_Doerry/publication/316281181_Catalog_of_Window_Taper_Functions_for_Sidelobe_Control/links/58f92cb2a6fdccb121c9d54d/Catalog-of-Window-Taper-Functions-for-Sidelobe-Control.pdf
+           Sidelobe Control", 2017.
+           https://www.researchgate.net/profile/Armin_Doerry/publication/316281181_Catalog_of_Window_Taper_Functions_for_Sidelobe_Control/links/58f92cb2a6fdccb121c9d54d/Catalog-of-Window-Taper-Functions-for-Sidelobe-Control.pdf
     """  # noqa: E501
     if _len_guards(M):
         return np.ones(M)
