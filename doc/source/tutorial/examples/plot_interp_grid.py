@@ -5,8 +5,8 @@ import matplotlib.pyplot as plt
 from matplotlib import ticker
 
 
-fig, axes = plt.subplots(1, 2, figsize=(11, 5))
 orders = [2, 3]
+fig, axes = plt.subplots(1, len(orders), figsize=(11, 5))
 n_cells = 7  # grid will be size (n_cells, n_cells)
 
 # desired interpolation coordinate (xi, yi)

@@ -42,20 +42,11 @@ for mode, (ax0, ax1, ax2) in zip(modes, axes):
             if (xx < 0) or (xx > img.size - 1):
                 idx = np.argmin(np.abs(x - xx))
 
-                ax0.scatter(
-                    [x[idx]], [y[idx]], facecolors='none',
-                    edgecolor='#0343df', marker='o'
-                )
-
-                ax1.scatter(
-                    [x[idx]], [y2[idx]], facecolors='none',
-                    edgecolor='#0343df', marker='o'
-                )
-
-                ax2.scatter(
-                    [x[idx]], [y3[idx]], facecolors='none',
-                    edgecolor='#0343df', marker='o'
-                )
+                for y_vals, ax in zip((y, y2, y3), (ax0, ax1, ax2)):
+                    ax.scatter(
+                        [x[idx]], [y_vals[idx]], facecolors='none',
+                        edgecolor='#0343df', marker='o'
+                    )
 
 plt.tight_layout()
 plt.show()

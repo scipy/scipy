@@ -771,11 +771,11 @@ filter functions. Therefore, these functions all support a *mode*
 parameter that determines how the boundaries are handled, and a *cval*
 parameter that gives a constant value in case that the 'constant' mode
 is used. The behavior of all modes, including at non-integer locations is
-illustrated below. Note that the modes `reflect` (aka `grid-mirror`) and
-`grid-wrap` involve symmetry or repetition about a point that is half way
-between image samples (dashed vertical lines). On the contray, modes `mirror`
-and `wrap` treat the image as if it's extent ends exactly at the first and last
-sample point rather than 0.5 samples past it.
+illustrated below. Note the boundaries is not handled the same for all modes;
+`reflect` (aka `grid-mirror`) and `grid-wrap` involve symmetry or repetition
+about a point that is half way between image samples (dashed vertical lines)
+while modes `mirror` and `wrap` treat the image as if it's extent ends exactly
+at the first and last sample point rather than 0.5 samples past it.
 
 .. plot:: tutorial/examples/plot_boundary_modes.py
    :include-source: False
