@@ -1363,6 +1363,22 @@ class TestRegression(object):
         res = stats.linregress(x, y)
         assert_almost_equal(res[4], 2.3957814497838803e-3)
 
+    def test_regress_alternative(self):
+        # test alternative parameter
+        x = np.linspace(0, 100, 100)
+        y = 0.2 * np.linspace(0, 100, 100) + 10
+        y += np.sin(np.linspace(0, 20, 100))
+
+        assert_raises(ValueError, stats.linregress, x, y, alternative="error")
+
+        res = stats.linregress(x, y, alternative="two-sided")
+
+        rest = stats.linregress(x, y, alternative="less")
+        assert_allclose(rest.pvalue, 1 - (res.pvalue / 2))
+
+        rest = stats.linregress(x, y, alternative="greater")
+        assert_allclose(rest.pvalue, res.pvalue / 2)
+
     def test_regress_simple_onearg_rows(self):
         # Regress a line w sinusoidal noise, with a single input of shape (2, N).
         x = np.linspace(0, 100, 100)
