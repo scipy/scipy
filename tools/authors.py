@@ -102,9 +102,11 @@ def main():
     # generate set of all new authors
     if vars(options)['new']:
         new_authors = authors.difference(all_authors)
+        n_authors = list(new_authors)
+        n_authors.sort(key=name_key)
         # Print some empty lines to separate
         stdout_b.write(("\n\n").encode('utf-8'))
-        for author in new_authors:
+        for author in n_authors:
             stdout_b.write(("- %s\n" % author).encode('utf-8'))
         # return for early exit so we only print new authors
         return
