@@ -24,6 +24,9 @@ import subprocess
 import textwrap
 import warnings
 import sysconfig
+
+# Import setuptools first, to get the version of distutils it vendors
+import setuptools
 from distutils.version import LooseVersion
 
 
@@ -85,6 +88,7 @@ def git_version():
     return GIT_REVISION
 
 
+# FIXME
 # BEFORE importing setuptools, remove MANIFEST. Otherwise it may not be
 # properly updated when the contents of directories change (true for distutils,
 # not sure about setuptools).
@@ -556,6 +560,7 @@ def setup_package():
     # Disable OSX Accelerate, it has too old LAPACK
     os.environ['ACCELERATE'] = 'None'
 
+    # FIXME
     # This import is here because it needs to be done before importing setup()
     # from numpy.distutils, but after the MANIFEST removing and sdist import
     # higher up in this file.
