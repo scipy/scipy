@@ -132,9 +132,9 @@ class TestTaylor(object):
         BW_3dB = 2*np.argmax(spec <= -3.0102999566398121) / N_fft * M_win
         BW_18dB = 2*np.argmax(spec <= -18.061799739838872) / N_fft * M_win
 
-        assert_allclose(PSLL, -35.1672)
-        assert_allclose(BW_3dB, 1.1822)
-        assert_allclose(BW_18dB, 2.6112)
+        assert_allclose(PSLL, -35.1672, atol=1)
+        assert_allclose(BW_3dB, 1.1822, atol=0.1)
+        assert_allclose(BW_18dB, 2.6112, atol=0.1)
 
 
 class TestBohman(object):
@@ -335,6 +335,7 @@ class TestGeneralCosine(object):
                         [0.4, 0.3, 1, 0.3, 0.4])
         assert_allclose(windows.general_cosine(4, [0.5, 0.3, 0.2], sym=False),
                         [0.4, 0.3, 1, 0.3])
+
 
 class TestGeneralHamming(object):
 
