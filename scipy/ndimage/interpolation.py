@@ -678,8 +678,7 @@ def zoom(input, zoom, output=None, order=3, mode='constant', cval=0.0,
     output = _ni_support._get_output(output, input,
                                      shape=output_shape)
     zoom = numpy.ascontiguousarray(zoom)
-    # TODO: add npad argument to zoom_shift as well
-    _nd_image.zoom_shift(filtered, zoom, None, output, order, mode, cval)
+    _nd_image.zoom_shift(filtered, zoom, None, output, order, mode, cval, npad)
     return output
 
 
