@@ -11,14 +11,9 @@ def _linprog_highs_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
                        maxiter=None, disp=False, presolve=True,
                        time_limit=None,
                        dual_feasibility_tolerance=None,
-                       dual_objective_value_upper_bound=None,
-                       ipm_optimality_tolerance=None,
                        primal_feasibility_tolerance=None,
-                       simplex_crash_strategy=None,
-                       simplex_dual_edge_weight_strategy=None,
-                       simplex_primal_edge_weight_strategy=None,
-                       simplex_strategy=None,
-                       simplex_update_limit=None,
+                       ipm_optimality_tolerance=None,
+                       simplex_dual_edge_weight_strategy='steepest-devex',
                        **unknown_options):
     r"""
     Linear programming: minimize a linear objective function subject to linear
@@ -77,9 +72,10 @@ def _linprog_highs_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         ``max`` will serve as bounds for all decision variables.
     method : str
 
-        This is the method-specific documentation for 'highs'.
-        :ref:`'highs-simplex' <optimize.linprog-highs-simplex>`,
-        :ref:`'highs-ipm' <optimize.linprog-highs-ipm>`,
+        This is the method-specific documentation for 'highs', which chooses
+        automatically between
+        :ref:`'highs-simplex' <optimize.linprog-highs-simplex>` and
+        :ref:`'highs-ipm' <optimize.linprog-highs-ipm>`.
         :ref:`'interior-point' <optimize.linprog-interior-point>` (default),
         :ref:`'revised simplex' <optimize.linprog-revised_simplex>`, and
         :ref:`'simplex' <optimize.linprog-simplex>` (legacy)
@@ -89,9 +85,9 @@ def _linprog_highs_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     -------
     maxiter : int
         The maximum number of iterations to perform in either phase.
-        For ``solver='ipm'``, this does not include the number of
-        crossover iterations.  Default is the largest possible value
-        for an ``int`` on the platform.
+        For :ref:`'highs-ipm' <optimize.linprog-highs-ipm>`, this does not
+        include the number of crossover iterations. Default is the largest
+        possible value for an ``int`` on the platform.
     disp : bool (default: ``False``)
         Set to ``True`` if indicators of optimization status are to be
         printed to the console during optimization.
@@ -106,101 +102,29 @@ def _linprog_highs_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         default is the largest possible value for a ``double`` on the
         platform.
     dual_feasibility_tolerance : double (default: 1e-07)
-        Dual feasibility tolerance.
+        Dual feasibility tolerance for
+        :ref:`'highs-simplex' <optimize.linprog-highs-simplex>`.
         The minimum of this and ``primal_feasibility_tolerance``
-        is used for the feasibility tolerance when ``solver='ipm'``.
-    dual_objective_value_upper_bound : double
-        Upper bound on objective value for dual simplex:
-        algorithm terminates if reached.  Default is the largest
-        possible value for a ``double`` on the platform.
-        When ``solver='ipm'`` this value is ignored.
-    ipm_optimality_tolerance : double
-        Optimality tolerance for ``solver='ipm'``.  Default is 1e-08.
-        Minimum possible value is 1e-12 and must be smaller than the
-        largest possible value for a ``double`` on the platform.
+        is used for the feasibility tolerance of
+        :ref:`'highs-ipm' <optimize.linprog-highs-ipm>`.
     primal_feasibility_tolerance : double (default: 1e-07)
-        Primal feasibility tolerance.
+        Primal feasibility tolerance for
+        :ref:`'highs-simplex' <optimize.linprog-highs-simplex>`.
         The minimum of this and ``dual_feasibility_tolerance``
-        is used for the feasibility tolerance when ``solver='ipm'``.
-    simplex_crash_strategy : int {0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
-        Strategy for simplex crash: off / LTSSF / Bixby (0/1/2).
-        Default is ``0``.  Corresponds to the following:
-
-        ``0``: `SIMPLEX_CRASH_STRATEGY_OFF`
-
-        ``1``: `SIMPLEX_CRASH_STRATEGY_LTSSF_K`
-
-        ``2``: `SIMPLEX_CRASH_STRATEGY_BIXBY`
-
-        ``3``: `SIMPLEX_CRASH_STRATEGY_LTSSF_PRI`
-
-        ``4``: `SIMPLEX_CRASH_STRATEGY_LTSF_K`
-
-        ``5``: `SIMPLEX_CRASH_STRATEGY_LTSF_PRI`
-
-        ``6``: `SIMPLEX_CRASH_STRATEGY_LTSF`
-
-        ``7``: `SIMPLEX_CRASH_STRATEGY_BIXBY_NO_NONZERO_COL_COSTS`
-
-        ``8``: `SIMPLEX_CRASH_STRATEGY_BASIC`
-
-        ``9``: `SIMPLE_CRASH_STRATEGY_TEST_SING`
-
-    ``SIMPLEX_CRASH_STRATEGY_*`` are defined as in HiGHS.
-
-    simplex_dual_edge_weight_strategy : int {0, 1, 2, 3, 4}
-        Strategy for simplex dual edge weights:
-        Dantzig / Devex / Steepest Edge.  Default is ``2``.
-        Corresponds to the following:
-
-        ``0``: `SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_DANTZIG`
-
-        ``1``: `SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_DEVEX`
-
-        ``2``: `SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_STEEPEST_EDGE_TO_DEVEX_SWITCH`
-
-        ``3``: `SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_STEEPEST_EDGE`
-
-        ``4``: `SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_STEEPEST_EDGE_UNIT_INITIAL`
-
-        ``SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_*`` are defined as in
-        HiGHS.
-
-    simplex_primal_edge_weight_strategy : int {0, 1}
-        Strategy for simplex primal edge weights:
-        Dantzig / Devex.  Default is ``0``.
-        Corresponds to the following:
-
-        ``0``: `SIMPLEX_PRIMAL_EDGE_WEIGHT_STRATEGY_DANTZIG`
-
-        ``1``: `SIMPLEX_PRIMAL_EDGE_WEIGHT_STRATEGY_DEVEX`
-
-        ``SIMPLEX_PRIMAL_EDGE_WEIGHT_STRATEGY_*`` are defined as in
-        HiGHS.
-
-    simplex_strategy : int {0, 1, 2, 3}
-        Strategy for simplex solver. Default: ``1``.
-        Corresponds to the following:
-
-        ``0``: `SIMPLEX_STRATEGY_MIN`
-
-        ``1``: `SIMPLEX_STRATEGY_DUAL`
-
-        ``2``: `SIMPLEX_STRATEGY_DUAL_TASKS`
-
-        ``3``: `SIMPLEX_STRATEGY_DUAL_MULTI`
-
-        ``SIMPLEX_STRATEGY_*`` are defined as in HiGHS.
-
-    simplex_update_limit : int (default: ``5000``)
-        Limit on the number of updates made to the representation of
-        the basis matrix inverse (e.g. LU factorization)
-        before a new representation is formed from scratch.
-        If needed for efficiency or numerical stability, a new
-        representation of the inverse may be formed before this limit
-        is reached. See [14]_  Secture 2.4 for more information about
-        updating the representation of the basis matrix inverse.
-
+        is used for the feasibility tolerance of
+        :ref:`'highs-ipm' <optimize.linprog-highs-ipm>`.
+    ipm_optimality_tolerance : double (default: ``1e-08``)
+        Optimality tolerance for
+        :ref:`'highs-ipm' <optimize.linprog-highs-ipm>`.
+        Minimum allowable value is 1e-12.
+    simplex_dual_edge_weight_strategy : str {'dantzig', 'devex', 'steepest-devex', 'steepest'}
+        Strategy for simplex dual edge weights. ``'dantzig'`` uses Dantzig's
+        original strategy of choosing the most negative reduced cost.
+        ``'devex'`` uses the strategy described in [15]_.  ``'steepest'`` uses
+        the exact steepest edge strategy as described in [16]_.
+        ``'steepest-devex'`` begins with the exact steepest edge strategy
+        until the computation is too costly or inexact and then switches to
+        the devex method.  Default is ``'steepest-devex'``.
     unknown_options : dict
         Optional arguments not used by this particular solver. If
         ``unknown_options`` is non-empty, a warning is issued listing
@@ -273,7 +197,10 @@ def _linprog_highs_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     .. [14] Huangfu, Q. and Hall, J. A. J. "Parallelizing the dual revised
            simplex method." Mathematical Programming Computation, 10 (1),
            119-142, 2018. DOI: 10.1007/s12532-017-0130-5
-
+    .. [15] Harris, Paula MJ. "Pivot selection methods of the Devex LP code."
+            Mathematical programming 5.1 (1973): 1-28.
+    .. [16] Goldfarb, Donald, and John Ker Reid. "A practicable steepest-edge
+            simplex algorithm." Mathematical Programming 12.1 (1977): 361-371.
     """
     pass
 
@@ -606,7 +533,7 @@ def _linprog_ip_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
 def _linprog_rs_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
                     bounds=None, method='interior-point', callback=None,
                     x0=None, maxiter=5000, disp=False, presolve=True,
-                    tol=1e-12,  autoscale=False, rr=True, maxupdate=10,
+                    tol=1e-12, autoscale=False, rr=True, maxupdate=10,
                     mast=False, pivot="mrc", **unknown_options):
     r"""
     Linear programming: minimize a linear objective function subject to linear

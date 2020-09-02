@@ -77,39 +77,15 @@ def _convert_to_highs_enum(option, option_str, choices):
 def _linprog_highs(lp, solver, time_limit=None, presolve=True,
                    disp=False, maxiter=None,
                    dual_feasibility_tolerance=None,
-                   ipm_optimality_tolerance=None,
                    primal_feasibility_tolerance=None,
+                   ipm_optimality_tolerance=None,
                    simplex_dual_edge_weight_strategy='steepest-devex',
                    **unknown_options):
     r"""
     Solve the following linear programming problem using one of the HiGHS
     solvers:
 
-    .. math::
-
-        \min_x \ & c^T x \\
-        \mbox{such that} \ & A_{ub} x \leq b_{ub},\\
-        & A_{eq} x = b_{eq},\\
-        & l \leq x \leq u ,
-
-    where :math:`x` is a vector of decision variables; :math:`c`,
-    :math:`b_{ub}`, :math:`b_{eq}`, :math:`l`, and :math:`u` are vectors; and
-    :math:`A_{ub}` and :math:`A_{eq}` are matrices.
-
-    Informally, that's:
-
-    minimize::
-
-        c @ x
-
-    such that::
-
-        A_ub @ x <= b_ub
-        A_eq @ x == b_eq
-        lb <= x <= ub
-
-    Note that by default ``lb = 0`` and ``ub = None`` unless specified with
-    ``bounds``.
+    User-facing documentation is in _linprog_doc.py.
 
     Parameters
     ----------
@@ -141,19 +117,19 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
         Dual feasibility tolerance.  Default is 1e-07.
         The minimum of this and ``primal_feasibility_tolerance``
         is used for the feasibility tolerance when ``solver='ipm'``.
-    ipm_optimality_tolerance : double
-        Optimality tolerance for ``solver='ipm'``.  Default is 1e-08.
-        Minimum possible value is 1e-12 and must be smaller than the largest
-        possible value for a ``double`` on the platform.
     primal_feasibility_tolerance : double
         Primal feasibility tolerance.  Default is 1e-07.
         The minimum of this and ``dual_feasibility_tolerance``
         is used for the feasibility tolerance when ``solver='ipm'``.
+    ipm_optimality_tolerance : double
+        Optimality tolerance for ``solver='ipm'``.  Default is 1e-08.
+        Minimum possible value is 1e-12 and must be smaller than the largest
+        possible value for a ``double`` on the platform.
     simplex_dual_edge_weight_strategy : str {'dantzig', 'devex', 'steepest-devex', 'steepest'}
         Strategy for simplex dual edge weights. ``'dantzig'`` uses Dantzig’s
         original strategy of choosing the most negative reduced cost.
-        ``'devex'`` uses the strategy described in [2]_.  ``steepest`` uses
-        the exact steepest edge strategy as described in [3]_.
+        ``'devex'`` uses the strategy described in [15]_.  ``steepest`` uses
+        the exact steepest edge strategy as described in [16]_.
         ``'steepest-devex'`` begins with the exact steepest edge strategy
         until the computation is too costly or inexact and then switches to
         the devex method.  Default is ``'steepest-devex'``.
@@ -208,10 +184,10 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
 
     References
     ----------
-    .. [2] Harris, Paula MJ. "Pivot selection methods of the Devex LP code."
-           Mathematical programming 5.1 (1973): 1-28.
-    .. [3] Goldfarb, Donald, and John Ker Reid. "A practicable steepest-edge
-           simplex algorithm." Mathematical Programming 12.1 (1977): 361-371.
+    .. [15] Harris, Paula MJ. "Pivot selection methods of the Devex LP code."
+            Mathematical programming 5.1 (1973): 1-28.
+    .. [16] Goldfarb, Donald, and John Ker Reid. "A practicable steepest-edge
+            simplex algorithm." Mathematical Programming 12.1 (1977): 361-371.
     """
 
     _check_unknown_options(unknown_options)

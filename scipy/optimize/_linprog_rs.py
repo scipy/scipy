@@ -427,6 +427,8 @@ def _linprog_rs(c, c0, A, b, x0, callback, postsolve_args,
         subject to:  A @ x == b
                      0 <= x < oo
 
+    User-facing documentation is in _linprog_doc.py.
+
     Parameters
     ----------
     c : 1-D array
