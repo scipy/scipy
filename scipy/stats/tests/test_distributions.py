@@ -2336,23 +2336,13 @@ class TestLevyStable(object):
                 | ((r['alpha'] >= 1.1))  # various points ok but too sparse to list
             )],
 
-            # # piecewise generally good accuracy
-            ['piecewise', 1e-8, lambda r: ~(
-                ((r['alpha'] == 0.1) & (r['beta'] == -0.5) & (r['pct'] == 0.75))
-                | ((r['alpha'] == 0.1) & (r['beta'] == 0.5) & (r['pct'] == 0.25))
-                | ((r['alpha'] == 0.1) & (r['beta'] == -0.3) & (r['pct'] == 0.65))
-                | ((r['alpha'] == 0.1) & (r['beta'] == 0.3) & (r['pct'] == 0.35))
-                | ((r['alpha'] == 0.1) & (r['beta'] == -0.8) & (r['pct'] == 0.9))
-                | ((r['alpha'] == 0.1) & (r['beta'] == 0.8) & (r['pct'] == 0.1))
+            # piecewise generally good accuracy
+            ['piecewise', 1e-11, lambda r: (
+                (r['alpha'] > 0.2)
             )],
-            # for some points close to alpha slighty reduced accuracy
-            ['piecewise', 1e-7, lambda r: (
-                ((r['alpha'] == 0.1) & (r['beta'] == -0.5) & (r['pct'] == 0.75))
-                | ((r['alpha'] == 0.1) & (r['beta'] == 0.5) & (r['pct'] == 0.25))
-                | ((r['alpha'] == 0.1) & (r['beta'] == -0.3) & (r['pct'] == 0.65))
-                | ((r['alpha'] == 0.1) & (r['beta'] == 0.3) & (r['pct'] == 0.35))
-                | ((r['alpha'] == 0.1) & (r['beta'] == -0.8) & (r['pct'] == 0.9))
-                | ((r['alpha'] == 0.1) & (r['beta'] == 0.8) & (r['pct'] == 0.1))
+            # for small alpha very slightly reduced accuracy
+            ['piecewise', 5e-11, lambda r: (
+                (r['alpha'] <= 0.2)
             )],
 
             # fft accuracy reduces as alpha decreases
@@ -2451,18 +2441,13 @@ class TestLevyStable(object):
         data = np.core.records.fromarrays(data.T, names='x,p,alpha,beta,pct')
 
         tests = [
-            # piecewise is accurate for most values
-            ['piecewise', 1e-7, lambda r: ~(
+            # piecewise generally good accuracy
+            ['piecewise', 1e-12, lambda r: ~(
                 ((r['alpha'] == 1.) & np.isin(r['beta'], [-0.3, -0.2, -0.1]) & (r['pct'] == 0.01))
                 | ((r['alpha'] == 1.) & np.isin(r['beta'], [0.1, 0.2, 0.3]) & (r['pct'] == 0.99))
-                | ((r['alpha'] == 0.5) & (r['beta'] == -0.3) & (r['pct'] == 0.1))
             )],
-            # for some points slighty reduced accuracy
-            ['piecewise', 1e-6, lambda r: (
-                ((r['alpha'] == 0.5) & (r['beta'] == -0.3) & (r['pct'] == 0.1))
-            )],
-            # 6 problematic points of varying degrees
-            ['piecewise', 1e-1, lambda r: (
+            # for some points with alpha=1, Nolan's STABLE clearly loses accuracy
+            ['piecewise', 5e-2, lambda r: (
                 ((r['alpha'] == 1.) & np.isin(r['beta'], [-0.3, -0.2, -0.1]) & (r['pct'] == 0.01))
                 | ((r['alpha'] == 1.) & np.isin(r['beta'], [0.1, 0.2, 0.3]) & (r['pct'] == 0.99))
             )],
@@ -2504,11 +2489,11 @@ class TestLevyStable(object):
                   (subdata2['relerr'] >= rtol) |
                   np.isnan(p)
                 ]
-                assert_almost_equal(
+                assert_allclose(
                     p,
                     subdata['p'],
                     rtol,
-                    "cdf test %s failed with method '%s'\n%s\n%s" %
+                    err_msg="cdf test %s failed with method '%s'\n%s\n%s" %
                     (ix, default_method, failures.dtype.names, failures),
                     verbose=False
                 )
