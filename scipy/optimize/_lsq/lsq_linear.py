@@ -32,7 +32,8 @@ TERMINATION_MESSAGES = {
 
 
 def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
-               lsq_solver=None, lsmr_tol=None, max_iter=None, verbose=0):
+               lsq_solver=None, lsmr_tol=None, max_iter=None, rcond=None, 
+               verbose=0):
     r"""Solve a linear least-squares problem with bounds on the variables.
 
     Given a m-by-n design matrix A and a target vector b with m elements,
@@ -100,6 +101,11 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
         Maximum number of iterations before termination. If None (default), it
         is set to 100 for ``method='trf'`` or to the number of variables for
         ``method='bvls'`` (not counting iterations for 'bvls' initialization).
+    rcond : float, optional
+        Cut-off ratio for small singular values of `A`. For rank determination,
+        singular values are treated as zero if they are smaller than `rcond`
+        times the largest singular value of `A`. The default uses the machine
+        precision times `max(m, n)`.
     verbose : {0, 1, 2}, optional
         Level of algorithm's verbosity:
 
@@ -273,7 +279,7 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
                          "upper bound.")
 
     if lsq_solver == 'exact':
-        x_lsq = np.linalg.lstsq(A, b, rcond=-1)[0]
+        x_lsq = np.linalg.lstsq(A, b, rcond=rcond)[0]
     elif lsq_solver == 'lsmr':
         x_lsq = lsmr(A, b, atol=tol, btol=tol)[0]
 
@@ -299,7 +305,7 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
         res = trf_linear(A, b, x_lsq, lb, ub, tol, lsq_solver, lsmr_tol,
                          max_iter, verbose)
     elif method == 'bvls':
-        res = bvls(A, b, x_lsq, lb, ub, tol, max_iter, verbose)
+        res = bvls(A, b, x_lsq, lb, ub, tol, max_iter, verbose, rcond=rcond)
 
     res.message = TERMINATION_MESSAGES[res.status]
     res.success = res.status > 0
