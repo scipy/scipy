@@ -164,13 +164,13 @@ def _linprog_highs_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
 
         nit : int
             The total number of iterations performed.
-            For ``solver='simplex'``, this includes iterations in all
-            phases. For ``solver='ipm'``, this does not include
+            For the HiGHS simplex method, this includes iterations in all
+            phases. For the HiGHS interior-point method, this does not include
             crossover iterations.
         crossover_nit : int
             The number of primal/dual pushes performed during the
-            crossover routine for ``solver='ipm'``.  This is ``0``
-            for ``solver='simplex'``.
+            crossover routine for the HiGHS interior-point method.
+            This is ``0`` for the HiGHS simplex method.
         message : str
             A string descriptor of the exit status of the algorithm.
 
@@ -201,6 +201,369 @@ def _linprog_highs_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
             Mathematical programming 5.1 (1973): 1-28.
     .. [16] Goldfarb, Donald, and John Ker Reid. "A practicable steepest-edge
             simplex algorithm." Mathematical Programming 12.1 (1977): 361-371.
+    """
+    pass
+
+
+def _linprog_highs_ds_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
+                          bounds=None, method='highs', callback=None,
+                          maxiter=None, disp=False, presolve=True,
+                          time_limit=None,
+                          dual_feasibility_tolerance=None,
+                          primal_feasibility_tolerance=None,
+                          simplex_dual_edge_weight_strategy='steepest-devex',
+                          **unknown_options):
+    r"""
+    Linear programming: minimize a linear objective function subject to linear
+    equality and inequality constraints using the HiGHS dual simplex solver.
+
+    Linear programming solves problems of the following form:
+
+    .. math::
+
+        \min_x \ & c^T x \\
+        \mbox{such that} \ & A_{ub} x \leq b_{ub},\\
+        & A_{eq} x = b_{eq},\\
+        & l \leq x \leq u ,
+
+    where :math:`x` is a vector of decision variables; :math:`c`,
+    :math:`b_{ub}`, :math:`b_{eq}`, :math:`l`, and :math:`u` are vectors; and
+    :math:`A_{ub}` and :math:`A_{eq}` are matrices.
+
+    Alternatively, that's:
+
+    minimize::
+
+        c @ x
+
+    such that::
+
+        A_ub @ x <= b_ub
+        A_eq @ x == b_eq
+        lb <= x <= ub
+
+    Note that by default ``lb = 0`` and ``ub = None`` unless specified with
+    ``bounds``.
+
+    Parameters
+    ----------
+    c : 1-D array
+        The coefficients of the linear objective function to be minimized.
+    A_ub : 2-D array, optional
+        The inequality constraint matrix. Each row of ``A_ub`` specifies the
+        coefficients of a linear inequality constraint on ``x``.
+    b_ub : 1-D array, optional
+        The inequality constraint vector. Each element represents an
+        upper bound on the corresponding value of ``A_ub @ x``.
+    A_eq : 2-D array, optional
+        The equality constraint matrix. Each row of ``A_eq`` specifies the
+        coefficients of a linear equality constraint on ``x``.
+    b_eq : 1-D array, optional
+        The equality constraint vector. Each element of ``A_eq @ x`` must equal
+        the corresponding element of ``b_eq``.
+    bounds : sequence, optional
+        A sequence of ``(min, max)`` pairs for each element in ``x``, defining
+        the minimum and maximum values of that decision variable. Use ``None``
+        to indicate that there is no bound. By default, bounds are
+        ``(0, None)`` (all decision variables are non-negative).
+        If a single tuple ``(min, max)`` is provided, then ``min`` and
+        ``max`` will serve as bounds for all decision variables.
+    method : str
+
+        This is the method-specific documentation for 'highs-simplex'.
+        :ref:`'highsx' <optimize.linprog-highs>`,
+        :ref:`'highs-ipm' <optimize.linprog-highs-ipm>`,
+        :ref:`'interior-point' <optimize.linprog-interior-point>` (default),
+        :ref:`'revised simplex' <optimize.linprog-revised_simplex>`, and
+        :ref:`'simplex' <optimize.linprog-simplex>` (legacy)
+        are also available.
+
+    Options
+    -------
+    maxiter : int
+        The maximum number of iterations to perform in either phase.
+        Default is the largest possible value for an ``int`` on the platform.
+    disp : bool (default: ``False``)
+        Set to ``True`` if indicators of optimization status are to be
+        printed to the console during optimization.
+    presolve : bool (default: ``True``)
+        Presolve attempts to identify trivial infeasibilities,
+        identify trivial unboundedness, and simplify the problem before
+        sending it to the main solver. It is generally recommended
+        to keep the default setting ``True``; set to ``False`` if
+        presolve is to be disabled.
+    time_limit : float
+        The maximum time in seconds allotted to solve the problem;
+        default is the largest possible value for a ``double`` on the
+        platform.
+    dual_feasibility_tolerance : double (default: 1e-07)
+        Dual feasibility tolerance for
+        :ref:`'highs-simplex' <optimize.linprog-highs-simplex>`.
+    primal_feasibility_tolerance : double (default: 1e-07)
+        Primal feasibility tolerance for
+        :ref:`'highs-simplex' <optimize.linprog-highs-simplex>`.
+    simplex_dual_edge_weight_strategy : str {'dantzig', 'devex', 'steepest-devex', 'steepest'}
+        Strategy for simplex dual edge weights. ``'dantzig'`` uses Dantzig's
+        original strategy of choosing the most negative reduced cost.
+        ``'devex'`` uses the strategy described in [15]_.  ``'steepest'`` uses
+        the exact steepest edge strategy as described in [16]_.
+        ``'steepest-devex'`` begins with the exact steepest edge strategy
+        until the computation is too costly or inexact and then switches to
+        the devex method.  Default is ``'steepest-devex'``.
+    unknown_options : dict
+        Optional arguments not used by this particular solver. If
+        ``unknown_options`` is non-empty, a warning is issued listing
+        all unused options.
+
+    Returns
+    -------
+    res : OptimizeResult
+        A :class:`scipy.optimize.OptimizeResult` consisting of the fields:
+
+        x : 1D array
+            The values of the decision variables that minimizes the
+            objective function while satisfying the constraints.
+        fun : float
+            The optimal value of the objective function ``c @ x``.
+        slack : 1D array
+            The (nominally positive) values of the slack,
+            ``b_ub - A_ub @ x``.
+        con : 1D array
+            The (nominally zero) residuals of the equality constraints,
+            ``b_eq - A_eq @ x``.
+        success : bool
+            ``True`` when the algorithm succeeds in finding an optimal
+            solution.
+        status : int
+            An integer representing the exit status of the algorithm.
+
+            ``0`` : Optimization terminated successfully.
+
+            ``1`` : Iteration or time limit reached.
+
+            ``2`` : Problem appears to be infeasible.
+
+            ``3`` : Problem appears to be unbounded.
+
+            ``4`` : The HiGHS solver ran into a problem.
+
+        nit : int
+            The total number of iterations performed. This includes iterations
+            in all phases.
+        crossover_nit : int
+            This is always ``0`` for the HiGHS simplex method.
+            For the HiGHS interior-point method, this is the number of
+            primal/dual pushes performed during the crossover routine.
+        message : str
+            A string descriptor of the exit status of the algorithm.
+
+    Notes
+    -----
+
+    Method :ref:`'highs-simplex' <optimize.linprog-highs-simplex>` is a wrapper
+    of the C++ high performance dual revised simplex implementation (HSOL)
+    [13]_, [14]_. Method :ref:`'highs-ipm' <optimize.linprog-highs-ipm>`
+    is a wrapper of a C++ implementation of an **i**\ nterior-\ **p**\ oint
+    **m**\ ethod [13]_; it features a crossover routine, so it is as accurate
+    as a simplex solver. Method :ref:`'highs' <optimize.linprog-highs>` chooses
+    between the two automatically. For new code involving `linprog`, we
+    recommend explicitly choosing one of these three method values instead of
+    :ref:`'interior-point' <optimize.linprog-interior-point>` (default),
+    :ref:`'revised simplex' <optimize.linprog-revised_simplex>`, and
+    :ref:`'simplex' <optimize.linprog-simplex>` (legacy).
+
+    References
+    ----------
+    .. [13] Huangfu, Q., Galabova, I., Feldmeier, M., and Hall, J. A. J.
+           "HiGHS - high performance software for linear optimization."
+           Accessed 4/16/2020 at https://www.maths.ed.ac.uk/hall/HiGHS/#guide
+    .. [14] Huangfu, Q. and Hall, J. A. J. "Parallelizing the dual revised
+           simplex method." Mathematical Programming Computation, 10 (1),
+           119-142, 2018. DOI: 10.1007/s12532-017-0130-5
+    .. [15] Harris, Paula MJ. "Pivot selection methods of the Devex LP code."
+            Mathematical programming 5.1 (1973): 1-28.
+    .. [16] Goldfarb, Donald, and John Ker Reid. "A practicable steepest-edge
+            simplex algorithm." Mathematical Programming 12.1 (1977): 361-371.
+    """
+    pass
+
+
+def _linprog_highs_ipm_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
+                           bounds=None, method='highs', callback=None,
+                           maxiter=None, disp=False, presolve=True,
+                           time_limit=None,
+                           dual_feasibility_tolerance=None,
+                           primal_feasibility_tolerance=None,
+                           ipm_optimality_tolerance=None,
+                           **unknown_options):
+    r"""
+    Linear programming: minimize a linear objective function subject to linear
+    equality and inequality constraints using the HiGHS interior point solver.
+
+    Linear programming solves problems of the following form:
+
+    .. math::
+
+        \min_x \ & c^T x \\
+        \mbox{such that} \ & A_{ub} x \leq b_{ub},\\
+        & A_{eq} x = b_{eq},\\
+        & l \leq x \leq u ,
+
+    where :math:`x` is a vector of decision variables; :math:`c`,
+    :math:`b_{ub}`, :math:`b_{eq}`, :math:`l`, and :math:`u` are vectors; and
+    :math:`A_{ub}` and :math:`A_{eq}` are matrices.
+
+    Alternatively, that's:
+
+    minimize::
+
+        c @ x
+
+    such that::
+
+        A_ub @ x <= b_ub
+        A_eq @ x == b_eq
+        lb <= x <= ub
+
+    Note that by default ``lb = 0`` and ``ub = None`` unless specified with
+    ``bounds``.
+
+    Parameters
+    ----------
+    c : 1-D array
+        The coefficients of the linear objective function to be minimized.
+    A_ub : 2-D array, optional
+        The inequality constraint matrix. Each row of ``A_ub`` specifies the
+        coefficients of a linear inequality constraint on ``x``.
+    b_ub : 1-D array, optional
+        The inequality constraint vector. Each element represents an
+        upper bound on the corresponding value of ``A_ub @ x``.
+    A_eq : 2-D array, optional
+        The equality constraint matrix. Each row of ``A_eq`` specifies the
+        coefficients of a linear equality constraint on ``x``.
+    b_eq : 1-D array, optional
+        The equality constraint vector. Each element of ``A_eq @ x`` must equal
+        the corresponding element of ``b_eq``.
+    bounds : sequence, optional
+        A sequence of ``(min, max)`` pairs for each element in ``x``, defining
+        the minimum and maximum values of that decision variable. Use ``None``
+        to indicate that there is no bound. By default, bounds are
+        ``(0, None)`` (all decision variables are non-negative).
+        If a single tuple ``(min, max)`` is provided, then ``min`` and
+        ``max`` will serve as bounds for all decision variables.
+    method : str
+
+        This is the method-specific documentation for 'highs-ipm'.
+        :ref:`'highs-ipm' <optimize.linprog-highs>`,
+        :ref:`'highs-simplex' <optimize.linprog-highs-simplex>`,
+        :ref:`'interior-point' <optimize.linprog-interior-point>` (default),
+        :ref:`'revised simplex' <optimize.linprog-revised_simplex>`, and
+        :ref:`'simplex' <optimize.linprog-simplex>` (legacy)
+        are also available.
+
+    Options
+    -------
+    maxiter : int
+        The maximum number of iterations to perform in either phase.
+        For :ref:`'highs-ipm' <optimize.linprog-highs-ipm>`, this does not
+        include the number of crossover iterations. Default is the largest
+        possible value for an ``int`` on the platform.
+    disp : bool (default: ``False``)
+        Set to ``True`` if indicators of optimization status are to be
+        printed to the console during optimization.
+    presolve : bool (default: ``True``)
+        Presolve attempts to identify trivial infeasibilities,
+        identify trivial unboundedness, and simplify the problem before
+        sending it to the main solver. It is generally recommended
+        to keep the default setting ``True``; set to ``False`` if
+        presolve is to be disabled.
+    time_limit : float
+        The maximum time in seconds allotted to solve the problem;
+        default is the largest possible value for a ``double`` on the
+        platform.
+    dual_feasibility_tolerance : double (default: 1e-07)
+        The minimum of this and ``primal_feasibility_tolerance``
+        is used for the feasibility tolerance of
+        :ref:`'highs-ipm' <optimize.linprog-highs-ipm>`.
+    primal_feasibility_tolerance : double (default: 1e-07)
+        The minimum of this and ``dual_feasibility_tolerance``
+        is used for the feasibility tolerance of
+        :ref:`'highs-ipm' <optimize.linprog-highs-ipm>`.
+    ipm_optimality_tolerance : double (default: ``1e-08``)
+        Optimality tolerance for
+        :ref:`'highs-ipm' <optimize.linprog-highs-ipm>`.
+        Minimum allowable value is 1e-12.
+    unknown_options : dict
+        Optional arguments not used by this particular solver. If
+        ``unknown_options`` is non-empty, a warning is issued listing
+        all unused options.
+
+    Returns
+    -------
+    res : OptimizeResult
+        A :class:`scipy.optimize.OptimizeResult` consisting of the fields:
+
+        x : 1D array
+            The values of the decision variables that minimizes the
+            objective function while satisfying the constraints.
+        fun : float
+            The optimal value of the objective function ``c @ x``.
+        slack : 1D array
+            The (nominally positive) values of the slack,
+            ``b_ub - A_ub @ x``.
+        con : 1D array
+            The (nominally zero) residuals of the equality constraints,
+            ``b_eq - A_eq @ x``.
+        success : bool
+            ``True`` when the algorithm succeeds in finding an optimal
+            solution.
+        status : int
+            An integer representing the exit status of the algorithm.
+
+            ``0`` : Optimization terminated successfully.
+
+            ``1`` : Iteration or time limit reached.
+
+            ``2`` : Problem appears to be infeasible.
+
+            ``3`` : Problem appears to be unbounded.
+
+            ``4`` : The HiGHS solver ran into a problem.
+
+        nit : int
+            The total number of iterations performed.
+            For the HiGHS interior-point method, this does not include
+            crossover iterations.
+        crossover_nit : int
+            The number of primal/dual pushes performed during the
+            crossover routine for the HiGHS interior-point method.
+        message : str
+            A string descriptor of the exit status of the algorithm.
+
+    Notes
+    -----
+
+    Method :ref:`'highs-ipm' <optimize.linprog-highs-ipm>`
+    is a wrapper of a C++ implementation of an **i**\ nterior-\ **p**\ oint
+    **m**\ ethod [13]_; it features a crossover routine, so it is as accurate
+    as a simplex solver.
+    Method :ref:`'highs-simplex' <optimize.linprog-highs-simplex>` is a wrapper
+    of the C++ high performance dual revised simplex implementation (HSOL)
+    [13]_, [14]_. Method :ref:`'highs' <optimize.linprog-highs>` chooses
+    between the two automatically. For new code involving `linprog`, we
+    recommend explicitly choosing one of these three method values instead of
+    :ref:`'interior-point' <optimize.linprog-interior-point>` (default),
+    :ref:`'revised simplex' <optimize.linprog-revised_simplex>`, and
+    :ref:`'simplex' <optimize.linprog-simplex>` (legacy).
+
+    References
+    ----------
+    .. [13] Huangfu, Q., Galabova, I., Feldmeier, M., and Hall, J. A. J.
+           "HiGHS - high performance software for linear optimization."
+           Accessed 4/16/2020 at https://www.maths.ed.ac.uk/hall/HiGHS/#guide
+    .. [14] Huangfu, Q. and Hall, J. A. J. "Parallelizing the dual revised
+           simplex method." Mathematical Programming Computation, 10 (1),
+           119-142, 2018. DOI: 10.1007/s12532-017-0130-5
     """
     pass
 
