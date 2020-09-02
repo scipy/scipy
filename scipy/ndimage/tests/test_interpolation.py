@@ -2,7 +2,8 @@ import sys
 
 import numpy
 from numpy.testing import (assert_, assert_equal, assert_array_equal,
-                           assert_array_almost_equal, suppress_warnings)
+                           assert_array_almost_equal, assert_allclose,
+                           suppress_warnings)
 import pytest
 from pytest import raises as assert_raises
 import scipy.ndimage as ndimage
@@ -10,6 +11,15 @@ import scipy.ndimage as ndimage
 from . import types
 
 eps = 1e-12
+
+ndimage_to_numpy_mode = {
+    'mirror': 'reflect',
+    'reflect': 'symmetric',
+    'grid-mirror': 'symmetric',
+    'grid-wrap': 'wrap',
+    'nearest': 'edge',
+    'grid-constant': 'constant',
+}
 
 
 class TestNdimageInterpolation:
@@ -60,30 +70,19 @@ class TestNdimageInterpolation:
     @pytest.mark.parametrize('order', range(6))
     def test_boundary_spline_accuracy(self, mode, order):
         """Tests based on examples from gh-2640"""
-        data = numpy.array([-2, -1, 0, 1, 2], float)
-        x = numpy.linspace(-6, 10, num=1000)
+        data = numpy.arange(-6, 7, dtype=float)
+        x = numpy.linspace(-8, 15, num=1000)
         y = ndimage.map_coordinates(data, [x], order=order, mode=mode)
 
         # compute expected value using explicit padding via numpy.pad
-        npad = 50
-        pad_mode = {
-            'mirror': 'reflect',
-            'reflect': 'symmetric',
-            'grid-mirror': 'symmetric',
-            'grid-wrap': 'wrap',
-            'nearest': 'edge',
-            'grid-constant': 'constant',
-        }.get(mode)
+        npad = 32
+        pad_mode = ndimage_to_numpy_mode.get(mode)
         padded = numpy.pad(data, npad, mode=pad_mode)
         expected = ndimage.map_coordinates(padded, [npad + x], order=order,
                                            mode=mode)
 
-        if mode in ['reflect', 'grid-mirror'] and order > 1:
-            numpy.testing.assert_allclose(y, expected, rtol=1e-4, atol=1e-13)
-        elif mode in ['grid-constant'] and order > 1:
-            numpy.testing.assert_allclose(y, expected, rtol=1e-5, atol=1e-7)
-        else:
-            numpy.testing.assert_allclose(y, expected, rtol=1e-6, atol=1e-13)
+        atol = 1e-5 if mode == 'grid-constant' else 1e-12
+        assert_allclose(y, expected, rtol=1e-7, atol=atol)
 
     @pytest.mark.parametrize('order', range(2, 6))
     @pytest.mark.parametrize('dtype', types)
@@ -398,6 +397,47 @@ class TestNdimageInterpolation:
             data, mapping, (2,), order=order, extra_arguments=(1,),
             extra_keywords={'b': 2})
         assert_array_almost_equal(out, [5, 7])
+
+    def test_geometric_transform_grid_constant_order1(self):
+        # verify interpolation outside the original bounds
+        x = numpy.array([[1, 2, 3],
+                         [4, 5, 6]], dtype=float)
+
+        def mapping(x):
+            return (x[0] - 0.5), (x[1] - 0.5)
+
+        expected_result = numpy.array([[0.25, 0.75, 1.25],
+                                       [1.25, 3.00, 4.00]])
+        assert_array_almost_equal(
+            ndimage.geometric_transform(x, mapping, mode='grid-constant',
+                                        order=1),
+            expected_result,
+        )
+
+    @pytest.mark.parametrize('mode', ['grid-constant', 'grid-wrap', 'nearest',
+                                      'mirror', 'reflect'])
+    @pytest.mark.parametrize('order', range(6))
+    def test_geometric_transform_vs_padded(self, order, mode):
+        x = numpy.arange(144, dtype=float).reshape(12, 12)
+
+        def mapping(x):
+            return (x[0] - 0.4), (x[1] + 2.3)
+
+        # Manually pad and then extract center after the transform to get the
+        # expected result.
+        npad = 24
+        pad_mode = ndimage_to_numpy_mode.get(mode)
+        xp = numpy.pad(x, npad, mode=pad_mode)
+        center_slice = tuple([slice(npad, -npad)] * x.ndim)
+        expected_result = ndimage.geometric_transform(
+            xp, mapping, mode=mode, order=order)[center_slice]
+
+        assert_allclose(
+            ndimage.geometric_transform(x, mapping, mode=mode,
+                                        order=order),
+            expected_result,
+            rtol=1e-7,
+        )
 
     def test_geometric_transform_endianness_with_output_parameter(self):
         # geometric transform given output ndarray or dtype with
@@ -919,6 +959,28 @@ class TestNdimageInterpolation:
             numpy.roll(x, shift, axis=(0, 1)),
         )
 
+    @pytest.mark.parametrize('shift',
+                             [(1, 0), (0, 1), (-1, 1), (3, -5), (2, 7)])
+    @pytest.mark.parametrize('order', range(0, 6))
+    def test_shift_grid_constant1(self, shift, order):
+        # For integer shifts, 'constant' and 'grid-constant' should be equal
+        x = numpy.arange(20).reshape((5, 4))
+        assert_array_almost_equal(
+            ndimage.shift(x, shift, mode='grid-constant', order=order),
+            ndimage.shift(x, shift, mode='constant', order=order),
+        )
+
+    def test_shift_grid_constant_order1(self):
+        # shift by x.shape results in reflection
+        x = numpy.array([[1, 2, 3],
+                         [4, 5, 6]], dtype=float)
+        expected_result = numpy.array([[0.25, 0.75, 1.25],
+                                       [1.25, 3.00, 4.00]])
+        assert_array_almost_equal(
+            ndimage.shift(x, (0.5, 0.5), mode='grid-constant', order=1),
+            expected_result,
+        )
+
     @pytest.mark.parametrize('order', range(0, 6))
     def test_shift_reflect(self, order):
         # shift by x.shape results in reflection
@@ -927,6 +989,27 @@ class TestNdimageInterpolation:
         assert_array_almost_equal(
             ndimage.shift(x, x.shape, mode='reflect', order=order),
             x[::-1, ::-1],
+        )
+
+    @pytest.mark.parametrize('mode', ['grid-constant', 'grid-wrap', 'nearest',
+                                      'mirror', 'reflect'])
+    @pytest.mark.parametrize('order', range(6))
+    def test_shift_vs_padded(self, order, mode):
+        x = numpy.arange(144, dtype=float).reshape(12, 12)
+        shift = (0.4, -2.3)
+
+        # manually pad and then extract center to get expected result
+        npad = 32
+        pad_mode = ndimage_to_numpy_mode.get(mode)
+        xp = numpy.pad(x, npad, mode=pad_mode)
+        center_slice = tuple([slice(npad, -npad)] * x.ndim)
+        expected_result = ndimage.shift(
+            xp, shift, mode=mode, order=order)[center_slice]
+
+        assert_allclose(
+            ndimage.shift(x, shift, mode=mode, order=order),
+            expected_result,
+            rtol=1e-7,
         )
 
     @pytest.mark.parametrize('order', range(0, 6))
