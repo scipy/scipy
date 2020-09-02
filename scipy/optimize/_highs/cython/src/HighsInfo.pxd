@@ -2,7 +2,9 @@
 # cython: language_level=3
 
 cdef extern from "HighsInfo.h" nogil:
+    # From HiGHS/src/lp_data/HighsInfo.h
     cdef cppclass HighsInfo:
+        # Inherited from HighsInfoStruct:
         int simplex_iteration_count
         int ipm_iteration_count
         int crossover_iteration_count

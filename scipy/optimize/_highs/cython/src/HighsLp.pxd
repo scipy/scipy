@@ -8,6 +8,7 @@ from libcpp.vector cimport vector
 from HConst cimport HighsBasisStatus
 
 cdef extern from "HighsLp.h" nogil:
+    # From HiGHS/src/lp_data/HighsLp.h
     cdef cppclass HighsLp:
         int numCol_
         int numRow_

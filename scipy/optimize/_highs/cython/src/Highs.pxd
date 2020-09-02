@@ -10,9 +10,10 @@ from HighsStatus cimport HighsStatus
 from HighsOptions cimport HighsOptions
 from HighsLp cimport HighsLp, HighsModelStatus
 from HighsInfo cimport HighsInfo
-from HighsLp cimport HighsSolution, HighsBasis
+from HighsLp cimport HighsSolution, HighsBasis, ObjSense
 
 cdef extern from "Highs.h":
+    # From HiGHS/src/Highs.h
     cdef cppclass Highs:
         HighsStatus passHighsOptions(const HighsOptions& options)
         HighsStatus passModel(const HighsLp& lp)
@@ -32,15 +33,12 @@ cdef extern from "Highs.h":
         HighsStatus getHighsInfoValue(const string& info, double& value) const
         const HighsOptions& getHighsOptions() const
 
-        # split up for cython
-        #HighsStatus writeSolution(const string filename, const bool pretty = false) const
-        HighsStatus writeSolution(const string filename) const
         HighsStatus writeSolution(const string filename, const bool pretty) const
 
         const HighsSolution& getSolution() const
         const HighsBasis& getBasis() const
 
-        bool changeObjectiveSense(const int sense)
+        bool changeObjectiveSense(const ObjSense sense)
 
         HighsStatus setHighsOptionValueBool "setHighsOptionValue" (const string & option, const bool value)
         HighsStatus setHighsOptionValueInt "setHighsOptionValue" (const string & option, const int value)

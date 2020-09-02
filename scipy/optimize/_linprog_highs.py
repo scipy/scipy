@@ -13,6 +13,7 @@ References
 
 """
 
+import inspect
 import numpy as np
 from .optimize import _check_unknown_options, OptimizeWarning
 from warnings import warn
@@ -36,6 +37,17 @@ from ._highs.constants import (
     as MODEL_STATUS_RDOVUB,
     MODEL_STATUS_REACHED_TIME_LIMIT,
     MODEL_STATUS_REACHED_ITERATION_LIMIT,
+
+    HIGHS_SIMPLEX_STRATEGY_CHOOSE,
+    HIGHS_SIMPLEX_STRATEGY_DUAL,
+
+    HIGHS_SIMPLEX_CRASH_STRATEGY_OFF,
+
+    HIGHS_SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_DANTZIG,
+    HIGHS_SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_DEVEX,
+    HIGHS_SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_STEEPEST_EDGE_TO_DEVEX_SWITCH
+    as HIGHS_SIMPLEX_DUAL_EDGE_WEIGHT_STEEP2DVX,
+    HIGHS_SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_STEEPEST_EDGE,
 )
 from scipy.sparse import csc_matrix, vstack, issparse
 
@@ -47,27 +59,27 @@ def _replace_inf(x):
     return x
 
 
-def _check_invalid_option_values(option, option_str, allowed, default):
-    warning_message = ("Option {0} is {1}, "
-                       "but only values in {2} are allowed. Using default."
-                       .format(option_str, option, allowed))
-    if option not in allowed:
-        warn(warning_message, OptimizeWarning, stacklevel=3)
-        return default
-    return option
+def _convert_to_highs_enum(option, option_str, choices):
+    # If option is in the choices we can look it up, if not use
+    # the default value taken from function signature and warn:
+    try:
+        return choices[option.lower()]
+    except (KeyError, AttributeError):
+        sig = inspect.signature(_linprog_highs)
+        default_str = sig.parameters[option_str].default
+        warn(f"Option {option_str} is {option}, but only values in "
+             f"{set(choices.keys())} are allowed. Using default: "
+             f"{default_str}.",
+             OptimizeWarning, stacklevel=3)
+        return choices[default_str]
 
 
 def _linprog_highs(lp, solver, time_limit=None, presolve=True,
                    disp=False, maxiter=None,
                    dual_feasibility_tolerance=None,
-                   dual_objective_value_upper_bound=None,
                    ipm_optimality_tolerance=None,
                    primal_feasibility_tolerance=None,
-                   simplex_crash_strategy=None,
-                   simplex_dual_edge_weight_strategy=None,
-                   simplex_primal_edge_weight_strategy=None,
-                   simplex_strategy=None,
-                   simplex_update_limit=None,
+                   simplex_dual_edge_weight_strategy='steepest-devex',
                    **unknown_options):
     r"""
     Solve the following linear programming problem using one of the HiGHS
@@ -104,8 +116,7 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
     lp :  _LPProblem
         A ``scipy.optimize._linprog_util._LPProblem`` ``namedtuple``.
     solver : "ipm" or "simplex" or None
-        Which HiGHS solver to use.  If ``None``, HiGHS will determine which
-        solver to use based on the problem.
+        Which HiGHS solver to use.  If ``None``, "simplex" will be used.
 
     Options
     -------
@@ -130,11 +141,6 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
         Dual feasibility tolerance.  Default is 1e-07.
         The minimum of this and ``primal_feasibility_tolerance``
         is used for the feasibility tolerance when ``solver='ipm'``.
-    dual_objective_value_upper_bound : double
-        Upper bound on objective value for dual simplex:
-        algorithm terminates if reached.  Default is the largest possible
-        value for a ``double`` on the platform.
-        When ``solver='ipm'`` this value is ignored.
     ipm_optimality_tolerance : double
         Optimality tolerance for ``solver='ipm'``.  Default is 1e-08.
         Minimum possible value is 1e-12 and must be smaller than the largest
@@ -143,82 +149,14 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
         Primal feasibility tolerance.  Default is 1e-07.
         The minimum of this and ``dual_feasibility_tolerance``
         is used for the feasibility tolerance when ``solver='ipm'``.
-    simplex_crash_strategy : int {0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
-        Strategy for simplex crash: off / LTSSF / Bixby (0/1/2).
-        Default is ``0``.  Corresponds to the following:
-
-            ``0``: `SIMPLEX_CRASH_STRATEGY_OFF`
-
-            ``1``: `SIMPLEX_CRASH_STRATEGY_LTSSF_K`
-
-            ``2``: `SIMPLEX_CRASH_STRATEGY_BIXBY`
-
-            ``3``: `SIMPLEX_CRASH_STRATEGY_LTSSF_PRI`
-
-            ``4``: `SIMPLEX_CRASH_STRATEGY_LTSF_K`
-
-            ``5``: `SIMPLEX_CRASH_STRATEGY_LTSF_PRI`
-
-            ``6``: `SIMPLEX_CRASH_STRATEGY_LTSF`
-
-            ``7``: `SIMPLEX_CRASH_STRATEGY_BIXBY_NO_NONZERO_COL_COSTS`
-
-            ``8``: `SIMPLEX_CRASH_STRATEGY_BASIC`
-
-            ``9``: `SIMPLE_CRASH_STRATEGY_TEST_SING`
-
-         ``SIMPLEX_CRASH_STRATEGY_*`` are defined as in HiGHS.
-
-    simplex_dual_edge_weight_strategy : int {0, 1, 2, 3, 4}
-        Strategy for simplex dual edge weights:
-        Dantzig / Devex / Steepest Edge.  Default is ``2``.
-        Corresponds to the following:
-
-            ``0``: `SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_DANTZIG`
-
-            ``1``: `SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_DEVEX`
-
-            ``2``: `SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_STEEPEST_EDGE_TO_DEVEX_SWITCH`
-
-            ``3``: `SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_STEEPEST_EDGE`
-
-            ``4``: `SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_STEEPEST_EDGE_UNIT_INITIAL`
-
-        ``SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_*`` are defined as in HiGHS.
-
-    simplex_primal_edge_weight_strategy : int {0, 1}
-        Strategy for simplex primal edge weights:
-        Dantzig / Devex.  Default is ``0``.
-        Corresponds to the following:
-
-            ``0``: `SIMPLEX_PRIMAL_EDGE_WEIGHT_STRATEGY_DANTZIG`
-
-            ``1``: `SIMPLEX_PRIMAL_EDGE_WEIGHT_STRATEGY_DEVEX`
-
-        ``SIMPLEX_PRIMAL_EDGE_WEIGHT_STRATEGY_*`` are defined as in HiGHS.
-
-    simplex_strategy : int {0, 1, 2, 3}
-        Strategy for simplex solver. Default: ``1``.
-        Corresponds to the following:
-
-            ``0``: `SIMPLEX_STRATEGY_MIN`
-
-            ``1``: `SIMPLEX_STRATEGY_DUAL`
-
-            ``2``: `SIMPLEX_STRATEGY_DUAL_TASKS`
-
-            ``3``: `SIMPLEX_STRATEGY_DUAL_MULTI`
-
-        ``SIMPLEX_STRATEGY_*`` are defined as in HiGHS.
-
-    simplex_update_limit : int
-        Limit on the number of updates made to the representation of the
-        basis matrix inverse (i.e. basis matrix factorization) before a
-        new representation is formed from scratch.
-        If needed for efficiency or numerical stability, a new
-        representation of the inverse may be formed before this limit is
-        reached. Default is ``5000``.
-
+    simplex_dual_edge_weight_strategy : str {'dantzig', 'devex', 'steepest-devex', 'steepest'}
+        Strategy for simplex dual edge weights. ``'dantzig'`` uses Dantzig’s
+        original strategy of choosing the most negative reduced cost.
+        ``'devex'`` uses the strategy described in [2]_.  ``steepest`` uses
+        the exact steepest edge strategy as described in [3]_.
+        ``'steepest-devex'`` begins with the exact steepest edge strategy
+        until the computation is too costly or inexact and then switches to
+        the devex method.  Default is ``'steepest-devex'``.
     unknown_options : dict
         Optional arguments not used by this particular solver. If
         ``unknown_options`` is non-empty, a warning is issued listing all
@@ -268,14 +206,25 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
             message : str
                 A string descriptor of the exit status of the algorithm.
 
+    References
+    ----------
+    .. [2] Harris, Paula MJ. "Pivot selection methods of the Devex LP code."
+           Mathematical programming 5.1 (1973): 1-28.
+    .. [3] Goldfarb, Donald, and John Ker Reid. "A practicable steepest-edge
+           simplex algorithm." Mathematical Programming 12.1 (1977): 361-371.
     """
 
     _check_unknown_options(unknown_options)
 
-    # SIMPLEX_STRATEGY_PRIMAL (4) is experimental -- disallow use!
-    simplex_strategy = (
-        _check_invalid_option_values(simplex_strategy, 'simplex_strategy',
-                                     {None, 0, 1, 2, 3}, 1))
+    # Map options to HiGHS enum values
+    simplex_dual_edge_weight_strategy = _convert_to_highs_enum(
+        simplex_dual_edge_weight_strategy,
+        'simplex_dual_edge_weight_strategy',
+        choices={'dantzig': HIGHS_SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_DANTZIG,
+                 'devex': HIGHS_SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_DEVEX,
+                 'steepest-devex': HIGHS_SIMPLEX_DUAL_EDGE_WEIGHT_STEEP2DVX,
+                 'steepest':
+                 HIGHS_SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_STEEPEST_EDGE})
 
     statuses = {
         MODEL_STATUS_NOTSET: (
@@ -357,15 +306,11 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
         'time_limit': time_limit,
         'message_level': MESSAGE_LEVEL_MINIMAL * disp,
         'dual_feasibility_tolerance': dual_feasibility_tolerance,
-        'dual_objective_value_upper_bound': dual_objective_value_upper_bound,
         'ipm_optimality_tolerance': ipm_optimality_tolerance,
         'primal_feasibility_tolerance': primal_feasibility_tolerance,
-        'simplex_crash_strategy': simplex_crash_strategy,
         'simplex_dual_edge_weight_strategy': simplex_dual_edge_weight_strategy,
-        'simplex_primal_edge_weight_strategy':
-            simplex_primal_edge_weight_strategy,
-        'simplex_strategy': simplex_strategy,
-        'simplex_update_limit': simplex_update_limit,
+        'simplex_strategy': HIGHS_SIMPLEX_STRATEGY_DUAL,
+        'simplex_crash_strategy': HIGHS_SIMPLEX_CRASH_STRATEGY_OFF,
     }
 
     options['ipm_iteration_limit'] = maxiter
@@ -379,11 +324,6 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
 
     res = highs_wrapper(c, A.indptr, A.indices, A.data, lhs, rhs,
                         lb, ub, options)
-
-    # If we get a MODEL_ERROR, match behavior of other linprog implementations
-    # and return infeasible status
-    if res['status'] == MODEL_STATUS_MODEL_ERROR:
-        res['status'] == MODEL_STATUS_PRIMAL_INFEASIBLE
 
     # HiGHS represents constraints as lhs/rhs, so
     # Ax + s = b => Ax = b - s

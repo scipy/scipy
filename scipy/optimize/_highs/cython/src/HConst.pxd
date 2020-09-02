@@ -3,11 +3,11 @@
 
 cdef extern from "HConst.h" nogil:
 
-    int HIGHS_CONST_I_INF
-    double HIGHS_CONST_INF
-    double HIGHS_CONST_TINY
-    double HIGHS_CONST_ZERO
-    int HIGHS_THREAD_LIMIT
+    const int HIGHS_CONST_I_INF
+    const double HIGHS_CONST_INF
+    const double HIGHS_CONST_TINY
+    const double HIGHS_CONST_ZERO
+    const int HIGHS_THREAD_LIMIT
 
     cdef enum HighsBasisStatus:
         LOWER "HighsBasisStatus::LOWER" = 0, # (slack) variable is at its lower bound [including fixed variables]

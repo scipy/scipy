@@ -4,7 +4,7 @@
 from libc.stdio cimport FILE
 
 cdef extern from "HighsIO.h" nogil:
-    void HighsPrintMessage(FILE* pass_output, const int message_level, const int level, const char* format, ...)
+    void HighsPrintMessage(FILE* pass_output, const int level, const char* format, ...)
 
     cdef enum HighsPrintMessageLevel:
         ML_MIN = 0
