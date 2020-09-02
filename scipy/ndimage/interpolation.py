@@ -538,9 +538,8 @@ def affine_transform(input, matrix, offset=0.0, output_shape=None,
             "array supplied for the matrix parameter has changed in "
             "SciPy 0.18.0."
         )
-        # TODO: add npad argument to zoom_shift as well
         _nd_image.zoom_shift(filtered, matrix, offset/matrix, output, order,
-                             mode, cval)
+                             mode, cval, npad)
     else:
         _nd_image.geometric_transform(filtered, None, None, matrix, offset,
                                       output, order, mode, cval, npad, None,
@@ -599,8 +598,7 @@ def shift(input, shift, output=None, order=3, mode='constant', cval=0.0,
     shift = numpy.asarray(shift, dtype=numpy.float64)
     if not shift.flags.contiguous:
         shift = shift.copy()
-    # TODO: add npad argument to zoom_shift as well
-    _nd_image.zoom_shift(filtered, None, shift, output, order, mode, cval)
+    _nd_image.zoom_shift(filtered, None, shift, output, order, mode, cval, npad)
     return output
 
 

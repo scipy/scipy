@@ -819,18 +819,18 @@ static PyObject *Py_ZoomShift(PyObject *obj, PyObject *args)
 {
     PyArrayObject *input = NULL, *output = NULL, *shift = NULL;
     PyArrayObject *zoom = NULL;
-    int mode, order;
+    int mode, order, nprepad;
     double cval;
 
-    if (!PyArg_ParseTuple(args, "O&O&O&O&iid",
+    if (!PyArg_ParseTuple(args, "O&O&O&O&iidi",
                           NI_ObjectToInputArray, &input,
                           NI_ObjectToOptionalInputArray, &zoom,
                           NI_ObjectToOptionalInputArray, &shift,
                           NI_ObjectToOutputArray, &output,
-                          &order, &mode, &cval))
+                          &order, &mode, &cval, &nprepad))
         goto exit;
 
-    NI_ZoomShift(input, zoom, shift, output, order, (NI_ExtendMode)mode, cval);
+    NI_ZoomShift(input, zoom, shift, output, order, (NI_ExtendMode)mode, cval, nprepad);
     #ifdef HAVE_WRITEBACKIFCOPY
         PyArray_ResolveWritebackIfCopy(output);
     #endif
