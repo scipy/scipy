@@ -206,7 +206,7 @@ def _linprog_highs_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
 
 
 def _linprog_highs_ds_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
-                          bounds=None, method='highs', callback=None,
+                          bounds=None, method='highs-simplex', callback=None,
                           maxiter=None, disp=False, presolve=True,
                           time_limit=None,
                           dual_feasibility_tolerance=None,
@@ -389,7 +389,7 @@ def _linprog_highs_ds_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
 
 
 def _linprog_highs_ipm_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
-                           bounds=None, method='highs', callback=None,
+                           bounds=None, method='highs-ipm', callback=None,
                            maxiter=None, disp=False, presolve=True,
                            time_limit=None,
                            dual_feasibility_tolerance=None,
