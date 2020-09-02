@@ -991,13 +991,24 @@ class Sobol(QMCEngine):
     """Engine for generating (scrambled) Sobol' sequences.
 
     Sobol' sequences are low-discrepancy, quasi-random numbers.
-    Using 21201-dim numbers with search criterion 6 from
-    https://web.maths.unsw.edu.au/~fkuo/sobol/
+
+    .. note::
+
+        Maximum number of dimension is 21201. The sequence uses direction
+        numbers which have been precomputed with search criterion 6 from
+        https://web.maths.unsw.edu.au/~fkuo/sobol/.
 
     .. warning::
 
        Sobol' sequence has good properties only when the number of samples
        is equal to :math:`2^n`, with ``n`` an integer.
+
+       If one wants to skip points, one should only skip a power of 2 points.
+       But Skipping :math:`2^k` points and using the next :math:`2^n` points
+       will break as soon as :math:`n>k`.
+
+       Also, 30 bits are used which means the maximum number of samples is
+       :math:`2^30`. Afterward, the sequence will repeat.
 
     Parameters
     ----------
@@ -1034,7 +1045,7 @@ class Sobol(QMCEngine):
     Generate samples from a low discrepancy sequence of Sobol'.
 
     >>> from scipy.stats import qmc
-    >>> sampler = qmc.Sobol(dim=2)
+    >>> sampler = qmc.Sobol(dim=2, scramble=False)
     >>> sample = sampler.random(n_samples=8)
     >>> sample
     array([[0.   , 0.   ],
@@ -1077,7 +1088,7 @@ class Sobol(QMCEngine):
     MAXDIM = _MAXDIM
     MAXBIT = _MAXBIT
 
-    def __init__(self, dim, scramble=False, seed=None):
+    def __init__(self, dim, scramble=True, seed=None):
         if dim > self.MAXDIM:
             raise ValueError(
                 "Maximum supported dimensionality is {}.".format(self.MAXDIM)

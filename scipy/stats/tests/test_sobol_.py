@@ -15,9 +15,9 @@ class TestSobol:
     maxDiff = None
 
     def setUp(self):
-        engine_unscrambled_1d = Sobol(1)
+        engine_unscrambled_1d = Sobol(1, scramble=False)
         self.draws_unscrambled_1d = engine_unscrambled_1d.random(10)
-        engine_unscrambled_3d = Sobol(3)
+        engine_unscrambled_3d = Sobol(3, scramble=False)
         self.draws_unscrambled_3d = engine_unscrambled_3d.random(10)
         engine_scrambled_1d = Sobol(1, scramble=True, seed=12345)
         self.draws_scrambled_1d = engine_scrambled_1d.random(10)
@@ -52,13 +52,13 @@ class TestSobol:
 
     def test_Unscrambled3DAsyncSobol(self):
         self.setUp()
-        engine_unscrambled_3d = Sobol(3)
+        engine_unscrambled_3d = Sobol(3, scramble=False)
         draws = np.vstack([engine_unscrambled_3d.random() for i in range(10)])
         assert_array_equal(self.draws_unscrambled_3d, draws)
 
     def test_UnscrambledFastForwardAndResetSobol(self):
         self.setUp()
-        engine_unscrambled_3d = Sobol(3).fast_forward(5)
+        engine_unscrambled_3d = Sobol(3, scramble=False).fast_forward(5)
         draws = engine_unscrambled_3d.random(5)
         assert_array_equal(self.draws_unscrambled_3d[5:10, :], draws)
 
@@ -75,7 +75,7 @@ class TestSobol:
         )
 
     def test_UnscrambledHighDimSobol(self):
-        engine = Sobol(1111)
+        engine = Sobol(1111, scramble=False)
         count1 = Counter(engine.random().flatten().tolist())
         count2 = Counter(engine.random().flatten().tolist())
         count3 = Counter(engine.random().flatten().tolist())
@@ -84,13 +84,13 @@ class TestSobol:
         assert_equal(count3, Counter({0.25: 557, 0.75: 554}))
 
     def test_UnscrambledSobolBounds(self):
-        engine = Sobol(1111)
+        engine = Sobol(1111, scramble=False)
         draws = engine.random(1000)
         assert_(np.all(draws >= 0))
         assert_(np.all(draws <= 1))
 
     def test_UnscrambledDistributionSobol(self):
-        engine = Sobol(1111)
+        engine = Sobol(1111, scramble=False)
         draws = engine.random(1000)
         assert_array_almost_equal(
             np.mean(draws, axis=0), np.repeat(0.5, 1111), decimal=2
@@ -135,7 +135,7 @@ class TestSobol:
 
     def test_Scrambled3DAsyncSobol(self):
         self.setUp()
-        engine_unscrambled_3d = Sobol(3)
+        engine_unscrambled_3d = Sobol(3, scramble=False)
         draws = np.vstack([engine_unscrambled_3d.random() for i in range(10)])
         assert_array_equal(self.draws_unscrambled_3d, draws)
 
@@ -178,12 +178,12 @@ class TestSobol:
         )
 
     def test_0Dim(self):
-        engine = Sobol(0)
+        engine = Sobol(0, scramble=False)
         draws = engine.random(5)
         assert_array_equal(np.empty((5, 0)), draws)
 
     def test_discrepancy(self):
-        engine_sobol = Sobol(10)
+        engine_sobol = Sobol(10, scramble=False)
         sample_sobol = engine_sobol.random(100)
 
         engine_olhs = qmc.OrthogonalLatinHypercube(10)
