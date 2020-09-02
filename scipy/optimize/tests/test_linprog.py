@@ -224,7 +224,7 @@ def test_unknown_solver():
 
 
 def test_choose_solver():
-    # test that HiGHS can automatically choose a solver
+    # 'highs' chooses 'dual'
     c = np.array([-3, -2])
     A_ub = [[2, 1], [1, 1], [1, 0]]
     b_ub = [10, 8, 4]
@@ -1569,11 +1569,7 @@ class LinprogHiGHSTests(LinprogCommonTests):
     @pytest.mark.parametrize("options",
                              [{"dual_feasibility_tolerance": -1},
                               {"primal_feasibility_tolerance": -1},
-                              {"simplex_crash_strategy": 10},
                               {"simplex_dual_edge_weight_strategy": 10},
-                              {"simplex_primal_edge_weight_strategy": 10},
-                              # {"simplex_strategy": 10},
-                              {"simplex_update_limit": -1}
                               ])
     def test_invalid_option_values(self, options):
         def f(options):
@@ -1896,25 +1892,7 @@ class TestLinprogRSBland(LinprogRSTests):
 
 class TestLinprogHiGHSSimplexDual(LinprogHiGHSTests):
     method = "highs-simplex"
-    options = {'simplex_strategy': 'dual'}
-
-
-class TestLinprogHiGHSSimplexPrimal(LinprogHiGHSTests):
-    method = 'highs-simplex'
-    options = {'simplex_strategy': 'primal'}
-
-    def test_optimize_result(self):
-        pytest.skip("Primal fails where Dual succeeds.")
-
-    def test_enzo_example_c_with_infeasibility(self):
-        pytest.skip("model_status is not optimal, "
-                    "using scaled_model_status instead")
-
-    def test_bounds_equal_no_presolve(self):
-        pytest.skip("Primal fails where Dual succeeds.")
-
-    def test_bounds_mixed(self):
-        pytest.skip("Primal fails where Dual succeeds.")
+    options = {}
 
 
 ###################################

@@ -40,18 +40,14 @@ from ._highs.constants import (
 
     HIGHS_SIMPLEX_STRATEGY_CHOOSE,
     HIGHS_SIMPLEX_STRATEGY_DUAL,
-    HIGHS_SIMPLEX_STRATEGY_PRIMAL,
 
     HIGHS_SIMPLEX_CRASH_STRATEGY_OFF,
-    HIGHS_SIMPLEX_CRASH_STRATEGY_BIXBY,
-    HIGHS_SIMPLEX_CRASH_STRATEGY_LTSF,
 
     HIGHS_SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_DANTZIG,
     HIGHS_SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_DEVEX,
+    HIGHS_SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_STEEPEST_EDGE_TO_DEVEX_SWITCH
+    as HIGHS_SIMPLEX_DUAL_EDGE_WEIGHT_STEEP2DVX,
     HIGHS_SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_STEEPEST_EDGE,
-
-    HIGHS_SIMPLEX_PRIMAL_EDGE_WEIGHT_STRATEGY_DANTZIG,
-    HIGHS_SIMPLEX_PRIMAL_EDGE_WEIGHT_STRATEGY_DEVEX,
 )
 from scipy.sparse import csc_matrix, vstack, issparse
 
@@ -81,14 +77,9 @@ def _convert_to_highs_enum(option, option_str, choices):
 def _linprog_highs(lp, solver, time_limit=None, presolve=True,
                    disp=False, maxiter=None,
                    dual_feasibility_tolerance=None,
-                   dual_objective_value_upper_bound=None,
                    ipm_optimality_tolerance=None,
                    primal_feasibility_tolerance=None,
-                   simplex_crash_strategy='off',
-                   simplex_dual_edge_weight_strategy='devex',
-                   simplex_primal_edge_weight_strategy='devex',
-                   simplex_strategy='choose',
-                   simplex_update_limit=None,
+                   simplex_dual_edge_weight_strategy='steepest-devex',
                    **unknown_options):
     r"""
     Solve the following linear programming problem using one of the HiGHS
@@ -125,8 +116,7 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
     lp :  _LPProblem
         A ``scipy.optimize._linprog_util._LPProblem`` ``namedtuple``.
     solver : "ipm" or "simplex" or None
-        Which HiGHS solver to use.  If ``None``, HiGHS will determine which
-        solver to use based on the problem.
+        Which HiGHS solver to use.  If ``None``, "simplex" will be used.
 
     Options
     -------
@@ -151,11 +141,6 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
         Dual feasibility tolerance.  Default is 1e-07.
         The minimum of this and ``primal_feasibility_tolerance``
         is used for the feasibility tolerance when ``solver='ipm'``.
-    dual_objective_value_upper_bound : double
-        Upper bound on objective value for dual simplex:
-        algorithm terminates if reached.  Default is the largest possible
-        value for a ``double`` on the platform.
-        When ``solver='ipm'`` this value is ignored.
     ipm_optimality_tolerance : double
         Optimality tolerance for ``solver='ipm'``.  Default is 1e-08.
         Minimum possible value is 1e-12 and must be smaller than the largest
@@ -164,33 +149,14 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
         Primal feasibility tolerance.  Default is 1e-07.
         The minimum of this and ``dual_feasibility_tolerance``
         is used for the feasibility tolerance when ``solver='ipm'``.
-    simplex_crash_strategy : str {'off', 'ltsf', 'bixby'}
-        Strategy for simplex crash. ``'off'`` uses no simplex crash routine.
-        ``'bixby'`` is based on the CPLEX simplex crash strategy from [2]_.
-        ``'ltsf'`` is based on the LTSF simplex crash strategy found in [3]_
-        Default is ``off``.
-    simplex_dual_edge_weight_strategy : str {'dantzig', 'devex', 'steepest'}
+    simplex_dual_edge_weight_strategy : str {'dantzig', 'devex', 'steepest-devex', 'steepest'}
         Strategy for simplex dual edge weights. ``'dantzig'`` uses Dantzig’s
         original strategy of choosing the most negative reduced cost.
-        ``'devex'`` uses the strategy described in [4]_.  ``steepest`` uses
-        the exact steepest edge strategy as described in [5]_.
-        Default is ``'devex'``.
-    simplex_primal_edge_weight_strategy : str {'dantzig', 'devex'}
-        Strategy for simplex primal edge weights. These options correspond
-        to those of the same for ``simplex_dual_edge_weight_strategy``.
-        Default is ``devex``.
-    simplex_strategy : str {'choose', 'dual', 'primal'}
-        Strategy for simplex solver. ``'choose'`` chooses the strategy based
-        on characteristics of the problem. ``'dual'`` uses the dual revised
-        simplex method while ``'primal'`` uses the primal revised simplex
-        method. Default: ``choose``.
-    simplex_update_limit : int
-        Limit on the number of updates made to the representation of the
-        basis matrix inverse (i.e. basis matrix factorization) before a
-        new representation is formed from scratch.
-        If needed for efficiency or numerical stability, a new
-        representation of the inverse may be formed before this limit is
-        reached. Default is ``5000``.
+        ``'devex'`` uses the strategy described in [2]_.  ``steepest`` uses
+        the exact steepest edge strategy as described in [3]_.
+        ``'steepest-devex'`` begins with the exact steepest edge strategy
+        until the computation is too costly or inexact and then switches to
+        the devex method.  Default is ``'steepest-devex'``.
     unknown_options : dict
         Optional arguments not used by this particular solver. If
         ``unknown_options`` is non-empty, a warning is issued listing all
@@ -242,47 +208,23 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
 
     References
     ----------
-    .. [2] Bixby, Robert E. "Implementing the simplex method: The initial
-           basis." ORSA Journal on Computing 4.3 (1992): 267-284.
-    .. [3] Maros, István, and Gautam Mitra. "Strategies for creating advanced
-           bases for large-scale linear programming problems." INFORMS Journal
-           on Computing 10.2 (1998): 248-260.
-    .. [4] Harris, Paula MJ. "Pivot selection methods of the Devex LP code."
+    .. [2] Harris, Paula MJ. "Pivot selection methods of the Devex LP code."
            Mathematical programming 5.1 (1973): 1-28.
-    .. [5] Goldfarb, Donald, and John Ker Reid. "A practicable steepest-edge
+    .. [3] Goldfarb, Donald, and John Ker Reid. "A practicable steepest-edge
            simplex algorithm." Mathematical Programming 12.1 (1977): 361-371.
     """
 
     _check_unknown_options(unknown_options)
 
     # Map options to HiGHS enum values
-    simplex_strategy = _convert_to_highs_enum(
-        simplex_strategy,
-        'simplex_strategy',
-        choices={'choose': HIGHS_SIMPLEX_STRATEGY_CHOOSE,
-                 'dual': HIGHS_SIMPLEX_STRATEGY_DUAL,
-                 'primal': HIGHS_SIMPLEX_STRATEGY_PRIMAL})
-
-    simplex_crash_strategy = _convert_to_highs_enum(
-        simplex_crash_strategy,
-        'simplex_crash_strategy',
-        choices={'off': HIGHS_SIMPLEX_CRASH_STRATEGY_OFF,
-                 'bixby': HIGHS_SIMPLEX_CRASH_STRATEGY_BIXBY,
-                 'ltsf': HIGHS_SIMPLEX_CRASH_STRATEGY_LTSF})
-
     simplex_dual_edge_weight_strategy = _convert_to_highs_enum(
         simplex_dual_edge_weight_strategy,
         'simplex_dual_edge_weight_strategy',
         choices={'dantzig': HIGHS_SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_DANTZIG,
                  'devex': HIGHS_SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_DEVEX,
+                 'steepest-devex': HIGHS_SIMPLEX_DUAL_EDGE_WEIGHT_STEEP2DVX,
                  'steepest':
                  HIGHS_SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_STEEPEST_EDGE})
-
-    simplex_primal_edge_weight_strategy = _convert_to_highs_enum(
-        simplex_primal_edge_weight_strategy,
-        'simplex_primal_edge_weight_strategy',
-        choices={'dantzig': HIGHS_SIMPLEX_PRIMAL_EDGE_WEIGHT_STRATEGY_DANTZIG,
-                 'devex': HIGHS_SIMPLEX_PRIMAL_EDGE_WEIGHT_STRATEGY_DEVEX})
 
     statuses = {
         MODEL_STATUS_NOTSET: (
@@ -364,15 +306,11 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
         'time_limit': time_limit,
         'message_level': MESSAGE_LEVEL_MINIMAL * disp,
         'dual_feasibility_tolerance': dual_feasibility_tolerance,
-        'dual_objective_value_upper_bound': dual_objective_value_upper_bound,
         'ipm_optimality_tolerance': ipm_optimality_tolerance,
         'primal_feasibility_tolerance': primal_feasibility_tolerance,
-        'simplex_crash_strategy': simplex_crash_strategy,
         'simplex_dual_edge_weight_strategy': simplex_dual_edge_weight_strategy,
-        'simplex_primal_edge_weight_strategy':
-            simplex_primal_edge_weight_strategy,
-        'simplex_strategy': simplex_strategy,
-        'simplex_update_limit': simplex_update_limit,
+        'simplex_strategy': HIGHS_SIMPLEX_STRATEGY_DUAL,
+        'simplex_crash_strategy': HIGHS_SIMPLEX_CRASH_STRATEGY_OFF,
     }
 
     options['ipm_iteration_limit'] = maxiter
@@ -384,17 +322,8 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
     lb = _replace_inf(lb)
     ub = _replace_inf(ub)
 
-    # from ._highs.mpswriter import mpswriter
-    # mpswriter(b'bug.mps', c, A, lhs, rhs, lb, ub, np.empty(0, dtype=np.int32), True)
-    # assert False
-
     res = highs_wrapper(c, A.indptr, A.indices, A.data, lhs, rhs,
                         lb, ub, options)
-
-    # If we get a MODEL_ERROR, match behavior of other linprog implementations
-    # and return infeasible status
-    # if res['status'] == MODEL_STATUS_MODEL_ERROR:
-    #     res['status'] == MODEL_STATUS_PRIMAL_INFEASIBLE
 
     # HiGHS represents constraints as lhs/rhs, so
     # Ax + s = b => Ax = b - s
