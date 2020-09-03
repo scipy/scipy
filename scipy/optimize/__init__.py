@@ -248,7 +248,7 @@ The `linprog` function supports the following methods:
    optimize.linprog-interior-point
    optimize.linprog-revised_simplex
    optimize.linprog-highs-ipm
-   optimize.linprog-highs-simplex
+   optimize.linprog-highs-ds
    optimize.linprog-highs
 
 The simplex, interior-point, and revised simplex methods support callback

@@ -3368,7 +3368,7 @@ def show_options(solver=None, method=None, disp=True):
     - :ref:`interior-point    <optimize.linprog-interior-point>`
     - :ref:`revised simplex   <optimize.linprog-revised_simplex>`
     - :ref:`highs             <optimize.linprog-highs>`
-    - :ref:`highs-simplex     <optimize.linprog-highs-simplex>`
+    - :ref:`highs-ds          <optimize.linprog-highs-ds>`
     - :ref:`highs-ipm         <optimize.linprog-highs-ipm>`
 
     Examples
@@ -3429,12 +3429,12 @@ def show_options(solver=None, method=None, disp=True):
             ('halley', 'scipy.optimize._root_scalar._root_scalar_halley_doc'),
         ),
         'linprog': (
-            ('simplex', 'scipy.optimize._linprog._linprog_simplex'),
-            ('interior-point', 'scipy.optimize._linprog._linprog_ip'),
-            ('revised simplex', 'scipy.optimize._linprog._linprog_rs'),
-            ('highs-ipm', 'scipy.optimize._linprog._linprog_highs'),
-            ('highs-simplex', 'scipy.optimize._linprog._linprog_highs'),
-            ('highs', 'scipy.optimize._linprog._linprog_highs'),
+            ('simplex', 'scipy.optimize._linprog._linprog_simplex_doc'),
+            ('interior-point', 'scipy.optimize._linprog._linprog_ip_doc'),
+            ('revised simplex', 'scipy.optimize._linprog._linprog_rs_doc'),
+            ('highs-ipm', 'scipy.optimize._linprog._linprog_highs_ipm_doc'),
+            ('highs-ds', 'scipy.optimize._linprog._linprog_highs_ds_doc'),
+            ('highs', 'scipy.optimize._linprog._linprog_highs_doc'),
         ),
         'minimize_scalar': (
             ('brent', 'scipy.optimize.optimize._minimize_scalar_brent'),

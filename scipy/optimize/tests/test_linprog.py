@@ -1885,13 +1885,13 @@ class TestLinprogRSBland(LinprogRSTests):
     options = {"pivot": "bland"}
 
 
-#######################################
-# HiGHS-Simplex Option-Specific Tests #
-#######################################
+############################################
+# HiGHS-Simplex-Dual Option-Specific Tests #
+############################################
 
 
 class TestLinprogHiGHSSimplexDual(LinprogHiGHSTests):
-    method = "highs-simplex"
+    method = "highs-ds"
     options = {}
 
 
