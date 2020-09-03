@@ -167,6 +167,22 @@ def lpgen_2d(m, n):
     return A, b, c.ravel()
 
 
+def very_random_gen(seed=0):
+    np.random.seed(0)
+    m_eq, m_ub, n = 10, 20, 50
+    c = np.random.rand(n)-0.5
+    A_ub = np.random.rand(m_ub, n)-0.5
+    b_ub = np.random.rand(m_ub)-0.5
+    A_eq = np.random.rand(m_eq, n)-0.5
+    b_eq = np.random.rand(m_eq)-0.5
+    lb = -np.random.rand(n)
+    ub = np.random.rand(n)
+    lb[lb < -np.random.rand()] = -np.inf
+    ub[ub > np.random.rand()] = np.inf
+    bounds = np.vstack((lb, ub)).T
+    return c, A_ub, b_ub, A_eq, b_eq, bounds
+
+
 def nontrivial_problem():
     c = [-1, 8, 4, -6]
     A_ub = [[-7, -7, 6, 9],
@@ -1068,18 +1084,7 @@ class LinprogCommonTests(object):
 
     def test_optimize_result(self):
         # check all fields in OptimizeResult
-        np.random.seed(0)
-        m_eq, m_ub, n = 10, 20, 50
-        c = np.random.rand(n)-0.5
-        A_ub = np.random.rand(m_ub, n)-0.5
-        b_ub = np.random.rand(m_ub)-0.5
-        A_eq = np.random.rand(m_eq, n)-0.5
-        b_eq = np.random.rand(m_eq)-0.5
-        lb = -np.random.rand(n)
-        ub = np.random.rand(n)
-        lb[lb < -np.random.rand()] = -np.inf
-        ub[ub > np.random.rand()] = np.inf
-        bounds = np.vstack((lb, ub)).T
+        c, A_ub, b_ub, A_eq, b_eq, bounds = very_random_gen(0)
         res = linprog(c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq,
                       bounds=bounds, method=self.method, options=self.options)
         assert_(res.success)
@@ -1567,15 +1572,39 @@ class LinprogHiGHSTests(LinprogCommonTests):
         _assert_success(res, desired_fun=-18.0, desired_x=[2, 6])
 
     @pytest.mark.parametrize("options",
-                             [{"dual_feasibility_tolerance": -1},
+                             [{"maxiter": -1},
+                              {"disp": -1},
+                              {"presolve": -1},
+                              {"time_limit": -1},
+                              {"dual_feasibility_tolerance": -1},
                               {"primal_feasibility_tolerance": -1},
-                              {"simplex_dual_edge_weight_strategy": 10},
+                              {"ipm_optimality_tolerance": -1},
+                              {"simplex_dual_edge_weight_strategy": "ekki"},
                               ])
     def test_invalid_option_values(self, options):
         def f(options):
             linprog(1, method=self.method, options=options)
         options.update(self.options)
         assert_warns(OptimizeWarning, f, options=options)
+
+    def test_optimize_result(self):
+        # check all fields in OptimizeResult
+        c, A_ub, b_ub, A_eq, b_eq, bounds = very_random_gen(0)
+        res = linprog(c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq,
+                      bounds=bounds, method=self.method, options=self.options)
+        assert_(res.success)
+        assert_(res.nit)
+        assert_(not res.status)
+        assert_(res.message == "Optimization terminated successfully.")
+        assert_allclose(c @ res.x, res.fun)
+        assert_allclose(b_eq - A_eq @ res.x, res.con, atol=1e-12)
+        assert_allclose(b_ub - A_ub @ res.x, res.slack, atol=1e-12)
+        assert_equal(res.method, self.method)
+        # crossover_nit is nonzero only for highs-ipm
+        assert_equal(res.crossover_nit == 0, self.method != "highs-ipm")
+        # edge weight strategy is None only for highs-ipm
+        assert_equal(res.simplex_dual_edge_weight_strategy is None,
+                     self.method == "highs-ipm")
 
 ################################
 # Simplex Option-Specific Tests#

@@ -79,7 +79,7 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
                    dual_feasibility_tolerance=None,
                    primal_feasibility_tolerance=None,
                    ipm_optimality_tolerance=None,
-                   simplex_dual_edge_weight_strategy='steepest-devex',
+                   simplex_dual_edge_weight_strategy=None,
                    **unknown_options):
     r"""
     Solve the following linear programming problem using one of the HiGHS
@@ -125,20 +125,24 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
         Optimality tolerance for ``solver='ipm'``.  Default is 1e-08.
         Minimum possible value is 1e-12 and must be smaller than the largest
         possible value for a ``double`` on the platform.
-    simplex_dual_edge_weight_strategy : str (default: 'steepest-devex')
-        Strategy for simplex dual edge weights.
+    simplex_dual_edge_weight_strategy : str (default: None)
+        Strategy for simplex dual edge weights. The default, ``None``,
+        automatically selects one of the following.
 
         ``'dantzig'`` uses Dantzig's original strategy of choosing the most
         negative reduced cost.
 
         ``'devex'`` uses the strategy described in [15]_.
 
-        ``steepest`` uses the exact steepest edge strategy as described in [
-        16]_.
+        ``steepest`` uses the exact steepest edge strategy as described in
+        [16]_.
 
         ``'steepest-devex'`` begins with the exact steepest edge strategy
         until the computation is too costly or inexact and then switches to
         the devex method.
+
+        Curently, using ``None`` always selects ``'steepest-devex'``, but this
+        may change as new options become available.
 
     unknown_options : dict
         Optional arguments not used by this particular solver. If
@@ -188,7 +192,11 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
                 for ``solver='simplex'``.
             message : str
                 A string descriptor of the exit status of the algorithm.
-
+            simplex_dual_edge_weight_strategy : str
+                The selected strategy for simplex dual edge weights. This is
+                ``None`` for ``solver='ipm'``.
+            method : {'highs-ds', 'highs-ipm'}
+                The selected solution method.
     References
     ----------
     .. [15] Harris, Paula MJ. "Pivot selection methods of the Devex LP code."
@@ -200,14 +208,17 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
     _check_unknown_options(unknown_options)
 
     # Map options to HiGHS enum values
-    simplex_dual_edge_weight_strategy = _convert_to_highs_enum(
+    if simplex_dual_edge_weight_strategy is None:
+        simplex_dual_edge_weight_strategy = 'steepest-devex'
+    simplex_dual_edge_weight_strategy_enum = _convert_to_highs_enum(
         simplex_dual_edge_weight_strategy,
         'simplex_dual_edge_weight_strategy',
         choices={'dantzig': HIGHS_SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_DANTZIG,
                  'devex': HIGHS_SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_DEVEX,
                  'steepest-devex': HIGHS_SIMPLEX_DUAL_EDGE_WEIGHT_STEEP2DVX,
                  'steepest':
-                 HIGHS_SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_STEEPEST_EDGE})
+                 HIGHS_SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_STEEPEST_EDGE,
+                 None: HIGHS_SIMPLEX_DUAL_EDGE_WEIGHT_STEEP2DVX})
 
     statuses = {
         MODEL_STATUS_NOTSET: (
@@ -291,7 +302,8 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
         'dual_feasibility_tolerance': dual_feasibility_tolerance,
         'ipm_optimality_tolerance': ipm_optimality_tolerance,
         'primal_feasibility_tolerance': primal_feasibility_tolerance,
-        'simplex_dual_edge_weight_strategy': simplex_dual_edge_weight_strategy,
+        'simplex_dual_edge_weight_strategy':
+            simplex_dual_edge_weight_strategy_enum,
         'simplex_strategy': HIGHS_SIMPLEX_STRATEGY_DUAL,
         'simplex_crash_strategy': HIGHS_SIMPLEX_CRASH_STRATEGY_OFF,
     }
@@ -318,6 +330,9 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
     else:
         slack, con = None, None
 
+    # this needs to be updated if we start choosing the solver intelligently
+    solvers = {"ipm": "highs-ipm", "simplex": "highs-ds", None: "highs-ds"}
+
     sol = {'x': np.array(res['x']) if 'x' in res else None,
            'slack': slack,
            # TODO: Add/test dual info like:
@@ -330,5 +345,10 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
            'message': statuses[res['status']][1],
            'nit': res.get('simplex_nit', 0) or res.get('ipm_nit', 0),
            'crossover_nit': res.get('crossover_nit'),
+           'method': solvers[solver],
+           'simplex_dual_edge_weight_strategy':
+               (simplex_dual_edge_weight_strategy if solver != "ipm"
+                else None)
            }
+
     return sol

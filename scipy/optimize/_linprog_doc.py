@@ -13,7 +13,7 @@ def _linprog_highs_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
                        dual_feasibility_tolerance=None,
                        primal_feasibility_tolerance=None,
                        ipm_optimality_tolerance=None,
-                       simplex_dual_edge_weight_strategy='steepest-devex',
+                       simplex_dual_edge_weight_strategy=None,
                        **unknown_options):
     r"""
     Linear programming: minimize a linear objective function subject to linear
@@ -117,21 +117,24 @@ def _linprog_highs_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         Optimality tolerance for
         :ref:`'highs-ipm' <optimize.linprog-highs-ipm>`.
         Minimum allowable value is 1e-12.
-    simplex_dual_edge_weight_strategy : str (default: 'steepest-devex')
-        Strategy for simplex dual edge weights.
+    simplex_dual_edge_weight_strategy : str (default: None)
+        Strategy for simplex dual edge weights. The default, ``None``,
+        automatically selects one of the following.
 
         ``'dantzig'`` uses Dantzig's original strategy of choosing the most
         negative reduced cost.
 
         ``'devex'`` uses the strategy described in [15]_.
 
-        ``steepest`` uses the exact steepest edge strategy as described in [
-        16]_.
+        ``steepest`` uses the exact steepest edge strategy as described in
+        [16]_.
 
         ``'steepest-devex'`` begins with the exact steepest edge strategy
         until the computation is too costly or inexact and then switches to
         the devex method.
 
+        Curently, ``None`` always selects ``'steepest-devex'``, but this
+        may change as new options become available.
     unknown_options : dict
         Optional arguments not used by this particular solver. If
         ``unknown_options`` is non-empty, a warning is issued listing
@@ -169,6 +172,8 @@ def _linprog_highs_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
 
             ``4`` : The HiGHS solver ran into a problem.
 
+        message : str
+            A string descriptor of the exit status of the algorithm.
         nit : int
             The total number of iterations performed.
             For the HiGHS simplex method, this includes iterations in all
@@ -178,8 +183,11 @@ def _linprog_highs_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
             The number of primal/dual pushes performed during the
             crossover routine for the HiGHS interior-point method.
             This is ``0`` for the HiGHS simplex method.
-        message : str
-            A string descriptor of the exit status of the algorithm.
+        simplex_dual_edge_weight_strategy : str
+            The selected strategy for simplex dual edge weights. This is
+            ``None`` for the HiGHS interior-point method.
+        method : {'highs-ds', 'highs-ipm'}
+            The selected solution method.
 
     Notes
     -----
@@ -218,7 +226,7 @@ def _linprog_highs_ds_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
                           time_limit=None,
                           dual_feasibility_tolerance=None,
                           primal_feasibility_tolerance=None,
-                          simplex_dual_edge_weight_strategy='steepest-devex',
+                          simplex_dual_edge_weight_strategy=None,
                           **unknown_options):
     r"""
     Linear programming: minimize a linear objective function subject to linear
@@ -309,21 +317,24 @@ def _linprog_highs_ds_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     primal_feasibility_tolerance : double (default: 1e-07)
         Primal feasibility tolerance for
         :ref:`'highs-ds' <optimize.linprog-highs-ds>`.
-    simplex_dual_edge_weight_strategy : str (default: 'steepest-devex')
-        Strategy for simplex dual edge weights.
+    simplex_dual_edge_weight_strategy : str (default: None)
+        Strategy for simplex dual edge weights. The default, ``None``,
+        automatically selects one of the following.
 
         ``'dantzig'`` uses Dantzig's original strategy of choosing the most
         negative reduced cost.
 
         ``'devex'`` uses the strategy described in [15]_.
 
-        ``steepest`` uses the exact steepest edge strategy as described in [
-        16]_.
+        ``steepest`` uses the exact steepest edge strategy as described in
+        [16]_.
 
         ``'steepest-devex'`` begins with the exact steepest edge strategy
         until the computation is too costly or inexact and then switches to
         the devex method.
 
+        Curently, ``None`` always selects ``'steepest-devex'``, but this
+        may change as new options become available.
     unknown_options : dict
         Optional arguments not used by this particular solver. If
         ``unknown_options`` is non-empty, a warning is issued listing
@@ -370,6 +381,11 @@ def _linprog_highs_ds_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
             primal/dual pushes performed during the crossover routine.
         message : str
             A string descriptor of the exit status of the algorithm.
+        simplex_dual_edge_weight_strategy : str
+            The selected strategy for simplex dual edge weights. This is
+            ``None`` for the HiGHS interior-point method.
+        method : {'highs-ds', 'highs-ipm'}
+            The selected solution method.
 
     Notes
     -----
@@ -553,6 +569,11 @@ def _linprog_highs_ipm_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
             crossover routine for the HiGHS interior-point method.
         message : str
             A string descriptor of the exit status of the algorithm.
+        simplex_dual_edge_weight_strategy : str
+            The selected strategy for simplex dual edge weights. This is
+            ``None`` for the HiGHS interior-point method.
+        method : {'highs-ds', 'highs-ipm'}
+            The selected solution method.
 
     Notes
     -----
