@@ -1,8 +1,8 @@
-.. _optimize.linprog-highs-simplex:
+.. _optimize.linprog-highs-ds:
 
-linprog(method='highs-simplex')
+linprog(method='highs-ds')
 ----------------------------------------
 
 .. scipy-optimize:function:: scipy.optimize.linprog
    :impl: scipy.optimize._linprog._linprog_highs_ds_doc
-   :method: highs-simplex
+   :method: highs-ds

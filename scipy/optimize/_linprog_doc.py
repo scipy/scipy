@@ -74,7 +74,7 @@ def _linprog_highs_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
 
         This is the method-specific documentation for 'highs', which chooses
         automatically between
-        :ref:`'highs-simplex' <optimize.linprog-highs-simplex>` and
+        :ref:`'highs-ds' <optimize.linprog-highs-ds>` and
         :ref:`'highs-ipm' <optimize.linprog-highs-ipm>`.
         :ref:`'interior-point' <optimize.linprog-interior-point>` (default),
         :ref:`'revised simplex' <optimize.linprog-revised_simplex>`, and
@@ -103,13 +103,13 @@ def _linprog_highs_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         platform.
     dual_feasibility_tolerance : double (default: 1e-07)
         Dual feasibility tolerance for
-        :ref:`'highs-simplex' <optimize.linprog-highs-simplex>`.
+        :ref:`'highs-ds' <optimize.linprog-highs-ds>`.
         The minimum of this and ``primal_feasibility_tolerance``
         is used for the feasibility tolerance of
         :ref:`'highs-ipm' <optimize.linprog-highs-ipm>`.
     primal_feasibility_tolerance : double (default: 1e-07)
         Primal feasibility tolerance for
-        :ref:`'highs-simplex' <optimize.linprog-highs-simplex>`.
+        :ref:`'highs-ds' <optimize.linprog-highs-ds>`.
         The minimum of this and ``dual_feasibility_tolerance``
         is used for the feasibility tolerance of
         :ref:`'highs-ipm' <optimize.linprog-highs-ipm>`.
@@ -177,7 +177,7 @@ def _linprog_highs_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     Notes
     -----
 
-    Method :ref:`'highs-simplex' <optimize.linprog-highs-simplex>` is a wrapper
+    Method :ref:`'highs-ds' <optimize.linprog-highs-ds>` is a wrapper
     of the C++ high performance dual revised simplex implementation (HSOL)
     [13]_, [14]_. Method :ref:`'highs-ipm' <optimize.linprog-highs-ipm>`
     is a wrapper of a C++ implementation of an **i**\ nterior-\ **p**\ oint
@@ -206,7 +206,7 @@ def _linprog_highs_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
 
 
 def _linprog_highs_ds_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
-                          bounds=None, method='highs-simplex', callback=None,
+                          bounds=None, method='highs-ds', callback=None,
                           maxiter=None, disp=False, presolve=True,
                           time_limit=None,
                           dual_feasibility_tolerance=None,
@@ -270,7 +270,7 @@ def _linprog_highs_ds_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         ``max`` will serve as bounds for all decision variables.
     method : str
 
-        This is the method-specific documentation for 'highs-simplex'.
+        This is the method-specific documentation for 'highs-ds'.
         :ref:`'highsx' <optimize.linprog-highs>`,
         :ref:`'highs-ipm' <optimize.linprog-highs-ipm>`,
         :ref:`'interior-point' <optimize.linprog-interior-point>` (default),
@@ -298,10 +298,10 @@ def _linprog_highs_ds_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         platform.
     dual_feasibility_tolerance : double (default: 1e-07)
         Dual feasibility tolerance for
-        :ref:`'highs-simplex' <optimize.linprog-highs-simplex>`.
+        :ref:`'highs-ds' <optimize.linprog-highs-ds>`.
     primal_feasibility_tolerance : double (default: 1e-07)
         Primal feasibility tolerance for
-        :ref:`'highs-simplex' <optimize.linprog-highs-simplex>`.
+        :ref:`'highs-ds' <optimize.linprog-highs-ds>`.
     simplex_dual_edge_weight_strategy : str {'dantzig', 'devex', 'steepest-devex', 'steepest'}
         Strategy for simplex dual edge weights. ``'dantzig'`` uses Dantzig's
         original strategy of choosing the most negative reduced cost.
@@ -360,7 +360,7 @@ def _linprog_highs_ds_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     Notes
     -----
 
-    Method :ref:`'highs-simplex' <optimize.linprog-highs-simplex>` is a wrapper
+    Method :ref:`'highs-ds' <optimize.linprog-highs-ds>` is a wrapper
     of the C++ high performance dual revised simplex implementation (HSOL)
     [13]_, [14]_. Method :ref:`'highs-ipm' <optimize.linprog-highs-ipm>`
     is a wrapper of a C++ implementation of an **i**\ nterior-\ **p**\ oint
@@ -455,7 +455,7 @@ def _linprog_highs_ipm_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
 
         This is the method-specific documentation for 'highs-ipm'.
         :ref:`'highs-ipm' <optimize.linprog-highs>`,
-        :ref:`'highs-simplex' <optimize.linprog-highs-simplex>`,
+        :ref:`'highs-ds' <optimize.linprog-highs-ds>`,
         :ref:`'interior-point' <optimize.linprog-interior-point>` (default),
         :ref:`'revised simplex' <optimize.linprog-revised_simplex>`, and
         :ref:`'simplex' <optimize.linprog-simplex>` (legacy)
@@ -547,7 +547,7 @@ def _linprog_highs_ipm_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     is a wrapper of a C++ implementation of an **i**\ nterior-\ **p**\ oint
     **m**\ ethod [13]_; it features a crossover routine, so it is as accurate
     as a simplex solver.
-    Method :ref:`'highs-simplex' <optimize.linprog-highs-simplex>` is a wrapper
+    Method :ref:`'highs-ds' <optimize.linprog-highs-ds>` is a wrapper
     of the C++ high performance dual revised simplex implementation (HSOL)
     [13]_, [14]_. Method :ref:`'highs' <optimize.linprog-highs>` chooses
     between the two automatically. For new code involving `linprog`, we
@@ -633,8 +633,8 @@ def _linprog_ip_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         ``max`` will serve as bounds for all decision variables.
     method : str
         This is the method-specific documentation for 'interior-point'.
-        :ref:`'highs' <optimize.linprog-highs-simplex>`,
-        :ref:`'highs-simplex' <optimize.linprog-highs-simplex>`,
+        :ref:`'highs' <optimize.linprog-highs>`,
+        :ref:`'highs-ds' <optimize.linprog-highs-ds>`,
         :ref:`'highs-ipm' <optimize.linprog-highs-ipm>`,
         :ref:`'revised simplex' <optimize.linprog-revised_simplex>`, and
         :ref:`'simplex' <optimize.linprog-simplex>` (legacy)
@@ -956,7 +956,7 @@ def _linprog_rs_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     method : str
         This is the method-specific documentation for 'revised simplex'.
         :ref:`'highs' <optimize.linprog-highs>`,
-        :ref:`'highs-simplex' <optimize.linprog-highs-simplex>`,
+        :ref:`'highs-ds' <optimize.linprog-highs-ds>`,
         :ref:`'highs-ipm' <optimize.linprog-highs-ipm>`,
         :ref:`'interior-point' <optimize.linprog-interior-point>` (default),
         and :ref:`'simplex' <optimize.linprog-simplex>` (legacy)
@@ -1136,7 +1136,7 @@ def _linprog_simplex_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     method : str
         This is the method-specific documentation for 'simplex'.
         :ref:`'highs' <optimize.linprog-highs>`,
-        :ref:`'highs-simplex' <optimize.linprog-highs-simplex>`,
+        :ref:`'highs-ds' <optimize.linprog-highs-ds>`,
         :ref:`'highs-ipm' <optimize.linprog-highs-ipm>`,
         :ref:`'interior-point' <optimize.linprog-interior-point>` (default),
         and :ref:`'revised simplex' <optimize.linprog-revised_simplex>`

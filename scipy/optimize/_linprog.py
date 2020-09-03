@@ -222,10 +222,10 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         ``(0, None)`` (all decision variables are non-negative).
         If a single tuple ``(min, max)`` is provided, then ``min`` and
         ``max`` will serve as bounds for all decision variables.
-    method : {'highs-simplex', 'highs-ipm', 'highs', 'interior-point',
+    method : {'highs-ds', 'highs-ipm', 'highs', 'interior-point',
     'revised simplex', 'simplex'}, optional
         The algorithm used to solve the standard form problem.
-        :ref:`'highs-simplex' <optimize.linprog-highs-simplex>`,
+        :ref:`'highs-ds' <optimize.linprog-highs-ds>`,
         :ref:`'highs-ipm' <optimize.linprog-highs-ipm>`,
         :ref:`'highs' <optimize.linprog-highs>`,
         :ref:`'interior-point' <optimize.linprog-interior-point>` (default),
@@ -355,7 +355,7 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     This section describes the available solvers that can be selected by the
     'method' parameter.
 
-    `'highs-simplex'` and
+    `'highs-ds'` and
     `'highs-ipm'` are interfaces to the
     HiGHS simplex and interior-point method solvers [13]_, respectively.
     `'highs'` chooses between
@@ -370,7 +370,7 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     `'simplex'` is the legacy method and is
     included for backwards compatibility and educational purposes.
 
-    Method *highs-simplex* is a wrapper of the C++ high performance dual
+    Method *highs-ds* is a wrapper of the C++ high performance dual
     revised simplex implementation (HSOL) [13]_, [14]_. Method *highs-ipm*
     is a wrapper of a C++ implementation of an **i**\ nterior-\ **p**\ oint
     **m**\ ethod [13]_; it features a crossover routine, so it is as accurate
@@ -550,7 +550,7 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
 
     meth = method.lower()
     methods = {"simplex", "revised simplex", "interior-point",
-               "highs", "highs-simplex", "highs-ipm"}
+               "highs", "highs-ds", "highs-ipm"}
     if meth not in methods:
         raise ValueError(f"Unknown solver '{method}'")
 
@@ -567,7 +567,7 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         if callback is not None:
             raise NotImplementedError("HiGHS solvers do not support the "
                                       "callback interface.")
-        highs_solvers = {'highs-ipm': 'ipm', 'highs-simplex': 'simplex',
+        highs_solvers = {'highs-ipm': 'ipm', 'highs-ds': 'simplex',
                          'highs': None}
 
         sol = _linprog_highs(lp, solver=highs_solvers[meth],

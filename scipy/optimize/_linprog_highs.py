@@ -125,14 +125,21 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
         Optimality tolerance for ``solver='ipm'``.  Default is 1e-08.
         Minimum possible value is 1e-12 and must be smaller than the largest
         possible value for a ``double`` on the platform.
-    simplex_dual_edge_weight_strategy : str {'dantzig', 'devex', 'steepest-devex', 'steepest'}
-        Strategy for simplex dual edge weights. ``'dantzig'`` uses Dantzig’s
-        original strategy of choosing the most negative reduced cost.
-        ``'devex'`` uses the strategy described in [15]_.  ``steepest`` uses
-        the exact steepest edge strategy as described in [16]_.
+    simplex_dual_edge_weight_strategy : str (default: 'steepest-devex')
+        Strategy for simplex dual edge weights.
+
+        ``'dantzig'`` uses Dantzig's original strategy of choosing the most
+        negative reduced cost.
+
+        ``'devex'`` uses the strategy described in [15]_.
+
+        ``steepest`` uses the exact steepest edge strategy as described in [
+        16]_.
+
         ``'steepest-devex'`` begins with the exact steepest edge strategy
         until the computation is too costly or inexact and then switches to
-        the devex method.  Default is ``'steepest-devex'``.
+        the devex method.
+
     unknown_options : dict
         Optional arguments not used by this particular solver. If
         ``unknown_options`` is non-empty, a warning is issued listing all
