@@ -2549,6 +2549,104 @@ class TestLevyStable(object):
             )
             assert_almost_equal(calc_stats, exp_stats)
 
+    @pytest.mark.slow
+    def test_nolan_alpha_rounding(self):
+        # alpha close to 1 are rounded to alpha = 1
+        # this test assumes piecewise_alpha_tol_near_one < 0.01
+        #   (its default is currently set to 0.0075)
+        stats.levy_stable.pdf_default_method = "piecewise"
+        stats.levy_stable.cdf_default_method = "piecewise"
+        alphas = (np.arange(0.99, 0.999, 0.001).tolist() +
+                  np.arange(1.001, 1.01, 0.001).tolist())
+        betas = np.linspace(-1, 1, 21)
+        xs = np.linspace(-1, 1, 21)
+
+        cdf = stats.levy_stable.cdf
+        pdf = stats.levy_stable.pdf
+
+        for beta in betas:
+            cdf_vals_alpha_one = cdf(xs, alpha=1.0, beta=beta)
+            pdf_vals_alpha_one = pdf(xs, alpha=1.0, beta=beta)
+            for alpha in alphas:
+                # we need to correct for the shifting
+                # mean in scipy's parameterization
+                mean_location = -beta * np.tan(alpha * np.pi / 2.0)
+                cdf_vals = cdf(xs - mean_location, alpha=alpha,
+                               beta=beta)
+                assert_allclose(cdf_vals, cdf_vals_alpha_one,
+                                0.05)  # within 5%
+
+                pdf_vals = pdf(xs - mean_location, alpha=alpha,
+                               beta=beta)
+                assert_allclose(pdf_vals, pdf_vals_alpha_one,
+                                0.05)  # within 5%
+
+    @pytest.mark.slow
+    def test_nolan_beta_rounding(self):
+        # for alpha=1, Nolan rounds |beta| < 0.005 to beta = 0
+        # we do not do this rounding, so we need to check accuracy here
+        stats.levy_stable.pdf_default_method = "piecewise"
+        stats.levy_stable.cdf_default_method = "piecewise"
+        alphas = np.arange(0.5, 2.0, 0.1)
+        betas = [10 ** (-k) for k in range(2, 20)]
+        betas += [-10 ** (-k) for k in range(2, 20)]
+        xs = np.linspace(-1, 1, 21)
+
+        cdf = stats.levy_stable.cdf
+        pdf = stats.levy_stable.pdf
+
+        for alpha in alphas:
+            cdf_vals_beta_zero = cdf(xs, alpha=alpha, beta=0.0)
+            pdf_vals_beta_zero = pdf(xs, alpha=alpha, beta=0.0)
+
+            for beta in betas:
+                # we need to correct for the shifting
+                # mean in scipy's parameterization
+                if alpha != 1:
+                    mean_location = -beta * np.tan(alpha * np.pi / 2.0)
+                else:
+                    mean_location = 0
+                cdf_vals = cdf(xs - mean_location, alpha=alpha,
+                               beta=beta)
+                assert_allclose(cdf_vals, cdf_vals_beta_zero,
+                                0.05)  # within 5%
+
+                pdf_vals = pdf(xs - mean_location, alpha=alpha,
+                               beta=beta)
+                assert_allclose(pdf_vals, pdf_vals_beta_zero,
+                                0.05)  # within 5%
+
+    @pytest.mark.slow
+    def test_nolan_x0_rounding(self):
+        # in scipy's parameterization, Nolan rounds
+        #   |x| < 0.5e-2*alpha**(1/alpha) to x=0
+        # this test assumes piecewise_x_tol_near_zeta < ~2e-2
+        #   (its default is currently set to 1e-2)
+        stats.levy_stable.pdf_default_method = "piecewise"
+        stats.levy_stable.cdf_default_method = "piecewise"
+        alphas = np.arange(0.5, 2.0, 0.1)
+        betas = np.arange(-1.0, 1.0, 0.1)
+
+        cdf = stats.levy_stable.cdf
+        pdf = stats.levy_stable.pdf
+
+        for alpha in alphas:
+            for beta in betas:
+                offsets = np.arange(-2e-2, 2e-2, 0.0005) * alpha ** (1 / alpha)
+
+                cdf_val = cdf(0, alpha=alpha, beta=beta)
+                pdf_val = pdf(0, alpha=alpha, beta=beta)
+
+                offset_cdf_val = cdf(offsets, alpha=alpha,
+                                     beta=beta)
+                assert_allclose(cdf_val, offset_cdf_val,
+                                0.05)  # within 5%
+
+                offset_pdf_val = pdf(offsets, alpha=alpha,
+                                     beta=beta)
+                assert_allclose(pdf_val, offset_pdf_val, 0.05,
+                                atol=1e-16)  # within 5% or 1e-16
+
 
 class TestArrayArgument(object):  # test for ticket:992
     def setup_method(self):
