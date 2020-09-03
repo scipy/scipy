@@ -110,9 +110,13 @@ def spline_filter1d(input, order=3, axis=-1, output=numpy.float64,
     if order < 0 or order > 5:
         raise RuntimeError('spline order not supported')
     input = numpy.asarray(input)
-    if numpy.iscomplexobj(input):
-        raise TypeError('Complex type not supported')
-    output = _ni_support._get_output(output, input)
+    complex_output = numpy.iscomplexobj(input)
+    output = _ni_support._get_output(output, input,
+                                     complex_output=complex_output)
+    if complex_output:
+        spline_filter1d(input.real, order, axis, output.real, mode)
+        spline_filter1d(input.imag, order, axis, output.imag, mode)
+        return output
     if order in [0, 1]:
         output[...] = numpy.array(input)
     else:
@@ -161,9 +165,13 @@ def spline_filter(input, order=3, output=numpy.float64, mode='mirror'):
     if order < 2 or order > 5:
         raise RuntimeError('spline order not supported')
     input = numpy.asarray(input)
-    if numpy.iscomplexobj(input):
-        raise TypeError('Complex type not supported')
-    output = _ni_support._get_output(output, input)
+    complex_output = numpy.iscomplexobj(input)
+    output = _ni_support._get_output(output, input,
+                                     complex_output=complex_output)
+    if complex_output:
+        spline_filter(input.real, order, output.real, mode)
+        spline_filter(input.imag, order, output.imag, mode)
+        return output
     if order not in [0, 1] and input.ndim > 0:
         for axis in range(input.ndim):
             spline_filter1d(input, order, axis, output=output, mode=mode)
@@ -295,12 +303,22 @@ def geometric_transform(input, mapping, output_shape=None,
     if order < 0 or order > 5:
         raise RuntimeError('spline order not supported')
     input = numpy.asarray(input)
-    if numpy.iscomplexobj(input):
-        raise TypeError('Complex type not supported')
     if output_shape is None:
         output_shape = input.shape
     if input.ndim < 1 or len(output_shape) < 1:
         raise RuntimeError('input and output rank must be > 0')
+    complex_output = numpy.iscomplexobj(input)
+    output = _ni_support._get_output(output, input, shape=output_shape,
+                                     complex_output=complex_output)
+    if complex_output:
+        kwargs = dict(order=order, mode=mode, cval=cval, prefilter=prefilter,
+                      output_shape=output_shape,
+                      extra_arguments=extra_arguments,
+                      extra_keywords=extra_keywords)
+        geometric_transform(input.real, mapping, output=output.real, **kwargs)
+        geometric_transform(input.imag, mapping, output=output.imag, **kwargs)
+        return output
+
     if prefilter and order > 1:
         padded, npad = _prepad_for_spline_filter(input, mode, cval)
         filtered = spline_filter(padded, order, output=numpy.float64,
@@ -309,7 +327,6 @@ def geometric_transform(input, mapping, output_shape=None,
         npad = 0
         filtered = input
     mode = _ni_support._extend_mode_to_code(mode)
-    output = _ni_support._get_output(output, input, shape=output_shape)
     _nd_image.geometric_transform(filtered, mapping, None, None, None, output,
                                   order, mode, cval, npad, extra_arguments,
                                   extra_keywords)
@@ -382,8 +399,6 @@ def map_coordinates(input, coordinates, output=None, order=3,
     if order < 0 or order > 5:
         raise RuntimeError('spline order not supported')
     input = numpy.asarray(input)
-    if numpy.iscomplexobj(input):
-        raise TypeError('Complex type not supported')
     coordinates = numpy.asarray(coordinates)
     if numpy.iscomplexobj(coordinates):
         raise TypeError('Complex type not supported')
@@ -392,6 +407,14 @@ def map_coordinates(input, coordinates, output=None, order=3,
         raise RuntimeError('input and output rank must be > 0')
     if coordinates.shape[0] != input.ndim:
         raise RuntimeError('invalid shape for coordinate array')
+    complex_output = numpy.iscomplexobj(input)
+    output = _ni_support._get_output(output, input, shape=output_shape,
+                                     complex_output=complex_output)
+    if complex_output:
+        kwargs = dict(order=order, mode=mode, cval=cval, prefilter=prefilter)
+        map_coordinates(input.real, coordinates, output=output.real, **kwargs)
+        map_coordinates(input.imag, coordinates, output=output.imag, **kwargs)
+        return output
     if prefilter and order > 1:
         padded, npad = _prepad_for_spline_filter(input, mode, cval)
         filtered = spline_filter(padded, order, output=numpy.float64,
@@ -399,8 +422,6 @@ def map_coordinates(input, coordinates, output=None, order=3,
     else:
         npad = 0
         filtered = input
-    output = _ni_support._get_output(output, input,
-                                     shape=output_shape)
     mode = _ni_support._extend_mode_to_code(mode)
     _nd_image.geometric_transform(filtered, None, coordinates, None, None,
                                   output, order, mode, cval, npad, None, None)
@@ -489,12 +510,19 @@ def affine_transform(input, matrix, offset=0.0, output_shape=None,
     if order < 0 or order > 5:
         raise RuntimeError('spline order not supported')
     input = numpy.asarray(input)
-    if numpy.iscomplexobj(input):
-        raise TypeError('Complex type not supported')
     if output_shape is None:
         output_shape = input.shape
     if input.ndim < 1 or len(output_shape) < 1:
         raise RuntimeError('input and output rank must be > 0')
+    complex_output = numpy.iscomplexobj(input)
+    output = _ni_support._get_output(output, input, shape=output_shape,
+                                     complex_output=complex_output)
+    if complex_output:
+        kwargs = dict(offset=offset, output_shape=output_shape, order=order,
+                      mode=mode, cval=cval, prefilter=prefilter)
+        affine_transform(input.real, matrix, output=output.real, **kwargs)
+        affine_transform(input.imag, matrix, output=output.imag, **kwargs)
+        return output
     if prefilter and order > 1:
         padded, npad = _prepad_for_spline_filter(input, mode, cval)
         filtered = spline_filter(padded, order, output=numpy.float64,
@@ -503,8 +531,6 @@ def affine_transform(input, matrix, offset=0.0, output_shape=None,
         npad = 0
         filtered = input
     mode = _ni_support._extend_mode_to_code(mode)
-    output = _ni_support._get_output(output, input,
-                                     shape=output_shape)
     matrix = numpy.asarray(matrix, dtype=numpy.float64)
     if matrix.ndim not in [1, 2] or matrix.shape[0] < 1:
         raise RuntimeError('no proper affine matrix provided')
@@ -580,10 +606,19 @@ def shift(input, shift, output=None, order=3, mode='constant', cval=0.0,
     if order < 0 or order > 5:
         raise RuntimeError('spline order not supported')
     input = numpy.asarray(input)
-    if numpy.iscomplexobj(input):
-        raise TypeError('Complex type not supported')
     if input.ndim < 1:
         raise RuntimeError('input and output rank must be > 0')
+    complex_output = numpy.iscomplexobj(input)
+    output = _ni_support._get_output(output, input,
+                                     complex_output=complex_output)
+    if complex_output:
+        # import under different name to avoid confusion with shift parameter
+        from scipy.ndimage.interpolation import shift as _shift
+
+        kwargs = dict(order=order, mode=mode, cval=cval, prefilter=prefilter)
+        _shift(input.real, shift, output=output.real, **kwargs)
+        _shift(input.imag, shift, output=output.imag, **kwargs)
+        return output
     if prefilter and order > 1:
         padded, npad = _prepad_for_spline_filter(input, mode, cval)
         filtered = spline_filter(padded, order, output=numpy.float64,
@@ -592,7 +627,6 @@ def shift(input, shift, output=None, order=3, mode='constant', cval=0.0,
         npad = 0
         filtered = input
     mode = _ni_support._extend_mode_to_code(mode)
-    output = _ni_support._get_output(output, input)
     shift = _ni_support._normalize_sequence(shift, input.ndim)
     shift = [-ii for ii in shift]
     shift = numpy.asarray(shift, dtype=numpy.float64)
@@ -653,10 +687,22 @@ def zoom(input, zoom, output=None, order=3, mode='constant', cval=0.0,
     if order < 0 or order > 5:
         raise RuntimeError('spline order not supported')
     input = numpy.asarray(input)
-    if numpy.iscomplexobj(input):
-        raise TypeError('Complex type not supported')
     if input.ndim < 1:
         raise RuntimeError('input and output rank must be > 0')
+    zoom = _ni_support._normalize_sequence(zoom, input.ndim)
+    output_shape = tuple(
+            [int(round(ii * jj)) for ii, jj in zip(input.shape, zoom)])
+    complex_output = numpy.iscomplexobj(input)
+    output = _ni_support._get_output(output, input, shape=output_shape,
+                                     complex_output=complex_output)
+    if complex_output:
+        # import under different name to avoid confusion with zoom parameter
+        from scipy.ndimage.interpolation import zoom as _zoom
+
+        kwargs = dict(order=order, mode=mode, cval=cval, prefilter=prefilter)
+        _zoom(input.real, zoom, output=output.real, **kwargs)
+        _zoom(input.imag, zoom, output=output.imag, **kwargs)
+        return output
     if prefilter and order > 1:
         padded, npad = _prepad_for_spline_filter(input, mode, cval)
         filtered = spline_filter(padded, order, output=numpy.float64,
@@ -665,9 +711,6 @@ def zoom(input, zoom, output=None, order=3, mode='constant', cval=0.0,
         npad = 0
         filtered = input
     mode = _ni_support._extend_mode_to_code(mode)
-    zoom = _ni_support._normalize_sequence(zoom, input.ndim)
-    output_shape = tuple(
-            [int(round(ii * jj)) for ii, jj in zip(input.shape, zoom)])
 
     zoom_div = numpy.array(output_shape, float) - 1
     # Zooming to infinite values is unpredictable, so just choose
@@ -675,9 +718,6 @@ def zoom(input, zoom, output=None, order=3, mode='constant', cval=0.0,
     zoom = numpy.divide(numpy.array(input.shape) - 1, zoom_div,
                         out=numpy.ones_like(input.shape, dtype=numpy.float64),
                         where=zoom_div != 0)
-
-    output = _ni_support._get_output(output, input,
-                                     shape=output_shape)
     zoom = numpy.ascontiguousarray(zoom)
     _nd_image.zoom_shift(filtered, zoom, None, output, order, mode, cval, npad)
     return output
@@ -789,7 +829,9 @@ def rotate(input, angle, axes=(1, 0), reshape=True, output=None, order=3,
     output_shape[axes] = out_plane_shape
     output_shape = tuple(output_shape)
 
-    output = _ni_support._get_output(output, input_arr, shape=output_shape)
+    complex_output = numpy.iscomplexobj(input_arr)
+    output = _ni_support._get_output(output, input_arr, shape=output_shape,
+                                     complex_output=complex_output)
 
     if ndim <= 2:
         affine_transform(input_arr, rot_matrix, offset, output_shape, output,
