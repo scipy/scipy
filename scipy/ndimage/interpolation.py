@@ -83,6 +83,12 @@ def spline_filter1d(input, order=3, axis=-1, output=numpy.float64,
     parameter, the result will only be correct if it matches the `mode`
     used when filtering.
 
+    For complex-valued `input`, this function processes the real and imaginary
+    components independently.
+
+    .. versionadded:: 1.6.0
+        Complex-valued support added.
+
     See Also
     --------
     spline_filter : Multidimensional spline filter.
@@ -143,6 +149,12 @@ def spline_filter(input, order=3, output=numpy.float64, mode='mirror'):
     in the same data type as the output. Therefore, for output types
     with a limited precision, the results may be imprecise because
     intermediate results may be stored with insufficient precision.
+
+    For complex-valued `input`, this function processes the real and imaginary
+    components independently.
+
+    .. versionadded:: 1.6.0
+        Complex-valued support added.
 
     Examples
     --------
@@ -272,6 +284,12 @@ def geometric_transform(input, mapping, output_shape=None,
     are accepted, but these are for backward compatibility only and should
     not be used in new code.
 
+    For complex-valued `input`, this function transforms the real and imaginary
+    components independently.
+
+    .. versionadded:: 1.6.0
+        Complex-valued support added.
+
     Examples
     --------
     >>> import numpy as np
@@ -371,6 +389,14 @@ def map_coordinates(input, coordinates, output=None, order=3,
     See Also
     --------
     spline_filter, geometric_transform, scipy.interpolate
+
+    Notes
+    -----
+    For complex-valued `input`, this function maps the real and imaginary
+    components independently.
+
+    .. versionadded:: 1.6.0
+        Complex-valued support added.
 
     Examples
     --------
@@ -503,6 +529,12 @@ def affine_transform(input, matrix, offset=0.0, output_shape=None,
         was determined from the input image at position
         ``matrix * (o + offset)``.
 
+    For complex-valued `input`, this function transforms the real and imaginary
+    components independently.
+
+    .. versionadded:: 1.6.0
+        Complex-valued support added.
+
     References
     ----------
     .. [1] https://en.wikipedia.org/wiki/Homogeneous_coordinates
@@ -602,6 +634,14 @@ def shift(input, shift, output=None, order=3, mode='constant', cval=0.0,
     shift : ndarray
         The shifted input.
 
+    Notes
+    -----
+    For complex-valued `input`, this function shifts the real and imaginary
+    components independently.
+
+    .. versionadded:: 1.6.0
+        Complex-valued support added.
+
     """
     if order < 0 or order > 5:
         raise RuntimeError('spline order not supported')
@@ -663,6 +703,14 @@ def zoom(input, zoom, output=None, order=3, mode='constant', cval=0.0,
     -------
     zoom : ndarray
         The zoomed input.
+
+    Notes
+    -----
+    For complex-valued `input`, this function zooms the real and imaginary
+    components independently.
+
+    .. versionadded:: 1.6.0
+        Complex-valued support added.
 
     Examples
     --------
@@ -755,6 +803,14 @@ def rotate(input, angle, axes=(1, 0), reshape=True, output=None, order=3,
     -------
     rotate : ndarray
         The rotated input.
+
+    Notes
+    -----
+    For complex-valued `input`, this function rotates the real and imaginary
+    components independently.
+
+    .. versionadded:: 1.6.0
+        Complex-valued support added.
 
     Examples
     --------
