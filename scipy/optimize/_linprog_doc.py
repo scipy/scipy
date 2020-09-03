@@ -117,14 +117,21 @@ def _linprog_highs_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         Optimality tolerance for
         :ref:`'highs-ipm' <optimize.linprog-highs-ipm>`.
         Minimum allowable value is 1e-12.
-    simplex_dual_edge_weight_strategy : str {'dantzig', 'devex', 'steepest-devex', 'steepest'}
-        Strategy for simplex dual edge weights. ``'dantzig'`` uses Dantzig's
-        original strategy of choosing the most negative reduced cost.
-        ``'devex'`` uses the strategy described in [15]_.  ``'steepest'`` uses
-        the exact steepest edge strategy as described in [16]_.
+    simplex_dual_edge_weight_strategy : str (default: 'steepest-devex')
+        Strategy for simplex dual edge weights.
+
+        ``'dantzig'`` uses Dantzig's original strategy of choosing the most
+        negative reduced cost.
+
+        ``'devex'`` uses the strategy described in [15]_.
+
+        ``steepest`` uses the exact steepest edge strategy as described in [
+        16]_.
+
         ``'steepest-devex'`` begins with the exact steepest edge strategy
         until the computation is too costly or inexact and then switches to
-        the devex method.  Default is ``'steepest-devex'``.
+        the devex method.
+
     unknown_options : dict
         Optional arguments not used by this particular solver. If
         ``unknown_options`` is non-empty, a warning is issued listing
@@ -271,7 +278,7 @@ def _linprog_highs_ds_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     method : str
 
         This is the method-specific documentation for 'highs-ds'.
-        :ref:`'highsx' <optimize.linprog-highs>`,
+        :ref:`'highs' <optimize.linprog-highs>`,
         :ref:`'highs-ipm' <optimize.linprog-highs-ipm>`,
         :ref:`'interior-point' <optimize.linprog-interior-point>` (default),
         :ref:`'revised simplex' <optimize.linprog-revised_simplex>`, and
@@ -302,14 +309,21 @@ def _linprog_highs_ds_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     primal_feasibility_tolerance : double (default: 1e-07)
         Primal feasibility tolerance for
         :ref:`'highs-ds' <optimize.linprog-highs-ds>`.
-    simplex_dual_edge_weight_strategy : str {'dantzig', 'devex', 'steepest-devex', 'steepest'}
-        Strategy for simplex dual edge weights. ``'dantzig'`` uses Dantzig's
-        original strategy of choosing the most negative reduced cost.
-        ``'devex'`` uses the strategy described in [15]_.  ``'steepest'`` uses
-        the exact steepest edge strategy as described in [16]_.
+    simplex_dual_edge_weight_strategy : str (default: 'steepest-devex')
+        Strategy for simplex dual edge weights.
+
+        ``'dantzig'`` uses Dantzig's original strategy of choosing the most
+        negative reduced cost.
+
+        ``'devex'`` uses the strategy described in [15]_.
+
+        ``steepest`` uses the exact steepest edge strategy as described in [
+        16]_.
+
         ``'steepest-devex'`` begins with the exact steepest edge strategy
         until the computation is too costly or inexact and then switches to
-        the devex method.  Default is ``'steepest-devex'``.
+        the devex method.
+
     unknown_options : dict
         Optional arguments not used by this particular solver. If
         ``unknown_options`` is non-empty, a warning is issued listing
