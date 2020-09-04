@@ -64,7 +64,9 @@ def _convert_to_highs_enum(option, option_str, choices):
     # the default value taken from function signature and warn:
     try:
         return choices[option.lower()]
-    except (KeyError, AttributeError):
+    except AttributeError:
+        return choices[option]
+    except KeyError:
         sig = inspect.signature(_linprog_highs)
         default_str = sig.parameters[option_str].default
         warn(f"Option {option_str} is {option}, but only values in "
@@ -208,8 +210,6 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
     _check_unknown_options(unknown_options)
 
     # Map options to HiGHS enum values
-    if simplex_dual_edge_weight_strategy is None:
-        simplex_dual_edge_weight_strategy = 'steepest-devex'
     simplex_dual_edge_weight_strategy_enum = _convert_to_highs_enum(
         simplex_dual_edge_weight_strategy,
         'simplex_dual_edge_weight_strategy',
@@ -218,7 +218,7 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
                  'steepest-devex': HIGHS_SIMPLEX_DUAL_EDGE_WEIGHT_STEEP2DVX,
                  'steepest':
                  HIGHS_SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_STEEPEST_EDGE,
-                 None: HIGHS_SIMPLEX_DUAL_EDGE_WEIGHT_STEEP2DVX})
+                 None: None})
 
     statuses = {
         MODEL_STATUS_NOTSET: (
