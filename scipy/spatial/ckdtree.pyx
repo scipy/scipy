@@ -421,7 +421,7 @@ cdef class cKDTree:
     point.
 
     The algorithm used is described in Maneewongvatana and Mount 1999.
-    The general idea is that the kd-tree is a binary trie, each of whose
+    The general idea is that the kd-tree is a binary tree, each of whose
     nodes represents an axis-aligned hyperrectangle. Each node specifies
     an axis and splits the set of points based on whether their coordinate
     along that axis is greater than or less than a particular value.
