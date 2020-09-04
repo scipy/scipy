@@ -183,6 +183,8 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
 
                 ``4`` : The HiGHS solver ran into a problem.
 
+            message : str
+                A string descriptor of the exit status of the algorithm.
             nit : int
                 The total number of iterations performed.
                 For ``solver='simplex'``, this includes iterations in all
@@ -192,13 +194,7 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
                 The number of primal/dual pushes performed during the
                 crossover routine for ``solver='ipm'``.  This is ``0``
                 for ``solver='simplex'``.
-            message : str
-                A string descriptor of the exit status of the algorithm.
-            simplex_dual_edge_weight_strategy : str
-                The selected strategy for simplex dual edge weights. This is
-                ``None`` for ``solver='ipm'``.
-            method : {'highs-ds', 'highs-ipm'}
-                The selected solution method.
+
     References
     ----------
     .. [15] Harris, Paula MJ. "Pivot selection methods of the Devex LP code."
@@ -345,10 +341,6 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
            'message': statuses[res['status']][1],
            'nit': res.get('simplex_nit', 0) or res.get('ipm_nit', 0),
            'crossover_nit': res.get('crossover_nit'),
-           'method': solvers[solver],
-           'simplex_dual_edge_weight_strategy':
-               (simplex_dual_edge_weight_strategy if solver != "ipm"
-                else None)
            }
 
     return sol

@@ -183,11 +183,6 @@ def _linprog_highs_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
             The number of primal/dual pushes performed during the
             crossover routine for the HiGHS interior-point method.
             This is ``0`` for the HiGHS simplex method.
-        simplex_dual_edge_weight_strategy : str
-            The selected strategy for simplex dual edge weights. This is
-            ``None`` for the HiGHS interior-point method.
-        method : {'highs-ds', 'highs-ipm'}
-            The selected solution method.
 
     Notes
     -----
@@ -372,6 +367,8 @@ def _linprog_highs_ds_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
 
             ``4`` : The HiGHS solver ran into a problem.
 
+        message : str
+            A string descriptor of the exit status of the algorithm.
         nit : int
             The total number of iterations performed. This includes iterations
             in all phases.
@@ -379,13 +376,6 @@ def _linprog_highs_ds_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
             This is always ``0`` for the HiGHS simplex method.
             For the HiGHS interior-point method, this is the number of
             primal/dual pushes performed during the crossover routine.
-        message : str
-            A string descriptor of the exit status of the algorithm.
-        simplex_dual_edge_weight_strategy : str
-            The selected strategy for simplex dual edge weights. This is
-            ``None`` for the HiGHS interior-point method.
-        method : {'highs-ds', 'highs-ipm'}
-            The selected solution method.
 
     Notes
     -----
@@ -560,6 +550,8 @@ def _linprog_highs_ipm_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
 
             ``4`` : The HiGHS solver ran into a problem.
 
+        message : str
+            A string descriptor of the exit status of the algorithm.
         nit : int
             The total number of iterations performed.
             For the HiGHS interior-point method, this does not include
@@ -567,13 +559,6 @@ def _linprog_highs_ipm_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         crossover_nit : int
             The number of primal/dual pushes performed during the
             crossover routine for the HiGHS interior-point method.
-        message : str
-            A string descriptor of the exit status of the algorithm.
-        simplex_dual_edge_weight_strategy : str
-            The selected strategy for simplex dual edge weights. This is
-            ``None`` for the HiGHS interior-point method.
-        method : {'highs-ds', 'highs-ipm'}
-            The selected solution method.
 
     Notes
     -----
@@ -788,10 +773,11 @@ def _linprog_ip_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
 
             ``4`` : Numerical difficulties encountered.
 
-        nit : int
-            The total number of iterations performed in all phases.
         message : str
             A string descriptor of the exit status of the algorithm.
+        nit : int
+            The total number of iterations performed in all phases.
+
 
     Notes
     -----
@@ -1086,10 +1072,11 @@ def _linprog_rs_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
 
             ``6`` : Invalid guess provided.
 
-        nit : int
-            The total number of iterations performed in all phases.
         message : str
             A string descriptor of the exit status of the algorithm.
+        nit : int
+            The total number of iterations performed in all phases.
+
 
     Notes
     -----
@@ -1244,10 +1231,10 @@ def _linprog_simplex_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
 
             ``4`` : Numerical difficulties encountered.
 
-        nit : int
-            The total number of iterations performed in all phases.
         message : str
             A string descriptor of the exit status of the algorithm.
+        nit : int
+            The total number of iterations performed in all phases.
 
     References
     ----------

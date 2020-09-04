@@ -1587,25 +1587,14 @@ class LinprogHiGHSTests(LinprogCommonTests):
         options.update(self.options)
         assert_warns(OptimizeWarning, f, options=options)
 
-    def test_optimize_result(self):
-        pytest.skip('crossover only runs on large sparse problems like 25FV27')
-        # check all fields in OptimizeResult
-        c, A_ub, b_ub, A_eq, b_eq, bounds = very_random_gen(0)
+    def test_crossover(self):
+        c = np.array([1, 1]) * -1  # maximize
+        A_ub = np.array([[1, 1]])
+        b_ub = [1]
         res = linprog(c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq,
                       bounds=bounds, method=self.method, options=self.options)
-        assert_(res.success)
-        assert_(res.nit)
-        assert_(not res.status)
-        assert_(res.message == "Optimization terminated successfully.")
-        assert_allclose(c @ res.x, res.fun)
-        assert_allclose(b_eq - A_eq @ res.x, res.con, atol=1e-11)
-        assert_allclose(b_ub - A_ub @ res.x, res.slack, atol=1e-11)
-        assert_equal(res.method, self.method)
-        # crossover_nit is nonzero only for highs-ipm
+        # there should be nonzero crossover iterations for IPM (only)
         assert_equal(res.crossover_nit == 0, self.method != "highs-ipm")
-        # edge weight strategy is None only for highs-ipm
-        assert_equal(res.simplex_dual_edge_weight_strategy is None,
-                     self.method == "highs-ipm")
 
 ################################
 # Simplex Option-Specific Tests#
