@@ -128,7 +128,47 @@ class BaseMixin(object):
         result = lsq_linear(A, b, method=self.method)
         assert_(result.cost < 1.1e-8)
 
+     # This is a test for issue #12709
+     def test_large_rank_deficient(self):
+        np.random.seed(0)
+        n, m = np.sort(np.random.randint(2, 1000, size=2))
+        m *= 2   # make m >> n
+        A = 1.*np.random.randint(-99, 99, size=[m, n])
+        b = 1.*np.random.randint(-99, 99, size=[m])
+        bounds = 1.*np.sort(np.random.randint(-99, 99, size=(2, n)), 0)
+        bounds[1, :] += 1  # ensure up > lb
 
+        # Make the A matrix strongly rank deficient by replicating some columns
+        w = np.random.choice(n, n)  # Select random columns with duplicates
+        A = A[:, w]
+        
+        x2 = lsq_linear(A, b, bounds=bounds, method='bvls').x
+        x3 = lsq_linear(A, b, bounds=bounds, method='trf').x
+        
+        chi2_2 = np.sum((A @ x2 - b)**2)
+        chi2_3 = np.sum((A @ x3 - b)**2)
+
+        assert_(abs(chi2_2 - chi2_3) < chi2_3*1e-10)
+
+     # This is a test for issue #12709
+    def test_convergence_small_matrix(self):
+        A = np.array([
+            [ 49.  41. -32.],
+            [-19. -32.  -8.],
+            [-13.  10.  69.]])
+        b = np.array([-41. -90.  47.])
+        bounds = np.array(
+            [[ 31. -44.  26.]
+            [ 54. -32.  28.]])
+
+        x2 = lsq_linear(A, b, bounds=bounds, method='bvls').x
+        x3 = lsq_linear(A, b, bounds=bounds, method='trf').x
+
+        chi2_2 = np.sum((A @ x2 - b)**2)
+        chi2_3 = np.sum((A @ x3 - b)**2)
+
+        assert_(abs(chi2_2 - chi2_3) < chi2_3*1e-10)
+    
 class SparseMixin(object):
     def test_sparse_and_LinearOperator(self):
         m = 5000
