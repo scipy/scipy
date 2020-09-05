@@ -54,14 +54,7 @@ def _pdf_single_value_cf_integrate(x, alpha, beta, **kwds):
             np.sin(beta * (t ** alpha) * Phi(alpha, t))
         )
 
-    with warnings.catch_warnings():
-        warnings.filterwarnings(
-            "ignore", category=integrate.IntegrationWarning
-        )
-        warnings.filterwarnings("ignore", category=np.ComplexWarning)
-        warnings.filterwarnings(
-            "ignore", message="invalid value encountered in double_scalars"
-        )
+    with np.errstate(invalid='ignore'):
         int1, err1 = integrate.quad(
             integrand1,
             0,
@@ -304,19 +297,15 @@ def _pdf_single_value_piecewise(x, alpha, beta, **kwds):
             # exp_height = 1 is handled by peak
         ]
         intg_points = [left_support, peak, right_support] + tail_points
-        with warnings.catch_warnings():
-            warnings.filterwarnings(
-                "ignore", category=integrate.IntegrationWarning
-            )
-            intg = integrate.quad(
-                integrand,
-                left_support,
-                right_support,
-                points=intg_points,
-                limit=100,
-                epsrel=quad_eps,
-                epsabs=0
-            )[0]
+        intg = integrate.quad(
+            integrand,
+            left_support,
+            right_support,
+            points=intg_points,
+            limit=100,
+            epsrel=quad_eps,
+            epsabs=0
+        )[0]
 
     return c2 * intg
 
@@ -393,19 +382,15 @@ def _cdf_single_value_piecewise(x, alpha, beta, **kwds):
                 lambda t: g(t) - exponent_upper_limit, -xi, np.pi / 2
             )
 
-        with warnings.catch_warnings():
-            warnings.filterwarnings(
-                "ignore", category=integrate.IntegrationWarning
-            )
-            intg = integrate.quad(
-                integrand,
-                left_support,
-                right_support,
-                points=[left_support, right_support],
-                limit=100,
-                epsrel=quad_eps,
-                epsabs=0
-            )[0]
+        intg = integrate.quad(
+            integrand,
+            left_support,
+            right_support,
+            points=[left_support, right_support],
+            limit=100,
+            epsrel=quad_eps,
+            epsabs=0
+        )[0]
 
     return c1 + c3 * intg
 

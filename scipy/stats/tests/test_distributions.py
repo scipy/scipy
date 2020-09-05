@@ -2361,9 +2361,34 @@ class TestLevyStable(object):
             subdata = data[filter_func(data)
                            ] if filter_func is not None else data
             with suppress_warnings() as sup:
+                # occurs in FFT methods only
                 sup.record(
                     RuntimeWarning,
                     "Density calculations experimental for FFT method.*"
+                )
+                # occurs in piecewise methods only
+                sup.filter(
+                    IntegrationWarning,
+                    "The occurrence of roundoff error is detected.*"
+                )
+                sup.filter(
+                    IntegrationWarning,
+                    "The algorithm does not converge.*"
+                )
+                # occurs for DNI method only
+                sup.filter(
+                    IntegrationWarning,
+                    "Bad integrand behavior occurs within one or more of "
+                    "the cycles.*"
+                )
+                sup.filter(
+                    IntegrationWarning,
+                    "The extrapolation table constructed for convergence "
+                    "acceleration.*"
+                )
+                sup.filter(
+                    IntegrationWarning,
+                    "The maximum number of cycles allowed has been achieved.*"
                 )
                 p = stats.levy_stable.pdf(
                     subdata['x'],
@@ -2465,9 +2490,17 @@ class TestLevyStable(object):
                            ] if filter_func is not None else data
             with suppress_warnings() as sup:
                 sup.record(
-                 RuntimeWarning,
-                 'Cumulative density calculations experimental for FFT method.'
-                 + ' Use piecewise method instead.*'
+                    RuntimeWarning,
+                    'Cumulative density calculations experimental for FFT method.'
+                    + ' Use piecewise method instead.*'
+                )
+                sup.filter(
+                    IntegrationWarning,
+                    "The occurrence of roundoff error is detected.*"
+                )
+                sup.filter(
+                    IntegrationWarning,
+                    "The algorithm does not converge.*"
                 )
                 p = stats.levy_stable.cdf(
                     subdata['x'],
@@ -2529,6 +2562,12 @@ class TestLevyStable(object):
             sup.filter(
                 category=RuntimeWarning,
                 message="Density calculation unstable.*"
+            )
+            # occurs for DNI method only
+            sup.filter(
+                IntegrationWarning,
+                "Bad integrand behavior occurs within one or more of "
+                "the cycles.*"
             )
             for default_method, decimal_places in tests:
                 stats.levy_stable.pdf_default_method = default_method
