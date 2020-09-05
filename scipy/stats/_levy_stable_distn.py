@@ -203,7 +203,7 @@ def _pdf_single_value_piecewise(x, alpha, beta, **kwds):
     zeta = -beta * np.tan(np.pi * alpha / 2.0)
     xi = np.arctan(-zeta) / alpha if alpha != 1 else np.pi / 2
 
-    # convert to S_0 parameterization
+    # convert from Nolan's S to S_0 parameterization
     x0 = x + zeta if alpha != 1 else x
 
     x0, alpha, beta = _nolan_round_difficult_input(
@@ -256,7 +256,9 @@ def _pdf_single_value_piecewise(x, alpha, beta, **kwds):
 
     def integrand(theta):
         # limit any numerical issues leading to g_1 < 0 near theta limits
-        g_1 = max(g(theta), 0)
+        g_1 = g(theta)
+        if not np.isfinite(g_1) or g_1 < 0:
+            g_1 = 0
         return g_1 * np.exp(-g_1)
 
     with np.errstate(all="ignore"):
@@ -302,15 +304,19 @@ def _pdf_single_value_piecewise(x, alpha, beta, **kwds):
             # exp_height = 1 is handled by peak
         ]
         intg_points = [left_support, peak, right_support] + tail_points
-        intg = integrate.quad(
-            integrand,
-            left_support,
-            right_support,
-            points=intg_points,
-            limit=100,
-            epsrel=quad_eps,
-            epsabs=0
-        )[0]
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", category=integrate.IntegrationWarning
+            )
+            intg = integrate.quad(
+                integrand,
+                left_support,
+                right_support,
+                points=intg_points,
+                limit=100,
+                epsrel=quad_eps,
+                epsabs=0
+            )[0]
 
     return c2 * intg
 
@@ -321,87 +327,9 @@ def _cdf_single_value_piecewise(x, alpha, beta, **kwds):
     quad_eps = kwds.get("quad_eps", _QUAD_EPS)
 
     zeta = -beta * np.tan(np.pi * alpha / 2.0)
-    if alpha != 1:
-        x0 = x + zeta  # convert to S_0 parameterization
-        xi = np.arctan(-zeta) / alpha
-
-        if x0 > zeta:
-            c_1 = 1 if alpha > 1 else 0.5 - xi / np.pi
-
-            def V(theta):
-                return (
-                    np.cos(alpha * xi) ** (1 / (alpha - 1))
-                    * (np.cos(theta) / np.sin(alpha * (xi + theta)))
-                    ** (alpha / (alpha - 1))
-                    * (
-                        np.cos(alpha * xi + (alpha - 1) * theta)
-                        / np.cos(theta)
-                    )
-                )
-
-            def f(theta):
-                z = np.complex128(x0 - zeta)
-                return np.exp(-V(theta) * np.real(z ** (alpha / (alpha - 1))))
-
-            with np.errstate(all="ignore"):
-                # spare calculating integral on null set
-                # use isclose as macos has fp differences
-                if np.isclose(-xi, np.pi / 2, rtol=1e-014, atol=1e-014):
-                    intg = 0
-                else:
-                    intg = integrate.quad(f, -xi, np.pi / 2, epsrel=quad_eps,
-                                          epsabs=0)[0]
-                return c_1 + np.sign(1 - alpha) * intg / np.pi
-        elif x0 == zeta:
-            return 0.5 - xi / np.pi
-        else:
-            return 1 - _cdf_single_value_piecewise(-x, alpha, -beta, **kwds)
-
-    else:
-        # since location zero, no need to reposition x for S_0
-        # parameterization
-        xi = np.pi / 2
-        if beta > 0:
-
-            def V(theta):
-                expr_1 = np.pi / 2 + beta * theta
-                return (
-                    2.0
-                    * expr_1
-                    * np.exp(expr_1 * np.tan(theta) / beta)
-                    / np.cos(theta)
-                    / np.pi
-                )
-
-            with np.errstate(all="ignore"):
-                expr_1 = np.exp(-np.pi * x / beta / 2.0)
-                int_1 = integrate.quad(
-                    lambda theta: np.exp(-expr_1 * V(theta)),
-                    -np.pi / 2,
-                    np.pi / 2,
-                    epsrel=quad_eps,
-                    epsabs=0
-                )[0]
-                return int_1 / np.pi
-        elif beta == 0:
-            return 0.5 + np.arctan(x) / np.pi
-        else:
-            # NOTE: Nolan's paper has a typo here!
-            # He states F(x) = 1 - F(x, alpha, -beta), but this is clearly
-            # incorrect since F(-infty) would be 1.0 in this case
-            # Indeed, the alpha != 1, x0 < zeta case is correct here.
-            return 1 - _cdf_single_value_piecewise(-x, 1, -beta, **kwds)
-
-
-def _cdf_single_value_piecewise_ragibson(x, alpha, beta, **kwds):
-    """Calculate cdf using Nolan's methods as detailed in [NO].
-    """
-    quad_eps = kwds.get("quad_eps", _QUAD_EPS)
-
-    zeta = -beta * np.tan(np.pi * alpha / 2.0)
     xi = np.arctan(-zeta) / alpha if alpha != 1 else np.pi / 2
 
-    # convert to S_0 parameterization
+    # convert from Nolan's S to S_0 parameterization
     x0 = x + zeta if alpha != 1 else x
 
     x0, alpha, beta = _nolan_round_difficult_input(
@@ -417,11 +345,11 @@ def _cdf_single_value_piecewise_ragibson(x, alpha, beta, **kwds):
             # He states F(x) = 1 - F(x, alpha, -beta), but this is clearly
             # incorrect since F(-infty) would be 1.0 in this case
             # Indeed, the alpha != 1, x0 < zeta case is correct here.
-            return 1 - _cdf_single_value_piecewise_ragibson(-x, alpha, -beta, **kwds)
+            return 1 - _cdf_single_value_piecewise(-x, alpha, -beta, **kwds)
     elif x0 == zeta:
         return 0.5 - xi / np.pi
     elif x0 < zeta:
-        return 1 - _cdf_single_value_piecewise_ragibson(-x, alpha, -beta, **kwds)
+        return 1 - _cdf_single_value_piecewise(-x, alpha, -beta, **kwds)
 
     # following Nolan, we may now assume
     #   x0 > zeta when alpha != 1
@@ -438,7 +366,9 @@ def _cdf_single_value_piecewise_ragibson(x, alpha, beta, **kwds):
 
     def integrand(theta):
         # limit any numerical issues leading to g_1 < 0 near theta limits
-        g_1 = max(g(theta), 0)
+        g_1 = g(theta)
+        if not np.isfinite(g_1) or g_1 < 0:
+            g_1 = 0
         return np.exp(-g_1)
 
     with np.errstate(all="ignore"):
@@ -463,15 +393,19 @@ def _cdf_single_value_piecewise_ragibson(x, alpha, beta, **kwds):
                 lambda t: g(t) - exponent_upper_limit, -xi, np.pi / 2
             )
 
-        intg = integrate.quad(
-            integrand,
-            left_support,
-            right_support,
-            points=[left_support, right_support],
-            limit=100,
-            epsrel=quad_eps,
-            epsabs=0
-        )[0]
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", category=integrate.IntegrationWarning
+            )
+            intg = integrate.quad(
+                integrand,
+                left_support,
+                right_support,
+                points=[left_support, right_support],
+                limit=100,
+                epsrel=quad_eps,
+                epsabs=0
+            )[0]
 
     return c1 + c3 * intg
 
@@ -770,7 +704,7 @@ class levy_stable_gen(rv_continuous):
             self, "cdf_default_method", "piecewise"
         )
         if cdf_default_method_name == "piecewise":
-            cdf_single_value_method = _cdf_single_value_piecewise_ragibson
+            cdf_single_value_method = _cdf_single_value_piecewise
         elif cdf_default_method_name == "fft-simpson":
             cdf_single_value_method = None
 
