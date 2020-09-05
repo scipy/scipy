@@ -55,7 +55,7 @@ def _pdf_single_value_cf_integrate(x, alpha, beta, **kwds):
         )
 
     with np.errstate(invalid='ignore'):
-        int1, err1 = integrate.quad(
+        int1, *ret1 = integrate.quad(
             integrand1,
             0,
             np.inf,
@@ -63,10 +63,11 @@ def _pdf_single_value_cf_integrate(x, alpha, beta, **kwds):
             wvar=x,
             limit=1000,
             epsabs=quad_eps,
-            epsrel=quad_eps
+            epsrel=quad_eps,
+            full_output=1
         )
 
-        int2, err2 = integrate.quad(
+        int2, *ret2 = integrate.quad(
             integrand2,
             0,
             np.inf,
@@ -74,7 +75,8 @@ def _pdf_single_value_cf_integrate(x, alpha, beta, **kwds):
             wvar=x,
             limit=1000,
             epsabs=quad_eps,
-            epsrel=quad_eps
+            epsrel=quad_eps,
+            full_output=1
         )
 
     return (int1 + int2) / np.pi
@@ -297,15 +299,16 @@ def _pdf_single_value_piecewise(x, alpha, beta, **kwds):
             # exp_height = 1 is handled by peak
         ]
         intg_points = [left_support, peak, right_support] + tail_points
-        intg = integrate.quad(
+        intg, *ret  = integrate.quad(
             integrand,
             left_support,
             right_support,
             points=intg_points,
             limit=100,
             epsrel=quad_eps,
-            epsabs=0
-        )[0]
+            epsabs=0,
+            full_output=1
+        )
 
     return c2 * intg
 
@@ -382,15 +385,16 @@ def _cdf_single_value_piecewise(x, alpha, beta, **kwds):
                 lambda t: g(t) - exponent_upper_limit, -xi, np.pi / 2
             )
 
-        intg = integrate.quad(
+        intg, *ret = integrate.quad(
             integrand,
             left_support,
             right_support,
             points=[left_support, right_support],
             limit=100,
             epsrel=quad_eps,
-            epsabs=0
-        )[0]
+            epsabs=0,
+            full_output=1
+        )
 
     return c1 + c3 * intg
 
