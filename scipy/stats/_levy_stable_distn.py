@@ -87,39 +87,22 @@ def _pdf_single_value_cf_integrate(x, alpha, beta, **kwds):
     return (int1 + int2) / np.pi
 
 
-def _nolan_round_difficult_input(x, x0, alpha, beta, zeta, xi, **kwds):
+def _nolan_round_difficult_input(x0, alpha, beta, zeta, **kwds):
     """Round difficult input values for Nolan's method in [NO]."""
-    x_tol_near_zeta = kwds.get("piecewise_x_tol_near_zeta", 0.01)
-    alpha_tol_near_one = kwds.get("piecewise_alpha_tol_near_one", 0.0075)
-    alpha_one_beta_tol_near_zero = kwds.get(
-        "piecewise_alpha_one_beta_tol_near_zero", 1e-12
-    )
+    x_tol_near_zeta = kwds.get("piecewise_x_tol_near_zeta", 0.005)
+    alpha_tol_near_one = kwds.get("piecewise_alpha_tol_near_one", 0.005)
 
     # following Nolan's STABLE,
     #   "1. When 0 < |alpha-1| < 0.005, the program has numerical problems
     #   evaluating the pdf and cdf.  The current version of the program sets
     #   alpha=1 in these cases. This approximation is not bad in the S0
     #   parameterization."
-    # It seems we need ~0.0075 here, perhaps due to scipy's parameterization
     if np.abs(alpha - 1) < alpha_tol_near_one:
-        if alpha != 1.0:
-            # recompute quantities after alpha change
-            x += zeta  # need to shift x with scipy's parameterization
-            zeta = _nolan_zeta(1.0, beta)
-            xi = _nolan_xi(alpha, zeta)
-            x0 = x
-
         alpha = 1.0
 
     #   "2. When alpha=1 and |beta| < 0.005, the program has numerical
     #   problems.  The current version sets beta=0."
     # We seem to have addressed this through re-expression of g(theta) here
-    # That said, we need to avoid FP issues with *very* small beta
-    if alpha == 1.0 and np.abs(beta) < alpha_one_beta_tol_near_zero:
-        beta = 0.0
-
-        # recompute quantities after beta change
-        zeta = _nolan_zeta(alpha, beta)
 
     #   "8. When |x0-beta*tan(pi*alpha/2)| is small, the
     #   computations of the density and cumulative have numerical problems.
@@ -132,11 +115,11 @@ def _nolan_round_difficult_input(x, x0, alpha, beta, zeta, xi, **kwds):
     #
     # We seem to have partially addressed this through re-expression of
     # g(theta) here, but it still needs to be used in some extreme cases.
-    # It seems we need ~1e-2 here, perhaps due to scipy's parameterization
+    # Perhaps tol(5) = 0.5e-2 could be reduced for our implementation.
     if np.abs(x0 - zeta) < x_tol_near_zeta * alpha ** (1 / alpha):
         x0 = zeta
 
-    return x, x0, alpha, beta, zeta, xi
+    return x0, alpha, beta
 
 
 def _nolan_g(alpha, beta, x0, xi, zeta):
@@ -212,32 +195,19 @@ def _nolan_c3(alpha):
         return 1 / np.pi
 
 
-def _nolan_zeta(alpha, beta):
-    """Special function from Nolan's method in [NO]."""
-    return -beta * np.tan(np.pi * alpha / 2.0)
-
-
-def _nolan_xi(alpha, zeta):
-    """Special function from Nolan's method in [NO]."""
-    if alpha != 1:
-        return np.arctan(-zeta) / alpha
-    else:
-        return np.pi / 2
-
-
 def _pdf_single_value_piecewise(x, alpha, beta, **kwds):
     """Calculate pdf using Nolan's methods as detailed in [NO].
     """
     quad_eps = kwds.get("quad_eps", _QUAD_EPS)
 
-    zeta = _nolan_zeta(alpha, beta)
-    xi = _nolan_xi(alpha, zeta)
+    zeta = -beta * np.tan(np.pi * alpha / 2.0)
+    xi = np.arctan(-zeta) / alpha if alpha != 1 else np.pi / 2
 
     # convert to S_0 parameterization
     x0 = x + zeta if alpha != 1 else x
 
-    x, x0, alpha, beta, zeta, xi = _nolan_round_difficult_input(
-        x, x0, alpha, beta, zeta, xi, **kwds
+    x0, alpha, beta = _nolan_round_difficult_input(
+        x0, alpha, beta, zeta, **kwds
     )
 
     # handle Nolan's initial case logic with
@@ -286,9 +256,7 @@ def _pdf_single_value_piecewise(x, alpha, beta, **kwds):
 
     def integrand(theta):
         # limit any numerical issues leading to g_1 < 0 near theta limits
-        g_1 = g(theta)
-        if not np.isfinite(g_1) or g_1 < 0:
-            g_1 = 0
+        g_1 = max(g(theta), 0)
         return g_1 * np.exp(-g_1)
 
     with np.errstate(all="ignore"):
@@ -430,14 +398,14 @@ def _cdf_single_value_piecewise_ragibson(x, alpha, beta, **kwds):
     """
     quad_eps = kwds.get("quad_eps", _QUAD_EPS)
 
-    zeta = _nolan_zeta(alpha, beta)
-    xi = _nolan_xi(alpha, zeta)
+    zeta = -beta * np.tan(np.pi * alpha / 2.0)
+    xi = np.arctan(-zeta) / alpha if alpha != 1 else np.pi / 2
 
     # convert to S_0 parameterization
     x0 = x + zeta if alpha != 1 else x
 
-    x, x0, alpha, beta, zeta, xi = _nolan_round_difficult_input(
-        x, x0, alpha, beta, zeta, xi, **kwds
+    x0, alpha, beta = _nolan_round_difficult_input(
+        x0, alpha, beta, zeta, **kwds
     )
 
     # handle Nolan's initial case logic
@@ -470,9 +438,7 @@ def _cdf_single_value_piecewise_ragibson(x, alpha, beta, **kwds):
 
     def integrand(theta):
         # limit any numerical issues leading to g_1 < 0 near theta limits
-        g_1 = g(theta)
-        if not np.isfinite(g_1) or g_1 < 0:
-            g_1 = 0
+        g_1 = max(g(theta), 0)
         return np.exp(-g_1)
 
     with np.errstate(all="ignore"):
@@ -556,20 +522,15 @@ class levy_stable_gen(rv_continuous):
     to either 'piecewise', 'dni' or 'fft-simpson'.
 
     To improve performance of piecewise and direct numerical integration one
-    can specify several values:
-
-    * ``levy_stable.quad_eps`` (defaults to 1.2e-14) is used as the absolute
-    and relative quadrature tolerances for direct numerical integration and
-    the relative quadrature tolerance for the piecewise method.
-    * ``levy_stable.piecewise_x_tol_near_zeta`` (defaults to 0.01) is how
-    close x is to zeta before it is considered the same as zeta [NO]. The exact
-    check is
-    ``abs(x0 - zeta) < piecewise_x_tol_near_zeta*alpha**(1/alpha)``.
-    * ``levy_stable.piecewise_alpha_tol_near_one`` (defaults to 0.0075) is how
-    close alpha is to 1 before being considered equal to 1.
-    * ``levy_stable.piecewise_alpha_one_beta_tol_near_zero`` (defaults to
-    1e-12) is how close beta is to 0 before being considered equal to zero.
-    This only applies in the special case where alpha = 1.
+    can specify ``levy_stable.quad_eps`` (defaults to 1.2e-14). This is used
+    as the absolute and relative quadrature tolerances for direct numerical
+    integration and the relative quadrature tolerance for the piecewise method.
+    One can also specify ``levy_stable.piecewise_x_tol_near_zeta`` (defaults to
+    0.005) for how close x is to zeta before it is considered the same as x
+    [NO]. The exact check is
+    ``abs(x0 - zeta) < piecewise_x_tol_near_zeta*alpha**(1/alpha)``. One can
+    also specify ``levy_stable.piecewise_alpha_tol_near_one`` (defaults to
+    0.005) for how close alpha is to 1 before being considered equal to 1.
 
     To increase accuracy of FFT calculation one can specify
     ``levy_stable.pdf_fft_grid_spacing`` (defaults to 0.001) and
@@ -711,13 +672,10 @@ class levy_stable_gen(rv_continuous):
         pdf_single_value_kwds = {
             "quad_eps": getattr(self, "quad_eps", _QUAD_EPS),
             "piecewise_x_tol_near_zeta": getattr(
-                self, "piecewise_x_tol_near_zeta", 0.01
+                self, "piecewise_x_tol_near_zeta", 0.005
             ),
             "piecewise_alpha_tol_near_one": getattr(
-                self, "piecewise_alpha_tol_near_one", 0.0075
-            ),
-            "piecewise_alpha_one_beta_tol_near_zero": getattr(
-                self, "piecewise_alpha_one_beta_tol_near_zero", 1e-12
+                self, "piecewise_alpha_tol_near_one", 0.005
             )
         }
 
@@ -819,13 +777,10 @@ class levy_stable_gen(rv_continuous):
         cdf_single_value_kwds = {
             "quad_eps": getattr(self, "quad_eps", _QUAD_EPS),
             "piecewise_x_tol_near_zeta": getattr(
-                self, "piecewise_x_tol_near_zeta", 0.01
+                self, "piecewise_x_tol_near_zeta", 0.005
             ),
             "piecewise_alpha_tol_near_one": getattr(
-                self, "piecewise_alpha_tol_near_one", 0.0075
-            ),
-            "piecewise_alpha_one_beta_tol_near_zero": getattr(
-                self, "piecewise_alpha_one_beta_tol_near_zero", 1e-12
+                self, "piecewise_alpha_tol_near_one", 0.005
             )
         }
 
