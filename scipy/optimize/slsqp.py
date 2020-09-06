@@ -22,7 +22,7 @@ from numpy import (zeros, array, linalg, append, asfarray, concatenate, finfo,
 from .optimize import (OptimizeResult, _check_unknown_options,
                        _prepare_scalar_function)
 from ._numdiff import approx_derivative
-from ._constraints import old_bound_to_new
+from ._constraints import old_bound_to_new, _arr_to_scalar
 
 
 __docformat__ = "restructuredtext en"
@@ -255,13 +255,13 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
         # check type
         try:
             ctype = con['type'].lower()
-        except KeyError:
-            raise KeyError('Constraint %d has no type defined.' % ic)
-        except TypeError:
+        except KeyError as e:
+            raise KeyError('Constraint %d has no type defined.' % ic) from e
+        except TypeError as e:
             raise TypeError('Constraints must be defined using a '
-                            'dictionary.')
-        except AttributeError:
-            raise TypeError("Constraint's type must be a string.")
+                            'dictionary.') from e
+        except AttributeError as e:
+            raise TypeError("Constraint's type must be a string.") from e
         else:
             if ctype not in ['eq', 'ineq']:
                 raise ValueError("Unknown constraint type '%s'." % con['type'])
@@ -346,7 +346,8 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
         xl.fill(np.nan)
         xu.fill(np.nan)
     else:
-        bnds = array(bounds, float)
+        bnds = array([(_arr_to_scalar(l), _arr_to_scalar(u))
+                      for (l, u) in bounds], float)
         if bnds.shape[0] != n:
             raise IndexError('SLSQP Error: the length of bounds is not '
                              'compatible with that of x0.')
@@ -405,8 +406,8 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
     fx = sf.fun(x)
     try:
         fx = float(np.asarray(fx))
-    except (TypeError, ValueError):
-        raise ValueError("Objective function must return a scalar")
+    except (TypeError, ValueError) as e:
+        raise ValueError("Objective function must return a scalar") from e
     g = append(sf.grad(x), 0.0)
     c = _eval_constraint(x, cons)
     a = _eval_con_normals(x, cons, la, n, m, meq, mieq)

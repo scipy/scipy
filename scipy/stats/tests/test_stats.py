@@ -27,6 +27,7 @@ from scipy.stats._ksstats import kolmogn
 from scipy.special._testutils import FuncData
 from .common_tests import check_named_results
 from scipy.sparse.sputils import matrix
+from scipy.spatial.distance import cdist
 
 """ Numbers in docstrings beginning with 'W' refer to the section numbers
     and headings found in the STATISTICS QUIZ of Leland Wilkinson.  These are
@@ -911,6 +912,9 @@ class TestCorrSpearmanr2(object):
 
 
 def test_kendalltau():
+    # For the cases without ties, both variants should give the same
+    # result.
+    variants = ('b', 'c')
 
     # case without ties, con-dis equal zero
     x = [5, 2, 1, 3, 6, 4, 7, 8]
@@ -918,9 +922,10 @@ def test_kendalltau():
     # Cross-check with exact result from R:
     # cor.test(x,y,method="kendall",exact=1)
     expected = (0.0, 1.0)
-    res = stats.kendalltau(x, y)
-    assert_approx_equal(res[0], expected[0])
-    assert_approx_equal(res[1], expected[1])
+    for taux in variants:
+        res = stats.kendalltau(x, y)
+        assert_approx_equal(res[0], expected[0])
+        assert_approx_equal(res[1], expected[1])
 
     # case without ties, con-dis equal zero
     x = [0, 5, 2, 1, 3, 6, 4, 7, 8]
@@ -928,9 +933,10 @@ def test_kendalltau():
     # Cross-check with exact result from R:
     # cor.test(x,y,method="kendall",exact=1)
     expected = (0.0, 1.0)
-    res = stats.kendalltau(x, y)
-    assert_approx_equal(res[0], expected[0])
-    assert_approx_equal(res[1], expected[1])
+    for taux in variants:
+        res = stats.kendalltau(x, y)
+        assert_approx_equal(res[0], expected[0])
+        assert_approx_equal(res[1], expected[1])
 
     # case without ties, con-dis close to zero
     x = [5, 2, 1, 3, 6, 4, 7]
@@ -938,9 +944,10 @@ def test_kendalltau():
     # Cross-check with exact result from R:
     # cor.test(x,y,method="kendall",exact=1)
     expected = (-0.14285714286, 0.77261904762)
-    res = stats.kendalltau(x, y)
-    assert_approx_equal(res[0], expected[0])
-    assert_approx_equal(res[1], expected[1])
+    for taux in variants:
+        res = stats.kendalltau(x, y)
+        assert_approx_equal(res[0], expected[0])
+        assert_approx_equal(res[1], expected[1])
 
     # case without ties, con-dis close to zero
     x = [2, 1, 3, 6, 4, 7, 8]
@@ -948,9 +955,10 @@ def test_kendalltau():
     # Cross-check with exact result from R:
     # cor.test(x,y,method="kendall",exact=1)
     expected = (0.047619047619, 1.0)
-    res = stats.kendalltau(x, y)
-    assert_approx_equal(res[0], expected[0])
-    assert_approx_equal(res[1], expected[1])
+    for taux in variants:
+        res = stats.kendalltau(x, y)
+        assert_approx_equal(res[0], expected[0])
+        assert_approx_equal(res[1], expected[1])
 
     # simple case without ties
     x = np.arange(10)
@@ -958,9 +966,10 @@ def test_kendalltau():
     # Cross-check with exact result from R:
     # cor.test(x,y,method="kendall",exact=1)
     expected = (1.0, 5.511463844797e-07)
-    res = stats.kendalltau(x, y)
-    assert_approx_equal(res[0], expected[0])
-    assert_approx_equal(res[1], expected[1])
+    for taux in variants:
+        res = stats.kendalltau(x, y, variant=taux)
+        assert_approx_equal(res[0], expected[0])
+        assert_approx_equal(res[1], expected[1])
 
     # swap a couple of values
     b = y[1]
@@ -969,9 +978,10 @@ def test_kendalltau():
     # Cross-check with exact result from R:
     # cor.test(x,y,method="kendall",exact=1)
     expected = (0.9555555555555556, 5.511463844797e-06)
-    res = stats.kendalltau(x, y)
-    assert_approx_equal(res[0], expected[0])
-    assert_approx_equal(res[1], expected[1])
+    for taux in variants:
+        res = stats.kendalltau(x, y, variant=taux)
+        assert_approx_equal(res[0], expected[0])
+        assert_approx_equal(res[1], expected[1])
 
     # swap a couple more
     b = y[5]
@@ -980,9 +990,10 @@ def test_kendalltau():
     # Cross-check with exact result from R:
     # cor.test(x,y,method="kendall",exact=1)
     expected = (0.9111111111111111, 2.976190476190e-05)
-    res = stats.kendalltau(x, y)
-    assert_approx_equal(res[0], expected[0])
-    assert_approx_equal(res[1], expected[1])
+    for taux in variants:
+        res = stats.kendalltau(x, y, variant=taux)
+        assert_approx_equal(res[0], expected[0])
+        assert_approx_equal(res[1], expected[1])
 
     # same in opposite direction
     x = np.arange(10)
@@ -990,9 +1001,10 @@ def test_kendalltau():
     # Cross-check with exact result from R:
     # cor.test(x,y,method="kendall",exact=1)
     expected = (-1.0, 5.511463844797e-07)
-    res = stats.kendalltau(x, y)
-    assert_approx_equal(res[0], expected[0])
-    assert_approx_equal(res[1], expected[1])
+    for taux in variants:
+        res = stats.kendalltau(x, y, variant=taux)
+        assert_approx_equal(res[0], expected[0])
+        assert_approx_equal(res[1], expected[1])
 
     # swap a couple of values
     b = y[1]
@@ -1001,9 +1013,10 @@ def test_kendalltau():
     # Cross-check with exact result from R:
     # cor.test(x,y,method="kendall",exact=1)
     expected = (-0.9555555555555556, 5.511463844797e-06)
-    res = stats.kendalltau(x, y)
-    assert_approx_equal(res[0], expected[0])
-    assert_approx_equal(res[1], expected[1])
+    for taux in variants:
+        res = stats.kendalltau(x, y, variant=taux)
+        assert_approx_equal(res[0], expected[0])
+        assert_approx_equal(res[1], expected[1])
 
     # swap a couple more
     b = y[5]
@@ -1012,18 +1025,32 @@ def test_kendalltau():
     # Cross-check with exact result from R:
     # cor.test(x,y,method="kendall",exact=1)
     expected = (-0.9111111111111111, 2.976190476190e-05)
-    res = stats.kendalltau(x, y)
-    assert_approx_equal(res[0], expected[0])
-    assert_approx_equal(res[1], expected[1])
+    for taux in variants:
+        res = stats.kendalltau(x, y, variant=taux)
+        assert_approx_equal(res[0], expected[0])
+        assert_approx_equal(res[1], expected[1])
 
-    # check exception in case of ties
+    # Check a case where variants are different
+    # Example values found from Kendall (1970).
+    # P-value is the same for the both variants
+    x = array([1, 2, 2, 4, 4, 6, 6, 8, 9, 9])
+    y = array([1, 2, 4, 4, 4, 4, 8, 8, 8, 10])
+    expected = 0.85895569
+    assert_approx_equal(stats.kendalltau(x, y, variant='b')[0], expected)
+    expected = 0.825
+    assert_approx_equal(stats.kendalltau(x, y, variant='c')[0], expected)
+
+    # check exception in case of ties and method='exact' requested
     y[2] = y[1]
     assert_raises(ValueError, stats.kendalltau, x, y, method='exact')
 
     # check exception in case of invalid method keyword
     assert_raises(ValueError, stats.kendalltau, x, y, method='banana')
 
-    # with some ties
+    # check exception in case of invalid variant keyword
+    assert_raises(ValueError, stats.kendalltau, x, y, variant='rms')
+
+    # tau-b with some ties
     # Cross-check with R:
     # cor.test(c(12,2,1,12,2),c(1,4,7,1,0),method="kendall",exact=FALSE)
     x1 = [12, 2, 1, 12, 2]
@@ -1035,13 +1062,18 @@ def test_kendalltau():
 
     # test for namedtuple attribute results
     attributes = ('correlation', 'pvalue')
-    res = stats.kendalltau(x1, x2)
-    check_named_results(res, attributes)
+    for taux in variants:
+        res = stats.kendalltau(x1, x2, variant=taux)
+        check_named_results(res, attributes)
 
-    # with only ties in one or both inputs
-    assert_equal(stats.kendalltau([2,2,2], [2,2,2]), (np.nan, np.nan))
-    assert_equal(stats.kendalltau([2,0,2], [2,2,2]), (np.nan, np.nan))
-    assert_equal(stats.kendalltau([2,2,2], [2,0,2]), (np.nan, np.nan))
+    # with only ties in one or both inputs in tau-b or tau-c
+    for taux in variants:
+        assert_equal(stats.kendalltau([2, 2, 2], [2, 2, 2], variant=taux),
+                     (np.nan, np.nan))
+        assert_equal(stats.kendalltau([2, 0, 2], [2, 2, 2], variant=taux),
+                     (np.nan, np.nan))
+        assert_equal(stats.kendalltau([2, 2, 2], [2, 0, 2], variant=taux),
+                     (np.nan, np.nan))
 
     # empty arrays provided as input
     assert_equal(stats.kendalltau([], []), (np.nan, np.nan))
@@ -1058,8 +1090,11 @@ def test_kendalltau():
     assert_approx_equal(res[0], expected[0])
     assert_approx_equal(res[1], expected[1])
 
-    # and do we get a tau of 1 for identical inputs?
-    assert_approx_equal(stats.kendalltau([1,1,2], [1,1,2])[0], 1.0)
+    # this should result in 1 for taub but not tau-c
+    assert_approx_equal(stats.kendalltau([1, 1, 2], [1, 1, 2], variant='b')[0],
+                        1.0)
+    assert_approx_equal(stats.kendalltau([1, 1, 2], [1, 1, 2], variant='c')[0],
+                        0.88888888)
 
     # test nan_policy
     x = np.arange(10.)
@@ -1190,8 +1225,9 @@ def test_segfault_issue_9710():
     # The code below also caused SEGFAULT
     stats.weightedtau([np.nan], [52])
 
+
 def test_kendall_tau_large():
-    n = 172.
+    n = 172
     x = np.arange(n)
     y = np.arange(n)
     _, pval = stats.kendalltau(x, y, method='exact')
@@ -1201,6 +1237,13 @@ def test_kendall_tau_large():
     assert_equal(pval, 0.0)
     y[-3], y[-4] = y[-4], y[-3]
     _, pval = stats.kendalltau(x, y, method='exact')
+    assert_equal(pval, 0.0)
+
+    # Test omit policy
+    x = np.arange(n + 1).astype(float)
+    y = np.arange(n + 1).astype(float)
+    y[-1] = np.nan
+    _, pval = stats.kendalltau(x, y, method='exact', nan_policy='omit')
     assert_equal(pval, 0.0)
 
 
@@ -2456,8 +2499,7 @@ class TestStudentTest(object):
         assert_array_almost_equal(p, self.P1_2)
 
         # check nan policy
-        np.random.seed(7654567)
-        x = stats.norm.rvs(loc=5, scale=10, size=51)
+        x = stats.norm.rvs(loc=5, scale=10, size=51, random_state=7654567)
         x[50] = np.nan
         with np.errstate(invalid="ignore"):
             assert_array_equal(stats.ttest_1samp(x, 5.0), (np.nan, np.nan))
@@ -3024,8 +3066,7 @@ class TestKSOneSample(object):
 
     def test_known_examples(self):
         # the following tests rely on deterministically replicated rvs
-        np.random.seed(987654321)
-        x = stats.norm.rvs(loc=0.2, size=100)
+        x = stats.norm.rvs(loc=0.2, size=100, random_state=987654321)
         self._testOne(x, 'two-sided', 0.12464329735846891, 0.089444888711820769, mode='asymp')
         self._testOne(x, 'less', 0.12464329735846891, 0.040989164077641749)
         self._testOne(x, 'greater', 0.0072115233216310994, 0.98531158590396228)
@@ -3209,7 +3250,6 @@ class TestKSTwoSamples(object):
         np.random.seed(123456)
         x = np.random.normal(size=3000)
         y = np.random.normal(size=3001) * 1.5
-        print(x[0], x[-1], y[0], y[-1])
         self._testOne(x, y, 'two-sided', 0.11292880151060758, 2.7755575615628914e-15, mode='asymp')
         self._testOne(x, y, 'two-sided', 0.11292880151060758, 2.7755575615628914e-15, mode='exact')
 
@@ -3218,7 +3258,6 @@ class TestKSTwoSamples(object):
         np.random.seed(123456)
         x = np.random.normal(size=10000)
         y = np.random.normal(size=10001) * 1.5
-        print(x[0], x[-1], y[0], y[-1])
         self._testOne(x, y, 'two-sided', 0.10597913208679133, 3.3149311398483503e-49, mode='asymp')
         self._testOne(x, y, 'two-sided', 0.10597913208679133, 2.7755575615628914e-15, mode='exact')
         self._testOne(x, y, 'greater', 0.10597913208679133, 2.7947433906389253e-41, mode='asymp')
@@ -3265,6 +3304,18 @@ class TestKSTwoSamples(object):
         assert_raises(ValueError, stats.ks_2samp, [1], [])
         assert_raises(ValueError, stats.ks_2samp, [], [])
 
+    def test_gh12218(self):
+        """Ensure gh-12218 is fixed."""
+        # gh-1228 triggered a TypeError calculating sqrt(n1*n2*(n1+n2)).
+        # n1, n2 both large integers, the product exceeded 2^64
+        np.random.seed(12345678)
+        n1 = 2097152  # 2*^21
+        rvs1 = stats.uniform.rvs(size=n1, loc=0., scale=1)
+        rvs2 = rvs1 + 1  # Exact value of rvs2 doesn't matter.
+        stats.ks_2samp(rvs1, rvs2, alternative='greater', mode='asymp')
+        stats.ks_2samp(rvs1, rvs2, alternative='less', mode='asymp')
+        stats.ks_2samp(rvs1, rvs2, alternative='two-sided', mode='asymp')
+
 
 def test_ttest_rel():
     # regression test
@@ -3309,11 +3360,11 @@ def test_ttest_rel():
     assert_equal(t.shape, (3, 2))
 
     # check nan policy
-    np.random.seed(12345678)
-    x = stats.norm.rvs(loc=5, scale=10, size=501)
+    rng = np.random.RandomState(12345678)
+    x = stats.norm.rvs(loc=5, scale=10, size=501, random_state=rng)
     x[500] = np.nan
-    y = (stats.norm.rvs(loc=5, scale=10, size=501) +
-         stats.norm.rvs(scale=0.2, size=501))
+    y = (stats.norm.rvs(loc=5, scale=10, size=501, random_state=rng) +
+         stats.norm.rvs(scale=0.2, size=501, random_state=rng))
     y[500] = np.nan
 
     with np.errstate(invalid="ignore"):
@@ -3457,10 +3508,10 @@ def test_ttest_ind():
     assert_equal(t.shape, (3, 2))
 
     # check nan policy
-    np.random.seed(12345678)
-    x = stats.norm.rvs(loc=5, scale=10, size=501)
+    rng = np.random.RandomState(12345678)
+    x = stats.norm.rvs(loc=5, scale=10, size=501, random_state=rng)
     x[500] = np.nan
-    y = stats.norm.rvs(loc=5, scale=10, size=500)
+    y = stats.norm.rvs(loc=5, scale=10, size=500, random_state=rng)
 
     with np.errstate(invalid="ignore"):
         assert_array_equal(stats.ttest_ind(x, y), (np.nan, np.nan))
@@ -4978,8 +5029,8 @@ class TestCombinePvalues(object):
         assert_approx_equal(p, 0.970299, significant=4)
 
     def test_mudholkar_george(self):
-        Z, p = stats.combine_pvalues([.01, .2, .3], method='mudholkar_george')
-        assert_approx_equal(p, 3.7191571041915e-07, significant=4)
+        Z, p = stats.combine_pvalues([.1, .1, .1], method='mudholkar_george')
+        assert_approx_equal(p, 0.019462, significant=4)
 
     def test_mudholkar_george_equal_fisher_minus_pearson(self):
         Z, p = stats.combine_pvalues([.01, .2, .3], method='mudholkar_george')
@@ -5503,7 +5554,7 @@ class TestMGCErrorWarnings(object):
         assert_raises(ValueError, stats.multiscale_graphcorr, x, y)
 
     def test_error_wrongdisttype(self):
-        # raises error if compute_distance is not a function
+        # raises error if metric is not a function
         x = np.arange(20)
         compute_distance = 0
         assert_raises(ValueError, stats.multiscale_graphcorr, x, x,
@@ -5622,6 +5673,7 @@ class TestMGCStat(object):
         assert_approx_equal(stat, 1.0, significant=1)
         assert_approx_equal(pvalue, 0.001, significant=1)
 
+    @pytest.mark.slow
     def test_workers(self):
         np.random.seed(12345678)
 
@@ -5642,3 +5694,17 @@ class TestMGCStat(object):
         stat, pvalue, _ = stats.multiscale_graphcorr(x, y, random_state=1)
         assert_approx_equal(stat, 0.97, significant=1)
         assert_approx_equal(pvalue, 0.001, significant=1)
+
+    @pytest.mark.slow
+    def test_dist_perm(self):
+        np.random.seed(12345678)
+        # generate x and y
+        x, y = self._simulations(samps=100, dims=1, sim_type="nonlinear")
+        distx = cdist(x, x, metric="euclidean")
+        disty = cdist(y, y, metric="euclidean")
+
+        stat_dist, pvalue_dist, _ = stats.multiscale_graphcorr(distx, disty,
+                                                               compute_distance=None,
+                                                               random_state=1)
+        assert_approx_equal(stat_dist, 0.163, significant=1)
+        assert_approx_equal(pvalue_dist, 0.001, significant=1)

@@ -141,21 +141,17 @@ def test_mapwrapper_parallel():
 
 # get our custom ones and a few from the "import *" cases
 @pytest.mark.parametrize(
-    'key', ('fft', 'ifft', 'diag', 'arccos',
-            'randn', 'rand', 'array'))
+    'key', ('ifft', 'diag', 'arccos', 'randn', 'rand', 'array'))
 def test_numpy_deprecation(key):
     """Test that 'from numpy import *' functions are deprecated."""
-    if key in ('fft', 'ifft', 'diag', 'arccos'):
+    if key in ('ifft', 'diag', 'arccos'):
         arg = [1.0, 0.]
     elif key == 'finfo':
         arg = float
     else:
         arg = 2
     func = getattr(scipy, key)
-    if key == 'fft':
-        match = r'scipy\.fft.*deprecated.*1.5.0.*'
-    else:
-        match = r'scipy\.%s is deprecated.*2\.0\.0' % key
+    match = r'scipy\.%s is deprecated.*2\.0\.0' % key
     with deprecated_call(match=match) as dep:
         func(arg)  # deprecated
     # in case we catch more than one dep warning
@@ -164,7 +160,7 @@ def test_numpy_deprecation(key):
     assert 'test__util' in basenames
     if key in ('rand', 'randn'):
         root = np.random
-    elif key in ('fft', 'ifft'):
+    elif key == 'ifft':
         root = np.fft
     else:
         root = np

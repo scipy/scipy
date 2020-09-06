@@ -72,11 +72,11 @@ def _get_umf_family(A):
     try:
         family = _families[(f_type, i_type)]
 
-    except KeyError:
+    except KeyError as e:
         msg = 'only float64 or complex128 matrices with int32 or int64' \
             ' indices are supported! (got: matrix: %s, indices: %s)' \
             % (f_type, i_type)
-        raise ValueError(msg)
+        raise ValueError(msg) from e
 
     # See gh-8278. Considered converting only if
     # A.shape[0]*A.shape[1] > np.iinfo(np.int32).max,
@@ -491,14 +491,14 @@ def factorized(A):
 def spsolve_triangular(A, b, lower=True, overwrite_A=False, overwrite_b=False,
                        unit_diagonal=False):
     """
-    Solve the equation `A x = b` for `x`, assuming A is a triangular matrix.
+    Solve the equation ``A x = b`` for `x`, assuming A is a triangular matrix.
 
     Parameters
     ----------
     A : (M, M) sparse matrix
         A sparse square triangular matrix. Should be in CSR format.
     b : (M,) or (M, N) array_like
-        Right-hand side matrix in `A x = b`
+        Right-hand side matrix in ``A x = b``
     lower : bool, optional
         Whether `A` is a lower or upper triangular matrix.
         Default is lower triangular matrix.
@@ -520,7 +520,8 @@ def spsolve_triangular(A, b, lower=True, overwrite_A=False, overwrite_b=False,
     Returns
     -------
     x : (M,) or (M, N) ndarray
-        Solution to the system `A x = b`. Shape of return matches shape of `b`.
+        Solution to the system ``A x = b``. Shape of return matches shape
+        of `b`.
 
     Raises
     ------
@@ -574,7 +575,7 @@ def spsolve_triangular(A, b, lower=True, overwrite_A=False, overwrite_b=False,
             '{} and the shape of b is {}.'.format(A.shape, b.shape))
 
     # Init x as (a copy of) b.
-    x_dtype = np.result_type(A.data, b, np.float)
+    x_dtype = np.result_type(A.data, b, np.float64)
     if overwrite_b:
         if np.can_cast(b.dtype, x_dtype, casting='same_kind'):
             x = b

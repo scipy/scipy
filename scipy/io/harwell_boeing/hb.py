@@ -300,10 +300,10 @@ class HBInfo(object):
 def _expect_int(value, msg=None):
     try:
         return int(value)
-    except ValueError:
+    except ValueError as e:
         if msg is None:
             msg = "Expected an int, got %s"
-        raise ValueError(msg % value)
+        raise ValueError(msg % value) from e
 
 
 def _read_hb_data(content, header):
@@ -394,8 +394,8 @@ class HBMatrixType(object):
             structure = cls._f2q_structure[fmt[1]]
             storage = cls._f2q_storage[fmt[2]]
             return cls(value_type, structure, storage)
-        except KeyError:
-            raise ValueError("Unrecognized format %s" % fmt)
+        except KeyError as e:
+            raise ValueError("Unrecognized format %s" % fmt) from e
 
     def __init__(self, value_type, structure, storage="assembled"):
         self.value_type = value_type

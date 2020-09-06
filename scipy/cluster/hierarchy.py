@@ -2807,10 +2807,10 @@ def _plot_dendrogram(icoords, dcoords, ivl, p, n, mh, orientation,
             import matplotlib.pylab
         import matplotlib.patches
         import matplotlib.collections
-    except ImportError:
+    except ImportError as e:
         raise ImportError("You must install the matplotlib library to plot "
                           "the dendrogram. Use no_plot=True to calculate the "
-                          "dendrogram without plotting.")
+                          "dendrogram without plotting.") from e
 
     if ax is None:
         ax = matplotlib.pylab.gca()
@@ -3223,6 +3223,10 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
           ``i``-th leaf node corresponds to an original observation.
           Otherwise, it corresponds to a non-singleton cluster.
 
+        ``'leaves_color_list'``
+          A list of color names. The k'th element represents the color of the
+          k'th leaf.
+
     See Also
     --------
     linkage, set_link_color_palette
@@ -3274,7 +3278,7 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
         raise ValueError("orientation must be one of 'top', 'left', "
                          "'bottom', or 'right'")
 
-    if labels and Z.shape[0] + 1 != len(labels):
+    if labels is not None and Z.shape[0] + 1 != len(labels):
         raise ValueError("Dimensions of Z and labels must be consistent.")
 
     is_valid_linkage(Z, throw=True, name='Z')
@@ -3358,7 +3362,24 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
                          ax=ax,
                          above_threshold_color=above_threshold_color)
 
+    R["leaves_color_list"] = _get_leaves_color_list(R)
+
     return R
+
+
+def _get_leaves_color_list(R):
+    leaves_color_list = [None] * len(R['leaves'])
+    for link_x, link_y, link_color in zip(R['icoord'],
+                                          R['dcoord'],
+                                          R['color_list']):
+        for (xi, yi) in zip(link_x, link_y):
+            if yi == 0.0:  # if yi is 0.0, the point is a leaf
+                # xi of leaves are      5, 15, 25, 35, ... (see `iv_ticks`)
+                # index of leaves are   0,  1,  2,  3, ... as below
+                leaf_index = (int(xi) - 5) // 10
+                # each leaf has a same color of its link.
+                leaves_color_list[leaf_index] = link_color
+    return leaves_color_list
 
 
 def _append_singleton_leaf_node(Z, p, n, level, lvs, ivl, leaf_label_func,

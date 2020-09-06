@@ -127,7 +127,7 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
     despite the apparent size mismatch. This is compatible with the
     numpy.dot() behavior and the returned result is still 1-D array.
 
-    The generic, symmetric, hermitian and positive definite solutions are
+    The generic, symmetric, Hermitian and positive definite solutions are
     obtained via calling ?GESV, ?SYSV, ?HESV, and ?POSV routines of
     LAPACK respectively.
     """
@@ -673,8 +673,8 @@ def solve_toeplitz(c_or_cr, b, check_finite=True):
         c = _asarray_validated(c_or_cr, check_finite=check_finite).ravel()
         r = c.conjugate()
 
-    # Form a 1-D array of values to be used in the matrix, containing a reversed
-    # copy of r[1:], followed by c.
+    # Form a 1-D array of values to be used in the matrix, containing a
+    # reversed copy of r[1:], followed by c.
     vals = np.concatenate((r[-1:0:-1], c))
     if b is None:
         raise ValueError('illegal value, `b` is a required argument')
@@ -1302,7 +1302,9 @@ def pinv(a, cond=None, rcond=None, return_rank=False, check_finite=True):
 
     """
     a = _asarray_validated(a, check_finite=check_finite)
-    b = np.identity(a.shape[0], dtype=a.dtype)
+    # If a is sufficiently tall it is cheaper to compute using the transpose
+    trans = a.shape[0] / a.shape[1] >= 1.1
+    b = np.eye(a.shape[1] if trans else a.shape[0], dtype=a.dtype)
 
     if rcond is not None:
         cond = rcond
@@ -1310,12 +1312,13 @@ def pinv(a, cond=None, rcond=None, return_rank=False, check_finite=True):
     if cond is None:
         cond = max(a.shape) * np.spacing(a.real.dtype.type(1))
 
-    x, resids, rank, s = lstsq(a, b, cond=cond, check_finite=False)
+    x, resids, rank, s = lstsq(a.T if trans else a, b,
+                               cond=cond, check_finite=False)
 
     if return_rank:
-        return x, rank
+        return (x.T if trans else x), rank
     else:
-        return x
+        return x.T if trans else x
 
 
 def pinv2(a, cond=None, rcond=None, return_rank=False, check_finite=True):

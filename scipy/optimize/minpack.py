@@ -759,8 +759,8 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
             try:
                 # scipy.linalg.cholesky requires lower=True to return L L^T = A
                 transform = cholesky(sigma, lower=True)
-            except LinAlgError:
-                raise ValueError("`sigma` must be positive definite.")
+            except LinAlgError as e:
+                raise ValueError("`sigma` must be positive definite.") from e
         else:
             raise ValueError("`sigma` has incorrect shape.")
     else:

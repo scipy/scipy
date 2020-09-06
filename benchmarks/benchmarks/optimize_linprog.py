@@ -3,7 +3,7 @@ import os
 import numpy as np
 from numpy.testing import suppress_warnings
 
-from .common import Benchmark
+from .common import Benchmark, is_xslow
 
 try:
     from scipy.optimize import linprog, OptimizeWarning
@@ -31,12 +31,6 @@ except ImportError:
     pass
 
 
-try:
-    # the value of SCIPY_XSLOW is used to control whether slow benchmarks run
-    slow = int(os.environ.get('SCIPY_XSLOW', 0))
-except ValueError:
-    pass
-
 methods = [("interior-point", {"sparse": True}),
            ("interior-point", {"sparse": False}),
            ("revised simplex", {})]
@@ -57,6 +51,7 @@ problems = ['25FV47', '80BAU3B', 'ADLITTLE', 'AFIRO', 'AGG', 'AGG2', 'AGG3',
             'SHIP08S', 'SHIP12L', 'SHIP12S', 'SIERRA', 'STAIR', 'STANDATA',
             'STANDMPS', 'STOCFOR1', 'STOCFOR2', 'TRUSS', 'TUFF', 'VTP-BASE',
             'WOOD1P', 'WOODW']
+presolve_problems = problems
 rr_problems = ['AFIRO', 'BLEND', 'FINNIS', 'RECIPE', 'SCSD6', 'VTP-BASE',
                'BORE3D', 'CYCLE', 'DEGEN2', 'DEGEN3', 'ETAMACRO', 'PILOTNOV',
                'QAP8', 'RECIPE', 'SCORPION', 'SHELL', 'SIERRA', 'WOOD1P']
@@ -67,16 +62,20 @@ infeasible_problems = ['bgdbg1', 'bgetam', 'bgindy', 'bgprtr', 'box1',
                        'mondou2', 'pang', 'pilot4i', 'qual', 'reactor',
                        'refinery', 'vol1', 'woodinfe']
 
-if not slow:
-    problems = ['ADLITTLE', 'AFIRO', 'BLEND', 'BEACONFD', 'GROW7', 'LOTFI',
-                'SC105', 'SCTAP1', 'SHARE2B', 'STOCFOR1']
-    rr_problems = ['AFIRO', 'BLEND', 'FINNIS', 'RECIPE', 'SCSD6', 'VTP-BASE',
-                   'DEGEN2', 'ETAMACRO', 'RECIPE']
-    infeasible_problems = ['bgdbg1', 'bgprtr', 'box1', 'chemcom', 'cplex2',
-                           'ex72a', 'ex73a', 'forest6', 'galenet', 'itest2',
-                           'itest6', 'klein1', 'refinery', 'woodinfe']
-
-presolve_problems = problems
+if not is_xslow():
+    enabled_problems = ['ADLITTLE', 'AFIRO', 'BLEND', 'BEACONFD', 'GROW7', 'LOTFI',
+                        'SC105', 'SCTAP1', 'SHARE2B', 'STOCFOR1']
+    enabled_presolve_problems = enabled_problems
+    enabled_rr_problems = ['AFIRO', 'BLEND', 'FINNIS', 'RECIPE', 'SCSD6', 'VTP-BASE',
+                           'DEGEN2', 'ETAMACRO', 'RECIPE']
+    enabled_infeasible_problems = ['bgdbg1', 'bgprtr', 'box1', 'chemcom', 'cplex2',
+                                   'ex72a', 'ex73a', 'forest6', 'galenet', 'itest2',
+                                   'itest6', 'klein1', 'refinery', 'woodinfe']
+else:
+    enabled_problems = problems
+    enabled_presolve_problems = enabled_problems
+    enabled_rr_problems = rr_problems
+    enabled_infeasible_problems = infeasible_problems
 
 
 def klee_minty(D):
@@ -98,12 +97,13 @@ class MagicSquare(Benchmark):
                  (5, 1.807494583582637), (6, 1.747266446858304)]
 
     params = [methods, solutions]
-    if not slow:
-        params[1] = solutions[:2]
-
     param_names = ['method', '(dimensions, objective)']
 
     def setup(self, meth, prob):
+        if not is_xslow():
+            if prob[0] > 4:
+                raise NotImplementedError("skipped")
+
         dims, obj = prob
         self.A_eq, self.b_eq, self.c, numbers = magic_square(dims)
         self.fun = None
@@ -179,6 +179,9 @@ class Netlib(Benchmark):
     param_names = ['method', 'problems']
 
     def setup(self, meth, prob):
+        if prob not in enabled_problems:
+            raise NotImplementedError("skipped")
+
         dir_path = os.path.dirname(os.path.realpath(__file__))
         datafile = os.path.join(dir_path, "linprog_benchmark_files",
                                 prob + ".npz")
@@ -225,6 +228,9 @@ class Netlib_RR(Benchmark):
                    ('_remove_redundancy_sparse', 'PILOTNOV')}
 
     def setup(self, meth, prob):
+        if prob not in enabled_rr_problems:
+            raise NotImplementedError("skipped")
+
         if (meth.__name__, prob) in self.known_fails:
             raise NotImplementedError("Known issues with these benchmarks.")
 
@@ -278,6 +284,8 @@ class Netlib_presolve(Benchmark):
     param_names = ['method', 'problems']
 
     def setup(self, meth, prob):
+        if prob not in enabled_presolve_problems:
+            raise NotImplementedError("skipped")
 
         dir_path = os.path.dirname(os.path.realpath(__file__))
         datafile = os.path.join(dir_path, "linprog_benchmark_files",
@@ -308,6 +316,9 @@ class Netlib_infeasible(Benchmark):
     param_names = ['method', 'problems']
 
     def setup(self, meth, prob):
+        if prob not in enabled_infeasible_problems:
+            raise NotImplementedError("skipped")
+
         dir_path = os.path.dirname(os.path.realpath(__file__))
         datafile = os.path.join(dir_path, "linprog_benchmark_files",
                                 "infeasible", prob + ".npz")

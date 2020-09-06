@@ -432,55 +432,57 @@ def least_squares(
 
     Returns
     -------
-    `OptimizeResult` with the following fields defined:
-    x : ndarray, shape (n,)
-        Solution found.
-    cost : float
-        Value of the cost function at the solution.
-    fun : ndarray, shape (m,)
-        Vector of residuals at the solution.
-    jac : ndarray, sparse matrix or LinearOperator, shape (m, n)
-        Modified Jacobian matrix at the solution, in the sense that J^T J
-        is a Gauss-Newton approximation of the Hessian of the cost function.
-        The type is the same as the one used by the algorithm.
-    grad : ndarray, shape (m,)
-        Gradient of the cost function at the solution.
-    optimality : float
-        First-order optimality measure. In unconstrained problems, it is always
-        the uniform norm of the gradient. In constrained problems, it is the
-        quantity which was compared with `gtol` during iterations.
-    active_mask : ndarray of int, shape (n,)
-        Each component shows whether a corresponding constraint is active
-        (that is, whether a variable is at the bound):
+    result : OptimizeResult
+        `OptimizeResult` with the following fields defined:
 
-            *  0 : a constraint is not active.
-            * -1 : a lower bound is active.
-            *  1 : an upper bound is active.
+            x : ndarray, shape (n,)
+                Solution found.
+            cost : float
+                Value of the cost function at the solution.
+            fun : ndarray, shape (m,)
+                Vector of residuals at the solution.
+            jac : ndarray, sparse matrix or LinearOperator, shape (m, n)
+                Modified Jacobian matrix at the solution, in the sense that J^T J
+                is a Gauss-Newton approximation of the Hessian of the cost function.
+                The type is the same as the one used by the algorithm.
+            grad : ndarray, shape (m,)
+                Gradient of the cost function at the solution.
+            optimality : float
+                First-order optimality measure. In unconstrained problems, it is
+                always the uniform norm of the gradient. In constrained problems,
+                it is the quantity which was compared with `gtol` during iterations.
+            active_mask : ndarray of int, shape (n,)
+                Each component shows whether a corresponding constraint is active
+                (that is, whether a variable is at the bound):
 
-        Might be somewhat arbitrary for 'trf' method as it generates a sequence
-        of strictly feasible iterates and `active_mask` is determined within a
-        tolerance threshold.
-    nfev : int
-        Number of function evaluations done. Methods 'trf' and 'dogbox' do not
-        count function calls for numerical Jacobian approximation, as opposed
-        to 'lm' method.
-    njev : int or None
-        Number of Jacobian evaluations done. If numerical Jacobian
-        approximation is used in 'lm' method, it is set to None.
-    status : int
-        The reason for algorithm termination:
+                    *  0 : a constraint is not active.
+                    * -1 : a lower bound is active.
+                    *  1 : an upper bound is active.
 
-            * -1 : improper input parameters status returned from MINPACK.
-            *  0 : the maximum number of function evaluations is exceeded.
-            *  1 : `gtol` termination condition is satisfied.
-            *  2 : `ftol` termination condition is satisfied.
-            *  3 : `xtol` termination condition is satisfied.
-            *  4 : Both `ftol` and `xtol` termination conditions are satisfied.
+                Might be somewhat arbitrary for 'trf' method as it generates a
+                sequence of strictly feasible iterates and `active_mask` is
+                determined within a tolerance threshold.
+            nfev : int
+                Number of function evaluations done. Methods 'trf' and 'dogbox' do
+                not count function calls for numerical Jacobian approximation, as
+                opposed to 'lm' method.
+            njev : int or None
+                Number of Jacobian evaluations done. If numerical Jacobian
+                approximation is used in 'lm' method, it is set to None.
+            status : int
+                The reason for algorithm termination:
 
-    message : str
-        Verbal description of the termination reason.
-    success : bool
-        True if one of the convergence criteria is satisfied (`status` > 0).
+                    * -1 : improper input parameters status returned from MINPACK.
+                    *  0 : the maximum number of function evaluations is exceeded.
+                    *  1 : `gtol` termination condition is satisfied.
+                    *  2 : `ftol` termination condition is satisfied.
+                    *  3 : `xtol` termination condition is satisfied.
+                    *  4 : Both `ftol` and `xtol` termination conditions are satisfied.
+
+            message : str
+                Verbal description of the termination reason.
+            success : bool
+                True if one of the convergence criteria is satisfied (`status` > 0).
 
     See Also
     --------

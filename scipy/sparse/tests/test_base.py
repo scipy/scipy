@@ -3499,23 +3499,6 @@ class TestCSR(sparse_test_class()):
         assert_array_equal(bsp.indptr,[0,1,2,3])
         assert_array_almost_equal(bsp.todense(),b)
 
-### currently disabled
-##    def test_constructor4(self):
-##        """try using int64 indices"""
-##        data = arange( 6 ) + 1
-##        col = array( [1, 2, 1, 0, 0, 2], dtype='int64' )
-##        ptr = array( [0, 2, 4, 6], dtype='int64' )
-##
-##        a = csr_matrix( (data, col, ptr), shape = (3,3) )
-##
-##        b = matrix([[0,1,2],
-##                    [4,3,0],
-##                    [5,0,6]],'d')
-##
-##        assert_equal(a.indptr.dtype,numpy.dtype('int64'))
-##        assert_equal(a.indices.dtype,numpy.dtype('int64'))
-##        assert_array_equal(a.todense(),b)
-
     def test_constructor4(self):
         # using (data, ij) format
         row = array([2, 3, 1, 3, 0, 1, 3, 0, 2, 1, 2])
@@ -3543,6 +3526,35 @@ class TestCSR(sparse_test_class()):
         csr = csr_matrix((data, indices, indptr))
         assert_array_equal(csr.shape, (3,6))
         assert_(np.issubdtype(csr.dtype, np.signedinteger))
+
+    def test_constructor_smallcol(self):
+        # int64 indices not required
+        data = arange(6) + 1
+        col = array([1, 2, 1, 0, 0, 2], dtype=np.int64)
+        ptr = array([0, 2, 4, 6], dtype=np.int64)
+
+        a = csr_matrix((data, col, ptr), shape=(3, 3))
+
+        b = matrix([[0, 1, 2],
+                    [4, 3, 0],
+                    [5, 0, 6]], 'd')
+
+        assert_equal(a.indptr.dtype, np.dtype(np.int32))
+        assert_equal(a.indices.dtype, np.dtype(np.int32))
+        assert_array_equal(a.todense(), b)
+
+    def test_constructor_largecol(self):
+        # int64 indices required
+        data = arange(6) + 1
+        large = np.iinfo(np.int32).max + 100
+        col = array([0, 1, 2, large, large+1, large+2], dtype=np.int64)
+        ptr = array([0, 2, 4, 6], dtype=np.int64)
+
+        a = csr_matrix((data, col, ptr))
+
+        assert_equal(a.indptr.dtype, np.dtype(np.int64))
+        assert_equal(a.indices.dtype, np.dtype(np.int64))
+        assert_array_equal(a.shape, (3, max(col)+1))
 
     def test_sort_indices(self):
         data = arange(5)
@@ -3947,13 +3959,13 @@ class TestLIL(sparse_test_class(minmax=False)):
     math_dtypes = [np.int_, np.float_, np.complex_]
 
     def test_dot(self):
-        A = zeros((10,10), np.complex)
-        A[0,3] = 10
-        A[5,6] = 20j
+        A = zeros((10, 10), np.complex128)
+        A[0, 3] = 10
+        A[5, 6] = 20j
 
-        B = lil_matrix((10,10), dtype=np.complex)
-        B[0,3] = 10
-        B[5,6] = 20j
+        B = lil_matrix((10, 10), dtype=np.complex128)
+        B[0, 3] = 10
+        B[5, 6] = 20j
 
         # TODO: properly handle this assertion on ppc64le
         if platform.machine() != 'ppc64le':
@@ -3962,86 +3974,87 @@ class TestLIL(sparse_test_class(minmax=False)):
         assert_array_equal(A @ A.conjugate().T, (B * B.H).todense())
 
     def test_scalar_mul(self):
-        x = lil_matrix((3,3))
-        x[0,0] = 2
+        x = lil_matrix((3, 3))
+        x[0, 0] = 2
 
         x = x*2
-        assert_equal(x[0,0],4)
+        assert_equal(x[0, 0], 4)
 
         x = x*0
-        assert_equal(x[0,0],0)
+        assert_equal(x[0, 0], 0)
 
     def test_inplace_ops(self):
-        A = lil_matrix([[0,2,3],[4,0,6]])
-        B = lil_matrix([[0,1,0],[0,2,3]])
+        A = lil_matrix([[0, 2, 3], [4, 0, 6]])
+        B = lil_matrix([[0, 1, 0], [0, 2, 3]])
 
-        data = {'add': (B,A + B),
-                'sub': (B,A - B),
-                'mul': (3,A * 3)}
+        data = {'add': (B, A + B),
+                'sub': (B, A - B),
+                'mul': (3, A * 3)}
 
-        for op,(other,expected) in data.items():
+        for op, (other, expected) in data.items():
             result = A.copy()
             getattr(result, '__i%s__' % op)(other)
 
             assert_array_equal(result.todense(), expected.todense())
 
         # Ticket 1604.
-        A = lil_matrix((1,3), dtype=np.dtype('float64'))
-        B = array([0.1,0.1,0.1])
-        A[0,:] += B
-        assert_array_equal(A[0,:].toarray().squeeze(), B)
+        A = lil_matrix((1, 3), dtype=np.dtype('float64'))
+        B = array([0.1, 0.1, 0.1])
+        A[0, :] += B
+        assert_array_equal(A[0, :].toarray().squeeze(), B)
 
     def test_lil_iteration(self):
-        row_data = [[1,2,3],[4,5,6]]
+        row_data = [[1, 2, 3], [4, 5, 6]]
         B = lil_matrix(array(row_data))
-        for r,row in enumerate(B):
-            assert_array_equal(row.todense(),array(row_data[r],ndmin=2))
+        for r, row in enumerate(B):
+            assert_array_equal(row.todense(), array(row_data[r], ndmin=2))
 
     def test_lil_from_csr(self):
         # Tests whether a lil_matrix can be constructed from a
         # csr_matrix.
-        B = lil_matrix((10,10))
-        B[0,3] = 10
-        B[5,6] = 20
-        B[8,3] = 30
-        B[3,8] = 40
-        B[8,9] = 50
+        B = lil_matrix((10, 10))
+        B[0, 3] = 10
+        B[5, 6] = 20
+        B[8, 3] = 30
+        B[3, 8] = 40
+        B[8, 9] = 50
         C = B.tocsr()
         D = lil_matrix(C)
         assert_array_equal(C.A, D.A)
 
     def test_fancy_indexing_lil(self):
-        M = asmatrix(arange(25).reshape(5,5))
+        M = asmatrix(arange(25).reshape(5, 5))
         A = lil_matrix(M)
 
-        assert_equal(A[array([1,2,3]),2:3].todense(), M[array([1,2,3]),2:3])
+        assert_equal(A[array([1, 2, 3]), 2:3].todense(),
+                     M[array([1, 2, 3]), 2:3])
 
     def test_point_wise_multiply(self):
-        l = lil_matrix((4,3))
-        l[0,0] = 1
-        l[1,1] = 2
-        l[2,2] = 3
-        l[3,1] = 4
+        l = lil_matrix((4, 3))
+        l[0, 0] = 1
+        l[1, 1] = 2
+        l[2, 2] = 3
+        l[3, 1] = 4
 
-        m = lil_matrix((4,3))
-        m[0,0] = 1
-        m[0,1] = 2
-        m[2,2] = 3
-        m[3,1] = 4
-        m[3,2] = 4
+        m = lil_matrix((4, 3))
+        m[0, 0] = 1
+        m[0, 1] = 2
+        m[2, 2] = 3
+        m[3, 1] = 4
+        m[3, 2] = 4
 
         assert_array_equal(l.multiply(m).todense(),
                            m.multiply(l).todense())
 
         assert_array_equal(l.multiply(m).todense(),
-                           [[1,0,0],
-                            [0,0,0],
-                            [0,0,9],
-                            [0,16,0]])
+                           [[1, 0, 0],
+                            [0, 0, 0],
+                            [0, 0, 9],
+                            [0, 16, 0]])
 
     def test_lil_multiply_removal(self):
         # Ticket #1427.
-        a = lil_matrix(np.ones((3,3)))
+        a = lil_matrix(np.ones((3, 3)))
         a *= 2.
         a[0, :] = 0
 
@@ -4632,6 +4645,8 @@ def cases_64bit():
         'test_solve': 'linsolve for 64-bit indices not available',
         'test_scalar_idx_dtype': 'test implemented in base class',
         'test_large_dimensions_reshape': 'test actually requires 64-bit to work',
+        'test_constructor_smallcol': 'test verifies int32 indexes',
+        'test_constructor_largecol': 'test verifies int64 indexes',
     }
 
     for cls in TEST_CLASSES:
@@ -4666,8 +4681,7 @@ class Test64Bit(object):
 
     def _compare_index_dtype(self, m, dtype):
         dtype = np.dtype(dtype)
-        if isinstance(m, csc_matrix) or isinstance(m, csr_matrix) \
-               or isinstance(m, bsr_matrix):
+        if isinstance(m, (csc_matrix, csr_matrix, bsr_matrix)):
             return (m.indices.dtype == dtype) and (m.indptr.dtype == dtype)
         elif isinstance(m, coo_matrix):
             return (m.row.dtype == dtype) and (m.col.dtype == dtype)

@@ -872,13 +872,14 @@ class DifferentialEvolutionSolver(object):
         try:
             calc_energies = list(self._mapwrapper(self.func,
                                                   parameters_pop[0:nfevs]))
-            energies[0:nfevs] = calc_energies
-        except (TypeError, ValueError):
+            energies[0:nfevs] = np.squeeze(calc_energies)
+        except (TypeError, ValueError) as e:
             # wrong number of arguments for _mapwrapper
             # or wrong length returned from the mapper
-            raise RuntimeError("The map-like callable must be of the"
-                               " form f(func, iterable), returning a sequence"
-                               " of numbers the same length as 'iterable'")
+            raise RuntimeError(
+                "The map-like callable must be of the form f(func, iterable), "
+                "returning a sequence of numbers the same length as 'iterable'"
+            ) from e
 
         self._nfev += nfevs
 

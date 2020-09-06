@@ -139,7 +139,7 @@ def _kolmogn_DMTW(n, d, cdf=True):
     # q = k-th row of H (actually i!/n^i*H^i)
     intm = np.arange(1, m + 1)
     v = 1.0 - h ** intm
-    w = np.zeros(m)
+    w = np.empty(m)
     fac = 1.0
     for j in intm:
         w[j - 1] = fac
@@ -228,9 +228,9 @@ def _kolmogn_Pomeranz(n, x, cdf=True):
     ceilf = (1 if f > 0 else 0)
     roundf = (1 if f > 0.5 else 0)
     npwrs = 2 * (ll + 1)    # Maximum number of powers needed in convolutions
-    gpower = np.zeros(npwrs)  # gpower = (g/n)^m/m!
-    twogpower = np.zeros(npwrs)  # twogpower = (2g/n)^m/m!
-    onem2gpower = np.zeros(npwrs)  # onem2gpower = ((1-2g)/n)^m/m!
+    gpower = np.empty(npwrs)  # gpower = (g/n)^m/m!
+    twogpower = np.empty(npwrs)  # twogpower = (2g/n)^m/m!
+    onem2gpower = np.empty(npwrs)  # onem2gpower = ((1-2g)/n)^m/m!
     # gpower etc are *almost* Poisson probs, just missing normalizing factor.
 
     gpower[0] = 1.0
@@ -522,7 +522,8 @@ def kolmogn(n, x, cdf=True):
 
     The return value has shape the result of numpy broadcasting n and x.
     """
-    it = np.nditer([n, x, cdf, None], op_dtypes=[None, np.float, np.bool, np.float])
+    it = np.nditer([n, x, cdf, None],
+                   op_dtypes=[None, np.float64, np.bool_, np.float64])
     for _n, _x, _cdf, z in it:
         if np.isnan(_n):
             z[...] = _n

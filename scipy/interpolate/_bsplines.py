@@ -1,4 +1,3 @@
-import functools
 import operator
 
 import numpy as np
@@ -8,16 +7,9 @@ from scipy.linalg import (get_lapack_funcs, LinAlgError,
 from . import _bspl
 from . import _fitpack_impl
 from . import _fitpack as _dierckx
+from scipy._lib._util import prod
 
 __all__ = ["BSpline", "make_interp_spline", "make_lsq_spline"]
-
-
-# copy-paste from interpolate.py
-def prod(x):
-    """Product of a list of numbers; ~40x faster vs np.prod for Python tuples"""
-    if len(x) == 0:
-        return 1
-    return functools.reduce(operator.mul, x)
 
 
 def _get_dtype(dtype):
@@ -606,10 +598,10 @@ def _process_deriv_spec(deriv):
     if deriv is not None:
         try:
             ords, vals = zip(*deriv)
-        except TypeError:
+        except TypeError as e:
             msg = ("Derivatives, `bc_type`, should be specified as a pair of "
                    "iterables of pairs of (order, value).")
-            raise ValueError(msg)
+            raise ValueError(msg) from e
     else:
         ords, vals = [], []
     return np.atleast_1d(ords, vals)
@@ -737,8 +729,8 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
     else:
         try:
             deriv_l, deriv_r = bc_type
-        except TypeError:
-            raise ValueError("Unknown boundary condition: %s" % bc_type)
+        except TypeError as e:
+            raise ValueError("Unknown boundary condition: %s" % bc_type) from e
 
     y = np.asarray(y)
 
