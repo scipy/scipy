@@ -73,7 +73,6 @@ def test_add(n):
         dis2.add(x)
         assert len(dis2) == i + 1
 
-
     assert list(dis1) == list(dis2)
 
 
@@ -91,20 +90,28 @@ def test_element_not_present():
         dis.connected(elements[0], "dummy")
 
 
+@pytest.mark.parametrize("direction", ["forwards", "backwards"])
 @pytest.mark.parametrize("n", [10, 100])
-def test_linear_union_sequence(n):
+def test_linear_union_sequence(n, direction):
     elements = get_elements(n)
     dis = DisjointSet(elements)
+    assert elements == list(dis)
 
-    for i in range(n - 1):
+    indices = list(range(n - 1))
+    if direction == "backwards":
+        indices = indices[::-1]
+
+    for it, i in enumerate(indices):
         assert not dis.connected(elements[i], elements[i + 1])
         assert dis.merge(elements[i], elements[i + 1])
         assert dis.connected(elements[i], elements[i + 1])
-        assert dis.n_subsets == n - 1 - i
+        assert dis.n_subsets == n - 1 - it
 
-    assert elements == list(dis)
     roots = [dis[i] for i in elements]
-    assert all(elements[0] == r for r in roots)
+    if direction == "forwards":
+        assert all(elements[0] == r for r in roots)
+    else:
+        assert all(elements[-2] == r for r in roots)
     assert not dis.merge(elements[0], elements[-1])
 
 
