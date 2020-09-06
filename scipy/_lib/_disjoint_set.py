@@ -74,7 +74,9 @@ class DisjointSet:
         self.n_subsets = 0
         self._sizes = {}
         self._parents = {}
-        # _indices tracks the element insertion order
+        # _indices tracks the element insertion order - OrderedDict is used to
+        # ensure correct ordering in `__iter__` and for tie-breaking in
+        # `merge`.
         self._indices = collections.OrderedDict()
         if elements is not None:
             for x in elements:
@@ -117,7 +119,11 @@ class DisjointSet:
         return x
 
     def add(self, x):
-        """Add element `x` to disjoint set"""
+        """Add element `x` to disjoint set
+        """
+        if x in self._indices:
+            return
+
         self._sizes[x] = 1
         self._parents[x] = x
         self._indices[x] = len(self._indices)
@@ -140,16 +146,16 @@ class DisjointSet:
         merged : bool
             True if `x` and `y` were in disjoint sets, False otherwise.
         """
-        x = self[x]
-        y = self[y]
-        if self._indices[x] == self._indices[y]:
+        xr = self[x]
+        yr = self[y]
+        if self._indices[xr] == self._indices[yr]:
             return False
 
         sizes = self._sizes
-        if (sizes[x], self._indices[y]) < (sizes[y], self._indices[x]):
-            x, y = y, x
-        self._parents[y] = x
-        self._sizes[x] += self._sizes[y]
+        if (sizes[xr], self._indices[yr]) < (sizes[yr], self._indices[xr]):
+            xr, yr = yr, xr
+        self._parents[yr] = xr
+        self._sizes[xr] += self._sizes[yr]
         self.n_subsets -= 1
         return True
 
@@ -166,6 +172,4 @@ class DisjointSet:
         result : bool
             True if `x` and `y` are in the same set, False otherwise.
         """
-        x = self[x]
-        y = self[y]
-        return self._indices[x] == self._indices[y]
+        return self._indices[self[x]] == self._indices[self[y]]

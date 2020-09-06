@@ -69,6 +69,11 @@ def test_add(n):
         dis2.add(x)
         assert len(dis2) == i + 1
 
+        # test idempotency by adding element again
+        dis2.add(x)
+        assert len(dis2) == i + 1
+
+
     assert list(dis1) == list(dis2)
 
 
@@ -99,7 +104,7 @@ def test_linear_union_sequence(n):
 
     assert elements == list(dis)
     roots = [dis[i] for i in elements]
-    assert all([elements[0] == r for r in roots])
+    assert all(elements[0] == r for r in roots)
     assert not dis.merge(elements[0], elements[-1])
 
 
