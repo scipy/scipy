@@ -40,6 +40,7 @@ import re
 import sys
 import hashlib
 import subprocess
+from multiprocessing import cpu_count
 from multiprocessing.dummy import Pool, Lock
 from os.path import dirname, join
 
@@ -246,8 +247,13 @@ def find_process_files(root_dir):
     lock = Lock()
 
     try:
-        num_proc = int(os.environ.get('SCIPY_NUM_CYTHONIZE_JOBS', ''))
+        num_proc = int(os.environ.get('SCIPY_NUM_CYTHONIZE_JOBS', cpu_count()))
         pool = Pool(processes=num_proc)
+    except ImportError as e:
+        # Allow building (single-threaded) on GNU/Hurd, which does not
+        # support semaphores so Pool cannot initialize.
+        pool = type('', (), {'imap_unordered': lambda self, func,
+                iterable: map(func, iterable)})()
     except ValueError:
         pool = Pool()
 
