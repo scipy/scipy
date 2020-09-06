@@ -1,6 +1,7 @@
 from collections import Counter
 
 import numpy as np
+import pytest
 
 from scipy.stats.qmc import Sobol
 
@@ -15,14 +16,20 @@ class TestSobol:
     maxDiff = None
 
     def setUp(self):
-        engine_unscrambled_1d = Sobol(1, scramble=False)
-        self.draws_unscrambled_1d = engine_unscrambled_1d.random(10)
-        engine_unscrambled_3d = Sobol(3, scramble=False)
-        self.draws_unscrambled_3d = engine_unscrambled_3d.random(10)
-        engine_scrambled_1d = Sobol(1, scramble=True, seed=12345)
-        self.draws_scrambled_1d = engine_scrambled_1d.random(10)
-        engine_scrambled_3d = Sobol(3, scramble=True, seed=12345)
-        self.draws_scrambled_3d = engine_scrambled_3d.random(10)
+        with pytest.warns(UserWarning):
+            engine_unscrambled_1d = Sobol(1, scramble=False)
+            self.draws_unscrambled_1d = engine_unscrambled_1d.random(10)
+            engine_unscrambled_3d = Sobol(3, scramble=False)
+            self.draws_unscrambled_3d = engine_unscrambled_3d.random(10)
+            engine_scrambled_1d = Sobol(1, scramble=True, seed=12345)
+            self.draws_scrambled_1d = engine_scrambled_1d.random(10)
+            engine_scrambled_3d = Sobol(3, scramble=True, seed=12345)
+            self.draws_scrambled_3d = engine_scrambled_3d.random(10)
+
+    def test_warning(self):
+        with pytest.warns(UserWarning):
+            engine = Sobol(1)
+            engine.random(10)
 
     def test_raise(self):
         assert_raises(ValueError, Sobol, Sobol.MAXDIM + 1)
@@ -83,12 +90,14 @@ class TestSobol:
         assert_equal(count2, Counter({0.5: 1111}))
         assert_equal(count3, Counter({0.25: 557, 0.75: 554}))
 
+    @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_UnscrambledSobolBounds(self):
         engine = Sobol(1111, scramble=False)
         draws = engine.random(1000)
         assert_(np.all(draws >= 0))
         assert_(np.all(draws <= 1))
 
+    @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_UnscrambledDistributionSobol(self):
         engine = Sobol(1111, scramble=False)
         draws = engine.random(1000)
@@ -139,6 +148,7 @@ class TestSobol:
         draws = np.vstack([engine_unscrambled_3d.random() for i in range(10)])
         assert_array_equal(self.draws_unscrambled_3d, draws)
 
+    @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_ScrambledSobolBounds(self):
         engine = Sobol(100, scramble=True)
         draws = engine.random(1000)
@@ -164,9 +174,10 @@ class TestSobol:
             np.vstack(even_draws),
         )
 
+    @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_ScrambledDistributionSobol(self):
         engine = Sobol(10, scramble=True, seed=12345)
-        draws = engine.random(1000)
+        draws = engine.random(512)
         assert_array_almost_equal(
             np.mean(draws, axis=0), np.repeat(0.5, 10), decimal=2
         )
@@ -177,6 +188,7 @@ class TestSobol:
             np.percentile(draws, 75, axis=0), np.repeat(0.75, 10), decimal=2
         )
 
+    @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_0Dim(self):
         engine = Sobol(0, scramble=False)
         draws = engine.random(5)
@@ -184,14 +196,14 @@ class TestSobol:
 
     def test_discrepancy(self):
         engine_sobol = Sobol(10, scramble=False)
-        sample_sobol = engine_sobol.random(100)
+        sample_sobol = engine_sobol.random(128)
 
         engine_olhs = qmc.OrthogonalLatinHypercube(10)
-        sample_olhs = engine_olhs.random(100)
+        sample_olhs = engine_olhs.random(128)
 
         assert qmc.discrepancy(sample_sobol) < qmc.discrepancy(sample_olhs)
 
         engine_halton = qmc.Halton(10)
-        sample_halton = engine_halton.random(100)
+        sample_halton = engine_halton.random(128)
 
         assert qmc.discrepancy(sample_sobol) < qmc.discrepancy(sample_halton)

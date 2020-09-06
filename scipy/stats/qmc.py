@@ -6,6 +6,7 @@ Define function to generate sample of points in the unit hypercube.
 """
 from abc import ABC, abstractmethod
 import math
+import warnings
 
 import numpy as np
 from scipy.optimize import brute
@@ -201,8 +202,8 @@ def discrepancy(sample, iterative=False, method='CD'):
             ]) / n_samples ** 2
         )
     else:
-        raise ValueError('Method {} is not valid. Options are CD, WD, MD, star'
-                         .format(method))
+        raise ValueError('{} is not a valid method. Options are '
+                         'CD, WD, MD, star.'.format(method))
 
 
 def _update_discrepancy(x_new, sample, initial_disc):
@@ -556,6 +557,13 @@ class Halton(QMCEngine):
     sequence for the first dimension, base-three for its second and base-n for
     its n-dimension.
 
+    .. note::
+
+       The Halton sequence has severe striping artifacts for even modestly
+       large dimensions.  These can be ameliorated by scrambling.  Scrambling
+       also supports replication-based error estimates and extends
+       applicabiltiy to unbounded integrands.
+
     Parameters
     ----------
     dim : int
@@ -566,6 +574,8 @@ class Halton(QMCEngine):
     .. [1] Halton, "On the efficiency of certain quasi-random sequences of
        points in evaluating multi-dimensional integrals", Numerische
        Mathematik, 1960.
+    .. [2] A. B. Owen. "A randomized Halton algorithm in R",
+       arXiv:1706.02808, 2017.
 
     Examples
     --------
@@ -729,6 +739,15 @@ class LatinHypercube(QMCEngine):
     per dimension `dim`. Within this multi-dimensional grid, `n_samples` are
     selected by ensuring there is only one sample per row and column.
 
+    A Latin hypercube sample [1]_ generates ``n`` points in
+    :math:`[0,1)^dim`. Each univariate marginal distribution is stratified,
+    placing exactly one point in :math:`[j/n, (j+1)/n)` for
+    :math:`j=0,1,...,n-1`. They are still applicable when :math:`n << dim`.
+    LHS is extremely effective on integrands that are nearly additive [2]_.
+    LHS on n points never has more variance than plain MC on :math:`n-1`
+    points [3]_. There is a central limit theorem for plain LHS [4]_, but not
+    necessarily for optimized LHS.
+
     Parameters
     ----------
     dim : int
@@ -748,6 +767,12 @@ class LatinHypercube(QMCEngine):
     .. [1] Mckay et al., "A Comparison of Three Methods for Selecting Values
        of Input Variables in the Analysis of Output from a Computer Code",
        Technometrics, 1979.
+    .. [2] M. Stein, "Large sample properties of simulations using Latin
+       hypercube sampling." Technometrics 29, no. 2: 143-151, 1987.
+    .. [3] A. B. Owen, "Monte Carlo variance of scrambled net quadrature."
+       SIAM Journal on Numerical Analysis 34, no. 5: 1884-1910, 1997
+    .. [4]  Loh, W.-L. "On Latin hypercube sampling." The annals of statistics
+       24, no. 5: 2058-2080, 1996.
 
     Examples
     --------
@@ -990,25 +1015,40 @@ class OptimalDesign(QMCEngine):
 class Sobol(QMCEngine):
     """Engine for generating (scrambled) Sobol' sequences.
 
-    Sobol' sequences are low-discrepancy, quasi-random numbers.
+    Sobol' sequences are low-discrepancy, quasi-random numbers. Points
+    can be drawn using two methods:
+
+    * ``random_base2(m)``: safely draw :math:`n=2^m` points. This method
+      guaranty the balance properties of the sequence.
+    * ``random(n_samples)``: draw an arbitrary number of points from the
+      sequence.
 
     .. note::
 
-        Maximum number of dimension is 21201. The sequence uses direction
-        numbers which have been precomputed with search criterion 6 from
-        https://web.maths.unsw.edu.au/~fkuo/sobol/.
+       Sobol' sequences [1]_ provide :math:`n=2^m` low discrepancy points in
+       :math:`[0,1)^dim`. Scrambling them [2]_ makes them suitable for singular
+       integrands, provides a means of error estimation, and can improve their
+       rate of convergence.
+
+       There are many versions of Sobol' sequences depending on their
+       'direction numbers'. This code uses direction numbers from [3]_. Hence,
+       maximum number of dimension is 21201. The direction numbers have been
+       precomputed with search criterion 6 and can be retrieved at
+       https://web.maths.unsw.edu.au/~fkuo/sobol/.
 
     .. warning::
 
-       Sobol' sequence has good properties only when the number of samples
-       is equal to :math:`2^n`, with ``n`` an integer.
+       Sobol' sequences are a quadrature rule and they lose their balance
+       properties if one uses a sample size that is not a power of 2, or skips
+       the first point, or thins the sequence [4]_.
 
-       If one wants to skip points, one should only skip a power of 2 points.
-       But Skipping :math:`2^k` points and using the next :math:`2^n` points
-       will break as soon as :math:`n>k`.
+       If :math:`n=2^m` points are not enough then one should take :math:`2^M`
+       points for :math:`M>m`. When scrambling, the number R of independent
+       replicates does not have to be a power of 2.
 
-       Also, 30 bits are used which means the maximum number of samples is
-       :math:`2^30`. Afterward, the sequence will repeat.
+       Sobol' sequences are generated to some number :math:`B` of bits. Then
+       after :math:`2^B` points have been generated, the sequence will repeat.
+       Currently :math:`B=32`.
 
     Parameters
     ----------
@@ -1046,7 +1086,7 @@ class Sobol(QMCEngine):
 
     >>> from scipy.stats import qmc
     >>> sampler = qmc.Sobol(dim=2, scramble=False)
-    >>> sample = sampler.random(n_samples=8)
+    >>> sample = sampler.random_base2(m=3)
     >>> sample
     array([[0.   , 0.   ],
            [0.5  , 0.5  ],
@@ -1063,11 +1103,12 @@ class Sobol(QMCEngine):
     0.013882107204860938
 
     If some wants to continue an existing design, extra points can be obtained
-    by calling again `random()`. Alternatively, you can skip some points like:
+    by calling again ``random_base2(m)``. Alternatively, you can skip some
+    points like:
 
     >>> sampler.reset()
     >>> sampler.fast_forward(4)
-    >>> sample_continued = sampler.random(n_samples=4)
+    >>> sample_continued = sampler.random_base2(m=2)
     >>> sample_continued
     array([[0.375, 0.375],
            [0.875, 0.875],
@@ -1142,6 +1183,11 @@ class Sobol(QMCEngine):
         sample = np.empty((n_samples, self.dim), dtype=float)
 
         if self.num_generated == 0:
+            # verify n_samples is 2**n
+            if not (n_samples & (n_samples - 1) == 0):
+                warnings.warn("The balance properties of Sobol' points require"
+                              " n_samples to be a power of 2.")
+
             if n_samples == 1:
                 sample = self._first_point
             else:
@@ -1155,6 +1201,37 @@ class Sobol(QMCEngine):
 
         self.num_generated += n_samples
         return sample
+
+    def random_base2(self, m=1):
+        """Draw point(s) from the Sobol' sequence.
+
+        This function draws :math:`n=2^m` points in the parameter space
+        ensuring the balance properties of the sequence.
+
+        Parameters
+        ----------
+        m : int
+            Exponent (power of 2) to calculate the number of samples to
+            generate in the parameter space.
+
+        Returns
+        -------
+        sample : array_like (n_samples, dim)
+            Sobol' sample.
+
+        """
+        n_samples = 2 ** m
+
+        total_n_samples = self.num_generated + n_samples
+        if not (total_n_samples & (total_n_samples - 1) == 0):
+            raise ValueError("The balance properties of Sobol' points require "
+                             "n to be a power of 2. {0} points have been "
+                             "previously generated, then: n={0}+2**{1}={2}. "
+                             "If you still want to do this, the function "
+                             "'Sobol.random()' can be used."
+                             .format(self.num_generated, m, total_n_samples))
+
+        return self.random(n_samples=n_samples)
 
     def reset(self):
         """Reset the engine to base state.
@@ -1220,9 +1297,9 @@ def multinomial_qmc(n_samples, pvals, engine=None, seed=None):
 
     """
     if np.min(pvals) < 0:
-        raise ValueError('Elements of pvals must be non-negative')
+        raise ValueError('Elements of pvals must be non-negative.')
     if not np.isclose(np.sum(pvals), 1):
-        raise ValueError('Elements of pvals must sum to 1')
+        raise ValueError('Elements of pvals must sum to 1.')
 
     if engine is None:
         engine = Sobol(1, scramble=True, seed=seed)
@@ -1236,10 +1313,6 @@ def multinomial_qmc(n_samples, pvals, engine=None, seed=None):
 
 class NormalQMC(QMCEngine):
     """Engine for QMC sampling from a multivariate normal :math:`N(0, I_d)`.
-
-    By default, this implementation uses Box-Muller transformed Sobol' samples
-    following pg. 123 in [1]_. To use the inverse transform instead, set
-    ``inv_transform=True``.
 
     Parameters
     ----------
@@ -1256,11 +1329,6 @@ class NormalQMC(QMCEngine):
         seeded with `seed`.
         If `seed` is already a ``RandomState`` instance, then that
         instance is used.
-
-    References
-    ----------
-    .. [1] G. Pages. Numerical Probability: An Introduction with Applications
-       to Finance. Universitext. Springer International Publishing, 2018.
 
     Examples
     --------
@@ -1323,10 +1391,6 @@ class NormalQMC(QMCEngine):
 class MultivariateNormalQMC(QMCEngine):
     r"""QMC sampling from a multivariate Normal :math:`N(\mu, \Sigma)`.
 
-    By default, this implementation uses Box-Muller transformed Sobol' samples
-    following pg. 123 in [1]_ To use the inverse transform instead, set
-    ``inv_transform=True``.
-
     Parameters
     ----------
     mean: array_like (dim,)
@@ -1345,11 +1409,6 @@ class MultivariateNormalQMC(QMCEngine):
         If `seed` is already a ``RandomState`` instance, then that
         instance is used.
 
-    References
-    ----------
-    .. [1] G. Pages. Numerical Probability: An Introduction with Applications
-       to Finance. Universitext. Springer International Publishing, 2018.
-
     Examples
     --------
     >>> import matplotlib.pyplot as plt
@@ -1361,7 +1420,7 @@ class MultivariateNormalQMC(QMCEngine):
 
     """
 
-    def __init__(self, mean, cov, inv_transform=False, engine=None, seed=None):
+    def __init__(self, mean, cov, inv_transform=True, engine=None, seed=None):
         # check for square/symmetric cov matrix and mean vector has the same d
         mean = np.array(mean, copy=False, ndmin=1)
         cov = np.array(cov, copy=False, ndmin=2)

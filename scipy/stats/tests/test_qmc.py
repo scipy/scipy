@@ -1,5 +1,6 @@
 import copy
 import numpy as np
+import pytest
 from numpy.testing import (assert_allclose, assert_almost_equal, assert_,
                            assert_equal, assert_array_almost_equal,
                            assert_array_equal)
@@ -235,6 +236,7 @@ class TestMultinomialQMC:
         p = np.array([0.12, 0.26, 0.1, 0.35, 0.22])
         assert_raises(ValueError, qmc.multinomial_qmc, 10, p)
 
+    @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_MultinomialBasicDraw(self):
         p = np.array([0.12, 0.26, 0.05, 0.35, 0.22])
         expected = np.array([12, 25, 6, 35, 22])
@@ -242,7 +244,7 @@ class TestMultinomialQMC:
 
     def test_MultinomialDistribution(self):
         p = np.array([0.12, 0.26, 0.05, 0.35, 0.22])
-        draws = qmc.multinomial_qmc(10000, p, seed=12345)
+        draws = qmc.multinomial_qmc(8192, p, seed=12345)
         assert_array_almost_equal(draws / np.sum(draws), p, decimal=4)
 
     def test_FindIndex(self):
@@ -254,6 +256,7 @@ class TestMultinomialQMC:
         assert_equal(_test_find_index(p_cumulative, size, 0.45001), 3)
         assert_equal(_test_find_index(p_cumulative, size, 1.0), size - 1)
 
+    @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_other_engine(self):
         # same as test_MultinomialBasicDraw with different engine
         p = np.array([0.12, 0.26, 0.05, 0.35, 0.22])
@@ -445,7 +448,8 @@ class TestMultivariateNormalQMC:
         np.random.seed(54321)
         a = np.random.randn(2, 2)
         A = a @ a.transpose() + np.diag(np.random.rand(2))
-        engine = qmc.MultivariateNormalQMC(np.array([0, 0]), A, seed=12345)
+        engine = qmc.MultivariateNormalQMC(np.array([0, 0]), A,
+                                           inv_transform=False, seed=12345)
         samples = engine.random(n_samples=2)
         samples_expected = np.array(
             [[-1.010703, -0.324223], [-0.67595995, -2.27437872]]
@@ -456,7 +460,8 @@ class TestMultivariateNormalQMC:
         np.random.seed(54321)
         a = np.random.randn(3, 3)
         A = a @ a.transpose() + np.diag(np.random.rand(3))
-        engine = qmc.MultivariateNormalQMC(np.array([0, 0, 0]), A, seed=12345)
+        engine = qmc.MultivariateNormalQMC(np.array([0, 0, 0]), A,
+                                           inv_transform=False, seed=12345)
         samples = engine.random(n_samples=2)
         samples_expected = np.array(
             [
