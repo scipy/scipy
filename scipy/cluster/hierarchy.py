@@ -141,12 +141,12 @@ _LINKAGE_METHODS = {'single': 0, 'complete': 1, 'average': 2, 'centroid': 3,
                     'median': 4, 'ward': 5, 'weighted': 6}
 _EUCLIDEAN_METHODS = ('centroid', 'median', 'ward')
 
-__all__ = ['ClusterNode', 'DisjointSet', 'average', 'centroid', 'complete', 'cophenet',
-           'correspond', 'cut_tree', 'dendrogram', 'fcluster', 'fclusterdata',
-           'from_mlab_linkage', 'inconsistent', 'is_isomorphic',
-           'is_monotonic', 'is_valid_im', 'is_valid_linkage', 'leaders',
-           'leaves_list', 'linkage', 'maxRstat', 'maxdists', 'maxinconsts',
-           'median', 'num_obs_linkage', 'optimal_leaf_ordering',
+__all__ = ['ClusterNode', 'DisjointSet', 'average', 'centroid', 'complete',
+           'cophenet', 'correspond', 'cut_tree', 'dendrogram', 'fcluster',
+           'fclusterdata', 'from_mlab_linkage', 'inconsistent',
+           'is_isomorphic', 'is_monotonic', 'is_valid_im', 'is_valid_linkage',
+           'leaders', 'leaves_list', 'linkage', 'maxRstat', 'maxdists',
+           'maxinconsts', 'median', 'num_obs_linkage', 'optimal_leaf_ordering',
            'set_link_color_palette', 'single', 'to_mlab_linkage', 'to_tree',
            'ward', 'weighted', 'distance']
 
