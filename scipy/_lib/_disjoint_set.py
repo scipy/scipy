@@ -75,8 +75,7 @@ class DisjointSet:
         self._sizes = {}
         self._parents = {}
         # _indices tracks the element insertion order - OrderedDict is used to
-        # ensure correct ordering in `__iter__` and for tie-breaking in
-        # `merge`.
+        # ensure correct ordering in `__iter__`.
         self._indices = collections.OrderedDict()
         if elements is not None:
             for x in elements:
