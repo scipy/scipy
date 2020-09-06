@@ -1,71 +1,53 @@
-"""
-Polyalgorithm functions for scipy.linalg.solve()
-
-Solving linear system equations are central to the numerical linear algebra
-routines. And thus, any performance benefit introduced by the solver directly
-impacts upstream code elsewhere. The established convention to solve systems
-with unknown structure is to perform gradually more expensive checks and branch
-off to the structured solvers if possible, finally fallback to generic solvers
-if no structure is found. This type of "if-this-use-that" algorithms are called
-polyalgorithms. Many numerical algebra tools already use this type of branching
-(matlab's backslash operator possibly being the most well-known). It might be
-counter-intuitive to waste time on such checks at first, however, it has to be
-noted that linear solvers often have O(n**3) complexity. Many checks we
-perform are of O(n**2) hence the worst case, "no structure after all checks",
-doesn't suffer a huge delay, in turn if structure is found, significant speed
-benefits are obtained.
-
-Here, Cythonized versions of these checks and branching logic is provided;
-since we use BLAS/LAPACK backend, the arrays have to be prepared strictly to
-have only single/double precision dtypes and Fortran-contiguous (column-major)
-memory layout to be used in LAPACK calls. Thus the entrance of the solve(A, b)
-regularizes the inputs and make copies if not possible. If the datatype is
-matched, C-contiguous arrays are transposed and used without any copies.
-
-Next, we start checking the bandwidth of the arrays looping over rows/columns.
-If a particular form is detected, then checks stop and relevant solver is used.
-If no triangular form is discovered then symmetry/hermitian properties are
-checked. If further obvious properties are satisfied (diagonal entries of a
-sign-definite matrix should have the same sign and be nonzero) then Cholesky
-factorization is tested. Depending on the result relevant solvers are used.
-It should be noted that even though Cholesky factorization is comparable to
-other solvers in time-complexity, it often fails very quickly in practice and
-the worst-case scenarios hardly ever encountered and in fact require special
-matrix constructions.
-
-If no structure is detected, standard generic linsolve routines are used.
-"""
-
+# cython: language_level=3
 cimport cython
-from libc.stdlib cimport abs
 cimport numpy as cnp
+import numpy as np
+from cython cimport view
+from warnings import warn
+from libc.stdlib cimport malloc, free
+from libc.math cimport isfinite
+from scipy.linalg import LinAlgError, LinAlgWarning
+from scipy.linalg.cython_lapack cimport (slamch, dlamch,
+                                         sgetrf, dgetrf, cgetrf, zgetrf,
+                                         sgetrs, dgetrs, cgetrs, zgetrs,
+                                         sgecon, dgecon, cgecon, zgecon,
+                                         strtrs, dtrtrs, ctrtrs, ztrtrs,
+                                         slange, dlange, clange, zlange,
+                                         strcon, dtrcon, ctrcon, ztrcon,
+                                         spotrf, dpotrf, cpotrf, zpotrf
+                                        )
 
-ctypedef fused valid_type_t:
-    cnp.float32
-    cnp.float64
-    cnp.complex
-
+__all__ = ['get_lapack_flavor', 'array_is_finite', 'find_array_structure',
+           'lusolve', 'diagsolve', 'trisolve', 'bidiagsolve']
 
 ctypedef fused lapack_t:
     float
     double
-    float complex
-    double complex
+    (float complex)
+    (double complex)
 
 ctypedef fused lapack_cz_t:
-    float complex
-    double complex
+    (float complex)
+    (double complex)
 
 ctypedef fused lapack_sd_t:
     float
     double
 
-ctypedef (int, int) (*f_tri_ptr)(lapack_t[:, ::1])
-ctypedef (bint, bint) (*f_sym_ptr)(lapack_t[:, ::1])
-ctypedef int (*f_posdiag_ptr)(lapack_t[:, ::1])
+ctypedef fused lapack_f_t:
+    float
+    (float complex)
+ctypedef fused lapack_d_t:
+    double
+    (double complex)
 
-# The numpy facilities for type casting checks are too slow for small-sized
-# arrays and eats away the time-budget for the checkups. Here we provide a
+ctypedef (int, int) (*f_tri_ptr)(lapack_t[:, ::1]) nogil
+ctypedef (bint, bint) (*f_sym_ptr)(lapack_t[:, ::1]) nogil
+ctypedef int (*f_posdiag_ptr)(lapack_t[:, ::1]) nogil
+
+
+# The numpy facilities for type-casting checks are too slow for small sized
+# arrays and eats away the time budget for the checkups. Here we provide a
 # precomputed version of the numpy.can_cast() table.
 
 # output of np.typecodes['All']
@@ -97,28 +79,20 @@ casting_table = np.array([[1, 1, 1, 1],  # ?
                           [0, 0, 0, 0],  # V
                           [0, 0, 0, 0],  # O
                           [0, 0, 0, 0],  # M
-                          [0, 0, 0, 0]], # m
+                          [0, 0, 0, 0]],  # m
                          dtype=bool)
 
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
 @cython.nonecheck(False)
-cpdef inline int get_lapack_flavor(
-    str a,
-    str b,
-    str K = casting_key,
-    const cnp.npy_bool[:, ::1]C = casting_table
-    ):
-    """
-    Given dtype characters, this function finds the smallest LAPACK compatible
-    dtype index (counted for "s", "d", "c", "z"). If not found, returns -1.
-    """
-    cdef size_t ind
+cpdef int get_lapack_flavor(str a, str b, str K = casting_key,
+                            const cnp.npy_bool[:, ::1]C = casting_table):
+    cdef int ind
     cdef size_t rowa = K.find(a)
     cdef size_t rowb = K.find(b)
     if rowa == -1 or rowb == -1:
-        raise TypeError('Unknown data type for linalg.solve()')
+        raise TypeError('Data type is not known to NumPy.')
 
     for ind in range(4):
         if C[rowa, ind] and C[rowb, ind]:
@@ -129,9 +103,51 @@ cpdef inline int get_lapack_flavor(
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef inline (int, int) _is_tri_c(lapack_t[:, ::1]A) nogil:
+@cython.nonecheck(False)
+cpdef bint array_is_finite(lapack_t[:, ::1]A) nogil:
     """
-    Computes the lower and the upper bandwidth of a square
+    Runs over the array and checks for infs and nans. Compared
+    to asarray_chkfinite the performance gets better as the
+    array size increases. Starting from n=3 it is ~x2 faster
+    for finite arrays and faster if array has inf/nan due to
+    early exit capability.
+    """
+    cdef int n = <int>A.shape[0]
+    cdef int r, c
+    cdef lapack_t entry
+    if lapack_t in lapack_cz_t:
+        for r in xrange(n):
+            for c in xrange(n):
+                entry = A[r, c]
+                if not(isfinite(entry.real) and isfinite(entry.imag)):
+                    return False
+    else:
+        for r in xrange(n):
+            for c in xrange(n):
+                if (not isfinite(A[r, c])):
+                    return False
+    return True
+
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cdef inline bint _ones_on_diagonal(lapack_t[:, ::1] a) nogil:
+    cdef size_t n = len(a)
+    cdef int k
+    cdef lapack_t one = 1.0
+
+    for k in range(n):
+        if a[k, k] != one:
+            return False
+
+    return True
+
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cdef (int, int) _is_tri_c(lapack_t[:, ::1]A) nogil:
+    """
+    Computes the lower and the upper band width of a square
     matrix. If both bands are zero, it's diagonal, if either
     is zero then lower/upper triangular etc. If all entries
     are full then for nxn matrix the result is (n-1, n-1).
@@ -139,24 +155,24 @@ cdef inline (int, int) _is_tri_c(lapack_t[:, ::1]A) nogil:
     This is the row-major layout version (C-contiguous).
     """
     cdef size_t n = A.shape[0]
-    cdef int r, c, c_nnz, lower_band, upper_band
+    cdef int r, c, lower_band, upper_band
     lower_band = 0
     upper_band = 0
     for r in xrange(n):
         for c in xrange(n):
-            if (A[r, c] != 0) and abs(r - c) > lower_band:
-                # Only bother if outside the existing band:
-                if (r > c):
-                    lower_band = r-c
-                else:
-                    upper_band = c-r
+            # Only bother if outside the existing band:
+            if (A[r, c] != 0.):
+                if r > c and (r - c) > lower_band:
+                    lower_band = r - c
+                elif r < c and (c - r) > upper_band:
+                    upper_band = c - r
 
     return lower_band, upper_band
 
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef inline (bint, bint) _is_sym_her_c(lapack_t[:, ::1]A) nogil:
+cdef (bint, bint) _is_sym_her_c(lapack_t[:, ::1]A) nogil:
     """
     Checks for the symmetry or Hermitianness for a square matrix.
     For reals it doesn't matter however for complex matrices,
@@ -201,12 +217,7 @@ cdef inline (bint, bint) _is_sym_her_c(lapack_t[:, ::1]A) nogil:
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef inline int _is_posdef_diag_c(lapack_t[:, ::1]A) nogil:
-    """
-    One of the easy checks for positive/negative definiteness is that the
-    diagonal should all be +/-. Here we check the sign of the first element
-    and then compare with the rest and early exit if not.
-    """
+cdef int _is_posdef_diag_c(lapack_t[:, ::1]A) nogil:
     cdef size_t n = A.shape[0]
     cdef int d
     cdef bint pos
@@ -234,39 +245,25 @@ cdef inline int _is_posdef_diag_c(lapack_t[:, ::1]A) nogil:
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cpdef (int, int) _check_for_structure_c(lapack_t[:, ::1]A):
+cpdef (int, int) find_array_structure(lapack_t[:, ::1]A) nogil:
     """
     Returns (family, member) structure information given a square C-contiguous
     array.
 
     Family
     ------
-    0 : generic - no structure found
-        0: dummy member
-    1 : Triangular
-        0: diagonal
-        1: lower
-        2: upper
-        3: lower bidiagonal
-        4: upper bidiagonal
-    2 : Hessenberg
-        0: lower
-        1: upper
-        2: tridiagonal
-    3 : Hermitian
-        0: non-positive definite
-        1: maybe positive definite (survived the simple checks)
-        2: maybe negative definite (survived the simple checks)
-    4 : complex symmetric
-        0: dummy member
-
+    0 : no structure found (0: dummy member)
+    1 : triangular (0: diagonal, 1: lower, 2: upper, 3: lower bi, 4: upper bi)
+    2 : hessenberg (0: lower, 1: upper, 2: tridiag,)
+    3 : hermitian (0: non-posdef, 1: maybe posdef, 2: maybe negdef)
+    4 : complex symmetric (0: dummy member)
 
     """
     cdef int lb, ub
+    cdef bint her, sym
     cdef f_tri_ptr tri_bands
     cdef f_sym_ptr sym_check
     cdef f_posdiag_ptr posdiag_check
-
     # Function pointers
     tri_bands = &_is_tri_c[lapack_t]
     sym_check = &_is_sym_her_c[lapack_t]
@@ -274,6 +271,7 @@ cpdef (int, int) _check_for_structure_c(lapack_t[:, ::1]A):
 
     # Triangular/Hess family
     lb, ub = tri_bands(A)
+
     if lb == 0 and ub == 0:
         return 1, 0  # diagonal
     elif lb == 0:
@@ -297,6 +295,7 @@ cpdef (int, int) _check_for_structure_c(lapack_t[:, ::1]A):
     # Sym/Her/PosDef family
     her, sym = sym_check(A)
     if her:
+        # Note: realness of the diagonal is already checked
         return 3, posdiag_check(A)
     if sym:
         return 4, 0
@@ -304,44 +303,519 @@ cpdef (int, int) _check_for_structure_c(lapack_t[:, ::1]A):
     # No known structure return generic
     return 0, 0
 
+
+# ########################
+# internal ge functions
+# ########################
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef int _check_cholesky_success_c(lapack_t[:, ::1]a):
-    """
-    When solving a hermitian linear system, attempting
-    to factorize a square matrix often fails quite quickly
-    hence the penalty is negligible if the array is not
-    pos/neg definite and the benefit is noteworthy if it succeeds.
+@cython.nonecheck(False)
+cdef int lusolve_s(char* trans, char* norm, int* n, int* nrhs, int* info,
+                   float* a, float* b) nogil except -1:
+    cdef int row = n[0]
+    cdef float* work = <float *> malloc(4*row*sizeof(float))
+    cdef int* ipiv = <int *> malloc(row * sizeof(int))
+    cdef float anorm
+    cdef float rcond = 0.0
+    cdef int step = 0
+    if not work or not ipiv:
+        raise MemoryError("Internal array allocation failed.")
 
-    Here we try to chol-factorize a hermitian matrix.
-    LAPACK ?poXXX routines use one of the hermitian sides
-    of the array including the diagonal. Here we use one
-    side for this experiment (if succeeds we keep using
-    that side). If fails we restore the diagonal and use
-    the other side for later usage. Requires extra linear
-    memory access and storage for the diagonal.
+    anorm = slange(norm, n, n, a, n, work);
+    sgetrf(n, n, a, n, ipiv, info)
+    if info[0] != 0:
+        free(ipiv)
+        free(work)
+        if info[0] > 0:
+            raise LinAlgError('Matrix is singular')
+        if info[0] < 0:
+            raise LinAlgError('LAPACK routine sgetrf reported an illegal'
+                             ' value in {}-th argument.'.format(-info[0]))
 
-    We use the lower side for the experiment and upper for
-    the failure. Note that the LAPACK functions use Fortran
-    layout.
+    sgetrs(trans, n, nrhs, a, n, ipiv, b, n, info)
+    if info[0] != 0:
+        free(ipiv)
+        free(work)
+        raise LinAlgError('LAPACK routine sgetrs reported an illegal'
+                          ' value in {}-th argument.'.format(-info[0]))
+
+    # Recycle ipiv as iwork
+    sgecon(norm, n, a, n, &anorm, &rcond, work, ipiv, info);
+    free(ipiv)
+    free(work)
+
+    if info[0] != 0:
+        raise LinAlgError('LAPACK routine sgecon reported an illegal'
+                          ' value in {}-th argument.'.format(-info[0]))
+
+    # recycle anorm for eps
+    anorm = slamch('E')
+
+    if rcond < anorm:  # rcond < eps
+        with gil:
+            warn('Ill-conditioned matrix (rcond={:.6g}): '
+                 'result may not be accurate.'.format(rcond),
+                 LinAlgWarning)
+
+    return 0
+
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+@cython.nonecheck(False)
+cdef int lusolve_d(char* trans, char* norm, int* n, int* nrhs, int* info,
+                   double* a, double* b) nogil except -1:
+    cdef int row = n[0]
+    cdef double* work = <double *> malloc(4*row*sizeof(double))
+    cdef int* ipiv = <int *> malloc(row * sizeof(int))
+    cdef double anorm
+    cdef double rcond = 0.0
+    cdef int step = 0
+    if not work or not ipiv:
+        raise MemoryError("Internal array allocation failed.")
+
+    anorm = dlange(norm, n, n, a, n, work);
+    dgetrf(n, n, a, n, ipiv, info)
+    if info[0] != 0:
+        free(ipiv)
+        free(work)
+        if info[0] > 0:
+            raise LinAlgError('Matrix is singular')
+        if info[0] < 0:
+            raise LinAlgError('LAPACK routine dgetrf reported an illegal'
+                             ' value in {}-th argument.'.format(-info[0]))
+
+    dgetrs(trans, n, nrhs, a, n, ipiv, b, n, info)
+    if info[0] != 0:
+        free(ipiv)
+        free(work)
+        raise LinAlgError('LAPACK routine dgetrs reported an illegal'
+                          ' value in {}-th argument.'.format(-info[0]))
+
+    # Recycle ipiv as iwork
+    dgecon(norm, n, a, n, &anorm, &rcond, work, ipiv, info);
+    free(ipiv)
+    free(work)
+
+    if info[0] != 0:
+        raise LinAlgError('LAPACK routine dgecon reported an illegal'
+                          ' value in {}-th argument.'.format(-info[0]))
+
+    # recycle anorm for eps
+    anorm = dlamch('E')
+
+    if rcond < anorm:  # rcond < eps
+        with gil:
+            warn('Ill-conditioned matrix (rcond={:.6g}): '
+                 'result may not be accurate.'.format(rcond),
+                 LinAlgWarning)
+
+    return 0
+
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+@cython.nonecheck(False)
+cdef int lusolve_c(char* trans, char* norm, int* n, int* nrhs, int* info,
+                   (float complex*) a, (float complex*) b) nogil except -1:
+    cdef int row = n[0]
+    cdef float* work = <float *> malloc(2*row*sizeof(float))
+    cdef float complex* cwork = <float complex*> malloc(2*row*sizeof(float complex))
+    cdef int* ipiv = <int *> malloc(row * sizeof(int))
+    cdef float anorm
+    cdef float rcond = 0.0
+    if not work or not ipiv or not cwork:
+        with gil:
+            raise MemoryError("Internal array allocation failed.")
+
+    anorm = clange(norm, n, n, a, n, work);
+    cgetrf(n, n, a, n, ipiv, info)
+    if info[0] != 0:
+        free(ipiv)
+        free(work)
+        free(cwork)
+        if info[0] > 0:
+            raise LinAlgError('Matrix is singular')
+        if info[0] < 0:
+            raise LinAlgError('LAPACK routine cgetrf reported an illegal'
+                             ' value in {}-th argument.'.format(-info[0]))
+
+    cgetrs(trans, n, nrhs, a, n, ipiv, b, n, info)
+    free(ipiv)  # We are done with it anyways
+
+    if info[0] != 0:
+        free(work)
+        free(cwork)
+        raise LinAlgError('LAPACK routine cgetrs reported an illegal'
+                          ' value in {}-th argument.'.format(-info[0]))
+
+    cgecon(norm, n, a, n, &anorm, &rcond, cwork, work, info);
+    free(work)
+    free(cwork)
+
+    if info[0] != 0:
+        raise LinAlgError('LAPACK routine cgecon reported an illegal'
+                          ' value in {}-th argument.'.format(-info[0]))
+
+    # recycle anorm for eps
+    anorm = slamch('E')
+
+    if rcond < anorm:  # rcond < eps
+        with gil:
+            warn('Ill-conditioned matrix (rcond={:.6g}): '
+                 'result may not be accurate.'.format(rcond),
+                 LinAlgWarning)
+
+    return 0
+
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+@cython.nonecheck(False)
+cdef int lusolve_z(char* trans, char* norm, int* n, int* nrhs, int* info,
+                   (double complex*) a, (double complex*) b) nogil except -1:
+
+    cdef int row = n[0]
+    cdef double* work = <double *> malloc(2*row*sizeof(double))
+    cdef double complex* cwork = <double complex*> malloc(2*row*sizeof(double complex))
+    cdef int* ipiv = <int *> malloc(row * sizeof(int))
+    cdef double anorm
+    cdef double rcond = 0.0
+    cdef int step = 0
+    if not work or not ipiv or not cwork:
+        with gil:
+            raise MemoryError("Internal array allocation failed.")
+
+    anorm = zlange(norm, n, n, a, n, work);
+    zgetrf(n, n, a, n, ipiv, info)
+    if info[0] != 0:
+        free(ipiv)
+        free(work)
+        free(cwork)
+        if info[0] > 0:
+            raise LinAlgError('Matrix is singular')
+        if info[0] < 0:
+            raise LinAlgError('LAPACK routine zgetrf reported an illegal'
+                             ' value in {}-th argument.'.format(-info[0]))
+
+    zgetrs(trans, n, nrhs, a, n, ipiv, b, n, info)
+    free(ipiv)  # We are done with it anyways
+
+    if info[0] != 0:
+        free(work)
+        free(cwork)
+        raise LinAlgError('LAPACK routine zgetrs reported an illegal'
+                          ' value in {}-th argument.'.format(-info[0]))
+
+    zgecon(norm, n, a, n, &anorm, &rcond, cwork, work, info);
+    free(work)
+    free(cwork)
+
+    if info[0] != 0:
+        raise LinAlgError('LAPACK routine zgecon reported an illegal'
+                          ' value in {}-th argument.'.format(-info[0]))
+
+    # recycle anorm for eps
+    anorm = dlamch('E')
+
+    if rcond < anorm:  # rcond < eps
+        with gil:
+            warn('Ill-conditioned matrix (rcond={:.6g}): '
+                 'result may not be accurate.'.format(rcond),
+                 LinAlgWarning)
+
+    return 0
+
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+@cython.nonecheck(False)
+cpdef inline int lusolve(lapack_t[:, ::1] a,
+                         lapack_t[::1, :]b,
+                         bint a_is_c) nogil except -1:
     """
-    cdef int info
-    cdef char* uplo = 'U'
+    LU solution is a straightforward call to two LAPACK
+    routines first ?getrf and then ?getrs. Here to detect the
+    ill-conditioned problems we squeeze a ?gecon call after
+    getrf.
+
+    Since A is in row-major order, we factorize A.T and use
+    transposed version in getrs depending is a_is_c array or not.
+    """
+    cdef char* trans = 'T' if a_is_c else 'N'
+    cdef char* norm = '1' if a_is_c else 'I'
+    cdef int info, res
     cdef int n = <int>a.shape[0]
+    cdef int nrhs = <int>b.shape[1]
 
     if lapack_t is float:
-        spotrf(uplo, &n, &a[0, 0], &n, &info)
+        res = lusolve_s(trans, norm, &n, &nrhs, &info, &a[0, 0], &b[0, 0])
     elif lapack_t is double:
-        dpotrf(uplo, &n, &a[0, 0], &n, &info)
-    elif lapack_t is float_complex:
-        cpotrf(uplo, &n, &a[0, 0], &n, &info)
+        res = lusolve_d(trans, norm, &n, &nrhs, &info, &a[0, 0], &b[0, 0])
+    elif lapack_t is floatcomplex:
+        res = lusolve_c(trans, norm, &n, &nrhs, &info, &a[0, 0], &b[0, 0])
     else:
-        zpotrf(uplo, &n, &a[0, 0], &n, &info)
+        res = lusolve_z(trans, norm, &n, &nrhs, &info, &a[0, 0], &b[0, 0])
 
-    return info
-
-
+    return res
 
 
+# ########################
+# internal diag function
+# ########################
+# Just a regular python func.
+# Not optimized for its simple functionality
+# TODO: optimize
+def diagsolve(a, b):
+    if any(a == 0.):
+        raise LinAlgError("Matrix is singular")
+
+    diags_abs = np.abs(a)
+    diags_min = diags_abs.min()
+    if diags_min == 0.:
+        raise LinAlgError("Matrix is singular")
+    rcond = diags_min/diags_abs.max()
+    b /= a[:, None]
+
+    if rcond <  np.finfo(a.dtype).eps:
+        warn('Ill-conditioned matrix (rcond={:.6g}): '
+              'result may not be accurate.'.format(rcond),
+              LinAlgWarning)
+
+    return b
 
 
+# ########################
+# internal tr functions
+# ########################
+@cython.boundscheck(False)
+@cython.wraparound(False)
+@cython.nonecheck(False)
+cdef int trisolve_s(char* norm, char* uplo, char* diag, char* transa,
+                    int* n, int* nrhs, float* a, float* b) nogil except -1:
+    cdef char* side = 'L'  # No XA = B for now
+    cdef int row = n[0]
+    cdef int info
+    cdef float* work = <float *> malloc(3*row*sizeof(float))
+    cdef int* iwork = <int *> malloc(row * sizeof(int))
+    cdef float eps = slamch('E')
+    cdef float rcond = 0.0
+
+    if not work or not iwork:
+        raise MemoryError("Internal array allocation failed.")
+
+    strcon(norm, uplo, diag, n, a, n, &rcond, work, iwork, &info)
+    free(work)
+    free(iwork)
+    if info < 0:
+        raise LinAlgError('LAPACK routine strcon reported an illegal'
+                          ' value in {}-th argument.'.format(-info))
+    if rcond < eps:
+        with gil:
+            warn('Ill-conditioned matrix (rcond={:.6g}): result may not be '
+                 'accurate.'.format(rcond), LinAlgWarning)
+
+    strtrs(uplo, transa, diag, n, nrhs, a, n, b, n, &info)
+    if info < 0:
+        raise LinAlgError('LAPACK routine strtrs reported an illegal'
+                          ' value in {}-th argument.'.format(-info))
+    if info > 0:
+        raise LinAlgError('Matrix is singular')
+
+    return 0
+
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+@cython.nonecheck(False)
+cdef int trisolve_d(char* norm, char* uplo, char* diag, char* transa,
+                    int* n, int* nrhs, double* a, double* b) nogil except -1:
+    cdef char* side = 'L'  # No XA = B for now
+    cdef int row = n[0]
+    cdef int info
+    cdef double* work = <double *> malloc(3*row*sizeof(double))
+    cdef int* iwork = <int *> malloc(row*sizeof(int))
+    cdef double eps = dlamch('E')
+    cdef double rcond = 0.0
+
+    if not work or not iwork:
+        raise MemoryError("Internal array allocation failed.")
+
+    dtrcon(norm, uplo, diag, n, a, n, &rcond, work, iwork, &info)
+    free(work)
+    free(iwork)
+    if info < 0:
+        raise LinAlgError('LAPACK routine dtrcon reported an illegal'
+                          ' value in {}-th argument.'.format(-info))
+    if rcond < eps:
+        with gil:
+            warn('Ill-conditioned matrix (rcond={:.6g}): result may not be '
+                 'accurate.'.format(rcond), LinAlgWarning)
+
+    dtrtrs(uplo, transa, diag, n, nrhs, a, n, b, n, &info)
+    if info < 0:
+        raise LinAlgError('LAPACK routine dtrtrs reported an illegal'
+                          ' value in {}-th argument.'.format(-info))
+    if info > 0:
+        raise LinAlgError('Matrix is singular')
+
+    return 0
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+@cython.nonecheck(False)
+cdef int trisolve_c(char* norm, char* uplo, char* diag, char* transa, int* n,
+                    int* nrhs,
+                    (float complex)* a, (float complex)* b) nogil except -1:
+
+    cdef char* side = 'L'  # No XA = B for now
+    cdef int row = n[0]
+    cdef int info
+    cdef float complex* work = <float complex *> malloc(2*row*sizeof(float complex))
+    cdef float* rwork = <float *> malloc(row * sizeof(float))
+    cdef float eps = slamch('E')
+    cdef float rcond = 0.0
+
+    if not work or not rwork:
+        raise MemoryError("Internal array allocation failed.")
+
+    ctrcon(norm, uplo, diag, n, a, n, &rcond, work, rwork, &info)
+    free(work)
+    free(rwork)
+    if info < 0:
+        raise LinAlgError('LAPACK routine ctrcon reported an illegal'
+                          ' value in {}-th argument.'.format(-info))
+    if rcond < eps:
+        with gil:
+            warn('Ill-conditioned matrix (rcond={:.6g}): result may not be '
+                 'accurate.'.format(rcond), LinAlgWarning)
+
+    ctrtrs(uplo, transa, diag, n, nrhs, a, n, b, n, &info)
+    if info < 0:
+        raise LinAlgError('LAPACK routine ctrtrs reported an illegal'
+                          ' value in {}-th argument.'.format(-info))
+    if info > 0:
+        raise LinAlgError('Matrix is singular')
+    return 0
+
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+@cython.nonecheck(False)
+cdef int trisolve_z(char* norm, char* uplo, char* diag, char* transa,
+                    int* n, int* nrhs,
+                    (double complex)* a, (double complex)* b) nogil except -1:
+
+    cdef char* side = 'L'  # No XA = B for now
+    cdef int row = n[0]
+    cdef int info
+    cdef double complex* work = <double complex *> malloc(2*row*sizeof(double complex))
+    cdef double* rwork = <double *> malloc(row * sizeof(double))
+    cdef double eps = dlamch('E')
+    cdef double rcond = 0.0
+
+    if not work or not rwork:
+        raise MemoryError("Internal array allocation failed.")
+
+    ztrcon(norm, uplo, diag, n, a, n, &rcond, work, rwork, &info)
+    free(work)
+    free(rwork)
+    if info < 0:
+        raise LinAlgError('LAPACK routine ztrcon reported an illegal'
+                          ' value in {}-th argument.'.format(-info))
+    if rcond < eps:
+        with gil:
+            warn('Ill-conditioned matrix (rcond={:.6g}): result may not be '
+                 'accurate.'.format(rcond), LinAlgWarning)
+
+    ztrtrs(uplo, transa, diag, n, nrhs, a, n, b, n, &info)
+    if info < 0:
+        raise LinAlgError('LAPACK routine ztrtrs reported an illegal'
+                          ' value in {}-th argument.'.format(-info))
+    if info > 0:
+        raise LinAlgError('Matrix is singular')
+
+    return 0
+
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+@cython.nonecheck(False)
+cpdef int trisolve(lapack_t[:, ::1] a, lapack_t[::1, :]b, bint a_is_c,
+                   bint lower, bint transposed) nogil except -1:
+    """
+    TR solution is a straightforward call to ?trtrs routines.
+
+    For the array transposition and upper/lower triangular side, truth table
+
+                                   a_is_c
+                              | True | False
+                        ------|------|------
+                        True  |  'U' |  'L'
+                  lower ------|------|-------
+                        False |  'L' |  'U'
+    """
+    cdef char* trans_r = 'T' if transposed else 'N'
+    cdef char* trans_c = 'C' if transposed else 'N'
+    cdef char* norm = '1' if a_is_c else 'I'
+    cdef char* uplo = 'L' if (a_is_c ^ lower) else 'U'
+    cdef char* diag = 'U' if _ones_on_diagonal(a) else 'N'
+    cdef int res
+    cdef int n = <int>a.shape[0]
+    cdef int nrhs = <int>b.shape[1]
+
+    if lapack_t is float:
+        res = trisolve_s(norm, uplo, diag, trans_r, &n, &nrhs, &a[0, 0], &b[0, 0])
+    elif lapack_t is double:
+        res = trisolve_d(norm, uplo, diag, trans_r, &n, &nrhs, &a[0, 0], &b[0, 0])
+    elif lapack_t is floatcomplex:
+        res = trisolve_c(norm, uplo, diag, trans_c, &n, &nrhs, &a[0, 0], &b[0, 0])
+    else:
+        res = trisolve_z(norm, uplo, diag, trans_c, &n, &nrhs, &a[0, 0], &b[0, 0])
+
+    return res
+
+
+# ###########################
+# internal bidiag functions
+# ###########################
+@cython.boundscheck(False)
+@cython.wraparound(False)
+@cython.nonecheck(False)
+@cython.cdivision(True)
+cpdef int bidiagsolve(lapack_t[::1] d,
+                      lapack_t[::1] u,
+                      lapack_t[::1, :] b,
+                      bint lower) nogil except -1:
+    """
+    Only the diagonal and the sub/sup diagonal is passed. Substitution
+    direction is controlled via the bool.
+
+    b is in column major format so goes through the columns unlike every other
+    textbook implementation.
+    """
+    # TODO: This might not be the optimal way to do it via memoryviews;
+    # gather feedback and optimize. But it is already O(n) so would not
+    # return huge benefits other than decreasing the constant.
+
+    cdef int n = <int>b.shape[0]
+    cdef int nrhs = <int>b.shape[1]
+    cdef int r, c
+
+    for r in xrange(n):
+        if d[r] == 0.0:
+            raise LinAlgError("Matrix is singular.")
+
+    # forward substitution
+    if lower:
+        for c in xrange(nrhs):
+            b[0, c] = b[0, c] / d[0]
+            for r in range(1, n):
+                b[r, c] = (b[r, c] - u[r-1]*b[r-1, c]) / d[r]
+    else:
+        for c in xrange(nrhs):
+            b[n-1, c] = b[n-1, c] / d[n-1]
+            for r in range(n-2, -1, -1):
+                b[r, c] = (b[r, c] - u[r]*b[r+1, c]) / d[r]
+
+    return 0

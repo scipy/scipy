@@ -6,39 +6,22 @@
 
 from warnings import warn
 import numpy as np
-from numpy import atleast_1d, atleast_2d
 from .flinalg import get_flinalg_funcs
 from .lapack import get_lapack_funcs, _compute_lwork
 from .misc import LinAlgError, _datacopied, LinAlgWarning
 from .decomp import _asarray_validated
 from . import decomp, decomp_svd
 from ._solve_toeplitz import levinson
-from ._linsolve import get_lapack_flavor
+from ._linsolve import (get_lapack_flavor,
+                        lusolve, diagsolve, trisolve, bidiagsolve,
+                        array_is_finite, find_array_structure)
 
 __all__ = ['solve', 'solve_triangular', 'solveh_banded', 'solve_banded',
            'solve_toeplitz', 'solve_circulant', 'inv', 'det', 'lstsq',
            'pinv', 'pinv2', 'pinvh', 'matrix_balance', 'matmul_toeplitz']
 
 
-# Linear equations
-def _solve_check(n, info, lamch=None, rcond=None):
-    """ Check arguments during the different steps of the solution phase """
-    if info < 0:
-        raise ValueError('LAPACK reported an illegal value in {}-th argument'
-                         '.'.format(-info))
-    elif 0 < info:
-        raise LinAlgError('Matrix is singular.')
-
-    if lamch is None:
-        return
-    E = lamch('E')
-    if rcond < E:
-        warn('Ill-conditioned matrix (rcond={:.6g}): '
-             'result may not be accurate.'.format(rcond),
-             LinAlgWarning, stacklevel=3)
-
-
-def _validate_input_arrays(a, b):
+def _solve_asarray_validated(a, b, owa, owb):
     """
     All LAPACK funcs work with Fortran memory layout, but most use cases have
     C layout since NumPy's defaults. Hence if the data is contiguous in memory
@@ -49,19 +32,81 @@ def _validate_input_arrays(a, b):
     This provides further surgery options as opposed to letting f2py do the
     memory handling and array copies.
     """
-    info = get_lapack_flavor(a.dtype.char, b.dtype.char)
-    # Backwards compatibility, if dtype is not known try "d"
+
+    if np.ma.isMaskedArray(a) or np.ma.isMaskedArray(b):
+        raise ValueError('Masked arrays are not supported')
+
+    # make "a" an unspecified numpy array
+    a1 = np.asarray(a)
+    # force b into a fortran array
+    b1 = np.asarray(b)
+
+    if a1.dtype is np.dtype('O') or b1.dtype is np.dtype('O'):
+        raise ValueError('object arrays are not supported')
+
+    info = get_lapack_flavor(a1.dtype.char, b1.dtype.char)
+    # Backwards compatibility: if dtype is not known try "d"
     if info < 0:
-        prefix = 'd'
         info = 1
-    else:
-        prefix = 'sdcz'[info]
 
     # If not contiguous or not the right type, pay the price with a copy
-    a = np.array(a, dtype='fdFD'[info], copy=not a.flags.forc, order='K')
-    b = np.array(b, dtype='fdFD'[info], copy=not a.flags.forc, order='K')
+    a1 = np.array(a1, dtype='fdFD'[info],
+                  copy=(not a1.flags.forc) or not (owa or _datacopied(a1, a)),
+                  order='K')
+    b1 = np.array(b1, dtype='fdFD'[info],
+                  copy=(not b1.flags.forc) or not (owb or _datacopied(b1, b)),
+                  order='F')
 
-    return a, b
+    return a1, b1
+
+
+def _bidiag_rcond(d, u, lower):
+    """Check the reciprocal condition number of a bidiagonal matrix with
+    respect to 1-norm is smaller than the machine precision.
+
+    Implements the Algorithm 2.1 of DOI:10.1137/0907011. "kap" is the 1-norm
+    of A, "gam" is the 1-norm of Ainv.
+
+    Parameters
+    ----------
+    d : (n,) ndarray
+        The diagonal entries of the array
+    u : (n-1,) ndarray
+        The sup-/sub-diagonal entries of the array
+    lower : bool
+        sub/sup structure switch
+
+    Returns
+    -------
+    info : int
+        Return a dummy 0 upon success
+
+    """
+    ad = np.abs(d)
+    au = np.abs(u)
+    one = d.dtype.type(1.).real
+    # Get max of column sum
+    if lower:
+        kap = max(np.max(ad[:-1]+au), ad[-1])
+        z = 1/ad[0]
+        gam = z
+        for ind in range(d.size-1):
+            z = (one + abs(au[ind])*z)/ad[ind+1]
+            gam = max(gam, z)
+
+    else:
+        kap = max(np.max(ad[1:]+au), ad[0])
+        z = 1/ad[-1]
+        gam = z
+        for ind in range(d.size-2, -1, -1):
+            z = (one + abs(au[ind])*z)/ad[ind]
+            gam = max(gam, z)
+
+    if 1/(kap*gam) < np.finfo(d.dtype).eps:
+        warn('Ill-conditioned matrix (rcond={:.6g}): result may not  be '
+             'accurate.'.format(1/(kap*gam)), LinAlgWarning, stacklevel=3)
+
+    return 0
 
 
 def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
@@ -75,19 +120,8 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
     corresponding string to ``assume_a`` key chooses the dedicated solver.
     The available options are
 
-    ===================  ========
-     generic matrix       'gen'
-     symmetric            'sym'
-     hermitian            'her'
-     positive definite    'pos'
-    ===================  ========
+    <================ FILL IN ALL THE OPTIONS ==================>
 
-    If omitted, ``'gen'`` is the default structure.
-
-    The datatype of the arrays define which solver is called regardless
-    of the values. In other words, even when the complex array entries have
-    precisely zero imaginary parts, the complex solver will be called based
-    on the data type of the array.
 
     Parameters
     ----------
@@ -95,9 +129,6 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
         Square input data
     b : (N, NRHS) array_like
         Input data for the right hand side.
-    lower : bool, optional
-        If True, only the data contained in the lower triangle of `a`. Default
-        is to use upper triangle. (ignored for ``'gen'``)
     assume_a : str, optional
         Valid entries are explained above.
     transposed: bool, optional
@@ -116,6 +147,9 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
         Assume `a` is symmetric and positive definite. This key is deprecated
         and assume_a = 'pos' keyword is recommended instead. The functionality
         is the same. It will be removed in the future.
+    lower : bool, optional
+        If True, only the data contained in the lower triangle of `a`. Default
+        is to use upper triangle. (ignored for ``'gen'``)
 
     Returns
     -------
@@ -151,138 +185,91 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
     despite the apparent size mismatch. This is compatible with the
     numpy.dot() behavior and the returned result is still 1-D array.
 
-    The generic, symmetric, Hermitian and positive definite solutions are
-    obtained via calling ?GESV, ?SYSV, ?HESV, and ?POSV routines of
-    LAPACK respectively.
+    The datatype of the arrays define which solver is called regardless
+    of the values. In other words, even when the complex array entries have
+    precisely zero imaginary parts, the complex solver will be called based
+    on the data type of the array.
+
     """
-    # Flags for 1-D or N-D right-hand side
-    b_is_1D = False
+    # b_is_1D : Flags for 1-D or N-D right-hand side
+    a, b = _solve_asarray_validated(a, b, overwrite_a, overwrite_b)
+    n = a.shape[0]
 
-    a1 = atleast_2d(_asarray_validated(a, check_finite=check_finite))
-    b1 = atleast_1d(_asarray_validated(b, check_finite=check_finite))
-    n = a1.shape[0]
+    if a.ndim != 2:
+        raise ValueError('Input "a" needs to be strictly a 2D array.')
+    if a.shape[0] != a.shape[1]:
+        raise ValueError('Input "a" needs to be a square matrix.')
 
-    overwrite_a = overwrite_a or _datacopied(a1, a)
-    overwrite_b = overwrite_b or _datacopied(b1, b)
-
-    if a1.shape[0] != a1.shape[1]:
-        raise ValueError('Input a needs to be a square matrix.')
-
-    if n != b1.shape[0]:
+    if n != b.shape[0]:
         # Last chance to catch 1x1 scalar a and 1-D b arrays
-        if not (n == 1 and b1.size != 0):
-            raise ValueError('Input b has to have same number of rows as '
-                             'input a')
+        if not (n == 1 and b.size != 0):
+            raise ValueError('Input "b" has to have same number of rows as '
+                             'input "a".')
 
     # accommodate empty arrays
-    if b1.size == 0:
-        return np.asfortranarray(b1.copy())
+    if b.size == 0:
+        return np.asfortranarray(b.copy())
 
     # regularize 1-D b arrays to 2D
-    if b1.ndim == 1:
+    b_is_1D = False
+    if b.ndim == 1:
         if n == 1:
-            b1 = b1[None, :]
+            b = b[None, :]
         else:
-            b1 = b1[:, None]
+            b = b[:, None]
         b_is_1D = True
 
-    # Validate as contiguous/LAPACK-typed
-    a2, b2 = _validate_input_arrays(a1, b1)
+    a_is_c = a.flags.c_contiguous
+    a_t = a if a_is_c else a.T
+    if check_finite:
+        fa = array_is_finite(a_t)
+        # b is fortran-array
+        fb = array_is_finite(b.T)
+        if not (fa and fb):
+            raise ValueError("The arrays cannot contain inf or nan entries.")
 
+    # Detect structure
+    (fam, member) = find_array_structure(a_t)
 
+    # Branching starts here.
+    # Is it a generic matrix?
+    if fam == 0:
+        _ = lusolve(a_t, b, a_is_c)
+    elif fam == 1:
+        # diagonal
+        if member == 0:
+            _ = diagsolve(a.diagonal(), b)
+        # upper triangular (lower if f-contiguous)
+        elif member == 1:
+            _ = trisolve(a_t, b, a_is_c,
+                         lower=0 if a_is_c else 1,
+                         transposed=1 if a_is_c else 0)
+        # lower triangular (upper if f-contiguous)
+        elif member == 2:
+            _ = trisolve(a_t, b, a_is_c,
+                         lower=1 if a_is_c else 0,
+                         transposed=1 if a_is_c else 0)
+        # lower bidiagonal (upper if f-contiguous)
+        elif member == 3:
+            k = -1 if a_is_c else 1
+            lower = True if a_is_c else False
+            # FIXME Why is copy needed to fool Cython? Contiguousness?
+            d = a.diagonal().copy(order='C')
+            u = a.diagonal(offset=k).copy(order='C')
+            _ = bidiagsolve(d, u, b, lower)
+            # survived, check for rcond
+            _ = _bidiag_rcond(d, u, lower)
 
-    # Backwards compatibility - old keyword.
-    if sym_pos:
-        assume_a = 'pos'
+        # upper bidiagonal (lower if f-contiguous)
+        else:
+            k = 1 if a_is_c else -1
+            lower = False if a_is_c else True
+            d = a.diagonal().copy(order='C')
+            u = a.diagonal(offset=k).copy(order='C')
+            _ = bidiagsolve(d, u, b, lower)
+            _ = _bidiag_rcond(d, u, lower)
 
-    if assume_a not in ('gen', 'sym', 'her', 'pos'):
-        raise ValueError('{} is not a recognized matrix structure'
-                         ''.format(assume_a))
-
-    # Deprecate keyword "debug"
-    if debug is not None:
-        warn('Use of the "debug" keyword is deprecated '
-             'and this keyword will be removed in future '
-             'versions of SciPy.', DeprecationWarning, stacklevel=2)
-
-    # Get the correct lamch function.
-    # The LAMCH functions only exists for S and D
-    # So for complex values we have to convert to real/double.
-    if a1.dtype.char in 'fF':  # single precision
-        lamch = get_lapack_funcs('lamch', dtype='f')
-    else:
-        lamch = get_lapack_funcs('lamch', dtype='d')
-
-    # Currently we do not have the other forms of the norm calculators
-    #   lansy, lanpo, lanhe.
-    # However, in any case they only reduce computations slightly...
-    lange = get_lapack_funcs('lange', (a1,))
-
-    # Since the I-norm and 1-norm are the same for symmetric matrices
-    # we can collect them all in this one call
-    # Note however, that when issuing 'gen' and form!='none', then
-    # the I-norm should be used
-    if transposed:
-        trans = 1
-        norm = 'I'
-        if np.iscomplexobj(a1):
-            raise NotImplementedError('scipy.linalg.solve can currently '
-                                      'not solve a^T x = b or a^H x = b '
-                                      'for complex matrices.')
-    else:
-        trans = 0
-        norm = '1'
-
-    anorm = lange(norm, a1)
-
-    # Generalized case 'gesv'
-    if assume_a == 'gen':
-        gecon, getrf, getrs = get_lapack_funcs(('gecon', 'getrf', 'getrs'),
-                                               (a1, b1))
-        lu, ipvt, info = getrf(a1, overwrite_a=overwrite_a)
-        _solve_check(n, info)
-        x, info = getrs(lu, ipvt, b1,
-                        trans=trans, overwrite_b=overwrite_b)
-        _solve_check(n, info)
-        rcond, info = gecon(lu, anorm, norm=norm)
-    # Hermitian case 'hesv'
-    elif assume_a == 'her':
-        hecon, hesv, hesv_lw = get_lapack_funcs(('hecon', 'hesv',
-                                                 'hesv_lwork'), (a1, b1))
-        lwork = _compute_lwork(hesv_lw, n, lower)
-        lu, ipvt, x, info = hesv(a1, b1, lwork=lwork,
-                                 lower=lower,
-                                 overwrite_a=overwrite_a,
-                                 overwrite_b=overwrite_b)
-        _solve_check(n, info)
-        rcond, info = hecon(lu, ipvt, anorm)
-    # Symmetric case 'sysv'
-    elif assume_a == 'sym':
-        sycon, sysv, sysv_lw = get_lapack_funcs(('sycon', 'sysv',
-                                                 'sysv_lwork'), (a1, b1))
-        lwork = _compute_lwork(sysv_lw, n, lower)
-        lu, ipvt, x, info = sysv(a1, b1, lwork=lwork,
-                                 lower=lower,
-                                 overwrite_a=overwrite_a,
-                                 overwrite_b=overwrite_b)
-        _solve_check(n, info)
-        rcond, info = sycon(lu, ipvt, anorm)
-    # Positive definite case 'posv'
-    else:
-        pocon, posv = get_lapack_funcs(('pocon', 'posv'),
-                                       (a1, b1))
-        lu, x, info = posv(a1, b1, lower=lower,
-                           overwrite_a=overwrite_a,
-                           overwrite_b=overwrite_b)
-        _solve_check(n, info)
-        rcond, info = pocon(lu, anorm)
-
-    _solve_check(n, info, lamch, rcond)
-
-    if b_is_1D:
-        x = x.ravel()
-
-    return x
+    return b.ravel() if b_is_1D else b
 
 
 def solve_triangular(a, b, trans=0, lower=False, unit_diagonal=False,
