@@ -1851,8 +1851,8 @@ def distance_transform_bf(input, metric="euclidean", sampling=None,
         An output array to store the calculated distance transform, instead of 
         returning it.
         This parameter is only used when `return_distances` is True.
-        It must be the same shape as `input`, and of type float64 if `metric` is
-        'euclidean', uint32 otherwise.
+        It must be the same shape as `input`, and of type float64 if `metric`
+        is 'euclidean', uint32 otherwise.
     indices : int32 ndarray, optional
         An output array to store the calculated feature transform, instead of 
         returning it.
