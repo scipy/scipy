@@ -53,7 +53,7 @@ class Bench(Benchmark):
         assert self.nodes[-1] in self.pre_merged
 
     def time_absence(self, n):
-        # Test for absense
+        # Test for absence
         assert None not in self.pre_merged
         assert "dummy" not in self.pre_merged
         assert (1, 2, 3) not in self.pre_merged
