@@ -25,7 +25,7 @@ class DisjointSet:
     -----
     This class implements the disjoint set [1]_, also known as the *union-find*
     or *merge-find* data structure. The *find* operation (implemented in
-    `__getitem__`)* implements the *path halving* variant. The *merge* method
+    `__getitem__`) implements the *path halving* variant. The *merge* method
     implements the *merge by size* variant.
 
     References
