@@ -1103,14 +1103,6 @@ class TestPareto(object):
                       fscale=3)
 
 
-def _assert_lessthan_loglike(dist, data, func, **kwds):
-    mle_analytical = dist.fit(data, **kwds)
-    numerical_opt = super(type(dist), dist).fit(data, **kwds)
-    ll_mle_analytical = func(mle_analytical, data)
-    ll_numerical_opt = func(numerical_opt, data)
-    assert ll_mle_analytical < ll_numerical_opt
-
-
 class TestGenpareto(object):
     def test_ab(self):
         # c >= 0: a, b = [0, inf]
