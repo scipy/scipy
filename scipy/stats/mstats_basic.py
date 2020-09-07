@@ -424,7 +424,7 @@ def pearsonr(x,y):
 SpearmanrResult = namedtuple('SpearmanrResult', ('correlation', 'pvalue'))
 
 
-def spearmanr(x, y=None, use_ties=True, axis=None, nan_policy='propagate'):
+def spearmanr(x, y=None, use_ties=True, axis=None, nan_policy='propagate', alternative='two-sided'):
     """
     Calculates a Spearman rank-order correlation coefficient and the p-value
     to test for non-correlation.
@@ -465,6 +465,15 @@ def spearmanr(x, y=None, use_ties=True, axis=None, nan_policy='propagate'):
         Defines how to handle when input contains nan. 'propagate' returns nan,
         'raise' throws an error, 'omit' performs the calculations ignoring nan
         values. Default is 'propagate'.
+    alternative : {'two-sided', 'less', 'greater'}, optional
+        Defines the alternative hypothesis.
+        The following options are available (default is 'two-sided'):
+
+          * 'two-sided'
+          * 'less': one-sided
+          * 'greater': one-sided
+
+        .. versionadded:: 1.6.0
 
     Returns
     -------
@@ -520,7 +529,15 @@ def spearmanr(x, y=None, use_ties=True, axis=None, nan_policy='propagate'):
             # errors before taking the square root
             t = rs * np.sqrt((dof / ((rs+1.0) * (1.0-rs))).clip(0))
 
-        prob = 2 * distributions.t.sf(np.abs(t), dof)
+        if alternative == 'less':
+            prob = distributions.t.cdf(t, dof)
+        elif alternative == 'greater':
+            prob = distributions.t.sf(t, dof)
+        elif alternative == 'two-sided':
+            prob = 2 * distributions.t.sf(np.abs(t), dof)
+        else:
+            raise ValueError("alternative should be "
+                             "'less', 'greater' or 'two-sided'")
 
         # For backwards compatibility, return scalars when comparing 2 columns
         if rs.shape == (2, 2):
