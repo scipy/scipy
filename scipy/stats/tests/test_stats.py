@@ -901,6 +901,8 @@ class TestCorrSpearmanr2(object):
         assert_raises(ValueError, stats.spearmanr, x, y, axis=2)
 
     def test_alternative(self):
+        # Test alternative parameter
+        # Based on the above ``test_spearmanr_vs_r``
         x1 = [1, 2, 3, 4, 5]
         x2 = [5, 6, 7, 8, 7]
         expected = (0.82078268166812329, 0.088587005313543798)
