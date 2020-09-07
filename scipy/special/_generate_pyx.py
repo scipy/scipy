@@ -596,7 +596,7 @@ class Func(object):
 
         for header in signatures.keys():
             for name, sig in signatures[header].items():
-                inarg, outarg, ret = self._parse_signature(sig)
+                _, inarg, _, outarg, _, ret = self._parse_signature(sig)
                 self.signatures.append((name, inarg, outarg, ret, header))
 
     def _parse_signature(self, sig):
