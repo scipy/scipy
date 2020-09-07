@@ -220,6 +220,17 @@ class TestCorr(object):
               0.0, 0.6, 6.7, 3.8, 1.0, 1.2, 1.4, np.nan]
         (x, y) = (ma.fix_invalid(x), ma.fix_invalid(y))
         assert_almost_equal(mstats.spearmanr(x,y)[0], 0.6887299)
+
+        # test alternative parameter (based on above)
+        pr = mstats.spearmanr(x,y).pvalue
+
+        p = mstats.spearmanr(x,y, alternative="greater").pvalue
+        assert_almost_equal(p, pr / 2)
+
+        p = mstats.spearmanr(x,y, alternative="less").pvalue
+        assert_almost_equal(p, 1 - pr / 2)
+
+
         # Next test is to make sure calculation uses sufficient precision.
         # The denominator's value is ~n^3 and used to be represented as an
         # int. 2000**3 > 2**32 so these arrays would cause overflow on
