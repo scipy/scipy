@@ -600,8 +600,11 @@ class Func(object):
                 self.signatures.append((name, inarg, outarg, ret, header))
 
     def _parse_signature(self, sig):
-        # m = re.match(r"\s*([fdgFDGil]*)\s*\*\s*([fdgFDGil]*)\s*->\s*([*fdgFDGil]*)\s*$", sig)
-        m = re.match(r"\s*(([fdgFDGil]+)\s*)?\*\s*(([fdgFDGil]+)\s*)?->\s*(([*fdgFDGil]+)\s*)?$", sig)
+        # m = re.match(r"\s*([fdgFDGil]*)\s*\*\s*
+        # ([fdgFDGil]*)\s*->\s*([*fdgFDGil]*)\s*$", sig)
+        m = re.match(r"\s*(([fdgFDGil]+)\s*)?\*\s*"
+                     r"(([fdgFDGil]+)\s*)?->"
+                     r"\s*(([*fdgFDGil]+)\s*)?$", sig)
         if m:
             # inarg, outarg, ret = [x.strip() for x in m.groups()]
             _, inarg, _, outarg, _, ret = [x.strip() for x in m.groups()]
