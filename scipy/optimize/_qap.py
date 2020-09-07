@@ -9,10 +9,8 @@ import itertools
 
 def quadratic_assignment(A, B, method="faq", options=None):
     r"""
-    Solve the quadratic assignment problem.
-
-    This function solves the Quadratic Assignment Problem (QAP) and the
-    Graph Matching Problem (GMP).
+    Approximates solution to the quadratic assignment problem and
+    the graph matching problem.
 
     Quadratic assignment solves problems of the following form:
 
