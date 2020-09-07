@@ -4128,7 +4128,7 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate', alternative='two-sided'
         and ``b`` combined.
     pvalue : float
         The p-value for a hypothesis test whose alternative hypothesis is
-        defined by the ``alternative`` parameter and who's null hypotheisis
+        defined by the ``alternative`` parameter and whose null hypotheisis
         is that two sets of data are uncorrelated, has same dimension as rho.
 
     References
@@ -4217,7 +4217,7 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate', alternative='two-sided'
     variable_has_nan = np.zeros(n_vars, dtype=bool)
     if a_contains_nan:
         if nan_policy == 'omit':
-            return mstats_basic.spearmanr(a, axis=axis, nan_policy=nan_policy)
+            return mstats_basic.spearmanr(a, axis=axis, nan_policy=nan_policy, alternative=alternative)
         elif nan_policy == 'propagate':
             if a.ndim == 1 or n_vars <= 2:
                 return SpearmanrResult(np.nan, np.nan)
