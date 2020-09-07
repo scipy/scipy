@@ -334,7 +334,7 @@ def _quadratic_assignment_faq(A, B,
         array of ones, is used. This is the "barycenter" of the
         search space of doubly-stochastic matrices.
         
-        If ``"random"``, rhe algorithm will start from the randomized 
+        If ``"random"``, the algorithm will start from the randomized 
         initial search position :math:`P_0 = (J + K)/2`, 
         where :math:`J` is the "barycenter" and :math:`K` is a random 
         doubly stochastic matrix.
