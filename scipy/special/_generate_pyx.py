@@ -600,15 +600,19 @@ class Func(object):
                 self.signatures.append((name, inarg, outarg, ret, header))
 
     def _parse_signature(self, sig):
-        m = re.match(r"\s*([fdgFDGil]*)\s*\*\s*([fdgFDGil]*)\s*->\s*([*fdgFDGil]*)\s*$", sig)
+        # m = re.match(r"\s*([fdgFDGil]*)\s*\*\s*([fdgFDGil]*)\s*->\s*([*fdgFDGil]*)\s*$", sig)
+        m = re.match(r"\s*(([fdgFDGil]+)\s*)?\*\s*(([fdgFDGil]+)\s*)?->\s*(([fdgFDGil]+)\s*)?$", sig)
         if m:
-            inarg, outarg, ret = [x.strip() for x in m.groups()]
+            # inarg, outarg, ret = [x.strip() for x in m.groups()]
+            _, inarg, _, outarg, _, ret = [x.strip() for x in m.groups()]
             if ret.count('*') > 1:
                 raise ValueError("{}: Invalid signature: {}".format(self.name, sig))
             return inarg, outarg, ret
-        m = re.match(r"\s*([fdgFDGil]*)\s*->\s*([fdgFDGil]?)\s*$", sig)
+        # m = re.match(r"\s*([fdgFDGil]*)\s*->\s*([fdgFDGil]?)\s*$", sig)
+        m = re.match(r"\s*(([fdgFDGil]+)\s*)?->\s*(([fdgFDGil])\s*)?$", sig)
         if m:
-            inarg, ret = [x.strip() for x in m.groups()]
+            # inarg, ret = [x.strip() for x in m.groups()]
+            _, inarg, _, ret = [x.strip() for x in m.groups()]
             return inarg, "", ret
         raise ValueError("{}: Invalid signature: {}".format(self.name, sig))
 
