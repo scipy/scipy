@@ -171,16 +171,16 @@ class TestFAQ(QAPCommonTests):
                                    options={'maxiter': 5})
         assert_equal(res.nit, 5)
 
-        # test with no shuffle
+        # test with shuffle
         res = quadratic_assignment(A, B,
-                                   options={'shuffle_input': False})
+                                   options={'shuffle_input': True})
         assert_(11156 <= res.fun < 21000)
 
-        # check with specified init_J
+        # check with specified P0
         K = np.ones((n, n)) / float(n)
         K = _doubly_stochastic(K)
         res = quadratic_assignment(A, B,
-                                   options={'init_J': K})
+                                   options={'P0': K})
         assert_(11156 <= res.fun < 21000)
 
     def test_specific_input_validation(self):
@@ -192,12 +192,8 @@ class TestFAQ(QAPCommonTests):
 
         # ValueError Checks: making sure single value parameters are of
         # correct value
-        with pytest.raises(ValueError, match="Invalid 'init_J' parameter"):
-            quadratic_assignment(A, B, options={'init_J': "random"})
-        with pytest.raises(
-                ValueError,
-                match="'init_weight' must be strictly between zero and one"):
-            quadratic_assignment(A, B, options={'init_weight': 2})
+        with pytest.raises(ValueError, match="Invalid 'P0' parameter"):
+            quadratic_assignment(A, B, options={'P0': "randomized"})
         with pytest.raises(
                 ValueError, match="'maxiter' must be a positive integer"):
             quadratic_assignment(A, B, options={'maxiter': -1})
@@ -209,13 +205,13 @@ class TestFAQ(QAPCommonTests):
         with pytest.raises(TypeError):
             quadratic_assignment(A, B, options={'maxiter': 1.5})
 
-        # test init matrix input
+        # test P0 matrix input
         with pytest.raises(
                 ValueError,
-                match="`init_J` matrix must have same shape as A and B"):
+                match="`P0` matrix must have same shape as A and B"):
             quadratic_assignment(
                 np.identity(4), np.identity(4),
-                options={'init_J': np.ones((3, 3))}
+                options={'P0': np.ones((3, 3))}
             )
 
         K = [[0.4, 0.2, 0.3],
@@ -223,9 +219,9 @@ class TestFAQ(QAPCommonTests):
              [0.2, 0.2, 0.7]]
         # matrix that isn't quite doubly stochastic
         with pytest.raises(
-                ValueError, match="`init_J` matrix must be doubly stochastic"):
+                ValueError, match="`P0` matrix must be doubly stochastic"):
             quadratic_assignment(
-                np.identity(3), np.identity(3), options={'init_J': K}
+                np.identity(3), np.identity(3), options={'P0': K}
             )
 
 

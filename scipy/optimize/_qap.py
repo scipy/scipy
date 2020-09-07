@@ -244,9 +244,8 @@ def _common_input_validation(A, B, partial_match):
 
 def _quadratic_assignment_faq(A, B,
                               maximize=False, partial_match=None, rng=None,
-                              init_J="barycenter", init_weight=1,
-                              shuffle_input=True, maxiter=30, tol=0.05,
-                              **unknown_options
+                              P0="barycenter", shuffle_input=False, maxiter=30,
+                              tol=0.05, **unknown_options
                               ):
     r"""
     Solve the quadratic assignment problem (approximately).
@@ -320,37 +319,33 @@ def _quadratic_assignment_faq(A, B,
         ``partial_match`` is an array of size ``(m , 2)``, where ``m`` is
         not greater than the number of nodes.
 
-    init_J : 2d-array or "barycenter" (default = "barycenter")
+    P0 : 2d-array, "barycenter", or "random" (default = "barycenter")
         The initial (guess) permutation matrix or search "position"
-        :math:`J`.
+        :math:`P0`.
 
-        :math:`J` need not be a proper permutation matrix;
+        :math:`P0` need not be a proper permutation matrix;
         however, it must have the same shape as `A` and
         `B`, and it must be doubly stochastic: each of its
         rows and columns must sum to 1.
 
         If unspecified or ``"barycenter"``, the non-informative "flat
-        doubly stochastic matrix" :math:`1*1^T/n`, where :math:`n`
+        doubly stochastic matrix" :math:`J = 1*1^T/n`, where :math:`n`
         is the number of nodes and :math:`1` is a :math:`n \times 1`
         array of ones, is used. This is the "barycenter" of the
         search space of doubly-stochastic matrices.
+        
+        If ``"random"``, rhe algorithm will start from the randomized 
+        initial search position :math:`P_0 = (J + K)/2`, 
+        where :math:`J` is the "barycenter" and :math:`K` is a random 
+        doubly stochastic matrix.
 
-    init_weight : float in range [0, 1] (default = 1)
-        Allows the user to specify the weight of the provided
-        search position :math:`J` relative to random perturbations
-        :math:`K`.
-
-        The algorithm will start from the randomized initial search
-        position :math:`P_0 = (\alpha J + (1 - \alpha) K`, where
-        :math:`J` is given by option `init_J`,
-        :math:`\alpha` is given by option `init_weight`,
-        :math:`K` is a random doubly stochastic matrix.
-
-    shuffle_input : bool (default = True)
+    shuffle_input : bool (default = False)
         To avoid artificially high or low matching due to inherent
         sorting of input matrices, gives users the option
         to shuffle the nodes. Results are then unshuffled so that the
         returned results correspond with the node order of inputs.
+        Shuffling may cause the algorithm to be non-deterministic, 
+        unless a random seed is set.
 
     maxiter : int, positive (default = 30)
         Integer specifying the max number of Franke-Wolfe iterations performed.
@@ -399,17 +394,17 @@ def _quadratic_assignment_faq(A, B,
     >>> print(res.fun)
     46.871483385480545 # may vary
 
-    >>> options = {"init_weight": 0}  # use 100% random initialization
+    >>> options = {"P0": 'random'}  # use 100% random initialization
     >>> res = quadratic_assignment(A, B, options=options)
     >>> print(res.fun)
-    46.91558492779956 # may vary
+    47.224831071310625 # may vary
 
     However, consider running from several random initializations and keeping
     the best result.
     >>> res = min([quadratic_assignment(A, B, options=options)
     ...            for i in range(30)], key=lambda x: x.fun)
     >>> print(res.fun)
-    46.50791824173632 # may vary
+    46.671852533681516 # may vary
 
     The '2-opt' method can be used to further refine the results.
     >>> options = {"partial_guess": np.array([np.arange(n), res.col_ind]).T}
@@ -438,10 +433,8 @@ def _quadratic_assignment_faq(A, B,
     A, B, partial_match = _common_input_validation(A, B, partial_match)
 
     msg = None
-    if isinstance(init_J, str) and init_J not in {'barycenter'}:
-        msg = "Invalid 'init_J' parameter string"
-    elif init_weight < 0 or init_weight > 1:
-        msg = "'init_weight' must be strictly between zero and one"
+    if isinstance(P0, str) and P0 not in {'barycenter', 'random'}:
+        msg = "Invalid 'P0' parameter string"
     elif maxiter <= 0:
         msg = "'maxiter' must be a positive integer"
     elif tol <= 0:
@@ -471,25 +464,25 @@ def _quadratic_assignment_faq(A, B,
     A11, A12, A21, A22 = _split_matrix(A[perm_A][:, perm_A], n_seeds)
     B11, B12, B21, B22 = _split_matrix(B[perm_B][:, perm_B], n_seeds)
 
-    # setting initialization matrix
-    if isinstance(init_J, str) and init_J == 'barycenter':
+    # [1] Algorithm 1 Line 1 - choose initialization
+    if isinstance(P0, str):
         J = np.ones((n_unseed, n_unseed)) / float(n_unseed)
+        if P0 == 'barycenter':
+            P = J
+        elif P0 == 'random':
+            # generate a nxn matrix where each entry is a random number [0, 1]
+            # would use rand, but Generators don't have it
+            # would use random, but old mtrand.RandomStates don't have it
+            K = rng.uniform(size=(n_unseed, n_unseed))
+            # Sinkhorn balancing
+            K = _doubly_stochastic(K)
+            # initialize J, a doubly stochastic barycenter
+            P = J * 0.5 + K * 0.5
     else:
-        J = np.atleast_2d(init_J)
+        J = np.atleast_2d(P0)
         _check_init_input(J, n_unseed)
-
-# [1] Algorithm 1 Line 1 - choose initialization
-    if init_weight != 1:
-        # generate a nxn matrix where each entry is a random number [0, 1]
-        # would use rand, but Generators don't have it
-        # would use random, but old mtrand.RandomStates don't have it
-        K = rng.uniform(size=(n_unseed, n_unseed))
-        # Sinkhorn balancing
-        K = _doubly_stochastic(K)
-        # initialize J, a doubly stochastic barycenter
-        P = J * init_weight + (1 - init_weight) * K
-    else:
         P = J
+
     const_sum = A21 @ B21.T + A12.T @ B12
 
     # [1] Algorithm 1 Line 2 - loop while stopping criteria not met
@@ -544,17 +537,17 @@ def _quadratic_assignment_faq(A, B,
     return OptimizeResult(res)
 
 
-def _check_init_input(init_J, n):
-    row_sum = np.sum(init_J, axis=0)
-    col_sum = np.sum(init_J, axis=1)
+def _check_init_input(P0, n):
+    row_sum = np.sum(P0, axis=0)
+    col_sum = np.sum(P0, axis=1)
     tol = 1e-3
     msg = None
-    if init_J.shape != (n, n):
-        msg = "`init_J` matrix must have same shape as A and B"
+    if P0.shape != (n, n):
+        msg = "`P0` matrix must have same shape as A and B"
     elif ((~np.isclose(row_sum, 1, atol=tol)).any() or
           (~np.isclose(col_sum, 1, atol=tol)).any() or
-          (init_J < 0).any()):
-        msg = "`init_J` matrix must be doubly stochastic"
+          (P0 < 0).any()):
+        msg = "`P0` matrix must be doubly stochastic"
     if msg is not None:
         raise ValueError(msg)
 
