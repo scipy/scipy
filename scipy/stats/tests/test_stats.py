@@ -902,13 +902,13 @@ class TestCorrSpearmanr2(object):
 
     def test_alternative(self):
         # Test alternative parameter
-        # Based on the above ``test_spearmanr_vs_r``
+        assert_raises(ValueError, stats.spearmanr, X, X,
+                      alternative='error')
+
+        # Simple test - Based on the above ``test_spearmanr_vs_r``
         x1 = [1, 2, 3, 4, 5]
         x2 = [5, 6, 7, 8, 7]
         expected = (0.82078268166812329, 0.088587005313543798)
-
-        assert_raises(ValueError, stats.spearmanr, X, X,
-                      alternative='error')
 
         res = stats.spearmanr(x1, x2, alternative="less")
         assert_approx_equal(res[0], expected[0])
@@ -917,6 +917,38 @@ class TestCorrSpearmanr2(object):
         res = stats.spearmanr(x1, x2, alternative="greater")
         assert_approx_equal(res[0], expected[0])
         assert_approx_equal(res[1], expected[1] / 2)
+
+        # Test nan policies
+        x1nan = x1 + [np.nan]
+        x2nan = x2 + [np.nan]
+
+        assert_array_equal(stats.spearmanr(x1nan, x2nan), (np.nan, np.nan))
+
+        # Test omission
+        res_actual = stats.spearmanr(x1nan, x2nan, nan_policy='omit')
+        res_expected = stats.spearmanr(x1, x2)
+        assert_allclose(res_actual, res_expected)
+
+        res_actual = stats.spearmanr(x1nan, x2nan, nan_policy='omit',
+            alternative="less")
+        res_expected = stats.spearmanr(x1, x2, alternative="less")
+        assert_allclose(res_actual, res_expected)
+
+        res_actual = stats.spearmanr(x1nan, x2nan, nan_policy='omit',
+            alternative="greater")
+        res_expected = stats.spearmanr(x1, x2, alternative="greater")
+        assert_allclose(res_actual, res_expected)
+
+        # Test value raises
+        assert_raises(ValueError, stats.spearmanr, x1nan, x2nan,
+            nan_policy='raise', alternative="less")
+        assert_raises(ValueError, stats.spearmanr, x1nan, x2nan,
+            nan_policy='raise', alternative="greater")
+
+        assert_raises(ValueError, stats.spearmanr, x1nan, x2nan,
+            nan_policy='foobar', alternative="less")
+        assert_raises(ValueError, stats.spearmanr, x1nan, x2nan,
+            nan_policy='foobar', alternative="greater")
 
 
 #    W.II.E.  Tabulate X against X, using BIG as a case weight.  The values
