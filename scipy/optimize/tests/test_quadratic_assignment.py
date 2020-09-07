@@ -176,6 +176,11 @@ class TestFAQ(QAPCommonTests):
                                    options={'shuffle_input': True})
         assert_(11156 <= res.fun < 21000)
 
+        # test with randomized init
+        res = quadratic_assignment(A, B,
+                                   options={'rng': 1, 'P0': "randomized"})
+        assert_(11156 <= res.fun < 21000)
+
         # check with specified P0
         K = np.ones((n, n)) / float(n)
         K = _doubly_stochastic(K)
@@ -193,7 +198,7 @@ class TestFAQ(QAPCommonTests):
         # ValueError Checks: making sure single value parameters are of
         # correct value
         with pytest.raises(ValueError, match="Invalid 'P0' parameter"):
-            quadratic_assignment(A, B, options={'P0': "randomized"})
+            quadratic_assignment(A, B, options={'P0': "random"})
         with pytest.raises(
                 ValueError, match="'maxiter' must be a positive integer"):
             quadratic_assignment(A, B, options={'maxiter': -1})

@@ -319,7 +319,7 @@ def _quadratic_assignment_faq(A, B,
         ``partial_match`` is an array of size ``(m , 2)``, where ``m`` is
         not greater than the number of nodes.
 
-    P0 : 2d-array, "barycenter", or "random" (default = "barycenter")
+    P0 : 2d-array, "barycenter", or "randomized" (default = "barycenter")
         The initial (guess) permutation matrix or search "position"
         :math:`P0`.
 
@@ -333,10 +333,10 @@ def _quadratic_assignment_faq(A, B,
         is the number of nodes and :math:`1` is a :math:`n \times 1`
         array of ones, is used. This is the "barycenter" of the
         search space of doubly-stochastic matrices.
-        
-        If ``"random"``, the algorithm will start from the randomized 
-        initial search position :math:`P_0 = (J + K)/2`, 
-        where :math:`J` is the "barycenter" and :math:`K` is a random 
+
+        If ``"randomized"``, the algorithm will start from the
+        randomized initial search position :math:`P_0 = (J + K)/2`,
+        where :math:`J` is the "barycenter" and :math:`K` is a random
         doubly stochastic matrix.
 
     shuffle_input : bool (default = False)
@@ -344,8 +344,8 @@ def _quadratic_assignment_faq(A, B,
         sorting of input matrices, gives users the option
         to shuffle the nodes. Results are then unshuffled so that the
         returned results correspond with the node order of inputs.
-        Shuffling may cause the algorithm to be non-deterministic, 
-        unless a random seed is set.
+        Shuffling may cause the algorithm to be non-deterministic,
+        unless a random seed is set or an `rng` option is provided.
 
     maxiter : int, positive (default = 30)
         Integer specifying the max number of Franke-Wolfe iterations performed.
@@ -394,13 +394,13 @@ def _quadratic_assignment_faq(A, B,
     >>> print(res.fun)
     46.871483385480545 # may vary
 
-    >>> options = {"P0": 'random'}  # use 100% random initialization
+    >>> options = {"P0": "randomized"}  # use randomized initialization
     >>> res = quadratic_assignment(A, B, options=options)
     >>> print(res.fun)
     47.224831071310625 # may vary
 
-    However, consider running from several random initializations and keeping
-    the best result.
+    However, consider running from several randomized initializations and
+    keeping the best result.
     >>> res = min([quadratic_assignment(A, B, options=options)
     ...            for i in range(30)], key=lambda x: x.fun)
     >>> print(res.fun)
@@ -433,7 +433,7 @@ def _quadratic_assignment_faq(A, B,
     A, B, partial_match = _common_input_validation(A, B, partial_match)
 
     msg = None
-    if isinstance(P0, str) and P0 not in {'barycenter', 'random'}:
+    if isinstance(P0, str) and P0 not in {'barycenter', 'randomized'}:
         msg = "Invalid 'P0' parameter string"
     elif maxiter <= 0:
         msg = "'maxiter' must be a positive integer"
@@ -466,22 +466,22 @@ def _quadratic_assignment_faq(A, B,
 
     # [1] Algorithm 1 Line 1 - choose initialization
     if isinstance(P0, str):
+        # initialize J, a doubly stochastic barycenter
         J = np.ones((n_unseed, n_unseed)) / float(n_unseed)
         if P0 == 'barycenter':
             P = J
-        elif P0 == 'random':
+        elif P0 == 'randomized':
             # generate a nxn matrix where each entry is a random number [0, 1]
             # would use rand, but Generators don't have it
             # would use random, but old mtrand.RandomStates don't have it
             K = rng.uniform(size=(n_unseed, n_unseed))
             # Sinkhorn balancing
             K = _doubly_stochastic(K)
-            # initialize J, a doubly stochastic barycenter
             P = J * 0.5 + K * 0.5
     else:
-        J = np.atleast_2d(P0)
-        _check_init_input(J, n_unseed)
-        P = J
+        P0 = np.atleast_2d(P0)
+        _check_init_input(P0, n_unseed)
+        P = P0
 
     const_sum = A21 @ B21.T + A12.T @ B12
 
