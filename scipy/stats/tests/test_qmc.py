@@ -297,21 +297,21 @@ class TestNormalQMC:
         assert_equal(samples.shape, (5, 2))
 
     def test_other_engine(self):
-        engine = qmc.NormalQMC(dim=2, engine=qmc.Sobol(dim=2, scramble=True),
+        engine = qmc.NormalQMC(dim=2, engine=qmc.Sobol(dim=2, scramble=False),
                                inv_transform=True)
         samples = engine.random()
         assert_equal(samples.shape, (1, 2))
 
     def test_NormalQMCSeeded(self):
         # test even dimension
-        engine = qmc.NormalQMC(dim=2, seed=12345)
+        engine = qmc.NormalQMC(dim=2, inv_transform=False, seed=12345)
         samples = engine.random(n_samples=2)
         samples_expected = np.array(
             [[-0.943472, 0.405116], [-0.63099602, -1.32950772]]
         )
         assert_array_almost_equal(samples, samples_expected)
         # test odd dimension
-        engine = qmc.NormalQMC(dim=3, seed=12345)
+        engine = qmc.NormalQMC(dim=3, inv_transform=False, seed=12345)
         samples = engine.random(n_samples=2)
         samples_expected = np.array(
             [

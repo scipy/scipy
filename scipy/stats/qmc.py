@@ -3,6 +3,189 @@
 
 Define function to generate sample of points in the unit hypercube.
 
+Quasi-Monte Carlo (QMC) methods [1]_,[2]_,[3]_] provide an :math:`n \times dim`
+matrix of numbers in :math:`[0,1]`. They can be used in place of n points from
+the :math:`U[0,1]^{dim}` distribution. Compared to random points, QMC
+points are designed to have fewer gaps and clumps. This is
+quantified by discrepancy measures [4]_. From the Koksma-Hlawka
+inequality [5]_ we know that low discrepancy reduces a bound on
+integration error. Averaging a function :math:`f` over :math:`n` QMC points
+can achieve an integration error close to :math:`O(n^-1)` for well
+behaved functions [2]_.
+
+Most QMC constructions are designed for special values of :math:`n`
+such as powers of 2 or large primes. Changing the sample
+size by even one can degrade their performance, even their
+rate of convergence [6]_. For instance :math:`n=100` points may give less
+accuracy than :math:`n=64` if the method was designed for :math:`n=2^m`.
+
+Some QMC constructions are extensible in n: we can find
+another special sample size :math:`n' > n` and often an infinite
+sequence of increasing special sample sizes. Some QMC
+constructions are extensible in :math:`dim`: we can increase the dimension,
+possibly to some upper bound, and typically without requiring
+special values of d. Some QMC methods are extensible in
+both :math:`n` and :math:`dim`.
+
+QMC points are deterministic. That makes it hard to estimate
+the accuracy of averages. Randomized QMC (RQMC) [7]_
+points are constructed so that each point is individually :math:`U[0,1]^{dim}`
+while collectively the n points retain their low discrepancy.
+One can make :math:`R` independent replications of RQMC points to
+see how stable a computation is. From :math:`R` independent values
+a t test (or bootstrap t test [8]_) then gives approximate confidence
+intervals on the mean value.  Some RQMC methods produce a
+root mean squared error that is actually :math:`o(1/n)` and smaller than
+the rate seen in unrandomized QMC.  An intuitive explanation is
+that the error is a sum of many small ones and random errors
+cancel in a way that deterministic ones do not. RQMC also
+has advantages on integrands that are singular or, for other
+reasons, fail to be Riemann integrable.
+
+(R)QMC cannot beat Bahkvalov's curse of dimension (see [9]_). For
+any random or deterministic method, there are worst case functions
+that will give it poor performance in high dimensions. A worst
+case function for QMC might be 0 at all n points but very
+large elsewhere. Worst case analyses get very pessimistic
+in high dimensions. (R)QMC can bring a great improvement over
+MC when the functions on which it is used are not worst case.
+For instance (R)QMC can be especially effective on integrands
+that are well approximated by sums of functions of one or two
+or some small number of their input variables at a time [10]_,[11]_.
+That property is often a surprising finding about those functions.
+
+Scrambled nets are a kind of RQMC that have some valuable robustness
+properties [12]_. If the integrand is square integrable they give variance
+:math:`var_SNET = o(1/n)`. There is a finite upper bound on
+:math:`var_SNET / var_MC` that holds simultaneously for every square integrable
+integrand. Scrambled nets satisfy a strong law of large numbers for :math:`f`
+in :math:`L^p` when :math:`p>1`. In some
+special cases there is a central limit theorem [13]_. For smooth enough
+integrands they can achieve RMSE nearly O(n^-3). See [12]_ for references
+about these properties.
+
+The main kinds of QMC methods are lattice rules [14]_ and digital
+nets and sequences [2]_,[15]_. The theories meet up in polynomial
+lattice rules [16]_ which can produce digital nets. Lattice rules
+require some form of search for good constructions. For digital
+nets there are widely used default constructions.
+
+The most widely used QMC methods are Sobol' sequences [17]_.
+These are digital nets. They are extensible in both n and d.
+They can be scrambled.  The special sample sizes are powers
+of 2. Another popular method are Halton sequences [18]_.
+The constructions resemble those of digital nets. The earlier
+dimensions have much better equidistribution properties than
+later ones. There are essentially no special sample sizes.
+They are not thought to be as accurate as Sobol' sequences.
+They can be scrambled. The nets of Faure [19]_ are also widely
+used. All dimensions are equally good but the special sample
+sizes grow rapidly with dimension d. They can be scrambled.
+The nets of Niederreiter and Xing [20]_ have the best asymptotic
+properties but have not shown good empirical performance [21]_.
+
+Higher order digital nets are formed by a digit interleaving process
+in the digits of the constructed points. They can achieve higher
+levels of asymptotic accuracy given higher smoothness conditions on f
+and they can be scrambled [22]_. There is little or no empirical work
+showing the improved rate to be attained.
+
+Using QMC is like using the entire period of a small random
+number generator. The constructions are similar and so
+therefore are the computational costs [23]_.
+
+(R)QMC is sometimes improved by passing the points through
+a baker's transformation (tent function) prior to using them.
+That function has the form :math:`1-2|x-1/2|`.  As x goes from 0 to
+1 this function goes from 0 to 1 and then back.  It is very
+useful to produce a periodic function for lattice rules [14]_
+and sometimes it improves the convergence rate [24]_.
+
+It is not straightforward to apply QMC methods to Markov
+chain Monte Carlo (MCMC).  We can think of MCMC as using
+n=1 one point in :math:`[0,1]^{dim}` for very large d, with ergodic results
+corresponding to :math:`dim\to \\infty`.  One proposal is in [25]_
+and under strong conditions an improved rate of convergence
+has been shown [26]_.
+
+Returning to Sobol' points: there are many versions depending
+on what are called direction numbers. Those are the result of
+searches and are tabulated. A very widely used set of direction
+numbers come from [27]_. It is extensible in dimension up to
+:math:`dim=21201`.
+
+References
+----------
+.. [1] Owen, Art B. "Monte Carlo Book: the Quasi-Monte Carlo parts." (2019).
+.. [2] Niederreiter, Harald. Random number generation and quasi-Monte Carlo
+   methods. Society for Industrial and Applied Mathematics, 1992.
+.. [3] Dick, Josef, Frances Y. Kuo, and Ian H. Sloan. "High-dimensional
+   integration: the quasi-Monte Carlo way." Acta Numerica 22 (2013): 133.
+.. [4] Aho, A. V., C. Aistleitner, T. Anderson, K. Appel, V. Arnol'd, N.
+   Aronszajn, D. Asotsky et al. "W. Chen et al.(eds.), A Panorama of
+   Discrepancy Theory (2014): 679. Sringer International Publishing,
+   Switzerland.
+.. [5] Hickernell, Fred J. "Koksma-Hlawka Inequality." Wiley StatsRef:
+   Statistics Reference Online (2014).
+.. [6] Owen, Art B. "On dropping the first Sobol' point." arXiv preprint
+   arXiv:2008.08051 (2020).
+.. [7] L'Ecuyer, Pierre, and Christiane Lemieux. "Recent advances in randomized
+   quasi-Monte Carlo methods." In Modeling uncertainty, pp. 419-474. Springer,
+   New York, NY, 2002.
+.. [8] DiCiccio, Thomas J., and Bradley Efron. "Bootstrap confidence
+   intervals." Statistical science (1996): 189-212.
+.. [9] Dimov, Ivan T. Monte Carlo methods for applied scientists. World
+   Scientific, 2008.
+.. [10] Caflisch, Russel E., William J. Morokoff, and Art B. Owen. Valuation of
+   mortgage backed securities using Brownian bridges to reduce effective
+   dimension. Journal of Computational Finance, (1997): 1, no. 1 27-46.
+.. [11] Sloan, Ian H., and Henryk Wozniakowski. "When are quasi-Monte Carlo
+   algorithms efficient for high dimensional integrals?." Journal of Complexity
+   14, no. 1 (1998): 1-33.
+.. [12] Owen, Art B., and Daniel Rudolf "A strong law of large numbers for
+   scrambled net integration." SIAM Review, to appear.
+.. [13] Loh, Wei-Liem. "On the asymptotic distribution of scrambled net
+   quadrature." The Annals of Statistics 31, no. 4 (2003): 1282-1324.
+.. [14] Sloan, Ian H. and S. Joe. Lattice methods for multiple integration.
+   Oxford University Press, 1994.
+.. [15] Dick, Josef, and Friedrich Pillichshammer. Digital nets and sequences:
+   discrepancy theory and quasi-Monte Carlo integration. Cambridge University
+   Press, 2010.
+.. [16] Dick, Josef, F. Kuo, Friedrich Pillichshammer, and I. Sloan.
+   "Construction algorithms for polynomial lattice rules for multivariate
+   integration." Mathematics of computation 74, no. 252 (2005): 1895-1921.
+.. [17] Sobol', Il'ya Meerovich. "On the distribution of points in a cube and
+   the approximate evaluation of integrals." Zhurnal Vychislitel'noi Matematiki
+   i Matematicheskoi Fiziki 7, no. 4 (1967): 784-802.
+.. [18] Halton, John H. "On the efficiency of certain quasi-random sequences of
+   points in evaluating multi-dimensional integrals." Numerische Mathematik 2,
+   no. 1 (1960): 84-90.
+.. [19] Faure, Henri. "Discrepance de suites associees a un systeme de
+   numeration (en dimension s)." Acta arithmetica 41, no. 4 (1982): 337-351.
+.. [20] Niederreiter, Harold, and Chaoping Xing. "Low-discrepancy sequences and
+   global function fields with many rational places." Finite Fields and their
+   applications 2, no. 3 (1996): 241-273.
+.. [21] Hong, Hee Sun, and Fred J. Hickernell. "Algorithm 823: Implementing
+   scrambled digital sequences." ACM Transactions on Mathematical Software
+   (TOMS) 29, no. 2 (2003): 95-109.
+.. [22] Dick, Josef. "Higher order scrambled digital nets achieve the optimal
+   rate of the root mean square error for smooth integrands." The Annals of
+   Statistics 39, no. 3 (2011): 1372-1398.
+.. [23] Niederreiter, Harald. "Multidimensional numerical integration using
+   pseudorandom numbers." In Stochastic Programming 84 Part I, pp. 17-38.
+   Springer, Berlin, Heidelberg, 1986.
+.. [24] Hickernell, Fred J. "Obtaining O (N-2+e) Convergence for Lattice
+   Quadrature Rules." In Monte Carlo and Quasi-Monte Carlo Methods 2000,
+   pp. 274-289. Springer, Berlin, Heidelberg, 2002.
+.. [25] Owen, Art B., and Seth D. Tribble. "A quasi-Monte Carlo Metropolis
+   algorithm." Proceedings of the National Academy of Sciences 102, no. 25
+   (2005): 8844-8849.
+.. [26] Chen, Su. "Consistency and convergence rate of Markov chain quasi Monte
+   Carlo with examples." PhD diss., Stanford University, 2011.
+.. [27] Joe, Stephen, and Frances Y. Kuo. "Constructing Sobol sequences with
+   better two-dimensional projections." SIAM Journal on Scientific Computing
+   30, no. 5 (2008): 2635-2654.
+
 """
 from abc import ABC, abstractmethod
 import math
@@ -452,7 +635,6 @@ class QMCEngine(ABC):
 
     Notes
     -----
-
     By convention samples are distributed over the half-open interval
     ``[0, 1)``. Instances of the class can access the attributes: ``dim`` for
     the dimension; and ``rng`` for the random number generator (used for the
@@ -557,17 +739,16 @@ class Halton(QMCEngine):
     sequence for the first dimension, base-three for its second and base-n for
     its n-dimension.
 
-    .. note::
-
-       The Halton sequence has severe striping artifacts for even modestly
-       large dimensions.  These can be ameliorated by scrambling.  Scrambling
-       also supports replication-based error estimates and extends
-       applicabiltiy to unbounded integrands.
-
     Parameters
     ----------
     dim : int
         Dimension of the parameter space.
+    Notes
+    -----
+    The Halton sequence has severe striping artifacts for even modestly
+    large dimensions.  These can be ameliorated by scrambling.  Scrambling
+    also supports replication-based error estimates and extends
+    applicabiltiy to unbounded integrands.
 
     References
     ----------
@@ -597,7 +778,7 @@ class Halton(QMCEngine):
     0.088893711419753
 
     If some wants to continue an existing design, extra points can be obtained
-    by calling again `random()`. Alternatively, you can skip some points like:
+    by calling again `random`. Alternatively, you can skip some points like:
 
     >>> sampler.fast_forward(5)
     >>> sample_continued = sampler.random(n_samples=5)
@@ -735,12 +916,8 @@ class OrthogonalLatinHypercube(QMCEngine):
 class LatinHypercube(QMCEngine):
     """Latin hypercube sampling (LHS).
 
-    The parameter space is subdivided into an orthogonal grid of `n_samples`
-    per dimension `dim`. Within this multi-dimensional grid, `n_samples` are
-    selected by ensuring there is only one sample per row and column.
-
     A Latin hypercube sample [1]_ generates ``n`` points in
-    :math:`[0,1)^dim`. Each univariate marginal distribution is stratified,
+    :math:`[0,1)^{dim}`. Each univariate marginal distribution is stratified,
     placing exactly one point in :math:`[j/n, (j+1)/n)` for
     :math:`j=0,1,...,n-1`. They are still applicable when :math:`n << dim`.
     LHS is extremely effective on integrands that are nearly additive [2]_.
@@ -1018,37 +1195,10 @@ class Sobol(QMCEngine):
     Sobol' sequences are low-discrepancy, quasi-random numbers. Points
     can be drawn using two methods:
 
-    * ``random_base2(m)``: safely draw :math:`n=2^m` points. This method
+    * `random_base2`: safely draw :math:`n=2^m` points. This method
       guaranty the balance properties of the sequence.
-    * ``random(n_samples)``: draw an arbitrary number of points from the
+    * `random`: draw an arbitrary number of points from the
       sequence.
-
-    .. note::
-
-       Sobol' sequences [1]_ provide :math:`n=2^m` low discrepancy points in
-       :math:`[0,1)^dim`. Scrambling them [2]_ makes them suitable for singular
-       integrands, provides a means of error estimation, and can improve their
-       rate of convergence.
-
-       There are many versions of Sobol' sequences depending on their
-       'direction numbers'. This code uses direction numbers from [3]_. Hence,
-       maximum number of dimension is 21201. The direction numbers have been
-       precomputed with search criterion 6 and can be retrieved at
-       https://web.maths.unsw.edu.au/~fkuo/sobol/.
-
-    .. warning::
-
-       Sobol' sequences are a quadrature rule and they lose their balance
-       properties if one uses a sample size that is not a power of 2, or skips
-       the first point, or thins the sequence [4]_.
-
-       If :math:`n=2^m` points are not enough then one should take :math:`2^M`
-       points for :math:`M>m`. When scrambling, the number R of independent
-       replicates does not have to be a power of 2.
-
-       Sobol' sequences are generated to some number :math:`B` of bits. Then
-       after :math:`2^B` points have been generated, the sequence will repeat.
-       Currently :math:`B=32`.
 
     Parameters
     ----------
@@ -1063,6 +1213,33 @@ class Sobol(QMCEngine):
         seeded with `seed`.
         If `seed` is already a ``RandomState`` instance, then that
         instance is used.
+
+    Notes
+    -----
+    Sobol' sequences [1]_ provide :math:`n=2^m` low discrepancy points in
+    :math:`[0,1)^{dim}`. Scrambling them [2]_ makes them suitable for singular
+    integrands, provides a means of error estimation, and can improve their
+    rate of convergence.
+
+    There are many versions of Sobol' sequences depending on their
+    'direction numbers'. This code uses direction numbers from [3]_. Hence,
+    maximum number of dimension is 21201. The direction numbers have been
+    precomputed with search criterion 6 and can be retrieved at
+    https://web.maths.unsw.edu.au/~fkuo/sobol/.
+
+    .. warning::
+
+       Sobol' sequences are a quadrature rule and they lose their balance
+       properties if one uses a sample size that is not a power of 2, or skips
+       the first point, or thins the sequence [4]_.
+
+       If :math:`n=2^m` points are not enough then one should take :math:`2^M`
+       points for :math:`M>m`. When scrambling, the number R of independent
+       replicates does not have to be a power of 2.
+
+       Sobol' sequences are generated to some number :math:`B` of bits. Then
+       after :math:`2^B` points have been generated, the sequence will repeat.
+       Currently :math:`B=30`.
 
     References
     ----------
@@ -1103,7 +1280,7 @@ class Sobol(QMCEngine):
     0.013882107204860938
 
     If some wants to continue an existing design, extra points can be obtained
-    by calling again ``random_base2(m)``. Alternatively, you can skip some
+    by calling again `random_base2`. Alternatively, you can skip some
     points like:
 
     >>> sampler.reset()
@@ -1211,8 +1388,7 @@ class Sobol(QMCEngine):
         Parameters
         ----------
         m : int
-            Exponent (power of 2) to calculate the number of samples to
-            generate in the parameter space.
+            Logarithm in base 2 of the number of samples; i.e., n = 2^m.
 
         Returns
         -------
@@ -1335,13 +1511,13 @@ class NormalQMC(QMCEngine):
     >>> import matplotlib.pyplot as plt
     >>> from scipy.stats import qmc
     >>> engine = qmc.NormalQMC(2)
-    >>> sample = engine.random(500)
+    >>> sample = engine.random(512)
     >>> plt.scatter(sample[:, 0], sample[:, 1])
     >>> plt.show()
 
     """
 
-    def __init__(self, dim, inv_transform=False, engine=None, seed=None):
+    def __init__(self, dim, inv_transform=True, engine=None, seed=None):
         super().__init__(dim=dim, seed=seed)
         self._inv_transform = inv_transform
         if not inv_transform:
@@ -1376,7 +1552,7 @@ class NormalQMC(QMCEngine):
             # (values to close to 0/1 result in inf values)
             return norm.ppf(0.5 + (1 - 1e-10) * (samples - 0.5))
         else:
-            # apply Box-Muller transform (note: [1] indexes starting from 1)
+            # apply Box-Muller transform (note: indexes starting from 1)
             even = np.arange(0, samples.shape[-1], 2)
             Rs = np.sqrt(-2 * np.log(samples[:, even]))
             thetas = 2 * math.pi * samples[:, 1 + even]
@@ -1414,7 +1590,7 @@ class MultivariateNormalQMC(QMCEngine):
     >>> import matplotlib.pyplot as plt
     >>> from scipy.stats import qmc
     >>> engine = qmc.MultivariateNormalQMC(mean=[0, 5], cov=[[1, 0], [0, 1]])
-    >>> sample = engine.random(500)
+    >>> sample = engine.random(512)
     >>> plt.scatter(sample[:, 0], sample[:, 1])
     >>> plt.show()
 
