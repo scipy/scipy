@@ -312,7 +312,7 @@ def freqz(b, a=1, worN=512, whole=False, plot=None, fs=2*pi, include_nyquist=Fal
     whole : bool, optional
         Normally, frequencies are computed from 0 to the Nyquist frequency,
         fs/2 (upper-half of unit-circle). If `whole` is True, compute
-        frequencies from 0 to fs. Ignored if w is array_like.
+        frequencies from 0 to fs. Ignored if worN is array_like.
     plot : callable
         A callable that takes two arguments. If given, the return parameters
         `w` and `h` are passed to plot. Useful for plotting the frequency
