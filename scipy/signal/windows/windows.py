@@ -8,9 +8,9 @@ from scipy import linalg, special, fft as sp_fft
 
 __all__ = ['boxcar', 'triang', 'parzen', 'bohman', 'blackman', 'nuttall',
            'blackmanharris', 'flattop', 'bartlett', 'hanning', 'barthann',
-           'hamming', 'kaiser', 'gaussian', 'general_cosine','general_gaussian',
-           'general_hamming', 'chebwin', 'cosine', 'hann',
-           'exponential', 'tukey', 'taylor', 'dpss', 'get_window']
+           'hamming', 'kaiser', 'gaussian', 'general_cosine',
+           'general_gaussian', 'general_hamming', 'chebwin', 'cosine',
+           'hann', 'exponential', 'tukey', 'taylor', 'dpss', 'get_window']
 
 
 def _len_guards(M):
@@ -1620,7 +1620,7 @@ def exponential(M, center=None, tau=1., sym=True):
     return _truncate(w, needs_trunc)
 
 
-def taylor(M, nbar=4, level=-30, sym=True):
+def taylor(M, nbar=4, level=-30, norm=True, sym=True):
     """
     Return the Taylor window.
 
@@ -1636,6 +1636,9 @@ def taylor(M, nbar=4, level=-30, sym=True):
         Number of nearly constant level sidelobes adjacent to the mainlobe.
     level : float
         Desired peak sidelobe level in decibels (db) relative to the mainlobe.
+    norm : boolean
+        When True (default), normalizes the window such that all values are
+        less than or equal to 1.
     sym : bool, optional
         When True (default), generates a symmetric window, for use in filter
         design.
@@ -1684,8 +1687,9 @@ def taylor(M, nbar=4, level=-30, sym=True):
     w = W(np.arange(M))
 
     # normalize (Note that this is not described in the original text [1])
-    scale = 1.0 / W((M - 1) / 2)
-    w *= scale
+    if norm:
+        scale = 1.0 / W((M - 1) / 2)
+        w *= scale
 
     return _truncate(w, needs_trunc)
 
