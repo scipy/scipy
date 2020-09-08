@@ -354,7 +354,7 @@ def _quadratic_assignment_faq(A, B,
         A threshold for the stopping criterion. Franke-Wolfe
         iteration terminates when the change in search position between
         iterations is sufficiently small, that is, when the relative Frobenius
-        norm, :math:`||P_{i}-P_{i+1}||_F \over \sqrt{len(P_{i})} \leq tol`, 
+        norm, :math:`||P_{i}-P_{i+1}||_F \over \sqrt{len(P_{i})} \leq tol`,
         where :math:`i` is the iteration number.
 
     Returns
