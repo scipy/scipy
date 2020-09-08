@@ -1,16 +1,54 @@
 # -*- coding: utf-8 -*-
-"""Quasi-Monte Carlo methods.
+r"""
+Quasi-Monte Carlo methods (:mod:`scipy.stats.qmc`)
+==================================================
 
-Define function to generate sample of points in the unit hypercube.
+.. currentmodule:: scipy.stats.qmc
 
-Quasi-Monte Carlo (QMC) methods [1]_,[2]_,[3]_] provide an :math:`n \times dim`
-matrix of numbers in :math:`[0,1]`. They can be used in place of n points from
-the :math:`U[0,1]^{dim}` distribution. Compared to random points, QMC
-points are designed to have fewer gaps and clumps. This is
+This module provides Quasi-Monte Carlo generators and associated helper
+functions.
+
+
+Quasi-Monte Carlo
+=================
+
+Engines
+-------
+
+.. autosummary::
+   :toctree: generated/
+
+   QMCEngine
+   Sobol
+   Halton
+   OrthogonalLatinHypercube
+   LatinHypercube
+   OptimalDesign
+   NormalQMC
+   MultivariateNormalQMC
+
+Helpers
+-------
+
+.. autosummary::
+   :toctree: generated/
+
+   discrepancy
+   scale
+   multinomial_qmc
+
+
+Introduction to Quasi-Monte Carlo
+=================================
+
+Quasi-Monte Carlo (QMC) methods [1]_, [2]_, [3]_ provide an
+:math:`n \times dim` matrix of numbers in :math:`[0,1]`. They can be used in
+place of n points from the :math:`U[0,1]^{dim}` distribution. Compared to
+random points, QMC points are designed to have fewer gaps and clumps. This is
 quantified by discrepancy measures [4]_. From the Koksma-Hlawka
 inequality [5]_ we know that low discrepancy reduces a bound on
 integration error. Averaging a function :math:`f` over :math:`n` QMC points
-can achieve an integration error close to :math:`O(n^-1)` for well
+can achieve an integration error close to :math:`O(n^{-1})` for well
 behaved functions [2]_.
 
 Most QMC constructions are designed for special values of :math:`n`
@@ -51,21 +89,21 @@ in high dimensions. (R)QMC can bring a great improvement over
 MC when the functions on which it is used are not worst case.
 For instance (R)QMC can be especially effective on integrands
 that are well approximated by sums of functions of one or two
-or some small number of their input variables at a time [10]_,[11]_.
+or some small number of their input variables at a time [10]_, [11]_.
 That property is often a surprising finding about those functions.
 
 Scrambled nets are a kind of RQMC that have some valuable robustness
 properties [12]_. If the integrand is square integrable they give variance
-:math:`var_SNET = o(1/n)`. There is a finite upper bound on
-:math:`var_SNET / var_MC` that holds simultaneously for every square integrable
-integrand. Scrambled nets satisfy a strong law of large numbers for :math:`f`
-in :math:`L^p` when :math:`p>1`. In some
+:math:`var_{SNET} = o(1/n)`. There is a finite upper bound on
+:math:`var_{SNET} / var_{MC}` that holds simultaneously for every square
+integrable integrand. Scrambled nets satisfy a strong law of large numbers
+for :math:`f` in :math:`L^p` when :math:`p>1`. In some
 special cases there is a central limit theorem [13]_. For smooth enough
-integrands they can achieve RMSE nearly O(n^-3). See [12]_ for references
-about these properties.
+integrands they can achieve RMSE nearly :math:`O(n^{-3})`. See [12]_
+for references about these properties.
 
 The main kinds of QMC methods are lattice rules [14]_ and digital
-nets and sequences [2]_,[15]_. The theories meet up in polynomial
+nets and sequences [2]_, [15]_. The theories meet up in polynomial
 lattice rules [16]_ which can produce digital nets. Lattice rules
 require some form of search for good constructions. For digital
 nets there are widely used default constructions.
@@ -86,7 +124,7 @@ properties but have not shown good empirical performance [21]_.
 
 Higher order digital nets are formed by a digit interleaving process
 in the digits of the constructed points. They can achieve higher
-levels of asymptotic accuracy given higher smoothness conditions on f
+levels of asymptotic accuracy given higher smoothness conditions on :math:`f`
 and they can be scrambled [22]_. There is little or no empirical work
 showing the improved rate to be attained.
 
@@ -104,7 +142,7 @@ and sometimes it improves the convergence rate [24]_.
 It is not straightforward to apply QMC methods to Markov
 chain Monte Carlo (MCMC).  We can think of MCMC as using
 n=1 one point in :math:`[0,1]^{dim}` for very large d, with ergodic results
-corresponding to :math:`dim\to \\infty`.  One proposal is in [25]_
+corresponding to :math:`dim \to \infty`.  One proposal is in [25]_
 and under strong conditions an improved rate of convergence
 has been shown [26]_.
 
