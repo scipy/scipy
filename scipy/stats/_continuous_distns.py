@@ -3000,7 +3000,7 @@ class gumbel_r_gen(rv_continuous):
         def func(vals, data):
             a, b = vals
             n = len(data)
-            exp_x_b = np.exp(- data / b)
+            exp_x_b = np.exp(-data / b)
             sum_exp_x_b = np.sum(exp_x_b)
             x1 = data.mean() - (np.dot(data, exp_x_b) / sum_exp_x_b) - b
             x2 = - b * np.log(sum_exp_x_b / n) - a
