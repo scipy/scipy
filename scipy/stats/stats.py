@@ -4071,7 +4071,8 @@ class SpearmanRConstantInputWarning(RuntimeWarning):
 SpearmanrResult = namedtuple('SpearmanrResult', ('correlation', 'pvalue'))
 
 
-def spearmanr(a, b=None, axis=0, nan_policy='propagate', alternative='two-sided'):
+def spearmanr(a, b=None, axis=0, nan_policy='propagate', 
+  alternative='two-sided'):
     """
     Calculate a Spearman correlation coefficient with associated p-value.
 
@@ -4217,7 +4218,8 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate', alternative='two-sided'
     variable_has_nan = np.zeros(n_vars, dtype=bool)
     if a_contains_nan:
         if nan_policy == 'omit':
-            return mstats_basic.spearmanr(a, axis=axis, nan_policy=nan_policy, alternative=alternative)
+            return mstats_basic.spearmanr(a, axis=axis, nan_policy=nan_policy, 
+              alternative=alternative)
         elif nan_policy == 'propagate':
             if a.ndim == 1 or n_vars <= 2:
                 return SpearmanrResult(np.nan, np.nan)

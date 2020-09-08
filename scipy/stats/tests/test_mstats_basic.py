@@ -222,14 +222,13 @@ class TestCorr(object):
         assert_almost_equal(mstats.spearmanr(x,y)[0], 0.6887299)
 
         # test alternative parameter (based on above)
-        pr = mstats.spearmanr(x,y).pvalue
+        pr = mstats.spearmanr(x, y).pvalue
 
-        p = mstats.spearmanr(x,y, alternative="greater").pvalue
+        p = mstats.spearmanr(x, y, alternative="greater").pvalue
         assert_almost_equal(p, pr / 2)
 
-        p = mstats.spearmanr(x,y, alternative="less").pvalue
+        p = mstats.spearmanr(x, y, alternative="less").pvalue
         assert_almost_equal(p, 1 - pr / 2)
-
 
         # Next test is to make sure calculation uses sufficient precision.
         # The denominator's value is ~n^3 and used to be represented as an
