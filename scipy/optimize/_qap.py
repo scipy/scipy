@@ -401,6 +401,7 @@ def _quadratic_assignment_faq(A, B,
 
     However, consider running from several randomized initializations and
     keeping the best result.
+    
 
     >>> res = min([quadratic_assignment(A, B, options=options)
     ...            for i in range(30)], key=lambda x: x.fun)
@@ -408,6 +409,7 @@ def _quadratic_assignment_faq(A, B,
     46.671852533681516 # may vary
 
     The '2-opt' method can be used to further refine the results.
+    
 
     >>> options = {"partial_guess": np.array([np.arange(n), res.col_ind]).T}
     >>> res = quadratic_assignment(A, B, method="2opt", options=options)
