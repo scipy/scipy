@@ -109,7 +109,7 @@ class IndexMixin(object):
             if not ((broadcast_row or x.shape[0] == i.shape[0]) and
                     (broadcast_col or x.shape[1] == i.shape[1])):
                 raise ValueError('shape mismatch in assignment')
-            if x.size == 0:
+            if x.shape[0] == 0 or x.shape[1] == 0:
                 return
             x = x.tocoo(copy=True)
             x.sum_duplicates()

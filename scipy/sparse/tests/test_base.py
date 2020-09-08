@@ -2631,6 +2631,11 @@ class _TestSlicingAssign(object):
                       ([[1, 2, 3], [0, 3, 4], [4, 1, 3]],
                        [[1, 2, 4], [0, 1, 3]]), [2, 3, 4])
 
+    def test_assign_empty_spmatrix(self):
+        A = self.spmatrix(np.ones((2, 3)))
+        B = self.spmatrix((1, 2))
+        A[1, :2] = B
+        assert_array_equal(A.todense(), [[1, 1, 1], [0, 0, 1]])
 
 class _TestFancyIndexing(object):
     """Tests fancy indexing features.  The tests for any matrix formats
