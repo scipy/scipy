@@ -245,7 +245,7 @@ def _common_input_validation(A, B, partial_match):
 def _quadratic_assignment_faq(A, B,
                               maximize=False, partial_match=None, rng=None,
                               P0="barycenter", shuffle_input=False, maxiter=30,
-                              tol=0.05, **unknown_options
+                              tol=0.03, **unknown_options
                               ):
     r"""
     Solve the quadratic assignment problem (approximately).
@@ -350,12 +350,12 @@ def _quadratic_assignment_faq(A, B,
     maxiter : int, positive (default = 30)
         Integer specifying the max number of Franke-Wolfe iterations performed.
 
-    tol : float (default = 0.05)
+    tol : float (default = 0.03)
         A threshold for the stopping criterion. Franke-Wolfe
         iteration terminates when the change in search position between
-        iterations is sufficiently small, that is, when the Frobenius
-        norm of :math:`(P_{i}-P_{i+1}) \leq tol`, where :math:`i` is
-        the iteration number.
+        iterations is sufficiently small, that is, when the relative Frobenius
+        norm, :math:`||P_{i}-P_{i+1}||_F \over \sqrt{len(P_{i})} \leq tol`, 
+        where :math:`i` is the iteration number.
 
     Returns
     -------
@@ -401,12 +401,14 @@ def _quadratic_assignment_faq(A, B,
 
     However, consider running from several randomized initializations and
     keeping the best result.
+
     >>> res = min([quadratic_assignment(A, B, options=options)
     ...            for i in range(30)], key=lambda x: x.fun)
     >>> print(res.fun)
     46.671852533681516 # may vary
 
     The '2-opt' method can be used to further refine the results.
+
     >>> options = {"partial_guess": np.array([np.arange(n), res.col_ind]).T}
     >>> res = quadratic_assignment(A, B, method="2opt", options=options)
     >>> print(res.fun)
@@ -517,7 +519,7 @@ def _quadratic_assignment_faq(A, B,
 
         # [1] Algorithm 1 Line 6 - Update P
         P_i1 = alpha * P + (1 - alpha) * Q
-        if np.linalg.norm(P - P_i1) < tol:
+        if n_unseed > 0 and np.linalg.norm(P - P_i1)/np.sqrt(n_unseed) < tol:
             P = P_i1
             break
         P = P_i1
