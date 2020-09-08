@@ -380,17 +380,7 @@ Quasi-Monte Carlo
 .. autosummary::
    :toctree: generated/
 
-   qmc.QMCEngine
-   qmc.Sobol
-   qmc.Halton
-   qmc.OrthogonalLatinHypercube
-   qmc.LatinHypercube
-   qmc.OptimalDesign
-   qmc.NormalQMC
-   qmc.MultivariateNormalQMC
-   qmc.discrepancy
-   qmc.scale
-   qmc.multinomial_qmc
+   qmc
 
 
 Warnings used in :mod:`scipy.stats`
