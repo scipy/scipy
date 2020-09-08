@@ -242,6 +242,7 @@ Mark Borgerding for contributing linalg.convolution_matrix.
 Shashaank N for contributions to scipy.signal.
 Frank Torres for fixing a bug with solve_bvp for large problems.
 Ben West for updating the Gamma distribution documentation.
+Terry Davis for documentation improvements in scipy.ndimage.morphology
 
 Institutions
 ------------
