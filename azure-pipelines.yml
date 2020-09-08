@@ -37,17 +37,17 @@ jobs:
            curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py && \
            python3.6 get-pip.py && \
            pip3 --version && \
-           pip3 install setuptools wheel numpy==1.14.5 cython==0.29.18 pybind11 pytest pytest-timeout pytest-xdist pytest-env pytest-cov Pillow mpmath matplotlib==3.1.3 --user && \
-           apt-get -y install gfortran-5 wget && \
+           pip3 install setuptools wheel numpy==1.16.6 cython==0.29.18 pybind11 pytest pytest-timeout pytest-xdist pytest-env pytest-cov Pillow mpmath matplotlib==3.1.3 --user && \
+           apt-get -y install gcc-5 g++-5 gfortran-5 wget && \
            cd .. && \
            mkdir openblas && cd openblas && \
            target=\$(python3.6 ../scipy/tools/openblas_support.py) && \
            cp -r \$target/lib/* /usr/lib && \
            cp \$target/include/* /usr/include && \
            cd ../scipy && \
-           F77=gfortran-5 F90=gfortran-5 python3.6 setup.py install && \
+           CC=gcc-5 CXX=g++-5 F77=gfortran-5 F90=gfortran-5 python3.6 setup.py install && \
            python3.6 tools/openblas_support.py --check_version $(openblas_version) && \
-           F77=gfortran-5 F90=gfortran-5 python3.6 runtests.py --mode=full -- -n auto -s --junitxml=junit/test-results.xml --cov-config=.coveragerc --cov-report=xml --cov-report=html"
+           CC=gcc-5 CXX=g++-5 F77=gfortran-5 F90=gfortran-5 python3.6 runtests.py --mode=full -- -n auto -s --junitxml=junit/test-results.xml --cov-config=.coveragerc --cov-report=xml --cov-report=html"
     displayName: 'Run 32-bit Ubuntu Docker Build / Tests'
   - task: PublishTestResults@2
     condition: succeededOrFailed()
@@ -99,7 +99,8 @@ jobs:
       versionSpec: $(PYTHON_VERSION)
       addToPath: true
       architecture: $(PYTHON_ARCH)
-  - script: python -m pip install --upgrade pip setuptools wheel
+  - script: |
+      python -m pip install --upgrade pip "setuptools<50.0" wheel
     displayName: 'Install tools'
   - powershell: |
       $pyversion = python -c "import sys; print(sys.version.split()[0])"
@@ -126,11 +127,20 @@ jobs:
       choco install -y mingw --forcex86 --force --version=6.4.0
     displayName: 'Install 32-bit mingw for 32-bit builds'
     condition: and(succeeded(), eq(variables['BITS'], 32))
-  - script: python -m pip install numpy cython==0.29.18 pybind11 pytest==5.4.3 pytest-timeout pytest-xdist pytest-env pytest-cov Pillow mpmath
+  - script: >-
+      python -m pip install
+      cython==0.29.18
+      matplotlib
+      mpmath
+      numpy
+      Pillow
+      pybind11
+      pytest==5.4.3
+      pytest-cov
+      pytest-env
+      pytest-timeout
+      pytest-xdist==1.34.0
     displayName: 'Install dependencies'
-  - powershell: |
-      python -m pip install matplotlib
-    displayName: 'Install matplotlib'
   # DLL resolution mechanics were changed in
   # Python 3.8: https://bugs.python.org/issue36085
   # While we normally leave adjustment of _distributor_init.py

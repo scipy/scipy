@@ -455,6 +455,10 @@ class RotationBench(Benchmark):
         '''Time converting rotation from and to rotation vectors'''
         Rotation.from_rotvec(self.rotations.as_rotvec())
 
+    def time_mrp_conversion(self, num_rotations):
+        '''Time converting rotation from and to Modified Rodrigues Parameters'''
+        Rotation.from_mrp(self.rotations.as_mrp())
+
     def time_mul_inv(self, num_rotations):
         '''Time multiplication and inverse of rotations'''
         self.rotations * self.rotations.inv()

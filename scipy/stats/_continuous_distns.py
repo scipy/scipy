@@ -3392,6 +3392,37 @@ class invgauss_gen(rv_continuous):
     def _stats(self, mu):
         return mu, mu**3.0, 3*np.sqrt(mu), 15*mu
 
+    def fit(self, data, *args, **kwds):
+
+        if type(self) == wald_gen:
+            return super(invgauss_gen, self).fit(data, *args, **kwds)
+
+        data, fshape_s, floc, fscale = _check_fit_input_parameters(self, data,
+                                                                   args, kwds)
+        '''
+        Source: Statistical Distributions, 3rd Edition. Evans, Hastings,
+        and Peacock (2000), Page 121. Their shape parameter is equivilent to
+        SciPy's with the conversion `fshape_s = fshape / scale`.
+
+        MLE formulas are not used in 3 condtions:
+        - `loc` is not fixed
+        - `mu` is fixed
+        These cases fall back on the superclass fit method.
+        - `loc` is fixed but translation results in negative data raises
+          a `FitDataError`.
+        '''
+        if floc is None or fshape_s is not None:
+            return super(invgauss_gen, self).fit(data, *args, **kwds)
+        elif np.any(data - floc < 0):
+            raise FitDataError("invgauss", lower=0, upper=np.inf)
+        else:
+            data = data - floc
+            fshape_n = np.mean(data)
+            if fscale is None:
+                fscale = len(data) / (np.sum(data ** -1 - fshape_n ** -1))
+            fshape_s = fshape_n / fscale
+        return fshape_s, floc, fscale
+
 
 invgauss = invgauss_gen(a=0.0, name='invgauss')
 
@@ -3991,7 +4022,7 @@ def _check_fit_input_parameters(dist, data, args, kwds):
     floc = kwds.get('floc', None)
     fscale = kwds.get('fscale', None)
 
-    num_shapes = len(dist.shapes.split(',')) if dist.shapes else 0
+    num_shapes = len(dist.shapes.split(",")) if dist.shapes else 0
     fshape_keys = []
     fshapes = []
 
@@ -4068,6 +4099,9 @@ class levy_gen(rv_continuous):
         # Equivalent to 2*norm.sf(np.sqrt(1/x))
         return sc.erfc(np.sqrt(0.5 / x))
 
+    def _sf(self, x):
+        return sc.erf(np.sqrt(0.5 / x))
+
     def _ppf(self, q):
         # Equivalent to 1.0/(norm.isf(q/2)**2) or 0.5/(erfcinv(q)**2)
         val = -sc.ndtri(q/2)
@@ -4117,9 +4151,16 @@ class levy_l_gen(rv_continuous):
         ax = abs(x)
         return 2 * _norm_cdf(1 / np.sqrt(ax)) - 1
 
+    def _sf(self, x):
+        ax = abs(x)
+        return 2 * _norm_sf(1 / np.sqrt(ax))
+
     def _ppf(self, q):
         val = _norm_ppf((q + 1.0) / 2)
         return -1.0 / (val * val)
+
+    def _isf(self, p):
+        return -1/_norm_isf(p/2)**2
 
     def _stats(self):
         return np.inf, np.inf, np.nan, np.nan
@@ -8423,7 +8464,7 @@ class argus_gen(rv_continuous):
     def _stats(self, chi):
         chi2 = chi**2
         phi = _argus_phi(chi)
-        m = np.sqrt(np.pi/8) * chi * np.exp(-chi2/4) * sc.iv(1, chi2/4) / phi
+        m = np.sqrt(np.pi/8) * chi * sc.ive(1, chi2/4) / phi
         v = (1 - 3 / chi2 + chi * _norm_pdf(chi) / phi) - m**2
         return m, v, None, None
 

@@ -15,10 +15,6 @@ class TestBSplines(object):
     """Test behaviors of B-splines. The values tested against were returned as of
     SciPy 1.1.0 and are included for regression testing purposes"""
 
-    def test_factorial(self):
-        # can't all be zero state
-        assert_equal(bsp.factorial(1), 1)
-
     def test_spline_filter(self):
         np.random.seed(12457)
         # Test the type-error branch

@@ -1061,19 +1061,20 @@ class TestPareto(object):
         args = [data, (stats.pareto._fitstart(data), )]
         func = stats.pareto._reduce_func(args, {})[1]
 
-        # fixed `floc` to actual location provides as good or better fit.
+        # fixed `floc` to actual location provides a better fit than the
+        # super method
         _assert_lessthan_loglike(stats.pareto, data, func, floc=rvs_loc)
 
-        # fixing `floc` to an arbitrary number, 0, still provides an as good
-        # or better fit.
+        # fixing `floc` to an arbitrary number, 0, still provides a better
+        # fit than the super method
         _assert_lessthan_loglike(stats.pareto, data, func, floc=0)
 
-        # fixed shape still uses analytical MLE and provides
-        # an as good or better fit.
+        # fixed shape still uses MLE formula and provides a better fit than
+        # the super method
         _assert_lessthan_loglike(stats.pareto, data, func, floc=0, f0=4)
 
-        # valid fixed fscale still uses analytical MLE and provides
-        # an as good or better fit.
+        # valid fixed fscale still uses MLE formulas and provides a better
+        # fit than the super method
         _assert_lessthan_loglike(stats.pareto, data, func, floc=0,
                                  fscale=rvs_scale/2)
 
@@ -1081,7 +1082,7 @@ class TestPareto(object):
         assert_fit_warnings(stats.pareto)
         # `floc` that causes invalid negative data
         assert_raises(FitDataError, stats.pareto.fit, [1, 2, 3], floc=2)
-        # `floc` and `fscale` combination causes invalid data > `fscale`
+        # `floc` and `fscale` combination causes invalid data
         assert_raises(FitDataError, stats.pareto.fit, [5, 2, 3], floc=1,
                       fscale=3)
 
@@ -1553,6 +1554,87 @@ class TestDLaplace(object):
         assert_allclose((v, k), (4., 3.25))
 
 
+class TestInvgauss(object):
+    def setup_method(self):
+        np.random.seed(1234)
+
+    @pytest.mark.parametrize("rvs_mu,rvs_loc,rvs_scale",
+                             [(2, 0, 1), (np.random.rand(3)*10)])
+    def test_fit(self, rvs_mu, rvs_loc, rvs_scale):
+        data = stats.invgauss.rvs(size=100, mu=rvs_mu,
+                                  loc=rvs_loc, scale=rvs_scale)
+        # Analytical MLEs are calculated with formula when `floc` is fixed
+        mu, loc, scale = stats.invgauss.fit(data, floc=rvs_loc)
+
+        data = data - rvs_loc
+        mu_temp = np.mean(data)
+        scale_mle = len(data) / (np.sum(data**(-1) - mu_temp**(-1)))
+        mu_mle = mu_temp/scale_mle
+
+        # `mu` and `scale` match analytical formula
+        assert_allclose(mu_mle, mu, atol=1e-15, rtol=1e-15)
+        assert_allclose(scale_mle, scale, atol=1e-15, rtol=1e-15)
+        assert_equal(loc, rvs_loc)
+        data = stats.invgauss.rvs(size=100, mu=rvs_mu,
+                                  loc=rvs_loc, scale=rvs_scale)
+        # fixed parameters are returned
+        mu, loc, scale = stats.invgauss.fit(data, floc=rvs_loc - 1,
+                                            fscale=rvs_scale + 1)
+        assert_equal(rvs_scale + 1, scale)
+        assert_equal(rvs_loc - 1, loc)
+
+        # shape can still be fixed with multiple names
+        shape_mle1 = stats.invgauss.fit(data, fmu=1.04)[0]
+        shape_mle2 = stats.invgauss.fit(data, fix_mu=1.04)[0]
+        shape_mle3 = stats.invgauss.fit(data, f0=1.04)[0]
+        assert shape_mle1 == shape_mle2 == shape_mle3 == 1.04
+
+    @pytest.mark.parametrize("rvs_mu,rvs_loc,rvs_scale",
+                             [(2, 0, 1), (np.random.rand(3)*10)])
+    def test_fit_MLE_comp_optimzer(self, rvs_mu, rvs_loc, rvs_scale):
+        data = stats.invgauss.rvs(size=100, mu=rvs_mu,
+                                  loc=rvs_loc, scale=rvs_scale)
+
+        super_fit = super(type(stats.invgauss), stats.invgauss).fit
+        # fitting without `floc` uses superclass fit method
+        super_fitted = super_fit(data)
+        invgauss_fit = stats.invgauss.fit(data)
+        assert_equal(super_fitted, invgauss_fit)
+
+        # fitting with `fmu` is uses superclass fit method
+        super_fitted = super_fit(data, floc=0, fmu=2)
+        invgauss_fit = stats.invgauss.fit(data, floc=0, fmu=2)
+        assert_equal(super_fitted, invgauss_fit)
+
+        # obtain log-likelihood objective function to compare results
+        args = [data, (stats.invgauss._fitstart(data), )]
+        func = stats.invgauss._reduce_func(args, {})[1]
+
+        # fixed `floc` uses analytical formula and provides better fit than
+        # super method
+        _assert_lessthan_loglike(stats.invgauss, data, func, floc=rvs_loc)
+
+        # fixed `floc` not resulting in invalid data < 0 uses analytical
+        # formulas and provides a better fit than the super method
+        assert np.all((data - (rvs_loc - 1)) > 0)
+        _assert_lessthan_loglike(stats.invgauss, data, func, floc=rvs_loc - 1)
+
+        # fixed `floc` to an arbitrary number, 0, still provides a better fit
+        # than the super method
+        _assert_lessthan_loglike(stats.invgauss, data, func, floc=0)
+
+        # fixed `fscale` to an arbitrary number still provides a better fit
+        # than the super method
+        _assert_lessthan_loglike(stats.invgauss, data, func, floc=rvs_loc,
+                                 fscale=np.random.rand(1)[0])
+
+    def test_fit_raise_errors(self):
+        assert_fit_warnings(stats.invgauss)
+        # FitDataError is raised when negative invalid data
+        with pytest.raises(FitDataError):
+            stats.invgauss.fit([1, 2, 3], floc=2)
+
+
 class TestLaplace(object):
     @pytest.mark.parametrize("rvs_loc", [-5, 0, 1, 2])
     @pytest.mark.parametrize("rvs_scale", [1, 2, 3, 10])
@@ -1565,12 +1647,12 @@ class TestLaplace(object):
         loc_mle = np.median(data)
         scale_mle = np.sum(np.abs(data - loc_mle)) / len(data)
 
-        # standard outputs should match MLE
+        # standard outputs should match analytical MLE formulas
         loc, scale = stats.laplace.fit(data)
         assert_allclose(loc, loc_mle, atol=1e-15, rtol=1e-15)
         assert_allclose(scale, scale_mle, atol=1e-15, rtol=1e-15)
 
-        # fixed parameter should use MLE for other
+        # fixed parameter should use analytical formula for other
         loc, scale = stats.laplace.fit(data, floc=loc_mle)
         assert_allclose(scale, scale_mle, atol=1e-15, rtol=1e-15)
         loc, scale = stats.laplace.fit(data, fscale=scale_mle)
@@ -1584,12 +1666,12 @@ class TestLaplace(object):
         # fixed loc to non median, scale should match
         # scale calculation with modified loc
         loc, scale = stats.laplace.fit(data, floc=loc)
-        assert_allclose(scale, scale_mle, atol=1e-15, rtol=1e-15)
+        assert_equal(scale_mle, scale)
 
         # fixed scale created with non median loc,
         # loc output should still be the data median.
         loc, scale = stats.laplace.fit(data, fscale=scale_mle)
-        assert_allclose(loc_mle, loc, atol=1e-15, rtol=1e-15)
+        assert_equal(loc_mle, loc)
 
         # error raised when both `floc` and `fscale` are fixed
         assert_raises(RuntimeError, stats.laplace.fit, data, floc=loc_mle,
@@ -1810,13 +1892,6 @@ class TestRvDiscrete(object):
         assert_array_equal(rv.ppf(rv.cdf(rv.xk[:-1]) + 1e-8),
                            rv.xk[1:])
 
-    def test_expect(self):
-        xk = [1, 2, 4, 6, 7, 11]
-        pk = [0.1, 0.2, 0.2, 0.2, 0.2, 0.1]
-        rv = stats.rv_discrete(values=(xk, pk))
-
-        assert_allclose(rv.expect(), np.sum(rv.xk * rv.pk), atol=1e-14)
-
     def test_multidimension(self):
         xk = np.arange(12).reshape((3, 4))
         pk = np.array([[0.1, 0.1, 0.15, 0.05],
@@ -1856,8 +1931,15 @@ class TestRvDiscrete(object):
         # same shapes => no error
         xk, pk = np.arange(6).reshape((3, 2)), np.full((3, 2), 1/6)
         assert_equal(stats.rv_discrete(values=(xk, pk)).pmf(0), 1/6)
-        
-    def test_expect(self):
+
+    def test_expect1(self):
+        xk = [1, 2, 4, 6, 7, 11]
+        pk = [0.1, 0.2, 0.2, 0.2, 0.2, 0.1]
+        rv = stats.rv_discrete(values=(xk, pk))
+
+        assert_allclose(rv.expect(), np.sum(rv.xk * rv.pk), atol=1e-14)
+
+    def test_expect2(self):
         # rv_sample should override _expect. Bug report from
         # https://stackoverflow.com/questions/63199792
         y = [200.0, 300.0, 400.0, 500.0, 600.0, 700.0, 800.0, 900.0, 1000.0,
@@ -1870,13 +1952,14 @@ class TestRvDiscrete(object):
         py = [0.0004, 0.0, 0.0033, 0.006500000000000001, 0.0, 0.0,
               0.004399999999999999, 0.6862, 0.0, 0.0, 0.0,
               0.00019999999999997797, 0.0006000000000000449,
-              0.024499999999999966, 0.006400000000000072, 0.0043999999999999595,
-              0.019499999999999962, 0.03770000000000007, 0.01759999999999995,
-              0.015199999999999991, 0.018100000000000005, 0.04500000000000004,
-              0.0025999999999999357, 0.0, 0.0041000000000001036,
-              0.005999999999999894, 0.0042000000000000925,
-              0.0050000000000000044, 0.0041999999999999815,
-              0.0004999999999999449, 0.009199999999999986, 0.008200000000000096,
+              0.024499999999999966, 0.006400000000000072,
+              0.0043999999999999595, 0.019499999999999962,
+              0.03770000000000007, 0.01759999999999995, 0.015199999999999991,
+              0.018100000000000005, 0.04500000000000004, 0.0025999999999999357,
+              0.0, 0.0041000000000001036, 0.005999999999999894,
+              0.0042000000000000925, 0.0050000000000000044,
+              0.0041999999999999815, 0.0004999999999999449,
+              0.009199999999999986, 0.008200000000000096,
               0.0, 0.0, 0.0046999999999999265, 0.0019000000000000128,
               0.0006000000000000449, 0.02510000000000001, 0.0,
               0.007199999999999984, 0.0, 0.012699999999999934, 0.0, 0.0,
@@ -3990,6 +4073,38 @@ def test_levy_cdf_ppf():
     assert_allclose(xx, x, rtol=1e-13)
 
 
+def test_levy_sf():
+    # Large values, far into the tail of the distribution.
+    x = np.array([1e15, 1e25, 1e35, 1e50])
+    # Expected values were calculated with mpmath.
+    expected = np.array([2.5231325220201597e-08,
+                         2.52313252202016e-13,
+                         2.52313252202016e-18,
+                         7.978845608028653e-26])
+    y = stats.levy.sf(x)
+    assert_allclose(y, expected, rtol=1e-14)
+
+
+def test_levy_l_sf():
+    # Test levy_l.sf for small arguments.
+    x = np.array([-0.016, -0.01, -0.005, -0.0015])
+    # Expected values were calculated with mpmath.
+    expected = np.array([2.6644463892359302e-15,
+                         1.523970604832107e-23,
+                         2.0884875837625492e-45,
+                         5.302850374626878e-147])
+    y = stats.levy_l.sf(x)
+    assert_allclose(y, expected, rtol=1e-13)
+
+
+def test_levy_l_isf():
+    # Test roundtrip sf(isf(p)), including a small input value.
+    p = np.array([3.0e-15, 0.25, 0.99])
+    x = stats.levy_l.isf(p)
+    q = stats.levy_l.sf(x)
+    assert_allclose(q, p, rtol=5e-14)
+
+
 def test_hypergeom_interval_1802():
     # these two had endless loops
     assert_equal(stats.hypergeom.interval(.95, 187601, 43192, 757),
@@ -4734,6 +4849,28 @@ class TestArgus(object):
         x = stats.argus.rvs(3.5, size=1500, random_state=1535)
         assert_almost_equal(stats.argus(3.5).mean(), x.mean(), decimal=3)
         assert_almost_equal(stats.argus(3.5).std(), x.std(), decimal=3)
+
+    # Expected values were computed with mpmath.
+    @pytest.mark.parametrize('chi, expected_mean',
+                             [(1, 0.6187026683551835),
+                              (10, 0.984805536783744),
+                              (40, 0.9990617659702923),
+                              (60, 0.9995831885165300),
+                              (99, 0.9998469348663028)])
+    def test_mean(self, chi, expected_mean):
+        m = stats.argus.mean(chi, scale=1)
+        assert_allclose(m, expected_mean, rtol=1e-13)
+
+    # Expected values were computed with mpmath.
+    @pytest.mark.parametrize('chi, expected_var, rtol',
+                             [(1, 0.05215651254197807, 1e-13),
+                              (10, 0.00015805472008165595, 1e-11),
+                              (40, 5.877763210262901e-07, 1e-8),
+                              (60, 1.1590179389611416e-07, 1e-8),
+                              (99, 1.5623277006064666e-08, 1e-8)])
+    def test_var(self, chi, expected_var, rtol):
+        v = stats.argus.var(chi, scale=1)
+        assert_allclose(v, expected_var, rtol=rtol)
 
 
 def test_rvs_no_size_warning():

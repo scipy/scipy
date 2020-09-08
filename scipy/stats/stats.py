@@ -174,7 +174,7 @@ from numpy import array, asarray, ma
 from scipy.spatial.distance import cdist
 from scipy.ndimage import measurements
 from scipy._lib._util import (_lazywhere, check_random_state, MapWrapper,
-                              rng_integers)
+                              rng_integers, float_factorial)
 import scipy.special as special
 from scipy import linalg
 from . import distributions
@@ -4529,9 +4529,9 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate',
         elif size == 2:
             pvalue = 1.0
         elif c == 0:
-            pvalue = 2.0/math.factorial(size) if size < 171 else 0.0
+            pvalue = 2.0/float_factorial(size)
         elif c == 1:
-            pvalue = 2.0/math.factorial(size-1) if (size-1) < 171 else 0.0
+            pvalue = 2.0/float_factorial(size-1)
         elif 2*c == tot:
             pvalue = 1.0
         else:
@@ -4545,7 +4545,7 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate',
                 for k in range(j, c+1):
                     new[k] += new[k-1] - old[k-j]
 
-            pvalue = 2.0*sum(new)/math.factorial(size) if size < 171 else 0.0
+            pvalue = 2.0*sum(new)/float_factorial(size)
 
     elif method == 'asymptotic':
         # con_minus_dis is approx normally distributed with this variance [3]_
@@ -7552,10 +7552,11 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
         statistic = -2 * np.sum(np.log1p(-pvalues))
         pval = distributions.chi2.sf(statistic, 2 * len(pvalues))
     elif method == 'mudholkar_george':
+        normalizing_factor = np.sqrt(3/len(pvalues))/np.pi
         statistic = -np.sum(np.log(pvalues)) + np.sum(np.log1p(-pvalues))
         nu = 5 * len(pvalues) + 4
         approx_factor = np.sqrt(nu / (nu - 2))
-        pval = distributions.t.sf(statistic * approx_factor, nu)
+        pval = distributions.t.sf(statistic * normalizing_factor * approx_factor, nu)
     elif method == 'tippett':
         statistic = np.min(pvalues)
         pval = distributions.beta.sf(statistic, 1, len(pvalues))

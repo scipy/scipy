@@ -3830,23 +3830,21 @@ class TestGammatone(object):
     def test_invalid_input(self):
         # Cutoff frequency is <= 0 or >= fs / 2.
         fs = 16000
-        with pytest.raises(ValueError, match='The frequency must be between '):
-            gammatone(-fs, 'iir', fs=fs)
-            gammatone(0, 'fir', fs=fs)
-            gammatone(fs / 2, 'iir', fs=fs)
-            gammatone(fs, 'fir', fs=fs)
+        for args in [(-fs, 'iir'), (0, 'fir'), (fs / 2, 'iir'), (fs, 'fir')]:
+            with pytest.raises(ValueError, match='The frequency must be '
+                               'between '):
+                gammatone(*args, fs=fs)
 
         # Filter type is not fir or iir
-        with pytest.raises(ValueError, match='ftype must be '):
-            gammatone(440, ftype='fie', fs=16000)
-            gammatone(220, ftype='it', fs=32000)
+        for args in [(440, 'fie'), (220, 'it')]:
+            with pytest.raises(ValueError, match='ftype must be '):
+                gammatone(*args, fs=fs)
 
         # Order is <= 0 or > 24 for FIR filter.
-        with pytest.raises(ValueError, match='Invalid order: '):
-            gammatone(440, 'fir', fs=16000, order=-50)
-            gammatone(220, 'fir', fs=32000, order=0)
-            gammatone(110, 'fir', fs=44100, order=25)
-            gammatone(55, 'fir', fs=48000, order=50)
+        for args in [(440, 'fir', -50), (220, 'fir', 0), (110, 'fir', 25),
+                     (55, 'fir', 50)]:
+            with pytest.raises(ValueError, match='Invalid order: '):
+                gammatone(*args, numtaps=None, fs=fs)
 
     # Verify that the filter's frequency response is approximately
     # 1 at the cutoff frequency.
