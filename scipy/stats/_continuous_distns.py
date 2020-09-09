@@ -3075,6 +3075,17 @@ class gumbel_l_gen(rv_continuous):
     def _entropy(self):
         return _EULER + 1.
 
+    def fit(self, data, *args, **kwds):
+        # The fit method of `gumbel_r` can be used for this distribution with
+        # small modifications. The process to do this is
+        # 1. pass the sign negated data into `gumbel_r.fit`
+        # 2. negate the sign of the resulting location, leaving the scale
+        #    unmodified.
+        # `gumbel_r.fit` holds necessary input checks.
+
+        loc_r, scale_r, = gumbel_r.fit(-data, *args, **kwds)
+        return (-loc_r, scale_r)
+
 
 gumbel_l = gumbel_l_gen(name='gumbel_l')
 
