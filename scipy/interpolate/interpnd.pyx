@@ -854,12 +854,12 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
 
     @cython.boundscheck(False)
     @cython.wraparound(False)
-    def _do_evaluate(self, double[:,::1] xi, double_or_complex dummy):
-        cdef double_or_complex[:,::1] values = self.values
-        cdef double_or_complex[:,:,:] grad = self.grad
+    def _do_evaluate(self, const double[:,::1] xi, double_or_complex dummy):
+        cdef const double_or_complex[:,::1] values = self.values
+        cdef const double_or_complex[:,:,:] grad = self.grad
         cdef double_or_complex[:,::1] out
-        cdef double[:,::1] points = self.points
-        cdef int[:,::1] simplices = self.tri.simplices
+        cdef const double[:,::1] points = self.points
+        cdef const int[:,::1] simplices = self.tri.simplices
         cdef double c[NPY_MAXDIMS]
         cdef double_or_complex f[NPY_MAXDIMS+1]
         cdef double_or_complex df[2*NPY_MAXDIMS+2]
