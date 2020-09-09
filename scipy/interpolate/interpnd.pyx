@@ -291,7 +291,7 @@ class LinearNDInterpolator(NDInterpolatorBase):
         cdef const double_or_complex[:,::1] values = self.values
         cdef double_or_complex[:,::1] out
         cdef const double[:,::1] points = self.points
-        cdef int[:,::1] simplices = self.tri.simplices
+        cdef const int[:,::1] simplices = self.tri.simplices
         cdef double c[NPY_MAXDIMS]
         cdef double_or_complex fill_value
         cdef int i, j, k, m, ndim, isimplex, inside, start, nvalues
