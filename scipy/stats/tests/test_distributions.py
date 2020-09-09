@@ -77,6 +77,28 @@ def test_vonmises_numerical():
     assert_almost_equal(vm.cdf(0), 0.5)
 
 
+# Expected values of the vonmises PDF were computed using
+# mpmath with 50 digits of precision:
+#
+# def vmpdf_mp(x, kappa):
+#     x = mpmath.mpf(x)
+#     kappa = mpmath.mpf(kappa)
+#     num = mpmath.exp(kappa*mpmath.cos(x))
+#     den = 2 * mpmath.pi * mpmath.besseli(0, kappa)
+#     return num/den
+#
+@pytest.mark.parametrize('x, kappa, expected_pdf',
+                         [(0.1, 0.01, 0.16074242744907072),
+                          (0.1, 25.0, 1.7515464099118245),
+                          (0.1, 800, 0.2073272544458798),
+                          (2.0, 0.01, 0.15849003875385817),
+                          (2.0, 25.0, 8.356882934278192e-16),
+                          (2.0, 800, 0.0)])
+def test_vonmises_pdf(x, kappa, expected_pdf):
+    pdf = stats.vonmises.pdf(x, kappa)
+    assert_allclose(pdf, expected_pdf, rtol=1e-15)
+
+
 def _assert_lessthan_loglike(dist, data, func, **kwds):
     mle_analytical = dist.fit(data, **kwds)
     numerical_opt = super(type(dist), dist).fit(data, **kwds)
