@@ -10,8 +10,13 @@ import argparse
 # The set of Unicode code points greater than 127 that we
 # allow in the source code.
 box_drawing_chars = set(chr(cp) for cp in range(0x2500, 0x2580))
-allowed = (set(['®', 'é', 'ö', 'λ', 'π', 'ω', '∫', '≠']) |
-           box_drawing_chars)
+greek_letters = set(chr(cp) for cp in chain(
+    range(0x03b1, 0x3c2), range(0x3c3, 0x03c9 + 1),  # small
+    range(0x0391, 0x03a2), range(0x03a3,  0x03a9 + 1))  # large
+)
+allowed = (set(['®', 'é', 'ö', '∫', '≠']) |
+           box_drawing_chars |
+           greek_letters)
 
 
 def unicode_check(showall=False):

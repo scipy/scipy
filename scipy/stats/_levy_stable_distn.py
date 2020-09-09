@@ -1,3 +1,6 @@
+# -*- coding: utf-8 -*-
+#
+
 import warnings
 
 import numpy as np
@@ -299,7 +302,7 @@ def _pdf_single_value_piecewise(x, alpha, beta, **kwds):
             # exp_height = 1 is handled by peak
         ]
         intg_points = [left_support, peak, right_support] + tail_points
-        intg, *ret  = integrate.quad(
+        intg, *ret = integrate.quad(
             integrand,
             left_support,
             right_support,
@@ -501,7 +504,7 @@ class levy_stable_gen(rv_continuous):
     .. [MC] McCulloch, J., 1986. Simple consistent estimators of stable
         distribution parameters. Communications in Statistics - Simulation and
         Computation 15, 11091136.
-    .. [WZ] Wang, Li and Zhang, Ji-Hong, 2008. Simpson’s rule based FFT method
+    .. [WZ] Wang, Li and Zhang, Ji-Hong, 2008. Simpson's rule based FFT method
         to compute densities of stable distribution.
     .. [NO] Nolan, J., 1997. Numerical Calculation of Stable Densities and
         distributions Functions.
@@ -513,6 +516,8 @@ class levy_stable_gen(rv_continuous):
     """
 
     def _rvs(self, alpha, beta, size=None, random_state=None):
+        """Simulate random variables using Nolan's methods as detailed in [NO].
+        """
         def alpha1func(alpha, beta, TH, aTH, bTH, cosTH, tanTH, W):
             return 2 / np.pi * (np.pi / 2 + bTH) * tanTH - beta * np.log(
                 (np.pi / 2 * W * cosTH) / (np.pi / 2 + bTH)

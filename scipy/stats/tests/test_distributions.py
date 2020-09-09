@@ -2315,25 +2315,36 @@ class TestLevyStable(object):
         npisin = np.isin if hasattr(np, "isin") else np.in1d
 
         # fmt: off
-        tests = [  # noqa
+        tests = [
             # TODO: reduce range of pct to speed up computation as
             # numerical integration slow, eg [.01, .05, .5, .95, .99]
             ['dni', 1e-7, lambda r: ~(
                 ((r['beta'] == 0) & (r['pct'] == 0.5))
-                | ((r['beta'] >= 0.9) & (r['alpha'] >= 1.6) & (r['pct'] == 0.5))
+                | ((r['beta'] >= 0.9) & (r['alpha'] >= 1.6)
+                    & (r['pct'] == 0.5))
                 | ((r['alpha'] <= 0.4) & npisin(r['pct'], [.01, .99]))
                 | ((r['alpha'] <= 0.3) & npisin(r['pct'], [.05, .95]))
                 | ((r['alpha'] <= 0.2) & npisin(r['pct'], [.1, .9]))
-                | ((r['alpha'] == 0.1) & npisin(r['pct'], [.25, .75]) & npisin(np.abs(r['beta']), [.5, .6, .7]))
-                | ((r['alpha'] == 0.1) & npisin(r['pct'], [.5]) & npisin(np.abs(r['beta']), [.1]))
-                | ((r['alpha'] == 0.1) & (r['beta'] == -0.3) & (r['pct'] == 0.65))
-                | ((r['alpha'] == 0.1) & (r['beta'] == 0.4) & (r['pct'] == 0.35))
-                | ((r['alpha'] == 0.2) & (r['beta'] == 0.5) & (r['pct'] == 0.25))
-                | ((r['alpha'] == 0.2) & (r['beta'] == -0.3) & (r['pct'] == 0.65))
-                | ((r['alpha'] == 0.2) & (r['beta'] == 0.3) & (r['pct'] == 0.35))
-                | ((r['alpha'] == 1.) & npisin(r['pct'], [.5]) & npisin(np.abs(r['beta']), [.1, .2, .3, .4]))
-                | ((r['alpha'] == 1.) & npisin(r['pct'], [.35, .65]) & npisin(np.abs(r['beta']), [.8, .9, 1.]))
-                | ((r['alpha'] >= 1.1))  # various points ok but too sparse to list
+                | ((r['alpha'] == 0.1) & npisin(r['pct'], [.25, .75])
+                    & npisin(np.abs(r['beta']), [.5, .6, .7]))
+                | ((r['alpha'] == 0.1) & npisin(r['pct'], [.5])
+                    & npisin(np.abs(r['beta']), [.1]))
+                | ((r['alpha'] == 0.1) & (r['beta'] == -0.3)
+                    & (r['pct'] == 0.65))
+                | ((r['alpha'] == 0.1) & (r['beta'] == 0.4)
+                    & (r['pct'] == 0.35))
+                | ((r['alpha'] == 0.2) & (r['beta'] == 0.5)
+                    & (r['pct'] == 0.25))
+                | ((r['alpha'] == 0.2) & (r['beta'] == -0.3)
+                    & (r['pct'] == 0.65))
+                | ((r['alpha'] == 0.2) & (r['beta'] == 0.3)
+                    & (r['pct'] == 0.35))
+                | ((r['alpha'] == 1.) & npisin(r['pct'], [.5])
+                    & npisin(np.abs(r['beta']), [.1, .2, .3, .4]))
+                | ((r['alpha'] == 1.) & npisin(r['pct'], [.35, .65])
+                    & npisin(np.abs(r['beta']), [.8, .9, 1.]))
+                # various points ok but too sparse to list
+                | ((r['alpha'] >= 1.1))
             )],
 
             # piecewise generally good accuracy
@@ -2347,7 +2358,8 @@ class TestLevyStable(object):
 
             # fft accuracy reduces as alpha decreases
             ['fft-simpson', 1e-5, lambda r: r['alpha'] >= 1.9],
-            ['fft-simpson', 1e-6, lambda r: (r['alpha'] > 1) & (r['alpha'] < 1.9)],
+            ['fft-simpson', 1e-6, lambda r: (r['alpha'] > 1)
+                & (r['alpha'] < 1.9)],
             # fft relative errors for alpha < 1, will raise if enabled
             # ['fft-simpson', 1e-4, lambda r: r['alpha'] == 0.9],
             # ['fft-simpson', 1e-3, lambda r: r['alpha'] == 0.8],
@@ -2433,7 +2445,7 @@ class TestLevyStable(object):
         data = np.load(
             os.path.abspath(
                 os.path.join(
-                    os.path.dirname(__file__), 
+                    os.path.dirname(__file__),
                     'data/stable-cdf-sample-data.npy'
                 )
             )
@@ -2444,20 +2456,28 @@ class TestLevyStable(object):
         tests = [
             # piecewise generally good accuracy
             ['piecewise', 1e-12, lambda r: ~(
-                ((r['alpha'] == 1.) & np.isin(r['beta'], [-0.3, -0.2, -0.1]) & (r['pct'] == 0.01))
-                | ((r['alpha'] == 1.) & np.isin(r['beta'], [0.1, 0.2, 0.3]) & (r['pct'] == 0.99))
+                ((r['alpha'] == 1.) & np.isin(r['beta'], [-0.3, -0.2, -0.1])
+                    & (r['pct'] == 0.01))
+                | ((r['alpha'] == 1.) & np.isin(r['beta'], [0.1, 0.2, 0.3])
+                    & (r['pct'] == 0.99))
             )],
-            # for some points with alpha=1, Nolan's STABLE clearly loses accuracy
+            # for some points with alpha=1, Nolan's STABLE clearly
+            # loses accuracy
             ['piecewise', 5e-2, lambda r: (
-                ((r['alpha'] == 1.) & np.isin(r['beta'], [-0.3, -0.2, -0.1]) & (r['pct'] == 0.01))
-                | ((r['alpha'] == 1.) & np.isin(r['beta'], [0.1, 0.2, 0.3]) & (r['pct'] == 0.99))
+                ((r['alpha'] == 1.) & np.isin(r['beta'], [-0.3, -0.2, -0.1])
+                    & (r['pct'] == 0.01))
+                | ((r['alpha'] == 1.) & np.isin(r['beta'], [0.1, 0.2, 0.3])
+                    & (r['pct'] == 0.99))
             )],
 
             # fft accuracy poor, very poor alpha < 1
             ['fft-simpson', 1e-5, lambda r: r['alpha'] > 1.7],
-            ['fft-simpson', 1e-4, lambda r: (r['alpha'] > 1.5) & (r['alpha'] <= 1.7)],
-            ['fft-simpson', 1e-3, lambda r: (r['alpha'] > 1.3) & (r['alpha'] <= 1.5)],
-            ['fft-simpson', 1e-2, lambda r: (r['alpha'] > 1.0) & (r['alpha'] <= 1.3)],
+            ['fft-simpson', 1e-4, lambda r: (r['alpha'] > 1.5)
+                & (r['alpha'] <= 1.7)],
+            ['fft-simpson', 1e-3, lambda r: (r['alpha'] > 1.3)
+                & (r['alpha'] <= 1.5)],
+            ['fft-simpson', 1e-2, lambda r: (r['alpha'] > 1.0)
+                & (r['alpha'] <= 1.3)],
         ]
         for ix, (default_method, rtol,
                  filter_func) in enumerate(tests):
@@ -2467,8 +2487,8 @@ class TestLevyStable(object):
             with suppress_warnings() as sup:
                 sup.record(
                     RuntimeWarning,
-                    'Cumulative density calculations experimental for FFT method.'
-                    + ' Use piecewise method instead.*'
+                    'Cumulative density calculations experimental for FFT'
+                    + ' method. Use piecewise method instead.*'
                 )
                 p = stats.levy_stable.cdf(
                     subdata['x'],
