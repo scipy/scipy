@@ -810,7 +810,11 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         broadcast_row = M != 1 and x.shape[0] == 1
         broadcast_col = N != 1 and x.shape[1] == 1
         r, c = x.row, x.col
+
         x = np.asarray(x.data, dtype=self.dtype)
+        if x.size == 0:
+            return
+
         if broadcast_row:
             r = np.repeat(np.arange(M), len(r))
             c = np.tile(c, M)
