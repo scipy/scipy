@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 import sys
 import copy
 import heapq
@@ -105,7 +103,7 @@ class _Bunch(object):
 
 def quad_vec(f, a, b, epsabs=1e-200, epsrel=1e-8, norm='2', cache_size=100e6, limit=10000,
              workers=1, points=None, quadrature=None, full_output=False):
-    """Adaptive integration of a vector-valued function.
+    r"""Adaptive integration of a vector-valued function.
 
     Parameters
     ----------
@@ -198,6 +196,21 @@ def quad_vec(f, a, b, epsabs=1e-200, epsrel=1e-8, norm='2', cache_size=100e6, li
     ----------
     [1] R. Piessens, E. de Doncker, QUADPACK (1983).
 
+    Examples
+    --------
+    We can compute integrations of a vector-valued function:
+
+    >>> from scipy.integrate import quad_vec
+    >>> import matplotlib.pyplot as plt
+    >>> alpha = np.linspace(0.0, 2.0, num=30)
+    >>> f = lambda x: x**alpha
+    >>> x0, x1 = 0, 2
+    >>> y, err = quad_vec(f, x0, x1)
+    >>> plt.plot(alpha, y)
+    >>> plt.xlabel(r"$\alpha$")
+    >>> plt.ylabel(r"$\int_{0}^{2} x^\alpha dx$")
+    >>> plt.show()
+
     """
     a = float(a)
     b = float(b)
@@ -264,8 +277,8 @@ def quad_vec(f, a, b, epsabs=1e-200, epsrel=1e-8, norm='2', cache_size=100e6, li
                        'gk21': _quadrature_gk21,
                        'gk15': _quadrature_gk15,
                        'trapz': _quadrature_trapz}[quadrature]
-    except KeyError:
-        raise ValueError("unknown quadrature {!r}".format(quadrature))
+    except KeyError as e:
+        raise ValueError("unknown quadrature {!r}".format(quadrature)) from e
 
     # Initial interval set
     if points is None:

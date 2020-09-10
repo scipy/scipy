@@ -586,7 +586,7 @@ npy_intp csr_matmat_maxnnz(const I n_row,
 
         npy_intp next_nnz = nnz + row_nnz;
 
-        if (row_nnz > NPY_MAX_INTP - nnz || next_nnz != (I)next_nnz) {
+        if (row_nnz > NPY_MAX_INTP - nnz) {
             /*
              * Index overflowed. Note that row_nnz <= n_col and cannot overflow
              */

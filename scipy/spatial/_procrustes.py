@@ -5,8 +5,6 @@ This code was originally written by Justin Kucynski and ported over from
 scikit-bio by Yoshiki Vazquez-Baeza.
 """
 
-from __future__ import absolute_import, division, print_function
-
 import numpy as np
 from scipy.linalg import orthogonal_procrustes
 

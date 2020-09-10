@@ -1,4 +1,3 @@
-from __future__ import division, print_function, absolute_import
 import pytest
 
 from math import sqrt, exp, sin, cos

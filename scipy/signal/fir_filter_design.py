@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 """Functions for FIR filter design."""
-from __future__ import division, print_function, absolute_import
 
 from math import ceil, log
 import operator
@@ -842,9 +841,9 @@ def remez(numtaps, bands, desired, weight=None, Hz=None, type='bandpass',
     # Convert type
     try:
         tnum = {'bandpass': 1, 'differentiator': 2, 'hilbert': 3}[type]
-    except KeyError:
+    except KeyError as e:
         raise ValueError("Type must be 'bandpass', 'differentiator', "
-                         "or 'hilbert'")
+                         "or 'hilbert'") from e
 
     # Convert weight
     if weight is None:
@@ -1008,7 +1007,7 @@ def firls(numtaps, bands, desired, weight=None, nyq=None, fs=None):
     # Set up the linear matrix equation to be solved, Qa = b
 
     # We can express Q(k,n) = 0.5 Q1(k,n) + 0.5 Q2(k,n)
-    # where Q1(k,n)=q(k−n) and Q2(k,n)=q(k+n), i.e. a Toeplitz plus Hankel.
+    # where Q1(k,n)=q(k-n) and Q2(k,n)=q(k+n), i.e. a Toeplitz plus Hankel.
 
     # We omit the factor of 0.5 above, instead adding it during coefficient
     # calculation.

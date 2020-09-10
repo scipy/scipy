@@ -6,8 +6,6 @@ The *Format classes handle conversion between Fortran and Python format, and
 FortranFormatParser can create *Format instances from raw Fortran format
 strings (e.g. '(3I4)', '(10I3)', etc...)
 """
-from __future__ import division, print_function, absolute_import
-
 import re
 
 import numpy as np
@@ -246,7 +244,7 @@ class FortranFormatParser(object):
                     tokens.append(t)
             return self._parse_format(tokens)
         except SyntaxError as e:
-            raise BadFortranFormat(str(e))
+            raise BadFortranFormat(str(e)) from e
 
     def _get_min(self, tokens):
         next = tokens.pop(0)

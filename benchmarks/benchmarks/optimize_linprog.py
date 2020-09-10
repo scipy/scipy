@@ -1,27 +1,39 @@
-"""
-Benchmarks for Linear Programming
-"""
-
-# Import testing parameters
-from scipy.optimize import linprog, OptimizeWarning
-from scipy.linalg import toeplitz
-from scipy.optimize.tests.test_linprog import lpgen_2d, magic_square
-from numpy.testing import suppress_warnings
-from scipy.optimize._remove_redundancy import (_remove_redundancy_svd,
-                                               _remove_redundancy_pivot_sparse,
-                                               _remove_redundancy_pivot_dense,
-                                               _remove_redundancy_id)
-from scipy.optimize._linprog_util import _presolve, _clean_inputs, _LPProblem
-from scipy.sparse import csc_matrix, csr_matrix
-import numpy as np
 import os
 
-from .common import Benchmark
+import numpy as np
+from numpy.testing import suppress_warnings
+
+from .common import Benchmark, is_xslow
 
 try:
-    # the value of SCIPY_XSLOW is used to control whether slow benchmarks run
-    slow = int(os.environ.get('SCIPY_XSLOW', 0))
-except ValueError:
+    from scipy.optimize import linprog, OptimizeWarning
+except ImportError:
+    pass
+
+try:
+    from scipy.optimize.tests.test_linprog import lpgen_2d, magic_square
+    from scipy.optimize._remove_redundancy import (
+        _remove_redundancy_svd,
+        _remove_redundancy_pivot_sparse,
+        _remove_redundancy_pivot_dense,
+        _remove_redundancy_id
+    )
+    from scipy.optimize._linprog_util import (
+        _presolve,
+        _clean_inputs,
+        _LPProblem
+    )
+except ImportError:
+    pass
+
+try:
+    from scipy.linalg import toeplitz
+except ImportError:
+    pass
+
+try:
+    from scipy.sparse import csc_matrix, csr_matrix
+except ImportError:
     pass
 
 
@@ -45,17 +57,32 @@ problems = ['25FV47', '80BAU3B', 'ADLITTLE', 'AFIRO', 'AGG', 'AGG2', 'AGG3',
             'SHIP08S', 'SHIP12L', 'SHIP12S', 'SIERRA', 'STAIR', 'STANDATA',
             'STANDMPS', 'STOCFOR1', 'STOCFOR2', 'TRUSS', 'TUFF', 'VTP-BASE',
             'WOOD1P', 'WOODW']
+presolve_problems = problems
 rr_problems = ['AFIRO', 'BLEND', 'FINNIS', 'RECIPE', 'SCSD6', 'VTP-BASE',
                'BORE3D', 'CYCLE', 'DEGEN2', 'DEGEN3', 'ETAMACRO', 'PILOTNOV',
                'QAP8', 'RECIPE', 'SCORPION', 'SHELL', 'SIERRA', 'WOOD1P']
+infeasible_problems = ['bgdbg1', 'bgetam', 'bgindy', 'bgprtr', 'box1',
+                       'ceria3d', 'chemcom', 'cplex1', 'cplex2', 'ex72a',
+                       'ex73a', 'forest6', 'galenet', 'gosh', 'gran',
+                       'itest2', 'itest6', 'klein1', 'klein2', 'klein3',
+                       'mondou2', 'pang', 'pilot4i', 'qual', 'reactor',
+                       'refinery', 'vol1', 'woodinfe']
 
-if not slow:
-    problems = ['ADLITTLE', 'AFIRO', 'BLEND', 'BEACONFD', 'GROW7', 'LOTFI',
-                'SC105', 'SCTAP1', 'SHARE2B', 'STOCFOR1']
-    rr_problems = ['AFIRO', 'BLEND', 'FINNIS', 'RECIPE', 'SCSD6', 'VTP-BASE',
-                   'DEGEN2', 'ETAMACRO', 'RECIPE']
-
-presolve_problems = problems
+if not is_xslow():
+    enabled_problems = ['ADLITTLE', 'AFIRO', 'BLEND', 'BEACONFD', 'GROW7',
+                        'LOTFI', 'SC105', 'SCTAP1', 'SHARE2B', 'STOCFOR1']
+    enabled_presolve_problems = enabled_problems
+    enabled_rr_problems = ['AFIRO', 'BLEND', 'FINNIS', 'RECIPE', 'SCSD6',
+                           'VTP-BASE', 'DEGEN2', 'ETAMACRO', 'RECIPE']
+    enabled_infeasible_problems = ['bgdbg1', 'bgprtr', 'box1', 'chemcom',
+                                   'cplex2', 'ex72a', 'ex73a', 'forest6',
+                                   'galenet', 'itest2', 'itest6', 'klein1',
+                                   'refinery', 'woodinfe']
+else:
+    enabled_problems = problems
+    enabled_presolve_problems = enabled_problems
+    enabled_rr_problems = rr_problems
+    enabled_infeasible_problems = infeasible_problems
 
 
 def klee_minty(D):
@@ -77,12 +104,13 @@ class MagicSquare(Benchmark):
                  (5, 1.807494583582637), (6, 1.747266446858304)]
 
     params = [methods, solutions]
-    if not slow:
-        params[1] = solutions[:2]
-
     param_names = ['method', '(dimensions, objective)']
 
     def setup(self, meth, prob):
+        if not is_xslow():
+            if prob[0] > 4:
+                raise NotImplementedError("skipped")
+
         dims, obj = prob
         self.A_eq, self.b_eq, self.c, numbers = magic_square(dims)
         self.fun = None
@@ -158,6 +186,9 @@ class Netlib(Benchmark):
     param_names = ['method', 'problems']
 
     def setup(self, meth, prob):
+        if prob not in enabled_problems:
+            raise NotImplementedError("skipped")
+
         dir_path = os.path.dirname(os.path.realpath(__file__))
         datafile = os.path.join(dir_path, "linprog_benchmark_files",
                                 prob + ".npz")
@@ -204,6 +235,9 @@ class Netlib_RR(Benchmark):
                    ('_remove_redundancy_pivot_sparse', 'PILOTNOV')}
 
     def setup(self, meth, prob):
+        if prob not in enabled_rr_problems:
+            raise NotImplementedError("skipped")
+
         if (meth.__name__, prob) in self.known_fails:
             raise NotImplementedError("Known issues with these benchmarks.")
 
@@ -258,6 +292,8 @@ class Netlib_presolve(Benchmark):
     param_names = ['method', 'problems']
 
     def setup(self, meth, prob):
+        if prob not in enabled_presolve_problems:
+            raise NotImplementedError("skipped")
 
         dir_path = os.path.dirname(os.path.realpath(__file__))
         datafile = os.path.join(dir_path, "linprog_benchmark_files",
@@ -278,3 +314,44 @@ class Netlib_presolve(Benchmark):
 
     def time_netlib_presolve(self, meth, prob):
         _presolve(self.lp_cleaned, rr=False, rr_method=None, tol=1e-9)
+
+
+class Netlib_infeasible(Benchmark):
+    params = [
+        methods,
+        infeasible_problems
+    ]
+    param_names = ['method', 'problems']
+
+    def setup(self, meth, prob):
+        if prob not in enabled_infeasible_problems:
+            raise NotImplementedError("skipped")
+
+        dir_path = os.path.dirname(os.path.realpath(__file__))
+        datafile = os.path.join(dir_path, "linprog_benchmark_files",
+                                "infeasible", prob + ".npz")
+        data = np.load(datafile, allow_pickle=True)
+        self.c = data["c"]
+        self.A_eq = data["A_eq"]
+        self.A_ub = data["A_ub"]
+        self.b_ub = data["b_ub"]
+        self.b_eq = data["b_eq"]
+        self.bounds = np.squeeze(data["bounds"])
+        self.status = None
+
+    def time_netlib_infeasible(self, meth, prob):
+        method, options = meth
+        res = linprog(c=self.c,
+                      A_ub=self.A_ub,
+                      b_ub=self.b_ub,
+                      A_eq=self.A_eq,
+                      b_eq=self.b_eq,
+                      bounds=self.bounds,
+                      method=method,
+                      options=options)
+        self.status = res.status
+
+    def track_netlib_infeasible(self, meth, prob):
+        if self.status is None:
+            self.time_netlib_infeasible(meth, prob)
+        return self.status

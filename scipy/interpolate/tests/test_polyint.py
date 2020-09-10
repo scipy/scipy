@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 import warnings
 import io
 import numpy as np
@@ -198,14 +196,6 @@ class TestKrogh(object):
                                 np.zeros(len(self.test_xs)))
 
     def test_hermite(self):
-        xs = [0,0,0,1,1,1,2]
-        ys = [self.true_poly(0),
-              self.true_poly.deriv(1)(0),
-              self.true_poly.deriv(2)(0),
-              self.true_poly(1),
-              self.true_poly.deriv(1)(1),
-              self.true_poly.deriv(2)(1),
-              self.true_poly(2)]
         P = KroghInterpolator(self.xs,self.ys)
         assert_almost_equal(self.true_poly(self.test_xs),P(self.test_xs))
 
@@ -361,6 +351,12 @@ class TestBarycentric(object):
         P = BarycentricInterpolator(self.xs, self.ys)
         values = barycentric_interpolate(self.xs, self.ys, self.test_xs)
         assert_almost_equal(P(self.test_xs), values)
+
+    def test_int_input(self):
+        x = 1000 * np.arange(1, 11)  # np.prod(x[-1] - x[:-1]) overflows
+        y = np.arange(1, 11)
+        value = barycentric_interpolate(x, y, 1000 * 9.5)
+        assert_almost_equal(value, 9.5)
 
 
 class TestPCHIP(object):

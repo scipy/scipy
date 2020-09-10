@@ -2,7 +2,6 @@
 differential_evolution: The differential evolution global optimization algorithm
 Added by Andrew Nelson 2014
 """
-from __future__ import division, print_function, absolute_import
 import warnings
 
 import numpy as np
@@ -12,6 +11,7 @@ from scipy._lib._util import check_random_state, MapWrapper
 
 from scipy.optimize._constraints import (Bounds, new_bounds_to_old,
                                          NonlinearConstraint, LinearConstraint)
+from scipy.sparse import issparse
 
 
 __all__ = ['differential_evolution']
@@ -125,7 +125,8 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
             - 'latinhypercube'
             - 'random'
             - array specifying the initial population. The array should have
-              shape ``(M, len(x))``, where len(x) is the number of parameters.
+              shape ``(M, len(x))``, where M is the total population size and
+              len(x) is the number of parameters.
               `init` is clipped to `bounds` before use.
 
         The default is 'latinhypercube'. Latin Hypercube sampling tries to
@@ -194,7 +195,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     creating trial candidates, which suit some problems more than others. The
     'best1bin' strategy is a good starting point for many systems. In this
     strategy two members of the population are randomly chosen. Their difference
-    is used to mutate the best member (the `best` in `best1bin`), :math:`b_0`,
+    is used to mutate the best member (the 'best' in 'best1bin'), :math:`b_0`,
     so far:
 
     .. math::
@@ -245,6 +246,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     (array([1., 1., 1., 1., 1.]), 1.9216496320061384e-19)
 
     Let's try and do a constrained minimization
+
     >>> from scipy.optimize import NonlinearConstraint, Bounds
     >>> def constr_f(x):
     ...     return np.array(x[0] + x[1])
@@ -407,7 +409,8 @@ class DifferentialEvolutionSolver(object):
             - 'latinhypercube'
             - 'random'
             - array specifying the initial population. The array should have
-              shape ``(M, len(x))``, where len(x) is the number of parameters.
+              shape ``(M, len(x))``, where M is the total population size and
+              len(x) is the number of parameters.
               `init` is clipped to `bounds` before use.
 
         The default is 'latinhypercube'. Latin Hypercube sampling tries to
@@ -708,6 +711,9 @@ class DifferentialEvolutionSolver(object):
         """
         Return True if the solver has converged.
         """
+        if np.any(np.isinf(self.population_energies)):
+            return False
+
         return (np.std(self.population_energies) <=
                 self.atol +
                 self.tol * np.abs(np.mean(self.population_energies)))
@@ -765,25 +771,15 @@ class DifferentialEvolutionSolver(object):
                       % (nit,
                          self.population_energies[0]))
 
+            if self.callback:
+                c = self.tol / (self.convergence + _MACHEPS)
+                warning_flag = bool(self.callback(self.x, convergence=c))
+                if warning_flag:
+                    status_message = ('callback function requested stop early'
+                                      ' by returning True')
+
             # should the solver terminate?
-            convergence = self.convergence
-
-            if (self.callback and
-                    self.callback(self._scale_parameters(self.population[0]),
-                                  convergence=self.tol / convergence) is True):
-
-                warning_flag = True
-                status_message = ('callback function requested stop early '
-                                  'by returning True')
-                break
-
-            if np.any(np.isinf(self.population_energies)):
-                intol = False
-            else:
-                intol = (np.std(self.population_energies) <=
-                         self.atol +
-                         self.tol * np.abs(np.mean(self.population_energies)))
-            if warning_flag or intol:
+            if warning_flag or self.converged():
                 break
 
         else:
@@ -876,13 +872,14 @@ class DifferentialEvolutionSolver(object):
         try:
             calc_energies = list(self._mapwrapper(self.func,
                                                   parameters_pop[0:nfevs]))
-            energies[0:nfevs] = calc_energies
-        except (TypeError, ValueError):
+            energies[0:nfevs] = np.squeeze(calc_energies)
+        except (TypeError, ValueError) as e:
             # wrong number of arguments for _mapwrapper
             # or wrong length returned from the mapper
-            raise RuntimeError("The map-like callable must be of the"
-                               " form f(func, iterable), returning a sequence"
-                               " of numbers the same length as 'iterable'")
+            raise RuntimeError(
+                "The map-like callable must be of the form f(func, iterable), "
+                "returning a sequence of numbers the same length as 'iterable'"
+            ) from e
 
         self._nfev += nfevs
 
@@ -1298,7 +1295,10 @@ class _ConstraintWrapper(object):
                 return np.atleast_1d(constraint.fun(x))
         elif isinstance(constraint, LinearConstraint):
             def fun(x):
-                A = np.atleast_2d(constraint.A)
+                if issparse(constraint.A):
+                    A = constraint.A
+                else:
+                    A = np.atleast_2d(constraint.A)
                 return A.dot(x)
         elif isinstance(constraint, Bounds):
             def fun(x):

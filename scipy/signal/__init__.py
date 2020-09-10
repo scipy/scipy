@@ -17,6 +17,7 @@ Convolution
    correlate2d        -- 2-D correlation (more options).
    sepfir2d           -- Convolve with a 2-D separable FIR filter.
    choose_conv_method -- Chooses faster of FFT and direct convolution methods.
+   correlation_lags   -- Determines lag indices for 1D cross-correlation.
 
 B-splines
 =========
@@ -93,6 +94,7 @@ Filter design
    freqz         -- Digital filter frequency response from TF coefficients.
    freqz_zpk     -- Digital filter frequency response from ZPK coefficients.
    sosfreqz      -- Digital filter frequency response for SOS format filter.
+   gammatone     -- FIR and IIR gammatone filter design.
    group_delay   -- Digital filter group delay.
    iirdesign     -- IIR filter design given bands and gains.
    iirfilter     -- IIR filter design given order and critical frequencies.
@@ -157,6 +159,7 @@ Matlab-style IIR filter design
    bessel -- Bessel (no order selection available -- try butterod)
    iirnotch      -- Design second-order IIR notch digital filter.
    iirpeak       -- Design second-order IIR peak (resonant) digital filter.
+   iircomb       -- Design IIR comb filter.
 
 Continuous-time linear systems
 ==============================
@@ -286,8 +289,6 @@ Spectral analysis
    check_NOLA     -- Check the NOLA constraint for iSTFT reconstruction.
 
 """
-from __future__ import division, print_function, absolute_import
-
 from . import sigtools, windows
 from .waveforms import *
 from ._max_len_seq import max_len_seq
@@ -314,7 +315,7 @@ from .windows import get_window  # keep this one in signal namespace
 deprecated_windows = ('boxcar', 'triang', 'parzen', 'bohman', 'blackman',
                       'nuttall', 'blackmanharris', 'flattop', 'bartlett',
                       'barthann', 'hamming', 'kaiser', 'gaussian',
-                      'general_gaussian', 'chebwin', 'slepian', 'cosine',
+                      'general_gaussian', 'chebwin', 'cosine',
                       'hann', 'exponential', 'tukey')
 
 # backward compatibility imports for actually deprecated windows not

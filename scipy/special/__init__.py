@@ -583,23 +583,24 @@ Other special functions
 .. autosummary::
    :toctree: generated/
 
-   agm        -- Arithmetic, Geometric Mean.
-   bernoulli  -- Bernoulli numbers B0..Bn (inclusive).
-   binom      -- Binomial coefficient
-   diric      -- Periodic sinc function, also called the Dirichlet function.
-   euler      -- Euler numbers E0..En (inclusive).
-   expn       -- Exponential integral E_n.
-   exp1       -- Exponential integral E_1 of complex argument z.
-   expi       -- Exponential integral Ei.
-   factorial  -- The factorial of a number or array of numbers.
-   factorial2 -- Double factorial.
-   factorialk -- Multifactorial of n of order k, n(!!...!).
-   shichi     -- Hyperbolic sine and cosine integrals.
-   sici       -- Sine and cosine integrals.
-   softmax    -- Softmax function.
-   spence     -- Spence's function, also known as the dilogarithm.
-   zeta       -- Riemann zeta function.
-   zetac      -- Riemann zeta function minus 1.
+   agm         -- Arithmetic, Geometric Mean.
+   bernoulli   -- Bernoulli numbers B0..Bn (inclusive).
+   binom       -- Binomial coefficient
+   diric       -- Periodic sinc function, also called the Dirichlet function.
+   euler       -- Euler numbers E0..En (inclusive).
+   expn        -- Exponential integral E_n.
+   exp1        -- Exponential integral E_1 of complex argument z.
+   expi        -- Exponential integral Ei.
+   factorial   -- The factorial of a number or array of numbers.
+   factorial2  -- Double factorial.
+   factorialk  -- Multifactorial of n of order k, n(!!...!).
+   shichi      -- Hyperbolic sine and cosine integrals.
+   sici        -- Sine and cosine integrals.
+   softmax     -- Softmax function.
+   log_softmax -- Logarithm of softmax function.
+   spence      -- Spence's function, also known as the dilogarithm.
+   zeta        -- Riemann zeta function.
+   zetac       -- Riemann zeta function minus 1.
 
 Convenience functions
 ---------------------
@@ -627,8 +628,6 @@ Convenience functions
 
 """
 
-from __future__ import division, print_function, absolute_import
-
 from .sf_error import SpecialFunctionWarning, SpecialFunctionError
 
 from . import _ufuncs
@@ -637,7 +636,7 @@ from ._ufuncs import *
 from . import _basic
 from ._basic import *
 
-from ._logsumexp import logsumexp, softmax
+from ._logsumexp import logsumexp, softmax, log_softmax
 
 from . import orthogonal
 from .orthogonal import *
@@ -648,7 +647,7 @@ from ._ellip_harm import (
     ellip_harm_2,
     ellip_normal
 )
-from .lambertw import lambertw
+from ._lambertw import lambertw
 from ._spherical_bessel import (
     spherical_jn,
     spherical_yn,
@@ -662,6 +661,7 @@ __all__ = _ufuncs.__all__ + _basic.__all__ + orthogonal.__all__ + [
     'orthogonal',  # Not public, but kept in __all__ for back-compat
     'logsumexp',
     'softmax',
+    'log_softmax',
     'multigammaln',
     'ellip_harm',
     'ellip_harm_2',

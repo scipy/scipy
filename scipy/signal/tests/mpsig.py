@@ -2,10 +2,8 @@
 Some signal functions implemented using mpmath.
 """
 
-from __future__ import division
-
 try:
-    import mpmath
+    import mpmath  # type: ignore[import]
 except ImportError:
     mpmath = None
 

@@ -1,4 +1,3 @@
-from __future__ import division, print_function, absolute_import
 import numpy as np
 import scipy.sparse as sps
 from ._numdiff import approx_derivative, group_columns
@@ -479,7 +478,8 @@ class LinearVectorFunction(object):
             self.J = A.toarray()
             self.sparse_jacobian = False
         else:
-            self.J = np.atleast_2d(A)
+            # np.asarray makes sure A is ndarray and not matrix
+            self.J = np.atleast_2d(np.asarray(A))
             self.sparse_jacobian = False
 
         self.m, self.n = self.J.shape

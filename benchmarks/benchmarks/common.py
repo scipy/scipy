@@ -1,8 +1,6 @@
 """
 Airspeed Velocity benchmark utilities
 """
-from __future__ import division, absolute_import, print_function
-
 import sys
 import os
 import re
@@ -17,7 +15,14 @@ class Benchmark(object):
     """
     Base class with sensible options
     """
-    goal_time = 0.25
+    pass
+
+
+def is_xslow():
+    try:
+        return int(os.environ.get('SCIPY_XSLOW', '0'))
+    except ValueError:
+        return False
 
 
 class LimitedParamBenchmark(Benchmark):
@@ -29,10 +34,7 @@ class LimitedParamBenchmark(Benchmark):
     num_param_combinations = 0
 
     def setup(self, *args, **kwargs):
-        try:
-            slow = int(os.environ.get('SCIPY_XSLOW', '0'))
-        except ValueError:
-            slow = False
+        slow = is_xslow()
 
         if slow:
             # no need to skip

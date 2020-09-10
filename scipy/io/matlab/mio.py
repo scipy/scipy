@@ -3,7 +3,6 @@ Module for reading and writing matlab (TM) .mat files
 """
 # Authors: Travis Oliphant, Matthew Brett
 
-from __future__ import division, print_function, absolute_import
 from contextlib import contextmanager
 
 from .miobase import get_matfile_version, docfiller
@@ -38,14 +37,16 @@ def _open_file(file_like, appendmat, mode='rb'):
 
     try:
         return open(file_like, mode), True
-    except IOError:
+    except IOError as e:
         # Probably "not found"
         if isinstance(file_like, str):
             if appendmat and not file_like.endswith('.mat'):
                 file_like += '.mat'
             return open(file_like, mode), True
         else:
-            raise IOError('Reader needs file name or open file-like object')
+            raise IOError(
+                'Reader needs file name or open file-like object'
+            ) from e
 
 
 @docfiller
@@ -129,6 +130,12 @@ def loadmat(file_name, mdict=None, appendmat=True, **kwargs):
         MATLAB variables to read from the file. The reader will skip any
         variable with a name not in this sequence, possibly saving some read
         processing.
+    simplify_cells : False, optional
+        If True, return a simplified dict structure (which is useful if the mat
+        file contains cell arrays). Note that this only affects the structure
+        of the result and not its contents (which is identical for both output
+        structures). If True, this automatically sets `struct_as_record` to
+        False and `squeeze_me` to True, which is required to simplify cells.
 
     Returns
     -------
@@ -263,6 +270,17 @@ def savemat(file_name, mdict,
     oned_as : {'row', 'column'}, optional
         If 'column', write 1-D NumPy arrays as column vectors.
         If 'row', write 1-D NumPy arrays as row vectors.
+
+    Examples
+    --------
+    >>> from scipy.io import savemat
+    >>> a = np.arange(20)
+    >>> mdic = {"a": a, "label": "experiment"}
+    >>> mdic
+    {'a': array([ 0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15, 16,
+        17, 18, 19]),
+    'label': 'experiment'}
+    >>> savemat("matlab_matrix.mat", mdic)
     """
     with _open_file_context(file_name, appendmat, 'wb') as file_stream:
         if format == '4':

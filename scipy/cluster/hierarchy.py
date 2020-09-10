@@ -83,8 +83,6 @@ Utility routines for plotting:
    set_link_color_palette
 
 """
-from __future__ import division, print_function, absolute_import
-
 # Copyright (C) Damian Eads, 2007-2008. New BSD License.
 
 # hierarchy.py (derived from cluster.py, http://scipy-cluster.googlecode.com)
@@ -2800,7 +2798,7 @@ def _get_tick_rotation(p):
 def _plot_dendrogram(icoords, dcoords, ivl, p, n, mh, orientation,
                      no_labels, color_list, leaf_font_size=None,
                      leaf_rotation=None, contraction_marks=None,
-                     ax=None, above_threshold_color='b'):
+                     ax=None, above_threshold_color='C0'):
     # Import matplotlib here so that it's not imported unless dendrograms
     # are plotted. Raise an informative error if importing fails.
     try:
@@ -2809,10 +2807,10 @@ def _plot_dendrogram(icoords, dcoords, ivl, p, n, mh, orientation,
             import matplotlib.pylab
         import matplotlib.patches
         import matplotlib.collections
-    except ImportError:
+    except ImportError as e:
         raise ImportError("You must install the matplotlib library to plot "
                           "the dendrogram. Use no_plot=True to calculate the "
-                          "dendrogram without plotting.")
+                          "dendrogram without plotting.") from e
 
     if ax is None:
         ax = matplotlib.pylab.gca()
@@ -2931,7 +2929,9 @@ def _plot_dendrogram(icoords, dcoords, ivl, p, n, mh, orientation,
         matplotlib.pylab.draw_if_interactive()
 
 
-_link_line_colors = ['g', 'r', 'c', 'm', 'y', 'k']
+# C0  is used for above threshhold color
+_link_line_colors_default = ('C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8', 'C9')
+_link_line_colors = list(_link_line_colors_default)
 
 
 def set_link_color_palette(palette):
@@ -2952,8 +2952,8 @@ def set_link_color_palette(palette):
         order in which the colors are cycled through when color thresholding in
         the dendrogram.
 
-        If ``None``, resets the palette to its default (which is
-        ``['g', 'r', 'c', 'm', 'y', 'k']``).
+        If ``None``, resets the palette to its default (which are matplotlib
+        default colors C1 to C9).
 
     Returns
     -------
@@ -2975,9 +2975,9 @@ def set_link_color_palette(palette):
     >>> Z = hierarchy.linkage(ytdist, 'single')
     >>> dn = hierarchy.dendrogram(Z, no_plot=True)
     >>> dn['color_list']
-    ['g', 'b', 'b', 'b', 'b']
+    ['C1', 'C0', 'C0', 'C0', 'C0']
     >>> hierarchy.set_link_color_palette(['c', 'm', 'y', 'k'])
-    >>> dn = hierarchy.dendrogram(Z, no_plot=True)
+    >>> dn = hierarchy.dendrogram(Z, no_plot=True, above_threshold_color='b')
     >>> dn['color_list']
     ['c', 'b', 'b', 'b', 'b']
     >>> dn = hierarchy.dendrogram(Z, no_plot=True, color_threshold=267,
@@ -2992,7 +2992,7 @@ def set_link_color_palette(palette):
     """
     if palette is None:
         # reset to its default
-        palette = ['g', 'r', 'c', 'm', 'y', 'k']
+        palette = _link_line_colors_default
     elif type(palette) not in (list, tuple):
         raise TypeError("palette must be a list or tuple")
     _ptypes = [isinstance(p, str) for p in palette]
@@ -3000,9 +3000,8 @@ def set_link_color_palette(palette):
     if False in _ptypes:
         raise TypeError("all palette list elements must be color strings")
 
-    for i in list(_link_line_colors):
-        _link_line_colors.remove(i)
-    _link_line_colors.extend(list(palette))
+    global _link_line_colors
+    _link_line_colors = palette
 
 
 def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
@@ -3011,7 +3010,7 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
                no_plot=False, no_labels=False, leaf_font_size=None,
                leaf_rotation=None, leaf_label_func=None,
                show_contracted=False, link_color_func=None, ax=None,
-               above_threshold_color='b'):
+               above_threshold_color='C0'):
     """
     Plot the hierarchical clustering as a dendrogram.
 
@@ -3062,10 +3061,12 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
         :math:`k` the same color if :math:`k` is the first node below
         the cut threshold :math:`t`. All links connecting nodes with
         distances greater than or equal to the threshold are colored
-        blue. If :math:`t` is less than or equal to zero, all nodes
-        are colored blue. If ``color_threshold`` is None or
-        'default', corresponding with MATLAB(TM) behavior, the
-        threshold is set to ``0.7*max(Z[:,2])``.
+        with de default matplotlib color ``'C0'``. If :math:`t` is less
+        than or equal to zero, all nodes are colored ``'C0'``.
+        If ``color_threshold`` is None or 'default',
+        corresponding with MATLAB(TM) behavior, the threshold is set to
+        ``0.7*max(Z[:,2])``.
+
     get_leaves : bool, optional
         Includes a list ``R['leaves']=H`` in the result
         dictionary. For each :math:`i`, ``H[i] == j``, cluster node
@@ -3091,10 +3092,10 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
 
     labels : ndarray, optional
         By default, ``labels`` is None so the index of the original observation
-        is used to label the leaf nodes.  Otherwise, this is an :math:`n`
-        -sized list (or tuple). The ``labels[i]`` value is the text to put
-        under the :math:`i` th leaf node only if it corresponds to an original
-        observation and not a non-singleton cluster.
+        is used to label the leaf nodes.  Otherwise, this is an :math:`n`-sized
+        sequence, with ``n == Z.shape[0] + 1``. The ``labels[i]`` value is the
+        text to put under the :math:`i` th leaf node only if it corresponds to
+        an original observation and not a non-singleton cluster.
     count_sort : str or bool, optional
         For each node n, the order (visually, from left-to-right) n's
         two descendent links are plotted is determined by this
@@ -3194,7 +3195,7 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
         useful if the dendrogram is part of a more complex figure.
     above_threshold_color : str, optional
         This matplotlib color string sets the color of the links above the
-        color_threshold. The default is 'b'.
+        color_threshold. The default is ``'C0'``.
 
     Returns
     -------
@@ -3221,6 +3222,10 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
           :math:`j < 2n-1` and :math:`i < n`. If ``j`` is less than ``n``, the
           ``i``-th leaf node corresponds to an original observation.
           Otherwise, it corresponds to a non-singleton cluster.
+
+        ``'leaves_color_list'``
+          A list of color names. The k'th element represents the color of the
+          k'th leaf.
 
     See Also
     --------
@@ -3272,6 +3277,9 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
     if orientation not in ["top", "left", "bottom", "right"]:
         raise ValueError("orientation must be one of 'top', 'left', "
                          "'bottom', or 'right'")
+
+    if labels is not None and Z.shape[0] + 1 != len(labels):
+        raise ValueError("Dimensions of Z and labels must be consistent.")
 
     is_valid_linkage(Z, throw=True, name='Z')
     Zs = Z.shape
@@ -3354,7 +3362,24 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
                          ax=ax,
                          above_threshold_color=above_threshold_color)
 
+    R["leaves_color_list"] = _get_leaves_color_list(R)
+
     return R
+
+
+def _get_leaves_color_list(R):
+    leaves_color_list = [None] * len(R['leaves'])
+    for link_x, link_y, link_color in zip(R['icoord'],
+                                          R['dcoord'],
+                                          R['color_list']):
+        for (xi, yi) in zip(link_x, link_y):
+            if yi == 0.0:  # if yi is 0.0, the point is a leaf
+                # xi of leaves are      5, 15, 25, 35, ... (see `iv_ticks`)
+                # index of leaves are   0,  1,  2,  3, ... as below
+                leaf_index = (int(xi) - 5) // 10
+                # each leaf has a same color of its link.
+                leaves_color_list[leaf_index] = link_color
+    return leaves_color_list
 
 
 def _append_singleton_leaf_node(Z, p, n, level, lvs, ivl, leaf_label_func,
@@ -3425,7 +3450,7 @@ def _dendrogram_calculate_info(Z, p, truncate_mode,
                                leaf_label_func=None, level=0,
                                contraction_marks=None,
                                link_color_func=None,
-                               above_threshold_color='b'):
+                               above_threshold_color='C0'):
     """
     Calculate the endpoints of the links as well as the labels for the
     the dendrogram rooted at the node with index i. iv is the independent

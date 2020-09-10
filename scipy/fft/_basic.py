@@ -42,10 +42,15 @@ def fft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
     axis : int, optional
         Axis over which to compute the FFT. If not given, the last axis is
         used.
-    norm : {None, "ortho"}, optional
-        Normalization mode. Default is None, meaning no normalization on the
-        forward transforms and scaling by ``1/n`` on the `ifft`.
+    norm : {"backward", "ortho", "forward"}, optional
+        Normalization mode. Default is "backward", meaning no normalization on
+        the forward transforms and scaling by ``1/n`` on the `ifft`.
+        "forward" instead applies the ``1/n`` factor on the forward tranform.
         For ``norm="ortho"``, both directions are scaled by ``1/sqrt(n)``.
+
+        .. versionadded:: 1.6.0
+           ``norm={"forward", "backward"}`` options were added
+
     overwrite_x : bool, optional
         If True, the contents of `x` can be destroyed; the default is False.
         See the notes below for more details.
@@ -194,8 +199,8 @@ def ifft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
     axis : int, optional
         Axis over which to compute the inverse DFT. If not given, the last
         axis is used.
-    norm : {None, "ortho"}, optional
-        Normalization mode (see `fft`). Default is None.
+    norm : {"backward", "ortho", "forward"}, optional
+        Normalization mode (see `fft`). Default is "backward".
     overwrite_x : bool, optional
         If True, the contents of `x` can be destroyed; the default is False.
         See :func:`fft` for more details.
@@ -285,8 +290,8 @@ def rfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
     axis : int, optional
         Axis over which to compute the FFT. If not given, the last axis is
         used.
-    norm : {None, "ortho"}, optional
-        Normalization mode (see `fft`). Default is None.
+    norm : {"backward", "ortho", "forward"}, optional
+        Normalization mode (see `fft`). Default is "backward".
     overwrite_x : bool, optional
         If True, the contents of `x` can be destroyed; the default is False.
         See :func:`fft` for more details.
@@ -318,6 +323,7 @@ def rfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
     irfft : The inverse of `rfft`.
     fft : The 1-D FFT of general (complex) input.
     fftn : The N-D FFT.
+    rfft2 : The 2-D FFT of real input.
     rfftn : The N-D FFT of real input.
 
     Notes
@@ -360,7 +366,7 @@ def rfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
 def irfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
           plan=None):
     """
-    Compute the inverse of the n-point DFT for real input.
+    Computes the inverse of `rfft`.
 
     This function computes the inverse of the 1-D *n*-point
     discrete Fourier Transform of real input computed by `rfft`.
@@ -387,8 +393,8 @@ def irfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
     axis : int, optional
         Axis over which to compute the inverse FFT. If not given, the last
         axis is used.
-    norm : {None, "ortho"}, optional
-        Normalization mode (see `fft`). Default is None.
+    norm : {"backward", "ortho", "forward"}, optional
+        Normalization mode (see `fft`). Default is "backward".
     overwrite_x : bool, optional
         If True, the contents of `x` can be destroyed; the default is False.
         See :func:`fft` for more details.
@@ -478,8 +484,8 @@ def hfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
     axis : int, optional
         Axis over which to compute the FFT. If not given, the last
         axis is used.
-    norm : {None, "ortho"}, optional
-        Normalization mode (see `fft`). Default is None.
+    norm : {"backward", "ortho", "forward"}, optional
+        Normalization mode (see `fft`). Default is "backward".
     overwrite_x : bool, optional
         If True, the contents of `x` can be destroyed; the default is False.
         See `fft` for more details.
@@ -558,8 +564,8 @@ def ihfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
     axis : int, optional
         Axis over which to compute the inverse FFT. If not given, the last
         axis is used.
-    norm : {None, "ortho"}, optional
-        Normalization mode (see `fft`). Default is None.
+    norm : {"backward", "ortho", "forward"}, optional
+        Normalization mode (see `fft`). Default is "backward".
     overwrite_x : bool, optional
         If True, the contents of `x` can be destroyed; the default is False.
         See `fft` for more details.
@@ -630,8 +636,8 @@ def fftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
     axes : sequence of ints, optional
         Axes over which to compute the FFT. If not given, the last ``len(s)``
         axes are used, or all axes if `s` is also not specified.
-    norm : {None, "ortho"}, optional
-        Normalization mode (see `fft`). Default is None.
+    norm : {"backward", "ortho", "forward"}, optional
+        Normalization mode (see `fft`). Default is "backward".
     overwrite_x : bool, optional
         If True, the contents of `x` can be destroyed; the default is False.
         See :func:`fft` for more details.
@@ -741,8 +747,8 @@ def ifftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
     axes : sequence of ints, optional
         Axes over which to compute the IFFT.  If not given, the last ``len(s)``
         axes are used, or all axes if `s` is also not specified.
-    norm : {None, "ortho"}, optional
-        Normalization mode (see `fft`). Default is None.
+    norm : {"backward", "ortho", "forward"}, optional
+        Normalization mode (see `fft`). Default is "backward".
     overwrite_x : bool, optional
         If True, the contents of `x` can be destroyed; the default is False.
         See :func:`fft` for more details.
@@ -836,8 +842,8 @@ def fft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None, *
     axes : sequence of ints, optional
         Axes over which to compute the FFT. If not given, the last two axes are
         used.
-    norm : {None, "ortho"}, optional
-        Normalization mode (see `fft`). Default is None.
+    norm : {"backward", "ortho", "forward"}, optional
+        Normalization mode (see `fft`). Default is "backward".
     overwrite_x : bool, optional
         If True, the contents of `x` can be destroyed; the default is False.
         See :func:`fft` for more details.
@@ -941,8 +947,8 @@ def ifft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None, 
     axes : sequence of ints, optional
         Axes over which to compute the FFT. If not given, the last two
         axes are used.
-    norm : {None, "ortho"}, optional
-        Normalization mode (see `fft`). Default is None.
+    norm : {"backward", "ortho", "forward"}, optional
+        Normalization mode (see `fft`). Default is "backward".
     overwrite_x : bool, optional
         If True, the contents of `x` can be destroyed; the default is False.
         See :func:`fft` for more details.
@@ -1031,8 +1037,8 @@ def rfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
     axes : sequence of ints, optional
         Axes over which to compute the FFT. If not given, the last ``len(s)``
         axes are used, or all axes if `s` is also not specified.
-    norm : {None, "ortho"}, optional
-        Normalization mode (see `fft`). Default is None.
+    norm : {"backward", "ortho", "forward"}, optional
+        Normalization mode (see `fft`). Default is "backward".
     overwrite_x : bool, optional
         If True, the contents of `x` can be destroyed; the default is False.
         See :func:`fft` for more details.
@@ -1116,8 +1122,8 @@ def rfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None, 
         Shape of the FFT.
     axes : sequence of ints, optional
         Axes over which to compute the FFT.
-    norm : {None, "ortho"}, optional
-        Normalization mode (see `fft`). Default is None.
+    norm : {"backward", "ortho", "forward"}, optional
+        Normalization mode (see `fft`). Default is "backward".
     overwrite_x : bool, optional
         If True, the contents of `x` can be destroyed; the default is False.
         See :func:`fft` for more details.
@@ -1138,6 +1144,8 @@ def rfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None, 
 
     See Also
     --------
+    irfft2 : The inverse of the 2-D FFT of real input.
+    rfft : The 1-D FFT of real input.
     rfftn : Compute the N-D discrete Fourier Transform for real
             input.
 
@@ -1154,7 +1162,7 @@ def rfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None, 
 def irfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
            plan=None):
     """
-    Compute the inverse of the N-D FFT of real input.
+    Computes the inverse of `rfftn`
 
     This function computes the inverse of the N-D discrete
     Fourier Transform for real input over any number of axes in an
@@ -1184,8 +1192,8 @@ def irfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
     axes : sequence of ints, optional
         Axes over which to compute the inverse FFT. If not given, the last
         `len(s)` axes are used, or all axes if `s` is also not specified.
-    norm : {None, "ortho"}, optional
-        Normalization mode (see `fft`). Default is None.
+    norm : {"backward", "ortho", "forward"}, optional
+        Normalization mode (see `fft`). Default is "backward".
     overwrite_x : bool, optional
         If True, the contents of `x` can be destroyed; the default is False.
         See :func:`fft` for more details.
@@ -1260,7 +1268,7 @@ def irfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
 def irfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None, *,
            plan=None):
     """
-    Compute the 2-D inverse FFT of a real array.
+    Computes the inverse of `rfft2`
 
     Parameters
     ----------
@@ -1271,8 +1279,8 @@ def irfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None,
     axes : sequence of ints, optional
         The axes over which to compute the inverse fft.
         Default is the last two axes.
-    norm : {None, "ortho"}, optional
-        Normalization mode (see `fft`). Default is None.
+    norm : {"backward", "ortho", "forward"}, optional
+        Normalization mode (see `fft`). Default is "backward".
     overwrite_x : bool, optional
         If True, the contents of `x` can be destroyed; the default is False.
         See :func:`fft` for more details.
@@ -1293,7 +1301,9 @@ def irfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None,
 
     See Also
     --------
-    irfftn : Compute the inverse of the N-D FFT of real input.
+    rfft2 : The 2-D FFT of real input.
+    irfft : The inverse of the 1-D FFT of real input.
+    irfftn : The inverse of the N-D FFT of real input.
 
     Notes
     -----
@@ -1335,8 +1345,8 @@ def hfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
     axes : sequence of ints, optional
         Axes over which to compute the inverse FFT. If not given, the last
         `len(s)` axes are used, or all axes if `s` is also not specified.
-    norm : {None, "ortho"}, optional
-        Normalization mode (see `fft`). Default is None.
+    norm : {"backward", "ortho", "forward"}, optional
+        Normalization mode (see `fft`). Default is "backward".
     overwrite_x : bool, optional
         If True, the contents of `x` can be destroyed; the default is False.
         See :func:`fft` for more details.
@@ -1431,8 +1441,8 @@ def hfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None, 
         Shape of the real output.
     axes : sequence of ints, optional
         Axes over which to compute the FFT.
-    norm : {None, "ortho"}, optional
-        Normalization mode (see `fft`). Default is None.
+    norm : {"backward", "ortho", "forward"}, optional
+        Normalization mode (see `fft`). Default is "backward".
     overwrite_x : bool, optional
         If True, the contents of `x` can be destroyed; the default is False.
         See `fft` for more details.
@@ -1492,8 +1502,8 @@ def ihfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
     axes : sequence of ints, optional
         Axes over which to compute the FFT. If not given, the last ``len(s)``
         axes are used, or all axes if `s` is also not specified.
-    norm : {None, "ortho"}, optional
-        Normalization mode (see `fft`). Default is None.
+    norm : {"backward", "ortho", "forward"}, optional
+        Normalization mode (see `fft`). Default is "backward".
     overwrite_x : bool, optional
         If True, the contents of `x` can be destroyed; the default is False.
         See :func:`fft` for more details.
@@ -1574,8 +1584,8 @@ def ihfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None,
     axes : sequence of ints, optional
         The axes over which to compute the inverse fft.
         Default is the last two axes.
-    norm : {None, "ortho"}, optional
-        Normalization mode (see `fft`). Default is None.
+    norm : {"backward", "ortho", "forward"}, optional
+        Normalization mode (see `fft`). Default is "backward".
     overwrite_x : bool, optional
         If True, the contents of `x` can be destroyed; the default is False.
         See :func:`fft` for more details.

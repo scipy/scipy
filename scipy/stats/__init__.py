@@ -52,8 +52,6 @@ Continuous distributions
    fisk              -- Fisk
    foldcauchy        -- Folded Cauchy
    foldnorm          -- Folded Normal
-   frechet_r         -- Deprecated. Alias for weibull_min
-   frechet_l         -- Deprecated. Alias for weibull_max
    genlogistic       -- Generalized Logistic
    gennorm           -- Generalized normal
    genpareto         -- Generalized Pareto
@@ -80,8 +78,9 @@ Continuous distributions
    johnsonsu         -- Johnson SU
    kappa4            -- Kappa 4 parameter
    kappa3            -- Kappa 3 parameter
-   ksone             -- Kolmogorov-Smirnov one-sided (no stats)
-   kstwobign         -- Kolmogorov-Smirnov two-sided test for Large N (no stats)
+   ksone             -- Distribution of Kolmogorov-Smirnov one-sided test statistic
+   kstwo             -- Distribution of Kolmogorov-Smirnov two-sided test statistic
+   kstwobign         -- Limiting Distribution of scaled Kolmogorov-Smirnov two-sided test statistic.
    laplace           -- Laplace
    levy              -- Levy
    levy_l
@@ -158,6 +157,7 @@ Discrete distributions
    hypergeom         -- Hypergeometric
    logser            -- Logarithmic (Log-Series, Series)
    nbinom            -- Negative Binomial
+   nhypergeom        -- Negative Hypergeometric
    planck            -- Planck (Discrete Exponential)
    poisson           -- Poisson
    randint           -- Discrete Uniform
@@ -200,6 +200,7 @@ Summary statistics
    mvsdist
    entropy
    median_absolute_deviation
+   median_abs_deviation
 
 Frequency statistics
 ====================
@@ -247,9 +248,10 @@ Statistical tests
    ttest_ind
    ttest_ind_from_stats
    ttest_rel
-   kstest
    chisquare
    power_divergence
+   kstest
+   ks_1samp
    ks_2samp
    epps_singleton_2samp
    mannwhitneyu
@@ -372,6 +374,8 @@ Warnings used in :mod:`scipy.stats`
 .. autosummary::
    :toctree: generated/
 
+   F_onewayConstantInputWarning
+   F_onewayBadInputSizesWarning
    PearsonRConstantInputWarning
    PearsonRNearConstantInputWarning
    SpearmanRConstantInputWarning
@@ -380,8 +384,6 @@ For many more stat related functions install the software R and the
 interface package rpy.
 
 """
-from __future__ import division, print_function, absolute_import
-
 from .stats import *
 from .distributions import *
 from .morestats import *

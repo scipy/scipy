@@ -1,8 +1,6 @@
 """Tools for spectral analysis.
 """
 
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 from scipy import fft as sp_fft
 from . import signaltools
@@ -717,7 +715,7 @@ def spectrogram(x, fs=1.0, window=('tukey', .25), nperseg=None, noverlap=None,
     Compute and plot the spectrogram.
 
     >>> f, t, Sxx = signal.spectrogram(x, fs)
-    >>> plt.pcolormesh(t, f, Sxx)
+    >>> plt.pcolormesh(t, f, Sxx, shading='gouraud')
     >>> plt.ylabel('Frequency [Hz]')
     >>> plt.xlabel('Time [sec]')
     >>> plt.show()
@@ -725,7 +723,7 @@ def spectrogram(x, fs=1.0, window=('tukey', .25), nperseg=None, noverlap=None,
     Note, if using output that is not one sided, then use the following:
 
     >>> f, t, Sxx = signal.spectrogram(x, fs, return_onesided=False)
-    >>> plt.pcolormesh(t, fftshift(f), fftshift(Sxx, axes=0))
+    >>> plt.pcolormesh(t, fftshift(f), fftshift(Sxx, axes=0), shading='gouraud')
     >>> plt.ylabel('Frequency [Hz]')
     >>> plt.xlabel('Time [sec]')
     >>> plt.show()
@@ -1161,7 +1159,7 @@ def stft(x, fs=1.0, window='hann', nperseg=256, noverlap=None, nfft=None,
     Compute and plot the STFT's magnitude.
 
     >>> f, t, Zxx = signal.stft(x, fs, nperseg=1000)
-    >>> plt.pcolormesh(t, f, np.abs(Zxx), vmin=0, vmax=amp)
+    >>> plt.pcolormesh(t, f, np.abs(Zxx), vmin=0, vmax=amp, shading='gouraud')
     >>> plt.title('STFT Magnitude')
     >>> plt.ylabel('Frequency [Hz]')
     >>> plt.xlabel('Time [sec]')
@@ -1306,7 +1304,7 @@ def istft(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
 
     >>> f, t, Zxx = signal.stft(x, fs=fs, nperseg=nperseg)
     >>> plt.figure()
-    >>> plt.pcolormesh(t, f, np.abs(Zxx), vmin=0, vmax=amp)
+    >>> plt.pcolormesh(t, f, np.abs(Zxx), vmin=0, vmax=amp, shading='gouraud')
     >>> plt.ylim([f[1], f[-1]])
     >>> plt.title('STFT Magnitude')
     >>> plt.ylabel('Frequency [Hz]')
@@ -1703,8 +1701,8 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
         youter.pop(axis)
         try:
             outershape = np.broadcast(np.empty(xouter), np.empty(youter)).shape
-        except ValueError:
-            raise ValueError('x and y cannot be broadcast together.')
+        except ValueError as e:
+            raise ValueError('x and y cannot be broadcast together.') from e
 
     if same_data:
         if x.size == 0:

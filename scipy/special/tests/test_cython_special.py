@@ -1,4 +1,3 @@
-from __future__ import division, print_function, absolute_import
 import pytest
 from itertools import product
 from numpy.testing import assert_allclose, suppress_warnings
@@ -6,12 +5,14 @@ from scipy import special
 from scipy.special import cython_special
 
 
+bint_points = [True, False]
 int_points = [-10, -1, 1, 10]
 real_points = [-10.0, -1.0, 1.0, 10.0]
 complex_points = [complex(*tup) for tup in product(real_points, repeat=2)]
 
 
 CYTHON_SIGNATURE_MAP = {
+    'b': 'bint',
     'f': 'float',
     'd': 'double',
     'g': 'long double',
@@ -24,6 +25,7 @@ CYTHON_SIGNATURE_MAP = {
 
 
 TEST_POINTS = {
+    'b': bint_points,
     'f': real_points,
     'd': real_points,
     'g': real_points,
@@ -241,6 +243,10 @@ PARAMS = [
     (special.rel_entr, cython_special.rel_entr, ('dd',), None),
     (special.rgamma, cython_special.rgamma, ('d', 'D'), None),
     (special.round, cython_special.round, ('d',), None),
+    (special.spherical_jn, cython_special.spherical_jn, ('ld', 'ldb', 'lD', 'lDb'), None),
+    (special.spherical_yn, cython_special.spherical_yn, ('ld', 'ldb', 'lD', 'lDb'), None),
+    (special.spherical_in, cython_special.spherical_in, ('ld', 'ldb', 'lD', 'lDb'), None),
+    (special.spherical_kn, cython_special.spherical_kn, ('ld', 'ldb', 'lD', 'lDb'), None),
     (special.shichi, cython_special._shichi_pywrap, ('d', 'D'), None),
     (special.sici, cython_special._sici_pywrap, ('d', 'D'), None),
     (special.sindg, cython_special.sindg, ('d',), None),
@@ -297,7 +303,8 @@ def test_cython_api(param):
         pytest.xfail(reason=knownfailure)
 
     # Check which parameters are expected to be fused types
-    values = [set() for code in specializations[0]]
+    max_params = max(len(spec) for spec in specializations)
+    values = [set() for _ in range(max_params)]
     for typecodes in specializations:
         for j, v in enumerate(typecodes):
             values[j].add(v)

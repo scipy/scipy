@@ -384,8 +384,6 @@ Simple iteration solvers:
 :mod:`Additional information on the nonlinear solvers <scipy.optimize.nonlin>`
 """
 
-from __future__ import division, print_function, absolute_import
-
 from .optimize import *
 from ._minimize import *
 from ._root import *
@@ -397,7 +395,7 @@ from .tnc import fmin_tnc
 from .cobyla import fmin_cobyla
 from .nonlin import *
 from .slsqp import fmin_slsqp
-from .nnls import nnls
+from ._nnls import nnls
 from ._basinhopping import basinhopping
 from ._linprog import linprog, linprog_verbose_callback
 from ._lsap import linear_sum_assignment

@@ -6,8 +6,6 @@ Functions
 ---------
 - root : find a root of a scalar function.
 """
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 
 from . import zeros as optzeros
@@ -237,8 +235,8 @@ def root_scalar(f, args=(), method=None, bracket=None,
 
     try:
         methodc = getattr(optzeros, map2underlying.get(meth, meth))
-    except AttributeError:
-        raise ValueError('Unknown solver %s' % meth)
+    except AttributeError as e:
+        raise ValueError('Unknown solver %s' % meth) from e
 
     if meth in ['bisect', 'ridder', 'brentq', 'brenth', 'toms748']:
         if not isinstance(bracket, (list, tuple, np.ndarray)):

@@ -17,8 +17,6 @@
 #
 #-------------------------------------------------------------------------------
 
-from __future__ import division, print_function, absolute_import
-
 # Standard library imports.
 import warnings
 
@@ -34,6 +32,7 @@ import numpy as np
 
 # Local imports.
 from . import mvn
+from ._stats import gaussian_kernel_estimate
 
 
 __all__ = ['gaussian_kde']
@@ -239,28 +238,20 @@ class gaussian_kde(object):
                     self.d)
                 raise ValueError(msg)
 
-        result = zeros((m,), dtype=float)
-
-        whitening = linalg.cholesky(self.inv_cov)
-        scaled_dataset = dot(whitening, self.dataset)
-        scaled_points = dot(whitening, points)
-
-        if m >= self.n:
-            # there are more points than data, so loop over data
-            for i in range(self.n):
-                diff = scaled_dataset[:, i, newaxis] - scaled_points
-                energy = sum(diff * diff, axis=0) / 2.0
-                result += self.weights[i]*exp(-energy)
+        output_dtype = np.common_type(self.covariance, points)
+        itemsize = np.dtype(output_dtype).itemsize
+        if itemsize == 4:
+            spec = 'float'
+        elif itemsize == 8:
+            spec = 'double'
+        elif itemsize in (12, 16):
+            spec = 'long double'
         else:
-            # loop over points
-            for i in range(m):
-                diff = scaled_dataset - scaled_points[:, i, newaxis]
-                energy = sum(diff * diff, axis=0) / 2.0
-                result[i] = sum(exp(-energy)*self.weights, axis=0)
-
-        result = result / self._norm_factor
-
-        return result
+            raise TypeError('%s has unexpected item size %d' %
+                            (output_dtype, itemsize))
+        result = gaussian_kernel_estimate[spec](self.dataset.T, self.weights[:, None],
+                                                points.T, self.inv_cov, output_dtype)
+        return result[:, 0]
 
     __call__ = evaluate
 
@@ -612,7 +603,7 @@ class gaussian_kde(object):
 
         if m >= self.n:
             # there are more points than data, so loop over data
-            energy = zeros((self.n, m), dtype=float)
+            energy = np.empty((self.n, m), dtype=float)
             for i in range(self.n):
                 diff = self.dataset[:, i, newaxis] - points
                 tdiff = dot(self.inv_cov, diff)
@@ -621,12 +612,12 @@ class gaussian_kde(object):
                                b=self.weights / self._norm_factor, axis=1)
         else:
             # loop over points
-            result = zeros((m,), dtype=float)
+            result = np.empty((m,), dtype=float)
             for i in range(m):
                 diff = self.dataset - points[:, i, newaxis]
                 tdiff = dot(self.inv_cov, diff)
                 energy = sum(diff * tdiff, axis=0) / 2.0
-                result[i] = logsumexp(-energy, b=self.weights / 
+                result[i] = logsumexp(-energy, b=self.weights /
                                       self._norm_factor)
 
         return result

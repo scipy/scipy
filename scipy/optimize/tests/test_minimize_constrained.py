@@ -1,4 +1,3 @@
-from __future__ import division, print_function, absolute_import
 import numpy as np
 import pytest
 from scipy.linalg import block_diag
@@ -666,3 +665,14 @@ class TestEmptyConstraint(TestCase):
         )
 
         assert_array_almost_equal(abs(result.x), np.array([1, 0]), decimal=4)
+
+
+def test_bug_11886():
+    def opt(x):
+        return x[0]**2+x[1]**2
+
+    with np.testing.suppress_warnings() as sup:
+        sup.filter(PendingDeprecationWarning)
+        A = np.matrix(np.diag([1, 1]))
+    lin_cons = LinearConstraint(A, -1, np.inf)
+    minimize(opt, 2*[1], constraints = lin_cons)  # just checking that there are no errors

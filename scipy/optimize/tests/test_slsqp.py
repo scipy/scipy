@@ -1,8 +1,6 @@
 """
 Unit test for SLSQP optimization.
 """
-from __future__ import division, print_function, absolute_import
-
 from numpy.testing import (assert_, assert_array_almost_equal,
                            assert_allclose, assert_equal)
 from pytest import raises as assert_raises
@@ -313,6 +311,15 @@ class TestSLSQP(object):
     def test_integer_bounds(self):
         # This should not raise an exception
         fmin_slsqp(lambda z: z**2 - 1, [0], bounds=[[0, 1]], iprint=0)
+
+    def test_array_bounds(self):
+        # NumPy used to treat n-dimensional 1-element arrays as scalars
+        # in some cases.  The handling of `bounds` by `fmin_slsqp` still
+        # supports this behavior.
+        bounds = [(-np.inf, np.inf), (np.array([2]), np.array([3]))]
+        x = fmin_slsqp(lambda z: np.sum(z**2 - 1), [2.5, 2.5], bounds=bounds,
+                       iprint=0)
+        assert_array_almost_equal(x, [0, 2])
 
     def test_obj_must_return_scalar(self):
         # Regression test for Github Issue #5433

@@ -14,11 +14,10 @@ Uses ARPACK: http://www.caam.rice.edu/software/ARPACK/
 # - (s,d,c,z)neupd: single,double,complex,double complex general matrix
 # This wrapper puts the *neupd (general matrix) interfaces in eigs()
 # and the *seupd (symmetric matrix) in eigsh().
-# There is no Hermitian complex/double complex interface.
-# To find eigenvalues of a Hermitian matrix you
-# must use eigs() and not eigsh()
-# It might be desirable to handle the Hermitian case differently
-# and, for example, return real eigenvalues.
+# There is no specialized interface for complex Hermitian matrices.
+# To find eigenvalues of a complex Hermitian matrix you
+# may use eigsh(), but eigsh() will simply call eigs()
+# and return the real part of the eigenvalues thus obtained.
 
 # Number of eigenvalues returned and complex eigenvalues
 # ------------------------------------------------------
@@ -36,13 +35,13 @@ Uses ARPACK: http://www.caam.rice.edu/software/ARPACK/
 # ARPACK and handle shifted and shift-inverse computations
 # for eigenvalues by providing a shift (sigma) and a solver.
 
-from __future__ import division, print_function, absolute_import
-
 __docformat__ = "restructuredtext en"
 
 __all__ = ['eigs', 'eigsh', 'svds', 'ArpackError', 'ArpackNoConvergence']
 
 from . import _arpack
+arpack_int = _arpack.timing.nbx.dtype
+
 import numpy as np
 import warnings
 from scipy.sparse.linalg.interface import aslinearoperator, LinearOperator
@@ -341,7 +340,7 @@ class _ArpackParams(object):
         ncv = min(ncv, n)
 
         self.v = np.zeros((n, ncv), tp)  # holds Ritz vectors
-        self.iparam = np.zeros(11, "int")
+        self.iparam = np.zeros(11, arpack_int)
 
         # set solver mode and parameters
         ishfts = 1
@@ -530,7 +529,7 @@ class _SymmetricArpackParams(_ArpackParams):
         self.iterate_infodict = _SAUPD_ERRORS[ltr]
         self.extract_infodict = _SEUPD_ERRORS[ltr]
 
-        self.ipntr = np.zeros(11, "int")
+        self.ipntr = np.zeros(11, arpack_int)
 
     def iterate(self):
         self.ido, self.tol, self.resid, self.v, self.iparam, self.ipntr, self.info = \
@@ -710,7 +709,7 @@ class _UnsymmetricArpackParams(_ArpackParams):
         self.iterate_infodict = _NAUPD_ERRORS[ltr]
         self.extract_infodict = _NEUPD_ERRORS[ltr]
 
-        self.ipntr = np.zeros(14, "int")
+        self.ipntr = np.zeros(14, arpack_int)
 
         if self.tp in 'FD':
             # Use _aligned_zeros to work around a f2py bug in Numpy 1.9.1
@@ -1123,8 +1122,8 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
 
             A * x = w * M * x.
 
-        M must represent a real, symmetric matrix if A is real, and must
-        represent a complex, hermitian matrix if A is complex. For best
+        M must represent a real symmetric matrix if A is real, and must
+        represent a complex Hermitian matrix if A is complex. For best
         results, the data type of M should be the same as that of A.
         Additionally:
 
@@ -1354,7 +1353,7 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
           Minv=None, OPinv=None, mode='normal'):
     """
     Find k eigenvalues and eigenvectors of the real symmetric square matrix
-    or complex hermitian matrix A.
+    or complex Hermitian matrix A.
 
     Solves ``A * x[i] = w[i] * x[i]``, the standard eigenvalue problem for
     w[i] eigenvalues with corresponding eigenvectors x[i].
@@ -1363,11 +1362,15 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
     generalized eigenvalue problem for w[i] eigenvalues
     with corresponding eigenvectors x[i].
 
+    Note that there is no specialized routine for the case when A is a complex
+    Hermitian matrix. In this case, ``eigsh()`` will call ``eigs()`` and return the
+    real parts of the eigenvalues thus obtained.
+
     Parameters
     ----------
     A : ndarray, sparse matrix or LinearOperator
         A square operator representing the operation ``A * x``, where ``A`` is
-        real symmetric or complex hermitian. For buckling mode (see below)
+        real symmetric or complex Hermitian. For buckling mode (see below)
         ``A`` must additionally be positive-definite.
     k : int, optional
         The number of eigenvalues and eigenvectors desired.
@@ -1389,8 +1392,8 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
 
             A @ x = w * M @ x.
 
-        M must represent a real, symmetric matrix if A is real, and must
-        represent a complex, hermitian matrix if A is complex. For best
+        M must represent a real symmetric matrix if A is real, and must
+        represent a complex Hermitian matrix if A is complex. For best
         results, the data type of M should be the same as that of A.
         Additionally:
 
@@ -1433,7 +1436,7 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
         smaller than n; it is recommended that ``ncv > 2*k``.
         Default: ``min(n, max(2*k + 1, 20))``
     which : str ['LM' | 'SM' | 'LA' | 'SA' | 'BE']
-        If A is a complex hermitian matrix, 'BE' is invalid.
+        If A is a complex Hermitian matrix, 'BE' is invalid.
         Which `k` eigenvectors and eigenvalues to find:
 
             'LM' : Largest (in magnitude) eigenvalues.
@@ -1550,7 +1553,7 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
     (13, 6)
 
     """
-    # complex hermitian matrices should be solved with eigs
+    # complex Hermitian matrices should be solved with eigs
     if np.issubdtype(A.dtype, np.complexfloating):
         if mode != 'normal':
             raise ValueError("mode=%s cannot be used with "

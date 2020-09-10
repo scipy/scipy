@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 import scipy.sparse
 
@@ -125,8 +123,8 @@ def load_npz(file):
     with np.load(file, **PICKLE_KWARGS) as loaded:
         try:
             matrix_format = loaded['format']
-        except KeyError:
-            raise ValueError('The file {} does not contain a sparse matrix.'.format(file))
+        except KeyError as e:
+            raise ValueError('The file {} does not contain a sparse matrix.'.format(file)) from e
 
         matrix_format = matrix_format.item()
 
@@ -137,8 +135,8 @@ def load_npz(file):
 
         try:
             cls = getattr(scipy.sparse, '{}_matrix'.format(matrix_format))
-        except AttributeError:
-            raise ValueError('Unknown matrix format "{}"'.format(matrix_format))
+        except AttributeError as e:
+            raise ValueError('Unknown matrix format "{}"'.format(matrix_format)) from e
 
         if matrix_format in ('csc', 'csr', 'bsr'):
             return cls((loaded['data'], loaded['indices'], loaded['indptr']), shape=loaded['shape'])

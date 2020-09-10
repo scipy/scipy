@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 from numpy import array, kron, diag
 from numpy.testing import assert_, assert_equal
 

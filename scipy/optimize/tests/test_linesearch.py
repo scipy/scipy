@@ -1,8 +1,6 @@
 """
 Tests for line search routines
 """
-from __future__ import division, print_function, absolute_import
-
 from numpy.testing import (assert_, assert_equal, assert_array_almost_equal,
                            assert_array_almost_equal_nulp, assert_warns,
                            suppress_warnings)
@@ -50,7 +48,7 @@ def assert_fp_equal(x, y, err_msg="", nulp=50):
     try:
         assert_array_almost_equal_nulp(x, y, nulp)
     except AssertionError as e:
-        raise AssertionError("%s\n%s" % (e, err_msg))
+        raise AssertionError("%s\n%s" % (e, err_msg)) from e
 
 
 class TestLineSearch(object):

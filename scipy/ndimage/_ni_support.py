@@ -28,8 +28,6 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from __future__ import division, print_function, absolute_import
-
 from collections.abc import Iterable
 import numpy
 
@@ -81,11 +79,3 @@ def _get_output(output, input, shape=None):
     elif output.shape != shape:
         raise RuntimeError("output shape not correct")
     return output
-
-
-def _check_axis(axis, rank):
-    if axis < 0:
-        axis += rank
-    if axis < 0 or axis >= rank:
-        raise ValueError('invalid axis')
-    return axis

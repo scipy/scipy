@@ -387,8 +387,6 @@ static PyMethodDef test_ccallback_methods[] = {
 };
 
 
-#if PY_VERSION_HEX >= 0x03000000
-
 static struct PyModuleDef test_ccallback_module = {
     PyModuleDef_HEAD_INIT,
     "_test_ccallback",
@@ -402,19 +400,7 @@ static struct PyModuleDef test_ccallback_module = {
 };
 
 
-PyMODINIT_FUNC
-PyInit__test_ccallback(void)
+PyObject *PyInit__test_ccallback(void)
 {
     return PyModule_Create(&test_ccallback_module);
 }
-
-
-#else
-
-PyMODINIT_FUNC
-init_test_ccallback(void)
-{
-    Py_InitModule("_test_ccallback", test_ccallback_methods);
-}
-
-#endif

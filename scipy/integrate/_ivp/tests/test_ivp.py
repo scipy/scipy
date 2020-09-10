@@ -1,4 +1,3 @@
-from __future__ import division, print_function, absolute_import
 from itertools import product
 from numpy.testing import (assert_, assert_allclose,
                            assert_equal, assert_no_warnings, suppress_warnings)
@@ -11,6 +10,10 @@ from scipy.integrate import OdeSolution
 from scipy.integrate._ivp.common import num_jac
 from scipy.integrate._ivp.base import ConstantDenseOutput
 from scipy.sparse import coo_matrix, csc_matrix
+
+
+def fun_zero(t, y):
+    return np.zeros_like(y)
 
 
 def fun_linear(t, y):
@@ -134,7 +137,7 @@ def sol_complex(t):
 
 def compute_error(y, y_true, rtol, atol):
     e = (y - y_true) / (atol + rtol * np.abs(y_true))
-    return np.sqrt(np.sum(np.real(e * e.conj()), axis=0) / e.shape[0])
+    return np.linalg.norm(e, axis=0) / np.sqrt(e.shape[0])
 
 
 def test_integration():
@@ -227,26 +230,26 @@ def test_integration_complex():
         assert_equal(res.status, 0)
 
         if method == 'DOP853':
-            assert_(res.nfev < 35)
+            assert res.nfev < 35
         else:
-            assert_(res.nfev < 25)
+            assert res.nfev < 25
 
         if method == 'BDF':
             assert_equal(res.njev, 1)
-            assert_(res.nlu < 6)
+            assert res.nlu < 6
         else:
-            assert_equal(res.njev, 0)
-            assert_equal(res.nlu, 0)
+            assert res.njev == 0
+            assert res.nlu == 0
 
         y_true = sol_complex(res.t)
         e = compute_error(res.y, y_true, rtol, atol)
-        assert_(np.all(e < 5))
+        assert np.all(e < 5)
 
         yc_true = sol_complex(tc)
         yc = res.sol(tc)
         e = compute_error(yc, yc_true, rtol, atol)
 
-        assert_(np.all(e < 5))
+        assert np.all(e < 5)
 
 
 def test_integration_sparse_difference():
@@ -969,3 +972,11 @@ def test_args():
     assert_allclose(y0events[0], np.ones_like(y0events[0]))
     assert_allclose(y0events[1], np.zeros_like(y0events[1]), atol=5e-14)
     assert_allclose(zfinalevents[2], [zfinal])
+
+
+@pytest.mark.parametrize('method', ['RK23', 'RK45', 'DOP853', 'Radau', 'BDF', 'LSODA'])
+def test_integration_zero_rhs(method):
+    result = solve_ivp(fun_zero, [0, 10], np.ones(3), method=method)
+    assert_(result.success)
+    assert_equal(result.status, 0)
+    assert_allclose(result.y, 1.0, rtol=1e-15)

@@ -20,8 +20,6 @@ TODO: Make interfaces to the following fitpack functions:
     For univariate splines: cocosp, concon, fourco, insert
     For bivariate splines: profil, regrid, parsur, surev
 """
-from __future__ import division, print_function, absolute_import
-
 
 __all__ = ['splrep', 'splprep', 'splev', 'splint', 'sproot', 'spalde',
            'bisplrep', 'bisplev', 'insert', 'splder', 'splantider']
@@ -30,22 +28,25 @@ import warnings
 import numpy as np
 from . import _fitpack
 from numpy import (atleast_1d, array, ones, zeros, sqrt, ravel, transpose,
-                   empty, iinfo, intc, asarray)
+                   empty, iinfo, asarray)
 
 # Try to replace _fitpack interface with
 #  f2py-generated version
 from . import dfitpack
 
 
-def _intc_overflow(x, msg=None):
-    """Cast the value to an intc and raise an OverflowError if the value
+dfitpack_int = dfitpack.types.intvar.dtype
+
+
+def _int_overflow(x, msg=None):
+    """Cast the value to an dfitpack_int and raise an OverflowError if the value
     cannot fit.
     """
-    if x > iinfo(intc).max:
+    if x > iinfo(dfitpack_int).max:
         if msg is None:
-            msg = '%r cannot fit into an intc' % x
+            msg = '%r cannot fit into an %r' % (x, dfitpack_int)
         raise OverflowError(msg)
-    return intc(x)
+    return dfitpack_int.type(x)
 
 
 _iermess = {
@@ -99,7 +100,7 @@ _iermess2 = {
 }
 
 _parcur_cache = {'t': array([], float), 'wrk': array([], float),
-                 'iwrk': array([], intc), 'u': array([], float),
+                 'iwrk': array([], dfitpack_int), 'u': array([], float),
                  'ub': 0, 'ue': 1}
 
 
@@ -214,7 +215,7 @@ def splprep(x, w=None, u=None, ub=None, ue=None, k=3, task=0, s=None, t=None,
     """
     if task <= 0:
         _parcur_cache = {'t': array([], float), 'wrk': array([], float),
-                         'iwrk': array([], intc), 'u': array([], float),
+                         'iwrk': array([], dfitpack_int), 'u': array([], float),
                          'ub': 0, 'ue': 1}
     x = atleast_1d(x)
     idim, m = x.shape
@@ -300,8 +301,8 @@ def splprep(x, w=None, u=None, ub=None, ue=None, k=3, task=0, s=None, t=None,
         else:
             try:
                 raise _iermess[ier][1](_iermess[ier][0])
-            except KeyError:
-                raise _iermess['unknown'][1](_iermess['unknown'][0])
+            except KeyError as e:
+                raise _iermess['unknown'][1](_iermess['unknown'][0]) from e
     if full_output:
         try:
             return tcku, fp, ier, _iermess[ier][0]
@@ -312,7 +313,7 @@ def splprep(x, w=None, u=None, ub=None, ue=None, k=3, task=0, s=None, t=None,
 
 
 _curfit_cache = {'t': array([], float), 'wrk': array([], float),
-                 'iwrk': array([], intc)}
+                 'iwrk': array([], dfitpack_int)}
 
 
 def splrep(x, y, w=None, xb=None, xe=None, k=3, task=0, s=None, t=None,
@@ -389,13 +390,6 @@ def splrep(x, y, w=None, xb=None, xe=None, k=3, task=0, s=None, t=None,
     msg : str, optional
         A message corresponding to the integer flag, ier.
 
-    Notes
-    -----
-    See splev for evaluation of the spline and its derivatives.
-
-    The user is responsible for assuring that the values of *x* are unique.
-    Otherwise, *splrep* will not return sensible results.
-
     See Also
     --------
     UnivariateSpline, BivariateSpline
@@ -406,6 +400,9 @@ def splrep(x, y, w=None, xb=None, xe=None, k=3, task=0, s=None, t=None,
     -----
     See splev for evaluation of the spline and its derivatives. Uses the
     FORTRAN routine curfit from FITPACK.
+
+    The user is responsible for assuring that the values of *x* are unique.
+    Otherwise, *splrep* will not return sensible results.
 
     If provided, knots `t` must satisfy the Schoenberg-Whitney conditions,
     i.e., there must be a subset of data points ``x[j]`` such that
@@ -489,14 +486,14 @@ def splrep(x, y, w=None, xb=None, xe=None, k=3, task=0, s=None, t=None,
             _curfit_cache['wrk'] = empty((m*(k + 1) + nest*(8 + 5*k),), float)
         else:
             _curfit_cache['wrk'] = empty((m*(k + 1) + nest*(7 + 3*k),), float)
-        _curfit_cache['iwrk'] = empty((nest,), intc)
+        _curfit_cache['iwrk'] = empty((nest,), dfitpack_int)
     try:
         t = _curfit_cache['t']
         wrk = _curfit_cache['wrk']
         iwrk = _curfit_cache['iwrk']
-    except KeyError:
+    except KeyError as e:
         raise TypeError("must call with task=1 only after"
-                        " call with task=0,-1")
+                        " call with task=0,-1") from e
     if not per:
         n, c, fp, ier = dfitpack.curfit(task, x, y, w, t, wrk, iwrk,
                                         xb, xe, k, s)
@@ -513,8 +510,8 @@ def splrep(x, y, w=None, xb=None, xe=None, k=3, task=0, s=None, t=None,
         else:
             try:
                 raise _iermess[ier][1](_iermess[ier][0])
-            except KeyError:
-                raise _iermess['unknown'][1](_iermess['unknown'][0])
+            except KeyError as e:
+                raise _iermess['unknown'][1](_iermess['unknown'][0]) from e
     if full_output:
         try:
             return tck, fp, ier, _iermess[ier][0]
@@ -795,7 +792,7 @@ def spalde(x, tck):
 
 
 _surfit_cache = {'tx': array([], float), 'ty': array([], float),
-                 'wrk': array([], float), 'iwrk': array([], intc)}
+                 'wrk': array([], float), 'iwrk': array([], dfitpack_int)}
 
 
 def bisplrep(x, y, z, w=None, xb=None, xe=None, yb=None, ye=None,
@@ -886,6 +883,10 @@ def bisplrep(x, y, z, w=None, xb=None, xe=None, yb=None, ye=None,
     .. [3] Dierckx P.:Curve and surface fitting with splines, Monographs on
        Numerical Analysis, Oxford University Press, 1993.
 
+    Examples
+    --------
+    Examples are given :ref:`in the tutorial <tutorial-interpolate_2d_spline>`.
+
     """
     x, y, z = map(ravel, [x, y, z])  # ensure 1-d arrays.
     m = len(x)
@@ -950,10 +951,10 @@ def bisplrep(x, y, z, w=None, xb=None, xe=None, yb=None, ye=None,
     if bx > by:
         b1, b2 = by, by + u - kx
     msg = "Too many data points to interpolate"
-    lwrk1 = _intc_overflow(u*v*(2 + b1 + b2) +
-                           2*(u + v + km*(m + ne) + ne - kx - ky) + b2 + 1,
-                           msg=msg)
-    lwrk2 = _intc_overflow(u*v*(b2 + 1) + b2, msg=msg)
+    lwrk1 = _int_overflow(u*v*(2 + b1 + b2) +
+                          2*(u + v + km*(m + ne) + ne - kx - ky) + b2 + 1,
+                          msg=msg)
+    lwrk2 = _int_overflow(u*v*(b2 + 1) + b2, msg=msg)
     tx, ty, c, o = _fitpack._surfit(x, y, z, w, xb, xe, yb, ye, kx, ky,
                                     task, s, eps, tx, ty, nxest, nyest,
                                     wrk, lwrk1, lwrk2)
@@ -977,8 +978,8 @@ def bisplrep(x, y, z, w=None, xb=None, xe=None, yb=None, ye=None,
         else:
             try:
                 raise _iermess2[ierm][1](_iermess2[ierm][0])
-            except KeyError:
-                raise _iermess2['unknown'][1](_iermess2['unknown'][0])
+            except KeyError as e:
+                raise _iermess2['unknown'][1](_iermess2['unknown'][0]) from e
     if full_output:
         try:
             return tck, fp, ier, _iermess2[ierm][0]
@@ -1034,6 +1035,10 @@ def bisplev(x, y, tck, dx=0, dy=0):
        report tw50, Dept. Computer Science,K.U.Leuven, 1980.
     .. [3] Dierckx P. : Curve and surface fitting with splines,
        Monographs on Numerical Analysis, Oxford University Press, 1993.
+
+    Examples
+    --------
+    Examples are given :ref:`in the tutorial <tutorial-interpolate_2d_spline>`.
 
     """
     tx, ty, c, kx, ky = tck
@@ -1222,9 +1227,9 @@ def splder(tck, n=1):
                 # Adjust knots
                 t = t[1:-1]
                 k -= 1
-        except FloatingPointError:
+        except FloatingPointError as e:
             raise ValueError(("The spline has internal repeated knots "
-                              "and is not differentiable %d times") % n)
+                              "and is not differentiable %d times") % n) from e
 
     return t, c, k
 

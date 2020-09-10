@@ -1,12 +1,9 @@
 """Interpolation algorithms using piecewise cubic polynomials."""
 
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 
-from . import BPoly, PPoly
+from . import PPoly
 from .polyint import _isscalar
-from scipy._lib._util import _asarray_validated
 from scipy.linalg import solve_banded, solve
 
 
@@ -120,10 +117,10 @@ class CubicHermiteSpline(PPoly):
 
     See Also
     --------
-    Akima1DInterpolator
-    PchipInterpolator
-    CubicSpline
-    PPoly
+    Akima1DInterpolator : Akima 1D interpolator.
+    PchipInterpolator : PCHIP 1-D monotonic cubic interpolator.
+    CubicSpline : Cubic spline data interpolator.
+    PPoly : Piecewise polynomial in terms of coefficients and breakpoints
 
     Notes
     -----
@@ -188,10 +185,10 @@ class PchipInterpolator(CubicHermiteSpline):
 
     See Also
     --------
-    CubicHermiteSpline
-    Akima1DInterpolator
-    CubicSpline
-    PPoly
+    CubicHermiteSpline : Piecewise-cubic interpolator.
+    Akima1DInterpolator : Akima 1D interpolator.
+    CubicSpline : Cubic spline data interpolator.
+    PPoly : Piecewise polynomial in terms of coefficients and breakpoints.
 
     Notes
     -----
@@ -330,12 +327,27 @@ def pchip_interpolate(xi, yi, x, der=0, axis=0):
 
     See Also
     --------
-    PchipInterpolator
+    PchipInterpolator : PCHIP 1-D monotonic cubic interpolator.
 
     Returns
     -------
     y : scalar or array_like
         The result, of length R or length M or M by R,
+
+    Examples
+    --------
+    We can interpolate 2D observed data using pchip interpolation:
+
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.interpolate import pchip_interpolate
+    >>> x_observed = np.linspace(0.0, 10.0, 11)
+    >>> y_observed = np.sin(x_observed)
+    >>> x = np.linspace(min(x_observed), max(x_observed), num=100)
+    >>> y = pchip_interpolate(x_observed, y_observed, x)
+    >>> plt.plot(x_observed, y_observed, "o", label="observation")
+    >>> plt.plot(x, y, label="pchip interpolation")
+    >>> plt.legend()
+    >>> plt.show()
 
     """
     P = PchipInterpolator(xi, yi, axis=axis)
@@ -377,9 +389,9 @@ class Akima1DInterpolator(CubicHermiteSpline):
 
     See Also
     --------
-    PchipInterpolator
-    CubicSpline
-    PPoly
+    PchipInterpolator : PCHIP 1-D monotonic cubic interpolator.
+    CubicSpline : Cubic spline data interpolator.
+    PPoly : Piecewise polynomial in terms of coefficients and breakpoints
 
     Notes
     -----
@@ -530,9 +542,9 @@ class CubicSpline(CubicHermiteSpline):
 
     See Also
     --------
-    Akima1DInterpolator
-    PchipInterpolator
-    PPoly
+    Akima1DInterpolator : Akima 1D interpolator.
+    PchipInterpolator : PCHIP 1-D monotonic cubic interpolator.
+    PPoly : Piecewise polynomial in terms of coefficients and breakpoints.
 
     Notes
     -----
@@ -813,9 +825,11 @@ class CubicSpline(CubicHermiteSpline):
             else:
                 try:
                     deriv_order, deriv_value = bc
-                except Exception:
-                    raise ValueError("A specified derivative value must be "
-                                     "given in the form (order, value).")
+                except Exception as e:
+                    raise ValueError(
+                        "A specified derivative value must be "
+                        "given in the form (order, value)."
+                    ) from e
 
                 if deriv_order not in [1, 2]:
                     raise ValueError("The specified derivative order must "

@@ -106,6 +106,11 @@ clacon2_(int *n, complex *v, complex *x, float *est, int *kase, int isave[3])
     extern float smach(char *);
     extern int icmax1_slu(int *, complex *, int *);
     extern double scsum1_slu(int *, complex *, int *);
+#ifdef _CRAY
+    extern int CCOPY(int *, complex *, int *, complex [], int *);
+#else
+    extern int ccopy_(int *, complex *, int *, complex [], int *);
+#endif
 
     safmin = smach("Safe minimum");  /* lamch_("Safe minimum"); */
     if ( *kase == 0 ) {

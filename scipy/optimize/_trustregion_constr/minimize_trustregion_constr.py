@@ -1,4 +1,3 @@
-from __future__ import division, print_function, absolute_import
 import time
 import numpy as np
 from scipy.sparse.linalg import LinearOperator

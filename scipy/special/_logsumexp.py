@@ -1,9 +1,7 @@
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 from scipy._lib._util import _asarray_validated
 
-__all__ = ["logsumexp", "softmax"]
+__all__ = ["logsumexp", "softmax", "log_softmax"]
 
 
 def logsumexp(a, axis=None, b=None, keepdims=False, return_sign=False):
@@ -186,7 +184,8 @@ def softmax(x, axis=None):
     >>> m.sum()
     1.0000000000000002
 
-    Compute the softmax transformation along the first axis (i.e., the columns).
+    Compute the softmax transformation along the first axis (i.e., the
+    columns).
 
     >>> m = softmax(x, axis=0)
 
@@ -213,3 +212,72 @@ def softmax(x, axis=None):
 
     # compute in log space for numerical stability
     return np.exp(x - logsumexp(x, axis=axis, keepdims=True))
+
+
+def log_softmax(x, axis=None):
+    r"""
+    Logarithm of softmax function::
+
+        log_softmax(x) = log(softmax(x))
+
+    Parameters
+    ----------
+    x : array_like
+        Input array.
+    axis : int or tuple of ints, optional
+        Axis to compute values along. Default is None and softmax will be
+        computed over the entire array `x`.
+
+    Returns
+    -------
+    s : ndarray or scalar
+        An array with the same shape as `x`. Exponential of the result will
+        sum to 1 along the specified axis. If `x` is a scalar, a scalar is
+        returned.
+
+    Notes
+    -----
+    `log_softmax` is more accurate than ``np.log(softmax(x))`` with inputs that
+    make `softmax` saturate (see examples below).
+
+    .. versionadded:: 1.5.0
+
+    Examples
+    --------
+    >>> from scipy.special import log_softmax
+    >>> from scipy.special import softmax
+    >>> np.set_printoptions(precision=5)
+
+    >>> x = np.array([1000.0, 1.0])
+
+    >>> y = log_softmax(x)
+    >>> y
+    array([   0., -999.])
+
+    >>> with np.errstate(divide='ignore'):
+    ...   y = np.log(softmax(x))
+    ...
+    >>> y
+    array([  0., -inf])
+
+    """
+
+    x = _asarray_validated(x, check_finite=False)
+
+    x_max = np.amax(x, axis=axis, keepdims=True)
+
+    if x_max.ndim > 0:
+        x_max[~np.isfinite(x_max)] = 0
+    elif not np.isfinite(x_max):
+        x_max = 0
+
+    tmp = x - x_max
+    exp_tmp = np.exp(tmp)
+
+    # suppress warnings about log of zero
+    with np.errstate(divide='ignore'):
+        s = np.sum(exp_tmp, axis=axis, keepdims=True)
+        out = np.log(s)
+
+    out = tmp - out
+    return out

@@ -28,24 +28,17 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from __future__ import division, print_function, absolute_import
-
 import itertools
-import numpy
 import warnings
 
+import numpy
+from numpy.core.multiarray import normalize_axis_index
+
+from scipy import special
 from . import _ni_support
 from . import _nd_image
-from ._ni_docstrings import docdict
-from scipy._lib import doccer
+from ._ni_docstrings import docfiller
 
-# Change the default 'reflect' to 'constant' via modifying a copy of docdict
-docdict_copy = docdict.copy()
-del docdict
-docdict_copy['mode'] = docdict_copy['mode'].replace("Default is 'reflect'",
-                                                    "Default is 'constant'")
-
-docfiller = doccer.filldoc(docdict_copy)
 
 __all__ = ['spline_filter1d', 'spline_filter', 'geometric_transform',
            'map_coordinates', 'affine_transform', 'shift', 'zoom', 'rotate']
@@ -71,7 +64,7 @@ def spline_filter1d(input, order=3, axis=-1, output=numpy.float64,
     output : ndarray or dtype, optional
         The array in which to place the output, or the dtype of the returned
         array. Default is ``numpy.float64``.
-    %(mode)s
+    %(mode_mirror)s
 
     Returns
     -------
@@ -89,6 +82,30 @@ def spline_filter1d(input, order=3, axis=-1, output=numpy.float64,
     the `prefilter` keyword argument. For functions that accept a `mode`
     parameter, the result will only be correct if it matches the `mode`
     used when filtering.
+
+    See Also
+    --------
+    spline_filter : Multidimensional spline filter.
+
+    Examples
+    --------
+    We can filter an image using 1-D spline along the given axis:
+
+    >>> from scipy.ndimage import spline_filter1d
+    >>> import matplotlib.pyplot as plt
+    >>> orig_img = np.eye(20)  # create an image
+    >>> orig_img[10, :] = 1.0
+    >>> sp_filter_axis_0 = spline_filter1d(orig_img, axis=0)
+    >>> sp_filter_axis_1 = spline_filter1d(orig_img, axis=1)
+    >>> f, ax = plt.subplots(1, 3, sharex=True)
+    >>> for ind, data in enumerate([[orig_img, "original image"],
+    ...             [sp_filter_axis_0, "spline filter (axis=0)"],
+    ...             [sp_filter_axis_1, "spline filter (axis=1)"]]):
+    ...     ax[ind].imshow(data[0], cmap='gray_r')
+    ...     ax[ind].set_title(data[1])
+    >>> plt.tight_layout()
+    >>> plt.show()
+
     """
     if order < 0 or order > 5:
         raise RuntimeError('spline order not supported')
@@ -100,7 +117,7 @@ def spline_filter1d(input, order=3, axis=-1, output=numpy.float64,
         output[...] = numpy.array(input)
     else:
         mode = _ni_support._extend_mode_to_code(mode)
-        axis = _ni_support._check_axis(axis, input.ndim)
+        axis = normalize_axis_index(axis, input.ndim)
         _nd_image.spline_filter1d(input, order, axis, output, mode)
     return output
 
@@ -113,7 +130,7 @@ def spline_filter(input, order=3, output=numpy.float64, mode='mirror'):
 
     See Also
     --------
-    spline_filter1d
+    spline_filter1d : Calculate a 1-D spline filter along the given axis.
 
     Notes
     -----
@@ -122,6 +139,23 @@ def spline_filter(input, order=3, output=numpy.float64, mode='mirror'):
     in the same data type as the output. Therefore, for output types
     with a limited precision, the results may be imprecise because
     intermediate results may be stored with insufficient precision.
+
+    Examples
+    --------
+    We can filter an image using multidimentional splines:
+
+    >>> from scipy.ndimage import spline_filter
+    >>> import matplotlib.pyplot as plt
+    >>> orig_img = np.eye(20)  # create an image
+    >>> orig_img[10, :] = 1.0
+    >>> sp_filter = spline_filter(orig_img, order=3)
+    >>> f, ax = plt.subplots(1, 2, sharex=True)
+    >>> for ind, data in enumerate([[orig_img, "original image"],
+    ...                             [sp_filter, "spline filter"]]):
+    ...     ax[ind].imshow(data[0], cmap='gray_r')
+    ...     ax[ind].set_title(data[1])
+    >>> plt.tight_layout()
+    >>> plt.show()
 
     """
     if order < 2 or order > 5:
@@ -165,7 +199,7 @@ def geometric_transform(input, mapping, output_shape=None,
     order : int, optional
         The order of the spline interpolation, default is 3.
         The order has to be in the range 0-5.
-    %(mode)s
+    %(mode_constant)s
     %(cval)s
     %(prefilter)s
     extra_arguments : tuple, optional
@@ -288,7 +322,7 @@ def map_coordinates(input, coordinates, output=None, order=3,
     order : int, optional
         The order of the spline interpolation, default is 3.
         The order has to be in the range 0-5.
-    %(mode)s
+    %(mode_constant)s
     %(cval)s
     %(prefilter)s
 
@@ -400,7 +434,7 @@ def affine_transform(input, matrix, offset=0.0, output_shape=None,
     order : int, optional
         The order of the spline interpolation, default is 3.
         The order has to be in the range 0-5.
-    %(mode)s
+    %(mode_constant)s
     %(cval)s
     %(prefilter)s
 
@@ -507,7 +541,7 @@ def shift(input, shift, output=None, order=3, mode='constant', cval=0.0,
     order : int, optional
         The order of the spline interpolation, default is 3.
         The order has to be in the range 0-5.
-    %(mode)s
+    %(mode_constant)s
     %(cval)s
     %(prefilter)s
 
@@ -557,7 +591,7 @@ def zoom(input, zoom, output=None, order=3, mode='constant', cval=0.0,
     order : int, optional
         The order of the spline interpolation, default is 3.
         The order has to be in the range 0-5.
-    %(mode)s
+    %(mode_constant)s
     %(cval)s
     %(prefilter)s
 
@@ -640,7 +674,7 @@ def rotate(input, angle, axes=(1, 0), reshape=True, output=None, order=3,
     order : int, optional
         The order of the spline interpolation, default is 3.
         The order has to be in the range 0-5.
-    %(mode)s
+    %(mode_constant)s
     %(cval)s
     %(prefilter)s
 
@@ -697,8 +731,7 @@ def rotate(input, angle, axes=(1, 0), reshape=True, output=None, order=3,
 
     axes.sort()
 
-    angle_rad = numpy.deg2rad(angle)
-    c, s = numpy.cos(angle_rad), numpy.sin(angle_rad)
+    c, s = special.cosdg(angle), special.sindg(angle)
 
     rot_matrix = numpy.array([[c, s],
                               [-s, c]])

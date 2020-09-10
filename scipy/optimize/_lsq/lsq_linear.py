@@ -1,6 +1,4 @@
 """Linear least squares with bound constraints on independent variables."""
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 from numpy.linalg import norm
 from scipy.sparse import issparse, csr_matrix
@@ -227,7 +225,7 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
     if issparse(A):
         A = csr_matrix(A)
     elif not isinstance(A, LinearOperator):
-        A = np.atleast_2d(A)
+        A = np.atleast_2d(np.asarray(A))
 
     if method == 'bvls':
         if lsq_solver == 'lsmr':
@@ -280,7 +278,7 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
         x_lsq = lsmr(A, b, atol=tol, btol=tol)[0]
 
     if in_bounds(x_lsq, lb, ub):
-        r = A.dot(x_lsq) - b
+        r = A @ x_lsq - b
         cost = 0.5 * np.dot(r, r)
         termination_status = 3
         termination_message = TERMINATION_MESSAGES[termination_status]

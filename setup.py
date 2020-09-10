@@ -54,7 +54,7 @@ Operating System :: MacOS
 """
 
 MAJOR = 1
-MINOR = 5
+MINOR = 6
 MICRO = 0
 ISRELEASED = False
 VERSION = '%d.%d.%d' % (MAJOR, MINOR, MICRO)
@@ -226,6 +226,16 @@ def get_build_ext_override():
     from numpy.distutils.command.build_ext import build_ext as old_build_ext
 
     class build_ext(old_build_ext):
+        def finalize_options(self):
+            super().finalize_options()
+
+            # Disable distutils parallel build, due to race conditions
+            # in numpy.distutils (Numpy issue gh-15957)
+            if self.parallel:
+                print("NOTE: -j build option not supportd. Set NPY_NUM_BUILD_JOBS=4 "
+                      "for parallel build.")
+            self.parallel = None
+
         def build_extension(self, ext):
             # When compiling with GNU compilers, use a version script to
             # hide symbols during linking.
@@ -241,8 +251,8 @@ def get_build_ext_override():
                     ext.extra_link_args.append('-Wl,--version-script=' + script_fn)
 
             # Allow late configuration
-            if hasattr(ext, '_pre_build_hook'):
-                ext._pre_build_hook(self, ext)
+            hooks = getattr(ext, '_pre_build_hook', ())
+            _run_pre_build_hooks(hooks, (self, ext))
 
             old_build_ext.build_extension(self, ext)
 
@@ -264,11 +274,43 @@ def get_build_ext_override():
                     cc = sysconfig.get_config_var("CC")
                     if not cc:
                         cc = ""
-                    compiler_name = os.path.basename(cc)
+                    compiler_name = os.path.basename(cc.split(" ")[0])
                     is_gcc = "gcc" in compiler_name or "g++" in compiler_name
             return is_gcc and sysconfig.get_config_var('GNULD') == 'yes'
 
     return build_ext
+
+
+def get_build_clib_override():
+    """
+    Custom build_clib command to tweak library building.
+    """
+    from numpy.distutils.command.build_clib import build_clib as old_build_clib
+
+    class build_clib(old_build_clib):
+        def finalize_options(self):
+            super().finalize_options()
+
+            # Disable parallelization (see build_ext above)
+            self.parallel = None
+
+        def build_a_library(self, build_info, lib_name, libraries):
+            # Allow late configuration
+            hooks = build_info.get('_pre_build_hook', ())
+            _run_pre_build_hooks(hooks, (self, build_info))
+            old_build_clib.build_a_library(self, build_info, lib_name, libraries)
+
+    return build_clib
+
+
+def _run_pre_build_hooks(hooks, args):
+    """Call a sequence of pre-build hooks, if any"""
+    if hooks is None:
+        hooks = ()
+    elif not hasattr(hooks, '__iter__'):
+        hooks = (hooks,)
+    for hook in hooks:
+        hook(*args)
 
 
 def generate_cython():
@@ -428,10 +470,17 @@ def configuration(parent_package='', top_path=None):
     lapack_opt = get_info('lapack_opt')
 
     if not lapack_opt:
-        msg = 'No lapack/blas resources found.'
         if sys.platform == "darwin":
-            msg = ('No lapack/blas resources found. '
+            msg = ('No BLAS/LAPACK libraries found. '
                    'Note: Accelerate is no longer supported.')
+        else:
+            msg = 'No BLAS/LAPACK libraries found.'
+        msg += ("\n"
+                "To build Scipy from sources, BLAS & LAPACK libraries "
+                "need to be installed.\n"
+                "See site.cfg.example in the Scipy source directory and\n"
+                "https://docs.scipy.org/doc/scipy/reference/building/index.html "
+                "for details.")
         raise NotFoundError(msg)
 
     config = Configuration(None, parent_package, top_path)
@@ -517,6 +566,7 @@ def setup_package():
 
         # Customize extension building
         cmdclass['build_ext'] = get_build_ext_override()
+        cmdclass['build_clib'] = get_build_clib_override()
 
         cwd = os.path.abspath(os.path.dirname(__file__))
         if not os.path.exists(os.path.join(cwd, 'PKG-INFO')):

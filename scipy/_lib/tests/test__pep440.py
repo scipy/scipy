@@ -1,5 +1,3 @@
-from __future__ import division, absolute_import, print_function
-
 from pytest import raises as assert_raises
 from scipy._lib._pep440 import Version, parse
 

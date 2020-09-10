@@ -17,7 +17,6 @@ References
 """
 # Author: Matt Haberland
 
-from __future__ import division, absolute_import, print_function
 import numpy as np
 from scipy.linalg import solve
 from .optimize import _check_unknown_options
@@ -343,9 +342,8 @@ def _phase_two(c, A, x, b, callback, postsolve_args, maxiter, tol, disp,
             else:
                 phase = 2
                 x_postsolve = x
-            x_o, fun, slack, con, _, _ = _postsolve(x_postsolve,
-                                                    postsolve_args,
-                                                    tol=tol, copy=True)
+            x_o, fun, slack, con = _postsolve(x_postsolve,
+                                              postsolve_args)
 
             if callback is not None:
                 res = OptimizeResult({'x': x_o, 'fun': fun, 'slack': slack,

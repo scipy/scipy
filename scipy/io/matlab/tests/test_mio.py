@@ -1,11 +1,9 @@
-# -*- coding: latin-1 -*-
+# -*- coding: utf-8 -*-
 ''' Nose test generators
 
 Need function load / save / roundtrip tests
 
 '''
-from __future__ import division, print_function, absolute_import
-
 import os
 from collections import OrderedDict
 from os.path import join as pjoin, dirname
@@ -1026,7 +1024,7 @@ def test_str_round():
     stream.truncate(0)
     stream.seek(0)
     # Make Fortran ordered version of string
-    in_str = in_arr.tostring(order='F')
+    in_str = in_arr.tobytes(order='F')
     in_from_str = np.ndarray(shape=a.shape,
                              dtype=in_arr.dtype,
                              order='F',
@@ -1227,3 +1225,13 @@ def test_filenotfound():
     # Check the correct error is thrown
     assert_raises(IOError, loadmat, "NotExistentFile00.mat")
     assert_raises(IOError, loadmat, "NotExistentFile00")
+
+
+def test_simplify_cells():
+    # Test output when simplify_cells=True
+    filename = pjoin(test_data_path, 'testsimplecell.mat')
+    res1 = loadmat(filename, simplify_cells=True)
+    res2 = loadmat(filename, simplify_cells=False)
+    assert_(isinstance(res1["s"], dict))
+    assert_(isinstance(res2["s"], np.ndarray))
+    assert_array_equal(res1["s"]["mycell"], np.array(["a", "b", "c"]))

@@ -3,7 +3,7 @@
 
 subroutine <prefix>ptsv(n, nrhs, d, e, b, info)
     callstatement (*f2py_func)(&n, &nrhs, d, e, b, &n, &info);
-    callprotoargument int*, int*, <ctypereal>*, <ctype>*, <ctype>*, int*, int*
+    callprotoargument F_INT*, F_INT*, <ctypereal>*, <ctype>*, <ctype>*, F_INT*, F_INT*
     integer intent(hide), depend(d) :: n = len(d)
     integer intent(hide), depend(b) :: nrhs = shape(b, 1)
     <ftypereal> dimension(n), intent(in,out,copy) :: d
@@ -12,3 +12,168 @@ subroutine <prefix>ptsv(n, nrhs, d, e, b, info)
     integer intent(out) :: info
 
 end subroutine <prefix>ptsv
+
+
+subroutine <prefix>pttrf(n, d, e, info)
+    ! d, e, info  = pttrf(d, e, overwrite_d=0, overwrite_e=0)
+    !
+    ! ?PTTRF computes the L*D*L**T factorization of a symmetric positive
+    ! definite tridiagonal matrix A.  The factorization may also be regarded
+    ! as ! having the form A = U**T*D*U.
+
+    callstatement (*f2py_func)(&n, d, e, &info)
+    callprotoargument F_INT*, <ctypereal>*, <ctype>*, F_INT*
+
+    integer intent(hide), depend(d) :: n = len(d)
+    <ftypereal> intent(in, out, copy), dimension(n) :: d
+    <ftype> intent(in, out, copy), dimension((n>0?n-1:0)), depend(n) :: e
+    integer intent(out) :: info
+
+end subroutine <prefix>pttrf
+
+
+subroutine <prefix2>pttrs(n, nrhs, d, e, b, ldb, info)
+    ! x, info  = pttrs(d, e, b, overwrite_b=0)
+    !
+    ! DPTTRS solves a tridiagonal system of the form
+    !
+    !     A * X = B
+    !
+    ! using the L*D*L**T factorization of A computed by DPTTRF.  D is a
+    ! diagonal matrix specified in the vector D, L is a unit bidiagonal
+    ! matrix whose subdiagonal is specified in the vector E, and X and B
+    ! are N by NRHS matrices.
+
+    callstatement (*f2py_func)(&n, &nrhs, d, e, b, &ldb, &info)
+    callprotoargument F_INT*, F_INT*, <ctype2>*, <ctype2>*, <ctype2>*, F_INT*, F_INT*
+
+    integer intent(hide), depend(d) :: n = len(d)
+    <ftype2> intent(in), dimension(n) :: d
+    <ftype2> intent(in), dimension((n>0?n-1:0)), depend(n) :: e
+    <ftype2> intent(in, out, copy, out=x), dimension(ldb, nrhs) :: b
+    integer intent(hide), depend(b) :: ldb = MAX(1, shape(b, 0))
+    integer intent(hide), depend(b)  :: nrhs = shape(b, 1)
+    integer intent(out) :: info
+
+end subroutine<prefix2>pttrs
+
+
+subroutine <prefix2c>pttrs(lower, n, nrhs, d, e, b, ldb, info)
+    ! x, info  = pttrs(d, e, b, lower=0, overwrite_b=0)
+    !
+    ! ?PTTRS solves a tridiagonal system of the form
+    !
+    !     A * X = B
+    !
+    ! using the L*D*L**T factorization of A computed by DPTTRF.  D is a
+    ! diagonal matrix specified in the vector D, L is a unit bidiagonal
+    ! matrix whose subdiagonal is specified in the vector E, and X and B
+    ! are N by NRHS matrices.
+
+    callstatement (*f2py_func)((lower?"L":"U"), &n, &nrhs, d, e, b, &ldb, &info)
+    callprotoargument char*, F_INT*, F_INT*, <ctype2>*, <ctype2c>*, <ctype2c>*, F_INT*, F_INT*
+
+    integer optional, intent(in), check(lower==0||lower==1) :: lower = 0
+    integer intent(hide), depend(d) :: n = len(d)
+    <ftype2> intent(in), dimension(n) :: d
+    <ftype2c> intent(in), dimension((n>0?n-1:0)), depend(n) :: e
+    <ftype2c> intent(in, out, copy, out=x), dimension(ldb, nrhs) :: b
+    integer intent(hide), depend(b) :: ldb = MAX(1, shape(b, 0))
+    integer intent(hide), depend(b)  :: nrhs = shape(b, 1)
+    integer intent(out) :: info
+
+end subroutine<prefix2c>pttrs
+
+
+subroutine <prefix>pteqr(compute_z, n, d, e, z, ldz, work, info)
+    ! d, e, z, work, info  = pteqr(d, e, z, compute_z=0, overwrite_d=0, overwrite_e=0, overwrite_z=0)
+    ! ?PTEQR computes all eigenvalues and, optionally, eigenvectors of a
+    ! symmetric positive definite tridiagonal matrix.
+    !
+    ! This routine computes the eigenvalues of the positive definite
+    ! tridiagonal matrix to high relative accuracy.  This means that if the
+    ! eigenvalues range over many orders of magnitude in size, then the
+    ! small eigenvalues and corresponding eigenvectors will be computed
+    ! more accurately than, for example, with the standard QR method.
+    !
+    ! The eigenvectors of a full or band positive definite Hermitian matrix
+    ! can also be found if ?HETRD, ?HPTRD, or ?HBTRD has been used to
+    ! reduce this matrix to tridiagonal form.  (The reduction to
+    ! tridiagonal form, however, may preclude the possibility of obtaining
+    ! high relative accuracy in the small eigenvalues of the original
+    ! matrix, if these eigenvalues range over many orders of magnitude.)
+    callstatement (*f2py_func)((compute_z?(compute_z==2?"I":"V"):"N"), &n, d, e, z, &ldz, work, &info)
+    callprotoargument char*, F_INT*, <ctypereal>*, <ctypereal>*, <ctype>*, F_INT*, <ctypereal>*, F_INT*
+    integer intent(in, optional), check((compute_z>=0) && (compute_z<=2)) :: compute_z = 0
+    integer intent(hide), depend(d) :: n = len(d)
+    <ftypereal> intent(in,out,copy), dimension(n) :: d
+    <ftypereal> intent(in,out,copy), depend(n), dimension((n>0?n-1:0)) :: e
+    <ftype> intent(in,out,copy), depend(n), dimension((compute_z==0?shape(z, 0):max(1,n)),(compute_z==0?shape(z, 1):n)) :: z
+    integer intent(hide), depend(z,n,compute_z) :: ldz = (compute_z==0)?1:max(1, shape(z, 0))
+    <ftypereal> intent(hide), dimension(4*n) :: work
+    integer intent(out) :: info
+
+end subroutine <prefix>pteqr
+
+
+subroutine <prefix2>ptsvx(fact, n, nrhs, d, e, df, ef, b, ldb, x, ldx, rcond, ferr, berr, work, info)
+    ! DPTSVX uses the factorization A = L*D*L**T to compute the solution
+    ! to a real system of linear equations A*X = B, where A is an N-by-N
+    ! symmetric positive definite tridiagonal matrix and X and B are
+    !N-by-NRHS matrices.
+    !
+    ! Error bounds on the solution and a condition estimate are also
+    ! provided.
+    callstatement (*f2py_func)(fact, &n, &nrhs, d, e, df, ef, b, &ldb, x, &ldx, &rcond, ferr, berr, work, &info)
+    callprotoargument char*, F_INT*, F_INT*, <ctype2>*, <ctype2>*, <ctype2>*, <ctype2>*, <ctype2>*, F_INT*, <ctype2>*, F_INT*,  <ctype2>*, <ctype2>*, <ctype2>*, <ctype2>*, F_INT*
+
+    character optional, intent(in) :: fact = 'N'
+    integer intent(hide), depend(d) :: n = len(d)
+    integer intent(hide), depend(b) :: nrhs = shape(b, 1)
+    <ftype2> intent(in), dimension(n) :: d
+    <ftype2> intent(in), depend(n), dimension(max(0, n-1)) :: e
+    <ftype2> optional, intent(in,out), depend(n), dimension(n) :: df
+    <ftype2> optional, intent(in,out), depend(n), dimension(max(0, n-1)) :: ef
+    <ftype2> intent(in), depend(n), dimension(ldb, nrhs), check(shape(b, 0) >= n):: b
+    integer intent(hide), depend(b) :: ldb = max(1, shape(b, 0))
+    <ftype2> intent(out), dimension(ldx, nrhs) :: x
+    integer intent(hide), depend(n) :: ldx = n
+    <ftype2> intent(out) :: rcond
+    <ftype2> intent(out), depend(nrhs), dimension(nrhs) :: ferr
+    <ftype2> intent(out), depend(nrhs), dimension(nrhs) :: berr
+    <ftype2> intent(hide,cache), depend(n), dimension(2*n) :: work
+    integer intent(out) :: info
+
+end subroutine <prefix2>ptsvx
+
+
+subroutine <prefix2c>ptsvx(fact, n, nrhs, d, e, df, ef, b, ldb, x, ldx, rcond, ferr, berr, work, rwork, info)
+    ! DPTSVX uses the factorization A = L*D*L**T to compute the solution
+    ! to a real system of linear equations A*X = B, where A is an N-by-N
+    ! symmetric positive definite tridiagonal matrix and X and B are
+    !N-by-NRHS matrices.
+    !
+    ! Error bounds on the solution and a condition estimate are also
+    ! provided.
+    callstatement (*f2py_func)(fact, &n, &nrhs, d, e, df, ef, b, &ldb, x, &ldx, &rcond, ferr, berr, work, rwork, &info)
+    callprotoargument char*, F_INT*, F_INT*, <ctype2>*, <ctype2c>*, <ctype2>*, <ctype2c>*, <ctype2c>*, F_INT*, <ctype2c>*, F_INT*,  <ctype2>*, <ctype2>*, <ctype2>*, <ctype2c>*, <ctype2>*, F_INT*
+
+    character optional, intent(in) :: fact = 'N'
+    integer intent(hide), depend(d) :: n = len(d)
+    integer intent(hide), depend(b) :: nrhs = shape(b, 1)
+    <ftype2> intent(in), dimension(n) :: d
+    <ftype2c> intent(in), depend(n), dimension(max(0, n-1)) :: e
+    <ftype2> optional, intent(in,out), depend(n), dimension(n) :: df
+    <ftype2c> optional, intent(in,out), depend(n), dimension(max(0, n-1)) :: ef
+    <ftype2c> intent(in), depend(n), dimension(ldb, nrhs), check(shape(b,0) >= n) :: b
+    integer intent(hide), depend(b) :: ldb = max(1, shape(b, 0))
+    <ftype2c> intent(out), dimension(ldx, nrhs) :: x
+    integer intent(hide), depend(n) :: ldx = n
+    <ftype2> intent(out) :: rcond
+    <ftype2> intent(out), depend(nrhs), dimension(nrhs) :: ferr
+    <ftype2> intent(out), depend(nrhs), dimension(nrhs) :: berr
+    <ftype2c> intent(hide,cache), depend(n), dimension(n) :: work
+    <ftype2> intent(hide,cache), depend(n), dimension(n) :: rwork
+    integer intent(out) :: info
+
+end subroutine <prefix2c>ptsvx

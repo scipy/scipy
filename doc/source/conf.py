@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from __future__ import print_function
 import sys, os, re
 import glob
 from datetime import date
@@ -126,9 +125,9 @@ warnings.filterwarnings('error')
 warnings.filterwarnings('default', module='sphinx')  # internal warnings
 # global weird ones that can be safely ignored
 for key in (
-        "'U' mode is deprecated",  # sphinx io
-        "OpenSSL\.rand is deprecated",  # OpenSSL package in linkcheck
-        "Using or importing the ABCs from",  # 3.5 importlib._bootstrap
+        r"'U' mode is deprecated",  # sphinx io
+        r"OpenSSL\.rand is deprecated",  # OpenSSL package in linkcheck
+        r"Using or importing the ABCs from",  # 3.5 importlib._bootstrap
         ):
     warnings.filterwarnings(  # deal with other modules having bad imports
         'ignore', message=".*" + key, category=DeprecationWarning)
@@ -139,13 +138,9 @@ warnings.filterwarnings(  # matplotlib<->pyparsing issue
 # TODO: eventually these should be eliminated!
 for key in (
         'invalid escape sequence',  # numpydoc 0.8 has some bad escape chars
-        '\nWARNING. The coefficients',  # interpolate.LSQSphereBivariateSpline
         'The integral is probably divergent',  # stats.mielke example
         'underflow encountered in square',  # signal.filtfilt underflow
-        'slepian is deprecated',  # signal.windows.slepian deprecation
         'underflow encountered in multiply',  # scipy.spatial.HalfspaceIntersection
-        '`frechet_l` is deprecated',  # stats.frechet_l
-        '`frechet_r` is deprecated',  # stats.frechet_r
         'underflow encountered in nextafter',  # tuterial/interpolate.rst
         # stats.skewnorm, stats.norminvgauss, stats.gaussian_kde,
         # tutorial/stats.rst (twice):
@@ -191,6 +186,18 @@ else:
         html_style = 'scipy_fallback.css'
         html_logo = '_static/scipyshiny_small.png'
         html_sidebars = {'index': ['indexsidebar.html', 'searchbox.html']}
+
+if 'versionwarning' in tags:
+    # Specific to docs.scipy.org deployment.
+    # See https://github.com/scipy/docs.scipy.org/blob/master/_static/versionwarning.js_t
+    src = ('var script = document.createElement("script");\n'
+           'script.type = "text/javascript";\n'
+           'script.src = "/doc/_static/versionwarning.js";\n'
+           'document.head.appendChild(script);');
+    html_context = {
+        'VERSIONCHECK_JS': src
+    }
+    html_js_files = ['versioncheck.js']
 
 html_title = "%s v%s Reference Guide" % (project, version)
 html_static_path = ['_static']

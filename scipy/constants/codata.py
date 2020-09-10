@@ -49,8 +49,6 @@ back to the 1800s. To search the bibliography, visit
 https://physics.nist.gov/cuu/Constants/
 
 """
-from __future__ import division, print_function, absolute_import
-
 import warnings
 from math import pi, sqrt
 
@@ -1555,6 +1553,10 @@ for k in _physical_constants_2018:
     if 'momentum' in k:
         _aliases[k] = k.replace('momentum', 'mom.um')
 
+# CODATA 2018: renamed and no longer exact; use as aliases
+_aliases['mag. constant'] = 'vacuum mag. permeability'
+_aliases['electric constant'] = 'vacuum electric permittivity'
+
 
 class ConstantWarning(DeprecationWarning):
     """Accessing a constant no longer in current CODATA data set"""
@@ -1703,26 +1705,33 @@ def find(sub=None, disp=False):
     else:
         return result
 
+    
+c = value('speed of light in vacuum')
+mu0 = value('vacuum mag. permeability')
+epsilon0 = value('vacuum electric permittivity')
 
 # Table is lacking some digits for exact values: calculate from definition
-c = value('speed of light in vacuum')
-mu0 = 4e-7 * pi
-epsilon0 = 1 / (mu0 * c * c)
-
 exact_values = {
-    'vacuum mag. permeability': (mu0, 'N A^-2', 0.0),
-    'vacuum electric permittivity': (epsilon0, 'F m^-1', 0.0),
-    'atomic unit of permittivity': (4 * epsilon0 * pi, 'F m^-1', 0.0),
     'joule-kilogram relationship': (1 / (c * c), 'kg', 0.0),
     'kilogram-joule relationship': (c * c, 'J', 0.0),
-    'hertz-inverse meter relationship': (1 / c, 'm^-1', 0.0)
+    'hertz-inverse meter relationship': (1 / c, 'm^-1', 0.0),
+
+    # The following derived quantities are no longer exact (CODATA2018):
+    # specify separately
+    'characteristic impedance of vacuum': (
+        sqrt(mu0 / epsilon0), 'ohm',
+        sqrt(mu0 / epsilon0) * 0.5 * (
+            physical_constants['vacuum mag. permeability'][2] / mu0
+            + physical_constants['vacuum electric permittivity'][2] / epsilon0))
 }
 
 # sanity check
 for key in exact_values:
-    val = _current_constants[key][0]
+    val = physical_constants[key][0]
     if abs(exact_values[key][0] - val) / val > 1e-9:
         raise ValueError("Constants.codata: exact values too far off.")
+    if exact_values[key][2] == 0 and physical_constants[key][2] != 0:
+        raise ValueError("Constants.codata: value not exact")
 
 physical_constants.update(exact_values)
 

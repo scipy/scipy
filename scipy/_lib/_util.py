@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 import functools
 import operator
 import sys
@@ -8,30 +6,28 @@ import numbers
 from collections import namedtuple
 from multiprocessing import Pool
 import inspect
+import math
 
 import numpy as np
 
-
-def _valarray(shape, value=np.nan, typecode=None):
-    """Return an array of all values.
-    """
-
-    out = np.ones(shape, dtype=bool) * value
-    if typecode is not None:
-        out = out.astype(typecode)
-    if not isinstance(out, np.ndarray):
-        out = np.asarray(out)
-    return out
+try:
+    from numpy.random import Generator as Generator
+except ImportError:
+    class Generator():  # type: ignore[no-redef]
+        pass
 
 
 def _lazywhere(cond, arrays, f, fillvalue=None, f2=None):
     """
     np.where(cond, x, fillvalue) always evaluates x even where cond is False.
     This one only evaluates f(arr1[cond], arr2[cond], ...).
-    For example,
+    
+    Examples
+    --------
+
     >>> a, b = np.array([1, 2, 3, 4]), np.array([5, 6, 7, 8])
     >>> def f(a, b):
-        return a*b
+    ...     return a*b
     >>> _lazywhere(a > 2, (a, b), f, np.nan)
     array([ nan,  nan,  21.,  32.])
 
@@ -51,7 +47,7 @@ def _lazywhere(cond, arrays, f, fillvalue=None, f2=None):
     arrays = np.broadcast_arrays(*arrays)
     temp = tuple(np.extract(cond, arr) for arr in arrays)
     tcode = np.mintypecode([a.dtype.char for a in arrays])
-    out = _valarray(np.shape(arrays[0]), value=fillvalue, typecode=tcode)
+    out = np.full(np.shape(arrays[0]), fill_value=fillvalue, dtype=tcode)
     np.place(out, cond, f(*temp))
     if f2 is not None:
         temp = tuple(np.extract(~cond, arr) for arr in arrays)
@@ -89,7 +85,7 @@ def _lazyselect(condlist, choicelist, arrays, default=0):
     """
     arrays = np.broadcast_arrays(*arrays)
     tcode = np.mintypecode([a.dtype.char for a in arrays])
-    out = _valarray(np.shape(arrays[0]), value=default, typecode=tcode)
+    out = np.full(np.shape(arrays[0]), fill_value=default, dtype=tcode)
     for index in range(len(condlist)):
         func, cond = choicelist[index], condlist[index]
         if np.all(cond is False):
@@ -134,6 +130,27 @@ def _prune_array(array):
     if array.base is not None and array.size < array.base.size // 2:
         return array.copy()
     return array
+
+
+def prod(iterable):
+    """
+    Product of a sequence of numbers.
+
+    Faster than np.prod for short lists like array shapes, and does
+    not overflow if using Python integers.
+    """
+    product = 1
+    for x in iterable:
+        product *= x
+    return product
+
+
+def float_factorial(n: int) -> float:
+    """Compute the factorial and return as a float
+
+    Returns infinity when result is too large for a double
+    """
+    return float(math.factorial(n)) if n < 171 else np.inf
 
 
 class DeprecatedImport(object):
@@ -395,7 +412,71 @@ class MapWrapper(object):
         # only accept one iterable because that's all Pool.map accepts
         try:
             return self._mapfunc(func, iterable)
-        except TypeError:
+        except TypeError as e:
             # wrong number of arguments
             raise TypeError("The map-like callable must be of the"
-                            " form f(func, iterable)")
+                            " form f(func, iterable)") from e
+
+
+def rng_integers(gen, low, high=None, size=None, dtype='int64',
+                 endpoint=False):
+    """
+    Return random integers from low (inclusive) to high (exclusive), or if
+    endpoint=True, low (inclusive) to high (inclusive). Replaces
+    `RandomState.randint` (with endpoint=False) and
+    `RandomState.random_integers` (with endpoint=True).
+
+    Return random integers from the "discrete uniform" distribution of the
+    specified dtype. If high is None (the default), then results are from
+    0 to low.
+
+    Parameters
+    ----------
+    gen: {None, np.random.RandomState, np.random.Generator}
+        Random number generator. If None, then the np.random.RandomState
+        singleton is used.
+    low: int or array-like of ints
+        Lowest (signed) integers to be drawn from the distribution (unless
+        high=None, in which case this parameter is 0 and this value is used
+        for high).
+    high: int or array-like of ints
+        If provided, one above the largest (signed) integer to be drawn from
+        the distribution (see above for behavior if high=None). If array-like,
+        must contain integer values.
+    size: None
+        Output shape. If the given shape is, e.g., (m, n, k), then m * n * k
+        samples are drawn. Default is None, in which case a single value is
+        returned.
+    dtype: {str, dtype}, optional
+        Desired dtype of the result. All dtypes are determined by their name,
+        i.e., 'int64', 'int', etc, so byteorder is not available and a specific
+        precision may have different C types depending on the platform.
+        The default value is np.int_.
+    endpoint: bool, optional
+        If True, sample from the interval [low, high] instead of the default
+        [low, high) Defaults to False.
+
+    Returns
+    -------
+    out: int or ndarray of ints
+        size-shaped array of random integers from the appropriate distribution,
+        or a single such random int if size not provided.
+    """
+    if isinstance(gen, Generator):
+        return gen.integers(low, high=high, size=size, dtype=dtype,
+                            endpoint=endpoint)
+    else:
+        if gen is None:
+            # default is RandomState singleton used by np.random.
+            gen = np.random.mtrand._rand
+        if endpoint:
+            # inclusive of endpoint
+            # remember that low and high can be arrays, so don't modify in
+            # place
+            if high is None:
+                return gen.randint(low + 1, size=size, dtype=dtype)
+            if high is not None:
+                return gen.randint(low, high=high + 1, size=size, dtype=dtype)
+
+        # exclusive
+        return gen.randint(low, high=high, size=size, dtype=dtype)

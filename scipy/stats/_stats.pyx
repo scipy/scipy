@@ -1,15 +1,16 @@
-from __future__ import absolute_import
-
 from cpython cimport bool
 from libc cimport math
 cimport cython
 cimport numpy as np
 from numpy.math cimport PI
+from numpy.math cimport INFINITY
+from numpy.math cimport NAN
 from numpy cimport ndarray, int64_t, float64_t, intp_t
 
 import warnings
 import numpy as np
 import scipy.stats, scipy.special
+cimport scipy.special.cython_special as cs
 
 
 cdef double von_mises_cdf_series(double k, double x, unsigned int p):
@@ -122,7 +123,7 @@ ctypedef fused ordered:
 @cython.boundscheck(False)
 cdef _invert_in_place(intp_t[:] perm):
     cdef intp_t n, i, j, k
-    for n in xrange(len(perm)-1, -1, -1):
+    for n in range(len(perm)-1, -1, -1):
         i = perm[n]
         if i < 0:
             perm[n] = -i - 1
@@ -149,7 +150,7 @@ def _toint64(x):
     cdef int64_t[::1] result = np.ndarray(l, dtype=np.int64)
 
     # Find nans, if any, and assign them the lowest value
-    for i in xrange(l - 1, -1, -1):
+    for i in range(l - 1, -1, -1):
         if not np.isnan(x[perm[i]]):
             break
         result[perm[i]] = 0
@@ -158,12 +159,12 @@ def _toint64(x):
         j = 1
         l = i + 1
 
-    for i in xrange(l - 1):
+    for i in range(l - 1):
         result[perm[i]] = j
         if x[perm[i]] != x[perm[i + 1]]:
             j += 1
 
-    result[perm[i + 1]] = j
+    result[perm[l - 1]] = j
     return np.array(result, dtype=np.int64)
 
 
@@ -195,7 +196,7 @@ def _weightedrankedtau(ordered[:] x, ordered[:] y, intp_t[:] rank, weigher, bool
     s = w
     sq = w * w
 
-    for i in xrange(1, n):
+    for i in range(1, n):
         if x[perm[first]] != x[perm[i]] or y[perm[first]] != y[perm[i]]:
             t += s * (i - first - 1) if additive else (s * s - sq) / 2
             first = i
@@ -214,7 +215,7 @@ def _weightedrankedtau(ordered[:] x, ordered[:] y, intp_t[:] rank, weigher, bool
     s = w
     sq = w * w
 
-    for i in xrange(1, n):
+    for i in range(1, n):
         if x[perm[first]] != x[perm[i]]:
             u += s * (i - first - 1) if additive else (s * s - sq) / 2
             first = i
@@ -275,7 +276,7 @@ def _weightedrankedtau(ordered[:] x, ordered[:] y, intp_t[:] rank, weigher, bool
     s = w
     sq = w * w
 
-    for i in xrange(1, n):
+    for i in range(1, n):
         if y[perm[first]] != y[perm[i]]:
             v += s * (i - first - 1) if additive else (s * s - sq) / 2
             first = i
@@ -291,7 +292,7 @@ def _weightedrankedtau(ordered[:] x, ordered[:] y, intp_t[:] rank, weigher, bool
 
     # weigh all pairs
     s = sq = 0
-    for i in xrange(n):
+    for i in range(n):
         w = weigher(rank[perm[i]])
         s += w
         sq += w * w
@@ -333,7 +334,7 @@ def _center_distance_matrix(distx, global_corr='mgc', is_ranked=True):
         rank_distx = _rank_distance_matrix(distx)
 
     if global_corr == "rank":
-        distx = rank_distx.astype(np.float, copy=False)
+        distx = rank_distx.astype(np.float64, copy=False)
 
     # 'mgc' distance transform (col-wise mean) - default
     cdef ndarray exp_distx = np.repeat(((distx.mean(axis=0) * n) / (n-1)), n).reshape(-1, n).T
@@ -479,3 +480,107 @@ def _local_correlations(distx, disty, global_corr='mgc'):
     corr_mat[:, local_vary <= 0] = 0
 
     return corr_mat
+
+
+cpdef double geninvgauss_logpdf(double x, double p, double b) nogil:
+    return _geninvgauss_logpdf_kernel(x, p, b)
+
+
+cdef double _geninvgauss_logpdf_kernel(double x, double p, double b) nogil:
+    cdef double z, c
+
+    if x <= 0:
+        return -INFINITY
+
+    z = cs.kve(p, b)
+    if math.isinf(z):
+        return NAN
+
+    c = -math.log(2) - math.log(z) + b
+    return c + (p - 1)*math.log(x) - b*(x + 1/x)/2
+
+
+cdef double _geninvgauss_pdf(double x, void *user_data) nogil except *:
+    # destined to be used in a LowLevelCallable
+    cdef double p, b
+
+    if x <= 0:
+        return 0.
+
+    p = (<double *>user_data)[0]
+    b = (<double *>user_data)[1]
+
+    return math.exp(_geninvgauss_logpdf_kernel(x, p, b))
+
+
+ctypedef fused real:
+    float
+    double
+    long double
+
+
+@cython.wraparound(False)
+@cython.boundscheck(False)
+def gaussian_kernel_estimate(points, values, xi, precision, dtype, real _=0):
+    """
+    def gaussian_kernel_estimate(points, real[:, :] values, xi, precision)
+
+    Evaluate a multivariate Gaussian kernel estimate.
+
+    Parameters
+    ----------
+    points : array_like with shape (n, d)
+        Data points to estimate from in d dimenions.
+    values : real[:, :] with shape (n, p)
+        Multivariate values associated with the data points.
+    xi : array_like with shape (m, d)
+        Coordinates to evaluate the estimate at in d dimensions.
+    precision : array_like with shape (d, d)
+        Precision matrix for the Gaussian kernel.
+
+    Returns
+    -------
+    estimate : double[:, :] with shape (m, p)
+        Multivariate Gaussian kernel estimate evaluated at the input coordinates.
+    """
+    cdef:
+        real[:, :] points_, xi_, values_, estimate, whitening
+        int i, j, k
+        int n, d, m, p
+        real arg, residual, norm
+
+    n = points.shape[0]
+    d = points.shape[1]
+    m = xi.shape[0]
+    p = values.shape[1]
+
+    if xi.shape[1] != d:
+        raise ValueError("points and xi must have same trailing dim")
+    if precision.shape[0] != d or precision.shape[1] != d:
+        raise ValueError("precision matrix must match data dims")
+
+    # Rescale the data
+    whitening = np.linalg.cholesky(precision).astype(dtype, copy=False)
+    points_ = np.dot(points, whitening).astype(dtype, copy=False)
+    xi_ = np.dot(xi, whitening).astype(dtype, copy=False)
+    values_ = values.astype(dtype, copy=False)
+
+    # Evaluate the normalisation
+    norm = (2 * PI) ** (- d / 2)
+    for i in range(d):
+        norm *= whitening[i, i]
+
+    # Create the result array and evaluate the weighted sum
+    estimate = np.zeros((m, p), dtype)
+    for i in range(n):
+        for j in range(m):
+            arg = 0
+            for k in range(d):
+                residual = (points_[i, k] - xi_[j, k])
+                arg += residual * residual
+
+            arg = math.exp(-arg / 2) * norm
+            for k in range(p):
+                estimate[j, k] += values_[i, k] * arg
+
+    return np.asarray(estimate)

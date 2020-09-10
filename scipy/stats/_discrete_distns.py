@@ -2,11 +2,10 @@
 # Author:  Travis Oliphant  2002-2011 with contributions from
 #          SciPy Developers 2004-2011
 #
-from __future__ import division, print_function, absolute_import
-
+from functools import partial
 from scipy import special
 from scipy.special import entr, logsumexp, betaln, gammaln as gamln
-from scipy._lib._util import _lazywhere
+from scipy._lib._util import _lazywhere, rng_integers
 
 from numpy import floor, ceil, log, exp, sqrt, log1p, expm1, tanh, cosh, sinh
 
@@ -37,9 +36,13 @@ class binom_gen(rv_discrete):
 
     %(example)s
 
+    See Also
+    --------
+    hypergeom, nbinom, nhypergeom
+
     """
-    def _rvs(self, n, p):
-        return self._random_state.binomial(n, p, self._size)
+    def _rvs(self, n, p, size=None, random_state=None):
+        return random_state.binomial(n, p, size)
 
     def _argcheck(self, n, p):
         return (n >= 0) & (p >= 0) & (p <= 1)
@@ -114,8 +117,8 @@ class bernoulli_gen(binom_gen):
     %(example)s
 
     """
-    def _rvs(self, p):
-        return binom_gen._rvs(self, 1, p)
+    def _rvs(self, p, size=None, random_state=None):
+        return binom_gen._rvs(self, 1, p, size=size, random_state=random_state)
 
     def _argcheck(self, p):
         return (p >= 0) & (p <= 1)
@@ -188,9 +191,9 @@ class betabinom_gen(rv_discrete):
 
     """
 
-    def _rvs(self, n, a, b):
-        p = self._random_state.beta(a, b, self._size)
-        return self._random_state.binomial(n, p, self._size)
+    def _rvs(self, n, a, b, size=None, random_state=None):
+        p = random_state.beta(a, b, size)
+        return random_state.binomial(n, p, size)
 
     def _get_support(self, n, a, b):
         return 0, n
@@ -257,9 +260,13 @@ class nbinom_gen(rv_discrete):
 
     %(example)s
 
+    See Also
+    --------
+    hypergeom, binom, nhypergeom
+
     """
-    def _rvs(self, n, p):
-        return self._random_state.negative_binomial(n, p, self._size)
+    def _rvs(self, n, p, size=None, random_state=None):
+        return random_state.negative_binomial(n, p, size)
 
     def _argcheck(self, n, p):
         return (n > 0) & (p >= 0) & (p <= 1)
@@ -326,8 +333,8 @@ class geom_gen(rv_discrete):
     %(example)s
 
     """
-    def _rvs(self, p):
-        return self._random_state.geometric(p, size=self._size)
+    def _rvs(self, p, size=None, random_state=None):
+        return random_state.geometric(p, size=size)
 
     def _argcheck(self, p):
         return (p <= 1) & (p >= 0)
@@ -427,9 +434,13 @@ class hypergeom_gen(rv_discrete):
 
     >>> R = hypergeom.rvs(M, n, N, size=10)
 
+    See Also
+    --------
+    nhypergeom, binom, nbinom
+
     """
-    def _rvs(self, M, n, N):
-        return self._random_state.hypergeometric(n, M-n, N, size=self._size)
+    def _rvs(self, M, n, N, size=None, random_state=None):
+        return random_state.hypergeometric(n, M-n, N, size=size)
 
     def _get_support(self, M, n, N):
         return np.maximum(N-(M-n), 0), np.minimum(n, N)
@@ -515,6 +526,144 @@ class hypergeom_gen(rv_discrete):
 hypergeom = hypergeom_gen(name='hypergeom')
 
 
+class nhypergeom_gen(rv_discrete):
+    r"""A negative hypergeometric discrete random variable.
+
+    Consider a box containing :math:`M` balls:, :math:`n` red and
+    :math:`M-n` blue. We randomly sample balls from the box, one
+    at a time and *without* replacement, until we have picked :math:`r`
+    blue balls. `nhypergeom` is the distribution of the number of
+    red balls :math:`k` we have picked.
+
+    %(before_notes)s
+
+    Notes
+    -----
+    The symbols used to denote the shape parameters (`M`, `n`, and `r`) are not
+    universally accepted. See the Examples for a clarification of the
+    definitions used here.
+
+    The probability mass function is defined as,
+
+    .. math:: f(k; M, n, r) = \frac{{{k+r-1}\choose{k}}{{M-r-k}\choose{n-k}}}
+                                   {{M \choose n}}
+
+    for :math:`k \in [0, n]`, :math:`n \in [0, M]`, :math:`r \in [0, M-n]`,
+    and the binomial coefficient is:
+
+    .. math:: \binom{n}{k} \equiv \frac{n!}{k! (n - k)!}.
+
+    It is equivalent to observing :math:`k` successes in :math:`k+r-1`
+    samples with :math:`k+r`'th sample being a failure. The former
+    can be modelled as a hypergeometric distribution. The probability
+    of the latter is simply the number of failures remaining
+    :math:`M-n-(r-1)` divided by the size of the remaining population
+    :math:`M-(k+r-1)`. This relationship can be shown as:
+
+    .. math:: NHG(k;M,n,r) = HG(k;M,n,k+r-1)\frac{(M-n-(r-1))}{(M-(k+r-1))}
+
+    where :math:`NHG` is probability mass function (PMF) of the
+    negative hypergeometric distribution and :math:`HG` is the
+    PMF of the hypergeometric distribution.
+
+    %(after_notes)s
+
+    Examples
+    --------
+    >>> from scipy.stats import nhypergeom
+    >>> import matplotlib.pyplot as plt
+
+    Suppose we have a collection of 20 animals, of which 7 are dogs.
+    Then if we want to know the probability of finding a given number
+    of dogs (successes) in a sample with exactly 12 animals that
+    aren't dogs (failures), we can initialize a frozen distribution
+    and plot the probability mass function:
+
+    >>> M, n, r = [20, 7, 12]
+    >>> rv = nhypergeom(M, n, r)
+    >>> x = np.arange(0, n+2)
+    >>> pmf_dogs = rv.pmf(x)
+
+    >>> fig = plt.figure()
+    >>> ax = fig.add_subplot(111)
+    >>> ax.plot(x, pmf_dogs, 'bo')
+    >>> ax.vlines(x, 0, pmf_dogs, lw=2)
+    >>> ax.set_xlabel('# of dogs in our group with given 12 failures')
+    >>> ax.set_ylabel('nhypergeom PMF')
+    >>> plt.show()
+
+    Instead of using a frozen distribution we can also use `nhypergeom`
+    methods directly.  To for example obtain the probability mass
+    function, use:
+
+    >>> prb = nhypergeom.pmf(x, M, n, r)
+
+    And to generate random numbers:
+
+    >>> R = nhypergeom.rvs(M, n, r, size=10)
+
+    To verify the relationship between `hypergeom` and `nhypergeom`, use:
+
+    >>> from scipy.stats import hypergeom, nhypergeom
+    >>> M, n, r = 45, 13, 8
+    >>> k = 6
+    >>> nhypergeom.pmf(k, M, n, r)
+    0.06180776620271643
+    >>> hypergeom.pmf(k, M, n, k+r-1) * (M - n - (r-1)) / (M - (k+r-1))
+    0.06180776620271644
+
+    See Also
+    --------
+    hypergeom, binom, nbinom
+
+    References
+    ----------
+    .. [1] Negative Hypergeometric Distribution on Wikipedia
+           https://en.wikipedia.org/wiki/Negative_hypergeometric_distribution
+
+    .. [2] Negative Hypergeometric Distribution from
+           http://www.math.wm.edu/~leemis/chart/UDR/PDFs/Negativehypergeometric.pdf
+
+    """
+    def _get_support(self, M, n, r):
+        return 0, n
+
+    def _argcheck(self, M, n, r):
+        cond = (n >= 0) & (n <= M) & (r >= 0) & (r <= M-n)
+        return cond
+
+    def _logpmf(self, k, M, n, r):
+        cond = ((r == 0) & (k == 0))
+        result = _lazywhere(~cond, (k, M, n, r),
+                            lambda k, M, n, r:
+                                (-betaln(k+1, r) + betaln(k+r, 1) -
+                                 betaln(n-k+1, M-r-n+1) + betaln(M-r-k+1, 1) +
+                                 betaln(n+1, M-n+1) - betaln(M+1, 1)),
+                            fillvalue=0.0)
+        return result
+
+    def _pmf(self, k, M, n, r):
+        # same as the following but numerically more precise
+        # return comb(k+r-1, k) * comb(M-r-k, n-k) / comb(M, n)
+        return exp(self._logpmf(k, M, n, r))
+
+    def _stats(self, M, n, r):
+        # Promote the datatype to at least float
+        # mu = rn / (M-n+1)
+        M, n, r = 1.*M, 1.*n, 1.*r
+        mu = r*n / (M-n+1)
+
+        var = r*(M+1)*n / ((M-n+1)*(M-n+2)) * (1 - r / (M-n+1))
+
+        # The skew and kurtosis are mathematically
+        # intractable so return `None`. See [2]_.
+        g1, g2 = None, None
+        return mu, var, g1, g2
+
+
+nhypergeom = nhypergeom_gen(name='nhypergeom')
+
+
 # FIXME: Fails _cdfvec
 class logser_gen(rv_discrete):
     r"""A Logarithmic (Log-Series, Series) discrete random variable.
@@ -538,10 +687,10 @@ class logser_gen(rv_discrete):
     %(example)s
 
     """
-    def _rvs(self, p):
+    def _rvs(self, p, size=None, random_state=None):
         # looks wrong for p>0.5, too few k=1
         # trying to use generic is worse, no k=1 at all
-        return self._random_state.logseries(p, size=self._size)
+        return random_state.logseries(p, size=size)
 
     def _argcheck(self, p):
         return (p > 0) & (p < 1)
@@ -585,6 +734,8 @@ class poisson_gen(rv_discrete):
     for :math:`k \ge 0`.
 
     `poisson` takes :math:`\mu` as shape parameter.
+    When mu = 0 then at quantile k = 0, ``pmf`` method
+    returns `1.0`.
 
     %(after_notes)s
 
@@ -596,8 +747,8 @@ class poisson_gen(rv_discrete):
     def _argcheck(self, mu):
         return mu >= 0
 
-    def _rvs(self, mu):
-        return self._random_state.poisson(mu, self._size)
+    def _rvs(self, mu, size=None, random_state=None):
+        return random_state.poisson(mu, size)
 
     def _logpmf(self, k, mu):
         Pk = special.xlogy(k, mu) - gamln(k + 1) - mu
@@ -684,10 +835,10 @@ class planck_gen(rv_discrete):
         temp = self._cdf(vals1, lambda_)
         return np.where(temp >= q, vals1, vals)
 
-    def _rvs(self, lambda_):
+    def _rvs(self, lambda_, size=None, random_state=None):
         # use relation to geometric distribution for sampling
         p = -expm1(-lambda_)
-        return self._random_state.geometric(p, size=self._size) - 1.0
+        return random_state.geometric(p, size=size) - 1.0
 
     def _stats(self, lambda_):
         mu = 1/expm1(lambda_)
@@ -819,25 +970,21 @@ class randint_gen(rv_discrete):
         g2 = -6.0/5.0 * (d*d + 1.0) / (d*d - 1.0)
         return mu, var, g1, g2
 
-    def _rvs(self, low, high):
+    def _rvs(self, low, high, size=None, random_state=None):
         """An array of *size* random integers >= ``low`` and < ``high``."""
-        if hasattr(self._random_state, 'integers'):
-            # isinstance(self._random_state, np.random.Generator)
-            int_fun = self._random_state.integers
-        else:
-            int_fun = self._random_state.randint
-
         if np.asarray(low).size == 1 and np.asarray(high).size == 1:
             # no need to vectorize in that case
-            return int_fun(low, high, size=self._size)
-        if self._size is not None:
+            return rng_integers(random_state, low, high, size=size)
+
+        if size is not None:
             # NumPy's RandomState.randint() doesn't broadcast its arguments.
             # Use `broadcast_to()` to extend the shapes of low and high
-            # up to self._size.  Then we can use the numpy.vectorize'd
+            # up to size.  Then we can use the numpy.vectorize'd
             # randint without needing to pass it a `size` argument.
-            low = np.broadcast_to(low, self._size)
-            high = np.broadcast_to(high, self._size)
-        randint = np.vectorize(int_fun, otypes=[np.int_])
+            low = np.broadcast_to(low, size)
+            high = np.broadcast_to(high, size)
+        randint = np.vectorize(partial(rng_integers, random_state),
+                               otypes=[np.int_])
         return randint(low, high)
 
     def _entropy(self, low, high):
@@ -872,8 +1019,8 @@ class zipf_gen(rv_discrete):
     %(example)s
 
     """
-    def _rvs(self, a):
-        return self._random_state.zipf(a, size=self._size)
+    def _rvs(self, a, size=None, random_state=None):
+        return random_state.zipf(a, size=size)
 
     def _argcheck(self, a):
         return a > 1
@@ -942,7 +1089,7 @@ class dlaplace_gen(rv_discrete):
     def _entropy(self, a):
         return a / sinh(a) - log(tanh(a/2.0))
 
-    def _rvs(self, a):
+    def _rvs(self, a, size=None, random_state=None):
         # The discrete Laplace is equivalent to the two-sided geometric
         # distribution with PMF:
         #   f(k) = (1 - alpha)/(1 + alpha) * alpha^abs(k)
@@ -959,8 +1106,8 @@ class dlaplace_gen(rv_discrete):
         #   1) alpha = e^-a
         #   2) probability_of_success = 1 - alpha (Bernoulli trial)
         probOfSuccess = -np.expm1(-np.asarray(a))
-        x = self._random_state.geometric(probOfSuccess, size=self._size)
-        y = self._random_state.geometric(probOfSuccess, size=self._size)
+        x = random_state.geometric(probOfSuccess, size=size)
+        y = random_state.geometric(probOfSuccess, size=size)
         return x - y
 
 
@@ -998,10 +1145,10 @@ class skellam_gen(rv_discrete):
     %(example)s
 
     """
-    def _rvs(self, mu1, mu2):
-        n = self._size
-        return (self._random_state.poisson(mu1, n) -
-                self._random_state.poisson(mu2, n))
+    def _rvs(self, mu1, mu2, size=None, random_state=None):
+        n = size
+        return (random_state.poisson(mu1, n) -
+                random_state.poisson(mu2, n))
 
     def _pmf(self, x, mu1, mu2):
         px = np.where(x < 0,
@@ -1062,9 +1209,9 @@ class yulesimon_gen(rv_discrete):
     %(example)s
 
     """
-    def _rvs(self, alpha):
-        E1 = self._random_state.standard_exponential(self._size)
-        E2 = self._random_state.standard_exponential(self._size)
+    def _rvs(self, alpha, size=None, random_state=None):
+        E1 = random_state.standard_exponential(size)
+        E2 = random_state.standard_exponential(size)
         ans = ceil(-E1 / log1p(-exp(-E2 / alpha)))
         return ans
 

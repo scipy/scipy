@@ -1,6 +1,4 @@
 """SVD decomposition functions."""
-from __future__ import division, print_function, absolute_import
-
 import numpy
 from numpy import zeros, r_, diag, dot, arccos, arcsin, where, clip
 
@@ -117,7 +115,7 @@ def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
         raise ValueError('lapack_driver must be "gesdd" or "gesvd", not "%s"'
                          % (lapack_driver,))
     funcs = (lapack_driver, lapack_driver + '_lwork')
-    gesXd, gesXd_lwork = get_lapack_funcs(funcs, (a1,))
+    gesXd, gesXd_lwork = get_lapack_funcs(funcs, (a1,), ilp64='preferred')
 
     # compute optimal lwork
     lwork = _compute_lwork(gesXd_lwork, a1.shape[0], a1.shape[1],
