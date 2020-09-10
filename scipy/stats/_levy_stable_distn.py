@@ -201,7 +201,8 @@ def _pdf_single_value_piecewise(x, alpha, beta, **kwds):
     zeta = -beta * np.tan(np.pi * alpha / 2.0)
     xi = np.arctan(-zeta) / alpha if alpha != 1 else np.pi / 2
 
-    # convert from Nolan's S to S_0 parameterization
+    # convert from Nolan's S_1 (aka S) to S_0 (aka Zolaterev M)
+    # parameterization
     x0 = x + zeta if alpha != 1 else x
 
     x0, alpha, beta = _nolan_round_difficult_input(
@@ -324,7 +325,8 @@ def _cdf_single_value_piecewise(x, alpha, beta, **kwds):
     zeta = -beta * np.tan(np.pi * alpha / 2.0)
     xi = np.arctan(-zeta) / alpha if alpha != 1 else np.pi / 2
 
-    # convert from Nolan's S to S_0 parameterization
+    # convert from Nolan's S_1 (aka S) to S_0 (aka Zolaterev M)
+    # parameterization
     x0 = x + zeta if alpha != 1 else x
 
     x0, alpha, beta = _nolan_round_difficult_input(
@@ -737,8 +739,8 @@ class levy_stable_gen(rv_continuous):
                 ).reshape(len(data_subset), 1)
             else:
                 warnings.warn(
-                    "Cumulative density calculations experimental for FFT method."
-                    + " Use piecewise method instead.",
+                    "Cumulative density calculations experimental for FFT"
+                    + " method. Use piecewise method instead.",
                     RuntimeWarning,
                 )
                 _alpha, _beta = pair
