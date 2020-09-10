@@ -6,7 +6,7 @@ import numpy as np
 from numpy import asarray_chkfinite, asarray
 import scipy.linalg
 from scipy._lib import doccer
-from scipy.special import gammaln, psi, multigammaln, xlogy, entr
+from scipy.special import gammaln, psi, multigammaln, xlogy, entr, betaln
 from scipy._lib._util import check_random_state
 from scipy.linalg.blas import drot
 from scipy.linalg.misc import LinAlgError
@@ -24,7 +24,8 @@ __all__ = ['multivariate_normal',
            'special_ortho_group',
            'ortho_group',
            'random_correlation',
-           'unitary_group']
+           'unitary_group',
+           'multivariate_hypergeom']
 
 _LOG_2PI = np.log(2 * np.pi)
 _LOG_2 = np.log(2)
@@ -3850,3 +3851,418 @@ class unitary_group_gen(multi_rv_generic):
 
 
 unitary_group = unitary_group_gen()
+
+_mhg_doc_default_callparams = """\
+m : array_like
+    The number of different types of objects
+    in the population
+n : array_like
+    The number of samples taken from the population.
+"""
+
+_mhg_doc_callparams_note = \
+"""`m` must be an array of positive integers. Quantiles `x` must
+sum up to the sample size `n`. If the quantile :math:`i` contain
+values out of the range :math:`[0, m_i]` where :math:`m_i` is the
+number of objects of type :math:`i` in the population, appropriate
+values (like zero by `pmf` method) are returned by the called
+methods. If `m` or `n` contain negative values, the result will
+contain `nan`s there.
+"""
+
+_mhg_doc_frozen_callparams = ""
+
+_mhg_doc_frozen_callparams_note = \
+    """See class definition for a detailed description of parameters."""
+
+mhg_docdict_params = {
+    '_doc_default_callparams': _mhg_doc_default_callparams,
+    '_doc_callparams_note': _mhg_doc_callparams_note,
+    '_doc_random_state': _doc_random_state
+}
+
+mhg_docdict_noparams = {
+    '_doc_default_callparams': _mhg_doc_frozen_callparams,
+    '_doc_callparams_note': _mhg_doc_frozen_callparams_note,
+    '_doc_random_state': _doc_random_state
+}
+
+class multivariate_hypergeom_gen(multi_rv_generic):
+    r"""
+    A multivariate hypergeometric random variable.
+
+    Methods
+    -------
+    ``pmf(x, m, n)``
+        Probability mass function.
+    ``logpmf(x, m, n)``
+        Log of the probability mass function.
+    ``rvs(m, n, size=1, random_state=None)``
+        Draw random samples from a multivariate hypergeometric
+        distribution.
+    ``mean(m, n)``
+        Mean of the multivariate hypergeometric distribution.
+    ``var(m, n)``
+        Variance of the multivariate hypergeometric distribution.
+    ``cov(m, n)``
+        Compute the covariance matrix of the multivariate
+        hypergeometric distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Quantiles, with the last axis of `x` denoting the components.
+    %(_doc_default_callparams)s
+    %(_doc_random_state)s
+
+    Notes
+    -----
+    %(_doc_callparams_note)s
+
+    Alternatively, the object may be called (as a function) to fix the `m` and
+    `n` parameters, returning a "frozen" multivariate hypergeometric
+    random variable:
+
+    The probability mass function for `multivariate_hypergeom` is
+
+    .. math::
+
+        \P(X_1 = x_1, X_2 = x_2, \ldots, X_k = x_k) = \frac{\binom{m_1}{x_1} \binom{m_2}{x_2}
+        \cdots \binom{m_k}{x_k}}{\binom{m}{n}}, \quad (x_1, x_2, \ldots, x_k) \in \N^k
+        \text{ with } \sum_{i=1}^k x_i = n
+
+    .. versionadded:: 1.6.0
+
+    Examples
+    --------
+
+    >>> from scipy.stats import multivariate_hypergeom
+    >>> rv = multivariate_hypergeom(m=[10, 20], n=12)
+    >>> rv.pmf(x=[8, 4])
+    0.0025207176631464523
+
+    The multivariate_hypergeom distribution is identical to the
+    corresponding hypergeom distribution (tiny numerical differences
+    notwithstanding) when only two types (good and bad) of objects
+    are present in the population:
+
+    >>> from scipy.stats import hypergeom
+    >>> multivariate_hypergeom.pmf(x=[3, 1], m=[10, 5], n=4)
+    0.4395604395604395
+    >>> hypergeom.pmf(k=3, M=15, n=4, N=10)
+    0.43956043956044005
+
+    The functions ``pmf``, ``logpmf``, ``mean``, ``var``, and ``rvs``
+    support broadcasting, under the convention that the vector parameters
+    (``x`` and ``m``) are interpreted as if each row along the last axis
+    is a single object. For instance:
+
+    >>> multivariate_hypergeom.pmf(x=[[3, 4], [4, 5]], m=[5, 10], n=[7, 9])
+    array([0.32634033, 0.25174825])
+
+    Here, ``x.shape == (2, 2)``, ``m.shape == (2,)``, and ``n.shape == (2,)``,
+    but following the rules mentioned above they behave as if the rows
+    ``[3, 4]`` and ``[3, 5]`` in ``x``, ``[5, 10]`` in ``m``, and ``[7, 9]``
+    in ``n`` were a single object, and as if we had ``x.shape = (2,)``,
+    ``m.shape = (2,)``, and ``n.shape = ()``. To obtain the individual elements
+    without broadcasting, we would do this:
+
+    >>> multivariate_hypergeom.pmf([3, 4], m=[5, 10], n=7)
+    0.3263403263403265
+    >>> multivariate_hypergeom.pmf([4, 5], m=[5, 10], n=9)
+    0.25174825174825205
+
+    This broadcasting also works for ``cov``, where the output objects are
+    square matrices of size ``m.shape[-1]``. For example:
+
+    >>> multivariate_hypergeom.cov(m=[[7, 9], [10, 15]], n=[8, 12])
+    array([[[ 1.05, -1.05],
+            [-1.05,  1.05]],
+
+           [[ 1.56, -1.56],
+            [-1.56,  1.56]]])
+
+    In this example, ``m.shape == (2, 2)`` and ``n.shape == (2,)``,
+    broadcast, following the rules above, as if ``m.shape == (2,)``.
+    Thus the result should also be of shape ``(2,)``, but since each output is
+    a :math:`2 \times 2` matrix. The result, in fact, has shape ``(2, 2, 2)``,
+    where ``result[0]`` is equal to ``multivariate_hypergeom.cov(m=[7, 9], n=8)``
+    and ``result[1]`` is equal to ``multivariate_hypergeom.cov(m=[10, 15], n=12)``.
+
+    See also
+    --------
+    scipy.stats.hypergeom
+    numpy.random.Generator.multivariate_hypergeometric
+
+    References
+    ----------
+    .. [1]: The Multivariate Hypergeometric Distribution,
+            http://www.randomservices.org/random/urn/MultiHypergeometric.html
+
+    .. [2]: Thomas J. Sargent and John Stachurski, 2020,
+            Multivariate Hypergeometric Distribution on Wikipedia
+            https://python.quantecon.org/_downloads/pdf/multi_hyper.pdf
+    """
+    def __init__(self, seed=None):
+        super(multivariate_hypergeom_gen, self).__init__(seed)
+        self.__doc__ = doccer.docformat(self.__doc__)
+
+    def __call__(self, m, n, seed=None):
+        """
+        Create a frozen multivariate_hypergeom distribution.
+
+        See `multivariate_hypergeom_frozen` for more information.
+        """
+        return multivariate_hypergeom_frozen(m, n, seed=seed)
+
+    def _process_parameters(self, m, n):
+        m = np.asarray(m, dtype=np.int_)
+        n = np.asarray(n, dtype=np.int_)
+        if m.ndim == 0:
+            raise ValueError("'m' must be an array!")
+        mcond = np.any(m < 0, axis=-1)
+
+        M = m.sum(axis=-1)
+
+        ncond = (n <= 0) | (n > M)
+        return M, m, n, mcond | ncond
+
+    def _process_quantiles(self, x, M, m, n):
+        xx = np.asarray(x, dtype=np.int_)
+        if xx.ndim == 0:
+            raise ValueError("x must be an array.")
+        if xx.size != 0 and not xx.shape[-1] == m.shape[-1]:
+            raise ValueError("Size of each quantile should be size of 'm': "
+                             "received %d, but expected %d." %
+                             (xx.shape[-1], m.shape[-1]))
+
+        xcond = np.any(xx != x, axis=-1)
+        xcond = xcond | np.any((xx < 0) | (xx > m), axis=-1)
+        xcond = xcond | (xx.sum(axis=-1) != n)
+        return xx, xcond
+
+    def _checkresult(self, result, cond, bad_value):
+        result = np.asarray(result)
+        if cond.ndim != 0:
+            result[cond] = bad_value
+        elif cond:
+            if result.ndim == 0:
+                return bad_value
+            result[...] = bad_value
+        if result.ndim == 0:
+            return result[()]
+        return result
+
+    def _logpmf(self, x, M, m, n):
+        num = betaln(m+1, 1) - betaln(x+1, m-x+1)
+        den = betaln(M+1, 1) - betaln(n+1, M-n+1)
+        return num.sum(axis=-1) - den
+
+    def logpmf(self, x, m, n):
+        """
+        Log of the Multivariate Hypergeometric probability mass function.
+
+        Parameters
+        ----------
+        x : array_like
+            Quantiles, with the last axis of `x` denoting the components.
+        %(_doc_default_callparams)s
+
+        Returns
+        -------
+        logpmf : ndarray or scalar
+            Log of the probability mass function evaluated at `x`
+
+        Notes
+        -----
+        %(_doc_callparams_note)s
+        """
+        M, m, n, mncond = self._process_parameters(m, n)
+        x, xcond = self._process_quantiles(x, M, m, n)
+
+        result = self._logpmf(x, M, m, n)
+
+        # replace values for which x was out of the domain; broadcast
+        # xcond to the right shape
+        xcond_ = xcond | np.zeros(mncond.shape, dtype=np.bool_)
+        result = self._checkresult(result, xcond_, np.NINF)
+
+        # replace values bad for n or m; broadcast
+        # mncond to the right shape
+        mncond_ = mncond | np.zeros(xcond.shape, dtype=np.bool_)
+        return self._checkresult(result, mncond_, np.NAN)
+
+    def pmf(self, x, m, n):
+        """
+        Multivariate Hypergeometric probability mass function.
+
+        Parameters
+        ----------
+        x : array_like
+            Quantiles, with the last axis of `x` denoting the components.
+        %(_doc_default_callparams)s
+
+        Returns
+        -------
+        pmf : ndarray or scalar
+            Probability density function evaluated at `x`
+
+        Notes
+        -----
+        %(_doc_callparams_note)s
+        """
+        out = np.exp(self.logpmf(x, m, n))
+        return out
+
+    def mean(self, m, n):
+        """
+        Mean of the Multivariate Hypergeometric distribution
+
+        Parameters
+        ----------
+        %(_doc_default_callparams)s
+
+        Returns
+        -------
+        mean : array_like or scalar
+            The mean of the distribution
+        """
+        M, m, n, mncond = self._process_parameters(m, n)
+        M, n = M[..., np.newaxis], n[..., np.newaxis]
+        mu = n*(m/M)
+        if mu.shape[-1] == 1:
+            return self._checkresult(mu, mncond, np.NAN).squeeze(-1)
+        return self._checkresult(mu, mncond, np.NAN)
+
+    def var(self, m, n):
+        """
+        Variance of the Multivariate Hypergeometric distribution.
+
+        Parameters
+        ----------
+        %(_doc_default_callparams)s
+
+        Returns
+        -------
+        cov : array_like
+            The covariance matrix of the distribution
+        """
+        M, m, n, mncond = self._process_parameters(m, n)
+        M, n = M[..., np.newaxis], n[..., np.newaxis]
+        output = n * m/M * (M-m)/M * (M-n)/(M-1)
+        if output.shape[-1] == 1:
+            self._checkresult(output, mncond, np.NAN).squeeze(-1)
+        return self._checkresult(output, mncond, np.NAN)
+
+    def cov(self, m, n):
+        """
+        Covariance matrix of the Multivariate Hypergeometric distribution.
+
+        Parameters
+        ----------
+        %(_doc_default_callparams)s
+
+        Returns
+        -------
+        cov : array_like
+            The covariance matrix of the distribution
+        """
+        # cov( x_i,x_j ) = -n * (M-n)/(M-1) * (K_i*K_j) / (M**2)
+        M, m, n, mncond = self._process_parameters(m, n)
+        M = M[..., np.newaxis, np.newaxis]
+        n = n[..., np.newaxis, np.newaxis]
+        output = (-n * (M-n)/(M-1) / (M**2) *
+                  np.einsum("...i,...j->...ij", m, m))
+        dim = m.shape[-1]
+        M, n = M[..., 0, 0], n[..., 0, 0]
+        # diagonal entries need to be computed differently
+        for i in range(dim):
+            output[..., i, i] = (n * (M-n)/(M-1) *
+                                 m[..., i]*(M-m[..., i]) / (M**2))
+
+        return self._checkresult(output, mncond, np.NAN)
+
+    def rvs(self, m, n, size=1, random_state=None):
+        """
+        Draw random samples from a Multivariate Hypergeometric distribution.
+
+        Parameters
+        ----------
+        %(_doc_default_callparams)s
+        size : integer or iterable of integers, optional
+            Number of samples to draw (default 1).
+        %(_doc_random_state)s
+
+        Returns
+        -------
+        rvs : array_like
+            Random variates of shape (`size`, `len(p)`)
+
+        Notes
+        -----
+        %(_doc_callparams_note)s
+        """
+        M, m, n, mncond = self._process_parameters(m, n)
+
+        random_state = self._get_random_state(random_state)
+        try:
+            # Generator is only available in numpy >= 1.17
+            if isinstance(random_state, np.random.Generator):
+                out = random_state.multivariate_hypergeometric(m, n,
+                                                               size)
+                return _squeeze_output(out)
+        except AttributeError:
+            pass
+
+        if isinstance(size, int):
+            size = (size, )
+
+        rvs = np.empty(size + (m.shape[-1], ), dtype=m.dtype)
+        rem = M
+        _, rem, n = np.broadcast_arrays(rvs[..., 0], rem, n)
+
+        for c in range(m.shape[-1] - 1):
+            rem = rem - m[..., c]
+            rvs[..., c] = ((n != 0) *
+                            random_state.hypergeometric(m[..., c], rem,
+                                                        n + (n == 0),
+                                                        size=size))
+            n = n - rvs[..., c]
+        rvs[..., m.shape[-1] - 1] = n
+
+        return _squeeze_output(rvs)
+
+
+multivariate_hypergeom = multivariate_hypergeom_gen()
+
+
+class multivariate_hypergeom_frozen(multi_rv_frozen):
+    def __init__(self, m, n, seed=None):
+        self._dist = multivariate_hypergeom_gen(seed)
+        (self.M, self.m,
+         self.n, self.mcond) = self._dist._process_parameters(m, n)
+
+        # monkey patch self._dist
+        def _process_parameters(m, n):
+            return self.M, self.m, self.n, self.mcond
+        self._dist._process_parameters = _process_parameters
+
+    def logpmf(self, x):
+        return self._dist.logpmf(x, self.m, self.n)
+
+    def pmf(self, x):
+        return self._dist.pmf(x, self.m, self.n)
+
+    def mean(self):
+        return self._dist.mean(self.m, self.n)
+
+    def var(self):
+        return self._dist.var(self.m, self.n)
+
+    def cov(self):
+        return self._dist.cov(self.m, self.n)
+
+    def rvs(self, size=1, random_state=None):
+        return self._dist.rvs(self.m, self.n,
+                              size=size,
+                              random_state=random_state)
