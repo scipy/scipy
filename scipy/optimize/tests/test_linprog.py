@@ -213,13 +213,15 @@ def generic_callback_test(self):
     assert_allclose(last_cb['slack'], res['slack'])
 
 
-def test_unknown_solver():
+def test_unknown_solvers_and_options():
     c = np.array([-3, -2])
     A_ub = [[2, 1], [1, 1], [1, 0]]
     b_ub = [10, 8, 4]
 
-    assert_raises(ValueError, linprog,
-                  c, A_ub=A_ub, b_ub=b_ub, method='ekki-ekki-ekki')
+    assert_raises(ValueError, linprog, c, A_ub=A_ub, b_ub=b_ub,
+                  method='ekki-ekki-ekki')
+    assert_raises(ValueError, linprog, c, A_ub=A_ub, b_ub=b_ub,
+                  options={"rr_method": 'ekki-ekki-ekki'})
 
 
 A_ub = None
@@ -1774,3 +1776,31 @@ class TestAutoscaleRS(AutoscaleTests):
         res = linprog(c, A_ub, b_ub, A_eq, b_eq, bounds,
                       method=self.method, options=self.options, x0=bad_guess)
         assert_equal(res.status, 6)
+
+
+###########################
+# Redundancy Removal Tests#
+###########################
+
+
+class RRTests(object):
+    method = "interior-point"
+    LCT = LinprogCommonTests
+    # these are a few of the existing tests that have redundancy
+    test_RR_infeasibility = LCT.test_remove_redundancy_infeasibility
+    test_bug_10349 = LCT.test_bug_10349
+    test_bug_7044 = LCT.test_bug_7044
+    test_NFLC = LCT.test_network_flow_limited_capacity
+    test_enzo_example_b = LCT.test_enzo_example_b
+
+
+class TestRRSVD(RRTests):
+    options = {"rr_method": "SVD"}
+
+
+class TestRRPivot(RRTests):
+    options = {"rr_method": "pivot"}
+
+
+class TestRRID(RRTests):
+    options = {"rr_method": "ID"}

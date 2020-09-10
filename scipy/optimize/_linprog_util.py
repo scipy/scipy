@@ -603,13 +603,10 @@ def _presolve(lp, rr, rr_method, tol=1e-9):
 
     if (rr_method is not None
             and rr_method.lower() not in {"svd", "pivot", "id"}):
-        status = 4
         message = ("'" + str(rr_method) + "' is not a valid option "
                    "for redundancy removal. Valid options are 'SVD', "
                    "'pivot', and 'ID'.")
-        complete = True
-        return (_LPProblem(c, A_ub, b_ub, A_eq, b_eq, bounds, x0),
-                c0, x, undo, complete, status, message)
+        raise ValueError(message)
 
     if sps.issparse(A_eq):
         A_eq = A_eq.tocsr()
@@ -862,11 +859,14 @@ def _presolve(lp, rr, rr_method, tol=1e-9):
         else:
             rr_method = rr_method.lower()
             if rr_method == "svd":
-                A_eq, b_eq, status, message = _remove_redundancy_svd(A_eq, b_eq)
+                rr_res = _remove_redundancy_svd(A_eq, b_eq)
+                A_eq, b_eq, status, message = rr_res
             elif rr_method == "pivot":
-                A_eq, b_eq, status, message = _remove_redundancy_pivot_dense(A_eq, b_eq)
+                rr_res = _remove_redundancy_pivot_dense(A_eq, b_eq)
+                A_eq, b_eq, status, message = rr_res
             elif rr_method == "id":
-                A_eq, b_eq, status, message = _remove_redundancy_id(A_eq, b_eq, rank)
+                rr_res = _remove_redundancy_id(A_eq, b_eq, rank)
+                A_eq, b_eq, status, message = rr_res
             else:  # shouldn't get here; option validity checked above
                 pass
         if A_eq.shape[0] < rank:

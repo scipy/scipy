@@ -554,10 +554,10 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     lp_o = deepcopy(lp)
 
     # Solve trivial problem, eliminate variables, tighten bounds, etc.
+    rr_method = solver_options.pop('rr_method', None)  # need to pop these;
+    rr = solver_options.pop('rr', True)  # they're not passed to methods
     c0 = 0  # we might get a constant term in the objective
     if solver_options.pop('presolve', True):
-        rr = solver_options.pop('rr', True)
-        rr_method = solver_options.pop('rr_method', None)
         (lp, c0, x, undo, complete, status, message) = _presolve(lp, rr,
                                                                  rr_method,
                                                                  tol)
