@@ -8545,7 +8545,7 @@ class rv_histogram(rv_continuous):
 
 
 # Collect names of classes and objects in this module.
-pairs = list(globals().items())
+pairs = list(globals().copy().items())
 _distn_names, _distn_gen_names = get_distribution_names(pairs, rv_continuous)
 
 __all__ = _distn_names + _distn_gen_names + ['rv_histogram']
