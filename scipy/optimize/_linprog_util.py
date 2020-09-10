@@ -832,7 +832,8 @@ def _presolve(lp, rr, rr_method, tol=1e-9):
                           "for redundant equality constraints.")
     if (sps.issparse(A_eq)):
         if rr and A_eq.size > 0:  # TODO: Fast sparse rank check?
-            A_eq, b_eq, status, message = _remove_redundancy_pivot_sparse(A_eq, b_eq)
+            rr_res = _remove_redundancy_pivot_sparse(A_eq, b_eq)
+            A_eq, b_eq, status, message = rr_res
             if A_eq.shape[0] < n_rows_A:
                 warn(redundancy_warning, OptimizeWarning, stacklevel=1)
             if status != 0:
@@ -844,18 +845,22 @@ def _presolve(lp, rr, rr_method, tol=1e-9):
     # faster. More testing would be good.
     small_nullspace = 5
     if rr and A_eq.size > 0:
-        try:  # TODO: instead use results of first SVD in _remove_redundancy_svd
+        try:  # TODO: use results of first SVD in _remove_redundancy_svd
             rank = np.linalg.matrix_rank(A_eq)
-        except Exception:  # oh well, we'll have to go with _remove_redundancy_pivot_dense
+        # oh well, we'll have to go with _remove_redundancy_pivot_dense
+        except Exception:
             rank = 0
     if rr and A_eq.size > 0 and rank < A_eq.shape[0]:
         warn(redundancy_warning, OptimizeWarning, stacklevel=3)
         dim_row_nullspace = A_eq.shape[0]-rank
         if rr_method is None:
             if dim_row_nullspace <= small_nullspace:
-                A_eq, b_eq, status, message = _remove_redundancy_svd(A_eq, b_eq)
+                rr_res = _remove_redundancy_svd(A_eq, b_eq)
+                A_eq, b_eq, status, message = rr_res
             if dim_row_nullspace > small_nullspace or status == 4:
-                A_eq, b_eq, status, message = _remove_redundancy_pivot_dense(A_eq, b_eq)
+                rr_res = _remove_redundancy_pivot_dense(A_eq, b_eq)
+                A_eq, b_eq, status, message = rr_res
+
         else:
             rr_method = rr_method.lower()
             if rr_method == "svd":

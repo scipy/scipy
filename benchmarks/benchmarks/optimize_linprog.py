@@ -7,9 +7,12 @@ from scipy.optimize import linprog, OptimizeWarning
 from scipy.linalg import toeplitz
 from scipy.optimize.tests.test_linprog import lpgen_2d, magic_square
 from numpy.testing import suppress_warnings
-from scipy.optimize._remove_redundancy import _remove_redundancy, _remove_redundancy_dense, _remove_redundancy_sparse
+from scipy.optimize._remove_redundancy import (_remove_redundancy_svd,
+                                               _remove_redundancy_pivot_sparse,
+                                               _remove_redundancy_pivot_dense,
+                                               _remove_redundancy_id)
 from scipy.optimize._linprog_util import _presolve, _clean_inputs, _LPProblem
-from scipy.sparse import csc_matrix, csr_matrix, issparse
+from scipy.sparse import csc_matrix, csr_matrix
 import numpy as np
 import os
 
@@ -25,8 +28,8 @@ except ValueError:
 methods = [("interior-point", {"sparse": True}),
            ("interior-point", {"sparse": False}),
            ("revised simplex", {})]
-rr_methods = [_remove_redundancy, _remove_redundancy_dense,
-              _remove_redundancy_sparse]
+rr_methods = [_remove_redundancy_svd, _remove_redundancy_pivot_sparse,
+              _remove_redundancy_pivot_dense, _remove_redundancy_id]
 presolve_methods = ['sparse', 'dense']
 
 problems = ['25FV47', '80BAU3B', 'ADLITTLE', 'AFIRO', 'AGG', 'AGG2', 'AGG3',
@@ -196,9 +199,9 @@ class Netlib_RR(Benchmark):
     param_names = ['method', 'problems']
     # sparse routine returns incorrect matrix on BORE3D and PILOTNOV
     # SVD fails (doesn't converge) on QAP8
-    known_fails = {('_remove_redundancy', 'QAP8'),
-                   ('_remove_redundancy_sparse', 'BORE3D'),
-                   ('_remove_redundancy_sparse', 'PILOTNOV')}
+    known_fails = {('_remove_redundancy_svd', 'QAP8'),
+                   ('_remove_redundancy_pivot_sparse', 'BORE3D'),
+                   ('_remove_redundancy_pivot_sparse', 'PILOTNOV')}
 
     def setup(self, meth, prob):
         if (meth.__name__, prob) in self.known_fails:
@@ -216,11 +219,12 @@ class Netlib_RR(Benchmark):
 
         lp = _LPProblem(c, A_ub, b_ub, A_eq, b_eq, bounds, x0)
         lp_cleaned = _clean_inputs(lp)
-        res = _presolve(lp_cleaned, rr=False, tol=1e-9)[0]
+        # rr_method is None here because we're not using RR
+        res = _presolve(lp_cleaned, rr=False, rr_method=None, tol=1e-9)[0]
 
         self.A_eq, self.b_eq = res.A_eq, res.b_eq
         self.true_rank = np.linalg.matrix_rank(self.A_eq)
-        if meth == _remove_redundancy_sparse:
+        if meth == _remove_redundancy_pivot_sparse:
             self.A_eq = csc_matrix(self.A_eq)
         self.rr_A = None
 
@@ -231,7 +235,7 @@ class Netlib_RR(Benchmark):
         if self.rr_A is None:
             self.time_netlib_rr(meth, prob)
 
-        if meth == _remove_redundancy_sparse:
+        if meth == _remove_redundancy_pivot_sparse:
             self.rr_A = self.rr_A.todense()
 
         rr_rank = np.linalg.matrix_rank(self.rr_A)
@@ -273,4 +277,4 @@ class Netlib_presolve(Benchmark):
         self.lp_cleaned = _clean_inputs(lp)
 
     def time_netlib_presolve(self, meth, prob):
-        _presolve(self.lp_cleaned, rr=False, tol=1e-9)
+        _presolve(self.lp_cleaned, rr=False, rr_method=None, tol=1e-9)
