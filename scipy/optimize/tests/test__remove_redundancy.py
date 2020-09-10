@@ -250,5 +250,6 @@ class TestRRID(RRCommonTests):
 
 class TestRRPivotSparse(RRCommonTests):
     def rr(self, A, b):
-        A1, b1, status, message = _remove_redundancy_pivot_sparse(csc_matrix(A), b)
+        rr_res = _remove_redundancy_pivot_sparse(csc_matrix(A), b)
+        A1, b1, status, message = rr_res
         return A1.toarray(), b1, status, message
