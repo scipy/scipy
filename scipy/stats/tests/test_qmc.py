@@ -107,13 +107,18 @@ class TestQMC(object):
         out = [0., 0.5, 0.25, 0.75, 0.125, 0.625, 0.375, 0.875, 0.0625, 0.5625]
         assert_almost_equal(sample, out)
 
-        sample = qmc.van_der_corput(5, start_index=3)
-        out = [0.75, 0.125, 0.625, 0.375, 0.875]
-        assert_almost_equal(sample, out)
+        sample = qmc.van_der_corput(7, start_index=3)
+        assert_almost_equal(sample, out[3:])
+
+    def test_van_der_corput_scramble(self):
+        out = qmc.van_der_corput(10, scramble=True, seed=123456)
+
+        sample = qmc.van_der_corput(7, start_index=3, scramble=True,
+                                    seed=123456)
+        assert_almost_equal(sample, out[3:])
 
     def test_halton(self):
-        # without bounds
-        engine = qmc.Halton(dim=2)
+        engine = qmc.Halton(dim=2, scramble=False)
         sample = engine.random(n_samples=3)
 
         out = np.array([[0, 0], [1 / 2, 1 / 3], [1 / 4, 2 / 3], [3 / 4, 1 / 9],
@@ -132,9 +137,33 @@ class TestQMC(object):
         assert_almost_equal(sample, out, decimal=1)
 
         # continuing with fast_forward
-        engine = qmc.Halton(dim=2)
+        engine = qmc.Halton(dim=2, scramble=False)
         engine.fast_forward(2)
         sample = engine.random(n_samples=4)
+
+        assert_almost_equal(sample, out[2:], decimal=1)
+
+    def test_halton_scramble(self):
+        engine = qmc.Halton(dim=2, scramble=True, seed=123456)
+        out = engine.random(n_samples=10)
+
+        engine = qmc.Halton(dim=2, scramble=True, seed=123456)
+        sample = engine.random(n_samples=3)
+        assert_almost_equal(sample, out[:3], decimal=1)
+
+        # continuing
+        sample = engine.random(n_samples=7)
+        assert_almost_equal(sample, out[3:], decimal=1)
+
+        # reset
+        engine.reset()
+        sample = engine.random(n_samples=10)
+        assert_almost_equal(sample, out, decimal=1)
+
+        # continuing with fast_forward
+        engine = qmc.Halton(dim=2, scramble=True, seed=123456)
+        engine.fast_forward(2)
+        sample = engine.random(n_samples=8)
 
         assert_almost_equal(sample, out[2:], decimal=1)
 

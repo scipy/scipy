@@ -230,6 +230,7 @@ import math
 import warnings
 
 import numpy as np
+
 from scipy.optimize import brute
 from scipy._lib._util import check_random_state
 from scipy.optimize import basinhopping
@@ -620,10 +621,15 @@ def n_primes(n):
     return primes
 
 
-def van_der_corput(n_samples, base=2, start_index=0):
+def van_der_corput(n_samples, base=2, start_index=0, scramble=False,
+                   seed=None):
     """Van der Corput sequence.
 
     Pseudo-random number generator based on a b-adic expansion.
+
+    Scrambling uses permutations of the remainders (see [1]_). Multiple
+    permutations are applied to construct a point. The sequence of
+    permutations has to be the same for all points of the sequence.
 
     Parameters
     ----------
@@ -633,22 +639,44 @@ def van_der_corput(n_samples, base=2, start_index=0):
         Base of the sequence.
     start_index : int
         Index to start the sequence from.
+    scramble: bool, optional
+        If True, use Owen scrambling.
+    seed : {int or `numpy.random.RandomState` instance}, optional
+        If `seed` is not specified the `numpy.random.RandomState`
+        singleton is used.
+        If `seed` is an int, a new ``RandomState`` instance is used,
+        seeded with `seed`.
+        If `seed` is already a ``RandomState`` instance, then that
+        instance is used.
 
     Returns
     -------
     sequence : list (n_samples,)
         Sequence of Van der Corput.
 
+    References
+    ----------
+    .. [1] A. B. Owen. "A randomized Halton algorithm in R",
+       arXiv:1706.02808, 2017.
+
     """
-    sequence = []
-    for i in range(start_index, start_index + n_samples):
-        n_th_number, denom = 0., 1.
-        quotient = i
-        while quotient > 0:
-            quotient, remainder = divmod(quotient, base)
-            denom *= base
-            n_th_number += remainder / denom
-        sequence.append(n_th_number)
+    rng = check_random_state(seed)
+    sequence = np.zeros(n_samples)
+
+    quotient = np.arange(start_index, start_index + n_samples)
+    b2r = 1 / base
+
+    while (1 - b2r) < 1:
+        remainder = quotient % base
+
+        if scramble:
+            # permutation must be the same for all points of the sequence
+            perm = rng.permutation(base)
+            remainder = perm[np.array(remainder).astype(int)]
+
+        sequence += remainder * b2r
+        b2r /= base
+        quotient = (quotient - remainder) / base
 
     return sequence
 
@@ -781,10 +809,20 @@ class Halton(QMCEngine):
     ----------
     dim : int
         Dimension of the parameter space.
+    scramble: bool, optional
+        If True, use Owen scrambling.
+    seed : {int or `numpy.random.RandomState` instance}, optional
+        If `seed` is not specified the `numpy.random.RandomState`
+        singleton is used.
+        If `seed` is an int, a new ``RandomState`` instance is used,
+        seeded with `seed`.
+        If `seed` is already a ``RandomState`` instance, then that
+        instance is used.
+
     Notes
     -----
     The Halton sequence has severe striping artifacts for even modestly
-    large dimensions.  These can be ameliorated by scrambling.  Scrambling
+    large dimensions. These can be ameliorated by scrambling. Scrambling
     also supports replication-based error estimates and extends
     applicabiltiy to unbounded integrands.
 
@@ -801,7 +839,7 @@ class Halton(QMCEngine):
     Generate samples from a low discrepancy sequence of Halton.
 
     >>> from scipy.stats import qmc
-    >>> sampler = qmc.Halton(dim=2)
+    >>> sampler = qmc.Halton(dim=2, scramble=False)
     >>> sample = sampler.random(n_samples=5)
     >>> sample
     array([[0.        , 0.        ],
@@ -839,9 +877,11 @@ class Halton(QMCEngine):
 
     """
 
-    def __init__(self, dim):
+    def __init__(self, dim, scramble=True, seed=None):
         super().__init__(dim=dim)
+        self.seed = seed
         self.base = n_primes(dim)
+        self.scramble = scramble
 
     def random(self, n_samples=1):
         """Draw `n_samples` in the half-open interval ``[0, 1)``.
@@ -859,7 +899,8 @@ class Halton(QMCEngine):
         """
         # Generate a sample using a Van der Corput sequence per dimension.
         # important to have ``type(bdim) == int`` for performance reason
-        sample = [van_der_corput(n_samples, int(bdim), self.num_generated)
+        sample = [van_der_corput(n_samples, int(bdim), self.num_generated,
+                                 scramble=self.scramble, seed=self.seed)
                   for bdim in self.base]
 
         self.num_generated += n_samples
