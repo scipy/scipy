@@ -317,21 +317,21 @@ def _quadratic_assignment_faq(A, B,
         corresponding nodes, that is, node ``partial_match[i, 0]`` of `A` is
         matched to node ``partial_match[i, 1]`` of `B`. Accordingly,
         ``partial_match`` is an array of size ``(m , 2)``, where ``m`` is
-        not greater than the number of nodes, ``n``.
+        not greater than the number of nodes, :math:`n`.
 
     P0 : 2d-array, "barycenter", or "randomized" (default = "barycenter")
         The initial (guess) permutation matrix or search "position"
-        :math:`P0`.
+        `P0`.
 
-        :math:`P0` need not be a proper permutation matrix;
-        however, it must be ``m' x m'``, where ``m' = n - m``, and it must
-        be doubly stochastic: each of its rows and columns must sum to 1.
+        `P0` need not be a proper permutation matrix;
+        however, it must be :math:`m' x m'`, where :math:`m' = n - m`,
+        and it must be doubly stochastic: each of its rows and columns must
+        sum to 1.
 
         If unspecified or ``"barycenter"``, the non-informative "flat
-        doubly stochastic matrix" :math:`J = 1*1^T/n`, where :math:`n`
-        is the number of nodes and :math:`1` is a :math:`n \times 1`
-        array of ones, is used. This is the "barycenter" of the
-        search space of doubly-stochastic matrices.
+        doubly stochastic matrix" :math:`J = 1*1^T/m'`, where :math:`1` is
+        a :math:`m' \times 1` array of ones, is used. This is the "barycenter"
+        of the search space of doubly-stochastic matrices.
 
         If ``"randomized"``, the algorithm will start from the
         randomized initial search position :math:`P_0 = (J + K)/2`,
@@ -353,7 +353,7 @@ def _quadratic_assignment_faq(A, B,
         A threshold for the stopping criterion. Franke-Wolfe
         iteration terminates when the change in search position between
         iterations is sufficiently small, that is, when the relative Frobenius
-        norm, :math:`||P_{i}-P_{i+1}||_F \over \sqrt{len(P_{i})} \leq tol`,
+        norm, :math:`\frac{||P_{i}-P_{i+1}||_F}{\sqrt{len(P_{i})}} \leq tol`,
         where :math:`i` is the iteration number.
 
     Returns
