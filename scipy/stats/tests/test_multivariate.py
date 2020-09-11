@@ -1677,7 +1677,7 @@ class TestMultivariateHypergeom(object):
         vals1 = multivariate_hypergeom.pmf(x=[3, 4], m=[5, 10], n=7)
         assert_allclose(vals1, 0.3263403263403265, rtol=1e-8)
 
-        vals2 = multivariate_hypergeom.pmf(x=[[[3, 5],[0, 8]],
+        vals2 = multivariate_hypergeom.pmf(x=[[[3, 5], [0, 8]],
                                               [[-1, 9], [1, 1]]],
                                            m=[5, 10], n=[[8, 8], [8, 2]])
         assert_allclose(vals2, [[0.39160839, 0.00699301], [0, 0.47619048]],
@@ -1773,7 +1773,8 @@ class TestMultivariateHypergeom(object):
         np.random.seed(1234)
         n = 12
         m = [7, 9, 11, 13]
-        x = [[0,0,0,12],[0,0,1,11],[0,1,1,10],[1,1,1,9],[1,1,2,8]]
+        x = [[0, 0, 0, 12], [0, 0, 1, 11], [0, 1, 1, 10],
+             [1, 1, 1, 9], [1, 1, 2, 8]]
         x = np.asarray(x, dtype=np.float64)
         mhg_frozen = multivariate_hypergeom(m, n)
         assert_allclose(mhg_frozen.pmf(x),
