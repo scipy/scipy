@@ -317,16 +317,15 @@ def _quadratic_assignment_faq(A, B,
         corresponding nodes, that is, node ``partial_match[i, 0]`` of `A` is
         matched to node ``partial_match[i, 1]`` of `B`. Accordingly,
         ``partial_match`` is an array of size ``(m , 2)``, where ``m`` is
-        not greater than the number of nodes.
+        not greater than the number of nodes, ``n``.
 
     P0 : 2d-array, "barycenter", or "randomized" (default = "barycenter")
         The initial (guess) permutation matrix or search "position"
         :math:`P0`.
 
         :math:`P0` need not be a proper permutation matrix;
-        however, it must have the same shape as `A` and
-        `B`, and it must be doubly stochastic: each of its
-        rows and columns must sum to 1.
+        however, it must be ``m' x m'``, where ``m' = n - m``, and it must
+        be doubly stochastic: each of its rows and columns must sum to 1.
 
         If unspecified or ``"barycenter"``, the non-informative "flat
         doubly stochastic matrix" :math:`J = 1*1^T/n`, where :math:`n`
@@ -401,7 +400,6 @@ def _quadratic_assignment_faq(A, B,
 
     However, consider running from several randomized initializations and
     keeping the best result.
-    
 
     >>> res = min([quadratic_assignment(A, B, options=options)
     ...            for i in range(30)], key=lambda x: x.fun)
@@ -409,7 +407,6 @@ def _quadratic_assignment_faq(A, B,
     46.671852533681516 # may vary
 
     The '2-opt' method can be used to further refine the results.
-    
 
     >>> options = {"partial_guess": np.array([np.arange(n), res.col_ind]).T}
     >>> res = quadratic_assignment(A, B, method="2opt", options=options)
@@ -450,6 +447,12 @@ def _quadratic_assignment_faq(A, B,
     n = A.shape[0]  # number of vertices in graphs
     n_seeds = partial_match.shape[0]  # number of seeds
     n_unseed = n - n_seeds
+
+    # check outlier cases
+    if n == 0 or partial_match.shape[0] == n:
+        score = _calc_score(A, B, partial_match[:, 1])
+        res = {"col_ind": partial_match[:, 1], "fun": score, "nit": 0}
+        return OptimizeResult(res)
 
     obj_func_scalar = 1
     if maximize:
@@ -507,8 +510,8 @@ def _quadratic_assignment_faq(A, B,
         b12 = ((R.T @ A12.T) * B12.T).sum()
         AR22 = A22.T @ R
         BR22 = B22 @ R.T
-        b22a = (AR22.T * (B22 @ Q.T)).sum()
-        b22b = ((A22.T @ Q).T * BR22).sum()
+        b22a = (AR22 * B22.T[cols]).sum()
+        b22b = (A22 * BR22[cols]).sum()
         a = (AR22.T * BR22).sum()
         b = b21 + b12 + b22a + b22b
         # critical point of ax^2 + bx + c is at x = -d/(2*e)
@@ -547,7 +550,7 @@ def _check_init_input(P0, n):
     tol = 1e-3
     msg = None
     if P0.shape != (n, n):
-        msg = "`P0` matrix must have same shape as A and B"
+        msg = "`P0` matrix must have shape m' x m', where m'=n-m"
     elif ((~np.isclose(row_sum, 1, atol=tol)).any() or
           (~np.isclose(col_sum, 1, atol=tol)).any() or
           (P0 < 0).any()):
@@ -701,6 +704,13 @@ def _quadratic_assignment_2opt(A, B, maximize=False, partial_match=None,
     rng = check_random_state(rng)
     A, B, partial_match = _common_input_validation(A, B, partial_match)
 
+    N = len(A)
+    # check outlier cases
+    if N == 0 or partial_match.shape[0] == N:
+        score = _calc_score(A, B, partial_match[:, 1])
+        res = {"col_ind": partial_match[:, 1], "fun": score, "nit": 0}
+        return OptimizeResult(res)
+
     if partial_guess is None:
         partial_guess = np.array([[], []]).T
     partial_guess = np.atleast_2d(partial_guess).astype(int)
@@ -722,8 +732,6 @@ def _quadratic_assignment_2opt(A, B, maximize=False, partial_match=None,
         msg = "`partial_guess` column entries must be unique"
     if msg is not None:
         raise ValueError(msg)
-
-    N = len(A)
 
     fixed_rows = None
     if partial_match.size or partial_guess.size:
