@@ -4007,7 +4007,7 @@ class multivariate_hypergeom_gen(multi_rv_generic):
            http://www.randomservices.org/random/urn/MultiHypergeometric.html
 
     .. [2] Thomas J. Sargent and John Stachurski, 2020,
-           Multivariate Hypergeometric Distribution on Wikipedia
+           Multivariate Hypergeometric Distribution
            https://python.quantecon.org/_downloads/pdf/multi_hyper.pdf
     """
     def __init__(self, seed=None):
@@ -4137,8 +4137,6 @@ class multivariate_hypergeom_gen(multi_rv_generic):
         M, m, n, mncond = self._process_parameters(m, n)
         M, n = M[..., np.newaxis], n[..., np.newaxis]
         mu = n*(m/M)
-        if mu.shape[-1] == 1:
-            return self._checkresult(mu, mncond, np.NAN).squeeze(-1)
         return self._checkresult(mu, mncond, np.NAN)
 
     def var(self, m, n):
@@ -4157,8 +4155,6 @@ class multivariate_hypergeom_gen(multi_rv_generic):
         M, m, n, mncond = self._process_parameters(m, n)
         M, n = M[..., np.newaxis], n[..., np.newaxis]
         output = n * m/M * (M-m)/M * (M-n)/(M-1)
-        if output.shape[-1] == 1:
-            self._checkresult(output, mncond, np.NAN).squeeze(-1)
         return self._checkresult(output, mncond, np.NAN)
 
     def cov(self, m, n):
