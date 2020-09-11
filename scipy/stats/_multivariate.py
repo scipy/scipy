@@ -4222,7 +4222,6 @@ class multivariate_hypergeom_gen(multi_rv_generic):
 
         rvs = np.empty(size + (m.shape[-1], ), dtype=m.dtype)
         rem = M
-        _, rem, n = np.broadcast_arrays(rvs[..., 0], rem, n)
 
         for c in range(m.shape[-1] - 1):
             rem = rem - m[..., c]
