@@ -1654,7 +1654,7 @@ class TestMultivariateHypergeom(object):
 
     def test_reduces_hypergeom(self):
         # test that the multivariate_hypergeom pmf reduces to the
-        # binomial pmf in the 2d case.
+        # hypergeom pmf in the 2d case.
         val1 = multivariate_hypergeom.pmf(x=[3, 1], m=[10, 5], n=4)
         val2 = hypergeom.pmf(k=3, M=15, n=4, N=10)
         assert_allclose(val1, val2, rtol=1e-8)
@@ -1677,9 +1677,11 @@ class TestMultivariateHypergeom(object):
         vals1 = multivariate_hypergeom.pmf(x=[3, 4], m=[5, 10], n=7)
         assert_allclose(vals1, 0.3263403263403265, rtol=1e-8)
 
-        vals2 = multivariate_hypergeom.pmf(x=[[[3, 5],[0, 8]], [[-1, 9], [1, 1]]],
+        vals2 = multivariate_hypergeom.pmf(x=[[[3, 5],[0, 8]],
+                                              [[-1, 9], [1, 1]]],
                                            m=[5, 10], n=[[8, 8], [8, 2]])
-        assert_allclose(vals2, [[0.39160839, 0.00699301], [0, 0.47619048]], rtol=1e-6)
+        assert_allclose(vals2, [[0.39160839, 0.00699301], [0, 0.47619048]],
+                        rtol=1e-6)
 
         x = np.empty((0, 2), dtype=np.float64)
         vals3 = multivariate_hypergeom.pmf(x=x, m=[4], n=0)
@@ -1692,29 +1694,33 @@ class TestMultivariateHypergeom(object):
         assert_allclose(vals5, 0.010773540185304875, rtol=1e-8)
 
     def test_pmf_broadcasting(self):
-        vals0 = multivariate_hypergeom.pmf(x=[3, 4], m=[[5, 10], [10, 15]], n=7)
+        vals0 = multivariate_hypergeom.pmf(x=[3, 4], m=[[5, 10], [10, 15]],
+                                           n=7)
         assert_allclose(vals0, [0.32634033, 0.34075307], rtol=1e-7)
 
-        vals1 = multivariate_hypergeom.pmf(x=[[1], [2]], m=[[3], [4]], n=[1, 3])
+        vals1 = multivariate_hypergeom.pmf(x=[[1], [2]], m=[[3], [4]],
+                                           n=[1, 3])
         assert_allclose(vals1, [1., 0.], rtol=1e-8)
 
-        vals2 = multivariate_hypergeom.pmf(x=[[[1], [2]]], m=[[3], [4]], n=[1, 3])
+        vals2 = multivariate_hypergeom.pmf(x=[[[1], [2]]], m=[[3], [4]],
+                                           n=[1, 3])
         assert_allclose(vals2, [[1., 0.]], rtol=1e-8)
 
-        vals3 = multivariate_hypergeom.pmf(x=[[1], [2]], m=[[[[3]]]], n=[1, 3])
+        vals3 = multivariate_hypergeom.pmf(x=[[1], [2]], m=[[[[3]]]],
+                                           n=[1, 3])
         assert_allclose(vals3, [[[1., 0.]]], rtol=1e-8)
 
     def test_cov(self):
         cov1 = multivariate_hypergeom.cov(m=[3, 7, 10], n=12)
-        cov2 = [[ 0.64421053, -0.26526316, -0.37894737],
-                [-0.26526316,  1.14947368, -0.88421053],
-                [-0.37894737, -0.88421053,  1.26315789]]
+        cov2 = [[0.64421053, -0.26526316, -0.37894737],
+                [-0.26526316, 1.14947368, -0.88421053],
+                [-0.37894737, -0.88421053, 1.26315789]]
         assert_allclose(cov1, cov2, rtol=1e-8)
 
     def test_cov_broadcasting(self):
         cov1 = multivariate_hypergeom.cov(m=[[7, 9], [10, 15]], n=[8, 12])
-        cov2 = [[[ 1.05, -1.05], [-1.05,  1.05]],
-                [[ 1.56, -1.56], [-1.56,  1.56]]]
+        cov2 = [[[1.05, -1.05], [-1.05, 1.05]],
+                [[1.56, -1.56], [-1.56, 1.56]]]
         assert_allclose(cov1, cov2, rtol=1e-8)
 
         cov3 = multivariate_hypergeom.cov(m=[[4], [5]], n=[4, 5])
@@ -1722,8 +1728,8 @@ class TestMultivariateHypergeom(object):
         assert_allclose(cov3, cov4, rtol=1e-8)
 
         cov5 = multivariate_hypergeom.cov(m=[7, 9], n=[8, 12])
-        cov6 = [[[ 1.05  , -1.05  ], [-1.05  ,  1.05  ]],
-                [[ 0.7875, -0.7875], [-0.7875,  0.7875]]]
+        cov6 = [[[1.05, -1.05], [-1.05, 1.05]],
+                [[0.7875, -0.7875], [-0.7875, 0.7875]]]
         assert_allclose(cov5, cov6, rtol=1e-8)
 
     def test_var(self):
@@ -1740,7 +1746,7 @@ class TestMultivariateHypergeom(object):
         assert_allclose(var0[1], var2, rtol=1e-8)
 
         var3 = multivariate_hypergeom.var(m=[[10, 5], [10, 14]], n=[4, 8])
-        var4 = [[0.6984127, 0.6984127], [1.352657 , 1.352657 ]]
+        var4 = [[0.6984127, 0.6984127], [1.352657, 1.352657]]
         assert_allclose(var3, var4, rtol=1e-8)
 
         var5 = multivariate_hypergeom.var(m=[[5], [10]], n=[5, 10])
@@ -1770,8 +1776,10 @@ class TestMultivariateHypergeom(object):
         x = [[0,0,0,12],[0,0,1,11],[0,1,1,10],[1,1,1,9],[1,1,2,8]]
         x = np.asarray(x, dtype=np.float64)
         mhg_frozen = multivariate_hypergeom(m, n)
-        assert_allclose(mhg_frozen.pmf(x), multivariate_hypergeom.pmf(x, m, n))
-        assert_allclose(mhg_frozen.logpmf(x), multivariate_hypergeom.logpmf(x, m, n))
+        assert_allclose(mhg_frozen.pmf(x),
+                        multivariate_hypergeom.pmf(x, m, n))
+        assert_allclose(mhg_frozen.logpmf(x),
+                        multivariate_hypergeom.logpmf(x, m, n))
         assert_allclose(mhg_frozen.var(), multivariate_hypergeom.var(m, n))
 
 

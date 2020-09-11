@@ -3920,21 +3920,23 @@ class multivariate_hypergeom_gen(multi_rv_generic):
     -----
     %(_doc_callparams_note)s
 
-    Alternatively, the object may be called (as a function) to fix the `m` and
-    `n` parameters, returning a "frozen" multivariate hypergeometric
+    Alternatively, the object may be called (as a function) to fix the `m`
+    and `n` parameters, returning a "frozen" multivariate hypergeometric
     random variable:
 
     The probability mass function for `multivariate_hypergeom` is
 
     .. math::
 
-        P(X_1 = x_1, X_2 = x_2, \ldots, X_k = x_k) = \frac{\binom{m_1}{x_1} \binom{m_2}{x_2}
-        \cdots \binom{m_k}{x_k}}{\binom{M}{n}}, \\ \quad (x_1, x_2, \ldots, x_k) \in
-        \mathbb{N}^k \text{ with } \sum_{i=1}^k x_i = n
+        P(X_1 = x_1, X_2 = x_2, \ldots, X_k = x_k) = \frac{\binom{m_1}{x_1}
+        \binom{m_2}{x_2} \cdots \binom{m_k}{x_k}}{\binom{M}{n}}, \\ \quad
+        (x_1, x_2, \ldots, x_k) \in \mathbb{N}^k \text{ with }
+        \sum_{i=1}^k x_i = n
 
     where :math:`m_i` are the number of objects of type :math:`i`, :math:`M`
-    is the total number of objects in the population (sum of all :math:`m_i`s),
-    and :math:`n` is the size of the sample to be taken from the population.
+    is the total number of objects in the population (sum of all
+    :math:`m_i`s), and :math:`n` is the size of the sample to be taken
+    from the population.
 
     .. versionadded:: 1.6.0
 
@@ -3969,8 +3971,8 @@ class multivariate_hypergeom_gen(multi_rv_generic):
     but following the rules mentioned above they behave as if the rows
     ``[3, 4]`` and ``[3, 5]`` in ``x``, ``[5, 10]`` in ``m``, and ``[7, 9]``
     in ``n`` were a single object, and as if we had ``x.shape = (2,)``,
-    ``m.shape = (2,)``, and ``n.shape = ()``. To obtain the individual elements
-    without broadcasting, we would do this:
+    ``m.shape = (2,)``, and ``n.shape = ()``. To obtain the individual
+    elements without broadcasting, we would do this:
 
     >>> multivariate_hypergeom.pmf([3, 4], m=[5, 10], n=7)
     0.3263403263403265
@@ -3990,8 +3992,9 @@ class multivariate_hypergeom_gen(multi_rv_generic):
     broadcast, following the rules above, as if ``m.shape == (2,)``.
     Thus the result should also be of shape ``(2,)``, but since each output is
     a :math:`2 \times 2` matrix. The result, in fact, has shape ``(2, 2, 2)``,
-    where ``result[0]`` is equal to ``multivariate_hypergeom.cov(m=[7, 9], n=8)``
-    and ``result[1]`` is equal to ``multivariate_hypergeom.cov(m=[10, 15], n=12)``.
+    where ``result[0]`` is equal to
+    ``multivariate_hypergeom.cov(m=[7, 9], n=8)`` and ``result[1]`` is equal
+    to ``multivariate_hypergeom.cov(m=[10, 15], n=12)``.
 
     See also
     --------
@@ -4000,12 +4003,12 @@ class multivariate_hypergeom_gen(multi_rv_generic):
 
     References
     ----------
-    .. [1]: The Multivariate Hypergeometric Distribution,
-            http://www.randomservices.org/random/urn/MultiHypergeometric.html
+    .. [1] The Multivariate Hypergeometric Distribution,
+           http://www.randomservices.org/random/urn/MultiHypergeometric.html
 
-    .. [2]: Thomas J. Sargent and John Stachurski, 2020,
-            Multivariate Hypergeometric Distribution on Wikipedia
-            https://python.quantecon.org/_downloads/pdf/multi_hyper.pdf
+    .. [2] Thomas J. Sargent and John Stachurski, 2020,
+           Multivariate Hypergeometric Distribution on Wikipedia
+           https://python.quantecon.org/_downloads/pdf/multi_hyper.pdf
     """
     def __init__(self, seed=None):
         super(multivariate_hypergeom_gen, self).__init__(seed)
