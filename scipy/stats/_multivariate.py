@@ -3887,6 +3887,7 @@ mhg_docdict_noparams = {
     '_doc_random_state': _doc_random_state
 }
 
+
 class multivariate_hypergeom_gen(multi_rv_generic):
     r"""
     A multivariate hypergeometric random variable.
@@ -3927,9 +3928,13 @@ class multivariate_hypergeom_gen(multi_rv_generic):
 
     .. math::
 
-        \P(X_1 = x_1, X_2 = x_2, \ldots, X_k = x_k) = \frac{\binom{m_1}{x_1} \binom{m_2}{x_2}
-        \cdots \binom{m_k}{x_k}}{\binom{m}{n}}, \quad (x_1, x_2, \ldots, x_k) \in \N^k
-        \text{ with } \sum_{i=1}^k x_i = n
+        P(X_1 = x_1, X_2 = x_2, \ldots, X_k = x_k) = \frac{\binom{m_1}{x_1} \binom{m_2}{x_2}
+        \cdots \binom{m_k}{x_k}}{\binom{M}{n}}, \\ \quad (x_1, x_2, \ldots, x_k) \in
+        \mathbb{N}^k \text{ with } \sum_{i=1}^k x_i = n
+
+    where :math:`m_i` are the number of objects of type :math:`i`, :math:`M`
+    is the total number of objects in the population (sum of all :math:`m_i`s),
+    and :math:`n` is the size of the sample to be taken from the population.
 
     .. versionadded:: 1.6.0
 
@@ -3978,7 +3983,6 @@ class multivariate_hypergeom_gen(multi_rv_generic):
     >>> multivariate_hypergeom.cov(m=[[7, 9], [10, 15]], n=[8, 12])
     array([[[ 1.05, -1.05],
             [-1.05,  1.05]],
-
            [[ 1.56, -1.56],
             [-1.56,  1.56]]])
 
@@ -4266,3 +4270,14 @@ class multivariate_hypergeom_frozen(multi_rv_frozen):
         return self._dist.rvs(self.m, self.n,
                               size=size,
                               random_state=random_state)
+
+
+# Set frozen generator docstrings from corresponding docstrings in
+# multivariate_hypergeom and fill in default strings in class docstrings
+for name in ['logpmf', 'pmf', 'mean', 'var', 'cov', 'rvs']:
+    method = multivariate_hypergeom_gen.__dict__[name]
+    method_frozen = multivariate_hypergeom_frozen.__dict__[name]
+    method_frozen.__doc__ = doccer.docformat(
+        method.__doc__, mhg_docdict_noparams)
+    method.__doc__ = doccer.docformat(method.__doc__,
+                                      mhg_docdict_params)
