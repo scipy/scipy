@@ -147,7 +147,16 @@ class QAPCommonTests(object):
         seed = np.asarray([np.arange(len(A)), opt_perm]).T
         res = quadratic_assignment(A, B, method=self.method,
                                    options={'partial_match': seed})
+        assert_equal(res.col_ind, seed[:, 1].T)
         assert_equal(res.fun, 11156)
+        assert_equal(res.nit, 0)
+
+        # check performance with zero sized matrix inputs
+        empty = np.empty((0, 0))
+        res = quadratic_assignment(empty, empty, method=self.method,
+                                   options={"rng": 0})
+        assert_equal(res.nit, 0)
+        assert_equal(res.fun, 0)
 
     def test_unknown_options(self):
         A, B, opt_perm = chr12c()
@@ -213,7 +222,7 @@ class TestFAQ(QAPCommonTests):
         # test P0 matrix input
         with pytest.raises(
                 ValueError,
-                match="`P0` matrix must have same shape as A and B"):
+                match="`P0` matrix must have shape m' x m', where m'=n-m"):
             quadratic_assignment(
                 np.identity(4), np.identity(4),
                 options={'P0': np.ones((3, 3))}
