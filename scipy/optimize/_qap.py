@@ -631,7 +631,7 @@ def _quadratic_assignment_2opt(A, B, maximize=False, partial_match=None,
     method :  str in {'faq', '2opt'} (default: 'faq')
         The algorithm used to solve the problem. This is the method-specific
         documentation for '2opt'.
-        :ref:`'2opt' <optimize.qap-faq>` is also available.
+        :ref:`'faq' <optimize.qap-faq>` is also available.
 
     Options
     -------
