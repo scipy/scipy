@@ -4012,7 +4012,7 @@ class multivariate_hypergeom_gen(multi_rv_generic):
     """
     def __init__(self, seed=None):
         super(multivariate_hypergeom_gen, self).__init__(seed)
-        self.__doc__ = doccer.docformat(self.__doc__)
+        self.__doc__ = doccer.docformat(self.__doc__, mhg_docdict_params)
 
     def __call__(self, m, n, seed=None):
         """
