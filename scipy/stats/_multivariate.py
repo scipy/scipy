@@ -3861,7 +3861,7 @@ n : array_like
 """
 
 _mhg_doc_callparams_note = \
-"""`m` must be an array of positive integers. Quantiles `x` must
+"""Array `m` must contain only positive integers. Quantiles `x` must
 sum up to the sample size `n`. If the quantile :math:`i` contain
 values out of the range :math:`[0, m_i]` where :math:`m_i` is the
 number of objects of type :math:`i` in the population, appropriate
