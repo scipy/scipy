@@ -1681,8 +1681,9 @@ class TestMultivariateHypergeom(object):
         assert_allclose(rvs.mean(0), rv.mean(), rtol=1e-2)
 
     def test_rvs_numpy(self):
-        if np.__version__ < '1.17':
-            pytest.skip("Generators only present in numpy>=1.17")
+        if np.__version__ < '1.18':
+            pytest.skip("Multivariate Hypergeometric distribution "
+                        "only present in numpy>=1.18")
         rng_sc = np.random.Generator(np.random.PCG64(123))
         rv = multivariate_hypergeom(m=[3, 5], n=4)
         rvs_sc = rv.rvs(size=100, random_state=rng_sc)
@@ -1807,6 +1808,7 @@ class TestMultivariateHypergeom(object):
     def test_invalid_params(self):
         assert_raises(ValueError, multivariate_hypergeom.pmf, 5, 10, 5)
         assert_raises(ValueError, multivariate_hypergeom.pmf, 5, [10], 5)
+        assert_raises(ValueError, multivariate_hypergeom.pmf, [5, 4], [10], 5)
 
 
 def check_pickling(distfn, args):

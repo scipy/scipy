@@ -3007,6 +3007,7 @@ class multinomial_gen(multi_rv_generic):
     --------
     scipy.stats.binom : The binomial distribution.
     numpy.random.Generator.multinomial : Sampling from the multinomial distribution.
+    scipy.stats.multivariate_hypergeom : The Multivariate Hypergeometric distribution.
     """  # noqa: E501
 
     def __init__(self, seed=None):
@@ -3997,8 +3998,9 @@ class multivariate_hypergeom_gen(multi_rv_generic):
 
     See also
     --------
-    scipy.stats.hypergeom
-    numpy.random.Generator.multivariate_hypergeometric
+    scipy.stats.hypergeom : The Hypergeometric distribution.
+    numpy.random.Generator.multivariate_hypergeometric : The Multivariate Hypergeometric distribution sampler in numpy.
+    scipy.stats.multinomial : The Multinomial distribution.
 
     References
     ----------
@@ -4008,7 +4010,7 @@ class multivariate_hypergeom_gen(multi_rv_generic):
     .. [2] Thomas J. Sargent and John Stachurski, 2020,
            Multivariate Hypergeometric Distribution
            https://python.quantecon.org/_downloads/pdf/multi_hyper.pdf
-    """
+    """  # noqa: E501
     def __init__(self, seed=None):
         super(multivariate_hypergeom_gen, self).__init__(seed)
         self.__doc__ = doccer.docformat(self.__doc__, mhg_docdict_params)
@@ -4038,9 +4040,9 @@ class multivariate_hypergeom_gen(multi_rv_generic):
         if xx.ndim == 0:
             raise ValueError("x must be an array.")
         if xx.size != 0 and not xx.shape[-1] == m.shape[-1]:
-            raise ValueError("Size of each quantile should be size of 'm': "
-                             "received %d, but expected %d." %
-                             (xx.shape[-1], m.shape[-1]))
+            raise ValueError(f"Size of each quantile should be size of 'm': "
+                             f"received {xx.shape[-1]}, "
+                             f"but expected {m.shape[-1]}.")
 
         xcond = np.any(xx != x, axis=-1)
         xcond = xcond | np.any((xx < 0) | (xx > m), axis=-1)
@@ -4206,8 +4208,11 @@ class multivariate_hypergeom_gen(multi_rv_generic):
 
         random_state = self._get_random_state(random_state)
         try:
-            # Generator is only available in numpy >= 1.17
-            if isinstance(random_state, np.random.Generator):
+            # Generator is only available in numpy >= 1.17 while
+            # `multivariate_hypergeometric` distribution is only
+            # available in numpy >= 1.18
+            if (isinstance(random_state, np.random.Generator) and
+                np.__version__ >= 1.18):
                 out = random_state.multivariate_hypergeometric(m, n,
                                                                size)
                 return _squeeze_output(out)
