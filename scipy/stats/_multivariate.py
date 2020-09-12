@@ -3854,8 +3854,9 @@ unitary_group = unitary_group_gen()
 
 _mhg_doc_default_callparams = """\
 m : array_like
-    The number of different types of objects
-    in the population.
+    The number of different types of objects in
+    the population. That is, :math:`m[i]` is the
+    number of objects of type :math:`i`. 
 n : array_like
     The number of samples taken from the population.
 """
@@ -3911,8 +3912,6 @@ class multivariate_hypergeom_gen(multi_rv_generic):
 
     Parameters
     ----------
-    x : array_like
-        Quantiles, with the last axis of `x` denoting the components.
     %(_doc_default_callparams)s
     %(_doc_random_state)s
 
@@ -3948,8 +3947,8 @@ class multivariate_hypergeom_gen(multi_rv_generic):
     >>> rv.pmf(x=[8, 4])
     0.0025207176631464523
 
-    The multivariate_hypergeom distribution is identical to the
-    corresponding hypergeom distribution (tiny numerical differences
+    The `multivariate_hypergeom` distribution is identical to the
+    corresponding `hypergeom` distribution (tiny numerical differences
     notwithstanding) when only two types (good and bad) of objects
     are present in the population:
 
@@ -3959,7 +3958,7 @@ class multivariate_hypergeom_gen(multi_rv_generic):
     >>> hypergeom.pmf(k=3, M=15, n=4, N=10)
     0.43956043956044005
 
-    The functions ``pmf``, ``logpmf``, ``mean``, ``var``, and ``rvs``
+    The functions ``pmf``, ``logpmf``, ``mean``, ``var``, ``cov``, and ``rvs``
     support broadcasting, under the convention that the vector parameters
     (``x`` and ``m``) are interpreted as if each row along the last axis
     is a single object. For instance:
@@ -4053,9 +4052,7 @@ class multivariate_hypergeom_gen(multi_rv_generic):
         if cond.ndim != 0:
             result[cond] = bad_value
         elif cond:
-            if result.ndim == 0:
-                return bad_value
-            result[...] = bad_value
+            return bad_value
         if result.ndim == 0:
             return result[()]
         return result

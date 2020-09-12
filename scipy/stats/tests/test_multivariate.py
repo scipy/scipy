@@ -1652,6 +1652,11 @@ class TestMultivariateHypergeom(object):
         vals4 = multivariate_hypergeom.logpmf(x=[3, 4], m=[-5, 10], n=7)
         assert_allclose(vals4, np.NAN, rtol=1e-8)
 
+        vals5 = multivariate_hypergeom.pmf(x=[[1, 2], [3, 4]],
+                                           m=[[-4, -6], [-5, -10]],
+                                           n=[3, 7])
+        assert_allclose(vals5, [np.NAN, np.NAN], rtol=1e-8)
+
     def test_reduces_hypergeom(self):
         # test that the multivariate_hypergeom pmf reduces to the
         # hypergeom pmf in the 2d case.
@@ -1674,6 +1679,16 @@ class TestMultivariateHypergeom(object):
         rv = multivariate_hypergeom(m=[[3, 5], [5, 10]], n=[4, 9])
         rvs = rv.rvs(size=(1000, 2), random_state=123)
         assert_allclose(rvs.mean(0), rv.mean(), rtol=1e-2)
+
+    def test_rvs_numpy(self):
+        if np.__version__ < '1.17':
+            pytest.skip("Generators only present in numpy>=1.17")
+        rng_sc = np.random.Generator(np.random.PCG64(123))
+        rv = multivariate_hypergeom(m=[3, 5], n=4)
+        rvs_sc = rv.rvs(size=100, random_state=rng_sc)
+        rng_np = np.random.Generator(np.random.PCG64(123))
+        rvs_np = rng_np.multivariate_hypergeometric([3, 5], 4, size=100)
+        assert_equal(rvs_sc, rvs_np)
 
     def test_pmf(self):
         vals0 = multivariate_hypergeom.pmf(x=[5], m=[5], n=5)
@@ -1787,6 +1802,11 @@ class TestMultivariateHypergeom(object):
         assert_allclose(mhg_frozen.logpmf(x),
                         multivariate_hypergeom.logpmf(x, m, n))
         assert_allclose(mhg_frozen.var(), multivariate_hypergeom.var(m, n))
+        assert_allclose(mhg_frozen.cov(), multivariate_hypergeom.cov(m, n))
+
+    def test_invalid_params(self):
+        assert_raises(ValueError, multivariate_hypergeom.pmf, 5, 10, 5)
+        assert_raises(ValueError, multivariate_hypergeom.pmf, 5, [10], 5)
 
 
 def check_pickling(distfn, args):
