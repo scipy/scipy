@@ -1668,12 +1668,12 @@ class TestMultivariateHypergeom(object):
         # to the true mean.
         rv = multivariate_hypergeom(m=[3, 5], n=4)
         rvs = rv.rvs(size=1000, random_state=123)
-        assert_almost_equal(rvs.mean(0), rv.mean(), decimal=1)
+        assert_allclose(rvs.mean(0), rv.mean(), rtol=1e-2)
 
     def test_rvs_broadcasting(self):
         rv = multivariate_hypergeom(m=[[3, 5], [5, 10]], n=[4, 9])
         rvs = rv.rvs(size=(1000, 2), random_state=123)
-        assert_almost_equal(rvs.mean(0), rv.mean(), decimal=1)
+        assert_allclose(rvs.mean(0), rv.mean(), rtol=1e-2)
 
     def test_pmf(self):
         vals0 = multivariate_hypergeom.pmf(x=[5], m=[5], n=5)
