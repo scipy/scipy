@@ -524,7 +524,7 @@ def _quadratic_assignment_faq(A, B,
 
         # [1] Algorithm 1 Line 6 - Update P
         P_i1 = alpha * P + (1 - alpha) * Q
-        if n_unseed > 0 and np.linalg.norm(P - P_i1)/np.sqrt(n_unseed) < tol:
+        if np.linalg.norm(P - P_i1) / np.sqrt(n_unseed) < tol:
             P = P_i1
             break
         P = P_i1
