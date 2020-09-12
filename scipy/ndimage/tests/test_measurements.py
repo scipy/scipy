@@ -700,7 +700,7 @@ def test_median03():
 
 def test_median_gh12836_bool():
     # test boolean addition fix on example from gh-12836
-    a = np.asarray([1, 1], dtype=np.bool)
+    a = np.asarray([1, 1], dtype=bool)
     output = ndimage.median(a, labels=np.ones((2,)), index=[1])
     assert_array_almost_equal(output, [1.0])
 
