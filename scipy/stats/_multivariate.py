@@ -3855,19 +3855,19 @@ unitary_group = unitary_group_gen()
 _mhg_doc_default_callparams = """\
 m : array_like
     The number of different types of objects
-    in the population
+    in the population.
 n : array_like
     The number of samples taken from the population.
 """
 
 _mhg_doc_callparams_note = \
-"""Array `m` must contain only positive integers. Quantiles `x` must
-sum up to the sample size `n`. If the quantile :math:`i` contain
+"""`m` must be an array of positive integers. Quantiles `x` must
+sum up to the sample size `n`. If the quantile :math:`i` contains
 values out of the range :math:`[0, m_i]` where :math:`m_i` is the
 number of objects of type :math:`i` in the population, appropriate
-values (like zero by `pmf` method) are returned by the called
+values (like zero by ``pmf`` method) are returned by the called
 methods. If `m` or `n` contain negative values, the result will
-contain `nan`s there.
+contain ``nan`` there.
 """
 
 _mhg_doc_frozen_callparams = ""
