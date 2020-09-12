@@ -4212,7 +4212,7 @@ class multivariate_hypergeom_gen(multi_rv_generic):
             # `multivariate_hypergeometric` distribution is only
             # available in numpy >= 1.18
             if (isinstance(random_state, np.random.Generator) and
-                np.__version__ >= 1.18):
+                np.__version__ >= '1.18'):
                 out = random_state.multivariate_hypergeometric(m, n,
                                                                size)
                 return _squeeze_output(out)
