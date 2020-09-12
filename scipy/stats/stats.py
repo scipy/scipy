@@ -3773,14 +3773,14 @@ def pearsonr(x, y):
     where :math:`m_x` is the mean of the vector :math:`x` and :math:`m_y` is
     the mean of the vector :math:`y`.
 
-    Under the assumption that x and y are drawn from independent normal
-    distributions (so the population correlation coefficient is 0), the
-    probability density function of the sample correlation coefficient r
-    is ([1]_, [2]_)::
+    Under the assumption that :math:`x` and :math:`m_y` are drawn from
+    independent normal distributions (so the population correlation coefficient
+    is 0), the probability density function of the sample correlation
+    coefficient :math:`r` is ([1]_, [2]_):
 
-               (1 - r**2)**(n/2 - 2)
-        f(r) = ---------------------
-                  B(1/2, n/2 - 1)
+    .. math::
+
+        f(r) = \frac{{(1-r^2)}^{n/2-2}}{\mathrm{B}(\frac{1}{2},\frac{n}{2}-1)}
 
     where n is the number of samples, and B is the beta function.  This
     is sometimes referred to as the exact distribution of r.  This is
