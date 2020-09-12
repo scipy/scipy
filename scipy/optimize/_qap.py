@@ -474,7 +474,7 @@ def _quadratic_assignment_faq(A, B,
     # [1] Algorithm 1 Line 1 - choose initialization
     if isinstance(P0, str):
         # initialize J, a doubly stochastic barycenter
-        J = np.ones((n_unseed, n_unseed)) / float(n_unseed)
+        J = np.ones((n_unseed, n_unseed)) / n_unseed
         if P0 == 'barycenter':
             P = J
         elif P0 == 'randomized':
