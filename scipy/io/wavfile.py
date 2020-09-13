@@ -538,7 +538,7 @@ def _handle_pad_byte(fid, size):
         fid.seek(1, 1)
 
 
-def read(filename, mmap=False, int_form='lj'):
+def read(filename, mmap=False, int_format='lj'):
     """
     Open a WAV file.
 
@@ -553,7 +553,7 @@ def read(filename, mmap=False, int_form='lj'):
         with some bit depths; see Notes.  Only to be used on real files.
 
         .. versionadded:: 0.12.0
-    int_form : {'lj', 'rj', 'fp', 'fs'}
+    int_format : {'lj', 'rj', 'fp', 'fs'}
         The format of the returned data for integer PCM files.  (Float files
         are always returned in their native type.)  See Notes for details on
         each format.
@@ -704,7 +704,7 @@ def read(filename, mmap=False, int_form='lj'):
     else:
         fid = open(filename, 'rb')
 
-    if mmap and int_form != 'lj':
+    if mmap and int_format != 'lj':
         raise ValueError('mmap must lj')
 
     try:
@@ -751,24 +751,24 @@ def read(filename, mmap=False, int_form='lj'):
                                         is_big_endian, block_align, mmap)
                 if format_tag == WAVE_FORMAT.IEEE_FLOAT:
                     continue
-                if int_form == 'lj':
+                if int_format == 'lj':
                     pass
-                elif int_form == 'rj':
+                elif int_format == 'rj':
                     if bit_depth <= 8:
                         data = (data - 128).view(numpy.int8)
                     data = data >> (data.itemsize*8 - bit_depth)
-                elif int_form == 'fp':
+                elif int_format == 'fp':
                     if bit_depth <= 8:
                         data = (data - 128).view(numpy.int8)
                     data = data >> (data.itemsize*8 - bit_depth)
                     data = data / (2**(bit_depth - 1))
-                elif int_form == 'fs':
+                elif int_format == 'fs':
                     if bit_depth <= 8:
                         data = (data - 128).view(numpy.int8)
                     data = data >> (data.itemsize*8 - bit_depth)
                     data = data / (2**(bit_depth - 1) - 1)
                 else:
-                    raise ValueError('int_form not understood')
+                    raise ValueError('int_format not understood')
             elif chunk_id == b'LIST':
                 # Someday this could be handled properly but for now skip it
                 _skip_unknown_chunk(fid, is_big_endian)

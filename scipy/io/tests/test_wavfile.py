@@ -28,7 +28,7 @@ def test_read_1():
 
         del data
 
-    rate, data = wavfile.read(datafile(filename), mmap=False, int_form='rj')
+    rate, data = wavfile.read(datafile(filename), mmap=False, int_format='rj')
 
     assert_equal(rate, 44100)
     assert data.dtype == np.int32  # actually np.intc on Windows
@@ -47,7 +47,7 @@ def test_read_2():
 
         del data
 
-    rate, data = wavfile.read(datafile(filename), mmap=False, int_form='rj')
+    rate, data = wavfile.read(datafile(filename), mmap=False, int_format='rj')
 
     assert_equal(rate, 8000)
     assert_(np.issubdtype(data.dtype, np.int8))  # signed
@@ -62,11 +62,11 @@ def test_read_2():
 
 def test_read_3():
     # Little-endian float
-    for mmap, int_form in [(False, 'lj'), (False, 'rj'),
-                           (False, 'fp'), (False, 'fs'), (True, 'lj')]:
+    for mmap, int_format in [(False, 'lj'), (False, 'rj'),
+                             (False, 'fp'), (False, 'fs'), (True, 'lj')]:
         filename = 'test-44100Hz-2ch-32bit-float-le.wav'
         rate, data = wavfile.read(datafile(filename), mmap=mmap,
-                                  int_form=int_form)
+                                  int_format=int_format)
 
         assert_equal(rate, 44100)
         assert_(np.issubdtype(data.dtype, np.float32))
@@ -134,7 +134,7 @@ def test_5_bit_odd_size_no_pad():
 
         del data
 
-    rate, data = wavfile.read(datafile(filename), mmap=False, int_form='rj')
+    rate, data = wavfile.read(datafile(filename), mmap=False, int_format='rj')
 
     assert_equal(rate, 8000)
     assert_(np.issubdtype(data.dtype, np.int8))  # signed
@@ -193,7 +193,7 @@ def test_24_bit_odd_size_with_pad():
                         [+0x7fff_ff00, +0x7fff_ff00, +0x200]])
     #                     ^ clipped
 
-    rate, data = wavfile.read(datafile(filename), mmap=False, int_form='rj')
+    rate, data = wavfile.read(datafile(filename), mmap=False, int_format='rj')
 
     assert_equal(rate, 8000)
     assert data.dtype == np.int32  # actually np.intc on Windows
@@ -211,7 +211,7 @@ def test_24_bit_odd_size_with_pad():
                         [+0x7fffff, +0x7fffff, +2]])
     #                     ^ clipped
 
-    rate, data = wavfile.read(datafile(filename), mmap=False, int_form='fp')
+    rate, data = wavfile.read(datafile(filename), mmap=False, int_format='fp')
 
     assert_equal(rate, 8000)
     assert_(np.issubdtype(data.dtype, np.float64))
@@ -220,7 +220,7 @@ def test_24_bit_odd_size_with_pad():
     assert_equal(data[:4, 0], [-1, -0.5, 0, 0.5])
     assert_equal(data[:, 2], np.array([-2, -1, 0, 1, 2]) / (2**23))
 
-    rate, data = wavfile.read(datafile(filename), mmap=False, int_form='fs')
+    rate, data = wavfile.read(datafile(filename), mmap=False, int_format='fs')
 
     assert_equal(rate, 8000)
     assert_(np.issubdtype(data.dtype, np.float64))
