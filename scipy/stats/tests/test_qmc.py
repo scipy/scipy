@@ -10,6 +10,8 @@ from scipy.stats import shapiro
 
 from scipy.stats._sobol import _test_find_index
 from scipy.stats import qmc
+from scipy.stats._qmc import (van_der_corput, n_primes, primes_from_2_to,
+                              _perturb_discrepancy, _update_discrepancy)
 
 
 class TestUtils(object):
@@ -63,8 +65,8 @@ class TestUtils(object):
         space_1 = (2.0 * space_1 - 1.0) / (2.0 * 6.0)
 
         disc_init = qmc.discrepancy(space_1[:-1], iterative=True)
-        disc_iter = qmc._update_discrepancy(space_1[-1], space_1[:-1],
-                                            disc_init)
+        disc_iter = _update_discrepancy(space_1[-1], space_1[:-1],
+                                        disc_init)
 
         assert_allclose(disc_iter, 0.0081, atol=1e-4)
 
@@ -80,41 +82,41 @@ class TestUtils(object):
         doe[row_1, col], doe[row_2, col] = doe[row_2, col], doe[row_1, col]
 
         disc_valid = qmc.discrepancy(doe)
-        disc_perm = qmc._perturb_discrepancy(doe_init, row_1, row_2, col,
-                                             disc_init)
+        disc_perm = _perturb_discrepancy(doe_init, row_1, row_2, col,
+                                         disc_init)
 
         assert_allclose(disc_valid, disc_perm)
 
     def test_n_primes(self):
-        n_primes = qmc.n_primes(10)
-        assert n_primes[-1] == 29
+        primes = n_primes(10)
+        assert primes[-1] == 29
 
-        n_primes = qmc.n_primes(168)
-        assert n_primes[-1] == 997
+        primes = n_primes(168)
+        assert primes[-1] == 997
 
-        n_primes = qmc.n_primes(350)
-        assert n_primes[-1] == 2357
+        primes = n_primes(350)
+        assert primes[-1] == 2357
 
     def test_primes(self):
-        primes = qmc.primes_from_2_to(50)
+        primes = primes_from_2_to(50)
         out = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47]
         assert_allclose(primes, out)
 
 
 class TestQMC(object):
     def test_van_der_corput(self):
-        sample = qmc.van_der_corput(10)
+        sample = van_der_corput(10)
         out = [0., 0.5, 0.25, 0.75, 0.125, 0.625, 0.375, 0.875, 0.0625, 0.5625]
         assert_almost_equal(sample, out)
 
-        sample = qmc.van_der_corput(7, start_index=3)
+        sample = van_der_corput(7, start_index=3)
         assert_almost_equal(sample, out[3:])
 
     def test_van_der_corput_scramble(self):
-        out = qmc.van_der_corput(10, scramble=True, seed=123456)
+        out = van_der_corput(10, scramble=True, seed=123456)
 
-        sample = qmc.van_der_corput(7, start_index=3, scramble=True,
-                                    seed=123456)
+        sample = van_der_corput(7, start_index=3, scramble=True,
+                                seed=123456)
         assert_almost_equal(sample, out[3:])
 
     def test_halton(self):
