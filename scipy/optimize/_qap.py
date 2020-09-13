@@ -36,10 +36,10 @@ def quadratic_assignment(A, B, method="faq", options=None):
 
     Parameters
     ----------
-    A : 2d-array, square
+    A : 2-D array, square
         The square matrix :math:`A` in the objective function above.
 
-    B : 2d-array, square
+    B : 2-D array, square
         The square matrix :math:`B` in the objective function above.
 
     method :  str in {'faq', '2opt'} (default: 'faq')
@@ -50,7 +50,11 @@ def quadratic_assignment(A, B, method="faq", options=None):
     options : dict, optional
         A dictionary of solver options. All solvers support the following:
 
-        partial_match : 2d-array of integers, optional, (default = None)
+        maximize : bool (default: False)
+            Setting `maximize` to ``True`` solves the Graph Matching Problem
+            (GMP) rather than the Quadratic Assignment Problem (QAP).
+
+        partial_match : 2-D array of integers, optional (default: None)
             Allows the user to fix part of the matching between the two
             matrices. In the literature, a partial match is also
             known as a "seed" [2]_.
@@ -58,12 +62,8 @@ def quadratic_assignment(A, B, method="faq", options=None):
             Each row of `partial_match` specifies the indices of a pair of
             corresponding nodes, that is, node ``partial_match[i, 0]`` of `A`
             is matched to node ``partial_match[i, 1]`` of `B`. Accordingly,
-            ``partial_match`` is an array of size ``(m , 2)``, where ``m`` is
+            ``partial_match`` is an array of size ``(m, 2)``, where ``m`` is
             not greater than the number of nodes.
-
-        maximize : bool (default = False)
-            Setting `maximize` to ``True`` solves the Graph Matching Problem
-            (GMP) rather than the Quadratic Assingnment Problem (QAP).
 
         rng : {None, int, `~np.random.RandomState`, `~np.random.Generator`}
             This parameter defines the object to use for drawing random
@@ -82,8 +82,7 @@ def quadratic_assignment(A, B, method="faq", options=None):
     Returns
     -------
     res : OptimizeResult
-        A :class:`scipy.optimize.OptimizeResult` containing the following
-        fields.
+        `OptimizeResult` containing the following fields.
 
         col_ind : 1-D array
             An array of column indices corresponding with the best
@@ -122,9 +121,9 @@ def quadratic_assignment(A, B, method="faq", options=None):
     >>> import numpy as np
     >>> from scipy.optimize import quadratic_assignment
     >>> A = np.array([[0, 80, 150, 170], [80, 0, 130, 100],
-    ...              [150, 130, 0, 120], [170, 100, 120, 0]])
+    ...               [150, 130, 0, 120], [170, 100, 120, 0]])
     >>> B = np.array([[0, 5, 2, 7], [0, 0, 3, 8],
-    ...              [0, 0, 0, 3], [0, 0, 0, 0]])
+    ...               [0, 0, 0, 3], [0, 0, 0, 0]])
     >>> res = quadratic_assignment(A, B)
     >>> print(res)
      col_ind: array([0, 3, 2, 1])
@@ -135,9 +134,8 @@ def quadratic_assignment(A, B, method="faq", options=None):
     use ``col_ind`` to form the best permutation matrix found, then evaluate
     the objective function :math:`f(P) = trace(A^T P B P^T )`.
 
-    >>> n = A.shape[0]
     >>> perm = res['col_ind']
-    >>> P = np.eye(n, dtype=int)[perm]
+    >>> P = np.eye(len(A), dtype=int)[perm]
     >>> fun = np.trace(A.T @ P @ B @ P.T)
     >>> print(fun)
     3260
@@ -166,9 +164,9 @@ def quadratic_assignment(A, B, method="faq", options=None):
     :ref:`'faq' <optimize.qap-faq>`, does not find the global optimum.
 
     >>> A = np.array([[0, 5, 8, 6], [5, 0, 5, 1],
-    ...              [8, 5, 0, 2], [6, 1, 2, 0]])
+    ...               [8, 5, 0, 2], [6, 1, 2, 0]])
     >>> B = np.array([[0, 1, 8, 4], [1, 0, 5, 2],
-    ...              [8, 5, 0, 5], [4, 2, 5, 0]])
+    ...               [8, 5, 0, 5], [4, 2, 5, 0]])
     >>> res = quadratic_assignment(A, B)
     >>> print(res)
      col_ind: array([1, 0, 3, 2])
@@ -178,7 +176,7 @@ def quadratic_assignment(A, B, method="faq", options=None):
     If accuracy is important, consider using  :ref:`'2opt' <optimize.qap-2opt>`
     to refine the solution.
 
-    >>> guess = np.array([np.arange(A.shape[0]), res.col_ind]).T
+    >>> guess = np.array([np.arange(len(A)), res.col_ind]).T
     >>> res = quadratic_assignment(A, B, method="2opt",
     ...                            options = {'partial_guess': guess})
     >>> print(res)
@@ -278,10 +276,10 @@ def _quadratic_assignment_faq(A, B,
 
     Parameters
     ----------
-    A : 2d-array, square
+    A : 2-D array, square
         The square matrix :math:`A` in the objective function above.
 
-    B : 2d-array, square
+    B : 2-D array, square
         The square matrix :math:`B` in the objective function above.
 
     method :  str in {'faq', '2opt'} (default: 'faq')
@@ -292,10 +290,21 @@ def _quadratic_assignment_faq(A, B,
     Options
     -------
 
-    maximize : bool (default = False)
+    maximize : bool (default: False)
         Setting `maximize` to ``True`` solves the Graph Matching Problem (GMP)
-        rather than the Quadratic Assingnment Problem (QAP). This is
+        rather than the Quadratic Assignment Problem (QAP). This is
         accomplished through trivial negation of the objective function.
+
+    partial_match : 2-D array of integers, optional (default: None)
+        Allows the user to fix part of the matching between the two
+        matrices. In the literature, a partial match is also known as a
+        "seed".
+
+        Each row of `partial_match` specifies the indices of a pair of
+        corresponding nodes, that is, node ``partial_match[i, 0]`` of `A` is
+        matched to node ``partial_match[i, 1]`` of `B`. Accordingly,
+        ``partial_match`` is an array of size ``(m, 2)``, where ``m`` is
+        not greater than the number of nodes, :math:`n`.
 
     rng : {None, int, `~np.random.RandomState`, `~np.random.Generator`}
         This parameter defines the object to use for drawing random
@@ -308,20 +317,8 @@ def _quadratic_assignment_faq(A, B,
         instance, then that object is used.
         Default is None.
 
-    partial_match : 2d-array of integers, optional, (default = None)
-        Allows the user to fix part of the matching between the two
-        matrices. In the literature, a partial match is also known as a
-        "seed".
-
-        Each row of `partial_match` specifies the indices of a pair of
-        corresponding nodes, that is, node ``partial_match[i, 0]`` of `A` is
-        matched to node ``partial_match[i, 1]`` of `B`. Accordingly,
-        ``partial_match`` is an array of size ``(m , 2)``, where ``m`` is
-        not greater than the number of nodes, :math:`n`.
-
-    P0 : 2d-array, "barycenter", or "randomized" (default = "barycenter")
-        The initial (guess) permutation matrix or search "position"
-        `P0`.
+    P0 : 2-D array, "barycenter", or "randomized" (default: "barycenter")
+        The initial (guess) permutation matrix or search "position".
 
         `P0` need not be a proper permutation matrix;
         however, it must be :math:`m' x m'`, where :math:`m' = n - m`,
@@ -329,16 +326,16 @@ def _quadratic_assignment_faq(A, B,
         sum to 1.
 
         If unspecified or ``"barycenter"``, the non-informative "flat
-        doubly stochastic matrix" :math:`J = 1*1^T/m'`, where :math:`1` is
-        a :math:`m' \times 1` array of ones, is used. This is the "barycenter"
-        of the search space of doubly-stochastic matrices.
+        doubly stochastic matrix" :math:`J = \mathbf{1} \cdot \mathbf{1}^T/m'`,
+        where :math:`1` is a :math:`m' \times 1` array of ones, is used. This
+        is the "barycenter" of the search space of doubly-stochastic matrices.
 
         If ``"randomized"``, the algorithm will start from the
         randomized initial search position :math:`P_0 = (J + K)/2`,
         where :math:`J` is the "barycenter" and :math:`K` is a random
         doubly stochastic matrix.
 
-    shuffle_input : bool (default = False)
+    shuffle_input : bool (default: False)
         To avoid artificially high or low matching due to inherent
         sorting of input matrices, gives users the option
         to shuffle the nodes. Results are then unshuffled so that the
@@ -346,10 +343,10 @@ def _quadratic_assignment_faq(A, B,
         Shuffling may cause the algorithm to be non-deterministic,
         unless a random seed is set or an `rng` option is provided.
 
-    maxiter : int, positive (default = 30)
+    maxiter : int, positive (default: 30)
         Integer specifying the max number of Franke-Wolfe iterations performed.
 
-    tol : float (default = 0.03)
+    tol : float (default: 0.03)
         A threshold for the stopping criterion. Franke-Wolfe
         iteration terminates when the change in search position between
         iterations is sufficiently small, that is, when the relative Frobenius
@@ -359,8 +356,7 @@ def _quadratic_assignment_faq(A, B,
     Returns
     -------
     res : OptimizeResult
-        A :class:`scipy.optimize.OptimizeResult` containing the following
-        fields.
+        `OptimizeResult` containing the following fields.
 
         col_ind : 1-D array
             An array of column indices corresponding with the best
@@ -391,7 +387,7 @@ def _quadratic_assignment_faq(A, B,
     >>> B = np.random.rand(n, n)
     >>> res = quadratic_assignment(A, B)  # FAQ is default method
     >>> print(res.fun)
-    46.871483385480545 # may vary
+    46.871483385480545
 
     >>> options = {"P0": "randomized"}  # use randomized initialization
     >>> res = quadratic_assignment(A, B, options=options)
@@ -444,12 +440,12 @@ def _quadratic_assignment_faq(A, B,
         raise ValueError(msg)
 
     rng = check_random_state(rng)
-    n = A.shape[0]  # number of vertices in graphs
-    n_seeds = partial_match.shape[0]  # number of seeds
+    n = len(A)  # number of vertices in graphs
+    n_seeds = len(partial_match)  # number of seeds
     n_unseed = n - n_seeds
 
-    # check outlier cases
-    if n == 0 or partial_match.shape[0] == n:
+    # check trivial cases
+    if n == 0 or n_seeds == n:
         score = _calc_score(A, B, partial_match[:, 1])
         res = {"col_ind": partial_match[:, 1], "fun": score, "nit": 0}
         return OptimizeResult(res)
@@ -538,9 +534,7 @@ def _quadratic_assignment_faq(A, B,
     unshuffled_perm[perm_A] = perm_B[perm]
 
     score = _calc_score(A, B, unshuffled_perm)
-
     res = {"col_ind": unshuffled_perm, "fun": score, "nit": n_iter}
-
     return OptimizeResult(res)
 
 
@@ -589,14 +583,15 @@ def _doubly_stochastic(P, tol=1e-3):
     return P_eps
 
 
-def _quadratic_assignment_2opt(A, B, maximize=False, partial_match=None,
-                               rng=None, partial_guess=None,
+def _quadratic_assignment_2opt(A, B, maximize=False, rng=None,
+                               partial_match=None,
+                               partial_guess=None,
                                **unknown_options):
     r"""
     Solve the quadratic assignment problem (approximately).
 
     This function solves the Quadratic Assignment Problem (QAP) and the
-    Graph Matching Problem (GMP) using the 2-opt algorithm [3]_.
+    Graph Matching Problem (GMP) using the 2-opt algorithm [1]_.
 
     Quadratic assignment solves problems of the following form:
 
@@ -622,10 +617,10 @@ def _quadratic_assignment_2opt(A, B, maximize=False, partial_match=None,
 
     Parameters
     ----------
-    A : 2d-array, square
+    A : 2-D array, square
         The square matrix :math:`A` in the objective function above.
 
-    B : 2d-array, square
+    B : 2-D array, square
         The square matrix :math:`B` in the objective function above.
 
     method :  str in {'faq', '2opt'} (default: 'faq')
@@ -636,9 +631,9 @@ def _quadratic_assignment_2opt(A, B, maximize=False, partial_match=None,
     Options
     -------
 
-    maximize : bool (default = False)
+    maximize : bool (default: False)
         Setting `maximize` to ``True`` solves the Graph Matching Problem (GMP)
-        rather than the Quadratic Assingnment Problem (QAP).
+        rather than the Quadratic Assignment Problem (QAP).
 
     rng : {None, int, `~np.random.RandomState`, `~np.random.Generator`}
         This parameter defines the object to use for drawing random
@@ -651,7 +646,7 @@ def _quadratic_assignment_2opt(A, B, maximize=False, partial_match=None,
         instance, then that object is used.
         Default is None.
 
-    partial_match : 2d-array of integers, optional, (default = None)
+    partial_match : 2-D array of integers, optional (default: None)
         Allows the user to fix part of the matching between the two
         matrices. In the literature, a partial match is also known as a
         "seed".
@@ -659,10 +654,10 @@ def _quadratic_assignment_2opt(A, B, maximize=False, partial_match=None,
         Each row of `partial_match` specifies the indices of a pair of
         corresponding nodes, that is, node ``partial_match[i, 0]`` of `A` is
         matched to node ``partial_match[i, 1]`` of `B`. Accordingly,
-        ``partial_match`` is an array of size ``(m , 2)``, where ``m`` is
+        ``partial_match`` is an array of size ``(m, 2)``, where ``m`` is
         not greater than the number of nodes.
 
-    partial_guess : 2d-array of integers, optional, (default = None)
+    partial_guess : 2-D array of integers, optional (default: None)
         Allows the user to provide a guess for the matching between the two
         matrices. Unlike `partial_match`, `partial_guess` does not fix the
         indices; they are still free to be optimized.
@@ -670,15 +665,14 @@ def _quadratic_assignment_2opt(A, B, maximize=False, partial_match=None,
         Each row of `partial_guess` specifies the indices of a pair of
         corresponding nodes, that is, node ``partial_guess[i, 0]`` of `A` is
         matched to node ``partial_guess[i, 1]`` of `B`. Accordingly,
-        ``partial_guess`` is an array of size ``(m , 2)``, where ``m`` is
+        ``partial_guess`` is an array of size ``(m, 2)``, where ``m`` is
         less than or equal to the number of nodes.
 
 
     Returns
     -------
     res : OptimizeResult
-        A :class:`scipy.optimize.OptimizeResult` containing the following
-        fields.
+        `OptimizeResult` containing the following fields.
 
         col_ind : 1-D array
             An array of column indices corresponding with the best
@@ -696,7 +690,7 @@ def _quadratic_assignment_2opt(A, B, maximize=False, partial_match=None,
 
     References
     ----------
-    .. [3] "2-opt," Wikipedia.
+    .. [1] "2-opt," Wikipedia.
            https://en.wikipedia.org/wiki/2-opt
     """
 
@@ -705,7 +699,7 @@ def _quadratic_assignment_2opt(A, B, maximize=False, partial_match=None,
     A, B, partial_match = _common_input_validation(A, B, partial_match)
 
     N = len(A)
-    # check outlier cases
+    # check trivial cases
     if N == 0 or partial_match.shape[0] == N:
         score = _calc_score(A, B, partial_match[:, 1])
         res = {"col_ind": partial_match[:, 1], "fun": score, "nit": 0}
@@ -784,5 +778,4 @@ def _quadratic_assignment_2opt(A, B, maximize=False, partial_match=None,
             done = True
 
     res = {"col_ind": perm, "fun": best_score, "nit": n_iter}
-
     return OptimizeResult(res)
