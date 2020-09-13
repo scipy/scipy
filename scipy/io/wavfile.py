@@ -639,14 +639,15 @@ def read(filename, mmap=False, int_format='lj'):
     This converts the integer values to float, dividing by 2**(N-1), which
     interprets them as fixed-point numbers with the binary point
     to the right of the MSbit, so it can reach -1.0 but cannot reach +1.0.
-    [3]_ [4]_
+    [3]_ [4]_  This behaves the same as MATLAB's ``audioread`` function. [5]_
+    [6]_
 
     An 8-bit file would reach from -1.0 to 0.992 (127/128), for example.
 
     **Full-scale format**
     This converts the integer values to float, dividing by 2**(N-1) - 1, using
     the convention that full-scale is defined by the highest positive
-    code. [5]_ [6]_
+    code. [7]_ [8]_
 
     An 8-bit file would reach from -1.008 (-128/127) to +1.0, for example.
 
@@ -662,8 +663,13 @@ def read(filename, mmap=False, int_format='lj'):
     .. [4] Universal Serial Bus Device Class Definition for Audio Data Formats,
        Release 3.0, 2016, Section 2.3.1.6.1 "PCM Format"
        https://www.usb.org/document-library/usb-audio-devices-rev-30-and-adopters-agreement
-    .. [5] AES17-1998 (r2009)
-    .. [6] IEC 61606-3:2008
+    .. [5] MATLAB audioread function
+       https://www.mathworks.com/help/matlab/ref/audioread.html
+    .. [6] Walter Roberson, Response to "What does the 'audioread' function
+       actually do?", MATLAB Answers, 7 Jul 2016
+       https://www.mathworks.com/matlabcentral/answers/294112-what-does-the-audioread-function-actually-do#comment_377989
+    .. [7] AES17-1998 (r2009)
+    .. [8] IEC 61606-3:2008
 
     Examples
     --------
