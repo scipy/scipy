@@ -582,8 +582,7 @@ class TestCorrSpearmanr(object):
         assert_raises(ValueError, stats.spearmanr, x, x, nan_policy='foobar')
 
     def test_nan_policy_bug_12458(self):
-        np.random.seed(5)
-        x = np.random.rand(5, 10)
+        x = np.random.default_rng(5).uniform(0, 1, 50).reshape(5,10)
         k = 6
         x[:, k] = np.nan
         y = np.delete(x, k, axis=1)
@@ -591,7 +590,7 @@ class TestCorrSpearmanr(object):
         cory, py = stats.spearmanr(y)
         corx = np.delete(np.delete(corx, k, axis=1), k, axis=0)
         px = np.delete(np.delete(px, k, axis=1), k, axis=0)
-        assert_allclose(corx, cory)
+        assert_allclose(corx, cory, atol=1e-14)
         assert_allclose(px, py, atol=1e-14)
 
     def test_sXX(self):
