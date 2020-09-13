@@ -1447,7 +1447,7 @@ class Sobol(QMCEngine):
             if n_samples == 1:
                 sample = self._first_point
             else:
-                _draw(n_samples, self.num_generated, self.dim, self._sv,
+                _draw(n_samples - 1, self.num_generated, self.dim, self._sv,
                       self._quasi, sample)
                 sample = np.concatenate([self._first_point,
                                          sample])[:n_samples]

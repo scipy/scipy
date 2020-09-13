@@ -31,6 +31,21 @@ class TestSobol:
             engine = Sobol(1)
             engine.random(10)
 
+    def test_random_base2(self):
+        self.setUp()
+        engine = Sobol(1, scramble=False)
+        sample = engine.random_base2(2)
+        assert_array_equal(self.draws_unscrambled_1d[:4],
+                           sample)
+
+        # resampling still having N=2**n
+        sample = engine.random_base2(2)
+        assert_array_equal(self.draws_unscrambled_1d[4:8],
+                           sample)
+
+        # resampling again but leading to N!=2**n
+        assert_raises(ValueError, engine.random_base2, 2)
+
     def test_raise(self):
         assert_raises(ValueError, Sobol, Sobol.MAXDIM + 1)
 
@@ -90,17 +105,15 @@ class TestSobol:
         assert_equal(count2, Counter({0.5: 1111}))
         assert_equal(count3, Counter({0.25: 557, 0.75: 554}))
 
-    @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_UnscrambledSobolBounds(self):
         engine = Sobol(1111, scramble=False)
-        draws = engine.random(1000)
+        draws = engine.random(1024)
         assert_(np.all(draws >= 0))
         assert_(np.all(draws <= 1))
 
-    @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_UnscrambledDistributionSobol(self):
         engine = Sobol(1111, scramble=False)
-        draws = engine.random(1000)
+        draws = engine.random(1024)
         assert_array_almost_equal(
             np.mean(draws, axis=0), np.repeat(0.5, 1111), decimal=2
         )
@@ -148,10 +161,9 @@ class TestSobol:
         draws = np.vstack([engine_unscrambled_3d.random() for i in range(10)])
         assert_array_equal(self.draws_unscrambled_3d, draws)
 
-    @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_ScrambledSobolBounds(self):
         engine = Sobol(100, scramble=True)
-        draws = engine.random(1000)
+        draws = engine.random(1024)
         assert_(np.all(draws >= 0))
         assert_(np.all(draws <= 1))
 
@@ -174,7 +186,6 @@ class TestSobol:
             np.vstack(even_draws),
         )
 
-    @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_ScrambledDistributionSobol(self):
         engine = Sobol(10, scramble=True, seed=12345)
         draws = engine.random(512)
@@ -188,11 +199,10 @@ class TestSobol:
             np.percentile(draws, 75, axis=0), np.repeat(0.75, 10), decimal=2
         )
 
-    @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_0Dim(self):
         engine = Sobol(0, scramble=False)
-        draws = engine.random(5)
-        assert_array_equal(np.empty((5, 0)), draws)
+        draws = engine.random(4)
+        assert_array_equal(np.empty((4, 0)), draws)
 
     def test_discrepancy(self):
         engine_sobol = Sobol(10, scramble=False)
