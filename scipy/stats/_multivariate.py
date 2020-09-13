@@ -3007,7 +3007,7 @@ class multinomial_gen(multi_rv_generic):
     --------
     scipy.stats.binom : The binomial distribution.
     numpy.random.Generator.multinomial : Sampling from the multinomial distribution.
-    scipy.stats.multivariate_hypergeom : The Multivariate Hypergeometric distribution.
+    scipy.stats.multivariate_hypergeom : The multivariate hypergeometric distribution.
     """  # noqa: E501
 
     def __init__(self, seed=None):
@@ -3855,9 +3855,9 @@ unitary_group = unitary_group_gen()
 
 _mhg_doc_default_callparams = """\
 m : array_like
-    The number of different types of objects in
-    the population. That is, :math:`m[i]` is the
-    number of objects of type :math:`i`. 
+    The number of each type of object in the population.
+    That is, :math:`m[i]` is the number of objects of
+    type :math:`i`.
 n : array_like
     The number of samples taken from the population.
 """
@@ -3920,10 +3920,6 @@ class multivariate_hypergeom_gen(multi_rv_generic):
     -----
     %(_doc_callparams_note)s
 
-    Alternatively, the object may be called (as a function) to fix the `m`
-    and `n` parameters, returning a "frozen" multivariate hypergeometric
-    random variable:
-
     The probability mass function for `multivariate_hypergeom` is
 
     .. math::
@@ -3934,8 +3930,8 @@ class multivariate_hypergeom_gen(multi_rv_generic):
         \sum_{i=1}^k x_i = n
 
     where :math:`m_i` are the number of objects of type :math:`i`, :math:`M`
-    is the total number of objects in the population (sum of all
-    :math:`m_i`s), and :math:`n` is the size of the sample to be taken
+    is the total number of objects in the population (sum of all the
+    :math:`m_i`), and :math:`n` is the size of the sample to be taken
     from the population.
 
     .. versionadded:: 1.6.0
@@ -3943,15 +3939,21 @@ class multivariate_hypergeom_gen(multi_rv_generic):
     Examples
     --------
 
+    To evaluate the probability mass function of the multivariate
+    hypergeometric distribution, with a dichotomous population of size
+    :math:`10` and :math:`20`, at a sample of size :math:`12` with
+    :math:`8` objects of the first type and :math:`4` objects of the
+    second type, use:
+
     >>> from scipy.stats import multivariate_hypergeom
-    >>> rv = multivariate_hypergeom(m=[10, 20], n=12)
-    >>> rv.pmf(x=[8, 4])
+    >>> multivariate_hypergeom.pmf(x=[8, 4], m=[10, 20], n=12)
     0.0025207176631464523
 
     The `multivariate_hypergeom` distribution is identical to the
     corresponding `hypergeom` distribution (tiny numerical differences
     notwithstanding) when only two types (good and bad) of objects
-    are present in the population:
+    are present in the population as in the example above. Consider
+    another example for a comparison with the hypergeometric distribution:
 
     >>> from scipy.stats import hypergeom
     >>> multivariate_hypergeom.pmf(x=[3, 1], m=[10, 5], n=4)
@@ -3961,23 +3963,29 @@ class multivariate_hypergeom_gen(multi_rv_generic):
 
     The functions ``pmf``, ``logpmf``, ``mean``, ``var``, ``cov``, and ``rvs``
     support broadcasting, under the convention that the vector parameters
-    (``x`` and ``m``) are interpreted as if each row along the last axis
-    is a single object. For instance:
+    (``x``, ``m``, and ``n``) are interpreted as if each row along the last
+    axis is a single object. For instance:
 
-    >>> multivariate_hypergeom.pmf(x=[[3, 4], [4, 5]], m=[5, 10], n=[7, 9])
-    array([0.32634033, 0.25174825])
+    >>> multivariate_hypergeom.pmf(x=[[8, 4], [3, 1]], m=[[10, 20], [10, 5]], n=[12, 4])
+    array([0.00252072, 0.43956044])
 
-    Here, ``x.shape == (2, 2)``, ``m.shape == (2,)``, and ``n.shape == (2,)``,
-    but following the rules mentioned above they behave as if the rows
-    ``[3, 4]`` and ``[3, 5]`` in ``x``, ``[5, 10]`` in ``m``, and ``[7, 9]``
-    in ``n`` were a single object, and as if we had ``x.shape = (2,)``,
+    This combines the result of previous two examples in a single array.
+    In this example, the last axis of the each array ``x``, ``m``, and ``n``
+    are treated as independent objects and the ``pmf`` is exaluated over
+    each of them to generate a combined result.
+
+    Here, ``x.shape == (2, 2)``, ``m.shape == (2, 2)``, and
+    ``n.shape == (2,)`` but following the rules mentioned above, they behave
+    as if the rows ``[8, 4]`` and ``[3, 1]`` in ``x``, ``[10, 20]`` and
+    ``[10, 5]`` in ``m``, and ``12`` and ``4`` in ``n`` were two independent
+    objects, and as if we had two populations with ``x.shape = (2,)``,
     ``m.shape = (2,)``, and ``n.shape = ()``. To obtain the individual
-    elements without broadcasting, we would do this:
+    elements without broadcasting,  we would do this:
 
-    >>> multivariate_hypergeom.pmf([3, 4], m=[5, 10], n=7)
-    0.3263403263403265
-    >>> multivariate_hypergeom.pmf([4, 5], m=[5, 10], n=9)
-    0.25174825174825205
+    >>> multivariate_hypergeom.pmf([8, 4], m=[10, 20], n=12)
+    0.0025207176631464523
+    >>> multivariate_hypergeom.pmf([3, 1], m=[10, 5], n=4)
+    0.4395604395604395
 
     This broadcasting also works for ``cov``, where the output objects are
     square matrices of size ``m.shape[-1]``. For example:
@@ -3996,11 +4004,19 @@ class multivariate_hypergeom_gen(multi_rv_generic):
     ``multivariate_hypergeom.cov(m=[7, 9], n=8)`` and ``result[1]`` is equal
     to ``multivariate_hypergeom.cov(m=[10, 15], n=12)``.
 
+    Alternatively, the object may be called (as a function) to fix the `m`
+    and `n` parameters, returning a "frozen" multivariate hypergeometric
+    random variable.
+
+    >>> rv = multivariate_hypergeom(m=[10, 20], n=12)
+    >>> rv.pmf(x=[8, 4])
+    0.0025207176631464523
+
     See also
     --------
-    scipy.stats.hypergeom : The Hypergeometric distribution.
-    numpy.random.Generator.multivariate_hypergeometric : The Multivariate Hypergeometric distribution sampler in numpy.
-    scipy.stats.multinomial : The Multinomial distribution.
+    scipy.stats.hypergeom : The hypergeometric distribution.
+    numpy.random.Generator.multivariate_hypergeometric : The multivariate hypergeometric distribution sampler in numpy.
+    scipy.stats.multinomial : The multinomial distribution.
 
     References
     ----------
