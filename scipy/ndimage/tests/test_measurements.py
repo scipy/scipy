@@ -698,6 +698,20 @@ def test_median03():
     assert_almost_equal(output, 3.0)
 
 
+def test_median_gh12836_bool():
+    # test boolean addition fix on example from gh-12836
+    a = np.asarray([1, 1], dtype=bool)
+    output = ndimage.median(a, labels=np.ones((2,)), index=[1])
+    assert_array_almost_equal(output, [1.0])
+
+
+def test_median_no_int_overflow():
+    # test integer overflow fix on example from gh-12836
+    a = np.asarray([65, 70], dtype=np.int8)
+    output = ndimage.median(a, labels=np.ones((2,)), index=[1])
+    assert_array_almost_equal(output, [67.5])
+
+
 def test_variance01():
     with np.errstate(all='ignore'):
         for type in types:
