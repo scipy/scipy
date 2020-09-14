@@ -2630,12 +2630,21 @@ class _TestSlicingAssign(object):
         assert_raises(ValueError, A.__setitem__,
                       ([[1, 2, 3], [0, 3, 4], [4, 1, 3]],
                        [[1, 2, 4], [0, 1, 3]]), [2, 3, 4])
+        assert_raises(ValueError, A.__setitem__, (slice(4), 0),
+                      [[1, 2], [3, 4]])
 
     def test_assign_empty_spmatrix(self):
         A = self.spmatrix(np.ones((2, 3)))
         B = self.spmatrix((1, 2))
         A[1, :2] = B
         assert_array_equal(A.todense(), [[1, 1, 1], [0, 0, 1]])
+
+    def test_assign_1d_slice(self):
+        A = self.spmatrix(np.ones((3, 3)))
+        x = np.zeros(3)
+        A[:, 0] = x
+        A[1, :] = x
+        assert_array_equal(A.todense(), [[0, 1, 1], [0, 0, 0], [0, 1, 1]])
 
 class _TestFancyIndexing(object):
     """Tests fancy indexing features.  The tests for any matrix formats
