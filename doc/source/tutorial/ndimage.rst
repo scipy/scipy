@@ -134,14 +134,34 @@ boundary condition. The following boundary conditions are currently
 supported:
 
  ==========   ====================================   ====================
+  **mode**              **description**                  **example**
+ ==========   ====================================   ====================
  "nearest"    use the value at the boundary          [1 2 3]->[1 1 2 3 3]
  "wrap"       periodically replicate the array       [1 2 3]->[3 1 2 3 1]
  "reflect"    reflect the array at the boundary      [1 2 3]->[1 1 2 3 3]
+ "mirror"     mirror the array at the boundary       [1 2 3]->[2 1 2 3 2]
  "constant"   use a constant value, default is 0.0   [1 2 3]->[0 1 2 3 0]
  ==========   ====================================   ====================
 
-The "constant" mode is special since it needs an additional
-parameter to specify the constant value that should be used.
+The following synonyms are also supported for consistency with the
+interpolation routines:
+
+ =============   =======================
+   **mode**          **description**
+ =============   =======================
+ "grid-mirror"   equivalent to "reflect"
+ "grid-wrap"     equivalent to "wrap"
+ =============   =======================
+
+The "constant" mode is special since it needs an additional parameter to
+specify the constant value that should be used.
+
+Note that modes mirror and reflect differ only in whether the sample at the
+boundary is repeated upon reflection. For mode mirror, the point of symmetry is
+exactly at the final sample, so that value is not repeated. This mode is also
+known as whole-sample symmetric since the point of symmetry falls on the final
+sample. Similarly, reflect is often refered to as half-sample symmetric as the
+point of symmetry is half a sample beyond the array boundary.
 
 .. note::
 
@@ -758,10 +778,12 @@ following two functions implement the pre-filtering:
      insufficient precision. This can be prevented by specifying a
      output type of high precision.
 
-Interpolation functions
-^^^^^^^^^^^^^^^^^^^^^^^
+.. _ndimage-interpolation-modes:
 
-The following functions all employ spline interpolation to effect some
+Interpolation boundary handling
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The interpolation functions all employ spline interpolation to effect some
 type of geometric transformation of the input array. This requires a
 mapping of the output coordinates to the input coordinates, and
 therefore, the possibility arises that input values outside the
@@ -790,6 +812,10 @@ the location of the red x.
 
 .. plot:: tutorial/examples/plot_interp_grid.py
    :include-source: False
+
+
+Interpolation functions
+^^^^^^^^^^^^^^^^^^^^^^^
 
 - The :func:`geometric_transform` function applies an arbitrary
   geometric transform to the input. The given *mapping* function is
